@@ -1,3 +1,33 @@
+#!/usr/bin/env python
+#******************************************************************************
+# 
+#  Project:  GDAL
+#  Purpose:  Script to one folder structure of GDAL (old) to another (new).
+#  Author:   Maxim Dubinin, sim@gis-lab.info
+#  Example:  python gdal_restructure.py /media/sim/Windows7_OS/work/gdal_cmake/ /media/sim/Windows7_OS/work/lib_gdal_new/ /home/sim/work/lib_gdal/etc/cmake-build-helpers/gdal_folders.csv
+#******************************************************************************
+#  Copyright (c) 2015, Maxim Dubinin
+# 
+#  Permission is hereby granted, free of charge, to any person obtaining a
+#  copy of this software and associated documentation files (the "Software"),
+#  to deal in the Software without restriction, including without limitation
+#  the rights to use, copy, modify, merge, publish, distribute, sublicense,
+#  and/or sell copies of the Software, and to permit persons to whom the
+#  Software is furnished to do so, subject to the following conditions:
+# 
+#  The above copyright notice and this permission notice shall be included
+#  in all copies or substantial portions of the Software.
+# 
+#  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+#  OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+#  THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+#  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+#  DEALINGS IN THE SOFTWARE.
+#******************************************************************************
+
+import sys
 import os
 import shutil
 import glob
@@ -19,7 +49,9 @@ def copyonly(dirpath, contents):
      return ignore_list2
  
 def copy_dir(src, dest, exts):
-    os.makedirs(to_folder)
+    if not os.path.exists(to_folder):
+        os.makedirs(to_folder)
+
     files = glob.glob(src + "/*.*")
     for f in files:
         if not os.path.isdir(f):
@@ -28,10 +60,12 @@ def copy_dir(src, dest, exts):
                 shutil.copy(f, dest)
 
 
-start = '/media/sim/Windows7_OS/work/lib_gdal/'
-finish = '/media/sim/Windows7_OS/work/lib_gdal_new/'
+start_folder = sys.argv[1]         #where to copy from
+finish_folder = sys.argv[2]        #where to copy to
+if not os.path.exists(finish_folder): os.makedirs(finish_folder)
+mappings_csv = sys.argv[3]         #csv with folder mappings
 
-mappings = read_mappings('/home/sim/work/gdal_folders.csv')
+mappings = read_mappings(mappings_csv)
 
 for row in mappings:
 
@@ -39,11 +73,12 @@ for row in mappings:
     to_folder = row['new']
     action = row['action']
     exts = row['ext2keep']
+    from_folder = start_folder + from_folder
+    to_folder = finish_folder + to_folder
     
-    if action == 'skip':
-        continue
-    else:
-        from_folder = start + from_folder
-        to_folder = finish + to_folder
-        copy_dir(from_folder, to_folder, exts)
-    print(from_folder + ' ... processed' )
+    if os.path.exists(from_folder):
+        if action == 'skip':
+            continue
+        else:
+            copy_dir(from_folder, to_folder, exts)
+        print(from_folder + ' ... processed' )

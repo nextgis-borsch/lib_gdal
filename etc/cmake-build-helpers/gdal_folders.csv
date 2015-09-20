@@ -333,9 +333,9 @@ gdal/swig/python/osgeo,bindings/python/osgeo,,"cpp,h"
 gdal/swig/python/samples,bindings/python/samples,,"cpp,h"
 gdal/swig/python/scripts,bindings/python/scripts,,"cpp,h"
 gdal/swig/ruby,bindings/ruby,,"cpp,h"
-gdal/vb6,,skip,"cpp,h"
-gdal/vb6/test,,skip,"cpp,h"
-gdal/wince,,skip,"cpp,h"
-gdal/wince/msvc80,,skip,"cpp,h"
-gdal/wince/msvc80/gdalce_dll,,skip,"cpp,h"
-,,skip,"cpp,h"
+gdal/vb6,,skip,
+gdal/vb6/test,,skip,
+gdal/wince,,skip,
+gdal/wince/msvc80,,skip,
+gdal/wince/msvc80/gdalce_dll,,skip,
+,,skip,
