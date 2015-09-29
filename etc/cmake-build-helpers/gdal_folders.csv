@@ -327,9 +327,9 @@ gdal/swig/perl/lib,bindings/perl/lib,,"cpp,h"
 gdal/swig/perl/lib/Geo,bindings/perl/lib/Geo,,"cpp,h"
 gdal/swig/perl/t,bindings/perl/t,,"cpp,h"
 gdal/swig/php,bindings/php,,"cpp,h"
-gdal/swig/python,bindings/python,,"cpp,h"
+gdal/swig/python,bindings/python,,"cpp,h,txt,py,conf"
 gdal/swig/python/extensions,bindings/python/extensions,,"cpp,h"
-gdal/swig/python/osgeo,bindings/python/osgeo,,"cpp,h"
+gdal/swig/python/osgeo,bindings/python/osgeo,,py
 gdal/swig/python/samples,bindings/python/samples,,"cpp,h"
 gdal/swig/python/scripts,bindings/python/scripts,,"cpp,h"
 gdal/swig/ruby,bindings/ruby,,"cpp,h"
@@ -338,4 +338,11 @@ gdal/vb6/test,,skip,
 gdal/wince,,skip,
 gdal/wince/msvc80,,skip,
 gdal/wince/msvc80/gdalce_dll,,skip,
-,,skip,
+gdal/frmts/vrt,core/frmts/vrt,,h
+gdal/frmts/mem,core/frmts/mem,,h
+gdal/frmts/gtiff,core/frmts/gtiff,,h
+gdal/ogr/ogrsf_frmts/xplane/,core/ogr/ogrsf_frmts/xplane/,,h
+gdal/ogr/ogrsf_frmts/,core/ogr/ogrsf_frmts,,h
+gdal/ogr/ogrsf_frmts/mem/,core/ogr/ogrsf_frmts/mem/,,h
+gdal/ogr/ogrsf_frmts/generic/,core/ogr/ogrsf_frmts/generic/,,h
+gdal/ogr/ogrsf_frmts/geojson/,core/ogr/ogrsf_frmts/geojson/,,h
