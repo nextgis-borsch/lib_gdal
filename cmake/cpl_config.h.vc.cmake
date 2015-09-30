@@ -70,7 +70,7 @@
 #define SIZEOF_UNSIGNED_LONG @SIZEOF_UNSIGNED_LONG@
 
 /* The size of `void*', as computed by sizeof. */
-#define SIZEOF_VOIDP @SIZEOF_VOID_P@
+#define SIZEOF_VOIDP @SIZEOF_VOIDP@
 
 /* Set the native cpu bit order */
 #define HOST_FILLORDER @HOST_FILLORDER@

@@ -40,6 +40,8 @@ if(GDAL_PAM_ENABLED)
     add_definitions(-DPAM_ENABLED)
 endif(GDAL_PAM_ENABLED)
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../port)
+include_directories(${GDAL_ROOT_BINARY_DIR}/port)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../gcore)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../ogr)
 

@@ -36,6 +36,10 @@ if(GDAL_ENABLE_OGR)
 endif()
 
 add_definitions(-DGDAL_COMPILATION)
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../port)
+include_directories(${GDAL_ROOT_BINARY_DIR}/port)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../gcore)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/ogrsf_frmts)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/ogrsf_frmts/mem)
 
@@ -149,8 +153,13 @@ if(GDAL_USE_PROJ)
             GIT_REPOSITORY ${EP_URL}/lib_proj
             INSTALL_COMMAND ""
         )
-        set (PROJ_DIR "${CMAKE_CURRENT_BINARY_DIR}")
-        set (PROJ_FOUND ON)
+        
+        set (PROJ_DIR ${ep_base}/proj CACHE INTERNAL "proj.4 internal path")
+        set (PROJ_INCLUDE_DIR ${PROJ_DIR} CACHE PATH "proj.4 internal include path")
+        set (PROJ_LIBRARIES ${PROJ_DIR}/lib/proj CACHE INTERNAL "proj.4 internal lib path")
+        set (PROJ_LIBRARY ${PROJ_LIBRARIES} CACHE FILEPATH "proj.4 internal lib path")
+        
+        link_directories(${LIBCURL_DIR}/lib)
     else()
         find_package(PROJ REQUIRED)
         if(PROJ_FOUND)
@@ -159,35 +168,6 @@ if(GDAL_USE_PROJ)
     endif()
 else()
     message(WARNING "No proj.4 support")
-endif()
-
-#check zip and internal zip
-option(GDAL_USE_LIBZ "Set ON to use libz" ON)
-if(GDAL_USE_LIBZ)
-    option(GDAL_USE_LIBZ_INTERNAL "Set ON to use internal libz" OFF)
-    add_definitions(-DHAVE_LIBZ -DZIP_SUPPORT)
-    if(GDAL_USE_LIBZ_INTERNAL)
-        # external projext
-        ExternalProject_Add(zlib
-            GIT_REPOSITORY ${EP_URL}/lib_z
-            INSTALL_COMMAND ""
-        )
-        set (ZLIB_DIR "${CMAKE_CURRENT_BINARY_DIR}")
-        # todo: set(ZLIB_LIBRARIES)
-        #       include_directories(${ZLIB_INCLUDE_DIRS})
-        set(ZLIB_FOUND ON)
-    else()
-        find_package(ZLIB REQUIRED)
-        if(ZLIB_FOUND)
-            include_directories(${ZLIB_INCLUDE_DIRS})
-            add_definitions(-DHAVE_ZLIB_H -DHAVE_ZLIB)
-            if(MSVC)
-                add_definitions(-DZLIB_DLL)
-            endif()
-        endif()
-    endif()
-else()
-    message(WARNING "No zlib support")
 endif()
 
 option(GDAL_USE_EXPAT "Set ON to use libexpat" ON)
@@ -199,16 +179,17 @@ if(GDAL_USE_EXPAT)
             GIT_REPOSITORY ${EP_URL}/lib_expat
             INSTALL_COMMAND ""
         )
-        set (EXPAT_DIR "${CMAKE_CURRENT_BINARY_DIR}")
-        set(EXPAT_INCLUDE_DIRS ${EXPAT_DIR})
-        set(EXPAT_FOUND ON)
+       
+        set (EXPAT_DIR ${ep_base}/expat CACHE INTERNAL "expat internal path")
+        set (EXPAT_INCLUDE_DIRS ${EXPAT_DIR} CACHE PATH "expat internal include path")
+        set (EXPAT_LIBRARIES ${EXPAT_DIR}/lib/expat CACHE INTERNAL "expat internal lib path")
+        set (EXPAT_LIBRARY ${EXPAT_LIBRARIES} CACHE FILEPATH "expat internal lib path")
+        
+        link_directories(${ZLIB_DIR}/lib)
     else()
         find_package(EXPAT REQUIRED)
         if(EXPAT_FOUND)
-            get_filename_component(GEOS_ROOT ${GEOS_INCLUDE_DIR} PATH)
-            include_directories(${GEOS_INCLUDE_DIR})
-            include_directories(${GEOS_ROOT}/capi)
-            add_definitions(-DHAVE_GEOS=1)
+            include_directories(${EXPAT_INCLUDE_DIR})
         endif()
     endif()
 endif()
@@ -227,21 +208,27 @@ endif()
 
 add_library(${LIB_NAME} OBJECT ${LIB_HHEADERS} ${LIB_CSOURCES})
 
-if(EXPAT_FOUND)
-    set(GDAL_TARGET_LINK_LIB ${GDAL_TARGET_LINK_LIB} ${EXPAT_LIBRARIES})
-endif(EXPAT_FOUND)
-
-if(ZLIB_FOUND)
-    set(GDAL_TARGET_LINK_LIB ${GDAL_TARGET_LINK_LIB} ${ZLIB_LIBRARIES})
-endif(ZLIB_FOUND)
+if(GDAL_USE_EXPAT)    
+    if(GDAL_USE_EXPAT_INTERNAL)        
+        add_dependencies(${LIB_NAME} expat)
+        #set(GDAL_TARGET_LINK_LIB ${GDAL_TARGET_LINK_LIB} expat})
+    else()
+        set(GDAL_TARGET_LINK_LIB ${GDAL_TARGET_LINK_LIB} ${EXPAT_LIBRARIES})
+    endif()
+endif()
 
 if(GEOS_FOUND)
     set(GDAL_TARGET_LINK_LIB ${GDAL_TARGET_LINK_LIB} ${GEOS_LIBRARY})
-endif(GEOS_FOUND)
+endif()
 
-if(PROJ_FOUND)
-    set(GDAL_TARGET_LINK_LIB ${GDAL_TARGET_LINK_LIB} ${PROJ_LIBRARY})
-endif(PROJ_FOUND)
+if(GDAL_USE_PROJ)    
+    if(GDAL_USE_PROJ_INTERNAL)        
+        add_dependencies(${LIB_NAME} proj)
+        #set(GDAL_TARGET_LINK_LIB ${GDAL_TARGET_LINK_LIB} proj})
+    else()
+        set(GDAL_TARGET_LINK_LIB ${GDAL_TARGET_LINK_LIB} ${PROJ_LIBRARY})
+    endif()
+endif()
 
 # build target
 set(GDAL_TARGET_OBJECTS ${GDAL_TARGET_OBJECTS} $<TARGET_OBJECTS:${LIB_NAME}> PARENT_SCOPE)

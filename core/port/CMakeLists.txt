@@ -32,6 +32,8 @@ project ("lib${LIB_NAME}")
 
 include(configure)
 
+include_directories(${GDAL_ROOT_BINARY_DIR}/port)
+
 set(LIB_HHEADERS
     cpl_atomic_ops.h
     cpl_config_extras.h
@@ -151,23 +153,37 @@ if(GDAL_USE_LIBZ)
         cpl_minizip_unzip.cpp
         cpl_minizip_zip.cpp
     )
-    if(GDAL_USE_LIBZ_INTERNAL)
+    if(GDAL_USE_LIBZ_INTERNAL)        
+        set (ZLIB_SRC_DIR ${ep_base}/Source/zlib CACHE INTERNAL "zlib internal sources path")
+        set (ZLIB_BLD_DIR ${ep_base}/Build/zlib CACHE INTERNAL "zlib internal build path")
         # external projext
         ExternalProject_Add(zlib
             GIT_REPOSITORY ${EP_URL}/lib_z
-            INSTALL_COMMAND ""
-        )
-        set (ZLIB_DIR "${CMAKE_CURRENT_BINARY_DIR}")
-        # todo: set(ZLIB_LIBRARIES)
-        #       include_directories(${ZLIB_INCLUDE_DIRS})
+            INSTALL_COMMAND "" # no install
+        )        
+        set (ZLIB_INCLUDE_DIRS ${ZLIB_SRC_DIR} ${ZLIB_BLD_DIR})
+        
+        if (MSVC)
+            set(ZLIB_LIBRARIES
+                DEBUG           "${ZLIB_BLD_DIR}/Debug/${CMAKE_STATIC_LIBRARY_PREFIX}zlibd${CMAKE_STATIC_LIBRARY_SUFFIX}"
+                RELEASE         "${ZLIB_BLD_DIR}/Release/${CMAKE_STATIC_LIBRARY_PREFIX}zlib${CMAKE_STATIC_LIBRARY_SUFFIX}"
+            )
+        else()
+            set(ZLIB_LIBRARIES
+                "${ZLIB_BLD_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}z${CMAKE_STATIC_LIBRARY_SUFFIX}"
+            )
+        endif()      
+        
+        set(ZLIB_FOUND ON)
     else()
-        find_package(ZLIB REQUIRED)
-        if(ZLIB_FOUND)
-            include_directories(${ZLIB_INCLUDE_DIRS})
-            add_definitions(-DHAVE_ZLIB_H -DHAVE_ZLIB)
-            if(MSVC)
-                add_definitions(-DZLIB_DLL)
-            endif()
+        find_package(ZLIB REQUIRED)        
+    endif()
+    
+    if(ZLIB_FOUND)
+        include_directories(${ZLIB_INCLUDE_DIRS})
+        add_definitions(-DHAVE_ZLIB_H -DHAVE_ZLIB)
+        if(MSVC)
+            add_definitions(-DZLIB_DLL)
         endif()
     endif()
 else()
@@ -193,8 +209,13 @@ if(GDAL_USE_CURL)
             GIT_REPOSITORY ${EP_URL}/lib_openssl
             INSTALL_COMMAND ""
         )
-        set (OPENSSL_DIR "${CMAKE_CURRENT_BINARY_DIR}")
-
+        set (OPENSSL_DIR ${ep_base}/Source/openssl CACHE INTERNAL "openssl internal path")
+        set (OPENSSL_INCLUDE_DIR ${OPENSSL_DIR} CACHE PATH "openssl internal include path")
+        #set (OPENSSL_LIBRARIES ${OPENSSL_DIR}/lib/openssl CACHE INTERNAL "openssl internal lib path")
+        #set (OPENSSL_LIBRARY ${OPENSSL_LIBRARIES} CACHE FILEPATH "openssl internal lib path")
+        
+        link_directories(${OPENSSL_DIR}/Install/openssl)
+        
         ExternalProject_Add(curl
             DEPENDS zlib
             DEPENDS openssl
@@ -221,10 +242,13 @@ if(GDAL_USE_CURL)
             -DCMAKE_USE_LIBSSH2=OFF
             INSTALL_COMMAND ""
         )
-        set (LIBCURL_DIR "${CMAKE_CURRENT_BINARY_DIR}")
-
-        # todo: set(CURL_LIBRARIES)
-        #       include_directories(${CURL_INCLUDE_DIRS})
+        
+        set (LIBCURL_DIR ${ep_base}/Source/curl CACHE INTERNAL "libcurl internal path")
+        set (LIBCURL_INCLUDE_DIR ${LIBCURL_DIR} CACHE PATH "libcurl internal include path")
+        #set (LIBCURL_LIBRARIES ${LIBCURL_DIR}/lib/curl CACHE INTERNAL "libcurl internal lib path")
+        #set (LIBCURL_LIBRARY ${LIBCURL_LIBRARIES} CACHE FILEPATH "libcurl internal lib path")
+        
+        link_directories(${LIBCURL_DIR}/Install/curl)
     else()
         find_package(CURL REQUIRED)
         if(CURL_FOUND)
@@ -240,11 +264,20 @@ if(HAVE_ICONV)
 endif()
 
 if(GDAL_USE_LIBZ)
+    if(GDAL_USE_LIBZ_INTERNAL)        
+        add_dependencies(${LIB_NAME} zlib)
+    endif()
+    
     set(GDAL_TARGET_LINK_LIB ${GDAL_TARGET_LINK_LIB} ${ZLIB_LIBRARIES})
 endif()
 
 if(GDAL_USE_CURL)
-    set(GDAL_TARGET_LINK_LIB ${GDAL_TARGET_LINK_LIB} ${CURL_LIBRARIES})
+    if(GDAL_USE_CURL_INTERNAL)        
+        add_dependencies(${LIB_NAME} curl)
+        #set(GDAL_TARGET_LINK_LIB ${GDAL_TARGET_LINK_LIB} curl)
+    else()
+        set(GDAL_TARGET_LINK_LIB ${GDAL_TARGET_LINK_LIB} ${CURL_LIBRARIES})
+    endif()    
 endif()
 
 # build target
