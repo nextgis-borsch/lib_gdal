@@ -101,7 +101,6 @@ set(LIB_CSOURCES
     cpl_vsisimple.cpp
     cpl_worker_thread_pool.cpp
     cpl_xml_validate.cpp
-    vsipreload.cpp
 )
 
 if(WIN32)
@@ -153,26 +152,21 @@ if(GDAL_USE_LIBZ)
         cpl_minizip_unzip.cpp
         cpl_minizip_zip.cpp
     )
-    if(GDAL_USE_LIBZ_INTERNAL)        
+    if(GDAL_USE_LIBZ_INTERNAL)    
+        option(GDAL_USE_LIBZ_INTERNAL_SHARED "Set ON to use shared libz" ON)    
         set (ZLIB_SRC_DIR ${ep_base}/Source/zlib CACHE INTERNAL "zlib internal sources path")
         set (ZLIB_BLD_DIR ${ep_base}/Build/zlib CACHE INTERNAL "zlib internal build path")
-        # external projext
+        # external project
         ExternalProject_Add(zlib
             GIT_REPOSITORY ${EP_URL}/lib_z
             INSTALL_COMMAND "" # no install
         )        
-        set (ZLIB_INCLUDE_DIRS ${ZLIB_SRC_DIR} ${ZLIB_BLD_DIR})
-        
+        set (ZLIB_INCLUDE_DIRS ${ZLIB_SRC_DIR} ${ZLIB_BLD_DIR})        
         if (MSVC)
-            set(ZLIB_LIBRARIES
-                DEBUG           "${ZLIB_BLD_DIR}/Debug/${CMAKE_STATIC_LIBRARY_PREFIX}zlibd${CMAKE_STATIC_LIBRARY_SUFFIX}"
-                RELEASE         "${ZLIB_BLD_DIR}/Release/${CMAKE_STATIC_LIBRARY_PREFIX}zlib${CMAKE_STATIC_LIBRARY_SUFFIX}"
-            )
+            set_libraries(ZLIB_LIBRARIES GDAL_USE_LIBZ_INTERNAL_SHARED ${ZLIB_BLD_DIR} "zlib" "zlibd") 
         else()
-            set(ZLIB_LIBRARIES
-                "${ZLIB_BLD_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}z${CMAKE_STATIC_LIBRARY_SUFFIX}"
-            )
-        endif()      
+            set_libraries(ZLIB_LIBRARIES GDAL_USE_LIBZ_INTERNAL_SHARED ${ZLIB_BLD_DIR} "z" "z")         
+        endif()
         
         set(ZLIB_FOUND ON)
     else()
@@ -205,20 +199,14 @@ if(GDAL_USE_CURL)
     )
 
     if(GDAL_USE_CURL_INTERNAL)
-        ExternalProject_Add(openssl
-            GIT_REPOSITORY ${EP_URL}/lib_openssl
-            INSTALL_COMMAND ""
-        )
-        set (OPENSSL_DIR ${ep_base}/Source/openssl CACHE INTERNAL "openssl internal path")
-        set (OPENSSL_INCLUDE_DIR ${OPENSSL_DIR} CACHE PATH "openssl internal include path")
-        #set (OPENSSL_LIBRARIES ${OPENSSL_DIR}/lib/openssl CACHE INTERNAL "openssl internal lib path")
-        #set (OPENSSL_LIBRARY ${OPENSSL_LIBRARIES} CACHE FILEPATH "openssl internal lib path")
-        
-        link_directories(${OPENSSL_DIR}/Install/openssl)
+        option(GDAL_USE_CURL_INTERNAL_SHARED "Set ON to use shared curl" ON)   
+        option(GDAL_USE_OPENSSL_INTERNAL "Set ON to use openssl internal" ON)       
+        set (CURL_SRC_DIR ${ep_base}/Source/curl CACHE INTERNAL "curl internal sources path")
+        set (CURL_BLD_DIR ${ep_base}/Build/curl CACHE INTERNAL "curl internal build path")
+        # external project
         
         ExternalProject_Add(curl
             DEPENDS zlib
-            DEPENDS openssl
             GIT_REPOSITORY ${EP_URL}/lib_curl
             CMAKE_ARGS
             -DBUILD_CURL_TESTS=OFF
@@ -240,21 +228,28 @@ if(GDAL_USE_CURL)
             -DENABLE_MANUAL=OFF
             -DCMAKE_USE_OPENSSL=ON
             -DCMAKE_USE_LIBSSH2=OFF
+            -DCMAKE_USE_OPENSSL_INTERNAL=${GDAL_USE_OPENSSL_INTERNAL}
+            -DCURL_ZLIB_INTERNAL=${GDAL_USE_LIBZ_INTERNAL}
             INSTALL_COMMAND ""
         )
         
-        set (LIBCURL_DIR ${ep_base}/Source/curl CACHE INTERNAL "libcurl internal path")
-        set (LIBCURL_INCLUDE_DIR ${LIBCURL_DIR} CACHE PATH "libcurl internal include path")
-        #set (LIBCURL_LIBRARIES ${LIBCURL_DIR}/lib/curl CACHE INTERNAL "libcurl internal lib path")
-        #set (LIBCURL_LIBRARY ${LIBCURL_LIBRARIES} CACHE FILEPATH "libcurl internal lib path")
-        
-        link_directories(${LIBCURL_DIR}/Install/curl)
-    else()
-        find_package(CURL REQUIRED)
-        if(CURL_FOUND)
-            include_directories(${CURL_INCLUDE_DIRS})
+        set (CURL_INCLUDE_DIRS ${CURL_SRC_DIR} ${CURL_BLD_DIR})        
+        if (MSVC)
+            set_libraries(CURL_LIBRARIES GDAL_USE_CURL_INTERNAL_SHARED ${CURL_BLD_DIR} "curl" "curld") 
+        else()
+            set_libraries(CURL_LIBRARIES GDAL_USE_CURL_INTERNAL_SHARED ${CURL_BLD_DIR} "curl" "curl")         
         endif()
+        
+        set(CURL_FOUND ON)
+    else()
+        find_package(CURL REQUIRED)        
     endif()
+    
+    if(CURL_FOUND)
+        include_directories(${CURL_INCLUDE_DIRS})
+    endif()
+else()
+     message(WARNING "No libcurl support")    
 endif()
 
 add_library(${LIB_NAME} OBJECT ${LIB_HHEADERS} ${LIB_CSOURCES})
@@ -274,10 +269,9 @@ endif()
 if(GDAL_USE_CURL)
     if(GDAL_USE_CURL_INTERNAL)        
         add_dependencies(${LIB_NAME} curl)
-        #set(GDAL_TARGET_LINK_LIB ${GDAL_TARGET_LINK_LIB} curl)
-    else()
-        set(GDAL_TARGET_LINK_LIB ${GDAL_TARGET_LINK_LIB} ${CURL_LIBRARIES})
-    endif()    
+    endif() 
+        
+    set(GDAL_TARGET_LINK_LIB ${GDAL_TARGET_LINK_LIB} ${CURL_LIBRARIES})   
 endif()
 
 # build target

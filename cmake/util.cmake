@@ -28,27 +28,27 @@
 
 function(check_version major minor rev)
 
-# parse the version number from gdal_version.h and include in
-# major, minor and rev parameters
+    # parse the version number from gdal_version.h and include in
+    # major, minor and rev parameters
 
-file(READ ${CMAKE_CURRENT_SOURCE_DIR}/core/gcore/gdal_version.h GDAL_VERSION_H_CONTENTS)
+    file(READ ${CMAKE_CURRENT_SOURCE_DIR}/core/gcore/gdal_version.h GDAL_VERSION_H_CONTENTS)
 
-string(REGEX MATCH "GDAL_VERSION_MAJOR[ \t]+([0-9]+)"
-  GDAL_MAJOR_VERSION ${GDAL_VERSION_H_CONTENTS})
-string (REGEX MATCH "([0-9]+)"
-  GDAL_MAJOR_VERSION ${GDAL_MAJOR_VERSION})
-string(REGEX MATCH "GDAL_VERSION_MINOR[ \t]+([0-9]+)"
-  GDAL_MINOR_VERSION ${GDAL_VERSION_H_CONTENTS})
-string (REGEX MATCH "([0-9]+)"
-  GDAL_MINOR_VERSION ${GDAL_MINOR_VERSION})
-string(REGEX MATCH "GDAL_VERSION_REV[ \t]+([0-9]+)"
-  GDAL_REV_VERSION ${GDAL_VERSION_H_CONTENTS})
-string (REGEX MATCH "([0-9]+)"
-  GDAL_REV_VERSION ${GDAL_REV_VERSION})
+    string(REGEX MATCH "GDAL_VERSION_MAJOR[ \t]+([0-9]+)"
+      GDAL_MAJOR_VERSION ${GDAL_VERSION_H_CONTENTS})
+    string (REGEX MATCH "([0-9]+)"
+      GDAL_MAJOR_VERSION ${GDAL_MAJOR_VERSION})
+    string(REGEX MATCH "GDAL_VERSION_MINOR[ \t]+([0-9]+)"
+      GDAL_MINOR_VERSION ${GDAL_VERSION_H_CONTENTS})
+    string (REGEX MATCH "([0-9]+)"
+      GDAL_MINOR_VERSION ${GDAL_MINOR_VERSION})
+    string(REGEX MATCH "GDAL_VERSION_REV[ \t]+([0-9]+)"
+      GDAL_REV_VERSION ${GDAL_VERSION_H_CONTENTS})
+    string (REGEX MATCH "([0-9]+)"
+      GDAL_REV_VERSION ${GDAL_REV_VERSION})
 
-set(${major} ${GDAL_MAJOR_VERSION} PARENT_SCOPE)
-set(${minor} ${GDAL_MINOR_VERSION} PARENT_SCOPE)
-set(${rev} ${GDAL_REV_VERSION} PARENT_SCOPE)
+    set(${major} ${GDAL_MAJOR_VERSION} PARENT_SCOPE)
+    set(${minor} ${GDAL_MINOR_VERSION} PARENT_SCOPE)
+    set(${rev} ${GDAL_REV_VERSION} PARENT_SCOPE)
 
 endfunction(check_version)
 
@@ -79,3 +79,29 @@ function(find_python_module module)
     endif(NOT PY_${module_upper})
     find_package_handle_standard_args(PY_${module} DEFAULT_MSG PY_${module_upper})
 endfunction(find_python_module)
+
+function(set_libraries libs is_shared bld_dir release_name debug_name)
+    if (MSVC)
+        if(is_shared)
+            set(${libs}
+                    debug "${bld_dir}/Debug/${CMAKE_SHARED_LIBRARY_PREFIX}${debug_name}${CMAKE_STATIC_LIBRARY_SUFFIX}"
+                    optimized "${bld_dir}/Release/${CMAKE_SHARED_LIBRARY_PREFIX}${release_name}${CMAKE_STATIC_LIBRARY_SUFFIX}"
+                PARENT_SCOPE)
+        else()
+            set(${libs}
+                    debug"${bld_dir}/Debug/${CMAKE_STATIC_LIBRARY_PREFIX}${debug_name}${CMAKE_STATIC_LIBRARY_SUFFIX}"
+                    optimized "${bld_dir}/Release/${CMAKE_STATIC_LIBRARY_PREFIX}${release_name}${CMAKE_STATIC_LIBRARY_SUFFIX}"
+                PARENT_SCOPE)
+        endif()
+    else()
+        if(is_shared)
+            set(${libs}
+                "${bld_dir}/${CMAKE_SHARED_LIBRARY_PREFIX}${debug_name}${CMAKE_SHARED_LIBRARY_SUFFIX}"
+            PARENT_SCOPE)
+        else()
+            set(${libs}
+                "${bld_dir}/${CMAKE_STATIC_LIBRARY_PREFIX}${release_name}${CMAKE_STATIC_LIBRARY_SUFFIX}"
+            PARENT_SCOPE)
+        endif()            
+    endif()    
+endfunction(set_libraries)

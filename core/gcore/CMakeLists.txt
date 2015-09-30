@@ -133,7 +133,7 @@ if(GDAL_USE_JSONC)
         endif()
     endif()
 else()
-    message(ERROR_FATAL "libjson-c is required")
+    message(FATAL_ERROR "libjson-c is required")
 endif()
 
 add_subdirectory(mdreader)
