@@ -27,9 +27,7 @@
 
 cmake_minimum_required (VERSION 2.8.10 FATAL_ERROR)
 
-# main settings
-set(PROJECT_NAME "gdal")
-project(${PROJECT_NAME})
+project(GDAL)
 
 # some init settings
 set(CMAKE_COLOR_MAKEFILE ON)
