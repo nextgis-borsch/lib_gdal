@@ -25,8 +25,6 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-cmake_minimum_required (VERSION 2.8.10 FATAL_ERROR)
-
 option(BUILD_TESTS "Set ON to build tests" ON)
 # testing
 if(BUILD_TESTS)
