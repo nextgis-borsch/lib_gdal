@@ -30,7 +30,6 @@ cmake_minimum_required (VERSION 2.8.10 FATAL_ERROR)
 project(GDAL)
 
 # some init settings
-set(CMAKE_COLOR_MAKEFILE ON)
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "Configs" FORCE)
 
 # setup paths
