@@ -26,14 +26,10 @@
 ################################################################################
 
 
-cmake_minimum_required (VERSION 2.8.10 FATAL_ERROR)
-
 set(LIB_NAME "cpl")
 project ("lib${LIB_NAME}")
 
 include(configure)
-
-
 
 #Find zlib or configure ExternalProject if not found .
 include(ZLIB)
