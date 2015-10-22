@@ -75,12 +75,11 @@ set(GDAL_INSTALL_HEADERS "")
 add_subdirectory(core)
 add_subdirectory(bindings)
 
-# testing
-enable_testing()
 add_subdirectory(autotest)
 
 # link library objects
 list(REMOVE_DUPLICATES GDAL_TARGET_OBJECTS)
+
 option(GDAL_BUILD_SHARED "Set ON to build shared library" ON)
 if(GDAL_BUILD_SHARED)
     add_library(${GDAL_LIB_NAME} SHARED ${GDAL_TARGET_OBJECTS})
