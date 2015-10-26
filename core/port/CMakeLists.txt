@@ -25,16 +25,18 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-cmake_minimum_required (VERSION 2.8.10 FATAL_ERROR)
 
 set(LIB_NAME "cpl")
 project ("lib${LIB_NAME}")
 
 include(configure)
 
+#Find zlib or configure ExternalProject if not found .
+include(ZLIB)
+
 include_directories(${GDAL_ROOT_BINARY_DIR}/port)
 
-set(LIB_HHEADERS
+set(CPL_HEADERS
     cpl_atomic_ops.h
     cpl_config_extras.h
     cpl_conv.h
@@ -59,7 +61,7 @@ set(LIB_HHEADERS
     gdal_csv.h
 )
 
-set(LIB_CSOURCES
+set(CPL_SOURCES
     cpl_atomic_ops.cpp
     cpl_base64.cpp
     cpl_conv.cpp
@@ -105,104 +107,65 @@ set(LIB_CSOURCES
 )
 
 if(WIN32)
-    set(LIB_CSOURCES ${LIB_CSOURCES} cpl_vsil_win32.cpp)
-else(WIN32)
-    set(LIB_CSOURCES ${LIB_CSOURCES} cpl_vsil_unix_stdio_64.cpp)
-endif(WIN32)
+    list(APPEND LIB_CSOURCES cpl_vsil_win32.cpp)
+else()
+    list(APPEND LIB_CSOURCES cpl_vsil_unix_stdio_64.cpp)
+endif()
 
 #check odbc
-option(GDAL_USE_ODBC "Set ON to use odbc" OFF)
-if(GDAL_USE_ODBC)
-    set(LIB_HHEADERS ${LIB_HHEADERS} cpl_odbc.h)
-    set(LIB_CSOURCES ${LIB_CSOURCES} cpl_odbc.cpp)
-endif(GDAL_USE_ODBC)
+option(WITH_ODBC "Set ON to use odbc" OFF)
 
-option(GDAL_USE_XMLREFORMAT "Set ON to use xmlreformat" OFF)
-if(GDAL_USE_XMLREFORMAT)
-    set(LIB_CSOURCES ${LIB_CSOURCES} xmlreformat.cpp)
-endif(GDAL_USE_XMLREFORMAT)
+if(WITH_ODBC)
+    list(APPEND CPL_HEADERS cpl_odbc.h)
+    list(APPEND LIB_CSOURCES cpl_odbc.cpp)
+endif()
 
-option(GDAL_USE_ONLY_CRYPTODLL_ALG "Include cryptopp support" OFF)
-if(GDAL_USE_ONLY_CRYPTODLL_ALG)
+option(WITH_XMLREFORMAT "Set ON to use xmlreformat" OFF)
+if(WITH_XMLREFORMAT)
+    list(APPEND LIB_CSOURCES xmlreformat.cpp)
+endif()
+
+option(WITH_ONLY_CRYPTODLL_ALG "Include cryptopp support" OFF)
+if(WITH_ONLY_CRYPTODLL_ALG)
     #todo: check cryptopp func
     add_definitions(-DUSE_ONLY_CRYPTODLL_ALG)
-endif(GDAL_USE_ONLY_CRYPTODLL_ALG)
+endif()
 
 if(HAVE_ICONV)
-    set(LIB_CSOURCES ${LIB_CSOURCES}
-        cpl_recode_iconv.cpp
-    )
+    list(APPEND LIB_CSOURCES cpl_recode_iconv.cpp )
     include_directories(${ICONV_INCLUDE_DIR})
     add_definitions(-DHAVE_ICONV -DLIBICONV_PLUG)
 endif()
 
 #check zip and internal zip
-option(GDAL_USE_LIBZ "Set ON to use libz" ON)
-if(GDAL_USE_LIBZ)
-    option(GDAL_USE_LIBZ_INTERNAL "Set ON to use internal libz" OFF)
+if(WITH_ZLIB)
+#  add_dependencies( ZLIB)
     add_definitions(-DHAVE_LIBZ -DZIP_SUPPORT)
-    set(LIB_HHEADERS ${LIB_HHEADERS}
+    list(APPEND CPL_HEADERS
         cpl_minizip_ioapi.h
         cpl_minizip_unzip.h
         cpl_minizip_zip.h
     )
-
-    set(LIB_CSOURCES ${LIB_CSOURCES}
+    list(APPEND LIB_CSOURCES 
         cpl_vsil_gzip.cpp
         cpl_minizip_ioapi.cpp
         cpl_minizip_unzip.cpp
         cpl_minizip_zip.cpp
     )
-    if(GDAL_USE_LIBZ_INTERNAL)        
-        set (ZLIB_SRC_DIR ${ep_base}/Source/zlib CACHE INTERNAL "zlib internal sources path")
-        set (ZLIB_BLD_DIR ${ep_base}/Build/zlib CACHE INTERNAL "zlib internal build path")
-        # external projext
-        ExternalProject_Add(zlib
-            GIT_REPOSITORY ${EP_URL}/lib_z
-            INSTALL_COMMAND "" # no install
-        )        
-        set (ZLIB_INCLUDE_DIRS ${ZLIB_SRC_DIR} ${ZLIB_BLD_DIR})
-        
-        if (MSVC)
-            set(ZLIB_LIBRARIES
-                DEBUG           "${ZLIB_BLD_DIR}/Debug/${CMAKE_STATIC_LIBRARY_PREFIX}zlibd${CMAKE_STATIC_LIBRARY_SUFFIX}"
-                RELEASE         "${ZLIB_BLD_DIR}/Release/${CMAKE_STATIC_LIBRARY_PREFIX}zlib${CMAKE_STATIC_LIBRARY_SUFFIX}"
-            )
-        else()
-            set(ZLIB_LIBRARIES
-                "${ZLIB_BLD_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}z${CMAKE_STATIC_LIBRARY_SUFFIX}"
-            )
-        endif()      
-        
-        set(ZLIB_FOUND ON)
-    else()
-        find_package(ZLIB REQUIRED)        
-    endif()
-    
-    if(ZLIB_FOUND)
-        include_directories(${ZLIB_INCLUDE_DIRS})
-        add_definitions(-DHAVE_ZLIB_H -DHAVE_ZLIB)
-        if(MSVC)
-            add_definitions(-DZLIB_DLL)
-        endif()
-    endif()
-else()
-    message(WARNING "No zlib support")
 endif()
 
+#should we apply same method as in ZLIB ?
 #check curl
-option(GDAL_USE_CURL "Set ON to use libcurl" ON)
-if(GDAL_USE_CURL)
+option(WITH_CURL "Set ON to use libcurl" ON)
+if(WITH_CURL)
     option(GDAL_USE_CURL_INTERNAL "Set ON to use internal libcurl" OFF)
     add_definitions(-DHAVE_CURL)
-    set(LIB_HHEADERS ${LIB_HHEADERS}
-        cpl_vsil_curl_priv.h
-    )
+    set(CPL_HEADERS cpl_vsil_curl_priv.h)
 
-    set(LIB_CSOURCES ${LIB_CSOURCES}
-        cpl_vsil_curl.cpp
-        cpl_vsil_curl_streaming.cpp
-    )
+    list(APPEND LIB_CSOURCES
+      cpl_vsil_curl.cpp
+      cpl_vsil_curl_streaming.cpp
+      )
 
     if(GDAL_USE_CURL_INTERNAL)
         ExternalProject_Add(openssl
@@ -257,26 +220,25 @@ if(GDAL_USE_CURL)
     endif()
 endif()
 
-add_library(${LIB_NAME} OBJECT ${LIB_HHEADERS} ${LIB_CSOURCES})
+add_library(${LIB_NAME} OBJECT ${CPL_HEADERS} ${LIB_CSOURCES})
 
 if(HAVE_ICONV)
-    set(GDAL_TARGET_LINK_LIB ${GDAL_TARGET_LINK_LIB} ${ICONV_LIBRARIES})
+    list(APPEND GDAL_TARGET_LINK_LIB ${ICONV_LIBRARIES})
 endif()
 
-if(GDAL_USE_LIBZ)
-    if(GDAL_USE_LIBZ_INTERNAL)        
-        add_dependencies(${LIB_NAME} zlib)
-    endif()
-    
-    set(GDAL_TARGET_LINK_LIB ${GDAL_TARGET_LINK_LIB} ${ZLIB_LIBRARIES})
+if(WITH_ZLIB)
+    # if(GDAL_USE_LIBZ_INTERNAL)        
+    #     add_dependencies(${LIB_NAME} zlib)
+    # endif()    
+    list(APPEND GDAL_TARGET_LINK_LIB ${ZLIB_LIBRARIES})
 endif()
 
-if(GDAL_USE_CURL)
+if(WITH_CURL)
     if(GDAL_USE_CURL_INTERNAL)        
         add_dependencies(${LIB_NAME} curl)
         #set(GDAL_TARGET_LINK_LIB ${GDAL_TARGET_LINK_LIB} curl)
     else()
-        set(GDAL_TARGET_LINK_LIB ${GDAL_TARGET_LINK_LIB} ${CURL_LIBRARIES})
+        list(GDAL_TARGET_LINK_LIB ${CURL_LIBRARIES})
     endif()    
 endif()
 
@@ -285,4 +247,4 @@ set(GDAL_TARGET_OBJECTS ${GDAL_TARGET_OBJECTS} $<TARGET_OBJECTS:${LIB_NAME}> PAR
 set(GDAL_TARGET_LINK_LIB ${GDAL_TARGET_LINK_LIB} PARENT_SCOPE)
 
 # install headers
-set(GDAL_INSTALL_HEADERS ${GDAL_INSTALL_HEADERS} ${LIB_HHEADERS} PARENT_SCOPE)
+set(GDAL_INSTALL_HEADERS ${GDAL_INSTALL_HEADERS} ${CPL_HEADERS} PARENT_SCOPE)
