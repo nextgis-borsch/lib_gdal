@@ -81,12 +81,13 @@ add_subdirectory(autotest)
 
 # link library objects
 list(REMOVE_DUPLICATES GDAL_TARGET_OBJECTS)
-option(GDAL_BUILD_SHARED "Set ON to build shared library" ON)
-if(GDAL_BUILD_SHARED)
+
+option(BUILD_SHARED_LIBS "Set ON to build shared library" ON)
+if(BUILD_SHARED_LIBS)
     add_library(${GDAL_LIB_NAME} SHARED ${GDAL_TARGET_OBJECTS})
-else(GDAL_BUILD_SHARED)
+else(BUILD_SHARED_LIBS)
     add_library(${GDAL_LIB_NAME} STATIC ${GDAL_TARGET_OBJECTS})
-endif(GDAL_BUILD_SHARED)
+endif(BUILD_SHARED_LIBS)
 
 list(REMOVE_DUPLICATES GDAL_TARGET_LINK_LIB)
 target_link_libraries(${GDAL_LIB_NAME} ${GDAL_TARGET_LINK_LIB})
