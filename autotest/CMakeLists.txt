@@ -25,19 +25,25 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-cmake_minimum_required (VERSION 2.8.10 FATAL_ERROR)
-
-find_package(PythonInterp REQUIRED)
-if(NOT PYTHONINTERP_FOUND)
+option(BUILD_TESTS "Set ON to build tests" ON)
+# testing
+if(BUILD_TESTS)
+  # call cmake enable_testing function
+  enable_testing()
+  #check for python
+  find_package(PythonInterp REQUIRED)
+  if(NOT PYTHONINTERP_FOUND)
     message(FATAL_ERROR "Cannot find python")
+  endif()
+
+  #add tests
+  add_test(gcore ${PYTHON_EXECUTABLE} gcore)
+  add_test(gdrivers ${PYTHON_EXECUTABLE} gdrivers)
+  add_test(alg ${PYTHON_EXECUTABLE} alg)
+  add_test(osr ${PYTHON_EXECUTABLE} osr)
+  add_test(ogr ${PYTHON_EXECUTABLE} ogr)
+  add_test(utilities ${PYTHON_EXECUTABLE} utilities)
+  add_test(pyscripts ${PYTHON_EXECUTABLE} pyscripts)
+
 endif()
-
-add_test(gcore ${PYTHON_EXECUTABLE} gcore)
-add_test(gdrivers ${PYTHON_EXECUTABLE} gdrivers)
-add_test(alg ${PYTHON_EXECUTABLE} alg)
-add_test(osr ${PYTHON_EXECUTABLE} osr)
-add_test(ogr ${PYTHON_EXECUTABLE} ogr)
-add_test(utilities ${PYTHON_EXECUTABLE} utilities)
-add_test(pyscripts ${PYTHON_EXECUTABLE} pyscripts)
-
 

@@ -27,12 +27,9 @@
 
 cmake_minimum_required (VERSION 2.8.10 FATAL_ERROR)
 
-# main settings
-set(PROJECT_NAME "gdal")
-project(${PROJECT_NAME})
+project(GDAL)
 
 # some init settings
-set(CMAKE_COLOR_MAKEFILE ON)
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "Configs" FORCE)
 
 # setup paths
@@ -75,8 +72,6 @@ set(GDAL_INSTALL_HEADERS "")
 add_subdirectory(core)
 add_subdirectory(bindings)
 
-# testing
-enable_testing()
 add_subdirectory(autotest)
 
 # link library objects

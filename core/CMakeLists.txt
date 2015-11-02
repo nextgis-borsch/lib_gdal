@@ -25,8 +25,6 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-cmake_minimum_required (VERSION 2.8.10 FATAL_ERROR)
-
 add_subdirectory(port)
 add_subdirectory(gcore)
 add_subdirectory(alg)
