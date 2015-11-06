@@ -107,9 +107,9 @@ set(CPL_SOURCES
 )
 
 if(WIN32)
-    list(APPEND LIB_CSOURCES cpl_vsil_win32.cpp)
+    list(APPEND CPL_SOURECS cpl_vsil_win32.cpp)
 else()
-    list(APPEND LIB_CSOURCES cpl_vsil_unix_stdio_64.cpp)
+    list(APPEND CPL_SOURECS cpl_vsil_unix_stdio_64.cpp)
 endif()
 
 #check odbc
@@ -117,12 +117,12 @@ option(WITH_ODBC "Set ON to use odbc" OFF)
 
 if(WITH_ODBC)
     list(APPEND CPL_HEADERS cpl_odbc.h)
-    list(APPEND LIB_CSOURCES cpl_odbc.cpp)
+    list(APPEND CPL_SOURECS cpl_odbc.cpp)
 endif()
 
 option(WITH_XMLREFORMAT "Set ON to use xmlreformat" OFF)
 if(WITH_XMLREFORMAT)
-    list(APPEND LIB_CSOURCES xmlreformat.cpp)
+    list(APPEND CPL_SOURECS xmlreformat.cpp)
 endif()
 
 option(WITH_ONLY_CRYPTODLL_ALG "Include cryptopp support" OFF)
@@ -132,7 +132,7 @@ if(WITH_ONLY_CRYPTODLL_ALG)
 endif()
 
 if(HAVE_ICONV)
-    list(APPEND LIB_CSOURCES cpl_recode_iconv.cpp )
+    list(APPEND CPL_SOURECS cpl_recode_iconv.cpp )
     include_directories(${ICONV_INCLUDE_DIR})
     add_definitions(-DHAVE_ICONV -DLIBICONV_PLUG)
 endif()
@@ -146,7 +146,7 @@ if(WITH_ZLIB)
         cpl_minizip_unzip.h
         cpl_minizip_zip.h
     )
-    list(APPEND LIB_CSOURCES 
+    list(APPEND CPL_SOURECS 
         cpl_vsil_gzip.cpp
         cpl_minizip_ioapi.cpp
         cpl_minizip_unzip.cpp
@@ -162,7 +162,7 @@ if(WITH_CURL)
     add_definitions(-DHAVE_CURL)
     set(CPL_HEADERS cpl_vsil_curl_priv.h)
 
-    list(APPEND LIB_CSOURCES
+    list(APPEND CPL_SOURECS
       cpl_vsil_curl.cpp
       cpl_vsil_curl_streaming.cpp
       )
@@ -220,7 +220,7 @@ if(WITH_CURL)
     endif()
 endif()
 
-add_library(${LIB_NAME} OBJECT ${CPL_HEADERS} ${LIB_CSOURCES})
+add_library(${LIB_NAME} OBJECT ${CPL_HEADERS} ${CPL_SOURECS})
 
 if(HAVE_ICONV)
     list(APPEND GDAL_TARGET_LINK_LIB ${ICONV_LIBRARIES})
