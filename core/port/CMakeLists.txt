@@ -31,6 +31,11 @@ project ("lib${LIB_NAME}")
 
 include(configure)
 
+option(WITH_ODBC "Set ON to use odbc" OFF)
+option(WITH_CURL "Set ON to use libcurl" ON)
+option(WITH_XMLREFORMAT "Set ON to use xmlreformat" OFF)
+option(WITH_ONLY_CRYPTODLL_ALG "Include cryptopp support" OFF)
+
 #Find zlib or configure ExternalProject if not found .
 include(ZLIB)
 
@@ -113,19 +118,15 @@ else()
 endif()
 
 #check odbc
-option(WITH_ODBC "Set ON to use odbc" OFF)
-
 if(WITH_ODBC)
     list(APPEND CPL_HEADERS cpl_odbc.h)
     list(APPEND CPL_SOURECS cpl_odbc.cpp)
 endif()
 
-option(WITH_XMLREFORMAT "Set ON to use xmlreformat" OFF)
 if(WITH_XMLREFORMAT)
     list(APPEND CPL_SOURECS xmlreformat.cpp)
 endif()
 
-option(WITH_ONLY_CRYPTODLL_ALG "Include cryptopp support" OFF)
 if(WITH_ONLY_CRYPTODLL_ALG)
     #todo: check cryptopp func
     add_definitions(-DUSE_ONLY_CRYPTODLL_ALG)
@@ -154,9 +155,7 @@ if(WITH_ZLIB)
     )
 endif()
 
-#should we apply same method as in ZLIB ?
 #check curl
-option(WITH_CURL "Set ON to use libcurl" ON)
 if(WITH_CURL)
     option(GDAL_USE_CURL_INTERNAL "Set ON to use internal libcurl" OFF)
     add_definitions(-DHAVE_CURL)
