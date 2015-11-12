@@ -25,14 +25,15 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-
-set(LIB_NAME "cpl")
-project ("lib${LIB_NAME}")
-
 include(configure)
+
+option(WITH_ODBC "Set ON to use odbc" OFF)
+option(WITH_XMLREFORMAT "Set ON to use xmlreformat" OFF)
+option(WITH_ONLY_CRYPTODLL_ALG "Include cryptopp support" OFF)
 
 #Find zlib or configure ExternalProject if not found .
 include(ZLIB)
+include(CURL)
 
 include_directories(${GDAL_ROOT_BINARY_DIR}/port)
 
@@ -107,46 +108,41 @@ set(CPL_SOURCES
 )
 
 if(WIN32)
-    list(APPEND LIB_CSOURCES cpl_vsil_win32.cpp)
+    list(APPEND CPL_SOURECS cpl_vsil_win32.cpp)
 else()
-    list(APPEND LIB_CSOURCES cpl_vsil_unix_stdio_64.cpp)
+    list(APPEND CPL_SOURECS cpl_vsil_unix_stdio_64.cpp)
 endif()
 
 #check odbc
-option(WITH_ODBC "Set ON to use odbc" OFF)
-
 if(WITH_ODBC)
     list(APPEND CPL_HEADERS cpl_odbc.h)
-    list(APPEND LIB_CSOURCES cpl_odbc.cpp)
+    list(APPEND CPL_SOURECS cpl_odbc.cpp)
 endif()
 
-option(WITH_XMLREFORMAT "Set ON to use xmlreformat" OFF)
 if(WITH_XMLREFORMAT)
-    list(APPEND LIB_CSOURCES xmlreformat.cpp)
+    list(APPEND CPL_SOURECS xmlreformat.cpp)
 endif()
 
-option(WITH_ONLY_CRYPTODLL_ALG "Include cryptopp support" OFF)
 if(WITH_ONLY_CRYPTODLL_ALG)
     #todo: check cryptopp func
     add_definitions(-DUSE_ONLY_CRYPTODLL_ALG)
 endif()
 
 if(HAVE_ICONV)
-    list(APPEND LIB_CSOURCES cpl_recode_iconv.cpp )
+    list(APPEND CPL_SOURECS cpl_recode_iconv.cpp )
     include_directories(${ICONV_INCLUDE_DIR})
     add_definitions(-DHAVE_ICONV -DLIBICONV_PLUG)
 endif()
 
 #check zip and internal zip
 if(WITH_ZLIB)
-#  add_dependencies( ZLIB)
     add_definitions(-DHAVE_LIBZ -DZIP_SUPPORT)
     list(APPEND CPL_HEADERS
         cpl_minizip_ioapi.h
         cpl_minizip_unzip.h
         cpl_minizip_zip.h
     )
-    list(APPEND LIB_CSOURCES 
+    list(APPEND CPL_SOURECS 
         cpl_vsil_gzip.cpp
         cpl_minizip_ioapi.cpp
         cpl_minizip_unzip.cpp
@@ -154,96 +150,39 @@ if(WITH_ZLIB)
     )
 endif()
 
-#should we apply same method as in ZLIB ?
 #check curl
-option(WITH_CURL "Set ON to use libcurl" ON)
 if(WITH_CURL)
-    option(GDAL_USE_CURL_INTERNAL "Set ON to use internal libcurl" OFF)
-    add_definitions(-DHAVE_CURL)
-    set(CPL_HEADERS cpl_vsil_curl_priv.h)
+  add_definitions(-DHAVE_CURL)
+  list(APPEND CPL_HEADERS cpl_vsil_curl_priv.h)
 
-    list(APPEND LIB_CSOURCES
+  list(APPEND CPL_SOURECS
       cpl_vsil_curl.cpp
-      cpl_vsil_curl_streaming.cpp
-      )
-
-    if(GDAL_USE_CURL_INTERNAL)
-        ExternalProject_Add(openssl
-            GIT_REPOSITORY ${EP_URL}/lib_openssl
-            INSTALL_COMMAND ""
-        )
-        set (OPENSSL_DIR ${ep_base}/Source/openssl CACHE INTERNAL "openssl internal path")
-        set (OPENSSL_INCLUDE_DIR ${OPENSSL_DIR} CACHE PATH "openssl internal include path")
-        #set (OPENSSL_LIBRARIES ${OPENSSL_DIR}/lib/openssl CACHE INTERNAL "openssl internal lib path")
-        #set (OPENSSL_LIBRARY ${OPENSSL_LIBRARIES} CACHE FILEPATH "openssl internal lib path")
-        
-        link_directories(${OPENSSL_DIR}/Install/openssl)
-        
-        ExternalProject_Add(curl
-            DEPENDS zlib
-            DEPENDS openssl
-            GIT_REPOSITORY ${EP_URL}/lib_curl
-            CMAKE_ARGS
-            -DBUILD_CURL_TESTS=OFF
-            -DCURL_DISABLE_FTP=ON
-            -DCURL_DISABLE_LDAP=ON
-            -DCURL_DISABLE_TELNET=ON
-            -DCURL_DISABLE_DICT=ON
-            -DCURL_DISABLE_FILE=ON
-            -DCURL_DISABLE_TFTP=ON
-            -DCURL_DISABLE_LDAPS=ON
-            -DCURL_DISABLE_RTSP=ON
-            -DCURL_DISABLE_PROXY=ON
-            -DCURL_DISABLE_POP3=ON
-            -DCURL_DISABLE_IMAP=ON
-            -DCURL_DISABLE_SMTP=ON
-            -DCURL_DISABLE_GOPHER=ON
-            -DCURL_DISABLE_CRYPTO_AUTH=OFF
-            -DENABLE_IPV6=OFF
-            -DENABLE_MANUAL=OFF
-            -DCMAKE_USE_OPENSSL=ON
-            -DCMAKE_USE_LIBSSH2=OFF
-            INSTALL_COMMAND ""
-        )
-        
-        set (LIBCURL_DIR ${ep_base}/Source/curl CACHE INTERNAL "libcurl internal path")
-        set (LIBCURL_INCLUDE_DIR ${LIBCURL_DIR} CACHE PATH "libcurl internal include path")
-        #set (LIBCURL_LIBRARIES ${LIBCURL_DIR}/lib/curl CACHE INTERNAL "libcurl internal lib path")
-        #set (LIBCURL_LIBRARY ${LIBCURL_LIBRARIES} CACHE FILEPATH "libcurl internal lib path")
-        
-        link_directories(${LIBCURL_DIR}/Install/curl)
-    else()
-        find_package(CURL REQUIRED)
-        if(CURL_FOUND)
-            include_directories(${CURL_INCLUDE_DIRS})
-        endif()
-    endif()
+      cpl_vsil_curl_streaming.cpp )
+   
 endif()
 
-add_library(${LIB_NAME} OBJECT ${CPL_HEADERS} ${LIB_CSOURCES})
+add_library(cpl OBJECT ${CPL_HEADERS} ${CPL_SOURECS})
 
 if(HAVE_ICONV)
     list(APPEND GDAL_TARGET_LINK_LIB ${ICONV_LIBRARIES})
 endif()
 
 if(WITH_ZLIB)
-    # if(GDAL_USE_LIBZ_INTERNAL)        
-    #     add_dependencies(${LIB_NAME} zlib)
-    # endif()    
-    list(APPEND GDAL_TARGET_LINK_LIB ${ZLIB_LIBRARIES})
+  if(NOT GDAL_USES_EXTERNAL_ZLIB)
+  add_dependencies(cpl zlib)
+   endif()
+  list(APPEND GDAL_TARGET_LINK_LIB ${ZLIB_LIBRARIES})
 endif()
 
 if(WITH_CURL)
-    if(GDAL_USE_CURL_INTERNAL)        
-        add_dependencies(${LIB_NAME} curl)
-        #set(GDAL_TARGET_LINK_LIB ${GDAL_TARGET_LINK_LIB} curl)
-    else()
-        list(GDAL_TARGET_LINK_LIB ${CURL_LIBRARIES})
-    endif()    
+  if(NOT GDAL_USES_EXTERNAL_CURL)
+    add_dependencies(cpl curl)
+  endif()
+  list(APPEND GDAL_TARGET_LINK_LIB ${CURL_LIBRARIES})
 endif()
 
 # build target
-set(GDAL_TARGET_OBJECTS ${GDAL_TARGET_OBJECTS} $<TARGET_OBJECTS:${LIB_NAME}> PARENT_SCOPE)
+set(GDAL_TARGET_OBJECTS ${GDAL_TARGET_OBJECTS} $<TARGET_OBJECTS:cpl> PARENT_SCOPE)
 set(GDAL_TARGET_LINK_LIB ${GDAL_TARGET_LINK_LIB} PARENT_SCOPE)
 
 # install headers
