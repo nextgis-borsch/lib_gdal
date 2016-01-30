@@ -9,6 +9,7 @@
  * ----------------------------------------------------------------------------- */
 
 #define SWIGPYTHON
+#define SED_HACKS
 #define SWIG_PYTHON_DIRECTOR_NO_VTABLE
 
 
@@ -3055,7 +3056,7 @@ typedef void GNMNetworkShadow;
 typedef void GNMGenericNetworkShadow;
 
 
-#ifdef DEBUG 
+#ifdef DEBUG
 typedef struct OGRLayerHS OGRLayerShadow;
 typedef struct OGRFeatureHS OGRFeatureShadow;
 typedef struct OGRSpatialReferenceHS OSRSpatialReferenceShadow;
@@ -3069,13 +3070,13 @@ typedef void OSRSpatialReferenceShadow;
 int bUseExceptions=0;
 CPLErrorHandler pfnPreviousHandler = CPLDefaultErrorHandler;
 
-void CPL_STDCALL 
-PythonBindingErrorHandler(CPLErr eclass, int code, const char *msg ) 
+void CPL_STDCALL
+PythonBindingErrorHandler(CPLErr eclass, int code, const char *msg )
 {
-  /* 
+  /*
   ** Generally we want to suppress error reporting if we have exceptions
-  ** enabled as the error message will be in the exception thrown in 
-  ** Python.  
+  ** enabled as the error message will be in the exception thrown in
+  ** Python.
   */
 
   /* If the error class is CE_Fatal, we want to have a message issued
@@ -3097,19 +3098,22 @@ PythonBindingErrorHandler(CPLErr eclass, int code, const char *msg )
 
 
 int GetUseExceptions() {
+  CPLErrorReset();
   return bUseExceptions;
 }
 
 void UseExceptions() {
+  CPLErrorReset();
   if( !bUseExceptions )
   {
     bUseExceptions = 1;
-    pfnPreviousHandler = 
+    pfnPreviousHandler =
         CPLSetErrorHandler( (CPLErrorHandler) PythonBindingErrorHandler );
   }
 }
 
 void DontUseExceptions() {
+  CPLErrorReset();
   if( bUseExceptions )
   {
     bUseExceptions = 0;
@@ -3123,6 +3127,24 @@ SWIGINTERNINLINE PyObject*
 {
   return PyInt_FromLong((long) value);
 }
+
+
+/* Completely unrelated: just to avoid Coverity warnings */
+
+static int bReturnSame = 1;
+
+void NeverCallMePlease() {
+    bReturnSame = 0;
+}
+
+/* Some SWIG code generates dead code, which Coverity warns about */
+template<class T> static T ReturnSame(T x)
+{
+    if( bReturnSame )
+        return x;
+    return 0;
+}
+
 
 
 
@@ -3146,7 +3168,7 @@ static PyObject* GDALPythonObjectFromCStr(const char *pszStr)
     pszIter ++;
   }
 #if PY_VERSION_HEX >= 0x03000000
-  return PyUnicode_FromString(pszStr); 
+  return PyUnicode_FromString(pszStr);
 #else
   return PyString_FromString(pszStr);
 #endif
@@ -3174,7 +3196,7 @@ static char* GDALPythonObjectToCStr(PyObject* pyObject, int* pbToFree)
       *pbToFree = 1;
       return pszNewStr;
   }
-  else 
+  else
   {
 #if PY_VERSION_HEX >= 0x03000000
       return PyBytes_AsString(pyObject);
@@ -3585,12 +3607,12 @@ SWIGINTERN int GNMNetworkShadow_GetLayerCount(GNMNetworkShadow *self){
         }
 SWIGINTERN OGRLayerShadow *GNMNetworkShadow_GetLayerByIndex(GNMNetworkShadow *self,int index=0){
         
-        OGRLayerShadow* layer = (OGRLayerShadow*) GDALDatasetGetLayer(self, 
+        OGRLayerShadow* layer = (OGRLayerShadow*) GDALDatasetGetLayer(self,
                                                                       index);
             return layer;
         }
 SWIGINTERN OGRLayerShadow *GNMNetworkShadow_GetLayerByName(GNMNetworkShadow *self,char const *layer_name){
-            OGRLayerShadow* layer = 
+            OGRLayerShadow* layer =
                   (OGRLayerShadow*) GDALDatasetGetLayerByName(self, layer_name);
             return layer;
         }
@@ -3620,11 +3642,11 @@ SWIGINTERN void delete_GNMGenericNetworkShadow(GNMGenericNetworkShadow *self){
         }
 SWIGINTERN CPLErr GNMGenericNetworkShadow_ConnectFeatures(GNMGenericNetworkShadow *self,GIntBig nSrcFID,GIntBig nTgtFID,GIntBig nConFID,double dfCost,double dfInvCost,GNMDirection eDir){
             return GNMConnectFeatures(self, nSrcFID, nTgtFID,
-                                              nConFID, dfCost, dfInvCost, eDir);                        
+                                              nConFID, dfCost, dfInvCost, eDir);
         }
 SWIGINTERN CPLErr GNMGenericNetworkShadow_DisconnectFeatures(GNMGenericNetworkShadow *self,GIntBig nSrcFID,GIntBig nTgtFID,GIntBig nConFID){
             return GNMDisconnectFeatures(self, nSrcFID, nTgtFID,
-                                                           nConFID);                           
+                                                           nConFID);
         }
 SWIGINTERN CPLErr GNMGenericNetworkShadow_DisconnectFeaturesWithId(GNMGenericNetworkShadow *self,GIntBig nFID){
             return GNMDisconnectFeaturesWithId(self, nFID);
@@ -3661,19 +3683,20 @@ SWIG_AsVal_bool (PyObject *obj, bool *val)
 SWIGINTERN CPLErr GNMGenericNetworkShadow_ChangeBlockState(GNMGenericNetworkShadow *self,GIntBig nFID,bool bIsBlock){
             return GNMChangeBlockState(self, nFID, bIsBlock);
         }
-SWIGINTERN CPLErr GNMGenericNetworkShadow_ChangeAllBlockState(GNMGenericNetworkShadow *self,bool bIsBlock=false){            
+SWIGINTERN CPLErr GNMGenericNetworkShadow_ChangeAllBlockState(GNMGenericNetworkShadow *self,bool bIsBlock=false){
             return GNMChangeAllBlockState(self, bIsBlock);
         }
 #ifdef __cplusplus
 extern "C" {
 #endif
 SWIGINTERN PyObject *_wrap_GetUseExceptions(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   int result;
   
   if (!PyArg_ParseTuple(args,(char *)":GetUseExceptions")) SWIG_fail;
   result = (int)GetUseExceptions();
   resultobj = SWIG_From_int(static_cast< int >(result));
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   return NULL;
@@ -3681,11 +3704,12 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_UseExceptions(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   
   if (!PyArg_ParseTuple(args,(char *)":UseExceptions")) SWIG_fail;
   UseExceptions();
   resultobj = SWIG_Py_Void();
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   return NULL;
@@ -3693,11 +3717,12 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_DontUseExceptions(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   
   if (!PyArg_ParseTuple(args,(char *)":DontUseExceptions")) SWIG_fail;
   DontUseExceptions();
   resultobj = SWIG_Py_Void();
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   return NULL;
@@ -3705,7 +3730,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_MajorObject_GetDescription(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GDALMajorObjectShadow *arg1 = (GDALMajorObjectShadow *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -3723,14 +3748,17 @@ SWIGINTERN PyObject *_wrap_MajorObject_GetDescription(PyObject *SWIGUNUSEDPARM(s
       CPLErrorReset();
     }
     result = (char *)GDALMajorObjectShadow_GetDescription(arg1);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   resultobj = SWIG_FromCharPtr((const char *)result);
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   return NULL;
@@ -3738,7 +3766,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_MajorObject_SetDescription(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GDALMajorObjectShadow *arg1 = (GDALMajorObjectShadow *) 0 ;
   char *arg2 = (char *) 0 ;
   void *argp1 = 0 ;
@@ -3770,15 +3798,18 @@ SWIGINTERN PyObject *_wrap_MajorObject_SetDescription(PyObject *SWIGUNUSEDPARM(s
       CPLErrorReset();
     }
     GDALMajorObjectShadow_SetDescription(arg1,(char const *)arg2);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   resultobj = SWIG_Py_Void();
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
@@ -3787,7 +3818,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_MajorObject_GetMetadataDomainList(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GDALMajorObjectShadow *arg1 = (GDALMajorObjectShadow *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -3805,12 +3836,14 @@ SWIGINTERN PyObject *_wrap_MajorObject_GetMetadataDomainList(PyObject *SWIGUNUSE
       CPLErrorReset();
     }
     result = (char **)GDALMajorObjectShadow_GetMetadataDomainList(arg1);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   {
     /* %typemap(out) char **CSL -> ( string ) */
@@ -3829,6 +3862,7 @@ SWIGINTERN PyObject *_wrap_MajorObject_GetMetadataDomainList(PyObject *SWIGUNUSE
     }
     CSLDestroy(result);
   }
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   return NULL;
@@ -3836,7 +3870,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_MajorObject_GetMetadata_Dict(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GDALMajorObjectShadow *arg1 = (GDALMajorObjectShadow *) 0 ;
   char *arg2 = (char *) "" ;
   void *argp1 = 0 ;
@@ -3866,12 +3900,14 @@ SWIGINTERN PyObject *_wrap_MajorObject_GetMetadata_Dict(PyObject *SWIGUNUSEDPARM
       CPLErrorReset();
     }
     result = (char **)GDALMajorObjectShadow_GetMetadata_Dict(arg1,(char const *)arg2);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   {
     /* %typemap(out) char **dict */
@@ -3898,6 +3934,7 @@ SWIGINTERN PyObject *_wrap_MajorObject_GetMetadata_Dict(PyObject *SWIGUNUSEDPARM
     }
   }
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
@@ -3906,7 +3943,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_MajorObject_GetMetadata_List(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GDALMajorObjectShadow *arg1 = (GDALMajorObjectShadow *) 0 ;
   char *arg2 = (char *) "" ;
   void *argp1 = 0 ;
@@ -3936,12 +3973,14 @@ SWIGINTERN PyObject *_wrap_MajorObject_GetMetadata_List(PyObject *SWIGUNUSEDPARM
       CPLErrorReset();
     }
     result = (char **)GDALMajorObjectShadow_GetMetadata_List(arg1,(char const *)arg2);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   {
     /* %typemap(out) char **options -> ( string ) */
@@ -3960,6 +3999,7 @@ SWIGINTERN PyObject *_wrap_MajorObject_GetMetadata_List(PyObject *SWIGUNUSEDPARM
     }
   }
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
@@ -3968,7 +4008,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_MajorObject_SetMetadata__SWIG_0(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GDALMajorObjectShadow *arg1 = (GDALMajorObjectShadow *) 0 ;
   char **arg2 = (char **) 0 ;
   char *arg3 = (char *) "" ;
@@ -3992,8 +4032,12 @@ SWIGINTERN PyObject *_wrap_MajorObject_SetMetadata__SWIG_0(PyObject *SWIGUNUSEDP
     /* %typemap(in) char **dict */
     arg2 = NULL;
     if ( PySequence_Check( obj1 ) ) {
-      int size = PySequence_Size(obj1);
-      for (int i = 0; i < size; i++) {
+      Py_ssize_t size = PySequence_Size(obj1);
+      if( size != (int)size ) {
+        PyErr_SetString(PyExc_TypeError, "too big sequence");
+        SWIG_fail;
+      }
+      for (int i = 0; i < (int)size; i++) {
         PyObject* pyObj = PySequence_GetItem(obj1,i);
         int bFreeStr;
         char* pszStr = GDALPythonObjectToCStr(pyObj, &bFreeStr);
@@ -4009,16 +4053,16 @@ SWIGINTERN PyObject *_wrap_MajorObject_SetMetadata__SWIG_0(PyObject *SWIGUNUSEDP
     }
     else if ( PyMapping_Check( obj1 ) ) {
       /* We need to use the dictionary form. */
-      int size = PyMapping_Length( obj1 );
-      if ( size > 0 ) {
+      Py_ssize_t size = PyMapping_Length( obj1 );
+      if ( size > 0 && size == (int)size) {
         PyObject *item_list = PyMapping_Items( obj1 );
-        for( int i=0; i<size; i++ ) {
+        for( int i=0; i<(int)size; i++ ) {
           PyObject *it = PySequence_GetItem( item_list, i );
           
           PyObject *k, *v;
           if ( ! PyArg_ParseTuple( it, "OO", &k, &v ) ) {
             Py_DECREF(it);
-            PyErr_SetString(PyExc_TypeError,"dictionnaire must contain tuples of strings");
+            PyErr_SetString(PyExc_TypeError,"Dictionary must contain tuples of strings");
             SWIG_fail;
           }
           
@@ -4030,7 +4074,7 @@ SWIGINTERN PyObject *_wrap_MajorObject_SetMetadata__SWIG_0(PyObject *SWIGUNUSEDP
             GDALPythonFreeCStr(pszK, bFreeK);
             GDALPythonFreeCStr(pszV, bFreeV);
             Py_DECREF(it);
-            PyErr_SetString(PyExc_TypeError,"dictionnaire must contain tuples of strings");
+            PyErr_SetString(PyExc_TypeError,"Dictionary must contain tuples of strings");
             SWIG_fail;
           }
           arg2 = CSLAddNameValue( arg2, pszK, pszV );
@@ -4059,12 +4103,14 @@ SWIGINTERN PyObject *_wrap_MajorObject_SetMetadata__SWIG_0(PyObject *SWIGUNUSEDP
       CPLErrorReset();
     }
     result = (CPLErr)GDALMajorObjectShadow_SetMetadata__SWIG_0(arg1,arg2,(char const *)arg3);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   resultobj = SWIG_From_int(static_cast< int >(result));
   {
@@ -4072,16 +4118,7 @@ SWIGINTERN PyObject *_wrap_MajorObject_SetMetadata__SWIG_0(PyObject *SWIGUNUSEDP
     CSLDestroy( arg2 );
   }
   if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
-  {
-    /* %typemap(ret) CPLErr */
-    if ( bUseExceptions == 0 ) {
-      /* We're not using exceptions.  And no error has occurred */
-      if ( resultobj == 0 ) {
-        /* No other return values set so return ErrorCode */
-        resultobj = PyInt_FromLong(result);
-      }
-    }
-  }
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   {
@@ -4094,7 +4131,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_MajorObject_SetMetadata__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GDALMajorObjectShadow *arg1 = (GDALMajorObjectShadow *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) "" ;
@@ -4134,26 +4171,19 @@ SWIGINTERN PyObject *_wrap_MajorObject_SetMetadata__SWIG_1(PyObject *SWIGUNUSEDP
       CPLErrorReset();
     }
     result = (CPLErr)GDALMajorObjectShadow_SetMetadata__SWIG_1(arg1,arg2,(char const *)arg3);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   resultobj = SWIG_From_int(static_cast< int >(result));
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
-  {
-    /* %typemap(ret) CPLErr */
-    if ( bUseExceptions == 0 ) {
-      /* We're not using exceptions.  And no error has occurred */
-      if ( resultobj == 0 ) {
-        /* No other return values set so return ErrorCode */
-        resultobj = PyInt_FromLong(result);
-      }
-    }
-  }
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
@@ -4167,8 +4197,8 @@ SWIGINTERN PyObject *_wrap_MajorObject_SetMetadata(PyObject *self, PyObject *arg
   PyObject *argv[4];
   int ii;
   
-  if (!PyTuple_Check(args)) SWIG_fail;
-  argc = args ? (int)PyObject_Length(args) : 0;
+  if (args == NULL || !PyTuple_Check(args)) SWIG_fail;
+  argc = (int)PyObject_Length(args);
   for (ii = 0; (ii < 3) && (ii < argc); ii++) {
     argv[ii] = PyTuple_GET_ITEM(args,ii);
   }
@@ -4228,7 +4258,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_MajorObject_GetMetadataItem(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GDALMajorObjectShadow *arg1 = (GDALMajorObjectShadow *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) "" ;
@@ -4273,16 +4303,19 @@ SWIGINTERN PyObject *_wrap_MajorObject_GetMetadataItem(PyObject *SWIGUNUSEDPARM(
       CPLErrorReset();
     }
     result = (char *)GDALMajorObjectShadow_GetMetadataItem(arg1,(char const *)arg2,(char const *)arg3);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   resultobj = SWIG_FromCharPtr((const char *)result);
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
@@ -4292,7 +4325,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_MajorObject_SetMetadataItem(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GDALMajorObjectShadow *arg1 = (GDALMajorObjectShadow *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
@@ -4347,27 +4380,20 @@ SWIGINTERN PyObject *_wrap_MajorObject_SetMetadataItem(PyObject *SWIGUNUSEDPARM(
       CPLErrorReset();
     }
     result = (CPLErr)GDALMajorObjectShadow_SetMetadataItem(arg1,(char const *)arg2,(char const *)arg3,(char const *)arg4);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   resultobj = SWIG_From_int(static_cast< int >(result));
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
   if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
-  {
-    /* %typemap(ret) CPLErr */
-    if ( bUseExceptions == 0 ) {
-      /* We're not using exceptions.  And no error has occurred */
-      if ( resultobj == 0 ) {
-        /* No other return values set so return ErrorCode */
-        resultobj = PyInt_FromLong(result);
-      }
-    }
-  }
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
@@ -4385,7 +4411,7 @@ SWIGINTERN PyObject *MajorObject_swigregister(PyObject *SWIGUNUSEDPARM(self), Py
 }
 
 SWIGINTERN PyObject *_wrap_CastToNetwork(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GDALMajorObjectShadow *arg1 = (GDALMajorObjectShadow *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -4403,14 +4429,17 @@ SWIGINTERN PyObject *_wrap_CastToNetwork(PyObject *SWIGUNUSEDPARM(self), PyObjec
       CPLErrorReset();
     }
     result = (GNMNetworkShadow *)CastToNetwork(arg1);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_GNMNetworkShadow, 0 |  0 );
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   return NULL;
@@ -4418,7 +4447,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_CastToGenericNetwork(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GDALMajorObjectShadow *arg1 = (GDALMajorObjectShadow *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -4436,14 +4465,17 @@ SWIGINTERN PyObject *_wrap_CastToGenericNetwork(PyObject *SWIGUNUSEDPARM(self), 
       CPLErrorReset();
     }
     result = (GNMGenericNetworkShadow *)CastToGenericNetwork(arg1);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_GNMGenericNetworkShadow, 0 |  0 );
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   return NULL;
@@ -4451,7 +4483,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_delete_Network(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GNMNetworkShadow *arg1 = (GNMNetworkShadow *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -4468,14 +4500,17 @@ SWIGINTERN PyObject *_wrap_delete_Network(PyObject *SWIGUNUSEDPARM(self), PyObje
       CPLErrorReset();
     }
     delete_GNMNetworkShadow(arg1);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   resultobj = SWIG_Py_Void();
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   return NULL;
@@ -4483,7 +4518,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_Network_ReleaseResultSet(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GNMNetworkShadow *arg1 = (GNMNetworkShadow *) 0 ;
   OGRLayerShadow *arg2 = (OGRLayerShadow *) 0 ;
   void *argp1 = 0 ;
@@ -4507,14 +4542,17 @@ SWIGINTERN PyObject *_wrap_Network_ReleaseResultSet(PyObject *SWIGUNUSEDPARM(sel
       CPLErrorReset();
     }
     GNMNetworkShadow_ReleaseResultSet(arg1,arg2);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   resultobj = SWIG_Py_Void();
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   return NULL;
@@ -4522,7 +4560,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_Network_GetVersion(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GNMNetworkShadow *arg1 = (GNMNetworkShadow *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -4540,14 +4578,17 @@ SWIGINTERN PyObject *_wrap_Network_GetVersion(PyObject *SWIGUNUSEDPARM(self), Py
       CPLErrorReset();
     }
     result = (int)GNMNetworkShadow_GetVersion(arg1);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   resultobj = SWIG_From_int(static_cast< int >(result));
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   return NULL;
@@ -4555,7 +4596,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_Network_GetName(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GNMNetworkShadow *arg1 = (GNMNetworkShadow *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -4573,14 +4614,17 @@ SWIGINTERN PyObject *_wrap_Network_GetName(PyObject *SWIGUNUSEDPARM(self), PyObj
       CPLErrorReset();
     }
     result = (char *)GNMNetworkShadow_GetName(arg1);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   resultobj = SWIG_FromCharPtr((const char *)result);
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   return NULL;
@@ -4588,7 +4632,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_Network_GetFeatureByGlobalFID(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GNMNetworkShadow *arg1 = (GNMNetworkShadow *) 0 ;
   GIntBig arg2 ;
   void *argp1 = 0 ;
@@ -4616,14 +4660,17 @@ SWIGINTERN PyObject *_wrap_Network_GetFeatureByGlobalFID(PyObject *SWIGUNUSEDPAR
       CPLErrorReset();
     }
     result = (OGRFeatureShadow *)GNMNetworkShadow_GetFeatureByGlobalFID(arg1,arg2);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_OGRFeatureShadow, SWIG_POINTER_OWN |  0 );
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   return NULL;
@@ -4631,7 +4678,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_Network_GetPath(PyObject *SWIGUNUSEDPARM(self), PyObject *args, PyObject *kwargs) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GNMNetworkShadow *arg1 = (GNMNetworkShadow *) 0 ;
   GIntBig arg2 ;
   GIntBig arg3 ;
@@ -4691,8 +4738,12 @@ SWIGINTERN PyObject *_wrap_Network_GetPath(PyObject *SWIGUNUSEDPARM(self), PyObj
         SWIG_fail;
       }
       
-      int size = PySequence_Size(obj4);
-      for (int i = 0; i < size; i++) {
+      Py_ssize_t size = PySequence_Size(obj4);
+      if( size != (int)size ) {
+        PyErr_SetString(PyExc_TypeError, "too big sequence");
+        SWIG_fail;
+      }
+      for (int i = 0; i < (int)size; i++) {
         PyObject* pyObj = PySequence_GetItem(obj4,i);
         if (PyUnicode_Check(pyObj))
         {
@@ -4729,18 +4780,21 @@ SWIGINTERN PyObject *_wrap_Network_GetPath(PyObject *SWIGUNUSEDPARM(self), PyObj
       CPLErrorReset();
     }
     result = (OGRLayerShadow *)GNMNetworkShadow_GetPath(arg1,arg2,arg3,arg4,arg5);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_OGRLayerShadow, SWIG_POINTER_OWN |  0 );
   {
     /* %typemap(freearg) char **options */
     CSLDestroy( arg5 );
   }
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   {
@@ -4752,7 +4806,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_Network_DisconnectAll(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GNMNetworkShadow *arg1 = (GNMNetworkShadow *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -4770,24 +4824,17 @@ SWIGINTERN PyObject *_wrap_Network_DisconnectAll(PyObject *SWIGUNUSEDPARM(self),
       CPLErrorReset();
     }
     result = (CPLErr)GNMNetworkShadow_DisconnectAll(arg1);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   resultobj = SWIG_From_int(static_cast< int >(result));
-  {
-    /* %typemap(ret) CPLErr */
-    if ( bUseExceptions == 0 ) {
-      /* We're not using exceptions.  And no error has occurred */
-      if ( resultobj == 0 ) {
-        /* No other return values set so return ErrorCode */
-        resultobj = PyInt_FromLong(result);
-      }
-    }
-  }
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   return NULL;
@@ -4795,7 +4842,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_Network_GetProjection(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GNMNetworkShadow *arg1 = (GNMNetworkShadow *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -4813,14 +4860,17 @@ SWIGINTERN PyObject *_wrap_Network_GetProjection(PyObject *SWIGUNUSEDPARM(self),
       CPLErrorReset();
     }
     result = (char *)GNMNetworkShadow_GetProjection(arg1);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   resultobj = SWIG_FromCharPtr((const char *)result);
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   return NULL;
@@ -4828,7 +4878,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_Network_GetProjectionRef(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GNMNetworkShadow *arg1 = (GNMNetworkShadow *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -4846,14 +4896,17 @@ SWIGINTERN PyObject *_wrap_Network_GetProjectionRef(PyObject *SWIGUNUSEDPARM(sel
       CPLErrorReset();
     }
     result = (char *)GNMNetworkShadow_GetProjectionRef(arg1);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   resultobj = SWIG_FromCharPtr((const char *)result);
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   return NULL;
@@ -4861,7 +4914,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_Network_GetFileList(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GNMNetworkShadow *arg1 = (GNMNetworkShadow *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -4879,12 +4932,14 @@ SWIGINTERN PyObject *_wrap_Network_GetFileList(PyObject *SWIGUNUSEDPARM(self), P
       CPLErrorReset();
     }
     result = (char **)GNMNetworkShadow_GetFileList(arg1);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   {
     /* %typemap(out) char **CSL -> ( string ) */
@@ -4903,6 +4958,7 @@ SWIGINTERN PyObject *_wrap_Network_GetFileList(PyObject *SWIGUNUSEDPARM(self), P
     }
     CSLDestroy(result);
   }
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   return NULL;
@@ -4910,7 +4966,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_Network_CreateLayer(PyObject *SWIGUNUSEDPARM(self), PyObject *args, PyObject *kwargs) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GNMNetworkShadow *arg1 = (GNMNetworkShadow *) 0 ;
   char *arg2 = (char *) 0 ;
   OSRSpatialReferenceShadow *arg3 = (OSRSpatialReferenceShadow *) NULL ;
@@ -4981,8 +5037,12 @@ SWIGINTERN PyObject *_wrap_Network_CreateLayer(PyObject *SWIGUNUSEDPARM(self), P
         SWIG_fail;
       }
       
-      int size = PySequence_Size(obj4);
-      for (int i = 0; i < size; i++) {
+      Py_ssize_t size = PySequence_Size(obj4);
+      if( size != (int)size ) {
+        PyErr_SetString(PyExc_TypeError, "too big sequence");
+        SWIG_fail;
+      }
+      for (int i = 0; i < (int)size; i++) {
         PyObject* pyObj = PySequence_GetItem(obj4,i);
         if (PyUnicode_Check(pyObj))
         {
@@ -5019,12 +5079,14 @@ SWIGINTERN PyObject *_wrap_Network_CreateLayer(PyObject *SWIGUNUSEDPARM(self), P
       CPLErrorReset();
     }
     result = (OGRLayerShadow *)GNMNetworkShadow_CreateLayer(arg1,(char const *)arg2,arg3,arg4,arg5);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_OGRLayerShadow, 0 |  0 );
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
@@ -5032,6 +5094,7 @@ SWIGINTERN PyObject *_wrap_Network_CreateLayer(PyObject *SWIGUNUSEDPARM(self), P
     /* %typemap(freearg) char **options */
     CSLDestroy( arg5 );
   }
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
@@ -5044,7 +5107,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_Network_CopyLayer(PyObject *SWIGUNUSEDPARM(self), PyObject *args, PyObject *kwargs) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GNMNetworkShadow *arg1 = (GNMNetworkShadow *) 0 ;
   OGRLayerShadow *arg2 = (OGRLayerShadow *) 0 ;
   char *arg3 = (char *) 0 ;
@@ -5094,8 +5157,12 @@ SWIGINTERN PyObject *_wrap_Network_CopyLayer(PyObject *SWIGUNUSEDPARM(self), PyO
         SWIG_fail;
       }
       
-      int size = PySequence_Size(obj3);
-      for (int i = 0; i < size; i++) {
+      Py_ssize_t size = PySequence_Size(obj3);
+      if( size != (int)size ) {
+        PyErr_SetString(PyExc_TypeError, "too big sequence");
+        SWIG_fail;
+      }
+      for (int i = 0; i < (int)size; i++) {
         PyObject* pyObj = PySequence_GetItem(obj3,i);
         if (PyUnicode_Check(pyObj))
         {
@@ -5137,12 +5204,14 @@ SWIGINTERN PyObject *_wrap_Network_CopyLayer(PyObject *SWIGUNUSEDPARM(self), PyO
       CPLErrorReset();
     }
     result = (OGRLayerShadow *)GNMNetworkShadow_CopyLayer(arg1,arg2,(char const *)arg3,arg4);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_OGRLayerShadow, 0 |  0 );
   if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
@@ -5150,6 +5219,7 @@ SWIGINTERN PyObject *_wrap_Network_CopyLayer(PyObject *SWIGUNUSEDPARM(self), PyO
     /* %typemap(freearg) char **options */
     CSLDestroy( arg4 );
   }
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
@@ -5162,7 +5232,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_Network_DeleteLayer(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GNMNetworkShadow *arg1 = (GNMNetworkShadow *) 0 ;
   int arg2 ;
   void *argp1 = 0 ;
@@ -5189,12 +5259,14 @@ SWIGINTERN PyObject *_wrap_Network_DeleteLayer(PyObject *SWIGUNUSEDPARM(self), P
       CPLErrorReset();
     }
     result = GNMNetworkShadow_DeleteLayer(arg1,arg2);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   {
     /* %typemap(out) OGRErr */
@@ -5205,14 +5277,11 @@ SWIGINTERN PyObject *_wrap_Network_DeleteLayer(PyObject *SWIGUNUSEDPARM(self), P
   }
   {
     /* %typemap(ret) OGRErr */
-    if (resultobj == Py_None ) {
-      Py_DECREF(resultobj);
-      resultobj = 0;
-    }
-    if (resultobj == 0) {
+    if ( ReturnSame(resultobj == Py_None || resultobj == 0) ) {
       resultobj = PyInt_FromLong( result );
     }
   }
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   return NULL;
@@ -5220,7 +5289,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_Network_GetLayerCount(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GNMNetworkShadow *arg1 = (GNMNetworkShadow *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -5238,14 +5307,17 @@ SWIGINTERN PyObject *_wrap_Network_GetLayerCount(PyObject *SWIGUNUSEDPARM(self),
       CPLErrorReset();
     }
     result = (int)GNMNetworkShadow_GetLayerCount(arg1);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   resultobj = SWIG_From_int(static_cast< int >(result));
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   return NULL;
@@ -5253,7 +5325,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_Network_GetLayerByIndex(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GNMNetworkShadow *arg1 = (GNMNetworkShadow *) 0 ;
   int arg2 = (int) 0 ;
   void *argp1 = 0 ;
@@ -5282,14 +5354,17 @@ SWIGINTERN PyObject *_wrap_Network_GetLayerByIndex(PyObject *SWIGUNUSEDPARM(self
       CPLErrorReset();
     }
     result = (OGRLayerShadow *)GNMNetworkShadow_GetLayerByIndex(arg1,arg2);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_OGRLayerShadow, 0 |  0 );
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   return NULL;
@@ -5297,7 +5372,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_Network_GetLayerByName(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GNMNetworkShadow *arg1 = (GNMNetworkShadow *) 0 ;
   char *arg2 = (char *) 0 ;
   void *argp1 = 0 ;
@@ -5325,15 +5400,18 @@ SWIGINTERN PyObject *_wrap_Network_GetLayerByName(PyObject *SWIGUNUSEDPARM(self)
       CPLErrorReset();
     }
     result = (OGRLayerShadow *)GNMNetworkShadow_GetLayerByName(arg1,(char const *)arg2);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_OGRLayerShadow, 0 |  0 );
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
@@ -5342,7 +5420,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_Network_TestCapability(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GNMNetworkShadow *arg1 = (GNMNetworkShadow *) 0 ;
   char *arg2 = (char *) 0 ;
   void *argp1 = 0 ;
@@ -5370,15 +5448,18 @@ SWIGINTERN PyObject *_wrap_Network_TestCapability(PyObject *SWIGUNUSEDPARM(self)
       CPLErrorReset();
     }
     result = (bool)GNMNetworkShadow_TestCapability(arg1,(char const *)arg2);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   resultobj = SWIG_From_bool(static_cast< bool >(result));
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
@@ -5387,7 +5468,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_Network_StartTransaction(PyObject *SWIGUNUSEDPARM(self), PyObject *args, PyObject *kwargs) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GNMNetworkShadow *arg1 = (GNMNetworkShadow *) 0 ;
   int arg2 = (int) FALSE ;
   void *argp1 = 0 ;
@@ -5419,12 +5500,14 @@ SWIGINTERN PyObject *_wrap_Network_StartTransaction(PyObject *SWIGUNUSEDPARM(sel
       CPLErrorReset();
     }
     result = GNMNetworkShadow_StartTransaction(arg1,arg2);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   {
     /* %typemap(out) OGRErr */
@@ -5435,14 +5518,11 @@ SWIGINTERN PyObject *_wrap_Network_StartTransaction(PyObject *SWIGUNUSEDPARM(sel
   }
   {
     /* %typemap(ret) OGRErr */
-    if (resultobj == Py_None ) {
-      Py_DECREF(resultobj);
-      resultobj = 0;
-    }
-    if (resultobj == 0) {
+    if ( ReturnSame(resultobj == Py_None || resultobj == 0) ) {
       resultobj = PyInt_FromLong( result );
     }
   }
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   return NULL;
@@ -5450,7 +5530,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_Network_CommitTransaction(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GNMNetworkShadow *arg1 = (GNMNetworkShadow *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -5468,12 +5548,14 @@ SWIGINTERN PyObject *_wrap_Network_CommitTransaction(PyObject *SWIGUNUSEDPARM(se
       CPLErrorReset();
     }
     result = GNMNetworkShadow_CommitTransaction(arg1);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   {
     /* %typemap(out) OGRErr */
@@ -5484,14 +5566,11 @@ SWIGINTERN PyObject *_wrap_Network_CommitTransaction(PyObject *SWIGUNUSEDPARM(se
   }
   {
     /* %typemap(ret) OGRErr */
-    if (resultobj == Py_None ) {
-      Py_DECREF(resultobj);
-      resultobj = 0;
-    }
-    if (resultobj == 0) {
+    if ( ReturnSame(resultobj == Py_None || resultobj == 0) ) {
       resultobj = PyInt_FromLong( result );
     }
   }
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   return NULL;
@@ -5499,7 +5578,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_Network_RollbackTransaction(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GNMNetworkShadow *arg1 = (GNMNetworkShadow *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -5517,12 +5596,14 @@ SWIGINTERN PyObject *_wrap_Network_RollbackTransaction(PyObject *SWIGUNUSEDPARM(
       CPLErrorReset();
     }
     result = GNMNetworkShadow_RollbackTransaction(arg1);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   {
     /* %typemap(out) OGRErr */
@@ -5533,14 +5614,11 @@ SWIGINTERN PyObject *_wrap_Network_RollbackTransaction(PyObject *SWIGUNUSEDPARM(
   }
   {
     /* %typemap(ret) OGRErr */
-    if (resultobj == Py_None ) {
-      Py_DECREF(resultobj);
-      resultobj = 0;
-    }
-    if (resultobj == 0) {
+    if ( ReturnSame(resultobj == Py_None || resultobj == 0) ) {
       resultobj = PyInt_FromLong( result );
     }
   }
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   return NULL;
@@ -5555,7 +5633,7 @@ SWIGINTERN PyObject *Network_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObje
 }
 
 SWIGINTERN PyObject *_wrap_delete_GenericNetwork(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GNMGenericNetworkShadow *arg1 = (GNMGenericNetworkShadow *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -5572,14 +5650,17 @@ SWIGINTERN PyObject *_wrap_delete_GenericNetwork(PyObject *SWIGUNUSEDPARM(self),
       CPLErrorReset();
     }
     delete_GNMGenericNetworkShadow(arg1);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   resultobj = SWIG_Py_Void();
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   return NULL;
@@ -5587,7 +5668,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_GenericNetwork_ConnectFeatures(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GNMGenericNetworkShadow *arg1 = (GNMGenericNetworkShadow *) 0 ;
   GIntBig arg2 ;
   GIntBig arg3 ;
@@ -5662,24 +5743,17 @@ SWIGINTERN PyObject *_wrap_GenericNetwork_ConnectFeatures(PyObject *SWIGUNUSEDPA
       CPLErrorReset();
     }
     result = (CPLErr)GNMGenericNetworkShadow_ConnectFeatures(arg1,arg2,arg3,arg4,arg5,arg6,arg7);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   resultobj = SWIG_From_int(static_cast< int >(result));
-  {
-    /* %typemap(ret) CPLErr */
-    if ( bUseExceptions == 0 ) {
-      /* We're not using exceptions.  And no error has occurred */
-      if ( resultobj == 0 ) {
-        /* No other return values set so return ErrorCode */
-        resultobj = PyInt_FromLong(result);
-      }
-    }
-  }
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   return NULL;
@@ -5687,7 +5761,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_GenericNetwork_DisconnectFeatures(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GNMGenericNetworkShadow *arg1 = (GNMGenericNetworkShadow *) 0 ;
   GIntBig arg2 ;
   GIntBig arg3 ;
@@ -5735,24 +5809,17 @@ SWIGINTERN PyObject *_wrap_GenericNetwork_DisconnectFeatures(PyObject *SWIGUNUSE
       CPLErrorReset();
     }
     result = (CPLErr)GNMGenericNetworkShadow_DisconnectFeatures(arg1,arg2,arg3,arg4);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   resultobj = SWIG_From_int(static_cast< int >(result));
-  {
-    /* %typemap(ret) CPLErr */
-    if ( bUseExceptions == 0 ) {
-      /* We're not using exceptions.  And no error has occurred */
-      if ( resultobj == 0 ) {
-        /* No other return values set so return ErrorCode */
-        resultobj = PyInt_FromLong(result);
-      }
-    }
-  }
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   return NULL;
@@ -5760,7 +5827,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_GenericNetwork_DisconnectFeaturesWithId(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GNMGenericNetworkShadow *arg1 = (GNMGenericNetworkShadow *) 0 ;
   GIntBig arg2 ;
   void *argp1 = 0 ;
@@ -5788,24 +5855,17 @@ SWIGINTERN PyObject *_wrap_GenericNetwork_DisconnectFeaturesWithId(PyObject *SWI
       CPLErrorReset();
     }
     result = (CPLErr)GNMGenericNetworkShadow_DisconnectFeaturesWithId(arg1,arg2);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   resultobj = SWIG_From_int(static_cast< int >(result));
-  {
-    /* %typemap(ret) CPLErr */
-    if ( bUseExceptions == 0 ) {
-      /* We're not using exceptions.  And no error has occurred */
-      if ( resultobj == 0 ) {
-        /* No other return values set so return ErrorCode */
-        resultobj = PyInt_FromLong(result);
-      }
-    }
-  }
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   return NULL;
@@ -5813,7 +5873,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_GenericNetwork_ReconnectFeatures(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GNMGenericNetworkShadow *arg1 = (GNMGenericNetworkShadow *) 0 ;
   GIntBig arg2 ;
   GIntBig arg3 ;
@@ -5888,24 +5948,17 @@ SWIGINTERN PyObject *_wrap_GenericNetwork_ReconnectFeatures(PyObject *SWIGUNUSED
       CPLErrorReset();
     }
     result = (CPLErr)GNMGenericNetworkShadow_ReconnectFeatures(arg1,arg2,arg3,arg4,arg5,arg6,arg7);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   resultobj = SWIG_From_int(static_cast< int >(result));
-  {
-    /* %typemap(ret) CPLErr */
-    if ( bUseExceptions == 0 ) {
-      /* We're not using exceptions.  And no error has occurred */
-      if ( resultobj == 0 ) {
-        /* No other return values set so return ErrorCode */
-        resultobj = PyInt_FromLong(result);
-      }
-    }
-  }
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   return NULL;
@@ -5913,7 +5966,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_GenericNetwork_CreateRule(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GNMGenericNetworkShadow *arg1 = (GNMGenericNetworkShadow *) 0 ;
   char *arg2 = (char *) 0 ;
   void *argp1 = 0 ;
@@ -5946,25 +5999,18 @@ SWIGINTERN PyObject *_wrap_GenericNetwork_CreateRule(PyObject *SWIGUNUSEDPARM(se
       CPLErrorReset();
     }
     result = (CPLErr)GNMGenericNetworkShadow_CreateRule(arg1,(char const *)arg2);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   resultobj = SWIG_From_int(static_cast< int >(result));
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
-  {
-    /* %typemap(ret) CPLErr */
-    if ( bUseExceptions == 0 ) {
-      /* We're not using exceptions.  And no error has occurred */
-      if ( resultobj == 0 ) {
-        /* No other return values set so return ErrorCode */
-        resultobj = PyInt_FromLong(result);
-      }
-    }
-  }
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
@@ -5973,7 +6019,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_GenericNetwork_DeleteAllRules(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GNMGenericNetworkShadow *arg1 = (GNMGenericNetworkShadow *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -5991,24 +6037,17 @@ SWIGINTERN PyObject *_wrap_GenericNetwork_DeleteAllRules(PyObject *SWIGUNUSEDPAR
       CPLErrorReset();
     }
     result = (CPLErr)GNMGenericNetworkShadow_DeleteAllRules(arg1);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   resultobj = SWIG_From_int(static_cast< int >(result));
-  {
-    /* %typemap(ret) CPLErr */
-    if ( bUseExceptions == 0 ) {
-      /* We're not using exceptions.  And no error has occurred */
-      if ( resultobj == 0 ) {
-        /* No other return values set so return ErrorCode */
-        resultobj = PyInt_FromLong(result);
-      }
-    }
-  }
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   return NULL;
@@ -6016,7 +6055,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_GenericNetwork_DeleteRule(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GNMGenericNetworkShadow *arg1 = (GNMGenericNetworkShadow *) 0 ;
   char *arg2 = (char *) 0 ;
   void *argp1 = 0 ;
@@ -6049,25 +6088,18 @@ SWIGINTERN PyObject *_wrap_GenericNetwork_DeleteRule(PyObject *SWIGUNUSEDPARM(se
       CPLErrorReset();
     }
     result = (CPLErr)GNMGenericNetworkShadow_DeleteRule(arg1,(char const *)arg2);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   resultobj = SWIG_From_int(static_cast< int >(result));
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
-  {
-    /* %typemap(ret) CPLErr */
-    if ( bUseExceptions == 0 ) {
-      /* We're not using exceptions.  And no error has occurred */
-      if ( resultobj == 0 ) {
-        /* No other return values set so return ErrorCode */
-        resultobj = PyInt_FromLong(result);
-      }
-    }
-  }
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
@@ -6076,7 +6108,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_GenericNetwork_GetRules(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GNMGenericNetworkShadow *arg1 = (GNMGenericNetworkShadow *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -6094,12 +6126,14 @@ SWIGINTERN PyObject *_wrap_GenericNetwork_GetRules(PyObject *SWIGUNUSEDPARM(self
       CPLErrorReset();
     }
     result = (char **)GNMGenericNetworkShadow_GetRules(arg1);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   {
     /* %typemap(out) char **CSL -> ( string ) */
@@ -6118,6 +6152,7 @@ SWIGINTERN PyObject *_wrap_GenericNetwork_GetRules(PyObject *SWIGUNUSEDPARM(self
     }
     CSLDestroy(result);
   }
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   return NULL;
@@ -6125,7 +6160,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_GenericNetwork_ConnectPointsByLines(PyObject *SWIGUNUSEDPARM(self), PyObject *args, PyObject *kwargs) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GNMGenericNetworkShadow *arg1 = (GNMGenericNetworkShadow *) 0 ;
   char **arg2 = (char **) 0 ;
   double arg3 ;
@@ -6171,8 +6206,12 @@ SWIGINTERN PyObject *_wrap_GenericNetwork_ConnectPointsByLines(PyObject *SWIGUNU
       SWIG_fail;
     }
     
-    int size = PySequence_Size(obj1);
-    for (int i = 0; i < size; i++) {
+    Py_ssize_t size = PySequence_Size(obj1);
+    if( size != (int)size ) {
+      PyErr_SetString(PyExc_TypeError, "too big sequence");
+      SWIG_fail;
+    }
+    for (int i = 0; i < (int)size; i++) {
       PyObject* pyObj = PySequence_GetItem(obj1,i);
       if (PyUnicode_Check(pyObj))
       {
@@ -6228,28 +6267,21 @@ SWIGINTERN PyObject *_wrap_GenericNetwork_ConnectPointsByLines(PyObject *SWIGUNU
       CPLErrorReset();
     }
     result = (CPLErr)GNMGenericNetworkShadow_ConnectPointsByLines(arg1,arg2,arg3,arg4,arg5,arg6);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   resultobj = SWIG_From_int(static_cast< int >(result));
   {
     /* %typemap(freearg) char **options */
     CSLDestroy( arg2 );
   }
-  {
-    /* %typemap(ret) CPLErr */
-    if ( bUseExceptions == 0 ) {
-      /* We're not using exceptions.  And no error has occurred */
-      if ( resultobj == 0 ) {
-        /* No other return values set so return ErrorCode */
-        resultobj = PyInt_FromLong(result);
-      }
-    }
-  }
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   {
@@ -6261,7 +6293,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_GenericNetwork_ChangeBlockState(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GNMGenericNetworkShadow *arg1 = (GNMGenericNetworkShadow *) 0 ;
   GIntBig arg2 ;
   bool arg3 ;
@@ -6298,24 +6330,17 @@ SWIGINTERN PyObject *_wrap_GenericNetwork_ChangeBlockState(PyObject *SWIGUNUSEDP
       CPLErrorReset();
     }
     result = (CPLErr)GNMGenericNetworkShadow_ChangeBlockState(arg1,arg2,arg3);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   resultobj = SWIG_From_int(static_cast< int >(result));
-  {
-    /* %typemap(ret) CPLErr */
-    if ( bUseExceptions == 0 ) {
-      /* We're not using exceptions.  And no error has occurred */
-      if ( resultobj == 0 ) {
-        /* No other return values set so return ErrorCode */
-        resultobj = PyInt_FromLong(result);
-      }
-    }
-  }
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   return NULL;
@@ -6323,7 +6348,7 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_GenericNetwork_ChangeAllBlockState(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
   GNMGenericNetworkShadow *arg1 = (GNMGenericNetworkShadow *) 0 ;
   bool arg2 = (bool) false ;
   void *argp1 = 0 ;
@@ -6352,24 +6377,17 @@ SWIGINTERN PyObject *_wrap_GenericNetwork_ChangeAllBlockState(PyObject *SWIGUNUS
       CPLErrorReset();
     }
     result = (CPLErr)GNMGenericNetworkShadow_ChangeAllBlockState(arg1,arg2);
+#ifndef SED_HACKS
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
       }
     }
+#endif
   }
   resultobj = SWIG_From_int(static_cast< int >(result));
-  {
-    /* %typemap(ret) CPLErr */
-    if ( bUseExceptions == 0 ) {
-      /* We're not using exceptions.  And no error has occurred */
-      if ( resultobj == 0 ) {
-        /* No other return values set so return ErrorCode */
-        resultobj = PyInt_FromLong(result);
-      }
-    }
-  }
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
 fail:
   return NULL;
@@ -6604,7 +6622,7 @@ SWIG_InitializeModule(void *clientdata) {
     /* This is the first module loaded for this interpreter */
     /* so set the swig module into the interpreter */
     SWIG_SetModule(clientdata, &swig_module);
-    module_head = &swig_module;
+    /*module_head = &swig_module;*/
   } else {
     /* the interpreter has loaded a SWIG module, but has it loaded this one? */
     found=0;
@@ -7053,7 +7071,7 @@ extern "C" {
               char *buff = ndoc;
               strncpy(buff, methods[i].ml_doc, ldoc);
               buff += ldoc;
-              strncpy(buff, "swig_ptr: ", 10);
+              memcpy(buff, "swig_ptr: ", 10);
               buff += 10;
               SWIG_PackVoidPtr(buff, ptr, ty->name, lptr);
               methods[i].ml_doc = ndoc;

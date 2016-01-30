@@ -32,10 +32,6 @@
 
 CPL_CVSID("$Id: ntfstroke.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
 
-#ifndef PI
-#define PI  3.14159265358979323846
-#endif 
-
 /************************************************************************/
 /*                   OGROCIArcCenterFromEdgePoints()                    */
 /*                                                                      */
@@ -47,7 +43,7 @@ OGROCIArcCenterFromEdgePoints( double x_c0, double y_c0,
                                double x_c1, double y_c1, 
                                double x_c2, double y_c2, 
                                double *x_center, double *y_center )
-    
+
 {
 
 /* -------------------------------------------------------------------- */
@@ -97,29 +93,29 @@ OGROCIArcCenterFromEdgePoints( double x_c0, double y_c0,
 /* -------------------------------------------------------------------- */
 /*      Turn these into the Ax+By+C = 0 form of the lines.              */
 /* -------------------------------------------------------------------- */
-    double      a1, a2, b1, b2, c1, c2;
+    double      a1, a2, l_b1, l_b2, c1, c2;
 
     a1 = m1;
     a2 = m2;
 
-    b1 = -1.0;
-    b2 = -1.0;
-    
+    l_b1 = -1.0;
+    l_b2 = -1.0;
+
     c1 = (y1 - m1*x1);
     c2 = (y2 - m2*x2);
-    
+
 /* -------------------------------------------------------------------- */
 /*      Compute the intersection of the two lines through the center    */
 /*      of the circle, using Kramers rule.                              */
 /* -------------------------------------------------------------------- */
     double      det_inv;
 
-    if( a1*b2 - a2*b1 == 0.0 )
+    if( a1*l_b2 - a2*l_b1 == 0.0 )
         return FALSE;
 
-    det_inv = 1 / (a1*b2 - a2*b1);
+    det_inv = 1 / (a1*l_b2 - a2*l_b1);
 
-    *x_center = (b1*c2 - b2*c1) * det_inv;
+    *x_center = (l_b1*c2 - l_b2*c1) * det_inv;
     *y_center = (a2*c1 - a1*c2) * det_inv;
 
     return TRUE;
@@ -145,20 +141,19 @@ OGROCIStrokeArcToOGRGeometry_Angles( double dfCenterX, double dfCenterY,
         ceil(fabs(dfEndAngle - dfStartAngle)/dfMaxAngleStepSizeDegrees) + 1;
     nVertexCount = MAX(2,nVertexCount);
     dfSlice = (dfEndAngle-dfStartAngle)/(nVertexCount-1);
+    iAppendLocation = poLine->getNumPoints();
 
     for( iPoint=0; iPoint < nVertexCount; iPoint++ )
     {
         double      dfAngle;
 
-        dfAngle = (dfStartAngle + iPoint * dfSlice) * PI / 180.0;
+        dfAngle = (dfStartAngle + iPoint * dfSlice) * M_PI / 180.0;
 
         dfArcX = dfCenterX + cos(dfAngle) * dfRadius;
         dfArcY = dfCenterY + sin(dfAngle) * dfRadius;
 
         if( iPoint == 0 )
         {
-            iAppendLocation = poLine->getNumPoints();
-
             if( poLine->getNumPoints() > 0 
                 && fabs(poLine->getX(poLine->getNumPoints()-1)-dfArcX) < dfEps
                 && fabs(poLine->getY(poLine->getNumPoints()-1)-dfArcY) < dfEps)
@@ -192,7 +187,7 @@ OGROCIStrokeArcToOGRGeometry_Points( double dfStartX, double dfStartY,
                                      double dfMaxAngleStepSizeDegrees,
                                      int bForceWholeCircle,
                                      OGRLineString *poLine )
-    
+
 {
     double      dfStartAngle, dfEndAngle, dfAlongAngle;
     double      dfCenterX, dfCenterY, dfRadius;
@@ -214,15 +209,15 @@ OGROCIStrokeArcToOGRGeometry_Points( double dfStartX, double dfStartY,
 
         dfDeltaX = dfStartX - dfCenterX;
         dfDeltaY = dfStartY - dfCenterY;
-        dfStartAngle = atan2(dfDeltaY,dfDeltaX) * 180.0 / PI;
+        dfStartAngle = atan2(dfDeltaY,dfDeltaX) * 180.0 / M_PI;
 
         dfDeltaX = dfAlongX - dfCenterX;
         dfDeltaY = dfAlongY - dfCenterY;
-        dfAlongAngle = atan2(dfDeltaY,dfDeltaX) * 180.0 / PI;
+        dfAlongAngle = atan2(dfDeltaY,dfDeltaX) * 180.0 / M_PI;
 
         dfDeltaX = dfEndX - dfCenterX;
         dfDeltaY = dfEndY - dfCenterY;
-        dfEndAngle = atan2(dfDeltaY,dfDeltaX) * 180.0 / PI;
+        dfEndAngle = atan2(dfDeltaY,dfDeltaX) * 180.0 / M_PI;
 
         // Try positive (clockwise?) winding.
         while( dfAlongAngle < dfStartAngle )
@@ -236,7 +231,7 @@ OGROCIStrokeArcToOGRGeometry_Points( double dfStartX, double dfStartY,
         {
             while( dfAlongAngle > dfStartAngle )
                 dfAlongAngle -= 360.0;
-            
+
             while( dfEndAngle > dfAlongAngle )
                 dfEndAngle -= 360.0;
         }
@@ -268,4 +263,3 @@ OGROCIStrokeArcToOGRGeometry_Points( double dfStartX, double dfStartY,
 
     return bResult;
 }
-

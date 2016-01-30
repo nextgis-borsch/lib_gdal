@@ -23,7 +23,7 @@
 #endif
 
 CPL_C_START
-// Cripes ... shouldn't this go in an include files!
+// Should this go in an include file?  Otherwise it should be static, correct?
 int dec_jpeg2000(char *injpc,g2int bufsize,g2int *outfld);
 CPL_C_END
 
@@ -117,7 +117,7 @@ int dec_jpeg2000(char *injpc,g2int bufsize,g2int *outfld)
     int nBandSpace = 0;
 
     //    Decompress the JPEG2000 into the output integer array.
-    poJ2KDataset->RasterIO( GF_Read, nXOff, nYOff, nXSize, nYSize,
+    CPLErr eErr = poJ2KDataset->RasterIO( GF_Read, nXOff, nYOff, nXSize, nYSize,
                             outfld, nBufXSize, nBufYSize, eBufType,
                             nBandCount, panBandMap, 
                             nPixelSpace, nLineSpace, nBandSpace, NULL );
@@ -126,23 +126,21 @@ int dec_jpeg2000(char *injpc,g2int bufsize,g2int *outfld)
     GDALClose( poJ2KDataset );
     VSIUnlink( osFileName );
 
-    return 0;
+    return (eErr == CE_None) ? 0 : -3;
 
 #else 
 
     // JasPer method
     
-    int ier;
     g2int i,j,k;
-    jas_image_t *image=0;
+    jas_image_t *image=NULL;
     jas_stream_t *jpcstream;
     jas_image_cmpt_t *pcmpt;
-    char *opts=0;
+    char *opts=NULL;
     jas_matrix_t *data;
 
 //    jas_init();
 
-    ier=0;
 //   
 //     Create jas_stream_t containing input JPEG200 codestream in memory.
 //       
@@ -154,11 +152,11 @@ int dec_jpeg2000(char *injpc,g2int bufsize,g2int *outfld)
 //       
 
     image=jpc_decode(jpcstream,opts);
-    if ( image == 0 ) {
-       printf(" jpc_decode return = %d \n",ier);
+    if ( image == NULL ) {
+       printf(" jpc_decode failed\n");
        return -3;
     }
-    
+
     pcmpt=image->cmpts_[0];
 
 //   Expecting jpeg2000 image to be grayscale only.
@@ -173,7 +171,7 @@ int dec_jpeg2000(char *injpc,g2int bufsize,g2int *outfld)
 //    Create a data matrix of grayscale image values decoded from
 //    the jpeg2000 codestream.
 //
-    data=jas_matrix_create(jas_image_height(image), jas_image_width(image));
+    data=jas_matrix_create(static_cast<int>(jas_image_height(image)), static_cast<int>(jas_image_width(image)));
     jas_image_readcmpt(image,0,0,0,jas_image_width(image),
                        jas_image_height(image),data);
 //
@@ -182,12 +180,12 @@ int dec_jpeg2000(char *injpc,g2int bufsize,g2int *outfld)
     k=0;
     for (i=0;i<pcmpt->height_;i++) 
       for (j=0;j<pcmpt->width_;j++) 
-        outfld[k++]=data->rows_[i][j];
+        outfld[k++]=static_cast<g2int>(data->rows_[i][j]);
 //
 //     Clean up JasPer work structures.
 //
     jas_matrix_destroy(data);
-    ier=jas_stream_close(jpcstream);
+    jas_stream_close(jpcstream);
     jas_image_destroy(image);
 
     return 0;

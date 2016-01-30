@@ -54,6 +54,8 @@ OGRGeomediaLayer::OGRGeomediaLayer()
 
     poSRS = NULL;
     nSRSId = -2; // we haven't even queried the database for it yet. 
+    poFeatureDefn = NULL;
+    panFieldOrdinals = NULL;
 }
 
 /************************************************************************/
@@ -101,12 +103,12 @@ OGRGeomediaLayer::~OGRGeomediaLayer()
 /************************************************************************/
 
 CPLErr OGRGeomediaLayer::BuildFeatureDefn( const char *pszLayerName,
-                                       CPLODBCStatement *poStmt )
+                                       CPLODBCStatement *poStmtIn )
 
 {
     poFeatureDefn = new OGRFeatureDefn( pszLayerName );
     SetDescription( poFeatureDefn->GetName() );
-    int    nRawColumns = poStmt->GetColCount();
+    int    nRawColumns = poStmtIn->GetColCount();
 
     poFeatureDefn->Reference();
     poFeatureDefn->GetGeomFieldDefn(0)->SetSpatialRef(poSRS);
@@ -115,25 +117,25 @@ CPLErr OGRGeomediaLayer::BuildFeatureDefn( const char *pszLayerName,
 
     for( int iCol = 0; iCol < nRawColumns; iCol++ )
     {
-        OGRFieldDefn    oField( poStmt->GetColName(iCol), OFTString );
+        OGRFieldDefn    oField( poStmtIn->GetColName(iCol), OFTString );
 
-        oField.SetWidth( MAX(0,poStmt->GetColSize( iCol )) );
+        oField.SetWidth( MAX(0,poStmtIn->GetColSize( iCol )) );
 
         if( pszGeomColumn != NULL 
-            && EQUAL(poStmt->GetColName(iCol),pszGeomColumn) )
+            && EQUAL(poStmtIn->GetColName(iCol),pszGeomColumn) )
             continue;
 
         if( pszGeomColumn == NULL 
-            && EQUAL(poStmt->GetColName(iCol),"Geometry")
-			&& (poStmt->GetColType(iCol) == SQL_BINARY ||
-			    poStmt->GetColType(iCol) == SQL_VARBINARY ||
-				poStmt->GetColType(iCol) == SQL_LONGVARBINARY) )
+            && EQUAL(poStmtIn->GetColName(iCol),"Geometry")
+			&& (poStmtIn->GetColType(iCol) == SQL_BINARY ||
+			    poStmtIn->GetColType(iCol) == SQL_VARBINARY ||
+				poStmtIn->GetColType(iCol) == SQL_LONGVARBINARY) )
         {
-            pszGeomColumn = CPLStrdup(poStmt->GetColName(iCol));
+            pszGeomColumn = CPLStrdup(poStmtIn->GetColName(iCol));
             continue;
         }
-        
-        switch( poStmt->GetColType(iCol) )
+
+        switch( poStmtIn->GetColType(iCol) )
         {
           case SQL_INTEGER:
           case SQL_SMALLINT:
@@ -148,7 +150,7 @@ CPLErr OGRGeomediaLayer::BuildFeatureDefn( const char *pszLayerName,
 
           case SQL_DECIMAL:
             oField.SetType( OFTReal );
-            oField.SetPrecision( poStmt->GetColPrecision(iCol) );
+            oField.SetPrecision( poStmtIn->GetColPrecision(iCol) );
             break;
 
           case SQL_FLOAT:
@@ -199,7 +201,7 @@ void OGRGeomediaLayer::ResetReading()
 OGRFeature *OGRGeomediaLayer::GetNextFeature()
 
 {
-    for( ; TRUE; )
+    while( true )
     {
         OGRFeature      *poFeature;
 
@@ -242,7 +244,6 @@ OGRFeature *OGRGeomediaLayer::GetNextRawFeature()
 /* -------------------------------------------------------------------- */
 /*      Create a feature from the current result.                       */
 /* -------------------------------------------------------------------- */
-    int         iField;
     OGRFeature *poFeature = new OGRFeature( poFeatureDefn );
 
     if( pszFIDColumn != NULL && poStmt->GetColId(pszFIDColumn) > -1 )
@@ -257,7 +258,7 @@ OGRFeature *OGRGeomediaLayer::GetNextRawFeature()
 /* -------------------------------------------------------------------- */
 /*      Set the fields.                                                 */
 /* -------------------------------------------------------------------- */
-    for( iField = 0; iField < poFeatureDefn->GetFieldCount(); iField++ )
+    for( int iField = 0; iField < poFeatureDefn->GetFieldCount(); iField++ )
     {
         int iSrcField = panFieldOrdinals[iField]-1;
         const char *pszValue = poStmt->GetColData( iSrcField );

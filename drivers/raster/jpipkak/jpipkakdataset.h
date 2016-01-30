@@ -36,9 +36,7 @@
 #include "cpl_vsi.h"
 #include "cpl_multiproc.h"
 
-#include "kdu_cache.h"
-#include "kdu_region_decompressor.h"
-#include "kdu_file_io.h"
+#include "jpipkak_headers.h"
 
 #include <time.h>
 
@@ -69,25 +67,25 @@ private:
     int bIsFinal;
     int bIsEOR;
 public:
-    int GetId(){return nId;}
-    int GetAux(){return nAux;}
-    int GetClassId(){return nClassId;}
-    int GetCodestreamIdx(){return nCodestream;}
-    int GetOffset(){return nOffset;}
-    int GetLen(){return nLen;}
+    long GetId(){return nId;}
+    long GetAux(){return nAux;}
+    long GetClassId(){return nClassId;}
+    long GetCodestreamIdx(){return nCodestream;}
+    long GetOffset(){return nOffset;}
+    long GetLen(){return nLen;}
     GByte* GetData(){return pabyData;}
     int IsFinal(){return bIsFinal;}
     int IsEOR(){return bIsEOR;}
 
-    void SetId(long nId){this->nId = nId;}
-    void SetAux(long nAux){this->nAux = nAux;}
-    void SetClassId(long nClassId){this->nClassId = nClassId;}
-    void SetCodestreamIdx(long nCodestream){this->nCodestream = nCodestream;}
-    void SetOffset(long nOffset){this->nOffset = nOffset;}
-    void SetLen(long nLen){this->nLen = nLen;}
-    void SetData(GByte* pabyData){this->pabyData = pabyData;}
-    void SetFinal(int bIsFinal){this->bIsFinal = bIsFinal;}
-    void SetEOR(int bIsEOR){this->bIsEOR = bIsEOR;}
+    void SetId(long nIdIn){this->nId = nIdIn;}
+    void SetAux(long nAuxIn){this->nAux = nAuxIn;}
+    void SetClassId(long nClassIdIn){this->nClassId = nClassIdIn;}
+    void SetCodestreamIdx(long nCodestreamIn){this->nCodestream = nCodestreamIn;}
+    void SetOffset(long nOffsetIn){this->nOffset = nOffsetIn;}
+    void SetLen(long nLenIn){this->nLen = nLenIn;}
+    void SetData(GByte* pabyDataIn){this->pabyData = pabyDataIn;}
+    void SetFinal(int bIsFinalIn){this->bIsFinal = bIsFinalIn;}
+    void SetEOR(int bIsEORIn){this->bIsEOR = bIsEORIn;}
     JPIPDataSegment();
     ~JPIPDataSegment();
 };
@@ -102,7 +100,6 @@ class JPIPKAKDataset: public GDALPamDataset
 private:
     int       bNeedReinitialize;
     CPLString osRequestUrl;
-    char* pszTid;
     char* pszPath;
     char* pszCid;
     char* pszProjection;
@@ -141,13 +138,13 @@ private:
     int KakaduClassId(int nClassId);
 
     CPLMutex *pGlobalMutex;
- 
+
     // support two communication threads to the server, a main and an overview thread
     volatile int bHighThreadRunning;
     volatile int bLowThreadRunning;
     volatile int bHighThreadFinished;
     volatile int bLowThreadFinished;
-    
+
     // transmission counts
     volatile long nHighThreadByteCount;
     volatile long nLowThreadByteCount;
@@ -236,7 +233,7 @@ public:
     JPIPKAKRasterBand( int, int, kdu_codestream *, int,
                        JPIPKAKDataset * );
     ~JPIPKAKRasterBand();
-    
+
     virtual CPLErr IReadBlock( int, int, void * );
     virtual CPLErr IRasterIO( GDALRWFlag, int, int, int, int,
                               void *, int, int, GDALDataType,

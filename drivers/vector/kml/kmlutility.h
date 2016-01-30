@@ -36,7 +36,8 @@
 
 enum Nodetype
 {
-    Unknown, Empty, Mixed, Point, LineString, Polygon, Rest, MultiGeometry, MultiPoint, MultiLineString, MultiPolygon
+    Unknown, Empty, Mixed, Point, LineString, Polygon, Rest, MultiGeometry,
+    MultiPoint, MultiLineString, MultiPolygon
 };
 
 struct Attribute
@@ -67,7 +68,7 @@ struct Feature
     Feature()
         : eType(Unknown), poGeom(NULL)
     {}
-    
+
     ~Feature()
     {
         delete poGeom;

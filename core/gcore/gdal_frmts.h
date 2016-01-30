@@ -2,7 +2,7 @@
  * $Id$
  *
  * Project:  GDAL
- * Purpose:  Prototypes for all format specific driver initializations.
+ * Purpose:  Prototypes for all format specific driver initialization.
  * Author:   Frank Warmerdam, warmerdam@pobox.com
  *
  ******************************************************************************
@@ -143,7 +143,6 @@ void CPL_DLL GDALRegister_SRP(void);
 void CPL_DLL GDALRegister_COASP(void);
 void CPL_DLL GDALRegister_BLX(void);
 void CPL_DLL GDALRegister_LCP(void);
-void CPL_DLL GDALRegister_PGCHIP(void);
 void CPL_DLL GDALRegister_TMS(void);
 void CPL_DLL GDALRegister_EIR(void);
 void CPL_DLL GDALRegister_GEOR(void);
@@ -185,6 +184,9 @@ void CPL_DLL GDALRegister_PLMOSAIC(void);
 void CPL_DLL GDALRegister_CALS(void);
 void CPL_DLL GDALRegister_ISCE(void);
 void CPL_DLL GDALRegister_WMTS(void);
+void CPL_DLL GDALRegister_SAFE(void);
+void CPL_DLL GDALRegister_SENTINEL2(void);
+void CPL_DLL GDALRegister_mrf(void);
 CPL_C_END
 
 #endif /* ndef GDAL_FRMTS_H_INCLUDED */

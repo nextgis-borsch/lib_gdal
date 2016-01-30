@@ -32,10 +32,8 @@
 #define KEADATASET_H
 
 #include "gdal_pam.h"
-#if defined(USE_GCC_VISIBILITY_FLAG) && !defined(DllExport)
-#define DllExport CPL_DLL
-#endif
-#include "libkea/KEAImageIO.h"
+
+#include "libkea_headers.h"
 
 // class that implements a GDAL dataset
 class KEADataset : public GDALPamDataset
@@ -49,7 +47,7 @@ public:
     // constructor/destructor
     KEADataset( H5::H5File *keaImgH5File, GDALAccess eAccess );
     ~KEADataset();
-    
+
     // static methods that handle open and creation
     // the driver class has pointers to these
     static GDALDataset *Open( GDALOpenInfo * );

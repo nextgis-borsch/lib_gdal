@@ -35,7 +35,7 @@
 // Construction/Destruction
 //
 // Upon successful parsing of a header in ifile, isValid() returns true
-// and ifile is seeked to the beginning of the image data
+// and ifile is sought to the beginning of the image data
 //////////////////////////////////////////////////////////////////////
 
 XRITHeaderParser::XRITHeaderParser(std::ifstream & ifile)
@@ -48,7 +48,7 @@ XRITHeaderParser::XRITHeaderParser(std::ifstream & ifile)
 , m_scanNorth(false)
 {
   const unsigned int probeSize = 8;
- 
+
   unsigned char probeBuf[probeSize];
   ifile.read((char*)probeBuf, probeSize); // Probe file by reading first 8 bytes
 
@@ -66,7 +66,7 @@ XRITHeaderParser::XRITHeaderParser(std::ifstream & ifile)
       m_isValid = true;
     }
   }
-  
+
   if (!m_isValid) // seek back to original position
   {
 #if _MSC_VER > 1000 && _MSC_VER < 1300  

@@ -112,7 +112,7 @@ OGRFeatureDefn *OGRMySQLResultLayer::ReadResultDefinition()
           case FIELD_TYPE_NEWDECIMAL:
 #endif
             oField.SetType( OFTReal );
-            
+
             // a bunch of hackery to munge the widths that MySQL gives 
             // us into corresponding widths and precisions for OGR
             precision =    (int)psMSField->decimals;
@@ -120,7 +120,7 @@ OGRFeatureDefn *OGRMySQLResultLayer::ReadResultDefinition()
             if (!precision)
                 width = width - 1;
             width = width - precision;
-            
+
             oField.SetWidth(width);
             oField.SetPrecision(precision);
             poDefn->AddFieldDefn( &oField );
@@ -183,7 +183,7 @@ OGRFeatureDefn *OGRMySQLResultLayer::ReadResultDefinition()
             oField.SetWidth((int)psMSField->max_length);
             poDefn->AddFieldDefn( &oField );
             break;
-                        
+
           case FIELD_TYPE_GEOMETRY:
             if (pszGeomColumn == NULL)
             {
@@ -191,12 +191,12 @@ OGRFeatureDefn *OGRMySQLResultLayer::ReadResultDefinition()
                 pszGeomColumn = CPLStrdup( psMSField->name);
             }
             break;
-            
+
           default:
             // any other field we ignore. 
             break;
         }
-        
+
         // assume a FID name first, and if it isn't there
         // take a field that is not null, a primary key, 
         // and is an integer-like field
@@ -232,10 +232,10 @@ OGRFeatureDefn *OGRMySQLResultLayer::ReadResultDefinition()
         char*        pszType=NULL;
         CPLString    osCommand;
         char           **papszRow;  
-         
+
         // set to unknown first
         poDefn->SetGeomType( wkbUnknown );
-        
+
         osCommand.Printf(
                 "SELECT type FROM geometry_columns WHERE f_table_name='%s'",
                 pszGeomColumnTable );
@@ -256,14 +256,13 @@ OGRFeatureDefn *OGRMySQLResultLayer::ReadResultDefinition()
         {
             pszType = papszRow[0];
 
-            OGRwkbGeometryType nGeomType = OGRFromOGCGeomType(pszType);
+            OGRwkbGeometryType l_nGeomType = OGRFromOGCGeomType(pszType);
 
-            poDefn->SetGeomType( nGeomType );
-
-        } 
+            poDefn->SetGeomType( l_nGeomType );
+        }
 
 		nSRSId = FetchSRSId();
-    } 
+    }
 
 
     return poDefn;

@@ -139,26 +139,27 @@
 #define TWOMIL        2000000.e0    /* TWO MILLION                           */
 #define TRUE                      1  /* CONSTANT VALUE FOR TRUE VALUE  */
 #define FALSE                     0  /* CONSTANT VALUE FOR FALSE VALUE */
-#define PI    3.14159265358979323e0  /* PI                             */
-#define PI_OVER_2  (PI / 2.0e0)
+#define PI_OVER_2  (M_PI / 2.0e0)
 
 #define MIN_EASTING  100000
 #define MAX_EASTING  900000
 #define MIN_NORTHING 0
 #define MAX_NORTHING 10000000
 #define MAX_PRECISION           5   /* Maximum precision of easting & northing */
-#define MIN_UTM_LAT      ( (-80 * PI) / 180.0 ) /* -80 degrees in radians    */
-#define MAX_UTM_LAT      ( (84 * PI) / 180.0 )  /* 84 degrees in radians     */
+#define MIN_UTM_LAT      ( (-80 * M_PI) / 180.0 ) /* -80 degrees in radians    */
+#define MAX_UTM_LAT      ( (84 * M_PI) / 180.0 )  /* 84 degrees in radians     */
 
 #define MIN_EAST_NORTH 0
 #define MAX_EAST_NORTH 4000000
 
 
 /* Ellipsoid parameters, default to WGS 84 */
-double MGRS_a = 6378137.0;    /* Semi-major axis of ellipsoid in meters */
-double MGRS_f = 1 / 298.257223563; /* Flattening of ellipsoid           */
-double MGRS_recpf = 298.257223563;
-char   MGRS_Ellipsoid_Code[3] = {'W','E',0};
+static const double MGRS_a = 6378137.0;    /* Semi-major axis of ellipsoid in meters */
+static const double MGRS_f = 1 / 298.257223563; /* Flattening of ellipsoid           */
+#ifdef unused
+static const double MGRS_recpf = 298.257223563;
+#endif
+static const char   MGRS_Ellipsoid_Code[3] = {'W','E',0};
 
 
 /* 
@@ -167,10 +168,10 @@ char   MGRS_Ellipsoid_Code[3] = {'W','E',0};
  *    BESSEL_1841 : Ellipsoid code for BESSEL_1841
  *    BESSEL_1841_NAMIBIA : Ellipsoid code for BESSEL 1841 (NAMIBIA)
  */
-const char* CLARKE_1866 = "CC";
-const char* CLARKE_1880 = "CD";
-const char* BESSEL_1841 = "BR";
-const char* BESSEL_1841_NAMIBIA = "BN";
+static const char* const CLARKE_1866 = "CC";
+static const char* const CLARKE_1880 = "CD";
+static const char* const BESSEL_1841 = "BR";
+static const char* const BESSEL_1841_NAMIBIA = "BN";
 
 
 typedef struct Latitude_Band_Value
@@ -225,7 +226,7 @@ static const UPS_Constant UPS_Constant_Table[4] =
  *                              FUNCTIONS     
  */
 
-long Get_Latitude_Band_Min_Northing(long letter, double* min_northing)
+static long Get_Latitude_Band_Min_Northing(long letter, double* min_northing)
 /*
  * The function Get_Latitude_Band_Min_Northing receives a latitude band letter
  * and uses the Latitude_Band_Table to determine the minimum northing for that
@@ -249,8 +250,8 @@ long Get_Latitude_Band_Min_Northing(long letter, double* min_northing)
   return error_code;
 } /* Get_Latitude_Band_Min_Northing */
 
-
-long Get_Latitude_Range(long letter, double* north, double* south)
+#ifdef unused
+static long Get_Latitude_Range(long letter, double* north, double* south)
 /*
  * The function Get_Latitude_Range receives a latitude band letter
  * and uses the Latitude_Band_Table to determine the latitude band 
@@ -283,9 +284,10 @@ long Get_Latitude_Range(long letter, double* north, double* south)
 
   return error_code;
 } /* Get_Latitude_Range */
+#endif
 
-
-long Get_Latitude_Letter(double latitude, int* letter)
+#ifdef unusued
+static long Get_Latitude_Letter(double latitude, int* letter)
 /*
  * The function Get_Latitude_Letter receives a latitude value
  * and uses the Latitude_Band_Table to determine the latitude band 
@@ -311,9 +313,10 @@ long Get_Latitude_Letter(double latitude, int* letter)
 
   return error_code;
 } /* Get_Latitude_Letter */
+#endif
 
-
-long Check_Zone(char* MGRS, long* zone_exists)
+#ifdef unused
+static long Check_Zone(char* MGRS, long* zone_exists)
 /*
  * The function Check_Zone receives an MGRS coordinate string.
  * If a zone is given, TRUE is returned. Otherwise, FALSE
@@ -346,9 +349,9 @@ long Check_Zone(char* MGRS, long* zone_exists)
 
   return error_code;
 } /* Check_Zone */
+#endif
 
-
-long Round_MGRS (double value)
+static long Round_MGRS (double value)
 /*
  * The function Round_MGRS rounds the input value to the 
  * nearest integer, using the standard engineering rule.
@@ -367,7 +370,7 @@ long Round_MGRS (double value)
 } /* Round_MGRS */
 
 
-long Make_MGRS_String (char* MGRS, 
+static long Make_MGRS_String (char* MGRS, 
                        long Zone, 
                        int Letters[MGRS_LETTERS], 
                        double Easting, 
@@ -411,12 +414,12 @@ long Make_MGRS_String (char* MGRS,
   if (Northing >= 99999.5)
     Northing = 99999.0;
   north = (long)(Northing/divisor);
-  i += sprintf (MGRS+i, "%*.*ld", (int) Precision, (int) Precision, north);
+  /*i += */sprintf (MGRS+i, "%*.*ld", (int) Precision, (int) Precision, north);
   return (error_code);
 } /* Make_MGRS_String */
 
 
-long Break_MGRS_String (char* MGRS,
+static long Break_MGRS_String (char* MGRS,
                         long* Zone,
                         long Letters[MGRS_LETTERS],
                         double* Easting,
@@ -521,7 +524,7 @@ long Break_MGRS_String (char* MGRS,
 } /* Break_MGRS_String */
 
 
-void Get_Grid_Values (long zone, 
+static void Get_Grid_Values (long zone, 
                       long* ltr2_low_value, 
                       long* ltr2_high_value, 
                       double *false_northing)
@@ -585,8 +588,8 @@ void Get_Grid_Values (long zone,
   }
 } /* END OF Get_Grid_Values */
 
-
-long UTM_To_MGRS (long Zone,
+#ifdef unused
+static long UTM_To_MGRS (long Zone,
                   double Latitude,
                   double Easting,
                   double Northing,
@@ -656,8 +659,9 @@ long UTM_To_MGRS (long Zone,
   }
   return error_code;
 } /* END UTM_To_MGRS */
+#endif
 
-
+#ifdef unused
 long Set_MGRS_Parameters (double a,
                           double f,
                           char   *Ellipsoid_Code)
@@ -688,11 +692,12 @@ long Set_MGRS_Parameters (double a,
     MGRS_a = a;
     MGRS_f = f;
     MGRS_recpf = inv_f;
-    strcpy (MGRS_Ellipsoid_Code, Ellipsoid_Code);
+    strncpy (MGRS_Ellipsoid_Code, Ellipsoid_Code, sizeof(MGRS_Ellipsoid_Code));
+    MGRS_Ellipsoid_Code[sizeof(MGRS_Ellipsoid_Code) - 1] = '\0';
   }
   return (Error_Code);
 }  /* Set_MGRS_Parameters  */
-
+#endif
 
 void Get_MGRS_Parameters (double *a,
                           double *f,
@@ -712,7 +717,7 @@ void Get_MGRS_Parameters (double *a,
   return;
 } /* Get_MGRS_Parameters */
 
-#ifdef notdef
+#ifndef GDAL_COMPILATION
 long Convert_UTM_To_MGRS (long Zone,
                           char Hemisphere,
                           double Easting,
@@ -788,14 +793,14 @@ long Convert_MGRS_To_UTM (char   *MGRS,
 { /* Convert_MGRS_To_UTM */
   double scaled_min_northing;
   double min_northing;
-  long ltr2_low_value;
-  long ltr2_high_value;
+  long ltr2_low_value = 0;
+  long ltr2_high_value = 0;
   double false_northing;
   double grid_easting;        /* Easting for 100,000 meter grid square      */
   double grid_northing;       /* Northing for 100,000 meter grid square     */
   long letters[MGRS_LETTERS];
   long in_precision;
-#ifdef notdef
+#ifndef GDAL_COMPILATION
   double upper_lat_limit;     /* North latitude limits based on 1st letter  */
   double lower_lat_limit;     /* South latitude limits based on 1st letter  */
   double latitude = 0.0;
@@ -861,7 +866,7 @@ long Convert_MGRS_To_UTM (char   *MGRS,
 
             *Easting = grid_easting + *Easting;
             *Northing = grid_northing + *Northing;
-#ifdef notdef
+#ifndef GDAL_COMPILATION
             /* check that point is within Zone Letter bounds */
             error_code = Set_UTM_Parameters(MGRS_a,MGRS_f,*Zone);
             if (!error_code)
@@ -914,7 +919,7 @@ long Convert_UPS_To_MGRS (char   Hemisphere,
   long ltr2_low_value;        /* 2nd letter range - low number                */
   int letters[MGRS_LETTERS];  /* Number location of 3 letters in alphabet     */
   double divisor;
-  int index = 0;
+  int l_index = 0;
   long error_code = MGRS_NO_ERROR;
 
   if ((Hemisphere != 'N') && (Hemisphere != 'S'))
@@ -938,10 +943,10 @@ long Convert_UPS_To_MGRS (char   Hemisphere,
       else
         letters[0] = LETTER_Y;
 
-      index = letters[0] - 22;
-      ltr2_low_value = UPS_Constant_Table[index].ltr2_low_value;
-      false_easting = UPS_Constant_Table[index].false_easting;
-      false_northing = UPS_Constant_Table[index].false_northing;
+      l_index = letters[0] - 22;
+      ltr2_low_value = UPS_Constant_Table[l_index].ltr2_low_value;
+      false_easting = UPS_Constant_Table[l_index].false_easting;
+      false_northing = UPS_Constant_Table[l_index].false_northing;
     }
     else
     {
@@ -957,7 +962,7 @@ long Convert_UPS_To_MGRS (char   Hemisphere,
 
     grid_northing = Northing;
     grid_northing = grid_northing - false_northing;
-    letters[2] = (long)(grid_northing / ONEHT);
+    letters[2] = (int)(grid_northing / ONEHT);
 
     if (letters[2] > LETTER_H)
       letters[2] = letters[2] + 1;
@@ -967,7 +972,7 @@ long Convert_UPS_To_MGRS (char   Hemisphere,
 
     grid_easting = Easting;
     grid_easting = grid_easting - false_easting;
-    letters[1] = ltr2_low_value + ((long)(grid_easting / ONEHT)); 
+    letters[1] = (int)(ltr2_low_value + ((long)(grid_easting / ONEHT))); 
 
     if (Easting < TWOMIL)
     {
@@ -1003,7 +1008,7 @@ long Convert_MGRS_To_UPS ( char   *MGRS,
  *  The function Convert_MGRS_To_UPS converts an MGRS coordinate string
  *  to UPS (hemisphere, easting, and northing) coordinates, according 
  *  to the current ellipsoid parameters. If any errors occur, the error 
- *  code(s) are returned by the function, otherwide UPS_NO_ERROR is returned.
+ *  code(s) are returned by the function, otherwise UPS_NO_ERROR is returned.
  *
  *    MGRS          : MGRS coordinate string           (input)
  *    Hemisphere    : Hemisphere either 'N' or 'S'     (output)
@@ -1018,10 +1023,10 @@ long Convert_MGRS_To_UPS ( char   *MGRS,
   double false_northing;      /* False northing for 3rd letter              */
   double grid_easting;        /* easting for 100,000 meter grid square      */
   double grid_northing;       /* northing for 100,000 meter grid square     */
-  long zone;
+  long zone = 0;
   long letters[MGRS_LETTERS];
   long in_precision;
-  int index = 0;
+  int l_index = 0;
   long error_code = MGRS_NO_ERROR;
 
   error_code = Break_MGRS_String (MGRS, &zone, letters, Easting, Northing, &in_precision);
@@ -1035,12 +1040,12 @@ long Convert_MGRS_To_UPS ( char   *MGRS,
       {
         *Hemisphere = 'N';
 
-        index = letters[0] - 22;
-        ltr2_low_value = UPS_Constant_Table[index].ltr2_low_value;
-        ltr2_high_value = UPS_Constant_Table[index].ltr2_high_value;
-        ltr3_high_value = UPS_Constant_Table[index].ltr3_high_value;
-        false_easting = UPS_Constant_Table[index].false_easting;
-        false_northing = UPS_Constant_Table[index].false_northing;
+        l_index = (int)(letters[0] - 22);
+        ltr2_low_value = UPS_Constant_Table[l_index].ltr2_low_value;
+        ltr2_high_value = UPS_Constant_Table[l_index].ltr2_high_value;
+        ltr3_high_value = UPS_Constant_Table[l_index].ltr3_high_value;
+        false_easting = UPS_Constant_Table[l_index].false_easting;
+        false_northing = UPS_Constant_Table[l_index].false_northing;
       }
       else
       {
@@ -1100,6 +1105,3 @@ long Convert_MGRS_To_UPS ( char   *MGRS,
   }
   return (error_code);
 } /* Convert_MGRS_To_UPS */
-
-
-

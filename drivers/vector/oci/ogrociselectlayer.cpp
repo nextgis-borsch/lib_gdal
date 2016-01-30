@@ -51,7 +51,7 @@ OGROCISelectLayer::OGROCISelectLayer( OGROCIDataSource *poDSIn,
     SetDescription( poFeatureDefn->GetName() );
 
     pszQueryStatement = CPLStrdup(pszQuery);
-    
+
     ResetReading();
 }
 
@@ -80,8 +80,8 @@ OGROCISelectLayer::ReadTableDefinition( OGROCIStatement *poCommand )
 /* -------------------------------------------------------------------- */
 /*      Parse the returned table information.                           */
 /* -------------------------------------------------------------------- */
-    for( int iParm = 0; TRUE; iParm++ )
-    {                                                           
+    for( int iParm = 0; true; iParm++ )
+    {
         OGRFieldDefn oField( "", OFTString );
         int          nStatus;
         OCIParam     *hParmDesc;

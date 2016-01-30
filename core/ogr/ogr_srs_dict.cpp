@@ -90,7 +90,7 @@ OGRErr OGRSpatialReference::importFromDict( const char *pszDictFile,
         if( pszLine[0] == '#' )
             /* do nothing */;
 
-        else if( EQUALN(pszLine,"include ",8) )
+        else if( STARTS_WITH_CI(pszLine, "include ") )
         {
             eErr = importFromDict( pszLine + 8, pszCode );
             if( eErr != OGRERR_UNSUPPORTED_SRS )
@@ -114,7 +114,7 @@ OGRErr OGRSpatialReference::importFromDict( const char *pszDictFile,
 /*      Cleanup                                                         */
 /* -------------------------------------------------------------------- */
     VSIFClose( fp );
-    
+
     return eErr;
 }
 
@@ -127,7 +127,7 @@ OGRErr OSRImportFromDict( OGRSpatialReferenceH hSRS,
                           const char *pszCode )
 
 {
-    VALIDATE_POINTER1( hSRS, "OSRImportFromDict", CE_Failure );
+    VALIDATE_POINTER1( hSRS, "OSRImportFromDict", OGRERR_FAILURE );
 
     return ((OGRSpatialReference *) hSRS)->importFromDict( pszDictFile,
                                                            pszCode );

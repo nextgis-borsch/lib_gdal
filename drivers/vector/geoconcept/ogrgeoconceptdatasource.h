@@ -31,8 +31,8 @@
 #include "ogrsf_frmts.h"
 #include "ogrgeoconceptlayer.h"
 
-#ifndef _GEOCONCEPT_OGR_DATASOURCE_H_INCLUDED_
-#define _GEOCONCEPT_OGR_DATASOURCE_H_INCLUDED_
+#ifndef GEOCONCEPT_OGR_DATASOURCE_H_INCLUDED_
+#define GEOCONCEPT_OGR_DATASOURCE_H_INCLUDED_
 
 /**********************************************************************/
 /*            OGCGeoconceptDataSource Class                           */
@@ -48,15 +48,15 @@ class OGRGeoconceptDataSource : public OGRDataSource
     char                *_pszDirectory;
     char                *_pszExt;
     char               **_papszOptions;
-    int                  _bSingleNewFile;
-    int                  _bUpdate;
+    bool                 _bSingleNewFile;
+    bool                 _bUpdate;
     GCExportFileH       *_hGXT;
 
   public:
                    OGRGeoconceptDataSource();
                   ~OGRGeoconceptDataSource();
 
-    int            Open( const char* pszName, int bTestOpen, int bUpdate );
+    int            Open( const char* pszName, bool bTestOpen, bool bUpdate );
     int            Create( const char* pszName, char** papszOptions );
 
     const char*    GetName() { return _pszName; }
@@ -73,4 +73,4 @@ class OGRGeoconceptDataSource : public OGRDataSource
     int            LoadFile( const char * );
 };
 
-#endif /* _GEOCONCEPT_OGR_DATASOURCE_H_INCLUDED_ */
+#endif /* GEOCONCEPT_OGR_DATASOURCE_H_INCLUDED_ */

@@ -2,7 +2,7 @@
  * $Id$
  *
  * Project:  GDAL Utilities
- * Purpose:  Commandline utility for GDAL identify, delete, rename and copy 
+ * Purpose:  Command line utility for GDAL identify, delete, rename and copy 
  *           (by file) operations. 
  * Author:   Frank Warmerdam, warmerdam@pobox.com
  *
@@ -67,7 +67,7 @@ static void ProcessIdentifyTarget( const char *pszTarget,
     if( hDriver != NULL )
         printf( "%s: %s\n", pszTarget, GDALGetDriverShortName( hDriver ) );
     else if( bReportFailures )
-        printf( "%s: unrecognised\n", pszTarget );
+        printf( "%s: unrecognized\n", pszTarget );
 
     if( !bRecursive || hDriver != NULL )
         return;
@@ -100,7 +100,7 @@ static void Identify( int nArgc, char **papszArgv )
 
 {
 /* -------------------------------------------------------------------- */
-/*      Scan for commandline switches                                   */
+/*      Scan for command line switches                                   */
 /* -------------------------------------------------------------------- */
     int bRecursive = FALSE, bReportFailures = FALSE;
 
@@ -221,7 +221,7 @@ int main( int argc, char ** argv )
 /* -------------------------------------------------------------------- */
 /*      Split out based on operation.                                   */
 /* -------------------------------------------------------------------- */
-    if( EQUALN(argv[1],"identify",5) )
+    if( STARTS_WITH_CI(argv[1],"ident" /* identify" */ ) )
         Identify( nRemainingArgc, papszRemainingArgv );
 
     else if( EQUAL(argv[1],"copy") )
@@ -229,7 +229,7 @@ int main( int argc, char ** argv )
 
     else if( EQUAL(argv[1],"rename") )
         Copy( hDriver, nRemainingArgc, papszRemainingArgv, "rename" );
-    
+
     else if( EQUAL(argv[1],"delete") )
         Delete( hDriver, nRemainingArgc, papszRemainingArgv );
 

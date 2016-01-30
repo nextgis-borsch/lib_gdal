@@ -59,7 +59,7 @@ endif()
 find_anyproject(ICONV DEFAULT ON) #default OFF, to set ON add DEFAULT ON
 if(ICONV_FOUND)
     set(HAVE_ICONV TRUE)
-
+    add_definitions(-DHAVE_ICONV -DLIBICONV_PLUG)
     if(${ICONV_SECOND_ARGUMENT_IS_CONST})
         set(ICONV_CONST "const")
     endif()
@@ -67,10 +67,23 @@ if(ICONV_FOUND)
     if(${ICONV_SECOND_ARGUMENT_CPP_IS_CONST})
         set(ICONV_CPP_CONST "const")
     endif()
+else()
+    message(WARNING "No iconv support")
 endif()
 
 find_anyproject(ZLIB DEFAULT ON)
+if(ZLIB_FOUND)
+    add_definitions(-DHAVE_LIBZ -DZIP_SUPPORT)
+else()
+    message(WARNING "No zlib support")
+endif()
+
 find_anyproject(CURL DEFAULT ON)
+if(CURL_FOUND)
+    add_definitions(-DHAVE_CURL)
+else()
+    message(WARNING "No curl support")
+endif()
 
 find_anyproject(GEOS DEFAULT ON)
 if(GEOS_FOUND)
@@ -87,6 +100,16 @@ if(PROJ4_FOUND)
 else()
     message(WARNING "No proj.4 support")
 endif()
+
+find_anyproject(LibXml2 DEFAULT ON)
+if(LIBXML2_FOUND)
+    add_definitions(-DHAVE_LIBXML2)
+endif()
+
+#TODO:
+#ifeq ($(HAVE_SQLITE),yes)
+#CXXFLAGS :=	$(CXXFLAGS) -DSQLITE_ENABLED
+#endif
 
 include(configure)
 

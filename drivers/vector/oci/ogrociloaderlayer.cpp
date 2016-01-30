@@ -56,10 +56,10 @@ OGROCILoaderLayer::OGROCILoaderLayer( OGROCIDataSource *poDSIn,
     poFeatureDefn = new OGRFeatureDefn( pszTableName );
     SetDescription( poFeatureDefn->GetName() );
     poFeatureDefn->Reference();
-    
+
     pszGeomName = CPLStrdup( pszGeomColIn );
     pszFIDName = (char*)CPLGetConfigOption( "OCI_FID", "OGR_FID" );
-    
+
 
     nSRID = nSRIDIn;
     poSRS = poDSIn->FetchSRS( nSRID );
@@ -128,7 +128,7 @@ void OGROCILoaderLayer::WriteLoaderHeader()
 /*      Dermine our operation mode.                                     */
 /* -------------------------------------------------------------------- */
     const char *pszLDRMode = CSLFetchNameValue( papszOptions, "LOADER_MODE" );
-    
+
     if( pszLDRMode != NULL && EQUAL(pszLDRMode,"VARIABLE") )
         nLDRMode = LDRM_VARIABLE;
     else if( pszLDRMode != NULL && EQUAL(pszLDRMode,"BINARY") )
@@ -157,7 +157,7 @@ void OGROCILoaderLayer::WriteLoaderHeader()
                       pszDataFilename );
             return;
         }
-            
+
         VSIFPrintf( fpLoader, "INFILE %s \"var 8\"\n", pszDataFilename );
     }
     const char *pszExpectedFIDName = 
@@ -277,7 +277,7 @@ OGRErr OGROCILoaderLayer::WriteFeatureStreamMode( OGRFeature *poFeature )
         if( nSRID == -1 )
             strcpy( szSRID, "NULL" );
         else
-            sprintf( szSRID, "%d", nSRID );
+            snprintf( szSRID, sizeof(szSRID), "%d", nSRID );
 
         if( TranslateToSDOGeometry( poFeature->GetGeometryRef(), &nGType )
             == OGRERR_NONE )
@@ -344,7 +344,7 @@ OGRErr OGROCILoaderLayer::WriteFeatureStreamMode( OGRFeature *poFeature )
             nLineLen = 0;
         }
 
-        nLineLen += strlen(pszStrValue);
+        nLineLen += static_cast<int>(strlen(pszStrValue));
 
         if( poFldDefn->GetType() == OFTInteger 
             || poFldDefn->GetType() == OFTInteger64
@@ -361,7 +361,7 @@ OGRErr OGROCILoaderLayer::WriteFeatureStreamMode( OGRFeature *poFeature )
         }
         else 
         {
-            int nLength = strlen(pszStrValue);
+            int nLength = static_cast<int>(strlen(pszStrValue));
 
             if( poFldDefn->GetWidth() > 0 && nLength > poFldDefn->GetWidth() )
             {
@@ -414,7 +414,7 @@ OGRErr OGROCILoaderLayer::WriteFeatureVariableMode( OGRFeature *poFeature )
         if( nSRID == -1 )
             strcpy( szSRID, "NULL" );
         else
-            sprintf( szSRID, "%d", nSRID );
+            snprintf( szSRID, sizeof(szSRID), "%d", nSRID );
 
         if( TranslateToSDOGeometry( poFeature->GetGeometryRef(), &nGType )
             == OGRERR_NONE )
@@ -482,7 +482,7 @@ OGRErr OGROCILoaderLayer::WriteFeatureVariableMode( OGRFeature *poFeature )
         }
         else 
         {
-            int nLength = strlen(pszStrValue);
+            int nLength = static_cast<int>(strlen(pszStrValue));
 
             if( poFldDefn->GetWidth() > 0 && nLength > poFldDefn->GetWidth() )
             {
@@ -504,7 +504,7 @@ OGRErr OGROCILoaderLayer::WriteFeatureVariableMode( OGRFeature *poFeature )
     char szLength[9]; 
     size_t  nStringLen = strlen(oLine.GetString());
 
-    sprintf( szLength, "%08d", (int) (nStringLen-8) );
+    snprintf( szLength, sizeof(szLength), "%08d", (int) (nStringLen-8) );
     strncpy( oLine.GetString(), szLength, 8 );
 
     if( VSIFWrite( oLine.GetString(), 1, nStringLen, fpData ) != nStringLen )
@@ -521,7 +521,7 @@ OGRErr OGROCILoaderLayer::WriteFeatureVariableMode( OGRFeature *poFeature )
 /*                       WriteFeatureBinaryMode()                       */
 /************************************************************************/
 
-OGRErr OGROCILoaderLayer::WriteFeatureBinaryMode( OGRFeature *poFeature )
+OGRErr OGROCILoaderLayer::WriteFeatureBinaryMode( OGRFeature * /*poFeature*/ )
 
 {
     return OGRERR_UNSUPPORTED_OPERATION;
@@ -548,7 +548,7 @@ OGRErr OGROCILoaderLayer::ICreateFeature( OGRFeature *poFeature )
     if( poFeature->GetGeometryRef() != NULL )
     {
         OGREnvelope  sThisExtent;
-        
+
         poFeature->GetGeometryRef()->getEnvelope( &sThisExtent );
         sExtent.Merge( sThisExtent );
     }
@@ -592,7 +592,7 @@ int OGROCILoaderLayer::TestCapability( const char * pszCap )
 /*      way of counting features matching a spatial query.              */
 /************************************************************************/
 
-GIntBig OGROCILoaderLayer::GetFeatureCount( int bForce )
+GIntBig OGROCILoaderLayer::GetFeatureCount( int /* bForce */ )
 
 {
     return iNextFIDToWrite - 1;
@@ -624,7 +624,6 @@ void OGROCILoaderLayer::FinalizeNewLayer()
                   "Layer %s appears to have no geometry ... not setting SDO DIMINFO metadata.", 
                   poFeatureDefn->GetName() );
         return;
-                  
     }
 
 /* -------------------------------------------------------------------- */
@@ -644,17 +643,17 @@ void OGROCILoaderLayer::FinalizeNewLayer()
     dfXMax = sExtent.MaxX + dfResSize * 3;
     dfXRes = dfResSize;
     ParseDIMINFO( "DIMINFO_X", &dfXMin, &dfXMax, &dfXRes );
-    
+
     dfYMin = sExtent.MinY - dfResSize * 3;
     dfYMax = sExtent.MaxY + dfResSize * 3;
     dfYRes = dfResSize;
     ParseDIMINFO( "DIMINFO_Y", &dfYMin, &dfYMax, &dfYRes );
-    
+
     dfZMin = -100000.0;
     dfZMax = 100000.0;
     dfZRes = 0.002;
     ParseDIMINFO( "DIMINFO_Z", &dfZMin, &dfZMax, &dfZRes );
-    
+
 /* -------------------------------------------------------------------- */
 /*      Prepare dimension update statement.                             */
 /* -------------------------------------------------------------------- */
@@ -677,7 +676,7 @@ void OGROCILoaderLayer::FinalizeNewLayer()
 
     sDimUpdate.Append( ")" );
 
-    sDimUpdate.Appendf( strlen(poFeatureDefn->GetName()) + 100,
+    sDimUpdate.Appendf( static_cast<int>(strlen(poFeatureDefn->GetName()) + 100),
                         " WHERE table_name = UPPER('%s')",
                         poFeatureDefn->GetName() );
 

@@ -32,9 +32,6 @@
 #define KEABAND_H
 
 #include "gdal_pam.h"
-#if defined(USE_GCC_VISIBILITY_FLAG) && !defined(DllExport)
-#define DllExport CPL_DLL
-#endif
 #include "keadataset.h"
 
 class KEAOverview;
@@ -92,7 +89,7 @@ public:
     GDALColorInterp GetColorInterpretation();
     CPLErr SetColorInterpretation(GDALColorInterp gdalinterp);
 
-    // virtual mthods for band masks
+    // Virtual methods for band masks.
     CPLErr CreateMaskBand(int nFlags);
     GDALRasterBand* GetMaskBand();
     int GetMaskFlags();

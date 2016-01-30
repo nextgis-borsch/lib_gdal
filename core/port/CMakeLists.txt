@@ -29,6 +29,8 @@ option(WITH_ODBC "Set ON to use odbc" OFF)
 option(WITH_XMLREFORMAT "Set ON to use xmlreformat" OFF)
 option(WITH_ONLY_CRYPTODLL_ALG "Include cryptopp support" OFF)
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
 set(TARGET_NAME cpl)
 
 set(LIB_HHEADERS
@@ -53,6 +55,8 @@ set(LIB_HHEADERS
     cpl_vsi_virtual.h
     cpl_worker_thread_pool.h
     gdal_csv.h
+    cpl_aws.h
+    cpl_sha256.h
 )
 
 set(LIB_HHEADERS_PRIV
@@ -102,6 +106,9 @@ set(LIB_CSOURCES
     cpl_worker_thread_pool.cpp
     cpl_xml_validate.cpp
     vsipreload.cpp
+    cpl_aws.cpp
+    cpl_sha256.cpp
+    cpl_vsil_crypt.cpp
 )
 
 if(WIN32)
@@ -127,14 +134,10 @@ endif()
 
 if(ICONV_FOUND)
     list(APPEND LIB_CSOURCES cpl_recode_iconv.cpp )
-    add_definitions(-DHAVE_ICONV -DLIBICONV_PLUG)
-else()
-    message(WARNING "No iconv support")
 endif()
 
 #check zip and internal zip
 if(ZLIB_FOUND)
-    add_definitions(-DHAVE_LIBZ -DZIP_SUPPORT)
     list(APPEND LIB_HHEADERS_PRIV
         cpl_minizip_ioapi.h
         cpl_minizip_unzip.h
@@ -146,20 +149,14 @@ if(ZLIB_FOUND)
         cpl_minizip_unzip.cpp
         cpl_minizip_zip.cpp
     )
-else()
-    message(WARNING "No zlib support")
 endif()
 
 #check curl
 if(CURL_FOUND)
-  add_definitions(-DHAVE_CURL)
   list(APPEND LIB_HHEADERS_PRIV cpl_vsil_curl_priv.h)
-
   list(APPEND LIB_CSOURCES
       cpl_vsil_curl.cpp
       cpl_vsil_curl_streaming.cpp )
-else()
-    message(WARNING "No curl support")
 endif()
 
 add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})

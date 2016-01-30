@@ -27,8 +27,8 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#ifndef _CPL_ILI2READER_H_INCLUDED
-#define _CPL_ILI2READER_H_INCLUDED
+#ifndef CPL_ILI2READER_H_INCLUDED
+#define CPL_ILI2READER_H_INCLUDED
 
 // This works around problems with math.h on some platforms #defining INFINITY
 #ifdef INFINITY
@@ -49,7 +49,7 @@ public:
 
     virtual int  ReadModel( ImdReader *poImdReader, const char *modelFilename ) = 0;
     virtual int  SaveClasses( const char *pszFilename ) = 0;
-    
+
     virtual std::list<OGRLayer *> GetLayers() = 0;
     virtual int GetLayerCount() = 0;
 };

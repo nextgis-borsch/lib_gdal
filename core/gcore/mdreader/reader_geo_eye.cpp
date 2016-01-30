@@ -27,7 +27,7 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
- 
+
 #include "reader_geo_eye.h"
 
 CPL_CVSID("$Id$");
@@ -38,7 +38,7 @@ CPL_CVSID("$Id$");
 GDALMDReaderGeoEye::GDALMDReaderGeoEye(const char *pszPath, 
         char **papszSiblingFiles) : GDALMDReaderBase(pszPath, papszSiblingFiles)
 {
-    
+
     const char* pszBaseName = CPLGetBasename(pszPath);
     const char* pszDirName = CPLGetDirname(pszPath);
     size_t nBaseNameLen = strlen(pszBaseName);
@@ -46,19 +46,19 @@ GDALMDReaderGeoEye::GDALMDReaderGeoEye(const char *pszPath,
         return;
 
     // get _metadata.txt file
-    
+
     // split file name by _rgb_ or _pan_
     char szMetadataName[512] = {0};
     size_t i;
     for(i = 0; i < nBaseNameLen; i++)
     {
         szMetadataName[i] = pszBaseName[i];
-        if(EQUALN(pszBaseName + i, "_rgb_", 5) || EQUALN(pszBaseName + i, "_pan_", 5))
+        if(STARTS_WITH_CI(pszBaseName + i, "_rgb_") || STARTS_WITH_CI(pszBaseName + i, "_pan_"))
         {
             break;
         }
     }
-    
+
     // form metadata file name
     CPLStrlcpy(szMetadataName + i, "_metadata.txt", 14);
     const char* pszIMDSourceFilename = CPLFormFilename( pszDirName,
@@ -66,7 +66,7 @@ GDALMDReaderGeoEye::GDALMDReaderGeoEye(const char *pszPath,
     if (CPLCheckForFile((char*)pszIMDSourceFilename, papszSiblingFiles))
     {
         m_osIMDSourceFilename = pszIMDSourceFilename;
-    }                                                     
+    }
     else
     {
         CPLStrlcpy(szMetadataName + i, "_METADATA.TXT", 14);
@@ -78,7 +78,7 @@ GDALMDReaderGeoEye::GDALMDReaderGeoEye(const char *pszPath,
     }
 
     // get _rpc.txt file
-    
+
     const char* pszRPBSourceFilename = CPLFormFilename( pszDirName,
                                                         CPLSPrintf("%s_rpc",
                                                         pszBaseName),
@@ -115,7 +115,7 @@ GDALMDReaderGeoEye::~GDALMDReaderGeoEye()
 /**
  * HasRequiredFiles()
  */
-const bool GDALMDReaderGeoEye::HasRequiredFiles() const
+bool GDALMDReaderGeoEye::HasRequiredFiles() const
 {
     if (!m_osIMDSourceFilename.empty())
         return true;
@@ -159,14 +159,14 @@ void GDALMDReaderGeoEye::LoadMetadata()
     }
 
     m_papszDEFAULTMD = CSLAddNameValue(m_papszDEFAULTMD, MD_NAME_MDTYPE, "GE");
-           
+
     m_bIsMetadataLoad = true;      
-    
+
     if(NULL == m_papszIMDMD)
     {
         return;
-    }   
-    
+    }
+
     //extract imagery metadata
     const char* pszSatId = CSLFetchNameValue(m_papszIMDMD,
                                              "Source Image Metadata.Sensor");
@@ -176,7 +176,7 @@ void GDALMDReaderGeoEye::LoadMetadata()
                                            MD_NAME_SATELLITE,
                                            CPLStripQuotes(pszSatId));
     }
-        
+
     const char* pszCloudCover = CSLFetchNameValue(m_papszIMDMD,
                                    "Source Image Metadata.Percent Cloud Cover");
     if(NULL != pszCloudCover)
@@ -184,10 +184,10 @@ void GDALMDReaderGeoEye::LoadMetadata()
         m_papszIMAGERYMD = CSLAddNameValue(m_papszIMAGERYMD,
                                            MD_NAME_CLOUDCOVER, pszCloudCover);
     }
-    
+
     const char* pszDateTime = CSLFetchNameValue(m_papszIMDMD,
                                  "Source Image Metadata.Acquisition Date/Time");
-                                         
+
     if(NULL != pszDateTime)
     {
         char buffer[80];
@@ -196,18 +196,18 @@ void GDALMDReaderGeoEye::LoadMetadata()
         strftime (buffer, 80, MD_DATETIMEFORMAT, localtime(&timeMid));
         m_papszIMAGERYMD = CSLAddNameValue(m_papszIMAGERYMD, 
                                            MD_NAME_ACQDATETIME, buffer);
-    }  
+    }
 }
 
 /**
  * GetAcqisitionTimeFromString()
  */
-const time_t GDALMDReaderGeoEye::GetAcquisitionTimeFromString(
+time_t GDALMDReaderGeoEye::GetAcquisitionTimeFromString(
         const char* pszDateTime)
 {
     if(NULL == pszDateTime)
         return 0;
-        
+
     int iYear;
     int iMonth;
     int iDay;
@@ -215,14 +215,14 @@ const time_t GDALMDReaderGeoEye::GetAcquisitionTimeFromString(
     int iMin;
     int iSec = 0;
 
-// string exampe: Acquisition Date/Time: 2006-03-01 11:08 GMT
+    // string example: Acquisition Date/Time: 2006-03-01 11:08 GMT
 
     int r = sscanf ( pszDateTime, "%d-%d-%d %d:%d GMT", &iYear, &iMonth,
                      &iDay, &iHours, &iMin);
 
     if (r != 5)
         return 0;
-    
+
     struct tm tmDateTime;
     tmDateTime.tm_sec = iSec;
     tmDateTime.tm_min = iMin;
@@ -257,13 +257,13 @@ char** GDALMDReaderGeoEye::LoadIMDWktFile() const
     {
         // skip section (=== or ---) lines
 
-        if(EQUALN( papszLines[i], "===",3))
+        if(STARTS_WITH_CI(papszLines[i], "==="))
         {
             bBeginSection = true;
             continue;
         }
 
-        if(EQUALN( papszLines[i], "---",3) || CPLStrnlen(papszLines[i], 512) == 0)
+        if(STARTS_WITH_CI(papszLines[i], "---") || CPLStrnlen(papszLines[i], 512) == 0)
             continue;
 
         // check the metadata level

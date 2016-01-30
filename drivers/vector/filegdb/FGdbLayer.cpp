@@ -107,7 +107,7 @@ OGRFeature* FGdbBaseLayer::GetNextFeature()
 
         if (hr != S_OK)
         {
-        // It's OK, we are done fetching - failure is catched by FAILED macro
+        // It's OK, we are done fetching - failure is caught by FAILED macro
             return NULL;
         }
 
@@ -204,11 +204,11 @@ int FGdbLayer::EditIndexesForFIDHack(const char* pszRadixTablename)
 
     CPLString osGDBTablX = CPLResetExtension(pszRadixTablename, "gdbtablx");
     CPLString osNewGDBTablX = CPLResetExtension(pszRadixTablename, "gdbtablx.new");
-    
+
     if( !EditGDBTablX(osGDBTablX, osNewGDBTablX) )
     {
-        CPLError(CE_Failure, CPLE_AppDefined,
-                         "Error occured when editing %s", osNewGDBTablX.c_str());
+        CPLError( CE_Failure, CPLE_AppDefined,
+                  "Error occurred when editing %s", osNewGDBTablX.c_str());
         VSIUnlink(osNewGDBTablX);
         return FALSE;
     }
@@ -226,8 +226,8 @@ int FGdbLayer::EditIndexesForFIDHack(const char* pszRadixTablename)
             CPLString osIndex(CPLFormFilename(osDirectory, *papszIter, NULL));
             if( !EditATXOrSPX(osIndex) )
             {
-                CPLError(CE_Failure, CPLE_AppDefined,
-                         "Error occured when editing %s", osIndex.c_str());
+                CPLError( CE_Failure, CPLE_AppDefined,
+                          "Error occurred when editing %s", osIndex.c_str());
                 bRet = FALSE;
             }
         }
@@ -669,13 +669,20 @@ int  FGdbLayer::EditGDBTablX( const CPLString& osGDBTablX,
     int nSizeInBytesOut = BIT_ARRAY_SIZE_IN_BYTES(n1024BlocksOut);
     /* Round to the next multiple of 128 bytes (32 int4 words) */
     nSizeInBytesOut = ((nSizeInBytesOut + 127) / 128) * 128;
-    GByte* pabyBlockMapOut = (GByte*) CPLCalloc( 1, nSizeInBytesOut );
-    GByte* pabyPage = (GByte*)VSIMalloc( 1024 * nRecordSize );
+    GByte* pabyBlockMapOut = (GByte*) VSI_CALLOC_VERBOSE( 1, nSizeInBytesOut );
+    GByte* pabyPage = (GByte*)VSI_MALLOC_VERBOSE( 1024 * nRecordSize );
+    if( pabyBlockMapOut == NULL || pabyPage == NULL )
+    {
+        VSIFree(pabyBlockMapOut);
+        VSIFree(pabyPage);
+        VSIFCloseL(fp);
+        return FALSE;
+    }
     GByte abyEmptyOffset[6];
     memset(abyEmptyOffset, 0, 6);
     int nNonEmptyPages = 0;
     int nOffsetInPage = 0, nLastWrittenOffset = 0;
-    int bDisableSparsePages = CSLTestBoolean(CPLGetConfigOption("FILEGDB_DISABLE_SPARSE_PAGES", "NO"));
+    int bDisableSparsePages = CPLTestBool(CPLGetConfigOption("FILEGDB_DISABLE_SPARSE_PAGES", "NO"));
     
     oIterO2F = m_oMapOGRFIDToFGDBFID.begin();
     int nNextOGRFID = oIterO2F->first;
@@ -879,7 +886,10 @@ bool FGdbLayer::UpdateRowWithGeometry(Row& row, OGRGeometry* poGeom)
     GByte *pabyShape = NULL;
     int nShapeSize = 0;
     if ( OGRWriteToShapeBin( poGeom, &pabyShape, &nShapeSize ) != OGRERR_NONE )
+    {
+        CPLFree(pabyShape);
         return false;
+    }
 
     /* Copy it into a ShapeBuffer */
     if ( nShapeSize > 0 )
@@ -1049,16 +1059,15 @@ OGRErr FGdbLayer::ICreateFeature( OGRFeature *poFeature )
     if( !m_pDS->GetUpdate() || m_pTable == NULL )
         return OGRERR_FAILURE;
 
-    if( poFeature->GetFID() < -1 ||
-        poFeature->GetFID() == 0 ||
-        (GIntBig)(int)poFeature->GetFID() != poFeature->GetFID() )
+    GIntBig nFID = poFeature->GetFID();
+    if( nFID < -1 || nFID == 0 || !CPL_INT64_FITS_ON_INT32(nFID) )
     {
         CPLError(CE_Failure, CPLE_NotSupported,
                  "Only 32 bit positive integers FID supported by FileGDB");
         return OGRERR_FAILURE;
     }
 
-    if( poFeature->GetFID() > 0 )
+    if( nFID > 0 )
     {
         if( m_pDS->GetOpenFileGDBDrv() == NULL )
         {
@@ -1108,7 +1117,7 @@ OGRErr FGdbLayer::ICreateFeature( OGRFeature *poFeature )
         return OGRERR_FAILURE;
 
     if (m_bBulkLoadAllowed < 0)
-        m_bBulkLoadAllowed = CSLTestBoolean(CPLGetConfigOption("FGDB_BULK_LOAD", "NO"));
+        m_bBulkLoadAllowed = CPLTestBool(CPLGetConfigOption("FGDB_BULK_LOAD", "NO"));
 
     if (m_bBulkLoadAllowed && !m_bBulkLoadInProgress)
         StartBulkLoad();
@@ -1385,7 +1394,10 @@ OGRErr FGdbLayer::PopulateRowWithFeature( Row& fgdb_row, OGRFeature *poFeature )
                 err = OGRWriteToShapeBin( poGeom, &pabyShape, &nShapeSize );
             }
             if ( err != OGRERR_NONE )
+            {
+                CPLFree(pabyShape);
                 return err;
+            }
 
             /* Copy it into a ShapeBuffer */
             if ( nShapeSize > 0 )
@@ -1422,7 +1434,7 @@ OGRErr FGdbLayer::GetRow( EnumRows& enumRows, Row& row, GIntBig nFID )
     CPLString      osQuery;
     
     /* Querying a 64bit FID causes a runtime exception in FileGDB... */
-    if( (GIntBig)(int)nFID != nFID )
+    if( !CPL_INT64_FITS_ON_INT32(nFID) )
     {
         return OGRERR_FAILURE;
     }
@@ -1460,7 +1472,7 @@ OGRErr FGdbLayer::DeleteFeature( GIntBig nFID )
 
     if( !m_pDS->GetUpdate() || m_pTable == NULL )
         return OGRERR_FAILURE;
-    if( (GIntBig)(int)nFID != nFID )
+    if( !CPL_INT64_FITS_ON_INT32(nFID) )
         return OGRERR_NON_EXISTING_FEATURE;
 
     if( m_bSymlinkFlag && !CreateRealCopy() )
@@ -1506,13 +1518,14 @@ OGRErr FGdbLayer::ISetFeature( OGRFeature* poFeature )
     if( !m_pDS->GetUpdate()|| m_pTable == NULL )
         return OGRERR_FAILURE;
 
-    if( poFeature->GetFID() == OGRNullFID )
+    GIntBig nFID64 = poFeature->GetFID();
+    if( nFID64 == OGRNullFID )
     {
         CPLError( CE_Failure, CPLE_AppDefined,
                   "SetFeature() with unset FID fails." );
         return OGRERR_FAILURE;
     }
-    if( (GIntBig)(int)poFeature->GetFID() != poFeature->GetFID() )
+    if( !CPL_INT64_FITS_ON_INT32(nFID64) )
         return OGRERR_NON_EXISTING_FEATURE;
 
     EndBulkLoad();
@@ -1520,7 +1533,7 @@ OGRErr FGdbLayer::ISetFeature( OGRFeature* poFeature )
     if( m_bSymlinkFlag && !CreateRealCopy() )
         return OGRERR_FAILURE;
 
-    int nFID = (int)poFeature->GetFID();
+    int nFID = (int)nFID64;
     std::map<int,int>::iterator oIter = m_oMapOGRFIDToFGDBFID.find(nFID);
     if( oIter != m_oMapOGRFIDToFGDBFID.end() )
         nFID = oIter->second;
@@ -1903,7 +1916,7 @@ OGRErr FGdbLayer::AlterFieldDefn( int iFieldToAlter, OGRFieldDefn* poNewFieldDef
 /*                                                                      */
 /************************************************************************/
 
-CPLXMLNode* XMLSpatialReference(OGRSpatialReference* poSRS, char** papszOptions)
+static CPLXMLNode* XMLSpatialReference(OGRSpatialReference* poSRS, char** papszOptions)
 {
     /* We always need a SpatialReference */
     CPLXMLNode *srs_xml = CPLCreateXMLNode(NULL, CXT_Element, "SpatialReference");
@@ -1961,7 +1974,7 @@ CPLXMLNode* XMLSpatialReference(OGRSpatialReference* poSRS, char** papszOptions)
                 nSRID = 0;
 
                 /* Enumerate SRS from ESRI DB and find a match */
-                while(TRUE)
+                while( true )
                 {
                     if ( poSRS->IsProjected() )
                     {
@@ -2160,7 +2173,7 @@ bool FGdbLayer::CreateFeatureDataset(FGdbDataSource* pParentDataSource,
     CPLAddXMLChild(defn_xml, extent_xml);
 
     /* Add the SRS */
-    if( TRUE ) // TODO: conditional on existence of SRS
+    if( true ) // TODO: conditional on existence of SRS
     {
         CPLXMLNode *srs_xml = XMLSpatialReference(poSRS, papszOptions);
         if ( srs_xml )
@@ -2310,7 +2323,7 @@ bool FGdbLayer::Create(FGdbDataSource* pParentDataSource,
             return GDBErr(-1, "Unable to map OGR type to ESRI type");
 
         if( wkbFlatten(eType) == wkbMultiPolygon &&
-            CSLTestBoolean(CSLFetchNameValueDef(papszOptions, "CREATE_MULTIPATCH", "NO")) )
+            CPLTestBool(CSLFetchNameValueDef(papszOptions, "CREATE_MULTIPATCH", "NO")) )
         {
             esri_type = "esriGeometryMultiPatch";
             has_z = true;
@@ -2484,10 +2497,10 @@ bool FGdbLayer::Create(FGdbDataSource* pParentDataSource,
     }
 
     m_papszOptions = CSLDuplicate(papszOptions);
-    m_bCreateMultipatch = CSLTestBoolean(CSLFetchNameValueDef(m_papszOptions, "CREATE_MULTIPATCH", "NO"));
+    m_bCreateMultipatch = CPLTestBool(CSLFetchNameValueDef(m_papszOptions, "CREATE_MULTIPATCH", "NO"));
     
     // Default to YES here assuming ogr2ogr scenario
-    m_bBulkLoadAllowed = CSLTestBoolean(CPLGetConfigOption("FGDB_BULK_LOAD", "YES"));
+    m_bBulkLoadAllowed = CPLTestBool(CPLGetConfigOption("FGDB_BULK_LOAD", "YES"));
 
     /* Store the new FGDB Table pointer and set up the OGRFeatureDefn */
     return FGdbLayer::Initialize(pParentDataSource, table, wtable_path, L"Table");
@@ -2824,7 +2837,7 @@ bool FGdbLayer::GDBToOGRFields(CPLXMLNode* psRoot)
             std::string fieldName;
             std::string fieldType;
             int nLength = 0;
-            int nPrecision = 0;
+            //int nPrecision = 0;
             int bNullable = TRUE;
             std::string osDefault;
 
@@ -2862,7 +2875,7 @@ bool FGdbLayer::GDBToOGRFields(CPLXMLNode* psRoot)
                     }
                     else if (EQUAL(psFieldItemNode->pszValue,"Precision") )
                     {
-                        nPrecision = atoi(psFieldItemNode->psChild->pszValue);
+                        //nPrecision = atoi(psFieldItemNode->psChild->pszValue);
                     }
                     else if (EQUAL(psFieldItemNode->pszValue,"IsNullable") )
                     {
@@ -3075,34 +3088,6 @@ void FGdbLayer::SetSpatialFilter( OGRGeometry* pOGRGeom )
 }
 
 /************************************************************************/
-/*                         SetSpatialFilterRect()                       */
-/************************************************************************/
-
-void FGdbLayer::SetSpatialFilterRect (double dfMinX, double dfMinY, double dfMaxX, double dfMaxY)
-{
-
-    //TODO: can optimize this by changing how the filter gets generated -
-    //this will work for now
-
-    OGRGeometry* pTemp = OGRGeometryFactory::createGeometry(wkbPolygon);
-
-    pTemp->assignSpatialReference(m_pSRS);
-
-    OGRLinearRing ring;
-
-    ring.addPoint( dfMinX, dfMinY );
-    ring.addPoint( dfMinX, dfMaxY );
-    ring.addPoint( dfMaxX, dfMaxY );
-    ring.addPoint( dfMaxX, dfMinY );
-    ring.addPoint( dfMinX, dfMinY );
-    ((OGRPolygon *) pTemp)->addRing( &ring );
-
-    SetSpatialFilter(pTemp);
-
-    OGRGeometryFactory::destroyGeometry(pTemp);
-}
-
-/************************************************************************/
 /*                             ResyncIDs()                              */
 /************************************************************************/
 
@@ -3181,11 +3166,11 @@ bool FGdbBaseLayer::OGRFeatureFromGdbRow(Row* pRow, OGRFeature** ppFeature)
     //
 
 
-    size_t mappedFieldCount = m_vOGRFieldToESRIField.size();
+    int mappedFieldCount = static_cast<int>(m_vOGRFieldToESRIField.size());
 
     bool foundBadColumn = false;
 
-    for (size_t i = 0; i < mappedFieldCount; ++i)
+    for (int i = 0; i < mappedFieldCount; ++i)
     {
         OGRFieldDefn* poFieldDefn = m_pFeatureDefn->GetFieldDefn(i);
         // The IsNull() and GetXXX() API are very slow when there are a 
@@ -3416,7 +3401,7 @@ OGRFeature *FGdbLayer::GetFeature( GIntBig oid )
     // do query to fetch individual row
     EnumRows       enumRows;
     Row            row;
-    if( (GIntBig)(int)oid != oid || m_pTable == NULL )
+    if( !CPL_INT64_FITS_ON_INT32(oid) || m_pTable == NULL )
         return NULL;
 
     EndBulkLoad();
@@ -3452,7 +3437,6 @@ OGRFeature *FGdbLayer::GetFeature( GIntBig oid )
 
 GIntBig FGdbLayer::GetFeatureCount( CPL_UNUSED int bForce )
 {
-    long           hr;
     int32          rowCount = 0;
     
     if( m_pTable == NULL )
@@ -3467,7 +3451,7 @@ GIntBig FGdbLayer::GetFeatureCount( CPL_UNUSED int bForce )
             return 0;
 
         int nFeatures = 0;
-        while( TRUE )
+        while( true )
         {
             long hr;
 
@@ -3489,6 +3473,7 @@ GIntBig FGdbLayer::GetFeatureCount( CPL_UNUSED int bForce )
         return nFeatures;
     }
 
+    long hr;
     if (FAILED(hr = m_pTable->GetRowCount(rowCount)))
     {
         GDBErr(hr, "Failed counting rows");
@@ -3756,15 +3741,16 @@ int FGdbLayer::CreateRealCopy()
     char* apszDrivers[2];
     apszDrivers[0] = (char*) "OpenFileGDB";
     apszDrivers[1] = NULL;
-    const char* pszSystemCatalog = CPLFormFilename(m_pDS->GetFSName(), "a00000001.gdbtable", NULL);
+    const char* pszSystemCatalog
+        = CPLFormFilename(m_pDS->GetFSName(), "a00000001.gdbtable", NULL);
     GDALDataset* poOpenFileGDBDS = (GDALDataset*)
         GDALOpenEx(pszSystemCatalog, GDAL_OF_VECTOR,
                     apszDrivers, NULL, NULL);
     if( poOpenFileGDBDS == NULL || poOpenFileGDBDS->GetLayer(0) == NULL )
     {
-        CPLError(CE_Failure, CPLE_AppDefined,
-                    "Cannot open %s with OpenFileGDB driver. Shouldn't happen.",
-                    pszSystemCatalog);
+        CPLError( CE_Failure, CPLE_AppDefined,
+                  "Cannot open %s with OpenFileGDB driver. Should not happen.",
+                  pszSystemCatalog);
         GDALClose(poOpenFileGDBDS);
         return FALSE;
     }
@@ -3778,8 +3764,9 @@ int FGdbLayer::CreateRealCopy()
     OGRFeature* poF = poLayer->GetNextFeature();
     if( poF == NULL )
     {
-        CPLError(CE_Failure, CPLE_AppDefined, "Cannot find filename for layer %s",
-                    GetName());
+        CPLError( CE_Failure, CPLE_AppDefined,
+                  "Cannot find filename for layer %s",
+                  GetName());
         GDALClose(poOpenFileGDBDS);
         return FALSE;
     }

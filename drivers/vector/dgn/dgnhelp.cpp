@@ -31,7 +31,7 @@
 
 CPL_CVSID("$Id$");
 
-static unsigned char abyDefaultPCT[256][3] = 
+static const unsigned char abyDefaultPCT[256][3] = 
 {
   {255,255,255},
   {0,0,255},
@@ -362,8 +362,8 @@ int DGNGetShapeFillInfo( DGNHandle hDGN, DGNElemCore *psElem, int *pnColor )
 
 {
     int iLink;
-    
-    for( iLink = 0; TRUE; iLink++ )
+
+    for( iLink = 0; true; iLink++ )
     {
         int nLinkType, nLinkSize;
         unsigned char *pabyData;
@@ -402,8 +402,8 @@ int DGNGetAssocID( DGNHandle hDGN, DGNElemCore *psElem )
 
 {
     int iLink;
-    
-    for( iLink = 0; TRUE; iLink++ )
+
+    for( iLink = 0; true; iLink++ )
     {
         int nLinkType, nLinkSize;
         unsigned char *pabyData;
@@ -511,7 +511,7 @@ void DGNAsciiToRad50( const char *str, unsigned short *pRad50 )
 /*      Read the line style name from symbol table.                     */
 /*      The got name is stored in psLine.                               */
 /************************************************************************/
-
+#ifdef unused
 int DGNGetLineStyleName(CPL_UNUSED DGNInfo *psDGN,
                         DGNElemMultiPoint *psLine,
                         char szLineStyle[65] )
@@ -544,6 +544,7 @@ int DGNGetLineStyleName(CPL_UNUSED DGNInfo *psDGN,
         return FALSE;
     }
 }
+#endif
 
 /************************************************************************/
 /*                           DGNDumpElement()                           */
@@ -624,7 +625,7 @@ void DGNDumpElement( DGNHandle hDGN, DGNElemCore *psElement, FILE *fp )
             fprintf( fp, ",LINEAR PATTERNED ELEMENT" );
         else if( nClass == DGNC_CONSTRUCTION_RULE_ELEMENT )
             fprintf( fp, ",CONSTRUCTION_RULE_ELEMENT" );
-            
+
         fprintf( fp, "\n" );
     }
 
@@ -634,7 +635,7 @@ void DGNDumpElement( DGNHandle hDGN, DGNElemCore *psElement, FILE *fp )
       {
           DGNElemMultiPoint     *psLine = (DGNElemMultiPoint *) psElement;
           int                   i;
-          
+
           for( i=0; i < psLine->num_vertices; i++ )
               fprintf( fp, "  (%.6f,%.6f,%.6f)\n", 
                        psLine->vertices[i].x, 
@@ -657,7 +658,7 @@ void DGNDumpElement( DGNHandle hDGN, DGNElemCore *psElement, FILE *fp )
                    psCell->rnghigh.x, psCell->rnghigh.y, psCell->rnghigh.z );
           fprintf( fp, "  origin=(%.5f,%.5f,%.5f)\n",
                    psCell->origin.x, psCell->origin.y, psCell->origin.z);
-          
+
           if( psInfo->dimension == 2 )
               fprintf( fp, "  xscale=%g, yscale=%g, rotation=%g\n",
                        psCell->xscale, psCell->yscale, psCell->rotation );
@@ -822,7 +823,7 @@ void DGNDumpElement( DGNHandle hDGN, DGNElemCore *psElement, FILE *fp )
           for( iView = 0; iView < 8; iView++ )
           {
               DGNViewInfo *psView = psTCB->views + iView;
-              
+
               fprintf(fp, 
                       "  View%d: flags=%04X, levels=%02X%02X%02X%02X%02X%02X%02X%02X\n",
                       iView,
@@ -1028,8 +1029,8 @@ void DGNDumpElement( DGNHandle hDGN, DGNElemCore *psElement, FILE *fp )
         int iLink;
 
         fprintf( fp, "Attributes (%d bytes):\n", psElement->attr_bytes );
-        
-        for( iLink = 0; TRUE; iLink++ )
+
+        for( iLink = 0; true; iLink++ )
 
         {
             int nLinkType, nEntityNum=0, nMSLink=0, nLinkSize, i;
@@ -1045,7 +1046,7 @@ void DGNDumpElement( DGNHandle hDGN, DGNElemCore *psElement, FILE *fp )
                 fprintf( fp, ", EntityNum=%d, MSLink=%d", 
                          nEntityNum, nMSLink );
 
-            int nBytes = psElement->attr_data + psElement->attr_bytes - pabyData;
+            int nBytes = static_cast<int>(psElement->attr_data + psElement->attr_bytes - pabyData);
             if( nBytes < nLinkSize )
             {
                 CPLError( CE_Failure, CPLE_AppDefined,
@@ -1060,7 +1061,7 @@ void DGNDumpElement( DGNHandle hDGN, DGNElemCore *psElement, FILE *fp )
             for( i = 0; i < nLinkSize; i++ )
                 fprintf( fp, "%02x", pabyData[i] );
             fprintf( fp, "\n" );
-            
+
         }
     }
 }
@@ -1090,13 +1091,13 @@ const char *DGNTypeToName( int nType )
     {
       case DGNT_CELL_LIBRARY:
         return "Cell Library";
-        
+
       case DGNT_CELL_HEADER:
         return "Cell Header";
-        
+
       case DGNT_LINE:
         return "Line";
-        
+
       case DGNT_LINE_STRING:
         return "Line String";
 
@@ -1108,34 +1109,34 @@ const char *DGNTypeToName( int nType )
 
       case DGNT_SHAPE:
         return "Shape";
-        
+
       case DGNT_TEXT_NODE:
         return "Text Node";
 
       case DGNT_DIGITIZER_SETUP:
         return "Digitizer Setup";
-        
+
       case DGNT_TCB:
         return "TCB";
-        
+
       case DGNT_LEVEL_SYMBOLOGY:
         return "Level Symbology";
-        
+
       case DGNT_CURVE:
         return "Curve";
-        
+
       case DGNT_COMPLEX_CHAIN_HEADER:
         return "Complex Chain Header";
-        
+
       case DGNT_COMPLEX_SHAPE_HEADER:
         return "Complex Shape Header";
-        
+
       case DGNT_ELLIPSE:
         return "Ellipse";
-        
+
       case DGNT_ARC:
         return "Arc";
-        
+
       case DGNT_TEXT:
         return "Text";
 
@@ -1162,13 +1163,13 @@ const char *DGNTypeToName( int nType )
 
       case DGNT_SHARED_CELL_DEFN:
         return "Shared Cell Definition";
-        
+
       case DGNT_SHARED_CELL_ELEM:
         return "Shared Cell Element";
-        
+
       case DGNT_TAG_VALUE:
         return "Tag Value";
-        
+
       case DGNT_CONE:
         return "Cone";
 
@@ -1179,7 +1180,7 @@ const char *DGNTypeToName( int nType )
         return "3D Solid Header";
 
       default:
-        sprintf( szNumericResult, "%d", nType );
+        snprintf( szNumericResult, sizeof(szNumericResult), "%d", nType );
         return szNumericResult;
     }
 }
@@ -1253,7 +1254,7 @@ int DGNGetAttrLinkSize( CPL_UNUSED DGNHandle hDGN,
  * @param pnMSLink variable to return the MSLINK value in, or NULL if not 
  * required.
  * @param pnLength variable to returned the linkage size in bytes or NULL.
- * 
+ *
  * @return pointer to raw internal linkage data.  This data should not be
  * altered or freed.  NULL returned on failure. 
  */
@@ -1261,7 +1262,7 @@ int DGNGetAttrLinkSize( CPL_UNUSED DGNHandle hDGN,
 unsigned char *DGNGetLinkage( DGNHandle hDGN, DGNElemCore *psElement, 
                               int iIndex, int *pnLinkageType,
                               int *pnEntityNum, int *pnMSLink, int *pnLength )
-    
+
 {
     int nAttrOffset;
     int iLinkage, nLinkSize;
@@ -1273,7 +1274,11 @@ unsigned char *DGNGetLinkage( DGNHandle hDGN, DGNElemCore *psElement,
         if( iLinkage == iIndex )
         {
             int  nLinkageType=0, nEntityNum=0, nMSLink = 0;
-            CPLAssert( nLinkSize > 4 );
+            if( nLinkSize <= 4 )
+            {
+                CPLError(CE_Failure, CPLE_AssertionFailed, "nLinkSize <= 4");
+                return NULL;
+            }
 
             if( psElement->attr_data[nAttrOffset+0] == 0x00
                 && (psElement->attr_data[nAttrOffset+1] == 0x00
@@ -1299,7 +1304,7 @@ unsigned char *DGNGetLinkage( DGNHandle hDGN, DGNElemCore *psElement,
                     + psElement->attr_data[nAttrOffset+9] * 256
                     + psElement->attr_data[nAttrOffset+10] * 65536
                     + psElement->attr_data[nAttrOffset+11] * 65536 * 256;
-                
+
             }
 
             if( pnLinkageType != NULL )
@@ -1314,7 +1319,7 @@ unsigned char *DGNGetLinkage( DGNHandle hDGN, DGNElemCore *psElement,
             return psElement->attr_data + nAttrOffset;
         }
     }
-             
+
     return NULL;
 }
 
@@ -1327,7 +1332,7 @@ unsigned char *DGNGetLinkage( DGNHandle hDGN, DGNElemCore *psElement,
 void DGNRotationToQuaternion( double dfRotation, int *panQuaternion )
 
 {
-    double dfRadianRot = (dfRotation / 180.0)  * PI;
+    double dfRadianRot = (dfRotation / 180.0)  * M_PI;
 
     panQuaternion[0] = (int) (cos(-dfRadianRot/2.0) * 2147483647);
     panQuaternion[1] = 0;
@@ -1368,6 +1373,7 @@ void DGNQuaternionToMatrix( int *quat, float *mat )
 /*                  DGNTransformPointWithQuaternion()                   */
 /************************************************************************/
 
+#ifdef unused
 void DGNTransformPointWithQuaternionVertex( CPL_UNUSED int *quat,
                                             CPL_UNUSED DGNPoint *v1,
                                             CPL_UNUSED DGNPoint *v2 )
@@ -1387,20 +1393,20 @@ void DGNTransformPointWithQuaternionVertex( CPL_UNUSED int *quat,
 #endif
 
 /* ==================================================================== */
-/*      Impelementation provided by Peggy Jung - 2004/03/05.            */
+/*      Implementation provided by Peggy Jung - 2004/03/05.            */
 /*      peggy.jung at moskito-gis dot de.  I haven't tested it.         */
 /* ==================================================================== */
 
 /*  Version: 0.1                                 Datum: 26.01.2004
- 
+
 IN:
 x,y,z               // DGNPoint &v1
 quat[]              // 
- 
+
 OUT:
 newX, newY, newZ    // DGNPoint &v2
 
-A u t o r  :  Peggy Jung
+Author: Peggy Jung
 */
 /*
     double ROT[12];  //rotation matrix for a given quaternion
@@ -1410,41 +1416,42 @@ A u t o r  :  Peggy Jung
     x = v1->x;
     y = v1->y;
     z = v1->z;
- 
+
     n = sqrt((double)PDP2PC_long(quat[0])*(double)PDP2PC_long(quat[0])+(double)PDP2PC_long(quat[1])*(double)PDP2PC_long(quat[1])+
              (double)PDP2PC_long(quat[2])*(double)PDP2PC_long(quat[2])+(double)PDP2PC_long(quat[3])*(double)PDP2PC_long(quat[3]));
- 
+
     a = (double)PDP2PC_long(quat[0])/n; //w
     b = (double)PDP2PC_long(quat[1])/n; //x
     c = (double)PDP2PC_long(quat[2])/n; //y
     d = (double)PDP2PC_long(quat[3])/n; //z
- 
+
     xx      = b*b;
     xy      = b*c;
     xz      = b*d;
     xw      = b*a;
- 
+
     yy      = c*c;
     yz      = c*d;
     yw      = c*a;
- 
+
     zz      = d*d;
     zw      = d+a;
- 
+
     ROT[0] = 1 - 2 * yy - 2 * zz ;
     ROT[1] =     2 * xy - 2 * zw ;
     ROT[2] =     2 * xz + 2 * yw ;
- 
+
     ROT[4] =     2 * xy + 2 * zw ;
     ROT[5] = 1 - 2 * xx - 2 * zz ;
     ROT[6] =     2 * yz - 2 * xw ;
- 
+
     ROT[8] =     2 * xz - 2 * yw ;
     ROT[9] =     2 * yz + 2 * xw ;
     ROT[10] = 1 - 2 * xx - 2 * yy ;
- 
+
     v2->x = ROT[0]*x + ROT[1]*y + ROT[2]*z;
     v2->y = ROT[4]*x + ROT[5]*y + ROT[6]*z;
     v2->z = ROT[8]*x + ROT[9]*y + ROT[10]*z;
 */
 }
+#endif

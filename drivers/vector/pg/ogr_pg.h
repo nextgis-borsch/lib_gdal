@@ -28,8 +28,8 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#ifndef _OGR_PG_H_INCLUDED
-#define _OGR_PG_H_INCLUDED
+#ifndef OGR_PG_H_INCLUDED
+#define OGR_PG_H_INCLUDED
 
 #include "ogrsf_frmts.h"
 #include "libpq-fe.h"
@@ -167,7 +167,7 @@ class OGRPGLayer : public OGRLayer
     GIntBig             iNextShapeId;
 
     static char        *GByteArrayToBYTEA( const GByte* pabyData, int nLen);
-    static char        *GeometryToBYTEA( OGRGeometry *, int bIsPostGIS1 );
+    static char        *GeometryToBYTEA( OGRGeometry *, int nPostGISMajor, int nPostGISMinor );
     static GByte       *BYTEAToGByteArray( const char *pszBytea, int* pnLength );
     static OGRGeometry *BYTEAToGeometry( const char *, int bIsPostGIS1 );
     Oid                 GeometryToOID( OGRGeometry * );
@@ -233,7 +233,7 @@ class OGRPGLayer : public OGRLayer
     virtual const char *GetFIDColumn();
 
     virtual OGRErr      SetNextByIndex( GIntBig nIndex );
-    
+
     OGRPGDataSource    *GetDS() { return poDS; }
 
     virtual void        ResolveSRID(OGRPGGeomFieldDefn* poGFldDefn) = 0;
@@ -284,23 +284,23 @@ class OGRPGTableLayer : public OGRPGLayer
 
     int                 bRetrieveFID;
     int                 bHasWarnedAlreadySetFID;
-    
+
     char              **papszOverrideColumnTypes;
     int                 nForcedSRSId;
     int                 nForcedDimension;
     int                 bCreateSpatialIndexFlag;
     int                 bInResetReading;
-    
+
     int                 bAutoFIDOnCreateViaCopy;
     int                 bUseCopyByDefault;
-    
+
     int                 bDifferedCreation;
     CPLString           osCreateTable;
-    
+
     int                 iFIDAsRegularColumnIndex;
 
     virtual CPLString   GetFromClauseForGetExtent() { return pszSqlTableName; }
-    
+
     OGRErr              RunAddGeometryColumn( OGRPGGeomFieldDefn *poGeomField );
     OGRErr              RunCreateSpatialIndex( OGRPGGeomFieldDefn *poGeomField );
 
@@ -396,7 +396,7 @@ class OGRPGResultLayer : public OGRPGLayer
     char                *pszGeomTableSchemaName;
 
     CPLString           osWHERE;
-    
+
     virtual CPLString   GetFromClauseForGetExtent()
         { CPLString osStr("(");
           osStr += pszRawStatement; osStr += ")"; return osStr; }
@@ -448,7 +448,7 @@ class OGRPGDataSource : public OGRDataSource
 
     PGconn              *hPGConn;
 
-    int                 DeleteLayer( int iLayer );
+    OGRErr              DeleteLayer( int iLayer );
 
     Oid                 nGeometryOID;
     Oid                 nGeographyOID;
@@ -467,7 +467,7 @@ class OGRPGDataSource : public OGRDataSource
     CPLString           GetCurrentSchema();
 
     int                 nUndefinedSRID;
-    
+
     char               *pszForcedTables;
     char              **papszSchemaList;
     int                 bHasLoadTables;
@@ -512,7 +512,7 @@ class OGRPGDataSource : public OGRDataSource
     int                 GetLayerCount();
     OGRLayer            *GetLayer( int );
     OGRLayer            *GetLayerByName(const char * pszName);
-    
+
     virtual void        FlushCache(void);
 
     virtual OGRLayer    *ICreateLayer( const char *,
@@ -546,5 +546,5 @@ class OGRPGDataSource : public OGRDataSource
     OGRErr              EndCopy( );
 };
 
-#endif /* ndef _OGR_PG_H_INCLUDED */
+#endif /* ndef OGR_PG_H_INCLUDED */
 

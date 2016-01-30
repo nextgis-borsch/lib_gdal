@@ -28,19 +28,16 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "ogr_spatialref.h"
 #include "cpl_string.h"
+#include "gdal_frmts.h"
+#include "ogr_spatialref.h"
 
 #include "rmfdataset.h"
 
 CPL_CVSID("$Id$");
 
-CPL_C_START
-void    GDALRegister_RMF(void);
-CPL_C_END
-
-#define RMF_DEFAULT_BLOCKXSIZE 256
-#define RMF_DEFAULT_BLOCKYSIZE 256
+static const int RMF_DEFAULT_BLOCKXSIZE = 256;
+static const int RMF_DEFAULT_BLOCKYSIZE = 256;
 
 static const char RMF_SigRSW[] = { 'R', 'S', 'W', '\0' };
 static const char RMF_SigRSW_BE[] = { '\0', 'W', 'S', 'R' };
@@ -62,30 +59,29 @@ static const char RMF_UnitsMM[] = "mm";
 /*                           RMFRasterBand()                            */
 /************************************************************************/
 
-RMFRasterBand::RMFRasterBand( RMFDataset *poDS, int nBand,
-                              GDALDataType eType )
+RMFRasterBand::RMFRasterBand( RMFDataset *poDSIn, int nBandIn,
+                              GDALDataType eType ) :
+    nBytesPerPixel(poDSIn->sHeader.nBitDepth / 8),
+    nLastTileWidth(poDSIn->GetRasterXSize() % poDSIn->sHeader.nTileWidth),
+    nLastTileHeight(poDSIn->GetRasterYSize() % poDSIn->sHeader.nTileHeight),
+    nDataSize(GDALGetDataTypeSize( eType ) / 8)
 {
-    this->poDS = poDS;
-    this->nBand = nBand;
+    poDS = poDSIn;
+    nBand = nBandIn;
 
     eDataType = eType;
-    nBytesPerPixel = poDS->sHeader.nBitDepth / 8;
-    nDataSize = GDALGetDataTypeSize( eDataType ) / 8;
-    nBlockXSize = poDS->sHeader.nTileWidth;
-    nBlockYSize = poDS->sHeader.nTileHeight;
+    nBlockXSize = poDSIn->sHeader.nTileWidth;
+    nBlockYSize = poDSIn->sHeader.nTileHeight;
     nBlockSize = nBlockXSize * nBlockYSize;
     nBlockBytes = nBlockSize * nDataSize;
-    nLastTileXBytes =
-        (poDS->GetRasterXSize() % poDS->sHeader.nTileWidth) * nDataSize;
-    nLastTileHeight = poDS->GetRasterYSize() % poDS->sHeader.nTileHeight;
 
 #ifdef DEBUG
     CPLDebug( "RMF",
               "Band %d: tile width is %d, tile height is %d, "
-              " last tile width %d, last tile height %d, "
+              " last tile width %u, last tile height %u, "
               "bytes per pixel is %d, data type size is %d",
               nBand, nBlockXSize, nBlockYSize,
-              poDS->sHeader.nLastTileWidth, poDS->sHeader.nLastTileHeight,
+              nLastTileWidth, nLastTileHeight,
               nBytesPerPixel, nDataSize );
 #endif
 }
@@ -94,24 +90,22 @@ RMFRasterBand::RMFRasterBand( RMFDataset *poDS, int nBand,
 /*                           ~RMFRasterBand()                           */
 /************************************************************************/
 
-RMFRasterBand::~RMFRasterBand()
-{
-}
+RMFRasterBand::~RMFRasterBand() {}
 
 /************************************************************************/
 /*                              ReadBuffer()                            */
 /*                                                                      */
-/* Helper fucntion to read specified amount of bytes from the input     */
+/* Helper function to read specified amount of bytes from the input     */
 /* file stream.                                                         */
 /************************************************************************/
 
 CPLErr RMFRasterBand::ReadBuffer( GByte *pabyBuf, GUInt32 nBytes ) const
 {
-    RMFDataset  *poGDS = (RMFDataset *) poDS;
+    RMFDataset  *poGDS = reinterpret_cast<RMFDataset *>( poDS );
 
-    CPLAssert( pabyBuf != NULL && poGDS->fp != 0 );
+    CPLAssert( pabyBuf != NULL && poGDS->fp != NULL );
 
-    vsi_l_offset nOffset = VSIFTellL( poGDS->fp );
+    const vsi_l_offset nOffset = VSIFTellL( poGDS->fp );
 
     if ( VSIFReadL( pabyBuf, 1, nBytes, poGDS->fp ) < nBytes )
     {
@@ -124,7 +118,7 @@ CPLErr RMFRasterBand::ReadBuffer( GByte *pabyBuf, GUInt32 nBytes ) const
         {
             CPLError( CE_Failure, CPLE_FileIO,
                       "Can't read at offset %ld from input file.\n%s\n",
-                      (long)nOffset, VSIStrerror( errno ) );
+                      static_cast<long>( nOffset ), VSIStrerror( errno ) );
             return CE_Failure;
         }
     }
@@ -132,23 +126,21 @@ CPLErr RMFRasterBand::ReadBuffer( GByte *pabyBuf, GUInt32 nBytes ) const
 #ifdef CPL_MSB
     if ( poGDS->eRMFType == RMFT_MTW )
     {
-        GUInt32     i;
-
         if ( poGDS->sHeader.nBitDepth == 16 )
         {
-            for ( i = 0; i < nBytes; i += 2 )
+            for ( GUInt32 i = 0; i < nBytes; i += 2 )
                 CPL_SWAP16PTR( pabyBuf + i );
         }
 
         else if ( poGDS->sHeader.nBitDepth == 32 )
         {
-            for ( i = 0; i < nBytes; i += 4 )
+            for ( GUInt32 i = 0; i < nBytes; i += 4 )
                 CPL_SWAP32PTR( pabyBuf + i );
         }
 
         else if ( poGDS->sHeader.nBitDepth == 64 )
         {
-            for ( i = 0; i < nBytes; i += 8 )
+            for ( GUInt32 i = 0; i < nBytes; i += 8 )
                 CPL_SWAPDOUBLE( pabyBuf + i );
         }
     }
@@ -164,10 +156,7 @@ CPLErr RMFRasterBand::ReadBuffer( GByte *pabyBuf, GUInt32 nBytes ) const
 CPLErr RMFRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
                                   void * pImage )
 {
-    RMFDataset  *poGDS = (RMFDataset *) poDS;
-    GUInt32     nTile = nBlockYOff * poGDS->nXTiles + nBlockXOff;
-    GUInt32     nTileBytes;
-    GUInt32     nCurBlockYSize;
+    RMFDataset  *poGDS = reinterpret_cast<RMFDataset *>( poDS );
 
     CPLAssert( poGDS != NULL
                && nBlockXOff >= 0
@@ -176,16 +165,18 @@ CPLErr RMFRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 
     memset( pImage, 0, nBlockBytes );
 
+    GUInt32 nTile = nBlockYOff * poGDS->nXTiles + nBlockXOff;
     if (2 * nTile + 1 >= poGDS->sHeader.nTileTblSize / sizeof(GUInt32))
     {
         return CE_Failure;
     }
 
-    nTileBytes = poGDS->paiTiles[2 * nTile + 1];
+    GUInt32 nTileBytes = poGDS->paiTiles[2 * nTile + 1];
+    GUInt32 nCurBlockYSize;
 
-    if ( poGDS->sHeader.nLastTileHeight
-         && (GUInt32) nBlockYOff == poGDS->nYTiles - 1 )
-        nCurBlockYSize = poGDS->sHeader.nLastTileHeight;
+    if ( nLastTileHeight
+         && static_cast<GUInt32>( nBlockYOff ) == poGDS->nYTiles - 1 )
+        nCurBlockYSize = nLastTileHeight;
     else
         nCurBlockYSize = nBlockYSize;
 
@@ -195,13 +186,12 @@ CPLErr RMFRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 	// in update state and data for this block will be available later
         if( poGDS->eAccess == GA_Update )
             return CE_None;
-        else
-        {
-            CPLError( CE_Failure, CPLE_FileIO,
-                "Can't seek to offset %ld in input file to read data.\n%s\n",
-                (long) poGDS->paiTiles[2 * nTile], VSIStrerror( errno ) );
-            return CE_Failure;
-        }
+
+        CPLError( CE_Failure, CPLE_FileIO,
+                  "Can't seek to offset %ld in input file to read data.\n%s\n",
+                  static_cast<long>( poGDS->paiTiles[2 * nTile] ),
+                  VSIStrerror( errno ) );
+        return CE_Failure;
     }
 
     if ( poGDS->nBands == 1 &&
@@ -220,8 +210,8 @@ CPLErr RMFRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
         {
             GUInt32 nRawBytes;
 
-            if ( nLastTileXBytes && (GUInt32)nBlockXOff == poGDS->nXTiles - 1 )
-                nRawBytes = nLastTileXBytes;
+            if ( nLastTileWidth && (GUInt32)nBlockXOff == poGDS->nXTiles - 1 )
+                nRawBytes = poGDS->nBands * nLastTileWidth * nDataSize;
             else
                 nRawBytes = poGDS->nBands * nBlockXSize * nDataSize;
 
@@ -232,7 +222,8 @@ CPLErr RMFRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 
             if ( nRawBytes > nTileBytes )
             {
-                GByte   *pabyTile = (GByte *) VSIMalloc( nTileBytes );
+                GByte *pabyTile = reinterpret_cast<GByte *>(
+                    VSIMalloc( nTileBytes ) );
 
                 if ( !pabyTile )
                 {
@@ -251,13 +242,15 @@ CPLErr RMFRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
                 }
 
                 (*poGDS->Decompress)( pabyTile, nTileBytes,
-                                      (GByte*)pImage, nRawBytes );
+                                      reinterpret_cast<GByte*>( pImage ),
+                                      nRawBytes );
                 CPLFree( pabyTile );
-                nTileBytes = nRawBytes;
+                /*nTileBytes = nRawBytes;*/
             }
             else
             {
-                if ( ReadBuffer( (GByte *)pImage, nTileBytes ) == CE_Failure )
+              if ( ReadBuffer( reinterpret_cast<GByte *>( pImage ),
+                               nTileBytes ) == CE_Failure )
                 {
                     // XXX: Do not fail here, just return empty block
                     // and continue reading.
@@ -269,7 +262,8 @@ CPLErr RMFRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
         else
         {
 
-            if ( ReadBuffer( (GByte *)pImage, nTileBytes ) == CE_Failure )
+          if ( ReadBuffer( reinterpret_cast<GByte *>( pImage ),
+                           nTileBytes ) == CE_Failure )
             {
                 // XXX: Do not fail here, just return empty block
                 // and continue reading.
@@ -282,7 +276,7 @@ CPLErr RMFRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 
     else if ( poGDS->eRMFType == RMFT_RSW )
     {
-        GByte   *pabyTile = (GByte *) VSIMalloc( nTileBytes );
+        GByte *pabyTile = reinterpret_cast<GByte *>( VSIMalloc( nTileBytes ) );
 
         if ( !pabyTile )
         {
@@ -308,8 +302,8 @@ CPLErr RMFRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
         {
             GUInt32 nRawBytes;
 
-            if ( nLastTileXBytes && (GUInt32)nBlockXOff == poGDS->nXTiles - 1 )
-                nRawBytes = nLastTileXBytes;
+            if ( nLastTileWidth && (GUInt32)nBlockXOff == poGDS->nXTiles - 1 )
+                nRawBytes = poGDS->nBands * nLastTileWidth * nDataSize;
             else
                 nRawBytes = poGDS->nBands * nBlockXSize * nDataSize;
 
@@ -320,12 +314,15 @@ CPLErr RMFRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 
             if ( nRawBytes > nTileBytes )
             {
-                GByte *pszRawBuf = (GByte *)VSIMalloc( nRawBytes );
+                GByte *pszRawBuf = reinterpret_cast<GByte *>(
+                    VSIMalloc( nRawBytes ) );
                 if (pszRawBuf == NULL)
                 {
                     CPLError( CE_Failure, CPLE_FileIO,
-                      "Can't allocate a buffer for raw data of size %lu.\n%s\n",
-                      (unsigned long) nRawBytes, VSIStrerror( errno ) );
+                              "Can't allocate a buffer for raw data of "
+                              "size %lu.\n%s\n",
+                              static_cast<unsigned long>( nRawBytes ),
+                              VSIStrerror( errno ) );
 
                     VSIFree( pabyTile );
                     return CE_Failure;
@@ -342,8 +339,6 @@ CPLErr RMFRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 /* -------------------------------------------------------------------- */
 /*  Deinterleave pixels from input buffer.                              */
 /* -------------------------------------------------------------------- */
-        GUInt32     i;
-
         if ( poGDS->sHeader.nBitDepth == 24 || poGDS->sHeader.nBitDepth == 32 )
         {
             GUInt32 nTileSize = nTileBytes / nBytesPerPixel;
@@ -351,14 +346,14 @@ CPLErr RMFRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
             if ( nTileSize > nBlockSize )
                 nTileSize = nBlockSize;
 
-            for ( i = 0; i < nTileSize; i++ )
+            for( GUInt32 i = 0; i < nTileSize; i++ )
             {
                 // Colour triplets in RMF file organized in reverse order:
                 // blue, green, red. When we have 32-bit RMF the forth byte
-                // in quadriplet should be discarded as it has no meaning.
+                // in quadruplet should be discarded as it has no meaning.
                 // That is why we always use 3 byte count in the following
                 // pabyTemp index.
-                ((GByte *) pImage)[i] =
+                reinterpret_cast<GByte *>( pImage )[i] =
                     pabyTile[i * nBytesPerPixel + 3 - nBand];
             }
         }
@@ -370,21 +365,24 @@ CPLErr RMFRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
             if ( nTileSize > nBlockSize )
                 nTileSize = nBlockSize;
 
-            for ( i = 0; i < nTileSize; i++ )
+            for( GUInt32 i = 0; i < nTileSize; i++ )
             {
                 switch ( nBand )
                 {
                     case 1:
-                        ((GByte *) pImage)[i] =
-                            (GByte)((((GUInt16*)pabyTile)[i] & 0x7c00) >> 7);
+                        reinterpret_cast<GByte *>( pImage )[i] =
+                            static_cast<GByte>((reinterpret_cast<GUInt16 *>(
+                                pabyTile )[i] & 0x7c00) >> 7);
                         break;
                     case 2:
-                        ((GByte *) pImage)[i] =
-                            (GByte)((((GUInt16*)pabyTile)[i] & 0x03e0) >> 2);
+                        reinterpret_cast<GByte *>( pImage )[i] =
+                            static_cast<GByte>((reinterpret_cast<GUInt16 *>(
+                                pabyTile )[i] & 0x03e0) >> 2);
                         break;
                     case 3:
-                        ((GByte *) pImage)[i] =
-                            (GByte)(((GUInt16*)pabyTile)[i] & 0x1F) << 3;
+                        reinterpret_cast<GByte *>( pImage )[i] =
+                            static_cast<GByte>((reinterpret_cast<GUInt16 *>(
+                                pabyTile)[i] & 0x1F) << 3);
                         break;
                     default:
                         break;
@@ -395,48 +393,67 @@ CPLErr RMFRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
         else if ( poGDS->sHeader.nBitDepth == 4 )
         {
             GByte *pabyTemp = pabyTile;
+            
+            if( nTileBytes != (nBlockSize+1) / 2 )
+            {
+                CPLError(CE_Failure, CPLE_AppDefined,
+                         "Tile has %d bytes, %d were expected",
+                         nTileBytes, (nBlockSize+1) / 2 );
+                CPLFree( pabyTile );
+                return CE_Failure;
+            }
 
-            for ( i = 0; i < nBlockSize; i++ )
+            for( GUInt32 i = 0; i < nBlockSize; i++ )
             {
                 // Most significant part of the byte represents leftmost pixel
                 if ( i & 0x01 )
-                    ((GByte *) pImage)[i] = *pabyTemp++ & 0x0F;
+                    reinterpret_cast<GByte *>( pImage )[i] = *pabyTemp++ & 0x0F;
                 else
-                    ((GByte *) pImage)[i] = (*pabyTemp & 0xF0) >> 4;
+                    reinterpret_cast<GByte *>( pImage )[i]
+                        = (*pabyTemp & 0xF0) >> 4;
             }
         }
 
         else if ( poGDS->sHeader.nBitDepth == 1 )
         {
             GByte *pabyTemp = pabyTile;
-
-            for ( i = 0; i < nBlockSize; i++ )
+            
+            if( nTileBytes != (nBlockSize+7) / 8 )
+            {
+                CPLError(CE_Failure, CPLE_AppDefined,
+                         "Tile has %d bytes, %d were expected",
+                         nTileBytes, (nBlockSize+7) / 8 );
+                CPLFree( pabyTile );
+                return CE_Failure;
+            }
+            
+            for( GUInt32 i = 0; i < nBlockSize; i++ )
             {
                 switch ( i & 0x7 )
                 {
                     case 0:
-                        ((GByte *) pImage)[i] = (*pabyTemp & 0x80) >> 7;
+                        reinterpret_cast<GByte *>( pImage )[i] = (*pabyTemp & 0x80) >> 7;
                         break;
                     case 1:
-                        ((GByte *) pImage)[i] = (*pabyTemp & 0x40) >> 6;
+                        reinterpret_cast<GByte *>( pImage )[i] = (*pabyTemp & 0x40) >> 6;
                         break;
                     case 2:
-                        ((GByte *) pImage)[i] = (*pabyTemp & 0x20) >> 5;
+                        reinterpret_cast<GByte *>( pImage )[i] = (*pabyTemp & 0x20) >> 5;
                         break;
                     case 3:
-                        ((GByte *) pImage)[i] = (*pabyTemp & 0x10) >> 4;
+                        reinterpret_cast<GByte *>( pImage )[i] = (*pabyTemp & 0x10) >> 4;
                         break;
                     case 4:
-                        ((GByte *) pImage)[i] = (*pabyTemp & 0x08) >> 3;
+                        reinterpret_cast<GByte *>( pImage )[i] = (*pabyTemp & 0x08) >> 3;
                         break;
                     case 5:
-                        ((GByte *) pImage)[i] = (*pabyTemp & 0x04) >> 2;
+                        reinterpret_cast<GByte *>( pImage )[i] = (*pabyTemp & 0x04) >> 2;
                         break;
                     case 6:
-                        ((GByte *) pImage)[i] = (*pabyTemp & 0x02) >> 1;
+                        reinterpret_cast<GByte *>( pImage )[i] = (*pabyTemp & 0x02) >> 1;
                         break;
                     case 7:
-                        ((GByte *) pImage)[i] = *pabyTemp++ & 0x01;
+                        reinterpret_cast<GByte *>( pImage )[i] = *pabyTemp++ & 0x01;
                         break;
                     default:
                         break;
@@ -447,16 +464,16 @@ CPLErr RMFRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
         CPLFree( pabyTile );
     }
 
-    if ( nLastTileXBytes
-         && (GUInt32) nBlockXOff == poGDS->nXTiles - 1 )
+    if ( nLastTileWidth
+         && static_cast<GUInt32>( nBlockXOff ) == poGDS->nXTiles - 1 )
     {
-        GUInt32 iRow;
-
-        for ( iRow = nCurBlockYSize - 1; iRow > 0; iRow-- )
+        for ( GUInt32 iRow = nCurBlockYSize - 1; iRow > 0; iRow-- )
         {
-            memmove( (GByte *)pImage + nBlockXSize * iRow * nDataSize,
-                     (GByte *)pImage + iRow * nLastTileXBytes,
-                     nLastTileXBytes );
+            memmove( reinterpret_cast<GByte *>( pImage )
+                     + nBlockXSize * iRow * nDataSize,
+                     reinterpret_cast<GByte *>( pImage ) +
+                     iRow * nLastTileWidth * nDataSize,
+                     nLastTileWidth * nDataSize );
         }
 
     }
@@ -471,7 +488,7 @@ CPLErr RMFRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 CPLErr RMFRasterBand::IWriteBlock( int nBlockXOff, int nBlockYOff,
                                    void * pImage )
 {
-    RMFDataset  *poGDS = (RMFDataset *)poDS;
+    RMFDataset  *poGDS = reinterpret_cast<RMFDataset *>( poDS );
     GUInt32     nTile = nBlockYOff * poGDS->nXTiles + nBlockXOff;
     GUInt32     nTileBytes = nDataSize * poGDS->nBands;
     GUInt32     iInPixel, iOutPixel, nCurBlockYSize;
@@ -488,7 +505,7 @@ CPLErr RMFRasterBand::IWriteBlock( int nBlockXOff, int nBlockYOff,
         {
             CPLError( CE_Failure, CPLE_FileIO,
                 "Can't seek to offset %ld in output file to write data.\n%s",
-                      (long) poGDS->paiTiles[2 * nTile],
+                      static_cast<long>( poGDS->paiTiles[2 * nTile] ),
                       VSIStrerror( errno ) );
             return CE_Failure;
         }
@@ -499,7 +516,7 @@ CPLErr RMFRasterBand::IWriteBlock( int nBlockXOff, int nBlockYOff,
         {
             CPLError( CE_Failure, CPLE_FileIO,
                 "Can't seek to offset %ld in output file to write data.\n%s",
-                      (long) poGDS->paiTiles[2 * nTile],
+                      static_cast<long>( poGDS->paiTiles[2 * nTile] ),
                       VSIStrerror( errno ) );
             return CE_Failure;
         }
@@ -508,31 +525,32 @@ CPLErr RMFRasterBand::IWriteBlock( int nBlockXOff, int nBlockYOff,
         poGDS->bHeaderDirty = TRUE;
     }
 
-    if ( nLastTileXBytes
-         && (GUInt32) nBlockXOff == poGDS->nXTiles - 1 )
-        nTileBytes *= poGDS->sHeader.nLastTileWidth;
+    if ( nLastTileWidth
+         && static_cast<GUInt32>( nBlockXOff ) == poGDS->nXTiles - 1 )
+        nTileBytes *= nLastTileWidth;
     else
         nTileBytes *= nBlockXSize;
 
-    if ( poGDS->sHeader.nLastTileHeight
-         && (GUInt32) nBlockYOff == poGDS->nYTiles - 1 )
-        nCurBlockYSize = poGDS->sHeader.nLastTileHeight;
+    if ( nLastTileHeight
+         && static_cast<GUInt32>( nBlockYOff ) == poGDS->nYTiles - 1 )
+        nCurBlockYSize = nLastTileHeight;
     else
         nCurBlockYSize = nBlockYSize;
 
     nTileBytes *= nCurBlockYSize;
 
-    pabyTile = (GByte *) VSICalloc( nTileBytes, 1 );
+    pabyTile = reinterpret_cast<GByte *>( VSICalloc( nTileBytes, 1 ) );
     if ( !pabyTile )
     {
         CPLError( CE_Failure, CPLE_FileIO,
-                  "Can't allocate space for the tile blocak of size %lu.\n%s",
-                 (unsigned long) nTileBytes,  VSIStrerror( errno ) );
+                  "Can't allocate space for the tile block of size %lu.\n%s",
+                  static_cast<unsigned long>( nTileBytes ),
+                  VSIStrerror( errno ) );
         return CE_Failure;
     }
 
-    if ( nLastTileXBytes
-         && (GUInt32) nBlockXOff == poGDS->nXTiles - 1 )
+    if ( nLastTileWidth
+         && static_cast<GUInt32>( nBlockXOff ) == poGDS->nXTiles - 1 )
     {
         GUInt32 iRow;
 
@@ -540,9 +558,9 @@ CPLErr RMFRasterBand::IWriteBlock( int nBlockXOff, int nBlockYOff,
         {
             for ( iRow = 0; iRow < nCurBlockYSize; iRow++ )
             {
-                memcpy( pabyTile + iRow * nLastTileXBytes,
-                         (GByte*)pImage + nBlockXSize * iRow * nDataSize,
-                         nLastTileXBytes );
+                memcpy( pabyTile + iRow * nLastTileWidth * nDataSize,
+                        reinterpret_cast<GByte *>( pImage )
+                        + nBlockXSize * iRow * nDataSize, nLastTileWidth * nDataSize );
             }
         }
         else
@@ -556,10 +574,11 @@ CPLErr RMFRasterBand::IWriteBlock( int nBlockXOff, int nBlockYOff,
             for ( iRow = 0; iRow < nCurBlockYSize; iRow++ )
             {
                 for ( iInPixel = 0, iOutPixel = nBytesPerPixel - nBand;
-                      iOutPixel < nLastTileXBytes * poGDS->nBands;
+                      iOutPixel < nLastTileWidth * nDataSize * poGDS->nBands;
                       iInPixel++, iOutPixel += poGDS->nBands )
-                    (pabyTile + iRow * nLastTileXBytes * poGDS->nBands)[iOutPixel] =
-                        ((GByte *) pImage + nBlockXSize * iRow * nDataSize)[iInPixel];
+                    (pabyTile + iRow * nLastTileWidth * nDataSize * poGDS->nBands)[iOutPixel] =
+                        (reinterpret_cast<GByte *>( pImage ) + nBlockXSize
+                         * iRow * nDataSize)[iInPixel];
             }
         }
     }
@@ -578,31 +597,29 @@ CPLErr RMFRasterBand::IWriteBlock( int nBlockXOff, int nBlockYOff,
             for ( iInPixel = 0, iOutPixel = nBytesPerPixel - nBand;
                   iOutPixel < nTileBytes;
                   iInPixel++, iOutPixel += poGDS->nBands )
-                pabyTile[iOutPixel] = ((GByte *) pImage)[iInPixel];
+                pabyTile[iOutPixel] = reinterpret_cast<GByte *>( pImage )[iInPixel];
 
         }
     }
 
 #ifdef CPL_MSB
     if ( poGDS->eRMFType == RMFT_MTW )
-    {
-        GUInt32 i;
-
+    {;
         if ( poGDS->sHeader.nBitDepth == 16 )
         {
-            for ( i = 0; i < nTileBytes; i += 2 )
+            for( GUInt32 i = 0; i < nTileBytes; i += 2 )
                 CPL_SWAP16PTR( pabyTile + i );
         }
 
         else if ( poGDS->sHeader.nBitDepth == 32 )
         {
-            for ( i = 0; i < nTileBytes; i += 4 )
+            for( GUInt32 i = 0; i < nTileBytes; i += 4 )
                 CPL_SWAP32PTR( pabyTile + i );
         }
 
         else if ( poGDS->sHeader.nBitDepth == 64 )
         {
-            for ( i = 0; i < nTileBytes; i += 8 )
+            for( GUInt32 i = 0; i < nTileBytes; i += 8 )
                 CPL_SWAPDOUBLE( pabyTile + i );
         }
     }
@@ -632,7 +649,7 @@ CPLErr RMFRasterBand::IWriteBlock( int nBlockXOff, int nBlockYOff,
 double RMFRasterBand::GetNoDataValue( int *pbSuccess )
 
 {
-    RMFDataset *poGDS = (RMFDataset *)poDS;
+    RMFDataset *poGDS = reinterpret_cast<RMFDataset *>( poDS );
 
     if ( pbSuccess )
         *pbSuccess = TRUE;
@@ -647,7 +664,7 @@ double RMFRasterBand::GetNoDataValue( int *pbSuccess )
 const char *RMFRasterBand::GetUnitType()
 
 {
-    RMFDataset   *poGDS = (RMFDataset *) poDS;
+    RMFDataset *poGDS = reinterpret_cast<RMFDataset *>( poDS );
 
     return (const char *)poGDS->pszUnitType;
 }
@@ -659,7 +676,7 @@ const char *RMFRasterBand::GetUnitType()
 CPLErr RMFRasterBand::SetUnitType( const char *pszNewValue )
 
 {
-    RMFDataset   *poGDS = (RMFDataset *) poDS;
+    RMFDataset *poGDS = reinterpret_cast<RMFDataset *>( poDS );
 
     CPLFree(poGDS->pszUnitType);
     poGDS->pszUnitType = CPLStrdup( pszNewValue );
@@ -673,7 +690,7 @@ CPLErr RMFRasterBand::SetUnitType( const char *pszNewValue )
 
 GDALColorTable *RMFRasterBand::GetColorTable()
 {
-    RMFDataset   *poGDS = (RMFDataset *) poDS;
+    RMFDataset *poGDS = reinterpret_cast<RMFDataset *>( poDS );
 
     return poGDS->poColorTable;
 }
@@ -684,19 +701,17 @@ GDALColorTable *RMFRasterBand::GetColorTable()
 
 CPLErr RMFRasterBand::SetColorTable( GDALColorTable *poColorTable )
 {
-    RMFDataset  *poGDS = (RMFDataset *) poDS;
+    RMFDataset *poGDS = reinterpret_cast<RMFDataset *>( poDS );
 
     if ( poColorTable )
     {
         if ( poGDS->eRMFType == RMFT_RSW && poGDS->nBands == 1 )
         {
-            GDALColorEntry  oEntry;
-            GUInt32         i;
-
             if ( !poGDS->pabyColorTable )
                 return CE_Failure;
 
-            for( i = 0; i < poGDS->nColorTableSize; i++ )
+            GDALColorEntry  oEntry;
+            for( GUInt32 i = 0; i < poGDS->nColorTableSize; i++ )
             {
                 poColorTable->GetColorEntryAsRGB( i, &oEntry );
                 poGDS->pabyColorTable[i * 4] = (GByte) oEntry.c1;     // Red
@@ -707,11 +722,10 @@ CPLErr RMFRasterBand::SetColorTable( GDALColorTable *poColorTable )
 
             poGDS->bHeaderDirty = TRUE;
         }
+        return CE_None;
     }
-    else
-        return CE_Failure;
 
-    return CE_None;
+    return CE_Failure;
 }
 
 /************************************************************************/
@@ -720,7 +734,7 @@ CPLErr RMFRasterBand::SetColorTable( GDALColorTable *poColorTable )
 
 GDALColorInterp RMFRasterBand::GetColorInterpretation()
 {
-    RMFDataset      *poGDS = (RMFDataset *) poDS;
+    RMFDataset *poGDS = reinterpret_cast<RMFDataset *>( poDS );
 
     if( poGDS->nBands == 3 )
     {
@@ -730,16 +744,14 @@ GDALColorInterp RMFRasterBand::GetColorInterpretation()
             return GCI_GreenBand;
         else if( nBand == 3 )
             return GCI_BlueBand;
-        else
-            return GCI_Undefined;
+
+        return GCI_Undefined;
     }
-    else
-    {
-        if ( poGDS->eRMFType == RMFT_RSW )
-            return GCI_PaletteIndex;
-        else
-            return GCI_Undefined;
-    }
+
+    if ( poGDS->eRMFType == RMFT_RSW )
+        return GCI_PaletteIndex;
+
+    return GCI_Undefined;
 }
 
 /************************************************************************/
@@ -752,32 +764,31 @@ GDALColorInterp RMFRasterBand::GetColorInterpretation()
 /*                           RMFDataset()                               */
 /************************************************************************/
 
-RMFDataset::RMFDataset()
+RMFDataset::RMFDataset() :
+    eRMFType(RMFT_RSW),
+    nXTiles(0),
+    nYTiles(0),
+    paiTiles(NULL),
+    nColorTableSize(0),
+    pabyColorTable(NULL),
+    poColorTable(NULL),
+    pszProjection(CPLStrdup( "" )),
+    pszUnitType(CPLStrdup( RMF_UnitsEmpty )),
+    bBigEndian(FALSE),
+    bHeaderDirty(FALSE),
+    pszFilename(NULL),
+    fp(NULL),
+    Decompress(NULL)
 {
-    pszFilename = NULL;
-    fp = NULL;
     nBands = 0;
-    nXTiles = 0;
-    nYTiles = 0;
-    paiTiles = NULL;
-    pszProjection = CPLStrdup( "" );
-    pszUnitType = CPLStrdup( RMF_UnitsEmpty );
     adfGeoTransform[0] = 0.0;
     adfGeoTransform[1] = 1.0;
     adfGeoTransform[2] = 0.0;
     adfGeoTransform[3] = 0.0;
     adfGeoTransform[4] = 0.0;
     adfGeoTransform[5] = 1.0;
-    pabyColorTable = NULL;
-    poColorTable = NULL;
-    eRMFType = RMFT_RSW;
     memset( &sHeader, 0, sizeof(sHeader) );
     memset( &sExtHeader, 0, sizeof(sExtHeader) );
-
-    Decompress = NULL;
-
-    bBigEndian = FALSE;
-    bHeaderDirty = FALSE;
 }
 
 /************************************************************************/
@@ -788,17 +799,13 @@ RMFDataset::~RMFDataset()
 {
     FlushCache();
 
-    if ( paiTiles )
-        CPLFree( paiTiles );
-    if ( pszProjection )
-        CPLFree( pszProjection );
-    if ( pszUnitType )
-        CPLFree( pszUnitType );
-    if ( pabyColorTable )
-        CPLFree( pabyColorTable );
+    CPLFree( paiTiles );
+    CPLFree( pszProjection );
+    CPLFree( pszUnitType );
+    CPLFree( pabyColorTable );
     if ( poColorTable != NULL )
         delete poColorTable;
-    if( fp != NULL )
+    if ( fp )
         VSIFCloseL( fp );
 }
 
@@ -812,8 +819,8 @@ CPLErr RMFDataset::GetGeoTransform( double * padfTransform )
 
     if( sHeader.iGeorefFlag )
         return CE_None;
-    else
-        return CE_Failure;
+
+    return CE_Failure;
 }
 
 /************************************************************************/
@@ -843,8 +850,8 @@ const char *RMFDataset::GetProjectionRef()
 {
     if( pszProjection )
         return pszProjection;
-    else
-        return "";
+
+    return "";
 }
 
 /************************************************************************/
@@ -875,24 +882,24 @@ CPLErr RMFDataset::WriteHeader()
     if( pszProjection && !EQUAL( pszProjection, "" ) )
     {
         OGRSpatialReference oSRS;
-        long            iProjection, iDatum, iEllips, iZone;
-        char            *pszProj =  pszProjection;
+        char *pszProj = pszProjection;
 
         if ( oSRS.importFromWkt( &pszProj ) == OGRERR_NONE )
         {
+            long iProjection, iDatum, iEllips, iZone;
             double  adfPrjParams[7];
 
             oSRS.exportToPanorama( &iProjection, &iDatum, &iEllips, &iZone,
                                    adfPrjParams );
-            sHeader.iProjection = iProjection;
+            sHeader.iProjection = static_cast<int>(iProjection);
             sHeader.dfStdP1 = adfPrjParams[0];
             sHeader.dfStdP2 = adfPrjParams[1];
             sHeader.dfCenterLat = adfPrjParams[2];
             sHeader.dfCenterLong = adfPrjParams[3];
 
-            sExtHeader.nEllipsoid = iEllips;
-            sExtHeader.nDatum = iDatum;
-            sExtHeader.nZone = iZone;
+            sExtHeader.nEllipsoid = static_cast<int>(iEllips);
+            sExtHeader.nDatum = static_cast<int>(iDatum);
+            sExtHeader.nZone = static_cast<int>(iZone);
         }
     }
 
@@ -986,7 +993,8 @@ do {                                                    \
 
     if ( sHeader.nExtHdrOffset && sHeader.nExtHdrSize )
     {
-        GByte   *pabyExtHeader = (GByte *)CPLCalloc( sHeader.nExtHdrSize, 1 );
+        GByte *pabyExtHeader = reinterpret_cast<GByte *>(
+            CPLCalloc( sHeader.nExtHdrSize, 1 ) );
 
         RMF_WRITE_LONG( pabyExtHeader, sExtHeader.nEllipsoid, 24 );
         RMF_WRITE_LONG( pabyExtHeader, sExtHeader.nDatum, 32 );
@@ -1019,14 +1027,13 @@ do {                                                    \
     VSIFSeekL( fp, sHeader.nTileTblOffset, SEEK_SET );
 
 #ifdef CPL_MSB
-    GUInt32 i;
-    GUInt32 *paiTilesSwapped = (GUInt32 *)CPLMalloc( sHeader.nTileTblSize );
-
+    GUInt32 *paiTilesSwapped = reinterpret_cast<GUInt32 *>(
+        CPLMalloc( sHeader.nTileTblSize ) );
     if ( !paiTilesSwapped )
         return CE_Failure;
 
     memcpy( paiTilesSwapped, paiTiles, sHeader.nTileTblSize );
-    for ( i = 0; i < sHeader.nTileTblSize / sizeof(GUInt32); i++ )
+    for ( GUInt32 i = 0; i < sHeader.nTileTblSize / sizeof(GUInt32); i++ )
         CPL_SWAP32PTR( paiTilesSwapped + i );
     VSIFWriteL( paiTilesSwapped, 1, sHeader.nTileTblSize, fp );
 
@@ -1095,9 +1102,7 @@ GDALDataset *RMFDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*  Create a corresponding GDALDataset.                                 */
 /* -------------------------------------------------------------------- */
-    RMFDataset      *poDS;
-
-    poDS = new RMFDataset();
+    RMFDataset *poDS = new RMFDataset();
 
     if( poOpenInfo->eAccess == GA_ReadOnly )
         poDS->fp = VSIFOpenL( poOpenInfo->pszFilename, "rb" );
@@ -1147,7 +1152,7 @@ do {                                                                    \
 
 #define RMF_READ_DOUBLE(ptr, value, offset)                             \
 do {                                                                    \
-    (value) = *(double*)((ptr) + (offset));                             \
+    (value) = *reinterpret_cast<double*>((ptr) + (offset));             \
     if ( poDS->bBigEndian )                                             \
     {                                                                   \
         CPL_MSBPTR64(&(value));                                         \
@@ -1166,7 +1171,11 @@ do {                                                                    \
         GByte   abyHeader[RMF_HEADER_SIZE];
 
         VSIFSeekL( poDS->fp, 0, SEEK_SET );
-        VSIFReadL( abyHeader, 1, sizeof(abyHeader), poDS->fp );
+        if( VSIFReadL( abyHeader, 1, sizeof(abyHeader), poDS->fp ) != sizeof(abyHeader) )
+        {
+            delete poDS;
+            return NULL;
+        }
 
         if ( memcmp(abyHeader, RMF_SigMTW, sizeof(RMF_SigMTW)) == 0 )
             poDS->eRMFType = RMFT_MTW;
@@ -1230,7 +1239,7 @@ do {                                                                    \
 
         if (poDS->sHeader.nBitDepth == 8)
         {
-            poDS->sHeader.dfNoData = *(char*)(abyHeader + 296);
+            poDS->sHeader.dfNoData = *reinterpret_cast<char *>(abyHeader + 296);
         }
         else if (poDS->sHeader.nBitDepth == 16)
         {
@@ -1257,8 +1266,9 @@ do {                                                                    \
 
     if ( poDS->sHeader.nExtHdrOffset && poDS->sHeader.nExtHdrSize )
     {
-        GByte *pabyExtHeader =
-            (GByte *)VSICalloc( poDS->sHeader.nExtHdrSize, 1 );
+        /* coverity[tainted_data] */
+        GByte *pabyExtHeader = reinterpret_cast<GByte *>(
+            VSICalloc( poDS->sHeader.nExtHdrSize, 1 ) );
         if (pabyExtHeader == NULL)
         {
             delete poDS;
@@ -1290,8 +1300,10 @@ do {                                                                    \
               poDS->sHeader.dfNoData );
     CPLDebug( "RMF", "Size %d, offset to overview %#lx, user ID %d, "
               "ROI offset %#lx, ROI size %d",
-              poDS->sHeader.nSize, (unsigned long)poDS->sHeader.nOvrOffset,
-              poDS->sHeader.iUserID, (unsigned long)poDS->sHeader.nROIOffset,
+              poDS->sHeader.nSize,
+              static_cast<unsigned long>( poDS->sHeader.nOvrOffset ),
+              poDS->sHeader.iUserID,
+              static_cast<unsigned long>( poDS->sHeader.nROIOffset ),
               poDS->sHeader.nROISize );
     CPLDebug( "RMF", "Map type %d, projection %d, scale %f, resolution %f, ",
               poDS->sHeader.iMapType, poDS->sHeader.iProjection,
@@ -1301,16 +1313,18 @@ do {                                                                    \
               poDS->sHeader.dfLLX, poDS->sHeader.dfLLY );
     if ( poDS->sHeader.nROIOffset && poDS->sHeader.nROISize )
     {
-        GUInt32     i;
-        GInt32     nValue;
+        GInt32 nValue;
 
         CPLDebug( "RMF", "ROI coordinates:" );
-        for ( i = 0; i < poDS->sHeader.nROISize; i += sizeof(nValue) )
+        /* coverity[tainted_data] */
+        for ( GUInt32 i = 0; i < poDS->sHeader.nROISize; i += sizeof(nValue) )
         {
-            GUInt32  nValue;
-
-            VSIFSeekL( poDS->fp, poDS->sHeader.nROIOffset + i, SEEK_SET );
-            VSIFReadL( &nValue, 1, sizeof(nValue), poDS->fp );
+            if( VSIFSeekL( poDS->fp, poDS->sHeader.nROIOffset + i, SEEK_SET ) != 0 ||
+                VSIFReadL( &nValue, 1, sizeof(nValue), poDS->fp ) != sizeof(nValue) )
+            {
+                delete poDS;
+                return NULL;
+            }
 
             CPLDebug( "RMF", "%d", nValue );
         }
@@ -1320,15 +1334,15 @@ do {                                                                    \
 /* -------------------------------------------------------------------- */
 /*  Read array of blocks offsets/sizes.                                 */
 /* -------------------------------------------------------------------- */
-    GUInt32 i;
-
     if ( VSIFSeekL( poDS->fp, poDS->sHeader.nTileTblOffset, SEEK_SET ) < 0)
     {
         delete poDS;
         return NULL;
     }
 
-    poDS->paiTiles = (GUInt32 *)VSIMalloc( poDS->sHeader.nTileTblSize );
+    /* coverity[tainted_data] */
+    poDS->paiTiles = reinterpret_cast<GUInt32 *>(
+        VSIMalloc( poDS->sHeader.nTileTblSize ) );
     if ( !poDS->paiTiles )
     {
         delete poDS;
@@ -1346,13 +1360,13 @@ do {                                                                    \
 #ifdef CPL_MSB
     if ( !poDS->bBigEndian )
     {
-        for ( i = 0; i < poDS->sHeader.nTileTblSize / sizeof(GUInt32); i++ )
+        for ( GUInt32 i = 0; i < poDS->sHeader.nTileTblSize / sizeof(GUInt32); i++ )
             CPL_SWAP32PTR( poDS->paiTiles + i );
     }
 #else
     if ( poDS->bBigEndian )
     {
-        for ( i = 0; i < poDS->sHeader.nTileTblSize / sizeof(GUInt32); i++ )
+        for ( GUInt32 i = 0; i < poDS->sHeader.nTileTblSize / sizeof(GUInt32); i++ )
             CPL_SWAP32PTR( poDS->paiTiles + i );
     }
 #endif
@@ -1360,7 +1374,7 @@ do {                                                                    \
 #ifdef DEBUG
     CPLDebug( "RMF", "List of block offsets/sizes:" );
 
-    for ( i = 0; i < poDS->sHeader.nTileTblSize / sizeof(GUInt32); i += 2 )
+    for ( GUInt32 i = 0; i < poDS->sHeader.nTileTblSize / sizeof(GUInt32); i += 2 )
     {
         CPLDebug( "RMF", "    %d / %d",
                   poDS->paiTiles[i], poDS->paiTiles[i + 1] );
@@ -1405,8 +1419,9 @@ do {                                                                    \
                         delete poDS;
                         return NULL;
                     }
-                    poDS->pabyColorTable =
-                        (GByte *)VSIMalloc( poDS->sHeader.nClrTblSize );
+                    /* coverity[tainted_data] */
+                    poDS->pabyColorTable = reinterpret_cast<GByte *>(
+                        VSIMalloc( poDS->sHeader.nClrTblSize ) );
                     if (poDS->pabyColorTable == NULL)
                     {
                         CPLDebug( "RMF", "Can't allocate color table." );
@@ -1431,7 +1446,7 @@ do {                                                                    \
 
                     GDALColorEntry oEntry;
                     poDS->poColorTable = new GDALColorTable();
-                    for( i = 0; i < poDS->nColorTableSize; i++ )
+                    for( GUInt32 i = 0; i < poDS->nColorTableSize; i++ )
                     {
                         oEntry.c1 = poDS->pabyColorTable[i * 4];     // Red
                         oEntry.c2 = poDS->pabyColorTable[i * 4 + 1]; // Green
@@ -1461,19 +1476,30 @@ do {                                                                    \
             eType = GDT_Float64;
     }
 
-    if (poDS->sHeader.nTileWidth == 0 ||
-        poDS->sHeader.nTileHeight == 0)
+    if (poDS->sHeader.nTileWidth == 0 || poDS->sHeader.nTileWidth > INT_MAX ||
+        poDS->sHeader.nTileHeight == 0 || poDS->sHeader.nTileHeight > INT_MAX)
     {
-        CPLDebug ("RMF", "Invalid tile dimension : %d x %d",
+        CPLDebug ("RMF", "Invalid tile dimension : %u x %u",
                   poDS->sHeader.nTileWidth, poDS->sHeader.nTileHeight);
         delete poDS;
         return NULL;
     }
+    
+    const int nDataSize = GDALGetDataTypeSize( eType ) / 8;
+    const int nBlockXSize = static_cast<int>(poDS->sHeader.nTileWidth);
+    const int nBlockYSize = static_cast<int>(poDS->sHeader.nTileHeight);
+    if( nDataSize == 0 ||
+        nBlockXSize > INT_MAX / nBlockYSize ||
+        nBlockYSize > INT_MAX / nDataSize ||
+        nBlockXSize > INT_MAX / (nBlockYSize * nDataSize) )
+    {
+        CPLDebug ("RMF", "Too big raster / tile dimension");
+        delete poDS;
+        return NULL;
+    }
 
-    poDS->nXTiles = ( poDS->nRasterXSize + poDS->sHeader.nTileWidth - 1 ) /
-        poDS->sHeader.nTileWidth;
-    poDS->nYTiles = ( poDS->nRasterYSize + poDS->sHeader.nTileHeight - 1 ) /
-        poDS->sHeader.nTileHeight;
+    poDS->nXTiles = DIV_ROUND_UP( poDS->nRasterXSize, nBlockXSize );
+    poDS->nYTiles = DIV_ROUND_UP( poDS->nRasterYSize, nBlockYSize );
 
 #ifdef DEBUG
     CPLDebug( "RMF", "Image is %d tiles wide, %d tiles long",
@@ -1496,9 +1522,7 @@ do {                                                                    \
 /* -------------------------------------------------------------------- */
 /*  Create band information objects.                                    */
 /* -------------------------------------------------------------------- */
-    int iBand;
-
-    for( iBand = 1; iBand <= poDS->nBands; iBand++ )
+    for( int iBand = 1; iBand <= poDS->nBands; iBand++ )
         poDS->SetBand( iBand, new RMFRasterBand( poDS, iBand, eType ) );
 
 /* -------------------------------------------------------------------- */
@@ -1514,7 +1538,7 @@ do {                                                                    \
     {
         OGRSpatialReference oSRS;
         GInt32  nProj =
-            (poDS->sHeader.iProjection) ? poDS->sHeader.iProjection : 1L;
+            (poDS->sHeader.iProjection) ? poDS->sHeader.iProjection : 1;
         double  padfPrjParams[8];
 
         padfPrjParams[0] = poDS->sHeader.dfStdP1;
@@ -1665,9 +1689,7 @@ GDALDataset *RMFDataset::Create( const char * pszFilename,
 /* -------------------------------------------------------------------- */
 /*  Create the dataset.                                                 */
 /* -------------------------------------------------------------------- */
-    RMFDataset      *poDS;
-
-    poDS = new RMFDataset();
+    RMFDataset *poDS = new RMFDataset();
 
     poDS->fp = VSIFOpenL( pszFilename, "w+b" );
     if( poDS->fp == NULL )
@@ -1683,12 +1705,10 @@ GDALDataset *RMFDataset::Create( const char * pszFilename,
 /* -------------------------------------------------------------------- */
 /*  Fill the RMFHeader                                                  */
 /* -------------------------------------------------------------------- */
-    GUInt32     nTileSize, nCurPtr = 0;
-    GUInt32     nBlockXSize =
+    GUInt32 nBlockXSize =
         ( nXSize < RMF_DEFAULT_BLOCKXSIZE ) ? nXSize : RMF_DEFAULT_BLOCKXSIZE;
-    GUInt32     nBlockYSize =
+    GUInt32 nBlockYSize =
         ( nYSize < RMF_DEFAULT_BLOCKYSIZE ) ? nYSize : RMF_DEFAULT_BLOCKYSIZE;
-    const char  *pszValue;
 
     if ( CSLFetchBoolean( papszParmList, "MTW", FALSE) )
         poDS->eRMFType = RMFT_MTW;
@@ -1706,13 +1726,17 @@ GDALDataset *RMFDataset::Create( const char * pszFilename,
     poDS->sHeader.nHeight = nYSize;
     poDS->sHeader.nWidth = nXSize;
 
-    pszValue = CSLFetchNameValue(papszParmList,"BLOCKXSIZE");
+    const char *pszValue = CSLFetchNameValue(papszParmList,"BLOCKXSIZE");
     if( pszValue != NULL )
         nBlockXSize = atoi( pszValue );
+    if( nBlockXSize <= 0 )
+        nBlockXSize = RMF_DEFAULT_BLOCKXSIZE;
 
     pszValue = CSLFetchNameValue(papszParmList,"BLOCKYSIZE");
     if( pszValue != NULL )
         nBlockYSize = atoi( pszValue );
+    if( nBlockYSize <= 0 )
+        nBlockYSize = RMF_DEFAULT_BLOCKXSIZE;
 
     poDS->sHeader.nTileWidth = nBlockXSize;
     poDS->sHeader.nTileHeight = nBlockYSize;
@@ -1731,7 +1755,7 @@ GDALDataset *RMFDataset::Create( const char * pszFilename,
     poDS->sHeader.nROIOffset = 0x00;
     poDS->sHeader.nROISize = 0x00;
 
-    nCurPtr += RMF_HEADER_SIZE;
+    GUInt32 nCurPtr = RMF_HEADER_SIZE;
 
     // Extended header
     poDS->sHeader.nExtHdrOffset = nCurPtr;
@@ -1741,8 +1765,6 @@ GDALDataset *RMFDataset::Create( const char * pszFilename,
     // Color table
     if ( poDS->eRMFType == RMFT_RSW && nBands == 1 )
     {
-        GUInt32 i;
-
         if ( poDS->sHeader.nBitDepth > 8 )
         {
             CPLError( CE_Failure, CPLE_AppDefined,
@@ -1755,14 +1777,14 @@ GDALDataset *RMFDataset::Create( const char * pszFilename,
         poDS->sHeader.nClrTblOffset = nCurPtr;
         poDS->nColorTableSize = 1 << poDS->sHeader.nBitDepth;
         poDS->sHeader.nClrTblSize = poDS->nColorTableSize * 4;
-        poDS->pabyColorTable = (GByte *) VSIMalloc( poDS->sHeader.nClrTblSize );
+        poDS->pabyColorTable = reinterpret_cast<GByte *>(
+            VSI_MALLOC_VERBOSE( poDS->sHeader.nClrTblSize ) );
         if (poDS->pabyColorTable == NULL)
         {
-            CPLError( CE_Failure, CPLE_OutOfMemory, "Out of memory");
             delete poDS;
             return NULL;
         }
-        for ( i = 0; i < poDS->nColorTableSize; i++ )
+        for( GUInt32 i = 0; i < poDS->nColorTableSize; i++ )
         {
             poDS->pabyColorTable[i * 4] =
                 poDS->pabyColorTable[i * 4 + 1] =
@@ -1781,9 +1803,10 @@ GDALDataset *RMFDataset::Create( const char * pszFilename,
     poDS->sHeader.nTileTblOffset = nCurPtr;
     poDS->sHeader.nTileTblSize =
         poDS->sHeader.nXTiles * poDS->sHeader.nYTiles * 4 * 2;
-    poDS->paiTiles = (GUInt32 *)CPLCalloc( poDS->sHeader.nTileTblSize, 1 );
-    nCurPtr += poDS->sHeader.nTileTblSize;
-    nTileSize = poDS->sHeader.nTileWidth * poDS->sHeader.nTileHeight
+    poDS->paiTiles = reinterpret_cast<GUInt32 *>(
+        CPLCalloc( poDS->sHeader.nTileTblSize, 1 ) );
+    /*nCurPtr += poDS->sHeader.nTileTblSize;*/
+    const GUInt32 nTileSize = poDS->sHeader.nTileWidth * poDS->sHeader.nTileHeight
         * GDALGetDataTypeSize( eType ) / 8;
     poDS->sHeader.nSize =
         poDS->paiTiles[poDS->sHeader.nTileTblSize / 4 - 2] + nTileSize;
@@ -1832,12 +1855,10 @@ GDALDataset *RMFDataset::Create( const char * pszFilename,
 /* -------------------------------------------------------------------- */
 /*      Create band information objects.                                */
 /* -------------------------------------------------------------------- */
-    int         iBand;
-
-    for( iBand = 1; iBand <= poDS->nBands; iBand++ )
+    for( int iBand = 1; iBand <= poDS->nBands; iBand++ )
         poDS->SetBand( iBand, new RMFRasterBand( poDS, iBand, eType ) );
 
-    return (GDALDataset *) poDS;
+    return reinterpret_cast<GDALDataset *>( poDS );
 }
 
 /************************************************************************/
@@ -1847,34 +1868,29 @@ GDALDataset *RMFDataset::Create( const char * pszFilename,
 void GDALRegister_RMF()
 
 {
-    GDALDriver  *poDriver;
+    if( GDALGetDriverByName( "RMF" ) != NULL )
+        return;
 
-    if( GDALGetDriverByName( "RMF" ) == NULL )
-    {
-        poDriver = new GDALDriver();
+    GDALDriver *poDriver = new GDALDriver();
 
-        poDriver->SetDescription( "RMF" );
-        poDriver->SetMetadataItem( GDAL_DCAP_RASTER, "YES" );
-        poDriver->SetMetadataItem( GDAL_DMD_LONGNAME,
-                                   "Raster Matrix Format" );
-        poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC,
-                                   "frmt_rmf.html" );
-        poDriver->SetMetadataItem( GDAL_DMD_EXTENSION, "rsw" );
-        poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES,
-                                   "Byte Int16 Int32 Float64" );
-        poDriver->SetMetadataItem( GDAL_DMD_CREATIONOPTIONLIST,
+    poDriver->SetDescription( "RMF" );
+    poDriver->SetMetadataItem( GDAL_DCAP_RASTER, "YES" );
+    poDriver->SetMetadataItem( GDAL_DMD_LONGNAME, "Raster Matrix Format" );
+    poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, "frmt_rmf.html" );
+    poDriver->SetMetadataItem( GDAL_DMD_EXTENSION, "rsw" );
+    poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES,
+                               "Byte Int16 Int32 Float64" );
+    poDriver->SetMetadataItem( GDAL_DMD_CREATIONOPTIONLIST,
 "<CreationOptionList>"
 "   <Option name='MTW' type='boolean' description='Create MTW DEM matrix'/>"
 "   <Option name='BLOCKXSIZE' type='int' description='Tile Width'/>"
 "   <Option name='BLOCKYSIZE' type='int' description='Tile Height'/>"
 "</CreationOptionList>" );
-        poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
+    poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
 
-        poDriver->pfnIdentify = RMFDataset::Identify;
-        poDriver->pfnOpen = RMFDataset::Open;
-        poDriver->pfnCreate = RMFDataset::Create;
+    poDriver->pfnIdentify = RMFDataset::Identify;
+    poDriver->pfnOpen = RMFDataset::Open;
+    poDriver->pfnCreate = RMFDataset::Create;
 
-        GetGDALDriverManager()->RegisterDriver( poDriver );
-    }
+    GetGDALDriverManager()->RegisterDriver( poDriver );
 }
-

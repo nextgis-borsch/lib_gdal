@@ -94,8 +94,10 @@ CPLErr GDALParseGMLCoverage( CPLXMLNode *psXML,
     {
         CPLError( CE_Failure, CPLE_AppDefined, 
                   "Unable to find or parse GridEnvelope.low/high." );
+        CSLDestroy( papszLow );
+        CSLDestroy( papszHigh );
         return CE_Failure;
-    }        
+    }
 
     if( pnXSize != NULL )
         *pnXSize = atoi(papszHigh[0]) - atoi(papszLow[0]) + 1;
@@ -113,15 +115,15 @@ CPLErr GDALParseGMLCoverage( CPLXMLNode *psXML,
 
     if( psOriginPoint != NULL )
     {
-        int bOldWrap = FALSE;
+        bool bOldWrap = false;
 
-        // old coverages (ie. WCS) just have <pos> under <origin> so we
-        // may need to temporarily force <origin> to <Point>
+        // Old coverages (i.e. WCS) just have <pos> under <origin>, so we
+        // may need to temporarily force <origin> to <Point>.
         if( psOriginPoint->eType == CXT_Element
             && EQUAL(psOriginPoint->pszValue,"origin") )
         {
             strcpy( psOriginPoint->pszValue, "Point");
-            bOldWrap = TRUE;
+            bOldWrap = true;
         }
         poOriginGeometry = (OGRPoint *) 
             OGR_G_CreateFromGMLTree( psOriginPoint );
@@ -145,11 +147,11 @@ CPLErr GDALParseGMLCoverage( CPLXMLNode *psXML,
 /* -------------------------------------------------------------------- */
     char **papszOffset1Tokens = NULL;
     char **papszOffset2Tokens = NULL;
-    int bSuccess = FALSE;
+    bool bSuccess = false;
 
-    papszOffset1Tokens = 
+    papszOffset1Tokens =
         CSLTokenizeStringComplex( pszOffset1, " ,", FALSE, FALSE );
-    papszOffset2Tokens = 
+    papszOffset2Tokens =
         CSLTokenizeStringComplex( pszOffset2, " ,", FALSE, FALSE );
 
     if( CSLCount(papszOffset1Tokens) >= 2
@@ -169,7 +171,7 @@ CPLErr GDALParseGMLCoverage( CPLXMLNode *psXML,
         padfGeoTransform[3] -= padfGeoTransform[4]*0.5;
         padfGeoTransform[3] -= padfGeoTransform[5]*0.5;
 
-        bSuccess = TRUE;
+        bSuccess = true;
         //bHaveGeoTransform = TRUE;
     }
 
@@ -180,19 +182,19 @@ CPLErr GDALParseGMLCoverage( CPLXMLNode *psXML,
         delete poOriginGeometry;
 
 /* -------------------------------------------------------------------- */
-/*      If we have gotten a geotransform, then try to interprete the    */
+/*      If we have gotten a geotransform, then try to interpret the     */
 /*      srsName.                                                        */
 /* -------------------------------------------------------------------- */
     if( bSuccess && pszSRSName != NULL 
         && (*ppszProjection == NULL || strlen(*ppszProjection) == 0) )
     {
-        if( EQUALN(pszSRSName,"epsg:",5) )
+        if( STARTS_WITH_CI(pszSRSName, "epsg:") )
         {
             OGRSpatialReference oSRS;
             if( oSRS.SetFromUserInput( pszSRSName ) == OGRERR_NONE )
                 oSRS.exportToWkt( ppszProjection );
         }
-        else if( EQUALN(pszSRSName,"urn:ogc:def:crs:",16) )
+        else if( STARTS_WITH_CI(pszSRSName, "urn:ogc:def:crs:") )
         {
             OGRSpatialReference oSRS;
             if( oSRS.importFromURN( pszSRSName ) == OGRERR_NONE )
@@ -209,4 +211,3 @@ CPLErr GDALParseGMLCoverage( CPLXMLNode *psXML,
 
     return CE_None;
 }
-

@@ -42,64 +42,7 @@
 
 #ifdef FRMT_ecw
 
-// The following is needed on 4.x+ to enable rw support.
-#if defined(HAVE_COMPRESS)
-# ifndef ECW_COMPRESS_RW_SDK_VERSION
-#  define ECW_COMPRESS_RW_SDK_VERSION
-# endif
-#endif
-
-#if defined(_MSC_VER)
-#  pragma warning(disable:4800)
-#endif
-
-#include <NCSECWClient.h>
-#include <NCSECWCompressClient.h>
-#include <NCSErrors.h>
-#include <NCSFile.h>
-#include <NCSJP2FileView.h>
-
-#ifdef HAVE_ECW_BUILDNUMBER_H
-#  include <ECWJP2BuildNumber.h>
-#  if !defined(ECW_VERSION)
-#    define ECWSDK_VERSION (NCS_ECWJP2_VER_MAJOR*10+NCS_ECWJP2_VER_MINOR)
-#  endif
-#else
-/* By default, assume 3.3 SDK Version. */
-#  if !defined(ECWSDK_VERSION)
-#    define ECWSDK_VERSION 33
-#  endif
-#endif
-
-#if ECWSDK_VERSION < 40
-
-#if !defined(NO_COMPRESS) && !defined(HAVE_COMPRESS)
-#  define HAVE_COMPRESS
-#endif
-
-#else
-    #if ECWSDK_VERSION>=50
-		#if ECWSDK_VERSION>=51
-			#define JPEG2000_DOMAIN_NAME "JPEG2000"
-		#endif
-        #include <NCSECWHeaderEditor.h>
-        #include "NCSEcw/SDK/Box.h"
-    #else 
-        #include <HeaderEditor.h>
-    #endif
-#  define NCS_FASTCALL
-#endif
-
-#if ECWSDK_VERSION >= 40
-#define SDK_CAN_DO_SUPERSAMPLING 1
-#endif
-
-#ifndef NCSFILEBASE_H
-#  include <NCSJP2FileView.h>
-#else
-#  undef  CNCSJP2FileView
-#  define CNCSJP2FileView	  CNCSFile
-#endif
+#include "ecwsdk_headers.h"
 
 void ECWInitialize( void );
 GDALDataset* ECWDatasetOpenJPEG2000(GDALOpenInfo* poOpenInfo);
@@ -160,7 +103,7 @@ public:
     virtual void UpdateXLBox(void);
 
     void    SetData( int nDataLength, const unsigned char *pabyDataIn );
-    
+
     int     GetDataLength() { return nDataLength; }
     unsigned char *GetData() { return pabyData; }
 };
@@ -178,17 +121,20 @@ class VSIIOStream : public CNCSJPCIOStream
   private: 
     char     *m_Filename;
   public:
-    
+
     INT64    startOfJPData;
     INT64    lengthOfJPData;
     VSILFILE    *fpVSIL;
     BOOLEAN      bWritable;
     BOOLEAN      bSeekable;
     int      nFileViewCount;
-    
+
     int      nCOMState;
     int      nCOMLength;
     GByte    abyCOMType[2];
+
+    /* To fix ‘virtual bool NCS::CIOStream::Read(INT64, void*, UINT32)’ was hidden' with SDK 5 */
+    using CNCSJPCIOStream::Read;
 
     VSIIOStream() : m_Filename(NULL){
         nFileViewCount = 0;
@@ -221,10 +167,10 @@ class VSIIOStream : public CNCSJPCIOStream
         }
         return oErr;
     }        
-        
+
 #if ECWSDK_VERSION >= 40
     virtual VSIIOStream *Clone() {
-        
+
         VSILFILE *fpNewVSIL = VSIFOpenL( m_Filename, "rb" );
         if (fpNewVSIL == NULL) 
         {
@@ -266,14 +212,27 @@ class VSIIOStream : public CNCSJPCIOStream
             }
             CPLDebug( "ECW", "Using filename '%s' for temporary directory determination purposes.", osFilenameUsed.c_str() );
         }
-        return(CNCSJPCIOStream::Open((char *)osFilenameUsed.c_str(), 
-                                     (bool) bWrite));
+#ifdef WIN32
+        if( CSLTestBoolean( CPLGetConfigOption( "GDAL_FILENAME_IS_UTF8", "YES" ) ) )
+        {
+            wchar_t       *pwszFilename = CPLRecodeToWChar( osFilenameUsed.c_str(), CPL_ENC_UTF8, CPL_ENC_UCS2 );
+            CNCSError oError;
+            oError = CNCSJPCIOStream::Open( pwszFilename, (bool) bWrite );
+            CPLFree( pwszFilename );
+            return oError;
+        }
+        else
+#endif
+        {
+            return(CNCSJPCIOStream::Open((char *)osFilenameUsed.c_str(),
+                                        (bool) bWrite));
+        }
     }
 
     virtual bool NCS_FASTCALL Seek() {
         return bSeekable;
     }
-    
+
     virtual bool NCS_FASTCALL Seek(INT64 offset, Origin origin = CURRENT) {
         bool success = false;
         switch(origin) {
@@ -284,7 +243,7 @@ class VSIIOStream : public CNCSJPCIOStream
             case CURRENT:
               success = (0 == VSIFSeekL(fpVSIL, offset, SEEK_CUR));
               break;
-                
+
             case END:
               success = (0 == VSIFSeekL(fpVSIL, offset, SEEK_END));
               break;
@@ -327,7 +286,7 @@ class VSIIOStream : public CNCSJPCIOStream
                       "Read(%d) failed @ " CPL_FRMT_GIB ", ignoring failure.",
                       count, (VSIFTellL( fpVSIL ) - startOfJPData) );
         }
-        
+
         return true;
     }
 
@@ -389,7 +348,7 @@ class VSIIOStream : public CNCSJPCIOStream
                 nCOMState = 0;
             }
         }
-        
+
         if( 1 != VSIFWriteL(buffer, count, 1, fpVSIL) )
         {
             CPLDebug( "ECW", "VSIIOStream::Write(%d) failed.", 
@@ -422,7 +381,7 @@ private:
 
     static NCSEcwReadStatus RefreshCB( NCSFileView * );
     NCSEcwReadStatus ReadToBuffer();
-    
+
 public:
     ECWAsyncReader();
     virtual ~ECWAsyncReader();
@@ -528,9 +487,9 @@ class CPL_DLL ECWDataset : public GDALJP2AbstractDataset
     int         bDatumCodeChanged;
     int         bUnitsCodeChanged;
     void        WriteHeader();
-    
+
     int         bUseOldBandRasterIOImplementation;
-    
+
     int         bPreventCopyingSomeMetadata;
 
     int         nBandIndexToPromoteTo8Bit;
@@ -549,7 +508,7 @@ class CPL_DLL ECWDataset : public GDALJP2AbstractDataset
   public:
         ECWDataset(int bIsJPEG2000);
         ~ECWDataset();
-                
+
     static GDALDataset *Open( GDALOpenInfo *, int bIsJPEG2000 );
     static int          IdentifyJPEG2000( GDALOpenInfo * poOpenInfo );
     static GDALDataset *OpenJPEG2000( GDALOpenInfo * );
@@ -614,7 +573,7 @@ class CPL_DLL ECWDataset : public GDALJP2AbstractDataset
 class ECWRasterBand : public GDALPamRasterBand
 {
     friend class ECWDataset;
-    
+
     // NOTE: poDS may be altered for NITF/JPEG2000 files!
     ECWDataset     *poGDS;
 

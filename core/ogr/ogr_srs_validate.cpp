@@ -35,10 +35,10 @@
 
 CPL_CVSID("$Id$");
 
-/* why would fipszone and zone be paramers when they relate to a composite
+/* why would fipszone and zone be parameters when they relate to a composite
    projection which renders done into a non-zoned projection? */
 
-static const char *papszParameters[] =
+static const char * const papszParameters[] =
 {
     SRS_PP_CENTRAL_MERIDIAN,
     SRS_PP_SCALE_FACTOR,
@@ -69,6 +69,10 @@ static const char *papszParameters[] =
     SRS_PP_LONGITUDE_OF_1ST_POINT,
     SRS_PP_LATITUDE_OF_2ND_POINT,
     SRS_PP_LONGITUDE_OF_2ND_POINT,
+    SRS_PP_PEG_POINT_LATITUDE, /* for SCH */
+    SRS_PP_PEG_POINT_LONGITUDE, /* for SCH */
+    SRS_PP_PEG_POINT_HEADING, /* for SCH */
+    SRS_PP_PEG_POINT_HEIGHT, /* for SCH */
     NULL
 };
 
@@ -77,7 +81,7 @@ static const char *papszParameters[] =
 // underscores instead of spaces.  Should we use the EPSG names were available?
 // Plate-Caree has an accent in the spec!
 
-static const char *papszProjectionSupported[] =
+static const char * const papszProjectionSupported[] =
 {
     SRS_PT_CASSINI_SOLDNER,
     SRS_PT_BONNE,
@@ -128,6 +132,7 @@ static const char *papszProjectionSupported[] =
     SRS_PT_WAGNER_VI,
     SRS_PT_WAGNER_VII,
     SRS_PT_QSC,
+    SRS_PT_SCH,
     SRS_PT_GAUSSSCHREIBERTMERCATOR,
     SRS_PT_KROVAK,
     SRS_PT_CYLINDRICAL_EQUAL_AREA,
@@ -136,7 +141,7 @@ static const char *papszProjectionSupported[] =
     NULL
 };
 
-static const char *papszProjectionUnsupported[] =
+static const char * const papszProjectionUnsupported[] =
 {
     SRS_PT_NEW_ZEALAND_MAP_GRID,
     SRS_PT_TUNISIA_MINING_GRID,
@@ -146,7 +151,7 @@ static const char *papszProjectionUnsupported[] =
 /*
 ** List of supported projections with the PARAMETERS[] acceptable for each.
 */
-static const char *papszProjWithParms[] = {
+static const char * const papszProjWithParms[] = {
 
     SRS_PT_TRANSVERSE_MERCATOR,
     SRS_PP_LATITUDE_OF_ORIGIN,
@@ -512,6 +517,13 @@ static const char *papszProjWithParms[] = {
     SRS_PP_CENTRAL_MERIDIAN,
     NULL,
 
+    SRS_PT_SCH,
+    SRS_PP_PEG_POINT_LATITUDE,
+    SRS_PP_PEG_POINT_LONGITUDE,
+    SRS_PP_PEG_POINT_HEADING,
+    SRS_PP_PEG_POINT_HEIGHT,
+    NULL,
+
     SRS_PT_GAUSSSCHREIBERTMERCATOR,
     SRS_PP_LATITUDE_OF_ORIGIN,
     SRS_PP_CENTRAL_MERIDIAN,
@@ -532,7 +544,7 @@ static const char *papszProjWithParms[] = {
     NULL
 };
 
-static const char *papszAliasGroupList[] = {
+static const char * const papszAliasGroupList[] = {
     SRS_PP_LATITUDE_OF_ORIGIN,
     SRS_PP_LATITUDE_OF_CENTER,
     NULL,
@@ -581,7 +593,7 @@ OGRErr OGRSpatialReference::Validate()
     /* using the CT spec grammar */
     static int bUseCTGrammar = -1;
     if( bUseCTGrammar < 0 )
-        bUseCTGrammar = CSLTestBoolean(CPLGetConfigOption("OSR_USE_CT_GRAMMAR", "TRUE"));
+        bUseCTGrammar = CPLTestBool(CPLGetConfigOption("OSR_USE_CT_GRAMMAR", "TRUE"));
 
     if( eErr == OGRERR_NONE && bUseCTGrammar )
     {
@@ -618,7 +630,7 @@ OGRErr OGRSpatialReference::Validate(OGR_SRSNode *poRoot)
         && !EQUAL(poRoot->GetValue(),"COMPD_CS"))
     {
         CPLDebug( "OGRSpatialReference::Validate",
-                  "Unrecognised root node `%s'\n",
+                  "Unrecognized root node `%s'\n",
                   poRoot->GetValue() );
         return OGRERR_CORRUPT_DATA;
     }
@@ -677,8 +689,8 @@ OGRErr OGRSpatialReference::Validate(OGR_SRSNode *poRoot)
     {
         OGR_SRSNode     *poNode;
         int             i;
-        int             bGotVertDatum = FALSE;
-        int             bGotUnit = FALSE;
+        bool            bGotVertDatum = false;
+        bool            bGotUnit = false;
         int             nCountAxis = 0;
 
         for( i = 1; i < poRoot->GetChildCount(); i++ )
@@ -690,14 +702,14 @@ OGRErr OGRSpatialReference::Validate(OGR_SRSNode *poRoot)
                 OGRErr eErr = ValidateVertDatum(poNode);
                 if (eErr != OGRERR_NONE)
                     return eErr;
-                bGotVertDatum = TRUE;
+                bGotVertDatum = true;
             }
             else if( EQUAL(poNode->GetValue(),"UNIT") )
             {
                 OGRErr eErr = ValidateUnit(poNode);
                 if (eErr != OGRERR_NONE)
                     return eErr;
-                bGotUnit = TRUE;
+                bGotUnit = true;
             }
             else if( EQUAL(poNode->GetValue(),"AXIS") )
             {
@@ -755,9 +767,9 @@ OGRErr OGRSpatialReference::Validate(OGR_SRSNode *poRoot)
     {
         OGR_SRSNode     *poNode;
         int             i;
-        int             bGotDatum = FALSE;
-        int             bGotPrimeM = FALSE;
-        int             bGotUnit = FALSE;
+        bool            bGotDatum = false;
+        bool            bGotPrimeM = false;
+        bool            bGotUnit = false;
         int             nCountAxis = 0;
 
         for( i = 1; i < poRoot->GetChildCount(); i++ )
@@ -766,11 +778,11 @@ OGRErr OGRSpatialReference::Validate(OGR_SRSNode *poRoot)
 
             if( EQUAL(poNode->GetValue(),"DATUM") )
             {
-                bGotDatum = TRUE;
+                bGotDatum = true;
             }
             else if( EQUAL(poNode->GetValue(),"PRIMEM") )
             {
-                bGotPrimeM = TRUE;
+                bGotPrimeM = true;
 
                 if( poNode->GetChildCount() < 2 
                     || poNode->GetChildCount() > 3 )
@@ -779,7 +791,7 @@ OGRErr OGRSpatialReference::Validate(OGR_SRSNode *poRoot)
                               "PRIMEM has wrong number of children (%d),"
                               "not 2 or 3 as expected.\n",
                               poNode->GetChildCount() );
-                    
+
                     return OGRERR_CORRUPT_DATA;
                 }
             }
@@ -788,7 +800,7 @@ OGRErr OGRSpatialReference::Validate(OGR_SRSNode *poRoot)
                 OGRErr eErr = ValidateUnit(poNode);
                 if (eErr != OGRERR_NONE)
                     return eErr;
-                bGotUnit = TRUE;
+                bGotUnit = true;
             }
             else if( EQUAL(poNode->GetValue(),"AXIS") )
             {
@@ -876,16 +888,16 @@ OGRErr OGRSpatialReference::Validate(OGR_SRSNode *poRoot)
                               "PARAMETER has wrong number of children (%d),"
                               "not 2 as expected.\n",
                               poNode->GetChildCount() );
-                    
+
                     return OGRERR_CORRUPT_DATA;
                 }
                 else if( CSLFindString( (char **)papszParameters,
                                         poNode->GetChild(0)->GetValue()) == -1)
                 {
                     CPLDebug( "OGRSpatialReference::Validate",
-                              "Unrecognised PARAMETER `%s'.\n",
+                              "Unrecognized PARAMETER `%s'.\n",
                               poNode->GetChild(0)->GetValue() );
-                    
+
                     return OGRERR_UNSUPPORTED_SRS;
                 }
             }
@@ -897,7 +909,7 @@ OGRErr OGRSpatialReference::Validate(OGR_SRSNode *poRoot)
                               "PROJECTION has wrong number of children (%d),"
                               "not 1 or 2 as expected.\n",
                               poNode->GetChildCount() );
-                    
+
                     return OGRERR_CORRUPT_DATA;
                 }
                 else if( CSLFindString( (char **)papszProjectionSupported,
@@ -906,18 +918,18 @@ OGRErr OGRSpatialReference::Validate(OGR_SRSNode *poRoot)
                                         poNode->GetChild(0)->GetValue()) == -1)
                 {
                     CPLDebug( "OGRSpatialReference::Validate",
-                              "Unrecognised PROJECTION `%s'.\n",
+                              "Unrecognized PROJECTION `%s'.\n",
                               poNode->GetChild(0)->GetValue() );
-                    
+
                     return OGRERR_UNSUPPORTED_SRS;
                 }
                 else if( CSLFindString( (char **)papszProjectionSupported,
                                         poNode->GetChild(0)->GetValue()) == -1)
                 {
                     CPLDebug( "OGRSpatialReference::Validate",
-                              "Unsupported, but recognised PROJECTION `%s'.\n",
+                              "Unsupported, but recognized PROJECTION `%s'.\n",
                               poNode->GetChild(0)->GetValue() );
-                    
+
                     return OGRERR_UNSUPPORTED_SRS;
                 }
 
@@ -962,12 +974,12 @@ OGRErr OGRSpatialReference::Validate(OGR_SRSNode *poRoot)
                 CPLDebug( "OGRSpatialReference::Validate",
                           "Unexpected child for PROJCS `%s'.\n",
                           poNode->GetValue() );
-                
+
                 return OGRERR_CORRUPT_DATA;
             }
         }
     }
-    
+
 /* -------------------------------------------------------------------- */
 /*      Validate GEOGCS if found.                                       */
 /* -------------------------------------------------------------------- */
@@ -995,7 +1007,7 @@ OGRErr OGRSpatialReference::Validate(OGR_SRSNode *poRoot)
                               "PRIMEM has wrong number of children (%d),"
                               "not 2 or 3 as expected.\n",
                               poNode->GetChildCount() );
-                    
+
                     return OGRERR_CORRUPT_DATA;
                 }
             }
@@ -1027,7 +1039,7 @@ OGRErr OGRSpatialReference::Validate(OGR_SRSNode *poRoot)
                 CPLDebug( "OGRSpatialReference::Validate",
                           "Unexpected child for GEOGCS `%s'.\n",
                           poNode->GetValue() );
-                
+
                 return OGRERR_CORRUPT_DATA;
             }
         }
@@ -1036,7 +1048,7 @@ OGRErr OGRSpatialReference::Validate(OGR_SRSNode *poRoot)
         {
             CPLDebug( "OGRSpatialReference::Validate",
                       "No DATUM child in GEOGCS.\n" );
-            
+
             return OGRERR_CORRUPT_DATA;
         }
     }
@@ -1049,14 +1061,14 @@ OGRErr OGRSpatialReference::Validate(OGR_SRSNode *poRoot)
     if( poDATUM != NULL )
     {
         OGR_SRSNode     *poSPHEROID;
-        int             bGotSpheroid = FALSE;
+        bool            bGotSpheroid = false;
         int             i;
 
         if( poDATUM->GetChildCount() == 0 )
         {
             CPLDebug( "OGRSpatialReference::Validate",
                       "DATUM has no children." );
-            
+
             return OGRERR_CORRUPT_DATA;
         }
 
@@ -1068,7 +1080,7 @@ OGRErr OGRSpatialReference::Validate(OGR_SRSNode *poRoot)
             if( EQUAL(poNode->GetValue(),"SPHEROID") )
             {
                 poSPHEROID = poDATUM->GetChild(1);
-                bGotSpheroid = TRUE;
+                bGotSpheroid = true;
 
                 if( poSPHEROID->GetChildCount() != 3 
                     && poSPHEROID->GetChildCount() != 4 )
@@ -1077,7 +1089,7 @@ OGRErr OGRSpatialReference::Validate(OGR_SRSNode *poRoot)
                               "SPHEROID has wrong number of children (%d),"
                               "not 3 or 4 as expected.\n",
                               poSPHEROID->GetChildCount() );
-                    
+
                     return OGRERR_CORRUPT_DATA;
                 }
                 else if( CPLAtof(poSPHEROID->GetChild(1)->GetValue()) == 0.0 )
@@ -1115,7 +1127,7 @@ OGRErr OGRSpatialReference::Validate(OGR_SRSNode *poRoot)
                 CPLDebug( "OGRSpatialReference::Validate",
                           "Unexpected child for DATUM `%s'.\n",
                           poNode->GetValue() );
-                
+
                 return OGRERR_CORRUPT_DATA;
             }
         }
@@ -1124,10 +1136,10 @@ OGRErr OGRSpatialReference::Validate(OGR_SRSNode *poRoot)
         {
             CPLDebug( "OGRSpatialReference::Validate",
                       "No SPHEROID child in DATUM.\n" );
-            
+
             return OGRERR_CORRUPT_DATA;
         }
-    }        
+    }
 
 /* -------------------------------------------------------------------- */
 /*      If this is projected, try to validate the detailed set of       */
@@ -1153,7 +1165,7 @@ OGRErr OGRSpatialReference::Validate(OGR_SRSNode *poRoot)
 OGRErr OSRValidate( OGRSpatialReferenceH hSRS )
 
 {
-    VALIDATE_POINTER1( hSRS, "OSRValidate", CE_Failure );
+    VALIDATE_POINTER1( hSRS, "OSRValidate", OGRERR_FAILURE );
 
     return ((OGRSpatialReference *) hSRS)->Validate();
 }
@@ -1237,7 +1249,7 @@ OGRErr OGRSpatialReference::ValidateProjection(OGR_SRSNode *poRoot)
 /* -------------------------------------------------------------------- */
     const char *pszProjection;
     int        iOffset;
-    
+
     pszProjection = poPROJCS->GetNode("PROJECTION")->GetChild(0)->GetValue();
 
     for( iOffset = 0; 
@@ -1455,4 +1467,3 @@ OGRErr OGRSpatialReference::ValidateUnit(OGR_SRSNode *poRoot)
 
     return OGRERR_NONE;
 }
-

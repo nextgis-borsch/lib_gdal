@@ -247,7 +247,7 @@ static const char* getCLDataTypeString( cl_channel_type dataType )
 }
 
 /*
- Finds an appropirate OpenCL device. If the user specifies a preference, the
+ Finds an appropriate OpenCL device. If the user specifies a preference, the
  code for it should be here (but not currently supported). For debugging, it's
  always easier to use CL_DEVICE_TYPE_CPU because then printf() can be called
  from the kernel. If debugging is on, we can print the name and stats about the
@@ -287,9 +287,9 @@ cl_device_id get_device(OCLVendor *peVendor)
     assert(err == CL_SUCCESS);
     CPLDebug( "OpenCL", "Connected to %s %s.", vendor_name, device_name);
 
-    if (strncmp((const char*)vendor_name, "Advanced Micro Devices", strlen("Advanced Micro Devices")) == 0)
+    if (STARTS_WITH((const char*)vendor_name, "Advanced Micro Devices"))
         *peVendor = VENDOR_AMD;
-    else if (strncmp((const char*)vendor_name, "Intel(R) Corporation", strlen("Intel(R) Corporation")) == 0)
+    else if (STARTS_WITH((const char*)vendor_name, "Intel(R) Corporation"))
         *peVendor = VENDOR_INTEL;
     else
         *peVendor = VENDOR_OTHER;
@@ -396,7 +396,7 @@ cl_int alloc_pinned_mem(struct oclWarper *warper, int imgNum, size_t dataSz,
         CPLDebug("OpenCL", "Using fallback non-pinned memory!");
 #endif
         //Fallback to regular allocation
-        wrkPtr[imgNum] = (void *)VSIMalloc(dataSz);
+        wrkPtr[imgNum] = (void *)VSI_MALLOC_VERBOSE(dataSz);
         
         if (wrkPtr[imgNum] == NULL)
             handleErr(err = CL_OUT_OF_HOST_MEMORY);
@@ -436,15 +436,15 @@ cl_int alloc_working_arr(struct oclWarper *warper,
     }
     
     //Alloc space for pointers to the main image data
-    warper->realWork.v = (void **)VSICalloc(ptrSz, warper->numImages);
-    warper->dstRealWork.v = (void **)VSICalloc(ptrSz, warper->numImages);
+    warper->realWork.v = (void **)VSI_CALLOC_VERBOSE(ptrSz, warper->numImages);
+    warper->dstRealWork.v = (void **)VSI_CALLOC_VERBOSE(ptrSz, warper->numImages);
     if (warper->realWork.v == NULL || warper->dstRealWork.v == NULL)
         handleErr(err = CL_OUT_OF_HOST_MEMORY);
     
     if (warper->imagWorkCL != NULL) {
         //Alloc space for pointers to the extra channel, if it exists
-        warper->imagWork.v = (void **)VSICalloc(ptrSz, warper->numImages);
-        warper->dstImagWork.v = (void **)VSICalloc(ptrSz, warper->numImages);
+        warper->imagWork.v = (void **)VSI_CALLOC_VERBOSE(ptrSz, warper->numImages);
+        warper->dstImagWork.v = (void **)VSI_CALLOC_VERBOSE(ptrSz, warper->numImages);
         if (warper->imagWork.v == NULL || warper->dstImagWork.v == NULL)
             handleErr(err = CL_OUT_OF_HOST_MEMORY);
     } else {
@@ -510,8 +510,8 @@ cl_int alloc_working_arr(struct oclWarper *warper,
 }
 
 /*
- Assemble and create the kernel. For optimization, portabilaty, and
- implimentation limitation reasons, the program is actually assembled from
+ Assemble and create the kernel. For optimization, portability, and
+ implementation limitation reasons, the program is actually assembled from
  several strings, then compiled with as many invariants as possible defined by
  the preprocessor. There is also quite a bit of error-catching code in here
  because the kernel is where many bugs show up.
@@ -528,7 +528,8 @@ cl_kernel get_kernel(struct oclWarper *warper, char useVec,
     cl_kernel kernel;
 	cl_int err = CL_SUCCESS;
     char *buffer = (char *)CPLCalloc(128000, sizeof(char));
-    char *progBuf = (char *)CPLCalloc(128000, sizeof(char));
+#define PROGBUF_SIZE 128000
+    char *progBuf = (char *)CPLCalloc(PROGBUF_SIZE, sizeof(char));
     float dstMinVal, dstMaxVal;
     
     const char *outType;
@@ -1226,11 +1227,11 @@ cl_kernel get_kernel(struct oclWarper *warper, char useVec,
     //Assemble the kernel from parts. The compiler is unable to handle multiple
     //kernels in one string with more than a few __constant modifiers each.
     if (warper->resampAlg == OCL_Bilinear)
-        sprintf(progBuf, "%s\n%s", kernGenFuncs, kernBilinear);
+        snprintf(progBuf, PROGBUF_SIZE, "%s\n%s", kernGenFuncs, kernBilinear);
     else if (warper->resampAlg == OCL_Cubic)
-        sprintf(progBuf, "%s\n%s", kernGenFuncs, kernCubic);
+        snprintf(progBuf, PROGBUF_SIZE, "%s\n%s", kernGenFuncs, kernCubic);
     else
-        sprintf(progBuf, "%s\n%s", kernGenFuncs, kernResampler);
+        snprintf(progBuf, PROGBUF_SIZE, "%s\n%s", kernGenFuncs, kernResampler);
     
     //Actually make the program from assembled source
     program = clCreateProgramWithSource(warper->context, 1, (const char**)&progBuf,
@@ -2037,8 +2038,8 @@ struct oclWarper* GDALWarpKernelOpenCL_createEnv(int srcWidth, int srcHeight,
         for (i = 0; i < warper->numBands; ++i)
             warper->useBandSrcValid[i] = FALSE;
         
-        //Allocate one array for all the band validity masks
-        //Remember that the masks don't use much memeory (they're bitwise)
+        // Allocate one array for all the band validity masks.
+        // Remember that the masks don't use much memory (they're bitwise).
         err = alloc_pinned_mem(warper, 0, sz * sizeof(int),
                                (void **)&(warper->nBandSrcValid),
                                &(warper->nBandSrcValidCL));
@@ -2076,7 +2077,7 @@ struct oclWarper* GDALWarpKernelOpenCL_createEnv(int srcWidth, int srcHeight,
     }
     handleErrGoto(err, error_label);
     
-    //Find a good & compable image channel order for the Lat/Long arr
+    // Find a good & compatible image channel order for the Lat/Long array.
     err = set_supported_formats(warper, 2,
                                 &(warper->xyChOrder), &(warper->xyChSize),
                                 CL_FLOAT);
@@ -2170,7 +2171,7 @@ cl_int GDALWarpKernelOpenCL_setDstImg(struct oclWarper *warper, void *imgData,
  values from an original matrix. When bilinearly sampled in the GPU hardware,
  the generated values are as close as possible to the original matrix.
  
- Complication: matricies have arbitrary dimensions and the sub-sampling factor
+ Complication: matrices have arbitrary dimensions and the sub-sampling factor
  is an arbitrary integer greater than zero. Getting the edge cases right is 
  difficult.
  

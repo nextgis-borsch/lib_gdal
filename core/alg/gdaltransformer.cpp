@@ -7,7 +7,7 @@
  * Author:   Frank Warmerdam, warmerdam@pobox.com
  *
  ******************************************************************************
- * Copyright (c) 2002, i3 - information integration and imaging 
+ * Copyright (c) 2002, i3 - information integration and imaging
  *                          Fort Collin, CO
  * Copyright (c) 2008-2013, Even Rouault <even dot rouault at mines-paris dot org>
  *
@@ -120,7 +120,7 @@ points may have failed) or FALSE if the overall transformation fails.
  * Then a resolution is computed with the intent that the length of the
  * distance from the top left corner of the output imagery to the bottom right
  * corner would represent the same number of pixels as in the source image. 
- * Note that if the image is somewhat rotated the diagonal taken isnt of the
+ * Note that if the image is somewhat rotated the diagonal taken isn't of the
  * whole output bounding rectangle, but instead of the locations where the
  * top/left and bottom/right corners transform.  The output pixel size is 
  * always square.  This is intended to approximately preserve the resolution
@@ -307,7 +307,7 @@ static int GDALSuggestedWarpOutput2_MustAdjustForBottomBorder(
  * Then a resolution is computed with the intent that the length of the
  * distance from the top left corner of the output imagery to the bottom right
  * corner would represent the same number of pixels as in the source image. 
- * Note that if the image is somewhat rotated the diagonal taken isnt of the
+ * Note that if the image is somewhat rotated the diagonal taken isn't of the
  * whole output bounding rectangle, but instead of the locations where the
  * top/left and bottom/right corners transform.  The output pixel size is 
  * always square.  This is intended to approximately preserve the resolution
@@ -375,9 +375,9 @@ retry:
     double dfRatio = 0.0;
     double dfStep = 1. / nSteps;
 
-    pabSuccess = (int *) VSIMalloc3(sizeof(int), nSteps + 1, nSteps + 1);
-    padfX = (double *) VSIMalloc3(sizeof(double) * 3, nSteps + 1, nSteps + 1);
-    padfXRevert = (double *) VSIMalloc3(sizeof(double) * 3, nSteps + 1, nSteps + 1);
+    pabSuccess = (int *) VSI_MALLOC3_VERBOSE(sizeof(int), nSteps + 1, nSteps + 1);
+    padfX = (double *) VSI_MALLOC3_VERBOSE(sizeof(double) * 3, nSteps + 1, nSteps + 1);
+    padfXRevert = (double *) VSI_MALLOC3_VERBOSE(sizeof(double) * 3, nSteps + 1, nSteps + 1);
     if (pabSuccess == NULL || padfX == NULL || padfXRevert == NULL)
     {
         CPLFree( padfX );
@@ -394,7 +394,6 @@ retry:
     padfZ = padfX + nSampleMax * 2;
     padfYRevert = padfXRevert + nSampleMax;
     padfZRevert = padfXRevert + nSampleMax * 2;
-
 
     // Take N_STEPS steps
     int iStep;
@@ -499,9 +498,9 @@ retry:
                     dfExpectedX   = nInXSize;
                     dfExpectedY   = dfRatio * nInYSize;
                 }
-                
-                if (fabs(padfXRevert[i] - dfExpectedX) > nInXSize / nSteps ||
-                    fabs(padfYRevert[i] - dfExpectedY) > nInYSize / nSteps)
+
+                if (fabs(padfXRevert[i] - dfExpectedX) > nInXSize / static_cast<double>(nSteps) ||
+                    fabs(padfYRevert[i] - dfExpectedY) > nInYSize / static_cast<double>(nSteps))
                     nFailedCount ++;
             }
             if( nFailedCount != 0 )
@@ -587,20 +586,20 @@ retry:
             double x_out_before = padfX[i-1];
             double x_out_after = padfX[i];
             int nIter = 0;
-            double x_in_before = (x_i - 1) * nInXSize * 1.0 / nSteps;
-            double x_in_after = x_i * nInXSize * 1.0 / nSteps;
+            double x_in_before = (double)(x_i - 1) * nInXSize / nSteps;
+            double x_in_after = (double)x_i * nInXSize / nSteps;
             int valid_before = pabSuccess[i-1];
             int valid_after = pabSuccess[i];
-            
-            /* Detect discontinuity in target coordinates when the target x coordinates */
-            /* change sign. This may be a false positive when the targe tx is around 0 */
-            /* Dichotomic search to reduce the interval to near the discontinuity and */
-            /* get a better out extent */
+
+            // Detect discontinuity in target coordinates when the target x
+            // coordinates change sign. This may be a false positive when the
+            // target tx is around 0 Dichotomic search to reduce the interval
+            // to near the discontinuity and get a better out extent.
             while ( (!valid_before || !valid_after ||
                      x_out_before * x_out_after < 0) && nIter < 16 )
             {
                 double x = (x_in_before + x_in_after) / 2;
-                double y = y_i * nInYSize * 1.0 / nSteps;
+                double y = (double)y_i * nInYSize / nSteps;
                 double z= 0;
                 //fprintf(stderr, "[%d] (%f, %f) -> ", nIter, x, y);
                 int bSuccess = TRUE;
@@ -622,7 +621,7 @@ retry:
                 else
                 {
                     //fprintf(stderr, "(%f, %f)\n", x, y);
-                    
+
                     if( !bGotInitialPoint )
                     {
                         bGotInitialPoint = TRUE;
@@ -1010,7 +1009,7 @@ GDALCreateGenImgProjTransformer( GDALDatasetH hSrcDS, const char *pszSrcWKT,
 static CPLString InsertCenterLong( GDALDatasetH hDS, CPLString osWKT )
 
 {								        
-    if( !EQUALN(osWKT.c_str(), "GEOGCS[", 7) )
+    if( !STARTS_WITH_CI(osWKT.c_str(), "GEOGCS[") )
         return osWKT;
     
     if( strstr(osWKT,"EXTENSION[\"CENTER_LONG") != NULL )
@@ -1140,7 +1139,7 @@ static GDALGenImgProjTransformInfo* GDALCreateGenImgProjTransformerInternal()
  * <li> DST_SRS: WKT SRS to be used as an override for hDstDS.
  * <li> GCPS_OK: If false, GCPs will not be used, default is TRUE. 
  * <li> REFINE_MINIMUM_GCPS: The minimum amount of GCPs that should be available after the refinement.
- * <li> REFINE_TOLERANCE: The tolernace that specifies when a GCP will be eliminated.
+ * <li> REFINE_TOLERANCE: The tolerance that specifies when a GCP will be eliminated.
  * <li> MAX_GCP_ORDER: the maximum order to use for GCP derived polynomials if
  * possible.  The default is to autoselect based on the number of GCPs.  
  * A value of -1 triggers use of Thin Plate Spline instead of polynomials.
@@ -1191,7 +1190,7 @@ GDALCreateGenImgProjTransformer2( GDALDatasetH hSrcDS, GDALDatasetH hDstDS,
 
     pszValue = CSLFetchNameValue( papszOptions, "GCPS_OK" );
     if( pszValue )
-        bGCPUseOK = CSLTestBoolean(pszValue);
+        bGCPUseOK = CPLTestBool(pszValue);
 
     pszValue = CSLFetchNameValue( papszOptions, "REFINE_MINIMUM_GCPS" );
     if( pszValue )
@@ -1339,9 +1338,10 @@ GDALCreateGenImgProjTransformer2( GDALDatasetH hSrcDS, GDALDatasetH hDstDS,
 
     else
     {
-        CPLError( CE_Failure, CPLE_AppDefined, 
-                  "Unable to compute a transformation between pixel/line\n"
-                  "and georeferenced coordinates for %s.\n"
+        CPLError( CE_Failure, CPLE_AppDefined,
+                  "The transformation is already \"north up\" or\n"
+                  "a transformation between pixel/line and georeferenced\n"
+                  "coordinates cannot be computed for %s.\n"
                   "There is no affine transformation and no GCPs.\n"
                   "Specify transformation option SRC_METHOD=NO_GEOTRANSFORM to bypass this check.", 
                   GDALGetDescription( hSrcDS ) );
@@ -1905,7 +1905,7 @@ int GDALGenImgProjTransform( void *pTransformArg, int bDstToSrc,
             padfY[i] = dfNewY;
         }
     }
-        
+
     return TRUE;
 }
 
@@ -1929,14 +1929,13 @@ GDALSerializeGenImgProjTransformer( void *pTransformArg )
 /* -------------------------------------------------------------------- */
     if( psInfo->pSrcGCPTransformArg != NULL )
     {
-        CPLXMLNode *psTransformerContainer;
-        CPLXMLNode *psTransformer;
 
-        psTransformerContainer = 
+        CPLXMLNode *psTransformerContainer =
             CPLCreateXMLNode( psTree, CXT_Element, "SrcGCPTransformer" );
 
-        psTransformer = GDALSerializeTransformer( GDALGCPTransform,
-                                                  psInfo->pSrcGCPTransformArg);
+        CPLXMLNode *psTransformer
+            = GDALSerializeTransformer( GDALGCPTransform,
+                                        psInfo->pSrcGCPTransformArg);
         if( psTransformer != NULL )
             CPLAddXMLChild( psTransformerContainer, psTransformer );
     }
@@ -1946,14 +1945,11 @@ GDALSerializeGenImgProjTransformer( void *pTransformArg )
 /* -------------------------------------------------------------------- */
     else if( psInfo->pSrcTPSTransformArg != NULL )
     {
-        CPLXMLNode *psTransformerContainer;
-        CPLXMLNode *psTransformer;
+        CPLXMLNode *psTransformerContainer
+            = CPLCreateXMLNode( psTree, CXT_Element, "SrcTPSTransformer" );
 
-        psTransformerContainer = 
-            CPLCreateXMLNode( psTree, CXT_Element, "SrcTPSTransformer" );
-
-        psTransformer = 
-            GDALSerializeTransformer( NULL, psInfo->pSrcTPSTransformArg);
+        CPLXMLNode *psTransformer
+            = GDALSerializeTransformer( NULL, psInfo->pSrcTPSTransformArg);
         if( psTransformer != NULL )
             CPLAddXMLChild( psTransformerContainer, psTransformer );
     }
@@ -1963,14 +1959,11 @@ GDALSerializeGenImgProjTransformer( void *pTransformArg )
 /* -------------------------------------------------------------------- */
     else if( psInfo->pSrcGeoLocTransformArg != NULL )
     {
-        CPLXMLNode *psTransformerContainer;
-        CPLXMLNode *psTransformer;
+        CPLXMLNode *psTransformerContainer
+            = CPLCreateXMLNode( psTree, CXT_Element, "SrcGeoLocTransformer" );
 
-        psTransformerContainer = 
-            CPLCreateXMLNode( psTree, CXT_Element, "SrcGeoLocTransformer" );
-
-        psTransformer = 
-            GDALSerializeTransformer( NULL, psInfo->pSrcGeoLocTransformArg);
+        CPLXMLNode *psTransformer
+            = GDALSerializeTransformer( NULL, psInfo->pSrcGeoLocTransformArg);
         if( psTransformer != NULL )
             CPLAddXMLChild( psTransformerContainer, psTransformer );
     }
@@ -1980,14 +1973,11 @@ GDALSerializeGenImgProjTransformer( void *pTransformArg )
 /* -------------------------------------------------------------------- */
     else if( psInfo->pSrcRPCTransformArg != NULL )
     {
-        CPLXMLNode *psTransformerContainer;
-        CPLXMLNode *psTransformer;
+        CPLXMLNode *psTransformerContainer
+            = CPLCreateXMLNode( psTree, CXT_Element, "SrcRPCTransformer" );
 
-        psTransformerContainer = 
-            CPLCreateXMLNode( psTree, CXT_Element, "SrcRPCTransformer" );
-
-        psTransformer = 
-            GDALSerializeTransformer( NULL, psInfo->pSrcRPCTransformArg);
+        CPLXMLNode *psTransformer
+            = GDALSerializeTransformer( NULL, psInfo->pSrcRPCTransformArg);
         if( psTransformer != NULL )
             CPLAddXMLChild( psTransformerContainer, psTransformer );
     }
@@ -1997,7 +1987,7 @@ GDALSerializeGenImgProjTransformer( void *pTransformArg )
 /* -------------------------------------------------------------------- */
     else
     {
-        CPLsprintf( szWork, "%.18g,%.18g,%.18g,%.18g,%.18g,%.18g",
+        CPLsnprintf( szWork, sizeof(szWork), "%.18g,%.18g,%.18g,%.18g,%.18g,%.18g",
                  psInfo->adfSrcGeoTransform[0],
                  psInfo->adfSrcGeoTransform[1],
                  psInfo->adfSrcGeoTransform[2],
@@ -2005,8 +1995,8 @@ GDALSerializeGenImgProjTransformer( void *pTransformArg )
                  psInfo->adfSrcGeoTransform[4],
                  psInfo->adfSrcGeoTransform[5] );
         CPLCreateXMLElementAndValue( psTree, "SrcGeoTransform", szWork );
-        
-        CPLsprintf( szWork, "%.18g,%.18g,%.18g,%.18g,%.18g,%.18g",
+
+        CPLsnprintf( szWork, sizeof(szWork), "%.18g,%.18g,%.18g,%.18g,%.18g,%.18g",
                  psInfo->adfSrcInvGeoTransform[0],
                  psInfo->adfSrcInvGeoTransform[1],
                  psInfo->adfSrcInvGeoTransform[2],
@@ -2015,20 +2005,18 @@ GDALSerializeGenImgProjTransformer( void *pTransformArg )
                  psInfo->adfSrcInvGeoTransform[5] );
         CPLCreateXMLElementAndValue( psTree, "SrcInvGeoTransform", szWork );
     }
-    
+
 /* -------------------------------------------------------------------- */
 /*      Handle Dest GCP transformation.                                 */
 /* -------------------------------------------------------------------- */
     if( psInfo->pDstGCPTransformArg != NULL )
     {
-        CPLXMLNode *psTransformerContainer;
-        CPLXMLNode *psTransformer;
+        CPLXMLNode *psTransformerContainer
+            = CPLCreateXMLNode( psTree, CXT_Element, "DstGCPTransformer" );
 
-        psTransformerContainer = 
-            CPLCreateXMLNode( psTree, CXT_Element, "DstGCPTransformer" );
-
-        psTransformer = GDALSerializeTransformer( GDALGCPTransform,
-                                                  psInfo->pDstGCPTransformArg);
+        CPLXMLNode *psTransformer
+            = GDALSerializeTransformer( GDALGCPTransform,
+                                        psInfo->pDstGCPTransformArg);
         if( psTransformer != NULL )
             CPLAddXMLChild( psTransformerContainer, psTransformer );
     }
@@ -2038,14 +2026,11 @@ GDALSerializeGenImgProjTransformer( void *pTransformArg )
 /* -------------------------------------------------------------------- */
     else if( psInfo->pDstTPSTransformArg != NULL )
     {
-        CPLXMLNode *psTransformerContainer;
-        CPLXMLNode *psTransformer;
+        CPLXMLNode *psTransformerContainer
+            = CPLCreateXMLNode( psTree, CXT_Element, "DstTPSTransformer" );
 
-        psTransformerContainer = 
-            CPLCreateXMLNode( psTree, CXT_Element, "DstTPSTransformer" );
-
-        psTransformer = 
-            GDALSerializeTransformer( NULL, psInfo->pDstTPSTransformArg);
+        CPLXMLNode *psTransformer
+            = GDALSerializeTransformer( NULL, psInfo->pDstTPSTransformArg);
         if( psTransformer != NULL )
             CPLAddXMLChild( psTransformerContainer, psTransformer );
     }
@@ -2055,14 +2040,11 @@ GDALSerializeGenImgProjTransformer( void *pTransformArg )
 /* -------------------------------------------------------------------- */
     else if( psInfo->pDstRPCTransformArg != NULL )
     {
-        CPLXMLNode *psTransformerContainer;
-        CPLXMLNode *psTransformer;
+        CPLXMLNode *psTransformerContainer
+            = CPLCreateXMLNode( psTree, CXT_Element, "DstRPCTransformer" );
 
-        psTransformerContainer = 
-            CPLCreateXMLNode( psTree, CXT_Element, "DstRPCTransformer" );
-
-        psTransformer = 
-            GDALSerializeTransformer( NULL, psInfo->pDstRPCTransformArg);
+        CPLXMLNode *psTransformer
+            = GDALSerializeTransformer( NULL, psInfo->pDstRPCTransformArg);
         if( psTransformer != NULL )
             CPLAddXMLChild( psTransformerContainer, psTransformer );
     }
@@ -2072,7 +2054,7 @@ GDALSerializeGenImgProjTransformer( void *pTransformArg )
 /* -------------------------------------------------------------------- */
     else
     {
-        CPLsprintf( szWork, "%.18g,%.18g,%.18g,%.18g,%.18g,%.18g",
+        CPLsnprintf( szWork, sizeof(szWork), "%.18g,%.18g,%.18g,%.18g,%.18g,%.18g",
                  psInfo->adfDstGeoTransform[0],
                  psInfo->adfDstGeoTransform[1],
                  psInfo->adfDstGeoTransform[2],
@@ -2080,8 +2062,8 @@ GDALSerializeGenImgProjTransformer( void *pTransformArg )
                  psInfo->adfDstGeoTransform[4],
                  psInfo->adfDstGeoTransform[5] );
         CPLCreateXMLElementAndValue( psTree, "DstGeoTransform", szWork );
-        
-        CPLsprintf( szWork, "%.18g,%.18g,%.18g,%.18g,%.18g,%.18g",
+
+        CPLsnprintf( szWork, sizeof(szWork), "%.18g,%.18g,%.18g,%.18g,%.18g,%.18g",
                  psInfo->adfDstInvGeoTransform[0],
                  psInfo->adfDstInvGeoTransform[1],
                  psInfo->adfDstInvGeoTransform[2],
@@ -2096,18 +2078,17 @@ GDALSerializeGenImgProjTransformer( void *pTransformArg )
 /* -------------------------------------------------------------------- */
     if( psInfo->pReprojectArg != NULL )
     {
-        CPLXMLNode *psTransformerContainer;
-        CPLXMLNode *psTransformer;
 
-        psTransformerContainer = 
-            CPLCreateXMLNode( psTree, CXT_Element, "ReprojectTransformer" );
+        CPLXMLNode *psTransformerContainer
+            = CPLCreateXMLNode( psTree, CXT_Element, "ReprojectTransformer" );
 
-        psTransformer = GDALSerializeTransformer( GDALReprojectionTransform,
+        CPLXMLNode *psTransformer
+            = GDALSerializeTransformer( GDALReprojectionTransform,
                                                   psInfo->pReprojectArg );
         if( psTransformer != NULL )
             CPLAddXMLChild( psTransformerContainer, psTransformer );
     }
-    
+
     return psTree;
 }
 
@@ -2134,13 +2115,13 @@ static void GDALDeserializeGeoTransform(const char* pszGT,
 void *GDALDeserializeGenImgProjTransformer( CPLXMLNode *psTree )
 
 {
-    GDALGenImgProjTransformInfo *psInfo;
     CPLXMLNode *psSubtree;
 
 /* -------------------------------------------------------------------- */
 /*      Initialize the transform info.                                  */
 /* -------------------------------------------------------------------- */
-    psInfo = GDALCreateGenImgProjTransformerInternal();
+    GDALGenImgProjTransformInfo *psInfo
+        = GDALCreateGenImgProjTransformerInternal();
 
 /* -------------------------------------------------------------------- */
 /*      SrcGeotransform                                                 */
@@ -2461,7 +2442,7 @@ GDALDeserializeReprojectionTransformer( CPLXMLNode *psTree )
 
 {
     const char *pszSourceSRS = CPLGetXMLValue( psTree, "SourceSRS", NULL );
-    const char *pszTargetSRS= CPLGetXMLValue( psTree, "TargetSRS", NULL );
+    const char *pszTargetSRS = CPLGetXMLValue( psTree, "TargetSRS", NULL );
     char *pszSourceWKT = NULL, *pszTargetWKT = NULL;
     void *pResult = NULL;
 
@@ -2854,7 +2835,7 @@ static int GDALApproxTransformInternal( void *pCBData, int bDstToSrc, int nPoint
                 GDALApproxTransformInternal( psATInfo, bDstToSrc, nMiddle, 
                                             x, y, z, panSuccess,
                                             x2, y2, z2);
-    
+
         }
         else
         {
@@ -2942,7 +2923,7 @@ static int GDALApproxTransformInternal( void *pCBData, int bDstToSrc, int nPoint
 #endif
         panSuccess[i] = TRUE;
     }
-    
+
     return TRUE;
 }
 
@@ -2965,9 +2946,9 @@ int GDALApproxTransform( void *pCBData, int bDstToSrc, int nPoints,
 {
     ApproxTransformInfo *psATInfo = (ApproxTransformInfo *) pCBData;
     double x2[3], y2[3], z2[3];
-    int nMiddle, anSuccess2[3], bSuccess;
+    int anSuccess2[3], bSuccess;
 
-    nMiddle = (nPoints-1)/2;
+    int nMiddle = (nPoints-1)/2;
 
 /* -------------------------------------------------------------------- */
 /*      Bail if our preconditions are not met, or if error is not       */
@@ -3030,20 +3011,18 @@ GDALDeserializeApproxTransformer( CPLXMLNode *psTree )
 
 {
     double dfMaxError = CPLAtof(CPLGetXMLValue( psTree, "MaxError",  "0.25" ));
-    CPLXMLNode *psContainer;
     GDALTransformerFunc pfnBaseTransform = NULL;
     void *pBaseCBData = NULL;
 
-    psContainer = CPLGetXMLNode( psTree, "BaseTransformer" );
+    CPLXMLNode *psContainer = CPLGetXMLNode( psTree, "BaseTransformer" );
 
     if( psContainer != NULL && psContainer->psChild != NULL )
     {
         GDALDeserializeTransformer( psContainer->psChild, 
                                     &pfnBaseTransform, 
                                     &pBaseCBData );
-        
     }
-    
+
     if( pfnBaseTransform == NULL )
     {
         CPLError( CE_Failure, CPLE_AppDefined,
@@ -3112,8 +3091,6 @@ void CPL_STDCALL GDALApplyGeoTransform( double *padfGeoTransform,
 int CPL_STDCALL GDALInvGeoTransform( double *gt_in, double *gt_out )
 
 {
-    double	det, inv_det;
-
     /* Special case - no rotation - to avoid computing determinate */
     /* and potential precision issues. */
     if( gt_in[2] == 0.0 && gt_in[4] == 0.0 &&
@@ -3138,14 +3115,14 @@ int CPL_STDCALL GDALInvGeoTransform( double *gt_in, double *gt_out )
 
     /* Compute determinate */
 
-    det = gt_in[1] * gt_in[5] - gt_in[2] * gt_in[4];
+    const double det = gt_in[1] * gt_in[5] - gt_in[2] * gt_in[4];
 
     if( fabs(det) < 0.000000000000001 )
         return 0;
 
-    inv_det = 1.0 / det;
+    const double inv_det = 1.0 / det;
 
-    /* compute adjoint, and devide by determinate */
+    /* compute adjoint, and divide by determinate */
 
     gt_out[1] =  gt_in[5] * inv_det;
     gt_out[4] = -gt_in[4] * inv_det;
@@ -3340,7 +3317,7 @@ CPLErr GDALDeserializeTransformer( CPLXMLNode *psTree,
         else
         {
             CPLError( CE_Failure, CPLE_AppDefined,
-                    "Unrecognised element '%s' GDALDeserializeTransformer",
+                    "Unrecognized element '%s' GDALDeserializeTransformer",
                     psTree->pszValue );
         }
     }
@@ -3433,6 +3410,7 @@ void *GDALCloneTransformer( void *pTransformArg )
             CE_None )
         {
             CPLDestroyXMLNode(pSerialized);
+            CPLFree(pClonedTransformArg);
             return NULL;
         }
         CPLDestroyXMLNode(pSerialized);

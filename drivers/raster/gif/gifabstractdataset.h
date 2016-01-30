@@ -27,8 +27,8 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#ifndef _GIFABSTRACTDATASET_H_INCLUDED
-#define _GIFABSTRACTDATASET_H_INCLUDED
+#ifndef GIFABSTRACTDATASET_H_INCLUDED
+#define GIFABSTRACTDATASET_H_INCLUDED
 
 #include "gdal_pam.h"
 
@@ -87,6 +87,7 @@ class GIFAbstractDataset : public GDALPamDataset
     static int          myEGifCloseFile( GifFileType *hGifFile );
     static int          ReadFunc( GifFileType *psGFile, GifByteType *pabyBuffer, 
                                   int nBytesToRead );
+    static GifRecordType FindFirstImage( GifFileType* hGifFile );
 };
 
 /************************************************************************/
@@ -101,7 +102,7 @@ class GIFAbstractRasterBand : public GDALPamRasterBand
     SavedImage  *psImage;
 
     int         *panInterlaceMap;
-    
+
     GDALColorTable *poColorTable;
 
     int         nTransparentColor;

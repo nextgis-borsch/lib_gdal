@@ -16,10 +16,10 @@
  * the rights to use, copy, modify, merge, publish, distribute, sublicense,
  * and/or sell copies of the Software, and to permit persons to whom the
  * Software is furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included
  * in all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
@@ -29,8 +29,8 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#ifndef _CPL_STRING_H_INCLUDED
-#define _CPL_STRING_H_INCLUDED
+#ifndef CPL_STRING_H_INCLUDED
+#define CPL_STRING_H_INCLUDED
 
 #include "cpl_vsi.h"
 #include "cpl_error.h"
@@ -61,6 +61,7 @@
 CPL_C_START
 
 char CPL_DLL **CSLAddString(char **papszStrList, const char *pszNewString) CPL_WARN_UNUSED_RESULT;
+char CPL_DLL **CSLAddStringMayFail(char **papszStrList, const char *pszNewString) CPL_WARN_UNUSED_RESULT;
 int CPL_DLL CSLCount(char **papszStrList);
 const char CPL_DLL *CSLGetField( char **, int );
 void CPL_DLL CPL_STDCALL CSLDestroy(char **papszStrList);
@@ -72,7 +73,7 @@ char CPL_DLL **CSLTokenizeStringComplex(const char *pszString,
                                    const char *pszDelimiter,
                                    int bHonourStrings, int bAllowEmptyTokens ) CPL_WARN_UNUSED_RESULT;
 char CPL_DLL **CSLTokenizeString2( const char *pszString, 
-                                   const char *pszDelimeter, 
+                                   const char *pszDelimiter, 
                                    int nCSLTFlags ) CPL_WARN_UNUSED_RESULT;
 
 #define CSLT_HONOURSTRINGS      0x0001
@@ -98,9 +99,27 @@ int CPL_DLL CSLFindStringCaseSensitive( char **, const char * );
 int CPL_DLL CSLPartialFindString( char **papszHaystack, 
 	const char * pszNeedle );
 int CPL_DLL CSLFindName(char **papszStrList, const char *pszName);
-int CPL_DLL CSLTestBoolean( const char *pszValue );
 int CPL_DLL CSLFetchBoolean( char **papszStrList, const char *pszKey, 
                              int bDefault );
+
+/* TODO: Deprecate CSLTestBoolean.  Remove in GDAL 3.x. */
+int CPL_DLL CSLTestBoolean( const char *pszValue );
+int CPL_DLL CPLTestBoolean( const char *pszValue );
+
+#ifdef __cplusplus
+#ifdef DO_NOT_USE_DEBUG_BOOL
+#define CPLTestBool(x) CPL_TO_BOOL(CPLTestBoolean(x))
+#else
+/* Prefer these for C++ code. */
+#ifdef DEBUG_BOOL
+extern "C++" {
+#endif
+bool CPL_DLL CPLTestBool( const char *pszValue );
+#ifdef DEBUG_BOOL
+}
+#endif
+#endif
+#endif  /* __cplusplus */
 
 const char CPL_DLL *
       CPLParseNameValue(const char *pszNameValue, char **ppszKey );
@@ -119,6 +138,8 @@ char CPL_DLL **
                       const char *pszName, const char *pszValue) CPL_WARN_UNUSED_RESULT;
 void CPL_DLL CSLSetNameValueSeparator( char ** papszStrList, 
                                        const char *pszSeparator );
+
+char CPL_DLL ** CSLParseCommandLine(const char* pszCommandLine);
 
 #define CPLES_BackslashQuotable 0
 #define CPLES_XML               1
@@ -152,17 +173,17 @@ size_t CPL_DLL CPLStrlcat(char* pszDest, const char* pszSrc, size_t nDestSize);
 size_t CPL_DLL CPLStrnlen (const char *pszStr, size_t nMaxLen);
 
 /* -------------------------------------------------------------------- */
-/*      Locale independant formatting functions.                        */
+/*      Locale independent formatting functions.                        */
 /* -------------------------------------------------------------------- */
-int CPL_DLL CPLvsnprintf(char *str, size_t size, const char* fmt, va_list args);
+int CPL_DLL CPLvsnprintf(char *str, size_t size, const char* fmt, va_list args) CPL_PRINT_FUNC_FORMAT (3, 0);
 int CPL_DLL CPLsnprintf(char *str, size_t size, const char* fmt, ...) CPL_PRINT_FUNC_FORMAT(3,4);
-int CPL_DLL CPLsprintf(char *str, const char* fmt, ...) CPL_PRINT_FUNC_FORMAT(2, 3);
+int CPL_DLL CPLsprintf(char *str, const char* fmt, ...) CPL_PRINT_FUNC_FORMAT(2, 3) CPL_WARN_DEPRECATED_IF_GDAL_COMPILATION("Use CPLsnprintf instead");
 int CPL_DLL CPLprintf(const char* fmt, ...) CPL_PRINT_FUNC_FORMAT(1, 2);
-int CPL_DLL CPLsscanf(const char* str, const char* fmt, ...); /* caution: only works with limited number of formats */
+int CPL_DLL CPLsscanf(const char* str, const char* fmt, ...) CPL_SCAN_FUNC_FORMAT(2, 3); /* caution: only works with limited number of formats */
 
-const char CPL_DLL *CPLSPrintf(const char *fmt, ...) CPL_PRINT_FUNC_FORMAT(1, 2);
+const char CPL_DLL *CPLSPrintf(const char *fmt, ...) CPL_PRINT_FUNC_FORMAT(1, 2) CPL_WARN_UNUSED_RESULT;
 char CPL_DLL **CSLAppendPrintf(char **papszStrList, const char *fmt, ...) CPL_PRINT_FUNC_FORMAT(2, 3) CPL_WARN_UNUSED_RESULT;
-int CPL_DLL CPLVASPrintf(char **buf, const char *fmt, va_list args );
+int CPL_DLL CPLVASPrintf(char **buf, const char *fmt, va_list args ) CPL_PRINT_FUNC_FORMAT(2, 0);
 
 /* -------------------------------------------------------------------- */
 /*      RFC 23 character set conversion/recoding API (cpl_recode.cpp).  */
@@ -179,7 +200,7 @@ int CPL_DLL  CPLEncodingCharSize( const char *pszEncoding );
 void CPL_DLL  CPLClearRecodeWarningFlags( void );
 char CPL_DLL *CPLRecode( const char *pszSource, 
                          const char *pszSrcEncoding, 
-                         const char *pszDstEncoding ) CPL_WARN_UNUSED_RESULT;
+                         const char *pszDstEncoding ) CPL_WARN_UNUSED_RESULT CPL_RETURNS_NONNULL;
 char CPL_DLL *CPLRecodeFromWChar( const wchar_t *pwszSource, 
                                   const char *pszSrcEncoding, 
                                   const char *pszDstEncoding ) CPL_WARN_UNUSED_RESULT;
@@ -227,28 +248,22 @@ CPL_C_END
 # define gdal_std_string std::string
 #endif 
 
-/* Remove annoying warnings in Microsoft eVC++ and Microsoft Visual C++ */
-#if defined(WIN32CE)
-#  pragma warning(disable:4251 4275 4786)
-#endif
-
 //! Convenient string class based on std::string.
 class CPL_DLL CPLString : public gdal_std_string
 {
 public:
 
-    
     CPLString(void) {}
     CPLString( const std::string &oStr ) : gdal_std_string( oStr ) {}
     CPLString( const char *pszStr ) : gdal_std_string( pszStr ) {}
-    
+
     operator const char* (void) const { return c_str(); }
 
     char& operator[](std::string::size_type i)
     {
         return gdal_std_string::operator[](i);
     }
-    
+
     const char& operator[](std::string::size_type i) const
     {
         return gdal_std_string::operator[](i);
@@ -280,7 +295,7 @@ public:
 
     /* There seems to be a bug in the way the compiler count indices... Should be CPL_PRINT_FUNC_FORMAT (1, 2) */
     CPLString &Printf( const char *pszFormat, ... ) CPL_PRINT_FUNC_FORMAT (2, 3);
-    CPLString &vPrintf( const char *pszFormat, va_list args );
+    CPLString &vPrintf( const char *pszFormat, va_list args ) CPL_PRINT_FUNC_FORMAT(2, 0);
     CPLString &FormatC( double dfValue, const char *pszFormat = NULL );
     CPLString &Trim();
     CPLString &Recode( const char *pszSrcEncoding, const char *pszDstEncoding );
@@ -293,7 +308,7 @@ public:
 };
 
 CPLString CPLOPrintf(const char *pszFormat, ... ) CPL_PRINT_FUNC_FORMAT (1, 2);
-CPLString CPLOvPrintf(const char *pszFormat, va_list args);
+CPLString CPLOvPrintf(const char *pszFormat, va_list args) CPL_PRINT_FUNC_FORMAT (1, 0);
 
 /* -------------------------------------------------------------------- */
 /*      URL processing functions, here since they depend on CPLString.  */
@@ -319,7 +334,7 @@ class CPL_DLL CPLStringList
     void   MakeOurOwnCopy();
     void   EnsureAllocation( int nMaxLength );
     int    FindSortedInsertionPoint( const char *pszLine );
-    
+
   public:
     CPLStringList();
     CPLStringList( char **papszList, int bTakeOwnership=TRUE );
@@ -337,10 +352,10 @@ class CPL_DLL CPLStringList
     CPLStringList &InsertString( int nInsertAtLineNo, const char *pszNewLine )
     { return InsertStringDirectly( nInsertAtLineNo, CPLStrdup(pszNewLine) ); }
     CPLStringList &InsertStringDirectly( int nInsertAtLineNo, char *pszNewLine);
-    
+
 //    CPLStringList &InsertStrings( int nInsertAtLineNo, char **papszNewLines );
 //    CPLStringList &RemoveStrings( int nFirstLineToDelete, int nNumToRemove=1 );
-    
+
     int    FindString( const char *pszTarget ) const
     { return CSLFindString( papszList, pszTarget ); }
     int    PartialFindString( const char *pszNeedle ) const
@@ -358,9 +373,9 @@ class CPL_DLL CPLStringList
     CPLStringList &operator=(const CPLStringList& oOther);
 
     char * operator[](int i);
-    char * operator[](size_t i) { return (*this)[(int)i]; }
+    char * operator[](size_t i) { return (*this)[static_cast<int>(i)]; }
     const char * operator[](int i) const;
-    const char * operator[](size_t i) const { return (*this)[(int)i]; }
+    const char * operator[](size_t i) const { return (*this)[static_cast<int>(i)]; }
 
     char **List() { return papszList; }
     char **StealList();
@@ -373,4 +388,4 @@ class CPL_DLL CPLStringList
 
 #endif /* def __cplusplus && !CPL_SUPRESS_CPLUSPLUS */
 
-#endif /* _CPL_STRING_H_INCLUDED */
+#endif /* CPL_STRING_H_INCLUDED */

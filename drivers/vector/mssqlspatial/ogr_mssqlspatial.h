@@ -27,8 +27,8 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#ifndef _OGR_MSSQLSPATIAL_H_INCLUDED
-#define _OGR_MSSQLSPATIAL_H_INCLUDED
+#ifndef OGR_MSSQLSPATIAL_H_INCLUDED
+#define OGR_MSSQLSPATIAL_H_INCLUDED
 
 #include "ogrsf_frmts.h"
 #include "cpl_odbc.h"
@@ -97,7 +97,7 @@ class OGRMSSQLGeometryParser
 {
 protected:    
     unsigned char* pszData;
-    /* serialization propeties */
+    /* serialization properties */
     char chProps;
     /* point array */
     int nPointSize;
@@ -297,6 +297,8 @@ class OGRMSSQLSpatialSelectLayer : public OGRMSSQLSpatialLayer
     virtual OGRFeature *GetFeature( GIntBig nFeatureId );
     
     virtual OGRErr      GetExtent(OGREnvelope *psExtent, int bForce = TRUE);
+    virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce)
+                { return OGRLayer::GetExtent(iGeomField, psExtent, bForce); }
 
     virtual int         TestCapability( const char * );
 };
@@ -352,7 +354,7 @@ class OGRMSSQLSpatialDataSource : public OGRDataSource
     int                 GetGeometryFormat() { return nGeometryFormat; }
     int                 UseGeometryColumns() { return bUseGeometryColumns; }
 
-    virtual int         DeleteLayer( int iLayer );
+    virtual OGRErr       DeleteLayer( int iLayer );
     virtual OGRLayer    *ICreateLayer( const char *,
                                       OGRSpatialReference * = NULL,
                                       OGRwkbGeometryType = wkbUnknown,
@@ -398,4 +400,4 @@ class OGRMSSQLSpatialDriver : public OGRSFDriver
     int                 TestCapability( const char * );
 };
 
-#endif /* ndef _OGR_MSSQLSPATIAL_H_INCLUDED */
+#endif /* ndef OGR_MSSQLSPATIAL_H_INCLUDED */

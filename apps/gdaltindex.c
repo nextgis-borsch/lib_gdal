@@ -51,7 +51,7 @@ static void Usage(const char* pszErrorMsg)
             "                  [-src_srs_name field_name] [-src_srs_format [AUTO|WKT|EPSG|PROJ]\n"
             "                  [-lyr_name name] index_file [gdal_file]*\n"
             "\n"
-            "eg.\n"
+            "e.g.\n"
             "  % gdaltindex doq_index.shp doq/*.tif\n" 
             "\n"
             "NOTES:\n"
@@ -141,6 +141,7 @@ int main(int argc, char *argv[])
         {
             printf("%s was compiled against GDAL %s and is running against GDAL %s\n",
                    argv[0], GDAL_RELEASE_NAME, GDALVersionInfo("RELEASE_NAME"));
+            CSLDestroy( argv );
             return 0;
         }
         else if( EQUAL(argv[i_arg],"--help") )
@@ -225,6 +226,7 @@ int main(int argc, char *argv[])
                     "when -t_srs is requested.\n" );
        }
        hTargetSRS = OSRNewSpatialReference("");
+       /* coverity[tainted_data] */
        if( OSRSetFromUserInput( hTargetSRS, pszTargetSRS ) != CE_None )
        {
            OSRDestroySpatialReference( hTargetSRS );
@@ -317,14 +319,14 @@ int main(int argc, char *argv[])
         {
             OGRFieldDefnH hFieldDefn = OGR_Fld_Create( tile_index, OFTString );
             if( nMaxFieldSize )
-                OGR_Fld_SetWidth( hFieldDefn, nMaxFieldSize);
+                OGR_Fld_SetWidth( hFieldDefn, (int)nMaxFieldSize);
             OGR_L_CreateField( hLayer, hFieldDefn, TRUE );
             OGR_Fld_Destroy(hFieldDefn);
             if( pszSrcSRSName != NULL )
             {
                 hFieldDefn = OGR_Fld_Create( pszSrcSRSName, OFTString );
                 if( nMaxFieldSize )
-                    OGR_Fld_SetWidth( hFieldDefn, nMaxFieldSize);
+                    OGR_Fld_SetWidth( hFieldDefn, (int)nMaxFieldSize);
                 OGR_L_CreateField( hLayer, hFieldDefn, TRUE );
                 OGR_Fld_Destroy(hFieldDefn);
             }

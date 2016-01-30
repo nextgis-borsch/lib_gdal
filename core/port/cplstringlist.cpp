@@ -310,7 +310,7 @@ CPLStringList &CPLStringList::AddString( const char *pszNewString )
 /************************************************************************/
 
 /**
- * A a name=value entry to the list.
+ * Add a name=value entry to the list.
  *
  * A key=value string is prepared and appended to the list.  There is no
  * check for other values for the same key in the list.
@@ -332,8 +332,9 @@ CPLStringList &CPLStringList::AddNameValue( const char  *pszKey,
 /*      Format the line.                                                */
 /* -------------------------------------------------------------------- */
     char *pszLine;
-    pszLine = (char *) CPLMalloc(strlen(pszKey)+strlen(pszValue)+2);
-    sprintf( pszLine, "%s=%s", pszKey, pszValue );
+    const size_t nLen = strlen(pszKey)+strlen(pszValue)+2;
+    pszLine = (char *) CPLMalloc(nLen);
+    snprintf( pszLine, nLen, "%s=%s", pszKey, pszValue );
 
 /* -------------------------------------------------------------------- */
 /*      If we don't need to keep the sort order things are pretty       */
@@ -396,8 +397,9 @@ CPLStringList &CPLStringList::SetNameValue( const char *pszKey,
     else
     {
         char *pszLine;
-        pszLine = (char *) CPLMalloc(strlen(pszKey)+strlen(pszValue)+2);
-        sprintf( pszLine, "%s=%s", pszKey, pszValue );
+        const size_t nLen = strlen(pszKey)+strlen(pszValue)+2;
+        pszLine = (char *) CPLMalloc(nLen);
+        snprintf( pszLine, nLen, "%s=%s", pszKey, pszValue );
 
         papszList[iKey] = pszLine;
     }
@@ -450,10 +452,10 @@ const char *CPLStringList::operator[]( int i ) const
 /**
  * Seize ownership of underlying string array.
  *
- * This method is simmilar to List(), except that the returned list is
- * now owned by the caller and the CPLStringList is emptied.  
+ * This method is similar to List(), except that the returned list is
+ * now owned by the caller and the CPLStringList is emptied.
  *
- * @return the C style string list. 
+ * @return the C style string list.
  */
 char **CPLStringList::StealList()
 
@@ -464,7 +466,7 @@ char **CPLStringList::StealList()
     papszList = NULL;
     nCount = 0;
     nAllocation = 0;
-    
+
     return papszRetList;
 }
 
@@ -473,7 +475,7 @@ static int CPLCompareKeyValueString(const char* pszKVa, const char* pszKVb)
 {
     const char* pszItera = pszKVa;
     const char* pszIterb = pszKVb;
-    while( TRUE )
+    while( true )
     {
         char cha = *pszItera;
         char chb = *pszIterb;
@@ -534,7 +536,8 @@ CPLStringList &CPLStringList::Sort()
     Count();
     MakeOurOwnCopy();
 
-    qsort( papszList, nCount, sizeof(char*), llCompareStr );
+    if( nCount )
+        qsort( papszList, nCount, sizeof(char*), llCompareStr );
     bIsSorted = TRUE;
     
     return *this;
@@ -564,7 +567,7 @@ int CPLStringList::FindName( const char *pszKey ) const
 
     // If we are sorted, we can do an optimized binary search. 
     int iStart=0, iEnd=nCount-1;
-    int nKeyLen = strlen(pszKey);
+    size_t nKeyLen = strlen(pszKey);
 
     while( iStart <= iEnd )
     {

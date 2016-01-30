@@ -37,14 +37,14 @@
  * \brief Constructor
  ************************/
 PostGISRasterTileRasterBand::PostGISRasterTileRasterBand(
-    PostGISRasterTileDataset * poRTDS, int nBand,
-    GDALDataType eDataType, GBool bIsOffline)
+    PostGISRasterTileDataset * poRTDSIn, int nBandIn,
+    GDALDataType eDataTypeIn, GBool bIsOfflineIn)
 {
     /* Basic properties */
-    this->poDS = poRTDS;
-    this->bIsOffline = bIsOffline;
-    this->nBand = nBand;
-    
+    this->poDS = poRTDSIn;
+    this->bIsOffline = bIsOfflineIn;
+    this->nBand = nBandIn;
+
 #if 0
     CPLDebug("PostGIS_Raster", 
         "PostGISRasterTileRasterBand::Constructor: Raster tile dataset "
@@ -52,13 +52,14 @@ PostGISRasterTileRasterBand::PostGISRasterTileRasterBand(
         poRTDS->GetRasterYSize());
 #endif
 
-    this->eDataType = eDataType;
+    this->eDataType = eDataTypeIn;
 
-    nRasterXSize = poRTDS->GetRasterXSize();
-    nRasterYSize = poRTDS->GetRasterYSize();
+    nRasterXSize = poRTDSIn->GetRasterXSize();
+    nRasterYSize = poRTDSIn->GetRasterYSize();
 
     nBlockXSize = nRasterXSize;
     nBlockYSize = nRasterYSize;
+    poSource = NULL;
 }
 
 
@@ -79,7 +80,7 @@ GBool PostGISRasterTileRasterBand::IsCached()
         poBlock->DropLock();
         return true;
     }
-    
+
     return false;
 }
 
@@ -98,15 +99,16 @@ CPLErr PostGISRasterTileRasterBand::IReadBlock(CPL_UNUSED int nBlockXOff,
 
     PostGISRasterTileDataset * poRTDS =
         (PostGISRasterTileDataset *)poDS;
-        
+
     // Get by PKID
     if (poRTDS->poRDS->pszPrimaryKeyName) {
+        //osCommand.Printf("select ST_AsBinary(st_band(%s, %d),TRUE) from %s.%s where "
         osCommand.Printf("select st_band(%s, %d) from %s.%s where "
             "%s = '%s'", poRTDS->poRDS->pszColumn, nBand, poRTDS->poRDS->pszSchema, poRTDS->poRDS->pszTable,
             poRTDS->poRDS->pszPrimaryKeyName, poRTDS->pszPKID);
 
     }
-    
+
     // Get by upperleft
     else {
         osCommand.Printf("select st_band(%s, %d) from %s.%s where "
@@ -114,11 +116,10 @@ CPLErr PostGISRasterTileRasterBand::IReadBlock(CPL_UNUSED int nBlockXOff,
             poRTDS->poRDS->pszColumn, nBand, poRTDS->poRDS->pszSchema, poRTDS->poRDS->pszTable, poRTDS->poRDS->pszColumn, 
             poRTDS->adfGeoTransform[GEOTRSFRM_TOPLEFT_X], poRTDS->poRDS->pszColumn, 
             poRTDS->adfGeoTransform[GEOTRSFRM_TOPLEFT_Y]);
-        
     }
-    
+
     poResult = PQexec(poRTDS->poRDS->poConn, osCommand.c_str());
-    
+
 #ifdef DEBUG_QUERY
     CPLDebug("PostGIS_Raster", "PostGISRasterTileRasterBand::IReadBlock(): "
              "Query = \"%s\" --> number of rows = %d",
@@ -128,15 +129,15 @@ CPLErr PostGISRasterTileRasterBand::IReadBlock(CPL_UNUSED int nBlockXOff,
     if (poResult == NULL || 
         PQresultStatus(poResult) != PGRES_TUPLES_OK ||
         PQntuples(poResult) <= 0) {
-            
+
         if (poResult)
             PQclear(poResult);
-            
+
         ReportError(CE_Failure, CPLE_AppDefined,
             "Error getting block of data (upperpixel = %f, %f)",
                 poRTDS->adfGeoTransform[GEOTRSFRM_TOPLEFT_X], 
                 poRTDS->adfGeoTransform[GEOTRSFRM_TOPLEFT_Y]);
-            
+
         return CE_Failure;
     }
 
@@ -145,15 +146,15 @@ CPLErr PostGISRasterTileRasterBand::IReadBlock(CPL_UNUSED int nBlockXOff,
     if (bIsOffline) {
         CPLError(CE_Failure, CPLE_AppDefined, "This raster has outdb "
             "storage. This feature isn't still available");
-        
+
         PQclear(poResult);    
         return CE_Failure;
     }
-    
+
     /* Copy only data size, without payload */
     int nExpectedDataSize = 
         nBlockXSize * nBlockYSize * nPixelSize;
-        
+
     GByte * pbyData = CPLHexToBinary(PQgetvalue(poResult, 0, 0), 
         &nWKBLength);
     int nExpectedWKBLength = RASTER_HEADER_SIZE + BAND_SIZE(nPixelSize, nExpectedDataSize);

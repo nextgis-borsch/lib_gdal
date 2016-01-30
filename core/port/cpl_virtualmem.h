@@ -28,8 +28,8 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#ifndef _CPL_VIRTUAL_MEM_INCLUDED
-#define _CPL_VIRTUAL_MEM_INCLUDED
+#ifndef CPL_VIRTUAL_MEM_INCLUDED
+#define CPL_VIRTUAL_MEM_INCLUDED
 
 #include "cpl_port.h"
 #include "cpl_vsi.h"
@@ -192,7 +192,8 @@ int CPL_DLL CPLIsVirtualMemFileMapAvailable(void);
  * On Linux AMD64 platforms, the maximum value for nLength is 128 TB.
  * On Linux x86 platforms, the maximum value for nLength is 2 GB.
  *
- * Only supported on Linux for now.
+ * Supported on Linux only in GDAL <= 2.0, and all POSIX systems supporting
+ * mmap() in GDAL >= 2.1
  *
  * @param  fp       Virtual file handle.
  * @param  nOffset  Offset in the file to start the mapping from.
@@ -277,10 +278,10 @@ void CPL_DLL *CPLVirtualMemGetAddr(CPLVirtualMem* ctxt);
  */
 size_t CPL_DLL CPLVirtualMemGetSize(CPLVirtualMem* ctxt);
 
-/** Return if the virtal memory mapping is a direct file mapping.
+/** Return if the virtual memory mapping is a direct file mapping.
  *
  * @param ctxt context returned by CPLVirtualMemNew().
- * @return TRUE if the virtal memory mapping is a direct file mapping.
+ * @return TRUE if the virtual memory mapping is a direct file mapping.
  *
  * @since GDAL 1.11
  */
@@ -386,4 +387,4 @@ void CPL_DLL CPLVirtualMemManagerTerminate(void);
 
 CPL_C_END
 
-#endif /* _CPL_VIRTUAL_MEM_INCLUDED */
+#endif /* CPL_VIRTUAL_MEM_INCLUDED */

@@ -73,7 +73,6 @@
 
 #define GET_BAND_DATA(raster, nband, nodatasize, datasize) \
     ((raster) + RASTER_HEADER_SIZE + (nband) * BAND_SIZE(nodatasize, datasize) - (datasize))
-    
 
 #define GEOTRSFRM_TOPLEFT_X            0
 #define GEOTRSFRM_WE_RES               1
@@ -126,7 +125,7 @@ typedef enum
  * 		considered as tiles of a bigger raster coverage (the whole
  * 		table). If database and table name are specified and mode = 2
  * 		is present in the connection string, this is the selected mode.
- * - BROWSE_SCHEMA: If no table name is speficied, just database and
+ * - BROWSE_SCHEMA: If no table name is specified, just database and
  * 		schema names, the driver will yell of the schema's raster tables
  * 		as possible datasets.
  * - BROWSE_DATABASE: If no table name is specified, just database name,
@@ -168,7 +167,6 @@ char * ReplaceQuotes(const char *, int);
 char * ReplaceSingleQuotes(const char *, int);
 char ** ParseConnectionString(const char *);
 GBool TranslateDataType(const char *, GDALDataType *, int *, GBool *);
-        
 
 class PostGISRasterRasterBand;
 class PostGISRasterTileDataset;
@@ -217,7 +215,7 @@ private:
     char* pszProjection;
     ResolutionStrategy resolutionStrategy;
     WorkingMode nMode;
-    int nTiles;
+    int m_nTiles;
     double xmin, ymin, xmax, ymax;
     PostGISRasterTileDataset ** papoSourcesHolders;
     CPLQuadTree * hQuadTree;
@@ -226,7 +224,7 @@ private:
     int nOverviewCount;
     PostGISRasterDataset* poParentDS;
     PostGISRasterDataset** papoOverviewDS;
-    
+
     std::map<CPLString, PostGISRasterTileDataset*> oMapPKIDToRTDS;
 
     GBool bAssumeMultiBandReadPattern;
@@ -238,7 +236,7 @@ private:
 
     GBool bHasTriedHasSpatialIndex;
     GBool bHasSpatialIndex;
-    
+
     GBool bBuildQuadTreeDynamically;
 
     GBool bTilesSameDimension;
@@ -254,7 +252,7 @@ private:
 		int *);
     BandMetadata * GetBandsMetadata(int *);
     PROverview * GetOverviewTables(int *);
-    
+
     PostGISRasterTileDataset* BuildRasterTileDataset(const char* pszMetadata,
                                                      const char* pszPKID,
                                                      int nBandsFetched,
@@ -304,7 +302,7 @@ public:
  * PostGIS Raster bands
  **********************************************************************/
 class PostGISRasterTileRasterBand;
- 
+
 class PostGISRasterRasterBand : public VRTSourcedRasterBand {
     friend class PostGISRasterDataset;
 protected:
@@ -386,9 +384,8 @@ private:
     GBool bIsOffline;
 
     GBool IsCached();
-    
+
     VRTSource* poSource;
-	
 	
 public:
 	PostGISRasterTileRasterBand(

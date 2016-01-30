@@ -30,6 +30,7 @@ set(TARGET_NAME alg)
 include_directories(${CMAKE_SOURCE_DIR}/core/port)
 include_directories(${CMAKE_SOURCE_DIR}/core/gcore)
 include_directories(${CMAKE_SOURCE_DIR}/core/ogr)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 set(LIB_HHEADERS
     gdal_alg.h
@@ -44,6 +45,7 @@ set(LIB_HHEADERS
 set(LIB_HHEADERS_PRIV
     gdal_alg_priv.h    
     gdalgrid_priv.h
+    internal_qhull_headers.h
 )
 
 set(LIB_CSOURCES
@@ -81,6 +83,7 @@ set(LIB_CSOURCES
     thinplatespline.cpp
 )
 
+find_anyproject(QHULL DEFAULT OFF)
 
 find_anyproject(Armadillo DEFAULT OFF)
 if(ARMADILLO_FOUND)

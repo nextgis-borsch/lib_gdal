@@ -32,10 +32,8 @@
 #define KEACOPY_H
 
 #include "gdal_priv.h"
-#if defined(USE_GCC_VISIBILITY_FLAG) && !defined(DllExport)
-#define DllExport CPL_DLL
-#endif
-#include "libkea/KEAImageIO.h"
+
+#include "libkea_headers.h"
 
 bool KEACopyFile( GDALDataset *pDataset, kealib::KEAImageIO *pImageIO, GDALProgressFunc pfnProgress, void *pProgressData );
 

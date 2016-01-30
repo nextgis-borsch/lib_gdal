@@ -69,7 +69,7 @@ static GDALDataset *OGRSEGYDriverOpen( GDALOpenInfo* poOpenInfo )
     {
         return NULL;
     }
-    if( EQUALN((const char*)poOpenInfo->pabyHeader, "%PDF", 4))
+    if( STARTS_WITH_CI((const char*)poOpenInfo->pabyHeader, "%PDF"))
     {
         return NULL;
     }
@@ -103,7 +103,7 @@ static GDALDataset *OGRSEGYDriverOpen( GDALOpenInfo* poOpenInfo )
         if (k == 1)
         {
             CPLFree(pabyASCIITextHeader);
-            return FALSE;
+            return NULL;
         }
     }
 
@@ -162,24 +162,19 @@ static GDALDataset *OGRSEGYDriverOpen( GDALOpenInfo* poOpenInfo )
 void RegisterOGRSEGY()
 
 {
-    GDALDriver  *poDriver;
+    if( GDALGetDriverByName( "SEGY" ) != NULL )
+        return;
 
-    if( GDALGetDriverByName( "SEGY" ) == NULL )
-    {
-        poDriver = new GDALDriver();
+    GDALDriver *poDriver = new GDALDriver();
 
-        poDriver->SetDescription( "SEGY" );
-        poDriver->SetMetadataItem( GDAL_DCAP_VECTOR, "YES" );
-        poDriver->SetMetadataItem( GDAL_DMD_LONGNAME,
-                                   "SEG-Y" );
-        poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC,
-                                   "drv_segy.html" );
+    poDriver->SetDescription( "SEGY" );
+    poDriver->SetMetadataItem( GDAL_DCAP_VECTOR, "YES" );
+    poDriver->SetMetadataItem( GDAL_DMD_LONGNAME, "SEG-Y" );
+    poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, "drv_segy.html" );
+    poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
 
-        poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
+    poDriver->pfnOpen = OGRSEGYDriverOpen;
 
-        poDriver->pfnOpen = OGRSEGYDriverOpen;
-
-        GetGDALDriverManager()->RegisterDriver( poDriver );
-    }
+    GetGDALDriverManager()->RegisterDriver( poDriver );
 }
 

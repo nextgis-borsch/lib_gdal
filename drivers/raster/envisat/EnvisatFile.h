@@ -27,8 +27,8 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#ifndef __ENVISAT_FILE_H__
-#define __ENVISAT_FILE_H__
+#ifndef ENVISAT_FILE_H_
+#define ENVISAT_FILE_H_
 
 typedef struct EnvisatFile_tag EnvisatFile;
 
@@ -100,7 +100,7 @@ int EnvisatFile_SetDatasetInfo( EnvisatFile *self,
                                 int ds_size,
                                 int num_dsr,
                                 int dsr_size );
-                              
+
 int EnvisatFile_ReadDatasetRecordChunk( EnvisatFile *self, 
                                     int ds_index,
                                     int record_index,
@@ -119,7 +119,6 @@ int EnvisatFile_ReadDatasetChunk( EnvisatFile *self,
                                   int offset, 
                                   int size,
                                   void *buffer );
-                                
 
 #ifndef FAILURE
 #  define FAILURE 1
@@ -128,7 +127,7 @@ int EnvisatFile_ReadDatasetChunk( EnvisatFile *self,
 #  define SUCCESS 0
 #endif
 
-#endif /* __ENVISAT_FILE_H__ */
+#endif /* ENVISAT_FILE_H_ */
 
 /* EOF */
 

@@ -50,7 +50,7 @@
 
 /*
  * To override the default routine used to image decoded
- * spans one can use the pseduo tag TIFFTAG_FAXFILLFUNC.
+ * spans one can use the pseudo tag TIFFTAG_FAXFILLFUNC.
  * The routine must have the type signature given below;
  * for example:
  *
@@ -85,7 +85,7 @@ typedef	void (*TIFFFaxFillFunc)(unsigned char*, GUInt32*, GUInt32*, GUInt32);
 typedef struct {		/* state table entry */
 	unsigned char State;	/* see above */
 	unsigned char Width;	/* width of code in bits */
-	GUInt32	Param;		/* unsigned 32-bit run length in bits */
+	GUInt16	Param;		/* unsigned 16-bit run length in bits */
 } TIFFFaxTabEnt;
 
 #if 0  /* Unused */
@@ -1539,7 +1539,7 @@ typedef struct {
     sp->bit = BitsAvail;						\
     sp->data = BitAcc;							\
     sp->EOLcnt = EOLcnt;						\
-    rawcc -= (unsigned char *) cp - rawcp;				\
+    rawcc -= (int)((unsigned char *) cp - rawcp);			\
     rawcp = (unsigned char *) cp;					\
 } while (0)
 
@@ -1584,7 +1584,7 @@ Fax3PrematureEOF()
  * this is <8 bytes.  We optimize the code here to reflect the
  * machine characteristics.
  */
-#if defined(__alpha) || _MIPS_SZLONG == 64 || defined(__LP64__) || defined(__arch64__)
+#if SIZEOF_UNSIGNED_LONG == 8
 #define FILL(n, cp)							    \
     switch (n) {							    \
     case 15:(cp)[14] = 0xff; case 14:(cp)[13] = 0xff; case 13: (cp)[12] = 0xff;\
@@ -1728,6 +1728,11 @@ Fax3DecodeRLE(Fax3BaseState* tif, unsigned char *buf, int occ,
 {
     DECLARE_STATE(tif, sp);
     int mode = sp->b.mode;
+    if( occ % sp->b.rowbytes)
+    {
+        CPLError(CE_Failure, CPLE_AppDefined, "Fractional scanlines cannot be read");
+        return (-1);
+    }
 
     CACHE_STATE(sp);
     thisrun = sp->curruns;
@@ -1884,6 +1889,11 @@ CPLErr DecompressCCITTRLETile( unsigned char *pabySrcData, int nSrcBytes,
      * Calculate the scanline/tile widths.
      */
     rowbytes = nBlockXSize / 8;
+	if( rowbytes == 0 )
+	{
+        CPLError(CE_Failure, CPLE_AppDefined, "rowbytes == 0");
+        return CE_Failure;
+	}
     rowpixels = nBlockXSize;
 
     sp->rowbytes = (GUInt32) rowbytes;

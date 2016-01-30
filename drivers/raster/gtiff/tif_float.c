@@ -82,7 +82,7 @@ GUInt32 HalfToFloat( GUInt16 iHalf )
 	    }
 
 	    iExponent += 1;
-	    iMantissa &= ~0x00000400;
+	    iMantissa &= ~0x00000400U;
 	}
     }
     else if (iExponent == 31)
@@ -116,6 +116,7 @@ GUInt32 HalfToFloat( GUInt16 iHalf )
 /*	 Assemble sign, exponent and mantissa.			        */
 /* -------------------------------------------------------------------- */
 
+    /* coverity[overflow_sink] */
     return (iSign << 31) | (iExponent << 23) | iMantissa;
 }
 
@@ -155,7 +156,7 @@ GUInt32 TripleToFloat( GUInt32 iTriple )
 	    }
 
 	    iExponent += 1;
-	    iMantissa &= ~0x00002000;
+	    iMantissa &= ~0x00002000U;
 	}
     }
     else if (iExponent == 127)
@@ -189,5 +190,6 @@ GUInt32 TripleToFloat( GUInt32 iTriple )
 /*	 Assemble sign, exponent and mantissa.			        */
 /* -------------------------------------------------------------------- */
 
+    /* coverity[overflow_sink] */
     return (iSign << 31) | (iExponent << 23) | iMantissa;
 }

@@ -39,13 +39,14 @@
 #include  <io.h>
 #endif
 
-#include  <cstdio>
-#include  <cstdlib>
-#include <string>
+#include <cstdio>
+#include <cstdlib>
+
 #include <map>
+#include <string>
 
 CPL_C_START
-void	GDALRegister_ILWIS(void);
+void GDALRegister_ILWIS();
 CPL_C_END
 
 #define shUNDEF	-32767
@@ -54,7 +55,7 @@ CPL_C_END
 #define	rUNDEF  ((double)-1e308)
 
 enum ilwisStoreType
-{	
+{
     stByte,
     stInt,
     stLong,
@@ -96,7 +97,7 @@ private:
 
 struct ILWISInfo
 {
-    ILWISInfo() : bUseValueRange(false), vr(0, 0) {}
+    ILWISInfo() : bUseValueRange(false), vr(0, 0), stStoreType(stByte) {}
     bool bUseValueRange;
     ValueRange vr;
     ilwisStoreType stStoreType;
@@ -121,7 +122,7 @@ public:
     ~ILWISRasterBand();
     CPLErr GetILWISInfo(std::string pszFileName);
     void ILWISOpen( std::string pszFilename);
-				
+
     virtual CPLErr IReadBlock( int, int, void * );
     virtual CPLErr IWriteBlock( int, int, void * ); 
     virtual double GetNoDataValue( int *pbSuccess );
@@ -150,13 +151,13 @@ class ILWISDataset : public GDALPamDataset
     CPLErr WriteProjection();
     CPLErr WriteGeoReference();
     void   CollectTransformCoef(std::string &pszRefFile );
-		
+
 public:
     ILWISDataset();
     ~ILWISDataset();
 
     static GDALDataset *Open( GDALOpenInfo * );
-		
+
     static GDALDataset *CreateCopy( const char * pszFilename,
                                     GDALDataset *poSrcDS,
                                     int bStrict, char ** papszOptions,
@@ -167,7 +168,7 @@ public:
                                int nXSize, int nYSize, 
                                int nBands, GDALDataType eType,
                                char** papszParmList); 
-		
+
     virtual CPLErr 	GetGeoTransform( double * padfTransform );
     virtual CPLErr  SetGeoTransform( double * );
 
@@ -178,7 +179,7 @@ public:
 };
 
 // IniFile.h: interface for the IniFile class.
-// 
+//
 //////////////////////////////////////////////////////////////////////
 
 class CompareAsNum
@@ -210,5 +211,3 @@ private:
     void Load();
     void Store();
 };
-
-

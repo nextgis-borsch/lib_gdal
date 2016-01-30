@@ -113,7 +113,7 @@ void OGROCILayer::ResetReading()
 OGRFeature *OGROCILayer::GetNextFeature()
 
 {
-    while( TRUE )
+    while( true )
     {
         OGRFeature      *poFeature;
 
@@ -254,7 +254,7 @@ int OGROCILayer::ExecuteQuery( const char *pszReqQuery )
                            (dvoid *)0, (ub2 *)0, (ub2 *)0, (ub4)OCI_DEFAULT),
             "OCIDefineByPos(geometry)") )
             return FALSE;
-        
+
         if( poSession->Failed( 
             OCIDefineObject(hGDefine, poSession->hError, 
                             poSession->hGeometryTDO,
@@ -347,18 +347,17 @@ OGRGeometry *OGROCILayer::TranslateGeometry()
 /* -------------------------------------------------------------------- */
     OGRGeometryCollection *poCollection = NULL;
     OGRPolygon *poPolygon = NULL;
-    OGRGeometry *poParent = NULL;
 
     if( ORA_GTYPE_MATCH(nGType,ORA_GTYPE_POLYGON) )
-        poParent = poPolygon = new OGRPolygon();
+        poPolygon = new OGRPolygon();
     else if( ORA_GTYPE_MATCH(nGType,ORA_GTYPE_COLLECTION) )
-        poParent = poCollection = new OGRGeometryCollection();
+        poCollection = new OGRGeometryCollection();
     else if( ORA_GTYPE_MATCH(nGType,ORA_GTYPE_MULTIPOINT) )
-        poParent = poCollection = new OGRMultiPoint();
+        poCollection = new OGRMultiPoint();
     else if( ORA_GTYPE_MATCH(nGType,ORA_GTYPE_MULTILINESTRING) )
-        poParent = poCollection = new OGRMultiLineString();
+        poCollection = new OGRMultiLineString();
     else if( ORA_GTYPE_MATCH(nGType,ORA_GTYPE_MULTIPOLYGON) )
-        poParent = poCollection = new OGRMultiPolygon();
+        poCollection = new OGRMultiPolygon();
 
 /* ==================================================================== */
 /*      Loop over the component elements.                               */
@@ -430,7 +429,7 @@ OGRGeometry *OGROCILayer::TranslateGeometry()
 
                     poPolygon = new OGRPolygon();
                 }
-                
+
                 if( poPolygon != NULL )
                     poPolygon->addRingDirectly( (OGRLinearRing *) poGeom );
                 else
@@ -481,14 +480,14 @@ OGROCILayer::LoadElementInfo( int iElement, int nElemCount, int nTotalOrdCount,
                    (dvoid **)&hNumber, NULL );
     OCINumberToInt(poSession->hError, hNumber, (uword)sizeof(ub4), 
                    OCI_NUMBER_UNSIGNED, (dvoid *) pnStartOrdinal );
-        
+
     OCICollGetElem(poSession->hEnv, poSession->hError, 
                    (OCIColl *)(hLastGeom->sdo_elem_info), 
                    (sb4)(iElement+1), (boolean *)&bExists, 
                    (dvoid **)&hNumber, NULL );
     OCINumberToInt(poSession->hError, hNumber, (uword)sizeof(ub4), 
                    OCI_NUMBER_UNSIGNED, (dvoid *) pnEType );
-        
+
     OCICollGetElem(poSession->hEnv, poSession->hError, 
                    (OCIColl *)(hLastGeom->sdo_elem_info), 
                    (sb4)(iElement+2), (boolean *)&bExists, 
@@ -514,7 +513,7 @@ OGROCILayer::LoadElementInfo( int iElement, int nElemCount, int nTotalOrdCount,
 
     return TRUE;
 }
-                              
+
 
 /************************************************************************/
 /*                      TranslateGeometryElement()                      */
@@ -608,7 +607,7 @@ OGROCILayer::TranslateGeometryElement( int *piElement,
     {
         OGRLineString *poLS = new OGRLineString();
         int nPointCount = nElemOrdCount / nDimension, i;
-        
+
         for( i = 0; i < nPointCount-2; i += 2 )
         {
             double dfStartX, dfStartY, dfStartZ = 0.0; 
@@ -664,7 +663,7 @@ OGROCILayer::TranslateGeometryElement( int *piElement,
     {
         OGRLineString *poLS = new OGRLinearRing();
         int nPointCount = nElemOrdCount / nDimension, i;
-        
+
         for( i = 0; i < nPointCount-2; i += 2 )
         {
             double dfStartX, dfStartY, dfStartZ = 0.0; 
@@ -695,12 +694,12 @@ OGROCILayer::TranslateGeometryElement( int *piElement,
         OGRLinearRing *poLS = new OGRLinearRing();
         double dfX1, dfY1, dfZ1 = 0.0;
         double dfX2, dfY2, dfZ2 = 0.0;
-        
+
         GetOrdinalPoint( nStartOrdinal, nDimension, 
                          &dfX1, &dfY1, &dfZ1 );
         GetOrdinalPoint( nStartOrdinal + nDimension, nDimension, 
                          &dfX2, &dfY2, &dfZ2 );
-        
+
         poLS->setNumPoints( 5 );
 
         poLS->setPoint( 0, dfX1, dfY1, dfZ1 );
@@ -721,7 +720,7 @@ OGROCILayer::TranslateGeometryElement( int *piElement,
         double dfX1, dfY1, dfZ1 = 0.0;
         double dfX2, dfY2, dfZ2 = 0.0;
         double dfX3, dfY3, dfZ3 = 0.0;
-        
+
         GetOrdinalPoint( nStartOrdinal, nDimension, 
                          &dfX1, &dfY1, &dfZ1 );
         GetOrdinalPoint( nStartOrdinal + nDimension, nDimension, 
@@ -749,7 +748,7 @@ OGROCILayer::TranslateGeometryElement( int *piElement,
         OGRLineString *poLS, *poElemLS;
         int nElemCount, nTotalOrdCount;
         OGROCISession      *poSession = poDS->GetSession();
-        
+
         if( nEType == 4 )
             poLS = new OGRLineString();
         else 
@@ -760,7 +759,7 @@ OGROCILayer::TranslateGeometryElement( int *piElement,
                          (OCIColl *)(hLastGeom->sdo_elem_info), &nElemCount),
             "OCICollSize(sdo_elem_info)" ) )
             return NULL;
-        
+
         if( poSession->Failed( 
             OCICollSize( poSession->hEnv, poSession->hError, 
                          (OCIColl*)(hLastGeom->sdo_ordinates),&nTotalOrdCount),
@@ -791,7 +790,7 @@ OGROCILayer::TranslateGeometryElement( int *piElement,
                     CPLAssert( 
                         poElemLS->getX(0) == poLS->getX(poLS->getNumPoints()-1)
                         && poElemLS->getY(0) ==poLS->getY(poLS->getNumPoints()-1));
-                    
+
                     poLS->addSubLineString( poElemLS, 1 );
                 }
                 else
@@ -799,19 +798,19 @@ OGROCILayer::TranslateGeometryElement( int *piElement,
 
                 delete poElemLS;
             }
-            
+
         }
 
         *piElement -= 3;
         return poLS;
     }
-    
+
 /* -------------------------------------------------------------------- */
 /*      Otherwise it is apparently unsupported.                         */
 /* -------------------------------------------------------------------- */
     else
     {
-        
+
         CPLDebug( "OCI", "Geometry with EType=%d, Interp=%d ignored.", 
                   nEType, nInterpretation );
     }
@@ -855,7 +854,7 @@ int OGROCILayer::GetOrdinalPoint( int iOrdinal, int nDimension,
 
     return TRUE;
 }
-                                       
+
 /************************************************************************/
 /*                           TestCapability()                           */
 /************************************************************************/
@@ -896,7 +895,7 @@ int OGROCILayer::LookupTableSRID()
 /* -------------------------------------------------------------------- */
     if( pszGeomName == NULL )
         return -1;
-    
+
 /* -------------------------------------------------------------------- */
 /*      Split out the owner if available.                               */
 /* -------------------------------------------------------------------- */
@@ -919,7 +918,7 @@ int OGROCILayer::LookupTableSRID()
     oCommand.Appendf( 1000, "SELECT SRID FROM ALL_SDO_GEOM_METADATA "
                       "WHERE TABLE_NAME = UPPER('%s') AND COLUMN_NAME = UPPER('%s')",
                       pszTableName, pszGeomName );
-    
+
     if( pszOwner != NULL )
     {
         oCommand.Appendf( 500, " AND OWNER = '%s'", pszOwner );
@@ -931,7 +930,7 @@ int OGROCILayer::LookupTableSRID()
 /* -------------------------------------------------------------------- */
     OGROCIStatement oGetTables( poDS->GetSession() );
     int nSRID = -1;
-    
+
     if( oGetTables.Execute( oCommand.GetString() ) == CE_None )
     {
         char **papszRow = oGetTables.SimpleFetchRow();

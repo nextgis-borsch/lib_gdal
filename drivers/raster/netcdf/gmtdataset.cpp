@@ -28,10 +28,10 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "gdal_pam.h"
-#include "gdal_frmts.h"
-#include "netcdf.h"
 #include "cpl_multiproc.h"
+#include "gdal_frmts.h"
+#include "gdal_pam.h"
+#include "netcdf.h"
 
 CPL_CVSID("$Id$");
 
@@ -53,8 +53,9 @@ class GMTDataset : public GDALPamDataset
   public:
     int         cdfid;
 
+                GMTDataset() : z_id(0), cdfid(0) { }
 		~GMTDataset();
-    
+
     static GDALDataset *Open( GDALOpenInfo * );
 
     CPLErr 	GetGeoTransform( double * padfTransform );
@@ -74,7 +75,7 @@ class GMTRasterBand : public GDALPamRasterBand
   public:
 
     		GMTRasterBand( GMTDataset *poDS, int nZId, int nBand );
-    
+
     virtual CPLErr IReadBlock( int, int, void * );
 };
 
@@ -83,20 +84,20 @@ class GMTRasterBand : public GDALPamRasterBand
 /*                           GMTRasterBand()                            */
 /************************************************************************/
 
-GMTRasterBand::GMTRasterBand( GMTDataset *poDS, int nZId, int nBand )
+GMTRasterBand::GMTRasterBand( GMTDataset *poDSIn, int nZIdIn, int nBandIn )
 
 {
-    this->poDS = poDS;
-    this->nBand = nBand;
-    this->nZId = nZId;
-    
+    this->poDS = poDSIn;
+    this->nBand = nBandIn;
+    this->nZId = nZIdIn;
+
     nBlockXSize = poDS->GetRasterXSize();
     nBlockYSize = 1;
 
 /* -------------------------------------------------------------------- */
 /*      Get the type of the "z" variable, our target raster array.      */
 /* -------------------------------------------------------------------- */
-    if( nc_inq_var( poDS->cdfid, nZId, NULL, &nc_datatype, NULL, NULL,
+    if( nc_inq_var( poDSIn->cdfid, nZId, NULL, &nc_datatype, NULL, NULL,
                     NULL ) != NC_NOERR )
     {
         CPLError( CE_Failure, CPLE_AppDefined, 
@@ -131,15 +132,14 @@ GMTRasterBand::GMTRasterBand( GMTDataset *poDS, int nZId, int nBand )
 CPLErr GMTRasterBand::IReadBlock( CPL_UNUSED int nBlockXOff, int nBlockYOff,
                                   void * pImage )
 {
-    size_t start[2], edge[2];
-    int    nErr = NC_NOERR;
-    int    cdfid = ((GMTDataset *) poDS)->cdfid;
-    
+
     CPLMutexHolderD(&hNCMutex);
 
-    start[0] = nBlockYOff * nBlockXSize;
-    edge[0] = nBlockXSize;
+    size_t start[2] = {static_cast<size_t>(nBlockYOff * nBlockXSize), 0};
+    size_t edge[2] = {static_cast<size_t>(nBlockXSize), 0};
 
+    int nErr = NC_NOERR;
+    int cdfid = ((GMTDataset *) poDS)->cdfid;
     if( eDataType == GDT_Byte )
         nErr = nc_get_vara_uchar( cdfid, nZId, start, edge, 
                                   (unsigned char *) pImage );
@@ -169,8 +169,8 @@ CPLErr GMTRasterBand::IReadBlock( CPL_UNUSED int nBlockXOff, int nBlockYOff,
                   nc_strerror( nErr ) );
         return CE_Failure;
     }
-    else
-        return CE_None;
+
+    return CE_None;
 }
 
 /************************************************************************/
@@ -186,6 +186,7 @@ CPLErr GMTRasterBand::IReadBlock( CPL_UNUSED int nBlockXOff, int nBlockYOff,
 GMTDataset::~GMTDataset()
 
 {
+    CPLMutexHolderD(&hNCMutex);
     FlushCache();
     nc_close (cdfid);
 }
@@ -219,17 +220,18 @@ GDALDataset *GMTDataset::Open( GDALOpenInfo * poOpenInfo )
         || poOpenInfo->pabyHeader[2] != 'F' 
         || poOpenInfo->pabyHeader[3] != 1 )
         return NULL;
-    
+
     CPLMutexHolderD(&hNCMutex);
 
 /* -------------------------------------------------------------------- */
 /*      Try opening the dataset.                                        */
 /* -------------------------------------------------------------------- */
-    int cdfid, nm_id, dim_count, z_id;
-
+    int cdfid;
     if( nc_open( poOpenInfo->pszFilename, NC_NOWRITE, &cdfid ) != NC_NOERR )
         return NULL;
 
+    int nm_id;
+    int z_id;
     if( nc_inq_varid( cdfid, "dimension", &nm_id ) != NC_NOERR 
         || nc_inq_varid( cdfid, "z", &z_id ) != NC_NOERR )
     {
@@ -242,12 +244,13 @@ GDALDataset *GMTDataset::Open( GDALOpenInfo * poOpenInfo )
         return NULL;
     }
 
+    int dim_count;
     if( nc_inq_ndims( cdfid, &dim_count ) != NC_NOERR || dim_count < 2 )
     {
         nc_close( cdfid );
         return NULL;
     }
-    
+
 /* -------------------------------------------------------------------- */
 /*      Confirm the requested access is supported.                      */
 /* -------------------------------------------------------------------- */
@@ -259,31 +262,33 @@ GDALDataset *GMTDataset::Open( GDALOpenInfo * poOpenInfo )
                   " datasets.\n" );
         return NULL;
     }
-    
-/* -------------------------------------------------------------------- */
-/*      Create a corresponding GDALDataset.                             */
-/* -------------------------------------------------------------------- */
-    GMTDataset 	*poDS;
 
-    CPLReleaseMutex(hNCMutex);  // Release mutex otherwise we'll deadlock with GDALDataset own mutex
-    poDS = new GMTDataset();
-    CPLAcquireMutex(hNCMutex, 1000.0);
-
-    poDS->cdfid = cdfid;
-    poDS->z_id = z_id;
-    
 /* -------------------------------------------------------------------- */
 /*      Get dimensions.  If we can't find this, then this is a          */
 /*      GMT file, but not a normal grid product.                     */
 /* -------------------------------------------------------------------- */
-    size_t start[2], edge[2];
     int    nm[2];
-
-    start[0] = 0;
-    edge[0] = 2;
+    size_t start[2] = {0, 0};
+    size_t edge[2] = {2, 0};
 
     nc_get_vara_int(cdfid, nm_id, start, edge, nm);
-    
+    if( !GDALCheckDatasetDimensions(nm[0], nm[1]) )
+    {
+        nc_close( cdfid );
+        return NULL;
+    }
+
+/* -------------------------------------------------------------------- */
+/*      Create a corresponding GDALDataset.                             */
+/* -------------------------------------------------------------------- */
+    CPLReleaseMutex(hNCMutex);  // Release mutex otherwise we'll deadlock with GDALDataset own mutex
+
+    GMTDataset 	*poDS = new GMTDataset();
+    CPLAcquireMutex(hNCMutex, 1000.0);
+
+    poDS->cdfid = cdfid;
+    poDS->z_id = z_id;
+
     poDS->nRasterXSize = nm[0];
     poDS->nRasterYSize = nm[1];
 
@@ -291,11 +296,13 @@ GDALDataset *GMTDataset::Open( GDALOpenInfo * poOpenInfo )
 /*      Fetch "z" attributes scale_factor, add_offset, and              */
 /*      node_offset.                                                    */
 /* -------------------------------------------------------------------- */
-    double scale_factor=1.0, add_offset=0.0;
-    int node_offset = 1;
-
+    double scale_factor=1.0;
     nc_get_att_double( cdfid, z_id, "scale_factor", &scale_factor );
+
+    double add_offset=0.0;
     nc_get_att_double( cdfid, z_id, "add_offset", &add_offset );
+
+    int node_offset = 1;
     nc_get_att_int( cdfid, z_id, "node_offset", &node_offset );
 
 /* -------------------------------------------------------------------- */
@@ -306,9 +313,10 @@ GDALDataset *GMTDataset::Open( GDALOpenInfo * poOpenInfo )
     if( nc_inq_varid (cdfid, "x_range", &x_range_id) == NC_NOERR 
         && nc_inq_varid (cdfid, "y_range", &y_range_id) == NC_NOERR )
     {
-        double x_range[2], y_range[2];
-
+        double x_range[2];
         nc_get_vara_double( cdfid, x_range_id, start, edge, x_range );
+
+        double y_range[2];
         nc_get_vara_double( cdfid, y_range_id, start, edge, y_range );
 
         // Pixel is area
@@ -393,9 +401,6 @@ GMTCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 /* -------------------------------------------------------------------- */
 /*      Figure out general characteristics.                             */
 /* -------------------------------------------------------------------- */
-    nc_type nc_datatype;
-    GDALRasterBand *poBand;
-    int nXSize, nYSize;
 
     CPLMutexHolderD(&hNCMutex);
 
@@ -406,11 +411,13 @@ GMTCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
         return NULL;
     }
 
-    poBand = poSrcDS->GetRasterBand(1);
+    GDALRasterBand *poBand = poSrcDS->GetRasterBand(1);
 
-    nXSize = poSrcDS->GetRasterXSize();
-    nYSize = poSrcDS->GetRasterYSize();
-    
+    const int nXSize = poSrcDS->GetRasterXSize();
+    const int nYSize = poSrcDS->GetRasterYSize();
+
+    nc_type nc_datatype;
+
     if( poBand->GetRasterDataType() == GDT_Int16 )
         nc_datatype = NC_SHORT;
     else if( poBand->GetRasterDataType() == GDT_Int32 )
@@ -432,17 +439,16 @@ GMTCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
         nc_datatype = NC_INT;
     else if( poBand->GetRasterDataType() == GDT_UInt32 )
         nc_datatype = NC_INT;
-    else 
+    else
         nc_datatype = NC_FLOAT;
-    
+
 /* -------------------------------------------------------------------- */
 /*      Establish bounds from geotransform.                             */
 /* -------------------------------------------------------------------- */
     double adfGeoTransform[6];
-    double dfXMax, dfYMin;
 
     poSrcDS->GetGeoTransform( adfGeoTransform );
-    
+
     if( adfGeoTransform[2] != 0.0 || adfGeoTransform[4] != 0.0 )
     {
         CPLError( bStrict ? CE_Failure : CE_Warning, CPLE_AppDefined, 
@@ -451,15 +457,15 @@ GMTCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
             return NULL;
     }
 
-    dfXMax = adfGeoTransform[0] + adfGeoTransform[1] * nXSize;
-    dfYMin = adfGeoTransform[3] + adfGeoTransform[5] * nYSize;
-    
+    const double dfXMax = adfGeoTransform[0] + adfGeoTransform[1] * nXSize;
+    const double dfYMin = adfGeoTransform[3] + adfGeoTransform[5] * nYSize;
+
 /* -------------------------------------------------------------------- */
 /*      Create base file.                                               */
 /* -------------------------------------------------------------------- */
-    int cdfid, err;
+    int cdfid;
 
-    err = nc_create (pszFilename, NC_CLOBBER,&cdfid);
+    int err = nc_create (pszFilename, NC_CLOBBER, &cdfid);
     if( err != NC_NOERR )
     {
         CPLError( CE_Failure, CPLE_AppDefined, 
@@ -471,16 +477,19 @@ GMTCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 /* -------------------------------------------------------------------- */
 /*      Define the dimensions and so forth.                             */
 /* -------------------------------------------------------------------- */
-    int side_dim, xysize_dim, dims[1];
-    int x_range_id, y_range_id, z_range_id, inc_id, nm_id, z_id;
+    int side_dim, xysize_dim;
 
     nc_def_dim(cdfid, "side", 2, &side_dim);
     nc_def_dim(cdfid, "xysize", (int) (nXSize * nYSize), &xysize_dim);
 
-    dims[0]		= side_dim;
+    int dims[1] = {side_dim};
+
+    int x_range_id, y_range_id, z_range_id;
     nc_def_var (cdfid, "x_range", NC_DOUBLE, 1, dims, &x_range_id);
     nc_def_var (cdfid, "y_range", NC_DOUBLE, 1, dims, &y_range_id);
     nc_def_var (cdfid, "z_range", NC_DOUBLE, 1, dims, &z_range_id);
+
+    int inc_id, nm_id, z_id;
     nc_def_var (cdfid, "spacing", NC_DOUBLE, 1, dims, &inc_id);
     nc_def_var (cdfid, "dimension", NC_LONG, 1, dims, &nm_id);
 
@@ -490,24 +499,23 @@ GMTCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 /* -------------------------------------------------------------------- */
 /*      Assign attributes.                                              */
 /* -------------------------------------------------------------------- */
-    double default_scale = 1.0;
-    double default_offset = 0.0;
-    int default_node_offset = 1; // pixel is area
-
     nc_put_att_text (cdfid, x_range_id, "units", 7, "meters");
     nc_put_att_text (cdfid, y_range_id, "units", 7, "meters");
     nc_put_att_text (cdfid, z_range_id, "units", 7, "meters");
 
+    double default_scale = 1.0;
     nc_put_att_double (cdfid, z_id, "scale_factor", NC_DOUBLE, 1, 
                        &default_scale );
+    double default_offset = 0.0;
     nc_put_att_double (cdfid, z_id, "add_offset", NC_DOUBLE, 1, 
                        &default_offset );
 
+    int default_node_offset = 1; // pixel is area
     nc_put_att_int (cdfid, z_id, "node_offset", NC_LONG, 1, 
                     &default_node_offset );
     nc_put_att_text (cdfid, NC_GLOBAL, "title", 1, "");
     nc_put_att_text (cdfid, NC_GLOBAL, "source", 1, "");
-	
+
     /* leave define mode */
     nc_enddef (cdfid);
 
@@ -516,18 +524,13 @@ GMTCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 /* -------------------------------------------------------------------- */
     double adfMinMax[2];
     GDALComputeRasterMinMax( (GDALRasterBandH) poBand, FALSE, adfMinMax );
-	
+
 /* -------------------------------------------------------------------- */
 /*      Set range variables.                                            */
 /* -------------------------------------------------------------------- */
-    size_t start[2], edge[2];
-    double dummy[2];
-    int nm[2];
-	
-    start[0] = 0;
-    edge[0] = 2;
-    dummy[0] = adfGeoTransform[0];
-    dummy[1] = dfXMax;
+    size_t start[2] = {0, 0};
+    size_t edge[2] = {2, 0};
+    double dummy[2] = {adfGeoTransform[0], dfXMax};
     nc_put_vara_double(cdfid, x_range_id, start, edge, dummy);
 
     dummy[0] = dfYMin;
@@ -538,8 +541,7 @@ GMTCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     dummy[1] = -adfGeoTransform[5];
     nc_put_vara_double(cdfid, inc_id, start, edge, dummy);
 
-    nm[0] = nXSize;
-    nm[1] = nYSize;
+    int nm[2] = {nXSize, nYSize};
     nc_put_vara_int(cdfid, nm_id, start, edge, nm);
 
     nc_put_vara_double(cdfid, z_range_id, start, edge, adfMinMax);
@@ -547,17 +549,19 @@ GMTCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 /* -------------------------------------------------------------------- */
 /*      Write out the image one scanline at a time.                     */
 /* -------------------------------------------------------------------- */
-    double *padfData;
-    int  iLine;
-
-    padfData = (double *) CPLMalloc( sizeof(double) * nXSize );
+    double *padfData = (double *) CPLMalloc( sizeof(double) * nXSize );
 
     edge[0] = nXSize;
-    for( iLine = 0; iLine < nYSize; iLine++ )
+    for( int iLine = 0; iLine < nYSize; iLine++ )
     {
         start[0] = iLine * nXSize;
-        poBand->RasterIO( GF_Read, 0, iLine, nXSize, 1, 
-                          padfData, nXSize, 1, GDT_Float64, 0, 0, NULL );
+        if( poBand->RasterIO( GF_Read, 0, iLine, nXSize, 1, 
+                          padfData, nXSize, 1, GDT_Float64, 0, 0, NULL ) != CE_None )
+        {
+            nc_close (cdfid);
+            CPLFree( padfData );
+            return( NULL );
+        }
         err = nc_put_vara_double( cdfid, z_id, start, edge, padfData );
         if( err != NC_NOERR )
         {
@@ -565,10 +569,11 @@ GMTCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
                       "nc_put_vara_double(%s): %s", 
                       pszFilename, nc_strerror( err ) );
             nc_close (cdfid);
+            CPLFree( padfData );
             return( NULL );
         }
     }
-    
+
     CPLFree( padfData );
 
 /* -------------------------------------------------------------------- */
@@ -595,29 +600,24 @@ GMTCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 void GDALRegister_GMT()
 
 {
-    GDALDriver	*poDriver;
-    
-    if (! GDAL_CHECK_VERSION("GMT driver"))
+    if( !GDAL_CHECK_VERSION( "GMT driver" ) )
         return;
 
-    if( GDALGetDriverByName( "GMT" ) == NULL )
-    {
-        poDriver = new GDALDriver();
-        
-        poDriver->SetDescription( "GMT" );
-        poDriver->SetMetadataItem( GDAL_DCAP_RASTER, "YES" );
-        poDriver->SetMetadataItem( GDAL_DMD_LONGNAME, 
-                                   "GMT NetCDF Grid Format" );
-        poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, 
-                                   "frmt_various.html#GMT" );
-        poDriver->SetMetadataItem( GDAL_DMD_EXTENSION, "nc" );
+    if( GDALGetDriverByName( "GMT" ) != NULL )
+        return;
 
-        poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES, 
-                                   "Int16 Int32 Float32 Float64" );
+    GDALDriver *poDriver = new GDALDriver();
 
-        poDriver->pfnOpen = GMTDataset::Open;
-        poDriver->pfnCreateCopy = GMTCreateCopy;
+    poDriver->SetDescription( "GMT" );
+    poDriver->SetMetadataItem( GDAL_DCAP_RASTER, "YES" );
+    poDriver->SetMetadataItem( GDAL_DMD_LONGNAME, "GMT NetCDF Grid Format" );
+    poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, "frmt_various.html#GMT" );
+    poDriver->SetMetadataItem( GDAL_DMD_EXTENSION, "nc" );
+    poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES,
+                               "Int16 Int32 Float32 Float64" );
 
-        GetGDALDriverManager()->RegisterDriver( poDriver );
-    }
+    poDriver->pfnOpen = GMTDataset::Open;
+    poDriver->pfnCreateCopy = GMTCreateCopy;
+
+    GetGDALDriverManager()->RegisterDriver( poDriver );
 }

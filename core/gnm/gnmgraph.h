@@ -37,6 +37,8 @@
 // Types declarations.
 
 typedef std::vector<GNMGFID> GNMVECTOR, *LPGNMVECTOR;
+typedef const std::vector<GNMGFID> GNMCONSTVECTOR;
+typedef const std::vector<GNMGFID>* LPGNMCONSTVECTOR;
 typedef std::pair<GNMGFID,GNMGFID> EDGEVERTEXPAIR;
 typedef std::vector< EDGEVERTEXPAIR > GNMPATH;
 
@@ -134,7 +136,7 @@ public:
     virtual bool CheckVertexBlocked(GNMGFID nFID) const;
 
     /**
-     * @brief Change all vertice and edges block state.
+     * @brief Change all vertices and edges block state.
      *
      * This is mainly use for unblock all vertices and edges.
      *
@@ -188,7 +190,7 @@ public:
      * features, i.e. the blocked features are the barriers during the routing 
      * process.
      *  
-     * @param anEmittersIDs - array of emmiters identificators
+     * @param anEmittersIDs - array of emitters identificators
      * @return an array of connected identificators
      */
     virtual GNMPATH ConnectedComponents(const GNMVECTOR &anEmittersIDs);
@@ -196,7 +198,7 @@ public:
     virtual void Clear();
 protected:
     /**
-     * @brief Method to create best paht tree.
+     * @brief Method to create best path tree.
      *
      * Calculates and builds the best path tree with the Dijkstra
      * algorithm starting from the nFID. Method takes in account the blocking
@@ -216,7 +218,7 @@ protected:
     virtual GNMPATH DijkstraShortestPath(GNMGFID nStartFID, GNMGFID nEndFID,
                                  const std::map<GNMGFID, GNMStdEdge> &mstEdges);
 
-    virtual const LPGNMVECTOR GetOutEdges(GNMGFID nFID) const;
+    virtual LPGNMCONSTVECTOR GetOutEdges(GNMGFID nFID) const;
     virtual GNMGFID GetOppositVertex(GNMGFID nEdgeFID, GNMGFID nVertexFID) const;
     virtual void TraceTargets(std::queue<GNMGFID> &vertexQueue, 
                                 std::set<GNMGFID> &markedVertIds, 

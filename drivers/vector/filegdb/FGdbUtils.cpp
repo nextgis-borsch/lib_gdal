@@ -72,7 +72,7 @@ bool GDBErr(long int hr, std::string desc, CPLErr errType, const char* pszAddMsg
 {
     std::wstring fgdb_error_desc_w;
     fgdbError er;
-    er = FileGDBAPI::ErrorInfo::GetErrorDescription(hr, fgdb_error_desc_w);
+    er = FileGDBAPI::ErrorInfo::GetErrorDescription(static_cast<fgdbError>(hr), fgdb_error_desc_w);
     if ( er == S_OK )
     {
         std::string fgdb_error_desc = WStringToString(fgdb_error_desc_w);
@@ -99,7 +99,7 @@ bool GDBDebug(long int hr, std::string desc)
 {
     std::wstring fgdb_error_desc_w;
     fgdbError er;
-    er = FileGDBAPI::ErrorInfo::GetErrorDescription(hr, fgdb_error_desc_w);
+    er = FileGDBAPI::ErrorInfo::GetErrorDescription(static_cast<fgdbError>(hr), fgdb_error_desc_w);
     if ( er == S_OK )
     {
         std::string fgdb_error_desc = WStringToString(fgdb_error_desc_w);
@@ -237,8 +237,9 @@ bool OGRGeometryToGDB(OGRwkbGeometryType ogrType, std::string *gdbType, bool *ha
 /*                            GDBToOGRFieldType()                        */
 /*************************************************************************/
 
-// We could make this function far more robust by doing automatic coertion of types,
-// and/or skipping fields we do not know. But our purposes this works fine
+// We could make this function far more robust by doing automatic coercion of
+// types, and/or skipping fields we do not know. But, for our purposes. this
+// works fine.
 bool GDBToOGRFieldType(std::string gdbType, OGRFieldType* pOut, OGRFieldSubType* pSubType)
 {
     /*
@@ -456,7 +457,7 @@ bool GDBGeometryToOGRGeometry(bool forceMulti, FileGDBAPI::ShapeBuffer* pGdbGeom
 
     OGRErr eErr = OGRCreateFromShapeBin( pGdbGeometry->shapeBuffer,
                                 &pOGRGeometry,
-                                pGdbGeometry->inUseLength);
+                                static_cast<int>(pGdbGeometry->inUseLength));
 
     //OGRErr eErr = OGRGeometryFactory::createFromWkb(pGdbGeometry->shapeBuffer, pOGRSR, &pOGRGeometry, pGdbGeometry->inUseLength );
 
@@ -523,7 +524,7 @@ bool GDBToOGRSpatialReference(const string & wkt, OGRSpatialReference** ppSR)
         *ppSR = NULL;
 
         CPLError( CE_Failure, CPLE_AppDefined,
-                  "Failed morhping from ESRI Geometry: %s", wkt.c_str());
+                  "Failed morphing from ESRI Geometry: %s", wkt.c_str());
 
         return false;
     }
@@ -576,7 +577,7 @@ std::string FGDBEscapeUnsupportedPrefixes(const std::string className)
     std::string newName = className;
     // From ESRI docs
     // Feature classes starting with these strings are unsupported.
-    static const char* UNSUPPORTED_PREFIXES[] = {"sde_", "gdb_", "delta_", NULL};
+    static const char* const UNSUPPORTED_PREFIXES[] = {"sde_", "gdb_", "delta_", NULL};
 
     for (int i = 0; UNSUPPORTED_PREFIXES[i] != NULL; i++)
     {
@@ -601,7 +602,7 @@ std::string FGDBEscapeReservedKeywords(const std::string name)
     std::transform(upperName.begin(), upperName.end(), upperName.begin(), ::toupper);
 
     // From ESRI docs
-    static const char* RESERVED_WORDS[] = {FGDB_OID_NAME, "ADD", "ALTER", "AND", "AS", "ASC", "BETWEEN",
+    static const char* const RESERVED_WORDS[] = {FGDB_OID_NAME, "ADD", "ALTER", "AND", "AS", "ASC", "BETWEEN",
                                     "BY", "COLUMN", "CREATE", "DATE", "DELETE", "DESC",
                                     "DROP", "EXISTS", "FOR", "FROM", "IN", "INSERT", "INTO",
                                     "IS", "LIKE", "NOT", "NULL", "OR", "ORDER", "SELECT",

@@ -27,8 +27,8 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#ifndef _NTF_H_INCLUDED
-#define _NTF_H_INCLUDED
+#ifndef NTF_H_INCLUDED
+#define NTF_H_INCLUDED
 
 #include "cpl_conv.h"
 #include "ogrsf_frmts.h"
@@ -51,9 +51,9 @@
 #define NRT_CHAIN    24                /* Chain */
 #define NRT_POLYGON  31                /* Polygon */
 #define NRT_CPOLY    33                /* Complex Polygon */
-#define NRT_COLLECT  34                /* Collection of featues */
+#define NRT_COLLECT  34                /* Collection of features */
 #define NRT_ADR      40                /* Attribute Description Record */
-#define NRT_CODELIST 42                /* Codelist Record (ie. BL2000) */
+#define NRT_CODELIST 42                /* Codelist Record (i.e. BL2000) */
 #define NRT_TEXTREC  43                /* Text */
 #define NRT_TEXTPOS  44                /* Text position */
 #define NRT_TEXTREP  45                /* Text representation */
@@ -119,7 +119,7 @@ class NTFRecord
     char    *pszData;
 
     int      ReadPhysicalLine( FILE *fp, char *pszLine );
-    
+
   public:
              NTFRecord( FILE * );
              ~NTFRecord();
@@ -149,7 +149,7 @@ public:
 
                 NTFGenericClass();
                 ~NTFGenericClass();
-    
+
     void        CheckAddAttr( const char *, const char *, int );
     void        SetMultiple( const char * );
 };
@@ -166,9 +166,9 @@ public:
 
     const char  *Lookup( const char * );
 
-    char        szValType[3];   /* attribute code for list, ie. AC */
+    char        szValType[3];   /* attribute code for list, i.e. AC */
     char        szFInter[6];    /* format of code values */
- 
+
     int         nNumCode;
     char        **papszCodeVal; /* Short code value */
     char        **papszCodeDes; /* Long description of code */
@@ -209,7 +209,7 @@ class NTFFileReader
 {
     char             *pszFilename;
     OGRNTFDataSource *poDS;
-        
+
     FILE             *fp;
 
     // feature class list.
@@ -246,7 +246,7 @@ class NTFFileReader
     long              nSavedFeatureId;
     long              nBaseFeatureId;
     long              nFeatureCount; 
-    
+
     NTFRecord         *apoCGroup[MAX_REC_GROUP+1];
 
     char             *pszProduct;
@@ -292,8 +292,8 @@ class NTFFileReader
     int               SetFPPos( long nPos, long nFeatureId );
     void              Reset();
     void              SetBaseFID( long nFeatureId );
-  
-    
+
+
     OGRGeometry      *ProcessGeometry( NTFRecord *, int * = NULL );
     OGRGeometry      *ProcessGeometry3D( NTFRecord *, int * = NULL );
     int               ProcessAttDesc( NTFRecord *, NTFAttDesc * );
@@ -303,10 +303,10 @@ class NTFFileReader
     NTFAttDesc       *GetAttDesc( const char * );
 
     void              ApplyAttributeValues( OGRFeature *, NTFRecord **, ... );
-     
+
     int               ApplyAttributeValue( OGRFeature *, int, const char *,
                                            char **, char ** );
-    
+
     int               ProcessAttValue( const char *pszValType, 
                                        const char *pszRawValue,
                                        char **ppszAttName, 
@@ -367,7 +367,7 @@ class NTFFileReader
     int               GetRasterDataType() { return nRasterDataType; }
     double           *GetGeoTransform() { return adfGeoTransform; }
     CPLErr            ReadRasterColumn( int, float * );
-    
+
 };
 
 /************************************************************************/
@@ -384,7 +384,7 @@ class OGRNTFLayer : public OGRLayer
     int                 iCurrentReader;
     long                nCurrentPos;
     long                nCurrentFID;
-  
+
   public:
                         OGRNTFLayer( OGRNTFDataSource * poDS,
                                      OGRFeatureDefn * poFeatureDefine,
@@ -400,13 +400,13 @@ class OGRNTFLayer : public OGRLayer
     OGRErr              ISetFeature( OGRFeature *poFeature );
     OGRErr              ICreateFeature( OGRFeature *poFeature );
 #endif
-    
+
     OGRFeatureDefn *    GetLayerDefn() { return poFeatureDefn; }
 
 #ifdef notdef    
     GIntBig             GetFeatureCount( int );
 #endif
-    
+
     int                 TestCapability( const char * );
 
     // special to NTF
@@ -425,23 +425,25 @@ class OGRNTFFeatureClassLayer : public OGRLayer
     OGRNTFDataSource   *poDS;
 
     int                 iCurrentFC;
-  
+
   public:
                         OGRNTFFeatureClassLayer( OGRNTFDataSource * poDS );
                         ~OGRNTFFeatureClassLayer();
 
     OGRGeometry *       GetSpatialFilter() { return poFilterGeom; }
     void                SetSpatialFilter( OGRGeometry * );
+    virtual void        SetSpatialFilter( int iGeomField, OGRGeometry *poGeom )
+                { OGRLayer::SetSpatialFilter(iGeomField, poGeom); }
 
     void                ResetReading();
     OGRFeature *        GetNextFeature();
 
     OGRFeature         *GetFeature( GIntBig nFeatureId );
-    
+
     OGRFeatureDefn *    GetLayerDefn() { return poFeatureDefn; }
 
     GIntBig             GetFeatureCount( int = TRUE );
-    
+
     int                 TestCapability( const char * );
 };
 
@@ -462,10 +464,10 @@ class OGRNTFRasterLayer : public OGRLayer
     int                 iColumnOffset;
 
     int                 iCurrentFC;
-  
+
     int                 nDEMSample;
     int                 nFeatureCount;
-    
+
   public:
                         OGRNTFRasterLayer( OGRNTFDataSource * poDS,
                                            NTFFileReader * poReaderIn );
@@ -473,16 +475,18 @@ class OGRNTFRasterLayer : public OGRLayer
 
     OGRGeometry *       GetSpatialFilter() { return poFilterGeom; }
     void                SetSpatialFilter( OGRGeometry * );
+    virtual void        SetSpatialFilter( int iGeomField, OGRGeometry *poGeom )
+                { OGRLayer::SetSpatialFilter(iGeomField, poGeom); }
 
     void                ResetReading();
     OGRFeature *        GetNextFeature();
 
     OGRFeature         *GetFeature( GIntBig nFeatureId );
-    
+
     OGRFeatureDefn *    GetLayerDefn() { return poFeatureDefn; }
 
     GIntBig             GetFeatureCount( int = TRUE );
-    
+
     int                 TestCapability( const char * );
 };
 
@@ -503,7 +507,7 @@ class OGRNTFDataSource : public OGRDataSource
     int                 iCurrentReader;
     long                nCurrentPos;
     long                nCurrentFID;
-  
+
     int                 nNTFFileCount;
     NTFFileReader       **papoNTFFileReader;
 
@@ -518,17 +522,17 @@ class OGRNTFDataSource : public OGRDataSource
     char                **papszOptions;
 
     void                EnsureTileNameUnique( NTFFileReader * );
-    
+
   public:
                         OGRNTFDataSource();
                         ~OGRNTFDataSource();
 
     void                SetOptionList( char ** );
     const char         *GetOption( const char * );
-    
+
     int                 Open( const char * pszName, int bTestOpen = FALSE,
                               char ** papszFileList = NULL );
-    
+
     const char          *GetName() { return pszName; }
     int                 GetLayerCount();
     OGRLayer            *GetLayer( int );
@@ -576,4 +580,4 @@ NTFStrokeArcToOGRGeometry_Angles( double dfCenterX, double dfCenterY,
                                   double dfStartAngle, double dfEndAngle,
                                   int nVertexCount );
 
-#endif /* ndef _NTF_H_INCLUDED */
+#endif /* ndef NTF_H_INCLUDED */

@@ -32,6 +32,8 @@
 
 CPL_CVSID("$Id$");
 
+CPL_INLINE static void CPL_IGNORE_RET_VAL_INT(CPL_UNUSED int unused) {}
+
 /************************************************************************/
 /*                    AIGProcessRaw32bitFloatBlock()                    */
 /*                                                                      */
@@ -104,10 +106,27 @@ CPLErr AIGProcessIntConstBlock( GByte *pabyCur, int nDataSize, int nMin,
     return( CE_None );
 }
 
+/**********************************************************************
+ *                       AIGSaturatedAdd()
+ ***********************************************************************/
+
+static GInt32 AIGSaturatedAdd(GInt32 nVal, GInt32 nAdd)
+{
+    if( nAdd >= 0 && nVal > INT_MAX - nAdd )
+        nVal = INT_MAX;
+    else if( nAdd == INT_MIN && nVal < 0 )
+        nVal = INT_MIN;
+    else if( nAdd != INT_MIN && nAdd < 0 && nVal < INT_MIN - nAdd )
+        nVal = INT_MIN;
+    else
+        nVal += nAdd;
+    return nVal;
+}
+
 /************************************************************************/
 /*                         AIGProcess32bitRawBlock()                    */
 /*                                                                      */
-/*      Process a block using ``20'' (thirtytwo bit) raw format.        */
+/*      Process a block using ``20'' (thirty two bit) raw format.        */
 /************************************************************************/
 
 static 
@@ -129,10 +148,9 @@ CPLErr AIGProcessRaw32BitBlock( GByte *pabyCur, int nDataSize, int nMin,
 /* -------------------------------------------------------------------- */
     for( i = 0; i < nBlockXSize * nBlockYSize; i++ )
     {
-        panData[i] = pabyCur[0] * 256 * 256 * 256
-            + pabyCur[1] * 256 * 256
-            + pabyCur[2] * 256 
-            + pabyCur[3] + nMin;
+        memcpy(panData + i, pabyCur, 4);
+        panData[i] = CPL_MSBWORD32(panData[i]);
+        panData[i] = AIGSaturatedAdd(panData[i], nMin);
         pabyCur += 4;
     }
 
@@ -288,11 +306,9 @@ CPLErr AIGProcessFFBlock( GByte *pabyCur, int nDataSize, int nMin,
     int i, nDstBytes = (nBlockXSize * nBlockYSize + 7) / 8;
     unsigned char *pabyIntermediate;
 
-    pabyIntermediate = (unsigned char *) VSIMalloc(nDstBytes);
+    pabyIntermediate = (unsigned char *) VSI_MALLOC_VERBOSE(nDstBytes);
     if (pabyIntermediate == NULL)
     {
-        CPLError(CE_Failure, CPLE_OutOfMemory,
-                 "Cannot allocate %d bytes", nDstBytes);
         return CE_Failure;
     }
     
@@ -708,9 +724,9 @@ CPLErr AIGReadBlock( VSILFILE * fp, GUInt32 nBlockOffset, int nBlockSize,
     nDataSize -= nMinSize;
     
 /* -------------------------------------------------------------------- */
-/*	Call an apppropriate handler depending on magic code.		*/
+/*	Call an appropriate handler depending on magic code.		*/
 /* -------------------------------------------------------------------- */
-
+    eErr = CE_None;
     if( nMagic == 0x08 )
     {
         AIGProcessRawBlock( pabyCur, nDataSize, nMin,
@@ -748,7 +764,7 @@ CPLErr AIGReadBlock( VSILFILE * fp, GUInt32 nBlockOffset, int nBlockSize,
     }
     else if( nMagic == 0xFF )
     {
-        AIGProcessFFBlock( pabyCur, nDataSize, nMin,
+        eErr = AIGProcessFFBlock( pabyCur, nDataSize, nMin,
                            nBlockXSize, nBlockYSize,
                            panData );
     }
@@ -779,7 +795,7 @@ CPLErr AIGReadBlock( VSILFILE * fp, GUInt32 nBlockOffset, int nBlockSize,
 
     CPLFree( pabyRaw );
 
-    return CE_None;
+    return eErr;
 }
 
 /************************************************************************/
@@ -795,12 +811,13 @@ CPLErr AIGReadHeader( const char * pszCoverName, AIGInfo_t * psInfo )
     char	*pszHDRFilename;
     VSILFILE	*fp;
     GByte	abyData[308];
+    const size_t nHDRFilenameLen = strlen(pszCoverName)+30;
 
 /* -------------------------------------------------------------------- */
 /*      Open the file hdr.adf file.                                     */
 /* -------------------------------------------------------------------- */
-    pszHDRFilename = (char *) CPLMalloc(strlen(pszCoverName)+30);
-    sprintf( pszHDRFilename, "%s/hdr.adf", pszCoverName );
+    pszHDRFilename = (char *) CPLMalloc(nHDRFilenameLen);
+    snprintf( pszHDRFilename, nHDRFilenameLen, "%s/hdr.adf", pszCoverName );
 
     fp = AIGLLOpen( pszHDRFilename, "rb" );
     
@@ -820,9 +837,13 @@ CPLErr AIGReadHeader( const char * pszCoverName, AIGInfo_t * psInfo )
 /*      long.                                                           */
 /* -------------------------------------------------------------------- */
 
-    VSIFReadL( abyData, 1, 308, fp );
+    if( VSIFReadL( abyData, 1, 308, fp ) != 308 )
+    {
+        CPL_IGNORE_RET_VAL_INT(VSIFCloseL( fp ));
+        return( CE_Failure );
+    }
 
-    VSIFCloseL( fp );
+    CPL_IGNORE_RET_VAL_INT(VSIFCloseL( fp ));
     
 /* -------------------------------------------------------------------- */
 /*      Read the block size information.                                */
@@ -865,16 +886,17 @@ CPLErr AIGReadBlockIndex( AIGInfo_t * psInfo, AIGTileInfo *psTInfo,
 {
     char	*pszHDRFilename;
     VSILFILE	*fp;
-    int		nLength, i;
-    GInt32	nValue;
+    int		i;
+    GUInt32	nValue, nLength;
     GUInt32	*panIndex;
     GByte       abyHeader[8];
+    const size_t nHDRFilenameLen = strlen(psInfo->pszCoverName)+40;
 
 /* -------------------------------------------------------------------- */
 /*      Open the file hdr.adf file.                                     */
 /* -------------------------------------------------------------------- */
-    pszHDRFilename = (char *) CPLMalloc(strlen(psInfo->pszCoverName)+40);
-    sprintf( pszHDRFilename, "%s/%sx.adf", psInfo->pszCoverName, pszBasename );
+    pszHDRFilename = (char *) CPLMalloc(nHDRFilenameLen);
+    snprintf( pszHDRFilename, nHDRFilenameLen, "%s/%sx.adf", psInfo->pszCoverName, pszBasename );
 
     fp = AIGLLOpen( pszHDRFilename, "rb" );
     
@@ -894,12 +916,16 @@ CPLErr AIGReadBlockIndex( AIGInfo_t * psInfo, AIGTileInfo *psTInfo,
 /*      Verify the magic number.  This is often corrupted by CR/LF      */
 /*      translation.                                                    */
 /* -------------------------------------------------------------------- */
-    VSIFReadL( abyHeader, 1, 8, fp );
+    if( VSIFReadL( abyHeader, 1, 8, fp ) != 8 )
+    {
+        CPL_IGNORE_RET_VAL_INT(VSIFCloseL( fp ));
+        return CE_Failure;
+    }
     if( abyHeader[3] == 0x0D && abyHeader[4] == 0x0A )
     {
         CPLError( CE_Failure, CPLE_AppDefined, 
                   "w001001x.adf file header has been corrupted by unix to dos text conversion." );
-        VSIFCloseL( fp );
+        CPL_IGNORE_RET_VAL_INT(VSIFCloseL( fp ));
         return CE_Failure;
     }
 
@@ -912,56 +938,72 @@ CPLErr AIGReadBlockIndex( AIGInfo_t * psInfo, AIGTileInfo *psTInfo,
     {
         CPLError( CE_Failure, CPLE_AppDefined, 
                   "w001001x.adf file header magic number is corrupt." );
-        VSIFCloseL( fp );
+        CPL_IGNORE_RET_VAL_INT(VSIFCloseL( fp ));
         return CE_Failure;
     }
 
 /* -------------------------------------------------------------------- */
 /*      Get the file length (in 2 byte shorts)                          */
 /* -------------------------------------------------------------------- */
-    VSIFSeekL( fp, 24, SEEK_SET );
-    VSIFReadL( &nValue, 1, 4, fp );
+    if( VSIFSeekL( fp, 24, SEEK_SET ) != 0 ||
+        VSIFReadL( &nValue, 1, 4, fp ) != 4 )
+    {
+        CPL_IGNORE_RET_VAL_INT(VSIFCloseL( fp ));
+        return CE_Failure;
+    }
 
-    // FIXME? : risk of overflow in multiplication
-    nLength = CPL_MSBWORD32(nValue) * 2;
+    nValue = CPL_MSBWORD32(nValue);
+    if( nValue > INT_MAX )
+    {
+        CPLError(CE_Failure, CPLE_AppDefined,
+                 "AIGReadBlockIndex: Bad length");
+        CPL_IGNORE_RET_VAL_INT(VSIFCloseL( fp ));
+        return CE_Failure;
+    }
+    nLength = nValue * 2;
+    if( nLength <= 100 ) 
+    {
+        CPLError(CE_Failure, CPLE_AppDefined,
+                 "AIGReadBlockIndex: Bad length");
+        CPL_IGNORE_RET_VAL_INT(VSIFCloseL( fp ));
+        return CE_Failure;
+    }
 
 /* -------------------------------------------------------------------- */
 /*      Allocate buffer, and read the file (from beyond the header)     */
 /*      into the buffer.                                                */
 /* -------------------------------------------------------------------- */
     psTInfo->nBlocks = (nLength-100) / 8;
-    panIndex = (GUInt32 *) VSIMalloc2(psTInfo->nBlocks, 8);
+    panIndex = (GUInt32 *) VSI_MALLOC2_VERBOSE(psTInfo->nBlocks, 8);
     if (panIndex == NULL)
     {
-        CPLError(CE_Failure, CPLE_OutOfMemory,
-                 "AIGReadBlockIndex: Out of memory. Probably due to corrupted w001001x.adf file");
-        VSIFCloseL( fp );
+        CPL_IGNORE_RET_VAL_INT(VSIFCloseL( fp ));
         return CE_Failure;
     }
-    VSIFSeekL( fp, 100, SEEK_SET );
-    if ((int)VSIFReadL( panIndex, 8, psTInfo->nBlocks, fp ) != psTInfo->nBlocks)
+    if( VSIFSeekL( fp, 100, SEEK_SET ) != 0 ||
+        (int)VSIFReadL( panIndex, 8, psTInfo->nBlocks, fp ) != psTInfo->nBlocks)
     {
         CPLError(CE_Failure, CPLE_AppDefined,
                  "AIGReadBlockIndex: Cannot read block info");
-        VSIFCloseL( fp );
+        CPL_IGNORE_RET_VAL_INT(VSIFCloseL( fp ));
         CPLFree( panIndex );
         return CE_Failure;
     }
 
-    VSIFCloseL( fp );
+    CPL_IGNORE_RET_VAL_INT(VSIFCloseL( fp ));
 
 /* -------------------------------------------------------------------- */
 /*	Allocate AIGInfo block info arrays.				*/
 /* -------------------------------------------------------------------- */
-    psTInfo->panBlockOffset = (GUInt32 *) VSIMalloc2(4, psTInfo->nBlocks);
-    psTInfo->panBlockSize = (int *) VSIMalloc2(4, psTInfo->nBlocks);
+    psTInfo->panBlockOffset = (GUInt32 *) VSI_MALLOC2_VERBOSE(4, psTInfo->nBlocks);
+    psTInfo->panBlockSize = (int *) VSI_MALLOC2_VERBOSE(4, psTInfo->nBlocks);
     if (psTInfo->panBlockOffset == NULL || 
         psTInfo->panBlockSize == NULL)
     {
-        CPLError(CE_Failure, CPLE_OutOfMemory,
-                 "AIGReadBlockIndex: Out of memory. Probably due to corrupted w001001x.adf file");
         CPLFree( psTInfo->panBlockOffset );
         CPLFree( psTInfo->panBlockSize );
+        psTInfo->panBlockOffset = NULL;
+        psTInfo->panBlockSize = NULL;
         CPLFree( panIndex );
         return CE_Failure;
     }
@@ -971,8 +1013,35 @@ CPLErr AIGReadBlockIndex( AIGInfo_t * psInfo, AIGTileInfo *psTInfo,
 /* -------------------------------------------------------------------- */
     for( i = 0; i < psTInfo->nBlocks; i++ )
     {
-        psTInfo->panBlockOffset[i] = CPL_MSBWORD32(panIndex[i*2]) * 2;
-        psTInfo->panBlockSize[i] = CPL_MSBWORD32(panIndex[i*2+1]) * 2;
+        GUInt32 nVal;
+
+        nVal = CPL_MSBWORD32(panIndex[i*2]);
+        if( nVal >= INT_MAX )
+        {
+            CPLError(CE_Failure, CPLE_AppDefined,
+                     "AIGReadBlockIndex: Bad offset for block %d", i);
+            CPLFree( psTInfo->panBlockOffset );
+            CPLFree( psTInfo->panBlockSize );
+            psTInfo->panBlockOffset = NULL;
+            psTInfo->panBlockSize = NULL;
+            CPLFree( panIndex );
+            return CE_Failure;
+        }
+        psTInfo->panBlockOffset[i] = nVal * 2;
+
+        nVal = CPL_MSBWORD32(panIndex[i*2+1]);
+        if( nVal >= INT_MAX / 2 )
+        {
+            CPLError(CE_Failure, CPLE_AppDefined,
+                     "AIGReadBlockIndex: Bad size for block %d", i);
+            CPLFree( psTInfo->panBlockOffset );
+            CPLFree( psTInfo->panBlockSize );
+            psTInfo->panBlockOffset = NULL;
+            psTInfo->panBlockSize = NULL;
+            CPLFree( panIndex );
+            return CE_Failure;
+        }
+        psTInfo->panBlockSize[i] = nVal * 2;
     }
 
     CPLFree( panIndex );
@@ -992,12 +1061,13 @@ CPLErr AIGReadBounds( const char * pszCoverName, AIGInfo_t * psInfo )
     char	*pszHDRFilename;
     VSILFILE	*fp;
     double	adfBound[4];
+    const size_t nHDRFilenameLen = strlen(pszCoverName)+40;
 
 /* -------------------------------------------------------------------- */
 /*      Open the file dblbnd.adf file.                                  */
 /* -------------------------------------------------------------------- */
-    pszHDRFilename = (char *) CPLMalloc(strlen(pszCoverName)+40);
-    sprintf( pszHDRFilename, "%s/dblbnd.adf", pszCoverName );
+    pszHDRFilename = (char *) CPLMalloc(nHDRFilenameLen);
+    snprintf( pszHDRFilename, nHDRFilenameLen, "%s/dblbnd.adf", pszCoverName );
 
     fp = AIGLLOpen( pszHDRFilename, "rb" );
     
@@ -1016,9 +1086,13 @@ CPLErr AIGReadBounds( const char * pszCoverName, AIGInfo_t * psInfo )
 /* -------------------------------------------------------------------- */
 /*      Get the contents - four doubles.                                */
 /* -------------------------------------------------------------------- */
-    VSIFReadL( adfBound, 1, 32, fp );
+    if( VSIFReadL( adfBound, 1, 32, fp ) != 32 )
+    {
+        CPL_IGNORE_RET_VAL_INT(VSIFCloseL( fp ));
+        return CE_Failure;
+    }
 
-    VSIFCloseL( fp );
+    CPL_IGNORE_RET_VAL_INT(VSIFCloseL( fp ));
 
 #ifdef CPL_LSB
     CPL_SWAPDOUBLE(adfBound+0);
@@ -1047,6 +1121,7 @@ CPLErr AIGReadStatistics( const char * pszCoverName, AIGInfo_t * psInfo )
     char	*pszHDRFilename;
     VSILFILE	*fp;
     double	adfStats[4];
+    const size_t nHDRFilenameLen = strlen(pszCoverName)+40;
 
     psInfo->dfMin = 0.0;
     psInfo->dfMax = 0.0;
@@ -1056,8 +1131,8 @@ CPLErr AIGReadStatistics( const char * pszCoverName, AIGInfo_t * psInfo )
 /* -------------------------------------------------------------------- */
 /*      Open the file sta.adf file.                                     */
 /* -------------------------------------------------------------------- */
-    pszHDRFilename = (char *) CPLMalloc(strlen(pszCoverName)+40);
-    sprintf( pszHDRFilename, "%s/sta.adf", pszCoverName );
+    pszHDRFilename = (char *) CPLMalloc(nHDRFilenameLen);
+    snprintf( pszHDRFilename, nHDRFilenameLen, "%s/sta.adf", pszCoverName );
 
     fp = AIGLLOpen( pszHDRFilename, "rb" );
     
@@ -1076,9 +1151,13 @@ CPLErr AIGReadStatistics( const char * pszCoverName, AIGInfo_t * psInfo )
 /* -------------------------------------------------------------------- */
 /*      Get the contents - four doubles.                                */
 /* -------------------------------------------------------------------- */
-    VSIFReadL( adfStats, 1, 32, fp );
+    if( VSIFReadL( adfStats, 1, 32, fp ) != 32 )
+    {
+        CPL_IGNORE_RET_VAL_INT(VSIFCloseL( fp ));
+        return CE_Failure;
+    }
 
-    VSIFCloseL( fp );
+    CPL_IGNORE_RET_VAL_INT(VSIFCloseL( fp ));
 
 #ifdef CPL_LSB
     CPL_SWAPDOUBLE(adfStats+0);

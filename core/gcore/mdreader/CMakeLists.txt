@@ -27,6 +27,8 @@
 
 set(TARGET_NAME mdreader)
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
 set(LIB_HHEADERS
     reader_alos.h
     reader_digital_globe.h

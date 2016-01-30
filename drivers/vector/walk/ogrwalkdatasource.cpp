@@ -34,13 +34,12 @@
 /*                         OGRWalkDataSource()                          */
 /************************************************************************/
 
-OGRWalkDataSource::OGRWalkDataSource()
-
-{
-    pszName = NULL;
-    papoLayers = NULL;
-    nLayers = 0;
-}
+OGRWalkDataSource::OGRWalkDataSource() :
+    pszName(NULL),
+    papoLayers(NULL),
+    nLayers(0),
+    bDSUpdate(FALSE)
+{ }
 
 /************************************************************************/
 /*                        ~OGRWalkDataSource()                          */
@@ -49,14 +48,11 @@ OGRWalkDataSource::OGRWalkDataSource()
 OGRWalkDataSource::~OGRWalkDataSource()
 
 {
-    int i;
-
     CPLFree( pszName );
 
-    for( i = 0; i < nLayers; i++ )
+    for( int i = 0; i < nLayers; i++ )
     {
         CPLAssert( NULL != papoLayers[i] );
-
         delete papoLayers[i];
     }
 
@@ -76,14 +72,16 @@ int OGRWalkDataSource::Open( const char * pszNewName, int bUpdate )
 /* -------------------------------------------------------------------- */
     char *pszDSN;
 
-    if( EQUALN(pszNewName,"WALK:",5) )
+    if( STARTS_WITH_CI(pszNewName, "WALK:") )
         pszDSN = CPLStrdup( pszNewName + 5 );
     else
     {
         const char *pszDSNStringTemplate = "DRIVER=Microsoft Access Driver (*.mdb);DBQ=%s";
         pszDSN = (char *) CPLMalloc(strlen(pszNewName)+strlen(pszDSNStringTemplate)+100);
 
-        sprintf( pszDSN, pszDSNStringTemplate,  pszNewName );
+        snprintf( pszDSN,
+                  strlen(pszNewName)+strlen(pszDSNStringTemplate)+100,
+                  pszDSNStringTemplate,  pszNewName );
     }
 
 /* -------------------------------------------------------------------- */
@@ -124,9 +122,9 @@ int OGRWalkDataSource::Open( const char * pszNewName, int bUpdate )
 
     while( oStmt.Fetch() )
     {
-        int i, iNew = apapszGeomColumns.size();
+        int i, iNew = static_cast<int>(apapszGeomColumns.size());
         char **papszRecord = NULL;
-        
+
         for( i = 1; i < 7; i++ )
             papszRecord = CSLAddString( papszRecord, oStmt.GetColData(i) ); //Add LayerName, Extent and Memo
 
@@ -211,6 +209,7 @@ OGRLayer * OGRWalkDataSource::ExecuteSQL( const char *pszSQLCommand,
     {
         CPLError( CE_Failure, CPLE_AppDefined, 
                   "%s", oSession.GetLastError() );
+        delete poStmt;
         return NULL;
     }
 
@@ -234,7 +233,7 @@ OGRLayer * OGRWalkDataSource::ExecuteSQL( const char *pszSQLCommand,
 
     if( poSpatialFilter != NULL )
         poLayer->SetSpatialFilter( poSpatialFilter );
-    
+
     return poLayer;
 }
 

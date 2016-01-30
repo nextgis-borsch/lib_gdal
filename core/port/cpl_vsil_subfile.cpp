@@ -33,10 +33,6 @@
 #include "cpl_multiproc.h"
 #include <map>
 
-#if defined(WIN32CE)
-#  include <wce_errno.h>
-#endif
-
 CPL_CVSID("$Id$");
 
 /************************************************************************/
@@ -102,10 +98,10 @@ public:
 int VSISubFileHandle::Close()
 
 {
-    VSIFCloseL( fp );
+    int nRet = VSIFCloseL( fp );
     fp = NULL;
 
-    return 0;
+    return nRet;
 }
 
 /************************************************************************/
@@ -256,24 +252,22 @@ VSISubFileFilesystemHandler::~VSISubFileFilesystemHandler()
 /*      offset (1000), a size (2000) and a path (data/abc.tif).         */
 /************************************************************************/
 
-int 
-VSISubFileFilesystemHandler::DecomposePath( const char *pszPath, 
-                                            CPLString &osFilename, 
+int
+VSISubFileFilesystemHandler::DecomposePath( const char *pszPath,
+                                            CPLString &osFilename,
                                             vsi_l_offset &nSubFileOffset,
                                             vsi_l_offset &nSubFileSize )
 
 {
-    int i;
+    if( !STARTS_WITH(pszPath, "/vsisubfile/") )
+        return FALSE;
 
     osFilename = "";
     nSubFileOffset = 0;
     nSubFileSize = 0;
 
-    if( strncmp(pszPath,"/vsisubfile/",12) != 0 )
-        return FALSE;
-
-    nSubFileOffset = CPLScanUIntBig(pszPath+12, strlen(pszPath + 12));
-    for( i = 12; pszPath[i] != '\0'; i++ )
+    nSubFileOffset = CPLScanUIntBig(pszPath+12, static_cast<int>(strlen(pszPath + 12)));
+    for( int i = 12; pszPath[i] != '\0'; i++ )
     {
         if( pszPath[i] == '_' && nSubFileSize == 0 )
         {
@@ -283,7 +277,7 @@ VSISubFileFilesystemHandler::DecomposePath( const char *pszPath,
             if (pszPath[i + 1] == '-')
                 nSubFileSize = 0;
             else
-                nSubFileSize = CPLScanUIntBig(pszPath + i + 1, strlen(pszPath + i + 1));
+                nSubFileSize = CPLScanUIntBig(pszPath + i + 1, static_cast<int>(strlen(pszPath + i + 1)));
         }
         else if( pszPath[i] == ',' )
         {
@@ -330,7 +324,7 @@ VSISubFileFilesystemHandler::Open( const char *pszFilename,
 /*      Open the underlying file.                                       */
 /* -------------------------------------------------------------------- */
     VSILFILE *fp = VSIFOpenL( osSubFilePath, pszAccess );
-    
+
     if( fp == NULL )
         return NULL;
 
@@ -343,7 +337,11 @@ VSISubFileFilesystemHandler::Open( const char *pszFilename,
     poHandle->nSubregionOffset = nOff;
     poHandle->nSubregionSize = nSize;
 
-    VSIFSeekL( fp, nOff, SEEK_SET );
+    if( VSIFSeekL( fp, nOff, SEEK_SET ) != 0 )
+    {
+        delete poHandle;
+        poHandle = NULL;
+    }
 
     return poHandle;
 }
@@ -355,7 +353,7 @@ VSISubFileFilesystemHandler::Open( const char *pszFilename,
 int VSISubFileFilesystemHandler::Stat( const char * pszFilename, 
                                        VSIStatBufL * psStatBuf,
                                        int nFlags )
-    
+
 {
     CPLString osSubFilePath;
     vsi_l_offset nOff, nSize;
@@ -369,7 +367,7 @@ int VSISubFileFilesystemHandler::Stat( const char * pszFilename,
     }
 
     int nResult = VSIStatExL( osSubFilePath, psStatBuf, nFlags );
-    
+
     if( nResult == 0 )
     {
         if( nSize != 0 )
@@ -461,4 +459,4 @@ void VSIInstallSubFileHandler()
     VSIFileManager::InstallHandler( "/vsisubfile/", 
                                     new VSISubFileFilesystemHandler );
 }
-                            
+

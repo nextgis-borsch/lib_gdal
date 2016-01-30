@@ -32,6 +32,8 @@
 
 CPL_CVSID("$Id$");
 
+CPL_INLINE static void CPL_IGNORE_RET_VAL_INT(CPL_UNUSED int unused) {}
+
 /************************************************************************/
 /*                              AIGOpen()                               */
 /************************************************************************/
@@ -54,7 +56,7 @@ AIGInfo_t *AIGOpen( const char * pszInputName, const char * pszAccess )
     {
         int      i;
 
-        for( i = strlen(pszCoverName)-1; i > 0; i-- )
+        for( i = (int)strlen(pszCoverName)-1; i > 0; i-- )
         {
             if( pszCoverName[i] == '\\' || pszCoverName[i] == '/' )
             {
@@ -136,6 +138,13 @@ AIGInfo_t *AIGOpen( const char * pszInputName, const char * pszAccess )
         return NULL;
     }
 
+    if (psInfo->nBlocksPerRow > INT_MAX / psInfo->nBlocksPerColumn)
+    {
+        CPLError(CE_Failure, CPLE_OutOfMemory, "Too many blocks");
+        AIGClose( psInfo );
+        return NULL;
+    }
+    
     psInfo->nTileXSize = psInfo->nBlockXSize * psInfo->nBlocksPerRow;
     psInfo->nTileYSize = psInfo->nBlockYSize * psInfo->nBlocksPerColumn;
 
@@ -145,6 +154,8 @@ AIGInfo_t *AIGOpen( const char * pszInputName, const char * pszAccess )
     if (psInfo->nTilesPerRow > INT_MAX / psInfo->nTilesPerColumn)
     {
         CPLError(CE_Failure, CPLE_OutOfMemory, "Too many tiles");
+        psInfo->nTilesPerRow = 0; /* to avoid int32 overflow in AIGClose() */
+        psInfo->nTilesPerColumn = 0;
         AIGClose( psInfo );
         return NULL;
     }
@@ -153,11 +164,10 @@ AIGInfo_t *AIGOpen( const char * pszInputName, const char * pszAccess )
 /*      Setup tile infos, but defer reading of tile data.               */
 /* -------------------------------------------------------------------- */
     psInfo->pasTileInfo = (AIGTileInfo *) 
-        VSICalloc(sizeof(AIGTileInfo),
+        VSI_CALLOC_VERBOSE(sizeof(AIGTileInfo),
                   psInfo->nTilesPerRow * psInfo->nTilesPerColumn);
     if (psInfo->pasTileInfo == NULL)
     {
-        CPLError(CE_Failure, CPLE_OutOfMemory, "Cannot allocate tile info array");
         AIGClose( psInfo );
         return NULL;
     }
@@ -184,6 +194,7 @@ CPLErr AIGAccessTile( AIGInfo_t *psInfo, int iTileX, int iTileY )
     char szBasename[20];
     char *pszFilename;
     AIGTileInfo *psTInfo;
+    const size_t nFilenameLen = strlen(psInfo->pszCoverName)+40;
 
 /* -------------------------------------------------------------------- */
 /*      Identify our tile.                                              */
@@ -204,17 +215,17 @@ CPLErr AIGAccessTile( AIGInfo_t *psInfo, int iTileX, int iTileY )
 /*      Compute the basename.                                           */
 /* -------------------------------------------------------------------- */
     if( iTileY == 0 )
-        sprintf( szBasename, "w%03d001", iTileX + 1 );
+        snprintf( szBasename, sizeof(szBasename), "w%03d001", iTileX + 1 );
     else if( iTileY == 1 )
-        sprintf( szBasename, "w%03d000", iTileX + 1 );
+        snprintf( szBasename, sizeof(szBasename), "w%03d000", iTileX + 1 );
     else
-        sprintf( szBasename, "z%03d%03d", iTileX + 1, iTileY - 1 );
+        snprintf( szBasename, sizeof(szBasename), "z%03d%03d", iTileX + 1, iTileY - 1 );
     
 /* -------------------------------------------------------------------- */
 /*      Open the file w001001.adf file itself.                          */
 /* -------------------------------------------------------------------- */
-    pszFilename = (char *) CPLMalloc(strlen(psInfo->pszCoverName)+40);
-    sprintf( pszFilename, "%s/%s.adf", psInfo->pszCoverName, szBasename );
+    pszFilename = (char *) CPLMalloc(nFilenameLen);
+    snprintf( pszFilename, nFilenameLen, "%s/%s.adf", psInfo->pszCoverName, szBasename );
 
     psTInfo->fpGrid = AIGLLOpen( pszFilename, "rb" );
     psTInfo->bTriedToLoad = TRUE;
@@ -251,7 +262,7 @@ CPLErr AIGReadTile( AIGInfo_t * psInfo, int nBlockXOff, int nBlockYOff,
     AIGTileInfo *psTInfo;
 
 /* -------------------------------------------------------------------- */
-/*      Compute our tile, and ensure it is accessable (open).  Then     */
+/*      Compute our tile, and ensure it is accessible (open).  Then     */
 /*      reduce block x/y values to be the block within that tile.       */
 /* -------------------------------------------------------------------- */
     iTileX = nBlockXOff / psInfo->nBlocksPerRow;
@@ -341,7 +352,7 @@ CPLErr AIGReadFloatTile( AIGInfo_t * psInfo, int nBlockXOff, int nBlockYOff,
     AIGTileInfo *psTInfo;
 
 /* -------------------------------------------------------------------- */
-/*      Compute our tile, and ensure it is accessable (open).  Then     */
+/*      Compute our tile, and ensure it is accessible (open).  Then     */
 /*      reduce block x/y values to be the block within that tile.       */
 /* -------------------------------------------------------------------- */
     iTileX = nBlockXOff / psInfo->nBlocksPerRow;
@@ -425,17 +436,20 @@ CPLErr AIGReadFloatTile( AIGInfo_t * psInfo, int nBlockXOff, int nBlockYOff,
 void AIGClose( AIGInfo_t * psInfo )
 
 {
-    int nTileCount = psInfo->nTilesPerRow * psInfo->nTilesPerColumn;
-    int iTile;
-
-    for( iTile = 0; iTile < nTileCount; iTile++ )
+    if( psInfo->pasTileInfo != NULL )
     {
-        if( psInfo->pasTileInfo[iTile].fpGrid )
-        {
-            VSIFCloseL( psInfo->pasTileInfo[iTile].fpGrid );
+        int nTileCount = psInfo->nTilesPerRow * psInfo->nTilesPerColumn;
+        int iTile;
 
-            CPLFree( psInfo->pasTileInfo[iTile].panBlockOffset );
-            CPLFree( psInfo->pasTileInfo[iTile].panBlockSize );
+        for( iTile = 0; iTile < nTileCount; iTile++ )
+        {
+            if( psInfo->pasTileInfo[iTile].fpGrid )
+            {
+                CPL_IGNORE_RET_VAL_INT(VSIFCloseL( psInfo->pasTileInfo[iTile].fpGrid ));
+
+                CPLFree( psInfo->pasTileInfo[iTile].panBlockOffset );
+                CPLFree( psInfo->pasTileInfo[iTile].panBlockSize );
+            }
         }
     }
 
@@ -462,7 +476,7 @@ VSILFILE *AIGLLOpen( const char *pszFilename, const char *pszAccess )
         char *pszUCFilename = CPLStrdup(pszFilename);
         int  i;
 
-        for( i = strlen(pszUCFilename)-1; 
+        for( i = (int)strlen(pszUCFilename)-1; 
              pszUCFilename[i] != '/' && pszUCFilename[i] != '\\';
              i-- )
         {

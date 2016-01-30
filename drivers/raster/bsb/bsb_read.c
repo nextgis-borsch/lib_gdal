@@ -142,7 +142,7 @@ int BSBGetc( BSBInfo *psInfo, int bNO1, int* pbErrorFlag )
     {
         psInfo->nBufferOffset = 0;
         psInfo->nBufferSize = 
-            VSIFReadL( psInfo->pabyBuffer, 1, psInfo->nBufferAllocation,
+            (int)VSIFReadL( psInfo->pabyBuffer, 1, psInfo->nBufferAllocation,
                        psInfo->fp );
         if( psInfo->nBufferSize <= 0 )
         {
@@ -273,23 +273,8 @@ BSBInfo *BSBOpen( const char *pszFilename )
                                                     FALSE,FALSE);
             nCount = CSLCount(papszTokens);
         }
-        else if( EQUALN(szLine,"    ",4) && szLine[4] != ' ' )
-        {
-            /* add extension lines to the last header line. */
-            int iTargetHeader = CSLCount(psInfo->papszHeader);
 
-            if( iTargetHeader != -1 )
-            {
-                psInfo->papszHeader[iTargetHeader] = (char *) 
-                    CPLRealloc(psInfo->papszHeader[iTargetHeader],
-                               strlen(psInfo->papszHeader[iTargetHeader])
-                               + strlen(szLine) + 5 );
-                strcat( psInfo->papszHeader[iTargetHeader], "," );
-                strcat( psInfo->papszHeader[iTargetHeader], szLine+4 );
-            }
-        }
-
-        if( EQUALN(szLine,"BSB/",4) )
+        if( STARTS_WITH_CI(szLine, "BSB/") )
         {
             int		nRAIndex;
 
@@ -305,7 +290,7 @@ BSBInfo *BSBOpen( const char *pszFilename )
             psInfo->nXSize = atoi(papszTokens[nRAIndex+1]);
             psInfo->nYSize = atoi(papszTokens[nRAIndex+2]);
         }
-        else if( EQUALN(szLine,"NOS/",4) )
+        else if( STARTS_WITH_CI(szLine, "NOS/") )
         {
             int  nRAIndex;
             
@@ -328,7 +313,7 @@ BSBInfo *BSBOpen( const char *pszFilename )
             if (iPCT < 0 || iPCT > 128)
             {
                 CSLDestroy( papszTokens );
-                CPLError( CE_Failure, CPLE_OutOfMemory, 
+                CPLError( CE_Failure, CPLE_AppDefined, 
                             "BSBOpen : Invalid color table index. Probably due to corrupted BSB file (iPCT = %d).",
                             iPCT);
                 BSBClose( psInfo );
@@ -337,13 +322,10 @@ BSBInfo *BSBOpen( const char *pszFilename )
             if( iPCT > psInfo->nPCTSize-1 )
             {
                 unsigned char* pabyNewPCT = (unsigned char *) 
-                    VSIRealloc(psInfo->pabyPCT,(iPCT+1) * 3);
+                    VSI_REALLOC_VERBOSE(psInfo->pabyPCT,(iPCT+1) * 3);
                 if (pabyNewPCT == NULL)
                 {
                     CSLDestroy( papszTokens );
-                    CPLError( CE_Failure, CPLE_OutOfMemory, 
-                              "BSBOpen : Out of memory. Probably due to corrupted BSB file (iPCT = %d).",
-                              iPCT);
                     BSBClose( psInfo );
                     return NULL;
                 }
@@ -357,7 +339,7 @@ BSBInfo *BSBOpen( const char *pszFilename )
             psInfo->pabyPCT[iPCT*3+1] = (unsigned char)atoi(papszTokens[2]);
             psInfo->pabyPCT[iPCT*3+2] = (unsigned char)atoi(papszTokens[3]);
         }
-        else if( EQUALN(szLine,"VER/",4) && nCount >= 1 )
+        else if( STARTS_WITH_CI(szLine, "VER/") && nCount >= 1 )
         {
             psInfo->nVersion = (int) (100 * CPLAtof(papszTokens[0]) + 0.5);
         }
@@ -399,7 +381,7 @@ BSBInfo *BSBOpen( const char *pszFilename )
 /*                                                                      */
 /*      We actually do some funny stuff here to be able to read past    */
 /*      some garbage to try and find the 0x1a 0x00 sequence since in    */
-/*      at least some files (ie. optech/World.kap) we find a few        */
+/*      at least some files (i.e. optech/World.kap) we find a few       */
 /*      bytes of extra junk in the way.                                 */
 /* -------------------------------------------------------------------- */
 /* from optech/World.kap 
@@ -468,12 +450,9 @@ BSBInfo *BSBOpen( const char *pszFilename )
 /*      Initialize memory for line offset list.                         */
 /* -------------------------------------------------------------------- */
     psInfo->panLineOffset = (int *) 
-        VSIMalloc2(sizeof(int), psInfo->nYSize);
+        VSI_MALLOC2_VERBOSE(sizeof(int), psInfo->nYSize);
     if (psInfo->panLineOffset == NULL)
     {
-        CPLError( CE_Failure, CPLE_OutOfMemory, 
-                  "BSBOpen : Out of memory. Probably due to corrupted BSB file (nYSize = %d).",
-                  psInfo->nYSize );
         BSBClose( psInfo );
         return NULL;
     }
@@ -484,7 +463,7 @@ BSBInfo *BSBOpen( const char *pszFilename )
 /* -------------------------------------------------------------------- */
 /*       Read the line offset list                                      */
 /* -------------------------------------------------------------------- */
-    if ( ! CSLTestBoolean(CPLGetConfigOption("BSB_DISABLE_INDEX", "NO")) )
+    if ( !CPLTestBoolean(CPLGetConfigOption("BSB_DISABLE_INDEX", "NO")) )
     {
         /* build the list from file's index table */
         /* To overcome endian compatibility issues individual
@@ -509,7 +488,7 @@ BSBInfo *BSBOpen( const char *pszFilename )
         /* the index table can have one row less than nYSize */
         /* If we look into the file closely, there is no data for */
         /* that last row (the end of line psInfo->nYSize - 1 is the start */
-        /* of the index table), so we can decrement psInfo->nYSize */
+        /* of the index table), so we can decrement psInfo->nYSize. */
         if (nOffsetIndexTable + 4 * (psInfo->nYSize - 1) == nFileLen - 4)
         {
             CPLDebug("BSB", "Index size is one row shorter than declared image height. Correct this");
@@ -590,7 +569,9 @@ static int BSBReadHeaderLine( BSBInfo *psInfo, char* pszLine, int nLineMaxLen, i
     while( !VSIFEofL(psInfo->fp) && nLineLen < nLineMaxLen-1 )
     {
         chNext = (char) BSBGetc( psInfo, bNO1, NULL );
-        if( chNext == 0x1A )
+        /* '\0' is not really expected at this point in correct products */
+        /* but we must escape if found. */
+        if( chNext == '\0' || chNext == 0x1A )
         {
             BSBUngetc( psInfo, chNext );
             return FALSE;
@@ -708,7 +689,7 @@ static int BSBSeekAndCheckScanlineNumber ( BSBInfo *psInfo, int nScanline,
         && nLineMarker != nScanline + 1 )
     {
         int bIgnoreLineNumbers = 
-            CSLTestBoolean(CPLGetConfigOption("BSB_IGNORE_LINENUMBERS", "NO"));
+            CPLTestBoolean(CPLGetConfigOption("BSB_IGNORE_LINENUMBERS", "NO"));
 
         if (bVerboseIfError && !bIgnoreLineNumbers )
         {
@@ -745,7 +726,7 @@ int BSBReadScanline( BSBInfo *psInfo, int nScanline,
 
 /* -------------------------------------------------------------------- */
 /*      Do we know where the requested line is?  If not, read all       */
-/*      the preceeding ones to "find" our line.                         */
+/*      the preceding ones to "find" our line.                          */
 /* -------------------------------------------------------------------- */
     if( nScanline < 0 || nScanline >= psInfo->nYSize )
     {
@@ -798,7 +779,7 @@ int BSBReadScanline( BSBInfo *psInfo, int nScanline,
                 !bErrorFlag)
         {
             int	    nPixValue;
-            int     nRunCount, i;
+            int     nRunCount;
 
             nPixValue = (byNext & byValueMask) >> nValueShift;
 
@@ -844,7 +825,7 @@ int BSBReadScanline( BSBInfo *psInfo, int nScanline,
 /*      For reasons that are unclear, some scanlines are exactly one    */
 /*      pixel short (such as in the BSB 3.0 354704.KAP product from     */
 /*      NDI/CHS) but are otherwise OK.  Just add a zero if this         */
-/*      appear to have occured.                                         */
+/*      appear to have occurred.                                         */
 /* -------------------------------------------------------------------- */
         if( iPixel == psInfo->nXSize - 1 )
             pabyScanlineBuf[iPixel++] = 0;
@@ -886,7 +867,7 @@ int BSBReadScanline( BSBInfo *psInfo, int nScanline,
 
 /* -------------------------------------------------------------------- */
 /*      If the line buffer is not filled after reading the line in the  */
-/*      file upto the next line offset, just fill it with zeros.        */
+/*      file up to the next line offset, just fill it with zeros.       */
 /*      (The last pixel value from nPixValue could be a better value?)  */
 /* -------------------------------------------------------------------- */
     while( iPixel < psInfo->nXSize )
@@ -1039,7 +1020,7 @@ int BSBWriteScanline( BSBInfo *psInfo, unsigned char *pabyScanlineBuf )
     }
 
 /* -------------------------------------------------------------------- */
-/*      If this is the first scanline writen out the EOF marker, and    */
+/*      If this is the first scanline written out the EOF marker, and   */
 /*      the introductory info in the image segment.                     */
 /* -------------------------------------------------------------------- */
     if( psInfo->nLastLineWritten == -1 )

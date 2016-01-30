@@ -146,11 +146,13 @@ public:
                           GDALContourWriter pfnWriter, void *pWriterCBData );
     ~GDALContourGenerator();
 
+    bool                Init();
+
     void                SetNoData( double dfNoDataValue );
-    void                SetContourLevels( double dfContourInterval, 
-                                          double dfContourOffset = 0.0 )
-        { this->dfContourInterval = dfContourInterval;
-          this->dfContourOffset = dfContourOffset; }
+    void                SetContourLevels( double dfContourIntervalIn, 
+                                          double dfContourOffsetIn = 0.0 )
+        { dfContourInterval = dfContourIntervalIn;
+          dfContourOffset = dfContourOffsetIn; }
 
     void                SetFixedLevels( int, double * );
     CPLErr              FeedLine( double *padfScanline );
@@ -217,8 +219,8 @@ GDALContourGenerator::GDALContourGenerator( int nWidthIn, int nHeightIn,
     nWidth = nWidthIn;
     nHeight = nHeightIn;
 
-    padfLastLine = (double *) CPLCalloc(sizeof(double),nWidth);
-    padfThisLine = (double *) CPLCalloc(sizeof(double),nWidth);
+    padfLastLine = NULL;
+    padfThisLine = NULL;
 
     pfnWriter = pfnWriterIn;
     pWriterCBData = pWriterCBDataIn;
@@ -251,6 +253,17 @@ GDALContourGenerator::~GDALContourGenerator()
 
     CPLFree( padfLastLine );
     CPLFree( padfThisLine );
+}
+
+/************************************************************************/
+/*                              Init()                                  */
+/************************************************************************/
+
+bool GDALContourGenerator::Init()
+{
+    padfLastLine = (double *) VSI_CALLOC_VERBOSE(sizeof(double),nWidth);
+    padfThisLine = (double *) VSI_CALLOC_VERBOSE(sizeof(double),nWidth);
+    return padfLastLine != NULL && padfThisLine != NULL;
 }
 
 /************************************************************************/
@@ -324,10 +337,10 @@ CPLErr GDALContourGenerator::ProcessPixel( int iPixel )
 /* -------------------------------------------------------------------- */
 /*      Prepare subdivisions.                                           */
 /* -------------------------------------------------------------------- */
-    int nGoodCount = 0; 
+    int nGoodCount = 0;
     double dfASum = 0.0;
-    double dfCenter, dfTop=0.0, dfRight=0.0, dfLeft=0.0, dfBottom=0.0;
-    
+    double dfTop=0.0, dfRight=0.0, dfLeft=0.0, dfBottom=0.0;
+
     if( dfUpLeft != dfNoDataValue )
     {
         dfASum += dfUpLeft;
@@ -352,10 +365,10 @@ CPLErr GDALContourGenerator::ProcessPixel( int iPixel )
         nGoodCount++;
     }
 
-    if( nGoodCount == 0.0 )
+    if( nGoodCount == 0 )
         return CE_None;
 
-    dfCenter = dfASum / nGoodCount;
+    double dfCenter = dfASum / nGoodCount;
 
     if( dfUpLeft != dfNoDataValue )
     {
@@ -1384,10 +1397,10 @@ CPLErr OGRContourWriter( double dfLevel,
 
     OGR_F_SetGeometryDirectly( hFeat, hGeom );
 
-    OGR_L_CreateFeature( (OGRLayerH) poInfo->hLayer, hFeat );
+    OGRErr eErr = OGR_L_CreateFeature( (OGRLayerH) poInfo->hLayer, hFeat );
     OGR_F_Destroy( hFeat );
 
-    return CE_None;
+    return (eErr == OGRERR_NONE) ? CE_None : CE_Failure;
 }
 #endif // OGR_ENABLED
 
@@ -1408,22 +1421,22 @@ CPLErr OGRContourWriter( double dfLevel,
  *
  * ALGORITHM RULES
 
-For contouring purposes raster pixel values are assumed to represent a point 
-value at the center of the corresponding pixel region.  For the purpose of 
+For contouring purposes raster pixel values are assumed to represent a point
+value at the center of the corresponding pixel region.  For the purpose of
 contour generation we virtually connect each pixel center to the values to
 the left, right, top and bottom.  We assume that the pixel value is linearly
 interpolated between the pixel centers along each line, and determine where
-(if any) contour lines will appear along these line segements.  Then the
-contour crossings are connected.  
+(if any) contour lines will appear along these line segments.  Then the
+contour crossings are connected.
 
-This means that contour lines' nodes won't actually be on pixel edges, but 
-rather along vertical and horizontal lines connecting the pixel centers. 
+This means that contour lines' nodes will not actually be on pixel edges, but
+rather along vertical and horizontal lines connecting the pixel centers.
 
 \verbatim
 General Case:
 
       5 |                  | 3
-     -- + ---------------- + -- 
+     -- + ---------------- + --
         |                  |
         |                  |
         |                  |
@@ -1431,36 +1444,36 @@ General Case:
      10 +                  |
         |\                 |
         | \                |
-     -- + -+-------------- + -- 
+     -- + -+-------------- + --
      12 |  10              | 1
 
 
 Saddle Point:
 
       5 |                  | 12
-     -- + -------------+-- + -- 
+     -- + -------------+-- + --
         |               \  |
         |                 \|
-        |                  + 
+        |                  +
         |                  |
         +                  |
         |\                 |
         | \                |
-     -- + -+-------------- + -- 
+     -- + -+-------------- + --
      12 |                  | 1
 
 or:
 
       5 |                  | 12
-     -- + -------------+-- + -- 
+     -- + -------------+-- + --
         |          __/     |
         |      ___/        |
-        |  ___/          __+ 
+        |  ___/          __+
         | /           __/  |
         +'         __/     |
         |       __/        |
         |   ,__/           |
-     -- + -+-------------- + -- 
+     -- + -+-------------- + --
      12 |                  | 1
 \endverbatim
 
@@ -1582,6 +1595,10 @@ CPLErr GDALContourGenerate( GDALRasterBandH hBand,
     int nYSize = GDALGetRasterBandYSize( hBand );
 
     GDALContourGenerator oCG( nXSize, nYSize, OGRContourWriter, &oCWI );
+    if( !oCG.Init() )
+    {
+        return CE_Failure;
+    }
 
     if( nFixedLevelCount > 0 )
         oCG.SetFixedLevels( nFixedLevelCount, padfFixedLevels );
@@ -1598,19 +1615,18 @@ CPLErr GDALContourGenerate( GDALRasterBandH hBand,
     double *padfScanline;
     CPLErr eErr = CE_None;
 
-    padfScanline = (double *) VSIMalloc(sizeof(double) * nXSize);
+    padfScanline = (double *) VSI_MALLOC2_VERBOSE(sizeof(double), nXSize);
     if (padfScanline == NULL)
     {
-        CPLError( CE_Failure, CPLE_OutOfMemory,
-                  "VSIMalloc(): Out of memory in GDALContourGenerate" );
         return CE_Failure;
     }
 
     for( iLine = 0; iLine < nYSize && eErr == CE_None; iLine++ )
     {
-        GDALRasterIO( hBand, GF_Read, 0, iLine, nXSize, 1, 
+        eErr = GDALRasterIO( hBand, GF_Read, 0, iLine, nXSize, 1, 
                       padfScanline, nXSize, 1, GDT_Float64, 0, 0 );
-        eErr = oCG.FeedLine( padfScanline );
+        if( eErr == CE_None )
+            eErr = oCG.FeedLine( padfScanline );
 
         if( eErr == CE_None 
             && !pfnProgress( (iLine+1) / (double) nYSize, "", pProgressArg ) )

@@ -35,6 +35,12 @@
 #include "cpl_multiproc.h"
 #include <assert.h>
 
+#ifndef HAVE_GEOS
+#define UNUSED_IF_NO_GEOS CPL_UNUSED
+#else
+#define UNUSED_IF_NO_GEOS 
+#endif
+
 CPL_CVSID("$Id$");
 
 int OGRGeometry::bGenerate_DB2_V72_BYTE_ORDER = FALSE;
@@ -150,7 +156,7 @@ void OGRGeometry::dumpReadable( FILE * fp, const char * pszPrefix, char** papszO
 
 {
     char        *pszWkt = NULL;
-    
+
     if( pszPrefix == NULL )
         pszPrefix = "";
 
@@ -377,8 +383,8 @@ void OGR_G_AssignSpatialReference( OGRGeometryH hGeom,
  * \brief Do these features intersect?
  *
  * Determines whether two geometries intersect.  If GEOS is enabled, then
- * this is done in rigerous fashion otherwise TRUE is returned if the
- * envelopes (bounding boxes) of the two features overlap. 
+ * this is done in rigorous fashion otherwise TRUE is returned if the
+ * envelopes (bounding boxes) of the two features overlap.
  *
  * The poOtherGeom argument may be safely NULL, but in this case the method
  * will always return TRUE.   That is, a NULL geometry is treated as being
@@ -396,7 +402,7 @@ OGRBoolean OGRGeometry::Intersects( const OGRGeometry *poOtherGeom ) const
 {
     OGREnvelope         oEnv1, oEnv2;
 
-    if( this == NULL || poOtherGeom == NULL )
+    if( poOtherGeom == NULL )
         return TRUE;
 
     this->getEnvelope( &oEnv1 );
@@ -409,11 +415,9 @@ OGRBoolean OGRGeometry::Intersects( const OGRGeometry *poOtherGeom ) const
         return FALSE;
 
 #ifndef HAVE_GEOS
-
-    // Without GEOS we assume that envelope overlap is equivelent to
+    // Without GEOS we assume that envelope overlap is equivalent to
     // actual intersection.
     return TRUE;
-
 #else
 
     GEOSGeom hThisGeosGeom = NULL;
@@ -422,7 +426,7 @@ OGRBoolean OGRGeometry::Intersects( const OGRGeometry *poOtherGeom ) const
     GEOSContextHandle_t hGEOSCtxt = createGEOSContext();
     hThisGeosGeom = exportToGEOS(hGEOSCtxt);
     hOtherGeosGeom = poOtherGeom->exportToGEOS(hGEOSCtxt);
-    
+
     OGRBoolean bResult = FALSE;
     if( hThisGeosGeom != NULL && hOtherGeosGeom != NULL )
     {
@@ -440,7 +444,7 @@ OGRBoolean OGRGeometry::Intersects( const OGRGeometry *poOtherGeom ) const
 #endif /* HAVE_GEOS */
 }
 
-// Old API compatibility function.                                 
+// Old API compatibility function.
 
 OGRBoolean OGRGeometry::Intersect( OGRGeometry *poOtherGeom ) const
 
@@ -454,9 +458,9 @@ OGRBoolean OGRGeometry::Intersect( OGRGeometry *poOtherGeom ) const
 /**
  * \brief Do these features intersect?
  *
- * Currently this is not implemented in a rigerous fashion, and generally
+ * Currently this is not implemented in a rigorous fashion, and generally
  * just tests whether the envelopes of the two features intersect.  Eventually
- * this will be made rigerous.
+ * this will be made rigorous.
  *
  * This function is the same as the CPP method OGRGeometry::Intersects.
  *
@@ -799,8 +803,8 @@ int OGR_G_GetCoordinateDimension( OGRGeometryH hGeom )
  *
  * This method sets the explicit coordinate dimension.  Setting the coordinate
  * dimension of a geometry to 2 should zero out any existing Z values.  Setting
- * the dimension of a geometry collection will not necessarily affect the
- * children geometries. 
+ * the dimension of a geometry collection, a compound curve, a polygon, etc.
+ * will affect the children geometries. 
  *
  * @param nNewDimension New coordinate dimension value, either 2 or 3.
  */
@@ -819,9 +823,9 @@ void OGRGeometry::setCoordinateDimension( int nNewDimension )
  * \brief Set the coordinate dimension.
  *
  * This method sets the explicit coordinate dimension.  Setting the coordinate
- * dimension of a geometry to 2 should zero out any existing Z values.  Setting
- * the dimension of a geometry collection will not necessarily affect the
- * children geometries.
+ * dimension of a geometry to 2 should zero out any existing Z values. Setting
+ * the dimension of a geometry collection, a compound curve, a polygon, etc.
+ * will affect the children geometries. 
  *
  * @param hGeom handle on the geometry to set the dimension of the
  * coordinates.
@@ -873,16 +877,11 @@ int OGR_G_Equals( OGRGeometryH hGeom, OGRGeometryH hOther )
 {
     VALIDATE_POINTER1( hGeom, "OGR_G_Equals", FALSE );
 
-    if (hGeom == NULL) {
-        CPLError ( CE_Failure, CPLE_ObjectNull, "hGeom was NULL in OGR_G_Equals");
-        return 0;
-    }
-
     if (hOther == NULL) {
         CPLError ( CE_Failure, CPLE_ObjectNull, "hOther was NULL in OGR_G_Equals");
         return 0;
     }
-    
+
     return ((OGRGeometry *) hGeom)->Equals( (OGRGeometry *) hOther );
 }
 
@@ -1218,7 +1217,8 @@ OGRErr OGR_G_ImportFromWkt( OGRGeometryH hGeom, char ** ppszSrcText )
 
 /* Returns -1 if processing must continue */
 OGRErr OGRGeometry::importPreambuleFromWkt( char ** ppszInput,
-                                            int* pbHasZ, int* pbHasM )
+                                            int* pbHasZ, int* pbHasM,
+                                            bool* pbIsEmpty )
 {
     char        szToken[OGR_WKT_TOKEN_MAX];
     const char  *pszInput = *ppszInput;
@@ -1227,6 +1227,7 @@ OGRErr OGRGeometry::importPreambuleFromWkt( char ** ppszInput,
 /*      Clear existing Geoms.                                           */
 /* -------------------------------------------------------------------- */
     empty();
+    *pbIsEmpty = false;
 
 /* -------------------------------------------------------------------- */
 /*      Read and verify the type keyword, and ensure it matches the     */
@@ -1247,6 +1248,7 @@ OGRErr OGRGeometry::importPreambuleFromWkt( char ** ppszInput,
     if( EQUAL(szToken,"EMPTY") )
     {
         *ppszInput = (char *) pszPreScan;
+        *pbIsEmpty = true;
         empty();
         return OGRERR_NONE;
     }
@@ -1280,6 +1282,7 @@ OGRErr OGRGeometry::importPreambuleFromWkt( char ** ppszInput,
             empty();
             if( bHasZ )
                 setCoordinateDimension(3);
+            *pbIsEmpty = true;
 
             /* FIXME?: In theory we should store the M presence */
             /* if we want to allow round-trip with ExportToWKT v1.2 */
@@ -1308,14 +1311,15 @@ OGRErr OGRGeometry::importPreambuleFromWkt( char ** ppszInput,
             {
                 *ppszInput = (char *) pszPreScan;
                 empty();
+                *pbIsEmpty = true;
                 return OGRERR_NONE;
             }
         }
     }
-    
+
     *ppszInput = (char*) pszInput;
 
-    return -1;
+    return OGRERR_NONE;
 }
 
 
@@ -1648,7 +1652,7 @@ OGRGeometry::IsValid(  ) const
 
     OGRBoolean bResult = FALSE;
     GEOSGeom hThisGeosGeom = NULL;
-    
+
     GEOSContextHandle_t hGEOSCtxt = createGEOSContext();
     hThisGeosGeom = exportToGEOS(hGEOSCtxt);
 
@@ -1721,7 +1725,7 @@ OGRGeometry::IsSimple(  ) const
 
     OGRBoolean bResult = FALSE;
     GEOSGeom hThisGeosGeom = NULL;
-    
+
     GEOSContextHandle_t hGEOSCtxt = createGEOSContext();
     hThisGeosGeom = exportToGEOS(hGEOSCtxt);
 
@@ -1740,7 +1744,7 @@ OGRGeometry::IsSimple(  ) const
 
 /**
  * \brief Returns TRUE if the geometry is simple.
- * 
+ *
  * Returns TRUE if the geometry has no anomalous geometric points, such
  * as self intersection or self tangency. The description of each
  * instantiable geometric class will include the specific conditions that
@@ -1794,7 +1798,7 @@ OGRGeometry::IsRing(  ) const
 
     OGRBoolean bResult = FALSE;
     GEOSGeom hThisGeosGeom = NULL;
-    
+
     GEOSContextHandle_t hGEOSCtxt = createGEOSContext();
     hThisGeosGeom = exportToGEOS(hGEOSCtxt);
 
@@ -1843,50 +1847,48 @@ int OGR_G_IsRing( OGRGeometryH hGeom )
 /*      OGR constants.                                                  */
 /************************************************************************/
 
-#define EQUALN_CST(var, cst) EQUALN(var, cst, strlen(cst))
-
 OGRwkbGeometryType OGRFromOGCGeomType( const char *pszGeomType )
 {
     OGRwkbGeometryType eType;
-    int bConvertTo3D = FALSE;
+    bool bConvertTo3D = false;
     if( *pszGeomType != '\0' )
     {
         char ch = pszGeomType[strlen(pszGeomType)-1];
         if( ch == 'z' || ch == 'Z' )
         {
-            bConvertTo3D = TRUE;
+            bConvertTo3D = true;
         }
     }
-    if ( EQUALN_CST(pszGeomType, "POINT") )
+    if ( STARTS_WITH_CI(pszGeomType, "POINT") )
         eType = wkbPoint;
-    else if ( EQUALN_CST(pszGeomType, "LINESTRING") )
+    else if ( STARTS_WITH_CI(pszGeomType, "LINESTRING") )
         eType = wkbLineString;
-    else if ( EQUALN_CST(pszGeomType, "POLYGON") )
+    else if ( STARTS_WITH_CI(pszGeomType, "POLYGON") )
         eType = wkbPolygon;
-    else if ( EQUALN_CST(pszGeomType, "MULTIPOINT") )
+    else if ( STARTS_WITH_CI(pszGeomType, "MULTIPOINT") )
         eType = wkbMultiPoint;
-    else if ( EQUALN_CST(pszGeomType, "MULTILINESTRING") )
+    else if ( STARTS_WITH_CI(pszGeomType, "MULTILINESTRING") )
         eType = wkbMultiLineString;
-    else if ( EQUALN_CST(pszGeomType, "MULTIPOLYGON") )
+    else if ( STARTS_WITH_CI(pszGeomType, "MULTIPOLYGON") )
         eType = wkbMultiPolygon;
-    else if ( EQUALN_CST(pszGeomType, "GEOMETRYCOLLECTION") )
+    else if ( STARTS_WITH_CI(pszGeomType, "GEOMETRYCOLLECTION") )
         eType = wkbGeometryCollection;
-    else if ( EQUALN_CST(pszGeomType, "CIRCULARSTRING") )
+    else if ( STARTS_WITH_CI(pszGeomType, "CIRCULARSTRING") )
         eType = wkbCircularString;
-    else if ( EQUALN_CST(pszGeomType, "COMPOUNDCURVE") )
+    else if ( STARTS_WITH_CI(pszGeomType, "COMPOUNDCURVE") )
         eType = wkbCompoundCurve;
-    else if ( EQUALN_CST(pszGeomType, "CURVEPOLYGON") )
+    else if ( STARTS_WITH_CI(pszGeomType, "CURVEPOLYGON") )
         eType = wkbCurvePolygon;
-    else if ( EQUALN_CST(pszGeomType, "MULTICURVE") )
+    else if ( STARTS_WITH_CI(pszGeomType, "MULTICURVE") )
         eType = wkbMultiCurve;
-    else if ( EQUALN_CST(pszGeomType, "MULTISURFACE") )
+    else if ( STARTS_WITH_CI(pszGeomType, "MULTISURFACE") )
         eType = wkbMultiSurface;
     else
         eType = wkbUnknown;
 
     if( bConvertTo3D )
         eType = wkbSetZ(eType);
-    
+
     return eType;
 }
 
@@ -2036,13 +2038,7 @@ const char *OGRGeometryTypeToName( OGRwkbGeometryType eType )
 
       default:
       {
-          // OGRThreadSafety: This static is judged to be a very low risk 
-          // for thread safety because it is only used in case of error, 
-          // and the worst that can happen is reporting the wrong code
-          // in the generated message.
-          static char szWorkName[33];
-          sprintf( szWorkName, "Unrecognised: %d", (int) eType );
-          return szWorkName;
+          return CPLSPrintf( "Unrecognized: %d", (int) eType );
       }
     }
 }
@@ -2063,8 +2059,8 @@ const char *OGRGeometryTypeToName( OGRwkbGeometryType eType )
  * geometry types with nothing in common but the base geometry
  * type.  wkbNone should be used to indicate that no geometries
  * have been encountered yet, and means the first geometry
- * encounted will establish the preliminary type.
- * 
+ * encountered will establish the preliminary type.
+ *
  * @param eMain the first input geometry type.
  * @param eExtra the second input geometry type.
  *
@@ -2091,13 +2087,13 @@ OGRMergeGeometryTypes( OGRwkbGeometryType eMain,
  * geometry types with nothing in common but the base geometry
  * type.  wkbNone should be used to indicate that no geometries
  * have been encountered yet, and means the first geometry
- * encounted will establish the preliminary type.
+ * encountered will establish the preliminary type.
  *
  * If bAllowPromotingToCurves is set to TRUE, mixing Polygon and CurvePolygon
  * will return CurvePolygon. Mixing LineString, CircularString, CompoundCurve
  * will return CompoundCurve. Mixing MultiPolygon and MultiSurface will return
  * MultiSurface. Mixing MultiCurve and MultiLineString will return MultiCurve.
- * 
+ *
  * @param eMain the first input geometry type.
  * @param eExtra the second input geometry type.
  * @param bAllowPromotingToCurves determine if promotion to curve type must be done.
@@ -2239,17 +2235,11 @@ char *OGRGeometry::exportToGML( const char* const * papszOptions ) const
 
 char *OGRGeometry::exportToKML() const
 {
-#ifndef _WIN32_WCE
 #ifdef OGR_ENABLED
     return OGR_G_ExportToKML( (OGRGeometryH) this, NULL );
 #else
     CPLError( CE_Failure, CPLE_AppDefined,
               "OGRGeometry::exportToKML() not supported in builds without OGR drivers." );
-    return NULL;
-#endif
-#else
-    CPLError( CE_Failure, CPLE_AppDefined,
-              "OGRGeometry::exportToKML() not supported in the WinCE build." );
     return NULL;
 #endif
 }
@@ -2272,18 +2262,12 @@ char *OGRGeometry::exportToKML() const
 
 char *OGRGeometry::exportToJson() const
 {
-#ifndef _WIN32_WCE
 #ifdef OGR_ENABLED
     OGRGeometry* poGeometry = const_cast<OGRGeometry*>(this);
     return OGR_G_ExportToJson( (OGRGeometryH) (poGeometry) );
 #else
     CPLError( CE_Failure, CPLE_AppDefined,
               "OGRGeometry::exportToJson() not supported in builds without OGR drivers." );
-    return NULL;
-#endif
-#else
-    CPLError( CE_Failure, CPLE_AppDefined,
-              "OGRGeometry::exportToJson() not supported in the WinCE build." );
     return NULL;
 #endif
 }
@@ -2342,7 +2326,7 @@ GEOSContextHandle_t OGRGeometry::createGEOSContext()
 /*                          freeGEOSContext()                           */
 /************************************************************************/
 
-void OGRGeometry::freeGEOSContext(GEOSContextHandle_t hGEOSCtxt)
+void OGRGeometry::freeGEOSContext(UNUSED_IF_NO_GEOS GEOSContextHandle_t hGEOSCtxt)
 {
 #ifdef HAVE_GEOS
     if( hGEOSCtxt != NULL )
@@ -2356,7 +2340,7 @@ void OGRGeometry::freeGEOSContext(GEOSContextHandle_t hGEOSCtxt)
 /*                            exportToGEOS()                            */
 /************************************************************************/
 
-GEOSGeom OGRGeometry::exportToGEOS(GEOSContextHandle_t hGEOSCtxt) const
+GEOSGeom OGRGeometry::exportToGEOS(UNUSED_IF_NO_GEOS GEOSContextHandle_t hGEOSCtxt) const
 
 {
 #ifndef HAVE_GEOS
@@ -2541,7 +2525,7 @@ double OGRGeometry::Distance( const OGRGeometry *poOtherGeom ) const
     GEOSContextHandle_t hGEOSCtxt = createGEOSContext();
     hOther = poOtherGeom->exportToGEOS(hGEOSCtxt);
     hThis = exportToGEOS(hGEOSCtxt);
-   
+
     int bIsErr = 0;
     double dfDistance = 0.0;
 
@@ -2600,6 +2584,7 @@ double OGR_G_Distance( OGRGeometryH hFirst, OGRGeometryH hOther )
 /*                       OGRGeometryRebuildCurves()                     */
 /************************************************************************/
 
+#ifdef HAVE_GEOS
 static OGRGeometry* OGRGeometryRebuildCurves(const OGRGeometry* poGeom,
                                              const OGRGeometry* poOtherGeom,
                                              OGRGeometry* poOGRProduct)
@@ -2615,6 +2600,7 @@ static OGRGeometry* OGRGeometryRebuildCurves(const OGRGeometry* poGeom,
     }
     return poOGRProduct;
 }
+#endif
 
 /************************************************************************/
 /*                             ConvexHull()                             */
@@ -2736,7 +2722,7 @@ OGRGeometry *OGRGeometry::Boundary() const
     return NULL;
 
 #else
-    
+
     GEOSGeom hGeosGeom = NULL;
     GEOSGeom hGeosProduct = NULL;
     OGRGeometry *poOGRProduct = NULL;
@@ -2833,14 +2819,14 @@ OGRGeometryH OGR_G_GetBoundary( OGRGeometryH hTarget )
  *
  * Builds a new geometry containing the buffer region around the geometry
  * on which it is invoked.  The buffer is a polygon containing the region within
- * the buffer distance of the original geometry.  
+ * the buffer distance of the original geometry.
  *
  * Some buffer sections are properly described as curves, but are converted to
- * approximate polygons.  The nQuadSegs parameter can be used to control how many
- * segements should be used to define a 90 degree curve - a quadrant of a circle. 
- * A value of 30 is a reasonable default.  Large values result in large numbers
- * of vertices in the resulting buffer geometry while small numbers reduce the 
- * accuracy of the result. 
+ * approximate polygons.  The nQuadSegs parameter can be used to control how
+ * many segments should be used to define a 90 degree curve - a quadrant of a
+ * circle.  A value of 30 is a reasonable default.  Large values result in
+ * large numbers of vertices in the resulting buffer geometry while small
+ * numbers reduce the accuracy of the result.
  *
  * This method is the same as the C function OGR_G_Buffer().
  *
@@ -2858,7 +2844,8 @@ OGRGeometryH OGR_G_GetBoundary( OGRGeometryH hTarget )
  * @return the newly created geometry, or NULL if an error occurs. 
  */
 
-OGRGeometry *OGRGeometry::Buffer( double dfDist, int nQuadSegs ) const
+OGRGeometry *OGRGeometry::Buffer( UNUSED_IF_NO_GEOS double dfDist,
+                                  UNUSED_IF_NO_GEOS int nQuadSegs ) const
 
 {
 #ifndef HAVE_GEOS
@@ -2905,14 +2892,14 @@ OGRGeometry *OGRGeometry::Buffer( double dfDist, int nQuadSegs ) const
  *
  * Builds a new geometry containing the buffer region around the geometry
  * on which it is invoked.  The buffer is a polygon containing the region within
- * the buffer distance of the original geometry.  
+ * the buffer distance of the original geometry.
  *
  * Some buffer sections are properly described as curves, but are converted to
- * approximate polygons.  The nQuadSegs parameter can be used to control how many
- * segements should be used to define a 90 degree curve - a quadrant of a circle. 
- * A value of 30 is a reasonable default.  Large values result in large numbers
- * of vertices in the resulting buffer geometry while small numbers reduce the 
- * accuracy of the result. 
+ * approximate polygons.  The nQuadSegs parameter can be used to control how
+ * many segments should be used to define a 90 degree curve - a quadrant of a
+ * circle.  A value of 30 is a reasonable default.  Large values result in
+ * large numbers of vertices in the resulting buffer geometry while small
+ * numbers reduce the accuracy of the result.
  *
  * This function is the same as the C++ method OGRGeometry::Buffer().
  *
@@ -2963,7 +2950,7 @@ OGRGeometryH OGR_G_Buffer( OGRGeometryH hTarget, double dfDist, int nQuadSegs )
  * no intersection or an error occurs.
  */
 
-OGRGeometry *OGRGeometry::Intersection( const OGRGeometry *poOtherGeom ) const
+OGRGeometry *OGRGeometry::Intersection( UNUSED_IF_NO_GEOS const OGRGeometry *poOtherGeom ) const
 
 {
 #ifndef HAVE_GEOS
@@ -3064,7 +3051,7 @@ OGRGeometryH OGR_G_Intersection( OGRGeometryH hThis, OGRGeometryH hOther )
  * @return a new geometry representing the union or NULL if an error occurs.
  */
 
-OGRGeometry *OGRGeometry::Union( const OGRGeometry *poOtherGeom ) const
+OGRGeometry *OGRGeometry::Union( UNUSED_IF_NO_GEOS const OGRGeometry *poOtherGeom ) const
 
 {
 #ifndef HAVE_GEOS
@@ -3247,7 +3234,7 @@ OGRGeometryH OGR_G_UnionCascaded( OGRGeometryH hThis )
  * difference is empty or an error occurs.
  */
 
-OGRGeometry *OGRGeometry::Difference( const OGRGeometry *poOtherGeom ) const
+OGRGeometry *OGRGeometry::Difference( UNUSED_IF_NO_GEOS const OGRGeometry *poOtherGeom ) const
 
 {
 #ifndef HAVE_GEOS
@@ -3257,7 +3244,7 @@ OGRGeometry *OGRGeometry::Difference( const OGRGeometry *poOtherGeom ) const
     return NULL;
 
 #else
-    
+
     GEOSGeom hThisGeosGeom = NULL;
     GEOSGeom hOtherGeosGeom = NULL;
     GEOSGeom hGeosProduct = NULL;
@@ -3351,7 +3338,7 @@ OGRGeometryH OGR_G_Difference( OGRGeometryH hThis, OGRGeometryH hOther )
  */
 
 OGRGeometry *
-OGRGeometry::SymDifference( const OGRGeometry *poOtherGeom ) const
+OGRGeometry::SymDifference( UNUSED_IF_NO_GEOS const OGRGeometry *poOtherGeom ) const
 
 {
 #ifndef HAVE_GEOS
@@ -3484,7 +3471,7 @@ OGRGeometryH OGR_G_SymmetricDifference( OGRGeometryH hThis, OGRGeometryH hOther 
  */
 
 OGRBoolean
-OGRGeometry::Disjoint( const OGRGeometry *poOtherGeom ) const
+OGRGeometry::Disjoint( UNUSED_IF_NO_GEOS const OGRGeometry *poOtherGeom ) const
 
 {
 #ifndef HAVE_GEOS
@@ -3566,7 +3553,7 @@ int OGR_G_Disjoint( OGRGeometryH hThis, OGRGeometryH hOther )
  */
 
 OGRBoolean
-OGRGeometry::Touches( const OGRGeometry *poOtherGeom ) const
+OGRGeometry::Touches( UNUSED_IF_NO_GEOS const OGRGeometry *poOtherGeom ) const
 
 {
 #ifndef HAVE_GEOS
@@ -3649,7 +3636,7 @@ int OGR_G_Touches( OGRGeometryH hThis, OGRGeometryH hOther )
  */
 
 OGRBoolean
-OGRGeometry::Crosses( const OGRGeometry *poOtherGeom ) const
+OGRGeometry::Crosses( UNUSED_IF_NO_GEOS const OGRGeometry *poOtherGeom ) const
 
 {
 #ifndef HAVE_GEOS
@@ -3732,7 +3719,7 @@ int OGR_G_Crosses( OGRGeometryH hThis, OGRGeometryH hOther )
  */
 
 OGRBoolean
-OGRGeometry::Within( const OGRGeometry *poOtherGeom ) const
+OGRGeometry::Within( UNUSED_IF_NO_GEOS const OGRGeometry *poOtherGeom ) const
 
 {
 #ifndef HAVE_GEOS
@@ -3814,7 +3801,7 @@ int OGR_G_Within( OGRGeometryH hThis, OGRGeometryH hOther )
  */
 
 OGRBoolean
-OGRGeometry::Contains( const OGRGeometry *poOtherGeom ) const
+OGRGeometry::Contains( UNUSED_IF_NO_GEOS const OGRGeometry *poOtherGeom ) const
 
 {
 #ifndef HAVE_GEOS
@@ -3897,7 +3884,7 @@ int OGR_G_Contains( OGRGeometryH hThis, OGRGeometryH hOther )
  */
 
 OGRBoolean
-OGRGeometry::Overlaps( const OGRGeometry *poOtherGeom ) const
+OGRGeometry::Overlaps( UNUSED_IF_NO_GEOS const OGRGeometry *poOtherGeom ) const
 
 {
 #ifndef HAVE_GEOS
@@ -4026,7 +4013,7 @@ void OGR_G_CloseRings( OGRGeometryH hGeom )
  * @since OGR 1.8.0 as a OGRGeometry method (previously was restricted to OGRPolygon)
  */
 
-int OGRGeometry::Centroid( OGRPoint *poPoint ) const
+OGRErr OGRGeometry::Centroid( OGRPoint *poPoint ) const
 
 {
     if( poPoint == NULL )
@@ -4042,7 +4029,7 @@ int OGRGeometry::Centroid( OGRPoint *poPoint ) const
 
     GEOSGeom hThisGeosGeom = NULL;
     GEOSGeom hOtherGeosGeom = NULL;
-    
+
     GEOSContextHandle_t hGEOSCtxt = createGEOSContext();
     hThisGeosGeom = exportToGEOS(hGEOSCtxt);
 
@@ -4136,7 +4123,7 @@ int OGR_G_Centroid( OGRGeometryH hGeom, OGRGeometryH hCentroidPoint )
 
     OGRGeometry *poGeom = ((OGRGeometry *) hGeom);
     OGRPoint *poCentroid = ((OGRPoint *) hCentroidPoint);
-    
+
     if( poCentroid == NULL )
         return OGRERR_FAILURE;
 
@@ -4164,12 +4151,12 @@ int OGR_G_Centroid( OGRGeometryH hGeom, OGRGeometryH hCentroidPoint )
  *
  * This method is built on the GEOS library, check it for the definition
  * of the geometry operation.
- * If OGR is built without the GEOS library, this method will always fail, 
- * issuing a CPLE_NotSupported error. 
+ * If OGR is built without the GEOS library, this method will always fail,
+ * issuing a CPLE_NotSupported error.
  *
- * @param hGeom the geometry to operate on. 
+ * @param hGeom the geometry to operate on.
  * @return a point guaranteed to lie on the surface or NULL if an error
- *         occured.
+ *         occurred.
  *
  * @since OGR 1.10
  */
@@ -4190,7 +4177,7 @@ OGRGeometryH OGR_G_PointOnSurface( OGRGeometryH hGeom )
 
     GEOSContextHandle_t hGEOSCtxt = OGRGeometry::createGEOSContext();
     hThisGeosGeom = poThis->exportToGEOS(hGEOSCtxt);
- 
+
     if( hThisGeosGeom != NULL )
     {
         hOtherGeosGeom = GEOSPointOnSurface_r( hGEOSCtxt, hThisGeosGeom );
@@ -4204,7 +4191,7 @@ OGRGeometryH OGR_G_PointOnSurface( OGRGeometryH hGeom )
 
         OGRGeometry *poInsidePointGeom = (OGRGeometry *) 
             OGRGeometryFactory::createFromGEOS(hGEOSCtxt,  hOtherGeosGeom );
- 
+
         GEOSGeom_destroy_r( hGEOSCtxt, hOtherGeosGeom );
 
         if (poInsidePointGeom == NULL)
@@ -4234,6 +4221,31 @@ OGRGeometryH OGR_G_PointOnSurface( OGRGeometryH hGeom )
 }
 
 /************************************************************************/
+/*                          PointOnSurfaceInternal()                    */
+/************************************************************************/
+
+OGRErr OGRGeometry::PointOnSurfaceInternal( OGRPoint * poPoint ) const
+{
+    if( poPoint == NULL || poPoint->IsEmpty() )
+        return OGRERR_FAILURE;
+
+    OGRGeometryH hInsidePoint = OGR_G_PointOnSurface( (OGRGeometryH) this );
+    if( hInsidePoint == NULL )
+        return OGRERR_FAILURE;
+
+    OGRPoint *poInsidePoint = (OGRPoint *) hInsidePoint;
+    if( poInsidePoint->IsEmpty() )
+        poPoint->empty();
+    else
+    {
+        poPoint->setX( poInsidePoint->getX() );
+        poPoint->setY( poInsidePoint->getY() );
+    }
+
+    return OGRERR_NONE;
+}
+
+/************************************************************************/
 /*                              Simplify()                              */
 /************************************************************************/
 
@@ -4254,7 +4266,7 @@ OGRGeometryH OGR_G_PointOnSurface( OGRGeometryH hGeom )
  * @since OGR 1.8.0
  */
 
-OGRGeometry *OGRGeometry::Simplify(double dTolerance) const
+OGRGeometry *OGRGeometry::Simplify(UNUSED_IF_NO_GEOS double dTolerance) const
 
 {
 #ifndef HAVE_GEOS
@@ -4340,7 +4352,7 @@ OGRGeometryH OGR_G_Simplify( OGRGeometryH hThis, double dTolerance )
  * @since OGR 1.9.0
  */
 
-OGRGeometry *OGRGeometry::SimplifyPreserveTopology(double dTolerance) const
+OGRGeometry *OGRGeometry::SimplifyPreserveTopology(UNUSED_IF_NO_GEOS double dTolerance) const
 
 {
 #ifndef HAVE_GEOS
@@ -4427,21 +4439,23 @@ OGRGeometryH OGR_G_SimplifyPreserveTopology( OGRGeometryH hThis, double dToleran
  * @since OGR 2.1
  */
 
-OGRGeometry *OGRGeometry::DelaunayTriangulation(double dfTolerance, int bOnlyEdges) const
-{
 #ifndef HAVE_GEOS
-
+OGRGeometry *OGRGeometry::DelaunayTriangulation(double /*dfTolerance*/, int /*bOnlyEdges*/) const
+{
     CPLError( CE_Failure, CPLE_NotSupported,
               "GEOS support not enabled." );
     return NULL;
-
+}
 #elif GEOS_VERSION_MAJOR < 3 || (GEOS_VERSION_MAJOR == 3 && GEOS_VERSION_MINOR < 4)
+OGRGeometry *OGRGeometry::DelaunayTriangulation(double /*dfTolerance*/, int /*bOnlyEdges*/) const
+{
     CPLError( CE_Failure, CPLE_NotSupported,
               "GEOS 3.4 or later needed for DelaunayTriangulation." );
     return NULL;
-
+}
 #else
-    
+OGRGeometry *OGRGeometry::DelaunayTriangulation(double dfTolerance, int bOnlyEdges) const
+{
     GEOSGeom hThisGeosGeom = NULL;
     GEOSGeom hGeosProduct = NULL;
     OGRGeometry *poOGRProduct = NULL;
@@ -4462,9 +4476,8 @@ OGRGeometry *OGRGeometry::DelaunayTriangulation(double dfTolerance, int bOnlyEdg
     }
     freeGEOSContext( hGEOSCtxt );
     return poOGRProduct;
-
-#endif
 }
+#endif
 
 /************************************************************************/
 /*                     OGR_G_DelaunayTriangulation()                    */
@@ -4511,7 +4524,7 @@ OGRGeometryH OGR_G_DelaunayTriangulation( OGRGeometryH hThis, double dfTolerance
  * A new geometry object is created and returned containing a collection
  * of reassembled Polygons: NULL will be returned if the input collection
  * doesn't corresponds to a MultiLinestring, or when reassembling Edges
- * into Polygons is impossible due to topogical inconsistencies.
+ * into Polygons is impossible due to topological inconsistencies.
  *
  * This method is the same as the C function OGR_G_Polygonize().
  *
@@ -4548,7 +4561,7 @@ OGRGeometry *OGRGeometry::Polygonize() const
     GEOSGeom *hGeosGeomList = NULL;
     GEOSGeom hGeosPolygs = NULL;
     OGRGeometry *poPolygsOGRGeom = NULL;
-    int bError = FALSE;
+    bool bError = false;
 
     GEOSContextHandle_t hGEOSCtxt = createGEOSContext();
 
@@ -4559,17 +4572,17 @@ OGRGeometry *OGRGeometry::Polygonize() const
         OGRGeometry * poChild = (OGRGeometry*)poColl->getGeometryRef(ig);
         if( poChild == NULL ||
             wkbFlatten(poChild->getGeometryType()) != wkbLineString )
-            bError = TRUE;
+            bError = true;
         else
         {
             hGeosGeom = poChild->exportToGEOS(hGEOSCtxt);
             if( hGeosGeom == NULL)
-                bError = TRUE;
+                bError = true;
         }
         *(hGeosGeomList + ig) = hGeosGeom;
     }
 
-    if( bError == FALSE )
+    if( !bError )
     {
         hGeosPolygs = GEOSPolygonize_r( hGEOSCtxt, hGeosGeomList, iCount );
 
@@ -4605,7 +4618,7 @@ OGRGeometry *OGRGeometry::Polygonize() const
  * A new geometry object is created and returned containing a collection
  * of reassembled Polygons: NULL will be returned if the input collection
  * doesn't corresponds to a MultiLinestring, or when reassembling Edges
- * into Polygons is impossible due to topogical inconsistencies.  
+ * into Polygons is impossible due to topological inconsistencies.
  *
  * This function is the same as the C++ method OGRGeometry::Polygonize().
  *
@@ -4680,7 +4693,7 @@ int OGRHasPreparedGeometrySupport()
 /*                         OGRCreatePreparedGeometry()                  */
 /************************************************************************/
 
-OGRPreparedGeometry* OGRCreatePreparedGeometry( const OGRGeometry* poGeom )
+OGRPreparedGeometry* OGRCreatePreparedGeometry( UNUSED_IF_NO_GEOS const OGRGeometry* poGeom )
 {
 #ifdef HAVE_GEOS_PREPARED_GEOMETRY
     GEOSContextHandle_t hGEOSCtxt = OGRGeometry::createGEOSContext();
@@ -4713,7 +4726,7 @@ OGRPreparedGeometry* OGRCreatePreparedGeometry( const OGRGeometry* poGeom )
 /*                        OGRDestroyPreparedGeometry()                  */
 /************************************************************************/
 
-void OGRDestroyPreparedGeometry( OGRPreparedGeometry* poPreparedGeom )
+void OGRDestroyPreparedGeometry( UNUSED_IF_NO_GEOS OGRPreparedGeometry* poPreparedGeom )
 {
 #ifdef HAVE_GEOS_PREPARED_GEOMETRY
     if( poPreparedGeom != NULL )
@@ -4730,8 +4743,8 @@ void OGRDestroyPreparedGeometry( OGRPreparedGeometry* poPreparedGeom )
 /*                      OGRPreparedGeometryIntersects()                 */
 /************************************************************************/
 
-int OGRPreparedGeometryIntersects( const OGRPreparedGeometry* poPreparedGeom,
-                                   const OGRGeometry* poOtherGeom )
+int OGRPreparedGeometryIntersects( UNUSED_IF_NO_GEOS const OGRPreparedGeometry* poPreparedGeom,
+                                   UNUSED_IF_NO_GEOS const OGRGeometry* poOtherGeom )
 {
 #ifdef HAVE_GEOS_PREPARED_GEOMETRY
     if( poPreparedGeom == NULL || poOtherGeom == NULL )
@@ -4746,6 +4759,28 @@ int OGRPreparedGeometryIntersects( const OGRPreparedGeometry* poPreparedGeom,
                                         hGEOSOtherGeom);
     GEOSGeom_destroy_r( poPreparedGeom->hGEOSCtxt, hGEOSOtherGeom );
 
+    return bRet;
+#else
+    return FALSE;
+#endif
+}
+
+int OGRPreparedGeometryContains( UNUSED_IF_NO_GEOS const OGRPreparedGeometry* poPreparedGeom,
+                                 UNUSED_IF_NO_GEOS const OGRGeometry* poOtherGeom )
+{
+#ifdef HAVE_GEOS_PREPARED_GEOMETRY
+    if( poPreparedGeom == NULL || poOtherGeom == NULL )
+        return FALSE;
+  
+    GEOSGeom hGEOSOtherGeom = poOtherGeom->exportToGEOS(poPreparedGeom->hGEOSCtxt);
+    if( hGEOSOtherGeom == NULL )
+        return FALSE;
+    
+    int bRet = GEOSPreparedContains_r(poPreparedGeom->hGEOSCtxt,
+                                      poPreparedGeom->poPreparedGEOSGeom,
+                                      hGEOSOtherGeom);
+    GEOSGeom_destroy_r( poPreparedGeom->hGEOSCtxt, hGEOSOtherGeom );
+    
     return bRet;
 #else
     return FALSE;
@@ -4768,7 +4803,7 @@ OGRGeometry *OGRGeometryFromEWKB( GByte *pabyWKB, int nLength, int* pnSRID,
 {
     OGRGeometry *poGeometry = NULL;
     unsigned int ewkbFlags = 0;
-    
+
     if (nLength < 5)
     {
         CPLError( CE_Failure, CPLE_AppDefined,
@@ -4821,7 +4856,7 @@ OGRGeometry *OGRGeometryFromEWKB( GByte *pabyWKB, int nLength, int* pnSRID,
 /* -------------------------------------------------------------------- */
 /*      Try to ingest the geometry.                                     */
 /* -------------------------------------------------------------------- */
-    OGRGeometryFactory::createFromWkb( pabyWKB, NULL, &poGeometry, nLength, 
+    (void) OGRGeometryFactory::createFromWkb( pabyWKB, NULL, &poGeometry, nLength, 
                                        (bIsPostGIS1_EWKB) ? wkbVariantPostGIS1 : wkbVariantOldOgc );
 
     return poGeometry;
@@ -4856,7 +4891,7 @@ OGRGeometry *OGRGeometryFromHexEWKB( const char *pszBytea, int* pnSRID,
 /************************************************************************/
 
 char* OGRGeometryToHexEWKB( OGRGeometry * poGeometry, int nSRSId,
-                            int bIsPostGIS1_EWKB  )
+                            int nPostGISMajor, int nPostGISMinor )
 {
     GByte       *pabyWKB;
     char        *pszTextBuf;
@@ -4866,8 +4901,18 @@ char* OGRGeometryToHexEWKB( OGRGeometry * poGeometry, int nSRSId,
     int nWkbSize = poGeometry->WkbSize();
     pabyWKB = (GByte *) CPLMalloc(nWkbSize);
 
-    if( poGeometry->exportToWkb( wkbNDR, pabyWKB,
-            bIsPostGIS1_EWKB ? wkbVariantPostGIS1 : wkbVariantOldOgc ) != OGRERR_NONE )
+    if( (nPostGISMajor > 2 || (nPostGISMajor == 2 && nPostGISMinor >= 2)) &&
+        wkbFlatten(poGeometry->getGeometryType()) == wkbPoint &&
+        poGeometry->IsEmpty() )
+    {
+        if( poGeometry->exportToWkb( wkbNDR, pabyWKB, wkbVariantIso ) != OGRERR_NONE )
+        {
+            CPLFree( pabyWKB );
+            return CPLStrdup("");
+        }
+    }
+    else if( poGeometry->exportToWkb( wkbNDR, pabyWKB,
+            (nPostGISMajor < 2) ? wkbVariantPostGIS1 : wkbVariantOldOgc ) != OGRERR_NONE )
     {
         CPLFree( pabyWKB );
         return CPLStrdup("");
@@ -4881,7 +4926,7 @@ char* OGRGeometryToHexEWKB( OGRGeometry * poGeometry, int nSRSId,
     pszTextBuf = (char *) CPLMalloc(pszSize);
     pszTextBufCurrent = pszTextBuf;
 
-    /* Convert the 1st byte, which is the endianess flag, to hex. */
+    /* Convert the 1st byte, which is the endianness flag, to hex. */
     pszHex = CPLBinaryToHex( 1, pabyWKB );
     strcpy(pszTextBufCurrent, pszHex );
     CPLFree ( pszHex );
@@ -4894,7 +4939,7 @@ char* OGRGeometryToHexEWKB( OGRGeometry * poGeometry, int nSRSId,
     /* Now add the SRID flag if an SRID is provided */
     if (nSRSId > 0)
     {
-        /* Change the flag to wkbNDR (little) endianess */
+        /* Change the flag to wkbNDR (little) endianness */
         GUInt32 nGSrsFlag = CPL_LSBWORD32( WKBSRIDFLAG );
         /* Apply the flag */
         geomType = geomType | nGSrsFlag;
@@ -4909,7 +4954,7 @@ char* OGRGeometryToHexEWKB( OGRGeometry * poGeometry, int nSRSId,
     /* Now include SRID if provided */
     if (nSRSId > 0)
     {
-        /* Force the srsid to wkbNDR (little) endianess */
+        /* Force the srsid to wkbNDR (little) endianness */
         GUInt32 nGSRSId = CPL_LSBWORD32( nSRSId );
         pszHex = CPLBinaryToHex( sizeof(nGSRSId),(GByte*) &nGSRSId );
         strcpy(pszTextBufCurrent, pszHex );
@@ -4934,10 +4979,10 @@ char* OGRGeometryToHexEWKB( OGRGeometry * poGeometry, int nSRSId,
  * \brief Add intermediate vertices to a geometry.
  *
  * This method modifies the geometry to add intermediate vertices if necessary
- * so that the maximum length between 2 consecutives vertices is lower than
+ * so that the maximum length between 2 consecutive vertices is lower than
  * dfMaxLength.
  *
- * @param dfMaxLength maximum length between 2 consecutives vertices.
+ * @param dfMaxLength maximum length between 2 consecutive vertices.
  */
 
 
@@ -4957,9 +5002,10 @@ OGRErr OGRGeometry::importPreambuleFromWkb( unsigned char * pabyData,
 /* -------------------------------------------------------------------- */
 /*      Get the byte order byte.                                        */
 /* -------------------------------------------------------------------- */
-    eByteOrder = DB2_V72_FIX_BYTE_ORDER((OGRwkbByteOrder) *pabyData);
-    if (!( eByteOrder == wkbXDR || eByteOrder == wkbNDR ))
+    int nByteOrder = DB2_V72_FIX_BYTE_ORDER(*pabyData);
+    if (!( nByteOrder == wkbXDR || nByteOrder == wkbNDR ))
         return OGRERR_CORRUPT_DATA;
+    eByteOrder = (OGRwkbByteOrder) nByteOrder;
 
 /* -------------------------------------------------------------------- */
 /*      Get the geometry feature type.                                  */
@@ -4970,7 +5016,7 @@ OGRErr OGRGeometry::importPreambuleFromWkb( unsigned char * pabyData,
     if( err != OGRERR_NONE || eGeometryType != wkbFlatten(getGeometryType()) )
         return OGRERR_CORRUPT_DATA;
 
-    return -1;
+    return OGRERR_NONE;
 }
 
 /************************************************************************/
@@ -4992,7 +5038,7 @@ OGRErr OGRGeometry::importPreambuleOfCollectionFromWkb( unsigned char * pabyData
     OGRBoolean b3D = FALSE;
 
     OGRErr eErr = importPreambuleFromWkb( pabyData, nSize, eByteOrder, b3D, eWkbVariant );
-    if( eErr >= 0 )
+    if( eErr != OGRERR_NONE )
         return eErr;
 
 /* -------------------------------------------------------------------- */
@@ -5007,7 +5053,7 @@ OGRErr OGRGeometry::importPreambuleOfCollectionFromWkb( unsigned char * pabyData
 /*      Get the sub-geometry count.                                     */
 /* -------------------------------------------------------------------- */
     memcpy( &nGeomCount, pabyData + 5, 4 );
-    
+
     if( OGR_SWAP( eByteOrder ) )
         nGeomCount = CPL_SWAP32(nGeomCount);
 
@@ -5030,7 +5076,7 @@ OGRErr OGRGeometry::importPreambuleOfCollectionFromWkb( unsigned char * pabyData
     if( nSize != -1 )
         nSize -= nDataOffset;
 
-    return -1;
+    return OGRERR_NONE;
 }
 
 /************************************************************************/
@@ -5049,8 +5095,9 @@ OGRErr OGRGeometry::importCurveCollectionFromWkt( char ** ppszInput,
 
 {
     int bHasZ = FALSE, bHasM = FALSE;
-    OGRErr      eErr = importPreambuleFromWkt(ppszInput, &bHasZ, &bHasM);
-    if( eErr >= 0 )
+    bool bIsEmpty = false;
+    OGRErr      eErr = importPreambuleFromWkt(ppszInput, &bHasZ, &bHasM, &bIsEmpty);
+    if( eErr != OGRERR_NONE || bIsEmpty )
         return eErr;
 
     if( bHasZ )
@@ -5125,7 +5172,7 @@ OGRErr OGRGeometry::importCurveCollectionFromWkt( char ** ppszInput,
         }
 
 /* -------------------------------------------------------------------- */
-/*      Read the delimeter following the surface.                       */
+/*      Read the delimiter following the surface.                       */
 /* -------------------------------------------------------------------- */
         pszInput = OGRWktReadToken( pszInput, szToken );
 
@@ -5143,7 +5190,7 @@ OGRErr OGRGeometry::importCurveCollectionFromWkt( char ** ppszInput,
 
     if( szToken[0] != ')' )
         return OGRERR_CORRUPT_DATA;
-    
+
     *ppszInput = (char *) pszInput;
     return OGRERR_NONE;
 }
@@ -5216,7 +5263,7 @@ OGRwkbGeometryType OGR_GT_SetZ( OGRwkbGeometryType eType )
 {
     if( OGR_GT_HasZ(eType) || eType == wkbNone )
         return eType;
-    if( eType >= wkbUnknown && eType <= wkbGeometryCollection )
+    if( eType <= wkbGeometryCollection )
         return (OGRwkbGeometryType)(eType | wkb25DBitInternalUse);
     else
         return (OGRwkbGeometryType)(eType + 1000);
@@ -5333,7 +5380,7 @@ OGRwkbGeometryType OGR_GT_GetCollection( OGRwkbGeometryType eType )
 
     else if( OGR_GT_IsSurface(eFGType) )
         eType = wkbMultiSurface;
-    
+
     else
         return wkbUnknown;
 

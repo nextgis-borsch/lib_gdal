@@ -34,8 +34,6 @@
 #include "cpl_error.h"
 
 
-#ifndef WIN32CE /* ODBC is not supported on Windows CE. */
-
 CPL_CVSID("$Id$");
 
 #ifndef SQLColumns_TABLE_CAT 
@@ -63,8 +61,9 @@ CPL_CVSID("$Id$");
 /*                           CPLODBCDriverInstaller()                   */
 /************************************************************************/
 
-CPLODBCDriverInstaller::CPLODBCDriverInstaller()
-    : m_nUsageCount(0)
+CPLODBCDriverInstaller::CPLODBCDriverInstaller() :
+    m_nErrorCode(0),
+    m_nUsageCount(0)
 {
     memset( m_szPathOut, '\0', ODBC_FILENAME_MAX );
     memset( m_szError, '\0', SQL_MAX_MESSAGE_LENGTH );
@@ -102,11 +101,13 @@ int CPLODBCDriverInstaller::InstallDriver( const char* pszDriver,
             CPLDebug( "ODBC", "HOME=%s", pszEnvHome );
 
             // Set ODBCSYSINI variable pointing to HOME location
-            pszEnvIni = (char *)CPLMalloc( strlen(pszEnvHome) + 12 );
+            const size_t nLen = strlen(pszEnvHome) + 12;
+            pszEnvIni = (char *)CPLMalloc( nLen );
 
-            sprintf( pszEnvIni, "ODBCSYSINI=%s", pszEnvHome );
+            snprintf( pszEnvIni, nLen, "ODBCSYSINI=%s", pszEnvHome );
             /* a 'man putenv' shows that we cannot free pszEnvIni */
             /* because the pointer is used directly by putenv in old glibc */
+            /* coverity[tainted_string] */
             putenv( pszEnvIni );
 
             CPLDebug( "ODBC", "%s", pszEnvIni );
@@ -193,7 +194,7 @@ int CPLODBCSession::CloseSession()
         SQLFreeConnect( m_hDBC );
         m_hDBC = NULL;
     }
-    
+
     if( m_hEnv!=NULL )
     {
         SQLFreeEnv( m_hEnv );
@@ -363,7 +364,7 @@ int CPLODBCSession::EstablishSession( const char *pszDSN,
 
 {
     CloseSession();
-    
+
     if( Failed( SQLAllocEnv( &m_hEnv ) ) )
         return FALSE;
 
@@ -373,7 +374,14 @@ int CPLODBCSession::EstablishSession( const char *pszDSN,
         return FALSE;
     }
 
+#ifdef _MSC_VER
+#pragma warning( push )
+#pragma warning( disable : 4996 )  /*  warning C4996: 'SQLSetConnectOption': ODBC API: SQLSetConnectOption is deprecated. Please use SQLSetConnectAttr instead */
+#endif
     SQLSetConnectOption( m_hDBC,SQL_LOGIN_TIMEOUT,30 );
+#ifdef _MSC_VER
+#pragma warning( pop )
+#endif
 
     if( pszUserid == NULL )
         pszUserid = "";
@@ -445,13 +453,6 @@ CPLODBCStatement::CPLODBCStatement( CPLODBCSession *poSession )
 {
     m_poSession = poSession;
 
-    if( Failed( 
-            SQLAllocStmt( poSession->GetConnection(), &m_hStmt ) ) )
-    {
-        m_hStmt = NULL;
-        return;
-    }
-
     m_nColCount = 0;
     m_papszColNames = NULL;
     m_panColType = NULL;
@@ -467,6 +468,13 @@ CPLODBCStatement::CPLODBCStatement( CPLODBCSession *poSession )
     m_pszStatement = NULL;
     m_nStatementMax = 0;
     m_nStatementLen = 0;
+
+    if( Failed( 
+            SQLAllocStmt( poSession->GetConnection(), &m_hStmt ) ) )
+    {
+        m_hStmt = NULL;
+        return;
+    }
 }
 
 /************************************************************************/
@@ -526,6 +534,8 @@ int CPLODBCStatement::ExecuteSQL( const char *pszStatement )
 
 #endif
 
+    /* SQL_NTS=-3 is a valid value for SQLExecDirect */
+    /* coverity[negative_returns] */
     if( Failed( 
             SQLExecDirect( m_hStmt, (SQLCHAR *) m_pszStatement, SQL_NTS ) ) )
         return FALSE;
@@ -554,11 +564,11 @@ int CPLODBCStatement::CollectResultsInfo()
 /* -------------------------------------------------------------------- */
     m_papszColNames = (char **) CPLCalloc(sizeof(char *),(m_nColCount+1));
     m_papszColValues = (char **) CPLCalloc(sizeof(char *),(m_nColCount+1));
-    m_panColValueLengths = (_SQLLEN *) CPLCalloc(sizeof(_SQLLEN),(m_nColCount+1));
+    m_panColValueLengths = (CPL_SQLLEN *) CPLCalloc(sizeof(CPL_SQLLEN),(m_nColCount+1));
 
     m_panColType = (SQLSMALLINT *) CPLCalloc(sizeof(SQLSMALLINT),m_nColCount);
     m_papszColTypeNames = (char **) CPLCalloc(sizeof(char *),(m_nColCount+1));
-    m_panColSize = (_SQLULEN *) CPLCalloc(sizeof(_SQLULEN),m_nColCount);
+    m_panColSize = (CPL_SQLULEN *) CPLCalloc(sizeof(CPL_SQLULEN),m_nColCount);
     m_panColPrecision = (SQLSMALLINT *) CPLCalloc(sizeof(SQLSMALLINT),m_nColCount);
     m_panColNullable = (SQLSMALLINT *) CPLCalloc(sizeof(SQLSMALLINT),m_nColCount);
     m_papszColColumnDef = (char **) CPLCalloc(sizeof(char *),(m_nColCount+1));
@@ -608,7 +618,7 @@ int CPLODBCStatement::GetRowCountAffected()
 {
     SQLLEN nResultCount=0;
     SQLRowCount( m_hStmt, &nResultCount );
-    
+
     return (int)nResultCount;
 }
 
@@ -799,16 +809,16 @@ const char *CPLODBCStatement::GetColColumnDef( int iCol )
  * Requests the next row in the current resultset using the SQLFetchScroll()
  * call.  Note that many ODBC drivers only support the default forward
  * fetching one record at a time.  Only SQL_FETCH_NEXT (the default) should
- * be considered reliable on all drivers. 
+ * be considered reliable on all drivers.
  *
  * Currently it isn't clear how to determine whether an error or a normal
- * out of data condition has occured if Fetch() fails. 
+ * out of data condition has occurred if Fetch() fails.
  *
  * @param nOrientation One of SQL_FETCH_NEXT, SQL_FETCH_LAST, SQL_FETCH_PRIOR,
  * SQL_FETCH_ABSOLUTE, or SQL_FETCH_RELATIVE (default is SQL_FETCH_NEXT).
  *
- * @param nOffset the offset (number of records), ignored for some 
- * orientations.  
+ * @param nOffset the offset (number of records), ignored for some
+ * orientations.
  *
  * @return TRUE if a new row is successfully fetched, or FALSE if not.
  */
@@ -860,11 +870,11 @@ int CPLODBCStatement::Fetch( int nOrientation, int nOffset )
 /*      Pull out all the column values.                                 */
 /* -------------------------------------------------------------------- */
     SQLSMALLINT iCol;
-    
+
     for( iCol = 0; iCol < m_nColCount; iCol++ )
     {
         char szWrkData[513];
-        _SQLLEN cbDataLen;
+        CPL_SQLLEN cbDataLen;
         SQLSMALLINT nFetchType = GetTypeMapping( m_panColType[iCol] );
 
         // Handle values other than WCHAR and BINARY as CHAR.
@@ -903,9 +913,9 @@ int CPLODBCStatement::Fetch( int nOrientation, int nOffset )
         // assume big result: should check for state=SQLSATE 01004.
         else if( nRetCode == SQL_SUCCESS_WITH_INFO  ) 
         {
-            if( cbDataLen >= (_SQLLEN)(sizeof(szWrkData)-1) )
+            if( cbDataLen >= (CPL_SQLLEN)(sizeof(szWrkData)-1) )
             {
-                cbDataLen = (_SQLLEN)(sizeof(szWrkData)-1);
+                cbDataLen = (CPL_SQLLEN)(sizeof(szWrkData)-1);
                 if (nFetchType == SQL_C_CHAR) 
                     while ((cbDataLen > 1) && (szWrkData[cbDataLen - 1] == 0)) 
                         --cbDataLen; // trimming the extra terminators: bug 990
@@ -922,9 +932,9 @@ int CPLODBCStatement::Fetch( int nOrientation, int nOffset )
             m_papszColValues[iCol][cbDataLen+1] = '\0';
             m_panColValueLengths[iCol] = cbDataLen;
 
-            while( TRUE )
+            while( true )
             {
-                _SQLLEN nChunkLen;
+                CPL_SQLLEN nChunkLen;
 
                 nRetCode = SQLGetData( m_hStmt, (SQLUSMALLINT) iCol+1, 
                                        nFetchType,
@@ -1103,7 +1113,7 @@ int CPLODBCStatement::GetColId( const char *pszColName )
     for( SQLSMALLINT iCol = 0; iCol < m_nColCount; iCol++ )
         if( EQUAL(pszColName, m_papszColNames[iCol]) )
             return iCol;
-    
+
     return -1;
 }
 
@@ -1232,9 +1242,9 @@ void CPLODBCStatement::AppendEscaped( const char *pszText )
 void CPLODBCStatement::Append( int nValue )
 
 {
-    char szFormattedValue[100];
+    char szFormattedValue[32];
 
-    sprintf( szFormattedValue, "%d", nValue );
+    snprintf( szFormattedValue, sizeof(szFormattedValue), "%d", nValue );
     Append( szFormattedValue );
 }
 
@@ -1255,7 +1265,7 @@ void CPLODBCStatement::Append( double dfValue )
 {
     char szFormattedValue[100];
 
-    sprintf( szFormattedValue, "%24g", dfValue );
+    snprintf( szFormattedValue, sizeof(szFormattedValue), "%24g", dfValue );
     Append( szFormattedValue );
 }
 
@@ -1271,8 +1281,8 @@ void CPLODBCStatement::Append( double dfValue )
  * properly, and should be appended with the direct Append() methods.
  *
  * @param pszFormat printf() style format string.
- * 
- * @return FALSE if formatting fails dueto result being too large.
+ *
+ * @return FALSE if formatting fails due to result being too large.
  */
 
 int CPLODBCStatement::Appendf( const char *pszFormat, ... )
@@ -1297,7 +1307,7 @@ int CPLODBCStatement::Appendf( const char *pszFormat, ... )
 
     return bSuccess;
 }
-                                
+
 /************************************************************************/
 /*                               Clear()                                */
 /************************************************************************/
@@ -1312,7 +1322,7 @@ void CPLODBCStatement::Clear()
     /* Closing the cursor if opened */
     if( m_hStmt != NULL )
         SQLFreeStmt( m_hStmt, SQL_CLOSE );
-    
+
     ClearColumnData();
 
     if( m_pszStatement != NULL )
@@ -1366,7 +1376,7 @@ void CPLODBCStatement::Clear()
  * Fetch column definitions for a table.
  *
  * The SQLColumn() method is used to fetch the definitions for the columns
- * of a table (or other queriable object such as a view).  The column
+ * of a table (or other queryable object such as a view).  The column
  * definitions are digested and used to populate the CPLODBCStatement
  * column definitions essentially as if a "SELECT * FROM tablename" had
  * been done; however, no resultset will be available.
@@ -1432,13 +1442,13 @@ int CPLODBCStatement::GetColumns( const char *pszTable,
 #endif
 
     m_nColCount = 500;
-    
+
     m_papszColNames = (char **) CPLCalloc(sizeof(char *),(m_nColCount+1));
     m_papszColValues = (char **) CPLCalloc(sizeof(char *),(m_nColCount+1));
 
     m_panColType = (SQLSMALLINT *) CPLCalloc(sizeof(SQLSMALLINT),m_nColCount);
     m_papszColTypeNames = (char **) CPLCalloc(sizeof(char *),(m_nColCount+1));
-    m_panColSize = (_SQLULEN *) CPLCalloc(sizeof(_SQLULEN),m_nColCount);
+    m_panColSize = (CPL_SQLULEN *) CPLCalloc(sizeof(CPL_SQLULEN),m_nColCount);
     m_panColPrecision = (SQLSMALLINT *) CPLCalloc(sizeof(SQLSMALLINT),m_nColCount);
     m_panColNullable = (SQLSMALLINT *) CPLCalloc(sizeof(SQLSMALLINT),m_nColCount);
     m_papszColColumnDef = (char **) CPLCalloc(sizeof(char *),(m_nColCount+1));
@@ -1451,7 +1461,7 @@ int CPLODBCStatement::GetColumns( const char *pszTable,
     for( iCol = 0; iCol < m_nColCount; iCol++ )
     {
         char szWrkData[8193];
-        _SQLLEN cbDataLen;
+        CPL_SQLLEN cbDataLen;
 
         if( Failed( SQLFetch( m_hStmt ) ) )
         {
@@ -1657,7 +1667,7 @@ void CPLODBCStatement::DumpResult( FILE *fp, int bShowSchema )
     while( Fetch() )
     {
         fprintf( fp, "Record %d\n", iRecord++ );
-        
+
         for( iCol = 0; iCol < GetColCount(); iCol++ )
         {
             fprintf( fp, "  %s: %s\n", GetColName(iCol), GetColData(iCol) );
@@ -1687,29 +1697,28 @@ CPLString CPLODBCStatement::GetTypeName( int nTypeCode )
     {
       case SQL_CHAR:
         return "CHAR";
-        
+
       case SQL_NUMERIC:
         return "NUMERIC";
-        
+
       case SQL_DECIMAL:
         return "DECIMAL";
-        
+
       case SQL_INTEGER:
         return "INTEGER";
-        
+
       case SQL_SMALLINT:
         return "SMALLINT";
 
-        
       case SQL_FLOAT:
         return "FLOAT";
-        
+
       case SQL_REAL:
         return "REAL";
 
       case SQL_DOUBLE:
         return "DOUBLE";
-        
+
       case SQL_DATETIME:
         return "DATETIME";
 
@@ -1721,7 +1730,7 @@ CPLString CPLODBCStatement::GetTypeName( int nTypeCode )
 
       case SQL_TYPE_TIME:
         return "TIME";
-        
+
       case SQL_TYPE_TIMESTAMP:
         return "TIMESTAMP";
 
@@ -1824,5 +1833,3 @@ SQLSMALLINT CPLODBCStatement::GetTypeMapping( SQLSMALLINT nTypeCode )
             return SQL_C_CHAR;
     }
 }
-
-#endif /* #ifndef WIN32CE */

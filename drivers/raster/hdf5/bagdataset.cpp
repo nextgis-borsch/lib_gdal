@@ -30,16 +30,13 @@
 
 #include "gh5_convenience.h"
 
+#include "cpl_string.h"
+#include "gdal_frmts.h"
 #include "gdal_pam.h"
 #include "gdal_priv.h"
 #include "ogr_spatialref.h"
-#include "cpl_string.h"
 
 CPL_CVSID("$Id$");
-
-CPL_C_START
-void    GDALRegister_BAG(void);
-CPL_C_END
 
 OGRErr OGR_SRS_ImportFromISO19115( OGRSpatialReference *poThis, 
                                    const char *pszISOXML );
@@ -51,7 +48,6 @@ OGRErr OGR_SRS_ImportFromISO19115( OGRSpatialReference *poThis,
 /************************************************************************/
 class BAGDataset : public GDALPamDataset
 {
-
     friend class BAGRasterBand;
 
     hid_t        hHDF5;
@@ -63,11 +59,11 @@ class BAGDataset : public GDALPamDataset
 
     char        *pszXMLMetadata;
     char        *apszMDList[2];
-    
+
 public:
     BAGDataset();
     ~BAGDataset();
-    
+
     virtual CPLErr GetGeoTransform( double * );
     virtual const char *GetProjectionRef(void);
     virtual char      **GetMetadataDomainList();
@@ -97,32 +93,28 @@ class BAGRasterBand : public GDALPamRasterBand
     double      dfMaximum;
 
 public:
-  
+
     BAGRasterBand( BAGDataset *, int );
     ~BAGRasterBand();
 
     bool                    Initialize( hid_t hDataset, const char *pszName );
 
     virtual CPLErr          IReadBlock( int, int, void * );
-    virtual double	    GetNoDataValue( int * ); 
+    virtual double	    GetNoDataValue( int * );
 
     virtual double GetMinimum( int *pbSuccess = NULL );
-    virtual double GetMaximum(int *pbSuccess = NULL );
+    virtual double GetMaximum( int *pbSuccess = NULL );
 };
 
 /************************************************************************/
 /*                           BAGRasterBand()                            */
 /************************************************************************/
-BAGRasterBand::BAGRasterBand( BAGDataset *poDS, int nBand )
-
+BAGRasterBand::BAGRasterBand( BAGDataset *poDS_, int nBand_ ) :
+    hDatasetID(-1), native(-1), dataspace(-1), bMinMaxSet(false),
+    dfMinimum(0.0), dfMaximum(0.0)
 {
-    this->poDS       = poDS;
-    this->nBand      = nBand;
-    
-    hDatasetID = -1;
-    dataspace = -1;
-    native = -1;
-    bMinMaxSet = false;
+    poDS = poDS_;
+    nBand = nBand_;
 }
 
 /************************************************************************/
@@ -145,15 +137,15 @@ BAGRasterBand::~BAGRasterBand()
 /*                             Initialize()                             */
 /************************************************************************/
 
-bool BAGRasterBand::Initialize( hid_t hDatasetID, const char *pszName )
+bool BAGRasterBand::Initialize( hid_t hDatasetIDIn, const char *pszName )
 
 {
     SetDescription( pszName );
 
-    this->hDatasetID = hDatasetID;
+    this->hDatasetID = hDatasetIDIn;
 
-    hid_t datatype     = H5Dget_type( hDatasetID );
-    dataspace          = H5Dget_space( hDatasetID );
+    hid_t datatype     = H5Dget_type( hDatasetIDIn );
+    dataspace          = H5Dget_space( hDatasetIDIn );
     int n_dims         = H5Sget_simple_extent_ndims( dataspace );
     native             = H5Tget_native_type( datatype, H5T_DIR_ASCEND );
     hsize_t dims[3], maxdims[3];
@@ -181,7 +173,7 @@ bool BAGRasterBand::Initialize( hid_t hDatasetID, const char *pszName )
 /*      Check for chunksize, and use it as blocksize for optimized      */
 /*      reading.                                                        */
 /* -------------------------------------------------------------------- */
-    hid_t listid = H5Dget_create_plist( hDatasetID );
+    hid_t listid = H5Dget_create_plist( hDatasetIDIn );
     if (listid>0)
     {
         if(H5Pget_layout(listid) == H5D_CHUNKED)
@@ -219,15 +211,15 @@ bool BAGRasterBand::Initialize( hid_t hDatasetID, const char *pszName )
 /*      Load min/max information.                                       */
 /* -------------------------------------------------------------------- */
     if( EQUAL(pszName,"elevation") 
-        && GH5_FetchAttribute( hDatasetID, "Maximum Elevation Value", 
+        && GH5_FetchAttribute( hDatasetIDIn, "Maximum Elevation Value", 
                             dfMaximum ) 
-        && GH5_FetchAttribute( hDatasetID, "Minimum Elevation Value", 
+        && GH5_FetchAttribute( hDatasetIDIn, "Minimum Elevation Value", 
                                dfMinimum ) )
         bMinMaxSet = true;
     else if( EQUAL(pszName,"uncertainty")
-             && GH5_FetchAttribute( hDatasetID, "Maximum Uncertainty Value", 
+             && GH5_FetchAttribute( hDatasetIDIn, "Maximum Uncertainty Value", 
                                     dfMaximum ) 
-             && GH5_FetchAttribute( hDatasetID, "Minimum Uncertainty Value", 
+             && GH5_FetchAttribute( hDatasetIDIn, "Minimum Uncertainty Value", 
                                     dfMinimum ) )
     {
         /* Some products where uncertainty band is completely set to nodata */
@@ -236,9 +228,9 @@ bool BAGRasterBand::Initialize( hid_t hDatasetID, const char *pszName )
             bMinMaxSet = true;
     }
     else if( EQUAL(pszName,"nominal_elevation") 
-             && GH5_FetchAttribute( hDatasetID, "max_value", 
+             && GH5_FetchAttribute( hDatasetIDIn, "max_value", 
                                     dfMaximum ) 
-             && GH5_FetchAttribute( hDatasetID, "min_value", 
+             && GH5_FetchAttribute( hDatasetIDIn, "min_value", 
                                     dfMinimum ) )
         bMinMaxSet = true;
 
@@ -307,19 +299,16 @@ CPLErr BAGRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
     herr_t      status;
     hsize_t     count[3];
     H5OFFSET_TYPE offset[3];
-    int         nSizeOfData;
     hid_t       memspace;
     hsize_t     col_dims[3];
-    hsize_t     rank;
-
-    rank=2;
+    hsize_t     rank = 2;
 
     offset[0] = MAX(0,nRasterYSize - (nBlockYOff+1)*nBlockYSize);
-    offset[1] = nBlockXOff*nBlockXSize;
+    offset[1] = nBlockXOff*static_cast<hsize_t>(nBlockXSize);
     count[0]  = nBlockYSize;
     count[1]  = nBlockXSize;
 
-    nSizeOfData = H5Tget_size( native );
+    int nSizeOfData = static_cast<int>(H5Tget_size( native ));
     memset( pImage,0,nBlockXSize*nBlockYSize*nSizeOfData );
 
 /*  blocksize may not be a multiple of imagesize */
@@ -338,6 +327,8 @@ CPLErr BAGRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
                                    H5S_SELECT_SET,
                                    offset, NULL,
                                    count, NULL );
+    if( status < 0 )
+        return CE_Failure;
 
 /* -------------------------------------------------------------------- */
 /*      Create memory space to receive the data                         */
@@ -350,6 +341,8 @@ CPLErr BAGRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
                                   H5S_SELECT_SET,
                                   mem_offset, NULL,
                                   count, NULL);
+    if( status < 0 )
+        return CE_Failure;
 
     status = H5Dread ( hDatasetID,
                        native,
@@ -363,7 +356,7 @@ CPLErr BAGRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 /* -------------------------------------------------------------------- */
 /*      Y flip the data.                                                */
 /* -------------------------------------------------------------------- */
-    int nLinesToFlip = count[0];
+    int nLinesToFlip = static_cast<int>(count[0]);
     int nLineSize = nSizeOfData * nBlockXSize;
     GByte *pabyTemp = (GByte *) CPLMalloc(nLineSize);
 
@@ -405,18 +398,18 @@ CPLErr BAGRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 /*                             BAGDataset()                             */
 /************************************************************************/
 
-BAGDataset::BAGDataset()
+BAGDataset::BAGDataset() :
+    hHDF5(-1), pszProjection(NULL), pszXMLMetadata(NULL)
 {
-    hHDF5 = -1;
-    pszXMLMetadata = NULL;
-    pszProjection = NULL;
-
     adfGeoTransform[0] = 0.0;
     adfGeoTransform[1] = 1.0;
     adfGeoTransform[2] = 0.0;
     adfGeoTransform[3] = 0.0;
     adfGeoTransform[4] = 0.0;
     adfGeoTransform[5] = 1.0;
+
+    apszMDList[0] = NULL;
+    apszMDList[1] = NULL;
 }
 
 /************************************************************************/
@@ -429,8 +422,8 @@ BAGDataset::~BAGDataset( )
     if( hHDF5 >= 0 )
         H5Fclose( hHDF5 );
 
-    CPLFree( pszXMLMetadata );
     CPLFree( pszProjection );
+    CPLFree( pszXMLMetadata );
 }
 
 /************************************************************************/
@@ -480,7 +473,7 @@ GDALDataset *BAGDataset::Open( GDALOpenInfo * poOpenInfo )
                   "The BAG driver does not support update access." );
         return NULL;
     }
-    
+
 /* -------------------------------------------------------------------- */
 /*      Open the file as an HDF5 file.                                  */
 /* -------------------------------------------------------------------- */
@@ -581,7 +574,7 @@ GDALDataset *BAGDataset::Open( GDALOpenInfo * poOpenInfo )
     }
     else
         delete poNBand;
-        
+
 /* -------------------------------------------------------------------- */
 /*      Load the XML metadata.                                          */
 /* -------------------------------------------------------------------- */
@@ -731,7 +724,7 @@ OGRErr BAGDataset::ParseWKTFromXML( const char *pszISOXML )
         CPLDestroyXMLNode( psRoot );
         return eOGRErr;
     }
-    
+
     const char *pszSRCodeSpace = 
         CPLGetXMLValue( psRSI, "MD_ReferenceSystem.referenceSystemIdentifier.RS_Identifier.codeSpace.CharacterString", "" );
     if( !EQUAL( pszSRCodeSpace, "WKT" ) )
@@ -783,18 +776,17 @@ OGRErr BAGDataset::ParseWKTFromXML( const char *pszISOXML )
         return eOGRErr;
     }
 
-    if( EQUALN(pszSRCodeString, "VERTCS", 6 ) )
+    if( STARTS_WITH_CI(pszSRCodeString, "VERTCS") )
     {
         CPLString oString( pszProjection );
+        CPLFree( pszProjection );
         oString += ",";
         oString += pszSRCodeString;
-        if ( pszProjection )
-            CPLFree( pszProjection );
         pszProjection = CPLStrdup( oString );
     }
 
     CPLDestroyXMLNode( psRoot );
-    
+
     return eOGRErr;
 }
 
@@ -862,24 +854,21 @@ char **BAGDataset::GetMetadata( const char *pszDomain )
 void GDALRegister_BAG( )
 
 {
-    GDALDriver  *poDriver;
-    
-    if (! GDAL_CHECK_VERSION("BAG"))
+    if( !GDAL_CHECK_VERSION( "BAG" ) )
         return;
 
-    if(  GDALGetDriverByName( "BAG" ) == NULL )
-    {
-        poDriver = new GDALDriver();
-        
-        poDriver->SetDescription( "BAG" );
-        poDriver->SetMetadataItem( GDAL_DCAP_RASTER, "YES" );
-        poDriver->SetMetadataItem( GDAL_DMD_LONGNAME, 
-                                   "Bathymetry Attributed Grid" );
-        poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, 
-                                   "frmt_bag.html" );
-        poDriver->pfnOpen = BAGDataset::Open;
-        poDriver->pfnIdentify = BAGDataset::Identify;
+    if( GDALGetDriverByName( "BAG" ) != NULL )
+        return;
 
-        GetGDALDriverManager( )->RegisterDriver( poDriver );
-    }
+    GDALDriver *poDriver = new GDALDriver();
+
+    poDriver->SetDescription( "BAG" );
+    poDriver->SetMetadataItem( GDAL_DCAP_RASTER, "YES" );
+    poDriver->SetMetadataItem( GDAL_DMD_LONGNAME,
+                               "Bathymetry Attributed Grid" );
+    poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, "frmt_bag.html" );
+    poDriver->pfnOpen = BAGDataset::Open;
+    poDriver->pfnIdentify = BAGDataset::Identify;
+
+    GetGDALDriverManager( )->RegisterDriver( poDriver );
 }

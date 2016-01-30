@@ -65,8 +65,7 @@ OGRPGResultLayer::OGRPGResultLayer( OGRPGDataSource *poDSIn,
     CPLString osRequest;
     std::map< std::pair<int,int>, int> oMapAttributeToFieldIndex;
 
-    int iRawField;
-    for( iRawField = 0; iRawField < PQnfields(hInitialResultIn); iRawField++ )
+    for( int iRawField = 0; iRawField < PQnfields(hInitialResultIn); iRawField++ )
     {
         if( poFeatureDefn->GetGeomFieldCount() == 1 &&
             strcmp(PQfname(hInitialResultIn,iRawField),
@@ -167,12 +166,13 @@ void OGRPGResultLayer::BuildFullQueryStatement()
         pszQueryStatement = NULL;
     }
 
-    pszQueryStatement = (char*) CPLMalloc(strlen(pszRawStatement) + strlen(osWHERE) + 40);
+    const size_t nLen = strlen(pszRawStatement) + strlen(osWHERE) + 40;
+    pszQueryStatement = (char*) CPLMalloc(nLen);
 
     if (strlen(osWHERE) == 0)
         strcpy(pszQueryStatement, pszRawStatement);
     else
-        sprintf(pszQueryStatement, "SELECT * FROM (%s) AS ogrpgsubquery %s",
+        snprintf(pszQueryStatement, nLen, "SELECT * FROM (%s) AS ogrpgsubquery %s",
                 pszRawStatement, osWHERE.c_str());
 }
 
@@ -224,7 +224,7 @@ int OGRPGResultLayer::TestCapability( const char * pszCap )
 
 {
     GetLayerDefn();
-    
+
     if( EQUAL(pszCap,OLCFastFeatureCount) ||
         EQUAL(pszCap,OLCFastSetNextByIndex) )
     {
@@ -276,7 +276,7 @@ OGRFeature *OGRPGResultLayer::GetNextFeature()
     if( poFeatureDefn->GetGeomFieldCount() != 0 )
         poGeomFieldDefn = poFeatureDefn->myGetGeomFieldDefn(m_iGeomFieldFilter);
 
-    for( ; TRUE; )
+    while( true )
     {
         OGRFeature      *poFeature;
 
@@ -407,6 +407,8 @@ void OGRPGResultLayer::ResolveSRID(OGRPGGeomFieldDefn* poGFldDefn)
             osGetSRID += psGetSRIDFct;
             osGetSRID += "(";
             osGetSRID += OGRPGEscapeColumnName(poGFldDefn->GetNameRef());
+            if (poDS->sPostGISVersion.nMajor > 2 || (poDS->sPostGISVersion.nMajor == 2 && poDS->sPostGISVersion.nMinor >= 2))
+                osGetSRID += "::geometry";
             osGetSRID += ") FROM(";
             osGetSRID += pszRawStatement;
             osGetSRID += ") AS ogrpggetsrid LIMIT 1";

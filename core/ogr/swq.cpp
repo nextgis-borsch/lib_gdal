@@ -3,7 +3,7 @@
  * Component: OGDI Driver Support Library
  * Purpose: Generic SQL WHERE Expression Implementation.
  * Author: Frank Warmerdam <warmerdam@pobox.com>
- * 
+ *
  ******************************************************************************
  * Copyright (C) 2001 Information Interoperability Institute (3i)
  * Copyright (c) 2010-2013, Even Rouault <even dot rouault at mines-paris dot org>
@@ -12,8 +12,8 @@
  * its documentation for any purpose and without fee is hereby granted,
  * provided that the above copyright notice appear in all copies, that
  * both the copyright notice and this permission notice appear in
- * supporting documentation, and that the name of 3i not be used 
- * in advertising or publicity pertaining to distribution of the software 
+ * supporting documentation, and that the name of 3i not be used
+ * in advertising or publicity pertaining to distribution of the software
  * without specific, written prior permission.  3i makes no
  * representations about the suitability of this software for any purpose.
  * It is provided "as is" without express or implied warranty.
@@ -36,15 +36,15 @@
 void swqerror( swq_parse_context *context, const char *msg )
 {
     CPLString osMsg;
-    osMsg.Printf( "SQL Expression Parsing Error: %s. Occured around :\n", msg );
+    osMsg.Printf( "SQL Expression Parsing Error: %s. Occurred around :\n",
+                  msg );
 
-    int i;
-    int n = context->pszLastValid - context->pszInput;
+    int n = static_cast<int>(context->pszLastValid - context->pszInput);
 
-    for( i = MAX(0,n-40); i < n + 40 && context->pszInput[i] != '\0'; i ++ )
+    for( int i = MAX(0,n-40); i < n + 40 && context->pszInput[i] != '\0'; i ++ )
         osMsg += context->pszInput[i];
     osMsg += "\n";
-    for(i=0;i<MIN(n, 40);i++)
+    for( int i=0;i<MIN(n, 40);i++ )
         osMsg += " ";
     osMsg += "^";
 
@@ -97,7 +97,7 @@ int swqlex( YYSTYPE *ppNode, swq_parse_context *context )
         char *token;
         int i_token;
         char chQuote = *pszInput;
-        int bFoundEndQuote = FALSE;
+        bool bFoundEndQuote = false;
 
         int nRet = *pszInput == '"' ? SWQT_IDENTIFIER : SWQT_STRING;
 
@@ -117,10 +117,10 @@ int swqlex( YYSTYPE *ppNode, swq_parse_context *context )
             else if( *pszInput == chQuote )
             {
                 pszInput++;
-                bFoundEndQuote = TRUE;
+                bFoundEndQuote = true;
                 break;
             }
-            
+
             token[i_token++] = *(pszInput++);
         }
         token[i_token] = '\0';
@@ -185,7 +185,7 @@ int swqlex( YYSTYPE *ppNode, swq_parse_context *context )
         else
         {
             GIntBig nVal = CPLAtoGIntBig(osToken);
-            if( (GIntBig)(int)nVal == nVal )
+            if( CPL_INT64_FITS_ON_INT32(nVal) )
                 *ppNode = new swq_expr_node( (int)nVal );
             else
                 *ppNode = new swq_expr_node( nVal );
@@ -317,14 +317,12 @@ swq_select_summarize( swq_select *select_info,
 /* -------------------------------------------------------------------- */
     if( select_info->column_summary == NULL )
     {
-        int i;
-
         select_info->column_summary = (swq_summary *) 
             CPLMalloc(sizeof(swq_summary) * select_info->result_columns);
         memset( select_info->column_summary, 0, 
                 sizeof(swq_summary) * select_info->result_columns );
 
-        for( i = 0; i < select_info->result_columns; i++ )
+        for( int i = 0; i < select_info->result_columns; i++ )
         {
             select_info->column_summary[i].min = 1e20;
             select_info->column_summary[i].max = -1e20;
@@ -337,7 +335,7 @@ swq_select_summarize( swq_select *select_info,
 /*      If distinct processing is on, process that now.                 */
 /* -------------------------------------------------------------------- */
     summary = select_info->column_summary + dest_column;
-    
+
     if( def->distinct_flag )
     {
         GIntBig  i;
@@ -355,15 +353,18 @@ swq_select_summarize( swq_select *select_info,
                      strcmp(value,summary->distinct_list[i]) == 0 )
                 break;
         }
-        
+
         if( i == summary->count )
         {
             char  **old_list = summary->distinct_list;
-            
+
             summary->distinct_list = (char **) 
                 CPLMalloc(sizeof(char *) * (size_t)(summary->count+1));
-            memcpy( summary->distinct_list, old_list, 
-                    sizeof(char *) * (size_t)summary->count );
+            if( summary->count )
+            {
+                memcpy( summary->distinct_list, old_list, 
+                        sizeof(char *) * (size_t)summary->count );
+            }
             summary->distinct_list[(summary->count)++] = 
                 (value != NULL) ? CPLStrdup( value ) : NULL;
 
@@ -479,8 +480,6 @@ swq_select_summarize( swq_select *select_info,
 
 static int FORCE_CDECL swq_compare_int( const void *item1, const void *item2 )
 {
-    GIntBig  v1, v2;
-
     const char* pszStr1 = *((const char **) item1);
     const char* pszStr2 = *((const char **) item2);
     if (pszStr1 == NULL)
@@ -488,8 +487,8 @@ static int FORCE_CDECL swq_compare_int( const void *item1, const void *item2 )
     else if (pszStr2 == NULL)
         return 1;
 
-    v1 = CPLAtoGIntBig(pszStr1);
-    v2 = CPLAtoGIntBig(pszStr2);
+    const GIntBig v1 = CPLAtoGIntBig(pszStr1);
+    const GIntBig v2 = CPLAtoGIntBig(pszStr2);
 
     if( v1 < v2 )
         return -1;
@@ -501,8 +500,6 @@ static int FORCE_CDECL swq_compare_int( const void *item1, const void *item2 )
 
 static int FORCE_CDECL swq_compare_real( const void *item1, const void *item2 )
 {
-    double  v1, v2;
-
     const char* pszStr1 = *((const char **) item1);
     const char* pszStr2 = *((const char **) item2);
     if (pszStr1 == NULL)
@@ -510,8 +507,8 @@ static int FORCE_CDECL swq_compare_real( const void *item1, const void *item2 )
     else if (pszStr2 == NULL)
         return 1;
 
-    v1 = CPLAtof(pszStr1);
-    v2 = CPLAtof(pszStr2);
+    const double v1 = CPLAtof(pszStr1);
+    const double v2 = CPLAtof(pszStr2);
 
     if( v1 < v2 )
         return -1;
@@ -579,28 +576,15 @@ const char *swq_select_finish_summarize( swq_select *select_info )
 /* -------------------------------------------------------------------- */
     if( !select_info->order_defs[0].ascending_flag )
     {
-        char *saved;
-        GIntBig i;
-
-        for( i = 0; i < count/2; i++ )
+        for( GIntBig i = 0; i < count/2; i++ )
         {
-            saved = distinct_list[i];
+            char *saved = distinct_list[i];
             distinct_list[i] = distinct_list[count-i-1];
             distinct_list[count-i-1] = saved;
         }
     }
 
     return NULL;
-}
-
-/************************************************************************/
-/*                          swq_select_free()                           */
-/************************************************************************/
-
-void swq_select_free( swq_select *select_info )
-
-{
-    delete select_info;
 }
 
 /************************************************************************/
@@ -626,10 +610,10 @@ int swq_identify_field_internal( const char* table_name, const char *field_token
                                  int bOneMoreTimeOK )
 
 {
-    int i;
-    if( table_name == NULL ) table_name = "";
+    if( table_name == NULL )
+        table_name = "";
 
-    int   tables_enabled;
+    int tables_enabled;
 
     if( field_list->table_count > 0 && field_list->table_ids != NULL )
         tables_enabled = TRUE;
@@ -639,7 +623,7 @@ int swq_identify_field_internal( const char* table_name, const char *field_token
 /* -------------------------------------------------------------------- */
 /*      Search for matching field.                                      */
 /* -------------------------------------------------------------------- */
-    for( i = 0; i < field_list->count; i++ )
+    for( int i = 0; i < field_list->count; i++ )
     {
         int  t_id = 0;
 
@@ -668,7 +652,7 @@ int swq_identify_field_internal( const char* table_name, const char *field_token
             else
                 *this_type = SWQ_OTHER;
         }
-        
+
         if( table_id != NULL )
             *table_id = t_id;
 
@@ -689,6 +673,7 @@ int swq_identify_field_internal( const char* table_name, const char *field_token
 
             // Check there's no table called table_name, or a field called with
             // the aggregated name
+            int i;
             for( i = 0; i < field_list->count; i++ )
             {
                 if( tables_enabled )
@@ -774,7 +759,7 @@ CPLErr swq_expr_compile( const char *where_clause,
     field_list.types = field_types;
     field_list.table_ids = NULL;
     field_list.ids = NULL;
-    
+
     field_list.table_count = 0;
     field_list.table_defs = NULL;
 
@@ -794,7 +779,6 @@ CPLErr swq_expr_compile2( const char *where_clause,
                           swq_expr_node **expr_out )
 
 {
-
     swq_parse_context context;
 
     context.pszInput = where_clause;
@@ -802,7 +786,7 @@ CPLErr swq_expr_compile2( const char *where_clause,
     context.pszLastValid = where_clause;
     context.nStartToken = SWQT_VALUE_START;
     context.bAcceptCustomFuncs = poCustomFuncRegistrar != NULL;
-    
+
     if( swqparse( &context ) == 0 
         && bCheck && context.poRoot->Check( field_list, FALSE, FALSE, poCustomFuncRegistrar ) != SWQ_ERROR )
     {
@@ -822,7 +806,7 @@ CPLErr swq_expr_compile2( const char *where_clause,
 /*                        swq_is_reserved_keyword()                     */
 /************************************************************************/
 
-static const char* apszSQLReservedKeywords[] = {
+static const char* const apszSQLReservedKeywords[] = {
     "OR",
     "AND",
     "NOT",

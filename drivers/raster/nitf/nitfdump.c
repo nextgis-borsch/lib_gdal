@@ -140,11 +140,9 @@ NITFLocation* NITFReadRPFLocationTable(VSILFILE* fp, int* pnLocCount)
 
     VSIFSeekL(fp, nCurOffset + nLocSectionOffset, SEEK_SET);
 
-    pasLocations = (NITFLocation *)  VSICalloc(sizeof(NITFLocation), nLocCount);
+    pasLocations = (NITFLocation *)  VSI_CALLOC_VERBOSE(sizeof(NITFLocation), nLocCount);
     if (pasLocations == NULL)
     {
-        CPLError(CE_Failure, CPLE_OutOfMemory,
-                 "Cannot allocate memory for location table");
         return NULL;
     }
 
@@ -206,7 +204,7 @@ static const LocationNameId asLocationTable[] =
     { "ColorTableIndexRecord", 153 }
 };
 
-const char* GetLocationNameFromId(int nID)
+static const char* GetLocationNameFromId(int nID)
 {
     unsigned int i;
     for(i=0;i<sizeof(asLocationTable) / sizeof(asLocationTable[0]);i++)
@@ -541,7 +539,7 @@ int main( int nArgc, char ** papszArgv )
 
             // NITF 2.0. (also works for NITF 2.1)
             nSTYPEOffset = 200;
-            if( EQUALN(achSubheader+193,"999998",6) )
+            if( STARTS_WITH_CI(achSubheader+193, "999998") )
                 nSTYPEOffset += 40;
 
 /* -------------------------------------------------------------------- */
@@ -706,16 +704,16 @@ int main( int nArgc, char ** papszArgv )
                 char szFilename[32];
                 char szRadix[32];
                 if (bExtractSHPInMem)
-                    sprintf(szRadix, "/vsimem/nitf_segment_%d", iSegment + 1);
+                    snprintf(szRadix, sizeof(szRadix), "/vsimem/nitf_segment_%d", iSegment + 1);
                 else
-                    sprintf(szRadix, "nitf_segment_%d", iSegment + 1);
+                    snprintf(szRadix, sizeof(szRadix), "nitf_segment_%d", iSegment + 1);
 
                 if (NITFDESExtractShapefile(psDES, szRadix))
                 {
 #ifdef OGR_ENABLED
                     OGRDataSourceH hDS;
                     OGRRegisterAll();
-                    sprintf(szFilename, "%s.SHP", szRadix);
+                    snprintf(szFilename, sizeof(szFilename), "%s.SHP", szRadix);
                     hDS = OGROpen(szFilename, FALSE, NULL);
                     if (hDS)
                     {
@@ -746,11 +744,11 @@ int main( int nArgc, char ** papszArgv )
 
                 if (bExtractSHPInMem)
                 {
-                    sprintf(szFilename, "%s.SHP", szRadix);
+                    snprintf(szFilename, sizeof(szFilename), "%s.SHP", szRadix);
                     VSIUnlink(szFilename);
-                    sprintf(szFilename, "%s.SHX", szRadix);
+                    snprintf(szFilename, sizeof(szFilename), "%s.SHX", szRadix);
                     VSIUnlink(szFilename);
-                    sprintf(szFilename, "%s.DBF", szRadix);
+                    snprintf(szFilename, sizeof(szFilename), "%s.DBF", szRadix);
                     VSIUnlink(szFilename);
                 }
             }

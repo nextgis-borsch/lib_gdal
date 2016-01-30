@@ -69,7 +69,7 @@ static void VSIStdinInit()
 /* ==================================================================== */
 /************************************************************************/
 
-class VSIStdinFilesystemHandler : public VSIFilesystemHandler
+class VSIStdinFilesystemHandler CPL_FINAL : public VSIFilesystemHandler
 {
 public:
                               VSIStdinFilesystemHandler();
@@ -87,7 +87,7 @@ public:
 /* ==================================================================== */
 /************************************************************************/
 
-class VSIStdinHandle : public VSIVirtualHandle
+class VSIStdinHandle CPL_FINAL : public VSIVirtualHandle
 {
   private:
     GUIntBig nCurOff;
@@ -131,7 +131,7 @@ int VSIStdinHandle::ReadAndCache( void* pBuffer, int nToRead )
 {
     CPLAssert(nCurOff == nRealPos);
 
-    int nRead = fread(pBuffer, 1, nToRead, stdin);
+    int nRead = static_cast<int>(fread(pBuffer, 1, nToRead, stdin));
 
     if (nRealPos < BUFFER_SIZE)
     {
@@ -157,8 +157,11 @@ int VSIStdinHandle::Seek( vsi_l_offset nOffset, int nWhence )
         return 0;
 
     VSIStdinInit();
-    if (nBufferLen == 0)
-        nRealPos = nBufferLen = fread(pabyBuffer, 1, BUFFER_SIZE, stdin);
+    if (nRealPos < BUFFER_SIZE )
+    {
+        nRealPos += fread(pabyBuffer + nRealPos, 1, BUFFER_SIZE - (int)nRealPos, stdin);
+        nBufferLen = static_cast<int>(nRealPos);
+    }
 
     if (nWhence == SEEK_END)
     {
@@ -204,7 +207,7 @@ int VSIStdinHandle::Seek( vsi_l_offset nOffset, int nWhence )
 
     char abyTemp[8192];
     nCurOff = nRealPos;
-    while(TRUE)
+    while(true)
     {
         int nToRead = (int) MIN(8192, nOffset - nCurOff);
         int nRead = ReadAndCache( abyTemp, nToRead );
@@ -363,7 +366,7 @@ int VSIStdinFilesystemHandler::Stat( const char * pszFilename,
     {
         VSIStdinInit();
         if (nBufferLen == 0)
-            nRealPos = nBufferLen = fread(pabyBuffer, 1, BUFFER_SIZE, stdin);
+            nRealPos = nBufferLen = static_cast<int>(fread(pabyBuffer, 1, BUFFER_SIZE, stdin));
 
         pStatBuf->st_size = nBufferLen;
     }

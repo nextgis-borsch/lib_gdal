@@ -50,7 +50,7 @@ protected:
     int             nFullBlocksX;
     int             nFullBlocksY;
 
-    GByte	       *pabyBlockBuf;
+    GByte	   *pabyBlockBuf;
     uint32          nTiles;
 
     INGR_TileItem  *pahTiles;
@@ -58,7 +58,7 @@ protected:
     INGR_HeaderOne  hHeaderOne;
     INGR_HeaderTwoA hHeaderTwo;
     INGR_TileHeader hTileDir;
-    
+
     int             nRLEOffset;
 
 public:
@@ -80,7 +80,7 @@ public:
 protected:
     int  HandleUninstantiatedTile( int nBlockXOff, int nBlockYOff, void* pImage);
     int  LoadBlockBuf( int nBlockXOff, int nBlockYOff, int nBlockBytes, GByte *pabyBlock );
-    void ReshapeBlock( int nBlockXOff, int nBlockYOff, int nBlockBytes, GByte *pabyBlock );
+    bool ReshapeBlock( int nBlockXOff, int nBlockYOff, int nBlockBytes, GByte *pabyBlock );
     void FlushBandHeader( void );
     void BlackWhiteCT( bool bReverse = false );
 };

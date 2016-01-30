@@ -67,7 +67,7 @@ void VSIStdoutSetRedirection( VSIWriteFunction pFct, FILE* stream )
 /* ==================================================================== */
 /************************************************************************/
 
-class VSIStdoutFilesystemHandler : public VSIFilesystemHandler
+class VSIStdoutFilesystemHandler CPL_FINAL : public VSIFilesystemHandler
 {
 public:
     virtual VSIVirtualHandle *Open( const char *pszFilename, 
@@ -81,12 +81,12 @@ public:
 /* ==================================================================== */
 /************************************************************************/
 
-class VSIStdoutHandle : public VSIVirtualHandle
+class VSIStdoutHandle CPL_FINAL : public VSIVirtualHandle
 {
-    vsi_l_offset      nOffset;
+    vsi_l_offset      m_nOffset;
 
   public:
-                      VSIStdoutHandle() : nOffset(0) {}
+                      VSIStdoutHandle() : m_nOffset(0) {}
 
     virtual int       Seek( vsi_l_offset nOffset, int nWhence );
     virtual vsi_l_offset Tell();
@@ -118,7 +118,7 @@ int VSIStdoutHandle::Seek( vsi_l_offset nOffset, int nWhence )
 
 vsi_l_offset VSIStdoutHandle::Tell()
 {
-    return nOffset;
+    return m_nOffset;
 }
 
 /************************************************************************/
@@ -151,11 +151,11 @@ size_t VSIStdoutHandle::Read( CPL_UNUSED void * pBuffer,
 /************************************************************************/
 
 size_t VSIStdoutHandle::Write( const void * pBuffer, size_t nSize, 
-                                  size_t nCount )
+                               size_t nCount )
 
 {
     size_t nRet = pWriteFunction(pBuffer, nSize, nCount, pWriteStream);
-    nOffset += nSize * nRet;
+    m_nOffset += nSize * nRet;
     return nRet;
 }
 
@@ -176,7 +176,7 @@ int VSIStdoutHandle::Eof()
 int VSIStdoutHandle::Close()
 
 {
-    return 0;
+    return Flush();
 }
 
 /************************************************************************/
@@ -231,7 +231,7 @@ int VSIStdoutFilesystemHandler::Stat( CPL_UNUSED const char * pszFilename,
 /* ==================================================================== */
 /************************************************************************/
 
-class VSIStdoutRedirectFilesystemHandler : public VSIFilesystemHandler
+class VSIStdoutRedirectFilesystemHandler CPL_FINAL : public VSIFilesystemHandler
 {
 public:
     virtual VSIVirtualHandle *Open( const char *pszFilename,
@@ -245,9 +245,9 @@ public:
 /* ==================================================================== */
 /************************************************************************/
 
-class VSIStdoutRedirectHandle : public VSIVirtualHandle
+class VSIStdoutRedirectHandle CPL_FINAL : public VSIVirtualHandle
 {
-    VSIVirtualHandle* poHandle;
+    VSIVirtualHandle* m_poHandle;
   public:
                       VSIStdoutRedirectHandle(VSIVirtualHandle* poHandle);
                      ~VSIStdoutRedirectHandle();
@@ -267,7 +267,7 @@ class VSIStdoutRedirectHandle : public VSIVirtualHandle
 
 VSIStdoutRedirectHandle::VSIStdoutRedirectHandle(VSIVirtualHandle* poHandle)
 {
-    this->poHandle = poHandle;
+    m_poHandle = poHandle;
 }
 
 /************************************************************************/
@@ -276,7 +276,7 @@ VSIStdoutRedirectHandle::VSIStdoutRedirectHandle(VSIVirtualHandle* poHandle)
 
 VSIStdoutRedirectHandle::~VSIStdoutRedirectHandle()
 {
-    delete poHandle;
+    delete m_poHandle;
 }
 
 /************************************************************************/
@@ -296,7 +296,7 @@ int VSIStdoutRedirectHandle::Seek( CPL_UNUSED vsi_l_offset nOffset,
 
 vsi_l_offset VSIStdoutRedirectHandle::Tell()
 {
-    return poHandle->Tell();
+    return m_poHandle->Tell();
 }
 
 /************************************************************************/
@@ -306,7 +306,7 @@ vsi_l_offset VSIStdoutRedirectHandle::Tell()
 int VSIStdoutRedirectHandle::Flush()
 
 {
-    return poHandle->Flush();
+    return m_poHandle->Flush();
 }
 
 /************************************************************************/
@@ -329,7 +329,7 @@ size_t VSIStdoutRedirectHandle::Write( const void * pBuffer, size_t nSize,
                                   size_t nCount )
 
 {
-    return poHandle->Write(pBuffer, nSize, nCount);
+    return m_poHandle->Write(pBuffer, nSize, nCount);
 }
 
 /************************************************************************/
@@ -339,7 +339,7 @@ size_t VSIStdoutRedirectHandle::Write( const void * pBuffer, size_t nSize,
 int VSIStdoutRedirectHandle::Eof()
 
 {
-    return poHandle->Eof();
+    return m_poHandle->Eof();
 }
 
 /************************************************************************/
@@ -349,7 +349,7 @@ int VSIStdoutRedirectHandle::Eof()
 int VSIStdoutRedirectHandle::Close()
 
 {
-    return poHandle->Close();
+    return m_poHandle->Close();
 }
 
 /************************************************************************/

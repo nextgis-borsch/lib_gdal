@@ -32,7 +32,7 @@
 
 CPL_CVSID("$Id$");
 
-#define DEG_TO_RAD (PI/180.0)
+#define DEG_TO_RAD (M_PI/180.0)
 
 /************************************************************************/
 /*                         ComputePointOnArc()                          */
@@ -43,7 +43,7 @@ static void ComputePointOnArc2D( double dfPrimary, double dfSecondary,
                                  double *pdfX, double *pdfY )
 
 {
-    //dfAxisRotation and dfAngle are suposed to be in Radians
+    // dfAxisRotation and dfAngle are supposed to be in Radians
     double      dfCosRotation = cos(dfAxisRotation);
     double      dfSinRotation = sin(dfAxisRotation);
     double      dfEllipseX = dfPrimary * cos(dfAngle);
@@ -93,7 +93,7 @@ int DGNStrokeArc( CPL_UNUSED DGNHandle hFile,
     for( i = 0; i < nPoints; i++ )
     {
         dfAngle = (psArc->startang + dfAngleStep * i) * DEG_TO_RAD;
-        
+
         ComputePointOnArc2D( psArc->primary_axis, 
                              psArc->secondary_axis,
                              psArc->rotation * DEG_TO_RAD,
@@ -155,6 +155,7 @@ int DGNStrokeCurve( CPL_UNUSED DGNHandle hFile,
 
     for( k = 0; k < nDGNPoints-1; k++ )
     {
+        /* coverity[overrun-local] */
         padfD[k] = sqrt( (pasDGNPoints[k+1].x-pasDGNPoints[k].x)
                            * (pasDGNPoints[k+1].x-pasDGNPoints[k].x)
                          + (pasDGNPoints[k+1].y-pasDGNPoints[k].y)
@@ -314,8 +315,8 @@ int main( int argc, char ** argv )
 
     dfPrimary = CPLAtof(argv[1]);
     dfSecondary = CPLAtof(argv[2]);
-    dfAxisRotation = CPLAtof(argv[3]) / 180 * PI;
-    dfAngle = CPLAtof(argv[4]) / 180 * PI;
+    dfAxisRotation = CPLAtof(argv[3]) / 180 * M_PI;
+    dfAngle = CPLAtof(argv[4]) / 180 * M_PI;
 
     ComputePointOnArc2D( dfPrimary, dfSecondary, dfAxisRotation, dfAngle, 
                          &dfX, &dfY );

@@ -68,12 +68,16 @@ toff_t GTIFFWriteDirectory(TIFF *hTIFF, int nSubfileType, int nXSize, int nYSize
 
     nBaseDirOffset = TIFFCurrentDirOffset( hTIFF );
 
+    /* This is a bit of a hack to cause (*tif->tif_cleanup)(tif); to be called */
+    /* See https://trac.osgeo.org/gdal/ticket/2055 */
+    TIFFSetField( hTIFF, TIFFTAG_COMPRESSION, COMPRESSION_NONE );
+
 #if defined(TIFFLIB_VERSION) && TIFFLIB_VERSION >= 20051201 /* 3.8.0 */
     TIFFFreeDirectory( hTIFF );
 #endif
 
     TIFFCreateDirectory( hTIFF );
-    
+
 /* -------------------------------------------------------------------- */
 /*      Setup TIFF fields.                                              */
 /* -------------------------------------------------------------------- */
@@ -153,7 +157,7 @@ void GTIFFBuildOverviewMetadata( const char *pszResampling,
 {
     osMetadata = "<GDALMetadata>";
 
-    if( pszResampling && EQUALN(pszResampling,"AVERAGE_BIT2",12) )
+    if( pszResampling && STARTS_WITH_CI(pszResampling, "AVERAGE_BIT2") )
         osMetadata += "<Item name=\"RESAMPLING\" sample=\"0\">AVERAGE_BIT2GRAYSCALE</Item>";
 
     if( poBaseDS->GetMetadataItem( "INTERNAL_MASK_FLAGS_1" ) )
@@ -290,7 +294,7 @@ GTIFFBuildOverviews( const char * pszFilename,
                 atoi(hBand->GetMetadataItem("NBITS","IMAGE_STRUCTURE"));
 
             if( nBandBits == 1 
-                && EQUALN(pszResampling,"AVERAGE_BIT2",12) )
+                && STARTS_WITH_CI(pszResampling, "AVERAGE_BIT2") )
                 nBandBits = 8;
         }
 
@@ -336,7 +340,7 @@ GTIFFBuildOverviews( const char * pszFilename,
         if (nCompression < 0)
             return CE_Failure;
     }
-    
+
     if( nCompression == COMPRESSION_JPEG && nBitsPerPixel > 8 )
     {  
         if( nBitsPerPixel > 16 )
@@ -379,7 +383,7 @@ GTIFFBuildOverviews( const char * pszFilename,
     if( nBands == 3 )
         nPhotometric = PHOTOMETRIC_RGB;
     else if( papoBandList[0]->GetColorTable() != NULL 
-             && !EQUALN(pszResampling,"AVERAGE_BIT2",12) )
+             && !STARTS_WITH_CI(pszResampling, "AVERAGE_BIT2") )
     {
         nPhotometric = PHOTOMETRIC_PALETTE;
         /* should set the colormap up at this point too! */
@@ -539,7 +543,7 @@ GTIFFBuildOverviews( const char * pszFilename,
         }
         else
         {
-            bCreateBigTIFF = CSLTestBoolean( pszBIGTIFF );
+            bCreateBigTIFF = CPLTestBool( pszBIGTIFF );
             if (!bCreateBigTIFF && nCompression == COMPRESSION_NONE 
                 && dfUncompressedOverviewSize > 4200000000.0 )
             {
@@ -576,7 +580,7 @@ GTIFFBuildOverviews( const char * pszFilename,
                           "failed in VSI_TIFFOpen().\n",
                           pszFilename );
             if( fpL != NULL )
-                VSIFCloseL(fpL);
+                CPL_IGNORE_RET_VAL(VSIFCloseL(fpL));
             return CE_Failure;
         }
     }
@@ -598,7 +602,7 @@ GTIFFBuildOverviews( const char * pszFilename,
                           "failed in VSI_TIFFOpen().\n",
                           pszFilename );
             if( fpL != NULL )
-                VSIFCloseL(fpL);
+                CPL_IGNORE_RET_VAL(VSIFCloseL(fpL));
             return CE_Failure;
         }
     }
@@ -679,7 +683,8 @@ GTIFFBuildOverviews( const char * pszFilename,
     }
 
     XTIFFClose( hOTIFF );
-    VSIFCloseL(fpL);
+    if (VSIFCloseL(fpL) != 0 )
+        return CE_Failure;
     fpL = NULL;
 
 /* -------------------------------------------------------------------- */
@@ -692,7 +697,7 @@ GTIFFBuildOverviews( const char * pszFilename,
     hODS = (GDALDataset *) GDALOpen( pszFilename, GA_Update );
     if( hODS == NULL )
         return CE_Failure;
-    
+
 /* -------------------------------------------------------------------- */
 /*      Do we need to set the jpeg quality?                             */
 /* -------------------------------------------------------------------- */
@@ -715,7 +720,7 @@ GTIFFBuildOverviews( const char * pszFilename,
         nPlanarConfig == PLANARCONFIG_CONTIG &&
         GDALDataTypeIsComplex(papoBandList[0]->GetRasterDataType()) == FALSE &&
         papoBandList[0]->GetColorTable() == NULL &&
-        (EQUALN(pszResampling, "NEAR", 4) || EQUAL(pszResampling, "AVERAGE") ||
+        (STARTS_WITH_CI(pszResampling, "NEAR") || EQUAL(pszResampling, "AVERAGE") ||
          EQUAL(pszResampling, "GAUSS") || EQUAL(pszResampling, "CUBIC") ||
          EQUAL(pszResampling, "CUBICSPLINE") || EQUAL(pszResampling, "LANCZOS") ||
          EQUAL(pszResampling, "BILINEAR")))
@@ -831,4 +836,3 @@ GTIFFBuildOverviews( const char * pszFilename,
 
     return eErr;
 }
-    

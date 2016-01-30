@@ -33,7 +33,8 @@ include (CheckLibraryExists)
 include (CheckSymbolExists)
 include (CheckTypeSize)
 include (TestBigEndian)
-# include (CheckCXXSourceCompiles)
+include (CheckCSourceCompiles)
+include (CheckCXXSourceCompiles)
 # include (CompilerFlags)
 
 check_function_exists(vsnprintf HAVE_VSNPRINTF)
@@ -64,14 +65,69 @@ else ()
     set (HOST_FILLORDER FILLORDER_LSB2MSB)
 endif ()
 
-check_type_size ("int" SIZEOF_INT)
-check_type_size ("unsigned long" SIZEOF_UNSIGNED_LONG)
-check_type_size ("void*" SIZEOF_VOIDP)
+check_type_size ("int" INT)
+check_type_size ("unsigned long" UNSIGNED_LONG)
+check_type_size ("void*" VOIDP)
 
 #check_include_file("ieeefp.h" HAVE_IEEEFP_H)
 #if(HAVE_IEEEFP_H)
     set(HAVE_IEEEFP TRUE)
 #endif()
+
+set(AVX_TEST_CODE "
+    #ifdef __AVX__
+    #include <immintrin.h>
+    int foo() { unsigned int nXCRLow, nXCRHigh;
+    __asm__ (\"xgetbv\" : \"=a\" (nXCRLow), \"=d\" (nXCRHigh) : \"c\" (0));
+    float fEpsilon = 0.0000000000001f;
+    __m256 ymm_small = _mm256_set_ps(fEpsilon,fEpsilon,fEpsilon,fEpsilon,fEpsilon,fEpsilon,fEpsilon,fEpsilon);
+    return (int)nXCRLow + _mm256_movemask_ps(ymm_small); }
+    int main(int argc, char**) { if( argc == 0 ) return foo(); return 0; }
+    #else
+    some_error
+    #endif
+    ")
+
+check_cxx_source_compiles("${AVX_TEST_CODE}" HAVE_AVX_AT_COMPILE_TIME)
+
+if(NOT HAVE_AVX_AT_COMPILE_TIME)   
+    set(CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS} -mavx)
+    check_cxx_source_compiles("${AVX_TEST_CODE}" HAVE_AVX_AT_COMPILE_TIME) 
+    
+    if(HAVE_AVX_AT_COMPILE_TIME)
+        set(AVXFLAGS -mavx)
+    endif()
+    unset(CMAKE_REQUIRED_FLAGS)
+endif()       
+
+if(HAVE_AVX_AT_COMPILE_TIME)
+    add_definitions(-DHAVE_AVX_AT_COMPILE_TIME)
+endif() 
+
+set(SSE_TEST_CODE "
+    #ifdef __SSE__
+    #include <xmmintrin.h>
+    void foo() { float fEpsilon = 0.0000000000001f; __m128 xmm_small = _mm_load1_ps(&fEpsilon); }  int main() { return 0; }
+    #else
+    some_error
+    #endif
+")
+
+check_cxx_source_compiles("${SSE_TEST_CODE}" HAVE_SSE_AT_COMPILE_TIME)
+
+if(NOT HAVE_SSE_AT_COMPILE_TIME)   
+    set(CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS} -msse)
+    check_cxx_source_compiles("${SSE_TEST_CODE}" HAVE_SSE_AT_COMPILE_TIME) 
+    
+    if(HAVE_SSE_AT_COMPILE_TIME)
+        set(SSEFLAGS -msse)
+    endif()
+    unset(CMAKE_REQUIRED_FLAGS)
+endif()       
+
+if(HAVE_SSE_AT_COMPILE_TIME)
+    add_definitions(-DHAVE_SSE_AT_COMPILE_TIME)
+endif() 
 
 if(WIN32)
 # windows
@@ -113,13 +169,15 @@ else()
     check_function_exists(strtof HAVE_DECL_STRTOF)
     check_include_file("inttypes.h" HAVE_INTTYPES_H)
 
-    check_c_source_compiles("
-        int main() { long long off=0; }
-        " HAVE_LONG_LONG)
+    check_type_size("long long" LONG_LONG)
+        
     check_include_file("strings.h" HAVE_STRINGS_H)
     check_include_file("string.h" HAVE_STRING_H)
+    
     check_function_exists(strtof HAVE_STRTOF)
+    
     check_include_file("sys/stat.h" HAVE_SYS_STAT_H)
+    
     check_function_exists(readlink HAVE_READLINK)
     check_function_exists(posix_spawnp HAVE_POSIX_SPAWNP)
     check_function_exists(vfork HAVE_VFORK)
@@ -132,27 +190,102 @@ else()
         set(MACOSX_FRAMEWORK FALSE)
     endif()
 
-    check_function_exists(fopen64 HAVE_FOPEN64)
-    check_function_exists(stat64 HAVE_STAT64)
-    if(HAVE_FOPEN64 AND HAVE_STAT64)
-        set(UNIX_STDIO_64 TRUE)
-        set(VSI_LARGE_API_SUPPORTED TRUE)
-        set(VSI_FSEEK64 "fseeko64")
-        set(VSI_FTELL64 "ftello64")
-        set(VSI_FOPEN64 "fopen64")
-        set(VSI_STAT64 "stat64")
-        set(VSI_TRANCATE64 "ftruncate64")
-    else()
-        set(UNIX_STDIO_64 FALSE)
-        set(VSI_LARGE_API_SUPPORTED FALSE)
-        set(VSI_FSEEK64 "fseek")
-        set(VSI_FTELL64 "ftell")
-        set(VSI_FOPEN64 "fopen")
-        set(VSI_STAT64 "stat")
-        set(VSI_TRANCATE64 "ftruncate")
+    
+    check_c_source_compiles("
+        #if defined(__MINGW32__)
+        #ifndef __MSVCRT_VERSION__
+        #define __MSVCRT_VERSION__ 0x0601
+        #endif
+        #endif
+        #include <sys/types.h>
+        #include <sys/stat.h>
+        int main() { struct __stat64 buf; _stat64( \"\", &buf ); return 0; }
+    " NO_UNIX_STDIO_64)
+    
+    if(NO_UNIX_STDIO_64)
+        set(VSI_STAT64 _stat64)
+        set(VSI_STAT64_T __stat64)    
     endif()
+    
+    check_function_exists(ftell64 HAVE_FTELL64)
+    if(HAVE_FTELL64)
+        set(VSI_FTELL64 "ftell64")
+    else()
+        check_function_exists(ftello64 HAVE_FTELLO64)
+        if(HAVE_FTELLO64)
+            set(VSI_FTELL64 "ftello64")
+        endif()
+    endif()
+    
+    check_function_exists(fseek64 HAVE_FSEEK64)
+    if(HAVE_FSEEK64)
+        set(VSI_FSEEK64 "fseek64")
+    else()
+        check_function_exists(fseeko64 HAVE_FSEEKO64)
+        if(HAVE_FSEEKO64)
+            set(VSI_FSEEK64 "fseeko64")
+        endif()          
+    endif()    
+    
+    if(NOT VSI_FTELL64 AND NOT VSI_FSEEK64)
+        check_c_source_compiles("
+            #define _LARGEFILE64_SOURCE
+            #include <stdio.h>
+            int main() { long long off=0; fseeko64(NULL, off, SEEK_SET); off = ftello64(NULL); return 0; }
+        " VSI_NEED_LARGEFILE64_SOURCE)
 
-    set(VSI_STAT64_T ${VSI_STAT64})
+        if(VSI_NEED_LARGEFILE64_SOURCE)
+            set(VSI_FTELL64 "ftello64")
+            set(VSI_FSEEK64 "fseeko64")
+        endif()
+    endif()    
+   
+    if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+        if(NOT VSI_FTELL64 AND NOT VSI_FSEEK64)
+            set(VSI_FTELL64 "ftello")
+            set(VSI_FSEEK64 "fseeko")
+        endif()
+        set(VSI_STAT64 stat)
+        set(VSI_STAT64_T stat)
+    else()
+        if(NOT VSI_FTELL64 AND NOT VSI_FSEEK64)
+            check_function_exists(ftello HAVE_FTELLO)
+            if(HAVE_FTELLO)
+                set(VSI_FTELL64 "ftello")
+            endif()
+            
+            check_function_exists(fseeko HAVE_FSEEKO)
+            if(HAVE_FSEEKO)
+                set(VSI_FSEEK64 "fseeko")
+            endif()  
+        endif()
+        check_function_exists(stat64 HAVE_STAT64)
+        
+        if(HAVE_STAT64)
+            set(VSI_STAT64 stat64)
+            set(VSI_STAT64_T stat64)
+        else()
+            set(VSI_STAT64 stat)
+            set(VSI_STAT64_T stat)
+        endif()   
+    endif()    
+        
+    check_function_exists(fopen64 HAVE_FOPEN64)
+    if(HAVE_FOPEN64)
+        set(VSI_FOPEN64 "fopen64")
+    else()
+        set(VSI_FOPEN64 "fopen")
+    endif()
+        
+    check_function_exists(ftruncate64 HAVE_FTRUNCATE64)
+    if(HAVE_FTRUNCATE64)
+        set(VSI_FTRUNCATE64 "ftruncate64")
+    else()
+        set(VSI_FTRUNCATE64 "ftruncate")
+    endif()
+    
+    set(UNIX_STDIO_64 TRUE)
+    set(VSI_LARGE_API_SUPPORTED TRUE)
 
     check_c_source_compiles("
         #define _XOPEN_SOURCE 700
@@ -165,12 +298,6 @@ else()
             return 0;
         }
         " HAVE_USELOCALE)
-
-    check_c_source_compiles("
-        #define _LARGEFILE64_SOURCE
-        #include <stdio.h>
-        int main() { long long off=0; fseeko64(NULL, off, SEEK_SET); off = ftello64(NULL); return 0; }
-    " VSI_NEED_LARGEFILE64_SOURCE)
 
     set(CMAKE_REQUIRED_FLAGS "-fvisibility=hidden")
     check_c_source_compiles("
@@ -209,12 +336,9 @@ else()
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2 -fPIC -fno-strict-aliasing -Wall -Wdeclaration-after-statement")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O2 -fPIC -fno-strict-aliasing -Wall")
 
-    configure_file(${CMAKE_MODULE_PATH}/cpl_config.h.cmake ${GDAL_ROOT_BINARY_DIR}/port/cpl_config.h @ONLY)
+    configure_file(${CMAKE_MODULE_PATH}/cpl_config.h.cmake ${CMAKE_BINARY_DIR}/cpl_config.h @ONLY)
 endif()
-
-set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} PARENT_SCOPE)
-set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} PARENT_SCOPE)
 
 add_definitions (-DHAVE_CONFIG_H)
 
-configure_file(${CMAKE_MODULE_PATH}/uninstall.cmake.in ${GDAL_ROOT_BINARY_DIR}/cmake_uninstall.cmake IMMEDIATE @ONLY)
+configure_file(${CMAKE_MODULE_PATH}/uninstall.cmake.in ${CMAKE_BINARY_DIR}/cmake_uninstall.cmake IMMEDIATE @ONLY)

@@ -41,7 +41,7 @@ CPL_CVSID("$Id$");
 
 // XXX: this macro computes zone number from the central meridian parameter.
 // Note, that "Panorama" parameters are set in radians.
-// In degrees it means formulae:
+// In degrees it means formula:
 //
 //              zone = (central_meridian + 3) / 6
 //
@@ -78,7 +78,7 @@ CPL_CVSID("$Id$");
 #define PAN_DATUM_WGS84     2L  // WGS84
 
 /************************************************************************/
-/*  "Panorama" ellipsod codes.                                          */
+/*  "Panorama" ellipsoid codes.                                         */
 /************************************************************************/
 
 #define PAN_ELLIPSOID_NONE          -1L
@@ -96,7 +96,7 @@ CPL_CVSID("$Id$");
 /*  Correspondence between "Panorama" and EPSG datum codes.             */
 /************************************************************************/
 
-static const long aoDatums[] =
+static const int aoDatums[] =
 {
     0,
     4284,   // Pulkovo, 1942
@@ -116,7 +116,7 @@ static const long aoDatums[] =
 /*  Correspondence between "Panorama" and EPSG ellipsoid codes.         */
 /************************************************************************/
 
-static const long aoEllips[] =
+static const int aoEllips[] =
 {
     0,
     7024,   // Krassovsky, 1940
@@ -141,7 +141,7 @@ static const long aoEllips[] =
     7003   // Australian National, 1965
 };
 
-#define NUMBER_OF_ELLIPSOIDS    (sizeof(aoEllips)/sizeof(aoEllips[0]))
+#define NUMBER_OF_ELLIPSOIDS    static_cast<int>(sizeof(aoEllips)/sizeof(aoEllips[0]))
 
 /************************************************************************/
 /*                        OSRImportFromPanorama()                       */
@@ -152,7 +152,7 @@ OGRErr OSRImportFromPanorama( OGRSpatialReferenceH hSRS,
                               double *padfPrjParams )
 
 {
-    VALIDATE_POINTER1( hSRS, "OSRImportFromPanorama", CE_Failure );
+    VALIDATE_POINTER1( hSRS, "OSRImportFromPanorama", OGRERR_FAILURE );
 
     return ((OGRSpatialReference *) hSRS)->importFromPanorama( iProjSys,
                                                                iDatum,iEllips,
@@ -248,7 +248,7 @@ OGRErr OGRSpatialReference::importFromPanorama( long iProjSys, long iDatum,
 /* -------------------------------------------------------------------- */
 /*      Use safe defaults if projection parameters are not supplied.    */
 /* -------------------------------------------------------------------- */
-    int     bProjAllocated = FALSE;
+    int bProjAllocated = false;
 
     if( padfPrjParams == NULL )
     {
@@ -259,7 +259,7 @@ OGRErr OGRSpatialReference::importFromPanorama( long iProjSys, long iDatum,
             return OGRERR_NOT_ENOUGH_MEMORY;
         for ( i = 0; i < 7; i++ )
             padfPrjParams[i] = 0.0;
-        bProjAllocated = TRUE;
+        bProjAllocated = true;
     }
 
 /* -------------------------------------------------------------------- */
@@ -272,15 +272,15 @@ OGRErr OGRSpatialReference::importFromPanorama( long iProjSys, long iDatum,
 
         case PAN_PROJ_UTM:
             {
-                long nZone;
+                int nZone;
 
                 if ( padfPrjParams[7] == 0.0 )
-                    nZone = (long)TO_ZONE(padfPrjParams[3]);
+                    nZone = (int) TO_ZONE(padfPrjParams[3]);
                 else
-                    nZone = (long) padfPrjParams[7];
+                    nZone = (int) padfPrjParams[7];
 
                 // XXX: no way to determine south hemisphere. Always assume
-                // nothern hemisphere.
+                // northern hemisphere.
                 SetUTM( nZone, TRUE );
             }
             break;
@@ -332,18 +332,18 @@ OGRErr OGRSpatialReference::importFromPanorama( long iProjSys, long iDatum,
                 // parameter, because usually it is not contained in the
                 // "Panorama" projection definition.
                 // FIXME: what to do with negative values?
-                long    nZone;
+                int    nZone;
                 double  dfCenterLong;
 
                 if ( padfPrjParams[7] == 0.0 )
                 {
-                    nZone = (long)TO_ZONE(padfPrjParams[3]);
+                    nZone = (int)TO_ZONE(padfPrjParams[3]);
                     dfCenterLong = TO_DEGREES * padfPrjParams[3];
                 }
                 else
                 {
-                    nZone = (long) padfPrjParams[7];
-                    dfCenterLong = 6 * nZone - 3;
+                    nZone = (int) padfPrjParams[7];
+                    dfCenterLong = 6 * (double)nZone - 3;
                 }
 
                 padfPrjParams[5] = nZone * 1000000.0 + 500000.0;
@@ -432,7 +432,7 @@ OGRErr OGRSpatialReference::importFromPanorama( long iProjSys, long iDatum,
         }
 
         else if ( iEllips > 0
-                  && iEllips < (long)NUMBER_OF_ELLIPSOIDS
+                  && iEllips < NUMBER_OF_ELLIPSOIDS
                   && aoEllips[iEllips] )
         {
             char    *pszName = NULL;
@@ -496,11 +496,11 @@ OGRErr OSRExportToPanorama( OGRSpatialReferenceH hSRS,
                             long *piZone, double *padfPrjParams )
 
 {
-    VALIDATE_POINTER1( hSRS, "OSRExportToPanorama", CE_Failure );
-    VALIDATE_POINTER1( piProjSys, "OSRExportToPanorama", CE_Failure );
-    VALIDATE_POINTER1( piDatum, "OSRExportToPanorama", CE_Failure );
-    VALIDATE_POINTER1( piEllips, "OSRExportToPanorama", CE_Failure );
-    VALIDATE_POINTER1( padfPrjParams, "OSRExportToPanorama", CE_Failure );
+    VALIDATE_POINTER1( hSRS, "OSRExportToPanorama", OGRERR_FAILURE );
+    VALIDATE_POINTER1( piProjSys, "OSRExportToPanorama", OGRERR_FAILURE );
+    VALIDATE_POINTER1( piDatum, "OSRExportToPanorama", OGRERR_FAILURE );
+    VALIDATE_POINTER1( piEllips, "OSRExportToPanorama", OGRERR_FAILURE );
+    VALIDATE_POINTER1( padfPrjParams, "OSRExportToPanorama", OGRERR_FAILURE );
 
     return ((OGRSpatialReference *) hSRS)->exportToPanorama( piProjSys,
                                                              piDatum, piEllips,
@@ -768,7 +768,7 @@ OGRErr OGRSpatialReference::exportToPanorama( long *piProjSys, long *piDatum,
                   "Geographic system will be used.", pszProjection );
         *piProjSys = PAN_PROJ_NONE;
     }
- 
+
 /* -------------------------------------------------------------------- */
 /*      Translate the datum.                                            */
 /* -------------------------------------------------------------------- */
@@ -795,14 +795,13 @@ OGRErr OGRSpatialReference::exportToPanorama( long *piProjSys, long *piDatum,
     {
         double      dfSemiMajor = GetSemiMajor();
         double      dfInvFlattening = GetInvFlattening();
-        size_t      i;
 
 #ifdef DEBUG
         CPLDebug( "OSR_Panorama",
                   "Datum \"%s\" unsupported by \"Panorama\" GIS. "
                   "Trying to translate an ellipsoid definition.", pszDatum );
 #endif
-       
+
         for ( i = 0; i < NUMBER_OF_ELLIPSOIDS; i++ )
         {
             if ( aoEllips[i] )
@@ -835,4 +834,3 @@ OGRErr OGRSpatialReference::exportToPanorama( long *piProjSys, long *piDatum,
 
     return OGRERR_NONE;
 }
-

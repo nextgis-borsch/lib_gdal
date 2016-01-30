@@ -32,10 +32,8 @@
 #define KEAMASKBAND_H
 
 #include "gdal_priv.h"
-#if defined(USE_GCC_VISIBILITY_FLAG) && !defined(DllExport)
-#define DllExport CPL_DLL
-#endif
-#include "libkea/KEAImageIO.h"
+
+#include "libkea_headers.h"
 
 class KEAMaskBand : public GDALRasterBand
 {

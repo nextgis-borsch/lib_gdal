@@ -54,6 +54,8 @@ OGRPGeoLayer::OGRPGeoLayer()
 
     poSRS = NULL;
     nSRSId = -2; // we haven't even queried the database for it yet. 
+    poFeatureDefn = NULL;
+    panFieldOrdinals = NULL;
 }
 
 /************************************************************************/
@@ -101,12 +103,12 @@ OGRPGeoLayer::~OGRPGeoLayer()
 /************************************************************************/
 
 CPLErr OGRPGeoLayer::BuildFeatureDefn( const char *pszLayerName, 
-                                       CPLODBCStatement *poStmt )
+                                       CPLODBCStatement *poStmtIn )
 
 {
     poFeatureDefn = new OGRFeatureDefn( pszLayerName );
     SetDescription( poFeatureDefn->GetName() );
-    int    nRawColumns = poStmt->GetColCount();
+    int    nRawColumns = poStmtIn->GetColCount();
 
     poFeatureDefn->Reference();
     poFeatureDefn->GetGeomFieldDefn(0)->SetSpatialRef(poSRS);
@@ -115,28 +117,28 @@ CPLErr OGRPGeoLayer::BuildFeatureDefn( const char *pszLayerName,
 
     for( int iCol = 0; iCol < nRawColumns; iCol++ )
     {
-        OGRFieldDefn    oField( poStmt->GetColName(iCol), OFTString );
+        OGRFieldDefn    oField( poStmtIn->GetColName(iCol), OFTString );
 
-        oField.SetWidth( MAX(0,poStmt->GetColSize( iCol )) );
+        oField.SetWidth( MAX(0,poStmtIn->GetColSize( iCol )) );
 
         if( pszGeomColumn != NULL 
-            && EQUAL(poStmt->GetColName(iCol),pszGeomColumn) )
+            && EQUAL(poStmtIn->GetColName(iCol),pszGeomColumn) )
             continue;
 
         if( pszFIDColumn == NULL 
-            && EQUAL(poStmt->GetColName(iCol),"OBJECTID") )
+            && EQUAL(poStmtIn->GetColName(iCol),"OBJECTID") )
         {
-            pszFIDColumn = CPLStrdup(poStmt->GetColName(iCol));
+            pszFIDColumn = CPLStrdup(poStmtIn->GetColName(iCol));
         }
 
         if( pszGeomColumn == NULL 
-            && EQUAL(poStmt->GetColName(iCol),"Shape") )
+            && EQUAL(poStmtIn->GetColName(iCol),"Shape") )
         {
-            pszGeomColumn = CPLStrdup(poStmt->GetColName(iCol));
+            pszGeomColumn = CPLStrdup(poStmtIn->GetColName(iCol));
             continue;
         }
-        
-        switch( poStmt->GetColType(iCol) )
+
+        switch( poStmtIn->GetColType(iCol) )
         {
           case SQL_INTEGER:
           case SQL_SMALLINT:
@@ -151,7 +153,7 @@ CPLErr OGRPGeoLayer::BuildFeatureDefn( const char *pszLayerName,
 
           case SQL_DECIMAL:
             oField.SetType( OFTReal );
-            oField.SetPrecision( poStmt->GetColPrecision(iCol) );
+            oField.SetPrecision( poStmtIn->GetColPrecision(iCol) );
             break;
 
           case SQL_FLOAT:
@@ -205,7 +207,7 @@ void OGRPGeoLayer::ResetReading()
 OGRFeature *OGRPGeoLayer::GetNextFeature()
 
 {
-    for( ; TRUE; )
+    while( true )
     {
         OGRFeature      *poFeature;
 
@@ -248,7 +250,6 @@ OGRFeature *OGRPGeoLayer::GetNextRawFeature()
 /* -------------------------------------------------------------------- */
 /*      Create a feature from the current result.                       */
 /* -------------------------------------------------------------------- */
-    int         iField;
     OGRFeature *poFeature = new OGRFeature( poFeatureDefn );
 
     if( pszFIDColumn != NULL && poStmt->GetColId(pszFIDColumn) > -1 )
@@ -263,7 +264,7 @@ OGRFeature *OGRPGeoLayer::GetNextRawFeature()
 /* -------------------------------------------------------------------- */
 /*      Set the fields.                                                 */
 /* -------------------------------------------------------------------- */
-    for( iField = 0; iField < poFeatureDefn->GetFieldCount(); iField++ )
+    for( int iField = 0; iField < poFeatureDefn->GetFieldCount(); iField++ )
     {
         int iSrcField = panFieldOrdinals[iField]-1;
         const char *pszValue = poStmt->GetColData( iSrcField );
@@ -341,7 +342,7 @@ void OGRPGeoLayer::LookupSRID( int nSRID )
 /*      Fetch the corresponding WKT from the SpatialRef table.          */
 /* -------------------------------------------------------------------- */
     CPLODBCStatement oStmt( poDS->GetSession() );
-        
+
     oStmt.Appendf( "SELECT srtext FROM GDB_SpatialRefs WHERE srid = %d",
                   nSRID );
 
@@ -378,7 +379,7 @@ void OGRPGeoLayer::LookupSRID( int nSRID )
 /*      Turn it into an OGRSpatialReference.                            */
 /* -------------------------------------------------------------------- */
     poSRS = new OGRSpatialReference();
-    
+
     if( poSRS->importFromWkt( &pszSRText ) != OGRERR_NONE )
     {
         CPLError( CE_Failure, CPLE_AppDefined, 

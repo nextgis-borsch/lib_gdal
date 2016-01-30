@@ -31,30 +31,29 @@
 #include "gdal_alg_priv.h"
 #include "cpl_conv.h"
 #include <vector>
+#include <set>
 
 CPL_CVSID("$Id$");
 
-#define GP_NODATA_MARKER -51502112
 #define MY_MAX_INT 2147483647
 
 /*
  * General Plan
  *
- * 1) make a pass with the polygon enumerator to build up the 
+ * 1) make a pass with the polygon enumerator to build up the
  *    polygon map array.  Also accumulate polygon size information.
  *
  * 2) Identify the polygons that need to be merged.
- * 
- * 3) Make a pass with the polygon enumerator.  For each "to be merged" 
- *    polygon keep track of it's largest neighbour. 
- * 
+ *
+ * 3) Make a pass with the polygon enumerator.  For each "to be merged"
+ *    polygon keep track of its largest neighbour.
+ *
  * 4) Fix up remappings that would go to polygons smaller than the seive
- *    size.  Ensure these in term map to the largest neighbour of the 
- *    "to be seieved" polygons. 
- * 
+ *    size.  Ensure these in term map to the largest neighbour of the
+ *    "to be sieved" polygons.
+ *
  * 5) Make another pass with the polygon enumerator. This time we remap
  *    the actual pixel values of all polygons to be merged.
- * 
  */
 
 /************************************************************************/
@@ -64,7 +63,7 @@ CPL_CVSID("$Id$");
 /*      band is zero.                                                   */
 /************************************************************************/
 
-static CPLErr 
+static CPLErr
 GPMaskImageData( GDALRasterBandH hMaskBand, GByte *pabyMaskLine, int iY, int nXSize, 
                  GInt32 *panImageLine )
 
@@ -86,6 +85,8 @@ GPMaskImageData( GDALRasterBandH hMaskBand, GByte *pabyMaskLine, int iY, int nXS
     return eErr;
 }
 
+// TODO: What is "eaches" supposed to be?
+
 /************************************************************************/
 /*                          CompareNeighbour()                          */
 /*                                                                      */
@@ -100,14 +101,19 @@ GPMaskImageData( GDALRasterBandH hMaskBand, GByte *pabyMaskLine, int iY, int nXS
 /*      smaller than our sieve threshold.                               */
 /************************************************************************/
 
-static inline void CompareNeighbour( int nPolyId1, int nPolyId2, 
-                                     int *panPolyIdMap, 
-                                     int *panPolyValue,
+static inline void CompareNeighbour( int nPolyId1, int nPolyId2,
+                                     int *panPolyIdMap,
+                                     int * /* panPolyValue */,
                                      std::vector<int> &anPolySizes,
                                      std::vector<int> &anBigNeighbour )
 
 {
-    // make sure we are working with the final merged polygon ids. 
+    // nodata polygon do not need neighbours, and cannot be neighbours
+    // to valid polygons.
+    if( nPolyId1 < 0 || nPolyId2 < 0 )
+        return;
+
+    // make sure we are working with the final merged polygon ids.
     nPolyId1 = panPolyIdMap[nPolyId1];
     nPolyId2 = panPolyIdMap[nPolyId2];
 
@@ -115,10 +121,11 @@ static inline void CompareNeighbour( int nPolyId1, int nPolyId2,
         return;
 
     // nodata polygon do not need neighbours, and cannot be neighbours
-    // to valid polygons. 
-    if( panPolyValue[nPolyId1] == GP_NODATA_MARKER
-        || panPolyValue[nPolyId2] == GP_NODATA_MARKER )
-        return;
+    // to valid polygons.
+    // should no longer happen with r28826 optimization
+    //if( panPolyValue[nPolyId1] == GP_NODATA_MARKER
+    //    || panPolyValue[nPolyId2] == GP_NODATA_MARKER )
+    //    return;
 
     if( anBigNeighbour[nPolyId1] == -1
         || anPolySizes[anBigNeighbour[nPolyId1]] < anPolySizes[nPolyId2] )
@@ -199,19 +206,17 @@ GDALSieveFilter( GDALRasterBandH hSrcBand, GDALRasterBandH hMaskBand,
     CPLErr eErr = CE_None;
     int nXSize = GDALGetRasterBandXSize( hSrcBand );
     int nYSize = GDALGetRasterBandYSize( hSrcBand );
-    GInt32 *panLastLineVal = (GInt32 *) VSIMalloc2(sizeof(GInt32), nXSize);
-    GInt32 *panThisLineVal = (GInt32 *) VSIMalloc2(sizeof(GInt32), nXSize);
-    GInt32 *panLastLineId =  (GInt32 *) VSIMalloc2(sizeof(GInt32), nXSize);
-    GInt32 *panThisLineId =  (GInt32 *) VSIMalloc2(sizeof(GInt32), nXSize);
-    GInt32 *panThisLineWriteVal = (GInt32 *) VSIMalloc2(sizeof(GInt32), nXSize);
-    GByte *pabyMaskLine = (hMaskBand != NULL) ? (GByte *) VSIMalloc(nXSize) : NULL;
+    GInt32 *panLastLineVal = (GInt32 *) VSI_MALLOC2_VERBOSE(sizeof(GInt32), nXSize);
+    GInt32 *panThisLineVal = (GInt32 *) VSI_MALLOC2_VERBOSE(sizeof(GInt32), nXSize);
+    GInt32 *panLastLineId =  (GInt32 *) VSI_MALLOC2_VERBOSE(sizeof(GInt32), nXSize);
+    GInt32 *panThisLineId =  (GInt32 *) VSI_MALLOC2_VERBOSE(sizeof(GInt32), nXSize);
+    GInt32 *panThisLineWriteVal = (GInt32 *) VSI_MALLOC2_VERBOSE(sizeof(GInt32), nXSize);
+    GByte *pabyMaskLine = (hMaskBand != NULL) ? (GByte *) VSI_MALLOC_VERBOSE(nXSize) : NULL;
     if (panLastLineVal == NULL || panThisLineVal == NULL ||
         panLastLineId == NULL || panThisLineId == NULL ||
         panThisLineWriteVal == NULL ||
         (hMaskBand != NULL && pabyMaskLine == NULL))
     {
-        CPLError(CE_Failure, CPLE_OutOfMemory,
-                 "Could not allocate enough memory for temporary buffers");
         CPLFree( panThisLineId );
         CPLFree( panLastLineId );
         CPLFree( panThisLineVal );
@@ -259,8 +264,7 @@ GDALSieveFilter( GDALRasterBandH hSrcBand, GDALRasterBandH hMaskBand,
         {
             iPoly = panThisLineId[iX]; 
 
-            CPLAssert( iPoly >= 0 );
-            if( anPolySizes[iPoly] < MY_MAX_INT )
+            if( iPoly >= 0 && anPolySizes[iPoly] < MY_MAX_INT )
                 anPolySizes[iPoly] += 1;
         }
 
@@ -295,7 +299,7 @@ GDALSieveFilter( GDALRasterBandH hSrcBand, GDALRasterBandH hMaskBand,
     oFirstEnum.CompleteMerges();
 
 /* -------------------------------------------------------------------- */
-/*      Push the sizes of merged polygon fragments into the the         */
+/*      Push the sizes of merged polygon fragments into the             */
 /*      merged polygon id's count.                                      */
 /* -------------------------------------------------------------------- */
     for( iPoly = 0; iPoly < oFirstEnum.nNextPolygonId; iPoly++ )
@@ -305,7 +309,7 @@ GDALSieveFilter( GDALRasterBandH hSrcBand, GDALRasterBandH hMaskBand,
             GIntBig nSize = anPolySizes[oFirstEnum.panPolyIdMap[iPoly]];
 
             nSize += anPolySizes[iPoly];
-            
+
             if( nSize > MY_MAX_INT )
                 nSize = MY_MAX_INT;
 
@@ -315,7 +319,7 @@ GDALSieveFilter( GDALRasterBandH hSrcBand, GDALRasterBandH hMaskBand,
     }
 
 /* -------------------------------------------------------------------- */
-/*      We will use a new enumerator for the second pass primariliy     */
+/*      We will use a new enumerator for the second pass primarily      */
 /*      so we can preserve the first pass map.                          */
 /* -------------------------------------------------------------------- */
     GDALRasterPolygonEnumerator oSecondEnum( nConnectedness );
@@ -456,26 +460,48 @@ GDALSieveFilter( GDALRasterBandH hSrcBand, GDALRasterBandH hMaskBand,
             continue;
         }
 
-        // If our biggest neighbour is larger than the threshold
-        // then we are golden. 
-        if( anPolySizes[anBigNeighbour[iPoly]] >= nSizeThreshold )
-            continue;
+        std::set<int> oSetVisitedPoly;
+        oSetVisitedPoly.insert(iPoly);
 
-#ifdef notdef
-        // Will our neighbours biggest neighbour do?  
-        // Eventually we need something sort of recursive here with
-        // loop detection.
-        if( anPolySizes[anBigNeighbour[anBigNeighbour[iPoly]]] 
-            >= nSizeThreshold )
+        // Walk through our neighbours until we find a polygon large enough
+        int iFinalId = iPoly;
+        bool bFoundBigEnoughPoly = false;
+        while(true)
         {
-            anBigNeighbour[iPoly] = anBigNeighbour[anBigNeighbour[iPoly]];
+            iFinalId = anBigNeighbour[iFinalId];
+            if( iFinalId < 0 )
+            {
+                break;
+            }
+            // If the biggest neighbour is larger than the threshold
+            // then we are golden. 
+            if( anPolySizes[iFinalId] >= nSizeThreshold )
+            {
+                bFoundBigEnoughPoly = true;
+                break;
+            }
+            // Check that we don't cycle on an already visited polygon
+            if( oSetVisitedPoly.find(iFinalId) != oSetVisitedPoly.end() )
+                break;
+            oSetVisitedPoly.insert(iFinalId);
+        }
+
+        if( !bFoundBigEnoughPoly )
+        {
+            nFailedMerges++;
+            anBigNeighbour[iPoly] = -1;
             continue;
         }
-#endif
 
-        nFailedMerges++;
-        anBigNeighbour[iPoly] = -1;
-    }									
+        // Map the whole intermediate chain to it
+        int iPolyCur = iPoly;
+        while( anBigNeighbour[iPolyCur] != iFinalId )
+        {
+            int iNextPoly = anBigNeighbour[iPolyCur];
+            anBigNeighbour[iPolyCur] = iFinalId;
+            iPolyCur = iNextPoly;
+        }
+    }
 
     CPLDebug( "GDALSieveFilter", 
               "Small Polygons: %d, Isolated: %d, Unmergable: %d",
@@ -524,13 +550,17 @@ GDALSieveFilter( GDALRasterBandH hSrcBand, GDALRasterBandH hMaskBand,
 /* -------------------------------------------------------------------- */
         for( iX = 0; iX < nXSize; iX++ )
         {
-            int iThisPoly = oFirstEnum.panPolyIdMap[panThisLineId[iX]];
-
-            if( anBigNeighbour[iThisPoly] != -1 )
+            int iThisPoly = panThisLineId[iX];
+            if( iThisPoly >= 0 )
             {
-                panThisLineWriteVal[iX] = 
-                    oFirstEnum.panPolyValue[
-                        anBigNeighbour[iThisPoly]];
+                iThisPoly = oFirstEnum.panPolyIdMap[iThisPoly];
+
+                if( anBigNeighbour[iThisPoly] != -1 )
+                {
+                    panThisLineWriteVal[iX] = 
+                        oFirstEnum.panPolyValue[
+                            anBigNeighbour[iThisPoly]];
+                }
             }
         }
 

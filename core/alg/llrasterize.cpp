@@ -120,7 +120,8 @@ No known bug
     for( part = 0; part < nPartCount; part++ )
         n += panPartSize[part];
 
-    polyInts = (int *) malloc(sizeof(int) * n);
+    // +1 to make clang static analyzer not warn about potential malloc(0)
+    polyInts = (int *) malloc(sizeof(int) * (n+1));
 
     dminy = padfY[0];
     dmaxy = padfY[0];
@@ -216,15 +217,15 @@ No known bug
 
             if(( dy < dy2 ) && (dy >= dy1))
             {
-                
+
                 intersect = (dy-dy1) * (dx2-dx1) / (dy2-dy1) + dx1;
 
                 polyInts[ints++] = (int) floor(intersect+0.5);
             }
         }
 
-        /* 
-         * It would be more efficient to do this inline, to avoid 
+        /*
+         * It would be more efficient to do this inline, to avoid
          * a function call for each comparison.
          * NOTE - mloskot: make llCompareInt a functor and use std
          * algorithm and it will be optimized and expanded
@@ -561,9 +562,9 @@ GDALdllImageLineAllTouched(int nRasterXSize, int nRasterYSize,
                 int iX = (int) floor(dfX);
                 int iY = (int) floor(dfY);
 
-                // burn in the current point.
-                // We should be able to drop the Y check because we cliped in Y,
-                // but there may be some error with all the small steps.
+                // Burn in the current point.
+                // We should be able to drop the Y check because we clipped
+                // in Y, but there may be some error with all the small steps.
                 if( iY >= 0 && iY < nRasterYSize )
                     pfnPointFunc( pCBData, iY, iX, dfVariant );
 
@@ -599,7 +600,7 @@ GDALdllImageLineAllTouched(int nRasterXSize, int nRasterYSize,
                     dfY += dfStepY;
                     dfVariant += dfDeltaVariant * dfStepX;
                 }
-            } // next step along sement.
+            } // next step along segment.
 
         } // next segment
     } // next part

@@ -7,7 +7,7 @@
  *
  * This code was provided by Gilad Ronnen (gro at visrt dot com) with
  * permission to reuse under the following license.
- * 
+ *
  ******************************************************************************
  * Copyright (c) 2004, VIZRT Inc.
  * Copyright (c) 2008-2014, Even Rouault <even dot rouault at mines-paris dot org>
@@ -38,9 +38,9 @@
 
 #include "thinplatespline.h"
 
-/////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 //// vizGeorefSpline2D
-/////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 
 #define A(r,c) _AA[ _nof_eqs * (r) + (c) ]
 #define Ainv(r,c) _Ainv[ _nof_eqs * (r) + (c) ]
@@ -52,23 +52,37 @@
 static int matrixInvert( int N, double input[], double output[] );
 #endif
 
-void VizGeorefSpline2D::grow_points()
+bool VizGeorefSpline2D::grow_points()
 
 {
     int new_max = _max_nof_points*2 + 2 + 3;
     int i;
 
-    x = (double *) VSIRealloc( x, sizeof(double) * new_max );
-    y = (double *) VSIRealloc( y, sizeof(double) * new_max );
-    u = (double *) VSIRealloc( u, sizeof(double) * new_max );
-    unused = (int *) VSIRealloc( unused, sizeof(int) * new_max );
-    index = (int *) VSIRealloc( index, sizeof(int) * new_max );
-    for( i = 0; i < VIZGEOREF_MAX_VARS; i++ )
+    double *new_x = (double *) VSI_REALLOC_VERBOSE( x, sizeof(double) * new_max );
+    if( !new_x ) return false;
+    x = new_x;
+    double *new_y = (double *) VSI_REALLOC_VERBOSE( y, sizeof(double) * new_max );
+    if( !new_y ) return false;
+    y = new_y;
+    double *new_u = (double *) VSI_REALLOC_VERBOSE( u, sizeof(double) * new_max );
+    if( !new_u ) return false;
+    u = new_u;
+    int *new_unused = (int *) VSI_REALLOC_VERBOSE( unused, sizeof(int) * new_max );
+    if( !new_unused ) return false;
+    unused = new_unused;
+    int *new_index = (int *) VSI_REALLOC_VERBOSE( index, sizeof(int) * new_max );
+    if( !new_index ) return false;
+    index = new_index;
+    for( i = 0; i < _nof_vars; i++ )
     {
-        rhs[i] = (double *) 
-            VSIRealloc( rhs[i], sizeof(double) * new_max );
-        coef[i] = (double *) 
-            VSIRealloc( coef[i], sizeof(double) * new_max );
+        double* rhs_i_new = (double *) 
+            VSI_REALLOC_VERBOSE( rhs[i], sizeof(double) * new_max );
+        if( !rhs_i_new ) return false;
+        rhs[i] = rhs_i_new;
+        double* coef_i_new = (double *) 
+            VSI_REALLOC_VERBOSE( coef[i], sizeof(double) * new_max );
+        if( !coef_i_new ) return false;
+        coef[i] = coef_i_new;
         if( _max_nof_points == 0 )
         {
             memset(rhs[i], 0, 3 * sizeof(double));
@@ -77,15 +91,19 @@ void VizGeorefSpline2D::grow_points()
     }
 
     _max_nof_points = new_max - 3;
+    return true;
 }
 
-int VizGeorefSpline2D::add_point( const double Px, const double Py, const double *Pvars )
+bool VizGeorefSpline2D::add_point( const double Px, const double Py, const double *Pvars )
 {
     type = VIZ_GEOREF_SPLINE_POINT_WAS_ADDED;
     int i;
 
     if( _nof_points == _max_nof_points )
-        grow_points();
+    {
+        if( !grow_points() )
+            return false;
+    }
 
     i = _nof_points;
     //A new point is added
@@ -94,7 +112,7 @@ int VizGeorefSpline2D::add_point( const double Px, const double Py, const double
     for ( int j = 0; j < _nof_vars; j++ )
         rhs[j][i+3] = Pvars[j];
     _nof_points++;
-    return 1;
+    return true;
 }
 
 #if 0
@@ -179,9 +197,9 @@ static CPL_INLINE double VizGeorefSpline2DBase_func( const double x1, const doub
  */
 
 /* __ieee754_log(x)
- * Return the logrithm of x
+ * Return the logarithm of x
  *
- * Method :                  
+ * Method:
  *   1. Argument Reduction: find k and f such that
  *                      x = 2^k * (1+f),
  *         where  sqrt(2)/2 < 1+f < sqrt(2) .
@@ -206,7 +224,7 @@ static CPL_INLINE double VizGeorefSpline2DBase_func( const double x1, const doub
  *      by
  *              log(1+f) = f - s*(f - R)        (if f is not too large)
  *              log(1+f) = f - (hfsq - s*(hfsq+R)).     (better accuracy)
- *      
+ *
  *      3. Finally,  log(x) = k*ln2 + log(1+f).  
  *                          = k*ln2_hi+(f-(hfsq-(s*(hfsq+R)+k*ln2_lo)))
  *         Here ln2 is split into two floating point number:
@@ -245,7 +263,7 @@ typedef union
 static const V2DF
 v2_ln2_div_2pow20 = {6.93147180559945286e-01 / 1048576, 6.93147180559945286e-01 / 1048576},
 v2_Lg1 = {6.666666666666735130e-01, 6.666666666666735130e-01},
-v2_Lg2 = {3.999999999940941908e-01, 3.999999999940941908e-01}, 
+v2_Lg2 = {3.999999999940941908e-01, 3.999999999940941908e-01},
 v2_Lg3 = {2.857142874366239149e-01, 2.857142874366239149e-01},
 v2_Lg4 = {2.222219843214978396e-01, 2.222219843214978396e-01},
 v2_Lg5 = {1.818357216161805012e-01, 1.818357216161805012e-01},
@@ -264,7 +282,7 @@ static const long long cst_0x100000 = MAKE_WIDE_CST(0x00100000);
 static const long long cst_0x3ff00000 = MAKE_WIDE_CST(0x3ff00000);
 
 /* Modified version of __ieee754_log(), less precise than log() but a bit */
-/* faste, and computing 4 log() at a time. Assumes that the values are > 0 */
+/* faster, and computing 4 log() at a time. Assumes that the values are > 0 */
 static void FastApproxLog4Val(v2dfunion* x)
 {
     V2DF f[2],s[2],z[2],R[2],w[2],t1[2],t2[2];
@@ -273,6 +291,7 @@ static void FastApproxLog4Val(v2dfunion* x)
 
     GET_HIGH_WORD(hx[0].i[0],x[0].d[0]);
     GET_HIGH_WORD(hx[0].i[1],x[0].d[1]);
+    /* coverity[uninit_use] */
     k[0].li = hx[0].li & cst_expmask;
     hx[0].li &= ~cst_expmask;
     i[0].li = (hx[0].li + cst_0x95f64) & cst_0x100000;
@@ -299,7 +318,9 @@ static void FastApproxLog4Val(v2dfunion* x)
     s[0] = f[0]/(x[0].v2+v2_one);
     z[0] = s[0]*s[0];
     w[0] = z[0]*z[0];
+    /* coverity[ptr_arith] */
     t1[0]= w[0]*(v2_Lg2+w[0]*(v2_Lg4+w[0]*v2_Lg6));
+    /* coverity[ptr_arith] */
     t2[0]= z[0]*(v2_Lg1+w[0]*(v2_Lg3+w[0]*(v2_Lg5/*+w[0]*v2_Lg7*/)));
     R[0] = t2[0]+t1[0];
     x[0].v2 = ((dk[0].v2 - v2_const1023_mul_2pow20)*v2_ln2_div_2pow20-(s[0]*(f[0]-R[0])-f[0]));
@@ -308,7 +329,9 @@ static void FastApproxLog4Val(v2dfunion* x)
     s[1] = f[1]/(x[1].v2+v2_one);
     z[1] = s[1]*s[1];
     w[1] = z[1]*z[1];
+    /* coverity[ptr_arith] */
     t1[1]= w[1]*(v2_Lg2+w[1]*(v2_Lg4+w[1]*v2_Lg6));
+    /* coverity[ptr_arith] */
     t2[1]= z[1]*(v2_Lg1+w[1]*(v2_Lg3+w[1]*(v2_Lg5/*+w[1]*v2_Lg7*/)));
     R[1] = t2[1]+t1[1];
     x[1].v2 = ((dk[1].v2- v2_const1023_mul_2pow20)*v2_ln2_div_2pow20-(s[1]*(f[1]-R[1])-f[1]));
@@ -475,12 +498,11 @@ int VizGeorefSpline2D::solve(void)
         return 0;
     }
 	
-    double* _AA = ( double * )VSICalloc( _nof_eqs * _nof_eqs, sizeof( double ) );
-    double* _Ainv = ( double * )VSICalloc( _nof_eqs * _nof_eqs, sizeof( double ) );
+    double* _AA = ( double * )VSI_CALLOC_VERBOSE( _nof_eqs * _nof_eqs, sizeof( double ) );
+    double* _Ainv = ( double * )VSI_CALLOC_VERBOSE( _nof_eqs * _nof_eqs, sizeof( double ) );
     
     if( _AA == NULL || _Ainv == NULL )
     {
-        CPLError(CE_Failure, CPLE_AppDefined, "Out-of-memory while allocating temporary arrays. Computation aborted.");
         VSIFree(_AA);
         VSIFree(_Ainv);
         return 0;
@@ -532,9 +554,16 @@ int VizGeorefSpline2D::solve(void)
             for(col = 0; col < _nof_vars; col++)
                 matRHS.at(row, col) = rhs[col][row];
         arma::mat matCoefs(_nof_vars, _nof_eqs);
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8))
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+#endif
         if( !arma::solve(matCoefs, matA, matRHS) )
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8))
+#pragma GCC diagnostic pop
+#endif
         {
-            CPLError(CE_Failure, CPLE_AppDefined, "There is a problem to invert the interpolation matrix.");
+            CPLError(CE_Failure, CPLE_AppDefined, "There is a problem inverting the interpolation matrix.");
             ret = 0;
         }
         else
@@ -546,16 +575,15 @@ int VizGeorefSpline2D::solve(void)
     }
     catch(...)
     {
-        CPLError(CE_Failure, CPLE_AppDefined, "There is a problem to invert the interpolation matrix.");
+        CPLError(CE_Failure, CPLE_AppDefined, "There is a problem inverting the interpolation matrix.");
         ret = 0;
     }
 #else
-    // Invert the matrix
     int status = matrixInvert( _nof_eqs, _AA, _Ainv );
-			
+
     if ( !status )
     {
-        CPLError(CE_Failure, CPLE_AppDefined, "There is a problem to invert the interpolation matrix.");
+        CPLError(CE_Failure, CPLE_AppDefined, "There is a problem inverting the interpolation matrix.");
         ret = 0;
     }
     else
@@ -635,13 +663,13 @@ int VizGeorefSpline2D::get_point( const double Px, const double Py, double *vars
         
         for ( r = 0; r < (_nof_points & (~3)); r+=4 )
         {
-            double tmp[4];
-            VizGeorefSpline2DBase_func4( tmp, Pxy, &x[r], &y[r] );
+            double dfTmp[4];
+            VizGeorefSpline2DBase_func4( dfTmp, Pxy, &x[r], &y[r] );
             for ( v= 0; v < _nof_vars; v++ )
-                vars[v] += coef[v][r+3] * tmp[0] +
-                        coef[v][r+3+1] * tmp[1] +
-                        coef[v][r+3+2] * tmp[2] +
-                        coef[v][r+3+3] * tmp[3];
+                vars[v] += coef[v][r+3] * dfTmp[0] +
+                        coef[v][r+3+1] * dfTmp[1] +
+                        coef[v][r+3+2] * dfTmp[2] +
+                        coef[v][r+3+3] * dfTmp[3];
         }
         for ( ; r < _nof_points; r++ )
         {
@@ -705,7 +733,7 @@ static int matrixInvert( int N, double input[], double output[] )
     double* temp = (double*) new double[ tempSize ];
     double ftemp;
 	
-    if (temp == 0) {
+    if (temp == NULL) {
 		
         CPLError(CE_Failure, CPLE_AppDefined, "matrixInvert(): ERROR - memory allocation failed.");
         return false;

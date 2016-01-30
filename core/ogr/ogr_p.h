@@ -42,6 +42,7 @@
 
 #include "ogr_core.h"
 #include "ogr_geometry.h"
+#include "ogr_feature.h"
 
 /* A default name for the default geometry column, instead of '' */
 #define OGR_GEOMETRY_DEFAULT_NON_EMPTY_NAME     "_ogr_geometry_"
@@ -66,7 +67,7 @@
 /*      helper function for parsing well known text format vector objects.*/
 /* -------------------------------------------------------------------- */
 
-#ifdef _OGR_GEOMETRY_H_INCLUDED
+#ifdef OGR_GEOMETRY_H_INCLUDED
 #define OGR_WKT_TOKEN_MAX       64
 
 const char CPL_DLL * OGRWktReadToken( const char * pszInput, char * pszToken );
@@ -81,7 +82,8 @@ void CPL_DLL OGRMakeWktCoordinate( char *, double, double, double, int );
 
 #endif
 
-void OGRFormatDouble( char *pszBuffer, int nBufferLen, double dfVal, char chDecimalSep, int nPrecision = 15 );
+void OGRFormatDouble( char *pszBuffer, int nBufferLen, double dfVal,
+                      char chDecimalSep, int nPrecision = 15, char chConversionSpecifier = 'f' );
 
 /* -------------------------------------------------------------------- */
 /*      Date-time parsing and processing functions                      */
@@ -114,9 +116,9 @@ int CPL_DLL OGRGeneralCmdLineProcessor( int nArgc, char ***ppapszArgv, int nOpti
 #define SPF_OGR_GEOM_AREA 4
 #define SPECIAL_FIELD_COUNT 5
 
-extern const char* SpecialFieldNames[SPECIAL_FIELD_COUNT];
+extern const char* const SpecialFieldNames[SPECIAL_FIELD_COUNT];
 
-#ifdef _SWQ_H_INCLUDED_
+#ifdef SWQ_H_INCLUDED_
 extern const swq_field_type SpecialFieldTypes[SPECIAL_FIELD_COUNT];
 #endif
 
@@ -134,12 +136,12 @@ OGRErr CPL_DLL OGRCheckPermutation(int* panPermutation, int nSize);
 /* GML related */
 
 OGRGeometry *GML2OGRGeometry_XMLNode( const CPLXMLNode *psNode,
-                                      int bGetSecondaryGeometryOption,
+                                      int nPseudoBoolGetSecondaryGeometryOption,
                                       int nRecLevel = 0,
                                       int nSRSDimension = 0,
-                                      int bIgnoreGSG = FALSE,
-                                      int bOrientation = TRUE,
-                                      int bFaceHoleNegative = FALSE);
+                                      bool bIgnoreGSG = false,
+                                      bool bOrientation = true,
+                                      bool bFaceHoleNegative = false);
 
 /************************************************************************/
 /*                        PostGIS EWKB encoding                         */
@@ -150,7 +152,7 @@ OGRGeometry CPL_DLL *OGRGeometryFromEWKB( GByte *pabyWKB, int nLength, int* pnSR
 OGRGeometry CPL_DLL *OGRGeometryFromHexEWKB( const char *pszBytea, int* pnSRID,
                                              int bIsPostGIS1_EWKB );
 char CPL_DLL * OGRGeometryToHexEWKB( OGRGeometry * poGeometry, int nSRSId,
-                                     int bIsPostGIS1_EWKB );
+                                     int nPostGISMajor, int nPostGISMinor );
 
 /************************************************************************/
 /*                        WKB Type Handling encoding                    */
@@ -159,5 +161,13 @@ char CPL_DLL * OGRGeometryToHexEWKB( OGRGeometry * poGeometry, int nSRSId,
 OGRErr OGRReadWKBGeometryType( unsigned char * pabyData,
                                OGRwkbVariant wkbVariant,
                                OGRwkbGeometryType *eGeometryType, OGRBoolean *b3D );
+
+/************************************************************************/
+/*                            Other                                     */
+/************************************************************************/
+
+void CPL_DLL OGRUpdateFieldType( OGRFieldDefn* poFDefn,
+                                 OGRFieldType eNewType,
+                                 OGRFieldSubType eNewSubType );
 
 #endif /* ndef OGR_P_H_INCLUDED */

@@ -38,8 +38,8 @@ CPL_CVSID("$Id$");
 /*                           OGRMySQLLayer()                            */
 /************************************************************************/
 
-OGRMySQLLayer::OGRMySQLLayer()
-
+OGRMySQLLayer::OGRMySQLLayer() :
+    nGeomType(0)
 {
     poDS = NULL;
 
@@ -116,7 +116,7 @@ OGRFeature *OGRMySQLLayer::GetNextFeature()
 
 {
 
-    for( ; TRUE; )
+    while( true )
     {
         OGRFeature      *poFeature;
 
@@ -193,13 +193,13 @@ OGRFeature *OGRMySQLLayer::RecordToFeature( char **papszRow,
         if( pszGeomColumn && EQUAL(psMSField->name,pszGeomColumn))
         {
             OGRGeometry *poGeometry = NULL;
-            
+
             // Geometry columns will have the first 4 bytes contain the SRID.
             OGRGeometryFactory::createFromWkb(
                 ((GByte *)papszRow[iField]) + 4, 
                 NULL,
                 &poGeometry,
-                panLengths[iField] - 4 );
+                static_cast<int>(panLengths[iField] - 4) );
 
             if( poGeometry != NULL )
             {
@@ -221,7 +221,7 @@ OGRFeature *OGRMySQLLayer::RecordToFeature( char **papszRow,
 
         if( psFieldDefn->GetType() == OFTBinary )
         {
-            poFeature->SetField( iOGRField, panLengths[iField], 
+            poFeature->SetField( iOGRField, static_cast<int>(panLengths[iField]), 
                                  (GByte *) papszRow[iField] );
         }
         else
@@ -259,7 +259,7 @@ OGRFeature *OGRMySQLLayer::GetNextRawFeature()
         if( hResultSet == NULL )
         {
             poDS->ReportError( "mysql_use_result() failed on query." );
-            return FALSE;
+            return NULL;
         }
     }
 
@@ -335,7 +335,7 @@ int OGRMySQLLayer::FetchSRSId()
 {
 	CPLString        osCommand;
     char           **papszRow;  
-    
+
     if( hResultSet != NULL )
         mysql_free_result( hResultSet );
 		hResultSet = NULL;
@@ -351,7 +351,6 @@ int OGRMySQLLayer::FetchSRSId()
     papszRow = NULL;
     if( hResultSet != NULL )
         papszRow = mysql_fetch_row( hResultSet );
-        
 
     if( papszRow != NULL && papszRow[0] != NULL )
     {
@@ -362,7 +361,7 @@ int OGRMySQLLayer::FetchSRSId()
     if( hResultSet != NULL )
         mysql_free_result( hResultSet );
 		hResultSet = NULL;
-        
+
 	return nSRSId;
 }
 

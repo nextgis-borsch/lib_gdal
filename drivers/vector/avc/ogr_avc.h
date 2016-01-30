@@ -27,8 +27,8 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#ifndef _OGR_AVC_H_INCLUDED
-#define _OGR_AVC_H_INCLUDED
+#ifndef OGR_AVC_H_INCLUDED
+#define OGR_AVC_H_INCLUDED
 
 #include "ogrsf_frmts.h"
 #include "avc.h"
@@ -45,7 +45,7 @@ class OGRAVCLayer : public OGRLayer
     OGRFeatureDefn      *poFeatureDefn;
 
     OGRAVCDataSource    *poDS;
-    
+
     AVCFileType         eSectionType;
 
     int                 SetupFeatureDefinition( const char *pszName ); 
@@ -67,7 +67,7 @@ class OGRAVCLayer : public OGRLayer
     OGRFeatureDefn *	GetLayerDefn() { return poFeatureDefn; }
 
     virtual OGRSpatialReference *GetSpatialRef();
-    
+
     virtual int         TestCapability( const char * );
 };
 
@@ -102,7 +102,7 @@ class OGRAVCBinDataSource;
 
 class OGRAVCBinLayer : public OGRAVCLayer
 {
-    AVCE00Section       *psSection;
+    AVCE00Section       *m_psSection;
     AVCBinFile          *hFile;
 
     OGRAVCBinLayer      *poArcLayer;
@@ -142,11 +142,11 @@ class OGRAVCBinDataSource : public OGRAVCDataSource
 {
     OGRLayer            **papoLayers;
     int			nLayers;
-    
+
     char		*pszName;
 
     AVCE00ReadPtr       psAVC;
-    
+
   public:
     			OGRAVCBinDataSource();
     			~OGRAVCBinDataSource();
@@ -231,4 +231,4 @@ class OGRAVCE00DataSource : public OGRAVCDataSource
 };
 
 
-#endif /* _OGR_AVC_H_INCLUDED */
+#endif /* OGR_AVC_H_INCLUDED */

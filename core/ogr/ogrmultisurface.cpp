@@ -145,8 +145,9 @@ OGRErr OGRMultiSurface::importFromWkt( char ** ppszInput )
 
 {
     int bHasZ = FALSE, bHasM = FALSE;
-    OGRErr      eErr = importPreambuleFromWkt(ppszInput, &bHasZ, &bHasM);
-    if( eErr >= 0 )
+    bool bIsEmpty = false;
+    OGRErr      eErr = importPreambuleFromWkt(ppszInput, &bHasZ, &bHasM, &bIsEmpty);
+    if( eErr != OGRERR_NONE || bIsEmpty )
         return eErr;
 
     if( bHasZ )
@@ -224,7 +225,7 @@ OGRErr OGRMultiSurface::importFromWkt( char ** ppszInput )
         }
 
 /* -------------------------------------------------------------------- */
-/*      Read the delimeter following the surface.                       */
+/*      Read the delimiter following the surface.                       */
 /* -------------------------------------------------------------------- */
         pszInput = OGRWktReadToken( pszInput, szToken );
 
@@ -242,7 +243,7 @@ OGRErr OGRMultiSurface::importFromWkt( char ** ppszInput )
 
     if( szToken[0] != ')' )
         return OGRERR_CORRUPT_DATA;
-    
+
     *ppszInput = (char *) pszInput;
     return OGRERR_NONE;
 }
@@ -284,10 +285,7 @@ OGRBoolean OGRMultiSurface::hasCurveGeometry(int bLookForNonLinear) const
 
 OGRErr OGRMultiSurface::PointOnSurface( OGRPoint * poPoint ) const
 {
-    OGRMultiPolygon* poMPoly = (OGRMultiPolygon*) getLinearGeometry();
-    OGRErr ret = poMPoly->PointOnSurface(poPoint);
-    delete poMPoly;
-    return ret;
+    return PointOnSurfaceInternal(poPoint);
 }
 
 /************************************************************************/

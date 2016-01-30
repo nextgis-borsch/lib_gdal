@@ -130,7 +130,7 @@ class RMFDataset : public GDALDataset
     GUInt32         nXTiles;
     GUInt32         nYTiles;
     GUInt32         *paiTiles;
-    
+
     GUInt32         nColorTableSize;
     GByte           *pabyColorTable;
     GDALColorTable  *poColorTable;
@@ -178,7 +178,7 @@ class RMFRasterBand : public GDALRasterBand
 
     GUInt32     nBytesPerPixel;
     GUInt32     nBlockSize, nBlockBytes;
-    GUInt32     nLastTileXBytes, nLastTileHeight;
+    GUInt32     nLastTileWidth, nLastTileHeight;
     GUInt32     nDataSize;
 
     CPLErr   ReadBuffer( GByte *, GUInt32 ) const;
@@ -197,4 +197,3 @@ class RMFRasterBand : public GDALRasterBand
     virtual CPLErr          SetUnitType(const char *);
     virtual CPLErr          SetColorTable( GDALColorTable * );
 };
-

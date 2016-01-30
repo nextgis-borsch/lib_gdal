@@ -75,10 +75,9 @@ CPLErr OGRPGeoTableLayer::Initialize( const char *pszTableName,
                                       int nSRID,
                                       int bHasZ )
 
-
 {
     CPLODBCSession *poSession = poDS->GetSession();
-    
+
     SetDescription( pszTableName );
 
     CPLFree( pszGeomColumn );
@@ -133,16 +132,17 @@ CPLErr OGRPGeoTableLayer::Initialize( const char *pszTableName,
 
     if( eOGRType != wkbUnknown && eOGRType != wkbNone && bHasZ )
         eOGRType = wkbSetZ(eOGRType);
+    CPL_IGNORE_RET_VAL(eOGRType);
 
 /* -------------------------------------------------------------------- */
 /*      Do we have a simple primary key?                                */
 /* -------------------------------------------------------------------- */
     CPLODBCStatement oGetKey( poSession );
-    
+
     if( oGetKey.GetPrimaryKeys( pszTableName ) && oGetKey.Fetch() )
     {
         pszFIDColumn = CPLStrdup(oGetKey.GetColData( 3 ));
-        
+
         if( oGetKey.Fetch() ) // more than one field in key! 
         {
             CPLFree( pszFIDColumn );
@@ -299,19 +299,19 @@ OGRFeature *OGRPGeoTableLayer::GetFeature( GIntBig nFeatureId )
 /*                         SetAttributeFilter()                         */
 /************************************************************************/
 
-OGRErr OGRPGeoTableLayer::SetAttributeFilter( const char *pszQuery )
+OGRErr OGRPGeoTableLayer::SetAttributeFilter( const char *pszQueryIn )
 
 {
     CPLFree(m_pszAttrQueryString);
-    m_pszAttrQueryString = (pszQuery) ? CPLStrdup(pszQuery) : NULL;
+    m_pszAttrQueryString = (pszQueryIn) ? CPLStrdup(pszQueryIn) : NULL;
 
-    if( (pszQuery == NULL && this->pszQuery == NULL)
-        || (pszQuery != NULL && this->pszQuery != NULL 
-            && EQUAL(pszQuery,this->pszQuery)) )
+    if( (pszQueryIn == NULL && this->pszQuery == NULL)
+        || (pszQueryIn != NULL && this->pszQuery != NULL 
+            && EQUAL(pszQueryIn,this->pszQuery)) )
         return OGRERR_NONE;
 
     CPLFree( this->pszQuery );
-    this->pszQuery = pszQuery ? CPLStrdup( pszQuery ) : NULL; 
+    this->pszQuery = pszQueryIn ? CPLStrdup( pszQueryIn ) : NULL; 
 
     ClearStatement();
 

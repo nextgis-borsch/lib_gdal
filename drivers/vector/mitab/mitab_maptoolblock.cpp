@@ -78,7 +78,7 @@ TABMAPToolBlock::TABMAPToolBlock(TABAccess eAccessMode /*= TABRead*/):
     m_nNextToolBlock = m_numDataBytes = 0;
 
     m_numBlocksInChain = 1;  // Current block counts as 1
- 
+
     m_poBlockManagerRef = NULL;
 }
 
@@ -87,10 +87,7 @@ TABMAPToolBlock::TABMAPToolBlock(TABAccess eAccessMode /*= TABRead*/):
  *
  * Destructor.
  **********************************************************************/
-TABMAPToolBlock::~TABMAPToolBlock()
-{
-   
-}
+TABMAPToolBlock::~TABMAPToolBlock() {}
 
 
 /**********************************************************************
@@ -118,7 +115,7 @@ GBool TABMAPToolBlock::EndOfChain()
  * Perform some initialization on the block after its binary data has
  * been set or changed (or loaded from a file).
  *
- * Returns 0 if succesful or -1 if an error happened, in which case 
+ * Returns 0 if successful or -1 if an error happened, in which case
  * CPLError() will have been called.
  **********************************************************************/
 int     TABMAPToolBlock::InitBlockFromData(GByte *pabyBuf,
@@ -155,8 +152,26 @@ int     TABMAPToolBlock::InitBlockFromData(GByte *pabyBuf,
      *----------------------------------------------------------------*/
     GotoByteInBlock(0x002);
     m_numDataBytes = ReadInt16();       /* Excluding 8 bytes header */
+    if( m_numDataBytes < 0 || m_numDataBytes + MAP_TOOL_HEADER_SIZE > nBlockSize )
+    {
+        CPLError(CE_Failure, CPLE_FileIO,
+                 "TABMAPToolBlock::InitBlockFromData(): m_numDataBytes=%d incompatible with block size %d",
+                 m_numDataBytes, nBlockSize);
+        CPLFree(m_pabyBuf);
+        m_pabyBuf = NULL;
+        return -1;
+    }
 
     m_nNextToolBlock = ReadInt32();
+    if( m_nNextToolBlock != 0 &&
+        (m_nNextToolBlock / m_nBlockSize) * m_nBlockSize == nOffset )
+    {
+        CPLError(CE_Failure, CPLE_FileIO,
+                 "InitBlockFromData(): self referencing block");
+        CPLFree(m_pabyBuf);
+        m_pabyBuf = NULL;
+        return -1;
+    }
 
     /*-----------------------------------------------------------------
      * The read ptr is now located at the beginning of the data part.
@@ -176,7 +191,7 @@ int     TABMAPToolBlock::InitBlockFromData(GByte *pabyBuf,
  * block header and then calls TABRawBinBlock::CommitToFile() to do
  * the actual writing to disk.
  *
- * Returns 0 if succesful or -1 if an error happened, in which case 
+ * Returns 0 if successful or -1 if an error happened, in which case
  * CPLError() will have been called.
  **********************************************************************/
 int     TABMAPToolBlock::CommitToFile()
@@ -202,6 +217,7 @@ int     TABMAPToolBlock::CommitToFile()
     GotoByteInBlock(0x000);
 
     WriteInt16(TABMAP_TOOL_BLOCK);    // Block type code
+    CPLAssert(m_nSizeUsed >= MAP_TOOL_HEADER_SIZE && m_nSizeUsed < MAP_TOOL_HEADER_SIZE + 32768);
     WriteInt16((GInt16)(m_nSizeUsed - MAP_TOOL_HEADER_SIZE)); // num. bytes used
     WriteInt32(m_nNextToolBlock);
 
@@ -213,7 +229,7 @@ int     TABMAPToolBlock::CommitToFile()
     if (nStatus == 0)
     {
 #ifdef DEBUG_VERBOSE
-        CPLDebug("MITAB", "Commiting TOOL block to offset %d", m_nFileOffset);
+        CPLDebug("MITAB", "Committing TOOL block to offset %d", m_nFileOffset);
 #endif
         nStatus = TABRawBinBlock::CommitToFile();
     }
@@ -233,14 +249,15 @@ int     TABMAPToolBlock::CommitToFile()
  * that puts the block in a stable state without loading any initial
  * data in it.
  *
- * Returns 0 if succesful or -1 if an error happened, in which case 
+ * Returns 0 if successful or -1 if an error happened, in which case
  * CPLError() will have been called.
  **********************************************************************/
 int     TABMAPToolBlock::InitNewBlock(VSILFILE *fpSrc, int nBlockSize, 
                                         int nFileOffset /* = 0*/)
 {
 #ifdef DEBUG_VERBOSE
-    CPLDebug("MITAB", "Instanciating new TOOL block at offset %d", nFileOffset);
+    CPLDebug( "MITAB",
+              "Instantiating new TOOL block at offset %d", nFileOffset);
 #endif
 
     /*-----------------------------------------------------------------
@@ -253,7 +270,7 @@ int     TABMAPToolBlock::InitNewBlock(VSILFILE *fpSrc, int nBlockSize,
      * And then set default values for the block header.
      *----------------------------------------------------------------*/
     m_nNextToolBlock = 0;
- 
+
     m_numDataBytes = 0;
 
     GotoByteInBlock(0x000);
@@ -312,7 +329,7 @@ void TABMAPToolBlock::SetMAPBlockManagerRef(TABBinBlockManager *poBlockMgr)
  * specified number of bytes as if the copy had happened... but it 
  * won't crash.
  *
- * Returns 0 if succesful or -1 if an error happened, in which case 
+ * Returns 0 if successful or -1 if an error happened, in which case
  * CPLError() will have been called.
  **********************************************************************/
 int     TABMAPToolBlock::ReadBytes(int numBytes, GByte *pabyDstBuf)
@@ -350,10 +367,10 @@ int     TABMAPToolBlock::ReadBytes(int numBytes, GByte *pabyDstBuf)
  * specified number of bytes as if the copy had happened... but it 
  * won't crash.
  *
- * Returns 0 if succesful or -1 if an error happened, in which case 
+ * Returns 0 if successful or -1 if an error happened, in which case
  * CPLError() will have been called.
  **********************************************************************/
-int  TABMAPToolBlock::WriteBytes(int nBytesToWrite, GByte *pabySrcBuf)
+int  TABMAPToolBlock::WriteBytes(int nBytesToWrite, const GByte *pabySrcBuf)
 {
     if (m_eAccess == TABWrite && m_poBlockManagerRef &&
         (m_nBlockSize - m_nCurPos) < nBytesToWrite)
@@ -362,7 +379,7 @@ int  TABMAPToolBlock::WriteBytes(int nBytesToWrite, GByte *pabySrcBuf)
         SetNextToolBlock(nNewBlockOffset);
 
         if (CommitToFile() != 0 ||
-            InitNewBlock(m_fp, 512, nNewBlockOffset) != 0)
+            InitNewBlock(m_fp, m_nBlockSize, nNewBlockOffset) != 0)
         {
             // An error message should have already been reported.
             return -1;
@@ -381,7 +398,7 @@ int  TABMAPToolBlock::WriteBytes(int nBytesToWrite, GByte *pabySrcBuf)
  * current block.  If it can't fit then force committing current block 
  * and allocating a new one.
  *
- * Returns 0 if succesful or -1 if an error happened, in which case 
+ * Returns 0 if successful or -1 if an error happened, in which case
  * CPLError() will have been called.
  **********************************************************************/
 int  TABMAPToolBlock::CheckAvailableSpace(int nToolType)
@@ -412,7 +429,7 @@ int  TABMAPToolBlock::CheckAvailableSpace(int nToolType)
         SetNextToolBlock(nNewBlockOffset);
 
         if (CommitToFile() != 0 ||
-            InitNewBlock(m_fp, 512, nNewBlockOffset) != 0)
+            InitNewBlock(m_fp, m_nBlockSize, nNewBlockOffset) != 0)
         {
             // An error message should have already been reported.
             return -1;
@@ -456,6 +473,3 @@ void TABMAPToolBlock::Dump(FILE *fpOut /*=NULL*/)
 }
 
 #endif // DEBUG
-
-
-

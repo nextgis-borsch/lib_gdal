@@ -2,7 +2,7 @@
  * $Id$
  *
  * Project:  Mapinfo Image Warper
- * Purpose:  Implemention of the GDALTransformer wrapper around CRS.C functions
+ * Purpose:  Implementation of the GDALTransformer wrapper around CRS.C functions
  *           to build a polynomial transformation based on ground control 
  *           points.
  * Author:   Frank Warmerdam, warmerdam@pobox.com
@@ -122,7 +122,7 @@ static int CRS_compute_georef_equations(struct Control_Points *,
     double [], double [], double [], double [], int);
 static int remove_outliers(GCPTransformInfo *);
 
-static char *CRS_error_message[] = {
+static const char * const CRS_error_message[] = {
     "Failed to compute GCP transform: Not enough points available",
     "Failed to compute GCP transform: Transform is not solvable",
     "Failed to compute GCP transform: Not enough memory",
@@ -171,33 +171,7 @@ void* GDALCreateSimilarGCPTransformer( void *hTransformArg, double dfRatioX, dou
 /*                      GDALCreateGCPTransformer()                      */
 /************************************************************************/
 
-/**
- * Create GCP based polynomial transformer.
- *
- * Computes least squares fit polynomials from a provided set of GCPs,
- * and stores the coefficients for later transformation of points between
- * pixel/line and georeferenced coordinates. 
- *
- * The return value should be used as a TransformArg in combination with
- * the transformation function GDALGCPTransform which fits the 
- * GDALTransformerFunc signature.  The returned transform argument should
- * be deallocated with GDALDestroyGCPTransformer when no longer needed.
- *
- * This function may fail (returning NULL) if the provided set of GCPs
- * are inadequate for the requested order, the determinate is zero or they
- * are otherwise "ill conditioned".  
- *
- * Note that 2nd order requires at least 6 GCPs, and 3rd order requires at
- * least 10 gcps.  If nReqOrder is 0 the highest order possible with the
- * provided gcp count will be used.
- *
- * @param nGCPCount the number of GCPs in pasGCPList.
- * @param pasGCPList an array of GCPs to be used as input.
- * @param nReqOrder the requested polynomial order.  It should be 1, 2 or 3.
- * 
- * @return the transform argument or NULL if creation fails. 
- */
-
+static
 void *GDALCreateGCPTransformerEx( int nGCPCount, const GDAL_GCP *pasGCPList, 
                                 int nReqOrder, int bReversed, int bRefine, double dfTolerance, int nMinimumGcps)
 
@@ -294,6 +268,32 @@ void *GDALCreateGCPTransformerEx( int nGCPCount, const GDAL_GCP *pasGCPList,
     }
 }
 
+/**
+ * Create GCP based polynomial transformer.
+ *
+ * Computes least squares fit polynomials from a provided set of GCPs,
+ * and stores the coefficients for later transformation of points between
+ * pixel/line and georeferenced coordinates. 
+ *
+ * The return value should be used as a TransformArg in combination with
+ * the transformation function GDALGCPTransform which fits the 
+ * GDALTransformerFunc signature.  The returned transform argument should
+ * be deallocated with GDALDestroyGCPTransformer when no longer needed.
+ *
+ * This function may fail (returning NULL) if the provided set of GCPs
+ * are inadequate for the requested order, the determinate is zero or they
+ * are otherwise "ill conditioned".  
+ *
+ * Note that 2nd order requires at least 6 GCPs, and 3rd order requires at
+ * least 10 gcps.  If nReqOrder is 0 the highest order possible with the
+ * provided gcp count will be used.
+ *
+ * @param nGCPCount the number of GCPs in pasGCPList.
+ * @param pasGCPList an array of GCPs to be used as input.
+ * @param nReqOrder the requested polynomial order.  It should be 1, 2 or 3.
+ * 
+ * @return the transform argument or NULL if creation fails. 
+ */
 void *GDALCreateGCPTransformer( int nGCPCount, const GDAL_GCP *pasGCPList, 
                                 int nReqOrder, int bReversed )
 
@@ -870,9 +870,9 @@ ORDER\TERM   1    2    3    4    5    6    7    8    9   10
 */
 /***************************************************************************/
 
-static double term (int term, double e, double n)
+static double term (int nTerm, double e, double n)
 {
-    switch(term)
+    switch(nTerm)
     {
       case  1: return((double)1.0);
       case  2: return((double)e);
@@ -1067,7 +1067,7 @@ static int worst_outlier(struct Control_Points *cp, double E[], double N[], doub
   ARE REACHED OR NO OUTLIERS CAN BE DETECTED.
   
   1. WE CALCULATE THE COEFFICIENTS FOR ALL THE GCPS.
-  2. THE GCP LIST WILL BE SCANED TO DETERMINE THE WORST OUTLIER USING
+  2. THE GCP LIST WILL BE SCANNED TO DETERMINE THE WORST OUTLIER USING
      THE CALCULATED COEFFICIENTS.
   3. THE WORST OUTLIER WILL BE REMOVED FROM THE GCP LIST.
   4. THE COEFFICIENTS WILL BE RECALCULATED WITHOUT THE WORST OUTLIER.

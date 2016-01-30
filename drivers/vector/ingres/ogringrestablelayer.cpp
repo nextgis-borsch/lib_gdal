@@ -164,7 +164,7 @@ OGRFeatureDefn *OGRIngresTableLayer::ReadTableDefinition( const char *pszTable )
         {
             osGeomColumn = osFieldName;
             osIngresGeomType = osInternalType;
-            
+
             if( strstr(osInternalType,"POINT") )
                 poDefn->SetGeomType( wkbPoint );
             else if( strstr(osInternalType,"LINE")
@@ -184,19 +184,19 @@ OGRFeatureDefn *OGRIngresTableLayer::ReadTableDefinition( const char *pszTable )
                 poDefn->SetGeomType( wkbPolygon );
             continue;
         }
-        else if( EQUALN(osIngresType,"byte",4) 
-            || EQUALN(osIngresType,"long byte",9) )
+        else if( STARTS_WITH_CI(osIngresType, "byte") 
+            || STARTS_WITH_CI(osIngresType, "long byte") )
         {
             oField.SetType( OFTBinary );
         }
-        else if( EQUALN(osIngresType,"varchar",7) 
+        else if( STARTS_WITH_CI(osIngresType, "varchar") 
                  || EQUAL(osIngresType,"text") 
-                 || EQUALN(osIngresType,"long varchar",12) )
+                 || STARTS_WITH_CI(osIngresType, "long varchar") )
         {
             oField.SetType( OFTString );
             oField.SetWidth( nWidth );
         }
-        else if( EQUALN(osIngresType,"char",4) || EQUAL(osIngresType,"c") )
+        else if( STARTS_WITH_CI(osIngresType, "char") || EQUAL(osIngresType,"c") )
         {
             oField.SetType( OFTString );
             oField.SetWidth( nWidth );
@@ -205,7 +205,7 @@ OGRFeatureDefn *OGRIngresTableLayer::ReadTableDefinition( const char *pszTable )
         {
             oField.SetType( OFTInteger );
         }
-        else if( EQUALN(osIngresType,"decimal", 7) )
+        else if( STARTS_WITH_CI(osIngresType, "decimal") )
         {
             if( nScale != 0 )
             {
@@ -219,7 +219,7 @@ OGRFeatureDefn *OGRIngresTableLayer::ReadTableDefinition( const char *pszTable )
                 oField.SetWidth( nWidth );
             }
         }
-        else if( EQUALN(osIngresType,"float", 5) )
+        else if( STARTS_WITH_CI(osIngresType, "float") )
         {
             oField.SetType( OFTReal );
         }
@@ -297,10 +297,10 @@ void OGRIngresTableLayer::BuildWhere()
         char szEnvelope[4096];
         OGREnvelope  sEnvelope;
         szEnvelope[0] = '\0';
-        
+
         //POLYGON((MINX MINY, MAXX MINY, MAXX MAXY, MINX MAXY, MINX MINY))
         m_poFilterGeom->getEnvelope( &sEnvelope );
-        
+
         sprintf(szEnvelope,
                 "POLYGON((%.12f %.12f, %.12f %.12f, %.12f %.12f, %.12f %.12f, %.12f %.12f))",
                 sEnvelope.MinX, sEnvelope.MinY,
@@ -337,7 +337,7 @@ void OGRIngresTableLayer::BuildFullQueryStatement()
     osQueryStatement.Printf( "SELECT %s FROM %s %s", 
                              pszFields, poFeatureDefn->GetName(), 
                              osWHERE.c_str() );
-    
+
     CPLFree( pszFields );
 }
 
@@ -516,13 +516,13 @@ OGRErr OGRIngresTableLayer::DeleteFeature( GIntBig nFID )
 /* -------------------------------------------------------------------- */
     osCommand.Printf( "DELETE FROM %s WHERE %s = %ld",
                       poFeatureDefn->GetName(), osFIDColumn.c_str(), nFID );
-                      
+
 /* -------------------------------------------------------------------- */
 /*      Execute the delete.                                             */
 /* -------------------------------------------------------------------- */
     poDS->EstablishActiveLayer( NULL );
     OGRIngresStatement oStmt( poDS->GetConn() );
-    
+
     if( !oStmt.ExecuteSQL( osCommand ) )
         return OGRERR_FAILURE;
     else
@@ -618,8 +618,8 @@ OGRErr OGRIngresTableLayer::PrepareOldStyleGeometry(
                 CPLDebug( "INGRES", "Dropping duplicate point in linestring.");
                 continue;
             }
-            
-            if( EQUALN(osIngresGeomType,"I",1) )
+
+            if( STARTS_WITH_CI(osIngresGeomType, "I") )
                 osPoint.Printf( "(%d,%d)",
                                 (int) floor(poLS->getX(i)), 
                                 (int) floor(poLS->getY(i)) );
@@ -696,7 +696,7 @@ OGRErr OGRIngresTableLayer::PrepareOldStyleGeometry(
         for( i = 0; i < nPoints; i++ )
         {
             CPLString osPoint;
-            
+
             if( i > 0 
                 && poLS->getX(i) == poLS->getX(i-1)
                 && poLS->getY(i) == poLS->getY(i-1) )
@@ -704,8 +704,8 @@ OGRErr OGRIngresTableLayer::PrepareOldStyleGeometry(
                 CPLDebug( "INGRES", "Dropping duplicate point in linestring.");
                 continue;
             }
-            
-            if( EQUALN(osIngresGeomType,"I",1) )
+
+            if( STARTS_WITH_CI(osIngresGeomType, "I") )
                 osPoint.Printf( "(%d,%d)",
                                 (int) floor(poLS->getX(i)), 
                                 (int) floor(poLS->getY(i)) );
@@ -838,7 +838,7 @@ OGRErr OGRIngresTableLayer::ICreateFeature( OGRFeature *poFeature )
     {
         if( bNeedComma )
             osCommand += ", ";
-        
+
         osCommand = osCommand + osFIDColumn + " ";
         bNeedComma = TRUE;
     }
@@ -881,7 +881,7 @@ OGRErr OGRIngresTableLayer::ICreateFeature( OGRFeature *poFeature )
         }
         if( localErr == OGRERR_NONE )
         {
-            if( CSLTestBoolean( 
+            if( CPLTestBool(
                      CPLGetConfigOption( "INGRES_INSERT_SUB", "NO") ) )
             {
                 osCommand += " ~V";
@@ -1016,7 +1016,7 @@ OGRErr OGRIngresTableLayer::ICreateFeature( OGRFeature *poFeature )
 
     if( !oStmt.ExecuteSQL( osCommand ) )
         return OGRERR_FAILURE;
-    
+
     return OGRERR_NONE;
 
 }
@@ -1124,7 +1124,7 @@ OGRErr OGRIngresTableLayer::CreateField( OGRFieldDefn *poFieldIn,
         return OGRERR_FAILURE;
 
     poFeatureDefn->AddFieldDefn( &oField );    
-    
+
     return OGRERR_NONE;
 }
 
@@ -1222,7 +1222,7 @@ GIntBig OGRIngresTableLayer::GetFeatureCount( int bForce )
 /*      Ensure any active long result is interrupted.                   */
 /* -------------------------------------------------------------------- */
     poDS->InterruptLongResult();
-    
+
 /* -------------------------------------------------------------------- */
 /*      Issue the appropriate select command.                           */
 /* -------------------------------------------------------------------- */
@@ -1244,7 +1244,7 @@ GIntBig OGRIngresTableLayer::GetFeatureCount( int bForce )
         poDS->ReportError( "ingres_store_result() failed on SELECT COUNT(*)." );
         return FALSE;
     }
-    
+
 /* -------------------------------------------------------------------- */
 /*      Capture the result.                                             */
 /* -------------------------------------------------------------------- */
@@ -1257,7 +1257,7 @@ GIntBig OGRIngresTableLayer::GetFeatureCount( int bForce )
     if( hResultSet != NULL )
         ingres_free_result( hResultSet );
  		hResultSet = NULL;
-    
+
     return nCount;
 }
 #endif
@@ -1279,7 +1279,7 @@ OGRErr OGRIngresTableLayer::GetExtent(OGREnvelope *psExtent, int bForce )
         psExtent->MaxX = 0.0;
         psExtent->MinY = 0.0;
         psExtent->MaxY = 0.0;
-        
+
         return OGRERR_FAILURE;
     }
 

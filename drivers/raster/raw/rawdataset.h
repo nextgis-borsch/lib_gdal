@@ -2,7 +2,7 @@
  * $Id$
  *
  * Project:  Raw Translator
- * Purpose:  Implementation of RawDataset class.  Intented to be subclassed
+ * Purpose:  Implementation of RawDataset class.  Intended to be subclassed
  *           by other raw formats.
  * Author:   Frank Warmerdam, warmerdam@pobox.com
  *
@@ -60,6 +60,8 @@ class CPL_DLL RawDataset : public GDALPamDataset
                  RawDataset();
                  ~RawDataset() = 0;
 
+  private:
+    CPL_DISALLOW_COPY_ASSIGN(RawDataset);
 };
 
 /************************************************************************/
@@ -97,14 +99,14 @@ protected:
     GDALColorInterp eInterp;
 
     char           **papszCategoryNames;
-    
+
     int         bOwnsFP;
 
     int         Seek( vsi_l_offset, int );
     size_t      Read( void *, size_t, size_t );
     size_t      Write( void *, size_t, size_t );
 
-    CPLErr      AccessBlock( vsi_l_offset nBlockOff, int nBlockSize,
+    CPLErr      AccessBlock( vsi_l_offset nBlockOff, size_t nBlockSize,
                              void * pData );
     int         IsSignificantNumberOfLinesLoaded( int nLineOff, int nLines );
     void        Initialize();
@@ -134,7 +136,7 @@ public:
                  ~RawRasterBand() /* = 0 */ ;
 
     // should override RasterIO eventually.
-    
+
     virtual CPLErr  IReadBlock( int, int, void * );
     virtual CPLErr  IWriteBlock( int, int, void * );
 
@@ -156,7 +158,7 @@ public:
     CPLErr          AccessLine( int iLine );
 
     void            SetAccess( GDALAccess eAccess );
-    
+
     // this is deprecated.
     void	 StoreNoDataValue( double );
 
@@ -166,9 +168,12 @@ public:
     int          GetLineOffset() { return nLineOffset; }
     int          GetNativeOrder() { return bNativeOrder; }
     int          GetIsVSIL() { return bIsVSIL; }
-    FILE        *GetFP() { return (bIsVSIL) ? (FILE*)fpRawL : fpRaw; }
+    FILE        *GetFP() { return (bIsVSIL) ? reinterpret_cast<FILE *>( fpRawL ) : fpRaw; }
     VSILFILE    *GetFPL() { CPLAssert(bIsVSIL); return fpRawL; }
     int          GetOwnsFP() { return bOwnsFP; }
+
+  private:
+    CPL_DISALLOW_COPY_ASSIGN(RawRasterBand);
 };
 
 #endif // GDAL_FRMTS_RAW_RAWDATASET_H_INCLUDED

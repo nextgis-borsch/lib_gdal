@@ -127,7 +127,7 @@ typedef struct {
 } GDALTransformerInfo;
 
 void CPL_DLL GDALDestroyTransformer( void *pTransformerArg );
-int  CPL_DLL GDALUseTransformer( void *pTranformerArg, 
+int  CPL_DLL GDALUseTransformer( void *pTransformerArg, 
                                  int bDstToSrc, int nPointCount, 
                                  double *x, double *y, double *z, 
                                  int *panSuccess );
@@ -135,7 +135,7 @@ void* GDALCreateSimilarTransformer( void* psTransformerArg, double dfSrcRatioX, 
 
 
 /* High level transformer for going from image coordinates on one file
-   to image coordiantes on another, potentially doing reprojection, 
+   to image coordinates on another, potentially doing reprojection, 
    utilizing GCPs or using the geotransform. */
 
 void CPL_DLL *

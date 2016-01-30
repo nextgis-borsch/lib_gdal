@@ -27,8 +27,8 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#ifndef _OGRWALK_H_INCLUDED
-#define _OGRWALK_H_INCLUDED
+#ifndef OGRWALK_H_INCLUDED
+#define OGRWALK_H_INCLUDED
 
 #include "ogrsf_frmts.h"
 #include "cpl_odbc.h"
@@ -85,7 +85,7 @@ public:
     OGRFeature *        GetNextRawFeature();
 
     OGRFeatureDefn *    GetLayerDefn() { return poFeatureDefn; }
-    
+
     int         TestCapability( const char * ) { return FALSE; }
 
     virtual const char * GetFIDColumn (); 
@@ -124,10 +124,12 @@ public:
 
     virtual OGRErr      SetAttributeFilter( const char * );
     virtual OGRFeature *GetFeature( GIntBig nFeatureId );
-    
+
     virtual int         TestCapability( const char * );
 
     virtual OGRErr      GetExtent(OGREnvelope *psExtent, int bForce = TRUE);
+    virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce)
+                { return OGRLayer::GetExtent(iGeomField, psExtent, bForce); }
 };
 
 /************************************************************************/
@@ -150,7 +152,8 @@ class OGRWalkSelectLayer : public OGRWalkLayer
 
     virtual void        ResetReading();
     virtual OGRErr      GetExtent(OGREnvelope *psExtent, int bForce = TRUE);
-
+    virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce)
+                { return OGRLayer::GetExtent(iGeomField, psExtent, bForce); }
 };
 
 /************************************************************************/
@@ -197,15 +200,15 @@ class OGRWalkDriver : public OGRODBCMDBDriver
 {
 public:
                 ~OGRWalkDriver();
-                
+
     const char    *GetName();
     OGRDataSource *Open( const char *, int );
 
     OGRDataSource *CreateDataSource( const char *, char ** );
-    
+
     int            TestCapability( const char * );
 };
 
 void RegisterOGRWalk();
 
-#endif /* ndef _OGRWALK_H_INCLUDED */
+#endif /* ndef OGRWALK_H_INCLUDED */

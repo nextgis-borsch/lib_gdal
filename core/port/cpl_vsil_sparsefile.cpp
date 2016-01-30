@@ -34,10 +34,6 @@
 #include "cpl_minixml.h"
 #include <map>
 
-#if defined(WIN32CE)
-#  include <wce_errno.h>
-#endif
-
 CPL_CVSID("$Id$");
 
 class SFRegion { 
@@ -64,10 +60,10 @@ class VSISparseFileFilesystemHandler;
 
 class VSISparseFileHandle : public VSIVirtualHandle
 { 
-    VSISparseFileFilesystemHandler* poFS;
+    VSISparseFileFilesystemHandler* m_poFS;
 
   public:
-    VSISparseFileHandle(VSISparseFileFilesystemHandler* poFS) : poFS(poFS), nOverallLength(0), nCurOffset(0) {}
+    VSISparseFileHandle(VSISparseFileFilesystemHandler* poFS) : m_poFS(poFS), nOverallLength(0), nCurOffset(0) {}
 
     GUIntBig           nOverallLength;
     GUIntBig           nCurOffset;
@@ -108,7 +104,7 @@ public:
     virtual int      Mkdir( const char *pszDirname, long nMode );
     virtual int      Rmdir( const char *pszDirname );
     virtual char   **ReadDir( const char *pszDirname );
-    
+
     int              GetRecCounter() { return oRecOpenCount[CPLGetPID()]; }
     void             IncRecCounter() { oRecOpenCount[CPLGetPID()] ++; }
     void             DecRecCounter() { oRecOpenCount[CPLGetPID()] --; }
@@ -127,12 +123,10 @@ public:
 int VSISparseFileHandle::Close()
 
 {
-    unsigned int i;
-
-    for( i = 0; i < aoRegions.size(); i++ )
+    for( unsigned int i = 0; i < aoRegions.size(); i++ )
     {
         if( aoRegions[i].fp != NULL )
-            VSIFCloseL( aoRegions[i].fp );
+            CPL_IGNORE_RET_VAL(VSIFCloseL( aoRegions[i].fp ));
     }
 
     return 0;
@@ -219,7 +213,7 @@ size_t VSISparseFileHandle::Read( void * pBuffer, size_t nSize, size_t nCount )
         size_t nExtraBytes = 
             (size_t) (nCurOffset + nBytesRequested - nBytesAvailable);
         // Recurse to get the rest of the request.
-        
+
         GUIntBig nCurOffsetSave = nCurOffset;
         nCurOffset += nBytesRequested - nExtraBytes;
         size_t nBytesRead = 
@@ -273,10 +267,10 @@ size_t VSISparseFileHandle::Read( void * pBuffer, size_t nSize, size_t nCount )
                        SEEK_SET ) != 0 )
             return 0;
 
-        poFS->IncRecCounter();
+        m_poFS->IncRecCounter();
         size_t nBytesRead = VSIFReadL( pBuffer, 1, (size_t) nBytesRequested, 
                                        aoRegions[iRegion].fp );
-        poFS->DecRecCounter();
+        m_poFS->DecRecCounter();
 
         if( nBytesAvailable < nBytesRequested )
             nReturnCount = nBytesRead / nSize;
@@ -342,7 +336,7 @@ VSISparseFileFilesystemHandler::Open( const char *pszFilename,
                                       const char *pszAccess )
 
 {
-    CPLAssert( EQUALN(pszFilename,"/vsisparse/", 11) );
+    CPLAssert( STARTS_WITH_CI(pszFilename, "/vsisparse/") );
 
     if( !EQUAL(pszAccess,"r") && !EQUAL(pszAccess,"rb") )
     {
@@ -362,7 +356,7 @@ VSISparseFileFilesystemHandler::Open( const char *pszFilename,
     VSILFILE *fp = VSIFOpenL( osSparseFilePath, "r" );
     if( fp == NULL )
         return NULL;
-    VSIFCloseL( fp );
+    CPL_IGNORE_RET_VAL(VSIFCloseL( fp ));
 
 /* -------------------------------------------------------------------- */
 /*      Read the XML file.                                              */
@@ -406,7 +400,7 @@ VSISparseFileFilesystemHandler::Open( const char *pszFilename,
         oRegion.nDstOffset = 
             CPLScanUIntBig( CPLGetXMLValue(psRegion,"DestinationOffset","0" ),
                             32 );
-                            
+
         oRegion.nSrcOffset = 
             CPLScanUIntBig( CPLGetXMLValue(psRegion,"SourceOffset","0" ), 32);
 
@@ -426,9 +420,7 @@ VSISparseFileFilesystemHandler::Open( const char *pszFilename,
         CPLScanUIntBig( CPLGetXMLValue(psXMLRoot,"Length","0" ), 32);
     if( poHandle->nOverallLength == 0 )
     {
-        unsigned int i;
-
-        for( i = 0; i < poHandle->aoRegions.size(); i++ )
+        for( unsigned int i = 0; i < poHandle->aoRegions.size(); i++ )
         {
             poHandle->nOverallLength = MAX(poHandle->nOverallLength,
                                            poHandle->aoRegions[i].nDstOffset
@@ -448,7 +440,7 @@ VSISparseFileFilesystemHandler::Open( const char *pszFilename,
 int VSISparseFileFilesystemHandler::Stat( const char * pszFilename, 
                                           VSIStatBufL * psStatBuf,
                                           int nFlags )
-    
+
 {
     VSIVirtualHandle *poFile = Open( pszFilename, "r" );
 
@@ -529,7 +521,7 @@ char **VSISparseFileFilesystemHandler::ReadDir( CPL_UNUSED const char *pszPath )
  * The file referenced by /vsisparse/ should be an XML control file 
  * formatted something like:
  *
- * 
+ *
 \verbatim
 <VSISparseFile>
   <Length>87629264</Length>
@@ -572,4 +564,3 @@ void VSIInstallSparseFileHandler()
     VSIFileManager::InstallHandler( "/vsisparse/", 
                                     new VSISparseFileFilesystemHandler );
 }
-                            

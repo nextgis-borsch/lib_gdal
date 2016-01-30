@@ -32,61 +32,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- ******************************************************************************
- *
- * $Log: shptree.c,v $
- * Revision 1.17  2012-01-27 21:09:26  fwarmerdam
- * optimize .qix output (gdal #4472)
- *
- * Revision 1.16  2011-12-11 22:26:46  fwarmerdam
- * upgrade .qix access code to use SAHooks (gdal #3365)
- *
- * Revision 1.15  2011-07-24 05:59:25  fwarmerdam
- * minimize use of CPLError in favor of SAHooks.Error()
- *
- * Revision 1.14  2010-08-27 23:43:27  fwarmerdam
- * add SHPAPI_CALL attribute in code
- *
- * Revision 1.13  2010-06-29 05:50:15  fwarmerdam
- * fix sign of Z/M comparisons in SHPCheckObjectContained (#2223)
- *
- * Revision 1.12  2008-11-12 15:39:50  fwarmerdam
- * improve safety in face of buggy .shp file.
- *
- * Revision 1.11  2007/10/27 03:31:14  fwarmerdam
- * limit default depth of tree to 12 levels (gdal ticket #1594)
- *
- * Revision 1.10  2005/01/03 22:30:13  fwarmerdam
- * added support for saved quadtrees
- *
- * Revision 1.9  2003/01/28 15:53:41  warmerda
- * Avoid build warnings.
- *
- * Revision 1.8  2002/05/07 13:07:45  warmerda
- * use qsort() - patch from Bernhard Herzog
- *
- * Revision 1.7  2002/01/15 14:36:07  warmerda
- * updated email address
- *
- * Revision 1.6  2001/05/23 13:36:52  warmerda
- * added use of SHPAPI_CALL
- *
- * Revision 1.5  1999/11/05 14:12:05  warmerda
- * updated license terms
- *
- * Revision 1.4  1999/06/02 18:24:21  warmerda
- * added trimming code
- *
- * Revision 1.3  1999/06/02 17:56:12  warmerda
- * added quad'' subnode support for trees
- *
- * Revision 1.2  1999/05/18 19:11:11  warmerda
- * Added example searching capability
- *
- * Revision 1.1  1999/05/18 17:49:20  warmerda
- * New
- *
- */
+ *******************************************************************************/
 
 #include "shapefil.h"
 
@@ -239,6 +185,7 @@ SHPTree SHPAPI_CALL1(*)
     psTree->psRoot = SHPTreeNodeCreate( padfBoundsMin, padfBoundsMax );
     if( NULL == psTree->psRoot )
     {
+        free( psTree );
         return NULL;
     }
 
@@ -247,13 +194,10 @@ SHPTree SHPAPI_CALL1(*)
 /*      use the bounds of the provided file otherwise the create        */
 /*      function will have already set the bounds.                      */
 /* -------------------------------------------------------------------- */
-    assert( NULL != psTree );
-    assert( NULL != psTree->psRoot );
-	
     if( padfBoundsMin == NULL )
     {
         SHPGetInfo( hSHP, NULL, NULL,
-                    psTree->psRoot->adfBoundsMin, 
+                    psTree->psRoot->adfBoundsMin,
                     psTree->psRoot->adfBoundsMax );
     }
 
@@ -396,7 +340,7 @@ static int SHPCheckObjectContained( SHPObject * psObject, int nDimension,
 /*      longest dimension.                                              */
 /************************************************************************/
 
-void SHPAPI_CALL
+static void
 SHPTreeSplitBounds( double *padfBoundsMinIn, double *padfBoundsMaxIn,
                     double *padfBoundsMin1, double * padfBoundsMax1,
                     double *padfBoundsMin2, double * padfBoundsMax2 )
@@ -447,7 +391,7 @@ SHPTreeNodeAddShapeId( SHPTreeNode * psTreeNode, SHPObject * psObject,
     int		i;
     
 /* -------------------------------------------------------------------- */
-/*      If there are subnodes, then consider wiether this object        */
+/*      If there are subnodes, then consider whether this object        */
 /*      will fit in them.                                               */
 /* -------------------------------------------------------------------- */
     if( nMaxDepth > 1 && psTreeNode->nSubNodes > 0 )
@@ -604,7 +548,7 @@ SHPTreeAddShapeId( SHPTree * psTree, SHPObject * psObject )
 /*      tree node by tree node basis.                                   */
 /************************************************************************/
 
-void SHPAPI_CALL
+static void
 SHPTreeCollectShapeIds( SHPTree *hTree, SHPTreeNode * psTreeNode,
                         double * padfBoundsMin, double * padfBoundsMax,
                         int * pnShapeCount, int * pnMaxShapes,
@@ -694,7 +638,8 @@ SHPTreeFindLikelyShapes( SHPTree * hTree,
 /*      Sort the id array                                               */
 /* -------------------------------------------------------------------- */
 
-    qsort(panShapeList, *pnShapeCount, sizeof(int), compare_ints);
+    if( panShapeList != NULL )
+        qsort(panShapeList, *pnShapeCount, sizeof(int), compare_ints);
 
     return panShapeList;
 }
@@ -702,7 +647,7 @@ SHPTreeFindLikelyShapes( SHPTree * hTree,
 /************************************************************************/
 /*                          SHPTreeNodeTrim()                           */
 /*                                                                      */
-/*      This is the recurve version of SHPTreeTrimExtraNodes() that     */
+/*      This is the recursive version of SHPTreeTrimExtraNodes() that   */
 /*      walks the tree cleaning it up.                                  */
 /************************************************************************/
 
@@ -1024,9 +969,9 @@ SHPSearchDiskTree( FILE *fp,
 /*                       SHPSearchDiskTreeEx()                         */
 /************************************************************************/
 
-int* SHPSearchDiskTreeEx( SHPTreeDiskHandle hDiskTree, 
-                     double *padfBoundsMin, double *padfBoundsMax,
-                     int *pnShapeCount )
+int* SHPSearchDiskTreeEx( SHPTreeDiskHandle hDiskTree,
+                          double *padfBoundsMin, double *padfBoundsMax,
+                          int *pnShapeCount )
 
 {
     int i, bNeedSwap, nBufferMax = 0;
@@ -1060,7 +1005,7 @@ int* SHPSearchDiskTreeEx( SHPTreeDiskHandle hDiskTree,
         bNeedSwap = TRUE;
 
 /* -------------------------------------------------------------------- */
-/*      Search through root node and it's decendents.                   */
+/*      Search through root node and it's descendants.                  */
 /* -------------------------------------------------------------------- */
     if( !SHPSearchDiskTreeNode( hDiskTree, padfBoundsMin, padfBoundsMax, 
                                 &panResultBuffer, &nBufferMax, 
@@ -1074,12 +1019,14 @@ int* SHPSearchDiskTreeEx( SHPTreeDiskHandle hDiskTree,
 /* -------------------------------------------------------------------- */
 /*      Sort the id array                                               */
 /* -------------------------------------------------------------------- */
-    qsort(panResultBuffer, *pnShapeCount, sizeof(int), compare_ints);
 
     /* To distinguish between empty intersection from error case */
     if( panResultBuffer == NULL )
         panResultBuffer = (int*) calloc(1, sizeof(int));
-    
+    else
+        qsort(panResultBuffer, *pnShapeCount, sizeof(int), compare_ints);
+
+
     return panResultBuffer;
 }
 
@@ -1094,7 +1041,7 @@ int* SHPSearchDiskTreeEx( SHPTreeDiskHandle hDiskTree,
 static int SHPGetSubNodeOffset( SHPTreeNode *node) 
 {
     int i;
-    long offset=0;
+    int offset=0;
 
     for(i=0; i<node->nSubNodes; i++ ) 
     {
@@ -1144,7 +1091,8 @@ static void SHPWriteTreeNode( SAFile fp, SHPTreeNode *node, SAHooks* psHooks)
 
     memcpy( pabyRec+36, &node->nShapeCount, 4);
     j = node->nShapeCount * sizeof(int);
-    memcpy( pabyRec+40, node->panShapeIds, j);
+    if( j )
+        memcpy( pabyRec+40, node->panShapeIds, j);
     memcpy( pabyRec+j+40, &node->nSubNodes, 4);
 
     psHooks->FWrite( pabyRec, 44+j, 1, fp );

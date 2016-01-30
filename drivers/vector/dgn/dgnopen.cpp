@@ -96,20 +96,20 @@ int DGNTestOpen( GByte *pabyHeader, int nByteCount )
 DGNHandle DGNOpen( const char * pszFilename, int bUpdate )
 
 {
-    DGNInfo     *psDGN;
-    FILE        *fp;
 
 /* -------------------------------------------------------------------- */
 /*      Open the file.                                                  */
 /* -------------------------------------------------------------------- */
+    FILE *fp;
+
     if( bUpdate )
         fp = VSIFOpen( pszFilename, "rb+" );
     else
         fp = VSIFOpen( pszFilename, "rb" );
     if( fp == NULL )
     {
-        CPLError( CE_Failure, CPLE_OpenFailed, 
-                  "Unable to open `%s' for read access.\n", 
+        CPLError( CE_Failure, CPLE_OpenFailed,
+                  "Unable to open `%s' for read access.\n",
                   pszFilename );
         return NULL;
     }
@@ -117,13 +117,12 @@ DGNHandle DGNOpen( const char * pszFilename, int bUpdate )
 /* -------------------------------------------------------------------- */
 /*      Verify the format ... add later.                                */
 /* -------------------------------------------------------------------- */
-    GByte       abyHeader[512];
-
-    VSIFRead( abyHeader, 1, sizeof(abyHeader), fp );
-    if( !DGNTestOpen( abyHeader, sizeof(abyHeader) ) )
+    GByte abyHeader[512];
+    const int nHeaderBytes = static_cast<int>(VSIFRead( abyHeader, 1, sizeof(abyHeader), fp ));
+    if( !DGNTestOpen( abyHeader, nHeaderBytes ) )
     {
         CPLError( CE_Failure, CPLE_AppDefined,
-                  "File `%s' does not have expected DGN header.\n", 
+                  "File `%s' does not have expected DGN header.\n",
                   pszFilename );
         VSIFClose( fp );
         return NULL;
@@ -134,7 +133,7 @@ DGNHandle DGNOpen( const char * pszFilename, int bUpdate )
 /* -------------------------------------------------------------------- */
 /*      Create the info structure.                                      */
 /* -------------------------------------------------------------------- */
-    psDGN = (DGNInfo *) CPLCalloc(sizeof(DGNInfo),1);
+    DGNInfo *psDGN = (DGNInfo *) CPLCalloc(sizeof(DGNInfo),1);
     psDGN->fp = fp;
     psDGN->next_element_id = 0;
 
@@ -142,7 +141,7 @@ DGNHandle DGNOpen( const char * pszFilename, int bUpdate )
     psDGN->scale = 1.0;
     psDGN->origin_x = 0.0;
     psDGN->origin_y = 0.0;
-    psDGN->origin_z = 0.0;                                             
+    psDGN->origin_z = 0.0;
 
     psDGN->index_built = FALSE;
     psDGN->element_count = 0;
@@ -176,10 +175,10 @@ DGNHandle DGNOpen( const char * pszFilename, int bUpdate )
  * DGNO_CAPTURE_RAW_DATA: If this is enabled (it is off by default),
  * then the raw binary data associated with elements will be kept in
  * the raw_data field within the DGNElemCore when they are read.  This
- * is required if the application needs to interprete the raw data itself.
+ * is required if the application needs to interpret the raw data itself.
  * It is also necessary if the element is to be written back to this file,
  * or another file using DGNWriteElement().  Off by default (to conserve
- * memory). 
+ * memory).
  *
  * @param hDGN handle to file returned by DGNOpen(). 
  * @param nOptions ORed option flags.
@@ -261,7 +260,7 @@ void DGNSpatialFilterToUOR( DGNInfo *psDGN )
     sMin.x = psDGN->sf_min_x_geo;
     sMin.y = psDGN->sf_min_y_geo;
     sMin.z = 0;
-    
+
     sMax.x = psDGN->sf_max_x_geo;
     sMax.y = psDGN->sf_max_y_geo;
     sMax.z = 0;

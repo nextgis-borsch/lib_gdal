@@ -41,15 +41,12 @@ CPL_CVSID("$Id$");
 /**
  * \brief Constructor
  *
- * Normally the driver registrar is constucted by the 
+ * Normally the driver registrar is constructed by the
  * OGRSFDriverRegistrar::GetRegistrar() accessor which ensures singleton
- * status.  
+ * status.
  */
 
-OGRSFDriverRegistrar::OGRSFDriverRegistrar()
-
-{
-}
+OGRSFDriverRegistrar::OGRSFDriverRegistrar() {}
 
 /************************************************************************/
 /*                       ~OGRSFDriverRegistrar()                        */
@@ -163,7 +160,7 @@ OGRErr OGRReleaseDataSource( OGRDataSourceH hDS )
 
 #ifdef OGRAPISPY_ENABLED
     if( bOGRAPISpyEnabled )
-        OGRAPISpyPostClose(hDS);
+        OGRAPISpyPostClose();
 #endif
 
     return OGRERR_NONE;
@@ -304,7 +301,7 @@ void OGRRegisterDriver( OGRSFDriverH hDriver )
 
 {
     VALIDATE_POINTER0( hDriver, "OGRRegisterDriver" );
-    
+
     GetGDALDriverManager()->RegisterDriver( (GDALDriver*)hDriver );
 }
 
@@ -316,7 +313,7 @@ void OGRDeregisterDriver( OGRSFDriverH hDriver )
 
 {
     VALIDATE_POINTER0( hDriver, "OGRDeregisterDriver" );
-    
+
     GetGDALDriverManager()->DeregisterDriver( (GDALDriver*)hDriver );
 }
 

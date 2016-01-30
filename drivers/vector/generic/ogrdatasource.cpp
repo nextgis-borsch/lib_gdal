@@ -70,7 +70,7 @@ void OGR_DS_Destroy( OGRDataSourceH hDS )
     //VALIDATE_POINTER0( hDS, "OGR_DS_Destroy" );
 #ifdef OGRAPISPY_ENABLED
     if( bOGRAPISpyEnabled )
-        OGRAPISpyPostClose(hDS);
+      OGRAPISpyPostClose();
 #endif
 }
 
@@ -138,7 +138,7 @@ OGRLayerH OGR_DS_CreateLayer( OGRDataSourceH hDS,
     if (pszName == NULL)
     {
         CPLError ( CE_Failure, CPLE_ObjectNull, "Name was NULL in OGR_DS_CreateLayer");
-        return 0;
+        return NULL;
     }
     OGRLayerH hLayer = (OGRLayerH) ((GDALDataset *)hDS)->CreateLayer( 
         pszName, (OGRSpatialReference *) hSpatialRef, eType, papszOptions );
@@ -346,7 +346,7 @@ OGRStyleTableH OGR_DS_GetStyleTable( OGRDataSourceH hDS )
 
 {
     VALIDATE_POINTER1( hDS, "OGR_DS_GetStyleTable", NULL );
-    
+
     return (OGRStyleTableH) ((GDALDataset *) hDS)->GetStyleTable( );
 }
 
@@ -359,7 +359,7 @@ void OGR_DS_SetStyleTableDirectly( OGRDataSourceH hDS,
 
 {
     VALIDATE_POINTER0( hDS, "OGR_DS_SetStyleTableDirectly" );
-    
+
     ((GDALDataset *) hDS)->SetStyleTableDirectly( (OGRStyleTable *) hStyleTable);
 }
 
@@ -372,6 +372,6 @@ void OGR_DS_SetStyleTable( OGRDataSourceH hDS, OGRStyleTableH hStyleTable )
 {
     VALIDATE_POINTER0( hDS, "OGR_DS_SetStyleTable" );
     VALIDATE_POINTER0( hStyleTable, "OGR_DS_SetStyleTable" );
-    
+
     ((GDALDataset *) hDS)->SetStyleTable( (OGRStyleTable *) hStyleTable);
 }

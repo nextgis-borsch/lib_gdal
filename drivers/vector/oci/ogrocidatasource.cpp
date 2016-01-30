@@ -33,10 +33,10 @@
 
 CPL_CVSID("$Id$");
 
-static int anEPSGOracleMapping[] = 
+static const int anEPSGOracleMapping[] = 
 {
     /* Oracle SRID, EPSG GCS/PCS Code */
-    
+
     8192, 4326, // WGS84
     8306, 4322, // WGS72
     8267, 4269, // NAD83
@@ -79,7 +79,7 @@ OGROCIDataSource::~OGROCIDataSource()
 
     for( i = 0; i < nLayers; i++ )
         delete papoLayers[i];
-    
+
     CPLFree( papoLayers );
 
     for( i = 0; i < nKnownSRID; i++ )
@@ -98,7 +98,7 @@ OGROCIDataSource::~OGROCIDataSource()
 /************************************************************************/
 
 int OGROCIDataSource::Open( const char * pszNewName,
-                            char** papszOpenOptions,
+                            char** papszOpenOptionsIn,
                             int bUpdate,
                             int bTestOpen )
 
@@ -108,7 +108,7 @@ int OGROCIDataSource::Open( const char * pszNewName,
 /* -------------------------------------------------------------------- */
 /*      Verify Oracle prefix.                                           */
 /* -------------------------------------------------------------------- */
-    if( !EQUALN(pszNewName,"OCI:",3) )
+    if( !STARTS_WITH_CI(pszNewName,"OCI:") )
     {
         if( !bTestOpen )
         {
@@ -130,10 +130,10 @@ int OGROCIDataSource::Open( const char * pszNewName,
 
     if( pszNewName[4] == '\0' )
     {
-        pszUserid = CPLStrdup(CSLFetchNameValueDef(papszOpenOptions, "USER", ""));
-        pszPassword = CSLFetchNameValueDef(papszOpenOptions, "PASSWORD", "");
-        pszDatabase = CSLFetchNameValueDef(papszOpenOptions, "DBNAME", "");
-        const char* pszTables = CSLFetchNameValue(papszOpenOptions, "TABLES");
+        pszUserid = CPLStrdup(CSLFetchNameValueDef(papszOpenOptionsIn, "USER", ""));
+        pszPassword = CSLFetchNameValueDef(papszOpenOptionsIn, "PASSWORD", "");
+        pszDatabase = CSLFetchNameValueDef(papszOpenOptionsIn, "DBNAME", "");
+        const char* pszTables = CSLFetchNameValue(papszOpenOptionsIn, "TABLES");
         if( pszTables )
             papszTableList = CSLTokenizeStringComplex(pszTables, ",", TRUE, FALSE );
     }
@@ -142,7 +142,7 @@ int OGROCIDataSource::Open( const char * pszNewName,
         pszUserid = CPLStrdup( pszNewName + 4 );
 
         // Is there a table list? 
-        for( i = strlen(pszUserid)-1; i > 1; i-- )
+        for( i = static_cast<int>(strlen(pszUserid))-1; i > 1; i-- )
         {
             if( pszUserid[i] == ':' )
             {
@@ -201,7 +201,7 @@ int OGROCIDataSource::Open( const char * pszNewName,
     }
 
     pszName = CPLStrdup( pszNewName );
-    
+
     bDSUpdate = bUpdate;
 
 /* -------------------------------------------------------------------- */
@@ -225,7 +225,7 @@ int OGROCIDataSource::Open( const char * pszNewName,
                 if( EQUAL(papszRow[1],pszUserid) )
                     strcpy( szFullTableName, papszRow[0] );
                 else
-                    sprintf( szFullTableName, "%s.%s", 
+                    snprintf( szFullTableName, sizeof(szFullTableName), "%s.%s", 
                              papszRow[1], papszRow[0] );
 
                 if( CSLFindString( papszTableList, szFullTableName ) == -1 )
@@ -254,7 +254,7 @@ int OGROCIDataSource::Open( const char * pszNewName,
 /************************************************************************/
 
 int OGROCIDataSource::OpenTable( const char *pszNewName, 
-                                 int nSRID, int bUpdate, int bTestOpen )
+                                 int nSRID, int bUpdate, CPL_UNUSED int bTestOpen )
 
 {
 /* -------------------------------------------------------------------- */
@@ -325,7 +325,7 @@ void OGROCIDataSource::ValidateLayer( const char *pszLayerName )
 /*      Prepare and execute the geometry validation.                    */
 /* -------------------------------------------------------------------- */
 
-    if( !strlen(poLayer->GetGeometryColumn()) == 0 )
+    if( strlen(poLayer->GetGeometryColumn()) != 0 )
     {
         OGROCIStringBuf oValidateCmd;
         OGROCIStatement oValidateStmt( GetSession() );
@@ -455,7 +455,7 @@ void OGROCIDataSource::TruncateLayer( const char *pszLayerName )
 /*      Set OGR Debug statement explaining what is happening            */
 /* -------------------------------------------------------------------- */
     CPLDebug( "OCI", "Truncate TABLE %s", pszLayerName );
-    
+
 /* -------------------------------------------------------------------- */
 /*      Truncate the layer in the database.                             */
 /* -------------------------------------------------------------------- */
@@ -482,14 +482,13 @@ OGROCIDataSource::ICreateLayer( const char * pszLayerName,
 
     poSession->CleanName( pszSafeLayerName );
     CPLDebug( "OCI", "In Create Layer ..." );
-              
 
 /* -------------------------------------------------------------------- */
 /*      Do we already have this layer?  If so, should we blow it        */
 /*      away?                                                           */
 /* -------------------------------------------------------------------- */
     int iLayer;
-    
+
     if( CSLFetchBoolean( papszOptions, "TRUNCATE", FALSE ) )
     {
         CPLDebug( "OCI", "Calling TruncateLayer for %s", pszLayerName );
@@ -530,7 +529,7 @@ OGROCIDataSource::ICreateLayer( const char * pszLayerName,
     if( CSLFetchNameValue( papszOptions, "SRID" ) != NULL )
         strcpy( szSRSId, CSLFetchNameValue( papszOptions, "SRID" ) );     
     else if( poSRS != NULL )
-        sprintf( szSRSId, "%d", FetchSRSId( poSRS ) );
+        snprintf( szSRSId, sizeof(szSRSId), "%d", FetchSRSId( poSRS ) );
     else
         strcpy( szSRSId, "NULL" );
 
@@ -549,25 +548,25 @@ OGROCIDataSource::ICreateLayer( const char * pszLayerName,
 /* -------------------------------------------------------------------- */
     const char *pszExpectedFIDName = 
         CPLGetConfigOption( "OCI_FID", "OGR_FID" );    
-   
+
     OGROCIStatement oStatement( poSession );
 
 /* -------------------------------------------------------------------- */
-/*      If geometry type is wkbNone, do not create a geoemtry column    */
+/*      If geometry type is wkbNone, do not create a geometry column.   */
 /* -------------------------------------------------------------------- */
 
     if ( CSLFetchNameValue( papszOptions, "TRUNCATE" ) == NULL  )
     {
         if (eType == wkbNone)
         {
-            sprintf( szCommand,
+            snprintf( szCommand, sizeof(szCommand),
                      "CREATE TABLE \"%s\" ( "
                      "%s INTEGER PRIMARY KEY)",
                      pszSafeLayerName, pszExpectedFIDName);
         }
         else
         {
-            sprintf( szCommand,
+            snprintf( szCommand, sizeof(szCommand),
                      "CREATE TABLE \"%s\" ( "
                      "%s INTEGER PRIMARY KEY, "
                      "%s %s%s )",
@@ -581,7 +580,7 @@ OGROCIDataSource::ICreateLayer( const char * pszLayerName,
             CPLFree( pszSafeLayerName );
             return NULL;
         }
-    }  
+    }
 
 /* -------------------------------------------------------------------- */
 /*      Create the layer object.                                        */
@@ -618,7 +617,7 @@ OGROCIDataSource::ICreateLayer( const char * pszLayerName,
 /* -------------------------------------------------------------------- */
     papoLayers = (OGROCILayer **)
         CPLRealloc( papoLayers,  sizeof(OGROCILayer *) * (nLayers+1) );
-    
+
     papoLayers[nLayers++] = poLayer;
 
     CPLFree( pszSafeLayerName );
@@ -683,7 +682,7 @@ OGRLayer * OGROCIDataSource::ExecuteSQL( const char *pszSQLCommand,
 /* -------------------------------------------------------------------- */
 /*      Special case DELLAYER: command.                                 */
 /* -------------------------------------------------------------------- */
-    if( EQUALN(pszSQLCommand,"DELLAYER:",9) )
+    if( STARTS_WITH_CI(pszSQLCommand, "DELLAYER:") )
     {
         const char *pszLayerName = pszSQLCommand + 9;
 
@@ -697,7 +696,7 @@ OGRLayer * OGROCIDataSource::ExecuteSQL( const char *pszSQLCommand,
 /* -------------------------------------------------------------------- */
 /*      Special case VALLAYER: command.                                 */
 /* -------------------------------------------------------------------- */
-    if( EQUALN(pszSQLCommand,"VALLAYER:",9) )
+    if( STARTS_WITH_CI(pszSQLCommand, "VALLAYER:") )
     {
         const char *pszLayerName = pszSQLCommand + 9;
 
@@ -711,7 +710,7 @@ OGRLayer * OGROCIDataSource::ExecuteSQL( const char *pszSQLCommand,
 /* -------------------------------------------------------------------- */
 /*      Just execute simple command.                                    */
 /* -------------------------------------------------------------------- */
-    if( !EQUALN(pszSQLCommand,"SELECT",6) )
+    if( !STARTS_WITH_CI(pszSQLCommand, "SELECT") )
     {
         OGROCIStatement oCommand( poSession );
 
@@ -726,7 +725,7 @@ OGRLayer * OGROCIDataSource::ExecuteSQL( const char *pszSQLCommand,
     else
     {
         OGROCIStatement oCommand( poSession );
-        
+
         if( oCommand.Execute( pszSQLCommand, OCI_DESCRIBE_ONLY ) == CE_None )
             return new OGROCISelectLayer( this, pszSQLCommand, &oCommand );
         else
@@ -775,7 +774,7 @@ OGRSpatialReference *OGROCIDataSource::FetchSRS( int nId )
     OGROCIStatement oStatement( GetSession() );
     char            szSelect[200], **papszResult;
 
-    sprintf( szSelect, 
+    snprintf( szSelect, sizeof(szSelect),
              "SELECT WKTEXT, AUTH_SRID, AUTH_NAME FROM MDSYS.CS_SRS "
              "WHERE SRID = %d AND WKTEXT IS NOT NULL", nId );
 
@@ -906,7 +905,7 @@ int OGROCIDataSource::FetchSRSId( OGRSpatialReference * poSRS )
 /*      Convert SRS into old style format (SF-SQL 1.0).                 */
 /* -------------------------------------------------------------------- */
     OGRSpatialReference *poSRS2 = poSRS->Clone();
-    
+
     poSRS2->StripCTParms();
 
 /* -------------------------------------------------------------------- */
@@ -924,9 +923,9 @@ int OGROCIDataSource::FetchSRSId( OGRSpatialReference * poSRS )
         delete poSRS2;
         return -1;
     }
-    
+
     delete poSRS2;
-    
+
 /* -------------------------------------------------------------------- */
 /*      Try to find in the existing table.                              */
 /* -------------------------------------------------------------------- */
@@ -949,7 +948,7 @@ int OGROCIDataSource::FetchSRSId( OGRSpatialReference * poSRS )
         CPLFree( pszWKT );
         return atoi( papszResult[0] );
     }
-    
+
 /* ==================================================================== */
 /*      We didn't find it, so we need to define it as a new SRID at     */
 /*      the end of the list of known values.                            */
@@ -962,7 +961,7 @@ int OGROCIDataSource::FetchSRSId( OGRSpatialReference * poSRS )
         papszResult = oCmdStatement.SimpleFetchRow();
     else
         papszResult = NULL;
-        
+
     if( CSLCount(papszResult) == 1 )
         nSRSId = atoi(papszResult[0]) + 1;
     else
@@ -992,13 +991,13 @@ int OGROCIDataSource::FetchSRSId( OGRSpatialReference * poSRS )
 /*                           GetLayerByName()                           */
 /************************************************************************/
 
-OGRLayer *OGROCIDataSource::GetLayerByName( const char *pszName )
+OGRLayer *OGROCIDataSource::GetLayerByName( const char *pszNameIn )
 
 {
-    OGROCILayer *poLayer;
+    OGROCILayer *poLayer = NULL;
     int  i, count;
 
-    if ( !pszName )
+    if ( !pszNameIn )
 	return NULL;
 
     count = GetLayerCount();
@@ -1008,13 +1007,13 @@ OGRLayer *OGROCIDataSource::GetLayerByName( const char *pszName )
     {
         poLayer = papoLayers[i];
 
-        if( strcmp( pszName, poLayer->GetName() ) == 0 )
+        if( strcmp( pszNameIn, poLayer->GetName() ) == 0 )
         {
             return poLayer;
         }
     }
 
-    char *pszSafeLayerName = CPLStrdup( pszName );
+    char *pszSafeLayerName = CPLStrdup( pszNameIn );
     poSession->CleanName( pszSafeLayerName );
 
     /* then case insensitive and laundered */

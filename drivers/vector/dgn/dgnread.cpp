@@ -101,8 +101,10 @@ int DGNLoadRawElement( DGNInfo *psDGN, int *pnType, int *pnLevel )
 /* -------------------------------------------------------------------- */
 /*      Read the rest of the element data into the working buffer.      */
 /* -------------------------------------------------------------------- */
-    CPLAssert( nWords * 2 + 4 <= (int) sizeof(psDGN->abyElem) );
+    if( nWords * 2 + 4 > (int) sizeof(psDGN->abyElem) )
+        return FALSE;
 
+    /* coverity[tainted_data] */
     if( (int) VSIFRead( psDGN->abyElem + 4, 2, nWords, psDGN->fp ) != nWords )
         return FALSE;
 
@@ -115,10 +117,10 @@ int DGNLoadRawElement( DGNInfo *psDGN, int *pnType, int *pnLevel )
 /* -------------------------------------------------------------------- */
     if( pnType != NULL )
         *pnType = nType;
-    
+
     if( pnLevel != NULL )
         *pnLevel = nLevel;
-    
+
     return TRUE;
 }
 
@@ -126,14 +128,14 @@ int DGNLoadRawElement( DGNInfo *psDGN, int *pnType, int *pnLevel )
 /************************************************************************/
 /*                          DGNGetRawExtents()                          */
 /*                                                                      */
-/*      Returns FALSE if the element type does not have reconisable     */
+/*      Returns FALSE if the element type does not have recognizable    */
 /*      element extents, other TRUE and the extents will be updated.    */
 /*                                                                      */
 /*      It is assumed the raw element data has been loaded into the     */
 /*      working area by DGNLoadRawElement().                            */
 /************************************************************************/
 
-static int 
+static int
 DGNGetRawExtents( DGNInfo *psDGN, int nType, unsigned char *pabyRawData,
                   GUInt32 *pnXMin, GUInt32 *pnYMin, GUInt32 *pnZMin, 
                   GUInt32 *pnXMax, GUInt32 *pnYMax, GUInt32 *pnZMax )
@@ -324,7 +326,7 @@ static DGNElemCore *DGNProcessElement( DGNInfo *psDGN, int nType, int nLevel )
               d = DGN_INT32( psDGN->abyElem + 80 );
               a2 = a * a;
               c2 = c * c;
-              
+
               psCell->xscale = sqrt(a2 + c2) / 214748;
               psCell->yscale = sqrt(b*b + d*d) / 214748;
               if( (a2 + c2) <= 0.0 )
@@ -333,9 +335,9 @@ static DGNElemCore *DGNProcessElement( DGNInfo *psDGN, int nType, int nLevel )
                   psCell->rotation = acos(a / sqrt(a2 + c2));
 
               if (b <= 0)
-                  psCell->rotation = psCell->rotation * 180 / PI;
+                  psCell->rotation = psCell->rotation * 180 / M_PI;
               else
-                  psCell->rotation = 360 - psCell->rotation * 180 / PI;
+                  psCell->rotation = 360 - psCell->rotation * 180 / M_PI;
               }
           }
           else
@@ -407,7 +409,7 @@ static DGNElemCore *DGNProcessElement( DGNInfo *psDGN, int nType, int nLevel )
           psCell->numwords = psDGN->abyElem[36] + psDGN->abyElem[37] * 256;
 
           memset( psCell->description, 0, sizeof(psCell->description) );
-          
+
           for( iWord = 0; iWord < 9; iWord++ )
           {
               int iOffset = 52 + iWord * 2;
@@ -461,6 +463,11 @@ static DGNElemCore *DGNProcessElement( DGNInfo *psDGN, int nType, int nLevel )
           int                pntsize = psDGN->dimension * 4;
 
           count = psDGN->abyElem[36] + psDGN->abyElem[37]*256;
+          if( count < 2 )
+          {
+              CPLError(CE_Failure, CPLE_AssertionFailed, "count < 2");
+              return NULL;
+          }
           psLine = (DGNElemMultiPoint *) 
               CPLCalloc(sizeof(DGNElemMultiPoint)+(count-2)*sizeof(DGNPoint),1);
           psElement = (DGNElemCore *) psLine;
@@ -469,12 +476,19 @@ static DGNElemCore *DGNProcessElement( DGNInfo *psDGN, int nType, int nLevel )
 
           if( psDGN->nElemBytes < 38 + count * pntsize )
           {
+              int new_count = (psDGN->nElemBytes - 38) / pntsize;
+              if( new_count < 0 )
+              {
+                  CPLError(CE_Failure, CPLE_AssertionFailed, "new_count < 2");
+                  DGNFreeElement(psDGN, psElement);
+                  return NULL;
+              }
               CPLError( CE_Warning, CPLE_AppDefined, 
                         "Trimming multipoint vertices to %d from %d because\n"
                         "element is short.\n", 
-                        (psDGN->nElemBytes - 38) / pntsize,
+                        new_count,
                         count );
-              count = (psDGN->nElemBytes - 38) / pntsize;
+              count = new_count;
           }
           psLine->num_vertices = count;
           for( i = 0; i < psLine->num_vertices; i++ )
@@ -568,10 +582,10 @@ static DGNElemCore *DGNProcessElement( DGNInfo *psDGN, int nType, int nLevel )
           {
               psEllipse->rotation = DGN_INT32( psDGN->abyElem + 52 );
               psEllipse->rotation = psEllipse->rotation / 360000.0;
-              
+
               memcpy( &(psEllipse->origin.x), psDGN->abyElem + 56, 8 );
               DGN2IEEEDouble( &(psEllipse->origin.x) );
-              
+
               memcpy( &(psEllipse->origin.y), psDGN->abyElem + 64, 8 );
               DGN2IEEEDouble( &(psEllipse->origin.y) );
           }
@@ -581,10 +595,10 @@ static DGNElemCore *DGNProcessElement( DGNInfo *psDGN, int nType, int nLevel )
 
               memcpy( &(psEllipse->origin.x), psDGN->abyElem + 68, 8 );
               DGN2IEEEDouble( &(psEllipse->origin.x) );
-              
+
               memcpy( &(psEllipse->origin.y), psDGN->abyElem + 76, 8 );
               DGN2IEEEDouble( &(psEllipse->origin.y) );
-              
+
               memcpy( &(psEllipse->origin.z), psDGN->abyElem + 84, 8 );
               DGN2IEEEDouble( &(psEllipse->origin.z) );
 
@@ -625,7 +639,7 @@ static DGNElemCore *DGNProcessElement( DGNInfo *psDGN, int nType, int nLevel )
               psEllipse->sweepang = 360.0;
           else
               psEllipse->sweepang = nSweepVal / 360000.0;
-          
+
           memcpy( &(psEllipse->primary_axis), psDGN->abyElem + 44, 8 );
           DGN2IEEEDouble( &(psEllipse->primary_axis) );
           psEllipse->primary_axis *= psDGN->scale;
@@ -633,26 +647,26 @@ static DGNElemCore *DGNProcessElement( DGNInfo *psDGN, int nType, int nLevel )
           memcpy( &(psEllipse->secondary_axis), psDGN->abyElem + 52, 8 );
           DGN2IEEEDouble( &(psEllipse->secondary_axis) );
           psEllipse->secondary_axis *= psDGN->scale;
-          
+
           if( psDGN->dimension == 2 )
           {
               psEllipse->rotation = DGN_INT32( psDGN->abyElem + 60 );
               psEllipse->rotation = psEllipse->rotation / 360000.0;
-          
+
               memcpy( &(psEllipse->origin.x), psDGN->abyElem + 64, 8 );
               DGN2IEEEDouble( &(psEllipse->origin.x) );
-              
+
               memcpy( &(psEllipse->origin.y), psDGN->abyElem + 72, 8 );
               DGN2IEEEDouble( &(psEllipse->origin.y) );
           }
-          else 
+          else
           {
               /* for now we don't try to handle quaternion */
               psEllipse->rotation = 0;
-          
+
               memcpy( &(psEllipse->origin.x), psDGN->abyElem + 76, 8 );
               DGN2IEEEDouble( &(psEllipse->origin.x) );
-              
+
               memcpy( &(psEllipse->origin.y), psDGN->abyElem + 84, 8 );
               DGN2IEEEDouble( &(psEllipse->origin.y) );
 
@@ -814,19 +828,24 @@ static DGNElemCore *DGNProcessElement( DGNInfo *psDGN, int nType, int nLevel )
       case DGNT_CONE:
         {
           DGNElemCone *psCone;
+          
+          if( psDGN->dimension != 3 )
+          {
+              CPLError(CE_Failure, CPLE_AssertionFailed, "psDGN->dimension != 3");
+              return NULL;
+          }
 
           psCone = (DGNElemCone *) CPLCalloc(sizeof(DGNElemCone),1);
           psElement = (DGNElemCore *) psCone;
           psElement->stype = DGNST_CONE;
           DGNParseCore( psDGN, psElement );
 
-          CPLAssert( psDGN->dimension == 3 );
           psCone->unknown = psDGN->abyElem[36] + psDGN->abyElem[37] * 256;
           psCone->quat[0] = DGN_INT32( psDGN->abyElem + 38 );
           psCone->quat[1] = DGN_INT32( psDGN->abyElem + 42 );
           psCone->quat[2] = DGN_INT32( psDGN->abyElem + 46 );
           psCone->quat[3] = DGN_INT32( psDGN->abyElem + 50 );
- 
+
           memcpy( &(psCone->center_1.x), psDGN->abyElem + 54, 8 );
           DGN2IEEEDouble( &(psCone->center_1.x) );
           memcpy( &(psCone->center_1.y), psDGN->abyElem + 62, 8 );
@@ -881,7 +900,7 @@ static DGNElemCore *DGNProcessElement( DGNInfo *psDGN, int nType, int nLevel )
           DGNParseCore( psDGN, psElement );
 
           // Read B-Spline surface header
-          psSpline->desc_words = DGN_INT32(psDGN->abyElem + 36);
+          psSpline->desc_words = static_cast<long>(DGN_INT32(psDGN->abyElem + 36));
           psSpline->curve_type = psDGN->abyElem[41];
 
           // U
@@ -912,7 +931,7 @@ static DGNElemCore *DGNProcessElement( DGNInfo *psDGN, int nType, int nLevel )
           DGNParseCore( psDGN, psElement );
 
           // Read B-Spline curve header
-          psSpline->desc_words = DGN_INT32(psDGN->abyElem + 36);
+          psSpline->desc_words = static_cast<long>(DGN_INT32(psDGN->abyElem + 36));
 
           // flags
           psSpline->order = (psDGN->abyElem[40] & 0x0f) + 2;
@@ -927,6 +946,11 @@ static DGNElemCore *DGNProcessElement( DGNInfo *psDGN, int nType, int nLevel )
         {
           DGNElemBSplineSurfaceBoundary *psBounds;
           short numverts = psDGN->abyElem[38] + psDGN->abyElem[39]*256;
+          if( numverts <= 0 )
+          {
+              CPLError(CE_Failure, CPLE_AssertionFailed, "numverts <= 0");
+              return NULL;
+          }
 
           psBounds = (DGNElemBSplineSurfaceBoundary *)
             CPLCalloc(sizeof(DGNElemBSplineSurfaceBoundary)+
@@ -1011,7 +1035,7 @@ static DGNElemCore *DGNProcessElement( DGNInfo *psDGN, int nType, int nLevel )
 /* -------------------------------------------------------------------- */
     psElement->element_id = psDGN->next_element_id - 1;
 
-    psElement->offset = VSIFTell( psDGN->fp ) - psDGN->nElemBytes;
+    psElement->offset = static_cast<int>(VSIFTell( psDGN->fp )) - psDGN->nElemBytes;
     psElement->size = psDGN->nElemBytes;
 
     return psElement;
@@ -1051,16 +1075,16 @@ DGNElemCore *DGNReadElement( DGNHandle hDGN )
 /*      filter is in effect, loop until we get something within our     */
 /*      spatial constraints.                                            */
 /* -------------------------------------------------------------------- */
-    do { 
+    do {
         bInsideFilter = TRUE;
 
         if( !DGNLoadRawElement( psDGN, &nType, &nLevel ) )
             return NULL;
-        
+
         if( psDGN->has_spatial_filter )
         {
             GUInt32     nXMin, nXMax, nYMin, nYMax;
-            
+
             if( !psDGN->sf_converted_to_uor )
                 DGNSpatialFilterToUOR( psDGN );
 
@@ -1068,7 +1092,7 @@ DGNElemCore *DGNReadElement( DGNHandle hDGN )
                                    &nXMin, &nYMin, NULL,
                                    &nXMax, &nYMax, NULL ) )
             {
-                /* If we don't have spatial characterists for the element
+                /* If we don't have spatial characteristics for the element
                    we will pass it through. */
                 bInsideFilter = TRUE;
             }
@@ -1140,7 +1164,7 @@ int DGNElemTypeHasDispHdr( int nElemType )
       case 62:
       case 63:
         return FALSE;
-        
+
       default:
         return TRUE;
     }
@@ -1181,7 +1205,7 @@ int DGNParseCore( DGNInfo *psDGN, DGNElemCore *psElement )
     if( psElement->properties & DGNPF_ATTRIBUTES )
     {
         int   nAttIndex;
-        
+
         nAttIndex = psData[30] + psData[31] * 256;
 
         psElement->attr_bytes = psDGN->nElemBytes - nAttIndex*2 - 32;
@@ -1202,7 +1226,7 @@ int DGNParseCore( DGNInfo *psDGN, DGNElemCore *psElement )
             psElement->attr_bytes = 0;
         }
     }
-    
+
     return TRUE;
 }
 
@@ -1215,7 +1239,7 @@ static DGNElemCore *DGNParseColorTable( DGNInfo * psDGN )
 {
     DGNElemCore *psElement;
     DGNElemColorTable  *psColorTable;
-            
+
     psColorTable = (DGNElemColorTable *) 
         CPLCalloc(sizeof(DGNElemColorTable),1);
     psElement = (DGNElemCore *) psColorTable;
@@ -1236,7 +1260,7 @@ static DGNElemCore *DGNParseColorTable( DGNInfo * psDGN )
     // usually do better at least. 
     memcpy( psDGN->color_table, psColorTable->color_info, 768 );
     psDGN->got_color_table = 1;
-    
+
     return psElement;
 }
 
@@ -1249,8 +1273,9 @@ static DGNElemCore *DGNParseTagSet( DGNInfo * psDGN )
 {
     DGNElemCore *psElement;
     DGNElemTagSet *psTagSet;
-    int          nDataOffset, iTag;
-            
+    size_t      nDataOffset;
+    int         iTag;
+
     psTagSet = (DGNElemTagSet *) CPLCalloc(sizeof(DGNElemTagSet),1);
     psElement = (DGNElemCore *) psTagSet;
     psElement->stype = DGNST_TAG_SET;
@@ -1283,7 +1308,7 @@ static DGNElemCore *DGNParseTagSet( DGNInfo * psDGN )
 /*      Parse each of the tag definitions.                              */
 /* -------------------------------------------------------------------- */
     psTagSet->tagList = (DGNTagDef *) 
-        CPLMalloc(sizeof(DGNTagDef) * psTagSet->tagCount);
+        CPLCalloc(sizeof(DGNTagDef), psTagSet->tagCount);
 
     nDataOffset = 48 + strlen(psTagSet->tagSetName) + 1 + 1; 
 
@@ -1291,7 +1316,13 @@ static DGNElemCore *DGNParseTagSet( DGNInfo * psDGN )
     {
         DGNTagDef *tagDef = psTagSet->tagList + iTag;
 
-        CPLAssert( nDataOffset < psDGN->nElemBytes );
+        if( nDataOffset >= static_cast<size_t>(psDGN->nElemBytes) )
+        {
+            CPLError(CE_Failure, CPLE_AssertionFailed,
+                     "nDataOffset >= static_cast<size_t>(psDGN->nElemBytes)");
+            DGNFreeElement(psDGN, psElement);
+            return NULL;
+        }
 
         /* collect tag name. */
         tagDef->name = CPLStrdup( (char *) psDGN->abyElem + nDataOffset );
@@ -1363,14 +1394,14 @@ static DGNElemCore *DGNParseTCB( DGNInfo * psDGN )
         psTCB->dimension = 3;
     else
         psTCB->dimension = 2;
-          
-    psTCB->subunits_per_master = DGN_INT32( psDGN->abyElem + 1112 );
+
+    psTCB->subunits_per_master = static_cast<long>(DGN_INT32( psDGN->abyElem + 1112 ));
 
     psTCB->master_units[0] = (char) psDGN->abyElem[1120];
     psTCB->master_units[1] = (char) psDGN->abyElem[1121];
     psTCB->master_units[2] = '\0';
 
-    psTCB->uor_per_subunit = DGN_INT32( psDGN->abyElem + 1116 );
+    psTCB->uor_per_subunit = static_cast<long>(DGN_INT32( psDGN->abyElem + 1116 ));
 
     psTCB->sub_units[0] = (char) psDGN->abyElem[1122];
     psTCB->sub_units[1] = (char) psDGN->abyElem[1123];
@@ -1421,7 +1452,7 @@ static DGNElemCore *DGNParseTCB( DGNInfo * psDGN )
 
         psView->flags = pabyRawView[0] + pabyRawView[1] * 256;
         memcpy( psView->levels, pabyRawView + 2, 8 );
-        
+
         psView->origin.x = DGN_INT32( pabyRawView + 10 );
         psView->origin.y = DGN_INT32( pabyRawView + 14 );
         psView->origin.z = DGN_INT32( pabyRawView + 18 );
@@ -1443,7 +1474,7 @@ static DGNElemCore *DGNParseTCB( DGNInfo * psDGN )
         memcpy( &(psView->conversion), pabyRawView + 106, sizeof(double) );
         DGN2IEEEDouble( &(psView->conversion) );
 
-        psView->activez = DGN_INT32( pabyRawView + 114 );
+        psView->activez = static_cast<unsigned long>(DGN_INT32( pabyRawView + 114 ));
     }
 
     return psElement;
@@ -1565,13 +1596,14 @@ void DGNInverseTransformPointToInt( DGNInfo *psDGN, DGNPoint *psPoint,
     adfCT[1] = (psPoint->y + psDGN->origin_y) / psDGN->scale;
     adfCT[2] = (psPoint->z + psDGN->origin_z) / psDGN->scale;
 
-    for( i = 0; i < psDGN->dimension; i++ )
+    const int nIter = MIN(3, psDGN->dimension);
+    for( i = 0; i < nIter; i++ )
     {
         GInt32 nCTI;
         unsigned char *pabyCTI = (unsigned char *) &nCTI;
 
         nCTI = (GInt32) MAX(-2147483647,MIN(2147483647,adfCT[i]));
-        
+
 #ifdef WORDS_BIGENDIAN 
         pabyTarget[i*4+0] = pabyCTI[1];
         pabyTarget[i*4+1] = pabyCTI[0];
@@ -1632,23 +1664,23 @@ int DGNLoadTCB( DGNHandle hDGN )
  *
  * This function will return an array with brief information about every
  * element in a DGN file.  It requires one pass through the entire file to
- * generate (this is not repeated on subsequent calls). 
+ * generate (this is not repeated on subsequent calls).
  *
- * The returned array of DGNElementInfo structures contain the level, type, 
+ * The returned array of DGNElementInfo structures contain the level, type,
  * stype, and other flags for each element in the file.  This can facilitate
  * application level code representing the number of elements of various types
- * effeciently. 
+ * efficiently.
  *
  * Note that while building the index requires one pass through the whole file,
- * it does not generally request much processing for each element. 
+ * it does not generally request much processing for each element.
  *
  * @param hDGN the file to get an index for.
- * @param pnElementCount the integer to put the total element count into. 
+ * @param pnElementCount the integer to put the total element count into.
  *
- * @return a pointer to an internal array of DGNElementInfo structures (there 
+ * @return a pointer to an internal array of DGNElementInfo structures (there
  * will be *pnElementCount entries in the array), or NULL on failure.  The
  * returned array should not be modified or freed, and will last only as long
- * as the DGN file remains open. 
+ * as the DGN file remains open.
  */
 
 const DGNElementInfo *DGNGetElementIndex( DGNHandle hDGN, int *pnElementCount )
@@ -1660,7 +1692,7 @@ const DGNElementInfo *DGNGetElementIndex( DGNHandle hDGN, int *pnElementCount )
 
     if( pnElementCount != NULL )
         *pnElementCount = psDGN->element_count;
-    
+
     return psDGN->element_index;
 }
 
@@ -1699,13 +1731,13 @@ int DGNGetExtents( DGNHandle hDGN, double * padfExtents )
     sMin.x = psDGN->min_x - 2147483648.0;
     sMin.y = psDGN->min_y - 2147483648.0;
     sMin.z = psDGN->min_z - 2147483648.0;
-    
+
     DGNTransformPoint( psDGN, &sMin );
 
     padfExtents[0] = sMin.x;
     padfExtents[1] = sMin.y;
     padfExtents[2] = sMin.z;
-    
+
     sMax.x = psDGN->max_x - 2147483648.0;
     sMax.y = psDGN->max_y - 2147483648.0;
     sMax.z = psDGN->max_z - 2147483648.0;
@@ -1734,7 +1766,7 @@ void DGNBuildIndex( DGNInfo *psDGN )
         return;
 
     psDGN->index_built = TRUE;
-    
+
     DGNRewind( psDGN );
 
     nMaxElements = 0;
@@ -1747,7 +1779,7 @@ void DGNBuildIndex( DGNInfo *psDGN )
         if( psDGN->element_count == nMaxElements )
         {
             nMaxElements = (int) (nMaxElements * 1.5) + 500;
-            
+
             psDGN->element_index = (DGNElementInfo *) 
                 CPLRealloc( psDGN->element_index, 
                             nMaxElements * sizeof(DGNElementInfo) );
@@ -1778,13 +1810,13 @@ void DGNBuildIndex( DGNInfo *psDGN )
         }
         else if( nType == DGNT_ELLIPSE || nType == DGNT_ARC )
             psEI->stype = DGNST_ARC;
-        
+
         else if( nType == DGNT_COMPLEX_SHAPE_HEADER 
                  || nType == DGNT_COMPLEX_CHAIN_HEADER
                  || nType == DGNT_3DSURFACE_HEADER
                  || nType == DGNT_3DSOLID_HEADER)
             psEI->stype = DGNST_COMPLEX_HEADER;
-        
+
         else if( nType == DGNT_TEXT )
             psEI->stype = DGNST_TEXT;
 
@@ -1836,7 +1868,12 @@ void DGNBuildIndex( DGNInfo *psDGN )
             }
             else
             {
-                memcpy( &(psDGN->min_x), anRegion, sizeof(GInt32) * 6 );
+                psDGN->min_x = anRegion[0];
+                psDGN->min_y = anRegion[1];
+                psDGN->min_z = anRegion[2];
+                psDGN->max_x = anRegion[3];
+                psDGN->max_y = anRegion[4];
+                psDGN->max_z = anRegion[5];
                 psDGN->got_bounds = TRUE;
             }
         }

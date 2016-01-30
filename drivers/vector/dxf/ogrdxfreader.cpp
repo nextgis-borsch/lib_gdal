@@ -39,18 +39,14 @@ CPL_CVSID("$Id: ogrdxf_diskio.cpp 20278 2010-08-14 15:11:01Z warmerdam $");
 /*                            OGRDXFReader()                            */
 /************************************************************************/
 
-OGRDXFReader::OGRDXFReader()
-
-{
-    fp = NULL;
-
-    iSrcBufferOffset = 0;
-    nSrcBufferBytes = 0;
-    iSrcBufferFileOffset = 0;
-
-    nLastValueSize = 0;
-    nLineNumber = 0;
-}
+OGRDXFReader::OGRDXFReader() :
+    fp(NULL),
+    iSrcBufferOffset(0),
+    nSrcBufferBytes(0),
+    iSrcBufferFileOffset(0),
+    nLastValueSize(0),
+    nLineNumber(0)
+{}
 
 /************************************************************************/
 /*                           ~OGRDXFReader()                            */
@@ -65,10 +61,10 @@ OGRDXFReader::~OGRDXFReader()
 /*                             Initialize()                             */
 /************************************************************************/
 
-void OGRDXFReader::Initialize( VSILFILE *fp )
+void OGRDXFReader::Initialize( VSILFILE *fpIn )
 
 {
-    this->fp = fp;
+    fp = fpIn;
 }
 
 /************************************************************************/
@@ -114,8 +110,8 @@ void OGRDXFReader::LoadDiskChunk()
         iSrcBufferOffset = 0;
     }
 
-    nSrcBufferBytes += VSIFReadL( achSrcBuffer + nSrcBufferBytes, 
-                                  1, 512, fp );
+    nSrcBufferBytes += static_cast<int>(VSIFReadL( achSrcBuffer + nSrcBufferBytes, 
+                                  1, 512, fp ));
     achSrcBuffer[nSrcBufferBytes] = '\0';
 
     CPLAssert( nSrcBufferBytes <= 1024 );

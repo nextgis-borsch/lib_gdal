@@ -185,9 +185,9 @@ OGRErr OGRLinearRing::_importFromWkb( OGRwkbByteOrder eByteOrder, int b3D,
 /*      Get the vertex count.                                           */
 /* -------------------------------------------------------------------- */
     int         nNewNumPoints;
-    
+
     memcpy( &nNewNumPoints, pabyData, 4 );
-    
+
     if( OGR_SWAP( eByteOrder ) )
         nNewNumPoints = CPL_SWAP32(nNewNumPoints);
 
@@ -199,7 +199,7 @@ OGRErr OGRLinearRing::_importFromWkb( OGRwkbByteOrder eByteOrder, int b3D,
     if (nNewNumPoints < 0 || nNewNumPoints > INT_MAX / nPointSize)
         return OGRERR_CORRUPT_DATA;
     int nBufferMinSize = nPointSize * nNewNumPoints;
-   
+
     if( nBytesAvailable != -1 && nBufferMinSize > nBytesAvailable - 4 )
     {
         CPLError( CE_Failure, CPLE_AppDefined,
@@ -214,12 +214,10 @@ OGRErr OGRLinearRing::_importFromWkb( OGRwkbByteOrder eByteOrder, int b3D,
         Make3D();
     else
         Make2D();
-    
+
 /* -------------------------------------------------------------------- */
 /*      Get the vertices                                                */
 /* -------------------------------------------------------------------- */
-    int i = 0;
-
     if( !b3D )
     {
         memcpy( paoPoints, pabyData + 4, 16 * nPointCount );
@@ -233,13 +231,13 @@ OGRErr OGRLinearRing::_importFromWkb( OGRwkbByteOrder eByteOrder, int b3D,
             memcpy( padfZ + i, pabyData + 4 + 24 * i + 16, 8 );
         }
     }
-    
+
 /* -------------------------------------------------------------------- */
 /*      Byte swap if needed.                                            */
 /* -------------------------------------------------------------------- */
     if( OGR_SWAP( eByteOrder ) )
     {
-        for( i = 0; i < nPointCount; i++ )
+        for( int i = 0; i < nPointCount; i++ )
         {
             CPL_SWAPDOUBLE( &(paoPoints[i].x) );
             CPL_SWAPDOUBLE( &(paoPoints[i].y) );
@@ -309,7 +307,7 @@ OGRErr  OGRLinearRing::_exportToWkb( OGRwkbByteOrder eByteOrder, int b3D,
             CPL_SWAPDOUBLE( pabyData + 4 + 8 * i );
         }
     }
-    
+
     return OGRERR_NONE;
 }
 
@@ -375,7 +373,7 @@ int OGRLinearRing::isClockwise() const
 {
     int    i, v, next;
     double  dx0, dy0, dx1, dy1, crossproduct;
-    int    bUseFallback = FALSE;
+    bool bUseFallback = false;
 
     if( nPointCount < 2 )
         return TRUE;
@@ -390,14 +388,14 @@ int OGRLinearRing::isClockwise() const
                paoPoints[i].x > paoPoints[v].x ) )
         {
             v = i;
-            bUseFallback = FALSE;
+            bUseFallback = false;
         }
         else if ( paoPoints[i].y == paoPoints[v].y &&
                   paoPoints[i].x == paoPoints[v].x )
         {
             /* Two vertex with same coordinates are the lowest rightmost */
             /* vertex! We cannot use that point as the pivot (#5342) */
-            bUseFallback = TRUE;
+            bUseFallback = true;
         }
     }
 
@@ -413,13 +411,12 @@ int OGRLinearRing::isClockwise() const
     {
         /* Don't try to be too clever by retrying with a next point */
         /* This can lead to false results as in the case of #3356 */
-        bUseFallback = TRUE;
+        bUseFallback = true;
     }
 
     dx0 = paoPoints[next].x - paoPoints[v].x;
     dy0 = paoPoints[next].y - paoPoints[v].y;
-    
-    
+
     /* following */
     next = v + 1;
     if ( next >= nPointCount - 1 )
@@ -432,7 +429,7 @@ int OGRLinearRing::isClockwise() const
     {
         /* Don't try to be too clever by retrying with a next point */
         /* This can lead to false results as in the case of #3356 */
-        bUseFallback = TRUE;
+        bUseFallback = true;
     }
 
     dx1 = paoPoints[next].x - paoPoints[v].x;
@@ -447,12 +444,12 @@ int OGRLinearRing::isClockwise() const
         else if ( crossproduct < 0 )  /* CW */
             return TRUE;
     }
-    
+
     /* ok, this is a degenerate case : the extent of the polygon is less than EPSILON */
     /* or 2 nearly identical points were found */
     /* Try with Green Formula as a fallback, but this is not a guarantee */
     /* as we'll probably be affected by numerical instabilities */
-    
+
     double dfSum = paoPoints[0].x * (paoPoints[1].y - paoPoints[nPointCount-1].y);
 
     for (i=1; i<nPointCount-1; i++) {
@@ -608,7 +605,7 @@ OGRBoolean OGRLinearRing::isPointOnRingBoundary(const OGRPoint* poPoint, int bTe
     double prev_diff_x = getX(0) - dfTestX;
     double prev_diff_y = getY(0) - dfTestY;
 
-    for ( int iPoint = 1; iPoint < iNumPoints; iPoint++ ) 
+    for ( int iPoint = 1; iPoint < iNumPoints; iPoint++ )
     {
         const double x1 = getX(iPoint) - dfTestX;
         const double y1 = getY(iPoint) - dfTestY;
@@ -616,10 +613,11 @@ OGRBoolean OGRLinearRing::isPointOnRingBoundary(const OGRPoint* poPoint, int bTe
         const double x2 = prev_diff_x;
         const double y2 = prev_diff_y;
 
-        /* If the point is on the segment, return immediatly */
+        /* If the point is on the segment, return immediately. */
         /* FIXME? If the test point is not exactly identical to one of */
         /* the vertices of the ring, but somewhere on a segment, there's */
-        /* little chance that we get 0. So that should be tested against some epsilon */
+        /* little chance that we get 0. So that should be tested against some */
+        /* epsilon. */
 
         if ( x1 * y2 - x2 * y1 == 0 )
         {

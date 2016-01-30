@@ -75,7 +75,7 @@ CPL_CVSID("$Id$");
 #define CEA     97L     // Cylindrical Equal Area (Grid corners set
                         // in meters for EASE grid) 
 #define BCEA    98L     // Cylindrical Equal Area (Grid corners set
-                        // in DMS degs for EASE grid) 
+                        // in DMS degs for EASE grid)
 #define ISINUS  99L     // Integerized Sinusoidal Grid
                         // (added by Raj Gejjagaraguppe ARC for MODIS) 
 
@@ -108,7 +108,7 @@ CPL_CVSID("$Id$");
 /*  Correspondence between GCTP and EPSG ellipsoid codes.               */
 /************************************************************************/
 
-static const long aoEllips[] =
+static const int aoEllips[] =
 {
     7008,   // Clarke, 1866 (NAD1927)
     7034,   // Clarke, 1880
@@ -158,7 +158,7 @@ OGRErr OSRImportFromUSGS( OGRSpatialReferenceH hSRS, long iProjsys,
                           long iZone, double *padfPrjParams, long iDatum )
 
 {
-    VALIDATE_POINTER1( hSRS, "OSRImportFromUSGS", CE_Failure );
+    VALIDATE_POINTER1( hSRS, "OSRImportFromUSGS", OGRERR_FAILURE );
 
     return ((OGRSpatialReference *) hSRS)->importFromUSGS( iProjsys, iZone,
                                                            padfPrjParams,
@@ -456,7 +456,7 @@ OGRErr OGRSpatialReference::importFromUSGS( long iProjSys, long iZone,
                     iZone = -iZone;
                     bNorth = FALSE;
                 }
-                SetUTM( iZone, bNorth );
+                SetUTM( (int)iZone, bNorth );
             }
             break;
 
@@ -470,8 +470,8 @@ OGRErr OGRSpatialReference::importFromUSGS( long iProjSys, long iZone,
                     CPLError( CE_Warning, CPLE_AppDefined,
                               "Wrong datum for State Plane projection %d. "
                               "Should be 0 or 8.", (int) iDatum );
-                
-                SetStatePlane( iZone, bNAD83 );
+
+                SetStatePlane( (int)iZone, bNAD83 );
             }
             break;
 
@@ -646,7 +646,7 @@ OGRErr OGRSpatialReference::importFromUSGS( long iProjSys, long iZone,
         // FIXME: OBEQA --- Oblated Equal Area skipped
 
         // FIXME: ISINUS1 --- Integerized Sinusoidal Grid (the same as 99) skipped
-        
+
         // FIXME: CEA --- Cylindrical Equal Area skipped (Grid corners set in meters for EASE grid)
 
         // FIXME: BCEA --- Cylindrical Equal Area skipped (Grid corners set in DMS degs for EASE grid)
@@ -657,7 +657,7 @@ OGRErr OGRSpatialReference::importFromUSGS( long iProjSys, long iZone,
             CPLDebug( "OSR_USGS", "Unsupported projection: %ld", iProjSys );
             SetLocalCS( CPLString().Printf("GCTP projection number %ld", iProjSys) );
             break;
-            
+
     }
 
 /* -------------------------------------------------------------------- */
@@ -784,7 +784,7 @@ OGRErr OSRExportToUSGS( OGRSpatialReferenceH hSRS,
                         double **ppadfPrjParams, long *piDatum )
 
 {
-    VALIDATE_POINTER1( hSRS, "OSRExportToUSGS", CE_Failure );
+    VALIDATE_POINTER1( hSRS, "OSRExportToUSGS", OGRERR_FAILURE );
 
     *ppadfPrjParams = NULL;
 
@@ -1127,7 +1127,7 @@ OGRErr OGRSpatialReference::exportToUSGS( long *piProjSys, long *piZone,
                   "Geographic system will be used.", pszProjection );
         *piProjSys = GEO;
     }
- 
+
 /* -------------------------------------------------------------------- */
 /*      Translate the datum.                                            */
 /* -------------------------------------------------------------------- */
@@ -1155,7 +1155,7 @@ OGRErr OGRSpatialReference::exportToUSGS( long *piProjSys, long *piZone,
                       "Datum \"%s\" unsupported by USGS GCTP. "
                       "Try to translate ellipsoid definition.", pszDatum );
 #endif
-            
+
             for ( i = 0; i < NUMBER_OF_ELLIPSOIDS; i++ )
             {
                 double  dfSM;

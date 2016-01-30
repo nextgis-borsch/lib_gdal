@@ -79,12 +79,12 @@ static void    (*pfn_pj_ctx_free)( projCtx ) = NULL;
 
 // Locale-safe proj starts with 4.10
 #if defined(PJ_LOCALE_SAFE)
-static int      bProjLocaleSafe = PJ_LOCALE_SAFE;
+static bool      bProjLocaleSafe = PJ_LOCALE_SAFE;
 #else
-static int      bProjLocaleSafe = FALSE;
+static bool      bProjLocaleSafe = false;
 #endif
 
-#if (defined(WIN32) || defined(WIN32CE)) && !defined(__MINGW32__)
+#if defined(WIN32) && !defined(__MINGW32__)
 #  define LIBNAME      "proj.dll"
 #elif defined(__MINGW32__)
 // XXX: If PROJ.4 library was properly built using libtool in Cygwin or MinGW
@@ -92,7 +92,7 @@ static int      bProjLocaleSafe = FALSE;
 // (it is CURRENT-AGE number). If DLL came somewhere else (e.g. from MSVC
 // build) it can be named either way, so use PROJSO environment variable to
 // specify the right library name. By default assume that in Cygwin/MinGW all
-// components were buit in the same way.
+// components were built in the same way.
 #  define LIBNAME      "libproj-0.dll"
 #elif defined(__CYGWIN__)
 #  define LIBNAME      "cygproj-0.dll"
@@ -127,7 +127,6 @@ class OGRProj4CT : public OGRCoordinateTransformation
     double      dfSourceToRadians;
     int         bSourceWrap;
     double      dfSourceWrapLong;
-    
 
     OGRSpatialReference *poSRSTarget;
     void        *psPJTarget;
@@ -141,10 +140,10 @@ class OGRProj4CT : public OGRCoordinateTransformation
     int         bWebMercatorToWGS84;
 
     int         nErrorCount;
-    
+
     int         bCheckWithInvertProj;
     double      dfThreshold;
-    
+
     projCtx     pjctx;
 
     int         InitializeNoLock( OGRSpatialReference *poSource, 
@@ -172,7 +171,6 @@ public:
     virtual int TransformEx( int nCount, 
                              double *x, double *y, double *z = NULL,
                              int *panSuccess = NULL );
-
 };
 
 /************************************************************************/
@@ -182,10 +180,8 @@ public:
 static const char* GetProjLibraryName()
 {
     const char *pszLibName = LIBNAME;
-#if !defined(WIN32CE)
     if( CPLGetConfigOption("PROJSO",NULL) != NULL )
         pszLibName = CPLGetConfigOption("PROJSO",NULL);
-#endif
     return pszLibName;
 }
 
@@ -193,16 +189,16 @@ static const char* GetProjLibraryName()
 /*                          LoadProjLibrary()                           */
 /************************************************************************/
 
-static int LoadProjLibrary_unlocked()
+static bool LoadProjLibrary_unlocked()
 
 {
-    static int  bTriedToLoad = FALSE;
+    static bool bTriedToLoad = false;
     const char *pszLibName;
-    
+
     if( bTriedToLoad )
         return( pfn_pj_transform != NULL );
 
-    bTriedToLoad = TRUE;
+    bTriedToLoad = true;
 
     pszLibName = GetProjLibraryName();
 
@@ -226,12 +222,13 @@ static int LoadProjLibrary_unlocked()
 #else
     CPLPushErrorHandler( CPLQuietErrorHandler );
 
+    /* coverity[tainted_string] */
     pfn_pj_init = (projPJ (*)(int, char**)) CPLGetSymbol( pszLibName,
                                                        "pj_init" );
     CPLPopErrorHandler();
-    
+
     if( pfn_pj_init == NULL )
-       return( FALSE );
+       return false;
 
     pfn_pj_init_plus = (projPJ (*)(const char *)) 
         CPLGetSymbol( pszLibName, "pj_init_plus" );
@@ -282,7 +279,7 @@ static int LoadProjLibrary_unlocked()
         pfn_pj_init_plus_ctx = NULL;
         pfn_pj_ctx_get_errno = NULL;
     }
-    
+
     if( bProjLocaleSafe )
         CPLDebug("OGRCT", "Using locale-safe proj version");
 
@@ -293,13 +290,13 @@ static int LoadProjLibrary_unlocked()
                   "Please upgrade to PROJ 4.1.2 or later.", 
                   pszLibName );
 
-        return FALSE;
+        return false;
     }
 
-    return( TRUE );
+    return true;
 }
 
-static int LoadProjLibrary()
+static bool LoadProjLibrary()
 
 {
     CPLMutexHolderD( &hPROJMutex );
@@ -367,7 +364,7 @@ char *OCTProj4Normalize( const char *pszProj4Src )
  *
  * @param hCT the object to delete
  */
- 
+
 void CPL_STDCALL
 OCTDestroyCoordinateTransformation( OGRCoordinateTransformationH hCT )
 
@@ -394,7 +391,7 @@ OCTDestroyCoordinateTransformation( OGRCoordinateTransformationH hCT )
  *
  * @since GDAL 1.7.0
  */
- 
+
 void OGRCoordinateTransformation::DestroyCT(OGRCoordinateTransformation* poCT)
 {
     delete poCT;
@@ -439,7 +436,7 @@ OGRCreateCoordinateTransformation( OGRSpatialReference *poSource,
     }
 
     poCT = new OGRProj4CT();
-    
+
     if( !poCT->Initialize( poSource, poTarget ) )
     {
         delete poCT;
@@ -472,7 +469,7 @@ OGRCreateCoordinateTransformation( OGRSpatialReference *poSource,
  * @param hTargetSRS target spatial reference system. 
  * @return NULL on failure or a ready to use transformation object.
  */
- 
+
 OGRCoordinateTransformationH CPL_STDCALL 
 OCTNewCoordinateTransformation(
     OGRSpatialReferenceH hSourceSRS, OGRSpatialReferenceH hTargetSRS )
@@ -488,34 +485,18 @@ OCTNewCoordinateTransformation(
 /*                             OGRProj4CT()                             */
 /************************************************************************/
 
-OGRProj4CT::OGRProj4CT()
-
+OGRProj4CT::OGRProj4CT() :
+    poSRSSource(NULL), psPJSource(NULL), bSourceLatLong(FALSE),
+    dfSourceToRadians(0.0), bSourceWrap(FALSE), dfSourceWrapLong(0.0),
+    poSRSTarget(NULL), psPJTarget(NULL), bTargetLatLong(FALSE),
+    dfTargetFromRadians(0.0), bTargetWrap(FALSE), dfTargetWrapLong(0.0),
+    bIdentityTransform(FALSE), bWebMercatorToWGS84(FALSE), nErrorCount(0),
+    bCheckWithInvertProj(FALSE), dfThreshold(0.0), pjctx(NULL), nMaxCount(0),
+    padfOriX(NULL), padfOriY(NULL), padfOriZ(NULL), padfTargetX(NULL),
+    padfTargetY(NULL), padfTargetZ(NULL)
 {
-    poSRSSource = NULL;
-    poSRSTarget = NULL;
-    psPJSource = NULL;
-    psPJTarget = NULL;
-    
-    bIdentityTransform = FALSE;
-    //bWGS84ToWebMercator = FALSE;
-    bWebMercatorToWGS84 = FALSE;
-    nErrorCount = 0;
-    
-    bCheckWithInvertProj = FALSE;
-    dfThreshold = 0;
-
-    nMaxCount = 0;
-    padfOriX = NULL;
-    padfOriY = NULL;
-    padfOriZ = NULL;
-    padfTargetX = NULL;
-    padfTargetY = NULL;
-    padfTargetZ = NULL;
-
     if (pfn_pj_ctx_alloc != NULL)
         pjctx = pfn_pj_ctx_alloc();
-    else
-        pjctx = NULL;
 }
 
 /************************************************************************/
@@ -668,9 +649,9 @@ int OGRProj4CT::InitializeNoLock( OGRSpatialReference * poSourceIn,
         bTargetWrap = TRUE;
         CPLDebug( "OGRCT", "Wrap target at %g.", dfTargetWrapLong );
     }
-    
+
     bCheckWithInvertProj = CSLTestBoolean(CPLGetConfigOption( "CHECK_WITH_INVERT_PROJ", "NO" ));
-    
+
     /* The threshold is rather experimental... Works well with the cases of ticket #2305 */
     if (bSourceLatLong)
         dfThreshold = CPLAtof(CPLGetConfigOption( "THRESHOLD", ".1" ));
@@ -679,9 +660,9 @@ int OGRProj4CT::InitializeNoLock( OGRSpatialReference * poSourceIn,
         /* a tolerance of 10000 */
         dfThreshold = CPLAtof(CPLGetConfigOption( "THRESHOLD", "10000" ));
 
-    // OGRThreadSafety: The following variable is not a thread safety issue 
-    // since the only issue is incrementing while accessing which at worse 
-    // means debug output could be one "increment" late. 
+    // OGRThreadSafety: The following variable is not a thread safety issue
+    // since the only issue is incrementing while accessing which at worse
+    // means debug output could be one "increment" late.
     static int   nDebugReportCount = 0;
 
     char        *pszSrcProj4Defn = NULL;
@@ -784,7 +765,7 @@ int OGRProj4CT::InitializeNoLock( OGRSpatialReference * poSourceIn,
         pszDst = strstr(pszSrcProj4Defn, "+nadgrids=@null ");
         pszSrc = pszDst + strlen("+nadgrids=@null ");
         memmove(pszDst, pszSrc, strlen(pszSrc)+1);
-        
+
         pszDst = strstr(pszSrcProj4Defn, "+wktext ");
         if( pszDst )
         {
@@ -805,7 +786,7 @@ int OGRProj4CT::InitializeNoLock( OGRSpatialReference * poSourceIn,
             psPJSource = pfn_pj_init_plus_ctx( pjctx, pszSrcProj4Defn );
         else
             psPJSource = pfn_pj_init_plus( pszSrcProj4Defn );
-        
+
         if( psPJSource == NULL )
         {
             if( pjctx != NULL)
@@ -835,7 +816,7 @@ int OGRProj4CT::InitializeNoLock( OGRSpatialReference * poSourceIn,
             }
         }
     }
-    
+
     if( nDebugReportCount < 10 )
         CPLDebug( "OGRCT", "Source: %s", pszSrcProj4Defn );
 
@@ -855,7 +836,7 @@ int OGRProj4CT::InitializeNoLock( OGRSpatialReference * poSourceIn,
             psPJTarget = pfn_pj_init_plus_ctx( pjctx, pszDstProj4Defn );
         else
             psPJTarget = pfn_pj_init_plus( pszDstProj4Defn );
-        
+
         if( psPJTarget == NULL )
             CPLError( CE_Failure, CPLE_NotSupported, 
                     "Failed to initialize PROJ.4 with `%s'.", 
@@ -877,15 +858,17 @@ int OGRProj4CT::InitializeNoLock( OGRSpatialReference * poSourceIn,
     /* Determine if we really have a transformation to do */
     bIdentityTransform = (strcmp(pszSrcProj4Defn, pszDstProj4Defn) == 0);
 
+#if 0
     /* In case of identity transform, under the following conditions, */
-    /* we can also avoid transforming from deegrees <--> radians. */
+    /* we can also avoid transforming from degrees <--> radians. */
     if( bIdentityTransform && bSourceLatLong && !bSourceWrap &&
         bTargetLatLong && !bTargetWrap &&
-        abs(dfSourceToRadians * dfTargetFromRadians - 1.0) < 1e-10 )
+        fabs(dfSourceToRadians * dfTargetFromRadians - 1.0) < 1e-10 )
     {
         /*bSourceLatLong = FALSE;
         bTargetLatLong = FALSE;*/
     }
+#endif
 
     CPLFree( pszSrcProj4Defn );
     CPLFree( pszDstProj4Defn );
@@ -997,7 +980,7 @@ int OGRProj4CT::TransformEx( int nCount, double *x, double *y, double *z,
 /* -------------------------------------------------------------------- */
 /*      Optimized transform from WebMercator to WGS84                   */
 /* -------------------------------------------------------------------- */
-    int bTransformDone = FALSE;
+    bool bTransformDone = false;
     if( bWebMercatorToWGS84 )
     {
 #define REVERSE_SPHERE_RADIUS  (1. / 6378137.)
@@ -1050,10 +1033,10 @@ int OGRProj4CT::TransformEx( int nCount, double *x, double *y, double *z,
             }
         }
 
-        bTransformDone = TRUE;
+        bTransformDone = true;
     }
     else if( bIdentityTransform )
-        bTransformDone = TRUE;
+        bTransformDone = true;
 
 /* -------------------------------------------------------------------- */
 /*      Do the transformation (or not...) using PROJ.4.                 */
@@ -1097,7 +1080,7 @@ int OGRProj4CT::TransformEx( int nCount, double *x, double *y, double *z,
             {
                 memcpy(padfTargetZ, z, sizeof(double)*nCount);
             }
-            
+
             err = pfn_pj_transform( psPJTarget, psPJSource , nCount, 1,
                                     padfTargetX, padfTargetY, (z) ? padfTargetZ : NULL);
             if (err == 0)
@@ -1140,7 +1123,7 @@ int OGRProj4CT::TransformEx( int nCount, double *x, double *y, double *z,
             const char *pszError = NULL;
             if( pfn_pj_strerrno != NULL )
                 pszError = pfn_pj_strerrno( err );
-            
+
             if( pszError == NULL )
                 CPLError( CE_Failure, CPLE_AppDefined, 
                           "Reprojection failed, err = %d", 
@@ -1227,4 +1210,3 @@ int CPL_STDCALL OCTTransformEx( OGRCoordinateTransformationH hTransform,
     return ((OGRCoordinateTransformation*) hTransform)->
         TransformEx( nCount, x, y, z, pabSuccess );
 }
-

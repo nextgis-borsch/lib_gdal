@@ -28,10 +28,11 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "gdal_pam.h"
 #include "cpl_string.h"
 #include "cpl_http.h"
 #include "cpl_atomic_ops.h"
+#include "gdal_frmts.h"
+#include "gdal_pam.h"
 
 CPL_CVSID("$Id$");
 
@@ -46,12 +47,12 @@ static const char* HTTPFetchContentDispositionFilename(char** papszHeaders)
     while(papszIter && *papszIter)
     {
         /* For multipart, we have in raw format, but without end-of-line characters */
-        if (strncmp(*papszIter, "Content-Disposition: attachment; filename=", 42) == 0)
+        if (STARTS_WITH(*papszIter, "Content-Disposition: attachment; filename="))
         {
             return *papszIter + 42;
         }
         /* For single part, the headers are in KEY=VAL format, but with e-o-l ... */
-        else if (strncmp(*papszIter, "Content-Disposition=attachment; filename=", 41) == 0)
+        else if (STARTS_WITH(*papszIter, "Content-Disposition=attachment; filename="))
         {
             char* pszVal = (char*)(*papszIter + 41);
             char* pszEOL = strchr(pszVal, '\r');
@@ -77,16 +78,16 @@ static GDALDataset *HTTPOpen( GDALOpenInfo * poOpenInfo )
     if( poOpenInfo->nHeaderBytes != 0 )
         return NULL;
 
-    if( !EQUALN(poOpenInfo->pszFilename,"http:",5)
-        && !EQUALN(poOpenInfo->pszFilename,"https:",6)
-        && !EQUALN(poOpenInfo->pszFilename,"ftp:",4) )
+    if( !STARTS_WITH_CI(poOpenInfo->pszFilename, "http:")
+        && !STARTS_WITH_CI(poOpenInfo->pszFilename, "https:")
+        && !STARTS_WITH_CI(poOpenInfo->pszFilename, "ftp:") )
         return NULL;
 
 /* -------------------------------------------------------------------- */
 /*      Fetch the result.                                               */
 /* -------------------------------------------------------------------- */
     CPLErrorReset();
-    
+
     CPLHTTPResult *psResult = CPLHTTPFetch( poOpenInfo->pszFilename, NULL );
 
 /* -------------------------------------------------------------------- */
@@ -199,20 +200,17 @@ static GDALDataset *HTTPOpen( GDALOpenInfo * poOpenInfo )
 void GDALRegister_HTTP()
 
 {
-    GDALDriver	*poDriver;
+    if( GDALGetDriverByName( "HTTP" ) != NULL )
+        return;
 
-    if( GDALGetDriverByName( "HTTP" ) == NULL )
-    {
-        poDriver = new GDALDriver();
-        
-        poDriver->SetDescription( "HTTP" );
-        poDriver->SetMetadataItem( GDAL_DCAP_RASTER, "YES" );
-        poDriver->SetMetadataItem( GDAL_DCAP_VECTOR, "YES" );
-        poDriver->SetMetadataItem( GDAL_DMD_LONGNAME, 
-                                   "HTTP Fetching Wrapper" );
-        
-        poDriver->pfnOpen = HTTPOpen;
+    GDALDriver *poDriver = new GDALDriver();
 
-        GetGDALDriverManager()->RegisterDriver( poDriver );
-    }
+    poDriver->SetDescription( "HTTP" );
+    poDriver->SetMetadataItem( GDAL_DCAP_RASTER, "YES" );
+    poDriver->SetMetadataItem( GDAL_DCAP_VECTOR, "YES" );
+    poDriver->SetMetadataItem( GDAL_DMD_LONGNAME, "HTTP Fetching Wrapper" );
+
+    poDriver->pfnOpen = HTTPOpen;
+
+    GetGDALDriverManager()->RegisterDriver( poDriver );
 }

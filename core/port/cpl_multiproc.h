@@ -28,8 +28,8 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#ifndef _CPL_MULTIPROC_H_INCLUDED_
-#define _CPL_MULTIPROC_H_INCLUDED_
+#ifndef CPL_MULTIPROC_H_INCLUDED_
+#define CPL_MULTIPROC_H_INCLUDED_
 
 #include "cpl_port.h"
 
@@ -124,14 +124,14 @@ CPL_C_END
 
 #ifdef __cplusplus
 
-/* Instanciates the mutex if not already done. The parameter x should be a (void**)  */
+/* Instantiates the mutex if not already done. The parameter x should be a (void**). */
 #define CPLMutexHolderD(x)  CPLMutexHolder oHolder(x,1000.0,__FILE__,__LINE__);
 
-/* Instanciates the mutex with options if not already done. */
-/* The parameter x should be a (void**)  */
+/* Instantiates the mutex with options if not already done. */
+/* The parameter x should be a (void**). */
 #define CPLMutexHolderExD(x, nOptions)  CPLMutexHolder oHolder(x,1000.0,__FILE__,__LINE__,nOptions);
 
-/* This variant assumes the the mutex has already been created. If not, it will */
+/* This variant assumes the mutex has already been created. If not, it will */
 /* be a no-op. The parameter x should be a (void*) */
 #define CPLMutexHolderOptionalLockD(x)  CPLMutexHolder oHolder(x,1000.0,__FILE__,__LINE__);
 
@@ -144,13 +144,13 @@ class CPL_DLL CPLMutexHolder
 
   public:
 
-    /* Instanciates the mutex if not already done */
+    /* Instantiates the mutex if not already done. */
     CPLMutexHolder( CPLMutex **phMutex, double dfWaitInSeconds = 1000.0,
                     const char *pszFile = __FILE__,
                     int nLine = __LINE__,
                     int nOptions = CPL_MUTEX_RECURSIVE);
 
-    /* This variant assumes the the mutex has already been created. If not, it will */
+    /* This variant assumes the mutex has already been created. If not, it will */
     /* be a no-op */
     CPLMutexHolder( CPLMutex* hMutex, double dfWaitInSeconds = 1000.0,
                     const char *pszFile = __FILE__,
@@ -159,10 +159,10 @@ class CPL_DLL CPLMutexHolder
     ~CPLMutexHolder();
 };
 
-/* Instanciates the lock if not already done. The parameter x should be a (CPLLock**) */
+/* Instantiates the lock if not already done. The parameter x should be a (CPLLock**). */
 #define CPLLockHolderD(x, eType)  CPLLockHolder oHolder(x,eType,__FILE__,__LINE__);
 
-/* This variant assumes the the lock has already been created. If not, it will */
+/* This variant assumes the lock has already been created. If not, it will */
 /* be a no-op. The parameter should be (CPLLock*) */
 #define CPLLockHolderOptionalLockD(x)  CPLLockHolder oHolder(x,__FILE__,__LINE__);
 
@@ -175,12 +175,12 @@ class CPL_DLL CPLLockHolder
 
   public:
 
-    /* Instanciates the lock if not already done */
+    /* Instantiates the lock if not already done. */
     CPLLockHolder( CPLLock **phSpin, CPLLockType eType,
                     const char *pszFile = __FILE__,
                     int nLine = __LINE__);
 
-    /* This variant assumes the the lock has already been created. If not, it will */
+    /* This variant assumes the lock has already been created. If not, it will */
     /* be a no-op */
     CPLLockHolder( CPLLock* hSpin,
                     const char *pszFile = __FILE__,
@@ -216,14 +216,16 @@ class CPL_DLL CPLLockHolder
 
 CPL_C_START
 void CPL_DLL * CPLGetTLS( int nIndex );
+void CPL_DLL * CPLGetTLSEx( int nIndex, int* pbMemoryErrorOccurred );
 void CPL_DLL CPLSetTLS( int nIndex, void *pData, int bFreeOnExit );
 
 /* Warning : the CPLTLSFreeFunc must not in any case directly or indirectly */
 /* use or fetch any TLS data, or a terminating thread will hang ! */
 typedef void (*CPLTLSFreeFunc)( void* pData );
 void CPL_DLL CPLSetTLSWithFreeFunc( int nIndex, void *pData, CPLTLSFreeFunc pfnFree );
+void CPL_DLL CPLSetTLSWithFreeFuncEx( int nIndex, void *pData, CPLTLSFreeFunc pfnFree, int* pbMemoryErrorOccurred );
 
 void CPL_DLL CPLCleanupTLS( void );
 CPL_C_END
 
-#endif /* _CPL_MULTIPROC_H_INCLUDED_ */
+#endif /* CPL_MULTIPROC_H_INCLUDED_ */

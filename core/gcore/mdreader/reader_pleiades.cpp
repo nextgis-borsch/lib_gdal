@@ -52,12 +52,12 @@ GDALMDReaderPleiades::GDALMDReaderPleiades(const char *pszPath,
 
     // find last underline
     char sBaseName[512];
-    int nLastUnderline = 0;
+    size_t nLastUnderline = 0;
     for(size_t i = 4; i < nBaseNameLen; i++)
     {
         sBaseName[i - 4] = pszBaseName[i];
         if(pszBaseName[i] == '_')
-            nLastUnderline = i - 4;
+            nLastUnderline = i - 4U;
     }
 
     sBaseName[nLastUnderline] = 0;
@@ -108,7 +108,7 @@ GDALMDReaderPleiades::~GDALMDReaderPleiades()
 /**
  * HasRequiredFiles()
  */
-const bool GDALMDReaderPleiades::HasRequiredFiles() const
+bool GDALMDReaderPleiades::HasRequiredFiles() const
 {
     if (!m_osIMDSourceFilename.empty())
         return true;
@@ -256,7 +256,7 @@ void GDALMDReaderPleiades::LoadMetadata()
  * LoadRPCXmlFile()
  */
 
-static const char *apszRPBMap[] = {
+static const char * const apszRPBMap[] = {
     RPC_LINE_OFF,   "RFM_Validity.LINE_OFF",
     RPC_SAMP_OFF,   "RFM_Validity.SAMP_OFF",
     RPC_LAT_OFF,    "RFM_Validity.LAT_OFF",
@@ -269,7 +269,7 @@ static const char *apszRPBMap[] = {
     RPC_HEIGHT_SCALE,   "RFM_Validity.HEIGHT_SCALE",
     NULL,             NULL };
 
-static const char *apszRPCTXT20ValItems[] =
+static const char * const apszRPCTXT20ValItems[] =
 {
     RPC_LINE_NUM_COEFF,
     RPC_LINE_DEN_COEFF,

@@ -117,9 +117,9 @@ OGROCISession::~OGROCISession()
 /*                          EstablishSession()                          */
 /************************************************************************/
 
-int OGROCISession::EstablishSession( const char *pszUserid, 
-                                     const char *pszPassword,
-                                     const char *pszDatabase )
+int OGROCISession::EstablishSession( const char *pszUseridIn, 
+                                     const char *pszPasswordIn,
+                                     const char *pszDatabaseIn )
 
 {
 /* -------------------------------------------------------------------- */
@@ -128,9 +128,9 @@ int OGROCISession::EstablishSession( const char *pszUserid,
 
     ub4 eCred = OCI_CRED_RDBMS;
 
-    if( EQUAL(pszDatabase, "") &&
-        EQUAL(pszPassword, "") &&
-        EQUAL(pszUserid, "/") )
+    if( EQUAL(pszDatabaseIn, "") &&
+        EQUAL(pszPasswordIn, "") &&
+        EQUAL(pszUseridIn, "/") )
     {
         eCred = OCI_CRED_EXT;
     }
@@ -175,8 +175,8 @@ int OGROCISession::EstablishSession( const char *pszUserid,
         return FALSE;
     }
 
-    if( Failed( OCIServerAttach( hServer, hError, (text*) pszDatabase,
-                strlen((char*) pszDatabase), 0) ) )
+    if( Failed( OCIServerAttach( hServer, hError, (text*) pszDatabaseIn,
+                static_cast<int>(strlen((char*) pszDatabaseIn)), 0) ) )
     {
         return FALSE;
     }
@@ -198,14 +198,14 @@ int OGROCISession::EstablishSession( const char *pszUserid,
     }
 
     if( Failed( OCIAttrSet((dvoid *) hSession, (ub4) OCI_HTYPE_SESSION,
-                (dvoid *) pszUserid, (ub4) strlen((char *) pszUserid),
+                (dvoid *) pszUseridIn, (ub4) strlen((char *) pszUseridIn),
                 (ub4) OCI_ATTR_USERNAME, hError) ) )
     {
         return FALSE;
     }
 
     if( Failed( OCIAttrSet((dvoid *) hSession, (ub4) OCI_HTYPE_SESSION,
-                (dvoid *) pszPassword, (ub4) strlen((char *) pszPassword),
+                (dvoid *) pszPasswordIn, (ub4) strlen((char *) pszPasswordIn),
                 (ub4) OCI_ATTR_PASSWORD, hError) ) )
     {
         return FALSE;
@@ -218,7 +218,7 @@ int OGROCISession::EstablishSession( const char *pszUserid,
     if( Failed( OCISessionBegin(hSvcCtx, hError, hSession, eCred,
                 (ub4) OCI_DEFAULT) ) )
     {
-        CPLDebug("OCI", "OCISessionBegin() failed to intialize session");
+        CPLDebug("OCI", "OCISessionBegin() failed to initialize session");
         return FALSE;
     }
 
@@ -275,12 +275,12 @@ int OGROCISession::EstablishSession( const char *pszUserid,
 /* -------------------------------------------------------------------- */
 /*      Record information about the session.                           */
 /* -------------------------------------------------------------------- */
-    this->pszUserid = CPLStrdup(pszUserid);
-    this->pszPassword = CPLStrdup(pszPassword);
-    this->pszDatabase = CPLStrdup(pszDatabase);
+    this->pszUserid = CPLStrdup(pszUseridIn);
+    this->pszPassword = CPLStrdup(pszPasswordIn);
+    this->pszDatabase = CPLStrdup(pszDatabaseIn);
 
 /* -------------------------------------------------------------------- */
-/*      Setting upt the OGR compatible time formating rules.            */
+/*      Setting up the OGR compatible time formatting rules.            */
 /* -------------------------------------------------------------------- */
     OGROCIStatement     oSetNLSTimeFormat( this );
     if( oSetNLSTimeFormat.Execute( "ALTER SESSION SET NLS_DATE_FORMAT='YYYY/MM/DD' \
@@ -362,7 +362,7 @@ OGROCISession::GetParmInfo( OCIParam *hParmDesc, OGRFieldDefn *poOGRDefn,
     ub1 bOCINull;
     char *pszColName;
     char szTermColName[128];
-    
+
 /* -------------------------------------------------------------------- */
 /*      Get basic parameter details.                                    */
 /* -------------------------------------------------------------------- */
@@ -401,7 +401,7 @@ OGROCISession::GetParmInfo( OCIParam *hParmDesc, OGRFieldDefn *poOGRDefn,
 
     strncpy( szTermColName, pszColName, nColLen );
     szTermColName[nColLen] = '\0';
-    
+
     poOGRDefn->SetName( szTermColName );
     poOGRDefn->SetNullable( bOCINull );
 
@@ -516,8 +516,8 @@ void OGROCISession::CleanName( char * pszName )
 
     for( i = 0; pszName[i] != '\0'; i++ )
     {
-        pszName[i] = toupper(pszName[i]);
-        
+        pszName[i] = static_cast<char>(toupper(pszName[i]));
+
         if( (pszName[i] < '0' || pszName[i] > '9')
             && (pszName[i] < 'A' || pszName[i] > 'Z')
             && pszName[i] != '_' )

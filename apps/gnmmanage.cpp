@@ -45,17 +45,20 @@ enum operation
     op_create,      /** create a new network */
     op_import,      /** add a OGR layer to the network */
     op_connect,     /** connect features from layers added to the network */
-    op_disconnect,  /** dicsonnect features from layers added to the network */
+    op_disconnect,  /** disconnect features from layers added to the network */
     op_rule,        /** add connect rule */
-    op_autoconnect, /** try to connect features base on their tollerance */
+    op_autoconnect, /** try to connect features base on their tolerance */
     op_delete,      /** delete network */
-    op_change_st    /** change veertext or edge blocking state */
+    op_change_st    /** change vertex or edge blocking state */
 };
 
 /************************************************************************/
 /*                               Usage()                                */
 /************************************************************************/
-static void Usage(const char* pszAdditionalMsg, int bShort = TRUE)
+
+static void Usage(const char* pszAdditionalMsg, int bShort = TRUE) CPL_NO_RETURN;
+
+static void Usage(const char* pszAdditionalMsg, int bShort)
 {
     printf("Usage: gnmmanage [--help][-q][-quiet][--long-usage]\n"
            "                 [info]\n"
@@ -212,9 +215,10 @@ int main( int nArgc, char ** papszArgv )
         {
             printf("%s was compiled against GDAL %s and is running against GDAL %s\n",
                     papszArgv[0], GDAL_RELEASE_NAME, GDALVersionInfo("RELEASE_NAME"));
+            CSLDestroy( papszArgv );
             return 0;
-        }        
-    
+        }
+
         else if( EQUAL(papszArgv[iArg],"--help") )
         {
             Usage();
@@ -413,6 +417,7 @@ int main( int nArgc, char ** papszArgv )
         {
             printf( "Coordinate System is '%s'\n", pszProjection );
         }
+        OSRDestroySpatialReference(hSRS);
 
         // report layers
         if(poDS->GetLayerCount() > 0)
@@ -471,6 +476,9 @@ int main( int nArgc, char ** papszArgv )
         const char* pszPath;
         const char* pszNetworkName = CSLFetchNameValue(papszDSCO, GNM_MD_NAME);
 
+        if(pszDataSource == NULL)
+            Usage("No network dataset provided");
+
         //the DSCO have priority on input keys
         if(NULL == pszNetworkName)
         {
@@ -495,6 +503,8 @@ int main( int nArgc, char ** papszArgv )
 
         if(NULL == pszFinalSRS)
             Usage("No spatial reference provided");
+        if( pszFormat == NULL )
+            Usage("No output format provided");
 
         GDALDriver *poDriver = GetGDALDriverManager()->GetDriverByName(pszFormat);
         if( poDriver == NULL )
@@ -898,6 +908,7 @@ int main( int nArgc, char ** papszArgv )
     }
 
 exit:
+    CSLDestroy( papszArgv );
     CSLDestroy( papszDSCO );
     CSLDestroy( papszLayers );
 

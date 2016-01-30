@@ -27,15 +27,12 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#include "gdal_frmts.h"
 #include "rawdataset.h"
 
 CPL_CVSID("$Id$");
 
-CPL_C_START
-void    GDALRegister_ISCE(void);
-CPL_C_END
-
-static const char *papszISCE2GDALDatatypes[] = {
+static const char * const apszISCE2GDALDatatypes[] = {
     "BYTE:Byte",
     "CHAR:Byte",
     "SHORT:Int16",
@@ -52,7 +49,7 @@ static const char *papszISCE2GDALDatatypes[] = {
     "CDOUBLE:CFloat64",
     NULL };
 
-static const char *papszGDAL2ISCEDatatypes[] = {
+static const char * const apszGDAL2ISCEDatatypes[] = {
     "Byte:BYTE",
     "Int16:SHORT",
     "Int32:INT",
@@ -67,7 +64,7 @@ static const char *papszGDAL2ISCEDatatypes[] = {
     NULL };
 
 enum Scheme { BIL = 0, BIP = 1, BSQ = 2 };
-const char *papszSchemeNames[] = { "BIL", "BIP", "BSQ", NULL };
+static const char * const apszSchemeNames[] = { "BIL", "BIP", "BSQ", NULL };
 
 /************************************************************************/
 /* ==================================================================== */
@@ -82,18 +79,18 @@ class ISCEDataset : public RawDataset
     friend class ISCERasterBand;
 
     VSILFILE    *fpImage;
-    
+
     char        *pszXMLFilename;
 
     enum Scheme eScheme;
 
   public:
-                ISCEDataset( void );
-                ~ISCEDataset( void );
+                ISCEDataset();
+                ~ISCEDataset();
 
-    virtual void        FlushCache( void );
-    virtual char      **GetFileList( void );
-    
+    virtual void        FlushCache();
+    virtual char      **GetFileList();
+
     static int          Identify( GDALOpenInfo *poOpenInfo );
     static GDALDataset *Open( GDALOpenInfo *poOpenInfo );
     static GDALDataset *Create( const char *pszFilename,
@@ -142,8 +139,8 @@ static CPLString getXMLFilename( GDALOpenInfo *poOpenInfo )
         /*      We need to tear apart the filename to form a .xml       */
         /*      filename.                                               */
         /* ------------------------------------------------------------ */
-        CPLString osPath = CPLGetPath( poOpenInfo->pszFilename );
-        CPLString osName = CPLGetFilename( poOpenInfo->pszFilename );
+        const CPLString osPath = CPLGetPath( poOpenInfo->pszFilename );
+        const CPLString osName = CPLGetFilename( poOpenInfo->pszFilename );
 
         int iFile = CSLFindString( papszSiblingFiles,
                                    CPLFormFilename( NULL, osName, "xml" ) );
@@ -162,11 +159,11 @@ static CPLString getXMLFilename( GDALOpenInfo *poOpenInfo )
 /*                             ISCEDataset()                            */
 /************************************************************************/
 
-ISCEDataset::ISCEDataset( void )
-{
-    fpImage = NULL;
-    pszXMLFilename = NULL;
-}
+ISCEDataset::ISCEDataset() :
+    fpImage(NULL),
+    pszXMLFilename(NULL),
+    eScheme(BIL)
+{ }
 
 /************************************************************************/
 /*                            ~ISCEDataset()                          */
@@ -177,7 +174,10 @@ ISCEDataset::~ISCEDataset( void )
     FlushCache();
     if ( fpImage != NULL )
     {
-        VSIFCloseL( fpImage );
+        if( VSIFCloseL( fpImage ) != 0 )
+        {
+            CPLError(CE_Failure, CPLE_FileIO, "I/O error");
+        }
     }
     CPLFree( pszXMLFilename );
 }
@@ -198,11 +198,11 @@ void ISCEDataset::FlushCache( void )
 /* -------------------------------------------------------------------- */
 /*      Recreate a XML doc with the dataset information.                */
 /* -------------------------------------------------------------------- */
-    CPLXMLNode *psDocNode, *psTmpNode;
     char sBuf[64];
-    psDocNode = CPLCreateXMLNode( NULL, CXT_Element, "imageFile" );
+    CPLXMLNode *psDocNode = CPLCreateXMLNode( NULL, CXT_Element, "imageFile" );
 
-    psTmpNode = CPLCreateXMLNode( psDocNode, CXT_Element, "property" );
+    CPLXMLNode *psTmpNode
+        = CPLCreateXMLNode( psDocNode, CXT_Element, "property" );
     CPLAddXMLAttributeAndValue( psTmpNode, "name", "WIDTH" );
     snprintf(sBuf, sizeof(sBuf), "%d", nRasterXSize);
     CPLCreateXMLElementAndValue( psTmpNode, "value", sBuf );
@@ -222,10 +222,10 @@ void ISCEDataset::FlushCache( void )
     CPLAddXMLAttributeAndValue( psTmpNode, "name", "DATA_TYPE" );
     CPLCreateXMLElementAndValue( psTmpNode, "value", 
                                  CSLFetchNameValue(
-                                         (char **)papszGDAL2ISCEDatatypes, 
+                                         (char **)apszGDAL2ISCEDatatypes, 
                                          sType ) );
 
-    const char *sScheme = papszSchemeNames[eScheme];
+    const char *sScheme = apszSchemeNames[eScheme];
     psTmpNode = CPLCreateXMLNode( psDocNode, CXT_Element, "property" );
     CPLAddXMLAttributeAndValue( psTmpNode, "name", "SCHEME" );
     CPLCreateXMLElementAndValue( psTmpNode, "value", sScheme );
@@ -244,13 +244,11 @@ void ISCEDataset::FlushCache( void )
     char **papszISCEMetadata = GetMetadata( "ISCE" );
     for (int i = 0; i < CSLCount( papszISCEMetadata ); i++)
     {
-        char **papszTokens;
-
         /* Get the tokens from the metadata item */
-        papszTokens = CSLTokenizeString2( papszISCEMetadata[i],
-                                          "=",
-                                          CSLT_STRIPLEADSPACES
-                                            | CSLT_STRIPENDSPACES);
+        char **papszTokens = CSLTokenizeString2( papszISCEMetadata[i],
+                                                 "=",
+                                                 CSLT_STRIPLEADSPACES
+                                                 | CSLT_STRIPENDSPACES);
         if ( CSLCount( papszTokens ) != 2 )
         {
             CPLDebug( "ISCE",
@@ -298,10 +296,8 @@ void ISCEDataset::FlushCache( void )
 
 char **ISCEDataset::GetFileList()
 {
-    char **papszFileList = NULL;
-
     /* Main data file, etc. */
-    papszFileList = RawDataset::GetFileList();
+    char **papszFileList = RawDataset::GetFileList();
 
     /* XML file. */
     papszFileList = CSLAddString( papszFileList, pszXMLFilename );
@@ -344,8 +340,6 @@ int ISCEDataset::Identify( GDALOpenInfo *poOpenInfo )
 
 GDALDataset *ISCEDataset::Open( GDALOpenInfo *poOpenInfo )
 {
-    bool bNativeOrder = true;
-
 /* -------------------------------------------------------------------- */
 /*      Confirm that the header is compatible with a ISCE dataset.    */
 /* -------------------------------------------------------------------- */
@@ -357,8 +351,7 @@ GDALDataset *ISCEDataset::Open( GDALOpenInfo *poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Open and parse the .xml file                                    */
 /* -------------------------------------------------------------------- */
-    char **papszXmlProps = NULL;
-    CPLString osXMLFilename = getXMLFilename( poOpenInfo );
+    const CPLString osXMLFilename = getXMLFilename( poOpenInfo );
     CPLXMLNode *psNode = CPLParseXMLFile( osXMLFilename );
     if ( psNode == NULL || CPLGetXMLNode( psNode, "=imageFile" ) == NULL )
     {
@@ -366,6 +359,7 @@ GDALDataset *ISCEDataset::Open( GDALOpenInfo *poOpenInfo )
         return NULL;
     }
     CPLXMLNode *psCur  = CPLGetXMLNode( psNode, "=imageFile" )->psChild;
+    char **papszXmlProps = NULL;
     while ( psCur != NULL ) {
         const char *name, *value;
         if ( strcmp(psCur->pszValue, "property") != 0) {
@@ -384,7 +378,6 @@ GDALDataset *ISCEDataset::Open( GDALOpenInfo *poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Fetch required fields.                                          */
 /* -------------------------------------------------------------------- */
-    int nWidth = 0, nFileLength = 0;
     if ( CSLFetchNameValue( papszXmlProps, "WIDTH" ) == NULL
         || CSLFetchNameValue( papszXmlProps, "LENGTH" ) == NULL
         || CSLFetchNameValue( papszXmlProps, "NUMBER_BANDS" ) == NULL
@@ -394,12 +387,14 @@ GDALDataset *ISCEDataset::Open( GDALOpenInfo *poOpenInfo )
         CSLDestroy( papszXmlProps );
         return NULL;
     }
-    nWidth = atoi( CSLFetchNameValue( papszXmlProps, "WIDTH" ) );
-    nFileLength = atoi( CSLFetchNameValue( papszXmlProps, "LENGTH" ) );
+    const int nWidth = atoi( CSLFetchNameValue( papszXmlProps, "WIDTH" ) );
+    const int nFileLength = atoi( CSLFetchNameValue( papszXmlProps, "LENGTH" ) );
 
 /* -------------------------------------------------------------------- */
 /*      Update byte order info if image specify something.              */
 /* -------------------------------------------------------------------- */
+    bool bNativeOrder = true;
+
     if ( CSLFetchNameValue( papszXmlProps, "BYTE_ORDER" ) != NULL )
     {
         const char *sByteOrder = CSLFetchNameValue( papszXmlProps,
@@ -415,8 +410,7 @@ GDALDataset *ISCEDataset::Open( GDALOpenInfo *poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Create a corresponding GDALDataset.                             */
 /* -------------------------------------------------------------------- */
-    ISCEDataset *poDS;
-    poDS = new ISCEDataset();
+    ISCEDataset *poDS = new ISCEDataset();
     poDS->nRasterXSize = nWidth;
     poDS->nRasterYSize = nFileLength;
     poDS->eAccess = poOpenInfo->eAccess;
@@ -447,10 +441,10 @@ GDALDataset *ISCEDataset::Open( GDALOpenInfo *poOpenInfo )
 /*      Create band information objects.                                */
 /* -------------------------------------------------------------------- */
     const char *sDataType =
-        CSLFetchNameValue( (char **)papszISCE2GDALDatatypes,
+        CSLFetchNameValue( (char **)apszISCE2GDALDatatypes,
                            CSLFetchNameValue( papszXmlProps, "DATA_TYPE" ) );
-    GDALDataType eDataType = GDALGetDataTypeByName( sDataType );
-    int nBands = atoi( CSLFetchNameValue( papszXmlProps, "NUMBER_BANDS" ) );
+    const GDALDataType eDataType = GDALGetDataTypeByName( sDataType );
+    const int nBands = atoi( CSLFetchNameValue( papszXmlProps, "NUMBER_BANDS" ) );
     const char *sScheme = CSLFetchNameValue( papszXmlProps, "SCHEME" );
     int nPixelOffset, nLineOffset, nBandOffset;
     if ( EQUAL( sScheme, "BIL" ) )
@@ -479,7 +473,7 @@ GDALDataset *ISCEDataset::Open( GDALOpenInfo *poOpenInfo )
         CSLDestroy( papszXmlProps );
         delete poDS;
         CPLError( CE_Failure, CPLE_OpenFailed,
-                  "Unkown scheme \"%s\" within ISCE raster.\n",
+                  "Unknown scheme \"%s\" within ISCE raster.\n",
                   CSLFetchNameValue( papszXmlProps, "SCHEME" ) );
         return NULL;
     }
@@ -502,7 +496,7 @@ GDALDataset *ISCEDataset::Open( GDALOpenInfo *poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Set all the other header metadata into the ISCE domain       */
 /* -------------------------------------------------------------------- */
-    for (int i = 0; i < CSLCount( papszXmlProps ); i++)
+    for (int i = 0; papszXmlProps != NULL && papszXmlProps[i] != NULL; i++)
     {
         char **papszTokens;
         papszTokens = CSLTokenizeString2( papszXmlProps[i],
@@ -558,8 +552,7 @@ GDALDataset *ISCEDataset::Create( const char *pszFilename,
 /* -------------------------------------------------------------------- */
 /*      Try to create the file.                                         */
 /* -------------------------------------------------------------------- */
-    VSILFILE *fp;
-    fp = VSIFOpenL( pszFilename, "wb" );
+    VSILFILE *fp = VSIFOpenL( pszFilename, "wb" );
     if( fp == NULL )
     {
         CPLError( CE_Failure, CPLE_OpenFailed,
@@ -572,18 +565,18 @@ GDALDataset *ISCEDataset::Create( const char *pszFilename,
 /*      Just write out a couple of bytes to establish the binary        */
 /*      file, and then close it.                                        */
 /* -------------------------------------------------------------------- */
-    VSIFWriteL( (void *) "\0\0", 2, 1, fp );
-    VSIFCloseL( fp );
+    CPL_IGNORE_RET_VAL(VSIFWriteL( (void *) "\0\0", 2, 1, fp ));
+    CPL_IGNORE_RET_VAL(VSIFCloseL( fp ));
 
 /* -------------------------------------------------------------------- */
 /*      Create a minimal XML document.                                  */
 /* -------------------------------------------------------------------- */
-    CPLXMLNode *psDocNode, *psTmpNode;
-    char sBuf[64];
-    psDocNode = CPLCreateXMLNode( NULL, CXT_Element, "imageFile" );
+    CPLXMLNode *psDocNode = CPLCreateXMLNode( NULL, CXT_Element, "imageFile" );
 
-    psTmpNode = CPLCreateXMLNode( psDocNode, CXT_Element, "property" );
+    CPLXMLNode *psTmpNode
+        = CPLCreateXMLNode( psDocNode, CXT_Element, "property" );
     CPLAddXMLAttributeAndValue( psTmpNode, "name", "WIDTH" );
+    char sBuf[64];
     snprintf(sBuf, sizeof(sBuf), "%d", nXSize);
     CPLCreateXMLElementAndValue( psTmpNode, "value", sBuf );
 
@@ -601,7 +594,7 @@ GDALDataset *ISCEDataset::Create( const char *pszFilename,
     CPLAddXMLAttributeAndValue( psTmpNode, "name", "DATA_TYPE" );
     CPLCreateXMLElementAndValue( psTmpNode, "value", 
                                  CSLFetchNameValue(
-                                         (char **)papszGDAL2ISCEDatatypes, 
+                                         (char **)apszGDAL2ISCEDatatypes, 
                                          sType ));
 
     psTmpNode = CPLCreateXMLNode( psDocNode, CXT_Element, "property" );
@@ -619,8 +612,7 @@ GDALDataset *ISCEDataset::Create( const char *pszFilename,
 /* -------------------------------------------------------------------- */
 /*      Write the XML file.                                             */
 /* -------------------------------------------------------------------- */
-    const char  *pszXMLFilename;
-    pszXMLFilename = CPLFormFilename( NULL, pszFilename, "xml" );
+    const char  *pszXMLFilename = CPLFormFilename( NULL, pszFilename, "xml" );
     CPLSerializeXMLTreeToFile( psDocNode, pszXMLFilename );
 
 /* -------------------------------------------------------------------- */
@@ -635,13 +627,13 @@ GDALDataset *ISCEDataset::Create( const char *pszFilename,
 /*                          ISCERasterBand()                            */
 /************************************************************************/
 
-ISCERasterBand::ISCERasterBand( GDALDataset *poDS, int nBand, void *fpRaw,
-                                    vsi_l_offset nImgOffset, int nPixelOffset,
-                                    int nLineOffset,
-                                    GDALDataType eDataType, int bNativeOrder,
-                                    int bIsVSIL, int bOwnsFP ) :
-        RawRasterBand(poDS, nBand, fpRaw, nImgOffset, nPixelOffset,
-                      nLineOffset, eDataType, bNativeOrder, bIsVSIL, bOwnsFP)
+ISCERasterBand::ISCERasterBand( GDALDataset *poDSIn, int nBandIn, void *fpRawIn,
+                                    vsi_l_offset nImgOffsetIn, int nPixelOffsetIn,
+                                    int nLineOffsetIn,
+                                    GDALDataType eDataTypeIn, int bNativeOrderIn,
+                                    int bIsVSILIn, int bOwnsFPIn ) :
+        RawRasterBand(poDSIn, nBandIn, fpRawIn, nImgOffsetIn, nPixelOffsetIn,
+                      nLineOffsetIn, eDataTypeIn, bNativeOrderIn, bIsVSILIn, bOwnsFPIn)
 {
 }
 
@@ -649,29 +641,24 @@ ISCERasterBand::ISCERasterBand( GDALDataset *poDS, int nBand, void *fpRaw,
 /*                         GDALRegister_ISCE()                          */
 /************************************************************************/
 
-void GDALRegister_ISCE( void )
+void GDALRegister_ISCE()
 {
-    GDALDriver  *poDriver;
-
-    if ( !GDAL_CHECK_VERSION( "ISCE" ) )
-    {
+    if( !GDAL_CHECK_VERSION( "ISCE" ) )
         return;
-    }
 
-    if ( GDALGetDriverByName( "ISCE" ) == NULL )
-    {
-        poDriver = new GDALDriver();
-        
-        poDriver->SetDescription( "ISCE" );
-        poDriver->SetMetadataItem( GDAL_DMD_LONGNAME, 
-                                   "ISCE raster" );
-        poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, 
-                                   "frmt_various.html#ISCE" );
-        poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES,
-                                   "Byte Int16 Int32 Int64 Float32"
-                                       " Float64 CInt16 CInt64 CFloat32 "
-                                       " CFloat64" );
-        poDriver->SetMetadataItem( GDAL_DMD_CREATIONOPTIONLIST,
+    if( GDALGetDriverByName( "ISCE" ) != NULL )
+        return;
+
+    GDALDriver *poDriver = new GDALDriver();
+
+    poDriver->SetDescription( "ISCE" );
+    poDriver->SetMetadataItem( GDAL_DMD_LONGNAME, "ISCE raster" );
+    poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, "frmt_various.html#ISCE" );
+    poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES,
+                               "Byte Int16 Int32 Int64 Float32"
+                               " Float64 CInt16 CInt64 CFloat32 "
+                               " CFloat64" );
+    poDriver->SetMetadataItem( GDAL_DMD_CREATIONOPTIONLIST,
 "<CreationOptionList>"
 "   <Option name='SCHEME' type='string-select'>"
 "       <Value>BIP</Value>"
@@ -679,12 +666,11 @@ void GDALRegister_ISCE( void )
 "       <Value>BSQ</Value>"
 "   </Option>"
 "</CreationOptionList>" );
-        poDriver->SetMetadataItem( GDAL_DCAP_RASTER, "YES" );
-        poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
+    poDriver->SetMetadataItem( GDAL_DCAP_RASTER, "YES" );
+    poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
 
-        poDriver->pfnOpen = ISCEDataset::Open;
-        poDriver->pfnCreate = ISCEDataset::Create;
+    poDriver->pfnOpen = ISCEDataset::Open;
+    poDriver->pfnCreate = ISCEDataset::Create;
 
-        GetGDALDriverManager()->RegisterDriver( poDriver );
-    }
+    GetGDALDriverManager()->RegisterDriver( poDriver );
 }

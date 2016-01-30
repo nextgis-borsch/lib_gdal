@@ -2,7 +2,7 @@
  * $Id$
  *
  * Project:  GDAL Utilities
- * Purpose:  Commandline application to do image enhancement. 
+ * Purpose:  Command line application to do image enhancement. 
  * Author:   Frank Warmerdam, warmerdam@pobox.com
  *
  * ****************************************************************************
@@ -45,7 +45,6 @@ ComputeEqualizationLUTs( GDALDatasetH hDataset,  int nLUTBins,
 static CPLErr EnhancerCallback( void *hCBData, 
                                 int nXOff, int nYOff, int nXSize, int nYSize,
                                 void *pData );
-                                
 
 typedef struct {
     GDALRasterBand *poSrcBand;
@@ -135,8 +134,8 @@ int main( int argc, char ** argv )
 
         else if( EQUAL(argv[i],"-ot") && i < argc-1 )
         {
-            int	iType;
-            
+            int iType;
+
             for( iType = 1; iType < GDT_TypeCount; iType++ )
             {
                 if( GDALGetDataTypeName((GDALDataType)iType) != NULL
@@ -155,7 +154,7 @@ int main( int argc, char ** argv )
             i++;
         }
 
-        else if( EQUALN(argv[i],"-s_nodata",9) )
+        else if( STARTS_WITH_CI(argv[i], "-s_nodata") )
         {
             // TODO
             i += 1;
@@ -166,13 +165,13 @@ int main( int argc, char ** argv )
             papszCreateOptions = CSLAddString( papszCreateOptions, argv[++i] );
         }   
 
-        else if( EQUALN(argv[i],"-src_scale",10) && i < argc-2)
+        else if( STARTS_WITH_CI(argv[i], "-src_scale") && i < argc-2)
         {
             // TODO
             i += 2;
         }
 
-        else if( EQUALN(argv[i],"-dst_scale",10) && i < argc-2 )
+        else if( STARTS_WITH_CI(argv[i], "-dst_scale") && i < argc-2 )
         {
             // TODO
             i += 2;
@@ -226,7 +225,7 @@ int main( int argc, char ** argv )
 /* -------------------------------------------------------------------- */
 
     hDataset = GDALOpenShared( pszSource, GA_ReadOnly );
-    
+
     if( hDataset == NULL )
     {
         fprintf( stderr,
@@ -244,13 +243,13 @@ int main( int argc, char ** argv )
     hDriver = GDALGetDriverByName( pszFormat );
     if( hDriver == NULL )
     {
-        int	iDr;
-        
+        int iDr;
+
         printf( "Output driver `%s' not recognised.\n", pszFormat );
         printf( "The following format drivers are configured and support output:\n" );
         for( iDr = 0; iDr < GDALGetDriverCount(); iDr++ )
         {
-            GDALDriverH hDriver = GDALGetDriver(iDr);
+            hDriver = GDALGetDriver(iDr);
 
             if( GDALGetMetadataItem( hDriver, GDAL_DCAP_RASTER, NULL) != NULL &&
                 (GDALGetMetadataItem( hDriver, GDAL_DCAP_CREATE, NULL ) != NULL
@@ -318,7 +317,7 @@ int main( int argc, char ** argv )
                 continue;
 
             // process lut
-            if( iBand == 0 )
+            if( papanLUTs == NULL )
             {
                 nLUTBins = CSLCount(papszTokens) - 3;
                 papanLUTs = (int **) CPLCalloc(sizeof(int*),nBandCount);
@@ -342,7 +341,7 @@ int main( int argc, char ** argv )
         FILE *fpConfig = stdout;
         if( pszConfigFile )
             fpConfig = fopen( pszConfigFile, "w" );
-        
+
         for( iBand = 0; iBand < nBandCount; iBand++ )
         {
             fprintf( fpConfig, "%d:Band ", iBand+1 );
@@ -378,7 +377,7 @@ int main( int argc, char ** argv )
     VRTDataset *poVDS;
     EnhanceCBInfo *pasEInfo = (EnhanceCBInfo *) 
         CPLCalloc(nBandCount, sizeof(EnhanceCBInfo));
-        
+
 /* -------------------------------------------------------------------- */
 /*      Make a virtual clone.                                           */
 /* -------------------------------------------------------------------- */
@@ -403,7 +402,7 @@ int main( int argc, char ** argv )
                         GDALGetGCPs(hDataset),
                         GDALGetGCPProjection( hDataset ) );
     }
-    
+
     poVDS->SetMetadata( ((GDALDataset*)hDataset)->GetMetadata() );
 
     for( iBand = 0; iBand < nBandCount; iBand++ )
@@ -427,7 +426,7 @@ int main( int argc, char ** argv )
 /* -------------------------------------------------------------------- */
         poVDS->AddBand( eBandType, NULL );
         poVRTBand = (VRTSourcedRasterBand *) poVDS->GetRasterBand( iBand+1 );
-            
+
 /* -------------------------------------------------------------------- */
 /*      Create a function based source with info on how to apply the    */
 /*      enhancement.                                                    */
@@ -440,7 +439,7 @@ int main( int argc, char ** argv )
 
         if( papanLUTs )
             pasEInfo[iBand].panLUT = papanLUTs[iBand];
-        
+
         poVRTBand->AddFuncSource( EnhancerCallback, pasEInfo + iBand );
 
 /* -------------------------------------------------------------------- */
@@ -459,9 +458,9 @@ int main( int argc, char ** argv )
         GDALClose( hOutDS );
 
     GDALClose( (GDALDatasetH) poVDS );
-        
+
     GDALClose( hDataset );
-    
+
 /* -------------------------------------------------------------------- */
 /*      Cleanup and exit.                                               */
 /* -------------------------------------------------------------------- */
@@ -586,7 +585,7 @@ static CPLErr EnhancerCallback( void *hCBData,
                   "Currently gdalenhance only supports Byte output." );
         exit( 2 );
     }
-    
+
     GByte *pabyOutImage = (GByte *) pData;
     CPLErr eErr;
     float *pafSrcImage = (float *) CPLCalloc(sizeof(float),nXSize*nYSize);
@@ -607,7 +606,7 @@ static CPLErr EnhancerCallback( void *hCBData,
     float fNoData = (float)psEInfo->poSrcBand->GetNoDataValue( &bHaveNoData );
     double dfScale = 
         psEInfo->nLUTBins / (psEInfo->dfScaleMax - psEInfo->dfScaleMin);
-    
+
     for( iPixel = 0; iPixel < nPixelCount; iPixel++ )
     {
         if( bHaveNoData && pafSrcImage[iPixel] == fNoData )

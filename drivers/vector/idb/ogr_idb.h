@@ -28,8 +28,8 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#ifndef _OGR_IDB_H_INCLUDED_
-#define _OGR_IDB_H_INCLUDED_
+#ifndef OGR_IDB_H_INCLUDED_
+#define OGR_IDB_H_INCLUDED_
 
 #include "ogrsf_frmts.h"
 #include "cpl_error.h"
@@ -153,6 +153,8 @@ class OGRIDBSelectLayer : public OGRIDBLayer
     virtual OGRFeature *GetFeature( GIntBig nFeatureId );
 
     virtual OGRErr      GetExtent(OGREnvelope *psExtent, int bForce = TRUE);
+    virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce)
+                { return OGRLayer::GetExtent(iGeomField, psExtent, bForce); }
 
     virtual int         TestCapability( const char * );
 };

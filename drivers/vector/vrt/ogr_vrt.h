@@ -28,8 +28,8 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#ifndef _OGR_VRT_H_INCLUDED
-#define _OGR_VRT_H_INCLUDED
+#ifndef OGR_VRT_H_INCLUDED
+#define OGR_VRT_H_INCLUDED
 
 #include "ogrsf_frmts.h"
 #include "cpl_error.h"
@@ -75,7 +75,7 @@ class OGRVRTGeomFieldProps
         int                 bUseSpatialSubquery;
 
         OGREnvelope         sStaticEnvelope;
-        
+
         int                 bNullable;
 
                         OGRVRTGeomFieldProps();
@@ -154,7 +154,7 @@ class OGRVRTLayer : public OGRLayer
 /*      Caution : all the below methods should care of calling          */
 /*      FullInitialize() if not already done                            */
 /* -------------------------------------------------------------------- */
-    
+
     virtual void        ResetReading();
     virtual OGRFeature *GetNextFeature();
 
@@ -214,7 +214,7 @@ class OGRVRTDataSource : public OGRDataSource
     OGRLayer          **papoLayers;
     OGRLayerType       *paeLayerType;
     int                 nLayers;
-    
+
     char               *pszName;
 
     CPLXMLNode         *psTree;
@@ -223,11 +223,11 @@ class OGRVRTDataSource : public OGRDataSource
 
     std::set<std::string> aosOtherDSNameSet;
 
-    OGRLayer*           InstanciateWarpedLayer(CPLXMLNode *psLTree,
+    OGRLayer*           InstantiateWarpedLayer(CPLXMLNode *psLTree,
                                                const char *pszVRTDirectory,
                                                int bUpdate,
                                                int nRecLevel);
-    OGRLayer*           InstanciateUnionLayer(CPLXMLNode *psLTree,
+    OGRLayer*           InstantiateUnionLayer(CPLXMLNode *psLTree,
                                                const char *pszVRTDirectory,
                                                int bUpdate,
                                                int nRecLevel);
@@ -241,12 +241,14 @@ class OGRVRTDataSource : public OGRDataSource
                         OGRVRTDataSource(GDALDriver* poDriver);
                         ~OGRVRTDataSource();
 
-    OGRLayer*           InstanciateLayer(CPLXMLNode *psLTree,
+    virtual int         CloseDependentDatasets();
+
+    OGRLayer*           InstantiateLayer(CPLXMLNode *psLTree,
                                     const char *pszVRTDirectory,
                                     int bUpdate,
                                     int nRecLevel = 0);
 
-    OGRLayer*           InstanciateLayerInternal(CPLXMLNode *psLTree,
+    OGRLayer*           InstantiateLayerInternal(CPLXMLNode *psLTree,
                                             const char *pszVRTDirectory,
                                             int bUpdate,
                                             int nRecLevel);
@@ -279,6 +281,6 @@ class OGRVRTDataSource : public OGRDataSource
 
 OGRwkbGeometryType OGRVRTGetGeometryType(const char* pszGType, int* pbError);
 
-#endif /* ndef _OGR_VRT_H_INCLUDED */
+#endif /* ndef OGR_VRT_H_INCLUDED */
 
 

@@ -215,7 +215,7 @@ OGRFeature *OGROGDILayer::GetNextFeature()
         ResetReading();
     }
 
-    while( TRUE )
+    while( true )
     {
         poFeature = GetNextRawFeature();
         if( poFeature == NULL )
@@ -258,7 +258,7 @@ OGRFeature *OGROGDILayer::GetNextRawFeature()
         m_nTotalShapeCount = m_iNextShapeId - m_nFilteredOutShapes;
         return NULL;
     }
-   
+
     poFeature = new OGRFeature(m_poFeatureDefn);
 
     poFeature->SetFID( m_iNextShapeId++ );
@@ -456,7 +456,7 @@ GIntBig OGROGDILayer::GetFeatureCount( int bForce )
 {
     if( m_nTotalShapeCount == -1)
     {
-        m_nTotalShapeCount = OGRLayer::GetFeatureCount( bForce );
+        m_nTotalShapeCount = static_cast<int>(OGRLayer::GetFeatureCount( bForce ));
     }
 
     return m_nTotalShapeCount;
@@ -511,7 +511,7 @@ void OGROGDILayer::BuildFeatureDefn()
 /* -------------------------------------------------------------------- */
 /*      Feature Defn name will be "<OGDILyrName>_<FeatureFamily>"       */
 /* -------------------------------------------------------------------- */
-    
+
     switch(m_eFamily)
     {
       case Point:
@@ -535,7 +535,7 @@ void OGROGDILayer::BuildFeatureDefn()
         eLayerGeomType = wkbUnknown;
         break;
     }
-    
+
     char* pszFeatureDefnName;
     if (m_poODS->LaunderLayerNames())
     {
@@ -556,7 +556,7 @@ void OGROGDILayer::BuildFeatureDefn()
     SetDescription( m_poFeatureDefn->GetName() );
     CPLFree(pszFeatureDefnName);
     pszFeatureDefnName = NULL;
-    
+
     m_poFeatureDefn->SetGeomType(eLayerGeomType);
     m_poFeatureDefn->Reference();
     m_poFeatureDefn->GetGeomFieldDefn(0)->SetSpatialRef(m_poSpatialRef);
@@ -587,6 +587,7 @@ void OGROGDILayer::BuildFeatureDefn()
           case Smallint:
           case Integer:
             oField.SetType( OFTInteger );
+            // TODO: Fix spelling - lenght -> length
             if( oaf->oa.oa_val[i].lenght > 0 )
                 oField.SetWidth( oaf->oa.oa_val[i].lenght );
             else
@@ -635,9 +636,4 @@ void OGROGDILayer::BuildFeatureDefn()
 
         m_poFeatureDefn->AddFieldDefn( &oField );
     }
-    
 }
-
-
-
-

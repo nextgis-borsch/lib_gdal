@@ -123,12 +123,12 @@ OGRFeature *OGRNTFLayer::GetNextFeature()
         poCurrentReader->SetFPPos( nCurrentPos, nCurrentFID );
     else
         poCurrentReader->Reset();
-        
+
 /* -------------------------------------------------------------------- */
 /*      Read features till we find one that satisfies our current       */
 /*      spatial criteria.                                               */
 /* -------------------------------------------------------------------- */
-    while( TRUE )
+    while( true )
     {
         poFeature = poCurrentReader->ReadOGRFeature( this );
         if( poFeature == NULL )

@@ -80,7 +80,7 @@
 
 /*---------------------------------------------------------------------
  * Define a static flag and set it with the byte ordering on this machine
- * we will then compare with this value to decide if we nned to swap
+ * we will then compare with this value to decide if we need to swap
  * bytes or not.
  *
  * CPL_MSB or CPL_LSB should be set in the makefile... the default is
@@ -123,22 +123,22 @@ AVCRawBinFile *AVCRawBinOpen(const char *pszFname, const char *pszAccess,
      * A case for "r+" is included here, but random access is not
      * properly supported yet... so this option should be used with care.
      *----------------------------------------------------------------*/
-    if (EQUALN(pszAccess, "r+", 2))
+    if (STARTS_WITH_CI(pszAccess, "r+"))
     {
         psFile->eAccess = AVCReadWrite;
         psFile->fp = VSIFOpen(pszFname, "r+b");
     }
-    else if (EQUALN(pszAccess, "r", 1))
+    else if (STARTS_WITH_CI(pszAccess, "r"))
     {
         psFile->eAccess = AVCRead;
         psFile->fp = VSIFOpen(pszFname, "rb");
     }
-    else if (EQUALN(pszAccess, "w", 1))
+    else if (STARTS_WITH_CI(pszAccess, "w"))
     {
         psFile->eAccess = AVCWrite;
         psFile->fp = VSIFOpen(pszFname, "wb");
     }
-    else if (EQUALN(pszAccess, "a", 1))
+    else if (STARTS_WITH_CI(pszAccess, "a"))
     {
         psFile->eAccess = AVCWrite;
         psFile->fp = VSIFOpen(pszFname, "ab");
@@ -146,13 +146,13 @@ AVCRawBinFile *AVCRawBinOpen(const char *pszFname, const char *pszAccess,
     else
     {
         CPLError(CE_Failure, CPLE_IllegalArg,
-                 "Acces mode \"%s\" not supported.", pszAccess);
+                 "Access mode \"%s\" not supported.", pszAccess);
         CPLFree(psFile);
         return NULL;
     }
 
     /*-----------------------------------------------------------------
-     * Check that file was opened succesfully, and init struct.
+     * Check that file was opened successfully, and init struct.
      *----------------------------------------------------------------*/
     if (psFile->fp == NULL)
     {
@@ -260,7 +260,7 @@ void AVCRawBinReadBytes(AVCRawBinFile *psFile, int nBytesToRead, GByte *pBuf)
         if (psFile->nCurPos == psFile->nCurSize)
         {
             psFile->nOffset += psFile->nCurSize;
-            psFile->nCurSize = VSIFRead(psFile->abyBuf, sizeof(GByte),
+            psFile->nCurSize = (int)VSIFRead(psFile->abyBuf, sizeof(GByte),
                                         AVCRAWBIN_READBUFSIZE, psFile->fp);
             psFile->nCurPos = 0;
         }
@@ -270,7 +270,7 @@ void AVCRawBinReadBytes(AVCRawBinFile *psFile, int nBytesToRead, GByte *pBuf)
             /* Attempt to read past EOF... generate an error.
              *
              * Note: AVCRawBinEOF() can set bDisableReadBytesEOFError=TRUE
-             *       to disable the error message whils it is testing
+             *       to disable the error message while it is testing
              *       for EOF.
              *
              * TODO: We are not resetting the buffer. Also, there is no easy
@@ -380,10 +380,11 @@ void AVCRawBinFSeek(AVCRawBinFile *psFile, int nOffset, int nFrom)
          * move the FILE * to the right location and be ready to 
          * read from there.
          */
-        VSIFSeek(psFile->fp, psFile->nOffset+nTarget, SEEK_SET);
         psFile->nCurPos = 0;
         psFile->nCurSize = 0;
         psFile->nOffset = psFile->nOffset+nTarget;
+        if( VSIFSeek(psFile->fp, psFile->nOffset+nTarget, SEEK_SET) < 0 )
+            return;
     }
 
 }
@@ -414,14 +415,14 @@ GBool AVCRawBinEOF(AVCRawBinFile *psFile)
 
     /* If the file pointer has been moved by AVCRawBinFSeek(), then
      * we may be at a position past EOF, but VSIFeof() would still
-     * return FALSE. It also returns false if we have read just upto
+     * return FALSE. It also returns false if we have read just up to
      * the end of the file. EOF marker would not have been set unless
      * we try to read past that.
-     * 
+     *
      * To prevent this situation, if the memory buffer is empty,
      * we will try to read 1 byte from the file to force the next
-     * chunk of data to be loaded (and we'll move the the read pointer
-     * back by 1 char after of course!).  
+     * chunk of data to be loaded (and we'll move the read pointer
+     * back by 1 char after of course!).
      * If we are at the end of the file, this will trigger the EOF flag.
      */
     if ((psFile->nCurPos == 0 && psFile->nCurSize == 0) ||
@@ -516,9 +517,9 @@ double  AVCRawBinReadDouble(AVCRawBinFile *psFile)
  *
  * Write the number of bytes from the buffer to the file.
  *
- * If a problem happens, then CPLError() will be called and 
- * CPLGetLastErrNo() can be used to test if a write operation was 
- * succesful.
+ * If a problem happens, then CPLError() will be called and
+ * CPLGetLastErrNo() can be used to test if a write operation was
+ * successful.
  **********************************************************************/
 void AVCRawBinWriteBytes(AVCRawBinFile *psFile, int nBytesToWrite, 
                          const GByte *pBuf)
@@ -555,7 +556,7 @@ void AVCRawBinWriteBytes(AVCRawBinFile *psFile, int nBytesToWrite,
  *
  * If a problem happens, then CPLError() will be called and 
  * CPLGetLastErrNo() can be used to test if a write operation was 
- * succesful.
+ * successful.
  **********************************************************************/
 void  AVCRawBinWriteInt16(AVCRawBinFile *psFile, GInt16 n16Value)
 {
@@ -601,12 +602,12 @@ void  AVCRawBinWriteDouble(AVCRawBinFile *psFile, double dValue)
 /**********************************************************************
  *                          AVCRawBinWriteZeros()
  *
- * Write a number of zeros (sepcified in bytes) at the current position 
+ * Write a number of zeros (specified in bytes) at the current position 
  * in the file.
  *
  * If a problem happens, then CPLError() will be called and 
  * CPLGetLastErrNo() can be used to test if a write operation was 
- * succesful.
+ * successful.
  **********************************************************************/
 void AVCRawBinWriteZeros(AVCRawBinFile *psFile, int nBytesToWrite)
 {
@@ -630,7 +631,7 @@ void AVCRawBinWriteZeros(AVCRawBinFile *psFile, int nBytesToWrite)
  *
  * If a problem happens, then CPLError() will be called and 
  * CPLGetLastErrNo() can be used to test if a write operation was 
- * succesful.
+ * successful.
  **********************************************************************/
 void AVCRawBinWritePaddedString(AVCRawBinFile *psFile, int nFieldSize,
                                 const GByte *pszString)
@@ -644,7 +645,7 @@ void AVCRawBinWritePaddedString(AVCRawBinFile *psFile, int nFieldSize,
     pszString = AVCE00Convert2ArcDBCS(psFile->psDBCSInfo,
                                       pszString, nFieldSize);
 
-    nLen = strlen((const char *)pszString);
+    nLen = (int)strlen((const char *)pszString);
     nLen = MIN(nLen, nFieldSize);
     numSpaces = nFieldSize - nLen;
 
@@ -659,4 +660,3 @@ void AVCRawBinWritePaddedString(AVCRawBinFile *psFile, int nFieldSize,
                             (GByte*)acSpaces);
     }
 }
-

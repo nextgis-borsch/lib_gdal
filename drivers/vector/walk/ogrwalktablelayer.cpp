@@ -94,18 +94,18 @@ CPLErr OGRWalkTableLayer::Initialize( const char *pszLayerName,
 /* -------------------------------------------------------------------- */
     char* pszFeatureTableName = (char *) CPLMalloc(strlen(pszLayerName)+10);
 
-    sprintf(pszFeatureTableName, "%sFeatures", pszLayerName);
+    snprintf(pszFeatureTableName, strlen(pszLayerName)+10, "%sFeatures", pszLayerName);
 
 /* -------------------------------------------------------------------- */
 /*      Do we have a simple primary key?                                */
 /* -------------------------------------------------------------------- */
     CPLODBCStatement oGetKey( poSession );
-    
+
     if( oGetKey.GetPrimaryKeys( pszFeatureTableName, NULL, NULL ) 
         && oGetKey.Fetch() )
     {
         pszFIDColumn = CPLStrdup(oGetKey.GetColData( 3 ));
-        
+
         if( oGetKey.Fetch() ) // more than one field in key! 
         {
             CPLFree( pszFIDColumn );
@@ -152,7 +152,7 @@ CPLErr OGRWalkTableLayer::Initialize( const char *pszLayerName,
         CPLFree( pszFeatureTableName );
         return CE_Failure;
     }
-        
+
 /* -------------------------------------------------------------------- */
 /*      If we got a geometry column, does it exist?  Is it binary?      */
 /* -------------------------------------------------------------------- */
@@ -283,19 +283,19 @@ OGRFeature *OGRWalkTableLayer::GetFeature( GIntBig nFeatureId )
 /*                         SetAttributeFilter()                         */
 /************************************************************************/
 
-OGRErr OGRWalkTableLayer::SetAttributeFilter( const char *pszQuery )
+OGRErr OGRWalkTableLayer::SetAttributeFilter( const char *pszQueryIn )
 
 {
     CPLFree(m_pszAttrQueryString);
-    m_pszAttrQueryString = (pszQuery) ? CPLStrdup(pszQuery) : NULL;
+    m_pszAttrQueryString = (pszQueryIn) ? CPLStrdup(pszQueryIn) : NULL;
 
-    if( (pszQuery == NULL && this->pszQuery == NULL)
-        || (pszQuery != NULL && this->pszQuery != NULL 
-            && EQUAL(pszQuery,this->pszQuery)) )
+    if( (pszQueryIn == NULL && this->pszQuery == NULL)
+        || (pszQueryIn != NULL && this->pszQuery != NULL 
+            && EQUAL(pszQueryIn,this->pszQuery)) )
         return OGRERR_NONE;
 
     CPLFree( this->pszQuery );
-    this->pszQuery = (pszQuery != NULL ) ? CPLStrdup( pszQuery ) : NULL;
+    this->pszQuery = (pszQueryIn != NULL ) ? CPLStrdup( pszQueryIn ) : NULL;
 
     ClearStatement();
 
@@ -312,7 +312,7 @@ int OGRWalkTableLayer::TestCapability( const char * pszCap )
 {
     if( EQUAL(pszCap,OLCRandomRead) )
         return TRUE;
-        
+
     else 
         return OGRWalkLayer::TestCapability( pszCap );
 }

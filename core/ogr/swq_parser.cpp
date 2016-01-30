@@ -101,6 +101,7 @@
 
 
 #include "cpl_conv.h"
+#include "cpl_port.h"
 #include "cpl_string.h"
 #include "ogr_geometry.h"
 #include "swq.h"
@@ -1001,6 +1002,7 @@ yytnamerr (char *yyres, const char *yystr)
             if (*++yyp != '\\')
               goto do_not_strip_quotes;
             /* Fall through.  */
+            // CPL_FALLTHROUGH
           default:
             if (yyres)
               yyres[yyn] = *yyp;
@@ -1329,7 +1331,7 @@ YYSTYPE yylval YY_INITIAL_VALUE (= yyval_default);
   yyssp++;
 
  yysetstate:
-  *yyssp = yystate;
+  *yyssp = (yytype_int16)yystate;
 
   if (yyss + yystacksize - 1 <= yyssp)
     {
@@ -1729,7 +1731,7 @@ yyreduce:
             in->nOperation = SWQ_IN;
             in->PushSubExpression( (yyvsp[-5]) );
             in->ReverseSubExpressions();
-            
+
             (yyval) = new swq_expr_node( SWQ_NOT );
             (yyval)->field_type = SWQ_BOOLEAN;
             (yyval)->PushSubExpression( in );
@@ -2036,7 +2038,7 @@ yyreduce:
         OGRwkbGeometryType eType = OGRFromOGCGeomType((yyvsp[-1])->string_value);
         if( !EQUAL((yyvsp[-3])->string_value,"GEOMETRY") || 
             (wkbFlatten(eType) == wkbUnknown &&
-            !EQUALN((yyvsp[-1])->string_value, "GEOMETRY", strlen("GEOMETRY"))) )
+            !STARTS_WITH_CI((yyvsp[-1])->string_value, "GEOMETRY")) )
         {
             yyerror (context, "syntax error");
             delete (yyvsp[-3]);
@@ -2056,7 +2058,7 @@ yyreduce:
         OGRwkbGeometryType eType = OGRFromOGCGeomType((yyvsp[-3])->string_value);
         if( !EQUAL((yyvsp[-5])->string_value,"GEOMETRY") || 
             (wkbFlatten(eType) == wkbUnknown &&
-            !EQUALN((yyvsp[-3])->string_value, "GEOMETRY", strlen("GEOMETRY"))) )
+            !STARTS_WITH_CI((yyvsp[-3])->string_value, "GEOMETRY")) )
         {
             yyerror (context, "syntax error");
             delete (yyvsp[-5]);
@@ -2182,7 +2184,7 @@ yyreduce:
 
             delete (yyvsp[-3]);
             (yyvsp[-3]) = NULL;
-                    
+
             swq_expr_node *poNode = new swq_expr_node();
             poNode->eNodeType = SNT_COLUMN;
             poNode->string_value = CPLStrdup( "*" );
@@ -2251,10 +2253,10 @@ yyreduce:
             }
 
             delete (yyvsp[-4]);
-            
+
             swq_expr_node *count = new swq_expr_node( SWQ_COUNT );
             count->PushSubExpression( (yyvsp[-1]) );
-                
+
             if( !context->poCurSelect->PushField( count, NULL, TRUE ) )
             {
                 delete count;
@@ -2315,7 +2317,7 @@ yyreduce:
   case 73:
 #line 772 "swq_parser.y" /* yacc.c:1646  */
     {
-            context->poCurSelect->PushJoin( (yyvsp[-3])->int_value,
+            context->poCurSelect->PushJoin( static_cast<int>((yyvsp[-3])->int_value),
                                             (yyvsp[-1]) );
             delete (yyvsp[-3]);
         }
@@ -2325,7 +2327,7 @@ yyreduce:
   case 74:
 #line 778 "swq_parser.y" /* yacc.c:1646  */
     {
-            context->poCurSelect->PushJoin( (yyvsp[-3])->int_value,
+            context->poCurSelect->PushJoin( static_cast<int>((yyvsp[-3])->int_value),
                                             (yyvsp[-1]) );
             delete (yyvsp[-3]);
 	    }

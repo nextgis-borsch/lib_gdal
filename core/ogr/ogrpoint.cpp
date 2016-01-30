@@ -33,6 +33,7 @@
 
 /* for std::numeric_limits */
 #include <limits>
+#include <new>
 
 CPL_CVSID("$Id$");
 
@@ -120,10 +121,10 @@ OGRPoint::~OGRPoint()
 
 /**
  * \brief Assignment operator.
- * 
+ *
  * Note: before GDAL 2.1, only the default implementation of the operator
  * existed, which could be unsafe to use.
- * 
+ *
  * @since GDAL 2.1
  */
 
@@ -132,7 +133,7 @@ OGRPoint& OGRPoint::operator=( const OGRPoint& other )
     if( this != &other)
     {
         OGRGeometry::operator=( other );
-        
+
         x = other.x;
         y = other.y;
         z = other.z;
@@ -149,7 +150,9 @@ OGRPoint& OGRPoint::operator=( const OGRPoint& other )
 OGRGeometry *OGRPoint::clone() const
 
 {
-    OGRPoint    *poNewPoint = new OGRPoint( x, y, z );
+    OGRPoint    *poNewPoint = new (std::nothrow) OGRPoint( x, y, z );
+    if( poNewPoint == NULL )
+        return NULL;
 
     poNewPoint->assignSpatialReference( getSpatialReference() );
     poNewPoint->setCoordinateDimension( nCoordDimension );
@@ -229,9 +232,9 @@ int OGRPoint::getCoordinateDimension() const
 void OGRPoint::setCoordinateDimension( int nNewDimension )
 
 {
-    nCoordDimension = nNewDimension;
-    
-    if( nCoordDimension == 2 )
+    nCoordDimension = (nCoordDimension < 0 ) ? -nNewDimension : nNewDimension;
+
+    if( nNewDimension == 2 )
         z = 0;
 }
 
@@ -267,7 +270,7 @@ OGRErr OGRPoint::importFromWkb( unsigned char * pabyData,
     OGRBoolean          bIs3D = FALSE;
 
     OGRErr eErr = importPreambuleFromWkb( pabyData, nSize, eByteOrder, bIs3D, eWkbVariant );
-    if( eErr >= 0 )
+    if( eErr != OGRERR_NONE )
         return eErr;
 
     if ( nSize < ((bIs3D) ? 29 : 21) && nSize != -1 )
@@ -278,7 +281,7 @@ OGRErr OGRPoint::importFromWkb( unsigned char * pabyData,
 /* -------------------------------------------------------------------- */
     memcpy( &x, pabyData + 5,     8 );
     memcpy( &y, pabyData + 5 + 8, 8 );
-    
+
     if( OGR_SWAP( eByteOrder ) )
     {
         CPL_SWAPDOUBLE( &x );
@@ -327,17 +330,17 @@ OGRErr  OGRPoint::exportToWkb( OGRwkbByteOrder eByteOrder,
 /*      Set the geometry feature type.                                  */
 /* -------------------------------------------------------------------- */
     GUInt32 nGType = getGeometryType();
-    
+
     if ( eWkbVariant == wkbVariantIso )
         nGType = getIsoGeometryType();
-    
+
     if( eByteOrder == wkbNDR )
         nGType = CPL_LSBWORD32( nGType );
     else
         nGType = CPL_MSBWORD32( nGType );
 
     memcpy( pabyData + 1, &nGType, 4 );
-    
+
 /* -------------------------------------------------------------------- */
 /*      Copy in the raw data.                                           */
 /* -------------------------------------------------------------------- */
@@ -352,13 +355,14 @@ OGRErr  OGRPoint::exportToWkb( OGRwkbByteOrder eByteOrder,
     }
     else
     {
-        memcpy( pabyData+5, &x, 16 );
+        memcpy( pabyData+5, &x, 8 );
+        memcpy( pabyData+5+8, &y, 8 );
         if( getCoordinateDimension() == 3 )
         {
             memcpy( pabyData + 5 + 16, &z, 8 );
         }
     }
-    
+
 /* -------------------------------------------------------------------- */
 /*      Swap if needed.                                                 */
 /* -------------------------------------------------------------------- */
@@ -385,13 +389,14 @@ OGRErr OGRPoint::importFromWkt( char ** ppszInput )
 
 {
     int bHasZ = FALSE, bHasM = FALSE;
-    OGRErr      eErr = importPreambuleFromWkt(ppszInput, &bHasZ, &bHasM);
-    if( eErr >= 0 )
-    {
-        if( eErr == OGRERR_NONE ) /* only the case for an EMPTY case */
-            nCoordDimension = (bHasZ) ? -3 : -2;
-
+    bool bIsEmpty = false;
+    OGRErr      eErr = importPreambuleFromWkt(ppszInput, &bHasZ, &bHasM, &bIsEmpty);
+    if( eErr != OGRERR_NONE )
         return eErr;
+    if( bIsEmpty )
+    {
+        nCoordDimension = (bHasZ) ? -3 : -2;
+        return OGRERR_NONE;
     }
 
     const char  *pszInput = *ppszInput;
@@ -440,7 +445,7 @@ OGRErr OGRPoint::importFromWkt( char ** ppszInput )
         nCoordDimension = 2;
 
     *ppszInput = (char *) pszInput;
-    
+
     return OGRERR_NONE;
 }
 
@@ -448,7 +453,7 @@ OGRErr OGRPoint::importFromWkt( char ** ppszInput )
 /*                            exportToWkt()                             */
 /*                                                                      */
 /*      Translate this structure into it's well known text format       */
-/*      equivelent.                                                     */
+/*      equivalent.                                                     */
 /************************************************************************/
 
 OGRErr OGRPoint::exportToWkt( char ** ppszDstText,
@@ -469,12 +474,12 @@ OGRErr OGRPoint::exportToWkt( char ** ppszDstText,
     {
         OGRMakeWktCoordinate(szCoordinate, x, y, z, getCoordinateDimension() );
         if( getCoordinateDimension() == 3 && eWkbVariant == wkbVariantIso )
-            sprintf( szTextEquiv, "POINT Z (%s)", szCoordinate );
+            snprintf( szTextEquiv, sizeof(szTextEquiv), "POINT Z (%s)", szCoordinate );
         else
-            sprintf( szTextEquiv, "POINT (%s)", szCoordinate );
+            snprintf( szTextEquiv, sizeof(szTextEquiv), "POINT (%s)", szCoordinate );
         *ppszDstText = CPLStrdup( szTextEquiv );
     }
-    
+
     return OGRERR_NONE;
 }
 
@@ -565,19 +570,20 @@ void OGRPoint::getEnvelope( OGREnvelope3D * psEnvelope ) const
 OGRBoolean OGRPoint::Equals( OGRGeometry * poOther ) const
 
 {
-    OGRPoint    *poOPoint = (OGRPoint *) poOther;
-    
-    if( poOPoint== this )
+    if( poOther== this )
         return TRUE;
-    
+
     if( poOther->getGeometryType() != getGeometryType() )
         return FALSE;
 
-    if ( IsEmpty() && poOther->IsEmpty() )
+    OGRPoint    *poOPoint = (OGRPoint *) poOther;
+    if ( nCoordDimension != poOPoint->nCoordDimension )
+        return FALSE;
+
+    if ( IsEmpty() )
         return TRUE;
 
     // we should eventually test the SRS.
-    
     if( poOPoint->getX() != getX()
         || poOPoint->getY() != getY()
         || poOPoint->getZ() != getZ() )

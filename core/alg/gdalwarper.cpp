@@ -249,7 +249,7 @@ GDALReprojectImage( GDALDatasetH hSrcDS, const char *pszSrcWKT,
 
     if( dfMaxError > 0.0 )
         GDALDestroyApproxTransformer( psWOptions->pTransformerArg );
-        
+
     GDALDestroyWarpOptions( psWOptions );
 
     return eErr;
@@ -268,7 +268,7 @@ CPLErr CPL_STDCALL GDALCreateAndReprojectImage(
     GDALResampleAlg eResampleAlg, double dfWarpMemoryLimit, double dfMaxError,
     GDALProgressFunc pfnProgress, void *pProgressArg, 
     GDALWarpOptions *psOptions )
-    
+
 {
     VALIDATE_POINTER1( hSrcDS, "GDALCreateAndReprojectImage", CE_Failure );
 
@@ -669,12 +669,9 @@ GDALWarpSrcMaskMasker( void *pMaskFuncArg,
 /* -------------------------------------------------------------------- */
     GByte *pabySrcMask;
 
-    pabySrcMask = (GByte *) VSIMalloc2(nXSize,nYSize);
+    pabySrcMask = (GByte *) VSI_MALLOC2_VERBOSE(nXSize,nYSize);
     if( pabySrcMask == NULL )
     {
-        CPLError( CE_Failure, CPLE_OutOfMemory,
-                  "Failed to allocate pabySrcMask (%dx%d) in GDALWarpSrcMaskMasker()", 
-                  nXSize, nYSize );
         return CE_Failure;
     }
 
@@ -818,7 +815,7 @@ GDALWarpDstAlphaMasker( void *pMaskFuncArg, int nBandCount,
         eErr = GDALRasterIO( hAlphaBand, GF_Write, 
                              nXOff, nYOff, nDstXSize, nDstYSize, 
                              pafMask, nDstXSize, nDstYSize, GDT_Float32,
-                             0, sizeof(float) * nXSize );
+                             0, (int)sizeof(float) * nXSize );
         return eErr;
     }
 }
@@ -842,12 +839,12 @@ GDALWarpDstAlphaMasker( void *pMaskFuncArg, int nBandCount,
  * destination image to be initialized to the indicated value (for all bands)
  * or indicates that it should be initialized to the NO_DATA value in
  * padfDstNoDataReal/padfDstNoDataImag.  If this value isn't set the
- * destination image will be read and overlayed.  
+ * destination image will be read and overlaid.  
  *
  * - WRITE_FLUSH=YES/NO: This option forces a flush to disk of data after
  * each chunk is processed.  In some cases this helps ensure a serial 
  * writing of the output data otherwise a block of data may be written to disk
- * each time a block of data is read for the input buffer resulting in alot
+ * each time a block of data is read for the input buffer resulting in a lot
  * of extra seeking around the disk, and reduced IO throughput.  The default
  * at this time is NO.
  *
@@ -856,7 +853,7 @@ GDALWarpDstAlphaMasker( void *pMaskFuncArg, int nBandCount,
  * destination (INIT_DEST) and all other processing, and so should be used
  * careful.  Mostly useful to short circuit a lot of extra work in mosaicing 
  * situations.
- * 
+ *
  * - UNIFIED_SRC_NODATA=YES/[NO]: By default nodata masking values considered
  * independently for each band.  However, sometimes it is desired to treat all
  * bands as nodata if and only if, all bands match the corresponding nodata
@@ -873,7 +870,7 @@ GDALWarpDstAlphaMasker( void *pMaskFuncArg, int nBandCount,
  * for areas around the pole, or transformations where some of the image is
  * untransformable.  The following options provide some additional control
  * to deal with errors in computing the source window:
- * 
+ *
  * - SAMPLE_GRID=YES/NO: Setting this option to YES will force the sampling to 
  * include internal points as well as edge points which can be important if
  * the transformation is esoteric inside out, or if large sections of the
@@ -885,8 +882,8 @@ GDALWarpDstAlphaMasker( void *pMaskFuncArg, int nBandCount,
  *
  * - SOURCE_EXTRA: This is a number of extra pixels added around the source
  * window for a given request, and by default it is 1 to take care of rounding
- * error.  Setting this larger will incease the amount of data that needs to
- * be read, but can avoid missing source data.  
+ * error.  Setting this larger will increase the amount of data that needs to
+ * be read, but can avoid missing source data.
  *
  * - CUTLINE: This may contain the WKT geometry for a cutline.  It will
  * be converted into a geometry by GDALWarpOperation::Initialize() and assigned
@@ -903,35 +900,40 @@ GDALWarpDstAlphaMasker( void *pMaskFuncArg, int nBandCount,
  * will be selected, not just those whose center point falls within the 
  * polygon.
  *
- * - OPTIMIZE_SIZE: This defaults to FALSE, but may be set to TRUE when
- * outputing typically to a compressed dataset (GeoTIFF with COMPRESSED creation
- * option set for example) for achieving a smaller file size. This is achieved
- * by writing at once data aligned on full blocks of the target dataset, which
- * avoids partial writes of compressed blocks and lost space when they are rewritten
- * at the end of the file. However sticking to target block size may cause major
+ * - OPTIMIZE_SIZE: This defaults to FALSE, but may be set to TRUE
+ * typically when writing to a compressed dataset (GeoTIFF with
+ * COMPRESSED creation option set for example) for achieving a smaller
+ * file size. This is achieved by writing at once data aligned on full
+ * blocks of the target dataset, which avoids partial writes of
+ * compressed blocks and lost space when they are rewritten at the end
+ * of the file. However sticking to target block size may cause major
  * processing slowdown for some particular reprojections.
  *
  * - NUM_THREADS: (GDAL >= 1.10) Can be set to a numeric value or ALL_CPUS to
  * set the number of threads to use to parallelize the computation part of the
  * warping. If not set, computation will be done in a single thread.
  *
- * - STREAMABLE_OUTPUT: (GDAL >= 2.0) This defaults to FALSE, but may be set to TRUE when
- * outputing typically to a streamed file. The gdalwarp utility automatically
- * sets this option when outputing to /vsistdout/ or a named pipe (on Unix).
- * This option has performance impacts for some reprojections.
- * Note: band interleaved output is not currently supported by the warping algorithm in
- * a streamable compabible way.
+ * - STREAMABLE_OUTPUT: (GDAL >= 2.0) This defaults to FALSE, but may
+ * be set to TRUE typically when writing to a streamed file. The
+ * gdalwarp utility automatically sets this option when writing to
+ * /vsistdout/ or a named pipe (on Unix).  This option has performance
+ * impacts for some reprojections.  Note: band interleaved output is
+ * not currently supported by the warping algorithm in a streamable
+ * compatible way.
  *
- * - SRC_COORD_PRECISION: (GDAL >= 2.0). Advanced setting. This defaults to 0, to indicate that
- * no rounding of computing source image coordinates corresponding to the target
- * image must be done. If greater than 0 (and typically below 1), this value,
- * expressed in pixel, will be used to round computed source image coordinates. The purpose
- * of this option is to make the results of warping with the approximated transformer
- * more reproducible and not sensitive to changes in warping memory size. To achieve
- * that, SRC_COORD_PRECISION must be at least 10 times greater than the error
- * threshold. The higher the SRC_COORD_PRECISION/error_threshold ratio, the higher
- * the performance will be, since exact reprojections must statistically be
- * done with a frequency of 4*error_threshold/SRC_COORD_PRECISION.
+ * - SRC_COORD_PRECISION: (GDAL >= 2.0). Advanced setting. This
+ * defaults to 0, to indicate that no rounding of computing source
+ * image coordinates corresponding to the target image must be
+ * done. If greater than 0 (and typically below 1), this value,
+ * expressed in pixel, will be used to round computed source image
+ * coordinates. The purpose of this option is to make the results of
+ * warping with the approximated transformer more reproducible and not
+ * sensitive to changes in warping memory size. To achieve that,
+ * SRC_COORD_PRECISION must be at least 10 times greater than the
+ * error threshold. The higher the SRC_COORD_PRECISION/error_threshold
+ * ratio, the higher the performance will be, since exact
+ * reprojections must statistically be done with a frequency of
+ * 4*error_threshold/SRC_COORD_PRECISION.
  */
 
 /************************************************************************/
@@ -1343,7 +1345,7 @@ GDALWarpOptions * CPL_STDCALL GDALDeserializeWarpOptions( CPLXMLNode *psTree )
             && EQUAL(psItem->pszValue,"Option") )
         {
             const char *pszName = CPLGetXMLValue(psItem, "Name", NULL );
-            const char *pszValue = CPLGetXMLValue(psItem, "", NULL );
+            pszValue = CPLGetXMLValue(psItem, "", NULL );
 
             if( pszName != NULL && pszValue != NULL )
             {
@@ -1522,9 +1524,9 @@ GDALWarpOptions * CPL_STDCALL GDALDeserializeWarpOptions( CPLXMLNode *psTree )
     }
 
 /* -------------------------------------------------------------------- */
-/*      If any error has occured, cleanup else return success.          */
+/*      If any error has occurred, cleanup else return success.          */
 /* -------------------------------------------------------------------- */
-    if( CPLGetLastErrorNo() != CE_None )
+    if( CPLGetLastErrorType() != CE_None )
     {
         if ( psWO->pTransformerArg )
         {

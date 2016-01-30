@@ -31,8 +31,8 @@
 #include "ogrsf_frmts.h"
 #include "geoconcept.h"
 
-#ifndef _GEOCONCEPT_OGR_LAYER_H_INCLUDED_
-#define _GEOCONCEPT_OGR_LAYER_H_INCLUDED_
+#ifndef GEOCONCEPT_OGR_LAYER_H_INCLUDED_
+#define GEOCONCEPT_OGR_LAYER_H_INCLUDED_
 
 /**********************************************************************/
 /*            OGCGeoconceptLayer Class                           */
@@ -66,6 +66,8 @@ class OGRGeoconceptLayer : public OGRLayer
     OGRSpatialReference* GetSpatialRef( );
     GIntBig              GetFeatureCount( int bForce = TRUE );
     OGRErr               GetExtent( OGREnvelope *psExtent, int bForce = TRUE );
+    virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce)
+                { return OGRLayer::GetExtent(iGeomField, psExtent, bForce); }
     int                  TestCapability( const char* pszCap );
 //    const char*          GetInfo( const char* pszTag );
     OGRErr               CreateField( OGRFieldDefn* poField, int bApproxOK = TRUE );
@@ -79,4 +81,4 @@ class OGRGeoconceptLayer : public OGRLayer
     void                   SetSpatialRef( OGRSpatialReference *poSpatialRef );
 };
 
-#endif /* _GEOCONCEPT_OGR_LAYER_H_INCLUDED_ */
+#endif /* GEOCONCEPT_OGR_LAYER_H_INCLUDED_ */

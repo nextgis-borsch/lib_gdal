@@ -28,8 +28,8 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#ifndef _OGR_FEATURE_H_INCLUDED
-#define _OGR_FEATURE_H_INCLUDED
+#ifndef OGR_FEATURE_H_INCLUDED
+#define OGR_FEATURE_H_INCLUDED
 
 #include "ogr_geometry.h"
 #include "ogr_featurestyle.h"
@@ -68,14 +68,14 @@ class CPL_DLL OGRFieldDefn
     int                 nWidth;                 /* zero is variable */
     int                 nPrecision;
     char                *pszDefault;
-    
+
     int                 bIgnore;
     OGRFieldSubType     eSubType;
-    
+
     int                 bNullable;
 
     void                Initialize( const char *, OGRFieldType );
-    
+
   public:
                         OGRFieldDefn( const char *, OGRFieldType );
                         OGRFieldDefn( OGRFieldDefn * );
@@ -117,6 +117,9 @@ class CPL_DLL OGRFieldDefn
     void                SetNullable( int bNullableIn ) { bNullable = bNullableIn; }
 
     int                 IsSame( const OGRFieldDefn * ) const;
+
+  private:
+    CPL_DISALLOW_COPY_ASSIGN(OGRFieldDefn);
 };
 
 /************************************************************************/
@@ -171,6 +174,9 @@ public:
         void                SetNullable( int bNullableIn ) { bNullable = bNullableIn; }
 
         int                 IsSame( OGRGeomFieldDefn * );
+
+  private:
+    CPL_DISALLOW_COPY_ASSIGN(OGRGeomFieldDefn);
 };
 
 /************************************************************************/
@@ -201,7 +207,7 @@ class CPL_DLL OGRFeatureDefn
 {
   protected:
     volatile int nRefCount;
-    
+
     int         nFieldCount;
     OGRFieldDefn **papoFieldDefn;
 
@@ -211,7 +217,7 @@ class CPL_DLL OGRFeatureDefn
     char        *pszFeatureClassName;
 
     int         bIgnoreStyle;
-    
+
   public:
                 OGRFeatureDefn( const char * pszName = NULL );
     virtual    ~OGRFeatureDefn();
@@ -252,6 +258,9 @@ class CPL_DLL OGRFeatureDefn
 
     static OGRFeatureDefn  *CreateFeatureDefn( const char *pszName = NULL );
     static void         DestroyFeatureDefn( OGRFeatureDefn * );
+
+  private:
+    CPL_DISALLOW_COPY_ASSIGN(OGRFeatureDefn);
 };
 
 /************************************************************************/
@@ -270,22 +279,26 @@ class CPL_DLL OGRFeature
     OGRFeatureDefn      *poDefn;
     OGRGeometry        **papoGeometries;
     OGRField            *pauFields;
+    char                *m_pszNativeData;
+    char                *m_pszNativeMediaType;
+
+    bool                SetFieldInternal( int i, OGRField * puValue );
 
   protected: 
     char *              m_pszStyleString;
     OGRStyleTable       *m_poStyleTable;
     char *              m_pszTmpFieldValue;
-    
+
   public:
                         OGRFeature( OGRFeatureDefn * );
     virtual            ~OGRFeature();                        
 
     OGRFeatureDefn     *GetDefnRef() { return poDefn; }
-    
+
     OGRErr              SetGeometryDirectly( OGRGeometry * );
     OGRErr              SetGeometry( OGRGeometry * );
     OGRGeometry        *GetGeometryRef();
-    OGRGeometry        *StealGeometry();
+    OGRGeometry        *StealGeometry() CPL_WARN_UNUSED_RESULT;
 
     int                 GetGeomFieldCount()
                                 { return poDefn->GetGeomFieldCount(); }
@@ -300,7 +313,7 @@ class CPL_DLL OGRFeature
     OGRErr              SetGeomFieldDirectly( int iField, OGRGeometry * );
     OGRErr              SetGeomField( int iField, OGRGeometry * );
 
-    OGRFeature         *Clone();
+    OGRFeature         *Clone() CPL_WARN_UNUSED_RESULT;
     virtual OGRBoolean  Equal( OGRFeature * poFeature );
 
     int                 GetFieldCount() { return poDefn->GetFieldCount(); }
@@ -310,9 +323,9 @@ class CPL_DLL OGRFeature
                                       { return poDefn->GetFieldIndex(pszName);}
 
     int                 IsFieldSet( int iField );
-    
+
     void                UnsetField( int iField );
-    
+
     OGRField           *GetRawFieldRef( int i ) { return pauFields + i; }
 
     int                 GetFieldAsInteger( int i );
@@ -425,8 +438,16 @@ class CPL_DLL OGRFeature
     virtual void        SetStyleTable(OGRStyleTable *poStyleTable);
     virtual void        SetStyleTableDirectly(OGRStyleTable *poStyleTable);
 
+    const char         *GetNativeData() const { return m_pszNativeData; }
+    const char         *GetNativeMediaType() const { return m_pszNativeMediaType; }
+    void                SetNativeData( const char* pszNativeData );
+    void                SetNativeMediaType( const char* pszNativeMediaType );
+
     static OGRFeature  *CreateFeature( OGRFeatureDefn * );
     static void         DestroyFeature( OGRFeature * );
+
+  private:
+    CPL_DISALLOW_COPY_ASSIGN(OGRFeature);
 };
 
 /************************************************************************/
@@ -446,9 +467,9 @@ class CPL_DLL OGRFeatureQuery
     char          **FieldCollector( void *, char ** );
 
     GIntBig       *EvaluateAgainstIndices( swq_expr_node*, OGRLayer *, GIntBig& nFIDCount);
-    
+
     int         CanUseIndex( swq_expr_node*, OGRLayer * );
-    
+
   public:
                 OGRFeatureQuery();
                 ~OGRFeatureQuery();
@@ -458,7 +479,7 @@ class CPL_DLL OGRFeatureQuery
     int         Evaluate( OGRFeature * );
 
     GIntBig       *EvaluateAgainstIndices( OGRLayer *, OGRErr * );
-    
+
     int         CanUseIndex( OGRLayer * );
 
     char      **GetUsedFields();
@@ -466,4 +487,4 @@ class CPL_DLL OGRFeatureQuery
     void       *GetSWQExpr() { return pSWQExpr; }
 };
 
-#endif /* ndef _OGR_FEATURE_H_INCLUDED */
+#endif /* ndef OGR_FEATURE_H_INCLUDED */

@@ -27,8 +27,8 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#ifndef _GMLREGISTRY_H_INCLUDED
-#define _GMLREGISTRY_H_INCLUDED
+#ifndef GMLREGISTRY_H_INCLUDED
+#define GMLREGISTRY_H_INCLUDED
 
 #include "cpl_string.h"
 #include "cpl_minixml.h"
@@ -66,8 +66,8 @@ class GMLRegistry
     public:
         std::vector<GMLRegistryNamespace> aoNamespaces;
 
-        GMLRegistry(const CPLString& osRegistryPath) : osRegistryPath(osRegistryPath) {}
+        GMLRegistry(const CPLString& osRegistryPathIn) : osRegistryPath(osRegistryPathIn) {}
         int Parse();
 };
 
-#endif /* _GMLREGISTRY_H_INCLUDED */
+#endif /* GMLREGISTRY_H_INCLUDED */

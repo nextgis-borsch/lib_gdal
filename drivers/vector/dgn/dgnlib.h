@@ -27,8 +27,10 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#ifndef _DGNLIB_H_INCLUDED
-#define _DGNLIB_H_INCLUDED
+#ifndef DGNLIB_H_INCLUDED
+#define DGNLIB_H_INCLUDED
+
+#undef STRICT_CPLERRORNUM_TYPE
 
 #include "cpl_conv.h"
 
@@ -158,8 +160,8 @@ typedef struct {
  */
 
 typedef struct {
-    DGNElemCore core;
-    
+    DGNElemCore core;   /* must be at first position ! */
+
     int         font_id;       /*!< Microstation font id, no list available*/
     int         justification; /*!< Justification, see DGNJ_* */
     double      length_mult;   /*!< Char width in master (if square) */
@@ -181,8 +183,8 @@ typedef struct {
  */
 
 typedef struct {
-    DGNElemCore core;
-    
+    DGNElemCore core;   /* must be at first position ! */
+
     int         totlength;     /*!< Total length of surface in words,
                                     excluding the first 19 words
                                     (header + totlength field) */
@@ -235,14 +237,14 @@ typedef struct {
  */
 
 typedef struct {
-    DGNElemCore core;
+    DGNElemCore core;   /* must be at first position ! */
 
     int         dimension;         /*!< Dimension (2 or 3) */
 
     double      origin_x;       /*!< X origin of UOR space in master units(?)*/
     double      origin_y;       /*!< Y origin of UOR space in master units(?)*/
     double      origin_z;       /*!< Z origin of UOR space in master units(?)*/
-    
+
     long        uor_per_subunit;   /*!< UOR per subunit. */
     char        sub_units[3];      /*!< User name for subunits (2 chars)*/
     long        subunits_per_master; /*!< Subunits per master unit. */
@@ -261,7 +263,7 @@ typedef struct {
  */
 
 typedef struct {
-    DGNElemCore core;
+    DGNElemCore core;   /* must be at first position ! */
 
     int         totlength;         /*!< Total length of cell in words,
                                         excluding the first 19 words
@@ -269,10 +271,10 @@ typedef struct {
     char        name[7];           /*!< Cell name */
  unsigned short cclass;            /*!< Class bitmap */
  unsigned short levels[4];         /*!< Levels used in cell */
-    
+
     DGNPoint    rnglow;            /*!< X/Y/Z minimums for cell */
     DGNPoint    rnghigh;           /*!< X/Y/Z maximums for cell */
-    
+
     double      trans[9];          /*!< 2D/3D Transformation Matrix */
     DGNPoint    origin;            /*!< Cell Origin */
 
@@ -291,7 +293,7 @@ typedef struct {
  */
 
 typedef struct {
-    DGNElemCore core;
+    DGNElemCore core;   /* must be at first position ! */
 
     short       celltype;          /*!< Cell type. */
     short       attindx;           /*!< Attribute linkage. */
@@ -304,7 +306,7 @@ typedef struct {
  unsigned short levels[4];         /*!< Levels used in cell */
 
     char        description[28];   /*!< Description */
-    
+
 } DGNElemCellLibrary;
 
 /** 
@@ -316,7 +318,7 @@ typedef struct {
  */
 
 typedef struct {
-    DGNElemCore core;
+    DGNElemCore core;   /* must be at first position ! */
 
     int         totlength;         /*!< Total length of cell in words,
                                         excluding the first 19 words
@@ -337,7 +339,7 @@ typedef union { char *string; GInt32 integer; double real; } tagValueUnion;
  */
 
 typedef struct {
-    DGNElemCore core;
+    DGNElemCore core;   /* must be at first position ! */
 
     int         tagType;           /*!< Tag type indicator, DGNTT_* */
     int         tagSet;            /*!< Which tag set does this relate to? */
@@ -373,7 +375,7 @@ typedef struct _DGNTagDef {
  */
 
 typedef struct {
-    DGNElemCore core;
+    DGNElemCore core;   /* must be at first position ! */
 
     int        tagCount;    /*!< Number of tags in tagList. */
     int        tagSet;      /*!< Tag set index. */
@@ -392,7 +394,7 @@ typedef struct {
  * Used for: DGNT_CONE(23)
  */
 typedef struct {
-  DGNElemCore core;
+  DGNElemCore core;   /* must be at first position ! */
 
   short unknown;     /*!< Unknown data */
   int quat[4];      /*!< Orientation quaternion */
@@ -415,8 +417,8 @@ typedef struct {
  */
 
 typedef struct {
-  DGNElemCore core;
- 
+  DGNElemCore core;   /* must be at first position ! */
+
   int       totlength; 	 	/*!<  Total length of the node
 				      (bytes = totlength * 2 + 38) */
   int       numelems;    	/*!<  Number of text strings */
@@ -442,7 +444,7 @@ typedef struct {
  * Used for: DGNT_BSPLINE_SURFACE_HEADER(24)
  */
 typedef struct {
-  DGNElemCore core;
+  DGNElemCore core;   /* must be at first position ! */
 
   long desc_words;               /*!< Total length of B-Spline surface in
                                       words, excluding the first 20 words
@@ -473,7 +475,7 @@ typedef struct {
  * Used for: DGNT_BSPLINE_CURVE_HEADER(27)
  */
 typedef struct {
-  DGNElemCore core;
+  DGNElemCore core;   /* must be at first position ! */
 
   long desc_words;               /*!< Total length of B-Spline curve in words,
                                       excluding the first 20 words
@@ -493,7 +495,7 @@ typedef struct {
  * Used for: DGNT_BSPLINE_SURFACE_BOUNDARY(25)
  */
 typedef struct {
-  DGNElemCore core;
+  DGNElemCore core;   /* must be at first position ! */
 
   short number;         /*!< boundary number */
   short numverts;       /*!< number of boundary vertices */
@@ -509,7 +511,7 @@ typedef struct {
  * Used for: DGNT_BSPLINE_KNOT(26), DGNT_BSPLINE_WEIGHT_FACTOR(28)
  */
 typedef struct {
-  DGNElemCore core;
+  DGNElemCore core;   /* must be at first position ! */
 
   float array[1];         /*!< array (variable length). Length is
                              given in the corresponding B-Spline
@@ -785,7 +787,7 @@ unsigned char CPL_DLL *
                              int *pnEntityNum, int *pnMSLink, int *pnLinkSize);
 
 /* Write API */
-    
+
 int  CPL_DLL  DGNWriteElement( DGNHandle, DGNElemCore * );
 int  CPL_DLL  DGNResizeElement( DGNHandle, DGNElemCore *, int );
 DGNHandle CPL_DLL 
@@ -859,7 +861,7 @@ DGNCreateCellHeaderElem( DGNHandle hDGN, int nTotLength, const char *pszName,
                          DGNPoint *psRangeLow, DGNPoint *psRangeHigh, 
                          DGNPoint *psOrigin, double dfXScale, double dfYScale,
                          double dfRotation );
-                     
+
 DGNElemCore CPL_DLL *
 DGNCreateCellHeaderFromGroup( DGNHandle hDGN, const char *pszName, 
                               short nClass, short *panLevels, 
@@ -881,4 +883,4 @@ int CPL_DLL DGNElemTypeHasDispHdr( int nElemType );
 
 CPL_C_END
 
-#endif /* ndef _DGNLIB_H_INCLUDED */
+#endif /* ndef DGNLIB_H_INCLUDED */

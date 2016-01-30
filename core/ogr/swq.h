@@ -18,17 +18,15 @@
  * It is provided "as is" without express or implied warranty.
  ****************************************************************************/
 
-#ifndef _SWQ_H_INCLUDED_
-#define _SWQ_H_INCLUDED_
+#ifndef SWQ_H_INCLUDED_
+#define SWQ_H_INCLUDED_
 
 #include "cpl_conv.h"
 #include "cpl_string.h"
 #include "ogr_core.h"
 
-#if defined(_WIN32) && !defined(_WIN32_WCE)
+#if defined(_WIN32) && !defined(strcasecmp)
 #  define strcasecmp stricmp
-#elif defined(_WIN32_WCE)
-#  define strcasecmp _stricmp
 #endif
 
 typedef enum {
@@ -82,7 +80,7 @@ typedef enum {
 
 typedef enum {
     SNT_CONSTANT,
-    SNT_COLUMN, 
+    SNT_COLUMN,
     SNT_OPERATION
 } swq_node_type;
 
@@ -105,12 +103,12 @@ class swq_expr_node {
 public:
     swq_expr_node();
 
-    swq_expr_node( const char * );
-    swq_expr_node( int );
-    swq_expr_node( GIntBig );
-    swq_expr_node( double );
-    swq_expr_node( OGRGeometry* );
-    swq_expr_node( swq_op );
+    explicit swq_expr_node( const char * );
+    explicit swq_expr_node( int );
+    explicit swq_expr_node( GIntBig );
+    explicit swq_expr_node( double );
+    explicit swq_expr_node( OGRGeometry* );
+    explicit swq_expr_node( swq_op );
 
     ~swq_expr_node();
 
@@ -147,11 +145,10 @@ public:
     GIntBig     int_value;
     double      float_value;
     OGRGeometry *geometry_value;
-    
+
     /* shared by SNT_COLUMN, SNT_CONSTANT and also possibly SNT_OPERATION when */
     /* nOperation == SWQ_CUSTOM_FUNC */
     char        *string_value; /* column name when SNT_COLUMN */
-
 
     static CPLString   QuoteIfNecessary( const CPLString &, char chQuote = '\'' );
     static CPLString   Quote( const CPLString &, char chQuote = '\'' );
@@ -288,7 +285,7 @@ typedef struct {
 
 typedef struct {
     GIntBig     count;
-    
+
     char        **distinct_list; /* items of the list can be NULL */
     double      sum;
     double      min;
@@ -389,4 +386,4 @@ int swq_is_reserved_keyword(const char* pszStr);
 
 char* OGRHStoreGetValue(const char* pszHStore, const char* pszSearchedKey);
 
-#endif /* def _SWQ_H_INCLUDED_ */
+#endif /* def SWQ_H_INCLUDED_ */

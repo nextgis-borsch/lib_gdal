@@ -47,7 +47,7 @@ OGRErr OSRImportFromERM( OGRSpatialReferenceH hSRS, const char *pszProj,
                          const char *pszDatum, const char *pszUnits )
 
 {
-    VALIDATE_POINTER1( hSRS, "OSRImportFromERM", CE_Failure );
+    VALIDATE_POINTER1( hSRS, "OSRImportFromERM", OGRERR_FAILURE );
 
     return ((OGRSpatialReference *) hSRS)->importFromERM( pszProj,
                                                           pszDatum,
@@ -89,11 +89,11 @@ OGRErr OGRSpatialReference::importFromERM( const char *pszProj,
 /*      Do we have an EPSG coordinate system?                           */
 /* -------------------------------------------------------------------- */
 
-    if( EQUALN(pszProj,"EPSG:",5) )
+    if( STARTS_WITH_CI(pszProj, "EPSG:") )
         return importFromEPSG( atoi(pszProj+5) );
 
 
-    if( EQUALN(pszDatum,"EPSG:",5) )
+    if( STARTS_WITH_CI(pszDatum, "EPSG:") )
         return importFromEPSG( atoi(pszDatum+5) );
 
 /* -------------------------------------------------------------------- */
@@ -146,7 +146,7 @@ OGRErr OSRExportToERM( OGRSpatialReferenceH hSRS,
                        char *pszProj, char *pszDatum, char *pszUnits )
 
 {
-    VALIDATE_POINTER1( hSRS, "OSRExportToERM", CE_Failure );
+    VALIDATE_POINTER1( hSRS, "OSRExportToERM", OGRERR_FAILURE );
 
     return ((OGRSpatialReference *) hSRS)->exportToERM( pszProj, pszDatum,
                                                         pszUnits );
@@ -160,7 +160,7 @@ OGRErr OSRExportToERM( OGRSpatialReferenceH hSRS,
  * Convert coordinate system to ERMapper format.
  *
  * @param pszProj 32 character buffer to receive projection name.
- * @param pszDatum 32 character buffer to recieve datum name.
+ * @param pszDatum 32 character buffer to receive datum name.
  * @param pszUnits 32 character buffer to receive units name.
  *
  * @return OGRERR_NONE on success, OGRERR_SRS_UNSUPPORTED if not translation is
@@ -176,7 +176,7 @@ OGRErr OGRSpatialReference::exportToERM( char *pszProj, char *pszDatum,
     strcpy( pszUnits, "METERS" );
 
     if( !IsProjected() && !IsGeographic() )
-        return TRUE;
+        return OGRERR_NONE; /* not sure what to return. We returned TRUE before... */
 
 /* -------------------------------------------------------------------- */
 /*      Try to find the EPSG code.                                      */
@@ -227,10 +227,10 @@ OGRErr OGRSpatialReference::exportToERM( char *pszProj, char *pszDatum,
 
         else if( nEPSGGCSCode == 4322 )
             strcpy( pszDatum, "WGS72DOD" );
-        
+
         else if( nEPSGGCSCode == 4267 )
             strcpy( pszDatum, "NAD27" );
-        
+
         else if( nEPSGGCSCode == 4269 )
             strcpy( pszDatum, "NAD83" );
 
@@ -290,14 +290,14 @@ OGRErr OGRSpatialReference::exportToERM( char *pszProj, char *pszDatum,
     {
         if( EQUAL(pszDatum,"GDA94") && !bNorth && nZone >= 48 && nZone <= 58)
         {
-            sprintf( pszProj, "MGA%02d", nZone );
+            snprintf( pszProj, 32, "MGA%02d", nZone );
         }
         else
         {
             if( bNorth )
-                sprintf( pszProj, "NUTM%02d", nZone );
+                snprintf( pszProj, 32, "NUTM%02d", nZone );
             else
-                sprintf( pszProj, "SUTM%02d", nZone );
+                snprintf( pszProj, 32, "SUTM%02d", nZone );
         }
     }
 
@@ -323,8 +323,8 @@ OGRErr OGRSpatialReference::exportToERM( char *pszProj, char *pszDatum,
 /* -------------------------------------------------------------------- */
     if( (EQUAL(pszDatum,"RAW") || EQUAL(pszProj,"RAW")) && nEPSGCode != 0 )
     {
-        sprintf( pszProj, "EPSG:%d", nEPSGCode );
-        sprintf( pszDatum, "EPSG:%d", nEPSGCode );
+        snprintf( pszProj, 32, "EPSG:%d", nEPSGCode );
+        snprintf( pszDatum, 32, "EPSG:%d", nEPSGCode );
     }
 
 /* -------------------------------------------------------------------- */
@@ -336,7 +336,7 @@ OGRErr OGRSpatialReference::exportToERM( char *pszProj, char *pszDatum,
         strcpy( pszUnits, "FEET" );
     else
         strcpy( pszUnits, "METERS" );
-       
+
     if( EQUAL(pszProj,"RAW") )
         return OGRERR_UNSUPPORTED_SRS;
     else

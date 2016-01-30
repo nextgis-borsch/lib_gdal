@@ -85,7 +85,7 @@ static E00ReadPtr  _E00ReadTestOpen(E00ReadPtr psInfo)
     /* Check that the file is in E00 format.
      */
     _ReadNextSourceLine(psInfo);
-    if (!psInfo->bEOF && strncmp(psInfo->szInBuf, "EXP ", 4) == 0)
+    if (!psInfo->bEOF && STARTS_WITH(psInfo->szInBuf, "EXP "))
     {
         /* We should be in presence of a valid E00 file... 
          * Is the file compressed or not?
@@ -147,7 +147,7 @@ E00ReadPtr  E00ReadOpen(const char *pszFname)
         return NULL;
     }
 
-    /* File was succesfully opened, allocate and initialize a 
+    /* File was successfully opened, allocate and initialize a
      * E00ReadPtr handle and check that the file is valid.
      */
     psInfo = (E00ReadPtr)CPLCalloc(1, sizeof(struct _E00ReadInfo));
@@ -313,7 +313,7 @@ const char *E00ReadNextLine(E00ReadPtr psInfo)
         }
 
         /* If we just reached EOF then make sure we don't add an extra
-         * empty line at the end of the uncompressed oputput.
+         * empty line at the end of the uncompressed output.
          */
         if (psInfo->bEOF && strlen(pszLine) == 0)
             pszLine = NULL;
@@ -366,11 +366,11 @@ static void _ReadNextSourceLine(E00ReadPtr psInfo)
 
         if (!psInfo->bEOF)
         {
-            /* A new line was succesfully read.  Remove trailing '\n' if any.
+            /* A new line was successfully read.  Remove trailing '\n' if any.
              * (Note: For Unix systems, we also have to check for '\r')
              */
             int nLen;
-            nLen = strlen(psInfo->szInBuf);
+            nLen = (int)strlen(psInfo->szInBuf);
             while(nLen > 0 && (psInfo->szInBuf[nLen-1] == '\n' ||
                                psInfo->szInBuf[nLen-1] == '\r'   ) )
             {
@@ -558,7 +558,7 @@ static const char *_UncompressNextLine(E00ReadPtr psInfo)
                     if (n == 92 && (c=_GetNextSourceChar(psInfo)) != '\0')
                         n += c - '!';
 
-                    psInfo->szOutBuf[iOutBufPtr++] = '0' + n/10;
+                    psInfo->szOutBuf[iOutBufPtr++] = (char)('0' + n/10);
 
                     if (++iCurDigit == iDecimalPoint)
                         psInfo->szOutBuf[iOutBufPtr++] = '.';

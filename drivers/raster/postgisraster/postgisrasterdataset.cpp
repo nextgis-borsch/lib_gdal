@@ -4,7 +4,7 @@
  * Purpose:  GDAL Dataset implementation for PostGIS Raster driver
  * Author:   Jorge Arevalo, jorge.arevalo@deimos-space.com
  *                          jorgearevalo@libregis.org
- * 
+ *
  * Author:	 David Zwarg, dzwarg@azavea.com
  *
  * Last changes: $Id: $
@@ -33,6 +33,8 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE 
  * SOFTWARE.
  **********************************************************************/
+
+#include "gdal_frmts.h"
 #include "postgisraster.h"
 #include <math.h>
 
@@ -43,11 +45,6 @@
 /* PostgreSQL defaults */
 #define DEFAULT_SCHEMA          "public"
 #define DEFAULT_COLUMN          "rast"
-
-
-CPL_C_START
-void GDALRegister_PostGISRaster(void);
-CPL_C_END
 
 /** Note on read performance on mode=2:
 
@@ -64,7 +61,7 @@ CPL_C_END
             During a IRasterIO() query,
             i) we will do a SQL query to retrieve the PKID of tiles that intersect the query window.
             ii) If some tiles are not registered as sources, then do a SQL query to fetch their metadata
-            and instanciate them and register them.
+            and instantiate them and register them.
             iii) If some tiles are not cached, then determine if the query window is not too big (w.r.t. GDAL cache),
             and if not, then do a SQL query to fetch their raster column.
 
@@ -104,96 +101,97 @@ PostGISRasterDataset::PostGISRasterDataset():VRTDataset(0, 0) {
     poConn = NULL;
     bRegularBlocking = false;
     bAllTilesSnapToSameGrid = false;
-    
-    
-    bCheckAllTiles = CSLTestBoolean( 
+
+    bCheckAllTiles = CPLTestBool(
         CPLGetConfigOption("PR_ALLOW_WHOLE_TABLE_SCAN", "YES"));
-    
+
     pszSchema = NULL;
     pszTable = NULL;
     pszColumn = NULL;
     pszWhere = NULL;
     pszProjection = NULL;
-    
+
     adfGeoTransform[GEOTRSFRM_TOPLEFT_X] = 0.0;
     adfGeoTransform[GEOTRSFRM_ROTATION_PARAM1] = 0.0;
     adfGeoTransform[GEOTRSFRM_TOPLEFT_Y] = 0.0;
     adfGeoTransform[GEOTRSFRM_ROTATION_PARAM2] = 0.0;
     adfGeoTransform[GEOTRSFRM_WE_RES] = 0;
     adfGeoTransform[GEOTRSFRM_NS_RES] = 0;
-    
+
     adfGeoTransform[GEOTRSFRM_WE_RES] =
         CPLAtof(CPLGetConfigOption("PR_WE_RES", NO_VALID_RES));
-        
+
     adfGeoTransform[GEOTRSFRM_NS_RES] =
         CPLAtof(CPLGetConfigOption("PR_NS_RES", NO_VALID_RES));
-    
+
     // Default
     resolutionStrategy = AVERAGE_APPROX_RESOLUTION;
-    
+
     const char * pszTmp = NULL;
     // We ignore this option if we provided the desired resolution
     if (CPLIsEqual(adfGeoTransform[GEOTRSFRM_WE_RES], CPLAtof(NO_VALID_RES)) ||
         CPLIsEqual(adfGeoTransform[GEOTRSFRM_NS_RES], CPLAtof(NO_VALID_RES))) {
-            
+
         // Resolution didn't have a valid value, so, we initiate it
         adfGeoTransform[GEOTRSFRM_WE_RES] = 0.0;
         adfGeoTransform[GEOTRSFRM_NS_RES] = 0.0;
-        
+
         pszTmp = 
             CPLGetConfigOption("PR_RESOLUTION_STRATEGY", "AVERAGE_APPROX");
-            
+
         if (EQUAL(pszTmp, "LOWEST"))
             resolutionStrategy = LOWEST_RESOLUTION;
-            
+
         else if (EQUAL(pszTmp, "HIGHEST"))
             resolutionStrategy = HIGHEST_RESOLUTION;
-            
+
         else if (EQUAL(pszTmp, "USER"))
             resolutionStrategy = USER_RESOLUTION;
-        
+
         else if (EQUAL(pszTmp, "AVERAGE"))
             resolutionStrategy = AVERAGE_RESOLUTION;
-    
+
     }
-    
+
     else {
         resolutionStrategy = USER_RESOLUTION;
+#ifdef DEBUG_VERBOSE
         pszTmp = "USER";
+#endif
     }
-    
+
 #ifdef DEBUG_VERBOSE
      CPLDebug("PostGIS_Raster", "PostGISRasterDataset::Constructor:"
                 "STRATEGY = %s", pszTmp);
 #endif
 
-    nTiles = 0;
+    m_nTiles = 0;
     nMode = NO_MODE;
     poDriver = NULL;
-    
+
     nRasterXSize = nRasterYSize = 0;
     pszPrimaryKeyName = NULL;
     bIsFastPK = false;
     bHasTriedFetchingPrimaryKeyName = false;
-    
+
     papoSourcesHolders = NULL;
     hQuadTree = NULL;
-    
+
     bHasBuiltOverviews = false;
     nOverviewCount = 0;
     papoOverviewDS = NULL;
     poParentDS = NULL;
-    
+
     bAssumeMultiBandReadPattern = true;
     nNextExpectedBand = 1;
     nXOffPrev = 0;
     nYOffPrev = 0;
     nXSizePrev = 0;
     nYSizePrev = 0;
-    
+
     bHasTriedHasSpatialIndex = false;
     bHasSpatialIndex = false;
-    
+
     bBuildQuadTreeDynamically = false;
 
     bTilesSameDimension = false;
@@ -205,9 +203,9 @@ PostGISRasterDataset::PostGISRasterDataset():VRTDataset(0, 0) {
 
     /**
      * TODO: Parametrize bAllTilesSnapToSameGrid. It controls if all the
-     * raster rows, in ONE_RASTER_PER_TABLE mode, must be checked to 
-     * test if they snap to the same grid and have the same srid. It can 
-     * be the user decission, if he/she's sure all the rows pass the 
+     * raster rows, in ONE_RASTER_PER_TABLE mode, must be checked to
+     * test if they snap to the same grid and have the same SRID. It can
+     * be the user decision, if he/she's sure all the rows pass the
      * test and want more speed.
      **/
 
@@ -222,22 +220,22 @@ PostGISRasterDataset::~PostGISRasterDataset() {
         CPLFree(pszSchema);
         pszSchema = NULL;
     }
-    
+
     if (pszTable) {
         CPLFree(pszTable);
         pszTable = NULL;
     }
-    
+
     if (pszColumn) {
         CPLFree(pszColumn);
         pszColumn = NULL;
     }
-    
+
     if (pszWhere) {
         CPLFree(pszWhere);
         pszWhere = NULL;
     }
-    
+
     if (pszProjection) {
         CPLFree(pszProjection);
         pszProjection = NULL;
@@ -252,12 +250,12 @@ PostGISRasterDataset::~PostGISRasterDataset() {
         CSLDestroy(papszSubdatasets);
         papszSubdatasets = NULL;
     }
-        
+
     if (hQuadTree) {
         CPLQuadTreeDestroy(hQuadTree);
         hQuadTree = NULL;
     }
-    
+
     // Call it now so that the VRT sources
     // are deleted and that there is no longer any code
     // referencing the bands of the source holders.
@@ -267,12 +265,12 @@ PostGISRasterDataset::~PostGISRasterDataset() {
 
     if (papoSourcesHolders) {
         int i;
-        for(i = 0; i < nTiles; i++) {
+        for(i = 0; i < m_nTiles; i++) {
             if (papoSourcesHolders[i])
                 delete papoSourcesHolders[i];
-            
+
         }
-        
+
         VSIFree(papoSourcesHolders);
         papoSourcesHolders = NULL;
     }
@@ -297,7 +295,7 @@ int PostGISRasterDataset::CloseDependentDatasets()
         nOverviewCount = 0;
         bHasDroppedRef = TRUE;
     }
-    
+
     return bHasDroppedRef;
 }
 
@@ -309,16 +307,16 @@ GBool PostGISRasterDataset::HasSpatialIndex()
 {
     CPLString osCommand;
     PGresult* poResult = NULL;
-    
+
     // If exists, return it
     if (bHasTriedHasSpatialIndex) {
         return bHasSpatialIndex;
     }
-    
+
     bHasTriedHasSpatialIndex = true;
 
     /* For debugging purposes only */
-    if( CSLTestBoolean(CPLGetConfigOption("PR_DISABLE_GIST", "FALSE") ) )
+    if( CPLTestBool(CPLGetConfigOption("PR_DISABLE_GIST", "FALSE") ) )
         return false;
 
     // Copyright dustymugs !!!
@@ -338,7 +336,7 @@ GBool PostGISRasterDataset::HasSpatialIndex()
     "AND n.nspname = '%s' "
     "AND c2.relname = '%s' "
     "AND att.attname = '%s' ", pszSchema, pszTable, pszColumn);
-    
+
 #ifdef DEBUG_QUERY
     CPLDebug("PostGIS_Raster", 
         "PostGISRasterDataset::HasSpatialIndex(): Query: %s", 
@@ -346,7 +344,7 @@ GBool PostGISRasterDataset::HasSpatialIndex()
 #endif
 
     poResult = PQexec(poConn, osCommand.c_str());
-    
+
     if (poResult == NULL || 
         PQresultStatus(poResult) != PGRES_TUPLES_OK ||
         PQntuples(poResult) <= 0 )
@@ -375,18 +373,18 @@ const char * PostGISRasterDataset::GetPrimaryKeyRef()
 {
     CPLString osCommand;
     PGresult* poResult = NULL;
-    
+
     // If exists, return it
     if (bHasTriedFetchingPrimaryKeyName) {
         return pszPrimaryKeyName;
     }
-    
+
     bHasTriedFetchingPrimaryKeyName = true;
 
     /* For debugging purposes only */
-    if( CSLTestBoolean(CPLGetConfigOption("PR_DISABLE_PK", "FALSE") ) )
+    if( CPLTestBool(CPLGetConfigOption("PR_DISABLE_PK", "FALSE") ) )
         return NULL;
-    
+
     /* Determine the primary key/unique column on the table */
     osCommand.Printf("select d.attname from pg_catalog.pg_constraint "
         "as a join pg_catalog.pg_indexes as b on a.conname = "
@@ -403,11 +401,11 @@ const char * PostGISRasterDataset::GetPrimaryKeyRef()
 #endif
 
     poResult = PQexec(poConn, osCommand.c_str());
-    
+
     if (poResult == NULL || 
         PQresultStatus(poResult) != PGRES_TUPLES_OK ||
         PQntuples(poResult) <= 0 ) {
-            
+
         PQclear(poResult);
 
         /**
@@ -439,7 +437,7 @@ const char * PostGISRasterDataset::GetPrimaryKeyRef()
             "find a primary key or unique column on the specified "
             "table %s.%s. For better performance, creating a primary key on the table is advised.",
             pszSchema, pszTable);
-            
+
             pszPrimaryKeyName = NULL; // Just in case
 
         }
@@ -449,7 +447,7 @@ const char * PostGISRasterDataset::GetPrimaryKeyRef()
         }
 
     }
-    
+
     // Ok, get the primary key        
     else {
         pszPrimaryKeyName = CPLStrdup(PQgetvalue(poResult, 0, 0));
@@ -478,12 +476,11 @@ const char * PostGISRasterDataset::GetPrimaryKeyRef()
  **********************************************************************/
 GBool PostGISRasterDataset::BrowseDatabase(const char* pszCurrentSchema,
         const char* pszValidConnectionString) {
-            
-    /* Be careful! These 3 vars override the class ones! */
-    char* pszSchema = NULL;
-    char* pszTable = NULL;
-    char* pszColumn = NULL;
-    
+
+    char* l_pszSchema = NULL;
+    char* l_pszTable = NULL;
+    char* l_pszColumn = NULL;
+
     int i = 0;
     int nTuples = 0;
     PGresult * poResult = NULL;
@@ -506,7 +503,7 @@ GBool PostGISRasterDataset::BrowseDatabase(const char* pszCurrentSchema,
         if (poResult == NULL || 
             PQresultStatus(poResult) != PGRES_TUPLES_OK ||
             PQntuples(poResult) <= 0) {
-                    
+
             ReportError(CE_Failure, CPLE_AppDefined,
                 "Error browsing database for PostGIS Raster tables: %s", 
                 PQerrorMessage(poConn));
@@ -519,20 +516,20 @@ GBool PostGISRasterDataset::BrowseDatabase(const char* pszCurrentSchema,
 
         nTuples = PQntuples(poResult);
         for (i = 0; i < nTuples; i++) {
-            pszSchema = PQgetvalue(poResult, i, 0);
-            pszTable = PQgetvalue(poResult, i, 1);
-            pszColumn = PQgetvalue(poResult, i, 2);
+            l_pszSchema = PQgetvalue(poResult, i, 0);
+            l_pszTable = PQgetvalue(poResult, i, 1);
+            l_pszColumn = PQgetvalue(poResult, i, 2);
 
             papszSubdatasets = CSLSetNameValue(papszSubdatasets,
                 CPLSPrintf("SUBDATASET_%d_NAME", (i + 1)),
                 CPLSPrintf("PG:%s schema=%s table=%s column=%s",
-                pszValidConnectionString, pszSchema, pszTable, 
-                pszColumn));
+                pszValidConnectionString, l_pszSchema, l_pszTable, 
+                l_pszColumn));
 
             papszSubdatasets = CSLSetNameValue(papszSubdatasets,
                 CPLSPrintf("SUBDATASET_%d_DESC", (i + 1)),
                 CPLSPrintf("PostGIS Raster table at %s.%s (%s)", 
-                pszSchema, pszTable, pszColumn));
+                l_pszSchema, l_pszTable, l_pszColumn));
         }
 
         PQclear(poResult);
@@ -556,11 +553,11 @@ GBool PostGISRasterDataset::BrowseDatabase(const char* pszCurrentSchema,
         if (poResult == NULL || 
             PQresultStatus(poResult) != PGRES_TUPLES_OK || 
             PQntuples(poResult) <= 0) {
-                
+
             ReportError(CE_Failure, CPLE_AppDefined,
                 "Error browsing database for PostGIS Raster tables: %s", 
                 PQerrorMessage(poConn));
-                
+
             if (poResult != NULL)
                 PQclear(poResult);
 
@@ -570,19 +567,19 @@ GBool PostGISRasterDataset::BrowseDatabase(const char* pszCurrentSchema,
 
         nTuples = PQntuples(poResult);
         for (i = 0; i < nTuples; i++) {
-            pszTable = PQgetvalue(poResult, i, 0);
-            pszColumn = PQgetvalue(poResult, i, 1);
+            l_pszTable = PQgetvalue(poResult, i, 0);
+            l_pszColumn = PQgetvalue(poResult, i, 1);
 
             papszSubdatasets = CSLSetNameValue(papszSubdatasets,
                 CPLSPrintf("SUBDATASET_%d_NAME", (i + 1)),
                 CPLSPrintf("PG:%s schema=%s table=%s column=%s",
-                pszValidConnectionString, pszCurrentSchema, pszTable, 
-                pszColumn));
+                pszValidConnectionString, pszCurrentSchema, l_pszTable, 
+                l_pszColumn));
 
             papszSubdatasets = CSLSetNameValue(papszSubdatasets,
                 CPLSPrintf("SUBDATASET_%d_DESC", (i + 1)),
                 CPLSPrintf("PostGIS Raster table at %s.%s (%s)", 
-                pszCurrentSchema, pszTable, pszColumn));
+                pszCurrentSchema, l_pszTable, l_pszColumn));
         }
 
         PQclear(poResult);
@@ -600,7 +597,7 @@ PROverview * PostGISRasterDataset::GetOverviewTables(int * pnOverviews)
     PROverview * poOV = NULL;
     CPLString osCommand;
     PGresult * poResult = NULL;
-    
+
     osCommand.Printf("SELECT o_table_name, overview_factor, "
             "o_raster_column, o_table_schema FROM raster_overviews "
             "WHERE r_table_schema = '%s' AND r_table_name = '%s' AND "
@@ -618,7 +615,7 @@ PROverview * PostGISRasterDataset::GetOverviewTables(int * pnOverviews)
     if (poResult == NULL || 
         PQresultStatus(poResult) != PGRES_TUPLES_OK ||
         PQntuples(poResult) < 0) {
-        
+
         ReportError(CE_Failure, CPLE_AppDefined, 
             "Error looking for overview tables: %s", 
             PQerrorMessage(poConn));
@@ -628,51 +625,51 @@ PROverview * PostGISRasterDataset::GetOverviewTables(int * pnOverviews)
 
         return NULL;
     }
-    
+
     else if (PQntuples(poResult) == 0) {
         CPLDebug("PostGIS_Raster", 
             "PostGISRasterDataset::GetOverviewTables(): No overviews " 
             "for table %s.%s", pszTable, pszSchema);
-        
+
         if (poResult)
             PQclear(poResult);
 
         return NULL;
     }
-    
+
     int nTuples = PQntuples(poResult);
-    
+
     poOV = (PROverview *)VSIMalloc2(nTuples, sizeof(PROverview));
     if (poOV == NULL) {
         ReportError(CE_Failure, CPLE_AppDefined, 
             "Error looking for overview tables");
-        
+
         PQclear(poResult);
-        
+
         return NULL;
     }
-    
+
     int iOVerview = 0;
     for(iOVerview = 0; iOVerview < nTuples; iOVerview++) {
         poOV[iOVerview].pszSchema = 
             CPLStrdup(PQgetvalue(poResult, iOVerview, 3));
-            
+
         poOV[iOVerview].pszTable =
             CPLStrdup(PQgetvalue(poResult, iOVerview, 0));
-            
+
         poOV[iOVerview].pszColumn = 
             CPLStrdup(PQgetvalue(poResult, iOVerview, 2));
-            
+
         poOV[iOVerview].nFactor = 
             atoi(PQgetvalue(poResult, iOVerview, 1));
-    
+
     }
-    
+
     if (pnOverviews)
         *pnOverviews = nTuples;
-    
+
     PQclear(poResult);
-    
+
     return poOV;
 }
 
@@ -711,7 +708,7 @@ void PostGISRasterDataset::BuildOverviews()
             poOvrDS->pszWhere = pszWhere ? CPLStrdup(pszWhere) : NULL;
             poOvrDS->poParentDS = this;
 
-            if (!CSLTestBoolean(CPLGetConfigOption("PG_DIFFERED_OVERVIEWS", "YES")) &&
+            if (!CPLTestBool(CPLGetConfigOption("PG_DIFFERED_OVERVIEWS", "YES")) &&
                 (!poOvrDS->SetRasterProperties(NULL) ||
                 poOvrDS->GetRasterCount() != GetRasterCount()))
             {
@@ -745,7 +742,7 @@ PostGISRasterDataset* PostGISRasterDataset::GetOverviewDS(int iOvr)
         return NULL;
     return papoOverviewDS[iOvr];
 }
- 
+
 /***********************************************************************
  * \brief Calculates the destination window for a VRT source, taking 
  * into account that the source is a PostGIS Raster tile and the 
@@ -759,27 +756,27 @@ GBool PostGISRasterDataset::GetDstWin(
 {
     double we_res = this->adfGeoTransform[GEOTRSFRM_WE_RES];
     double ns_res = this->adfGeoTransform[GEOTRSFRM_NS_RES];
-    
+
     double adfTileGeoTransform[6];
     psDP->GetGeoTransform(adfTileGeoTransform);
-    
+
     *pnDstXOff = (int)
         (0.5 + (adfTileGeoTransform[GEOTRSFRM_TOPLEFT_X] - xmin) / we_res);
-    
+
     if( ns_res < 0 )
         *pnDstYOff = (int)
             (0.5 + (ymax - adfTileGeoTransform[GEOTRSFRM_TOPLEFT_Y]) / -ns_res);
     else
         *pnDstYOff = (int)
             (0.5 + (adfTileGeoTransform[GEOTRSFRM_TOPLEFT_Y] - ymin) / ns_res);
-    
+
     *pnDstXSize = (int)
         (0.5 + psDP->GetRasterXSize() *
          adfTileGeoTransform[GEOTRSFRM_WE_RES] / we_res);
     *pnDstYSize = (int)
         (0.5 + psDP->GetRasterYSize() *
          adfTileGeoTransform[GEOTRSFRM_NS_RES] / ns_res);
-         
+
     return true;
 }
 
@@ -819,11 +816,11 @@ GBool PostGISRasterDataset::AddComplexSource(PostGISRasterTileDataset* poRTDS)
 
         int bHasNoData = FALSE;
         double dfBandNoDataValue = prb->GetNoDataValue(&bHasNoData);
-            
+
         PostGISRasterTileRasterBand * prtb =
             (PostGISRasterTileRasterBand *)
                 poRTDS->GetRasterBand(iBand + 1);
-            
+
         prb->AddComplexSource(prtb, 0, 0, 
             poRTDS->GetRasterXSize(),
             poRTDS->GetRasterYSize(),
@@ -833,7 +830,7 @@ GBool PostGISRasterDataset::AddComplexSource(PostGISRasterTileDataset* poRTDS)
 
         prtb->poSource = prb->papoSources[prb->nSources-1];
     }
-    
+
     return true;
 }
 
@@ -851,7 +848,7 @@ PostGISRasterTileDataset *
     int i;
     PostGISRasterTileDataset * poRTDS = NULL;
 
-    for(i = 0; i < nTiles; i++)
+    for(i = 0; i < m_nTiles; i++)
     {
         poRTDS = papoSourcesHolders[i];
 
@@ -884,18 +881,18 @@ void PostGISRasterDataset::CacheTile(const char* pszMetadata,
 
     // Skip first "("
     char* pszFilteredRes = pszRes + 1;
-    
+
     // Skip last ")"
     pszFilteredRes[strlen(pszFilteredRes)-1] = '\0';
-    
+
     // Tokenize
     char** papszParams = 
         CSLTokenizeString2(pszFilteredRes, ",", 
             CSLT_HONOURSTRINGS | CSLT_ALLOWEMPTYTOKENS);
     CPLAssert(CSLCount(papszParams) >= ELEMENTS_OF_METADATA_RECORD);
-    
+
     CPLFree(pszRes);
-    
+
     double dfTilePixelSizeX = CPLAtof(papszParams[POS_UPPERLEFTX]);
     double dfTilePixelSizeY = CPLAtof(papszParams[POS_UPPERLEFTY]);
     int nTileXSize = atoi(papszParams[POS_WIDTH]);
@@ -913,7 +910,7 @@ void PostGISRasterDataset::CacheTile(const char* pszMetadata,
 
     int nWKBLength = 0;
     GByte* pbyData = CPLHexToBinary(pszRaster, &nWKBLength);
-        
+
     int nExpectedBands = bAllBandCaching ? GetRasterCount() : 1;
     int nExpectedWKBLength = RASTER_HEADER_SIZE + BAND_SIZE(nBandDataTypeSize, nExpectedBandDataSize) * nExpectedBands;
     if( nWKBLength != nExpectedWKBLength )
@@ -1029,7 +1026,7 @@ GBool PostGISRasterDataset::LoadSources(int nXOff, int nYOff, int nXSize, int nY
     int bLoadRasters = FALSE;
     int bAllBandCaching = FALSE;
 
-    if( nTiles > 0 && !bFetchAll )
+    if( m_nTiles > 0 && !bFetchAll )
     {
         osCommand.Printf("SELECT %s FROM %s.%s",
                         pszPrimaryKeyName, pszSchema, pszTable);
@@ -1052,7 +1049,7 @@ GBool PostGISRasterDataset::LoadSources(int nXOff, int nYOff, int nXSize, int nY
 
             if (poResult)
                 PQclear(poResult);
-        
+
             CPLError(CE_Failure, CPLE_AppDefined, 
                 "PostGISRasterDataset::LoadSources(): %s", 
                 PQerrorMessage(poConn));
@@ -1062,8 +1059,8 @@ GBool PostGISRasterDataset::LoadSources(int nXOff, int nYOff, int nXSize, int nY
 
         if( bTilesSameDimension && nBand > 0 )
         {
-            GIntBig nMemoryRequiredForTiles = PQntuples(poResult) * nTileWidth * nTileHeight *
-                GDALGetDataTypeSize(GetRasterBand(nBand)->GetRasterDataType()) / 8;
+            GIntBig nMemoryRequiredForTiles = static_cast<GIntBig>(PQntuples(poResult)) * nTileWidth * nTileHeight *
+                (GDALGetDataTypeSize(GetRasterBand(nBand)->GetRasterDataType()) / 8);
             GIntBig nCacheMax = (GIntBig) GDALGetCacheMax64();
             if( nBands * nMemoryRequiredForTiles <= nCacheMax )
             {
@@ -1145,7 +1142,7 @@ GBool PostGISRasterDataset::LoadSources(int nXOff, int nYOff, int nXSize, int nY
 
             if (poResult)
                 PQclear(poResult);
-    
+
             CPLError(CE_Failure, CPLE_AppDefined, 
                 "PostGISRasterDataset::LoadSources(): %s", 
                 PQerrorMessage(poConn));
@@ -1169,8 +1166,8 @@ GBool PostGISRasterDataset::LoadSources(int nXOff, int nYOff, int nXSize, int nY
                     {
                         oMapPKIDToRTDS[poRTDS->pszPKID] = poRTDS;
                         papoSourcesHolders = (PostGISRasterTileDataset**)
-                            CPLRealloc(papoSourcesHolders, sizeof(PostGISRasterTileDataset*) * (nTiles + 1));
-                        papoSourcesHolders[nTiles ++] = poRTDS;
+                            CPLRealloc(papoSourcesHolders, sizeof(PostGISRasterTileDataset*) * (m_nTiles + 1));
+                        papoSourcesHolders[m_nTiles ++] = poRTDS;
                         CPLQuadTreeInsert(hQuadTree, poRTDS);
                     }
                     else
@@ -1190,12 +1187,12 @@ GBool PostGISRasterDataset::LoadSources(int nXOff, int nYOff, int nXSize, int nY
 
         PQclear(poResult);
     }
-    
+
     // If we have fetched the surface of all the dataset, then all sources have
     // been built, and we don't need to do a spatial query on following IRasterIO() calls
     if( bFetchAll )
         bBuildQuadTreeDynamically = false;
-    
+
     return true;
 }
 
@@ -1212,7 +1209,7 @@ BandMetadata * PostGISRasterDataset::GetBandsMetadata(int * pnBands)
     char * pszRes = NULL;
     char * pszFilteredRes = NULL;
     char ** papszParams = NULL;
-        
+
     if (pszWhere == NULL) {
         osCommand.Printf("select st_bandmetadata(%s, band) from "
         "(select %s, generate_series(1, st_numbands(%s)) band from "
@@ -1226,7 +1223,7 @@ BandMetadata * PostGISRasterDataset::GetBandsMetadata(int * pnBands)
         "(select %s from %s.%s where %s limit 1) bar) foo", pszColumn, 
         pszColumn, pszColumn, pszColumn, pszSchema, pszTable, pszWhere);
     }
-    
+
 #ifdef DEBUG_QUERY
     CPLDebug("PostGIS_Raster", 
         "PostGISRasterDataset::GetBandsMetadata(): Query: %s", 
@@ -1238,90 +1235,87 @@ BandMetadata * PostGISRasterDataset::GetBandsMetadata(int * pnBands)
     if (poResult == NULL || 
         PQresultStatus(poResult) != PGRES_TUPLES_OK ||
         PQntuples(poResult) <= 0) {
-        
+
         ReportError(CE_Failure, CPLE_AppDefined, 
             "Error getting band metadata while creating raster "
             "bands");
-            
+
         CPLDebug("PostGIS_Raster", 
             "PostGISRasterDataset::GetBandsMetadata(): %s", 
             PQerrorMessage(poConn));
-        
+
         if (poResult)
             PQclear(poResult);
 
         return NULL;
     }
-    
+
     // Matches nBands
     int nTuples = PQntuples(poResult);
-    
-    poBMD = (BandMetadata *)VSIMalloc2(nTuples, sizeof(BandMetadata));
+
+    poBMD = (BandMetadata *)VSI_MALLOC2_VERBOSE(nTuples, sizeof(BandMetadata));
     if (poBMD == NULL) {
-        ReportError(CE_Failure, CPLE_OutOfMemory, 
-            "Out of memory getting metadata from bands");
-            
         PQclear(poResult);
-        
+
         return NULL;
     }
-    
+
 
     int iBand = 0;
-    
+
     for(iBand = 0; iBand < nTuples; iBand++) {
-    
+
         // Get metadata record
         pszRes = CPLStrdup(PQgetvalue(poResult, iBand, 0));
-        
+
         // Skip first "("
         pszFilteredRes = pszRes + 1;
-        
+
         // Skip last ")"
         pszFilteredRes[strlen(pszFilteredRes)-1] = '\0';
-        
+
         // Tokenize
         papszParams = 
             CSLTokenizeString2(pszFilteredRes, ",", CSLT_HONOURSTRINGS | CSLT_ALLOWEMPTYTOKENS);
         CPLAssert(CSLCount(papszParams) >= ELEMENTS_OF_BAND_METADATA_RECORD);
-        
+
         CPLFree(pszRes);
-        
+
         // If the band doesn't have nodata, NULL is returned as nodata
         TranslateDataType(papszParams[POS_PIXELTYPE], 
             &(poBMD[iBand].eDataType), &(poBMD[iBand].nBitsDepth),
             &(poBMD[iBand].bSignedByte));
-            
+
         if (papszParams[POS_NODATAVALUE] == NULL ||
-            EQUALN(papszParams[POS_NODATAVALUE], "NULL", 4*sizeof(char)) || 
-            EQUALN(papszParams[POS_NODATAVALUE], "f", sizeof(char)) || 
+            EQUAL(papszParams[POS_NODATAVALUE], "NULL") || 
+            EQUAL(papszParams[POS_NODATAVALUE], "f") || 
             EQUAL(papszParams[POS_NODATAVALUE], "")) {
-        
+
             poBMD[iBand].bHasNoDataValue = false;
             poBMD[iBand].dfNoDataValue = CPLAtof(NO_VALID_RES);
         }
-        
+
         else {
             poBMD[iBand].bHasNoDataValue = true;
             poBMD[iBand].dfNoDataValue = 
                 CPLAtof(papszParams[POS_NODATAVALUE]);
         }
-        
+
         // TODO: Manage outdb and get path
         poBMD[iBand].bIsOffline = (papszParams[POS_ISOUTDB] != NULL) ?
-            EQUALN(papszParams[POS_ISOUTDB], "t", sizeof(char)) :
+            EQUAL(papszParams[POS_ISOUTDB], "t") :
             false;
-        
+
         CSLDestroy(papszParams);
     }   
-    
+
     if (pnBands)
         *pnBands = nTuples;
-    
+
     PQclear(poResult);
-    
+
     return poBMD; 
-    
+
 }
 
 /***********************************************************************
@@ -1333,18 +1327,18 @@ static void GetTileBoundingBox(const void *hFeature,
 {
     PostGISRasterTileDataset * poRTD = 
         (PostGISRasterTileDataset *)hFeature;
-        
+
     double adfTileGeoTransform[6];
     poRTD->GetGeoTransform(adfTileGeoTransform);
-    
+
     int nTileWidth = poRTD->GetRasterXSize();
     int nTileHeight = poRTD->GetRasterYSize();
-    
+
     pBounds->minx = adfTileGeoTransform[GEOTRSFRM_TOPLEFT_X];
     pBounds->maxx = adfTileGeoTransform[GEOTRSFRM_TOPLEFT_X] +
          nTileWidth *
          adfTileGeoTransform[GEOTRSFRM_WE_RES];
-    
+
     if (adfTileGeoTransform[GEOTRSFRM_NS_RES] >= 0.0) {
         pBounds->miny = adfTileGeoTransform[GEOTRSFRM_TOPLEFT_Y];
         pBounds->maxy = adfTileGeoTransform[GEOTRSFRM_TOPLEFT_Y] +
@@ -1357,7 +1351,7 @@ static void GetTileBoundingBox(const void *hFeature,
             nTileHeight *
             adfTileGeoTransform[GEOTRSFRM_NS_RES];
     }
-    
+
 #ifdef DEBUG_VERBOSE
     CPLDebug("PostGIS_Raster", "TileBoundingBox minx=%f miny=%f maxx=%f maxy=%f adfTileGeoTransform[GEOTRSFRM_NS_RES]=%f",
              pBounds->minx, pBounds->miny, pBounds->maxx, pBounds->maxy, adfTileGeoTransform[GEOTRSFRM_NS_RES]);
@@ -1379,10 +1373,10 @@ PostGISRasterTileDataset* PostGISRasterDataset::BuildRasterTileDataset(const cha
 
     // Skip first "("
     char* pszFilteredRes = pszRes + 1;
-    
+
     // Skip last ")"
     pszFilteredRes[strlen(pszFilteredRes)-1] = '\0';
-    
+
     // Tokenize
     char** papszParams = 
         CSLTokenizeString2(pszFilteredRes, ",", 
@@ -1390,7 +1384,7 @@ PostGISRasterTileDataset* PostGISRasterDataset::BuildRasterTileDataset(const cha
     CPLAssert(CSLCount(papszParams) >= ELEMENTS_OF_METADATA_RECORD);
 
     CPLFree(pszRes);
-    
+
     double tileSkewX = CPLAtof(papszParams[POS_SKEWX]);
     double tileSkewY = CPLAtof(papszParams[POS_SKEWY]);
 
@@ -1398,23 +1392,24 @@ PostGISRasterTileDataset* PostGISRasterDataset::BuildRasterTileDataset(const cha
     // TODO: allow them
     if (!CPLIsEqual(tileSkewX, 0.0) || 
         !CPLIsEqual(tileSkewY, 0.0)) {
-        
+
         ReportError(CE_Failure, CPLE_AppDefined, 
             "GDAL PostGIS Raster driver can not work with "
             "rotated rasters yet.");
 
+        CSLDestroy(papszParams);
         return NULL;
     }
 
-    int nTileWidth = atoi(papszParams[POS_WIDTH]);
-    int nTileHeight = atoi(papszParams[POS_HEIGHT]);
+    int l_nTileWidth = atoi(papszParams[POS_WIDTH]);
+    int l_nTileHeight = atoi(papszParams[POS_HEIGHT]);
 
     /**
         * Now, construct a PostGISRasterTileDataset, and add
         * its bands as sources for the general raster bands
         **/
     int nTileBands = atoi(papszParams[POS_NBANDS]);
-    
+
         /**
         * If the source doesn't have the same number of bands than
         * the raster band, is discarded
@@ -1429,30 +1424,30 @@ PostGISRasterTileDataset* PostGISRasterDataset::BuildRasterTileDataset(const cha
 
         return NULL;
     }
-    
+
     PostGISRasterTileDataset* poRTDS =
-        new PostGISRasterTileDataset(this, nTileWidth, nTileHeight);
-    
+        new PostGISRasterTileDataset(this, l_nTileWidth, l_nTileHeight);
+
     if (GetPrimaryKeyRef() != NULL)
     {
         poRTDS->pszPKID = CPLStrdup(pszPKID);
     }
-    
+
     poRTDS->adfGeoTransform[GEOTRSFRM_TOPLEFT_X]=
         CPLAtof(papszParams[POS_UPPERLEFTX]);
-        
+
     poRTDS->adfGeoTransform[GEOTRSFRM_TOPLEFT_Y]=
         CPLAtof(papszParams[POS_UPPERLEFTY]);
 
     poRTDS->adfGeoTransform[GEOTRSFRM_WE_RES]=
         CPLAtof(papszParams[POS_SCALEX]);
-        
+
     poRTDS->adfGeoTransform[GEOTRSFRM_NS_RES]=
         CPLAtof(papszParams[POS_SCALEY]);
- 
+
     // TODO: outdb bands should be handled. Not a priority.
     for(int j = 0; j < nTileBands; j++) {
-        
+
         // Create band
         poRTDS->SetBand(j + 1,
             new PostGISRasterTileRasterBand(
@@ -1460,9 +1455,9 @@ PostGISRasterTileDataset* PostGISRasterDataset::BuildRasterTileDataset(const cha
                 j + 1, (poBandMetaData ) ? poBandMetaData[j].eDataType : GetRasterBand(j+1)->GetRasterDataType(), 
                 (poBandMetaData ) ? poBandMetaData[j].bIsOffline : FALSE));
     }
-    
+
     CSLDestroy(papszParams);
-    
+
     return poRTDS;
 }
 
@@ -1537,31 +1532,31 @@ void PostGISRasterDataset::BuildBands(BandMetadata * poBandMetaData,
         "PostGISRasterDataset::ConstructOneDatasetFromTiles: "
         "Now constructing the raster dataset bands");
 #endif
-        
+
     int iBand;
     for (iBand = 0; iBand < nBandsFetched; iBand++) {
-            
+
         SetBand(iBand + 1, new PostGISRasterRasterBand(this, iBand + 1, 
             poBandMetaData[iBand].eDataType, 
             poBandMetaData[iBand].bHasNoDataValue, 
             poBandMetaData[iBand].dfNoDataValue, 
             poBandMetaData[iBand].bIsOffline));
-        
+
         // Set some band metadata items
         GDALRasterBand * b = GetRasterBand(iBand + 1);
-        
+
         if (poBandMetaData[iBand].bSignedByte) {
             b->SetMetadataItem(
                 "PIXELTYPE", "SIGNEDBYTE", "IMAGE_STRUCTURE" );
         }
-        
+
         if (poBandMetaData[iBand].nBitsDepth < 8) {
             b->SetMetadataItem(
             "NBITS", CPLString().Printf( "%d", 
                 poBandMetaData[iBand].nBitsDepth ),
             "IMAGE_STRUCTURE" );
         }
-        
+
 #ifdef DEBUG_VERBOSE
         CPLDebug("PostGIS_Raster", 
             "PostGISRasterDataset::ConstructOneDatasetFromTiles: "
@@ -1572,12 +1567,12 @@ void PostGISRasterDataset::BuildBands(BandMetadata * poBandMetaData,
 
 /***********************************************************************
  * \brief Construct just one dataset from all the results fetched.
- * 
- * This method is not very elegant. It's strongly attached to 
+ *
+ * This method is not very elegant. It's strongly attached to
  * SetRasterProperties (it assumes poResult is not NULL, and the actual
  * results are stored at fixed positions). I just did it to avoid a
  * huge SetRasterProperties method.
- * 
+ *
  * I know, this could be avoided in a better way. Like implementing a
  * wrapper to raise queries and get results without all the checking
  * overhead. I'd like to do it, someday...
@@ -1585,31 +1580,30 @@ void PostGISRasterDataset::BuildBands(BandMetadata * poBandMetaData,
 GBool PostGISRasterDataset::ConstructOneDatasetFromTiles(
     PGresult * poResult)
 {
-    
+
     /*******************************************************************
-     * We first get the band metadata. So we'll can use it as metadata 
-     * for all the sources. 
-     * 
+     * We first get the band metadata. So we'll can use it as metadata
+     * for all the sources.
+     *
      * We just fetch the band metadata from 1 tile. So, we assume that:
      * - All the bands have the same data type
      * - All the bands have the same NODATA value
-     * 
-     * It's user's resposibility to ensure the requested table fit in
+     *
+     * It's user's responsibility to ensure the requested table fit in
      * this schema. He/she may use the 'where' clause to ensure this
      ******************************************************************/
     int nBandsFetched = 0;
     BandMetadata * poBandMetaData = GetBandsMetadata(&nBandsFetched);
-   
-    
+
     /*******************************************************************
      * Now, we can iterate over the input query's results (metadata 
      * from all the database tiles). 
-     * 
+     *
      * In this iteration, we will construct the dataset GeoTransform 
      * array and we will add each tile's band as source for each of our
      * rasterbands. 
      ******************************************************************/
-    int nTiles = PQntuples(poResult);
+    int l_nTiles = PQntuples(poResult);
 
     adfGeoTransform[GEOTRSFRM_TOPLEFT_X] = xmin;
 
@@ -1619,7 +1613,7 @@ GBool PostGISRasterDataset::ConstructOneDatasetFromTiles(
      * tile's geotransform. And we don't need to construct sources for 
      * the raster bands. We just read from the unique tile we have. So, 
      * we avoid all the VRT stuff.
-     * 
+     *
      * TODO: For some reason, the implementation of IRasterIO in
      * PostGISRasterRasterBand class causes a segmentation fault when
      * tries to call GDALRasterBand::IRasterIO. This call intends to
@@ -1632,65 +1626,65 @@ GBool PostGISRasterDataset::ConstructOneDatasetFromTiles(
      * Right now, we avoid this optimization by making the next boolean
      * variable always true.
      **/
-    //GBool bNeedToConstructSourcesHolders = (nTiles > 1); 
-    
+    //GBool bNeedToConstructSourcesHolders = (l_nTiles > 1); 
+
     // As the optimization is not working, we avoid it
     GBool bNeedToConstructSourcesHolders = true;
-    
+
 #ifdef notdef
     // This won't be called if the optimization is disabled
     if (!bNeedToConstructSourcesHolders)
     {
         // Get metadata record
         char* pszRes = CPLStrdup(PQgetvalue(poResult, 0, nField));
-        
+
         // Skip first "("
         char* pszFilteredRes = pszRes + 1;
-        
+
         // Skip last ")"
         pszFilteredRes[strlen(pszFilteredRes)-1] = '\0';
-        
+
         // Tokenize
         char** papszParams = 
             CSLTokenizeString2(pszFilteredRes, ",", CSLT_HONOURSTRINGS | CSLT_ALLOWEMPTYTOKENS);
         CPLAssert(CSLCount(papszParams) >= ELEMENTS_OF_METADATA_RECORD);
-        
+
         CPLFree(pszRes);
-        
+
         adfGeoTransform[GEOTRSFRM_ROTATION_PARAM1] = 
             CPLAtof(papszParams[POS_SKEWX]);
-            
+
         adfGeoTransform[GEOTRSFRM_ROTATION_PARAM2] = 
             CPLAtof(papszParams[POS_SKEWY]);
-         
+
         // Rotated rasters are not allowed, so far
         // TODO: allow them
         if (!CPLIsEqual(adfGeoTransform[GEOTRSFRM_ROTATION_PARAM1], 0.0) ||
             !CPLIsEqual(adfGeoTransform[GEOTRSFRM_ROTATION_PARAM2], 0.0)) {
-        
+
             ReportError(CE_Failure, CPLE_AppDefined, 
                     "GDAL PostGIS Raster driver can not work with "
                     "rotated rasters yet.");
-        
+
             VSIFree(poBandMetaData); 
             CSLDestroy(papszParams);
-            
+
             return false;          
         }
-            
+
         /**
          * We override user resolution. It only makes sense in case we
          * have several tiles with different resolutions
-         **/ 
+         **/
         adfGeoTransform[GEOTRSFRM_WE_RES] = 
             CPLAtof(papszParams[POS_SCALEX]);        
         adfGeoTransform[GEOTRSFRM_NS_RES] = 
             CPLAtof(papszParams[POS_SCALEY]);
-            
+
         CSLDestroy(papszParams);
-    
+
     }
-    
+
     /**
      * Several tiles: construct the dataset from metadata of all tiles,
      * and create PostGISRasterTileDataset objects, to hold the
@@ -1704,24 +1698,20 @@ GBool PostGISRasterDataset::ConstructOneDatasetFromTiles(
 #ifdef DEBUG_VERBOSE
         CPLDebug("PostGIS_Raster", 
             "PostGISRasterDataset::ConstructOneDatasetFromTiles: "
-            "Constructing one dataset from %d tiles", nTiles);
+            "Constructing one dataset from %d tiles", l_nTiles);
 #endif
-        
+
         papoSourcesHolders = (PostGISRasterTileDataset **)
-            VSIMalloc2(nTiles, sizeof(PostGISRasterTileDataset *));
-    
+            VSI_MALLOC2_VERBOSE(l_nTiles, sizeof(PostGISRasterTileDataset *));
+
         if (papoSourcesHolders == NULL) {
-            ReportError(CE_Failure, CPLE_OutOfMemory, 
-                "Out of memory allocating space for dataset bands "
-                "sources");
-                
             VSIFree(poBandMetaData);
-            
+
             return false;
         }
-        
+
         int nValidTiles = 0;
-        for(i = 0; i < nTiles; i++)
+        for(i = 0; i < l_nTiles; i++)
         {
             PostGISRasterTileDataset* poRTDS = 
                 BuildRasterTileDataset(PQgetvalue(poResult, i, nField),
@@ -1751,8 +1741,8 @@ GBool PostGISRasterDataset::ConstructOneDatasetFromTiles(
             papoSourcesHolders[nValidTiles++] = poRTDS;
 
         } // end for
-        
-        nTiles = nValidTiles;
+
+        l_nTiles = nValidTiles;
 
         if( nOverviewFactor > 1 )
         {
@@ -1760,13 +1750,13 @@ GBool PostGISRasterDataset::ConstructOneDatasetFromTiles(
             adfGeoTransform[GEOTRSFRM_NS_RES] = poParentDS->adfGeoTransform[GEOTRSFRM_NS_RES] * nOverviewFactor;
         }
         else if ((resolutionStrategy == AVERAGE_RESOLUTION ||
-             resolutionStrategy == AVERAGE_APPROX_RESOLUTION) && nTiles > 0) {
-            adfGeoTransform[GEOTRSFRM_WE_RES] /= nTiles;
-            adfGeoTransform[GEOTRSFRM_NS_RES] /= nTiles;
+             resolutionStrategy == AVERAGE_APPROX_RESOLUTION) && l_nTiles > 0) {
+            adfGeoTransform[GEOTRSFRM_WE_RES] /= l_nTiles;
+            adfGeoTransform[GEOTRSFRM_NS_RES] /= l_nTiles;
         }
-        
+
     } // end else
-    
+
     /**
      * Complete the rest of geotransform parameters
      **/
@@ -1791,25 +1781,26 @@ GBool PostGISRasterDataset::ConstructOneDatasetFromTiles(
     nRasterXSize = (int) 
         fabs(rint((xmax - xmin) / 
             adfGeoTransform[GEOTRSFRM_WE_RES]));
-    
+
     nRasterYSize = (int) 
         fabs(rint((ymax - ymin) / 
             adfGeoTransform[GEOTRSFRM_NS_RES]));
 
 #ifdef DEBUG_VERBOSE
-    CPLDebug("PostGIS_Raster", 
+    CPLDebug( "PostGIS_Raster",
         "PostGISRasterDataset::ConstructOneDatasetFromTiles: "
         "Raster size: (%d, %d), ",nRasterXSize, nRasterYSize);
 #endif
 
     if (nRasterXSize <= 0 || nRasterYSize <= 0) {
-        ReportError(CE_Failure, CPLE_AppDefined, 
+        ReportError(CE_Failure, CPLE_AppDefined,
             "Computed PostGIS Raster dimension is invalid. You've "
-            "probably specified unappropriate resolution.");
-        
+            "probably specified inappropriate resolution." );
+
+        VSIFree(poBandMetaData); 
         return false;
     }
-    
+
     /*******************************************************************
      * Now construct the dataset bands
      ******************************************************************/
@@ -1818,7 +1809,6 @@ GBool PostGISRasterDataset::ConstructOneDatasetFromTiles(
     // And free bandmetadata
     VSIFree(poBandMetaData);
 
-    
     /*******************************************************************
      * Finally, add complex sources and create a quadtree index for them
      ******************************************************************/
@@ -1828,7 +1818,7 @@ GBool PostGISRasterDataset::ConstructOneDatasetFromTiles(
             "PostGISRasterDataset::ConstructOneDatasetFromTiles: "
             "Finally, adding sources for bands");
 #endif
-        for(int iSource = 0; iSource < nTiles; iSource++)
+        for(int iSource = 0; iSource < l_nTiles; iSource++)
         {
             PostGISRasterTileDataset* poRTDS =papoSourcesHolders[iSource];
             if (!AddComplexSource(poRTDS))
@@ -1866,22 +1856,22 @@ GBool PostGISRasterDataset::ConstructOneDatasetFromTiles(
 GBool PostGISRasterDataset::YieldSubdatasets(PGresult * poResult,
 const char * pszValidConnectionString)
 {
-    int nTiles = PQntuples(poResult);
+    int l_nTiles = PQntuples(poResult);
     int i = 0;
     double dfTileUpperLeftX = 0;
     double dfTileUpperLeftY = 0;
-    
-    papszSubdatasets = (char**)VSICalloc(2 * nTiles + 1, sizeof(char*));
+
+    papszSubdatasets = (char**)VSICalloc(2 * l_nTiles + 1, sizeof(char*));
     if( papszSubdatasets == NULL )
         return false;
-    
+
     // Subdatasets identified by primary key
     if (GetPrimaryKeyRef() != NULL) {
-        
-        for(i = 0; i < nTiles; i++) {
-            
+
+        for(i = 0; i < l_nTiles; i++) {
+
             const char* pszId = PQgetvalue(poResult, i, 0);
-        
+
             papszSubdatasets[2 * i] = 
                 CPLStrdup(CPLSPrintf("SUBDATASET_%d_NAME=PG:%s schema=%s table=%s column=%s "
                     "where='%s = %s'", i+ 1, pszValidConnectionString, 
@@ -1893,35 +1883,35 @@ const char * pszValidConnectionString)
                     i + 1, pszSchema, pszTable, pszColumn, pszPrimaryKeyName, 
                     pszId));
         }
-    } 
-        
+    }
+
     // Subdatasets identified by upper left pixel
     else {
-        
+
         char * pszRes;
         char * pszFilteredRes;
         char ** papszParams;
-        
-        for(i = 0; i < nTiles; i++) {
-            
+
+        for(i = 0; i < l_nTiles; i++) {
+
             pszRes = CPLStrdup(PQgetvalue(poResult, i, 0));
-        
+
             // Skip first "("
             pszFilteredRes = pszRes + 1;
-            
+
             // Skip last ")"
             pszFilteredRes[strlen(pszFilteredRes)-1] = '\0';
-            
+
             // Tokenize
             papszParams = 
                 CSLTokenizeString2(pszFilteredRes, ",", 
                     CSLT_HONOURSTRINGS);
-                    
+
             CPLFree(pszRes);
-        
+
             dfTileUpperLeftX = CPLAtof(papszParams[POS_UPPERLEFTX]);
             dfTileUpperLeftY = CPLAtof(papszParams[POS_UPPERLEFTY]);
-        
+
             papszSubdatasets[2 * i] = 
                 CPLStrdup(CPLSPrintf("SUBDATASET_%d_NAME=PG:%s schema=%s table=%s column=%s "
                     "where='abs(ST_UpperLeftX(%s) - %.8f) < 1e-8 AND "
@@ -1934,11 +1924,11 @@ const char * pszValidConnectionString)
                 CPLStrdup(CPLSPrintf("SUBDATASET_%d_DESC=PostGIS Raster at %s.%s (%s), "
                 "UpperLeft = %.8f, %.8f", i + 1, pszSchema, pszTable, pszColumn, 
                 dfTileUpperLeftX, dfTileUpperLeftY));
-                
+
             CSLDestroy(papszParams);
         }
     }
-    
+
     /**
      * Not a single raster fetched. Not really needed. Just to keep code clean 
      **/
@@ -1987,12 +1977,12 @@ GBool PostGISRasterDataset::SetRasterProperties
     GBool bNeedToCheckWholeTable = false;
 
     /*******************************************************************
-     * Get the extent and the maximum number of bands of the requested 
+     * Get the extent and the maximum number of bands of the requested
      * raster-
-     * 
-     * TODO: The extent of rotated rasters could be a problem. We'll 
-     * need a ST_RotatedExtent function in PostGIS. Without that 
-     * function, we shouldn't allow rotated rasters
+     *
+     * TODO: The extent of rotated rasters could be a problem. We will
+     * need a ST_RotatedExtent function in PostGIS. Without that
+     * function, we should not allow rotated rasters.
      ******************************************************************/
     if (pszWhere != NULL) {
         osCommand.Printf(
@@ -2004,7 +1994,7 @@ GBool PostGISRasterDataset::SetRasterProperties
             pszColumn, pszColumn, pszColumn, pszColumn, pszColumn,
             pszSchema, pszTable, pszWhere, 
             pszColumn);
-            
+
 #ifdef DEBUG_QUERY
         CPLDebug("PostGIS_Raster", 
         "PostGISRasterDataset::SetRasterProperties(): First query: %s", 
@@ -2013,9 +2003,9 @@ GBool PostGISRasterDataset::SetRasterProperties
 
         poResult = PQexec(poConn, osCommand.c_str());
     }
-    
+
     else {
-        
+
         /**
          * Optimization: First, check raster_columns view (it makes 
          * things faster. See ticket #5046)
@@ -2034,45 +2024,45 @@ GBool PostGISRasterDataset::SetRasterProperties
             "raster_columns where r_table_schema = '%s' and "
             "r_table_name = '%s' and r_raster_column = '%s' ) foo",
             pszSchema, pszTable, pszColumn);
-            
+
 #ifdef DEBUG_QUERY
         CPLDebug("PostGIS_Raster", 
         "PostGISRasterDataset::SetRasterProperties(): First query: %s", 
         osCommand.c_str());
 #endif
-        
+
         poResult = PQexec(poConn, osCommand.c_str());
-            
+
         // Query execution error
         if(poResult == NULL || 
             PQresultStatus(poResult) != PGRES_TUPLES_OK || 
             PQntuples(poResult) < 0) {
-            
+
             bNeedToCheckWholeTable = true;
-            
+
             if (poResult)
                 PQclear(poResult);
-        
+
         }
-        
+
         /**
          * We didn't find anything in raster_columns view. Need to check
          * the whole table for metadata
          **/
         else if (PQntuples(poResult) == 0) {
-            
+
             ReportError(CE_Warning, CPLE_AppDefined, "Cannot find "
             "information about %s.%s table in raster_columns view. The "
             "raster table load would take a lot of time. Please, "
             "execute AddRasterConstraints PostGIS function to register "
             "this table as raster table in raster_columns view. This "
             "will save a lot of time.", pszSchema, pszTable);
-            
+
             PQclear(poResult);
-            
+
             bNeedToCheckWholeTable = true;
         }
-        
+
         /* There's a result but the row has empty values */
         else if (PQntuples(poResult) == 1 &&
                  (PQgetvalue(poResult, 0, 1)[0] == '\0' ||
@@ -2087,13 +2077,12 @@ GBool PostGISRasterDataset::SetRasterProperties
             "execute AddRasterConstraints PostGIS function to register "
             "this table as raster table in raster_columns view. This "
             "will save a lot of time.", pszSchema, pszTable);
-            
+
             PQclear(poResult);
-            
+
             bNeedToCheckWholeTable = true;
         }
-        
-        
+
         // We should check whole table but we can't
         if (bNeedToCheckWholeTable && !bCheckAllTiles) {
             ReportError(CE_Failure, CPLE_AppDefined, "Cannot find "
@@ -2106,14 +2095,13 @@ GBool PostGISRasterDataset::SetRasterProperties
             "driver will work even without the table information "
             "stored in raster_columns view, but it could perform "
             "really slow.", pszSchema, pszTable);
-            
+
             PQclear(poResult);
-            
+
             return false;
-            
+
         }
-        
-        
+
         // We should check the whole table and we can
         else if (bNeedToCheckWholeTable) {
             osCommand.Printf(
@@ -2123,7 +2111,7 @@ GBool PostGISRasterDataset::SetRasterProperties
                 "st_extent(%s::geometry) geom, max(ST_NumBands(%s)) "
                 "nbband, avg(ST_ScaleX(%s)) scale_x, avg(ST_ScaleY(%s)) scale_y from %s.%s group by st_srid(%s)) foo", 
                 pszColumn, pszColumn, pszColumn, pszColumn, pszColumn, pszSchema, pszTable, pszColumn);
-                
+
 #ifdef DEBUG_QUERY
             CPLDebug("PostGIS_Raster", 
                 "PostGISRasterDataset::SetRasterProperties(): "
@@ -2132,8 +2120,7 @@ GBool PostGISRasterDataset::SetRasterProperties
 
             poResult = PQexec(poConn, osCommand.c_str()); 
         }
-        
-        
+
         // We already found the data in raster_columns
         else {
             bDataFoundInRasterColumns = true;
@@ -2144,7 +2131,7 @@ GBool PostGISRasterDataset::SetRasterProperties
     if(poResult == NULL || 
         PQresultStatus(poResult) != PGRES_TUPLES_OK || 
         PQntuples(poResult) < 0) {
-        
+
         ReportError(CE_Failure, CPLE_AppDefined, 
             "Error browsing database for PostGIS Raster "
             "properties : %s",  PQerrorMessage(poConn));
@@ -2153,20 +2140,20 @@ GBool PostGISRasterDataset::SetRasterProperties
             PQclear(poResult);
 
         return false;                  
-    
+
     }
-    
+
     else if (PQntuples(poResult) == 0) {
         ReportError(CE_Failure, CPLE_AppDefined, 
             "No results found in %s.%s. Did you specify a 'where' "
             "clause too restrictive?", pszSchema, pszTable);
-            
+
         PQclear(poResult);
-        
+
         return false;
     }
 
-    
+
     /**
      * Found more than one SRID value in the table. Not allowed.
      * 
@@ -2183,7 +2170,7 @@ GBool PostGISRasterDataset::SetRasterProperties
             pszSchema, pszTable);
 
         PQclear(poResult);
-        
+
         return false;
     }
 
@@ -2217,7 +2204,7 @@ GBool PostGISRasterDataset::SetRasterProperties
 
     double scale_x = CPLAtof(PQgetvalue(poResult, 0, 6));
     double scale_y = CPLAtof(PQgetvalue(poResult, 0, 7));
-    if( nOverviewFactor > 1 )
+    if( nOverviewFactor > 1 && poParentDS != NULL )
     {
         scale_x = poParentDS->adfGeoTransform[GEOTRSFRM_WE_RES] * nOverviewFactor;
         scale_y = poParentDS->adfGeoTransform[GEOTRSFRM_NS_RES] * nOverviewFactor;
@@ -2227,7 +2214,7 @@ GBool PostGISRasterDataset::SetRasterProperties
         scale_x = adfGeoTransform[GEOTRSFRM_WE_RES];
         scale_y = adfGeoTransform[GEOTRSFRM_NS_RES];
     }
-    
+
     // These fields can only be fetched from raster_columns view
     if (bDataFoundInRasterColumns)
     {
@@ -2237,10 +2224,10 @@ GBool PostGISRasterDataset::SetRasterProperties
             bTilesSameDimension = true;
 
         bAllTilesSnapToSameGrid =
-            EQUALN(PQgetvalue(poResult, 0, 10), "t", sizeof(char));
-        
+            EQUAL(PQgetvalue(poResult, 0, 10), "t");
+
         bRegularBlocking = 
-            EQUALN(PQgetvalue(poResult, 0, 11), "t", sizeof(char));
+            EQUAL(PQgetvalue(poResult, 0, 11), "t");
     }
 
 #ifdef DEBUG_VERBOSE
@@ -2251,7 +2238,7 @@ GBool PostGISRasterDataset::SetRasterProperties
 #endif
 
     PQclear(poResult);
-    
+
     /*******************************************************************
      * Now, we fetch the metadata of all the raster tiles in the 
      * database, that will allow us to construct VRT sources to the
@@ -2325,30 +2312,32 @@ GBool PostGISRasterDataset::SetRasterProperties
                 nRasterXSize = (int) 
                     fabs(rint((xmax - xmin) / 
                         adfGeoTransform[GEOTRSFRM_WE_RES]));
-                
+
                 nRasterYSize = (int) 
                     fabs(rint((ymax - ymin) / 
                         adfGeoTransform[GEOTRSFRM_NS_RES]));
 
             #ifdef DEBUG_VERBOSE
-                CPLDebug("PostGIS_Raster", 
+                CPLDebug( "PostGIS_Raster",
                     "PostGISRasterDataset::ConstructOneDatasetFromTiles: "
                     "Raster size: (%d, %d), ",nRasterXSize, nRasterYSize);
             #endif
 
                 if (nRasterXSize <= 0 || nRasterYSize <= 0) {
-                    ReportError(CE_Failure, CPLE_AppDefined, 
-                        "Computed PostGIS Raster dimension is invalid. You've "
-                        "probably specified unappropriate resolution.");
+                    ReportError(
+                        CE_Failure, CPLE_AppDefined,
+                        "Computed PostGIS Raster dimension is invalid. You "
+                        "have probably specified an inappropriate "
+                        "resolution." );
 
                     return false;
                 }
 
                 bBuildQuadTreeDynamically = true;
 
-                /*******************************************************************
+                /**************************************************************
                 * Now construct the dataset bands
-                ******************************************************************/
+                ***************************************************************/
                 int nBandsFetched = 0;
                 BandMetadata * poBandMetaData = GetBandsMetadata(&nBandsFetched);
 
@@ -2362,10 +2351,10 @@ GBool PostGISRasterDataset::SetRasterProperties
 
             osCommand.Printf("select %s, st_metadata(%s) from %s.%s",
                 pszPrimaryKeyName, pszColumn, pszSchema, pszTable);
-                        
-            // srid shouldn't be necessary. It was previously checked
+
+            // srid should not be necessary. It was previously checked
         }
-        
+
         else {
             osCommand.Printf("select %s, st_metadata(%s) from %s.%s "
                 "where %s", pszPrimaryKeyName, pszColumn, pszSchema, 
@@ -2379,13 +2368,13 @@ GBool PostGISRasterDataset::SetRasterProperties
             osCommand.Printf("select st_metadata(%s) from %s.%s",
                 pszColumn, pszSchema, pszTable);
         }
-        
+
         else {
             osCommand.Printf("select st_metadata(%s) from %s.%s "
                 "where %s", pszColumn, pszSchema, pszTable, pszWhere);
         }
     }
-   
+
 #ifdef DEBUG_QUERY
     CPLDebug("PostGIS_Raster", 
         "PostGISRasterDataset::SetRasterProperties(): Query: %s", 
@@ -2411,9 +2400,8 @@ GBool PostGISRasterDataset::SetRasterProperties
     }
 
     // Now we know the number of tiles that form our dataset
-    nTiles = PQntuples(poResult);
-    
-    
+    m_nTiles = PQntuples(poResult);
+
     /*******************************************************************
      * We are going to create a whole dataset as a mosaic with all the 
      * tiles. We'll consider each tile as a VRT source for 
@@ -2421,21 +2409,21 @@ GBool PostGISRasterDataset::SetRasterProperties
      * of these sources, and it will be cached in the sources' caches, 
      * not in the PostGISRasterRasterBand cache
      ******************************************************************/
-    if (nTiles == 1 || nMode == ONE_RASTER_PER_TABLE)
+    if (m_nTiles == 1 || nMode == ONE_RASTER_PER_TABLE)
     {
 #ifdef DEBUG_VERBOSE
         CPLDebug("PostGIS_Raster", 
             "PostGISRasterDataset::SetRasterProperties(): "
-            "Constructing one dataset from %d tiles", nTiles);
+            "Constructing one dataset from %d tiles", m_nTiles);
 #endif
 
         GBool res = ConstructOneDatasetFromTiles(poResult);
-        
+
         PQclear(poResult);
-        
+
         return res;
     }
-    
+
 
     /***************************************************************
      * One raster per row: collect subdatasets 
@@ -2444,17 +2432,17 @@ GBool PostGISRasterDataset::SetRasterProperties
 #ifdef DEBUG_VERBOSE
         CPLDebug("PostGIS_Raster", 
             "PostGISRasterDataset::SetRasterProperties(): "
-            "Reporting %d datasets", nTiles);
+            "Reporting %d datasets", m_nTiles);
 #endif
 
         GBool res = YieldSubdatasets(poResult, 
             pszValidConnectionString);
-        
+
         PQclear(poResult);
-        
+
         return res;
     }
-        
+
     /***************************************************************
      * Wrong mode: error 
      **************************************************************/
@@ -2465,14 +2453,13 @@ GBool PostGISRasterDataset::SetRasterProperties
             "documentation at "
             "http://trac.osgeo.org/gdal/wiki/frmts_wtkraster.html "
             "for further information about working modes.");
-            
+
         PQclear(poResult);
-            
+
         return false;
     }
 }
-         
-    
+
 /***********************************************************************
  * \brief Get the connection information for a filename. 
  * 
@@ -2520,10 +2507,10 @@ GetConnectionInfo(const char * pszFilename,
     if (nPos != -1) {
         int tmp;
         tmp = atoi(CPLParseNameValue(papszParams[nPos], NULL));
-        
+
         // default value
         *nMode = ONE_RASTER_PER_ROW;
-        
+
         if (tmp == 2) {
             *nMode = ONE_RASTER_PER_TABLE;
         }
@@ -2567,13 +2554,13 @@ GetConnectionInfo(const char * pszFilename,
         if (nPos != -1) {
             *ppszSchema = 
                 CPLStrdup(CPLParseNameValue(papszParams[nPos], NULL));
-                
+
             /* Delete this pair from params array */
             papszParams = CSLRemoveStrings(papszParams, nPos, 1, NULL);
         }
 
         /**
-         * Remove the rest of the parameters, if exist (they mustn't be 
+         * Remove the rest of the parameters, if exist (they must not be
          * present if we want a valid PQ connection string)
          **/
         nPos = CSLFindName(papszParams, "column");
@@ -2609,7 +2596,7 @@ GetConnectionInfo(const char * pszFilename,
         else {
             *ppszColumn = 
                 CPLStrdup(CPLParseNameValue(papszParams[nPos], NULL));
-                
+
             /* Delete this pair from params array */
             papszParams = CSLRemoveStrings(papszParams, nPos, 1, NULL);
         }
@@ -2621,7 +2608,7 @@ GetConnectionInfo(const char * pszFilename,
         } else {
             *ppszSchema = 
                 CPLStrdup(CPLParseNameValue(papszParams[nPos], NULL));
-                
+
             /* Delete this pair from params array */
             papszParams = CSLRemoveStrings(papszParams, nPos, 1, NULL);
         }
@@ -2630,7 +2617,7 @@ GetConnectionInfo(const char * pszFilename,
         if (nPos != -1) {
             *ppszWhere = 
                 CPLStrdup(CPLParseNameValue(papszParams[nPos], NULL));
-                
+
             /* Delete this pair from params array */
             papszParams = CSLRemoveStrings(papszParams, nPos, 1, NULL);
         }
@@ -2638,7 +2625,7 @@ GetConnectionInfo(const char * pszFilename,
 
     /* Parse ppszWhere, if needed */
     if (*ppszWhere) {
-        pszTmp = ReplaceQuotes(*ppszWhere, strlen(*ppszWhere));
+        pszTmp = ReplaceQuotes(*ppszWhere, static_cast<int>(strlen(*ppszWhere)));
         CPLFree(*ppszWhere);
         *ppszWhere = pszTmp;
     }
@@ -2652,7 +2639,7 @@ GetConnectionInfo(const char * pszFilename,
         *ppszConnectionString = 
             strncat(*ppszConnectionString, papszParams[i], 
                 strlen(papszParams[i]));
-                
+
         *ppszConnectionString = 
             strncat(*ppszConnectionString, " ", strlen(" "));
     }
@@ -2776,7 +2763,7 @@ GetConnection(const char * pszFilename, char ** ppszConnectionString,
          **************************************************************/
         poDriver = 
             (PostGISRasterDriver *)GDALGetDriverByName("PostGISRaster");
-            
+
         poConn = poDriver->GetConnection(*ppszConnectionString,
                 pszDbname, pszHost, pszPort, pszUser);
 
@@ -2803,11 +2790,11 @@ int PostGISRasterDataset::Identify(GDALOpenInfo* poOpenInfo)
 {
     if (poOpenInfo->pszFilename == NULL ||
         poOpenInfo->fpL != NULL ||
-        !EQUALN(poOpenInfo->pszFilename, "PG:", 3))
+        !STARTS_WITH_CI(poOpenInfo->pszFilename, "PG:"))
     {
         return FALSE;
     }
-    
+
     // Will avoid a OGR PostgreSQL connection string to be recognized as a
     // PostgisRaster one and later fail (#6034)
     if( strstr(poOpenInfo->pszFilename, " schemas=") ||
@@ -2815,7 +2802,7 @@ int PostGISRasterDataset::Identify(GDALOpenInfo* poOpenInfo)
     {
         return FALSE;
     }
-    
+
     return TRUE;
 }
 
@@ -2859,7 +2846,7 @@ GDALDataset* PostGISRasterDataset::Open(GDALOpenInfo* poOpenInfo) {
         CPLFree(pszWhere);
         return NULL;
     }
-    
+
 
     /*******************************************************************
      * No table will be read. Only shows information about the existent 
@@ -2904,7 +2891,7 @@ GDALDataset* PostGISRasterDataset::Open(GDALOpenInfo* poOpenInfo) {
         if (pszWhere)
             CPLFree(pszWhere);
     }
-    
+
     /*******************************************************************
      * A table will be read as dataset: Fetch raster properties from db. 
      ******************************************************************/
@@ -2957,7 +2944,7 @@ char **PostGISRasterDataset::GetMetadataDomainList()
  * calling ST_Metadata, for example)
  *****************************************/
 char** PostGISRasterDataset::GetMetadata(const char *pszDomain) {
-    if (pszDomain != NULL && EQUALN(pszDomain, "SUBDATASETS", 11))
+    if (pszDomain != NULL && STARTS_WITH_CI(pszDomain, "SUBDATASETS"))
         return papszSubdatasets;
     else
         return GDALDataset::GetMetadata(pszDomain);
@@ -3111,10 +3098,10 @@ CPLErr PostGISRasterDataset::GetGeoTransform(double * padfGeoTransform) {
 
     // copy necessary values in supplied buffer
     memcpy(padfGeoTransform, adfGeoTransform, 6 * sizeof(double));
-    
+
     if( nRasterXSize == 0 && nRasterYSize == 0 )
         return CE_Failure;
-    
+
     /* To avoid QGIS trying to create a warped VRT for what is really */
     /* an ungeoreferenced dataset */
     if( CPLIsEqual(padfGeoTransform[0], 0.0) &&
@@ -3174,14 +3161,14 @@ PostGISRasterDataset::CreateCopy( CPL_UNUSED const char * pszFilename,
             "datasets that are PostGISRaster" );
         return NULL;
     }
-    
+
     // Now we can do the cast
     PostGISRasterDataset *poSrcDS = (PostGISRasterDataset *)poGSrcDS;
     PostGISRasterDataset *poSubDS;
 
     // Check connection string
     if (pszFilename == NULL ||
-        !EQUALN(pszFilename, "PG:", 3)) {
+        !STARTS_WITH_CI(pszFilename, "PG:")) {
         /**
          * The connection string provided is not a valid connection 
          * string.
@@ -3509,7 +3496,7 @@ PostGISRasterDataset::Delete(const char* pszFilename)
 
     // Check connection string
     if (pszFilename == NULL ||
-        !EQUALN(pszFilename, "PG:", 3)) { 
+        !STARTS_WITH_CI(pszFilename, "PG:")) { 
         /**
          * The connection string provided is not a valid connection 
          * string.
@@ -3590,7 +3577,7 @@ PostGISRasterDataset::Delete(const char* pszFilename)
         poResult = PQexec(poConn, "commit");
         if (poResult == NULL ||
             PQresultStatus(poResult) != PGRES_COMMAND_OK) {
-                
+
             CPLError(CE_Failure, CPLE_AppDefined,
                 "Error committing database transaction: %s",
                 PQerrorMessage(poConn));
@@ -3671,28 +3658,29 @@ GBool PostGISRasterDataset::PolygonFromCoords(
 }
 
 /***********************************************************************
- * GDALRegister_PostGISRaster()                
+ * GDALRegister_PostGISRaster()
  **********************************************************************/
-void GDALRegister_PostGISRaster() {
-    GDALDriver *poDriver;
-    
-    if (! GDAL_CHECK_VERSION("PostGISRaster driver"))
+void GDALRegister_PostGISRaster()
+
+{
+    if( !GDAL_CHECK_VERSION( "PostGISRaster driver" ) )
         return;
 
-    if (GDALGetDriverByName("PostGISRaster") == NULL) {
-        poDriver = new PostGISRasterDriver();
+    if( GDALGetDriverByName( "PostGISRaster" ) != NULL )
+        return;
 
-        poDriver->SetDescription("PostGISRaster");
-        poDriver->SetMetadataItem( GDAL_DCAP_RASTER, "YES" );
-        poDriver->SetMetadataItem(GDAL_DMD_LONGNAME,
-                "PostGIS Raster driver");
-        poDriver->SetMetadataItem( GDAL_DMD_SUBDATASETS, "YES" );
+    GDALDriver *poDriver = new PostGISRasterDriver();
 
-        poDriver->pfnOpen = PostGISRasterDataset::Open;
-        poDriver->pfnIdentify = PostGISRasterDataset::Identify;
-        poDriver->pfnCreateCopy = PostGISRasterDataset::CreateCopy;
-        poDriver->pfnDelete = PostGISRasterDataset::Delete;
+    poDriver->SetDescription("PostGISRaster");
+    poDriver->SetMetadataItem( GDAL_DCAP_RASTER, "YES" );
+    poDriver->SetMetadataItem(GDAL_DMD_LONGNAME,
+                              "PostGIS Raster driver");
+    poDriver->SetMetadataItem( GDAL_DMD_SUBDATASETS, "YES" );
 
-        GetGDALDriverManager()->RegisterDriver(poDriver);
-    }
+    poDriver->pfnOpen = PostGISRasterDataset::Open;
+    poDriver->pfnIdentify = PostGISRasterDataset::Identify;
+    poDriver->pfnCreateCopy = PostGISRasterDataset::CreateCopy;
+    poDriver->pfnDelete = PostGISRasterDataset::Delete;
+
+    GetGDALDriverManager()->RegisterDriver(poDriver);
 }

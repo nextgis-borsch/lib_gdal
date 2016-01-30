@@ -28,8 +28,8 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#ifndef _DTED_API_H_INCLUDED
-#define _DTED_API_H_INCLUDED
+#ifndef DTED_API_H_INCLUDED
+#define DTED_API_H_INCLUDED
 
 /* -------------------------------------------------------------------- */
 /*      To avoid dependence on CPL, just define AVOID_CPL when          */
@@ -37,6 +37,7 @@
 /* -------------------------------------------------------------------- */
 #ifndef AVOID_CPL
 #  include "cpl_conv.h"
+#  include "cpl_string.h"
 #else
 
 #include <stdio.h>
@@ -138,7 +139,7 @@ DTEDInfo *DTEDOpenEx( VSILFILE* fp, const char * pszFilename,
 
 /**     Read one single sample. The coordinates are given from the
         top-left corner of the file (contrary to the internal
-        organisation or a DTED file)
+        organization or a DTED file)
 */
 int DTEDReadPoint( DTEDInfo * psDInfo, int nXOff, int nYOff, GInt16* panVal);
 
@@ -194,7 +195,6 @@ typedef enum {
     DTEDMD_MAX = 23
 } DTEDMetaDataCode;
 
-    
 char *DTEDGetMetadata( DTEDInfo *, DTEDMetaDataCode );
 int   DTEDSetMetadata( DTEDInfo *, DTEDMetaDataCode, const char *);
 
@@ -210,6 +210,6 @@ void  DTEDPtStreamTrimEdgeOnlyTiles( void *hStream );
 
 CPL_C_END
 
-#endif /* ndef _DTED_API_H_INCLUDED */
+#endif /* ndef DTED_API_H_INCLUDED */
 
 

@@ -2,8 +2,8 @@
  * $Id$
  *
  * Project:  Oracle Spatial Driver
- * Purpose:  Implementation of OGROCIStatement, which encapsulates the 
- *           preparation, executation and fetching from an SQL statement.
+ * Purpose:  Implementation of OGROCIStatement, which encapsulates the
+ *           preparation, execution and fetching from an SQL statement.
  * Author:   Frank Warmerdam, warmerdam@pobox.com
  *
  ******************************************************************************
@@ -86,7 +86,7 @@ void OGROCIStatement::Clean()
 
     CPLFree( papszCurImage );
     papszCurImage = NULL;
-    
+
     CPLFree( panCurColumnInd );
     panCurColumnInd = NULL;
 
@@ -140,7 +140,7 @@ CPLErr OGROCIStatement::Prepare( const char *pszSQLStatement )
 /* -------------------------------------------------------------------- */
     if( poSession->Failed(
         OCIStmtPrepare( hStatement, poSession->hError, 
-                        (text *) pszSQLStatement, strlen(pszSQLStatement),
+                        (text *) pszSQLStatement, static_cast<unsigned int>(strlen(pszSQLStatement)),
                         (ub4)OCI_NTV_SYNTAX, (ub4)OCI_DEFAULT ),
         "OCIStmtPrepare" ) )
         return CE_Failure;
@@ -167,7 +167,7 @@ CPLErr OGROCIStatement::BindObject( const char *pszPlaceName,
                            (ub4)OCI_DEFAULT),
             "OCIBindByName()") )
         return CE_Failure;
-    
+
     if( poSession->Failed(
             OCIBindObject( hBindOrd, poSession->hError, hTDO,
                            (dvoid **) pahObjects, (ub4 *)0, 
@@ -237,7 +237,7 @@ CPLErr OGROCIStatement::Execute( const char *pszSQLStatement,
                     &nStmtType, 0, OCI_ATTR_STMT_TYPE, poSession->hError ),
         "OCIAttrGet(ATTR_STMT_TYPE)") )
         return CE_Failure;
-    
+
     int bSelect = (nStmtType == OCI_STMT_SELECT);
 
 /* -------------------------------------------------------------------- */
@@ -277,8 +277,8 @@ CPLErr OGROCIStatement::Execute( const char *pszSQLStatement,
 /* -------------------------------------------------------------------- */
 /*      Count the columns.                                              */
 /* -------------------------------------------------------------------- */
-    for( nRawColumnCount = 0; TRUE; nRawColumnCount++ )
-    {                                                           
+    for( nRawColumnCount = 0; true; nRawColumnCount++ )
+    {
         OCIParam     *hParmDesc;
 
         if( OCIParamGet( hStatement, OCI_HTYPE_STMT, poSession->hError, 
@@ -286,12 +286,12 @@ CPLErr OGROCIStatement::Execute( const char *pszSQLStatement,
                          (ub4) nRawColumnCount+1 ) != OCI_SUCCESS )
             break;
     }
-    
+
     panFieldMap = (int *) CPLCalloc(sizeof(int),nRawColumnCount);
-    
+
     papszCurColumn = (char **) CPLCalloc(sizeof(char*),nRawColumnCount+1);
     panCurColumnInd = (sb2 *) CPLCalloc(sizeof(sb2),nRawColumnCount+1);
-        
+
 /* ==================================================================== */
 /*      Establish result column definitions, and setup parameter        */
 /*      defines.                                                        */
@@ -301,7 +301,7 @@ CPLErr OGROCIStatement::Execute( const char *pszSQLStatement,
     poDefn->Reference();
 
     for( int iParm = 0; iParm < nRawColumnCount; iParm++ )
-    {                                                           
+    {
         OGRFieldDefn oField( "", OFTString );
         OCIParam     *hParmDesc;
         ub2          nOCIType;
@@ -381,7 +381,7 @@ char **OGROCIStatement::SimpleFetchRow()
 
 {
     int nStatus, i;
-    
+
     if( papszCurImage == NULL )
     {
         papszCurImage = (char **) 

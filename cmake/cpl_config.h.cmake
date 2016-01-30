@@ -102,10 +102,10 @@
 #cmakedefine HOST_FILLORDER @HOST_FILLORDER@
 
 /* Define as const if the declaration of iconv() needs const. */
-#cmakedefine ICONV_CONST @ICONV_CONST@
+#define ICONV_CONST @ICONV_CONST@
 
 /* For .cpp files, define as const if the declaration of iconv() needs const. */
-#cmakedefine ICONV_CPP_CONST @ICONV_CPP_CONST@
+#define ICONV_CPP_CONST @ICONV_CPP_CONST@
 
 /* Define for Mac OSX Framework build */
 #cmakedefine MACOSX_FRAMEWORK 1
@@ -135,7 +135,7 @@
 #cmakedefine VSI_FOPEN64 @VSI_FOPEN64@
 
 /* Define to name of 64bit ftruncate sfunction */
-#cmakedefine VSI_FTRUNCATE64 @VSI_TRANCATE64@
+#cmakedefine VSI_FTRUNCATE64 @VSI_FTRUNCATE64@
 
 /* Define to name of 64bit fseek func */
 #cmakedefine VSI_FSEEK64 @VSI_FSEEK64@

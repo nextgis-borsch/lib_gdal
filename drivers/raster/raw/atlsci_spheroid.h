@@ -45,13 +45,12 @@ public:
    ~SpheroidItem();
 
    char *spheroid_name;
-   double equitorial_radius;
+   double equitorial_radius;  // TODO: Spelling.
    double polar_radius;
    double inverse_flattening;
 
    void SetValuesByRadii(const char *spheroidname, double eq_radius, double p_radius);
    void SetValuesByEqRadiusAndInvFlattening(const char *spheroidname, double eq_radius, double inverseflattening);
-
 };
 
 class SpheroidList 
@@ -62,7 +61,6 @@ public:
   // Acceptable errors for radii, inverse flattening
   double epsilonR;
   double epsilonI;
-
 
   SpheroidItem spheroids[MAX_RECOGNIZED_SPHEROIDS];
 
@@ -76,6 +74,4 @@ public:
   double GetSpheroidEqRadius( const char *spheroid_name );
   double GetSpheroidPolarRadius( const char *spheroid_name ); 
   double GetSpheroidInverseFlattening( const char *spheroid_name );
-
 };
-

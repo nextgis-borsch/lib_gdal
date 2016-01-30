@@ -42,14 +42,14 @@
  * expanded tabs
  *
  * Revision 1.2  2000/09/28 16:39:44  warmerda
- * avoid warnings for unused, and unitialized variables
+ * Avoid warnings for unused, and uninitialized variables
  *
  * Revision 1.1  2000/09/19 17:19:40  daniel
  * Initial Revision
  *
  **********************************************************************/
 
-#include "ogr_geometry.h"
+#include "mitab_geometry.h"
 
 #define OGR_NUM_RINGS(poly)   (poly->getNumInteriorRings()+1)
 #define OGR_GET_RING(poly, i) (i==0?poly->getExteriorRing():poly->getInteriorRing(i-1))
@@ -172,15 +172,17 @@ int OGRPolygonLabelPoint(OGRPolygon *poPoly, OGRPoint *poLabelPoint)
         /* count total number of points */
         n += OGR_GET_RING(poPoly, j)->getNumPoints();
     }
+    if( n == 0 )
+        return OGRERR_FAILURE;
 
     xintersect = (double *)calloc(n, sizeof(double));
     if (xintersect == NULL)
         return OGRERR_FAILURE;
 
     for(k=1; k<=NUM_SCANLINES; k++) 
-    { 
+    {
         /* sample the shape in the y direction */
-    
+
         y = oEnv.MaxY - k*skip; 
 
         /* need to find a y that won't intersect any vertices exactly */  
@@ -203,7 +205,6 @@ int OGRPolygonLabelPoint(OGRPolygon *poPoly, OGRPoint *poLabelPoint)
             }
         }
 
-        n=0;
         for(j=0; j<OGR_NUM_RINGS(poPoly); j++) 
         {
             OGRLinearRing *poRing = OGR_GET_RING(poPoly,j);
@@ -220,10 +221,13 @@ int OGRPolygonLabelPoint(OGRPolygon *poPoly, OGRPoint *poLabelPoint)
         }
 
         if(lo_y == hi_y) 
+        {
+            free(xintersect);
             return OGRERR_FAILURE;
+        }
         else  
             y = (hi_y + lo_y)/2.0;    
-    
+
         nfound = 0;
         for(j=0; j<OGR_NUM_RINGS(poPoly); j++)   /* for each line */
         {
@@ -235,22 +239,22 @@ int OGRPolygonLabelPoint(OGRPolygon *poPoly, OGRPoint *poLabelPoint)
             {
                 point2.x = poRing->getX(i);
                 point2.y = poRing->getY(i);
-        
+
                 if(EDGE_CHECK(point1.y, y, point2.y) == CLIP_MIDDLE) 
                 {
                     if(point1.y == point2.y)
                         continue; /* ignore horizontal edges */
                     else
                         slope = (point2.x - point1.x) / (point2.y - point1.y);
-          
+
                     x = point1.x + (y - point1.y)*slope;
                     xintersect[nfound++] = x;
                 } /* End of checking this edge */
-        
+
                 point1 = point2;  /* Go on to next edge */
             }
         } /* Finished the scanline */
-    
+
         /* First, sort the intersections */
         do 
         {
@@ -264,9 +268,9 @@ int OGRPolygonLabelPoint(OGRPolygon *poPoly, OGRPoint *poLabelPoint)
                 }
             }
         } while(wrong_order);
-    
+
         /* Great, now find longest span */
-        point1.y = point2.y = y;
+        //point1.y = point2.y = y;
         for(i=0; i < nfound; i += 2) 
         {
             point1.x = xintersect[i];
@@ -310,7 +314,7 @@ int OGRPolygonLabelPoint(OGRPolygon *poPoly, OGRPoint *poLabelPoint)
         return OGRERR_FAILURE;
 }
 
-
+#ifdef unused
 /**********************************************************************
  *                   OGRGetCentroid()
  *
@@ -354,10 +358,10 @@ int OGRGetCentroid(OGRPolygon *poPoly, OGRPoint *poCentroid)
 
     poCentroid->setX( cent_weight_x / total_len );
     poCentroid->setY( cent_weight_y / total_len );
-  
+
     return OGRERR_NONE;
 }
-
+#endif
 
 
 /**********************************************************************
@@ -391,7 +395,7 @@ int OGRPolylineCenterPoint(OGRLineString *poLine, OGRPoint *poLabelPoint)
         // Return the center point
         poLine->getPoint(poLine->getNumPoints()/2, poLabelPoint);
     }
-    
+
     return OGRERR_NONE;
 }
 
@@ -432,7 +436,7 @@ int OGRPolylineLabelPoint(OGRLineString *poLine, OGRPoint *poLabelPoint)
             poLabelPoint->setY( (y1 + y2)/2.0 );
         }
     }
-    
+
     return OGRERR_NONE;
 }
 

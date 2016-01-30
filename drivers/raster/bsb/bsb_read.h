@@ -27,8 +27,8 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#ifndef _BSBREAD_H_INCLUDED
-#define _BSBREAD_H_INCLUDED
+#ifndef BSBREAD_H_INCLUDED
+#define BSBREAD_H_INCLUDED
 
 #include "cpl_port.h"
 #include "cpl_vsi.h"
@@ -76,8 +76,7 @@ int CPL_DLL BSBWritePCT( BSBInfo *psInfo,
                          int nPCTSize, unsigned char *pabyPCT );
 int CPL_DLL BSBWriteScanline( BSBInfo *psInfo, 
                               unsigned char *pabyScanlineBuf );
-                            
+
 CPL_C_END
 
-
-#endif /* ndef _BSBREAD_H_INCLUDED */
+#endif /* ndef BSBREAD_H_INCLUDED */

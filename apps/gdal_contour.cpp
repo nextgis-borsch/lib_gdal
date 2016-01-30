@@ -117,6 +117,7 @@ int main( int argc, char ** argv )
         {
             printf("%s was compiled against GDAL %s and is running against GDAL %s\n",
                    argv[0], GDAL_RELEASE_NAME, GDALVersionInfo("RELEASE_NAME"));
+            CSLDestroy( argv );
             return 0;
         }
         else if( EQUAL(argv[i], "--help") )
@@ -215,7 +216,7 @@ int main( int argc, char ** argv )
     {
         Usage("Missing destination filename.");
     }
-    
+
     if (!bQuiet)
         pfnProgress = GDALTermProgress;
 
@@ -251,7 +252,7 @@ int main( int argc, char ** argv )
         hSRS = OSRNewSpatialReference( pszWKT );
 
 /* -------------------------------------------------------------------- */
-/*      Create the outputfile.                                          */
+/*      Create the output file.                                          */
 /* -------------------------------------------------------------------- */
     OGRDataSourceH hDS;
     OGRSFDriverH hDriver = OGRGetDriverByName( pszFormat );

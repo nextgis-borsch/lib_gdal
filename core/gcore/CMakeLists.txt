@@ -36,6 +36,7 @@ include_directories(${CMAKE_SOURCE_DIR}/core/ogr/ogrsf_frmts/geojson)
 include_directories(${CMAKE_SOURCE_DIR}/core/frmts/gtiff)
 include_directories(${CMAKE_SOURCE_DIR}/core/frmts/vrt)
 include_directories(${CMAKE_SOURCE_DIR}/core/frmts/mem)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 set(LIB_HHEADERS
     gdalexif.h

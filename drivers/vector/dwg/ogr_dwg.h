@@ -27,8 +27,8 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#ifndef _OGR_DWG_H_INCLUDED
-#define _OGR_DWG_H_INCLUDED
+#ifndef OGR_DWG_H_INCLUDED
+#define OGR_DWG_H_INCLUDED
 
 #include "ogrsf_frmts.h"
 #include "cpl_conv.h"
@@ -86,7 +86,7 @@ class OGRDWGBlocksLayer : public OGRLayer
     OGRDWGDataSource   *poDS;
 
     OGRFeatureDefn     *poFeatureDefn;
-    
+
     int                 iNextFID;
     unsigned int        iNextSubFeature;
 
@@ -122,7 +122,7 @@ class OGRDWGLayer : public OGRLayer
     void                ClearPendingFeatures();
 
     std::map<CPLString,CPLString> oStyleProperties;
-    
+
     void                TranslateGenericProperties( OGRFeature *poFeature, 
                                                     OdDbEntityPtr poEntity );
     void                PrepareLineStyle( OGRFeature *poFeature );
@@ -259,7 +259,7 @@ class OGRDWGDriver : public OGRSFDriver
 {
     int     bInitialized;
     void    Initialize();
-    
+
     OdStaticRxObject<OGRDWGServices> oServices;
 
     static void ErrorHandler( OdResult oRes );
@@ -276,4 +276,4 @@ class OGRDWGDriver : public OGRSFDriver
 };
 
 
-#endif /* ndef _OGR_DWG_H_INCLUDED */
+#endif /* ndef OGR_DWG_H_INCLUDED */

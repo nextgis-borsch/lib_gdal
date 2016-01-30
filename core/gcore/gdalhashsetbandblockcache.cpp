@@ -39,7 +39,7 @@ CPL_CVSID("$Id$");
 /*                        GDALHashSetBandBlockCache                     */
 /* ******************************************************************** */
 
-class GDALHashSetBandBlockCache: public GDALAbstractBandBlockCache
+class GDALHashSetBandBlockCache CPL_FINAL : public GDALAbstractBandBlockCache
 {
     CPLHashSet     *hSet;
     CPLLock        *hLock;
@@ -47,9 +47,9 @@ class GDALHashSetBandBlockCache: public GDALAbstractBandBlockCache
     public:
             GDALHashSetBandBlockCache(GDALRasterBand* poBand);
            ~GDALHashSetBandBlockCache();
-           
-           virtual int              Init();
-           virtual int              IsInitOK();
+
+           virtual bool             Init();
+           virtual bool             IsInitOK();
            virtual CPLErr           FlushCache();
            virtual CPLErr           AdoptBlock( GDALRasterBlock * );
            virtual GDALRasterBlock *TryGetLockedBlockRef( int nXBlockOff, int nYBlockYOff );
@@ -93,14 +93,14 @@ static int GDALRasterBlockEqualFunc(const void* elt1, const void* elt2)
     GDALRasterBlock* poBlock2 = (GDALRasterBlock*) elt2;
     return poBlock1->GetXOff() == poBlock2->GetXOff() &&
            poBlock1->GetYOff() == poBlock2->GetYOff();
-} 
-        
+}
+
 /************************************************************************/
 /*                       GDALHashSetBandBlockCache()                    */
 /************************************************************************/
 
-GDALHashSetBandBlockCache::GDALHashSetBandBlockCache(GDALRasterBand* poBand) :
-                                            GDALAbstractBandBlockCache(poBand)
+GDALHashSetBandBlockCache::GDALHashSetBandBlockCache(GDALRasterBand* poBandIn) :
+                                            GDALAbstractBandBlockCache(poBandIn)
 {
     hSet = CPLHashSetNew(GDALRasterBlockHashFunc, GDALRasterBlockEqualFunc, NULL); 
     hLock = CPLCreateLock(LOCK_ADAPTIVE_MUTEX);
@@ -121,18 +121,18 @@ GDALHashSetBandBlockCache::~GDALHashSetBandBlockCache()
 /*                                  Init()                              */
 /************************************************************************/
 
-int GDALHashSetBandBlockCache::Init()
+bool GDALHashSetBandBlockCache::Init()
 {
-    return TRUE;
+    return true;
 }
 
 /************************************************************************/
 /*                             IsInitOK()                               */
 /************************************************************************/
 
-int GDALHashSetBandBlockCache::IsInitOK()
+bool GDALHashSetBandBlockCache::IsInitOK()
 {
-    return TRUE;
+    return true;
 }
 
 /************************************************************************/
@@ -193,7 +193,7 @@ CPLErr GDALHashSetBandBlockCache::FlushCache()
 
         CPLHashSetClear(hSet);
     }
-    
+
     // Sort blocks by increasing y and then x in order to please some tests
     // like tiff_write_133
     std::sort(apoBlocks.begin(), apoBlocks.end(), GDALHashSetBandBlockCacheSortBlocks);
@@ -215,7 +215,7 @@ CPLErr GDALHashSetBandBlockCache::FlushCache()
                 eGlobalErr = eErr;
         }
     }
-    
+
     WaitKeepAliveCounter();
 
     return( eGlobalErr );
@@ -275,7 +275,7 @@ GDALRasterBlock *GDALHashSetBandBlockCache::TryGetLockedBlockRef( int nXBlockOff
 {
     GDALRasterBlock oBlockForLookup(nXBlockOff, nYBlockOff);
     GDALRasterBlock* poBlock;
-    while( TRUE )
+    while( true )
     {
         {
             CPLLockHolderOptionalLockD( hLock );

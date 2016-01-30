@@ -27,8 +27,8 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#ifndef _OGR_DODS_H_INCLUDED
-#define _OGR_DODS_H_INCLUDED
+#ifndef OGR_DODS_H_INCLUDED
+#define OGR_DODS_H_INCLUDED
 
 #include "ogrsf_frmts.h"
 #include "cpl_error.h"
@@ -84,7 +84,7 @@ class OGRDODSFieldDefn {
 public:
     OGRDODSFieldDefn();
     ~OGRDODSFieldDefn();
-    
+
     int Initialize( AttrTable *, 
                     BaseType *poTarget = NULL, BaseType *poSuperSeq = NULL );
     int Initialize( const char *, const char * = "das",
@@ -106,7 +106,7 @@ public:
 /************************************************************************/
 
 class OGRDODSDataSource;
-    
+
 class OGRDODSLayer : public OGRLayer
 {
   protected:
@@ -133,7 +133,7 @@ class OGRDODSLayer : public OGRLayer
     DataDDS            *poDataDDS;
 
     BaseType           *poTargetVar;
-    
+
     AttrTable          *poOGRLayerInfo;
 
     int                 bKnowExtent;
@@ -156,6 +156,8 @@ class OGRDODSLayer : public OGRLayer
     virtual int         TestCapability( const char * );
 
     virtual OGRErr      GetExtent(OGREnvelope *psExtent, int bForce = TRUE);
+    virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce)
+                { return OGRLayer::GetExtent(iGeomField, psExtent, bForce); }
 };
 
 /************************************************************************/
@@ -184,7 +186,7 @@ private:
                                        Sequence * );
 
     double              BaseTypeToDouble( BaseType * );
-    
+
     int                 BuildFields( BaseType *, const char *, 
                                      const char * );
 
@@ -200,7 +202,7 @@ public:
     virtual             ~OGRDODSSequenceLayer();
 
     virtual OGRFeature *GetFeature( GIntBig nFeatureId );
-    
+
     virtual GIntBig     GetFeatureCount( int );
 };
 
@@ -288,7 +290,7 @@ public:
     virtual             ~OGRDODSGridLayer();
 
     virtual OGRFeature *GetFeature( GIntBig nFeatureId );
-    
+
     virtual GIntBig     GetFeatureCount( int );
 
 };
@@ -301,7 +303,7 @@ class OGRDODSDataSource : public OGRDataSource
 {
     OGRDODSLayer        **papoLayers;
     int                 nLayers;
-    
+
     char               *pszName;
 
     void                AddLayer( OGRDODSLayer * );
@@ -350,6 +352,6 @@ int  OGRDODSGetVarIndex( Sequence *poParent, string oVarName );
 int  OGRDODSIsFloatInvalid( const float * );
 int  OGRDODSIsDoubleInvalid( const double * );
 
-#endif /* ndef _OGR_DODS_H_INCLUDED */
+#endif /* ndef OGR_DODS_H_INCLUDED */
 
 

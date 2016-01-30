@@ -2,7 +2,7 @@
  * $Id: sdedataset.cpp 10804 2007-02-08 23:24:59Z hobu $
  *
  * Project:  ESRI ArcSDE Raster reader
- * Purpose:  Rasterband implementaion for ESRI ArcSDE Rasters
+ * Purpose:  Rasterband implementation for ESRI ArcSDE Rasters
  * Author:   Howard Butler, hobu@hobu.net
  *
  * This work was sponsored by the Geological Survey of Canada, Natural
@@ -30,9 +30,7 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-
 #include "sderasterband.h"
-
 
 
 /************************************************************************/
@@ -59,14 +57,14 @@
 /*  large overhead.                                                     */
 /*                                                                      */
 /*  Once the band or overview band is established, querying raster      */
-/*  blocks does not carry much more network overhead than that requied  */
+/*  blocks does not carry much more network overhead than that required */
 /*  to actually download the bytes.                                     */
 /*                                                                      */
 /*  Overview of internal methods:                                       */
 /*      -- InitializeBand - does most of the work of construction       */
 /*                          of the band and communication with SDE.     */
 /*                          Calls InitializeConstraint and              */
-/*                          IntializeQuery.                             */
+/*                          InitializeQuery.                             */
 /*      -- InitializeQuery -    Initializes a SDE queryinfo object      */
 /*                              that contains information about which   */
 /*                              tables we are querying from.            */
@@ -105,7 +103,7 @@ SDERasterBand::SDERasterBand(   SDEDataset *poDS,
     this->nBand = nBand;
     this->nOverview = nOverview;
     this->poBand = band;
-    
+
     // Initialize our SDE opaque object pointers to NULL.
     // The nOverviews private data member will be updated when 
     // GetOverviewCount is called and subsequently returned immediately in 
@@ -113,7 +111,7 @@ SDERasterBand::SDERasterBand(   SDEDataset *poDS,
     this->hConstraint = NULL;
     this->hQuery = NULL;
     this->poColorTable = NULL;
-    
+
     if (this->nOverview == -1 || this->nOverview == 0)
         this->nOverviews = GetOverviewCount();
     else
@@ -126,12 +124,12 @@ SDERasterBand::SDERasterBand(   SDEDataset *poDS,
         this->papoOverviews = NULL;
     }
     this->eDataType = GetRasterDataType();
-    
+
     // nSDERasterType is set by GetRasterDataType
     this->dfDepth = MorphESRIRasterDepth(nSDERasterType);
     InitializeBand(this->nOverview);
 
-    
+
 }
 
 /************************************************************************/
@@ -139,7 +137,7 @@ SDERasterBand::SDERasterBand(   SDEDataset *poDS,
 /************************************************************************/
 SDERasterBand::~SDERasterBand( void )
 
-{ 
+{
 
     if (hQuery)
         SE_queryinfo_free(hQuery);
@@ -151,7 +149,7 @@ SDERasterBand::~SDERasterBand( void )
         for (int i=0; i < nOverviews; i++)
             delete papoOverviews[i];
         CPLFree(papoOverviews);
-    
+
     if (poColorTable != NULL)
         delete poColorTable;
 }
@@ -162,7 +160,6 @@ SDERasterBand::~SDERasterBand( void )
 /************************************************************************/
 GDALColorTable* SDERasterBand::GetColorTable(void) 
 {
-    
     if (SE_rasbandinfo_has_colormap(*poBand)) {
         if (poColorTable == NULL)
             ComputeColorTable();
@@ -198,8 +195,6 @@ GDALRasterBand* SDERasterBand::GetOverview( int nOverviewValue )
     }
     else
         return NULL;
-
-    
 }
 
 /************************************************************************/
@@ -212,7 +207,7 @@ int SDERasterBand::GetOverviewCount( void )
     long nSDEErr;
     BOOL bSkipLevel;
     LONG nOvRet;
-    
+
     // return nothing if we were an overview band
     if (nOverview != -1)
         return 0;
@@ -222,7 +217,7 @@ int SDERasterBand::GetOverviewCount( void )
     {
         IssueSDEError( nSDEErr, "SE_rasbandinfo_get_band_size" );
     }
-    
+
     nOverviews = nOvRet;
 
     return nOverviews;
@@ -235,7 +230,7 @@ GDALDataType SDERasterBand::GetRasterDataType(void)
 {
     // Always ask SDE what it thinks our type is.
     LONG nSDEErr;
-    
+
     nSDEErr = SE_rasbandinfo_get_pixel_type(*poBand, &nSDERasterType);
     if( nSDEErr != SE_SUCCESS )
     {
@@ -268,7 +263,7 @@ CPLErr SDERasterBand::GetStatistics( int bApproxOK, int bForce,
 
     // bForce has no effect currently.  We always go to SDE to get our 
     // stats if SDE has them.
-    
+
     // bApproxOK has no effect currently.  If we're getting stats from 
     // SDE, we're hoping SDE calculates them in the way we want.
     long nSDEErr;
@@ -464,15 +459,15 @@ void SDERasterBand::ComputeColorTable(void)
 
     SE_COLORMAP_TYPE eCMap_Type;
     SE_COLORMAP_DATA_TYPE eCMap_DataType;
-    
+
     LONG nCMapEntries;
     void * phSDEColormapData;
-    
+
     unsigned char* puszSDECMapData;
     unsigned short* pushSDECMapData;
-    
+
     long nSDEErr;
-    
+
     nSDEErr = SE_rasbandinfo_get_colormap(  *poBand,
                                             &eCMap_Type,
                                             &eCMap_DataType,
@@ -488,11 +483,11 @@ void SDERasterBand::ComputeColorTable(void)
     // on the eCMap_DataType
     puszSDECMapData = (unsigned char*) phSDEColormapData;
     pushSDECMapData = (unsigned short*) phSDEColormapData;
-    
+
     poColorTable = new GDALColorTable(GPI_RGB);
-    
+
     int red, green, blue, alpha;
-    
+
     CPLDebug("SDERASTER", "%d colormap entries specified", nCMapEntries);
     switch (eCMap_DataType) {
         case SE_COLORMAP_DATA_BYTE:
@@ -508,7 +503,7 @@ void SDERasterBand::ComputeColorTable(void)
                         sColor.c2 = green;
                         sColor.c3 = blue;
                         sColor.c4 = 255;
-                        
+
                         // sColor is copied
                         poColorTable->SetColorEntry(i,&sColor);
                         CPLDebug ("SDERASTER", "SE_COLORMAP_DATA_BYTE "\
@@ -528,7 +523,7 @@ void SDERasterBand::ComputeColorTable(void)
                         sColor.c2 = green;
                         sColor.c3 = blue;
                         sColor.c4 = alpha;
-                        
+
                         // sColor is copied
                         poColorTable->SetColorEntry(i,&sColor);
                         CPLDebug ("SDERASTER", "SE_COLORMAP_DATA_BYTE "\
@@ -553,7 +548,7 @@ void SDERasterBand::ComputeColorTable(void)
                         sColor.c2 = green;
                         sColor.c3 = blue;
                         sColor.c4 = 255;
-                        
+
                         // sColor is copied
                         poColorTable->SetColorEntry(i,&sColor);
                         CPLDebug ("SDERASTER", "SE_COLORMAP_DATA_SHORT "\
@@ -573,7 +568,7 @@ void SDERasterBand::ComputeColorTable(void)
                         sColor.c2 = green;
                         sColor.c3 = blue;
                         sColor.c4 = alpha;
-                        
+
                         // sColor is copied
                         poColorTable->SetColorEntry(i,&sColor);
                         CPLDebug ("SDERASTER", "SE_COLORMAP_DATA_SHORT "\
@@ -595,10 +590,10 @@ void SDERasterBand::ComputeColorTable(void)
 /************************************************************************/
 CPLErr SDERasterBand::InitializeBand( int nOverview )
 
-{    
+{
 
     SDEDataset *poGDS = (SDEDataset *) poDS;
-    
+
     long nSDEErr;
 
 
@@ -620,7 +615,7 @@ CPLErr SDERasterBand::InitializeBand( int nOverview )
         IssueSDEError( nSDEErr, "SE_stream_close" );
         return CE_Fatal;
     }
-                      
+
     nSDEErr = SE_stream_query_with_info(poGDS->hStream, hQuery);
     if( nSDEErr != SE_SUCCESS )
     {
@@ -640,7 +635,7 @@ CPLErr SDERasterBand::InitializeBand( int nOverview )
         IssueSDEError( nSDEErr, "SE_stream_fetch" );
         return CE_Fatal;
     }
-    
+
 
     CPLErr error = QueryRaster(hConstraint);
     if (error != CE_None)
@@ -657,9 +652,9 @@ CPLErr SDERasterBand::InitializeBand( int nOverview )
 
     nBlockXSize = nBXRet;
     nBlockYSize = nBYRet;
-    
+
     LONG offset_x, offset_y, num_bands, nXSRet, nYSRet;
-    
+
     nSDEErr = SE_rasterattr_get_image_size_by_level (poGDS->hAttributes,
                                                      &nXSRet, &nYSRet,
                                                      &offset_x,
@@ -696,14 +691,14 @@ SE_RASCONSTRAINT& SDERasterBand::InitializeConstraint( long* nBlockXOff,
 {
 
     long nSDEErr;   
-    
+
     if (!hConstraint) {
         nSDEErr = SE_rasconstraint_create(&hConstraint);
         if( nSDEErr != SE_SUCCESS )
         {
             IssueSDEError( nSDEErr, "SE_rasconstraint_create" );
         }
-        
+
         nSDEErr = SE_rasconstraint_set_level(hConstraint, (nOverview == -1) ? (0): (nOverview));
         if( nSDEErr != SE_SUCCESS )
         {
@@ -723,17 +718,17 @@ SE_RASCONSTRAINT& SDERasterBand::InitializeConstraint( long* nBlockXOff,
         }
 
     }
-    
+
     if (nBlockXSize != -1 && nBlockYSize != -1) { // we aren't initialized yet
         if (nBlockXSize >= 0 && nBlockYSize >= 0) { 
             if (*nBlockXOff >= 0 &&  *nBlockYOff >= 0) {
                 long nMinX, nMinY, nMaxX, nMaxY;
-                
+
                 nMinX = *nBlockXOff;
                 nMinY = *nBlockYOff;
                 nMaxX = *nBlockXOff;
                 nMaxY = *nBlockYOff;
-                                                                            
+
                 nSDEErr = SE_rasconstraint_set_envelope (hConstraint,
                                                         nMinX,
                                                         nMinY,
@@ -762,7 +757,7 @@ SE_QUERYINFO& SDERasterBand::InitializeQuery( void )
     {
         IssueSDEError( nSDEErr, "SE_queryinfo_create" );
     }
-    
+
     nSDEErr = SE_queryinfo_set_tables(hQuery, 
                                       1, 
                                       (const char**) &(poGDS->pszLayerName), 
@@ -794,7 +789,7 @@ SE_QUERYINFO& SDERasterBand::InitializeQuery( void )
 /*                             MorphESRIRasterDepth()                   */
 /************************************************************************/
 double SDERasterBand::MorphESRIRasterDepth(int gtype) {
-    
+
     switch (gtype) {
         case SE_PIXEL_TYPE_1BIT:
             return 0.125;
@@ -825,7 +820,7 @@ double SDERasterBand::MorphESRIRasterDepth(int gtype) {
 /*                             MorphESRIRasterType()                    */
 /************************************************************************/
 GDALDataType SDERasterBand::MorphESRIRasterType(int gtype) {
-    
+
     switch (gtype) {
         case SE_PIXEL_TYPE_1BIT:
             return GDT_Byte;
@@ -859,18 +854,16 @@ CPLErr SDERasterBand::QueryRaster( SE_RASCONSTRAINT& constraint )
 {
 
     SDEDataset *poGDS = (SDEDataset *) poDS;
-    
+
     long nSDEErr;
 
-
-                          
     nSDEErr = SE_stream_query_raster_tile(poGDS->hStream, constraint);
     if( nSDEErr != SE_SUCCESS )
     {
         IssueSDEError( nSDEErr, "SE_stream_query_raster_tile" );
         return CE_Fatal;
     }
-    
+
     nSDEErr = SE_stream_get_raster (poGDS->hStream, 1, poGDS->hAttributes);
     if( nSDEErr != SE_SUCCESS )
     {

@@ -24,25 +24,27 @@
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS IN THE SOFpszFileNameTWARE.
+ * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
 #include "ogr_geopackage.h"
 #include "memdataset.h"
 #include "gdal_alg_priv.h"
 
-//#define DEBUG_VERBOSE
+#if !defined(DEBUG_VERBOSE) && defined(DEBUG_VERBOSE_GPKG)
+#define DEBUG_VERBOSE
+#endif
 
 /************************************************************************/
 /*                      GDALGeoPackageRasterBand()                      */
 /************************************************************************/
 
-GDALGeoPackageRasterBand::GDALGeoPackageRasterBand(GDALGeoPackageDataset* poDS,
-                                                   int nBand,
-                                                   int nTileWidth, int nTileHeight)
+GDALGeoPackageRasterBand::GDALGeoPackageRasterBand(
+    GDALGeoPackageDataset* poDSIn,
+    int nBandIn, int nTileWidth, int nTileHeight)
 {
-    this->poDS = poDS;
-    this->nBand = nBand;
+    poDS = poDSIn;
+    nBand = nBandIn;
     eDataType = GDT_Byte;
     nBlockXSize = nTileWidth;
     nBlockYSize = nTileHeight;
@@ -54,7 +56,8 @@ GDALGeoPackageRasterBand::GDALGeoPackageRasterBand(GDALGeoPackageDataset* poDS,
 
 CPLErr GDALGeoPackageRasterBand::FlushCache()
 {
-    GDALGeoPackageDataset* poGDS = (GDALGeoPackageDataset* )poDS;
+    GDALGeoPackageDataset* poGDS
+        = reinterpret_cast<GDALGeoPackageDataset *>( poDS );
     if( GDALPamRasterBand::FlushCache() != CE_None )
         return CE_Failure;
     return poGDS->FlushCacheWithErrCode();
@@ -66,15 +69,17 @@ CPLErr GDALGeoPackageRasterBand::FlushCache()
 
 GDALColorTable* GDALGeoPackageRasterBand::GetColorTable()
 {
-    GDALGeoPackageDataset* poGDS = (GDALGeoPackageDataset* )poDS;
+    GDALGeoPackageDataset* poGDS
+        = reinterpret_cast<GDALGeoPackageDataset *>( poDS );
     if( poGDS->nBands == 1 )
     {
         if( !poGDS->m_bTriedEstablishingCT )
         {
-            poGDS->m_bTriedEstablishingCT = TRUE;
+            poGDS->m_bTriedEstablishingCT = true;
             if( poGDS->m_poParentDS != NULL )
             {
-                poGDS->m_poCT = poGDS->m_poParentDS->GetRasterBand(1)->GetColorTable();
+                poGDS->m_poCT
+                    = poGDS->m_poParentDS->GetRasterBand(1)->GetColorTable();
                 if( poGDS->m_poCT )
                     poGDS->m_poCT = poGDS->m_poCT->Clone();
                 return poGDS->m_poCT;
@@ -88,26 +93,31 @@ GDALColorTable* GDALGeoPackageRasterBand::GetColorTable()
             if ( rc == SQLITE_OK )
             {
                 rc = sqlite3_step( hStmt );
-                if( rc == SQLITE_ROW && sqlite3_column_type( hStmt, 0 ) == SQLITE_BLOB )
+                if( rc == SQLITE_ROW
+                    && sqlite3_column_type( hStmt, 0 ) == SQLITE_BLOB )
                 {
                     const int nBytes = sqlite3_column_bytes( hStmt, 0 );
-                    GByte* pabyRawData = (GByte*)sqlite3_column_blob( hStmt, 0 );
+                    GByte* pabyRawData = reinterpret_cast<GByte *>(
+                        const_cast<void *>( sqlite3_column_blob( hStmt, 0 ) ) );
                     CPLString osMemFileName;
                     osMemFileName.Printf("/vsimem/gpkg_read_tile_%p", this);
-                    VSILFILE * fp = VSIFileFromMemBuffer( osMemFileName.c_str(), pabyRawData,
-                                                            nBytes, FALSE);
+                    VSILFILE *fp = VSIFileFromMemBuffer( osMemFileName.c_str(),
+                                                         pabyRawData,
+                                                         nBytes, FALSE);
                     VSIFCloseL(fp);
 
-                    /* Only PNG can have color table */
+                    /* Only PNG can have color table. */
                     const char* apszDrivers[] = { "PNG", NULL };
-                    GDALDataset* poDSTile = (GDALDataset*)GDALOpenEx(osMemFileName.c_str(),
-                                                                GDAL_OF_RASTER | GDAL_OF_INTERNAL,
-                                                                apszDrivers, NULL, NULL);
+                    GDALDataset* poDSTile = reinterpret_cast<GDALDataset *>(
+                        GDALOpenEx( osMemFileName.c_str(),
+                                    GDAL_OF_RASTER | GDAL_OF_INTERNAL,
+                                    apszDrivers, NULL, NULL ) );
                     if( poDSTile != NULL )
                     {
                         if( poDSTile->GetRasterCount() == 1 )
                         {
-                            poGDS->m_poCT = poDSTile->GetRasterBand(1)->GetColorTable();
+                            poGDS->m_poCT
+                                = poDSTile->GetRasterBand(1)->GetColorTable();
                             if( poGDS->m_poCT != NULL )
                                 poGDS->m_poCT = poGDS->m_poCT->Clone();
                         }
@@ -123,8 +133,8 @@ GDALColorTable* GDALGeoPackageRasterBand::GetColorTable()
 
         return poGDS->m_poCT;
     }
-    else
-        return NULL;
+
+    return NULL;
 }
 
 /************************************************************************/
@@ -133,7 +143,8 @@ GDALColorTable* GDALGeoPackageRasterBand::GetColorTable()
 
 CPLErr GDALGeoPackageRasterBand::SetColorTable(GDALColorTable* poCT)
 {
-    GDALGeoPackageDataset* poGDS = (GDALGeoPackageDataset* )poDS;
+    GDALGeoPackageDataset* poGDS
+        = reinterpret_cast<GDALGeoPackageDataset *>( poDS );
     if( poGDS->nBands != 1 )
     {
         CPLError(CE_Failure, CPLE_NotSupported,
@@ -147,7 +158,7 @@ CPLErr GDALGeoPackageRasterBand::SetColorTable(GDALColorTable* poCT)
         return CE_Failure;
     }
 
-    poGDS->m_bTriedEstablishingCT = TRUE;
+    poGDS->m_bTriedEstablishingCT = true;
     delete poGDS->m_poCT;
     if( poCT != NULL )
         poGDS->m_poCT = poCT->Clone();
@@ -162,7 +173,8 @@ CPLErr GDALGeoPackageRasterBand::SetColorTable(GDALColorTable* poCT)
 
 GDALColorInterp GDALGeoPackageRasterBand::GetColorInterpretation()
 {
-    GDALGeoPackageDataset* poGDS = (GDALGeoPackageDataset* )poDS;
+    GDALGeoPackageDataset* poGDS
+        = reinterpret_cast<GDALGeoPackageDataset *>( poDS );
     if( poGDS->nBands == 1 )
         return GetColorTable() ? GCI_PaletteIndex : GCI_GrayIndex;
     else if( poGDS->nBands == 2 )
@@ -175,19 +187,24 @@ GDALColorInterp GDALGeoPackageRasterBand::GetColorInterpretation()
 /*                        SetColorInterpretation()                      */
 /************************************************************************/
 
-CPLErr GDALGeoPackageRasterBand::SetColorInterpretation( GDALColorInterp eInterp )
+CPLErr GDALGeoPackageRasterBand::SetColorInterpretation(
+    GDALColorInterp eInterp )
 {
     GDALGeoPackageDataset* poGDS = (GDALGeoPackageDataset* )poDS;
     if( eInterp == GCI_Undefined )
         return CE_None;
-    if( poGDS->nBands == 1 && (eInterp == GCI_GrayIndex || eInterp == GCI_PaletteIndex) )
+    if( poGDS->nBands == 1
+        && (eInterp == GCI_GrayIndex || eInterp == GCI_PaletteIndex) )
         return CE_None;
     if( poGDS->nBands == 2 &&
-        ((nBand == 1 && eInterp == GCI_GrayIndex) || (nBand == 2 && eInterp == GCI_AlphaBand)) )
+        ((nBand == 1
+          && eInterp == GCI_GrayIndex)
+         || (nBand == 2 && eInterp == GCI_AlphaBand)) )
         return CE_None;
     if( poGDS->nBands >= 3 && eInterp == GCI_RedBand + nBand - 1 )
         return CE_None;
-    CPLError(CE_Warning, CPLE_NotSupported, "%s color interpretation not supported. Will be ignored",
+    CPLError(CE_Warning, CPLE_NotSupported,
+             "%s color interpretation not supported. Will be ignored",
              GDALGetColorInterpretationName(eInterp));
     return CE_Warning;
 }
@@ -200,7 +217,7 @@ static int GPKGFindBestEntry(GDALColorTable* poCT,
                              GByte c1, GByte c2, GByte c3, GByte c4,
                              int nTileBandCount)
 {
-    int nEntries = MIN(256, poCT->GetColorEntryCount());
+    const int nEntries = MIN(256, poCT->GetColorEntryCount());
     int iBestIdx = 0;
     int nBestDistance = 4 * 256 * 256;
     for(int i=0;i<nEntries;i++)
@@ -226,14 +243,15 @@ static int GPKGFindBestEntry(GDALColorTable* poCT,
 
 CPLErr GDALGeoPackageDataset::ReadTile(const CPLString& osMemFileName,
                                        GByte* pabyTileData,
-                                       int* pbIsLossyFormat)
+                                       bool* pbIsLossyFormat)
 {
     const char* apszDrivers[] = { "JPEG", "PNG", "WEBP", NULL };
     int nBlockXSize, nBlockYSize;
     GetRasterBand(1)->GetBlockSize(&nBlockXSize, &nBlockYSize);
-    GDALDataset* poDSTile = (GDALDataset*)GDALOpenEx(osMemFileName.c_str(),
-                                                     GDAL_OF_RASTER | GDAL_OF_INTERNAL,
-                                                     apszDrivers, NULL, NULL);
+    GDALDataset* poDSTile = reinterpret_cast<GDALDataset*>(
+        GDALOpenEx( osMemFileName.c_str(),
+                    GDAL_OF_RASTER | GDAL_OF_INTERNAL,
+                    apszDrivers, NULL, NULL ) );
     if( poDSTile == NULL )
     {
         CPLError(CE_Failure, CPLE_AppDefined,
@@ -242,14 +260,14 @@ CPLErr GDALGeoPackageDataset::ReadTile(const CPLString& osMemFileName,
         return CE_Failure;
     }
 
-    int nTileBandCount = poDSTile->GetRasterCount();
+    const int nTileBandCount = poDSTile->GetRasterCount();
 
     if( !(poDSTile->GetRasterXSize() == nBlockXSize &&
           poDSTile->GetRasterYSize() == nBlockYSize &&
           (nTileBandCount >= 1 && nTileBandCount <= 4)) )
     {
-        CPLError(CE_Failure, CPLE_AppDefined,
-                 "Inconsistent tiles characteristics");
+        CPLError( CE_Failure, CPLE_AppDefined,
+                  "Inconsistent tiles characteristics" );
         GDALClose(poDSTile);
         memset(pabyTileData, 0, nBands * nBlockXSize * nBlockYSize );
         return CE_Failure;
@@ -275,8 +293,9 @@ CPLErr GDALGeoPackageDataset::ReadTile(const CPLString& osMemFileName,
     }
 
     if( pbIsLossyFormat )
-        *pbIsLossyFormat = !EQUAL(poDSTile->GetDriver()->GetDescription(), "PNG") ||
-                           (poCT != NULL && poCT->GetColorEntryCount() == 256) /* PNG8 */;
+        *pbIsLossyFormat
+            = !EQUAL(poDSTile->GetDriver()->GetDescription(), "PNG") ||
+              (poCT != NULL && poCT->GetColorEntryCount() == 256) /* PNG8 */;
 
     /* Map RGB(A) tile to single-band color indexed */
     if( nBands == 1 && m_poCT != NULL && nTileBandCount != 1 )
@@ -296,36 +315,44 @@ CPLErr GDALGeoPackageDataset::ReadTile(const CPLString& osMemFileName,
         int iBestEntryFor0 = GPKGFindBestEntry(m_poCT, 0, 0, 0, 0, nTileBandCount);
         for(int i=0;i<nBlockXSize*nBlockYSize;i++)
         {
-            GByte c1 = pabyTileData[i];
-            GByte c2 = pabyTileData[i + nBlockXSize * nBlockYSize];
-            GByte c3 = pabyTileData[i + 2 * nBlockXSize * nBlockYSize];
-            GByte c4 = pabyTileData[i + 3 * nBlockXSize * nBlockYSize];
+            const GByte c1 = pabyTileData[i];
+            const GByte c2 = pabyTileData[i + nBlockXSize * nBlockYSize];
+            const GByte c3 = pabyTileData[i + 2 * nBlockXSize * nBlockYSize];
+            const GByte c4 = pabyTileData[i + 3 * nBlockXSize * nBlockYSize];
             GUInt32 nVal = c1 + (c2 << 8) + (c3 << 16);
             if( nTileBandCount == 4 ) nVal += (c4 << 24);
-            if( nVal == 0 ) /* In most cases we will reach that point at partial tiles */
-                pabyTileData[i] = (GByte) iBestEntryFor0;
+            if( nVal == 0 )
+                // In most cases we will reach that point at partial tiles.
+                pabyTileData[i] = static_cast<GByte>( iBestEntryFor0 );
             else
             {
-                std::map< GUInt32, int >::iterator oMapEntryToIndexIter = oMapEntryToIndex.find(nVal);
+                std::map< GUInt32, int >::iterator oMapEntryToIndexIter
+                    = oMapEntryToIndex.find(nVal);
                 if( oMapEntryToIndexIter == oMapEntryToIndex.end() )
                     /* Could happen with JPEG tiles */
-                    pabyTileData[i] = (GByte) GPKGFindBestEntry(m_poCT, c1, c2, c3, c4, nTileBandCount);
+                  pabyTileData[i] = static_cast<GByte>(
+                      GPKGFindBestEntry(m_poCT, c1, c2, c3, c4,
+                                        nTileBandCount) );
                 else
-                    pabyTileData[i] = (GByte) oMapEntryToIndexIter->second;
+                    pabyTileData[i] = static_cast<GByte>(
+                        oMapEntryToIndexIter->second );
             }
         }
         GDALClose( poDSTile );
         return CE_None;
     }
-    
+
     if( nBands == 1 && nTileBandCount == 1 && poCT != NULL && m_poCT != NULL &&
              !poCT->IsSame(m_poCT) )
     {
-        CPLError(CE_Warning, CPLE_NotSupported, "Different color tables. Unhandled for now");
+        CPLError( CE_Warning, CPLE_NotSupported,
+                  "Different color tables. Unhandled for now" );
     }
     else if( (nBands == 1 && nTileBandCount >= 3) ||
-             (nBands == 1 && nTileBandCount == 1 && m_poCT != NULL && poCT == NULL) ||
-             ((nBands == 1 || nBands == 2) && nTileBandCount == 1 && m_poCT == NULL && poCT != NULL) )
+             (nBands == 1 && nTileBandCount == 1 && m_poCT != NULL
+              && poCT == NULL) ||
+             ((nBands == 1 || nBands == 2) && nTileBandCount == 1
+              && m_poCT == NULL && poCT != NULL) )
     {
         CPLError(CE_Failure, CPLE_AppDefined,
                  "Inconsistent dataset and tiles band characteristics");
@@ -333,7 +360,8 @@ CPLErr GDALGeoPackageDataset::ReadTile(const CPLString& osMemFileName,
 
     if( nBands == 2 )
     {
-        if( nTileBandCount == 1 || nTileBandCount == 3 /* assuming that the RGB is Grey,Grey,Grey */ )
+        // assuming that the RGB is Grey,Grey,Grey
+        if( nTileBandCount == 1 || nTileBandCount == 3 )
         {
             /* Create fully opaque alpha */
             memset(pabyTileData + 1 * nBlockXSize * nBlockYSize,
@@ -363,10 +391,9 @@ CPLErr GDALGeoPackageDataset::ReadTile(const CPLString& osMemFileName,
         /* Expand color indexed to RGB(A) */
         if( poCT != NULL )
         {
-            int i;
             GByte abyCT[4*256];
             int nEntries = MIN(256, poCT->GetColorEntryCount());
-            for(i=0;i<nEntries;i++)
+            for( int i = 0; i < nEntries; i++ )
             {
                 const GDALColorEntry* psEntry = poCT->GetColorEntry(i);
                 abyCT[4*i] = (GByte)psEntry->c1;
@@ -374,16 +401,16 @@ CPLErr GDALGeoPackageDataset::ReadTile(const CPLString& osMemFileName,
                 abyCT[4*i+2] = (GByte)psEntry->c3;
                 abyCT[4*i+3] = (GByte)psEntry->c4;
             }
-            for(;i<256;i++)
+            for( int i = nEntries; i < 256; i++ )
             {
                 abyCT[4*i] = 0;
                 abyCT[4*i+1] = 0;
                 abyCT[4*i+2] = 0;
                 abyCT[4*i+3] = 0;
             }
-            for(i=0;i<nBlockXSize * nBlockYSize;i++)
+            for( int i = 0; i < nBlockXSize * nBlockYSize; i++ )
             {
-                GByte byVal = pabyTileData[i];
+                const GByte byVal = pabyTileData[i];
                 pabyTileData[i] = abyCT[4*byVal];
                 pabyTileData[i + 1 * nBlockXSize * nBlockYSize] = abyCT[4*byVal+1];
                 pabyTileData[i + 2 * nBlockXSize * nBlockYSize] = abyCT[4*byVal+2];
@@ -411,7 +438,7 @@ CPLErr GDALGeoPackageDataset::ReadTile(const CPLString& osMemFileName,
     }
 
     GDALClose( poDSTile );
-    
+
     return CE_None;
 }
 
@@ -421,14 +448,13 @@ CPLErr GDALGeoPackageDataset::ReadTile(const CPLString& osMemFileName,
 
 GByte* GDALGeoPackageDataset::ReadTile(int nRow, int nCol)
 {
-    GByte* pabyData = NULL;
-
     int nBlockXSize, nBlockYSize;
     GetRasterBand(1)->GetBlockSize(&nBlockXSize, &nBlockYSize);
-    if( m_nShiftXPixelsMod )
+    if( m_nShiftXPixelsMod || m_nShiftYPixelsMod )
     {
-        int i;
-        for(i = 0; i < 4; i ++)
+        GByte* pabyData = NULL;
+        int i = 0;
+        for( ; i < 4; i++ )
         {
             if( m_asCachedTilesDesc[i].nRow == nRow &&
                 m_asCachedTilesDesc[i].nCol == nCol )
@@ -436,7 +462,8 @@ GByte* GDALGeoPackageDataset::ReadTile(int nRow, int nCol)
                 if( m_asCachedTilesDesc[i].nIdxWithinTileData >= 0 )
                 {
                     return m_pabyCachedTiles +
-                        m_asCachedTilesDesc[i].nIdxWithinTileData * 4 * nBlockXSize * nBlockYSize;
+                        m_asCachedTilesDesc[i].nIdxWithinTileData * 4 *
+                        nBlockXSize * nBlockYSize;
                 }
                 else
                 {
@@ -459,61 +486,101 @@ GByte* GDALGeoPackageDataset::ReadTile(int nRow, int nCol)
             }
         }
         CPLAssert(i < 4);
+        return ReadTile(nRow, nCol, pabyData);
     }
     else
-        pabyData = m_pabyCachedTiles;
-    
-    return ReadTile(nRow, nCol, pabyData);
+    {
+        GByte* pabyDest = m_pabyCachedTiles + 8 * nBlockXSize * nBlockYSize;
+        bool bAllNonDirty = true;
+        for( int i = 0; i < nBands; i++ )
+        {
+            if( m_asCachedTilesDesc[0].abBandDirty[i] )
+                bAllNonDirty = false;
+        }
+        if( bAllNonDirty )
+        {
+            return ReadTile(nRow, nCol, pabyDest);
+        }
+
+        /* If some bands of the blocks are dirty/written we need to fetch */
+        /* the tile in a temporary buffer in order not to override dirty bands*/
+        for( int i = 1; i <= 3; i++ )
+        {
+            m_asCachedTilesDesc[i].nRow = -1;
+            m_asCachedTilesDesc[i].nCol = -1;
+            m_asCachedTilesDesc[i].nIdxWithinTileData = -1;
+        }
+        GByte* pabyTemp = m_pabyCachedTiles + 12 * nBlockXSize * nBlockYSize;
+        if( ReadTile(nRow, nCol, pabyTemp) != NULL )
+        {
+            for( int i = 0; i < nBands; i++ )
+            {
+                if( !m_asCachedTilesDesc[0].abBandDirty[i] )
+                {
+                    memcpy(pabyDest + i * nBlockXSize * nBlockYSize,
+                           pabyTemp + i * nBlockXSize * nBlockYSize,
+                           nBlockXSize * nBlockYSize);
+                }
+            }
+        }
+        return pabyDest;
+    }
 }
 
 /************************************************************************/
 /*                           ReadTile()                                 */
 /************************************************************************/
 
-GByte* GDALGeoPackageDataset::ReadTile(int nRow, int nCol, GByte* pabyData,
-                                       int* pbIsLossyFormat)
+GByte* GDALGeoPackageDataset::ReadTile( int nRow, int nCol, GByte *pabyData,
+                                        bool *pbIsLossyFormat)
 {
-    int rc;
-    int nBlockXSize, nBlockYSize;
+    int nBlockXSize;
+    int nBlockYSize;
     GetRasterBand(1)->GetBlockSize(&nBlockXSize, &nBlockYSize);
-    
-    if( pbIsLossyFormat ) *pbIsLossyFormat = FALSE;
+
+    if( pbIsLossyFormat ) *pbIsLossyFormat = false;
 
     if( nRow < 0 || nCol < 0 || nRow >= m_nTileMatrixHeight ||
         nCol >= m_nTileMatrixWidth )
     {
-        memset(pabyData, 0, nBands * nBlockXSize * nBlockYSize );
+        memset( pabyData, 0, nBands * nBlockXSize * nBlockYSize );
         return pabyData;
     }
 
-    //CPLDebug("GPKG", "For block (blocky=%d, blockx=%d) request tile (row=%d, col=%d)",
-    //         nBlockYOff, nBlockXOff, nRow, nCol);
-    char* pszSQL = sqlite3_mprintf("SELECT tile_data FROM '%q' "
+#ifdef DEBUG_VERBOSE
+    CPLDebug( "GPKG", "ReadTile(row=%d, col=%d)", nRow, nCol );
+#endif
+
+    char *pszSQL = sqlite3_mprintf( "SELECT tile_data FROM '%q' "
         "WHERE zoom_level = %d AND tile_row = %d AND tile_column = %d%s",
         m_osRasterTable.c_str(), m_nZoomLevel, nRow, nCol,
         m_osWHERE.size() ? CPLSPrintf(" AND (%s)", m_osWHERE.c_str()): "");
+
 #ifdef DEBUG_VERBOSE
     CPLDebug("GPKG", "%s", pszSQL);
 #endif
-    sqlite3_stmt* hStmt = NULL;
-    rc = sqlite3_prepare(GetDB(), pszSQL, -1, &hStmt, NULL);
+
+    sqlite3_stmt *hStmt = NULL;
+    int rc = sqlite3_prepare( GetDB(), pszSQL, -1, &hStmt, NULL );
     if ( rc != SQLITE_OK )
     {
-        CPLError( CE_Failure, CPLE_AppDefined, "failed to prepare SQL: %s", pszSQL);
+        CPLError( CE_Failure, CPLE_AppDefined,
+                  "failed to prepare SQL: %s", pszSQL );
         sqlite3_free(pszSQL);
         return NULL;
     }
-    sqlite3_free(pszSQL);
+    sqlite3_free( pszSQL );
     rc = sqlite3_step( hStmt );
 
     if( rc == SQLITE_ROW && sqlite3_column_type( hStmt, 0 ) == SQLITE_BLOB )
     {
         const int nBytes = sqlite3_column_bytes( hStmt, 0 );
-        GByte* pabyRawData = (GByte*)sqlite3_column_blob( hStmt, 0 );
+        GByte* pabyRawData = static_cast<GByte *>( const_cast<void *>(
+            sqlite3_column_blob( hStmt, 0 ) ) );
         CPLString osMemFileName;
         osMemFileName.Printf("/vsimem/gpkg_read_tile_%p", this);
-        VSILFILE * fp = VSIFileFromMemBuffer( osMemFileName.c_str(), pabyRawData,
-                                                nBytes, FALSE);
+        VSILFILE * fp = VSIFileFromMemBuffer(
+            osMemFileName.c_str(), pabyRawData, nBytes, FALSE );
         VSIFCloseL(fp);
 
         ReadTile(osMemFileName, pabyData, pbIsLossyFormat);
@@ -522,7 +589,7 @@ GByte* GDALGeoPackageDataset::ReadTile(int nRow, int nCol, GByte* pabyData,
     }
     else
     {
-        sqlite3_finalize(hStmt);
+        sqlite3_finalize( hStmt );
         hStmt = NULL;
 
         if( m_hTempDB && (m_nShiftXPixelsMod || m_nShiftYPixelsMod) )
@@ -532,28 +599,33 @@ GByte* GDALGeoPackageDataset::ReadTile(int nRow, int nCol, GByte* pabyData,
                 "tile_data_band_3, tile_data_band_4 FROM partial_tiles WHERE "
                 "zoom_level = %d AND tile_row = %d AND tile_column = %d",
                 m_nZoomLevel, nRow, nCol);
+
 #ifdef DEBUG_VERBOSE
             CPLDebug("GPKG", "%s", pszSQLNew);
 #endif
-            rc = sqlite3_prepare_v2(m_hTempDB, pszSQLNew, strlen(pszSQLNew), &hStmt, NULL);
+
+            rc = sqlite3_prepare_v2(m_hTempDB, pszSQLNew, -1, &hStmt, NULL);
             if ( rc != SQLITE_OK )
             {
                 memset(pabyData, 0, nBands * nBlockXSize * nBlockYSize );
-                CPLError( CE_Failure, CPLE_AppDefined, "sqlite3_prepare(%s) failed: %s",
-                        pszSQLNew, sqlite3_errmsg( m_hTempDB ) );
+                CPLError( CE_Failure, CPLE_AppDefined,
+                          "sqlite3_prepare(%s) failed: %s",
+                          pszSQLNew, sqlite3_errmsg( m_hTempDB ) );
                 return pabyData;
             }
 
             rc = sqlite3_step(hStmt);
             if ( rc == SQLITE_ROW )
             {
-                int nPartialFlag = sqlite3_column_int(hStmt, 0);
+                const int nPartialFlag = sqlite3_column_int(hStmt, 0);
                 for(int iBand = 1; iBand <= nBands; iBand ++ )
                 {
-                    GByte* pabyDestBand = pabyData + (iBand - 1) * nBlockXSize * nBlockYSize;
+                    GByte* pabyDestBand
+                        = pabyData + (iBand - 1) * nBlockXSize * nBlockYSize;
                     if( nPartialFlag & (((1 << 4)-1) << (4 * (iBand - 1))) )
                     {
-                        CPLAssert( sqlite3_column_bytes(hStmt, iBand) == nBlockXSize * nBlockYSize );
+                        CPLAssert( sqlite3_column_bytes(hStmt, iBand)
+                                   == nBlockXSize * nBlockYSize );
                         memcpy( pabyDestBand,
                                 sqlite3_column_blob(hStmt, iBand),
                                 nBlockXSize * nBlockYSize );
@@ -587,21 +659,24 @@ CPLErr GDALGeoPackageRasterBand::IReadBlock(int nBlockXOff, int nBlockYOff,
                                             void* pData)
 {
     GDALGeoPackageDataset* poGDS = (GDALGeoPackageDataset* )poDS;
-    //CPLDebug("GPKG", "IReadBlock(nBand=%d,nBlockXOff=%d,nBlockYOff=%d",
-    //         nBand,nBlockXOff,nBlockYOff);
 
-    int nRowMin = nBlockYOff + poGDS->m_nShiftYTiles;
+#ifdef DEBUG_VERBOSE
+    CPLDebug( "GPKG", "IReadBlock(nBand=%d,nBlockXOff=%d,nBlockYOff=%d,m_nZoomLevel=%d)",
+              nBand,nBlockXOff,nBlockYOff,poGDS->m_nZoomLevel);
+#endif
+
+    const int nRowMin = nBlockYOff + poGDS->m_nShiftYTiles;
     int nRowMax = nRowMin;
     if( poGDS->m_nShiftYPixelsMod )
         nRowMax ++;
-    
-    int nColMin = nBlockXOff + poGDS->m_nShiftXTiles;
+
+    const int nColMin = nBlockXOff + poGDS->m_nShiftXTiles;
     int nColMax = nColMin;
     if( poGDS->m_nShiftXPixelsMod )
         nColMax ++;
 
     /* Optimize for left to right reading at constant row */
-    if( poGDS->m_nShiftXPixelsMod )
+    if( poGDS->m_nShiftXPixelsMod || poGDS->m_nShiftYPixelsMod )
     {
         if( nRowMin == poGDS->m_asCachedTilesDesc[0].nRow &&
             nColMin == poGDS->m_asCachedTilesDesc[0].nCol + 1 &&
@@ -617,8 +692,10 @@ CPLErr GDALGeoPackageRasterBand::IReadBlock(int nBlockXOff, int nBlockYOff,
             /* or */
             /* 1 0  --> 0 -1 */
             /* 3 2      2 -1 */
-            poGDS->m_asCachedTilesDesc[0].nIdxWithinTileData = poGDS->m_asCachedTilesDesc[1].nIdxWithinTileData;
-            poGDS->m_asCachedTilesDesc[2].nIdxWithinTileData = poGDS->m_asCachedTilesDesc[3].nIdxWithinTileData;
+            poGDS->m_asCachedTilesDesc[0].nIdxWithinTileData
+                = poGDS->m_asCachedTilesDesc[1].nIdxWithinTileData;
+            poGDS->m_asCachedTilesDesc[2].nIdxWithinTileData
+                = poGDS->m_asCachedTilesDesc[3].nIdxWithinTileData;
         }
         else
         {
@@ -642,6 +719,17 @@ CPLErr GDALGeoPackageRasterBand::IReadBlock(int nBlockXOff, int nBlockYOff,
     {
         for(int nCol = nColMin; nCol <= nColMax; nCol++ )
         {
+            if( poGDS->m_nShiftXPixelsMod == 0 && poGDS->m_nShiftYPixelsMod == 0 )
+            {
+                if( !(nRow == poGDS->m_asCachedTilesDesc[0].nRow &&
+                      nCol == poGDS->m_asCachedTilesDesc[0].nCol &&
+                      poGDS->m_asCachedTilesDesc[0].nIdxWithinTileData == 0) )
+                {
+                    if( poGDS->WriteTile() != CE_None )
+                        return CE_Failure;
+                }
+            }
+
             GByte* pabyTileData = poGDS->ReadTile(nRow, nCol);
             if( pabyTileData == NULL )
                 return CE_Failure;
@@ -657,7 +745,8 @@ CPLErr GDALGeoPackageRasterBand::IReadBlock(int nBlockXOff, int nBlockYOff,
                 else
                 {
                     poBlock =
-                        poGDS->GetRasterBand(iBand)->GetLockedBlockRef(nBlockXOff, nBlockYOff, TRUE);
+                        poGDS->GetRasterBand(iBand)->GetLockedBlockRef(
+                            nBlockXOff, nBlockYOff, TRUE );
                     if( poBlock == NULL )
                         continue;
                     if( poBlock->GetDirty() )
@@ -669,16 +758,42 @@ CPLErr GDALGeoPackageRasterBand::IReadBlock(int nBlockXOff, int nBlockYOff,
                 }
 
                 // Composite tile data into block data
-                if( poGDS->m_nShiftXPixelsMod == 0 && poGDS->m_nShiftYPixelsMod == 0 )
+                if( poGDS->m_nShiftXPixelsMod == 0
+                    && poGDS->m_nShiftYPixelsMod == 0 )
                 {
-                    memcpy(pabyDest,
-                           pabyTileData + (iBand - 1) * nBlockXSize * nBlockYSize,
-                           nBlockXSize * nBlockYSize);
+                    memcpy( pabyDest,
+                            pabyTileData +
+                            (iBand - 1) * nBlockXSize * nBlockYSize,
+                            nBlockXSize * nBlockYSize );
+#ifdef DEBUG_VERBOSE
+                    if( (nBlockXOff+1) * nBlockXSize <= nRasterXSize &&
+                        (nBlockYOff+1) * nBlockYSize > nRasterYSize )
+                    {
+                        bool bFoundNonZero = false;
+                        for(int y = nRasterYSize - nBlockYOff * nBlockYSize; y < nBlockYSize; y++)
+                        {
+                            for(int x=0;x<nBlockXSize;x++)
+                            {
+                                if( pabyDest[y*nBlockXSize+x] != 0 && !bFoundNonZero )
+                                {
+                                    CPLDebug("GPKG", "IReadBlock(): Found non-zero content in ghost part of tile(nBand=%d,nBlockXOff=%d,nBlockYOff=%d,m_nZoomLevel=%d)\n",
+                                            iBand,nBlockXOff,nBlockYOff,poGDS->m_nZoomLevel);
+                                    bFoundNonZero = true;
+                                }
+                            }
+                        }
+                    }
+#endif
+
                 }
                 else
                 {
-                    int nSrcXOffset, nSrcXSize, nSrcYOffset, nSrcYSize;
-                    int nDstXOffset, nDstYOffset;
+                    int nSrcXOffset;
+                    int nSrcXSize;
+                    int nSrcYOffset;
+                    int nSrcYSize;
+                    int nDstXOffset;
+                    int nDstYOffset;
                     if( nCol == nColMin )
                     {
                         nSrcXOffset = poGDS->m_nShiftXPixelsMod;
@@ -703,13 +818,23 @@ CPLErr GDALGeoPackageRasterBand::IReadBlock(int nBlockXOff, int nBlockYOff,
                         nSrcYSize = poGDS->m_nShiftYPixelsMod;
                         nDstYOffset = nBlockYSize - poGDS->m_nShiftYPixelsMod;
                     }
-                    //CPLDebug("GPKG", "Copy source tile x=%d,w=%d,y=%d,h=%d into buffet at x=%d,y=%d",
-                    //         nSrcXOffset, nSrcXSize, nSrcYOffset, nSrcYSize, nDstXOffset, nDstYOffset);
+
+#ifdef DEBUG_VERBOSE
+                    CPLDebug( "GPKG",
+                              "Copy source tile x=%d,w=%d,y=%d,h=%d into "
+                              "buffer at x=%d,y=%d",
+                              nSrcXOffset, nSrcXSize, nSrcYOffset, nSrcYSize,
+                              nDstXOffset, nDstYOffset);
+#endif
+
                     for( int y=0; y<nSrcYSize; y++ )
                     {
-                        GByte* pSrc = pabyTileData + (iBand - 1) * nBlockXSize * nBlockYSize +
-                                        (y + nSrcYOffset) * nBlockXSize + nSrcXOffset;
-                        GByte* pDst = pabyDest + (y + nDstYOffset) * nBlockXSize + nDstXOffset;
+                        GByte *pSrc =
+                          pabyTileData + (iBand - 1) * nBlockXSize * nBlockYSize
+                          + (y + nSrcYOffset) * nBlockXSize + nSrcXOffset;
+                        GByte *pDst =
+                          pabyDest + (y + nDstYOffset) * nBlockXSize
+                          + nDstXOffset;
                         GDALCopyWords(pSrc, GDT_Byte, 1,
                                       pDst, GDT_Byte, 1,
                                       nSrcXSize);
@@ -730,14 +855,14 @@ CPLErr GDALGeoPackageRasterBand::IReadBlock(int nBlockXOff, int nBlockYOff,
 /*                       WEBPSupports4Bands()                           */
 /************************************************************************/
 
-static int WEBPSupports4Bands()
+static bool WEBPSupports4Bands()
 {
     static int bRes = -1;
     if( bRes < 0 )
     {
         GDALDriver* poDrv = (GDALDriver*) GDALGetDriverByName("WEBP");
-        if( poDrv == NULL || CSLTestBoolean(CPLGetConfigOption("GPKG_SIMUL_WEBP_3BAND", "FALSE")) )
-            bRes = FALSE;
+        if( poDrv == NULL || CPLTestBool(CPLGetConfigOption("GPKG_SIMUL_WEBP_3BAND", "FALSE")) )
+            bRes = false;
         else
         {
             // LOSSLESS and RGBA support appeared in the same version
@@ -749,7 +874,7 @@ static int WEBPSupports4Bands()
                         "The version of WEBP available does not support 4-band RGBA");
         }
     }
-    return bRes;
+    return CPL_TO_BOOL(bRes);
 }
 
 /************************************************************************/
@@ -759,9 +884,9 @@ static int WEBPSupports4Bands()
 CPLErr GDALGeoPackageDataset::WriteTile()
 {
     CPLAssert(!m_bInWriteTile);
-    m_bInWriteTile = TRUE;
+    m_bInWriteTile = true;
     CPLErr eErr = WriteTileInternal();
-    m_bInWriteTile = FALSE;
+    m_bInWriteTile = false;
     return eErr;
 }
 
@@ -776,15 +901,14 @@ CPLErr GDALGeoPackageDataset::WriteTileInternal()
     int nRow = m_asCachedTilesDesc[0].nRow;
     int nCol = m_asCachedTilesDesc[0].nCol;
 
-    int bAllDirty = TRUE;
-    int bAllNonDirty = TRUE;
-    int i;
-    for(i=0;i<nBands;i++)
+    bool bAllDirty = true;
+    bool bAllNonDirty = true;
+    for( int i = 0; i < nBands; i++ )
     {
         if( m_asCachedTilesDesc[0].abBandDirty[i] )
-            bAllNonDirty = FALSE;
+            bAllNonDirty = false;
         else
-            bAllDirty = FALSE;
+            bAllDirty = false;
     }
     if( bAllNonDirty )
         return CE_None;
@@ -794,10 +918,10 @@ CPLErr GDALGeoPackageDataset::WriteTileInternal()
 
     /* If all bands for that block are not dirty/written, we need to */
     /* fetch the missing ones if the tile exists */
-    int bIsLossyFormat = FALSE;
+    bool bIsLossyFormat = false;
     if( !bAllDirty )
     {
-        for(i=1;i<=3;i++)
+        for( int i = 1; i <= 3; i++ )
         {
             m_asCachedTilesDesc[i].nRow = -1;
             m_asCachedTilesDesc[i].nCol = -1;
@@ -805,7 +929,7 @@ CPLErr GDALGeoPackageDataset::WriteTileInternal()
         }
         ReadTile(nRow, nCol, m_pabyCachedTiles + 4 * nBlockXSize * nBlockYSize,
                  &bIsLossyFormat);
-        for(i=0;i<nBands;i++)
+        for( int i = 0; i < nBands; i++ )
         {
             if( !m_asCachedTilesDesc[0].abBandDirty[i] )
             {
@@ -827,36 +951,64 @@ CPLErr GDALGeoPackageDataset::WriteTileInternal()
     if( nXOff >= nRasterXSize || nYOff >= nRasterYSize )
         return CE_None;
 
+#ifdef DEBUG_VERBOSE
+    if( m_nShiftXPixelsMod == 0 && m_nShiftYPixelsMod == 0 )
+    {
+        int nBlockXOff = nCol;
+        int nBlockYOff = nRow;
+        if( (nBlockXOff+1) * nBlockXSize <= nRasterXSize &&
+            (nBlockYOff+1) * nBlockYSize > nRasterYSize )
+        {
+            for(int i = 0; i < nBands; i++ )
+            {
+                bool bFoundNonZero = false;
+                for(int y = nRasterYSize - nBlockYOff * nBlockYSize; y < nBlockYSize; y++)
+                {
+                    for(int x=0;x<nBlockXSize;x++)
+                    {
+                        if( m_pabyCachedTiles[y*nBlockXSize+x + i * nBlockXSize * nBlockYSize] != 0 && !bFoundNonZero )
+                        {
+                            CPLDebug("GPKG", "WriteTileInternal(): Found non-zero content in ghost part of tile(band=%d,nBlockXOff=%d,nBlockYOff=%d,m_nZoomLevel=%d)\n",
+                                    i+1,nBlockXOff,nBlockYOff,m_nZoomLevel);
+                            bFoundNonZero = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+#endif
+
     /* Validity area of tile data in intra-tile coordinate space */
     int iXOff = 0;
     int iYOff = 0;
     int iXCount = nBlockXSize;
     int iYCount = nBlockYSize;
 
-    int bPartialTile = FALSE;
+    bool bPartialTile = false;
     int nAlphaBand = (nBands == 2) ? 2 : (nBands == 4) ? 4 : 0;
     if( nAlphaBand == 0 )
     {
         if( nXOff < 0 )
         {
-            bPartialTile = TRUE;
+            bPartialTile = true;
             iXOff = -nXOff;
             iXCount += nXOff;
         }
         if( nXOff + nBlockXSize > nRasterXSize )
         {
-            bPartialTile = TRUE;
+            bPartialTile = true;
             iXCount -= nXOff + nBlockXSize - nRasterXSize;
         }
         if( nYOff < 0 )
         {
-            bPartialTile = TRUE;
+            bPartialTile = true;
             iYOff = -nYOff;
             iYCount += nYOff;
         }
         if( nYOff + nBlockYSize > nRasterYSize )
         {
-            bPartialTile = TRUE;
+            bPartialTile = true;
             iYCount -= nYOff + nBlockYSize - nRasterYSize;
         }
         CPLAssert(iXOff >= 0);
@@ -870,18 +1022,19 @@ CPLErr GDALGeoPackageDataset::WriteTileInternal()
     m_asCachedTilesDesc[0].nRow = -1;
     m_asCachedTilesDesc[0].nCol = -1;
     m_asCachedTilesDesc[0].nIdxWithinTileData = -1;
-    m_asCachedTilesDesc[0].abBandDirty[0] = FALSE;
-    m_asCachedTilesDesc[0].abBandDirty[1] = FALSE;
-    m_asCachedTilesDesc[0].abBandDirty[2] = FALSE;
-    m_asCachedTilesDesc[0].abBandDirty[3] = FALSE;
+    m_asCachedTilesDesc[0].abBandDirty[0] = false;
+    m_asCachedTilesDesc[0].abBandDirty[1] = false;
+    m_asCachedTilesDesc[0].abBandDirty[2] = false;
+    m_asCachedTilesDesc[0].abBandDirty[3] = false;
 
     CPLErr eErr = CE_Failure;
 
-    int bAllOpaque = TRUE;
+    bool bAllOpaque = true;
     if( m_poCT == NULL && nAlphaBand != 0 )
     {
         GByte byFirstAlphaVal =  m_pabyCachedTiles[(nAlphaBand-1) * nBlockXSize * nBlockYSize];
-        for(i=1;i<nBlockXSize * nBlockYSize;i++)
+        int i = 1;
+        for( ; i < nBlockXSize * nBlockYSize; i++ )
         {
             if( m_pabyCachedTiles[(nAlphaBand-1) * nBlockXSize * nBlockYSize + i] != byFirstAlphaVal )
                 break;
@@ -899,12 +1052,12 @@ CPLErr GDALGeoPackageDataset::WriteTileInternal()
 #endif
                 char* pszErrMsg = NULL;
                 int rc = sqlite3_exec(GetDB(), pszSQL, NULL, NULL, &pszErrMsg);
-                if( rc == SQLITE_OK )
-                    eErr = CE_None;
-                else
+                if( rc != SQLITE_OK )
+                {
                     CPLError(CE_Failure, CPLE_AppDefined,
                             "Failure when deleting tile (row=%d,col=%d) at zoom_level=%d : %s",
                             nRow, nCol, m_nZoomLevel, pszErrMsg ? pszErrMsg : "");
+                }
                 sqlite3_free(pszSQL);
                 sqlite3_free(pszErrMsg);
                 return CE_None;
@@ -912,7 +1065,7 @@ CPLErr GDALGeoPackageDataset::WriteTileInternal()
             bAllOpaque = (byFirstAlphaVal == 255);
         }
         else
-            bAllOpaque = FALSE;
+            bAllOpaque = false;
     }
 
     if( bIsLossyFormat )
@@ -925,23 +1078,23 @@ CPLErr GDALGeoPackageDataset::WriteTileInternal()
     CPLString osMemFileName;
     osMemFileName.Printf("/vsimem/gpkg_write_tile_%p", this);
     const char* pszDriverName = "PNG";
-    int bTileDriverSupports1Band = FALSE;
-    int bTileDriverSupports2Bands = FALSE;
-    int bTileDriverSupports4Bands = FALSE;
-    int bTileDriverSupportsCT = FALSE;
-    
+    bool bTileDriverSupports1Band = false;
+    bool bTileDriverSupports2Bands = false;
+    bool bTileDriverSupports4Bands = false;
+    bool bTileDriverSupportsCT = false;
+
     if( nBands == 1 )
         GetRasterBand(1)->GetColorTable();
-    
+
     if( m_eTF == GPKG_TF_PNG_JPEG )
     {
-        bTileDriverSupports1Band = TRUE;
+        bTileDriverSupports1Band = true;
         if( bPartialTile || (nBands == 2 && !bAllOpaque) || (nBands == 4 && !bAllOpaque) || m_poCT != NULL )
         {
             pszDriverName = "PNG";
-            bTileDriverSupports2Bands = TRUE;
-            bTileDriverSupports4Bands = TRUE;
-            bTileDriverSupportsCT = TRUE;
+            bTileDriverSupports2Bands = m_bPNGSupports2Bands;
+            bTileDriverSupports4Bands = true;
+            bTileDriverSupportsCT = m_bPNGSupportsCT;
         }
         else
             pszDriverName = "JPEG";
@@ -950,15 +1103,15 @@ CPLErr GDALGeoPackageDataset::WriteTileInternal()
              m_eTF == GPKG_TF_PNG8 )
     {
         pszDriverName = "PNG";
-        bTileDriverSupports1Band = TRUE;
-        bTileDriverSupports2Bands = TRUE;
-        bTileDriverSupports4Bands = TRUE;
-        bTileDriverSupportsCT = TRUE;
+        bTileDriverSupports1Band = true;
+        bTileDriverSupports2Bands = m_bPNGSupports2Bands;
+        bTileDriverSupports4Bands = true;
+        bTileDriverSupportsCT = m_bPNGSupportsCT;
     }
     else if( m_eTF == GPKG_TF_JPEG )
     {
         pszDriverName = "JPEG";
-        bTileDriverSupports1Band = TRUE;
+        bTileDriverSupports1Band = true;
     }
     else if( m_eTF == GPKG_TF_WEBP )
     {
@@ -966,10 +1119,12 @@ CPLErr GDALGeoPackageDataset::WriteTileInternal()
         bTileDriverSupports4Bands = WEBPSupports4Bands();
     }
     else
+    {
         CPLAssert(0);
+    }
 
-    GDALDriver* poDriver = (GDALDriver*) GDALGetDriverByName(pszDriverName);
-    if( poDriver != NULL)
+    GDALDriver* l_poDriver = (GDALDriver*) GDALGetDriverByName(pszDriverName);
+    if( l_poDriver != NULL)
     {
         GDALDataset* poMEMDS = MEMDataset::Create("", nBlockXSize, nBlockYSize,
                                                   0, GDT_Byte, NULL);
@@ -1004,7 +1159,7 @@ CPLErr GDALGeoPackageDataset::WriteTileInternal()
             nTileBands = 3;
             if( bTileDriverSupports4Bands )
             {
-                for(i=0;i<m_poCT->GetColorEntryCount();i++)
+                for( int i = 0; i < m_poCT->GetColorEntryCount(); i++ )
                 {
                     const GDALColorEntry* psEntry = m_poCT->GetColorEntry(i);
                     if( psEntry->c4 == 0 )
@@ -1030,7 +1185,7 @@ CPLErr GDALGeoPackageDataset::WriteTileInternal()
             }
         }
 
-        for(i=0;i<nTileBands;i++)
+        for( int i = 0; i < nTileBands; i++ )
         {
             char** papszOptions = NULL;
             char szDataPointer[32];
@@ -1056,7 +1211,7 @@ CPLErr GDALGeoPackageDataset::WriteTileInternal()
         {
             GDALDataset* poMEM_RGB_DS = MEMDataset::Create("", nBlockXSize, nBlockYSize,
                                                   0, GDT_Byte, NULL);
-            for(i=0;i<3;i++)
+            for( int i = 0; i < 3; i++ )
             {
                 char** papszOptions = NULL;
                 char szDataPointer[32];
@@ -1068,13 +1223,13 @@ CPLErr GDALGeoPackageDataset::WriteTileInternal()
                 poMEM_RGB_DS->AddBand(GDT_Byte, papszOptions);
                 CSLDestroy(papszOptions);
             }
-            
+
             if( m_pabyHugeColorArray == NULL )
             {
-                if( nBlockXSize * nBlockYSize <= 65536 )
+                if( nBlockXSize <= 65536 / nBlockYSize )
                     m_pabyHugeColorArray = (GByte*) VSIMalloc(MEDIAN_CUT_AND_DITHER_BUFFER_SIZE_65536);
                 else
-                    m_pabyHugeColorArray = (GByte*) VSIMalloc2(256 * 256 * 256, sizeof(int));
+                    m_pabyHugeColorArray = (GByte*) VSIMalloc2(256 * 256 * 256, sizeof(GUInt32));
             }
 
             GDALColorTable* poCT = new GDALColorTable();
@@ -1088,7 +1243,7 @@ CPLErr GDALGeoPackageDataset::WriteTileInternal()
                                        NULL,
                                        256, /* max colors */
                                        8, /* bit depth */
-                                       (int*)m_pabyHugeColorArray, /* preallocated histogram */
+                                       (GUInt32*)m_pabyHugeColorArray, /* preallocated histogram */
                                        poCT,
                                        NULL, NULL );
 
@@ -1109,7 +1264,7 @@ CPLErr GDALGeoPackageDataset::WriteTileInternal()
         {
             GByte abyCT[4*256];
             int nEntries = MIN(256, m_poCT->GetColorEntryCount());
-            for(i=0;i<nEntries;i++)
+            for( int i = 0; i < nEntries; i++ )
             {
                 const GDALColorEntry* psEntry = m_poCT->GetColorEntry(i);
                 abyCT[4*i] = (GByte)psEntry->c1;
@@ -1117,7 +1272,7 @@ CPLErr GDALGeoPackageDataset::WriteTileInternal()
                 abyCT[4*i+2] = (GByte)psEntry->c3;
                 abyCT[4*i+3] = (GByte)psEntry->c4;
             }
-            for(;i<256;i++)
+            for( int i = nEntries; i<256 ;i++ )
             {
                 abyCT[4*i] = 0;
                 abyCT[4*i+1] = 0;
@@ -1131,6 +1286,7 @@ CPLErr GDALGeoPackageDataset::WriteTileInternal()
                 memset(m_pabyCachedTiles + 2 * nBlockXSize * nBlockYSize, 0, nBlockXSize * iYOff);
                 memset(m_pabyCachedTiles + 3 * nBlockXSize * nBlockYSize, 0, nBlockXSize * iYOff);
             }
+            int i;  // TODO: Rename the variable to make it clean what it is.
             for(int iY = iYOff; iY < iYOff + iYCount; iY ++)
             {
                 if( iXOff > 0 )
@@ -1184,7 +1340,7 @@ CPLErr GDALGeoPackageDataset::WriteTileInternal()
         VSIStatBufL sStat;
         CPLAssert(VSIStatL(osMemFileName, &sStat) != 0);
 #endif
-        GDALDataset* poOutDS = poDriver->CreateCopy(osMemFileName, poMEMDS,
+        GDALDataset* poOutDS = l_poDriver->CreateCopy(osMemFileName, poMEMDS,
                                                     FALSE, papszDriverOptions, NULL, NULL);
         CSLDestroy( papszDriverOptions );
         if( poOutDS )
@@ -1283,7 +1439,7 @@ CPLErr GDALGeoPackageDataset::FlushRemainingShiftedTiles()
     CPLDebug("GPKG", "%s", pszSQL);
 #endif
     sqlite3_stmt* hStmt = NULL;
-    int rc = sqlite3_prepare_v2(m_hTempDB, pszSQL, strlen(pszSQL), &hStmt, NULL);
+    int rc = sqlite3_prepare_v2(m_hTempDB, pszSQL, -1, &hStmt, NULL);
     if ( rc != SQLITE_OK )
     {
         CPLError( CE_Failure, CPLE_AppDefined, "sqlite3_prepare(%s) failed: %s",
@@ -1292,13 +1448,13 @@ CPLErr GDALGeoPackageDataset::FlushRemainingShiftedTiles()
     }
 
     CPLErr eErr = CE_None;
-    int bGotPartialTiles = FALSE;
+    bool bGotPartialTiles = false;
     do
     {
-        int rc = sqlite3_step(hStmt);
+        rc = sqlite3_step(hStmt);
         if ( rc == SQLITE_ROW )
         {
-            bGotPartialTiles = TRUE;
+            bGotPartialTiles = true;
 
             int nRow = sqlite3_column_int(hStmt, 0);
             int nCol = sqlite3_column_int(hStmt, 1);
@@ -1350,10 +1506,8 @@ CPLErr GDALGeoPackageDataset::FlushRemainingShiftedTiles()
                                                               nBytes, FALSE);
                         VSIFCloseL(fp);
 
-                        int bIsLossyFormat;
                         ReadTile(osMemFileName,
-                                 m_pabyCachedTiles + 4 * nBlockXSize * nBlockYSize,
-                                 &bIsLossyFormat);
+                                 m_pabyCachedTiles + 4 * nBlockXSize * nBlockYSize);
                         VSIUnlink(osMemFileName);
 
                         int iYQuadrantMax = ( m_nShiftYPixelsMod ) ? 1 : 0;
@@ -1416,10 +1570,10 @@ CPLErr GDALGeoPackageDataset::FlushRemainingShiftedTiles()
             m_asCachedTilesDesc[0].nRow = nRow;
             m_asCachedTilesDesc[0].nCol = nCol;
             m_asCachedTilesDesc[0].nIdxWithinTileData = 0;
-            m_asCachedTilesDesc[0].abBandDirty[0] = TRUE;
-            m_asCachedTilesDesc[0].abBandDirty[1] = TRUE;
-            m_asCachedTilesDesc[0].abBandDirty[2] = TRUE;
-            m_asCachedTilesDesc[0].abBandDirty[3] = TRUE;
+            m_asCachedTilesDesc[0].abBandDirty[0] = true;
+            m_asCachedTilesDesc[0].abBandDirty[1] = true;
+            m_asCachedTilesDesc[0].abBandDirty[2] = true;
+            m_asCachedTilesDesc[0].abBandDirty[3] = true;
 
             eErr = WriteTile();
         }
@@ -1513,7 +1667,7 @@ CPLErr GDALGeoPackageDataset::WriteShiftedTile(int nRow, int nCol, int nBand,
         iQuadrantFlag |= (1 << 2);
     if( nDstXOffset + nDstXSize == nBlockXSize && nDstYOffset + nDstYSize == nBlockYSize )
         iQuadrantFlag |= (1 << 3);
-    int nFlags = iQuadrantFlag << (4 * (nBand - 1));
+    int l_nFlags = iQuadrantFlag << (4 * (nBand - 1));
     int nFullFlags = (1 << (4 * nBands)) - 1;
     int nOldFlags = 0;
 
@@ -1532,7 +1686,7 @@ CPLErr GDALGeoPackageDataset::WriteShiftedTile(int nRow, int nCol, int nBand,
     CPLDebug("GPKG", "%s", pszSQL);
 #endif
     sqlite3_stmt* hStmt = NULL;
-    int rc = sqlite3_prepare_v2(m_hTempDB, pszSQL, strlen(pszSQL), &hStmt, NULL);
+    int rc = sqlite3_prepare_v2(m_hTempDB, pszSQL, -1, &hStmt, NULL);
     if ( rc != SQLITE_OK )
     {
         CPLError( CE_Failure, CPLE_AppDefined, "sqlite3_prepare(%s) failed: %s",
@@ -1596,15 +1750,15 @@ CPLErr GDALGeoPackageDataset::WriteShiftedTile(int nRow, int nCol, int nBand,
     GDALClose(poLogDS);
 #endif
 
-    if( (nOldFlags & nFlags) != 0 )
+    if( (nOldFlags & l_nFlags) != 0 )
     {
         CPLDebug("GPKG",
                  "Rewriting quadrant %d of band %d of tile (row=%d,col=%d)",
                  iQuadrantFlag, nBand, nRow, nCol);
     }
 
-    nFlags |= nOldFlags;
-    if( nFlags == nFullFlags )
+    l_nFlags |= nOldFlags;
+    if( l_nFlags == nFullFlags )
     {
 #ifdef DEBUG_VERBOSE
         CPLDebug("GPKG", "Got all quadrants for that tile");
@@ -1619,7 +1773,7 @@ CPLErr GDALGeoPackageDataset::WriteShiftedTile(int nRow, int nCol, int nBand,
                 CPLDebug("GPKG", "%s", pszSQL);
 #endif
                 hStmt = NULL;
-                rc = sqlite3_prepare_v2(m_hTempDB, pszSQL, strlen(pszSQL), &hStmt, NULL);
+                rc = sqlite3_prepare_v2(m_hTempDB, pszSQL, -1, &hStmt, NULL);
                 if ( rc != SQLITE_OK )
                 {
                     CPLError( CE_Failure, CPLE_AppDefined, "sqlite3_prepare(%s) failed: %s",
@@ -1649,10 +1803,10 @@ CPLErr GDALGeoPackageDataset::WriteShiftedTile(int nRow, int nCol, int nBand,
         m_asCachedTilesDesc[0].nRow = nRow;
         m_asCachedTilesDesc[0].nCol = nCol;
         m_asCachedTilesDesc[0].nIdxWithinTileData = 0;
-        m_asCachedTilesDesc[0].abBandDirty[0] = TRUE;
-        m_asCachedTilesDesc[0].abBandDirty[1] = TRUE;
-        m_asCachedTilesDesc[0].abBandDirty[2] = TRUE;
-        m_asCachedTilesDesc[0].abBandDirty[3] = TRUE;
+        m_asCachedTilesDesc[0].abBandDirty[0] = true;
+        m_asCachedTilesDesc[0].abBandDirty[1] = true;
+        m_asCachedTilesDesc[0].abBandDirty[2] = true;
+        m_asCachedTilesDesc[0].abBandDirty[3] = true;
 
         pszSQL = CPLSPrintf("UPDATE partial_tiles SET zoom_level = %d, "
                             "partial_flag = 0 WHERE id = %d",
@@ -1689,14 +1843,14 @@ CPLErr GDALGeoPackageDataset::WriteShiftedTile(int nRow, int nCol, int nBand,
     {
         pszSQL = CPLSPrintf("INSERT INTO partial_tiles "
                 "(zoom_level, tile_row, tile_column, tile_data_band_%d, partial_flag) VALUES (%d, %d, %d, ?, %d)",
-                nBand, m_nZoomLevel, nRow, nCol, nFlags);
+                nBand, m_nZoomLevel, nRow, nCol, l_nFlags);
     }
     else
     {
         pszSQL = CPLSPrintf("UPDATE partial_tiles SET zoom_level = %d, "
                             "tile_row = %d, tile_column = %d, "
                             "tile_data_band_%d = ?, partial_flag = %d WHERE id = %d",
-                            m_nZoomLevel, nRow, nCol, nBand, nFlags, nExistingId);
+                            m_nZoomLevel, nRow, nCol, nBand, l_nFlags, nExistingId);
     }
 #ifdef DEBUG_VERBOSE
     CPLDebug("GPKG", "%s", pszSQL);
@@ -1738,10 +1892,13 @@ CPLErr GDALGeoPackageDataset::WriteShiftedTile(int nRow, int nCol, int nBand,
 CPLErr GDALGeoPackageRasterBand::IWriteBlock(int nBlockXOff, int nBlockYOff,
                                              void* pData)
 {
-    //CPLDebug("GPKG", "IWriteBlock(nBand=%d,nBlockXOff=%d,nBlockYOff=%d",
-    //         nBand,nBlockXOff,nBlockYOff);
-
     GDALGeoPackageDataset* poGDS = (GDALGeoPackageDataset* )poDS;
+
+#ifdef DEBUG_VERBOSE
+    CPLDebug("GPKG", "IWriteBlock(nBand=%d,nBlockXOff=%d,nBlockYOff=%d,m_nZoomLevel=%d)",
+             nBand,nBlockXOff,nBlockYOff,poGDS->m_nZoomLevel);
+#endif
+
     if( !poGDS->bUpdate )
     {
         CPLError(CE_Failure, CPLE_NotSupported,
@@ -1797,7 +1954,7 @@ CPLErr GDALGeoPackageRasterBand::IWriteBlock(int nBlockXOff, int nBlockYOff,
 
             // Composite block data into tile, and check if all bands for this block
             // are dirty, and if so write the tile
-            int bAllDirty = TRUE;
+            bool bAllDirty = true;
             for(int iBand=1;iBand<=poGDS->nBands;iBand++)
             {
                 GDALRasterBlock* poBlock = NULL;
@@ -1828,14 +1985,14 @@ CPLErr GDALGeoPackageRasterBand::IWriteBlock(int nBlockXOff, int nBlockYOff,
                         {
                             if( poBlock )
                                 poBlock->DropLock();
-                            bAllDirty = FALSE;
+                            bAllDirty = false;
                             continue;
                         }
                     }
                 }
 
                 if( poGDS->m_nShiftXPixelsMod == 0 && poGDS->m_nShiftYPixelsMod == 0 )
-                    poGDS->m_asCachedTilesDesc[0].abBandDirty[iBand - 1] = TRUE;
+                    poGDS->m_asCachedTilesDesc[0].abBandDirty[iBand - 1] = true;
 
                 int nDstXOffset = 0, nDstXSize = nBlockXSize,
                     nDstYOffset = 0, nDstYSize = nBlockYSize;
@@ -1843,8 +2000,62 @@ CPLErr GDALGeoPackageRasterBand::IWriteBlock(int nBlockXOff, int nBlockYOff,
                 // Composite block data into tile data
                 if( poGDS->m_nShiftXPixelsMod == 0 && poGDS->m_nShiftYPixelsMod == 0 )
                 {
+
+#ifdef DEBUG_VERBOSE
+                    if( (nBlockXOff+1) * nBlockXSize <= nRasterXSize &&
+                        (nBlockYOff+1) * nBlockYSize > nRasterYSize )
+                    {
+                        bool bFoundNonZero = false;
+                        for(int y = nRasterYSize - nBlockYOff * nBlockYSize; y < nBlockYSize; y++)
+                        {
+                            for(int x=0;x<nBlockXSize;x++)
+                            {
+                                if( pabySrc[y*nBlockXSize+x] != 0 && !bFoundNonZero )
+                                {
+                                    CPLDebug("GPKG", "IWriteBlock(): Found non-zero content in ghost part of tile(nBand=%d,nBlockXOff=%d,nBlockYOff=%d,m_nZoomLevel=%d)\n",
+                                            iBand,nBlockXOff,nBlockYOff,poGDS->m_nZoomLevel);
+                                    bFoundNonZero = true;
+                                }
+                            }
+                        }
+                    }
+#endif
+
                     memcpy( poGDS->m_pabyCachedTiles + (iBand - 1) * nBlockXSize * nBlockYSize,
                             pabySrc, nBlockXSize * nBlockYSize );
+
+                    // Make sure partial blocks are zero'ed outside of the validity area
+                    // but do that only when know that JPEG will not be used so as to
+                    // avoid edge effects (although we should probably repeat last pixels
+                    // if we really want to do that, but that only makes sense if readers
+                    // only clip to the gpkg_contents extent). Well, ere on the safe side for now
+                    if( poGDS->m_eTF != GPKG_TF_JPEG &&
+                        ((nBlockXOff+1) * nBlockXSize >= nRasterXSize ||
+                         (nBlockYOff+1) * nBlockYSize >= nRasterYSize) )
+                    {
+                        int nXEndValidity = nRasterXSize - nBlockXOff * nBlockXSize;
+                        if( nXEndValidity > nBlockXSize )
+                            nXEndValidity = nBlockXSize;
+                        int nYEndValidity = nRasterYSize - nBlockYOff * nBlockYSize;
+                        if( nYEndValidity > nBlockYSize )
+                            nYEndValidity = nBlockYSize;
+                        if( nXEndValidity < nBlockXSize )
+                        {
+                            for( int iY = 0; iY < nYEndValidity; iY++ )
+                            {
+                                memset( poGDS->m_pabyCachedTiles + ((iBand - 1) * nBlockYSize + iY) * nBlockXSize + nXEndValidity,
+                                        0,
+                                        nBlockXSize - nXEndValidity );
+                            }
+                        }
+                        if( nYEndValidity < nBlockYSize )
+                        {
+                            memset( poGDS->m_pabyCachedTiles + ((iBand - 1) * nBlockYSize + nYEndValidity) * nBlockXSize,
+                                    0,
+                                    (nBlockYSize - nYEndValidity) * nBlockXSize );
+                        }
+                    }
+
                 }
                 else
                 {
@@ -1872,13 +2083,24 @@ CPLErr GDALGeoPackageRasterBand::IWriteBlock(int nBlockXOff, int nBlockYOff,
                         nDstYSize = poGDS->m_nShiftYPixelsMod;
                         nSrcYOffset = nBlockYSize - poGDS->m_nShiftYPixelsMod;
                     }
-                    //CPLDebug("GPKG", "Copy source tile x=%d,w=%d,y=%d,h=%d into buffet at x=%d,y=%d",
-                    //         nDstXOffset, nDstXSize, nDstYOffset, nDstYSize, nSrcXOffset, nSrcYOffset);
+
+#ifdef DEBUG_VERBOSE
+                    CPLDebug( "GPKG",
+                              "Copy source tile x=%d,w=%d,y=%d,h=%d into "
+                              "buffer at x=%d,y=%d",
+                              nDstXOffset, nDstXSize, nDstYOffset, nDstYSize,
+                              nSrcXOffset, nSrcYOffset);
+#endif
+
                     for( int y=0; y<nDstYSize; y++ )
                     {
-                        GByte* pDst = poGDS->m_pabyCachedTiles + (iBand - 1) * nBlockXSize * nBlockYSize +
-                                        (y + nDstYOffset) * nBlockXSize + nDstXOffset;
-                        GByte* pSrc = pabySrc + (y + nSrcYOffset) * nBlockXSize + nSrcXOffset;
+                        GByte* pDst =
+                          poGDS->m_pabyCachedTiles +
+                          (iBand - 1) * nBlockXSize * nBlockYSize +
+                          (y + nDstYOffset) * nBlockXSize + nDstXOffset;
+                        GByte* pSrc =
+                            pabySrc + (y + nSrcYOffset) * nBlockXSize +
+                            nSrcXOffset;
                         GDALCopyWords(pSrc, GDT_Byte, 1,
                                     pDst, GDT_Byte, 1,
                                     nDstXSize);
@@ -1888,7 +2110,8 @@ CPLErr GDALGeoPackageRasterBand::IWriteBlock(int nBlockXOff, int nBlockYOff,
                 if( poBlock )
                     poBlock->DropLock();
 
-                if( !(poGDS->m_nShiftXPixelsMod == 0 && poGDS->m_nShiftYPixelsMod == 0) )
+                if( !(poGDS->m_nShiftXPixelsMod == 0
+                      && poGDS->m_nShiftYPixelsMod == 0) )
                 {
                     poGDS->m_asCachedTilesDesc[0].nRow = -1;
                     poGDS->m_asCachedTilesDesc[0].nCol = -1;
@@ -1899,9 +2122,10 @@ CPLErr GDALGeoPackageRasterBand::IWriteBlock(int nBlockXOff, int nBlockYOff,
                 }
             }
 
-            if( poGDS->m_nShiftXPixelsMod == 0 && poGDS->m_nShiftYPixelsMod == 0 )
+            if( poGDS->m_nShiftXPixelsMod == 0
+                && poGDS->m_nShiftYPixelsMod == 0 )
             {
-                if( bAllDirty ) 
+                if( bAllDirty )
                 {
                     eErr = poGDS->WriteTile();
                 }
@@ -1918,7 +2142,8 @@ CPLErr GDALGeoPackageRasterBand::IWriteBlock(int nBlockXOff, int nBlockYOff,
 
 int GDALGeoPackageRasterBand::GetOverviewCount()
 {
-    GDALGeoPackageDataset* poGDS = (GDALGeoPackageDataset* )poDS;
+    GDALGeoPackageDataset *poGDS
+        = reinterpret_cast<GDALGeoPackageDataset *>( poDS );
     return poGDS->m_nOverviewCount;
 }
 
@@ -1928,7 +2153,8 @@ int GDALGeoPackageRasterBand::GetOverviewCount()
 
 GDALRasterBand* GDALGeoPackageRasterBand::GetOverview(int nIdx)
 {
-    GDALGeoPackageDataset* poGDS = (GDALGeoPackageDataset* )poDS;
+    GDALGeoPackageDataset *poGDS
+        = reinterpret_cast<GDALGeoPackageDataset *>( poDS );
     if( nIdx < 0 || nIdx >= poGDS->m_nOverviewCount )
         return NULL;
     return poGDS->m_papoOverviewDS[nIdx]->GetRasterBand(nBand);

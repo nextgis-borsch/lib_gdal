@@ -72,6 +72,7 @@ static double GetOGRangle(double angle)
 }
 
 
+// TODO: Spelling Tesselate -> Tessellate
 /************************************************************************/
 /*                DXFSmoothPolyline::Tesselate()                        */
 /************************************************************************/
@@ -102,20 +103,20 @@ OGRGeometry* DXFSmoothPolyline::Tesselate() const
 
     m_blinestringstarted = false;
 
-    std::vector<DXFSmoothPolylineVertex>::const_iterator iter = m_vertices.begin();
-    std::vector<DXFSmoothPolylineVertex>::const_iterator eiter = m_vertices.end();
+    std::vector<DXFSmoothPolylineVertex>::const_iterator oIter = m_vertices.begin();
+    std::vector<DXFSmoothPolylineVertex>::const_iterator oEndIter = m_vertices.end();
 
-    eiter--;
+    oEndIter--;
 
-    DXFSmoothPolylineVertex begin = *iter;
+    DXFSmoothPolylineVertex begin = *oIter;
 
     double dfZ = 0.0;
     const bool bConstantZ = this->HasConstantZ(dfZ);
 
-    while(iter != eiter)
+    while(oIter != oEndIter)
     {
-        iter++;
-        DXFSmoothPolylineVertex end = *iter;
+        oIter++;
+        DXFSmoothPolylineVertex end = *oIter;
 
         const double len = GetLength(begin,end);
 
@@ -274,7 +275,7 @@ void DXFSmoothPolyline::EmitArc
 
 
 /* -------------------------------------------------------------------- */
-/*      Tesselate the arc segment and append to the linestring.         */
+/*      Tessellate the arc segment and append to the linestring.        */
 /* -------------------------------------------------------------------- */
 
     OGRLineString* poArcpoLS = 

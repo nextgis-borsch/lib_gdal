@@ -27,36 +27,16 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#ifndef _CPL_ILI2READERP_H_INCLUDED
-#define _CPL_ILI2READERP_H_INCLUDED
+#ifndef CPL_ILI2READERP_H_INCLUDED
+#define CPL_ILI2READERP_H_INCLUDED
 
-// This works around problems with math.h on some platforms #defining INFINITY
-#ifdef INFINITY
-#undef  INFINITY
-#define INFINITY INFINITY_XERCES
-#endif
+#include "xercesc_headers.h"
 
 #include "ili2reader.h"
 #include "ogr_ili2.h"
 
 #include <string>
 #include <set>
-
-#include <util/PlatformUtils.hpp>
-#include <sax2/DefaultHandler.hpp>
-#include <sax2/ContentHandler.hpp>
-#include <sax2/SAX2XMLReader.hpp>
-#include <sax2/XMLReaderFactory.hpp>
-#include <dom/DOM.hpp>
-#include <util/XMLString.hpp>
-
-#if _XERCES_VERSION >= 30000
-# include <sax2/Attributes.hpp>
-#endif
-
-#ifdef XERCES_CPP_NAMESPACE_USE
-XERCES_CPP_NAMESPACE_USE
-#endif
 
 int cmpStr(std::string s1, std::string s2);
 
@@ -75,19 +55,19 @@ class ILI2Handler : public DefaultHandler
     ILI2Reader  *m_poReader;
 
     int level;
-    
+
     DOMDocument *dom_doc;
     DOMElement *dom_elem;
-    
+
     int m_nEntityCounter;
 
 public:
     ILI2Handler( ILI2Reader *poReader );
     ~ILI2Handler();
-    
+
     void startDocument();
     void endDocument();
-    
+
     void startElement(
         const   XMLCh* const    uri,
         const   XMLCh* const    localname,
@@ -122,16 +102,15 @@ class ILI2Reader : public IILI2Reader
 private:
     int      SetupParser();
     void     CleanupParser();
-    
+
     char    *m_pszFilename;
-    
+
     std::list<std::string> m_missAttrs;
 
     ILI2Handler *m_poILI2Handler;
     SAX2XMLReader *m_poSAXReader;
     int      m_bReadStarted;
-    double   arcIncr;
-    
+
     std::list<OGRLayer *> m_listLayer;
 
 public:
@@ -141,11 +120,11 @@ public:
     void     SetSourceFile( const char *pszFilename );
     int      ReadModel( ImdReader *poImdReader, const char *modelFilename );
     int      SaveClasses( const char *pszFile );
-    
+
     std::list<OGRLayer *> GetLayers();
     int      GetLayerCount();
     OGRLayer* GetLayer(const char* pszName);
-    
+
     int      AddFeature(DOMElement *elem);
     void     SetFieldValues(OGRFeature *feature, DOMElement* elem);
     const char* GetLayerName(/*IOM_BASKET model, IOM_OBJECT table*/);

@@ -40,7 +40,7 @@
 
 CPL_CVSID("$Id$");
 
-#define TO_RADIANS (3.14159265358979323846 / 180.0)
+#define TO_RADIANS (M_PI / 180.0)
 
 #ifndef DBL_MAX
 # ifdef __DBL_MAX__
@@ -215,7 +215,8 @@ GDALGridInverseDistanceToAPower( const void *poOptions, GUInt32 nPoints,
 /************************************************************************/
 
 /**
- * Inverse distance to a power with nearest neighbor search, ideal when max_points used.
+ * Inverse distance to a power with nearest neighbor search, ideal when
+ * max_points used.
  *
  * The Inverse Distance to a Power gridding method is a weighted average
  * interpolator. You should supply the input arrays with the scattered data
@@ -693,15 +694,15 @@ GDALGridNearestNeighbor( const void *poOptions, GUInt32 nPoints,
                     dfNearestR = dfRadius1;
                 for(int k=0; k<nFeatureCount; k++)
                 {
-                    int i = papsPoints[k]->i;
-                    double  dfRX = padfX[i] - dfXPoint;
-                    double  dfRY = padfY[i] - dfYPoint;
+                    int idx = papsPoints[k]->i;
+                    double  dfRX = padfX[idx] - dfXPoint;
+                    double  dfRY = padfY[idx] - dfYPoint;
 
                     const double    dfR2 = dfRX * dfRX + dfRY * dfRY;
                     if( dfR2 <= dfNearestR )
                     {
                         dfNearestR = dfR2;
-                        dfNearestValue = padfZ[i];
+                        dfNearestValue = padfZ[idx];
                     }
                 }
 
@@ -1652,7 +1653,7 @@ static void GDALGridJobProcess(void* user_data)
     /*  and use GDALCopyWords() to copy values into output data array with  */
     /*  appropriate data type conversion.                                   */
     /* -------------------------------------------------------------------- */
-    double      *padfValues = (double *)VSIMalloc2( sizeof(double), nXSize );
+    double      *padfValues = (double *)VSI_MALLOC2_VERBOSE( sizeof(double), nXSize );
     if( padfValues == NULL )
     {
         *(psJob->pbStop) = TRUE;
@@ -1728,12 +1729,12 @@ static void GDALGridContextCreateQuadTree(GDALGridContext* psContext);
  * Creates a context to do regular gridding from the scattered data.
  *
  * This function takes the arrays of X and Y coordinates and corresponding Z
- * values as input to preprare computation of regular grid (or call it a raster) from these
- * scattered data.
+ * values as input to prepare computation of regular grid (or call it a raster)
+ * from these scattered data.
  *
  * On Intel/AMD i386/x86_64 architectures, some
  * gridding methods will be optimized with SSE instructions (provided GDAL
- * has been compiled with such support, and it is availabable at runtime).
+ * has been compiled with such support, and it is available at runtime).
  * Currently, only 'invdist' algorithm with default parameters has an optimized
  * implementation.
  * This can provide substantial speed-up, but sometimes at the expense of
@@ -1748,12 +1749,12 @@ static void GDALGridContextCreateQuadTree(GDALGridContext* psContext);
  * the number of worker threads, or ALL_CPUS to use all the cores/CPUs of the
  * computer (default value).
  *
- * @param eAlgorithm Gridding method. 
- * @param poOptions Options to control choosen gridding method.
+ * @param eAlgorithm Gridding method.
+ * @param poOptions Options to control chosen gridding method.
  * @param nPoints Number of elements in input arrays.
- * @param padfX Input array of X coordinates. 
- * @param padfY Input array of Y coordinates. 
- * @param padfZ Input array of Z values. 
+ * @param padfX Input array of X coordinates.
+ * @param padfY Input array of Y coordinates.
+ * @param padfZ Input array of Z values.
  * @param bCallerWillKeepPointArraysAlive Whether the provided padfX, padfY, padfZ
  *        arrays will still be "alive" during the calls to GDALGridContextProcess().
  *        Setting to TRUE prevent them from being duplicated in the context.
@@ -1812,12 +1813,12 @@ GDALGridContextCreate( GDALGridAlgorithm eAlgorithm, const void *poOptions,
 
 #define ALIGN32(x)  (((char*)(x)) + ((32 - (((size_t)(x)) % 32)) % 32))
 
-                    if( CSLTestBoolean(CPLGetConfigOption("GDAL_USE_AVX", "YES")) &&
+                    if( CPLTestBool(CPLGetConfigOption("GDAL_USE_AVX", "YES")) &&
                         CPLHaveRuntimeAVX() )
                     {
-                        pabyX = (float*)VSIMalloc(sizeof(float) * nPoints + 31);
-                        pabyY = (float*)VSIMalloc(sizeof(float) * nPoints + 31);
-                        pabyZ = (float*)VSIMalloc(sizeof(float) * nPoints + 31);
+                        pabyX = (float*)VSI_MALLOC_VERBOSE(sizeof(float) * nPoints + 31);
+                        pabyY = (float*)VSI_MALLOC_VERBOSE(sizeof(float) * nPoints + 31);
+                        pabyZ = (float*)VSI_MALLOC_VERBOSE(sizeof(float) * nPoints + 31);
                         if( pabyX != NULL && pabyY != NULL && pabyZ != NULL)
                         {
                             CPLDebug("GDAL_GRID", "Using AVX optimized version");
@@ -1848,12 +1849,12 @@ GDALGridContextCreate( GDALGridAlgorithm eAlgorithm, const void *poOptions,
 #define ALIGN16(x)  (((char*)(x)) + ((16 - (((size_t)(x)) % 16)) % 16))
 
                     if( pafXAligned == NULL &&
-                        CSLTestBoolean(CPLGetConfigOption("GDAL_USE_SSE", "YES")) &&
+                        CPLTestBool(CPLGetConfigOption("GDAL_USE_SSE", "YES")) &&
                         CPLHaveRuntimeSSE() )
                     {
-                        pabyX = (float*)VSIMalloc(sizeof(float) * nPoints + 15);
-                        pabyY = (float*)VSIMalloc(sizeof(float) * nPoints + 15);
-                        pabyZ = (float*)VSIMalloc(sizeof(float) * nPoints + 15);
+                        pabyX = (float*)VSI_MALLOC_VERBOSE(sizeof(float) * nPoints + 15);
+                        pabyY = (float*)VSI_MALLOC_VERBOSE(sizeof(float) * nPoints + 15);
+                        pabyZ = (float*)VSI_MALLOC_VERBOSE(sizeof(float) * nPoints + 15);
                         if( pabyX != NULL && pabyY != NULL && pabyZ != NULL)
                         {
                             CPLDebug("GDAL_GRID", "Using SSE optimized version");
@@ -1968,13 +1969,11 @@ GDALGridContextCreate( GDALGridAlgorithm eAlgorithm, const void *poOptions,
         bCallerWillKeepPointArraysAlive = TRUE;
     if( !bCallerWillKeepPointArraysAlive )
     {
-        double* padfXNew = (double*)VSIMalloc2(nPoints, sizeof(double));
-        double* padfYNew = (double*)VSIMalloc2(nPoints, sizeof(double));
-        double* padfZNew = (double*)VSIMalloc2(nPoints, sizeof(double));
+        double* padfXNew = (double*)VSI_MALLOC2_VERBOSE(nPoints, sizeof(double));
+        double* padfYNew = (double*)VSI_MALLOC2_VERBOSE(nPoints, sizeof(double));
+        double* padfZNew = (double*)VSI_MALLOC2_VERBOSE(nPoints, sizeof(double));
         if( padfXNew == NULL || padfYNew == NULL || padfZNew == NULL )
         {
-            CPLError( CE_Failure, CPLE_OutOfMemory,
-                      "Not enough memory to duplicate X,Y,Z arrays");
             VSIFree(padfXNew);
             VSIFree(padfYNew);
             VSIFree(padfZNew);
@@ -2085,7 +2084,7 @@ void GDALGridContextCreateQuadTree(GDALGridContext* psContext)
 {
     GUInt32 nPoints = psContext->nPoints;
     psContext->pasGridPoints = (GDALGridPoint*)
-            VSIMalloc2(nPoints, sizeof(GDALGridPoint));
+            VSI_MALLOC2_VERBOSE(nPoints, sizeof(GDALGridPoint));
     if( psContext->pasGridPoints != NULL )
     {
         const double* padfX = psContext->padfX;
@@ -2180,7 +2179,7 @@ void GDALGridContextFree(GDALGridContext* psContext)
  * @param dfYMax Highest Y border of output grid.
  * @param nXSize Number of columns in output grid.
  * @param nYSize Number of rows in output grid.
- * @param eType Data type of output array.  
+ * @param eType Data type of output array.
  * @param pData Pointer to array where the computed grid will be stored.
  * @param pfnProgress a GDALProgressFunc() compatible callback function for
  * reporting progress or NULL.
@@ -2202,13 +2201,13 @@ CPLErr GDALGridContextProcess(GDALGridContext* psContext,
     if ( nXSize == 0 || nYSize == 0 )
     {
         CPLError( CE_Failure, CPLE_IllegalArg,
-                  "Output raster dimesions should have non-zero size." );
+                  "Output raster dimensions should have non-zero size." );
         return CE_Failure;
     }
 
     const double    dfDeltaX = ( dfXMax - dfXMin ) / nXSize;
     const double    dfDeltaY = ( dfYMax - dfYMin ) / nYSize;
-    
+
     // For linear, check if we will need to fallback to nearest neighbour
     // by sampling along the edges (if all points on edges are within triangles,
     // then interior points will also be!)
@@ -2309,7 +2308,7 @@ CPLErr GDALGridContextProcess(GDALGridContext* psContext,
         int i;
 
         sJob.nYStep = nThreads;
-        sJob.hCondMutex = CPLCreateMutex(); /* and take implicitely the mutex */
+        sJob.hCondMutex = CPLCreateMutex(); /* and  implicitly take the mutex */
         sJob.hCond = CPLCreateCond();
         if( sJob.pfnRealProgress != NULL && sJob.pfnRealProgress != GDALDummyProgress )
             sJob.pfnProgress = GDALGridProgressMultiThread;
@@ -2335,7 +2334,8 @@ CPLErr GDALGridContextProcess(GDALGridContext* psContext,
             int nLocalCounter = nCounter;
             CPLReleaseMutex(sJob.hCondMutex);
 
-            if( !pfnProgress( nLocalCounter / (double) nYSize, "", pProgressArg ) )
+            if( pfnProgress != NULL &&
+                !pfnProgress( nLocalCounter / (double) nYSize, "", pProgressArg ) )
             {
                 CPLError( CE_Failure, CPLE_UserInterrupt, "User terminated" );
                 bStop = TRUE;
@@ -2380,7 +2380,7 @@ CPLErr GDALGridContextProcess(GDALGridContext* psContext,
  *
  * Starting with GDAL 1.10, on Intel/AMD i386/x86_64 architectures, some
  * gridding methods will be optimized with SSE instructions (provided GDAL
- * has been compiled with such support, and it is availabable at runtime).
+ * has been compiled with such support, and it is available at runtime).
  * Currently, only 'invdist' algorithm with default parameters has an optimized
  * implementation.
  * This can provide substantial speed-up, but sometimes at the expense of
@@ -2395,19 +2395,19 @@ CPLErr GDALGridContextProcess(GDALGridContext* psContext,
  * gridding operations with the same algorithm, parameters and points, and
  * moving the window in the output grid.
  *
- * @param eAlgorithm Gridding method. 
- * @param poOptions Options to control choosen gridding method.
+ * @param eAlgorithm Gridding method.
+ * @param poOptions Options to control chosen gridding method.
  * @param nPoints Number of elements in input arrays.
- * @param padfX Input array of X coordinates. 
- * @param padfY Input array of Y coordinates. 
- * @param padfZ Input array of Z values. 
+ * @param padfX Input array of X coordinates.
+ * @param padfY Input array of Y coordinates.
+ * @param padfZ Input array of Z values.
  * @param dfXMin Lowest X border of output grid.
  * @param dfXMax Highest X border of output grid.
  * @param dfYMin Lowest Y border of output grid.
  * @param dfYMax Highest Y border of output grid.
  * @param nXSize Number of columns in output grid.
  * @param nYSize Number of rows in output grid.
- * @param eType Data type of output array.  
+ * @param eType Data type of output array.
  * @param pData Pointer to array where the computed grid will be stored.
  * @param pfnProgress a GDALProgressFunc() compatible callback function for
  * reporting progress or NULL.
@@ -2462,7 +2462,10 @@ CPLErr ParseAlgorithmAndOptions( const char *pszAlgorithm,
     char **papszParms = CSLTokenizeString2( pszAlgorithm, ":", FALSE );
 
     if ( CSLCount(papszParms) < 1 )
+    {
+        CSLDestroy( papszParms );
         return CE_Failure;
+    }
 
     if ( EQUAL(papszParms[0], szAlgNameInvDist) )
         *peAlgorithm = GGA_InverseDistanceToAPower;
@@ -2633,7 +2636,7 @@ CPLErr ParseAlgorithmAndOptions( const char *pszAlgorithm,
 
             pszValue = CSLFetchNameValue( papszParms, "min_points" );
             ((GDALGridDataMetricsOptions *)*ppOptions)->
-                nMinPoints = (pszValue) ? atol(pszValue) : 0;
+                nMinPoints = (pszValue) ? atoi(pszValue) : 0;
 
             pszValue = CSLFetchNameValue( papszParms, "nodata" );
             ((GDALGridDataMetricsOptions *)*ppOptions)->
@@ -2657,3 +2660,158 @@ CPLErr ParseAlgorithmAndOptions( const char *pszAlgorithm,
     CSLDestroy( papszParms );
     return CE_None;
 }
+
+#ifdef HAVE_SSE_AT_COMPILE_TIME
+
+/************************************************************************/
+/*                          CPLHaveRuntimeSSE()                         */
+/************************************************************************/
+
+#define CPUID_SSE_EDX_BIT     25
+
+#if (defined(_M_X64) || defined(__x86_64))
+
+int CPLHaveRuntimeSSE()
+{
+    return TRUE;
+}
+
+#elif defined(__GNUC__) && defined(__i386__)
+
+int CPLHaveRuntimeSSE()
+{
+    int cpuinfo[4] = {0,0,0,0};
+    GCC_CPUID(1, cpuinfo[0], cpuinfo[1], cpuinfo[2], cpuinfo[3]);
+    return (cpuinfo[3] & (1 << CPUID_SSE_EDX_BIT)) != 0;
+}
+
+#elif defined(_MSC_VER) && defined(_M_IX86)
+
+#if _MSC_VER <= 1310
+static void inline __cpuid(int cpuinfo[4], int level)
+{
+    __asm 
+    {
+        push   ebx
+        push   esi
+
+        mov    esi,cpuinfo
+        mov    eax,level  
+        cpuid  
+        mov    dword ptr [esi], eax
+        mov    dword ptr [esi+4],ebx  
+        mov    dword ptr [esi+8],ecx  
+        mov    dword ptr [esi+0Ch],edx 
+
+        pop    esi
+        pop    ebx
+    }
+}
+#else
+#include <intrin.h>
+#endif
+
+int CPLHaveRuntimeSSE()
+{
+    int cpuinfo[4] = {0,0,0,0};
+    __cpuid(cpuinfo, 1);
+    return (cpuinfo[3] & (1 << CPUID_SSE_EDX_BIT)) != 0;
+}
+
+#else
+
+int CPLHaveRuntimeSSE()
+{
+    return FALSE;
+}
+#endif
+
+#endif // HAVE_SSE_AT_COMPILE_TIME
+
+#ifdef HAVE_AVX_AT_COMPILE_TIME
+
+/************************************************************************/
+/*                          CPLHaveRuntimeAVX()                         */
+/************************************************************************/
+
+#define CPUID_OSXSAVE_ECX_BIT   27
+#define CPUID_AVX_ECX_BIT       28
+
+#define BIT_XMM_STATE           (1 << 1)
+#define BIT_YMM_STATE           (2 << 1)
+
+#if defined(__GNUC__) && (defined(__i386__) ||defined(__x86_64))
+
+int CPLHaveRuntimeAVX()
+{
+    int cpuinfo[4] = {0,0,0,0};
+    GCC_CPUID(1, cpuinfo[0], cpuinfo[1], cpuinfo[2], cpuinfo[3]);
+
+    /* Check OSXSAVE feature */
+    if( (cpuinfo[2] & (1 << CPUID_OSXSAVE_ECX_BIT)) == 0 )
+    {
+        return FALSE;
+    }
+
+    /* Check AVX feature */
+    if( (cpuinfo[2] & (1 << CPUID_AVX_ECX_BIT)) == 0 )
+    {
+        return FALSE;
+    }
+
+    /* Issue XGETBV and check the XMM and YMM state bit */
+    unsigned int nXCRLow;
+    unsigned int nXCRHigh;
+    __asm__ ("xgetbv" : "=a" (nXCRLow), "=d" (nXCRHigh) : "c" (0));
+    if( (nXCRLow & ( BIT_XMM_STATE | BIT_YMM_STATE )) !=
+                   ( BIT_XMM_STATE | BIT_YMM_STATE ) )
+    {
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+#elif defined(_MSC_FULL_VER) && (_MSC_FULL_VER >= 160040219) && (defined(_M_IX86) || defined(_M_X64))
+// _xgetbv available only in Visual Studio 2010 SP1 or later
+
+#include <intrin.h>
+
+int CPLHaveRuntimeAVX()
+{
+    int cpuinfo[4] = {0,0,0,0};
+    __cpuid(cpuinfo, 1);
+
+    /* Check OSXSAVE feature */
+    if( (cpuinfo[2] & (1 << CPUID_OSXSAVE_ECX_BIT)) == 0 )
+    {
+        return FALSE;
+    }
+
+    /* Check AVX feature */
+    if( (cpuinfo[2] & (1 << CPUID_AVX_ECX_BIT)) == 0 )
+    {
+        return FALSE;
+    }
+
+    /* Issue XGETBV and check the XMM and YMM state bit */
+    unsigned __int64 xcrFeatureMask = _xgetbv(_XCR_XFEATURE_ENABLED_MASK);
+    if( (xcrFeatureMask & ( BIT_XMM_STATE | BIT_YMM_STATE )) !=
+                          ( BIT_XMM_STATE | BIT_YMM_STATE ) )
+    {
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+#else
+
+int CPLHaveRuntimeAVX()
+{
+    return FALSE;
+}
+
+#endif
+
+#endif //  HAVE_AVX_AT_COMPILE_TIME

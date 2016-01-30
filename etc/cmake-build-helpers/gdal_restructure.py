@@ -52,12 +52,12 @@ def copy_dir(src, dest, exts):
     if not os.path.exists(to_folder):
         os.makedirs(to_folder)
 
-    files = glob.glob(src + "/*.*")
+    files = glob.glob(src + "/*")
     for f in files:
         if not os.path.isdir(f):
             file_extension = os.path.splitext(f)[1].replace('.','')
-            file_name = os.path.basename(f)
-            if file_extension in exts:
+            file_name = os.path.basename(f)            
+            if file_extension != '' and file_extension in exts:
                 shutil.copy(f, dest)
             elif file_name in exts:               
                 shutil.copy(f, dest) 

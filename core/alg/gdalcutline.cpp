@@ -75,7 +75,7 @@ BlendMaskGenerator(
 /* -------------------------------------------------------------------- */
 /*      Prepare a clipping polygon a bit bigger than the area of        */
 /*      interest in the hopes of simplifying the cutline down to        */
-/*      stuff that will be relavent for this area of interest.          */
+/*      stuff that will be relevant for this area of interest.          */
 /* -------------------------------------------------------------------- */
     CPLString osClipRectWKT;
 
@@ -90,21 +90,20 @@ BlendMaskGenerator(
                           nYOff + nYSize + (dfBlendDist+1), 
                           nXOff - (dfBlendDist+1), 
                           nYOff - (dfBlendDist+1) );
-    
+
     OGRPolygon *poClipRect = NULL;
     char *pszWKT = (char *) osClipRectWKT.c_str();
-    
+
     OGRGeometryFactory::createFromWkt( &pszWKT, NULL, 
                                        (OGRGeometry**) (&poClipRect) );
 
     if( poClipRect )
     {
 
-        /***** if it doesnt intersect the polym zero the mask and return *****/
+        // If it does not intersect the polym zero the mask and return.
 
         if ( ! ((OGRGeometry *) hPolygon)->Intersects( poClipRect ) )
         {
-            
             memset( pafValidityMask, 0, sizeof(float) * nXSize * nYSize );
 
             delete poLines;
@@ -113,8 +112,8 @@ BlendMaskGenerator(
             return CE_None;
         }
 
-        /***** if it doesnt intersect the line at all just return *****/
-         
+        // If it does not intersect the line at all just return.
+
         else if ( ! ((OGRGeometry *) poLines)->Intersects( poClipRect ) )
         {
             delete poLines;
@@ -350,10 +349,10 @@ GDALWarpCutlineMasker( void *pMaskFuncArg,
     char *apszOptions[] = { szDataPointer, NULL };
 
     memset( szDataPointer, 0, sizeof(szDataPointer) );
-    sprintf( szDataPointer, "DATAPOINTER=" );
+    snprintf( szDataPointer, sizeof(szDataPointer), "DATAPOINTER=" );
     CPLPrintPointer( szDataPointer+strlen(szDataPointer), 
-                    pabyPolyMask, 
-                     sizeof(szDataPointer) - strlen(szDataPointer) );
+                     pabyPolyMask, 
+                     static_cast<int>(sizeof(szDataPointer) - strlen(szDataPointer)) );
 
     hMemDS = GDALCreate( hMemDriver, "warp_temp", 
                          nXSize, nYSize, 0, GDT_Byte, NULL );

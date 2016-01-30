@@ -36,16 +36,17 @@
 /*                      OGRGeoPackageLayer()                            */
 /************************************************************************/
 
-OGRGeoPackageLayer::OGRGeoPackageLayer(GDALGeoPackageDataset *poDS) : m_poDS(poDS)
+OGRGeoPackageLayer::OGRGeoPackageLayer(GDALGeoPackageDataset *poDS) :
+    m_poDS(poDS),
+    m_poFeatureDefn(NULL),
+    iNextShapeId(0),
+    m_poQueryStatement(NULL),
+    bDoStep(TRUE),
+    m_pszFidColumn(NULL),
+    iFIDCol(-1),
+    iGeomCol(-1),
+    panFieldOrdinals(NULL)
 {
-    m_poFeatureDefn = NULL;
-    iNextShapeId = 0;
-    m_poQueryStatement = NULL;
-    bDoStep = TRUE;
-    m_pszFidColumn = NULL;
-    iFIDCol = -1;
-    iGeomCol = -1;
-    panFieldOrdinals = NULL;
 }
 
 /************************************************************************/
@@ -100,7 +101,7 @@ void OGRGeoPackageLayer::ClearStatement()
 OGRFeature *OGRGeoPackageLayer::GetNextFeature()
 
 {
-    for( ; TRUE; )
+    for( ; true; )
     {
         OGRFeature      *poFeature;
 
@@ -162,7 +163,6 @@ OGRFeature *OGRGeoPackageLayer::TranslateFeature( sqlite3_stmt* hStmt )
 /* -------------------------------------------------------------------- */
 /*      Create a feature from the current result.                       */
 /* -------------------------------------------------------------------- */
-    int         iField;
     OGRFeature *poFeature = new OGRFeature( m_poFeatureDefn );
 
 /* -------------------------------------------------------------------- */
@@ -202,17 +202,17 @@ OGRFeature *OGRGeoPackageLayer::TranslateFeature( sqlite3_stmt* hStmt )
             poFeature->SetGeometryDirectly( poGeom );
         }
     }
-    
+
 /* -------------------------------------------------------------------- */
 /*      set the fields.                                                 */
 /* -------------------------------------------------------------------- */
-    for( iField = 0; iField < m_poFeatureDefn->GetFieldCount(); iField++ )
+    for( int iField = 0; iField < m_poFeatureDefn->GetFieldCount(); iField++ )
     {
         OGRFieldDefn *poFieldDefn = m_poFeatureDefn->GetFieldDefn( iField );
         if ( poFieldDefn->IsIgnored() )
             continue;
 
-        int iRawField = panFieldOrdinals[iField];
+        const int iRawField = panFieldOrdinals[iField];
 
         if( sqlite3_column_type( hStmt, iRawField ) == SQLITE_NULL )
             continue;
@@ -320,8 +320,7 @@ void OGRGeoPackageLayer::BuildFeatureDefn( const char *pszLayerName,
 
     panFieldOrdinals = (int *) CPLMalloc( sizeof(int) * nRawColumns );
 
-    int iCol;
-    for( iCol = 0; iCol < nRawColumns; iCol++ )
+    for( int iCol = 0; iCol < nRawColumns; iCol++ )
     {
         OGRFieldDefn    oField( OGRSQLiteParamsUnquote(sqlite3_column_name( hStmt, iCol )),
                                 OFTString );
@@ -419,23 +418,28 @@ void OGRGeoPackageLayer::BuildFeatureDefn( const char *pszLayerName,
                         poSRS->Dereference();
                     }
                     delete poGeom;
+                    poGeom = NULL;
 
                     m_poFeatureDefn->AddGeomFieldDefn(&oGeomField);
                     iGeomCol = iCol;
                     continue;
                 }
+                // Unlikely to have poGeom be valid, but just in case, check
+                // if we need to delete it.
+                if (poGeom != NULL)
+                    delete poGeom;
             }
         }
 
         switch( nColType )
         {
           case SQLITE_INTEGER:
-            if( CSLTestBoolean(CPLGetConfigOption("OGR_PROMOTE_TO_INTEGER64", "FALSE")) )
+            if( CPLTestBool(CPLGetConfigOption("OGR_PROMOTE_TO_INTEGER64", "FALSE")) )
                 oField.SetType( OFTInteger64 );
             else
             {
                 GIntBig nVal = sqlite3_column_int64(hStmt, iCol);
-                if( (GIntBig)(int)nVal == nVal )
+                if( CPL_INT64_FITS_ON_INT32(nVal) )
                     oField.SetType( OFTInteger );
                 else
                     oField.SetType( OFTInteger64 );

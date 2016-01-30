@@ -78,7 +78,9 @@ static int FindNearestColor( int nColors, int *panPCT,
                              int nRedValue, int nGreenValue, int nBlueValue );
 
 /* Structure for a hashmap from a color code to a color index of the color table */
-typedef struct  /* NOTE: if changing the size of this structure, edit MEDIAN_CUT_AND_DITHER_BUFFER_SIZE_65536 */
+/* NOTE: if changing the size of this structure, edit */
+/* MEDIAN_CUT_AND_DITHER_BUFFER_SIZE_65536 in gdal_alg_priv.h and take into account HashHistogram in gdalmediancut.cpp */
+typedef struct
 {
     GUInt32 nColorCode;
     GUInt32 nColorCode2;
@@ -214,16 +216,20 @@ int GDALDitherRGB2PCTInternal( GDALRasterBandH hRed,
         return CE_Failure;
     }
     
-    for( iColor = 0; iColor < nColors; iColor++ )
+    iColor = 0;
+    do
     {
         GDALColorEntry	sEntry;
 
         GDALGetColorEntryAsRGB( hColorTable, iColor, &sEntry );
-        CAST_PCT(anPCT)[4*iColor+0] = sEntry.c1;
-        CAST_PCT(anPCT)[4*iColor+1] = sEntry.c2;
-        CAST_PCT(anPCT)[4*iColor+2] = sEntry.c3;
+        CAST_PCT(anPCT)[4*iColor+0] = static_cast<GByte>(sEntry.c1);
+        CAST_PCT(anPCT)[4*iColor+1] = static_cast<GByte>(sEntry.c2);
+        CAST_PCT(anPCT)[4*iColor+2] = static_cast<GByte>(sEntry.c3);
         CAST_PCT(anPCT)[4*iColor+3] = 0;
-    }
+
+        iColor ++;
+    } while( iColor < nColors );
+
 #ifdef USE_SSE2
     /* Pad to multiple of 8 colors */
     int nColorsMod8 = nColors % 8;
@@ -245,13 +251,13 @@ int GDALDitherRGB2PCTInternal( GDALRasterBandH hRed,
     int nCLevels = 1 << nBits;
     ColorIndex* psColorIndexMap = NULL;
 
-    pabyRed = (GByte *) VSIMalloc(nXSize);
-    pabyGreen = (GByte *) VSIMalloc(nXSize);
-    pabyBlue = (GByte *) VSIMalloc(nXSize);
+    pabyRed = (GByte *) VSI_MALLOC_VERBOSE(nXSize);
+    pabyGreen = (GByte *) VSI_MALLOC_VERBOSE(nXSize);
+    pabyBlue = (GByte *) VSI_MALLOC_VERBOSE(nXSize);
 
-    pabyIndex = (GByte *) VSIMalloc(nXSize);
+    pabyIndex = (GByte *) VSI_MALLOC_VERBOSE(nXSize);
 
-    panError = (int *) VSICalloc(sizeof(int),(nXSize+2) * 3);
+    panError = (int *) VSI_CALLOC_VERBOSE(sizeof(int),(nXSize+2) * 3);
     
     if (pabyRed == NULL ||
         pabyGreen == NULL ||
@@ -259,8 +265,6 @@ int GDALDitherRGB2PCTInternal( GDALRasterBandH hRed,
         pabyIndex == NULL ||
         panError == NULL)
     {
-        CPLError( CE_Failure, CPLE_OutOfMemory,
-                  "VSIMalloc(): Out of memory in GDALDitherRGB2PCT" );
         err = CE_Failure;
         goto end_and_cleanup;
     }
@@ -271,12 +275,10 @@ int GDALDitherRGB2PCTInternal( GDALRasterBandH hRed,
 /*      Build a 24bit to 8 bit color mapping.                           */
 /* -------------------------------------------------------------------- */
 
-        pabyColorMap = (GByte *) VSIMalloc(nCLevels * nCLevels * nCLevels 
+        pabyColorMap = (GByte *) VSI_MALLOC_VERBOSE(nCLevels * nCLevels * nCLevels 
                                         * sizeof(GByte));
         if( pabyColorMap == NULL )
         {
-            CPLError( CE_Failure, CPLE_OutOfMemory,
-                  "VSIMalloc(): Out of memory in GDALDitherRGB2PCT" );
             err = CE_Failure;
             goto end_and_cleanup;
         }
@@ -322,12 +324,16 @@ int GDALDitherRGB2PCTInternal( GDALRasterBandH hRed,
 /* -------------------------------------------------------------------- */
 /*      Read source data.                                               */
 /* -------------------------------------------------------------------- */
-        GDALRasterIO( hRed, GF_Read, 0, iScanline, nXSize, 1, 
+        err = GDALRasterIO( hRed, GF_Read, 0, iScanline, nXSize, 1, 
                       pabyRed, nXSize, 1, GDT_Byte, 0, 0 );
-        GDALRasterIO( hGreen, GF_Read, 0, iScanline, nXSize, 1, 
+        if( err == CE_None )
+            err = GDALRasterIO( hGreen, GF_Read, 0, iScanline, nXSize, 1, 
                       pabyGreen, nXSize, 1, GDT_Byte, 0, 0 );
-        GDALRasterIO( hBlue, GF_Read, 0, iScanline, nXSize, 1, 
+        if( err == CE_None )
+            err = GDALRasterIO( hBlue, GF_Read, 0, iScanline, nXSize, 1, 
                       pabyBlue, nXSize, 1, GDT_Byte, 0, 0 );
+        if( err != CE_None )
+            goto end_and_cleanup;
 
 /* -------------------------------------------------------------------- */
 /*	Apply the error from the previous line to this one.		*/
@@ -369,7 +375,7 @@ int GDALDitherRGB2PCTInternal( GDALRasterBandH hRed,
                 GUInt32 nIdx = nColorCode % PRIME_FOR_65536;
                 //int nCollisions = 0;
                 //static int nMaxCollisions = 0;
-                while( TRUE )
+                while( true )
                 {
                     if( psColorIndexMap[nIdx].nColorCode == nColorCode )
                     {
@@ -437,7 +443,7 @@ int GDALDitherRGB2PCTInternal( GDALRasterBandH hRed,
                 int iRed   = nRedValue *   nCLevels   / 256;
                 int iGreen = nGreenValue * nCLevels / 256;
                 int iBlue  = nBlueValue *  nCLevels  / 256;
-                
+
                 iIndex = pabyColorMap[iRed + iGreen * nCLevels 
                                     + iBlue * nCLevels * nCLevels];
             }
@@ -446,10 +452,10 @@ int GDALDitherRGB2PCTInternal( GDALRasterBandH hRed,
                 GUInt32 nColorCode = MAKE_COLOR_CODE(nRedValue, nGreenValue, nBlueValue);
                 GInt16* psIndex = &pasDynamicColorMap[nColorCode];
                 if( *psIndex < 0 )
-                    iIndex = *psIndex = FindNearestColor( nColors, anPCT,
+                    iIndex = *psIndex = static_cast<GInt16>(FindNearestColor( nColors, anPCT,
                                                           nRedValue,
                                                           nGreenValue,
-                                                          nBlueValue );
+                                                          nBlueValue ));
                 else
                     iIndex = *psIndex;
             }
@@ -498,8 +504,10 @@ int GDALDitherRGB2PCTInternal( GDALRasterBandH hRed,
 /* -------------------------------------------------------------------- */
 /*      Write results.                                                  */
 /* -------------------------------------------------------------------- */
-        GDALRasterIO( hTarget, GF_Write, 0, iScanline, nXSize, 1, 
+        err = GDALRasterIO( hTarget, GF_Write, 0, iScanline, nXSize, 1, 
                       pabyIndex, nXSize, 1, GDT_Byte, 0, 0 );
+        if( err != CE_None )
+            break;
     }
 
     pfnProgress( 1.0, NULL, pProgressArg );

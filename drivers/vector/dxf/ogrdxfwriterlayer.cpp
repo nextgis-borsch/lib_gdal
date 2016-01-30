@@ -36,22 +36,18 @@
 
 CPL_CVSID("$Id$");
 
-#ifndef PI
-#define PI  3.14159265358979323846
-#endif 
-
 /************************************************************************/
 /*                         OGRDXFWriterLayer()                          */
 /************************************************************************/
 
-OGRDXFWriterLayer::OGRDXFWriterLayer( OGRDXFWriterDS *poDS, VSILFILE *fp )
+OGRDXFWriterLayer::OGRDXFWriterLayer( OGRDXFWriterDS *poDSIn, VSILFILE *fpIn )
 
 {
-    this->fp = fp;
-    this->poDS = poDS;
+    this->fp = fpIn;
+    this->poDS = poDSIn;
 
     nNextAutoID = 1;
-    bWriteHatch = CSLTestBoolean(CPLGetConfigOption("DXF_WRITE_HATCH", "YES"));
+    bWriteHatch = CPLTestBool(CPLGetConfigOption("DXF_WRITE_HATCH", "YES"));
 
     poFeatureDefn = new OGRFeatureDefn( "entities" );
     poFeatureDefn->Reference();
@@ -76,10 +72,10 @@ OGRDXFWriterLayer::OGRDXFWriterLayer( OGRDXFWriterDS *poDS, VSILFILE *fp )
 
     OGRFieldDefn  oBlockField( "BlockName", OFTString );
     poFeatureDefn->AddFieldDefn( &oBlockField );
-    
+
     OGRFieldDefn  oScaleField( "BlockScale", OFTRealList );
     poFeatureDefn->AddFieldDefn( &oScaleField );
-    
+
     OGRFieldDefn  oBlockAngleField( "BlockAngle", OFTReal );
     poFeatureDefn->AddFieldDefn( &oBlockAngleField );
 }
@@ -272,7 +268,7 @@ OGRErr OGRDXFWriterLayer::WriteINSERT( OGRFeature *poFeature )
             WriteValue( 62, ColorStringToDXFColor( poSymbol->Color(bDefault) ) );
     }
     delete poTool;
-    
+
 /* -------------------------------------------------------------------- */
 /*      Write location.                                                 */
 /* -------------------------------------------------------------------- */
@@ -287,7 +283,7 @@ OGRErr OGRDXFWriterLayer::WriteINSERT( OGRFeature *poFeature )
         if( !WriteValue( 30, poPoint->getZ() ) )
             return OGRERR_FAILURE;
     }
-    
+
 /* -------------------------------------------------------------------- */
 /*      Write scaling.                                                  */
 /* -------------------------------------------------------------------- */
@@ -358,7 +354,7 @@ OGRErr OGRDXFWriterLayer::WritePOINT( OGRFeature *poFeature )
         if( !WriteValue( 30, poPoint->getZ() ) )
             return OGRERR_FAILURE;
     }
-    
+
     return OGRERR_NONE;
 }
 
@@ -400,7 +396,7 @@ CPLString OGRDXFWriterLayer::TextEscape( const char *pszInput )
     }
 
     CPLFree(panInput);
-    
+
     return osResult;
 }
 
@@ -469,7 +465,7 @@ OGRErr OGRDXFWriterLayer::WriteTEXT( OGRFeature *poFeature )
 /*      Anchor / Attachment Point                                       */
 /* -------------------------------------------------------------------- */
         int nAnchor = poLabel->Anchor(bDefault);
-        
+
         if( !bDefault )
         {
             const static int anAnchorMap[] = 
@@ -507,7 +503,7 @@ OGRErr OGRDXFWriterLayer::WriteTEXT( OGRFeature *poFeature )
         if( !WriteValue( 30, poPoint->getZ() ) )
             return OGRERR_FAILURE;
     }
-    
+
     return OGRERR_NONE;
 
 }
@@ -551,18 +547,16 @@ OGRDXFWriterLayer::PrepareLineTypeDefinition( CPL_UNUSED OGRFeature *poFeature,
              pszUnit++ ) {}
 
         osAmount.assign(pszToken,(int) (pszUnit-pszToken));
-        
+
         // If the unit is other than 'g' we really should be trying to 
         // do some type of transformation - but what to do?  Pretty hard.
-        
-        // 
 
         // Even entries are "pen down" represented as negative in DXF.
         if( i%2 == 0 )
             osDXFEntry.Printf( " 49\n-%s\n 74\n0\n", osAmount.c_str() );
         else
             osDXFEntry.Printf( " 49\n%s\n 74\n0\n", osAmount.c_str() );
-        
+
         osDef += osDXFEntry;
 
         dfTotalLength += CPLAtof(osAmount);
@@ -572,7 +566,7 @@ OGRDXFWriterLayer::PrepareLineTypeDefinition( CPL_UNUSED OGRFeature *poFeature,
 /*      Prefix 73 and 40 items to the definition.                       */
 /* -------------------------------------------------------------------- */
     CPLString osPrefix;
-    
+
     osPrefix.Printf( " 73\n%d\n 40\n%.6g\n", 
                      CSLCount(papszTokens), 
                      dfTotalLength );
@@ -602,7 +596,7 @@ OGRErr OGRDXFWriterLayer::WritePOLYLINE( OGRFeature *poFeature,
     {
         return OGRERR_NONE;
     }
-            
+
     if( wkbFlatten(poGeom->getGeometryType()) == wkbMultiPolygon 
         || wkbFlatten(poGeom->getGeometryType()) == wkbMultiLineString )
     {
@@ -814,7 +808,7 @@ OGRErr OGRDXFWriterLayer::WritePOLYLINE( OGRFeature *poFeature,
         WriteCore( poFeature );
         WriteValue( 100, "AcDbEntity" );
     }
-    
+
     delete poTool;
 
     return OGRERR_NONE;
@@ -852,7 +846,7 @@ OGRErr OGRDXFWriterLayer::WritePOLYLINE( OGRFeature *poFeature,
 
     WriteValue( 0, "SEQEND" );
     WriteValue( 8, "0" );
-    
+
     return OGRERR_NONE;
 #endif
 }
@@ -876,7 +870,7 @@ OGRErr OGRDXFWriterLayer::WriteHATCH( OGRFeature *poFeature,
     {
         return OGRERR_NONE;
     }
-            
+
     if( wkbFlatten(poGeom->getGeometryType()) == wkbMultiPolygon )
     {
         OGRGeometryCollection *poGC = (OGRGeometryCollection *) poGeom;
@@ -916,7 +910,7 @@ OGRErr OGRDXFWriterLayer::WriteHATCH( OGRFeature *poFeature,
 
     WriteValue( 2, "SOLID" ); // fill pattern
     WriteValue( 70, 1 ); // solid fill
-    WriteValue( 71, 0 ); // associativity 
+    WriteValue( 71, 0 ); // associativity
 
 /* -------------------------------------------------------------------- */
 /*      Do we have styling information?                                 */
@@ -954,7 +948,7 @@ OGRErr OGRDXFWriterLayer::WriteHATCH( OGRFeature *poFeature,
 
         if( poPen->Color(bDefault) != NULL && !bDefault )
             WriteValue( 62, ColorStringToDXFColor( poPen->Color(bDefault) ) );
-        
+
         double dfWidthInMM = poPen->Width(bDefault);
 
         if( !bDefault )
@@ -1035,7 +1029,7 @@ OGRErr OGRDXFWriterLayer::WriteHATCH( OGRFeature *poFeature,
         WriteValue( 72, 0 ); // has bulge
         WriteValue( 73, 1 ); // is closed
         WriteValue( 93, poLR->getNumPoints() );
-        
+
         for( int iVert = 0; iVert < poLR->getNumPoints(); iVert++ )
         {
             WriteValue( 10, poLR->getX(iVert) );
@@ -1048,7 +1042,7 @@ OGRErr OGRDXFWriterLayer::WriteHATCH( OGRFeature *poFeature,
     WriteValue( 75, 0 ); // hatch style = Hatch "odd parity" area (Normal style)
     WriteValue( 76, 1 ); // hatch pattern type = predefined
     WriteValue( 98, 0 ); // 0 seed points
-    
+
     return OGRERR_NONE;
 
 #ifdef notdef
@@ -1084,7 +1078,7 @@ OGRErr OGRDXFWriterLayer::WriteHATCH( OGRFeature *poFeature,
 
     WriteValue( 0, "SEQEND" );
     WriteValue( 8, "0" );
-    
+
     return OGRERR_NONE;
 #endif
 }
@@ -1098,7 +1092,7 @@ OGRErr OGRDXFWriterLayer::ICreateFeature( OGRFeature *poFeature )
 {
     OGRGeometry *poGeom = poFeature->GetGeometryRef();
     OGRwkbGeometryType eGType = wkbNone;
-    
+
     if( poGeom != NULL )
     {
         if( !poGeom->IsEmpty() )
@@ -1128,12 +1122,12 @@ OGRErr OGRDXFWriterLayer::ICreateFeature( OGRFeature *poFeature )
                 || poDS->poBlocksLayer->FindBlock(pszBlockName) == NULL )
                 pszBlockName = NULL;
         }
-                                  
+
         if( pszBlockName != NULL )
             return WriteINSERT( poFeature );
-            
+
         else if( poFeature->GetStyleString() != NULL
-            && EQUALN(poFeature->GetStyleString(),"LABEL",5) )
+            && STARTS_WITH_CI(poFeature->GetStyleString(), "LABEL") )
             return WriteTEXT( poFeature );
         else
             return WritePOINT( poFeature );
@@ -1161,14 +1155,14 @@ OGRErr OGRDXFWriterLayer::ICreateFeature( OGRFeature *poFeature )
         for( iGeom = 0; iGeom < poGC->getNumGeometries(); iGeom++ )
         {
             poFeature->SetGeometry( poGC->getGeometryRef(iGeom) );
-                                    
+
             OGRErr eErr = CreateFeature( poFeature );
-            
+
             if( eErr != OGRERR_NONE )
                 return eErr;
 
         }
-        
+
         poFeature->SetGeometryDirectly( poGC );
         return OGRERR_NONE;
     }
@@ -1198,7 +1192,7 @@ int OGRDXFWriterLayer::ColorStringToDXFColor( const char *pszRGB )
 
     int nCount  = sscanf(pszRGB,"#%2x%2x%2x%2x",&nRed,&nGreen,&nBlue, 
                          &nTransparency);
-   
+
     if (nCount < 3 )
         return -1;
 
@@ -1222,6 +1216,6 @@ int OGRDXFWriterLayer::ColorStringToDXFColor( const char *pszRGB )
             nMinDist = nDist;
         }
     }
-    
+
     return nBestColor;
 }

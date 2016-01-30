@@ -80,8 +80,8 @@
 #include "mitab.h"
 #include "ogrsf_frmts.h"
 
-#ifndef _MITAB_OGR_DRIVER_H_INCLUDED_
-#define _MITAB_OGR_DRIVER_H_INCLUDED_
+#ifndef MITAB_OGR_DRIVER_H_INCLUDED_
+#define MITAB_OGR_DRIVER_H_INCLUDED_
 
 /*=====================================================================
  *            OGRTABDataSource Class
@@ -104,6 +104,7 @@ class OGRTABDataSource : public OGRDataSource
     int                 m_bSingleLayerAlreadyCreated;
     GBool               m_bQuickSpatialIndexMode;
     int                 m_bUpdate;
+    int                 m_nBlockSize;
 
   public:
                 OGRTABDataSource();
@@ -116,7 +117,7 @@ class OGRTABDataSource : public OGRDataSource
     int          GetLayerCount();
     OGRLayer    *GetLayer( int );
     int          TestCapability( const char * );
-    
+
     OGRLayer    *ICreateLayer(const char *, 
                              OGRSpatialReference * = NULL,
                              OGRwkbGeometryType = wkbUnknown,
@@ -127,4 +128,4 @@ class OGRTABDataSource : public OGRDataSource
 
 void CPL_DLL RegisterOGRTAB();
 
-#endif /* _MITAB_OGR_DRIVER_H_INCLUDED_ */
+#endif /* MITAB_OGR_DRIVER_H_INCLUDED_ */

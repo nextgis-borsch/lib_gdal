@@ -59,7 +59,7 @@ GDALOpenInfo::GDALOpenInfo( const char * pszFilenameIn, int nOpenFlagsIn,
     if( strlen(pszFilenameIn) == 2 && pszFilenameIn[1] == ':' )
     {
         char    szAltPath[10];
-        
+
         strcpy( szAltPath, pszFilenameIn );
         strcat( szAltPath, "\\" );
         pszFilename = CPLStrdup( szAltPath );
@@ -83,7 +83,7 @@ GDALOpenInfo::GDALOpenInfo( const char * pszFilenameIn, int nOpenFlagsIn,
     papszOpenOptions = NULL;
 
 #ifdef HAVE_READLINK
-    int  bHasRetried = FALSE;
+    bool bHasRetried = false;
 #endif
 
 /* -------------------------------------------------------------------- */
@@ -94,19 +94,32 @@ GDALOpenInfo::GDALOpenInfo( const char * pszFilenameIn, int nOpenFlagsIn,
 #ifdef HAVE_READLINK
 retry:
 #endif
-    int bPotentialDirectory = FALSE;
+
+#ifdef __FreeBSD__
+    /* FreeBSD 8 oddity: fopen(a_directory, "rb") returns non NULL */
+    bool bPotentialDirectory = (eAccess == GA_ReadOnly);
+#else
+    bool bPotentialDirectory = false;
+#endif
 
     /* Check if the filename might be a directory of a special virtual file system */
-    if( strncmp(pszFilename, "/vsizip/", strlen("/vsizip/")) == 0 ||
-        strncmp(pszFilename, "/vsitar/", strlen("/vsitar/")) == 0 )
+    if( STARTS_WITH(pszFilename, "/vsizip/") ||
+        STARTS_WITH(pszFilename, "/vsitar/") )
     {
         const char* pszExt = CPLGetExtension(pszFilename);
-        if( EQUAL(pszExt, "zip") || EQUAL(pszExt, "tar") || EQUAL(pszExt, "gz") )
-            bPotentialDirectory = TRUE;
+        if( EQUAL(pszExt, "zip") || EQUAL(pszExt, "tar") || EQUAL(pszExt, "gz")
+#ifdef DEBUG
+            /* For AFL, so that .cur_input is detected as the archive filename */
+            || EQUAL( CPLGetFilename(pszFilename), ".cur_input" )
+#endif
+          )
+        {
+            bPotentialDirectory = true;
+        }
     }
-    else if( strncmp(pszFilename, "/vsicurl/", strlen("/vsicurl/")) == 0 )
+    else if( STARTS_WITH(pszFilename, "/vsicurl/") )
     {
-        bPotentialDirectory = TRUE;
+        bPotentialDirectory = true;
     }
 
     if( bPotentialDirectory )
@@ -139,7 +152,7 @@ retry:
                         VSI_STAT_EXISTS_FLAG | VSI_STAT_NATURE_FLAG ) == 0 &&
             VSI_ISDIR( sStat.st_mode ) )
         {
-            VSIFCloseL(fpL);
+            CPL_IGNORE_RET_VAL(VSIFCloseL(fpL));
             fpL = NULL;
             CPLFree(pabyHeader);
             pabyHeader = NULL;
@@ -156,20 +169,20 @@ retry:
                 bIsDirectory = TRUE;
         }
 #ifdef HAVE_READLINK
-        else if ( !bHasRetried && strncmp(pszFilename, "/vsi", strlen("/vsi")) != 0 )
+        else if ( !bHasRetried && !STARTS_WITH(pszFilename, "/vsi") )
         {
             /* If someone creates a file with "ln -sf /vsicurl/http://download.osgeo.org/gdal/data/gtiff/utm.tif my_remote_utm.tif" */
             /* we will be able to open it by passing my_remote_utm.tif */
             /* This helps a lot for GDAL based readers that only provide file explorers to open datasets */
             char szPointerFilename[2048];
-            int nBytes = readlink(pszFilename, szPointerFilename, sizeof(szPointerFilename));
+            int nBytes = static_cast<int>(readlink(pszFilename, szPointerFilename, sizeof(szPointerFilename)));
             if (nBytes != -1)
             {
                 szPointerFilename[MIN(nBytes, (int)sizeof(szPointerFilename)-1)] = 0;
                 CPLFree(pszFilename);
                 pszFilename = CPLStrdup(szPointerFilename);
                 papszSiblingsIn = NULL;
-                bHasRetried = TRUE;
+                bHasRetried = true;
                 goto retry;
             }
         }
@@ -194,7 +207,7 @@ retry:
             papszSiblingFiles = CSLAddString( NULL, CPLGetFilename(pszFilename) );
             bHasGotSiblingFiles = TRUE;
         }
-        else if( CSLTestBoolean(pszOptionVal) )
+        else if( CPLTestBool(pszOptionVal) )
         {
             /* skip reading the directory */
             papszSiblingFiles = NULL;
@@ -225,7 +238,7 @@ GDALOpenInfo::~GDALOpenInfo()
     CPLFree( pszFilename );
 
     if( fpL != NULL )
-        VSIFCloseL( fpL );
+        CPL_IGNORE_RET_VAL(VSIFCloseL( fpL ));
     CSLDestroy( papszSiblingFiles );
 }
 
@@ -240,12 +253,20 @@ char** GDALOpenInfo::GetSiblingFiles()
     bHasGotSiblingFiles = TRUE;
 
     CPLString osDir = CPLGetDirname( pszFilename );
-    papszSiblingFiles = VSIReadDir( osDir );
+    const int nMaxFiles = atoi(CPLGetConfigOption("GDAL_READDIR_LIMIT_ON_OPEN", "1000"));
+    papszSiblingFiles = VSIReadDirEx( osDir, nMaxFiles );
+    if( nMaxFiles > 0 && CSLCount(papszSiblingFiles) > nMaxFiles )
+    {
+        CPLDebug("GDAL", "GDAL_READDIR_LIMIT_ON_OPEN reached on %s",
+                 osDir.c_str());
+        CSLDestroy(papszSiblingFiles);
+        papszSiblingFiles = NULL;
+    }
 
     /* Small optimization to avoid unnecessary stat'ing from PAux or ENVI */
     /* drivers. The MBTiles driver needs no companion file. */
     if( papszSiblingFiles == NULL &&
-        strncmp(pszFilename, "/vsicurl/", 9) == 0 &&
+        STARTS_WITH(pszFilename, "/vsicurl/") &&
         EQUAL(CPLGetExtension( pszFilename ),"mbtiles") )
     {
         papszSiblingFiles = CSLAddString( NULL, CPLGetFilename(pszFilename) );
@@ -254,6 +275,29 @@ char** GDALOpenInfo::GetSiblingFiles()
     return papszSiblingFiles;
 }
 
+/************************************************************************/
+/*                         StealSiblingFiles()                          */
+/*                                                                      */
+/*      Same as GetSiblingFiles() except that the list is stealed       */
+/*      (ie ownership transferred to the caller) and the associated     */
+/*      member variable is set to NULL.                                 */
+/************************************************************************/
+
+char** GDALOpenInfo::StealSiblingFiles()
+{
+    char** papszRet = GetSiblingFiles();
+    papszSiblingFiles = NULL;
+    return papszRet;
+}
+
+/************************************************************************/
+/*                        AreSiblingFilesLoaded()                       */
+/************************************************************************/
+
+bool GDALOpenInfo::AreSiblingFilesLoaded() const
+{
+    return bHasGotSiblingFiles != FALSE;
+}
 
 /************************************************************************/
 /*                           TryToIngest()                              */

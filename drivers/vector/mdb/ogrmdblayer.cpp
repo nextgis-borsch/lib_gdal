@@ -39,11 +39,11 @@ CPL_CVSID("$Id$");
 /*                            OGRMDBLayer()                            */
 /************************************************************************/
 
-OGRMDBLayer::OGRMDBLayer(OGRMDBDataSource* poDS, OGRMDBTable* poMDBTable)
+OGRMDBLayer::OGRMDBLayer(OGRMDBDataSource* poDSIn, OGRMDBTable* poMDBTableIn)
 
 {
-    this->poDS = poDS;
-    this->poMDBTable = poMDBTable;
+    this->poDS = poDSIn;
+    this->poMDBTable = poMDBTableIn;
 
     eGeometryType = MDB_GEOM_NONE;
 
@@ -139,7 +139,7 @@ CPLErr OGRMDBLayer::BuildFeatureDefn()
             pszGeomColumn = CPLStrdup(pszColName);
             continue;
         }
-        
+
         switch( poMDBTable->GetColumnType(iCol) )
         {
           case MDB_Boolean:
@@ -215,7 +215,7 @@ GIntBig OGRMDBLayer::GetFeatureCount(int bForce)
 OGRFeature *OGRMDBLayer::GetNextFeature()
 
 {
-    for( ; TRUE; )
+    while( true )
     {
         OGRFeature      *poFeature;
 
@@ -570,9 +570,9 @@ CPLErr OGRMDBLayer::Initialize( CPL_UNUSED const char *pszTableName,
 /*                             Initialize()                             */
 /************************************************************************/
 
-CPLErr OGRMDBLayer::Initialize( CPL_UNUSED const char *pszTableName,
+CPLErr OGRMDBLayer::Initialize( const char * /*pszTableName */,
                                 const char *pszGeomCol,
-                                OGRSpatialReference* poSRS )
+                                OGRSpatialReference* poSRSIn )
 
 
 {
@@ -591,7 +591,7 @@ CPLErr OGRMDBLayer::Initialize( CPL_UNUSED const char *pszTableName,
 
     eGeometryType = MDB_GEOM_GEOMEDIA;
 
-    this->poSRS = poSRS;
+    this->poSRS = poSRSIn;
 
     CPLErr eErr;
     eErr = BuildFeatureDefn();

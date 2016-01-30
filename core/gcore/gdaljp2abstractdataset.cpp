@@ -77,21 +77,21 @@ int GDALJP2AbstractDataset::CloseDependentDatasets()
 /************************************************************************/
 
 void GDALJP2AbstractDataset::LoadJP2Metadata(GDALOpenInfo* poOpenInfo,
-                                             const char* pszOverideFilenameIn)
+                                             const char* pszOverrideFilenameIn)
 {
-    const char* pszOverideFilename = pszOverideFilenameIn;
-    if( pszOverideFilename == NULL )
-        pszOverideFilename = poOpenInfo->pszFilename;
+    const char* pszOverrideFilename = pszOverrideFilenameIn;
+    if( pszOverrideFilename == NULL )
+        pszOverrideFilename = poOpenInfo->pszFilename;
 
 /* -------------------------------------------------------------------- */
 /*      Check for georeferencing information.                           */
 /* -------------------------------------------------------------------- */
     GDALJP2Metadata oJP2Geo;
 
-    if( (poOpenInfo->fpL != NULL && pszOverideFilenameIn == NULL &&
+    if( (poOpenInfo->fpL != NULL && pszOverrideFilenameIn == NULL &&
          oJP2Geo.ReadAndParse(poOpenInfo->fpL) ) ||
-        (!(poOpenInfo->fpL != NULL && pszOverideFilenameIn == NULL) &&
-         oJP2Geo.ReadAndParse( pszOverideFilename )) )
+        (!(poOpenInfo->fpL != NULL && pszOverrideFilenameIn == NULL) &&
+         oJP2Geo.ReadAndParse( pszOverrideFilename )) )
     {
         CPLFree(pszProjection);
         pszProjection = CPLStrdup(oJP2Geo.pszProjection);
@@ -209,10 +209,10 @@ void GDALJP2AbstractDataset::LoadJP2Metadata(GDALOpenInfo* poOpenInfo,
     if( !bGeoTransformValid )
     {
         bGeoTransformValid |=
-            GDALReadWorldFile2( pszOverideFilename, NULL,
+            GDALReadWorldFile2( pszOverrideFilename, NULL,
                                 adfGeoTransform,
                                 poOpenInfo->GetSiblingFiles(), &pszWldFilename )
-            || GDALReadWorldFile2( pszOverideFilename, ".wld",
+            || GDALReadWorldFile2( pszOverrideFilename, ".wld",
                                    adfGeoTransform,
                                    poOpenInfo->GetSiblingFiles(), &pszWldFilename );
     }
@@ -304,8 +304,7 @@ void GDALJP2AbstractDataset::LoadVectorLayers(int bOpenRemoteResources)
             CPLXMLNode* psChild = psGCorGMLJP2FeaturesChildIter->psChild;
             if( psChild->eType == CXT_Attribute &&
                 strcmp(psChild->pszValue, "xlink:href") == 0 &&
-                strncmp(psChild->psChild->pszValue,
-                        "gmljp2://xml/", strlen("gmljp2://xml/")) == 0 )
+                STARTS_WITH(psChild->psChild->pszValue, "gmljp2://xml/") )
             {
                 const char* pszBoxName = psChild->psChild->pszValue + strlen("gmljp2://xml/");
                 char** papszBoxData = GetMetadata(CPLSPrintf("xml:%s", pszBoxName));
@@ -323,11 +322,13 @@ void GDALJP2AbstractDataset::LoadVectorLayers(int bOpenRemoteResources)
             }
             if( psChild->eType == CXT_Attribute &&
                 strcmp(psChild->pszValue, "xlink:href") == 0 &&
-                (strncmp(psChild->psChild->pszValue, "http://", strlen("http://")) == 0 ||
-                 strncmp(psChild->psChild->pszValue, "https://", strlen("https://")) == 0) )
+                (STARTS_WITH(psChild->psChild->pszValue, "http://") ||
+                 STARTS_WITH(psChild->psChild->pszValue, "https://")) )
             {
                 if( !bOpenRemoteResources )
-                    CPLDebug("GMLJP2", "Remote feature collection %s mentionned in GMLJP2 box",
+                    CPLDebug("GMLJP2",
+                             "Remote feature collection %s mentioned in "
+                             "GMLJP2 box",
                              psChild->psChild->pszValue);
                 else
                     osGMLTmpFile = "/vsicurl/" + CPLString(psChild->psChild->pszValue);
@@ -366,17 +367,17 @@ void GDALJP2AbstractDataset::LoadVectorLayers(int bOpenRemoteResources)
                     {
                         for(char** papszIter = papszTokens; *papszIter; papszIter += 2 )
                         {
-                            if( strncmp(papszIter[1], "gmljp2://xml/", strlen("gmljp2://xml/")) == 0 )
+                            if( STARTS_WITH(papszIter[1], "gmljp2://xml/") )
                             {
                                 const char* pszBoxName = papszIter[1] + strlen("gmljp2://xml/");
                                 char** papszBoxData = GetMetadata(CPLSPrintf("xml:%s", pszBoxName));
                                 if( papszBoxData != NULL )
                                 {
                                     osXSDTmpFile = CPLSPrintf("/vsimem/gmljp2/%p/my.xsd", this);
-                                    VSIFCloseL(VSIFileFromMemBuffer(osXSDTmpFile,
+                                    CPL_IGNORE_RET_VAL(VSIFCloseL(VSIFileFromMemBuffer(osXSDTmpFile,
                                                                     (GByte*)papszBoxData[0],
                                                                     strlen(papszBoxData[0]),
-                                                                    FALSE));
+                                                                    FALSE)));
                                 }
                                 else
                                 {
@@ -434,7 +435,7 @@ void GDALJP2AbstractDataset::LoadVectorLayers(int bOpenRemoteResources)
                 CPLDebug("GMLJP2", "No GML driver found to read feature collection");
             }
 
-            if( strncmp(osGMLTmpFile, "/vsicurl/", strlen("/vsicurl/")) != 0 )
+            if( !STARTS_WITH(osGMLTmpFile, "/vsicurl/") )
                 VSIUnlink(osGMLTmpFile);
             if( osXSDTmpFile.size() )
                 VSIUnlink(osXSDTmpFile);

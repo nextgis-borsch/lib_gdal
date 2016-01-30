@@ -92,7 +92,7 @@ OGRErr OGRWAsPDataSource::Load(bool bSilent)
         if (!bSilent) CPLError( CE_Failure, CPLE_NotSupported, "layer already loaded");
         return OGRERR_FAILURE;
     }
-    /* Parse the first line of the file in case it'a a spatial ref*/
+    /* Parse the first line of the file in case it's a spatial ref*/
     const char * pszLine = CPLReadLine2L( hFile, 1024, NULL );
     if ( !pszLine )
     {
@@ -127,7 +127,7 @@ OGRErr OGRWAsPDataSource::Load(bool bSilent)
         oLayer.reset();
         return OGRERR_FAILURE;
     }
-    
+
     double dfValues[4];
     int iNumValues = 0;
     {
@@ -227,12 +227,12 @@ OGRLayer *OGRWAsPDataSource::ICreateLayer(const char *pszName,
     const CPLString sFields( pszFields ? pszFields : "" );
     if ( ! sFields.empty() )
     {
-        /* parse the coma separated list of fields */
-        const size_t iComa = sFields.find(',');
-        if ( std::string::npos != iComa )
+        /* parse the comma separated list of fields */
+        const size_t iComma = sFields.find(',');
+        if ( std::string::npos != iComma )
         {
-            sFirstField = sFields.substr(0, iComa); 
-            sSecondField = sFields.substr( iComa + 1 );
+            sFirstField = sFields.substr(0, iComma);
+            sSecondField = sFields.substr( iComma + 1 );
         }
         else
         {
@@ -243,9 +243,9 @@ OGRLayer *OGRWAsPDataSource::ICreateLayer(const char *pszName,
     const char *pszGeomField = CSLFetchNameValue( papszOptions, "WASP_GEOM_FIELD" );
     sGeomField = CPLString( pszGeomField ? pszGeomField : "" );
 
-    const bool bMerge = CSLTestBoolean(CSLFetchNameValueDef( papszOptions, "WASP_MERGE", "YES" ));
+    const bool bMerge = CPLTestBool(CSLFetchNameValueDef( papszOptions, "WASP_MERGE", "YES" ));
 
-    std::auto_ptr<double> pdfTolerance;
+    UNIQUEPTR<double> pdfTolerance;
     {
         const char *pszToler = CSLFetchNameValue( papszOptions, "WASP_TOLERANCE" );
 
@@ -271,7 +271,7 @@ OGRLayer *OGRWAsPDataSource::ICreateLayer(const char *pszName,
         }
     }
 
-    std::auto_ptr<double> pdfAdjacentPointTolerance;
+    UNIQUEPTR<double> pdfAdjacentPointTolerance;
     {
         const char *pszAdjToler = CSLFetchNameValue( papszOptions, "WASP_ADJ_TOLER" );
         if ( pszAdjToler )
@@ -287,7 +287,7 @@ OGRLayer *OGRWAsPDataSource::ICreateLayer(const char *pszName,
         }
     }
 
-    std::auto_ptr<double> pdfPointToCircleRadius;
+    UNIQUEPTR<double> pdfPointToCircleRadius;
     {
         const char *pszPtToCircRad = CSLFetchNameValue( papszOptions, "WASP_POINT_TO_CIRCLE_RADIUS" );
         if ( pszPtToCircRad )
@@ -315,21 +315,19 @@ OGRLayer *OGRWAsPDataSource::ICreateLayer(const char *pszName,
                                     pdfPointToCircleRadius.release() ) );
 
     char * ppszWktSpatialRef = NULL ;
-    if ( poSpatialRef 
+    if ( poSpatialRef
             && poSpatialRef->exportToProj4( &ppszWktSpatialRef ) == OGRERR_NONE )
     {
         VSIFPrintfL( hFile, "%s\n", ppszWktSpatialRef );
-        OGRFree( ppszWktSpatialRef );
     }
     else
     {
         VSIFPrintfL( hFile, "no spatial ref sys\n" );
     }
+    OGRFree( ppszWktSpatialRef );
 
     VSIFPrintfL( hFile, "  0.0 0.0 0.0 0.0\n" );
     VSIFPrintfL( hFile, "  1.0 0.0 1.0 0.0\n" );
     VSIFPrintfL( hFile, "  1.0 0.0\n" );
     return oLayer.get();
 }
-
-

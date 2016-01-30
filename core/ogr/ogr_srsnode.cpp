@@ -156,9 +156,6 @@ OGR_SRSNode *OGR_SRSNode::GetNode( const char * pszName )
 {
     int  i;
 
-    if( this == NULL )
-        return NULL;
-    
     if( nChildren > 0 && EQUAL(pszName,pszValue) )
         return this;
 
@@ -243,7 +240,7 @@ void OGR_SRSNode::InsertChild( OGR_SRSNode * poNew, int iChild )
 
     memmove( papoChildNodes + iChild + 1, papoChildNodes + iChild,
              sizeof(void*) * (nChildren - iChild - 1) );
-    
+
     papoChildNodes[iChild] = poNew;
     poNew->poParent = this;
 }
@@ -287,17 +284,17 @@ void OGR_SRSNode::DestroyChild( int iChild )
  * Note that the node value must match pszValue with the exception of
  * case.  The comparison is case insensitive.
  *
- * @param pszValue the node value being searched for.
+ * @param pszValueIn the node value being searched for.
  *
  * @return the child index, or -1 on failure. 
  */
 
-int OGR_SRSNode::FindChild( const char * pszValue ) const
+int OGR_SRSNode::FindChild( const char * pszValueIn ) const
 
 {
     for( int i = 0; i < nChildren; i++ )
     {
-        if( EQUAL(papoChildNodes[i]->pszValue,pszValue) )
+        if( EQUAL(papoChildNodes[i]->pszValue,pszValueIn) )
             return i;
     }
 
@@ -342,7 +339,7 @@ void OGR_SRSNode::SetValue( const char * pszNewValue )
 /**
  * Make a duplicate of this node, and it's children.
  *
- * @return a new node tree, which becomes the responsiblity of the caller.
+ * @return a new node tree, which becomes the responsibility of the caller.
  */
 
 OGR_SRSNode *OGR_SRSNode::Clone() const
@@ -377,7 +374,7 @@ int OGR_SRSNode::NeedsQuoting() const
     // needs to be quoted even though it appears well behaved.
     if( poParent != NULL && EQUAL(poParent->GetValue(),"AUTHORITY") )
         return TRUE;
-    
+
     // As per bugzilla bug 294, the OGC spec says the direction
     // values for the AXIS keywords should *not* be quoted.
     if( poParent != NULL && EQUAL(poParent->GetValue(),"AXIS") 
@@ -418,20 +415,20 @@ int OGR_SRSNode::NeedsQuoting() const
  * @return currently OGRERR_NONE is always returned, but the future it
  * is possible error conditions will develop. 
  */
- 
+
 
 OGRErr OGR_SRSNode::exportToWkt( char ** ppszResult ) const
 
 {
     char        **papszChildrenWkt = NULL;
-    int         nLength = strlen(pszValue)+4;
+    size_t      nLength = strlen(pszValue)+4;
     int         i;
 
 /* -------------------------------------------------------------------- */
 /*      Build a list of the WKT format for the children.                */
 /* -------------------------------------------------------------------- */
     papszChildrenWkt = (char **) CPLCalloc(sizeof(char*),(nChildren+1));
-    
+
     for( i = 0; i < nChildren; i++ )
     {
         papoChildNodes[i]->exportToWkt( papszChildrenWkt + i );
@@ -443,7 +440,7 @@ OGRErr OGR_SRSNode::exportToWkt( char ** ppszResult ) const
 /* -------------------------------------------------------------------- */
     *ppszResult = (char *) CPLMalloc(nLength);
     *ppszResult[0] = '\0';
-    
+
 /* -------------------------------------------------------------------- */
 /*      Capture this nodes value.  We put it in double quotes if        */
 /*      this is a leaf node, otherwise we assume it is a well formed    */
@@ -463,7 +460,7 @@ OGRErr OGR_SRSNode::exportToWkt( char ** ppszResult ) const
 /* -------------------------------------------------------------------- */
     if( nChildren > 0 )
         strcat( *ppszResult, "[" );
-    
+
     for( i = 0; i < nChildren; i++ )
     {
         strcat( *ppszResult, papszChildrenWkt[i] );
@@ -486,14 +483,14 @@ OGRErr OGR_SRSNode::exportToPrettyWkt( char ** ppszResult, int nDepth ) const
 
 {
     char        **papszChildrenWkt = NULL;
-    int         nLength = strlen(pszValue)+4;
+    size_t      nLength = strlen(pszValue)+4;
     int         i;
 
 /* -------------------------------------------------------------------- */
 /*      Build a list of the WKT format for the children.                */
 /* -------------------------------------------------------------------- */
     papszChildrenWkt = (char **) CPLCalloc(sizeof(char*),(nChildren+1));
-    
+
     for( i = 0; i < nChildren; i++ )
     {
         papoChildNodes[i]->exportToPrettyWkt( papszChildrenWkt + i,
@@ -506,7 +503,7 @@ OGRErr OGR_SRSNode::exportToPrettyWkt( char ** ppszResult, int nDepth ) const
 /* -------------------------------------------------------------------- */
     *ppszResult = (char *) CPLMalloc(nLength);
     *ppszResult[0] = '\0';
-    
+
 /* -------------------------------------------------------------------- */
 /*      Capture this nodes value.  We put it in double quotes if        */
 /*      this is a leaf node, otherwise we assume it is a well formed    */
@@ -526,7 +523,7 @@ OGRErr OGR_SRSNode::exportToPrettyWkt( char ** ppszResult, int nDepth ) const
 /* -------------------------------------------------------------------- */
     if( nChildren > 0 )
         strcat( *ppszResult, "[" );
-    
+
     for( i = 0; i < nChildren; i++ )
     {
         if( papoChildNodes[i]->GetChildCount() > 0 )
@@ -546,7 +543,7 @@ OGRErr OGR_SRSNode::exportToPrettyWkt( char ** ppszResult, int nDepth ) const
     {
         if( (*ppszResult)[strlen(*ppszResult)-1] == ',' )
             (*ppszResult)[strlen(*ppszResult)-1] = '\0';
-        
+
         strcat( *ppszResult, "]" );
     }
 
@@ -586,7 +583,7 @@ OGRErr OGR_SRSNode::importFromWkt( char ** ppszInput, int nRecLevel, int* pnNode
 
 {
     const char  *pszInput = *ppszInput;
-    int         bInQuotedString = FALSE;
+    bool bInQuotedString = false;
 
     /* Sanity checks */
     if( nRecLevel == 10 )
@@ -597,18 +594,18 @@ OGRErr OGR_SRSNode::importFromWkt( char ** ppszInput, int nRecLevel, int* pnNode
     {
         return OGRERR_CORRUPT_DATA;
     }
-    
+
 /* -------------------------------------------------------------------- */
 /*      Clear any existing children of this node.                       */
 /* -------------------------------------------------------------------- */
     ClearChildren();
-    
+
 /* -------------------------------------------------------------------- */
 /*      Read the ``value'' for this node.                               */
 /* -------------------------------------------------------------------- */
     char        szToken[512];
     int         nTokenLen = 0;
-    
+
     while( *pszInput != '\0' && nTokenLen < (int) sizeof(szToken)-1 )
     {
         if( *pszInput == '"' )
@@ -664,7 +661,7 @@ OGRErr OGR_SRSNode::importFromWkt( char ** ppszInput, int nRecLevel, int* pnNode
             }
 
             AddChild( poNewChild );
-            
+
             // swallow whitespace
             while( isspace(*pszInput) ) 
                 pszInput++;
@@ -712,7 +709,7 @@ void OGR_SRSNode::MakeValueSafe()
 /* -------------------------------------------------------------------- */
     if( (pszValue[0] >= '0' && pszValue[0] <= '9') || pszValue[0] != '.' )
         return;
-    
+
 /* -------------------------------------------------------------------- */
 /*      Translate non-alphanumeric values to underscores.               */
 /* -------------------------------------------------------------------- */
@@ -736,7 +733,7 @@ void OGR_SRSNode::MakeValueSafe()
 
         pszValue[++j] = pszValue[i];
     }
-    
+
     if( pszValue[j] == '_' )
         pszValue[j] = '\0';
     else
@@ -757,7 +754,7 @@ void OGR_SRSNode::MakeValueSafe()
  * continues.
  *
  * @param pszNode Restrict remapping to children of this type of node 
- *                (eg. "PROJECTION")
+ *                (e.g. "PROJECTION")
  * @param papszSrcValues a NULL terminated array of source string.  If the
  * node value matches one of these (case insensitive) then replacement occurs.
  * @param papszDstValues an array of destination strings.  On a match, the
@@ -768,9 +765,9 @@ void OGR_SRSNode::MakeValueSafe()
  * @param bChildOfHit Only TRUE if we the current node is the child of a match,
  * and so needs to be set.  Application code would normally pass FALSE for this
  * argument.
- * 
+ *
  * @return returns OGRERR_NONE unless something bad happens.  There is no
- * indication returned about whether any replacement occured.  
+ * indication returned about whether any replacement occurred.
  */
 
 OGRErr OGR_SRSNode::applyRemapper( const char *pszNode, 
@@ -798,7 +795,7 @@ OGRErr OGR_SRSNode::applyRemapper( const char *pszNode,
     }
 
 /* -------------------------------------------------------------------- */
-/*      Are the the target node?                                        */
+/*      Is this the target node?                                        */
 /* -------------------------------------------------------------------- */
     if( pszNode != NULL )
         bChildOfHit = EQUAL(pszValue,pszNode);
@@ -814,7 +811,7 @@ OGRErr OGR_SRSNode::applyRemapper( const char *pszNode,
 
     return OGRERR_NONE;
 }
-                                   
+
 /************************************************************************/
 /*                             StripNodes()                             */
 /************************************************************************/
@@ -822,7 +819,7 @@ OGRErr OGR_SRSNode::applyRemapper( const char *pszNode,
 /**
  * Strip child nodes matching name.
  *
- * Removes any decendent nodes of this node that match the given name. 
+ * Removes any descendant nodes of this node that match the given name.
  * Of course children of removed nodes are also discarded.
  *
  * @param pszName the name for nodes that should be removed.
@@ -865,7 +862,7 @@ static const char * const apszGEOCCSRule[] =
 static const char * const apszVERTCSRule[] = 
 { "VERT_CS", "VERT_DATUM", "UNIT", "AXIS", "EXTENSION", "AUTHORITY", NULL };
 
-static const char * const *apszOrderingRules[] = {
+static const char * const * const apszOrderingRules[] = {
     apszPROJCSRule, apszGEOGCSRule, apszDATUMRule, apszGEOCCSRule, apszVERTCSRule, NULL };
 
 /**
@@ -937,11 +934,12 @@ OGRErr OGR_SRSNode::FixupOrdering()
 /*      Sort - Note we don't try to do anything with the first child    */
 /*      which we assume is a name string.                               */
 /* -------------------------------------------------------------------- */
-    int j, bChange = TRUE;
+    int j;
+    bool bChange = true;
 
     for( i = 1; bChange && i < GetChildCount()-1; i++ )
     {
-        bChange = FALSE;
+        bChange = false;
         for( j = 1; j < GetChildCount()-i; j++ )
         {
             if( panChildKey[j] == -1 || panChildKey[j+1] == -1 )
@@ -950,16 +948,14 @@ OGRErr OGR_SRSNode::FixupOrdering()
             if( panChildKey[j] > panChildKey[j+1] )
             {
                 OGR_SRSNode *poTemp = papoChildNodes[j];
-                int          nKeyTemp = panChildKey[j];
-
                 papoChildNodes[j] = papoChildNodes[j+1];
                 papoChildNodes[j+1] = poTemp;
 
-                nKeyTemp = panChildKey[j];
+                int nKeyTemp = panChildKey[j];
                 panChildKey[j] = panChildKey[j+1];
                 panChildKey[j+1] = nKeyTemp;
 
-                bChange = TRUE;
+                bChange = true;
             }
         }
     }
@@ -968,5 +964,3 @@ OGRErr OGR_SRSNode::FixupOrdering()
 
     return OGRERR_NONE;
 }
-
-

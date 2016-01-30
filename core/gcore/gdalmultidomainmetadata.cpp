@@ -127,7 +127,7 @@ CPLErr GDALMultiDomainMetadata::SetMetadata( char **papszMetadata,
 
     // we want to mark name/value pair domains as being sorted for fast
     // access.
-    if( !EQUALN(pszDomain,"xml:",4) && !EQUAL(pszDomain, "SUBDATASETS") )
+    if( !STARTS_WITH_CI(pszDomain, "xml:") && !EQUAL(pszDomain, "SUBDATASETS") )
         papoMetadataLists[iDomain]->Sort();
 
     return CE_None;
@@ -217,7 +217,7 @@ int GDALMultiDomainMetadata::XMLInit( CPLXMLNode *psTree, CPL_UNUSED int bMerge 
 
         int iDomain = CSLFindString( papszDomainList, pszDomain );
         CPLAssert( iDomain != -1 );
-        
+
         CPLStringList *poMDList = papoMetadataLists[iDomain];
 
 /* -------------------------------------------------------------------- */
@@ -231,7 +231,7 @@ int GDALMultiDomainMetadata::XMLInit( CPLXMLNode *psTree, CPL_UNUSED int bMerge 
             psSubDoc = psMetadata->psChild;
             while( psSubDoc != NULL && psSubDoc->eType == CXT_Attribute )
                 psSubDoc = psSubDoc->psNext;
-            
+
             char *pszDoc = CPLSerializeXMLTree( psSubDoc );
 
             poMDList->Clear();
@@ -285,8 +285,8 @@ CPLXMLNode *GDALMultiDomainMetadata::Serialize()
             continue;
 
         CPLXMLNode *psMD;
-        int bFormatXML = FALSE;
-        
+        bool bFormatXML = false;
+
         psMD = CPLCreateXMLNode( NULL, CXT_Element, "Metadata" );
 
         if( strlen( papszDomainList[iDomain] ) > 0 )
@@ -294,18 +294,18 @@ CPLXMLNode *GDALMultiDomainMetadata::Serialize()
                 CPLCreateXMLNode( psMD, CXT_Attribute, "domain" ), 
                 CXT_Text, papszDomainList[iDomain] );
 
-        if( EQUALN(papszDomainList[iDomain],"xml:",4) 
+        if( STARTS_WITH_CI(papszDomainList[iDomain], "xml:") 
             && CSLCount(papszMD) == 1 )
         {
             CPLXMLNode *psValueAsXML = CPLParseXMLString( papszMD[0] );
             if( psValueAsXML != NULL )
             {
-                bFormatXML = TRUE;
+                bFormatXML = true;
 
-                CPLCreateXMLNode( 
+                CPLCreateXMLNode(
                     CPLCreateXMLNode( psMD, CXT_Attribute, "format" ), 
                     CXT_Text, "xml" );
-                
+
                 CPLAddXMLChild( psMD, psValueAsXML );
             }
         }
@@ -325,9 +325,9 @@ CPLXMLNode *GDALMultiDomainMetadata::Serialize()
                 const char *pszRawValue;
                 char *pszKey = NULL;
                 CPLXMLNode *psMDI;
-                
+
                 pszRawValue = CPLParseNameValue( papszMD[i], &pszKey );
-                
+
                 psMDI = CPLCreateXMLNode( NULL, CXT_Element, "MDI" );
                 if( psLastChild == NULL )
                     psMD->psChild = psMDI;
@@ -337,11 +337,11 @@ CPLXMLNode *GDALMultiDomainMetadata::Serialize()
 
                 CPLSetXMLValue( psMDI, "#key", pszKey );
                 CPLCreateXMLNode( psMDI, CXT_Text, pszRawValue );
-                
+
                 CPLFree( pszKey );
             }
         }
-            
+
         if( psFirst == NULL )
             psFirst = psMD;
         else

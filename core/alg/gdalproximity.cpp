@@ -45,7 +45,8 @@ ProcessProximityLine( GInt32 *panSrcScanline, int *panNearX, int *panNearY,
 /************************************************************************/
 
 /**
-Compute the proximity of all pixels in the image to a set of pixels in the source image.
+Compute the proximity of all pixels in the image to a set of pixels in
+the source image.
 
 This function attempts to compute the proximity of all pixels in
 the image to a set of pixels in the source image.  The following
@@ -56,7 +57,7 @@ that target pixels are set to the value corresponding to a distance
 of zero.
 
 The progress function args may be NULL or a valid progress reporting function
-such as GDALTermProgress/NULL. 
+such as GDALTermProgress/NULL.
 
 Options:
 
@@ -141,7 +142,8 @@ GDALComputeProximity( GDALRasterBandH hSrcBand,
         else if( !EQUAL(pszOpt,"PIXEL") )
         {
             CPLError( CE_Failure, CPLE_AppDefined,
-                      "Unrecognised DISTUNITS value '%s', should be GEO or PIXEL.",
+                      "Unrecognized DISTUNITS value '%s', "
+                      "should be GEO or PIXEL.",
                       pszOpt );
             return CE_Failure;
         }
@@ -283,18 +285,16 @@ GDALComputeProximity( GDALRasterBandH hSrcBand,
 /*      Allocate buffer for two scanlines of distances as floats        */
 /*      (the current and last line).                                    */
 /* -------------------------------------------------------------------- */
-    pafProximity = (float *) VSIMalloc2(sizeof(float), nXSize);
-    panNearX = (int *) VSIMalloc2(sizeof(int), nXSize);
-    panNearY = (int *) VSIMalloc2(sizeof(int), nXSize);
-    panSrcScanline = (GInt32 *) VSIMalloc2(sizeof(GInt32), nXSize);
+    pafProximity = (float *) VSI_MALLOC2_VERBOSE(sizeof(float), nXSize);
+    panNearX = (int *) VSI_MALLOC2_VERBOSE(sizeof(int), nXSize);
+    panNearY = (int *) VSI_MALLOC2_VERBOSE(sizeof(int), nXSize);
+    panSrcScanline = (GInt32 *) VSI_MALLOC2_VERBOSE(sizeof(GInt32), nXSize);
 
     if( pafProximity== NULL 
         || panNearX == NULL 
         || panNearY == NULL
         || panSrcScanline == NULL)
     {
-        CPLError( CE_Failure, CPLE_OutOfMemory, 
-                  "Out of memory allocating working buffers.");
         eErr = CE_Failure;
         goto end;
     }

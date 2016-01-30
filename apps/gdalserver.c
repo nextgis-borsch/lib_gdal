@@ -27,13 +27,18 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#if defined(__STDC_VERSION__)
-#define _XOPEN_SOURCE
+// So that __USE_XOPEN2K is defined to have getaddrinfo
+#ifndef __sun__
+#define _XOPEN_SOURCE 600
 #endif
 
 #include "cpl_port.h"
 
 #ifdef WIN32
+
+  /* To disable 'warning C4996: 'WSADuplicateSocketA': Use WSADuplicateSocketW()' and 'WSASocketA': Use WSASocketW() instead */
+  #define _WINSOCK_DEPRECATED_NO_WARNINGS
+
   #ifdef _WIN32_WINNT
     #undef _WIN32_WINNT
   #endif
@@ -45,12 +50,14 @@
     #define HAVE_GETADDRINFO 1
   #endif
 #else
+  #include <sys/select.h>
   #include <sys/time.h>
   #include <sys/types.h>
   #include <sys/wait.h>
   #include <sys/socket.h>
   #include <sys/un.h>
   #include <netinet/in.h>
+  #include <signal.h>
   #include <unistd.h>
   #ifdef HAVE_GETADDRINFO
     #include <netdb.h>
@@ -88,7 +95,7 @@ static int bVerbose = FALSE;
 /*                               Usage()                                */
 /************************************************************************/
 
-void Usage(const char* pszErrorMsg)
+static void Usage(const char* pszErrorMsg)
 
 {
 #ifdef WIN32
@@ -125,7 +132,7 @@ void Usage(const char* pszErrorMsg)
 /*                CreateSocketAndBindAndListen()                        */
 /************************************************************************/
 
-int CreateSocketAndBindAndListen(const char* pszService,
+static CPL_SOCKET CreateSocketAndBindAndListen(const char* pszService,
                                  int *pnFamily,
                                  int *pnSockType,
                                  int *pnProtocol)
@@ -160,7 +167,7 @@ int CreateSocketAndBindAndListen(const char* pszService,
             continue;
 
         if (bind(nListenSocket, psResultsIter->ai_addr,
-                 psResultsIter->ai_addrlen) != SOCKET_ERROR)
+                 (int)psResultsIter->ai_addrlen) != (int)SOCKET_ERROR)
         {
             if( pnFamily )   *pnFamily =   psResultsIter->ai_family;
             if( pnSockType ) *pnSockType = psResultsIter->ai_socktype;
@@ -224,10 +231,11 @@ int CreateSocketAndBindAndListen(const char* pszService,
 /*                             RunServer()                              */
 /************************************************************************/
 
+static
 int RunServer(const char* pszApplication,
               const char* pszService,
-              const char* unused_pszUnixSocketFilename,
-              int bFork)
+              CPL_UNUSED const char* unused_pszUnixSocketFilename,
+              CPL_UNUSED int bFork)
 {
     int nRet;
     WSADATA wsaData;
@@ -256,14 +264,14 @@ int RunServer(const char* pszApplication,
         CPLSpawnedProcess* psProcess;
         CPL_FILE_HANDLE fin, fout;
         CPL_PID nPid;
-        SOCKET nConnSocket;
+        CPL_SOCKET nConnSocket;
         char szReady[5];
         int bOK = TRUE;
         const char* apszArgs[] = { NULL, "-newconnection", NULL };
 
         apszArgs[0] = pszApplication;
         nConnSocket = accept(nListenSocket, &sockAddr, &nLen);
-        if( nConnSocket == SOCKET_ERROR )
+        if( nConnSocket == (CPL_SOCKET)SOCKET_ERROR )
         {
             fprintf(stderr, "accept() function failed with error: %d\n", WSAGetLastError());
             closesocket(nListenSocket);
@@ -337,6 +345,7 @@ int RunServer(const char* pszApplication,
 /*                          RunNewConnection()                          */
 /************************************************************************/
 
+static
 int RunNewConnection()
 {
     int nRet;
@@ -413,7 +422,7 @@ typedef struct
 
 #define MAX_CLIENTS 100
 
-int RunServer(CPL_UNUSED const char* pszApplication,
+static int RunServer(CPL_UNUSED const char* pszApplication,
               const char* pszService,
               const char* pszUnixSocketFilename,
               int bFork)
@@ -422,7 +431,9 @@ int RunServer(CPL_UNUSED const char* pszApplication,
     int i;
     int nClients = 0;
     ClientInfo asClientInfos[MAX_CLIENTS];
-    
+
+    memset( asClientInfos, 0, sizeof(asClientInfos) );
+
     if( !bFork )
         signal(SIGPIPE, SIG_IGN);
 
@@ -441,7 +452,7 @@ int RunServer(CPL_UNUSED const char* pszApplication,
         sockAddrUnix.sun_family = AF_UNIX;
         CPLStrlcpy(sockAddrUnix.sun_path, pszUnixSocketFilename, sizeof(sockAddrUnix.sun_path));
         unlink(sockAddrUnix.sun_path);
-        len = strlen(sockAddrUnix.sun_path) + sizeof(sockAddrUnix.sun_family);
+        len = (int)(strlen(sockAddrUnix.sun_path) + sizeof(sockAddrUnix.sun_family));
         if (bind(nListenSocket, (struct sockaddr *)&sockAddrUnix, len) == -1)
         {
             perror("bind");

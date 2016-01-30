@@ -28,8 +28,12 @@
 * DEALINGS IN THE SOFTWARE.
 ****************************************************************************/
 
-#ifndef _OGR_FGDB_H_INCLUDED
-#define _OGR_FGDB_H_INCLUDED
+#ifndef OGR_FGDB_H_INCLUDED
+#define OGR_FGDB_H_INCLUDED
+
+#ifdef DEBUG_BOOL
+#define DO_NOT_USE_DEBUG_BOOL
+#endif
 
 #include <vector>
 #include <set>
@@ -42,8 +46,8 @@
 /* GDAL XML handler */
 #include "cpl_minixml.h"
 
-/* FGDB API headers */
-#include "FileGDBAPI.h"
+/* FGDB API headers through our own inclusion file */
+#include "filegdbsdk_headers.h"
 
 /* Workaround needed for Linux, at least for FileGDB API 1.1 (#4455) */
 #if defined(__linux__)
@@ -189,10 +193,15 @@ public:
   virtual OGRErr      DeleteFeature( GIntBig nFID );
 
   virtual OGRErr      GetExtent( OGREnvelope *psExtent, int bForce );
+  virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce)
+                { return OGRLayer::GetExtent(iGeomField, psExtent, bForce); }
+
   virtual GIntBig     GetFeatureCount( int bForce );
   virtual OGRErr      SetAttributeFilter( const char *pszQuery );
-  virtual void 	      SetSpatialFilterRect (double dfMinX, double dfMinY, double dfMaxX, double dfMaxY);
+
   virtual void        SetSpatialFilter( OGRGeometry * );
+  virtual void        SetSpatialFilter( int iGeomField, OGRGeometry *poGeom )
+                { OGRLayer::SetSpatialFilter(iGeomField, poGeom); }
 
 //  virtual OGRErr        StartTransaction( );
 //  virtual OGRErr        CommitTransaction( );
@@ -360,7 +369,7 @@ public:
     
     int          IsFIDHackInProgress() const { return m_bFIDHackInProgress; }
     void         SetFIDHackInProgress(int bFlag) { m_bFIDHackInProgress = bFlag; }
-    int          OpenGeodatabase(const char* pszOveriddenName);
+    int          OpenGeodatabase(const char* pszOverriddenName);
     void         CloseGeodatabase();
 };
 

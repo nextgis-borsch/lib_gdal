@@ -27,7 +27,7 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
- 
+
 #ifndef READER_DIGITAL_GLOBE_H_INCLUDED
 #define READER_DIGITAL_GLOBE_H_INCLUDED
 
@@ -59,7 +59,7 @@ class GDALMDReaderDigitalGlobe: public GDALMDReaderBase
 public:
     GDALMDReaderDigitalGlobe(const char *pszPath, char **papszSiblingFiles);
     virtual ~GDALMDReaderDigitalGlobe();
-    virtual const bool HasRequiredFiles() const;
+    virtual bool HasRequiredFiles() const;
     virtual char** GetMetadataFiles() const;
 protected:
     virtual void LoadMetadata();

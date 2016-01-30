@@ -3,7 +3,7 @@
  *
  * Project:  FMEObjects Translator
  * Purpose:  Implement the OGRFMECacheIndex class, a mechanism to manage a
- *           persisent index list of cached datasets.
+ *           persistent index list of cached datasets.
  * Author:   Frank Warmerdam, warmerdam@pobox.com
  *
  ******************************************************************************
@@ -15,10 +15,10 @@
  * the rights to use, copy, modify, merge, publish, distribute, sublicense,
  * and/or sell copies of the Software, and to permit persons to whom the
  * Software is furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included
  * in all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
@@ -130,7 +130,7 @@ int OGRFMECacheIndex::Load()
         psTree = CPLCreateXMLNode( NULL, CXT_Element, "OGRFMECacheIndex" );
         return TRUE;
     }
-    
+
 /* -------------------------------------------------------------------- */
 /*      Load the data from the file.                                    */
 /* -------------------------------------------------------------------- */
@@ -154,7 +154,7 @@ int OGRFMECacheIndex::Load()
     psTree = CPLParseXMLString( pszIndexBuffer );
 
     CPLFree( pszIndexBuffer );
-    
+
     return psTree != NULL;
 }
 
@@ -365,7 +365,7 @@ int OGRFMECacheIndex::ExpireOldCaches( IFMESession *poSession )
     if( psTree == NULL )
         return FALSE;
 
-    for( psLastDSNode = NULL; TRUE; psLastDSNode = psDSNode )
+    for( psLastDSNode = NULL; true; psLastDSNode = psDSNode )
     {
         if( psLastDSNode != NULL )
             psDSNode = psLastDSNode->psNext;
@@ -376,7 +376,7 @@ int OGRFMECacheIndex::ExpireOldCaches( IFMESession *poSession )
 
         if( !EQUAL(psDSNode->pszValue,"DataSource") )
             continue;
-        
+
 /* -------------------------------------------------------------------- */
 /*      When was this datasource last accessed?                         */
 /* -------------------------------------------------------------------- */
@@ -384,7 +384,7 @@ int OGRFMECacheIndex::ExpireOldCaches( IFMESession *poSession )
 
         sscanf( CPLGetXMLValue( psDSNode, "LastUseTime", "0" ), 
                 "%lu", &nLastUseTime );
-        
+
 /* -------------------------------------------------------------------- */
 /*      When was this datasource created.                               */
 /* -------------------------------------------------------------------- */
@@ -454,11 +454,11 @@ int OGRFMECacheIndex::ExpireOldCaches( IFMESession *poSession )
             {
                 CPLDebug( "OGRFMECacheIndex", "Failed to open FME index %s.",
                           pszBase );
-                          
+
                 poSession->destroySpatialIndex( poIndex );
                 continue;
             }
-         
+
             poIndex->close( FME_TRUE );
             poSession->destroySpatialIndex( poIndex );
         }

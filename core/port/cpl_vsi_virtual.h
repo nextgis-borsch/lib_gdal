@@ -3,7 +3,7 @@
  *
  * Project:  VSI Virtual File System
  * Purpose:  Declarations for classes related to the virtual filesystem.
- *           These would only be normally required by applications implmenting
+ *           These would only be normally required by applications implementing
  *           their own virtual file system classes which should be rare.  
  *           The class interface may be fragile through versions.
  * Author:   Frank Warmerdam, warmerdam@pobox.com
@@ -37,12 +37,6 @@
 #include "cpl_vsi.h"
 #include "cpl_string.h"
 #include "cpl_multiproc.h"
-
-#if defined(WIN32CE)
-#  include "cpl_wince.h"
-#  include <wce_errno.h>
-#  pragma warning(disable:4786) /* Remove annoying warnings in eVC++ and VC++ 6.0 */
-#endif
 
 #include <map>
 #include <vector>
@@ -88,10 +82,13 @@ public:
                       { (void) pszDirname; errno=ENOENT; return -1; }
     virtual char **ReadDir( const char *pszDirname ) 
                       { (void) pszDirname; return NULL; }
+    virtual char **ReadDirEx( const char *pszDirname, int /* nMaxFiles */ ) 
+                      { return ReadDir(pszDirname); }
     virtual int Rename( const char *oldpath, const char *newpath )
                       { (void) oldpath; (void)newpath; errno=ENOENT; return -1; }
     virtual int IsCaseSensitive( const char* pszFilename )
                       { (void) pszFilename; return TRUE; }
+    virtual GIntBig GetDiskFreeSpace( const char* /* pszDirname */ ) { return -1; }
 };
 
 /************************************************************************/
@@ -140,13 +137,17 @@ typedef struct
     GIntBig       nModifiedTime;
 } VSIArchiveEntry;
 
-typedef struct
+class VSIArchiveContent
 {
+public:
     time_t       mTime;
     vsi_l_offset nFileSize;
     int nEntries;
     VSIArchiveEntry* entries;
-} VSIArchiveContent;
+
+    VSIArchiveContent() : mTime(0), nFileSize(0), nEntries(0), entries(NULL) {}
+    ~VSIArchiveContent();
+};
 
 class VSIArchiveReader
 {
@@ -166,7 +167,7 @@ class VSIArchiveFilesystemHandler : public VSIFilesystemHandler
 {
 protected:
     CPLMutex* hMutex;
-    /* We use a cache that contains the list of files containes in a VSIArchive file as */
+    /* We use a cache that contains the list of files contained in a VSIArchive file as */
     /* unarchive.c is quite inefficient in listing them. This speeds up access to VSIArchive files */
     /* containing ~1000 files like a CADRG product */
     std::map<CPLString,VSIArchiveContent*>   oFileList;
@@ -184,7 +185,7 @@ public:
     virtual int      Rename( const char *oldpath, const char *newpath );
     virtual int      Mkdir( const char *pszDirname, long nMode );
     virtual int      Rmdir( const char *pszDirname );
-    virtual char   **ReadDir( const char *pszDirname );
+    virtual char   **ReadDirEx( const char *pszDirname, int nMaxFiles );
 
     virtual const VSIArchiveContent* GetContentOfArchive(const char* archiveFilename, VSIArchiveReader* poReader = NULL);
     virtual char* SplitFilename(const char *pszFilename, CPLString &osFileInArchive, int bCheckMainFileExists);
@@ -195,7 +196,7 @@ public:
 VSIVirtualHandle CPL_DLL *VSICreateBufferedReaderHandle(VSIVirtualHandle* poBaseHandle);
 VSIVirtualHandle* VSICreateBufferedReaderHandle(VSIVirtualHandle* poBaseHandle,
                                                 const GByte* pabyBeginningContent,
-                                                vsi_l_offset nSheatFileSize);
+                                                vsi_l_offset nCheatFileSize);
 VSIVirtualHandle* VSICreateCachedFile( VSIVirtualHandle* poBaseHandle, size_t nChunkSize = 32768, size_t nCacheSize = 0 );
 VSIVirtualHandle CPL_DLL *VSICreateGZipWritable( VSIVirtualHandle* poBaseHandle, int bRegularZLibIn, int bAutoCloseBaseHandle );
 

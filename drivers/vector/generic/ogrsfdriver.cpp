@@ -53,7 +53,7 @@ OGRDataSource *OGRSFDriver::CreateDataSource( const char *, char ** )
 {
     CPLError( CE_Failure, CPLE_NotSupported,
               "CreateDataSource() not supported by this driver.\n" );
-              
+
     return NULL;
 }
 
@@ -93,7 +93,7 @@ OGRErr OGRSFDriver::DeleteDataSource( const char *pszDataSource )
     (void) pszDataSource;
     CPLError( CE_Failure, CPLE_NotSupported,
               "DeleteDataSource() not supported by this driver." );
-              
+
     return OGRERR_UNSUPPORTED_OPERATION;
 }
 
@@ -112,7 +112,11 @@ OGRErr OGR_Dr_DeleteDataSource( OGRSFDriverH hDriver,
     OGRAPISpyDeleteDataSource(hDriver, pszDataSource);
 #endif
 
-    return ((GDALDriver *) hDriver)->Delete( pszDataSource );
+    CPLErr eErr = ((GDALDriver *) hDriver)->Delete( pszDataSource );
+    if( eErr == CE_None )
+        return OGRERR_NONE;
+    else
+        return OGRERR_FAILURE;
 }
 
 /************************************************************************/
@@ -189,7 +193,7 @@ OGRDataSourceH OGR_Dr_CopyDataSource( OGRSFDriverH hDriver,
                                       OGRDataSourceH hSrcDS, 
                                       const char *pszNewName,
                                       char **papszOptions )
-                                      
+
 {
     VALIDATE_POINTER1( hDriver, "OGR_Dr_CopyDataSource", NULL );
     VALIDATE_POINTER1( hSrcDS, "OGR_Dr_CopyDataSource", NULL );

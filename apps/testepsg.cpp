@@ -34,7 +34,7 @@
 #include "ogr_p.h"
 #include "cpl_multiproc.h"
 
-void Usage()
+static void Usage()
 
 {
     printf( "testepsg [-xml] [-t src_def trg_def x y z]* [def]*\n" );
@@ -64,14 +64,14 @@ int main( int nArgc, char ** papszArgv )
     {
         if( EQUAL(papszArgv[i],"-xml") )
             bReportXML = TRUE;
-        
+
         else if( EQUAL(papszArgv[i],"-t") && i < nArgc - 4 )
         {
             OGRSpatialReference oSourceSRS, oTargetSRS;
             OGRCoordinateTransformation *poCT;
             double                      x, y, z_orig, z;
             int                         nArgsUsed = 4;
-            
+
             if( oSourceSRS.SetFromUserInput(papszArgv[i+1]) != OGRERR_NONE )
             {
                 CPLError( CE_Failure, CPLE_AppDefined, 
@@ -86,7 +86,7 @@ int main( int nArgc, char ** papszArgv )
                           papszArgv[i+2] );
                 continue;
             }
-            
+
             poCT = OGRCreateCoordinateTransformation( &oSourceSRS,
                                                       &oTargetSRS );
             x = CPLAtof( papszArgv[i+3] );
@@ -99,7 +99,7 @@ int main( int nArgc, char ** papszArgv )
             }
             else
                 z_orig = z = 0;
-            
+
             if( poCT == NULL || !poCT->Transform( 1, &x, &y, &z ) )
                 printf( "Transformation failed.\n" );
             else
@@ -108,14 +108,15 @@ int main( int nArgc, char ** papszArgv )
                         CPLAtof( papszArgv[i+4] ),
                         z_orig, 
                         x, y, z );
-            
+
             i += nArgsUsed;
         }
         else 
         {
+            /* coverity[tainted_data] */
             if( oSRS.SetFromUserInput(papszArgv[i]) != OGRERR_NONE )
                 CPLError( CE_Failure, CPLE_AppDefined, 
-                          "Error occured translating %s.\n", 
+                          "Error occurred translating %s.\n",
                           papszArgv[i] );
             else
             {
@@ -125,7 +126,7 @@ int main( int nArgc, char ** papszArgv )
                     printf( "Validate Fails.\n" );
                 else
                     printf( "Validate Succeeds.\n" );
-                
+
                 oSRS.exportToPrettyWkt( &pszWKT, FALSE );
                 printf( "WKT[%s] =\n%s\n", 
                         papszArgv[i], pszWKT );

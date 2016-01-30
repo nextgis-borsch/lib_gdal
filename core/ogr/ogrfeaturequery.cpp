@@ -41,7 +41,7 @@ CPL_CVSID("$Id$");
 /*     Support for special attributes (feature query and selection)     */
 /************************************************************************/
 
-const char* SpecialFieldNames[SPECIAL_FIELD_COUNT] 
+const char* const SpecialFieldNames[SPECIAL_FIELD_COUNT] 
 = {"FID", "OGR_GEOMETRY", "OGR_STYLE", "OGR_GEOM_WKT", "OGR_GEOM_AREA"};
 const swq_field_type SpecialFieldTypes[SPECIAL_FIELD_COUNT] 
 = {SWQ_INTEGER, SWQ_STRING, SWQ_STRING, SWQ_STRING, SWQ_FLOAT};
@@ -274,9 +274,9 @@ int OGRFeatureQuery::CanUseIndex( OGRLayer *poLayer )
     swq_expr_node *psExpr = (swq_expr_node *) pSWQExpr;
 
 /* -------------------------------------------------------------------- */
-/*      Do we have an index on the targetted layer?                     */
+/*      Do we have an index on the targeted layer?                      */
 /* -------------------------------------------------------------------- */
-    if ( poLayer->GetIndex() == FALSE )
+    if ( poLayer->GetIndex() == NULL )
         return FALSE;
 
     return CanUseIndex( psExpr, poLayer );
@@ -307,7 +307,7 @@ int OGRFeatureQuery::CanUseIndex( swq_expr_node *psExpr,
 
     swq_expr_node *poColumn = psExpr->papoSubExpr[0];
     swq_expr_node *poValue = psExpr->papoSubExpr[1];
-    
+
     if( poColumn->eNodeType != SNT_COLUMN
         || poValue->eNodeType != SNT_CONSTANT )
         return FALSE;
@@ -358,7 +358,7 @@ GIntBig *OGRFeatureQuery::EvaluateAgainstIndices( OGRLayer *poLayer,
         *peErr = OGRERR_NONE;
 
 /* -------------------------------------------------------------------- */
-/*      Do we have an index on the targetted layer?                     */
+/*      Do we have an index on the targeted layer?                      */
 /* -------------------------------------------------------------------- */
     if ( poLayer->GetIndex() == NULL )
         return NULL;
@@ -534,7 +534,7 @@ GIntBig *OGRFeatureQuery::EvaluateAgainstIndices( swq_expr_node *psExpr,
 
     swq_expr_node *poColumn = psExpr->papoSubExpr[0];
     swq_expr_node *poValue = psExpr->papoSubExpr[1];
-    
+
     if( poColumn->eNodeType != SNT_COLUMN
         || poValue->eNodeType != SNT_CONSTANT )
         return NULL;
@@ -615,18 +615,18 @@ GIntBig *OGRFeatureQuery::EvaluateAgainstIndices( swq_expr_node *psExpr,
         else
             sValue.Integer = (int) poValue->int_value;
         break;
-      
+
       case OFTInteger64:
         if (poValue->field_type == SWQ_FLOAT)
             sValue.Integer64 = (GIntBig) poValue->float_value;
         else
             sValue.Integer64 = poValue->int_value;
         break;
-        
+
       case OFTReal:
         sValue.Real = poValue->float_value;
         break;
-        
+
       case OFTString:
         sValue.String = poValue->string_value;
         break;
@@ -690,7 +690,7 @@ char **OGRFeatureQuery::FieldCollector( void *pBareOp,
             CSLDestroy( papszList );
             return NULL;
         }
-        
+
         if( CSLFindString( papszList, pszFieldName ) == -1 )
             papszList = CSLAddString( papszList, pszFieldName );
     }
@@ -723,7 +723,7 @@ char **OGRFeatureQuery::FieldCollector( void *pBareOp,
  * fetched. 
  *
  * NOTE: If any fields in the expression are from tables other than the
- * primary table then NULL is returned indicating an error.  In succesful
+ * primary table then NULL is returned indicating an error.  In successful
  * use, no non-empty expression should return an empty list.
  *
  * @return list of field names.  Free list with CSLDestroy() when no longer
@@ -736,9 +736,5 @@ char **OGRFeatureQuery::GetUsedFields( )
     if( pSWQExpr == NULL )
         return NULL;
 
-    
     return FieldCollector( pSWQExpr, NULL );
 }
-
-
-

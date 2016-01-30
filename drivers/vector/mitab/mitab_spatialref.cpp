@@ -17,10 +17,10 @@
  * the rights to use, copy, modify, merge, publish, distribute, sublicense,
  * and/or sell copies of the Software, and to permit persons to whom the
  * Software is furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included
  * in all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
@@ -47,7 +47,7 @@
  * Cleanup Win32 Compile Warnings (GDAL bug #2930)
  *
  * Revision 1.50  2010-07-05 17:20:14  aboudreault
- * Added Krovak projection suppoprt (bug 2230)
+ * Added Krovak projection support (bug 2230)
  *
  * Revision 1.49  2009-10-15 16:16:37  fwarmerdam
  * add the default EPSG/OGR name for new zealand datums (gdal #3187)
@@ -144,7 +144,7 @@
  * Added new datums/ellipsoid from MapInfo V6.0
  *
  * Revision 1.20  2000/09/28 16:39:44  warmerda
- * avoid warnings for unused, and unitialized variables
+ * Avoid warnings for unused, and uninitialized variables
  *
  * Revision 1.19  2000/02/07 17:43:17  daniel
  * Fixed offset in parsing of custom datum string in SetSpatialRef()
@@ -820,7 +820,7 @@ OGRSpatialReference *TABFile::GetSpatialRef()
      *----------------------------------------------------------------*/
     if (m_poSpatialRef != NULL)
         return m_poSpatialRef;
-    
+
 
     /*-----------------------------------------------------------------
      * Fetch the parameters from the header.
@@ -835,7 +835,7 @@ OGRSpatialReference *TABFile::GetSpatialRef()
                  "GetSpatialRef() failed reading projection parameters.");
         return NULL;
     }
-    
+
     m_poSpatialRef = GetSpatialRefFromTABProj(sTABProj);
     return m_poSpatialRef;
 }
@@ -864,57 +864,57 @@ OGRSpatialReference* TABFile::GetSpatialRefFromTABProj(const TABProjInfo& sTABPr
         pszUnitsName = "Kilometer";
         pszUnitsConv = "1000.0";
         break;
-            
+
       case 2:
         pszUnitsName = "IINCH";
         pszUnitsConv = "0.0254";
         break;
-            
+
       case 3:
         pszUnitsName = SRS_UL_FOOT;
         pszUnitsConv = SRS_UL_FOOT_CONV;
         break;
-            
+
       case 4:
         pszUnitsName = "IYARD";
         pszUnitsConv = "0.9144";
         break;
-            
+
       case 5:
         pszUnitsName = "Millimeter";
         pszUnitsConv = "0.001";
         break;
-            
+
       case 6:
         pszUnitsName = "Centimeter";
         pszUnitsConv = "0.01";
         break;
-            
+
       case 7:
         pszUnitsName = SRS_UL_METER;
         pszUnitsConv = "1.0";
         break;
-            
+
       case 8:
         pszUnitsName = SRS_UL_US_FOOT;
         pszUnitsConv = SRS_UL_US_FOOT_CONV;
         break;
-            
+
       case 9:
         pszUnitsName = SRS_UL_NAUTICAL_MILE;
         pszUnitsConv = SRS_UL_NAUTICAL_MILE_CONV;
         break;
-            
+
       case 30:
         pszUnitsName = SRS_UL_LINK;
         pszUnitsConv = SRS_UL_LINK_CONV;
         break;
-            
+
       case 31:
         pszUnitsName = SRS_UL_CHAIN;
         pszUnitsConv = SRS_UL_CHAIN_CONV;
         break;
-            
+
       case 32:
         pszUnitsName = SRS_UL_ROD;
         pszUnitsConv = SRS_UL_ROD_CONV;
@@ -1150,7 +1150,7 @@ OGRSpatialReference* TABFile::GetSpatialRefFromTABProj(const TABProjInfo& sTABPr
       case 17:
         poSpatialRef->SetGS( sTABProj.adProjParams[0], 0.0, 0.0 );
         break;
-        
+
         /*--------------------------------------------------------------
          * New Zealand Map Grid
          *-------------------------------------------------------------*/
@@ -1257,7 +1257,7 @@ OGRSpatialReference* TABFile::GetSpatialRefFromTABProj(const TABProjInfo& sTABPr
     if( sTABProj.nProjId != 1 && poSpatialRef->GetRoot() != NULL )
     {
         OGR_SRSNode     *poUnits = new OGR_SRSNode("UNIT");
-        
+
         poSpatialRef->GetRoot()->AddChild(poUnits);
 
         poUnits->AddChild( new OGR_SRSNode( pszUnitsName ) );
@@ -1290,7 +1290,7 @@ OGRSpatialReference* TABFile::GetSpatialRefFromTABProj(const TABProjInfo& sTABPr
          iDatumInfo++ )
     {
         psDatumInfo = asDatumInfoList + iDatumInfo;
-        
+
         if( TAB_EQUAL(psDatumInfo->nEllipsoid, sTABProj.nEllipsoidId) &&
             ((sTABProj.nDatumId > 0 && 
               sTABProj.nDatumId == psDatumInfo->nMapInfoDatumID) ||
@@ -1316,7 +1316,7 @@ OGRSpatialReference* TABFile::GetSpatialRefFromTABProj(const TABProjInfo& sTABPr
             && sTABProj.adDatumParams[3] == 0.0
             && sTABProj.adDatumParams[4] == 0.0 )
         {
-            sprintf( szDatumName,
+            snprintf( szDatumName, sizeof(szDatumName), 
                      "MIF 999,%d,%.15g,%.15g,%.15g", 
                      sTABProj.nEllipsoidId,
                      sTABProj.dDatumShiftX, 
@@ -1325,7 +1325,7 @@ OGRSpatialReference* TABFile::GetSpatialRefFromTABProj(const TABProjInfo& sTABPr
         }
         else
         {
-            sprintf( szDatumName,
+            snprintf( szDatumName, sizeof(szDatumName), 
                      "MIF 9999,%d,%.15g,%.15g,%.15g,%.15g,%.15g,%.15g,%.15g,%.15g",
                      sTABProj.nEllipsoidId,
                      sTABProj.dDatumShiftX, 
@@ -1340,8 +1340,8 @@ OGRSpatialReference* TABFile::GetSpatialRefFromTABProj(const TABProjInfo& sTABPr
     }
     else if( strlen(psDatumInfo->pszOGCDatumName) > 0 )
     {
-        strncpy( szDatumName, psDatumInfo->pszOGCDatumName,
-                 sizeof(szDatumName) );
+        CPLStrlcpy( szDatumName, psDatumInfo->pszOGCDatumName,
+                    sizeof(szDatumName) );
 
         /* For LCC, standard parallel 1 and 2 can be switched indifferently */
         /* So the MapInfo order and the EPSG order are not generally identical */
@@ -1383,7 +1383,7 @@ OGRSpatialReference* TABFile::GetSpatialRefFromTABProj(const TABProjInfo& sTABPr
     }
     else
     {
-        sprintf( szDatumName, "MIF %d", psDatumInfo->nMapInfoDatumID );
+        snprintf( szDatumName, sizeof(szDatumName), "MIF %d", psDatumInfo->nMapInfoDatumID );
     }
 
     /*-----------------------------------------------------------------
@@ -1416,14 +1416,14 @@ OGRSpatialReference* TABFile::GetSpatialRefFromTABProj(const TABProjInfo& sTABPr
      *----------------------------------------------------------------*/
     double      dfPMOffset = 0.0;
     const char *pszPMName = "Greenwich";
-    
+
     if( /*sTABProj.nDatumId == 9999 ||*/ sTABProj.adDatumParams[4] != 0.0 )
     {
         dfPMOffset = sTABProj.adDatumParams[4];
 
         pszPMName = "non-Greenwich";
     }
-                    
+
     /*-----------------------------------------------------------------
      * Create a GEOGCS definition.
      *----------------------------------------------------------------*/
@@ -1522,13 +1522,13 @@ int TABFile::SetSpatialRef(OGRSpatialReference *poSpatialRef)
      *----------------------------------------------------------------*/
     if (m_poSpatialRef && m_poSpatialRef->Dereference() == 0)
         delete m_poSpatialRef;
-    
+
     m_poSpatialRef = poSpatialRef->Clone();
 
     TABProjInfo     sTABProj;
     int             nParmCount;
     GetTABProjFromSpatialRef(poSpatialRef, sTABProj, nParmCount);
-    
+
     /*-----------------------------------------------------------------
      * Set the new parameters in the .MAP header.
      * This will also trigger lookup of default bounds for the projection.
@@ -1555,7 +1555,7 @@ int TABFile::GetTABProjFromSpatialRef(const OGRSpatialReference* poSpatialRef,
     sTABProj.adProjParams[0] = sTABProj.adProjParams[1] = 0.0;
     sTABProj.adProjParams[2] = sTABProj.adProjParams[3] = 0.0;
     sTABProj.adProjParams[4] = sTABProj.adProjParams[5] = 0.0;
-    
+
     sTABProj.nDatumId = 0;
     sTABProj.dDatumShiftX = 0.0;
     sTABProj.dDatumShiftY = 0.0;
@@ -1689,7 +1689,7 @@ int TABFile::GetTABProjFromSpatialRef(const OGRSpatialReference* poSpatialRef,
         nParmCount = 3;
 
         if( ABS((ABS(parms[1]) - 90)) > 0.001 )
-            sTABProj.nProjId = 28;
+            sTABProj.nProjId = 29;
     }
 
     else if( EQUAL(pszProjection,SRS_PT_LAMBERT_CONFORMAL_CONIC_2SP) )
@@ -1892,7 +1892,7 @@ int TABFile::GetTABProjFromSpatialRef(const OGRSpatialReference* poSpatialRef,
      * ============================================================== */
     const char *pszWKTDatum = poSpatialRef->GetAttrValue("DATUM");
     const MapInfoDatumInfo *psDatumInfo = NULL;
-    
+
     int nDatumEPSGCode = -1;
     const char *pszDatumAuthority = poSpatialRef->GetAuthorityName("DATUM");
     const char *pszDatumCode = poSpatialRef->GetAuthorityCode("DATUM");
@@ -1919,7 +1919,7 @@ int TABFile::GetTABProjFromSpatialRef(const OGRSpatialReference* poSpatialRef,
      * We know the MIF datum number, and need to look it up to
      * translate into datum parameters.
      *----------------------------------------------------------------*/
-    else if( EQUALN(pszWKTDatum,"MIF ",4)
+    else if( STARTS_WITH_CI(pszWKTDatum, "MIF ")
              && atoi(pszWKTDatum+4) != 999
              && atoi(pszWKTDatum+4) != 9999 )
     {
@@ -1946,12 +1946,12 @@ int TABFile::GetTABProjFromSpatialRef(const OGRSpatialReference* poSpatialRef,
     /*-----------------------------------------------------------------
      * We have the MIF datum parameters, and apply those directly.
      *----------------------------------------------------------------*/
-    else if( EQUALN(pszWKTDatum,"MIF ",4)
+    else if( STARTS_WITH_CI(pszWKTDatum, "MIF ")
              && (atoi(pszWKTDatum+4) == 999 || atoi(pszWKTDatum+4) == 9999) )
     {
         char **papszFields;
 
-        sTABProj.nDatumId = atoi(pszWKTDatum+4);
+        sTABProj.nDatumId = static_cast<GInt16>(atoi(pszWKTDatum+4));
         papszFields =
             CSLTokenizeStringComplex( pszWKTDatum+4, ",", FALSE, TRUE);
 
@@ -1981,7 +1981,7 @@ int TABFile::GetTABProjFromSpatialRef(const OGRSpatialReference* poSpatialRef,
 
         CSLDestroy( papszFields );
     }
-    
+
     /*-----------------------------------------------------------------
      * We have a "real" datum name, and possibly an EPSG code for the
      * datum.  Try to look it up (using EPSG code first) and get the
@@ -2056,7 +2056,20 @@ int TABFile::GetTABProjFromSpatialRef(const OGRSpatialReference* poSpatialRef,
             }
         }
     }
-    
+
+    // Google Merc
+    if( (poSpatialRef->GetAuthorityName(NULL) != NULL &&
+        EQUAL(poSpatialRef->GetAuthorityName(NULL), "EPSG") &&
+        poSpatialRef->GetAuthorityCode(NULL) != NULL &&
+        atoi(poSpatialRef->GetAuthorityCode(NULL)) == 3857) ||
+        (poSpatialRef->GetExtension(NULL, "PROJ4") != NULL &&
+         EQUAL(poSpatialRef->GetExtension(NULL, "PROJ4"),
+               "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext  +no_defs")) )
+    {
+        sTABProj.nDatumId = 157;
+        sTABProj.nEllipsoidId = 54;
+    }
+
     /*-----------------------------------------------------------------
      * Translate the units
      *----------------------------------------------------------------*/

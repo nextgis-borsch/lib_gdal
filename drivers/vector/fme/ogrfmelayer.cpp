@@ -91,7 +91,7 @@ int OGRFMELayer::Initialize( IFMEFeature * poSchemaFeature,
 
 {
     IFMEString  *poFMEString = NULL;
-    
+
     poFMEString = poDS->GetFMESession()->createString();
     poFMEFeature = poDS->GetFMESession()->createFeature();
 
@@ -124,7 +124,7 @@ int OGRFMELayer::Initialize( IFMEFeature * poSchemaFeature,
     OGRwkbGeometryType eGeomType = wkbNone;
     IFMEString  *poAttrValue;
     poAttrValue = poDS->GetFMESession()->createString();
-    
+
     for( int iAttr = 0; iAttr < (int)poAttrNames->entries(); iAttr++ )
     {
         const char       *pszAttrName = (*poAttrNames)(iAttr);
@@ -140,7 +140,7 @@ int OGRFMELayer::Initialize( IFMEFeature * poSchemaFeature,
 /*      the geometry type of this layer.  If we get conflicting         */
 /*      geometries just fall back to the generic geometry type.         */
 /* -------------------------------------------------------------------- */
-        if( EQUALN(pszAttrName,"fme_geometry",12) )
+        if( STARTS_WITH_CI(pszAttrName, "fme_geometry") )
         {
             OGRwkbGeometryType eAttrGeomType = wkbNone;
 
@@ -185,9 +185,9 @@ int OGRFMELayer::Initialize( IFMEFeature * poSchemaFeature,
 /*      with * appear to be massaged suitably for use, with fme         */
 /*      standard data types.                                            */
 /* -------------------------------------------------------------------- */
-        if( EQUALN(pszAttrName,"fme_geometry",12) 
+        if( STARTS_WITH_CI(pszAttrName, "fme_geometry") 
             || pszAttrName[0] == '*'
-            || EQUALN(pszAttrName,"fme_geomattr",12) )
+            || STARTS_WITH_CI(pszAttrName, "fme_geomattr") )
         {
             continue;
         }
@@ -262,7 +262,7 @@ int OGRFMELayer::Initialize( IFMEFeature * poSchemaFeature,
 /*      Add the field to the feature definition.                        */
 /* -------------------------------------------------------------------- */
         OGRFieldDefn  oFieldDefn( pszAttrName, eType );
-        
+
         oFieldDefn.SetWidth( nWidth );
         oFieldDefn.SetPrecision( nPrecision );
 
