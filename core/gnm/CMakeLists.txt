@@ -25,38 +25,33 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-cmake_minimum_required (VERSION 2.8.10 FATAL_ERROR)
-
 option(GDAL_ENABLE_GNM "Build GNM module" OFF)
 if(GDAL_ENABLE_GNM)
+    set(TARGET_NAME gnm)
 
-set(LIB_NAME "gnm")
-project ("lib${LIB_NAME}")
+    set(LIB_HHEADERS
+        gnm_api.h
+        gnmgraph.h
+        gnm.h
+        gnm_priv.h
+    )
 
-set(LIB_HHEADERS
-    gnm_api.h
-    gnmgraph.h
-    gnm.h
-    gnm_priv.h
-)
-
-set(LIB_CSOURCES
-    gnmgenericnetwork.cpp
-    gnmgraph.cpp
-    gnmlayer.cpp
-    gnmnetwork.cpp
-    gnmresultlayer.cpp
-    gnmrule.cpp
-)
+    set(LIB_CSOURCES
+        gnmgenericnetwork.cpp
+        gnmgraph.cpp
+        gnmlayer.cpp
+        gnmnetwork.cpp
+        gnmresultlayer.cpp
+        gnmrule.cpp
+    )
 
 
-add_library(${LIB_NAME} OBJECT ${LIB_HHEADERS} ${LIB_CSOURCES})
+    add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_CSOURCES})
 
-# build target
-set(GDAL_TARGET_OBJECTS ${GDAL_TARGET_OBJECTS} $<TARGET_OBJECTS:${LIB_NAME}> PARENT_SCOPE)
-set(GDAL_TARGET_LINK_LIB ${GDAL_TARGET_LINK_LIB} PARENT_SCOPE)
+    # build target
+    set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
+    set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
 
-# install headers
-set(GDAL_INSTALL_HEADERS ${GDAL_INSTALL_HEADERS} ${LIB_HHEADERS} PARENT_SCOPE)
-
+    # install headers
+    set(INSTALL_HEADERS ${INSTALL_HEADERS} ${LIB_HHEADERS} PARENT_SCOPE)
 endif()

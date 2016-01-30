@@ -3,7 +3,7 @@
 # Purpose:  CMake build scripts
 # Author:   Dmitry Baryshnikov, polimax@mail.ru
 ################################################################################
-# Copyright (C) 2015, NextGIS <info@nextgis.com>
+# Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
 # Copyright (C) 2012,2013,2014 Dmitry Baryshnikov
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -25,74 +25,122 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-cmake_minimum_required (VERSION 2.8.10 FATAL_ERROR)
+cmake_minimum_required (VERSION 2.8.12 FATAL_ERROR)
 
-project(GDAL)
+project(gdal)
 
 # some init settings
-set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "Configs" FORCE)
+set(CMAKE_COLOR_MAKEFILE ON)
+# set path to additional CMake modules
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
+
+set(INSTALL_BIN_DIR "${CMAKE_INSTALL_PREFIX}/bin" CACHE INTERNAL "Installation directory for executables" FORCE)
+set(INSTALL_LIB_DIR "${CMAKE_INSTALL_PREFIX}/lib" CACHE INTERNAL "Installation directory for libraries" FORCE)
+set(INSTALL_INC_DIR "${CMAKE_INSTALL_PREFIX}/include" CACHE INTERNAL "Installation directory for headers" FORCE)
+
+# setup package meta-data
+include(util)
+
+check_version(GDAL_MAJOR_VERSION GDAL_MINOR_VERSION GDAL_REV_VERSION)
+set(VERSION ${GDAL_MAJOR_VERSION}.${GDAL_MINOR_VERSION}.${GDAL_REV_VERSION})
+
+report_version(${PROJECT_NAME} ${VERSION})  
+
+set(TARGET_OBJECTS)
+set(INSTALL_HEADERS)
+
+include(FindAnyProject)
+
+if(WIN32)
+    set(TARGET_LINK_LIB ${TARGET_LINK_LIB} Ws2_32.lib)
+endif()
+
+
+find_anyproject(ICONV DEFAULT ON) #default OFF, to set ON add DEFAULT ON
+if(ICONV_FOUND)
+    set(HAVE_ICONV TRUE)
+
+    if(${ICONV_SECOND_ARGUMENT_IS_CONST})
+        set(ICONV_CONST "const")
+    endif()
+
+    if(${ICONV_SECOND_ARGUMENT_CPP_IS_CONST})
+        set(ICONV_CPP_CONST "const")
+    endif()
+endif()
+
+find_anyproject(ZLIB DEFAULT ON)
+find_anyproject(CURL DEFAULT ON)
+
+find_anyproject(GEOS DEFAULT ON)
+if(GEOS_FOUND)
+    add_definitions(-DHAVE_GEOS=1)
+    get_filename_component(GEOS_ROOT ${GEOS_INCLUDE_DIR} PATH)
+    include_directories(${GEOS_ROOT}/capi)
+else()
+    message(WARNING "No geos support")
+endif()
+
+find_anyproject(PROJ4 DEFAULT ON)
+if(PROJ4_FOUND)
+    add_definitions(-DHAVE_PROJ) # todo: do we need it? -DPROJ_STATIC)
+else()
+    message(WARNING "No proj.4 support")
+endif()
+
+include(configure)
 
 # setup paths
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-set(GDAL_ROOT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-set(GDAL_ROOT_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
-
-# set path to additional CMake modules
-set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
-
-# add external project support
-include(ExternalProject)
-set(ep_base "${GDAL_ROOT_BINARY_DIR}/third-party")
-set_property(DIRECTORY PROPERTY "EP_BASE" ${ep_base})
-set(EP_URL "https://github.com/nextgis-extra")
-    
-# setup package meta-data
-include(util)
-set(GDAL_MAJOR_VERSION -1)
-set(GDAL_MINOR_VERSION -1)
-set(GDAL_REV_VERSION -1)
-check_version(GDAL_MAJOR_VERSION GDAL_MINOR_VERSION GDAL_REV_VERSION)
-set(GDAL_VERSION ${GDAL_MAJOR_VERSION}.${GDAL_MINOR_VERSION}.${GDAL_REV_VERSION})
-message(STATUS "gdal version=[${GDAL_VERSION}]")
-
-if(WIN32)    
-    set(GDAL_LIB_NAME gdal${GDAL_MAJOR_VERSION}${GDAL_MINOR_VERSION})
-elseif(UNIX)
-    set(GDAL_LIB_NAME gdal)
-endif()
-message(STATUS "GDAL lib name ... " ${GDAL_LIB_NAME})
-
-set(GDAL_TARGET_OBJECTS "")
-set(GDAL_TARGET_LINK_LIB "")
-set(GDAL_INSTALL_HEADERS "")
-
 # main directories
 add_subdirectory(core)
-add_subdirectory(bindings)
-
-add_subdirectory(autotest)
+#add_subdirectory(bindings)
 
 # link library objects
-list(REMOVE_DUPLICATES GDAL_TARGET_OBJECTS)
+list(REMOVE_DUPLICATES TARGET_OBJECTS)
 
-option(BUILD_SHARED_LIBS "Set ON to build shared library" ON)
 if(BUILD_SHARED_LIBS)
-    add_library(${GDAL_LIB_NAME} SHARED ${GDAL_TARGET_OBJECTS})
-else(BUILD_SHARED_LIBS)
-    add_library(${GDAL_LIB_NAME} STATIC ${GDAL_TARGET_OBJECTS})
-endif(BUILD_SHARED_LIBS)
+    set(LIB_NAME ${PROJECT_NAME})
+    add_library(${LIB_NAME} SHARED ${TARGET_OBJECTS})
+    if(WIN32)
+        set (LIB_VERSION ${GDAL_MAJOR_VERSION})
+        if(MSVC)        
+            set_target_properties(${LIB_NAME} PROPERTIES IMPORT_SUFFIX "_i.lib")
+        endif()
+    else ()
+      set (LIB_VERSION ${VERSION})
+    endif()
+    
+    set_target_properties (${LIB_NAME} PROPERTIES VERSION ${LIB_VERSION})
+    set_target_properties (${LIB_NAME} PROPERTIES SOVERSION ${LIB_VERSION})
+else()
+    set(LIB_NAME ${PROJECT_NAME}static)
+    add_library(${LIB_NAME} STATIC ${TARGET_OBJECTS})
+endif()
 
-list(REMOVE_DUPLICATES GDAL_TARGET_LINK_LIB)
-target_link_libraries(${GDAL_LIB_NAME} ${GDAL_TARGET_LINK_LIB})
+if(UNIX)
+    set_target_properties(${LIB_NAME} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
+# TODO: Add Apple staff
+#    if(NOT APPLE AND BUILD_SHARED_LIBS)
+#        set_target_properties(${LIB_NAME} PROPERTIES LINK_FLAGS "-Wl,--version-script,\"${CMAKE_CURRENT_SOURCE_DIR}/zlib.map\"")
+#    endif()
+elseif(BUILD_SHARED_LIBS AND WIN32)
+    set_target_properties(${LIB_NAME} PROPERTIES SUFFIX "${GDAL_MAJOR_VERSION}${GDAL_MINOR_VERSION}.dll")
+endif()
+
+target_link_extlibraries(${LIB_NAME}) 
+export(TARGETS ${LIB_NAME} FILE ${LIB_NAME}-exports.cmake EXPORT_LINK_INTERFACE_LIBRARIES)
 
 # install
 include(install)
 
 # todo: target to build docs
 
+if(NOT SUPRESS_VERBOSE_OUTPUT)
+    include(summary)
+endif()
 
-
-
-include(summary)
+# uninstall
+add_custom_target(uninstall COMMAND ${CMAKE_COMMAND} -P ${GDAL_ROOT_BINARY_DIR}/cmake_uninstall.cmake)

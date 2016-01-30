@@ -25,36 +25,25 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-cmake_minimum_required (VERSION 2.8.10 FATAL_ERROR)
+set(TARGET_NAME alg)
 
-set(LIB_NAME "alg")
-project ("lib${LIB_NAME}")
-
-option(GDAL_USE_CPL "Set ON to use cpl" ON)
-if(GDAL_USE_CPL)
-    add_definitions(-DUSE_CPL)
-endif(GDAL_USE_CPL)
-
-option(GDAL_PAM_ENABLED "Set ON to enable pam" ON)
-if(GDAL_PAM_ENABLED)
-    add_definitions(-DPAM_ENABLED)
-endif(GDAL_PAM_ENABLED)
-
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../port)
-include_directories(${GDAL_ROOT_BINARY_DIR}/port)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../gcore)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../ogr)
+include_directories(${CMAKE_SOURCE_DIR}/core/port)
+include_directories(${CMAKE_SOURCE_DIR}/core/gcore)
+include_directories(${CMAKE_SOURCE_DIR}/core/ogr)
 
 set(LIB_HHEADERS
     gdal_alg.h
-    gdal_alg_priv.h
     gdalgrid.h
-    gdalgrid_priv.h
     gdalpansharpen.h
     gdal_simplesurf.h
     gdalwarper.h
     gvgcpfit.h
     thinplatespline.h
+)
+
+set(LIB_HHEADERS_PRIV
+    gdal_alg_priv.h    
+    gdalgrid_priv.h
 )
 
 set(LIB_CSOURCES
@@ -92,67 +81,29 @@ set(LIB_CSOURCES
     thinplatespline.cpp
 )
 
-option(GDAL_USE_GEOS "Set ON to use libgeos" ON)
-if(GDAL_USE_GEOS)
-    option(GDAL_USE_GEOS_INTERNAL "Set ON to use internal libgeos" OFF)
-    add_definitions(-DHAVE_GEOS=1)
-    if(GDAL_USE_GEOS_INTERNAL)
-        # todo: get geos from external project
-    else()
-        find_package(GEOS REQUIRED)
-        if(GEOS_FOUND)
-            get_filename_component(GEOS_ROOT ${GEOS_INCLUDE_DIR} PATH)
-            include_directories(${GEOS_INCLUDE_DIR})
-            include_directories(${GEOS_ROOT}/capi)
-        endif()
-    endif()
-endif()
 
-option(GDAL_USE_ARMADILLO "Set ON to use Armadillo" OFF)
-if(GDAL_USE_ARMADILLO)
-    find_package(Armadillo REQUIRED)
-    if(ARMADILLO_FOUND)
-        include_directories(${ARMADILLO_INCLUDE_DIRS})
-        add_definitions(-DHAVE_ARMADILLO)
-    endif()
-endif()
-
-
-option(GDAL_USE_OPENCL "Set ON to use OpenCL" OFF)
-if(GDAL_USE_OPENCL)
-    find_package(OpenCL REQUIRED)
-    if(OPENCL_FOUND)
-        include_directories(${OPENCL_INCLUDE_DIRS})
-        add_definitions(-DHAVE_OPENCL)
-
-        set(LIB_HHEADERS ${LIB_HHEADERS}
-            gdalwarpkernel_opencl.h
-        )
-
-        set(LIB_CSOURCES ${LIB_CSOURCES}
-            gdalwarpkernel_opencl.c
-        )
-    endif()
-endif()
-
-
-add_library(${LIB_NAME} OBJECT ${LIB_HHEADERS} ${LIB_CSOURCES})
-
-if(GEOS_FOUND)
-    set(GDAL_TARGET_LINK_LIB ${GDAL_TARGET_LINK_LIB} ${GEOS_LIBRARY})
-endif(GEOS_FOUND)
-
-if(OPENCL_FOUND)
-    set(GDAL_TARGET_LINK_LIB ${GDAL_TARGET_LINK_LIB} ${OPENCL_LIBRARIES})
-endif(OPENCL_FOUND)
-
+find_anyproject(Armadillo DEFAULT OFF)
 if(ARMADILLO_FOUND)
-    set(GDAL_TARGET_LINK_LIB ${GDAL_TARGET_LINK_LIB} ${ARMADILLO_LIBRARIES})
-endif(ARMADILLO_FOUND)
+    add_definitions(-DHAVE_ARMADILLO)
+endif()
+
+find_anyproject(OpenCL DEFAULT OFF)
+if(OPENCL_FOUND)
+    add_definitions(-DHAVE_OPENCL)
+
+    set(LIB_HHEADERS_PRIV ${LIB_HHEADERS_PRIV}
+        gdalwarpkernel_opencl.h
+    )
+    set(LIB_CSOURCES ${LIB_CSOURCES}
+        gdalwarpkernel_opencl.c
+    )
+endif()
+
+add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
 
 # build target
-set(GDAL_TARGET_OBJECTS ${GDAL_TARGET_OBJECTS} $<TARGET_OBJECTS:${LIB_NAME}> PARENT_SCOPE)
-set(GDAL_TARGET_LINK_LIB ${GDAL_TARGET_LINK_LIB} PARENT_SCOPE)
+set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
+set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
 
 # install headers
-set(GDAL_INSTALL_HEADERS ${GDAL_INSTALL_HEADERS} ${LIB_HHEADERS} PARENT_SCOPE)
+set(INSTALL_HEADERS ${INSTALL_HEADERS} ${LIB_HHEADERS} PARENT_SCOPE)

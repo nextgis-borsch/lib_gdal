@@ -8,8 +8,8 @@
 #endif
 
 /* Define if you have the vprintf function.  */
-#cmakedefine01 HAVE_VSNPRINTF
-#cmakedefine01 HAVE_SNPRINTF
+#cmakedefine HAVE_VSNPRINTF 1
+#cmakedefine HAVE_SNPRINTF 1
 #if defined(_MSC_VER) && (_MSC_VER < 1500)
 #  define vsnprintf _vsnprintf
 #endif
@@ -17,7 +17,7 @@
 #  define snprintf _snprintf
 #endif
 
-#cmakedefine01 HAVE_GETCWD
+#cmakedefine HAVE_GETCWD 1
 /* gmt_notunix.h from GMT project also redefines getcwd. See #3138 */
 #ifndef getcwd
 #define getcwd _getcwd
@@ -25,59 +25,59 @@
 
 /* Define if you have the ANSI C header files.  */
 #ifndef STDC_HEADERS
-#cmakedefine01 STDC_HEADERS
+#cmakedefine STDC_HEADERS 1
 #endif
 
 /* Define to 1 if you have the <assert.h> header file. */
-#cmakedefine01 HAVE_ASSERT_H
+#cmakedefine HAVE_ASSERT_H 1
 
 /* Define to 1 if you have the <fcntl.h> header file.  */
-#cmakedefine01 HAVE_FCNTL_H
+#cmakedefine HAVE_FCNTL_H 1
 
 /* Define if you have the <unistd.h> header file.  */
-#cmakedefine HAVE_UNISTD_H
+#cmakedefine HAVE_UNISTD_H 1
 
 /* Define if you have the <stdint.h> header file.  */
-#cmakedefine HAVE_STDINT_H
+#cmakedefine HAVE_STDINT_H 1
 
 /* Define to 1 if you have the <sys/types.h> header file. */
-#cmakedefine01 HAVE_SYS_TYPES_H
+#cmakedefine HAVE_SYS_TYPES_H 1
 
 /* Define to 1 if you have the <locale.h> header file. */
-#cmakedefine01 HAVE_LOCALE_H
+#cmakedefine HAVE_LOCALE_H 1
 
-#cmakedefine01 HAVE_FLOAT_H
+#cmakedefine HAVE_FLOAT_H 1
 
-#cmakedefine01 HAVE_ERRNO_H
+#cmakedefine HAVE_ERRNO_H 1
 
-#cmakedefine01 HAVE_SEARCH_H
+#cmakedefine HAVE_SEARCH_H 1
 
 /* Define to 1 if you have the <direct.h> header file. */
-#cmakedefine01 HAVE_DIRECT_H
+#cmakedefine HAVE_DIRECT_H 1
 
 /* Define to 1 if you have the `localtime_r' function. */
-#cmakedefine01 HAVE_LOCALTIME_R
+#cmakedefine HAVE_LOCALTIME_R 1
 
-#cmakedefine01 HAVE_DLFCN_H
-#cmakedefine01 HAVE_DBMALLOC_H
-#cmakedefine01 HAVE_LIBDBMALLOC
-#cmakedefine01 WORDS_BIGENDIAN
+#cmakedefine HAVE_DLFCN_H 1
+#cmakedefine HAVE_DBMALLOC_H 1
+#cmakedefine HAVE_LIBDBMALLOC 1 
+#cmakedefine WORDS_BIGENDIAN 1 
 
 /* The size of a `int', as computed by sizeof. */
-#define SIZEOF_INT @SIZEOF_INT@
+#cmakedefine SIZEOF_INT @SIZEOF_INT@
 
 /* The size of a `unsigned long', as computed by sizeof. */
-#define SIZEOF_UNSIGNED_LONG @SIZEOF_UNSIGNED_LONG@
+#cmakedefine SIZEOF_UNSIGNED_LONG @SIZEOF_UNSIGNED_LONG@
 
 /* The size of `void*', as computed by sizeof. */
-#define SIZEOF_VOIDP @SIZEOF_VOIDP@
+#cmakedefine SIZEOF_VOIDP @SIZEOF_VOIDP@
 
 /* Set the native cpu bit order */
-#define HOST_FILLORDER @HOST_FILLORDER@
+#cmakedefine HOST_FILLORDER @HOST_FILLORDER@
 
 /* Define as 0 or 1 according to the floating point format suported by the
    machine */
-#cmakedefine01 HAVE_IEEEFP
+#cmakedefine HAVE_IEEEFP 1
 
 /* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */

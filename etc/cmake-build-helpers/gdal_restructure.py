@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 #******************************************************************************
-# 
-#  Project:  GDAL
+#  Project:  Cmake4GDAL
 #  Purpose:  Script to one folder structure of GDAL (old) to another (new).
 #  Author:   Maxim Dubinin, sim@gis-lab.info
-#  Example:  python gdal_restructure.py /media/sim/Windows7_OS/work/gdal_cmake/ /media/sim/Windows7_OS/work/lib_gdal_new/ /home/sim/work/lib_gdal/etc/cmake-build-helpers/gdal_folders.csv
+#  Author:   Dmitry Baryshnikov, polimax@mail.ru 
+#  Example:  python gdal_restructure.py /src_path/gdal/ /dst_path/gdal/ /path_to_config/gdal_folders.csv
 #******************************************************************************
-#  Copyright (c) 2015, Maxim Dubinin
+#  Copyright (c) 2015-2016, NextGIS <info@nextgis.com>
 # 
 #  Permission is hereby granted, free of charge, to any person obtaining a
 #  copy of this software and associated documentation files (the "Software"),
@@ -56,8 +56,11 @@ def copy_dir(src, dest, exts):
     for f in files:
         if not os.path.isdir(f):
             file_extension = os.path.splitext(f)[1].replace('.','')
+            file_name = os.path.basename(f)
             if file_extension in exts:
                 shutil.copy(f, dest)
+            elif file_name in exts:               
+                shutil.copy(f, dest) 
 
 
 start_folder = sys.argv[1]         #where to copy from

@@ -25,25 +25,21 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-cmake_minimum_required (VERSION 2.8.10 FATAL_ERROR)
-
-set(LIB_NAME "ogr")
-project ("lib${LIB_NAME}")
-
 option(GDAL_ENABLE_OGR "Build OGR module" ON)
 if(GDAL_ENABLE_OGR)
     add_definitions(-DOGR_ENABLED)
 endif()
 
+set(TARGET_NAME ogr)
+
 add_definitions(-DGDAL_COMPILATION)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../port)
-include_directories(${GDAL_ROOT_BINARY_DIR}/port)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../gcore)
+include_directories(${CMAKE_SOURCE_DIR}/core/port)
+include_directories(${CMAKE_SOURCE_DIR}/core/gcore)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/ogrsf_frmts)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/ogrsf_frmts/mem)
 
-set(LIB_INST_HEADERS
+set(LIB_HHEADERS
     ogr_api.h
     ogr_core.h
     ogr_feature.h
@@ -55,7 +51,7 @@ set(LIB_INST_HEADERS
     ogr_geocoding.h
 )
 
-set(LIB_HHEADERS
+set(LIB_HHEADERS_PRIV
     ograpispy.h
     ogrgeomediageometry.h
     ogrpgeogeometry.h
@@ -125,114 +121,22 @@ set(LIB_CSOURCES
     swq_select.cpp
 )
 
-option(GDAL_USE_GEOS "Set ON to use libgeos" ON)
-if(GDAL_USE_GEOS)
-    option(GDAL_USE_GEOS_INTERNAL "Set ON to use internal libgeos" OFF)
-    add_definitions(-DHAVE_GEOS=1)
-    if(GDAL_USE_GEOS_INTERNAL)
-        # todo: get geos from external project
-        set(GEOS_FOUND ON)
-    else()
-        find_package(GEOS REQUIRED)
-        if(GEOS_FOUND)
-            get_filename_component(GEOS_ROOT ${GEOS_INCLUDE_DIR} PATH)
-            include_directories(${GEOS_INCLUDE_DIR})
-            include_directories(${GEOS_ROOT}/capi)
-        endif()
-    endif()
-else()
-    message(WARNING "No geos support")
-endif()
-
-option(GDAL_USE_PROJ "Set ON to use PROJ.4" ON)
-if(GDAL_USE_PROJ)
-    option(GDAL_USE_PROJ_INTERNAL "Set ON to use internal PROJ.4" OFF)
-    add_definitions(-DHAVE_PROJ) # todo: do we need it? -DPROJ_STATIC)
-    if(GDAL_USE_PROJ_INTERNAL)
-        ExternalProject_Add(proj
-            GIT_REPOSITORY ${EP_URL}/lib_proj
-            INSTALL_COMMAND ""
-        )
-        
-        set (PROJ_DIR ${ep_base}/proj CACHE INTERNAL "proj.4 internal path")
-        set (PROJ_INCLUDE_DIR ${PROJ_DIR} CACHE PATH "proj.4 internal include path")
-        set (PROJ_LIBRARIES ${PROJ_DIR}/lib/proj CACHE INTERNAL "proj.4 internal lib path")
-        set (PROJ_LIBRARY ${PROJ_LIBRARIES} CACHE FILEPATH "proj.4 internal lib path")
-        
-        link_directories(${LIBCURL_DIR}/lib)
-    else()
-        find_package(PROJ REQUIRED)
-        if(PROJ_FOUND)
-            include_directories(${PROJ_INCLUDE_DIR})
-        endif()
-    endif()
-else()
-    message(WARNING "No proj.4 support")
-endif()
-
-option(GDAL_USE_EXPAT "Set ON to use libexpat" ON)
-if(GDAL_USE_EXPAT)
-    option(GDAL_USE_EXPAT_INTERNAL "Set ON to use internal libgeos" OFF)
+find_anyproject(EXPAT DEFAULT ON)
+if(EXPAT_FOUND)
     add_definitions(-DHAVE_EXPAT)
-    if(GDAL_USE_EXPAT_INTERNAL)
-        ExternalProject_Add(expat
-            GIT_REPOSITORY ${EP_URL}/lib_expat
-            INSTALL_COMMAND ""
-        )
-       
-        set (EXPAT_DIR ${ep_base}/expat CACHE INTERNAL "expat internal path")
-        set (EXPAT_INCLUDE_DIRS ${EXPAT_DIR} CACHE PATH "expat internal include path")
-        set (EXPAT_LIBRARIES ${EXPAT_DIR}/lib/expat CACHE INTERNAL "expat internal lib path")
-        set (EXPAT_LIBRARY ${EXPAT_LIBRARIES} CACHE FILEPATH "expat internal lib path")
-        
-        link_directories(${ZLIB_DIR}/lib)
-    else()
-        find_package(EXPAT REQUIRED)
-        if(EXPAT_FOUND)
-            include_directories(${EXPAT_INCLUDE_DIR})
-        endif()
-    endif()
-endif()
-
-if(GDAL_USE_EXPAT)
-    include_directories(${EXPAT_INCLUDE_DIRS})
-    set(LIB_HHEADERS ${LIB_HHEADERS}
+    set(LIB_HHEADERS_PRIV ${LIB_HHEADERS_PRIV}
         ogr_expat.h
     )
     set(LIB_CSOURCES ${LIB_CSOURCES}
         ogr_expat.cpp
     )
-else()
-    message(WARNING "No expat support")
 endif()
 
-add_library(${LIB_NAME} OBJECT ${LIB_HHEADERS} ${LIB_CSOURCES})
-
-if(GDAL_USE_EXPAT)    
-    if(GDAL_USE_EXPAT_INTERNAL)        
-        add_dependencies(${LIB_NAME} expat)
-        #set(GDAL_TARGET_LINK_LIB ${GDAL_TARGET_LINK_LIB} expat})
-    else()
-        set(GDAL_TARGET_LINK_LIB ${GDAL_TARGET_LINK_LIB} ${EXPAT_LIBRARIES})
-    endif()
-endif()
-
-if(GEOS_FOUND)
-    set(GDAL_TARGET_LINK_LIB ${GDAL_TARGET_LINK_LIB} ${GEOS_LIBRARY})
-endif()
-
-if(GDAL_USE_PROJ)    
-    if(GDAL_USE_PROJ_INTERNAL)        
-        add_dependencies(${LIB_NAME} proj)
-        #set(GDAL_TARGET_LINK_LIB ${GDAL_TARGET_LINK_LIB} proj})
-    else()
-        set(GDAL_TARGET_LINK_LIB ${GDAL_TARGET_LINK_LIB} ${PROJ_LIBRARY})
-    endif()
-endif()
+add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
 
 # build target
-set(GDAL_TARGET_OBJECTS ${GDAL_TARGET_OBJECTS} $<TARGET_OBJECTS:${LIB_NAME}> PARENT_SCOPE)
-set(GDAL_TARGET_LINK_LIB ${GDAL_TARGET_LINK_LIB} PARENT_SCOPE)
+set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
+set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
 
 # install headers
-set(GDAL_INSTALL_HEADERS ${GDAL_INSTALL_HEADERS} ${LIB_INST_HEADERS} PARENT_SCOPE)
+set(INSTALL_HEADERS ${INSTALL_HEADERS} ${LIB_HHEADERS} PARENT_SCOPE)

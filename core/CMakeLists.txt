@@ -25,15 +25,24 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
+option(GDAL_USE_CPL "Set ON to use cpl" ON)
+if(GDAL_USE_CPL)
+    add_definitions(-DUSE_CPL)
+endif(GDAL_USE_CPL)
+
+option(GDAL_PAM_ENABLED "Set ON to enable pam" ON)
+if(GDAL_PAM_ENABLED)
+    add_definitions(-DPAM_ENABLED)
+endif(GDAL_PAM_ENABLED)
+
 add_subdirectory(port)
 add_subdirectory(gcore)
 add_subdirectory(alg)
 add_subdirectory(ogr)
 add_subdirectory(gnm)
 
-# move variables upper
-set(GDAL_INSTALL_HEADERS ${GDAL_INSTALL_HEADERS} PARENT_SCOPE)
-set(GDAL_TARGET_OBJECTS ${GDAL_TARGET_OBJECTS} PARENT_SCOPE)
-set(GDAL_TARGET_LINK_LIB ${GDAL_TARGET_LINK_LIB} PARENT_SCOPE)
-set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} PARENT_SCOPE)
-set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} PARENT_SCOPE)
+# send variables upper
+set(INSTALL_HEADERS ${INSTALL_HEADERS} PARENT_SCOPE)
+set(TARGET_OBJECTS ${TARGET_OBJECTS} PARENT_SCOPE)
+set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
+set(DEPENDENCY_LIB ${DEPENDENCY_LIB} PARENT_SCOPE)

@@ -25,47 +25,37 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-cmake_minimum_required (VERSION 2.8.10 FATAL_ERROR)
+set(TARGET_NAME gcore)
 
-set(LIB_NAME "gcore")
-project ("lib${LIB_NAME}")
-
-option(GDAL_USE_CPL "Set ON to use cpl" ON)
-if(GDAL_USE_CPL)
-    add_definitions(-DUSE_CPL)
-endif(GDAL_USE_CPL)
-
-option(GDAL_PAM_ENABLED "Set ON to enable pam" ON)
-if(GDAL_PAM_ENABLED)
-    add_definitions(-DPAM_ENABLED)
-endif(GDAL_PAM_ENABLED)
-
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../port)
-include_directories(${GDAL_ROOT_BINARY_DIR}/port)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../alg)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../ogr)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../ogr/ogrsf_frmts)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../ogr/ogrsf_frmts/generic)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../ogr/ogrsf_frmts/geojson)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../frmts/gtiff)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../frmts/vrt)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../frmts/mem)
+include_directories(${CMAKE_SOURCE_DIR}/core/port)
+include_directories(${CMAKE_SOURCE_DIR}/core/alg)
+include_directories(${CMAKE_SOURCE_DIR}/core/ogr)
+include_directories(${CMAKE_SOURCE_DIR}/core/ogr/ogrsf_frmts)
+include_directories(${CMAKE_SOURCE_DIR}/core/ogr/ogrsf_frmts/generic)
+include_directories(${CMAKE_SOURCE_DIR}/core/ogr/ogrsf_frmts/geojson)
+include_directories(${CMAKE_SOURCE_DIR}/core/frmts/gtiff)
+include_directories(${CMAKE_SOURCE_DIR}/core/frmts/vrt)
+include_directories(${CMAKE_SOURCE_DIR}/core/frmts/mem)
 
 set(LIB_HHEADERS
     gdalexif.h
+    gdal.h
+    gdal_mdreader.h
+    gdal_proxy.h
+    gdal_rat.h
+    gdal_version.h
+)
+
+set(LIB_HHEADERS_PRIV
 # todo: more elegant format's register  gdal_frmts.h
     gdalgeorefpamdataset.h
-    gdal.h
     gdaljp2abstractdataset.h
     gdaljp2metadatagenerator.h
     gdaljp2metadata.h
-    gdal_mdreader.h
     gdal_priv.h
-    gdal_proxy.h
-    gdal_rat.h
     gdalsse_priv.h
-    gdal_version.h
 )
+
 
 set(LIB_CSOURCES
     gdalmajorobject.cpp
@@ -110,7 +100,7 @@ set(LIB_CSOURCES
 )
 
 if(GDAL_PAM_ENABLED)
-    set(LIB_HHEADERS ${LIB_HHEADERS}
+    set(LIB_HHEADERS_PRIV ${LIB_HHEADERS_PRIV}
         gdal_pam.h
     )
     set(LIB_CSOURCES ${LIB_CSOURCES}
@@ -120,37 +110,15 @@ if(GDAL_PAM_ENABLED)
     )
 endif(GDAL_PAM_ENABLED)
 
-option(GDAL_USE_JSONC "Set ON to use libjson-c" ON)
-if(GDAL_USE_JSONC)
-    option(GDAL_USE_JSONC_INTERNAL "Set ON to use internal libjson-c" ON)
-    if(GDAL_USE_JSONC_INTERNAL)
-        # todo: get json-c from external project
-        set(JSONC_FOUND ON)
-    else()
-        find_package(JSONC REQUIRED)
-        if(JSONC_FOUND)
-            include_directories(${JSONC_INCLUDE_DIR})
-        endif()
-    endif()
-else()
-    message(FATAL_ERROR "libjson-c is required")
-endif()
+find_anyproject(JSONC REQUIRED)
 
 add_subdirectory(mdreader)
 
-add_library(${LIB_NAME} OBJECT ${LIB_HHEADERS} ${LIB_CSOURCES})
-
-if(JSONC_FOUND)
-    set(GDAL_TARGET_LINK_LIB ${GDAL_TARGET_LINK_LIB} ${JSONC_LIBRARY})
-endif(JSONC_FOUND)
+add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
 
 # build target
-set(GDAL_TARGET_OBJECTS ${GDAL_TARGET_OBJECTS} $<TARGET_OBJECTS:${LIB_NAME}> PARENT_SCOPE)
-if(WIN32)
-    set(GDAL_TARGET_LINK_LIB ${GDAL_TARGET_LINK_LIB} Ws2_32.lib PARENT_SCOPE)
-else(WIN32)
-    set(GDAL_TARGET_LINK_LIB ${GDAL_TARGET_LINK_LIB} PARENT_SCOPE)
-endif(WIN32)
+set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
+set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
 
 # install headers
-set(GDAL_INSTALL_HEADERS ${GDAL_INSTALL_HEADERS} ${LIB_HHEADERS} PARENT_SCOPE)
+set(INSTALL_HEADERS ${INSTALL_HEADERS} ${LIB_HHEADERS} PARENT_SCOPE)

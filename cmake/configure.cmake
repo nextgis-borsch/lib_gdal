@@ -73,29 +73,6 @@ check_type_size ("void*" SIZEOF_VOIDP)
     set(HAVE_IEEEFP TRUE)
 #endif()
 
-
-find_package(Iconv)
-if(ICONV_FOUND)
-    set(HAVE_ICONV ${ICONV_FOUND} CACHE INTERNAL "enable POSIX iconv support")
-
-    if(${ICONV_SECOND_ARGUMENT_IS_CONST})
-        set(ICONV_CONST "const")
-    endif()
-
-    if(${ICONV_SECOND_ARGUMENT_CPP_IS_CONST})
-        set(ICONV_CPP_CONST "const")
-    endif()
-else()
-    option(GDAL_USE_INTERNAL_ICONV "Set to ON to use internal iconv." ON)
-    if(GDAL_USE_INTERNAL_ICONV)
-        #todo: get iconv from remote repo
-    endif()
-endif()
-
-if(NOT ${HAVE_ICONV})
-    message(WARNING "No iconv support")
-endif()
-
 if(WIN32)
 # windows
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -W4 -wd4127 -wd4251 -wd4275 -wd4786 -wd4100 -wd4245 -wd4206 -wd4018 -wd4389")
@@ -147,9 +124,9 @@ else()
     check_function_exists(posix_spawnp HAVE_POSIX_SPAWNP)
     check_function_exists(vfork HAVE_VFORK)
     check_function_exists(lstat HAVE_LSTAT)
-
-    set(CPL_CONFIG_EXTRAS "// #include \"cpl_config_extras.h\"")
+    
     if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+        set(CPL_CONFIG_EXTRAS "#include \"cpl_config_extras.h\"")
         set(MACOSX_FRAMEWORK TRUE)
     else()
         set(MACOSX_FRAMEWORK FALSE)
@@ -238,4 +215,6 @@ endif()
 set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} PARENT_SCOPE)
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} PARENT_SCOPE)
 
-message(STATUS "cpl_config.h is configured")
+add_definitions (-DHAVE_CONFIG_H)
+
+configure_file(${CMAKE_MODULE_PATH}/uninstall.cmake.in ${GDAL_ROOT_BINARY_DIR}/cmake_uninstall.cmake IMMEDIATE @ONLY)

@@ -25,21 +25,14 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-include(configure)
-
 option(WITH_ODBC "Set ON to use odbc" OFF)
 option(WITH_XMLREFORMAT "Set ON to use xmlreformat" OFF)
 option(WITH_ONLY_CRYPTODLL_ALG "Include cryptopp support" OFF)
 
-#Find zlib or configure ExternalProject if not found .
-include(ZLIB)
-include(CURL)
+set(TARGET_NAME cpl)
 
-include_directories(${GDAL_ROOT_BINARY_DIR}/port)
-
-set(CPL_HEADERS
+set(LIB_HHEADERS
     cpl_atomic_ops.h
-    cpl_config_extras.h
     cpl_conv.h
     cpl_csv.h
     cpl_error.h
@@ -62,7 +55,11 @@ set(CPL_HEADERS
     gdal_csv.h
 )
 
-set(CPL_SOURCES
+set(LIB_HHEADERS_PRIV
+    cpl_config_extras.h
+)
+
+set(LIB_CSOURCES
     cpl_atomic_ops.cpp
     cpl_base64.cpp
     cpl_conv.cpp
@@ -108,19 +105,19 @@ set(CPL_SOURCES
 )
 
 if(WIN32)
-    list(APPEND CPL_SOURECS cpl_vsil_win32.cpp)
+    list(APPEND LIB_CSOURCES cpl_vsil_win32.cpp)
 else()
-    list(APPEND CPL_SOURECS cpl_vsil_unix_stdio_64.cpp)
+    list(APPEND LIB_CSOURCES cpl_vsil_unix_stdio_64.cpp)
 endif()
 
 #check odbc
 if(WITH_ODBC)
-    list(APPEND CPL_HEADERS cpl_odbc.h)
-    list(APPEND CPL_SOURECS cpl_odbc.cpp)
+    list(APPEND LIB_HHEADERS_PRIV cpl_odbc.h)
+    list(APPEND LIB_CSOURCES cpl_odbc.cpp)
 endif()
 
 if(WITH_XMLREFORMAT)
-    list(APPEND CPL_SOURECS xmlreformat.cpp)
+    list(APPEND LIB_CSOURCES xmlreformat.cpp)
 endif()
 
 if(WITH_ONLY_CRYPTODLL_ALG)
@@ -128,62 +125,48 @@ if(WITH_ONLY_CRYPTODLL_ALG)
     add_definitions(-DUSE_ONLY_CRYPTODLL_ALG)
 endif()
 
-if(HAVE_ICONV)
-    list(APPEND CPL_SOURECS cpl_recode_iconv.cpp )
-    include_directories(${ICONV_INCLUDE_DIR})
+if(ICONV_FOUND)
+    list(APPEND LIB_CSOURCES cpl_recode_iconv.cpp )
     add_definitions(-DHAVE_ICONV -DLIBICONV_PLUG)
+else()
+    message(WARNING "No iconv support")
 endif()
 
 #check zip and internal zip
-if(WITH_ZLIB)
+if(ZLIB_FOUND)
     add_definitions(-DHAVE_LIBZ -DZIP_SUPPORT)
-    list(APPEND CPL_HEADERS
+    list(APPEND LIB_HHEADERS_PRIV
         cpl_minizip_ioapi.h
         cpl_minizip_unzip.h
         cpl_minizip_zip.h
     )
-    list(APPEND CPL_SOURECS 
+    list(APPEND LIB_CSOURCES 
         cpl_vsil_gzip.cpp
         cpl_minizip_ioapi.cpp
         cpl_minizip_unzip.cpp
         cpl_minizip_zip.cpp
     )
+else()
+    message(WARNING "No zlib support")
 endif()
 
 #check curl
-if(WITH_CURL)
+if(CURL_FOUND)
   add_definitions(-DHAVE_CURL)
-  list(APPEND CPL_HEADERS cpl_vsil_curl_priv.h)
+  list(APPEND LIB_HHEADERS_PRIV cpl_vsil_curl_priv.h)
 
-  list(APPEND CPL_SOURECS
+  list(APPEND LIB_CSOURCES
       cpl_vsil_curl.cpp
       cpl_vsil_curl_streaming.cpp )
-   
+else()
+    message(WARNING "No curl support")
 endif()
 
-add_library(cpl OBJECT ${CPL_HEADERS} ${CPL_SOURECS})
-
-if(HAVE_ICONV)
-    list(APPEND GDAL_TARGET_LINK_LIB ${ICONV_LIBRARIES})
-endif()
-
-if(WITH_ZLIB)
-  if(NOT GDAL_USES_EXTERNAL_ZLIB)
-  add_dependencies(cpl zlib)
-   endif()
-  list(APPEND GDAL_TARGET_LINK_LIB ${ZLIB_LIBRARIES})
-endif()
-
-if(WITH_CURL)
-  if(NOT GDAL_USES_EXTERNAL_CURL)
-    add_dependencies(cpl curl)
-  endif()
-  list(APPEND GDAL_TARGET_LINK_LIB ${CURL_LIBRARIES})
-endif()
+add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
 
 # build target
-set(GDAL_TARGET_OBJECTS ${GDAL_TARGET_OBJECTS} $<TARGET_OBJECTS:cpl> PARENT_SCOPE)
-set(GDAL_TARGET_LINK_LIB ${GDAL_TARGET_LINK_LIB} PARENT_SCOPE)
+set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
+set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
 
 # install headers
-set(GDAL_INSTALL_HEADERS ${GDAL_INSTALL_HEADERS} ${CPL_HEADERS} PARENT_SCOPE)
+set(INSTALL_HEADERS ${INSTALL_HEADERS} ${LIB_HHEADERS} PARENT_SCOPE)

@@ -105,3 +105,13 @@ function(set_libraries libs is_shared bld_dir release_name debug_name)
         endif()            
     endif()    
 endfunction(set_libraries)
+
+function(report_version name ver)
+
+    string(ASCII 27 Esc)
+    set(BoldYellow  "${Esc}[1;33m")
+    set(ColourReset "${Esc}[m")
+        
+    message(STATUS "${BoldYellow}${name} version ${ver}${ColourReset}")
+    
+endfunction()    
