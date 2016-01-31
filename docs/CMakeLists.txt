@@ -27,7 +27,17 @@
 
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
-    set(DOX_INPUT "${CMAKE_SOURCE_DIR}/core/port ${CMAKE_SOURCE_DIR}/core/gcore ${CMAKE_SOURCE_DIR}/core/alg ${CMAKE_SOURCE_DIR}/docs/doc  ${CMAKE_SOURCE_DIR}/apps ${CMAKE_SOURCE_DIR}/core/ogr ${CMAKE_SOURCE_DIR}/bindings/python/scripts ${CMAKE_SOURCE_DIR}/core/gnm"
+    set(DOX_INPUT "${CMAKE_SOURCE_DIR}/core/port \\ 
+    ${CMAKE_SOURCE_DIR}/core/gcore \\
+    ${CMAKE_SOURCE_DIR}/core/alg \\ 
+    ${CMAKE_SOURCE_DIR}/docs/doc \\ 
+    ${CMAKE_SOURCE_DIR}/apps \\
+    ${CMAKE_SOURCE_DIR}/core/ogr \\
+    ${CMAKE_SOURCE_DIR}/bindings/python/scripts \\
+    ${CMAKE_SOURCE_DIR}/core/gnm \\
+    ${CMAKE_SOURCE_DIR}/docs/apps \\
+    ${CMAKE_SOURCE_DIR}/docs/gnm \\
+    ${CMAKE_SOURCE_DIR}/docs/ogr"
     )
     
     #                         frmts/gdalallregister.cpp \ \n
@@ -38,41 +48,85 @@ if(DOXYGEN_FOUND)
     #                         ogr/ogrsf_frmts/kml/ogr2kmlgeometry.cpp \ \n
 
 
-    set(DOX_FILE_PATTERNS "*.h *.cpp *.c *.dox")
-                             
+    set(DOX_FILE_PATTERNS "*.h *.cpp *.c *.dox")                             
     set(DOX_GENERATE_HTML "YES")                         
-    set(DOX_GENERATE_MAN "NO")   
-
-    set(DOX_EXAMPLE_PATH "${CMAKE_SOURCE_DIR}/apps # frmts \ frmts/jdem")      
-
-    set(HTML_FOOTER "${CMAKE_SOURCE_DIR}/docs/doc/gdal_footer.html")                
+    set(DOX_GENERATE_MAN "NO")
+    set(DOX_EXAMPLE_PATH "${CMAKE_SOURCE_DIR}/apps # frmts \ frmts/jdem")
+    set(HTML_FOOTER "${CMAKE_CURRENT_BINARY_DIR}/html/gdal_footer.html")      
+              
     find_package(Perl)
     set(PERL_PATH ${PERL_EXECUTABLE})
+    
+    #prepare translation
+    set(TRANSLATIONS ru br)
+    macro(prepare_translation trans)
+        file(STRINGS ${CMAKE_CURRENT_SOURCE_DIR}/doc/${trans}/Doxyfile Contents)
+        foreach(Line ${Contents})
+            if("${Line}" MATCHES "^# " OR 
+               "${Line}" MATCHES "^USE_WINDOWS_ENCODING " OR 
+               "${Line}" MATCHES "^DETAILS_AT_TOP " OR 
+               "${Line}" MATCHES "^HTML_ALIGN_MEMBERS " OR
+               "${Line}" MATCHES "^XML_SCHEMA " OR 
+               "${Line}" MATCHES "^XML_DTD " OR 
+               "${Line}" MATCHES "^MAX_DOT_GRAPH_WIDTH " OR 
+               "${Line}" MATCHES "^MAX_DOT_GRAPH_HEIGHT")
+                set(Line "NOP")   
+            elseif("${Line}" MATCHES "^INPUT ")
+                set(Line "INPUT = ${CMAKE_CURRENT_SOURCE_DIR}/doc/${trans}")
+            elseif("${Line}" MATCHES "^FILE_PATTERNS ")
+                set(Line "FILE_PATTERNS = ${DOX_FILE_PATTERNS}")
+            elseif("${Line}" MATCHES "^HTML_FOOTER ") 
+                set(Line "HTML_FOOTER = ${CMAKE_CURRENT_BINARY_DIR}/html/gdal_footer.html")   
+            elseif("${Line}" MATCHES "^EXAMPLE_PATH ") 
+                set(Line "EXAMPLE_PATH = ${DOX_EXAMPLE_PATH}") 
+            elseif("${Line}" MATCHES "^PERL_PATH ") 
+                set(Line "PERL_PATH = ${PERL_PATH}") 
+            endif()
+            if(NOT "${Line}" STREQUAL "NOP")
+                set(ModifiedContents "${ModifiedContents}${Line}\n")
+            endif()
+        endforeach()
+        file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile_${trans}.html ${ModifiedContents})        
+    endmacro()
+    
+    foreach(TRANSLATION ${TRANSLATIONS})
+        prepare_translation(${TRANSLATION})
+    endforeach()
+    
+    #get images list
+    file(GLOB DOX_HTML_IMAGES ${CMAKE_CURRENT_SOURCE_DIR}/doc/grid/*.png
+                              ${CMAKE_CURRENT_SOURCE_DIR}/doc/images/* )
+    set(DOX_HTML_IMAGES ${DOX_HTML_IMAGES} ${CMAKE_CURRENT_SOURCE_DIR}/data/gdalicon.png)                           
 
     configure_file(${CMAKE_MODULE_PATH}/Doxyfile.cmakein  ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile.html IMMEDIATE @ONLY)    
 
     add_custom_target(prepare_html
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/doc/gdal_footer.html ${CMAKE_BINARY_DIR}/gdal_footer.html
-        COMMAND ${DOXYGEN_EXECUTABLE} -w html ${CMAKE_CURRENT_BINARY_DIR}/html/header.html ${CMAKE_CURRENT_BINARY_DIR}/html/footer.html ${CMAKE_CURRENT_BINARY_DIR}/html/stylesheet.css ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile.html
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/doc/gdal_footer.html ${CMAKE_CURRENT_BINARY_DIR}/html/gdal_footer.html
+        COMMAND ${DOXYGEN_EXECUTABLE} -w html html/header.html html/footer.html html/stylesheet.css ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile.html
         COMMENT "Create html templates"
     )
 
-    add_custom_target (docs          
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_BINARY_DIR}/html/header.html ${CMAKE_CURRENT_BINARY_DIR}/html/header_br.html
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_BINARY_DIR}/html/header.html ${CMAKE_CURRENT_BINARY_DIR}/html/header_ru.html
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/doc/gdal_footer.html ${CMAKE_CURRENT_BINARY_DIR}/html/gdal_footer.html
-        COMMAND ${DOXYGEN_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/doc/br/Doxyfile"
-        COMMAND ${DOXYGEN_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/doc/ru/Doxyfile"
+    add_custom_target (docs  
         COMMAND ${DOXYGEN_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile.html"
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/data/gdalicon.png ${CMAKE_CURRENT_BINARY_DIR}/html
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/doc/images/ ${CMAKE_CURRENT_BINARY_DIR}/html
-        #COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/doc/grid/*.png ${CMAKE_CURRENT_BINARY_DIR}/html
         DEPENDS prepare_html
         COMMENT "Create html"
-    )       
+    )  
+    
+    foreach(TRANSLATION ${TRANSLATIONS})        
+        add_custom_command(TARGET prepare_html POST_BUILD
+              COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_BINARY_DIR}/html/header.html ${CMAKE_CURRENT_BINARY_DIR}/html/header_${TRANSLATION}.html
+              COMMAND ${DOXYGEN_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile_${TRANSLATION}.html"
+              COMMENT "Create translation for ${TRANSLATION}"
+        )
+    endforeach()
+
+    foreach(DOX_HTML_IMAGE ${DOX_HTML_IMAGES})
+        add_custom_command(TARGET docs POST_BUILD
+             COMMAND ${CMAKE_COMMAND} -E copy_if_different ${DOX_HTML_IMAGE} ${CMAKE_CURRENT_BINARY_DIR}/html
+        )
+    endforeach()     
     
 # TODO:
-#    	cp doc/grid/*.png html
 #	cp frmts/*.html frmts/*/frmt_*.html html
 #	cp frmts/openjpeg/*.xml html
 #	cp frmts/wms/frmt_*.xml html
