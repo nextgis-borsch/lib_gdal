@@ -56,8 +56,7 @@ set(LIB_HHEADERS_PRIV
     gdal_priv.h
     gdalsse_priv.h
 )
-
-
+  
 set(LIB_CSOURCES
     gdalmajorobject.cpp
     gdalabstractbandblockcache.cpp
@@ -95,7 +94,6 @@ set(LIB_CSOURCES
     gdal_rat.cpp
     gdalrescaledalphaband.cpp
     gdalvirtualmem.cpp
-    jp2dump.cpp
     overview.cpp
     rasterio.cpp
 )
@@ -122,4 +120,6 @@ set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCO
 set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
 
 # install headers
-set(INSTALL_HEADERS ${INSTALL_HEADERS} ${LIB_HHEADERS} PARENT_SCOPE)
+if(NOT SKIP_INSTALL_HEADERS AND NOT SKIP_INSTALL_ALL )
+    install(FILES ${LIB_HHEADERS} DESTINATION ${INSTALL_INC_DIR})
+endif() 

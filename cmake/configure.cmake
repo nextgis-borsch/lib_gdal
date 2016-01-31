@@ -65,9 +65,9 @@ else ()
     set (HOST_FILLORDER FILLORDER_LSB2MSB)
 endif ()
 
-check_type_size ("int" INT)
-check_type_size ("unsigned long" UNSIGNED_LONG)
-check_type_size ("void*" VOIDP)
+check_type_size ("int" SIZEOF_INT)
+check_type_size ("unsigned long" SIZEOF_UNSIGNED_LONG)
+check_type_size ("void*" SIZEOF_VOIDP)
 
 #check_include_file("ieeefp.h" HAVE_IEEEFP_H)
 #if(HAVE_IEEEFP_H)
@@ -169,7 +169,7 @@ else()
     check_function_exists(strtof HAVE_DECL_STRTOF)
     check_include_file("inttypes.h" HAVE_INTTYPES_H)
 
-    check_type_size("long long" LONG_LONG)
+    check_type_size("long long" SIZEOF_LONG_LONG)
         
     check_include_file("strings.h" HAVE_STRINGS_H)
     check_include_file("string.h" HAVE_STRING_H)
@@ -342,3 +342,5 @@ endif()
 add_definitions (-DHAVE_CONFIG_H)
 
 configure_file(${CMAKE_MODULE_PATH}/uninstall.cmake.in ${CMAKE_BINARY_DIR}/cmake_uninstall.cmake IMMEDIATE @ONLY)
+configure_file(${CMAKE_MODULE_PATH}/gdal.pc.cmakein  ${CMAKE_BINARY_DIR}/gdal.pc IMMEDIATE @ONLY)
+

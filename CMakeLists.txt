@@ -36,7 +36,10 @@ set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 
 set(INSTALL_BIN_DIR "${CMAKE_INSTALL_PREFIX}/bin" CACHE INTERNAL "Installation directory for executables" FORCE)
 set(INSTALL_LIB_DIR "${CMAKE_INSTALL_PREFIX}/lib" CACHE INTERNAL "Installation directory for libraries" FORCE)
-set(INSTALL_INC_DIR "${CMAKE_INSTALL_PREFIX}/include" CACHE INTERNAL "Installation directory for headers" FORCE)
+set(INSTALL_INC_DIR "${CMAKE_INSTALL_PREFIX}/include/gdal" CACHE INTERNAL "Installation directory for headers" FORCE)
+set(INSTALL_SHARE_DIR "${CMAKE_INSTALL_PREFIX}/share/gdal" CACHE INTERNAL "Installation directory for headers" FORCE)
+set(INSTALL_PKGCONFIG_DIR "${INSTALL_LIB_DIR}/pkgconfig" CACHE INTERNAL "Installation directory for pkgconfig (.pc) files" FORCE)
+set(INSTALL_MAN_DIR "${CMAKE_INSTALL_PREFIX}/share/man" CACHE INTERNAL "Installation directory for manual pages" FORCE)
 
 # setup package meta-data
 include(util)
@@ -47,7 +50,6 @@ set(VERSION ${GDAL_MAJOR_VERSION}.${GDAL_MINOR_VERSION}.${GDAL_REV_VERSION})
 report_version(${PROJECT_NAME} ${VERSION})  
 
 set(TARGET_OBJECTS)
-set(INSTALL_HEADERS)
 
 include(FindAnyProject)
 
@@ -120,6 +122,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 # main directories
 add_subdirectory(core)
 #add_subdirectory(bindings)
+add_subdirectory(docs)
 
 # link library objects
 list(REMOVE_DUPLICATES TARGET_OBJECTS)

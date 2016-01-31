@@ -52,6 +52,7 @@ endif()
 message(STATUS "  Installation directory:    ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "  C compiler:                ${CMAKE_C_COMPILER} ${CMAKE_C_FLAGS}")
 message(STATUS "  C++ compiler:              ${CMAKE_CXX_COMPILER} ${CMAKE_CXX_FLAGS}")
+# TODO: do we need it?
 #message(STATUS "")
 #summary_message("  LIBTOOL support:         "  WITH_LIBTOOL)
 message(STATUS "")

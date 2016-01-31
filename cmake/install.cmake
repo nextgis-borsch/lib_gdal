@@ -25,33 +25,34 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-set_target_properties(${GDAL_LIB_NAME}
+set_target_properties(${LIB_NAME}
     PROPERTIES PROJECT_LABEL ${PROJECT_NAME}
-    VERSION ${GDAL_VERSION}
+    VERSION ${VERSION}
     SOVERSION 1
-    ARCHIVE_OUTPUT_DIRECTORY ${GDAL_ROOT_BINARY_DIR}
-    LIBRARY_OUTPUT_DIRECTORY ${GDAL_ROOT_BINARY_DIR}
-    RUNTIME_OUTPUT_DIRECTORY ${GDAL_ROOT_BINARY_DIR}
-    )
+)
 
 #install lib and bin
 
-install(TARGETS ${GDAL_LIB_NAME}
-        RUNTIME DESTINATION bin
-        ARCHIVE DESTINATION lib
-        LIBRARY DESTINATION lib
+if(NOT SKIP_INSTALL_LIBRARIES AND NOT SKIP_INSTALL_ALL )
+    install(TARGETS ${LIB_NAME}
+        EXPORT ${LIB_NAME}
+        RUNTIME DESTINATION ${INSTALL_BIN_DIR} COMPONENT libraries
+        ARCHIVE DESTINATION ${INSTALL_LIB_DIR} COMPONENT libraries
+        LIBRARY DESTINATION ${INSTALL_LIB_DIR} COMPONENT libraries
     )
+endif()
 
 if(UNIX)
     option(GDAL_INSTALL_DATA_IN_VERSION_DIR "Set ON to install GDAL in path with version (i.e. usr/local/share/gdal/1.11" OFF)
     if(GDAL_INSTALL_DATA_IN_VERSION_DIR)
-        install(DIRECTORY ${GDAL_ROOT_SOURCE_DIR}/data/ DESTINATION share/gdal/${GDAL_VERSION} FILES_MATCHING PATTERN "*.*")
-    else()
-        install(DIRECTORY ${GDAL_ROOT_SOURCE_DIR}/data/ DESTINATION share/gdal FILES_MATCHING PATTERN "*.*")
+        set(INSTALL_SHARE_DIR ${INSTALL_SHARE_DIR}/${GDAL_VERSION})
     endif()
-elseif(WIN32)
-    install(DIRECTORY ${GDAL_ROOT_SOURCE_DIR}/data/ DESTINATION share/gdal FILES_MATCHING PATTERN "*.*")
 endif()
 
-# install headers
-install(FILES ${GDAL_INSTALL_HEADERS} DESTINATION include/gdal)
+if(NOT SKIP_INSTALL_FILES AND NOT SKIP_INSTALL_ALL )
+    install(DIRECTORY ${CMAKE_SOURCE_DIR}/data/ DESTINATION ${INSTALL_SHARE_DIR} FILES_MATCHING PATTERN "*.*")
+    install(FILES ${CMAKE_BINARY_DIR}/gdal.pc DESTINATION "${INSTALL_PKGCONFIG_DIR}")
+endif()
+
+
+   

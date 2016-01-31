@@ -1,0 +1,13 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=@INSTALL_BIN_DIR@
+libdir=@INSTALL_LIB_DIR@
+sharedlibdir=@INSTALL_SHARE_DIR@
+includedir=@INSTALL_INC_DIR@
+
+Name: gdal
+Description: Geospatial Data Abstraction Library
+Version: @VERSION@
+
+Requires:
+Libs: -L${libdir} -L${sharedlibdir} -lgdal
+Cflags: -I${includedir}	
