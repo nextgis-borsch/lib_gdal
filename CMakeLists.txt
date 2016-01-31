@@ -29,6 +29,11 @@ cmake_minimum_required (VERSION 2.8.12 FATAL_ERROR)
 
 project(gdal)
 
+set(PACKAGE_NAME GDAL)
+set(PACKAGE_NAME GDAL)
+set(PACKAGE_BUGREPORT "gdal-dev@lists.osgeo.org" )
+set(PACKAGE_URL "http://gdal.org/" )
+
 # some init settings
 set(CMAKE_COLOR_MAKEFILE ON)
 # set path to additional CMake modules
@@ -37,7 +42,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 set(INSTALL_BIN_DIR "${CMAKE_INSTALL_PREFIX}/bin" CACHE INTERNAL "Installation directory for executables" FORCE)
 set(INSTALL_LIB_DIR "${CMAKE_INSTALL_PREFIX}/lib" CACHE INTERNAL "Installation directory for libraries" FORCE)
 set(INSTALL_INC_DIR "${CMAKE_INSTALL_PREFIX}/include/gdal" CACHE INTERNAL "Installation directory for headers" FORCE)
-set(INSTALL_SHARE_DIR "${CMAKE_INSTALL_PREFIX}/share/gdal" CACHE INTERNAL "Installation directory for headers" FORCE)
+set(INSTALL_SHARE_DIR "${CMAKE_INSTALL_PREFIX}/share/gdal" CACHE INTERNAL "Installation directory for share data" FORCE)
 set(INSTALL_PKGCONFIG_DIR "${INSTALL_LIB_DIR}/pkgconfig" CACHE INTERNAL "Installation directory for pkgconfig (.pc) files" FORCE)
 set(INSTALL_MAN_DIR "${CMAKE_INSTALL_PREFIX}/share/man" CACHE INTERNAL "Installation directory for manual pages" FORCE)
 
@@ -48,6 +53,14 @@ check_version(GDAL_MAJOR_VERSION GDAL_MINOR_VERSION GDAL_REV_VERSION)
 set(VERSION ${GDAL_MAJOR_VERSION}.${GDAL_MINOR_VERSION}.${GDAL_REV_VERSION})
 
 report_version(${PROJECT_NAME} ${VERSION})  
+
+if(UNIX)
+    option(GDAL_INSTALL_DATA_IN_VERSION_DIR "Set ON to install GDAL in path with version (i.e. usr/local/share/gdal/1.11" OFF)
+    if(GDAL_INSTALL_DATA_IN_VERSION_DIR)
+        set(INSTALL_SHARE_DIR "${CMAKE_INSTALL_PREFIX}/share/gdal/${GDAL_VERSION}" CACHE INTERNAL "Installation directory for share data" FORCE)
+    endif()
+endif()
+
 
 set(TARGET_OBJECTS)
 
@@ -128,6 +141,7 @@ add_subdirectory(docs)
 list(REMOVE_DUPLICATES TARGET_OBJECTS)
 
 if(BUILD_SHARED_LIBS)
+    set(LIB_TYPE SHARED)
     set(LIB_NAME ${PROJECT_NAME})
     add_library(${LIB_NAME} SHARED ${TARGET_OBJECTS})
     if(WIN32)
@@ -142,6 +156,7 @@ if(BUILD_SHARED_LIBS)
     set_target_properties (${LIB_NAME} PROPERTIES VERSION ${LIB_VERSION})
     set_target_properties (${LIB_NAME} PROPERTIES SOVERSION ${LIB_VERSION})
 else()
+    set(LIB_TYPE STATIC)
     set(LIB_NAME ${PROJECT_NAME}static)
     add_library(${LIB_NAME} STATIC ${TARGET_OBJECTS})
 endif()

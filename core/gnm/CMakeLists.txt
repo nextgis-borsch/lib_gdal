@@ -57,6 +57,6 @@ if(GDAL_ENABLE_GNM)
 
     # install headers
     if(NOT SKIP_INSTALL_HEADERS AND NOT SKIP_INSTALL_ALL )
-        install(FILES ${LIB_HHEADERS} DESTINATION ${INSTALL_INC_DIR})
+        install(FILES ${LIB_HHEADERS} DESTINATION ${INSTALL_INC_DIR} COMPONENT headers)
     endif() 
 endif()

@@ -152,8 +152,18 @@ if(DOXYGEN_FOUND)
     )
     
     if(NOT SKIP_INSTALL_FILES AND NOT SKIP_INSTALL_ALL )
-        install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/man/man1 DESTINATION ${INSTALL_MAN_DIR})
+        install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/man/man1 
+                DESTINATION ${INSTALL_MAN_DIR}
+                COMPONENT documents)
+    
+        install(FILES
+                  ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.TXT
+                  ${CMAKE_CURRENT_SOURCE_DIR}/README
+                  ${CMAKE_CURRENT_SOURCE_DIR}/COMMITERS
+                  ${CMAKE_CURRENT_SOURCE_DIR}/NEWS
+              DESTINATION ${INSTALL_SHARE_DIR}
+              COMPONENT documents)
     endif()
-                   
+                  
 endif()
 

@@ -1,6 +1,6 @@
 autotest,,skip,
 gdal,core,,"cpp,h,c,hpp"
-gdal,docs,skip,"dox,Doxyfile"
+gdal,docs,,"COMMITERS,NEWS,TXT"
 gdal/alg,core/alg,,"cpp,h,c,hpp"
 gdal/alg,docs/alg,skip,"dox,Doxyfile"
 gdal/alg/libqhull,,skip,
