@@ -65,7 +65,7 @@ set(LIB_HHEADERS_PRIV
 )
 
 set(LIB_CSOURCES
-#    generate_encoding_table.c do we need special target for this
+#    generate_encoding_table.c do we need special target for this?
     gml2ogrgeometry.cpp
     ogr2gmlgeometry.cpp
     ogr_api.cpp
@@ -115,12 +115,10 @@ set(LIB_CSOURCES
     ogrsurface.cpp
     ogrutils.cpp
     osr_cs_wkt.c
-    osr_cs_wkt_parser.c
     swq.cpp
     swq_expr_node.cpp
     swq_op_general.cpp
-    swq_op_registrar.cpp
-    swq_parser.cpp
+    swq_op_registrar.cpp    
     swq_select.cpp
 )
 
@@ -137,30 +135,25 @@ endif()
 
 add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
 
-# TODO: add some custome targets
-# The sed substitution below workarounds a bug with gcc 4.1 -O2 (checked on 64bit platforms)
-# that produces buggy compiled code.
-# Seen on gcc 4.1.2-27ubuntu1 (Ubuntu 10.04) (not the default compiler) and gcc-4.1.2-48.el5 (CentOS 5.5)
-# (default compiler...)
-# The memset isn't necessary at all with a non-buggy compiler, but I've found
-# that it helps gcc 4.1 generating correct code here...
-#parser:
-#	bison -p swq -d -oswq_parser.cpp swq_parser.y
-#	sed "s/yytype_int16 yyssa\[YYINITDEPTH\];/yytype_int16 yyssa[YYINITDEPTH]; \/\* workaround bug with gcc 4.1 -O2 \*\/ memset(yyssa, 0, sizeof(yyssa));/" < swq_parser.cpp | sed "s/\*yyssp = yystate/\*yyssp = (yytype_int16)yystate/" > swq_parser.cpp.tmp
-#	mv swq_parser.cpp.tmp swq_parser.cpp
-#
-# The sed hack is to please MSVC
-#osr_cs_wkt_parser:
-#	bison --no-lines -p osr_cs_wkt_ -d -oosr_cs_wkt_parser.c osr_cs_wkt_grammar.y
-#	sed "s/\*yyssp = yystate/\*yyssp = (yytype_int16)yystate/" < osr_cs_wkt_parser.c | sed "s/yyerrorlab:/#if 0\nyyerrorlab:/" | sed "s/yyerrlab1:/#endif\nyyerrlab1:/" | sed "s/for (yylen = 0; yystr\[yylen\]; yylen++)/for (yylen = 0; yystr != YY_NULL \&\& yystr\[yylen\]; yylen++)/"  > osr_cs_wkt_parser.c.tmp
-#	mv osr_cs_wkt_parser.c.tmp osr_cs_wkt_parser.c
-#
-#osr_cs_wkt_parser.$(OBJ_EXT):   osr_cs_wkt_parser.c
-#	$(CC) $(GDAL_INCLUDE) $(CFLAGS) $(CPPFLAGS) $(NO_LOGICAL_OP_FLAG) -c -o $@ $<
-#
-#swq_parser.$(OBJ_EXT):   swq_parser.cpp
-#	$(CXX) $(GDAL_INCLUDE) $(CXXFLAGS) $(CPPFLAGS) $(NO_LOGICAL_OP_FLAG) -c -o $@ $<
+option(GDAL_UPDATE_SWQ "Set ON to update swq files" OFF)
+if(GDAL_UPDATE_SWQ)
+    find_package(BISON)    
+    if(BISON_FOUND)
+        BISON_TARGET(SWQParser swq_parser.y ${CMAKE_CURRENT_BINARY_DIR}/swq_parser.cpp)
+        BISON_TARGET(WKTGrammarParser osr_cs_wkt_grammar.y ${CMAKE_CURRENT_BINARY_DIR}/osr_cs_wkt_parser.c)
+        set(LIB_CSOURCES ${LIB_CSOURCES}
+            ${BISON_SWQParser_OUTPUTS}
+            ${BISON_WKTGrammarParser_OUTPUTS}
+        )    
+    endif()
+endif()
 
+if(NOT GDAL_UPDATE_SWQ OR NOT BISON_FOUND)
+    set(LIB_CSOURCES ${LIB_CSOURCES}
+        swq_parser.cpp
+        osr_cs_wkt_parser.c
+    ) 
+endif()
 
 # build target
 set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
