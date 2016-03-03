@@ -25,38 +25,15 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-option(GDAL_ENABLE_GNM "Build GNM module" OFF)
-if(GDAL_ENABLE_GNM)
-
-    include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+file(GLOB FORMATS ${CMAKE_CURRENT_SOURCE_DIR}/*)
+foreach(FORMAT ${FORMATS})
+    if(EXISTS ${FORMAT}/CMakeLists.txt)
+        add_subdirectory(${FORMAT})
+    endif()    
+endforeach()
     
-    set(TARGET_NAME gnm)
 
-    set(LIB_HHEADERS
-        gnm_api.h
-        gnmgraph.h
-        gnm.h
-        gnm_priv.h
-    )
-
-    set(LIB_CSOURCES
-        gnmgenericnetwork.cpp
-        gnmgraph.cpp
-        gnmlayer.cpp
-        gnmnetwork.cpp
-        gnmresultlayer.cpp
-        gnmrule.cpp
-    )
-
-
-    add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_CSOURCES})
-
-    # build target
-    set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
-    set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
-
-    # install headers
-    if(NOT SKIP_INSTALL_HEADERS AND NOT SKIP_INSTALL_ALL )
-        install(FILES ${LIB_HHEADERS} DESTINATION ${INSTALL_INC_DIR} COMPONENT headers)
-    endif() 
-endif()
+# send variables upper
+set(TARGET_OBJECTS ${TARGET_OBJECTS} PARENT_SCOPE)
+set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
+set(DEPENDENCY_LIB ${DEPENDENCY_LIB} PARENT_SCOPE)

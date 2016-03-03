@@ -133,8 +133,9 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 # main directories
 add_subdirectory(core)
-#add_subdirectory(drivers)
-#add_subdirectory(bindings)
+add_subdirectory(drivers)
+add_subdirectory(apps)
+add_subdirectory(bindings)
 add_subdirectory(docs)
 
 # link library objects
@@ -173,8 +174,6 @@ endif()
 
 target_link_extlibraries(${LIB_NAME}) 
 export(TARGETS ${LIB_NAME} FILE ${LIB_NAME}-exports.cmake EXPORT_LINK_INTERFACE_LIBRARIES)
-
-add_subdirectory(apps)
 
 # install
 include(install)
