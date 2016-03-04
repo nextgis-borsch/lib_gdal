@@ -120,6 +120,9 @@ if(LIBXML2_FOUND)
     add_definitions(-DHAVE_LIBXML2)
 endif()
 
+find_anyproject(TIFF REQUIRED)
+find_anyproject(GeoTIFF REQUIRED)
+
 #TODO:
 #ifeq ($(HAVE_SQLITE),yes)
 #CXXFLAGS :=	$(CXXFLAGS) -DSQLITE_ENABLED

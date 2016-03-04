@@ -31,7 +31,7 @@ if(GDAL_BUILD_APPS)
     
     macro(ADD_EXE target sources)
         add_executable(${target} ${sources})
-        target_link_libraries(${target} ${LIB_NAME})
+        target_link_libraries(${target} ${LIB_NAME} ${TARGET_LINK_LIB})
         set(INSTALL_TARGETS ${INSTALL_TARGETS} ${target})
     endmacro()
     

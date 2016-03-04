@@ -129,6 +129,11 @@ if(HAVE_SSE_AT_COMPILE_TIME)
     add_definitions(-DHAVE_SSE_AT_COMPILE_TIME)
 endif() 
 
+SET(CMAKE_REQUIRED_LIBRARIES ${TARGET_LINK_LIB})
+check_function_exists(TIFFScanlineSize64 HAVE_BIGTIFF)
+unset(CMAKE_REQUIRED_LIBRARIES)
+
+
 if(WIN32)
 # windows
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -W4 -wd4127 -wd4251 -wd4275 -wd4786 -wd4100 -wd4245 -wd4206 -wd4018 -wd4389")
