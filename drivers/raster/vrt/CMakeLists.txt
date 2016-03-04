@@ -3,7 +3,7 @@
 # Purpose:  CMake build scripts
 # Author:   Dmitry Baryshnikov, polimax@mail.ru
 ################################################################################
-# Copyright (C) 2015, NextGIS <info@nextgis.com>
+# Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
 # Copyright (C) 2012,2013,2014 Dmitry Baryshnikov
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -25,25 +25,42 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-option(GDAL_USE_CPL "Set ON to use cpl" ON)
-if(GDAL_USE_CPL)
-    add_definitions(-DUSE_CPL)
-endif(GDAL_USE_CPL)
+set(TARGET_NAME vrt)
 
-option(GDAL_PAM_ENABLED "Set ON to enable pam" ON)
-if(GDAL_PAM_ENABLED)
-    add_definitions(-DPAM_ENABLED)
-endif(GDAL_PAM_ENABLED)
+add_definitions(-DFRMT_vrt)
 
-add_definitions(-DGDAL_COMPILATION)
+include_directories(${CMAKE_SOURCE_DIR}/core/port)
+include_directories(${CMAKE_SOURCE_DIR}/core/gcore)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-add_subdirectory(port)
-add_subdirectory(gcore)
-add_subdirectory(alg)
-add_subdirectory(ogr)
-add_subdirectory(gnm)
 
-# send variables upper
-set(TARGET_OBJECTS ${TARGET_OBJECTS} PARENT_SCOPE)
-set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
-set(DEPENDENCY_LIB ${DEPENDENCY_LIB} PARENT_SCOPE)
+set(LIB_HHEADERS
+    vrtdataset.h
+    gdal_vrt.h
+)
+
+set(LIB_HHEADERS_PRIV
+)
+
+set(LIB_CSOURCES
+    vrtdriver.cpp   
+    vrtpansharpened.cpp  
+    vrtrawrasterband.cpp      
+    vrtsources.cpp    
+    vrtwarped.cpp
+    vrtdataset.cpp  
+    vrtderivedrasterband.cpp  
+    vrtfilters.cpp  
+    vrtrasterband.cpp    
+    vrtsourcedrasterband.cpp
+)
+
+add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
+
+# build target
+set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
+
+# install headers
+if(NOT SKIP_INSTALL_HEADERS AND NOT SKIP_INSTALL_ALL )
+    install(FILES ${LIB_HHEADERS} DESTINATION ${INSTALL_INC_DIR} COMPONENT headers)
+endif() 

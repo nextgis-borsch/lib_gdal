@@ -33,8 +33,6 @@ add_definitions(-DHAVE_MITAB)
 
 set(TARGET_NAME ogr)
 
-add_definitions(-DGDAL_COMPILATION)
-
 include_directories(${CMAKE_SOURCE_DIR}/core/port)
 include_directories(${CMAKE_SOURCE_DIR}/core/gcore)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
@@ -133,8 +131,6 @@ if(EXPAT_FOUND)
     )
 endif()
 
-add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
-
 option(GDAL_UPDATE_SWQ "Set ON to update swq files" OFF)
 if(GDAL_UPDATE_SWQ)
     find_package(BISON)    
@@ -154,6 +150,8 @@ if(NOT GDAL_UPDATE_SWQ OR NOT BISON_FOUND)
         osr_cs_wkt_parser.c
     ) 
 endif()
+
+add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
 
 # build target
 set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
