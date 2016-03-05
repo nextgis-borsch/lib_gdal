@@ -33,8 +33,6 @@ add_definitions(-DHAVE_MITAB)
 
 set(TARGET_NAME ogr)
 
-include_directories(${CMAKE_SOURCE_DIR}/core/port)
-include_directories(${CMAKE_SOURCE_DIR}/core/gcore)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/ogrsf_frmts)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/ogrsf_frmts/mem)
@@ -120,9 +118,7 @@ set(LIB_CSOURCES
     swq_select.cpp
 )
 
-find_anyproject(EXPAT DEFAULT ON)
 if(EXPAT_FOUND)
-    add_definitions(-DHAVE_EXPAT)
     set(LIB_HHEADERS_PRIV ${LIB_HHEADERS_PRIV}
         ogr_expat.h
     )

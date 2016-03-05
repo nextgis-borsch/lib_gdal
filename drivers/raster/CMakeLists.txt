@@ -25,9 +25,18 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
 file(GLOB FORMATS ${CMAKE_CURRENT_SOURCE_DIR}/*)
 foreach(FORMAT ${FORMATS})
     if(EXISTS ${FORMAT}/CMakeLists.txt)
+        if(NOT SUPRESS_VERBOSE_OUTPUT)
+            string(ASCII 27 Esc)
+            set(Blue        "${Esc}[34m")
+            set(ColourReset "${Esc}[m")
+            get_filename_component(FORMAT_NAME ${FORMAT} NAME)
+            message(STATUS "add raster format: ${Blue}${FORMAT_NAME}${ColourReset}")
+        endif()    
         add_subdirectory(${FORMAT})
     endif()    
 endforeach()

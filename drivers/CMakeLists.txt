@@ -30,7 +30,6 @@ set(TARGET_NAME registar)
 include_directories(${CMAKE_SOURCE_DIR}/core/port)
 include_directories(${CMAKE_SOURCE_DIR}/core/gcore)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/vector)
 
 set(LIB_HHEADERS_PRIV
     gnm_frmts.h

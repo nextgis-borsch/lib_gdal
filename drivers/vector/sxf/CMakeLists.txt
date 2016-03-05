@@ -25,26 +25,30 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-include_directories(${CMAKE_SOURCE_DIR}/core/ogr)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/generic)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+option(WITH_SXF "Build Storage and eXchange Format - SXF" ON)
+if(WITH_SXF)
+    set(TARGET_NAME ogr_sxf)
 
-file(GLOB FORMATS ${CMAKE_CURRENT_SOURCE_DIR}/*)
-foreach(FORMAT ${FORMATS})
-    if(EXISTS ${FORMAT}/CMakeLists.txt)    
-        if(NOT SUPRESS_VERBOSE_OUTPUT)
-            string(ASCII 27 Esc)
-            set(Blue        "${Esc}[34m")
-            set(ColourReset "${Esc}[m")
-            get_filename_component(FORMAT_NAME ${FORMAT} NAME)
-            message(STATUS "add vector format: ${Blue}${FORMAT_NAME}${ColourReset}")
-        endif()
-        add_subdirectory(${FORMAT})
-    endif()    
-endforeach()
-    
+    add_definitions(-DSXF_ENABLED)
 
-# send variables upper
-set(TARGET_OBJECTS ${TARGET_OBJECTS} PARENT_SCOPE)
-set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
-set(DEPENDENCY_LIB ${DEPENDENCY_LIB} PARENT_SCOPE)
+    include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
+    set(LIB_HHEADERS
+    )
+
+    set(LIB_HHEADERS_PRIV
+          ogr_sxf.h    
+          org_sxf_defs.h
+    )
+
+    set(LIB_CSOURCES
+        ogrsxfdatasource.cpp  
+        ogrsxflayer.cpp
+        ogrsxfdriver.cpp
+    )
+
+    add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
+
+    # build target
+    set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
+endif()

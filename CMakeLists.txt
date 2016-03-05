@@ -120,6 +120,12 @@ if(LIBXML2_FOUND)
     add_definitions(-DHAVE_LIBXML2)
 endif()
 
+find_anyproject(EXPAT DEFAULT ON)
+if(EXPAT_FOUND)
+    add_definitions(-DHAVE_EXPAT)
+endif()
+
+
 find_anyproject(TIFF REQUIRED)
 find_anyproject(GeoTIFF REQUIRED)
 

@@ -25,26 +25,44 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-include_directories(${CMAKE_SOURCE_DIR}/core/ogr)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/generic)
+set(TARGET_NAME ogr_kml)
+
+add_definitions(-DKML_ENABLED)
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-file(GLOB FORMATS ${CMAKE_CURRENT_SOURCE_DIR}/*)
-foreach(FORMAT ${FORMATS})
-    if(EXISTS ${FORMAT}/CMakeLists.txt)    
-        if(NOT SUPRESS_VERBOSE_OUTPUT)
-            string(ASCII 27 Esc)
-            set(Blue        "${Esc}[34m")
-            set(ColourReset "${Esc}[m")
-            get_filename_component(FORMAT_NAME ${FORMAT} NAME)
-            message(STATUS "add vector format: ${Blue}${FORMAT_NAME}${ColourReset}")
-        endif()
-        add_subdirectory(${FORMAT})
-    endif()    
-endforeach()
-    
+set(LIB_HHEADERS
+)
 
-# send variables upper
-set(TARGET_OBJECTS ${TARGET_OBJECTS} PARENT_SCOPE)
-set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
-set(DEPENDENCY_LIB ${DEPENDENCY_LIB} PARENT_SCOPE)
+set(LIB_HHEADERS_PRIV
+    ogr_kml.h
+)
+
+set(LIB_CSOURCES    
+    ogr2kmlgeometry.cpp   
+    ogrkmldriver.cpp  
+    ogrkmllayer.cpp    
+    ogrkmldatasource.cpp  
+)
+
+if(EXPAT_FOUND)
+    set(LIB_HHEADERS_PRIV ${LIB_HHEADERS_PRIV}
+        kml.h        
+        kmlnode.h
+        kmlvector.h
+        kmlutility.h
+    )
+
+    set(LIB_CSOURCES ${LIB_CSOURCES}
+        kml.cpp
+        kmlnode.cpp  
+        kmlvector.cpp  
+    )
+endif()
+
+add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
+
+# build target
+set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
+
+ 

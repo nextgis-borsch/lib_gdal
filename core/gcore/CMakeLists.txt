@@ -27,9 +27,6 @@
 
 set(TARGET_NAME gcore)
 
-include_directories(${CMAKE_SOURCE_DIR}/core/port)
-include_directories(${CMAKE_SOURCE_DIR}/core/alg)
-include_directories(${CMAKE_SOURCE_DIR}/core/ogr)
 include_directories(${CMAKE_SOURCE_DIR}/core/ogr/ogrsf_frmts)
 include_directories(${CMAKE_SOURCE_DIR}/core/ogr/ogrsf_frmts/generic)
 include_directories(${CMAKE_SOURCE_DIR}/core/ogr/ogrsf_frmts/geojson)

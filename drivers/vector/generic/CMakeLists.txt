@@ -25,26 +25,52 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-include_directories(${CMAKE_SOURCE_DIR}/core/ogr)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/generic)
+set(TARGET_NAME ogr_generic)
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-file(GLOB FORMATS ${CMAKE_CURRENT_SOURCE_DIR}/*)
-foreach(FORMAT ${FORMATS})
-    if(EXISTS ${FORMAT}/CMakeLists.txt)    
-        if(NOT SUPRESS_VERBOSE_OUTPUT)
-            string(ASCII 27 Esc)
-            set(Blue        "${Esc}[34m")
-            set(ColourReset "${Esc}[m")
-            get_filename_component(FORMAT_NAME ${FORMAT} NAME)
-            message(STATUS "add vector format: ${Blue}${FORMAT_NAME}${ColourReset}")
-        endif()
-        add_subdirectory(${FORMAT})
-    endif()    
-endforeach()
-    
+set(LIB_HHEADERS
+    ${CMAKE_SOURCE_DIR}/drivers/vector/ogrsf_frmts.h
+)
 
-# send variables upper
-set(TARGET_OBJECTS ${TARGET_OBJECTS} PARENT_SCOPE)
-set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
-set(DEPENDENCY_LIB ${DEPENDENCY_LIB} PARENT_SCOPE)
+set(LIB_HHEADERS_PRIV
+    ${CMAKE_SOURCE_DIR}/drivers/vector/ogr_attrind.h
+    ogrwarpedlayer.h
+    ogrlayerdecorator.h
+    ogremulatedtransaction.h
+    ogrmutexeddatasource.h
+    ogreditablelayer.h
+    ogr_gensql.h
+    ogrlayerpool.h
+    ogrmutexedlayer.h
+    ogrunionlayer.h
+)
+
+set(LIB_CSOURCES
+    ogremulatedtransaction.cpp  
+    ogrlayerdecorator.cpp  
+    ogrmutexeddatasource.cpp  
+    ogrsfdriver.cpp    
+    ogr_attrind.cpp               
+    ogrsfdriverregistrar.cpp
+    ogrdatasource.cpp     
+    ogr_gensql.cpp              
+    ogrlayerpool.cpp       
+    ogrmutexedlayer.cpp       
+    ogrunionlayer.cpp 
+    ogreditablelayer.cpp                                    
+    ogrlayer.cpp                
+    ogr_miattrind.cpp      
+    ogrregisterall.cpp        
+    ogrwarpedlayer.cpp
+)
+
+add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
+
+# build target
+set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
+
+# install headers
+if(NOT SKIP_INSTALL_HEADERS AND NOT SKIP_INSTALL_ALL )
+    install(FILES ${LIB_HHEADERS} DESTINATION ${INSTALL_INC_DIR} COMPONENT headers)
+endif() 

@@ -29,8 +29,6 @@ set(TARGET_NAME hfa)
 
 add_definitions(-DFRMT_hfa)
 
-include_directories(${CMAKE_SOURCE_DIR}/core/port)
-include_directories(${CMAKE_SOURCE_DIR}/core/gcore)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 
