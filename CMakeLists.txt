@@ -40,8 +40,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 
 set(INSTALL_BIN_DIR "${CMAKE_INSTALL_PREFIX}/bin" CACHE INTERNAL "Installation directory for executables" FORCE)
 set(INSTALL_LIB_DIR "${CMAKE_INSTALL_PREFIX}/lib" CACHE INTERNAL "Installation directory for libraries" FORCE)
-set(INSTALL_INC_DIR "${CMAKE_INSTALL_PREFIX}/include/gdal" CACHE INTERNAL "Installation directory for headers" FORCE)
-set(INSTALL_SHARE_DIR "${CMAKE_INSTALL_PREFIX}/share/gdal" CACHE INTERNAL "Installation directory for share data" FORCE)
+set(INSTALL_INC_DIR "${CMAKE_INSTALL_PREFIX}/include/${PROJECT_NAME}" CACHE INTERNAL "Installation directory for headers" FORCE)
+set(INSTALL_SHARE_DIR "${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}" CACHE INTERNAL "Installation directory for share data" FORCE)
 set(INSTALL_PKGCONFIG_DIR "${INSTALL_LIB_DIR}/pkgconfig" CACHE INTERNAL "Installation directory for pkgconfig (.pc) files" FORCE)
 set(INSTALL_MAN_DIR "${CMAKE_INSTALL_PREFIX}/share/man" CACHE INTERNAL "Installation directory for manual pages" FORCE)
 
@@ -56,7 +56,7 @@ report_version(${PROJECT_NAME} ${VERSION})
 if(UNIX)
     option(GDAL_INSTALL_DATA_IN_VERSION_DIR "Set ON to install GDAL in path with version (i.e. usr/local/share/gdal/1.11" OFF)
     if(GDAL_INSTALL_DATA_IN_VERSION_DIR)
-        set(INSTALL_SHARE_DIR "${CMAKE_INSTALL_PREFIX}/share/gdal/${GDAL_VERSION}" CACHE INTERNAL "Installation directory for share data" FORCE)
+        set(INSTALL_SHARE_DIR "${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}/${GDAL_VERSION}" CACHE INTERNAL "Installation directory for share data" FORCE)
     endif()
 endif()
 
@@ -201,4 +201,4 @@ if(NOT SUPRESS_VERBOSE_OUTPUT)
 endif()
 
 # uninstall
-add_custom_target(uninstall COMMAND ${CMAKE_COMMAND} -P ${GDAL_ROOT_BINARY_DIR}/cmake_uninstall.cmake)
+add_custom_target(uninstall COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
