@@ -154,7 +154,8 @@ if(DOXYGEN_FOUND)
     if(NOT SKIP_INSTALL_FILES AND NOT SKIP_INSTALL_ALL )
         install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/man/man1 
                 DESTINATION ${INSTALL_MAN_DIR}
-                COMPONENT documents)
+                COMPONENT documents
+                OPTIONAL)
     
         install(FILES
                   ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.TXT
@@ -162,7 +163,8 @@ if(DOXYGEN_FOUND)
                   ${CMAKE_CURRENT_SOURCE_DIR}/COMMITERS
                   ${CMAKE_CURRENT_SOURCE_DIR}/NEWS
               DESTINATION ${INSTALL_SHARE_DIR}
-              COMPONENT documents)
+              COMPONENT documents
+              OPTIONAL)
     endif()
                   
 endif()

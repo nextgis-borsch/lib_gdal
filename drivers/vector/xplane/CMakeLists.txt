@@ -25,87 +25,41 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-set(TARGET_NAME alg)
+set(TARGET_NAME ogr_xplane)
+
+add_definitions(-DXPLANE_ENABLED)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 set(LIB_HHEADERS
-    gdal_alg.h
-    gdalgrid.h
-    gdalpansharpen.h
-    gdal_simplesurf.h
-    gdalwarper.h
-    gvgcpfit.h
-    thinplatespline.h
 )
 
 set(LIB_HHEADERS_PRIV
-    gdal_alg_priv.h    
-    gdalgrid_priv.h
-    internal_qhull_headers.h
+    ogr_xplane_awy_reader.h    
+    ogr_xplane_geo_utils.h    
+    ogr_xplane_reader.h
+    ogr_xplane_apt_reader.h    
+    ogr_xplane_fix_reader.h    
+    ogr_xplane.h              
+    ogr_xplane_nav_reader.h    
 )
 
 set(LIB_CSOURCES
-    contour.cpp
-    delaunay.c
-    gdalchecksum.cpp
-    gdal_crs.c
-    gdalcutline.cpp
-    gdaldither.cpp
-    gdalgeoloc.cpp
-    gdalgridavx.cpp
-    gdalgrid.cpp
-    gdalgridsse.cpp
-    gdalmatching.cpp
-    gdalmediancut.cpp
-#    gdal_nrgcrs.c
-    gdal_octave.cpp
-    gdalpansharpen.cpp
-    gdalproximity.cpp
-    gdalrasterize.cpp
-    gdalrasterpolygonenumerator.cpp
-    gdal_rpc.cpp
-    gdalsievefilter.cpp
-    gdal_simplesurf.cpp
-    gdalsimplewarp.cpp
-    gdal_tps.cpp
-    gdaltransformer.cpp
-    gdaltransformgeolocs.cpp
-    gdalwarper.cpp
-    gdalwarpkernel.cpp
-    gdalwarpoperation.cpp
-    llrasterize.cpp
-    polygonize.cpp
-    rasterfill.cpp
-    thinplatespline.cpp
+    ogr_xplane_awy_reader.cpp  
+    ogrxplanedriver.cpp        
+    ogr_xplane_geo_utils.cpp  
+    ogrxplanelayer.cpp         
+    ogr_xplane_reader.cpp
+    ogr_xplane_apt_reader.cpp  
+    ogr_xplane_fix_reader.cpp  
+    ogr_xplane_nav_reader.cpp  
+    ogrxplanedatasource.cpp    
+#    test_geo_utils.cpp
 )
-
-find_anyproject(QHULL DEFAULT OFF)
-
-find_anyproject(Armadillo DEFAULT OFF)
-if(ARMADILLO_FOUND)
-    add_definitions(-DHAVE_ARMADILLO)
-endif()
-
-find_anyproject(OpenCL DEFAULT OFF)
-if(OPENCL_FOUND)
-    add_definitions(-DHAVE_OPENCL)
-
-    set(LIB_HHEADERS_PRIV ${LIB_HHEADERS_PRIV}
-        gdalwarpkernel_opencl.h
-    )
-    set(LIB_CSOURCES ${LIB_CSOURCES}
-        gdalwarpkernel_opencl.c
-    )
-endif()
 
 add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
 
 # build target
 set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
-set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
 
-# install headers
-if(NOT SKIP_INSTALL_HEADERS AND NOT SKIP_INSTALL_ALL )
-    install(FILES ${LIB_HHEADERS} DESTINATION ${INSTALL_INC_DIR} COMPONENT headers)
-endif() 
+ 

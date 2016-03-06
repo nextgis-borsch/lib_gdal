@@ -126,6 +126,8 @@ if(EXPAT_FOUND)
 endif()
 
 
+find_anyproject(JSONC REQUIRED)
+
 find_anyproject(TIFF REQUIRED)
 find_anyproject(GeoTIFF REQUIRED)
 
@@ -151,7 +153,16 @@ set(LIB_NAME)
 if(BUILD_SHARED_LIBS)
     set(LIB_TYPE SHARED)
     set(LIB_NAME ${PROJECT_NAME})
-    add_library(${LIB_NAME} SHARED ${TARGET_OBJECTS})
+else()
+    set(LIB_TYPE STATIC)
+    set(LIB_NAME ${PROJECT_NAME}static)
+endif()
+
+add_subdirectory(apps)
+
+add_library(${LIB_NAME} ${LIB_TYPE} ${TARGET_OBJECTS})
+
+if(BUILD_SHARED_LIBS)
     if(WIN32)
         set (LIB_VERSION ${GDAL_MAJOR_VERSION})
         if(MSVC)        
@@ -159,15 +170,11 @@ if(BUILD_SHARED_LIBS)
         endif()
     else ()
       set (LIB_VERSION ${VERSION})
-    endif()
-    
+    endif()    
     set_target_properties (${LIB_NAME} PROPERTIES VERSION ${LIB_VERSION})
     set_target_properties (${LIB_NAME} PROPERTIES SOVERSION ${LIB_VERSION})
-else()
-    set(LIB_TYPE STATIC)
-    set(LIB_NAME ${PROJECT_NAME}static)
-    add_library(${LIB_NAME} STATIC ${TARGET_OBJECTS})
 endif()
+
 
 if(UNIX)
     set_target_properties(${LIB_NAME} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
@@ -185,12 +192,9 @@ export(TARGETS ${LIB_NAME} FILE ${LIB_NAME}-exports.cmake EXPORT_LINK_INTERFACE_
 
 add_subdirectory(bindings)
 add_subdirectory(docs)
-add_subdirectory(apps)
 
 # install
 include(install)
-
-# todo: target to build docs
 
 if(NOT SUPRESS_VERBOSE_OUTPUT)
     include(summary)

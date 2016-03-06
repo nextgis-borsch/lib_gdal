@@ -25,38 +25,67 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
+set(TARGET_NAME apps_lib)
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/geojson)
+include_directories(${CMAKE_SOURCE_DIR}/core/ogr)
+
+
+set(LIB_HHEADERS
+)
+
+set(LIB_HHEADERS_PRIV
+    commonutils.h 
+    gdal_utils.h 
+    gdal_utils_priv.h 
+)
+
+set(LIB_CSOURCES
+    commonutils.cpp
+    gdalinfo_lib.cpp   
+    gdalwarp_lib.cpp
+    gdaldem_lib.cpp
+    gdal_translate_lib.cpp
+    nearblack_lib.cpp
+    gdal_rasterize_lib.cpp
+    ogr2ogr_lib.cpp
+    gdalbuildvrt_lib.cpp
+    gdal_grid_lib.cpp
+)
+
+add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
+
+# build target
+set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
+
 option(GDAL_BUILD_APPS "Build console applications" ON)
 if(GDAL_BUILD_APPS)
     set(INSTALL_TARGETS)
     
     macro(ADD_EXE target sources)
         add_executable(${target} ${sources})
+        add_dependencies(${target} ${LIB_NAME})
         target_link_libraries(${target} ${LIB_NAME} ${TARGET_LINK_LIB})
         set(INSTALL_TARGETS ${INSTALL_TARGETS} ${target})
     endmacro()
-    
-    macro(ADD_EXE_BIN target sources lib_target lib_sources)
-        add_library(${lib_target} OBJECT ${lib_sources})
-        set(ESOURCES ${sources} $<TARGET_OBJECTS:${lib_target}>)
-        add_exe(${target} ${ESOURCES})
-    endmacro()
-    
-    add_exe_bin(gdalinfo gdalinfo_bin.cpp gdalinfo_lib gdalinfo_lib.cpp) 
-    add_exe_bin(gdalwarp gdalwarp_bin.cpp gdalwarp_lib gdalwarp_lib.cpp) 
-    add_exe_bin(gdaldem gdaldem_bin.cpp gdaldem_lib gdaldem_lib.cpp) 
-    add_exe_bin(gdal_translate gdal_translate_bin.cpp gdal_translate_lib gdal_translate_lib.cpp) 
+       
+    add_exe(gdalinfo gdalinfo_bin.cpp) 
+    add_exe(gdalwarp gdalwarp_bin.cpp) 
+    add_exe(gdaldem gdaldem_bin.cpp) 
+    add_exe(gdal_translate gdal_translate_bin.cpp) 
        
     add_exe(gdalmanage gdalmanage.cpp)
     add_exe(gdalenhance gdalenhance.cpp)
     add_exe(gdaladdo gdaladdo.cpp)
     add_exe(gdalsrsinfo gdalsrsinfo.cpp)
 
-    add_exe_bin(nearblack nearblack_bin.cpp nearblack_lib nearblack_lib.cpp) 
+    add_exe(nearblack nearblack_bin.cpp) 
     add_exe(gdallocationinfo gdallocationinfo.cpp)
     add_exe(gdaltransform gdaltransform.cpp)
     add_exe(gdalserver gdalserver.c)
 
-#commonutils.cpp commonutils.h gdal_utils.h gdal_utils_priv.h
+
 
     if(GDAL_ENABLE_GNM)
         add_exe(gnmanalyse gnmanalyse.cpp)
@@ -66,15 +95,15 @@ if(GDAL_BUILD_APPS)
     if(GDAL_ENABLE_OGR)
         add_exe(gdal_contour gdal_contour.cpp)
         add_exe(gdaltindex gdaltindex.c)        
-        add_exe_bin(gdal_rasterize gdal_rasterize_bin.cpp gdal_rasterize_lib gdal_rasterize_lib.cpp)
+        add_exe(gdal_rasterize gdal_rasterize_bin.cpp)
         add_exe(ogrinfo ogrinfo.cpp)
         add_exe(ogrlineref ogrlineref.cpp)        
-        add_exe_bin(ogr2ogr ogr2ogr_bin.cpp ogr2ogr_lib ogr2ogr_lib.cpp)        
-        add_exe_bin(gdal_grid gdal_grid_bin.cpp gdal_grid_lib gdal_grid_lib.cpp)
+        add_exe(ogr2ogr ogr2ogr_bin.cpp) 
+        add_exe(gdal_grid gdal_grid_bin.cpp)
         add_exe(ogrtindex ogrtindex.cpp)
         add_exe(testepsg testepsg.cpp)
-        add_exe_bin(gdalbuildvrt gdalbuildvrt_bin.cpp gdalbuildvrt_lib gdalbuildvrt_lib.cpp)
-        add_exe(ogrdissolve ogrdissolve.cpp)
+        add_exe(gdalbuildvrt gdalbuildvrt_bin.cpp)
+#        add_exe(ogrdissolve ogrdissolve.cpp)
     endif()
 
     option(GDAL_BUILD_OPT_APPS "Build optional console applications" OFF)
@@ -84,7 +113,7 @@ if(GDAL_BUILD_APPS)
         add_exe(gdalwarpsimple gdalwarpsimple.c)
         add_exe(gdalflattenmask gdalflattenmask.c)
         add_exe(gdaltorture gdaltorture.cpp)
-        add_exe(gdal2ogr gdal2ogr.cpp)
+        add_exe(gdal2ogr gdal2ogr.c)
         add_exe(test_ogrsf test_ogrsf.cpp)
         add_exe(gdalasyncread gdalasyncread.cpp)
         add_exe(testreprojmulti testreprojmulti.cpp)

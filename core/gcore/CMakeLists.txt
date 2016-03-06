@@ -106,8 +106,6 @@ if(GDAL_PAM_ENABLED)
     )
 endif(GDAL_PAM_ENABLED)
 
-find_anyproject(JSONC REQUIRED)
-
 add_subdirectory(mdreader)
 
 add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
