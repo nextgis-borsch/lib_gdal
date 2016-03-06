@@ -52,8 +52,6 @@ if(MSVC)
     set(ENV{VS90COMNTOOLS} ${VC_DIR})
 endif()
 
-set(CURRENT_DIR bindings/${BINDING})
-
 set(COPY_IF_DIFFERENT
     extensions/gdal_array_wrap.cpp
     extensions/gdalconst_wrap.c
@@ -87,27 +85,27 @@ add_custom_target(copy_files ALL
 )
 
 foreach(FILE ${COPY_IF_DIFFERENT})
-    #message(STATUS "copy ${GDAL_ROOT_SOURCE_DIR}/${CURRENT_DIR}/${FILE} to ${GDAL_ROOT_BINARY_DIR}/${CURRENT_DIR}/${FILE}")
-    if(NOT EXISTS ${GDAL_ROOT_BINARY_DIR}/${CURRENT_DIR}/${FILE})
+    #message(STATUS "copy ${CMAKE_CURRENT_SOURCE_DIR}/${FILE} to ${CMAKE_CURRENT_BINARY_DIR}/${FILE}")
+    if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/${FILE})
     add_custom_command(TARGET copy_files
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${GDAL_ROOT_SOURCE_DIR}/${CURRENT_DIR}/${FILE}" "${GDAL_ROOT_BINARY_DIR}/${CURRENT_DIR}/${FILE}"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/${FILE}" "${CMAKE_CURRENT_BINARY_DIR}/${FILE}"
     )
     endif()
 endforeach()
 
 
 foreach(FILE ${COPY})
-    #message(STATUS "copy ${GDAL_ROOT_SOURCE_DIR}/${CURRENT_DIR}/${FILE} to ${GDAL_ROOT_BINARY_DIR}/${CURRENT_DIR}/${FILE}")
+    #message(STATUS "copy ${CMAKE_CURRENT_SOURCE_DIR}/${FILE} to ${CMAKE_CURRENT_BINARY_DIR}/${FILE}")
     add_custom_command(TARGET copy_files
-        COMMAND ${CMAKE_COMMAND} -E copy "${GDAL_ROOT_SOURCE_DIR}/${CURRENT_DIR}/${FILE}" "${GDAL_ROOT_BINARY_DIR}/${CURRENT_DIR}/${FILE}"
+        COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/${FILE}" "${CMAKE_CURRENT_BINARY_DIR}/${FILE}"
     )
 endforeach()
 
 add_custom_target(build ALL
     # copy some files to binary_dir
     COMMAND set VS90COMNTOOLS=${VC_DIR}
-    COMMAND ${PYTHON_EXECUTABLE} ${GDAL_ROOT_BINARY_DIR}/${CURRENT_DIR}/setup.py build
-    WORKING_DIRECTORY ${GDAL_ROOT_BINARY_DIR}/${CURRENT_DIR}
+    COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/setup.py build
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     DEPENDS copy_files
 )
 
@@ -115,16 +113,22 @@ add_custom_target(build ALL
 # todo: add custom target to generate swig
 # todo: add install target $(PYTHON) setup.py install --prefix=$(DESTDIR)$(prefix)
 # '../../port', '../../gcore', '../../alg', '../../ogr/', '../../ogr/ogrsf_frmts', '../../gnm'
-set(SWIG_PYTHON_INCLUDE_DIRS "'${GDAL_ROOT_SOURCE_DIR}/core/alg', '${GDAL_ROOT_SOURCE_DIR}/core/port', '${GDAL_ROOT_SOURCE_DIR}/core/gcore', '${GDAL_ROOT_SOURCE_DIR}/core/gnm', '${GDAL_ROOT_SOURCE_DIR}/core/ogr', '${GDAL_ROOT_SOURCE_DIR}/core/ogr/ogrsf_frmts'")
+set(SWIG_PYTHON_INCLUDE_DIRS "'${CMAKE_SOURCE_DIR}/core/alg', '${CMAKE_SOURCE_DIR}/core/port', '${CMAKE_SOURCE_DIR}/core/gcore', '${CMAKE_SOURCE_DIR}/core/gnm', '${CMAKE_SOURCE_DIR}/core/ogr', '${CMAKE_SOURCE_DIR}/core/ogr/ogrsf_frmts'")
 if(GDAL_ENABLE_GNM)
     set(GDAL_HAVE_GNM "True")
 else()
     set(GDAL_HAVE_GNM "False")
 endif()
 
-configure_file(${CMAKE_MODULE_PATH}/setup.py.cmake ${GDAL_ROOT_BINARY_DIR}/${CURRENT_DIR}/setup.py @ONLY)
+if(GDAL_ENABLE_OGR)
+    set(GDAL_HAVE_OGR "True")
+else()
+    set(GDAL_HAVE_OGR "False")
+endif()
+
+configure_file(${CMAKE_MODULE_PATH}/setup.py.cmake ${CMAKE_CURRENT_BINARY_DIR}/setup.py @ONLY)
 
 install(CODE "execute_process(
-            COMMAND \"${PYTHON_EXECUTABLE}\" \"${GDAL_ROOT_BINARY_DIR}/${CURRENT_DIR}/setup.py\" install
-            WORKING_DIRECTORY  ${GDAL_ROOT_BINARY_DIR}/${CURRENT_DIR}
+            COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/setup.py install
+            WORKING_DIRECTORY  ${CMAKE_CURRENT_BINARY_DIR}
         )")

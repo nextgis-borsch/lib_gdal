@@ -7,7 +7,7 @@
 # Howard Butler hobu.inc@gmail.com
 
 
-gdal_version = '2.1.0'
+gdal_version = '@VERSION@'
 
 import sys
 import os
@@ -20,6 +20,7 @@ from glob import glob
 # ---------------------------------------------------------------------------
 
 HAVE_GNM=@GDAL_HAVE_GNM@
+HAVE_OGR=@GDAL_HAVE_OGR@
 HAVE_NUMPY=False
 HAVE_SETUPTOOLS = False
 BUILD_FOR_CHEESESHOP = False
@@ -239,16 +240,18 @@ gnm_module = Extension('osgeo._gnm',
                     extra_link_args = extra_link_args)
 
 ext_modules = [gdal_module,
-              gdalconst_module,
               osr_module,
-              ogr_module
+              gdalconst_module
               ]
 
 py_modules = ['gdal',
-              'ogr',
               'osr',
               'gdalconst']
 
+if HAVE_OGR:
+    ext_modules.append(ogr_module)
+    py_modules.append('ogr')
+    
 if HAVE_GNM:
     ext_modules.append(gnm_module)
     py_modules.append('gnm')
