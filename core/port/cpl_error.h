@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id$
+ * $Id: cpl_error.h 32171 2015-12-13 20:39:43Z goatbar $
  *
  * Name:     cpl_error.h
  * Project:  CPL - Common Portability Library

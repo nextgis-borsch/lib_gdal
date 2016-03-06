@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: contour.cpp 32092 2015-12-08 14:54:56Z goatbar $
  *
  * Project:  Contour Generation
  * Purpose:  Core algorithm implementation for contour line generation. 
@@ -33,7 +33,7 @@
 #include "gdal_alg.h"
 #include "ogr_api.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: contour.cpp 32092 2015-12-08 14:54:56Z goatbar $");
 
 #ifdef OGR_ENABLED
 

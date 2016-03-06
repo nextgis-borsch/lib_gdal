@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: vrtwarped.cpp 33650 2016-03-05 22:25:27Z rouault $
  *
  * Project:  Virtual GDAL Datasets
  * Purpose:  Implementation of VRTWarpedRasterBand *and VRTWarpedDataset.
@@ -38,7 +38,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: vrtwarped.cpp 33650 2016-03-05 22:25:27Z rouault $");
 
 /************************************************************************/
 /*                      GDALAutoCreateWarpedVRT()                       */
@@ -296,6 +296,7 @@ VRTWarpedDataset::VRTWarpedDataset( int nXSize, int nYSize ) :
     m_nSrcOvrLevel(-2)
 {
     eAccess = GA_Update;
+    DisableReadWriteMutex();
 }
 
 /************************************************************************/
@@ -397,7 +398,7 @@ CPLErr VRTWarpedDataset::SetMetadataItem( const char *pszName, const char *pszVa
     if( (pszDomain == NULL || EQUAL(pszDomain, "")) && EQUAL(pszName, "SrcOvrLevel") )
     {
         const int nOldValue = m_nSrcOvrLevel;
-        if( EQUAL(pszValue, "AUTO") )
+        if( pszValue == NULL || EQUAL(pszValue, "AUTO") )
             m_nSrcOvrLevel = -2;
         else if( STARTS_WITH_CI(pszValue, "AUTO-") )
             m_nSrcOvrLevel = -2-atoi(pszValue + 5);

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: lcpdataset.cpp 32883 2016-01-09 18:24:40Z rouault $
  *
  * Project:  LCP Driver
  * Purpose:  FARSITE v.4 Landscape file (.lcp) reader for GDAL
@@ -35,7 +35,7 @@
 #include "ogr_spatialref.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: lcpdataset.cpp 32883 2016-01-09 18:24:40Z rouault $");
 
 static const size_t LCP_HEADER_SIZE = 7316;
 static const int LCP_MAX_BANDS = 10;

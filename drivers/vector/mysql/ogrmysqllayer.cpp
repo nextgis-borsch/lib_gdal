@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrmysqllayer.cpp 33105 2016-01-23 15:27:32Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRMySQLLayer class.
@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrmysqllayer.cpp 33105 2016-01-23 15:27:32Z rouault $");
 
 /************************************************************************/
 /*                           OGRMySQLLayer()                            */

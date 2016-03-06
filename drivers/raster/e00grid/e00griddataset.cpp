@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: e00griddataset.cpp 32223 2015-12-18 11:51:58Z rouault $
  *
  * Project:  E00 grid driver
  * Purpose:  GDALDataset driver for E00 grid dataset.
@@ -47,7 +47,7 @@ static const int E00_FLOAT_SIZE = 14;
 static const int E00_DOUBLE_SIZE = 21;
 static const int VALS_PER_LINE = 5;
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: e00griddataset.cpp 32223 2015-12-18 11:51:58Z rouault $");
 
 /* g++ -fPIC -Wall -g frmts/e00grid/e00griddataset.cpp -shared -o gdal_E00GRID.so -Iport -Igcore -Iogr -L. -lgdal */
 

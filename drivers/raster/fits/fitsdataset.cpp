@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: fitsdataset.cpp 33105 2016-01-23 15:27:32Z rouault $
  *
  * Project:  FITS Driver
  * Purpose:  Implement FITS raster read/write support
@@ -36,7 +36,7 @@
 #include <string.h>
 #include <fitsio.h>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: fitsdataset.cpp 33105 2016-01-23 15:27:32Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */

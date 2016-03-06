@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gifabstractdataset.h 32172 2015-12-13 23:28:18Z rouault $
  *
  * Project:  GIF Driver
  * Purpose:  GIF Abstract Dataset

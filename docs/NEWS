@@ -2526,7 +2526,7 @@ GTiff driver:
  * Add CT_HotineObliqueMercatorAzimuthCenter support
  * Fix PolarStereographic / 9829 support
  * Make sure that GetMetadata() initializes the value of GDALMD_AREA_OR_POINT item, if not already done (#4691)
- * When building overviews, if the image has already an internal mask, then build internal overviews for the mask implicitely
+ * When building overviews, if the image has already an internal mask, then build internal overviews for the mask implicitly
  * Better handling of SetMetadata(a_string) (#4816)
  * Use GTIFAllocDefn/GTIFFreeDefn with libgeotiff 1.4.1+
  * Add support for GEO_NORMALIZE_DISABLE_TOWGS84 (#3309)
@@ -6504,7 +6504,7 @@ SWIG Perl
  * Add wrappers for field types datetime and lists. Do not use the overloaded (field name) versions of the get/set functions.
  * GetField and SetField methods, which check for goodness of the field (name, index) and support dates, times, datetimes, and lists. In Row and Tuple the field value may be a listref.
  * Support HEXWKB in Geo::OGR::Geometry::create.
- * As* methods for Geometry as aliases for ExportTo; SpatialReference->create constuctor
+ * As* methods for Geometry as aliases for ExportTo; SpatialReference->create constructor
  * made needed links from parameters to typemaps to make Get- and SetDefaultHistogram methods work in Perl
  * support for mingw Windows builds
 

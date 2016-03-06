@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gt_citation.cpp 33105 2016-01-23 15:27:32Z rouault $
  *
  * Project:  GeoTIFF Driver
  * Purpose:  Implements special parsing of Imagine citation strings, and
@@ -36,7 +36,7 @@
 #include "gt_citation.h"
 #include "gt_wkt_srs_priv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gt_citation.cpp 33105 2016-01-23 15:27:32Z rouault $");
 
 static const char * const apszUnitMap[] = {
     "meters", "1.0",

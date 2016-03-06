@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalpamrasterband.cpp 33137 2016-01-23 23:26:39Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of GDALPamRasterBand, a raster band base class
@@ -34,7 +34,7 @@
 #include "gdal_rat.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalpamrasterband.cpp 33137 2016-01-23 23:26:39Z rouault $");
 
 /************************************************************************/
 /*                         GDALPamRasterBand()                          */

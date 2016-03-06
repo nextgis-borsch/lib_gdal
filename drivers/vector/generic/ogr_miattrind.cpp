@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_miattrind.cpp 32381 2015-12-20 21:37:32Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements interface to MapInfo .ID files used as attribute
@@ -33,7 +33,7 @@
 #include "mitab/mitab_priv.h"
 #include "cpl_minixml.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogr_miattrind.cpp 32381 2015-12-20 21:37:32Z goatbar $");
 
 /************************************************************************/
 /*                            OGRMIAttrIndex                            */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: vfkfeaturesqlite.cpp 32177 2015-12-14 07:25:30Z goatbar $
  *
  * Project:  VFK Reader - Feature definition (SQLite)
  * Purpose:  Implements VFKFeatureSQLite class.

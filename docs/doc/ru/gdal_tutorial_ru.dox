@@ -1,5 +1,5 @@
 /*
-$Id$
+$Id: gdal_tutorial_ru.dox 30780 2015-10-01 10:42:39Z bishop $
 Translation corresponds to gdal_tutorial.dox 14528 2008-05-26 03:07:21Z
 Translator Andrey Kiselev <dron@remotesensing.org>
 Translator Dmitry Baryshnikov <polimax@mail.ru>
@@ -640,7 +640,7 @@ CreateCopy(), показывает, что CreateCopy() должен завер�
 
 \htmlonly
 <p>
-$Id$
+$Id: gdal_tutorial_ru.dox 30780 2015-10-01 10:42:39Z bishop $
 </p>
 \endhtmlonly
 

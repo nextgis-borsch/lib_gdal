@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrsqlitedriver.cpp 33587 2016-02-28 19:04:46Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRSQLiteDriver class.
@@ -38,22 +38,7 @@
 #include "ogr_sqlite.h"
 #include "cpl_conv.h"
 
-#ifdef HAVE_SPATIALITE
-#include "spatialite.h"
-#endif
-
-CPL_CVSID("$Id$");
-
-/************************************************************************/
-/*                          OGRSQLiteDriverUnload()                     */
-/************************************************************************/
-
-static void OGRSQLiteDriverUnload(CPL_UNUSED GDALDriver* poDriver)
-{
-#ifdef SPATIALITE_412_OR_LATER
-    spatialite_shutdown();
-#endif
-}
+CPL_CVSID("$Id: ogrsqlitedriver.cpp 33587 2016-02-28 19:04:46Z rouault $");
 
 /************************************************************************/
 /*                     OGRSQLiteDriverIdentify()                        */

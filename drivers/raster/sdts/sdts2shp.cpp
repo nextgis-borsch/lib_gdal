@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * $Id$
+ * $Id: sdts2shp.cpp 32179 2015-12-14 16:22:34Z goatbar $
  *
  * Project:  SDTS Translator
  * Purpose:  Mainline for converting to ArcView Shapefiles.
@@ -31,7 +31,7 @@
 #include "shapefil.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: sdts2shp.cpp 32179 2015-12-14 16:22:34Z goatbar $");
 
 static int  bVerbose = FALSE;
 

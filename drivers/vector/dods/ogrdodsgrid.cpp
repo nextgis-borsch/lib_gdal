@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrdodsgrid.cpp 32366 2015-12-20 19:04:52Z goatbar $
  *
  * Project:  OGR/DODS Interface
  * Purpose:  Implements OGRDODSGridLayer class, which implements the
@@ -32,7 +32,7 @@
 #include "ogr_dods.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrdodsgrid.cpp 32366 2015-12-20 19:04:52Z goatbar $");
 
 /************************************************************************/
 /*                          OGRDODSGridLayer()                          */

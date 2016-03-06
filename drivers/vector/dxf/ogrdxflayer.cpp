@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrdxflayer.cpp 32629 2016-01-01 11:43:19Z rouault $
  *
  * Project:  DXF Translator
  * Purpose:  Implements OGRDXFLayer class.
@@ -33,7 +33,7 @@
 #include "ogrdxf_polyline_smooth.h"
 #include "ogr_api.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrdxflayer.cpp 32629 2016-01-01 11:43:19Z rouault $");
 
 /************************************************************************/
 /*                            OGRDXFLayer()                             */

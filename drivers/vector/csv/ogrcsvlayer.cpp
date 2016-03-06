@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrcsvlayer.cpp 33544 2016-02-24 16:38:44Z rouault $
  *
  * Project:  CSV Translator
  * Purpose:  Implements OGRCSVLayer class.
@@ -34,7 +34,7 @@
 #include "cpl_csv.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrcsvlayer.cpp 33544 2016-02-24 16:38:44Z rouault $");
 
 
 /************************************************************************/
@@ -1715,6 +1715,8 @@ int OGRCSVLayer::TestCapability( const char * pszCap )
         return TRUE;
     else if( EQUAL(pszCap,OLCCurveGeometries) )
         return TRUE;
+    else if( EQUAL(pszCap,OLCMeasuredGeometries) )
+        return TRUE;
     else
         return FALSE;
 }
@@ -2176,7 +2178,7 @@ OGRErr OGRCSVLayer::ICreateFeature( OGRFeature *poNewFeature )
     {
         char *pszWKT = NULL;
         OGRGeometry     *poGeom = poNewFeature->GetGeomFieldRef(0);
-        if (poGeom && poGeom->exportToWkt(&pszWKT) == OGRERR_NONE)
+        if (poGeom && poGeom->exportToWkt(&pszWKT, wkbVariantIso) == OGRERR_NONE)
         {
             bNonEmptyLine = TRUE;
             bRet &= VSIFWriteL( "\"", 1, 1, fpCSV ) > 0;
@@ -2202,7 +2204,7 @@ OGRErr OGRCSVLayer::ICreateFeature( OGRFeature *poNewFeature )
         {
             int iGeom = panGeomFieldIndex[iField];
             OGRGeometry     *poGeom = poNewFeature->GetGeomFieldRef(iGeom);
-            if (poGeom && poGeom->exportToWkt(&pszEscaped) == OGRERR_NONE)
+            if (poGeom && poGeom->exportToWkt(&pszEscaped, wkbVariantIso) == OGRERR_NONE)
             {
                 int nLenWKT = (int)strlen(pszEscaped);
                 char* pszNew = (char*) CPLMalloc(1 + nLenWKT + 1 + 1);
@@ -2218,7 +2220,13 @@ OGRErr OGRCSVLayer::ICreateFeature( OGRFeature *poNewFeature )
         }
         else if (poFeatureDefn->GetFieldDefn(iField)->GetType() == OFTReal)
         {
-            pszEscaped = CPLStrdup(poNewFeature->GetFieldAsString(iField));
+            if( poFeatureDefn->GetFieldDefn(iField)->GetSubType() == OFSTFloat32 &&
+                poNewFeature->IsFieldSet(iField) )
+            {
+                pszEscaped = CPLStrdup(CPLSPrintf("%.8g", poNewFeature->GetFieldAsDouble(iField)));
+            }
+            else
+                pszEscaped = CPLStrdup(poNewFeature->GetFieldAsString(iField));
         }
         else
         {

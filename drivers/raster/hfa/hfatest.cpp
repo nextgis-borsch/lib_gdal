@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: hfatest.cpp 31575 2015-11-17 20:26:00Z rouault $
  *
  * Project:  Erdas Imagine (.img) Translator
  * Purpose:  Testing mainline for HFA services - transitory.
@@ -31,7 +31,7 @@
 #include "hfa_p.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: hfatest.cpp 31575 2015-11-17 20:26:00Z rouault $");
 
 /************************************************************************/
 /*                               Usage()                                */

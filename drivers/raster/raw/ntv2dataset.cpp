@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ntv2dataset.cpp 33146 2016-01-24 17:07:03Z rouault $
  *
  * Project:  Horizontal Datum Formats
  * Purpose:  Implementation of NTv2 datum shift format used in Canada, France, 
@@ -35,7 +35,7 @@
 #include "ogr_srs_api.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ntv2dataset.cpp 33146 2016-01-24 17:07:03Z rouault $");
 
 /**
  * The header for the file, and each grid consists of 11 16byte records.

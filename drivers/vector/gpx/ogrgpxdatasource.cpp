@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrgpxdatasource.cpp 32982 2016-01-14 16:53:57Z goatbar $
  *
  * Project:  GPX Translator
  * Purpose:  Implements OGRGPXDataSource class
@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "ogr_gpx.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgpxdatasource.cpp 32982 2016-01-14 16:53:57Z goatbar $");
 
 static const int SPACE_FOR_METADATA = 160;
 

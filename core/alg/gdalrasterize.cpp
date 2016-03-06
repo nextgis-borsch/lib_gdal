@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalrasterize.cpp 32290 2015-12-20 00:31:07Z rouault $
  *
  * Project:  GDAL
  * Purpose:  Vector rasterization.

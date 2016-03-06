@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrcsvdatasource.cpp 33544 2016-02-24 16:38:44Z rouault $
  *
  * Project:  CSV Translator
  * Purpose:  Implements OGRCSVDataSource class
@@ -37,7 +37,7 @@
 
 #include "ogreditablelayer.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrcsvdatasource.cpp 33544 2016-02-24 16:38:44Z rouault $");
 
 /************************************************************************/
 /*                     OGRCSVEditableLayerSynchronizer                  */
@@ -354,6 +354,8 @@ int OGRCSVDataSource::TestCapability( const char * pszCap )
     else if( EQUAL(pszCap,ODsCCreateGeomFieldAfterCreateLayer) )
         return bUpdate && bEnableGeometryFields;
     else if( EQUAL(pszCap,ODsCCurveGeometries) )
+        return TRUE;
+    else if( EQUAL(pszCap,ODsCMeasuredGeometries) )
         return TRUE;
     else
         return FALSE;

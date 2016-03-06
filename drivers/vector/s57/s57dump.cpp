@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: s57dump.cpp 32445 2015-12-25 01:28:55Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Simple client for viewing S57 driver data.
@@ -31,7 +31,7 @@
 #include "cpl_string.h"
 #include "s57.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: s57dump.cpp 32445 2015-12-25 01:28:55Z goatbar $");
 
 /************************************************************************/
 /*                                main()                                */

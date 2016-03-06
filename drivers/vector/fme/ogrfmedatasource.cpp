@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrfmedatasource.cpp 33138 2016-01-24 11:18:11Z rouault $
  *
  * Project:  FMEObjects Translator
  * Purpose:  Implementations of the OGRFMEDataSource class.
@@ -39,7 +39,7 @@
 
 const char* kPROVIDERNAME = "FME_OLEDB";
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrfmedatasource.cpp 33138 2016-01-24 11:18:11Z rouault $");
 
 #ifdef WIN32
 #define FMEDLL_NAME "fme.dll"

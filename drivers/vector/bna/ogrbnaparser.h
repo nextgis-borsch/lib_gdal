@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrbnaparser.h 31955 2015-12-02 06:07:22Z goatbar $
  *
  * Project:  BNA Parser header
  * Purpose:  Definition of structures, enums and functions of BNA parser

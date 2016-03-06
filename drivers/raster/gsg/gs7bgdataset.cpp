@@ -1,5 +1,5 @@
 /****************************************************************************
- * $Id$
+ * $Id: gs7bgdataset.cpp 32642 2016-01-01 17:40:38Z rouault $
  *
  * Project:  GDAL
  * Purpose:  Implements the Golden Software Surfer 7 Binary Grid Format.
@@ -62,7 +62,7 @@
 # define SHRT_MAX 32767
 #endif /* SHRT_MAX */
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gs7bgdataset.cpp 32642 2016-01-01 17:40:38Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */

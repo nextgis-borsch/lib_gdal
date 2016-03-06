@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id$
+ * $Id: gmlpropertydefn.cpp 32409 2015-12-21 01:45:17Z goatbar $
  *
  * Project:  GML Reader
  * Purpose:  Implementation of GMLPropertyDefn

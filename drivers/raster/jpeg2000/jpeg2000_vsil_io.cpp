@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: jpeg2000_vsil_io.cpp 33123 2016-01-23 18:59:28Z rouault $
  *
  * Project:  JPEG-2000
  * Purpose:  Return a stream for a VSIL file
@@ -77,7 +77,7 @@
 #include "jpeg2000_vsil_io.h"
 #include "cpl_vsi.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: jpeg2000_vsil_io.cpp 33123 2016-01-23 18:59:28Z rouault $");
 
 /*
  * File descriptor file object.

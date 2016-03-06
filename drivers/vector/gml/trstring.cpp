@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: trstring.cpp 32410 2015-12-21 02:56:53Z goatbar $
  *
  * Project:  GML Reader
  * Purpose:  Functions for translating back and forth between XMLCh and char.

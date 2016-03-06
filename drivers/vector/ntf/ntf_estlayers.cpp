@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ntf_estlayers.cpp 32325 2015-12-20 13:48:20Z rouault $
  *
  * Project:  NTF Translator
  * Purpose:  NTFFileReader methods related to establishing the schemas
@@ -33,7 +33,7 @@
 #include "ntf.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ntf_estlayers.cpp 32325 2015-12-20 13:48:20Z rouault $");
 
 #define MAX_LINK        5000
 

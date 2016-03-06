@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: tigerpoint.cpp 32177 2015-12-14 07:25:30Z goatbar $
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Implements TigerPoint class.
@@ -30,7 +30,7 @@
 #include "ogr_tiger.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: tigerpoint.cpp 32177 2015-12-14 07:25:30Z goatbar $");
 
 /************************************************************************/
 /*                             TigerPoint()                             */

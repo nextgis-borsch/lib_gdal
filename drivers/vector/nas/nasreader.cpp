@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: nasreader.cpp 33095 2016-01-22 17:55:56Z rouault $
  *
  * Project:  NAS Reader
  * Purpose:  Implementation of NASReader class.

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: hfacompress.cpp 32099 2015-12-09 00:24:06Z goatbar $
  *
  * Name:     hfadataset.cpp
  * Project:  Erdas Imagine Driver
@@ -30,7 +30,7 @@
 
 #include "hfa_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: hfacompress.cpp 32099 2015-12-09 00:24:06Z goatbar $");
 
 HFACompress::HFACompress( void *pData, GUInt32 nBlockSize, EPTType eDataType ) :
     m_pData(pData),

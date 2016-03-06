@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ecwcreatecopy.cpp 33102 2016-01-23 11:05:59Z rouault $
  *
  * Project:  GDAL ECW Driver
  * Purpose:  ECW CreateCopy method implementation.
@@ -37,7 +37,7 @@
 #include "NCSUtil.h"
 #endif
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ecwcreatecopy.cpp 33102 2016-01-23 11:05:59Z rouault $");
 
 #if defined(FRMT_ecw) && defined(HAVE_COMPRESS)
 

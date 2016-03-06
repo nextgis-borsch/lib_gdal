@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrcartodbdriver.cpp 32110 2015-12-10 17:19:40Z goatbar $
  *
  * Project:  CartoDB Translator
  * Purpose:  Implements OGRCARTODBDriver.
@@ -31,7 +31,7 @@
 
 // g++ -g -Wall -fPIC -shared -o ogr_CARTODB.so -Iport -Igcore -Iogr -Iogr/ogrsf_frmts -Iogr/ogrsf_frmts/cartodb ogr/ogrsf_frmts/cartodb/*.c* -L. -lgdal -Iogr/ogrsf_frmts/geojson/libjson 
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrcartodbdriver.cpp 32110 2015-12-10 17:19:40Z goatbar $");
 
 extern "C" void RegisterOGRCartoDB();
 

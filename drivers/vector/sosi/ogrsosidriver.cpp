@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrsosidriver.cpp 32110 2015-12-10 17:19:40Z goatbar $
  *
  * Project:  SOSI Translator
  * Purpose:  Implements OGRSOSIDriver.

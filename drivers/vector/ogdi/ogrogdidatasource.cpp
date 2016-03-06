@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrogdidatasource.cpp 32983 2016-01-14 18:32:10Z goatbar $
  *
  * Project:  OGDI Bridge
  * Purpose:  Implements OGROGDIDataSource class.
@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrogdidatasource.cpp 32983 2016-01-14 18:32:10Z goatbar $");
 
 /************************************************************************/
 /*                         OGROGDIDataSource()                          */

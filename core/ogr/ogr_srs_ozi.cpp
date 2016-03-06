@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_srs_ozi.cpp 33631 2016-03-04 06:28:09Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  OGRSpatialReference translation from OziExplorer
@@ -33,7 +33,7 @@
 #include "cpl_conv.h"
 #include "cpl_csv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogr_srs_ozi.cpp 33631 2016-03-04 06:28:09Z goatbar $");
 
 /************************************************************************/
 /*                          OSRImportFromOzi()                          */
@@ -51,8 +51,8 @@ CPL_CVSID("$Id$");
  * @param hSRS spatial reference object.
  * @param papszLines Map file lines. This is an array of strings containing
  * the whole OziExplorer .MAP file. The array is terminated by a NULL pointer.
- * 
- * @return OGRERR_NONE on success or an error code in case of failure. 
+ *
+ * @return OGRERR_NONE on success or an error code in case of failure.
  *
  * @since OGR 2.0
  */
@@ -78,8 +78,8 @@ OGRErr OSRImportFromOzi( OGRSpatialReferenceH hSRS,
  *
  * @param papszLines Map file lines. This is an array of strings containing
  * the whole OziExplorer .MAP file. The array is terminated by a NULL pointer.
- * 
- * @return OGRERR_NONE on success or an error code in case of failure. 
+ *
+ * @return OGRERR_NONE on success or an error code in case of failure.
  *
  * @since OGR 1.10
  */
@@ -116,7 +116,7 @@ OGRErr OGRSpatialReference::importFromOzi( const char * const* papszLines )
 /*      Operate on the basis of the projection name.                    */
 /* -------------------------------------------------------------------- */
     char    **papszProj = CSLTokenizeStringComplex( pszProj, ",", TRUE, TRUE );
-    char    **papszProjParms = CSLTokenizeStringComplex( pszProjParms, ",", 
+    char    **papszProjParms = CSLTokenizeStringComplex( pszProjParms, ",",
                                                          TRUE, TRUE );
     char    **papszDatum = NULL;
 
@@ -239,10 +239,10 @@ OGRErr OGRSpatialReference::importFromOzi( const char * const* papszLines )
             if ( bFoundMMPLL && fMaxLatitude <= 90 )
             {
                 int nUtmZone;
-                if ( fMedianLatitude >= 56 && fMedianLatitude <= 64 && 
+                if ( fMedianLatitude >= 56 && fMedianLatitude <= 64 &&
                      fMedianLongitude >= 3 && fMedianLongitude <= 12 )
                     nUtmZone = 32;                                             /* Norway exception */
-                else if ( fMedianLatitude >= 72 && fMedianLatitude <= 84 && 
+                else if ( fMedianLatitude >= 72 && fMedianLatitude <= 84 &&
                          fMedianLongitude >= 0 && fMedianLongitude <= 42 )
                     nUtmZone = (int) ((fMedianLongitude + 3 ) / 12) * 2 + 31;  /* Svalbard exception */
                 else

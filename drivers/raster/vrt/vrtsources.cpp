@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: vrtsources.cpp 32984 2016-01-14 19:08:12Z goatbar $
  *
  * Project:  Virtual GDAL Datasets
  * Purpose:  Implementation of VRTSimpleSource, VRTFuncSource and 
@@ -43,7 +43,7 @@
 #define isnan std::isnan
 #endif
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: vrtsources.cpp 32984 2016-01-14 19:08:12Z goatbar $");
 
 /************************************************************************/
 /* ==================================================================== */

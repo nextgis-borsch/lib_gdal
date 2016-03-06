@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrsvgdatasource.cpp 32011 2015-12-06 10:19:18Z rouault $
  *
  * Project:  SVG Translator
  * Purpose:  Implements OGRSVGDataSource class
@@ -30,7 +30,7 @@
 #include "ogr_svg.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrsvgdatasource.cpp 32011 2015-12-06 10:19:18Z rouault $");
 
 /************************************************************************/
 /*                          OGRSVGDataSource()                          */

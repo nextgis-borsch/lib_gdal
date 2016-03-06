@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gtxdataset.cpp 32883 2016-01-09 18:24:40Z rouault $
  *
  * Project:  Vertical Datum Transformation
  * Purpose:  Implementation of NOAA .gtx vertical datum shift file format.
@@ -33,7 +33,7 @@
 #include "ogr_srs_api.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gtxdataset.cpp 32883 2016-01-09 18:24:40Z rouault $");
 
 /**
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrsegukooalayer.cpp 32982 2016-01-14 16:53:57Z goatbar $
  *
  * Project:  SEG-P1 / UKOOA P1-90 Translator
  * Purpose:  Implements OGRUKOOAP190Layer class.
@@ -33,7 +33,7 @@
 #include "ogr_p.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrsegukooalayer.cpp 32982 2016-01-14 16:53:57Z goatbar $");
 
 /************************************************************************/
 /*                            ExtractField()                            */

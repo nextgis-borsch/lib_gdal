@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalarraybandblockcache.cpp 32689 2016-01-02 20:44:50Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Store cached blocks in a array or a two-level array
@@ -36,7 +36,7 @@ static const int SUBBLOCK_SIZE = 64;
 #define TO_SUBBLOCK(x) ((x) >> 6)
 #define WITHIN_SUBBLOCK(x) ((x) & 0x3f)
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalarraybandblockcache.cpp 32689 2016-01-02 20:44:50Z rouault $");
 
 /* ******************************************************************** */
 /*                        GDALArrayBandBlockCache                       */

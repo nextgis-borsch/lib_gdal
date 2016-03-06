@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrocidriver.cpp 32110 2015-12-10 17:19:40Z goatbar $
  *
  * Project:  Oracle Spatial Driver
  * Purpose:  Implementation of the OGROCIDriver class.
@@ -29,7 +29,7 @@
 
 #include "ogr_oci.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrocidriver.cpp 32110 2015-12-10 17:19:40Z goatbar $");
 
 
 /************************************************************************/

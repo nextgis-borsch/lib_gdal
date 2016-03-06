@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_sosi.h 32177 2015-12-14 07:25:30Z goatbar $
  *
  * Project:  SOSI Translator
  * Purpose:  Implements OGRSOSIDriver.

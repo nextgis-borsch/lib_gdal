@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: sbnsearch.c 32078 2015-12-08 09:09:45Z rouault $
  *
  * Project:  Shapelib
  * Purpose:  Implementation of search in ESRI SBN spatial index.
@@ -40,7 +40,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-SHP_CVSID("$Id$")
+SHP_CVSID("$Id: sbnsearch.c 32078 2015-12-08 09:09:45Z rouault $")
 
 #ifndef TRUE
 #  define TRUE 1

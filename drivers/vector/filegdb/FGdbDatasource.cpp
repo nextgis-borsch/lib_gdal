@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: FGdbDatasource.cpp 33563 2016-02-26 14:57:06Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements FileGDB OGR Datasource.
@@ -37,7 +37,7 @@
 #include "FGdbUtils.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: FGdbDatasource.cpp 33563 2016-02-26 14:57:06Z rouault $");
 
 using std::vector;
 using std::wstring;
@@ -273,7 +273,7 @@ bool FGdbDataSource::OpenFGDBTables(const std::wstring &type,
             std::wstring fgdb_error_desc_w;
             fgdbError er;
             er = FileGDBAPI::ErrorInfo::GetErrorDescription(hr, fgdb_error_desc_w);
-            const char* pszLikelyReason = "Might be due to unsupported spatial reference system. Using OpenFileGDB driver should solve it";
+            const char* pszLikelyReason = "Might be due to unsupported spatial reference system. Using OpenFileGDB driver or FileGDB SDK >= 1.4 should solve it";
             if ( er == S_OK )
             {
                 std::string fgdb_error_desc = WStringToString(fgdb_error_desc_w);
@@ -479,7 +479,8 @@ int FGdbDataSource::TestCapability( const char * pszCap )
 
     else if( EQUAL(pszCap,ODsCDeleteLayer) )
         return m_bUpdate;
-
+    else if EQUAL(pszCap,ODsCCreateGeomFieldAfterCreateLayer)
+        return TRUE;
     return FALSE;
 }
 

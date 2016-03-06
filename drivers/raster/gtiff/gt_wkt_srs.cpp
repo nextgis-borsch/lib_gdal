@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gt_wkt_srs.cpp 33533 2016-02-23 16:34:15Z goatbar $
  *
  * Project:  GeoTIFF Driver
  * Purpose:  Implements translation between GeoTIFF normalized projection
@@ -46,7 +46,7 @@
 #include "gt_wkt_srs_priv.h"
 #include "gtiff.h"
 
-CPL_CVSID("$Id$")
+CPL_CVSID("$Id: gt_wkt_srs.cpp 33533 2016-02-23 16:34:15Z goatbar $")
 
 #define ProjLinearUnitsInterpCorrectGeoKey   3059
 
@@ -214,11 +214,11 @@ static void WKTMassageDatum( char ** ppszDatum )
 /************************************************************************/
 
 /* For example:
-   GTCitationGeoKey (Ascii,215): "IMAGINE GeoTIFF Support\nCopyright 1991 - 2001 by ERDAS, Inc. All Rights Reserved\n@(#)$RCSfile$ $Revision$ $Date$\nProjection Name = UTM\nUnits = meters\nGeoTIFF Units = meters"
+   GTCitationGeoKey (Ascii,215): "IMAGINE GeoTIFF Support\nCopyright 1991 - 2001 by ERDAS, Inc. All Rights Reserved\n@(#)$RCSfile$ $Revision: 33533 $ $Date: 2016-02-23 19:34:15 +0300 (Вт., 23 февр. 2016) $\nProjection Name = UTM\nUnits = meters\nGeoTIFF Units = meters"
 
-   GeogCitationGeoKey (Ascii,267): "IMAGINE GeoTIFF Support\nCopyright 1991 - 2001 by ERDAS, Inc. All Rights Reserved\n@(#)$RCSfile$ $Revision$ $Date$\nUnable to match Ellipsoid (Datum) to a GeographicTypeGeoKey value\nEllipsoid = Clarke 1866\nDatum = NAD27 (CONUS)"
+   GeogCitationGeoKey (Ascii,267): "IMAGINE GeoTIFF Support\nCopyright 1991 - 2001 by ERDAS, Inc. All Rights Reserved\n@(#)$RCSfile$ $Revision: 33533 $ $Date: 2016-02-23 19:34:15 +0300 (Вт., 23 февр. 2016) $\nUnable to match Ellipsoid (Datum) to a GeographicTypeGeoKey value\nEllipsoid = Clarke 1866\nDatum = NAD27 (CONUS)"
 
-   PCSCitationGeoKey (Ascii,214): "IMAGINE GeoTIFF Support\nCopyright 1991 - 2001 by ERDAS, Inc. All Rights Reserved\n@(#)$RCSfile$ $Revision$ $Date$\nUTM Zone 10N\nEllipsoid = Clarke 1866\nDatum = NAD27 (CONUS)"
+   PCSCitationGeoKey (Ascii,214): "IMAGINE GeoTIFF Support\nCopyright 1991 - 2001 by ERDAS, Inc. All Rights Reserved\n@(#)$RCSfile$ $Revision: 33533 $ $Date: 2016-02-23 19:34:15 +0300 (Вт., 23 февр. 2016) $\nUTM Zone 10N\nEllipsoid = Clarke 1866\nDatum = NAD27 (CONUS)"
 */
 
 static void GTIFCleanupImagineNames( char *pszCitation )
@@ -1249,7 +1249,6 @@ char *GTIFGetOGISDefn( GTIF *hGTIF, GTIFDefn * psDefn )
 static int OGCDatumName2EPSGDatumCode( const char * pszOGCName )
 
 {
-    FILE	*fp;
     char	**papszTokens;
     int		nReturn = KvUserDefined;
 
@@ -1272,9 +1271,9 @@ static int OGCDatumName2EPSGDatumCode( const char * pszOGCName )
 /* -------------------------------------------------------------------- */
 /*      Open the table if possible.                                     */
 /* -------------------------------------------------------------------- */
-    fp = VSIFOpen( CSVFilename("gdal_datum.csv"), "r" );
+    VSILFILE *fp = VSIFOpenL( CSVFilename("gdal_datum.csv"), "r" );
     if( fp == NULL )
-        fp = VSIFOpen( CSVFilename("datum.csv"), "r" );
+        fp = VSIFOpenL( CSVFilename("datum.csv"), "r" );
 
     if( fp == NULL )
         return nReturn;
@@ -1282,14 +1281,14 @@ static int OGCDatumName2EPSGDatumCode( const char * pszOGCName )
 /* -------------------------------------------------------------------- */
 /*	Discard the first line with field names.			*/
 /* -------------------------------------------------------------------- */
-    CSLDestroy( CSVReadParseLine( fp ) );
+    CSLDestroy( CSVReadParseLineL( fp ) );
 
 /* -------------------------------------------------------------------- */
 /*      Read lines looking for our datum.                               */
 /* -------------------------------------------------------------------- */
-    for( papszTokens = CSVReadParseLine( fp );
+    for( papszTokens = CSVReadParseLineL( fp );
          CSLCount(papszTokens) > 2 && nReturn == KvUserDefined;
-         papszTokens = CSVReadParseLine( fp ) )
+         papszTokens = CSVReadParseLineL( fp ) )
     {
         WKTMassageDatum( papszTokens + 1 );
 
@@ -1300,7 +1299,7 @@ static int OGCDatumName2EPSGDatumCode( const char * pszOGCName )
     }
 
     CSLDestroy( papszTokens );
-    VSIFClose( fp );
+    VSIFCloseL( fp );
 
     return nReturn;
 }

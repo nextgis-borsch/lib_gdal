@@ -1,8 +1,8 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdaldem_bin.cpp 33615 2016-03-02 20:19:22Z goatbar $
  *
  * Project:  GDAL DEM Utilities
- * Purpose:  
+ * Purpose:
  * Authors:  Even Rouault, <even dot rouault at spatialys dot com>
  *
  ******************************************************************************
@@ -37,7 +37,7 @@
 #include "gdal_priv.h"
 #include "commonutils.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdaldem_bin.cpp 33615 2016-03-02 20:19:22Z goatbar $");
 
 /************************************************************************/
 /*                               Usage()                                */

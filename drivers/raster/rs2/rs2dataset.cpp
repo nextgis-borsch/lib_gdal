@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: rs2dataset.cpp 32237 2015-12-18 13:41:27Z goatbar $
  *
  * Project:  Polarimetric Workstation
  * Purpose:  Radarsat 2 - XML Products (product.xml) driver
@@ -33,7 +33,7 @@
 #include "gdal_pam.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: rs2dataset.cpp 32237 2015-12-18 13:41:27Z goatbar $");
 
 typedef enum eCalibration_t {
     Sigma0 = 0,

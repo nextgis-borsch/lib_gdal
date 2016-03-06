@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalclientserver.cpp 32992 2016-01-15 00:23:21Z goatbar $
  *
  * Project:  GDAL Core
  * Purpose:  GDAL Client/server dataset mechanism.

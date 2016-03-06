@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: minidriver_iip.cpp 31098 2015-10-22 17:27:38Z goatbar $
  *
  * Project:  WMS Client Driver
  * Purpose:  Mini driver for Internel Imaging Protocol (IIP)

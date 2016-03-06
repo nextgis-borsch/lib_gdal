@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: s57filecollector.cpp 33271 2016-01-30 16:01:55Z goatbar $
  *
  * Project:  S-57 Translator
  * Purpose:  Implements S57FileCollector() function.  This function collects
@@ -33,7 +33,7 @@
 #include "cpl_string.h"
 #include "s57.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: s57filecollector.cpp 33271 2016-01-30 16:01:55Z goatbar $");
 
 /************************************************************************/
 /*                          S57FileCollector()                          */

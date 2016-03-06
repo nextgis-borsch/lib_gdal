@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: reader_geo_eye.cpp 32174 2015-12-14 00:09:26Z goatbar $
  *
  * Project:  GDAL Core
  * Purpose:  Read metadata from GeoEye imagery.
@@ -30,7 +30,7 @@
 
 #include "reader_geo_eye.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: reader_geo_eye.cpp 32174 2015-12-14 00:09:26Z goatbar $");
 
 /**
  * GDALMDReaderGeoEye()

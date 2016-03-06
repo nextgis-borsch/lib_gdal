@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: multireadtest.cpp 33615 2016-03-02 20:19:22Z goatbar $
  *
  * Project:  GDAL Utilities
  * Purpose:  Multi-threading test application.
@@ -32,7 +32,7 @@
 #include "cpl_multiproc.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: multireadtest.cpp 33615 2016-03-02 20:19:22Z goatbar $");
 
 static int nThreadCount = 4, nIterations = 1, bLockOnOpen = TRUE;
 static int nOpenIterations = 1;
@@ -112,14 +112,14 @@ int main( int argc, char ** argv )
     if( hDS == NULL )
         exit( 1 );
 
-    nChecksum = GDALChecksumImage( GDALGetRasterBand( hDS, 1 ), 
-                                   0, 0, 
-                                   GDALGetRasterXSize( hDS ), 
+    nChecksum = GDALChecksumImage( GDALGetRasterBand( hDS, 1 ),
+                                   0, 0,
+                                   GDALGetRasterXSize( hDS ),
                                    GDALGetRasterYSize( hDS ) );
 
     GDALClose( hDS );
 
-    printf( "Got checksum %d, launching %d worker threads on %s, %d iterations.\n", 
+    printf( "Got checksum %d, launching %d worker threads on %s, %d iterations.\n",
             nChecksum, nThreadCount, pszFilename, nIterations );
 
 /* -------------------------------------------------------------------- */
@@ -180,9 +180,9 @@ static void WorkerFunc( void * )
         {
             int nMyChecksum;
 
-            nMyChecksum = GDALChecksumImage( GDALGetRasterBand( hDS, 1 ), 
-                                             0, 0, 
-                                             GDALGetRasterXSize( hDS ), 
+            nMyChecksum = GDALChecksumImage( GDALGetRasterBand( hDS, 1 ),
+                                             0, 0,
+                                             GDALGetRasterXSize( hDS ),
                                              GDALGetRasterYSize( hDS ) );
 
             if( nMyChecksum != nChecksum )

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrvrtlayer.cpp 33552 2016-02-25 13:15:28Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRVRTLayer class.
@@ -34,7 +34,7 @@
 #include "ogrpgeogeometry.h"
 #include <string>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrvrtlayer.cpp 33552 2016-02-25 13:15:28Z rouault $");
 
 #define UNSUPPORTED_OP_READ_ONLY "%s : unsupported operation on a read-only datasource."
 
@@ -2044,11 +2044,10 @@ int OGRVRTLayer::TestCapability( const char * pszCap )
     else if( EQUAL(pszCap,OLCTransactions) )
         return bUpdate && poSrcLayer->TestCapability(pszCap);
 
-    else if( EQUAL(pszCap,OLCIgnoreFields) )
+    else if( EQUAL(pszCap,OLCIgnoreFields) ||
+             EQUAL(pszCap,OLCCurveGeometries) ||
+             EQUAL(pszCap,OLCMeasuredGeometries) )
         return poSrcLayer->TestCapability(pszCap);
-
-    else if( EQUAL(pszCap,OLCCurveGeometries) )
-        return TRUE;
 
     return FALSE;
 }

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrocitablelayer.cpp 33123 2016-01-23 18:59:28Z rouault $
  *
  * Project:  Oracle Spatial Driver
  * Purpose:  Implementation of the OGROCITableLayer class.  This class provides
@@ -33,7 +33,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrocitablelayer.cpp 33123 2016-01-23 18:59:28Z rouault $");
 
 static int nDiscarded = 0;
 static int nHits = 0;

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: grassdataset.cpp 32213 2015-12-18 04:45:21Z goatbar $
  *
  * Project:  GRASS Driver
  * Purpose:  Implement GRASS raster read/write support
@@ -35,7 +35,7 @@
 #include "gdal_priv.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: grassdataset.cpp 32213 2015-12-18 04:45:21Z goatbar $");
 
 /************************************************************************/
 /*                         Grass2CPLErrorHook()                         */

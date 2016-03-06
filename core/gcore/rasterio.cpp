@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: rasterio.cpp 33127 2016-01-23 19:47:48Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Contains default implementation of GDALRasterBand::IRasterIO()
@@ -39,7 +39,7 @@
 #include <limits>
 #include "gdal_priv_templates.hpp"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: rasterio.cpp 33127 2016-01-23 19:47:48Z rouault $");
 
 /************************************************************************/
 /*                             IRasterIO()                              */

@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: kearat.cpp 32179 2015-12-14 16:22:34Z goatbar $
  *  kearat.cpp
  *
  *  Created by Pete Bunting on 01/08/2012.

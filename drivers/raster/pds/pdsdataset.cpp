@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: pdsdataset.cpp 32436 2015-12-24 12:27:28Z rouault $
  *
  * Project:  PDS Driver; Planetary Data System Format
  * Purpose:  Implementation of PDSDataset
@@ -48,7 +48,7 @@ static const double NULL3 = -3.4028226550889044521e+38;
 #include "ogr_spatialref.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: pdsdataset.cpp 32436 2015-12-24 12:27:28Z rouault $");
 
 enum PDSLayout
 {

@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: keamaskband.cpp 31688 2015-11-21 17:19:14Z rouault $
  *  keamaskband.cpp
  *
  *  Created by Pete Bunting on 01/08/2012.

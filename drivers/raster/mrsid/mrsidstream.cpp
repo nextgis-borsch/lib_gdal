@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: mrsidstream.cpp 33095 2016-01-22 17:55:56Z rouault $
  *
  * Project:  Multi-resolution Seamless Image Database (MrSID)
  * Purpose:  Input/output stream wrapper for usage with LizardTech's
@@ -36,7 +36,7 @@
 #include "cpl_error.h"
 #include "mrsidstream.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: mrsidstream.cpp 33095 2016-01-22 17:55:56Z rouault $");
 
 LT_USE_NAMESPACE(LizardTech)
 

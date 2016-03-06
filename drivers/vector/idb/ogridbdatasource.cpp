@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogridbdatasource.cpp 31120 2015-10-24 19:55:09Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRIDBDataSource class
@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogridbdatasource.cpp 31120 2015-10-24 19:55:09Z rouault $");
 /************************************************************************/
 /*                         OGRIDBDataSource()                          */
 /************************************************************************/

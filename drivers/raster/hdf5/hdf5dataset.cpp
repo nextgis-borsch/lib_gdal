@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: hdf5dataset.cpp 33460 2016-02-15 16:48:24Z rouault $
  *
  * Project:  Hierarchical Data Format Release 5 (HDF5)
  * Purpose:  HDF5 Datasets. Open HDF5 file, fetch metadata and list of
@@ -49,7 +49,7 @@
 #include "gdal_priv.h"
 #include "hdf5dataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: hdf5dataset.cpp 33460 2016-02-15 16:48:24Z rouault $");
 
 static const size_t MAX_METADATA_LEN = 32768;
 
@@ -229,23 +229,43 @@ int HDF5Dataset::Identify( GDALOpenInfo * poOpenInfo )
 
     if( memcmp(poOpenInfo->pabyHeader,achSignature,8) == 0 )
     {
+        CPLString osExt(CPLGetExtension(poOpenInfo->pszFilename));
+
         /* The tests to avoid opening KEA and BAG drivers are not */
         /* necessary when drivers are built in the core lib, as they */
         /* are registered after HDF5, but in the case of plugins, we */
         /* cannot do assumptions about the registration order */
 
         /* Avoid opening kea files if the kea driver is available */
-        if( EQUAL(CPLGetExtension(poOpenInfo->pszFilename), "KEA") &&
+        if( EQUAL(osExt, "KEA") &&
             GDALGetDriverByName("KEA") != NULL )
         {
             return FALSE;
         }
 
-        /* Avoid opening kea files if the bag driver is available */
-        if( EQUAL(CPLGetExtension(poOpenInfo->pszFilename), "BAG") &&
+        /* Avoid opening BAG files if the bag driver is available */
+        if( EQUAL(osExt, "BAG") &&
             GDALGetDriverByName("BAG") != NULL )
         {
             return FALSE;
+        }
+
+        /* Avoid opening NC files if the netCDF driver is available and */
+        /* they are recognized by it */
+        if( (EQUAL(osExt, "NC") || EQUAL(osExt, "CDF") || EQUAL(osExt, "NC4")) &&
+            GDALGetDriverByName("netCDF") != NULL )
+        {
+            const char* const apszAllowedDriver [] = { "netCDF", NULL };
+            CPLPushErrorHandler(CPLQuietErrorHandler);
+            GDALDatasetH hDS =
+                GDALOpenEx( poOpenInfo->pszFilename, GDAL_OF_RASTER | GDAL_OF_VECTOR,
+                            apszAllowedDriver, NULL, NULL);
+            CPLPopErrorHandler();
+            if( hDS )
+            {
+                GDALClose(hDS);
+                return FALSE;
+            }
         }
 
         return TRUE;
@@ -679,6 +699,10 @@ static herr_t HDF5AttrIterate( hid_t hH5ObjID,
     const hid_t hAttrTypeID     = H5Aget_type( hAttrID );
     const hid_t hAttrNativeType = H5Tget_native_type( hAttrTypeID, H5T_DIR_DEFAULT );
     const hid_t hAttrSpace      = H5Aget_space( hAttrID );
+
+    if( H5Tget_class( hAttrNativeType ) == H5T_VLEN )
+        return 0;
+
     hsize_t nSize[64];
     const unsigned int nAttrDims =
         H5Sget_simple_extent_dims( hAttrSpace, nSize, NULL );
@@ -902,7 +926,7 @@ HDF5GroupObjects* HDF5Dataset::HDF5FindDatasetObjectsbyPath
         EQUAL( poH5Objects->pszUnderscorePath,pszDatasetPath ) ) {
 
 #ifdef DEBUG_VERBOSE
-      printf("found it! %ld\n", static_cast<long>(poH5Objects));
+      printf("found it! %p\n", poH5Objects);
 #endif
         return poH5Objects;
     }
@@ -940,7 +964,7 @@ HDF5GroupObjects* HDF5Dataset::HDF5FindDatasetObjects
         EQUAL( poH5Objects->pszName,pszDatasetName ) ) {
 
 #ifdef DEBUG_VERBOSE
-        printf("found it! %ld\n", static_cast<long>(poH5Objects));
+        printf("found it! %p\n", poH5Objects);
 #endif
         return poH5Objects;
     }
@@ -1148,27 +1172,27 @@ CPLErr HDF5Dataset::HDF5ReadDoubleAttr(const char* pszAttrFullPath,
         osAttrName = pszAttrFullPath;
     }
 
-    const hid_t hObjAttrID = H5Oopen( hHDF5, osObjName.c_str(),H5P_DEFAULT);
+    const hid_t hObjAttrID = H5Oopen( hHDF5, osObjName.c_str(), H5P_DEFAULT );
 
     CPLErr retVal = CE_Failure;
 
     if(hObjAttrID < 0)
     {
         CPLError( CE_Failure, CPLE_OpenFailed,
-                  "Object %s could not be opened\n", pszAttrFullPath);
+                  "Object %s could not be opened\n", pszAttrFullPath );
         retVal = CE_Failure;
     }
     else
     {
         // Open attribute handler by name, from the object handler opened
         // earlier.
-        const hid_t hAttrID = H5Aopen_name( hObjAttrID, osAttrName.c_str());
+        const hid_t hAttrID = H5Aopen_name( hObjAttrID, osAttrName.c_str() );
 
         // Check for errors opening the attribute.
         if(hAttrID <0)
         {
             CPLError( CE_Failure, CPLE_OpenFailed,
-                      "Attribute %s could not be opened\n", pszAttrFullPath);
+                      "Attribute %s could not be opened\n", pszAttrFullPath );
             retVal = CE_Failure;
         }
         else

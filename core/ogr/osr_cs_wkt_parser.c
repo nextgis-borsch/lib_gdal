@@ -71,7 +71,7 @@
 
 
 /******************************************************************************
- * $Id$
+ * $Id: osr_cs_wkt_parser.c 32696 2016-01-03 10:48:58Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  CS WKT parser grammar

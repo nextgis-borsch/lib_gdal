@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrwfslayer.cpp 33138 2016-01-24 11:18:11Z rouault $
  *
  * Project:  WFS Translator
  * Purpose:  Implements OGRWFSLayer class.
@@ -34,7 +34,7 @@
 #include "cpl_http.h"
 #include "parsexsd.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrwfslayer.cpp 33138 2016-01-24 11:18:11Z rouault $");
 
 
 /************************************************************************/

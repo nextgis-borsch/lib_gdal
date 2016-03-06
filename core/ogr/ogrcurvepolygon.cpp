@@ -53,10 +53,10 @@ OGRCurvePolygon::OGRCurvePolygon()
 
 /**
  * \brief Copy constructor.
- * 
+ *
  * Note: before GDAL 2.1, only the default implementation of the constructor
  * existed, which could be unsafe to use.
- * 
+ *
  * @since GDAL 2.1
  */
 
@@ -113,6 +113,7 @@ OGRGeometry *OGRCurvePolygon::clone() const
     if( poNewPolygon == NULL )
         return NULL;
     poNewPolygon->assignSpatialReference( getSpatialReference() );
+    poNewPolygon->flags = flags;
 
     for( int i = 0; i < oCC.nCurveCount; i++ )
     {
@@ -143,7 +144,11 @@ void OGRCurvePolygon::empty()
 OGRwkbGeometryType OGRCurvePolygon::getGeometryType() const
 
 {
-    if( nCoordDimension == 3 )
+    if( (flags & OGR_G_3D) && (flags & OGR_G_MEASURED) )
+        return wkbCurvePolygonZM;
+    else if( flags & OGR_G_MEASURED  )
+        return wkbCurvePolygonM;
+    else if( flags & OGR_G_3D )
         return wkbCurvePolygonZ;
     else
         return wkbCurvePolygon;
@@ -631,6 +636,15 @@ void OGRCurvePolygon::setCoordinateDimension( int nNewDimension )
     oCC.setCoordinateDimension(this, nNewDimension);
 }
 
+void OGRCurvePolygon::set3D( OGRBoolean bIs3D )
+{
+    oCC.set3D( this, bIs3D );
+}
+
+void OGRCurvePolygon::setMeasured( OGRBoolean bIsMeasured )
+{
+    oCC.setMeasured( this, bIsMeasured );
+}
 
 /************************************************************************/
 /*                               IsEmpty()                              */
@@ -718,10 +732,10 @@ OGRBoolean OGRCurvePolygon::Intersects( const OGRGeometry *poOtherGeom ) const
  * instances of OGRLineString. This can be verified if hasCurveGeometry(TRUE)
  * returns FALSE. It is not intended to approximate curve polygons. For that
  * use getLinearGeometry().
- * 
+ *
  * The passed in geometry is consumed and a new one returned (or NULL in case
- * of failure). 
- * 
+ * of failure).
+ *
  * @param poCP the input geometry - ownership is passed to the method.
  * @return new geometry.
  */

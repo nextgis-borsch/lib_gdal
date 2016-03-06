@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: pcidskdataset2.cpp 32546 2015-12-30 17:38:13Z rouault $
  *
  * Project:  PCIDSK Database File
  * Purpose:  Read/write PCIDSK Database File used by the PCI software, using
@@ -32,7 +32,7 @@
 #include "gdal_frmts.h"
 #include "pcidskdataset2.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: pcidskdataset2.cpp 32546 2015-12-30 17:38:13Z rouault $");
 
 const PCIDSK::PCIDSKInterfaces *PCIDSK2GetInterfaces(void);
 

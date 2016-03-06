@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ceos.h 32179 2015-12-14 16:22:34Z goatbar $
  *
  * Project:  ASI CEOS Translator
  * Purpose:  CEOS library prototypes

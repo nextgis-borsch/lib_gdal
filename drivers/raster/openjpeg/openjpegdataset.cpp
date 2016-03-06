@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: openjpegdataset.cpp 33095 2016-01-22 17:55:56Z rouault $
  *
  * Project:  JPEG2000 driver based on OpenJPEG library
  * Purpose:  JPEG2000 driver based on OpenJPEG library
@@ -46,7 +46,7 @@
 #include "gdaljp2metadata.h"
 #include "vrt/vrtdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: openjpegdataset.cpp 33095 2016-01-22 17:55:56Z rouault $");
 
 /************************************************************************/
 /*                  JP2OpenJPEGDataset_ErrorCallback()                  */

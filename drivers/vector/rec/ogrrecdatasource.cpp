@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrrecdatasource.cpp 33089 2016-01-22 15:02:53Z goatbar $
  *
  * Project:  Epiinfo .REC Translator
  * Purpose:  Implements OGRRECDataSource class
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrrecdatasource.cpp 33089 2016-01-22 15:02:53Z goatbar $");
 
 /************************************************************************/
 /*                          OGRRECDataSource()                          */

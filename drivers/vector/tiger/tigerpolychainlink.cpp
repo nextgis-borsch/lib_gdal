@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: tigerpolychainlink.cpp 27745 2014-09-27 16:38:57Z goatbar $
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Implements TigerPolyChainLink, providing access to .RTI files.
@@ -30,7 +30,7 @@
 #include "ogr_tiger.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: tigerpolychainlink.cpp 27745 2014-09-27 16:38:57Z goatbar $");
 
 #define FILE_CODE "I"
 

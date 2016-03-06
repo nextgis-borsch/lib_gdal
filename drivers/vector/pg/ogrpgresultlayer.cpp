@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrpgresultlayer.cpp 32885 2016-01-09 19:54:32Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRPGResultLayer class, access the resultset from
@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "ogr_pg.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrpgresultlayer.cpp 32885 2016-01-09 19:54:32Z rouault $");
 
 #define PQexec this_is_an_error
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrgeorssdatasource.cpp 32983 2016-01-14 18:32:10Z goatbar $
  *
  * Project:  GeoRSS Translator
  * Purpose:  Implements OGRGeoRSSDataSource class
@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "cpl_csv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgeorssdatasource.cpp 32983 2016-01-14 18:32:10Z goatbar $");
 
 /************************************************************************/
 /*                          OGRGeoRSSDataSource()                          */

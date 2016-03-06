@@ -1,5 +1,5 @@
 /*****************************************************************************
- * $Id$
+ * $Id: IntergraphBand.cpp 33503 2016-02-18 14:06:37Z rouault $
  *
  * Project:  Intergraph Raster Format support
  * Purpose:  Read/Write Intergraph Raster Format, band support
@@ -900,7 +900,7 @@ IntergraphBitmapBand::IntergraphBitmapBand( IntergraphDataset *poDSIn,
 
 	if( eFormat == JPEGGRAY ||
 		eFormat == JPEGRGB  ||
-		eFormat == JPEGCYMK )
+		eFormat == JPEGCMYK )
 	{
         nQuality = INGR_ReadJpegQuality( poDSIn->fp, 
             hHeaderTwo.ApplicationPacketPointer,

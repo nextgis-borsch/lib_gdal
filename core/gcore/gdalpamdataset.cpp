@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalpamdataset.cpp 33105 2016-01-23 15:27:32Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of GDALPamDataset, a dataset base class that
@@ -33,7 +33,7 @@
 #include "cpl_string.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalpamdataset.cpp 33105 2016-01-23 15:27:32Z rouault $");
 
 /************************************************************************/
 /*                           GDALPamDataset()                           */

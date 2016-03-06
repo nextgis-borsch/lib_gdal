@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrdxf_blockmap.cpp 32982 2016-01-14 16:53:57Z goatbar $
  *
  * Project:  DXF Translator
  * Purpose:  Implements BlockMap reading and management portion of 
@@ -33,7 +33,7 @@
 #include "cpl_string.h"
 #include "cpl_csv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrdxf_blockmap.cpp 32982 2016-01-14 16:53:57Z goatbar $");
 
 /************************************************************************/
 /*                          ReadBlockSection()                          */

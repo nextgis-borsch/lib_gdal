@@ -4,7 +4,7 @@
 #include "gdal_pam.h"
 
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdal_sde.h 32190 2015-12-16 13:50:27Z goatbar $");
 
 CPL_C_START
 void GDALRegister_SDE();

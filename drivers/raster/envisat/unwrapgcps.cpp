@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: unwrapgcps.cpp 31961 2015-12-03 02:01:09Z goatbar $
  *
  * Project:  APP ENVISAT Support
  * Purpose:  GCPs Unwrapping for products crossing the WGS84 date-line  

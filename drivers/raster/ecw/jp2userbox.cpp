@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: jp2userbox.cpp 31263 2015-10-29 13:10:20Z rouault $
  *
  * Project:  GDAL ECW Driver
  * Purpose:  JP2UserBox implementation - arbitrary box read/write.
@@ -29,7 +29,7 @@
 
 #include "gdal_ecw.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: jp2userbox.cpp 31263 2015-10-29 13:10:20Z rouault $");
 
 #if defined(HAVE_COMPRESS)
 

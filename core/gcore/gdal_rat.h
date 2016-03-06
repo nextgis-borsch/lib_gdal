@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdal_rat.h 32173 2015-12-14 00:04:53Z goatbar $
  *
  * Project:  GDAL Core
  * Purpose:  GDALRasterAttributeTable class declarations.

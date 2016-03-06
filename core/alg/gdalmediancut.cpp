@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalmediancut.cpp 31955 2015-12-02 06:07:22Z goatbar $
  *
  * Project:  CIETMap Phase 2
  * Purpose:  Use median cut algorithm to generate an near-optimal PCT for a 
@@ -42,7 +42,7 @@
 #include "gdal_alg_priv.h"
 #include <limits>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalmediancut.cpp 31955 2015-12-02 06:07:22Z goatbar $");
 
 #define HISTOGRAM(h,n,r,g,b) h[((r)*(n)+(g))*(n)+(b)]
 

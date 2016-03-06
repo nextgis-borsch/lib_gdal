@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: hdf4imagedataset.cpp 32851 2016-01-08 13:45:19Z rouault $
  *
  * Project:  Hierarchical Data Format Release 4 (HDF4)
  * Purpose:  Read subdatasets of HDF4 file.
@@ -56,7 +56,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: hdf4imagedataset.cpp 32851 2016-01-08 13:45:19Z rouault $");
 
 static const int HDF4_SDS_MAXNAMELEN = 65;
 

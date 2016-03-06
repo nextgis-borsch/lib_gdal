@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrjmlwriterlayer.cpp 32783 2016-01-06 16:11:09Z goatbar $
  *
  * Project:  JML Translator
  * Purpose:  Implements OGRJMLWriterLayer class.
@@ -30,7 +30,7 @@
 #include "cpl_conv.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrjmlwriterlayer.cpp 32783 2016-01-06 16:11:09Z goatbar $");
 
 /************************************************************************/
 /*                           OGRJMLWriterLayer()                        */

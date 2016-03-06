@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrsosilayer.cpp 32333 2015-12-20 14:42:31Z rouault $
  *
  * Project:  SOSI Translator
  * Purpose:  Implements OGRSOSILayer.

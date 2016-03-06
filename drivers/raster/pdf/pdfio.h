@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: pdfio.h 33338 2016-02-03 10:24:38Z rouault $
  *
  * Project:  PDF driver
  * Purpose:  GDALDataset driver for PDF dataset.
@@ -95,7 +95,7 @@ class VSIPDFFileStream: public BaseStream
         GooString         *poFilename;
         VSILFILE          *f;
         vsi_l_offset       nStart;
-        int                bLimited;
+        GBool              bLimited;
         vsi_l_offset       nLength;
 
         vsi_l_offset       nCurrentPos;

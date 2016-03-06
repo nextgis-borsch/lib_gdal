@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: dteddataset.cpp 32984 2016-01-14 19:08:12Z goatbar $
  *
  * Project:  DTED Translator
  * Purpose:  GDALDataset driver for DTED translator.
@@ -35,7 +35,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: dteddataset.cpp 32984 2016-01-14 19:08:12Z goatbar $");
 
 /************************************************************************/
 /* ==================================================================== */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: vrtdriver.cpp 32883 2016-01-09 18:24:40Z rouault $
  *
  * Project:  Virtual GDAL Datasets
  * Purpose:  Implementation of VRTDriver
@@ -34,7 +34,7 @@
 #include "gdal_frmts.h"
 #include "gdal_alg_priv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: vrtdriver.cpp 32883 2016-01-09 18:24:40Z rouault $");
 
 /************************************************************************/
 /*                             VRTDriver()                              */

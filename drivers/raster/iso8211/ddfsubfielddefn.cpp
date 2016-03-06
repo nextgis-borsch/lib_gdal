@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ddfsubfielddefn.cpp 33127 2016-01-23 19:47:48Z rouault $
  *
  * Project:  ISO 8211 Access
  * Purpose:  Implements the DDFSubfieldDefn class.
@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ddfsubfielddefn.cpp 33127 2016-01-23 19:47:48Z rouault $");
 
 /************************************************************************/
 /*                          DDFSubfieldDefn()                           */

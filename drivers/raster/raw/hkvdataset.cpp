@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: hkvdataset.cpp 32883 2016-01-09 18:24:40Z rouault $
  *
  * Project:  GView
  * Purpose:  Implementation of Atlantis HKV labelled blob support
@@ -35,7 +35,7 @@
 #include "rawdataset.h"
 #include "atlsci_spheroid.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: hkvdataset.cpp 32883 2016-01-09 18:24:40Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */

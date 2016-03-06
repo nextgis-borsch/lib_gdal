@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: hfaentry.cpp 32494 2015-12-27 13:06:34Z rouault $
  *
  * Project:  Erdas Imagine (.img) Translator
  * Purpose:  Implementation of the HFAEntry class for reading and relating
@@ -38,7 +38,7 @@
 #include "hfa_p.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: hfaentry.cpp 32494 2015-12-27 13:06:34Z rouault $");
 
 /************************************************************************/
 /*                              HFAEntry()                              */

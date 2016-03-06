@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: prologue.h 15064 2008-07-28 19:10:23Z mloskot $
  *
  * Purpose:  Interface of Prologue class. Parse the prologue of one repeat
  *           cycle and keep the interesting info.

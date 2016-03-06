@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: wmsmetadataset.h 31777 2015-11-26 14:14:41Z rouault $
  *
  * Project:  WMS Client Driver
  * Purpose:  Declaration of GDALWMSMetaDataset class

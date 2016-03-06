@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrmutexedlayer.cpp 31705 2015-11-21 22:57:18Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRMutexedLayer class
@@ -30,7 +30,7 @@
 #include "ogrmutexedlayer.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrmutexedlayer.cpp 31705 2015-11-21 22:57:18Z rouault $");
 
 OGRMutexedLayer::OGRMutexedLayer(OGRLayer* poDecoratedLayer,
                                  int bTakeOwnership,

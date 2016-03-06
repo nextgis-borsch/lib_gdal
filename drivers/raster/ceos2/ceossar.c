@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ceossar.c 31777 2015-11-26 14:14:41Z rouault $
  *
  * Project:  ASI CEOS Translator
  * Purpose:  Functions related to CeosSARVolume_t.
@@ -29,7 +29,7 @@
 
 #include "ceos.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ceossar.c 31777 2015-11-26 14:14:41Z rouault $");
 
 extern Link_t *RecipeFunctions;
 

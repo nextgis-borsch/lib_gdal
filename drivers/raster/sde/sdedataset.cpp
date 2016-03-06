@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: sdedataset.cpp 32237 2015-12-18 13:41:27Z goatbar $
  *
  * Project:  ESRI ArcSDE Raster reader
  * Purpose:  Dataset implementation for ESRI ArcSDE Rasters

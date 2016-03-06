@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: dodsdataset2.cpp 32205 2015-12-17 21:57:20Z goatbar $
  *
  * Project:  OPeNDAP Raster Driver
  * Purpose:  Implements DODSDataset and DODSRasterBand classes.
@@ -72,7 +72,7 @@
 
 using namespace libdap;
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: dodsdataset2.cpp 32205 2015-12-17 21:57:20Z goatbar $");
 
 /** Attribute names used to encode geo-referencing information. Note that
     these are not C++ objects to avoid problems with static global

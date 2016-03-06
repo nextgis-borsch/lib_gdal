@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: pnmdataset.cpp 32883 2016-01-09 18:24:40Z rouault $
  *
  * Project:  PNM Driver
  * Purpose:  Portable anymap file format imlementation
@@ -33,7 +33,7 @@
 #include "rawdataset.h"
 #include <ctype.h>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: pnmdataset.cpp 32883 2016-01-09 18:24:40Z rouault $");
 
 CPL_C_START
 void GDALRegister_PNM();

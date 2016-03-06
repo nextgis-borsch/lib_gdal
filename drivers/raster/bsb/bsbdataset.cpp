@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: bsbdataset.cpp 32205 2015-12-17 21:57:20Z goatbar $
  *
  * Project:  BSB Reader
  * Purpose:  BSBDataset implementation for BSB format.
@@ -34,7 +34,7 @@
 #include "gdal_pam.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: bsbdataset.cpp 32205 2015-12-17 21:57:20Z goatbar $");
 
 //Disabled as people may worry about the BSB patent
 //#define BSB_CREATE

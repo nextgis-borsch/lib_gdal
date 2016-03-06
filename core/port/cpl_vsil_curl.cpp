@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: cpl_vsil_curl.cpp 33646 2016-03-05 15:54:03Z goatbar $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Implement VSI large file api for HTTP/FTP files
@@ -36,7 +36,7 @@
 #include "cpl_aws.h"
 #include "cpl_minixml.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_vsil_curl.cpp 33646 2016-03-05 15:54:03Z goatbar $");
 
 #ifndef HAVE_CURL
 
@@ -133,7 +133,7 @@ typedef struct
     bool            bError;
     bool            bDownloadHeaderOnly;
 
-    VSILFILE           *fp; 
+    VSILFILE           *fp;
     VSICurlReadCbkFunc  pfnReadCbk;
     void               *pReadCbkUserData;
     bool                bInterrupted;
@@ -224,7 +224,7 @@ typedef struct
 
 class VSICurlHandle;
 
-class VSICurlFilesystemHandler : public VSIFilesystemHandler 
+class VSICurlFilesystemHandler : public VSIFilesystemHandler
 {
     CachedRegion  **papsRegions;
     int             nRegions;
@@ -264,7 +264,7 @@ public:
     VSICurlFilesystemHandler();
     ~VSICurlFilesystemHandler();
 
-    virtual VSIVirtualHandle *Open( const char *pszFilename, 
+    virtual VSIVirtualHandle *Open( const char *pszFilename,
                                     const char *pszAccess);
     virtual int      Stat( const char *pszFilename, VSIStatBufL *pStatBuf, int nFlags );
     virtual int      Unlink( const char *pszFilename );
@@ -482,7 +482,7 @@ void VSICurlSetOptions(CURL* hCurlHandle, const char* pszURL)
 #endif
 
     curl_easy_setopt(hCurlHandle, CURLOPT_NOBODY, 0);
-    curl_easy_setopt(hCurlHandle, CURLOPT_HTTPGET, 1); 
+    curl_easy_setopt(hCurlHandle, CURLOPT_HTTPGET, 1);
     curl_easy_setopt(hCurlHandle, CURLOPT_HEADER, 0);
 
 /* 7.16.4 */
@@ -642,7 +642,8 @@ vsi_l_offset VSICurlHandle::GetFileSize()
             const size_t nExtensionLen = strlen(papszExtensions[i]);
             if( EQUAL(papszExtensions[i], "{noext}") )
             {
-                if( nURLLen > 4 && strchr(pszURL + nURLLen - 4, '.') == NULL )
+                const char* pszLastSlash = strrchr(pszURL, '/');
+                if( pszLastSlash != NULL && strchr(pszLastSlash, '.') == NULL )
                 {
                     bFound = true;
                     break;
@@ -890,7 +891,7 @@ bool VSICurlHandle::DownloadRegion(vsi_l_offset startOffset, int nBlocks)
     sWriteFuncHeaderData.nStartOffset = startOffset;
     sWriteFuncHeaderData.nEndOffset = startOffset + nBlocks * DOWNLOAD_CHUNK_SIZE - 1;
     /* Some servers don't like we try to read after end-of-file (#5786) */
-    if( cachedFileProp->bHasComputedFileSize && 
+    if( cachedFileProp->bHasComputedFileSize &&
         sWriteFuncHeaderData.nEndOffset >= cachedFileProp->fileSize )
     {
         sWriteFuncHeaderData.nEndOffset = cachedFileProp->fileSize - 1;
@@ -1658,7 +1659,7 @@ CURL* VSICurlFilesystemHandler::GetCurlHandleFor(CPLString osURL)
 /*                   GetRegionFromCacheDisk()                           */
 /************************************************************************/
 
-const CachedRegion* 
+const CachedRegion*
 VSICurlFilesystemHandler::GetRegionFromCacheDisk(const char* pszURL,
                                                  vsi_l_offset nFileOffsetStart)
 {
@@ -1953,7 +1954,7 @@ static char *VSICurlParserFindEOL( char *pszData )
 
     if( *pszData == '\0' )
         return NULL;
-    else 
+    else
         return pszData;
 }
 
@@ -3049,7 +3050,7 @@ protected:
 public:
         VSIS3FSHandler() {}
 
-        virtual VSIVirtualHandle *Open( const char *pszFilename, 
+        virtual VSIVirtualHandle *Open( const char *pszFilename,
                                         const char *pszAccess);
         virtual int      Stat( const char *pszFilename, VSIStatBufL *pStatBuf, int nFlags );
         virtual int      Unlink( const char *pszFilename );

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: 8211dump.cpp 33035 2016-01-17 22:05:23Z rouault $
  *
  * Project:  SDTS Translator
  * Purpose:  Dump 8211 file in verbose form - just a junk program. 
@@ -33,7 +33,7 @@
 #include "cpl_vsi.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: 8211dump.cpp 33035 2016-01-17 22:05:23Z rouault $");
 
 
 int main( int nArgc, char ** papszArgv )

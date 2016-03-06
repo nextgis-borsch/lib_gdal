@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: pdfcreatecopy.h 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  PDF driver
  * Purpose:  GDALDataset driver for PDF dataset.

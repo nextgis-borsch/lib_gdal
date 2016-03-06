@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gh5_convenience.cpp 32179 2015-12-14 16:22:34Z goatbar $
  *
  * Project:  Hierarchical Data Format Release 5 (HDF5)
  * Purpose:  HDF5 convenience functions.
@@ -29,7 +29,7 @@
 
 #include "gh5_convenience.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gh5_convenience.cpp 32179 2015-12-14 16:22:34Z goatbar $");
 
 /************************************************************************/
 /*                    GH5_FetchAttribute(CPLString)                     */

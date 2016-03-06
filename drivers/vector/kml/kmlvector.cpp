@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: kmlvector.cpp 32872 2016-01-09 10:16:42Z goatbar $
  *
  * Project:  KML Driver
  * Purpose:  Specialization of the kml class, only for vectors in kml files.

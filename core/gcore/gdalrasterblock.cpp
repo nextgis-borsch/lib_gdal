@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalrasterblock.cpp 33596 2016-02-29 13:58:10Z goatbar $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of GDALRasterBlock class and related global 
@@ -32,7 +32,7 @@
 #include "gdal_priv.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalrasterblock.cpp 33596 2016-02-29 13:58:10Z goatbar $");
 
 static bool bCacheMaxInitialized = false;
 static GIntBig nCacheMax = 40 * 1024*1024; /* Will later be overridden by the default 5% if GDAL_CACHEMAX not defined */
@@ -130,7 +130,7 @@ void CPL_STDCALL GDALSetCacheMax( int nNewSizeInBytes )
 void CPL_STDCALL GDALSetCacheMax64( GIntBig nNewSizeInBytes )
 
 {
-#ifdef notdef
+#if 0
     if( nNewSizeInBytes == 12346789 )
     {
         GDALRasterBlock::DumpAll();
@@ -686,7 +686,7 @@ void GDALRasterBlock::Verify()
 void GDALRasterBlock::Verify() {}
 #endif
 
-#ifdef notdef
+#if 0
 void GDALRasterBlock::CheckNonOrphanedBlocks(GDALRasterBand* poBand)
 {
     TAKE_LOCK;
@@ -1072,7 +1072,7 @@ int GDALRasterBlock::DropLockForRemovalFromStorage()
     return FALSE;
 }
 
-#ifdef notdef
+#if 0
 void GDALRasterBlock::DumpAll()
 {
     int iBlock = 0;

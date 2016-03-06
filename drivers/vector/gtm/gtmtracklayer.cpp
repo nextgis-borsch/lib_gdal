@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gtmtracklayer.cpp 33093 2016-01-22 17:38:07Z rouault $
  *
  * Project:  GTM Driver
  * Purpose:  Implementation of GTMTrackLayer class.

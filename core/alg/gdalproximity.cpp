@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalproximity.cpp 32100 2015-12-09 07:07:26Z goatbar $
  *
  * Project:  GDAL
  * Purpose:  Compute each pixel's proximity to a set of target pixels.
@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalproximity.cpp 32100 2015-12-09 07:07:26Z goatbar $");
 
 static CPLErr
 ProcessProximityLine( GInt32 *panSrcScanline, int *panNearX, int *panNearY, 

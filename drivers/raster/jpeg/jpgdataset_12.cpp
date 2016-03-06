@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: jpgdataset_12.cpp 32400 2015-12-20 22:54:44Z rouault $
  *
  * Project:  JPEG JFIF Driver
  * Purpose:  Implement GDAL JPEG Support based on IJG libjpeg.

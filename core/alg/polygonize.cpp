@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: polygonize.cpp 32239 2015-12-18 14:48:33Z rouault $
  * Project:  GDAL
  * Purpose:  Raster to Polygon Converter
  * Author:   Frank Warmerdam, warmerdam@pobox.com
@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include <vector>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: polygonize.cpp 32239 2015-12-18 14:48:33Z rouault $");
 
 #ifdef OGR_ENABLED
 

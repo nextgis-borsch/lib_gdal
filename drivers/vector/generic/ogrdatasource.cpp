@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrdatasource.cpp 33105 2016-01-23 15:27:32Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The generic portions of the GDALDataset class.
@@ -32,7 +32,7 @@
 #include "ogr_api.h"
 #include "ograpispy.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrdatasource.cpp 33105 2016-01-23 15:27:32Z rouault $");
 
 /************************************************************************/
 /*                           ~OGRDataSource()                           */

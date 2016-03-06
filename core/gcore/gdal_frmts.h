@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdal_frmts.h 33351 2016-02-03 15:52:38Z goatbar $
  *
  * Project:  GDAL
  * Purpose:  Prototypes for all format specific driver initialization.
@@ -34,7 +34,6 @@
 #include "cpl_port.h"
 
 CPL_C_START
-void CPL_DLL GDALRegister_GDB(void);
 void CPL_DLL GDALRegister_GTiff(void);
 void CPL_DLL GDALRegister_GXF(void);
 void CPL_DLL GDALRegister_OGDI(void);
@@ -42,7 +41,7 @@ void CPL_DLL GDALRegister_HFA(void);
 void CPL_DLL GDALRegister_AAIGrid(void);
 void CPL_DLL GDALRegister_GRASSASCIIGrid(void);
 void CPL_DLL GDALRegister_AIGrid(void);
-void CPL_DLL GDALRegister_AIGrid2(void);
+// void CPL_DLL GDALRegister_AIGrid2(void);
 void CPL_DLL GDALRegister_CEOS(void);
 void CPL_DLL GDALRegister_SAR_CEOS(void);
 void CPL_DLL GDALRegister_SDTS(void);

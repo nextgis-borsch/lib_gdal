@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: xpmdataset.cpp 32883 2016-01-09 18:24:40Z rouault $
  *
  * Project:  XPM Driver
  * Purpose:  Implement GDAL XPM Support
@@ -33,7 +33,7 @@
 #include "memdataset.h"
 #include "gdal_frmts.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: xpmdataset.cpp 32883 2016-01-09 18:24:40Z rouault $");
 
 static unsigned char *ParseXPM( const char *pszInput,
                                 unsigned int nFileSize,

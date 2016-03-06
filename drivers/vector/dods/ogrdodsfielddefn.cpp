@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrdodsfielddefn.cpp 32366 2015-12-20 19:04:52Z goatbar $
  *
  * Project:  OGR/DODS Interface
  * Purpose:  Implements OGRDODSFieldDefn class.  This is a small class used
@@ -31,7 +31,7 @@
 #include "ogr_dods.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrdodsfielddefn.cpp 32366 2015-12-20 19:04:52Z goatbar $");
 
 /************************************************************************/
 /*                          OGRDODSFieldDefn()                          */

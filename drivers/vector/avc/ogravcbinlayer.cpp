@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogravcbinlayer.cpp 32123 2015-12-11 16:36:35Z goatbar $
  *
  * Project:  OGR
  * Purpose:  Implements OGRAVCBinLayer class.
@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogravcbinlayer.cpp 32123 2015-12-11 16:36:35Z goatbar $");
 
 /************************************************************************/
 /*                           OGRAVCBinLayer()                           */

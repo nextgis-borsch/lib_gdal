@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdal_rat.cpp 32173 2015-12-14 00:04:53Z goatbar $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of GDALRasterAttributeTable and related classes.
@@ -33,7 +33,7 @@
 #include "json.h"
 #include "ogrgeojsonwriter.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdal_rat.cpp 32173 2015-12-14 00:04:53Z goatbar $");
 
 /**
  * \class GDALRasterAttributeTable

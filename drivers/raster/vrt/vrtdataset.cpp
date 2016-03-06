@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: vrtdataset.cpp 33123 2016-01-23 18:59:28Z rouault $
  *
  * Project:  Virtual GDAL Datasets
  * Purpose:  Implementation of VRTDataset
@@ -36,7 +36,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: vrtdataset.cpp 33123 2016-01-23 18:59:28Z rouault $");
 
 /************************************************************************/
 /*                            VRTDataset()                             */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogravclayer.cpp 32124 2015-12-11 16:44:48Z goatbar $
  *
  * Project:  OGR
  * Purpose:  Implements OGRAVCLayer class.  This is the base class for E00
@@ -34,7 +34,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogravclayer.cpp 32124 2015-12-11 16:44:48Z goatbar $");
 
 /************************************************************************/
 /*                           OGRAVCLayer()                           */

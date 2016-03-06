@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrcompoundcurve.cpp 33631 2016-03-04 06:28:09Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRCompoundCurve geometry class.
@@ -52,10 +52,10 @@ OGRCompoundCurve::OGRCompoundCurve()
 
 /**
  * \brief Copy constructor.
- * 
+ *
  * Note: before GDAL 2.1, only the default implementation of the constructor
  * existed, which could be unsafe to use.
- * 
+ *
  * @since GDAL 2.1
  */
 
@@ -105,7 +105,11 @@ OGRCompoundCurve& OGRCompoundCurve::operator=( const OGRCompoundCurve& other )
 OGRwkbGeometryType OGRCompoundCurve::getGeometryType() const
 
 {
-    if( getCoordinateDimension() == 3 )
+    if( (flags & OGR_G_3D) && (flags & OGR_G_MEASURED) )
+        return wkbCompoundCurveZM;
+    else if( flags & OGR_G_MEASURED  )
+        return wkbCompoundCurveM;
+    else if( flags & OGR_G_3D )
         return wkbCompoundCurveZ;
     else
         return wkbCompoundCurve;
@@ -216,6 +220,7 @@ OGRGeometry *OGRCompoundCurve::clone() const
 
     poNewCC = new OGRCompoundCurve;
     poNewCC->assignSpatialReference( getSpatialReference() );
+    poNewCC->flags = flags;
 
     for( int i = 0; i < oCC.nCurveCount; i++ )
     {
@@ -314,7 +319,7 @@ void OGRCompoundCurve::Value( double dfDistance, OGRPoint *poPoint ) const
         double dfSegLength = oCC.papoCurves[iGeom]->get_Length();
         if (dfSegLength > 0)
         {
-            if( (dfLength <= dfDistance) && ((dfLength + dfSegLength) >= 
+            if( (dfLength <= dfDistance) && ((dfLength + dfSegLength) >=
                                              dfDistance) )
             {
                 oCC.papoCurves[iGeom]->Value(dfDistance - dfLength, poPoint);
@@ -386,6 +391,16 @@ OGRBoolean  OGRCompoundCurve::Equals( OGRGeometry *poOther ) const
 void OGRCompoundCurve::setCoordinateDimension( int nNewDimension )
 {
     oCC.setCoordinateDimension( this, nNewDimension );
+}
+
+void OGRCompoundCurve::set3D( OGRBoolean bIs3D )
+{
+    oCC.set3D(this, bIs3D);
+}
+
+void OGRCompoundCurve::setMeasured( OGRBoolean bIsMeasured )
+{
+    oCC.setMeasured(this, bIsMeasured);
 }
 
 /************************************************************************/
@@ -738,7 +753,7 @@ OGRLineString* OGRCompoundCurve::CastToLineString(OGRCompoundCurve* poCC)
  *
  * The passed in geometry is consumed and a new one returned (or NULL in case
  * of failure)
- * 
+ *
  * @param poCC the input geometry - ownership is passed to the method.
  * @return new geometry.
  */

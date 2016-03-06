@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: shape2ogr.cpp 33539 2016-02-24 15:20:43Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements translation of Shapefile shapes into OGR
@@ -31,8 +31,9 @@
 
 #include "ogrshape.h"
 #include "cpl_conv.h"
+#include <limits>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: shape2ogr.cpp 33539 2016-02-24 15:20:43Z rouault $");
 
 /************************************************************************/
 /*                        RingStartEnd                                  */
@@ -60,7 +61,7 @@ static void RingStartEnd ( SHPObject *psShape, int ring, int *start, int *end )
 /*                        CreateLinearRing                              */
 /*                                                                      */
 /************************************************************************/
-static OGRLinearRing * CreateLinearRing ( SHPObject *psShape, int ring, int bHasZ )
+static OGRLinearRing * CreateLinearRing ( SHPObject *psShape, int ring, int bHasZ, int bHasM )
 {
     OGRLinearRing *poRing;
     int nRingStart, nRingEnd, nRingPoints;
@@ -72,10 +73,15 @@ static OGRLinearRing * CreateLinearRing ( SHPObject *psShape, int ring, int bHas
     {
         nRingPoints = nRingEnd - nRingStart + 1;
 
-        if (bHasZ)
+        if (bHasZ && bHasM)
             poRing->setPoints( nRingPoints, psShape->padfX + nRingStart, 
                             psShape->padfY + nRingStart,
-                            psShape->padfZ + nRingStart );
+                            psShape->padfZ + nRingStart,
+                               psShape->padfM ? psShape->padfM + nRingStart : NULL );
+        else if (bHasM)
+            poRing->setPointsM( nRingPoints, psShape->padfX + nRingStart, 
+                            psShape->padfY + nRingStart,
+                                psShape->padfM ? psShape->padfM + nRingStart :NULL );
         else
             poRing->setPoints( nRingPoints, psShape->padfX + nRingStart,
                             psShape->padfY + nRingStart );
@@ -115,15 +121,22 @@ OGRGeometry *SHPReadOGRObject( SHPHandle hSHP, int iShape, SHPObject *psShape )
     }
     else if(psShape->nSHPType == SHPT_POINTZ )
     {
-        poOGR = new OGRPoint( psShape->padfX[0], psShape->padfY[0],
-                              psShape->padfZ[0] );
+        if( psShape->bMeasureIsUsed )
+        {
+            poOGR = new OGRPoint( psShape->padfX[0], psShape->padfY[0],
+                                  psShape->padfZ[0], psShape->padfM[0] );
+        }
+        else
+        {
+            poOGR = new OGRPoint( psShape->padfX[0], psShape->padfY[0],
+                                  psShape->padfZ[0] );
+        }
     }
     else if(psShape->nSHPType == SHPT_POINTM )
     {
-        /* padfM will be always not NULL in the case */
-        // Read XYM as XYZ
         poOGR = new OGRPoint( psShape->padfX[0], psShape->padfY[0],
-                            psShape->padfM[0] );
+                              0.0, psShape->padfM[0] );
+        poOGR->set3D(FALSE);
     }
 /* -------------------------------------------------------------------- */
 /*      Multipoint.                                                     */
@@ -146,8 +159,24 @@ OGRGeometry *SHPReadOGRObject( SHPHandle hSHP, int iShape, SHPObject *psShape )
                 OGRPoint    *poPoint;
 
                 if( psShape->nSHPType == SHPT_MULTIPOINTZ )
+                {
+                    if( psShape->padfM )
+                    {
+                        poPoint = new OGRPoint( psShape->padfX[i], psShape->padfY[i],
+                                                psShape->padfZ[i], psShape->padfM[i] );
+                    }
+                    else
+                    {
+                        poPoint = new OGRPoint( psShape->padfX[i], psShape->padfY[i],
+                                                psShape->padfZ[i] );
+                    }
+                }
+                else if( psShape->nSHPType == SHPT_MULTIPOINTM )
+                {
                     poPoint = new OGRPoint( psShape->padfX[i], psShape->padfY[i],
-                                            psShape->padfZ[i] );
+                                            0.0, psShape->padfM[i] );
+                    poPoint->set3D(FALSE);
+                }
                 else
                     poPoint = new OGRPoint( psShape->padfX[i], psShape->padfY[i] );
 
@@ -179,14 +208,13 @@ OGRGeometry *SHPReadOGRObject( SHPHandle hSHP, int iShape, SHPObject *psShape )
 
             if( psShape->nSHPType == SHPT_ARCZ )
                 poOGRLine->setPoints( psShape->nVertices,
-                                    psShape->padfX, psShape->padfY, psShape->padfZ );
-            else if( psShape->nSHPType == SHPT_ARCM && psShape->padfM != NULL )
-                // Read XYM as XYZ
-                poOGRLine->setPoints( psShape->nVertices,
-                                    psShape->padfX, psShape->padfY, psShape->padfM );
+                                      psShape->padfX, psShape->padfY, psShape->padfZ, psShape->padfM );
+            else if( psShape->nSHPType == SHPT_ARCM )
+                poOGRLine->setPointsM( psShape->nVertices,
+                                       psShape->padfX, psShape->padfY, psShape->padfM );
             else
                 poOGRLine->setPoints( psShape->nVertices,
-                                    psShape->padfX, psShape->padfY );
+                                      psShape->padfX, psShape->padfY );
 
             poOGR = poOGRLine;
         }
@@ -226,10 +254,10 @@ OGRGeometry *SHPReadOGRObject( SHPHandle hSHP, int iShape, SHPObject *psShape )
                     poLine->setPoints( nRingPoints,
                                     psShape->padfX + nRingStart,
                                     psShape->padfY + nRingStart,
-                                    psShape->padfZ + nRingStart );
+                                    psShape->padfZ + nRingStart,
+                                    psShape->padfM ? psShape->padfM + nRingStart : NULL );
                 else if( psShape->nSHPType == SHPT_ARCM && psShape->padfM != NULL )
-                    // Read XYM as XYZ
-                    poLine->setPoints( nRingPoints,
+                    poLine->setPointsM( nRingPoints,
                                     psShape->padfX + nRingStart,
                                     psShape->padfY + nRingStart,
                                     psShape->padfM + nRingStart );
@@ -254,6 +282,7 @@ OGRGeometry *SHPReadOGRObject( SHPHandle hSHP, int iShape, SHPObject *psShape )
     {
         int iRing;
         int bHasZ = ( psShape->nSHPType == SHPT_POLYGONZ );
+        int bHasM = ( bHasZ || (psShape->nSHPType == SHPT_POLYGONM) );
 
         //CPLDebug( "Shape", "Shape type: polygon with nParts=%d \n", psShape->nParts );
 
@@ -268,7 +297,7 @@ OGRGeometry *SHPReadOGRObject( SHPHandle hSHP, int iShape, SHPObject *psShape )
             OGRLinearRing *poRing = NULL;
 
             poOGR = poOGRPoly = new OGRPolygon();
-            poRing = CreateLinearRing ( psShape, 0, bHasZ );
+            poRing = CreateLinearRing ( psShape, 0, bHasZ, bHasM );
             poOGRPoly->addRingDirectly( poRing );
         }
 
@@ -278,7 +307,7 @@ OGRGeometry *SHPReadOGRObject( SHPHandle hSHP, int iShape, SHPObject *psShape )
             for( iRing = 0; iRing < psShape->nParts; iRing++ )
             {
                 tabPolygons[iRing] = new OGRPolygon();
-                tabPolygons[iRing]->addRingDirectly(CreateLinearRing ( psShape, iRing, bHasZ ));
+                tabPolygons[iRing]->addRingDirectly(CreateLinearRing ( psShape, iRing, bHasZ, bHasM ));
             }
 
             int isValidGeometry;
@@ -422,7 +451,7 @@ OGRGeometry *SHPReadOGRObject( SHPHandle hSHP, int iShape, SHPObject *psShape )
                     poLastPoly = new OGRPolygon();
 
                 poLastPoly->addRingDirectly( 
-                    CreateLinearRing( psShape, iPart, TRUE ) );
+                    CreateLinearRing( psShape, iPart, TRUE, TRUE ) );
             }
             else
                 CPLDebug( "OGR", "Unrecognized parttype %d, ignored.",
@@ -464,7 +493,7 @@ OGRGeometry *SHPReadOGRObject( SHPHandle hSHP, int iShape, SHPObject *psShape )
 /************************************************************************/
 static
 OGRErr SHPWriteOGRObject( SHPHandle hSHP, int iShape, OGRGeometry *poGeom,
-                          int bRewind)
+                          int bRewind, OGRwkbGeometryType eLayerGeomType )
 
 {
     int nReturnedShapeID;
@@ -475,7 +504,7 @@ OGRErr SHPWriteOGRObject( SHPHandle hSHP, int iShape, OGRGeometry *poGeom,
     {
         SHPObject       *psShape;
 
-        psShape = SHPCreateSimpleObject( SHPT_NULL, 0, NULL, NULL, NULL );
+        psShape = SHPCreateObject( SHPT_NULL, -1, 0, NULL, NULL, 0, NULL, NULL, NULL, NULL );
         nReturnedShapeID = SHPWriteObject( hSHP, iShape, psShape );
         SHPDestroyObject( psShape );
         if( nReturnedShapeID == -1 )
@@ -493,10 +522,10 @@ OGRErr SHPWriteOGRObject( SHPHandle hSHP, int iShape, OGRGeometry *poGeom,
              || hSHP->nShapeType == SHPT_POINTZ )
     {
         SHPObject       *psShape;
-        double          dfX, dfY, dfZ = 0;
+        double          dfX, dfY, dfZ, dfM;
+        double          *pdfM;
 
-        if( poGeom->getGeometryType() != wkbPoint
-            && poGeom->getGeometryType() != wkbPoint25D )        
+        if( wkbFlatten(poGeom->getGeometryType()) != wkbPoint )        
         {
             CPLError( CE_Failure, CPLE_AppDefined,
                       "Attempt to write non-point (%s) geometry to"
@@ -510,9 +539,19 @@ OGRErr SHPWriteOGRObject( SHPHandle hSHP, int iShape, OGRGeometry *poGeom,
         dfX = poPoint->getX();
         dfY = poPoint->getY();
         dfZ = poPoint->getZ();
+        if( wkbHasM(eLayerGeomType) && (hSHP->nShapeType == SHPT_POINTM || hSHP->nShapeType == SHPT_POINTZ) )
+        {
+            if( poGeom->IsMeasured() )
+                dfM = poPoint->getM();
+            else
+                dfM = -std::numeric_limits<double>::max();
+            pdfM = &dfM;
+        }
+        else
+            pdfM = NULL;
 
-        psShape = SHPCreateSimpleObject( hSHP->nShapeType, 1,
-                                         &dfX, &dfY, &dfZ );
+        psShape = SHPCreateObject( hSHP->nShapeType, -1, 0, NULL, NULL, 1,
+                                   &dfX, &dfY, &dfZ, pdfM );
         nReturnedShapeID = SHPWriteObject( hSHP, iShape, psShape );
         SHPDestroyObject( psShape );
         if( nReturnedShapeID == -1 )
@@ -525,7 +564,7 @@ OGRErr SHPWriteOGRObject( SHPHandle hSHP, int iShape, OGRGeometry *poGeom,
              || hSHP->nShapeType == SHPT_MULTIPOINTM
              || hSHP->nShapeType == SHPT_MULTIPOINTZ )
     {
-        double          *padfX, *padfY, *padfZ;
+        double          *padfX, *padfY, *padfZ, *padfM;
         int             iPoint;
         SHPObject       *psShape;
 
@@ -543,6 +582,10 @@ OGRErr SHPWriteOGRObject( SHPHandle hSHP, int iShape, OGRGeometry *poGeom,
         padfX = (double *) CPLMalloc(sizeof(double)*poMP->getNumGeometries());
         padfY = (double *) CPLMalloc(sizeof(double)*poMP->getNumGeometries());
         padfZ = (double *) CPLCalloc(sizeof(double),poMP->getNumGeometries());
+        if( wkbHasM(eLayerGeomType) && (hSHP->nShapeType == SHPT_MULTIPOINTM || hSHP->nShapeType == SHPT_MULTIPOINTZ) )
+            padfM = (double *) CPLCalloc(sizeof(double),poMP->getNumGeometries());
+        else
+            padfM = NULL;
 
         int iDstPoints = 0;
         for( iPoint = 0; iPoint < poMP->getNumGeometries(); iPoint++ )
@@ -555,6 +598,13 @@ OGRErr SHPWriteOGRObject( SHPHandle hSHP, int iShape, OGRGeometry *poGeom,
                 padfX[iDstPoints] = poPoint->getX();
                 padfY[iDstPoints] = poPoint->getY();
                 padfZ[iDstPoints] = poPoint->getZ();
+                if( padfM )
+                {
+                    if( poGeom->IsMeasured() )
+                        padfM[iDstPoints] = poPoint->getM();
+                    else
+                        padfM[iDstPoints] = -std::numeric_limits<double>::max();
+                }
                 iDstPoints ++;
             }
             else
@@ -562,15 +612,16 @@ OGRErr SHPWriteOGRObject( SHPHandle hSHP, int iShape, OGRGeometry *poGeom,
                               "Ignore POINT EMPTY inside MULTIPOINT in shapefile writer." );
         }
 
-        psShape = SHPCreateSimpleObject( hSHP->nShapeType,
-                                         iDstPoints,
-                                         padfX, padfY, padfZ );
+        psShape = SHPCreateObject( hSHP->nShapeType, -1, 0, NULL, NULL,
+                                   iDstPoints,
+                                   padfX, padfY, padfZ, padfM );
         nReturnedShapeID = SHPWriteObject( hSHP, iShape, psShape );
         SHPDestroyObject( psShape );
 
         CPLFree( padfX );
         CPLFree( padfY );
         CPLFree( padfZ );
+        CPLFree( padfM );
         if( nReturnedShapeID == -1 )
             return OGRERR_FAILURE;
     }
@@ -584,30 +635,42 @@ OGRErr SHPWriteOGRObject( SHPHandle hSHP, int iShape, OGRGeometry *poGeom,
              && wkbFlatten(poGeom->getGeometryType()) == wkbLineString )
     {
         OGRLineString   *poArc = (OGRLineString *) poGeom;
-        double          *padfX, *padfY, *padfZ;
+        double          *padfX, *padfY, *padfZ, *padfM;
         int             iPoint;
         SHPObject       *psShape;
 
         padfX = (double *) CPLMalloc(sizeof(double)*poArc->getNumPoints());
         padfY = (double *) CPLMalloc(sizeof(double)*poArc->getNumPoints());
         padfZ = (double *) CPLCalloc(sizeof(double),poArc->getNumPoints());
+        if( wkbHasM(eLayerGeomType) && (hSHP->nShapeType == SHPT_ARCM || hSHP->nShapeType == SHPT_ARCZ) )
+            padfM = (double *) CPLCalloc(sizeof(double),poArc->getNumPoints());
+        else
+            padfM = NULL;
 
         for( iPoint = 0; iPoint < poArc->getNumPoints(); iPoint++ )
         {
             padfX[iPoint] = poArc->getX( iPoint );
             padfY[iPoint] = poArc->getY( iPoint );
             padfZ[iPoint] = poArc->getZ( iPoint );
+            if( padfM )
+            {
+                if( poGeom->IsMeasured() )
+                    padfM[iPoint] = poArc->getM( iPoint );
+                else
+                    padfM[iPoint] = -std::numeric_limits<double>::max();
+            }
         }
 
-        psShape = SHPCreateSimpleObject( hSHP->nShapeType,
-                                         poArc->getNumPoints(),
-                                         padfX, padfY, padfZ );
+        psShape = SHPCreateObject( hSHP->nShapeType, -1, 0, NULL, NULL,
+                                   poArc->getNumPoints(),
+                                   padfX, padfY, padfZ, padfM );
         nReturnedShapeID = SHPWriteObject( hSHP, iShape, psShape );
         SHPDestroyObject( psShape );
 
         CPLFree( padfX );
         CPLFree( padfY );
         CPLFree( padfZ );
+        CPLFree( padfM );
         if( nReturnedShapeID == -1 )
             return OGRERR_FAILURE;
     }
@@ -619,11 +682,14 @@ OGRErr SHPWriteOGRObject( SHPHandle hSHP, int iShape, OGRGeometry *poGeom,
              || hSHP->nShapeType == SHPT_ARCZ )
     {
         OGRGeometry     *poForcedGeom;
-        double          *padfX=NULL, *padfY=NULL, *padfZ=NULL;
+        double          *padfX=NULL, *padfY=NULL, *padfZ=NULL, *padfM=NULL;
         int             iGeom, iPoint, nPointCount = 0;
         SHPObject       *psShape;
         int             *panRingStart;
         int             nParts = 0;
+        const bool       bSupportMeasures =
+            wkbHasM(eLayerGeomType) && (hSHP->nShapeType == SHPT_ARCM ||
+                                            hSHP->nShapeType == SHPT_ARCZ);
 
         poForcedGeom = OGRGeometryFactory::forceToMultiLineString( poGeom->clone() );
 
@@ -664,12 +730,20 @@ OGRErr SHPWriteOGRObject( SHPHandle hSHP, int iShape, OGRGeometry *poGeom,
                 CPLRealloc( padfY, sizeof(double)*(nNewPoints+nPointCount) );
             padfZ = (double *) 
                 CPLRealloc( padfZ, sizeof(double)*(nNewPoints+nPointCount) );
+            if( bSupportMeasures )
+            {
+                padfM = (double *) 
+                    CPLRealloc( padfM, sizeof(double)*(nNewPoints+nPointCount) );
+            }
 
             for( iPoint = 0; iPoint < nNewPoints; iPoint++ )
             {
                 padfX[nPointCount] = poArc->getX( iPoint );
                 padfY[nPointCount] = poArc->getY( iPoint );
                 padfZ[nPointCount] = poArc->getZ( iPoint );
+                if( bSupportMeasures )
+                    padfM[nPointCount] = poGeom->IsMeasured() ?
+                        poArc->getM( iPoint ) : -std::numeric_limits<double>::max();
                 nPointCount++;
             }
         }
@@ -679,7 +753,7 @@ OGRErr SHPWriteOGRObject( SHPHandle hSHP, int iShape, OGRGeometry *poGeom,
         psShape = SHPCreateObject( hSHP->nShapeType, iShape, 
                                     nParts, 
                                     panRingStart, NULL,
-                                    nPointCount, padfX, padfY, padfZ, NULL);
+                                    nPointCount, padfX, padfY, padfZ, padfM);
         nReturnedShapeID = SHPWriteObject( hSHP, iShape, psShape );
         SHPDestroyObject( psShape );
 
@@ -687,6 +761,7 @@ OGRErr SHPWriteOGRObject( SHPHandle hSHP, int iShape, OGRGeometry *poGeom,
         CPLFree( padfX );
         CPLFree( padfY );
         CPLFree( padfZ );
+        CPLFree( padfM );
 
         delete poML;
         if( nReturnedShapeID == -1 )
@@ -701,7 +776,7 @@ OGRErr SHPWriteOGRObject( SHPHandle hSHP, int iShape, OGRGeometry *poGeom,
              || hSHP->nShapeType == SHPT_POLYGONZ )
     {
         OGRLinearRing   *poRing, **papoRings=NULL;
-        double          *padfX=NULL, *padfY=NULL, *padfZ=NULL;
+        double          *padfX=NULL, *padfY=NULL, *padfZ=NULL, *padfM=NULL;
         int             iPoint, iRing, nRings, nVertex=0, *panRingStart;
 
         /* Collect list of rings */
@@ -810,7 +885,7 @@ OGRErr SHPWriteOGRObject( SHPHandle hSHP, int iShape, OGRGeometry *poGeom,
         {
             SHPObject       *psShape;
 
-            psShape = SHPCreateSimpleObject( SHPT_NULL, 0, NULL, NULL, NULL );
+            psShape = SHPCreateObject( SHPT_NULL, -1, 0, NULL, NULL, 0, NULL, NULL, NULL, NULL );
             nReturnedShapeID = SHPWriteObject( hSHP, iShape, psShape );
             SHPDestroyObject( psShape );
 
@@ -829,6 +904,8 @@ OGRErr SHPWriteOGRObject( SHPHandle hSHP, int iShape, OGRGeometry *poGeom,
         padfX = (double *) CPLMalloc(sizeof(double)*nVertex);
         padfY = (double *) CPLMalloc(sizeof(double)*nVertex);
         padfZ = (double *) CPLMalloc(sizeof(double)*nVertex);
+        if( wkbHasM(eLayerGeomType) && (hSHP->nShapeType == SHPT_POLYGONM || hSHP->nShapeType == SHPT_POLYGONZ) )
+            padfM = (double *) CPLMalloc(sizeof(double)*nVertex);
 
         /* collect vertices */
         nVertex = 0;
@@ -842,13 +919,18 @@ OGRErr SHPWriteOGRObject( SHPHandle hSHP, int iShape, OGRGeometry *poGeom,
                 padfX[nVertex] = poRing->getX( iPoint );
                 padfY[nVertex] = poRing->getY( iPoint );
                 padfZ[nVertex] = poRing->getZ( iPoint );
+                if( padfM )
+                {
+                    padfM[nVertex] = poGeom->IsMeasured() ?
+                        poRing->getM( iPoint ) : -std::numeric_limits<double>::max();
+                }
                 nVertex++;
             }
         }
 
         SHPObject* psShape = SHPCreateObject( hSHP->nShapeType, iShape, nRings,
                                    panRingStart, NULL,
-                                   nVertex, padfX, padfY, padfZ, NULL );
+                                   nVertex, padfX, padfY, padfZ, padfM );
         if( bRewind )
             SHPRewindObject( hSHP, psShape );
         nReturnedShapeID = SHPWriteObject( hSHP, iShape, psShape );
@@ -859,6 +941,7 @@ OGRErr SHPWriteOGRObject( SHPHandle hSHP, int iShape, OGRGeometry *poGeom,
         CPLFree( padfX );
         CPLFree( padfY );
         CPLFree( padfZ );
+        CPLFree( padfM );
         if( nReturnedShapeID == -1 )
             return OGRERR_FAILURE;
     }
@@ -1020,8 +1103,11 @@ OGRFeatureDefn *SHPReadOGRFeatureDefn( const char * pszName,
             break;
 
           case SHPT_POINTZ:
+            poDefn->SetGeomType( wkbPointZM );
+            break;
+
           case SHPT_POINTM:
-            poDefn->SetGeomType( wkbPoint25D );
+            poDefn->SetGeomType( wkbPointM );
             break;
 
           case SHPT_ARC:
@@ -1029,8 +1115,11 @@ OGRFeatureDefn *SHPReadOGRFeatureDefn( const char * pszName,
             break;
 
           case SHPT_ARCZ:
+            poDefn->SetGeomType( wkbLineStringZM );
+            break;
+
           case SHPT_ARCM:
-            poDefn->SetGeomType( wkbLineString25D );
+            poDefn->SetGeomType( wkbLineStringM );
             break;
 
           case SHPT_MULTIPOINT:
@@ -1038,8 +1127,11 @@ OGRFeatureDefn *SHPReadOGRFeatureDefn( const char * pszName,
             break;
 
           case SHPT_MULTIPOINTZ:
+            poDefn->SetGeomType( wkbMultiPointZM );
+            break;
+
           case SHPT_MULTIPOINTM:
-            poDefn->SetGeomType( wkbMultiPoint25D );
+            poDefn->SetGeomType( wkbMultiPointM );
             break;
 
           case SHPT_POLYGON:
@@ -1047,8 +1139,11 @@ OGRFeatureDefn *SHPReadOGRFeatureDefn( const char * pszName,
             break;
 
           case SHPT_POLYGONZ:
+            poDefn->SetGeomType( wkbPolygonZM );
+            break;
+
           case SHPT_POLYGONM:
-            poDefn->SetGeomType( wkbPolygon25D );
+            poDefn->SetGeomType( wkbPolygonM );
             break;
 
         }
@@ -1100,13 +1195,40 @@ OGRFeature *SHPReadOGRFeature( SHPHandle hSHP, DBFHandle hDBF,
 
             /*
             * NOTE - mloskot:
-            * Two possibilities are expected here (bot hare tested by GDAL Autotests):
+            * Two possibilities are expected here (both are tested by GDAL Autotests):
             * 1. Read valid geometry and assign it directly.
             * 2. Read and assign null geometry if it can not be read correctly from a shapefile
             *
             * It's NOT required here to test poGeometry == NULL.
             */
 
+            if (poGeometry)
+            {
+                /* Set/unset flags. */
+                OGRwkbGeometryType eMyGeomType = poFeature->GetDefnRef()->GetGeomFieldDefn(0)->GetType();
+    
+                if( eMyGeomType != wkbUnknown )
+                {
+                    OGRwkbGeometryType eGeomInType = poGeometry->getGeometryType();
+                    if( wkbHasZ(eMyGeomType) && !wkbHasZ(eGeomInType) )
+                    {
+                        poGeometry->set3D(TRUE);
+                    }
+                    else if( !wkbHasZ(eMyGeomType) && wkbHasZ(eGeomInType) )
+                    {
+                        poGeometry->set3D(FALSE);
+                    }
+                    if( wkbHasM(eMyGeomType) && !wkbHasM(eGeomInType) )
+                    {
+                        poGeometry->setMeasured(TRUE);
+                    }
+                    else if( !wkbHasM(eMyGeomType) && wkbHasM(eGeomInType) )
+                    {
+                        poGeometry->setMeasured(FALSE);
+                    }
+                }
+            }
+            
             poFeature->SetGeometryDirectly( poGeometry );
         }
         else if( psShape != NULL )
@@ -1273,7 +1395,8 @@ OGRErr SHPWriteOGRFeature( SHPHandle hSHP, DBFHandle hDBF,
     if( hSHP != NULL )
     {
         eErr = SHPWriteOGRObject( hSHP, (int)poFeature->GetFID(),
-                                  poFeature->GetGeometryRef(), bRewind );
+                                  poFeature->GetGeometryRef(), bRewind,
+                                  poDefn->GetGeomType() );
         if( eErr != OGRERR_NONE )
             return eErr;
     }

@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id$
+ * $Id: cpl_worker_thread_pool.h 31777 2015-11-26 14:14:41Z rouault $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  CPL worker thread pool

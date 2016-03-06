@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: fit.cpp 32179 2015-12-14 16:22:34Z goatbar $
  *
  * Project:  FIT Driver
  * Purpose:  Implement FIT Support - not using the SGI iflFIT library.
@@ -30,7 +30,7 @@
 #include <limits.h>
 #include "fit.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: fit.cpp 32179 2015-12-14 16:22:34Z goatbar $");
 
 GDALDataType fitDataType(int dtype) {
     switch (dtype) {

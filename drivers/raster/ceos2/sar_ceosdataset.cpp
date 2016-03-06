@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: sar_ceosdataset.cpp 32883 2016-01-09 18:24:40Z rouault $
  *
  * Project:  ASI CEOS Translator
  * Purpose:  GDALDataset driver for CEOS translator.
@@ -35,7 +35,7 @@
 #include "rawdataset.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: sar_ceosdataset.cpp 32883 2016-01-09 18:24:40Z rouault $");
 
 static GInt16 CastToGInt16(float val)
 {

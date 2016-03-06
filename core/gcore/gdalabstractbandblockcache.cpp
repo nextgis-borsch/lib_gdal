@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalabstractbandblockcache.cpp 31703 2015-11-21 22:11:38Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Store cached blocks
@@ -31,7 +31,7 @@
 #include "cpl_multiproc.h"
 #include <new>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalabstractbandblockcache.cpp 31703 2015-11-21 22:11:38Z rouault $");
 
 #ifdef DEBUG_VERBOSE_ABBC
 static int nAllBandsKeptAlivedBlocks = 0;

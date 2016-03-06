@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: dgnlib.h 32177 2015-12-14 07:25:30Z goatbar $
  *
  * Project:  Microstation DGN Access Library
  * Purpose:  Definitions of public structures and API of DGN Library.

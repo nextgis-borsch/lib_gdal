@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: generate_encoding_table.c 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  OGR
  * Purpose:  Generate a mapping table from a 1-byte encoding to unicode,

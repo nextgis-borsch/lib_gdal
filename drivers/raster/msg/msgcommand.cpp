@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: msgcommand.cpp 32179 2015-12-14 16:22:34Z goatbar $
  *
  * Purpose:  Implementation of MSGCommand class. Parse the src_dataset
  *           string that is meant for the MSG driver.

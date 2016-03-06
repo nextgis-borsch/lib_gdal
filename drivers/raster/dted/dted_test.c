@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: dted_test.c 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  DTED Translator
  * Purpose:  Test mainline for DTED writer.

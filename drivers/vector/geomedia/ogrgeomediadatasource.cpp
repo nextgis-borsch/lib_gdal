@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrgeomediadatasource.cpp 32835 2016-01-08 11:47:23Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRGeomediaDataSource class.
@@ -34,7 +34,7 @@
 #include "cpl_string.h"
 #include <vector>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgeomediadatasource.cpp 32835 2016-01-08 11:47:23Z rouault $");
 
 /************************************************************************/
 /*                       OGRGeomediaDataSource()                        */

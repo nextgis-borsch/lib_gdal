@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ddfmodule.cpp 33035 2016-01-17 22:05:23Z rouault $
  *
  * Project:  ISO 8211 Access
  * Purpose:  Implements the DDFModule class.
@@ -31,7 +31,7 @@
 #include "iso8211.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ddfmodule.cpp 33035 2016-01-17 22:05:23Z rouault $");
 
 /************************************************************************/
 /*                             DDFModule()                              */

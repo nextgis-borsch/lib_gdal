@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ntfrecord.cpp 32415 2015-12-21 10:13:54Z rouault $
  *
  * Project:  NTF Translator
  * Purpose:  NTFRecord class implementation.
@@ -31,7 +31,7 @@
 #include "ntf.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ntfrecord.cpp 32415 2015-12-21 10:13:54Z rouault $");
 
 static int nFieldBufSize = 0;
 static char *pszFieldBuf = NULL;

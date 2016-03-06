@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: aigccitt.c 32891 2016-01-09 22:20:01Z rouault $
  *
  * Project:  Arc/Info Binary Grid Translator
  * Purpose:  Code for decoding CCITT RLE (G1) compressed data.

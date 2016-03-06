@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: vsipreload.cpp 33646 2016-03-05 15:54:03Z goatbar $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Standalone shared library that can be LD_PRELOAD'ed as an overload of
@@ -37,7 +37,7 @@
 
 // Run:
 // LD_PRELOAD=./vsipreload.so ....
-// e.g: 
+// e.g:
 // LD_PRELOAD=./vsipreload.so gdalinfo /vsicurl/http://download.osgeo.org/gdal/data/ecw/spif83.ecw
 // LD_PRELOAD=./vsipreload.so gdalinfo 'HDF4_EOS:EOS_GRID:"/vsicurl/http://download.osgeo.org/gdal/data/hdf4/MOD09Q1G_EVI.A2006233.h07v03.005.2008338190308.hdf":MODIS_NACP_EVI:MODIS_EVI'
 // LD_PRELOAD=./vsipreload.so ogrinfo /vsicurl/http://svn.osgeo.org/gdal/trunk/autotest/ogr/data/testavc -ro
@@ -68,7 +68,7 @@
 #include "cpl_string.h"
 #include "cpl_hash_set.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: vsipreload.cpp 33646 2016-03-05 15:54:03Z goatbar $");
 
 static int DEBUG_VSIPRELOAD = 0;
 static int DEBUG_VSIPRELOAD_ONLY_VSIL = 1;
@@ -313,9 +313,9 @@ static int getfdFromVSILFILE(VSILFILE* fpVSIL)
 static int VSIFopenHelper(const char *path, int flags)
 {
     const char* pszMode = "rb";
-    if ((flags & 3) == O_RDONLY) 
+    if ((flags & 3) == O_RDONLY)
         pszMode = "rb";
-    else if ((flags & 3) == O_WRONLY) 
+    else if ((flags & 3) == O_WRONLY)
     {
         if( flags & O_APPEND )
             pszMode = "ab";

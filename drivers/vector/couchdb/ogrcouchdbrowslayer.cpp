@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrcouchdbrowslayer.cpp 32370 2015-12-20 19:40:13Z rouault $
  *
  * Project:  CouchDB Translator
  * Purpose:  Implements OGRCouchDBRowsLayer class.
@@ -29,7 +29,7 @@
 
 #include "ogr_couchdb.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrcouchdbrowslayer.cpp 32370 2015-12-20 19:40:13Z rouault $");
 
 /************************************************************************/
 /*                         OGRCouchDBRowsLayer()                        */

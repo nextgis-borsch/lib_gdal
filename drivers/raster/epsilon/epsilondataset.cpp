@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: epsilondataset.cpp 32984 2016-01-14 19:08:12Z goatbar $
  *
  * Project:  GDAL Epsilon driver
  * Purpose:  Implement GDAL Epsilon support using Epsilon library
@@ -32,7 +32,7 @@
 
 #include "epsilon.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: epsilondataset.cpp 32984 2016-01-14 19:08:12Z goatbar $");
 
 #define RASTERLITE_WAVELET_HEADER "StartWaveletsImage$$"
 #define RASTERLITE_WAVELET_FOOTER "$$EndWaveletsImage"

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogringresdatasource.cpp 33123 2016-01-23 18:59:28Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRIngresDataSource class.
@@ -33,7 +33,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogringresdatasource.cpp 33123 2016-01-23 18:59:28Z rouault $");
 
 /************************************************************************/
 /*                            SetConnParam()                            */

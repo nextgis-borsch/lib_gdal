@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ntf.h 32177 2015-12-14 07:25:30Z goatbar $
  *
  * Project:  NTF Translator
  * Purpose:  Main declarations for NTF translator.

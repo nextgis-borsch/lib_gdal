@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalwarper.cpp 33123 2016-01-23 18:59:28Z rouault $
  *
  * Project:  High Performance Image Reprojector
  * Purpose:  Implementation of high level convenience APIs for warper.
@@ -34,7 +34,7 @@
 #include "ogr_api.h"
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalwarper.cpp 33123 2016-01-23 18:59:28Z rouault $");
 
 /************************************************************************/
 /*                         GDALReprojectImage()                         */

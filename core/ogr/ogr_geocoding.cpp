@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_geocoding.cpp 33631 2016-03-04 06:28:09Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Client of geocoding service.
@@ -40,7 +40,7 @@
 
 /* Recent mingw define struct timezone */
 #if !(defined(__GNUC__) && defined(_TIMEZONE_DEFINED))
-struct timezone 
+struct timezone
 {
   int  tz_minuteswest; /* minutes W of Greenwich */
   int  tz_dsttime;     /* type of DST correction */
@@ -77,7 +77,7 @@ int OGR_gettimeofday(struct timeval *tv, CPL_UNUSED struct timezone *tzIgnored)
 #include "ogr_mem.h"
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogr_geocoding.cpp 33631 2016-03-04 06:28:09Z goatbar $");
 
 struct _OGRGeocodingSessionHS
 {

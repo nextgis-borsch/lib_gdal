@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: nitfdump.c 32078 2015-12-08 09:09:45Z rouault $
  *
  * Project:  NITF Read/Write Library
  * Purpose:  Simple test mainline to dump info about NITF file. 
@@ -37,7 +37,7 @@
 #include "ogr_api.h"
 #endif
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: nitfdump.c 32078 2015-12-08 09:09:45Z rouault $");
 
 static void DumpRPC( NITFImage *psImage, NITFRPC00BInfo *psRPC );
 static void DumpMetadata( const char *, const char *, char ** );

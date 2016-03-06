@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: wmsdriver.cpp 33093 2016-01-22 17:38:07Z rouault $
  *
  * Project:  WMS Client Driver
  * Purpose:  Implementation of Dataset and RasterBand classes for WMS

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: rcreatecopy.cpp 32179 2015-12-14 16:22:34Z goatbar $
  *
  * Project:  R Format Driver
  * Purpose:  CreateCopy() implementation for R stats package object format.
@@ -30,7 +30,7 @@
 #include "gdal_pam.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: rcreatecopy.cpp 32179 2015-12-14 16:22:34Z goatbar $");
 
 
 GDALDataset *

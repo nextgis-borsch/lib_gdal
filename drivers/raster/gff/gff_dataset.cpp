@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gff_dataset.cpp 33138 2016-01-24 11:18:11Z rouault $
  *
  * Project:  Ground-based SAR Applitcations Testbed File Format driver
  * Purpose:  Support in GDAL for Sandia National Laboratory's GFF format
@@ -37,7 +37,7 @@
 #include "gdal_pam.h"
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gff_dataset.cpp 33138 2016-01-24 11:18:11Z rouault $");
 
 /*******************************************************************
  * Declaration of the GFFDataset class                             *

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ddffielddefn.cpp 33035 2016-01-17 22:05:23Z rouault $
  *
  * Project:  ISO 8211 Access
  * Purpose:  Implements the DDFFieldDefn class.
@@ -31,7 +31,7 @@
 #include "cpl_string.h"
 #include <ctype.h>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ddffielddefn.cpp 33035 2016-01-17 22:05:23Z rouault $");
 
 #define CPLE_DiscardedFormat   1301
 

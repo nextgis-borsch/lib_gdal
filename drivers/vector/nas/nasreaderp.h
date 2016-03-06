@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: nasreaderp.h 32898 2016-01-10 14:44:10Z goatbar $
  *
  * Project:  NAS Reader
  * Purpose:  Private Declarations for OGR NAS Reader code.

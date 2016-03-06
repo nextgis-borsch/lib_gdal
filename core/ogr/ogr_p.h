@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_p.h 33631 2016-03-04 06:28:09Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Some private helper functions and stuff for OGR implementation.
@@ -47,7 +47,7 @@
 /* A default name for the default geometry column, instead of '' */
 #define OGR_GEOMETRY_DEFAULT_NON_EMPTY_NAME     "_ogr_geometry_"
 
-#ifdef CPL_MSB 
+#ifdef CPL_MSB
 #  define OGR_SWAP(x)   (x == wkbNDR)
 #else
 #  define OGR_SWAP(x)   (x == wkbXDR)
@@ -73,12 +73,21 @@
 const char CPL_DLL * OGRWktReadToken( const char * pszInput, char * pszToken );
 
 const char CPL_DLL * OGRWktReadPoints( const char * pszInput,
-                                       OGRRawPoint **ppaoPoints, 
+                                       OGRRawPoint **ppaoPoints,
                                        double **ppadfZ,
                                        int * pnMaxPoints,
                                        int * pnReadPoints );
 
+const char CPL_DLL * OGRWktReadPointsM( const char * pszInput,
+                                        OGRRawPoint **ppaoPoints,
+                                        double **ppadfZ,
+                                        double **ppadfM,
+                                        int * flags, /* geometry flags, are we expecting Z, M, or both; may change due to input */
+                                        int * pnMaxPoints,
+                                        int * pnReadPoints );
+
 void CPL_DLL OGRMakeWktCoordinate( char *, double, double, double, int );
+void CPL_DLL OGRMakeWktCoordinateM( char *, double, double, double, double, OGRBoolean, OGRBoolean );
 
 #endif
 
@@ -160,7 +169,7 @@ char CPL_DLL * OGRGeometryToHexEWKB( OGRGeometry * poGeometry, int nSRSId,
 
 OGRErr OGRReadWKBGeometryType( unsigned char * pabyData,
                                OGRwkbVariant wkbVariant,
-                               OGRwkbGeometryType *eGeometryType, OGRBoolean *b3D );
+                               OGRwkbGeometryType *eGeometryType );
 
 /************************************************************************/
 /*                            Other                                     */

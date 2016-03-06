@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrgtmdriver.cpp 32110 2015-12-10 17:19:40Z goatbar $
  *
  * Project:  GTM Driver
  * Purpose:  Implementation of OGRGTMDriver class.

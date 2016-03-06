@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id$
+ * $Id: cpl_hash_set.h 31777 2015-11-26 14:14:41Z rouault $
  *
  * Name:     cpl_hash_set.h
  * Project:  CPL - Common Portability Library

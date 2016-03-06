@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalcolortable.cpp 31955 2015-12-02 06:07:22Z goatbar $
  *
  * Project:  GDAL Core
  * Purpose:  Color table implementation.
@@ -30,7 +30,7 @@
 
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalcolortable.cpp 31955 2015-12-02 06:07:22Z goatbar $");
 
 /************************************************************************/
 /*                           GDALColorTable()                           */

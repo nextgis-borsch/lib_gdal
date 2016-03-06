@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_elastic.h 32177 2015-12-14 07:25:30Z goatbar $
  *
  * Project:  ElasticSearch Translator
  * Purpose:

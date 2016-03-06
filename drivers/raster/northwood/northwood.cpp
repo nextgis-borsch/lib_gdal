@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: northwood.cpp 32715 2016-01-03 22:37:35Z rouault $
  *
  * Project:  GRC/GRD Reader
  * Purpose:  Northwood Format basic implementation

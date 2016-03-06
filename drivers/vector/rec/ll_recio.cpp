@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ll_recio.cpp 33089 2016-01-22 15:02:53Z goatbar $
  *
  * Project:  EPIInfo .REC Reader
  * Purpose:  Implements low level REC reading API.
@@ -31,7 +31,7 @@
 #include "cpl_string.h"
 #include "ogr_rec.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ll_recio.cpp 33089 2016-01-22 15:02:53Z goatbar $");
 
 static int nNextRecLine = 0;
 

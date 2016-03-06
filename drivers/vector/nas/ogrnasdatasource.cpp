@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrnasdatasource.cpp 32898 2016-01-10 14:44:10Z goatbar $
  *
  * Project:  OGR
  * Purpose:  Implements OGRNASDataSource class.
@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "ogr_nas.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrnasdatasource.cpp 32898 2016-01-10 14:44:10Z goatbar $");
 
 static const char * const apszURNNames[] =
 {

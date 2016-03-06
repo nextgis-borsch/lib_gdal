@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: jaxapalsardataset.cpp 32213 2015-12-18 04:45:21Z goatbar $
  *
  * Project:  PALSAR JAXA imagery reader
  * Purpose:  Support for PALSAR L1.1/1.5 imagery and appropriate metadata from
@@ -33,7 +33,7 @@
 #include "gdal_frmts.h"
 #include "gdal_pam.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: jaxapalsardataset.cpp 32213 2015-12-18 04:45:21Z goatbar $");
 
 #if defined(WIN32)
 #define SEP_STRING "\\"

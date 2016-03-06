@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ntfdump.cpp 32177 2015-12-14 07:25:30Z goatbar $
  *
  * Project:  NTF Translator
  * Purpose:  Simple test harness.
@@ -31,7 +31,7 @@
 #include "cpl_vsi.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ntfdump.cpp 32177 2015-12-14 07:25:30Z goatbar $");
 
 static void NTFDump( const char * pszFile, char **papszOptions );
 static void NTFCount( const char * pszFile );

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: wmtsdataset.cpp 32984 2016-01-14 19:08:12Z goatbar $
  *
  * Project:  GDAL WMTS driver
  * Purpose:  Implement GDAL WMTS support
@@ -47,7 +47,7 @@ extern "C" void GDALRegister_WMTS();
 
 #define WMTS_METERS_FOR_ONE_DEG         (6378137 * 2 * M_PI / 360)
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: wmtsdataset.cpp 32984 2016-01-14 19:08:12Z goatbar $");
 
 /************************************************************************/
 /* ==================================================================== */

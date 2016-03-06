@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: rmfdataset.cpp 33105 2016-01-23 15:27:32Z rouault $
  *
  * Project:  Raster Matrix Format
  * Purpose:  Read/write raster files used in GIS "Integratsia"
@@ -34,7 +34,7 @@
 
 #include "rmfdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: rmfdataset.cpp 33105 2016-01-23 15:27:32Z rouault $");
 
 static const int RMF_DEFAULT_BLOCKXSIZE = 256;
 static const int RMF_DEFAULT_BLOCKYSIZE = 256;

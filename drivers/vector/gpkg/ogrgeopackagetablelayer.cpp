@@ -522,6 +522,7 @@ OGRErr OGRGeoPackageTableLayer::ReadTableDefinition(int bIsSpatial)
     CPLString osGeomColumnName;
     CPLString osGeomColsType;
     bool bHasZ = false;
+    bool bHasM = false;
 
     /* Check that the table name is registered in gpkg_contents */
     pszSQL = sqlite3_mprintf(
@@ -581,7 +582,7 @@ OGRErr OGRGeoPackageTableLayer::ReadTableDefinition(int bIsSpatial)
         /* Check that the table name is registered in gpkg_geometry_columns */
         pszSQL = sqlite3_mprintf(
                     "SELECT table_name, column_name, "
-                    "geometry_type_name, srs_id, z "
+                    "geometry_type_name, srs_id, z, m "
                     "FROM gpkg_geometry_columns "
                     "WHERE table_name = '%q'"
 #ifdef WORKAROUND_SQLITE3_BUGS
@@ -614,6 +615,7 @@ OGRErr OGRGeoPackageTableLayer::ReadTableDefinition(int bIsSpatial)
             osGeomColsType = pszGeomColsType;
         m_iSrs = SQLResultGetValueAsInteger(&oResultGeomCols, 3, 0);
         bHasZ = CPL_TO_BOOL(SQLResultGetValueAsInteger(&oResultGeomCols, 4, 0));
+        bHasM = CPL_TO_BOOL(SQLResultGetValueAsInteger(&oResultGeomCols, 5, 0));
 
         SQLResultFree(&oResultGeomCols);
     }
@@ -665,12 +667,12 @@ OGRErr OGRGeoPackageTableLayer::ReadTableDefinition(int bIsSpatial)
             /* Maybe it's a geometry type? */
             OGRwkbGeometryType oGeomType;
             if( oType > OFTMaxType )
-                oGeomType = GPkgGeometryTypeToWKB(pszType, bHasZ);
+                oGeomType = GPkgGeometryTypeToWKB(pszType, bHasZ, bHasM);
             else
                 oGeomType = wkbUnknown;
             if ( oGeomType != wkbNone )
             {
-                OGRwkbGeometryType oGeomTypeGeomCols = GPkgGeometryTypeToWKB(osGeomColsType.c_str(), bHasZ);
+                OGRwkbGeometryType oGeomTypeGeomCols = GPkgGeometryTypeToWKB(osGeomColsType.c_str(), bHasZ, bHasM);
                 /* Enforce consistency between table and metadata */
                 if( wkbFlatten(oGeomType) == wkbUnknown )
                     oGeomType = oGeomTypeGeomCols;
@@ -856,7 +858,7 @@ OGRGeoPackageTableLayer::OGRGeoPackageTableLayer(
     m_poInsertStatement = NULL;
     m_soColumns = "";
     m_soFilter = "";
-    m_bDeferedSpatialIndexCreation = false;
+    m_bDeferredSpatialIndexCreation = false;
     m_bHasSpatialIndex = -1;
     m_bDropRTreeTable = false;
     memset(m_abHasGeometryExtension, 0, sizeof(m_abHasGeometryExtension)); /* false */
@@ -1702,6 +1704,8 @@ int OGRGeoPackageTableLayer::TestCapability ( const char * pszCap )
     }
     else if( EQUAL(pszCap,OLCCurveGeometries) )
         return TRUE;
+    else if( EQUAL(pszCap,OLCMeasuredGeometries) )
+        return TRUE;
     else
     {
         return OGRGeoPackageLayer::TestCapability(pszCap);
@@ -1714,7 +1718,7 @@ int OGRGeoPackageTableLayer::TestCapability ( const char * pszCap )
 
 void OGRGeoPackageTableLayer::CreateSpatialIndexIfNecessary()
 {
-    if( m_bDeferedSpatialIndexCreation )
+    if( m_bDeferredSpatialIndexCreation )
     {
         CreateSpatialIndex();
     }
@@ -1732,7 +1736,7 @@ bool OGRGeoPackageTableLayer::CreateSpatialIndex()
     if( m_bDeferredCreation && RunDeferredCreationIfNecessary() != OGRERR_NONE )
         return false;
 
-    m_bDeferedSpatialIndexCreation = false;
+    m_bDeferredSpatialIndexCreation = false;
 
     if( m_pszFidColumn == NULL )
         return false;
@@ -1989,14 +1993,15 @@ void OGRGeoPackageTableLayer::CheckUnknownExtensions()
     {
         pszSQL = sqlite3_mprintf(
                     "SELECT extension_name, definition, scope FROM gpkg_extensions WHERE (table_name='%q' "
-                    "AND column_name='%q' AND extension_name NOT LIKE 'gpkg_geom_%s' AND extension_name NOT IN "
-                    "('gpkg_rtree_index', 'gpkg_geometry_type_trigger', 'gpkg_srs_id_trigger'))"
+                    "AND column_name='%q' AND extension_name NOT IN ('gpkg_geom_CIRCULARSTRING', "
+                    "'gpkg_geom_COMPOUNDCURVE', 'gpkg_geom_CURVEPOLYGON', 'gpkg_geom_MULTICURVE', "
+                    "'gpkg_geom_MULTISURFACE', 'gpkg_geom_CURVE', 'gpkg_geom_SURFACE', "
+                    "'gpkg_rtree_index', 'gpkg_geometry_type_trigger', 'gpkg_srs_id_trigger'))"
 #ifdef WORKAROUND_SQLITE3_BUGS
                     " OR 0"
 #endif
                     ,pszT,
-                    m_poFeatureDefn->GetGeomFieldDefn(0)->GetNameRef(),
-                    m_poDS->GetGeometryTypeString(m_poFeatureDefn->GetGeomFieldDefn(0)->GetType()) );
+                    m_poFeatureDefn->GetGeomFieldDefn(0)->GetNameRef() );
     }
     SQLResult oResultTable;
     OGRErr err = SQLQuery(m_poDS->GetDB(), pszSQL, &oResultTable);
@@ -2047,7 +2052,7 @@ void OGRGeoPackageTableLayer::CheckUnknownExtensions()
 bool OGRGeoPackageTableLayer::CreateGeometryExtensionIfNecessary(OGRwkbGeometryType eGType)
 {
     eGType = wkbFlatten(eGType);
-    CPLAssert(eGType <= wkbMultiSurface);
+    CPLAssert(eGType <= wkbTIN);
     if( m_abHasGeometryExtension[eGType] )
         return true;
 
@@ -2062,7 +2067,7 @@ bool OGRGeoPackageTableLayer::CreateGeometryExtensionIfNecessary(OGRwkbGeometryT
     char* pszSQL = sqlite3_mprintf(
                 "INSERT INTO gpkg_extensions "
                 "(table_name,column_name,extension_name,definition,scope) "
-                "VALUES ('%q', '%q', 'gpkg_geom_%s', 'GeoPackage 1.0 Specification Annex J', 'write-only')",
+                "VALUES ('%q', '%q', 'gpkg_geom_%s', 'GeoPackage 1.0 Specification Annex J', 'read-write')",
                 pszT, pszC, pszGeometryType);
     OGRErr err = SQLCommand(m_poDS->GetDB(), pszSQL);
     sqlite3_free(pszSQL);
@@ -2371,6 +2376,7 @@ OGRErr OGRGeoPackageTableLayer::RegisterGeometryColumn()
     /* Requirement 27: The z value in a gpkg_geometry_columns table row */
     /* SHALL be one of 0 (none), 1 (mandatory), or 2 (optional) */
     bool bGeometryTypeHasZ = CPL_TO_BOOL(wkbHasZ(eGType));
+    bool bGeometryTypeHasM = CPL_TO_BOOL(wkbHasM(eGType));
 
     /* Update gpkg_geometry_columns with the table info */
     char* pszSQL = sqlite3_mprintf(
@@ -2379,7 +2385,8 @@ OGRErr OGRGeoPackageTableLayer::RegisterGeometryColumn()
         " VALUES "
         "('%q','%q','%q',%d,%d,%d)",
         GetName(),GetGeometryColumn(),pszGeometryType,
-        m_iSrs,static_cast<int>(bGeometryTypeHasZ),0);
+        m_iSrs,static_cast<int>(bGeometryTypeHasZ),
+        static_cast<int>(bGeometryTypeHasM));
 
     OGRErr err = SQLCommand(m_poDS->GetDB(), pszSQL);
     sqlite3_free(pszSQL);
@@ -2387,7 +2394,9 @@ OGRErr OGRGeoPackageTableLayer::RegisterGeometryColumn()
         return OGRERR_FAILURE;
 
     if( OGR_GT_IsNonLinear( eGType ) )
+    {
         CreateGeometryExtensionIfNecessary(eGType);
+    }
 
     return OGRERR_NONE;
 }

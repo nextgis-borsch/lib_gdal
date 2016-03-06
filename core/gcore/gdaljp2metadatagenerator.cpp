@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdaljp2metadatagenerator.cpp 32234 2015-12-18 12:40:59Z rouault $
  *
  * Project:  GDAL 
  * Purpose:  GDALJP2Metadata: metadata generator
@@ -30,7 +30,7 @@
 #include <vector>
 #include "gdaljp2metadatagenerator.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdaljp2metadatagenerator.cpp 32234 2015-12-18 12:40:59Z rouault $");
 
 //#define ENABLE_BRAIN_DAMAGE
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gstEndian.h 32104 2015-12-09 15:06:59Z goatbar $
  *
  * Project:  FIT Driver
  * Purpose:  Implement FIT Support - not using the SGI iflFIT library.

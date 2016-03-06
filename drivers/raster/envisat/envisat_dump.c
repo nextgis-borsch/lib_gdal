@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: envisat_dump.c 9484 2006-04-04 02:44:16Z fwarmerdam $
  *
  * Project:  APP ENVISAT Support
  * Purpose:  Test mainline for dumping ENVISAT format files.

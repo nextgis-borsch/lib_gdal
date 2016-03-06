@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: doq2dataset.cpp 33136 2016-01-23 23:26:15Z rouault $
  *
  * Project:  USGS DOQ Driver (Second Generation Format)
  * Purpose:  Implementation of DOQ2Dataset
@@ -32,7 +32,7 @@
 #include "gdal_frmts.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: doq2dataset.cpp 33136 2016-01-23 23:26:15Z rouault $");
 
 CPL_C_START
 void GDALRegister_DOQ2();

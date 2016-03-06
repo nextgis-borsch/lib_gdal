@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrsosidatasource.cpp 32177 2015-12-14 07:25:30Z goatbar $
  *
  * Project:  SOSI Data Source
  * Purpose:  Provide SOSI Data to OGR.

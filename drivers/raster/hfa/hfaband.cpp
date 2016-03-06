@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: hfaband.cpp 32984 2016-01-14 19:08:12Z goatbar $
  *
  * Project:  Erdas Imagine (.img) Translator
  * Purpose:  Implementation of the HFABand, for accessing one Eimg_Layer.
@@ -34,7 +34,7 @@
 
 /* include the compression code */
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: hfaband.cpp 32984 2016-01-14 19:08:12Z goatbar $");
 
 /************************************************************************/
 /*                              HFABand()                               */

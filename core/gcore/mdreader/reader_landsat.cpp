@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: reader_landsat.cpp 31120 2015-10-24 19:55:09Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Read metadata from Landsat imagery.
@@ -30,7 +30,7 @@
 
 #include "reader_landsat.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: reader_landsat.cpp 31120 2015-10-24 19:55:09Z rouault $");
 
 /**
  * GDALMDReaderLandsat()

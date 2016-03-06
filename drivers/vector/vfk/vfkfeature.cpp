@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: vfkfeature.cpp 33033 2016-01-17 21:55:39Z rouault $
  *
  * Project:  VFK Reader - Feature definition
  * Purpose:  Implements IVFKFeature/VFKFeature class.

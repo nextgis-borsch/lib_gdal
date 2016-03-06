@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: iscedataset.cpp 33123 2016-01-23 18:59:28Z rouault $
  *
  * Project:  ISCE Raster Reader
  * Purpose:  Implementation of the ISCE raster reader
@@ -30,7 +30,7 @@
 #include "gdal_frmts.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: iscedataset.cpp 33123 2016-01-23 18:59:28Z rouault $");
 
 static const char * const apszISCE2GDALDatatypes[] = {
     "BYTE:Byte",

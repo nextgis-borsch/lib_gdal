@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrodbcdatasource.cpp 32843 2016-01-08 12:44:54Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRODBCDataSource class.
@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrodbcdatasource.cpp 32843 2016-01-08 12:44:54Z rouault $");
 /************************************************************************/
 /*                         OGRODBCDataSource()                          */
 /************************************************************************/

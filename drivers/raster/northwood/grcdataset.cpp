@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: grcdataset.cpp 32703 2016-01-03 19:33:18Z rouault $
  *
  * Project:  GRC Reader
  * Purpose:  GDAL driver for Northwood Classified Format

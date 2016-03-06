@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrbnalayer.cpp 32140 2015-12-12 20:37:27Z goatbar $
  *
  * Project:  BNA Translator
  * Purpose:  Implements OGRBNALayer class.

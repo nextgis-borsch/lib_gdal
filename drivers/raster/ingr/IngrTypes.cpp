@@ -1,5 +1,5 @@
 /*****************************************************************************
- * $Id$
+ * $Id: IngrTypes.cpp 33503 2016-02-18 14:06:37Z rouault $
  *
  * Project:  Intergraph Raster Format support
  * Purpose:  Types support function
@@ -63,7 +63,7 @@ static const INGR_FormatDescription INGR_FormatTable[] = {
     {AdaptiveGrayScale,       "Adaptive Gray Scale",         GDT_Byte},
     {JPEGGRAY,                "JPEG GRAY",                   GDT_Byte},
     {JPEGRGB,                 "JPEG RGB",                    GDT_Byte},
-    {JPEGCYMK,                "JPEG CYMK",                   GDT_Byte},
+    {JPEGCMYK,                "JPEG CMYK",                   GDT_Byte},
     {TiledRasterData,         "Tiled Raste Data",            GDT_Byte},
     {NotUsedReserved,         "Not Used( Reserved )",        GDT_Byte},
     {ContinuousTone,          "Continuous Tone",             GDT_Byte},
@@ -183,6 +183,13 @@ static void INGR_MultiplyMatrix( double *padfA, real64 *padfB, const double *pad
                 padfB[(i * 4) + 3] * padfC[(3 * 4) + j];
         }
     }
+}
+
+// TODO: Move function to port and change gdal_priv.h macro to function header.
+#undef DIV_ROUND_UP
+static int DIV_ROUND_UP(int a, int b)
+{
+    return (a % b) == 0 ? (a / b) : (a / b) + 1;
 }
 
 // -----------------------------------------------------------------------------
@@ -438,7 +445,6 @@ uint32 CPL_STDCALL INGR_GetTileDirectory( VSILFILE *fp,
     // ----------------------------------------------------------------
     // Calculate the number of tiles
     // ----------------------------------------------------------------
-#define DIV_ROUND_UP(a, b) ( ((a) % (b)) == 0 ? ((a) / (b)) : (((a) / (b)) + 1) )
     int nTilesPerCol = DIV_ROUND_UP(nBandXSize, pTileDir->TileSize);
     int nTilesPerRow = DIV_ROUND_UP(nBandYSize, pTileDir->TileSize);
     if( nTilesPerCol > INT_MAX / nTilesPerRow )

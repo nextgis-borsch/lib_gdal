@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: pdfobject.h 31213 2015-10-29 00:02:45Z rouault $
  *
  * Project:  PDF driver
  * Purpose:  GDALDataset driver for PDF dataset.

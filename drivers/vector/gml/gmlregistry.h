@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gmlregistry.h 32011 2015-12-06 10:19:18Z rouault $
  *
  * Project:  GML registry
  * Purpose:  GML reader

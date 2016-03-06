@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrbnaparser.cpp 33199 2016-01-29 15:48:41Z rouault $
  *
  * Project:  BNA Parser
  * Purpose:  Parse a BNA record

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ozidataset.cpp 33105 2016-01-23 15:27:32Z rouault $
  *
  * Project:   OZF2 and OZFx3 binary files driver
  * Purpose:  GDALDataset driver for OZF2 and OZFx3 binary files.
@@ -33,7 +33,7 @@
 
 /* g++ -fPIC -g -Wall frmts/ozi/ozidataset.cpp -shared -o gdal_OZI.so -Iport -Igcore -Iogr -L. -lgdal  */
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ozidataset.cpp 33105 2016-01-23 15:27:32Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */

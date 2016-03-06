@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalmultidomainmetadata.cpp 32173 2015-12-14 00:04:53Z goatbar $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of GDALMultiDomainMetadata class.  This class
@@ -33,7 +33,7 @@
 #include "cpl_string.h"
 #include <map>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalmultidomainmetadata.cpp 32173 2015-12-14 00:04:53Z goatbar $");
 
 /************************************************************************/
 /*                      GDALMultiDomainMetadata()                       */

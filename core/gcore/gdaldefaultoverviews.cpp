@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdaldefaultoverviews.cpp 32992 2016-01-15 00:23:21Z goatbar $
  *
  * Project:  GDAL Core
  * Purpose:  Helper code to implement overview and mask support for many 
@@ -32,7 +32,7 @@
 #include "gdal_priv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdaldefaultoverviews.cpp 32992 2016-01-15 00:23:21Z goatbar $");
 
 /************************************************************************/
 /*                        GDALDefaultOverviews()                        */

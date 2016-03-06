@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrocilayer.cpp 32177 2015-12-14 07:25:30Z goatbar $
  *
  * Project:  Oracle Spatial Driver
  * Purpose:  Implementation of the OGROCILayer class.  This is layer semantics
@@ -32,7 +32,7 @@
 #include "ogr_oci.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrocilayer.cpp 32177 2015-12-14 07:25:30Z goatbar $");
 
 /************************************************************************/
 /*                           OGROCILayer()                               */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gt_overview.cpp 33379 2016-02-08 11:42:33Z rouault $
  *
  * Project:  GeoTIFF Driver
  * Purpose:  Code to build overviews of external databases as a TIFF file. 
@@ -37,7 +37,7 @@
 #include "gt_overview.h"
 #include "gtiff.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gt_overview.cpp 33379 2016-02-08 11:42:33Z rouault $");
 
 /************************************************************************/
 /*                         GTIFFWriteDirectory()                        */
@@ -716,6 +716,8 @@ GTIFFBuildOverviews( const char * pszFilename,
 /*      Loop writing overview data.                                     */
 /* -------------------------------------------------------------------- */
 
+    GTIFFSetInExternalOvr(true);
+
     if (nCompression != COMPRESSION_NONE &&
         nPlanarConfig == PLANARCONFIG_CONTIG &&
         GDALDataTypeIsComplex(papoBandList[0]->GetRasterDataType()) == FALSE &&
@@ -831,6 +833,8 @@ GTIFFBuildOverviews( const char * pszFilename,
     if (eErr == CE_None)
         hODS->FlushCache();
     delete hODS;
+    
+    GTIFFSetInExternalOvr(false);
 
     pfnProgress( 1.0, NULL, pProgressData );
 

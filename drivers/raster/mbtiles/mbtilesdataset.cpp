@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: mbtilesdataset.cpp 32281 2015-12-19 22:05:56Z rouault $
  *
  * Project:  GDAL MBTiles driver
  * Purpose:  Implement GDAL MBTiles support using OGR SQLite driver
@@ -37,7 +37,7 @@
 
 #include <math.h>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: mbtilesdataset.cpp 32281 2015-12-19 22:05:56Z rouault $");
 
 static const char * const apszAllowedDrivers[] = {"JPEG", "PNG", NULL};
 

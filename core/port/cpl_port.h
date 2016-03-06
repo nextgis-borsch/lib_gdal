@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: cpl_port.h 33609 2016-03-01 22:54:50Z rouault $
  *
  * Project:  CPL - Common Portability Library
  * Author:   Frank Warmerdam, warmerdam@pobox.com
@@ -208,7 +208,7 @@ typedef unsigned long long GUIntBig;
 
 #define GINTBIG_MIN     ((GIntBig)(0x80000000) << 32)
 #define GINTBIG_MAX     (((GIntBig)(0x7FFFFFFF) << 32) | 0xFFFFFFFFU)
-#define GUINTBIG_MAX     (((GUIntBig)(0xFFFFFFFF) << 32) | 0xFFFFFFFFU)
+#define GUINTBIG_MAX     (((GUIntBig)(0xFFFFFFFFU) << 32) | 0xFFFFFFFFU)
 
 #else
 
@@ -291,7 +291,7 @@ typedef int              GPtrDiff_t;
 #ifdef _MSC_VER
 #  define FORCE_CDECL  __cdecl
 #else
-#  define FORCE_CDECL 
+#  define FORCE_CDECL
 #endif
 
 /* TODO : support for other compilers needed */
@@ -509,6 +509,10 @@ static inline char* CPL_afl_friendly_strstr(const char* haystack, const char* ne
 #  define EQUAL(a,b)              (STRCASECMP(a,b)==0)
 #endif
 
+/*---------------------------------------------------------------------
+ * Does a string "a" start with string "b".  Search is case-sensitive or,
+ * with CI, it is a case-insensitive comparison.
+ *--------------------------------------------------------------------- */
 #ifndef STARTS_WITH_CI
 #define STARTS_WITH(a,b)               (strncmp(a,b,strlen(b)) == 0)
 #define STARTS_WITH_CI(a,b)            EQUALN(a,b,strlen(b))
@@ -521,7 +525,7 @@ static inline char* CPL_afl_friendly_strstr(const char* haystack, const char* ne
 /* -------------------------------------------------------------------- */
 /*      Handle isnan() and isinf().  Note that isinf() and isnan()      */
 /*      are supposed to be macros according to C99, defined in math.h   */
-/*      Some systems (i.e. Tru64) don't have isinf() at all, so if       */
+/*      Some systems (i.e. Tru64) don't have isinf() at all, so if      */
 /*      the macro is not defined we just assume nothing is infinite.    */
 /*      This may mean we have no real CPLIsInf() on systems with isinf()*/
 /*      function but no corresponding macro, but I can live with        */
@@ -534,7 +538,7 @@ static inline char* CPL_afl_friendly_strstr(const char* haystack, const char* ne
 #  define CPLIsFinite(x) _finite(x)
 #else
 #  define CPLIsNan(x) isnan(x)
-#  ifdef isinf 
+#  ifdef isinf
 #    define CPLIsInf(x) isinf(x)
 #    define CPLIsFinite(x) (!isnan(x) && !isinf(x))
 #  elif defined(__sun__)
@@ -549,8 +553,8 @@ static inline char* CPL_afl_friendly_strstr(const char* haystack, const char* ne
 
 /*---------------------------------------------------------------------
  *                         CPL_LSB and CPL_MSB
- * Only one of these 2 macros should be defined and specifies the byte 
- * ordering for the current platform.  
+ * Only one of these 2 macros should be defined and specifies the byte
+ * ordering for the current platform.
  * This should be defined in the Makefile, but if it is not then
  * the default is CPL_LSB (Intel ordering, LSB first).
  *--------------------------------------------------------------------*/
@@ -585,7 +589,7 @@ template<> struct CPLStaticAssert<true>
 
 #else  /* __cplusplus */
 
-#define CPL_STATIC_ASSERT_IF_AVAILABLE(x) 
+#define CPL_STATIC_ASSERT_IF_AVAILABLE(x)
 
 #endif  /* __cplusplus */
 
@@ -711,7 +715,7 @@ template<> struct CPLStaticAssert<true>
 
 
 /* Utility macro to explicitly mark intentionally unreferenced parameters. */
-#ifndef UNREFERENCED_PARAM 
+#ifndef UNREFERENCED_PARAM
 #  ifdef UNREFERENCED_PARAMETER /* May be defined by Windows API */
 #    define UNREFERENCED_PARAM(param) UNREFERENCED_PARAMETER(param)
 #  else
@@ -797,7 +801,6 @@ static const char *cvsid_aw() { return( cvsid_aw() ? NULL : cpl_cvsid ); }
    Must be placed in the private section of a class and should be at the end.
 */
 #ifdef __cplusplus
-#if 1
 
 #if __cplusplus >= 201103L
 #define CPL_FINAL final
@@ -811,10 +814,6 @@ static const char *cvsid_aw() { return( cvsid_aw() ? NULL : cpl_cvsid ); }
     ClassName &operator=( const ClassName & );
 #endif
 
-#else
-#define CPL_FINAL
-#define CPL_DISALLOW_COPY_ASSIGN(ClassName)
-#endif
 #endif /* __cplusplus */
 
 #if !defined(DOXYGEN_SKIP)
@@ -830,12 +829,6 @@ static const char *cvsid_aw() { return( cvsid_aw() ? NULL : cpl_cvsid ); }
 #else
   #define CPL_WARN_DEPRECATED(x)
 #endif
-#endif
-
-#if defined(GDAL_COMPILATION) && !defined(DONT_DEPRECATE_SPRINTF)
-#define CPL_WARN_DEPRECATED_IF_GDAL_COMPILATION(x) CPL_WARN_DEPRECATED(x)
-#else
-#define CPL_WARN_DEPRECATED_IF_GDAL_COMPILATION(x)
 #endif
 
 #if !defined(_MSC_VER) && !defined(__APPLE__)
@@ -893,6 +886,7 @@ inline static bool CPL_TO_BOOL(int x) { return x != 0; }
 extern "C++" {
 class MSVCPedanticBool
 {
+
         friend bool operator== (const bool& one, const MSVCPedanticBool& other);
         friend bool operator!= (const bool& one, const MSVCPedanticBool& other);
 
@@ -900,6 +894,8 @@ class MSVCPedanticBool
         MSVCPedanticBool(int bIn);
 
     public:
+        /* b not initialized on purpose in default ctor to flag use. */
+        /* cppcheck-suppress uninitMemberVar */
         MSVCPedanticBool() {}
         MSVCPedanticBool(bool bIn) : b(bIn) {}
         MSVCPedanticBool(const MSVCPedanticBool& other) : b(other.b) {}
@@ -908,10 +904,10 @@ class MSVCPedanticBool
         MSVCPedanticBool& operator&= (const MSVCPedanticBool& other) { b &= other.b; return *this; }
         MSVCPedanticBool& operator|= (const MSVCPedanticBool& other) { b |= other.b; return *this; }
 
-        bool operator== (const bool& other) { return b == other; }
-        bool operator!= (const bool& other) { return b != other; }
-        bool operator== (const MSVCPedanticBool& other) { return b == other.b; }
-        bool operator!= (const MSVCPedanticBool& other) { return b != other.b; }
+        bool operator== (const bool& other) const { return b == other; }
+        bool operator!= (const bool& other) const { return b != other; }
+        bool operator== (const MSVCPedanticBool& other) const { return b == other.b; }
+        bool operator!= (const MSVCPedanticBool& other) const { return b != other.b; }
 
         bool operator! () const { return !b; }
         operator bool() const { return b; }

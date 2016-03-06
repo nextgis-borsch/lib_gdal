@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrgeomfielddefn.cpp 28806 2015-03-28 14:37:47Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRGeomFieldDefn class implementation.
@@ -32,7 +32,7 @@
 #include "ogr_p.h"
 #include "ograpispy.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgeomfielddefn.cpp 28806 2015-03-28 14:37:47Z rouault $");
 
 /************************************************************************/
 /*                         OGRGeomFieldDefn()                           */

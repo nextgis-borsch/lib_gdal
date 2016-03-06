@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: rawdataset.h 31955 2015-12-02 06:07:22Z goatbar $
  *
  * Project:  Raw Translator
  * Purpose:  Implementation of RawDataset class.  Intended to be subclassed

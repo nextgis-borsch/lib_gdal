@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: jdemdataset.cpp 32883 2016-01-09 18:24:40Z rouault $
  *
  * Project:  JDEM Reader
  * Purpose:  All code for Japanese DEM Reader
@@ -31,7 +31,7 @@
 #include "gdal_frmts.h"
 #include "gdal_pam.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: jdemdataset.cpp 32883 2016-01-09 18:24:40Z rouault $");
 
 /************************************************************************/
 /*                            JDEMGetField()                            */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrociwritablelayer.cpp 32251 2015-12-19 13:14:41Z rouault $
  *
  * Project:  Oracle Spatial Driver
  * Purpose:  Implementation of the OGROCIWritableLayer class.  This provides
@@ -33,7 +33,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrociwritablelayer.cpp 32251 2015-12-19 13:14:41Z rouault $");
 
 /************************************************************************/
 /*                        OGROCIWritableLayer()                         */

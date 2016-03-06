@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gifabstractdataset.cpp 32172 2015-12-13 23:28:18Z rouault $
  *
  * Project:  GIF Driver
  * Purpose:  GIF Abstract Dataset
@@ -29,7 +29,7 @@
 
 #include "gifabstractdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gifabstractdataset.cpp 32172 2015-12-13 23:28:18Z rouault $");
 
 static const int InterlacedOffset[] = { 0, 4, 2, 1 }; 
 static const int InterlacedJumps[] = { 8, 8, 4, 2 };  

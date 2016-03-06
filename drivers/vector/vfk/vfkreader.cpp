@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: vfkreader.cpp 33054 2016-01-20 12:06:06Z rouault $
  *
  * Project:  VFK Reader
  * Purpose:  Implements VFKReader class.

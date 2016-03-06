@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id$
+ * $Id: cpl_vsil_unix_stdio_64.cpp 33646 2016-03-05 15:54:03Z goatbar $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Implement VSI large file api for Unix platforms with fseek64()
@@ -38,6 +38,15 @@
 
 //#define VSI_COUNT_BYTES_READ
 
+// Some unusual filesystems do not work if _FORTIFY_SOURCE in GCC or
+// clang is used within this source file, especially if techniques
+// like those in vsipreload are used.  Fortify source interacts poorly with
+// filesystems that use fread for forward seeks.  This leads to SIGSEGV within
+// fread calls.
+//
+// See this for hardening background info: https://wiki.debian.org/Hardening
+#undef _FORTIFY_SOURCE
+
 #include "cpl_port.h"
 
 #if !defined(WIN32)
@@ -56,7 +65,7 @@
 #include <errno.h>
 #include <new>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_vsil_unix_stdio_64.cpp 33646 2016-03-05 15:54:03Z goatbar $");
 
 #if defined(UNIX_STDIO_64)
 
@@ -108,7 +117,7 @@ CPL_CVSID("$Id$");
 /* ==================================================================== */
 /************************************************************************/
 
-class VSIUnixStdioFilesystemHandler CPL_FINAL : public VSIFilesystemHandler 
+class VSIUnixStdioFilesystemHandler CPL_FINAL : public VSIFilesystemHandler
 {
 #ifdef VSI_COUNT_BYTES_READ
     vsi_l_offset  nTotalBytesRead;

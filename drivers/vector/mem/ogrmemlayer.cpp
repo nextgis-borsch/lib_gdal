@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrmemlayer.cpp 33400 2016-02-10 07:55:48Z ajolma $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRMemLayer class.
@@ -32,7 +32,7 @@
 #include "ogr_mem.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrmemlayer.cpp 33400 2016-02-10 07:55:48Z ajolma $");
 
 /************************************************************************/
 /*                      IOGRMemLayerFeatureIterator                     */
@@ -517,6 +517,10 @@ int OGRMemLayer::TestCapability( const char * pszCap )
 
     else if( EQUAL(pszCap,OLCCurveGeometries) )
         return TRUE;
+
+    else if( EQUAL(pszCap,OLCMeasuredGeometries) )
+        return TRUE;
+
     else
         return FALSE;
 }

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: cpl_minizip_zip.cpp 33646 2016-03-05 15:54:03Z goatbar $
  *
  * Project:  CPL - Common Portability Library
  * Author:   Frank Warmerdam, warmerdam@pobox.com
@@ -1264,7 +1264,7 @@ CPLErr CPLWriteFileInZip( void *hZip, const void *pBuffer, int nBufferSize )
 
     CPLZip* psZip = (CPLZip*)hZip;
 
-    int nErr = cpl_zipWriteInFileInZip( psZip->hZip, pBuffer, 
+    int nErr = cpl_zipWriteInFileInZip( psZip->hZip, pBuffer,
                                     (unsigned int) nBufferSize );
 
     if( nErr != ZIP_OK )

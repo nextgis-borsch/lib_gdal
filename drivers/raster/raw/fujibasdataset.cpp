@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: fujibasdataset.cpp 32215 2015-12-18 06:30:54Z goatbar $
  *
  * Project:  eCognition
  * Purpose:  Implementation of FUJI BAS Format
@@ -32,7 +32,7 @@
 #include "gdal_frmts.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: fujibasdataset.cpp 32215 2015-12-18 06:30:54Z goatbar $");
 
 CPL_C_START
 void GDALRegister_FujiBAS();

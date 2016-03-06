@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrgftlayer.cpp 32370 2015-12-20 19:40:13Z rouault $
  *
  * Project:  GFT Translator
  * Purpose:  Implements OGRGFTLayer class.
@@ -30,7 +30,7 @@
 #include "ogr_gft.h"
 #include "cpl_minixml.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgftlayer.cpp 32370 2015-12-20 19:40:13Z rouault $");
 
 /************************************************************************/
 /*                            OGRGFTLayer()                             */

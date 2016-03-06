@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: hfadictionary.cpp 32042 2015-12-06 21:33:27Z rouault $
  *
  * Project:  Erdas Imagine (.img) Translator
  * Purpose:  Implementation of the HFADictionary class for managing the
@@ -32,7 +32,7 @@
 #include "hfa_p.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: hfadictionary.cpp 32042 2015-12-06 21:33:27Z rouault $");
 
 static const char * const apszDefDefn[] = {
 

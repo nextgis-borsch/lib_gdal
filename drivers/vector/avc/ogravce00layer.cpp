@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogravce00layer.cpp 32126 2015-12-11 18:41:32Z goatbar $
  *
  * Project:  OGR
  * Purpose:  Implements OGRAVCE00Layer class.
@@ -34,7 +34,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogravce00layer.cpp 32126 2015-12-11 18:41:32Z goatbar $");
 
 /************************************************************************/
 /*                           OGRAVCE00Layer()                           */

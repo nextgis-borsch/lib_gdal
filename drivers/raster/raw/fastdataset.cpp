@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: fastdataset.cpp 32883 2016-01-09 18:24:40Z rouault $
  *
  * Project:  EOSAT FAST Format reader
  * Purpose:  Reads Landsat FAST-L7A, IRS 1C/1D
@@ -33,7 +33,7 @@
 #include "ogr_spatialref.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: fastdataset.cpp 32883 2016-01-09 18:24:40Z rouault $");
 
 // static const int ADM_STD_HEADER_SIZE = 4608;  // XXX: Format specification says it
 static const int ADM_HEADER_SIZE = 5000;  // should be 4608, but some vendors

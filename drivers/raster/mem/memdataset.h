@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: memdataset.h 33149 2016-01-24 20:19:31Z rouault $
  *
  * Project:  Memory Array Translator
  * Purpose:  Declaration of MEMDataset, and MEMRasterBand.

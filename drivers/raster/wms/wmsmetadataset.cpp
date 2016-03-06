@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: wmsmetadataset.cpp 32078 2015-12-08 09:09:45Z rouault $
  *
  * Project:  WMS Client Driver
  * Purpose:  Definition of GDALWMSMetaDataset class

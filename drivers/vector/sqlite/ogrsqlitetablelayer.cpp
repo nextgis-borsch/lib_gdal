@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrsqlitetablelayer.cpp 33559 2016-02-26 09:40:10Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRSQLiteTableLayer class, access to an existing table.
@@ -37,7 +37,7 @@
 
 #define UNSUPPORTED_OP_READ_ONLY "%s : unsupported operation on a read-only datasource."
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrsqlitetablelayer.cpp 33559 2016-02-26 09:40:10Z rouault $");
 
 /************************************************************************/
 /*                        OGRSQLiteTableLayer()                         */
@@ -423,7 +423,6 @@ CPLErr OGRSQLiteTableLayer::EstablishFeatureDefn(const char* pszGeomCol)
                 poGeomFieldDefn->nSRSId = atoi(papszRow[0]);
             if( poDS->IsSpatialiteDB() )
             {
-                int bHasM = FALSE;
                 if( papszRow[3] != NULL )
                     poGeomFieldDefn->bHasSpatialIndex = atoi(papszRow[3]);
                 if( poDS->HasSpatialite4Layout() )
@@ -435,30 +434,22 @@ CPLErr OGRSQLiteTableLayer::EstablishFeatureDefn(const char* pszGeomCol)
                     else if( nGeomType >= 1000 && nGeomType <= 1007 ) /* XYZ */
                         eGeomType = wkbSetZ(wkbFlatten(nGeomType));
                     else if( nGeomType >= 2000 && nGeomType <= 2007 ) /* XYM */
-                    {
-                        eGeomType = wkbFlatten(nGeomType);
-                        bHasM = TRUE;
-                    }
+                        eGeomType = wkbSetM(wkbFlatten(nGeomType));
                     else if( nGeomType >= 3000 && nGeomType <= 3007 ) /* XYZM */
-                    {
-                        eGeomType = wkbSetZ(wkbFlatten(nGeomType));
-                        bHasM = TRUE;
-                    }
+                        eGeomType = wkbSetM(wkbSetZ(wkbFlatten(nGeomType)));
                 }
                 else
                 {
                     eGeomType = OGRFromOGCGeomType(papszRow[1]);
 
                     if( strcmp ( papszRow[2], "XYZ" ) == 0 ||
-                        strcmp ( papszRow[2], "XYZM" ) == 0 ||
                         strcmp ( papszRow[2], "3" ) == 0) // SpatiaLite's own 3D geometries
                         eGeomType = wkbSetZ(eGeomType);
-
-                    if( strcmp ( papszRow[2], "XYM" ) == 0 ||
-                        strcmp ( papszRow[2], "XYZM" ) == 0 ) // M coordinate declared
-                        bHasM = TRUE;
+                    else if( strcmp ( papszRow[2], "XYM" ) == 0 )
+                        eGeomType = wkbSetM(eGeomType);
+                    else if( strcmp ( papszRow[2], "XYZM" ) == 0 ) // M coordinate declared
+                        eGeomType = wkbSetM(wkbSetZ(eGeomType));
                 }
-                poGeomFieldDefn->bHasM = bHasM;
                 eGeomFormat = OSGF_SpatiaLite;
             }
             else
@@ -1049,6 +1040,8 @@ int OGRSQLiteTableLayer::TestCapability( const char * pszCap )
     else if( EQUAL(pszCap,OLCCurveGeometries) )
         return poDS->TestCapability(ODsCCurveGeometries);
 
+    else if( EQUAL(pszCap,OLCMeasuredGeometries) )
+        return poDS->TestCapability(ODsCMeasuredGeometries);
     else 
         return OGRSQLiteLayer::TestCapability( pszCap );
 }
@@ -1585,17 +1578,24 @@ OGRErr OGRSQLiteTableLayer::RunAddGeometryColumn( OGRSQLiteGeomFieldDefn *poGeom
         / is found we'll unconditionally activate 2D casting mode
         */
         int iSpatialiteVersion = poDS->GetSpatialiteVersionNumber();
+        const char* pszCoordDim = "2";
         if ( iSpatialiteVersion < 24 && nCoordDim == 3 )
         {
             CPLDebug("SQLITE", "Spatialite < 2.4.0 --> 2.5D geometry not supported. Casting to 2D");
-            nCoordDim = 2;
         }
-
+        else if( OGR_GT_HasM( eType ) )
+        {
+            pszCoordDim = ( OGR_GT_HasZ( eType ) ) ? "'XYZM'" : "'XYM'";
+        }
+        else if( OGR_GT_HasZ( eType ) )
+        {
+            pszCoordDim = "3";
+        }
         osCommand.Printf( "SELECT AddGeometryColumn("
-                        "'%s', '%s', %d, '%s', %d",
+                        "'%s', '%s', %d, '%s', %s",
                         pszEscapedTableName,
                         OGRSQLiteEscape(pszGeomCol).c_str(), nSRSId,
-                        pszType, nCoordDim );
+                        pszType, pszCoordDim );
         if( iSpatialiteVersion >= 30 && !poGeomFieldDefn->IsNullable() )
             osCommand += ", 1";
         osCommand += ")";
@@ -2379,8 +2379,7 @@ OGRErr OGRSQLiteTableLayer::BindValues( OGRFeature *poFeature,
                 GByte   *pabySLBLOB;
 
                 int nSRSId = poGeomFieldDefn->nSRSId;
-                int bHasM = poGeomFieldDefn->bHasM;
-                CPL_IGNORE_RET_VAL(ExportSpatiaLiteGeometry( poGeom, nSRSId, wkbNDR, bHasM,
+                CPL_IGNORE_RET_VAL(ExportSpatiaLiteGeometry( poGeom, nSRSId, wkbNDR, 
                                         bSpatialite2D, bUseComprGeom, &pabySLBLOB, &nBLOBLen ));
                 rc = sqlite3_bind_blob( hStmtIn, nBindField++, pabySLBLOB,
                                         nBLOBLen, CPLFree );
@@ -2814,8 +2813,7 @@ OGRErr OGRSQLiteTableLayer::ICreateFeature( OGRFeature *poFeature )
         {
             OGRSQLiteGeomFieldDefn* poGeomFieldDefn =
                                         poFeatureDefn->myGetGeomFieldDefn(j);
-            if( !((bDeferredSpatialIndexCreation || !poGeomFieldDefn->bHasSpatialIndex) &&
-                  !poGeomFieldDefn->bHasM) )
+            if( !((bDeferredSpatialIndexCreation || !poGeomFieldDefn->bHasSpatialIndex)) )
                 continue;
             const char* pszGeomCol = poGeomFieldDefn->GetNameRef();
 

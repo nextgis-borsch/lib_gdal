@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalrescaledalphaband.cpp 31703 2015-11-21 22:11:38Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of GDALRescaledAlphaBand, a class implementing
@@ -30,7 +30,7 @@
 
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalrescaledalphaband.cpp 31703 2015-11-21 22:11:38Z rouault $");
 
 /************************************************************************/
 /*                        GDALRescaledAlphaBand()                       */

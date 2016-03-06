@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrfmedriver.cpp 32110 2015-12-10 17:19:40Z goatbar $
  *
  * Project:  FMEObjects Translator
  * Purpose:  Implementations of the OGRFMEDriver class.
@@ -30,7 +30,7 @@
 #include "fme2ogr.h"
 #include "cpl_error.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrfmedriver.cpp 32110 2015-12-10 17:19:40Z goatbar $");
 
 /************************************************************************/
 /* ==================================================================== */

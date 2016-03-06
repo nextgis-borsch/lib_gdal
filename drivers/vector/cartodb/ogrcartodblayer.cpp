@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrcartodblayer.cpp 32247 2015-12-19 07:05:52Z goatbar $
  *
  * Project:  CartoDB Translator
  * Purpose:  Implements OGRCARTODBLayer class.
@@ -30,7 +30,7 @@
 #include "ogr_cartodb.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrcartodblayer.cpp 32247 2015-12-19 07:05:52Z goatbar $");
 
 /************************************************************************/
 /*                         OGRCARTODBLayer()                            */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ddfutils.cpp 32179 2015-12-14 16:22:34Z goatbar $
  *
  * Project:  ISO 8211 Access
  * Purpose:  Various utility functions.
@@ -30,7 +30,7 @@
 #include "iso8211.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ddfutils.cpp 32179 2015-12-14 16:22:34Z goatbar $");
 
 /************************************************************************/
 /*                             DDFScanInt()                             */

@@ -1,4 +1,4 @@
-/* $Id$ */
+/* $Id: gdal_tutorial.dox 33134 2016-01-23 23:10:03Z rouault $ */
 
 /*!
 \page gdal_tutorial GDAL API Tutorial
@@ -651,7 +651,7 @@ In Python:
 
 \htmlonly
 <p>
-$Id$
+$Id: gdal_tutorial.dox 33134 2016-01-23 23:10:03Z rouault $
 </p>
 \endhtmlonly
 

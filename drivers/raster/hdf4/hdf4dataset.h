@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: hdf4dataset.h 33313 2016-02-01 21:41:00Z goatbar $
  *
  * Project:  Hierarchical Data Format Release 4 (HDF4)
  * Purpose:  Header file for HDF4 datasets reader.
@@ -65,7 +65,7 @@ class HDF4Dataset : public GDALPamDataset
 
   private:
 
-    int         bIsHDFEOS;
+    bool bIsHDFEOS;
 
     static char **HDF4EOSTokenizeAttrs( const char *pszString );
     static char **HDF4EOSGetObject( char **papszAttrList, char **ppszAttrName,
@@ -107,4 +107,3 @@ char *SPrintArray( GDALDataType eDataType, const void *paDataArray,
 
 
 #endif /* HDF4DATASET_H_INCLUDED_ */
-

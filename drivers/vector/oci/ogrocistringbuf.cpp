@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrocistringbuf.cpp 31688 2015-11-21 17:19:14Z rouault $
  *
  * Project:  Oracle Spatial Driver
  * Purpose:  Simple string buffer used to accumulate text of commands 
@@ -31,7 +31,7 @@
 #include "ogr_oci.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrocistringbuf.cpp 31688 2015-11-21 17:19:14Z rouault $");
 
 /************************************************************************/
 /*                          OGROCIStringBuf()                           */

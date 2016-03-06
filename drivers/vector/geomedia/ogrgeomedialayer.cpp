@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrgeomedialayer.cpp 32835 2016-01-08 11:47:23Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRGeomediaLayer class, code shared between
@@ -34,7 +34,7 @@
 #include "cpl_string.h"
 #include "ogrgeomediageometry.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgeomedialayer.cpp 32835 2016-01-08 11:47:23Z rouault $");
 
 /************************************************************************/
 /*                          OGRGeomediaLayer()                          */

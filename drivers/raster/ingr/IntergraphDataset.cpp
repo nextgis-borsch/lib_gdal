@@ -1,5 +1,5 @@
 /*****************************************************************************
- * $Id$
+ * $Id: IntergraphDataset.cpp 33503 2016-02-18 14:06:37Z rouault $
  *
  * Project:  Intergraph Raster Format support
  * Purpose:  Read/Write Intergraph Raster Format, dataset support
@@ -254,7 +254,7 @@ GDALDataset *IntergraphDataset::Open( GDALOpenInfo *poOpenInfo )
         eFormat != ContinuousTone &&
         eFormat != JPEGGRAY &&
         eFormat != JPEGRGB && 
-        eFormat != JPEGCYMK )
+        eFormat != JPEGCMYK )
     {
         CPLError( CE_Failure, CPLE_AppDefined, 
             "Intergraph Raster Format %d ( \"%s\" ) not supported",
@@ -342,7 +342,7 @@ GDALDataset *IntergraphDataset::Open( GDALOpenInfo *poOpenInfo )
         switch( eFormat )
         {
         case JPEGRGB:
-        case JPEGCYMK:
+        case JPEGCMYK:
         {
             IntergraphBitmapBand* poBand;
             nBands++;

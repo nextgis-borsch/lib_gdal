@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdaljp2abstractdataset.cpp 33537 2016-02-23 19:45:46Z goatbar $
  *
  * Project:  GDAL 
  * Purpose:  GDALGeorefPamDataset with helper to read georeferencing and other
@@ -95,7 +95,7 @@ void GDALJP2AbstractDataset::LoadJP2Metadata(GDALOpenInfo* poOpenInfo,
     {
         CPLFree(pszProjection);
         pszProjection = CPLStrdup(oJP2Geo.pszProjection);
-        bGeoTransformValid = oJP2Geo.bHaveGeoTransform;
+        bGeoTransformValid = CPL_TO_BOOL( oJP2Geo.bHaveGeoTransform );
         memcpy( adfGeoTransform, oJP2Geo.adfGeoTransform, 
                 sizeof(double) * 6 );
         nGCPCount = oJP2Geo.nGCPCount;

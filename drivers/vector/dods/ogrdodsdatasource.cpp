@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrdodsdatasource.cpp 32366 2015-12-20 19:04:52Z goatbar $
  *
  * Project:  OGR/DODS Interface
  * Purpose:  Implements OGRDODSDataSource class.
@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrdodsdatasource.cpp 32366 2015-12-20 19:04:52Z goatbar $");
 /************************************************************************/
 /*                         OGRDODSDataSource()                          */
 /************************************************************************/

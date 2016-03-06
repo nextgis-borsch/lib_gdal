@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: l1bdataset.cpp 32984 2016-01-14 19:08:12Z goatbar $
  *
  * Project:  NOAA Polar Orbiter Level 1b Dataset Reader (AVHRR)
  * Purpose:  Can read NOAA-9(F)-NOAA-17(M) AVHRR datasets
@@ -39,7 +39,7 @@
 #include "gdal_pam.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: l1bdataset.cpp 32984 2016-01-14 19:08:12Z goatbar $");
 
 typedef enum {                  // File formats
     L1B_NONE,           // Not a L1B format

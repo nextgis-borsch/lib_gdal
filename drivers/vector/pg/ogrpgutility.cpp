@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrpgutility.cpp 32078 2015-12-08 09:09:45Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Utility methods
@@ -30,7 +30,7 @@
 #include "ogr_pg.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrpgutility.cpp 32078 2015-12-08 09:09:45Z rouault $");
 
 /************************************************************************/
 /*                         OGRPG_PQexec()                               */

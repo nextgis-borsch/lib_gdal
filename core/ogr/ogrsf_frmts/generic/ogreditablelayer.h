@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogreditablelayer.h 32468 2015-12-26 10:54:59Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Defines OGREditableLayer class

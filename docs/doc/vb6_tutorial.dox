@@ -1,5 +1,5 @@
 #ifndef DOXYGEN_SKIP
-/* $Id$ */
+/* $Id: vb6_tutorial.dox 13528 2008-01-14 19:37:42Z warmerdam $ */
 #endif /* DOXYGEN_SKIP */
 
 /*!
@@ -521,7 +521,7 @@ End Sub
 
 \htmlonly
 <p>
-$Id$
+$Id: vb6_tutorial.dox 13528 2008-01-14 19:37:42Z warmerdam $
 </p>
 \endhtmlonly
 

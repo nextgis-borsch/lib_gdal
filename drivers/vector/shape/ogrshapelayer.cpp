@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrshapelayer.cpp 33539 2016-02-24 15:20:43Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRShapeLayer class.
@@ -40,7 +40,7 @@
 
 #define UNSUPPORTED_OP_READ_ONLY "%s : unsupported operation on a read-only datasource."
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrshapelayer.cpp 33539 2016-02-24 15:20:43Z rouault $");
 
 /************************************************************************/
 /*                           OGRShapeLayer()                            */
@@ -151,8 +151,57 @@ OGRShapeLayer::OGRShapeLayer( OGRShapeDataSource* poDSIn,
     OGRwkbGeometryType eGeomType = poFeatureDefn->GetGeomType();
     if( eGeomType != wkbNone )
     {
+        OGRwkbGeometryType eType;
+
+        if( eRequestedGeomType == wkbNone )
+        {
+            eType = eGeomType;
+            
+            const char* pszAdjustGeomType = CSLFetchNameValueDef(
+                            poDS->GetOpenOptions(), "ADJUST_GEOM_TYPE", "FIRST_SHAPE");
+            const bool bFirstShape = EQUAL(pszAdjustGeomType, "FIRST_SHAPE");
+            const bool bAllShapes  = EQUAL(pszAdjustGeomType, "ALL_SHAPES");
+            if( (hSHP != NULL) && (hSHP->nRecords > 0) && wkbHasM(eType) &&
+                (bFirstShape || bAllShapes) )
+            {
+                bool bMIsUsed = false;
+                for(int iShape=0; iShape < hSHP->nRecords; iShape++)
+                {
+                    SHPObject   *psShape = SHPReadObject( hSHP, iShape );
+                    if( psShape )
+                    {
+                        if( psShape->bMeasureIsUsed &&
+                            psShape->nVertices > 0 &&
+                            psShape->padfM != NULL )
+                        {
+                            for(int i=0;i<psShape->nVertices;i++)
+                            {
+                                /* Per the spec, if the M value is smaller than -1e38,
+                                 * it is a nodata value
+                                 */
+                                if( psShape->padfM[i] > -1e38 )
+                                {
+                                    bMIsUsed = true;
+                                    break;
+                                }
+                            }
+                        }
+                            
+                        SHPDestroyObject(psShape);
+                    }
+                    if( bFirstShape || bMIsUsed )
+                        break;
+                }
+                if( !bMIsUsed )
+                    eType = OGR_GT_SetModifier(eType, wkbHasZ(eType), FALSE);
+            }
+        }
+        else
+            eType = eRequestedGeomType;
+
         OGRShapeGeomFieldDefn* poGeomFieldDefn =
-            new OGRShapeGeomFieldDefn(pszFullName, eGeomType, bSRSSetIn, poSRSIn);
+            //new OGRShapeGeomFieldDefn(pszFullName, eGeomType, bSRSSetIn, poSRSIn);
+            new OGRShapeGeomFieldDefn(pszFullName, eType, bSRSSetIn, poSRSIn);
         poFeatureDefn->SetGeomType(wkbNone);
         poFeatureDefn->AddGeomFieldDefn(poGeomFieldDefn, FALSE);
     }
@@ -983,6 +1032,16 @@ OGRErr OGRShapeLayer::ICreateFeature( OGRFeature *poFeature )
             eRequestedGeomType = wkbPoint25D;
             break;
 
+          case wkbPointM:
+            nShapeType = SHPT_POINTM;
+            eRequestedGeomType = wkbPointM;
+            break;
+
+          case wkbPointZM:
+            nShapeType = SHPT_POINTZ;
+            eRequestedGeomType = wkbPointZM;
+            break;
+
           case wkbMultiPoint:
             nShapeType = SHPT_MULTIPOINT;
             eRequestedGeomType = wkbMultiPoint;
@@ -991,6 +1050,16 @@ OGRErr OGRShapeLayer::ICreateFeature( OGRFeature *poFeature )
           case wkbMultiPoint25D:
             nShapeType = SHPT_MULTIPOINTZ;
             eRequestedGeomType = wkbMultiPoint25D;
+            break;
+
+          case wkbMultiPointM:
+            nShapeType = SHPT_MULTIPOINTM;
+            eRequestedGeomType = wkbMultiPointM;
+            break;
+
+          case wkbMultiPointZM:
+            nShapeType = SHPT_MULTIPOINTZ;
+            eRequestedGeomType = wkbMultiPointM;
             break;
 
           case wkbLineString:
@@ -1005,6 +1074,18 @@ OGRErr OGRShapeLayer::ICreateFeature( OGRFeature *poFeature )
             eRequestedGeomType = wkbLineString25D;
             break;
 
+          case wkbLineStringM:
+          case wkbMultiLineStringM:
+            nShapeType = SHPT_ARCM;
+            eRequestedGeomType = wkbLineStringM;
+            break;
+
+          case wkbLineStringZM:
+          case wkbMultiLineStringZM:
+            nShapeType = SHPT_ARCZ;
+            eRequestedGeomType = wkbLineStringZM;
+            break;
+
           case wkbPolygon:
           case wkbMultiPolygon:
             nShapeType = SHPT_POLYGON;
@@ -1017,6 +1098,18 @@ OGRErr OGRShapeLayer::ICreateFeature( OGRFeature *poFeature )
             eRequestedGeomType = wkbPolygon25D;
             break;
 
+          case wkbPolygonM:
+          case wkbMultiPolygonM:
+            nShapeType = SHPT_POLYGONM;
+            eRequestedGeomType = wkbPolygonM;
+            break;
+
+          case wkbPolygonZM:
+          case wkbMultiPolygonZM:
+            nShapeType = SHPT_POLYGONZ;
+            eRequestedGeomType = wkbPolygonZM;
+            break;
+
           default:
             nShapeType = -1;
             break;
@@ -1024,6 +1117,7 @@ OGRErr OGRShapeLayer::ICreateFeature( OGRFeature *poFeature )
 
         if( nShapeType != -1 )
         {
+            poFeatureDefn->SetGeomType(eRequestedGeomType);
             ResetGeomType( nShapeType );
         }
     }
@@ -1454,6 +1548,10 @@ int OGRShapeLayer::TestCapability( const char * pszCap )
 
         return TRUE;
     }
+
+    else if( EQUAL(pszCap,OLCMeasuredGeometries) )
+        return TRUE;
+
     else 
         return FALSE;
 }

@@ -1,5 +1,5 @@
 /*****************************************************************************
-* $Id$
+* $Id: IdrisiDataset.cpp 33138 2016-01-24 11:18:11Z rouault $
 *
 * Project:  Idrisi Raster Image File Driver
 * Purpose:  Read/write Idrisi Raster Image Format RST
@@ -43,7 +43,7 @@
 #include "ogr_spatialref.h"
 #include "idrisi.h"
 
-CPL_CVSID( "$Id$" );
+CPL_CVSID( "$Id: IdrisiDataset.cpp 33138 2016-01-24 11:18:11Z rouault $" );
 
 #ifdef WIN32
 #  define PATHDELIM       '\\'

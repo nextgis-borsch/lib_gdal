@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrodbcdriver.cpp 31120 2015-10-24 19:55:09Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRODBCDriver class.
@@ -30,7 +30,7 @@
 #include "ogr_odbc.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrodbcdriver.cpp 31120 2015-10-24 19:55:09Z rouault $");
 
 /************************************************************************/
 /*                            ~OGRODBCDriver()                            */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: hfaopen.cpp 33129 2016-01-23 21:10:49Z rouault $
  *
  * Project:  Erdas Imagine (.img) Translator
  * Purpose:  Supporting functions for HFA (.img) ... main (C callable) API
@@ -42,7 +42,7 @@
 #include <limits.h>
 #include <vector>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: hfaopen.cpp 33129 2016-01-23 21:10:49Z rouault $");
 
 
 static const char * const apszAuxMetadataItems[] = {

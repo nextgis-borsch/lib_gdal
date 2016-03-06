@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalwarpkernel.cpp 33129 2016-01-23 21:10:49Z rouault $
  *
  * Project:  High Performance Image Reprojector
  * Purpose:  Implementation of the GDALWarpKernel class.  Implements the actual
@@ -43,7 +43,7 @@
 #include <limits>
 #include <new>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalwarpkernel.cpp 33129 2016-01-23 21:10:49Z rouault $");
 
 //#define INSTANTIATE_FLOAT64_SSE2_IMPL
 

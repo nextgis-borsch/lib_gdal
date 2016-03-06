@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrgmllayer.cpp 32982 2016-01-14 16:53:57Z goatbar $
  *
  * Project:  OGR
  * Purpose:  Implements OGRGMLLayer class.
@@ -36,7 +36,7 @@
 #include "ogr_p.h"
 #include "ogr_api.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgmllayer.cpp 32982 2016-01-14 16:53:57Z goatbar $");
 
 /************************************************************************/
 /*                           OGRGMLLayer()                              */

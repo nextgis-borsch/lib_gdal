@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: filegdbindex.cpp 33027 2016-01-17 18:47:10Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements reading of FileGDB indexes

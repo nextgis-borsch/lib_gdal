@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: xyzdataset.cpp 33105 2016-01-23 15:27:32Z rouault $
  *
  * Project:  XYZ driver
  * Purpose:  GDALDataset driver for XYZ dataset.
@@ -35,7 +35,7 @@
 #include <algorithm>
 #include <vector>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: xyzdataset.cpp 33105 2016-01-23 15:27:32Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */

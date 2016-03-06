@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: sdtsxref.cpp 31332 2015-11-03 17:34:39Z goatbar $
  *
  * Project:  SDTS Translator
  * Purpose:  Implementation of SDTS_XREF class for reading XREF module.
@@ -29,7 +29,7 @@
 
 #include "sdts_al.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: sdtsxref.cpp 31332 2015-11-03 17:34:39Z goatbar $");
 
 /************************************************************************/
 /*                             SDTS_XREF()                              */

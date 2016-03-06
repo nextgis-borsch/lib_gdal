@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: vrtrasterband.cpp 32984 2016-01-14 19:08:12Z goatbar $
  *
  * Project:  Virtual GDAL Datasets
  * Purpose:  Implementation of VRTRasterBand
@@ -34,7 +34,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: vrtrasterband.cpp 32984 2016-01-14 19:08:12Z goatbar $");
 
 /************************************************************************/
 /* ==================================================================== */

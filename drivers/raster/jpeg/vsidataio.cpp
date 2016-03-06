@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: vsidataio.cpp 31076 2015-10-19 20:19:01Z goatbar $
  *
  * Project:  JPEG JFIF Driver
  * Purpose:  Implement JPEG read/write io indirection through VSI.
@@ -30,7 +30,7 @@
 
 #include "vsidataio.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: vsidataio.cpp 31076 2015-10-19 20:19:01Z goatbar $");
 
 CPL_C_START
 #include "jerror.h"

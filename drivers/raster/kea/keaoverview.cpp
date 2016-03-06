@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: keaoverview.cpp 31977 2015-12-03 11:42:22Z rouault $
  *  keaoverview.cpp
  *
  *  Created by Pete Bunting on 01/08/2012.

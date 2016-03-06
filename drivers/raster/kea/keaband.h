@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: keaband.h 32682 2016-01-02 17:54:24Z rouault $
  *  keaband.h
  *
  *  Created by Pete Bunting on 01/08/2012.

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrplsceneslayer.cpp 32982 2016-01-14 16:53:57Z goatbar $
  *
  * Project:  PlanetLabs scene driver
  * Purpose:  Implements OGRPLScenesLayer
@@ -30,7 +30,7 @@
 #include "ogr_plscenes.h"
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrplsceneslayer.cpp 32982 2016-01-14 16:53:57Z goatbar $");
 
 typedef struct
 {

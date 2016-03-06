@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr2ogr_bin.cpp 33615 2016-03-02 20:19:22Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Simple client for translating between formats.
@@ -33,7 +33,7 @@
 #include "gdal_utils_priv.h"
 #include "commonutils.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogr2ogr_bin.cpp 33615 2016-03-02 20:19:22Z goatbar $");
 
 static void Usage(int bShort = TRUE);
 static void Usage(const char* pszAdditionalMsg, int bShort = TRUE);
@@ -141,6 +141,7 @@ int main( int nArgc, char ** papszArgv )
     if( nArgc < 1 )
     {
         papszArgv = NULL;
+        nRetCode = -nArgc;
         goto exit;
     }
 
@@ -185,6 +186,9 @@ int main( int nArgc, char ** papszArgv )
         GDALVectorTranslateOptionsForBinaryFree(psOptionsForBinary);
         goto exit;
     }
+
+    if( strcmp(psOptionsForBinary->pszDestDataSource, "/vsistdout/") == 0 )
+        psOptionsForBinary->bQuiet = TRUE;
 
     if (!psOptionsForBinary->bQuiet && psOptionsForBinary->bFormatExplicitlySet)
     {
@@ -348,13 +352,13 @@ static void Usage(const char* pszAdditionalMsg, int bShort)
             " -progress: Display progress on terminal. Only works if input layers have the \n"
             "                                          \"fast feature count\" capability\n"
             " -select field_list: Comma-delimited list of fields from input layer to\n"
-            "                     copy to the new layer (defaults to all)\n" 
-            " -where restricted_where: Attribute query (like SQL WHERE)\n" 
+            "                     copy to the new layer (defaults to all)\n"
+            " -where restricted_where: Attribute query (like SQL WHERE)\n"
             " -wrapdateline: split geometries crossing the dateline meridian\n"
-            "                (long. = +/- 180deg)\n" 
+            "                (long. = +/- 180deg)\n"
             " -datelineoffset: offset from dateline in degrees\n"
             "                (default long. = +/- 10deg,\n"
-            "                geometries within 170deg to -170deg will be split)\n" 
+            "                geometries within 170deg to -170deg will be split)\n"
             " -sql statement: Execute given SQL statement and save result.\n"
             " -dialect value: select a dialect, usually OGRSQL to avoid native sql.\n"
             " -skipfailures: skip features or layers that fail to convert\n"
@@ -389,7 +393,7 @@ static void Usage(const char* pszAdditionalMsg, int bShort)
     printf(" -a_srs srs_def: Assign an output SRS\n"
            " -t_srs srs_def: Reproject/transform to this SRS on output\n"
            " -s_srs srs_def: Override source SRS\n"
-           "\n" 
+           "\n"
            " Srs_def can be a full WKT definition (hard to escape properly),\n"
            " or a well known definition (i.e. EPSG:4326) or a file with a WKT\n"
            " definition.\n" );

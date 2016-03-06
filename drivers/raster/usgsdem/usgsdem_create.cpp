@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: usgsdem_create.cpp 32883 2016-01-09 18:24:40Z rouault $
  *
  * Project:  USGS DEM Driver
  * Purpose:  CreateCopy() implementation.
@@ -42,7 +42,7 @@
 #include <algorithm>
 
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: usgsdem_create.cpp 32883 2016-01-09 18:24:40Z rouault $");
 
 /* used by usgsdemdataset.cpp */
 GDALDataset *USGSDEMCreateCopy( const char *, GDALDataset *, int, char **,

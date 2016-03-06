@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: s57writer.cpp 32446 2015-12-25 05:44:05Z goatbar $
  *
  * Project:  S-57 Translator
  * Purpose:  Implements S57Writer class.
@@ -33,7 +33,7 @@
 #include "ogr_api.h"
 #include "s57.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: s57writer.cpp 32446 2015-12-25 05:44:05Z goatbar $");
 
 /************************************************************************/
 /*                             S57Writer()                              */

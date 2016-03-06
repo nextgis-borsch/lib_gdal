@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdaltransformer.cpp 33636 2016-03-04 12:13:05Z rouault $
  *
  * Project:  Mapinfo Image Warper
  * Purpose:  Implementation of one or more GDALTrasformerFunc types, including
@@ -38,7 +38,7 @@
 #include "cpl_list.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdaltransformer.cpp 33636 2016-03-04 12:13:05Z rouault $");
 CPL_C_START
 void *GDALDeserializeGCPTransformer( CPLXMLNode *psTree );
 void *GDALDeserializeTPSTransformer( CPLXMLNode *psTree );
@@ -1300,7 +1300,7 @@ GDALCreateGenImgProjTransformer2( GDALDatasetH hSrcDS, GDALDatasetH hDstDS,
              && GDALExtractRPCInfo( papszMD, &sRPCInfo ) )
     {
         psInfo->pSrcRPCTransformArg = 
-            GDALCreateRPCTransformer( &sRPCInfo, FALSE, 0.1, papszOptions );
+            GDALCreateRPCTransformer( &sRPCInfo, FALSE, 0, papszOptions );
         if( psInfo->pSrcRPCTransformArg == NULL )
         {
             GDALDestroyGenImgProjTransformer( psInfo );
@@ -1433,7 +1433,7 @@ GDALCreateGenImgProjTransformer2( GDALDatasetH hSrcDS, GDALDatasetH hDstDS,
              && GDALExtractRPCInfo( papszMD, &sRPCInfo ) )
     {
         psInfo->pDstRPCTransformArg = 
-            GDALCreateRPCTransformer( &sRPCInfo, FALSE, 0.1, papszOptions );
+            GDALCreateRPCTransformer( &sRPCInfo, FALSE, 0, papszOptions );
         if( psInfo->pDstRPCTransformArg == NULL )
         {
             GDALDestroyGenImgProjTransformer( psInfo );

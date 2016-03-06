@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdal_misc.cpp 33528 2016-02-23 02:27:00Z goatbar $
  *
  * Project:  GDAL Core
  * Purpose:  Free standing functions for GDAL.
@@ -36,7 +36,7 @@
 #include <string>
 #include <limits>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdal_misc.cpp 33528 2016-02-23 02:27:00Z goatbar $");
 
 #include "ogr_spatialref.h"
 #include "gdal_mdreader.h"
@@ -964,7 +964,6 @@ CPLString GDALFindAssociatedFile( const char *pszBaseFilename,
 /*                         GDALLoadOziMapFile()                         */
 /************************************************************************/
 
-#define MAX_GCP 30
 
 int CPL_STDCALL GDALLoadOziMapFile( const char *pszFilename,
                                     double *padfGeoTransform, char **ppszWKT, 
@@ -973,6 +972,7 @@ int CPL_STDCALL GDALLoadOziMapFile( const char *pszFilename,
 
 {
     int	        nCoordinateCount = 0;
+    static const int MAX_GCP = 30;
     GDAL_GCP    asGCPs[MAX_GCP];
 
     VALIDATE_POINTER1( pszFilename, "GDALLoadOziMapFile", FALSE );
@@ -1154,8 +1154,6 @@ int CPL_STDCALL GDALLoadOziMapFile( const char *pszFilename,
 
     return TRUE;
 }
-
-#undef MAX_GCP
 
 /************************************************************************/
 /*                       GDALReadOziMapFile()                           */
@@ -1627,7 +1625,6 @@ int GDALReadWorldFile2( const char *pszBaseFilename, const char *pszExtension,
     }
 
     VSIStatBufL sStatBuf;
-    int bGotTFW;
 
     pszTFW = CPLResetExtension( pszBaseFilename, szExtLower );
 
@@ -1654,7 +1651,7 @@ int GDALReadWorldFile2( const char *pszBaseFilename, const char *pszExtension,
 /*      Try lower case, then upper case.                                */
 /* -------------------------------------------------------------------- */
 
-    bGotTFW = VSIStatExL( pszTFW, &sStatBuf, VSI_STAT_EXISTS_FLAG ) == 0;
+    bool bGotTFW = VSIStatExL( pszTFW, &sStatBuf, VSI_STAT_EXISTS_FLAG ) == 0;
 
     if( !bGotTFW  && VSIIsCaseSensitiveFS(pszTFW) )
     {

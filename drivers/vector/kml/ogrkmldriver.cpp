@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrkmldriver.cpp 32897 2016-01-10 13:46:58Z rouault $
  *
  * Project:  KML Driver
  * Purpose:  Implementation of OGRKMLDriver class.

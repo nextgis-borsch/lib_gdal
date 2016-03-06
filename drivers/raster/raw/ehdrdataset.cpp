@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ehdrdataset.cpp 33105 2016-01-23 15:27:32Z rouault $
  *
  * Project:  ESRI .hdr Driver
  * Purpose:  Implementation of EHdrDataset
@@ -33,7 +33,7 @@
 #include "ogr_spatialref.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ehdrdataset.cpp 33105 2016-01-23 15:27:32Z rouault $");
 
 static const int HAS_MIN_FLAG = 0x1;
 static const int HAS_MAX_FLAG = 0x2;

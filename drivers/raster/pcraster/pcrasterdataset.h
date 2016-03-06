@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: pcrasterdataset.h 31137 2015-10-26 12:58:08Z goatbar $
  *
  * Project:  PCRaster Integration
  * Purpose:  PCRaster CSF 2.0 raster file driver declarations.

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: reflectancecalculator.cpp 32179 2015-12-14 16:22:34Z goatbar $
  *
  * Purpose:  Implementation of ReflectanceCalculator class. Calculate
  *           reflectance values from radiance, for visual bands.

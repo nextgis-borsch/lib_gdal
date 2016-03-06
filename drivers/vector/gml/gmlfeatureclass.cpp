@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id$
+ * $Id: gmlfeatureclass.cpp 32982 2016-01-14 16:53:57Z goatbar $
  *
  * Project:  GML Reader
  * Purpose:  Implementation of GMLFeatureClass.

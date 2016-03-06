@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: atlsci_spheroid.h 31812 2015-11-28 22:37:37Z goatbar $
  *
  * Project:  Spheroid classes
  * Purpose:  Provide spheroid lookup table base classes.

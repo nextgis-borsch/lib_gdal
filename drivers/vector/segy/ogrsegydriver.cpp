@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrsegydriver.cpp 33105 2016-01-23 15:27:32Z rouault $
  *
  * Project:  SEG-Y Translator
  * Purpose:  Implements OGRSEGYDriver class.
@@ -30,7 +30,7 @@
 #include "ogr_segy.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrsegydriver.cpp 33105 2016-01-23 15:27:32Z rouault $");
 
 /************************************************************************/
 /*                           EBCDICToASCII                              */

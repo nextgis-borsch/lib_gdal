@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: jpeglsdataset.cpp 32213 2015-12-18 04:45:21Z goatbar $
  *
  * Project:  JPEGLS driver based on CharLS library
  * Purpose:  JPEGLS driver based on CharLS library
@@ -36,7 +36,7 @@
 
 /* g++ -Wall -g fmrts/jpegls/jpeglsdataset.cpp -shared -fPIC -o gdal_JPEGLS.so -Iport -Igcore -L. -lgdal -I/home/even/charls-1.0 -L/home/even/charls-1.0/build -lCharLS */
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: jpeglsdataset.cpp 32213 2015-12-18 04:45:21Z goatbar $");
 
 /************************************************************************/
 /* ==================================================================== */

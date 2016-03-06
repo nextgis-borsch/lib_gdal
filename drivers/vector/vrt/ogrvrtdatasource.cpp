@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrvrtdatasource.cpp 33569 2016-02-26 21:07:25Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRVRTDataSource class.
@@ -34,7 +34,7 @@
 #include "ogrwarpedlayer.h"
 #include "ogrunionlayer.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrvrtdatasource.cpp 33569 2016-02-26 21:07:25Z rouault $");
 
 /************************************************************************/
 /*                       OGRVRTGetGeometryType()                        */
@@ -81,6 +81,8 @@ OGRwkbGeometryType OGRVRTGetGeometryType(const char* pszGType, int* pbError)
 
             if( strstr(pszGType,"25D") != NULL || strstr(pszGType,"Z") != NULL )
                 eGeomType = wkbSetZ(eGeomType);
+            if( strstr(pszGType,"M") != NULL )
+                eGeomType = wkbSetM(eGeomType);
             break;
         }
     }

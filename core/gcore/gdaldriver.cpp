@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdaldriver.cpp 33146 2016-01-24 17:07:03Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of GDALDriver class (and C wrappers)
@@ -31,7 +31,7 @@
 #include "gdal_priv.h"
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdaldriver.cpp 33146 2016-01-24 17:07:03Z rouault $");
 
 CPL_C_START
 const char* GDALClientDatasetGetFilename(const char* pszFilename);

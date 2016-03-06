@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: llrasterize.cpp 32401 2015-12-20 23:08:52Z rouault $
  *
  * Project:  GDAL
  * Purpose:  Vector polygon rasterization code.

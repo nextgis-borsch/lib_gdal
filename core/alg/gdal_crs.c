@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdal_crs.c 33129 2016-01-23 21:10:49Z rouault $
  *
  * Project:  Mapinfo Image Warper
  * Purpose:  Implementation of the GDALTransformer wrapper around CRS.C functions
@@ -59,7 +59,7 @@
 #include "cpl_string.h"
 #include "cpl_atomic_ops.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdal_crs.c 33129 2016-01-23 21:10:49Z rouault $");
 
 /* Hum, we cannot include gdal_priv.h from a .c file... */
 CPL_C_START

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: mffdataset.cpp 32883 2016-01-09 18:24:40Z rouault $
  *
  * Project:  GView
  * Purpose:  Implementation of Atlantis MFF Support
@@ -37,7 +37,7 @@
 #include <cctype>
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: mffdataset.cpp 32883 2016-01-09 18:24:40Z rouault $");
 
 enum {
   MFFPRJ_NONE,

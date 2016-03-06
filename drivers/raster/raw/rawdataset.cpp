@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: rawdataset.cpp 32984 2016-01-14 19:08:12Z goatbar $
  *
  * Project:  Generic Raw Binary Driver
  * Purpose:  Implementation of RawDataset and RawRasterBand classes.
@@ -38,7 +38,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: rawdataset.cpp 32984 2016-01-14 19:08:12Z goatbar $");
 
 /************************************************************************/
 /*                           RawRasterBand()                            */

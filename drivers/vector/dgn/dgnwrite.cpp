@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: dgnwrite.cpp 33138 2016-01-24 11:18:11Z rouault $
  *
  * Project:  Microstation DGN Access Library
  * Purpose:  DGN Access functions related to writing DGN elements.
@@ -30,7 +30,7 @@
 
 #include "dgnlibp.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: dgnwrite.cpp 33138 2016-01-24 11:18:11Z rouault $");
 
 static void DGNPointToInt( DGNInfo *psDGN, DGNPoint *psPoint, 
                            unsigned char *pabyTarget );

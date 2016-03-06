@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id$
+ * $Id: cpl_time.h 31777 2015-11-26 14:14:41Z rouault $
  *
  * Name:     cpl_time.h
  * Project:  CPL - Common Portability Library

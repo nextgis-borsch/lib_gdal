@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalchecksum.cpp 31749 2015-11-25 02:32:55Z goatbar $
  *
  * Project:  GDAL
  * Purpose:  Compute simple checksum for a region of image data. 
@@ -31,7 +31,7 @@
 #include "gdal_alg.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalchecksum.cpp 31749 2015-11-25 02:32:55Z goatbar $");
 
 /************************************************************************/
 /*                         GDALChecksumImage()                          */

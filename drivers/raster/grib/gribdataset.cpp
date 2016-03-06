@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gribdataset.cpp 32984 2016-01-14 19:08:12Z goatbar $
  *
  * Project:  GRIB Driver
  * Purpose:  GDALDataset driver for GRIB translator for read support
@@ -41,7 +41,7 @@
 #include "degrib18/degrib/filedatasource.h"
 #include "degrib18/degrib/memorydatasource.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gribdataset.cpp 32984 2016-01-14 19:08:12Z goatbar $");
 
 static CPLMutex *hGRIBMutex = NULL;
 

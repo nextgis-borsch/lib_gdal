@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: dgnfloat.cpp 32314 2015-12-20 13:07:06Z rouault $
  *
  * Project:  Microstation DGN Access Library
  * Purpose:  Functions for translating DGN floats into IEEE floats.
@@ -29,7 +29,7 @@
 
 #include "dgnlibp.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: dgnfloat.cpp 32314 2015-12-20 13:07:06Z rouault $");
 
 typedef struct dbl {
     GUInt32 hi;

@@ -1,5 +1,5 @@
 /*****************************************************************************
- * $Id$
+ * $Id: IntergraphDataset.h 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  Intergraph Raster Format support
  * Purpose:  Read selected types of Intergraph Raster Format

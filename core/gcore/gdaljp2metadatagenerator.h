@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdaljp2metadatagenerator.h 29048 2015-04-29 14:48:33Z rouault $
  *
  * Project:  GDAL 
  * Purpose:  GDALJP2Metadata: metadata generator

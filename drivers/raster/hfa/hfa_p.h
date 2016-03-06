@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: hfa_p.h 32593 2015-12-31 12:58:21Z rouault $
  *
  * Project:  Erdas Imagine (.img) Translator
  * Purpose:  Private class declarations for the HFA classes used to read

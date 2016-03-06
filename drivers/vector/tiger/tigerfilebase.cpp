@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: tigerfilebase.cpp 32982 2016-01-14 16:53:57Z goatbar $
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Implements TigerBaseFile class, providing common services to all
@@ -34,7 +34,7 @@
 #include "cpl_error.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: tigerfilebase.cpp 32982 2016-01-14 16:53:57Z goatbar $");
 
 /************************************************************************/
 /*                           TigerFileBase()                            */

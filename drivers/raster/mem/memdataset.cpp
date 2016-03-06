@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: memdataset.cpp 33149 2016-01-24 20:19:31Z rouault $
  *
  * Project:  Memory Array Translator
  * Purpose:  Complete implementation.
@@ -32,7 +32,7 @@
 #include "gdal_frmts.h"
 #include "memdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: memdataset.cpp 33149 2016-01-24 20:19:31Z rouault $");
 
 /************************************************************************/
 /*                        MEMCreateRasterBand()                         */

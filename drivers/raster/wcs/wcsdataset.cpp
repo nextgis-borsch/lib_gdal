@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: wcsdataset.cpp 32984 2016-01-14 19:08:12Z goatbar $
  *
  * Project:  WCS Client Driver
  * Purpose:  Implementation of Dataset and RasterBand classes for WCS.
@@ -35,7 +35,7 @@
 #include "gdal_pam.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: wcsdataset.cpp 32984 2016-01-14 19:08:12Z goatbar $");
 
 /************************************************************************/
 /* ==================================================================== */

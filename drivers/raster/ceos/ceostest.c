@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ceostest.c 20504 2010-09-02 02:40:49Z warmerdam $
  *
  * Project:  CEOS Translator
  * Purpose:  Test mainline.

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdaltindex.c 31868 2015-12-01 11:22:42Z rouault $
  *
  * Project:  MapServer
  * Purpose:  Commandline App to build tile index for raster files.
@@ -35,7 +35,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdaltindex.c 31868 2015-12-01 11:22:42Z rouault $");
 
 /************************************************************************/
 /*                               Usage()                                */

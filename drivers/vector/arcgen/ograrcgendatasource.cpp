@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ograrcgendatasource.cpp 32119 2015-12-11 05:47:58Z goatbar $
  *
  * Project:  Arc/Info Generate Translator
  * Purpose:  Implements OGRARCGENDataSource class
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ograrcgendatasource.cpp 32119 2015-12-11 05:47:58Z goatbar $");
 
 /************************************************************************/
 /*                          OGRARCGENDataSource()                          */

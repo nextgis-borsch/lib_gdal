@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: pcrasterdataset.cpp 33105 2016-01-23 15:27:32Z rouault $
  *
  * Project:  PCRaster Integration
  * Purpose:  PCRaster CSF 2.0 raster file driver
@@ -34,7 +34,7 @@
 #include "pcrasterdataset.h"
 #include "pcrasterutil.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: pcrasterdataset.cpp 33105 2016-01-23 15:27:32Z rouault $");
 
 
 /*!

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: vfkproperty.cpp 33105 2016-01-23 15:27:32Z rouault $
  *
  * Project:  VFK Reader - Property definition
  * Purpose:  Implements VFKProperty class.

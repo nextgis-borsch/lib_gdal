@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: rpftoclib.h 31101 2015-10-22 21:01:34Z goatbar $
  *
  * Project:  RPF A.TOC read Library
  * Purpose:  Main GDAL independent include file for RPF TOC support.  

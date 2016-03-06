@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalpansharpen.cpp 32730 2016-01-04 14:15:39Z rouault $
  *
  * Project:  GDAL Pansharpening module
  * Purpose:  Implementation of pansharpening.
@@ -39,7 +39,7 @@
 // Limit types to practical use cases
 #define LIMIT_TYPES 1
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalpansharpen.cpp 32730 2016-01-04 14:15:39Z rouault $");
 
 /************************************************************************/
 /*                     GDALCreatePansharpenOptions()                    */

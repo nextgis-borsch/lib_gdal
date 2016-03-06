@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: doq1dataset.cpp 32883 2016-01-09 18:24:40Z rouault $
  *
  * Project:  USGS DOQ Driver (First Generation Format)
  * Purpose:  Implementation of DOQ1Dataset
@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: doq1dataset.cpp 32883 2016-01-09 18:24:40Z rouault $");
 
 static double DOQGetField( unsigned char *, int );
 static void DOQGetDescription( GDALDataset *, unsigned char * );

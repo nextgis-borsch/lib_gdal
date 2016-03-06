@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_jml.h 32783 2016-01-06 16:11:09Z goatbar $
  *
  * Project:  JML .jml Translator
  * Purpose:  Definition of classes for OGR JML driver.

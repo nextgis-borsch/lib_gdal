@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: aigopen.c 32883 2016-01-09 18:24:40Z rouault $
  *
  * Project:  Arc/Info Binary Grid Translator
  * Purpose:  Grid file access cover API for non-GDAL use.
@@ -30,7 +30,7 @@
 
 #include "aigrid.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: aigopen.c 32883 2016-01-09 18:24:40Z rouault $");
 
 CPL_INLINE static void CPL_IGNORE_RET_VAL_INT(CPL_UNUSED int unused) {}
 

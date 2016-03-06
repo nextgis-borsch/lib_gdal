@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdaldither.cpp 32392 2015-12-20 22:13:31Z rouault $
  *
  * Project:  CIETMap Phase 2
  * Purpose:  Convert RGB (24bit) to a pseudo-colored approximation using
@@ -70,7 +70,7 @@
 
 #define MAKE_COLOR_CODE(r,g,b) ((r)|((g)<<8)|((b)<<16))
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdaldither.cpp 32392 2015-12-20 22:13:31Z rouault $");
 
 static void FindNearestColor( int nColors, int *panPCT, GByte *pabyColorMap,
                               int nCLevels );

@@ -1,5 +1,5 @@
 /*****************************************************************************
-* $Id$
+* $Id: IntergraphBand.h 32778 2016-01-06 14:44:25Z rouault $
 *
 * Project:  Intergraph Raster Format support
 * Purpose:  Read selected types of Intergraph Raster Format

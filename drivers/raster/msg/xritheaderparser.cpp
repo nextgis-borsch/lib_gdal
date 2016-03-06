@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: xritheaderparser.cpp 33123 2016-01-23 18:59:28Z rouault $
  *
  * Purpose:  Implementation of XRITHeaderParser class. Parse the header
  *           of the combined XRIT header/data files.

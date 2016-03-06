@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: idadataset.cpp 32883 2016-01-09 18:24:40Z rouault $
  *
  * Project:  IDA Raster Driver
  * Purpose:  Implemenents IDA driver/dataset/rasterband.
@@ -32,7 +32,7 @@
 #include "gdal_frmts.h"
 #include "gdal_rat.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: idadataset.cpp 32883 2016-01-09 18:24:40Z rouault $");
 
 // convert a Turbo Pascal real into a double
 static double tp2c(GByte *r);

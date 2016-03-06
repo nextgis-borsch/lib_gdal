@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ntf_generic.cpp 32177 2015-12-14 07:25:30Z goatbar $
  *
  * Project:  NTF Translator
  * Purpose:  Handle NTF products that aren't recognised generically.
@@ -31,7 +31,7 @@
 #include "ntf.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ntf_generic.cpp 32177 2015-12-14 07:25:30Z goatbar $");
 
 #define MAX_LINK        5000
 

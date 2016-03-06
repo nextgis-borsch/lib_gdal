@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrplscenesdataset.cpp 33602 2016-02-29 20:20:12Z rouault $
  *
  * Project:  PlanetLabs scene driver
  * Purpose:  Implements OGRPLScenesDataset
@@ -29,11 +29,7 @@
 
 #include "ogr_plscenes.h"
 
-// g++ -g -Wall -fPIC -shared -o ogr_PLSCENES.so -Iport -Igcore -Iogr -Iogr/ogrsf_frmts -Iogr/ogrsf_frmts/plscene ogr/ogrsf_frmts/plscenes/*.c* -L. -lgdal -Iogr/ogrsf_frmts/geojson -Iogr/ogrsf_frmts/geojson/libjson 
-
-CPL_CVSID("$Id$");
-
-extern "C" void RegisterOGRPLSCENES();
+CPL_CVSID("$Id: ogrplscenesdataset.cpp 33602 2016-02-29 20:20:12Z rouault $");
 
 /************************************************************************/
 /*                         OGRPLScenesDataset()                         */
@@ -178,15 +174,6 @@ void OGRPLScenesDataset::ReleaseResultSet( OGRLayer * poResultsSet )
 }
 
 /************************************************************************/
-/*                             Identify()                               */
-/************************************************************************/
-
-int OGRPLScenesDataset::Identify(GDALOpenInfo* poOpenInfo)
-{
-    return STARTS_WITH_CI(poOpenInfo->pszFilename, "PLSCENES:");
-}
-
-/************************************************************************/
 /*                          GetBaseHTTPOptions()                         */
 /************************************************************************/
 
@@ -313,7 +300,8 @@ GDALDataset* OGRPLScenesDataset::OpenRasterScene(GDALOpenInfo* poOpenInfo,
         {
             if( !EQUAL(pszKey, "api_key") &&
                 !EQUAL(pszKey, "scene") &&
-                !EQUAL(pszKey, "product_type") )
+                !EQUAL(pszKey, "product_type") &&
+                !EQUAL(pszKey, "version") )
             {
                 CPLError(CE_Failure, CPLE_NotSupported, "Unsupported option %s", pszKey);
                 CPLFree(pszKey);
@@ -413,7 +401,7 @@ GDALDataset* OGRPLScenesDataset::OpenRasterScene(GDALOpenInfo* poOpenInfo,
     if( poOutDS )
     {
         poOutDS->SetDescription(poOpenInfo->pszFilename);
-        poOutDS->GetFileList(); /* so as to probe all auxiliary files before reseting the allowed extensions */
+        CSLDestroy(poOutDS->GetFileList()); /* so as to probe all auxiliary files before reseting the allowed extensions */
 
         if( !EQUAL(pszProductType, "thumb") )
         {
@@ -463,9 +451,6 @@ GDALDataset* OGRPLScenesDataset::OpenRasterScene(GDALOpenInfo* poOpenInfo,
 
 GDALDataset* OGRPLScenesDataset::Open(GDALOpenInfo* poOpenInfo)
 {
-    if( !Identify(poOpenInfo) || poOpenInfo->eAccess == GA_Update )
-        return NULL;
-
     OGRPLScenesDataset* poDS = new OGRPLScenesDataset();
 
     poDS->osBaseURL = CPLGetConfigOption("PL_URL", "https://api.planet.com/v0/scenes/");
@@ -503,9 +488,10 @@ GDALDataset* OGRPLScenesDataset::Open(GDALOpenInfo* poOpenInfo)
         if( pszValue != NULL )
         {
             if( !EQUAL(pszKey, "api_key") &&
-                !EQUAL(pszKey, "spat") )
+                !EQUAL(pszKey, "spat") &&
+                !EQUAL(pszKey, "version") )
             {
-                CPLError(CE_Failure, CPLE_NotSupported, "Unsupported option %s", pszKey);
+                CPLError(CE_Failure, CPLE_NotSupported, "Unsupported option '%s'", pszKey);
                 CPLFree(pszKey);
                 delete poDS;
                 CSLDestroy(papszOptions);
@@ -573,36 +559,4 @@ GDALDataset* OGRPLScenesDataset::Open(GDALOpenInfo* poOpenInfo)
     }
 
     return poDS;
-}
-
-/************************************************************************/
-/*                        RegisterOGRPLSCENES()                         */
-/************************************************************************/
-
-void RegisterOGRPLSCENES()
-
-{
-    if( GDALGetDriverByName( "PLSCENES" ) != NULL )
-        return;
-
-    GDALDriver *poDriver = new GDALDriver();
-
-    poDriver->SetDescription( "PLSCENES" );
-    poDriver->SetMetadataItem( GDAL_DCAP_RASTER, "YES" );
-    poDriver->SetMetadataItem( GDAL_DCAP_VECTOR, "YES" );
-    poDriver->SetMetadataItem( GDAL_DMD_LONGNAME, "Planet Labs Scenes API" );
-    poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, "drv_plscenes.html" );
-    poDriver->SetMetadataItem( GDAL_DMD_CONNECTION_PREFIX, "PLSCENES:" );
-    poDriver->SetMetadataItem( GDAL_DMD_OPENOPTIONLIST,
-"<OpenOptionList>"
-"  <Option name='API_KEY' type='string' description='Account API key' required='true'/>"
-"  <Option name='SCENE' type='string' description='Scene id (for raster fetching)'/>"
-"  <Option name='PRODUCT_TYPE' type='string' description='Product type: visual, analytic or thumb (for raster fetching)' default='visual'/>"
-"  <Option name='RANDOM_ACCESS' type='boolean' description='Whether raster should be accessed in random access mode (but with potentially not optimal throughput). If no, in-memory ingestion is done' default='YES'/>"
-"</OpenOptionList>");
-
-    poDriver->pfnOpen = OGRPLScenesDataset::Open;
-    poDriver->pfnIdentify = OGRPLScenesDataset::Identify;
-
-    GetGDALDriverManager()->RegisterDriver( poDriver );
 }

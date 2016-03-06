@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: vfkdatablocksqlite.cpp 33023 2016-01-17 15:15:10Z rouault $
  *
  * Project:  VFK Reader - Data block definition (SQLite)
  * Purpose:  Implements VFKDataBlockSQLite

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalwarpsimple.c 27942 2014-11-11 00:57:41Z rouault $
  *
  * Project:  Mapinfo Image Warper
  * Purpose:  Commandline program for doing a variety of image warps, including
@@ -33,7 +33,7 @@
 #include "cpl_string.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalwarpsimple.c 27942 2014-11-11 00:57:41Z rouault $");
 
 static GDALDatasetH 
 GDALWarpCreateOutput( GDALDatasetH hSrcDS, const char *pszFilename, 

@@ -1,7 +1,7 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdaljp2abstractdataset.h 33529 2016-02-23 02:30:32Z goatbar $
  *
- * Project:  GDAL 
+ * Project:  GDAL
  * Purpose:  GDALGeorefPamDataset with helper to read georeferencing and other
  *           metadata from JP2Boxes
  * Author:   Even Rouault <even dot rouault at mines-paris dot org>

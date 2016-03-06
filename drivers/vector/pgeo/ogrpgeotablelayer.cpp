@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrpgeotablelayer.cpp 32289 2015-12-20 00:07:07Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRPGeoTableLayer class, access to an existing table.
@@ -32,7 +32,7 @@
 #include "ogr_pgeo.h"
 #include "ogrpgeogeometry.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrpgeotablelayer.cpp 32289 2015-12-20 00:07:07Z rouault $");
 
 /************************************************************************/
 /*                          OGRPGeoTableLayer()                         */

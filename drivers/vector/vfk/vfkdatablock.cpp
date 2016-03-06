@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: vfkdatablock.cpp 32379 2015-12-20 21:31:38Z rouault $
  *
  * Project:  VFK Reader - Data block definition
  * Purpose:  Implements VFKDataBlock class.

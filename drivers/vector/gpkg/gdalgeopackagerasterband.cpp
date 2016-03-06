@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalgeopackagerasterband.cpp 33461 2016-02-15 18:09:24Z rouault $
  *
  * Project:  GeoPackage Translator
  * Purpose:  Implements GDALGeoPackageRasterBand class
@@ -675,6 +675,7 @@ CPLErr GDALGeoPackageRasterBand::IReadBlock(int nBlockXOff, int nBlockYOff,
     if( poGDS->m_nShiftXPixelsMod )
         nColMax ++;
 
+retry:
     /* Optimize for left to right reading at constant row */
     if( poGDS->m_nShiftXPixelsMod || poGDS->m_nShiftYPixelsMod )
     {
@@ -753,6 +754,19 @@ CPLErr GDALGeoPackageRasterBand::IReadBlock(int nBlockXOff, int nBlockYOff,
                     {
                         poBlock->DropLock();
                         continue;
+                    }
+                    /* if we are short of GDAL cache max and there are dirty blocks */
+                    /* of our dataset, the above GetLockedBlockRef() might have reset */
+                    /* (at least part of) the 4 tiles we want to cache and have */
+                    /* already read */
+                    // FIXME this is way too fragile.
+                    if( (poGDS->m_nShiftXPixelsMod != 0 ||
+                         poGDS->m_nShiftYPixelsMod != 0) &&
+                        (poGDS->m_asCachedTilesDesc[0].nRow != nRowMin ||
+                         poGDS->m_asCachedTilesDesc[0].nCol != nColMin) )
+                    {
+                        poBlock->DropLock();
+                        goto retry;
                     }
                     pabyDest = (GByte*) poBlock->GetDataRef();
                 }

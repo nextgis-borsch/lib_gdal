@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_expat.cpp 30134 2015-09-05 14:27:57Z rouault $
  *
  * Project:  OGR
  * Purpose:  Convenience function for parsing with Expat library
@@ -32,7 +32,7 @@
 #include "ogr_expat.h"
 #include "cpl_error.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogr_expat.cpp 30134 2015-09-05 14:27:57Z rouault $");
 
 #define OGR_EXPAT_MAX_ALLOWED_ALLOC 10000000
 

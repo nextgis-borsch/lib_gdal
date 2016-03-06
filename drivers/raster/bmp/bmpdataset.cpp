@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: bmpdataset.cpp 32549 2015-12-30 18:33:41Z rouault $
  *
  * Project:  Microsoft Windows Bitmap
  * Purpose:  Read/write MS Windows Device Independent Bitmap (DIB) files
@@ -33,7 +33,7 @@
 #include "gdal_frmts.h"
 #include "gdal_pam.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: bmpdataset.cpp 32549 2015-12-30 18:33:41Z rouault $");
 
 // Enable if you want to see lots of BMP debugging output.
 // #define BMP_DEBUG

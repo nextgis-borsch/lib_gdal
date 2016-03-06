@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_ili1.h 33325 2016-02-02 14:30:48Z rouault $
  *
  * Project:  Interlis 1 Translator
  * Purpose:   Definition of classes for OGR Interlis 1 driver.
@@ -70,7 +70,8 @@ private:
     void                ResetReading();
     OGRFeature *        GetNextFeature();
     OGRFeature *        GetNextFeatureRef();
-    OGRFeature *        GetFeatureRef( long nFID );
+    OGRFeature *        GetFeatureRef( long nFid );
+    OGRFeature *        GetFeatureRef( const char* );
 
     GIntBig             GetFeatureCount( int bForce = TRUE );
 

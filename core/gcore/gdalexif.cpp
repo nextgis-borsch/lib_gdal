@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalexif.cpp 33229 2016-01-29 19:45:40Z goatbar $
  *
  * Project:  GDAL
  * Purpose:  Implements a EXIF directory reader
@@ -44,7 +44,7 @@
 
 using std::vector;
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalexif.cpp 33229 2016-01-29 19:45:40Z goatbar $");
 
 static const int MAXSTRINGLENGTH = 65535;
 static const int EXIFOFFSETTAG = 0x8769;

@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: keadataset.cpp 33123 2016-01-23 18:59:28Z rouault $
  *  keadataset.cpp
  *
  *  Created by Pete Bunting on 01/08/2012.

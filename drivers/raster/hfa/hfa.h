@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: hfa.h 32883 2016-01-09 18:24:40Z rouault $
  *
  * Project:  Erdas Imagine (.img) Translator
  * Purpose:  Public (C callable) interface for the Erdas Imagine reading

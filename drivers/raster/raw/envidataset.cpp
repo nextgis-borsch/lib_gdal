@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: envidataset.cpp 33105 2016-01-23 15:27:32Z rouault $
  *
  * Project:  ENVI .hdr Driver
  * Purpose:  Implementation of ENVI .hdr labelled raw raster support.
@@ -35,7 +35,7 @@
 #include "rawdataset.h"
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: envidataset.cpp 33105 2016-01-23 15:27:32Z rouault $");
 
 static const int anUsgsEsriZones[] =
 {

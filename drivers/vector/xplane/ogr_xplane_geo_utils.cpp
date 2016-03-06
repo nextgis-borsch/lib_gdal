@@ -30,7 +30,7 @@
 #include "ogr_xplane_geo_utils.h"
 #include "cpl_port.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogr_xplane_geo_utils.cpp 30726 2015-09-27 17:25:12Z goatbar $");
 
 #define RAD2METER            ((180./M_PI)*60.*1852.)
 #define METER2RAD            (1/RAD2METER)

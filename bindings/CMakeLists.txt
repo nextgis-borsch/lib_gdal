@@ -3,7 +3,7 @@
 # Purpose:  CMake build scripts
 # Author:   Dmitry Baryshnikov, polimax@mail.ru
 ################################################################################
-# Copyright (C) 2015, NextGIS <info@nextgis.com>
+# Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
 # Copyright (C) 2012,2013,2014 Dmitry Baryshnikov
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -25,47 +25,45 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-cmake_minimum_required (VERSION 2.8.10 FATAL_ERROR)
-
-option(GDAL_SWIG_PYTHON "Set ON to build python bindings" OFF)
-if(GDAL_SWIG_PYTHON)
+option(WITH_PYTHON "Set ON to build python bindings" OFF)
+if(WITH_PYTHON)
     set(GDAL_BINDINGS ${GDAL_BINDINGS} python PARENT_SCOPE)
     set(BINDING python)
     add_subdirectory(python)
 endif()
 
-option(GDAL_SWIG_PHP "Set ON to build php bindings" OFF)
-if(GDAL_SWIG_PHP)
+option(WITH_PHP "Set ON to build php bindings" OFF)
+if(WITH_PHP)
     set(GDAL_BINDINGS ${GDAL_BINDINGS} php PARENT_SCOPE)
     set(BINDING php)
-#    add_subdirectory(php)
+    add_subdirectory(php)
 endif()
 
-option(GDAL_SWIG_CSHARP "Set ON to build csharp bindings" OFF)
-if(GDAL_SWIG_CSHARP)
+option(WITH_CSHARP "Set ON to build csharp bindings" OFF)
+if(WITH_CSHARP)
     set(GDAL_BINDINGS ${GDAL_BINDINGS} csharp PARENT_SCOPE)
     set(BINDING csharp)
-#    add_subdirectory(csharp)
+    add_subdirectory(csharp)
 endif()
 
-option(GDAL_SWIG_RUBY "Set ON to build ruby bindings" OFF)
-if(GDAL_SWIG_RUBY)
+option(WITH_RUBY "Set ON to build ruby bindings" OFF)
+if(WITH_RUBY)
     set(GDAL_BINDINGS ${GDAL_BINDINGS} ruby PARENT_SCOPE)
     set(BINDING ruby)
-#    add_subdirectory(ruby)
+    add_subdirectory(ruby)
 endif()
 
-option(GDAL_SWIG_PERL "Set ON to build perl bindings" OFF)
-if(GDAL_SWIG_PERL)
+option(WITH_PERL "Set ON to build perl bindings" OFF)
+if(WITH_PERL)
     set(GDAL_BINDINGS ${GDAL_BINDINGS} perl PARENT_SCOPE)
     set(BINDING perl)
-#    add_subdirectory(perl)
+    add_subdirectory(perl)
 endif()
 
-option(GDAL_SWIG_JAVA "Set ON to build java bindings" OFF)
-if(GDAL_SWIG_JAVA)
+option(WITH_JAVA "Set ON to build java bindings" OFF)
+if(WITH_JAVA)
     set(GDAL_BINDINGS ${GDAL_BINDINGS} java PARENT_SCOPE)
     set(BINDING java)
-#    add_subdirectory(java)
+    add_subdirectory(java)
 endif()
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: EnvisatFile.h 32179 2015-12-14 16:22:34Z goatbar $
  *
  * Project:  APP ENVISAT Support
  * Purpose:  Low Level Envisat file access (read/write) API.

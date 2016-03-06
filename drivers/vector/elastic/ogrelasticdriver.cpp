@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrelasticdriver.cpp 32110 2015-12-10 17:19:40Z goatbar $
  *
  * Project:  ElasticSearch Translator
  * Purpose:
@@ -30,7 +30,7 @@
 #include "ogr_elastic.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrelasticdriver.cpp 32110 2015-12-10 17:19:40Z goatbar $");
 
 /************************************************************************/
 /*                   OGRElasticSearchDriverIdentify()                   */

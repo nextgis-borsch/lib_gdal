@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrxlsxdriver.cpp 32110 2015-12-10 17:19:40Z goatbar $
  *
  * Project:  XLSX Translator
  * Purpose:  Implements OGRXLSXDriver.
@@ -30,7 +30,7 @@
 #include "ogr_xlsx.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrxlsxdriver.cpp 32110 2015-12-10 17:19:40Z goatbar $");
 
 extern "C" void RegisterOGRXLSX();
 

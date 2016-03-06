@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: roipacdataset.cpp 32883 2016-01-09 18:24:40Z rouault $
  *
  * Project:  ROI_PAC Raster Reader
  * Purpose:  Implementation of the ROI_PAC raster reader
@@ -31,7 +31,7 @@
 #include "ogr_spatialref.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: roipacdataset.cpp 32883 2016-01-09 18:24:40Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */

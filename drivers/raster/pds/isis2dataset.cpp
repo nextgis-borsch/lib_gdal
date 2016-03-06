@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: isis2dataset.cpp 32215 2015-12-18 06:30:54Z goatbar $
  *
  * Project:  ISIS Version 2 Driver
  * Purpose:  Implementation of ISIS2Dataset
@@ -47,7 +47,7 @@ static const int RECORD_SIZE = 512;
 #include "ogr_spatialref.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: isis2dataset.cpp 32215 2015-12-18 06:30:54Z goatbar $");
 
 /************************************************************************/
 /* ==================================================================== */

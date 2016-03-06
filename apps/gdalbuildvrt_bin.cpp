@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalbuildvrt_bin.cpp 33615 2016-03-02 20:19:22Z goatbar $
  *
  * Project:  GDAL Utilities
  * Purpose:  Command line application to build VRT datasets from raster products or content of SHP tile index
@@ -32,7 +32,7 @@
 #include "commonutils.h"
 #include "gdal_utils_priv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalbuildvrt_bin.cpp 33615 2016-03-02 20:19:22Z goatbar $");
 
 /************************************************************************/
 /*                               Usage()                                */
@@ -43,7 +43,7 @@ static void Usage(const char* pszErrorMsg = NULL) CPL_NO_RETURN;
 static void Usage(const char* pszErrorMsg)
 
 {
-    fprintf(stdout, "%s", 
+    fprintf(stdout, "%s",
             "Usage: gdalbuildvrt [-tileindex field_name]\n"
             "                    [-resolution {highest|lowest|average|user}]\n"
             "                    [-te xmin ymin xmax ymax] [-tr xres yres] [-tap]\n"
@@ -196,7 +196,12 @@ int main( int argc, char ** argv )
     GDALBuildVRTOptionsFree(psOptions);
     GDALBuildVRTOptionsForBinaryFree(psOptionsForBinary);
 
+    CPLErrorReset();
+    // The flush to disk is only done at that stage, so check if any error has
+    // happened
     GDALClose( hOutDS );
+    if( CPLGetLastErrorType() != CE_None )
+        nRetCode = 1;
 
     GDALDumpOpenDatasets( stderr );
 

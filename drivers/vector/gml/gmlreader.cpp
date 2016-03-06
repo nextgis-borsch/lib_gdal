@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gmlreader.cpp 33095 2016-01-22 17:55:56Z rouault $
  *
  * Project:  GML Reader
  * Purpose:  Implementation of GMLReader class.
