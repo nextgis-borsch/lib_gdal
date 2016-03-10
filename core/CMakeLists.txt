@@ -37,11 +37,6 @@ endif(GDAL_PAM_ENABLED)
 
 add_definitions(-DGDAL_COMPILATION)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/port)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/gcore)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/alg)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/ogr)
-
 add_subdirectory(port)
 add_subdirectory(gcore)
 add_subdirectory(alg)

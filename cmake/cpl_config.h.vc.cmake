@@ -75,6 +75,12 @@
 /* Set the native cpu bit order */
 #cmakedefine HOST_FILLORDER @HOST_FILLORDER@
 
+/* Define as const if the declaration of iconv() needs const. */
+#define ICONV_CONST @ICONV_CONST@
+
+/* For .cpp files, define as const if the declaration of iconv() needs const. */
+#define ICONV_CPP_CONST @ICONV_CPP_CONST@
+
 /* Define as 0 or 1 according to the floating point format suported by the
    machine */
 #cmakedefine HAVE_IEEEFP 1

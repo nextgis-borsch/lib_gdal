@@ -27,9 +27,10 @@
 
 option(WITH_SXF "Build Storage and eXchange Format - SXF" ON)
 if(WITH_SXF)
-    set(TARGET_NAME ogr_sxf)
+    set(TARGET_NAME vec_sxf)
 
     add_definitions(-DSXF_ENABLED)
+	set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DSXF_ENABLED" PARENT_SCOPE)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 

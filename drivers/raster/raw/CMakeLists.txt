@@ -25,7 +25,7 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-set(TARGET_NAME raw)
+set(TARGET_NAME ras_raw)
 
 add_definitions(-DFRMT_raw)
 

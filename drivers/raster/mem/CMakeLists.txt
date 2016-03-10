@@ -25,9 +25,10 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-set(TARGET_NAME mem)
+set(TARGET_NAME ras_mem)
 
 add_definitions(-DFRMT_mem)
+set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DFRMT_mem" PARENT_SCOPE)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 

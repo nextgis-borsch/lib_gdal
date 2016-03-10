@@ -28,9 +28,10 @@
 set(TARGET_NAME apps_lib)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${CMAKE_SOURCE_DIR}/drivers)
 include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/geojson)
-include_directories(${CMAKE_SOURCE_DIR}/core/ogr)
-
+include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/vrt)
+include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/raw)
 
 set(LIB_HHEADERS
 )

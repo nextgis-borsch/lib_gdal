@@ -38,12 +38,12 @@ set(CMAKE_COLOR_MAKEFILE ON)
 # set path to additional CMake modules
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 
-set(INSTALL_BIN_DIR "${CMAKE_INSTALL_PREFIX}/bin" CACHE INTERNAL "Installation directory for executables" FORCE)
-set(INSTALL_LIB_DIR "${CMAKE_INSTALL_PREFIX}/lib" CACHE INTERNAL "Installation directory for libraries" FORCE)
-set(INSTALL_INC_DIR "${CMAKE_INSTALL_PREFIX}/include/${PROJECT_NAME}" CACHE INTERNAL "Installation directory for headers" FORCE)
-set(INSTALL_SHARE_DIR "${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}" CACHE INTERNAL "Installation directory for share data" FORCE)
+set(INSTALL_BIN_DIR "bin" CACHE INTERNAL "Installation directory for executables" FORCE)
+set(INSTALL_LIB_DIR "lib" CACHE INTERNAL "Installation directory for libraries" FORCE)
+set(INSTALL_INC_DIR "include/${PROJECT_NAME}" CACHE INTERNAL "Installation directory for headers" FORCE)
+set(INSTALL_SHARE_DIR "share/${PROJECT_NAME}" CACHE INTERNAL "Installation directory for share data" FORCE)
 set(INSTALL_PKGCONFIG_DIR "${INSTALL_LIB_DIR}/pkgconfig" CACHE INTERNAL "Installation directory for pkgconfig (.pc) files" FORCE)
-set(INSTALL_MAN_DIR "${CMAKE_INSTALL_PREFIX}/share/man" CACHE INTERNAL "Installation directory for manual pages" FORCE)
+set(INSTALL_MAN_DIR "share/man" CACHE INTERNAL "Installation directory for manual pages" FORCE)
 
 # setup package meta-data
 include(util)
@@ -73,7 +73,7 @@ endif()
 find_anyproject(ICONV DEFAULT ON) #default OFF, to set ON add DEFAULT ON
 if(ICONV_FOUND)
     set(HAVE_ICONV TRUE)
-    add_definitions(-DHAVE_ICONV -DLIBICONV_PLUG)
+    add_definitions(-DHAVE_ICONV)
     if(${ICONV_SECOND_ARGUMENT_IS_CONST})
         set(ICONV_CONST "const")
     endif()
@@ -123,6 +123,9 @@ endif()
 find_anyproject(EXPAT DEFAULT ON)
 if(EXPAT_FOUND)
     add_definitions(-DHAVE_EXPAT)
+    if(NOT BUILD_SHARED_LIBS)
+        add_definitions(-DXML_STATIC)
+    endif()
 endif()
 
 
@@ -141,6 +144,11 @@ include(configure)
 # setup paths
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/core/port)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/core/gcore)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/core/ogr)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/core/alg)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/apps)
 
 # main directories
 add_subdirectory(core)

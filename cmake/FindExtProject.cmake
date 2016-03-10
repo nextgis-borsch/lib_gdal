@@ -244,7 +244,7 @@ function(find_extproject name)
     endforeach ()    
     
     install( DIRECTORY ${EP_BASE}/Install/${name}_EP/ 
-             DESTINATION ${CMAKE_INSTALL_PREFIX} 
+             DESTINATION / #${CMAKE_INSTALL_PREFIX} 
              COMPONENT libraries)
         
     set(EXPORTS_PATHS ${EXPORTS_PATHS} PARENT_SCOPE)

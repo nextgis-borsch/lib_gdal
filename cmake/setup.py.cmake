@@ -31,8 +31,8 @@ BUILD_FOR_CHEESESHOP = False
 # ---------------------------------------------------------------------------
 
 include_dirs = [@SWIG_PYTHON_INCLUDE_DIRS@]
-library_dirs = ['../../.libs', '../../']
-libraries = ['gdal']
+library_dirs = [@SWIG_PYTHON_LIBRARY_DIRS@]
+libraries = [@SWIG_PYTHON_LIBRARIES@]
 
 # ---------------------------------------------------------------------------
 # Helper Functions
@@ -183,9 +183,9 @@ class gdal_ext(build_ext):
         if self.library_dirs is None:
             self.library_dirs = library_dirs
         if self.libraries is None:
-            if self.get_compiler() == 'msvc':
-                libraries.remove('gdal')
-                libraries.append('gdal_i')
+#            if self.get_compiler() == 'msvc':
+#                libraries.remove('gdal')
+#                libraries.append('gdal_i')
             self.libraries = libraries
 
         build_ext.finalize_options(self)
