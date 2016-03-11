@@ -208,6 +208,9 @@ function(find_extproject name)
            
         #add to list imported
         include_exports_path(${INCLUDE_EXPORT_PATH})
+    else()
+        message(WARNING "The path ${INCLUDE_EXPORT_PATH} not exist")
+        return()
     endif()
     
     add_dependencies(${IMPORTED_TARGETS} ${name}_EP)  

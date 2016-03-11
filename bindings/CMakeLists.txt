@@ -25,7 +25,7 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-if(BUILD_SHARE_LIBS) # not support for static builds
+if(BUILD_SHARED_LIBS) # not support for static builds
 option(WITH_PYTHON "Set ON to build python bindings" OFF)
 if(WITH_PYTHON)
     set(GDAL_BINDINGS ${GDAL_BINDINGS} python PARENT_SCOPE)
@@ -67,4 +67,4 @@ if(WITH_JAVA)
     set(BINDING java)
     add_subdirectory(java)
 endif()
-endif(BUILD_SHARE_LIBS)
+endif(BUILD_SHARED_LIBS)
