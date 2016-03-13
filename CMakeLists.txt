@@ -29,10 +29,6 @@ cmake_minimum_required (VERSION 2.8.12 FATAL_ERROR)
 
 project(gdal)
 
-set(PACKAGE_NAME GDAL)
-set(PACKAGE_BUGREPORT "gdal-dev@lists.osgeo.org" )
-set(PACKAGE_URL "http://gdal.org/" )
-
 # some init settings
 set(CMAKE_COLOR_MAKEFILE ON)
 # set path to additional CMake modules
@@ -180,7 +176,7 @@ if(UNIX)
     set_target_properties(${LIB_NAME} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
 # TODO: Add Apple staff
 #    if(NOT APPLE AND BUILD_SHARED_LIBS)
-#        set_target_properties(${LIB_NAME} PROPERTIES LINK_FLAGS "-Wl,--version-script,\"${CMAKE_CURRENT_SOURCE_DIR}/zlib.map\"")
+#        set_target_properties(${LIB_NAME} PROPERTIES LINK_FLAGS "-Wl,--version-script,\"${CMAKE_CURRENT_SOURCE_DIR}/gdal.map\"")
 #    endif()
 elseif(BUILD_SHARED_LIBS AND WIN32)
     set_target_properties(${LIB_NAME} PROPERTIES SUFFIX "${GDAL_MAJOR_VERSION}${GDAL_MINOR_VERSION}.dll")

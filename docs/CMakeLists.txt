@@ -152,7 +152,8 @@ if(DOXYGEN_FOUND)
     )
     
     if(NOT SKIP_INSTALL_FILES AND NOT SKIP_INSTALL_ALL )
-        install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/man/man1 
+        install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/man/man1
+                FILES_MATCHING PATTERN "_*_apps_.1" EXCLUDE
                 DESTINATION ${INSTALL_MAN_DIR}
                 COMPONENT documents
                 OPTIONAL)
