@@ -25,24 +25,12 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-set(TARGET_NAME registar)
-
-include_directories(${CMAKE_SOURCE_DIR}/core/port)
-include_directories(${CMAKE_SOURCE_DIR}/core/gcore)
+set(FORMAT_DEFINITIONS)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-
-set(LIB_HHEADERS_PRIV
-    gnm_frmts.h
-)
-
-set(LIB_CSOURCES
-    gdalallregister.cpp
-    gnmregisterall.cpp
-)
-
-add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
-
-set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}>)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/vector)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/vector/mem)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/vector/vrt)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/vector/mitab)
 
 add_subdirectory(raster)
 add_subdirectory(vector)
@@ -50,7 +38,59 @@ if(GDAL_ENABLE_GNM)
     add_subdirectory(network)
 endif()
 
+add_definitions(${FORMAT_DEFINITIONS})
+
+set(TARGET_NAME drivers_registar)
+
+set(LIB_HHEADERS
+    ogrsf_frmts.h
+)
+
+set(LIB_HHEADERS_PRIV
+    gnm_frmts.h
+    ogr_attrind.h
+    ogrwarpedlayer.h
+    ogrlayerdecorator.h
+    ogremulatedtransaction.h
+    ogrmutexeddatasource.h
+    ogreditablelayer.h
+    ogr_gensql.h
+    ogrlayerpool.h
+    ogrmutexedlayer.h
+    ogrunionlayer.h
+)
+
+set(LIB_CSOURCES
+    gdalallregister.cpp
+    gnmregisterall.cpp
+    ogremulatedtransaction.cpp  
+    ogrlayerdecorator.cpp  
+    ogrmutexeddatasource.cpp  
+    ogrsfdriver.cpp    
+    ogr_attrind.cpp               
+    ogrsfdriverregistrar.cpp
+    ogrdatasource.cpp     
+    ogr_gensql.cpp              
+    ogrlayerpool.cpp       
+    ogrmutexedlayer.cpp       
+    ogrunionlayer.cpp 
+    ogreditablelayer.cpp                                    
+    ogrlayer.cpp                
+    ogr_miattrind.cpp      
+    ogrregisterall.cpp        
+    ogrwarpedlayer.cpp
+)
+
+add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
+
+set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}>)
+
 # send variables upper
 set(TARGET_OBJECTS ${TARGET_OBJECTS} PARENT_SCOPE)
 set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
 set(DEPENDENCY_LIB ${DEPENDENCY_LIB} PARENT_SCOPE)
+
+# install headers
+if(NOT SKIP_INSTALL_HEADERS AND NOT SKIP_INSTALL_ALL )
+    install(FILES ${LIB_HHEADERS} DESTINATION ${INSTALL_INC_DIR} COMPONENT headers)
+endif() 

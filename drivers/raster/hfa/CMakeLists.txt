@@ -25,9 +25,11 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-set(TARGET_NAME hfa)
+set(TARGET_NAME ras_hfa)
 
 add_definitions(-DFRMT_hfa)
+set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DFRMT_hfa" PARENT_SCOPE)
+
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 

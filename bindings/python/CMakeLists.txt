@@ -113,7 +113,15 @@ add_custom_target(build ALL
 # todo: add custom target to generate swig
 # todo: add install target $(PYTHON) setup.py install --prefix=$(DESTDIR)$(prefix)
 # '../../port', '../../gcore', '../../alg', '../../ogr/', '../../ogr/ogrsf_frmts', '../../gnm'
-set(SWIG_PYTHON_INCLUDE_DIRS "'${CMAKE_SOURCE_DIR}/core/alg', '${CMAKE_SOURCE_DIR}/core/port', '${CMAKE_SOURCE_DIR}/core/gcore', '${CMAKE_SOURCE_DIR}/core/gnm', '${CMAKE_SOURCE_DIR}/core/ogr', '${CMAKE_SOURCE_DIR}/core/ogr/ogrsf_frmts'")
+if(MSVC)
+    set(SWIG_PYTHON_LIBRARIES "'${LIB_NAME}_i'")
+else()
+    set(SWIG_PYTHON_LIBRARIES "'${LIB_NAME}'")
+endif()
+    
+set(SWIG_PYTHON_LIBRARY_DIRS "'../../Release', '../../Debug', '../../MinSizeRel', '../../RelWithDebInfo', '../../.libs', '../../'")
+
+set(SWIG_PYTHON_INCLUDE_DIRS "'${CMAKE_SOURCE_DIR}/core/alg', '${CMAKE_SOURCE_DIR}/core/port', '${CMAKE_SOURCE_DIR}/core/gcore', '${CMAKE_SOURCE_DIR}/core/gnm', '${CMAKE_SOURCE_DIR}/core/ogr', '${CMAKE_SOURCE_DIR}/core/ogr/ogrsf_frmts', '${CMAKE_SOURCE_DIR}/apps', '${CMAKE_BINARY_DIR}'")
 if(GDAL_ENABLE_GNM)
     set(GDAL_HAVE_GNM "True")
 else()

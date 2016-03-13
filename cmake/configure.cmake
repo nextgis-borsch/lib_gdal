@@ -141,7 +141,7 @@ if(WIN32)
     check_include_file("search.h" HAVE_SEARCH_H)
     check_function_exists(localtime_r HAVE_LOCALTIME_R)
     check_include_file("dbmalloc.h" HAVE_LIBDBMALLOC)
-    configure_file(${CMAKE_MODULE_PATH}/cpl_config.h.vc.cmake ${GDAL_ROOT_BINARY_DIR}/port/cpl_config.h @ONLY)
+    configure_file(${CMAKE_MODULE_PATH}/cpl_config.h.vc.cmake ${CMAKE_BINARY_DIR}/cpl_config.h @ONLY)
 else()
 # linux
     option(GDAL_USE_CPL_MULTIPROC_PTHREAD "Set to ON if you want to use pthreads based multiprocessing support." ON)

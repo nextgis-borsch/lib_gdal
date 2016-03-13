@@ -25,12 +25,13 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-set(TARGET_NAME vrt)
+set(TARGET_NAME ras_vrt)
 
 add_definitions(-DFRMT_vrt)
+set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DFRMT_vrt" PARENT_SCOPE)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-
+include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/raw)
 
 set(LIB_HHEADERS
     vrtdataset.h

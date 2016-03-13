@@ -25,8 +25,6 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-
 file(GLOB FORMATS ${CMAKE_CURRENT_SOURCE_DIR}/*)
 foreach(FORMAT ${FORMATS})
     if(EXISTS ${FORMAT}/CMakeLists.txt)
@@ -45,3 +43,4 @@ endforeach()
 set(TARGET_OBJECTS ${TARGET_OBJECTS} PARENT_SCOPE)
 set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
 set(DEPENDENCY_LIB ${DEPENDENCY_LIB} PARENT_SCOPE)
+set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} PARENT_SCOPE)

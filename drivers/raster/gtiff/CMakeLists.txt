@@ -25,9 +25,10 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-set(TARGET_NAME gtiff)
+set(TARGET_NAME ras_geotiff)
 
 add_definitions(-DFRMT_gtiff)
+set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DFRMT_gtiff" PARENT_SCOPE)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 

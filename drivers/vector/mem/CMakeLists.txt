@@ -25,9 +25,10 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-set(TARGET_NAME ogr_mem)
+set(TARGET_NAME vec_mem)
 
 add_definitions(-DMEM_ENABLED)
+set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DMEM_ENABLED" PARENT_SCOPE)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 

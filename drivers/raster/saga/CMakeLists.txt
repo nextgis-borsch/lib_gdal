@@ -28,9 +28,10 @@
 option(WITH_SAGA "Build SDAT -- SAGA GIS Binary Grid File Format" ON)
 
 if(WITH_SAGA)
-    set(TARGET_NAME saga)
+    set(TARGET_NAME ras_saga)
 
     add_definitions(-DFRMT_saga)
+	set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DFRMT_saga" PARENT_SCOPE)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 

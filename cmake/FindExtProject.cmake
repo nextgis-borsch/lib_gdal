@@ -208,6 +208,9 @@ function(find_extproject name)
            
         #add to list imported
         include_exports_path(${INCLUDE_EXPORT_PATH})
+    else()
+        message(WARNING "The path ${INCLUDE_EXPORT_PATH} not exist")
+        return()
     endif()
     
     add_dependencies(${IMPORTED_TARGETS} ${name}_EP)  
@@ -244,7 +247,7 @@ function(find_extproject name)
     endforeach ()    
     
     install( DIRECTORY ${EP_BASE}/Install/${name}_EP/ 
-             DESTINATION ${CMAKE_INSTALL_PREFIX} 
+             DESTINATION / #${CMAKE_INSTALL_PREFIX} 
              COMPONENT libraries)
         
     set(EXPORTS_PATHS ${EXPORTS_PATHS} PARENT_SCOPE)

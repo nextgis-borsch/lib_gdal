@@ -25,9 +25,10 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-set(TARGET_NAME ogr_geojson)
+set(TARGET_NAME vec_geojson)
 
 add_definitions(-DGEOJSON_ENABLED)
+set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DGEOJSON_ENABLED" PARENT_SCOPE)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 

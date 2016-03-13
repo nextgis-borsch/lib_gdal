@@ -25,9 +25,10 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-set(TARGET_NAME ogr_vrt)
+set(TARGET_NAME vec_vrt)
 
 add_definitions(-DVRT_ENABLED)
+set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DVRT_ENABLED" PARENT_SCOPE)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 

@@ -153,7 +153,7 @@ gdal/html,,skip,
 gdal/m4,,skip,
 gdal/ogr,core/ogr,,"cpp,h,c,hpp"
 gdal/ogr,docs/ogr,,dox
-gdal/ogr/ogrsf_frmts,drivers/vector,,"cpp,h,c,hpp"
+gdal/ogr/ogrsf_frmts,drivers,,"cpp,h,c,hpp"
 gdal/ogr/ogrsf_frmts/geomedia,drivers/vector/geomedia,,"cpp,h,c,hpp"
 gdal/ogr/ogrsf_frmts/mem,drivers/vector/mem,,"cpp,h,c,hpp"
 gdal/ogr/ogrsf_frmts/pgdump,drivers/vector/pgdump,,"cpp,h,c,hpp"
@@ -177,7 +177,7 @@ gdal/ogr/ogrsf_frmts/edigeo,drivers/vector/edigeo,,"cpp,h,c,hpp"
 gdal/ogr/ogrsf_frmts/elastic,drivers/vector/elastic,,"cpp,h,c,hpp"
 gdal/ogr/ogrsf_frmts/filegdb,drivers/vector/filegdb,,"cpp,h,c,hpp"
 gdal/ogr/ogrsf_frmts/fme,drivers/vector/fme,,"cpp,h,c,hpp"
-gdal/ogr/ogrsf_frmts/generic,drivers/vector/generic,,"cpp,h,c,hpp"
+gdal/ogr/ogrsf_frmts/generic,drivers,,"cpp,h,c,hpp"
 gdal/ogr/ogrsf_frmts/geoconcept,drivers/vector/geoconcept,,"cpp,h,c,hpp"
 gdal/ogr/ogrsf_frmts/geojson,drivers/vector/geojson,,"cpp,h,c,hpp"
 gdal/ogr/ogrsf_frmts/geojson/libjson,,skip,

@@ -105,7 +105,6 @@ set(LIB_CSOURCES
     cpl_vsisimple.cpp
     cpl_worker_thread_pool.cpp
     cpl_xml_validate.cpp
-    vsipreload.cpp
     cpl_aws.cpp
     cpl_sha256.cpp
     cpl_vsil_crypt.cpp
@@ -114,7 +113,7 @@ set(LIB_CSOURCES
 if(WIN32)
     list(APPEND LIB_CSOURCES cpl_vsil_win32.cpp)
 else()
-    list(APPEND LIB_CSOURCES cpl_vsil_unix_stdio_64.cpp)
+    list(APPEND LIB_CSOURCES cpl_vsil_unix_stdio_64.cpp vsipreload.cpp)
 endif()
 
 #check odbc

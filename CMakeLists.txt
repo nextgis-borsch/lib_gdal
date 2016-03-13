@@ -34,12 +34,14 @@ set(CMAKE_COLOR_MAKEFILE ON)
 # set path to additional CMake modules
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 
-set(INSTALL_BIN_DIR "${CMAKE_INSTALL_PREFIX}/bin" CACHE INTERNAL "Installation directory for executables" FORCE)
-set(INSTALL_LIB_DIR "${CMAKE_INSTALL_PREFIX}/lib" CACHE INTERNAL "Installation directory for libraries" FORCE)
-set(INSTALL_INC_DIR "${CMAKE_INSTALL_PREFIX}/include/${PROJECT_NAME}" CACHE INTERNAL "Installation directory for headers" FORCE)
-set(INSTALL_SHARE_DIR "${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}" CACHE INTERNAL "Installation directory for share data" FORCE)
+include(GNUInstallDirs)
+
+set(INSTALL_BIN_DIR ${CMAKE_INSTALL_BINDIR} CACHE INTERNAL "Installation directory for executables" FORCE)
+set(INSTALL_LIB_DIR ${CMAKE_INSTALL_LIBDIR} CACHE INTERNAL "Installation directory for libraries" FORCE)
+set(INSTALL_INC_DIR "${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}" CACHE INTERNAL "Installation directory for headers" FORCE)
+set(INSTALL_SHARE_DIR "${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}" CACHE INTERNAL "Installation directory for share data" FORCE)
 set(INSTALL_PKGCONFIG_DIR "${INSTALL_LIB_DIR}/pkgconfig" CACHE INTERNAL "Installation directory for pkgconfig (.pc) files" FORCE)
-set(INSTALL_MAN_DIR "${CMAKE_INSTALL_PREFIX}/share/man" CACHE INTERNAL "Installation directory for manual pages" FORCE)
+set(INSTALL_MAN_DIR ${CMAKE_INSTALL_MANDIR} CACHE INTERNAL "Installation directory for manual pages" FORCE)
 
 # setup package meta-data
 include(util)
@@ -52,7 +54,7 @@ report_version(${PROJECT_NAME} ${VERSION})
 if(UNIX)
     option(GDAL_INSTALL_DATA_IN_VERSION_DIR "Set ON to install GDAL in path with version (i.e. usr/local/share/gdal/1.11" OFF)
     if(GDAL_INSTALL_DATA_IN_VERSION_DIR)
-        set(INSTALL_SHARE_DIR "${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}/${GDAL_VERSION}" CACHE INTERNAL "Installation directory for share data" FORCE)
+        set(INSTALL_SHARE_DIR "${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}/${GDAL_VERSION}" CACHE INTERNAL "Installation directory for share data" FORCE)
     endif()
 endif()
 
@@ -69,7 +71,7 @@ endif()
 find_anyproject(ICONV DEFAULT ON) #default OFF, to set ON add DEFAULT ON
 if(ICONV_FOUND)
     set(HAVE_ICONV TRUE)
-    add_definitions(-DHAVE_ICONV -DLIBICONV_PLUG)
+    add_definitions(-DHAVE_ICONV)
     if(${ICONV_SECOND_ARGUMENT_IS_CONST})
         set(ICONV_CONST "const")
     endif()
@@ -119,6 +121,9 @@ endif()
 find_anyproject(EXPAT DEFAULT ON)
 if(EXPAT_FOUND)
     add_definitions(-DHAVE_EXPAT)
+    if(NOT BUILD_SHARED_LIBS)
+        add_definitions(-DXML_STATIC)
+    endif()
 endif()
 
 
@@ -137,6 +142,11 @@ include(configure)
 # setup paths
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/core/port)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/core/gcore)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/core/ogr)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/core/alg)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/apps)
 
 # main directories
 add_subdirectory(core)

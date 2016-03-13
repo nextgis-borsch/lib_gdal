@@ -25,9 +25,10 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-set(TARGET_NAME ogr_xplane)
+set(TARGET_NAME vec_xplane)
 
 add_definitions(-DXPLANE_ENABLED)
+set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DXPLANE_ENABLED" PARENT_SCOPE)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
