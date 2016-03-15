@@ -26,9 +26,10 @@ Go to script folder of this repo /etc/cmake-build-helpers and execute
  
 # Build status
 
-Windows: ![build status](http://176.9.38.120/buildbot/png?builder=makegdal_win) 
-
-Ubuntu:  ![build status](http://176.9.38.120/buildbot/png?builder=makegdal_deb) 
+| OS | Status  |
+|---|:-:|
+| Windows | ![build status](http://176.9.38.120/buildbot/png?builder=makegdal_win) |
+| Ubuntu | ![build status](http://176.9.38.120/buildbot/png?builder=makegdal_deb) | 
 
 # Vector drivers 
 
