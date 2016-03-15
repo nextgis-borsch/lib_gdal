@@ -24,6 +24,11 @@ Go to script folder of this repo /etc/cmake-build-helpers and execute
 
  $ python ./etc/cmake-build-helpers/gdal_restructure.py /path_to_gdal/gdal-git/ ./ ./etc/cmake-build-helpers/gdal_folders.csv
  
+# Build status
+
+Windows: ![build status](http://176.9.38.120/buildbot/png?builder=makegdal_win) 
+Ubuntu: ![build status](http://176.9.38.120/buildbot/png?builder=makegdal_deb) 
+
 # Vector drivers 
 
 Available vector drivers for now (by all driver dirs in sources):
