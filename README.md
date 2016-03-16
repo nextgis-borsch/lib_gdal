@@ -165,7 +165,7 @@ Available vector drivers for now (by all driver dirs in sources):
 | filegdb | no |  |  |
 | fme | no |  |  |
 | geoconcept | no |  |  |
-| geojson | no |  |  |
+| geojson | yes |  | no |
 | geomedia | no |  |  |
 | georss | no |  |  |
 | gft | no |  |  |
@@ -183,11 +183,11 @@ Available vector drivers for now (by all driver dirs in sources):
 | ili | no |  |  |
 | ingres | no |  |  |
 | jml | no |  |  |
-| kml | no |  |  |
+| kml | yes |  |  |
 | libkml | no |  |  |
 | mdb | no |  |  |
-| mem | no |  | no |
-| mitab | no |  |  |
+| mem | yes |  | no |
+| mitab | yes |  |  |
 | mongodb | no |  |  |
 | mssqlspatial | no |  |  |
 | mysql | no |  |  |
@@ -213,18 +213,18 @@ Available vector drivers for now (by all driver dirs in sources):
 | segukooa | no |  |  |
 | segy | no |  |  |
 | selafin | no |  |  |
-| shape | no |  | no |
+| shape | yes | Win 7 | no |
 | sosi | no |  |  |
 | sqlite | no |  |  |
 | sua | no |  |  |
 | svg | no |  |  |
-| sxf | no |  |  |
+| sxf | yes | | |
 | tiger | no |  |  |
 | vfk | no |  |  |
-| vrt | no |  |  |
+| vrt | yes |  |  |
 | walk | no |  |  |
 | wasp | no |  |  |
 | wfs | no |  |  |
 | xls | no |  |  |
 | xlsx | no |  |  |
-| xplane | no |  |  |
+| xplane | yes |  |  |
