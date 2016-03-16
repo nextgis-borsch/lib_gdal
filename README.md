@@ -35,7 +35,7 @@ Go to script folder of this repo /etc/cmake-build-helpers and execute
 
 Available raster drivers for now (by all driver dirs in sources):
 
-| Driver | Cmaked  | OS tested | Dependences | Notes |
+| Driver | Cmaked  | OS tested | Dependencies | Notes |
 |---|:-:|---|---|---|
 | aaigrid | no |  |  |  |
 | adrg | no |  |  |  |
@@ -144,10 +144,10 @@ Available raster drivers for now (by all driver dirs in sources):
 
 Available vector drivers for now (by all driver dirs in sources):
 
-| Driver | Cmaked  | OS tested | Dependences | Notes |
+| Driver | Cmaked  | OS tested | Dependencies | Notes |
 |---|:-:|---|---|---|
-| aeronavfaa | no |  |  |  |
-| arcgen | no |  |  |  |
+| **aeronavfaa** | yes |  | no | Requires *xplane* headers |
+| **arcgen** | yes |  | no | - |
 | arcobjects | no |  |  |  |
 | avc | no |  |  |  |
 | bna | no |  |  |  |
@@ -165,7 +165,7 @@ Available vector drivers for now (by all driver dirs in sources):
 | filegdb | no |  |  |  |
 | fme | no |  |  |  |
 | geoconcept | no |  |  |  |
-| **geojson** | yes |  | no | Obligatory |
+| **geojson** | yes |  | no | Obligatory for GDAL |
 | geomedia | no |  |  |  |
 | georss | no |  |  |  |
 | gft | no |  |  |  |
@@ -183,11 +183,11 @@ Available vector drivers for now (by all driver dirs in sources):
 | ili | no |  |  |  |
 | ingres | no |  |  |  |
 | jml | no |  |  |  |
-| **kml** | yes |  | Expat |  |
+| **kml** | yes |  | Expat library |  |
 | libkml | no |  |  |  |
 | mdb | no |  |  |  |
-| **mem** | yes |  | no | Obligatory |
-| **mitab** | yes |  | no | Obligatory |
+| **mem** | yes |  | no | Obligatory for GDAL |
+| **mitab** | yes |  | no | Obligatory for GDAL |
 | mongodb | no |  |  |  |
 | mssqlspatial | no |  |  |  |
 | mysql | no |  |  |  |
@@ -221,10 +221,10 @@ Available vector drivers for now (by all driver dirs in sources):
 | **sxf** | yes |  | no | - |
 | tiger | no |  |  |  |
 | vfk | no |  |  |  |
-| **vrt** | yes |  | no | Obligatory |
+| **vrt** | yes |  | no | Obligatory for GDAL |
 | walk | no |  |  |  |
 | wasp | no |  |  |  |
 | wfs | no |  |  |  |
 | xls | no |  |  |  |
 | xlsx | no |  |  |  |
-| **xplane** | yes |  | no | Obligatory |
+| **xplane** | yes |  | no | Obligatory for GDAL |
