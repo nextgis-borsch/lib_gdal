@@ -1,10 +1,10 @@
 ################################################################################
 # Project:  CMake4GDAL
 # Purpose:  CMake build scripts
-# Author:   Dmitry Baryshnikov, polimax@mail.ru
+# Author:   Mikhail Gusev, gusevmihs@gmail.com
 ################################################################################
-# Copyright (C) 2015, NextGIS <info@nextgis.com>
-# Copyright (C) 2012,2013,2014 Dmitry Baryshnikov
+# Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
+# Copyright (C) 2016 Mikhail Gusev
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -25,20 +25,38 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-option(GDAL_PAM_ENABLED "Set ON to enable pam" ON)
-if(GDAL_PAM_ENABLED)
-    add_definitions(-DPAM_ENABLED)
-endif(GDAL_PAM_ENABLED)
+option(WITH_SHAPE "Build ESRI Shapefile Format" ON)
+if(WITH_SHAPE)
+    set(TARGET_NAME vec_shape)
 
-add_definitions(-DGDAL_COMPILATION)
+    add_definitions(-DSHAPE_ENABLED)
+	set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DSHAPE_ENABLED" PARENT_SCOPE)
 
-add_subdirectory(port)
-add_subdirectory(gcore)
-add_subdirectory(alg)
-add_subdirectory(ogr)
-add_subdirectory(gnm)
+    include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-# send variables upper
-set(TARGET_OBJECTS ${TARGET_OBJECTS} PARENT_SCOPE)
-set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
-set(DEPENDENCY_LIB ${DEPENDENCY_LIB} PARENT_SCOPE)
+    set(LIB_HHEADERS
+    )
+
+    set(LIB_HHEADERS_PRIV
+        ogrshape.h
+        shapefil.h
+        shp_vsi.h
+    )
+
+    set(LIB_CSOURCES
+        dbfopen.c	
+        shpopen.c	
+        shptree.c	
+        shp_vsi.c	
+        ogrshapedatasource.cpp	
+        ogrshapedriver.cpp	
+        ogrshapelayer.cpp	
+        shape2ogr.cpp		
+        sbnsearch.c
+    )
+
+    add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
+
+    # build target
+    set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
+endif()

@@ -137,6 +137,11 @@ find_anyproject(GeoTIFF REQUIRED)
 #CXXFLAGS :=	$(CXXFLAGS) -DSQLITE_ENABLED
 #endif
 
+option(GDAL_USE_CPL "Set ON to use cpl" ON)
+if(GDAL_USE_CPL)
+    add_definitions(-DUSE_CPL)
+endif(GDAL_USE_CPL)
+
 include(configure)
 
 # setup paths
