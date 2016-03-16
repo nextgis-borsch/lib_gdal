@@ -25,7 +25,7 @@ IF(WIN32)
     IF(MINGW)
         FIND_PATH(GEOTIFF_INCLUDE_DIR
             geotiff.h
-            PATH_PREFIXES geotiff
+            PATH_SUFFIXES geotiff
             PATHS
             /usr/local/include
             /usr/include
@@ -53,7 +53,9 @@ IF(WIN32)
   
 ELSEIF(UNIX)
 
-    FIND_PATH(GEOTIFF_INCLUDE_DIR geotiff.h PATH_PREFIXES geotiff)
+    FIND_PATH(GEOTIFF_INCLUDE_DIR geotiff.h PATH_SUFFIXES geotiff PATHS
+            /usr/local/include
+            /usr/include)
 
     FIND_LIBRARY(GEOTIFF_LIBRARY NAMES ${GEOTIFF_NAMES})
 
