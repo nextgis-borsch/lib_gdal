@@ -37,6 +37,10 @@ include (CheckCSourceCompiles)
 include (CheckCXXSourceCompiles)
 # include (CompilerFlags)
 
+if(CMAKE_GENERATOR_TOOLSET MATCHES "*xp")
+    add_definitions(-D_WIN32_WINNT=0x0501)
+endif()
+
 check_function_exists(vsnprintf HAVE_VSNPRINTF)
 check_function_exists(snprintf HAVE_SNPRINTF)
 check_function_exists(getcwd HAVE_GETCWD)
