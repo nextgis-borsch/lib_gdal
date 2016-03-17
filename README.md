@@ -146,11 +146,11 @@ Available vector drivers for now (by all driver dirs in sources):
 
 | Driver | Cmaked  | OS tested | Dependencies | Notes |
 |---|:-:|---|---|---|
-| **aeronavfaa** | yes |  | no | Requires *xplane* headers |
-| **arcgen** | yes |  | no | - |
+| **aeronavfaa** | **yes** |  | **no** | **Requires *xplane* headers** |
+| **arcgen** | **yes** |  | **no** | - |
 | arcobjects | no |  |  |  |
-| avc | no |  |  |  |
-| bna | no |  |  |  |
+| **avc** | **yes** |  |  | - |
+| **bna** | **yes** |  |  | - |
 | cartodb | no |  |  |  |
 | cloudant | no |  |  |  |
 | couchdb | no |  |  |  |
@@ -159,13 +159,13 @@ Available vector drivers for now (by all driver dirs in sources):
 | dgn | no |  |  |  |
 | dods | no |  |  |  |
 | dwg | no |  |  |  |
-| dxf | no |  |  |  |
+| **dxf** | **yes** |  |  | - |
 | edigeo | no |  |  |  |
 | elastic | no |  |  |  |
 | filegdb | no |  |  |  |
 | fme | no |  |  |  |
 | geoconcept | no |  |  |  |
-| **geojson** | yes |  | no | Obligatory for GDAL |
+| **geojson** | **yes** |  | **no** | **Obligatory for GDAL** |
 | geomedia | no |  |  |  |
 | georss | no |  |  |  |
 | gft | no |  |  |  |
@@ -183,11 +183,11 @@ Available vector drivers for now (by all driver dirs in sources):
 | ili | no |  |  |  |
 | ingres | no |  |  |  |
 | jml | no |  |  |  |
-| **kml** | yes |  | Expat library |  |
+| **kml** | **yes** |  | **Expat library** |  |
 | libkml | no |  |  |  |
 | mdb | no |  |  |  |
-| **mem** | yes |  | no | Obligatory for GDAL |
-| **mitab** | yes |  | no | Obligatory for GDAL |
+| **mem** | **yes** |  | **no** | **Obligatory for GDAL** |
+| **mitab** | **yes** |  | **no** | **Obligatory for GDAL** |
 | mongodb | no |  |  |  |
 | mssqlspatial | no |  |  |  |
 | mysql | no |  |  |  |
@@ -213,18 +213,18 @@ Available vector drivers for now (by all driver dirs in sources):
 | segukooa | no |  |  |  |
 | segy | no |  |  |  |
 | selafin | no |  |  |  |
-| **shape** | yes | Win 7 | no | - |
+| **shape** | **yes** | **Win 7** | **no** | - |
 | sosi | no |  |  |  |
 | sqlite | no |  |  |  |
 | sua | no |  |  |  |
 | svg | no |  |  |  |
-| **sxf** | yes |  | no | - |
+| **sxf** | **yes** |  | **no** | - |
 | tiger | no |  |  |  |
 | vfk | no |  |  |  |
-| **vrt** | yes |  | no | Obligatory for GDAL |
+| **vrt** | **yes** |  | **no** | **Obligatory for GDAL** |
 | walk | no |  |  |  |
 | wasp | no |  |  |  |
 | wfs | no |  |  |  |
 | xls | no |  |  |  |
 | xlsx | no |  |  |  |
-| **xplane** | yes |  | no | Obligatory for GDAL |
+| **xplane** | **yes** |  | **no** | **Obligatory for GDAL** |
