@@ -77,7 +77,7 @@ Available raster drivers for now (by all driver dirs in sources):
 | hdf5 | no |  |  |  |
 | hf2 | no |  |  |  |
 | hfa | no |  |  |  |
-| idrisi | no |  |  |  |
+| **idrisi** | **yes** |  | no | - |
 | ilwis | no |  |  |  |
 | ingr | no |  |  |  |
 | iris | no |  |  |  |
@@ -156,7 +156,7 @@ Available vector drivers for now (by all driver dirs in sources):
 | couchdb | no |  |  |  |
 | **csv** | **yes** |  | no | - |
 | csw | no |  |  |  |
-| dgn | no |  |  |  |
+| **dgn** | **yes** |  | no | Added without "zip" target |
 | dods | no |  |  |  |
 | dwg | no |  |  |  |
 | **dxf** | **yes** |  | no | - |
@@ -179,7 +179,7 @@ Available vector drivers for now (by all driver dirs in sources):
 | **gtm** | **yes** |  | no | - |
 | **htf** | **yes** |  | no | - |
 | idb | no |  |  |  |
-| idrisi | no |  |  |  |
+| **idrisi** | **yes** |  | no | Required Idrisi raster driver |
 | ili | no |  |  |  |
 | ingres | no |  |  |  |
 | jml | no |  |  |  |
@@ -198,7 +198,7 @@ Available vector drivers for now (by all driver dirs in sources):
 | odbc | no |  |  |  |
 | ods | no |  |  |  |
 | ogdi | no |  |  |  |
-| openair | no |  |  |  |
+| **openair** | **yes** |  | no | - |
 | openfilegdb | no |  |  |  |
 | osm | no |  |  |  |
 | pds | no |  |  |  |

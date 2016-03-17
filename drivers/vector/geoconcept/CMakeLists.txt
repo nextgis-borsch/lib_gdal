@@ -25,8 +25,8 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-option(WITH_GEOCONCEPT "Build Géoconcept Export format" ON)
-if(WITH_GEOCONCEPT)
+option(ENABLE_GEOCONCEPT "Build Géoconcept Export format" ON)
+if(ENABLE_GEOCONCEPT)
     set(TARGET_NAME vec_geoconcept)
 
     add_definitions(-DGEOCONCEPT_ENABLED)

@@ -25,12 +25,12 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-option(ENABLE_HTF "Build Hydrographic Transfer Format" ON)
-if(ENABLE_HTF)
-    set(TARGET_NAME vec_htf)
+option(ENABLE_OPENAIR "Build OpenAir format" ON)
+if(ENABLE_OPENAIR)
+    set(TARGET_NAME vec_openair)
 
-    add_definitions(-DHTF_ENABLED)
-	set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DHTF_ENABLED" PARENT_SCOPE)
+    add_definitions(-DOPENAIR_ENABLED)
+	set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DOPENAIR_ENABLED" PARENT_SCOPE)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -38,13 +38,14 @@ if(ENABLE_HTF)
     )
 
     set(LIB_HHEADERS_PRIV
-        ogr_htf.h
+        ogr_openair.h
     )
 
     set(LIB_CSOURCES
-        ogrhtfdriver.cpp 
-        ogrhtfdatasource.cpp 
-        ogrhtflayer.cpp
+        ogropenairdriver.cpp 
+        ogropenairdatasource.cpp 
+        ogropenairlayer.cpp
+        ogropenairlabellayer.cpp
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})

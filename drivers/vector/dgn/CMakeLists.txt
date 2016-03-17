@@ -25,12 +25,12 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-option(ENABLE_HTF "Build Hydrographic Transfer Format" ON)
-if(ENABLE_HTF)
-    set(TARGET_NAME vec_htf)
+option(ENABLE_DGN "Build Microstation DGN format" ON)
+if(ENABLE_DGN)
+    set(TARGET_NAME vec_dgn)
 
-    add_definitions(-DHTF_ENABLED)
-	set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DHTF_ENABLED" PARENT_SCOPE)
+    add_definitions(-DDGN_ENABLED)
+	set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DDGN_ENABLED" PARENT_SCOPE)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -38,13 +38,22 @@ if(ENABLE_HTF)
     )
 
     set(LIB_HHEADERS_PRIV
-        ogr_htf.h
+    )
+    
+    set(LIB_MINSOURCES
+        dgnopen.cpp 
+        dgnread.cpp
+        dgnfloat.cpp 
+        dgnhelp.cpp 
+        dgnwrite.cpp 
+        dgnstroke.cpp
     )
 
     set(LIB_CSOURCES
-        ogrhtfdriver.cpp 
-        ogrhtfdatasource.cpp 
-        ogrhtflayer.cpp
+        ogrdgndriver.cpp 
+        ogrdgndatasource.cpp 
+        ogrdgnlayer.cpp
+        ${LIB_MINSOURCES}
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})

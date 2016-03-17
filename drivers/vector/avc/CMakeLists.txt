@@ -25,8 +25,8 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-option(WITH_AVC "Build Arc/Info Binary Coverage & Arc/Info .E00 (ASCII) Coverage formats" ON)
-if(WITH_AVC)
+option(ENABLE_AVC "Build Arc/Info Binary Coverage & Arc/Info .E00 (ASCII) Coverage formats" ON)
+if(ENABLE_AVC)
     set(TARGET_NAME vec_avc)
 
     add_definitions(-DAVCBIN_ENABLED)

@@ -25,8 +25,8 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-option(WITH_SXF "Build Storage and eXchange Format - SXF" ON)
-if(WITH_SXF)
+option(ENABLE_SXF "Build Storage and eXchange Format - SXF" ON)
+if(ENABLE_SXF)
     set(TARGET_NAME vec_sxf)
 
     add_definitions(-DSXF_ENABLED)

@@ -25,8 +25,8 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-option(WITH_GTM "Build GPSTrackMaker (.gtm, .gtz) format" ON)
-if(WITH_GTM)
+option(ENABLE_GTM "Build GPSTrackMaker (.gtm, .gtz) format" ON)
+if(ENABLE_GTM)
     set(TARGET_NAME vec_gtm)
 
     add_definitions(-DGTM_ENABLED)

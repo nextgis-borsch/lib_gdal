@@ -25,8 +25,8 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-option(WITH_BNA "Build Atlas BNA format" ON)
-if(WITH_BNA)
+option(ENABLE_BNA "Build Atlas BNA format" ON)
+if(ENABLE_BNA)
     set(TARGET_NAME vec_bna)
 
     add_definitions(-DBNA_ENABLED)

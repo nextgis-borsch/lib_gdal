@@ -25,8 +25,8 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-option(WITH_DXF "Build AutoCAD DXF format" ON)
-if(WITH_DXF)
+option(ENABLE_DXF "Build AutoCAD DXF format" ON)
+if(ENABLE_DXF)
     set(TARGET_NAME vec_dxf)
 
     add_definitions(-DDXF_ENABLED)

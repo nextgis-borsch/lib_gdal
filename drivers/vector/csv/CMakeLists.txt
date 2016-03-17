@@ -25,8 +25,8 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-option(WITH_CSV "Build Comma Separated Value (.csv) format" ON)
-if(WITH_CSV)
+option(ENABLE_CSV "Build Comma Separated Value (.csv) format" ON)
+if(ENABLE_CSV)
     set(TARGET_NAME vec_csv)
 
     add_definitions(-DCSV_ENABLED)

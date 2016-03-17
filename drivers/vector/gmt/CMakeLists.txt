@@ -25,8 +25,8 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-option(WITH_GMT "Build GMT format" ON)
-if(WITH_GMT)
+option(ENABLE_GMT "Build GMT format" ON)
+if(ENABLE_GMT)
     set(TARGET_NAME vec_gmt)
 
     add_definitions(-DGMT_ENABLED)

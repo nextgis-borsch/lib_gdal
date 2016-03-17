@@ -25,8 +25,8 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-option(WITH_SHAPE "Build ESRI Shapefile Format" ON)
-if(WITH_SHAPE)
+option(ENABLE_SHAPE "Build ESRI Shapefile Format" ON)
+if(ENABLE_SHAPE)
     set(TARGET_NAME vec_shape)
 
     add_definitions(-DSHAPE_ENABLED)

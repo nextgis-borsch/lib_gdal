@@ -25,26 +25,28 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-option(ENABLE_HTF "Build Hydrographic Transfer Format" ON)
-if(ENABLE_HTF)
-    set(TARGET_NAME vec_htf)
+CMAKE_DEPENDENT_OPTION(ENABLE_IDRISI_VECTOR "Build Idrisi Vector (.VCT) format" ON
+                       "ENABLE_IDRISI_RASTER" OFF)
+if(ENABLE_IDRISI_VECTOR)
+    set(TARGET_NAME vec_idrisi)
 
-    add_definitions(-DHTF_ENABLED)
-	set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DHTF_ENABLED" PARENT_SCOPE)
+    add_definitions(-DIDRISI_ENABLED)
+	set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DIDRISI_ENABLED" PARENT_SCOPE)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+    include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/idrisi)
 
     set(LIB_HHEADERS
     )
 
     set(LIB_HHEADERS_PRIV
-        ogr_htf.h
+        ogr_idrisi.h
     )
 
     set(LIB_CSOURCES
-        ogrhtfdriver.cpp 
-        ogrhtfdatasource.cpp 
-        ogrhtflayer.cpp
+        ogridrisidriver.cpp 
+        ogridrisidatasource.cpp 
+        ogridrisilayer.cpp
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})

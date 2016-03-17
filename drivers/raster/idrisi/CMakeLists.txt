@@ -25,12 +25,12 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-option(ENABLE_HTF "Build Hydrographic Transfer Format" ON)
-if(ENABLE_HTF)
-    set(TARGET_NAME vec_htf)
+option(ENABLE_IDRISI_RASTER "Build Idrisi Raster format" ON)
+if(ENABLE_IDRISI_RASTER)
+    set(TARGET_NAME ras_idrisi)
 
-    add_definitions(-DHTF_ENABLED)
-	set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DHTF_ENABLED" PARENT_SCOPE)
+    add_definitions(-DFRMT_idrisi)
+    set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DFRMT_idrisi" PARENT_SCOPE)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -38,13 +38,10 @@ if(ENABLE_HTF)
     )
 
     set(LIB_HHEADERS_PRIV
-        ogr_htf.h
     )
 
     set(LIB_CSOURCES
-        ogrhtfdriver.cpp 
-        ogrhtfdatasource.cpp 
-        ogrhtflayer.cpp
+        IdrisiDataset.cpp	
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})

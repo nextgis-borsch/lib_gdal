@@ -25,8 +25,8 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-option(WITH_EDIGEO "Build EDIGEO format" ON)
-if(WITH_EDIGEO)
+option(ENABLE_EDIGEO "Build EDIGEO format" ON)
+if(ENABLE_EDIGEO)
     set(TARGET_NAME vec_edigeo)
 
     add_definitions(-DEDIGEO_ENABLED)
