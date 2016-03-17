@@ -31,6 +31,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/vector)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/vector/mem)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/vector/vrt)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/vector/mitab)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/vector/xplane)
 
 add_subdirectory(raster)
 add_subdirectory(vector)

@@ -25,8 +25,8 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-option(WITH_AERONAVFAA "Build Aeronav FAA files format" ON)
-if(WITH_AERONAVFAA)
+option(ENABLE_AERONAVFAA "Build Aeronav FAA files format" ON)
+if(ENABLE_AERONAVFAA)
     set(TARGET_NAME vec_aeronavfaa)
 
     add_definitions(-DAERONAVFAA_ENABLED)

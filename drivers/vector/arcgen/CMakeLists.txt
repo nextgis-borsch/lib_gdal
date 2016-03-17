@@ -25,8 +25,8 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-option(WITH_ARCGEN "Build Arc/Info Generate format" ON)
-if(WITH_ARCGEN)
+option(ENABLE_ARCGEN "Build Arc/Info Generate format" ON)
+if(ENABLE_ARCGEN)
     set(TARGET_NAME vec_arcgen)
 
     add_definitions(-DARCGEN_ENABLED)

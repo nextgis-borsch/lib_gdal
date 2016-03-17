@@ -1,10 +1,10 @@
 ################################################################################
 # Project:  CMake4GDAL
 # Purpose:  CMake build scripts
-# Author:   Dmitry Baryshnikov, polimax@mail.ru
+# Author:   Mikhail Gusev, gusevmihs@gmail.com
 ################################################################################
 # Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
-# Copyright (C) 2012,2013,2014 Dmitry Baryshnikov
+# Copyright (C) 2016 Mikhail Gusev
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -25,12 +25,12 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-option(ENABLE_SXF "Build Storage and eXchange Format - SXF" ON)
-if(ENABLE_SXF)
-    set(TARGET_NAME vec_sxf)
+option(ENABLE_AVC "Build Arc/Info Binary Coverage & Arc/Info .E00 (ASCII) Coverage formats" ON)
+if(ENABLE_AVC)
+    set(TARGET_NAME vec_avc)
 
-    add_definitions(-DSXF_ENABLED)
-	set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DSXF_ENABLED" PARENT_SCOPE)
+    add_definitions(-DAVCBIN_ENABLED)
+	set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DAVCBIN_ENABLED" PARENT_SCOPE)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -38,17 +38,34 @@ if(ENABLE_SXF)
     )
 
     set(LIB_HHEADERS_PRIV
-          ogr_sxf.h    
-          org_sxf_defs.h
+        ogr_avc.h
+        avc.h
     )
 
-    set(LIB_CSOURCES
-        ogrsxfdatasource.cpp  
-        ogrsxflayer.cpp
-        ogrsxfdriver.cpp
+    set(LIB_OGRSOURCES
+        ogravcbindriver.cpp 
+        ogravcbindatasource.cpp 
+        ogravcbinlayer.cpp
+		ogravclayer.cpp 
+        ogravcdatasource.cpp
+		ogravce00layer.cpp
+        ogravce00datasource.cpp 
+        ogravce00driver.cpp
+    )
+    
+    set(LIB_AVCSOURCES
+        avc_bin.c 
+        avc_binwr.c 
+        avc_e00gen.c 
+        avc_e00parse.c
+		avc_e00write.c 
+        avc_e00read.c 
+        avc_mbyte.c 
+        avc_misc.c
+		avc_rawbin.c 
     )
 
-    add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
+    add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_AVCSOURCES} ${LIB_OGRSOURCES})
 
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)

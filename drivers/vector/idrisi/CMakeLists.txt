@@ -1,10 +1,10 @@
 ################################################################################
 # Project:  CMake4GDAL
 # Purpose:  CMake build scripts
-# Author:   Dmitry Baryshnikov, polimax@mail.ru
+# Author:   Mikhail Gusev, gusevmihs@gmail.com
 ################################################################################
 # Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
-# Copyright (C) 2012,2013,2014 Dmitry Baryshnikov
+# Copyright (C) 2016 Mikhail Gusev
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -25,27 +25,28 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-option(ENABLE_SXF "Build Storage and eXchange Format - SXF" ON)
-if(ENABLE_SXF)
-    set(TARGET_NAME vec_sxf)
+CMAKE_DEPENDENT_OPTION(ENABLE_IDRISI_VECTOR "Build Idrisi Vector (.VCT) format" ON
+                       "ENABLE_IDRISI_RASTER" OFF)
+if(ENABLE_IDRISI_VECTOR)
+    set(TARGET_NAME vec_idrisi)
 
-    add_definitions(-DSXF_ENABLED)
-	set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DSXF_ENABLED" PARENT_SCOPE)
+    add_definitions(-DIDRISI_ENABLED)
+	set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DIDRISI_ENABLED" PARENT_SCOPE)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+    include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/idrisi)
 
     set(LIB_HHEADERS
     )
 
     set(LIB_HHEADERS_PRIV
-          ogr_sxf.h    
-          org_sxf_defs.h
+        ogr_idrisi.h
     )
 
     set(LIB_CSOURCES
-        ogrsxfdatasource.cpp  
-        ogrsxflayer.cpp
-        ogrsxfdriver.cpp
+        ogridrisidriver.cpp 
+        ogridrisidatasource.cpp 
+        ogridrisilayer.cpp
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
