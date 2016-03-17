@@ -171,13 +171,13 @@ Available vector drivers for now (by all driver dirs in sources):
 | gft | no |  |  |  |
 | gme | no |  |  |  |
 | gml | no |  |  |  |
-| gmt | no |  |  |  |
+| **gmt** | **yes** |  | no | - |
 | gpkg | no |  |  |  |
 | gpsbabel | no |  |  |  |
 | gpx | no |  |  |  |
 | grass | no |  |  |  |
-| gtm | no |  |  |  |
-| htf | no |  |  |  |
+| **gtm** | **yes** |  | no | - |
+| **htf** | **yes** |  | no | - |
 | idb | no |  |  |  |
 | idrisi | no |  |  |  |
 | ili | no |  |  |  |
