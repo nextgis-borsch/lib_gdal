@@ -149,6 +149,7 @@ if(DOXYGEN_FOUND)
     #build by default
     add_custom_target (man ALL
         COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile.man
+        DEPENDS prepare_html
         COMMENT "Create manuals"
     )
     
