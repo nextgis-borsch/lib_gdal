@@ -220,10 +220,11 @@ Available vector drivers for now (by all driver dirs in sources):
 | svg | no |  |  |
 | **sxf** | **yes** | no | ... |
 | **tiger** | **yes** | no | Built without "tigerinfo" target |
+| vdv | no |  |  |
 | vfk | no |  |  |
 | **vrt** | **yes** | no | Obligatory for GDAL |
 | walk | no |  |  |
-| wasp | no |  |  |
+| **wasp** | **yes** | no | - |
 | wfs | no |  |  |
 | xls | no |  |  |
 | xlsx | no |  |  |
