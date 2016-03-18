@@ -55,7 +55,7 @@ report_version(${PROJECT_NAME} ${VERSION})
 if(UNIX)
     option(GDAL_INSTALL_DATA_IN_VERSION_DIR "Set ON to install GDAL in path with version (i.e. usr/local/share/gdal/1.11" OFF)
     if(GDAL_INSTALL_DATA_IN_VERSION_DIR)
-        set(INSTALL_SHARE_DIR "${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}/${GDAL_VERSION}" CACHE INTERNAL "Installation directory for share data" FORCE)
+        set(INSTALL_SHARE_DIR "${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}/${VERSION}" CACHE INTERNAL "Installation directory for share data" FORCE)
     endif()
 endif()
 
