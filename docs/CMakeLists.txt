@@ -146,7 +146,8 @@ if(DOXYGEN_FOUND)
 
     configure_file(${CMAKE_MODULE_PATH}/Doxyfile.cmakein  ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile.man IMMEDIATE @ONLY)     
     
-    add_custom_target (man
+    #build by default
+    add_custom_target (man ALL
         COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile.man
         COMMENT "Create manuals"
     )
