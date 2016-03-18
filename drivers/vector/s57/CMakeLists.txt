@@ -1,10 +1,10 @@
 ################################################################################
 # Project:  CMake4GDAL
 # Purpose:  CMake build scripts
-# Author:   Dmitry Baryshnikov, polimax@mail.ru
+# Author:   Mikhail Gusev, gusevmihs@gmail.com
 ################################################################################
-# Copyright (C) 2015, NextGIS <info@nextgis.com>
-# Copyright (C) 2012,2013,2014 Dmitry Baryshnikov
+# Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
+# Copyright (C) 2016 Mikhail Gusev
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -25,21 +25,40 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-option(GDAL_PAM_ENABLED "Set ON to enable pam" ON)
-if(GDAL_PAM_ENABLED)
-    add_definitions(-DPAM_ENABLED)
-endif(GDAL_PAM_ENABLED)
+option(ENABLE_S57 "Build S-57 (ENC) format" ON)
+if(ENABLE_S57)
+    set(TARGET_NAME vec_s57)
 
-add_definitions(-DGDAL_COMPILATION)
+    add_definitions(-DS57_ENABLED)
+	set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DS57_ENABLED" PARENT_SCOPE)
 
-add_subdirectory(port)
-add_subdirectory(gcore)
-add_subdirectory(alg)
-add_subdirectory(lib)
-add_subdirectory(ogr)
-add_subdirectory(gnm)
+    include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+    include_directories(${CMAKE_SOURCE_DIR}/core/lib/iso8211)
 
-# send variables upper
-set(TARGET_OBJECTS ${TARGET_OBJECTS} PARENT_SCOPE)
-set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
-set(DEPENDENCY_LIB ${DEPENDENCY_LIB} PARENT_SCOPE)
+    set(LIB_HHEADERS
+    )
+
+    set(LIB_HHEADERS_PRIV
+        s57.h 
+        ogr_s57.h
+    )
+
+    set(LIB_CSOURCES
+        ogrs57driver.cpp 
+        ogrs57datasource.cpp 
+        ogrs57layer.cpp
+		s57reader.cpp 
+        s57writer.cpp 
+        ddfrecordindex.cpp
+		s57classregistrar.cpp 
+        s57filecollector.cpp
+	    s57featuredefns.cpp
+    )
+    
+    # TODO: implement s57dump target if needed
+
+    add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
+
+    # build target
+    set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
+endif()

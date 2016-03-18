@@ -25,7 +25,7 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-option(ENABLE_IDRISI_RASTER "Build Idrisi Raster format" ON)
+option(ENABLE_IDRISI_RASTER "Build Idrisi raster format" ON)
 if(ENABLE_IDRISI_RASTER)
     set(TARGET_NAME ras_idrisi)
 

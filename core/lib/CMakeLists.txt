@@ -1,10 +1,10 @@
 ################################################################################
 # Project:  CMake4GDAL
 # Purpose:  CMake build scripts
-# Author:   Dmitry Baryshnikov, polimax@mail.ru
+# Author:   Mikhail Gusev, gusevmihs@gmail.com
 ################################################################################
-# Copyright (C) 2015, NextGIS <info@nextgis.com>
-# Copyright (C) 2012,2013,2014 Dmitry Baryshnikov
+# Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
+# Copyright (C) 2016 Mikhail Gusev
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -25,21 +25,22 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-option(GDAL_PAM_ENABLED "Set ON to enable pam" ON)
-if(GDAL_PAM_ENABLED)
-    add_definitions(-DPAM_ENABLED)
-endif(GDAL_PAM_ENABLED)
-
-add_definitions(-DGDAL_COMPILATION)
-
-add_subdirectory(port)
-add_subdirectory(gcore)
-add_subdirectory(alg)
-add_subdirectory(lib)
-add_subdirectory(ogr)
-add_subdirectory(gnm)
-
+file(GLOB LIBS ${CMAKE_CURRENT_SOURCE_DIR}/*)
+foreach(LIB ${LIBS})
+    if(EXISTS ${LIB}/CMakeLists.txt)    
+        if(NOT SUPRESS_VERBOSE_OUTPUT)
+            string(ASCII 27 Esc)
+            set(Blue        "${Esc}[34m")
+            set(ColourReset "${Esc}[m")
+            get_filename_component(LIB_NAME ${LIB} NAME)
+            message(STATUS "add lib: ${Blue}${LIB_NAME}${ColourReset}")
+        endif()
+        add_subdirectory(${LIB})
+    endif()    
+endforeach()
+    
 # send variables upper
 set(TARGET_OBJECTS ${TARGET_OBJECTS} PARENT_SCOPE)
-set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
-set(DEPENDENCY_LIB ${DEPENDENCY_LIB} PARENT_SCOPE)
+#set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
+#set(DEPENDENCY_LIB ${DEPENDENCY_LIB} PARENT_SCOPE)
+#set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} PARENT_SCOPE)
