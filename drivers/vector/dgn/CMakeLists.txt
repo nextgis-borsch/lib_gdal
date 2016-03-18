@@ -55,6 +55,8 @@ if(ENABLE_DGN)
         ogrdgnlayer.cpp
         ${LIB_MINSOURCES}
     )
+    
+    # TODO: implement zip target if needed
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
 
