@@ -192,7 +192,7 @@ Available vector drivers for now (by all driver dirs in sources):
 | mssqlspatial | no |  |  |
 | mysql | no |  |  |
 | nas | no |  |  |
-| ntf | no |  |  |
+| **ntf** | **yes** | no | Built without "ntfdump" target |
 | null | no |  |  |
 | oci | no |  |  |
 | odbc | no |  |  |
@@ -209,17 +209,17 @@ Available vector drivers for now (by all driver dirs in sources):
 | **rec** | **yes** | no | - |
 | **s57** | **yes** | no | Required inner iso8211 lib; Built without some targets |
 | sde | no |  |  |
-| **sdts** | **yes** | no | Required inner sdts and iso8211 libs |
-| segukooa | no |  |  |
-| segy | no |  |  |
-| selafin | no |  |  |
+| **sdts** | **yes** | no | Required inner sdts and iso8211 libs; Built without some targets |
+| **segukooa** | **yes** | no | - |
+| **segy** | **yes** | no | - |
+| **selafin** | **yes** | no | - |
 | **shape** | **yes** | no | - |
 | sosi | no |  |  |
 | sqlite | no |  |  |
-| sua | no |  |  |
+| **sua** | **yes** | no | - |
 | svg | no |  |  |
-| **sxf** | **yes** | no | - |
-| tiger | no |  |  |
+| **sxf** | **yes** | no | ... |
+| **tiger** | **yes** | no | Built without "tigerinfo" target |
 | vfk | no |  |  |
 | **vrt** | **yes** | no | Obligatory for GDAL |
 | walk | no |  |  |
