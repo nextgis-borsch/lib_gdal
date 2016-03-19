@@ -86,6 +86,7 @@ set (CPACK_ARCHIVE_COMPONENT_INSTALL ON)
 if (WIN32)
 #  set (CPACK_SET_DESTDIR FALSE)
 #  set (CPACK_PACKAGING_INSTALL_PREFIX "/opt")
+# execute_process ( COMMAND python -c "from distutils.sysconfig import get_python_lib; print get_python_lib()" OUTPUT_VARIABLE PYTHON_SITE_PACKAGES OUTPUT_STRIP_TRAILING_WHITESPACE)
   set (CPACK_GENERATOR "NSIS;ZIP")
   set (CPACK_MONOLITHIC_INSTALL ON)
   set (CPACK_NSIS_COMPONENT_INSTALL ON)
@@ -93,12 +94,20 @@ if (WIN32)
   set (CPACK_NSIS_MODIFY_PATH ON)
   set (CPACK_NSIS_PACKAGE_NAME "${CPACK_PACKAGE_NAME} ${VERSION}")
   set (CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
+  
+  
   set (CPACK_NSIS_EXTRA_INSTALL_COMMANDS
         "\${EnvVarUpdate} \"$0\" \"GDAL_DATA\" \"A\" \"HKLM\" \"$INSTDIR\\\\${INSTALL_SHARE_DIR}\""
-        "\${un.EnvVarUpdate} \"$0\" \"GDAL_DATA\" \"R\" \"HKLM\" \"$INSTDIR\\\\${INSTALL_SHARE_DIR}\""
-        "\${EnvVarUpdate} \"$0\" \"PYTHONPATH\" \"A\" \"HKLM\" \"$INSTDIR\\\\${INSTALL_LIB_DIR}\\\\Python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}\\\\site_packages\""
-        "\${un.EnvVarUpdate} \"$0\" \"PYTHONPATH\" \"R\" \"HKLM\" \"$INSTDIR\\\\${INSTALL_LIB_DIR}\\\\Python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}\\\\site_packages\""
+        "\${un.EnvVarUpdate} \"$0\" \"GDAL_DATA\" \"R\" \"HKLM\" \"$INSTDIR\\\\${INSTALL_SHARE_DIR}\""        
+      )
+        
+  find_package(PythonInterp REQUIRED)
+  if(PYTHONINTERP_FOUND)
+    set (CPACK_NSIS_EXTRA_INSTALL_COMMANDS ${CPACK_NSIS_EXTRA_INSTALL_COMMANDS}
+        "\${EnvVarUpdate} \"$0\" \"PYTHONPATH\" \"A\" \"HKLM\" \"$INSTDIR\\\\${INSTALL_LIB_DIR}\\\\Python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}\\\\site_packages\""
+        "\${un.EnvVarUpdate} \"$0\" \"PYTHONPATH\" \"R\" \"HKLM\" \"$INSTDIR\\\\${INSTALL_LIB_DIR}\\\\Python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}\\\\site_packages\""
         )
+  endif()   
 else ()
   set (CPACK_PROJECT_CONFIG_FILE ${CMAKE_MODULE_PATH}/CPackConfig.cmake)
   set (CPACK_GENERATOR "DEB;RPM;TGZ;ZIP") 
