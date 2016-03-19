@@ -130,6 +130,11 @@ if(GDAL_BUILD_APPS)
             ARCHIVE DESTINATION ${INSTALL_LIB_DIR} COMPONENT applications
             LIBRARY DESTINATION ${INSTALL_LIB_DIR} COMPONENT applications
         )
+        
+        install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/gdal-config-inst
+                DESTINATION ${INSTALL_BIN_DIR}
+                COMPONENT applications
+                RENAME gdal-config)
     endif()
 
 endif()
