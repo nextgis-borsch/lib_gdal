@@ -165,7 +165,7 @@ if(DOXYGEN_FOUND)
                   ${CMAKE_CURRENT_SOURCE_DIR}/README
                   ${CMAKE_CURRENT_SOURCE_DIR}/COMMITERS
                   ${CMAKE_CURRENT_SOURCE_DIR}/NEWS
-              DESTINATION ${INSTALL_SHARE_DIR}
+              DESTINATION ${INSTALL_DOC_DIR}
               COMPONENT documents
               OPTIONAL)
     endif()
