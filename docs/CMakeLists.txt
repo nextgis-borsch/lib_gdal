@@ -142,7 +142,7 @@ if(DOXYGEN_FOUND)
     set(DOX_GENERATE_MAN "YES")   
     set(ENABLED_SECTIONS "man")
     set(DOX_FILE_PATTERNS "*.cpp *.dox")
-    set(DOX_INPUT "${CMAKE_SOURCE_DIR}/apps ${CMAKE_SOURCE_DIR}/bindings/python/scripts")
+    set(DOX_INPUT "${CMAKE_SOURCE_DIR}/apps ${CMAKE_SOURCE_DIR}/docs/apps ${CMAKE_SOURCE_DIR}/bindings/python/scripts")
 
     configure_file(${CMAKE_MODULE_PATH}/Doxyfile.cmakein  ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile.man IMMEDIATE @ONLY)     
     
