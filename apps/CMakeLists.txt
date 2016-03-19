@@ -120,8 +120,8 @@ if(GDAL_BUILD_APPS)
         add_exe(testreprojmulti testreprojmulti.cpp)
     endif()
     
-    configure_file(${CMAKE_MODULE_PATH}/gdal-config.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/gdal-config IMMEDIATE @ONLY)
-    configure_file(${CMAKE_MODULE_PATH}/gdal-config-inst.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/gdal-config-inst IMMEDIATE @ONLY)
+    configure_file(${CMAKE_MODULE_PATH}/gdal-config.cmake.in ${CMAKE_BINARY_DIR}/gdal-config IMMEDIATE @ONLY)
+    configure_file(${CMAKE_MODULE_PATH}/gdal-config-inst.cmake.in ${CMAKE_BINARY_DIR}/gdal-config-inst IMMEDIATE @ONLY)
 
     if(NOT SKIP_INSTALL_LIBRARIES AND NOT SKIP_INSTALL_ALL )
         install(TARGETS ${INSTALL_TARGETS}
@@ -131,7 +131,7 @@ if(GDAL_BUILD_APPS)
             LIBRARY DESTINATION ${INSTALL_LIB_DIR} COMPONENT applications
         )
         
-        install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/gdal-config-inst
+        install(PROGRAMS ${CMAKE_BINARY_DIR}/gdal-config-inst
                 DESTINATION ${INSTALL_BIN_DIR}
                 COMPONENT applications
                 RENAME gdal-config)

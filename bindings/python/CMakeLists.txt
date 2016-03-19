@@ -81,6 +81,18 @@ set(COPY
 #    setup.py
 )
 
+set(PY_COMMANDS
+    scripts/epsg_tr.py 
+    scripts/gdalchksum.py 
+    scripts/gdal2xyz.py 
+    scripts/gcps2wld.py
+    scripts/gdalimport.py 
+    scripts/gdal_merge.py 
+    scripts/pct2rgb.py 
+    scripts/rgb2pct.py
+    scripts/gcps2vec.py
+)
+
 add_custom_target(copy_files ALL
     COMMENT "Copy files"
 )
@@ -111,6 +123,14 @@ add_custom_target(build ALL
 )
 
 
+add_custom_target(egg
+    # copy some files to binary_dir
+    COMMAND set VS90COMNTOOLS=${VC_DIR}
+    COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/setup.py bdist_egg
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    DEPENDS copy_files
+)
+
 # todo: add custom target to generate swig
 # todo: add install target $(PYTHON) setup.py install --prefix=$(DESTDIR)$(prefix)
 # '../../port', '../../gcore', '../../alg', '../../ogr/', '../../ogr/ogrsf_frmts', '../../gnm'
@@ -137,7 +157,16 @@ endif()
 
 configure_file(${CMAKE_MODULE_PATH}/setup.py.cmake ${CMAKE_CURRENT_BINARY_DIR}/setup.py @ONLY)
 
+# https://docs.python.org/2/install/
 install(CODE "execute_process(
-            COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/setup.py install
-            WORKING_DIRECTORY  ${CMAKE_CURRENT_BINARY_DIR}
-        )")
+        COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/setup.py install --single-version-externally-managed --prefix=${CMAKE_INSTALL_PREFIX} --record=rekord.txt
+        WORKING_DIRECTORY  ${CMAKE_CURRENT_BINARY_DIR}
+    )")
+
+#install scripts
+install(PROGRAMS ${PY_COMMANDS} DESTINATION ${INSTALL_BIN_DIR} COMPONENT applications)        
+
+#install examples        
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/samples/ 
+        DESTINATION ${INSTALL_DOC_DIR}/python-samples 
+        COMPONENT documents)

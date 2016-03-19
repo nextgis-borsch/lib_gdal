@@ -93,6 +93,12 @@ if (WIN32)
   set (CPACK_NSIS_MODIFY_PATH ON)
   set (CPACK_NSIS_PACKAGE_NAME "${CPACK_PACKAGE_NAME} ${VERSION}")
   set (CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
+  set (CPACK_NSIS_EXTRA_INSTALL_COMMANDS
+        "\${EnvVarUpdate} \"$0\" \"GDAL_DATA\" \"A\" \"HKLM\" \"$INSTDIR\\\\${INSTALL_SHARE_DIR}\""
+        "\${un.EnvVarUpdate} \"$0\" \"GDAL_DATA\" \"R\" \"HKLM\" \"$INSTDIR\\\\${INSTALL_SHARE_DIR}\""
+        "\${EnvVarUpdate} \"$0\" \"PYTHONPATH\" \"A\" \"HKLM\" \"$INSTDIR\\\\${INSTALL_LIB_DIR}\\\\Python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}\\\\site_packages\""
+        "\${un.EnvVarUpdate} \"$0\" \"PYTHONPATH\" \"R\" \"HKLM\" \"$INSTDIR\\\\${INSTALL_LIB_DIR}\\\\Python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}\\\\site_packages\""
+        )
 else ()
   set (CPACK_PROJECT_CONFIG_FILE ${CMAKE_MODULE_PATH}/CPackConfig.cmake)
   set (CPACK_GENERATOR "DEB;RPM;TGZ;ZIP") 
@@ -107,6 +113,7 @@ else ()
   set (CPACK_DEBIAN_PRE_UNINSTALL_SCRIPT_FILE "/sbin/ldconfig")
   set (CPACK_DEBIAN_POST_INSTALL_SCRIPT_FILE "/sbin/ldconfig")
   set (CPACK_DEBIAN_POST_UNINSTALL_SCRIPT_FILE "/sbin/ldconfig")
+  set (CPACK_DEBIAN_PACKAGE_DEPENDS "zlib1g, libjpeg, libgeos, libcurl4-gnutls | libcurl-ssl, libexpat1, libproj, libxml2, liblzma, libarmadillo, libtiff5, libgeotiff, libjson-c, python2.7")
       
   set (CPACK_RPM_COMPONENT_INSTALL ON)
   set (CPACK_RPM_PACKAGE_GROUP "Development/Tools")
