@@ -122,6 +122,7 @@ add_custom_target(build ALL
     DEPENDS copy_files
 )
 
+add_dependencies(build ${LIB_NAME})
 
 add_custom_target(egg
     # copy some files to binary_dir
