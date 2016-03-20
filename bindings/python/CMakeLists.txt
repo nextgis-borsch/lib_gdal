@@ -185,9 +185,9 @@ endif()
 # do we need --install-lib=$(PYTHON_INSTALL_LIB) ?
 set(SETUP_OPTS "${SETUP_OPTS} --prefix=${CMAKE_INSTALL_PREFIX}")
 
-#if(NOT SUPRESS_VERBOSE_OUTPUT)
-#    message(STATUS "setup tools options: ${SETUP_OPTS}")
-#endif()
+if(NOT SUPRESS_VERBOSE_OUTPUT)
+    message(STATUS "setup tools options: ${SETUP_OPTS}")
+endif()
 
 install(CODE "execute_process(
         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/setup.py install ${SETUP_OPTS}  
