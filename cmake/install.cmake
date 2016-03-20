@@ -100,7 +100,8 @@ if (WIN32)
         "\${EnvVarUpdate} \"$0\" \"GDAL_DATA\" \"A\" \"HKLM\" \"$INSTDIR\\\\${INSTALL_SHARE_DIR}\""
         "\${un.EnvVarUpdate} \"$0\" \"GDAL_DATA\" \"R\" \"HKLM\" \"$INSTDIR\\\\${INSTALL_SHARE_DIR}\""        
       )
-        
+  
+  # https://docs.python.org/3/install/      
   find_package(PythonInterp REQUIRED)
   if(PYTHONINTERP_FOUND)
     set (CPACK_NSIS_EXTRA_INSTALL_COMMANDS ${CPACK_NSIS_EXTRA_INSTALL_COMMANDS}

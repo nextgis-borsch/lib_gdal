@@ -161,17 +161,28 @@ if(DOXYGEN_FOUND)
                 FILES_MATCHING 
                 PATTERN "*.1"
                 PATTERN "_*_apps_.1" EXCLUDE
-                )
+               )
     
-        install(FILES
-                  ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.TXT
-                  ${CMAKE_CURRENT_SOURCE_DIR}/README
-                  ${CMAKE_CURRENT_SOURCE_DIR}/COMMITERS
-                  ${CMAKE_CURRENT_SOURCE_DIR}/NEWS
-              DESTINATION ${INSTALL_DOC_DIR}
-              COMPONENT documents
-              OPTIONAL)
     endif()
                   
 endif()
+
+set (DOC_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.TXT
+    ${CMAKE_CURRENT_SOURCE_DIR}/README
+    ${CMAKE_CURRENT_SOURCE_DIR}/COMMITERS
+    ${CMAKE_CURRENT_SOURCE_DIR}/NEWS
+)
+
+if(WIN32)
+    set(DOC_FILES ${DOC_FILES}
+        ${CMAKE_CURRENT_SOURCE_DIR}/install.txt
+    )
+endif()
+        
+install(FILES ${DOC_FILES}
+        DESTINATION ${INSTALL_DOC_DIR}
+        COMPONENT documents
+        OPTIONAL
+       )
 

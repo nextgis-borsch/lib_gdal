@@ -158,6 +158,8 @@ endif()
 configure_file(${CMAKE_MODULE_PATH}/setup.py.cmake ${CMAKE_CURRENT_BINARY_DIR}/setup.py @ONLY)
 
 # https://docs.python.org/2/install/
+# https://docs.python.org/3/install/
+# https://pythonhosted.org/an_example_pypi_project/setuptools.html
 install(CODE "execute_process(
         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/setup.py install --single-version-externally-managed --prefix=${CMAKE_INSTALL_PREFIX} --record=rekord.txt
         WORKING_DIRECTORY  ${CMAKE_CURRENT_BINARY_DIR}
