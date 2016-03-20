@@ -144,10 +144,6 @@ function(find_extproject name)
         list(APPEND find_extproject_CMAKE_ARGS -DCMAKE_GENERATOR_TOOLSET=${CMAKE_GENERATOR_TOOLSET})
     endif() 
     
-    if(_WIN32_WINNT)
-        list(APPEND find_extproject_CMAKE_ARGS -D_WIN32_WINNT=${_WIN32_WINNT})
-    endif() 
-    
     if(EXISTS ${EP_BASE}/Build/${name}_EP/ext_options.cmake)         
         include(${EP_BASE}/Build/${name}_EP/ext_options.cmake)
         # add include into  ext_options.cmake
@@ -172,11 +168,13 @@ function(find_extproject name)
     # get some properties from <cmakemodules>/findext${name}.cmake file
     include(FindExt${name})
   
-    ExternalProject_Add(${name}_EP
-        GIT_REPOSITORY ${EP_URL}/${repo_name}
-        CMAKE_ARGS ${find_extproject_CMAKE_ARGS}
-        UPDATE_DISCONNECTED 1
-    )
+    if(NOT TARGET ${name}_EP)
+        ExternalProject_Add(${name}_EP
+            GIT_REPOSITORY ${EP_URL}/${repo_name}
+            CMAKE_ARGS ${find_extproject_CMAKE_ARGS}
+            UPDATE_DISCONNECTED 1
+        )
+    endif()    
         
     find_package(Git)
     if(NOT GIT_FOUND)

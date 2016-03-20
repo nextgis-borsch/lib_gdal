@@ -85,9 +85,7 @@ if(GDAL_BUILD_APPS)
     add_exe(gdallocationinfo gdallocationinfo.cpp)
     add_exe(gdaltransform gdaltransform.cpp)
     add_exe(gdalserver gdalserver.c)
-
-
-
+    
     if(GDAL_ENABLE_GNM)
         add_exe(gnmanalyse gnmanalyse.cpp)
         add_exe(gnmmanage gnmmanage.cpp)
@@ -120,9 +118,6 @@ if(GDAL_BUILD_APPS)
         add_exe(testreprojmulti testreprojmulti.cpp)
     endif()
     
-    configure_file(${CMAKE_MODULE_PATH}/gdal-config.cmake.in ${CMAKE_BINARY_DIR}/gdal-config IMMEDIATE @ONLY)
-    configure_file(${CMAKE_MODULE_PATH}/gdal-config-inst.cmake.in ${CMAKE_BINARY_DIR}/gdal-config-inst IMMEDIATE @ONLY)
-
     if(NOT SKIP_INSTALL_LIBRARIES AND NOT SKIP_INSTALL_ALL )
         install(TARGETS ${INSTALL_TARGETS}
         #    EXPORT ${INSTALL_TARGETS}
