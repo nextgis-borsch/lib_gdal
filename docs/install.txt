@@ -1,0 +1,25 @@
+Install
+=======
+
+Windows
+-------
+
+ZIP archive
+^^^^^^^^^^^
+
+After unpack the zip archive most of applications will work, but you need 
+manually add several environment variables:
+    * GDAL_DATA  - path to gdal data, <root of folder>/share/gdal/<GDAL version>
+    * PYTHONHOME - path to gdal python modules, 
+                   <root of folder>/lib/Python<Python version>/site_packages
+
+You can also export this variables to current environment each time you want 
+execute some GDAL command line exe or py files:
+    > set GDAL_DATA=<root of folder>/share/gdal/<GDAL version>
+    > set PYTHONHOME=<root of folder>/lib/Python<Python version>/site_packages
+
+
+Installer
+^^^^^^^^^
+
+Just launch GDAL-<version>-<arch>.exe and follow the install wizard steps.

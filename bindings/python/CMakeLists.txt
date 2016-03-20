@@ -3,7 +3,7 @@
 # Purpose:  CMake build scripts
 # Author:   Dmitry Baryshnikov, polimax@mail.ru
 ################################################################################
-# Copyright (C) 2015, NextGIS <info@nextgis.com>
+# Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
 # Copyright (C) 2012,2013,2014 Dmitry Baryshnikov
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -132,7 +132,6 @@ add_custom_target(egg
 )
 
 # todo: add custom target to generate swig
-# todo: add install target $(PYTHON) setup.py install --prefix=$(DESTDIR)$(prefix)
 # '../../port', '../../gcore', '../../alg', '../../ogr/', '../../ogr/ogrsf_frmts', '../../gnm'
 if(MSVC)
     set(SWIG_PYTHON_LIBRARIES "'${LIB_NAME}_i'")
@@ -160,10 +159,40 @@ configure_file(${CMAKE_MODULE_PATH}/setup.py.cmake ${CMAKE_CURRENT_BINARY_DIR}/s
 # https://docs.python.org/2/install/
 # https://docs.python.org/3/install/
 # https://pythonhosted.org/an_example_pypi_project/setuptools.html
+
+execute_process ( COMMAND ${PYTHON_EXECUTABLE} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()" OUTPUT_VARIABLE PY_SITE_PACKAGES OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+set(TEST_CMD "try: 
+    import setuptools
+    print(1)
+except ImportError: 
+    pass")
+
+execute_process ( COMMAND ${PYTHON_EXECUTABLE} -c ${TEST_CMD} OUTPUT_VARIABLE PY_HAVE_SETUPTOOLS OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+set(SETUP_OPTS)
+
+if(PY_HAVE_SETUPTOOLS)
+    set(SETUP_OPTS "${SETUP_OPTS} --single-version-externally-managed --record=rekord.txt")
+endif()
+
+# check debian
+string(FIND ${PY_SITE_PACKAGES} "dist-packages" PY_DIST_POS)
+if(${PY_DIST_POS} GREATER -1)
+    set(SETUP_OPTS "${SETUP_OPTS} --install-layout=deb")
+endif()
+
+# do we need --install-lib=$(PYTHON_INSTALL_LIB) ?
+set(SETUP_OPTS "${SETUP_OPTS} --prefix=${CMAKE_INSTALL_PREFIX}")
+
+#if(NOT SUPRESS_VERBOSE_OUTPUT)
+#    message(STATUS "setup tools options: ${SETUP_OPTS}")
+#endif()
+
 install(CODE "execute_process(
-        COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/setup.py install --single-version-externally-managed --prefix=${CMAKE_INSTALL_PREFIX} --record=rekord.txt
+        COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/setup.py install ${SETUP_OPTS}  
         WORKING_DIRECTORY  ${CMAKE_CURRENT_BINARY_DIR}
-    )")
+     )")
 
 #install scripts
 install(PROGRAMS ${PY_COMMANDS} DESTINATION ${INSTALL_BIN_DIR} COMPONENT applications)        
