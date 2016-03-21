@@ -39,24 +39,24 @@ Available raster drivers for now (by all driver dirs in sources):
 |---|:-:|---|---|
 | **aaigrid** | **yes** | no | 2 drivers in one (AAIGrid, GRASSASCIIGrid) |
 | **adrg** | **yes** | no | 2 drivers in one (ADRG, SRP) |
-| **aigrid** | **yes** | no | No additional targets implemented |
+| **aigrid** | **yes** | no | No additional build targets implemented |
 | **airsar** | **yes** | no | - |
 | **arg** | **yes** | no | - |
 | **blx** | **yes** | no | - |
 | **bmp** | **yes** | no | - |
 | bpg | no |  |  |
-| **bsb** | **yes** | no | No additional targets implemented |
+| **bsb** | **yes** | no | No additional build targets implemented |
 | **cals** | **yes** | no | Removed use of inner Tiff |
-| ceos | no |  |  |
-| ceos2 | no |  |  |
-| coasp | no |  |  |
-| cosar | no |  |  |
-| ctg | no |  |  |
+| **ceos** | **yes** | no | No additional build targets implemented |
+| **ceos2** | **yes** | no | - |
+| **coasp** | **yes** | no | - |
+| **cosar** | **yes** | no | - |
+| **ctg** | **yes** | no | - |
 | dds | no |  |  |
-| dimap | no |  |  |
+| **dimap** | **yes** | no | - |
 | dods | no |  |  |
-| dted | no |  |  |
-| e00grid | no |  |  |
+| **dted** | **yes** | no | No additional build targets implemented |
+| **e00grid** | **yes** | no | - |
 | ecw | no |  |  |
 | elas | no |  |  |
 | envisat | no |  |  |
@@ -156,7 +156,7 @@ Available vector drivers for now (by all driver dirs in sources):
 | couchdb | no |  |  |
 | **csv** | **yes** | no | - |
 | csw | no |  |  |
-| **dgn** | **yes** | no | No additional targets implemented |
+| **dgn** | **yes** | no | No additional build targets implemented |
 | dods | no |  |  |
 | dwg | no |  |  |
 | **dxf** | **yes** | no | - |
@@ -192,7 +192,7 @@ Available vector drivers for now (by all driver dirs in sources):
 | mssqlspatial | no |  |  |
 | mysql | no |  |  |
 | nas | no |  |  |
-| **ntf** | **yes** | no | No additional targets implemented |
+| **ntf** | **yes** | no | No additional build targets implemented |
 | null | no |  |  |
 | oci | no |  |  |
 | odbc | no |  |  |
@@ -207,9 +207,9 @@ Available vector drivers for now (by all driver dirs in sources):
 | pgeo | no |  |  |
 | plscenes | no |  |  |
 | **rec** | **yes** | no | - |
-| **s57** | **yes** | no | Requires inner iso8211 lib; No additional targets implemented |
+| **s57** | **yes** | no | Requires inner iso8211 lib; No additional build targets implemented |
 | sde | no |  |  |
-| **sdts** | **yes** | no | Requires inner sdts and iso8211 libs; No additional targets implemented; Has the same dir name in /raster |
+| **sdts** | **yes** | no | Requires inner sdts and iso8211 libs; No additional build targets implemented; Has the same dir name in /raster |
 | **segukooa** | **yes** | no | - |
 | **segy** | **yes** | no | - |
 | **selafin** | **yes** | no | - |
@@ -219,7 +219,7 @@ Available vector drivers for now (by all driver dirs in sources):
 | **sua** | **yes** | no | - |
 | svg | no |  |  |
 | **sxf** | **yes** | no | ... |
-| **tiger** | **yes** | no | No additional targets implemented |
+| **tiger** | **yes** | no | No additional build targets implemented |
 | **vdv** | **yes** | no | - |
 | vfk | no |  |  |
 | **vrt** | **yes** | no | Obligatory for building GDAL |
