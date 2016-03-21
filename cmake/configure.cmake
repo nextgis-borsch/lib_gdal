@@ -354,18 +354,22 @@ else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O2 -fPIC -fno-strict-aliasing -Wall")
 
     configure_file(${CMAKE_MODULE_PATH}/cpl_config.h.cmake ${CMAKE_BINARY_DIR}/cpl_config.h @ONLY)
+    
+    configure_file(${CMAKE_MODULE_PATH}/gdal.pc.cmakein  ${CMAKE_BINARY_DIR}/gdal.pc IMMEDIATE @ONLY)
+
+    set(APPS_DIR ${CMAKE_BINARY_DIR}/apps)
+    configure_file(${CMAKE_MODULE_PATH}/gdal-config.cmake.in ${CMAKE_BINARY_DIR}/tmp/gdal-config IMMEDIATE @ONLY)
+    file(COPY ${CMAKE_BINARY_DIR}/tmp/gdal-config
+         DESTINATION ${APPS_DIR}/
+         FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ
+         GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+      
+    configure_file(${CMAKE_MODULE_PATH}/gdal-config-inst.cmake.in ${APPS_DIR}/gdal-config-inst IMMEDIATE @ONLY)
+    
+    
 endif()
 
 add_definitions (-DHAVE_CONFIG_H)
 
 configure_file(${CMAKE_MODULE_PATH}/uninstall.cmake.in ${CMAKE_BINARY_DIR}/cmake_uninstall.cmake IMMEDIATE @ONLY)
-configure_file(${CMAKE_MODULE_PATH}/gdal.pc.cmakein  ${CMAKE_BINARY_DIR}/gdal.pc IMMEDIATE @ONLY)
-
-configure_file(${CMAKE_MODULE_PATH}/gdal-config.cmake.in ${CMAKE_BINARY_DIR}/tmp/gdal-config IMMEDIATE @ONLY)
-file(COPY ${CMAKE_BINARY_DIR}/tmp/gdal-config
-     DESTINATION ${CMAKE_BINARY_DIR}
-     FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ
-     GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
-  
-configure_file(${CMAKE_MODULE_PATH}/gdal-config-inst.cmake.in ${CMAKE_BINARY_DIR}/gdal-config-inst IMMEDIATE @ONLY)
 

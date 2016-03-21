@@ -60,6 +60,15 @@ add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSO
 # build target
 set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
 
+if(UNIX)
+    if(NOT SKIP_INSTALL_LIBRARIES AND NOT SKIP_INSTALL_ALL )
+        install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/gdal-config-inst
+                DESTINATION ${INSTALL_BIN_DIR}
+                COMPONENT applications
+                RENAME gdal-config)
+    endif()
+endif()
+
 option(GDAL_BUILD_APPS "Build console applications" ON)
 if(GDAL_BUILD_APPS)
     set(INSTALL_TARGETS)
@@ -124,12 +133,7 @@ if(GDAL_BUILD_APPS)
             RUNTIME DESTINATION ${INSTALL_BIN_DIR} COMPONENT applications
             ARCHIVE DESTINATION ${INSTALL_LIB_DIR} COMPONENT applications
             LIBRARY DESTINATION ${INSTALL_LIB_DIR} COMPONENT applications
-        )
-        
-        install(PROGRAMS ${CMAKE_BINARY_DIR}/gdal-config-inst
-                DESTINATION ${INSTALL_BIN_DIR}
-                COMPONENT applications
-                RENAME gdal-config)
+        )        
     endif()
 
 endif()

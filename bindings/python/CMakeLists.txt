@@ -160,40 +160,49 @@ configure_file(${CMAKE_MODULE_PATH}/setup.py.cmake ${CMAKE_CURRENT_BINARY_DIR}/s
 # https://docs.python.org/2/install/
 # https://docs.python.org/3/install/
 # https://pythonhosted.org/an_example_pypi_project/setuptools.html
+if(UNIX)
+    execute_process ( COMMAND ${PYTHON_EXECUTABLE} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()" OUTPUT_VARIABLE PY_SITE_PACKAGES OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-execute_process ( COMMAND ${PYTHON_EXECUTABLE} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()" OUTPUT_VARIABLE PY_SITE_PACKAGES OUTPUT_STRIP_TRAILING_WHITESPACE)
+    set(TEST_CMD "try: 
+        import setuptools
+        print(1)
+    except ImportError: 
+        pass")
 
-set(TEST_CMD "try: 
-    import setuptools
-    print(1)
-except ImportError: 
-    pass")
+    execute_process ( COMMAND ${PYTHON_EXECUTABLE} -c ${TEST_CMD} OUTPUT_VARIABLE PY_HAVE_SETUPTOOLS OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-execute_process ( COMMAND ${PYTHON_EXECUTABLE} -c ${TEST_CMD} OUTPUT_VARIABLE PY_HAVE_SETUPTOOLS OUTPUT_STRIP_TRAILING_WHITESPACE)
+    set(SETUP_OPTS)
 
-set(SETUP_OPTS)
+    if(PY_HAVE_SETUPTOOLS)
+        set(SETUP_OPTS "${SETUP_OPTS} --single-version-externally-managed --record=rekord.txt")
+    endif()
 
-if(PY_HAVE_SETUPTOOLS)
-    set(SETUP_OPTS "${SETUP_OPTS} --single-version-externally-managed --record=rekord.txt")
+    # check debian
+    string(FIND ${PY_SITE_PACKAGES} "dist-packages" PY_DIST_POS)
+    if(${PY_DIST_POS} GREATER -1)
+        set(SETUP_OPTS "${SETUP_OPTS} --install-layout=deb")
+    endif()
+
+    # do we need --install-lib=$(PYTHON_INSTALL_LIB) ?
+
+    set(SETUP_OPTS "${SETUP_OPTS} --prefix=\"${CMAKE_INSTALL_PREFIX}\"")
+    
+    if(NOT SUPRESS_VERBOSE_OUTPUT)
+        message(STATUS "setup tools options: ${SETUP_OPTS}")
+    endif()
+
+    install(CODE "execute_process(
+            COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/setup.py install ${SETUP_OPTS}  
+            WORKING_DIRECTORY  ${CMAKE_CURRENT_BINARY_DIR}
+            )")
+else()
+    file(GLOB TESTS ${CMAKE_CURRENT_BINARY_DIR}/build/lib.*)
+    foreach(TEST ${TESTS})
+        install(DIRECTORY ${TEST}/
+                DESTINATION ${INSTALL_LIB_DIR}/Python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}/site-packages
+                COMPONENT libraries)
+    endforeach()
 endif()
-
-# check debian
-string(FIND ${PY_SITE_PACKAGES} "dist-packages" PY_DIST_POS)
-if(${PY_DIST_POS} GREATER -1)
-    set(SETUP_OPTS "${SETUP_OPTS} --install-layout=deb")
-endif()
-
-# do we need --install-lib=$(PYTHON_INSTALL_LIB) ?
-set(SETUP_OPTS "${SETUP_OPTS} --prefix=${CMAKE_INSTALL_PREFIX}")
-
-if(NOT SUPRESS_VERBOSE_OUTPUT)
-    message(STATUS "setup tools options: ${SETUP_OPTS}")
-endif()
-
-install(CODE "execute_process(
-        COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/setup.py install ${SETUP_OPTS}  
-        WORKING_DIRECTORY  ${CMAKE_CURRENT_BINARY_DIR}
-     )")
 
 #install scripts
 install(PROGRAMS ${PY_COMMANDS} DESTINATION ${INSTALL_BIN_DIR} COMPONENT applications)        
