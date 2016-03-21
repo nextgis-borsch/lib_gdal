@@ -114,10 +114,19 @@ foreach(FILE ${COPY})
     )
 endforeach()
 
+if(MSVC)
+    if(CMAKE_CL_64)
+        set(PY_SETUP_PLATFORM_NAME --plat-name=win-amd64)
+    else()
+        set(PY_SETUP_PLATFORM_NAME --plat-name=win32)
+    endif()
+endif()
+
 add_custom_target(build ALL
     # copy some files to binary_dir
     COMMAND set VS90COMNTOOLS=${VC_DIR}
-    COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/setup.py build
+    COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/setup.py build ${PY_SETUP_PLATFORM_NAME}
+
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     DEPENDS copy_files
 )
