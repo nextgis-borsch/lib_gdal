@@ -164,10 +164,10 @@ if(UNIX)
     execute_process ( COMMAND ${PYTHON_EXECUTABLE} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()" OUTPUT_VARIABLE PY_SITE_PACKAGES OUTPUT_STRIP_TRAILING_WHITESPACE)
 
     set(TEST_CMD "try: 
-        import setuptools
-        print(1)
-    except ImportError: 
-        pass")
+    import setuptools
+    print(1)
+except ImportError: 
+    pass")
 
     execute_process ( COMMAND ${PYTHON_EXECUTABLE} -c ${TEST_CMD} OUTPUT_VARIABLE PY_HAVE_SETUPTOOLS OUTPUT_STRIP_TRAILING_WHITESPACE)
 
@@ -175,6 +175,11 @@ if(UNIX)
 
     if(PY_HAVE_SETUPTOOLS)
         set(SETUP_OPTS "${SETUP_OPTS} --single-version-externally-managed --record=rekord.txt")
+    endif()
+    
+    string( LENGTH "$ENV{DESTDIR}" DESTDIRLEN )
+    if ( ${DESTDIRLEN} GREATER 0 )
+        set(SETUP_OPTS "${SETUP_OPTS} --root=$ENV{DESTDIR}")
     endif()
 
     # check debian
@@ -185,7 +190,7 @@ if(UNIX)
 
     # do we need --install-lib=$(PYTHON_INSTALL_LIB) ?
 
-    set(SETUP_OPTS "${SETUP_OPTS} --prefix=\"${CMAKE_INSTALL_PREFIX}\"")
+    set(SETUP_OPTS "${SETUP_OPTS} --prefix=${CMAKE_INSTALL_PREFIX}")
     
     if(NOT SUPRESS_VERBOSE_OUTPUT)
         message(STATUS "setup tools options: ${SETUP_OPTS}")
