@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_vrt.h 33138 2016-01-24 11:18:11Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions for OGR/VRT driver.
@@ -40,11 +40,11 @@
 #include <string>
 #include <set>
 
-typedef enum { 
+typedef enum {
     VGS_None,
     VGS_Direct,
-    VGS_PointFromColumns, 
-    VGS_WKT, 
+    VGS_PointFromColumns,
+    VGS_WKT,
     VGS_WKB,
     VGS_Shape
 } OGRVRTGeometryStyle;
@@ -111,7 +111,7 @@ class OGRVRTLayer : public OGRLayer
 
     char                *pszAttrFilter;
 
-    int                 iFIDField; // -1 means pass through. 
+    int                 iFIDField; // -1 means pass through.
     CPLString           osFIDFieldName;
     int                 iStyleField; // -1 means pass through.
 
@@ -282,5 +282,3 @@ class OGRVRTDataSource : public OGRDataSource
 OGRwkbGeometryType OGRVRTGetGeometryType(const char* pszGType, int* pbError);
 
 #endif /* ndef OGR_VRT_H_INCLUDED */
-
-

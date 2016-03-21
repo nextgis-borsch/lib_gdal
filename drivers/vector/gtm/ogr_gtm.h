@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_gtm.h 32698 2016-01-03 18:07:36Z goatbar $
+ * $Id$
  *
  * Project:  GTM Driver
  * Purpose:  Declarations for OGR wrapper classes for GTM, and OGR->GTM
@@ -181,9 +181,9 @@ public:
 
     OGRLayer* GetLayer( int );
 
-    OGRLayer* ICreateLayer(const char *pszName, 
-                           OGRSpatialReference *poSpatialRef=NULL, 
-                           OGRwkbGeometryType eGType=wkbUnknown, 
+    OGRLayer* ICreateLayer(const char *pszName,
+                           OGRSpatialReference *poSpatialRef=NULL,
+                           OGRwkbGeometryType eGType=wkbUnknown,
                            char **papszOptions=NULL);
     int TestCapability( const char * );
 
@@ -215,11 +215,11 @@ public:
 
     void checkBounds(float newLat,
                      float newLon);
-    int getNumWaypoints() { return numWaypoints; } 
+    int getNumWaypoints() { return numWaypoints; }
     int getNumTrackpoints() { return numTrackpoints; }
     int getTracks() { return numTracks; };
 
-    int incNumWaypoints() { return ++numWaypoints; } 
+    int incNumWaypoints() { return ++numWaypoints; }
     int incNumTrackpoints() { return ++numTrackpoints; }
     int incNumTracks() { return ++numTracks; };
 private:

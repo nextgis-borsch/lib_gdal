@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrhtfdatasource.cpp 32744 2016-01-04 22:26:42Z goatbar $
+ * $Id$
  *
  * Project:  HTF Translator
  * Purpose:  Implements OGRHTFDataSource class
@@ -31,7 +31,7 @@
 #include "cpl_string.h"
 #include "ogr_htf.h"
 
-CPL_CVSID("$Id: ogrhtfdatasource.cpp 32744 2016-01-04 22:26:42Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                          OGRHTFDataSource()                          */

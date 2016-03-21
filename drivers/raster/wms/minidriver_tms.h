@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: minidriver_tms.h 18589 2010-01-19 18:54:53Z warmerdam $
+ * $Id$
  *
  * Project:  WMS Client Driver
  * Purpose:  Implementation of Dataset and RasterBand classes for WMS

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdaljp2abstractdataset.h 33529 2016-02-23 02:30:32Z goatbar $
+ * $Id$
  *
  * Project:  GDAL
  * Purpose:  GDALGeorefPamDataset with helper to read georeferencing and other

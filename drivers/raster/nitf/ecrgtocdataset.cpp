@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ecrgtocdataset.cpp 32285 2015-12-19 22:26:55Z rouault $
+ * $Id$
  *
  * Project:  ECRG TOC read Translator
  * Purpose:  Implementation of ECRGTOCDataset and ECRGTOCSubDataset.
@@ -37,7 +37,7 @@
 
 #include <vector>
 
-CPL_CVSID("$Id: ecrgtocdataset.cpp 32285 2015-12-19 22:26:55Z rouault $");
+CPL_CVSID("$Id$");
 
 /** Overview of used classes :
    - ECRGTOCDataset : lists the different subdatasets, listed in the .xml,
@@ -186,8 +186,8 @@ void ECRGTOCDataset::AddSubDataset( const char* pszFilename,
     const int nCount = CSLCount(papszSubDatasets ) / 2;
 
     snprintf( szName, sizeof(szName), "SUBDATASET_%d_NAME", nCount+1 );
-    papszSubDatasets = 
-        CSLSetNameValue( papszSubDatasets, szName, 
+    papszSubDatasets =
+        CSLSetNameValue( papszSubDatasets, szName,
               CPLSPrintf( "ECRG_TOC_ENTRY:%s:%s:%s:%s",
                           LaunderString(pszProductTitle).c_str(),
                           LaunderString(pszDiscId).c_str(),

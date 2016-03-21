@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_bna.h 32177 2015-12-14 07:25:30Z goatbar $
+ * $Id$
  *
  * Project:  BNA Translator
  * Purpose:  Definition of classes for OGR .bna driver.
@@ -137,7 +137,7 @@ class OGRBNADataSource : public OGRDataSource
     int                 Open( const char * pszFilename,
                               int bUpdate );
 
-    int                 Create( const char *pszFilename, 
+    int                 Create( const char *pszFilename,
                               char **papszOptions );
 
     const char*         GetName() { return pszName; }

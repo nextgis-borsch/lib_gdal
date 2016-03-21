@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrshape.h 33539 2016-02-24 15:20:43Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions within the Shapefile driver to implement
@@ -48,7 +48,7 @@
 /*      Functions from Shape2ogr.cpp.                                   */
 /* ==================================================================== */
 OGRFeature *SHPReadOGRFeature( SHPHandle hSHP, DBFHandle hDBF,
-                               OGRFeatureDefn * poDefn, int iShape, 
+                               OGRFeatureDefn * poDefn, int iShape,
                                SHPObject *psShape, const char *pszSHPEncoding );
 OGRGeometry *SHPReadOGRObject( SHPHandle hSHP, int iShape, SHPObject *psShape );
 OGRFeatureDefn *SHPReadOGRFeatureDefn( const char * pszName,
@@ -262,7 +262,7 @@ class OGRShapeDataSource CPL_FINAL: public OGRDataSource
     virtual OGRLayer    *GetLayer( int );
     virtual OGRLayer    *GetLayerByName(const char *);
 
-    virtual OGRLayer    *ICreateLayer( const char *, 
+    virtual OGRLayer    *ICreateLayer( const char *,
                                       OGRSpatialReference * = NULL,
                                       OGRwkbGeometryType = wkbUnknown,
                                       char ** = NULL );

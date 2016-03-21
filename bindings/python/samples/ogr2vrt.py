@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 ###############################################################################
-# $Id: ogr2vrt.py 33569 2016-02-26 21:07:25Z rouault $
+# $Id$
 #
 # Project:  OGR Python samples
 # Purpose:  Create OGR VRT from source datasource
@@ -52,7 +52,9 @@ def GeomType2Name( type ):
             ogr.wkbCompoundCurve : ('wkbCompoundCurve', 'Z'),
             ogr.wkbCurvePolygon : ('wkbCurvePolygon', 'Z'),
             ogr.wkbMultiCurve : ('wkbMultiCurve', 'Z'),
-            ogr.wkbMultiSurface : ('wkbMultiSurface', 'Z') }
+            ogr.wkbMultiSurface : ('wkbMultiSurface', 'Z'),
+            ogr.wkbCurve : ('wkbCurve', 'Z'),
+            ogr.wkbSurface : ('wkbSurface', 'Z') }
     ret = dic[flat_type][0]
     if flat_type != type:
         if ogr.GT_HasM(type):

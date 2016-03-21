@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: jpgdataset_12.cpp 32400 2015-12-20 22:54:44Z rouault $
+ * $Id$
  *
  * Project:  JPEG JFIF Driver
  * Purpose:  Implement GDAL JPEG Support based on IJG libjpeg.
@@ -31,7 +31,7 @@
 
 #undef ENABLE_LIBJPEG_NO_RETURN
 
-#define LIBJPEG_12_PATH   "libjpeg12/jpeglib.h" 
+#define LIBJPEG_12_PATH   "libjpeg12/jpeglib.h"
 #define JPGDataset        JPGDataset12
 #define GDALJPEGErrorStruct     GDALJPEGErrorStruct12
 #define jpeg_vsiio_src    jpeg_vsiio_src_12

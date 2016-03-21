@@ -1,5 +1,5 @@
-/***************************************************************************** 
- * $Id: gdalhttp.h 33105 2016-01-23 15:27:32Z rouault $
+/*****************************************************************************
+ * $Id$
  *
  * Project:  WMS Client Driver
  * Purpose:  Implementation of Dataset and RasterBand classes for WMS

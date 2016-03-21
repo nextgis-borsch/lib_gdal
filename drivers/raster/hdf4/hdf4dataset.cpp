@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hdf4dataset.cpp 33314 2016-02-01 23:21:40Z goatbar $
+ * $Id$
  *
  * Project:  Hierarchical Data Format Release 4 (HDF4)
  * Purpose:  HDF4 Datasets. Open HDF4 file, fetch metadata and list of
@@ -42,7 +42,7 @@
 
 #include "hdf4dataset.h"
 
-CPL_CVSID("$Id: hdf4dataset.cpp 33314 2016-02-01 23:21:40Z goatbar $");
+CPL_CVSID("$Id$");
 
 extern const char * const pszGDALSignature;
 
@@ -344,7 +344,7 @@ double HDF4Dataset::AnyTypeToDouble( int32 iNumType, void *pData )
 /*         Tokenize HDF-EOS attributes.                                 */
 /************************************************************************/
 
-char **HDF4Dataset::HDF4EOSTokenizeAttrs( const char * pszString ) 
+char **HDF4Dataset::HDF4EOSTokenizeAttrs( const char * pszString )
 
 {
     const char  * const pszDelimiters = " \t\n\r";
@@ -384,6 +384,7 @@ char **HDF4Dataset::HDF4EOSTokenizeAttrs( const char * pszString )
             if ( *pszString == '"' )
             {
                 bInString = !bInString;
+                continue;
             }
             else if ( *pszString == '(' )
             {

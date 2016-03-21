@@ -25,10 +25,10 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-option(GDAL_ENABLE_OGR "Build OGR module" ON)
-if(GDAL_ENABLE_OGR)
+#option(GDAL_ENABLE_OGR "Build OGR module" ON)
+#if(GDAL_ENABLE_OGR)
     add_definitions(-DOGR_ENABLED)
-endif()
+#endif()
 add_definitions(-DHAVE_MITAB)
 
 set(TARGET_NAME ogr)

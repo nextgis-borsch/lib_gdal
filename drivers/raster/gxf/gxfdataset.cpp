@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gxfdataset.cpp 32234 2015-12-18 12:40:59Z rouault $
+ * $Id$
  *
  * Project:  GXF Reader
  * Purpose:  GDAL binding for GXF reader.
@@ -32,7 +32,7 @@
 #include "gdal_pam.h"
 #include "gxfopen.h"
 
-CPL_CVSID("$Id: gxfdataset.cpp 32234 2015-12-18 12:40:59Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -310,7 +310,7 @@ GDALDataset *GXFDataset::Open( GDALOpenInfo * poOpenInfo )
     if( poOpenInfo->eAccess == GA_Update )
     {
         GXFClose(l_hGXF);
-        CPLError( CE_Failure, CPLE_NotSupported, 
+        CPLError( CE_Failure, CPLE_NotSupported,
                   "The GXF driver does not support update access to existing"
                   " datasets.\n" );
         return NULL;
@@ -348,9 +348,9 @@ GDALDataset *GXFDataset::Open( GDALOpenInfo * poOpenInfo )
 
     if  (poDS->nRasterXSize <= 0 || poDS->nRasterYSize <= 0)
     {
-        CPLError( CE_Failure, CPLE_AppDefined, 
-                  "Invalid dimensions : %d x %d", 
-                  poDS->nRasterXSize, poDS->nRasterYSize); 
+        CPLError( CE_Failure, CPLE_AppDefined,
+                  "Invalid dimensions : %d x %d",
+                  poDS->nRasterXSize, poDS->nRasterYSize);
         delete poDS;
         return NULL;
     }

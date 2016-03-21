@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 ###############################################################################
-# $Id: gdal_ls.py 31957 2015-12-02 12:44:54Z goatbar $
+# $Id$
 #
 #  Project:  GDAL samples
 #  Purpose:  Display the list of files in a virtual directory, like /vsicurl or /vsizip

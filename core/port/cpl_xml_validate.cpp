@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_xml_validate.cpp 32883 2016-01-09 18:24:40Z rouault $
+ * $Id$
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Implement XML validation against XSD schema
@@ -29,7 +29,7 @@
 
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: cpl_xml_validate.cpp 32883 2016-01-09 18:24:40Z rouault $");
+CPL_CVSID("$Id$");
 
 #ifdef HAVE_LIBXML2
 #include <libxml/xmlversion.h>

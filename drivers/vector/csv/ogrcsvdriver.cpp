@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrcsvdriver.cpp 32513 2015-12-28 21:35:31Z rouault $
+ * $Id$
  *
  * Project:  CSV Translator
  * Purpose:  Implements OGRCSVDriver.
@@ -33,7 +33,7 @@
 #include "cpl_multiproc.h"
 #include <map>
 
-CPL_CVSID("$Id: ogrcsvdriver.cpp 32513 2015-12-28 21:35:31Z rouault $");
+CPL_CVSID("$Id$");
 
 static CPLMutex* hMutex = NULL;
 static std::map<CPLString, GDALDataset*> *poMap = NULL;
@@ -226,8 +226,8 @@ static GDALDataset *OGRCSVDriverCreate( const char * pszName,
         else if( !EQUAL(pszName, "/vsistdout/") &&
             VSIMkdir( pszName, 0755 ) != 0 )
         {
-            CPLError( CE_Failure, CPLE_AppDefined, 
-                      "Failed to create directory %s:\n%s", 
+            CPLError( CE_Failure, CPLE_AppDefined,
+                      "Failed to create directory %s:\n%s",
                       pszName, VSIStrerror( errno ) );
             return NULL;
         }

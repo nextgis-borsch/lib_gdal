@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrsfdriverregistrar.cpp 32177 2015-12-14 07:25:30Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRSFDriverRegistrar class implementation.
@@ -32,7 +32,7 @@
 #include "ogr_api.h"
 #include "ograpispy.h"
 
-CPL_CVSID("$Id: ogrsfdriverregistrar.cpp 32177 2015-12-14 07:25:30Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                         OGRSFDriverRegistrar                         */
@@ -80,7 +80,7 @@ int OGRwillNeverBeTrue = FALSE;
 #endif
 
 /**
- * \brief Cleanup all OGR related resources. 
+ * \brief Cleanup all OGR related resources.
  *
  * FIXME
  */
@@ -408,6 +408,6 @@ OGRSFDriverH OGRGetDriverByName( const char *pszName )
 {
     VALIDATE_POINTER1( pszName, "OGRGetDriverByName", NULL );
 
-    return (OGRSFDriverH) 
+    return (OGRSFDriverH)
         OGRSFDriverRegistrar::GetRegistrar()->GetDriverByName( pszName );
 }

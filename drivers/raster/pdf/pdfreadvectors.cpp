@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: pdfreadvectors.cpp 33123 2016-01-23 18:59:28Z rouault $
+ * $Id$
  *
  * Project:  PDF driver
  * Purpose:  GDALDataset driver for PDF dataset (read vector features)
@@ -32,7 +32,7 @@
 #define SQUARE(x) ((x)*(x))
 #define EPSILON 1e-5
 
-CPL_CVSID("$Id: pdfreadvectors.cpp 33123 2016-01-23 18:59:28Z rouault $");
+CPL_CVSID("$Id$");
 
 #if defined(HAVE_POPPLER) || defined(HAVE_PODOFO) || defined(HAVE_PDFIUM)
 

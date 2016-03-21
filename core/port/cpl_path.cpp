@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_path.cpp 33646 2016-03-05 15:54:03Z goatbar $
+ * $Id$
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Portable filename/path parsing, and forming ala "Glob API".
@@ -33,7 +33,7 @@
 #include "cpl_string.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id: cpl_path.cpp 33646 2016-03-05 15:54:03Z goatbar $");
+CPL_CVSID("$Id$");
 
 /* should be size of larged possible filename */
 static const int CPL_PATH_BUF_SIZE = 2048;
@@ -61,7 +61,7 @@ static const char* CPLStaticBufferTooSmall(char *pszStaticResult)
 static char *CPLGetStaticResult()
 
 {
-    int bMemoryError;
+    int bMemoryError = FALSE;
     char *pachBufRingInfo
         = static_cast<char *>( CPLGetTLSEx( CTLS_PATHBUF, &bMemoryError ) );
     if( bMemoryError )

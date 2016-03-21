@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: vfkpropertydefn.cpp 32177 2015-12-14 07:25:30Z goatbar $
+ * $Id$
  *
  * Project:  VFK Reader - Data block property definition
  * Purpose:  Implements VFKPropertyDefn class.
@@ -111,7 +111,7 @@ VFKPropertyDefn::~VFKPropertyDefn()
 }
 
 /*!
-  \brief Get SQL data type 
+  \brief Get SQL data type
 
   \return string with data type ("text" by default)
 */

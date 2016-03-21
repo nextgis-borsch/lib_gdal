@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrcouchdblayer.cpp 32247 2015-12-19 07:05:52Z goatbar $
+ * $Id$
  *
  * Project:  CouchDB Translator
  * Purpose:  Implements OGRCouchDBLayer class.
@@ -31,7 +31,7 @@
 #include "ogrgeojsonreader.h"
 #include "ogrgeojsonutils.h"
 
-CPL_CVSID("$Id: ogrcouchdblayer.cpp 32247 2015-12-19 07:05:52Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                            OGRCouchDBLayer()                             */

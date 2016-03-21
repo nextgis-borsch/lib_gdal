@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_vsil_gzip.cpp 33646 2016-03-05 15:54:03Z goatbar $
+ * $Id$
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Implement VSI large file api for gz/zip files (.gz and .zip).
@@ -84,7 +84,7 @@
 #include "cpl_minizip_unzip.h"
 #include "cpl_time.h"
 
-CPL_CVSID("$Id: cpl_vsil_gzip.cpp 33646 2016-03-05 15:54:03Z goatbar $");
+CPL_CVSID("$Id$");
 
 #define Z_BUFSIZE 65536  /* original size is 16384 */
 static int const gz_magic[2] = {0x1f, 0x8b}; /* gzip magic header */
@@ -468,7 +468,7 @@ void VSIGZipHandle::check_header()
         while (len-- != 0 && get_byte() != EOF) ;
     }
 
-    int c;
+    int c = 0;
     if ((flags & ORIG_NAME) != 0) { /* skip the original file name */
         while ((c = get_byte()) != 0 && c != EOF) ;
     }
@@ -1521,9 +1521,8 @@ int VSIGZipFilesystemHandler::Stat( const char *pszFilename,
                 VSIGZipFilesystemHandler::OpenGZipReadOnly(pszFilename, "rb");
         if (poHandle)
         {
-            GUIntBig uncompressed_size;
             poHandle->Seek(0, SEEK_END);
-            uncompressed_size = (GUIntBig) poHandle->Tell();
+            const GUIntBig uncompressed_size = (GUIntBig) poHandle->Tell();
             poHandle->Seek(0, SEEK_SET);
 
             /* Patch with the uncompressed size */
@@ -2451,7 +2450,7 @@ void* CPLZLibDeflate( const void* ptr,
         return NULL;
     }
 
-    size_t nTmpSize;
+    size_t nTmpSize = 0;
     void* pTmp;
     if( outptr == NULL )
     {
@@ -2528,7 +2527,7 @@ void* CPLZLibInflate( const void* ptr, size_t nBytes,
         return NULL;
     }
 
-    size_t nTmpSize;
+    size_t nTmpSize = 0;
     char* pszTmp;
     if( outptr == NULL )
     {

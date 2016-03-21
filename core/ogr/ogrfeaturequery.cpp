@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrfeaturequery.cpp 33631 2016-03-04 06:28:09Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implementation of simple SQL WHERE style attributes queries
@@ -35,7 +35,7 @@
 #include "ogr_p.h"
 #include "ogr_attrind.h"
 
-CPL_CVSID("$Id: ogrfeaturequery.cpp 33631 2016-03-04 06:28:09Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*     Support for special attributes (feature query and selection)     */

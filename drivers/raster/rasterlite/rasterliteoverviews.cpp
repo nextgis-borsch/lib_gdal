@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: rasterliteoverviews.cpp 32984 2016-01-14 19:08:12Z goatbar $
+ * $Id$
  *
  * Project:  GDAL Rasterlite driver
  * Purpose:  Implement GDAL Rasterlite support using OGR SQLite driver
@@ -33,7 +33,7 @@
 
 #include "rasterlitedataset.h"
 
-CPL_CVSID("$Id: rasterliteoverviews.cpp 32984 2016-01-14 19:08:12Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                         ReloadOverviews()                            */

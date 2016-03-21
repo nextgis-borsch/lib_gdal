@@ -29,7 +29,7 @@
 
 #include "ogr_xplane_nav_reader.h"
 
-CPL_CVSID("$Id: ogr_xplane_nav_reader.cpp 31120 2015-10-24 19:55:09Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                   OGRXPlaneCreateNavFileReader                       */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gtmtracklayer.cpp 33093 2016-01-22 17:38:07Z rouault $
+ * $Id$
  *
  * Project:  GTM Driver
  * Purpose:  Implementation of GTMTrackLayer class.
@@ -329,7 +329,7 @@ OGRFeature* GTMTrackLayer::GetNextFeature()
         for (int i = 0; i < poTrack->getNumPoints(); ++i)
         {
             const TrackPoint* psTrackPoint = poTrack->getPoint(i);
-            lineString->addPoint(psTrackPoint->x, 
+            lineString->addPoint(psTrackPoint->x,
                                  psTrackPoint->y);
         }
         if (poSRS)

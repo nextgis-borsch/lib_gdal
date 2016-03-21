@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_srs_proj4.cpp 33631 2016-03-04 06:28:09Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  OGRSpatialReference interface to PROJ.4.
@@ -36,7 +36,7 @@
 
 extern int EPSGGetWGS84Transform( int nGeogCS, std::vector<CPLString>& asTransform );
 
-CPL_CVSID("$Id: ogr_srs_proj4.cpp 33631 2016-03-04 06:28:09Z goatbar $");
+CPL_CVSID("$Id$");
 
 /* -------------------------------------------------------------------- */
 /*      The following list comes from osrs/proj/src/pj_ellps.c.         */

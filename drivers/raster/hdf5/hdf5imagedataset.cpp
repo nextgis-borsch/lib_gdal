@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hdf5imagedataset.cpp 33312 2016-02-01 20:40:38Z goatbar $
+ * $Id$
  *
  * Project:  Hierarchical Data Format Release 5 (HDF5)
  * Purpose:  Read subdatasets of HDF5 file.
@@ -49,7 +49,7 @@
 #include "hdf5dataset.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: hdf5imagedataset.cpp 33312 2016-02-01 20:40:38Z goatbar $");
+CPL_CVSID("$Id$");
 
 /* release 1.6.3 or 1.6.4 changed the type of count in some api functions */
 
@@ -954,8 +954,9 @@ void HDF5ImageDataset::IdentifyProductType()
     //If there is a Mission_ID field
     if(pszMissionId != NULL && strstr(GetDescription(), "QLK") == NULL)
     {
-        //Check if the mission type is CSK
-        if(EQUAL(pszMissionId,"CSK"))
+        //Check if the mission type is CSK or KMPS
+        //KMPS: Komsat-5 is Korean mission with a SAR intrument.
+        if(EQUAL(pszMissionId,"CSK") || EQUAL(pszMissionId,"KMPS"))
         {
             iSubdatasetType = CSK_PRODUCT;
 

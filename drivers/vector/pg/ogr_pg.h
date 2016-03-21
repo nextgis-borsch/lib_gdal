@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_pg.h 33647 2016-03-05 16:43:00Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions for OGR/PostgreSQL driver.
@@ -302,7 +302,7 @@ class OGRPGTableLayer : public OGRPGLayer
     CPLString           osCreateTable;
 
     int                 iFIDAsRegularColumnIndex;
-    
+
     CPLString           m_osFirstGeometryFieldName;
 
     virtual CPLString   GetFromClauseForGetExtent() { return pszSqlTableName; }
@@ -562,4 +562,3 @@ class OGRPGDataSource : public OGRDataSource
 };
 
 #endif /* ndef OGR_PG_H_INCLUDED */
-

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: vsidataio.cpp 31076 2015-10-19 20:19:01Z goatbar $
+ * $Id$
  *
  * Project:  JPEG JFIF Driver
  * Purpose:  Implement JPEG read/write io indirection through VSI.
@@ -30,7 +30,7 @@
 
 #include "vsidataio.h"
 
-CPL_CVSID("$Id: vsidataio.cpp 31076 2015-10-19 20:19:01Z goatbar $");
+CPL_CVSID("$Id$");
 
 CPL_C_START
 #include "jerror.h"
@@ -126,7 +126,7 @@ fill_input_buffer (j_decompress_ptr cinfo)
 }
 
 /*
- * The Intel IPP performance libraries do not necessarily read the 
+ * The Intel IPP performance libraries do not necessarily read the
  * entire contents of the buffer with each pass, so each re-fill
  * copies the remaining buffer bytes to the front of the buffer,
  * then fills up the rest with new data.

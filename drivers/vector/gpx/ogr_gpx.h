@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_gpx.h 32665 2016-01-02 06:41:04Z goatbar $
+ * $Id$
  *
  * Project:  GPX Translator
  * Purpose:  Definition of classes for OGR .gpx driver.
@@ -214,7 +214,7 @@ class OGRGPXDataSource : public OGRDataSource
     int                 Open( const char * pszFilename,
                               int bUpdate );
 
-    int                 Create( const char *pszFilename, 
+    int                 Create( const char *pszFilename,
                               char **papszOptions );
 
     const char*         GetName() { return pszName; }

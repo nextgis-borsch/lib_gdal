@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrpdsdatasource.cpp 33047 2016-01-19 14:47:32Z goatbar $
+ * $Id$
  *
  * Project:  PDS Translator
  * Purpose:  Implements OGRPDSDataSource class
@@ -31,7 +31,7 @@
 #include "cpl_string.h"
 #include "ogr_pds.h"
 
-CPL_CVSID("$Id: ogrpdsdatasource.cpp 33047 2016-01-19 14:47:32Z goatbar $");
+CPL_CVSID("$Id$");
 
 using namespace OGRPDS;
 

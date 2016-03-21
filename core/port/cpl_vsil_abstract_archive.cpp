@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_vsil_abstract_archive.cpp 33646 2016-03-05 15:54:03Z goatbar $
+ * $Id$
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Implement VSI large file api for archive files.
@@ -35,7 +35,7 @@
 
 #define ENABLE_DEBUG 0
 
-CPL_CVSID("$Id: cpl_vsil_abstract_archive.cpp 33646 2016-03-05 15:54:03Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                    ~VSIArchiveEntryFileOffset()                      */
@@ -251,8 +251,7 @@ int VSIArchiveFilesystemHandler::FindFileInArchive(const char* archiveFilename,
     const VSIArchiveContent* content = GetContentOfArchive(archiveFilename);
     if (content)
     {
-        int i;
-        for(i=0;i<content->nEntries;i++)
+        for( int i = 0; i < content->nEntries; i++ )
         {
             if (strcmp(fileInArchiveName, content->entries[i].fileName) == 0)
             {
@@ -439,9 +438,8 @@ VSIArchiveReader* VSIArchiveFilesystemHandler::OpenArchiveFile(const char* archi
             const VSIArchiveContent* content = GetContentOfArchive(archiveFilename, poReader);
             if (content)
             {
-                int i;
                 msg += "\nYou could try one of the following :\n";
-                for(i=0;i<content->nEntries;i++)
+                for( int i=0; i < content->nEntries; i++ )
                 {
                     msg += CPLString().Printf("  %s/%s/%s\n", GetPrefix(), archiveFilename, content->entries[i].fileName);
                 }
@@ -611,8 +609,7 @@ char** VSIArchiveFilesystemHandler::ReadDirEx( const char *pszDirname,
     }
 
     if (ENABLE_DEBUG) CPLDebug("VSIArchive", "Read dir %s", pszDirname);
-    int i;
-    for(i=0;i<content->nEntries;i++)
+    for( int i=0; i < content->nEntries; i++ )
     {
         const char* fileName = content->entries[i].fileName;
         /* Only list entries at the same level of inArchiveSubDir */

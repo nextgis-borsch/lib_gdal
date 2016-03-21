@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: sdtsxref.cpp 31332 2015-11-03 17:34:39Z goatbar $
+ * $Id$
  *
  * Project:  SDTS Translator
  * Purpose:  Implementation of SDTS_XREF class for reading XREF module.
@@ -29,7 +29,7 @@
 
 #include "sdts_al.h"
 
-CPL_CVSID("$Id: sdtsxref.cpp 31332 2015-11-03 17:34:39Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                             SDTS_XREF()                              */
@@ -82,11 +82,11 @@ int SDTS_XREF::Read( const char * pszFilename )
 /* -------------------------------------------------------------------- */
 
     CPLFree( pszSystemName );
-    pszSystemName = 
+    pszSystemName =
         CPLStrdup( poRecord->GetStringSubfield( "XREF", 0, "RSNM", 0 ) );
 
     CPLFree( pszDatum );
-    pszDatum = 
+    pszDatum =
         CPLStrdup( poRecord->GetStringSubfield( "XREF", 0, "HDAT", 0 ) );
 
     nZone = poRecord->GetIntSubfield( "XREF", 0, "ZONE", 0 );

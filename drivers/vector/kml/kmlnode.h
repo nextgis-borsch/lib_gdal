@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: kmlnode.h 32872 2016-01-09 10:16:42Z goatbar $
+ * $Id$
  *
  * Project:  KML Driver
  * Purpose:  Class for building up the node structure of the kml file.

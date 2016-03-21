@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrmssqlgeometryparser.cpp 32839 2016-01-08 12:35:29Z rouault $
+ * $Id$
  *
  * Project:  MSSQL Spatial driver
  * Purpose:  Implements OGRMSSQLGeometryParser class to parse native SqlGeometries.
@@ -30,7 +30,7 @@
 #include "cpl_conv.h"
 #include "ogr_mssqlspatial.h"
 
-CPL_CVSID("$Id: ogrmssqlgeometryparser.cpp 32839 2016-01-08 12:35:29Z rouault $");
+CPL_CVSID("$Id$");
 
 /*   SqlGeometry serialization format
 
@@ -282,7 +282,7 @@ OGRPolygon* OGRMSSQLGeometryParser::ReadPolygon(int iShape)
         while (iPoint < iNextPoint)
         {
             if (nColType == MSSQLCOLTYPE_GEOGRAPHY)
-            {  
+            {
                 if ( chProps & SP_HASZVALUES )
                     poRing->setPoint(i, ReadY(iPoint), ReadX(iPoint), ReadZ(iPoint) );
                 else
@@ -381,7 +381,7 @@ OGRGeometryCollection* OGRMSSQLGeometryParser::ReadGeometryCollection(int iShape
 /************************************************************************/
 
 
-OGRErr OGRMSSQLGeometryParser::ParseSqlGeometry(unsigned char* pszInput, 
+OGRErr OGRMSSQLGeometryParser::ParseSqlGeometry(unsigned char* pszInput,
                                 int nLen, OGRGeometry **poGeom)
 {
     if (nLen < 10)
@@ -560,4 +560,3 @@ OGRErr OGRMSSQLGeometryParser::ParseSqlGeometry(unsigned char* pszInput,
 
     return OGRERR_NONE;
 }
-

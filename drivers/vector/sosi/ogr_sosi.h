@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_sosi.h 32177 2015-12-14 07:25:30Z goatbar $
+ * $Id$
  *
  * Project:  SOSI Translator
  * Purpose:  Implements OGRSOSIDriver.
@@ -84,7 +84,7 @@ class OGRSOSIDataSource : public OGRDataSource {
     int                 nLayers;
 
 #define MODE_READING 0
-#define MODE_WRITING 1    
+#define MODE_WRITING 1
     int                 nMode;
 
     void                buildOGRPoint(long nSerial);

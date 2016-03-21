@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_http.cpp 33646 2016-03-05 15:54:03Z goatbar $
+ * $Id$
  *
  * Project:  libcurl based HTTP client
  * Purpose:  libcurl based HTTP client
@@ -44,7 +44,7 @@ void CPLHTTPSetOptions(CURL *http_handle, char** papszOptions);
 
 #endif
 
-CPL_CVSID("$Id: cpl_http.cpp 33646 2016-03-05 15:54:03Z goatbar $");
+CPL_CVSID("$Id$");
 
 // list of named persistent http sessions
 

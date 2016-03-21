@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdaldrivermanager.cpp 33547 2016-02-24 22:05:11Z goatbar $
+ * $Id$
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of GDALDriverManager class.
@@ -42,7 +42,7 @@
 #  endif
 #endif
 
-CPL_CVSID("$Id: gdaldrivermanager.cpp 33547 2016-02-24 22:05:11Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -750,7 +750,7 @@ void GDALDriverManager::AutoLoadDrivers()
         if( VSIStatL( osABISpecificDir, &sStatBuf ) != 0 )
             osABISpecificDir = papszSearchPath[iDir];
 
-        char **papszFiles = CPLReadDir( osABISpecificDir );
+        char **papszFiles = VSIReadDir( osABISpecificDir );
         const int nFileCount = CSLCount(papszFiles);
 
         for( int iFile = 0; iFile < nFileCount; iFile++ )

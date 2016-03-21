@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalallvalidmaskband.cpp 31440 2015-11-12 01:38:25Z goatbar $
+ * $Id$
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of GDALAllValidMaskBand, a class implementing all
@@ -30,7 +30,7 @@
 
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id: gdalallvalidmaskband.cpp 31440 2015-11-12 01:38:25Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                        GDALAllValidMaskBand()                        */

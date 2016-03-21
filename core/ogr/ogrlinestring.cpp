@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrlinestring.cpp 33631 2016-03-04 06:28:09Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRSimpleCurve and OGRLineString geometry classes.
@@ -33,7 +33,7 @@
 #include <assert.h>
 #include "ogr_geos.h"
 
-CPL_CVSID("$Id: ogrlinestring.cpp 33631 2016-03-04 06:28:09Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                           OGRSimpleCurve()                           */

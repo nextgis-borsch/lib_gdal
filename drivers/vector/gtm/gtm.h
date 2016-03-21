@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gtm.h 32698 2016-01-03 18:07:36Z goatbar $
+ * $Id$
  *
  * Project:  GTM Driver
  * Purpose:  Class for reading, parsing and handling a gtm file.
@@ -128,11 +128,11 @@ public:
     unsigned char getType() const;
     int getColor() const;
 
-    void addPoint(double x, double y, GIntBig datetime, double altitude);  
+    void addPoint(double x, double y, GIntBig datetime, double altitude);
     int getNumPoints() const;
     const TrackPoint* getPoint(int pointNum) const;
 
-private: 
+private:
     char* pszName;
     unsigned char type;
     int color;

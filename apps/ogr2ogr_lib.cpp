@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr2ogr_lib.cpp 33615 2016-03-02 20:19:22Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Simple client for translating between formats.
@@ -42,7 +42,7 @@
 #include <map>
 #include <vector>
 
-CPL_CVSID("$Id: ogr2ogr_lib.cpp 33615 2016-03-02 20:19:22Z goatbar $");
+CPL_CVSID("$Id$");
 
 typedef enum
 {

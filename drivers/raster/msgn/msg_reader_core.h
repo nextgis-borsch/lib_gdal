@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: msg_reader_core.h 11698 2007-06-25 16:33:06Z warmerdam $
+ * $Id$
  *
  * Project:  MSG Native Reader
  * Purpose:  Base class for reading in the headers of MSG native images

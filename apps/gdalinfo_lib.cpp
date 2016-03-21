@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalinfo_lib.cpp 33615 2016-03-02 20:19:22Z goatbar $
+ * $Id$
  *
  * Project:  GDAL Utilities
  * Purpose:  Command line application to list info about a file.
@@ -45,7 +45,7 @@
 
 using std::vector;
 
-CPL_CVSID("$Id: gdalinfo_lib.cpp 33615 2016-03-02 20:19:22Z goatbar $");
+CPL_CVSID("$Id$");
 
 /*! output format */
 typedef enum {

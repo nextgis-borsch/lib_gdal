@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalwarp_bin.cpp 33615 2016-03-02 20:19:22Z goatbar $
+ * $Id$
  *
  * Project:  High Performance Image Reprojector
  * Purpose:  Test program for high performance warper API.
@@ -34,7 +34,7 @@
 #include "commonutils.h"
 #include "gdal_utils_priv.h"
 
-CPL_CVSID("$Id: gdalwarp_bin.cpp 33615 2016-03-02 20:19:22Z goatbar $");
+CPL_CVSID("$Id$");
 
 /******************************************************************************/
 /*! \page gdalwarp gdalwarp
@@ -272,9 +272,7 @@ static int GDALExit( int nCode )
 
   GDALDestroyDriverManager();
 
-#ifdef OGR_ENABLED
   OGRCleanupAll();
-#endif
 
   exit( nCode );
 }
@@ -525,9 +523,7 @@ int main( int argc, char ** argv )
 
     GDALDestroyDriverManager();
 
-#ifdef OGR_ENABLED
     OGRCleanupAll();
-#endif
 
     return nRetCode;
 }

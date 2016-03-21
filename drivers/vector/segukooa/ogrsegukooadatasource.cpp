@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrsegukooadatasource.cpp 31122 2015-10-25 09:28:57Z rouault $
+ * $Id$
  *
  * Project:  SEG-P1 / UKOOA P1-90 Translator
  * Purpose:  Implements OGRSEGUKOOADataSource class
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrsegukooadatasource.cpp 31122 2015-10-25 09:28:57Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                        OGRSEGUKOOADataSource()                       */

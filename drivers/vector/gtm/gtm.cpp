@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gtm.cpp 32760 2016-01-05 17:50:33Z rouault $
+ * $Id$
  *
  * Project:  GTM Driver
  * Purpose:  Class for reading, parsing and handling a gtmfile.

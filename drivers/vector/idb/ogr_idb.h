@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_idb.h 31777 2015-11-26 14:14:41Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRIDBTableLayer class, access to an existing table
@@ -106,7 +106,7 @@ class OGRIDBTableLayer : public OGRIDBLayer
                         OGRIDBTableLayer( OGRIDBDataSource * );
                         ~OGRIDBTableLayer();
 
-    CPLErr              Initialize( const char *pszTableName, 
+    CPLErr              Initialize( const char *pszTableName,
                                     const char *pszGeomCol,
                                     int bUpdate
                                   );
@@ -121,7 +121,7 @@ class OGRIDBTableLayer : public OGRIDBLayer
 #if 0
     virtual OGRErr      CreateField( OGRFieldDefn *poField,
                                      int bApproxOK = TRUE );
-#endif    
+#endif
     virtual OGRFeature *GetFeature( GIntBig nFeatureId );
 
     virtual OGRSpatialReference *GetSpatialRef();
@@ -178,7 +178,7 @@ class OGRIDBDataSource : public OGRDataSource
                         ~OGRIDBDataSource();
 
     int                 Open( const char *, int bUpdate, int bTestOpen );
-    int                 OpenTable( const char *pszTableName, 
+    int                 OpenTable( const char *pszTableName,
                                    const char *pszGeomCol,
                                    int bUpdate );
 
@@ -218,5 +218,3 @@ ITCallbackResult
 IDBErrorHandler( const ITErrorManager &err, void * userdata, long errorlevel );
 
 #endif /* ndef _OGR_idb_H_INCLUDED_ */
-
-

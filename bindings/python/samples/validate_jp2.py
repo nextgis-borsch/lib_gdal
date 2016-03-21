@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #******************************************************************************
-#  $Id: validate_jp2.py 31957 2015-12-02 12:44:54Z goatbar $
+#  $Id$
 #
 #  Project:  GDAL
 #  Purpose:  Validate JPEG2000 file structure

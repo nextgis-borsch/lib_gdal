@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrmssqlspatialdriver.cpp 32293 2015-12-20 01:21:31Z rouault $
+ * $Id$
  *
  * Project:  MSSQL Spatial driver
  * Purpose:  Definition of classes for OGR MSSQL Spatial driver.
@@ -30,7 +30,7 @@
 #include "ogr_mssqlspatial.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrmssqlspatialdriver.cpp 32293 2015-12-20 01:21:31Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                           ~OGRMSSQLSpatialDriver()                   */

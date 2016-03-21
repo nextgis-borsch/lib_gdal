@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: testreprojmulti.cpp 33011 2016-01-15 22:20:29Z goatbar $
+ * $Id$
  *
  * Project:  GDAL
  * Purpose:  Test multi-threaded reprojection
@@ -34,7 +34,7 @@
 #include "cpl_multiproc.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: testreprojmulti.cpp 33011 2016-01-15 22:20:29Z goatbar $");
+CPL_CVSID("$Id$");
 
 double* padfRefX;
 double* padfRefY;

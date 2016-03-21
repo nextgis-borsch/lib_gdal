@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: pdfcreatecopy.cpp 32984 2016-01-14 19:08:12Z goatbar $
+ * $Id$
  *
  * Project:  PDF driver
  * Purpose:  GDALDataset driver for PDF dataset.
@@ -42,7 +42,7 @@
 /* Cf PDF reference v1.7, Appendix C, page 993 */
 #define MAXIMUM_SIZE_IN_UNITS   14400
 
-CPL_CVSID("$Id: pdfcreatecopy.cpp 32984 2016-01-14 19:08:12Z goatbar $");
+CPL_CVSID("$Id$");
 
 #define PIXEL_TO_GEO_X(x,y) adfGeoTransform[0] + x * adfGeoTransform[1] + y * adfGeoTransform[2]
 #define PIXEL_TO_GEO_Y(x,y) adfGeoTransform[3] + x * adfGeoTransform[4] + y * adfGeoTransform[5]
@@ -1889,7 +1889,6 @@ int GDALPDFWriter::WriteClippedImagery(
     return TRUE;
 }
 
-#ifdef OGR_ENABLED
 
 /************************************************************************/
 /*                          WriteOGRDataSource()                        */
@@ -2502,7 +2501,7 @@ int GDALPDFWriter::WriteOGRFeature(GDALPDFLayerDesc& osVectorDesc,
             oDict.Add("Border", &(new GDALPDFArrayRW())->Add(0).Add(0).Add(0));
             oDict.Add("H", GDALPDFObjectRW::CreateName("I"));
 
-            if( wkbFlatten(OGR_G_GetGeometryType(hGeom)) == wkbPolygon && 
+            if( wkbFlatten(OGR_G_GetGeometryType(hGeom)) == wkbPolygon &&
                 OGR_G_GetGeometryCount(hGeom) == 1 )
             {
                 OGRGeometryH hSubGeom = OGR_G_GetGeometryRef(hGeom, 0);
@@ -2682,7 +2681,7 @@ int GDALPDFWriter::WriteOGRFeature(GDALPDFLayerDesc& osVectorDesc,
                         dfX - dfRadius * dfKappa, dfY + dfRadius,
                         dfX - dfRadius, dfY + dfRadius * dfKappa,
                         dfX - dfRadius, dfY);
-            if (osSymbolId == "ogr-sym-2") 
+            if (osSymbolId == "ogr-sym-2")
                 VSIFPrintfL(fp, "s\n"); /* not filled */
             else
                 VSIFPrintfL(fp, "b*\n"); /* filled */
@@ -2958,7 +2957,6 @@ int GDALPDFWriter::WriteOGRFeature(GDALPDFLayerDesc& osVectorDesc,
     return TRUE;
 }
 
-#endif
 
 /************************************************************************/
 /*                               EndPage()                              */
@@ -4690,14 +4688,12 @@ GDALDataset *GDALPDFCreateCopy( const char * pszFilename,
     CSLDestroy(papszExtraRasters);
     CSLDestroy(papszExtraRastersLayerName);
 
-#ifdef OGR_ENABLED
     if (bRet && pszOGRDataSource != NULL)
         oWriter.WriteOGRDataSource(pszOGRDataSource,
                                    pszOGRDisplayField,
                                    pszOGRDisplayLayerNames,
                                    pszOGRLinkField,
                                    bWriteOGRAttributes);
-#endif
 
     if (bRet)
         oWriter.EndPage(pszExtraImages,

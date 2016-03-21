@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: reader_rdk1.h 29915 2015-08-29 21:29:57Z rouault $
+ * $Id$
  *
  * Project:  GDAL Core
  * Purpose:  Read metadata from Resurs-DK1 imagery.

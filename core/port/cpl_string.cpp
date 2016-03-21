@@ -1,6 +1,6 @@
 
 /**********************************************************************
- * $Id: cpl_string.cpp 33531 2016-02-23 13:21:58Z goatbar $
+ * $Id$
  *
  * Name:     cpl_string.cpp
  * Project:  CPL - Common Portability Library
@@ -53,7 +53,7 @@
 #include "cpl_string.h"
 #include "cpl_vsi.h"
 
-CPL_CVSID("$Id: cpl_string.cpp 33531 2016-02-23 13:21:58Z goatbar $");
+CPL_CVSID("$Id$");
 
 /*=====================================================================
                     StringList manipulation functions.
@@ -1156,7 +1156,7 @@ int CPLvsnprintf(char *str, size_t size, const char* fmt, va_list args)
             memcpy(localfmt, fmt, ptrend - fmt + 1);
             localfmt[ptrend-fmt+1] = '\0';
 
-            int local_ret;
+            int local_ret = 0;
             if( end == '%' )
             {
                 if( offset_out == size-1 )

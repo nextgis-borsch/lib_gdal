@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal.i 33447 2016-02-12 20:59:51Z goatbar $
+ * $Id$
  *
  * Name:     gdal.i
  * Project:  GDAL Python Interface
@@ -746,6 +746,13 @@ GDALDriverShadow* GetDriverByName( char const *name ) {
 }
 %}
 
+#ifdef SWIGPERL
+%inline %{
+GDALDriverShadow* GetDriver( char const *name ) {
+  return (GDALDriverShadow*) GDALGetDriverByName( name );
+}
+%}
+#endif
 %inline %{
 GDALDriverShadow* GetDriver( int i ) {
   return (GDALDriverShadow*) GDALGetDriver( i );

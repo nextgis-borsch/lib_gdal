@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrsqlitedriver.cpp 33587 2016-02-28 19:04:46Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRSQLiteDriver class.
@@ -9,7 +9,7 @@
  *
  * Contributor: Alessandro Furieri, a.furieri@lqt.it
  * Portions of this module properly supporting SpatiaLite DB creation
- * Developed for Faunalia ( http://www.faunalia.it) with funding from 
+ * Developed for Faunalia ( http://www.faunalia.it) with funding from
  * Regione Toscana - Settore SISTEMA INFORMATIVO TERRITORIALE ED AMBIENTALE
  *
  ******************************************************************************
@@ -38,7 +38,7 @@
 #include "ogr_sqlite.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrsqlitedriver.cpp 33587 2016-02-28 19:04:46Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                     OGRSQLiteDriverIdentify()                        */
@@ -182,7 +182,7 @@ static GDALDataset *OGRSQLiteDriverCreate( const char * pszName,
 
     if( VSIStatL( pszName, &sStatBuf ) == 0 )
     {
-        CPLError( CE_Failure, CPLE_AppDefined, 
+        CPLError( CE_Failure, CPLE_AppDefined,
                   "It seems a file system object called '%s' already exists.",
                   pszName );
 

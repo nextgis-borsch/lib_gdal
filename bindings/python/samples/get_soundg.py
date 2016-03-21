@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ###############################################################################
-# $Id: get_soundg.py 31957 2015-12-02 12:44:54Z goatbar $
+# $Id$
 #
 # Project:  OGR Python samples
 # Purpose:  Extract SOUNDGings from an S-57 dataset, and write them to

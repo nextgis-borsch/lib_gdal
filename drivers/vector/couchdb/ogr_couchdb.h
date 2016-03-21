@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_couchdb.h 33138 2016-01-24 11:18:11Z rouault $
+ * $Id$
  *
  * Project:  CouchDB Translator
  * Purpose:  Definition of classes for OGR CouchDB / GeoCouch driver.
@@ -142,7 +142,7 @@ class OGRCouchDBTableLayer : public OGRCouchDBLayer
     CPLString                 osEscapedName;
     int                       bMustWriteMetadata;
     int                       bMustRunSpatialFilter;
-    std::vector<CPLString>    aosIdsToFetch;   
+    std::vector<CPLString>    aosIdsToFetch;
     int                       bServerSideSpatialFilteringWorks;
     int                       bHasLoadedMetadata;
     CPLString                 osMetadataRev;

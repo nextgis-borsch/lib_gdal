@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrunionlayer.cpp 32177 2015-12-14 07:25:30Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRUnionLayer class
@@ -31,7 +31,7 @@
 #include "ogrwarpedlayer.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrunionlayer.cpp 32177 2015-12-14 07:25:30Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                      OGRUnionLayerGeomFieldDefn()                    */

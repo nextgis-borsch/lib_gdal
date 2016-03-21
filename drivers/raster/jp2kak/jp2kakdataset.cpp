@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: jp2kakdataset.cpp 33577 2016-02-26 22:28:34Z goatbar $
+ * $Id$
  *
  * Project:  JPEG-2000
  * Purpose:  Implementation of the ISO/IEC 15444-1 standard based on Kakadu.
@@ -45,7 +45,7 @@
 #include "subfile_source.h"
 #include "vsil_target.h"
 
-CPL_CVSID("$Id: jp2kakdataset.cpp 33577 2016-02-26 22:28:34Z goatbar $");
+CPL_CVSID("$Id$");
 
 // Before v7.5 Kakadu does not advertise its version well
 // After v7.5 Kakadu has KDU_{MAJOR,MINOR,PATCH}_VERSION defines so it's easier

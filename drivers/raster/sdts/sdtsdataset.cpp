@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: sdtsdataset.cpp 32237 2015-12-18 13:41:27Z goatbar $
+ * $Id$
  *
  * Project:  SDTS Translator
  * Purpose:  GDALDataset driver for SDTS Raster translator.
@@ -33,7 +33,7 @@
 #include "ogr_spatialref.h"
 #include "sdts_al.h"
 
-CPL_CVSID("$Id: sdtsdataset.cpp 32237 2015-12-18 13:41:27Z goatbar $");
+CPL_CVSID("$Id$");
 
 /**
  \file sdtsdataset.cpp
@@ -143,7 +143,7 @@ GDALDataset *SDTSDataset::Open( GDALOpenInfo * poOpenInfo )
     if( poOpenInfo->eAccess == GA_Update )
     {
         delete poTransfer;
-        CPLError( CE_Failure, CPLE_NotSupported, 
+        CPLError( CE_Failure, CPLE_NotSupported,
                   "The SDTS driver does not support update access to existing"
                   " datasets.\n" );
         return NULL;

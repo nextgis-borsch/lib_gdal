@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: pcrasterrasterband.cpp 31680 2015-11-21 13:44:47Z rouault $
+ * $Id$
  *
  * Project:  PCRaster Integration
  * Purpose:  PCRaster raster band implementation.

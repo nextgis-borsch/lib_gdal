@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdaljp2box.cpp 33550 2016-02-25 12:47:15Z goatbar $
+ * $Id$
  *
  * Project:  GDAL
  * Purpose:  GDALJP2Box Implementation - Low level JP2 box reader.
@@ -31,7 +31,7 @@
 #include "cpl_string.h"
 #include "gdaljp2metadata.h"
 
-CPL_CVSID("$Id: gdaljp2box.cpp 33550 2016-02-25 12:47:15Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                             GDALJP2Box()                             */

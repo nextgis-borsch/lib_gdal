@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgeojsonutils.cpp 32460 2015-12-26 00:06:24Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implementation of private utilities used within OGR GeoJSON Driver.
@@ -67,7 +67,7 @@ int GeoJSONIsObject( const char* pszText )
         return FALSE;
 
     return ((strstr(pszText, "\"type\"") != NULL && strstr(pszText, "\"coordinates\"") != NULL)
-        || (strstr(pszText, "\"type\"") != NULL && strstr(pszText, "\"Topology\"") != NULL) 
+        || (strstr(pszText, "\"type\"") != NULL && strstr(pszText, "\"Topology\"") != NULL)
         || strstr(pszText, "\"FeatureCollection\"") != NULL
         || strstr(pszText, "\"Feature\"") != NULL
         || (strstr(pszText, "\"geometryType\"") != NULL && strstr(pszText, "\"esriGeometry") != NULL));
@@ -80,9 +80,9 @@ int GeoJSONIsObject( const char* pszText )
 static
 bool GeoJSONFileIsObject( GDALOpenInfo* poOpenInfo )
 {
-    // by default read first 6000 bytes 
-    // 6000 was chosen as enough bytes to  
-    // enable all current tests to pass 
+    // by default read first 6000 bytes
+    // 6000 was chosen as enough bytes to
+    // enable all current tests to pass
 
     if( poOpenInfo->fpL == NULL ||
         !poOpenInfo->TryToIngest(6000) )

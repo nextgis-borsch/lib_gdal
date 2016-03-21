@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalhashsetbandblockcache.cpp 33536 2016-02-23 17:48:22Z goatbar $
+ * $Id$
  *
  * Project:  GDAL Core
  * Purpose:  Store cached blocks in a hash set
@@ -33,7 +33,7 @@
 #include "gdal_priv.h"
 #include <algorithm>
 
-CPL_CVSID("$Id: gdalhashsetbandblockcache.cpp 33536 2016-02-23 17:48:22Z goatbar $");
+CPL_CVSID("$Id$");
 
 /* ******************************************************************** */
 /*                        GDALHashSetBandBlockCache                     */

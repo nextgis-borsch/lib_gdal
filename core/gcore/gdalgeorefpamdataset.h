@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalgeorefpamdataset.h 33535 2016-02-23 17:41:09Z goatbar $
+ * $Id$
  *
  * Project:  GDAL
  * Purpose:  GDALPamDataset with internal storage for georeferencing, with

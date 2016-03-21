@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgeopackageselectlayer.cpp 31640 2015-11-18 23:17:59Z rouault $
+ * $Id$
  *
  * Project:  GeoPackage Translator
  * Purpose:  Implements OGRGeoPackageSelectLayer class
@@ -116,8 +116,8 @@ OGRErr OGRGeoPackageSelectLayer::ResetStatement()
     }
     else
     {
-        CPLError( CE_Failure, CPLE_AppDefined, 
-                  "In ResetStatement(): sqlite3_prepare(%s):\n  %s", 
+        CPLError( CE_Failure, CPLE_AppDefined,
+                  "In ResetStatement(): sqlite3_prepare(%s):\n  %s",
                   poBehaviour->osSQLCurrent.c_str(), sqlite3_errmsg(m_poDS->GetDB()) );
         m_poQueryStatement = NULL;
         return OGRERR_FAILURE;

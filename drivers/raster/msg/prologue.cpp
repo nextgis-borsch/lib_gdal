@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: prologue.cpp 32179 2015-12-14 16:22:34Z goatbar $
+ * $Id$
  *
  * Purpose:  Implementation of Prologue class. Parse the prologue of one
  *           repeat cycle and keep the interesting info.

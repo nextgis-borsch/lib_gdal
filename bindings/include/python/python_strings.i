@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: python_strings.i 32864 2016-01-08 21:00:50Z goatbar $
+ * $Id$
  *
  * Name:     python_strings.i
  * Project:  GDAL Python Interface

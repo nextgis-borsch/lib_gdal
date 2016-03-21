@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ograeronavfaadatasource.cpp 32247 2015-12-19 07:05:52Z goatbar $
+ * $Id$
  *
  * Project:  AeronavFAA Translator
  * Purpose:  Implements OGRAeronavFAADataSource class
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ograeronavfaadatasource.cpp 32247 2015-12-19 07:05:52Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                      OGRAeronavFAADataSource()                       */

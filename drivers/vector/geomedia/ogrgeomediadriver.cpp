@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgeomediadriver.cpp 32110 2015-12-10 17:19:40Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements Personal Geodatabase driver.
@@ -31,7 +31,7 @@
 #include "ogr_geomedia.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrgeomediadriver.cpp 32110 2015-12-10 17:19:40Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                          ~OGRODBCDriver()                            */
@@ -68,7 +68,7 @@ OGRDataSource *OGRGeomediaDriver::Open( const char * pszFilename,
     if( STARTS_WITH_CI(pszFilename, "PGEO:") )
         return NULL;
 
-    if( !STARTS_WITH_CI(pszFilename, "GEOMEDIA:") 
+    if( !STARTS_WITH_CI(pszFilename, "GEOMEDIA:")
         && !EQUAL(CPLGetExtension(pszFilename),"mdb") )
         return NULL;
 
@@ -117,7 +117,7 @@ OGRDataSource *OGRGeomediaDriver::Open( const char * pszFilename,
     //
     if ( !InstallMdbDriver() )
     {
-        CPLError( CE_Warning, CPLE_AppDefined, 
+        CPLError( CE_Warning, CPLE_AppDefined,
                   "Unable to install MDB driver for ODBC, MDB access may not supported.\n" );
     }
     else

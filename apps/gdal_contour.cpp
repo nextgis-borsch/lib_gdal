@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_contour.cpp 33615 2016-03-02 20:19:22Z goatbar $
+ * $Id$
  *
  * Project:  Contour Generator
  * Purpose:  Contour Generator mainline.
@@ -35,7 +35,7 @@
 #include "ogr_api.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id: gdal_contour.cpp 33615 2016-03-02 20:19:22Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                            ArgIsNumeric()                            */

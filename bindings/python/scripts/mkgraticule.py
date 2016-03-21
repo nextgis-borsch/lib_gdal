@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ###############################################################################
-# $Id: mkgraticule.py 32555 2015-12-30 19:26:44Z goatbar $
+# $Id$
 #
 # Project:  OGR Python samples
 # Purpose:  Produce a graticule (grid) dataset.

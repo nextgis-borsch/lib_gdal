@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrodbcdriver.cpp 31120 2015-10-24 19:55:09Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRODBCDriver class.
@@ -30,7 +30,7 @@
 #include "ogr_odbc.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrodbcdriver.cpp 31120 2015-10-24 19:55:09Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                            ~OGRODBCDriver()                            */
@@ -61,7 +61,7 @@ OGRDataSource *OGRODBCDriver::Open( const char * pszFilename,
 {
     OGRODBCDataSource     *poDS;
 
-    if( !STARTS_WITH_CI(pszFilename, "ODBC:") 
+    if( !STARTS_WITH_CI(pszFilename, "ODBC:")
 #ifdef WIN32
         && !EQUAL(CPLGetExtension(pszFilename), "MDB")
 #endif
@@ -98,7 +98,7 @@ OGRDataSource *OGRODBCDriver::CreateDataSource( const char * pszName,
     if( !poDS->Open( pszName, TRUE, TRUE ) )
     {
         delete poDS;
-        CPLError( CE_Failure, CPLE_AppDefined, 
+        CPLError( CE_Failure, CPLE_AppDefined,
          "ODBC driver doesn't currently support database creation.\n"
                   "Please create database with the `createdb' command." );
         return NULL;
@@ -129,4 +129,3 @@ void RegisterOGRODBC()
 {
     OGRSFDriverRegistrar::GetRegistrar()->RegisterDriver( new OGRODBCDriver );
 }
-

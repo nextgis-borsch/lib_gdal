@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ograrcgenlayer.cpp 32330 2015-12-20 14:24:33Z rouault $
+ * $Id$
  *
  * Project:  Arc/Info Generate Translator
  * Purpose:  Implements OGRARCGENLayer class.
@@ -33,7 +33,7 @@
 #include "ogr_p.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id: ograrcgenlayer.cpp 32330 2015-12-20 14:24:33Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                            OGRARCGENLayer()                             */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrwarpedlayer.cpp 32177 2015-12-14 07:25:30Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRWarpedLayer class
@@ -29,7 +29,7 @@
 
 #include "ogrwarpedlayer.h"
 
-CPL_CVSID("$Id: ogrwarpedlayer.cpp 32177 2015-12-14 07:25:30Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                          OGRWarpedLayer()                            */

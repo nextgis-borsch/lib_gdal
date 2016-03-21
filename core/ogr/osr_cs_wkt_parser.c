@@ -71,7 +71,7 @@
 
 
 /******************************************************************************
- * $Id: osr_cs_wkt_parser.c 32696 2016-01-03 10:48:58Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  CS WKT parser grammar
@@ -1410,8 +1410,6 @@ yyreduce:
   YY_REDUCE_PRINT (yyn);
   switch (yyn)
     {
-      
-
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: rcreatecopy.cpp 32179 2015-12-14 16:22:34Z goatbar $
+ * $Id$
  *
  * Project:  R Format Driver
  * Purpose:  CreateCopy() implementation for R stats package object format.
@@ -30,12 +30,12 @@
 #include "gdal_pam.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: rcreatecopy.cpp 32179 2015-12-14 16:22:34Z goatbar $");
+CPL_CVSID("$Id$");
 
 
 GDALDataset *
-RCreateCopy( const char * pszFilename, GDALDataset *poSrcDS, 
-             int bStrict, char ** papszOptions, 
+RCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
+             int bStrict, char ** papszOptions,
              GDALProgressFunc pfnProgress, void * pProgressData );
 
 /************************************************************************/
@@ -125,7 +125,7 @@ RCreateCopy( const char * pszFilename,
     if( fp == NULL )
     {
         CPLError( CE_Failure, CPLE_OpenFailed,
-                  "Unable to create file %s.\n", 
+                  "Unable to create file %s.\n",
                   pszFilename );
         return NULL;
     }
@@ -183,7 +183,7 @@ RCreateCopy( const char * pszFilename,
         {
             int iValue;
 
-            eErr = poBand->RasterIO( GF_Read, 0, iLine, nXSize, 1, 
+            eErr = poBand->RasterIO( GF_Read, 0, iLine, nXSize, 1,
                                      padfScanline, nXSize, 1, GDT_Float64,
                                      sizeof(double), 0, NULL );
 
@@ -222,7 +222,7 @@ RCreateCopy( const char * pszFilename,
 /*      Write out the dims attribute.                                   */
 /* -------------------------------------------------------------------- */
     RWriteInteger( fp, bASCII, 1026 );
-    RWriteInteger( fp, bASCII, 1 );  
+    RWriteInteger( fp, bASCII, 1 );
 
     RWriteString( fp, bASCII, "dim" );
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogropenairlabellayer.cpp 32976 2016-01-14 00:07:34Z goatbar $
+ * $Id$
  *
  * Project:  OpenAir Translator
  * Purpose:  Implements OGROpenAirLabelLayer class.
@@ -33,7 +33,7 @@
 #include "ogr_p.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id: ogropenairlabellayer.cpp 32976 2016-01-14 00:07:34Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                      OGROpenAirLabelLayer()                          */

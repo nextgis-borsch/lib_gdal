@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrfeature.cpp 33631 2016-03-04 06:28:09Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRFeature class implementation.
@@ -36,7 +36,7 @@
 #include <errno.h>
 #include <new>
 
-CPL_CVSID("$Id: ogrfeature.cpp 33631 2016-03-04 06:28:09Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                             OGRFeature()                             */

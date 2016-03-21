@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_mem.h 32896 2016-01-10 13:37:26Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions within the OGR Memory driver.

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrinfo.cpp 33615 2016-03-02 20:19:22Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Simple client for viewing OGR driver data.
@@ -36,7 +36,7 @@
 #include "cpl_multiproc.h"
 #include "commonutils.h"
 
-CPL_CVSID("$Id: ogrinfo.cpp 33615 2016-03-02 20:19:22Z goatbar $");
+CPL_CVSID("$Id$");
 
 int     bReadOnly = FALSE;
 int     bVerbose = TRUE;

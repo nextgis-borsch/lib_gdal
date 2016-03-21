@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: minidriver_wms.h 23722 2012-01-07 22:15:29Z rouault $
+ * $Id$
  *
  * Project:  WMS Client Driver
  * Purpose:  Implementation of Dataset and RasterBand classes for WMS

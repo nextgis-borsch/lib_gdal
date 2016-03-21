@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgfttablelayer.cpp 32409 2015-12-21 01:45:17Z goatbar $
+ * $Id$
  *
  * Project:  GFT Translator
  * Purpose:  Implements OGRGFTTableLayer class.
@@ -29,7 +29,7 @@
 
 #include "ogr_gft.h"
 
-CPL_CVSID("$Id: ogrgfttablelayer.cpp 32409 2015-12-21 01:45:17Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                         OGRGFTTableLayer()                           */
@@ -1022,8 +1022,8 @@ OGRErr      OGRGFTTableLayer::ISetFeature( OGRFeature *poFeature )
         !STARTS_WITH(pszLine, "affected_rows\n1\n") ||
         psResult->pszErrBuf != NULL)
     {
-        CPLDebug( "GFT", "%s/%s", 
-                  pszLine ? pszLine : "null", 
+        CPLDebug( "GFT", "%s/%s",
+                  pszLine ? pszLine : "null",
                   psResult->pszErrBuf ? psResult->pszErrBuf : "null");
         CPLError(CE_Failure, CPLE_AppDefined, "Feature update failed (2)");
         CPLHTTPDestroyResult(psResult);
@@ -1089,8 +1089,8 @@ OGRErr OGRGFTTableLayer::DeleteFeature( GIntBig nFID )
         !STARTS_WITH(pszLine, "affected_rows\n1\n") ||
         psResult->pszErrBuf != NULL)
     {
-        CPLDebug( "GFT", "%s/%s", 
-                  pszLine ? pszLine : "null", 
+        CPLDebug( "GFT", "%s/%s",
+                  pszLine ? pszLine : "null",
                   psResult->pszErrBuf ? psResult->pszErrBuf : "null");
         CPLError(CE_Failure, CPLE_AppDefined, "Feature deletion failed (2)");
         CPLHTTPDestroyResult(psResult);

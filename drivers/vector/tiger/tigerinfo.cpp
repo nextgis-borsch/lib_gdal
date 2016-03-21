@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: tigerinfo.cpp 32177 2015-12-14 07:25:30Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Simple client for viewing OGR driver data.
@@ -33,7 +33,7 @@
 
 #include "ogr_tiger.h"
 
-CPL_CVSID("$Id: tigerinfo.cpp 32177 2015-12-14 07:25:30Z goatbar $");
+CPL_CVSID("$Id$");
 
 int     bReadOnly = FALSE;
 int     bVerbose = TRUE;
@@ -123,11 +123,9 @@ int main( int nArgc, char ** papszArgv )
         printf( "INFO: Open of `%s'\n"
                 "using driver `%s' successful.\n",
                 pszDataSource, poDriver->GetName() );
-        printf("Tiger Version: %s\n", 
+        printf("Tiger Version: %s\n",
                TigerVersionString(((OGRTigerDataSource*)poDS)->GetVersion()));
     }
-
-
 
     if( bVerbose && !EQUAL(pszDataSource,poDS->GetName()) )
     {
@@ -135,7 +133,6 @@ int main( int nArgc, char ** papszArgv )
                 "      different from user name `%s'.\n",
                 poDS->GetName(), pszDataSource );
     }
-
 
 /* -------------------------------------------------------------------- */
 /*      Process each data source layer.                                 */

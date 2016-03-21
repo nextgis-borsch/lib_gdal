@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: ogr_capi_test.c 32176 2015-12-14 00:52:52Z goatbar $
+ * $Id$
  **********************************************************************
  * Copyright (c) 2003, Daniel Morissette
  *
@@ -107,8 +107,8 @@ int OGRCDump(const char *pszFname)
             OGRFieldDefnH fieldDefn;
 
             fieldDefn = OGR_FD_GetFieldDefn( layerDefn, j );
-            printf(" Field %d: %s (%s)\n", 
-                   j, OGR_Fld_GetNameRef(fieldDefn), 
+            printf(" Field %d: %s (%s)\n",
+                   j, OGR_Fld_GetNameRef(fieldDefn),
                    OGR_GetFieldTypeName(OGR_Fld_GetType(fieldDefn)) );
         }
         printf("\n");

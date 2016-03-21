@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_minixml.cpp 33185 2016-01-28 19:35:01Z rouault $
+ * $Id$
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Implementation of MiniXML Parser and handling.
@@ -45,7 +45,7 @@
 #include "cpl_string.h"
 #include <ctype.h>
 
-CPL_CVSID("$Id: cpl_minixml.cpp 33185 2016-01-28 19:35:01Z rouault $");
+CPL_CVSID("$Id$");
 
 typedef enum {
     TNone,
@@ -380,7 +380,7 @@ static XMLTokenType ReadToken( ParseContext *psContext )
         /* Do we need to unescape it? */
         if( strchr(psContext->pszToken,'&') != NULL )
         {
-            int  nLength;
+            int nLength = 0;
             char *pszUnescaped = CPLUnescapeString( psContext->pszToken,
                                                     &nLength, CPLES_XML );
             strcpy( psContext->pszToken, pszUnescaped );
@@ -408,7 +408,7 @@ static XMLTokenType ReadToken( ParseContext *psContext )
         /* Do we need to unescape it? */
         if( strchr(psContext->pszToken,'&') != NULL )
         {
-            int  nLength;
+            int nLength = 0;
             char *pszUnescaped = CPLUnescapeString( psContext->pszToken,
                                                     &nLength, CPLES_XML );
             strcpy( psContext->pszToken, pszUnescaped );
@@ -434,7 +434,7 @@ static XMLTokenType ReadToken( ParseContext *psContext )
         /* Do we need to unescape it? */
         if( strchr(psContext->pszToken,'&') != NULL )
         {
-            int  nLength;
+            int nLength = 0;
             char *pszUnescaped = CPLUnescapeString( psContext->pszToken,
                                                     &nLength, CPLES_XML );
             strcpy( psContext->pszToken, pszUnescaped );

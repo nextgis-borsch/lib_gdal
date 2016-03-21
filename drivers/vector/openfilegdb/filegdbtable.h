@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: filegdbtable.h 33024 2016-01-17 16:10:22Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements reading of FileGDB tables

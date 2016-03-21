@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_ods.h 32989 2016-01-14 21:28:07Z rouault $
+ * $Id$
  *
  * Project:  ODS Translator
  * Purpose:  Definition of classes for OGR OpenOfficeSpreadsheet .ods driver.

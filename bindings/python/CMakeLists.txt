@@ -158,11 +158,11 @@ else()
     set(GDAL_HAVE_GNM "False")
 endif()
 
-if(GDAL_ENABLE_OGR)
+#if(GDAL_ENABLE_OGR)
     set(GDAL_HAVE_OGR "True")
-else()
-    set(GDAL_HAVE_OGR "False")
-endif()
+#else()
+    #set(GDAL_HAVE_OGR "False")
+#endif()
 
 configure_file(${CMAKE_MODULE_PATH}/setup.py.cmake ${CMAKE_CURRENT_BINARY_DIR}/setup.py @ONLY)
 

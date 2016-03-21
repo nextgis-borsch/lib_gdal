@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrvrtdriver.cpp 32982 2016-01-14 16:53:57Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRVRTDriver class.
@@ -31,7 +31,7 @@
 #include "ogr_vrt.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrvrtdriver.cpp 32982 2016-01-14 16:53:57Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                           OGRVRTErrorHandler()                       */

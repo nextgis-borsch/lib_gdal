@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_ili2.h 32746 2016-01-05 05:18:43Z goatbar $
+ * $Id$
  *
  * Project:  Interlis 2 Translator
  * Purpose:   Definition of classes for OGR Interlis 2 driver.
@@ -106,7 +106,7 @@ class OGRILI2DataSource : public OGRDataSource
     int         GetLayerCount() { return static_cast<int>(listLayer.size()); }
     OGRLayer   *GetLayer( int );
 
-    virtual OGRLayer *ICreateLayer( const char *, 
+    virtual OGRLayer *ICreateLayer( const char *,
                                       OGRSpatialReference * = NULL,
                                       OGRwkbGeometryType = wkbUnknown,
                                       char ** = NULL );

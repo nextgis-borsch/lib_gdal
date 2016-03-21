@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_pgdump.h 33639 2016-03-04 23:39:40Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions for OGR/PostgreSQL dump driver.

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_vsi_mem.cpp 33646 2016-03-05 15:54:03Z goatbar $
+ * $Id$
  *
  * Project:  VSI Virtual File System
  * Purpose:  Implementation of Memory Buffer virtual IO functions.
@@ -34,7 +34,7 @@
 #include <time.h>
 #include <map>
 
-CPL_CVSID("$Id: cpl_vsi_mem.cpp 33646 2016-03-05 15:54:03Z goatbar $");
+CPL_CVSID("$Id$");
 
 /*
 ** Notes on Multithreading:

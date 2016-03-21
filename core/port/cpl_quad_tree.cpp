@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_quad_tree.cpp 33199 2016-01-29 15:48:41Z rouault $
+ * $Id$
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Implementation of quadtree building and searching functions.
@@ -34,7 +34,7 @@
 #include "cpl_conv.h"
 #include "cpl_quad_tree.h"
 
-CPL_CVSID("$Id: cpl_quad_tree.cpp 33199 2016-01-29 15:48:41Z rouault $");
+CPL_CVSID("$Id$");
 
 static const int MAX_DEFAULT_TREE_DEPTH = 12;
 static const int MAX_SUBNODES = 4;

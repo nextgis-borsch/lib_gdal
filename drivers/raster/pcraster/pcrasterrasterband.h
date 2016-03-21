@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: pcrasterrasterband.h 31137 2015-10-26 12:58:08Z goatbar $
+ * $Id$
  *
  * Project:  PCRaster Integration
  * Purpose:  PCRaster raster band declaration.

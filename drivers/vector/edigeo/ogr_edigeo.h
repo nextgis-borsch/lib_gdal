@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_edigeo.h 31777 2015-11-26 14:14:41Z rouault $
+ * $Id$
  *
  * Project:  EDIGEO Translator
  * Purpose:  Definition of classes for OGR .edigeo driver.

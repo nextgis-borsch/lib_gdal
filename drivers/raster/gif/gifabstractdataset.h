@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gifabstractdataset.h 32172 2015-12-13 23:28:18Z rouault $
+ * $Id$
  *
  * Project:  GIF Driver
  * Purpose:  GIF Abstract Dataset
@@ -85,7 +85,7 @@ class GIFAbstractDataset : public GDALPamDataset
     static GifFileType* myDGifOpen( void *userPtr, InputFunc readFunc );
     static int          myDGifCloseFile( GifFileType *hGifFile );
     static int          myEGifCloseFile( GifFileType *hGifFile );
-    static int          ReadFunc( GifFileType *psGFile, GifByteType *pabyBuffer, 
+    static int          ReadFunc( GifFileType *psGFile, GifByteType *pabyBuffer,
                                   int nBytesToRead );
     static GifRecordType FindFirstImage( GifFileType* hGifFile );
 };
@@ -109,7 +109,7 @@ class GIFAbstractRasterBand : public GDALPamRasterBand
 
   public:
 
-                   GIFAbstractRasterBand(GIFAbstractDataset *poDS, int nBand, 
+                   GIFAbstractRasterBand(GIFAbstractDataset *poDS, int nBand,
                                          SavedImage *psSavedImage, int nBackground,
                                          int bAdvertizeInterlacedMDI );
     virtual       ~GIFAbstractRasterBand();

@@ -1,8 +1,8 @@
 /******************************************************************************
- * $Id: gdalnodatavaluesmaskband.cpp 32173 2015-12-14 00:04:53Z goatbar $
+ * $Id$
  *
  * Project:  GDAL Core
- * Purpose:  Implementation of GDALNoDataValuesMaskBand, a class implementing 
+ * Purpose:  Implementation of GDALNoDataValuesMaskBand, a class implementing
  *           a default band mask based on the NODATA_VALUES metadata item.
  *           A pixel is considered nodata in all bands if and only if all bands
  *           match the corresponding value in the NODATA_VALUES tuple
@@ -32,7 +32,7 @@
 
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id: gdalnodatavaluesmaskband.cpp 32173 2015-12-14 00:04:53Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                   GDALNoDataValuesMaskBand()                         */
@@ -87,7 +87,7 @@ CPLErr GDALNoDataValuesMaskBand::IReadBlock( int nXBlockOff, int nYBlockOff,
 /* -------------------------------------------------------------------- */
 /*      Decide on a working type.                                       */
 /* -------------------------------------------------------------------- */
-    switch( poDS->GetRasterBand(1)->GetRasterDataType() ) 
+    switch( poDS->GetRasterBand(1)->GetRasterDataType() )
     {
       case GDT_Byte:
         eWrkDT = GDT_Byte;

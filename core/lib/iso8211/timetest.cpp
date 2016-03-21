@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * $Id: timetest.cpp 32179 2015-12-14 16:22:34Z goatbar $
+ * $Id$
  *
  * Project:  SDTS Translator
  * Purpose:  Example program dumping data in 8211 data to stdout.

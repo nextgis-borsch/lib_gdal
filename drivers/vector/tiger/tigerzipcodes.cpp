@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: tigerzipcodes.cpp 27745 2014-09-27 16:38:57Z goatbar $
+ * $Id$
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Implements TigerZipCodes, providing access to .RT6 files.
@@ -30,7 +30,7 @@
 #include "ogr_tiger.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: tigerzipcodes.cpp 27745 2014-09-27 16:38:57Z goatbar $");
+CPL_CVSID("$Id$");
 
 #define FILE_CODE "6"
 

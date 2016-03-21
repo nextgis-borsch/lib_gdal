@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ddffield.cpp 33105 2016-01-23 15:27:32Z rouault $
+ * $Id$
  *
  * Project:  ISO 8211 Access
  * Purpose:  Implements the DDFField class.
@@ -30,7 +30,7 @@
 #include "iso8211.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ddffield.cpp 33105 2016-01-23 15:27:32Z rouault $");
+CPL_CVSID("$Id$");
 
 // Note, we implement no constructor for this class to make instantiation
 // cheaper.  It is required that the Initialize() be called before anything
@@ -245,7 +245,7 @@ int DDFField::GetRepeatCount()
             if( poThisSFDefn->GetWidth() > nDataSize - iOffset )
                 nBytesConsumed = poThisSFDefn->GetWidth();
             else
-                poThisSFDefn->GetDataLength( pachData+iOffset, 
+                poThisSFDefn->GetDataLength( pachData+iOffset,
                                              nDataSize - iOffset,
                                              &nBytesConsumed);
 
@@ -269,18 +269,18 @@ int DDFField::GetRepeatCount()
  * Get field instance data and size.
  *
  * The returned data pointer and size values are suitable for use with
- * DDFRecord::SetFieldRaw(). 
+ * DDFRecord::SetFieldRaw().
  *
- * @param nInstance a value from 0 to GetRepeatCount()-1.  
+ * @param nInstance a value from 0 to GetRepeatCount()-1.
  * @param pnInstanceSize a location to put the size (in bytes) of the
  * field instance data returned.  This size will include the unit terminator
  * (if any), but not the field terminator.  This size pointer may be NULL
  * if not needed.
  *
- * @return the data pointer, or NULL on error. 
+ * @return the data pointer, or NULL on error.
  */
 
-const char *DDFField::GetInstanceData( int nInstance, 
+const char *DDFField::GetInstanceData( int nInstance,
                                        int *pnInstanceSize )
 
 {
@@ -328,15 +328,15 @@ const char *DDFField::GetInstanceData( int nInstance,
 
         poLastSubfield = poDefn->GetSubfield(poDefn->GetSubfieldCount()-1);
 
-        pachLastData = GetSubfieldData( poLastSubfield, &nBytesRemaining2, 
+        pachLastData = GetSubfieldData( poLastSubfield, &nBytesRemaining2,
                                         nInstance );
         if( pachLastData == NULL )
             return NULL;
 
-        poLastSubfield->GetDataLength( pachLastData, nBytesRemaining2, 
+        poLastSubfield->GetDataLength( pachLastData, nBytesRemaining2,
                                        &nLastSubfieldWidth );
 
-        *pnInstanceSize = 
+        *pnInstanceSize =
             nBytesRemaining1 - (nBytesRemaining2 - nLastSubfieldWidth);
     }
 

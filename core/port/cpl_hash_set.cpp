@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_hash_set.cpp 33646 2016-03-05 15:54:03Z goatbar $
+ * $Id$
  *
  * Name:     cpl_hash_set.cpp
  * Project:  CPL - Common Portability Library
@@ -539,11 +539,11 @@ unsigned long CPLHashSetHashStr(const void *elt)
 {
     unsigned char* pszStr = (unsigned char*)elt;
     unsigned long hash = 0;
-    int c;
 
     if (pszStr == NULL)
         return 0;
 
+    int c = 0;
     while ((c = *pszStr++) != '\0')
         hash = c + (hash << 6) + (hash << 16) - hash;
 

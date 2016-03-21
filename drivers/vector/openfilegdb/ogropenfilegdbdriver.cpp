@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogropenfilegdbdriver.cpp 33031 2016-01-17 19:21:44Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements Open FileGDB OGR driver.

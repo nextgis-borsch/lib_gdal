@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_vsil_simple.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id$
  *
  * Project:  VSI Virtual File System
  * Purpose:  Alternatve simplified implementation VSI*L File API that just
@@ -32,7 +32,7 @@
 
 #include "cpl_vsi.h"
 
-CPL_CVSID("$Id: cpl_vsil_simple.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id$");
 
 #ifdef WIN32
 #  include <sys/stat.h>

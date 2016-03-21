@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: typemaps_php.i 31434 2015-11-11 23:37:41Z goatbar $
+ * $Id$
  *
  * Name:     typemaps_php.i
  * Project:  GDAL PHP Interface
@@ -52,7 +52,7 @@
 %typemap(out) IF_FALSE_RETURN_NONE
 {
  /* %typemap(out) IF_FALSE_RETURN_NONE */
- RETVAL_NULL();  
+ RETVAL_NULL();
 }
 %typemap(ret) IF_FALSE_RETURN_NONE
 {
@@ -425,7 +425,7 @@ OGRErrMessages( int rc ) {
   }
   convert_to_long_ex($input);
   val = ($*1_ltype) Z_LVAL_PP( $input );
-  $1 = &val;  
+  $1 = &val;
 }
 %typemap(typecheck,precedence=0) (int *optional_int)
 {

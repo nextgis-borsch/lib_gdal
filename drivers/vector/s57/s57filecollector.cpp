@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: s57filecollector.cpp 33271 2016-01-30 16:01:55Z goatbar $
+ * $Id$
  *
  * Project:  S-57 Translator
  * Purpose:  Implements S57FileCollector() function.  This function collects
@@ -33,7 +33,7 @@
 #include "cpl_string.h"
 #include "s57.h"
 
-CPL_CVSID("$Id: s57filecollector.cpp 33271 2016-01-30 16:01:55Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                          S57FileCollector()                          */
@@ -63,7 +63,7 @@ char **S57FileCollector( const char *pszDataset )
 
     if( VSI_ISDIR(sStatBuf.st_mode) )
     {
-        char    **papszDirFiles = CPLReadDir( pszDataset );
+        char    **papszDirFiles = VSIReadDir( pszDataset );
         DDFModule oModule;
 
         for( int iFile = 0;

@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_vsil_crypt.cpp 33646 2016-03-05 15:54:03Z goatbar $
+ * $Id$
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Implement VSI large file api for encrypted files.
@@ -38,7 +38,7 @@ void CPL_DLL VSIInstallCryptFileHandler(void);
 void CPL_DLL VSISetCryptKey(const GByte* pabyKey, int nKeySize);
 CPL_C_END
 
-CPL_CVSID("$Id: cpl_vsil_crypt.cpp 33646 2016-03-05 15:54:03Z goatbar $");
+CPL_CVSID("$Id$");
 
 static const char VSICRYPT_PREFIX[] = "/vsicrypt/";
 

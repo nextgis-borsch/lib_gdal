@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalgmlcoverage.cpp 33526 2016-02-22 20:54:09Z goatbar $
+ * $Id$
  *
  * Project:  GDAL
  * Purpose:  Generic support for GML Coverage descriptions.
@@ -34,7 +34,7 @@
 #include "ogr_geometry.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: gdalgmlcoverage.cpp 33526 2016-02-22 20:54:09Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                        ParseGMLCoverageDesc()                        */

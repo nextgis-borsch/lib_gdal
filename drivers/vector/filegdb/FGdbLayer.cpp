@@ -1,5 +1,5 @@
 /******************************************************************************
-* $Id: FGdbLayer.cpp 33563 2016-02-26 14:57:06Z rouault $
+* $Id$
 *
 * Project:  OpenGIS Simple Features Reference Implementation
 * Purpose:  Implements FileGDB OGR layer.
@@ -37,7 +37,7 @@
 #include "FGdbUtils.h"
 #include "cpl_minixml.h" // the only way right now to extract schema information
 
-CPL_CVSID("$Id: FGdbLayer.cpp 33563 2016-02-26 14:57:06Z rouault $");
+CPL_CVSID("$Id$");
 
 using std::string;
 using std::wstring;

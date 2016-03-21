@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_geocoding.h 33631 2016-03-04 06:28:09Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Client of geocoding service.

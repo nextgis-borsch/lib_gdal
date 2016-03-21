@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ###############################################################################
-# $Id: assemblepoly.py 31957 2015-12-02 12:44:54Z goatbar $
+# $Id$
 #
 # Project:  OGR Python samples
 # Purpose:  Assemble polygon geometries from arcs fulled from an arc layer.

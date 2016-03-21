@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgeorsslayer.cpp 32409 2015-12-21 01:45:17Z goatbar $
+ * $Id$
  *
  * Project:  GeoRSS Translator
  * Purpose:  Implements OGRGeoRSSLayer class.
@@ -33,7 +33,7 @@
 #include "ogr_georss.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrgeorsslayer.cpp 32409 2015-12-21 01:45:17Z goatbar $");
+CPL_CVSID("$Id$");
 
 static const char* const apszAllowedATOMFieldNamesWithSubElements[] =
     { "author", "contributor", NULL };
@@ -2191,7 +2191,7 @@ int OGRGeoRSSLayer::TestCapability( const char * pszCap )
         return bWriteMode;
     else if( EQUAL(pszCap,OLCCreateField) )
         return bWriteMode;
-    else 
+    else
         return FALSE;
 }
 

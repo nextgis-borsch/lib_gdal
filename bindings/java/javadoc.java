@@ -1,5 +1,5 @@
 /* ***************************************************************************
-* $Id: javadoc.java 33129 2016-01-23 21:10:49Z rouault $
+* $Id$
 *
 * Project:  GDAL/OGR Java bindings
 * Purpose:  Documentation for the Java bindings

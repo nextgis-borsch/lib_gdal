@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_vsil_curl_streaming.cpp 32955 2016-01-12 15:48:56Z rouault $
+ * $Id$
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Implement VSI large file api for HTTP/FTP files in streaming mode
@@ -34,7 +34,7 @@
 #include "cpl_time.h"
 #include "cpl_aws.h"
 
-CPL_CVSID("$Id: cpl_vsil_curl_streaming.cpp 32955 2016-01-12 15:48:56Z rouault $");
+CPL_CVSID("$Id$");
 
 #if !defined(HAVE_CURL) || defined(CPL_MULTIPROC_STUB)
 
@@ -1124,7 +1124,7 @@ size_t VSICurlStreamingHandle::Read( void * const pBuffer, size_t const nSize, s
     {
         for(size_t i = 0; i < 1024 / sizeof(int); i ++)
         {
-            int nVal;
+          int nVal = 0;
             memcpy(&nVal, pCachedData + i * sizeof(int), sizeof(int));
             nRecomputedChecksumOfFirst1024Bytes += nVal;
         }

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: FGdbDatasource.cpp 33563 2016-02-26 14:57:06Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements FileGDB OGR Datasource.
@@ -37,7 +37,7 @@
 #include "FGdbUtils.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id: FGdbDatasource.cpp 33563 2016-02-26 14:57:06Z rouault $");
+CPL_CVSID("$Id$");
 
 using std::vector;
 using std::wstring;

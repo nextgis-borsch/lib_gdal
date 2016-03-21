@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: argdataset.cpp 32205 2015-12-17 21:57:20Z goatbar $
+ * $Id$
  *
  * Project:  Azavea Raster Grid format driver.
  * Purpose:  Implements support for reading and writing Azavea Raster Grid
@@ -37,7 +37,7 @@
 #include <json.h>
 #include <limits>
 
-CPL_CVSID("$Id: argdataset.cpp 32205 2015-12-17 21:57:20Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /* ==================================================================== */

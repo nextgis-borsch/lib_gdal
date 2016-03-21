@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrreclayer.cpp 33089 2016-01-22 15:02:53Z goatbar $
+ * $Id$
  *
  * Project:  EPIInfo .REC Reader
  * Purpose:  Implements OGRRECLayer class.
@@ -31,7 +31,7 @@
 #include "cpl_string.h"
 #include "ogr_rec.h"
 
-CPL_CVSID("$Id: ogrreclayer.cpp 33089 2016-01-22 15:02:53Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                            OGRRECLayer()                             */

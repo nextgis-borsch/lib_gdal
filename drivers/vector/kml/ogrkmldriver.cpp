@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrkmldriver.cpp 32897 2016-01-10 13:46:58Z rouault $
+ * $Id$
  *
  * Project:  KML Driver
  * Purpose:  Implementation of OGRKMLDriver class.
@@ -66,7 +66,7 @@ static GDALDataset *OGRKMLDriverOpen( GDALOpenInfo* poOpenInfo )
     {
         /*if( poDS->GetLayerCount() == 0 )
         {
-            CPLError( CE_Failure, CPLE_OpenFailed, 
+            CPLError( CE_Failure, CPLE_OpenFailed,
                 "No layers in KML file: %s.", pszName );
 
             delete poDS;

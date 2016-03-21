@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #******************************************************************************
-#  $Id: gdal_fillnodata.py 32555 2015-12-30 19:26:44Z goatbar $
+#  $Id$
 #
 #  Project:  GDAL Python Interface
 #  Purpose:  Application for filling nodata areas in a raster by interpolation

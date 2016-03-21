@@ -28,6 +28,7 @@
 set(TARGET_NAME alg)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${CMAKE_SOURCE_DIR}/core/ogr/ogrsf_frmts)
 
 set(LIB_HHEADERS
     gdal_alg.h

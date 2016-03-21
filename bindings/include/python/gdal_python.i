@@ -1,5 +1,5 @@
 /*
- * $Id: gdal_python.i 33573 2016-02-26 21:33:04Z rouault $
+ * $Id$
  *
  * python specific code for gdal bindings.
  */

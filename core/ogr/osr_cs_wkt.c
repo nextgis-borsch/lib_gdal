@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: osr_cs_wkt.c 32078 2015-12-08 09:09:45Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  CS WKT parser
@@ -118,7 +118,7 @@ int osr_cs_wkt_lex(CPL_UNUSED YYSTYPE* pNode,
     if( *pszInput == '\0' )
     {
         context->pszNext = pszInput;
-        return EOF; 
+        return EOF;
     }
 
 /* -------------------------------------------------------------------- */
@@ -144,7 +144,7 @@ int osr_cs_wkt_lex(CPL_UNUSED YYSTYPE* pNode,
         if(  *pszInput == '\0' )
         {
             context->pszNext = pszInput;
-            return EOF; 
+            return EOF;
         }
         context->pszNext = pszInput + 1;
         return T_STRING;

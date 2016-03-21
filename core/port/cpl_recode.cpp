@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_recode.cpp 33646 2016-03-05 15:54:03Z goatbar $
+ * $Id$
  *
  * Name:     cpl_recode.cpp
  * Project:  CPL - Common Portability Library
@@ -26,7 +26,7 @@
 
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: cpl_recode.cpp 33646 2016-03-05 15:54:03Z goatbar $");
+CPL_CVSID("$Id$");
 
 #ifdef CPL_RECODE_ICONV
 extern void CPLClearRecodeIconvWarningFlags();
@@ -270,8 +270,7 @@ char CPL_DLL *CPLForceToASCII( const char* pabyData, int nLen,
     if (nLen < 0)
         nLen = static_cast<int>(strlen(pabyData));
     char* pszOutputString = static_cast<char *>( CPLMalloc(nLen + 1) );
-    int i;
-    for(i=0;i<nLen;i++)
+    for( int i=0;i < nLen; i++ )
     {
         if( reinterpret_cast<unsigned char *>(
                 const_cast<char *>( pabyData ) ) [i] > 127 )
@@ -279,7 +278,7 @@ char CPL_DLL *CPLForceToASCII( const char* pabyData, int nLen,
         else
             pszOutputString[i] = pabyData[i];
     }
-    pszOutputString[i] = '\0';
+    pszOutputString[nLen] = '\0';
     return pszOutputString;
 }
 

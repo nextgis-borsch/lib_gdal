@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: GDALInfo.cs 18705 2010-02-02 21:11:43Z tamas $
+ * $Id$
  *
  * Name:     GDALInfo.cs
  * Project:  GDAL CSharp Interface

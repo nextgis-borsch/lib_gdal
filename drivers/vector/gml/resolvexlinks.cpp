@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: resolvexlinks.cpp 32177 2015-12-14 07:25:30Z goatbar $
+ * $Id$
  *
  * Project:  GML Reader
  * Purpose:  Implementation of GMLReader::ResolveXlinks() method.
@@ -31,7 +31,7 @@
 #include "gmlreader.h"
 #include "cpl_error.h"
 
-CPL_CVSID("$Id: resolvexlinks.cpp 32177 2015-12-14 07:25:30Z goatbar $");
+CPL_CVSID("$Id$");
 
 #include "gmlreaderp.h"
 #include "cpl_conv.h"

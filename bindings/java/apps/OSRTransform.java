@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: OSRTransform.java 25229 2012-11-16 19:06:58Z rouault $
+ * $Id$
  *
  * Name:     OSRTransform.java
  * Project:  GDAL Java Interface

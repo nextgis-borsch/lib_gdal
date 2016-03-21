@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: GDALRead.cs 13437 2007-12-21 21:02:38Z tamas $
+ * $Id$
  *
  * Name:     GDALRead.cs
  * Project:  GDAL CSharp Interface

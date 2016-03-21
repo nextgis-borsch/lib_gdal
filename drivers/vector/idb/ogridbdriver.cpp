@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogridbdriver.cpp 32110 2015-12-10 17:19:40Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRIDBDriver class.
@@ -31,7 +31,7 @@
 #include "ogr_idb.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogridbdriver.cpp 32110 2015-12-10 17:19:40Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                            ~OGRIDBDriver()                            */
@@ -94,7 +94,7 @@ OGRDataSource *OGRIDBDriver::CreateDataSource( const char * pszName,
     if( !poDS->Open( pszName, TRUE, TRUE ) )
     {
         delete poDS;
-        CPLError( CE_Failure, CPLE_AppDefined, 
+        CPLError( CE_Failure, CPLE_AppDefined,
          "IDB driver doesn't currently support database creation.");
         return NULL;
     }
@@ -126,4 +126,3 @@ void RegisterOGRIDB()
         return;
     OGRSFDriverRegistrar::GetRegistrar()->RegisterDriver( new OGRIDBDriver );
 }
-

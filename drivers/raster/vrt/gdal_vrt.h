@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_vrt.h 32190 2015-12-16 13:50:27Z goatbar $
+ * $Id$
  *
  * Project:  Virtual GDAL Datasets
  * Purpose:  C/Public declarations of virtual GDAL dataset objects.
@@ -91,7 +91,7 @@ CPLErr CPL_DLL CPL_STDCALL VRTAddSimpleSource( VRTSourcedRasterBandH,
                                                int, int, int, int,
                                                const char *, double );
 CPLErr CPL_DLL CPL_STDCALL VRTAddComplexSource( VRTSourcedRasterBandH,
-                                                GDALRasterBandH, 
+                                                GDALRasterBandH,
                                                 int, int, int, int,
                                                 int, int, int, int,
                                                 double, double, double );

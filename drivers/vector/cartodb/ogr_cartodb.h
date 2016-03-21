@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_cartodb.h 33647 2016-03-05 16:43:00Z rouault $
+ * $Id$
  *
  * Project:  CARTODB Translator
  * Purpose:  Definition of classes for OGR CartoDB driver.

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_gpsbabel.h 32577 2015-12-31 06:39:56Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions for OGR/GPSBabel driver.

@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * $Id: 8211view.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id$
  *
  * Project:  SDTS Translator
  * Purpose:  Example program dumping data in 8211 data to stdout.
@@ -30,7 +30,7 @@
 #include <stdio.h>
 #include "iso8211.h"
 
-CPL_CVSID("$Id: 8211view.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id$");
 
 static void ViewRecordField( DDFField * poField );
 static int ViewSubfield( DDFSubfieldDefn *poSFDefn,

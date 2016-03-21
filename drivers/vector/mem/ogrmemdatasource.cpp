@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrmemdatasource.cpp 33400 2016-02-10 07:55:48Z ajolma $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRMemDataSource class.
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrmemdatasource.cpp 33400 2016-02-10 07:55:48Z ajolma $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                          OGRMemDataSource()                          */

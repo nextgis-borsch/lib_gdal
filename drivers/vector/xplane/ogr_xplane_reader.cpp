@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_xplane_reader.cpp 32381 2015-12-20 21:37:32Z goatbar $
+ * $Id$
  *
  * Project:  X-Plane aeronautical data reader
  * Purpose:  Definition of classes for OGR X-Plane aeronautical data driver.
@@ -31,7 +31,7 @@
 
 #include "ogr_xplane_reader.h"
 
-CPL_CVSID("$Id: ogr_xplane_reader.cpp 32381 2015-12-20 21:37:32Z goatbar $");
+CPL_CVSID("$Id$");
 
 /***********************************************************************/
 /*                       OGRXPlaneReader()                             */

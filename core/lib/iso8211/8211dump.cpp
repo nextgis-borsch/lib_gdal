@@ -1,8 +1,8 @@
 /******************************************************************************
- * $Id: 8211dump.cpp 33035 2016-01-17 22:05:23Z rouault $
+ * $Id$
  *
  * Project:  SDTS Translator
- * Purpose:  Dump 8211 file in verbose form - just a junk program. 
+ * Purpose:  Dump 8211 file in verbose form - just a junk program.
  * Author:   Frank Warmerdam, warmerdam@pobox.com
  *
  ******************************************************************************
@@ -33,7 +33,7 @@
 #include "cpl_vsi.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: 8211dump.cpp 33035 2016-01-17 22:05:23Z rouault $");
+CPL_CVSID("$Id$");
 
 
 int main( int nArgc, char ** papszArgv )
@@ -83,7 +83,7 @@ int main( int nArgc, char ** papszArgv )
         DDFFieldDefn *poFSPT = oModule.FindFieldDefn( "FSPT" );
 
         if( poFSPT == NULL )
-            fprintf( stderr, 
+            fprintf( stderr,
                      "unable to find FSPT field to set repeating flag.\n" );
         else
             poFSPT->SetRepeatingFlag( TRUE );
@@ -322,6 +322,3 @@ int main( int nArgc, char ** papszArgv )
 #endif
 
 }
-
-
-

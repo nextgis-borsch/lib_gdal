@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_findfile.cpp 33530 2016-02-23 08:56:17Z rouault $
+ * $Id$
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Generic data file location finder, with application hooking.
@@ -33,7 +33,7 @@
 #include "cpl_multiproc.h"
 #include "cpl_vsi.h"
 
-CPL_CVSID("$Id: cpl_findfile.cpp 33530 2016-02-23 08:56:17Z rouault $");
+CPL_CVSID("$Id$");
 
 typedef struct
 {
@@ -71,7 +71,7 @@ static void CPLFindFileFreeTLS(void* pData)
 
 static FindFileTLS* CPLGetFindFileTLS()
 {
-    int bMemoryError;
+    int bMemoryError = FALSE;
     FindFileTLS* pTLSData =
         reinterpret_cast<FindFileTLS *>(
             CPLGetTLSEx( CTLS_FINDFILE, &bMemoryError ) );
@@ -132,8 +132,11 @@ void CPLFinderClean()
 {
     FindFileTLS* pTLSData = CPLGetFindFileTLS();
     CPLFindFileFreeTLS(pTLSData);
-    int bMemoryError;
+    int bMemoryError = FALSE;
     CPLSetTLSWithFreeFuncEx( CTLS_FINDFILE, NULL, NULL, &bMemoryError );
+    // TODO: if( bMemoryError )
+    // {
+    // }
 }
 
 /************************************************************************/

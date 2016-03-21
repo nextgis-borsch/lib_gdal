@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: GDALtest.java 17965 2009-11-04 21:41:21Z rouault $
+ * $Id$
  *
  * Name:     GDALtest.java
  * Project:  GDAL SWIG Interface

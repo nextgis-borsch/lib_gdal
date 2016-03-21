@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrmysqldriver.cpp 32177 2015-12-14 07:25:30Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRMySQLDriver class.
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id: ogrmysqldriver.cpp 32177 2015-12-14 07:25:30Z goatbar $");
+CPL_CVSID("$Id$");
 
 static CPLMutex* hMutex = NULL;
 static int   bInitialized = FALSE;
@@ -121,7 +121,7 @@ static GDALDataset *OGRMySQLDriverCreate( const char * pszName,
     if( !poDS->Open( pszName, NULL, TRUE ) )
     {
         delete poDS;
-        CPLError( CE_Failure, CPLE_AppDefined, 
+        CPLError( CE_Failure, CPLE_AppDefined,
          "MySQL driver doesn't currently support database creation.\n"
                   "Please create database before using." );
         return NULL;

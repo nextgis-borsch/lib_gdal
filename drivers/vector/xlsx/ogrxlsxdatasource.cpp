@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrxlsxdatasource.cpp 33437 2016-02-12 11:02:55Z rouault $
+ * $Id$
  *
  * Project:  XLSX Translator
  * Purpose:  Implements OGRXLSXDataSource class
@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_time.h"
 
-CPL_CVSID("$Id: ogrxlsxdatasource.cpp 33437 2016-02-12 11:02:55Z rouault $");
+CPL_CVSID("$Id$");
 
 namespace OGRXLSX {
 

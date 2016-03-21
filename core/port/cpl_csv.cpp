@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_csv.cpp 33578 2016-02-26 23:53:21Z goatbar $
+ * $Id$
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  CSV (comma separated value) file access.
@@ -33,7 +33,7 @@
 #include "cpl_multiproc.h"
 #include "gdal_csv.h"
 
-CPL_CVSID("$Id: cpl_csv.cpp 33578 2016-02-26 23:53:21Z goatbar $");
+CPL_CVSID("$Id$");
 
 /* ==================================================================== */
 /*      The CSVTable is a persistent set of info about an open CSV      */
@@ -90,7 +90,7 @@ static CSVTable *CSVAccess( const char * pszFilename )
 /*      Fetch the table, and allocate the thread-local pointer to it    */
 /*      if there isn't already one.                                     */
 /* -------------------------------------------------------------------- */
-    int bMemoryError;
+    int bMemoryError = FALSE;
     CSVTable **ppsCSVTableList = reinterpret_cast<CSVTable **>(
         CPLGetTLSEx( CTLS_CSVTABLEPTR, &bMemoryError ) );
     if( bMemoryError )
@@ -236,7 +236,7 @@ void CSVDeaccess( const char * pszFilename )
 /*      Fetch the table, and allocate the thread-local pointer to it    */
 /*      if there isn't already one.                                     */
 /* -------------------------------------------------------------------- */
-    int bMemoryError;
+    int bMemoryError = FALSE;
     CSVTable **ppsCSVTableList = reinterpret_cast<CSVTable **>(
         CPLGetTLSEx( CTLS_CSVTABLEPTR, &bMemoryError ) );
 
@@ -1255,7 +1255,7 @@ const char * GDALDefaultCSVFilename( const char *pszBasename )
 /*      Do we already have this file accessed?  If so, just return      */
 /*      the existing path without any further probing.                  */
 /* -------------------------------------------------------------------- */
-    int bMemoryError;
+    int bMemoryError = FALSE;
     CSVTable **ppsCSVTableList = reinterpret_cast<CSVTable **>(
       CPLGetTLSEx( CTLS_CSVTABLEPTR, &bMemoryError ) );
     if( ppsCSVTableList != NULL )

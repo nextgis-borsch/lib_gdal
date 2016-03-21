@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_error.cpp 33646 2016-03-05 15:54:03Z goatbar $
+ * $Id$
  *
  * Name:     cpl_error.cpp
  * Project:  CPL - Common Portability Library
@@ -38,7 +38,7 @@
 #define TIMESTAMP_DEBUG
 //#define MEMORY_DEBUG
 
-CPL_CVSID("$Id: cpl_error.cpp 33646 2016-03-05 15:54:03Z goatbar $");
+CPL_CVSID("$Id$");
 
 static CPLMutex *hErrorMutex = NULL;
 static void *pErrorHandlerUserData = NULL;
@@ -108,7 +108,7 @@ static const CPLErrorContext sFailureContext =
 static CPLErrorContext *CPLGetErrorContext()
 
 {
-    int bError;
+    int bError = FALSE;
     CPLErrorContext *psCtx =
         reinterpret_cast<CPLErrorContext *>(
             CPLGetTLSEx( CTLS_ERRORCONTEXT, &bError ) );
@@ -214,7 +214,7 @@ void    CPLErrorV( CPLErr eErrClass, CPLErrorNum err_no, const char *fmt,
     CPLErrorContext *psCtx = CPLGetErrorContext();
     if( psCtx == NULL || IS_PREFEFINED_ERROR_CTX(psCtx) )
     {
-        int bMemoryError;
+        int bMemoryError = FALSE;
         if( eErrClass == CE_Warning )
         {
             CPLSetTLSWithFreeFuncEx(
@@ -287,7 +287,7 @@ void    CPLErrorV( CPLErr eErrClass, CPLErrorNum err_no, const char *fmt,
             }
         }
 
-        int nPR;
+        int nPR = 0;
         while( ((nPR = CPLvsnprintf(
                      psCtx->szLastErrMsg+nPreviousSize,
                      psCtx->nLastErrMsgMax-nPreviousSize, fmt, wrk_args )) == -1
@@ -605,7 +605,7 @@ void CPL_STDCALL CPLErrorReset()
         return;
     if( IS_PREFEFINED_ERROR_CTX(psCtx) )
     {
-        int bMemoryError;
+        int bMemoryError = FALSE;
         CPLSetTLSWithFreeFuncEx(
             CTLS_ERRORCONTEXT,
             reinterpret_cast<void*>(
@@ -640,7 +640,7 @@ void CPL_DLL CPLErrorSetState( CPLErr eErrClass, CPLErrorNum err_no,
         return;
     if( IS_PREFEFINED_ERROR_CTX(psCtx) )
     {
-        int bMemoryError;
+        int bMemoryError = FALSE;
         if( eErrClass == CE_None )
             CPLSetTLSWithFreeFuncEx(
                 CTLS_ERRORCONTEXT,

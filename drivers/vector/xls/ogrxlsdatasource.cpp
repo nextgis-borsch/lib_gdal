@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrxlsdatasource.cpp 32983 2016-01-14 18:32:10Z goatbar $
+ * $Id$
  *
  * Project:  XLS Translator
  * Purpose:  Implements OGRXLSDataSource class
@@ -37,7 +37,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrxlsdatasource.cpp 32983 2016-01-14 18:32:10Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                          OGRXLSDataSource()                          */
@@ -115,7 +115,7 @@ int OGRXLSDataSource::Open( const char * pszFilename, int bUpdateIn)
     pszName = CPLStrdup( pszFilename );
 #endif
 
-// -------------------------------------------------------------------- 
+// --------------------------------------------------------------------
 //      Does this appear to be a .xls file?
 // --------------------------------------------------------------------
 

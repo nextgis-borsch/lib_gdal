@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ###############################################################################
-# $Id: gdal2xyz.py 32555 2015-12-30 19:26:44Z goatbar $
+# $Id$
 #
 # Project:  GDAL
 # Purpose:  Script to translate GDAL supported raster into XYZ ASCII

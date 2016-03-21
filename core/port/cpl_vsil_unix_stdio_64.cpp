@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_vsil_unix_stdio_64.cpp 33646 2016-03-05 15:54:03Z goatbar $
+ * $Id$
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Implement VSI large file api for Unix platforms with fseek64()
@@ -65,7 +65,7 @@
 #include <errno.h>
 #include <new>
 
-CPL_CVSID("$Id: cpl_vsil_unix_stdio_64.cpp 33646 2016-03-05 15:54:03Z goatbar $");
+CPL_CVSID("$Id$");
 
 #if defined(UNIX_STDIO_64)
 

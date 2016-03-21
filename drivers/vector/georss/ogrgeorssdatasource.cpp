@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgeorssdatasource.cpp 32983 2016-01-14 18:32:10Z goatbar $
+ * $Id$
  *
  * Project:  GeoRSS Translator
  * Purpose:  Implements OGRGeoRSSDataSource class
@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "cpl_csv.h"
 
-CPL_CVSID("$Id: ogrgeorssdatasource.cpp 32983 2016-01-14 18:32:10Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                          OGRGeoRSSDataSource()                          */
@@ -333,7 +333,7 @@ int OGRGeoRSSDataSource::Open( const char * pszFilename, int bUpdateIn)
 /*                               Create()                               */
 /************************************************************************/
 
-int OGRGeoRSSDataSource::Create( const char *pszFilename, 
+int OGRGeoRSSDataSource::Create( const char *pszFilename,
                                  char **papszOptions )
 {
     if( fpOutput != NULL)
@@ -366,8 +366,8 @@ int OGRGeoRSSDataSource::Create( const char *pszFilename,
     fpOutput = VSIFOpenL( pszFilename, "w" );
     if( fpOutput == NULL )
     {
-        CPLError( CE_Failure, CPLE_OpenFailed, 
-                  "Failed to create GeoRSS file %s.", 
+        CPLError( CE_Failure, CPLE_OpenFailed,
+                  "Failed to create GeoRSS file %s.",
                   pszFilename );
         return FALSE;
     }

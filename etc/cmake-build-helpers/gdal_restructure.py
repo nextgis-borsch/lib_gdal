@@ -5,6 +5,7 @@
 #  Author:   Maxim Dubinin, sim@gis-lab.info
 #  Author:   Dmitry Baryshnikov, polimax@mail.ru 
 #  Example:  python gdal_restructure.py /src_path/gdal/ /dst_path/gdal/ /path_to_config/gdal_folders.csv
+#  Windows notes: do not forget to put last '\' after .\dst_path\gdal\
 #******************************************************************************
 #  Copyright (c) 2015-2016, NextGIS <info@nextgis.com>
 # 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrbnaparser.cpp 33199 2016-01-29 15:48:41Z rouault $
+ * $Id$
  *
  * Project:  BNA Parser
  * Purpose:  Parse a BNA record
@@ -288,7 +288,7 @@ BNARecord* BNA_GetNextRecord(VSILFILE* f,
           {
             if (tmpBufferLength[numField] == TMP_BUFFER_SIZE)
             {
-              detailedErrorMsg = TOO_LONG_ID; 
+              detailedErrorMsg = TOO_LONG_ID;
               goto error;
             }
             tmpBuffer[numField][tmpBufferLength[numField]++] = c;
@@ -303,7 +303,7 @@ BNARecord* BNA_GetNextRecord(VSILFILE* f,
           {
             if (tmpBufferLength[numField] == TMP_BUFFER_SIZE)
             {
-              detailedErrorMsg = TOO_LONG_ID; 
+              detailedErrorMsg = TOO_LONG_ID;
               goto error;
             }
             tmpBuffer[numField][tmpBufferLength[numField]++] = c;

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: netcdfwriterconfig.cpp 33500 2016-02-18 12:01:47Z rouault $
+ * $Id$
  *
  * Project:  netCDF read/write Driver
  * Purpose:  GDAL bindings over netCDF library.
@@ -29,7 +29,7 @@
 
 #include "netcdfdataset.h"
 
-CPL_CVSID("$Id: netcdfwriterconfig.cpp 33500 2016-02-18 12:01:47Z rouault $");
+CPL_CVSID("$Id$");
 
 bool netCDFWriterConfiguration::SetNameValue(CPLXMLNode* psNode,
                                              std::map<CPLString,CPLString>& oMap)

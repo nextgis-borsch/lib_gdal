@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgeometryfactory.cpp 33652 2016-03-05 23:39:47Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Factory for converting geometry to and from well known binary
@@ -41,7 +41,7 @@
 #define UNUSED_IF_NO_GEOS
 #endif
 
-CPL_CVSID("$Id: ogrgeometryfactory.cpp 33652 2016-03-05 23:39:47Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                           createFromWkb()                            */

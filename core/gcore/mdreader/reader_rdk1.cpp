@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: reader_rdk1.cpp 31812 2015-11-28 22:37:37Z goatbar $
+ * $Id$
  *
  * Project:  GDAL Core
  * Purpose:  Read metadata from Resurs-DK1 imagery.
@@ -30,7 +30,7 @@
 
 #include "reader_rdk1.h"
 
-CPL_CVSID("$Id: reader_rdk1.cpp 31812 2015-11-28 22:37:37Z goatbar $");
+CPL_CVSID("$Id$");
 
 /**
  * GDALMDReaderResursDK1()

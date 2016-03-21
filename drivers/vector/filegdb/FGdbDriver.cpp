@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: FGdbDriver.cpp 32833 2016-01-08 11:43:51Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements FileGDB OGR driver.
@@ -36,7 +36,7 @@
 #include "cpl_multiproc.h"
 #include "ogrmutexeddatasource.h"
 
-CPL_CVSID("$Id: FGdbDriver.cpp 32833 2016-01-08 11:43:51Z rouault $");
+CPL_CVSID("$Id$");
 
 extern "C" void RegisterOGRFileGDB();
 

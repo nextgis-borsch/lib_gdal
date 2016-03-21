@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_opt.cpp 33631 2016-03-04 06:28:09Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features
  * Purpose:  Functions for getting list of projection types, and their parms.
@@ -31,7 +31,7 @@
 #include "ogr_srs_api.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogr_opt.cpp 33631 2016-03-04 06:28:09Z goatbar $");
+CPL_CVSID("$Id$");
 
 static const char * const papszParameterDefinitions[] = {
     SRS_PP_CENTRAL_MERIDIAN,    "Central Meridian",     "Long",  "0.0",

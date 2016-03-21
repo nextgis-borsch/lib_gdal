@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrcompoundcurve.cpp 33631 2016-03-04 06:28:09Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRCompoundCurve geometry class.

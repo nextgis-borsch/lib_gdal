@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalnodatamaskband.cpp 32173 2015-12-14 00:04:53Z goatbar $
+ * $Id$
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of GDALNoDataMaskBand, a class implementing all
@@ -31,7 +31,7 @@
 
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id: gdalnodatamaskband.cpp 32173 2015-12-14 00:04:53Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                        GDALNoDataMaskBand()                          */
@@ -75,7 +75,7 @@ CPLErr GDALNoDataMaskBand::IReadBlock( int nXBlockOff, int nYBlockOff,
 /* -------------------------------------------------------------------- */
 /*      Decide on a working type.                                       */
 /* -------------------------------------------------------------------- */
-    switch( poParent->GetRasterDataType() ) 
+    switch( poParent->GetRasterDataType() )
     {
       case GDT_Byte:
         eWrkDT = GDT_Byte;

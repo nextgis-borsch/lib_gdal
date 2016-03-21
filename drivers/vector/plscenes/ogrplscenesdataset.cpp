@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrplscenesdataset.cpp 33602 2016-02-29 20:20:12Z rouault $
+ * $Id$
  *
  * Project:  PlanetLabs scene driver
  * Purpose:  Implements OGRPLScenesDataset
@@ -29,7 +29,7 @@
 
 #include "ogr_plscenes.h"
 
-CPL_CVSID("$Id: ogrplscenesdataset.cpp 33602 2016-02-29 20:20:12Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                         OGRPLScenesDataset()                         */
@@ -205,7 +205,7 @@ json_object* OGRPLScenesDataset::RunRequest(const char* pszURL,
         CPLString osURL(pszURL);
         if( osURL[osURL.size()-1 ] == '/' )
             osURL.resize(osURL.size()-1);
-        GByte* pabyBuf = VSIGetMemFileBuffer(osURL, &nDataLengthLarge, FALSE); 
+        GByte* pabyBuf = VSIGetMemFileBuffer(osURL, &nDataLengthLarge, FALSE);
         size_t nDataLength = static_cast<size_t>(nDataLengthLarge);
         if( pabyBuf )
         {

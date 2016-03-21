@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: wmsdriver.h 32179 2015-12-14 16:22:34Z goatbar $
+ * $Id$
  *
  * Project:  WMS Client Driver
  * Purpose:  Implementation of Dataset and RasterBand classes for WMS
@@ -126,7 +126,7 @@ typedef enum
 
 class GDALWMSMiniDriverCapabilities {
 public:
-  GDALWMSMiniDriverCapabilities() : 
+  GDALWMSMiniDriverCapabilities() :
       m_capabilities_version(0),
       m_has_image_request(0),
       m_has_tiled_image_requeset(0),

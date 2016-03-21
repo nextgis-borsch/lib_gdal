@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: pnmdataset.cpp 32883 2016-01-09 18:24:40Z rouault $
+ * $Id$
  *
  * Project:  PNM Driver
  * Purpose:  Portable anymap file format imlementation
@@ -33,7 +33,7 @@
 #include "rawdataset.h"
 #include <ctype.h>
 
-CPL_CVSID("$Id: pnmdataset.cpp 32883 2016-01-09 18:24:40Z rouault $");
+CPL_CVSID("$Id$");
 
 CPL_C_START
 void GDALRegister_PNM();
@@ -302,8 +302,8 @@ GDALDataset *PNMDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Check for world file.                                           */
 /* -------------------------------------------------------------------- */
-    poDS->bGeoTransformValid = 
-        GDALReadWorldFile( poOpenInfo->pszFilename, ".wld", 
+    poDS->bGeoTransformValid =
+        GDALReadWorldFile( poOpenInfo->pszFilename, ".wld",
                            poDS->adfGeoTransform );
 
 /* -------------------------------------------------------------------- */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrinfo.java 32865 2016-01-08 21:22:17Z goatbar $
+ * $Id$
  *
  * Name:     ogrinfo.java
  * Project:  GDAL SWIG Interface

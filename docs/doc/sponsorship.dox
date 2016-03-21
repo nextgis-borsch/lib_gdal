@@ -1,5 +1,5 @@
 #ifndef DOXYGEN_SKIP
-/* $Id: sponsorship.dox 32092 2015-12-08 14:54:56Z goatbar $ */
+/* $Id$ */
 #endif /* DOXYGEN_SKIP */
 
 /*!
@@ -87,7 +87,7 @@ questions, or to make arrangements.
 
 \htmlonly
 <p>
-$Id: sponsorship.dox 32092 2015-12-08 14:54:56Z goatbar $
+$Id$
 </p>
 \endhtmlonly
 

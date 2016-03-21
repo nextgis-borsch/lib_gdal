@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrcurve.cpp 33631 2016-03-04 06:28:09Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRCurve geometry class.
@@ -30,7 +30,7 @@
 #include "ogr_geometry.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrcurve.cpp 33631 2016-03-04 06:28:09Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                                OGRCurve()                            */

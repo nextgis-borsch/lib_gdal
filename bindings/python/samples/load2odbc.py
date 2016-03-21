@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ###############################################################################
-# $Id: load2odbc.py 31957 2015-12-02 12:44:54Z goatbar $
+# $Id$
 #
 # Project:  OGR Python samples
 # Purpose:  Load ODBC table to an ODBC datastore.  Uses direct SQL 

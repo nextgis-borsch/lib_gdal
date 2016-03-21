@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: testepsg.cpp 33615 2016-03-02 20:19:22Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Test mainline for translating EPSG definitions into WKT.

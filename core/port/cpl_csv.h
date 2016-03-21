@@ -1,9 +1,9 @@
 /******************************************************************************
- * $Id: cpl_csv.h 33509 2016-02-20 05:02:59Z goatbar $
+ * $Id$
  *
  * Project:  Common Portability Library
  * Purpose:  Functions for reading and scaning CSV (comma separated,
- *           variable length text files holding tables) files.  
+ *           variable length text files holding tables) files.
  * Author:   Frank Warmerdam, warmerdam@pobox.com
  *
  ******************************************************************************

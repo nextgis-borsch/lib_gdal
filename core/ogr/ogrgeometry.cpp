@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgeometry.cpp 33663 2016-03-06 17:04:59Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements a few base methods on OGRGeometry.
@@ -41,7 +41,7 @@
 #define UNUSED_IF_NO_GEOS
 #endif
 
-CPL_CVSID("$Id: ogrgeometry.cpp 33663 2016-03-06 17:04:59Z rouault $");
+CPL_CVSID("$Id$");
 
 int OGRGeometry::bGenerate_DB2_V72_BYTE_ORDER = FALSE;
 
@@ -321,6 +321,14 @@ void OGRGeometry::dumpReadable( FILE * fp, const char * pszPrefix, char** papszO
                 break;
             }
             case wkbLinearRing:
+            case wkbCurve:
+            case wkbSurface:
+            case wkbCurveZ:
+            case wkbSurfaceZ:
+            case wkbCurveM:
+            case wkbSurfaceM:
+            case wkbCurveZM:
+            case wkbSurfaceZM:
                 break;
         }
     }
@@ -2161,6 +2169,10 @@ OGRwkbGeometryType OGRFromOGCGeomType( const char *pszGeomType )
         eType = wkbMultiCurve;
     else if ( STARTS_WITH_CI(pszGeomType, "MULTISURFACE") )
         eType = wkbMultiSurface;
+    else if ( STARTS_WITH_CI(pszGeomType, "CURVE") )
+        eType = wkbCurve;
+    else if ( STARTS_WITH_CI(pszGeomType, "SURFACE") )
+        eType = wkbSurface;
     else
         eType = wkbUnknown;
 
@@ -2208,6 +2220,10 @@ const char * OGRToOGCGeomType( OGRwkbGeometryType eGeomType )
             return "MULTICURVE";
         case wkbMultiSurface:
             return "MULTISURFACE";
+        case wkbCurve:
+            return "CURVE";
+        case wkbSurface:
+            return "SURFACE";
         default:
             return "";
     }
@@ -2365,6 +2381,26 @@ const char *OGRGeometryTypeToName( OGRwkbGeometryType eType )
                 return "Measured Multi Surface";
             else
                 return "Multi Surface";
+
+        case wkbCurve:
+            if (b3D && bMeasured)
+                return "3D Measured Curve";
+            else if (b3D)
+                return "3D Curve";
+            else if (bMeasured)
+                return "Measured Curve";
+            else
+                return "Curve";
+
+        case wkbSurface:
+            if (b3D && bMeasured)
+                return "3D Measured Surface";
+            else if (b3D)
+                return "3D Surface";
+            else if (bMeasured)
+                return "Measured Surface";
+            else
+                return "Surface";
 
         case wkbNone:
             return "None";
@@ -2578,13 +2614,7 @@ char *OGRGeometry::exportToGML( const char* const * papszOptions ) const
 
 char *OGRGeometry::exportToKML() const
 {
-#ifdef OGR_ENABLED
     return OGR_G_ExportToKML( (OGRGeometryH) this, NULL );
-#else
-    CPLError( CE_Failure, CPLE_AppDefined,
-              "OGRGeometry::exportToKML() not supported in builds without OGR drivers." );
-    return NULL;
-#endif
 }
 
 /************************************************************************/
@@ -2605,14 +2635,8 @@ char *OGRGeometry::exportToKML() const
 
 char *OGRGeometry::exportToJson() const
 {
-#ifdef OGR_ENABLED
     OGRGeometry* poGeometry = const_cast<OGRGeometry*>(this);
     return OGR_G_ExportToJson( (OGRGeometryH) (poGeometry) );
-#else
-    CPLError( CE_Failure, CPLE_AppDefined,
-              "OGRGeometry::exportToJson() not supported in builds without OGR drivers." );
-    return NULL;
-#endif
 }
 
 /************************************************************************/

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_strtod.cpp 33644 2016-03-05 15:29:31Z goatbar $
+ * $Id$
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Functions to convert ASCII string to floating point number.
@@ -36,7 +36,7 @@
 
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: cpl_strtod.cpp 33644 2016-03-05 15:29:31Z goatbar $");
+CPL_CVSID("$Id$");
 
 // XXX: with GCC 2.95 strtof() function is only available when in c99 mode.
 // Fix it here not touching the compiler options.
@@ -175,7 +175,7 @@ static char* CPLReplacePointByLocalePoint(const char* pszNumber, char point)
             return pszNew;
         }
     }
-#else
+#else  // ndef __ANDROID__
     struct lconv *poLconv = localeconv();
     if ( poLconv
          && poLconv->decimal_point
@@ -198,7 +198,7 @@ static char* CPLReplacePointByLocalePoint(const char* pszNumber, char point)
             }
         }
     }
-#endif
+#endif  // __ANDROID__
 
     return const_cast<char*>( pszNumber );
 }
@@ -366,7 +366,7 @@ float CPLStrtofDelim(const char *nptr, char **endptr, char point)
 
     return static_cast<float>( CPLStrtodDelim(nptr, endptr, point) );
 
-#endif /* HAVE_STRTOF */
+#endif  // HAVE_STRTOF
 }
 
 /************************************************************************/

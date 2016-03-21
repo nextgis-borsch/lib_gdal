@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gifabstractdataset.cpp 32172 2015-12-13 23:28:18Z rouault $
+ * $Id$
  *
  * Project:  GIF Driver
  * Purpose:  GIF Abstract Dataset
@@ -29,10 +29,10 @@
 
 #include "gifabstractdataset.h"
 
-CPL_CVSID("$Id: gifabstractdataset.cpp 32172 2015-12-13 23:28:18Z rouault $");
+CPL_CVSID("$Id$");
 
-static const int InterlacedOffset[] = { 0, 4, 2, 1 }; 
-static const int InterlacedJumps[] = { 8, 8, 4, 2 };  
+static const int InterlacedOffset[] = { 0, 4, 2, 1 };
+static const int InterlacedJumps[] = { 8, 8, 4, 2 };
 
 /************************************************************************/
 /* ==================================================================== */
@@ -345,7 +345,7 @@ void GIFAbstractDataset::DetectGeoreferencing( GDALOpenInfo * poOpenInfo )
 
     bGeoTransformValid =
         GDALReadWorldFile2( poOpenInfo->pszFilename, NULL,
-                            adfGeoTransform, poOpenInfo->GetSiblingFiles(), 
+                            adfGeoTransform, poOpenInfo->GetSiblingFiles(),
                             &pszWldFilename );
     if ( !bGeoTransformValid )
     {
@@ -410,11 +410,11 @@ int GIFAbstractDataset::myEGifCloseFile( GifFileType *hGifFile )
 /*      Proxy function for reading from GIF file.                       */
 /************************************************************************/
 
-int GIFAbstractDataset::ReadFunc( GifFileType *psGFile, GifByteType *pabyBuffer, 
+int GIFAbstractDataset::ReadFunc( GifFileType *psGFile, GifByteType *pabyBuffer,
                                         int nBytesToRead )
 
 {
-    return static_cast<int>(VSIFReadL( pabyBuffer, 1, nBytesToRead, 
+    return static_cast<int>(VSIFReadL( pabyBuffer, 1, nBytesToRead,
                       (VSILFILE *) psGFile->UserData ));
 }
 
@@ -453,7 +453,7 @@ GifRecordType GIFAbstractDataset::FindFirstImage( GifFileType* hGifFile )
 /************************************************************************/
 
 GIFAbstractRasterBand::GIFAbstractRasterBand(
-                              GIFAbstractDataset *poDSIn, int nBandIn, 
+                              GIFAbstractDataset *poDSIn, int nBandIn,
                               SavedImage *psSavedImage, int nBackground,
                               int bAdvertizeInterlacedMDI ) :
     panInterlaceMap(NULL),
@@ -490,7 +490,7 @@ GIFAbstractRasterBand::GIFAbstractRasterBand(
         {
             for (int j = InterlacedOffset[i];
                  j < poDSIn->nRasterYSize;
-                 j += InterlacedJumps[i]) 
+                 j += InterlacedJumps[i])
                 panInterlaceMap[j] = iLine++;
         }
     }

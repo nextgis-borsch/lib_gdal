@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_srs_esri.cpp 33534 2016-02-23 16:57:43Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  OGRSpatialReference translation to/from ESRI .prj definitions.
@@ -37,7 +37,7 @@
 
 #include "ogr_srs_esri_names.h"
 
-CPL_CVSID("$Id: ogr_srs_esri.cpp 33534 2016-02-23 16:57:43Z goatbar $");
+CPL_CVSID("$Id$");
 
 void  SetNewName( OGRSpatialReference* pOgr, const char* keyName, const char* newName );
 int   RemapImgWGSProjcsName(OGRSpatialReference* pOgr, const char* pszProjCSName,

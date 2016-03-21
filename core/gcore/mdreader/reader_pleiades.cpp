@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: reader_pleiades.cpp 32045 2015-12-06 22:47:00Z rouault $
+ * $Id$
  *
  * Project:  GDAL Core
  * Purpose:  Read metadata from Pleiades imagery.
@@ -30,7 +30,7 @@
 
 #include "reader_pleiades.h"
 
-CPL_CVSID("$Id: reader_pleiades.cpp 32045 2015-12-06 22:47:00Z rouault $");
+CPL_CVSID("$Id$");
 
 /**
  * GDALMDReaderPleiades()
@@ -297,7 +297,7 @@ char** GDALMDReaderPleiades::LoadRPCXmlFile()
     if( NULL == papszRawRPCList )
     {
         CPLDestroyXMLNode(pNode);
-        return NULL;        
+        return NULL;
     }
 
     // format list
@@ -321,7 +321,6 @@ char** GDALMDReaderPleiades::LoadRPCXmlFile()
                                     CSLFetchNameValue(papszRawRPCList,
                                                         apszRPBMap[i + 1]));
         }
-	
     }
 
     // merge coefficients

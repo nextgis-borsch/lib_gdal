@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_srs_xml.cpp 33631 2016-03-04 06:28:09Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  OGRSpatialReference interface to OGC XML (014r4).

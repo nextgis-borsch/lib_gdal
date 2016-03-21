@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: msg_reader_core.cpp 33138 2016-01-24 11:18:11Z rouault $
+ * $Id$
  *
  * Project:  MSG Native Reader
  * Purpose:  Base class for reading in the headers of MSG native images
@@ -44,7 +44,7 @@
 #ifdef GDAL_SUPPORT
 #include "cpl_vsi.h"
 
-CPL_CVSID("$Id: msg_reader_core.cpp 33138 2016-01-24 11:18:11Z rouault $");
+CPL_CVSID("$Id$");
 
 #else
 #define VSIFSeek(fp, pos, ref)    CPL_IGNORE_RET_VAL(fseek(fp, pos, ref))

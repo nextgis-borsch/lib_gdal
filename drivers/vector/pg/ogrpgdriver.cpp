@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrpgdriver.cpp 33639 2016-03-04 23:39:40Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRPGDriver class.
@@ -30,7 +30,7 @@
 #include "ogr_pg.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrpgdriver.cpp 33639 2016-03-04 23:39:40Z rouault $");
+CPL_CVSID("$Id$");
 
 
 /************************************************************************/
@@ -89,7 +89,7 @@ static GDALDataset *OGRPGDriverCreate( const char * pszName,
     if( !poDS->Open( pszName, TRUE, TRUE, papszOptions ) )
     {
         delete poDS;
-        CPLError( CE_Failure, CPLE_AppDefined, 
+        CPLError( CE_Failure, CPLE_AppDefined,
          "PostgreSQL driver doesn't currently support database creation.\n"
                   "Please create database with the `createdb' command." );
         return NULL;
@@ -176,4 +176,3 @@ void RegisterOGRPG()
 
     GetGDALDriverManager()->RegisterDriver( poDriver );
 }
-

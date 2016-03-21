@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogringresdriver.cpp 32177 2015-12-14 07:25:30Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRIngresDriver class.
@@ -30,7 +30,7 @@
 #include "ogr_ingres.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogringresdriver.cpp 32177 2015-12-14 07:25:30Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                          ~OGRIngresDriver()                           */
@@ -117,7 +117,7 @@ OGRDataSource *OGRIngresDriver::CreateDataSource( const char * pszName,
         {
             delete poDS;
             poDS = NULL;
-            CPLError( CE_Failure, CPLE_AppDefined, 
+            CPLError( CE_Failure, CPLE_AppDefined,
                       "Ingres driver doesn't currently support database creation.\n"
                       "Please create database before using." );
         }
@@ -157,4 +157,3 @@ void RegisterOGRIngres()
         return;
     OGRSFDriverRegistrar::GetRegistrar()->RegisterDriver(new OGRIngresDriver);
 }
-

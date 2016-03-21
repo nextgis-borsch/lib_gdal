@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrcartodbtablelayer.cpp 33647 2016-03-05 16:43:00Z rouault $
+ * $Id$
  *
  * Project:  CartoDB Translator
  * Purpose:  Implements OGRCARTODBTableLayer class.
@@ -31,7 +31,7 @@
 #include "ogr_p.h"
 #include "ogr_pgdump.h"
 
-CPL_CVSID("$Id: ogrcartodbtablelayer.cpp 33647 2016-03-05 16:43:00Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                    OGRCARTODBEscapeIdentifier( )                     */

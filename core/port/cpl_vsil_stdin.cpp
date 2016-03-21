@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_vsil_stdin.cpp 33646 2016-03-05 15:54:03Z goatbar $
+ * $Id$
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Implement VSI large file api for stdin
@@ -37,16 +37,16 @@
 #include <fcntl.h>
 #endif
 
-CPL_CVSID("$Id: cpl_vsil_stdin.cpp 33646 2016-03-05 15:54:03Z goatbar $");
+CPL_CVSID("$Id$");
 
 /* We buffer the first 1MB of standard input to enable drivers */
 /* to autodetect data. In the first MB, backward and forward seeking */
 /* is allowed, after only forward seeking will work */
 #define BUFFER_SIZE (1024 * 1024)
 
-static GByte* pabyBuffer;
-static GUInt32 nBufferLen;
-static GUIntBig nRealPos;
+static GByte* pabyBuffer = NULL;
+static GUInt32 nBufferLen = 0;
+static GUIntBig nRealPos = 0;
 
 /************************************************************************/
 /*                           VSIStdinInit()                             */

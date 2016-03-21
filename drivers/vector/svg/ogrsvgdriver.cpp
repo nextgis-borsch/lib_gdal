@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrsvgdriver.cpp 32110 2015-12-10 17:19:40Z goatbar $
+ * $Id$
  *
  * Project:  SVG Translator
  * Purpose:  Implements OGRSVGDriver.
@@ -30,7 +30,7 @@
 #include "ogr_svg.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrsvgdriver.cpp 32110 2015-12-10 17:19:40Z goatbar $");
+CPL_CVSID("$Id$");
 
 CPL_C_START
 void RegisterOGRSVG();

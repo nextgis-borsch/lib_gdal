@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgmldriver.cpp 32110 2015-12-10 17:19:40Z goatbar $
+ * $Id$
  *
  * Project:  OGR
  * Purpose:  OGRGMLDriver implementation
@@ -32,7 +32,7 @@
 #include "cpl_multiproc.h"
 #include "gmlreaderp.h"
 
-CPL_CVSID("$Id: ogrgmldriver.cpp 32110 2015-12-10 17:19:40Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                        OGRGMLDriverUnload()                          */

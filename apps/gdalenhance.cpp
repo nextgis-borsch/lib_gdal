@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalenhance.cpp 33615 2016-03-02 20:19:22Z goatbar $
+ * $Id$
  *
  * Project:  GDAL Utilities
  * Purpose:  Command line application to do image enhancement.
@@ -35,7 +35,7 @@
 #include "vrtdataset.h"
 #include "commonutils.h"
 
-CPL_CVSID("$Id: gdalenhance.cpp 33615 2016-03-02 20:19:22Z goatbar $");
+CPL_CVSID("$Id$");
 
 static int
 ComputeEqualizationLUTs( GDALDatasetH hDataset,  int nLUTBins,

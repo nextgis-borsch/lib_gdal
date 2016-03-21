@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalbuildvrt_bin.cpp 33615 2016-03-02 20:19:22Z goatbar $
+ * $Id$
  *
  * Project:  GDAL Utilities
  * Purpose:  Command line application to build VRT datasets from raster products or content of SHP tile index
@@ -32,7 +32,7 @@
 #include "commonutils.h"
 #include "gdal_utils_priv.h"
 
-CPL_CVSID("$Id: gdalbuildvrt_bin.cpp 33615 2016-03-02 20:19:22Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                               Usage()                                */
@@ -207,9 +207,7 @@ int main( int argc, char ** argv )
 
     GDALDestroyDriverManager();
 
-#ifdef OGR_ENABLED
     OGRCleanupAll();
-#endif
 
     return nRetCode;
 }

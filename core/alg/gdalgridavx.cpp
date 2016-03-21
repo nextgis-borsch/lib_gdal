@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalgridavx.cpp 31631 2015-11-18 17:55:29Z rouault $
+ * $Id$
  *
  * Project:  GDAL Gridding API.
  * Purpose:  Implementation of GDAL scattered data gridder.
@@ -33,7 +33,7 @@
 #ifdef HAVE_AVX_AT_COMPILE_TIME
 #include <immintrin.h>
 
-CPL_CVSID("$Id: gdalgridavx.cpp 31631 2015-11-18 17:55:29Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*         GDALGridInverseDistanceToAPower2NoSmoothingNoSearchAVX()     */

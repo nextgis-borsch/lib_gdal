@@ -1,10 +1,10 @@
 /******************************************************************************
- * $Id: ogrsdedriver.cpp 32177 2015-12-14 07:25:30Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRSDEDriver class.
  * Author:   Frank Warmerdam, warmerdam@pobox.com
- * Copyright (c) 2008, Shawn Gervais <project10@project10.net> 
+ * Copyright (c) 2008, Shawn Gervais <project10@project10.net>
  * Copyright (c) 2008, Howard Butler <hobu.inc@gmail.com>
  *
  ******************************************************************************
@@ -32,7 +32,7 @@
 #include "ogr_sde.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrsdedriver.cpp 32177 2015-12-14 07:25:30Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                            ~OGRSDEDriver()                            */
@@ -126,4 +126,3 @@ void RegisterOGRSDE()
 
     OGRSFDriverRegistrar::GetRegistrar()->RegisterDriver( new OGRSDEDriver );
 }
-

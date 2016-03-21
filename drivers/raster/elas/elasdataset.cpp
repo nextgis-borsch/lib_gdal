@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: elasdataset.cpp 32883 2016-01-09 18:24:40Z rouault $
+ * $Id$
  *
  * Project:  ELAS Translator
  * Purpose:  Complete implementation of ELAS translator module for GDAL.
@@ -35,7 +35,7 @@
 
 using std::fill;
 
-CPL_CVSID("$Id: elasdataset.cpp 32883 2016-01-09 18:24:40Z rouault $");
+CPL_CVSID("$Id$");
 
 typedef struct ELASHeader {
     ELASHeader();
@@ -161,7 +161,7 @@ class ELASRasterBand : public GDALPamRasterBand
     // should override RasterIO eventually.
 
     virtual CPLErr IReadBlock( int, int, void * );
-    virtual CPLErr IWriteBlock( int, int, void * ); 
+    virtual CPLErr IWriteBlock( int, int, void * );
 };
 
 
@@ -501,7 +501,7 @@ GDALDataset *ELASDataset::Create( const char * pszFilename,
 /* -------------------------------------------------------------------- */
     if (nBands <= 0)
     {
-        CPLError( CE_Failure, CPLE_NotSupported, 
+        CPLError( CE_Failure, CPLE_NotSupported,
                   "ELAS driver does not support %d bands.\n", nBands);
         return NULL;
     }

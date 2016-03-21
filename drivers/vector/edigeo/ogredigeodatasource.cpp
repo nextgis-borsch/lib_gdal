@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogredigeodatasource.cpp 32983 2016-01-14 18:32:10Z goatbar $
+ * $Id$
  *
  * Project:  EDIGEO Translator
  * Purpose:  Implements OGREDIGEODataSource class
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogredigeodatasource.cpp 32983 2016-01-14 18:32:10Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                        OGREDIGEODataSource()                         */

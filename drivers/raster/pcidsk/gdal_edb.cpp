@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_edb.cpp 31188 2015-10-28 18:49:08Z rouault $
+ * $Id$
  *
  * Project:  PCIDSK Database File
  * Purpose:  External Database access interface implementation (EDBFile).
@@ -32,7 +32,7 @@
 #include "gdal_priv.h"
 #include "pcidsk.h"
 
-CPL_CVSID("$Id: gdal_edb.cpp 31188 2015-10-28 18:49:08Z rouault $");
+CPL_CVSID("$Id$");
 
 using PCIDSK::EDBFile;
 using PCIDSK::eChanType;
@@ -237,10 +237,10 @@ int GDAL_EDBFile::ReadBlock( int channel,
         win_ysize = poBand->GetYSize() - nBlockY * nBlockYSize - win_yoff;
 
     const CPLErr eErr = poBand->RasterIO( GF_Read,
-                                    nBlockX * nBlockXSize + win_xoff, 
+                                    nBlockX * nBlockXSize + win_xoff,
                                     nBlockY * nBlockYSize + win_yoff,
-                                    win_xsize, win_ysize, 
-                                    buffer, win_xsize, win_ysize, 
+                                    win_xsize, win_ysize,
+                                    buffer, win_xsize, win_ysize,
                                     poBand->GetRasterDataType(),
                                     nPixelOffset, nLineOffset, NULL );
 
@@ -292,7 +292,7 @@ int GDAL_EDBFile::WriteBlock( int channel, int block_index, void *buffer)
         nWinYSize = nBlockYSize;
 
     const CPLErr eErr = poBand->RasterIO( GF_Write,
-                                    nBlockX * nBlockXSize, 
+                                    nBlockX * nBlockXSize,
                                     nBlockY * nBlockYSize,
                                     nWinXSize, nWinYSize,
                                     buffer, nWinXSize, nWinYSize,

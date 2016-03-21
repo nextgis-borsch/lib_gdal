@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mrsidstream.cpp 33095 2016-01-22 17:55:56Z rouault $
+ * $Id$
  *
  * Project:  Multi-resolution Seamless Image Database (MrSID)
  * Purpose:  Input/output stream wrapper for usage with LizardTech's
@@ -36,7 +36,7 @@
 #include "cpl_error.h"
 #include "mrsidstream.h"
 
-CPL_CVSID("$Id: mrsidstream.cpp 33095 2016-01-22 17:55:56Z rouault $");
+CPL_CVSID("$Id$");
 
 LT_USE_NAMESPACE(LizardTech)
 
@@ -46,7 +46,7 @@ LT_USE_NAMESPACE(LizardTech)
 /* ==================================================================== */
 /************************************************************************/
 
-LTIVSIStream::LTIVSIStream() : poFileHandle(NULL), nError(0), pnRefCount(NULL), 
+LTIVSIStream::LTIVSIStream() : poFileHandle(NULL), nError(0), pnRefCount(NULL),
 bIsOpen(FALSE)
 {
 }
@@ -280,4 +280,3 @@ const char *LTIVSIStream::getID() const
 {
     return "LTIVSIStream:";
 }
-

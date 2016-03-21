@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrsosilayer.cpp 32333 2015-12-20 14:42:31Z rouault $
+ * $Id$
  *
  * Project:  SOSI Translator
  * Purpose:  Implements OGRSOSILayer.
@@ -246,7 +246,7 @@ OGRFeature *OGRSOSILayer::GetNextFeature() {
 
         if (poGeom == NULL) continue;                         /* skipping L_HODE and unrecognized groups */
         if (oGType != poFeatureDefn->GetGeomType()) {
-            if (poGeom != NULL) delete poGeom;     
+            if (poGeom != NULL) delete poGeom;
             continue; /* skipping features that are not the correct geometry */
         }
 

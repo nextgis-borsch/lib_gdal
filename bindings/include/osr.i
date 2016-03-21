@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: osr.i 32864 2016-01-08 21:00:50Z goatbar $
+ * $Id$
  *
  * Project:  GDAL SWIG Interfaces.
  * Purpose:  OGRSpatialReference related declarations.

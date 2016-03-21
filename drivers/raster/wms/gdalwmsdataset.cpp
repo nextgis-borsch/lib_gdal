@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalwmsdataset.cpp 33105 2016-01-23 15:27:32Z rouault $
+ * $Id$
  *
  * Project:  WMS Client Driver
  * Purpose:  Implementation of Dataset and RasterBand classes for WMS
@@ -373,7 +373,7 @@ CPLErr GDALWMSDataset::Initialize(CPLXMLNode *config) {
         }
     }
 
-    // UserPwd 
+    // UserPwd
     const char *pszUserPwd = CPLGetXMLValue(config, "UserPwd", "");
     if (pszUserPwd[0] != '\0')
         m_osUserPwd = pszUserPwd;

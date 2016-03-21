@@ -1,4 +1,4 @@
-/* $Id: cpl_sha256.h 31777 2015-11-26 14:14:41Z rouault $ */
+/* $Id$ */
 
 /* The MIT License
 

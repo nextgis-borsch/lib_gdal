@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrinfo.cs 19470 2010-04-20 20:22:42Z tamas $
+ * $Id$
  *
  * Name:     ogrinfo.cs
  * Project:  GDAL CSharp Interface

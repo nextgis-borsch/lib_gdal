@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ###############################################################################
-# $Id: gdalfilter.py 31957 2015-12-02 12:44:54Z goatbar $
+# $Id$
 #
 # Project:  OGR Python samples
 # Purpose:  Filter an input file, producing an output file. 

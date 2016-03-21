@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: iscedataset.cpp 33123 2016-01-23 18:59:28Z rouault $
+ * $Id$
  *
  * Project:  ISCE Raster Reader
  * Purpose:  Implementation of the ISCE raster reader
@@ -30,7 +30,7 @@
 #include "gdal_frmts.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id: iscedataset.cpp 33123 2016-01-23 18:59:28Z rouault $");
+CPL_CVSID("$Id$");
 
 static const char * const apszISCE2GDALDatatypes[] = {
     "BYTE:Byte",
@@ -125,10 +125,10 @@ static CPLString getXMLFilename( GDALOpenInfo *poOpenInfo )
     char **papszSiblingFiles = poOpenInfo->GetSiblingFiles();
     if ( papszSiblingFiles == NULL )
     {
-        osXMLFilename = CPLFormFilename( NULL, poOpenInfo->pszFilename, 
+        osXMLFilename = CPLFormFilename( NULL, poOpenInfo->pszFilename,
                                          "xml" );
         VSIStatBufL psXMLStatBuf;
-        if ( VSIStatL( osXMLFilename, &psXMLStatBuf ) != 0 ) 
+        if ( VSIStatL( osXMLFilename, &psXMLStatBuf ) != 0 )
         {
             osXMLFilename = "";
         }
@@ -220,9 +220,9 @@ void ISCEDataset::FlushCache( void )
     const char *sType = GDALGetDataTypeName( band->GetRasterDataType() );
     psTmpNode = CPLCreateXMLNode( psDocNode, CXT_Element, "property" );
     CPLAddXMLAttributeAndValue( psTmpNode, "name", "DATA_TYPE" );
-    CPLCreateXMLElementAndValue( psTmpNode, "value", 
+    CPLCreateXMLElementAndValue( psTmpNode, "value",
                                  CSLFetchNameValue(
-                                         (char **)apszGDAL2ISCEDatatypes, 
+                                         (char **)apszGDAL2ISCEDatatypes,
                                          sType ) );
 
     const char *sScheme = apszSchemeNames[eScheme];
@@ -265,7 +265,7 @@ void ISCEDataset::FlushCache( void )
               || strcmp( papszTokens[0], "LENGTH" ) == 0
               || strcmp( papszTokens[0], "NUMBER_BANDS" ) == 0
               || strcmp( papszTokens[0], "DATA_TYPE" ) == 0
-              || strcmp( papszTokens[0], "SCHEME" ) == 0 
+              || strcmp( papszTokens[0], "SCHEME" ) == 0
               || strcmp( papszTokens[0], "BYTE_ORDER" ) == 0 )
         {
             CSLDestroy( papszTokens );
@@ -525,7 +525,7 @@ GDALDataset *ISCEDataset::Open( GDALOpenInfo *poOpenInfo )
 /*      Initialize any PAM information.                                 */
 /* -------------------------------------------------------------------- */
     poDS->SetDescription( poOpenInfo->pszFilename );
-    poDS->TryLoadXML(); 
+    poDS->TryLoadXML();
 
 /* -------------------------------------------------------------------- */
 /*      Check for overviews.                                            */
@@ -592,9 +592,9 @@ GDALDataset *ISCEDataset::Create( const char *pszFilename,
 
     psTmpNode = CPLCreateXMLNode( psDocNode, CXT_Element, "property" );
     CPLAddXMLAttributeAndValue( psTmpNode, "name", "DATA_TYPE" );
-    CPLCreateXMLElementAndValue( psTmpNode, "value", 
+    CPLCreateXMLElementAndValue( psTmpNode, "value",
                                  CSLFetchNameValue(
-                                         (char **)apszGDAL2ISCEDatatypes, 
+                                         (char **)apszGDAL2ISCEDatatypes,
                                          sType ));
 
     psTmpNode = CPLCreateXMLNode( psDocNode, CXT_Element, "property" );

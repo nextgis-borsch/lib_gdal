@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_priv.h 33650 2016-03-05 22:25:27Z rouault $
+ * $Id$
  *
  * Name:     gdal_priv.h
  * Project:  GDAL Core
@@ -237,7 +237,7 @@ class CPL_DLL GDALDefaultOverviews
 
 class CPL_DLL GDALOpenInfo
 {
-    int         bHasGotSiblingFiles;
+    bool        bHasGotSiblingFiles;
     char        **papszSiblingFiles;
     int         nHeaderBytesTried;
 

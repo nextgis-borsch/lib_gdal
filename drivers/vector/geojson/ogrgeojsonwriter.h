@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgeojsonwriter.h 32952 2016-01-12 12:24:52Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Defines GeoJSON reader within OGR OGRGeoJSON Driver.

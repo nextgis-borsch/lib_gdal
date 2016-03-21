@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gtadataset.cpp 33005 2016-01-15 17:28:49Z rouault $
+ * $Id$
  *
  * Project:  GTA read/write Driver
  * Purpose:  GDAL bindings over GTA library.
@@ -92,7 +92,7 @@
 #include "gdal_pam.h"
 #include "gta_headers.h"
 
-CPL_CVSID("$Id: gtadataset.cpp 33005 2016-01-15 17:28:49Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /* Helper functions                                                     */

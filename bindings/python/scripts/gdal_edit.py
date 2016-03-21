@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 ###############################################################################
-# $Id: gdal_edit.py 32555 2015-12-30 19:26:44Z goatbar $
+# $Id$
 #
 #  Project:  GDAL samples
 #  Purpose:  Edit in place various information of an existing GDAL dataset

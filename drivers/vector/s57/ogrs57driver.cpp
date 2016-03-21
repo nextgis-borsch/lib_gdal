@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrs57driver.cpp 32433 2015-12-23 23:48:56Z goatbar $
+ * $Id$
  *
  * Project:  S-57 Translator
  * Purpose:  Implements OGRS57Driver
@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id: ogrs57driver.cpp 32433 2015-12-23 23:48:56Z goatbar $");
+CPL_CVSID("$Id$");
 
 S57ClassRegistrar *OGRS57Driver::poRegistrar = NULL;
 static CPLMutex* hS57RegistrarMutex = NULL;

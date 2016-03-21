@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: adsrange.hpp 31977 2015-12-03 11:42:22Z rouault $
+ * $Id$
  *
  * Project:  APP ENVISAT Support
  * Purpose:  Detect range of ADS records matching the MDS records

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gstEndian.h 32104 2015-12-09 15:06:59Z goatbar $
+ * $Id$
  *
  * Project:  FIT Driver
  * Purpose:  Implement FIT Support - not using the SGI iflFIT library.
@@ -78,7 +78,7 @@ static inline void gst_swap32(void * value)
 
 static inline void gst_swap16(void * value)
 {
-    *(uint16 *)(value) = 
+    *(uint16 *)(value) =
 		   ( ((*(uint16 *)(value) & 0x00ff) << 8) |
              ((*(uint16 *)(value) >> 8) & 0x00ff) );
 }

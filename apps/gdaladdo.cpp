@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdaladdo.cpp 33615 2016-03-02 20:19:22Z goatbar $
+ * $Id$
  *
  * Project:  GDAL Utilities
  * Purpose:  Command line application to build overviews.
@@ -31,7 +31,7 @@
 #include "gdal_priv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: gdaladdo.cpp 33615 2016-03-02 20:19:22Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                               Usage()                                */

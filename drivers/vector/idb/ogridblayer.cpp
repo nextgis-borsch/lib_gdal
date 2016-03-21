@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogridblayer.cpp 32104 2015-12-09 15:06:59Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRIDBLayer class, code shared between
@@ -33,7 +33,7 @@
 #include "ogr_idb.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogridblayer.cpp 32104 2015-12-09 15:06:59Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                            OGRIDBLayer()                            */
@@ -53,7 +53,7 @@ OGRIDBLayer::OGRIDBLayer()
     iNextShapeId = 0;
 
     poSRS = NULL;
-    nSRSId = -2; // we haven't even queried the database for it yet. 
+    nSRSId = -2; // we haven't even queried the database for it yet.
 }
 
 /************************************************************************/
@@ -93,7 +93,7 @@ OGRIDBLayer::~OGRIDBLayer()
 /*      set on a statement.  Sift out geometry and FID fields.          */
 /************************************************************************/
 
-CPLErr OGRIDBLayer::BuildFeatureDefn( const char *pszLayerName, 
+CPLErr OGRIDBLayer::BuildFeatureDefn( const char *pszLayerName,
                                     ITCursor *poCurr )
 
 {

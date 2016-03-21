@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrbnalayer.cpp 32140 2015-12-12 20:37:27Z goatbar $
+ * $Id$
  *
  * Project:  BNA Translator
  * Purpose:  Implements OGRBNALayer class.
@@ -448,7 +448,7 @@ OGRErr OGRBNALayer::ICreateFeature( OGRFeature *poFeature )
             OGRMultiPolygon* multipolygon = (OGRMultiPolygon*)poGeom;
             int N = multipolygon->getNumGeometries();
             int nBNAPoints = 0;
-            double firstX = 0, firstY = 0; 
+            double firstX = 0, firstY = 0;
             for(int i=0;i<N;i++)
             {
                 OGRPolygon* polygon = (OGRPolygon*)multipolygon->getGeometryRef(i);
@@ -669,7 +669,7 @@ OGRFeature *OGRBNALayer::BuildFeatureFromBNARecord (BNARecord* record, long fid)
                     else
                     {
 #if 0
-                        CPLError(CE_Warning, CPLE_AppDefined, 
+                        CPLError(CE_Warning, CPLE_AppDefined,
                                  "Geometry of polygon of fid %d starting at "
                                  "line %d is not strictly conformant. "
                                  "Trying to go on...\n",

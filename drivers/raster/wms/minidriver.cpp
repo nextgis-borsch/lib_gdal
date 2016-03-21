@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: minidriver.cpp 33105 2016-01-23 15:27:32Z rouault $
+ * $Id$
  *
  * Project:  WMS Client Driver
  * Purpose:  GDALWMSMiniDriver base class implementation.
@@ -107,7 +107,7 @@ GDALWMSMiniDriverManager::GDALWMSMiniDriverManager() {
 }
 
 GDALWMSMiniDriverManager::~GDALWMSMiniDriverManager() {
-    for (std::list<GDALWMSMiniDriverFactory *>::iterator it = m_mdfs.begin(); 
+    for (std::list<GDALWMSMiniDriverFactory *>::iterator it = m_mdfs.begin();
          it != m_mdfs.end(); ++it) {
         GDALWMSMiniDriverFactory *mdf = *it;
         delete mdf;

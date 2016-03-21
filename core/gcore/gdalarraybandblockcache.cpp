@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalarraybandblockcache.cpp 32689 2016-01-02 20:44:50Z rouault $
+ * $Id$
  *
  * Project:  GDAL Core
  * Purpose:  Store cached blocks in a array or a two-level array
@@ -36,7 +36,7 @@ static const int SUBBLOCK_SIZE = 64;
 #define TO_SUBBLOCK(x) ((x) >> 6)
 #define WITHIN_SUBBLOCK(x) ((x) & 0x3f)
 
-CPL_CVSID("$Id: gdalarraybandblockcache.cpp 32689 2016-01-02 20:44:50Z rouault $");
+CPL_CVSID("$Id$");
 
 /* ******************************************************************** */
 /*                        GDALArrayBandBlockCache                       */
@@ -299,7 +299,7 @@ CPLErr GDALArrayBandBlockCache::FlushCache()
                     }
                 }
 
-                // We might as well get rid of this grid chunk since we know 
+                // We might as well get rid of this grid chunk since we know
                 // it is now empty.
                 u.papapoBlocks[nSubBlock] = NULL;
                 CPLFree( papoSubBlockGrid );
@@ -427,7 +427,7 @@ CPLErr GDALArrayBandBlockCache::FlushBlock( int nXBlockOff, int nYBlockOff,
 /*                        TryGetLockedBlockRef()                        */
 /************************************************************************/
 
-GDALRasterBlock *GDALArrayBandBlockCache::TryGetLockedBlockRef( int nXBlockOff, 
+GDALRasterBlock *GDALArrayBandBlockCache::TryGetLockedBlockRef( int nXBlockOff,
                                                                  int nYBlockOff )
 
 {

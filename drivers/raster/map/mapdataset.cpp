@@ -33,7 +33,7 @@
 #include "ogr_geometry.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: mapdataset.cpp 32213 2015-12-18 04:45:21Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -165,7 +165,7 @@ int MAPDataset::CloseDependentDatasets()
 int MAPDataset::Identify( GDALOpenInfo *poOpenInfo )
 
 {
-    if( poOpenInfo->nHeaderBytes < 200 
+    if( poOpenInfo->nHeaderBytes < 200
         || !EQUAL(CPLGetExtension(poOpenInfo->pszFilename),"MAP") )
         return FALSE;
 
@@ -190,7 +190,7 @@ GDALDataset *MAPDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     if( poOpenInfo->eAccess == GA_Update )
     {
-        CPLError( CE_Failure, CPLE_NotSupported, 
+        CPLError( CE_Failure, CPLE_NotSupported,
                   "The MAP driver does not support update access to existing"
                   " datasets.\n" );
         return NULL;

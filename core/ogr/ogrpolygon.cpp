@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrpolygon.cpp 33631 2016-03-04 06:28:09Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRPolygon geometry class.
@@ -33,7 +33,7 @@
 #include "ogr_geos.h"
 #include "ogr_api.h"
 
-CPL_CVSID("$Id: ogrpolygon.cpp 33631 2016-03-04 06:28:09Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                             OGRPolygon()                             */

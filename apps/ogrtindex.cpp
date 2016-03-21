@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrtindex.cpp 33615 2016-03-02 20:19:22Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Program to generate a UMN MapServer compatible tile index for a
@@ -36,7 +36,7 @@
 
 #include <cassert>
 
-CPL_CVSID("$Id: ogrtindex.cpp 33615 2016-03-02 20:19:22Z goatbar $");
+CPL_CVSID("$Id$");
 
 static void Usage();
 

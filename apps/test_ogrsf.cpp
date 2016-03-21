@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: test_ogrsf.cpp 33647 2016-03-05 16:43:00Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Formal test harness for OGRLayer implementations.
@@ -37,7 +37,7 @@
 
 #include <limits>
 
-CPL_CVSID("$Id: test_ogrsf.cpp 33647 2016-03-05 16:43:00Z rouault $");
+CPL_CVSID("$Id$");
 
 int     bReadOnly = FALSE;
 int     bVerbose = TRUE;

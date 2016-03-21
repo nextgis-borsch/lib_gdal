@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_wfs.h 32177 2015-12-14 07:25:30Z goatbar $
+ * $Id$
  *
  * Project:  WFS Translator
  * Purpose:  Definition of classes for OGR WFS driver.

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: filegdbtable.cpp 33563 2016-02-26 14:57:06Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements reading of FileGDB tables
@@ -1434,7 +1434,7 @@ const OGRField* FileGDBTable::GetFieldValue(int iCol)
             nChSaved = *pabyIterVals;
             *pabyIterVals = '\0';
 
-            /* CPLDebug("OpenFileGDB", "Field %d, row %d: %s", iCol, nCurRow, sCurField.String); */ 
+            /* CPLDebug("OpenFileGDB", "Field %d, row %d: %s", iCol, nCurRow, sCurField.String); */
 
             break;
         }

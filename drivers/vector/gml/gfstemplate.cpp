@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gfstemplate.cpp 32099 2015-12-09 00:24:06Z goatbar $
+ * $Id$
  *
  * Project:  GML Reader
  * Purpose:  Implementation of GML GFS template management
@@ -36,7 +36,7 @@
 #include "gmlreaderp.h"
 #include "ogr_gml.h"
 
-CPL_CVSID("$Id: gfstemplate.cpp 32099 2015-12-09 00:24:06Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                        GFSTemplateItem                               */

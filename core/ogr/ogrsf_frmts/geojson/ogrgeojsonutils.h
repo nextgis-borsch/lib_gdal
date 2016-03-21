@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgeojsonutils.h 32181 2015-12-15 10:41:07Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private utilities within OGR OGRGeoJSON Driver.

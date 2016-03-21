@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrs57layer.cpp 33271 2016-01-30 16:01:55Z goatbar $
+ * $Id$
  *
  * Project:  S-57 Translator
  * Purpose:  Implements OGRS57Layer class.
@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "ogr_s57.h"
 
-CPL_CVSID("$Id: ogrs57layer.cpp 33271 2016-01-30 16:01:55Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                            OGRS57Layer()                             */

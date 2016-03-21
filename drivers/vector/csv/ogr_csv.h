@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_csv.h 32517 2015-12-29 10:09:56Z rouault $
+ * $Id$
  *
  * Project:  CSV Translator
  * Purpose:  Definition of classes for OGR .csv driver.
@@ -126,7 +126,7 @@ class OGRCSVLayer : public OGRLayer
     OGRCSVLayer( const char *pszName, VSILFILE *fp, const char *pszFilename,
                  int bNew, int bInWriteMode, char chDelimiter );
    ~OGRCSVLayer();
-   
+
     const char*         GetFilename() const { return pszFilename; }
     char                GetDelimiter() const { return chDelimiter; }
     int                 GetCRLF() const { return bUseCRLF; }
@@ -208,7 +208,7 @@ class OGRCSVDataSource : public OGRDataSource
     int                 GetLayerCount() { return nLayers; }
     OGRLayer            *GetLayer( int );
 
-    virtual OGRLayer   *ICreateLayer( const char *pszName, 
+    virtual OGRLayer   *ICreateLayer( const char *pszName,
                                      OGRSpatialReference *poSpatialRef = NULL,
                                      OGRwkbGeometryType eGType = wkbUnknown,
                                      char ** papszOptions = NULL );

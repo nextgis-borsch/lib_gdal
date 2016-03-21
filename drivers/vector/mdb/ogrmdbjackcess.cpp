@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrmdbjackcess.cpp 33102 2016-01-23 11:05:59Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRMDBJavaEnv class.
@@ -29,7 +29,7 @@
 
 #include "ogr_mdb.h"
 
-CPL_CVSID("$Id: ogrmdbjackcess.cpp 33102 2016-01-23 11:05:59Z rouault $");
+CPL_CVSID("$Id$");
 
 static JavaVM *jvm_static = NULL;
 static JNIEnv *env_static = NULL;

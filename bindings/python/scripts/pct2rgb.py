@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #******************************************************************************
-#  $Id: pct2rgb.py 33127 2016-01-23 19:47:48Z rouault $
+#  $Id$
 #
 #  Name:     pct2rgb
 #  Project:  GDAL Python Interface

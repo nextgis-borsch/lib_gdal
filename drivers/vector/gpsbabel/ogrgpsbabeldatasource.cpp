@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgpsbabeldatasource.cpp 32982 2016-01-14 16:53:57Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRGPSBabelDataSource class.
@@ -35,7 +35,7 @@
 
 #include <cstring>
 
-CPL_CVSID("$Id: ogrgpsbabeldatasource.cpp 32982 2016-01-14 16:53:57Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                      OGRGPSBabelDataSource()                         */

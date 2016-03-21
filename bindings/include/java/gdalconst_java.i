@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalconst_java.i 32864 2016-01-08 21:00:50Z goatbar $
+ * $Id$
  *
  * Name:     gdalconst_java.i
  * Project:  GDAL SWIG Interface

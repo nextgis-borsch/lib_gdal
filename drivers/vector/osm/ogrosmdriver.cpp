@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrosmdriver.cpp 33039 2016-01-18 17:04:21Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGROSMDriver class.
@@ -34,7 +34,7 @@
 
 extern "C" void CPL_DLL RegisterOGROSM();
 
-CPL_CVSID("$Id: ogrosmdriver.cpp 33039 2016-01-18 17:04:21Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                      OGROSMDriverIdentify()                          */

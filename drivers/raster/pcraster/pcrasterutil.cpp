@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: pcrasterutil.cpp 32957 2016-01-12 18:53:43Z rouault $
+ * $Id$
  *
  * Project:  PCRaster Integration
  * Purpose:  PCRaster driver support functions.

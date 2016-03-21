@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrpdsdriver.cpp 33047 2016-01-19 14:47:32Z goatbar $
+ * $Id$
  *
  * Project:  PDS Translator
  * Purpose:  Implements OGRPDSDriver.
@@ -30,7 +30,7 @@
 #include "cpl_conv.h"
 #include "ogr_pds.h"
 
-CPL_CVSID("$Id: ogrpdsdriver.cpp 33047 2016-01-19 14:47:32Z goatbar $");
+CPL_CVSID("$Id$");
 
 extern "C" void RegisterOGRPDS();
 

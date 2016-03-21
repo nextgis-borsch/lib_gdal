@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ll_recio.cpp 33089 2016-01-22 15:02:53Z goatbar $
+ * $Id$
  *
  * Project:  EPIInfo .REC Reader
  * Purpose:  Implements low level REC reading API.
@@ -31,7 +31,7 @@
 #include "cpl_string.h"
 #include "ogr_rec.h"
 
-CPL_CVSID("$Id: ll_recio.cpp 33089 2016-01-22 15:02:53Z goatbar $");
+CPL_CVSID("$Id$");
 
 static int nNextRecLine = 0;
 
@@ -161,12 +161,12 @@ int RECReadRecord( FILE *fp, char *pszRecord, int nRecordLength )
             continue;
         }
 
-        // Strip off end-of-line '!' marker. 
-        if( pszLine[iSegLen-1] != '!' 
+        // Strip off end-of-line '!' marker.
+        if( pszLine[iSegLen-1] != '!'
             && pszLine[iSegLen-1] != '^' )
         {
-            CPLError( CE_Failure, CPLE_AppDefined, 
-                      "Apparent corrupt data line at line=%d", 
+            CPLError( CE_Failure, CPLE_AppDefined,
+                      "Apparent corrupt data line at line=%d",
                       nNextRecLine );
             return FALSE;
         }
@@ -174,8 +174,8 @@ int RECReadRecord( FILE *fp, char *pszRecord, int nRecordLength )
         iSegLen--;
         if( nDataLen + iSegLen > nRecordLength )
         {
-            CPLError( CE_Failure, CPLE_AppDefined, 
-                      "Too much data for line at line %d.", 
+            CPLError( CE_Failure, CPLE_AppDefined,
+                      "Too much data for line at line %d.",
                       nNextRecLine-1 );
             return FALSE;
         }

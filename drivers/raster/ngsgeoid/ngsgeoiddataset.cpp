@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ngsgeoiddataset.cpp 32538 2015-12-30 13:12:08Z rouault $
+ * $Id$
  *
  * Project:  NGSGEOID driver
  * Purpose:  GDALDataset driver for NGSGEOID dataset.
@@ -33,7 +33,7 @@
 #include "gdal_pam.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id: ngsgeoiddataset.cpp 32538 2015-12-30 13:12:08Z rouault $");
+CPL_CVSID("$Id$");
 
 #define HEADER_SIZE (4 * 8 + 3 * 4)
 

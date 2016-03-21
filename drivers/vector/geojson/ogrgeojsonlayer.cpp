@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgeojsonlayer.cpp 33093 2016-01-22 17:38:07Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implementation of OGRGeoJSONLayer class (OGR GeoJSON Driver).
@@ -119,7 +119,7 @@ void OGRGeoJSONLayer::AddFeature( OGRFeature* poFeature )
 
         // TODO - mloskot: We need to redesign creation of FID column
         int nField = poFeature->GetFieldIndex( DefaultFIDColumn );
-        if( -1 != nField && 
+        if( -1 != nField &&
             (GetLayerDefn()->GetFieldDefn(nField)->GetType() == OFTInteger ||
              GetLayerDefn()->GetFieldDefn(nField)->GetType() == OFTInteger64 ))
         {

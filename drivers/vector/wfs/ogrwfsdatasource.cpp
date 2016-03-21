@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrwfsdatasource.cpp 33123 2016-01-23 18:59:28Z rouault $
+ * $Id$
  *
  * Project:  WFS Translator
  * Purpose:  Implements OGRWFSDataSource class
@@ -37,7 +37,7 @@
 #include "swq.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrwfsdatasource.cpp 33123 2016-01-23 18:59:28Z rouault $");
+CPL_CVSID("$Id$");
 
 #define DEFAULT_BASE_START_INDEX     0
 #define DEFAULT_PAGE_SIZE            100
@@ -2027,7 +2027,7 @@ CPLString WFS_DecodeURL(const CPLString &osSrc)
     CPLString ret;
     char ch;
     int ii;
-    for (size_t i=0; i<osSrc.length(); i++) 
+    for (size_t i=0; i<osSrc.length(); i++)
     {
         if (osSrc[i]=='%' && i+2 < osSrc.length())
         {
@@ -2036,7 +2036,7 @@ CPLString WFS_DecodeURL(const CPLString &osSrc)
             ret+=ch;
             i=i+2;
         }
-        else 
+        else
         {
             ret+=osSrc[i];
         }
@@ -2272,14 +2272,14 @@ OGRLayer * OGRWFSDataSource::ExecuteSQL( const char *pszSQLCommand,
                 const char* pszFieldName = poSrcLayer->GetLayerDefn()->
                     GetFieldDefn(nFieldIndex)->GetNameRef();
 
-                OGRWFSSortDesc oSortDesc(pszFieldName, 
+                OGRWFSSortDesc oSortDesc(pszFieldName,
                                     psSelectInfo->order_defs[i].ascending_flag);
                 aoSortColumns.push_back(oSortDesc);
             }
 
             if( i == psSelectInfo->order_specs )
             {
-                OGRWFSLayer* poDupLayer = poSrcLayer->Clone(); 
+                OGRWFSLayer* poDupLayer = poSrcLayer->Clone();
 
                 poDupLayer->SetOrderBy(aoSortColumns);
                 int nBackup = psSelectInfo->order_specs;

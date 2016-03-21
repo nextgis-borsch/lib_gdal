@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr2ogr.java 32865 2016-01-08 21:22:17Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Java port of a simple client for translating between formats.

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrili1layer.cpp 33325 2016-02-02 14:30:48Z rouault $
+ * $Id$
  *
  * Project:  Interlis 1 Translator
  * Purpose:  Implements OGRILI1Layer class.
@@ -33,7 +33,7 @@
 #include "ogr_geos.h"
 #include "ogr_ili1.h"
 
-CPL_CVSID("$Id: ogrili1layer.cpp 33325 2016-02-02 14:30:48Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                           OGRILI1Layer()                              */

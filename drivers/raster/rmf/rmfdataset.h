@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: rmfdataset.h 32667 2016-01-02 09:27:02Z rouault $
+ * $Id$
  *
  * Project:  Raster Matrix Format
  * Purpose:  Private class declarations for the RMF classes used to read/write
@@ -72,7 +72,7 @@ typedef struct
     GUInt32     nClrTblOffset;                  // Position and size
     GUInt32     nClrTblSize;                    // of the colour table
     GUInt32     nTileTblOffset;                 // Position and size of the
-    GUInt32     nTileTblSize;                   // tile offsets/sizes table 
+    GUInt32     nTileTblSize;                   // tile offsets/sizes table
     GInt32      iMapType;
     GInt32      iProjection;
     double      dfScale;

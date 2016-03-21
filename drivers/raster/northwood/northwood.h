@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: northwood.h 31749 2015-11-25 02:32:55Z goatbar $
+ * $Id$
  *
  * Project:  GRC/GRD Reader
  * Purpose:  Northwood Technologies Grid format declarations

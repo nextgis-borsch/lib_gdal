@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: commonutils.h 31778 2015-11-26 14:15:36Z rouault $
+ * $Id$
  *
  * Project:  GDAL Utilities
  * Purpose:  Common utility routines

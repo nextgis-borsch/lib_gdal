@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrsqlite3ext.h 33105 2016-01-23 15:27:32Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Custom version of sqlite3ext.h to workaround issues with Spatialite amalgamation
@@ -239,7 +239,7 @@ typedef struct sqlite3_backup ogr_sqlite3_backup;
 ** This header file defines the SQLite interface for use by
 ** shared libraries that want to be imported as extensions into
 ** an SQLite instance.  Shared libraries that intend to be loaded
-** as extensions by SQLite should #include this file instead of 
+** as extensions by SQLite should #include this file instead of
 ** sqlite3.h.
 */
 #ifndef SQLITE3EXT_H_

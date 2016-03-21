@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrmutexeddatasource.cpp 31705 2015-11-21 22:57:18Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRMutexedDataSource class
@@ -30,7 +30,7 @@
 #include "ogrmutexeddatasource.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id: ogrmutexeddatasource.cpp 31705 2015-11-21 22:57:18Z rouault $");
+CPL_CVSID("$Id$");
 
 OGRMutexedDataSource::OGRMutexedDataSource(OGRDataSource* poBaseDataSource,
                                            int bTakeOwnership,
@@ -119,7 +119,7 @@ int         OGRMutexedDataSource::TestCapability( const char * pszCap )
     return m_poBaseDataSource->TestCapability(pszCap);
 }
 
-OGRLayer   *OGRMutexedDataSource::ICreateLayer( const char *pszName, 
+OGRLayer   *OGRMutexedDataSource::ICreateLayer( const char *pszName,
                                      OGRSpatialReference *poSpatialRef,
                                      OGRwkbGeometryType eGType,
                                      char ** papszOptions)
@@ -128,8 +128,8 @@ OGRLayer   *OGRMutexedDataSource::ICreateLayer( const char *pszName,
     return WrapLayerIfNecessary(m_poBaseDataSource->CreateLayer(pszName, poSpatialRef, eGType, papszOptions));
 }
 
-OGRLayer   *OGRMutexedDataSource::CopyLayer( OGRLayer *poSrcLayer, 
-                                   const char *pszNewName, 
+OGRLayer   *OGRMutexedDataSource::CopyLayer( OGRLayer *poSrcLayer,
+                                   const char *pszNewName,
                                    char **papszOptions )
 {
     CPLMutexHolderOptionalLockD(m_hGlobalMutex);

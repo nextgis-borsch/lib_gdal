@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdaljp2structure.cpp 33581 2016-02-27 07:27:13Z goatbar $
+ * $Id$
  *
  * Project:  GDAL
  * Purpose:  GDALJP2Stucture - Dump structure of a JP2/J2K file

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_htf.h 32744 2016-01-04 22:26:42Z goatbar $
+ * $Id$
  *
  * Project:  HTF Translator
  * Purpose:  Definition of classes for OGR .htf driver.

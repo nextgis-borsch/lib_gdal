@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_vsil_subfile.cpp 33646 2016-03-05 15:54:03Z goatbar $
+ * $Id$
  *
  * Project:  VSI Virtual File System
  * Purpose:  Implementation of subfile virtual IO functions.
@@ -33,7 +33,7 @@
 #include "cpl_multiproc.h"
 #include <map>
 
-CPL_CVSID("$Id: cpl_vsil_subfile.cpp 33646 2016-03-05 15:54:03Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -153,7 +153,7 @@ vsi_l_offset VSISubFileHandle::Tell()
 size_t VSISubFileHandle::Read( void * pBuffer, size_t nSize, size_t nCount )
 
 {
-    size_t nRet;
+    size_t nRet = 0;
     if (nSubregionSize == 0)
         nRet = VSIFReadL( pBuffer, nSize, nCount, fp );
     else

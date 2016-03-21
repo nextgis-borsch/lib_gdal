@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_vfk.h 32177 2015-12-14 07:25:30Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions for OGR/VFK driver.

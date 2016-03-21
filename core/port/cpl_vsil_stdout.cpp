@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_vsil_stdout.cpp 33646 2016-03-05 15:54:03Z goatbar $
+ * $Id$
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Implement VSI large file api for stdout
@@ -37,7 +37,7 @@
 #include <fcntl.h>
 #endif
 
-CPL_CVSID("$Id: cpl_vsil_stdout.cpp 33646 2016-03-05 15:54:03Z goatbar $");
+CPL_CVSID("$Id$");
 
 static VSIWriteFunction pWriteFunction = fwrite;
 static FILE* pWriteStream = stdout;

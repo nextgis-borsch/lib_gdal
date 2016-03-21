@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_rasterize_bin.cpp 33615 2016-03-02 20:19:22Z goatbar $
+ * $Id$
  *
  * Project:  GDAL Utilities
  * Purpose:  Rasterize OGR shapes into a GDAL raster.
@@ -31,7 +31,7 @@
 #include "commonutils.h"
 #include "gdal_utils_priv.h"
 
-CPL_CVSID("$Id: gdal_rasterize_bin.cpp 33615 2016-03-02 20:19:22Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                               Usage()                                */

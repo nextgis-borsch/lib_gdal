@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: sdtsrasterreader.cpp 31332 2015-11-03 17:34:39Z goatbar $
+ * $Id$
  *
  * Project:  SDTS Translator
  * Purpose:  Implementation of SDTSRasterReader class.
@@ -32,7 +32,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id: sdtsrasterreader.cpp 31332 2015-11-03 17:34:39Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                          SDTSRasterReader()                          */

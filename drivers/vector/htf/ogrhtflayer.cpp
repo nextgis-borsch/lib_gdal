@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrhtflayer.cpp 33199 2016-01-29 15:48:41Z rouault $
+ * $Id$
  *
  * Project:  HTF Translator
  * Purpose:  Implements OGRHTFLayer class.
@@ -33,7 +33,7 @@
 #include "ogr_p.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id: ogrhtflayer.cpp 33199 2016-01-29 15:48:41Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                            OGRHTFLayer()                             */

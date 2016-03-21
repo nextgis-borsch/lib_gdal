@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: osr_csharp.i 13679 2008-02-02 23:48:53Z tamas $
+ * $Id$
  *
  * Name:     osr_csharp.i
  * Project:  GDAL CSharp Interface
@@ -27,7 +27,7 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  *****************************************************************************/
- 
+
 %include cpl_exceptions.i
 
 %include typemaps_csharp.i

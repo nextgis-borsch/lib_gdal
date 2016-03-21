@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: pdfobject.cpp 32179 2015-12-14 16:22:34Z goatbar $
+ * $Id$
  *
  * Project:  PDF driver
  * Purpose:  GDALDataset driver for PDF dataset.
@@ -39,7 +39,7 @@
 #include <vector>
 #include "pdfobject.h"
 
-CPL_CVSID("$Id: pdfobject.cpp 32179 2015-12-14 16:22:34Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                        ROUND_TO_INT_IF_CLOSE()                       */

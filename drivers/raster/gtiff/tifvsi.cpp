@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: tifvsi.cpp 32179 2015-12-14 16:22:34Z goatbar $
+ * $Id$
  *
  * Project:  GeoTIFF Driver
  * Purpose:  Implement system hook functions for libtiff on top of CPL/VSI,
@@ -47,7 +47,7 @@
 #endif
 
 CPL_C_START
-extern TIFF CPL_DLL * XTIFFClientOpen(const char* name, const char* mode, 
+extern TIFF CPL_DLL * XTIFFClientOpen(const char* name, const char* mode,
                                       thandle_t thehandle,
                                       TIFFReadWriteProc, TIFFReadWriteProc,
                                       TIFFSeekProc, TIFFCloseProc,

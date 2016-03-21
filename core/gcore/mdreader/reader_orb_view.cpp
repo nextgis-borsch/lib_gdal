@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: reader_orb_view.cpp 29915 2015-08-29 21:29:57Z rouault $
+ * $Id$
  *
  * Project:  GDAL Core
  * Purpose:  Read metadata from OrbView imagery.
@@ -30,7 +30,7 @@
 
 #include "reader_orb_view.h"
 
-CPL_CVSID("$Id: reader_orb_view.cpp 29915 2015-08-29 21:29:57Z rouault $");
+CPL_CVSID("$Id$");
 
 /**
  * GDALMDReaderOrbView()

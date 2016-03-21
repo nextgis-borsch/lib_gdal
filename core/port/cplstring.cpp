@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cplstring.cpp 33646 2016-03-05 15:54:03Z goatbar $
+ * $Id$
  *
  * Project:  GDAL
  * Purpose:  CPLString implementation.
@@ -31,7 +31,7 @@
 #include "cpl_string.h"
 #include <string>
 
-CPL_CVSID("$Id: cplstring.cpp 33646 2016-03-05 15:54:03Z goatbar $");
+CPL_CVSID("$Id$");
 
 /*
  * The CPLString class is derived from std::string, so the vast majority

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_frmts.h 33351 2016-02-03 15:52:38Z goatbar $
+ * $Id$
  *
  * Project:  GDAL
  * Purpose:  Prototypes for all format specific driver initialization.

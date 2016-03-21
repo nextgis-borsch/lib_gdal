@@ -31,7 +31,7 @@
 #include "ogr_xplane_geo_utils.h"
 #include "ogr_xplane_reader.h"
 
-CPL_CVSID("$Id: ogrxplanelayer.cpp 32177 2015-12-14 07:25:30Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                            OGRXPlaneLayer()                          */
@@ -213,7 +213,7 @@ OGRFeature *OGRXPlaneLayer::GetNextFeature()
               || FilterGeometry( poFeature->GetGeometryRef() ) )
             && (m_poAttrQuery == NULL
                 || m_poAttrQuery->Evaluate( poFeature )) )
-        {   
+        {
                 return poFeature->Clone();
         }
     }

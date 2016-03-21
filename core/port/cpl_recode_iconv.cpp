@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_recode_iconv.cpp 33646 2016-03-05 15:54:03Z goatbar $
+ * $Id$
  *
  * Name:     cpl_recode_iconv.cpp
  * Project:  CPL - Common Portability Library
@@ -26,7 +26,7 @@
 
 #include "cpl_port.h"
 
-CPL_CVSID("$Id: cpl_recode_iconv.cpp 33646 2016-03-05 15:54:03Z goatbar $");
+CPL_CVSID("$Id$");
 
 #ifdef CPL_RECODE_ICONV
 
@@ -210,9 +210,8 @@ char *CPLRecodeFromWCharIconv( const wchar_t *pwszSource,
     }
 
     GByte *pszIconvSrcBuf = (GByte*) CPLCalloc((nSrcLen+1),nTargetCharWidth);
-    unsigned int iSrc;
 
-    for( iSrc = 0; iSrc <= nSrcLen; iSrc++ )
+    for( unsigned int iSrc = 0; iSrc <= nSrcLen; iSrc++ )
     {
         if( nTargetCharWidth == 1 )
             pszIconvSrcBuf[iSrc] = (GByte) pwszSource[iSrc];

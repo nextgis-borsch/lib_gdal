@@ -1,8 +1,9 @@
 /******************************************************************************
- * $Id: gdalbuildvrt_lib.cpp 33615 2016-03-02 20:19:22Z goatbar $
+ * $Id$
  *
  * Project:  GDAL Utilities
- * Purpose:  Command line application to build VRT datasets from raster products or content of SHP tile index
+ * Purpose:  Command line application to build VRT datasets from raster products
+ *           or content of SHP tile index
  * Author:   Even Rouault, <even dot rouault at spatialys dot com>
  *
  ******************************************************************************
@@ -27,19 +28,17 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#include "cpl_string.h"
+#include "gdal_proxy.h"
 #include "gdal_utils.h"
 #include "gdal_utils_priv.h"
-#include "gdal_proxy.h"
-#include "cpl_string.h"
 #include "gdal_vrt.h"
 #include "vrtdataset.h"
 
-#ifdef OGR_ENABLED
 #include "ogr_api.h"
-#endif
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id: gdalbuildvrt_lib.cpp 33615 2016-03-02 20:19:22Z goatbar $");
+CPL_CVSID("$Id$");
 
 #define GEOTRSFRM_TOPLEFT_X            0
 #define GEOTRSFRM_WE_RES               1
@@ -1188,11 +1187,6 @@ static bool add_file_to_list(const char* filename, const char* tile_index,
 
     if (EQUAL(CPLGetExtension(filename), "SHP"))
     {
-#ifndef OGR_ENABLED
-        CPLError(CE_Failure, CPLE_AppDefined, "OGR support needed to read tileindex");
-        *pnInputFiles = 0;
-        *pppszInputFilenames = NULL;
-#else
         OGRRegisterAll();
 
         /* Handle gdaltindex Shapefile as a special case */
@@ -1253,7 +1247,6 @@ static bool add_file_to_list(const char* filename, const char* tile_index,
         ppszInputFilenames[nInputFiles] = NULL;
 
         OGR_DS_Destroy( hDS );
-#endif
     }
     else
     {
@@ -1315,7 +1308,8 @@ struct GDALBuildVRTOptions
 static
 GDALBuildVRTOptions* GDALBuildVRTOptionsClone(const GDALBuildVRTOptions *psOptionsIn)
 {
-    GDALBuildVRTOptions* psOptions = (GDALBuildVRTOptions*) CPLMalloc(sizeof(GDALBuildVRTOptions));
+    GDALBuildVRTOptions* psOptions = static_cast<GDALBuildVRTOptions*>(
+        CPLMalloc(sizeof(GDALBuildVRTOptions)) );
     memcpy(psOptions, psOptionsIn, sizeof(GDALBuildVRTOptions));
     if( psOptionsIn->pszResolution ) psOptions->pszResolution = CPLStrdup(psOptionsIn->pszResolution);
     if( psOptionsIn->pszSrcNoData ) psOptions->pszSrcNoData = CPLStrdup(psOptionsIn->pszSrcNoData);
@@ -1495,9 +1489,10 @@ static char *SanitizeSRS( const char *pszUserInput )
  */
 
 GDALBuildVRTOptions *GDALBuildVRTOptionsNew(char** papszArgv,
-                                          GDALBuildVRTOptionsForBinary* psOptionsForBinary)
+                                            GDALBuildVRTOptionsForBinary* psOptionsForBinary)
 {
-    GDALBuildVRTOptions *psOptions = (GDALBuildVRTOptions *)CPLCalloc(1, sizeof(GDALBuildVRTOptions));
+    GDALBuildVRTOptions *psOptions = static_cast<GDALBuildVRTOptions *>(
+        CPLCalloc(1, sizeof(GDALBuildVRTOptions)) );
 
     const char *tile_index = "location";
 
@@ -1537,24 +1532,24 @@ GDALBuildVRTOptions *GDALBuildVRTOptionsNew(char** papszArgv,
             if( psOptionsForBinary )
             {
                 const char* input_file_list = papszArgv[iArg];
-                FILE* f = VSIFOpen(input_file_list, "r");
+                VSILFILE* f = VSIFOpenL(input_file_list, "r");
                 if (f)
                 {
                     while(1)
                     {
-                        const char* filename = CPLReadLine(f);
+                        const char* filename = CPLReadLineL(f);
                         if (filename == NULL)
                             break;
                         if( !add_file_to_list(filename, tile_index,
                                          &psOptionsForBinary->nSrcFiles,
                                          &psOptionsForBinary->papszSrcFiles) )
                         {
-                            VSIFClose(f);
+                            VSIFCloseL(f);
                             GDALBuildVRTOptionsFree(psOptions);
                             return NULL;
                         }
                     }
-                    VSIFClose(f);
+                    VSIFCloseL(f);
                 }
             }
             else

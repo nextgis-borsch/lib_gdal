@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_aws.cpp 33646 2016-03-05 15:54:03Z goatbar $
+ * $Id$
  *
  * Name:     cpl_aws.cpp
  * Project:  CPL - Common Portability Library
@@ -34,7 +34,7 @@
 #include "cpl_minixml.h"
 #include <algorithm>
 
-CPL_CVSID("$Id: cpl_aws.cpp 33646 2016-03-05 15:54:03Z goatbar $");
+CPL_CVSID("$Id$");
 
 //#define DEBUG_VERBOSE 1
 

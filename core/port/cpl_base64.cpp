@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_base64.cpp 31561 2015-11-17 15:51:25Z goatbar $
+ * $Id$
  *
  * Project:  Common Portability Library
  * Purpose:  Encoding/Decoding Base64 strings
@@ -36,7 +36,7 @@
 
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: cpl_base64.cpp 31561 2015-11-17 15:51:25Z goatbar $");
+CPL_CVSID("$Id$");
 
 /* Derived from MapServer's mappostgis.c */
 

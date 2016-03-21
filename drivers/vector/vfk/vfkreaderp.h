@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: vfkreaderp.h 32177 2015-12-14 07:25:30Z goatbar $
+ * $Id$
  *
  * Project:  VFK Reader
  * Purpose:  Private Declarations for OGR free VFK Reader code.
@@ -45,7 +45,7 @@ class VFKReader;
 /************************************************************************/
 /*                              VFKReader                               */
 /************************************************************************/
-class VFKReader : public IVFKReader 
+class VFKReader : public IVFKReader
 {
 private:
     bool           m_bLatin2;
@@ -89,7 +89,7 @@ public:
 /*                              VFKReaderSQLite                         */
 /************************************************************************/
 
-class VFKReaderSQLite : public VFKReader 
+class VFKReaderSQLite : public VFKReader
 {
 private:
     char          *m_pszDBname;

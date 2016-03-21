@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: sdtsattrreader.cpp 31596 2015-11-18 11:40:37Z rouault $
+ * $Id$
  *
  * Project:  SDTS Translator
  * Purpose:  Implementation of SDTSAttrReader class.
@@ -29,7 +29,7 @@
 
 #include "sdts_al.h"
 
-CPL_CVSID("$Id: sdtsattrreader.cpp 31596 2015-11-18 11:40:37Z rouault $");
+CPL_CVSID("$Id$");
 
 
 /************************************************************************/

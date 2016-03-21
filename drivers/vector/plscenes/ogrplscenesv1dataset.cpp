@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrplscenesv1dataset.cpp 33607 2016-03-01 09:30:20Z rouault $
+ * $Id$
  *
  * Project:  PlanetLabs scene driver
  * Purpose:  Implements OGRPLScenesV1Dataset
@@ -29,7 +29,7 @@
 
 #include "ogr_plscenes.h"
 
-CPL_CVSID("$Id: ogrplscenesv1dataset.cpp 33607 2016-03-01 09:30:20Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                         OGRPLScenesV1Dataset()                       */
@@ -166,7 +166,7 @@ bool OGRPLScenesV1Dataset::ParseCatalogsPage(json_object* poObj,
         return false;
     }
     const int nCatalogsLength = json_object_array_length(poCatalogs);
-    for( int i=0; i<nCatalogsLength; i++ ) 
+    for( int i=0; i<nCatalogsLength; i++ )
     {
         json_object* poCatalog = json_object_array_get_idx(poCatalogs, i);
         ParseCatalog(poCatalog);
@@ -265,7 +265,7 @@ json_object* OGRPLScenesV1Dataset::RunRequest(const char* pszURL,
         CPLString osURL(pszURL);
         if( osURL[osURL.size()-1 ] == '/' )
             osURL.resize(osURL.size()-1);
-        GByte* pabyBuf = VSIGetMemFileBuffer(osURL, &nDataLengthLarge, FALSE); 
+        GByte* pabyBuf = VSIGetMemFileBuffer(osURL, &nDataLengthLarge, FALSE);
         size_t nDataLength = static_cast<size_t>(nDataLengthLarge);
         if( pabyBuf )
         {

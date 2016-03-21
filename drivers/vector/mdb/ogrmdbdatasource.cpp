@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrmdbdatasource.cpp 32983 2016-01-14 18:32:10Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRMDBDataSource class.
@@ -33,7 +33,7 @@
 #include <vector>
 #include "ogrgeomediageometry.h"
 
-CPL_CVSID("$Id: ogrmdbdatasource.cpp 32983 2016-01-14 18:32:10Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                         OGRMDBDataSource()                          */

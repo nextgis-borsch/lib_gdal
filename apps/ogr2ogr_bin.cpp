@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr2ogr_bin.cpp 33615 2016-03-02 20:19:22Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Simple client for translating between formats.
@@ -33,7 +33,7 @@
 #include "gdal_utils_priv.h"
 #include "commonutils.h"
 
-CPL_CVSID("$Id: ogr2ogr_bin.cpp 33615 2016-03-02 20:19:22Z goatbar $");
+CPL_CVSID("$Id$");
 
 static void Usage(int bShort = TRUE);
 static void Usage(const char* pszAdditionalMsg, int bShort = TRUE);

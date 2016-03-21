@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrosmlayer.cpp 33332 2016-02-02 23:01:31Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGROSMLayer class
@@ -33,7 +33,7 @@
 #include "cpl_time.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrosmlayer.cpp 33332 2016-02-02 23:01:31Z rouault $");
+CPL_CVSID("$Id$");
 
 #define SWITCH_THRESHOLD   10000
 #define MAX_THRESHOLD      100000

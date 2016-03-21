@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: tigerpoint.cpp 32177 2015-12-14 07:25:30Z goatbar $
+ * $Id$
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Implements TigerPoint class.
@@ -30,7 +30,7 @@
 #include "ogr_tiger.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: tigerpoint.cpp 32177 2015-12-14 07:25:30Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                             TigerPoint()                             */
@@ -105,7 +105,7 @@ OGRFeature *TigerPoint::GetFeature( int nRecordId,
 /************************************************************************/
 /*                           CreateFeature()                            */
 /************************************************************************/
-OGRErr TigerPoint::CreateFeature( OGRFeature *poFeature, 
+OGRErr TigerPoint::CreateFeature( OGRFeature *poFeature,
                                   int pointIndex)
 
 {
@@ -119,7 +119,7 @@ OGRErr TigerPoint::CreateFeature( OGRFeature *poFeature,
 
     WriteFields( psRTInfo, poFeature, szRecord );
 
-    if( poPoint != NULL 
+    if( poPoint != NULL
         && (poPoint->getGeometryType() == wkbPoint
             || poPoint->getGeometryType() == wkbPoint25D) ) {
         WritePoint( szRecord, pointIndex, poPoint->getX(), poPoint->getY() );

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hdf4dataset.h 33313 2016-02-01 21:41:00Z goatbar $
+ * $Id$
  *
  * Project:  Hierarchical Data Format Release 4 (HDF4)
  * Purpose:  Header file for HDF4 datasets reader.

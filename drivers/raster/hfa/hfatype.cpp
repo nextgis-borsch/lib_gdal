@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hfatype.cpp 32623 2016-01-01 09:34:53Z rouault $
+ * $Id$
  *
  * Project:  Erdas Imagine (.img) Translator
  * Purpose:  Implementation of the HFAType class, for managing one type
@@ -31,7 +31,7 @@
 
 #include "hfa_p.h"
 
-CPL_CVSID("$Id: hfatype.cpp 32623 2016-01-01 09:34:53Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -193,7 +193,7 @@ void HFAType::Dump( FILE * fp )
 /*                            SetInstValue()                            */
 /************************************************************************/
 
-CPLErr 
+CPLErr
 HFAType::SetInstValue( const char * pszFieldPath,
                        GByte *pabyData, GUInt32 nDataOffset, int nDataSize,
                        char chReqType, void *pValue )

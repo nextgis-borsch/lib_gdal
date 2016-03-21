@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * $Id: dumpoverviews.cpp 33615 2016-03-02 20:19:22Z goatbar $
+ * $Id$
  *
  * Project:  GDAL Utilities
  * Purpose:  Dump overviews to external files.
@@ -33,7 +33,7 @@
 #include "gdal_priv.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: dumpoverviews.cpp 33615 2016-03-02 20:19:22Z goatbar $");
+CPL_CVSID("$Id$");
 
 static void DumpBand( GDALDatasetH hBaseDS, GDALRasterBandH hBand,
                       const char *pszName );

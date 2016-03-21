@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * $Id: gdal_grid_lib.cpp 33615 2016-03-02 20:19:22Z goatbar $
+ * $Id$
  *
  * Project:  GDAL Utilities
  * Purpose:  GDAL scattered data gridding (interpolation) tool
@@ -41,7 +41,7 @@
 #include <vector>
 #include <algorithm>
 
-CPL_CVSID("$Id: gdal_grid_lib.cpp 33615 2016-03-02 20:19:22Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                          GDALGridOptions                             */

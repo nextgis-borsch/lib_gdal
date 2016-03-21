@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ###############################################################################
-# $Id: val_repl.py 31957 2015-12-02 12:44:54Z goatbar $
+# $Id$
 #
 # Project:  GDAL Python samples
 # Purpose:  Script to replace specified values from the input raster file

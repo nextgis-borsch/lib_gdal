@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: atlsci_spheroid.cpp 31211 2015-10-28 23:43:20Z goatbar $
+ * $Id$
  *
  * Project:  Spheroid classes
  * Purpose:  Provide spheroid lookup table base classes.
@@ -30,7 +30,7 @@
 #include "atlsci_spheroid.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: atlsci_spheroid.cpp 31211 2015-10-28 23:43:20Z goatbar $");
+CPL_CVSID("$Id$");
 
 /**********************************************************************/
 /* ================================================================== */
@@ -122,7 +122,7 @@ int SpheroidList :: SpheroidInList( const char *spheroid_name )
   /* Return 1 if the spheroid name is recognized; 0 otherwise */
   for( int index = 0; index < num_spheroids; index++)
   {
-    if EQUAL(spheroids[index].spheroid_name,spheroid_name) 
+    if EQUAL(spheroids[index].spheroid_name,spheroid_name)
       return 1;
   }
 

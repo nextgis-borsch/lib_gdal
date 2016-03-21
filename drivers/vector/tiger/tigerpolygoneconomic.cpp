@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: tigerpolygoneconomic.cpp 32177 2015-12-14 07:25:30Z goatbar $
+ * $Id$
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Implements TigerPolygonEconomic, providing access to .RTE files.
@@ -30,12 +30,12 @@
 #include "ogr_tiger.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: tigerpolygoneconomic.cpp 32177 2015-12-14 07:25:30Z goatbar $");
+CPL_CVSID("$Id$");
 
 #define FILE_CODE       "E"
 
 /* I think this was the expected RTE format, but was never deployed, leaving
-   it in the code in case I am missing something. 
+   it in the code in case I am missing something.
 
 static TigerFieldInfo rtE_fields[] = {
   // fieldname    fmt  type OFTType      beg  end  len  bDefine bSet bWrite

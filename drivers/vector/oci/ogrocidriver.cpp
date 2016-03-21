@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrocidriver.cpp 32110 2015-12-10 17:19:40Z goatbar $
+ * $Id$
  *
  * Project:  Oracle Spatial Driver
  * Purpose:  Implementation of the OGROCIDriver class.
@@ -29,7 +29,7 @@
 
 #include "ogr_oci.h"
 
-CPL_CVSID("$Id: ogrocidriver.cpp 32110 2015-12-10 17:19:40Z goatbar $");
+CPL_CVSID("$Id$");
 
 
 /************************************************************************/
@@ -85,7 +85,7 @@ static GDALDataset *OGROCIDriverCreate( const char * pszName,
     if( !poDS->Open( pszName, NULL, TRUE, TRUE ) )
     {
         delete poDS;
-        CPLError( CE_Failure, CPLE_AppDefined, 
+        CPLError( CE_Failure, CPLE_AppDefined,
          "Oracle driver doesn't currently support database creation.\n"
                   "Please create database with Oracle tools before loading tables." );
         return NULL;
@@ -154,4 +154,3 @@ void RegisterOGROCI()
 
     GetGDALDriverManager()->RegisterDriver( poDriver );
 }
-

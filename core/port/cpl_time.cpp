@@ -1,6 +1,6 @@
 
 /**********************************************************************
- * $Id: cpl_time.cpp 33138 2016-01-24 11:18:11Z rouault $
+ * $Id$
  *
  * Name:     cpl_time.cpp
  * Project:  CPL - Common Portability Library

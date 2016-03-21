@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: fyba_melding.cpp 33128 2016-01-23 20:05:32Z rouault $
+ * $Id$
  *
  * Project:  FYBA Callbacks
  * Purpose:  Needed by FYBA - however we do not want to display most messages

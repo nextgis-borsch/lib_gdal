@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrcartodblayer.cpp 32247 2015-12-19 07:05:52Z goatbar $
+ * $Id$
  *
  * Project:  CartoDB Translator
  * Purpose:  Implements OGRCARTODBLayer class.
@@ -30,7 +30,7 @@
 #include "ogr_cartodb.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrcartodblayer.cpp 32247 2015-12-19 07:05:52Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                         OGRCARTODBLayer()                            */
@@ -187,7 +187,7 @@ json_object* OGRCARTODBLayer::FetchNewFeatures(GIntBig iNextIn)
 
 OGRFeature *OGRCARTODBLayer::GetNextRawFeature()
 {
-    if( bEOF ) 
+    if( bEOF )
         return NULL;
 
     if( iNextInFetchedObjects >= nFetchedObjects )

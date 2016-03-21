@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gpb.h 33040 2016-01-19 05:49:25Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Author:   Even Rouault, <even dot rouault at mines dash paris dot org>

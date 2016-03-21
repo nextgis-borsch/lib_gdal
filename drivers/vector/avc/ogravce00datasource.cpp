@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogravce00datasource.cpp 32122 2015-12-11 16:01:28Z goatbar $
+ * $Id$
  *
  * Project:  OGR
  * Purpose:  Implements OGRAVCE00DataSource class.
@@ -33,7 +33,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogravce00datasource.cpp 32122 2015-12-11 16:01:28Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                        OGRAVCE00DataSource()                         */
@@ -99,7 +99,7 @@ int OGRAVCE00DataSource::Open( const char * pszNewName, int bTestOpen )
     {
         if( bCompressed )
         {
-            CPLError(CE_Failure, CPLE_OpenFailed, 
+            CPLError(CE_Failure, CPLE_OpenFailed,
                      "This looks like a compressed E00 file and cannot be "
                      "processed directly. You may need to uncompress it "
                      "first using the E00compr library or the e00conv "
@@ -158,7 +158,7 @@ int OGRAVCE00DataSource::Open( const char * pszNewName, int bTestOpen )
                   poSRS = new OGRSpatialReference();
                   if( poSRS->importFromESRI( papszPRJ ) != OGRERR_NONE )
                   {
-                      CPLError( CE_Warning, CPLE_AppDefined, 
+                      CPLError( CE_Warning, CPLE_AppDefined,
                                 "Failed to parse PRJ section, ignoring." );
                       delete poSRS;
                       poSRS = NULL;
@@ -232,7 +232,7 @@ OGRSpatialReference *OGRAVCE00DataSource::GetSpatialRef()
             poSRS = new OGRSpatialReference();
             if( poSRS->importFromESRI( pszPRJ ) != OGRERR_NONE )
             {
-                CPLError( CE_Warning, CPLE_AppDefined, 
+                CPLError( CE_Warning, CPLE_AppDefined,
                           "Failed to parse PRJ section, ignoring." );
                 delete poSRS;
                 poSRS = NULL;

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_port.h 33609 2016-03-01 22:54:50Z rouault $
+ * $Id$
  *
  * Project:  CPL - Common Portability Library
  * Author:   Frank Warmerdam, warmerdam@pobox.com

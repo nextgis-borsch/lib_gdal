@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cplstringlist.cpp 32078 2015-12-08 09:09:45Z rouault $
+ * $Id$
  *
  * Project:  GDAL 
  * Purpose:  CPLStringList implementation.
@@ -31,7 +31,7 @@
 #include "cpl_string.h"
 #include <string>
 
-CPL_CVSID("$Id: cplstringlist.cpp 32078 2015-12-08 09:09:45Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                           CPLStringList()                            */

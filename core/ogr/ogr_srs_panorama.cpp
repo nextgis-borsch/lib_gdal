@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_srs_panorama.cpp 33631 2016-03-04 06:28:09Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  OGRSpatialReference translation to/from "Panorama" GIS
@@ -34,7 +34,7 @@
 #include "cpl_conv.h"
 #include "cpl_csv.h"
 
-CPL_CVSID("$Id: ogr_srs_panorama.cpp 33631 2016-03-04 06:28:09Z goatbar $");
+CPL_CVSID("$Id$");
 
 #define TO_DEGREES 57.2957795130823208766
 #define TO_RADIANS 0.017453292519943295769

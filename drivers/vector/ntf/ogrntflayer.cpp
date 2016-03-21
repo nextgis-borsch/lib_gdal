@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrntflayer.cpp 32177 2015-12-14 07:25:30Z goatbar $
+ * $Id$
  *
  * Project:  UK NTF Reader
  * Purpose:  Implements OGRNTFLayer class.
@@ -30,7 +30,7 @@
 #include "ntf.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrntflayer.cpp 32177 2015-12-14 07:25:30Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                            OGRNTFLayer()                             */
@@ -64,7 +64,7 @@ OGRNTFLayer::~OGRNTFLayer()
     if( m_nFeaturesRead > 0 && poFeatureDefn != NULL )
     {
         CPLDebug( "Mem", "%d features read on layer '%s'.",
-                  (int) m_nFeaturesRead, 
+                  (int) m_nFeaturesRead,
                   poFeatureDefn->GetName() );
     }
 
@@ -137,7 +137,7 @@ OGRFeature *OGRNTFLayer::GetNextFeature()
         m_nFeaturesRead++;
 
         if( (m_poFilterGeom == NULL
-             || poFeature->GetGeometryRef() == NULL 
+             || poFeature->GetGeometryRef() == NULL
              || FilterGeometry( poFeature->GetGeometryRef() ) )
             && (m_poAttrQuery == NULL
                 || m_poAttrQuery->Evaluate( poFeature )) )
@@ -160,7 +160,7 @@ OGRFeature *OGRNTFLayer::GetNextFeature()
             poCurrentReader->DestroyIndex();
         }
 
-        do { 
+        do {
             iCurrentReader++;
         } while( iCurrentReader < poDS->GetFileCount()
                  && !poDS->GetFileReader(iCurrentReader)->TestForLayer(this) );
@@ -188,7 +188,7 @@ int OGRNTFLayer::TestCapability( const char * pszCap )
     if( EQUAL(pszCap,OLCRandomRead) )
         return FALSE;
 
-    else if( EQUAL(pszCap,OLCSequentialWrite) 
+    else if( EQUAL(pszCap,OLCSequentialWrite)
              || EQUAL(pszCap,OLCRandomWrite) )
         return FALSE;
 
@@ -198,7 +198,7 @@ int OGRNTFLayer::TestCapability( const char * pszCap )
     else if( EQUAL(pszCap,OLCFastSpatialFilter) )
         return FALSE;
 
-    else 
+    else
         return FALSE;
 }
 

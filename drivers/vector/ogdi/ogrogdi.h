@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrogdi.h 32177 2015-12-14 07:25:30Z goatbar $
+ * $Id$
  *
  * Project:  OGDI Bridge
  * Purpose:  Private definitions within the OGDI driver to implement
@@ -62,7 +62,7 @@ class OGROGDILayer : public OGRLayer
     OGRFeature *        GetNextRawFeature();
 
   public:
-                        OGROGDILayer(OGROGDIDataSource *, const char *, 
+                        OGROGDILayer(OGROGDIDataSource *, const char *,
                                      ecs_Family);
                         ~OGROGDILayer();
 
@@ -106,7 +106,7 @@ class OGROGDIDataSource : public OGRDataSource
 
     int                 m_bLaunderLayerNames;
 
-    void                IAddLayer( const char *pszLayerName, 
+    void                IAddLayer( const char *pszLayerName,
                                    ecs_Family eFamily );
 
   public:

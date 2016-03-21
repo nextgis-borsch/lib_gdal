@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: dipxdataset.cpp 33372 2016-02-07 15:22:58Z rouault $
+ * $Id$
  *
  * Project:  GDAL
  * Purpose:  Implementation for ELAS DIPEx format variant.
@@ -37,7 +37,7 @@
 
 using std::fill;
 
-CPL_CVSID("$Id: dipxdataset.cpp 33372 2016-02-07 15:22:58Z rouault $");
+CPL_CVSID("$Id$");
 
 typedef struct {
     GInt32      NBIH;   /* bytes in header, normally 1024 */
@@ -266,7 +266,7 @@ GDALDataset *DIPExDataset::Open( GDALOpenInfo * poOpenInfo )
                   nDIPExDataType, nBytesPerSample );
         return NULL;
     }
-    
+
     if( nLineOffset <= 0 || nLineOffset > INT_MAX / nBands )
     {
         delete poDS;
@@ -282,12 +282,12 @@ GDALDataset *DIPExDataset::Open( GDALOpenInfo * poOpenInfo )
     CPLErrorReset();
     for( int iBand = 0; iBand < nBands; iBand++ )
     {
-        poDS->SetBand( iBand+1, 
-                       new RawRasterBand( poDS, iBand+1, poDS->fp, 
-                                          1024 + iBand * nLineOffset, 
-                                          nBytesPerSample, 
+        poDS->SetBand( iBand+1,
+                       new RawRasterBand( poDS, iBand+1, poDS->fp,
+                                          1024 + iBand * nLineOffset,
+                                          nBytesPerSample,
                                           nLineOffset * nBands,
-                                          poDS->eRasterDataType, 
+                                          poDS->eRasterDataType,
                                           CPL_IS_LSB, TRUE ) );
         if( CPLGetLastErrorType() != CE_None )
         {

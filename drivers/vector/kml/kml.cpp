@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: kml.cpp 32872 2016-01-09 10:16:42Z goatbar $
+ * $Id$
  *
  * Project:  KML Driver
  * Purpose:  Class for reading, parsing and handling a kmlfile.
@@ -281,7 +281,7 @@ void XMLCALL KML::startElementValidate( void* pUserData, const char* pszName,
             if(strcmp(ppszAttr[i], "xmlns") == 0)
             {
                 // Is it KML 2.2?
-                if((strcmp(ppszAttr[i + 1], "http://earth.google.com/kml/2.2") == 0) || 
+                if((strcmp(ppszAttr[i + 1], "http://earth.google.com/kml/2.2") == 0) ||
                    (strcmp(ppszAttr[i + 1], "http://www.opengis.net/kml/2.2") == 0))
                 {
                     poKML->validity = KML_VALIDITY_VALID;

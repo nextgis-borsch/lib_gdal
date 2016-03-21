@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gtiff.h 33379 2016-02-08 11:42:33Z rouault $
+ * $Id$
  *
  * Project:  GeoTIFF Driver
  * Purpose:  GDAL GeoTIFF support.

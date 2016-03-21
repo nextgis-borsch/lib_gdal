@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrutils.cpp 33631 2016-03-04 06:28:09Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Utility functions for OGR classes, including some related to
@@ -37,11 +37,9 @@
 #include "ogr_geometry.h"
 #include "ogr_p.h"
 
-#ifdef OGR_ENABLED
 # include "ogrsf_frmts.h"
-#endif /* OGR_ENABLED */
 
-CPL_CVSID("$Id: ogrutils.cpp 33631 2016-03-04 06:28:09Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                        OGRFormatDouble()                             */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: sdtscatd.cpp 32100 2015-12-09 07:07:26Z goatbar $
+ * $Id$
  *
  * Project:  SDTS Translator
  * Purpose:  Implementation of SDTS_CATD and SDTS_CATDEntry classes for
@@ -30,7 +30,7 @@
 
 #include "sdts_al.h"
 
-CPL_CVSID("$Id: sdtscatd.cpp 32100 2015-12-09 07:07:26Z goatbar $");
+CPL_CVSID("$Id$");
 
 
 /************************************************************************/
@@ -166,7 +166,7 @@ int SDTS_CATD::Read( const char * pszFilename )
 /* -------------------------------------------------------------------- */
 /*      Create a full path to the file.                                 */
 /* -------------------------------------------------------------------- */
-        poEntry->pszFullPath = 
+        poEntry->pszFullPath =
             CPLStrdup(CPLFormCIFilename( pszPrefixPath, poEntry->pszFile,
                                          NULL ));
 
@@ -257,7 +257,7 @@ const char * SDTS_CATD::GetEntryTypeDesc( int iEntry )
  * <tt>Attribute Primary</tt> or <tt>Attribute Secondary</tt>.
  * <li> SLTPolygon: Read with SDTSPolygonReader, underlying type of
  * <tt>Polygon</tt>.
- * </ul> 
+ * </ul>
  */
 
 SDTSLayerType SDTS_CATD::GetEntryType( int iEntry )

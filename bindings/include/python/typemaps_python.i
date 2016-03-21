@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: typemaps_python.i 32994 2016-01-15 10:53:46Z rouault $
+ * $Id$
  *
  * Name:     typemaps_python.i
  * Project:  GDAL Python Interface

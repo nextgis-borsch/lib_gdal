@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrplsceneslayer.cpp 32982 2016-01-14 16:53:57Z goatbar $
+ * $Id$
  *
  * Project:  PlanetLabs scene driver
  * Purpose:  Implements OGRPLScenesLayer
@@ -30,7 +30,7 @@
 #include "ogr_plscenes.h"
 #include <algorithm>
 
-CPL_CVSID("$Id: ogrplsceneslayer.cpp 32982 2016-01-14 16:53:57Z goatbar $");
+CPL_CVSID("$Id$");
 
 typedef struct
 {
@@ -172,7 +172,7 @@ CPLString OGRPLScenesLayer::BuildFilter(swq_expr_node* poNode)
     {
         if( poNode->nOperation == SWQ_AND && poNode->nSubExprCount == 2 )
         {
-            // For AND, we can deal with a failure in one of the branch 
+            // For AND, we can deal with a failure in one of the branch
             // since client-side will do that extra filtering
             CPLString osFilter1 = BuildFilter(poNode->papoSubExpr[0]);
             CPLString osFilter2 = BuildFilter(poNode->papoSubExpr[1]);
@@ -303,7 +303,7 @@ CPLString OGRPLScenesLayer::BuildURL(int nFeatures)
     {
         OGRGeometry* poIntersection = NULL;
         OGRGeometry* poFilterGeom = m_poFilterGeom;
-        if( poFilterGeom ) 
+        if( poFilterGeom )
         {
             OGREnvelope sEnvelope;
             poFilterGeom->getEnvelope(&sEnvelope);
@@ -315,7 +315,7 @@ CPLString OGRPLScenesLayer::BuildURL(int nFeatures)
         if( poFilterGeom && poMainFilter )
             poIntersection = poFilterGeom->Intersection(poMainFilter);
         else if( poFilterGeom )
-            poIntersection = poFilterGeom; 
+            poIntersection = poFilterGeom;
         else if( poMainFilter )
             poIntersection = poMainFilter;
         if( poIntersection )
@@ -369,7 +369,7 @@ int OGRPLScenesLayer::GetNextPage()
             nFeatureCount = 0;
         return FALSE;
     }
-    // In the case of a "id = 'foo'" filter, a non existing resource 
+    // In the case of a "id = 'foo'" filter, a non existing resource
     // will cause a 404 error, which we want to be silent
     int bQuiet404Error = ( osRequestURL.find('?') == std::string::npos );
     json_object* poObj = poDS->RunRequest(osRequestURL, bQuiet404Error);

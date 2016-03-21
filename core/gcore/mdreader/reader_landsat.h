@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: reader_landsat.h 29915 2015-08-29 21:29:57Z rouault $
+ * $Id$
  *
  * Project:  GDAL Core
  * Purpose:  Read metadata from Landsat imagery.
@@ -38,7 +38,7 @@
 
 TIFF filename:      xxxxxx_aaa.tif
 Metadata filename:  xxxxxx_MTL.txt
-RPC filename:           
+RPC filename:
 
 Common metadata (from metadata filename):
     SatelliteId:         SPACECRAFT_ID

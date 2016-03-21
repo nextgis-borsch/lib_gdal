@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gt_jpeg_copy.cpp 32883 2016-01-09 18:24:40Z rouault $
+ * $Id$
  *
  * Project:  GeoTIFF Driver
  * Purpose:  Specialized copy of JPEG content into TIFF.
@@ -37,7 +37,7 @@
 /* Note: JPEG_DIRECT_COPY is not defined by default, because it is mainly */
 /* useful for debugging purposes */
 
-CPL_CVSID("$Id: gt_jpeg_copy.cpp 32883 2016-01-09 18:24:40Z rouault $");
+CPL_CVSID("$Id$");
 
 #if defined(JPEG_DIRECT_COPY) || defined(HAVE_LIBJPEG)
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgftdriver.cpp 33105 2016-01-23 15:27:32Z rouault $
+ * $Id$
  *
  * Project:  GFT Translator
  * Purpose:  Implements OGRGFTDriver.
@@ -33,7 +33,7 @@
 
 /* http://code.google.com/intl/fr/apis/fusiontables/docs/developers_reference.html */
 
-CPL_CVSID("$Id: ogrgftdriver.cpp 33105 2016-01-23 15:27:32Z rouault $");
+CPL_CVSID("$Id$");
 
 extern "C" void RegisterOGRGFT();
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_vsil_tar.cpp 33646 2016-03-05 15:54:03Z goatbar $
+ * $Id$
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Implement VSI large file api for tar files (.tar).
@@ -29,7 +29,7 @@
 
 #include "cpl_vsi_virtual.h"
 
-CPL_CVSID("$Id: cpl_vsil_tar.cpp 33646 2016-03-05 15:54:03Z goatbar $");
+CPL_CVSID("$Id$");
 
 #if defined(DEBUG) && !defined(HAVE_FUZZER_FRIENDLY_ARCHIVE)
 /* This is a completely custom archive format that is rather inefficient */

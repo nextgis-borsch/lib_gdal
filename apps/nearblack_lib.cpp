@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: nearblack_lib.cpp 33615 2016-03-02 20:19:22Z goatbar $
+ * $Id$
  *
  * Project:  GDAL Utilities
  * Purpose:  Convert nearly black or nearly white border to exact black/white.
@@ -34,7 +34,7 @@
 #include <vector>
 #include "gdal_utils_priv.h"
 
-CPL_CVSID("$Id: nearblack_lib.cpp 33615 2016-03-02 20:19:22Z goatbar $");
+CPL_CVSID("$Id$");
 
 typedef std::vector<int> Color;
 typedef std::vector< Color > Colors;

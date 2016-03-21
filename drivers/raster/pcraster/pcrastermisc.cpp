@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: pcrastermisc.cpp 32215 2015-12-18 06:30:54Z goatbar $
+ * $Id$
  *
  * Project:  PCRaster Integration
  * Purpose:  PCRaster driver support functions.

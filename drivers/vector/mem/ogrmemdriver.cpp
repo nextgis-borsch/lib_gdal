@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrmemdriver.cpp 32896 2016-01-10 13:37:26Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRMemDriver class.
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrmemdriver.cpp 32896 2016-01-10 13:37:26Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                          ~OGRMemDriver()                           */

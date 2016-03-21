@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 ###############################################################################
-# $Id: ogrupdate.py 32002 2015-12-05 06:03:16Z goatbar $
+# $Id$
 #
 # Project:  GDAL/OGR samples
 # Purpose:  Update an existing datasource with features from another one

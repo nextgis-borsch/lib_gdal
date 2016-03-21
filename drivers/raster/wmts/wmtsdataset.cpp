@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: wmtsdataset.cpp 32984 2016-01-14 19:08:12Z goatbar $
+ * $Id$
  *
  * Project:  GDAL WMTS driver
  * Purpose:  Implement GDAL WMTS support
@@ -47,7 +47,7 @@ extern "C" void GDALRegister_WMTS();
 
 #define WMTS_METERS_FOR_ONE_DEG         (6378137 * 2 * M_PI / 360)
 
-CPL_CVSID("$Id: wmtsdataset.cpp 32984 2016-01-14 19:08:12Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -163,7 +163,7 @@ class WMTSDataset : public GDALPamDataset
     virtual CPLErr  IRasterIO( GDALRWFlag eRWFlag,
                                int nXOff, int nYOff, int nXSize, int nYSize,
                                void * pData, int nBufXSize, int nBufYSize,
-                               GDALDataType eBufType, 
+                               GDALDataType eBufType,
                                int nBandCount, int *panBandMap,
                                GSpacing nPixelSpace, GSpacing nLineSpace,
                                GSpacing nBandSpace,
@@ -453,7 +453,7 @@ int WMTSDataset::CloseDependentDatasets()
 CPLErr  WMTSDataset::IRasterIO( GDALRWFlag eRWFlag,
                                int nXOff, int nYOff, int nXSize, int nYSize,
                                void * pData, int nBufXSize, int nBufYSize,
-                               GDALDataType eBufType, 
+                               GDALDataType eBufType,
                                int nBandCount, int *panBandMap,
                                GSpacing nPixelSpace, GSpacing nLineSpace,
                                GSpacing nBandSpace,
@@ -476,7 +476,7 @@ CPLErr  WMTSDataset::IRasterIO( GDALRWFlag eRWFlag,
             return eErr;
     }
 
-    return apoDatasets[0]->RasterIO( eRWFlag, nXOff, nYOff, nXSize, nYSize, 
+    return apoDatasets[0]->RasterIO( eRWFlag, nXOff, nYOff, nXSize, nYSize,
                                   pData, nBufXSize, nBufYSize,
                                   eBufType, nBandCount, panBandMap,
                                   nPixelSpace, nLineSpace, nBandSpace,

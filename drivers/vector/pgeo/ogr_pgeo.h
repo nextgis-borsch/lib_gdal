@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_pgeo.h 32177 2015-12-14 07:25:30Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions for Personal Geodatabase driver.
@@ -107,7 +107,7 @@ class OGRPGeoTableLayer : public OGRPGeoLayer
                         OGRPGeoTableLayer( OGRPGeoDataSource * );
                         ~OGRPGeoTableLayer();
 
-    CPLErr              Initialize( const char *pszTableName, 
+    CPLErr              Initialize( const char *pszTableName,
                                     const char *pszGeomCol,
                                     int nShapeType,
                                     double dfExtentLeft,
@@ -144,7 +144,7 @@ class OGRPGeoSelectLayer : public OGRPGeoLayer
     virtual CPLODBCStatement *  GetStatement();
 
   public:
-                        OGRPGeoSelectLayer( OGRPGeoDataSource *, 
+                        OGRPGeoSelectLayer( OGRPGeoDataSource *,
                                            CPLODBCStatement * );
                         ~OGRPGeoSelectLayer();
 
@@ -175,7 +175,7 @@ class OGRPGeoDataSource : public OGRDataSource
                         ~OGRPGeoDataSource();
 
     int                 Open( const char *, int bUpdate, int bTestOpen );
-    int                 OpenTable( const char *pszTableName, 
+    int                 OpenTable( const char *pszTableName,
                                    const char *pszGeomCol,
                                    int bUpdate );
 

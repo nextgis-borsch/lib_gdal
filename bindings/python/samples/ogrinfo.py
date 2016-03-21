@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #*****************************************************************************
-# $Id: ogrinfo.py 31957 2015-12-02 12:44:54Z goatbar $
+# $Id$
 #
 # Project:  OpenGIS Simple Features Reference Implementation
 # Purpose:  Python port of a simple client for viewing OGR driver data.

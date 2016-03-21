@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrvrtdatasource.cpp 33569 2016-02-26 21:07:25Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRVRTDataSource class.
@@ -34,7 +34,7 @@
 #include "ogrwarpedlayer.h"
 #include "ogrunionlayer.h"
 
-CPL_CVSID("$Id: ogrvrtdatasource.cpp 33569 2016-02-26 21:07:25Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                       OGRVRTGetGeometryType()                        */
@@ -60,6 +60,8 @@ static const OGRGeomTypeName asGeomTypeNames[] = { /* 25D versions are implicit 
     { wkbCurvePolygon, "wkbCurvePolygon" },
     { wkbGeometryCollection, "wkbMultiCurve" },
     { wkbMultiSurface, "wkbMultiSurface" },
+    { wkbCurve, "wkbCurve" },
+    { wkbSurface, "wkbSurface" },
     { wkbNone, "wkbNone" },
     { wkbNone, NULL }
 };
@@ -840,7 +842,7 @@ int OGRVRTDataSource::Initialize( CPLXMLNode *psTreeIn, const char *pszNewName,
     CPLXMLNode *psVRTDSXML = CPLGetXMLNode( psTree, "=OGRVRTDataSource" );
     if( psVRTDSXML == NULL )
     {
-        CPLError( CE_Failure, CPLE_AppDefined, 
+        CPLError( CE_Failure, CPLE_AppDefined,
                   "Did not find the <OGRVRTDataSource> node in the root of the document,\n"
                   "this is not really an OGR VRT." );
         return FALSE;

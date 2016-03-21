@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdaldem_bin.cpp 33615 2016-03-02 20:19:22Z goatbar $
+ * $Id$
  *
  * Project:  GDAL DEM Utilities
  * Purpose:
@@ -37,7 +37,7 @@
 #include "gdal_priv.h"
 #include "commonutils.h"
 
-CPL_CVSID("$Id: gdaldem_bin.cpp 33615 2016-03-02 20:19:22Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                               Usage()                                */

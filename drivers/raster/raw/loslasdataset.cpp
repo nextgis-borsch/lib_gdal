@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: loslasdataset.cpp 32883 2016-01-09 18:24:40Z rouault $
+ * $Id$
  *
  * Project:  Horizontal Datum Formats
  * Purpose:  Implementation of NOAA/NADCON los/las datum shift format.
@@ -33,7 +33,7 @@
 #include "ogr_srs_api.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id: loslasdataset.cpp 32883 2016-01-09 18:24:40Z rouault $");
+CPL_CVSID("$Id$");
 
 /**
 
@@ -127,7 +127,7 @@ int LOSLASDataset::Identify( GDALOpenInfo *poOpenInfo )
     if( poOpenInfo->nHeaderBytes < 64 )
         return FALSE;
 
-    if( !EQUAL(CPLGetExtension(poOpenInfo->pszFilename),"las") 
+    if( !EQUAL(CPLGetExtension(poOpenInfo->pszFilename),"las")
         && !EQUAL(CPLGetExtension(poOpenInfo->pszFilename),"los") )
         return FALSE;
 
@@ -203,8 +203,8 @@ GDALDataset *LOSLASDataset::Open( GDALOpenInfo * poOpenInfo )
 /*      the first since the data comes with the southern most record    */
 /*      first, not the northernmost like we would want.                 */
 /* -------------------------------------------------------------------- */
-    poDS->SetBand( 
-        1, new RawRasterBand( poDS, 1, poDS->fpImage, 
+    poDS->SetBand(
+        1, new RawRasterBand( poDS, 1, poDS->fpImage,
                               poDS->nRasterYSize * poDS->nRecordLength + 4,
                               4, -1 * poDS->nRecordLength,
                               GDT_Float32,

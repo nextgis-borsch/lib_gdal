@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: vfkproperty.cpp 33105 2016-01-23 15:27:32Z rouault $
+ * $Id$
  *
  * Project:  VFK Reader - Property definition
  * Purpose:  Implements VFKProperty class.
@@ -46,7 +46,7 @@ VFKProperty::VFKProperty()
 /*!
   \brief Set VFK property (integer)
 */
-VFKProperty::VFKProperty(int iValue) 
+VFKProperty::VFKProperty(int iValue)
     : m_bIsNull(FALSE), m_nValue(iValue), m_dValue(0.0)
 {
 }

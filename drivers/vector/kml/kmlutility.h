@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: kmlutility.h 33339 2016-02-03 11:48:06Z rouault $
+ * $Id$
  *
  * Project:  KML Driver
  * Purpose:  KML driver utilities

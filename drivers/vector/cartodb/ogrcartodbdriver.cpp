@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrcartodbdriver.cpp 32110 2015-12-10 17:19:40Z goatbar $
+ * $Id$
  *
  * Project:  CartoDB Translator
  * Purpose:  Implements OGRCARTODBDriver.
@@ -29,9 +29,9 @@
 
 #include "ogr_cartodb.h"
 
-// g++ -g -Wall -fPIC -shared -o ogr_CARTODB.so -Iport -Igcore -Iogr -Iogr/ogrsf_frmts -Iogr/ogrsf_frmts/cartodb ogr/ogrsf_frmts/cartodb/*.c* -L. -lgdal -Iogr/ogrsf_frmts/geojson/libjson 
+// g++ -g -Wall -fPIC -shared -o ogr_CARTODB.so -Iport -Igcore -Iogr -Iogr/ogrsf_frmts -Iogr/ogrsf_frmts/cartodb ogr/ogrsf_frmts/cartodb/*.c* -L. -lgdal -Iogr/ogrsf_frmts/geojson/libjson
 
-CPL_CVSID("$Id: ogrcartodbdriver.cpp 32110 2015-12-10 17:19:40Z goatbar $");
+CPL_CVSID("$Id$");
 
 extern "C" void RegisterOGRCartoDB();
 
@@ -83,7 +83,7 @@ static GDALDataset *OGRCartoDBDriverCreate( const char * pszName,
     if( !poDS->Open( pszName, NULL, TRUE ) )
     {
         delete poDS;
-        CPLError( CE_Failure, CPLE_AppDefined, 
+        CPLError( CE_Failure, CPLE_AppDefined,
                   "CartoDB driver doesn't support database creation." );
         return NULL;
     }
@@ -140,4 +140,3 @@ void RegisterOGRCartoDB()
 
     GetGDALDriverManager()->RegisterDriver( poDriver );
 }
-

@@ -1,9 +1,9 @@
 /******************************************************************************
- * $Id: sdtslib.cpp 32078 2015-12-08 09:09:45Z rouault $
+ * $Id$
  *
  * Project:  SDTS Translator
  * Purpose:  Various utility functions that apply to all SDTS profiles.
- *           SDTSModId, and SDTSFeature methods. 
+ *           SDTSModId, and SDTSFeature methods.
  * Author:   Frank Warmerdam, warmerdam@pobox.com
  *
  ******************************************************************************
@@ -32,7 +32,7 @@
 #include "sdts_al.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: sdtslib.cpp 32078 2015-12-08 09:09:45Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                            SDTSFeature()                             */
@@ -110,7 +110,7 @@ int SDTSModId::Set( DDFField *poField )
     const char  *pachData = poField->GetData();
     DDFFieldDefn *poDefn = poField->GetFieldDefn();
 
-    if( poDefn->GetSubfieldCount() >= 2 
+    if( poDefn->GetSubfieldCount() >= 2
         && poDefn->GetSubfield(0)->GetWidth() == 4 )
     {
         memcpy( szModule, pachData, 4 );
@@ -148,7 +148,7 @@ int SDTSModId::Set( DDFField *poField )
                 = poField->GetSubfieldData(poSF, &nBytesRemaining);
             if( pachData != NULL )
             {
-                strncpy( szOBRP, 
+                strncpy( szOBRP,
                         poSF->ExtractStringData( pachData, nBytesRemaining, NULL),
                         sizeof(szOBRP) );
 

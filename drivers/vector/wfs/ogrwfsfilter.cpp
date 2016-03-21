@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrwfsfilter.cpp 32177 2015-12-14 07:25:30Z goatbar $
+ * $Id$
  *
  * Project:  WFS Translator
  * Purpose:  Implements OGR SQL into OGC Filter translation.
@@ -30,7 +30,7 @@
 #include "ogr_wfs.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrwfsfilter.cpp 32177 2015-12-14 07:25:30Z goatbar $");
+CPL_CVSID("$Id$");
 
 typedef struct
 {
@@ -627,7 +627,7 @@ static swq_field_type OGRWFSSpatialBooleanPredicateChecker( swq_expr_node *op,
 /*                           OGRWFSCheckSRIDArg()                       */
 /************************************************************************/
 
-static int OGRWFSCheckSRIDArg( swq_expr_node *op, int iSubArgIndex ) 
+static int OGRWFSCheckSRIDArg( swq_expr_node *op, int iSubArgIndex )
 {
     if( op->papoSubExpr[iSubArgIndex]->field_type == SWQ_INTEGER )
     {

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrsuadatasource.cpp 27745 2014-09-27 16:38:57Z goatbar $
+ * $Id$
  *
  * Project:  SUA Translator
  * Purpose:  Implements OGRSUADataSource class
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrsuadatasource.cpp 27745 2014-09-27 16:38:57Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                          OGRSUADataSource()                          */

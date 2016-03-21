@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrnasrelationlayer.cpp 32898 2016-01-10 14:44:10Z goatbar $
+ * $Id$
  *
  * Project:  OGR
  * Purpose:  Implements OGRNASRelationLayer class, a special layer holding all
@@ -33,7 +33,7 @@
 #include "cpl_string.h"
 #include "ogr_nas.h"
 
-CPL_CVSID("$Id: ogrnasrelationlayer.cpp 32898 2016-01-10 14:44:10Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                        OGRNASRelationLayer()                         */

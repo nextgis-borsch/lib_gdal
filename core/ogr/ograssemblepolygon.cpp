@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ograssemblepolygon.cpp 33631 2016-03-04 06:28:09Z goatbar $
+ * $Id$
  *
  * Project:  S-57 Reader
  * Purpose:  Implements polygon assembly from a bunch of arcs.
@@ -33,7 +33,7 @@
 #include "ogr_api.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ograssemblepolygon.cpp 33631 2016-03-04 06:28:09Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                            CheckPoints()                             */

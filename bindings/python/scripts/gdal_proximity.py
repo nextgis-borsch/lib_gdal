@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #******************************************************************************
-#  $Id: gdal_proximity.py 32555 2015-12-30 19:26:44Z goatbar $
+#  $Id$
 #
 #  Name:     gdalproximity
 #  Project:  GDAL Python Interface

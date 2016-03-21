@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrosmdatasource.cpp 33199 2016-01-29 15:48:41Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGROSMDataSource class.
@@ -126,7 +126,7 @@ size_t GetMaxTotalAllocs();
 static void WriteVarInt64(GUIntBig nSVal, GByte** ppabyData);
 static void WriteVarSInt64(GIntBig nSVal, GByte** ppabyData);
 
-CPL_CVSID("$Id: ogrosmdatasource.cpp 33199 2016-01-29 15:48:41Z rouault $");
+CPL_CVSID("$Id$");
 
 class DSToBeOpened
 {

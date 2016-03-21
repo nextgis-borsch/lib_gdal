@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrili2driver.cpp 33109 2016-01-23 16:25:42Z rouault $
+ * $Id$
  *
  * Project:  Interlis 2 Translator
  * Purpose:  Implements OGRILI2Layer class.
@@ -33,7 +33,7 @@
 #include "ogr_ili2.h"
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id: ogrili2driver.cpp 33109 2016-01-23 16:25:42Z rouault $");
+CPL_CVSID("$Id$");
 
 
 /************************************************************************/

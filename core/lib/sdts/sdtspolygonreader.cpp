@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: sdtspolygonreader.cpp 31333 2015-11-03 19:04:27Z goatbar $
+ * $Id$
  *
  * Project:  SDTS Translator
  * Purpose:  Implementation of SDTSPolygonReader and SDTSRawPolygon classes.
@@ -31,7 +31,7 @@
 
 #include <cmath>
 
-CPL_CVSID("$Id: sdtspolygonreader.cpp 31333 2015-11-03 19:04:27Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -580,7 +580,7 @@ SDTSRawPolygon * SDTSPolygonReader::GetNextPolygon()
  * lines for other layers.
  */
 
-void SDTSPolygonReader::AssembleRings( SDTSTransfer * poTransfer, 
+void SDTSPolygonReader::AssembleRings( SDTSTransfer * poTransfer,
                                        int iPolyLayer )
 
 {

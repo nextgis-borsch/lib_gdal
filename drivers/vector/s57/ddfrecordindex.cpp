@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ddfrecordindex.cpp 33271 2016-01-30 16:01:55Z goatbar $
+ * $Id$
  *
  * Project:  S-57 Translator
  * Purpose:  Implements DDFRecordIndex class.  This class is used to cache
@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "s57.h"
 
-CPL_CVSID("$Id: ddfrecordindex.cpp 33271 2016-01-30 16:01:55Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                           DDFRecordIndex()                           */

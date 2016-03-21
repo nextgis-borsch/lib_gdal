@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: vfkreader.h 32177 2015-12-14 07:25:30Z goatbar $
+ * $Id$
  *
  * Project:  VFK Reader
  * Purpose:  Public Declarations for OGR free VFK Reader code.

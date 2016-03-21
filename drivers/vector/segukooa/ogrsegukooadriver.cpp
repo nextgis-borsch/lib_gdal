@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrsegukooadriver.cpp 32110 2015-12-10 17:19:40Z goatbar $
+ * $Id$
  *
  * Project:  SEG-P1 / UKOOA P1-90 Translator
  * Purpose:  Implements OGRSEGUKOOADriver.
@@ -30,7 +30,7 @@
 #include "ogr_segukooa.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrsegukooadriver.cpp 32110 2015-12-10 17:19:40Z goatbar $");
+CPL_CVSID("$Id$");
 
 extern "C" void RegisterOGRSEGUKOOA();
 

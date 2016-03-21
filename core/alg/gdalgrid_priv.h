@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalgrid_priv.h 29541 2015-07-20 14:03:42Z rouault $
+ * $Id$
  *
  * Project:  GDAL Gridding API.
  * Purpose:  Prototypes, and definitions for of GDAL scattered data gridder.
@@ -87,7 +87,7 @@ CPLErr GDALGridInverseDistanceToAPower2NoSmoothingNoSearchAVX(
                                         double *pdfValue,
                                         void* hExtraParamsIn );
 #endif
-#if defined(__GNUC__) 
+#if defined(__GNUC__)
 #if defined(__x86_64)
 #define GCC_CPUID(level, a, b, c, d)            \
   __asm__ ("xchgq %%rbx, %q1\n"                 \

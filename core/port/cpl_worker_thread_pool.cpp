@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_worker_thread_pool.cpp 32171 2015-12-13 20:39:43Z goatbar $
+ * $Id$
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  CPL worker thread pool

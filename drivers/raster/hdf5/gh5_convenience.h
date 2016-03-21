@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gh5_convenience.h 31777 2015-11-26 14:14:41Z rouault $
+ * $Id$
  *
  * Project:  Hierarchical Data Format Release 5 (HDF5)
  * Purpose:  HDF5 convenience functions.
@@ -38,7 +38,7 @@
 #endif
 #include "hdf5.h"
 #ifdef _MSC_VER
-#pragma warning( pop ) 
+#pragma warning( pop )
 #endif
 
 #include "cpl_string.h"
@@ -53,7 +53,7 @@
 #  define H5OFFSET_TYPE  hsize_t
 #endif
 
-bool GH5_FetchAttribute( hid_t loc_id, const char *pszName, 
+bool GH5_FetchAttribute( hid_t loc_id, const char *pszName,
                          CPLString &osResult, bool bReportError = false );
 bool GH5_FetchAttribute( hid_t loc_id, const char *pszName,
                          double &dfResult, bool bReportError = false );

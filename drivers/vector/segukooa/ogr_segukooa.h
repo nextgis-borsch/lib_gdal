@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_segukooa.h 31777 2015-11-26 14:14:41Z rouault $
+ * $Id$
  *
  * Project:  SEG-P1 / UKOOA P1-90 Translator
  * Purpose:  Definition of classes for OGR SEG-P1 / UKOOA P1-90 driver.

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: sagadataset.cpp 33478 2016-02-16 13:50:33Z goatbar $
+ * $Id$
  * Project:  SAGA GIS Binary Driver
  * Purpose:  Implements the SAGA GIS Binary Grid Format.
  * Author:   Volker Wichmann, wichmann@laserdata.at
@@ -38,7 +38,7 @@
 #include "gdal_pam.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: sagadataset.cpp 33478 2016-02-16 13:50:33Z goatbar $");
+CPL_CVSID("$Id$");
 
 #ifndef INT_MAX
 # define INT_MAX 2147483647
@@ -503,14 +503,14 @@ GDALDataset *SAGADataset::Open( GDALOpenInfo * poOpenInfo )
 
     if( STARTS_WITH_CI(szTopToBottom, "TRUE") )
     {
-        CPLError( CE_Failure, CPLE_AppDefined, 
+        CPLError( CE_Failure, CPLE_AppDefined,
                   "Currently the SAGA Binary Grid driver does not support\n"
                   "SAGA grids written TOPTOBOTTOM.\n");
         return NULL;
     }
     if( dZFactor != 1.0)
     {
-        CPLError( CE_Warning, CPLE_AppDefined, 
+        CPLError( CE_Warning, CPLE_AppDefined,
                   "Currently the SAGA Binary Grid driver does not support\n"
                   "ZFACTORs other than 1.\n");
     }
@@ -529,8 +529,8 @@ GDALDataset *SAGADataset::Open( GDALOpenInfo * poOpenInfo )
     if( poDS->fp == NULL )
     {
         delete poDS;
-        CPLError( CE_Failure, CPLE_OpenFailed, 
-                  "VSIFOpenL(%s) failed unexpectedly.", 
+        CPLError( CE_Failure, CPLE_OpenFailed,
+                  "VSIFOpenL(%s) failed unexpectedly.",
                   poOpenInfo->pszFilename );
         return NULL;
     }
@@ -599,8 +599,8 @@ GDALDataset *SAGADataset::Open( GDALOpenInfo * poOpenInfo )
     }
     else
     {
-        CPLError( CE_Failure, CPLE_NotSupported, 
-                  "SAGA driver does not support the dataformat %s.", 
+        CPLError( CE_Failure, CPLE_NotSupported,
+                  "SAGA driver does not support the dataformat %s.",
                   szDataFormat );
         delete poBand;
         delete poDS;
@@ -765,8 +765,8 @@ CPLErr SAGADataset::WriteHeader( CPLString osHDRFilename, GDALDataType eType,
 
     if( fp == NULL )
     {
-        CPLError( CE_Failure, CPLE_OpenFailed, 
-                  "Failed to write .sgrd file %s.", 
+        CPLError( CE_Failure, CPLE_OpenFailed,
+                  "Failed to write .sgrd file %s.",
                   osHDRFilename.c_str() );
         return CE_Failure;
     }
@@ -983,7 +983,7 @@ GDALDataset *SAGADataset::CreateCopy( const char *pszFilename,
     int nBands = poSrcDS->GetRasterCount();
     if (nBands == 0)
     {
-        CPLError( CE_Failure, CPLE_NotSupported, 
+        CPLError( CE_Failure, CPLE_NotSupported,
                   "SAGA driver does not support source dataset with zero band.\n");
         return NULL;
     }

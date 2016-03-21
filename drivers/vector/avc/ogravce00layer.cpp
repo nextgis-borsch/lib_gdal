@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogravce00layer.cpp 32126 2015-12-11 18:41:32Z goatbar $
+ * $Id$
  *
  * Project:  OGR
  * Purpose:  Implements OGRAVCE00Layer class.
@@ -34,7 +34,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogravce00layer.cpp 32126 2015-12-11 18:41:32Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                           OGRAVCE00Layer()                           */
@@ -283,7 +283,7 @@ int OGRAVCE00Layer::TestCapability( const char * pszCap )
 /*      them into the appropriate OGR geometry on the target feature.   */
 /************************************************************************/
 
-int OGRAVCE00Layer::FormPolygonGeometry( OGRFeature *poFeature, 
+int OGRAVCE00Layer::FormPolygonGeometry( OGRFeature *poFeature,
                                          AVCPal *psPAL )
 {
 /* -------------------------------------------------------------------- */

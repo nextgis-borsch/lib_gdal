@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: s57classregistrar.cpp 33274 2016-01-30 16:59:10Z goatbar $
+ * $Id$
  *
  * Project:  S-57 Translator
  * Purpose:  Implements S57ClassRegistrar class for keeping track of
@@ -33,7 +33,7 @@
 #include "cpl_string.h"
 #include "s57.h"
 
-CPL_CVSID("$Id: s57classregistrar.cpp 33274 2016-01-30 16:59:10Z goatbar $");
+CPL_CVSID("$Id$");
 
 
 #ifdef S57_BUILTIN_CLASSES
@@ -98,8 +98,8 @@ S57ClassContentExplorer::~S57ClassContentExplorer()
 /*                              FindFile()                              */
 /************************************************************************/
 
-int S57ClassRegistrar::FindFile( const char *pszTarget, 
-                                 const char *pszDirectory, 
+int S57ClassRegistrar::FindFile( const char *pszTarget,
+                                 const char *pszDirectory,
                                  int bReportErr,
                                  VSILFILE **pfp )
 

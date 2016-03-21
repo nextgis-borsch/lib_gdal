@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_mdb.h 33102 2016-01-23 11:05:59Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions for MDB driver.
@@ -188,7 +188,7 @@ public:
 
 };
 
-typedef enum 
+typedef enum
 {
     MDB_Boolean = 0x01,
     MDB_Byte = 0x02,
@@ -314,7 +314,7 @@ class OGRMDBDataSource : public OGRDataSource
                         ~OGRMDBDataSource();
 
     int                 Open( const char * );
-    int                 OpenTable( const char *pszTableName, 
+    int                 OpenTable( const char *pszTableName,
                                    const char *pszGeomCol,
                                    int bUpdate );
 

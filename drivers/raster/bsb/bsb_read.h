@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: bsb_read.h 32179 2015-12-14 16:22:34Z goatbar $
+ * $Id$
  *
  * Project:  BSB Reader
  * Purpose:  non-GDAL BSB API Declarations
@@ -66,15 +66,15 @@ typedef struct {
 } BSBInfo;
 
 BSBInfo CPL_DLL *BSBOpen( const char *pszFilename );
-int CPL_DLL BSBReadScanline( BSBInfo *psInfo, int nScanline, 
+int CPL_DLL BSBReadScanline( BSBInfo *psInfo, int nScanline,
                              unsigned char *pabyScanlineBuf );
 void CPL_DLL BSBClose( BSBInfo *psInfo );
 
-BSBInfo CPL_DLL *BSBCreate( const char *pszFilename, int nCreationFlags, 
+BSBInfo CPL_DLL *BSBCreate( const char *pszFilename, int nCreationFlags,
                             int nVersion, int nXSize, int nYSize );
-int CPL_DLL BSBWritePCT( BSBInfo *psInfo, 
+int CPL_DLL BSBWritePCT( BSBInfo *psInfo,
                          int nPCTSize, unsigned char *pabyPCT );
-int CPL_DLL BSBWriteScanline( BSBInfo *psInfo, 
+int CPL_DLL BSBWriteScanline( BSBInfo *psInfo,
                               unsigned char *pabyScanlineBuf );
 
 CPL_C_END

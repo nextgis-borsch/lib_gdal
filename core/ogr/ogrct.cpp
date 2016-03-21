@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrct.cpp 33631 2016-03-04 06:28:09Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRSCoordinateTransformation class.
@@ -39,7 +39,7 @@
 #include "proj_api.h"
 #endif
 
-CPL_CVSID("$Id: ogrct.cpp 33631 2016-03-04 06:28:09Z goatbar $");
+CPL_CVSID("$Id$");
 
 /* ==================================================================== */
 /*      PROJ.4 interface stuff.                                         */

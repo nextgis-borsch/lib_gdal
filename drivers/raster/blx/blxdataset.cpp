@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: blxdataset.cpp 32205 2015-12-17 21:57:20Z goatbar $
+ * $Id$
  *
  * Project:  BLX Driver
  * Purpose:  GDAL BLX support.
@@ -38,7 +38,7 @@ CPL_C_START
 #include <blx.h>
 CPL_C_END
 
-CPL_CVSID("$Id: blxdataset.cpp 32205 2015-12-17 21:57:20Z goatbar $");
+CPL_CVSID("$Id$");
 
 class BLXDataset : public GDALPamDataset
 {
@@ -281,10 +281,10 @@ BLXCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 
     if( poSrcDS->GetRasterBand(1)->GetRasterDataType() != GDT_Int16 && bStrict )
     {
-        CPLError( CE_Failure, CPLE_NotSupported, 
+        CPLError( CE_Failure, CPLE_NotSupported,
                   "BLX driver doesn't support data type %s. "
-                  "Only 16 bit byte bands supported.\n", 
-                  GDALGetDataTypeName( 
+                  "Only 16 bit byte bands supported.\n",
+                  GDALGetDataTypeName(
                       poSrcDS->GetRasterBand(1)->GetRasterDataType()) );
 
         return NULL;
@@ -293,7 +293,7 @@ BLXCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     const int nXSize = poSrcDS->GetRasterXSize();
     const int nYSize = poSrcDS->GetRasterYSize();
     if( (nXSize % 128 != 0) || (nYSize % 128 != 0) ) {
-        CPLError( CE_Failure, CPLE_NotSupported, 
+        CPLError( CE_Failure, CPLE_NotSupported,
                   "BLX driver doesn't support dimensions that are not a multiple of 128.\n");
 
         return NULL;
@@ -350,8 +350,8 @@ BLXCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     ctx->endian = endian;
 
     if(blxopen(ctx, pszFilename, "wb")) {
-        CPLError( CE_Failure, CPLE_OpenFailed, 
-                  "Unable to create blx file %s.\n", 
+        CPLError( CE_Failure, CPLE_OpenFailed,
+                  "Unable to create blx file %s.\n",
                   pszFilename );
         blx_free_context(ctx);
         return NULL;
@@ -378,8 +378,8 @@ BLXCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 	for(int j=0; j < ctx->cell_cols; j++) {
 	    blxdata *celldata;
 	    GDALRasterBand * poBand = poSrcDS->GetRasterBand( 1 );
-	    eErr = poBand->RasterIO( GF_Read, j*ctx->cell_xsize, i*ctx->cell_ysize, 
-				     ctx->cell_xsize, ctx->cell_ysize, 
+	    eErr = poBand->RasterIO( GF_Read, j*ctx->cell_xsize, i*ctx->cell_ysize,
+				     ctx->cell_xsize, ctx->cell_ysize,
 				     pabyTile, ctx->cell_xsize, ctx->cell_ysize, GDT_Int16,
 				     0, 0, NULL );
 	    if(eErr >= CE_Failure)

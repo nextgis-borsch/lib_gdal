@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: minidriver_virtualearth.h 27044 2014-03-16 23:41:27Z rouault $
+ * $Id$
  *
  * Project:  WMS Client Driver
  * Purpose:  Implementation of Dataset and RasterBand classes for WMS

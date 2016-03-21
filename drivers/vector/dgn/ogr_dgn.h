@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_dgn.h 32366 2015-12-20 19:04:52Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  OGR Driver for DGN Reader.
@@ -109,7 +109,7 @@ class OGRDGNDataSource : public OGRDataSource
     int                 Open( const char *, int bTestOpen, int bUpdate );
     int                 PreCreate( const char *, char ** );
 
-    OGRLayer           *ICreateLayer( const char *, 
+    OGRLayer           *ICreateLayer( const char *,
                                      OGRSpatialReference * = NULL,
                                      OGRwkbGeometryType = wkbUnknown,
                                      char ** = NULL );

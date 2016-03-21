@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrili2datasource.cpp 32797 2016-01-07 19:49:33Z rouault $
+ * $Id$
  *
  * Project:  Interlis 2 Translator
  * Purpose:  Implements OGRILI2DataSource class.
@@ -38,7 +38,7 @@
 using namespace std;
 
 
-CPL_CVSID("$Id: ogrili2datasource.cpp 32797 2016-01-07 19:49:33Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                         OGRILI2DataSource()                         */

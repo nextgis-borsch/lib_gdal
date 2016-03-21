@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrsqlitevirtualogr.cpp 33554 2016-02-25 16:00:10Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  SQLite Virtual Table module using OGR layers

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_geomedia.h 32177 2015-12-14 07:25:30Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions for Geomedia MDB driver.
@@ -106,7 +106,7 @@ class OGRGeomediaTableLayer : public OGRGeomediaLayer
                         OGRGeomediaTableLayer( OGRGeomediaDataSource * );
                         ~OGRGeomediaTableLayer();
 
-    CPLErr              Initialize( const char *pszTableName, 
+    CPLErr              Initialize( const char *pszTableName,
                                     const char *pszGeomCol,
                                     OGRSpatialReference* poSRS );
 
@@ -171,7 +171,7 @@ class OGRGeomediaDataSource : public OGRDataSource
                         ~OGRGeomediaDataSource();
 
     int                 Open( const char *, int bUpdate, int bTestOpen );
-    int                 OpenTable( const char *pszTableName, 
+    int                 OpenTable( const char *pszTableName,
                                    const char *pszGeomCol,
                                    int bUpdate );
 

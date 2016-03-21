@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrcouchdbtablelayer.cpp 32983 2016-01-14 18:32:10Z goatbar $
+ * $Id$
  *
  * Project:  CouchDB Translator
  * Purpose:  Implements OGRCouchDBTableLayer class.
@@ -34,7 +34,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id: ogrcouchdbtablelayer.cpp 32983 2016-01-14 18:32:10Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                       OGRCouchDBTableLayer()                         */
@@ -1878,7 +1878,7 @@ void OGRCouchDBTableLayer::LoadMetadata()
         poFeatureDefn->Reference();
 
         poFeatureDefn->SetGeomType(eGeomType);
-        if( poFeatureDefn->GetGeomFieldCount() != 0 ) 
+        if( poFeatureDefn->GetGeomFieldCount() != 0 )
             poFeatureDefn->GetGeomFieldDefn(0)->SetSpatialRef(poSRS);
 
         OGRFieldDefn oFieldId("_id", OFTString);

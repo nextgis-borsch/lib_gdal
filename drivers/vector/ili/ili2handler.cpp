@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ili2handler.cpp 33109 2016-01-23 16:25:42Z rouault $
+ * $Id$
  *
  * Project:  Interlis 2 Reader
  * Purpose:  Implementation of ILI2Handler class.
@@ -36,7 +36,7 @@
 
 #include <xercesc/sax2/Attributes.hpp>
 
-CPL_CVSID("$Id: ili2handler.cpp 33109 2016-01-23 16:25:42Z rouault $");
+CPL_CVSID("$Id$");
 
 //
 // constants

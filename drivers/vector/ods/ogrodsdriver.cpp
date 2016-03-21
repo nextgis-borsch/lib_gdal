@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrodsdriver.cpp 32967 2016-01-13 14:40:01Z goatbar $
+ * $Id$
  *
  * Project:  ODS Translator
  * Purpose:  Implements OGRODSDriver.
@@ -31,7 +31,7 @@
 #include "ogr_ods.h"
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id: ogrodsdriver.cpp 32967 2016-01-13 14:40:01Z goatbar $");
+CPL_CVSID("$Id$");
 
 using namespace OGRODS;
 

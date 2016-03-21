@@ -1,6 +1,6 @@
 /*-*-C++-*-*/
 /******************************************************************************
- * $Id: ogr_tiger.h 31777 2015-11-26 14:14:41Z rouault $
+ * $Id$
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Main declarations for Tiger translator.

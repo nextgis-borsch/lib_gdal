@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrelasticdatasource.cpp 33328 2016-02-02 18:56:34Z rouault $
+ * $Id$
  *
  * Project:  ElasticSearch Translator
  * Purpose:
@@ -37,7 +37,7 @@
 #include "cpl_csv.h"
 #include "cpl_http.h"
 
-CPL_CVSID("$Id: ogrelasticdatasource.cpp 33328 2016-02-02 18:56:34Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                        OGRElasticDataSource()                        */
@@ -582,7 +582,7 @@ OGRLayer* OGRElasticDataSource::ExecuteSQL( const char *pszSQLCommand,
 
         for( int iLayer = 0; iLayer < m_nLayers; iLayer++ )
         {
-            if( EQUAL(m_papoLayers[iLayer]->GetName(), 
+            if( EQUAL(m_papoLayers[iLayer]->GetName(),
                       pszLayerName ))
             {
                 DeleteLayer( iLayer );

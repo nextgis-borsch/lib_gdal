@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ods_formula.cpp 32967 2016-01-13 14:40:01Z goatbar $
+ * $Id$
  *
  * Component: ODS formula Engine
  * Purpose:

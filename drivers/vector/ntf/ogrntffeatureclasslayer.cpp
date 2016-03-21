@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrntffeatureclasslayer.cpp 32177 2015-12-14 07:25:30Z goatbar $
+ * $Id$
  *
  * Project:  UK NTF Reader
  * Purpose:  Implements OGRNTFFeatureClassLayer class.
@@ -30,7 +30,7 @@
 #include "ntf.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrntffeatureclasslayer.cpp 32177 2015-12-14 07:25:30Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                      OGRNTFFeatureClassLayer()                       */
@@ -171,7 +171,7 @@ int OGRNTFFeatureClassLayer::TestCapability( const char * pszCap )
     if( EQUAL(pszCap,OLCRandomRead) )
         return TRUE;
 
-    else if( EQUAL(pszCap,OLCSequentialWrite) 
+    else if( EQUAL(pszCap,OLCSequentialWrite)
              || EQUAL(pszCap,OLCRandomWrite) )
         return FALSE;
 
@@ -181,6 +181,6 @@ int OGRNTFFeatureClassLayer::TestCapability( const char * pszCap )
     else if( EQUAL(pszCap,OLCFastSpatialFilter) )
         return TRUE;
 
-    else 
+    else
         return FALSE;
 }

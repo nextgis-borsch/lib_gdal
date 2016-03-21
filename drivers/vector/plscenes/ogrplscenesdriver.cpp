@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrplscenesdriver.cpp 33602 2016-02-29 20:20:12Z rouault $
+ * $Id$
  *
  * Project:  PlanetLabs scene driver
  * Purpose:  PlanetLabs scene driver

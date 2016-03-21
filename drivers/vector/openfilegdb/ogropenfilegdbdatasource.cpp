@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogropenfilegdbdatasource.cpp 33024 2016-01-17 16:10:22Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements Open FileGDB OGR driver.
@@ -109,7 +109,7 @@ int OGROpenFileGDBDataSource::Open( const char* pszFilename )
         STARTS_WITH(m_osDirName, "/vsitar/"))
     {
         /* Look for one subdirectory ending with .gdb extension */
-        char** papszDir = CPLReadDir(m_osDirName);
+        char** papszDir = VSIReadDir(m_osDirName);
         int iCandidate = -1;
         for( int i=0; papszDir && papszDir[i] != NULL; i++ )
         {

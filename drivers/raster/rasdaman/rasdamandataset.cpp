@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: rasdamandataset.cpp 33095 2016-01-22 17:55:56Z rouault $
+ * $Id$
  * Project:  rasdaman Driver
  * Purpose:  Implement Rasdaman GDAL driver
  * Author:   Constantin Jucovschi, jucovschi@yahoo.com
@@ -41,7 +41,7 @@
 
 void CPL_DLL CPL_STDCALL GDALRegister_RASDAMAN();
 
-CPL_CVSID("$Id: rasdamandataset.cpp 33095 2016-01-22 17:55:56Z rouault $");
+CPL_CVSID("$Id$");
 
 
 class Subset
@@ -179,7 +179,7 @@ RasdamanDataset::~RasdamanDataset()
 CPLErr RasdamanDataset::IRasterIO( GDALRWFlag eRWFlag,
                                int nXOff, int nYOff, int nXSize, int nYSize,
                                void * pData, int nBufXSize, int nBufYSize,
-                               GDALDataType eBufType, 
+                               GDALDataType eBufType,
                                int nBandCount, int *panBandMap,
                                GSpacing nPixelSpace, GSpacing nLineSpace,
                                GSpacing nBandSpace,
@@ -717,4 +717,3 @@ void GDALRegister_RASDAMAN()
 
   GetGDALDriverManager()->RegisterDriver( poDriver );
 }
-

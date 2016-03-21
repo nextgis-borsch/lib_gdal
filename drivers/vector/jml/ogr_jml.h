@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_jml.h 32783 2016-01-06 16:11:09Z goatbar $
+ * $Id$
  *
  * Project:  JML .jml Translator
  * Purpose:  Definition of classes for OGR JML driver.
@@ -200,7 +200,7 @@ class OGRJMLDataset : public GDALDataset
 
     static int          Identify( GDALOpenInfo* poOpenInfo );
     static GDALDataset* Open( GDALOpenInfo* poOpenInfo );
-    static GDALDataset* Create( const char *pszFilename, 
+    static GDALDataset* Create( const char *pszFilename,
                                  int nBands,
                                  int nXSize,
                                  int nYSize,
