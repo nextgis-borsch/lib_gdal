@@ -1,10 +1,10 @@
 ################################################################################
 # Project:  CMake4GDAL
 # Purpose:  CMake build scripts
-# Author:   Dmitry Baryshnikov, polimax@mail.ru
+# Author:   Mikhail Gusev, gusevmihs@gmail.com
 ################################################################################
 # Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
-# Copyright (C) 2012,2013,2014 Dmitry Baryshnikov
+# Copyright (C) 2016 Mikhail Gusev
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -25,13 +25,12 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-option(ENABLE_SAGA "Build SDAT -- SAGA GIS Binary Grid File Format" ON)
+option(ENABLE_VDV "Build VDV-451/VDV-452/IDF format" ON)
+if(ENABLE_VDV)
+    set(TARGET_NAME vec_vdv)
 
-if(ENABLE_SAGA)
-    set(TARGET_NAME ras_saga)
-
-    add_definitions(-DFRMT_saga)
-	set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DFRMT_saga" PARENT_SCOPE)
+    add_definitions(-DVDV_ENABLED)
+	set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DVDV_ENABLED" PARENT_SCOPE)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -39,14 +38,15 @@ if(ENABLE_SAGA)
     )
 
     set(LIB_HHEADERS_PRIV
+        ogr_vdv.h
     )
 
     set(LIB_CSOURCES
-        sagadataset.cpp
+        ogrvdvdatasource.cpp
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
 
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
-endif() 
+endif()

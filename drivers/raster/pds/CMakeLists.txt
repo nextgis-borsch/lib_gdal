@@ -25,7 +25,7 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-option(ENABLE_PDS_RASTER "Build NASA Planetary Data System / ISIS2 / ISIS3 format" ON)
+option(ENABLE_PDS_RASTER "Build NASA Planetary Data System & ISIS2 & ISIS3 & VICAR format" ON)
 if(ENABLE_PDS_RASTER)
     set(TARGET_NAME ras_pds)
 

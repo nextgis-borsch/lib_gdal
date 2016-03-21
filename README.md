@@ -37,16 +37,16 @@ Available raster drivers for now (by all driver dirs in sources):
 
 | Driver | Cmaked | External dependencies | Notes |
 |---|:-:|---|---|
-| aaigrid | no |  |  |
-| adrg | no |  |  |
-| aigrid | no |  |  |
-| airsar | no |  |  |
-| arg | no |  |  |
-| blx | no |  |  |
-| bmp | no |  |  |
+| **aaigrid** | **yes** | no | 2 drivers in one (AAIGrid, GRASSASCIIGrid) |
+| **adrg** | **yes** | no | 2 drivers in one (ADRG, SRP) |
+| **aigrid** | **yes** | no | Ready without additional targets |
+| **airsar** | **yes** | no | - |
+| **arg** | **yes** | no | - |
+| **blx** | **yes** | no | - |
+| **bmp** | **yes** | no | - |
 | bpg | no |  |  |
-| bsb | no |  |  |
-| cals | no |  |  |
+| **bsb** | **yes** | no | Ready without additional targets |
+| **cals** | **yes** | no | - |
 | ceos | no |  |  |
 | ceos2 | no |  |  |
 | coasp | no |  |  |
@@ -71,13 +71,13 @@ Available raster drivers for now (by all driver dirs in sources):
 | grib | no |  |  |
 | gsg | no |  |  |
 | gta | no |  |  |
-| gtiff | no |  |  |
+| **gtiff** | **yes** | no | Obligatory for building GDAL |
 | gxf | no |  |  |
 | hdf4 | no |  |  |
 | hdf5 | no |  |  |
 | hf2 | no |  |  |
-| hfa | no |  |  |
-| **idrisi** | **yes** | no | - |
+| **hfa** | **yes** | no | Obligatory for building GDAL |
+| **idrisi** | **yes** | no | Has the same dir name in /vector  |
 | ilwis | no |  |  |
 | ingr | no |  |  |
 | iris | no |  |  |
@@ -95,7 +95,7 @@ Available raster drivers for now (by all driver dirs in sources):
 | leveller | no |  |  |
 | map | no |  |  |
 | mbtiles | no |  |  |
-| mem | no | no |  |
+| **mem** | **yes** | no | Obligatory for building GDAL |
 | mrsid | no |  |  |
 | mrsid_lidar | no |  |  |
 | msg | no |  |  |
@@ -110,7 +110,7 @@ Available raster drivers for now (by all driver dirs in sources):
 | pcidsk | no |  |  |
 | pcraster | no |  |  |
 | pdf | no |  |  |
-| **pds** | **yes** | no | 3 drivers in one (PDS, ISIS2, ISIS3) |
+| **pds** | **yes** | no | 4 drivers in one (PDS, ISIS2, ISIS3, VICAR); Has the same dir name in /vector |
 | pgchip | no |  |  |
 | plmosaic | no |  |  |
 | png | no |  |  |
@@ -118,20 +118,20 @@ Available raster drivers for now (by all driver dirs in sources):
 | r | no |  |  |
 | rasdaman | no |  |  |
 | rasterlite | no |  |  |
-| **raw** | **yes** | no | ... |
+| **raw** | **yes** | no | Obligatory for building GDAL |
 | rik | no |  |  |
 | rmf | no |  |  |
 | rs2 | no |  |  |
-| saga | no |  |  |
+| **saga** | **yes** | no | ... |
 | sde | no |  |  |
-| **sdts** | **yes** | no | Required inner sdts lib |
+| **sdts** | **yes** | no | Required inner sdts lib; Has the same dir name in /vector |
 | sgi | no |  |  |
 | srtmhgt | no |  |  |
 | terragen | no |  |  |
 | til | no |  |  |
 | tsx | no |  |  |
 | usgsdem | no |  |  |
-| vrt | no |  |  |
+| **vrt** | **yes** | no | Obligatory for building GDAL |
 | wcs | no |  |  |
 | webp | no |  |  |
 | wms | no |  |  |
@@ -156,7 +156,7 @@ Available vector drivers for now (by all driver dirs in sources):
 | couchdb | no |  |  |
 | **csv** | **yes** | no | - |
 | csw | no |  |  |
-| **dgn** | **yes** | no | Built without "zip" target |
+| **dgn** | **yes** | no | Ready without additional targets |
 | dods | no |  |  |
 | dwg | no |  |  |
 | **dxf** | **yes** | no | - |
@@ -165,7 +165,7 @@ Available vector drivers for now (by all driver dirs in sources):
 | filegdb | no |  |  |
 | fme | no |  |  |
 | **geoconcept** | **yes** | no | - |
-| **geojson** | **yes** | no | Obligatory for GDAL |
+| **geojson** | **yes** | no | Obligatory for building GDAL |
 | geomedia | no |  |  |
 | georss | no |  |  |
 | gft | no |  |  |
@@ -179,20 +179,20 @@ Available vector drivers for now (by all driver dirs in sources):
 | **gtm** | **yes** | no | - |
 | **htf** | **yes** | no | - |
 | idb | no |  |  |
-| **idrisi** | **yes** | no | Required Idrisi raster driver |
+| **idrisi** | **yes** | no | Required built Idrisi raster driver; Has the same dir name in /raster |
 | ili | no |  |  |
 | ingres | no |  |  |
 | jml | no |  |  |
 | **kml** | **yes** | Expat library | ... |
 | libkml | no |  |  |
 | mdb | no |  |  |
-| **mem** | **yes** | no | Obligatory for GDAL |
-| **mitab** | **yes** | no | Obligatory for GDAL |
+| **mem** | **yes** | no | Obligatory for building GDAL |
+| **mitab** | **yes** | no | Obligatory for building GDAL |
 | mongodb | no |  |  |
 | mssqlspatial | no |  |  |
 | mysql | no |  |  |
 | nas | no |  |  |
-| **ntf** | **yes** | no | Built without "ntfdump" target |
+| **ntf** | **yes** | no | Ready without additional targets |
 | null | no |  |  |
 | oci | no |  |  |
 | odbc | no |  |  |
@@ -201,15 +201,15 @@ Available vector drivers for now (by all driver dirs in sources):
 | **openair** | **yes** | no | - |
 | **openfilegdb** | **yes** | no | - |
 | osm | no |  |  |
-| **pds** | **yes** | no | Required PDS raster driver |
+| **pds** | **yes** | no | Required built PDS raster driver; Has the same dir name in /raster |
 | pg | no |  |  |
 | **pgdump** | **yes** | no | - |
 | pgeo | no |  |  |
 | plscenes | no |  |  |
 | **rec** | **yes** | no | - |
-| **s57** | **yes** | no | Required inner iso8211 lib; Built without some targets |
+| **s57** | **yes** | no | Required inner iso8211 lib; Ready without additional targets |
 | sde | no |  |  |
-| **sdts** | **yes** | no | Required inner sdts and iso8211 libs; Built without some targets |
+| **sdts** | **yes** | no | Required inner sdts and iso8211 libs; Ready without additional targets; Has the same dir name in /raster |
 | **segukooa** | **yes** | no | - |
 | **segy** | **yes** | no | - |
 | **selafin** | **yes** | no | - |
@@ -219,13 +219,13 @@ Available vector drivers for now (by all driver dirs in sources):
 | **sua** | **yes** | no | - |
 | svg | no |  |  |
 | **sxf** | **yes** | no | ... |
-| **tiger** | **yes** | no | Built without "tigerinfo" target |
-| vdv | no |  |  |
+| **tiger** | **yes** | no | Ready without additional targets |
+| **vdv** | **yes** | no | - |
 | vfk | no |  |  |
-| **vrt** | **yes** | no | Obligatory for GDAL |
+| **vrt** | **yes** | no | Obligatory for building GDAL |
 | walk | no |  |  |
 | **wasp** | **yes** | no | - |
 | wfs | no |  |  |
 | xls | no |  |  |
 | xlsx | no |  |  |
-| **xplane** | **yes** | no | Obligatory for GDAL |
+| **xplane** | **yes** | no | Obligatory for building GDAL |

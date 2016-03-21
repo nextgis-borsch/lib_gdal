@@ -1,10 +1,10 @@
 ################################################################################
 # Project:  CMake4GDAL
 # Purpose:  CMake build scripts
-# Author:   Dmitry Baryshnikov, polimax@mail.ru
+# Author:   Mikhail Gusev, gusevmihs@gmail.com
 ################################################################################
 # Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
-# Copyright (C) 2012,2013,2014 Dmitry Baryshnikov
+# Copyright (C) 2016 Mikhail Gusev
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -25,28 +25,41 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-option(ENABLE_SAGA "Build SDAT -- SAGA GIS Binary Grid File Format" ON)
+option(ENABLE_AIG "Build Arc/Info Binary Grid (.adf) format" ON)
+if(ENABLE_AIG)
+    set(TARGET_NAME ras_aigrid)
 
-if(ENABLE_SAGA)
-    set(TARGET_NAME ras_saga)
-
-    add_definitions(-DFRMT_saga)
-	set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DFRMT_saga" PARENT_SCOPE)
+    add_definitions(-DFRMT_aigrid)
+    set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DFRMT_aigrid" PARENT_SCOPE)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+    include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/avc)
+    include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/shape)
 
     set(LIB_HHEADERS
     )
 
     set(LIB_HHEADERS_PRIV
+        aigrid.h
+    )
+    
+    set(LIB_AIGSOURCES
+        gridlib.c 
+        aigopen.c 
+        aigccitt.c	
     )
 
-    set(LIB_CSOURCES
-        sagadataset.cpp
+    set(LIB_SOURCES
+        aigdataset.cpp	
+        ${LIB_AIGSOURCES}
     )
+    
+    #TODO: implement aitest target if needed.
+    #TODO: implement aigrid2tif target if needed.
+    #TODO: implement aitest-dist if needed.
 
-    add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
+    add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_SOURCES})
 
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
-endif() 
+endif()
