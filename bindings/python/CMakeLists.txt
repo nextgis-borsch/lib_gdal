@@ -189,6 +189,8 @@ except ImportError:
     string( LENGTH "$ENV{DESTDIR}" DESTDIRLEN )
     if ( ${DESTDIRLEN} GREATER 0 )
         set(SETUP_OPTS "${SETUP_OPTS} --root=$ENV{DESTDIR}")
+    elseif(PYTHON_DESTDIR)    
+        set(SETUP_OPTS "${SETUP_OPTS} --root=${PYTHON_DESTDIR}
     endif()
 
     # check debian
