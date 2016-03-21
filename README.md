@@ -39,14 +39,14 @@ Available raster drivers for now (by all driver dirs in sources):
 |---|:-:|---|---|
 | **aaigrid** | **yes** | no | 2 drivers in one (AAIGrid, GRASSASCIIGrid) |
 | **adrg** | **yes** | no | 2 drivers in one (ADRG, SRP) |
-| **aigrid** | **yes** | no | Ready without additional targets |
+| **aigrid** | **yes** | no | No additional targets implemented |
 | **airsar** | **yes** | no | - |
 | **arg** | **yes** | no | - |
 | **blx** | **yes** | no | - |
 | **bmp** | **yes** | no | - |
 | bpg | no |  |  |
-| **bsb** | **yes** | no | Ready without additional targets |
-| **cals** | **yes** | no | - |
+| **bsb** | **yes** | no | No additional targets implemented |
+| **cals** | **yes** | no | Removed use of inner Tiff |
 | ceos | no |  |  |
 | ceos2 | no |  |  |
 | coasp | no |  |  |
@@ -77,7 +77,7 @@ Available raster drivers for now (by all driver dirs in sources):
 | hdf5 | no |  |  |
 | hf2 | no |  |  |
 | **hfa** | **yes** | no | Obligatory for building GDAL |
-| **idrisi** | **yes** | no | Has the same dir name in /vector  |
+| **idrisi** | **yes** | no | Has the same dir name in /vector |
 | ilwis | no |  |  |
 | ingr | no |  |  |
 | iris | no |  |  |
@@ -124,7 +124,7 @@ Available raster drivers for now (by all driver dirs in sources):
 | rs2 | no |  |  |
 | **saga** | **yes** | no | ... |
 | sde | no |  |  |
-| **sdts** | **yes** | no | Required inner sdts lib; Has the same dir name in /vector |
+| **sdts** | **yes** | no | Requires inner sdts lib; Has the same dir name in /vector |
 | sgi | no |  |  |
 | srtmhgt | no |  |  |
 | terragen | no |  |  |
@@ -156,7 +156,7 @@ Available vector drivers for now (by all driver dirs in sources):
 | couchdb | no |  |  |
 | **csv** | **yes** | no | - |
 | csw | no |  |  |
-| **dgn** | **yes** | no | Ready without additional targets |
+| **dgn** | **yes** | no | No additional targets implemented |
 | dods | no |  |  |
 | dwg | no |  |  |
 | **dxf** | **yes** | no | - |
@@ -179,7 +179,7 @@ Available vector drivers for now (by all driver dirs in sources):
 | **gtm** | **yes** | no | - |
 | **htf** | **yes** | no | - |
 | idb | no |  |  |
-| **idrisi** | **yes** | no | Required built Idrisi raster driver; Has the same dir name in /raster |
+| **idrisi** | **yes** | no | Requires built Idrisi raster driver; Has the same dir name in /raster |
 | ili | no |  |  |
 | ingres | no |  |  |
 | jml | no |  |  |
@@ -192,7 +192,7 @@ Available vector drivers for now (by all driver dirs in sources):
 | mssqlspatial | no |  |  |
 | mysql | no |  |  |
 | nas | no |  |  |
-| **ntf** | **yes** | no | Ready without additional targets |
+| **ntf** | **yes** | no | No additional targets implemented |
 | null | no |  |  |
 | oci | no |  |  |
 | odbc | no |  |  |
@@ -201,15 +201,15 @@ Available vector drivers for now (by all driver dirs in sources):
 | **openair** | **yes** | no | - |
 | **openfilegdb** | **yes** | no | - |
 | osm | no |  |  |
-| **pds** | **yes** | no | Required built PDS raster driver; Has the same dir name in /raster |
+| **pds** | **yes** | no | Requires built PDS raster driver; Has the same dir name in /raster |
 | pg | no |  |  |
 | **pgdump** | **yes** | no | - |
 | pgeo | no |  |  |
 | plscenes | no |  |  |
 | **rec** | **yes** | no | - |
-| **s57** | **yes** | no | Required inner iso8211 lib; Ready without additional targets |
+| **s57** | **yes** | no | Requires inner iso8211 lib; No additional targets implemented |
 | sde | no |  |  |
-| **sdts** | **yes** | no | Required inner sdts and iso8211 libs; Ready without additional targets; Has the same dir name in /raster |
+| **sdts** | **yes** | no | Requires inner sdts and iso8211 libs; No additional targets implemented; Has the same dir name in /raster |
 | **segukooa** | **yes** | no | - |
 | **segy** | **yes** | no | - |
 | **selafin** | **yes** | no | - |
@@ -219,7 +219,7 @@ Available vector drivers for now (by all driver dirs in sources):
 | **sua** | **yes** | no | - |
 | svg | no |  |  |
 | **sxf** | **yes** | no | ... |
-| **tiger** | **yes** | no | Ready without additional targets |
+| **tiger** | **yes** | no | No additional targets implemented |
 | **vdv** | **yes** | no | - |
 | vfk | no |  |  |
 | **vrt** | **yes** | no | Obligatory for building GDAL |

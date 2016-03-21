@@ -26,7 +26,7 @@
 ################################################################################
 
 CMAKE_DEPENDENT_OPTION(ENABLE_PDS_VECTOR "Build PDS vector format" ON
-                       "ENABLE_PDS_RASTER" OFF)
+                       "ENABLE_PDS_ISIS2_ISIS3_VICAR" OFF)
 if(ENABLE_PDS_VECTOR)
     set(TARGET_NAME vec_pds)
 
