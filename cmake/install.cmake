@@ -87,7 +87,8 @@ if (WIN32)
 #  set (CPACK_SET_DESTDIR FALSE)
 #  set (CPACK_PACKAGING_INSTALL_PREFIX "/opt")
   
-  set(scriptPath ${CMAKE_MODULE_PATH}/EnvVarUpdate.nsh)
+  set(scriptPath ${CMAKE_MODULE_PATH}/EnvVarUpdate.nsh) 
+  file(TO_NATIVE_PATH ${scriptPath} scriptPath )
   string(REPLACE "\\" "\\\\" scriptPath  ${scriptPath} ) 
   set (NSIS_ADDITIONAL_INCLUDES " \"!include \\\"${scriptPath}\\\" \\n  \" ")
 
