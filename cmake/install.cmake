@@ -86,8 +86,14 @@ set (CPACK_ARCHIVE_COMPONENT_INSTALL ON)
 if (WIN32)
 #  set (CPACK_SET_DESTDIR FALSE)
 #  set (CPACK_PACKAGING_INSTALL_PREFIX "/opt")
+  
+  set(scriptPath ${CMAKE_MODULE_PATH}/EnvVarUpdate.nsh)
+  string(REPLACE "\\" "\\\\" scriptPath  ${scriptPath} } 
+  set (NSIS_ADDITIONAL_INCLUDES " \"!include \\\"${scriptPath}\\\" \\n  \" ")
+
   set (CPACK_GENERATOR "NSIS;ZIP")
   set (CPACK_MONOLITHIC_INSTALL ON)
+  set (CPACK_NSIS_DISPLAY_NAME "${PACKAGE_NAME}")
   set (CPACK_NSIS_COMPONENT_INSTALL ON)
   set (CPACK_NSIS_CONTACT "${PACKAGE_BUGREPORT}")
   set (CPACK_NSIS_MODIFY_PATH OFF)
@@ -126,7 +132,7 @@ if (WIN32)
     Pop  '$0' ")    
         
     set (CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS ${CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS}     
-       "  Push 'GDAL_DATA'
+       "  Push 'PYTHONPATH'
     Push 'R'
     Push 'HKCU'
     Push '$INSTDIR\\\\${NSIS_INSTALL_LIB_DIR}\\\\Python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}\\\\site-packages'
