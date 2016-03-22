@@ -88,7 +88,7 @@ if (WIN32)
 #  set (CPACK_PACKAGING_INSTALL_PREFIX "/opt")
   
   set(scriptPath ${CMAKE_MODULE_PATH}/EnvVarUpdate.nsh)
-  string(REPLACE "\\" "\\\\" scriptPath  ${scriptPath} } 
+  string(REPLACE "\\" "\\\\" scriptPath  ${scriptPath} ) 
   set (NSIS_ADDITIONAL_INCLUDES " \"!include \\\"${scriptPath}\\\" \\n  \" ")
 
   set (CPACK_GENERATOR "NSIS;ZIP")
