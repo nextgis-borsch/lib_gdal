@@ -134,8 +134,10 @@ function(find_extproject name)
         list(APPEND find_extproject_CMAKE_ARGS -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS})
     endif()
     
-    # set some arguments          
-    list(APPEND find_extproject_CMAKE_ARGS -DCMAKE_GENERATOR=${CMAKE_GENERATOR})    
+    # set some arguments  
+    if(CMAKE_GENERATOR)        
+        list(APPEND find_extproject_CMAKE_ARGS -DCMAKE_GENERATOR=${CMAKE_GENERATOR})    
+    endif()
     if(CMAKE_BUILD_TYPE)
         list(APPEND find_extproject_CMAKE_ARGS -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE})
     endif()        
