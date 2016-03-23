@@ -25,48 +25,62 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-option(ENABLE_AVC "Build Arc/Info Binary Coverage & Arc/Info .E00 (ASCII) Coverage formats" ON)
-if(ENABLE_AVC)
-    set(TARGET_NAME vec_avc)
+CMAKE_DEPENDENT_OPTION(ENABLE_NITF_RPFTOC_ECRGTOC "Build NITF (.ntf, .nsf, ...) & GRaster Product Format/RPF (CADRG, CIB) & ECRG Table Of Contents (TOC.xml) formats" ON 
+    "ENABLE_JPEG" OFF)
+if(ENABLE_NITF_RPFTOC_ECRGTOC)
+    set(TARGET_NAME ras_nitf)
 
-    add_definitions(-DAVCBIN_ENABLED)
-	set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DAVCBIN_ENABLED" PARENT_SCOPE)
-
+    add_definitions(-DFRMT_nitf)
+    set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DFRMT_nitf" PARENT_SCOPE)
+    
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-    include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/shape)
+    include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/vrt)
+    include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/gtiff)
+    
+    # TODO: implement jpeg12 support when change according paths to headers in sources.
+    # If do this don't forget to add to the end of file: set(TARGET_LINK_LIB ...) and  
+    # set(DEPENDENCY_LIB ...), or move this find_anyproject() to the upper CMakeLists.txt
+    #find_anyproject(JPEG12)
+    #if(JPEG12_FOUND) 
+    #    add_definitions(-DJPEG_DUAL_MODE_8_12)
+    #endif()
+    
+    # NOTE: Use of internal libjpeg and libtiff (and that's why -DRENAME_INTERNAL_LIBTIFF_SYMBOLS) 
+    # had been removed.
 
     set(LIB_HHEADERS
     )
 
     set(LIB_HHEADERS_PRIV
-        ogr_avc.h
-        avc.h
+        ${CMAKE_SOURCE_DIR}/core/gcore/gdal_proxy.h 
+        ${CMAKE_SOURCE_DIR}/drivers/raster/vrt/vrtdataset.h 
+        nitflib.h
+        #nitfwritejpeg.cpp
     )
 
-    set(LIB_OGRSOURCES
-        ogravcbindriver.cpp 
-        ogravcbindatasource.cpp 
-        ogravcbinlayer.cpp
-		ogravclayer.cpp 
-        ogravcdatasource.cpp
-		ogravce00layer.cpp
-        ogravce00datasource.cpp 
-        ogravce00driver.cpp
+    set(LIB_GDALSOURCES
+        nitfdataset.cpp 
+        rpftocdataset.cpp 
+        nitfwritejpeg.cpp
+		nitfwritejpeg_12.cpp 
+        nitfrasterband.cpp 
+        ecrgtocdataset.cpp
     )
     
-    set(LIB_AVCSOURCES
-        avc_bin.c 
-        avc_binwr.c 
-        avc_e00gen.c 
-        avc_e00parse.c
-		avc_e00write.c 
-        avc_e00read.c 
-        avc_mbyte.c 
-        avc_misc.c
-		avc_rawbin.c 
+    set(LIB_NITFSOURCES
+        nitffile.c
+        nitfimage.c
+        mgrs.c
+        nitfaridpcm.cpp
+		nitfbilevel.cpp
+        rpftocfile.cpp
+        nitfdes.c
+        nitf_gcprpc.cpp
     )
 
-    add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_AVCSOURCES} ${LIB_OGRSOURCES})
+    add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_GDALSOURCES} ${LIB_NITFSOURCES})
+    
+    # TODO: implement nitfdump target if needed.
 
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)

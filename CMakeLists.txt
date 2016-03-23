@@ -111,7 +111,7 @@ endif()
 
 find_anyproject(PROJ4 DEFAULT ON)
 if(PROJ4_FOUND)
-    add_definitions(-DHAVE_PROJ) # todo: do we need it? -DPROJ_STATIC)
+    add_definitions(-DHAVE_PROJ) # TODO: do we need it? -DPROJ_STATIC)
 else()
     message(WARNING "No proj.4 support")
 endif()
@@ -135,6 +135,12 @@ find_anyproject(JSONC REQUIRED)
 find_anyproject(TIFF REQUIRED)
 find_anyproject(GeoTIFF REQUIRED)
 
+# TODO: move this to /drivers or /drivers/raster while it's not needed for the core GDAL 
+find_anyproject(JPEG ON) 
+if(JPEG_FOUND)
+    add_definitions(-DJPEG_SUPPORTED)
+endif()
+
 #TODO:
 #ifeq ($(HAVE_SQLITE),yes)
 #CXXFLAGS :=	$(CXXFLAGS) -DSQLITE_ENABLED
@@ -146,6 +152,8 @@ if(GDAL_USE_CPL)
 endif(GDAL_USE_CPL)
 
 include(configure)
+
+add_definitions(-DGDAL_COMPILATION)
 
 # setup paths
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})

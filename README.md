@@ -85,7 +85,7 @@ Available raster drivers for now (by all driver dirs in sources):
 | jaxapalsar | no |  |  |
 | jdem | no |  |  |
 | jp2kak | no |  |  |
-| jpeg | no |  |  | 
+| **jpeg** | **yes** | JPEG, JPEG12 | No jpeg12 support implemented; | 
 | jpeg2000 | no |  |  |
 | jpegls | no |  |  |
 | jpipkak | no |  |  |
@@ -102,7 +102,7 @@ Available raster drivers for now (by all driver dirs in sources):
 | msgn | no |  |  |
 | netcdf | no |  |  |
 | ngsgeoid | no |  |  |
-| nitf | no |  |  |
+| **nitf** | **yes** | Optionally: JPEG, JPEG12, TIFF? | 3 drivers in one (NITF, RPFTOC, ECRGTOC); Requires built jpeg driver; No jpeg12 support implemented; No additional build targets implemented;  |
 | northwood | no |  |  |
 | ogdi | no |  |  |
 | openjpeg | no |  |  |
@@ -183,7 +183,7 @@ Available vector drivers for now (by all driver dirs in sources):
 | ili | no |  |  |
 | ingres | no |  |  |
 | jml | no |  |  |
-| **kml** | **yes** | Expat library | ... |
+| **kml** | **yes** | ... | ... |
 | libkml | no |  |  |
 | mdb | no |  |  |
 | **mem** | **yes** | no | Obligatory for building GDAL |

@@ -25,48 +25,39 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-option(ENABLE_AVC "Build Arc/Info Binary Coverage & Arc/Info .E00 (ASCII) Coverage formats" ON)
-if(ENABLE_AVC)
-    set(TARGET_NAME vec_avc)
+CMAKE_DEPENDENT_OPTION(ENABLE_JPEG "Build JPEG JFIF (.jpg) format" ON
+                       "JPEG_FOUND" OFF)
+if(ENABLE_JPEG)
+    set(TARGET_NAME ras_jpeg)
 
-    add_definitions(-DAVCBIN_ENABLED)
-	set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DAVCBIN_ENABLED" PARENT_SCOPE)
+    add_definitions(-DFRMT_jpeg)
+    set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DFRMT_jpeg" PARENT_SCOPE)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-    include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/shape)
+    include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/mem)
+    
+    # NOTE: use of internal jpeg and jpeg12 libraries had been removed.
+    
+    # TODO: implement jpeg12 support when change according paths to headers in sources.
+    # ...
+    
+    # From GNUMakefile:
+    # # Enable this to compile with -Wextra -Werror and get around the jump complaint.
+    # CPPFLAGS += -Wno-clobbered
+    add_definitions(-DENABLE_LIBJPEG_NO_RETURN)
 
     set(LIB_HHEADERS
     )
 
     set(LIB_HHEADERS_PRIV
-        ogr_avc.h
-        avc.h
     )
 
-    set(LIB_OGRSOURCES
-        ogravcbindriver.cpp 
-        ogravcbindatasource.cpp 
-        ogravcbinlayer.cpp
-		ogravclayer.cpp 
-        ogravcdatasource.cpp
-		ogravce00layer.cpp
-        ogravce00datasource.cpp 
-        ogravce00driver.cpp
-    )
-    
-    set(LIB_AVCSOURCES
-        avc_bin.c 
-        avc_binwr.c 
-        avc_e00gen.c 
-        avc_e00parse.c
-		avc_e00write.c 
-        avc_e00read.c 
-        avc_mbyte.c 
-        avc_misc.c
-		avc_rawbin.c 
+    set(LIB_CSOURCES
+        jpgdataset.cpp 
+        vsidataio.cpp
     )
 
-    add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_AVCSOURCES} ${LIB_OGRSOURCES})
+    add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
 
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
