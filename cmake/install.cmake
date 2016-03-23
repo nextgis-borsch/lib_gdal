@@ -105,6 +105,7 @@ if (WIN32)
   
   string (REPLACE "/" "\\\\" NSIS_INSTALL_SHARE_DIR "${INSTALL_SHARE_DIR}")
   string (REPLACE "/" "\\\\" NSIS_INSTALL_LIB_DIR "${INSTALL_LIB_DIR}")
+  string (REPLACE "/" "\\\\" NSIS_INSTALL_BIN_DIR "${INSTALL_BIN_DIR}")
   
   
   set (CPACK_NSIS_EXTRA_INSTALL_COMMANDS
@@ -122,6 +123,24 @@ if (WIN32)
     Push '$INSTDIR\\\\${NSIS_INSTALL_SHARE_DIR}'
     Call un.EnvVarUpdate
     Pop  '$0' ")
+    
+    
+  set (CPACK_NSIS_EXTRA_INSTALL_COMMANDS
+       "  Push 'PATH'
+    Push 'A'
+    Push 'HKCU'
+    Push '$INSTDIR\\\\${NSIS_INSTALL_BIN_DIR}'
+    Call EnvVarUpdate
+    Pop  '$0' ")
+          
+  set (CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS
+       "  Push 'PATH'
+    Push 'R'
+    Push 'HKCU'
+    Push '$INSTDIR\\\\${NSIS_INSTALL_BIN_DIR}'
+    Call un.EnvVarUpdate
+    Pop  '$0' ")
+  
   
   # https://docs.python.org/3/install/      
   find_package(PythonInterp REQUIRED)
