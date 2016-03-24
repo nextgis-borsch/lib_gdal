@@ -81,18 +81,18 @@ Available raster drivers for now (by all driver dirs in sources):
 | **ilwis** | **yes** | no | - |
 | **ingr** | **yes** | TIFF? | - |
 | **iris** | **yes** | no | - |
-| jaxapalsar | no |  |  |
-| jdem | no |  |  |
+| **jaxapalsar** | **yes** | no | - |
+| **jdem** | **yes** | no | - |
 | jp2kak | no |  |  |
 | **jpeg** | **yes** | JPEG, JPEG12 | No jpeg12 support implemented; | 
 | jpeg2000 | no |  |  |
 | jpegls | no |  |  |
 | jpipkak | no |  |  |
 | kea | no |  |  |
-| kmlsuperoverlay | no |  |  |
-| l1b | no |  |  |
-| leveller | no |  |  |
-| map | no |  |  |
+| **kmlsuperoverlay** | **yes** | no | - |
+| **l1b** | **yes** | no | - |
+| **leveller** | **yes** | no | - |
+| **map** | **yes** | no | - |
 | mbtiles | no |  |  |
 | **mem** | **yes** | no | Obligatory for building GDAL |
 | mrsid | no |  |  |
