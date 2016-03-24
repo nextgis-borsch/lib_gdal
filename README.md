@@ -98,11 +98,11 @@ Available raster drivers for now (by all driver dirs in sources):
 | mrsid | no |  |  |
 | mrsid_lidar | no |  |  |
 | msg | no |  |  |
-| msgn | no |  |  |
+| **msgn** | **yes** | no | - |
 | netcdf | no |  |  |
-| ngsgeoid | no |  |  |
+| **ngsgeoid** | **yes** | no | - |
 | **nitf** | **yes** | Optionally: JPEG, JPEG12, TIFF? | 3 drivers in one (NITF, RPFTOC, ECRGTOC); Requires built jpeg driver; No JPEG12 support implemented; No additional build targets implemented;  |
-| northwood | no |  |  |
+| **northwood** | **yes** | no | 2 drivers in one (NWT_GRC, NWT_GRD) |
 | ogdi | no |  |  |
 | openjpeg | no |  |  |
 | ozi | no |  |  |
@@ -114,12 +114,12 @@ Available raster drivers for now (by all driver dirs in sources):
 | plmosaic | no |  |  |
 | png | no |  |  |
 | postgisraster | no |  |  |
-| r | no |  |  |
+| **r** | **yes** | no | - |
 | rasdaman | no |  |  |
 | rasterlite | no |  |  |
 | **raw** | **yes** | no | Obligatory for building GDAL |
-| rik | no |  |  |
-| rmf | no |  |  |
+| **rik** | **yes** | no | - |
+| **rmf** | **yes** | no | - |
 | rs2 | no |  |  |
 | **saga** | **yes** | no | ... |
 | sde | no |  |  |
