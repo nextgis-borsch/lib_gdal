@@ -58,17 +58,17 @@ Available raster drivers for now (by all driver dirs in sources):
 | **dted** | **yes** | no | No additional build targets implemented |
 | **e00grid** | **yes** | no | - |
 | ecw | no |  |  |
-| elas | no |  |  |
-| envisat | no |  |  |
+| **elas** | **yes** | no | - |
+| **envisat** | **yes** | no | No additional build targets implemented |
 | epsilon | no |  |  |
-| ers | no |  |  |
-| fit | no |  |  |
+| **ers** | **yes** | no | No additional build targets implemented |
+| **fit** | **yes** | no | - |
 | fits | no |  |  |
 | georaster | no |  |  |
-| gff | no |  |  |
+| **gff** | **yes** | no | - |
 | gif | no |  |  |
 | grass | no |  |  |
-| grib | no |  |  |
+| **grib** | **yes** | Optionally: JASPER | No JASPER support implemented; No additional build targets implemented |
 | gsg | no |  |  |
 | gta | no |  |  |
 | **gtiff** | **yes** | no | Obligatory for building GDAL |
@@ -102,7 +102,7 @@ Available raster drivers for now (by all driver dirs in sources):
 | msgn | no |  |  |
 | netcdf | no |  |  |
 | ngsgeoid | no |  |  |
-| **nitf** | **yes** | Optionally: JPEG, JPEG12, TIFF? | 3 drivers in one (NITF, RPFTOC, ECRGTOC); Requires built jpeg driver; No jpeg12 support implemented; No additional build targets implemented;  |
+| **nitf** | **yes** | Optionally: JPEG, JPEG12, TIFF? | 3 drivers in one (NITF, RPFTOC, ECRGTOC); Requires built jpeg driver; No JPEG12 support implemented; No additional build targets implemented;  |
 | northwood | no |  |  |
 | ogdi | no |  |  |
 | openjpeg | no |  |  |
