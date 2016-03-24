@@ -108,6 +108,7 @@ set(LIB_CSOURCES
     cpl_aws.cpp
     cpl_sha256.cpp
     cpl_vsil_crypt.cpp
+    cpl_vsi_error.cpp
 )
 
 if(WIN32)

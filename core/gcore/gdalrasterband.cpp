@@ -364,10 +364,10 @@ GDALRasterIOEx( GDALRasterBandH hBand, GDALRWFlag eRWFlag,
  * block oriented data without an extra copy into an application buffer.
  *
  * @param nXBlockOff the horizontal block offset, with zero indicating
- * the left most block, 1 the next block and so forth.
+ * the leftmost block, 1 the next block and so forth.
  *
  * @param nYBlockOff the vertical block offset, with zero indicating
- * the left most block, 1 the next block and so forth.
+ * the topmost block, 1 the next block and so forth.
  *
  * @param pImage the buffer into which the data will be read.  The buffer
  * must be large enough to hold GetBlockXSize()*GetBlockYSize() words
@@ -1461,7 +1461,7 @@ GDALGetRasterNoDataValue( GDALRasterBandH hBand, int *pbSuccess )
  *
  * Depending on drivers, changing the no data value may or may not have an
  * effect on the pixel values of a raster that has just been created. It is
- * thus advised to explictly called Fill() if the intent is to initialize
+ * thus advised to explicitly called Fill() if the intent is to initialize
  * the raster to the nodata value.
  * In ay case, changing an existing no data value, when one already exists and
  * the dataset exists or has been initialized, has no effect on the pixel whose
@@ -1497,7 +1497,7 @@ CPLErr GDALRasterBand::SetNoDataValue( CPL_UNUSED double dfNoData )
  *
  * Depending on drivers, changing the no data value may or may not have an
  * effect on the pixel values of a raster that has just been created. It is
- * thus advised to explictly called Fill() if the intent is to initialize
+ * thus advised to explicitly called Fill() if the intent is to initialize
  * the raster to the nodata value.
  * In ay case, changing an existing no data value, when one already exists and
  * the dataset exists or has been initialized, has no effect on the pixel whose
