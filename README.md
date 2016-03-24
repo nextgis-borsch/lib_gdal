@@ -69,19 +69,18 @@ Available raster drivers for now (by all driver dirs in sources):
 | gif | no |  |  |
 | grass | no |  |  |
 | **grib** | **yes** | Optionally: JASPER | No JASPER support implemented; No additional build targets implemented |
-| gsg | no |  |  |
+| **gsg** | **yes** | no | 3 drivers in one (GSAG, GSBG, GS7BG) |
 | gta | no |  |  |
 | **gtiff** | **yes** | no | Obligatory for building GDAL |
-| gxf | no |  |  |
+| **gxf** | **yes** | no | No additional build targets implemented |
 | hdf4 | no |  |  |
 | hdf5 | no |  |  |
-| hf2 | no |  |  |
+| **hf2** | **yes** | no | - |
 | **hfa** | **yes** | no | Obligatory for building GDAL |
 | **idrisi** | **yes** | no | Has the same dir name in /vector |
-| ilwis | no |  |  |
-| ingr | no |  |  |
-| iris | no |  |  |
-| iso8211 | no |  |  |
+| **ilwis** | **yes** | no | - |
+| **ingr** | **yes** | TIFF? | - |
+| **iris** | **yes** | no | - |
 | jaxapalsar | no |  |  |
 | jdem | no |  |  |
 | jp2kak | no |  |  |
