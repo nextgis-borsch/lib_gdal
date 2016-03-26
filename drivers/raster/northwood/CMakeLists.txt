@@ -35,12 +35,13 @@ if(ENABLE_NWT)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
     
     # TODO: need to change sources to reach vector/mitab/mitab.h header so not to use stub include dirs.
-    include_directories(${CMAKE_SOURCE_DIR}/core/frmts/mitab) # in order to reach ../../ogr/ogrsf_frmts/mitab/mitab.h
+    include_directories(${CMAKE_SOURCE_DIR}/core/ogr/ogrsf_frmts) # in order to reach ../../ogr/ogrsf_frmts/mitab/mitab.h
 
     set(LIB_HHEADERS
     )
 
     set(LIB_HHEADERS_PRIV
+        #${CMAKE_SOURCE_DIR}/core/ogr/ogrsf_frmts/mitab/mitab.h
     )
 
     set(LIB_CSOURCES
