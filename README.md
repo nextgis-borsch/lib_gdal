@@ -29,7 +29,7 @@ Go to script folder of this repo /etc/cmake-build-helpers and execute
 | OS | Status  |
 |---|:-:|
 | Windows | ![build status](http://176.9.38.120/buildbot/png?builder=makegdal_win) |
-| Ubuntu | ![build status](http://176.9.38.120/buildbot/png?builder=makegdal_deb) | 
+| Ubuntu (package) | ![build status](http://176.9.38.120/buildbot/png?builder=makegdal_deb) | 
 
 # Raster drivers
 
@@ -58,52 +58,51 @@ Available raster drivers for now (by all driver dirs in sources):
 | **dted** | **yes** | no | No additional build targets implemented |
 | **e00grid** | **yes** | no | - |
 | ecw | no |  |  |
-| elas | no |  |  |
-| envisat | no |  |  |
+| **elas** | **yes** | no | - |
+| **envisat** | **yes** | no | No additional build targets implemented |
 | epsilon | no |  |  |
-| ers | no |  |  |
-| fit | no |  |  |
+| **ers** | **yes** | no | No additional build targets implemented |
+| **fit** | **yes** | no | - |
 | fits | no |  |  |
 | georaster | no |  |  |
-| gff | no |  |  |
+| **gff** | **yes** | no | - |
 | gif | no |  |  |
 | grass | no |  |  |
-| grib | no |  |  |
-| gsg | no |  |  |
+| **grib** | **yes** | Optionally: JASPER | No JASPER support implemented; No additional build targets implemented |
+| **gsg** | **yes** | no | 3 drivers in one (GSAG, GSBG, GS7BG) |
 | gta | no |  |  |
 | **gtiff** | **yes** | no | Obligatory for building GDAL |
-| gxf | no |  |  |
+| **gxf** | **yes** | no | No additional build targets implemented |
 | hdf4 | no |  |  |
 | hdf5 | no |  |  |
-| hf2 | no |  |  |
+| **hf2** | **yes** | no | - |
 | **hfa** | **yes** | no | Obligatory for building GDAL |
 | **idrisi** | **yes** | no | Has the same dir name in /vector |
-| ilwis | no |  |  |
-| ingr | no |  |  |
-| iris | no |  |  |
-| iso8211 | no |  |  |
-| jaxapalsar | no |  |  |
-| jdem | no |  |  |
+| **ilwis** | **yes** | no | - |
+| **ingr** | **yes** | TIFF? | - |
+| **iris** | **yes** | no | - |
+| **jaxapalsar** | **yes** | no | - |
+| **jdem** | **yes** | no | - |
 | jp2kak | no |  |  |
-| jpeg | no |  |  | 
+| **jpeg** | **yes** | JPEG, JPEG12 | No jpeg12 support implemented; | 
 | jpeg2000 | no |  |  |
 | jpegls | no |  |  |
 | jpipkak | no |  |  |
 | kea | no |  |  |
-| kmlsuperoverlay | no |  |  |
-| l1b | no |  |  |
-| leveller | no |  |  |
-| map | no |  |  |
+| **kmlsuperoverlay** | **yes** | no | - |
+| **l1b** | **yes** | no | - |
+| **leveller** | **yes** | no | - |
+| **map** | **yes** | no | - |
 | mbtiles | no |  |  |
 | **mem** | **yes** | no | Obligatory for building GDAL |
 | mrsid | no |  |  |
 | mrsid_lidar | no |  |  |
 | msg | no |  |  |
-| msgn | no |  |  |
+| **msgn** | **yes** | no | - |
 | netcdf | no |  |  |
-| ngsgeoid | no |  |  |
-| nitf | no |  |  |
-| northwood | no |  |  |
+| **ngsgeoid** | **yes** | no | - |
+| **nitf** | **yes** | Optionally: JPEG, JPEG12, TIFF? | 3 drivers in one (NITF, RPFTOC, ECRGTOC); Requires built jpeg driver; No JPEG12 support implemented; No additional build targets implemented;  |
+| **northwood** | **yes** | no | 2 drivers in one (NWT_GRC, NWT_GRD) |
 | ogdi | no |  |  |
 | openjpeg | no |  |  |
 | ozi | no |  |  |
@@ -115,12 +114,12 @@ Available raster drivers for now (by all driver dirs in sources):
 | plmosaic | no |  |  |
 | png | no |  |  |
 | postgisraster | no |  |  |
-| r | no |  |  |
+| **r** | **yes** | no | - |
 | rasdaman | no |  |  |
 | rasterlite | no |  |  |
 | **raw** | **yes** | no | Obligatory for building GDAL |
-| rik | no |  |  |
-| rmf | no |  |  |
+| **rik** | **yes** | no | - |
+| **rmf** | **yes** | no | - |
 | rs2 | no |  |  |
 | **saga** | **yes** | no | ... |
 | sde | no |  |  |
@@ -183,7 +182,7 @@ Available vector drivers for now (by all driver dirs in sources):
 | ili | no |  |  |
 | ingres | no |  |  |
 | jml | no |  |  |
-| **kml** | **yes** | Expat library | ... |
+| **kml** | **yes** | ... | ... |
 | libkml | no |  |  |
 | mdb | no |  |  |
 | **mem** | **yes** | no | Obligatory for building GDAL |

@@ -30,8 +30,6 @@ if(GDAL_PAM_ENABLED)
     add_definitions(-DPAM_ENABLED)
 endif(GDAL_PAM_ENABLED)
 
-add_definitions(-DGDAL_COMPILATION)
-
 add_subdirectory(port)
 add_subdirectory(gcore)
 add_subdirectory(alg)
