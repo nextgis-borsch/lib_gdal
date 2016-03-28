@@ -129,15 +129,15 @@ Available raster drivers for now (by all driver dirs in sources):
 | **terragen** | **yes** | no | - |
 | **til** | **yes** | no | - |
 | **tsx** | **yes** | no | - |
-| usgsdem | **yes** |  |  |
+| **usgsdem** | **yes** | no | - |
 | **vrt** | **yes** | no | Obligatory for building GDAL |
 | wcs | no |  |  |
 | webp | no |  |  |
 | wms | no |  |  |
 | wmts | no |  |  |
-| xpm | no |  |  |
-| xyz | no |  |  |
-| zmap | no |  |  |
+| **xpm** | **yes** | no | - |
+| **xyz** | **yes** | no | - |
+| **zmap** | **yes** | no | - |
 
 # Vector drivers 
 
