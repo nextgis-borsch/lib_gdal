@@ -120,16 +120,16 @@ Available raster drivers for now (by all driver dirs in sources):
 | **raw** | **yes** | no | Obligatory for building GDAL |
 | **rik** | **yes** | no | - |
 | **rmf** | **yes** | no | - |
-| rs2 | no |  |  |
+| **rs2** | **yes** | no | - |
 | **saga** | **yes** | no | ... |
 | sde | no |  |  |
 | **sdts** | **yes** | no | Requires inner sdts lib; Has the same dir name in /vector |
-| sgi | no |  |  |
-| srtmhgt | no |  |  |
-| terragen | no |  |  |
-| til | no |  |  |
-| tsx | no |  |  |
-| usgsdem | no |  |  |
+| **sgi** | **yes** | no | - |
+| **srtmhgt** | **yes** | no | - |
+| **terragen** | **yes** | no | - |
+| **til** | **yes** | no | - |
+| **tsx** | **yes** | no | - |
+| usgsdem | **yes** |  |  |
 | **vrt** | **yes** | no | Obligatory for building GDAL |
 | wcs | no |  |  |
 | webp | no |  |  |
