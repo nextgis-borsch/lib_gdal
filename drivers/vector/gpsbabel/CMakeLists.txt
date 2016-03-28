@@ -5,7 +5,7 @@
 ################################################################################
 # Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
 # Copyright (C) 2016 Mikhail Gusev
-#
+# 
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
 # to deal in the Software without restriction, including without limitation
@@ -25,36 +25,26 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-CMAKE_DEPENDENT_OPTION(ENABLE_JPEG "Build JPEG JFIF (.jpg) format" ON
-                       "JPEG_FOUND" OFF)
-if(ENABLE_JPEG)
-    set(TARGET_NAME ras_jpeg)
+option(ENABLE_GPSBABEL "Build GPSBabel format" ON)
+if(ENABLE_GPSBABEL)
+    set(TARGET_NAME vec_gpsbabel)
 
-    add_definitions(-DFRMT_jpeg)
-    set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DFRMT_jpeg" PARENT_SCOPE)
+    add_definitions(-DGPSBABEL_ENABLED)
+	set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DGPSBABEL_ENABLED" PARENT_SCOPE)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-    include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/mem)
-    
-    # NOTE: use of internal jpeg and jpeg12 libraries had been removed. The external only libraries are used.
-    
-    # TODO: implement jpeg12 support when change according paths to headers in sources.
-    # ...
-    
-    # From GNUMakefile:
-    # # Enable this to compile with -Wextra -Werror and get around the jump complaint.
-    # CPPFLAGS += -Wno-clobbered
-    add_definitions(-DENABLE_LIBJPEG_NO_RETURN)
 
     set(LIB_HHEADERS
     )
 
     set(LIB_HHEADERS_PRIV
+        ogr_gpsbabel.h
     )
 
     set(LIB_CSOURCES
-        jpgdataset.cpp 
-        vsidataio.cpp
+        ogrgpsbabeldriver.cpp
+        ogrgpsbabeldatasource.cpp
+        ogrgpsbabelwritedatasource.cpp
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})

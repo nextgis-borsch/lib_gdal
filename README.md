@@ -46,7 +46,7 @@ Available raster drivers for now (by all driver dirs in sources):
 | **bmp** | **yes** | no | - |
 | bpg | no |  |  |
 | **bsb** | **yes** | no | No additional build targets implemented |
-| **cals** | **yes** | no | Removed use of inner Tiff |
+| **cals** | **yes** | no | - |
 | **ceos** | **yes** | no | No additional build targets implemented |
 | **ceos2** | **yes** | no | - |
 | **coasp** | **yes** | no | - |
@@ -105,7 +105,7 @@ Available raster drivers for now (by all driver dirs in sources):
 | **northwood** | **yes** | no | 2 drivers in one (NWT_GRC, NWT_GRD) |
 | ogdi | no |  |  |
 | openjpeg | no |  |  |
-| ozi | no |  |  |
+| **ozi** | **yes** | ZLIB? | - |
 | pcidsk | no |  |  |
 | pcraster | no |  |  |
 | pdf | no |  |  |
@@ -157,7 +157,7 @@ Available vector drivers for now (by all driver dirs in sources):
 | csw | no |  |  |
 | **dgn** | **yes** | no | No additional build targets implemented |
 | dods | no |  |  |
-| dwg | no |  |  |
+| dwg | no | ... | Currently unsupported |
 | **dxf** | **yes** | no | - |
 | **edigeo** | **yes** | no | - |
 | elastic | no |  |  |
@@ -172,7 +172,7 @@ Available vector drivers for now (by all driver dirs in sources):
 | gml | no |  |  |
 | **gmt** | **yes** | no | - |
 | gpkg | no |  |  |
-| gpsbabel | no |  |  |
+| **gpsbabel** | **yes** | ? | Built without GPX driver - do we need it? |
 | gpx | no |  |  |
 | grass | no |  |  |
 | **gtm** | **yes** | no | - |

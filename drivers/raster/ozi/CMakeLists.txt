@@ -5,7 +5,7 @@
 ################################################################################
 # Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
 # Copyright (C) 2016 Mikhail Gusev
-#
+# 
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
 # to deal in the Software without restriction, including without limitation
@@ -25,27 +25,21 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-CMAKE_DEPENDENT_OPTION(ENABLE_JPEG "Build JPEG JFIF (.jpg) format" ON
-                       "JPEG_FOUND" OFF)
-if(ENABLE_JPEG)
-    set(TARGET_NAME ras_jpeg)
+option(ENABLE_OZI "Build OZI OZF2/OZFX3 format" OFF)
+if(ENABLE_OZI)
+    set(TARGET_NAME ras_ozi)
 
-    add_definitions(-DFRMT_jpeg)
-    set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DFRMT_jpeg" PARENT_SCOPE)
+    add_definitions(-DFRMT_ozi)
+    set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DFRMT_ozi" PARENT_SCOPE)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-    include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/mem)
     
-    # NOTE: use of internal jpeg and jpeg12 libraries had been removed. The external only libraries are used.
-    
-    # TODO: implement jpeg12 support when change according paths to headers in sources.
-    # ...
-    
-    # From GNUMakefile:
-    # # Enable this to compile with -Wextra -Werror and get around the jump complaint.
-    # CPPFLAGS += -Wno-clobbered
-    add_definitions(-DENABLE_LIBJPEG_NO_RETURN)
+    # NOTE: use of internal zlib library had been removed. The external only library is used.
 
+    #if(ZLIB_FOUND)
+    #    include_directories(${ZLIB_INCLUDE_DIRS})
+    #endif()
+    
     set(LIB_HHEADERS
     )
 
@@ -53,8 +47,7 @@ if(ENABLE_JPEG)
     )
 
     set(LIB_CSOURCES
-        jpgdataset.cpp 
-        vsidataio.cpp
+        ozidataset.cpp	
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
