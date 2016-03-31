@@ -234,5 +234,5 @@ Available raster+vector drivers for now (by all driver dirs in sources):
 
 | Driver | Cmaked | External dependencies | Notes |
 |---|:-:|---|---|
-| **gpkg** | **yes** | SQLITE3; Optionally: SPATIALITE | Requires PNG, JPEG, WEBP drivers ??? No Spatialite support implemented; |
+| **gpkg** | **yes** | SQLITE3; Optionally: SPATIALITE | Requires PNG?, JPEG?, WEBP? drivers; No Spatialite support implemented; |
 
