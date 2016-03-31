@@ -219,9 +219,9 @@ add_subdirectory(docs)
 # install
 include(install)
 
+# uninstall
+add_custom_target(uninstall COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
+
 if(NOT SUPRESS_VERBOSE_OUTPUT)
     include(summary)
 endif()
-
-# uninstall
-add_custom_target(uninstall COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
