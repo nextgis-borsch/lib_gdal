@@ -116,8 +116,24 @@ set(SSE_TEST_CODE "
     some_error
     #endif
 ")
-
 check_cxx_source_compiles("${SSE_TEST_CODE}" HAVE_SSE_AT_COMPILE_TIME)
+
+if(SQLITE3_FOUND AND NOT WITH_SQLITE3_EXTERNAL)
+set(SQLITE_COL_TEST_CODE "#ifdef __cplusplus
+extern \"C\"
+#endif
+char sqlite3_column_table_name ();
+int
+main ()
+{
+return sqlite3_column_table_name ();
+  return 0;
+}
+")
+check_c_source_compiles("${SQLITE_COL_TEST_CODE}"  SQLITE_HAS_COLUMN_METADATA)
+else()
+    set(SQLITE_HAS_COLUMN_METADATA ON)
+endif()
 
 if(NOT HAVE_SSE_AT_COMPILE_TIME)   
     set(CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS} -msse)

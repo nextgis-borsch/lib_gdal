@@ -35,6 +35,9 @@ include_directories(${CMAKE_SOURCE_DIR}/core/frmts/vrt)
 include_directories(${CMAKE_SOURCE_DIR}/core/frmts/mem)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
+# TODO: remove this when change according include path in gdaldataset.cpp 
+include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/sqlite)
+
 set(LIB_HHEADERS
     gdalexif.h
     gdal.h

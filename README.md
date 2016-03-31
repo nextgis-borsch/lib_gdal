@@ -171,7 +171,6 @@ Available vector drivers for now (by all driver dirs in sources):
 | gme | no |  |  |
 | gml | no |  |  |
 | **gmt** | **yes** | no | - |
-| gpkg | no |  |  |
 | **gpsbabel** | **yes** | ? | Built without GPX driver - do we need it? |
 | gpx | no |  |  |
 | grass | no |  |  |
@@ -214,7 +213,7 @@ Available vector drivers for now (by all driver dirs in sources):
 | **selafin** | **yes** | no | - |
 | **shape** | **yes** | no | - |
 | sosi | no |  |  |
-| sqlite | no |  |  |
+| **sqlite** | **yes** | SQLITE3; Optionally: SPATIALITE, PCRE | No Spatialite and PCRE support implemented; No additional build targets implemented |
 | **sua** | **yes** | no | - |
 | svg | no |  |  |
 | **sxf** | **yes** | no | ... |
@@ -228,3 +227,12 @@ Available vector drivers for now (by all driver dirs in sources):
 | xls | no |  |  |
 | xlsx | no |  |  |
 | **xplane** | **yes** | no | Obligatory for building GDAL |
+
+# Common drivers 
+
+Available raster+vector drivers for now (by all driver dirs in sources):
+
+| Driver | Cmaked | External dependencies | Notes |
+|---|:-:|---|---|
+| **gpkg** | **yes** | SQLITE3; Optionally: SPATIALITE | Requires PNG, JPEG, WEBP drivers ??? No Spatialite support implemented; |
+

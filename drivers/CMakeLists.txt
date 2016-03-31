@@ -35,6 +35,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/vector/xplane)
 
 add_subdirectory(raster)
 add_subdirectory(vector)
+add_subdirectory(common)
 if(GDAL_ENABLE_GNM)
     add_subdirectory(network)
 endif()

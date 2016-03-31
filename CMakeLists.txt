@@ -136,15 +136,16 @@ find_anyproject(TIFF REQUIRED)
 find_anyproject(GeoTIFF REQUIRED)
 
 # TODO: move this to /drivers or /drivers/raster while it's not needed for the core GDAL 
-find_anyproject(JPEG ON) 
+find_anyproject(JPEG DEFAULT ON) 
 if(JPEG_FOUND)
     add_definitions(-DJPEG_SUPPORTED)
 endif()
 
-#TODO:
-#ifeq ($(HAVE_SQLITE),yes)
-#CXXFLAGS :=	$(CXXFLAGS) -DSQLITE_ENABLED
-#endif
+find_anyproject(SQLite3 CMAKE_ARGS
+      -DENABLE_COLUMN_METADATA=ON)
+if(SQLITE3_FOUND)
+    add_definitions(-DSQLITE_ENABLED) # will enable some drivers directly
+endif()
 
 option(GDAL_USE_CPL "Set ON to use cpl" ON)
 if(GDAL_USE_CPL)
