@@ -93,7 +93,7 @@ Available raster drivers for now (by all driver dirs in sources):
 | **l1b** | **yes** | no | - |
 | **leveller** | **yes** | no | - |
 | **map** | **yes** | no | - |
-| mbtiles | no |  |  |
+| **mbtiles** | **yes** | Optionally: ZLIB? | Requires built sqlite driver; Requires some other drivers? |
 | **mem** | **yes** | no | Obligatory for building GDAL |
 | mrsid | no |  |  |
 | mrsid_lidar | no |  |  |
@@ -116,7 +116,7 @@ Available raster drivers for now (by all driver dirs in sources):
 | postgisraster | no |  |  |
 | **r** | **yes** | no | - |
 | rasdaman | no |  |  |
-| rasterlite | no |  |  |
+| **rasterlite** | **yes** | Optionally: SPATIALITE? | Requires built sqlite driver |
 | **raw** | **yes** | no | Obligatory for building GDAL |
 | **rik** | **yes** | no | - |
 | **rmf** | **yes** | no | - |

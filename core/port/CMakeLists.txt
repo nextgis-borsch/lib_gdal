@@ -109,6 +109,8 @@ set(LIB_CSOURCES
     cpl_sha256.cpp
     cpl_vsil_crypt.cpp
     cpl_vsi_error.cpp
+    
+    cpl_vsil_curl.cpp
 )
 
 if(WIN32)
@@ -155,7 +157,7 @@ endif()
 if(CURL_FOUND)
   list(APPEND LIB_HHEADERS_PRIV cpl_vsil_curl_priv.h)
   list(APPEND LIB_CSOURCES
-      cpl_vsil_curl.cpp
+      #cpl_vsil_curl.cpp
       cpl_vsil_curl_streaming.cpp )
 endif()
 
