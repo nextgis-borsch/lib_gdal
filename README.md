@@ -166,10 +166,10 @@ Available vector drivers for now (by all driver dirs in sources):
 | **geoconcept** | **yes** | no | - |
 | **geojson** | **yes** | no | Obligatory for building GDAL |
 | geomedia | no |  |  |
-| georss | no |  |  |
+| **georss** | **yes** | Optionally: EXPAT | - |
 | gft | no |  |  |
 | gme | no |  |  |
-| gml | no |  |  |
+| **gml** | **yes** | Optionally: EXPAT, XERCES, SQLITE3 | No Xerces support implemented; No additional build targets implemented |
 | **gmt** | **yes** | no | - |
 | **gpsbabel** | **yes** | ? | Built without GPX driver - do we need it? |
 | gpx | no |  |  |
@@ -219,7 +219,7 @@ Available vector drivers for now (by all driver dirs in sources):
 | **sxf** | **yes** | no | ... |
 | **tiger** | **yes** | no | No additional build targets implemented |
 | **vdv** | **yes** | no | - |
-| vfk | no |  |  |
+| **vfk** | **yes** | SQLITE3 | - |
 | **vrt** | **yes** | no | Obligatory for building GDAL |
 | walk | no |  |  |
 | **wasp** | **yes** | no | - |
