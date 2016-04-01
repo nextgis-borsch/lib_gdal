@@ -172,7 +172,7 @@ Available vector drivers for now (by all driver dirs in sources):
 | **gml** | **yes** | Optionally: EXPAT, XERCES, SQLITE3 | No Xerces support implemented; No additional build targets implemented |
 | **gmt** | **yes** | no | - |
 | **gpsbabel** | **yes** | ? | Built without GPX driver - do we need it? |
-| gpx | no |  |  |
+| **gpx** | **yes** | Optionally: EXPAT | - |
 | grass | no |  |  |
 | **gtm** | **yes** | no | - |
 | **htf** | **yes** | no | - |
@@ -180,7 +180,7 @@ Available vector drivers for now (by all driver dirs in sources):
 | **idrisi** | **yes** | no | Requires built Idrisi raster driver; Has the same dir name in /raster |
 | ili | no |  |  |
 | ingres | no |  |  |
-| jml | no |  |  |
+| **jml** | **yes** | Optionally: EXPAT | - |
 | **kml** | **yes** | ... | ... |
 | libkml | no |  |  |
 | mdb | no |  |  |
@@ -194,7 +194,7 @@ Available vector drivers for now (by all driver dirs in sources):
 | null | no |  |  |
 | oci | no |  |  |
 | odbc | no |  |  |
-| ods | no |  |  |
+| **ods** | **yes** | Optionally: EXPAT | No additional build targets implemented - workarounding of gcc bug |
 | ogdi | no |  |  |
 | **openair** | **yes** | no | - |
 | **openfilegdb** | **yes** | no | - |
