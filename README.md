@@ -194,11 +194,11 @@ Available vector drivers for now (by all driver dirs in sources):
 | null | no |  |  |
 | oci | no |  |  |
 | odbc | no |  |  |
-| **ods** | **yes** | Optionally: EXPAT | No additional build targets implemented - workarounding of gcc bug |
+| **ods** | **yes** | EXPAT | No additional build targets implemented - workarounding of gcc bug |
 | ogdi | no |  |  |
 | **openair** | **yes** | no | - |
 | **openfilegdb** | **yes** | no | - |
-| osm | no |  |  |
+| **osm** | **yes** | SQLITE3; Optionally: EXPAT | No additional build targets implemented |
 | **pds** | **yes** | no | Requires built PDS raster driver; Has the same dir name in /raster |
 | pg | no |  |  |
 | **pgdump** | **yes** | no | - |
@@ -215,7 +215,7 @@ Available vector drivers for now (by all driver dirs in sources):
 | sosi | no |  |  |
 | **sqlite** | **yes** | SQLITE3; Optionally: SPATIALITE, PCRE | No Spatialite and PCRE support implemented; No additional build targets implemented |
 | **sua** | **yes** | no | - |
-| svg | no |  |  |
+| **svg** | **yes** | EXPAT | - |
 | **sxf** | **yes** | no | ... |
 | **tiger** | **yes** | no | No additional build targets implemented |
 | **vdv** | **yes** | no | - |
@@ -225,7 +225,7 @@ Available vector drivers for now (by all driver dirs in sources):
 | **wasp** | **yes** | no | - |
 | wfs | no |  |  |
 | xls | no |  |  |
-| xlsx | no |  |  |
+| **xlsx** | **yes** | EXPAT | - |
 | **xplane** | **yes** | no | Obligatory for building GDAL |
 
 # Common drivers 

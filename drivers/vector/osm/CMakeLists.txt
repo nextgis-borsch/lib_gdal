@@ -25,44 +25,40 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-CMAKE_DEPENDENT_OPTION(ENABLE_ODS "Build Open Document Spreadsheet format" ON
-                       "EXPAT_FOUND" OFF)
-if(ENABLE_ODS)
-    set(TARGET_NAME vec_ods)
+CMAKE_DEPENDENT_OPTION(ENABLE_OSM "Build OpenStreetMap XML and PBF format" ON
+                       "SQLITE3_FOUND" OFF)
+if(ENABLE_OSM)
+    set(TARGET_NAME vec_osm)
 
-    add_definitions(-DODS_ENABLED)
-	set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DODS_ENABLED" PARENT_SCOPE)
+    add_definitions(-DOSM_ENABLED)
+	set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DOSM_ENABLED" PARENT_SCOPE)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-    include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/mem)
-    include_directories(${EXPAT_INCLUDE_DIRS})
+    include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/sqlite)
+    include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/generic)
+    include_directories(${SQLITE3_INCLUDE_DIRS})
+    
+    if(EXPAT_FOUND)
+        include_directories(${EXPAT_INCLUDE_DIRS})
+    endif()
 
     set(LIB_HHEADERS
     )
 
     set(LIB_HHEADERS_PRIV
-        ogr_ods.h 
-        ods_formula.h 
-        ods_formula_parser.hpp 
-        ${CMAKE_SOURCE_DIR}/drivers/vector/mem/ogr_mem.h
+        ogr_osm.h 
+        gpb.h 
+        osm_parser.h
     )
 
     set(LIB_CSOURCES
-        ogrodsdriver.cpp 
-        ogrodsdatasource.cpp 
-        ods_formula.cpp 
-        ods_formula_node.cpp
+        ogrosmdriver.cpp 
+        ogrosmdatasource.cpp 
+        ogrosmlayer.cpp 
+        osm_parser.cpp	
     )
     
-    # Comment from ogrsf_frmts/ods/GNUMakefile:
-    # The sed substitution below workarounds a bug with gcc 4.1 -O2 (checked on 64bit platforms)
-    # that produces buggy compiled code.
-    # Seen on gcc 4.1.2-27ubuntu1 (Ubuntu 10.04) (not the default compiler) and gcc-4.1.2-48.el5 (CentOS 5.5)
-    # (default compiler...)
-    # The memset isn't necessary at all with a non-buggy compiler, but I've found
-    # that it helps gcc 4.1 generating correct code here...
-    # The sed with yyerrorlab shut up MSVC warnings about unreachable code
-    # TODO: implement here targets: parser, testparser if needed.
+    # TODO: implement osm2osm target if needed.
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
 
