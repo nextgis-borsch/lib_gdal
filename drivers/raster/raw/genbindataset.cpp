@@ -184,7 +184,7 @@ static const int anUsgsEsriZones[] =
 
 /************************************************************************/
 /* ==================================================================== */
-/*				GenBinDataset				*/
+/*                              GenBinDataset                           */
 /* ==================================================================== */
 /************************************************************************/
 
@@ -192,7 +192,7 @@ class GenBinDataset : public RawDataset
 {
     friend class GenBinBitRasterBand;
 
-    VSILFILE	*fpImage;	// image data file.
+    VSILFILE    *fpImage;  // image data file.
 
     int         bGotTransform;
     double      adfGeoTransform[6];
@@ -204,7 +204,7 @@ class GenBinDataset : public RawDataset
 
   public:
     GenBinDataset();
-    ~GenBinDataset();
+    virtual ~GenBinDataset();
 
     virtual CPLErr GetGeoTransform( double * padfTransform );
     virtual const char *GetProjectionRef(void);
@@ -226,6 +226,7 @@ class GenBinBitRasterBand : public GDALPamRasterBand
 
   public:
     GenBinBitRasterBand( GenBinDataset *poDS, int nBits );
+    virtual ~GenBinBitRasterBand() {}
 
     virtual CPLErr IReadBlock( int, int, void * );
 };
@@ -331,7 +332,7 @@ CPLErr GenBinBitRasterBand::IReadBlock( CPL_UNUSED int nBlockXOff,
 
 /************************************************************************/
 /* ==================================================================== */
-/*				GenBinDataset				*/
+/*                              GenBinDataset                           */
 /* ==================================================================== */
 /************************************************************************/
 
@@ -749,7 +750,7 @@ GDALDataset *GenBinDataset::Open( GDALOpenInfo * poOpenInfo )
     }
 
 /* -------------------------------------------------------------------- */
-/*	Work out interleaving info.					*/
+/*      Work out interleaving info.                                     */
 /* -------------------------------------------------------------------- */
     const int nItemSize = GDALGetDataTypeSize(eDataType)/8;
     const char *pszInterleaving = CSLFetchNameValue(papszHdr,"INTERLEAVING");

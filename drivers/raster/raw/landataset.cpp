@@ -116,7 +116,7 @@ class LAN4BitRasterBand : public GDALPamRasterBand
 
   public:
                    LAN4BitRasterBand( LANDataset *, int );
-                  ~LAN4BitRasterBand();
+    virtual ~LAN4BitRasterBand();
 
     virtual GDALColorTable *GetColorTable();
     virtual GDALColorInterp GetColorInterpretation();
@@ -128,16 +128,16 @@ class LAN4BitRasterBand : public GDALPamRasterBand
 
 /************************************************************************/
 /* ==================================================================== */
-/*				LANDataset				*/
+/*                              LANDataset                              */
 /* ==================================================================== */
 /************************************************************************/
 
 class LANDataset : public RawDataset
 {
   public:
-    VSILFILE	*fpImage;	// image data file.
+    VSILFILE    *fpImage;  // image data file.
 
-    char	pachHeader[ERD_HEADER_SIZE];
+    char        pachHeader[ERD_HEADER_SIZE];
 
     char        *pszProjection;
 
@@ -149,8 +149,8 @@ class LANDataset : public RawDataset
     virtual char **GetFileList();
 
   public:
-    		LANDataset();
-    	        ~LANDataset();
+                LANDataset();
+    virtual ~LANDataset();
 
     virtual CPLErr GetGeoTransform( double * padfTransform );
     virtual CPLErr SetGeoTransform( double * padfTransform );
@@ -302,7 +302,7 @@ GDALColorInterp LAN4BitRasterBand::GetColorInterpretation()
 
 /************************************************************************/
 /* ==================================================================== */
-/*				LANDataset				*/
+/*                              LANDataset                              */
 /* ==================================================================== */
 /************************************************************************/
 
