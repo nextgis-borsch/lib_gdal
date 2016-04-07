@@ -51,6 +51,7 @@ include(util)
 
 check_version(GDAL_MAJOR_VERSION GDAL_MINOR_VERSION GDAL_REV_VERSION)
 set(VERSION ${GDAL_MAJOR_VERSION}.${GDAL_MINOR_VERSION}.${GDAL_REV_VERSION})
+set(SOVERSION 1)
 
 report_version(${PROJECT_NAME} ${VERSION})  
 
@@ -195,7 +196,7 @@ if(BUILD_SHARED_LIBS)
       set (LIB_VERSION ${VERSION})
     endif()    
     set_target_properties (${LIB_NAME} PROPERTIES VERSION ${LIB_VERSION})
-    set_target_properties (${LIB_NAME} PROPERTIES SOVERSION ${GDAL_MAJOR_VERSION})
+    set_target_properties (${LIB_NAME} PROPERTIES SOVERSION ${SOVERSION})
 endif()
 
 
