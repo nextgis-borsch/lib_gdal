@@ -37,7 +37,7 @@
 #include "cpl_conv.h"
 #include "tifvsi.h"
 
-#include <errno.h>
+#include <cerrno>
 
 // We avoid including xtiffio.h since it drags in the libgeotiff version
 // of the VSI functions.
@@ -212,14 +212,14 @@ _tiffSizeProc(thandle_t th)
 static int
 _tiffMapProc(thandle_t th, tdata_t* pbase, toff_t* psize)
 {
-	(void) th; (void) pbase; (void) psize;
-	return (0);
+    (void) th; (void) pbase; (void) psize;
+    return (0);
 }
 
 static void
 _tiffUnmapProc(thandle_t th, tdata_t base, toff_t size)
 {
-	(void) th; (void) base; (void) size;
+    (void) th; (void) base; (void) size;
 }
 
 VSILFILE* VSI_TIFFGetVSILFile(thandle_t th)

@@ -59,8 +59,11 @@ OGRMSSQLSpatialDataSource::OGRMSSQLSpatialDataSource() :
         nBCPSize = atoi(nBCPSizeParam);
     else
         nBCPSize = 1000;
-
-    bUseCopy = CSLTestBoolean(CPLGetConfigOption("MSSQLSPATIAL_USE_BCP", "FALSE"));
+#ifdef MSSQL_BCP_SUPPORTED
+    bUseCopy = CSLTestBoolean(CPLGetConfigOption("MSSQLSPATIAL_USE_BCP", "TRUE"));
+#else
+    bUseCopy = FALSE;
+#endif
 }
 
 /************************************************************************/
@@ -430,7 +433,7 @@ OGRLayer * OGRMSSQLSpatialDataSource::ICreateLayer( const char * pszLayerName,
     if( !oStmt.ExecuteSQL() )
     {
         CPLError( CE_Failure, CPLE_AppDefined,
-                    "Error creating layer: %s", GetSession()->GetLastError() );
+                    "Error creating layer: %s When using the overwrite option and the layer doesn't contain geometry column, you might require to use the MSSQLSPATIAL_LIST_ALL_TABLES config option to get the previous layer deleted before creating the new one.", GetSession()->GetLastError() );
 
         if (!bInTransaction)
             oSession.RollbackTransaction();
@@ -737,6 +740,7 @@ int OGRMSSQLSpatialDataSource::Open( const char * pszNewName, int bUpdate,
 
     if ( pszDriver == NULL )
     {
+        char* pszConnectionName2 = pszConnectionName;
 #if SQLNCLI_VERSION == 11
         pszDriver = CPLStrdup("{SQL Server Native Client 11.0}");
 #elif SQLNCLI_VERSION == 10
@@ -744,7 +748,8 @@ int OGRMSSQLSpatialDataSource::Open( const char * pszNewName, int bUpdate,
 #else
         pszDriver = CPLStrdup("{SQL Server}");
 #endif
-        pszConnectionName = CPLStrdup(CPLSPrintf("DRIVER=%s;%s", pszDriver, pszConnectionName));
+        pszConnectionName = CPLStrdup(CPLSPrintf("DRIVER=%s;%s", pszDriver, pszConnectionName2));
+        CPLFree(pszConnectionName2);
     }
 
     CPLFree(pszDriver);

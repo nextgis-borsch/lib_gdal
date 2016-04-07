@@ -62,7 +62,7 @@ class BTDataset : public GDALPamDataset
   public:
 
                 BTDataset();
-                ~BTDataset();
+    virtual ~BTDataset();
 
     virtual const char *GetProjectionRef(void);
     virtual CPLErr SetProjection( const char * );
@@ -90,13 +90,14 @@ class BTRasterBand : public GDALPamRasterBand
   public:
                    BTRasterBand( GDALDataset * poDS, VSILFILE * fp,
                                  GDALDataType eType );
+    virtual ~BTRasterBand() {}
 
     virtual CPLErr IReadBlock( int, int, void * );
     virtual CPLErr IWriteBlock( int, int, void * );
 
     virtual const char* GetUnitType();
     virtual CPLErr SetUnitType(const char*);
-	virtual double GetNoDataValue( int* = NULL );
+    virtual double GetNoDataValue( int* = NULL );
     virtual CPLErr SetNoDataValue( double );
 };
 
@@ -247,10 +248,10 @@ CPLErr BTRasterBand::IWriteBlock( int nBlockXOff,
 
 double BTRasterBand::GetNoDataValue( int* pbSuccess /*= NULL */ )
 {
-	if(pbSuccess != NULL)
-		*pbSuccess = TRUE;
+    if(pbSuccess != NULL)
+        *pbSuccess = TRUE;
 
-	return -32768;
+    return -32768;
 }
 
 CPLErr BTRasterBand::SetNoDataValue( double )

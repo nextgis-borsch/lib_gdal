@@ -35,7 +35,6 @@
 #include "cpl_multiproc.h"
 #include "gdal.h"
 #include "gdal_csv.h"
-
 #include "geovalues.h"
 #include "gt_citation.h"
 #include "gt_wkt_srs.h"
@@ -153,8 +152,8 @@ static void GTIFToCPLRecycleString( char **ppszTarget )
 static void WKTMassageDatum( char ** ppszDatum )
 
 {
-    int		i, j;
-    char	*pszDatum;
+    int i, j;
+    char *pszDatum;
 
     pszDatum = *ppszDatum;
     if (pszDatum[0] == '\0')
@@ -322,7 +321,7 @@ int GDALGTIFKeyGetDOUBLE( GTIF *hGTIF, geokey_t key,
 char *GTIFGetOGISDefn( GTIF *hGTIF, GTIFDefn * psDefn )
 
 {
-    OGRSpatialReference	oSRS;
+    OGRSpatialReference oSRS;
 
 /* -------------------------------------------------------------------- */
 /*      Make sure we have hooked CSVFilename().                         */
@@ -345,7 +344,7 @@ char *GTIFGetOGISDefn( GTIF *hGTIF, GTIFDefn * psDefn )
         && psDefn->Model != ModelTypeGeographic
         && psDefn->Model != ModelTypeGeocentric )
     {
-        char	*pszWKT;
+        char *pszWKT;
         char    szPeStr[2400];
 
         /** check if there is a pe string citation key **/
@@ -369,7 +368,7 @@ char *GTIFGetOGISDefn( GTIF *hGTIF, GTIFDefn * psDefn )
         }
         else
         {
-            char	*pszUnitsName = NULL;
+            char *pszUnitsName = NULL;
             char    szPCSName[300];
             int     nKeyCount = 0;
             int     anVersion[3];
@@ -423,7 +422,7 @@ char *GTIFGetOGISDefn( GTIF *hGTIF, GTIFDefn * psDefn )
 
         oSRS.SetGeocCS( szName );
 
-        char	*pszUnitsName = NULL;
+        char *pszUnitsName = NULL;
 
         GTIFGetUOMLengthInfo( psDefn->UOMLength, &pszUnitsName, NULL );
 
@@ -563,7 +562,7 @@ char *GTIFGetOGISDefn( GTIF *hGTIF, GTIFDefn * psDefn )
         /* Handle ESRI/Erdas style state plane and UTM in citation key */
         if( CheckCitationKeyForStatePlaneUTM(hGTIF, psDefn, &oSRS, &linearUnitIsSet) )
         {
-            char	*pszWKT;
+            char *pszWKT;
             oSRS.morphFromESRI();
             oSRS.FixupOrdering();
             if( oSRS.exportToWkt( &pszWKT ) == OGRERR_NONE )
@@ -579,12 +578,12 @@ char *GTIFGetOGISDefn( GTIF *hGTIF, GTIFDefn * psDefn )
 /* ==================================================================== */
 /*      Setup the GeogCS                                                */
 /* ==================================================================== */
-    char	*pszGeogName = NULL;
-    char	*pszDatumName = NULL;
-    char	*pszPMName = NULL;
-    char	*pszSpheroidName = NULL;
-    char	*pszAngularUnits = NULL;
-    double	dfInvFlattening=0.0, dfSemiMajor=0.0;
+    char *pszGeogName = NULL;
+    char *pszDatumName = NULL;
+    char *pszPMName = NULL;
+    char *pszSpheroidName = NULL;
+    char *pszAngularUnits = NULL;
+    double dfInvFlattening=0.0, dfSemiMajor=0.0;
     char  szGCSName[512];
     OGRBoolean aUnitGot = FALSE;
 
@@ -791,8 +790,8 @@ char *GTIFGetOGISDefn( GTIF *hGTIF, GTIFDefn * psDefn )
 /*      angular units of the GEOGCS and the linear units of the         */
 /*      projection.                                                     */
 /* -------------------------------------------------------------------- */
-        double		adfParm[10];
-        int		i;
+        double adfParm[10];
+        int i;
 
         for( i = 0; i < MIN(10,psDefn->nParms); i++ )
             adfParm[i] = psDefn->ProjParm[i];
@@ -1232,7 +1231,7 @@ char *GTIFGetOGISDefn( GTIF *hGTIF, GTIFDefn * psDefn )
 /* ==================================================================== */
 /*      Return the WKT serialization of the object.                     */
 /* ==================================================================== */
-    char	*pszWKT;
+    char *pszWKT;
 
     oSRS.FixupOrdering();
 
@@ -1249,9 +1248,8 @@ char *GTIFGetOGISDefn( GTIF *hGTIF, GTIFDefn * psDefn )
 static int OGCDatumName2EPSGDatumCode( const char * pszOGCName )
 
 {
-    char	**papszTokens;
-    int		nReturn = KvUserDefined;
-
+    char **papszTokens;
+    int nReturn = KvUserDefined;
 
 /* -------------------------------------------------------------------- */
 /*      Do we know it as a built in?                                    */
@@ -1279,7 +1277,7 @@ static int OGCDatumName2EPSGDatumCode( const char * pszOGCName )
         return nReturn;
 
 /* -------------------------------------------------------------------- */
-/*	Discard the first line with field names.			*/
+/*      Discard the first line with field names.                        */
 /* -------------------------------------------------------------------- */
     CSLDestroy( CSVReadParseLineL( fp ) );
 
@@ -1320,7 +1318,7 @@ int GTIFSetFromOGISDefnEx( GTIF * psGTIF, const char *pszOGCWKT,
                            GTIFFKeysFlavorEnum eFlavor )
 {
     OGRSpatialReference *poSRS;
-    int		nPCS = KvUserDefined;
+    int nPCS = KvUserDefined;
     OGRErr      eErr;
     OGRBoolean peStrStored = FALSE;
 
@@ -1369,7 +1367,7 @@ int GTIFSetFromOGISDefnEx( GTIF * psGTIF, const char *pszOGCWKT,
 /* -------------------------------------------------------------------- */
 /*      Get the Datum so we can special case a few PCS codes.           */
 /* -------------------------------------------------------------------- */
-    int		nDatum = KvUserDefined;
+    int nDatum = KvUserDefined;
 
     if( poSRS->GetAuthorityName("PROJCS|GEOGCS|DATUM") != NULL
         && EQUAL(poSRS->GetAuthorityName("PROJCS|GEOGCS|DATUM"),"EPSG") )
@@ -1399,7 +1397,7 @@ int GTIFSetFromOGISDefnEx( GTIF * psGTIF, const char *pszOGCWKT,
 /*      Get the linear units.                                           */
 /* -------------------------------------------------------------------- */
     char        *pszLinearUOMName = NULL;
-    double	dfLinearUOM = poSRS->GetLinearUnits( &pszLinearUOMName );
+    double dfLinearUOM = poSRS->GetLinearUnits( &pszLinearUOMName );
     int         nUOMLengthCode = 9001; /* meters */
 
     if( poSRS->GetAuthorityName("PROJCS|UNIT") != NULL
@@ -1495,7 +1493,7 @@ int GTIFSetFromOGISDefnEx( GTIF * psGTIF, const char *pszOGCWKT,
 
     else if( poSRS->GetUTMZone() != 0 )
     {
-        int		bNorth, nZone, nProjection;
+        int bNorth, nZone, nProjection;
 
         GTIFKeySet(psGTIF, GTModelTypeGeoKey, TYPE_SHORT, 1,
                    ModelTypeProjected);
@@ -2549,7 +2547,7 @@ CPLErr GTIFWktFromMemBufEx( int nSize, unsigned char *pabyBuffer,
 /* -------------------------------------------------------------------- */
 /*      Get the projection definition.                                  */
 /* -------------------------------------------------------------------- */
-    GTIF 	*hGTIF;
+    GTIF *hGTIF;
     GTIFDefn    *psGTIFDefn;
 
     hGTIF = GTIFNew(hTIFF);
@@ -2592,8 +2590,8 @@ CPLErr GTIFWktFromMemBufEx( int nSize, unsigned char *pabyBuffer,
 /* -------------------------------------------------------------------- */
 /*      Get geotransform or tiepoints.                                  */
 /* -------------------------------------------------------------------- */
-    double	*padfTiePoints, *padfScale, *padfMatrix;
-    int16	nCount;
+    double *padfTiePoints, *padfScale, *padfMatrix;
+    int16 nCount;
 
     padfGeoTransform[0] = 0.0;
     padfGeoTransform[1] = 1.0;
@@ -2636,8 +2634,8 @@ CPLErr GTIFWktFromMemBufEx( int nSize, unsigned char *pabyBuffer,
 
         for( int iGCP = 0; iGCP < *pnGCPCount; iGCP++ )
         {
-            char	szID[32];
-            GDAL_GCP	*psGCP = *ppasGCPList + iGCP;
+            char szID[32];
+            GDAL_GCP *psGCP = *ppasGCPList + iGCP;
 
             snprintf( szID, sizeof(szID), "%d", iGCP+1 );
             psGCP->pszId = CPLStrdup( szID );
@@ -2703,7 +2701,7 @@ CPLErr GTIFMemBufFromWktEx( const char *pszWKT, const double *padfGeoTransform,
 
 {
     TIFF        *hTIFF;
-    GTIF 	*hGTIF;
+    GTIF *hGTIF;
     char        szFilename[100];
 
     snprintf( szFilename, sizeof(szFilename), "/vsimem/wkt_from_mem_buf_%ld.tif",
@@ -2782,7 +2780,7 @@ CPLErr GTIFMemBufFromWktEx( const char *pszWKT, const double *padfGeoTransform,
 
         if( padfGeoTransform[2] == 0.0 && padfGeoTransform[4] == 0.0 )
         {
-            double	adfPixelScale[3], adfTiePoints[6];
+            double adfPixelScale[3], adfTiePoints[6];
 
             adfPixelScale[0] = padfGeoTransform[1];
             adfPixelScale[1] = fabs(padfGeoTransform[5]);
@@ -2807,7 +2805,7 @@ CPLErr GTIFMemBufFromWktEx( const char *pszWKT, const double *padfGeoTransform,
         }
         else
         {
-            double	adfMatrix[16];
+            double adfMatrix[16];
 
             memset(adfMatrix,0,sizeof(double) * 16);
 
@@ -2834,7 +2832,7 @@ CPLErr GTIFMemBufFromWktEx( const char *pszWKT, const double *padfGeoTransform,
 /* -------------------------------------------------------------------- */
     else if( nGCPCount > 0 )
     {
-        double	*padfTiePoints;
+        double *padfTiePoints;
 
         padfTiePoints = (double *) CPLMalloc(6*sizeof(double)*nGCPCount);
 

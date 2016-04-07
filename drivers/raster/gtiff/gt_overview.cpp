@@ -30,12 +30,10 @@
  ****************************************************************************/
 
 #include "gdal_priv.h"
-#define CPL_SERV_H_INCLUDED
-
-#include "tifvsi.h"
-#include "xtiffio.h"
 #include "gt_overview.h"
 #include "gtiff.h"
+#include "tifvsi.h"
+#include "xtiffio.h"
 
 CPL_CVSID("$Id$");
 
@@ -63,8 +61,8 @@ toff_t GTIFFWriteDirectory(TIFF *hTIFF, int nSubfileType, int nXSize, int nYSize
                            const char *pszMetadata )
 
 {
-    toff_t	nBaseDirOffset;
-    toff_t	nOffset;
+    toff_t nBaseDirOffset;
+    toff_t nOffset;
 
     nBaseDirOffset = TIFFCurrentDirOffset( hTIFF );
 
@@ -114,7 +112,7 @@ toff_t GTIFFWriteDirectory(TIFF *hTIFF, int nSubfileType, int nXSize, int nYSize
         TIFFSetField( hTIFF, TIFFTAG_PREDICTOR, nPredictor );
 
 /* -------------------------------------------------------------------- */
-/*	Write color table if one is present.				*/
+/*      Write color table if one is present.                            */
 /* -------------------------------------------------------------------- */
     if( panRed != NULL )
     {

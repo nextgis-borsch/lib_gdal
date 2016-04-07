@@ -146,7 +146,7 @@ class HDF4ImageDataset : public HDF4Dataset
 
   public:
                 HDF4ImageDataset();
-                ~HDF4ImageDataset();
+    virtual ~HDF4ImageDataset();
 
     static GDALDataset  *Open( GDALOpenInfo * );
     static GDALDataset  *Create( const char * pszFilename,
@@ -185,6 +185,7 @@ class HDF4ImageRasterBand : public GDALPamRasterBand
   public:
 
                 HDF4ImageRasterBand( HDF4ImageDataset *, int, GDALDataType );
+    virtual ~HDF4ImageRasterBand() {}
 
     virtual CPLErr          IReadBlock( int, int, void * );
     virtual CPLErr          IWriteBlock( int, int, void * );
@@ -283,7 +284,7 @@ CPLErr HDF4ImageRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
     {
         memset( pImage, 0,
                 nBlockXSize * nBlockYSize
-                * GDALGetDataTypeSize(eDataType) / 8 );
+                * GDALGetDataTypeSizeBytes(eDataType) );
         return CE_None;
     }
 
@@ -385,7 +386,7 @@ CPLErr HDF4ImageRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
       case HDF4_GR:
       {
           const int nDataTypeSize =
-              GDALGetDataTypeSize(poGDS->GetDataType(poGDS->iNumType)) / 8;
+              GDALGetDataTypeSizeBytes(poGDS->GetDataType(poGDS->iNumType));
           GByte *pbBuffer = reinterpret_cast<GByte *>(
               CPLMalloc(nBlockXSize*nBlockYSize*poGDS->iRank*nBlockYSize) );
 

@@ -93,7 +93,7 @@ Available raster drivers for now (by all driver dirs in sources):
 | **l1b** | **yes** | no | - |
 | **leveller** | **yes** | no | - |
 | **map** | **yes** | no | - |
-| mbtiles | no |  |  |
+| **mbtiles** | **yes** | Optionally: ZLIB? | Requires built sqlite driver; Requires some other drivers? |
 | **mem** | **yes** | no | Obligatory for building GDAL |
 | mrsid | no |  |  |
 | mrsid_lidar | no |  |  |
@@ -116,7 +116,7 @@ Available raster drivers for now (by all driver dirs in sources):
 | postgisraster | no |  |  |
 | **r** | **yes** | no | - |
 | rasdaman | no |  |  |
-| rasterlite | no |  |  |
+| **rasterlite** | **yes** | Optionally: SPATIALITE? | Requires built sqlite driver |
 | **raw** | **yes** | no | Obligatory for building GDAL |
 | **rik** | **yes** | no | - |
 | **rmf** | **yes** | no | - |
@@ -166,13 +166,13 @@ Available vector drivers for now (by all driver dirs in sources):
 | **geoconcept** | **yes** | no | - |
 | **geojson** | **yes** | no | Obligatory for building GDAL |
 | geomedia | no |  |  |
-| georss | no |  |  |
+| **georss** | **yes** | Optionally: EXPAT | - |
 | gft | no |  |  |
 | gme | no |  |  |
-| gml | no |  |  |
+| **gml** | **yes** | Optionally: EXPAT, XERCES, SQLITE3 | No Xerces support implemented; No additional build targets implemented |
 | **gmt** | **yes** | no | - |
 | **gpsbabel** | **yes** | ? | Built without GPX driver - do we need it? |
-| gpx | no |  |  |
+| **gpx** | **yes** | Optionally: EXPAT | - |
 | grass | no |  |  |
 | **gtm** | **yes** | no | - |
 | **htf** | **yes** | no | - |
@@ -180,7 +180,7 @@ Available vector drivers for now (by all driver dirs in sources):
 | **idrisi** | **yes** | no | Requires built Idrisi raster driver; Has the same dir name in /raster |
 | ili | no |  |  |
 | ingres | no |  |  |
-| jml | no |  |  |
+| **jml** | **yes** | Optionally: EXPAT | - |
 | **kml** | **yes** | ... | ... |
 | libkml | no |  |  |
 | mdb | no |  |  |
@@ -194,11 +194,11 @@ Available vector drivers for now (by all driver dirs in sources):
 | null | no |  |  |
 | oci | no |  |  |
 | odbc | no |  |  |
-| ods | no |  |  |
+| **ods** | **yes** | EXPAT | No additional build targets implemented - workarounding of gcc bug |
 | ogdi | no |  |  |
 | **openair** | **yes** | no | - |
 | **openfilegdb** | **yes** | no | - |
-| osm | no |  |  |
+| **osm** | **yes** | SQLITE3; Optionally: EXPAT | No additional build targets implemented |
 | **pds** | **yes** | no | Requires built PDS raster driver; Has the same dir name in /raster |
 | pg | no |  |  |
 | **pgdump** | **yes** | no | - |
@@ -215,17 +215,17 @@ Available vector drivers for now (by all driver dirs in sources):
 | sosi | no |  |  |
 | **sqlite** | **yes** | SQLITE3; Optionally: SPATIALITE, PCRE | No Spatialite and PCRE support implemented; No additional build targets implemented |
 | **sua** | **yes** | no | - |
-| svg | no |  |  |
+| **svg** | **yes** | EXPAT | - |
 | **sxf** | **yes** | no | ... |
 | **tiger** | **yes** | no | No additional build targets implemented |
 | **vdv** | **yes** | no | - |
-| vfk | no |  |  |
+| **vfk** | **yes** | SQLITE3 | - |
 | **vrt** | **yes** | no | Obligatory for building GDAL |
 | walk | no |  |  |
 | **wasp** | **yes** | no | - |
 | wfs | no |  |  |
 | xls | no |  |  |
-| xlsx | no |  |  |
+| **xlsx** | **yes** | EXPAT | - |
 | **xplane** | **yes** | no | Obligatory for building GDAL |
 
 # Common drivers 
