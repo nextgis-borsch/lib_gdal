@@ -195,7 +195,7 @@ if(BUILD_SHARED_LIBS)
       set (LIB_VERSION ${VERSION})
     endif()    
     set_target_properties (${LIB_NAME} PROPERTIES VERSION ${LIB_VERSION})
-    set_target_properties (${LIB_NAME} PROPERTIES SOVERSION ${LIB_VERSION})
+    set_target_properties (${LIB_NAME} PROPERTIES SOVERSION ${GDAL_MAJOR_VERSION})
 endif()
 
 
