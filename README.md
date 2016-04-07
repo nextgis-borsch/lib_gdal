@@ -28,8 +28,8 @@ Go to script folder of this repo /etc/cmake-build-helpers and execute
 
 | OS | Status  |
 |---|:-:|
-| Windows | ![build status](http://176.9.38.120/buildbot/png?builder=makegdal_win) |
-| Ubuntu (packaging) | ![build status](http://176.9.38.120/buildbot/png?builder=makegdal_deb) | 
+| Windows | ![build status](http://176.9.38.120/buildbot/png?builder=gdal_win) |
+| Ubuntu (packaging) | ![build status](http://176.9.38.120/buildbot/png?builder=gdal_deb) | 
 
 # Test status
 
