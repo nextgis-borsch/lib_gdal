@@ -31,6 +31,10 @@ Go to script folder of this repo /etc/cmake-build-helpers and execute
 | Windows | ![build status](http://176.9.38.120/buildbot/png?builder=makegdal_win) |
 | Ubuntu (packaging) | ![build status](http://176.9.38.120/buildbot/png?builder=makegdal_deb) | 
 
+# Test status
+
+TODO:
+
 # Raster drivers
 
 Available raster drivers for now (by all driver dirs in sources):
