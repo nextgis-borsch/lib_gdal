@@ -25,12 +25,6 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-set_target_properties(${LIB_NAME}
-    PROPERTIES PROJECT_LABEL ${PROJECT_NAME}
-    VERSION ${VERSION}
-    SOVERSION 1
-)
-
 #install lib and bin
 
 if(NOT SKIP_INSTALL_LIBRARIES AND NOT SKIP_INSTALL_ALL )
