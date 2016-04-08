@@ -45,15 +45,16 @@ set(LIB_HHEADERS
     gdal_proxy.h
     gdal_rat.h
     gdal_version.h
+    gdal_frmts.h
+    gdal_priv.h
+    gdaljp2metadata.h
 )
 
 set(LIB_HHEADERS_PRIV
-# todo: more elegant format's register  gdal_frmts.h
+# TODO: more elegant format's register  gdal_frmts.h
     gdalgeorefpamdataset.h
     gdaljp2abstractdataset.h
     gdaljp2metadatagenerator.h
-    gdaljp2metadata.h
-    gdal_priv.h
     gdalsse_priv.h
 )
   
@@ -99,7 +100,7 @@ set(LIB_CSOURCES
 )
 
 if(GDAL_PAM_ENABLED)
-    set(LIB_HHEADERS_PRIV ${LIB_HHEADERS_PRIV}
+    set(LIB_HHEADERS ${LIB_HHEADERS}
         gdal_pam.h
     )
     set(LIB_CSOURCES ${LIB_CSOURCES}
