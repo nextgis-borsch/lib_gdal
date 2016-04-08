@@ -34,6 +34,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 set(TARGET_NAME cpl)
 
 set(LIB_HHEADERS
+    ${CMAKE_BINARY_DIR}/cpl_config.h
     cpl_atomic_ops.h
     cpl_conv.h
     cpl_csv.h
@@ -130,7 +131,7 @@ if(WITH_XMLREFORMAT)
 endif()
 
 if(WITH_ONLY_CRYPTODLL_ALG)
-    #todo: check cryptopp func
+    #TODO: check cryptopp func
     add_definitions(-DUSE_ONLY_CRYPTODLL_ALG)
 endif()
 
