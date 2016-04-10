@@ -151,10 +151,15 @@ if(SQLITE3_FOUND)
     add_definitions(-DSQLITE_ENABLED) # will enable some drivers directly
 endif()
 
+## Options goes to config.h and gdal-config ####################################
 option(GDAL_USE_CPL "Set ON to use cpl" ON)
 if(GDAL_USE_CPL)
     add_definitions(-DUSE_CPL)
 endif(GDAL_USE_CPL)
+
+set(GDAL_ENABLE_OGR ON) # Always on
+option(GDAL_ENABLE_GNM "Build GNM module" OFF)
+################################################################################
 
 include(configure)
 

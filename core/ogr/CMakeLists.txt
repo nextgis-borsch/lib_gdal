@@ -26,9 +26,9 @@
 ################################################################################
 
 #option(GDAL_ENABLE_OGR "Build OGR module" ON)
-#if(GDAL_ENABLE_OGR)
+if(GDAL_ENABLE_OGR)
     add_definitions(-DOGR_ENABLED)
-#endif()
+endif()
 add_definitions(-DHAVE_MITAB)
 
 set(TARGET_NAME ogr)

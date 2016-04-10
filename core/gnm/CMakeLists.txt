@@ -25,7 +25,6 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-option(GDAL_ENABLE_GNM "Build GNM module" OFF)
 if(GDAL_ENABLE_GNM)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})

@@ -393,7 +393,8 @@ else()
     #TODO: Add formats from drivers definitions
     set(GDAL_FORMATS "gtiff hfa iso8211 raw mem vrt jpeg png")
     
-    #TODO: set(LIBS "")
+    #TODO: Add dependency libs -lxxx
+    set(LIBS "-L${CMAKE_INSTALL_PREFIX}/${INSTALL_LIB_DIR}")
         
     configure_file(${CMAKE_MODULE_PATH}/gdal-config.cmake.in ${CMAKE_BINARY_DIR}/tmp/gdal-config IMMEDIATE @ONLY)
     file(COPY ${CMAKE_BINARY_DIR}/tmp/gdal-config
