@@ -62,6 +62,7 @@ if(UNIX)
     endif()
 endif()
 
+add_definitions(-DINST_DATA="${INSTALL_SHARE_DIR}")
 
 set(TARGET_OBJECTS)
 

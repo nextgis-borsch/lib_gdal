@@ -374,6 +374,27 @@ else()
     configure_file(${CMAKE_MODULE_PATH}/gdal.pc.cmakein  ${CMAKE_BINARY_DIR}/gdal.pc IMMEDIATE @ONLY)
 
     set(APPS_DIR ${CMAKE_BINARY_DIR}/apps)
+    
+    if(GDAL_ENABLE_OGR)
+        set(GDAL_ENABLE_OGR_YESNO "yes")
+    else()    
+        set(GDAL_ENABLE_OGR_YESNO "no")
+    endif()
+
+    if(GDAL_ENABLE_GNM)
+        set(GDAL_ENABLE_GNM_YESNO "yes")
+    else()   
+        set(GDAL_ENABLE_GNM_YESNO "no")
+    endif()
+    
+    set(CONFIG_LIBS "-lgdal")
+    set(CONFIG_LIBS_INS "-L${CMAKE_INSTALL_PREFIX}/${INSTALL_LIB_DIR} -lgdal")
+    
+    #TODO: Add formats from drivers definitions
+    set(GDAL_FORMATS "gtiff hfa iso8211 raw mem vrt jpeg png")
+    
+    #TODO: set(LIBS "")
+        
     configure_file(${CMAKE_MODULE_PATH}/gdal-config.cmake.in ${CMAKE_BINARY_DIR}/tmp/gdal-config IMMEDIATE @ONLY)
     file(COPY ${CMAKE_BINARY_DIR}/tmp/gdal-config
          DESTINATION ${APPS_DIR}/
