@@ -28,6 +28,7 @@
 set(TARGET_NAME ras_raw)
 
 add_definitions(-DFRMT_raw)
+set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DFRMT_raw" PARENT_SCOPE)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
