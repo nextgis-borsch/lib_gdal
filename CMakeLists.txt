@@ -195,6 +195,15 @@ add_subdirectory(apps)
 
 add_library(${LIB_NAME} ${LIB_TYPE} ${TARGET_OBJECTS})
 
+if (CMAKE_CXX_COMPILER_ID STREQUAL GNU)
+	# Create a version script for the GNU ld.
+	set(_symbols "GDAL_1.8 { global: *; };")
+	set(_version_script "${CMAKE_CURRENT_BINARY_DIR}/version.script")
+	file(WRITE ${_version_script} "${_symbols}\n")
+
+	set(LINK_FLAGS "${LINK_FLAGS} -Wl,--version-script,\"${_version_script}\"")
+endif ()
+
 if(BUILD_SHARED_LIBS)
     if(WIN32)
         set (LIB_VERSION ${GDAL_MAJOR_VERSION})
@@ -210,7 +219,9 @@ endif()
 
 
 if(UNIX)
-    set_target_properties(${LIB_NAME} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
+    set_target_properties(${LIB_NAME} PROPERTIES 
+        LINK_FLAGS "${LINK_FLAGS}"
+        OUTPUT_NAME ${PROJECT_NAME})
 # TODO: Add Apple staff
 #    if(NOT APPLE AND BUILD_SHARED_LIBS)
 #        set_target_properties(${LIB_NAME} PROPERTIES LINK_FLAGS "-Wl,--version-script,\"${CMAKE_CURRENT_SOURCE_DIR}/gdal.map\"")
