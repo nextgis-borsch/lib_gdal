@@ -116,7 +116,7 @@ Available raster drivers for now (by all driver dirs in sources):
 | **pds** | **yes** | no | 4 drivers in one (PDS, ISIS2, ISIS3, VICAR); Has the same dir name in /vector |
 | pgchip | no |  |  |
 | plmosaic | no |  |  |
-| png | no |  |  |
+| **png** | **yes** | PNG |  |
 | postgisraster | no |  |  |
 | **r** | **yes** | no | - |
 | rasdaman | no |  |  |

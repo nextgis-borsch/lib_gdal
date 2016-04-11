@@ -133,17 +133,18 @@ if(EXPAT_FOUND)
     endif()
 endif()
 
-
 find_anyproject(JSONC REQUIRED)
-
-find_anyproject(TIFF REQUIRED)
-find_anyproject(GeoTIFF REQUIRED)
 
 # TODO: move this to /drivers or /drivers/raster while it's not needed for the core GDAL 
 find_anyproject(JPEG DEFAULT ON) 
 if(JPEG_FOUND)
     add_definitions(-DJPEG_SUPPORTED)
 endif()
+
+find_anyproject(JPEG12)
+
+find_anyproject(TIFF REQUIRED)
+find_anyproject(GeoTIFF REQUIRED)
 
 find_anyproject(SQLite3 CMAKE_ARGS
       -DENABLE_COLUMN_METADATA=ON)
