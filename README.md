@@ -137,7 +137,7 @@ Available raster drivers for now (by all driver dirs in sources):
 | **vrt** | **yes** | no | Obligatory for building GDAL |
 | wcs | no |  |  |
 | webp | no |  |  |
-| wms | no |  |  |
+| **wms** | **yes** | CURL | - |
 | wmts | no |  |  |
 | **xpm** | **yes** | no | - |
 | **xyz** | **yes** | no | - |
@@ -189,7 +189,7 @@ Available vector drivers for now (by all driver dirs in sources):
 | libkml | no |  |  |
 | mdb | no |  |  |
 | **mem** | **yes** | no | Obligatory for building GDAL |
-| **mitab** | **yes** | no | Obligatory for building GDAL |
+| **mitab** | **yes** | no | Obligatory for building GDAL; Depends on temporary /core/ogr directory |
 | mongodb | no |  |  |
 | mssqlspatial | no |  |  |
 | mysql | no |  |  |
@@ -227,7 +227,7 @@ Available vector drivers for now (by all driver dirs in sources):
 | **vrt** | **yes** | no | Obligatory for building GDAL |
 | walk | no |  |  |
 | **wasp** | **yes** | no | - |
-| wfs | no |  |  |
+| **wfs** | **yes** | CURL | Depends on temporary /core/frmts directory; Requires built wms driver |
 | xls | no |  |  |
 | **xlsx** | **yes** | EXPAT | - |
 | **xplane** | **yes** | no | Obligatory for building GDAL |

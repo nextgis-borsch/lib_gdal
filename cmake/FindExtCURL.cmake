@@ -23,9 +23,9 @@
 set(repo_name lib_curl)
 
 if(BUILD_SHARED_LIBS)    
-    set(repo_project libcurl)
+    set(repo_project curl)
 else()
-    set(repo_project libcurlstatic)
+    set(repo_project curlstatic)
 endif()
 
 set(repo_include "")
