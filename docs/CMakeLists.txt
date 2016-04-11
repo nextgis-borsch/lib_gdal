@@ -186,3 +186,6 @@ install(FILES ${DOC_FILES}
         OPTIONAL
        )
 
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.TXT 
+        DESTINATION ${INSTALL_SHARE_DIR}
+        COMPONENT documents)
