@@ -28,7 +28,7 @@
 CMAKE_DEPENDENT_OPTION(ENABLE_PLSCENES "Build Planet Labs Scenes API format" ON
                        "CURL_FOUND" OFF)
 if(ENABLE_PLSCENES)
-    set(TARGET_NAME vec_plscenes)
+    set(TARGET_NAME com_plscenes)
 
     add_definitions(-DPLSCENES_ENABLED)
 	set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DPLSCENES_ENABLED" PARENT_SCOPE)

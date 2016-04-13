@@ -149,7 +149,10 @@ find_anyproject(GeoTIFF REQUIRED)
 find_anyproject(SQLite3 CMAKE_ARGS
       -DENABLE_COLUMN_METADATA=ON)
 if(SQLITE3_FOUND)
-    add_definitions(-DSQLITE_ENABLED) # will enable some drivers directly
+    option(ENABLE_SQLITE_GPKG "Build SQLite & GeoPackage (raster + vector) formats" ON)
+    if(ENABLE_SQLITE_GPKG)
+        add_definitions(-DSQLITE_ENABLED) 
+    endif()    
 endif()
 
 ## Options goes to config.h and gdal-config ####################################

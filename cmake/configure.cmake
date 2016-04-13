@@ -407,7 +407,7 @@ else()
     
 endif()
 
-add_definitions (-DHAVE_CONFIG_H)
+#add_definitions (-DHAVE_CONFIG_H) # commented because of need of "config.h" in drivers/vector/wms
 
 configure_file(${CMAKE_MODULE_PATH}/uninstall.cmake.in ${CMAKE_BINARY_DIR}/cmake_uninstall.cmake IMMEDIATE @ONLY)
 

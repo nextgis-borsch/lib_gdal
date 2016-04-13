@@ -25,9 +25,7 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-CMAKE_DEPENDENT_OPTION(ENABLE_GPKG "Build GeoPackage (raster + vector) format" ON
-                       "SQLITE3_FOUND" OFF)
-if(ENABLE_GPKG)
+if(ENABLE_SQLITE_GPKG)
     set(TARGET_NAME com_gpkg)
 
     # TODO: add spatialite support.
