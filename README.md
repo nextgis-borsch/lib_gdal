@@ -115,7 +115,7 @@ Available raster drivers for now (by all driver dirs in sources):
 | pdf | no |  |  |
 | **pds** | **yes** | no | 4 drivers in one (PDS, ISIS2, ISIS3, VICAR); Has the same dir name in /vector |
 | pgchip | no |  |  |
-| plmosaic | no |  |  |
+| **plmosaic** | **yes** | CURL | - |
 | **png** | **yes** | PNG |  |
 | postgisraster | no |  |  |
 | **r** | **yes** | no | - |
@@ -135,10 +135,10 @@ Available raster drivers for now (by all driver dirs in sources):
 | **tsx** | **yes** | no | - |
 | **usgsdem** | **yes** | no | - |
 | **vrt** | **yes** | no | Obligatory for building GDAL |
-| wcs | no |  |  |
+| **wcs** | **yes** | CURL | Adds some "HTTP Fetching Wrapper" (raster/vector driver?) |
 | webp | no |  |  |
 | **wms** | **yes** | CURL | - |
-| wmts | no |  |  |
+| **wmts** | **yes** | CURL | - |
 | **xpm** | **yes** | no | - |
 | **xyz** | **yes** | no | - |
 | **zmap** | **yes** | no | - |
@@ -207,7 +207,6 @@ Available vector drivers for now (by all driver dirs in sources):
 | pg | no |  |  |
 | **pgdump** | **yes** | no | - |
 | pgeo | no |  |  |
-| plscenes | no |  |  |
 | **rec** | **yes** | no | - |
 | **s57** | **yes** | no | Requires inner iso8211 lib; No additional build targets implemented |
 | sde | no |  |  |
@@ -238,5 +237,6 @@ Available raster+vector drivers for now (by all driver dirs in sources):
 
 | Driver | Cmaked | External dependencies | Notes |
 |---|:-:|---|---|
-| **gpkg** | **yes** | SQLITE3; Optionally: SPATIALITE | Requires PNG?, JPEG?, WEBP? drivers; No Spatialite support implemented; |
+| **gpkg** | **yes** | SQLITE3; Optionally: SPATIALITE | Requires PNG?, JPEG?, WEBP? drivers; No Spatialite support implemented; Former OGR format |
+| **plscenes** | **yes** | CURL | Former OGR format |
 
