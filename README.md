@@ -154,9 +154,9 @@ Available vector drivers for now (by all driver dirs in sources):
 | arcobjects | no |  |  |
 | **avc** | **yes** | no | 2 drivers in one (AVCBin, AVCE00) |
 | **bna** | **yes** | no | - |
-| cartodb | no |  |  |
-| cloudant | no |  |  |
-| couchdb | no |  |  |
+| **cartodb** | **yes** | CURL | - |
+| **cloudant** | **yes** | CURL | - |
+| **couchdb** | **yes** | CURL | - |
 | **csv** | **yes** | no | - |
 | csw | no |  |  |
 | **dgn** | **yes** | no | No additional build targets implemented |
