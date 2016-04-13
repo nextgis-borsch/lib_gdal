@@ -26,7 +26,7 @@
 ################################################################################
 
 CMAKE_DEPENDENT_OPTION(ENABLE_WFS "Build OGC WFS (Web Feature Service) format" ON
-                       "CURL_FOUND" OFF)
+                       "ENABLE_WMS" OFF)
 if(ENABLE_WFS)
     set(TARGET_NAME vec_wfs)
 
