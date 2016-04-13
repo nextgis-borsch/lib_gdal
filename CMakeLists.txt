@@ -225,7 +225,7 @@ if(UNIX)
     set_target_properties(${LIB_NAME} PROPERTIES 
         LINK_FLAGS "${LINK_FLAGS}"
         OUTPUT_NAME ${PROJECT_NAME})
-# TODO: Add Apple staff
+    # Add Apple staff
     if(NOT APPLE AND BUILD_SHARED_LIBS)
         set_target_properties(${LIB_NAME} PROPERTIES LINK_FLAGS "-Wl,--version-script,\"${_version_script}\"")
     endif()
