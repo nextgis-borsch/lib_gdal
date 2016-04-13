@@ -158,20 +158,20 @@ Available vector drivers for now (by all driver dirs in sources):
 | **cloudant** | **yes** | CURL | - |
 | **couchdb** | **yes** | CURL | - |
 | **csv** | **yes** | no | - |
-| csw | no |  |  |
+| **csw** | **yes** | CURL | - |
 | **dgn** | **yes** | no | No additional build targets implemented |
 | dods | no |  |  |
 | dwg | no | ... | Currently unsupported |
 | **dxf** | **yes** | no | - |
 | **edigeo** | **yes** | no | - |
-| elastic | no |  |  |
+| **elastic** | **yes** | CURL | - |
 | filegdb | no |  |  |
 | fme | no |  |  |
 | **geoconcept** | **yes** | no | - |
 | **geojson** | **yes** | no | Obligatory for building GDAL |
 | geomedia | no |  |  |
 | **georss** | **yes** | Optionally: EXPAT | - |
-| gft | no |  |  |
+| **gft** | **yes** | CURL | - |
 | gme | no |  |  |
 | **gml** | **yes** | Optionally: EXPAT, XERCES, SQLITE3 | No Xerces support implemented; No additional build targets implemented |
 | **gmt** | **yes** | no | - |
