@@ -338,8 +338,8 @@ else()
         int hidden() { return 0; }
         int main() { return 0; }
     " HAVE_HIDE_INTERNAL_SYMBOLS )
-
     unset(CMAKE_REQUIRED_FLAGS)
+    
     check_c_source_compiles("
         int main() { int i; __sync_add_and_fetch(&i, 1); __sync_sub_and_fetch(&i, 1); __sync_bool_compare_and_swap(&i, 0, 1); return 0; }
     " HAVE_GCC_ATOMIC_BUILTINS )
