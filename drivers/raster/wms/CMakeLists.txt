@@ -25,43 +25,52 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-if(ENABLE_SQLITE_GPKG)
-    set(TARGET_NAME com_gpkg)
+CMAKE_DEPENDENT_OPTION(ENABLE_WMS "Build OGC Web Map Service, and TMS, WorldWind, On Earth tiled, VirtualEarth, ArcGIS REST, IIP) format" ON
+                       "CURL_FOUND" OFF)
+if(ENABLE_WMS)
+    set(TARGET_NAME ras_wms)
 
-    # TODO: add spatialite support.
-    #find_anyproject(... spatialite ...)
-    #if(... spatialite found ...)
-    #   if(SPATIALITE_412_OR_LATER)
-    #       add_definitions(-DSPATIALITE_412_OR_LATER)
-    #   endif()
-    #endif()
-    
-    if(DEFINED SQLITE_HAS_COLUMN_METADATA)
-        add_definitions(-DSQLITE_HAS_COLUMN_METADATA)
-    endif()
-    
+    add_definitions(-DFRMT_wms)
+    set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DFRMT_wms" PARENT_SCOPE)
+
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-    include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/sqlite)
-    include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/mem)
-    include_directories(${SQLITE3_INCLUDE_DIRS})
+    include_directories(${CURL_INCLUDE_DIRS})
 
     set(LIB_HHEADERS
     )
 
     set(LIB_HHEADERS_PRIV
-        ogr_geopackage.h 
-        ogrgeopackageutility.h 
-        ${CMAKE_SOURCE_DIR}/drivers/vector/sqlite/ogr_sqlite.h
+        gdalhttp.h 
+        md5.h 
+        minidriver_tileservice.h
+        minidriver_wms.h 
+        minidriver_worldwind.h 
+        minidriver_tms.h
+        minidriver_tiled_wms.h 
+        wmsdriver.h 
+        wmsmetadataset.h
+        minidriver_virtualearth.h 
+        minidriver_arcgis_server.h
     )
 
     set(LIB_CSOURCES
-        ogrgeopackagedriver.cpp 
-        ogrgeopackagedatasource.cpp 
-        ogrgeopackagelayer.cpp 
-        ogrgeopackagetablelayer.cpp 
-        ogrgeopackageselectlayer.cpp 
-        ogrgeopackageutility.cpp 
-        gdalgeopackagerasterband.cpp	
+        gdalwmscache.cpp 
+        gdalwmsdataset.cpp 
+        gdalwmsrasterband.cpp
+        gdalhttp.cpp 
+        md5.cpp 
+        minidriver.cpp
+        wmsutils.cpp 
+        wmsdriver.cpp 
+        minidriver_wms.cpp
+        minidriver_tileservice.cpp 
+        minidriver_worldwind.cpp
+        minidriver_tms.cpp
+        minidriver_tiled_wms.cpp
+        wmsmetadataset.cpp
+        minidriver_virtualearth.cpp 
+        minidriver_arcgis_server.cpp
+        minidriver_iip.cpp
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})

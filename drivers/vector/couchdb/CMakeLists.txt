@@ -5,14 +5,14 @@
 ################################################################################
 # Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
 # Copyright (C) 2016 Mikhail Gusev
-# 
+#  
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
 # to deal in the Software without restriction, including without limitation
 # the rights to use, copy, modify, merge, publish, distribute, sublicense,
 # and/or sell copies of the Software, and to permit persons to whom the
 # Software is furnished to do so, subject to the following conditions:
-#
+# 
 # The above copyright notice and this permission notice shall be included
 # in all copies or substantial portions of the Software.
 #
@@ -25,43 +25,34 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-if(ENABLE_SQLITE_GPKG)
-    set(TARGET_NAME com_gpkg)
+CMAKE_DEPENDENT_OPTION(ENABLE_COUCHDB "Build CouchDB / GeoCouch format" ON
+                       "CURL_FOUND" OFF)
+if(ENABLE_COUCHDB)
+    set(TARGET_NAME vec_couchdb)
 
-    # TODO: add spatialite support.
-    #find_anyproject(... spatialite ...)
-    #if(... spatialite found ...)
-    #   if(SPATIALITE_412_OR_LATER)
-    #       add_definitions(-DSPATIALITE_412_OR_LATER)
-    #   endif()
-    #endif()
-    
-    if(DEFINED SQLITE_HAS_COLUMN_METADATA)
-        add_definitions(-DSQLITE_HAS_COLUMN_METADATA)
-    endif()
-    
+    add_definitions(-DCOUCHDB_ENABLED)
+	set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DCOUCHDB_ENABLED" PARENT_SCOPE)
+
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-    include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/sqlite)
-    include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/mem)
-    include_directories(${SQLITE3_INCLUDE_DIRS})
+    #include_directories(${JSONC_INCLUDE_DIR})
+    include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/geojson)
 
     set(LIB_HHEADERS
     )
 
     set(LIB_HHEADERS_PRIV
-        ogr_geopackage.h 
-        ogrgeopackageutility.h 
-        ${CMAKE_SOURCE_DIR}/drivers/vector/sqlite/ogr_sqlite.h
+        ogr_couchdb.h 
+        ${CMAKE_SOURCE_DIR}/core/ogr/swq.h 
+        ${CMAKE_SOURCE_DIR}/drivers/vector/geojson/ogrgeojsonreader.h 
+        ${CMAKE_SOURCE_DIR}/drivers/vector/geojson/ogrgeojsonwriter.h
     )
 
     set(LIB_CSOURCES
-        ogrgeopackagedriver.cpp 
-        ogrgeopackagedatasource.cpp 
-        ogrgeopackagelayer.cpp 
-        ogrgeopackagetablelayer.cpp 
-        ogrgeopackageselectlayer.cpp 
-        ogrgeopackageutility.cpp 
-        gdalgeopackagerasterband.cpp	
+        ogrcouchdbdriver.cpp 
+        ogrcouchdbdatasource.cpp 
+        ogrcouchdblayer.cpp 
+        ogrcouchdbtablelayer.cpp 
+        ogrcouchdbrowslayer.cpp
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})

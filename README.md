@@ -115,7 +115,7 @@ Available raster drivers for now (by all driver dirs in sources):
 | pdf | no |  |  |
 | **pds** | **yes** | no | 4 drivers in one (PDS, ISIS2, ISIS3, VICAR); Has the same dir name in /vector |
 | pgchip | no |  |  |
-| plmosaic | no |  |  |
+| **plmosaic** | **yes** | CURL | - |
 | **png** | **yes** | PNG |  |
 | postgisraster | no |  |  |
 | **r** | **yes** | no | - |
@@ -135,10 +135,10 @@ Available raster drivers for now (by all driver dirs in sources):
 | **tsx** | **yes** | no | - |
 | **usgsdem** | **yes** | no | - |
 | **vrt** | **yes** | no | Obligatory for building GDAL |
-| wcs | no |  |  |
+| **wcs** | **yes** | CURL | Adds some "HTTP Fetching Wrapper" (raster/vector driver?) |
 | webp | no |  |  |
-| wms | no |  |  |
-| wmts | no |  |  |
+| **wms** | **yes** | CURL | - |
+| **wmts** | **yes** | CURL | - |
 | **xpm** | **yes** | no | - |
 | **xyz** | **yes** | no | - |
 | **zmap** | **yes** | no | - |
@@ -154,24 +154,24 @@ Available vector drivers for now (by all driver dirs in sources):
 | arcobjects | no |  |  |
 | **avc** | **yes** | no | 2 drivers in one (AVCBin, AVCE00) |
 | **bna** | **yes** | no | - |
-| cartodb | no |  |  |
-| cloudant | no |  |  |
-| couchdb | no |  |  |
+| **cartodb** | **yes** | CURL | - |
+| **cloudant** | **yes** | CURL | - |
+| **couchdb** | **yes** | CURL | - |
 | **csv** | **yes** | no | - |
-| csw | no |  |  |
+| **csw** | **yes** | CURL | - |
 | **dgn** | **yes** | no | No additional build targets implemented |
 | dods | no |  |  |
 | dwg | no | ... | Currently unsupported |
 | **dxf** | **yes** | no | - |
 | **edigeo** | **yes** | no | - |
-| elastic | no |  |  |
+| **elastic** | **yes** | CURL | - |
 | filegdb | no |  |  |
 | fme | no |  |  |
 | **geoconcept** | **yes** | no | - |
 | **geojson** | **yes** | no | Obligatory for building GDAL |
 | geomedia | no |  |  |
 | **georss** | **yes** | Optionally: EXPAT | - |
-| gft | no |  |  |
+| **gft** | **yes** | CURL | - |
 | gme | no |  |  |
 | **gml** | **yes** | Optionally: EXPAT, XERCES, SQLITE3 | No Xerces support implemented; No additional build targets implemented |
 | **gmt** | **yes** | no | - |
@@ -189,7 +189,7 @@ Available vector drivers for now (by all driver dirs in sources):
 | libkml | no |  |  |
 | mdb | no |  |  |
 | **mem** | **yes** | no | Obligatory for building GDAL |
-| **mitab** | **yes** | no | Obligatory for building GDAL |
+| **mitab** | **yes** | no | Obligatory for building GDAL; Depends on temporary /core/ogr directory |
 | mongodb | no |  |  |
 | mssqlspatial | no |  |  |
 | mysql | no |  |  |
@@ -207,7 +207,6 @@ Available vector drivers for now (by all driver dirs in sources):
 | pg | no |  |  |
 | **pgdump** | **yes** | no | - |
 | pgeo | no |  |  |
-| plscenes | no |  |  |
 | **rec** | **yes** | no | - |
 | **s57** | **yes** | no | Requires inner iso8211 lib; No additional build targets implemented |
 | sde | no |  |  |
@@ -227,7 +226,7 @@ Available vector drivers for now (by all driver dirs in sources):
 | **vrt** | **yes** | no | Obligatory for building GDAL |
 | walk | no |  |  |
 | **wasp** | **yes** | no | - |
-| wfs | no |  |  |
+| **wfs** | **yes** | CURL | Depends on temporary /core/frmts directory; Requires built wms driver |
 | xls | no |  |  |
 | **xlsx** | **yes** | EXPAT | - |
 | **xplane** | **yes** | no | Obligatory for building GDAL |
@@ -238,5 +237,6 @@ Available raster+vector drivers for now (by all driver dirs in sources):
 
 | Driver | Cmaked | External dependencies | Notes |
 |---|:-:|---|---|
-| **gpkg** | **yes** | SQLITE3; Optionally: SPATIALITE | Requires PNG?, JPEG?, WEBP? drivers; No Spatialite support implemented; |
+| **gpkg** | **yes** | SQLITE3; Optionally: SPATIALITE | Requires PNG?, JPEG?, WEBP? drivers; No Spatialite support implemented; Former OGR format |
+| **plscenes** | **yes** | CURL | Former OGR format |
 

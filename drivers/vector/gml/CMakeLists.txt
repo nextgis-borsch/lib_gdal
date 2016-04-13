@@ -47,7 +47,7 @@ if(ENABLE_GML)
     
     if(SQLITE3_FOUND)
         include_directories(${SQLITE3_INCLUDE_DIRS})
-        add_definitions(-DHAVE_SQLITE) # this option is used only in GML driver (among all sources)
+        add_definitions(-DHAVE_SQLITE) # option with this name is used only in GML driver (among all sources)
     endif()
     
     option(OGR_GML_VALIDATION OFF)

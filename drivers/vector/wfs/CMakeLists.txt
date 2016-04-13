@@ -12,7 +12,7 @@
 # the rights to use, copy, modify, merge, publish, distribute, sublicense,
 # and/or sell copies of the Software, and to permit persons to whom the
 # Software is furnished to do so, subject to the following conditions:
-#
+# 
 # The above copyright notice and this permission notice shall be included
 # in all copies or substantial portions of the Software.
 #
@@ -25,43 +25,35 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-if(ENABLE_SQLITE_GPKG)
-    set(TARGET_NAME com_gpkg)
+CMAKE_DEPENDENT_OPTION(ENABLE_WFS "Build OGC WFS (Web Feature Service) format" ON
+                       "ENABLE_WMS" OFF)
+if(ENABLE_WFS)
+    set(TARGET_NAME vec_wfs)
 
-    # TODO: add spatialite support.
-    #find_anyproject(... spatialite ...)
-    #if(... spatialite found ...)
-    #   if(SPATIALITE_412_OR_LATER)
-    #       add_definitions(-DSPATIALITE_412_OR_LATER)
-    #   endif()
-    #endif()
-    
-    if(DEFINED SQLITE_HAS_COLUMN_METADATA)
-        add_definitions(-DSQLITE_HAS_COLUMN_METADATA)
-    endif()
-    
+    add_definitions(-DWFS_ENABLED)
+	set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DWFS_ENABLED" PARENT_SCOPE)
+
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-    include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/sqlite)
-    include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/mem)
-    include_directories(${SQLITE3_INCLUDE_DIRS})
+    include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/gml)
+    # TODO: remove this when change relative paths for includes in sources:
+    include_directories(${CMAKE_SOURCE_DIR}/core/frmts/wms) 
 
     set(LIB_HHEADERS
     )
 
     set(LIB_HHEADERS_PRIV
-        ogr_geopackage.h 
-        ogrgeopackageutility.h 
-        ${CMAKE_SOURCE_DIR}/drivers/vector/sqlite/ogr_sqlite.h
+        ogr_wfs.h 
+        ${CMAKE_SOURCE_DIR}/core/ogr/swq.h 
+        ${CMAKE_SOURCE_DIR}/drivers/vector/gml/gmlreader.h 
+        ${CMAKE_SOURCE_DIR}/drivers/vector/gml/parsexsd.h
     )
 
     set(LIB_CSOURCES
-        ogrgeopackagedriver.cpp 
-        ogrgeopackagedatasource.cpp 
-        ogrgeopackagelayer.cpp 
-        ogrgeopackagetablelayer.cpp 
-        ogrgeopackageselectlayer.cpp 
-        ogrgeopackageutility.cpp 
-        gdalgeopackagerasterband.cpp	
+        ogrwfsdriver.cpp 
+        ogrwfsdatasource.cpp 
+        ogrwfslayer.cpp 
+        ogrwfsfilter.cpp 
+        ogrwfsjoinlayer.cpp
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})

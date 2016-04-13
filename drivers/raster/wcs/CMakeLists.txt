@@ -5,7 +5,7 @@
 ################################################################################
 # Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
 # Copyright (C) 2016 Mikhail Gusev
-# 
+#  
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
 # to deal in the Software without restriction, including without limitation
@@ -25,43 +25,25 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-if(ENABLE_SQLITE_GPKG)
-    set(TARGET_NAME com_gpkg)
+CMAKE_DEPENDENT_OPTION(ENABLE_WCS "Build OGC Web Coverage Service format" ON
+                       "CURL_FOUND" OFF)
+if(ENABLE_WCS)
+    set(TARGET_NAME ras_wcs)
 
-    # TODO: add spatialite support.
-    #find_anyproject(... spatialite ...)
-    #if(... spatialite found ...)
-    #   if(SPATIALITE_412_OR_LATER)
-    #       add_definitions(-DSPATIALITE_412_OR_LATER)
-    #   endif()
-    #endif()
-    
-    if(DEFINED SQLITE_HAS_COLUMN_METADATA)
-        add_definitions(-DSQLITE_HAS_COLUMN_METADATA)
-    endif()
-    
+    add_definitions(-DFRMT_wcs)
+    set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DFRMT_wcs" PARENT_SCOPE)
+
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-    include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/sqlite)
-    include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/mem)
-    include_directories(${SQLITE3_INCLUDE_DIRS})
 
     set(LIB_HHEADERS
     )
 
     set(LIB_HHEADERS_PRIV
-        ogr_geopackage.h 
-        ogrgeopackageutility.h 
-        ${CMAKE_SOURCE_DIR}/drivers/vector/sqlite/ogr_sqlite.h
     )
 
     set(LIB_CSOURCES
-        ogrgeopackagedriver.cpp 
-        ogrgeopackagedatasource.cpp 
-        ogrgeopackagelayer.cpp 
-        ogrgeopackagetablelayer.cpp 
-        ogrgeopackageselectlayer.cpp 
-        ogrgeopackageutility.cpp 
-        gdalgeopackagerasterband.cpp	
+        wcsdataset.cpp 
+        httpdriver.cpp
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})

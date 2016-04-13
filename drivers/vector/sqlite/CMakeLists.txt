@@ -25,11 +25,9 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-CMAKE_DEPENDENT_OPTION(ENABLE_SQLITE "Build SQLite format" ON
-                       "SQLITE3_FOUND" OFF)
-if(ENABLE_SQLITE)
+if(ENABLE_SQLITE_GPKG)
     set(TARGET_NAME vec_sqlite)
-
+    
     # TODO: add Spatialite library support.
     #find_anyproject(... spatialite ...)
     #if(... spatialite found ...)

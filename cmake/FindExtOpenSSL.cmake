@@ -20,13 +20,12 @@
 # along with this script.  If not, see <http://www.gnu.org/licenses/>.
 ################################################################################
 
-set(repo_name lib_curl)
+set(repo_name lib_openssl)
 
 if(BUILD_SHARED_LIBS)    
-    set(repo_project curl)
+    set(repo_project openssl)
 else()
-    set(repo_project curlstatic)
+    set(repo_project opensslstatic)
 endif()
 
-set(repo_include "")
-
+set(repo_include openssl)
