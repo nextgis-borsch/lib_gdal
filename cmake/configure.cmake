@@ -224,6 +224,8 @@ else()
     check_function_exists(readlink HAVE_READLINK)
     check_function_exists(posix_spawnp HAVE_POSIX_SPAWNP)
     check_function_exists(vfork HAVE_VFORK)
+    check_function_exists(mmap HAVE_MMAP)
+    check_function_exists(statvfs HAVE_STATVFS)
     check_function_exists(lstat HAVE_LSTAT)
     
     if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")

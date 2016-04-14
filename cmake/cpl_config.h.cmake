@@ -46,7 +46,7 @@
 /* Define if you have the iconv() function and it works. */
 #cmakedefine HAVE_ICONV 1
 
-/* Define as 0 or 1 according to the floating point format suported by the
+/* Define as 0 or 1 according to the floating point format supported by the
    machine */
 #cmakedefine HAVE_IEEEFP 1
 
@@ -97,6 +97,12 @@
 
 /* Define to 1 if you have the `vfork' function. */
 #cmakedefine HAVE_VFORK 1
+
+/* Define to 1 if you have the `mmap' function. */
+#cmakedefine HAVE_MMAP 1
+
+/* Define to 1 if you have the statvfs' function. */
+#cmakedefine HAVE_STATVFS 1
 
 /* Define to 1 if you have the `lstat' function. */
 #cmakedefine HAVE_LSTAT 1
