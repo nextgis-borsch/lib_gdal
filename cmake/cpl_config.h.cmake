@@ -13,6 +13,9 @@
 /* Define to 1 if you have the 5 args `mremap' function. */
 #cmakedefine HAVE_5ARGS_MREMAP 1
 
+/* --prefix directory for GDAL install */
+#cmakedefine GDAL_PREFIX "@GDAL_PREFIX@"
+
 /* Define to 1 if you have the <assert.h> header file. */
 #cmakedefine HAVE_ASSERT_H 1
 
