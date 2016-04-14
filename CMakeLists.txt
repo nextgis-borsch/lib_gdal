@@ -142,9 +142,12 @@ if(JPEG_FOUND)
 endif()
 
 find_anyproject(JPEG12)
+if(JPEG12_FOUND)
+    add_definitions(-DJPEG12_SUPPORTED)
+endif()
 
 find_anyproject(TIFF REQUIRED)
-find_anyproject(GeoTIFF REQUIRED)
+find_anyproject(GeoTIFF VERSION 1.2.1 REQUIRED)
 
 find_anyproject(SQLite3 CMAKE_ARGS
       -DENABLE_COLUMN_METADATA=ON)

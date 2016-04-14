@@ -153,6 +153,9 @@ SET(CMAKE_REQUIRED_LIBRARIES ${TARGET_LINK_LIB})
 check_function_exists(TIFFScanlineSize64 HAVE_BIGTIFF)
 unset(CMAKE_REQUIRED_LIBRARIES)
 
+if(HAVE_BIGTIFF)
+    add_definitions(-DBIGTIFF_SUPPORT)
+endif() 
 
 if(WIN32)
 # windows
