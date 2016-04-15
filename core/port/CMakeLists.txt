@@ -117,7 +117,7 @@ set(LIB_CSOURCES
 if(WIN32)
     list(APPEND LIB_CSOURCES cpl_vsil_win32.cpp)
 else()
-    list(APPEND LIB_CSOURCES cpl_vsil_unix_stdio_64.cpp vsipreload.cpp)
+    list(APPEND LIB_CSOURCES cpl_vsil_unix_stdio_64.cpp)
 endif()
 
 #check odbc
