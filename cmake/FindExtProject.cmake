@@ -74,6 +74,13 @@ function(include_exports_path include_path)
     if(PATH_INDEX EQUAL -1)
         list(APPEND EXPORTS_PATHS "${include_path}")
         set(EXPORTS_PATHS "${EXPORTS_PATHS}" PARENT_SCOPE)
+        # Add imported library have limit scope
+        # During the export cmake add library without GLOBAL parameter and no
+        # way to change this bihaviour. Let's fix it.
+        file (READ ${include_path} _file_content)
+        string (REPLACE "IMPORTED)" "IMPORTED GLOBAL)" _file_content "${_file_content}")
+        file(WRITE ${include_path} "${_file_content}") 
+        
         include(${include_path})
     endif()
 endfunction() 
@@ -125,14 +132,15 @@ function(find_extproject name)
     if(_list_size EQUAL 0)
         list(APPEND find_extproject_CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${EP_BASE}/Install/${name}_EP)
     endif()
+    unset(_matchedVars)
     
     # search BUILD_SHARED_LIBS
     string (REGEX MATCHALL "(^|;)-DBUILD_SHARED_LIBS[A-Za-z0-9_]*" _matchedVars "${find_extproject_CMAKE_ARGS}")   
-    unset(_matchedVars)
     list(LENGTH _matchedVars _list_size)    
     if(_list_size EQUAL 0)
         list(APPEND find_extproject_CMAKE_ARGS -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS})
     endif()
+    unset(_matchedVars)
     
     # set some arguments  
     if(CMAKE_GENERATOR)        
