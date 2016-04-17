@@ -35,7 +35,7 @@ if(ENABLE_PNG)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
     find_anyproject(PNG REQUIRED CMAKE_ARGS
-      -DPNG_EXPORT_RULE=OFF)
+      -DSKIP_INSTALL_EXPORT=ON)
 
     set(LIB_CSOURCES
         pngdataset.cpp   
