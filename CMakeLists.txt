@@ -239,7 +239,7 @@ endif()
 target_link_extlibraries(${LIB_NAME}) 
 export(TARGETS ${LIB_NAME} FILE ${LIB_NAME}-exports.cmake EXPORT_LINK_INTERFACE_LIBRARIES)
 
-
+set(GDAL_BINDINGS)
 add_subdirectory(bindings)
 add_subdirectory(docs)
 
