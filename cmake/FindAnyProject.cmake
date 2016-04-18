@@ -51,6 +51,8 @@ function(find_anyproject name)
     endif()
     string(TOUPPER ${name} UPPER_NAME)
 
+    write_ext_options()
+    
     if(WITH_${name})
         option(WITH_${name}_EXTERNAL "Set ON to use external ${name}" OFF)
         if(WITH_${name}_EXTERNAL)
@@ -108,9 +110,7 @@ function(find_anyproject name)
         set(DEPENDENCY_LIB ${DEPENDENCY_LIB} PARENT_SCOPE)    
     endif()
     set(WITHOPT ${WITHOPT} PARENT_SCOPE)
-    set(EXPORTS_PATHS ${EXPORTS_PATHS} PARENT_SCOPE)
-    
-    write_ext_options()
+    set(EXPORTS_PATHS ${EXPORTS_PATHS} PARENT_SCOPE)    
 endfunction()
 
 function(target_link_extlibraries name)
