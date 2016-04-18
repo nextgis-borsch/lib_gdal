@@ -109,6 +109,8 @@ function(find_anyproject name)
     endif()
     set(WITHOPT ${WITHOPT} PARENT_SCOPE)
     set(EXPORTS_PATHS ${EXPORTS_PATHS} PARENT_SCOPE)
+    
+    write_ext_options()
 endfunction()
 
 function(target_link_extlibraries name)
@@ -119,7 +121,7 @@ function(target_link_extlibraries name)
         #list(REMOVE_DUPLICATES TARGET_LINK_LIB) debug;...;optimised;... etc. if filter out
         target_link_libraries(${name} ${TARGET_LINK_LIB})
     endif()
-    write_ext_options()
+    
 endfunction()
 
 function(write_ext_options)
