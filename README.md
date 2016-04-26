@@ -31,6 +31,12 @@ Go to script folder of this repo /etc/cmake-build-helpers and execute
 | Windows | ![build status](http://176.9.38.120/buildbot/png?builder=gdal_win) |
 | Ubuntu (packaging) | ![build status](http://176.9.38.120/buildbot/png?builder=gdal_deb) | 
 
+# Ubuntu PPA
+
+ $ sudo apt-get install software-properties-common python-software-properties
+ $ sudo apt-add-repository ppa:nextgis/ppa
+ $ sudo apt-get install gdal-bin python-gdal
+
 # Test status
 
 TODO:
