@@ -76,14 +76,14 @@ Available raster drivers for now (by all driver dirs in sources). Drivers marked
 | fits | no |  |  |
 | georaster | no |  |  |
 | **gff** | **yes** | no | - |
-| gif | no |  |  |
+| gif * | no |  | Russian maps in internet are in gif and ozi |
 | grass * | no |  |  |
 | **grib** | **yes** | Optionally: JASPER | No JASPER support implemented; No additional build targets implemented |
 | **gsg** | **yes** | no | 3 drivers in one (GSAG, GSBG, GS7BG) |
 | gta | no |  |  |
 | **gtiff** | **yes** | no | Obligatory for building GDAL |
 | **gxf** | **yes** | no | No additional build targets implemented |
-| hdf4 * | no |  |  |
+| hdf4 * | no | [lib_hdf4](https://github.com/nextgis-extra/lib_hdf4) |  |
 | hdf5 * | no |  |  |
 | **hf2** | **yes** | no | - |
 | **hfa** | **yes** | no | Obligatory for building GDAL |
@@ -123,7 +123,7 @@ Available raster drivers for now (by all driver dirs in sources). Drivers marked
 | pgchip | no |  |  |
 | **plmosaic** | **yes** | CURL | - |
 | **png** | **yes** | PNG |  |
-| postgisraster * | no |  |  |
+| postgisraster * | no | [lib_pq](https://github.com/nextgis-extra/lib_pq) |  |
 | **r** | **yes** | no | - |
 | rasdaman | no |  |  |
 | **rasterlite** | **yes** | Optionally: SPATIALITE? | Requires built sqlite driver |
@@ -142,7 +142,7 @@ Available raster drivers for now (by all driver dirs in sources). Drivers marked
 | **usgsdem** | **yes** | no | - |
 | **vrt** | **yes** | no | Obligatory for building GDAL |
 | **wcs** | **yes** | CURL | Adds some "HTTP Fetching Wrapper" (raster/vector driver?) |
-| webp | no |  |  |
+| webp * | no |  | Need for mobile and server |
 | **wms** | **yes** | CURL | - |
 | **wmts** | **yes** | CURL | - |
 | **xpm** | **yes** | no | - |
@@ -210,7 +210,7 @@ Available vector drivers for now (by all driver dirs in sources). Drivers marked
 | **openfilegdb** | **yes** | no | - |
 | **osm** | **yes** | SQLITE3; Optionally: EXPAT | No additional build targets implemented |
 | **pds** | **yes** | no | Requires built PDS raster driver; Has the same dir name in /raster |
-| pg | no |  |  |
+| pg * | no | [lib_pq](https://github.com/nextgis-extra/lib_pq) |  |
 | **pgdump** | **yes** | no | - |
 | pgeo | no |  |  |
 | **rec** | **yes** | no | - |
@@ -222,7 +222,7 @@ Available vector drivers for now (by all driver dirs in sources). Drivers marked
 | **selafin** | **yes** | no | - |
 | **shape** | **yes** | no | - |
 | sosi | no |  |  |
-| **sqlite** | **yes** | SQLITE3; Optionally: SPATIALITE, PCRE | No Spatialite and PCRE support implemented; No additional build targets implemented |
+| **sqlite** | **yes** | SQLITE3; Optionally: SPATIALITE - [lib_spatialite](https://github.com/nextgis-extra/lib_spatialite), PCRE | No Spatialite and PCRE support implemented; No additional build targets implemented |
 | **sua** | **yes** | no | - |
 | **svg** | **yes** | EXPAT | - |
 | **sxf** | **yes** | no | ... |
@@ -233,7 +233,7 @@ Available vector drivers for now (by all driver dirs in sources). Drivers marked
 | walk | no |  |  |
 | **wasp** | **yes** | no | - |
 | **wfs** | **yes** | CURL | Depends on temporary /core/frmts directory; Requires built wms driver |
-| xls | no |  |  |
+| xls * | no | [lib_freexl](https://github.com/nextgis-extra/lib_freexl) |  |
 | **xlsx** | **yes** | EXPAT | - |
 | **xplane** | **yes** | no | Obligatory for building GDAL |
 
