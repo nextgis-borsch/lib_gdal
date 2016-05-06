@@ -10465,7 +10465,7 @@ public class SpatialReference:public int FixupOrdering()
 /**
  * Fetch angular geographic coordinate system units.
  * <p>
- * If no units are available, a value of "degree" and SRS_UA_DEGREE_CONV 
+ * If no units are available, a value of SRS_UA_DEGREE_CONV 
  * will be assumed.  This method only checks directly under the GEOGCS node
  * for units.
  *
@@ -10473,6 +10473,18 @@ public class SpatialReference:public int FixupOrdering()
  * radians.
  */
 public class SpatialReference:public double GetAngularUnits()
+
+/**
+ * Fetch angular geographic coordinate system units name.
+ * <p>
+ * If no units are available, a value of "degree"
+ * will be assumed.  This method only checks directly under the GEOGCS node
+ * for units.
+ *
+ * @return the units name
+ * @since Java bindings 2.1.0
+ */
+public class SpatialReference:public String GetAngularUnitsName()
 
 /**
  * Fetch first attribute of named node.
@@ -10535,6 +10547,42 @@ public class SpatialReference:public String GetAuthorityCode(String target_key)
  * @return value code from authority node, or null on failure.
  */
 public class SpatialReference:public String GetAuthorityName(String target_key)
+
+/**
+ * Get the axis name for a node.
+ * <p>
+ * This method is used to query an AXIS[] node from within the 
+ * WKT tree, and fetch the axis name value.  
+ * <p>
+ *
+ * @param target_key the partial or complete path to the node to 
+ * get an authority from.  i.e. "PROJCS", "GEOGCS" or null to 
+ * search for an authority node on the root element.
+ * @param iAxis axis index (starting with 0)
+ *
+ * @return axis name, or null on failure.
+ * @since GDAL 2.1
+ */
+public class SpatialReference:public String GetAxisName(String target_key, int iAxis)
+
+/**
+ * Get the axis orientation for a node.
+ * <p>
+ * This method is used to query an AXIS[] node from within the 
+ * WKT tree, and fetch the axis orientation value.  
+ * <p>
+ *
+ * @param target_key the partial or complete path to the node to 
+ * get an authority from.  i.e. "PROJCS", "GEOGCS" or null to 
+ * search for an authority node on the root element.
+ * @param iAxis axis index (starting with 0)
+ *
+ * @return axis orientation (org.gdal.osr.osr.OAO_Other, org.gdal.osr.osr.OAO_North,
+ *         org.gdal.osr.osr.OAO_South, org.gdal.osr.osr.OAO_East,
+ *         org.gdal.osr.osr.OAO_West, org.gdal.osr.osr.OAO_Up, org.gdal.osr.osr.OAO_Down), or org.gdal.osr.osr.OAO_Other on failure.
+ * @since GDAL 2.1
+ */
+public class SpatialReference:public int GetAxisOrientation(String target_key, int iAxis)
 
 /**
  * Fetch linear projection units. 

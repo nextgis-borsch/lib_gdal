@@ -31,6 +31,8 @@ add_definitions(-DFRMT_gtiff)
 set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DFRMT_gtiff" PARENT_SCOPE)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${CMAKE_SOURCE_DIR}/drivers/raster)
+include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/jpeg)
 
 
 set(LIB_HHEADERS

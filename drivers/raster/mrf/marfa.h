@@ -123,7 +123,8 @@ typedef struct {
 
 // Size of an image, also used as a tile or pixel location
 struct ILSize {
-    GInt32 x, y, z, c, l;
+    GInt32 x, y, z, c;
+    GIntBig l; // Dual use, sometimes it holds the number of pages
     ILSize(const int x_ = -1, const int y_ = -1, const int z_ = -1,
         const int c_ = -1, const int l_ = -1)
     {
@@ -204,7 +205,7 @@ static inline unsigned long long int swab64(const unsigned long long int val)
 // NET_ORDER is true if machine is BE, false otherwise
 // Call netxx() if network (big) order is needed
 
-#ifdef WORDS_BIGENDIAN
+#ifdef CPL_MSB
 #define NET_ORDER true
 // These could be macros, but for the side effects related to type
 static inline unsigned short net16(const unsigned short x)
@@ -273,7 +274,7 @@ static inline const ILSize pcount(const ILSize &size, const ILSize &psz) {
     pcnt.y = pcount(size.y, psz.y);
     pcnt.z = pcount(size.z, psz.z);
     pcnt.c = pcount(size.c, psz.c);
-    pcnt.l = pcnt.x*pcnt.y*pcnt.z*pcnt.c;
+    pcnt.l = static_cast<GIntBig>(pcnt.x) * pcnt.y * pcnt.z * pcnt.c;
     return pcnt;
 }
 

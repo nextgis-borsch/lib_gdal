@@ -117,7 +117,7 @@ Available raster drivers for now (by all driver dirs in sources):
 | pgchip | no |  |  |
 | **plmosaic** | **yes** | CURL | - |
 | **png** | **yes** | PNG |  |
-| postgisraster | no |  |  |
+| **postgisraster** | **yes** | PostgreSQL (libpq) | - |
 | **r** | **yes** | no | - |
 | rasdaman | no |  |  |
 | **rasterlite** | **yes** | Optionally: SPATIALITE? | Requires built sqlite driver |
@@ -204,7 +204,7 @@ Available vector drivers for now (by all driver dirs in sources):
 | **openfilegdb** | **yes** | no | - |
 | **osm** | **yes** | SQLITE3; Optionally: EXPAT | No additional build targets implemented |
 | **pds** | **yes** | no | Requires built PDS raster driver; Has the same dir name in /raster |
-| pg | no |  |  |
+| **pg** | **yes** | PostgreSQL (libpq) | - |
 | **pgdump** | **yes** | no | - |
 | pgeo | no |  |  |
 | **rec** | **yes** | no | - |

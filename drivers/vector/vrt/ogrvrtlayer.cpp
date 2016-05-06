@@ -38,7 +38,6 @@ CPL_CVSID("$Id$");
 
 #define UNSUPPORTED_OP_READ_ONLY "%s : unsupported operation on a read-only datasource."
 
-
 /************************************************************************/
 /*                       OGRVRTGeomFieldProps()                         */
 /************************************************************************/
@@ -210,8 +209,10 @@ int OGRVRTLayer::FastInitialize( CPLXMLNode *psLTreeIn, const char *pszVRTDirect
          pszLayerSRS = CPLGetXMLValue( psGeometryFieldNode, "SRS", NULL );
      if( pszLayerSRS != NULL )
      {
-         if( apoGeomFieldProps.size() == 0 )
+         if( apoGeomFieldProps.empty() )
+         {
              apoGeomFieldProps.push_back(new OGRVRTGeomFieldProps());
+         }
          if( !(EQUAL(pszLayerSRS,"NULL")) )
          {
              OGRSpatialReference oSRS;
@@ -252,8 +253,10 @@ int OGRVRTLayer::FastInitialize( CPLXMLNode *psLTreeIn, const char *pszVRTDirect
      if( pszExtentXMin != NULL && pszExtentYMin != NULL &&
          pszExtentXMax != NULL && pszExtentYMax != NULL )
      {
-         if( apoGeomFieldProps.size() == 0 )
+         if( apoGeomFieldProps.empty() )
+         {
              apoGeomFieldProps.push_back(new OGRVRTGeomFieldProps());
+         }
          apoGeomFieldProps[0]->sStaticEnvelope.MinX = CPLAtof(pszExtentXMin);
          apoGeomFieldProps[0]->sStaticEnvelope.MinY = CPLAtof(pszExtentYMin);
          apoGeomFieldProps[0]->sStaticEnvelope.MaxX = CPLAtof(pszExtentXMax);
@@ -509,7 +512,7 @@ int OGRVRTLayer::FullInitialize()
     const char *pszSrcFIDFieldName = NULL;
     const char *pszStyleFieldName = NULL;
     CPLXMLNode *psChild = NULL;
-    int bFoundGeometryField = FALSE;
+    bool bFoundGeometryField = false;
 
     if (bHasFullInitialized)
         return TRUE;
@@ -740,7 +743,7 @@ try_again:
         {
             if( !bFoundGeometryField )
             {
-                bFoundGeometryField = TRUE;
+                bFoundGeometryField = true;
 
                 // Recreate the first one if already taken into account in FastInitialize()
                 if( apoGeomFieldProps.size() == 1 )
@@ -809,6 +812,7 @@ try_again:
 /* -------------------------------------------------------------------- */
 /*      Figure out what should be used as an FID.                       */
 /* -------------------------------------------------------------------- */
+     bAttrFilterPassThrough = TRUE;
      pszSrcFIDFieldName = CPLGetXMLValue( psLTree, "FID", NULL );
 
      if( pszSrcFIDFieldName != NULL )
@@ -824,8 +828,13 @@ try_again:
          }
 
          // User facing FID column name. If not defined we will report the
-         // source FID column name only if it is exposed as a field too (#4637)
+         // source FID column name only if it is exposed as a field too (#4637).
          osFIDFieldName = CPLGetXMLValue( psLTree, "FID.name", "" );
+
+         if( !EQUAL(pszSrcFIDFieldName, poSrcLayer->GetFIDColumn()) )
+         {
+             bAttrFilterPassThrough = FALSE;
+         }
      }
 
 /* -------------------------------------------------------------------- */
@@ -844,12 +853,16 @@ try_again:
                        pszStyleFieldName );
              goto error;
          }
+
+         if( !EQUAL(pszStyleFieldName, "OGR_STYLE") )
+         {
+             bAttrFilterPassThrough = FALSE;
+         }
      }
 
 /* ==================================================================== */
 /*      Search for schema definitions in the VRT.                       */
 /* ==================================================================== */
-     bAttrFilterPassThrough = TRUE;
      for( psChild = psLTree->psChild; psChild != NULL; psChild=psChild->psNext )
      {
          if( psChild->eType == CXT_Element && EQUAL(psChild->pszValue,"Field") )

@@ -138,6 +138,7 @@ find_anyproject(JSONC REQUIRED)
 find_anyproject(JPEG DEFAULT ON) 
 if(JPEG_FOUND)
     add_definitions(-DJPEG_SUPPORTED)
+    add_definitions(-DHAVE_LIBJPEG) # added only after 2.1 release (especially for geotiff.cpp where incorrect #ifdef is used)
 endif()
 
 find_anyproject(JPEG12)

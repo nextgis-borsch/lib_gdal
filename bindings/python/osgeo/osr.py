@@ -235,6 +235,13 @@ SRS_DN_WGS72 = _osr.SRS_DN_WGS72
 SRS_DN_WGS84 = _osr.SRS_DN_WGS84
 SRS_WGS84_SEMIMAJOR = _osr.SRS_WGS84_SEMIMAJOR
 SRS_WGS84_INVFLATTENING = _osr.SRS_WGS84_INVFLATTENING
+OAO_Other = _osr.OAO_Other
+OAO_North = _osr.OAO_North
+OAO_South = _osr.OAO_South
+OAO_East = _osr.OAO_East
+OAO_West = _osr.OAO_West
+OAO_Up = _osr.OAO_Up
+OAO_Down = _osr.OAO_Down
 
 def GetUseExceptions(*args):
   """GetUseExceptions() -> int"""
@@ -262,7 +269,7 @@ class SpatialReference(_object):
     __swig_getmethods__ = {}
     __getattr__ = lambda self, name: _swig_getattr(self, SpatialReference, name)
     __repr__ = _swig_repr
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs): 
         """__init__(OSRSpatialReferenceShadow self, char const * wkt="") -> SpatialReference"""
         this = _osr.new_SpatialReference(*args, **kwargs)
         try: self.this.append(this)
@@ -337,6 +344,10 @@ class SpatialReference(_object):
         """GetAngularUnits(SpatialReference self) -> double"""
         return _osr.SpatialReference_GetAngularUnits(self, *args)
 
+    def GetAngularUnitsName(self, *args):
+        """GetAngularUnitsName(SpatialReference self) -> char const *"""
+        return _osr.SpatialReference_GetAngularUnitsName(self, *args)
+
     def SetTargetLinearUnits(self, *args):
         """SetTargetLinearUnits(SpatialReference self, char const * target, char const * name, double to_meters) -> OGRErr"""
         return _osr.SpatialReference_SetTargetLinearUnits(self, *args)
@@ -364,6 +375,14 @@ class SpatialReference(_object):
     def GetAuthorityName(self, *args):
         """GetAuthorityName(SpatialReference self, char const * target_key) -> char const *"""
         return _osr.SpatialReference_GetAuthorityName(self, *args)
+
+    def GetAxisName(self, *args):
+        """GetAxisName(SpatialReference self, char const * target_key, int iAxis) -> char const *"""
+        return _osr.SpatialReference_GetAxisName(self, *args)
+
+    def GetAxisOrientation(self, *args):
+        """GetAxisOrientation(SpatialReference self, char const * target_key, int iAxis) -> OGRAxisOrientation"""
+        return _osr.SpatialReference_GetAxisOrientation(self, *args)
 
     def SetUTM(self, *args):
         """SetUTM(SpatialReference self, int zone, int north=1) -> OGRErr"""
@@ -479,21 +498,21 @@ class SpatialReference(_object):
 
     def SetHOM(self, *args, **kwargs):
         """
-        SetHOM(SpatialReference self, double clat, double clong, double azimuth, double recttoskew, double scale, double fe,
+        SetHOM(SpatialReference self, double clat, double clong, double azimuth, double recttoskew, double scale, double fe, 
             double fn) -> OGRErr
         """
         return _osr.SpatialReference_SetHOM(self, *args, **kwargs)
 
     def SetHOM2PNO(self, *args, **kwargs):
         """
-        SetHOM2PNO(SpatialReference self, double clat, double dfLat1, double dfLong1, double dfLat2, double dfLong2, double scale,
+        SetHOM2PNO(SpatialReference self, double clat, double dfLat1, double dfLong1, double dfLat2, double dfLong2, double scale, 
             double fe, double fn) -> OGRErr
         """
         return _osr.SpatialReference_SetHOM2PNO(self, *args, **kwargs)
 
     def SetKrovak(self, *args, **kwargs):
         """
-        SetKrovak(SpatialReference self, double clat, double clong, double azimuth, double pseudostdparallellat, double scale,
+        SetKrovak(SpatialReference self, double clat, double clong, double azimuth, double pseudostdparallellat, double scale, 
             double fe, double fn) -> OGRErr
         """
         return _osr.SpatialReference_SetKrovak(self, *args, **kwargs)
@@ -568,7 +587,7 @@ class SpatialReference(_object):
 
     def SetTMVariant(self, *args, **kwargs):
         """
-        SetTMVariant(SpatialReference self, char const * pszVariantName, double clat, double clong, double scale, double fe,
+        SetTMVariant(SpatialReference self, char const * pszVariantName, double clat, double clong, double scale, double fe, 
             double fn) -> OGRErr
         """
         return _osr.SpatialReference_SetTMVariant(self, *args, **kwargs)
@@ -611,8 +630,8 @@ class SpatialReference(_object):
 
     def SetGeogCS(self, *args):
         """
-        SetGeogCS(SpatialReference self, char const * pszGeogName, char const * pszDatumName, char const * pszEllipsoidName,
-            double dfSemiMajor, double dfInvFlattening, char const * pszPMName="Greenwich",
+        SetGeogCS(SpatialReference self, char const * pszGeogName, char const * pszDatumName, char const * pszEllipsoidName, 
+            double dfSemiMajor, double dfInvFlattening, char const * pszPMName="Greenwich", 
             double dfPMOffset=0.0, char const * pszUnits="degree", double dfConvertToRadians=0.0174532925199433) -> OGRErr
         """
         return _osr.SpatialReference_SetGeogCS(self, *args)
@@ -752,7 +771,7 @@ class CoordinateTransformation(_object):
     __swig_getmethods__ = {}
     __getattr__ = lambda self, name: _swig_getattr(self, CoordinateTransformation, name)
     __repr__ = _swig_repr
-    def __init__(self, *args):
+    def __init__(self, *args): 
         """__init__(OSRCoordinateTransformationShadow self, SpatialReference src, SpatialReference dst) -> CoordinateTransformation"""
         this = _osr.new_CoordinateTransformation(*args)
         try: self.this.append(this)

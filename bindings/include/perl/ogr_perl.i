@@ -120,7 +120,7 @@ ALTERED_DESTROY(OGRGeometryShadow, OGRc, delete_Geometry)
 %perlcode %{
 
 package Geo::OGR;
-our $VERSION = '2.0100'; # this needs to be the same as that in gdal_perl.i
+our $VERSION = '2.0200'; # this needs to be the same as that in gdal_perl.i
 
 sub Driver {
     return 'Geo::GDAL::Driver' unless @_;
@@ -718,7 +718,7 @@ sub FETCH {
     my $i;
     eval {$i = $self->GetFieldIndex($index)};
     return $self->GetField($i) unless $@;
-    Geo::GDAL::error("It is not safe to retrieve geometries from a feature this way.");
+    Geo::GDAL::error("'$index' is not a non-spatial field and it is not safe to retrieve geometries from a feature this way.");
 }
 
 sub STORE {
@@ -726,9 +726,12 @@ sub STORE {
     my $index = shift;
     my $i;
     eval {$i = $self->GetFieldIndex($index)};
-    $self->SetField($i, @_) unless $@;
-    $i = $self->GetGeomFieldIndex($index);
-    $self->Geometry($i, @_);
+    unless ($@) {
+      $self->SetField($i, @_);
+    } else {
+      $i = $self->GetGeomFieldIndex($index);
+      $self->Geometry($i, @_);
+    }
 }
 
 sub FID {

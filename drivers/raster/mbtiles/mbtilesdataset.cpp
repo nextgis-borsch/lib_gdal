@@ -120,6 +120,7 @@ class MBTilesDataset : public GDALPamDataset, public GDALGPKGMBTilesLikePseudoDa
   private:
 
     bool m_bWriteBounds;
+    bool m_bWriteMinMaxZoom;
     MBTilesDataset* poMainDS;
     bool m_bGeoTransformValid;
     double m_adfGeoTransform[6];
@@ -726,6 +727,7 @@ GDALRasterBand* MBTilesBand::GetOverview(int nLevel)
 MBTilesDataset::MBTilesDataset()
 {
     m_bWriteBounds = true;
+    m_bWriteMinMaxZoom = true;
     poMainDS = NULL;
     m_nOverviewCount = 0;
     hDS = NULL;
@@ -930,6 +932,15 @@ CPLErr MBTilesDataset::SetGeoTransform( double* padfGeoTransform )
             maxx = 180.0;
         }
 
+        // Clamp latitude so that when transformed back to EPSG:3857, we don't
+        // have too big northings
+        double tmpx = 0, ok_maxy = MAX_GM;
+        SphericalMercatorToLongLat(&tmpx, &ok_maxy);
+        if( maxy > ok_maxy)
+            maxy = ok_maxy;
+        if( miny < -ok_maxy)
+            miny = -ok_maxy;
+
         char* pszSQL = sqlite3_mprintf(
             "INSERT INTO metadata (name, value) VALUES ('bounds', '%.18g,%.18g,%.18g,%.18g')",
             minx, miny, maxx, maxy );
@@ -1002,6 +1013,18 @@ CPLErr MBTilesDataset::FinalizeRasterRegistration()
     m_nOverviewCount = m_nZoomLevel;
     m_papoOverviewDS = (MBTilesDataset**) CPLCalloc(sizeof(MBTilesDataset*),
                                                            m_nOverviewCount);
+
+    if( m_bWriteMinMaxZoom )
+    {
+        char* pszSQL = sqlite3_mprintf(
+            "INSERT INTO metadata (name, value) VALUES ('minzoom', '%d')", m_nZoomLevel );
+        sqlite3_exec( hDB, pszSQL, NULL, NULL, NULL );
+        sqlite3_free(pszSQL);
+        pszSQL = sqlite3_mprintf(
+            "INSERT INTO metadata (name, value) VALUES ('maxzoom', '%d')", m_nZoomLevel );
+        sqlite3_exec( hDB, pszSQL, NULL, NULL, NULL );
+        sqlite3_free(pszSQL);
+    }
 
     for(int i=0; i<m_nOverviewCount; i++)
     {
@@ -1266,7 +1289,7 @@ int MBTilesGetMinMaxZoomLevel(OGRDataSourceH hDS, int bHasMap,
 #define OPTIMIZED_FOR_VSICURL
 #ifdef  OPTIMIZED_FOR_VSICURL
         int iLevel;
-        for(iLevel = 0; nMinLevel < 0 && iLevel < 16; iLevel ++)
+        for(iLevel = 0; nMinLevel < 0 && iLevel <= 32; iLevel ++)
         {
             pszSQL = CPLSPrintf(
                 "SELECT zoom_level FROM %s WHERE zoom_level = %d LIMIT 1",
@@ -1391,28 +1414,32 @@ bool MBTilesGetBounds(OGRDataSourceH hDS, bool bUseBounds,
                     CPLAtof(papszTokens[0]) > CPLAtof(papszTokens[2]) ||
                     CPLAtof(papszTokens[1]) > CPLAtof(papszTokens[3]))
                 {
-                    CPLError(CE_Failure, CPLE_AppDefined, "Invalid value for 'bounds' metadata");
-                    CSLDestroy(papszTokens);
-                    OGR_F_Destroy(hFeat);
-                    OGR_DS_ReleaseResultSet(hDS, hSQLLyr);
-                    return false;
+                    CPLError(CE_Warning, CPLE_AppDefined, "Invalid value for 'bounds' metadata. Ignoring it and fall back to present tile extent");
                 }
+                else
+                {
+                    minX = CPLAtof(papszTokens[0]);
+                    minY = CPLAtof(papszTokens[1]);
+                    maxX = CPLAtof(papszTokens[2]);
+                    maxY = CPLAtof(papszTokens[3]);
+                    LongLatToSphericalMercator(&minX, &minY);
+                    LongLatToSphericalMercator(&maxX, &maxY);
 
-                minX = CPLAtof(papszTokens[0]);
-                minY = CPLAtof(papszTokens[1]);
-                maxX = CPLAtof(papszTokens[2]);
-                maxY = CPLAtof(papszTokens[3]);
-                LongLatToSphericalMercator(&minX, &minY);
-                LongLatToSphericalMercator(&maxX, &maxY);
+                    // Clamp northings
+                    if( maxY > MAX_GM)
+                        maxY = MAX_GM;
+                    if( minY < -MAX_GM)
+                        minY = -MAX_GM;
 
-                bHasBounds = true;
+                    bHasBounds = true;
+                }
 
                 CSLDestroy(papszTokens);
 
                 OGR_F_Destroy(hFeat);
             }
             OGR_DS_ReleaseResultSet(hDS, hSQLLyr);
-      }
+        }
     }
 
     if (!bHasBounds)
@@ -2038,6 +2065,7 @@ bool MBTilesDataset::CreateInternal( const char * pszFilename,
     m_bPNGSupports2Bands = CPLTestBool(CPLGetConfigOption("MBTILES_PNG_SUPPORTS_2BANDS", "TRUE"));
     m_bPNGSupportsCT = CPLTestBool(CPLGetConfigOption("MBTILES_PNG_SUPPORTS_CT", "TRUE"));
     m_bWriteBounds = CPLFetchBool(const_cast<const char**>(papszOptions), "WRITE_BOUNDS", true);
+    m_bWriteMinMaxZoom = CPLFetchBool(const_cast<const char**>(papszOptions), "WRITE_MINMAXZOOM", true);
 
     VSIUnlink( pszFilename );
     SetDescription( pszFilename );
@@ -2207,6 +2235,44 @@ GDALDataset* MBTilesDataset::CreateCopy( const char *pszFilename,
     GDALDestroyGenImgProjTransformer( hTransformArg );
     hTransformArg = NULL;
 
+    // Hack to compensate for  GDALSuggestedWarpOutput2() failure when 
+    // reprojection latitude = +/- 90 to EPSG:3857
+    double adfSrcGeoTransform[6];
+    if( poSrcDS->GetGeoTransform(adfSrcGeoTransform) == CE_None )
+    {
+        const char* pszSrcWKT = poSrcDS->GetProjectionRef();
+        if( pszSrcWKT != NULL && pszSrcWKT[0] != '\0' )
+        {
+            OGRSpatialReference oSRS;
+            if( oSRS.SetFromUserInput( pszSrcWKT ) == OGRERR_NONE &&
+                oSRS.IsGeographic() )
+            {
+                double minLat = MIN( adfSrcGeoTransform[3], adfSrcGeoTransform[3] + poSrcDS->GetRasterYSize() * adfSrcGeoTransform[5] );
+                double maxLat = MAX( adfSrcGeoTransform[3], adfSrcGeoTransform[3] + poSrcDS->GetRasterYSize() * adfSrcGeoTransform[5] );
+                double maxNorthing = adfGeoTransform[3];
+                double minNorthing = adfGeoTransform[3] + adfGeoTransform[5] * nYSize;
+                bool bChanged = false;
+                if( maxLat > 89.9999999 )
+                {
+                    bChanged = true;
+                    maxNorthing = MAX_GM;
+                }
+                if( minLat <= -89.9999999 )
+                {
+                    bChanged = true;
+                    minNorthing = -MAX_GM;
+                }
+                if( bChanged )
+                {
+                    adfGeoTransform[3] = maxNorthing;
+                    nYSize = int((maxNorthing - minNorthing) / (-adfGeoTransform[5]) + 0.5);
+                    adfExtent[1] = maxNorthing + nYSize * adfGeoTransform[5];
+                    adfExtent[3] = maxNorthing;
+                }
+            }
+        }
+    }
+
     int nZoomLevel;
     double dfComputedRes = adfGeoTransform[1];
     double dfPrevRes = 0, dfRes = 0;
@@ -2275,6 +2341,30 @@ GDALDataset* MBTilesDataset::CreateCopy( const char *pszFilename,
         }
     }
 
+    GDALResampleAlg eResampleAlg = GRA_Bilinear;
+    const char* pszResampling = CSLFetchNameValue(papszOptions, "RESAMPLING");
+    if( pszResampling )
+    {
+        for(size_t iAlg = 0; iAlg < sizeof(asResamplingAlg)/sizeof(asResamplingAlg[0]); iAlg ++)
+        {
+            if( EQUAL(pszResampling, asResamplingAlg[iAlg].pszName) )
+            {
+                eResampleAlg = asResamplingAlg[iAlg].eResampleAlg;
+                break;
+            }
+        }
+    }
+
+    if( nBands == 1 && poSrcDS->GetRasterBand(1)->GetColorTable() != NULL &&
+        eResampleAlg != GRA_NearestNeighbour && eResampleAlg != GRA_Mode )
+    {
+        CPLError(CE_Warning, CPLE_AppDefined,
+                 "Input dataset has a color table, which will likely lead to "
+                 "bad results when using a resampling method other than "
+                 "nearest neighbour or mode. Converting the dataset to 24/32 bit "
+                 "(e.g. with gdal_translate -expand rgb/rgba) is advised.");
+    }
+
     GDALDataset* poDS = Create( pszFilename, nXSize, nYSize, nTargetBands, GDT_Byte,
                                    papszOptions );
     if( poDS == NULL )
@@ -2283,6 +2373,10 @@ GDALDataset* MBTilesDataset::CreateCopy( const char *pszFilename,
         return NULL;
     }
     poDS->SetGeoTransform(adfGeoTransform);
+    if( nTargetBands == 1 && nBands == 1 && poSrcDS->GetRasterBand(1)->GetColorTable() != NULL )
+    {
+        poDS->GetRasterBand(1)->SetColorTable( poSrcDS->GetRasterBand(1)->GetColorTable() );
+    }
 
     hTransformArg =
         GDALCreateGenImgProjTransformer2( poSrcDS, poDS, papszTO );
@@ -2307,22 +2401,9 @@ GDALDataset* MBTilesDataset::CreateCopy( const char *pszFilename,
 /* -------------------------------------------------------------------- */
     GDALWarpOptions *psWO = GDALCreateWarpOptions();
 
-    psWO->papszWarpOptions = NULL;
+    psWO->papszWarpOptions = CSLSetNameValue(NULL, "OPTIMIZE_SIZE", "YES");
     psWO->eWorkingDataType = GDT_Byte;
 
-    GDALResampleAlg eResampleAlg = GRA_Bilinear;
-    const char* pszResampling = CSLFetchNameValue(papszOptions, "RESAMPLING");
-    if( pszResampling )
-    {
-        for(size_t iAlg = 0; iAlg < sizeof(asResamplingAlg)/sizeof(asResamplingAlg[0]); iAlg ++)
-        {
-            if( EQUAL(pszResampling, asResamplingAlg[iAlg].pszName) )
-            {
-                eResampleAlg = asResamplingAlg[iAlg].eResampleAlg;
-                break;
-            }
-        }
-    }
     psWO->eResampleAlg = eResampleAlg;
 
     psWO->hSrcDS = poSrcDS;
@@ -2454,6 +2535,20 @@ CPLErr MBTilesDataset::IBuildOverviews(
             sqlite3_free(pszErrMsg);
             return CE_Failure;
         }
+
+        int nRows = 0, nCols = 0;
+        char** papszResult = NULL;
+        sqlite3_get_table(hDB, "SELECT * FROM metadata WHERE name = 'minzoom'", &papszResult, &nRows, &nCols, NULL);
+        sqlite3_free_table(papszResult);
+        if( nRows == 1 )
+        {
+            sqlite3_exec(hDB, "DELETE FROM metadata WHERE name = 'minzoom'", NULL, NULL, NULL);
+            pszSQL = sqlite3_mprintf(
+                "INSERT INTO metadata (name, value) VALUES ('minzoom', '%d')", m_nZoomLevel );
+            sqlite3_exec( hDB, pszSQL, NULL, NULL, NULL );
+            sqlite3_free(pszSQL);
+        }
+
         return CE_None;
     }
 
@@ -2491,6 +2586,7 @@ CPLErr MBTilesDataset::IBuildOverviews(
 
     GDALRasterBand*** papapoOverviewBands = (GDALRasterBand ***) CPLCalloc(sizeof(void*),nBands);
     int iCurOverview = 0;
+    int nMinZoom = m_nZoomLevel;
     for( int iBand = 0; iBand < nBands; iBand++ )
     {
         papapoOverviewBands[iBand] = (GDALRasterBand **) CPLCalloc(sizeof(void*),nOverviews);
@@ -2508,7 +2604,9 @@ CPLErr MBTilesDataset::IBuildOverviews(
             {
                 continue;
             }
-            GDALDataset* poODS = m_papoOverviewDS[iOvr];
+            MBTilesDataset* poODS = m_papoOverviewDS[iOvr];
+            if( poODS->m_nZoomLevel < nMinZoom )
+                nMinZoom = poODS->m_nZoomLevel;
             papapoOverviewBands[iBand][iCurOverview] = poODS->GetRasterBand(iBand+1);
             iCurOverview++ ;
         }
@@ -2523,6 +2621,22 @@ CPLErr MBTilesDataset::IBuildOverviews(
         CPLFree(papapoOverviewBands[iBand]);
     }
     CPLFree(papapoOverviewBands);
+
+    if( eErr == CE_None )
+    {
+        int nRows = 0, nCols = 0;
+        char** papszResult = NULL;
+        sqlite3_get_table(hDB, "SELECT * FROM metadata WHERE name = 'minzoom'", &papszResult, &nRows, &nCols, NULL);
+        sqlite3_free_table(papszResult);
+        if( nRows == 1 )
+        {
+            sqlite3_exec(hDB, "DELETE FROM metadata WHERE name = 'minzoom'", NULL, NULL, NULL);
+            char* pszSQL = sqlite3_mprintf(
+                "INSERT INTO metadata (name, value) VALUES ('minzoom', '%d')", nMinZoom );
+            sqlite3_exec( hDB, pszSQL, NULL, NULL, NULL );
+            sqlite3_free(pszSQL);
+        }
+    }
 
     return eErr;
 }
@@ -2600,6 +2714,7 @@ COMPRESSION_OPTIONS
 "    <Value>AVERAGE</Value>"
 "  </Option>"
 "  <Option name='WRITE_BOUNDS' type='boolean' description='Whether to write the bounds metadata' default='YES'/>"
+"  <Option name='WRITE_MINMAXZOOM' type='boolean' description='Whether to write the minzoom and maxzoom metadata' default='YES'/>"
 "</CreationOptionList>");
     poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
 

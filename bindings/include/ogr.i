@@ -1574,14 +1574,19 @@ public:
           CPLError(CE_Failure, 1, FIELD_INDEX_ERROR_TMPL, i);
       return i;
   }
-#endif
-
   int GetFieldIndex(const char* name) {
+      // Perl bindings let Swig handle overloaded methods. Thus they need to behave similarly.
       int i = OGR_F_GetFieldIndex(self, name);
-      if (i == -1)
+      if (i < 0)
           CPLError(CE_Failure, 1, FIELD_NAME_ERROR_TMPL, name);
       return i;
   }
+#else
+  int GetFieldIndex(const char* name) {
+      // Do not issue an error if the field doesn't exist. It is intended to be silent
+      return OGR_F_GetFieldIndex(self, name);
+  }
+#endif
 
 #ifdef SWIGPERL
   int GetGeomFieldIndex(int i) {
@@ -1589,14 +1594,19 @@ public:
           CPLError(CE_Failure, 1, FIELD_INDEX_ERROR_TMPL, i);
       return i;
   }
-#endif
-
   int GetGeomFieldIndex(const char* name) {
+      // Perl bindings let Swig handle overloaded methods. Thus they need to behave similarly.
       int i = OGR_F_GetGeomFieldIndex(self, name);
-      if (i == -1)
+      if (i < 0)
           CPLError(CE_Failure, 1, FIELD_NAME_ERROR_TMPL, name);
       return i;
   }
+#else
+  int GetGeomFieldIndex(const char* name) {
+      // Do not issue an error if the field doesn't exist. It is intended to be silent
+      return OGR_F_GetGeomFieldIndex(self, name);
+  }
+#endif
 
   GIntBig GetFID() {
     return OGR_F_GetFID(self);
@@ -1977,10 +1987,8 @@ public:
 #endif
 
   int GetFieldIndex(const char* name) {
-      int i = OGR_FD_GetFieldIndex(self, name);
-      if (i == -1)
-          CPLError(CE_Failure, 1, FIELD_NAME_ERROR_TMPL, name);
-      return i;
+      // Do not issue an error if the field doesn't exist. It is intended to be silent
+      return OGR_FD_GetFieldIndex(self, name);
   }
 
 %apply Pointer NONNULL {OGRFieldDefnShadow* defn};
@@ -2018,6 +2026,7 @@ public:
 #endif
 
   int GetGeomFieldIndex(const char* name) {
+      // Do not issue an error if the field doesn't exist. It is intended to be silent
       return OGR_FD_GetGeomFieldIndex(self, name);
   }
 

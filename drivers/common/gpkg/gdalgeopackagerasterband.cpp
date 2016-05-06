@@ -76,6 +76,9 @@ GDALGPKGMBTilesLikePseudoDataset::GDALGPKGMBTilesLikePseudoDataset() :
 #endif
     m_hTempDB = NULL;
     m_nTileInsertionCount = 0;
+    m_nLastSpaceCheckTimestamp = 0;
+    m_nAge = 0;
+    m_bForceTempDBCompaction = CPLTestBool(CPLGetConfigOption("GPKG_FORCE_TEMPDB_COMPACTION", "NO"));
 }
 
 /************************************************************************/
@@ -122,9 +125,12 @@ GDALGPKGMBTilesLikeRasterBand::GDALGPKGMBTilesLikeRasterBand(
 
 CPLErr GDALGPKGMBTilesLikeRasterBand::FlushCache()
 {
-    if( GDALPamRasterBand::FlushCache() != CE_None )
-        return CE_Failure;
-    return m_poTPD->IFlushCacheWithErrCode();
+    m_poTPD->m_nLastSpaceCheckTimestamp = -1; // disable partial flushes
+    CPLErr eErr = GDALPamRasterBand::FlushCache();
+    if( eErr == CE_None )
+        eErr = m_poTPD->IFlushCacheWithErrCode();
+    m_poTPD->m_nLastSpaceCheckTimestamp = 0;
+    return eErr;
 }
 
 /************************************************************************/
@@ -138,7 +144,7 @@ CPLErr GDALGPKGMBTilesLikePseudoDataset::FlushTiles()
     {
         if( m_nShiftXPixelsMod || m_nShiftYPixelsMod )
         {
-            eErr = FlushRemainingShiftedTiles();
+            eErr = FlushRemainingShiftedTiles(false /* total flush*/);
         }
         else
         {
@@ -175,50 +181,73 @@ GDALColorTable* GDALGPKGMBTilesLikeRasterBand::GetColorTable()
                 return m_poTPD->m_poCT;
             }
 
-            char* pszSQL = sqlite3_mprintf("SELECT tile_data FROM '%q' "
-                "WHERE zoom_level = %d LIMIT 1",
-                m_poTPD->m_osRasterTable.c_str(), m_poTPD->m_nZoomLevel);
-            sqlite3_stmt* hStmt = NULL;
-            int rc = sqlite3_prepare(m_poTPD->IGetDB(), pszSQL, -1, &hStmt, NULL);
-            if ( rc == SQLITE_OK )
+            for( int i=0;i<2;i++)
             {
-                rc = sqlite3_step( hStmt );
-                if( rc == SQLITE_ROW
-                    && sqlite3_column_type( hStmt, 0 ) == SQLITE_BLOB )
+                bool bRetry = false;
+                char* pszSQL;
+                if( i == 0 )
                 {
-                    const int nBytes = sqlite3_column_bytes( hStmt, 0 );
-                    GByte* pabyRawData = reinterpret_cast<GByte *>(
-                        const_cast<void *>( sqlite3_column_blob( hStmt, 0 ) ) );
-                    CPLString osMemFileName;
-                    osMemFileName.Printf("/vsimem/gpkg_read_tile_%p", this);
-                    VSILFILE *fp = VSIFileFromMemBuffer( osMemFileName.c_str(),
-                                                         pabyRawData,
-                                                         nBytes, FALSE);
-                    VSIFCloseL(fp);
-
-                    /* Only PNG can have color table. */
-                    const char* apszDrivers[] = { "PNG", NULL };
-                    GDALDataset* poDSTile = reinterpret_cast<GDALDataset *>(
-                        GDALOpenEx( osMemFileName.c_str(),
-                                    GDAL_OF_RASTER | GDAL_OF_INTERNAL,
-                                    apszDrivers, NULL, NULL ) );
-                    if( poDSTile != NULL )
-                    {
-                        if( poDSTile->GetRasterCount() == 1 )
-                        {
-                            m_poTPD->m_poCT
-                                = poDSTile->GetRasterBand(1)->GetColorTable();
-                            if( m_poTPD->m_poCT != NULL )
-                                m_poTPD->m_poCT = m_poTPD->m_poCT->Clone();
-                        }
-                        GDALClose( poDSTile );
-                    }
-
-                    VSIUnlink(osMemFileName);
+                    pszSQL = sqlite3_mprintf("SELECT tile_data FROM '%q' "
+                        "WHERE zoom_level = %d LIMIT 1",
+                        m_poTPD->m_osRasterTable.c_str(), m_poTPD->m_nZoomLevel);
                 }
+                else
+                {
+                    // Try a tile in the middle of the raster
+                    pszSQL = sqlite3_mprintf("SELECT tile_data FROM '%q' "
+                        "WHERE zoom_level = %d AND tile_column = %d AND tile_row = %d",
+                        m_poTPD->m_osRasterTable.c_str(), m_poTPD->m_nZoomLevel,
+                        m_poTPD->m_nShiftXTiles + nRasterXSize / 2 / nBlockXSize,
+                        m_poTPD->GetRowFromIntoTopConvention(m_poTPD->m_nShiftYTiles + nRasterYSize / 2 / nBlockYSize));
+                }
+                sqlite3_stmt* hStmt = NULL;
+                int rc = sqlite3_prepare(m_poTPD->IGetDB(), pszSQL, -1, &hStmt, NULL);
+                if ( rc == SQLITE_OK )
+                {
+                    rc = sqlite3_step( hStmt );
+                    if( rc == SQLITE_ROW
+                        && sqlite3_column_type( hStmt, 0 ) == SQLITE_BLOB )
+                    {
+                        const int nBytes = sqlite3_column_bytes( hStmt, 0 );
+                        GByte* pabyRawData = reinterpret_cast<GByte *>(
+                            const_cast<void *>( sqlite3_column_blob( hStmt, 0 ) ) );
+                        CPLString osMemFileName;
+                        osMemFileName.Printf("/vsimem/gpkg_read_tile_%p", this);
+                        VSILFILE *fp = VSIFileFromMemBuffer( osMemFileName.c_str(),
+                                                            pabyRawData,
+                                                            nBytes, FALSE);
+                        VSIFCloseL(fp);
+
+                        /* Only PNG can have color table. */
+                        const char* apszDrivers[] = { "PNG", NULL };
+                        GDALDataset* poDSTile = reinterpret_cast<GDALDataset *>(
+                            GDALOpenEx( osMemFileName.c_str(),
+                                        GDAL_OF_RASTER | GDAL_OF_INTERNAL,
+                                        apszDrivers, NULL, NULL ) );
+                        if( poDSTile != NULL )
+                        {
+                            if( poDSTile->GetRasterCount() == 1 )
+                            {
+                                m_poTPD->m_poCT
+                                    = poDSTile->GetRasterBand(1)->GetColorTable();
+                                if( m_poTPD->m_poCT != NULL )
+                                    m_poTPD->m_poCT = m_poTPD->m_poCT->Clone();
+                            }
+                            else
+                                bRetry = true;
+                            GDALClose( poDSTile );
+                        }
+                        else
+                            bRetry = true;
+
+                        VSIUnlink(osMemFileName);
+                    }
+                }
+                sqlite3_free(pszSQL);
+                sqlite3_finalize(hStmt);
+                if( !bRetry )
+                    break;
             }
-            sqlite3_free(pszSQL);
-            sqlite3_finalize(hStmt);
         }
 
         return m_poTPD->m_poCT;
@@ -1513,7 +1542,7 @@ CPLErr GDALGPKGMBTilesLikePseudoDataset::WriteTileInternal()
 /*                     FlushRemainingShiftedTiles()                     */
 /************************************************************************/
 
-CPLErr GDALGPKGMBTilesLikePseudoDataset::FlushRemainingShiftedTiles()
+CPLErr GDALGPKGMBTilesLikePseudoDataset::FlushRemainingShiftedTiles(bool bPartialFlush)
 {
     if( m_hTempDB == NULL )
         return CE_None;
@@ -1528,6 +1557,27 @@ CPLErr GDALGPKGMBTilesLikePseudoDataset::FlushRemainingShiftedTiles()
     int nBlockXSize, nBlockYSize;
     IGetRasterBand(1)->GetBlockSize(&nBlockXSize, &nBlockYSize);
     const int nBands = IGetRasterCount();
+    const int nRasterXSize = IGetRasterBand(1)->GetXSize();
+    const int nRasterYSize = IGetRasterBand(1)->GetYSize();
+    const int nXBlocks = DIV_ROUND_UP( nRasterXSize , nBlockXSize );
+    const int nYBlocks = DIV_ROUND_UP( nRasterYSize , nBlockYSize );
+
+    int nPartialActiveTiles = 0;
+    if( bPartialFlush )
+    {
+        sqlite3_stmt* hStmt = NULL;
+        CPLString osSQL;
+        osSQL.Printf("SELECT COUNT(*) FROM partial_tiles WHERE zoom_level = %d AND partial_flag != 0", m_nZoomLevel);
+        if( sqlite3_prepare_v2(m_hTempDB, osSQL.c_str(), -1, &hStmt, NULL) == SQLITE_OK )
+        {
+            if( sqlite3_step(hStmt) == SQLITE_ROW )
+            {
+                nPartialActiveTiles = sqlite3_column_int(hStmt, 0);
+                CPLDebug("GPKG", "Active partial tiles before flush: %d", nPartialActiveTiles);
+            }
+            sqlite3_finalize(hStmt);
+        }
+    }
 
     CPLString osSQL = "SELECT tile_row, tile_column, partial_flag";
     for(int nBand = 1; nBand <= nBands; nBand++ )
@@ -1537,6 +1587,10 @@ CPLErr GDALGPKGMBTilesLikePseudoDataset::FlushRemainingShiftedTiles()
     osSQL += CPLSPrintf(" FROM partial_tiles WHERE "
                         "zoom_level = %d AND partial_flag != 0",
                         m_nZoomLevel);
+    if( bPartialFlush )
+    {
+        osSQL += " ORDER BY age";
+    }
     const char* pszSQL = osSQL.c_str();
 
 #ifdef DEBUG_VERBOSE
@@ -1553,6 +1607,7 @@ CPLErr GDALGPKGMBTilesLikePseudoDataset::FlushRemainingShiftedTiles()
 
     CPLErr eErr = CE_None;
     bool bGotPartialTiles = false;
+    int nCountFlushedTiles = 0;
     do
     {
         rc = sqlite3_step(hStmt);
@@ -1563,6 +1618,55 @@ CPLErr GDALGPKGMBTilesLikePseudoDataset::FlushRemainingShiftedTiles()
             int nRow = sqlite3_column_int(hStmt, 0);
             int nCol = sqlite3_column_int(hStmt, 1);
             int nPartialFlags = sqlite3_column_int(hStmt, 2);
+
+            if( bPartialFlush )
+            {
+                // This method assumes that there are no dirty blocks alive
+                // so check this assumption.
+                // When called with bPartialFlush = false, FlushCache() has already
+                // been called, so no need to check.
+                bool bFoundDirtyBlock = false;
+                int nBlockXOff = nCol - m_nShiftXTiles;
+                int nBlockYOff = nRow - m_nShiftYTiles;
+                for( int iX = 0; !bFoundDirtyBlock && iX < (( m_nShiftXPixelsMod != 0 ) ? 2 : 1); iX ++ )
+                {
+                    if( nBlockXOff + iX < 0 || nBlockXOff + iX >= nXBlocks )
+                        continue;
+                    for( int iY = 0; !bFoundDirtyBlock && iY < (( m_nShiftYPixelsMod != 0 ) ? 2 : 1); iY ++ )
+                    {
+                        if( nBlockYOff + iY < 0 || nBlockYOff + iY >= nYBlocks )
+                            continue;
+                        for( int iBand = 1; !bFoundDirtyBlock && iBand <= nBands; iBand ++ )
+                        {
+                            GDALRasterBlock* poBlock =
+                                        ((GDALGPKGMBTilesLikeRasterBand*)IGetRasterBand(iBand))->
+                                                    AccessibleTryGetLockedBlockRef(nBlockXOff + iX, nBlockYOff + iY);
+                            if( poBlock )
+                            {
+                                if( poBlock->GetDirty() )
+                                    bFoundDirtyBlock = true;
+                                poBlock->DropLock();
+                            }
+                        }
+                    }
+                }
+                if( bFoundDirtyBlock )
+                {
+#ifdef DEBUG_VERBOSE
+                    CPLDebug("GPKG", "Skipped flushing tile row = %d, column = %d because it has dirty block(s) in GDAL cache",
+                             nRow, nCol);
+#endif
+                    continue;
+                }
+            }
+
+            nCountFlushedTiles ++;
+            if( bPartialFlush && nCountFlushedTiles >= nPartialActiveTiles / 2 )
+            {
+                CPLDebug("GPKG", "Flushed %d tiles", nCountFlushedTiles);
+                break;
+            }
+
             for( int nBand = 1; nBand <= nBands; nBand++ )
             {
                 if( nPartialFlags & (((1 << 4)-1) << (4*(nBand - 1))) )
@@ -1690,6 +1794,17 @@ CPLErr GDALGPKGMBTilesLikePseudoDataset::FlushRemainingShiftedTiles()
             m_asCachedTilesDesc[0].abBandDirty[3] = true;
 
             eErr = WriteTile();
+
+            if( eErr == CE_None && bPartialFlush )
+            {
+                pszSQL = CPLSPrintf("DELETE FROM partial_tiles WHERE zoom_level = %d AND tile_row = %d AND tile_column = %d",
+                                    m_nZoomLevel, nRow, nCol);
+#ifdef DEBUG_VERBOSE
+                CPLDebug("GPKG", "%s", pszSQL);
+#endif
+                if( SQLCommand(m_hTempDB, pszSQL) != OGRERR_NONE )
+                    eErr = CE_None;
+            }
         }
         else
         {
@@ -1705,7 +1820,12 @@ CPLErr GDALGPKGMBTilesLikePseudoDataset::FlushRemainingShiftedTiles()
 
     sqlite3_finalize(hStmt);
 
-    if( bGotPartialTiles )
+    if( bPartialFlush && nCountFlushedTiles < nPartialActiveTiles / 2 )
+    {
+        CPLDebug("GPKG", "Flushed %d tiles. Target was %d", nCountFlushedTiles, nPartialActiveTiles / 2);
+    }
+
+    if( bGotPartialTiles && !bPartialFlush )
     {
 #ifdef DEBUG_VERBOSE
         pszSQL = CPLSPrintf("SELECT p1.id, p1.tile_row, p1.tile_column FROM partial_tiles p1, partial_tiles p2 "
@@ -1725,7 +1845,7 @@ CPLErr GDALGPKGMBTilesLikePseudoDataset::FlushRemainingShiftedTiles()
 #endif
 
         pszSQL = CPLSPrintf("UPDATE partial_tiles SET zoom_level = %d, "
-                            "partial_flag = 0 WHERE zoom_level = %d AND partial_flag != 0",
+                            "partial_flag = 0, age = -1 WHERE zoom_level = %d AND partial_flag != 0",
                             -1-m_nZoomLevel, m_nZoomLevel);
 #ifdef DEBUG_VERBOSE
         CPLDebug("GPKG", "%s", pszSQL);
@@ -1734,6 +1854,62 @@ CPLErr GDALGPKGMBTilesLikePseudoDataset::FlushRemainingShiftedTiles()
     }
 
     return eErr;
+}
+
+/************************************************************************/
+/*                DoPartialFlushOfPartialTilesIfNecessary()             */
+/************************************************************************/
+
+CPLErr GDALGPKGMBTilesLikePseudoDataset::DoPartialFlushOfPartialTilesIfNecessary()
+{
+    time_t nCurTimeStamp = time(NULL);
+    if( m_nLastSpaceCheckTimestamp == 0 )
+        m_nLastSpaceCheckTimestamp = nCurTimeStamp;
+    if( m_nLastSpaceCheckTimestamp > 0 && 
+        (m_bForceTempDBCompaction || nCurTimeStamp - m_nLastSpaceCheckTimestamp > 10) )
+    {
+        m_nLastSpaceCheckTimestamp = nCurTimeStamp;
+        GIntBig nFreeSpace = VSIGetDiskFreeSpace( CPLGetDirname(m_osTempDBFilename) );
+        bool bTryFreeing = false;
+        if( nFreeSpace >= 0 && nFreeSpace < 1024 * 1024 * 1024 )
+        {
+            CPLDebug("GPKG", "Free space below 1GB. Flushing part of partial tiles");
+            bTryFreeing = true;
+        }
+        else
+        {
+            VSIStatBufL sStat;
+            if( VSIStatL( m_osTempDBFilename, &sStat ) == 0 )
+            {
+                GIntBig nTempSpace = sStat.st_size;
+                if( VSIStatL( (m_osTempDBFilename + "-journal").c_str(), &sStat ) == 0 )
+                  nTempSpace += sStat.st_size;
+                else if( VSIStatL( (m_osTempDBFilename + "-wal").c_str(), &sStat ) == 0 )
+                  nTempSpace += sStat.st_size;
+
+                int nBlockXSize, nBlockYSize;
+                IGetRasterBand(1)->GetBlockSize(&nBlockXSize, &nBlockYSize);
+                const int nBands = IGetRasterCount();
+
+                if( nTempSpace > 4 * static_cast<GIntBig>(IGetRasterBand(1)->GetXSize())  * nBlockYSize * nBands )
+                {
+                    CPLDebug("GPKG", "Partial tiles DB is " CPL_FRMT_GIB " bytes. Flushing part of partial tiles",
+                             nTempSpace);
+                    bTryFreeing = true;
+                }
+            }
+        }
+        if( bTryFreeing )
+        {
+            if( FlushRemainingShiftedTiles(true /* partial flush*/) != CE_None )
+            {
+                return CE_Failure;
+            }
+            SQLCommand(m_hTempDB, "DELETE FROM partial_tiles WHERE zoom_level < 0");
+            SQLCommand(m_hTempDB, "VACUUM");
+        }
+    }
+    return CE_None;
 }
 
 /************************************************************************/
@@ -1782,7 +1958,8 @@ CPLErr GDALGPKGMBTilesLikePseudoDataset::WriteShiftedTile(int nRow, int nCol, in
             return CE_Failure;
         }
         SQLCommand(m_hTempDB, "PRAGMA synchronous = OFF");
-        SQLCommand(m_hTempDB, "PRAGMA journal_mode = OFF");
+        /* coverity[tainted_string] */
+        SQLCommand(m_hTempDB, (CPLString("PRAGMA journal_mode = ") + CPLGetConfigOption("PARTIAL_TILES_JOURNAL_MODE", "OFF")).c_str());
         SQLCommand(m_hTempDB, "CREATE TABLE partial_tiles("
                                     "id INTEGER PRIMARY KEY AUTOINCREMENT,"
                                     "zoom_level INTEGER NOT NULL,"
@@ -1793,9 +1970,12 @@ CPLErr GDALGPKGMBTilesLikePseudoDataset::WriteShiftedTile(int nRow, int nCol, in
                                     "tile_data_band_3 BLOB,"
                                     "tile_data_band_4 BLOB,"
                                     "partial_flag INTEGER NOT NULL,"
+                                    "age INTEGER NOT NULL,"
                                     "UNIQUE (zoom_level, tile_column, tile_row))" );
         SQLCommand(m_hTempDB, "CREATE INDEX partial_tiles_partial_flag_idx "
                                 "ON partial_tiles(partial_flag)");
+        SQLCommand(m_hTempDB, "CREATE INDEX partial_tiles_age_idx "
+                                "ON partial_tiles(age)");
 
         if( m_poParentDS != NULL )
         {
@@ -1803,6 +1983,7 @@ CPLErr GDALGPKGMBTilesLikePseudoDataset::WriteShiftedTile(int nRow, int nCol, in
             m_poParentDS->m_hTempDB = m_hTempDB;
         }
     }
+
     if( m_poParentDS != NULL )
         m_hTempDB = m_poParentDS->m_hTempDB;
 
@@ -1961,13 +2142,20 @@ CPLErr GDALGPKGMBTilesLikePseudoDataset::WriteShiftedTile(int nRow, int nCol, in
         m_asCachedTilesDesc[0].abBandDirty[3] = true;
 
         pszSQL = CPLSPrintf("UPDATE partial_tiles SET zoom_level = %d, "
-                            "partial_flag = 0 WHERE id = %d",
+                            "partial_flag = 0, age = -1 WHERE id = %d",
                             -1-m_nZoomLevel, nExistingId);
         SQLCommand(m_hTempDB, pszSQL);
 #ifdef DEBUG_VERBOSE
         CPLDebug("GPKG", "%s", pszSQL);
 #endif
-        return WriteTile();
+        CPLErr eErr = WriteTile();
+
+        // Call DoPartialFlushOfPartialTilesIfNecessary() after using m_pabyCachedTiles
+        // as it is going to mess with it.
+        if( DoPartialFlushOfPartialTilesIfNecessary() != CE_None )
+            eErr = CE_None;
+
+        return eErr;
     }
 
     if( nExistingId == 0 )
@@ -1991,19 +2179,25 @@ CPLErr GDALGPKGMBTilesLikePseudoDataset::WriteShiftedTile(int nRow, int nCol, in
         }
     }
 
+    const GIntBig nAge = ( m_poParentDS ) ? m_poParentDS->m_nAge : m_nAge;
     if( nExistingId == 0 )
     {
         pszSQL = CPLSPrintf("INSERT INTO partial_tiles "
-                "(zoom_level, tile_row, tile_column, tile_data_band_%d, partial_flag) VALUES (%d, %d, %d, ?, %d)",
-                nBand, m_nZoomLevel, nRow, nCol, l_nFlags);
+                "(zoom_level, tile_row, tile_column, tile_data_band_%d, partial_flag, age) VALUES (%d, %d, %d, ?, %d, " CPL_FRMT_GIB ")",
+                nBand, m_nZoomLevel, nRow, nCol, l_nFlags, nAge);
     }
     else
     {
         pszSQL = CPLSPrintf("UPDATE partial_tiles SET zoom_level = %d, "
                             "tile_row = %d, tile_column = %d, "
-                            "tile_data_band_%d = ?, partial_flag = %d WHERE id = %d",
-                            m_nZoomLevel, nRow, nCol, nBand, l_nFlags, nExistingId);
+                            "tile_data_band_%d = ?, partial_flag = %d, age = " CPL_FRMT_GIB " WHERE id = %d",
+                            m_nZoomLevel, nRow, nCol, nBand, l_nFlags, nAge, nExistingId);
     }
+    if ( m_poParentDS )
+        m_poParentDS->m_nAge ++;
+    else
+        m_nAge ++;
+
 #ifdef DEBUG_VERBOSE
     CPLDebug("GPKG", "%s", pszSQL);
 #endif
@@ -2033,6 +2227,11 @@ CPLErr GDALGPKGMBTilesLikePseudoDataset::WriteShiftedTile(int nRow, int nCol, in
     }
 
     sqlite3_finalize(hStmt);
+
+    // Call DoPartialFlushOfPartialTilesIfNecessary() after using m_pabyCachedTiles
+    // as it is going to mess with it.
+    if( DoPartialFlushOfPartialTilesIfNecessary() != CE_None )
+          eErr = CE_None;
 
     return eErr;
 }
