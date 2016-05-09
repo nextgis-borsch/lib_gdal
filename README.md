@@ -83,7 +83,7 @@ Available raster drivers for now (by all driver dirs in sources). Drivers marked
 | gta | no |  |  |
 | **gtiff** | **yes** | no | Obligatory for building GDAL |
 | **gxf** | **yes** | no | No additional build targets implemented |
-| hdf4 * | no | [lib_hdf4](https://github.com/nextgis-extra/lib_hdf4) |  |
+| hdf4 * | no | [lib_hdf4](https://github.com/nextgis-borsch/lib_hdf4) |  |
 | hdf5 * | no |  |  |
 | **hf2** | **yes** | no | - |
 | **hfa** | **yes** | no | Obligatory for building GDAL |
@@ -123,7 +123,7 @@ Available raster drivers for now (by all driver dirs in sources). Drivers marked
 | pgchip | no |  |  |
 | **plmosaic** | **yes** | CURL | - |
 | **png** | **yes** | PNG |  |
-| **postgisraster** | **yes** | PostgreSQL ([lib_pq](https://github.com/nextgis-extra/lib_pq)) | - |
+| **postgisraster** | **yes** | PostgreSQL ([lib_pq](https://github.com/nextgis-borsch/lib_pq)) | - |
 | **r** | **yes** | no | - |
 | rasdaman | no |  |  |
 | **rasterlite** | **yes** | Optionally: SPATIALITE? | Requires built sqlite driver |
@@ -210,7 +210,7 @@ Available vector drivers for now (by all driver dirs in sources). Drivers marked
 | **openfilegdb** | **yes** | no | - |
 | **osm** | **yes** | SQLITE3; Optionally: EXPAT | No additional build targets implemented |
 | **pds** | **yes** | no | Requires built PDS raster driver; Has the same dir name in /raster |
-| **pg** | **yes** | PostgreSQL ([lib_pq](https://github.com/nextgis-extra/lib_pq)) | - |
+| **pg** | **yes** | PostgreSQL ([lib_pq](https://github.com/nextgis-borsch/lib_pq)) | - |
 | **pgdump** | **yes** | no | - |
 | pgeo | no |  |  |
 | **rec** | **yes** | no | - |
@@ -222,7 +222,7 @@ Available vector drivers for now (by all driver dirs in sources). Drivers marked
 | **selafin** | **yes** | no | - |
 | **shape** | **yes** | no | - |
 | sosi | no |  |  |
-| **sqlite** | **yes** | SQLITE3; Optionally: SPATIALITE - [lib_spatialite](https://github.com/nextgis-extra/lib_spatialite), PCRE | No Spatialite and PCRE support implemented; No additional build targets implemented |
+| **sqlite** | **yes** | SQLITE3; Optionally: SPATIALITE - [lib_spatialite](https://github.com/nextgis-borsch/lib_spatialite), PCRE | No Spatialite and PCRE support implemented; No additional build targets implemented |
 | **sua** | **yes** | no | - |
 | **svg** | **yes** | EXPAT | - |
 | **sxf** | **yes** | no | ... |
@@ -233,7 +233,7 @@ Available vector drivers for now (by all driver dirs in sources). Drivers marked
 | walk | no |  |  |
 | **wasp** | **yes** | no | - |
 | **wfs** | **yes** | CURL | Depends on temporary /core/frmts directory; Requires built wms driver |
-| xls * | no | [lib_freexl](https://github.com/nextgis-extra/lib_freexl) |  |
+| xls * | no | [lib_freexl](https://github.com/nextgis-borsch/lib_freexl) |  |
 | **xlsx** | **yes** | EXPAT | - |
 | **xplane** | **yes** | no | Obligatory for building GDAL |
 
