@@ -146,6 +146,8 @@ if(JPEG12_FOUND)
     add_definitions(-DJPEG12_SUPPORTED)
 endif()
 
+find_anyproject(LibLZMA)
+
 find_anyproject(TIFF REQUIRED)
 find_anyproject(GeoTIFF VERSION 1.2.1 REQUIRED)
 
