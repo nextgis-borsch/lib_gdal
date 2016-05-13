@@ -193,6 +193,8 @@ function(find_extproject name)
     endif()
    
     set(RECONFIGURE OFF)
+    set(INCLUDE_EXPORT_PATH "${EP_BASE}/Build/${name}_EP/${repo_project}-exports.cmake")
+
     if(NOT EXISTS "${EP_BASE}/Source/${name}_EP/.git")
         color_message("Git clone ${repo_name} ...")
         execute_process(COMMAND ${GIT_EXECUTABLE} clone ${EP_URL}/${repo_name} ${name}_EP
@@ -202,7 +204,11 @@ function(find_extproject name)
         file(WRITE ${EP_BASE}/Stamp/${name}_EP/${name}_EP-gitclone-lastrun.txt "")
         set(RECONFIGURE ON)
     else() 
-        check_updates(${EP_BASE}/Stamp/${name}_EP/${name}_EP-gitpull.txt ${PULL_UPDATE_PERIOD} CHECK_UPDATES)
+        if(EXISTS ${INCLUDE_EXPORT_PATH})
+            check_updates(${EP_BASE}/Stamp/${name}_EP/${name}_EP-gitpull.txt ${PULL_UPDATE_PERIOD} CHECK_UPDATES)
+        else()
+            set(CHECK_UPDATES ON)
+        endif()
         if(CHECK_UPDATES)
             color_message("Git pull ${repo_name} ...")
             execute_process(COMMAND ${GIT_EXECUTABLE} pull
@@ -221,8 +227,6 @@ function(find_extproject name)
             ${find_extproject_CMAKE_ARGS}
             WORKING_DIRECTORY ${EP_BASE}/Build/${name}_EP)         
     endif()
-    
-    set(INCLUDE_EXPORT_PATH "${EP_BASE}/Build/${name}_EP/${repo_project}-exports.cmake")
     
     if(EXISTS ${INCLUDE_EXPORT_PATH})
         get_imported_targets(${INCLUDE_EXPORT_PATH} IMPORTED_TARGETS)
