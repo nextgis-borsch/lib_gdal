@@ -3,7 +3,7 @@
 # Purpose:  CMake build scripts
 # Author:   Dmitry Baryshnikov, polimax@mail.ru
 ################################################################################
-# Copyright (C) 2015, NextGIS <info@nextgis.com>
+# Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
 # Copyright (C) 2015 Dmitry Baryshnikov
 #
 # This script is free software: you can redistribute it and/or modify
@@ -24,6 +24,7 @@ set(TARGET_LINK_LIB) # ${TARGET_LINK_LIB} ""
 set(DEPENDENCY_LIB) # ${DEPENDENCY_LIB} ""
 set(WITHOPT ${WITHOPT} "")
 set(EXPORTS_PATHS)
+set(LINK_SEARCH_PATHS)
        
 function(find_anyproject name)
 
@@ -110,13 +111,17 @@ function(find_anyproject name)
         set(DEPENDENCY_LIB ${DEPENDENCY_LIB} PARENT_SCOPE)    
     endif()
     set(WITHOPT ${WITHOPT} PARENT_SCOPE)
-    set(EXPORTS_PATHS ${EXPORTS_PATHS} PARENT_SCOPE)    
+    set(EXPORTS_PATHS ${EXPORTS_PATHS} PARENT_SCOPE)  
+    set(LINK_SEARCH_PATHS ${LINK_SEARCH_PATHS} PARENT_SCOPE) 
 endfunction()
 
 function(target_link_extlibraries name)
     if(DEPENDENCY_LIB)
         add_dependencies(${name} ${DEPENDENCY_LIB})  
-    endif()    
+    endif()   
+    if(LINK_SEARCH_PATHS)
+        link_directories(${LINK_SEARCH_PATHS})
+    endif() 
     if(TARGET_LINK_LIB)
         #list(REMOVE_DUPLICATES TARGET_LINK_LIB) debug;...;optimised;... etc. if filter out
         target_link_libraries(${name} ${TARGET_LINK_LIB})
@@ -125,11 +130,21 @@ function(target_link_extlibraries name)
 endfunction()
 
 function(write_ext_options)
-    if(EXPORTS_PATHS) #NOT BUILD_SHARED_LIBS AND 
-        foreach(EXPORT_PATH ${EXPORTS_PATHS})   
-            string(CONCAT EXPORTS_PATHS_STR ${EXPORTS_PATHS_STR} " \"${EXPORT_PATH}\"")
-        endforeach()
-        set(WITHOPT "${WITHOPT}set(INCLUDE_EXPORTS_PATHS \${INCLUDE_EXPORTS_PATHS} ${EXPORTS_PATHS_STR})\n")
+    if(NOT BUILD_SHARED_LIBS)
+        if(EXPORTS_PATHS)
+            foreach(EXPORT_PATH ${EXPORTS_PATHS})   
+                string(CONCAT EXPORTS_PATHS_STR ${EXPORTS_PATHS_STR} " \"${EXPORT_PATH}\"")
+            endforeach()
+            set(WITHOPT "${WITHOPT}set(INCLUDE_EXPORTS_PATHS \${INCLUDE_EXPORTS_PATHS} ${EXPORTS_PATHS_STR})\n")
+        endif()
+        
+        if(LINK_SEARCH_PATHS)
+            foreach(LINK_SEARCH_PATH ${LINK_SEARCH_PATHS})   
+                string(CONCAT LINK_SEARCH_PATHS_STR ${LINK_SEARCH_PATHS_STR} " \"${LINK_SEARCH_PATH}\"")
+            endforeach()
+            set(WITHOPT "${WITHOPT}set(INCLUDE_LINK_SEARCH_PATHS \${INCLUDE_LINK_SEARCH_PATHS} ${LINK_SEARCH_PATHS_STR})\n")
+        endif()           
+        
     endif()
     file(WRITE ${CMAKE_BINARY_DIR}/ext_options.cmake ${WITHOPT})
 endfunction()

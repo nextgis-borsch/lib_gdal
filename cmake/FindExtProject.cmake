@@ -3,7 +3,7 @@
 # Purpose:  CMake build scripts
 # Author:   Dmitry Baryshnikov, polimax@mail.ru
 ################################################################################
-# Copyright (C) 2015, NextGIS <info@nextgis.com>
+# Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
 # Copyright (C) 2015 Dmitry Baryshnikov
 #
 # This script is free software: you can redistribute it and/or modify
@@ -252,7 +252,7 @@ function(find_extproject name)
     set(IMPORTED_TARGET_PATH)
     foreach(IMPORTED_TARGET ${IMPORTED_TARGETS})
         set(IMPORTED_TARGET_PATH ${IMPORTED_TARGET_PATH} $<TARGET_LINKER_FILE:${IMPORTED_TARGET}>) #${IMPORTED_TARGET}
-        #if(NOT BUILD_SHARED_LIBS)
+        if(NOT BUILD_SHARED_LIBS)
             get_target_property(LINK_INTERFACE_LIBS "${IMPORTED_TARGET}" INTERFACE_LINK_LIBRARIES)
             foreach(LINK_INTERFACE_LIB ${LINK_INTERFACE_LIBS}) 
                 if(LINK_INTERFACE_LIB)
@@ -269,14 +269,14 @@ function(find_extproject name)
                     endif()
                 endif()
             endforeach()
-        #endif()
+        endif()
     endforeach()
     set(TARGET_LINK_LIB ${TARGET_LINK_LIB} ${IMPORTED_TARGET_PATH} PARENT_SCOPE)
     
     include_directories(${EP_BASE}/Install/${name}_EP/include)
     foreach (inc ${repo_include})
         include_directories(${EP_BASE}/Install/${name}_EP/include/${inc})
-    endforeach ()   
+    endforeach ()  
         
     if(WIN32)
         set(_INST_ROOT_PATH /)
@@ -289,4 +289,5 @@ function(find_extproject name)
              COMPONENT libraries)
         
     set(EXPORTS_PATHS ${EXPORTS_PATHS} PARENT_SCOPE)
+    set(LINK_SEARCH_PATHS ${LINK_SEARCH_PATHS} ${EP_BASE}/Install/${name}_EP/lib PARENT_SCOPE)
 endfunction()
