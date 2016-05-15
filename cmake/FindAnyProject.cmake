@@ -125,7 +125,7 @@ function(target_link_extlibraries name)
 endfunction()
 
 function(write_ext_options)
-    if(NOT BUILD_SHARED_LIBS AND EXPORTS_PATHS)
+    if(EXPORTS_PATHS) #NOT BUILD_SHARED_LIBS AND 
         foreach(EXPORT_PATH ${EXPORTS_PATHS})   
             string(CONCAT EXPORTS_PATHS_STR ${EXPORTS_PATHS_STR} " \"${EXPORT_PATH}\"")
         endforeach()
