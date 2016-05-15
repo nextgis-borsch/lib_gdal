@@ -150,7 +150,8 @@ endif()
 
 find_anyproject(LibLZMA)
 
-find_anyproject(TIFF REQUIRED)
+find_anyproject(TIFF REQUIRED CMAKE_ARGS
+    -DSKIP_BUILD_DOCS=ON)
 find_anyproject(GeoTIFF VERSION 1.2.1 REQUIRED)
 
 find_anyproject(SQLite3 CMAKE_ARGS
