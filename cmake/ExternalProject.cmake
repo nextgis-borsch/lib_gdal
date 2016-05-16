@@ -383,7 +383,7 @@ file::
 
 # macro to find packages on the host OS
 macro( find_exthost_package )
-    if(ANDROID)
+    if(CMAKE_CROSSCOMPILING)
         set( CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER )
         set( CMAKE_FIND_ROOT_PATH_MODE_LIBRARY NEVER )
         set( CMAKE_FIND_ROOT_PATH_MODE_INCLUDE NEVER )
@@ -409,7 +409,7 @@ endmacro()
 
 # macro to find programs on the host OS
 macro( find_exthost_program )
-    if(ANDROID)
+    if(CMAKE_CROSSCOMPILING)
         set( CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER )
         set( CMAKE_FIND_ROOT_PATH_MODE_LIBRARY NEVER )
         set( CMAKE_FIND_ROOT_PATH_MODE_INCLUDE NEVER )
