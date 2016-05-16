@@ -120,7 +120,17 @@ function(find_extproject name)
     list(APPEND find_extproject_CMAKE_ARGS -DEP_URL=${EP_URL})       
     list(APPEND find_extproject_CMAKE_ARGS -DPULL_UPDATE_PERIOD=${PULL_UPDATE_PERIOD})       
     list(APPEND find_extproject_CMAKE_ARGS -DPULL_TIMEOUT=${PULL_TIMEOUT})       
-    list(APPEND find_extproject_CMAKE_ARGS -DSUPRESS_VERBOSE_OUTPUT=${SUPRESS_VERBOSE_OUTPUT})       
+    list(APPEND find_extproject_CMAKE_ARGS -DSUPRESS_VERBOSE_OUTPUT=${SUPRESS_VERBOSE_OUTPUT}) 
+    if(CMAKE_TOOLCHAIN_FILE)
+        list(APPEND find_extproject_CMAKE_ARGS -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE})
+    endif()
+    if(ANDROID)
+        # TODO: do we need more keys?
+        list(APPEND find_extproject_CMAKE_ARGS -DANDROID_NDK=${ANDROID_NDK})
+        list(APPEND find_extproject_CMAKE_ARGS -DANDROID_NATIVE_API_LEVEL=${ANDROID_NATIVE_API_LEVEL})
+        list(APPEND find_extproject_CMAKE_ARGS -DANDROID_ABI=${ANDROID_ABI})
+        list(APPEND find_extproject_CMAKE_ARGS -DANDROID=TRUE)
+    endif()     
         
     include(ExternalProject)
     set_property(DIRECTORY PROPERTY "EP_BASE" ${EP_BASE})
@@ -177,20 +187,19 @@ function(find_extproject name)
         
     # get some properties from <cmakemodules>/findext${name}.cmake file
     include(FindExt${name})
-  
-    if(NOT TARGET ${name}_EP)
-        ExternalProject_Add(${name}_EP
-            GIT_REPOSITORY ${EP_URL}/${repo_name}
-            CMAKE_ARGS ${find_extproject_CMAKE_ARGS}
-            UPDATE_DISCONNECTED 1
-        )
-    endif()    
+    
         
-    find_package(Git)
+    find_exthost_package(Git)
     if(NOT GIT_FOUND)
       message(FATAL_ERROR "git is required")
       return()
     endif()
+      
+    ExternalProject_Add(${name}_EP
+        GIT_REPOSITORY ${EP_URL}/${repo_name}
+        CMAKE_ARGS ${find_extproject_CMAKE_ARGS}
+        UPDATE_DISCONNECTED 1
+    )
    
     set(RECONFIGURE OFF)
     set(INCLUDE_EXPORT_PATH "${EP_BASE}/Build/${name}_EP/${repo_project}-exports.cmake")

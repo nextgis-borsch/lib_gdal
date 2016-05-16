@@ -96,7 +96,8 @@ endif()
 
 find_anyproject(CURL DEFAULT ON CMAKE_ARGS
     -DBUILD_CURL_EXE=OFF
-    -DHTTP_ONLY=ON)
+    -DHTTP_ONLY=ON
+    -DUSE_MANUAL=OFF)
 if(CURL_FOUND)
     add_definitions(-DHAVE_CURL)
 else()
