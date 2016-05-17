@@ -31,7 +31,7 @@ function(get_imported_targets file_to_search targets)
     set(${targets} ${targets_local} PARENT_SCOPE)
 endfunction()
 
-function(get_target_name target_lib target_name)    
+function(get_target_name target_lib target_name)
     string(LENGTH ${target_lib} STR_LEN)
     if(STR_LEN LESS 21)
         return()
@@ -66,7 +66,7 @@ function(color_message text)
         
     message(STATUS "${BoldGreen}${text}${ColourReset}")
     
-endfunction() 
+endfunction()
 
 function(include_exports_path include_path)
     #add to list imported 
@@ -80,10 +80,10 @@ function(include_exports_path include_path)
         file (READ ${include_path} _file_content)
         string (REPLACE "IMPORTED)" "IMPORTED GLOBAL)" _file_content "${_file_content}")
         file(WRITE ${include_path} "${_file_content}") 
-        
+
         include(${include_path})
     endif()
-endfunction() 
+endfunction()
 
 function(find_extproject name)
   
@@ -168,6 +168,7 @@ function(find_extproject name)
     
     if(EXISTS ${EP_BASE}/Build/${name}_EP/ext_options.cmake)         
         include(${EP_BASE}/Build/${name}_EP/ext_options.cmake)
+
         # add include into  ext_options.cmake
         set(WITHOPT "${WITHOPT}include(${EP_BASE}/Build/${name}_EP/ext_options.cmake)\n" PARENT_SCOPE)   
        
@@ -298,7 +299,8 @@ function(find_extproject name)
     install( DIRECTORY ${EP_BASE}/Install/${name}_EP/ 
              DESTINATION ${_INST_ROOT_PATH}
              COMPONENT libraries)
-        
+
+    message(STATUS "EXPORTS_PATHS ${EXPORTS_PATHS}")
     set(EXPORTS_PATHS ${EXPORTS_PATHS} PARENT_SCOPE)
     set(LINK_SEARCH_PATHS ${LINK_SEARCH_PATHS} ${INCLUDE_LINK_SEARCH_PATHS} ${EP_BASE}/Install/${name}_EP/lib PARENT_SCOPE)
 endfunction()
