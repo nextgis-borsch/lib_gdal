@@ -22,7 +22,7 @@
 
 set(repo_name lib_geotiff)
 
-if(BUILD_SHARED_LIBS)    
+if(find_extproject_SHARED)    
     set(repo_project geotiff)
 else()
     set(repo_project geotiffstatic)

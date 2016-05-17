@@ -30,7 +30,7 @@ function(find_anyproject name)
 
     include (CMakeParseArguments)
     set(options OPTIONAL REQUIRED QUIET EXACT MODULE)
-    set(oneValueArgs DEFAULT VERSION)
+    set(oneValueArgs DEFAULT VERSION SHARED)
     set(multiValueArgs CMAKE_ARGS COMPONENTS)
     cmake_parse_arguments(find_anyproject "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )  
     
@@ -52,7 +52,7 @@ function(find_anyproject name)
     endif()
     string(TOUPPER ${name} UPPER_NAME)
 
-    write_ext_options()
+    write_ext_options(find_anyproject_SHARED)
     
     if(WITH_${name})
         option(WITH_${name}_EXTERNAL "Set ON to use external ${name}" OFF)
@@ -129,8 +129,8 @@ function(target_link_extlibraries name)
     
 endfunction()
 
-function(write_ext_options)
-    if(NOT BUILD_SHARED_LIBS)
+function(write_ext_options SHARED)
+    if(NOT SHARED)
         if(EXPORTS_PATHS)
             foreach(EXPORT_PATH ${EXPORTS_PATHS})   
                 string(CONCAT EXPORTS_PATHS_STR ${EXPORTS_PATHS_STR} " \"${EXPORT_PATH}\"")

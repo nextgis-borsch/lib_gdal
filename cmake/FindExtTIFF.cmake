@@ -22,7 +22,7 @@
 
 set(repo_name lib_tiff)
 
-if(BUILD_SHARED_LIBS)    
+if(find_extproject_SHARED)    
     set(repo_project tiff)
 else()
     set(repo_project tiffstatic)

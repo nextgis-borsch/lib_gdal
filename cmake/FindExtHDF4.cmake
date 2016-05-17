@@ -22,7 +22,7 @@
 
 set(repo_name lib_hdf4)
 
-if(BUILD_SHARED_LIBS)    
+if(find_extproject_SHARED)    
     set(repo_project hdf)
 else()
     set(repo_project hdfstatic)

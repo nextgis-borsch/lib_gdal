@@ -22,7 +22,7 @@
 
 set(repo_name lib_png)
 
-if(BUILD_SHARED_LIBS)    
+if(find_extproject_SHARED)    
     set(repo_project libpng)
 else()
     set(repo_project libpngstatic)

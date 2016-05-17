@@ -22,7 +22,7 @@
 
 set(repo_name lib_proj)
 
-if(BUILD_SHARED_LIBS)    
+if(find_extproject_SHARED)    
     set(repo_project proj)
 else()
     set(repo_project projstatic)

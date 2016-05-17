@@ -22,7 +22,7 @@
 
 set(repo_name lib_jpeg)
 
-if(BUILD_SHARED_LIBS)    
+if(find_extproject_SHARED)    
     set(repo_project jpeg)
 else()
     set(repo_project jpegstatic)
@@ -30,7 +30,7 @@ endif()
 
 set(repo_include)
 
-if(BUILD_SHARED_LIBS)
+if(find_extproject_SHARED)
     add_definitions(-DJPEG_DLL_IMPORTS)
 else()
     add_definitions(-DJPEG_STATIC)

@@ -22,7 +22,7 @@
 
 set(repo_name lib_jsonc)
 
-if(BUILD_SHARED_LIBS)    
+if(find_extproject_SHARED)    
     set(repo_project json-c)
 else()
     set(repo_project json-cstatic)
