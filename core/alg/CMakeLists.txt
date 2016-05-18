@@ -58,6 +58,10 @@ set(LIB_CSOURCES
     gdal_tps.cpp
     gdaltransformer.cpp
     gdaltransformgeolocs.cpp
+    gdalsimplewarp.cpp
+    gdalwarper.cpp
+    gdalwarpkernel.cpp
+    gdalwarpoperation.cpp
 )
 
 if(NOT ANDROID)
@@ -76,10 +80,6 @@ set(LIB_CSOURCES ${LIB_CSOURCES}
     gdal_rpc.cpp
     gdalsievefilter.cpp
     gdal_simplesurf.cpp
-    gdalsimplewarp.cpp
-    gdalwarper.cpp
-    gdalwarpkernel.cpp
-    gdalwarpoperation.cpp
     llrasterize.cpp
     polygonize.cpp
     rasterfill.cpp
