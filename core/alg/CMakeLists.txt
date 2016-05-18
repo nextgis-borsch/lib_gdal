@@ -62,6 +62,7 @@ set(LIB_CSOURCES
     gdalwarper.cpp
     gdalwarpkernel.cpp
     gdalwarpoperation.cpp
+    gdalrasterize.cpp
 )
 
 if(NOT ANDROID)
@@ -75,7 +76,6 @@ set(LIB_CSOURCES ${LIB_CSOURCES}
     gdalgridsse.cpp
     gdalmatching.cpp
     gdal_octave.cpp
-    gdalrasterize.cpp
     gdalrasterpolygonenumerator.cpp
     gdal_rpc.cpp
     gdalsievefilter.cpp
