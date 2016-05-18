@@ -110,9 +110,7 @@ if(GDAL_PAM_ENABLED)
     )
 endif(GDAL_PAM_ENABLED)
 
-if(NOT ANDROID)
 add_subdirectory(mdreader)
-endif()
 
 add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
 

@@ -54,6 +54,10 @@ set(LIB_CSOURCES
 #    gdal_nrgcrs.c
     gdalproximity.cpp
     thinplatespline.cpp
+    gdalpansharpen.cpp
+    gdal_tps.cpp
+    gdaltransformer.cpp
+    gdaltransformgeolocs.cpp
 )
 
 if(NOT ANDROID)
@@ -67,16 +71,12 @@ set(LIB_CSOURCES ${LIB_CSOURCES}
     gdalgridsse.cpp
     gdalmatching.cpp
     gdal_octave.cpp
-    gdalpansharpen.cpp
     gdalrasterize.cpp
     gdalrasterpolygonenumerator.cpp
     gdal_rpc.cpp
     gdalsievefilter.cpp
     gdal_simplesurf.cpp
     gdalsimplewarp.cpp
-    gdal_tps.cpp
-    gdaltransformer.cpp
-    gdaltransformgeolocs.cpp
     gdalwarper.cpp
     gdalwarpkernel.cpp
     gdalwarpoperation.cpp
