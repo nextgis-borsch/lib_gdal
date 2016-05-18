@@ -25,6 +25,7 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
+if(NOT ANDROID)
 file(GLOB LIBS ${CMAKE_CURRENT_SOURCE_DIR}/*)
 foreach(LIB ${LIBS})
     if(EXISTS ${LIB}/CMakeLists.txt)    
@@ -44,3 +45,4 @@ set(TARGET_OBJECTS ${TARGET_OBJECTS} PARENT_SCOPE)
 #set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
 #set(DEPENDENCY_LIB ${DEPENDENCY_LIB} PARENT_SCOPE)
 #set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} PARENT_SCOPE)
+endif()

@@ -47,22 +47,27 @@ set(LIB_HHEADERS_PRIV
 )
 
 set(LIB_CSOURCES
-    contour.cpp
-    delaunay.c
     gdalchecksum.cpp
     gdal_crs.c
     gdalcutline.cpp
+    gdalmediancut.cpp
+#    gdal_nrgcrs.c
+    gdalproximity.cpp
+    thinplatespline.cpp
+)
+
+if(NOT ANDROID)
+set(LIB_CSOURCES ${LIB_CSOURCES}
+    contour.cpp
+    delaunay.c
     gdaldither.cpp
     gdalgeoloc.cpp
     gdalgridavx.cpp
     gdalgrid.cpp
     gdalgridsse.cpp
     gdalmatching.cpp
-    gdalmediancut.cpp
-#    gdal_nrgcrs.c
     gdal_octave.cpp
     gdalpansharpen.cpp
-    gdalproximity.cpp
     gdalrasterize.cpp
     gdalrasterpolygonenumerator.cpp
     gdal_rpc.cpp
@@ -78,8 +83,8 @@ set(LIB_CSOURCES
     llrasterize.cpp
     polygonize.cpp
     rasterfill.cpp
-    thinplatespline.cpp
 )
+endif()
 
 find_anyproject(QHULL DEFAULT OFF)
 
