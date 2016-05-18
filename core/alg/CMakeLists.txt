@@ -63,10 +63,6 @@ set(LIB_CSOURCES
     gdalwarpkernel.cpp
     gdalwarpoperation.cpp
     gdalrasterize.cpp
-)
-
-if(NOT ANDROID)
-set(LIB_CSOURCES ${LIB_CSOURCES}
     contour.cpp
     delaunay.c
     gdaldither.cpp
@@ -84,7 +80,6 @@ set(LIB_CSOURCES ${LIB_CSOURCES}
     polygonize.cpp
     rasterfill.cpp
 )
-endif()
 
 find_anyproject(QHULL DEFAULT OFF)
 
