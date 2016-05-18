@@ -92,4 +92,6 @@ if(ENABLE_GML)
 
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
+else()
+    warning_msg("Skip gml")  
 endif()

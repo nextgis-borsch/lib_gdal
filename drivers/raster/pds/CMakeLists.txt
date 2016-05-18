@@ -57,4 +57,6 @@ if(ENABLE_PDS_ISIS2_ISIS3_VICAR)
 
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
+else()
+    warning_msg("Skip pds")  
 endif()

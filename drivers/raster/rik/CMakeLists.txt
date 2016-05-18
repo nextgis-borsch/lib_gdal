@@ -50,4 +50,6 @@ if(ENABLE_RIK)
 
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
+else()
+    warning_msg("Skip rik")  
 endif()

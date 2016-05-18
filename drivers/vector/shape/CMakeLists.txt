@@ -59,4 +59,6 @@ if(ENABLE_SHAPE)
 
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
+else()
+    warning_msg("Skip shp")  
 endif()

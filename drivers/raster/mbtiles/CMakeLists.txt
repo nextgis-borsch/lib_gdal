@@ -63,4 +63,6 @@ if(ENABLE_MBTILES)
 
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
+else()
+    warning_msg("Skip mbtiles")  
 endif()

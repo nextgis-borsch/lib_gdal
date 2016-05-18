@@ -61,5 +61,9 @@ if(POSTGRESQL_FOUND)
 
         # build target
         set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
+    else()
+        warning_msg("Skip postgisraster")  
     endif()
-endif()
+else()
+    warning_msg("Skip postgisraster")  
+endif() 

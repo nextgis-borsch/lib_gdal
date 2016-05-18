@@ -84,4 +84,6 @@ if(ENABLE_NITF_RPFTOC_ECRGTOC)
 
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
+else()
+    warning_msg("Skip nitf")  
 endif()

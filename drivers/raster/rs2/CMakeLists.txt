@@ -48,4 +48,6 @@ if(ENABLE_RS2)
 
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
+else()
+    warning_msg("Skip rs2")  
 endif()

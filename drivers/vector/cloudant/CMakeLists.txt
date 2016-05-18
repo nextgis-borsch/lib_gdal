@@ -59,4 +59,6 @@ if(ENABLE_CLOUDANT)
 
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
+else()
+    warning_msg("Skip cloudant")  
 endif()

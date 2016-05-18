@@ -65,7 +65,6 @@ set(LIB_CSOURCES
     gml2ogrgeometry.cpp
     ogr2gmlgeometry.cpp
     ogr_api.cpp
-    ograpispy.cpp
     ograssemblepolygon.cpp
     ogrcircularstring.cpp
     ogrcompoundcurve.cpp
@@ -93,7 +92,6 @@ set(LIB_CSOURCES
     ogrmultipolygon.cpp
     ogrmultisurface.cpp
     ogr_opt.cpp
-    ogrpgeogeometry.cpp
     ogrpoint.cpp
     ogrpolygon.cpp
     ogrspatialreference.cpp
@@ -117,6 +115,13 @@ set(LIB_CSOURCES
     swq_op_registrar.cpp    
     swq_select.cpp
 )
+
+if(NOT ANDROID)
+    set(LIB_CSOURCES ${LIB_CSOURCES}
+        ograpispy.cpp
+        ogrpgeogeometry.cpp
+    )
+endif()
 
 if(EXPAT_FOUND)
     set(LIB_HHEADERS_PRIV ${LIB_HHEADERS_PRIV}

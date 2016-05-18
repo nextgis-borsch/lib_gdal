@@ -48,4 +48,6 @@ if(ENABLE_BMP)
 
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
+else()
+    warning_msg("Skip bmp")  
 endif()

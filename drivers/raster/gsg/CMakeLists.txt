@@ -50,4 +50,6 @@ if(ENABLE_GSAG_GSBG_GS7BG)
 
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
+else()
+    warning_msg("Skip gsg")  
 endif()
