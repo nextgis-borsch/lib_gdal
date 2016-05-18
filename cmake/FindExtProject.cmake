@@ -300,7 +300,6 @@ function(find_extproject name)
              DESTINATION ${_INST_ROOT_PATH}
              COMPONENT libraries)
 
-    message(STATUS "EXPORTS_PATHS ${EXPORTS_PATHS}")
     set(EXPORTS_PATHS ${EXPORTS_PATHS} PARENT_SCOPE)
     set(LINK_SEARCH_PATHS ${LINK_SEARCH_PATHS} ${INCLUDE_LINK_SEARCH_PATHS} ${EP_BASE}/Install/${name}_EP/lib PARENT_SCOPE)
 endfunction()
