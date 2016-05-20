@@ -214,9 +214,9 @@ function(find_extproject name)
         #execute_process(COMMAND ${GIT_EXECUTABLE} checkout master
         #    WORKING_DIRECTORY  ${EP_BASE}/Source/${name}_EP)
         file(WRITE ${EP_BASE}/Stamp/${name}_EP/${name}_EP-gitclone-lastrun.txt "")
-        execute_process(COMMAND ${CMAKE_COMMAND} ${EP_BASE}/Source/${name}_EP
-            ${find_extproject_CMAKE_ARGS}
-            WORKING_DIRECTORY ${EP_BASE}/Build/${name}_EP)
+        #execute_process(COMMAND ${CMAKE_COMMAND} ${EP_BASE}/Source/${name}_EP
+        #    ${find_extproject_CMAKE_ARGS}
+        #    WORKING_DIRECTORY ${EP_BASE}/Build/${name}_EP)
         set(RECONFIGURE ON)
     else() 
         if(EXISTS ${INCLUDE_EXPORT_PATH})
