@@ -53,7 +53,7 @@ IF(WIN32)
   
 ELSEIF(UNIX)
 
-    FIND_PATH(GEOTIFF_INCLUDE_DIR geotiff.h PATH_SUFFIXES geotiff PATHS
+    FIND_PATH(GEOTIFF_INCLUDE_DIR geotiff.h PATH_SUFFIXES geotiff libgeotiff PATHS
             /usr/local/include
             /usr/include)
 
