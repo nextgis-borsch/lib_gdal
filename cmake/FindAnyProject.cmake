@@ -25,10 +25,11 @@ set(DEPENDENCY_LIB) # ${DEPENDENCY_LIB} ""
 set(WITHOPT ${WITHOPT} "")
 set(EXPORTS_PATHS)
 set(LINK_SEARCH_PATHS)
-       
-function(find_anyproject name)
+      
+include (CMakeParseArguments)     
+include(ExternalProject)
 
-    include (CMakeParseArguments)
+function(find_anyproject name)
     set(options OPTIONAL REQUIRED QUIET EXACT MODULE)
     set(oneValueArgs DEFAULT VERSION SHARED)
     set(multiValueArgs CMAKE_ARGS COMPONENTS)

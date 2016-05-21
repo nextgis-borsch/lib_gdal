@@ -381,57 +381,6 @@ file::
 # (To distribute this file outside of CMake, substitute the full
 #  License text for the above reference.)
 
-# macro to find packages on the host OS
-macro( find_exthost_package )
-    if(CMAKE_CROSSCOMPILING)
-        set( CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER )
-        set( CMAKE_FIND_ROOT_PATH_MODE_LIBRARY NEVER )
-        set( CMAKE_FIND_ROOT_PATH_MODE_INCLUDE NEVER )
-        if( CMAKE_HOST_WIN32 )
-            SET( WIN32 1 )
-            SET( UNIX )
-        elseif( CMAKE_HOST_APPLE )
-            SET( APPLE 1 )
-            SET( UNIX )
-        endif()
-        find_package( ${ARGN} )
-        SET( WIN32 )
-        SET( APPLE )
-        SET( UNIX 1 )
-        set( CMAKE_FIND_ROOT_PATH_MODE_PROGRAM ONLY )
-        set( CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY )
-        set( CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY )
-    else()
-        find_package( ${ARGN} )
-    endif()
-endmacro()
-
-
-# macro to find programs on the host OS
-macro( find_exthost_program )
-    if(CMAKE_CROSSCOMPILING)
-        set( CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER )
-        set( CMAKE_FIND_ROOT_PATH_MODE_LIBRARY NEVER )
-        set( CMAKE_FIND_ROOT_PATH_MODE_INCLUDE NEVER )
-        if( CMAKE_HOST_WIN32 )
-            SET( WIN32 1 )
-            SET( UNIX )
-        elseif( CMAKE_HOST_APPLE )
-            SET( APPLE 1 )
-            SET( UNIX )
-        endif()
-        find_program( ${ARGN} )
-        SET( WIN32 )
-        SET( APPLE )
-        SET( UNIX 1 )
-        set( CMAKE_FIND_ROOT_PATH_MODE_PROGRAM ONLY )
-        set( CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY )
-        set( CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY )
-    else()
-        find_program( ${ARGN} )
-    endif()
-endmacro()
-
 # Pre-compute a regex to match documented keywords for each command.
 math(EXPR _ep_documentation_line_count "${CMAKE_CURRENT_LIST_LINE} - 16")
 file(STRINGS "${CMAKE_CURRENT_LIST_FILE}" lines
@@ -2336,7 +2285,7 @@ function(_ep_add_build_command name)
     COMMAND ${cmd}
     BYPRODUCTS ${build_byproducts}
     WORKING_DIRECTORY ${binary_dir}
-    DEPENDEES configure
+    #DEPENDEES configure
     ALWAYS ${always}
     ${log}
     ${uses_terminal}
@@ -2507,15 +2456,15 @@ function(ExternalProject_Add name)
   # (Already set up above in the DEPENDS of the add_custom_target command.)
   #
   _ep_add_mkdir_command(${name})
-  _ep_add_download_command(${name})
-  _ep_add_update_command(${name})
-  _ep_add_patch_command(${name})
-  _ep_add_configure_command(${name})
+  ## _ep_add_download_command(${name})
+  ## _ep_add_update_command(${name})
+  ## _ep_add_patch_command(${name})
+  ## _ep_add_configure_command(${name})
   _ep_add_build_command(${name})
   _ep_add_install_command(${name})
 
   # Test is special in that it might depend on build, or it might depend
   # on install.
   #
-  _ep_add_test_command(${name})
+  ## _ep_add_test_command(${name})
 endfunction()
