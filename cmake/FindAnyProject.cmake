@@ -26,8 +26,7 @@ set(WITHOPT ${WITHOPT} "")
 set(EXPORTS_PATHS)
 set(LINK_SEARCH_PATHS)
       
-include (CMakeParseArguments)     
-include(ExternalProject)
+include (CMakeParseArguments)  
 
 function(find_anyproject name)
     set(options OPTIONAL REQUIRED QUIET EXACT MODULE)

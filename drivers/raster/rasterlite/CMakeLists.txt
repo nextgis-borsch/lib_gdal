@@ -26,7 +26,7 @@
 ################################################################################
 
 CMAKE_DEPENDENT_OPTION(ENABLE_RASTERLITE "Build Rasterlite (Rasters in SQLite DB) format" ON
-                       "ENABLE_SQLITE" OFF)
+                       "ENABLE_SQLITE_GPKG" OFF)
 if(ENABLE_RASTERLITE)
     set(TARGET_NAME ras_rasterlite)
 

@@ -180,7 +180,8 @@ function(find_extproject name)
       message(FATAL_ERROR "git is required")
       return()
     endif()
-    
+       
+    include(ExternalProject)
                   
     ExternalProject_Add(${name}_EP
         GIT_REPOSITORY ${EP_URL}/${repo_name}

@@ -151,9 +151,12 @@ if(HAVE_SSE_AT_COMPILE_TIME)
     add_definitions(-DHAVE_SSE_AT_COMPILE_TIME)
 endif() 
 
-SET(CMAKE_REQUIRED_LIBRARIES ${TARGET_LINK_LIB})
-check_function_exists(TIFFScanlineSize64 HAVE_BIGTIFF)
-unset(CMAKE_REQUIRED_LIBRARIES)
+if(WITH_TIFF_EXTERNAL)
+    #TODO: check cases then HAVE_BIGTIFF False
+    SET(HAVE_BIGTIFF TRUE)
+else()
+    check_function_exists(TIFFScanlineSize64 HAVE_BIGTIFF)
+endif()
 
 if(HAVE_BIGTIFF)
     add_definitions(-DBIGTIFF_SUPPORT)

@@ -26,7 +26,7 @@
 ################################################################################
 
 CMAKE_DEPENDENT_OPTION(ENABLE_MBTILES "Build MBTiles format" ON
-                       "ENABLE_SQLITE" OFF)
+                       "ENABLE_SQLITE_GPKG" OFF)
 if(ENABLE_MBTILES)
     set(TARGET_NAME ras_mbtiles)
 
