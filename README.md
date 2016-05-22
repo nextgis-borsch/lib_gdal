@@ -115,7 +115,7 @@ Available raster drivers for now (by all driver dirs in sources). Drivers marked
 | **northwood** | **yes** | no | 2 drivers in one (NWT_GRC, NWT_GRD) |
 | ogdi | no |  |  |
 | openjpeg | no |  |  |
-| **ozi** | **yes** | ZLIB? | - |
+| **ozi** | **yes** | ZLIB?, GIF? | - |
 | pcidsk | no |  |  |
 | pcraster | no |  |  |
 | pdf * | no |  |  |
@@ -192,7 +192,7 @@ Available vector drivers for now (by all driver dirs in sources). Drivers marked
 | ingres | no |  |  |
 | **jml** | **yes** | Optionally: EXPAT | - |
 | **kml** | **yes** | ... | ... |
-| libkml * | no |  |  |
+| libkml * | no | Google LibKML |  |
 | mdb * | no |  |  |
 | **mem** | **yes** | no | Obligatory for building GDAL |
 | **mitab** | **yes** | no | Obligatory for building GDAL; Depends on temporary /core/ogr directory |
