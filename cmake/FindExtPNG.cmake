@@ -28,4 +28,4 @@ else()
     set(repo_project libpngstatic)
 endif()
 
-set(repo_include)
+set(repo_include libpng16)

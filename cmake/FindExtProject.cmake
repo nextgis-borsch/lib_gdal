@@ -189,7 +189,6 @@ function(find_extproject name)
     ExternalProject_Add(${name}_EP
         GIT_REPOSITORY ${EP_URL}/${repo_name}
         CMAKE_ARGS ${find_extproject_CMAKE_ARGS}
-        INSTALL_DIR ${EXT_INSTALL_DIR}/
         UPDATE_DISCONNECTED 1
     )
     
@@ -313,9 +312,21 @@ function(find_extproject name)
         set(_INST_ROOT_PATH ${CMAKE_INSTALL_PREFIX})
     endif()
     
-    install( DIRECTORY ${EXT_INSTALL_DIR}/
+    install( DIRECTORY ${EXT_INSTALL_DIR}/bin
+             DESTINATION ${_INST_ROOT_PATH}
+             COMPONENT applications)
+             
+    install( DIRECTORY ${EXT_INSTALL_DIR}/lib
              DESTINATION ${_INST_ROOT_PATH}
              COMPONENT libraries)
+             
+    install( DIRECTORY ${EXT_INSTALL_DIR}/include
+             DESTINATION ${_INST_ROOT_PATH}
+             COMPONENT headers)    
+                 
+    install( DIRECTORY ${EXT_INSTALL_DIR}/share
+             DESTINATION ${_INST_ROOT_PATH}
+             COMPONENT libraries)                        
 
     set(EXPORTS_PATHS ${EXPORTS_PATHS} PARENT_SCOPE)
     set(LINK_SEARCH_PATHS ${LINK_SEARCH_PATHS} ${INCLUDE_LINK_SEARCH_PATHS} ${EP_PREFIX}/lib PARENT_SCOPE)
