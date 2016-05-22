@@ -42,7 +42,10 @@ if(ENABLE_PNG)
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_CSOURCES})
-
+    if(WITH_PNG_EXTERNAL)
+        add_dependencies(${TARGET_NAME} PNG_EP)
+    endif()
+    
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
     set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
