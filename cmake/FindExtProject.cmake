@@ -92,8 +92,8 @@ function(find_extproject name)
     cmake_parse_arguments(find_extproject "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
     
     # set default third party lib path
-    if(NOT DEFINED EP_BASE)
-        set(EP_BASE "${CMAKE_BINARY_DIR}/third-party")
+    if(NOT DEFINED EP_PREFIX)
+        set(EP_PREFIX "${CMAKE_BINARY_DIR}/third-party")
     endif()
 
     # set default url
@@ -113,7 +113,7 @@ function(find_extproject name)
         set(SUPRESS_VERBOSE_OUTPUT TRUE)
     endif()
 
-    list(APPEND find_extproject_CMAKE_ARGS -DEP_BASE=${EP_BASE})   
+    list(APPEND find_extproject_CMAKE_ARGS -DEP_PREFIX=${EP_PREFIX})   
     list(APPEND find_extproject_CMAKE_ARGS -DEP_URL=${EP_URL})       
     list(APPEND find_extproject_CMAKE_ARGS -DPULL_UPDATE_PERIOD=${PULL_UPDATE_PERIOD})       
     list(APPEND find_extproject_CMAKE_ARGS -DPULL_TIMEOUT=${PULL_TIMEOUT})       
@@ -129,14 +129,17 @@ function(find_extproject name)
         list(APPEND find_extproject_CMAKE_ARGS -DANDROID=ON)
     endif()     
         
-    set_property(DIRECTORY PROPERTY "EP_BASE" ${EP_BASE})
-
+    set_property(DIRECTORY PROPERTY "EP_PREFIX" ${EP_PREFIX})
     
+    set(EXT_INSTALL_DIR ${EP_PREFIX})
+    set(EXT_STAMP_DIR ${EP_PREFIX}/src/${name}_EP-stamp)
+    set(EXT_BUILD_DIR ${EP_PREFIX}/src/${name}_EP-build)
+        
     # search CMAKE_INSTALL_PREFIX
     string (REGEX MATCHALL "(^|;)-DCMAKE_INSTALL_PREFIX=[A-Za-z0-9_]*" _matchedVars "${find_extproject_CMAKE_ARGS}")    
     list(LENGTH _matchedVars _list_size)    
     if(_list_size EQUAL 0)
-        list(APPEND find_extproject_CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${EP_BASE}/Install/${name}_EP)
+        list(APPEND find_extproject_CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${EXT_INSTALL_DIR})
     endif()
     unset(_matchedVars)
     
@@ -186,13 +189,14 @@ function(find_extproject name)
     ExternalProject_Add(${name}_EP
         GIT_REPOSITORY ${EP_URL}/${repo_name}
         CMAKE_ARGS ${find_extproject_CMAKE_ARGS}
+        INSTALL_DIR ${EXT_INSTALL_DIR}/
         UPDATE_DISCONNECTED 1
     )
     
     set(RECONFIGURE OFF)
-    set(INCLUDE_EXPORT_PATH "${EP_BASE}/Build/${name}_EP/${repo_project}-exports.cmake")
+    set(INCLUDE_EXPORT_PATH "${EXT_BUILD_DIR}/${repo_project}-exports.cmake") 
 
-    if(NOT EXISTS "${EP_BASE}/Source/${name}_EP/.git")
+    if(NOT EXISTS "${EP_PREFIX}/src/${name}_EP/.git")
         color_message("Git clone ${repo_name} ...")
         
         set(error_code 1)
@@ -200,7 +204,7 @@ function(find_extproject name)
         while(error_code AND number_of_tries LESS 3)
           execute_process(
             COMMAND ${GIT_EXECUTABLE} clone ${EP_URL}/${repo_name} ${name}_EP
-            WORKING_DIRECTORY  ${EP_BASE}/Source
+            WORKING_DIRECTORY  ${EP_PREFIX}/src
             RESULT_VARIABLE error_code
             )
           math(EXPR number_of_tries "${number_of_tries} + 1")
@@ -211,39 +215,39 @@ function(find_extproject name)
             return()
         else()
             #execute_process(COMMAND ${GIT_EXECUTABLE} checkout master
-            #    WORKING_DIRECTORY  ${EP_BASE}/Source/${name}_EP)
-            file(WRITE ${EP_BASE}/Stamp/${name}_EP/${name}_EP-gitclone-lastrun.txt "")
-            #execute_process(COMMAND ${CMAKE_COMMAND} ${EP_BASE}/Source/${name}_EP
+            #    WORKING_DIRECTORY  ${EP_PREFIX}/src/${name}_EP)
+            file(WRITE ${EXT_STAMP_DIR}/${name}_EP-gitclone-lastrun.txt "")
+            #execute_process(COMMAND ${CMAKE_COMMAND} ${EP_PREFIX}/src/${name}_EP
             #    ${find_extproject_CMAKE_ARGS}
-            #    WORKING_DIRECTORY ${EP_BASE}/Build/${name}_EP)
+            #    WORKING_DIRECTORY ${EXT_BUILD_DIR})
             set(RECONFIGURE ON)
         endif()   
     else() 
         if(EXISTS ${INCLUDE_EXPORT_PATH})
-            check_updates(${EP_BASE}/Stamp/${name}_EP/${name}_EP-gitpull.txt ${PULL_UPDATE_PERIOD} CHECK_UPDATES)
+            check_updates(${EXT_STAMP_DIR}/${name}_EP-gitpull.txt ${PULL_UPDATE_PERIOD} CHECK_UPDATES)
         else()
             set(RECONFIGURE ON)
         endif()
         if(CHECK_UPDATES)
             color_message("Git pull ${repo_name} ...")
             execute_process(COMMAND ${GIT_EXECUTABLE} pull
-               WORKING_DIRECTORY  ${EP_BASE}/Source/${name}_EP
+               WORKING_DIRECTORY  ${EP_PREFIX}/src/${name}_EP
                TIMEOUT ${PULL_TIMEOUT} OUTPUT_VARIABLE OUT_STR)
            if(OUT_STR)
                 string(FIND ${OUT_STR} "Already up-to-date" STR_POS)
                 if(STR_POS LESS 0)
                     set(RECONFIGURE ON)
                 endif()
-                file(WRITE ${EP_BASE}/Stamp/${name}_EP/${name}_EP-gitpull.txt "")
+                file(WRITE ${EXT_STAMP_DIR}/${name}_EP-gitpull.txt "")
             endif()
         endif()        
     endif() 
 
     if(RECONFIGURE)
         color_message("Configure ${repo_name} ...")
-        execute_process(COMMAND ${CMAKE_COMMAND} ${EP_BASE}/Source/${name}_EP
+        execute_process(COMMAND ${CMAKE_COMMAND} ${EP_PREFIX}/src/${name}_EP
             ${find_extproject_CMAKE_ARGS}
-            WORKING_DIRECTORY ${EP_BASE}/Build/${name}_EP)         
+            WORKING_DIRECTORY ${EXT_BUILD_DIR})         
     endif()
     
     if(EXISTS ${INCLUDE_EXPORT_PATH})
@@ -258,11 +262,11 @@ function(find_extproject name)
         return()
     endif()    
         
-    if(EXISTS ${EP_BASE}/Build/${name}_EP/ext_options.cmake)         
-        include(${EP_BASE}/Build/${name}_EP/ext_options.cmake)
+    if(EXISTS ${EXT_BUILD_DIR}/ext_options.cmake)         
+        include(${EXT_BUILD_DIR}/ext_options.cmake)
 
         # add include into  ext_options.cmake
-        set(WITHOPT "${WITHOPT}include(${EP_BASE}/Build/${name}_EP/ext_options.cmake)\n" PARENT_SCOPE)   
+        set(WITHOPT "${WITHOPT}include(${EXT_BUILD_DIR}/ext_options.cmake)\n" PARENT_SCOPE)   
        
         foreach(INCLUDE_EXPORT_PATH ${INCLUDE_EXPORTS_PATHS})   
             include_exports_path(${INCLUDE_EXPORT_PATH})
@@ -298,9 +302,9 @@ function(find_extproject name)
     endforeach()
     set(TARGET_LINK_LIB ${TARGET_LINK_LIB} ${IMPORTED_TARGET_PATH} PARENT_SCOPE)
     
-    include_directories(${EP_BASE}/Install/${name}_EP/include)
+    include_directories(${EXT_INSTALL_DIR}/include)
     foreach (inc ${repo_include})
-        include_directories(${EP_BASE}/Install/${name}_EP/include/${inc})
+        include_directories(${EXT_INSTALL_DIR}/include/${inc})
     endforeach ()  
         
     if(WIN32)
@@ -309,10 +313,10 @@ function(find_extproject name)
         set(_INST_ROOT_PATH ${CMAKE_INSTALL_PREFIX})
     endif()
     
-    install( DIRECTORY ${EP_BASE}/Install/${name}_EP/ 
+    install( DIRECTORY ${EXT_INSTALL_DIR}/
              DESTINATION ${_INST_ROOT_PATH}
              COMPONENT libraries)
 
     set(EXPORTS_PATHS ${EXPORTS_PATHS} PARENT_SCOPE)
-    set(LINK_SEARCH_PATHS ${LINK_SEARCH_PATHS} ${INCLUDE_LINK_SEARCH_PATHS} ${EP_BASE}/Install/${name}_EP/lib PARENT_SCOPE)
+    set(LINK_SEARCH_PATHS ${LINK_SEARCH_PATHS} ${INCLUDE_LINK_SEARCH_PATHS} ${EP_PREFIX}/lib PARENT_SCOPE)
 endfunction()
