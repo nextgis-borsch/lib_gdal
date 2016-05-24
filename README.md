@@ -33,9 +33,11 @@ Go to script folder of this repo /etc/cmake-build-helpers and execute
 
 # Ubuntu PPA
 
- $ sudo apt-get install software-properties-common python-software-properties
- $ sudo apt-add-repository ppa:nextgis/ppa
- $ sudo apt-get install gdal-bin python-gdal
+  $ sudo apt-get install software-properties-common python-software-properties
+  
+  $ sudo apt-add-repository ppa:nextgis/ppa
+  
+  $ sudo apt-get install gdal-bin python-gdal
 
 # Test status
 
