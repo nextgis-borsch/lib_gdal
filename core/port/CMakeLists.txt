@@ -36,6 +36,7 @@ set(TARGET_NAME cpl)
 set(LIB_HHEADERS
     ${CMAKE_BINARY_DIR}/cpl_config.h
     cpl_atomic_ops.h
+    cpl_aws.h
     cpl_conv.h
     cpl_csv.h
     cpl_error.h
@@ -44,20 +45,24 @@ set(LIB_HHEADERS
     cplkeywordparser.h
     cpl_list.h
     cpl_minixml.h
+    cpl_minizip_ioapi.h
+    cpl_minizip_unzip.h
+    cpl_minizip_zip.h
     cpl_multiproc.h
+    cpl_odbc.h
     cpl_port.h
     cpl_progress.h
     cpl_quad_tree.h
+    cpl_sha256.h
     cpl_spawn.h
     cpl_string.h
     cpl_time.h
     cpl_virtualmem.h
     cpl_vsi.h
+    cpl_vsi_error.h
     cpl_vsi_virtual.h
     cpl_worker_thread_pool.h
     gdal_csv.h
-    cpl_aws.h
-    cpl_sha256.h
 )
 
 set(LIB_HHEADERS_PRIV
