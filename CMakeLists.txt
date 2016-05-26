@@ -117,7 +117,7 @@ endif()
 
 find_anyproject(PROJ4 DEFAULT ON)
 if(PROJ4_FOUND)
-    add_definitions(-DHAVE_PROJ) # TODO: do we need it? -DPROJ_STATIC)
+    add_definitions(-DHAVE_PROJ -DPROJ_STATIC)
 else()
     message(WARNING "No proj.4 support")
 endif()
