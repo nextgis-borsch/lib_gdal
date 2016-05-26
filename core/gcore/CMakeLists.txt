@@ -48,6 +48,10 @@ set(LIB_HHEADERS
     gdal_frmts.h
     gdal_priv.h
     gdaljp2metadata.h
+    gdalgeorefpamdataset.h
+    gdaljp2abstractdataset.h
+    gdaljp2metadatagenerator.h
+    
 )
 
 set(LIB_HHEADERS_PRIV

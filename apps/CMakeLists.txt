@@ -34,11 +34,11 @@ include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/vrt)
 include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/raw)
 
 set(LIB_HHEADERS
+    gdal_utils.h 
 )
 
 set(LIB_HHEADERS_PRIV
     commonutils.h 
-    gdal_utils.h 
     gdal_utils_priv.h 
 )
 
@@ -68,6 +68,11 @@ if(UNIX)
                 RENAME gdal-config)
     endif()
 endif()
+
+# install headers
+if(NOT SKIP_INSTALL_HEADERS AND NOT SKIP_INSTALL_ALL )
+    install(FILES ${LIB_HHEADERS} DESTINATION ${INSTALL_INC_DIR} COMPONENT headers)
+endif() 
 
 option(GDAL_BUILD_APPS "Build console applications" ON)
 if(GDAL_BUILD_APPS)
@@ -135,3 +140,4 @@ if(GDAL_BUILD_APPS)
     endif()
 
 endif()
+
