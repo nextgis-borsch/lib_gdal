@@ -2,12 +2,14 @@
 
 This is restructured GDAL sources tree fork with CMake build system [code name borsch].
 
-GDAL is an open source X/MIT licensed translator library for raster and vector geospatial data formats. This is a mirror of the GDAL Subversion repository.
+GDAL is an open source X/MIT licensed translator library for raster and vector 
+geospatial data formats. This is a mirror of the GDAL Subversion repository.
 
 * Main site: http://www.gdal.org - Developer and user docs, links to other resources
 * SVN repository: http://svn.osgeo.org/gdal
 * Download: ftp://ftp.remotesensing.org/gdal, http://download.osgeo.org/gdal
-* Wiki: http://trac.osgeo.org/gdal - Bug tracking, various user and developer contributed documentation and hints
+* Wiki: http://trac.osgeo.org/gdal - Bug tracking, various user and developer 
+  contributed documentation and hints
 * Mailing list: http://lists.osgeo.org/mailman/listinfo/gdal-dev
 
 # Sync sources with orgin
@@ -45,7 +47,8 @@ TODO:
 
 # Raster drivers
 
-Available raster drivers for now (by all driver dirs in sources). Drivers marked with '*' have high priority to be implemented.
+Available raster drivers for now (by all driver dirs in sources). Drivers marked 
+with '*' have high priority to be implemented.
 
 | Driver | Cmaked | External dependencies | Notes |
 |---|:-:|---|---|
@@ -247,4 +250,3 @@ Available raster+vector drivers for now (by all driver dirs in sources):
 |---|:-:|---|---|
 | **gpkg** | **yes** | SQLITE3; Optionally: SPATIALITE | Requires PNG?, JPEG?, WEBP? drivers; No Spatialite support implemented; Former OGR format |
 | **plscenes** | **yes** | CURL | Former OGR format |
-
