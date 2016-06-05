@@ -187,9 +187,6 @@ else()
     find_library(M_LIB m)
     set(TARGET_LINK_LIB ${TARGET_LINK_LIB} ${M_LIB})
     
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ldl")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ldl")
-
     option(GDAL_USE_CPL_MULTIPROC_PTHREAD "Set to ON if you want to use pthreads based multiprocessing support." ${_WITH_PT_OPTION_ON})
     set(CPL_MULTIPROC_PTHREAD ${GDAL_USE_CPL_MULTIPROC_PTHREAD})
     check_c_source_compiles("
