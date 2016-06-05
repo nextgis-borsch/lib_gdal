@@ -32,9 +32,10 @@
 *.dSYM/
 
 # Build
-/build
+/build*
 /inst
 
 # Temp
 *~
 .~*
+*.user

@@ -175,12 +175,17 @@ else()
     find_package(Threads)
     if(CMAKE_THREAD_LIBS_INIT)
         set(_WITH_PT_OPTION_ON TRUE)
-        #set(TARGET_OBJECTS ${TARGET_OBJECTS} ${CMAKE_THREAD_LIBS_INIT})
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_THREAD_LIBS_INIT}")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_THREAD_LIBS_INIT}")
+        set(TARGET_LINK_LIB ${TARGET_LINK_LIB} ${CMAKE_THREAD_LIBS_INIT})
+        #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_THREAD_LIBS_INIT}")
+        #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_THREAD_LIBS_INIT}")
     else()  
         set(_WITH_PT_OPTION_ON FALSE)
     endif()
+
+    find_library(DL_LIB dl)
+    set(TARGET_LINK_LIB ${TARGET_LINK_LIB} ${DL_LIB})
+    find_library(M_LIB m)
+    set(TARGET_LINK_LIB ${TARGET_LINK_LIB} ${M_LIB})
     
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ldl")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ldl")
@@ -381,8 +386,8 @@ else()
         endif()
     endif()
 
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2 -fPIC -fno-strict-aliasing -Wall -Wdeclaration-after-statement")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O2 -fPIC -fno-strict-aliasing -Wall")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -fno-strict-aliasing -Wall -Wdeclaration-after-statement")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -fno-strict-aliasing -Wall")
 
     configure_file(${CMAKE_MODULE_PATH}/cpl_config.h.cmake ${CMAKE_BINARY_DIR}/cpl_config.h @ONLY)
     
@@ -405,10 +410,10 @@ else()
     set(CONFIG_LIBS "-lgdal")
     set(CONFIG_LIBS_INS "-L${CMAKE_INSTALL_PREFIX}/${INSTALL_LIB_DIR} -lgdal")
     
-    #TODO: Add formats from drivers definitions
+    # TODO: Add formats from drivers definitions
     set(GDAL_FORMATS "gtiff hfa iso8211 raw mem vrt jpeg png")
     
-    #TODO: Add dependency libs -lxxx
+    # TODO: Add dependency libs -lxxx
     set(LIBS "-L${CMAKE_INSTALL_PREFIX}/${INSTALL_LIB_DIR}")
         
     configure_file(${CMAKE_MODULE_PATH}/gdal-config.cmake.in ${CMAKE_BINARY_DIR}/tmp/gdal-config IMMEDIATE @ONLY)
