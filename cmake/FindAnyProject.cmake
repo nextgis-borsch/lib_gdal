@@ -40,6 +40,10 @@ function(find_anyproject name)
         set(_WITH_OPTION_ON FALSE)
     endif()
     
+    if(NOT DEFINED find_anyproject_SHARED)
+        set(find_anyproject_SHARED ${BUILD_SHARED_LIBS})
+    endif()
+    
     if(DEFINED WITH_${name})
         set(WITHOPT "${WITHOPT}option(WITH_${name} \"Set ON to use ${name}\" ${WITH_${name}})\n")
         if(DEFINED WITH_${name}_EXTERNAL)
