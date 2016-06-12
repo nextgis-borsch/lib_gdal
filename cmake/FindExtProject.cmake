@@ -347,6 +347,12 @@ function(find_extproject name)
         set(_INST_ROOT_PATH ${CMAKE_INSTALL_PREFIX})
     endif()
     
+    # create directories
+    file(MAKE_DIRECTORY "${EXT_INSTALL_DIR}/bin")
+    file(MAKE_DIRECTORY "${EXT_INSTALL_DIR}/lib")
+    file(MAKE_DIRECTORY "${EXT_INSTALL_DIR}/include")
+    file(MAKE_DIRECTORY "${EXT_INSTALL_DIR}/share")
+    
     install( DIRECTORY ${EXT_INSTALL_DIR}/bin
              DESTINATION ${_INST_ROOT_PATH}
              COMPONENT applications)
