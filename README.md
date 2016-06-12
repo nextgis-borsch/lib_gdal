@@ -88,7 +88,7 @@ with '*' have high priority to be implemented.
 | gta | no |  |  |
 | **gtiff** | **yes** | no | Obligatory for building GDAL |
 | **gxf** | **yes** | no | No additional build targets implemented |
-| hdf4 * | no | [lib_hdf4](https://github.com/nextgis-borsch/lib_hdf4) |  |
+| **hdf4** | **yes** | [lib_hdf4](https://github.com/nextgis-borsch/lib_hdf4) | 2 drivers in one (HDF4, HDF4Image); hdf-eos target implemented not as a library |
 | hdf5 * | no |  |  |
 | **hf2** | **yes** | no | - |
 | **hfa** | **yes** | no | Obligatory for building GDAL |
