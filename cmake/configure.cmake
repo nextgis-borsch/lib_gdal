@@ -169,7 +169,7 @@ if(WIN32)
     check_include_file("search.h" HAVE_SEARCH_H)
     check_function_exists(localtime_r HAVE_LOCALTIME_R)
     check_include_file("dbmalloc.h" HAVE_LIBDBMALLOC)
-    configure_file(${CMAKE_MODULE_PATH}/cpl_config.h.vc.cmake ${CMAKE_BINARY_DIR}/cpl_config.h @ONLY)
+    configure_file(${CMAKE_SOURCE_DIR}/cmake/cpl_config.h.vc.cmake ${CMAKE_BINARY_DIR}/cpl_config.h @ONLY)
 else()
 # linux
     find_package(Threads)
@@ -386,9 +386,9 @@ else()
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -fno-strict-aliasing -Wall -Wdeclaration-after-statement")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -fno-strict-aliasing -Wall")
 
-    configure_file(${CMAKE_MODULE_PATH}/cpl_config.h.cmake ${CMAKE_BINARY_DIR}/cpl_config.h @ONLY)
+    configure_file(${CMAKE_SOURCE_DIR}/cmake/cpl_config.h.cmake ${CMAKE_BINARY_DIR}/cpl_config.h @ONLY)
     
-    configure_file(${CMAKE_MODULE_PATH}/gdal.pc.cmakein  ${CMAKE_BINARY_DIR}/gdal.pc IMMEDIATE @ONLY)
+    configure_file(${CMAKE_SOURCE_DIR}/cmake/gdal.pc.cmakein  ${CMAKE_BINARY_DIR}/gdal.pc IMMEDIATE @ONLY)
 
     set(APPS_DIR ${CMAKE_BINARY_DIR}/apps)
     
@@ -413,18 +413,18 @@ else()
     # TODO: Add dependency libs -lxxx
     set(LIBS "-L${CMAKE_INSTALL_PREFIX}/${INSTALL_LIB_DIR}")
         
-    configure_file(${CMAKE_MODULE_PATH}/gdal-config.cmake.in ${CMAKE_BINARY_DIR}/tmp/gdal-config IMMEDIATE @ONLY)
+    configure_file(${CMAKE_SOURCE_DIR}/cmake/gdal-config.cmake.in ${CMAKE_BINARY_DIR}/tmp/gdal-config IMMEDIATE @ONLY)
     file(COPY ${CMAKE_BINARY_DIR}/tmp/gdal-config
          DESTINATION ${APPS_DIR}/
          FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ
          GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
       
-    configure_file(${CMAKE_MODULE_PATH}/gdal-config-inst.cmake.in ${APPS_DIR}/gdal-config-inst IMMEDIATE @ONLY)
+    configure_file(${CMAKE_SOURCE_DIR}/cmake/gdal-config-inst.cmake.in ${APPS_DIR}/gdal-config-inst IMMEDIATE @ONLY)
     
     
 endif()
 
 #add_definitions (-DHAVE_CONFIG_H) # commented because of need of "config.h" in drivers/vector/wms
 
-configure_file(${CMAKE_MODULE_PATH}/uninstall.cmake.in ${CMAKE_BINARY_DIR}/cmake_uninstall.cmake IMMEDIATE @ONLY)
+configure_file(${CMAKE_SOURCE_DIR}/cmake/uninstall.cmake.in ${CMAKE_BINARY_DIR}/cmake_uninstall.cmake IMMEDIATE @ONLY)
 

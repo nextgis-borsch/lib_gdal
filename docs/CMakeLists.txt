@@ -100,7 +100,7 @@ if(GDAL_BUILD_DOCS)
                                   ${CMAKE_CURRENT_SOURCE_DIR}/doc/images/* )
         set(DOX_HTML_IMAGES ${DOX_HTML_IMAGES} ${CMAKE_CURRENT_SOURCE_DIR}/data/gdalicon.png)                           
 
-        configure_file(${CMAKE_MODULE_PATH}/Doxyfile.cmakein  ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile.html IMMEDIATE @ONLY)    
+        configure_file(${CMAKE_SOURCE_DIR}/cmake/Doxyfile.cmakein  ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile.html IMMEDIATE @ONLY)    
 
         add_custom_target(prepare_html
             COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/doc/gdal_footer.html ${CMAKE_CURRENT_BINARY_DIR}/html/gdal_footer.html
@@ -146,7 +146,7 @@ if(GDAL_BUILD_DOCS)
         set(DOX_FILE_PATTERNS "*.cpp *.dox")
         set(DOX_INPUT "${CMAKE_SOURCE_DIR}/apps ${CMAKE_SOURCE_DIR}/docs/apps ${CMAKE_SOURCE_DIR}/bindings/python/scripts")
 
-        configure_file(${CMAKE_MODULE_PATH}/Doxyfile.cmakein  ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile.man IMMEDIATE @ONLY)     
+        configure_file(${CMAKE_SOURCE_DIR}/cmake/Doxyfile.cmakein  ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile.man IMMEDIATE @ONLY)     
         
         #build by default
         add_custom_target (man ALL

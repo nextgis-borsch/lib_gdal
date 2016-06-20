@@ -205,7 +205,7 @@ else()
     set(GDAL_HAVE_OGR "False")
 endif()
 
-configure_file(${CMAKE_MODULE_PATH}/setup.py.cmake ${CMAKE_CURRENT_BINARY_DIR}/setup.py @ONLY)
+configure_file(${CMAKE_SOURCE_DIR}/cmake/setup.py.cmake ${CMAKE_CURRENT_BINARY_DIR}/setup.py @ONLY)
 
 # https://docs.python.org/2/install/
 # https://docs.python.org/3/install/
