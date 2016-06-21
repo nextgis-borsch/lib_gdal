@@ -144,12 +144,6 @@ if(JPEG_FOUND)
     add_definitions(-DHAVE_LIBJPEG) # added only after 2.1 release (especially for geotiff.cpp where incorrect #ifdef is used)
 endif()
 
-# TODO: move this to the according drivers.
-find_anyproject(HDF4) 
-#if(HDF4_FOUND)
-#    
-#endif()
-
 find_anyproject(JPEG12)
 if(JPEG12_FOUND)
     add_definitions(-DJPEG12_SUPPORTED)

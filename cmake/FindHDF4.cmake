@@ -38,10 +38,10 @@
 include(FindPackageHandleStandardArgs)
 
 # seed the initial lists of libraries to find with items we know we need
-set( HDF4_C_LIBRARY_NAMES_INIT hdf )
-set( HDF4_F90_LIBRARY_NAMES_INIT hdf_f90cstub ${HDF5_C_LIBRARY_NAMES_INIT} )
+set( HDF4_C_LIBRARY_NAMES_INIT df hdf )
+set( HDF4_F90_LIBRARY_NAMES_INIT hdf_f90cstub ${HDF4_C_LIBRARY_NAMES_INIT} )
 set( HDF4_FORTRAN_LIBRARY_NAMES_INIT hdf_fortran ${HDF4_F90_LIBRARY_NAMES_INIT} )
-set( HDF4_MFHDF_LIBRARY_NAMES_INIT mfhdf ${HDF5_C_LIBRARY_NAMES_INIT})
+set( HDF4_MFHDF_LIBRARY_NAMES_INIT mfhdf ${HDF4_C_LIBRARY_NAMES_INIT})
 set( HDF4_XDR_LIBRARY_NAMES_INIT xdr ${HDF4_MFHDF_LIBRARY_NAMES_INIT})
 set( HDF4_FORTRAN_MF_90_LIBRARY_NAMES_INIT mfhdf_f90cstub ${HDF4_FORTRAN_LIBRARY_NAMES_INIT} )
 set( HDF4_FORTRAN_MF_LIBRARY_NAMES_INIT mfhdf_fortran ${HDF4_FORTRAN_MF_90_LIBRARY_NAMES_INIT} )
@@ -79,6 +79,7 @@ FIND_PATH (HDF4_INCLUDE_DIRS "hdf.h"
     PATHS ${_HDF4_PATHS}
     PATH_SUFFIXES
         include
+        include/hdf
         Include
 )
 
@@ -92,7 +93,7 @@ if (HDF4_INCLUDE_DIR)
     set (HDF4_FOUND "YES")
   else()
     foreach( LIB ${HDF4_C_LIB} )
-        if( UNIX AND HDF5_USE_STATIC_LIBRARIES )
+        if( UNIX AND HDF4_USE_STATIC_LIBRARIES )
             # According to bug 1643 on the CMake bug tracker, this is the
             # preferred method for searching for a static library.
             # See http://www.cmake.org/Bug/view.php?id=1643.  We search
@@ -111,12 +112,16 @@ if (HDF4_INCLUDE_DIR)
             PATH_SUFFIXES lib Lib )
         find_library( HDF4_${LIB}_LIBRARY_RELEASE
             NAMES ${THIS_LIBRARY_SEARCH_RELEASE}
-            HINTS ${HDF5_${LANGUAGE}_LIBRARY_DIRS}
+            HINTS ${HDF4_${LANGUAGE}_LIBRARY_DIRS}
             ENV HDF4_ROOT
             PATH_SUFFIXES lib Lib )
         select_library_configurations( HDF4_${LIB} )
-        list(APPEND HDF4_LIBRARIES ${HDF4_${LIB}_LIBRARY})
+        if(HDF4_${LIB}_LIBRARY)
+            list(APPEND HDF4_LIBRARIES ${HDF4_${LIB}_LIBRARY})
+        endif()
     endforeach()
+    message(STATUS "1. ${HDF4_LIBRARIES}")
+        
     find_package_handle_standard_args( HDF4 DEFAULT_MSG
         HDF4_LIBRARIES
         HDF4_INCLUDE_DIRS

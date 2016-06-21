@@ -25,13 +25,17 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-CMAKE_DEPENDENT_OPTION(ENABLE_HDF4 "Build Hierarchical Data Format Release 4 (HDF4) format" ON
-                       "HDF4_FOUND" OFF)
+option(ENABLE_HDF4 "Build Hierarchical Data Format Release 4 (HDF4) format" OFF)
 if(ENABLE_HDF4)
     set(TARGET_NAME ras_hdf4)
 
     add_definitions(-DFRMT_hdf4)
     set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DFRMT_hdf4" PARENT_SCOPE)
+
+    find_anyproject(HDF4 REQUIRED)        
+    
+    message(STATUS "WITH_HDF4 ${WITH_HDF4} WITH_HDF4_EXTERNAL ${WITH_HDF4_EXTERNAL}")                
+
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/hdf-eos)
@@ -41,6 +45,11 @@ if(ENABLE_HDF4)
     )
 
     set(LIB_HHEADERS_PRIV
+        hdf4compat.h
+        hdf4dataset.h
+        hdf-eos/ease.h
+        hdf-eos/HdfEosDef.h
+        hdf-eos/HDFEOSVersion.h
     )
     
     set(LIB_HDFEOS_CSOURCES
@@ -59,9 +68,14 @@ if(ENABLE_HDF4)
     # TODO: implement plugin target if needed.
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_HDFEOS_CSOURCES} ${LIB_CSOURCES})
+    if(WITH_HDF4_EXTERNAL)
+        add_dependencies(${TARGET_NAME} HDF4_EP)
+    endif()
 
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
+    set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
+    set(DEPENDENCY_LIB ${DEPENDENCY_LIB} PARENT_SCOPE)
 else()
     warning_msg("Skip hdf4")  
 endif()
