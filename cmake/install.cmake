@@ -83,7 +83,7 @@ if (WIN32)
 #  set (CPACK_SET_DESTDIR FALSE)
 #  set (CPACK_PACKAGING_INSTALL_PREFIX "/opt")
   
-  set(scriptPath ${CMAKE_MODULE_PATH}/EnvVarUpdate.nsh) 
+  set(scriptPath ${CMAKE_SOURCE_DIR}/cmake/EnvVarUpdate.nsh) 
   file(TO_NATIVE_PATH ${scriptPath} scriptPath )
   string(REPLACE "\\" "\\\\" scriptPath  ${scriptPath} ) 
   set (CPACK_NSIS_ADDITIONAL_INCLUDES "!include \\\"${scriptPath}\\\" \\n")
@@ -159,7 +159,7 @@ if (WIN32)
   string (REPLACE ";" "\n" CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS "${CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS}")
 
 else ()
-  set (CPACK_PROJECT_CONFIG_FILE ${CMAKE_MODULE_PATH}/CPackConfig.cmake)
+  set (CPACK_PROJECT_CONFIG_FILE ${CMAKE_SOURCE_DIR}/cmake/CPackConfig.cmake)
   set (CPACK_GENERATOR "DEB;RPM;TGZ;ZIP") 
 
   set (CPACK_COMPONENTS_ALL applications libraries headers documents)
