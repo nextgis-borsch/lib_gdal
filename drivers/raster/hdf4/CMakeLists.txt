@@ -34,9 +34,6 @@ if(ENABLE_HDF4)
 
     find_anyproject(HDF4 REQUIRED)        
     
-    message(STATUS "WITH_HDF4 ${WITH_HDF4} WITH_HDF4_EXTERNAL ${WITH_HDF4_EXTERNAL}")                
-
-
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/hdf-eos)
     include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/pds)
