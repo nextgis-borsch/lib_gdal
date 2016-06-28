@@ -221,20 +221,20 @@ function(find_extproject name)
         CMAKE_ARGS ${find_extproject_CMAKE_ARGS}
         UPDATE_DISCONNECTED 1
     )
-    
+
     if(NOT SKIP_GIT_PULL)
-    add_custom_command(TARGET ${name}_EP PRE_BUILD
-               COMMAND ${CMAKE_COMMAND} -P ${EP_PREFIX}/tmp/${name}_EP-checkupdate.cmake
-               COMMENT "Check if update needed ..."               
-               VERBATIM)
-    endif()           
-    
+        add_custom_command(TARGET ${name}_EP PRE_BUILD
+                   COMMAND ${CMAKE_COMMAND} -P ${EP_PREFIX}/tmp/${name}_EP-checkupdate.cmake
+                   COMMENT "Check if update needed ..."
+                   VERBATIM)
+    endif()
+
     set(RECONFIGURE OFF)
     set(INCLUDE_EXPORT_PATH "${EXT_BUILD_DIR}/${repo_project}-exports.cmake") 
 
     if(NOT EXISTS "${EP_PREFIX}/src/${name}_EP/.git")
         color_message("Git clone ${repo_name} ...")
-        
+
         set(error_code 1)
         set(number_of_tries 0)
         while(error_code AND number_of_tries LESS 3)
@@ -245,8 +245,8 @@ function(find_extproject name)
             )
           math(EXPR number_of_tries "${number_of_tries} + 1")
         endwhile()
-           
-        if(error_code)   
+
+        if(error_code)
             message(FATAL_ERROR "Failed to clone repository: ${EP_URL}/${repo_name}")
             return()
         else()
@@ -257,8 +257,8 @@ function(find_extproject name)
             #    ${find_extproject_CMAKE_ARGS}
             #    WORKING_DIRECTORY ${EXT_BUILD_DIR})
             set(RECONFIGURE ON)
-        endif()   
-    else() 
+        endif()
+    elseif(NOT SKIP_GIT_PULL)
         if(EXISTS ${INCLUDE_EXPORT_PATH})
             check_updates(${EXT_STAMP_DIR}/${name}_EP-gitpull.txt ${PULL_UPDATE_PERIOD} CHECK_UPDATES)
         else()
@@ -277,8 +277,8 @@ function(find_extproject name)
                 endif()
                 file(WRITE ${EXT_STAMP_DIR}/${name}_EP-gitpull.txt "")
             endif()
-        endif()        
-    endif() 
+        endif()
+    endif()
 
     if(RECONFIGURE)
         color_message("Configure ${repo_name} ...")
