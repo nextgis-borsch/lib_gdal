@@ -191,7 +191,7 @@ function(find_extproject name)
     endif()
        
     include(ExternalProject)
-   
+
     # create delete build file script and custom command to periodically execute it
     file(WRITE ${EP_PREFIX}/tmp/${name}_EP-checkupdate.cmake
         "file(TIMESTAMP ${EXT_STAMP_DIR}/${name}_EP-gitpull.txt LAST_PULL \"%y%j%H%M\" UTC)
@@ -205,7 +205,7 @@ function(find_extproject name)
             execute_process(COMMAND ${GIT_EXECUTABLE} pull
                WORKING_DIRECTORY  ${EP_PREFIX}/src/${name}_EP
                TIMEOUT ${PULL_TIMEOUT} OUTPUT_VARIABLE OUT_STR)
-            
+
             if(OUT_STR)
                 string(FIND \${OUT_STR} \"Already up-to-date\" STR_POS)
                 if(STR_POS LESS 0)
@@ -215,7 +215,7 @@ function(find_extproject name)
                 file(WRITE ${EXT_STAMP_DIR}/${name}_EP-gitpull.txt \"\")
             endif()
          endif()")
-                  
+
     ExternalProject_Add(${name}_EP
         GIT_REPOSITORY ${EP_URL}/${repo_name}
         CMAKE_ARGS ${find_extproject_CMAKE_ARGS}
@@ -258,13 +258,13 @@ function(find_extproject name)
             #    WORKING_DIRECTORY ${EXT_BUILD_DIR})
             set(RECONFIGURE ON)
         endif()
-    elseif(NOT SKIP_GIT_PULL_WITH_NET)
+    else()
         if(EXISTS ${INCLUDE_EXPORT_PATH})
             check_updates(${EXT_STAMP_DIR}/${name}_EP-gitpull.txt ${PULL_UPDATE_PERIOD} CHECK_UPDATES)
         else()
             set(RECONFIGURE ON)
         endif()
-        if(CHECK_UPDATES)
+        if(CHECK_UPDATES AND NOT SKIP_GIT_PULL)
             color_message("Git pull ${repo_name} ...")
             execute_process(COMMAND ${GIT_EXECUTABLE} pull
                WORKING_DIRECTORY  ${EP_PREFIX}/src/${name}_EP
