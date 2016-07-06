@@ -311,12 +311,37 @@ function(find_extproject name)
         unset(INCLUDE_EXPORT_PATH)
     endif()
     
-    add_dependencies(${IMPORTED_TARGETS} ${name}_EP)  
+    add_dependencies(${IMPORTED_TARGETS} ${name}_EP)  # TODO: IMPORTED_TARGETS is list !!!
     
     set(DEPENDENCY_LIB ${DEPENDENCY_LIB} ${IMPORTED_TARGETS} PARENT_SCOPE) 
     
     set(IMPORTED_TARGET_PATH)
+
+    # TODO: this is hack for INTERFACE only libraries
+    set(EXCLUDE_IMPORTED_TARGETS
+        BOOST
+        RapidJSON
+        VARIANT
+    )
+
     foreach(IMPORTED_TARGET ${IMPORTED_TARGETS})
+
+        # TODO: this is hack for INTERFACE only libraries
+        set(IS_INTERFACE OFF)
+        foreach(EXCLUDE_IMPORTED_TARGET ${EXCLUDE_IMPORTED_TARGETS})
+            string(TOLOWER EXCLUDE_IMPORTED_TARGET EXCLUDED_TARGET)
+            string(TOLOWER IMPORTED_TARGET CHECKED_TARGET)
+            string(FIND CHECKED_TARGET EXCLUDED_TARGET IS_INTERFACE)
+            if(${IS_INTERFACE})
+                break()
+            endif()
+        endforeach()
+
+        if(${IS_INTERFACE})
+            continue()
+        endif()
+
+
         set(IMPORTED_TARGET_PATH ${IMPORTED_TARGET_PATH} $<TARGET_LINKER_FILE:${IMPORTED_TARGET}>) #${IMPORTED_TARGET}
         if(NOT find_extproject_SHARED)
             get_target_property(LINK_INTERFACE_LIBS "${IMPORTED_TARGET}" INTERFACE_LINK_LIBRARIES)
