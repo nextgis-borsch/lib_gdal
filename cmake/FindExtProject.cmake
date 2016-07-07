@@ -318,7 +318,7 @@ function(find_extproject name)
     set(IMPORTED_TARGET_PATH)
 
     foreach(IMPORTED_TARGET ${IMPORTED_TARGETS})
-        if(${repo_header_only})
+        if(repo_header_only)
             continue()
         endif()
         set(IMPORTED_TARGET_PATH ${IMPORTED_TARGET_PATH} $<TARGET_LINKER_FILE:${IMPORTED_TARGET}>) #${IMPORTED_TARGET}
