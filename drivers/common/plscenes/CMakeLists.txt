@@ -58,6 +58,10 @@ if(ENABLE_PLSCENES)
 
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
+    
+    if(DEPENDENCY_LIB)
+        add_dependencies(${TARGET_NAME} ${DEPENDENCY_LIB})  
+    endif() 
 else()
     warning_msg("Skip plscenes")    
 endif()
