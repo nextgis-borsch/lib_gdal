@@ -1,4 +1,4 @@
-# GDAL - Geospatial Data Abstraction Library
+# GDAL - Geospatial Data Abstraction Library [devel]
 
 This is restructured GDAL sources tree fork with CMake build system [code name borsch].
 
