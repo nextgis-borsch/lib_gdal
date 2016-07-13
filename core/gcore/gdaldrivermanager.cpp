@@ -299,7 +299,7 @@ GDALDriverManager::~GDALDriverManager()
  * @return the number of registered drivers.
  */
 
-int GDALDriverManager::GetDriverCount() const
+int GDALDriverManager::GetDriverCount()
 
 {
     return( nDrivers );

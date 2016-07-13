@@ -86,8 +86,8 @@ function(include_exports_path include_path)
 endfunction()
 
 function(find_extproject name)  
-    set(options OPTIONAL)
-    set(oneValueArgs SHARED)
+    set(options OPTIONAL EXACT)
+    set(oneValueArgs VERSION SHARED)
     set(multiValueArgs CMAKE_ARGS)
     cmake_parse_arguments(find_extproject "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
     
@@ -101,6 +101,11 @@ function(find_extproject name)
         set(EP_URL "https://github.com/nextgis-borsch")
     endif()  
     
+    # set default branch
+    if(NOT DEFINED EP_BRANCH)
+        set(EP_BRANCH "master")
+    endif()
+    
     if(NOT DEFINED PULL_UPDATE_PERIOD)
         set(PULL_UPDATE_PERIOD 25) # 25 min
     endif()
@@ -113,8 +118,9 @@ function(find_extproject name)
         set(SUPRESS_VERBOSE_OUTPUT TRUE)
     endif()
 
-    list(APPEND find_extproject_CMAKE_ARGS -DEP_PREFIX=${EP_PREFIX})   
-    list(APPEND find_extproject_CMAKE_ARGS -DEP_URL=${EP_URL})       
+    list(APPEND find_extproject_CMAKE_ARGS -DEP_PREFIX=${EP_PREFIX})      
+    list(APPEND find_extproject_CMAKE_ARGS -DEP_URL=${EP_URL}) 
+    list(APPEND find_extproject_CMAKE_ARGS -DEP_BRANCH=${EP_BRANCH})          
     list(APPEND find_extproject_CMAKE_ARGS -DPULL_UPDATE_PERIOD=${PULL_UPDATE_PERIOD})       
     list(APPEND find_extproject_CMAKE_ARGS -DPULL_TIMEOUT=${PULL_TIMEOUT})       
     list(APPEND find_extproject_CMAKE_ARGS -DSUPRESS_VERBOSE_OUTPUT=${SUPRESS_VERBOSE_OUTPUT}) 
@@ -191,7 +197,7 @@ function(find_extproject name)
     endif()
        
     include(ExternalProject)
-
+   
     # create delete build file script and custom command to periodically execute it
     file(WRITE ${EP_PREFIX}/tmp/${name}_EP-checkupdate.cmake
         "file(TIMESTAMP ${EXT_STAMP_DIR}/${name}_EP-gitpull.txt LAST_PULL \"%y%j%H%M\" UTC)
@@ -205,7 +211,7 @@ function(find_extproject name)
             execute_process(COMMAND ${GIT_EXECUTABLE} pull
                WORKING_DIRECTORY  ${EP_PREFIX}/src/${name}_EP
                TIMEOUT ${PULL_TIMEOUT} OUTPUT_VARIABLE OUT_STR)
-
+            
             if(OUT_STR)
                 string(FIND \${OUT_STR} \"Already up-to-date\" STR_POS)
                 if(STR_POS LESS 0)
@@ -215,26 +221,27 @@ function(find_extproject name)
                 file(WRITE ${EXT_STAMP_DIR}/${name}_EP-gitpull.txt \"\")
             endif()
          endif()")
-
+                  
     ExternalProject_Add(${name}_EP
         GIT_REPOSITORY ${EP_URL}/${repo_name}
+        GIT_TAG ${EP_BRANCH}
         CMAKE_ARGS ${find_extproject_CMAKE_ARGS}
         UPDATE_DISCONNECTED 1
     )
-
+    
     if(NOT SKIP_GIT_PULL)
-        add_custom_command(TARGET ${name}_EP PRE_BUILD
-                   COMMAND ${CMAKE_COMMAND} -P ${EP_PREFIX}/tmp/${name}_EP-checkupdate.cmake
-                   COMMENT "Check if update needed ..."
-                   VERBATIM)
-    endif()
-
+    add_custom_command(TARGET ${name}_EP PRE_BUILD
+               COMMAND ${CMAKE_COMMAND} -P ${EP_PREFIX}/tmp/${name}_EP-checkupdate.cmake
+               COMMENT "Check if update needed ..."               
+               VERBATIM)
+    endif()           
+    
     set(RECONFIGURE OFF)
     set(INCLUDE_EXPORT_PATH "${EXT_BUILD_DIR}/${repo_project}-exports.cmake") 
 
     if(NOT EXISTS "${EP_PREFIX}/src/${name}_EP/.git")
         color_message("Git clone ${repo_name} ...")
-
+        
         set(error_code 1)
         set(number_of_tries 0)
         while(error_code AND number_of_tries LESS 3)
@@ -245,26 +252,46 @@ function(find_extproject name)
             )
           math(EXPR number_of_tries "${number_of_tries} + 1")
         endwhile()
-
-        if(error_code)
+           
+        if(error_code)   
             message(FATAL_ERROR "Failed to clone repository: ${EP_URL}/${repo_name}")
             return()
         else()
-            #execute_process(COMMAND ${GIT_EXECUTABLE} checkout master
-            #    WORKING_DIRECTORY  ${EP_PREFIX}/src/${name}_EP)
+            # check version
+            if(find_extproject_EXACT)
+                set(BRANCH_NAME FALSE)
+                execute_process(COMMAND ${GIT_EXECUTABLE} tag -l "v*"
+                    OUTPUT_VARIABLE EP_TAGS
+                    WORKING_DIRECTORY  ${EP_PREFIX}/src/${name}_EP)
+                string(REPLACE "\n" " " EP_TAGS ${EP_TAGS})
+                foreach(EP_TAG ${EP_TAGS})    
+                    string(SUBSTRING ${EP_TAG} 1 -1 EP_TAG)
+                    if(find_extproject_VERSION VERSION_EQUAL EP_TAG)
+                        set(BRANCH_NAME "tags/v${EP_TAG}")
+                    endif()
+                endforeach()
+                if(NOT BRANCH_NAME)
+                    message(FATAL_ERROR "No ${name} version ${find_extproject_VERSION} exist in remote repository")
+                endif()
+            else()
+                set(BRANCH_NAME ${EP_BRANCH})
+            endif()
+            # checkout branch
+            execute_process(COMMAND ${GIT_EXECUTABLE} checkout ${BRANCH_NAME}
+                WORKING_DIRECTORY  ${EP_PREFIX}/src/${name}_EP)
             file(WRITE ${EXT_STAMP_DIR}/${name}_EP-gitclone-lastrun.txt "")
             #execute_process(COMMAND ${CMAKE_COMMAND} ${EP_PREFIX}/src/${name}_EP
             #    ${find_extproject_CMAKE_ARGS}
             #    WORKING_DIRECTORY ${EXT_BUILD_DIR})
             set(RECONFIGURE ON)
-        endif()
-    else()
+        endif()   
+    else() 
         if(EXISTS ${INCLUDE_EXPORT_PATH})
             check_updates(${EXT_STAMP_DIR}/${name}_EP-gitpull.txt ${PULL_UPDATE_PERIOD} CHECK_UPDATES)
         else()
             set(RECONFIGURE ON)
         endif()
-        if(CHECK_UPDATES AND NOT SKIP_GIT_PULL)
+        if(CHECK_UPDATES)
             color_message("Git pull ${repo_name} ...")
             execute_process(COMMAND ${GIT_EXECUTABLE} pull
                WORKING_DIRECTORY  ${EP_PREFIX}/src/${name}_EP
@@ -277,14 +304,18 @@ function(find_extproject name)
                 endif()
                 file(WRITE ${EXT_STAMP_DIR}/${name}_EP-gitpull.txt "")
             endif()
-        endif()
-    endif()
+        endif()        
+    endif() 
 
     if(RECONFIGURE)
         color_message("Configure ${repo_name} ...")
         execute_process(COMMAND ${CMAKE_COMMAND} ${EP_PREFIX}/src/${name}_EP
             ${find_extproject_CMAKE_ARGS}
-            WORKING_DIRECTORY ${EXT_BUILD_DIR})         
+            WORKING_DIRECTORY ${EXT_BUILD_DIR})      
+            
+        # TODO: check exact version if(find_extproject_EXACT) 
+        # if(find_extproject_VERSION VERSION_EQUAL ... get version from 
+        # ${name}_EP sources OR find_extproject_VERSION VERSION_LESS)      
     endif()
     
     if(EXISTS ${INCLUDE_EXPORT_PATH})
@@ -311,16 +342,12 @@ function(find_extproject name)
         unset(INCLUDE_EXPORT_PATH)
     endif()
     
-    add_dependencies(${IMPORTED_TARGETS} ${name}_EP)  # TODO: IMPORTED_TARGETS is list !!!
+    add_dependencies(${IMPORTED_TARGETS} ${name}_EP)  
     
     set(DEPENDENCY_LIB ${DEPENDENCY_LIB} ${IMPORTED_TARGETS} PARENT_SCOPE) 
     
     set(IMPORTED_TARGET_PATH)
-
     foreach(IMPORTED_TARGET ${IMPORTED_TARGETS})
-        if(repo_header_only)
-            continue()
-        endif()
         set(IMPORTED_TARGET_PATH ${IMPORTED_TARGET_PATH} $<TARGET_LINKER_FILE:${IMPORTED_TARGET}>) #${IMPORTED_TARGET}
         if(NOT find_extproject_SHARED)
             get_target_property(LINK_INTERFACE_LIBS "${IMPORTED_TARGET}" INTERFACE_LINK_LIBRARIES)

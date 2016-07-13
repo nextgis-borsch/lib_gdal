@@ -817,11 +817,11 @@ OGRErr OGRSpatialReference::importFromESRI( char **papszPrj )
 
     else if( EQUAL(osProj,"MERCATOR") )
     {
-        SetMercator( OSR_GDV( papszPrj, "PARAM_1", 0.0 ),
-                     OSR_GDV( papszPrj, "PARAM_0", 0.0 ),
+        SetMercator( OSR_GDV( papszPrj, "PARAM_2", 0.0 ),
+                     OSR_GDV( papszPrj, "PARAM_1", 0.0 ),
                      1.0,
-                     OSR_GDV( papszPrj, "PARAM_2", 0.0 ),
-                     OSR_GDV( papszPrj, "PARAM_3", 0.0 ) );
+                     OSR_GDV( papszPrj, "PARAM_3", 0.0 ),
+                     OSR_GDV( papszPrj, "PARAM_4", 0.0 ) );
     }
 
     else if( EQUAL(osProj, SRS_PT_MERCATOR_AUXILIARY_SPHERE) )
@@ -1370,7 +1370,7 @@ OGRErr OGRSpatialReference::morphToESRI()
             e2 = 2 *f - f*f;
         }
         const double dfStdP1Lat =
-            acos( sqrt( (1 - e2) / (1 / (dfK0 * dfK0)) - e2) ) / M_PI * 180.0;
+            acos( sqrt( (1 - e2) / ((1 / (dfK0 * dfK0)) - e2)) ) / M_PI * 180.0;
         if( poProjCS )
         {
             const int iScaleFactorChild =

@@ -1,3 +1,133 @@
+= GDAL/OGR 2.1.1 Release Notes = 
+
+The 2.1.1 release is a bug fix release.
+
+== Build ==
+ * Unix: Fix compilation in std=c++11 mode with Ubuntu 16.04 (#6490)
+ * Unix: fix libqhull include path when it is /usr/local/include/libqhull (#6522)
+ * Fix build failure on Solaris 11 on MRF driver (#6559)
+
+== Port ==
+ * Export VSICreateCachedFile() as CPL_DLL so as to enable building JP2KAK as a plugin (https://github.com/OSGeo/gdal/pull/126)
+ * Unix filesystem: make error message about failed open to report the filename (#6545)
+ * Fix VSIErrorV() buffer reallocation (#6545)
+
+== GDAL algorithms ==
+ * Fix GDAL_CG_Create() to call GDALContourGenerator::Init() (#6491)
+ * GDALContourGenerate(): handle the case where the nodata value is NaN (#6519)
+ * GDALGridCreate(): fix hang in multi-threaded case when pfnProgress is NULL or GDALDummyProgress (#6552)
+ * GDAL contour: fix incorrect oriented contour lines in some rare cases (#6563)
+
+== GDAL Core ==
+ * DIMAP/Pleiades metadata reader: take into tiling to properly shift RPC (#6293)
+
+== Utilities ==
+ * gdal_polygonize.py: explicitly set output layer geometry type to be polygon (#6530)
+ * gdalwarp: do not densify cutlines by default when CUTLINE_BLEND_DIST is used (#6507)
+
+== GDAL drivers ==
+
+ASRP driver:
+ * fix georeferencing of polar arc zone images (#6560)
+
+ECW driver:
+ * Add configuration option ECW_ALWAYS_UPWARD=TRUE/FALSE  to work around issues with "Downward" oriented images (#6516)
+
+GTiff driver:
+ * fix RasterIO() reported when downsampling a RGBA JPEG compressed TIFF file (#6943)
+ * fix suboptimal behaviour before regarding flushing of working buffer (#6580)
+ * fix race between empty block filling logic and background compression threads when using Create() interface and NUM_THREADS creation option (#6582)
+ * Internal libtiff: fix 1.11 regression that prevents from reading one-strip files that have no StripByteCounts tag (#6490)
+
+ISCE driver:
+ * fix computation of line offset for multi-band BIP files, and warn if detecting a wrong file produced by GDAL 2.1.0 (#6556)
+
+JP2KAK driver:
+ * add support for Kakadu v7.8 (https://github.com/OSGeo/gdal/pull/138)
+
+MRF driver:
+ * Fix plugin building (#6498)
+ * Fix crashes on MRF using JPEG or PNG crashes due to dandling pointer (#6554)
+ * Fix crashes when NoData is set after create (#6555)
+
+PostgisRaster driver:
+ * fix potential crash when one tile has a lower number of bands than the max of the table (fixes #6267)
+
+SAFE driver:
+ * fix handling of SLC Products by providing access to measurements as subdatasets (#6514)
+
+VRT driver:
+  * avoid useless floating point values in SrcRect / DstRect (#6568)
+  * VRT warp: fix issue with partial blocks at the right/bottom and dest nodata values that are different per band (#6581)
+
+== OGR core ==
+ * Fix assertion in OGRGeometryFactory::GetCurveParmeters() on degnerated CIRCULARSTRING (#6553)
+ * Fix crash/corrupted values when running importFromWkb() on POLYGON M/POLYGON ZM geometries (#6562)
+
+== OGRSpatialReference == 
+ * importFromESRI(): fix import of multi line MERCATOR SRS (#6523)
+ * morphToESRI(): correctly compute standard_parallel_1 of Mercator(2SP) projection from scale factor of Mercator(1SP) (#6456, #4861)
+
+== OGR utilities ==
+ * ogr2ogr: keep -append and -overwrite when -update follows (backport trunk r34341)
+ * ogr2ogr: do not return error on ogr2ogr --utility_version (backport of trunk r34340)
+ * ogr2ogr: fix heuristics to detect likely absence of '-f' (#6561)
+
+== OGR drivers == 
+
+CartoDB driver:
+ * fix CartoDB'fication() by removing manual creation of the_geom_webmercator mercator, and also attach created sequence to table.cartodb_id (#6565)
+
+GeoJSON driver:
+ * fix field type detection when first value of a field is null (#6517)
+ * ESRI Json reader: do not set field width of 2147483647 (#6529)
+ * fix wrong behaviour when there's a 'id' at Feature level and 'id' or 'ID' field in properties (#6538)
+ * in case top level id is a negative integer, put the value in a 'id' attribute (#6538)
+
+LIBKML driver:
+ * fix crash when reading <gx:TimeStamp> or <gx:TimeSpan> elements (#6518)
+
+MITAB driver:
+ * limit (width, precision) of numeric fields on creation to (20,16) for compatibility with MapInfo (#6392)
+
+MSSQLSpatial driver:
+ * Fix MSSQL bulk insert with table names containing spaces (#6527)
+
+NAS driver:
+ * support multiple 'anlass' in updates (cherry picked from r34461)
+
+OpenFileGDB driver:
+ * transcode UTF-16 strings found in column names, alias, etc... to UTF-8 (instead of using only their ASCII byte) (#6544)
+ * do not error out on geometries that have a declared M array but that is missing (#6528)
+ * do not emit an error on a empty table whose declaration has M settings (#6564)
+
+PG driver:
+ * fix insertion of binary/bytea content in non-copy mode (#6566)
+
+ROI_PAC driver:
+ * add support for reading/writing .flg files (#6504)
+
+S57 driver:
+ * Fix ogr2ogr -S57 (#6549)
+
+VFK driver:
+ * recreate DB automatically when it's outdated (#6511)
+
+VRT driver:
+ * add support for 'm' attribute in PointFromColumns mode (#6505)
+
+SOSI driver:
+ * make registration of driver work again (2.1 regression) (#6500)
+ * Update to latest version of ​https://github.com/kartverket/gdal. Make SOSI driver support more geometry types (including curved geometries) plus provides some improvements on attribute-type mapping. Fix some memory errors/leaks. Disable by default non working creation code (#6503)
+
+WFS driver:
+ * invalidate underlying layer when SetIgnoredFields() is called (QGIS #15112)
+ * don't crash on empty <Keyword/> declaration (#6586)
+
+== Perl bindings ==
+ * Fix GetGeomFieldIndex()
+ * Fix Dataset.Warp (#6521)
+
 = GDAL/OGR 2.1.0 Release Notes =
 
 == In a nutshell... ==
@@ -189,6 +319,7 @@ Algorithms:
  * RPC DEM: take into account vertical datum of the DEM when present to convert DEM elevations to ellipsoidal heights (#6084)
  * RPC DEM: do fallback cubic -> bilinear and bilinear -> near on DEM edges
  * RPC DEM: improve inverse transformer to validate error threshold and improve convergence (#6162, #6377)
+ * RPC: fix issues with dateline (#6472)
  * TPS solver: discard duplicated GCP to avoid avoidable error, warning when 2 GCPs have same (pixel,line) but different (X,Y) or the reverse
  * Warper: rework multithreaded computations to use a thread pool rather than forking threads each time
  * Warper: avoid really excessive processing time for some warping with target areas completely off the source raster (especially when involving RPC) (#6182)
@@ -258,6 +389,7 @@ ECRG driver:
 
 ECW driver:
  * use wide char Open API on Windows when GDAL_FILENAME_IS_UTF8=YES (https://github.com/OSGeo/gdal/pull/70)
+ * fix reading of ECW in /vsi file systems (with SDK >= 4) (#6482)
 
 GeoRaster driver:
  * fix deflate read error depending on endianness (#6252)
@@ -474,6 +606,8 @@ Core:
  * OGRFeature::SetGeometry()/SetGeometryDirectly(): make it work when passed geometry is the currently installed geometry (#6312)
  * OGR SQL: do not silently skip NULL values in the first records when evaluating a SELECT DISTINCT (#6020)
  * OGR SQL: correctly sort NULL values in first positions (#6155)
+ * OGR SQL: fix CAST(x AS bigint) to return an evaluated int64 node, and not int32 (#6479)
+ * OGR SQL: handle 'fid' as Integer64 in where clause, and allow CAST(fid AS bigint) in selected columns (#6484)
  * Add OGRUpdateFieldType()
  * Decorate a few functions/methods of the OGR layer API with CPL_WARN_UNUSED_RESULT
  * WKT export: use 15 significant figures, instead of 15 figures after decimal point (#6145)
@@ -598,6 +732,7 @@ JML driver:
  * remove arbitrary limitation preventing from reading geometries with <gml:coordinates> larger than 10 MB (#6338)
 
 KML driver:
+ * fix crash on KML files without content but with nested folders (#6486)
 
 LIBKML driver:
  * for documents without folder, use document name when available as name of layer (#6409)
@@ -630,10 +765,12 @@ OpenFileGDB driver:
  * do not emit warning if SDC/CDF table detected and that FileGDB driver is present
  * fix min/max on columns without indices (#6150)
  * build correct geometry for a multi-part wkbMultiLineStringZ (#6332)
+ * add support for reading SHPT_GENERALPOINT (#6478)
 
 OSM driver:
  * correct fields ids for the (non frequently used) Node message
  * do not override 'our' osm_id (the node, way or relation id) with a tag named 'osm_id' (#6347)
+ * properly deal with polygons in other_relations geometrycollection (#6475)
 
 PG driver:
  * Add PRELUDE_STATEMENTS and CLOSING_STATEMENTS open option to be for example able to specify options, like statement_timeout, with pg_bouncer
@@ -659,6 +796,7 @@ Shapefile driver:
  * accept opening standalone .dbf files whose header length is not a multiple of 32 bytes (#6035)
  * fix REPACK crash on shapefile without .dbf (#6274)
  * add capability to restore/build a missing .shx file when defining SHAPE_RESTORE_SHX to TRUE (#5035)
+ * avoid CreateLayer() to error out when passed wkbUnknown | wkb25D (#6473)
 
 SQLite/Spatialite driver:
  * support file:xxx URI syntax (derived from patch by joker99, #6150)
@@ -1577,6 +1715,7 @@ SQLite/Spatialite driver:
  * make GetFIDColumn() work when run as first method call (#5781)
  * emit warning when reading text values in a integer/real field (possible since SQLite has no strong typing)
  * support reading date/datetime from Julian day floating point representation
+ * SQLite dialect: fix insertion in geometry_columns of table names that are not in upper-case (#6483)
 
 SUA driver:
  * tweak detection logic to read beyond first 10KB bytes when needed (#5975)
@@ -1602,6 +1741,7 @@ VRT driver:
  * do not propagate ignoring of x and y cols of a PointFromColumns to the source layer (#5777)
  * add an optional 'name' attribute on FID element, so as to be able to force the report of a FID column name even if it is not exposed as a regular field (related to #5845)
  * handle optional <OpenOptions><OOI key='key'>value</OOI></OpenOptions> to specify open options
+ * do not enable passthrough filtering if redefining <FID> (#6480)
 
 Tiger driver:
  * Fix potential buffer underflow when providing /vsistdin/ to Tiger driver (#5567)

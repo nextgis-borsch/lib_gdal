@@ -548,16 +548,16 @@ OGRErr OGRSpatialReference::importFromPCI( const char *pszProj,
         if( !pasDatum->pszPCIDatum && szEarthModel[0] == 'D' )
         {
             const char *pszDatumCSV = CSVFilename( "pci_datum.txt" );
-            VSILFILE *fp = NULL;
+            FILE *fp = NULL;
 
             if( pszDatumCSV )
-                fp = VSIFOpenL( pszDatumCSV, "r" );
+                fp = VSIFOpen( pszDatumCSV, "r" );
 
             if( fp != NULL )
             {
                 char **papszLineItems = NULL;
 
-                while( (papszLineItems = CSVReadParseLineL( fp )) != NULL )
+                while( (papszLineItems = CSVReadParseLine( fp )) != NULL )
                 {
                     if( CSLCount(papszLineItems) > 3
                         && EQUALN(papszLineItems[0],szEarthModel,4) )
@@ -569,7 +569,7 @@ OGRErr OGRSpatialReference::importFromPCI( const char *pszProj,
                     CSLDestroy( papszLineItems );
                 }
 
-                VSIFCloseL( fp );
+                VSIFClose( fp );
             }
         }
 
@@ -605,16 +605,16 @@ OGRErr OGRSpatialReference::importFromPCI( const char *pszProj,
             if( !pasDatum->pszPCIDatum && szEarthModel[0] == 'E' )
             {
                 const char *pszCSV = CSVFilename( "pci_ellips.txt" );
-                VSILFILE *fp = NULL;
+                FILE *fp = NULL;
 
                 if( pszCSV )
-                    fp = VSIFOpenL( pszCSV, "r" );
+                    fp = VSIFOpen( pszCSV, "r" );
 
                 if( fp != NULL )
                 {
                     char **papszLineItems = NULL;
 
-                    while( (papszLineItems = CSVReadParseLineL( fp )) != NULL )
+                    while( (papszLineItems = CSVReadParseLine( fp )) != NULL )
                     {
                         if( CSLCount(papszLineItems) > 3
                             && EQUALN(papszLineItems[0],szEarthModel,4) )
@@ -628,7 +628,7 @@ OGRErr OGRSpatialReference::importFromPCI( const char *pszProj,
                     }
                     CSLDestroy( papszLineItems );
 
-                    VSIFCloseL( fp );
+                    VSIFClose( fp );
                 }
             }
 
@@ -1177,17 +1177,17 @@ OGRErr OGRSpatialReference::exportToPCI( char **ppszProj, char **ppszUnits,
         if( szEarthModel[0] == '\0' )
         {
             const char *pszCSV = CSVFilename( "pci_ellips.txt" );
-            VSILFILE *fp = NULL;
+            FILE *fp = NULL;
             double dfSemiMinor = OSRCalcSemiMinorFromInvFlattening(dfSemiMajor, dfInvFlattening);
 
             if( pszCSV )
-                fp = VSIFOpenL( pszCSV, "r" );
+                fp = VSIFOpen( pszCSV, "r" );
 
             if( fp != NULL )
             {
                 char **papszLineItems = NULL;
 
-                while( (papszLineItems = CSVReadParseLineL( fp )) != NULL )
+                while( (papszLineItems = CSVReadParseLine( fp )) != NULL )
                 {
                     if( CSLCount(papszLineItems) >= 4
                         && CPLIsEqual(dfSemiMajor,CPLAtof(papszLineItems[2]))
@@ -1202,7 +1202,7 @@ OGRErr OGRSpatialReference::exportToPCI( char **ppszProj, char **ppszUnits,
                 }
 
                 CSLDestroy( papszLineItems );
-                VSIFCloseL( fp );
+                VSIFClose( fp );
             }
         }
 
@@ -1224,20 +1224,20 @@ OGRErr OGRSpatialReference::exportToPCI( char **ppszProj, char **ppszUnits,
         && pszDatum != NULL )
     {
         const char *pszDatumCSV = CSVFilename( "pci_datum.txt" );
-        VSILFILE *fp = NULL;
+        FILE *fp = NULL;
         double adfTOWGS84[7];
         int    bHaveTOWGS84;
 
         bHaveTOWGS84 = (GetTOWGS84( adfTOWGS84, 7 ) == OGRERR_NONE);
 
         if( pszDatumCSV )
-            fp = VSIFOpenL( pszDatumCSV, "r" );
+            fp = VSIFOpen( pszDatumCSV, "r" );
 
         if( fp != NULL )
         {
             char **papszLineItems = NULL;
 
-            while( (papszLineItems = CSVReadParseLineL( fp )) != NULL )
+            while( (papszLineItems = CSVReadParseLine( fp )) != NULL )
             {
                 // Compare based on datum name.  This is mostly for
                 // PCI round-tripping.  We won't usually get exact matches
@@ -1298,7 +1298,7 @@ OGRErr OGRSpatialReference::exportToPCI( char **ppszProj, char **ppszUnits,
             }
 
             CSLDestroy( papszLineItems );
-            VSIFCloseL( fp );
+            VSIFClose( fp );
         }
     }
 

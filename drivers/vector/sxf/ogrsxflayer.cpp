@@ -121,12 +121,12 @@ void OGRSXFLayer::AddClassifyCode(unsigned nClassCode, const char *szName)
 }
 
 /************************************************************************/
-/*                           AddRecord()                                */
+/*                         AddRecord()                               */
 /************************************************************************/
 
 int OGRSXFLayer::AddRecord(long nFID, unsigned nClassCode, vsi_l_offset nOffset, bool bHasSemantic, size_t nSemanticsSize)
 {
-    if (mnClassificators.find(nClassCode) != mnClassificators.end() || EQUAL(GetName(), "Not_Classified"))
+    if (mnClassificators.empty() || mnClassificators.find(nClassCode) != mnClassificators.end())
     {
         mnRecordDesc[nFID] = nOffset;
         // Add additional semantics (attribute fields).
@@ -730,7 +730,7 @@ OGRFeature *OGRSXFLayer::GetNextRawFeature(long nFID)
     }
     // Else trouble.
 
-    if (b3D) //xxxxxx1x
+    if (b3D) //xххххх1х
         stCertInfo.bDim = 1;
     else
         stCertInfo.bDim = 0;
@@ -1198,7 +1198,7 @@ OGRFeature *OGRSXFLayer::TranslateLine(const SXFRecordDescription& certifInfo,
 
 /*---------------------- Reading Sub Lines --------------------------------*/
 
-    for(GUInt16 count=0 ; count <  certifInfo.nSubObjectCount ; count++)
+    for(int count=0 ; count <  certifInfo.nSubObjectCount ; count++)
     {
         poLS->empty();
 
@@ -1215,7 +1215,7 @@ OGRFeature *OGRSXFLayer::TranslateLine(const SXFRecordDescription& certifInfo,
 
         nOffset +=4;
 
-        for (GUInt16 i=0; i < nCoords ; i++)
+        for (int i=0; i < nCoords ; i++)
         {
             const char * psCoords = psRecordBuf + nOffset ;
             if (certifInfo.bDim == 1)
@@ -1441,44 +1441,39 @@ OGRFeature *OGRSXFLayer::TranslateText(const SXFRecordDescription& certifInfo,
     double dfY = 1.0;
     double dfZ = 0.0;
     GUInt32 nOffset = 0;
+    GUInt32 count;
     GUInt32 nDelta = 0;
+	//OGRFeatureDefn *fd = poFeatureDefn->Clone();
+	//fd->SetGeomType( wkbLineString );
+ //   OGRFeature *poFeature = new OGRFeature(fd);
 
     OGRFeature *poFeature = new OGRFeature(poFeatureDefn);
-    OGRMultiLineString *poMLS = new  OGRMultiLineString ();
-
-/*---------------------- Reading Primary Line --------------------------------*/
-    
     OGRLineString* poLS = new OGRLineString();
-    
-    for(GUInt32 count=0 ; count <  certifInfo.nPointCount ; count++)
-    {
-        const char * psCoords = psRecordBuf + nOffset ;
 
+    for(count=0 ; count <  certifInfo.nPointCount ; count++)
+    {
+        const char * psBuf = psRecordBuf + nOffset;
         if (certifInfo.bDim == 1)
         {
-            nDelta = TranslateXYH( certifInfo, psCoords, nBufLen - nOffset, 
-                                    &dfX, &dfY, &dfZ );
+            nDelta = TranslateXYH( certifInfo, psBuf, nBufLen - nOffset, &dfX, &dfY, &dfZ );
         }
         else
         {
             dfZ = 0.0;
-            nDelta = TranslateXYH( certifInfo, psCoords, nBufLen - nOffset, 
-                                    &dfX, &dfY );
+            nDelta = TranslateXYH( certifInfo, psBuf, nBufLen - nOffset, &dfX, &dfY );
         }
-
         if( nDelta == 0 )
             break;
-        nOffset += nDelta;
 
+        nOffset += nDelta;
         poLS->addPoint( dfX, dfY, dfZ );
     }
 
-    poMLS->addGeometry( poLS );
+    poFeature->SetGeometryDirectly( poLS );
 
-/*------------------     READING TEXT VALUE   --------------------------------*/
-    CPLString soText;
+/*------------------     READING TEXT VALUE   ---------------------------------------*/
 
-    if ( certifInfo.bHasTextSign )
+    if ( certifInfo.nSubObjectCount == 0 && certifInfo.bHasTextSign )
     {
         if( nOffset + 1 > nBufLen )
             return poFeature;
@@ -1494,85 +1489,19 @@ OGRFeature *OGRSXFLayer::TranslateText(const SXFRecordDescription& certifInfo,
 
         //TODO: Check encoding from sxf
         char* pszRecoded = CPLRecode(pszTextBuf, "CP1251", CPL_ENC_UTF8);
-        soText += pszRecoded;
+        poFeature->SetField("TEXT", pszRecoded);
         CPLFree(pszRecoded);
 
         CPLFree( pszTextBuf );
-        
-        nOffset += nTextL+2;
     }
 
-/*---------------------- Reading Sub Lines --------------------------------*/
 
-    for(int count=0 ; count <  certifInfo.nSubObjectCount ; count++)
-    {
-        poLS->empty();
+/*****
+ * TODO :
+ *          - Translate graphics
+ *          - Translate 3D vector
+ */
 
-        if( nOffset + 4 > nBufLen )
-            break;
-
-        GUInt16 nSubObj;
-        memcpy(&nSubObj, psRecordBuf + nOffset, 2);
-        CPL_LSBPTR16(&nSubObj);
-
-        GUInt16 nCoords;
-        memcpy(&nCoords, psRecordBuf + nOffset + 2, 2);
-        CPL_LSBPTR16(&nCoords);
-
-        nOffset +=4;
-
-        for (int i=0; i < nCoords ; i++)
-        {
-            const char * psCoords = psRecordBuf + nOffset ;
-            if (certifInfo.bDim == 1)
-            {
-                nDelta = TranslateXYH( certifInfo, psCoords, nBufLen - nOffset, &dfX, &dfY, &dfZ );
-            }
-            else
-            {
-                dfZ = 0.0;
-                nDelta = TranslateXYH( certifInfo, psCoords, nBufLen - nOffset, &dfX, &dfY );
-            }
-
-            if( nDelta == 0 )
-                break;
-            nOffset += nDelta;
-
-            poLS->addPoint( dfX, dfY, dfZ );
-        }
-
-        poMLS->addGeometry( poLS );
-        
-        if ( certifInfo.bHasTextSign )
-        {
-            if( nOffset + 1 > nBufLen )
-                return poFeature;
-            const char * pszTxt = psRecordBuf + nOffset;
-            GByte nTextL = (GByte) *pszTxt;
-            if( nOffset + 1 + nTextL > nBufLen )
-                return poFeature;
-
-            char * pszTextBuf = (char *)CPLMalloc( nTextL+1 );
-
-            strncpy(pszTextBuf, (pszTxt+1),    nTextL);
-            pszTextBuf[nTextL] = '\0';
-
-            //TODO: Check encoding from sxf
-            char* pszRecoded = CPLRecode(pszTextBuf, "CP1251", CPL_ENC_UTF8);
-            soText += " " + CPLString(pszRecoded);
-            CPLFree(pszRecoded);
-
-            CPLFree( pszTextBuf );
-            
-            nOffset += nTextL+2;
-        }
-
-    }    // for
-
-    delete poLS;
-    poFeature->SetGeometryDirectly( poMLS );
-
-    poFeature->SetField("TEXT", soText);
     return poFeature;
 }
 

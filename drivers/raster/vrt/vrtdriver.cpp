@@ -29,11 +29,10 @@
  ****************************************************************************/
 
 #include "vrtdataset.h"
-
 #include "cpl_minixml.h"
 #include "cpl_string.h"
-#include "gdal_alg_priv.h"
 #include "gdal_frmts.h"
+#include "gdal_alg_priv.h"
 
 CPL_CVSID("$Id$");
 
@@ -41,14 +40,17 @@ CPL_CVSID("$Id$");
 /*                             VRTDriver()                              */
 /************************************************************************/
 
-VRTDriver::VRTDriver() :
-    papszSourceParsers(NULL)
+VRTDriver::VRTDriver()
+
 {
+    papszSourceParsers = NULL;
 #if 0
     pDeserializerData = GDALRegisterTransformDeserializer(
         "WarpedOverviewTransformer",
         VRTWarpedOverviewTransform,
         VRTDeserializeWarpedOverviewTransformer );
+#else
+    m_pDeserializerData = NULL;
 #endif
 }
 
@@ -61,7 +63,7 @@ VRTDriver::~VRTDriver()
 {
     CSLDestroy( papszSourceParsers );
 #if 0
-    if(  pDeserializerData )
+    if ( pDeserializerData )
     {
         GDALUnregisterTransformDeserializer( pDeserializerData );
     }
@@ -76,7 +78,7 @@ char **VRTDriver::GetMetadataDomainList()
 {
     return BuildMetadataDomainList( GDALDriver::GetMetadataDomainList(),
                                     TRUE,
-                                    "SourceParsers", NULL );
+                                    "SourceParsers", NULL);
 }
 
 /************************************************************************/
@@ -117,7 +119,7 @@ void VRTDriver::AddSourceParser( const char *pszElementName,
                                  VRTSourceParser pfnParser )
 
 {
-  char szPtrValue[128] = { '\0' };
+    char szPtrValue[128];
     int nRet = CPLPrintPointer( szPtrValue,
                                 reinterpret_cast<void*>(pfnParser),
                                 sizeof(szPtrValue) );
@@ -147,9 +149,9 @@ VRTSource *VRTDriver::ParseSource( CPLXMLNode *psSrc, const char *pszVRTPath )
     if( pszParserFunc == NULL )
         return NULL;
 
-    VRTSourceParser pfnParser = reinterpret_cast<VRTSourceParser>(
-        CPLScanPointer( pszParserFunc,
-                        static_cast<int>(strlen(pszParserFunc)) ) );
+    VRTSourceParser pfnParser = reinterpret_cast<VRTSourceParser>
+                        (CPLScanPointer(pszParserFunc,
+                                        static_cast<int>(strlen(pszParserFunc))));
 
     if( pfnParser == NULL )
         return NULL;
@@ -203,7 +205,7 @@ VRTCreateCopy( const char * pszFilename,
         if( 0 != strlen( pszFilename ) )
         {
             VSILFILE *fpVRT = VSIFOpenL( pszFilename, "wb" );
-            if( fpVRT == NULL )
+            if (fpVRT == NULL)
             {
                 CPLError(CE_Failure, CPLE_AppDefined,
                          "Cannot create %s", pszFilename);
@@ -222,6 +224,7 @@ VRTCreateCopy( const char * pszFilename,
         else
         {
             /* No destination file is given, so pass serialized XML directly. */
+
             pCopyDS = reinterpret_cast<GDALDataset *>(
                 GDALOpen( pszXML, GA_Update ) );
         }
@@ -239,13 +242,13 @@ VRTCreateCopy( const char * pszFilename,
                             poSrcDS->GetRasterXSize(),
                             poSrcDS->GetRasterYSize(),
                             0, GDT_Byte, NULL ) );
-    if( poVRTDS == NULL )
+    if (poVRTDS == NULL)
         return NULL;
 
 /* -------------------------------------------------------------------- */
 /*      Do we have a geotransform?                                      */
 /* -------------------------------------------------------------------- */
-    double adfGeoTransform[6] = { 0.0 };
+    double adfGeoTransform[6];
 
     if( poSrcDS->GetGeoTransform( adfGeoTransform ) == CE_None )
     {
@@ -288,7 +291,7 @@ VRTCreateCopy( const char * pszFilename,
     }
 
 /* -------------------------------------------------------------------- */
-/*      Loop over all the bands.                                        */
+/*      Loop over all the bands.					*/
 /* -------------------------------------------------------------------- */
     for( int iBand = 0; iBand < poSrcDS->GetRasterCount(); iBand++ )
     {
@@ -316,8 +319,7 @@ VRTCreateCopy( const char * pszFilename,
 /* -------------------------------------------------------------------- */
 /*      Add specific mask band.                                         */
 /* -------------------------------------------------------------------- */
-        if( (poSrcBand->GetMaskFlags()
-              & (GMF_PER_DATASET | GMF_ALL_VALID | GMF_NODATA)) == 0)
+        if ( (poSrcBand->GetMaskFlags() & (GMF_PER_DATASET | GMF_ALL_VALID | GMF_NODATA)) == 0)
         {
             VRTSourcedRasterBand* poVRTMaskBand = new VRTSourcedRasterBand(
                 poVRTDS, 0,
@@ -331,9 +333,9 @@ VRTCreateCopy( const char * pszFilename,
 /* -------------------------------------------------------------------- */
 /*      Add dataset mask band                                           */
 /* -------------------------------------------------------------------- */
-    if( poSrcDS->GetRasterCount() != 0 &&
+    if (poSrcDS->GetRasterCount() != 0 &&
         poSrcDS->GetRasterBand(1) != NULL &&
-        poSrcDS->GetRasterBand(1)->GetMaskFlags() == GMF_PER_DATASET )
+        poSrcDS->GetRasterBand(1)->GetMaskFlags() == GMF_PER_DATASET)
     {
         GDALRasterBand *poSrcBand = poSrcDS->GetRasterBand(1);
         VRTSourcedRasterBand* poVRTMaskBand = new VRTSourcedRasterBand(
