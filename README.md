@@ -250,3 +250,12 @@ Available raster+vector drivers for now (by all driver dirs in sources):
 |---|:-:|---|---|
 | **gpkg** | **yes** | SQLITE3; Optionally: SPATIALITE | Requires PNG?, JPEG?, WEBP? drivers; No Spatialite support implemented; Former OGR format |
 | **plscenes** | **yes** | CURL | Former OGR format |
+
+# Network drivers 
+
+Available network (GNM) drivers for now (by all driver dirs in sources):
+
+| Driver | Cmaked | External dependencies | Notes |
+|---|:-:|---|---|
+| db | no | no | Requires built PostGIS driver |
+| **file** | **yes** | no | - |
