@@ -266,7 +266,8 @@ else()
     macro(install_win_py ver)
         file(GLOB TESTS ${CMAKE_CURRENT_BINARY_DIR}/build/lib.*${PYTHON${ver}_VERSION_MAJOR}.${PYTHON${ver}_VERSION_MINOR})
         foreach(TEST ${TESTS})
-            install(DIRECTORY ${TEST}/
+            message (STATUS "form install python bindings path: ${TEST} --> ${INSTALL_LIB_DIR}/Python${PYTHON${ver}_VERSION_MAJOR}${PYTHON${ver}_VERSION_MINOR}/site-packages")
+            install(DIRECTORY "${TEST}/"
                     DESTINATION ${INSTALL_LIB_DIR}/Python${PYTHON${ver}_VERSION_MAJOR}${PYTHON${ver}_VERSION_MINOR}/site-packages
                     COMPONENT libraries)
         endforeach()
