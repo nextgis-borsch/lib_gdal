@@ -147,10 +147,11 @@ endforeach()
 
 if(MSVC)
     if(CMAKE_CL_64)
-        set(PY_SETUP_PLATFORM_NAME --plat-name=win-amd64)
+        set(PY_PLATFORM_NAME win-amd64)
     else()
-        set(PY_SETUP_PLATFORM_NAME --plat-name=win32)
+        set(PY_PLATFORM_NAME win32)
     endif()
+    set(PY_SETUP_PLATFORM_NAME --plat-name=${PY_PLATFORM_NAME})
 endif()
 
 macro(build_py ver)
@@ -264,11 +265,10 @@ except ImportError:
     endif()                     
 else()
     macro(install_win_py ver)
-        set(SETUP_OPTS "--record=rekord.txt --root=${CMAKE_INSTALL_PREFIX}/${INSTALL_LIB_DIR}")
-        install(CODE "execute_process(
-                COMMAND ${PYTHON${ver}_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/setup.py install ${SETUP_OPTS}
-                WORKING_DIRECTORY  ${CMAKE_CURRENT_BINARY_DIR}
-                )")
+        set(BINDING_PATH ${CMAKE_CURRENT_BINARY_DIR}/build/lib.${PY_PLATFORM_NAME}-${PYTHON${ver}_VERSION_MAJOR}.${PYTHON${ver}_VERSION_MINOR})                  
+        install(DIRECTORY "${BINDING_PATH}/"
+                DESTINATION ${INSTALL_LIB_DIR}/Python${PYTHON${ver}_VERSION_MAJOR}${PYTHON${ver}_VERSION_MINOR}/site-packages
+                COMPONENT libraries)
     endmacro()
     
     if(PYTHON2_EXECUTABLE)
