@@ -264,7 +264,7 @@ except ImportError:
     endif()                     
 else()
     macro(install_win_py ver)
-        set(SETUP_OPTS "--record=rekord.txt --root=${INSTALL_LIB_DIR}")
+        set(SETUP_OPTS "--record=rekord.txt --root=${CMAKE_INSTALL_PREFIX}/${INSTALL_LIB_DIR}")
         install(CODE "execute_process(
                 COMMAND ${PYTHON${ver}_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/setup.py install ${SETUP_OPTS}
                 WORKING_DIRECTORY  ${CMAKE_CURRENT_BINARY_DIR}
