@@ -143,7 +143,7 @@ if (WIN32)
          "  Push 'PYTHONPATH'
     Push 'A'
     Push 'HKCU'
-    Push '$INSTDIR\\\\${NSIS_INSTALL_LIB_DIR}\\\\Python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}\\\\Lib\\\\site-packages'
+    Push '$INSTDIR\\\\${NSIS_INSTALL_LIB_DIR}\\\\Python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}\\\\site-packages'
     Call EnvVarUpdate
     Pop  '$0' ")    
         
@@ -151,7 +151,7 @@ if (WIN32)
        "  Push 'PYTHONPATH'
     Push 'R'
     Push 'HKCU'
-    Push '$INSTDIR\\\\${NSIS_INSTALL_LIB_DIR}\\\\Python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}\\\\Lib\\\\site-packages'
+    Push '$INSTDIR\\\\${NSIS_INSTALL_LIB_DIR}\\\\Python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}\\\\site-packages'
     Call un.EnvVarUpdate
     Pop  '$0' ")
   endif()   
