@@ -220,7 +220,7 @@ Available vector drivers for now (by all driver dirs in sources). Drivers marked
 | pgeo | no |  |  |
 | **rec** | **yes** | no | - |
 | **s57** | **yes** | no | Requires inner iso8211 lib; No additional build targets implemented |
-| sde | no |  |  |
+| sde* | no |  |  |
 | **sdts** | **yes** | no | Requires inner sdts and iso8211 libs; No additional build targets implemented; Has the same dir name in /raster |
 | **segukooa** | **yes** | no | - |
 | **segy** | **yes** | no | - |
@@ -250,6 +250,7 @@ Available raster+vector drivers for now (by all driver dirs in sources):
 |---|:-:|---|---|
 | **gpkg** | **yes** | SQLITE3; Optionally: SPATIALITE | Requires PNG?, JPEG?, WEBP? drivers; No Spatialite support implemented; Former OGR format |
 | **plscenes** | **yes** | CURL | Former OGR format |
+| cad | no | no | GSoC 2016 |
 
 # Network drivers 
 
