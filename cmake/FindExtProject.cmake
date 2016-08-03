@@ -129,12 +129,14 @@ function(find_extproject name)
     endif()
     if(ANDROID)
         # TODO: do we need more keys?
-        list(APPEND find_extproject_CMAKE_ARGS -DANDROID_NDK=${ANDROID_NDK})
-        list(APPEND find_extproject_CMAKE_ARGS -DANDROID_NATIVE_API_LEVEL=${ANDROID_NATIVE_API_LEVEL})
-        list(APPEND find_extproject_CMAKE_ARGS -DANDROID_ABI=${ANDROID_ABI})
         list(APPEND find_extproject_CMAKE_ARGS -DANDROID=ON)
-    endif()     
-        
+        list(APPEND find_extproject_CMAKE_ARGS -DANDROID_NDK=${ANDROID_NDK})
+        list(APPEND find_extproject_CMAKE_ARGS -DANDROID_ABI=${ANDROID_ABI})
+        list(APPEND find_extproject_CMAKE_ARGS -DANDROID_NATIVE_API_LEVEL=${ANDROID_NATIVE_API_LEVEL})
+        list(APPEND find_extproject_CMAKE_ARGS -DANDROID_TOOLCHAIN_NAME=${ANDROID_TOOLCHAIN_NAME})
+        list(APPEND find_extproject_CMAKE_ARGS -DANDROID_STL=${ANDROID_STL})
+    endif()
+
     set_property(DIRECTORY PROPERTY "EP_PREFIX" ${EP_PREFIX})
     
     set(EXT_INSTALL_DIR ${EP_PREFIX})
