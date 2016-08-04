@@ -130,11 +130,33 @@ function(find_extproject name)
     if(ANDROID)
         # TODO: do we need more keys?
         list(APPEND find_extproject_CMAKE_ARGS -DANDROID=ON)
-        list(APPEND find_extproject_CMAKE_ARGS -DANDROID_NDK=${ANDROID_NDK})
-        list(APPEND find_extproject_CMAKE_ARGS -DANDROID_ABI=${ANDROID_ABI})
         list(APPEND find_extproject_CMAKE_ARGS -DANDROID_NATIVE_API_LEVEL=${ANDROID_NATIVE_API_LEVEL})
         list(APPEND find_extproject_CMAKE_ARGS -DANDROID_TOOLCHAIN_NAME=${ANDROID_TOOLCHAIN_NAME})
-        list(APPEND find_extproject_CMAKE_ARGS -DANDROID_STL=${ANDROID_STL})
+
+        # Configurable variables from android-sdk/cmake/3.6/android.toolchain.cmake (package version 3.6.3027481)
+        # Modeled after the ndk-build system.
+        # For any variables defined in:
+        #         https://developer.android.com/ndk/guides/android_mk.html
+        #         https://developer.android.com/ndk/guides/application_mk.html
+        # if it makes sense for CMake, then replace LOCAL, APP, or NDK with ANDROID, and
+        # we have that variable below.
+        # The exception is ANDROID_TOOLCHAIN vs NDK_TOOLCHAIN_VERSION.
+        # Since we only have one version of each gcc and clang, specifying a version
+        # doesn't make much sense.
+        list(APPEND find_extproject_CMAKE_ARGS -DANDROID_NDK="${ANDROID_NDK}")
+        list(APPEND find_extproject_CMAKE_ARGS -DANDROID_TOOLCHAIN="${ANDROID_TOOLCHAIN}")
+        list(APPEND find_extproject_CMAKE_ARGS -DANDROID_ABI="${ANDROID_ABI}")
+        list(APPEND find_extproject_CMAKE_ARGS -DANDROID_PLATFORM="${ANDROID_PLATFORM}")
+        list(APPEND find_extproject_CMAKE_ARGS -DANDROID_STL="${ANDROID_STL}")
+        list(APPEND find_extproject_CMAKE_ARGS -DANDROID_PIE="${ANDROID_PIE}")
+        list(APPEND find_extproject_CMAKE_ARGS -DANDROID_CPP_FEATURES="${ANDROID_CPP_FEATURES}")
+        list(APPEND find_extproject_CMAKE_ARGS -DANDROID_ALLOW_UNDEFINED_SYMBOLS="${ANDROID_ALLOW_UNDEFINED_SYMBOLS}")
+        list(APPEND find_extproject_CMAKE_ARGS -DANDROID_ARM_MODE="${ANDROID_ARM_MODE}")
+        list(APPEND find_extproject_CMAKE_ARGS -DANDROID_ARM_NEON="${ANDROID_ARM_NEON}")
+        list(APPEND find_extproject_CMAKE_ARGS -DANDROID_DISABLE_NO_EXECUTE="${ANDROID_DISABLE_NO_EXECUTE}")
+        list(APPEND find_extproject_CMAKE_ARGS -DANDROID_DISABLE_RELRO="${ANDROID_DISABLE_RELRO}")
+        list(APPEND find_extproject_CMAKE_ARGS -DANDROID_DISABLE_FORMAT_STRING_CHECKS="${ANDROID_DISABLE_FORMAT_STRING_CHECKS}")
+        list(APPEND find_extproject_CMAKE_ARGS -DANDROID_CCACHE="${ANDROID_CCACHE}")
     endif()
 
     set_property(DIRECTORY PROPERTY "EP_PREFIX" ${EP_PREFIX})
