@@ -246,7 +246,7 @@ except ImportError:
 
         set(SETUP_OPTS "${SETUP_OPTS} --prefix=${CMAKE_INSTALL_PREFIX}")
         
-        if(NOT SUPRESS_VERBOSE_OUTPUT)
+        if(NOT SUPPRESS_VERBOSE_OUTPUT)
             message(STATUS "setup tools options: ${SETUP_OPTS}")
         endif()
 

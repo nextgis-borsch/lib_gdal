@@ -259,6 +259,6 @@ include(install)
 add_custom_target(uninstall COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
 
 # info
-if(NOT SUPRESS_VERBOSE_OUTPUT)
+if(NOT SUPPRESS_VERBOSE_OUTPUT)
     include(summary)
 endif()

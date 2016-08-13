@@ -28,7 +28,7 @@
 file(GLOB FORMATS ${CMAKE_CURRENT_SOURCE_DIR}/*)
 foreach(FORMAT ${FORMATS})
     if(EXISTS ${FORMAT}/CMakeLists.txt)    
-        if(NOT SUPRESS_VERBOSE_OUTPUT)
+        if(NOT SUPPRESS_VERBOSE_OUTPUT)
             string(ASCII 27 Esc)
             set(Blue        "${Esc}[34m")
             set(ColourReset "${Esc}[m")

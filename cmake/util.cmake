@@ -117,7 +117,7 @@ function(report_version name ver)
 endfunction() 
 
 function(warning_msg text)
-    if(NOT SUPRESS_VERBOSE_OUTPUT)
+    if(NOT SUPPRESS_VERBOSE_OUTPUT)
     string(ASCII 27 Esc)
     set(Red         "${Esc}[31m")
     set(ColourReset "${Esc}[m")
