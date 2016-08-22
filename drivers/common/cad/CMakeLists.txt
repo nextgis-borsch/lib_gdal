@@ -38,8 +38,8 @@ if(ENABLE_CAD AND COMPILER_SUPPORTS_CXX11)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-    set(WITH_OpenCAD ON)
-    set(WITH_OpenCAD_EXTERNAL ON)    
+    set(WITH_OpenCAD ON CACHE BOOL "OpenCAD on" FORCE)
+    set(WITH_OpenCAD_EXTERNAL ON CACHE BOOL "OpenCAD external on" FORCE)    
     find_anyproject(OpenCAD REQUIRED SHARED OFF)
     
     set(LIB_HHEADERS
