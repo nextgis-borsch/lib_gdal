@@ -25,24 +25,32 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-if(NOT ANDROID)
-file(GLOB LIBS ${CMAKE_CURRENT_SOURCE_DIR}/*)
-foreach(LIB ${LIBS})
-    if(EXISTS ${LIB}/CMakeLists.txt)    
-        if(NOT SUPPRESS_VERBOSE_OUTPUT)
-            string(ASCII 27 Esc)
-            set(Blue        "${Esc}[34m")
-            set(ColourReset "${Esc}[m")
-            get_filename_component(LIB_NAME ${LIB} NAME)
-            message(STATUS "add library: ${Blue}${LIB_NAME}${ColourReset}")
-        endif()
-        add_subdirectory(${LIB})
-    endif()    
-endforeach()
-    
-# send variables upper
-set(TARGET_OBJECTS ${TARGET_OBJECTS} PARENT_SCOPE)
-#set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
-#set(DEPENDENCY_LIB ${DEPENDENCY_LIB} PARENT_SCOPE)
-#set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} PARENT_SCOPE)
+option(ENABLE_GNMFILE "Build GNM (Geographical Network Model) file format" ON)
+if(ENABLE_GNMFILE)
+    set(TARGET_NAME net_file)
+
+    add_definitions(-DGNMFILE_ENABLED)
+    set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DGNMFILE_ENABLED" PARENT_SCOPE)
+
+    include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+    include_directories(${CMAKE_SOURCE_DIR}/core/gnm)
+
+    set(LIB_HHEADERS
+    )
+
+    set(LIB_HHEADERS_PRIV
+        gnmfile.h
+    )
+
+    set(LIB_CSOURCES
+        gnmfiledriver.cpp	
+        gnmfilenetwork.cpp
+    )
+
+    add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
+
+    # build target
+    set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
+else()
+    warning_msg("Skip gnm file format")  
 endif()

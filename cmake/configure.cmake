@@ -173,7 +173,7 @@ if(WIN32)
 else()
 # linux
     find_package(Threads)
-    if(CMAKE_THREAD_LIBS_INIT)
+    if(Threads_FOUND)
         set(_WITH_PT_OPTION_ON TRUE)
         set(TARGET_LINK_LIB ${TARGET_LINK_LIB} ${CMAKE_THREAD_LIBS_INIT})
         #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_THREAD_LIBS_INIT}")

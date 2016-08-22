@@ -104,6 +104,7 @@ if(GDAL_BUILD_APPS)
     add_exe(gdalserver gdalserver.c)
     
     if(GDAL_ENABLE_GNM)
+        include_directories(${CMAKE_SOURCE_DIR}/core/gnm)
         add_exe(gnmanalyse gnmanalyse.cpp)
         add_exe(gnmmanage gnmmanage.cpp)
     endif()

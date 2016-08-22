@@ -136,7 +136,7 @@ if (WIN32)
     Pop  '$0' ")
   
   
-  # https://docs.python.org/3/install/      
+  # https://docs.python.org/3/install/       
   find_package(PythonInterp REQUIRED)
   if(PYTHONINTERP_FOUND)
     set (CPACK_NSIS_EXTRA_INSTALL_COMMANDS ${CPACK_NSIS_EXTRA_INSTALL_COMMANDS}
@@ -172,8 +172,8 @@ else ()
   set (CPACK_DEBIAN_PRE_UNINSTALL_SCRIPT_FILE "/sbin/ldconfig")
   set (CPACK_DEBIAN_POST_INSTALL_SCRIPT_FILE "/sbin/ldconfig")
   set (CPACK_DEBIAN_POST_UNINSTALL_SCRIPT_FILE "/sbin/ldconfig")
-  set (CPACK_DEBIAN_PACKAGE_DEPENDS "zlib1g, libjpeg, libgeos, libcurl4-gnutls | libcurl-ssl, libexpat1, libproj, libxml2, liblzma, libarmadillo, libtiff5, libgeotiff, libjson-c, libsqlite3, python2.7, python-numpy, libpcre3, libspatialite, libpq")
-      
+  set (CPACK_DEBIAN_PACKAGE_DEPENDS "zlib1g, libjpeg, libpng, libgeos, libcurl4-gnutls | libcurl-ssl, libexpat1, libproj, libxml2, liblzma, libarmadillo, libtiff5, libgeotiff, libjson-c, libsqlite3, python2.7, python-numpy, libpcre3, libspatialite, libpq, libhdf4")
+  
   set (CPACK_RPM_COMPONENT_INSTALL ON)
   set (CPACK_RPM_PACKAGE_GROUP "Development/Tools")
   set (CPACK_RPM_PACKAGE_LICENSE "X/MIT")

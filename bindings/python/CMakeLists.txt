@@ -147,10 +147,11 @@ endforeach()
 
 if(MSVC)
     if(CMAKE_CL_64)
-        set(PY_SETUP_PLATFORM_NAME --plat-name=win-amd64)
+        set(PY_PLATFORM_NAME win-amd64)
     else()
-        set(PY_SETUP_PLATFORM_NAME --plat-name=win32)
+        set(PY_PLATFORM_NAME win32)
     endif()
+    set(PY_SETUP_PLATFORM_NAME --plat-name=${PY_PLATFORM_NAME})
 endif()
 
 macro(build_py ver)
@@ -245,7 +246,7 @@ except ImportError:
 
         set(SETUP_OPTS "${SETUP_OPTS} --prefix=${CMAKE_INSTALL_PREFIX}")
         
-        if(NOT SUPRESS_VERBOSE_OUTPUT)
+        if(NOT SUPPRESS_VERBOSE_OUTPUT)
             message(STATUS "setup tools options: ${SETUP_OPTS}")
         endif()
 
@@ -264,12 +265,10 @@ except ImportError:
     endif()                     
 else()
     macro(install_win_py ver)
-        file(GLOB TESTS ${CMAKE_CURRENT_BINARY_DIR}/build/lib.*${PYTHON${ver}_VERSION_MAJOR}.${PYTHON${ver}_VERSION_MINOR})
-        foreach(TEST ${TESTS})
-            install(DIRECTORY ${TEST}/
-                    DESTINATION ${INSTALL_LIB_DIR}/Python${PYTHON${ver}_VERSION_MAJOR}${PYTHON${ver}_VERSION_MINOR}/site-packages
-                    COMPONENT libraries)
-        endforeach()
+        set(BINDING_PATH ${CMAKE_CURRENT_BINARY_DIR}/build/lib.${PY_PLATFORM_NAME}-${PYTHON${ver}_VERSION_MAJOR}.${PYTHON${ver}_VERSION_MINOR})                  
+        install(DIRECTORY "${BINDING_PATH}/"
+                DESTINATION ${INSTALL_LIB_DIR}/Python${PYTHON${ver}_VERSION_MAJOR}${PYTHON${ver}_VERSION_MINOR}/site-packages
+                COMPONENT libraries)
     endmacro()
     
     if(PYTHON2_EXECUTABLE)
