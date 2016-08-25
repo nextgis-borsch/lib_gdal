@@ -64,6 +64,7 @@ CPLErr GDALWMSCache::Read(const char *key, CPLString *file_name) {
     return CE_None;
 }
 
+/*
 {
 SQLCommand(m_hTempDB, "PRAGMA synchronous = OFF");
         SQLCommand(m_hTempDB, (CPLString("PRAGMA journal_mode = ") + CPLGetConfigOption("PARTIAL_TILES_JOURNAL_MODE", "OFF")).c_str());
@@ -84,6 +85,6 @@ SQLCommand(m_hTempDB, "PRAGMA synchronous = OFF");
         SQLCommand(m_hTempDB, "CREATE INDEX partial_tiles_age_idx "
                                 "ON partial_tiles(age)");
 }
-
+*/
 
 #endif //SQLITE_ENABLED

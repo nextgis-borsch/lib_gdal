@@ -513,11 +513,11 @@ CPLErr GDALWMSDataset::Initialize(CPLXMLNode *config) {
     if (ret == CE_None) {
         CPLXMLNode *cache_node = CPLGetXMLNode(config, "Cache");
         if (cache_node != NULL) {
-#ifdef SQLITE_ENABLED
-            m_cache = new GDALWMSDbCache ();
-#else
+//#ifdef SQLITE_ENABLED
+//            m_cache = new GDALWMSDbCache ();
+//#else
             m_cache = new GDALWMSFileCache ();
-#endif //
+//#endif //
             if (m_cache->Initialize(cache_node, service_node) != CE_None) {
                 delete m_cache;
                 m_cache = NULL;

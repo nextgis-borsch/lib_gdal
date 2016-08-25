@@ -50,7 +50,7 @@
 #include "gdalhttp.h"
 
 #ifdef SQLITE_ENABLED
-    #include "ogr_sqlite.h" // for sqlite3*
+//    #include "ogr_sqlite.h" // for sqlite3*
 #endif
 
 class GDALWMSDataset;
