@@ -49,6 +49,10 @@
 #include "md5.h"
 #include "gdalhttp.h"
 
+#ifdef SQLITE_ENABLED
+    #include "ogr_sqlite.h" // for sqlite3*
+#endif
+
 class GDALWMSDataset;
 class GDALWMSRasterBand;
 
@@ -242,21 +246,61 @@ public: \
 class GDALWMSCache {
 public:
     GDALWMSCache();
-    ~GDALWMSCache();
+    virtual ~GDALWMSCache();
 
 public:
-    CPLErr Initialize(CPLXMLNode *config);
-    CPLErr Write(const char *key, const CPLString &file_name);
-    CPLErr Read(const char *key, CPLString *file_name);
+    virtual CPLErr Initialize(CPLXMLNode *config, CPLXMLNode *service_config);
+    virtual CPLErr Write(const char *key, const CPLString &file_name) = 0;
+    virtual CPLErr Read(const char *key, CPLString *file_name) = 0;
+protected:
+    CPLString m_cache_path;
+    CPLString m_key_name;
+    GIntBig m_max_size;
+    double m_ttl;
+};
 
+/************************************************************************/
+/*                         GDALWMSFileCache                             */
+/************************************************************************/
+
+class GDALWMSFileCache : public GDALWMSCache {
+public:
+    GDALWMSFileCache();
+    virtual ~GDALWMSFileCache();
+
+public:
+    virtual CPLErr Initialize(CPLXMLNode *config, CPLXMLNode *service_config);
+    virtual CPLErr Write(const char *key, const CPLString &file_name);
+    virtual CPLErr Read(const char *key, CPLString *file_name);
 protected:
     CPLString KeyToCacheFile(const char *key);
 
 protected:
-    CPLString m_cache_path;
     CPLString m_postfix;
     int m_cache_depth;
 };
+
+#ifdef SQLITE_ENABLED
+
+/************************************************************************/
+/*                          GDALWMSDbCache                              */
+/************************************************************************/
+
+class GDALWMSDbCache : public GDALWMSCache {
+public:
+    GDALWMSDbCache();
+    virtual ~GDALWMSDbCache();
+
+public:
+    virtual CPLErr Initialize(CPLXMLNode *config, CPLXMLNode *service_config);
+    virtual CPLErr Write(const char *key, const CPLString &file_name);
+    virtual CPLErr Read(const char *key, CPLString *file_name);
+
+protected:
+    sqlite3 *m_hDB;
+};
+
+#endif
 
 /************************************************************************/
 /*                            GDALWMSDataset                            */

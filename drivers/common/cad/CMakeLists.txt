@@ -37,10 +37,8 @@ if(ENABLE_CAD AND COMPILER_SUPPORTS_CXX11)
     set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DCAD_ENABLED" PARENT_SCOPE)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-
-    set(WITH_OpenCAD ON CACHE BOOL "OpenCAD on" FORCE)
-    set(WITH_OpenCAD_EXTERNAL ON CACHE BOOL "OpenCAD external on" FORCE)    
-    find_anyproject(OpenCAD REQUIRED SHARED OFF)
+   
+    find_anyproject(OpenCAD REQUIRED)
     
     set(LIB_HHEADERS
         ogr_cad.h

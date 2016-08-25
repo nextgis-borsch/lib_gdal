@@ -55,6 +55,8 @@ if(ENABLE_WMS)
 
     set(LIB_CSOURCES
         gdalwmscache.cpp 
+        gdalwmsfilecache.cpp
+        gdalwmsdbcache.cpp
         gdalwmsdataset.cpp 
         gdalwmsrasterband.cpp
         gdalhttp.cpp 

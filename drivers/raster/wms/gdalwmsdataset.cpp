@@ -513,8 +513,12 @@ CPLErr GDALWMSDataset::Initialize(CPLXMLNode *config) {
     if (ret == CE_None) {
         CPLXMLNode *cache_node = CPLGetXMLNode(config, "Cache");
         if (cache_node != NULL) {
-            m_cache = new GDALWMSCache();
-            if (m_cache->Initialize(cache_node) != CE_None) {
+#ifdef SQLITE_ENABLED
+            m_cache = new GDALWMSDbCache ();
+#else
+            m_cache = new GDALWMSFileCache ();
+#endif //
+            if (m_cache->Initialize(cache_node, service_node) != CE_None) {
                 delete m_cache;
                 m_cache = NULL;
                 CPLError(CE_Failure, CPLE_AppDefined, "GDALWMS: Failed to initialize cache.");
