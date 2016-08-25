@@ -31,6 +31,7 @@ ENDIF(WIN32)
 
 FIND_PATH(OPENCAD_INCLUDE_DIR opencad.h
     PATHS ${OPENCAD_OSGEO4W_HOME}/include
+    PATH_SUFFIXES opencad
     DOC "Path to OPENCAD library include directory")
 
 SET(OPENCAD_NAMES ${OPENCAD_NAMES} opencad opencad_i)
