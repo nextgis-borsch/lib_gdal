@@ -297,7 +297,9 @@ public:
     virtual CPLErr Read(const char *key, CPLString *file_name);
 
 protected:
-    sqlite3 *m_hDB;
+#ifdef SQLITE_ENABLED
+//    sqlite3 *m_hDB;
+#endif //SQLITE_ENABLED
 };
 
 #endif
