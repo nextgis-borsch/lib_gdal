@@ -35,12 +35,12 @@
 #define CACHE_DB "cache.db"
 
 GDALWMSDbCache::GDALWMSDbCache() : GDALWMSCache () {
-    m_hDB = NULL;
+//    m_hDB = NULL;
 }
 
 GDALWMSDbCache::~GDALWMSDbCache() {
-    sqlite3_close(m_hDB);
-    m_hDB = NULL;
+//    sqlite3_close(m_hDB);
+//    m_hDB = NULL;
 }
 
 CPLErr GDALWMSDbCache::Initialize(CPLXMLNode *config, CPLXMLNode *service_config) {
