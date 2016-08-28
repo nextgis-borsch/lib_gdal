@@ -13,6 +13,9 @@ geospatial data formats. This is a mirror of the GDAL Subversion repository.
   contributed documentation and hints
 * Mailing list: http://lists.osgeo.org/mailman/listinfo/gdal-dev
 
+# License
+X/MIT
+
 # Sync sources with orgin
 
 Clone sources
