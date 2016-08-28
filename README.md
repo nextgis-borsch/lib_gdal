@@ -1,6 +1,7 @@
 # GDAL - Geospatial Data Abstraction Library [devel]
 
-This is restructured GDAL sources tree fork with CMake build system [code name borsch]. This branch for testing and fast bug fixing.
+This is restructured GDAL sources tree fork with CMake build system [code name borsch]. 
+This branch for testing and fast bug fixing.
 
 GDAL is an open source X/MIT licensed translator library for raster and vector 
 geospatial data formats. This is a mirror of the GDAL Subversion repository.
@@ -251,7 +252,7 @@ Available raster+vector drivers for now (by all driver dirs in sources):
 |---|:-:|---|---|
 | **gpkg** | **yes** | SQLITE3; Optionally: SPATIALITE | Requires PNG?, JPEG?, WEBP? drivers; No Spatialite support implemented; Former OGR format |
 | **plscenes** | **yes** | CURL | Former OGR format |
-| **cad** | **yes** | OpenCAD | GSoC 2016, static build of OpenCAD. System libopencad usage is preferable |
+| **cad** | **yes** | OpenCAD | GSoC 2016, build of OpenCAD |
 
 # Network drivers 
 
