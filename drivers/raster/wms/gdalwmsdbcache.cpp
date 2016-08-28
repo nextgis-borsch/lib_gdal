@@ -54,12 +54,12 @@ CPLErr GDALWMSDbCache::Initialize(CPLXMLNode *config, CPLXMLNode *service_config
     return CE_None;
 }
 
-CPLErr GDALWMSCache::Write(const char *key, const CPLString &file_name) {
+CPLErr GDALWMSDbCache::Write(const char *key, const CPLString &file_name) {
 
     return CE_None;
 }
 
-CPLErr GDALWMSCache::Read(const char *key, CPLString *file_name) {
+CPLErr GDALWMSDbCache::Read(const char *key, CPLString *file_name) {
 
     return CE_None;
 }
