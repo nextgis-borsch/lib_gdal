@@ -151,12 +151,10 @@ endif()
 
 find_anyproject(LibLZMA)
 
-find_anyproject(TIFF REQUIRED CMAKE_ARGS
-    -DSKIP_BUILD_DOCS=ON)
+find_anyproject(TIFF REQUIRED CMAKE_ARGS -DSKIP_BUILD_DOCS=ON)
 find_anyproject(GeoTIFF VERSION 1.2.1 REQUIRED)
 
-find_anyproject(SQLite3 CMAKE_ARGS
-      -DENABLE_COLUMN_METADATA=ON)
+find_anyproject(SQLite3 CMAKE_ARGS -DENABLE_COLUMN_METADATA=ON)
 if(SQLITE3_FOUND)
     option(ENABLE_SQLITE_GPKG "Build SQLite & GeoPackage (raster + vector) formats" ON)
     if(ENABLE_SQLITE_GPKG)
