@@ -16,6 +16,9 @@ geospatial data formats. This is a mirror of the GDAL Subversion repository.
 # License
 X/MIT
 
+# Borsch
+Borsch repository link: https://github.com/nextgis-borsch/borsch
+
 # Sync sources with orgin
 
 Clone sources
