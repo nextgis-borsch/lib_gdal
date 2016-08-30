@@ -151,12 +151,10 @@ endif()
 
 find_anyproject(LibLZMA)
 
-find_anyproject(TIFF REQUIRED CMAKE_ARGS
-    -DSKIP_BUILD_DOCS=ON)
+find_anyproject(TIFF REQUIRED CMAKE_ARGS -DSKIP_BUILD_DOCS=ON)
 find_anyproject(GeoTIFF VERSION 1.2.1 REQUIRED)
 
-find_anyproject(SQLite3 CMAKE_ARGS
-      -DENABLE_COLUMN_METADATA=ON)
+find_anyproject(SQLite3 CMAKE_ARGS -DENABLE_COLUMN_METADATA=ON)
 if(SQLITE3_FOUND)
     option(ENABLE_SQLITE_GPKG "Build SQLite & GeoPackage (raster + vector) formats" ON)
     if(ENABLE_SQLITE_GPKG)
@@ -209,6 +207,11 @@ endif()
 add_subdirectory(apps)
 
 add_library(${LIB_NAME} ${LIB_TYPE} ${TARGET_OBJECTS})
+set(INSTALL_TARGETS ${LIB_NAME})
+if(BUILD_SHARED_LIBS AND BUILD_STATIC_LIBS)
+    add_library(${LIB_NAME}static STATIC ${TARGET_OBJECTS})  
+    set(INSTALL_TARGETS ${INSTALL_TARGETS} ${LIB_NAME}static)
+endif()
 
 set(_symbols "GDAL_1.8 { global: *; };")
 set(_version_script "${CMAKE_CURRENT_BINARY_DIR}/version.script")
@@ -221,12 +224,12 @@ endif ()
 
 if(BUILD_SHARED_LIBS)
     if(WIN32)
-        set (LIB_VERSION ${GDAL_MAJOR_VERSION})
+        set (LIB_VERSION ${GDAL_MAJOR_VERSION}0)
         if(MSVC)        
             set_target_properties(${LIB_NAME} PROPERTIES IMPORT_SUFFIX "_i.lib")
         endif()
     else ()
-      set (LIB_VERSION ${VERSION})
+      set (LIB_VERSION "${GDAL_MAJOR_VERSION}0.${GDAL_MINOR_VERSION}.${GDAL_REV_VERSION}")
     endif()    
     set_target_properties (${LIB_NAME} PROPERTIES VERSION ${LIB_VERSION})
     set_target_properties (${LIB_NAME} PROPERTIES SOVERSION ${SOVERSION})

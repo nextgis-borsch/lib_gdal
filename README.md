@@ -12,6 +12,12 @@ geospatial data formats. This is a mirror of the GDAL Subversion repository.
   contributed documentation and hints
 * Mailing list: http://lists.osgeo.org/mailman/listinfo/gdal-dev
 
+# License
+X/MIT
+
+# Borsch
+Borsch repository link: https://github.com/nextgis-borsch/borsch
+
 # Sync sources with orgin
 
 Clone sources
@@ -32,6 +38,7 @@ Go to script folder of this repo /etc/cmake-build-helpers and execute
 |---|:-:|
 | Windows | ![build status](http://176.9.38.120/buildbot/png?builder=gdal_win) |
 | Ubuntu (packaging) | ![build status](http://176.9.38.120/buildbot/png?builder=gdal_deb) | 
+| Ubuntu (packaging dev) | ![build status](http://176.9.38.120/buildbot/png?builder=gdal_debdev) | 
 
 # Ubuntu PPA
 
