@@ -98,7 +98,7 @@ static FindFileTLS* CPLFinderInit()
     FindFileTLS* pTLSData = CPLGetFindFileTLS();
     if( pTLSData != NULL && !pTLSData->bFinderInitialized )
     {
-        pTLSData->bFinderInitialized = TRUE;
+        pTLSData->bFinderInitialized = true;
         CPLPushFileFinder( CPLDefaultFindFile );
 
         CPLPushFinderLocation( "." );
@@ -109,18 +109,19 @@ static FindFileTLS* CPLFinderInit()
         }
         else
         {
+#ifdef INST_DATA
+            CPLPushFinderLocation( INST_DATA );
+#endif
 #ifdef GDAL_PREFIX
   #ifdef MACOSX_FRAMEWORK
             CPLPushFinderLocation( GDAL_PREFIX "/Resources/gdal" );
   #else
             CPLPushFinderLocation( GDAL_PREFIX "/share/gdal" );
   #endif
-#else
-            CPLPushFinderLocation( "/usr/local/share/gdal" );
 #endif
         }
     }
-    return pTLSData;
+return pTLSData;
 }
 
 /************************************************************************/
@@ -242,9 +243,12 @@ void CPLPushFinderLocation( const char *pszLocation )
     FindFileTLS* pTLSData = CPLFinderInit();
     if( pTLSData == NULL )
         return;
+    // Check if location already is in list.
+    if( CSLFindStringCaseSensitive(pTLSData->papszFinderLocations,
+                                   pszLocation) > -1 )
+        return;
     pTLSData->papszFinderLocations
-        = CSLAddStringMayFail( pTLSData->papszFinderLocations,
-                                   pszLocation );
+        = CSLAddStringMayFail( pTLSData->papszFinderLocations, pszLocation );
 }
 
 
