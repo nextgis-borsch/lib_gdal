@@ -14,9 +14,11 @@ geospatial data formats. This is a mirror of the GDAL Subversion repository.
 * Mailing list: http://lists.osgeo.org/mailman/listinfo/gdal-dev
 
 # License
+
 X/MIT
 
 # Borsch
+
 Borsch repository link: https://github.com/nextgis-borsch/borsch
 
 # Sync sources with orgin
