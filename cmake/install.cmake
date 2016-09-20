@@ -34,7 +34,7 @@ if(NOT SKIP_INSTALL_LIBRARIES AND NOT SKIP_INSTALL_ALL )
         ARCHIVE DESTINATION ${INSTALL_LIB_DIR} COMPONENT libraries
         LIBRARY DESTINATION ${INSTALL_LIB_DIR} COMPONENT libraries
     )
-    if(UNIX) #NOTE: Hack for work with qgis 2.8.x needed libgdal.so.1. 
+    if(UNIX AND BUILD_SHARED_LIBS) #NOTE: Hack for work with qgis 2.8.x needed libgdal.so.1. 
         install(FILES ${CMAKE_BINARY_DIR}/libgdal.so.${SOVERSION} DESTINATION ${INSTALL_LIB_DIR} RENAME libgdal.so.1 COMPONENT libraries)
     endif()
 endif()
