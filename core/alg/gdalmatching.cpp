@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  GDAL
  * Purpose:  GDAL Wrapper for image matching via correlation algorithm.
@@ -31,7 +30,9 @@
 #include "gdal_alg.h"
 #include "gdal_simplesurf.h"
 
-CPL_CVSID("$Id");
+//! @cond Doxygen_Suppress
+CPL_CVSID("$Id$");
+//! @endcond
 
 /**
  * @file
@@ -174,6 +175,7 @@ GatherFeaturePoints(GDALDataset* poDataset, int* panBands,
 /*                     GDALComputeMatchingPoints()                      */
 /************************************************************************/
 
+/** GDALComputeMatchingPoints. TODO document */
 GDAL_GCP CPL_DLL *
 GDALComputeMatchingPoints( GDALDatasetH hFirstImage,
                            GDALDatasetH hSecondImage,
@@ -202,8 +204,7 @@ GDALComputeMatchingPoints( GDALDatasetH hFirstImage,
 /*      limited to using RGB input so if we have one band only treat    */
 /*      it as red=green=blue=band 1.  Disallow non eightbit imagery.    */
 /* -------------------------------------------------------------------- */
-    int anBandMap1[3], anBandMap2[3];
-
+    int anBandMap1[3];
     if( GDALGetRasterCount(hFirstImage) >= 3 )
     {
         anBandMap1[0] = 1;
@@ -212,9 +213,12 @@ GDALComputeMatchingPoints( GDALDatasetH hFirstImage,
     }
     else
     {
-        anBandMap1[0] = anBandMap1[1] = anBandMap1[2] = 1;
+        anBandMap1[0] = 1;
+        anBandMap1[1] = 1;
+        anBandMap1[2] = 1;
     }
 
+    int anBandMap2[3];
     if( GDALGetRasterCount(hSecondImage) >= 3 )
     {
         anBandMap2[0] = 1;
@@ -223,7 +227,9 @@ GDALComputeMatchingPoints( GDALDatasetH hFirstImage,
     }
     else
     {
-        anBandMap2[0] = anBandMap2[1] = anBandMap2[2] = 1;
+        anBandMap2[0] = 1;
+        anBandMap2[1] = 1;
+        anBandMap2[2] = 1;
     }
 
 /* -------------------------------------------------------------------- */

@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRMDBJavaEnv class.
@@ -278,7 +277,6 @@ int OGRMDBJavaEnv::Init()
     return TRUE;
 }
 
-
 /************************************************************************/
 /*                       ExceptionOccurred()                             */
 /************************************************************************/
@@ -294,7 +292,6 @@ int OGRMDBJavaEnv::ExceptionOccurred()
     }
     return FALSE;
 }
-
 
 /************************************************************************/
 /*                           OGRMDBDatabase()                           */

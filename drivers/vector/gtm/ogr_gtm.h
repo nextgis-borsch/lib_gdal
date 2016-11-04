@@ -75,9 +75,7 @@ typedef enum
 #  define MAX(a,b)      ((a>b) ? a : b)
 #endif
 
-
 #include "gtm.h"
-
 
 /************************************************************************/
 /*                           OGRGTMLayer                                */
@@ -86,7 +84,7 @@ class OGRGTMLayer : public OGRLayer
 {
 public:
     OGRGTMLayer();
-    ~OGRGTMLayer();
+    virtual ~OGRGTMLayer();
     //
     // OGRLayer Interface
     //
@@ -113,16 +111,14 @@ protected:
     bool bError;
 
     static OGRErr CheckAndFixCoordinatesValidity( double& pdfLatitude, double& pdfLongitude );
-
 };
-
 
 /************************************************************************/
 /*                           GTMWaypointLayer                           */
 /************************************************************************/
 class GTMWaypointLayer : public OGRGTMLayer
 {
-public:
+  public:
     GTMWaypointLayer( const char* pszName,
                       OGRSpatialReference* poSRSIn,
                       int bWriterIn,
@@ -134,7 +130,8 @@ public:
     GIntBig GetFeatureCount(int bForce = TRUE);
 
     enum WaypointFields{NAME, COMMENT, ICON, DATE};
-private:
+
+  private:
     void WriteFeatureAttributes( OGRFeature *poFeature, float altitude );
 };
 
@@ -143,7 +140,7 @@ private:
 /************************************************************************/
 class GTMTrackLayer : public OGRGTMLayer
 {
-public:
+  public:
     GTMTrackLayer( const char* pszName,
                    OGRSpatialReference* poSRSIn,
                    int bWriterIn,
@@ -155,12 +152,10 @@ public:
     GIntBig GetFeatureCount(int bForce = TRUE);
     enum TrackFields{NAME, TYPE, COLOR};
 
-private:
+  private:
     void WriteFeatureAttributes( OGRFeature *poFeature );
     void WriteTrackpoint( double lat, double lon, float altitude, bool start );
-
 };
-
 
 /************************************************************************/
 /*                           OGRGTMDataSource                           */
@@ -205,7 +200,6 @@ public:
     bool hasNextTrack();
     Track* fetchNextTrack();
     void rewindTrack();
-
 
     /* Functions for writing ne files */
     float getMinLat() { return minlat; }

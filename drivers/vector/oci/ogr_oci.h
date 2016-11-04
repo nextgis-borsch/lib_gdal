@@ -89,7 +89,6 @@ typedef struct
 #define ORA_GTYPE_SOLID           8
 #define ORA_GTYPE_MULTISOLID      9
 
-
 /************************************************************************/
 /*                            OGROCISession                             */
 /************************************************************************/
@@ -127,7 +126,6 @@ class CPL_DLL OGROCISession {
     OCIType *PinTDO( const char * );
 
   private:
-
 };
 
 OGROCISession CPL_DLL*
@@ -364,7 +362,7 @@ class OGROCILoaderLayer : public OGROCIWritableLayer
                                            const char *pszGeomCol,
                                            int nSRID,
                                            const char *pszLoaderFile );
-                        ~OGROCILoaderLayer();
+                        virtual ~OGROCILoaderLayer();
 
     virtual void        ResetReading();
     virtual GIntBig     GetFeatureCount( int );
@@ -383,7 +381,6 @@ class OGROCILoaderLayer : public OGROCIWritableLayer
     virtual OGRSpatialReference *GetSpatialRef() { return poSRS; }
 
     virtual int         TestCapability( const char * );
-
 };
 
 /************************************************************************/
@@ -402,9 +399,9 @@ class OGROCITableLayer : public OGROCIWritableLayer
 
     OGRFeatureDefn     *ReadTableDefinition(const char *);
 
-    void                BuildWhere(void);
-    char               *BuildFields(void);
-    void                BuildFullQueryStatement(void);
+    void                BuildWhere();
+    char               *BuildFields();
+    void                BuildFullQueryStatement();
 
     char               *pszQuery;
     char               *pszWHERE;
@@ -413,6 +410,10 @@ class OGROCITableLayer : public OGROCIWritableLayer
 
     CPLString           osTableName;
     CPLString           osOwner;
+
+    int                 nFirstId;
+    int                 nMultiLoadCount;
+    int                 bMultiLoad;
 
     OCIArray           *hOrdVARRAY;
     OCIArray           *hElemInfoVARRAY;
@@ -446,7 +447,7 @@ class OGROCITableLayer : public OGROCIWritableLayer
                         OGROCITableLayer( OGROCIDataSource *,
                                           const char * pszName, OGRwkbGeometryType eGType,
                                           int nSRID, int bUpdate, int bNew );
-                        ~OGROCITableLayer();
+                        virtual ~OGROCITableLayer();
 
     virtual void        ResetReading();
     virtual GIntBig     GetFeatureCount( int );
@@ -506,6 +507,7 @@ class OGROCIDataSource : public OGRDataSource
     char               *pszDBName;
 
     int                 bDSUpdate;
+    int                 bNoLogging;
 
     OGROCISession      *poSession;
 
@@ -517,14 +519,15 @@ class OGROCIDataSource : public OGRDataSource
 
   public:
                         OGROCIDataSource();
-                        ~OGROCIDataSource();
+                        virtual ~OGROCIDataSource();
 
     OGROCISession      *GetSession() { return poSession; }
 
     int                 Open( const char *, char** papszOpenOptions,
                               int bUpdate, int bTestOpen );
     int                 OpenTable( const char *pszTableName,
-                                   int nSRID, int bUpdate, int bTestOpen );
+                                   int nSRID, int bUpdate, int bTestOpen,
+                                   char** papszOpenOptions );
 
     const char          *GetName() { return pszName; }
     int                 GetLayerCount() { return nLayers; }
@@ -563,6 +566,5 @@ OGROCIStrokeArcToOGRGeometry_Points( double dfStartX, double dfStartY,
                                      double dfMaxAngleStepSizeDegrees,
                                      int bForceWholeCircle,
                                      OGRLineString *poLine );
-
 
 #endif /* ndef OGR_OCI_H_INCLUDED */

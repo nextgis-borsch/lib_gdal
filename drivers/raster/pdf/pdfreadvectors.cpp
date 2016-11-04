@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  PDF driver
  * Purpose:  GDALDataset driver for PDF dataset (read vector features)
@@ -1120,7 +1119,8 @@ OGRGeometry* PDFDataset::ParseContent(const char* pszContent,
                 if( bEmitFeature && poCurLayer != NULL)
                 {
                     OGRGeometry* poGeom = BuildGeometry(oCoords, bHasFoundFill, bHasMultiPart);
-                    bHasFoundFill = bHasMultiPart = FALSE;
+                    bHasFoundFill = FALSE;
+                    bHasMultiPart = FALSE;
                     if (poGeom)
                     {
                         OGRFeature* poFeature = new OGRFeature(poCurLayer->GetLayerDefn());

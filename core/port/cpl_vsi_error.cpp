@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  VSI Virtual File System
  * Purpose:  Implement an error system for reporting file system errors.
@@ -39,7 +38,6 @@
 #if !defined(WIN32)
 #include <string.h>
 #endif
-
 
 #define TIMESTAMP_DEBUG
 //#define MEMORY_DEBUG

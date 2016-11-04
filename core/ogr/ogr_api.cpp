@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  C API Functions that don't correspond one-to-one with C++
@@ -32,6 +31,8 @@
 #include "ogr_geometry.h"
 #include "ogr_api.h"
 #include "cpl_error.h"
+
+CPL_CVSID("$Id$");
 
 static bool bNonLinearGeometriesEnabled = true;
 
@@ -455,7 +456,8 @@ void OGR_G_GetPoint( OGRGeometryH hGeom, int i,
           if (i < 0 || i >= poSC->getNumPoints())
           {
               CPLError(CE_Failure, CPLE_NotSupported, "Index out of bounds");
-              *pdfX = *pdfY = 0;
+              *pdfX = 0;
+              *pdfY = 0;
               if( pdfZ != NULL )
                   *pdfZ = 0;
           }
@@ -523,7 +525,8 @@ void OGR_G_GetPointZM( OGRGeometryH hGeom, int i,
           if (i < 0 || i >= poSC->getNumPoints())
           {
               CPLError(CE_Failure, CPLE_NotSupported, "Index out of bounds");
-              *pdfX = *pdfY = 0;
+              *pdfX = 0;
+              *pdfY = 0;
               if( pdfZ != NULL )
                   *pdfZ = 0;
               if( pdfM != NULL )
@@ -606,7 +609,7 @@ void CPL_DLL OGR_G_SetPoints( OGRGeometryH hGeom, int nPointsIn,
         {
           poSC->setNumPoints( nPointsIn );
 
-          for (int i = 0; i < nPointsIn; ++i)
+          for( int i = 0; i < nPointsIn; ++i )
           {
             double x = *(double*)((char*)pabyX + i * nXStride);
             double y = *(double*)((char*)pabyY + i * nYStride);
@@ -704,7 +707,7 @@ void CPL_DLL OGR_G_SetPointsZM( OGRGeometryH hGeom, int nPointsIn,
 
           if (!pabyZ && !pabyM)
           {
-              for (int i = 0; i < nPointsIn; ++i)
+              for( int i = 0; i < nPointsIn; ++i )
               {
                   double x = *(double*)((char*)pabyX + i * nXStride);
                   double y = *(double*)((char*)pabyY + i * nYStride);
@@ -713,7 +716,7 @@ void CPL_DLL OGR_G_SetPointsZM( OGRGeometryH hGeom, int nPointsIn,
           }
           else if (pabyZ && !pabyM)
           {
-              for (int i = 0; i < nPointsIn; ++i)
+              for( int i = 0; i < nPointsIn; ++i )
               {
                   double x = *(double*)((char*)pabyX + i * nXStride);
                   double y = *(double*)((char*)pabyY + i * nYStride);
@@ -723,7 +726,7 @@ void CPL_DLL OGR_G_SetPointsZM( OGRGeometryH hGeom, int nPointsIn,
           }
           else if (!pabyZ && pabyM)
           {
-              for (int i = 0; i < nPointsIn; ++i)
+              for( int i = 0; i < nPointsIn; ++i )
               {
                   double x = *(double*)((char*)pabyX + i * nXStride);
                   double y = *(double*)((char*)pabyY + i * nYStride);
@@ -733,7 +736,7 @@ void CPL_DLL OGR_G_SetPointsZM( OGRGeometryH hGeom, int nPointsIn,
           }
           else
           {
-              for (int i = 0; i < nPointsIn; ++i)
+              for( int i = 0; i < nPointsIn; ++i )
               {
                   double x = *(double*)((char*)pabyX + i * nXStride);
                   double y = *(double*)((char*)pabyY + i * nYStride);
@@ -742,7 +745,6 @@ void CPL_DLL OGR_G_SetPointsZM( OGRGeometryH hGeom, int nPointsIn,
                   poSC->setPoint( i, x, y, z, m );
               }
           }
-
         }
         break;
       }

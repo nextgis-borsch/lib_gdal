@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  GDAL/OGR Geography Network support (Geographic Network Model)
  * Purpose:  GNM graph implementation.
@@ -34,14 +33,12 @@
 #include <limits>
 #include <set>
 
-GNMGraph::GNMGraph()
-{
-}
+CPL_CVSID("$Id$");
 
-GNMGraph::~GNMGraph()
-{
+//! @cond Doxygen_Suppress
+GNMGraph::GNMGraph() {}
 
-}
+GNMGraph::~GNMGraph() {}
 
 void GNMGraph::AddVertex(GNMGFID nFID)
 {
@@ -275,7 +272,7 @@ std::vector<GNMPATH> GNMGraph::KShortestPaths(GNMGFID nStartFID, GNMGFID nEndFID
 
     for (k = 0; k < nK - 1; ++k) // -1 because we have already found one
     {
-        std::map<GNMGFID, double> mDeletedEdges; // for infinity costs assignement
+        std::map<GNMGFID, double> mDeletedEdges; // for infinity costs assignment
         itAk = A[k].begin();
 
         for (i = 0; i < A[k].size() - 1; ++i) // avoid end node
@@ -620,3 +617,4 @@ void GNMGraph::TraceTargets(std::queue<GNMGFID> &vertexQueue,
     if (!neighbours_queue.empty())
         TraceTargets(neighbours_queue, markedVertIds, connectedIds);
 }
+//! @endcond

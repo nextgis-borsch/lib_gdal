@@ -31,6 +31,8 @@
 #include "commonutils.h"
 #include "ogr_p.h"
 
+CPL_CVSID("$Id$");
+
 enum operation
 {
     op_unknown = 0, /** no operation */
@@ -402,8 +404,6 @@ int main( int nArgc, char ** papszArgv )
     {
         exit( -nArgc );
     }
-
-
 
     for( int iArg = 1; iArg < nArgc; iArg++ )
     {

@@ -35,7 +35,7 @@
 #include "cpl_string.h"
 
 //COM ATL Includes
-#include <atlbase.h> 
+#include <atlbase.h>
 #include <atlcom.h>
 #include <atlctl.h>
 #include <atlstr.h> //CString
@@ -47,8 +47,6 @@ using namespace ATL;
 #import "C:\Program Files (x86)\ArcGIS\com\esriGeometry.olb" raw_interfaces_only, raw_native_types, named_guids, exclude("ISegment")
 #import "C:\Program Files (x86)\ArcGIS\com\esriGeoDatabase.olb" raw_interfaces_only, raw_native_types, no_namespace, named_guids
 #import "C:\Program Files (x86)\ArcGIS\com\esriDataSourcesGDB.olb" raw_interfaces_only, raw_native_types, no_namespace, named_guids
-
-
 
 /************************************************************************/
 /*                            AOLayer                                  */
@@ -74,13 +72,12 @@ public:
 
   HRESULT GetTable(ITable** ppTable);
 
-
   virtual OGRErr      GetExtent( OGREnvelope *psExtent, int bForce );
   virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce)
                 { return OGRLayer::GetExtent(iGeomField, psExtent, bForce); }
   virtual GIntBig     GetFeatureCount( int bForce );
   virtual OGRErr      SetAttributeFilter( const char *pszQuery );
-  virtual void 	      SetSpatialFilterRect (double dfMinX, double dfMinY, double dfMaxX, double dfMaxY);
+  virtual void        SetSpatialFilterRect (double dfMinX, double dfMinY, double dfMaxX, double dfMaxY);
   virtual void        SetSpatialFilter( OGRGeometry * );
   virtual void        SetSpatialFilter( int iGeomField, OGRGeometry *poGeom )
                 { OGRLayer::SetSpatialFilter(iGeomField, poGeom); }
@@ -133,15 +130,13 @@ public:
   AODataSource();
   virtual ~AODataSource();
 
-
   int         Open(IWorkspace* pWorkspace, const char *, int );
-  
+
   const char* GetName() { return m_pszName; }
   int         GetLayerCount() { return static_cast<int>(m_layers.size()); }
-  
+
   OGRLayer*   GetLayer( int );
 
-  
   /*
   virtual OGRLayer* ICreateLayer( const char *,
                                  OGRSpatialReference* = NULL,
@@ -165,7 +160,6 @@ protected:
   char* m_pszName;
   std::vector <AOLayer*> m_layers;
   IWorkspacePtr m_ipWorkspace;
-
 };
 
 /************************************************************************/
@@ -199,5 +193,3 @@ void CPL_DLL RegisterOGRao();
 CPL_C_END
 
 #endif /* ndef _OGR_PG_H_INCLUDED */
-
-

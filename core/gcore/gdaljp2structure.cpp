@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  GDAL
  * Purpose:  GDALJP2Stucture - Dump structure of a JP2/J2K file
@@ -559,7 +558,12 @@ static void DumpRESxBox(CPLXMLNode* psBox, GDALJP2Box& oBox)
             CPLCreateXMLNode( psBox, CXT_Element, "DecodedContent" );
         GIntBig nRemainingLength = nBoxDataLength;
         GByte* pabyIter = pabyBoxData;
-        GUInt16 nNumV = 0, nNumH = 0, nDenomV = 1, nDenomH = 1, nExpV = 0, nExpH = 0;
+        GUInt16 nNumV = 0;
+        GUInt16 nNumH = 0;
+        GUInt16 nDenomV = 1;
+        GUInt16 nDenomH = 1;
+        GUInt16 nExpV = 0;
+        GUInt16 nExpH = 0;
         if( nRemainingLength >= 2 )
         {
             GUInt16 nVal;
@@ -917,7 +921,6 @@ static CPLXMLNode* DumpJPK2CodeStream(CPLXMLNode* psBox,
         GUInt16 nRemainingMarkerSize = nMarkerSize - 2;
         GUInt32 nLastVal = 0;
 
-
 #define READ_MARKER_FIELD_UINT8_COMMENT(name, comment) \
         do { if( nRemainingMarkerSize >= 1 ) { \
             nLastVal = *pabyMarkerDataIter; \
@@ -1126,7 +1129,8 @@ static CPLXMLNode* DumpJPK2CodeStream(CPLXMLNode* psBox,
         else if( abyMarker[1] == 0x55 ) /* TLM */
         {
             READ_MARKER_FIELD_UINT8("Ztlm");
-            int ST = 0, SP = 0;
+            int ST = 0;
+            int SP = 0;
             READ_MARKER_FIELD_UINT8_COMMENT("Stlm",
                     CPLSPrintf("ST=%d SP=%d",
                                (ST = (nLastVal >> 4) & 3),
@@ -1255,8 +1259,8 @@ void GDALGetJPEG2000StructureInternal(CPLXMLNode* psParent,
                     VSIFree(pszBinaryContent);
                 }
 
-                if( (CSLFetchBoolean(papszOptions, "BINARY_CONTENT", FALSE) ||
-                     CSLFetchBoolean(papszOptions, "ALL", FALSE) ) &&
+                if( (CPLFetchBool(papszOptions, "BINARY_CONTENT", false) ||
+                     CPLFetchBool(papszOptions, "ALL", false) ) &&
                     strcmp(pszBoxType, "jp2c") != 0 &&
                     nBoxDataLength < 100 * 1024 )
                 {
@@ -1278,8 +1282,8 @@ void GDALGetJPEG2000StructureInternal(CPLXMLNode* psParent,
                     VSIFree(pszBinaryContent);
                 }
 
-                if( (CSLFetchBoolean(papszOptions, "TEXT_CONTENT", FALSE) ||
-                     CSLFetchBoolean(papszOptions, "ALL", FALSE) ) &&
+                if( (CPLFetchBool(papszOptions, "TEXT_CONTENT", false) ||
+                     CPLFetchBool(papszOptions, "ALL", false) ) &&
                     strcmp(pszBoxType, "jp2c") != 0 &&
                     nBoxDataLength < 100 * 1024 )
                 {
@@ -1315,8 +1319,8 @@ void GDALGetJPEG2000StructureInternal(CPLXMLNode* psParent,
 
                 if( strcmp(pszBoxType, "jp2c") == 0 )
                 {
-                    if( CSLFetchBoolean(papszOptions, "CODESTREAM", FALSE) ||
-                        CSLFetchBoolean(papszOptions, "ALL", FALSE) )
+                    if( CPLFetchBool(papszOptions, "CODESTREAM", false) ||
+                        CPLFetchBool(papszOptions, "ALL", false) )
                     {
                         DumpJPK2CodeStream(psBox, fp,
                                            oBox.GetDataOffset(), nBoxDataLength);
@@ -1412,8 +1416,8 @@ CPLXMLNode* GDALGetJPEG2000Structure(const char* pszFilename,
     CPLXMLNode* psParent = NULL;
     if( memcmp(abyHeader, jpc_header, sizeof(jpc_header)) == 0 )
     {
-        if( CSLFetchBoolean(papszOptions, "CODESTREAM", FALSE) ||
-            CSLFetchBoolean(papszOptions, "ALL", FALSE) )
+        if( CPLFetchBool(papszOptions, "CODESTREAM", false) ||
+            CPLFetchBool(papszOptions, "ALL", false) )
         {
             if( VSIFSeekL(fp, 0, SEEK_END) == 0 )
             {

@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  GDAL/OGR Geography Network support (Geographic Network Model)
  * Purpose:  GNM network class.
@@ -34,6 +33,9 @@
 
 #include <set>
 
+CPL_CVSID("$Id$");
+
+//! @cond Doxygen_Suppress
 GNMGenericNetwork::GNMGenericNetwork() :
     GNMNetwork(),
     m_nVersion(0),
@@ -792,8 +794,8 @@ OGRLayer *GNMGenericNetwork::GetPath(GNMGFID nStartFID, GNMGFID nEndFID,
     OGRGNMWrappedResultLayer* poResLayer =
                               new OGRGNMWrappedResultLayer(poMEMDS, poMEMLayer);
 
-    bool bReturnEdges = CPL_TO_BOOL(CSLFetchBoolean(papszOptions, GNM_MD_FETCHEDGES, TRUE));
-    bool bReturnVertices = CPL_TO_BOOL(CSLFetchBoolean(papszOptions, GNM_MD_FETCHVERTEX, TRUE));
+    const bool bReturnEdges = CPLFetchBool(papszOptions, GNM_MD_FETCHEDGES, true);
+    const bool bReturnVertices = CPLFetchBool(papszOptions, GNM_MD_FETCHVERTEX, true);
 
     switch (eAlgorithm)
     {
@@ -1449,9 +1451,7 @@ CPLErr CPL_STDCALL GNMDisconnectFeaturesWithId(GNMGenericNetworkH hNet,
     VALIDATE_POINTER1( hNet, "GNMDisconnectFeaturesWithId", CE_Failure );
 
     return ((GNMGenericNetwork*)hNet)->DisconnectFeaturesWithId(nFID);
-
 }
-
 
 CPLErr CPL_STDCALL GNMReconnectFeatures (GNMGenericNetworkH hNet,
                                          GNMGFID nSrcFID, GNMGFID nTgtFID,
@@ -1462,7 +1462,6 @@ CPLErr CPL_STDCALL GNMReconnectFeatures (GNMGenericNetworkH hNet,
 
     return ((GNMGenericNetwork*)hNet)->ReconnectFeatures(nSrcFID, nTgtFID,
                                         nConFID, dfCost, dfInvCost, eDir);
-
 }
 
 CPLErr CPL_STDCALL GNMCreateRule (GNMGenericNetworkH hNet, const char *pszRuleStr)
@@ -1470,7 +1469,6 @@ CPLErr CPL_STDCALL GNMCreateRule (GNMGenericNetworkH hNet, const char *pszRuleSt
     VALIDATE_POINTER1( hNet, "GNMCreateRule", CE_Failure );
 
     return ((GNMGenericNetwork*)hNet)->CreateRule(pszRuleStr);
-
 }
 
 CPLErr CPL_STDCALL GNMDeleteAllRules(GNMGenericNetworkH hNet)
@@ -1524,3 +1522,4 @@ CPLErr CPL_STDCALL GNMChangeAllBlockState (GNMGenericNetworkH hNet,
 
     return ((GNMGenericNetwork*)hNet)->ChangeAllBlockState(bIsBlock == TRUE);
 }
+//! @endcond

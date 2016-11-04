@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRMultiLineString class.
@@ -41,9 +40,7 @@ CPL_CVSID("$Id$");
  * \brief Create an empty multi line string collection.
  */
 
-OGRMultiLineString::OGRMultiLineString()
-{
-}
+OGRMultiLineString::OGRMultiLineString() {}
 
 /************************************************************************/
 /*           OGRMultiLineString( const OGRMultiLineString& )            */
@@ -60,16 +57,13 @@ OGRMultiLineString::OGRMultiLineString()
 
 OGRMultiLineString::OGRMultiLineString( const OGRMultiLineString& other ) :
     OGRMultiCurve(other)
-{
-}
+{}
 
 /************************************************************************/
 /*                       ~OGRMultiLineString()                          */
 /************************************************************************/
 
-OGRMultiLineString::~OGRMultiLineString()
-{
-}
+OGRMultiLineString::~OGRMultiLineString() {}
 
 /************************************************************************/
 /*                  operator=( const OGRMultiCurve&)                    */
@@ -86,13 +80,12 @@ OGRMultiLineString::~OGRMultiLineString()
 
 OGRMultiLineString& OGRMultiLineString::operator=( const OGRMultiLineString& other )
 {
-    if( this != &other)
+    if( this != &other )
     {
         OGRMultiCurve::operator=( other );
     }
     return *this;
 }
-
 
 /************************************************************************/
 /*                          getGeometryType()                           */
@@ -145,9 +138,10 @@ OGRErr OGRMultiLineString::exportToWkt( char ** ppszDstText,
 /*                         hasCurveGeometry()                           */
 /************************************************************************/
 
-OGRBoolean OGRMultiLineString::hasCurveGeometry(CPL_UNUSED int bLookForNonLinear) const
+OGRBoolean OGRMultiLineString::hasCurveGeometry(
+    int /* bLookForNonLinear */ ) const
 {
-    return FALSE;
+    return false;
 }
 
 /************************************************************************/
@@ -157,13 +151,22 @@ OGRBoolean OGRMultiLineString::hasCurveGeometry(CPL_UNUSED int bLookForNonLinear
 /**
  * \brief Cast to multicurve.
  *
- * The passed in geometry is consumed and a new one returned .
+ * The passed in geometry is consumed and a new one returned.
  *
  * @param poMLS the input geometry - ownership is passed to the method.
  * @return new geometry.
  */
 
-OGRMultiCurve* OGRMultiLineString::CastToMultiCurve(OGRMultiLineString* poMLS)
+OGRMultiCurve* OGRMultiLineString::CastToMultiCurve( OGRMultiLineString* poMLS )
 {
-    return (OGRMultiCurve*) TransferMembersAndDestroy(poMLS, new OGRMultiCurve());
+    OGRMultiCurve *poMultiCurve = dynamic_cast<OGRMultiCurve *>(
+        TransferMembersAndDestroy(poMLS, new OGRMultiCurve()) );
+    if( poMultiCurve == NULL )
+    {
+        CPLError( CE_Fatal, CPLE_AppDefined,
+                  "OGRMultiCurve dynamic_cast failed." );
+        return NULL;
+    }
+
+    return poMultiCurve;
 }

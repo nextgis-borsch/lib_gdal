@@ -30,7 +30,17 @@
 #define OGR_GEOJSONUTILS_H_INCLUDED
 
 #include <ogr_core.h>
-#include <json.h> // JSON-C
+
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunknown-pragmas"
+#pragma clang diagnostic ignored "-Wdocumentation"
+#endif
+#include <json.h>
+#ifdef __clang
+#pragma clang diagnostic pop
+#endif
+
 #include "cpl_vsi.h"
 #include "gdal_priv.h"
 
@@ -68,7 +78,7 @@ GeoJSONProtocolType GeoJSONGetProtocolType( const char* pszSource );
 /*                           GeoJSONIsObject                            */
 /************************************************************************/
 
-int GeoJSONIsObject( const char* pszText );
+bool GeoJSONIsObject( const char* pszText );
 
 /************************************************************************/
 /*                           GeoJSONPropertyToFieldType                 */
@@ -77,7 +87,6 @@ int GeoJSONIsObject( const char* pszText );
 OGRFieldType GeoJSONPropertyToFieldType( json_object* poObject,
                                          OGRFieldSubType& eSubType,
                                          bool bArrayAsString = false );
-
 
 /************************************************************************/
 /*                      GeoJSONStringPropertyToFieldType                */
@@ -91,4 +100,4 @@ OGRFieldType GeoJSONStringPropertyToFieldType( json_object* poObject );
 
 const char* OGRGeoJSONGetGeometryName( OGRGeometry const* poGeometry );
 
-#endif /* OGR_GEOJSONUTILS_H_INCLUDED */
+#endif  // OGR_GEOJSONUTILS_H_INCLUDED

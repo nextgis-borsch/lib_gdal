@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  OpenGIS Simple Features
  * Purpose:  Functions for getting list of projection types, and their parms.
@@ -61,7 +60,6 @@ static const char * const papszParameterDefinitions[] = {
 };
 
 static const char * const papszProjectionDefinitions[] = {
-
     "*",
     SRS_PT_TRANSVERSE_MERCATOR,
     "Transverse Mercator",
@@ -489,9 +487,6 @@ static const char * const papszProjectionDefinitions[] = {
     NULL
 };
 
-
-
-
 /************************************************************************/
 /*                      OPTGetProjectionMethods()                       */
 /************************************************************************/
@@ -506,10 +501,9 @@ static const char * const papszProjectionDefinitions[] = {
 char **OPTGetProjectionMethods()
 
 {
-    int         i;
-    char        **papszList = NULL;
+    char **papszList = NULL;
 
-    for( i = 1; papszProjectionDefinitions[i] != NULL; i++ )
+    for( int i = 1; papszProjectionDefinitions[i] != NULL; ++i )
     {
         if( EQUAL(papszProjectionDefinitions[i-1],"*") )
             papszList = CSLAddString(papszList,papszProjectionDefinitions[i]);
@@ -543,28 +537,28 @@ char **OPTGetParameterList( const char *pszProjectionMethod,
 
 {
     char **papszList = NULL;
-    int  i;
 
-    for( i = 1; papszProjectionDefinitions[i] != NULL; i++ )
+    for( int i = 1; papszProjectionDefinitions[i] != NULL; ++i )
     {
         if( papszProjectionDefinitions[i-1][0] == '*'
             && EQUAL(papszProjectionDefinitions[i],pszProjectionMethod) )
         {
-            i++;
+            ++i;
 
             if( ppszUserName != NULL )
                 *ppszUserName = (char *)papszProjectionDefinitions[i];
 
-            i++;
+            ++i;
             while( papszProjectionDefinitions[i] != NULL
                    && papszProjectionDefinitions[i][0] != '*' )
             {
                 papszList = CSLAddString( papszList,
                                           papszProjectionDefinitions[i] );
-                i++;
+                ++i;
             }
-            if( papszList == NULL) /* IGH has no parameter, so return an empty list instead of NULL */
-                papszList = (char**) CPLCalloc(1, sizeof(char*));
+            // IGH has no parameter, so return an empty list instead of NULL.
+            if( papszList == NULL)
+                papszList = static_cast<char**>( CPLCalloc(1, sizeof(char*)) );
             return papszList;
         }
     }
@@ -601,18 +595,14 @@ char **OPTGetParameterList( const char *pszProjectionMethod,
  * @return TRUE if parameter found, or FALSE otherwise.
  */
 
-int OPTGetParameterInfo( const char * pszProjectionMethod,
+int OPTGetParameterInfo( CPL_UNUSED const char * pszProjectionMethod,
                          const char * pszParameterName,
                          char ** ppszUserName,
                          char ** ppszType,
                          double *pdfDefaultValue )
 
 {
-    int         i;
-
-    (void) pszProjectionMethod;
-
-    for( i = 0; papszParameterDefinitions[i] != NULL; i += 4 )
+    for( int i = 0; papszParameterDefinitions[i] != NULL; i += 4 )
     {
         if( EQUAL(papszParameterDefinitions[i],pszParameterName) )
         {

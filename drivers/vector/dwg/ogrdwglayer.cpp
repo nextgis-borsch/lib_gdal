@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrdwglayer.cpp 22008 2011-03-22 19:45:20Z warmerdam $
  *
  * Project:  DWG Translator
  * Purpose:  Implements OGRDWGLayer class.
@@ -49,7 +48,7 @@
 #include "DbFiler.h"
 #include "Ge/GeScale3d.h"
 
-CPL_CVSID("$Id: ogrdwglayer.cpp 22008 2011-03-22 19:45:20Z warmerdam $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                            OGRDWGLayer()                             */
@@ -142,7 +141,6 @@ void OGRDWGLayer::SetBlockTable( OdDbBlockTableRecordPtr poNewBlock )
     ResetReading();
 }
 
-
 /************************************************************************/
 /*                        ClearPendingFeatures()                        */
 /************************************************************************/
@@ -191,7 +189,6 @@ void OGRDWGLayer::TranslateGenericProperties( OGRFeature *poFeature,
 
     OdDbHandle oHandle = poEntity->getDbHandle();
     poFeature->SetField( "EntityHandle", (const char *) oHandle.ascii() );
-
 
     if( poEntity->colorIndex() != 256 )
     {
@@ -299,7 +296,6 @@ void OGRDWGLayer::TranslateGenericProperties( OGRFeature *poFeature,
 
     poFeature->SetField( "ExtendedEntity", osFullXData );
 
-
 #ifdef notdef
       // OCS vector.
       case 210:
@@ -313,7 +309,6 @@ void OGRDWGLayer::TranslateGenericProperties( OGRFeature *poFeature,
       case 230:
         oStyleProperties["230_N.dZ"] = pszValue;
         break;
-
 
       default:
         break;
@@ -487,7 +482,7 @@ OGRFeature *OGRDWGLayer::TranslateMTEXT( OdDbEntityPtr poEntity )
 
     CPLString osStyle;
     char szBuffer[64];
-    char* pszComma;
+    char* pszComma = NULL;
 
     osStyle.Printf("LABEL(f:\"Arial\",t:\"%s\"",osText.c_str());
 
@@ -619,7 +614,7 @@ OGRFeature *OGRDWGLayer::TranslateTEXT( OdDbEntityPtr poEntity )
 
     CPLString osStyle;
     char szBuffer[64];
-    char* pszComma;
+    char* pszComma = NULL;
 
     osStyle.Printf("LABEL(f:\"Arial\",t:\"%s\"",osText.c_str());
 
@@ -962,7 +957,8 @@ OGRFeature *OGRDWGLayer::TranslateARC( OdDbEntityPtr poEntity )
     OdDbArcPtr poAE = OdDbArc::cast( poEntity );
     OGRFeature *poFeature = new OGRFeature( poFeatureDefn );
     double dfRadius = 0.0;
-    double dfStartAngle = 0.0, dfEndAngle = 360.0;
+    double dfStartAngle = 0.0;
+    double dfEndAngle = 360.0;
     OdGePoint3d oCenter;
 
     TranslateGenericProperties( poFeature, poEntity );
@@ -1086,7 +1082,6 @@ OGRFeature *OGRDWGLayer::TranslateSPLINE( OdDbEntityPtr poEntity )
 /************************************************************************/
 /*                      GeometryInsertTransformer                       */
 /************************************************************************/
-
 
 class GeometryInsertTransformer : public OGRCoordinateTransformation
 {
@@ -1390,7 +1385,6 @@ OGRFeature *OGRDWGLayer::GetNextUnfilteredFeature()
                 poFeature = apoPendingFeatures.front();
                 apoPendingFeatures.pop();
             }
-
         }
         else
         {

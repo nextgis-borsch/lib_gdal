@@ -259,7 +259,7 @@ class OGRSQLiteLayer : public OGRLayer, public IOGRSQLiteGetSpatialWhere
 
     void                BuildFeatureDefn( const char *pszLayerName,
                                           sqlite3_stmt *hStmt,
-                                          const std::set<CPLString>& aosGeomCols,
+                                          const std::set<CPLString>* paosGeomCols,
                                           const std::set<CPLString>& aosIgnoredCols);
 
     void                ClearStatement();
@@ -277,7 +277,6 @@ class OGRSQLiteLayer : public OGRLayer, public IOGRSQLiteGetSpatialWhere
                                                        const char* pszEscapedGeomCol);
     CPLString           FormatSpatialFilterFromMBR(OGRGeometry* poFilterGeom,
                                                    const char* pszEscapedGeomColName);
-
 
   public:
                         OGRSQLiteLayer();
@@ -319,7 +318,6 @@ class OGRSQLiteLayer : public OGRLayer, public IOGRSQLiteGetSpatialWhere
     static OGRErr       ExportSpatiaLiteGeometry( const OGRGeometry *,
                                                   GInt32, OGRwkbByteOrder,
                                                   int, int bUseComprGeom, GByte **, int * );
-
 };
 
 /************************************************************************/
@@ -347,7 +345,7 @@ class OGRSQLiteTableLayer : public OGRSQLiteLayer
 
     void                ClearInsertStmt();
 
-    void                BuildWhere(void);
+    void                BuildWhere();
 
     virtual OGRErr      ResetStatement();
 
@@ -389,7 +387,7 @@ class OGRSQLiteTableLayer : public OGRSQLiteLayer
 
   public:
                         OGRSQLiteTableLayer( OGRSQLiteDataSource * );
-                        ~OGRSQLiteTableLayer();
+                        virtual ~OGRSQLiteTableLayer();
 
     CPLErr              Initialize( const char *pszTableName,
                                     int bIsVirtualShapeIn,
@@ -490,7 +488,7 @@ class OGRSQLiteViewLayer : public OGRSQLiteLayer
     OGRSQLiteLayer     *poUnderlyingLayer;
     OGRSQLiteLayer     *GetUnderlyingLayer();
 
-    void                BuildWhere(void);
+    void                BuildWhere();
 
     virtual OGRErr      ResetStatement();
 
@@ -498,7 +496,7 @@ class OGRSQLiteViewLayer : public OGRSQLiteLayer
 
   public:
                         OGRSQLiteViewLayer( OGRSQLiteDataSource * );
-                        ~OGRSQLiteViewLayer();
+                        virtual ~OGRSQLiteViewLayer();
 
     virtual const char* GetName() { return pszViewName; }
     virtual OGRwkbGeometryType GetGeomType();
@@ -609,7 +607,7 @@ class OGRSQLiteSelectLayer : public OGRSQLiteLayer, public IOGRSQLiteSelectLayer
                                               int bUseStatementForGetNextFeature,
                                               int bEmptyLayer,
                                               int bAllowMultipleGeomFields );
-                       ~OGRSQLiteSelectLayer();
+                       virtual ~OGRSQLiteSelectLayer();
 
     virtual void        ResetReading();
 
@@ -659,7 +657,7 @@ class OGRSQLiteSingleFeatureLayer CPL_FINAL : public OGRLayer
                                                      int nVal );
                         OGRSQLiteSingleFeatureLayer( const char* pszLayerName,
                                                      const char *pszVal );
-                        ~OGRSQLiteSingleFeatureLayer();
+                        virtual ~OGRSQLiteSingleFeatureLayer();
 
     virtual void        ResetReading();
     virtual OGRFeature *GetNextFeature();
@@ -708,7 +706,7 @@ class OGRSQLiteBaseDataSource : public GDALPamDataset
 
   public:
                         OGRSQLiteBaseDataSource();
-                        ~OGRSQLiteBaseDataSource();
+                        virtual ~OGRSQLiteBaseDataSource();
 
     sqlite3            *GetDB() { return hDB; }
     int                 GetUpdate() const { return bUpdate; }
@@ -776,7 +774,7 @@ class OGRSQLiteDataSource CPL_FINAL : public OGRSQLiteBaseDataSource
 
   public:
                         OGRSQLiteDataSource();
-                        ~OGRSQLiteDataSource();
+                        virtual ~OGRSQLiteDataSource();
 
     int                 Open( const char *, int bUpdateIn, char** papszOpenOptions );
     int                 Create( const char *, char **papszOptions );

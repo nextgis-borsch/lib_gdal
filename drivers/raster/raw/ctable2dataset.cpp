@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  Horizontal Datum Formats
  * Purpose:  Implementation of the CTable2 format, a PROJ.4 specific format
@@ -314,7 +313,6 @@ CPLErr CTable2Dataset::SetGeoTransform( double * padfTransform )
 
     return CE_None;
 }
-
 
 /************************************************************************/
 /*                          GetProjectionRef()                          */

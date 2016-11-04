@@ -52,6 +52,8 @@ class MEMRasterBand;
 
 class CPL_DLL MEMDataset : public GDALDataset
 {
+    friend class MEMRasterBand;
+
     int         bGeoTransformSet;
     double      adfGeoTransform[6];
 
@@ -60,6 +62,9 @@ class CPL_DLL MEMDataset : public GDALDataset
     int          nGCPCount;
     GDAL_GCP    *pasGCPs;
     CPLString    osGCPProjection;
+
+    int          m_nOverviewDSCount;
+    GDALDataset  **m_papoOverviewDS;
 
 #if 0
   protected:
@@ -71,7 +76,7 @@ class CPL_DLL MEMDataset : public GDALDataset
                  MEMDataset();
     virtual      ~MEMDataset();
 
-    virtual const char *GetProjectionRef(void);
+    virtual const char *GetProjectionRef();
     virtual CPLErr SetProjection( const char * );
 
     virtual CPLErr GetGeoTransform( double * );
@@ -96,6 +101,11 @@ class CPL_DLL MEMDataset : public GDALDataset
                                GSpacing nLineSpaceBuf,
                                GSpacing nBandSpaceBuf,
                                GDALRasterIOExtraArg* psExtraArg);
+    virtual CPLErr  IBuildOverviews( const char *pszResampling,
+                                     int nOverviews, int *panOverviewList,
+                                     int nListBands, int *panBandList,
+                                     GDALProgressFunc pfnProgress,
+                                     void * pProgressData );
 
     static GDALDataset *Open( GDALOpenInfo * );
     static GDALDataset *Create( const char * pszFilename,
@@ -177,8 +187,11 @@ class CPL_DLL MEMRasterBand : public GDALPamRasterBand
                                         int bForce,
                                         GDALProgressFunc, void *pProgressData);
 
+    virtual int GetOverviewCount();
+    virtual GDALRasterBand *GetOverview(int);
+
     // Allow access to MEM driver's private internal memory buffer.
-    GByte *GetData(void) const { return(pabyData); }
+    GByte *GetData() const { return(pabyData); }
 };
 
 #endif /* ndef MEMDATASET_H_INCLUDED */

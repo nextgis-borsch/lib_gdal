@@ -322,10 +322,10 @@ class SDTSLineReader : public SDTSIndexedReader
                 ~SDTSLineReader();
 
     int         Open( const char * );
-    SDTSRawLine *GetNextLine( void );
+    SDTSRawLine *GetNextLine();
     void        Close();
 
-    SDTSFeature *GetNextRawFeature( void ) { return GetNextLine(); }
+    SDTSFeature *GetNextRawFeature() { return GetNextLine(); }
 
     void        AttachToPolygons( SDTSTransfer *, int iPolyLayer  );
 };
@@ -390,7 +390,7 @@ class SDTSAttrReader : public SDTSIndexedReader
       */
     int         IsSecondary() { return bIsSecondary; }
 
-    SDTSFeature *GetNextRawFeature( void ) { return GetNextAttrRecord(); }
+    SDTSFeature *GetNextRawFeature() { return GetNextAttrRecord(); }
 };
 
 /************************************************************************/
@@ -439,10 +439,10 @@ class SDTSPointReader : public SDTSIndexedReader
     virtual    ~SDTSPointReader();
 
     int         Open( const char * );
-    SDTSRawPoint *GetNextPoint( void );
+    SDTSRawPoint *GetNextPoint();
     void        Close();
 
-    SDTSFeature *GetNextRawFeature( void ) { return GetNextPoint(); }
+    SDTSFeature *GetNextRawFeature() { return GetNextPoint(); }
 };
 
 /************************************************************************/
@@ -453,7 +453,7 @@ class SDTSPointReader : public SDTSIndexedReader
   Class for holding information about a polygon feature.
 
   When directly read from a polygon module, the polygon has no concept
-  of it's geometry.  Just it's ID, and references to attribute records.
+  of its geometry.  Just it's ID, and references to attribute records.
   However, if the SDTSLineReader::AttachToPolygons() method is called on
   the module containing the lines forming the polygon boundaries, then the
   nEdges/papoEdges information on the SDTSRawPolygon will be filled in.
@@ -521,10 +521,10 @@ class SDTSPolygonReader : public SDTSIndexedReader
     virtual    ~SDTSPolygonReader();
 
     int         Open( const char * );
-    SDTSRawPolygon *GetNextPolygon( void );
+    SDTSRawPolygon *GetNextPolygon();
     void        Close();
 
-    SDTSFeature *GetNextRawFeature( void ) { return GetNextPolygon(); }
+    SDTSFeature *GetNextRawFeature() { return GetNextPolygon(); }
 
     void        AssembleRings( SDTSTransfer *, int iPolyLayer );
 };

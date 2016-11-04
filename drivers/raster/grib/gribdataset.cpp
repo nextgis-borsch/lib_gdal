@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  GRIB Driver
  * Purpose:  GDALDataset driver for GRIB translator for read support
@@ -40,6 +39,8 @@
 #include "degrib18/degrib/myerror.h"
 #include "degrib18/degrib/filedatasource.h"
 #include "degrib18/degrib/memorydatasource.h"
+
+#include <algorithm>
 
 CPL_CVSID("$Id$");
 
@@ -103,7 +104,6 @@ public:
     void    UncacheData();
 
 private:
-
     CPLErr       LoadData();
 
     static void ReadGribData( DataSource &, sInt4, int, double**,
@@ -374,7 +374,7 @@ CPLErr GRIBRasterBand::IReadBlock( int /* nBlockXOff */,
     if( nBlockYOff >= nGribDataYSize ) // off image?
         return CE_None;
 
-    const int nCopyWords = MIN(nRasterXSize,nGribDataXSize);
+    const int nCopyWords = std::min(nRasterXSize, nGribDataXSize);
 
     memcpy( pImage,
             m_Grib_Data + nGribDataXSize*(nGribDataYSize-nBlockYOff-1),
@@ -501,6 +501,11 @@ GRIBDataset::GRIBDataset() :
     fp(NULL),
     pszProjection(CPLStrdup("")),
     nCachedBytes(0),
+    // Switch caching strategy once 100 MB threshold is reached.
+    // Why 100 MB ? --> why not.
+    nCachedBytesThreshold(
+        static_cast<GIntBig>(atoi(CPLGetConfigOption("GRIB_CACHEMAX", "100")))
+        * 1024 * 1024),
     bCacheOnlyOneBand(FALSE),
     poLastUsedBand(NULL)
 {
@@ -510,12 +515,6 @@ GRIBDataset::GRIBDataset() :
   adfGeoTransform[3] = 0.0;
   adfGeoTransform[4] = 0.0;
   adfGeoTransform[5] = 1.0;
-
-  /* Switch caching strategy once 100 MB threshold is reached */
-  /* Why 100 MB ? --> why not ! */
-  nCachedBytesThreshold =
-      static_cast<GIntBig>(atoi(CPLGetConfigOption("GRIB_CACHEMAX", "100")))
-      * 1024 * 1024;
 }
 
 /************************************************************************/
@@ -765,7 +764,7 @@ GDALDataset *GRIBDataset::Open( GDALOpenInfo * poOpenInfo )
                                  poOpenInfo->GetSiblingFiles() );
     CPLAcquireMutex(hGRIBMutex, 1000.0);
 
-    return( poDS );
+    return poDS;
 }
 
 /************************************************************************/

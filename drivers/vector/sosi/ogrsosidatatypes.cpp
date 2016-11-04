@@ -1,6 +1,8 @@
 #include <map>
 #include "ogr_sosi.h"
 
+CPL_CVSID("$Id$");
+
 C2F oTypes;
 C2F::iterator iTypes;
 
@@ -26,7 +28,6 @@ void OGRSOSISimpleDataType::setType (const char *name, OGRFieldType type) {
     nType   = type;
 }
 OGRSOSISimpleDataType::~OGRSOSISimpleDataType () {}
-
 
 /*** utility methods ***/
 

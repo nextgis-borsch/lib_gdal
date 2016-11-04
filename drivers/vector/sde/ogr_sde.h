@@ -49,7 +49,6 @@
 /*                            OGRSDELayer                                */
 /************************************************************************/
 
-
 class OGRSDEDataSource;
 
 class OGRSDELayer : public OGRLayer
@@ -89,7 +88,6 @@ class OGRSDELayer : public OGRLayer
     int                 iShapeColumn;
 
     int                 bUseNSTRING;
-
 
     char              **papszAllColumns;
     std::vector<int>    anFieldMap;     // SDE index of OGR field.
@@ -223,7 +221,7 @@ class OGRSDEDataSource : public OGRDataSource
 class OGRSDEDriver : public OGRSFDriver
 {
   public:
-                ~OGRSDEDriver();
+    virtual ~OGRSDEDriver();
 
     const char *GetName();
     OGRDataSource *Open( const char *, int );
@@ -232,6 +230,5 @@ class OGRSDEDriver : public OGRSFDriver
     virtual OGRDataSource *CreateDataSource( const char *pszName,
                                              char ** = NULL);
 };
-
 
 #endif /* ndef _OGR_PG_H_INCLUDED */

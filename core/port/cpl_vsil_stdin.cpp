@@ -1,5 +1,4 @@
 /**********************************************************************
- * $Id$
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Implement VSI large file api for stdin
@@ -27,6 +26,8 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+//! @cond Doxygen_Suppress
+
 #include "cpl_port.h"
 #include "cpl_error.h"
 #include "cpl_vsi_virtual.h"
@@ -36,6 +37,8 @@
 #include <io.h>
 #include <fcntl.h>
 #endif
+
+#include <algorithm>
 
 CPL_CVSID("$Id$");
 
@@ -125,7 +128,6 @@ VSIStdinHandle::~VSIStdinHandle()
 {
 }
 
-
 /************************************************************************/
 /*                              ReadAndCache()                          */
 /************************************************************************/
@@ -138,7 +140,8 @@ int VSIStdinHandle::ReadAndCache( void* pBuffer, int nToRead )
 
     if (nRealPos < BUFFER_SIZE)
     {
-        int nToCopy = MIN(BUFFER_SIZE - (int)nRealPos, nRead);
+        const int nToCopy =
+            std::min(BUFFER_SIZE - static_cast<int>(nRealPos), nRead);
         memcpy(pabyBuffer + nRealPos, pBuffer, nToCopy);
         nBufferLen += nToCopy;
     }
@@ -208,12 +211,14 @@ int VSIStdinHandle::Seek( vsi_l_offset nOffset, int nWhence )
     CPLDebug("VSI", "Forward seek from " CPL_FRMT_GUIB " to " CPL_FRMT_GUIB,
              nCurOff, nOffset);
 
-    char abyTemp[8192];
+    char abyTemp[8192] = {};
     nCurOff = nRealPos;
     while(true)
     {
-        int nToRead = (int) MIN(8192, nOffset - nCurOff);
-        int nRead = ReadAndCache( abyTemp, nToRead );
+        const vsi_l_offset nMaxToRead = 8192;
+        const int nToRead = static_cast<int>(std::min(nMaxToRead,
+                                                      nOffset - nCurOff));
+        const int nRead = ReadAndCache(abyTemp, nToRead);
 
         if (nRead < nToRead)
             return -1;
@@ -270,9 +275,9 @@ size_t VSIStdinHandle::Read( void * pBuffer, size_t nSize, size_t nCount )
 /*                               Write()                                */
 /************************************************************************/
 
-size_t VSIStdinHandle::Write( CPL_UNUSED const void * pBuffer,
-                              CPL_UNUSED size_t nSize,
-                              CPL_UNUSED size_t nCount )
+size_t VSIStdinHandle::Write( const void * /* pBuffer */,
+                              size_t /* nSize */,
+                              size_t /* nCount */ )
 {
     CPLError(CE_Failure, CPLE_NotSupported,
              "Write() unsupported on /vsistdin");
@@ -378,6 +383,8 @@ int VSIStdinFilesystemHandler::Stat( const char * pszFilename,
     pStatBuf->st_mode = S_IFREG;
     return 0;
 }
+
+//! @endcond
 
 /************************************************************************/
 /*                       VSIInstallStdinHandler()                       */

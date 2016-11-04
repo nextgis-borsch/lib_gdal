@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  GDAL Core
  * Purpose:  Read metadata from Alos imagery.
@@ -29,6 +28,8 @@
  ****************************************************************************/
 
 #include "reader_alos.h"
+
+CPL_CVSID("$Id$");
 
 /**
  * GDALMDReaderALOS()
@@ -236,7 +237,6 @@ void GDALMDReaderALOS::LoadMetadata()
         m_papszIMAGERYMD = CSLAddNameValue(m_papszIMAGERYMD,
                                 MD_NAME_SATELLITE, CPLStripQuotes(pszSatId2));
     }
-
 
     const char* pszCloudCover = CSLFetchNameValue(m_papszIMDMD,
                                                  "Img_CloudQuantityOfAllImage");

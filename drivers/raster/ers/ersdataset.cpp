@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  ERMapper .ers Driver
  * Purpose:  Implementation of .ers driver.
@@ -48,7 +47,7 @@ class ERSDataset : public RawDataset
 {
     friend class ERSRasterBand;
 
-    VSILFILE	*fpImage;	// image data file.
+    VSILFILE    *fpImage;  // Image data file.
     GDALDataset *poDepFile;
 
     int         bGotTransform;
@@ -84,8 +83,8 @@ class ERSDataset : public RawDataset
     virtual int         CloseDependentDatasets();
 
   public:
-    		ERSDataset();
-	       ~ERSDataset();
+                ERSDataset();
+    virtual    ~ERSDataset();
 
     virtual void FlushCache(void);
     virtual CPLErr GetGeoTransform( double * padfTransform );
@@ -120,22 +119,21 @@ ERSDataset::ERSDataset() :
     fpImage(NULL),
     poDepFile(NULL),
     bGotTransform(FALSE),
+    pszProjection(CPLStrdup("")),
     bHDRDirty(FALSE),
     poHeader(NULL),
     nGCPCount(0),
     pasGCPList(NULL),
+    pszGCPProjection(CPLStrdup("")),
     bHasNoDataValue(FALSE),
     dfNoDataValue(0.0)
 {
-    pszProjection = CPLStrdup("");
     adfGeoTransform[0] = 0.0;
     adfGeoTransform[1] = 1.0;
     adfGeoTransform[2] = 0.0;
     adfGeoTransform[3] = 0.0;
     adfGeoTransform[4] = 0.0;
     adfGeoTransform[5] = 1.0;
-
-    pszGCPProjection = CPLStrdup("");
 }
 
 /************************************************************************/
@@ -613,7 +611,7 @@ char **ERSDataset::GetFileList()
     if( strlen(osRawFilename) > 0 )
         papszFileList = CSLAddString( papszFileList, osRawFilename );
 
-    // If we have a dependent file, merge it's list of files in.
+    // If we have a dependent file, merge its list of files in.
     if( poDepFile )
     {
         char **papszDepFiles = poDepFile->GetFileList();
@@ -741,14 +739,14 @@ class ERSRasterBand : public RawRasterBand
 /************************************************************************/
 
 ERSRasterBand::ERSRasterBand( GDALDataset *poDSIn, int nBandIn, void * fpRawIn,
-                                vsi_l_offset nImgOffsetIn, int nPixelOffsetIn,
-                                int nLineOffsetIn,
-                                GDALDataType eDataTypeIn, int bNativeOrderIn,
-                                int bIsVSILIn, int bOwnsFPIn ) :
+                              vsi_l_offset nImgOffsetIn, int nPixelOffsetIn,
+                              int nLineOffsetIn,
+                              GDALDataType eDataTypeIn, int bNativeOrderIn,
+                              int bIsVSILIn, int bOwnsFPIn ) :
     RawRasterBand(poDSIn, nBandIn, fpRawIn, nImgOffsetIn, nPixelOffsetIn,
-                  nLineOffsetIn, eDataTypeIn, bNativeOrderIn, bIsVSILIn, bOwnsFPIn)
-{
-}
+                  nLineOffsetIn, eDataTypeIn, bNativeOrderIn, bIsVSILIn,
+                  bOwnsFPIn)
+{}
 
 /************************************************************************/
 /*                           GetNoDataValue()                           */
@@ -1196,7 +1194,6 @@ GDALDataset *ERSDataset::Open( GDALOpenInfo * poOpenInfo )
         }
 
         CPLPopErrorHandler();
-
     }
 
 /* -------------------------------------------------------------------- */
@@ -1234,7 +1231,7 @@ GDALDataset *ERSDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
 
-    return( poDS );
+    return poDS;
 }
 
 /************************************************************************/
@@ -1304,7 +1301,7 @@ GDALDataset *ERSDataset::Create( const char * pszFilename,
         pszCellType = "IEEE8ByteReal";
     else
     {
-        CPLAssert( FALSE );
+        CPLAssert( false );
     }
 
 /* -------------------------------------------------------------------- */
@@ -1342,7 +1339,6 @@ GDALDataset *ERSDataset::Create( const char * pszFilename,
         return NULL;
     }
     VSIFCloseL( fpBin );
-
 
 /* -------------------------------------------------------------------- */
 /*      Try writing header file.                                        */
@@ -1397,14 +1393,23 @@ GDALDataset *ERSDataset::Create( const char * pszFilename,
 /*      Fetch DATUM, PROJ and UNITS creation option                     */
 /* -------------------------------------------------------------------- */
     const char *pszDatum = CSLFetchNameValue( papszOptions, "DATUM" );
-    if (pszDatum)
-        poDS->osDatumForced = poDS->osDatum = pszDatum;
+    if( pszDatum )
+    {
+        poDS->osDatumForced = pszDatum;
+        poDS->osDatum = pszDatum;
+    }
     const char *pszProj = CSLFetchNameValue( papszOptions, "PROJ" );
-    if (pszProj)
-        poDS->osProjForced = poDS->osProj = pszProj;
+    if( pszProj )
+    {
+        poDS->osProjForced = pszProj;
+        poDS->osProj = pszProj;
+    }
     const char *pszUnits = CSLFetchNameValue( papszOptions, "UNITS" );
-    if (pszUnits)
-        poDS->osUnitsForced = poDS->osUnits = pszUnits;
+    if( pszUnits )
+    {
+        poDS->osUnitsForced = pszUnits;
+        poDS->osUnits = pszUnits;
+    }
 
     if (pszDatum || pszProj || pszUnits)
     {

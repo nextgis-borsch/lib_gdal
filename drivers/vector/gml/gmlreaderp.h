@@ -33,14 +33,18 @@
 
 #if defined(HAVE_XERCES)
 
+// Must be first for DEBUG_BOOL case
 #include "xercesc_headers.h"
+#include "ogr_xerces.h"
 
 #endif /* HAVE_XERCES */
 
+#include "cpl_string.h"
 #include "gmlreader.h"
 #include "ogr_api.h"
 #include "cpl_vsi.h"
 #include "cpl_multiproc.h"
+#include "gmlutils.h"
 
 #include <string>
 #include <vector>
@@ -59,13 +63,14 @@ class GFSTemplateItem;
 
 class GFSTemplateList
 {
-private:
+  private:
     bool            m_bSequentialLayers;
     GFSTemplateItem *pFirst;
     GFSTemplateItem *pLast;
     GFSTemplateItem *Insert( const char *pszName );
-public:
-                    GFSTemplateList( void );
+
+  public:
+                    GFSTemplateList();
                     ~GFSTemplateList();
     void            Update( const char *pszName, int bHasGeom );
     GFSTemplateItem *GetFirst() { return pFirst; }
@@ -102,7 +107,6 @@ typedef struct
     CPLXMLNode* psLastChild;
 } NodeLastChild;
 
-
 typedef enum
 {
     APPSCHEMA_GENERIC,
@@ -119,7 +123,6 @@ class GMLHandler
     bool       m_bInCurField;
     int        m_nAttributeIndex;
     int        m_nAttributeDepth;
-
 
     char      *m_pszGeometry;
     unsigned int m_nGeomAlloc;
@@ -145,6 +148,8 @@ class GMLHandler
     GeometryNamesStruct* pasGeometryNames;
 
     std::vector<NodeLastChild> apsXMLNode;
+
+    int        m_nSRSDimensionIfMissing;
 
     OGRErr     startElementTop(const char *pszName, int nLenName, void* attr);
 
@@ -184,7 +189,7 @@ protected:
     int              nStackDepth;
     HandlerState     stateStack[STACK_SIZE];
 
-    std::string      osFID;
+    CPLString           m_osFID;
     virtual const char* GetFID(void* attr) = 0;
 
     virtual CPLXMLNode* AddAttributes(CPLXMLNode* psNode, void* attr) = 0;
@@ -203,7 +208,6 @@ public:
     virtual char*       GetAttributeByIdx(void* attr, unsigned int idx, char** ppszKey) = 0;
 };
 
-
 #if defined(HAVE_XERCES)
 
 /************************************************************************/
@@ -219,14 +223,9 @@ public :
              GMLBinInputStream(VSILFILE* fp);
     virtual ~GMLBinInputStream();
 
-#if XERCES_VERSION_MAJOR >= 3
     virtual XMLFilePos curPos() const;
     virtual XMLSize_t readBytes(XMLByte* const toFill, const XMLSize_t maxToRead);
     virtual const XMLCh* getContentType() const ;
-#else
-    virtual unsigned int curPos() const;
-    virtual unsigned int readBytes(XMLByte* const toFill, const unsigned int maxToRead);
-#endif
 };
 
 /************************************************************************/
@@ -235,6 +234,7 @@ public :
 
 class GMLInputSource : public InputSource
 {
+    // TODO(schwehr): Rename to pBinInputStream to not look like a bool.
     GMLBinInputStream* binInputStream;
 
 public:
@@ -245,24 +245,18 @@ public:
     virtual BinInputStream* makeStream() const;
 };
 
-
-/************************************************************************/
-/*          XMLCh / char translation functions - trstring.cpp           */
-/************************************************************************/
-int tr_strcmp( const char *, const XMLCh * );
-void tr_strcpy( XMLCh *, const char * );
-void tr_strcpy( char *, const XMLCh * );
-char *tr_strdup( const XMLCh * );
-int tr_strlen( const XMLCh * );
-
 /************************************************************************/
 /*                         GMLXercesHandler                             */
 /************************************************************************/
 class GMLXercesHandler : public DefaultHandler, public GMLHandler
 {
     int        m_nEntityCounter;
+    CPLString  m_osElement;
+    CPLString  m_osCharacters;
+    CPLString  m_osAttrName;
+    CPLString  m_osAttrValue;
 
-public:
+  public:
     GMLXercesHandler( GMLReader *poReader );
 
     void startElement(
@@ -276,13 +270,8 @@ public:
         const   XMLCh* const    localname,
         const   XMLCh* const    qname
     );
-#if XERCES_VERSION_MAJOR >= 3
     void characters( const XMLCh *const chars,
                      const XMLSize_t length );
-#else
-    void characters( const XMLCh *const chars,
-                     const unsigned int length );
-#endif
 
     void fatalError(const SAXParseException&);
 
@@ -295,7 +284,6 @@ public:
 };
 
 #endif
-
 
 #if defined(HAVE_EXPAT)
 
@@ -351,7 +339,6 @@ public:
         return ( m_nPathLength == 0 ) ? "" : aosPathComponents[m_nPathLength-1].c_str();
     }
 
-
     size_t GetLastComponentLen() const {
         return ( m_nPathLength == 0 ) ? 0: aosPathComponents[m_nPathLength-1].size();
     }
@@ -369,18 +356,9 @@ public:
 /*                              GMLReader                               */
 /************************************************************************/
 
-typedef enum
-{
-    OGRGML_XERCES_UNINITIALIZED,
-    OGRGML_XERCES_INIT_FAILED,
-    OGRGML_XERCES_INIT_SUCCESSFUL
-} OGRGMLXercesState;
-
 class GMLReader : public IGMLReader
 {
-private:
-    static OGRGMLXercesState    m_eXercesInitState;
-    static int    m_nInstanceCount;
+  private:
     bool          m_bClassListLocked;
 
     int         m_nClassCount;
@@ -399,6 +377,7 @@ private:
     GMLFeature   *m_poCompleteFeature;
     GMLInputSource *m_GMLInputSource;
     bool          m_bEOF;
+    bool          m_bXercesInitialized;
     bool          SetupParserXerces();
     GMLFeature   *NextFeatureXerces();
 #endif
@@ -429,6 +408,7 @@ private:
 
     bool          m_bInvertAxisOrderIfLatLong;
     bool          m_bConsiderEPSGAsURN;
+    GMLSwapCoordinatesEnum m_eSwapCoordinates;
     bool          m_bGetSecondaryGeometryOption;
 
     int           ParseFeatureType(CPLXMLNode *psSchemaNode,
@@ -461,7 +441,9 @@ private:
 
 public:
                 GMLReader(bool bExpatReader, bool bInvertAxisOrderIfLatLong,
-                          bool bConsiderEPSGAsURN, bool bGetSecondaryGeometryOption);
+                          bool bConsiderEPSGAsURN,
+                          GMLSwapCoordinatesEnum eSwapCoordinates,
+                          bool bGetSecondaryGeometryOption);
     virtual     ~GMLReader();
 
     bool             IsClassListLocked() const { return m_bClassListLocked; }
@@ -496,7 +478,7 @@ public:
     bool             PrescanForSchema(bool bGetExtents = true,
                                       bool bAnalyzeSRSPerFeature = true,
                                       bool bOnlyDetectSRS = false );
-    bool             PrescanForTemplate( void );
+    bool             PrescanForTemplate();
     bool             ReArrangeTemplateClasses( GFSTemplateList *pCC );
     void             ResetReading();
 

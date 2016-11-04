@@ -42,7 +42,7 @@
 
 /************************************************************************/
 /* ==================================================================== */
-/*			     defines    		                             		*/
+/*                           defines                                    */
 /* ==================================================================== */
 /************************************************************************/
 
@@ -126,7 +126,6 @@ __FILE__, __FUNCTION__, __LINE__ ); }
 #endif
 #endif
 
-
 /* -------------------------------------------------------------------- */
 /*       CF-1 or NUG (NetCDF User's Guide) defs                         */
 /* -------------------------------------------------------------------- */
@@ -163,7 +162,6 @@ __FILE__, __FUNCTION__, __LINE__ ); }
 #define CF_AXIS            "axis"
 /* #define CF_BOUNDS          "bounds" */
 /* #define CF_ORIG_UNITS      "original_units" */
-
 
 /* -------------------------------------------------------------------- */
 /*      CF-1 convention standard variables related to                   */
@@ -214,7 +212,6 @@ __FILE__, __FUNCTION__, __LINE__ ); }
 #define CF_PP_VERT_PERSP             "vertical_perspective" /*not used yet */
 #define CF_PP_PERSPECTIVE_POINT_HEIGHT "perspective_point_height"
 #define CF_PP_SWEEP_ANGLE_AXIS        "sweep_angle_axis"
-
 
 /* -------------------------------------------------------------------- */
 /*         CF-1 Coordinate Type Naming (Chapter 4.  Coordinate Types )  */
@@ -267,7 +264,6 @@ static const char* const papszCFTimeUnitsValues[] = {
     "minutes since", "minute since", "min since",
     "seconds since", "second since", "sec since", "s since",
     NULL };
-
 
 /* -------------------------------------------------------------------- */
 /*         CF-1 to GDAL mappings                                        */
@@ -454,7 +450,6 @@ static const oNetcdfSRS_PP poLCEAMappings[] = {
 //
 // NB: handled as a special case - !isProjected()
 
-
 // Mercator
 //
 // grid_mapping_name = mercator
@@ -481,9 +476,9 @@ static const oNetcdfSRS_PP poM1SPMappings[] = {
 static const oNetcdfSRS_PP poM2SPMappings[] = {
     {CF_PP_LON_PROJ_ORIGIN, SRS_PP_CENTRAL_MERIDIAN},
     {CF_PP_STD_PARALLEL_1, SRS_PP_STANDARD_PARALLEL_1},
-    //From best understanding of this projection, only
- 	// actually specify one SP - it is the same N/S of equator.
-    //{CF_PP_STD_PARALLEL_2, SRS_PP_LATITUDE_OF_ORIGIN},
+    // From best understanding of this projection, only
+    // actually specify one SP - it is the same N/S of equator.
+    // {CF_PP_STD_PARALLEL_2, SRS_PP_LATITUDE_OF_ORIGIN},
     {CF_PP_FALSE_EASTING, SRS_PP_FALSE_EASTING },
     {CF_PP_FALSE_NORTHING, SRS_PP_FALSE_NORTHING },
     {NULL, NULL}
@@ -625,7 +620,6 @@ static const oNetcdfSRS_PP poTMMappings[] = {
 //
 // TODO: see how to map this to OGR
 
-
 static const oNetcdfSRS_PP poGEOSMappings[] = {
     {CF_PP_LON_PROJ_ORIGIN, SRS_PP_CENTRAL_MERIDIAN},
     {CF_PP_PERSPECTIVE_POINT_HEIGHT, SRS_PP_SATELLITE_HEIGHT},
@@ -634,8 +628,6 @@ static const oNetcdfSRS_PP poGEOSMappings[] = {
     /* { CF_PP_SWEEP_ANGLE_AXIS, .... } handled as a proj.4 extension */
     {NULL, NULL}
   };
-
-
 
 /* Mappings for various projections, including netcdf and GDAL projection names
    and corresponding oNetcdfSRS_PP mapping struct.
@@ -856,10 +848,10 @@ class netCDFDataset : public GDALPamDataset
     virtual ~netCDFDataset();
 
     /* Projection/GT */
-    CPLErr 	GetGeoTransform( double * );
-    CPLErr 	SetGeoTransform (double *);
+    CPLErr      GetGeoTransform( double * );
+    CPLErr      SetGeoTransform (double *);
     const char * GetProjectionRef();
-    CPLErr 	SetProjection (const char *);
+    CPLErr      SetProjection (const char *);
 
     virtual char      **GetMetadataDomainList();
     char ** GetMetadata( const char * );

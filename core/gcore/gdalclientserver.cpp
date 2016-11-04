@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  GDAL Core
  * Purpose:  GDAL Client/server dataset mechanism.
@@ -66,6 +65,8 @@
 #include "gdal_rat.h"
 #include "cpl_spawn.h"
 #include "cpl_multiproc.h"
+
+#include <algorithm>
 
 /*!
 \page gdal_api_proxy GDAL API Proxy
@@ -470,7 +471,7 @@ class GDALClientDataset: public GDALPamDataset
                                GDALRasterIOExtraArg* psExtraArg);
     public:
                             GDALClientDataset(GDALPipe* p);
-                            ~GDALClientDataset();
+                   virtual ~GDALClientDataset();
 
         int                 Init(const char* pszFilename, GDALAccess eAccess,
                                  char** papszOpenOptions);
@@ -590,7 +591,7 @@ class GDALClientRasterBand : public GDALPamRasterBand
                              int nRasterXSize, int nRasterYSize,
                              GDALDataType eDataType, int nBlockXSize, int nBlockYSize,
                              GByte abyCaps[16]);
-        ~GDALClientRasterBand();
+        virtual ~GDALClientRasterBand();
 
         int GetSrvBand() const { return iSrvBand; }
         int SupportsInstr(InstrEnum instr) const { return abyCaps[instr / 8] & (1 << (instr % 8)); }
@@ -678,7 +679,6 @@ class GDALClientRasterBand : public GDALPamRasterBand
         /*
         virtual GDALRasterBand *GetRasterSampleOverview( GUIntBig );
         */
-
 };
 
 /************************************************************************/
@@ -875,7 +875,6 @@ begin:
 #endif
         return GDALPipeReadSocketInternal(p, data, length);
     }
-
 }
 
 /************************************************************************/
@@ -982,7 +981,6 @@ static int GDALPipeRead(GDALPipe* p, char** ppszStr)
     (*ppszStr)[nLength] = 0;
     return TRUE;
 }
-
 
 static int GDALPipeRead(GDALPipe* p, char*** ppapszStr)
 {
@@ -1930,7 +1928,6 @@ GDALServerInstance::~GDALServerInstance()
         GDALClose((GDALDatasetH)poDS);
         poDS = NULL;
     }
-
 }
 
 /************************************************************************/
@@ -2121,7 +2118,8 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         }
         else if( instr == INSTR_SetConfigOption )
         {
-            char *pszKey = NULL, *pszValue = NULL;
+            char *pszKey = NULL;
+            char *pszValue = NULL;
             if( !GDALPipeRead(p, &pszKey) ||
                 !GDALPipeRead(p, &pszValue) )
             {
@@ -2135,7 +2133,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         }
         else if( instr == INSTR_Progress )
         {
-            double dfProgress;
+            double dfProgress = 0.0;
             char* pszProgressMsg = NULL;
             if( !GDALPipeRead(p, &dfProgress) ||
                 !GDALPipeRead(p, &pszProgressMsg) )
@@ -2252,13 +2250,13 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
                 GDALPipeWrite(p, poDS->GetRasterYSize());
                 int nBands = poDS->GetRasterCount();
                 GDALPipeWrite(p, nBands);
-                int i;
                 int bAllSame = TRUE;
                 GDALRasterBand* poFirstBand = NULL;
-                int nFBBlockXSize = 0, nFBBlockYSize = 0;
+                int nFBBlockXSize = 0;
+                int nFBBlockYSize = 0;
 
                 /* Check if all bands are identical */
-                for(i=0;i<nBands;i++)
+                for( int i = 0; i < nBands; i++ )
                 {
                     GDALRasterBand* poOtherBand = poDS->GetRasterBand(i+1);
                     if( strlen(poOtherBand->GetDescription()) > 0 )
@@ -2289,7 +2287,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
 
                 /* Transmit bands */
                 GDALPipeWrite(p, bAllSame);
-                for(i=0;i<nBands;i++)
+                for( int i = 0; i < nBands; i++ )
                 {
                     GDALRasterBand* poOtherBand = poDS->GetRasterBand(i+1);
                     if( i > 0 && bAllSame )
@@ -2620,7 +2618,6 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
 
             GDALEmitEndOfJunkMarker(p);
             GDALPipeWrite(p, eErr );
-
         }
         else if( instr == INSTR_GetFileList )
         {
@@ -3254,7 +3251,10 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
             if( !GDALPipeRead(p, &bApproxOK) ||
                 !GDALPipeRead(p, &bForce) )
                 break;
-            double dfMin = 0.0, dfMax = 0.0, dfMean = 0.0, dfStdDev = 0.0;
+            double dfMin = 0.0;
+            double dfMax = 0.0;
+            double dfMean = 0.0;
+            double dfStdDev = 0.0;
             CPLErr eErr = poBand->GetStatistics(bApproxOK, bForce,
                                                 &dfMin, &dfMax, &dfMean, &dfStdDev);
             GDALEmitEndOfJunkMarker(p);
@@ -3272,7 +3272,10 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
             int bApproxOK;
             if( !GDALPipeRead(p, &bApproxOK) )
                 break;
-            double dfMin = 0.0, dfMax = 0.0, dfMean = 0.0, dfStdDev = 0.0;
+            double dfMin = 0.0;
+            double dfMax = 0.0;
+            double dfMean = 0.0;
+            double dfStdDev = 0.0;
             CPLErr eErr = poBand->ComputeStatistics(bApproxOK,
                                                     &dfMin, &dfMax, &dfMean, &dfStdDev,
                                                     NULL, NULL);
@@ -4303,7 +4306,6 @@ CPLErr GDALClientDataset::AddBand( GDALDataType eType,
     return eRet;
 }
 
-
 /************************************************************************/
 /*                             AdviseRead()                             */
 /************************************************************************/
@@ -4390,7 +4392,6 @@ GDALClientRasterBand::GDALClientRasterBand(GDALPipe* pIn, int iSrvBandIn,
     eCachedBufType = GDT_Unknown;
     nCachedYStart = -1;
     nCachedLines = 0;
-
 }
 
 /************************************************************************/
@@ -5513,7 +5514,6 @@ CPLErr GDALClientRasterBand::DeleteNoDataValue()
     if( !SupportsInstr(INSTR_Band_DeleteNoDataValue) )
         return GDALPamRasterBand::DeleteNoDataValue();
 
-
     CLIENT_ENTER();
     if( !WriteInstr(INSTR_Band_DeleteNoDataValue) )
         return CE_Failure;
@@ -5863,7 +5863,8 @@ int GDALClientDataset::Init(const char* pszFilename, GDALAccess eAccessIn,
 
         while(true)
         {
-            char* pszKey = NULL, *pszVal = NULL;
+            char *pszKey = NULL;
+            char *pszVal = NULL;
             if( !GDALPipeRead(p, &pszKey) )
                 return FALSE;
             if( pszKey == NULL )
@@ -6132,7 +6133,7 @@ int GDALClientDataset::mCreateCopy( const char* pszFilename,
         return FALSE;
     }
 
-    if( !CSLFetchBoolean(papszOptions, "APPEND_SUBDATASET", FALSE) )
+    if( !CPLFetchBool(papszOptions, "APPEND_SUBDATASET", false) )
     {
         if( !GDALClientDatasetQuietDelete(p, pszFilename) )
             return FALSE;
@@ -6231,7 +6232,7 @@ int GDALClientDataset::mCreate( const char * pszFilename,
         return FALSE;
     }
 
-    if( !CSLFetchBoolean(papszOptions, "APPEND_SUBDATASET", FALSE) )
+    if( !CPLFetchBool(papszOptions, "APPEND_SUBDATASET", false) )
     {
         if( !GDALClientDatasetQuietDelete(p, pszFilename) )
             return FALSE;
@@ -6329,7 +6330,7 @@ CPLErr GDALClientDataset::Delete( const char * pszFilename )
 /************************************************************************/
 static GDALDriver* poAPIPROXYDriver = NULL;
 
-static void GDALUnloadAPIPROXYDriver(CPL_UNUSED GDALDriver* poDriver)
+static void GDALUnloadAPIPROXYDriver( GDALDriver* /* poDriver */ )
 {
     if( bRecycleChild )
     {
@@ -6366,7 +6367,7 @@ GDALDriver* GDALGetAPIPROXYDriver()
         if( atoi(pszConnPool) > 0 )
         {
             bRecycleChild = TRUE;
-            nMaxRecycled = MIN(atoi(pszConnPool), MAX_RECYCLED);
+            nMaxRecycled = std::min(atoi(pszConnPool), MAX_RECYCLED);
         }
         else if( CPLTestBool(pszConnPool) )
         {

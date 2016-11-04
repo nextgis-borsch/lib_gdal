@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Formal test harness for OGRLayer implementations.
@@ -35,6 +34,7 @@
 #include "ogr_p.h"
 #include "commonutils.h"
 
+#include <algorithm>
 #include <limits>
 
 CPL_CVSID("$Id$");
@@ -1439,7 +1439,6 @@ end:
     return bRet;
 }
 
-
 /************************************************************************/
 /*                       TestOGRLayerSetNextByIndex()                   */
 /*                                                                      */
@@ -1556,7 +1555,6 @@ static int TestOGRLayerSetNextByIndex( OGRLayer *poLayer )
 
         goto end;
     }
-
 
     if( bVerbose )
         printf( "INFO: SetNextByIndex() read test passed.\n" );
@@ -1762,7 +1760,8 @@ static int TestSpatialFilter( OGRLayer *poLayer, int iGeomField )
         sLayerExtent.MinX < sLayerExtent.MaxX &&
         sLayerExtent.MinY < sLayerExtent.MaxY )
     {
-        epsilon = MIN( sLayerExtent.MaxX - sLayerExtent.MinX, sLayerExtent.MaxY - sLayerExtent.MinY ) / 10.0;
+        epsilon = std::min(sLayerExtent.MaxX - sLayerExtent.MinX,
+                           sLayerExtent.MaxY - sLayerExtent.MinY) / 10.0;
     }
 
 /* -------------------------------------------------------------------- */
@@ -1995,7 +1994,8 @@ static int TestFullSpatialFilter( OGRLayer *poLayer, int iGeomField )
         sLayerExtent.MinX < sLayerExtent.MaxX &&
         sLayerExtent.MinY < sLayerExtent.MaxY )
     {
-        epsilon = MIN( sLayerExtent.MaxX - sLayerExtent.MinX, sLayerExtent.MaxY - sLayerExtent.MinY ) / 10.0;
+        epsilon = std::min(sLayerExtent.MaxX - sLayerExtent.MinX,
+                           sLayerExtent.MaxY - sLayerExtent.MinY) / 10.0;
     }
 
     GIntBig nTotalFeatureCount = LOG_ACTION(poLayer->GetFeatureCount());
@@ -2141,7 +2141,6 @@ static int TestSpatialFilter( OGRLayer *poLayer )
 
     return bRet;
 }
-
 
 /************************************************************************/
 /*                      TestAttributeFilter()                           */
@@ -3161,6 +3160,50 @@ static int TestLayerSQL( GDALDataset* poDS, OGRLayer * poLayer )
             printf( "ERROR: ExecuteSQL() should have returned a layer without features.\n" );
         }
         OGRFeature::DestroyFeature(poSQLFeat);
+
+        LOG_ACTION(poDS->ReleaseResultSet(poSQLLyr));
+    }
+    else
+    {
+        printf( "ERROR: ExecuteSQL() should have returned a non-NULL result.\n");
+        bRet = FALSE;
+    }
+
+    // Test that installing a spatial filter on an empty layer at ExecuteSQL()
+    // does not raise an error
+    osSQL.Printf("SELECT * FROM %s WHERE 0 = 1", GetLayerNameForSQL(poDS, poLayer->GetName()));
+
+    OGRPolygon oPoly;
+    OGRLinearRing oRing;
+    oRing.setPoint( 0, 0, 0 );
+    oRing.setPoint( 1, 0, 1 );
+    oRing.setPoint( 2, 1, 1 );
+    oRing.setPoint( 3, 1, 0 );
+    oRing.setPoint( 4, 0, 0 );
+    oPoly.addRing( &oRing );
+
+    CPLErrorReset();
+    poSQLLyr = LOG_ACTION(poDS->ExecuteSQL(osSQL.c_str(), &oPoly, NULL));
+    if( CPLGetLastErrorType() != CE_None )
+    {
+        bRet = FALSE;
+        printf( "ERROR: ExecuteSQL() triggered an unexpected error.\n" );
+    }
+    if (poSQLLyr)
+    {
+        CPLErrorReset();
+        poSQLFeat = LOG_ACTION(poSQLLyr->GetNextFeature());
+        if( CPLGetLastErrorType() != CE_None )
+        {
+            bRet = FALSE;
+            printf( "ERROR: GetNextFeature() triggered an unexpected error.\n" );
+        }
+        if (poSQLFeat != NULL)
+        {
+            bRet = FALSE;
+            printf( "ERROR: ExecuteSQL() should have returned a layer without features.\n" );
+        }
+        OGRFeature::DestroyFeature(poSQLFeat);
         LOG_ACTION(poDS->ReleaseResultSet(poSQLLyr));
     }
     else
@@ -3270,7 +3313,6 @@ static int TestOGRLayer( GDALDataset* poDS, OGRLayer * poLayer, int bIsSQLLayer 
 /*      Test error conditions.                                          */
 /* -------------------------------------------------------------------- */
     bRet &= TestLayerErrorConditions( poLayer );
-
 
 /* -------------------------------------------------------------------- */
 /*      Test some SQL.                                                  */

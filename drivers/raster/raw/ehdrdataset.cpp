@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  ESRI .hdr Driver
  * Purpose:  Implementation of EHdrDataset
@@ -147,7 +146,6 @@ class EHdrRasterBand : public RawRasterBand
     virtual CPLErr SetStatistics( double dfMin, double dfMax,
                                   double dfMean, double dfStdDev );
     virtual CPLErr SetColorTable( GDALColorTable *poNewCT );
-
 };
 
 /************************************************************************/
@@ -452,7 +450,6 @@ static const char*OSR_GDS( char* pszResult, int nResultLen,
     CSLDestroy( papszTokens );
     return pszResult;
 }
-
 
 /************************************************************************/
 /* ==================================================================== */
@@ -936,7 +933,6 @@ CPLErr EHdrDataset::ReadSTX()
     return CE_None;
 }
 
-
 /************************************************************************/
 /*                      GetImageRepFilename()                           */
 /************************************************************************/
@@ -1133,7 +1129,7 @@ GDALDataset *EHdrDataset::Open( GDALOpenInfo * poOpenInfo )
     double dfMin = 0;
     double dfMax = 0;
 
-    const char *pszLine;
+    const char *pszLine = NULL;
     while( (pszLine = CPLReadLineL( fp )) != NULL )
     {
         nLineCount++;
@@ -1192,7 +1188,8 @@ GDALDataset *EHdrDataset::Open( GDALOpenInfo * poOpenInfo )
         }
         else if( EQUAL(papszTokens[0],"cellsize") )
         {
-            dfXDim = dfYDim = CPLAtofM(papszTokens[1]);
+            dfXDim = CPLAtofM(papszTokens[1]);
+            dfYDim = dfXDim;
         }
         else if( EQUAL(papszTokens[0],"nbands") )
         {
@@ -1748,7 +1745,6 @@ GDALDataset *EHdrDataset::Open( GDALOpenInfo * poOpenInfo )
 
             char **papszValues = CSLTokenizeString2(pszLine, "\t ",
                                                     CSLT_HONOURSTRINGS);
-
 
             if ( CSLCount(papszValues) >= 4 )
             {

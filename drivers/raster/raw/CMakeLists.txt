@@ -73,6 +73,7 @@ set(LIB_CSOURCES
     idadataset.cpp  
     lcpdataset.cpp   
     ntv2dataset.cpp
+    rrasterdataset.cpp
 )
 
 add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})

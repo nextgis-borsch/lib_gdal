@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  GDAL Core
  * Purpose:  Read metadata from Kompsat imagery.
@@ -29,6 +28,8 @@
  ****************************************************************************/
 
 #include "reader_kompsat.h"
+
+CPL_CVSID("$Id$");
 
 /**
  * GDALMDReaderKompsat()
@@ -234,7 +235,6 @@ char** GDALMDReaderKompsat::ReadTxtToList()
             papszIMD = CSLAddNameValue(papszIMD, CPLSPrintf("%s.%s",
                                        soGroupName.c_str(), szName), pszLine + j);
         }
-
     }
 
     CSLDestroy(papszLines);

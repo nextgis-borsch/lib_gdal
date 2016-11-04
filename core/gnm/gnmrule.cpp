@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  GDAL/OGR Geography Network support (Geographic Network Model)
  * Purpose:  GNM rule class.
@@ -31,7 +30,9 @@
 #include "gnm.h"
 #include "gnm_priv.h"
 
+CPL_CVSID("$Id$");
 
+/*! @cond Doxygen_Suppress */
 GNMRule::GNMRule()
 {
     m_bValid = false;
@@ -62,10 +63,7 @@ GNMRule::GNMRule(const GNMRule &oRule)
     m_soRuleString = oRule.m_soRuleString;
 }
 
-GNMRule::~GNMRule()
-{
-
-}
+GNMRule::~GNMRule() {}
 
 bool GNMRule::IsValid() const
 {
@@ -185,5 +183,4 @@ bool GNMRule::ParseRuleString()
 
     return true;
 }
-
-
+/*! @endcond */

@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  GView
  * Purpose:  Implementation of Atlantis HKV labelled blob support
@@ -35,6 +34,10 @@
 #include "gdal_frmts.h"
 #include "ogr_spatialref.h"
 #include "rawdataset.h"
+
+#include <cmath>
+
+#include <algorithm>
 
 CPL_CVSID("$Id$");
 
@@ -427,7 +430,6 @@ CPLErr SaveHKVAttribFile( const char *pszFilenameIn,
         return CE_Failure;
     return CE_None;
 }
-
 
 /************************************************************************/
 /*                          GetProjectionRef()                          */
@@ -1756,8 +1758,8 @@ HKVDataset::CreateCopy( const char * pszFilename,
                     return NULL;
                 }
 
-                const int nTBXSize = MIN(nBlockXSize,nXSize-iXOffset);
-                const int nTBYSize = MIN(nBlockYSize,nYSize-iYOffset);
+                const int nTBXSize = std::min(nBlockXSize, nXSize - iXOffset);
+                const int nTBYSize = std::min(nBlockYSize, nYSize - iYOffset);
 
                 eErr = poSrcBand->RasterIO( GF_Read,
                                             iXOffset, iYOffset,
@@ -1799,8 +1801,9 @@ HKVDataset::CreateCopy( const char * pszFilename,
 
     if (( poSrcDS->GetGeoTransform( tempGeoTransform ) == CE_None)
         && (tempGeoTransform[0] != 0.0 || tempGeoTransform[1] != 1.0
-        || tempGeoTransform[2] != 0.0 || tempGeoTransform[3] != 0.0
-        || tempGeoTransform[4] != 0.0 || ABS(tempGeoTransform[5]) != 1.0 ))
+            || tempGeoTransform[2] != 0.0 || tempGeoTransform[3] != 0.0
+            || tempGeoTransform[4] != 0.0
+            || std::abs(tempGeoTransform[5]) != 1.0 ))
     {
 
           poDS->SetGCPProjection(poSrcDS->GetProjectionRef());
@@ -1825,7 +1828,6 @@ HKVDataset::CreateCopy( const char * pszFilename,
         poDstBand->FlushCache();
     }
 
-
     if( !pfnProgress( 1.0, NULL, pProgressData ) )
     {
         CPLError( CE_Failure, CPLE_UserInterrupt, "User terminated" );
@@ -1841,7 +1843,6 @@ HKVDataset::CreateCopy( const char * pszFilename,
 
     return poDS;
 }
-
 
 /************************************************************************/
 /*                         GDALRegister_HKV()                           */

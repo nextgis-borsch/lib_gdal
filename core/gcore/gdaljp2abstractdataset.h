@@ -31,6 +31,7 @@
 #ifndef GDAL_JP2_ABSTRACT_DATASET_H_INCLUDED
 #define GDAL_JP2_ABSTRACT_DATASET_H_INCLUDED
 
+//! @cond Doxygen_Suppress
 #include "gdalgeorefpamdataset.h"
 
 class CPL_DLL GDALJP2AbstractDataset: public GDALGeorefPamDataset
@@ -39,6 +40,7 @@ class CPL_DLL GDALJP2AbstractDataset: public GDALGeorefPamDataset
 
     GDALDataset*        poMemDS;
     char**              papszMetadataFiles;
+    int                 m_nWORLDFILEIndex;
 
   protected:
     virtual int         CloseDependentDatasets();
@@ -47,14 +49,15 @@ class CPL_DLL GDALJP2AbstractDataset: public GDALGeorefPamDataset
         GDALJP2AbstractDataset();
         virtual ~GDALJP2AbstractDataset();
 
-        void LoadJP2Metadata(GDALOpenInfo* poOpenInfo,
-                             const char* pszOverrideFilename = NULL);
-        void            LoadVectorLayers(int bOpenRemoteResources = FALSE);
+        void LoadJP2Metadata( GDALOpenInfo* poOpenInfo,
+                              const char* pszOverrideFilename = NULL );
+        void            LoadVectorLayers( int bOpenRemoteResources = FALSE );
 
-        virtual char      **GetFileList(void);
+        virtual char      **GetFileList( void );
 
         virtual int         GetLayerCount();
-        virtual OGRLayer   *GetLayer(int i);
+        virtual OGRLayer   *GetLayer( int i );
 };
+//! @endcond
 
 #endif /* GDAL_JP2_ABSTRACT_DATASET_H_INCLUDED */

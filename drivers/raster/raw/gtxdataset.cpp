@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  Vertical Datum Transformation
  * Purpose:  Implementation of NOAA .gtx vertical datum shift file format.
@@ -385,7 +384,6 @@ GDALDataset *GTXDataset::Create( const char * pszFilename,
     return reinterpret_cast<GDALDataset *>(
         GDALOpen( pszFilename, GA_Update ) );
 }
-
 
 /************************************************************************/
 /*                          GDALRegister_GTX()                          */

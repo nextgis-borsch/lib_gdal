@@ -1,5 +1,4 @@
 /******************************************************************************
-* $Id$
 *
 * Project:  OpenGIS Simple Features Reference Implementation
 * Purpose:  Implements FileGDB OGR layer.
@@ -132,8 +131,8 @@ OGRFeature* FGdbBaseLayer::GetNextFeature()
 /*                              FGdbLayer()                             */
 /************************************************************************/
 FGdbLayer::FGdbLayer():
-    m_pDS(NULL), m_pTable(NULL), m_wstrSubfields(L"*"), m_pOGRFilterGeometry(NULL), 
-    m_bFilterDirty(true), 
+    m_pDS(NULL), m_pTable(NULL), m_wstrSubfields(L"*"), m_pOGRFilterGeometry(NULL),
+    m_bFilterDirty(true),
     m_bLaunderReservedKeywords(true)
 {
     m_bBulkLoadAllowed = -1; /* uninitialized */
@@ -163,14 +162,13 @@ FGdbLayer::~FGdbLayer()
         OGRGeometryFactory::destroyGeometry(m_pOGRFilterGeometry);
         m_pOGRFilterGeometry = NULL;
     }
-    
+
     for(size_t i = 0; i < m_apoByteArrays.size(); i++ )
         delete m_apoByteArrays[i];
     m_apoByteArrays.resize(0);
 
     CSLDestroy(m_papszOptions);
     m_papszOptions = NULL;
-    
 }
 
 /************************************************************************/
@@ -213,7 +211,7 @@ int FGdbLayer::EditIndexesForFIDHack(const char* pszRadixTablename)
         return FALSE;
     }
 
-    CPLString osDirectory(CPLGetPath(pszRadixTablename));;
+    CPLString osDirectory(CPLGetPath(pszRadixTablename));
     char** papszFiles = VSIReadDir(osDirectory);
     CPLString osBasename(CPLGetBasename(pszRadixTablename));
     int bRet = TRUE;
@@ -316,7 +314,7 @@ static int FGdbLayerSortATX(const void* _pa, const void* _pb)
         return -1;
     else if( a > b )
         return 1;
-    CPLAssert(FALSE);
+    CPLAssert(false);
     return 0;
 }
 
@@ -333,7 +331,7 @@ int FGdbLayer::EditATXOrSPX(VSILFILE* fp,
                             int& bInvalidateIndex)
 {
     GByte abyBuffer[4096];
-    
+
     VSIFSeekL(fp, (nThisPage - 1) * 4096, SEEK_SET);
 
     if( nDepth == 1 )
@@ -350,10 +348,10 @@ int FGdbLayer::EditATXOrSPX(VSILFILE* fp,
         int nFeatures;
         memcpy(&nFeatures, abyBuffer + 4, 4);
         nFeatures = CPL_LSBWORD32(nFeatures);
-        
+
         //if( nLastPageVisited == 0 )
         //    printf("nFeatures = %d\n", nFeatures);
-        
+
         const int nMaxPerPages = (4096 - 12) / (4 + nSizeIndexedValue);
         const int nOffsetFirstValInPage = 12 + nMaxPerPages * 4;
         if( nFeatures > nMaxPerPages )
@@ -375,14 +373,14 @@ int FGdbLayer::EditATXOrSPX(VSILFILE* fp,
                 nOGRFID = CPL_LSBWORD32(nOGRFID);
                 memcpy(abyBuffer + 12 + 4 * i, &nOGRFID, 4);
                 bRewritePage = TRUE;
-                
+
                 if( bIndexedValueIsValid && i == nFeatures - 1 && nNextPageID == 0 )
                     bSortThisValue = TRUE;
             }
-             
+
             // We must make sure that features with same indexed values are
             // sorted by increasing FID, even when that spans over several
-            // pages           
+            // pages
             if( bSortThisValue && (bNewVal || (i == nFeatures - 1 && nNextPageID == 0)) )
             {
                 if( anPagesAtThisValue[0] == nThisPage )
@@ -392,7 +390,7 @@ int FGdbLayer::EditATXOrSPX(VSILFILE* fp,
                     if( !bNewVal && i == nFeatures - 1 && nNextPageID == 0 )
                         nFeaturesToSortThisPage ++;
                     CPLAssert(nFeaturesToSortThisPage > 0);
-                    
+
                     bRewritePage = TRUE;
                     qsort(abyBuffer + 12 + 4 * nFirstIndexAtThisValue,
                           nFeaturesToSortThisPage, 4, FGdbLayerSortATX);
@@ -402,11 +400,11 @@ int FGdbLayer::EditATXOrSPX(VSILFILE* fp,
                     std::vector<int> anValues;
                     int nFeaturesToSort = 0;
                     anValues.resize(anPagesAtThisValue.size() * nMaxPerPages);
-                    
+
                     int nFeaturesToSortLastPage = i;
                     if( !bNewVal && i == nFeatures - 1 && nNextPageID == 0 )
                         nFeaturesToSortLastPage ++;
-                    
+
                     for(size_t j=0;j<anPagesAtThisValue.size();j++)
                     {
                         int nFeaturesPrevPage;
@@ -434,7 +432,7 @@ int FGdbLayer::EditATXOrSPX(VSILFILE* fp,
                     }
 
                     qsort(&anValues[0], nFeaturesToSort, 4, FGdbLayerSortATX);
-                    
+
                     nFeaturesToSort = 0;
                     for(size_t j=0;j<anPagesAtThisValue.size();j++)
                     {
@@ -462,13 +460,13 @@ int FGdbLayer::EditATXOrSPX(VSILFILE* fp,
                     }
                 }
             }
-            
+
             if( bNewVal )
             {
                 nFirstIndexAtThisValue = i;
                 anPagesAtThisValue.clear();
                 anPagesAtThisValue.push_back(nThisPage);
-                
+
                 memcpy(pabyLastIndexedValue,
                        abyBuffer + nOffsetFirstValInPage + i * nSizeIndexedValue,
                        nSizeIndexedValue);
@@ -492,14 +490,14 @@ int FGdbLayer::EditATXOrSPX(VSILFILE* fp,
 
             bIndexedValueIsValid = TRUE;
         }
-        
+
         if( bRewritePage )
         {
             VSIFSeekL(fp, (nThisPage - 1) * 4096, SEEK_SET);
             if( VSIFWriteL(abyBuffer, 1, 4096, fp) != 4096 )
                 return FALSE;
         }
-        
+
         nLastPageVisited = nThisPage;
 
         return TRUE;
@@ -537,7 +535,7 @@ int FGdbLayer::EditATXOrSPX(VSILFILE* fp,
                 return FALSE;
             }
         }
-        
+
         return TRUE;
     }
 }
@@ -640,7 +638,7 @@ int  FGdbLayer::EditGDBTablX( const CPLString& osGDBTablX,
         else
             break;
     }
-    
+
     //printf("nInMaxFID = %d\n", nInMaxFID);
     //printf("nOutMaxFID = %d\n", nOutMaxFID);
 
@@ -683,15 +681,15 @@ int  FGdbLayer::EditGDBTablX( const CPLString& osGDBTablX,
     int nNonEmptyPages = 0;
     int nOffsetInPage = 0, nLastWrittenOffset = 0;
     int bDisableSparsePages = CPLTestBool(CPLGetConfigOption("FILEGDB_DISABLE_SPARSE_PAGES", "NO"));
-    
+
     oIterO2F = m_oMapOGRFIDToFGDBFID.begin();
     int nNextOGRFID = oIterO2F->first;
     std::map<int,int>::iterator oIterF2O = m_oMapFGDBFIDToOGRFID.begin();
     int nNextFGDBFID = oIterF2O->first;
-    
+
     int nCountBlocksBeforeIBlockIdx = 0;
     int nCountBlocksBeforeIBlockValue = 0;
-    
+
     int bRet = TRUE;
     for(int i=1; i<=nOutMaxFID;i++, nOffsetInPage += nRecordSize)
     {
@@ -1075,28 +1073,28 @@ OGRErr FGdbLayer::ICreateFeature( OGRFeature *poFeature )
                      "Cannot call CreateFeature() with a set FID when OpenFileGDB driver not available");
             return OGRERR_FAILURE;
         }
-        
+
         if( m_pDS->HasSelectLayers() )
         {
             CPLError(CE_Failure, CPLE_AppDefined,
                      "Cannot call CreateFeature() with a set FID when a layer resulting from ExecuteSQL() is still opened");
             return OGRERR_FAILURE;
         }
-        
+
         if( m_pDS->GetConnection()->GetRefCount() > 1 )
             {
             CPLError(CE_Failure, CPLE_AppDefined,
                      "Cannot call CreateFeature() with a set FID when a dataset is opened more than once");
             return OGRERR_FAILURE;
         }
-        
+
         if( m_oMapOGRFIDToFGDBFID.find((int)poFeature->GetFID()) != m_oMapOGRFIDToFGDBFID.end() )
         {
             CPLError(CE_Failure, CPLE_AppDefined,
                      "A feature with same FID already exists");
             return OGRERR_FAILURE;
         }
-        
+
         if( m_oMapFGDBFIDToOGRFID.find((int)poFeature->GetFID()) == m_oMapFGDBFIDToOGRFID.end() )
         {
             EnumRows       enumRows;
@@ -1355,7 +1353,7 @@ OGRErr FGdbLayer::PopulateRowWithFeature( Row& fgdb_row, OGRFeature *poFeature )
                 "FGDB driver does not support OGR type." );
             return OGRERR_FAILURE;
         }
-        
+
         if (FAILED(hr))
         {
             CPLError(CE_Warning, CPLE_AppDefined, "Cannot set value for field %s",
@@ -1421,7 +1419,6 @@ OGRErr FGdbLayer::PopulateRowWithFeature( Row& fgdb_row, OGRFeature *poFeature )
     }
 
     return OGRERR_NONE;
-
 }
 
 /************************************************************************/
@@ -1432,7 +1429,7 @@ OGRErr FGdbLayer::GetRow( EnumRows& enumRows, Row& row, GIntBig nFID )
 {
     long           hr;
     CPLString      osQuery;
-    
+
     /* Querying a 64bit FID causes a runtime exception in FileGDB... */
     if( !CPL_INT64_FITS_ON_INT32(nFID) )
     {
@@ -1577,7 +1574,7 @@ char* FGdbLayer::CreateFieldDefn(OGRFieldDefn& oField,
         GDBErr(-1, "Failed converting field type.");
         return NULL;
     }
-    
+
     if( oField.GetType() == OFTInteger64 && !bApproxOK )
     {
         CPLError(CE_Failure, CPLE_AppDefined,
@@ -1793,13 +1790,12 @@ OGRErr FGdbLayer::CreateField(OGRFieldDefn* poField, int bApproxOK)
 
     m_vOGRFieldToESRIField.push_back(StringToWString(fieldname_clean));
     m_vOGRFieldToESRIFieldType.push_back( gdbFieldType );
-    
+
     if( oField.GetType() == OFTBinary )
         m_apoByteArrays.push_back(new ByteArray());
 
     /* All done and happy */
     return OGRERR_NONE;
-
 }
 
 /************************************************************************/
@@ -1833,7 +1829,6 @@ OGRErr FGdbLayer::DeleteField( int iFieldToDelete )
     m_vOGRFieldToESRIField.erase (m_vOGRFieldToESRIField.begin() + iFieldToDelete);
     m_vOGRFieldToESRIFieldType.erase( m_vOGRFieldToESRIFieldType.begin() + iFieldToDelete );
 
-
     return m_pFeatureDefn->DeleteFieldDefn( iFieldToDelete );
 }
 
@@ -1860,7 +1855,11 @@ OGRErr FGdbLayer::AlterFieldDefn( int iFieldToAlter, OGRFieldDefn* poNewFieldDef
     OGRFieldDefn oField(poFieldDefn);
 
     if (nFlags & ALTER_TYPE_FLAG)
+    {
+        oField.SetSubType(OFSTNone);
         oField.SetType(poNewFieldDefn->GetType());
+        oField.SetSubType(poNewFieldDefn->GetSubType());
+    }
     if (nFlags & ALTER_NAME_FLAG)
     {
         if (strcmp(poNewFieldDefn->GetNameRef(), oField.GetNameRef()) != 0)
@@ -1901,7 +1900,9 @@ OGRErr FGdbLayer::AlterFieldDefn( int iFieldToAlter, OGRFieldDefn* poNewFieldDef
 
     m_vOGRFieldToESRIFieldType[iFieldToAlter] = gdbFieldType;
 
+    poFieldDefn->SetSubType(OFSTNone);
     poFieldDefn->SetType(oField.GetType());
+    poFieldDefn->SetType(oField.GetSubType());
     poFieldDefn->SetWidth(oField.GetWidth());
     poFieldDefn->SetPrecision(oField.GetPrecision());
 
@@ -2060,7 +2061,7 @@ static CPLXMLNode* XMLSpatialReference(OGRSpatialReference* poSRS, char** papszO
             delete poSRSClone;
         }
     }
-    
+
     /* Handle Origin/Scale/Tolerance */
     const char* grid[7] = {
       "XOrigin", "YOrigin", "XYScale",
@@ -2068,7 +2069,7 @@ static CPLXMLNode* XMLSpatialReference(OGRSpatialReference* poSRS, char** papszO
       "XYTolerance", "ZTolerance" };
     const char* gridvalues[7];
 
-    /* 
+    /*
     Need different default parameters for geographic and projected coordinate systems.
     Try and use ArcGIS 10 default values.
     */
@@ -2080,7 +2081,7 @@ static CPLXMLNode* XMLSpatialReference(OGRSpatialReference* poSRS, char** papszO
     char s_xyscale[50], s_xytol[50], s_zscale[50], s_ztol[50];
     CPLsnprintf(s_ztol, 50, "%f", ztol);
     snprintf(s_zscale, 50, "%ld", zscale);
-    
+
     if ( poSRS == NULL || poSRS->IsProjected() )
     {
         // default tolerance is 1mm in the units of the coordinate system
@@ -2121,10 +2122,10 @@ static CPLXMLNode* XMLSpatialReference(OGRSpatialReference* poSRS, char** papszO
     }
 
     /* FGDB is always High Precision */
-    CPLCreateXMLElementAndValue(srs_xml, "HighPrecision", "true");     
+    CPLCreateXMLElementAndValue(srs_xml, "HighPrecision", "true");
 
     /* Add the WKID to the XML */
-    if ( nSRID ) 
+    if ( nSRID )
     {
         CPLCreateXMLElementAndValue(srs_xml, "WKID", CPLSPrintf("%d", nSRID));
     }
@@ -2136,7 +2137,7 @@ static CPLXMLNode* XMLSpatialReference(OGRSpatialReference* poSRS, char** papszO
 /*                    CreateFeatureDataset()                            */
 /************************************************************************/
 
-bool FGdbLayer::CreateFeatureDataset(FGdbDataSource* pParentDataSource, 
+bool FGdbLayer::CreateFeatureDataset(FGdbDataSource* pParentDataSource,
                                      std::string feature_dataset_name,
                                      OGRSpatialReference* poSRS,
                                      char** papszOptions )
@@ -2218,10 +2219,10 @@ bool FGdbLayer::CreateFeatureDataset(FGdbDataSource* pParentDataSource,
 /*                                                                      */
 /************************************************************************/
 
-bool FGdbLayer::Create(FGdbDataSource* pParentDataSource, 
-                       const char* pszLayerNameIn, 
-                       OGRSpatialReference* poSRS, 
-                       OGRwkbGeometryType eType, 
+bool FGdbLayer::Create(FGdbDataSource* pParentDataSource,
+                       const char* pszLayerNameIn,
+                       OGRSpatialReference* poSRS,
+                       OGRwkbGeometryType eType,
                        char** papszOptions)
 {
     std::string parent_path = "";
@@ -2331,7 +2332,8 @@ bool FGdbLayer::Create(FGdbDataSource* pParentDataSource,
         }
     }
 
-    m_bLaunderReservedKeywords = CSLFetchBoolean( papszOptions, "LAUNDER_RESERVED_KEYWORDS", TRUE) == TRUE;
+    m_bLaunderReservedKeywords =
+        CPLFetchBool( papszOptions, "LAUNDER_RESERVED_KEYWORDS", true);
 
     /* XML node */
     CPLXMLNode *xml_xml = CPLCreateXMLNode(NULL, CXT_Element, "?xml");
@@ -2383,7 +2385,7 @@ bool FGdbLayer::Create(FGdbDataSource* pParentDataSource,
         FGDB_CPLAddXMLAttribute(shape_xml, "xsi:type", "esri:Field");
         CPLCreateXMLElementAndValue(shape_xml, "Name", geometry_name.c_str());
         CPLCreateXMLElementAndValue(shape_xml, "Type", "esriFieldTypeGeometry");
-        if( CSLFetchBoolean( papszOptions, "GEOMETRY_NULLABLE", TRUE) )
+        if( CPLFetchBool( papszOptions, "GEOMETRY_NULLABLE", true) )
             CPLCreateXMLElementAndValue(shape_xml, "IsNullable", "true");
         else
             CPLCreateXMLElementAndValue(shape_xml, "IsNullable", "false");
@@ -2471,7 +2473,7 @@ bool FGdbLayer::Create(FGdbDataSource* pParentDataSource,
 
     /* Convert our XML tree into a string for FGDB */
     char *defn_str;
-    
+
     if( CSLFetchNameValue( papszOptions, "XML_DEFINITION") != NULL )
         defn_str = CPLStrdup(CSLFetchNameValue( papszOptions, "XML_DEFINITION"));
     else
@@ -2486,7 +2488,7 @@ bool FGdbLayer::Create(FGdbDataSource* pParentDataSource,
     Table *table = new Table;
     Geodatabase *gdb = pParentDataSource->GetGDB();
     fgdbError hr = gdb->CreateTable(defn_str, wparent_path, *table);
-    
+
     /* Free the XML */
     CPLFree(defn_str);
 
@@ -2499,7 +2501,7 @@ bool FGdbLayer::Create(FGdbDataSource* pParentDataSource,
 
     m_papszOptions = CSLDuplicate(papszOptions);
     m_bCreateMultipatch = CPLTestBool(CSLFetchNameValueDef(m_papszOptions, "CREATE_MULTIPATCH", "NO"));
-    
+
     // Default to YES here assuming ogr2ogr scenario
     m_bBulkLoadAllowed = CPLTestBool(CPLGetConfigOption("FGDB_BULK_LOAD", "YES"));
 
@@ -2675,7 +2677,6 @@ bool FGdbLayer::ParseGeometryDef(CPLXMLNode* psRoot)
                 CPLFree(pszUnescaped);
             }
         }
-
     }
 
     OGRwkbGeometryType ogrGeoType;
@@ -2794,9 +2795,8 @@ bool FGdbLayer::ParseSpatialReference(CPLXMLNode* psSpatialRefNode,
             *pOutWkt = pszUnescaped;
             CPLFree(pszUnescaped);
         }
-
     }
-    return (*pOutWkt != "" || *pOutWKID != "");
+    return *pOutWkt != "" || *pOutWKID != "";
 }
 
 /************************************************************************/
@@ -2887,10 +2887,8 @@ bool FGdbLayer::GDBToOGRFields(CPLXMLNode* psRoot)
                 }
             }
 
-
             ///////////////////////////////////////////////////////////////////
             // At this point we have parsed everything about the current field
-
 
             if (fieldType == "esriFieldTypeGeometry")
             {
@@ -2916,7 +2914,6 @@ bool FGdbLayer::GDBToOGRFields(CPLXMLNode* psRoot)
                 fieldName.c_str(), fieldType.c_str() );
                 continue;
             }
-
 
             //TODO: Optimization - modify m_wstrSubFields so it only fetches fields that are mapped
 
@@ -2979,7 +2976,6 @@ bool FGdbLayer::GDBToOGRFields(CPLXMLNode* psRoot)
             m_vOGRFieldToESRIFieldType.push_back( fieldType );
             if( ogrType == OFTBinary )
                 m_apoByteArrays.push_back(new ByteArray());
-
         }
     }
 
@@ -3013,7 +3009,6 @@ bool FGdbLayer::GDBToOGRFields(CPLXMLNode* psRoot)
     return true;
 }
 
-
 /************************************************************************/
 /*                            ResetReading()                            */
 /************************************************************************/
@@ -3021,7 +3016,7 @@ bool FGdbLayer::GDBToOGRFields(CPLXMLNode* psRoot)
 void FGdbLayer::ResetReading()
 {
     long hr;
-    
+
     if( m_pTable == NULL )
         return;
 
@@ -3054,7 +3049,6 @@ void FGdbLayer::ResetReading()
         GDBErr(hr, "Failed Searching");
 
     m_bFilterDirty = false;
-  
 }
 
 /************************************************************************/
@@ -3137,7 +3131,6 @@ bool FGdbBaseLayer::OGRFeatureFromGdbRow(Row* pRow, OGRFeature** ppFeature)
     }
     pOutFeature->SetFID(oid);
 
-
     /////////////////////////////////////////////////////////
     // Translate Geometry
     //
@@ -3159,11 +3152,9 @@ bool FGdbBaseLayer::OGRFeatureFromGdbRow(Row* pRow, OGRFeature** ppFeature)
         pOutFeature->SetGeometryDirectly(pOGRGeo);
     }
 
-
     //////////////////////////////////////////////////////////
     // Map fields
     //
-
 
     int mappedFieldCount = static_cast<int>(m_vOGRFieldToESRIField.size());
 
@@ -3172,7 +3163,7 @@ bool FGdbBaseLayer::OGRFeatureFromGdbRow(Row* pRow, OGRFeature** ppFeature)
     for (int i = 0; i < mappedFieldCount; ++i)
     {
         OGRFieldDefn* poFieldDefn = m_pFeatureDefn->GetFieldDefn(i);
-        // The IsNull() and GetXXX() API are very slow when there are a 
+        // The IsNull() and GetXXX() API are very slow when there are a
         // big number of fields, for example with Tiger database.
         if (poFieldDefn->IsIgnored() )
             continue;
@@ -3361,12 +3352,10 @@ bool FGdbBaseLayer::OGRFeatureFromGdbRow(Row* pRow, OGRFeature** ppFeature)
     if (foundBadColumn)
         m_suppressColumnMappingError = true;
 
-
     *ppFeature = pOutFeature;
 
     return true;
 }
-
 
 /************************************************************************/
 /*                           GetNextFeature()                           */
@@ -3429,7 +3418,6 @@ OGRFeature *FGdbLayer::GetFeature( GIntBig oid )
     return pOGRFeature;
 }
 
-
 /************************************************************************/
 /*                          GetFeatureCount()                           */
 /************************************************************************/
@@ -3437,7 +3425,7 @@ OGRFeature *FGdbLayer::GetFeature( GIntBig oid )
 GIntBig FGdbLayer::GetFeatureCount( CPL_UNUSED int bForce )
 {
     int32          rowCount = 0;
-    
+
     if( m_pTable == NULL )
         return 0;
 
@@ -3587,21 +3575,19 @@ void FGdbLayer::EndBulkLoad ()
 
 /* OGRErr FGdbLayer::StartTransaction ()
 {
-    if ( ! m_pTable ) 
+    if ( ! m_pTable )
         return OGRERR_FAILURE;
-        
+
     m_pTable->LoadOnlyMode(true);
     m_pTable->SetWriteLock();
     return OGRERR_NONE;
-    
 } */
-
 
 /* OGRErr FGdbLayer::CommitTransaction ()
 {
-    if ( ! m_pTable ) 
+    if ( ! m_pTable )
         return OGRERR_FAILURE;
-    
+
     m_pTable->LoadOnlyMode(false);
     m_pTable->FreeWriteLock();
     return OGRERR_NONE;
@@ -3609,14 +3595,13 @@ void FGdbLayer::EndBulkLoad ()
 
 /* OGRErr FGdbLayer::RollbackTransaction ()
 {
-    if ( ! m_pTable ) 
+    if ( ! m_pTable )
         return OGRERR_FAILURE;
-    
+
     m_pTable->LoadOnlyMode(false);
     m_pTable->FreeWriteLock();
     return OGRERR_NONE;
 } */
-
 
 /************************************************************************/
 /*                           GetLayerXML()                              */
@@ -3633,7 +3618,7 @@ OGRErr FGdbLayer::GetLayerXML (char **ppXml)
 
     if( m_pTable == NULL )
         return OGRERR_FAILURE;
-    
+
     if ( FAILED(hr = m_pTable->GetDefinition(xml)) )
     {
         GDBErr(hr, "Failed fetching XML table definition");
@@ -3656,7 +3641,7 @@ OGRErr FGdbLayer::GetLayerMetadataXML (char **ppXml)
 {
     long hr;
     std::string xml;
-    
+
     if( m_pTable == NULL )
         return OGRERR_FAILURE;
 
@@ -3680,7 +3665,7 @@ int FGdbLayer::TestCapability( const char* pszCap )
     if (EQUAL(pszCap,OLCRandomRead))
         return TRUE;
 
-    else if (EQUAL(pszCap,OLCFastFeatureCount)) 
+    else if (EQUAL(pszCap,OLCFastFeatureCount))
         return m_pOGRFilterGeometry == NULL && m_wstrWhereClause.size() == 0;
 
     else if (EQUAL(pszCap,OLCFastSpatialFilter))
@@ -3727,7 +3712,7 @@ int FGdbLayer::TestCapability( const char* pszCap )
     else if( EQUAL(pszCap,OLCMeasuredGeometries) )
         return TRUE;
 
-    else 
+    else
         return FALSE;
 }
 
@@ -3800,7 +3785,7 @@ int FGdbLayer::CreateRealCopy()
         }
     }
     CSLDestroy(papszFiles);
-    
+
     // Rename the .tmp into normal filenames
     for(size_t i=0; !bError && i<aoFiles.size(); i++ )
     {

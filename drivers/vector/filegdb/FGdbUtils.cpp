@@ -1,5 +1,4 @@
 /******************************************************************************
-* $Id$
 *
 * Project:  OpenGIS Simple Features Reference Implementation
 * Purpose:  Different utility functions used in FileGDB OGR driver.
@@ -61,7 +60,7 @@ std::string WStringToString(const std::wstring& utf16string)
     char* pszUTF8 = CPLRecodeFromWChar( utf16string.c_str(), CPL_ENC_UCS2, CPL_ENC_UTF8 );
     std::string utf8string = pszUTF8;
     CPLFree(pszUTF8);
-    return utf8string; 
+    return utf8string;
 }
 
 /*************************************************************************/
@@ -192,7 +191,7 @@ bool OGRGeometryToGDB(OGRwkbGeometryType ogrType, std::string *gdbType, bool *ha
             *gdbType = "esriGeometryPolygon";
             break;
         }
-        
+
         default:
         {
             CPLError( CE_Failure, CPLE_AppDefined, "Cannot map OGRwkbGeometryType (%s) to ESRI type",
@@ -442,17 +441,30 @@ bool GDBGeometryToOGRGeometry(bool forceMulti, FileGDBAPI::ShapeBuffer* pGdbGeom
         // force geometries to multi if requested
 
         // If it is a polygon, force to MultiPolygon since we always produce multipolygons
-        if (wkbFlatten(pOGRGeometry->getGeometryType()) == wkbPolygon)
+        OGRwkbGeometryType eFlattenType = wkbFlatten(pOGRGeometry->getGeometryType());
+        if (eFlattenType == wkbPolygon)
         {
             pOGRGeometry = OGRGeometryFactory::forceToMultiPolygon(pOGRGeometry);
         }
+        else if (eFlattenType == wkbCurvePolygon)
+        {
+            OGRMultiSurface* poMS = new OGRMultiSurface();
+            poMS->addGeometryDirectly( pOGRGeometry );
+            pOGRGeometry = poMS;
+        }
         else if (forceMulti)
         {
-            if (wkbFlatten(pOGRGeometry->getGeometryType()) == wkbLineString)
+            if (eFlattenType == wkbLineString)
             {
                 pOGRGeometry = OGRGeometryFactory::forceToMultiLineString(pOGRGeometry);
             }
-            else if (wkbFlatten(pOGRGeometry->getGeometryType()) == wkbPoint)
+            else if (eFlattenType == wkbCompoundCurve)
+            {
+                OGRMultiCurve* poMC = new OGRMultiCurve();
+                poMC->addGeometryDirectly( pOGRGeometry );
+                pOGRGeometry = poMC;
+            }
+            else if (eFlattenType == wkbPoint)
             {
                 pOGRGeometry = OGRGeometryFactory::forceToMultiPoint(pOGRGeometry);
             }
@@ -461,7 +473,6 @@ bool GDBGeometryToOGRGeometry(bool forceMulti, FileGDBAPI::ShapeBuffer* pGdbGeom
         if (pOGRGeometry)
             pOGRGeometry->assignSpatialReference( pOGRSR );
     }
-
 
     *ppOutGeometry = pOGRGeometry;
 
@@ -528,7 +539,7 @@ std::string FGDBLaunderName(const std::string name)
     {
         if ( !( newName[i] == '_' ||
               ( newName[i]>='0' && newName[i]<='9') ||
-              ( newName[i]>='a' && newName[i]<='z') || 
+              ( newName[i]>='a' && newName[i]<='z') ||
               ( newName[i]>='A' && newName[i]<='Z') ))
         {
             newName[i] = '_';

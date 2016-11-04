@@ -67,7 +67,7 @@ class PCIDSK2Dataset : public GDALPamDataset
 
   public:
                 PCIDSK2Dataset();
-                ~PCIDSK2Dataset();
+    virtual ~PCIDSK2Dataset();
 
     static int           Identify( GDALOpenInfo * );
     static GDALDataset  *Open( GDALOpenInfo * );
@@ -79,7 +79,7 @@ class PCIDSK2Dataset : public GDALPamDataset
                                  GDALDataType eType,
                                  char **papszParmList );
 
-    char              **GetFileList(void);
+    char              **GetFileList();
     CPLErr              GetGeoTransform( double * padfTransform );
     CPLErr              SetGeoTransform( double * );
     const char         *GetProjectionRef();
@@ -91,7 +91,7 @@ class PCIDSK2Dataset : public GDALPamDataset
     CPLErr              SetMetadataItem(const char*,const char*,const char*);
     const char         *GetMetadataItem( const char*, const char*);
 
-    virtual void FlushCache(void);
+    virtual void FlushCache();
 
     virtual CPLErr IBuildOverviews( const char *, int, int *,
                                     int, int *, GDALProgressFunc, void * );
@@ -134,7 +134,7 @@ class PCIDSK2Band : public GDALPamRasterBand
   public:
                 PCIDSK2Band( PCIDSK2Dataset *, PCIDSK::PCIDSKFile *, int );
                 PCIDSK2Band( PCIDSK::PCIDSKChannel * );
-                ~PCIDSK2Band();
+    virtual ~PCIDSK2Band();
 
     virtual CPLErr IReadBlock( int, int, void * );
     virtual CPLErr IWriteBlock( int, int, void * );
@@ -179,7 +179,7 @@ class OGRPCIDSKLayer : public OGRLayer
 
   public:
     OGRPCIDSKLayer( PCIDSK::PCIDSKSegment*, PCIDSK::PCIDSKVectorSegment *, bool bUpdate );
-    ~OGRPCIDSKLayer();
+    virtual ~OGRPCIDSKLayer();
 
     void                ResetReading();
     OGRFeature *        GetNextFeature();

@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  Common Portability Library
  * Purpose:  Encoding/Decoding Base64 strings
@@ -80,11 +79,12 @@ static const unsigned char CPLBase64DecodeChar[256] = {
 
 /************************************************************************/
 /*                       CPLBase64DecodeInPlace()                       */
-/*                                                                      */
-/*      Decode base64 string "pszBase64" (null terminated) in place     */
-/*      Returns length of decoded array or 0 on failure.                */
 /************************************************************************/
 
+/** Decode base64 string "pszBase64" (null terminated) in place.
+ *
+ * Returns length of decoded array or 0 on failure.
+ */
 int CPLBase64DecodeInPlace(GByte* pszBase64)
 {
     if (pszBase64 && *pszBase64) {
@@ -117,7 +117,6 @@ int CPLBase64DecodeInPlace(GByte* pszBase64)
                 b2 = CPLBase64DecodeChar[pszBase64[idx+1]];
                 c3 = 'A';
             }  // Else: Use the default values.
-
 
             const unsigned char b3 = CPLBase64DecodeChar[c3];
             const unsigned char b4 = CPLBase64DecodeChar[c4];
@@ -178,6 +177,8 @@ int CPLBase64DecodeInPlace(GByte* pszBase64)
 /************************************************************************/
 /*                          CPLBase64Encode()                           */
 /************************************************************************/
+
+/** Base64 encode a buffer. */
 
 char *CPLBase64Encode(int nDataLen, const GByte *pabyBytesToEncode) {
     static const char base64Chars[] =

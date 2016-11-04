@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  High Performance Image Reprojector
  * Purpose:  Test program for high performance warper API.
@@ -38,9 +37,11 @@
 #include "ogr_api.h"
 #include "commonutils.h"
 #include "gdal_priv.h"
-#include <vector>
-#include <algorithm>
 #include "gdal_utils_priv.h"
+
+#include <cmath>
+#include <algorithm>
+#include <vector>
 
 CPL_CVSID("$Id$");
 
@@ -96,10 +97,14 @@ struct GDALWarpAppOptions
     void *pProgressData;
 
     /*! creates an output alpha band to identify nodata (unset/transparent) pixels
-        when set to TRUE */
-    int bEnableDstAlpha;
+        when set to true */
+    bool bEnableDstAlpha;
 
-    int bEnableSrcAlpha;
+    /*! forces the last band of an input file to be considered as alpha band. */
+    bool bEnableSrcAlpha;
+
+    /*! Prevent a source alpha band from being considered as such */
+    bool bDisableSrcAlpha;
 
     /*! output format. The default is GeoTIFF (GTiff). Use the short format name. */
     char *pszFormat;
@@ -182,7 +187,7 @@ struct GDALWarpAppOptions
     char *pszMDConflictValue;
 
     /*! set the color interpretation of the bands of the target dataset from the source dataset */
-    int bSetColorInterpretation;
+    bool bSetColorInterpretation;
 
     /*! overview level of source files to be used */
     int nOvLevel;
@@ -201,7 +206,7 @@ GDALWarpCreateOutput( int nSrcCount, GDALDatasetH *pahSrcDS, const char *pszFile
                       const char *pszFormat, char **papszTO,
                       char ***ppapszCreateOptions, GDALDataType eDT,
                       void ** phTransformArg,
-                      int bSetColorInterpretation,
+                      bool bSetColorInterpretation,
                       GDALWarpAppOptions *psOptions);
 
 static void
@@ -309,7 +314,6 @@ static CPLErr CropToCutline( void* hCutline, char** papszTO, int nSrcCount, GDAL
             OGR_G_DestroyGeometry(hCutlineGeom);
             return CE_Failure;
         }
-
     }
 
     if ( pszThisTargetSRS != NULL )
@@ -397,7 +401,6 @@ static CPLErr CropToCutline( void* hCutline, char** papszTO, int nSrcCount, GDAL
 
     return CE_None;
 }
-
 
 /************************************************************************/
 /*                          GDALWarpAppOptionsClone()                   */
@@ -529,7 +532,7 @@ GDALDatasetH GDALWarp( const char *pszDest, GDALDatasetH hDstDS, int nSrcCount,
     if( psOptions->dfErrorThreshold < 0 )
     {
         // By default, use approximate transformer unless RPC_DEM is specified
-        if( CSLFetchNameValue(psOptions->papszWarpOptions, "RPC_DEM") != NULL )
+        if( CSLFetchNameValue(psOptions->papszTO, "RPC_DEM") != NULL )
             psOptions->dfErrorThreshold = 0.0;
         else
             psOptions->dfErrorThreshold = 0.125;
@@ -637,6 +640,21 @@ GDALDatasetH GDALWarp( const char *pszDest, GDALDatasetH hDstDS, int nSrcCount,
 
     if( hDstDS == NULL )
     {
+        if( nSrcCount == 1 && pahSrcDS[0] != NULL && !psOptions->bDisableSrcAlpha )
+        {
+            if( GDALGetRasterCount(pahSrcDS[0]) > 0 &&
+                GDALGetRasterColorInterpretation(
+                    GDALGetRasterBand(pahSrcDS[0],GDALGetRasterCount(pahSrcDS[0])) )
+                == GCI_AlphaBand )
+            {
+                psOptions->bEnableSrcAlpha = true;
+                psOptions->bEnableDstAlpha = true;
+                if( !psOptions->bQuiet )
+                    printf( "Using band %d of source image as alpha.\n",
+                            GDALGetRasterCount(pahSrcDS[0]) );
+            }
+        }
+
         hDstDS = GDALWarpCreateOutput( nSrcCount, pahSrcDS, pszDest,psOptions->pszFormat,
                                        psOptions->papszTO, &psOptions->papszCreateOptions,
                                        psOptions->eOutputType, &hUniqueTransformArg,
@@ -679,11 +697,26 @@ GDALDatasetH GDALWarp( const char *pszDest, GDALDatasetH hDstDS, int nSrcCount,
     }
 
 /* -------------------------------------------------------------------- */
+/*      Detect if output has alpha channel.                             */
+/* -------------------------------------------------------------------- */
+    bool bEnableDstAlpha = psOptions->bEnableDstAlpha;
+    if( !bEnableDstAlpha
+        && GDALGetRasterCount(hDstDS)
+        && GDALGetRasterColorInterpretation(
+            GDALGetRasterBand(hDstDS,GDALGetRasterCount(hDstDS)))
+        == GCI_AlphaBand && !psOptions->bDisableSrcAlpha )
+    {
+        if( !psOptions->bQuiet )
+            printf( "Using band %d of destination image as alpha.\n",
+                    GDALGetRasterCount(hDstDS) );
+
+        bEnableDstAlpha = true;
+    }
+
+/* -------------------------------------------------------------------- */
 /*      Loop over all source files, processing each in turn.            */
 /* -------------------------------------------------------------------- */
-    int iSrc;
-
-    for( iSrc = 0; iSrc < nSrcCount; iSrc++ )
+    for( int iSrc = 0; iSrc < nSrcCount; iSrc++ )
     {
         GDALDatasetH hSrcDS;
 
@@ -719,6 +752,21 @@ GDALDatasetH GDALWarp( const char *pszDest, GDALDatasetH hDstDS, int nSrcCount,
             printf( "Processing input file %s.\n", GDALGetDescription(hSrcDS) );
 
 /* -------------------------------------------------------------------- */
+/*      Do we have a source alpha band?                                 */
+/* -------------------------------------------------------------------- */
+        bool bEnableSrcAlpha = psOptions->bEnableSrcAlpha;
+        if( GDALGetRasterColorInterpretation(
+                GDALGetRasterBand(hSrcDS,GDALGetRasterCount(hSrcDS)) )
+            == GCI_AlphaBand
+            && !bEnableSrcAlpha && !psOptions->bDisableSrcAlpha )
+        {
+            bEnableSrcAlpha = true;
+            if( !psOptions->bQuiet )
+                printf( "Using band %d of source image as alpha.\n",
+                        GDALGetRasterCount(hSrcDS) );
+        }
+
+/* -------------------------------------------------------------------- */
 /*      Get the metadata of the first source DS and copy it to the      */
 /*      destination DS. Copy Band-level metadata and other info, only   */
 /*      if source and destination band count are equal. Any values that */
@@ -743,7 +791,7 @@ GDALDatasetH GDALWarp( const char *pszDest, GDALDatasetH hDstDS, int nSrcCount,
                 for( int i = 0; papszMetadata != NULL && papszMetadata[i] != NULL; i++ )
                 {
                     // Do not preserve NODATA_VALUES when the output includes an alpha band
-                    if( psOptions->bEnableDstAlpha &&
+                    if( bEnableDstAlpha &&
                         STARTS_WITH_CI(papszMetadata[i], "NODATA_VALUES=") )
                     {
                         continue;
@@ -844,21 +892,6 @@ GDALDatasetH GDALWarp( const char *pszDest, GDALDatasetH hDstDS, int nSrcCount,
                         "bad results when using a resampling method other than "
                         "nearest neighbour or mode. Converting the dataset prior to 24/32 bit "
                         "is advised.", GDALGetDescription(hSrcDS) );
-        }
-
-/* -------------------------------------------------------------------- */
-/*      Do we have a source alpha band?                                 */
-/* -------------------------------------------------------------------- */
-        int bEnableSrcAlpha = psOptions->bEnableSrcAlpha;
-        if( GDALGetRasterColorInterpretation(
-                GDALGetRasterBand(hSrcDS,GDALGetRasterCount(hSrcDS)) )
-            == GCI_AlphaBand
-            && !bEnableSrcAlpha )
-        {
-            bEnableSrcAlpha = TRUE;
-            if( !psOptions->bQuiet )
-                printf( "Using band %d of source image as alpha.\n",
-                        GDALGetRasterCount(hSrcDS) );
         }
 
 /* -------------------------------------------------------------------- */
@@ -1020,20 +1053,6 @@ GDALDatasetH GDALWarp( const char *pszDest, GDALDatasetH hDstDS, int nSrcCount,
 /* -------------------------------------------------------------------- */
         if( bEnableSrcAlpha )
             psWO->nSrcAlphaBand = GDALGetRasterCount(hWrkSrcDS);
-
-        int bEnableDstAlpha = psOptions->bEnableDstAlpha;
-        if( !bEnableDstAlpha
-            && GDALGetRasterCount(hDstDS) == psWO->nBandCount+1
-            && GDALGetRasterColorInterpretation(
-                GDALGetRasterBand(hDstDS,GDALGetRasterCount(hDstDS)))
-            == GCI_AlphaBand )
-        {
-            if( !psOptions->bQuiet )
-                printf( "Using band %d of destination image as alpha.\n",
-                        GDALGetRasterCount(hDstDS) );
-
-            bEnableDstAlpha = TRUE;
-        }
 
         if( bEnableDstAlpha )
             psWO->nDstAlphaBand = GDALGetRasterCount(hDstDS);
@@ -1405,6 +1424,50 @@ GDALDatasetH GDALWarp( const char *pszDest, GDALDatasetH hDstDS, int nSrcCount,
 }
 
 /************************************************************************/
+/*                          ValidateCutline()                           */
+/************************************************************************/
+
+static bool ValidateCutline(OGRGeometryH hGeom)
+{
+    OGRwkbGeometryType eType = wkbFlatten(OGR_G_GetGeometryType( hGeom ));
+    if( eType == wkbMultiPolygon )
+    {
+        for( int iGeom = 0; iGeom < OGR_G_GetGeometryCount( hGeom ); iGeom++ )
+        {
+            OGRGeometryH hPoly = OGR_G_GetGeometryRef(hGeom,iGeom);
+            if( !ValidateCutline(hPoly) )
+                return false;
+        }
+    }
+    else if( eType == wkbPolygon )
+    {
+        if( OGRGeometryFactory::haveGEOS() && !OGR_G_IsValid(hGeom) )
+        {
+            char *pszWKT = NULL;
+            OGR_G_ExportToWkt( hGeom, &pszWKT );
+            CPLDebug("GDALWARP", "WKT = \"%s\"", pszWKT ? pszWKT : "(null)");
+            //fprintf(stderr, "WKT = \"%s\"\n", pszWKT ? pszWKT : "(null)");
+            CPLFree( pszWKT );
+
+            if( CPLTestBool(CPLGetConfigOption("GDALWARP_IGNORE_BAD_CUTLINE", "NO")) )
+                CPLError(CE_Warning, CPLE_AppDefined, "Cutline polygon is invalid.");
+            else
+            {
+                CPLError(CE_Failure, CPLE_AppDefined, "Cutline polygon is invalid.");
+                return false;
+            }
+        }
+    }
+    else
+    {
+        CPLError( CE_Failure, CPLE_AppDefined, "Cutline not of polygon type." );
+        return false;
+    }
+
+    return true;
+}
+
+/************************************************************************/
 /*                            LoadCutline()                             */
 /*                                                                      */
 /*      Load blend cutline from OGR datasource.                         */
@@ -1475,6 +1538,12 @@ LoadCutline( const char *pszCutlineDSName, const char *pszCLayer,
             goto error;
         }
 
+        if( !ValidateCutline(hGeom) )
+        {
+            OGR_F_Destroy( hFeat );
+            goto error;
+        }
+
         OGRwkbGeometryType eType = wkbFlatten(OGR_G_GetGeometryType( hGeom ));
 
         if( eType == wkbPolygon )
@@ -1488,12 +1557,6 @@ LoadCutline( const char *pszCutlineDSName, const char *pszCLayer,
                 OGR_G_AddGeometry( hMultiPolygon,
                                    OGR_G_GetGeometryRef(hGeom,iGeom) );
             }
-        }
-        else
-        {
-            CPLError( CE_Failure, CPLE_AppDefined, "Cutline not of polygon type." );
-            OGR_F_Destroy( hFeat );
-            goto error;
         }
 
         OGR_F_Destroy( hFeat );
@@ -1546,9 +1609,8 @@ GDALWarpCreateOutput( int nSrcCount, GDALDatasetH *pahSrcDS, const char *pszFile
                       const char *pszFormat, char **papszTO,
                       char ***ppapszCreateOptions, GDALDataType eDT,
                       void ** phTransformArg,
-                      int bSetColorInterpretation,
+                      bool bSetColorInterpretation,
                       GDALWarpAppOptions *psOptions)
-
 
 {
     GDALDriverH hDriver;
@@ -1664,8 +1726,9 @@ GDALWarpCreateOutput( int nSrcCount, GDALDatasetH *pahSrcDS, const char *pszFile
 
             for(int iBand = 0; iBand < nDstBandCount; iBand++)
             {
-                apeColorInterpretations.push_back(
-                    GDALGetRasterColorInterpretation(GDALGetRasterBand(pahSrcDS[iSrc],iBand+1)) );
+                GDALColorInterp eInterp =
+                    GDALGetRasterColorInterpretation(GDALGetRasterBand(pahSrcDS[iSrc],iBand+1));
+                apeColorInterpretations.push_back( eInterp );
             }
         }
 
@@ -1802,16 +1865,17 @@ GDALWarpCreateOutput( int nSrcCount, GDALDatasetH *pahSrcDS, const char *pszFile
                 dfWrkMaxY = adfExtent[3];
                 dfWrkMinY = adfExtent[1];
                 dfWrkResX = adfThisGeoTransform[1];
-                dfWrkResY = ABS(adfThisGeoTransform[5]);
+                dfWrkResY = std::abs(adfThisGeoTransform[5]);
             }
             else
             {
-                dfWrkMinX = MIN(dfWrkMinX,adfExtent[0]);
-                dfWrkMaxX = MAX(dfWrkMaxX,adfExtent[2]);
-                dfWrkMaxY = MAX(dfWrkMaxY,adfExtent[3]);
-                dfWrkMinY = MIN(dfWrkMinY,adfExtent[1]);
-                dfWrkResX = MIN(dfWrkResX,adfThisGeoTransform[1]);
-                dfWrkResY = MIN(dfWrkResY,ABS(adfThisGeoTransform[5]));
+                dfWrkMinX = std::min(dfWrkMinX, adfExtent[0]);
+                dfWrkMaxX = std::max(dfWrkMaxX, adfExtent[2]);
+                dfWrkMaxY = std::max(dfWrkMaxY, adfExtent[3]);
+                dfWrkMinY = std::min(dfWrkMinY,adfExtent[1]);
+                dfWrkResX = std::min(dfWrkResX,adfThisGeoTransform[1]);
+                dfWrkResY =
+                    std::min(dfWrkResY, std::abs(adfThisGeoTransform[5]));
             }
         }
 
@@ -1978,6 +2042,27 @@ GDALWarpCreateOutput( int nSrcCount, GDALDatasetH *pahSrcDS, const char *pszFile
     if( psOptions->bEnableDstAlpha )
         nDstBandCount++;
 
+    if( EQUAL(pszFormat, "GTiff") )
+    {
+
+/* -------------------------------------------------------------------- */
+/*      Automatically set PHOTOMETRIC=RGB for GTiff when appropriate    */
+/* -------------------------------------------------------------------- */
+        if ( apeColorInterpretations.size() >= 3 &&
+            apeColorInterpretations[0] == GCI_RedBand &&
+            apeColorInterpretations[1] == GCI_GreenBand &&
+            apeColorInterpretations[2] == GCI_BlueBand &&
+            CSLFetchNameValue( *ppapszCreateOptions, "PHOTOMETRIC" ) == NULL )
+        {
+            *ppapszCreateOptions = CSLSetNameValue(*ppapszCreateOptions,
+                                                "PHOTOMETRIC", "RGB");
+        }
+
+        /* The GTiff driver now supports writing band color interpretation */
+        /* in the TIFF_GDAL_METADATA tag */
+        bSetColorInterpretation = true;
+    }
+
 /* -------------------------------------------------------------------- */
 /*      Create the output file.                                         */
 /* -------------------------------------------------------------------- */
@@ -2021,9 +2106,9 @@ GDALWarpCreateOutput( int nSrcCount, GDALDatasetH *pahSrcDS, const char *pszFile
 /* -------------------------------------------------------------------- */
 /*      Try to set color interpretation of source bands to target       */
 /*      dataset.                                                        */
-/*      FIXME? We should likely do that for other drivers than VRT      */
-/*      but it might create spurious .aux.xml files (at least with HFA, */
-/*      and netCDF)                                                     */
+/*      FIXME? We should likely do that for other drivers than VRT &    */
+/*      GTiff  but it might create spurious .aux.xml files (at least    */
+/*      with HFA, and netCDF)                                           */
 /* -------------------------------------------------------------------- */
     if( bVRT || bSetColorInterpretation )
     {
@@ -2139,7 +2224,7 @@ double GetMaximumSegmentLength( OGRGeometry* poGeom )
         }
 
         default:
-            CPLAssert(0);
+            CPLAssert(false);
             return 0.0;
     }
 }
@@ -2155,14 +2240,13 @@ TransformCutlineToSource( GDALDatasetH hSrcDS, void *hCutline,
 
 {
     OGRGeometryH hMultiPolygon = OGR_G_Clone( (OGRGeometryH) hCutline );
-    char **papszTO = CSLDuplicate( papszTO_In );
 
 /* -------------------------------------------------------------------- */
 /*      Checkout that if there's a cutline SRS, there's also a raster   */
 /*      one.                                                            */
 /* -------------------------------------------------------------------- */
     OGRSpatialReferenceH  hRasterSRS = NULL;
-    const char *pszProjection = CSLFetchNameValue( papszTO, "SRC_SRS" );
+    const char *pszProjection = CSLFetchNameValue( papszTO_In, "SRC_SRS" );
     if( pszProjection == NULL )
     {
         char** papszMD;
@@ -2188,7 +2272,35 @@ TransformCutlineToSource( GDALDatasetH hSrcDS, void *hCutline,
         }
     }
 
+/* -------------------------------------------------------------------- */
+/*      Extract the cutline SRS.                                        */
+/* -------------------------------------------------------------------- */
     OGRSpatialReferenceH hCutlineSRS = OGR_G_GetSpatialReference( hMultiPolygon );
+
+/* -------------------------------------------------------------------- */
+/*      Detect if there's no transform at all involved, in which case   */
+/*      we can avoid densification.                                     */
+/* -------------------------------------------------------------------- */
+    bool bMayNeedDensify = true;
+    if( hRasterSRS != NULL && hCutlineSRS != NULL &&
+        OSRIsSame(hRasterSRS, hCutlineSRS) &&
+        GDALGetGCPCount( hSrcDS ) == 0 &&
+        GDALGetMetadata( hSrcDS, "RPC" ) == NULL &&
+        GDALGetMetadata( hSrcDS, "GEOLOCATION" ) == NULL )
+    {
+        char **papszTOTmp = CSLDuplicate( papszTO_In );
+        papszTOTmp = CSLSetNameValue(papszTOTmp, "SRC_SRS", NULL);
+        papszTOTmp = CSLSetNameValue(papszTOTmp, "DST_SRS", NULL);
+        if( CSLCount(papszTOTmp) == 0 )
+        {
+            bMayNeedDensify = false;
+        }
+        CSLDestroy(papszTOTmp);
+    }
+
+/* -------------------------------------------------------------------- */
+/*      Compare source raster SRS and cutline SRS                       */
+/* -------------------------------------------------------------------- */
     if( hRasterSRS != NULL && hCutlineSRS != NULL )
     {
         /* OK, we will reproject */
@@ -2210,9 +2322,7 @@ TransformCutlineToSource( GDALDatasetH hSrcDS, void *hCutline,
     if( hRasterSRS != NULL )
         OSRDestroySpatialReference(hRasterSRS);
 
-/* -------------------------------------------------------------------- */
-/*      Extract the cutline SRS WKT.                                    */
-/* -------------------------------------------------------------------- */
+    char **papszTO = CSLDuplicate( papszTO_In );
     if( hCutlineSRS != NULL )
     {
         char *pszCutlineSRS_WKT = NULL;
@@ -2264,7 +2374,7 @@ TransformCutlineToSource( GDALDatasetH hSrcDS, void *hCutline,
     const bool bWasValidInitialy = OGR_G_IsValid(hMultiPolygon) != FALSE;
     CPLPopErrorHandler();
     bool bDensify = false;
-    if( eErr == OGRERR_NONE && dfInitialMaxLengthInPixels > 1.0 )
+    if( bMayNeedDensify && eErr == OGRERR_NONE && dfInitialMaxLengthInPixels > 1.0 )
     {
         const char* pszDensifyCutline = CPLGetConfigOption("GDALWARP_DENSIFY_CUTLINE", "YES");
         if( EQUAL(pszDensifyCutline, "ONLY_IF_INVALID") )
@@ -2339,22 +2449,10 @@ TransformCutlineToSource( GDALDatasetH hSrcDS, void *hCutline,
             return CE_Failure;
         }
     }
-    else if( OGRGeometryFactory::haveGEOS() && !OGR_G_IsValid(hMultiPolygon) )
+    else if( !ValidateCutline(hMultiPolygon) )
     {
-        char *pszWKT = NULL;
-        OGR_G_ExportToWkt( hMultiPolygon, &pszWKT );
-        CPLDebug("GDALWARP", "WKT = \"%s\"", pszWKT ? pszWKT : "(null)");
-        //fprintf(stderr, "WKT = \"%s\"\n", pszWKT ? pszWKT : "(null)");
-        CPLFree( pszWKT );
-
-        if( CPLTestBool(CPLGetConfigOption("GDALWARP_IGNORE_BAD_CUTLINE", "NO")) )
-            CPLError(CE_Warning, CPLE_AppDefined, "Cutline is not valid after transformation");
-        else
-        {
-            CPLError(CE_Failure, CPLE_AppDefined, "Cutline is not valid after transformation");
-            OGR_G_DestroyGeometry( hMultiPolygon );
-            return CE_Failure;
-        }
+        OGR_G_DestroyGeometry( hMultiPolygon );
+        return CE_Failure;
     }
 
 /* -------------------------------------------------------------------- */
@@ -2470,8 +2568,9 @@ GDALWarpAppOptions *GDALWarpAppOptionsNew(char** papszArgv,
     psOptions->bQuiet = TRUE;
     psOptions->pfnProgress = GDALDummyProgress;
     psOptions->pProgressData = NULL;
-    psOptions->bEnableDstAlpha = FALSE;
-    psOptions->bEnableSrcAlpha = FALSE;
+    psOptions->bEnableDstAlpha = false;
+    psOptions->bEnableSrcAlpha = false;
+    psOptions->bDisableSrcAlpha = false;
     psOptions->pszFormat = CPLStrdup("GTiff");
     psOptions->bCreateOutput = FALSE;
     psOptions->papszWarpOptions = NULL;
@@ -2493,7 +2592,7 @@ GDALWarpAppOptions *GDALWarpAppOptionsNew(char** papszArgv,
     psOptions->bCopyMetadata = TRUE;
     psOptions->bCopyBandInfo = TRUE;
     psOptions->pszMDConflictValue = CPLStrdup("*");
-    psOptions->bSetColorInterpretation = FALSE;
+    psOptions->bSetColorInterpretation = false;
     psOptions->nOvLevel = -2;
 
 /* -------------------------------------------------------------------- */
@@ -2536,11 +2635,15 @@ GDALWarpAppOptions *GDALWarpAppOptionsNew(char** papszArgv,
         }
         else if( EQUAL(papszArgv[i],"-dstalpha") )
         {
-            psOptions->bEnableDstAlpha = TRUE;
+            psOptions->bEnableDstAlpha = true;
         }
         else if( EQUAL(papszArgv[i],"-srcalpha") )
         {
-            psOptions->bEnableSrcAlpha = TRUE;
+            psOptions->bEnableSrcAlpha = true;
+        }
+        else if( EQUAL(papszArgv[i],"-nosrcalpha") )
+        {
+            psOptions->bDisableSrcAlpha = true;
         }
         else if( EQUAL(papszArgv[i],"-of") && i+1 < argc )
         {
@@ -2830,7 +2933,7 @@ GDALWarpAppOptions *GDALWarpAppOptionsNew(char** papszArgv,
             psOptions->pszMDConflictValue = CPLStrdup(papszArgv[++i]);
         }
         else if( EQUAL(papszArgv[i],"-setci") )
-            psOptions->bSetColorInterpretation = TRUE;
+            psOptions->bSetColorInterpretation = true;
         else if( EQUAL(papszArgv[i], "-oo") && i+1 < argc )
         {
             if( psOptionsForBinary )
@@ -2878,6 +2981,14 @@ GDALWarpAppOptions *GDALWarpAppOptionsNew(char** papszArgv,
                 psOptionsForBinary->papszSrcFiles = CSLAddString( psOptionsForBinary->papszSrcFiles, papszArgv[i] );
             }
         }
+    }
+
+    if( psOptions->bEnableSrcAlpha && psOptions->bDisableSrcAlpha )
+    {
+        CPLError(CE_Failure, CPLE_IllegalArg,
+                 "-srcalpha and -nosrcalpha cannot be used together");
+        GDALWarpAppOptionsFree(psOptions);
+        return NULL;
     }
 
     if( psOptionsForBinary )

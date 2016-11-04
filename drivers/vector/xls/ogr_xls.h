@@ -45,7 +45,7 @@ class OGRXLSLayer : public OGRLayer
 
     char              *pszName;
     int                iSheet;
-    int                bFirstLineIsHeaders;
+    bool               bFirstLineIsHeaders;
     int                nRows;
     unsigned short     nCols;
 
@@ -63,8 +63,7 @@ class OGRXLSLayer : public OGRLayer
                                     int iSheetIn,
                                     int nRowsIn,
                                     unsigned short nColsIn);
-                        ~OGRXLSLayer();
-
+                        virtual ~OGRXLSLayer();
 
     virtual void                ResetReading();
     virtual OGRFeature *        GetNextFeature();
@@ -78,7 +77,6 @@ class OGRXLSLayer : public OGRLayer
     virtual int                 TestCapability( const char * );
 
     virtual OGRSpatialReference *GetSpatialRef() { return NULL; }
-
 };
 
 /************************************************************************/
@@ -96,7 +94,7 @@ class OGRXLSDataSource : public OGRDataSource
 
   public:
                         OGRXLSDataSource();
-                        ~OGRXLSDataSource();
+                        virtual ~OGRXLSDataSource();
 
     int                 Open( const char * pszFilename,
                               int bUpdate );
@@ -118,12 +116,11 @@ class OGRXLSDataSource : public OGRDataSource
 class OGRXLSDriver : public OGRSFDriver
 {
   public:
-                ~OGRXLSDriver();
+                virtual ~OGRXLSDriver();
 
     virtual const char*         GetName();
     virtual OGRDataSource*      Open( const char *, int );
     virtual int                 TestCapability( const char * );
 };
-
 
 #endif /* ndef OGR_XLS_H_INCLUDED */

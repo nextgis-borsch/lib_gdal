@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: jpipkakdataset.cpp 2008-10-01 nbarker $
+ * $Id$
  *
  * Project:  jpip read driver
  * Purpose:  GDAL bindings for JPIP.
@@ -40,12 +40,10 @@
 
 #include <time.h>
 
-
 #if KDU_MAJOR_VERSION > 7 || (KDU_MAJOR_VERSION == 7 && KDU_MINOR_VERSION >= 5)
     using namespace kdu_core;
     using namespace kdu_supp;
 #endif
-
 
 static void JPIPWorkerFunc(void *);
 
@@ -177,7 +175,7 @@ public:
 
     //gdaldataset methods
     virtual CPLErr GetGeoTransform( double * );
-    virtual const char *GetProjectionRef(void);
+    virtual const char *GetProjectionRef();
     virtual int    GetGCPCount();
     virtual const char *GetGCPProjection();
     virtual const GDAL_GCP *GetGCPs();
@@ -218,9 +216,9 @@ class JPIPKAKRasterBand : public GDALPamRasterBand
 
     int         nDiscardLevels;
 
-    kdu_dims 	band_dims;
+    kdu_dims    band_dims;
 
-    int		nOverviewCount;
+    int         nOverviewCount;
     JPIPKAKRasterBand **papoOverviewBand;
 
     kdu_codestream *oCodeStream;
@@ -232,7 +230,7 @@ public:
 
     JPIPKAKRasterBand( int, int, kdu_codestream *, int,
                        JPIPKAKDataset * );
-    ~JPIPKAKRasterBand();
+    virtual ~JPIPKAKRasterBand();
 
     virtual CPLErr IReadBlock( int, int, void * );
     virtual CPLErr IRasterIO( GDALRWFlag, int, int, int, int,

@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRSurface class.
@@ -29,6 +28,8 @@
 
 #include "ogr_geometry.h"
 #include "ogr_p.h"
+
+CPL_CVSID("$Id$");
 
 /**
  * \fn double OGRSurface::get_Area() const;
@@ -60,6 +61,7 @@
 /*                          CastToPolygon()                             */
 /************************************************************************/
 
+/*! @cond Doxygen_Suppress */
 /**
  * \brief Cast to polygon
  *
@@ -70,7 +72,7 @@
  * @return new geometry.
  */
 
-OGRPolygon* OGRSurface::CastToPolygon(OGRSurface* poSurface)
+OGRPolygon* OGRSurface::CastToPolygon( OGRSurface* poSurface )
 {
     OGRSurfaceCasterToPolygon pfn = poSurface->GetCasterToPolygon();
     return pfn(poSurface);
@@ -90,8 +92,9 @@ OGRPolygon* OGRSurface::CastToPolygon(OGRSurface* poSurface)
  * @return new geometry.
  */
 
-OGRCurvePolygon* OGRSurface::CastToCurvePolygon(OGRSurface* poSurface)
+OGRCurvePolygon* OGRSurface::CastToCurvePolygon( OGRSurface* poSurface )
 {
     OGRSurfaceCasterToCurvePolygon pfn = poSurface->GetCasterToCurvePolygon();
     return pfn(poSurface);
 }
+/*! @endcond */

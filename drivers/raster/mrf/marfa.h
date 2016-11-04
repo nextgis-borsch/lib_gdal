@@ -58,15 +58,9 @@
 #include <iostream>
 #include <sstream>
 
-#ifdef GDAL_COMPILATION
 #define NAMESPACE_MRF_START namespace GDAL_MRF {
 #define NAMESPACE_MRF_END   }
 #define USING_NAMESPACE_MRF using namespace GDAL_MRF;
-#else
-#define NAMESPACE_MRF_START
-#define NAMESPACE_MRF_END
-#define USING_NAMESPACE_MRF
-#endif
 
 NAMESPACE_MRF_START
 
@@ -91,10 +85,10 @@ NAMESPACE_MRF_START
 // Force LERC to be included, normally off, detected in the makefile
 // #define LERC
 
-// These are a pain to maintain in sync.  They should be replaced with 
+// These are a pain to maintain in sync.  They should be replaced with
 // C++11 uniform initializers.  The externs reside in util.cpp
 enum ILCompression {
-    IL_PNG = 0, IL_PPNG, IL_JPEG, IL_JPNG, IL_NONE, IL_ZLIB, IL_TIF, 
+    IL_PNG = 0, IL_PPNG, IL_JPEG, IL_JPNG, IL_NONE, IL_ZLIB, IL_TIF,
 #if defined(LERC)
     IL_LERC,
 #endif
@@ -235,7 +229,7 @@ CPLString getFname(CPLXMLNode *, const char *, const CPLString &, const char *);
 CPLString getFname(const CPLString &, const char *);
 double getXMLNum(CPLXMLNode *, const char *, double);
 GIntBig IdxOffset(const ILSize &, const ILImage &);
-double logb(double val, double base);
+double logbase(double val, double base);
 int IsPower(double value, double base);
 CPLXMLNode *SearchXMLSiblings(CPLXMLNode *psRoot, const char *pszElement);
 CPLString PrintDouble(double d, const char *frmt = "%12.8f");
@@ -292,8 +286,6 @@ enum { SAMPLING_ERR, SAMPLING_Avg, SAMPLING_Near };
 GDALMRFRasterBand *newMRFRasterBand(GDALMRFDataset *, const ILImage &, int, int level = 0);
 
 class GDALMRFDataset : public GDALPamDataset {
-
-
     friend class GDALMRFRasterBand;
     friend GDALMRFRasterBand *newMRFRasterBand(GDALMRFDataset *, const ILImage &, int, int level);
 
@@ -381,7 +373,7 @@ protected:
     CPLErr Initialize(CPLXMLNode *);
 
     // Do nothing, this is not possible in an MRF
-    CPLErr CleanOverviews(void) { return CE_None; }
+    CPLErr CleanOverviews() { return CE_None; }
 
     // Add uniform scale overlays, returns the new size of the index file
     GIntBig AddOverviews(int scale);
@@ -406,7 +398,6 @@ protected:
 
     virtual CPLErr IBuildOverviews(const char*, int, int*, int, int*,
         GDALProgressFunc, void*);
-
 
     // Write a tile, the infooffset is the relative position in the index file
     virtual CPLErr WriteTile(void *buff, GUIntBig infooffset, GUIntBig size = 0);
@@ -515,10 +506,9 @@ public:
     virtual double  GetNoDataValue(int *);
     virtual CPLErr  SetNoDataValue(double);
 
-    // These get set with SetStatistics.  Let PAM handle it
+    // These get set with SetStatistics
     virtual double  GetMinimum(int *);
     virtual double  GetMaximum(int *);
-
 
     // MRF specific, fetch is from a remote source
     CPLErr FetchBlock(int xblk, int yblk, void *buffer = NULL);
@@ -538,8 +528,7 @@ public:
 protected:
     // Pointer to the GDALMRFDataset
     GDALMRFDataset *poDS;
-    // 0 based
-    GInt32 m_band;
+    // Deflate page requested, named to avoid conflict with libz deflate()
     int deflatep;
     int deflate_flags;
     // Level count of this band
@@ -570,7 +559,7 @@ protected:
     //    virtual CPLErr ReadTileIdx(const ILSize &, ILIdx &, GIntBig bias = 0);
 
     GIntBig bandbit(int b) { return ((GIntBig)1) << b; }
-    GIntBig bandbit() { return bandbit(m_band); }
+    GIntBig bandbit() { return bandbit(nBand - 1); }
     GIntBig AllBandMask() { return bandbit(poDS->nBands) - 1; }
 
     // Overview Support
@@ -591,7 +580,7 @@ protected:
 
 class PNG_Codec {
 public:
-    PNG_Codec(const ILImage &image) : img(image), 
+    PNG_Codec(const ILImage &image) : img(image),
         PNGColors(NULL), PNGAlpha(NULL), PalSize(0), TransSize(0), deflate_flags(0) {};
 
     virtual ~PNG_Codec() {
@@ -610,7 +599,6 @@ public:
 
 private:
     PNG_Codec& operator= (const PNG_Codec& src); // not implemented. but suppress MSVC warning about 'assignment operator could not be generated'
-
 };
 
 class PNG_Band : public GDALMRFRasterBand {
@@ -625,7 +613,7 @@ protected:
     PNG_Codec codec;
 };
 
-/* 
+/*
  * The JPEG Codec can be used outside of the JPEG_Band
 */
 
@@ -766,4 +754,3 @@ protected:
 NAMESPACE_MRF_END
 
 #endif // GDAL_FRMTS_MRF_MARFA_H_INCLUDED
-

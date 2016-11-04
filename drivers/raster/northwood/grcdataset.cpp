@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  GRC Reader
  * Purpose:  GDAL driver for Northwood Classified Format
@@ -37,6 +36,8 @@
 #else
 #include "../../ogr/ogrsf_frmts/mitab/mitab.h"
 #endif
+
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -93,15 +94,14 @@ class NWT_GRCRasterBand : public GDALPamRasterBand
     virtual GDALColorTable *GetColorTable();
 };
 
-
 /************************************************************************/
 /*                           NWT_GRCRasterBand()                        */
 /************************************************************************/
 
 NWT_GRCRasterBand::NWT_GRCRasterBand( NWT_GRCDataset * poDSIn, int nBandIn )
 {
-    this->poDS = poDSIn;
-    this->nBand = nBandIn;
+    poDS = poDSIn;
+    nBand = nBandIn;
     NWT_GRCDataset *poGDS = reinterpret_cast<NWT_GRCDataset *>( poDS );
 
     if( poGDS->pGrd->nBitsPerPixel == 8 )
@@ -117,12 +117,9 @@ NWT_GRCRasterBand::NWT_GRCRasterBand( NWT_GRCDataset * poDSIn, int nBandIn )
     // load the color table and might as well to the ClassNames
     poGDS->poColorTable = new GDALColorTable();
 
-    GDALColorEntry oEntry;
+    GDALColorEntry oEntry = { 255, 255, 255, 255 };
     // null value = 0 is transparent
-    oEntry.c1 = 255;
-    oEntry.c2 = 255;
-    oEntry.c3 = 255;
-    oEntry.c4 = 255;                // alpha 255 = transparent
+    // alpha 255 = transparent
 
     poGDS->poColorTable->SetColorEntry( 0, &oEntry );
 
@@ -173,7 +170,6 @@ NWT_GRCRasterBand::NWT_GRCRasterBand( NWT_GRCDataset * poDSIn, int nBandIn )
         }
         if( i >= static_cast<int>( poGDS->pGrd->stClassDict->nNumClassifiedItems ) )
             poGDS->papszCategories = CSLAddString( poGDS->papszCategories, "" );
-
     }
 }
 
@@ -246,10 +242,12 @@ CPLErr NWT_GRCRasterBand::IReadBlock( CPL_UNUSED int nBlockXOff,
 /* ==================================================================== */
 /************************************************************************/
 NWT_GRCDataset::NWT_GRCDataset() :
-    fp(NULL), pGrd(NULL), papszCategories(NULL), pszProjection(NULL),
+    fp(NULL),
+    pGrd(NULL),
+    papszCategories(NULL),
+    pszProjection(NULL),
     poColorTable(NULL)
-{ }
-
+{}
 
 /************************************************************************/
 /*                            ~NWT_GRCDataset()                         */
@@ -300,7 +298,7 @@ const char *NWT_GRCDataset::GetProjectionRef()
             poSpatialRef->Release();
         }
     }
-    return ( (const char *) pszProjection );
+    return (const char *) pszProjection;
 }
 
 /************************************************************************/
@@ -392,9 +390,8 @@ GDALDataset *NWT_GRCDataset::Open( GDALOpenInfo * poOpenInfo )
                                  poOpenInfo->pszFilename,
                                  poOpenInfo->GetSiblingFiles() );
 
-    return (poDS);
+    return poDS;
 }
-
 
 /************************************************************************/
 /*                          GDALRegister_GRC()                          */

@@ -62,7 +62,6 @@
 #define FGDB_GEOMETRY_NAME "SHAPE"
 #define FGDB_OID_NAME "OBJECTID"
 
-
 /* The ESRI FGDB API namespace */
 using namespace FileGDBAPI;
 
@@ -91,7 +90,7 @@ protected:
   bool  m_forceMulti;
 
   bool OGRFeatureFromGdbRow(Row* pRow, OGRFeature** ppFeature);
-  
+
   virtual void       CloseGDBObjects();
 
 public:
@@ -144,14 +143,14 @@ class FGdbLayer : public FGdbBaseLayer
   OGRErr              GetRow( EnumRows& enumRows, Row& row, GIntBig nFID );
 
   char              **m_papszOptions;
-  
+
   int                 m_bCreateMultipatch;
 
   std::map<int,int>   m_oMapOGRFIDToFGDBFID;
   std::map<int,int>   m_oMapFGDBFIDToOGRFID;
   int                 m_nResyncThreshold;
   void                ResyncIDs();
-  
+
   int                 m_bSymlinkFlag;
   int                 CreateRealCopy();
 
@@ -215,14 +214,14 @@ public:
   // can be used by external code for specific purposes.
   OGRErr              GetLayerXML ( char **poXml );
   OGRErr              GetLayerMetadataXML ( char **poXmlMeta );
-  
+
   void                SetSymlinkFlag() { m_bSymlinkFlag = TRUE; }
-  
+
   virtual const char* GetMetadataItem(const char* pszName, const char* pszDomain);
-  
+
 protected:
 
-  bool GDBToOGRFields(CPLXMLNode* psFields);  
+  bool GDBToOGRFields(CPLXMLNode* psFields);
   bool ParseGeometryDef(CPLXMLNode* psGeometryDef);
   bool ParseSpatialReference(CPLXMLNode* psSpatialRefNode, std::string* pOutWkt,
                              std::string* pOutWKID, std::string* pOutLatestWKID);
@@ -245,7 +244,6 @@ protected:
   bool        m_bFilterDirty; //optimization to avoid multiple calls to search until necessary
 
   bool  m_bLaunderReservedKeywords;
-
 };
 
 /************************************************************************/
@@ -314,14 +312,13 @@ public:
   Geodatabase* GetGDB() { return m_pGeodatabase; }
   bool         GetUpdate() { return m_bUpdate; }
   FGdbDatabaseConnection* GetConnection() { return m_pConnection; }
-  
+
   GDALDriver* GetOpenFileGDBDrv() { return m_poOpenFileGDBDrv; }
   int         HasSelectLayers() { return m_oSetSelectLayers.size() != 0; }
-  
+
   int         Close(int bCloseGeodatabase = FALSE);
   int         ReOpen();
-  
-  
+
   int         HasPerLayerCopyingForTransaction();
   void        SetPerLayerCopyingForTransaction(int bFlag) { bPerLayerCopyingForTransaction = bFlag; }
   void        SetSymlinkFlagOnAllLayers();
@@ -361,12 +358,12 @@ public:
     int          m_nRefCount;
     int          m_bLocked;
     int          m_bFIDHackInProgress;
-    
+
     Geodatabase* GetGDB() { return m_pGeodatabase; }
     void         SetLocked(int bLockedIn) { m_bLocked = bLockedIn; }
     int          GetRefCount() const { return m_nRefCount; }
     int          IsLocked() const { return m_bLocked; }
-    
+
     int          IsFIDHackInProgress() const { return m_bFIDHackInProgress; }
     void         SetFIDHackInProgress(int bFlag) { m_bFIDHackInProgress = bFlag; }
     int          OpenGeodatabase(const char* pszOverriddenName);
@@ -395,9 +392,6 @@ public:
 
   void Release(const char* pszName);
   CPLMutex* GetMutex() { return hMutex; }
-
-private:
-
 };
 
 CPL_C_START
@@ -405,5 +399,3 @@ void CPL_DLL RegisterOGRFileGDB();
 CPL_C_END
 
 #endif /* ndef _OGR_PG_H_INCLUDED */
-
-

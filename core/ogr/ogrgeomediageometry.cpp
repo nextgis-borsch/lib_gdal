@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements decoder of geomedia geometry blobs
@@ -32,14 +31,14 @@
 
 CPL_CVSID("$Id$");
 
-#define GEOMEDIA_POINT          0xC0
-#define GEOMEDIA_ORIENTED_POINT 0xC8
-#define GEOMEDIA_POLYLINE       0xC2
-#define GEOMEDIA_POLYGON        0xC3
-#define GEOMEDIA_BOUNDARY       0xC5
-#define GEOMEDIA_COLLECTION     0xC6
-#define GEOMEDIA_MULTILINE      0xCB
-#define GEOMEDIA_MULTIPOLYGON   0xCC
+static const int GEOMEDIA_POINT          = 0xC0;
+static const int GEOMEDIA_ORIENTED_POINT = 0xC8;
+static const int GEOMEDIA_POLYLINE       = 0xC2;
+static const int GEOMEDIA_POLYGON        = 0xC3;
+static const int GEOMEDIA_BOUNDARY       = 0xC5;
+static const int GEOMEDIA_COLLECTION     = 0xC6;
+static const int GEOMEDIA_MULTILINE      = 0xCB;
+static const int GEOMEDIA_MULTIPOLYGON   = 0xCC;
 
 /************************************************************************/
 /*                       OGRCreateFromGeomedia()                        */
@@ -97,7 +96,7 @@ OGRErr OGRCreateFromGeomedia( GByte *pabyGeom,
 
         OGRLineString* poLS = new OGRLineString();
         poLS->setNumPoints(nPoints);
-        for(int i=0;i<nPoints;i++)
+        for( int i = 0; i < nPoints; i++ )
         {
             double dfX, dfY, dfZ;
             memcpy(&dfX, pabyGeom, 8);
@@ -133,7 +132,7 @@ OGRErr OGRCreateFromGeomedia( GByte *pabyGeom,
 
         OGRLinearRing* poRing = new OGRLinearRing();
         poRing->setNumPoints(nPoints);
-        for(int i=0;i<nPoints;i++)
+        for( int i = 0; i < nPoints; i++ )
         {
             double dfX, dfY, dfZ;
             memcpy(&dfX, pabyGeom, 8);
@@ -216,7 +215,7 @@ OGRErr OGRCreateFromGeomedia( GByte *pabyGeom,
         else if ( interiorGeomType == wkbMultiPolygon )
         {
             const int numGeom = ((OGRMultiPolygon*)poInteriorGeom)->getNumGeometries();
-            for ( int i = 0; i < numGeom; ++i )
+            for( int i = 0; i < numGeom; ++i )
             {
                 OGRPolygon* poInteriorPolygon =
                     (OGRPolygon*)((OGRMultiPolygon*)poInteriorGeom)->getGeometryRef(i);
@@ -261,7 +260,7 @@ OGRErr OGRCreateFromGeomedia( GByte *pabyGeom,
             bool bAllPolyline = true;
             bool bAllPolygon = true;
 
-            for(int i=0;i<nParts;i++)
+            for( int i = 0; i < nParts; i++ )
             {
                 if (nBytes < 4)
                     return OGRERR_FAILURE;
@@ -311,7 +310,7 @@ OGRErr OGRCreateFromGeomedia( GByte *pabyGeom,
                                         (nGeomType == GEOMEDIA_MULTIPOLYGON) ? new OGRMultiPolygon() :
                                                               new OGRGeometryCollection();
 
-        for(int i=0;i<nParts;i++)
+        for( int i = 0; i < nParts; i++ )
         {
             if (nBytes < 4)
             {
@@ -372,7 +371,6 @@ OGRErr OGRCreateFromGeomedia( GByte *pabyGeom,
 
     return OGRERR_FAILURE;
 }
-
 
 /************************************************************************/
 /*                         OGRGetGeomediaSRS()                          */

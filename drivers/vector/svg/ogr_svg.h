@@ -77,9 +77,9 @@ class OGRSVGLayer : public OGRLayer
 
     int                depthLevel;
     int                interestingDepthLevel;
-    int                inInterestingElement;
+    bool               inInterestingElement;
 
-    int                bStopParsing;
+    bool               bStopParsing;
 #ifdef HAVE_EXPAT
     int                nWithoutEventCounter;
     int                nDataHandlerCounter;
@@ -95,7 +95,7 @@ class OGRSVGLayer : public OGRLayer
                                     const char* layerName,
                                     SVGGeometryType svgGeomType,
                                     OGRSVGDataSource* poDS);
-                        ~OGRSVGLayer();
+                        virtual ~OGRSVGLayer();
 
     virtual void                ResetReading();
     virtual OGRFeature *        GetNextFeature();
@@ -147,7 +147,7 @@ class OGRSVGDataSource : public OGRDataSource
 
   public:
                         OGRSVGDataSource();
-                        ~OGRSVGDataSource();
+                        virtual ~OGRSVGDataSource();
 
     int                 Open( const char * pszFilename );
 
@@ -157,7 +157,6 @@ class OGRSVGDataSource : public OGRDataSource
     virtual OGRLayer*           GetLayer( int );
 
     virtual int                 TestCapability( const char * );
-
 
 #ifdef HAVE_EXPAT
     void                startElementValidateCbk(const char *pszName, const char **ppszAttr);

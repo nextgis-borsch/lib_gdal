@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  GDAL
  * Purpose:  CPLStringList implementation.
@@ -29,6 +28,8 @@
  ****************************************************************************/
 
 #include "cpl_string.h"
+
+#include <algorithm>
 #include <string>
 
 CPL_CVSID("$Id$");
@@ -76,7 +77,7 @@ CPLStringList::CPLStringList( const CPLStringList &oOther )
     Assign( oOther.papszList, FALSE );
 
     // We don't want to just retain a reference to the others list
-    // as we don't want to make assumptions about it's lifetime that
+    // as we don't want to make assumptions about its lifetime that
     // might surprise the client developer.
     MakeOurOwnCopy();
     bIsSorted = oOther.bIsSorted;
@@ -93,7 +94,7 @@ CPLStringList &CPLStringList::operator=(const CPLStringList& oOther)
         Assign( oOther.papszList, FALSE );
 
         // We don't want to just retain a reference to the others list
-        // as we don't want to make assumptions about it's lifetime that
+        // as we don't want to make assumptions about its lifetime that
         // might surprise the client developer.
         MakeOurOwnCopy();
         bIsSorted = oOther.bIsSorted;
@@ -198,12 +199,13 @@ int CPLStringList::Count() const
     {
         if( papszList == NULL )
         {
-            nCount = nAllocation = 0;
+            nCount = 0;
+            nAllocation = 0;
         }
         else
         {
             nCount = CSLCount( papszList );
-            nAllocation = MAX(nCount+1,nAllocation);
+            nAllocation = std::max(nCount + 1, nAllocation);
         }
     }
 
@@ -248,7 +250,7 @@ void CPLStringList::EnsureAllocation( int nMaxList )
 
     if( nAllocation <= nMaxList )
     {
-        nAllocation = MAX(nAllocation*2 + 20,nMaxList+1);
+        nAllocation = std::max(nAllocation * 2 + 20, nMaxList + 1);
         if( papszList == NULL )
         {
             papszList = static_cast<char **>(
@@ -473,7 +475,6 @@ char **CPLStringList::StealList()
 
     return papszRetList;
 }
-
 
 static int CPLCompareKeyValueString(const char* pszKVa, const char* pszKVb)
 {
@@ -726,7 +727,6 @@ const char *CPLStringList::FetchNameValueDef( const char *pszName,
  * @param nInsertAtLineNo the line to insert at, zero to insert at front.
  * @param pszNewLine to the line to insert.  This string will be copied.
  */
-
 
 /************************************************************************/
 /*                        InsertStringDirectly()                        */

@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRPolygon geometry class.
@@ -151,6 +150,20 @@ OGRLinearRing *OGRPolygon::getExteriorRing()
         return NULL;
 }
 
+/**
+ * \brief Fetch reference to external polygon ring.
+ *
+ * Note that the returned ring pointer is to an internal data object of
+ * the OGRPolygon.  It should not be modified or deleted by the application,
+ * and the pointer is only valid till the polygon is next modified.  Use
+ * the OGRGeometry::clone() method to make a separate copy within the
+ * application.
+ *
+ * Relates to the SFCOM IPolygon::get_ExteriorRing() method.
+ *
+ * @return pointer to external ring.  May be NULL if the OGRPolygon is empty.
+ */
+
 const OGRLinearRing *OGRPolygon::getExteriorRing() const
 
 {
@@ -193,7 +206,7 @@ OGRLinearRing *OGRPolygon::stealExteriorRing()
  *
  * Relates to the SFCOM IPolygon::get_InternalRing() method.
  *
- * @param iRing internal ring index from 0 to getNumInternalRings() - 1.
+ * @param iRing internal ring index from 0 to getNumInteriorRings() - 1.
  *
  * @return pointer to interior ring.  May be NULL.
  */
@@ -206,6 +219,22 @@ OGRLinearRing *OGRPolygon::getInteriorRing( int iRing )
     else
         return (OGRLinearRing*) oCC.papoCurves[iRing+1];
 }
+
+/**
+ * \brief Fetch reference to indicated internal ring.
+ *
+ * Note that the returned ring pointer is to an internal data object of
+ * the OGRPolygon.  It should not be modified or deleted by the application,
+ * and the pointer is only valid till the polygon is next modified.  Use
+ * the OGRGeometry::clone() method to make a separate copy within the
+ * application.
+ *
+ * Relates to the SFCOM IPolygon::get_InternalRing() method.
+ *
+ * @param iRing internal ring index from 0 to getNumInteriorRings() - 1.
+ *
+ * @return pointer to interior ring.  May be NULL.
+ */
 
 const OGRLinearRing *OGRPolygon::getInteriorRing( int iRing ) const
 
@@ -226,7 +255,7 @@ const OGRLinearRing *OGRPolygon::getInteriorRing( int iRing ) const
  * After the call to that function, only call to stealInteriorRing() or
  * destruction of the OGRPolygon is valid. Other operations may crash.
  *
- * @param iRing internal ring index from 0 to getNumInternalRings() - 1.
+ * @param iRing internal ring index from 0 to getNumInteriorRings() - 1.
  * @return pointer to interior ring.  May be NULL.
  */
 
@@ -239,6 +268,7 @@ OGRLinearRing *OGRPolygon::stealInteriorRing(int iRing)
     return poRet;
 }
 
+/*! @cond Doxygen_Suppress */
 /************************************************************************/
 /*                            checkRing()                               */
 /************************************************************************/
@@ -253,6 +283,7 @@ int OGRPolygon::checkRing( OGRCurve * poNewRing ) const
 
     return TRUE;
 }
+/*! @endcond */
 
 /************************************************************************/
 /*                              WkbSize()                               */
@@ -402,9 +433,10 @@ OGRErr  OGRPolygon::exportToWkb( OGRwkbByteOrder eByteOrder,
 OGRErr OGRPolygon::importFromWkt( char ** ppszInput )
 
 {
-    int bHasZ = FALSE, bHasM = FALSE;
+    int bHasZ = FALSE;
+    int bHasM = FALSE;
     bool bIsEmpty = false;
-    OGRErr      eErr = importPreambuleFromWkt(ppszInput, &bHasZ, &bHasM, &bIsEmpty);
+    OGRErr eErr = importPreambuleFromWkt(ppszInput, &bHasZ, &bHasM, &bIsEmpty);
     flags = 0;
     if( eErr != OGRERR_NONE )
         return eErr;
@@ -426,6 +458,7 @@ OGRErr OGRPolygon::importFromWkt( char ** ppszInput )
     return eErr;
 }
 
+/*! @cond Doxygen_Suppress */
 /************************************************************************/
 /*                        importFromWKTListOnly()                       */
 /*                                                                      */
@@ -559,6 +592,7 @@ OGRErr OGRPolygon::importFromWKTListOnly( char ** ppszInput, int bHasZ, int bHas
     *ppszInput = (char *) pszInput;
     return OGRERR_NONE;
 }
+/*! @endcond */
 
 /************************************************************************/
 /*                            exportToWkt()                             */
@@ -715,6 +749,9 @@ OGRErr OGRPolygon::PointOnSurface( OGRPoint *poPoint ) const
 /*                           IsPointOnSurface()                           */
 /************************************************************************/
 
+/** Return whether the point is on the surface.
+ * @return TRUE or FALSE
+ */
 OGRBoolean OGRPolygon::IsPointOnSurface( const OGRPoint * pt) const
 {
     if ( NULL == pt)
@@ -795,6 +832,7 @@ OGRGeometry* OGRPolygon::getCurveGeometry(const char* const* papszOptions) const
     return poCC;
 }
 
+/*! @cond Doxygen_Suppress */
 /************************************************************************/
 /*                        CastToCurvePolygon()                          */
 /************************************************************************/
@@ -844,3 +882,4 @@ OGRSurfaceCasterToPolygon OGRPolygon::GetCasterToPolygon() const {
 OGRSurfaceCasterToCurvePolygon OGRPolygon::GetCasterToCurvePolygon() const {
     return (OGRSurfaceCasterToCurvePolygon) OGRPolygon::CastToCurvePolygon;
 }
+/*! @endcond */

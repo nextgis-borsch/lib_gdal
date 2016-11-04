@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  GDAL Core
  * Purpose:  Read metadata from Resurs-DK1 imagery.
@@ -117,7 +116,6 @@ void GDALMDReaderResursDK1::LoadMetadata()
         m_papszIMAGERYMD = CSLAddNameValue(m_papszIMAGERYMD, MD_NAME_SATELLITE,
                                            CPLStripQuotes(pszSatId));
     }
-
 
     const char* pszDate = CSLFetchNameValue(m_papszIMDMD,
                                             "MSP_ROOT.Normal.dSceneDate");

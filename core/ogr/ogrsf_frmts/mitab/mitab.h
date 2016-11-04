@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: mitab.h,v 1.121 2010-10-08 18:38:13 aboudreault Exp $
+ * $Id$
  *
  * Name:     mitab.h
  * Project:  MapInfo TAB Read/Write library
@@ -131,7 +131,6 @@
 #  define ROUND_INT(dX) ((int)((dX) < 0.0 ? (dX)-0.5 : (dX)+0.5 ))
 #endif
 
-
 #define MITAB_AREA(x1, y1, x2, y2)  ((double)((x2)-(x1))*(double)((y2)-(y1)))
 
 class TABFeature;
@@ -148,7 +147,6 @@ typedef enum
     TABFC_MIFFile
 } TABFileClass;
 
-
 /*---------------------------------------------------------------------
  *                      class IMapInfoFile
  *
@@ -160,8 +158,6 @@ typedef enum
 
 class IMapInfoFile : public OGRLayer
 {
-  private:
-
   protected:
     GIntBig             m_nCurFeatureId;
     TABFeature         *m_poCurFeature;
@@ -418,7 +414,6 @@ class TABFile CPL_FINAL : public IMapInfoFile
 #endif
 };
 
-
 /*---------------------------------------------------------------------
  *                      class TABView
  *
@@ -463,7 +458,6 @@ class TABView CPL_FINAL : public IMapInfoFile
     //
     int         OpenForWrite(const char *pszFname );
     int         WriteTABFile();
-
 
   public:
     TABView();
@@ -544,7 +538,6 @@ class TABView CPL_FINAL : public IMapInfoFile
     virtual void Dump(FILE *fpOut = NULL);
 #endif
 };
-
 
 /*---------------------------------------------------------------------
  *                      class TABSeamless
@@ -665,7 +658,6 @@ class TABSeamless CPL_FINAL : public IMapInfoFile
     virtual void Dump(FILE *fpOut = NULL);
 #endif
 };
-
 
 /*---------------------------------------------------------------------
  *                      class MIFFile
@@ -1012,7 +1004,6 @@ class ITABFeatureSymbol
     void        DumpSymbolDef(FILE *fpOut = NULL);
 };
 
-
 /*=====================================================================
                         Feature Classes
  =====================================================================*/
@@ -1031,7 +1022,7 @@ class ITABFeatureSymbol
  * The logic to read/write the object from/to the .DAT and .MAP files is also
  * implemented as part of this class and derived classes.
  *--------------------------------------------------------------------*/
-class TABFeature: public OGRFeature
+class TABFeature : public OGRFeature
 {
   protected:
     TABGeomType m_nMapInfoType;
@@ -1118,9 +1109,7 @@ class TABFeature: public OGRFeature
 
     virtual void DumpMID(FILE *fpOut = NULL);
     virtual void DumpMIF(FILE *fpOut = NULL);
-
 };
-
 
 /*---------------------------------------------------------------------
  *                      class TABPoint
@@ -1167,7 +1156,6 @@ class TABPoint: public TABFeature,
 
     virtual void DumpMIF(FILE *fpOut = NULL);
 };
-
 
 /*---------------------------------------------------------------------
  *                      class TABFontPoint
@@ -1222,7 +1210,6 @@ class TABFontPoint CPL_FINAL : public TABPoint,
     void        SetSymbolAngle(double dAngle);
 };
 
-
 /*---------------------------------------------------------------------
  *                      class TABCustomPoint
  *
@@ -1273,7 +1260,6 @@ class TABCustomPoint CPL_FINAL : public TABPoint,
     void        SetCustomSymbolStyle(GByte nStyle)  {m_nCustomStyle = nStyle;}
 };
 
-
 /*---------------------------------------------------------------------
  *                      class TABPolyline
  *
@@ -1295,7 +1281,8 @@ class TABPolyline CPL_FINAL : public TABFeature,
 {
   private:
     GBool       m_bCenterIsSet;
-    double      m_dCenterX, m_dCenterY;
+    double      m_dCenterX;
+    double      m_dCenterY;
     GBool       m_bWriteTwoPointLineAsPolyline;
 
   public:
@@ -1335,7 +1322,6 @@ class TABPolyline CPL_FINAL : public TABFeature,
     // MapInfo-specific attributes... made available through public vars
     // for now.
     GBool       m_bSmooth;
-
 };
 
 /*---------------------------------------------------------------------
@@ -1361,10 +1347,11 @@ class TABRegion CPL_FINAL : public TABFeature,
                  public ITABFeaturePen,
                  public ITABFeatureBrush
 {
-    GBool       m_bSmooth;
   private:
+    GBool       m_bSmooth;
     GBool       m_bCenterIsSet;
-    double      m_dCenterX, m_dCenterY;
+    double      m_dCenterX;
+    double      m_dCenterY;
 
     int     ComputeNumRings(TABMAPCoordSecHdr **ppasSecHdrs,
                             TABMAPFile *poMAPFile);
@@ -1406,7 +1393,6 @@ class TABRegion CPL_FINAL : public TABFeature,
     int         GetCenter(double &dX, double &dY);
     void        SetCenter(double dX, double dY);
 };
-
 
 /*---------------------------------------------------------------------
  *                      class TABRectangle
@@ -1459,9 +1445,7 @@ class TABRectangle CPL_FINAL : public TABFeature,
     GBool       m_bRoundCorners;
     double      m_dRoundXRadius;
     double      m_dRoundYRadius;
-
 };
-
 
 /*---------------------------------------------------------------------
  *                      class TABEllipse
@@ -1521,9 +1505,7 @@ class TABEllipse CPL_FINAL : public TABFeature,
     double      m_dCenterY;
     double      m_dXRadius;
     double      m_dYRadius;
-
 };
-
 
 /*---------------------------------------------------------------------
  *                      class TABArc
@@ -1589,7 +1571,6 @@ class TABArc CPL_FINAL : public TABFeature,
     double      m_dXRadius;
     double      m_dYRadius;
 };
-
 
 /*---------------------------------------------------------------------
  *                      class TABText
@@ -1696,9 +1677,7 @@ class TABText CPL_FINAL : public TABFeature,
     GBool       IsFontUnderline();
     int         GetFontStyleTABValue()           {return m_nFontStyle;};
     void        SetFontStyleTABValue(int nStyle){m_nFontStyle=(GInt16)nStyle;};
-
 };
-
 
 /*---------------------------------------------------------------------
  *                      class TABMultiPoint
@@ -1720,7 +1699,8 @@ class TABMultiPoint CPL_FINAL : public TABFeature,
     // We call it center, but it's more like a label point
     // Its value default to be the location of the first point
     GBool       m_bCenterIsSet;
-    double      m_dCenterX, m_dCenterY;
+    double      m_dCenterX;
+    double      m_dCenterY;
 
   public:
              TABMultiPoint(OGRFeatureDefn *poDefnIn);
@@ -1833,7 +1813,6 @@ class TABCollection CPL_FINAL : public TABFeature,
     int                 SetMultiPointDirectly(TABMultiPoint *poMpoint);
 };
 
-
 /*---------------------------------------------------------------------
  *                      class TABDebugFeature
  *
@@ -1879,9 +1858,9 @@ class TABDebugFeature CPL_FINAL : public TABFeature
 char CPL_DLL *MITABSpatialRef2CoordSys( OGRSpatialReference * );
 OGRSpatialReference CPL_DLL * MITABCoordSys2SpatialRef( const char * );
 
-GBool MITABExtractCoordSysBounds( const char * pszCoordSys,
-                                  double &dXMin, double &dYMin,
-                                  double &dXMax, double &dYMax );
+bool MITABExtractCoordSysBounds( const char * pszCoordSys,
+                                 double &dXMin, double &dYMin,
+                                 double &dXMax, double &dYMax );
 int MITABCoordSys2TABProjInfo(const char * pszCoordSys, TABProjInfo *psProj);
 
 typedef struct {
@@ -1907,17 +1886,16 @@ typedef struct
     double      dfInvFlattening; /* Inverse flattening */
 } MapInfoSpheroidInfo;
 
-
 /*---------------------------------------------------------------------
  * The following are used for coordsys bounds lookup
  *--------------------------------------------------------------------*/
 
-GBool   MITABLookupCoordSysBounds(TABProjInfo *psCS,
+bool    MITABLookupCoordSysBounds(TABProjInfo *psCS,
                                   double &dXMin, double &dYMin,
                                   double &dXMax, double &dYMax,
-                                  int bOnlyUserTable = FALSE);
+                                  bool bOnlyUserTable = false);
 int     MITABLoadCoordSysTable(const char *pszFname);
 void    MITABFreeCoordSysTable();
-GBool   MITABCoordSysTableLoaded();
+bool    MITABCoordSysTableLoaded();  // TODO(schwehr): Unused?
 
 #endif /* MITAB_H_INCLUDED_ */

@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implement OGRDataSourceWithTransaction class
@@ -48,7 +47,7 @@ class OGRLayerWithTransaction: public OGRLayerDecorator
 
         OGRLayerWithTransaction(OGRDataSourceWithTransaction* poDS,
                                 OGRLayer* poBaseLayer);
-       ~OGRLayerWithTransaction();
+    virtual ~OGRLayerWithTransaction();
 
     virtual const char *GetName() { return GetDescription(); }
     virtual OGRFeatureDefn *GetLayerDefn();
@@ -66,9 +65,7 @@ class OGRLayerWithTransaction: public OGRLayerDecorator
     virtual OGRFeature *GetFeature( GIntBig nFID );
     virtual OGRErr      ISetFeature( OGRFeature *poFeature );
     virtual OGRErr      ICreateFeature( OGRFeature *poFeature );
-
 };
-
 
 class OGRDataSourceWithTransaction : public OGRDataSource
 {
@@ -164,23 +161,21 @@ OGRDataSource* OGRCreateEmulatedTransactionDataSourceWrapper(
                                             bTakeOwnershipTransactionBehaviour);
 }
 
-
 /************************************************************************/
 /*                      OGRDataSourceWithTransaction                    */
 /************************************************************************/
 
 OGRDataSourceWithTransaction::OGRDataSourceWithTransaction(
-                                OGRDataSource* poBaseDataSource,
-                                IOGRTransactionBehaviour* poTransactionBehaviour,
-                                int bTakeOwnershipDataSource,
-                                int bTakeOwnershipTransactionBehaviour) :
-            m_poBaseDataSource(poBaseDataSource),
-            m_poTransactionBehaviour(poTransactionBehaviour),
-            m_bHasOwnershipDataSource(bTakeOwnershipDataSource),
-            m_bHasOwnershipTransactionBehaviour(bTakeOwnershipTransactionBehaviour),
-            m_bInTransaction(FALSE)
-{
-}
+    OGRDataSource* poBaseDataSource,
+    IOGRTransactionBehaviour* poTransactionBehaviour,
+    int bTakeOwnershipDataSource,
+    int bTakeOwnershipTransactionBehaviour) :
+    m_poBaseDataSource(poBaseDataSource),
+    m_poTransactionBehaviour(poTransactionBehaviour),
+    m_bHasOwnershipDataSource(bTakeOwnershipDataSource),
+    m_bHasOwnershipTransactionBehaviour(bTakeOwnershipTransactionBehaviour),
+    m_bInTransaction(FALSE)
+{}
 
 OGRDataSourceWithTransaction::~OGRDataSourceWithTransaction()
 {
@@ -193,7 +188,6 @@ OGRDataSourceWithTransaction::~OGRDataSourceWithTransaction()
     if( m_bHasOwnershipTransactionBehaviour )
         delete m_poTransactionBehaviour;
 }
-
 
 OGRLayer* OGRDataSourceWithTransaction::WrapLayer(OGRLayer* poLayer)
 {
@@ -246,7 +240,6 @@ OGRLayer    *OGRDataSourceWithTransaction::GetLayer(int iIndex)
 {
     if( !m_poBaseDataSource ) return NULL;
     return WrapLayer(m_poBaseDataSource->GetLayer(iIndex));
-
 }
 
 OGRLayer    *OGRDataSourceWithTransaction::GetLayerByName(const char *pszName)
@@ -456,18 +449,16 @@ CPLErr      OGRDataSourceWithTransaction::SetMetadataItem( const char * pszName,
     return m_poBaseDataSource->SetMetadataItem(pszName, pszValue, pszDomain);
 }
 
-
 /************************************************************************/
 /*                       OGRLayerWithTransaction                        */
 /************************************************************************/
 
 OGRLayerWithTransaction::OGRLayerWithTransaction(
-                    OGRDataSourceWithTransaction* poDS, OGRLayer* poBaseLayer):
+    OGRDataSourceWithTransaction* poDS, OGRLayer* poBaseLayer) :
     OGRLayerDecorator(poBaseLayer, FALSE),
     m_poDS(poDS),
     m_poFeatureDefn(NULL)
-{
-}
+{}
 
 OGRLayerWithTransaction::~OGRLayerWithTransaction()
 {

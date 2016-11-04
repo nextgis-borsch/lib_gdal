@@ -33,6 +33,8 @@
 #include "swq.h"
 #include "ogr_geometry.h"
 
+CPL_CVSID("$Id$");
+
 /************************************************************************/
 /*                           swq_test_like()                            */
 /*                                                                      */
@@ -188,11 +190,15 @@ static char* OGRHStoreGetNextString(char* pszIter,
             }
             else if( ch == '"' )
             {
-                pszOut = *ppszOut = pszIter + 1;
+                pszOut = pszIter + 1;
+                *ppszOut = pszOut;
                 bInString = true;
             }
             else if( pszOut == NULL )
-                pszOut = *ppszOut = pszIter;
+            {
+                pszOut = pszIter;
+                *ppszOut = pszIter;
+            }
         }
     }
 
@@ -330,9 +336,8 @@ swq_expr_node *SWQGeneralEvaluator( swq_expr_node *node,
 
           case SWQ_IN:
           {
-              int i;
               poRet->int_value = 0;
-              for( i = 1; i < node->nSubExprCount; i++ )
+              for( int i = 1; i < node->nSubExprCount; i++ )
               {
                   if( sub_node_values[0]->float_value
                       == sub_node_values[i]->float_value )
@@ -391,7 +396,7 @@ swq_expr_node *SWQGeneralEvaluator( swq_expr_node *node,
           }
 
           default:
-            CPLAssert( FALSE );
+            CPLAssert( false );
             delete poRet;
             poRet = NULL;
             break;
@@ -531,7 +536,7 @@ swq_expr_node *SWQGeneralEvaluator( swq_expr_node *node,
             break;
 
           default:
-            CPLAssert( FALSE );
+            CPLAssert( false );
             delete poRet;
             poRet = NULL;
             break;
@@ -642,9 +647,8 @@ swq_expr_node *SWQGeneralEvaluator( swq_expr_node *node,
 
           case SWQ_IN:
           {
-              int i;
               poRet->int_value = 0;
-              for( i = 1; i < node->nSubExprCount; i++ )
+              for( int i = 1; i < node->nSubExprCount; i++ )
               {
                   if( strcasecmp(sub_node_values[0]->string_value,
                                  sub_node_values[i]->string_value) == 0 )
@@ -715,7 +719,6 @@ swq_expr_node *SWQGeneralEvaluator( swq_expr_node *node,
 
               int nSrcStrLen = (int)strlen(pszSrcStr);
 
-
               /* In SQL, the first character is at offset 1 */
               /* And 0 is considered as 1 */
               if (nOffset > 0)
@@ -758,7 +761,7 @@ swq_expr_node *SWQGeneralEvaluator( swq_expr_node *node,
           }
 
           default:
-            CPLAssert( FALSE );
+            CPLAssert( false );
             delete poRet;
             poRet = NULL;
             break;
@@ -1003,13 +1006,25 @@ swq_field_type SWQGeneralChecker( swq_expr_node *poNode,
             return SWQ_ERROR;
         SWQAutoPromoteIntegerToInteger64OrFloat( poNode );
         if( poNode->papoSubExpr[0]->field_type == SWQ_STRING )
-            eRetType = eArgType = SWQ_STRING;
+        {
+            eRetType = SWQ_STRING;
+            eArgType = SWQ_STRING;
+        }
         else if( poNode->papoSubExpr[0]->field_type == SWQ_FLOAT )
-            eRetType = eArgType = SWQ_FLOAT;
+        {
+            eRetType = SWQ_FLOAT;
+            eArgType = SWQ_FLOAT;
+        }
         else if( poNode->papoSubExpr[0]->field_type == SWQ_INTEGER64 )
-            eRetType = eArgType = SWQ_INTEGER64;
+        {
+            eRetType = SWQ_INTEGER64;
+            eArgType = SWQ_INTEGER64;
+        }
         else
-            eRetType = eArgType = SWQ_INTEGER;
+        {
+            eRetType = SWQ_INTEGER;
+            eArgType = SWQ_INTEGER;
+        }
         break;
 
       case SWQ_SUBTRACT:
@@ -1019,11 +1034,20 @@ swq_field_type SWQGeneralChecker( swq_expr_node *poNode,
             return SWQ_ERROR;
         SWQAutoPromoteIntegerToInteger64OrFloat( poNode );
         if( poNode->papoSubExpr[0]->field_type == SWQ_FLOAT )
-            eRetType = eArgType = SWQ_FLOAT;
+        {
+            eRetType = SWQ_FLOAT;
+            eArgType = SWQ_FLOAT;
+        }
         else if( poNode->papoSubExpr[0]->field_type == SWQ_INTEGER64 )
-            eRetType = eArgType = SWQ_INTEGER64;
+        {
+            eRetType = SWQ_INTEGER64;
+            eArgType = SWQ_INTEGER64;
+        }
         else
-            eRetType = eArgType = SWQ_INTEGER;
+        {
+            eRetType = SWQ_INTEGER;
+            eArgType = SWQ_INTEGER;
+        }
         break;
 
       case SWQ_CONCAT:
@@ -1310,7 +1334,7 @@ swq_expr_node *SWQCastEvaluator( swq_expr_node *node,
                 {
                     if( poSrcNode->geometry_value != NULL )
                     {
-                        char* pszWKT;
+                        char* pszWKT = NULL;
                         poSrcNode->geometry_value->exportToWkt(&pszWKT);
                         osRet = pszWKT;
                         CPLFree(pszWKT);

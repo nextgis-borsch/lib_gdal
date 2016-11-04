@@ -40,7 +40,7 @@ class OGRSEGUKOOABaseLayer : public OGRLayer
 {
   protected:
     OGRFeatureDefn*    poFeatureDefn;
-    int                bEOF;
+    bool               bEOF;
     int                nNextFID;
 
     virtual OGRFeature *       GetNextRawFeature() = 0;
@@ -73,8 +73,7 @@ class OGRUKOOAP190Layer : public OGRSEGUKOOABaseLayer
   public:
                         OGRUKOOAP190Layer(const char* pszFilename,
                                          VSILFILE* fp);
-                        ~OGRUKOOAP190Layer();
-
+                        virtual ~OGRUKOOAP190Layer();
 
     virtual void                ResetReading();
 };
@@ -94,11 +93,10 @@ class OGRSEGUKOOALineLayer : public OGRSEGUKOOABaseLayer
   public:
                         OGRSEGUKOOALineLayer(const char* pszFilename,
                                              OGRLayer *poBaseLayer);
-                        ~OGRSEGUKOOALineLayer();
+                        virtual ~OGRSEGUKOOALineLayer();
 
     virtual void                ResetReading();
 };
-
 
 /************************************************************************/
 /*                         OGRSEGP1Layer                                */
@@ -120,7 +118,7 @@ class OGRSEGP1Layer: public OGRSEGUKOOABaseLayer
                         OGRSEGP1Layer(const char* pszFilename,
                                       VSILFILE* fp,
                                       int nLatitudeCol);
-                        ~OGRSEGP1Layer();
+                        virtual ~OGRSEGP1Layer();
 
     virtual void                ResetReading();
 
@@ -142,7 +140,7 @@ class OGRSEGUKOOADataSource : public OGRDataSource
 
   public:
                         OGRSEGUKOOADataSource();
-                        ~OGRSEGUKOOADataSource();
+                        virtual ~OGRSEGUKOOADataSource();
 
     int                 Open( const char * pszFilename );
 

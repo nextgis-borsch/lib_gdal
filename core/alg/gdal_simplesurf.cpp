@@ -27,7 +27,7 @@
 
 #include "gdal_simplesurf.h"
 
-CPL_CVSID("$Id");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -248,7 +248,6 @@ GDALSimpleSURF::ExtractFeaturePoints(GDALIntegralImage *poImg,
     return poCollection;
 }
 
-
 double GDALSimpleSURF::GetEuclideanDistance(
     GDALFeaturePoint &firstPoint, GDALFeaturePoint &secondPoint)
 {
@@ -339,9 +338,9 @@ void GDALSimpleSURF::SetDescriptor(
 /**
  * Find corresponding points (equal points in two collections).
  *
- * @param poMatched Resulting collection for matched points
- * @param poFirstCollection Points on the first image
- * @param poSecondCollection Points on the second image
+ * @param poMatchPairs Resulting collection for matched points
+ * @param poFirstCollect Points on the first image
+ * @param poSecondCollect Points on the second image
  * @param dfThreshold Value from 0 to 1. Threshold affects to number of
  * matched points. If threshold is higher, amount of corresponding
  * points is larger, and vice versa
@@ -469,9 +468,9 @@ CPLErr GDALSimpleSURF::MatchFeaturePoints(
                             bestDist_2 = curDist;
                 }
 /* -------------------------------------------------------------------- */
-/*	    False matching pruning.                                         */
+/*      False matching pruning.                                         */
 /* If ratio bestDist to bestDist_2 greater than 0.8 =>                  */
-/* 		consider as false detection.                                    */
+/*     consider as false detection.                                     */
 /* Otherwise, add points as matched pair.                               */
 /*----------------------------------------------------------------------*/
         if (bestDist_2 > 0 && bestDist >= 0)
@@ -482,7 +481,6 @@ CPLErr GDALSimpleSURF::MatchFeaturePoints(
                 alreadyMatched[bestIndex] = true;
             }
     }
-
 
 /* -------------------------------------------------------------------- */
 /*      Pruning based on the provided threshold                         */

@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: jpipkakdataset.cpp 2008-10-01 nbarker $
  *
  * Project:  jpip read driver
  * Purpose:  GDAL bindings for JPIP.
@@ -35,6 +34,8 @@
 
 #include "gdal_frmts.h"
 #include "jpipkakdataset.h"
+
+CPL_CVSID("$Id$");
 
 /*
 ** The following are for testing premature stream termination support.
@@ -167,19 +168,20 @@ JPIPKAKRasterBand::JPIPKAKRasterBand( int nBandIn, int nDiscardLevelsIn,
 
     if( nDiscardLevels == 0 )
     {
-        int  nXSize = nRasterXSize, nYSize = nRasterYSize;
+        int nXSize = nRasterXSize;
+        int nYSize = nRasterYSize;
 
         for( int nDiscard = 1; nDiscard < nResCount; nDiscard++ )
         {
-            kdu_dims  dims;
 
-            nXSize = (nXSize+1) / 2;
-            nYSize = (nYSize+1) / 2;
+            nXSize = (nXSize + 1) / 2;
+            nYSize = (nYSize + 1) / 2;
 
             if( (nXSize+nYSize) < 128 || nXSize < 4 || nYSize < 4 )
                 continue; /* skip super reduced resolution layers */
 
             oCodeStream->apply_input_restrictions( 0, 0, nDiscard, 0, NULL );
+            kdu_dims dims;
             oCodeStream->get_dims( 0, dims );
 
             if( (dims.size.x == nXSize || dims.size.x == nXSize-1)
@@ -699,7 +701,6 @@ int JPIPKAKDataset::Initialize(const char* pszDatasetName, int bReinitializing )
 
         bYCC=TRUE;
         cod_in->get("Cycc", 0, 0, bYCC);
-
     }
     catch(...)
     {
@@ -826,7 +827,6 @@ int JPIPKAKDataset::Initialize(const char* pszDatasetName, int bReinitializing )
             // treat as cartesian, no geo metadata
             CPLError(CE_Warning, CPLE_AppDefined,
                      "Parsed metadata boxes from jpip stream, geographic metadata not found - is the server using placeholders for this data?" );
-
         }
     }
     catch(...)
@@ -1082,7 +1082,6 @@ int JPIPKAKDataset::ReadFromInput(GByte* pabyData, int nLen, int &bError )
     return res;
 }
 
-
 /************************************************************************/
 /*                          GetProjectionRef()                          */
 /************************************************************************/
@@ -1091,7 +1090,7 @@ const char *JPIPKAKDataset::GetProjectionRef()
 
 {
     if( pszProjection && *pszProjection )
-        return( pszProjection );
+        return pszProjection;
     else
         return GDALPamDataset::GetProjectionRef();
 }
@@ -1356,9 +1355,14 @@ JPIPKAKDataset::BeginAsyncReader(int xOff, int yOff,
         ario->pBuf = pBuf;
         ario->pAppBuf = pBuf;
 
-        ario->nAppPixelSpace = ario->nPixelSpace = nPixelSpace;
-        ario->nAppLineSpace = ario->nLineSpace = nLineSpace;
-        ario->nAppBandSpace = ario->nBandSpace = nBandSpace;
+        ario->nAppPixelSpace = nPixelSpace;
+        ario->nPixelSpace = nPixelSpace;
+
+        ario->nAppLineSpace = nLineSpace;
+        ario->nLineSpace = nLineSpace;
+
+        ario->nAppBandSpace = nBandSpace;
+        ario->nBandSpace = nBandSpace;
     }
 
     // parse options
@@ -1393,7 +1397,8 @@ JPIPKAKDataset::BeginAsyncReader(int xOff, int yOff,
         ario->nLevel = atoi(pszLevel);
     else
     {
-        int nRXSize = xSize, nRYSize = ySize;
+        int nRXSize = xSize;
+        int nRYSize = ySize;
         ario->nLevel = 0;
 
         while( ario->nLevel < nResLevels
@@ -1419,7 +1424,6 @@ void JPIPKAKDataset::EndAsyncReader(GDALAsyncReader *poARIO)
     delete poARIO;
 }
 
-
 /*****************************************/
 /*             Open()                    */
 /*****************************************/
@@ -1434,8 +1438,7 @@ GDALDataset *JPIPKAKDataset::Open(GDALOpenInfo * poOpenInfo)
         // using cpl_http for the connection
         if  (CPLHTTPEnabled() == TRUE)
         {
-            JPIPKAKDataset *poDS;
-            poDS = new JPIPKAKDataset();
+            JPIPKAKDataset *poDS = new JPIPKAKDataset();
             if (poDS->Initialize(poOpenInfo->pszFilename,FALSE))
             {
                 poDS->SetDescription( poOpenInfo->pszFilename );
@@ -1489,7 +1492,8 @@ void GDALRegister_JPIPKAK()
 JPIPKAKAsyncReader::JPIPKAKAsyncReader()
 {
     panBandMap = NULL;
-    pAppBuf = pBuf = NULL;
+    pAppBuf = NULL;
+    pBuf = NULL;
     nDataRead = 0;
 }
 
@@ -1909,7 +1913,6 @@ JPIPKAKAsyncReader::GetNextUpdatedRegion(double dfTimeout,
 
             poJDS->poDecompressor->finish();
             CPLReleaseMutex(poJDS->pGlobalMutex);
-
         }
         catch(...)
         {
@@ -1919,7 +1922,6 @@ JPIPKAKAsyncReader::GetNextUpdatedRegion(double dfTimeout,
             return GARIO_ERROR;
         }
     } // nBandsCompleted < nBandCount
-
 
 /* -------------------------------------------------------------------- */
 /*      If the application buffer is of a different type than our       */
@@ -2086,7 +2088,6 @@ static void JPIPWorkerFunc(void *req)
 
         if ((nEnd - nStart) > 0)
             nCurrentTransmissionLength = (int) MAX(bytes / ((1.0 * (nEnd - nStart)) / CLOCKS_PER_SEC), nMinimumTransmissionLength);
-
 
         CPLAcquireMutex(poJDS->pGlobalMutex, 100.0);
 

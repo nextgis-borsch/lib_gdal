@@ -116,7 +116,7 @@ static const char *Lookup(const char * const *table, size_t n, size_t index)
  * Using enumerated type instead of "ds" "dss" etc.  For speed considerations.
  *****************************************************************************
  */
-char *Print(const char *label, const char *varName, Prt_TYPE fmt, ...)
+char *Print(const char *label, const char *varName, int fmt, ...)
 {
    static char *buffer = NULL; /* Copy of message generated so far. */
    va_list ap;          /* pointer to variable argument list. */
@@ -828,7 +828,7 @@ static int PrintSect4 (grib_MetaData *meta, sChar f_unit)
                 sect4->upperLimit.value *
                 pow (10.0, -1 * sect4->upperLimit.factor), buffer);
          /* Intentionally fall through. */
-         // CPL_FALLTHROUGH
+         CPL_FALLTHROUGH
       case GS4_STATISTIC:
 /*         strftime (buffer, 100, "%m/%d/%Y %H:%M:%S UTC",
                    gmtime (&(sect4->validTime)));*/

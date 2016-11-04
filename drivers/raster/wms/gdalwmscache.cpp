@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  WMS Client Driver
  * Purpose:  Implementation of Dataset and RasterBand classes for WMS
@@ -30,47 +29,80 @@
 
 #include "wmsdriver.h"
 
-GDALWMSCache::GDALWMSCache() {
-    m_cache_path = "./gdalwmscache";
-    m_max_size = -1; // no limits
-}
+CPL_CVSID("$Id$");
 
-GDALWMSCache::~GDALWMSCache() {
-}
+GDALWMSCache::GDALWMSCache() :
+    m_cache_path("./gdalwmscache"),
+    // No need to do the default: m_postfix("");
+    m_cache_depth(2)
+{}
 
-CPLErr GDALWMSCache::Initialize(CPLXMLNode *config, CPLXMLNode *service_config) {
+GDALWMSCache::~GDALWMSCache() {}
+
+CPLErr GDALWMSCache::Initialize(CPLXMLNode *config) {
     const char *xmlcache_path = CPLGetXMLValue(config, "Path", NULL);
     const char *usercache_path = CPLGetConfigOption("GDAL_DEFAULT_WMS_CACHE_PATH", NULL);
     if(xmlcache_path)
     {
         m_cache_path = xmlcache_path;
     }
-    else if(usercache_path)
+    else
     {
-        m_cache_path = usercache_path;
-    }
-
-    for(CPLXMLNode* psChildNode = service_config->psChild; NULL != psChildNode;
-        psChildNode = psChildNode->psNext)
-    {
-        if( psChildNode->eType == CXT_Element
-            && EQUAL(psChildNode->pszValue,"ServerUrl")
-            && psChildNode->psChild != NULL )
+        if(usercache_path)
         {
-            if(m_key_name.empty ())
-                m_key_name = psChildNode->psChild->pszValue;
-            else
-            {
-                m_key_name += "+";
-                m_key_name += psChildNode->psChild->pszValue;
-            }
+            m_cache_path = usercache_path;
+        }
+        else
+        {
+            m_cache_path = "./gdalwmscache";
         }
     }
 
-    m_max_size = atoll (CPLGetXMLValue(config, "SizeLimit", "-1"));
-    // life time in seconds. Default 7 days
-    m_ttl = atof(CPLGetXMLValue(config, "LifeTime", "604800"));
+    const char *cache_depth = CPLGetXMLValue(config, "Depth", "2");
+    m_cache_depth = atoi(cache_depth);
+
+    const char *cache_extension = CPLGetXMLValue(config, "Extension", "");
+    m_postfix = cache_extension;
 
     return CE_None;
 }
 
+CPLErr GDALWMSCache::Write(const char *key, const CPLString &file_name) {
+    CPLString cache_file(KeyToCacheFile(key));
+    // printf("GDALWMSCache::Write(%s, %s) -> %s\n", key, file_name.c_str());
+    if (CPLCopyFile(cache_file.c_str(), file_name.c_str()) != CE_None) {
+        MakeDirs(cache_file.c_str());
+        CPLCopyFile(cache_file.c_str(), file_name.c_str());
+    }
+
+    return CE_None;
+}
+
+CPLErr GDALWMSCache::Read(const char *key, CPLString *file_name) {
+    CPLErr ret = CE_Failure;
+    CPLString cache_file(KeyToCacheFile(key));
+    VSILFILE* fp = VSIFOpenL(cache_file.c_str(), "rb");
+    if (fp != NULL)
+    {
+        VSIFCloseL(fp);
+        *file_name = cache_file;
+        ret = CE_None;
+    }
+    //    printf("GDALWMSCache::Read(...) -> %s\n", cache_file.c_str());
+
+    return ret;
+}
+
+CPLString GDALWMSCache::KeyToCacheFile(const char *key) {
+    CPLString hash(MD5String(key));
+    CPLString cache_file(m_cache_path);
+
+    if (cache_file.size() && (cache_file[cache_file.size() - 1] != '/')) cache_file.append(1, '/');
+    for (int i = 0; i < m_cache_depth; ++i) {
+        cache_file.append(1, hash[i]);
+        cache_file.append(1, '/');
+    }
+    cache_file.append(hash);
+    cache_file.append(m_postfix);
+    return cache_file;
+}

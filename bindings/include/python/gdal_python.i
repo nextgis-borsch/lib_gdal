@@ -952,7 +952,7 @@ def Translate(destName, srcDS, **kwargs):
           destName --- Output dataset name
           srcDS --- a Dataset object or a filename
         Keyword arguments are :
-          options --- return of gdal.InfoOptions(), string or array of strings
+          options --- return of gdal.TranslateOptions(), string or array of strings
           other keywords arguments of gdal.TranslateOptions()
         If options is provided as a gdal.TranslateOptions() object, other keywords are ignored. """
 
@@ -1125,7 +1125,7 @@ def Warp(destNameOrDestDS, srcDSOrSrcDSTab, **kwargs):
           destNameOrDestDS --- Output dataset name or object
           srcDSOrSrcDSTab --- an array of Dataset objects or filenames, or a Dataset object or a filename
         Keyword arguments are :
-          options --- return of gdal.InfoOptions(), string or array of strings
+          options --- return of gdal.WarpOptions(), string or array of strings
           other keywords arguments of gdal.WarpOptions()
         If options is provided as a gdal.WarpOptions() object, other keywords are ignored. """
 
@@ -1261,7 +1261,7 @@ def VectorTranslate(destNameOrDestDS, srcDS, **kwargs):
           destNameOrDestDS --- Output dataset name or object
           srcDS --- a Dataset object or a filename
         Keyword arguments are :
-          options --- return of gdal.InfoOptions(), string or array of strings
+          options --- return of gdal.VectorTranslateOptions(), string or array of strings
           other keywords arguments of gdal.VectorTranslateOptions()
         If options is provided as a gdal.VectorTranslateOptions() object, other keywords are ignored. """
 
@@ -1279,7 +1279,8 @@ def VectorTranslate(destNameOrDestDS, srcDS, **kwargs):
 
 def DEMProcessingOptions(options = [], colorFilename = None, format = 'GTiff',
               creationOptions = None, computeEdges = False, alg = 'Horn', band = 1,
-              zFactor = None, scale = None, azimuth = None, altitude = None, combined = False,
+              zFactor = None, scale = None, azimuth = None, altitude = None,
+              combined = False, multiDirectional = False,
               slopeFormat = None, trigonometric = False, zeroForFlat = False,
               callback = None, callback_data = None):
     """ Create a DEMProcessingOptions() object that can be passed to gdal.DEMProcessing()
@@ -1296,6 +1297,7 @@ def DEMProcessingOptions(options = [], colorFilename = None, format = 'GTiff',
           azimuth --- (hillshade only) azimuth of the light, in degrees. 0 if it comes from the top of the raster, 90 from the east, ... The default value, 315, should rarely be changed as it is the value generally used to generate shaded maps.
           altitude ---(hillshade only) altitude of the light, in degrees. 90 if the light comes from above the DEM, 0 if it is raking light.
           combined --- (hillshade only) whether to compute combined shading, a combination of slope and oblique shading.
+          multiDirectional --- (hillshade only) whether to compute multi-directional shading
           slopeformat --- (slope only) "degree" or "percent".
           trigonometric --- (aspect only) whether to return trigonometric angle instead of azimuth. Thus 0deg means East, 90deg North, 180deg West, 270deg South.
           zeroForFlat --- (aspect only) whether to return 0 for flat areas with slope=0, instead of -9999.
@@ -1327,6 +1329,8 @@ def DEMProcessingOptions(options = [], colorFilename = None, format = 'GTiff',
             new_options += ['-alt', str(altitude) ]
         if combined:
             new_options += ['-combined' ]
+        if multiDirectional:
+            new_options += ['-multidirectional' ]
         if slopeFormat == 'percent':
             new_options += ['-p' ]
         if trigonometric:
@@ -1343,7 +1347,7 @@ def DEMProcessing(destName, srcDS, processing, **kwargs):
           srcDS --- a Dataset object or a filename
           processing --- one of "hillshade", "slope", "aspect", "color-relief", "TRI", "TPI", "Roughness"
         Keyword arguments are :
-          options --- return of gdal.InfoOptions(), string or array of strings
+          options --- return of gdal.DEMProcessingOptions(), string or array of strings
           other keywords arguments of gdal.DEMProcessingOptions()
         If options is provided as a gdal.DEMProcessingOptions() object, other keywords are ignored. """
 
@@ -1412,7 +1416,7 @@ def Nearblack(destNameOrDestDS, srcDS, **kwargs):
           destNameOrDestDS --- Output dataset name or object
           srcDS --- a Dataset object or a filename
         Keyword arguments are :
-          options --- return of gdal.InfoOptions(), string or array of strings
+          options --- return of gdal.NearblackOptions(), string or array of strings
           other keywords arguments of gdal.NearblackOptions()
         If options is provided as a gdal.NearblackOptions() object, other keywords are ignored. """
 
@@ -1514,7 +1518,7 @@ def Grid(destName, srcDS, **kwargs):
           destName --- Output dataset name
           srcDS --- a Dataset object or a filename
         Keyword arguments are :
-          options --- return of gdal.InfoOptions(), string or array of strings
+          options --- return of gdal.GridOptions(), string or array of strings
           other keywords arguments of gdal.GridOptions()
         If options is provided as a gdal.GridOptions() object, other keywords are ignored. """
 
@@ -1528,6 +1532,7 @@ def Grid(destName, srcDS, **kwargs):
     return GridInternal(destName, srcDS, opts, callback, callback_data)
 
 def RasterizeOptions(options = [], format = None,
+         outputType = GDT_Unknown, 
          creationOptions = None, noData = None, initValues = None,
          outputBounds = None, outputSRS = None,
          width = None, height = None,
@@ -1540,6 +1545,7 @@ def RasterizeOptions(options = [], format = None,
         Keyword arguments are :
           options --- can be be an array of strings, a string or let empty and filled from other keywords.
           format --- output format ("GTiff", etc...)
+          outputType --- output type (gdal.GDT_Byte, etc...)
           creationOptions --- list of creation options
           outputBounds --- assigned output bounds: [minx, miny, maxx, maxy]
           outputSRS --- assigned output SRS
@@ -1570,6 +1576,8 @@ def RasterizeOptions(options = [], format = None,
         new_options = copy.copy(options)
         if format is not None:
             new_options += ['-of', format]
+        if outputType != GDT_Unknown:
+            new_options += ['-ot', GetDataTypeName(outputType) ]
         if creationOptions is not None:
             for opt in creationOptions:
                 new_options += ['-co', opt ]
@@ -1631,7 +1639,7 @@ def Rasterize(destNameOrDestDS, srcDS, **kwargs):
           destNameOrDestDS --- Output dataset name or object
           srcDS --- a Dataset object or a filename
         Keyword arguments are :
-          options --- return of gdal.InfoOptions(), string or array of strings
+          options --- return of gdal.RasterizeOptions(), string or array of strings
           other keywords arguments of gdal.RasterizeOptions()
         If options is provided as a gdal.RasterizeOptions() object, other keywords are ignored. """
 
@@ -1741,7 +1749,7 @@ def BuildVRT(destName, srcDSOrSrcDSTab, **kwargs):
           destName --- Output dataset name
           srcDSOrSrcDSTab --- an array of Dataset objects or filenames, or a Dataset object or a filename
         Keyword arguments are :
-          options --- return of gdal.InfoOptions(), string or array of strings
+          options --- return of gdal.BuildVRTOptions(), string or array of strings
           other keywords arguments of gdal.BuildVRTOptions()
         If options is provided as a gdal.BuildVRTOptions() object, other keywords are ignored. """
 

@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The Point geometry class.
@@ -54,49 +53,61 @@ OGRPoint::OGRPoint()
 
 /************************************************************************/
 /*                              OGRPoint()                              */
-/*                                                                      */
-/*      Initialize point to value.                                      */
 /************************************************************************/
 
-OGRPoint::OGRPoint( double xIn, double yIn, double zIn )
+/**
+ * \brief Create a point.
+ * @param xIn x
+ * @param yIn y
+ * @param zIn z
+ */
 
+OGRPoint::OGRPoint( double xIn, double yIn, double zIn ) :
+    x(xIn),
+    y(yIn),
+    z(zIn),
+    m(0.0)
 {
-    x = xIn;
-    y = yIn;
-    z = zIn;
-    m = 0.0;
     flags = OGR_G_NOT_EMPTY_POINT | OGR_G_3D;
 }
 
 /************************************************************************/
 /*                              OGRPoint()                              */
-/*                                                                      */
-/*      Initialize point to value.                                      */
 /************************************************************************/
 
-OGRPoint::OGRPoint( double xIn, double yIn )
+/**
+ * \brief Create a point.
+ * @param xIn x
+ * @param yIn y
+ */
 
+OGRPoint::OGRPoint( double xIn, double yIn ) :
+    x(xIn),
+    y(yIn),
+    z(0.0),
+    m(0.0)
 {
-    x = xIn;
-    y = yIn;
-    z = 0.0;
-    m = 0.0;
     flags = OGR_G_NOT_EMPTY_POINT;
 }
 
 /************************************************************************/
 /*                              OGRPoint()                              */
-/*                                                                      */
-/*      Initialize point to value.                                      */
 /************************************************************************/
 
-OGRPoint::OGRPoint( double xIn, double yIn, double zIn, double mIn )
+/**
+ * \brief Create a point.
+ * @param xIn x
+ * @param yIn y
+ * @param zIn z
+ * @param mIn m
+ */
 
+OGRPoint::OGRPoint( double xIn, double yIn, double zIn, double mIn ) :
+    x(xIn),
+    y(yIn),
+    z(zIn),
+    m(mIn)
 {
-    x = xIn;
-    y = yIn;
-    z = zIn;
-    m = mIn;
     flags = OGR_G_NOT_EMPTY_POINT | OGR_G_3D | OGR_G_MEASURED;
 }
 
@@ -183,7 +194,10 @@ OGRGeometry *OGRPoint::clone() const
 void OGRPoint::empty()
 
 {
-    x = y = z = m = 0.0;
+    x = 0.0;
+    y = 0.0;
+    z = 0.0;
+    m = 0.0;
     flags &= ~OGR_G_NOT_EMPTY_POINT;
 }
 
@@ -231,7 +245,8 @@ const char * OGRPoint::getGeometryName() const
 void OGRPoint::flattenTo2D()
 
 {
-    z = m = 0;
+    z = 0.0;
+    m = 0.0;
     flags &= ~OGR_G_3D;
     setMeasured(FALSE);
 }
@@ -451,9 +466,10 @@ OGRErr  OGRPoint::exportToWkb( OGRwkbByteOrder eByteOrder,
 OGRErr OGRPoint::importFromWkt( char ** ppszInput )
 
 {
-    int bHasZ = FALSE, bHasM = FALSE;
+    int bHasZ = FALSE;
+    int bHasM = FALSE;
     bool bIsEmpty = false;
-    OGRErr      eErr = importPreambuleFromWkt(ppszInput, &bHasZ, &bHasM, &bIsEmpty);
+    OGRErr eErr = importPreambuleFromWkt(ppszInput, &bHasZ, &bHasM, &bIsEmpty);
     flags = 0;
     if( eErr != OGRERR_NONE )
         return eErr;
@@ -473,13 +489,15 @@ OGRErr OGRPoint::importFromWkt( char ** ppszInput )
 /* -------------------------------------------------------------------- */
 /*      Read the point list which should consist of exactly one point.  */
 /* -------------------------------------------------------------------- */
-    OGRRawPoint         *poPoints = NULL;
-    double              *padfZ = NULL;
-    double              *padfM = NULL;
-    int                 nMaxPoint = 0, nPoints = 0;
-    int                 flagsFromInput = flags;
+    OGRRawPoint *poPoints = NULL;
+    double *padfZ = NULL;
+    double *padfM = NULL;
+    int nMaxPoint = 0;
+    int nPoints = 0;
+    int flagsFromInput = flags;
 
-    pszInput = OGRWktReadPointsM( pszInput, &poPoints, &padfZ, &padfM, &flagsFromInput,
+    pszInput = OGRWktReadPointsM( pszInput, &poPoints, &padfZ, &padfM,
+                                  &flagsFromInput,
                                   &nMaxPoint, &nPoints );
     if( pszInput == NULL || nPoints != 1 )
     {
@@ -585,8 +603,10 @@ OGRErr OGRPoint::exportToWkt( char ** ppszDstText,
 void OGRPoint::getEnvelope( OGREnvelope * psEnvelope ) const
 
 {
-    psEnvelope->MinX = psEnvelope->MaxX = getX();
-    psEnvelope->MinY = psEnvelope->MaxY = getY();
+    psEnvelope->MinX = getX();
+    psEnvelope->MaxX = getX();
+    psEnvelope->MinY = getY();
+    psEnvelope->MaxY = getY();
 }
 
 /************************************************************************/
@@ -596,11 +616,13 @@ void OGRPoint::getEnvelope( OGREnvelope * psEnvelope ) const
 void OGRPoint::getEnvelope( OGREnvelope3D * psEnvelope ) const
 
 {
-    psEnvelope->MinX = psEnvelope->MaxX = getX();
-    psEnvelope->MinY = psEnvelope->MaxY = getY();
-    psEnvelope->MinZ = psEnvelope->MaxZ = getZ();
+    psEnvelope->MinX = getX();
+    psEnvelope->MaxX = getX();
+    psEnvelope->MinY = getY();
+    psEnvelope->MaxY = getY();
+    psEnvelope->MinZ = getZ();
+    psEnvelope->MaxZ = getZ();
 }
-
 
 /**
  * \fn double OGRPoint::getX() const;
@@ -694,17 +716,13 @@ OGRBoolean OGRPoint::Equals( OGRGeometry * poOther ) const
 OGRErr OGRPoint::transform( OGRCoordinateTransformation *poCT )
 
 {
-#ifdef DISABLE_OGRGEOM_TRANSFORM
-    return OGRERR_FAILURE;
-#else
     if( poCT->Transform( 1, &x, &y, &z ) )
     {
         assignSpatialReference( poCT->GetTargetCS() );
         return OGRERR_NONE;
     }
-    else
-        return OGRERR_FAILURE;
-#endif
+
+    return OGRERR_FAILURE;
 }
 
 /************************************************************************/

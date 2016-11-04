@@ -38,7 +38,6 @@
 
 class OGRGPXDataSource;
 
-
 typedef enum
 {
     GPX_NONE,
@@ -128,7 +127,7 @@ class OGRGPXLayer : public OGRLayer
 #ifdef HAVE_EXPAT
     void               AddStrToSubElementValue(const char* pszStr);
 #endif
-    int                OGRGPX_WriteXMLExtension(const char* pszTagName,
+    bool               OGRGPX_WriteXMLExtension(const char* pszTagName,
                                                 const char* pszContent);
 
   public:

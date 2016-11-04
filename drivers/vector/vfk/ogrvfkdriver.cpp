@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRVFKDriver class.
@@ -37,9 +36,20 @@ CPL_CVSID("$Id$");
 
 static int OGRVFKDriverIdentify(GDALOpenInfo* poOpenInfo)
 {
-    return ( poOpenInfo->fpL != NULL &&
-             poOpenInfo->nHeaderBytes >= 2 &&
-             STARTS_WITH((const char*)poOpenInfo->pabyHeader, "&H") );
+    if( poOpenInfo->fpL == NULL )
+        return FALSE;
+
+    if( poOpenInfo->nHeaderBytes >= 2 &&
+        STARTS_WITH((const char*)poOpenInfo->pabyHeader, "&H") )
+        return TRUE;
+
+    /* valid datasource can be also SQLite DB previously created by
+       VFK driver, the real check is done by VFKReaderSQLite */
+    if ( poOpenInfo->nHeaderBytes >= 15 &&
+         STARTS_WITH((const char*)poOpenInfo->pabyHeader, "SQLite format 3") )
+        return GDAL_IDENTIFY_UNKNOWN;
+
+    return FALSE;
 }
 
 /*
@@ -48,22 +58,21 @@ static int OGRVFKDriverIdentify(GDALOpenInfo* poOpenInfo)
 */
 static GDALDataset *OGRVFKDriverOpen(GDALOpenInfo* poOpenInfo)
 {
-    OGRVFKDataSource *poDS;
-
     if( poOpenInfo->eAccess == GA_Update ||
         !OGRVFKDriverIdentify(poOpenInfo) )
         return NULL;
 
-    poDS = new OGRVFKDataSource();
+    OGRVFKDataSource *poDS = new OGRVFKDataSource();
 
-    if(!poDS->Open(poOpenInfo->pszFilename, TRUE) || poDS->GetLayerCount() == 0) {
+    if( !poDS->Open(poOpenInfo->pszFilename, TRUE) ||
+        poDS->GetLayerCount() == 0 )
+    {
         delete poDS;
         return NULL;
     }
     else
         return poDS;
 }
-
 
 /*!
   \brief Register VFK driver

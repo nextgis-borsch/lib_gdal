@@ -149,7 +149,7 @@ class OGRWAsPLayer : public OGRLayer
                                       VSILFILE * hFile,
                                       OGRSpatialReference * poSpatialRef );
 
-                        ~OGRWAsPLayer();
+                        virtual ~OGRWAsPLayer();
 
     virtual OGRFeatureDefn *    GetLayerDefn() { return poLayerDefn; }
 
@@ -188,7 +188,7 @@ class OGRWAsPDataSource : public OGRDataSource
                         /** @note takes ownership of hFile (i.e. responsibility for closing) */
                         OGRWAsPDataSource( const char * pszName,
                                            VSILFILE * hFile );
-                        ~OGRWAsPDataSource();
+                        virtual ~OGRWAsPDataSource();
 
     virtual const char *GetName() { return sFilename.c_str(); }
     virtual int         GetLayerCount() { return oLayer.get() ? 1 : 0; }
@@ -220,10 +220,9 @@ class OGRWAsPDriver : public OGRSFDriver
     virtual OGRDataSource       *CreateDataSource( const char *pszName,
                                                    char ** = NULL );
 
-    virtual OGRErr 	        DeleteDataSource (const char *pszName);
+    virtual OGRErr              DeleteDataSource (const char *pszName);
 
     virtual int                 TestCapability( const char * );
 };
-
 
 #endif /* ndef OGR_WASP_H_INCLUDED */

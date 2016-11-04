@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  SDTS Translator
  * Purpose:  GDALDataset driver for SDTS Raster translator.
@@ -82,7 +81,6 @@ class SDTSRasterBand : public GDALPamRasterBand
     virtual double GetNoDataValue( int *pbSuccess );
     virtual const char *GetUnitType();
 };
-
 
 /************************************************************************/
 /*                            ~SDTSDataset()                            */
@@ -236,7 +234,6 @@ GDALDataset *SDTSDataset::Open( GDALOpenInfo * poOpenInfo )
     if( oSRS.exportToWkt( &poDS->pszProjection ) != OGRERR_NONE )
         poDS->pszProjection = CPLStrdup("");
 
-
 /* -------------------------------------------------------------------- */
 /*      Get metadata from the IDEN file.                                */
 /* -------------------------------------------------------------------- */
@@ -246,7 +243,7 @@ GDALDataset *SDTSDataset::Open( GDALOpenInfo * poOpenInfo )
         DDFModule   oIDENFile;
         if( oIDENFile.Open( pszIDENFilePath ) )
         {
-            DDFRecord* poRecord;
+            DDFRecord* poRecord = NULL;
 
             while( (poRecord = oIDENFile.ReadRecord()) != NULL )
             {

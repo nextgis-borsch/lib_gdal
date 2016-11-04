@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  JPEG-2000
  * Purpose:  Implementation of the ISO/IEC 15444-1 standard based on Kakadu.
@@ -44,6 +43,7 @@
 
 #include "subfile_source.h"
 #include "vsil_target.h"
+#include <cmath>
 
 CPL_CVSID("$Id$");
 
@@ -116,7 +116,6 @@ class JP2KAKDataset : public GDALJP2AbstractDataset
                               GSpacing nPixelSpace, GSpacing nLineSpace,
                               GSpacing nBandSpace,
                               GDALRasterIOExtraArg* psExtraArg);
-
 
   public:
                 JP2KAKDataset();
@@ -324,33 +323,35 @@ JP2KAKRasterBand::JP2KAKRasterBand( int nBandIn, int nDiscardLevelsIn,
         int nBlueIndex = -1;
         int nLutIndex = 0;
         int nCSI = 0;
+
 #if KDU_MAJOR_VERSION > 7 || (KDU_MAJOR_VERSION == 7 && KDU_MINOR_VERSION >= 8)
         int nFMT = 0;
-#endif
-
         if( oJP2Channels.get_num_colours() == 3 )
         {
-#if KDU_MAJOR_VERSION > 7 || (KDU_MAJOR_VERSION == 7 && KDU_MINOR_VERSION >= 8)
             oJP2Channels.get_colour_mapping( 0, nRedIndex, nLutIndex, nCSI, nFMT );
             oJP2Channels.get_colour_mapping( 1, nGreenIndex, nLutIndex, nCSI, nFMT );
             oJP2Channels.get_colour_mapping( 2, nBlueIndex, nLutIndex, nCSI, nFMT );
-#else
-            oJP2Channels.get_colour_mapping( 0, nRedIndex, nLutIndex, nCSI );
-            oJP2Channels.get_colour_mapping( 1, nGreenIndex, nLutIndex, nCSI );
-            oJP2Channels.get_colour_mapping( 2, nBlueIndex, nLutIndex, nCSI );
-#endif
         }
         else
         {
-#if KDU_MAJOR_VERSION > 7 || (KDU_MAJOR_VERSION == 7 && KDU_MINOR_VERSION >= 8)
             oJP2Channels.get_colour_mapping( 0, nRedIndex, nLutIndex, nCSI, nFMT );
-#else
-            oJP2Channels.get_colour_mapping( 0, nRedIndex, nLutIndex, nCSI );
-#endif
             if( nBand == 1 )
                 eInterp = GCI_GrayIndex;
         }
-
+#else
+        if( oJP2Channels.get_num_colours() == 3 )
+        {
+            oJP2Channels.get_colour_mapping( 0, nRedIndex, nLutIndex, nCSI );
+            oJP2Channels.get_colour_mapping( 1, nGreenIndex, nLutIndex, nCSI );
+            oJP2Channels.get_colour_mapping( 2, nBlueIndex, nLutIndex, nCSI );
+        }
+        else
+        {
+            oJP2Channels.get_colour_mapping( 0, nRedIndex, nLutIndex, nCSI );
+            if( nBand == 1 )
+                eInterp = GCI_GrayIndex;
+        }
+#endif
         if( eInterp != GCI_Undefined )
             /* nothing to do */;
 
@@ -633,7 +634,7 @@ CPLErr JP2KAKRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
                     }
                     if( iOver == poBaseBand->GetOverviewCount() )
                     {
-                        CPLAssert( FALSE );
+                        CPLAssert( false );
                     }
                 }
 
@@ -1070,6 +1071,7 @@ GDALDataset *JP2KAKDataset::Open( GDALOpenInfo * poOpenInfo )
         }
         catch( ... )
         {
+            delete poRawInput;
             return NULL;
         }
     }
@@ -1170,6 +1172,7 @@ GDALDataset *JP2KAKDataset::Open( GDALOpenInfo * poOpenInfo )
                 CPLDebug( "JP2KAK", "Cannot read JP2 boxes" );
                 delete jp2_src;
                 delete family;
+                delete poRawInput;
                 return NULL;
             }
 
@@ -1368,13 +1371,14 @@ GDALDataset *JP2KAKDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Should we promote alpha channel to 8 bits ?                     */
 /* -------------------------------------------------------------------- */
-        poDS->bPromoteTo8Bit = (poDS->nBands == 4 &&
-                                poDS->oCodeStream.get_bit_depth(0) == 8 &&
-                                poDS->oCodeStream.get_bit_depth(1) == 8 &&
-                                poDS->oCodeStream.get_bit_depth(2) == 8 &&
-                                poDS->oCodeStream.get_bit_depth(3) == 1 &&
-                                CSLFetchBoolean(poOpenInfo->papszOpenOptions,
-                                                "1BIT_ALPHA_PROMOTION", TRUE));
+        poDS->bPromoteTo8Bit =
+            poDS->nBands == 4 &&
+            poDS->oCodeStream.get_bit_depth(0) == 8 &&
+            poDS->oCodeStream.get_bit_depth(1) == 8 &&
+            poDS->oCodeStream.get_bit_depth(2) == 8 &&
+            poDS->oCodeStream.get_bit_depth(3) == 1 &&
+            CPLFetchBool(poOpenInfo->papszOpenOptions,
+                         "1BIT_ALPHA_PROMOTION", true);
         if( poDS->bPromoteTo8Bit )
             CPLDebug( "JP2KAK",
                       "Fourth (alpha) band is promoted from 1 bit to 8 bit");
@@ -1447,8 +1451,8 @@ GDALDataset *JP2KAKDataset::Open( GDALOpenInfo * poOpenInfo )
         if( poOpenInfo->nOpenFlags & GDAL_OF_VECTOR )
         {
             poDS->LoadVectorLayers(
-                CSLFetchBoolean( poOpenInfo->papszOpenOptions,
-                                 "OPEN_REMOTE_GML", FALSE ) );
+                CPLFetchBool( poOpenInfo->papszOpenOptions,
+                              "OPEN_REMOTE_GML", false ) );
 
             // If file opened in vector-only mode and there's no vector,
             // return
@@ -1460,7 +1464,7 @@ GDALDataset *JP2KAKDataset::Open( GDALOpenInfo * poOpenInfo )
             }
         }
 
-        return( poDS );
+        return poDS;
     }
 
 /* -------------------------------------------------------------------- */
@@ -1657,7 +1661,6 @@ JP2KAKDataset::DirectRasterIO( GDALRWFlag /* eRWFlag */,
                       precisions[i] = 16;
                     }*/
                 }
-
             }
 
             if( eBufType == GDT_Byte )
@@ -2415,19 +2418,14 @@ JP2KAKCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 /* -------------------------------------------------------------------- */
 /*      Do we want a comment segment emitted?                           */
 /* -------------------------------------------------------------------- */
-    bool bComseg = false;
-
-    if( CSLFetchBoolean( papszOptions, "COMSEG", TRUE ) )
-        bComseg = true;
-    else
-        bComseg = false;
+    const bool bComseg = CPLFetchBool( papszOptions, "COMSEG", true );
 
 /* -------------------------------------------------------------------- */
 /*      Work out the precision.                                         */
 /* -------------------------------------------------------------------- */
     int nBits = 0;
 
-  if( CSLFetchNameValue( papszOptions, "NBITS" ) != NULL )
+    if( CSLFetchNameValue( papszOptions, "NBITS" ) != NULL )
         nBits = atoi(CSLFetchNameValue(papszOptions,"NBITS"));
     else if( poPrototypeBand->GetMetadataItem( "NBITS", "IMAGE_STRUCTURE" )
              != NULL )
@@ -2685,10 +2683,10 @@ JP2KAKCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
             if( dfXRes != 0.0 && dfYRes != 0.0 )
             {
                 if( fabs(dfXRes/dfYRes - 1.0) > 0.00001 )
-                    res.init( dfYRes/dfXRes );
+                    res.init( static_cast<float>(dfYRes/dfXRes) );
                 else
                     res.init( 1.0 );
-                res.set_resolution( dfXRes, true );
+                res.set_resolution( static_cast<float>(dfXRes), true );
             }
         }
     }
@@ -2747,7 +2745,7 @@ JP2KAKCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
                  || adfGeoTransform[2] != 0.0
                  || adfGeoTransform[3] != 0.0
                  || adfGeoTransform[4] != 0.0
-                 || ABS(adfGeoTransform[5]) != 1.0))
+                 || std::abs(adfGeoTransform[5]) != 1.0))
             || poSrcDS->GetGCPCount() > 0
             || poSrcDS->GetMetadata("RPC") != NULL) )
     {
@@ -2771,7 +2769,7 @@ JP2KAKCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
         oJP2MD.bPixelIsPoint =
             pszAreaOrPoint != NULL && EQUAL(pszAreaOrPoint, GDALMD_AOP_POINT);
 
-        if( CSLFetchBoolean( papszOptions, "GMLJP2", TRUE ) )
+        if( CPLFetchBool( papszOptions, "GMLJP2", true ) )
         {
             const char* pszGMLJP2V2Def =
                 CSLFetchNameValue( papszOptions, "GMLJP2V2_DEF" );
@@ -2783,7 +2781,7 @@ JP2KAKCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
             else
                 JP2KAKWriteBox( &jp2_out, oJP2MD.CreateGMLJP2(nXSize,nYSize) );
         }
-        if( CSLFetchBoolean( papszOptions, "GeoJP2", TRUE ) )
+        if( CPLFetchBool( papszOptions, "GeoJP2", true ) )
             JP2KAKWriteBox( &jp2_out, oJP2MD.CreateJP2GeoTIFF() );
     }
 
@@ -2820,7 +2818,7 @@ JP2KAKCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 /* -------------------------------------------------------------------- */
     double dfPixelsDone = 0.0;
     const double dfPixelsTotal = nXSize * static_cast<double>( nYSize );
-    const int bFlushEnabled = CSLFetchBoolean( papszOptions, "FLUSH", TRUE );
+    const bool bFlushEnabled = CPLFetchBool( papszOptions, "FLUSH", true );
 
     for( int iTileYOff = 0; iTileYOff < nYSize; iTileYOff += nTileYSize )
     {
@@ -2944,6 +2942,7 @@ void GDALRegister_JP2KAK()
 "<OpenOptionList>"
 "   <Option name='1BIT_ALPHA_PROMOTION' type='boolean' description='Whether a 1-bit alpha channel should be promoted to 8-bit' default='YES'/>"
 "   <Option name='OPEN_REMOTE_GML' type='boolean' description='Whether to load remote vector layers referenced by a link in a GMLJP2 v2 box' default='NO'/>"
+"   <Option name='GEOREF_SOURCES' type='string' description='Comma separated list made with values INTERNAL/GMLJP2/GEOJP2/WORLDFILE/PAM/NONE that describe the priority order for georeferencing' default='PAM,GEOJP2,GMLJP2,WORLDFILE'/>"
 "</OpenOptionList>" );
 
     poDriver->SetMetadataItem( GDAL_DMD_CREATIONOPTIONLIST,

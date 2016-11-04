@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of the GDAL PAM Proxy database interface.
@@ -268,7 +267,6 @@ void GDALPamProxyDB::SaveDB()
     if( hLock )
         CPLUnlockFile( hLock );
 }
-
 
 /************************************************************************/
 /*                            InitProxyDB()                             */

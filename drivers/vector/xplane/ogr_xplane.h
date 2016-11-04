@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_xplane.h $
+ * $Id$
  *
  * Project:  X-Plane aeronautical data reader
  * Purpose:  Definition of classes for OGR X-Plane aeronautical data driver.
@@ -78,7 +78,6 @@ class OGRXPlaneLayer : public OGRLayer
     virtual int               TestCapability( const char * pszCap );
 };
 
-
 /************************************************************************/
 /*                           OGRXPlaneDataSource                        */
 /************************************************************************/
@@ -91,14 +90,14 @@ class OGRXPlaneDataSource : public OGRDataSource
     int                 nLayers;
 
     OGRXPlaneReader*    poReader;
-    int                 bReadWholeFile;
-    int                 bWholeFiledReadingDone;
+    bool                bReadWholeFile;
+    bool                bWholeFiledReadingDone;
 
     void                Reset();
 
   public:
                         OGRXPlaneDataSource();
-                        ~OGRXPlaneDataSource();
+                        virtual ~OGRXPlaneDataSource();
 
     int                 Open( const char * pszFilename, int bReadWholeFile = TRUE );
 
@@ -126,6 +125,5 @@ class OGRXPlaneDriver : public OGRSFDriver
 
     virtual int         TestCapability( const char * pszCap );
 };
-
 
 #endif /* ndef OGR_XPLANE_H_INCLUDED */

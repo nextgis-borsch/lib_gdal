@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  GDAL Utilities
  * Purpose:  Convert nearly black or nearly white border to exact black/white.
@@ -33,6 +32,8 @@
 #include "cpl_string.h"
 #include <vector>
 #include "gdal_utils_priv.h"
+
+#include <algorithm>
 
 CPL_CVSID("$Id$");
 
@@ -483,7 +484,6 @@ GDALDatasetH CPL_DLL GDALNearblack( const char *pszDest, GDALDatasetH hDstDS,
             }
         }
 
-
         if( !(psOptions->pfnProgress( 0.5 + 0.5 * (nYSize-iLine) / (double) nYSize, NULL, psOptions->pProgressData )) )
         {
             if( bCloseOutDSOnError )
@@ -525,7 +525,7 @@ static void ProcessLine( GByte *pabyLine, GByte *pabyMask, int iStart,
 
     if( bDoVerticalCheck )
     {
-        int nXSize = MAX(iStart+1,iEnd+1);
+        const int nXSize = std::max(iStart + 1, iEnd + 1);
 
         for( i = 0; i < nXSize; i++ )
         {
@@ -694,9 +694,7 @@ static void ProcessLine( GByte *pabyLine, GByte *pabyMask, int iStart,
             }
         }
     }
-
 }
-
 
 /************************************************************************/
 /*                            IsInt()                                   */

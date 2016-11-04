@@ -35,32 +35,33 @@
 #include <map>
 #include <sstream>
 
+CPL_CVSID("$Id$");
+
 /************************************************************************/
 /*                            OGRWAsPLayer()                             */
 /************************************************************************/
 
 OGRWAsPLayer::OGRWAsPLayer( const char * pszName,
                             VSILFILE * hFileHandle,
-                            OGRSpatialReference * poSpatialRef )
-    : bMerge( false )
-    , iFeatureCount(0)
-    , sName( pszName )
-    , hFile( hFileHandle )
-    , iFirstFieldIdx( 0 )
-    , iSecondFieldIdx( 1 )
-    , iGeomFieldIdx( 0 )
-    , poLayerDefn( new OGRFeatureDefn( pszName ) )
-    , poSpatialReference( poSpatialRef )
-    , iOffsetFeatureBegin( VSIFTellL( hFile ) )
-    , eMode( READ_ONLY )
-
+                            OGRSpatialReference * poSpatialRef ) :
+    bMerge(false),
+    iFeatureCount(0),
+    sName(pszName),
+    hFile(hFileHandle),
+    iFirstFieldIdx(0),
+    iSecondFieldIdx(1),
+    iGeomFieldIdx(0),
+    poLayerDefn(new OGRFeatureDefn(pszName)),
+    poSpatialReference(poSpatialRef),
+    iOffsetFeatureBegin(VSIFTellL(hFile)),
+    eMode(READ_ONLY)
 {
     SetDescription( poLayerDefn->GetName() );
     poLayerDefn->Reference();
     poLayerDefn->SetGeomType( wkbLineString25D );
     poLayerDefn->GetGeomFieldDefn(0)->SetType( wkbLineString25D );
     poLayerDefn->GetGeomFieldDefn(0)->SetSpatialRef( poSpatialReference );
-    if (poSpatialReference) poSpatialReference->Reference();
+    if( poSpatialReference ) poSpatialReference->Reference();
 }
 
 OGRWAsPLayer::OGRWAsPLayer( const char * pszName,
@@ -72,24 +73,24 @@ OGRWAsPLayer::OGRWAsPLayer( const char * pszName,
                             bool bMergeParam,
                             double * pdfToleranceParam,
                             double * pdfAdjacentPointToleranceParam,
-                            double * pdfPointToCircleRadiusParam )
-    : bMerge( bMergeParam )
-    , iFeatureCount(0)
-    , sName( pszName )
-    , hFile( hFileHandle )
-    , sFirstField( sFirstFieldParam )
-    , sSecondField( sSecondFieldParam )
-    , sGeomField( sGeomFieldParam )
-    , iFirstFieldIdx( -1 )
-    , iSecondFieldIdx( -1 )
-    , iGeomFieldIdx( sGeomFieldParam.empty() ? 0 : -1 )
-    , poLayerDefn( new OGRFeatureDefn( pszName ) )
-    , poSpatialReference( poSpatialRef )
-    , iOffsetFeatureBegin( VSIFTellL( hFile ) ) /* avoids coverity warning */
-    , eMode( WRITE_ONLY )
-    , pdfTolerance( pdfToleranceParam )
-    , pdfAdjacentPointTolerance( pdfAdjacentPointToleranceParam )
-    , pdfPointToCircleRadius( pdfPointToCircleRadiusParam )
+                            double * pdfPointToCircleRadiusParam ) :
+    bMerge(bMergeParam),
+    iFeatureCount(0),
+    sName(pszName),
+    hFile(hFileHandle),
+    sFirstField(sFirstFieldParam),
+    sSecondField(sSecondFieldParam),
+    sGeomField(sGeomFieldParam),
+    iFirstFieldIdx(-1),
+    iSecondFieldIdx(-1),
+    iGeomFieldIdx(sGeomFieldParam.empty() ? 0 : -1),
+    poLayerDefn(new OGRFeatureDefn(pszName)),
+    poSpatialReference(poSpatialRef),
+    iOffsetFeatureBegin(VSIFTellL(hFile)),  // Avoids coverity warning.
+    eMode(WRITE_ONLY),
+    pdfTolerance(pdfToleranceParam),
+    pdfAdjacentPointTolerance(pdfAdjacentPointToleranceParam),
+    pdfPointToCircleRadius(pdfPointToCircleRadiusParam)
 {
     poLayerDefn->Reference();
     if (poSpatialReference) poSpatialReference->Reference();
@@ -362,7 +363,6 @@ OGRLineString * OGRWAsPLayer::Simplify( const OGRLineString & line ) const
                         cy + radius*sin((v%nbPt)*(2*M_PI/nbPt)) );
             }
         }
-
     }
 
     return poLine.release();
@@ -422,11 +422,9 @@ OGRErr OGRWAsPLayer::WriteElevation( OGRGeometry * poGeom, const double & dfZ )
     return OGRERR_FAILURE; /* avoid visual warning */
 }
 
-
 /************************************************************************/
 /*                            WriteRoughness()                          */
 /************************************************************************/
-
 
 OGRErr OGRWAsPLayer::WriteRoughness( OGRPolygon * poGeom, const double & dfZ )
 
@@ -496,7 +494,7 @@ OGRErr OGRWAsPLayer::WriteRoughness( OGRPolygon * poGeom, const double & dfZ )
                             OGREnvelope oErrorRegion = oZones[i].oEnvelope;
                             oErrorRegion.Intersect( oEnvelope );
                             CPLError(CE_Failure, CPLE_NotSupported,
-                                    "Overlaping polygons in rectangle (%.16g %.16g, %.16g %.16g))",
+                                    "Overlapping polygons in rectangle (%.16g %.16g, %.16g %.16g))",
                                     oErrorRegion.MinX,
                                     oErrorRegion.MinY,
                                     oErrorRegion.MaxX,
@@ -516,7 +514,7 @@ OGRErr OGRWAsPLayer::WriteRoughness( OGRPolygon * poGeom, const double & dfZ )
                             OGREnvelope oErrorRegion = oZones[i].oEnvelope;
                             oErrorRegion.Intersect( oEnvelope );
                             CPLError(CE_Failure, CPLE_NotSupported,
-                                    "Overlaping polygons in rectangle (%.16g %.16g, %.16g %.16g))",
+                                    "Overlapping polygons in rectangle (%.16g %.16g, %.16g %.16g))",
                                     oErrorRegion.MinX,
                                     oErrorRegion.MinY,
                                     oErrorRegion.MaxX,
@@ -635,14 +633,13 @@ OGRErr OGRWAsPLayer::ICreateFeature( OGRFeature * poFeature )
     if ( !geom ) return OGRERR_NONE; /* null geom, nothing to do */
 
     const OGRwkbGeometryType geomType = geom->getGeometryType();
-    const double bPolygon = (geomType == wkbPolygon)
+    const bool bPolygon = (geomType == wkbPolygon)
                          || (geomType == wkbPolygon25D)
                          || (geomType == wkbMultiPolygon)
                          || (geomType == wkbMultiPolygon25D);
     const bool bRoughness = (-1 != iSecondFieldIdx) || bPolygon ;
 
-
-    double z1;
+    double z1 = 0.0;
     if ( -1 != iFirstFieldIdx )
     {
         if (!poFeature->IsFieldSet(iFirstFieldIdx))
@@ -665,7 +662,7 @@ OGRErr OGRWAsPLayer::ICreateFeature( OGRFeature * poFeature )
         z1 = AvgZ( geom );
     }
 
-    double z2;
+    double z2 = 0.0;
     if ( -1 != iSecondFieldIdx )
     {
         if (!poFeature->IsFieldSet(iSecondFieldIdx))
@@ -681,7 +678,9 @@ OGRErr OGRWAsPLayer::ICreateFeature( OGRFeature * poFeature )
         return OGRERR_FAILURE;
     }
 
-    return bRoughness ? WriteRoughness( geom, z1, z2 ) : WriteElevation( geom, z1 );
+    return bRoughness
+        ? WriteRoughness( geom, z1, z2 )
+        : WriteElevation( geom, z1 );
 }
 
 /************************************************************************/
@@ -720,7 +719,6 @@ OGRErr OGRWAsPLayer::CreateGeomField( OGRGeomFieldDefn *poGeomFieldIn,
     return OGRERR_NONE;
 }
 
-
 /************************************************************************/
 /*                           GetNextFeature()                           */
 /************************************************************************/
@@ -733,13 +731,11 @@ OGRFeature *OGRWAsPLayer::GetNextFeature()
         return NULL;
     }
 
-    OGRFeature  *poFeature;
-
     GetLayerDefn();
 
     while( true )
     {
-        poFeature = GetNextRawFeature();
+        OGRFeature *poFeature = GetNextRawFeature();
         if (poFeature == NULL)
             return NULL;
 
@@ -838,7 +834,6 @@ void OGRWAsPLayer::ResetReading()
     VSIFSeekL( hFile, iOffsetFeatureBegin, SEEK_SET );
 }
 
-
 /************************************************************************/
 /*                           AvgZ()                                     */
 /************************************************************************/
@@ -890,8 +885,6 @@ double OGRWAsPLayer::AvgZ( OGRGeometry * poGeom )
     }
     return 0; /* avoid warning */
 }
-
-
 
 /************************************************************************/
 /*                           DouglasPeucker()                           */

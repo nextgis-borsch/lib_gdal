@@ -33,8 +33,6 @@
 #include "ogrsf_frmts.h"
 #include "ili1reader.h"
 
-
-
 class OGRILI1DataSource;
 
 /************************************************************************/
@@ -109,7 +107,7 @@ class OGRILI1DataSource : public OGRDataSource
 
   public:
                 OGRILI1DataSource();
-               ~OGRILI1DataSource();
+               virtual ~OGRILI1DataSource();
 
     int         Open( const char *, char** papszOpenOptions, int bTestOpen );
     int         Create( const char *pszFile, char **papszOptions );

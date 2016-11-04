@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  GDAL Core
  * Purpose:  Color table implementation.
@@ -64,7 +63,6 @@ GDALColorTableH CPL_STDCALL GDALCreateColorTable( GDALPaletteInterp eInterp )
     return reinterpret_cast<GDALColorTableH>( new GDALColorTable( eInterp ) );
 }
 
-
 /************************************************************************/
 /*                          ~GDALColorTable()                           */
 /************************************************************************/
@@ -119,7 +117,6 @@ const GDALColorEntry *GDALColorTable::GetColorEntry( int i ) const
 /*                         GDALGetColorEntry()                          */
 /************************************************************************/
 
-
 /**
  * \brief Fetch a color entry from table.
  *
@@ -133,7 +130,6 @@ GDALGetColorEntry( GDALColorTableH hTable, int i )
 
     return reinterpret_cast<GDALColorTable *>( hTable )->GetColorEntry( i );
 }
-
 
 /************************************************************************/
 /*                         GetColorEntryAsRGB()                         */
@@ -215,8 +211,7 @@ void GDALColorTable::SetColorEntry( int i, const GDALColorEntry * poEntry )
     {
         if( i >= static_cast<int>(aoEntries.size()) )
         {
-            GDALColorEntry oBlack;
-            oBlack.c1 = oBlack.c2 = oBlack.c3 = oBlack.c4 = 0;
+            GDALColorEntry oBlack = { 0, 0, 0, 0 };
             aoEntries.resize(i+1, oBlack);
         }
 
@@ -247,7 +242,6 @@ void CPL_STDCALL GDALSetColorEntry( GDALColorTableH hTable, int i,
     reinterpret_cast<GDALColorTable *>( hTable )->SetColorEntry( i, poEntry );
 }
 
-
 /************************************************************************/
 /*                               Clone()                                */
 /************************************************************************/
@@ -261,7 +255,7 @@ void CPL_STDCALL GDALSetColorEntry( GDALColorTableH hTable, int i,
 GDALColorTable *GDALColorTable::Clone() const
 
 {
-	return new GDALColorTable(*this);
+    return new GDALColorTable(*this);
 }
 
 /************************************************************************/

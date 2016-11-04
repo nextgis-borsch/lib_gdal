@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  APP ENVISAT Support
  * Purpose:  Reader for ENVISAT format image data.
@@ -68,28 +67,26 @@ class MerisL2FlagBand : public GDALPamRasterBand
 /*                        MerisL2FlagBand()                       */
 /************************************************************************/
 MerisL2FlagBand::MerisL2FlagBand( GDALDataset *poDSIn, int nBandIn,
-                                  VSILFILE* fpImageIn, vsi_l_offset nImgOffsetIn,
+                                  VSILFILE* fpImageIn,
+                                  vsi_l_offset nImgOffsetIn,
                                   int nPrefixBytesIn ) :
-    nBytePerPixel(3)
+    nImgOffset(nImgOffsetIn),
+    nPrefixBytes(nPrefixBytesIn),
+    nBytePerPixel(3),
+    nRecordSize(nPrefixBytesIn + nBlockXSize * nBytePerPixel),
+    nDataSize(nBlockXSize * nBytePerPixel),
+    pReadBuf(static_cast<GByte *>(CPLMalloc(nRecordSize)))
 {
-    this->poDS = poDSIn;
-    this->nBand = nBandIn;
+    poDS = poDSIn;
+    nBand = nBandIn;
 
-    this->fpImage = fpImageIn;
-    this->nImgOffset = nImgOffsetIn;
-    this->nPrefixBytes = nPrefixBytesIn;
+    fpImage = fpImageIn;
 
     eDataType = GDT_UInt32;
 
     nBlockXSize = poDS->GetRasterXSize();
     nBlockYSize = 1;
-
-    nDataSize = nBlockXSize * nBytePerPixel;
-    nRecordSize = nPrefixBytes + nDataSize;
-
-    pReadBuf = (GByte *) CPLMalloc( nRecordSize );
 }
-
 
 /************************************************************************/
 /*                        ~MerisL2FlagBand()                       */
@@ -148,17 +145,16 @@ CPLErr MerisL2FlagBand::IReadBlock( CPL_UNUSED int nBlockXOff,
     return CE_None;
 }
 
-
 /************************************************************************/
 /* ==================================================================== */
-/*				EnvisatDataset				*/
+/*                              EnvisatDataset                          */
 /* ==================================================================== */
 /************************************************************************/
 
 class EnvisatDataset : public RawDataset
 {
     EnvisatFile *hEnvisatFile;
-    VSILFILE	*fpImage;
+    VSILFILE    *fpImage;
 
     int         nGCPCount;
     GDAL_GCP    *pasGCPList;
@@ -170,13 +166,13 @@ class EnvisatDataset : public RawDataset
 
     void        UnwrapGCPs();
 
-    void	CollectMetadata( EnvisatFile_HeaderFlag );
+    void        CollectMetadata( EnvisatFile_HeaderFlag );
     void        CollectDSDMetadata();
     void        CollectADSMetadata();
 
   public:
-    		EnvisatDataset();
-    	        ~EnvisatDataset();
+                EnvisatDataset();
+    virtual ~EnvisatDataset();
 
     virtual int    GetGCPCount();
     virtual const char *GetGCPProjection();
@@ -184,18 +180,17 @@ class EnvisatDataset : public RawDataset
     virtual char      **GetMetadataDomainList();
     virtual char **GetMetadata( const char * pszDomain );
 
-
     static GDALDataset *Open( GDALOpenInfo * );
 };
 
 /************************************************************************/
 /* ==================================================================== */
-/*				EnvisatDataset				*/
+/*                              EnvisatDataset                          */
 /* ==================================================================== */
 /************************************************************************/
 
 /************************************************************************/
-/*                            EnvisatDataset()                             */
+/*                            EnvisatDataset()                          */
 /************************************************************************/
 
 EnvisatDataset::EnvisatDataset() :
@@ -204,11 +199,10 @@ EnvisatDataset::EnvisatDataset() :
     nGCPCount(0),
     pasGCPList(NULL),
     papszTempMD(NULL)
-{
-}
+{}
 
 /************************************************************************/
-/*                            ~EnvisatDataset()                            */
+/*                            ~EnvisatDataset()                         */
 /************************************************************************/
 
 EnvisatDataset::~EnvisatDataset()
@@ -301,11 +295,12 @@ void EnvisatDataset::ScanForGCPs_ASAR()
         return;
 
 /* -------------------------------------------------------------------- */
-/*      Collect the first GCP set from each record.			*/
+/*      Collect the first GCP set from each record.                     */
 /* -------------------------------------------------------------------- */
-    GByte	abyRecord[521];
-    int  	nRange=0, nRangeOffset=0;
-    GUInt32 	unValue;
+    GByte abyRecord[521];
+    int nRange = 0;
+    int nRangeOffset = 0;
+    GUInt32 unValue;
 
     nGCPCount = 0;
     pasGCPList = (GDAL_GCP *) CPLCalloc(sizeof(GDAL_GCP),(nNumDSR+1) * 11);
@@ -441,7 +436,7 @@ void EnvisatDataset::ScanForGCPs_MERIS()
 
     for( ; true; nMDSIndex++ )
     {
-        char *pszDSType;
+        char *pszDSType = NULL;
         if( EnvisatFile_GetDatasetInfo( hEnvisatFile, nMDSIndex,
             NULL, &pszDSType, NULL, NULL, NULL, NULL, NULL ) == FAILURE )
         {
@@ -453,7 +448,7 @@ void EnvisatDataset::ScanForGCPs_MERIS()
     }
 
 /* -------------------------------------------------------------------- */
-/*      Get subset of TP ADS records matching the MDS records	*/
+/*      Get subset of TP ADS records matching the MDS records           */
 /* -------------------------------------------------------------------- */
 
     /* get the MDS line sampling time interval */
@@ -511,10 +506,10 @@ void EnvisatDataset::ScanForGCPs_MERIS()
     }
 
 /* -------------------------------------------------------------------- */
-/*      Collect the first GCP set from each record.			*/
+/*      Collect the first GCP set from each record.                     */
 /* -------------------------------------------------------------------- */
 
-    GByte	*pabyRecord = (GByte *) CPLMalloc(nDSRSize-13);
+    GByte *pabyRecord = (GByte *) CPLMalloc(nDSRSize-13);
 
     GUInt32 *tpLat = ((GUInt32*)pabyRecord) + nTPPerLine*0 ; /* latitude */
     GUInt32 *tpLon = ((GUInt32*)pabyRecord) + nTPPerLine*1 ; /* longitude */
@@ -667,7 +662,7 @@ char **EnvisatDataset::GetMetadata( const char * pszDomain )
 void EnvisatDataset::CollectDSDMetadata()
 
 {
-    char	*pszDSName, *pszFilename;
+    char *pszDSName, *pszFilename;
 
     for( int iDSD = 0;
          EnvisatFile_GetDatasetInfo( hEnvisatFile, iDSD, &pszDSName, NULL,
@@ -853,7 +848,7 @@ GDALDataset *EnvisatDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Try opening the dataset.                                        */
 /* -------------------------------------------------------------------- */
-    EnvisatFile	*hEnvisatFile;
+    EnvisatFile *hEnvisatFile = NULL;
     if( EnvisatFile_Open( &hEnvisatFile, poOpenInfo->pszFilename, "r" )
         == FAILURE )
         return NULL;
@@ -863,7 +858,7 @@ GDALDataset *EnvisatDataset::Open( GDALOpenInfo * poOpenInfo )
 /*      raster band.                                                    */
 /* -------------------------------------------------------------------- */
     int         dsr_size, num_dsr, ds_offset;
-    char        *pszDSType;
+    char        *pszDSType = NULL;
 
     int ds_index = 0;
     for( ; true; ds_index++ )
@@ -996,7 +991,7 @@ GDALDataset *EnvisatDataset::Open( GDALOpenInfo * poOpenInfo )
 /*      Scan for all datasets matching the reference dataset.           */
 /* -------------------------------------------------------------------- */
     int num_dsr2, dsr_size2, iBand = 0;
-    const char *pszDSName;
+    const char *pszDSName = NULL;
     char szBandName[128];
     bool bMiltiChannel;
 
@@ -1138,7 +1133,7 @@ GDALDataset *EnvisatDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
 
-    return( poDS );
+    return poDS;
 }
 
 /************************************************************************/

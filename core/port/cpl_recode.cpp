@@ -1,5 +1,4 @@
 /**********************************************************************
- * $Id$
  *
  * Name:     cpl_recode.cpp
  * Project:  CPL - Common Portability Library
@@ -336,7 +335,6 @@ void CPLClearRecodeWarningFlags()
 #endif
     CPLClearRecodeStubWarningFlags();
 }
-
 
 /************************************************************************/
 /*                         CPLStrlenUTF8()                              */

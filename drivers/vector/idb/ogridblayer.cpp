@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRIDBLayer class, code shared between
@@ -217,7 +216,6 @@ CPLErr OGRIDBLayer::BuildFeatureDefn( const char *pszLayerName,
     return CE_None;
 }
 
-
 /************************************************************************/
 /*                            ResetReading()                            */
 /************************************************************************/
@@ -329,7 +327,6 @@ OGRFeature *OGRIDBLayer::GetNextRawFeature()
             }
 
             v->Release();
-
 
             if ( eErr != OGRERR_NONE )
             {

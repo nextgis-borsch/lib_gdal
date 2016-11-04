@@ -67,12 +67,12 @@
 #define INT8ARRAYOID            1016
 #define FLOAT4ARRAYOID          1021
 #define FLOAT8ARRAYOID          1022
-#define BPCHAROID		1042
-#define VARCHAROID		1043
-#define DATEOID			1082
-#define TIMEOID			1083
-#define TIMESTAMPOID	        1114
-#define TIMESTAMPTZOID	        1184
+#define BPCHAROID               1042
+#define VARCHAROID              1043
+#define DATEOID                 1082
+#define TIMEOID                 1083
+#define TIMESTAMPOID            1114
+#define TIMESTAMPTZOID          1184
 #define NUMERICOID              1700
 #define NUMERICARRAYOID         1231
 
@@ -249,9 +249,9 @@ class OGRPGTableLayer : public OGRPGLayer
 {
     int                 bUpdateAccess;
 
-    void                BuildWhere(void);
-    CPLString           BuildFields(void);
-    void                BuildFullQueryStatement(void);
+    void                BuildWhere();
+    CPLString           BuildFields();
+    void                BuildFullQueryStatement();
 
     char               *pszTableName;
     char               *pszSchemaName;
@@ -279,8 +279,8 @@ class OGRPGTableLayer : public OGRPGLayer
     int                 bFIDColumnInCopyFields;
     int                 bFirstInsertion;
 
-    OGRErr		CreateFeatureViaCopy( OGRFeature *poFeature );
-    OGRErr		CreateFeatureViaInsert( OGRFeature *poFeature );
+    OGRErr              CreateFeatureViaCopy( OGRFeature *poFeature );
+    OGRErr              CreateFeatureViaInsert( OGRFeature *poFeature );
     CPLString           BuildCopyFields();
 
     int                 bHasWarnedIncompatibleGeom;
@@ -318,7 +318,7 @@ public:
                                          const char * pszDescriptionIn,
                                          const char * pszGeomColForced,
                                          int bUpdate );
-                        ~OGRPGTableLayer();
+                        virtual ~OGRPGTableLayer();
 
     void                SetGeometryInformation(PGGeomColumnDesc* pasDesc,
                                                int nGeomFieldCount);
@@ -402,7 +402,7 @@ public:
 
 class OGRPGResultLayer : public OGRPGLayer
 {
-    void                BuildFullQueryStatement(void);
+    void                BuildFullQueryStatement();
 
     char                *pszRawStatement;
 
@@ -502,11 +502,14 @@ class OGRPGDataSource : public OGRDataSource
     int                 bBinaryTimeFormatIsInt8;
     int                 bUseEscapeStringSyntax;
 
+    bool                m_bHasGeometryColumns;
+    bool                m_bHasSpatialRefSys;
+
     int                GetUndefinedSRID() const { return nUndefinedSRID; }
 
   public:
                         OGRPGDataSource();
-                        ~OGRPGDataSource();
+                        virtual ~OGRPGDataSource();
 
     PGconn              *GetPGConn() { return hPGConn; }
 
@@ -528,7 +531,7 @@ class OGRPGDataSource : public OGRDataSource
     OGRLayer            *GetLayer( int );
     OGRLayer            *GetLayerByName(const char * pszName);
 
-    virtual void        FlushCache(void);
+    virtual void        FlushCache();
 
     virtual OGRLayer    *ICreateLayer( const char *,
                                       OGRSpatialReference * = NULL,

@@ -57,7 +57,6 @@ typedef std::vector<VFKFeatureSQLite *> VFKFeatureSQLiteList;
 #define VFK_DB_HEADER   "vfk_header"
 #define VFK_DB_TABLE    "vfk_tables"
 
-
 enum RecordType { RecordValid, RecordSkipped, RecordDuplicated };
 
 /************************************************************************/
@@ -86,7 +85,7 @@ public:
     bool                    IsNull()    const { return m_bIsNull; }
     int                     GetValueI() const { return m_nValue; }
     double                  GetValueD() const { return m_dValue; }
-    const char             *GetValueS(bool = FALSE) const;
+    const char             *GetValueS( bool = false ) const;
 };
 
 /************************************************************************/
@@ -243,7 +242,9 @@ protected:
 
     GIntBig            m_nRecordCount[3];
 
-    bool               AppendLineToRing(PointListArray *, const OGRLineString *, bool, bool = FALSE);
+    bool               AppendLineToRing( PointListArray *,
+                                         const OGRLineString *,
+                                         bool, bool = false );
     int                LoadData();
 
     virtual int        LoadGeometryPoint() = 0;
@@ -262,8 +263,8 @@ public:
     void               SetProperties(const char *);
     int                GetPropertyIndex(const char *) const;
 
-    GIntBig            GetFeatureCount();
-    void               SetFeatureCount(int, bool = FALSE);
+    GIntBig            GetFeatureCount( bool = true);
+    void               SetFeatureCount( int, bool = false );
     IVFKFeature       *GetFeatureByIndex(int) const;
     IVFKFeature       *GetFeature(GIntBig);
     void               AddFeature(IVFKFeature *);
@@ -333,8 +334,9 @@ public:
 
     const char          *GetKey() const;
     IVFKFeature         *GetFeature(GIntBig);
-    VFKFeatureSQLite    *GetFeature(const char *, GUIntBig, bool = FALSE);
-    VFKFeatureSQLite    *GetFeature(const char **, GUIntBig *, int, bool = FALSE);
+    VFKFeatureSQLite    *GetFeature( const char *, GUIntBig, bool = false );
+    VFKFeatureSQLite    *GetFeature( const char **, GUIntBig *, int,
+                                     bool = false);
     VFKFeatureSQLiteList GetFeatures(const char **, GUIntBig *, int);
 };
 
@@ -357,6 +359,7 @@ public:
     virtual bool           IsLatin2() const = 0;
     virtual bool           IsSpatial() const = 0;
     virtual bool           IsPreProcessed() const = 0;
+    virtual bool           IsValid() const = 0;
     virtual int            ReadDataBlocks() = 0;
     virtual int            ReadDataRecords(IVFKDataBlock * = NULL) = 0;
     virtual int            LoadGeometry() = 0;

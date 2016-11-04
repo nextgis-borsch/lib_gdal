@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Test mainline for translating EPSG definitions into WKT.
@@ -33,6 +32,8 @@
 #include "cpl_string.h"
 #include "ogr_p.h"
 #include "cpl_multiproc.h"
+
+CPL_CVSID("$Id$");
 
 static void Usage()
 
@@ -163,7 +164,6 @@ int main( int nArgc, char ** papszArgv )
                 printf( "PROJ.4 rendering of [%s] = %s\n",
                         papszArgv[i], pszWKT );
                 CPLFree( pszWKT );
-
 
                 if( bReportXML )
                 {

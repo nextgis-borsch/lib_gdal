@@ -42,8 +42,8 @@ class OGRSUALayer : public OGRLayer
     OGRSpatialReference *poSRS;
 
     VSILFILE*          fpSUA;
-    int                bEOF;
-    int                bHasLastLine;
+    bool               bEOF;
+    bool               bHasLastLine;
     CPLString          osLastLine;
 
     int                nNextFID;
@@ -52,8 +52,7 @@ class OGRSUALayer : public OGRLayer
 
   public:
                         OGRSUALayer(VSILFILE* fp);
-                        ~OGRSUALayer();
-
+                        virtual ~OGRSUALayer();
 
     virtual void                ResetReading();
     virtual OGRFeature *        GetNextFeature();
@@ -76,7 +75,7 @@ class OGRSUADataSource : public OGRDataSource
 
   public:
                         OGRSUADataSource();
-                        ~OGRSUADataSource();
+                        virtual ~OGRSUADataSource();
 
     int                 Open( const char * pszFilename );
 

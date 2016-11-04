@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  GDAL Core
  * Purpose:  Read metadata from Spot imagery.
@@ -29,6 +28,8 @@
  ****************************************************************************/
 
 #include "reader_spot.h"
+
+CPL_CVSID("$Id$");
 
 /**
  * GDALMDReaderSpot()
@@ -146,7 +147,6 @@ void GDALMDReaderSpot::LoadMetadata()
         }
     }
 
-
     const char* pszSatId2;
     if(nCounter == -1)
         pszSatId2 = CSLFetchNameValue(m_papszIMDMD,
@@ -173,7 +173,6 @@ void GDALMDReaderSpot::LoadMetadata()
         m_papszIMAGERYMD = CSLAddNameValue(m_papszIMAGERYMD,
                                 MD_NAME_SATELLITE, CPLStripQuotes(pszSatId2));
     }
-
 
     const char* pszDate;
     if(nCounter == -1)
@@ -209,7 +208,6 @@ void GDALMDReaderSpot::LoadMetadata()
     m_papszIMAGERYMD = CSLAddNameValue(m_papszIMAGERYMD, MD_NAME_CLOUDCOVER,
                                        MD_CLOUDCOVER_NA);
 }
-
 
 /**
  * ReadXMLToList()

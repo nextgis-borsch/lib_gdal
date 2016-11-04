@@ -50,7 +50,7 @@ class OGRIDFDataSource : public GDALDataset
 
   public:
                         OGRIDFDataSource(VSILFILE* fpL);
-                        ~OGRIDFDataSource();
+                        virtual ~OGRIDFDataSource();
 
     virtual int                 GetLayerCount();
     virtual OGRLayer*           GetLayer( int );
@@ -80,7 +80,7 @@ class OGRVDVLayer: public OGRLayer
                                     bool bOwnFP,
                                     bool bRecodeFromLatin1,
                                     vsi_l_offset nStartOffset);
-                        ~OGRVDVLayer();
+                        virtual ~OGRVDVLayer();
 
         virtual void            ResetReading();
         virtual OGRFeature     *GetNextFeature();
@@ -91,7 +91,6 @@ class OGRVDVLayer: public OGRLayer
         void                    SetFeatureCount(GIntBig nTotalFeatureCount)
                             { m_nTotalFeatureCount = nTotalFeatureCount; }
 };
-
 
 class OGRVDV452Field
 {
@@ -156,7 +155,7 @@ class OGRVDVWriterLayer: public OGRLayer
                                           const CPLString& osVDV452Lang = "",
                                           bool bProfileStrict = false
                                           );
-                        ~OGRVDVWriterLayer();
+                        virtual ~OGRVDVWriterLayer();
 
         virtual void            ResetReading();
         virtual OGRFeature     *GetNextFeature();
@@ -196,7 +195,7 @@ class OGRVDVDataSource : public GDALDataset
                                          bool bUpdate,
                                          bool bSingleFile,
                                          bool bNew);
-                        ~OGRVDVDataSource();
+                        virtual ~OGRVDVDataSource();
 
     virtual int                 GetLayerCount();
     virtual OGRLayer*           GetLayer( int );
@@ -214,6 +213,5 @@ class OGRVDVDataSource : public GDALDataset
                                         GDALDataType /*eType*/,
                                         char ** papszOptions );
 };
-
 
 #endif /* ndef OGR_VDV_H_INCLUDED */

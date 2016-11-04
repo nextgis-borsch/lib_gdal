@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  GDAL Utilities
  * Purpose:  Rasterize OGR shapes into a GDAL raster.
@@ -158,7 +157,6 @@ int main(int argc, char** argv)
 
     if (hDstDS == NULL && !psOptionsForBinary->bQuiet && !psOptionsForBinary->bFormatExplicitlySet)
         CheckExtensionConsistency(psOptionsForBinary->pszDest, psOptionsForBinary->pszFormat);
-
 
     int bUsageError = FALSE;
     GDALDatasetH hRetDS = GDALRasterize(psOptionsForBinary->pszDest,

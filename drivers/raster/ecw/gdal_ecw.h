@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ecwdataset.cpp 21486 2011-01-13 17:38:17Z warmerdam $
+ * $Id$
  *
  * Project:  GDAL
  * Purpose:  ECW (ERDAS Wavelet Compression Format) Driver Definitions
@@ -100,7 +100,7 @@ public:
     virtual CNCSError UnParse(class CNCSJP2File &JP2File,
                               CNCSJPCIOStream &Stream);
 #endif
-    virtual void UpdateXLBox(void);
+    virtual void UpdateXLBox();
 
     void    SetData( int nDataLength, const unsigned char *pabyDataIn );
 
@@ -356,7 +356,7 @@ class VSIIOStream : public CNCSJPCIOStream
             else
             {
                 GByte prevBuffer[] =
-		  { (GByte)(nCOMLength >> 8), (GByte) (nCOMLength & 0xff) };
+                  { (GByte)(nCOMLength >> 8), (GByte) (nCOMLength & 0xff) };
                 VSIFWriteL(prevBuffer, 2, 1, fpVSIL);
                 nCOMState = 0;
             }
@@ -423,7 +423,7 @@ public:
 
 /************************************************************************/
 /* ==================================================================== */
-/*				ECWDataset				*/
+/*                              ECWDataset                              */
 /* ==================================================================== */
 /************************************************************************/
 
@@ -491,7 +491,7 @@ class CPL_DLL ECWDataset : public GDALJP2AbstractDataset
     NCS::CError StatisticsEnsureInitialized();
     NCS::CError StatisticsWrite();
     void CleanupStatistics();
-	void ReadFileMetaDataFromFile();
+    void ReadFileMetaDataFromFile();
 
     int bFileMetaDataDirty;
     void WriteFileMetaData(NCSFileMetaData* pFileMetaDataCopy);

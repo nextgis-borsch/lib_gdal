@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  GDAL Core
  * Purpose:  Read metadata from RapidEye imagery.
@@ -29,6 +28,8 @@
  ****************************************************************************/
 
 #include "reader_rapid_eye.h"
+
+CPL_CVSID("$Id$");
 
 /**
  * GDALMDReaderRapidEye()
@@ -151,5 +152,4 @@ void GDALMDReaderRapidEye::LoadMetadata()
         m_papszIMAGERYMD = CSLAddNameValue(m_papszIMAGERYMD,
                                 MD_NAME_CLOUDCOVER, pszCC);
     }
-
 }

@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  XPM Driver
  * Purpose:  Implement GDAL XPM Support
@@ -33,6 +32,9 @@
 #include "memdataset.h"
 #include "gdal_frmts.h"
 
+#include <cstdlib>
+#include <algorithm>
+
 CPL_CVSID("$Id$");
 
 static unsigned char *ParseXPM( const char *pszInput,
@@ -42,7 +44,7 @@ static unsigned char *ParseXPM( const char *pszInput,
 
 /************************************************************************/
 /* ==================================================================== */
-/*				XPMDataset				*/
+/*                              XPMDataset                              */
 /* ==================================================================== */
 /************************************************************************/
 
@@ -161,7 +163,7 @@ GDALDataset *XPMDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Create a corresponding GDALDataset.                             */
 /* -------------------------------------------------------------------- */
-    XPMDataset 	*poDS = new XPMDataset();
+    XPMDataset *poDS = new XPMDataset();
 
 /* -------------------------------------------------------------------- */
 /*      Capture some information from the file that is of interest.     */
@@ -265,7 +267,7 @@ XPMCreateCopy( const char * pszFilename,
 
     int  anPixelMapping[256];
     GDALColorEntry asPixelColor[256];
-    int nActiveColors = MIN(poCT->GetColorEntryCount(),256);
+    int nActiveColors = std::min(poCT->GetColorEntryCount(),256);
 
     // Setup initial colortable and pixel value mapping.
     memset( anPixelMapping+0, 0, sizeof(int) * 256 );
@@ -296,9 +298,12 @@ XPMCreateCopy( const char * pszFilename,
                     nDistance = 0;
                 else
                     nDistance =
-                        ABS(asPixelColor[iColor1].c1-asPixelColor[iColor2].c1)
-                      + ABS(asPixelColor[iColor1].c2-asPixelColor[iColor2].c2)
-                      + ABS(asPixelColor[iColor1].c3-asPixelColor[iColor2].c3);
+                        std::abs(asPixelColor[iColor1].c1 -
+                                 asPixelColor[iColor2].c1)
+                        + std::abs(asPixelColor[iColor1].c2 -
+                                   asPixelColor[iColor2].c2)
+                        + std::abs(asPixelColor[iColor1].c3 -
+                                   asPixelColor[iColor2].c3);
 
                 if( nDistance < nClosestDistance )
                 {
@@ -376,7 +381,7 @@ XPMCreateCopy( const char * pszFilename,
     }
 
 /* -------------------------------------------------------------------- */
-/*	Dump image.							*/
+/*      Dump image.                                                     */
 /* -------------------------------------------------------------------- */
     GByte *pabyScanline = reinterpret_cast<GByte *>( CPLMalloc( nXSize ) );
 

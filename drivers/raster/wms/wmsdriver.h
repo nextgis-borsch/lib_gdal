@@ -34,13 +34,11 @@
 
 #include <math.h>
 #include <vector>
-#include <list>
 #include <algorithm>
 #include <curl/curl.h>
 
 #include "cpl_conv.h"
 #include "cpl_http.h"
-#include "cpl_multiproc.h"
 #include "gdal_pam.h"
 #include "ogr_spatialref.h"
 #include "gdalwarper.h"
@@ -48,10 +46,6 @@
 
 #include "md5.h"
 #include "gdalhttp.h"
-
-#ifdef SQLITE_ENABLED
-//    #include "ogr_sqlite.h" // for sqlite3*
-#endif
 
 class GDALWMSDataset;
 class GDALWMSRasterBand;
@@ -67,12 +61,10 @@ void URLAppend(CPLString *url, const CPLString &s);
 CPLString BufferToVSIFile(GByte *buffer, size_t size);
 CPLErr MakeDirs(const char *path);
 
-
 int StrToBool(const char *p);
 int URLSearchAndReplace (CPLString *base, const char *search, const char *fmt, ...) CPL_PRINT_FUNC_FORMAT (3, 4);
 /* Convert a.b.c.d to a * 0x1000000 + b * 0x10000 + c * 0x100 + d */
 int VersionStringToInt(const char *version);
-
 
 class GDALWMSImageRequestInfo {
 public:
@@ -128,9 +120,9 @@ typedef enum
     OVERVIEW_FLOOR
 } GDALWMSOverviewDimComputationMethod;
 
-class GDALWMSMiniDriverCapabilities {
+class WMSMiniDriverCapabilities {
 public:
-  GDALWMSMiniDriverCapabilities() :
+  WMSMiniDriverCapabilities() :
       m_capabilities_version(0),
       m_has_image_request(0),
       m_has_tiled_image_requeset(0),
@@ -153,91 +145,58 @@ public:
 };
 
 /* All data returned by mini-driver as pointer should remain valid for mini-driver lifetime
-   and should be freed by mini-driver destructor unless otherwise specified. */
-class GDALWMSMiniDriver {
+   and should be freed by mini-driver destructor unless otherwise specified.
+ */
+
+// Base class for minidrivers
+class WMSMiniDriver {
 friend class GDALWMSDataset;
 public:
-    GDALWMSMiniDriver();
-    virtual ~GDALWMSMiniDriver();
+    WMSMiniDriver() : m_parent_dataset(NULL) {};
+    virtual ~WMSMiniDriver() {};
 
 public:
-/* Read mini-driver specific configuration. */
-    virtual CPLErr Initialize(CPLXMLNode *config);
+    // MiniDriver specific initialization from XML, required
+    virtual CPLErr Initialize(CPLXMLNode *config, char **papszOpenOptions) = 0;
 
 public:
-    virtual void GetCapabilities(GDALWMSMiniDriverCapabilities *caps);
-    virtual void ImageRequest(CPLString *url, const GDALWMSImageRequestInfo &iri);
-    virtual void TiledImageRequest(CPLString *url, const GDALWMSImageRequestInfo &iri, const GDALWMSTiledImageRequestInfo &tiri);
-    virtual void GetTiledImageInfo(CPLString *url,
-                                              const GDALWMSImageRequestInfo &iri,
-                                              const GDALWMSTiledImageRequestInfo &tiri,
-                                              int nXInBlock,
-                                              int nYInBlock);
+    virtual void GetCapabilities(CPL_UNUSED WMSMiniDriverCapabilities *caps) {};
+    virtual void ImageRequest(CPL_UNUSED CPLString *url,
+        CPL_UNUSED const GDALWMSImageRequestInfo &iri) {};
 
-/* Return data projection in WKT format, NULL or empty string if unknown */
-    virtual const char *GetProjectionInWKT();
+    virtual void TiledImageRequest(CPL_UNUSED CPLString *url,
+        CPL_UNUSED const GDALWMSImageRequestInfo &iri,
+        CPL_UNUSED const GDALWMSTiledImageRequestInfo &tiri) {};
+
+    virtual void GetTiledImageInfo(CPL_UNUSED CPLString *url,
+        CPL_UNUSED const GDALWMSImageRequestInfo &iri,
+        CPL_UNUSED const GDALWMSTiledImageRequestInfo &tiri,
+        CPL_UNUSED int nXInBlock,
+        CPL_UNUSED int nYInBlock) {};
+
+    // Return data projection in WKT format, NULL if unknown
+    virtual const char *GetProjectionInWKT() {
+        return NULL;
+    };
 
 protected:
     GDALWMSDataset *m_parent_dataset;
 };
 
-class GDALWMSMiniDriverFactory {
+class WMSMiniDriverFactory {
 public:
-    GDALWMSMiniDriverFactory();
-    virtual ~GDALWMSMiniDriverFactory();
+    WMSMiniDriverFactory() {};
+    virtual ~WMSMiniDriverFactory() {};
 
 public:
-    virtual GDALWMSMiniDriver* New() = 0;
-    virtual void Delete(GDALWMSMiniDriver *instance) = 0;
-
-public:
-    const CPLString &GetName() {
-        return m_name;
-    }
-
-protected:
+    virtual WMSMiniDriver* New() const = 0;
     CPLString m_name;
 };
 
-class GDALWMSMiniDriverManager {
-public:
-    GDALWMSMiniDriverManager();
-    ~GDALWMSMiniDriverManager();
-
-public:
-    void Register(GDALWMSMiniDriverFactory *mdf);
-    GDALWMSMiniDriverFactory *Find(const CPLString &name);
-
-protected:
-    std::list<GDALWMSMiniDriverFactory *> m_mdfs;
-};
-
-#define H_GDALWMSMiniDriverFactory(name) \
-class GDALWMSMiniDriverFactory_##name : public GDALWMSMiniDriverFactory { \
-public: \
-    GDALWMSMiniDriverFactory_##name(); \
-    virtual ~GDALWMSMiniDriverFactory_##name(); \
-    \
-public: \
-    virtual GDALWMSMiniDriver* New(); \
-    virtual void Delete(GDALWMSMiniDriver *instance); \
-};
-
-#define CPP_GDALWMSMiniDriverFactory(name) \
-    GDALWMSMiniDriverFactory_##name::GDALWMSMiniDriverFactory_##name() { \
-    m_name = #name;\
-} \
-    \
-    GDALWMSMiniDriverFactory_##name::~GDALWMSMiniDriverFactory_##name() { \
-} \
-    \
-    GDALWMSMiniDriver* GDALWMSMiniDriverFactory_##name::New() { \
-    return new GDALWMSMiniDriver_##name(); \
-} \
-    \
-    void GDALWMSMiniDriverFactory_##name::Delete(GDALWMSMiniDriver *instance) { \
-    delete instance; \
-}
+// Interface with the global mini driver manager
+WMSMiniDriver *NewWMSMiniDriver(const CPLString &name);
+void WMSRegisterMiniDriverFactory(WMSMiniDriverFactory *mdf);
+void WMSDeregisterMiniDrivers(GDALDriver *);
 
 /************************************************************************/
 /*                            GDALWMSCache                              */
@@ -246,63 +205,21 @@ public: \
 class GDALWMSCache {
 public:
     GDALWMSCache();
-    virtual ~GDALWMSCache();
+    ~GDALWMSCache();
 
 public:
-    virtual CPLErr Initialize(CPLXMLNode *config, CPLXMLNode *service_config);
-    virtual CPLErr Write(const char *key, const CPLString &file_name) = 0;
-    virtual CPLErr Read(const char *key, CPLString *file_name) = 0;
-protected:
-    CPLString m_cache_path;
-    CPLString m_key_name;
-    GIntBig m_max_size;
-    double m_ttl;
-};
+    CPLErr Initialize(CPLXMLNode *config);
+    CPLErr Write(const char *key, const CPLString &file_name);
+    CPLErr Read(const char *key, CPLString *file_name);
 
-/************************************************************************/
-/*                         GDALWMSFileCache                             */
-/************************************************************************/
-
-class GDALWMSFileCache : public GDALWMSCache {
-public:
-    GDALWMSFileCache();
-    virtual ~GDALWMSFileCache();
-
-public:
-    virtual CPLErr Initialize(CPLXMLNode *config, CPLXMLNode *service_config);
-    virtual CPLErr Write(const char *key, const CPLString &file_name);
-    virtual CPLErr Read(const char *key, CPLString *file_name);
 protected:
     CPLString KeyToCacheFile(const char *key);
 
 protected:
+    CPLString m_cache_path;
     CPLString m_postfix;
     int m_cache_depth;
 };
-
-#ifdef SQLITE_ENABLED
-
-/************************************************************************/
-/*                          GDALWMSDbCache                              */
-/************************************************************************/
-
-class GDALWMSDbCache : public GDALWMSCache {
-public:
-    GDALWMSDbCache();
-    virtual ~GDALWMSDbCache();
-
-public:
-    virtual CPLErr Initialize(CPLXMLNode *config, CPLXMLNode *service_config);
-    virtual CPLErr Write(const char *key, const CPLString &file_name);
-    virtual CPLErr Read(const char *key, CPLString *file_name);
-
-protected:
-#ifdef SQLITE_ENABLED
-//    sqlite3 *m_hDB;
-#endif //SQLITE_ENABLED
-};
-
-#endif
 
 /************************************************************************/
 /*                            GDALWMSDataset                            */
@@ -426,15 +343,17 @@ protected:
                              GSpacing nPixelSpace, GSpacing nLineSpace,
                              GSpacing nBandSpace,
                              GDALRasterIOExtraArg* psExtraArg);
-    CPLErr Initialize(CPLXMLNode *config);
+    CPLErr Initialize(CPLXMLNode *config, char **papszOpenOptions);
 
     GDALWMSDataWindow m_data_window;
-    GDALWMSMiniDriver *m_mini_driver;
-    GDALWMSMiniDriverCapabilities m_mini_driver_caps;
+    WMSMiniDriver *m_mini_driver;
+    WMSMiniDriverCapabilities m_mini_driver_caps;
     GDALWMSCache *m_cache;
     CPLString m_projection;
     GDALColorTable *m_poColorTable;
-    std::vector<double> vNoData, vMin, vMax;
+    std::vector<double> vNoData;
+    std::vector<double> vMin;
+    std::vector<double> vMax;
     GDALDataType m_data_type;
     int m_block_size_x;
     int m_block_size_y;
@@ -453,8 +372,10 @@ protected:
     CPLString m_osUserPwd;
 
     GDALWMSDataWindow m_default_data_window;
-    int m_default_block_size_x, m_default_block_size_y;
-    int m_default_tile_count_x, m_default_tile_count_y;
+    int m_default_block_size_x;
+    int m_default_block_size_y;
+    int m_default_tile_count_x;
+    int m_default_tile_count_y;
     int m_default_overview_count;
 
     int m_bNeedsDataWindow;
@@ -478,7 +399,7 @@ class GDALWMSRasterBand : public GDALPamRasterBand {
     CPLString osMetadataItemURL;
 
 public:
-    GDALWMSRasterBand(GDALWMSDataset *parent_dataset, int band, double scale);
+    GDALWMSRasterBand( GDALWMSDataset *parent_dataset, int band, double scale );
     virtual ~GDALWMSRasterBand();
     void AddOverview(double scale);
     virtual double GetNoDataValue( int * );
@@ -516,8 +437,5 @@ protected:
     int m_overview;
     GDALColorInterp m_color_interp;
 };
-
-GDALWMSMiniDriverManager *GetGDALWMSMiniDriverManager();
-void DestroyWMSMiniDriverManager(void);
 
 #endif /* notdef WMSDRIVER_H_INCLUDED */

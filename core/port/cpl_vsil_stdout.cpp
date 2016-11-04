@@ -1,5 +1,4 @@
 /**********************************************************************
- * $Id$
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Implement VSI large file api for stdout
@@ -60,6 +59,7 @@ void VSIStdoutSetRedirection( VSIWriteFunction pFct, FILE* stream )
     pWriteStream = stream;
 }
 
+//! @cond Doxygen_Suppress
 
 /************************************************************************/
 /* ==================================================================== */
@@ -141,9 +141,9 @@ int VSIStdoutHandle::Flush()
 /*                                Read()                                */
 /************************************************************************/
 
-size_t VSIStdoutHandle::Read( CPL_UNUSED void * pBuffer,
-                              CPL_UNUSED size_t nSize,
-                              CPL_UNUSED size_t nCount )
+size_t VSIStdoutHandle::Read( void * /* pBuffer */,
+                              size_t /* nSize */,
+                              size_t /* nCount */ )
 {
     CPLError(CE_Failure, CPLE_NotSupported, "Read() unsupported on /vsistdout");
     return 0;
@@ -193,7 +193,7 @@ int VSIStdoutHandle::Close()
 /************************************************************************/
 
 VSIVirtualHandle *
-VSIStdoutFilesystemHandler::Open( CPL_UNUSED const char *pszFilename,
+VSIStdoutFilesystemHandler::Open( const char * /* pszFilename */,
                                   const char *pszAccess,
                                   bool /* bSetError */ )
 {
@@ -217,17 +217,15 @@ VSIStdoutFilesystemHandler::Open( CPL_UNUSED const char *pszFilename,
 /*                                Stat()                                */
 /************************************************************************/
 
-int VSIStdoutFilesystemHandler::Stat( CPL_UNUSED const char * pszFilename,
+int VSIStdoutFilesystemHandler::Stat( const char * /* pszFilename */,
                                       VSIStatBufL * pStatBuf,
-                                      CPL_UNUSED int nFlags )
+                                      int /* nFlags */ )
 
 {
     memset( pStatBuf, 0, sizeof(VSIStatBufL) );
 
     return -1;
 }
-
-
 
 /************************************************************************/
 /* ==================================================================== */
@@ -257,7 +255,7 @@ class VSIStdoutRedirectHandle CPL_FINAL : public VSIVirtualHandle
     VSIVirtualHandle* m_poHandle;
   public:
                       VSIStdoutRedirectHandle(VSIVirtualHandle* poHandle);
-                     ~VSIStdoutRedirectHandle();
+              virtual ~VSIStdoutRedirectHandle();
 
     virtual int       Seek( vsi_l_offset nOffset, int nWhence );
     virtual vsi_l_offset Tell();
@@ -290,10 +288,11 @@ VSIStdoutRedirectHandle::~VSIStdoutRedirectHandle()
 /*                                Seek()                                */
 /************************************************************************/
 
-int VSIStdoutRedirectHandle::Seek( CPL_UNUSED vsi_l_offset nOffset,
-                                   CPL_UNUSED int nWhence )
+int VSIStdoutRedirectHandle::Seek( vsi_l_offset /* nOffset */,
+                                   int /* nWhence */ )
 {
-    CPLError(CE_Failure, CPLE_NotSupported, "Seek() unsupported on /vsistdout_redirect");
+    CPLError(CE_Failure, CPLE_NotSupported,
+             "Seek() unsupported on /vsistdout_redirect");
     return -1;
 }
 
@@ -320,11 +319,12 @@ int VSIStdoutRedirectHandle::Flush()
 /*                                Read()                                */
 /************************************************************************/
 
-size_t VSIStdoutRedirectHandle::Read( CPL_UNUSED void * pBuffer,
-                                      CPL_UNUSED size_t nSize,
-                                      CPL_UNUSED size_t nCount )
+size_t VSIStdoutRedirectHandle::Read( void * /* pBuffer */,
+                                      size_t /* nSize */,
+                                      size_t /* nCount */ )
 {
-    CPLError(CE_Failure, CPLE_NotSupported, "Read() unsupported on /vsistdout_redirect");
+    CPLError(CE_Failure, CPLE_NotSupported,
+             "Read() unsupported on /vsistdout_redirect");
     return 0;
 }
 
@@ -333,7 +333,7 @@ size_t VSIStdoutRedirectHandle::Read( CPL_UNUSED void * pBuffer,
 /************************************************************************/
 
 size_t VSIStdoutRedirectHandle::Write( const void * pBuffer, size_t nSize,
-                                  size_t nCount )
+                                       size_t nCount )
 
 {
     return m_poHandle->Write(pBuffer, nSize, nCount);
@@ -395,14 +395,16 @@ VSIStdoutRedirectFilesystemHandler::Open( const char *pszFilename,
 /*                                Stat()                                */
 /************************************************************************/
 
-int VSIStdoutRedirectFilesystemHandler::Stat( CPL_UNUSED const char * pszFilename,
+int VSIStdoutRedirectFilesystemHandler::Stat( const char * /* pszFilename */,
                                               VSIStatBufL * pStatBuf,
-                                              CPL_UNUSED int nFlags )
+                                              int /* nFlags */ )
 {
     memset( pStatBuf, 0, sizeof(VSIStatBufL) );
 
     return -1;
 }
+
+//! @endcond
 
 /************************************************************************/
 /*                       VSIInstallStdoutHandler()                      */

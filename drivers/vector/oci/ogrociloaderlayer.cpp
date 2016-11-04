@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  Oracle Spatial Driver
  * Purpose:  Implementation of the OGROCILoaderLayer class.  This implements
@@ -60,7 +59,6 @@ OGROCILoaderLayer::OGROCILoaderLayer( OGROCIDataSource *poDSIn,
     pszGeomName = CPLStrdup( pszGeomColIn );
     pszFIDName = (char*)CPLGetConfigOption( "OCI_FID", "OGR_FID" );
 
-
     nSRID = nSRIDIn;
     poSRS = poDSIn->FetchSRS( nSRID );
 
@@ -81,7 +79,6 @@ OGROCILoaderLayer::OGROCILoaderLayer( OGROCIDataSource *poDSIn,
                   pszLoaderFilename );
         return;
     }
-
 }
 
 /************************************************************************/

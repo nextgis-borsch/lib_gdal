@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id:  $
  *
  * Project:  Erdas EIR Raw Driver
  * Purpose:  Implementation of EIRDataset
@@ -33,7 +32,7 @@
 #include "ogr_spatialref.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id:  $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -66,7 +65,6 @@ class EIRDataset : public RawDataset
     static int          Identify( GDALOpenInfo * );
     static GDALDataset *Open( GDALOpenInfo * );
 };
-
 
 /************************************************************************/
 /* ==================================================================== */
@@ -176,7 +174,6 @@ void EIRDataset::ResetKeyValue( const char *pszKey, const char *pszValue )
     bHDRDirty = true;
     papszHDR = CSLAddString( papszHDR, szNewLine );
 }
-
 
 /************************************************************************/
 /*                          GetGeoTransform()                           */
@@ -532,7 +529,6 @@ GDALDataset *EIRDataset::Open( GDALOpenInfo * poOpenInfo )
 
     return poDS;
 }
-
 
 /************************************************************************/
 /*                         GDALRegister_EIR()                           */

@@ -61,8 +61,7 @@ class OGREDIGEOLayer : public OGRLayer
                         OGREDIGEOLayer(OGREDIGEODataSource* poDS,
                                        const char* pszName, OGRwkbGeometryType eType,
                                        OGRSpatialReference* poSRS);
-                        ~OGREDIGEOLayer();
-
+                        virtual ~OGREDIGEOLayer();
 
     virtual void                ResetReading();
     virtual OGRFeature *        GetNextFeature();
@@ -151,7 +150,7 @@ class OGREDIGEODataSource : public OGRDataSource
     VSILFILE*           OpenFile(const char *pszType,
                                  const CPLString& osExt);
 
-    // TODO: Tranlate comments to English.
+    // TODO: Translate comments to English.
     CPLString osLON; /* Nom du lot */
     CPLString osGNN; /* Nom du sous-ensemble de données générales */
     CPLString osGON; /* Nom du sous-ensemble de la référence de coordonnées */
@@ -228,7 +227,7 @@ class OGREDIGEODataSource : public OGRDataSource
 
   public:
                         OGREDIGEODataSource();
-                        ~OGREDIGEODataSource();
+                        virtual ~OGREDIGEODataSource();
 
     int                 Open( const char * pszFilename );
 
@@ -241,6 +240,5 @@ class OGREDIGEODataSource : public OGRDataSource
 
     int                         HasUTF8ContentOnly() { return bHasUTF8ContentOnly; }
 };
-
 
 #endif /* ndef OGR_EDIGEO_H_INCLUDED */

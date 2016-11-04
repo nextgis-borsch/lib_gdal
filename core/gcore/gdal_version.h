@@ -1,3 +1,4 @@
+/* $Id$ */
 
 /* -------------------------------------------------------------------- */
 /*      GDAL Version Information.                                       */
@@ -6,7 +7,7 @@
 #ifndef GDAL_VERSION_MAJOR
 #  define GDAL_VERSION_MAJOR    2
 #  define GDAL_VERSION_MINOR    1
-#  define GDAL_VERSION_REV      2
+#  define GDAL_VERSION_REV      3
 #  define GDAL_VERSION_BUILD    0
 #endif
 
@@ -25,5 +26,5 @@
 #  define GDAL_RELEASE_DATE     20169999
 #endif
 #ifndef GDAL_RELEASE_NAME
-#  define GDAL_RELEASE_NAME     "2.1.2"
+#  define GDAL_RELEASE_NAME     "2.1.3"
 #endif

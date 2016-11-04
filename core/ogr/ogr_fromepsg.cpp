@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Generate an OGRSpatialReference object based on an EPSG
@@ -33,6 +32,7 @@
 #include "ogr_p.h"
 #include "ogr_spatialref.h"
 
+#include <cstdlib>
 #include <vector>
 
 CPL_CVSID("$Id$");
@@ -131,7 +131,7 @@ EPSGAngleStringToDD( const char * pszAngle, int nUOMAngle )
 
     if( nUOMAngle == 9110 )             /* DDD.MMSSsss */
     {
-        dfAngle = ABS(atoi(pszAngle));
+        dfAngle = std::abs(atoi(pszAngle));
         const char *pszDecimal = strchr(pszAngle,'.');
         if( pszDecimal != NULL && strlen(pszDecimal) > 1 )
         {
@@ -453,7 +453,7 @@ int EPSGGetWGS84Transform( int nGeogCS, std::vector<CPLString>& asTransform )
         return FALSE;
 
     asTransform.resize(0);
-    for(int  iField = 0; iField < 7; iField++ )
+    for( int iField = 0; iField < 7; iField++ )
     {
         const char* pszValue = papszLine[iDXField+iField];
         if( pszValue[0] )
@@ -905,7 +905,6 @@ EPSGGetProjTRFInfo( int nPCS, int * pnProjMethod,
     return true;
 }
 
-
 /************************************************************************/
 /*                           EPSGGetPCSInfo()                           */
 /************************************************************************/
@@ -933,7 +932,6 @@ EPSGGetPCSInfo( int nPCSCode, char **ppszEPSGName,
         snprintf( szSearchKey, sizeof(szSearchKey), "%d", nPCSCode );
         papszRecord = CSVScanFileByName( pszFilename, "COORD_REF_SYS_CODE",
                                          szSearchKey, CC_Integer );
-
     }
 
     if( papszRecord == NULL )
@@ -1381,8 +1379,7 @@ static double OGR_FetchParm( double *padfProjParms,
     return dfResult;
 }
 
-#define OGR_FP(x) OGR_FetchParm( adfProjParms, anParmIds, (x), \
-                                 dfFromGreenwich )
+#define OGR_FP(x) OGR_FetchParm(adfProjParms, anParmIds, (x), dfFromGreenwich)
 
 /************************************************************************/
 /*                           SetEPSGProjCS()                            */
@@ -1881,7 +1878,6 @@ static OGRErr SetEPSGGeocCS( OGRSpatialReference * poSRS, int nGCSCode )
                                 CSVGetFileFieldId(pszFilename,"DATUM_NAME") ) );
     OGREPSGDatumNameMassage( &pszDatumName );
 
-
     const int nEllipsoidCode = atoi(CSLGetField(
         papszRecord, CSVGetFileFieldId(pszFilename, "ELLIPSOID_CODE")));
 
@@ -2215,7 +2211,6 @@ OGRErr OGRSpatialReference::importFromEPSGA( int nCode )
     else
         pszAuthName = GetAuthorityName( "GEOGCS" );
 
-
     if( eErr == OGRERR_NONE && pszAuthName == NULL )
     {
         if( IsProjected() )
@@ -2435,13 +2430,15 @@ OGRErr OSRSetStatePlaneWithUnits( OGRSpatialReferenceH hSRS,
 
 /************************************************************************/
 /*                           GetEPSGGeogCS()                            */
-/*                                                                      */
-/*      Try to establish what the EPSG code for this coordinate         */
-/*      systems GEOGCS might be.  Returns -1 if no reasonable guess     */
-/*      can be made.                                                    */
-/*                                                                      */
-/*      TODO: We really need to do some name lookups.                   */
 /************************************************************************/
+
+/** Try to establish what the EPSG code for this coordinate systems
+ * GEOGCS might be.  Returns -1 if no reasonable guess can be made.
+ *
+ * @return EPSG code
+ */
+
+// TODO: We really need to do some name lookups.
 
 int OGRSpatialReference::GetEPSGGeogCS()
 
@@ -2467,14 +2464,14 @@ int OGRSpatialReference::GetEPSGGeogCS()
 /* -------------------------------------------------------------------- */
 /*      Is this a "well known" geographic coordinate system?            */
 /* -------------------------------------------------------------------- */
-    const int bWGS = strstr(pszGEOGCS,"WGS") != NULL
+    const bool bWGS = strstr(pszGEOGCS,"WGS") != NULL
         || strstr(pszDatum, "WGS")
         || strstr(pszGEOGCS,"World Geodetic System")
         || strstr(pszGEOGCS,"World_Geodetic_System")
         || strstr(pszDatum, "World Geodetic System")
         || strstr(pszDatum, "World_Geodetic_System");
 
-    const int bNAD = strstr(pszGEOGCS,"NAD") != NULL
+    const bool bNAD = strstr(pszGEOGCS,"NAD") != NULL
         || strstr(pszDatum, "NAD")
         || strstr(pszGEOGCS,"North American")
         || strstr(pszGEOGCS,"North_American")

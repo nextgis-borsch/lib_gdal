@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  Erdas Imagine (.img) Translator
  * Purpose:  Implementation of the HFAEntry class for reading and relating
@@ -45,7 +44,7 @@ CPL_CVSID("$Id$");
 /************************************************************************/
 
 HFAEntry::HFAEntry() :
-    bDirty(FALSE),
+    bDirty(false),
     nFilePos(0),
     psHFA(NULL),
     poParent(NULL),
@@ -58,7 +57,7 @@ HFAEntry::HFAEntry() :
     nDataPos(0),
     nDataSize(0),
     pabyData(NULL),
-    bIsMIFObject(FALSE)
+    bIsMIFObject(false)
 {
     szName[0] = '\0';
     szType[0] = '\0';
@@ -84,7 +83,7 @@ HFAEntry* HFAEntry::New( HFAInfo_t * psHFAIn, GUInt32 nPos,
 /* -------------------------------------------------------------------- */
 /*      Read the entry information from the file.                       */
 /* -------------------------------------------------------------------- */
-    GInt32	anEntryNums[6];
+    GInt32 anEntryNums[6] = {};
 
     if( VSIFSeekL( poEntry->psHFA->fp, poEntry->nFilePos, SEEK_SET ) == -1
         || VSIFReadL( anEntryNums, sizeof(GInt32), 6, poEntry->psHFA->fp ) < 1 )
@@ -145,7 +144,7 @@ HFAEntry::HFAEntry( HFAInfo_t * psHFAIn,
     nDataPos(0),
     nDataSize(0),
     pabyData(NULL),
-    bIsMIFObject(FALSE)
+    bIsMIFObject(false)
 {
 /* -------------------------------------------------------------------- */
 /*      Initialize Entry                                                */
@@ -209,7 +208,7 @@ HFAEntry* HFAEntry::BuildEntryFromMIFObject( HFAEntry *poContainer,
 
     osFieldName.Printf("%s.%s", pszMIFObjectPath, "MIFDictionary" );
     const char *pszField = poContainer->GetStringField( osFieldName.c_str() );
-    if (pszField == NULL)
+    if( pszField == NULL )
     {
         CPLError(CE_Failure, CPLE_AppDefined, "Cannot find %s entry",
                  osFieldName.c_str());
@@ -219,7 +218,7 @@ HFAEntry* HFAEntry::BuildEntryFromMIFObject( HFAEntry *poContainer,
 
     osFieldName.Printf("%s.%s", pszMIFObjectPath, "type.string" );
     pszField = poContainer->GetStringField( osFieldName.c_str() );
-    if (pszField == NULL)
+    if( pszField == NULL )
     {
         CPLError(CE_Failure, CPLE_AppDefined, "Cannot find %s entry",
                  osFieldName.c_str());
@@ -231,41 +230,41 @@ HFAEntry* HFAEntry::BuildEntryFromMIFObject( HFAEntry *poContainer,
     int nRemainingDataSize = 0;
     pszField = poContainer->GetStringField( osFieldName.c_str(),
                                             NULL, &nRemainingDataSize );
-    if (pszField == NULL)
+    if( pszField == NULL )
     {
         CPLError(CE_Failure, CPLE_AppDefined, "Cannot find %s entry",
                  osFieldName.c_str());
         return NULL;
     }
 
-    GInt32 nMIFObjectSize;
-    // we rudely look before the field data to get at the pointer/size info
-    memcpy( &nMIFObjectSize, pszField-8, 4 );
+    GInt32 nMIFObjectSize = 0;
+    // We rudely look before the field data to get at the pointer/size info.
+    memcpy( &nMIFObjectSize, pszField - 8, 4 );
     HFAStandard( 4, &nMIFObjectSize );
-    if (nMIFObjectSize <= 0)
+    if( nMIFObjectSize <= 0 )
     {
         CPLError(CE_Failure, CPLE_AppDefined, "Invalid MIF object size (%d)",
                  nMIFObjectSize);
         return NULL;
     }
 
-    // check that we won't copy more bytes than available in the buffer
-    if (nMIFObjectSize > nRemainingDataSize)
+    // Check that we won't copy more bytes than available in the buffer.
+    if( nMIFObjectSize > nRemainingDataSize )
     {
-        CPLError(CE_Failure, CPLE_AppDefined, "Invalid MIF object size (%d > %d)",
+        CPLError(CE_Failure, CPLE_AppDefined,
+                 "Invalid MIF object size (%d > %d)",
                  nMIFObjectSize, nRemainingDataSize);
         return NULL;
     }
 
-    GByte* l_pabyData = (GByte *) VSIMalloc(nMIFObjectSize);
-    if (l_pabyData == NULL)
+    GByte* l_pabyData = static_cast<GByte *>(VSIMalloc(nMIFObjectSize));
+    if( l_pabyData == NULL )
         return NULL;
 
     memcpy( l_pabyData, pszField, nMIFObjectSize );
 
     return new HFAEntry(osDictionary, osType,
                         nMIFObjectSize, l_pabyData);
-
 }
 
 /************************************************************************/
@@ -278,7 +277,7 @@ HFAEntry::HFAEntry( const char * pszDictionary,
                     const char * pszTypeName,
                     int nDataSizeIn,
                     GByte* pabyDataIn ) :
-    bDirty(FALSE),
+    bDirty(false),
     nFilePos(0),
     poParent(NULL),
     poPrev(NULL),
@@ -288,7 +287,7 @@ HFAEntry::HFAEntry( const char * pszDictionary,
     poChild(NULL),
     nDataPos(0),
     nDataSize(0),
-    bIsMIFObject(TRUE)
+    bIsMIFObject(true)
 {
 /* -------------------------------------------------------------------- */
 /*      Initialize Entry                                                */
@@ -298,10 +297,10 @@ HFAEntry::HFAEntry( const char * pszDictionary,
 /* -------------------------------------------------------------------- */
 /*      Create a dummy HFAInfo_t.                                       */
 /* -------------------------------------------------------------------- */
-    psHFA = (HFAInfo_t *) CPLCalloc(sizeof(HFAInfo_t),1);
+    psHFA = static_cast<HFAInfo_t *>(CPLCalloc(sizeof(HFAInfo_t), 1));
 
     psHFA->eAccess = HFA_ReadOnly;
-    psHFA->bTreeDirty = FALSE;
+    psHFA->bTreeDirty = false;
     psHFA->poRoot = this;
 
     psHFA->poDictionary = new HFADictionary( pszDictionary );
@@ -347,7 +346,7 @@ HFAEntry::~HFAEntry()
 /************************************************************************/
 /*                          RemoveAndDestroy()                          */
 /*                                                                      */
-/*      Removes this entry, and it's children from the current          */
+/*      Removes this entry, and its children from the current           */
 /*      tree.  The parent and/or siblings are appropriately updated     */
 /*      so that they will be flushed back to disk without the           */
 /*      reference to this node.                                         */
@@ -421,7 +420,7 @@ HFAEntry *HFAEntry::GetChild()
             nChildPos = 0;
     }
 
-    return( poChild );
+    return poChild;
 }
 
 /************************************************************************/
@@ -446,7 +445,8 @@ HFAEntry *HFAEntry::GetNext()
         if( poPast != NULL )
         {
             CPLError( CE_Warning, CPLE_AppDefined,
-                      "Corrupt (looping) entry in %s, ignoring some entries after %s.",
+                      "Corrupt (looping) entry in %s, "
+                      "ignoring some entries after %s.",
                       psHFA->pszFilename,
                       szName );
             nNextPos = 0;
@@ -458,7 +458,7 @@ HFAEntry *HFAEntry::GetNext()
             nNextPos = 0;
     }
 
-    return( poNext );
+    return poNext;
 }
 
 /************************************************************************/
@@ -475,16 +475,16 @@ void HFAEntry::LoadData()
         return;
     if( nDataSize > INT_MAX - 1 )
     {
-        CPLError( CE_Failure, CPLE_AppDefined,
-                  "Invalid value for nDataSize = %u", nDataSize);
+        CPLError(CE_Failure, CPLE_AppDefined,
+                 "Invalid value for nDataSize = %u", nDataSize);
         return;
     }
 
 /* -------------------------------------------------------------------- */
 /*      Allocate buffer, and read data.                                 */
 /* -------------------------------------------------------------------- */
-    pabyData = (GByte *) VSI_MALLOC_VERBOSE(nDataSize + 1);
-    if (pabyData == NULL)
+    pabyData = static_cast<GByte *>(VSI_MALLOC_VERBOSE(nDataSize + 1));
+    if( pabyData == NULL )
     {
         return;
     }
@@ -503,8 +503,8 @@ void HFAEntry::LoadData()
         return;
     }
 
-    /* Make sure the buffer is always null terminated to avoid */
-    /* issues when extracting strings from a corrupted file */
+    // Make sure the buffer is always null terminated to avoid
+    // issues when extracting strings from a corrupted file.
     pabyData[nDataSize] = '\0';
 
 /* -------------------------------------------------------------------- */
@@ -551,9 +551,10 @@ GByte *HFAEntry::MakeData( int nSize )
     if( nSize == 0 && poType->nBytes > 0 )
         nSize = poType->nBytes;
 
-    if( (int) nDataSize < nSize && nSize > 0 )
+    // nDataSize is a GUInt32.
+    if( static_cast<int>(nDataSize) < nSize && nSize > 0 )
     {
-        pabyData = (GByte *) CPLRealloc(pabyData, nSize);
+        pabyData = static_cast<GByte *>(CPLRealloc(pabyData, nSize));
         memset( pabyData + nDataSize, 0, nSize - nDataSize );
         nDataSize = nSize;
 
@@ -569,18 +570,19 @@ GByte *HFAEntry::MakeData( int nSize )
         {
             nFilePos = 0;
             nDataPos = 0;
-            if (poPrev != NULL) poPrev->MarkDirty();
-            if (poNext != NULL) poNext->MarkDirty();
-            if (poChild != NULL) poChild->MarkDirty();
-            if (poParent != NULL) poParent->MarkDirty();
+            if( poPrev != NULL ) poPrev->MarkDirty();
+            if( poNext != NULL ) poNext->MarkDirty();
+            if( poChild != NULL ) poChild->MarkDirty();
+            if( poParent != NULL ) poParent->MarkDirty();
         }
     }
     else
-        LoadData(); // make sure the data is loaded before we return pointer.
+    {
+        LoadData(); // Make sure the data is loaded before we return pointer.
+    }
 
     return pabyData;
 }
-
 
 /************************************************************************/
 /*                          DumpFieldValues()                           */
@@ -629,16 +631,19 @@ std::vector<HFAEntry*> HFAEntry::FindChildren( const char *pszName,
         return apoChildren;
     }
 
-    for( HFAEntry *poEntry = GetChild(); poEntry != NULL; poEntry = poEntry->GetNext() )
+    for( HFAEntry *poEntry = GetChild();
+         poEntry != NULL;
+         poEntry = poEntry->GetNext() )
     {
         std::vector<HFAEntry*> apoEntryChildren;
 
-        if( (pszName == NULL || EQUAL(poEntry->GetName(),pszName))
-            && (pszType == NULL || EQUAL(poEntry->GetType(),pszType)) )
+        if( (pszName == NULL || EQUAL(poEntry->GetName(), pszName))
+            && (pszType == NULL || EQUAL(poEntry->GetType(), pszType)) )
             apoChildren.push_back( poEntry );
 
-        apoEntryChildren = poEntry->FindChildren( pszName, pszType, nRecLevel + 1,
-                                                  pbErrorDetected);
+        apoEntryChildren =
+          poEntry->FindChildren(pszName, pszType, nRecLevel + 1,
+                                pbErrorDetected);
         if( *pbErrorDetected )
             return apoChildren;
 
@@ -678,10 +683,12 @@ HFAEntry *HFAEntry::GetNamedChild( const char * pszName )
 /* -------------------------------------------------------------------- */
 /*      Scan children looking for this name.                            */
 /* -------------------------------------------------------------------- */
-    for( HFAEntry *poEntry = GetChild(); poEntry != NULL; poEntry = poEntry->GetNext() )
+    for( HFAEntry *poEntry = GetChild();
+         poEntry != NULL;
+         poEntry = poEntry->GetNext() )
     {
-        if( EQUALN(poEntry->GetName(),pszName,nNameLen)
-            && (int) strlen(poEntry->GetName()) == nNameLen )
+        if( EQUALN(poEntry->GetName(), pszName, nNameLen)
+            && static_cast<int>(strlen(poEntry->GetName())) == nNameLen )
         {
             if( pszName[nNameLen] == '.' )
             {
@@ -703,21 +710,21 @@ HFAEntry *HFAEntry::GetNamedChild( const char * pszName )
 /*                           GetFieldValue()                            */
 /************************************************************************/
 
-int HFAEntry::GetFieldValue( const char * pszFieldPath,
-                             char chReqType, void *pReqReturn,
-                             int *pnRemainingDataSize)
+bool HFAEntry::GetFieldValue( const char * pszFieldPath,
+                              char chReqType, void *pReqReturn,
+                              int *pnRemainingDataSize )
 
 {
 /* -------------------------------------------------------------------- */
 /*      Is there a node path in this string?                            */
 /* -------------------------------------------------------------------- */
-    if( strchr(pszFieldPath,':') != NULL )
+    if( strchr(pszFieldPath, ':') != NULL )
     {
         HFAEntry* poEntry = GetNamedChild( pszFieldPath );
         if( poEntry == NULL )
-            return FALSE;
+            return false;
 
-        pszFieldPath = strchr(pszFieldPath,':') + 1;
+        pszFieldPath = strchr(pszFieldPath, ':') + 1;
     }
 
 /* -------------------------------------------------------------------- */
@@ -726,37 +733,36 @@ int HFAEntry::GetFieldValue( const char * pszFieldPath,
     LoadData();
 
     if( pabyData == NULL )
-        return FALSE;
+        return false;
 
     if( poType == NULL )
-        return FALSE;
+        return false;
 
 /* -------------------------------------------------------------------- */
 /*      Extract the instance information.                               */
 /* -------------------------------------------------------------------- */
-
-
-    return( poType->ExtractInstValue( pszFieldPath,
-                                      pabyData, nDataPos, nDataSize,
-                                      chReqType, pReqReturn, pnRemainingDataSize ) );
+    return
+        poType->ExtractInstValue( pszFieldPath,
+                                  pabyData, nDataPos, nDataSize,
+                                  chReqType, pReqReturn, pnRemainingDataSize );
 }
 
 /************************************************************************/
 /*                           GetFieldCount()                            */
 /************************************************************************/
 
-int HFAEntry::GetFieldCount( const char * pszFieldPath, CPL_UNUSED CPLErr *peErr )
+int HFAEntry::GetFieldCount( const char * pszFieldPath, CPLErr * /* peErr */ )
 {
 /* -------------------------------------------------------------------- */
 /*      Is there a node path in this string?                            */
 /* -------------------------------------------------------------------- */
-    if( strchr(pszFieldPath,':') != NULL )
+    if( strchr(pszFieldPath, ':') != NULL )
     {
         HFAEntry* poEntry = GetNamedChild( pszFieldPath );
         if( poEntry == NULL )
             return -1;
 
-        pszFieldPath = strchr(pszFieldPath,':') + 1;
+        pszFieldPath = strchr(pszFieldPath, ':') + 1;
     }
 
 /* -------------------------------------------------------------------- */
@@ -774,8 +780,8 @@ int HFAEntry::GetFieldCount( const char * pszFieldPath, CPL_UNUSED CPLErr *peErr
 /*      Extract the instance information.                               */
 /* -------------------------------------------------------------------- */
 
-    return( poType->GetInstCount( pszFieldPath,
-                                  pabyData, nDataPos, nDataSize ) );
+    return poType->GetInstCount( pszFieldPath,
+                                 pabyData, nDataPos, nDataSize );
 }
 
 /************************************************************************/
@@ -785,7 +791,7 @@ int HFAEntry::GetFieldCount( const char * pszFieldPath, CPL_UNUSED CPLErr *peErr
 GInt32 HFAEntry::GetIntField( const char * pszFieldPath, CPLErr *peErr )
 
 {
-    GInt32	nIntValue;
+    GInt32 nIntValue = 0;
 
     if( !GetFieldValue( pszFieldPath, 'i', &nIntValue, NULL ) )
     {
@@ -825,7 +831,7 @@ GIntBig HFAEntry::GetBigIntField( const char *pszFieldPath, CPLErr *peErr )
     if( peErr != NULL && *peErr != CE_None )
         return 0;
 
-    return nLower + (((GIntBig) nUpper) << 32);
+    return nLower + (static_cast<GIntBig>(nUpper) << 32);
 }
 
 /************************************************************************/
@@ -835,7 +841,7 @@ GIntBig HFAEntry::GetBigIntField( const char *pszFieldPath, CPLErr *peErr )
 double HFAEntry::GetDoubleField( const char * pszFieldPath, CPLErr *peErr )
 
 {
-    double dfDoubleValue;
+    double dfDoubleValue = 0;
 
     if( !GetFieldValue( pszFieldPath, 'd', &dfDoubleValue, NULL ) )
     {
@@ -886,13 +892,13 @@ CPLErr HFAEntry::SetFieldValue( const char * pszFieldPath,
 /* -------------------------------------------------------------------- */
 /*      Is there a node path in this string?                            */
 /* -------------------------------------------------------------------- */
-    if( strchr(pszFieldPath,':') != NULL )
+    if( strchr(pszFieldPath, ':') != NULL )
     {
         HFAEntry* poEntry = GetNamedChild( pszFieldPath );
         if( poEntry == NULL )
             return CE_Failure;
 
-        pszFieldPath = strchr(pszFieldPath,':') + 1;
+        pszFieldPath = strchr(pszFieldPath, ':') + 1;
     }
 
 /* -------------------------------------------------------------------- */
@@ -904,7 +910,6 @@ CPLErr HFAEntry::SetFieldValue( const char * pszFieldPath,
         || pabyData == NULL
         || poType == NULL )
     {
-        CPLAssert( FALSE );
         return CE_Failure;
     }
 
@@ -913,9 +918,9 @@ CPLErr HFAEntry::SetFieldValue( const char * pszFieldPath,
 /* -------------------------------------------------------------------- */
     MarkDirty();
 
-    return( poType->SetInstValue( pszFieldPath,
-                                  pabyData, nDataPos, nDataSize,
-                                  chReqType, pValue ) );
+    return poType->SetInstValue( pszFieldPath,
+                                 pabyData, nDataPos, nDataSize,
+                                 chReqType, pValue );
 }
 
 /************************************************************************/
@@ -962,7 +967,7 @@ void HFAEntry::SetPosition()
 
 {
 /* -------------------------------------------------------------------- */
-/*      Establish the location of this entry, and it's data.            */
+/*      Establish the location of this entry, and its data.             */
 /* -------------------------------------------------------------------- */
     if( nFilePos == 0 )
     {
@@ -988,7 +993,7 @@ void HFAEntry::SetPosition()
 /************************************************************************/
 /*                            FlushToDisk()                             */
 /*                                                                      */
-/*      Write this entry, and it's data to disk if the entries          */
+/*      Write this entry, and its data to disk if the entries           */
 /*      information is dirty.  Also force children to do the same.      */
 /************************************************************************/
 
@@ -1020,7 +1025,7 @@ CPLErr HFAEntry::FlushToDisk()
 /*      Write the Ehfa_Entry fields.                                    */
 /* -------------------------------------------------------------------- */
 
-        //VSIFFlushL( psHFA->fp );
+        // VSIFFlushL( psHFA->fp );
         if( VSIFSeekL( psHFA->fp, nFilePos, SEEK_SET ) != 0 )
         {
             CPLError( CE_Failure, CPLE_FileIO,
@@ -1062,7 +1067,7 @@ CPLErr HFAEntry::FlushToDisk()
         bOK &= VSIFWriteL( szName, 1, 64, psHFA->fp ) > 0;
         bOK &= VSIFWriteL( szType, 1, 32, psHFA->fp ) > 0;
 
-        nLong = 0; /* Should we keep the time, or set it more reasonably? */
+        nLong = 0;  // Should we keep the time, or set it more reasonably?
         bOK &= VSIFWriteL( &nLong, 4, 1, psHFA->fp ) > 0;
         if( !bOK )
         {
@@ -1075,21 +1080,21 @@ CPLErr HFAEntry::FlushToDisk()
 /* -------------------------------------------------------------------- */
 /*      Write out the data.                                             */
 /* -------------------------------------------------------------------- */
-        //VSIFFlushL( psHFA->fp );
+        // VSIFFlushL( psHFA->fp );
         if( nDataSize > 0 && pabyData != NULL )
         {
             if( VSIFSeekL( psHFA->fp, nDataPos, SEEK_SET ) != 0
                 || VSIFWriteL( pabyData, nDataSize, 1, psHFA->fp ) != 1 )
             {
                 CPLError( CE_Failure, CPLE_FileIO,
-                          "Failed to write %d bytes HFAEntry %s(%s) data,\n"
+                          "Failed to write %d bytes HFAEntry %s(%s) data, "
                           "out of disk space?",
                           nDataSize, szName, szType );
                 return CE_Failure;
             }
         }
 
-        //VSIFFlushL( psHFA->fp );
+        // VSIFFlushL( psHFA->fp );
     }
 
 /* -------------------------------------------------------------------- */
@@ -1104,7 +1109,7 @@ CPLErr HFAEntry::FlushToDisk()
             return eErr;
     }
 
-    bDirty = FALSE;
+    bDirty = false;
 
     return CE_None;
 }
@@ -1119,6 +1124,6 @@ CPLErr HFAEntry::FlushToDisk()
 void HFAEntry::MarkDirty()
 
 {
-    bDirty = TRUE;
-    psHFA->bTreeDirty = TRUE;
+    bDirty = true;
+    psHFA->bTreeDirty = true;
 }

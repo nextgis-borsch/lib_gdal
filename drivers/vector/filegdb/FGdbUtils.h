@@ -27,7 +27,6 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-
 #ifndef FGDB_UTILS_H_INCLUDED
 #define FGDB_UTILS_H_INCLUDED
 
@@ -47,15 +46,14 @@ std::string WStringToString(const std::wstring& s);
 bool GDBToOGRGeometry(std::string geoType, bool hasZ, bool hasM, OGRwkbGeometryType* pOut);
 bool OGRGeometryToGDB(OGRwkbGeometryType ogrType, std::string *gdbType, bool *hasZ, bool *hasM);
 
-
 bool GDBToOGRSpatialReference(const std::string & wkt, OGRSpatialReference** ppSR);
 
-// Feature mapping 
-bool GDBGeometryToOGRGeometry(bool forceMulti, FileGDBAPI::ShapeBuffer* pGdbGeometry, 
+// Feature mapping
+bool GDBGeometryToOGRGeometry(bool forceMulti, FileGDBAPI::ShapeBuffer* pGdbGeometry,
                               OGRSpatialReference* pOGRSR, OGRGeometry** ppOutGeometry);
 
 //temporary version - until we can parse the full binary format
-bool GhettoGDBGeometryToOGRGeometry(bool forceMulti, FileGDBAPI::ShapeBuffer* pGdbGeometry, 
+bool GhettoGDBGeometryToOGRGeometry(bool forceMulti, FileGDBAPI::ShapeBuffer* pGdbGeometry,
                                     OGRSpatialReference* pOGRSR, OGRGeometry** ppOutGeometry);
 //
 // GDB API to OGR Field Mapping

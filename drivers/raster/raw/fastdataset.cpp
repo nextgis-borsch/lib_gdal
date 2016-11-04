@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  EOSAT FAST Format reader
  * Purpose:  Reads Landsat FAST-L7A, IRS 1C/1D
@@ -147,7 +146,6 @@ class FASTRasterBand : public RawRasterBand
                                 int, int, GDALDataType, int );
 };
 
-
 /************************************************************************/
 /*                           FASTRasterBand()                           */
 /************************************************************************/
@@ -266,7 +264,6 @@ int FASTDataset::OpenChannel( const char *pszFilenameIn, int iBand )
 /************************************************************************/
 /*                             FOpenChannel()                           */
 /************************************************************************/
-
 
 VSILFILE *FASTDataset::FOpenChannel( const char *pszBandname,
                                      int iBand, int iFASTBand )

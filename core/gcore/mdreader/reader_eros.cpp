@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  GDAL Core
  * Purpose:  Read metadata from EROS imagery.
@@ -29,6 +28,8 @@
  ****************************************************************************/
 
 #include "reader_eros.h"
+
+CPL_CVSID("$Id$");
 
 /**
  * GDALMDReaderEROS()
@@ -209,7 +210,6 @@ void GDALMDReaderEROS::LoadMetadata()
         m_papszIMAGERYMD = CSLAddNameValue(m_papszIMAGERYMD,
                                            MD_NAME_ACQDATETIME, buffer);
     }
-
 }
 
 /**

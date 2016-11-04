@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  Interlis 2 Translator
  * Purpose:  Implements OGRILI2DataSource class.
@@ -36,7 +35,6 @@
 #include "ogr_ili2.h"
 
 using namespace std;
-
 
 CPL_CVSID("$Id$");
 
@@ -179,7 +177,6 @@ int OGRILI2DataSource::Open( const char * pszNewName,
     return TRUE;
 }
 
-
 /************************************************************************/
 /*                               Create()                               */
 /************************************************************************/
@@ -231,7 +228,6 @@ int OGRILI2DataSource::Create( const char *pszFilename,
         CSLDestroy(filenames);
         return FALSE;
     }
-
 
 /* -------------------------------------------------------------------- */
 /*      Parse model                                                     */
