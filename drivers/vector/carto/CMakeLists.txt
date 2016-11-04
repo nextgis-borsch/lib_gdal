@@ -25,13 +25,13 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-CMAKE_DEPENDENT_OPTION(ENABLE_CARTODB "Build CartoDB format" ON
+CMAKE_DEPENDENT_OPTION(ENABLE_CARTO "Build Carto format" ON
                        "CURL_FOUND" OFF)
-if(ENABLE_CARTODB)
-    set(TARGET_NAME vec_cartodb)
+if(ENABLE_CARTO)
+    set(TARGET_NAME vec_carto)
 
-    add_definitions(-DCARTODB_ENABLED)
-	set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DCARTODB_ENABLED" PARENT_SCOPE)
+    add_definitions(-DCARTO_ENABLED)
+	set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DCARTO_ENABLED" PARENT_SCOPE)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
     #include_directories(${JSONC_INCLUDE_DIR})
@@ -57,5 +57,5 @@ if(ENABLE_CARTODB)
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
 else()
-    warning_msg("Skip cartodb")  
+    warning_msg("Skip carto")  
 endif()
