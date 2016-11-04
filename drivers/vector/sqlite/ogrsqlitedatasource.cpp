@@ -2016,7 +2016,7 @@ OGRLayer * OGRSQLiteDataSource::ExecuteSQL( const char *pszSQLCommand,
     poLayer = new OGRSQLiteSelectLayer( this, osSQL, hSQLStmt,
                                         bUseStatementForGetNextFeature, bEmptyLayer, TRUE );
 
-    if( poSpatialFilter != NULL )
+    if( poSpatialFilter != NULL && poLayer->GetLayerDefn()->GetGeomFieldCount() > 0 )
         poLayer->SetSpatialFilter( 0, poSpatialFilter );
 
     return poLayer;
@@ -2059,6 +2059,20 @@ OGRSQLiteDataSource::ICreateLayer( const char * pszLayerNameIn,
                   m_pszFilename, pszLayerNameIn );
 
         return NULL;
+    }
+
+    if ( bIsSpatiaLiteDB && eType != wkbNone )
+    {
+        // We need to catch this right now as AddGeometryColumn does not
+        // return an error
+        OGRwkbGeometryType eFType = wkbFlatten(eType);
+        if( eFType > wkbGeometryCollection )
+        {
+            CPLError(CE_Failure, CPLE_NotSupported,
+                    "Cannot create geometry field of type %s",
+                    OGRToOGCGeomType(eType));
+            return NULL;
+        }
     }
 
     for( int iLayer = 0; iLayer < nLayers; iLayer++ )
@@ -2689,7 +2703,6 @@ OGRErr OGRSQLiteBaseDataSource::DoTransactionCommand(const char* pszCommand)
     rc = sqlite3_exec( hDB, pszCommand, NULL, NULL, &pszErrMsg );
     if( rc != SQLITE_OK )
     {
-        nSoftTransactionLevel--;
         CPLError( CE_Failure, CPLE_AppDefined,
                   "%s transaction failed: %s",
                   pszCommand, pszErrMsg );

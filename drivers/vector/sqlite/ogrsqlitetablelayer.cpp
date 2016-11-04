@@ -1446,6 +1446,19 @@ OGRErr OGRSQLiteTableLayer::CreateGeomField( OGRGeomFieldDefn *poGeomFieldIn,
                  "Cannot create geometry field of type wkbNone");
         return OGRERR_FAILURE;
     }
+    if ( poDS->IsSpatialiteDB() )
+    {
+        // We need to catch this right now as AddGeometryColumn does not
+        // return an error
+        OGRwkbGeometryType eFType = wkbFlatten(eType);
+        if( eFType > wkbGeometryCollection )
+        {
+            CPLError(CE_Failure, CPLE_NotSupported,
+                    "Cannot create geometry field of type %s",
+                    OGRToOGCGeomType(eType));
+            return OGRERR_FAILURE;
+        }
+    }
 
     OGRSQLiteGeomFieldDefn *poGeomField =
         new OGRSQLiteGeomFieldDefn( poGeomFieldIn->GetNameRef(), -1 );
@@ -2150,7 +2163,11 @@ OGRErr OGRSQLiteTableLayer::AlterFieldDefn( int iFieldToAlter, OGRFieldDefn* poN
             if( (nFlagsIn & ALTER_NAME_FLAG) )
                 oTmpFieldDefn.SetName(poNewFieldDefn->GetNameRef());
             if( (nFlagsIn & ALTER_TYPE_FLAG) )
+            {
+                oTmpFieldDefn.SetSubType(OFSTNone);
                 oTmpFieldDefn.SetType(poNewFieldDefn->GetType());
+                oTmpFieldDefn.SetSubType(poNewFieldDefn->GetSubType());
+            }
             if (nFlagsIn & ALTER_WIDTH_PRECISION_FLAG)
             {
                 oTmpFieldDefn.SetWidth(poNewFieldDefn->GetWidth());
@@ -2227,7 +2244,9 @@ OGRErr OGRSQLiteTableLayer::AlterFieldDefn( int iFieldToAlter, OGRFieldDefn* poN
             papszCompressedColumns = CSLRemoveStrings(papszCompressedColumns,
                                                       iIdx, 1, NULL);
         }
+        poFieldDefn->SetSubType(OFSTNone);
         poFieldDefn->SetType(poNewFieldDefn->GetType());
+        poFieldDefn->SetSubType(poNewFieldDefn->GetSubType());
     }
     if (nFlagsIn & ALTER_NAME_FLAG)
     {
@@ -3374,7 +3393,8 @@ OGRErr OGRSQLiteTableLayer::RunDeferredCreationIfNecessary()
         {
             OGRSQLiteGeomFieldDefn* poGeomFieldDefn =
                 poFeatureDefn->myGetGeomFieldDefn(i);
-            RunAddGeometryColumn(poGeomFieldDefn, FALSE);
+            if( RunAddGeometryColumn(poGeomFieldDefn, FALSE) != OGRERR_NONE )
+                return OGRERR_FAILURE;
         }
     }
 

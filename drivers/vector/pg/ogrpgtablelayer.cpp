@@ -646,7 +646,7 @@ int OGRPGTableLayer::ReadTableDefinition()
 
       /* Get the geometry type and dimensions from the table, or */
       /* from its parents if it is a derived table, or from the parent of the parent, etc.. */
-      int bGoOn = TRUE;
+      int bGoOn = poDS->m_bHasGeometryColumns;
       int bHasPostGISGeometry =
         (poGeomFieldDefn->ePostgisType == GEOM_TYPE_GEOMETRY);
 
@@ -2523,7 +2523,11 @@ OGRErr OGRPGTableLayer::AlterFieldDefn( int iField, OGRFieldDefn* poNewFieldDefn
     poDS->SoftStartTransaction();
 
     if (!(nFlagsIn & ALTER_TYPE_FLAG))
+    {
+        oField.SetSubType(OFSTNone);
         oField.SetType(poFieldDefn->GetType());
+        oField.SetSubType(poFieldDefn->GetSubType());
+    }
 
     if (!(nFlagsIn & ALTER_WIDTH_PRECISION_FLAG))
     {
@@ -2677,7 +2681,11 @@ OGRErr OGRPGTableLayer::AlterFieldDefn( int iField, OGRFieldDefn* poNewFieldDefn
     if (nFlagsIn & ALTER_NAME_FLAG)
         poFieldDefn->SetName(oField.GetNameRef());
     if (nFlagsIn & ALTER_TYPE_FLAG)
+    {
+        poFieldDefn->SetSubType(OFSTNone);
         poFieldDefn->SetType(oField.GetType());
+        poFieldDefn->SetSubType(oField.GetSubType());
+    }
     if (nFlagsIn & ALTER_WIDTH_PRECISION_FLAG)
     {
         poFieldDefn->SetWidth(oField.GetWidth());
@@ -2837,6 +2845,11 @@ void OGRPGTableLayer::ResolveSRID(OGRPGGeomFieldDefn* poGFldDefn)
     CPLString    osCommand;
 
     int nSRSId = poDS->GetUndefinedSRID();
+    if( !poDS->m_bHasGeometryColumns )
+    {
+        poGFldDefn->nSRSId = nSRSId;
+        return;
+    }
 
     osCommand.Printf(
                 "SELECT srid FROM geometry_columns "
