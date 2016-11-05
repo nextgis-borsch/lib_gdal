@@ -36,6 +36,7 @@ set(TARGET_NAME ogr)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/ogrsf_frmts)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/ogrsf_frmts/mem)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/ogrsf_frmts/geojson)
 
 set(LIB_HHEADERS
     ogr_api.h
