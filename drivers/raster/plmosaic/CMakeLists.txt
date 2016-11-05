@@ -34,7 +34,9 @@ if(ENABLE_PLMOSAIC)
     set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DFRMT_plmosaic" PARENT_SCOPE)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-    #include_directories(${JSONC_INCLUDE_DIRS})
+    #include_directories(${JSONC_INCLUDE_DIRS}) 
+    include_directories(${CMAKE_SOURCE_DIR}/core/ogr)
+    include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/geojson)
 
     set(LIB_HHEADERS
     )
