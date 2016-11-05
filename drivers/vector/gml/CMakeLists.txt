@@ -62,6 +62,9 @@ if(ENABLE_GML)
         ogr_gml.h 
         gmlreader.h 
         gmlreaderp.h
+        xercesc_headers.h
+        parsexsd.h
+        gmlregistry.h
     )
 
     set(LIB_CORESOURCES
@@ -75,7 +78,6 @@ if(ENABLE_GML)
         gmlutils.cpp 
 		gmlreadstate.cpp 
         gmlhandler.cpp 
-        trstring.cpp 
         gfstemplate.cpp 
         gmlregistry.cpp
     )
