@@ -35,6 +35,7 @@ gdal/frmts/coasp,drivers/raster/coasp,,"cpp,h,c,hpp"
 gdal/frmts/cosar,drivers/raster/cosar,,"cpp,h,c,hpp"
 gdal/frmts/ctg,drivers/raster/ctg,,"cpp,h,c,hpp"
 gdal/frmts/dds,drivers/raster/dds,,"cpp,h,c,hpp"
+gdal/frmts/derived,drivers/raster/derived,,"cpp,h,c,hpp"
 gdal/frmts/dimap,drivers/raster/dimap,,"cpp,h,c,hpp"
 gdal/frmts/dods,drivers/raster/dods,,"cpp,h,c,hpp"
 gdal/frmts/dted,drivers/raster/dted,,"cpp,h,c,hpp"
@@ -165,7 +166,8 @@ gdal/ogr/ogrsf_frmts/arcgen,drivers/vector/arcgen,,"cpp,h,c,hpp"
 gdal/ogr/ogrsf_frmts/arcobjects,drivers/vector/arcobjects,,"cpp,h,c,hpp"
 gdal/ogr/ogrsf_frmts/avc,drivers/vector/avc,,"cpp,h,c,hpp"
 gdal/ogr/ogrsf_frmts/bna,drivers/vector/bna,,"cpp,h,c,hpp"
-gdal/ogr/ogrsf_frmts/cartodb,drivers/vector/cartodb,,"cpp,h,c,hpp"
+gdal/ogr/ogrsf_frmts/cad,drivers/common/cad,,"cpp,h,c,hpp"
+gdal/ogr/ogrsf_frmts/carto,drivers/vector/carto,,"cpp,h,c,hpp"
 gdal/ogr/ogrsf_frmts/cloudant,drivers/vector/cloudant,,"cpp,h,c,hpp"
 gdal/ogr/ogrsf_frmts/couchdb,drivers/vector/couchdb,,"cpp,h,c,hpp"
 gdal/ogr/ogrsf_frmts/csv,drivers/vector/csv,,"cpp,h,c,hpp"
@@ -297,3 +299,4 @@ gdal/ogr/ogrsf_frmts/,core/ogr/ogrsf_frmts,,h
 gdal/ogr/ogrsf_frmts/mem/,core/ogr/ogrsf_frmts/mem/,,h
 gdal/ogr/ogrsf_frmts/generic/,core/ogr/ogrsf_frmts/generic/,,h
 gdal/ogr/ogrsf_frmts/geojson/,core/ogr/ogrsf_frmts/geojson/,,h
+gdal/frmts/derived,core/frmts/derived,,h

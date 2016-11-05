@@ -29,7 +29,6 @@
  *  SOFTWARE.
  *******************************************************************************/
 #include "ogr_cad.h"
-
 #include "vsilfileio.h"
 
 /************************************************************************/
@@ -45,7 +44,7 @@ static int OGRCADDriverIdentify( GDALOpenInfo *poOpenInfo )
         poOpenInfo->pabyHeader[1] != 'C' )
         return FALSE;
 
-    return IdentifyCADFile ( new VSILFileIO( poOpenInfo->pszFilename ) ) == 0 ? 
+    return IdentifyCADFile ( new VSILFileIO( poOpenInfo->pszFilename ), true ) == 0 ?
         FALSE : TRUE;
 }
 
@@ -55,30 +54,40 @@ static int OGRCADDriverIdentify( GDALOpenInfo *poOpenInfo )
 
 static GDALDataset *OGRCADDriverOpen( GDALOpenInfo* poOpenInfo )
 {
-    long nSubRasterLayer = -1, nSubRasterFID = -1;
+    long nSubRasterLayer = -1;
+    long nSubRasterFID = -1;
 
     CADFileIO* pFileIO;
     if ( STARTS_WITH_CI(poOpenInfo->pszFilename, "CAD:") )
     {
-        char** papszTokens = CSLTokenizeString2(poOpenInfo->pszFilename, ":", 0);
-        if( CSLCount(papszTokens) != 4 )
+        char** papszTokens = CSLTokenizeString2( poOpenInfo->pszFilename, ":", 0 );
+        int nTokens = CSLCount( papszTokens );
+        if( nTokens < 4 )
         {
             CSLDestroy(papszTokens);
-            return FALSE;
+            return NULL;
         }
 
-        pFileIO = new VSILFileIO( papszTokens[1] ); 
-        nSubRasterLayer = atol(papszTokens[2]);
-        nSubRasterFID = atol(papszTokens[3]);
+        CPLString osFilename;
+        for( int i = 1; i < nTokens - 2; ++i )
+        {
+            if( osFilename.empty() )
+                osFilename += ":";
+            osFilename += papszTokens[i];
+        }
 
-        CSLDestroy(papszTokens);
+        pFileIO = new VSILFileIO( osFilename );
+        nSubRasterLayer = atol( papszTokens[nTokens - 2] );
+        nSubRasterFID = atol( papszTokens[nTokens - 1] );
+
+        CSLDestroy( papszTokens );
     }
     else
     {
-        pFileIO = new VSILFileIO( poOpenInfo->pszFilename );    
+        pFileIO = new VSILFileIO( poOpenInfo->pszFilename );
     }
 
-    if ( IdentifyCADFile( pFileIO, false ) == FALSE)
+    if ( IdentifyCADFile( pFileIO, false ) == FALSE )
     {
         delete pFileIO;
         return NULL;
@@ -97,7 +106,7 @@ static GDALDataset *OGRCADDriverOpen( GDALOpenInfo* poOpenInfo )
         return NULL;
     }
 
-    GDALCADDataset *poDS = new GDALCADDataset();    
+    GDALCADDataset *poDS = new GDALCADDataset();
     if( !poDS->Open( poOpenInfo, pFileIO, nSubRasterLayer, nSubRasterFID ) )
     {
         delete poDS;
@@ -129,7 +138,7 @@ void RegisterOGRCAD()
         poDriver->SetMetadataItem( GDAL_DMD_OPENOPTIONLIST, "<OpenOptionList>"
 "  <Option name='MODE' type='string' description='Open mode. READ_ALL - read all data (slow), READ_FAST - read main data (fast), READ_FASTEST - read less data' default='READ_FAST'/>"
 "  <Option name='ADD_UNSUPPORTED_GEOMETRIES_DATA' type='string' description='Add unsupported geometries data (color, attributes) to the layer (YES/NO). They will have no geometrical representation.' default='NO'/>"
-"</OpenOptionList>"); 
+"</OpenOptionList>");
 
 
         poDriver->pfnOpen = OGRCADDriverOpen;
@@ -139,12 +148,17 @@ void RegisterOGRCAD()
     }
 }
 
-CPLString CADRecode( const std::string& sString, int CADEncoding )
+CPLString CADRecode( const CPLString& sString, int CADEncoding )
 {
     switch( CADEncoding )
     {
         case 29:
-            return CPLString( CPLRecode( sString.c_str(), "CP1251", CPL_ENC_UTF8 ) );
+        {
+            char* pszRecoded = CPLRecode( sString, "CP1251", CPL_ENC_UTF8 );
+            CPLString soRecoded(pszRecoded);
+            CPLFree(pszRecoded);
+            return soRecoded;
+        }
         default:
             CPLError( CE_Failure, CPLE_NotSupported,
                   "CADRecode() function does not support provided CADEncoding." );

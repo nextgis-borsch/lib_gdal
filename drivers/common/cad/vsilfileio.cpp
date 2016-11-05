@@ -30,8 +30,6 @@
 *******************************************************************************/
 #include "vsilfileio.h"
 
-#include <string>
-
 VSILFileIO::VSILFileIO(const char* pszFilePath) : CADFileIO(pszFilePath)
 {
 
@@ -48,19 +46,20 @@ const char* VSILFileIO::ReadLine()
     return nullptr;
 }
 
-bool VSILFileIO::Eof()
+bool VSILFileIO::Eof() const
 {
     return VSIFEofL( m_oFileStream ) == 0 ? false : true;
 }
 
 bool VSILFileIO::Open(int mode)
 {
-    std::string sOpenMode = "r";
-    if(mode & OpenMode::binary)
-        sOpenMode = "r+b";
-
-    if(mode & OpenMode::write)
+    // NOTE: now support only read mode
+    if( mode & OpenMode::write )
         return false;
+
+    std::string sOpenMode = "r";
+    if( mode & OpenMode::binary )
+        sOpenMode = "r+b";
 
     m_oFileStream = VSIFOpenL( m_soFilePath.c_str(), sOpenMode.c_str() );
 
@@ -78,7 +77,8 @@ bool VSILFileIO::Close()
 int VSILFileIO::Seek(long offset, CADFileIO::SeekOrigin origin)
 {
     int nWhence = 0;
-    switch (origin) {
+    switch( origin )
+    {
     case SeekOrigin::CUR:
         nWhence = SEEK_CUR;
         break;
@@ -93,7 +93,7 @@ int VSILFileIO::Seek(long offset, CADFileIO::SeekOrigin origin)
     return VSIFSeekL( m_oFileStream, offset, nWhence) == 0 ? 0 : 1;
 }
 
-long VSILFileIO::Tell()
+long int VSILFileIO::Tell()
 {
     return VSIFTellL( m_oFileStream );
 }

@@ -31,38 +31,34 @@
 #ifndef OGR_CAD_H_INCLUDED
 #define OGR_CAD_H_INCLUDED
 
-#include <memory>
-#include <vector>
-#include <string>
-
+// gdal headers
 #include "ogrsf_frmts.h"
 
-#include "opencad_api.h"
+// libopencad headers
 #include "cadgeometry.h"
+#include "opencad_api.h"
+
+#include <set>
 
 class OGRCADLayer : public OGRLayer
 {
     OGRFeatureDefn  *poFeatureDefn;
-
     OGRSpatialReference * poSpatialRef;
-
     GIntBig         nNextFID;
-
     CADLayer        &poCADLayer;
+    int             nDWGEncoding;
+
 public:
-    OGRCADLayer( CADLayer &poCADLayer, OGRSpatialReference *poSR );
+    OGRCADLayer( CADLayer &poCADLayer, OGRSpatialReference *poSR, int nEncoding );
     ~OGRCADLayer();
 
     void            ResetReading();
     OGRFeature      *GetNextFeature();
     OGRFeature      *GetFeature( GIntBig nFID );
     GIntBig         GetFeatureCount( int /* bForce */ );
-
-
     OGRSpatialReference *GetSpatialRef() { return poSpatialRef; }
     OGRFeatureDefn  *GetLayerDefn() { return poFeatureDefn; }
-
-    std::vector< std::string > asFeaturesAttributes;
+    std::set< CPLString > asFeaturesAttributes;
     int             TestCapability( const char * ) { return( FALSE ); }
 };
 
@@ -77,13 +73,14 @@ class GDALCADDataset : public GDALDataset
     CPLString      soWKT;
     double         adfGeoTransform[6];
     GDALDataset   *poRasterDS;
+    OGRSpatialReference *poSpatialReference;
 
 public:
     GDALCADDataset();
     virtual ~GDALCADDataset();
 
-    int            Open( GDALOpenInfo* poOpenInfo, CADFileIO* pFileIO, 
-                            long nSubRasterLayer = -1, long nSubRasterFID = -1 );  
+    int            Open( GDALOpenInfo* poOpenInfo, CADFileIO* pFileIO,
+                            long nSubRasterLayer = -1, long nSubRasterFID = -1 );
     int            GetLayerCount() { return nLayers; }
     OGRLayer      *GetLayer( int );
     int            TestCapability( const char * );
@@ -92,17 +89,18 @@ public:
     virtual CPLErr GetGeoTransform( double * );
     virtual int    GetGCPCount();
     virtual const char *GetGCPProjection();
-    virtual const GDAL_GCP *GetGCPs(); 
+    virtual const GDAL_GCP *GetGCPs();
     virtual int CloseDependentDatasets();
 
 protected:
     OGRSpatialReference *GetSpatialReference();
     const char* GetPrjFilePath();
     void FillTransform(CADImage* pImage, double dfUnits);
+    int GetCadEncoding() const;
 private:
     CPL_DISALLOW_COPY_ASSIGN(GDALCADDataset);
 };
 
-CPLString CADRecode( const std::string& sString, int CADEncoding );
+CPLString CADRecode( const CPLString& sString, int CADEncoding );
 
 #endif
