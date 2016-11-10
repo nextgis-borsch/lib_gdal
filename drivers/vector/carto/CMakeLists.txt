@@ -36,7 +36,8 @@ if(ENABLE_CARTO)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
     #include_directories(${JSONC_INCLUDE_DIR})
     include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/pgdump)
-
+    include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/geojson)
+    
     set(LIB_HHEADERS
     )
 

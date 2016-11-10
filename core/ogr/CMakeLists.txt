@@ -59,6 +59,7 @@ set(LIB_HHEADERS_PRIV
     osr_cs_wkt.h
     osr_cs_wkt_parser.h
     swq.h
+    ogr_xerces.h
 )
 
 set(LIB_CSOURCES
@@ -117,6 +118,7 @@ set(LIB_CSOURCES
     swq_select.cpp
     ograpispy.cpp
     ogrpgeogeometry.cpp
+    ogr_xerces.cpp
 )
 
 

@@ -34,6 +34,7 @@ if(ENABLE_ARG)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
     include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/raw)
+    include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/geojson)
 
     set(LIB_HHEADERS
     )

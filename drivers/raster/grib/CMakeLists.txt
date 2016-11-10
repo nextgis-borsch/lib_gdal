@@ -40,6 +40,10 @@ if(ENABLE_GRIB)
     #if(JASPER_FOUND) 
     #    add_definitions(-DHAVE_JASPER)
     #endif()
+    
+    if(PNG_FOUND) 
+        add_definitions(-DUSE_PNG)
+    endif()
 
     set(LIB_HHEADERS
     )
@@ -50,31 +54,41 @@ if(ENABLE_GRIB)
     set(LIB_CSOURCES
         gribdataset.cpp
     )
-    file(GLOB CSOURCES ${CMAKE_CURRENT_SOURCE_DIR}/degrib18/degrib/*)
-    foreach(CSOURCE ${CSOURCES})
-        if(EXISTS ${CSOURCE})
-            get_filename_component(CSOURCE_EXT ${CSOURCE} EXT) 
-            if((${CSOURCE_EXT} STREQUAL ".c") OR (${CSOURCE_EXT} STREQUAL ".cpp"))
-                set(LIB_CSOURCES ${LIB_CSOURCES} ${CSOURCE})
-            endif() 
-        endif()    
-    endforeach()
-    file(GLOB CSOURCES ${CMAKE_CURRENT_SOURCE_DIR}/degrib18/g2clib-1.0.4/*)
-    foreach(CSOURCE ${CSOURCES})
-        if(EXISTS ${CSOURCE})
-            get_filename_component(CSOURCE_EXT ${CSOURCE} EXT)  
-            if((CSOURCE_EXT STREQUAL ".c") OR (CSOURCE_EXT STREQUAL ".cpp"))
-                set(LIB_CSOURCES ${LIB_CSOURCES} ${CSOURCE})
-            endif() 
-        endif()    
-    endforeach()
     
     # TODO: implement plugin gdal_ERS.so/.dll target if needed.
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
 
+    
+    file(GLOB CSOURCES ${CMAKE_CURRENT_SOURCE_DIR}/degrib18/degrib/*)
+    foreach(CSOURCE ${CSOURCES})
+        if(EXISTS ${CSOURCE})
+            get_filename_component(CSOURCE_EXT ${CSOURCE} EXT) 
+            if((${CSOURCE_EXT} STREQUAL ".c") OR (${CSOURCE_EXT} STREQUAL ".cpp"))
+                set(LIB_CSOURCES_DEGRIB ${LIB_CSOURCES_DEGRIB} ${CSOURCE})
+            endif() 
+        endif()    
+    endforeach()
+    add_library(${TARGET_NAME}_degrib OBJECT ${LIB_CSOURCES_DEGRIB})
+    
+    
+    file(GLOB CSOURCES ${CMAKE_CURRENT_SOURCE_DIR}/degrib18/g2clib-1.0.4/*)
+    foreach(CSOURCE ${CSOURCES})
+        if(EXISTS ${CSOURCE})
+            get_filename_component(CSOURCE_EXT ${CSOURCE} EXT)  
+            if((CSOURCE_EXT STREQUAL ".c") OR (CSOURCE_EXT STREQUAL ".cpp"))
+                set(LIB_CSOURCES_G2CLIB ${LIB_CSOURCES_G2CLIB} ${CSOURCE})
+            endif() 
+        endif()    
+    endforeach()    
+    add_library(${TARGET_NAME}_g2clib OBJECT ${LIB_CSOURCES_G2CLIB})
+
     # build target
-    set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
+    set(TARGET_OBJECTS ${TARGET_OBJECTS} 
+        $<TARGET_OBJECTS:${TARGET_NAME}>
+        $<TARGET_OBJECTS:${TARGET_NAME}_degrib>
+        $<TARGET_OBJECTS:${TARGET_NAME}_g2clib>
+        PARENT_SCOPE)
 else()
     warning_msg("Skip grib")  
 endif()
