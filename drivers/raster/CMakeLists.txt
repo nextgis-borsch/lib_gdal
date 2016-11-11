@@ -25,6 +25,12 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
+# common raster libraries search
+option(ENABLE_PNG "Build Portable Network Graphics (.png) format" ON)
+if(ENABLE_PNG)
+    find_anyproject(PNG REQUIRED CMAKE_ARGS -DSKIP_INSTALL_EXPORT=ON)
+endif()
+
 file(GLOB FORMATS ${CMAKE_CURRENT_SOURCE_DIR}/*)
 foreach(FORMAT ${FORMATS})
     if(EXISTS ${FORMAT}/CMakeLists.txt)
