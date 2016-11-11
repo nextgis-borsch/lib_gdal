@@ -33,6 +33,8 @@ if(ENABLE_DIMAP)
     set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DFRMT_dimap" PARENT_SCOPE)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+    include_directories(${CMAKE_SOURCE_DIR}/drivers/raster)
+    include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/vrt)
 
     set(LIB_HHEADERS
     )
