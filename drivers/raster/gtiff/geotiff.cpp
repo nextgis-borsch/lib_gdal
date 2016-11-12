@@ -1338,7 +1338,7 @@ public:
         {
             while( nSeekForward > 0 )
             {
-#if HAVE_CXX11
+#if HAVE_CXX11 & DEBUG
                 // If size_t is smaller than vsi_l_offset, possible trouble.
                 static_assert(
                     sizeof(size_t) >= sizeof(vsi_l_offset),
