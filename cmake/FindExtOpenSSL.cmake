@@ -21,11 +21,5 @@
 ################################################################################
 
 set(repo_name lib_openssl)
-
-if(find_extproject_SHARED)    
-    set(repo_project openssl)
-else()
-    set(repo_project opensslstatic)
-endif()
-
+set(repo_project openssl)
 set(repo_include openssl)

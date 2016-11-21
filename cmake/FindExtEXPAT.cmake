@@ -21,11 +21,5 @@
 ################################################################################
 
 set(repo_name lib_expat)
-
-if(find_extproject_SHARED)    
-    set(repo_project expat)
-else()
-    set(repo_project expatstatic)
-endif()
-
+set(repo_project expat)
 set(repo_include)

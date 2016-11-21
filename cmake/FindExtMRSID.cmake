@@ -21,8 +21,6 @@
 ################################################################################
 
 set(repo_name lib_mrsid)
-
-set(repo_project libmrsid)
-
-set(repo_include libmrsid)
+set(repo_project mrsid)
+set(repo_include)
 set(repo_intetrface ON)

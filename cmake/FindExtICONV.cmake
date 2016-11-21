@@ -21,11 +21,5 @@
 ################################################################################
 
 set(repo_name lib_iconv)
-
-if(find_extproject_SHARED)    
-    set(repo_project iconv)
-else()
-    set(repo_project iconvstatic)
-endif()
-
+set(repo_project iconv)
 set(repo_include)

@@ -21,13 +21,7 @@
 ################################################################################
 
 set(repo_name lib_jpeg)
-
-if(find_extproject_SHARED)    
-    set(repo_project jpeg)
-else()
-    set(repo_project jpegstatic)
-endif()
-
+set(repo_project jpeg)
 set(repo_include)
 
 set(JPEG12_INCLUDE_DIR ${EXT_INSTALL_DIR}/include/ CACHE PATH "Include directory for 12-bit libjpeg" FORCE)

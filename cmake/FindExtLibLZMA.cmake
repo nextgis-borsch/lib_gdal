@@ -21,14 +21,8 @@
 ################################################################################
 
 set(repo_name lib_lzma)
-
-if(find_extproject_SHARED)    
-    set(repo_project lzma)
-else()
-    set(repo_project lzmastatic)
-endif()
-
-set(repo_include "")
+set(repo_project lzma)
+set(repo_include)
 
 if(NOT find_extproject_SHARED)
     add_definitions(-DLZMA_API_STATIC)

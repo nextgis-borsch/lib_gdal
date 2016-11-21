@@ -21,8 +21,5 @@
 ################################################################################
 
 set(repo_name lib_ecw)
-
-set(repo_project libecw)
-
-set(repo_include libecw)
+set(repo_project ecw)
 set(repo_intetrface ON)
