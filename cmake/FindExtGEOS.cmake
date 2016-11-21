@@ -21,11 +21,5 @@
 ################################################################################
 
 set(repo_name lib_geos)
-
-if(find_extproject_SHARED)    
-    set(repo_project geos)
-else()
-    set(repo_project geosstatic)
-endif()
-
-set(repo_include)
+set(repo_project geos)
+set(repo_include geos)

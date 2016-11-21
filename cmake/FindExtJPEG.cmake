@@ -21,13 +21,7 @@
 ################################################################################
 
 set(repo_name lib_jpeg)
-
-if(find_extproject_SHARED)    
-    set(repo_project jpeg)
-else()
-    set(repo_project jpegstatic)
-endif()
-
+set(repo_project jpeg)
 set(repo_include)
 
 if(find_extproject_SHARED)

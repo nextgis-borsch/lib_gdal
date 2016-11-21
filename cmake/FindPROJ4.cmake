@@ -9,6 +9,7 @@
 # PROJ4_LIBRARY, where to find the PROJ.4 library.
 #
 # Copyright (c) 2009 Mateusz Loskot <mateusz@loskot.net>
+# Copyright (c) 2015 NextGIS <info@nextgis.com>
 #
 # Redistribution and use is allowed according to the terms of the BSD license.
 # For details see the accompanying COPYING-CMAKE-SCRIPTS file.

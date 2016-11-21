@@ -21,11 +21,5 @@
 ################################################################################
 
 set(repo_name lib_sqlite)
-
-if(find_extproject_SHARED)    
-    set(repo_project sqlite3)
-else()
-    set(repo_project sqlite3static)
-endif()
-
+set(repo_project sqlite3)
 set(repo_include)

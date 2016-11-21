@@ -21,11 +21,5 @@
 ################################################################################
 
 set(repo_name lib_png)
-
-if(find_extproject_SHARED)    
-    set(repo_project libpng)
-else()
-    set(repo_project libpngstatic)
-endif()
-
+set(repo_project libpng)
 set(repo_include libpng16)

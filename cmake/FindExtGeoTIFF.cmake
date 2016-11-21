@@ -21,11 +21,5 @@
 ################################################################################
 
 set(repo_name lib_geotiff)
-
-if(find_extproject_SHARED)    
-    set(repo_project geotiff)
-else()
-    set(repo_project geotiffstatic)
-endif()
-
+set(repo_project geotiff)
 set(repo_include)

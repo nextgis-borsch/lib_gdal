@@ -21,11 +21,5 @@
 ################################################################################
 
 set(repo_name lib_tiff)
-
-if(find_extproject_SHARED)    
-    set(repo_project tiff)
-else()
-    set(repo_project tiffstatic)
-endif()
-
+set(repo_project tiff)
 set(repo_include)

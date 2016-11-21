@@ -46,49 +46,54 @@ FIND_PATH(JSONC_INCLUDE_DIR json.h
   c:/msys/local/include/json-c
   NO_DEFAULT_PATH
   )
-FIND_PATH(JSONC_INCLUDE_DIR json.h)
 
-if(CMAKE_CL_64)
+if(PROJ4_INCLUDE_DIR)
+    set(JSON_C_MAJOR_VERSION 0)
+    set(JSON_C_MINOR_VERSION 0)
+    set(JSON_C_MICRO_VERSION 0)
+
+    if(EXISTS "${JSONC_INCLUDE_DIR}/json_c_version.h")
+        file(READ ${JSONC_INCLUDE_DIR}/json_c_version.h _VERSION_H_CONTENTS)
+
+        string(REGEX MATCH "JSON_C_MAJOR_VERSION[ \t]+([0-9]+)"
+          JSON_C_MAJOR_VERSION ${_VERSION_H_CONTENTS})
+        string (REGEX MATCH "([0-9]+)"
+          JSON_C_MAJOR_VERSION ${JSON_C_MAJOR_VERSION})
+        string(REGEX MATCH "JSON_C_MINOR_VERSION[ \t]+([0-9]+)"
+          JSON_C_MINOR_VERSION ${_VERSION_H_CONTENTS})
+        string (REGEX MATCH "([0-9]+)"
+          JSON_C_MINOR_VERSION ${JSON_C_MINOR_VERSION})
+        string(REGEX MATCH "JSON_C_MICRO_VERSION[ \t]+([0-9]+)"
+          JSON_C_MICRO_VERSION ${_VERSION_H_CONTENTS})
+        string (REGEX MATCH "([0-9]+)"
+          JSON_C_MICRO_VERSION ${JSON_C_MICRO_VERSION})
+          
+        unset(_VERSION_H_CONTENTS)  
+    endif()
+    
+    set(JSON_C_VERSION_STRING "${JSON_C_MAJOR_VERSION}.${JSON_C_MINOR_VERSION}.${JSON_C_MICRO_VERSION}") 
+endif()
+
 FIND_LIBRARY(JSONC_LIBRARY NAMES json-c libjson-c libjson PATHS
   "$ENV{LIB_DIR}/lib"
   "$ENV{JSONC_ROOT}/lib"
-  "$ENV{JSONC_ROOT}/lib/x64"
   /usr/lib
   /usr/local/lib
   #mingw
   c:/msys/local/lib
   NO_DEFAULT_PATH
-  )
-else(CMAKE_CL_64)
-FIND_LIBRARY(JSONC_LIBRARY NAMES json-c libjson-c libjson PATHS
-  "$ENV{LIB_DIR}/lib"
-  "$ENV{JSONC_ROOT}/lib"
-  "$ENV{JSONC_ROOT}/lib/x32"
-  /usr/lib
-  /usr/local/lib
-  #mingw
-  c:/msys/local/lib
-  NO_DEFAULT_PATH
-  )
-endif(CMAKE_CL_64)  
-FIND_LIBRARY(JSONC_LIBRARY NAMES json-c libjson-c libjson)
+)  
 
-IF (JSONC_INCLUDE_DIR AND JSONC_LIBRARY)
-   SET(JSONC_FOUND TRUE)
-ENDIF (JSONC_INCLUDE_DIR AND JSONC_LIBRARY)
+# Handle the QUIETLY and REQUIRED arguments and set GEOS_FOUND to TRUE
+# if all listed variables are TRUE
+INCLUDE(FindPackageHandleStandardArgs)
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(JSONC REQUIRED_VARS JSONC_LIBRARY JSONC_INCLUDE_DIR
+                                        VERSION_VAR JSON_C_VERSION_STRING)
 
+if(JSONC_FOUND)
+  set(JSONC_LIBRARIES ${JSONC_LIBRARY})
+  set(JSONC_INCLUDE_DIRS ${JSONC_INCLUDE_DIR})
+endif()
 
-IF (JSONC_FOUND)
-
-   IF (NOT JSONC_FIND_QUIETLY)
-      MESSAGE(STATUS "Found JSONC: ${JSONC_LIBRARY}")
-      MESSAGE(STATUS "Found JSONC Headers: ${JSONC_INCLUDE_DIR}")
-   ENDIF (NOT JSONC_FIND_QUIETLY)
-
-ELSE (JSONC_FOUND)
-
-   IF (JSONC_FIND_REQUIRED)
-      MESSAGE(FATAL_ERROR "Could not find JSONC")
-   ENDIF (JSONC_FIND_REQUIRED)
-
-ENDIF (JSONC_FOUND)
+# Hide internal variables
+mark_as_advanced(JSONC_LIBRARY JSONC_INCLUDE_DIR)

@@ -21,11 +21,5 @@
 ################################################################################
 
 set(repo_name lib_hdf4)
-
-if(find_extproject_SHARED)    
-    set(repo_project hdf)
-else()
-    set(repo_project hdfstatic)
-endif()
-
+set(repo_project hdf)
 set(repo_include)

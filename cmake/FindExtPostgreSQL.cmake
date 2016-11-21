@@ -21,11 +21,5 @@
 ################################################################################
 
 set(repo_name lib_pq)
-
-if(find_extproject_SHARED)    
-    set(repo_project pq)
-else()
-    set(repo_project pqstatic)
-endif()
-
+set(repo_project pq)
 set(repo_include)

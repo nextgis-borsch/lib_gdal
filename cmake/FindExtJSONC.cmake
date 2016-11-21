@@ -21,11 +21,5 @@
 ################################################################################
 
 set(repo_name lib_jsonc)
-
-if(find_extproject_SHARED)    
-    set(repo_project json-c)
-else()
-    set(repo_project json-cstatic)
-endif()
-
+set(repo_project json-c)
 set(repo_include json-c)

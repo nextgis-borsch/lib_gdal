@@ -83,18 +83,14 @@ if(ICONV_FOUND)
   set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS_BACKUP}")
 endif()
 
-set(CMAKE_REQUIRED_INCLUDES)
-set(CMAKE_REQUIRED_LIBRARIES)
+include(FindPackageHandleStandardArgs)
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(ICONV DEFAULT_MSG ICONV_INCLUDE_DIR ICONV_LIBRARIES)
 
-if(ICONV_FOUND) 
-  if(NOT ICONV_FIND_QUIETLY) 
-    message(STATUS "Found Iconv: ${ICONV_LIBRARIES}") 
-  endif(NOT ICONV_FIND_QUIETLY) 
-else() 
-  if(Iconv_FIND_REQUIRED) 
-    message(FATAL_ERROR "Could not find Iconv") 
-  endif(Iconv_FIND_REQUIRED) 
-endif() 
+# Copy the results to the output variables.
+if(ICONV_FOUND)
+  set(ICONV_LIBRARY ${ICONV_LIBRARIES})
+  set(ICONV_INCLUDE_DIRS ${ICONV_INCLUDE_DIR})
+endif()
 
 mark_as_advanced(
     ICONV_INCLUDE_DIR

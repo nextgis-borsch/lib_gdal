@@ -195,13 +195,11 @@ add_subdirectory(drivers)
 # link library objects
 list(REMOVE_DUPLICATES TARGET_OBJECTS)
 
-set(LIB_NAME)
+set(LIB_NAME ${PROJECT_NAME})
 if(BUILD_SHARED_LIBS)
-    set(LIB_TYPE SHARED)
-    set(LIB_NAME ${PROJECT_NAME})
+    set(LIB_TYPE SHARED)    
 else()
     set(LIB_TYPE STATIC)
-    set(LIB_NAME ${PROJECT_NAME}static)
 endif()
 
 add_subdirectory(apps)

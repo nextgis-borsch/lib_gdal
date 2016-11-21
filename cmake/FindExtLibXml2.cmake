@@ -21,11 +21,5 @@
 ################################################################################
 
 set(repo_name lib_xml2)
-
-if(find_extproject_SHARED)    
-    set(repo_project xml2)
-else()
-    set(repo_project xml2static)
-endif()
-
-set(repo_include)
+set(repo_project xml2)
+set(repo_include xml2)

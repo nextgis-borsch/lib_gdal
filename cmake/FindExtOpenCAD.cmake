@@ -21,13 +21,7 @@
 ################################################################################
 
 set(repo_name lib_opencad)
-
-if(find_extproject_SHARED)    
-    set(repo_project opencad)
-else()
-    set(repo_project opencadstatic)
-endif()
-
+set(repo_project opencad)
 set(repo_include "opencad")
 
 if(NOT find_extproject_SHARED)
