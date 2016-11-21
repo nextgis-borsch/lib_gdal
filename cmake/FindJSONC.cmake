@@ -81,7 +81,6 @@ FIND_LIBRARY(JSONC_LIBRARY NAMES json-c libjson-c libjson PATHS
   /usr/local/lib
   #mingw
   c:/msys/local/lib
-  NO_DEFAULT_PATH
 )  
 
 # Handle the QUIETLY and REQUIRED arguments and set GEOS_FOUND to TRUE
