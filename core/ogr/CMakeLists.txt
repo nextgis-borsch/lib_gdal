@@ -25,6 +25,24 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
+find_anyproject(GEOS DEFAULT ON)
+if(GEOS_FOUND)
+    add_definitions(-DHAVE_GEOS=1)
+    if(GEOS_INCLUDE_DIRS)
+        get_filename_component(GEOS_ROOT ${GEOS_INCLUDE_DIRS} PATH)
+        include_directories(${GEOS_ROOT}/capi)
+    endif()    
+else()
+    message(WARNING "No geos support")
+endif()
+
+find_anyproject(PROJ4 DEFAULT ON)
+if(PROJ4_FOUND)
+    add_definitions(-DHAVE_PROJ -DPROJ_STATIC)
+else()
+    message(WARNING "No proj.4 support")
+endif()
+
 #option(GDAL_ENABLE_OGR "Build OGR module" ON)
 if(GDAL_ENABLE_OGR)
     add_definitions(-DOGR_ENABLED)
