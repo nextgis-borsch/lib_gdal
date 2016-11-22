@@ -32,19 +32,19 @@ IF( ECW_INCLUDE_DIR )
   
   if(EXISTS "${ECW_INCLUDE_DIR}/ECWJP2BuildNumber.h")
         file(READ "${ECW_INCLUDE_DIR}/ECWJP2BuildNumber.h" VERSION_H_CONTENTS)
-        string(REGEX MATCH "NCS_ECWJP2_VER_MAJOR[ \t]+([0-9]+)"
+        string(REGEX MATCH "_VER_MAJOR[ \t]+([0-9]+)"
       MAJOR_VERSION ${VERSION_H_CONTENTS})
     string (REGEX MATCH "([0-9]+)"
       MAJOR_VERSION ${c})
-    string(REGEX MATCH "NCS_ECWJP2_VER_MINOR[ \t]+([0-9]+)"
+    string(REGEX MATCH "_VER_MINOR[ \t]+([0-9]+)"
       MINOR_VERSION ${VERSION_H_CONTENTS})
     string (REGEX MATCH "([0-9]+)"
       MINOR_VERSION ${MINOR_VERSION})
-    string(REGEX MATCH "NCS_ECWJP2_VER_SERVICE[ \t]+([0-9]+)"
+    string(REGEX MATCH "_VER_SERVICE[ \t]+([0-9]+)"
       SRV_VERSION ${VERSION_H_CONTENTS})
     string (REGEX MATCH "([0-9]+)"
       SRV_VERSION ${SRV_VERSION})
-    string(REGEX MATCH "NCS_ECWJP2_VER_SERVICE[ \t]+([0-9]+)"
+    string(REGEX MATCH "_VER_SERVICE[ \t]+([0-9]+)"
       BLD_VERSION ${VERSION_H_CONTENTS})
     string (REGEX MATCH "([0-9]+)"
       BLD_VERSION ${BLD_VERSION})
