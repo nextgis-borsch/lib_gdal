@@ -21,10 +21,14 @@
 ################################################################################
 
 set(repo_name lib_jpeg)
-set(repo_project jpeg)
-set(repo_include)
+set(repo_project jpeg12)
+set(repo_include jpeg12)
 
-set(JPEG12_INCLUDE_DIR ${EXT_INSTALL_DIR}/include/ CACHE PATH "Include directory for 12-bit libjpeg" FORCE)
+if(OSX_FRAMEWORK)
+    set(JPEG12_INCLUDE_DIR ${EXT_INSTALL_DIR}/Library/Frameworks/jpeg12.framework/Headers/ CACHE PATH "Include directory for 12-bit libjpeg" FORCE)
+else()
+    set(JPEG12_INCLUDE_DIR ${EXT_INSTALL_DIR}/include/ CACHE PATH "Include directory for 12-bit libjpeg" FORCE)
+endif()
 
 list(APPEND find_extproject_CMAKE_ARGS -DBUILD_JPEG_12=ON -DBUILD_JPEG_8=OFF)
 

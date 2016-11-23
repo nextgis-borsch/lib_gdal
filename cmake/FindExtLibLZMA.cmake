@@ -24,6 +24,6 @@ set(repo_name lib_lzma)
 set(repo_project lzma)
 set(repo_include)
 
-if(NOT find_extproject_SHARED)
+if(NOT BUILD_SHARED_LIBS)
     add_definitions(-DLZMA_API_STATIC)
 endif()
