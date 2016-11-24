@@ -4,7 +4,7 @@
 
 #
 # Find the HDF4 includes and get all installed hdf4 library settings from
-# HDF4-config.cmake file : Requires a CMake compatible hdf-4.2 or later 
+# HDF4-config.cmake file : Requires a CMake compatible hdf-4.2 or later
 # for this feature to work. The following vars are set if hdf4 is found.
 #
 # HDF4_FOUND               - True if found, otherwise all other vars are undefined
@@ -13,13 +13,13 @@
 # HDF4_VERSION_STRING      - full version (e.g. 4.2.0)
 # HDF4_VERSION_MAJOR       - major part of version (e.g. 4)
 # HDF4_VERSION_MINOR       - minor part (e.g. 2)
-# 
+#
 # The following boolean vars will be defined
 # HDF4_ENABLE_PARALLEL - 1 if HDF4 parallel supported
 # HDF4_BUILD_FORTRAN   - 1 if HDF4 was compiled with fortran on
 # HDF4_BUILD_CPP_LIB   - 1 if HDF4 was compiled with cpp on
 # HDF4_BUILD_TOOLS     - 1 if HDF4 was compiled with tools on
-# 
+#
 # Target names that are valid (depending on enabled options)
 # will be the following
 #
@@ -30,11 +30,12 @@
 # xdr              : RPC library
 # mfhdf_f90cstub   : used by Fortran to C interface to multi-file library
 # mfhdf_fortran    : Fortran multi-file library
-# 
+#
 # To aid in finding HDF4 as part of a subproject set
 # HDF4_ROOT_DIR_HINT to the location where hdf4-config.cmake lies
 
 include(FindPackageHandleStandardArgs)
+include(SelectLibraryConfigurations)
 
 # seed the initial lists of libraries to find with items we know we need
 set( HDF4_C_LIBRARY_NAMES_INIT df )
@@ -116,12 +117,12 @@ if (HDF4_INCLUDE_DIRS)
         select_library_configurations( HDF4_${LIB} )
         if(HDF4_${LIB}_LIBRARY)
             list(APPEND HDF4_LIBRARIES ${HDF4_${LIB}_LIBRARY})
-        endif() 
+        endif()
     endforeach()
     find_package_handle_standard_args(HDF4 DEFAULT_MSG HDF4_LIBRARIES HDF4_INCLUDE_DIRS)
-    endif()  
+    endif()
 endif ()
-    
+
 IF(HDF4_FOUND)
   set(HDF4_LIBRARY ${HDF4_LIBRARIES})
   set(HDF4_INCLUDE_DIR ${HDF4_INCLUDE_DIRS})
