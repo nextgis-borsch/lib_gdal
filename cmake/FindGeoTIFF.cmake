@@ -26,7 +26,7 @@ IF(WIN32)
     IF(MINGW)
         FIND_PATH(GEOTIFF_INCLUDE_DIR
             geotiff.h
-            PATH_SUFFIXES geotiff
+            PATH_PREFIXES geotiff
             PATHS
             /usr/local/include
             /usr/include
@@ -54,7 +54,7 @@ IF(WIN32)
   
 ELSEIF(UNIX)
 
-    FIND_PATH(GEOTIFF_INCLUDE_DIR geotiff.h PATH_SUFFIXES geotiff libgeotiff PATHS
+    FIND_PATH(GEOTIFF_INCLUDE_DIR geotiff.h PATH_PREFIXES geotiff libgeotiff PATHS
             /usr/local/include
             /usr/include)
 
@@ -65,7 +65,7 @@ ELSE()
 ENDIF()
 
 
-if(PROJ4_INCLUDE_DIR)
+if(GEOTIFF_INCLUDE_DIR)
     set(GEOTIFF_MAJOR_VERSION 0)
     set(GEOTIFF_MINOR_VERSION 0)
     set(GEOTIFF_PATCH_VERSION 0)
