@@ -34,26 +34,62 @@ set(CMAKE_COLOR_MAKEFILE ON)
 # set path to additional CMake modules
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 
-include(GNUInstallDirs)
-include(CMakeDependentOption)
+if(OSX_FRAMEWORK AND (BUILD_SHARED_LIBS OR BUILD_STATIC_LIBS))
+  message(FATAL_ERROR "Only OSX_FRAMEWORK key or any or both BUILD_SHARED_LIBS
+                       and BUILD_STATIC_LIBS keys are permitted")
+endif()
 
-set(INSTALL_BIN_DIR ${CMAKE_INSTALL_BINDIR} CACHE INTERNAL "Installation directory for executables" FORCE)
-set(INSTALL_LIB_DIR ${CMAKE_INSTALL_LIBDIR} CACHE INTERNAL "Installation directory for libraries" FORCE)
-set(INSTALL_INC_DIR "${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}" CACHE INTERNAL "Installation directory for headers" FORCE)
-set(INSTALL_SHARE_DIR "${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}" CACHE INTERNAL "Installation directory for share data" FORCE)
-set(INSTALL_PKGCONFIG_DIR "${INSTALL_LIB_DIR}/pkgconfig" CACHE INTERNAL "Installation directory for pkgconfig (.pc) files" FORCE)
-set(INSTALL_MAN_DIR ${CMAKE_INSTALL_MANDIR} CACHE INTERNAL "Installation directory for manual pages" FORCE)
-set(INSTALL_DOC_DIR ${CMAKE_INSTALL_DOCDIR} CACHE INTERNAL "Installation directory for doc pages" FORCE)
+if(OSX_FRAMEWORK)
+  set(INSTALL_BIN_DIR "${CMAKE_INSTALL_PREFIX}/Applications" CACHE INTERNAL "Installation directory for executables" FORCE)
+  set(INSTALL_LIB_DIR "${CMAKE_INSTALL_PREFIX}/Library/Frameworks" CACHE INTERNAL "Installation directory for libraries" FORCE)
+  set(SKIP_INSTALL_HEADERS ON)
+  set(SKIP_INSTALL_EXECUTABLES ON)
+  set(SKIP_INSTALL_EXPORT ON)
 
+  set(CMAKE_MACOSX_RPATH ON)
+
+  # use, i.e. don't skip the full RPATH for the build tree
+  set(CMAKE_SKIP_BUILD_RPATH  TRUE)
+
+  # when building, don't use the install RPATH already
+  # (but later on when installing)
+  set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+
+  # the RPATH to be used when installing
+  set(CMAKE_INSTALL_RPATH "${INSTALL_LIB_DIR}")
+
+  # don't add the automatically determined parts of the RPATH
+  # which point to directories outside the build tree to the install RPATH
+  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
+
+  set(GDAL_BUILD_DOCS OFF CACHE INTERNAL "Don't build docs on Mac OS X" FORCE)
+else()
+    include(GNUInstallDirs)
+
+    set(INSTALL_BIN_DIR ${CMAKE_INSTALL_BINDIR} CACHE INTERNAL "Installation directory for executables" FORCE)
+    set(INSTALL_LIB_DIR ${CMAKE_INSTALL_LIBDIR} CACHE INTERNAL "Installation directory for libraries" FORCE)
+    set(INSTALL_INC_DIR "${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}" CACHE INTERNAL "Installation directory for headers" FORCE)
+    set(INSTALL_SHARE_DIR "${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}" CACHE INTERNAL "Installation directory for share data" FORCE)
+    set(INSTALL_PKGCONFIG_DIR "${INSTALL_LIB_DIR}/pkgconfig" CACHE INTERNAL "Installation directory for pkgconfig (.pc) files" FORCE)
+    set(INSTALL_MAN_DIR ${CMAKE_INSTALL_MANDIR} CACHE INTERNAL "Installation directory for manual pages" FORCE)
+    set(INSTALL_DOC_DIR ${CMAKE_INSTALL_DOCDIR} CACHE INTERNAL "Installation directory for doc pages" FORCE)
+endif()
 
 # setup package meta-data
+include(CMakeDependentOption)
 include(util)
 
 check_version(GDAL_MAJOR_VERSION GDAL_MINOR_VERSION GDAL_REV_VERSION)
 set(VERSION ${GDAL_MAJOR_VERSION}.${GDAL_MINOR_VERSION}.${GDAL_REV_VERSION})
 set(SOVERSION 20)
 
-report_version(${PROJECT_NAME} ${VERSION})  
+if(OSX_FRAMEWORK)
+    set(FRAMEWORK_VERSION "${GDAL_MAJOR_VERSION}.${GDAL_MINOR_VERSION}")
+    set(INSTALL_INC_DIR "${INSTALL_LIB_DIR}/${PROJECT_NAME}.framework/Versions/${FRAMEWORK_VERSION}/Headers" CACHE INTERNAL "Installation directory for headers" FORCE)
+    set(INSTALL_SHARE_DIR "${INSTALL_LIB_DIR}/${PROJECT_NAME}.framework/Versions/${FRAMEWORK_VERSION}/Resources/data")
+endif()
+
+report_version(${PROJECT_NAME} ${VERSION})
 
 if(UNIX)
     option(GDAL_INSTALL_DATA_IN_VERSION_DIR "Set ON to install GDAL in path with version (i.e. usr/local/share/gdal/1.11" OFF)
@@ -119,8 +155,8 @@ endif()
 
 find_anyproject(JSONC REQUIRED)
 
-# TODO: move this to /drivers or /drivers/raster while it's not needed for the core GDAL 
-find_anyproject(JPEG DEFAULT ON) 
+# TODO: move this to /drivers or /drivers/raster while it's not needed for the core GDAL
+find_anyproject(JPEG DEFAULT ON)
 if(JPEG_FOUND)
     add_definitions(-DJPEG_SUPPORTED)
     add_definitions(-DHAVE_LIBJPEG) # added only after 2.1 release (especially for geotiff.cpp where incorrect #ifdef is used)
@@ -140,8 +176,8 @@ find_anyproject(SQLite3 CMAKE_ARGS -DENABLE_COLUMN_METADATA=ON)
 if(SQLITE3_FOUND)
     option(ENABLE_SQLITE_GPKG "Build SQLite & GeoPackage (raster + vector) formats" ON)
     if(ENABLE_SQLITE_GPKG)
-        add_definitions(-DSQLITE_ENABLED) 
-    endif()    
+        add_definitions(-DSQLITE_ENABLED)
+    endif()
 endif()
 
 # TODO: move this to the according drivers.
@@ -177,22 +213,32 @@ add_subdirectory(drivers)
 # link library objects
 list(REMOVE_DUPLICATES TARGET_OBJECTS)
 
-set(LIB_NAME)
+set(LIB_NAME ${PROJECT_NAME})
 if(BUILD_SHARED_LIBS)
     set(LIB_TYPE SHARED)
-    set(LIB_NAME ${PROJECT_NAME})
 else()
     set(LIB_TYPE STATIC)
-    set(LIB_NAME ${PROJECT_NAME}static)
 endif()
 
 add_subdirectory(apps)
 
-add_library(${LIB_NAME} ${LIB_TYPE} ${TARGET_OBJECTS})
-set(INSTALL_TARGETS ${LIB_NAME})
-if(BUILD_SHARED_LIBS AND BUILD_STATIC_LIBS)
-    add_library(${LIB_NAME}static STATIC ${TARGET_OBJECTS})  
-    set(INSTALL_TARGETS ${INSTALL_TARGETS} ${LIB_NAME}static)
+if(OSX_FRAMEWORK)
+    add_library(${LIB_NAME} SHARED ${TARGET_OBJECTS})
+    set_target_properties(${LIB_NAME} PROPERTIES
+      FRAMEWORK TRUE
+      FRAMEWORK_VERSION ${FRAMEWORK_VERSION}
+      MACOSX_FRAMEWORK_SHORT_VERSION_STRING ${VERSION}
+      MACOSX_FRAMEWORK_BUNDLE_VERSION ${VERSION}
+      MACOSX_FRAMEWORK_IDENTIFIER org.libjpeg.libjpeg
+      XCODE_ATTRIBUTE_INSTALL_PATH "@rpath"
+    )
+else()
+    add_library(${LIB_NAME} ${LIB_TYPE} ${TARGET_OBJECTS})
+    set(INSTALL_TARGETS ${LIB_NAME})
+    if(BUILD_SHARED_LIBS AND BUILD_STATIC_LIBS)
+        add_library(${LIB_NAME}static STATIC ${TARGET_OBJECTS})
+        set(INSTALL_TARGETS ${INSTALL_TARGETS} ${LIB_NAME}static)
+    endif()
 endif()
 
 set(_symbols "GDAL_1.8 { global: *; };")
@@ -207,19 +253,19 @@ endif ()
 if(BUILD_SHARED_LIBS)
     if(WIN32)
         set (LIB_VERSION ${GDAL_MAJOR_VERSION}0)
-        if(MSVC)        
+        if(MSVC)
             set_target_properties(${LIB_NAME} PROPERTIES IMPORT_SUFFIX "_i.lib")
         endif()
     else ()
       set (LIB_VERSION "${GDAL_MAJOR_VERSION}0.${GDAL_MINOR_VERSION}.${GDAL_REV_VERSION}")
-    endif()    
+    endif()
     set_target_properties (${LIB_NAME} PROPERTIES VERSION ${LIB_VERSION})
     set_target_properties (${LIB_NAME} PROPERTIES SOVERSION ${SOVERSION})
 endif()
 
 
 if(UNIX)
-    set_target_properties(${LIB_NAME} PROPERTIES 
+    set_target_properties(${LIB_NAME} PROPERTIES
         LINK_FLAGS "${LINK_FLAGS}"
         OUTPUT_NAME ${PROJECT_NAME})
     # Add Apple staff
@@ -230,7 +276,7 @@ elseif(BUILD_SHARED_LIBS AND WIN32)
     set_target_properties(${LIB_NAME} PROPERTIES SUFFIX "${GDAL_MAJOR_VERSION}${GDAL_MINOR_VERSION}.dll")
 endif()
 
-target_link_extlibraries(${LIB_NAME}) 
+target_link_extlibraries(${LIB_NAME})
 export(TARGETS ${LIB_NAME} FILE ${LIB_NAME}-exports.cmake EXPORT_LINK_INTERFACE_LIBRARIES)
 
 set(GDAL_BINDINGS)
