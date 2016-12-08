@@ -79,7 +79,7 @@ with '*' have high priority to be implemented.
 | dods | no |  |  |
 | **dted** | **yes** | no | No additional build targets implemented |
 | **e00grid** | **yes** | no | - |
-| ecw * | no |  |  |
+| **ecw** | **yes** |  | Only Windows yet (need library repository update) |
 | **elas** | **yes** | no | - |
 | **envisat** | **yes** | no | No additional build targets implemented |
 | epsilon | no |  |  |
@@ -117,7 +117,7 @@ with '*' have high priority to be implemented.
 | **map** | **yes** | no | - |
 | **mbtiles** | **yes** | Optionally: ZLIB? | Requires built sqlite driver; Requires some other drivers? |
 | **mem** | **yes** | no | Obligatory for building GDAL |
-| mrsid * | no |  |  |
+| **mrsid** | **yes** |  | Only Windows yet (need library repository update) |
 | mrsid_lidar * | no |  |  |
 | msg | no |  |  |
 | **msgn** | **yes** | no | - |
