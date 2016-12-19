@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gmlpropertydefn.cpp 35385 2016-09-10 21:37:39Z goatbar $");
 
 /************************************************************************/
 /*                           GMLPropertyDefn                            */

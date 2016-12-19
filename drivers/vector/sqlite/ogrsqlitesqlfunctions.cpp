@@ -38,7 +38,7 @@
 #include "ogrsqliteregexp.cpp" /* yes the .cpp file, to make it work on Windows with load_extension('gdalXX.dll') */
 #include "swq.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrsqlitesqlfunctions.cpp 36411 2016-11-21 22:03:48Z rouault $");
 
 #ifndef HAVE_SPATIALITE
 #define MINIMAL_SPATIAL_FUNCTIONS
@@ -56,7 +56,7 @@ class OGRSQLiteExtensionData
     OGRGeocodingSessionH hGeocodingSession;
 
   public:
-                                 OGRSQLiteExtensionData(sqlite3* hDB);
+    explicit                     OGRSQLiteExtensionData(sqlite3* hDB);
                                 ~OGRSQLiteExtensionData();
 
     OGRCoordinateTransformation* GetTransform(int nSrcSRSId, int nDstSRSId);

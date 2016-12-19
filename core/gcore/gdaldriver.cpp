@@ -27,11 +27,25 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "cpl_string.h"
+#include "cpl_port.h"
+#include "gdal.h"
 #include "gdal_priv.h"
+
+#include <errno.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+
+#include "cpl_conv.h"
+#include "cpl_error.h"
+#include "cpl_minixml.h"
+#include "cpl_progress.h"
+#include "cpl_string.h"
+#include "cpl_vsi.h"
+#include "ogr_core.h"
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdaldriver.cpp 36523 2016-11-27 04:13:26Z goatbar $");
 
 CPL_C_START
 // TODO(schwehr): Why is this not in a header?
@@ -175,7 +189,8 @@ GDALDataset * GDALDriver::Create( const char * pszFilename,
         GDALDriver* poAPIPROXYDriver = GDALGetAPIPROXYDriver();
         if( poAPIPROXYDriver != this )
         {
-            if( poAPIPROXYDriver == NULL || poAPIPROXYDriver->pfnCreate == NULL )
+            if( poAPIPROXYDriver == NULL ||
+                poAPIPROXYDriver->pfnCreate == NULL )
                 return NULL;
             char** papszOptionsDup = CSLDuplicate(papszOptions);
             papszOptionsDup = CSLAddNameValue(papszOptionsDup, "SERVER_DRIVER",
@@ -1644,21 +1659,21 @@ int GDALValidateOptions( const char* pszOptionList,
                     }
                     ++pszValueIter;
                 }
-                if( *pszValueIter == '0' )
+                if( *pszValueIter == '\0' )
                 {
                     if( pszMin && atoi(pszValue) < atoi(pszMin) )
                     {
                         CPLError(CE_Warning, CPLE_NotSupported,
                              "'%s' is an unexpected value for %s %s that should be >= %s.",
                              pszValue, pszKey, pszErrorMessageOptionType, pszMin);
-                        break;
+                        bRet = false;
                     }
                     if( pszMax && atoi(pszValue) > atoi(pszMax) )
                     {
                         CPLError(CE_Warning, CPLE_NotSupported,
                              "'%s' is an unexpected value for %s %s that should be <= %s.",
                              pszValue, pszKey, pszErrorMessageOptionType, pszMax);
-                        break;
+                        bRet = false;
                     }
                 }
             }
@@ -1677,22 +1692,22 @@ int GDALValidateOptions( const char* pszOptionList,
                         break;
                     }
                     ++pszValueIter;
-                    if( *pszValueIter == '0' )
+                }
+                if( *pszValueIter == '\0' )
+                {
+                    if( pszMin && atoi(pszValue) < atoi(pszMin) )
                     {
-                        if( pszMin && atoi(pszValue) < atoi(pszMin) )
-                        {
-                            CPLError(CE_Warning, CPLE_NotSupported,
-                                "'%s' is an unexpected value for %s %s that should be >= %s.",
-                                pszValue, pszKey, pszErrorMessageOptionType, pszMin);
-                            break;
-                        }
-                        if( pszMax && atoi(pszValue) > atoi(pszMax) )
-                        {
-                            CPLError(CE_Warning, CPLE_NotSupported,
-                                "'%s' is an unexpected value for %s %s that should be <= %s.",
-                                pszValue, pszKey, pszErrorMessageOptionType, pszMax);
-                            break;
-                        }
+                        CPLError(CE_Warning, CPLE_NotSupported,
+                            "'%s' is an unexpected value for %s %s that should be >= %s.",
+                            pszValue, pszKey, pszErrorMessageOptionType, pszMin);
+                        bRet = false;
+                    }
+                    if( pszMax && atoi(pszValue) > atoi(pszMax) )
+                    {
+                        CPLError(CE_Warning, CPLE_NotSupported,
+                            "'%s' is an unexpected value for %s %s that should be <= %s.",
+                            pszValue, pszKey, pszErrorMessageOptionType, pszMax);
+                        bRet = false;
                     }
                 }
             }
@@ -1714,16 +1729,14 @@ int GDALValidateOptions( const char* pszOptionList,
                         CPLError(CE_Warning, CPLE_NotSupported,
                              "'%s' is an unexpected value for %s %s that should be >= %s.",
                              pszValue, pszKey, pszErrorMessageOptionType, pszMin);
-                        CPLFree(pszKey);
-                        break;
+                        bRet = false;
                     }
                     if( pszMax && dfVal > CPLAtof(pszMax) )
                     {
                         CPLError(CE_Warning, CPLE_NotSupported,
                              "'%s' is an unexpected value for %s %s that should be <= %s.",
                              pszValue, pszKey, pszErrorMessageOptionType, pszMax);
-                        CPLFree(pszKey);
-                        break;
+                        bRet = false;
                     }
                 }
             }
@@ -1752,6 +1765,14 @@ int GDALValidateOptions( const char* pszOptionList,
                         {
                             if (psOptionNode->eType == CXT_Text &&
                                 EQUAL(psOptionNode->pszValue, pszValue))
+                            {
+                                bMatchFound = true;
+                                break;
+                            }
+                            if( psOptionNode->eType == CXT_Attribute &&
+                                (EQUAL(psOptionNode->pszValue, "alias") ||
+                                 EQUAL(psOptionNode->pszValue, "deprecated_alias") ) &&
+                                 EQUAL(psOptionNode->psChild->pszValue, pszValue) )
                             {
                                 bMatchFound = true;
                                 break;

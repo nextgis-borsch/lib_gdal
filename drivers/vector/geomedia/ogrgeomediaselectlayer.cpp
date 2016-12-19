@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "ogr_geomedia.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgeomediaselectlayer.cpp 35175 2016-08-22 03:12:11Z goatbar $");
 
 /************************************************************************/
 /*                        OGRGeomediaSelectLayer()                      */

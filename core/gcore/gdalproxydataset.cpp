@@ -27,16 +27,26 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#include "cpl_port.h"
 #include "gdal_proxy.h"
 
-CPL_CVSID("$Id$");
+#include <cstddef>
+
+#include "cpl_error.h"
+#include "cpl_progress.h"
+#include "cpl_virtualmem.h"
+#include "gdal.h"
+#include "gdal_priv.h"
+
+CPL_CVSID("$Id: gdalproxydataset.cpp 36526 2016-11-27 15:46:54Z goatbar $");
 
 /*! @cond Doxygen_Suppress */
 /* ******************************************************************** */
 /*                        GDALProxyDataset                              */
 /* ******************************************************************** */
 
-#define D_PROXY_METHOD_WITH_RET(retType, retErrValue, methodName, argList, argParams) \
+#define D_PROXY_METHOD_WITH_RET(retType, retErrValue, methodName, \
+                                argList, argParams) \
 retType GDALProxyDataset::methodName argList \
 { \
     retType ret; \

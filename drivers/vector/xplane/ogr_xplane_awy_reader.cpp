@@ -28,7 +28,7 @@
 
 #include "ogr_xplane_awy_reader.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogr_xplane_awy_reader.cpp 35911 2016-10-24 15:03:26Z goatbar $");
 
 /************************************************************************/
 /*                   OGRXPlaneCreateAwyFileReader                       */

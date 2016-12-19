@@ -35,7 +35,7 @@
 #include "ogrlibkmlfeaturestyle.h"
 #include "ogrlibkmlstyle.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrlibkmlfeaturestyle.cpp 35933 2016-10-25 16:46:26Z goatbar $");
 
 using kmldom::FeaturePtr;
 using kmldom::IconStylePtr;

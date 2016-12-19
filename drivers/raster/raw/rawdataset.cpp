@@ -37,7 +37,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: rawdataset.cpp 35929 2016-10-25 16:09:00Z goatbar $");
 
 /************************************************************************/
 /*                           RawRasterBand()                            */

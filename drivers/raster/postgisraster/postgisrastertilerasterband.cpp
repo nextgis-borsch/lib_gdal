@@ -5,7 +5,7 @@
  * driver
  * Author:   Jorge Arevalo, jorge.arevalo@deimos-space.com
  *                          jorgearevalo@libregis.org
- * Last changes: $Id$
+ * Last changes: $Id: postgisrastertilerasterband.cpp 35929 2016-10-25 16:09:00Z goatbar $
  *
  ***********************************************************************
  * Copyright (c) 2009 - 2013, Jorge Arevalo
@@ -33,7 +33,7 @@
  **********************************************************************/
 #include "postgisraster.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: postgisrastertilerasterband.cpp 35929 2016-10-25 16:09:00Z goatbar $");
 
 /************************
  * \brief Constructor

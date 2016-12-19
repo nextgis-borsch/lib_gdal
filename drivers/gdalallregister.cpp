@@ -35,7 +35,7 @@
    #include "gnm_frmts.h"
 #endif
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalallregister.cpp 36731 2016-12-07 11:08:07Z rouault $");
 
 #ifdef notdef
 // we may have a use for this some day
@@ -256,6 +256,11 @@ void CPL_STDCALL GDALAllRegister()
 #ifdef FRMT_jpipkak
     // JPEG2000 support using Kakadu toolkit
     GDALRegister_JPIPKAK();
+#endif
+
+#ifdef FRMT_jp2lura
+    // JPEG2000 support using Lurawave library
+    GDALRegister_JP2Lura();
 #endif
 
 #ifdef FRMT_ecw
@@ -543,6 +548,10 @@ void CPL_STDCALL GDALAllRegister()
 
 #ifdef FRMT_iris
     GDALRegister_IRIS();
+#endif
+
+#ifdef FRMT_prf
+    GDALRegister_PRF();
 #endif
 
 #ifdef GNM_ENABLED

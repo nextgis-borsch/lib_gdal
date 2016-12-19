@@ -27,11 +27,12 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "gnm.h"
 #include "commonutils.h"
+#include "gnm.h"
+#include "gnm_priv.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gnmanalyse.cpp 36533 2016-11-27 23:45:39Z goatbar $");
 
 enum operation
 {
@@ -361,7 +362,7 @@ static void ReportOnLayer( OGRLayer * poLayer, int bVerbose )
     do { if (iArg + nExtraArg >= nArgc) \
         Usage(CPLSPrintf("%s option requires %d argument(s)", papszArgv[iArg], \
                 nExtraArg)); \
-        } while(0)
+        } while( false )
 
 int main( int nArgc, char ** papszArgv )
 

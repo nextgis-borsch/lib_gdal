@@ -48,7 +48,7 @@ CPL_C_START
 #include <jpeglib.h>
 CPL_C_END
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: JPEG_band.cpp 35897 2016-10-24 11:54:24Z goatbar $");
 
 NAMESPACE_MRF_START
 

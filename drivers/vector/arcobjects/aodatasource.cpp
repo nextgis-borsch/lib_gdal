@@ -32,7 +32,7 @@
 #include "gdal.h"
 #include "aoutils.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: aodatasource.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 /************************************************************************/
 /*                          AODataSource()                           */
@@ -139,7 +139,7 @@ bool AODataSource::LoadLayers(IEnumDataset* pEnumDataset)
     m_layers.push_back(pLayer);
   }
 
-  if (errEncountered && m_layers.size() == 0)
+  if (errEncountered && m_layers.empty())
     return false; //all of the ones we tried had errors
   else
     return true; //at least one worked

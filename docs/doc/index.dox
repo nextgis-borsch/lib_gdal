@@ -1,5 +1,5 @@
 #ifndef DOXYGEN_SKIP
-/* $Id$ */
+/* $Id: index.dox 35963 2016-10-27 09:37:42Z rouault $ */
 #endif /* DOXYGEN_SKIP */
 
 /*! \mainpage GDAL - Geospatial Data Abstraction Library

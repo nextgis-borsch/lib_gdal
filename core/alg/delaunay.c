@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: delaunay.c 36493 2016-11-24 20:53:30Z rouault $
  *
  * Project:  GDAL algorithms
  * Purpose:  Delaunay triangulation
@@ -50,7 +50,7 @@
 #include <ctype.h>
 #include <math.h>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: delaunay.c 36493 2016-11-24 20:53:30Z rouault $");
 
 #if defined(INTERNAL_QHULL) || defined(EXTERNAL_QHULL)
 #define HAVE_INTERNAL_OR_EXTERNAL_QHULL 1
@@ -170,6 +170,14 @@ GDALTriangulation* GDALTriangulationCreateDelaunay(int nPoints,
 
     VSIFree(points);
     points = NULL;
+
+#if qh_QHpointer  /* see user.h */
+    if (qh_qh == NULL)
+    {
+        CPLReleaseMutex(hMutex);
+        return NULL;
+    }
+#endif
 
     /* Establish a map from QHull facet id to the index in our array of sequential facets */
     panMapQHFacetIdToFacetIdx = (int*)VSI_MALLOC2_VERBOSE(sizeof(int), qh facet_id);

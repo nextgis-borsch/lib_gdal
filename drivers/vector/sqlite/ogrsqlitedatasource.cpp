@@ -60,7 +60,7 @@
 static int bSpatialiteGlobalLoaded = FALSE;
 #endif
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrsqlitedatasource.cpp 36954 2016-12-19 11:57:41Z rouault $");
 
 /************************************************************************/
 /*                      OGRSQLiteInitOldSpatialite()                    */
@@ -331,21 +331,37 @@ OGRSQLiteDataSource::OGRSQLiteDataSource() :
 OGRSQLiteDataSource::~OGRSQLiteDataSource()
 
 {
-    for( int iLayer = 0; iLayer < nLayers; iLayer++ )
+    if( nLayers > 0 || !apoInvisibleLayers.empty() )
     {
-        if( papoLayers[iLayer]->IsTableLayer() )
+        // Close any remaining iterator
+        for( int i = 0; i < nLayers; i++ )
+            papoLayers[i]->ResetReading();
+        for( size_t i = 0; i < apoInvisibleLayers.size(); i++ )
+            apoInvisibleLayers[i]->ResetReading();
+
+        // Create spatial indices in a transaction for faster execution
+        if( hDB )
+            SoftStartTransaction();
+        for( int iLayer = 0; iLayer < nLayers; iLayer++ )
         {
-            OGRSQLiteTableLayer* poLayer =
-                (OGRSQLiteTableLayer*) papoLayers[iLayer];
-            poLayer->RunDeferredCreationIfNecessary();
-            poLayer->CreateSpatialIndexIfNecessary();
+            if( papoLayers[iLayer]->IsTableLayer() )
+            {
+                OGRSQLiteTableLayer* poLayer =
+                    (OGRSQLiteTableLayer*) papoLayers[iLayer];
+                poLayer->RunDeferredCreationIfNecessary();
+                poLayer->CreateSpatialIndexIfNecessary();
+            }
         }
+        if( hDB )
+            SoftCommitTransaction();
     }
 
     SaveStatistics();
 
     for( int i = 0; i < nLayers; i++ )
         delete papoLayers[i];
+    for( size_t i = 0; i < apoInvisibleLayers.size(); i++ )
+        delete apoInvisibleLayers[i];
 
     CPLFree( papoLayers );
 
@@ -694,21 +710,24 @@ int OGRSQLiteBaseDataSource::OpenOrCreateDB(int flagsIn, int bRegisterOGR2SQLite
         return FALSE;
     }
 
+    if( CPLTestBool(CPLGetConfigOption("OGR_VFK_DB_READ", "NO")) ) {
+        int nRowCount = 0, nColCount = 0;
+        char** papszResult = NULL;
+        
+        sqlite3_get_table( hDB,
+                           "SELECT name FROM sqlite_master "
+                           "WHERE type = 'table' AND name = 'vfk_tables'",
+                           &papszResult, &nRowCount, &nColCount,
+                           NULL );
+        
+        sqlite3_free_table( papszResult );
+        
+        if( nRowCount > 0 )
+            return FALSE;  /* DB is valid VFK datasource */
+    }
+
     int nRowCount = 0, nColCount = 0;
     char** papszResult = NULL;
-    sqlite3_get_table( hDB,
-                       "SELECT name FROM sqlite_master "
-                       "WHERE type = 'table' AND name = 'vfk_tables'",
-                       &papszResult, &nRowCount, &nColCount,
-                       NULL );
-
-    sqlite3_free_table(papszResult);
-    papszResult = NULL;
-
-    if( nRowCount > 0 )
-        return FALSE; /* DB is valid VFK datasource */
-
-    nRowCount = nColCount = 0;
     sqlite3_get_table( hDB,
                        "SELECT name, sql FROM sqlite_master "
                        "WHERE (type = 'trigger' OR type = 'view') AND ("
@@ -873,16 +892,22 @@ int OGRSQLiteDataSource::Create( const char * pszNameIn, char **papszOptions )
         */
 
         const char* pszVal = CSLFetchNameValue( papszOptions, "INIT_WITH_EPSG" );
+        const int nSpatialiteVersionNumber = GetSpatialiteVersionNumber();
         if( pszVal != NULL && !CPLTestBool(pszVal) &&
-            GetSpatialiteVersionNumber() >= 40 )
-            osCommand =  "SELECT InitSpatialMetadata('NONE')";
+            nSpatialiteVersionNumber >= 40 )
+        {
+            if( nSpatialiteVersionNumber >= 41 )
+                osCommand =  "SELECT InitSpatialMetadata(1, 'NONE')";
+            else
+                osCommand =  "SELECT InitSpatialMetadata('NONE')";
+        }
         else
         {
             /* Since spatialite 4.1, InitSpatialMetadata() is no longer run */
             /* into a transaction, which makes population of spatial_ref_sys */
             /* from EPSG awfully slow. We have to use InitSpatialMetadata(1) */
             /* to run within a transaction */
-            if( GetSpatialiteVersionNumber() >= 41 )
+            if( nSpatialiteVersionNumber >= 41 )
                 osCommand =  "SELECT InitSpatialMetadata(1)";
             else
                 osCommand =  "SELECT InitSpatialMetadata()";
@@ -1680,7 +1705,7 @@ int OGRSQLiteDataSource::TestCapability( const char * pszCap )
         return !bIsSpatiaLiteDB;
     else if( EQUAL(pszCap,ODsCMeasuredGeometries) )
         return TRUE;
-    else if EQUAL(pszCap,ODsCCreateGeomFieldAfterCreateLayer)
+    else if( EQUAL(pszCap,ODsCCreateGeomFieldAfterCreateLayer) )
         return bUpdate;
     else if( EQUAL(pszCap,ODsCRandomLayerWrite) )
         return bUpdate;
@@ -1694,7 +1719,7 @@ int OGRSQLiteDataSource::TestCapability( const char * pszCap )
 
 int OGRSQLiteBaseDataSource::TestCapability( const char * pszCap )
 {
-    if EQUAL(pszCap,ODsCTransactions)
+    if( EQUAL(pszCap,ODsCTransactions) )
         return TRUE;
     else
         return GDALPamDataset::TestCapability(pszCap);
@@ -1724,6 +1749,12 @@ OGRLayer *OGRSQLiteDataSource::GetLayerByName( const char* pszLayerName )
     if( poLayer != NULL )
         return poLayer;
 
+    for( size_t i=0; i<apoInvisibleLayers.size(); ++i)
+    {
+        if( EQUAL(apoInvisibleLayers[i]->GetName(), pszLayerName) )
+            return apoInvisibleLayers[i];
+    }
+
     if( !OpenTable(pszLayerName) )
         return NULL;
 
@@ -1739,6 +1770,49 @@ OGRLayer *OGRSQLiteDataSource::GetLayerByName( const char* pszLayerName )
         nLayers --;
         return NULL;
     }
+
+    return poLayer;
+}
+
+/************************************************************************/
+/*                    GetLayerByNameNotVisible()                        */
+/************************************************************************/
+
+OGRLayer *OGRSQLiteDataSource::GetLayerByNameNotVisible( const char* pszLayerName )
+
+{
+    {
+        OGRLayer* poLayer = GDALDataset::GetLayerByName(pszLayerName);
+        if( poLayer != NULL )
+            return poLayer;
+    }
+
+    for( size_t i=0; i<apoInvisibleLayers.size(); ++i)
+    {
+        if( EQUAL(apoInvisibleLayers[i]->GetName(), pszLayerName) )
+            return apoInvisibleLayers[i];
+    }
+
+/* -------------------------------------------------------------------- */
+/*      Create the layer object.                                        */
+/* -------------------------------------------------------------------- */
+    OGRSQLiteTableLayer *poLayer = new OGRSQLiteTableLayer( this );
+    if( poLayer->Initialize( pszLayerName, FALSE, FALSE) != CE_None )
+    {
+        delete poLayer;
+        return NULL;
+    }
+    CPLErrorReset();
+    CPLPushErrorHandler(CPLQuietErrorHandler);
+    poLayer->GetLayerDefn();
+    CPLPopErrorHandler();
+    if( CPLGetLastErrorType() != 0 )
+    {
+        CPLErrorReset();
+        delete poLayer;
+        return NULL;
+    }
+    apoInvisibleLayers.push_back(poLayer);
 
     return poLayer;
 }
@@ -2694,7 +2768,7 @@ OGRErr OGRSQLiteBaseDataSource::DoTransactionCommand(const char* pszCommand)
     {
         CPLError( CE_Failure, CPLE_AppDefined,
                   "%s transaction failed: %s",
-                  pszCommand, pszErrMsg );
+                  pszCommand, pszErrMsg ? pszErrMsg : "(null)" );
         sqlite3_free( pszErrMsg );
         return OGRERR_FAILURE;
     }
@@ -2997,7 +3071,7 @@ int OGRSQLiteDataSource::FetchSRSId( OGRSpatialReference * poSRS )
 /* -------------------------------------------------------------------- */
 /*      Translate SRS to PROJ.4 string (if not already done)            */
 /* -------------------------------------------------------------------- */
-    if( osProj4.size() == 0 )
+    if( osProj4.empty() )
     {
         char* pszProj4 = NULL;
         if( oSRS.exportToProj4( &pszProj4 ) == OGRERR_NONE )

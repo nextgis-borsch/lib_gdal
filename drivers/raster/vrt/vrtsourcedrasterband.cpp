@@ -32,7 +32,7 @@
 #include "ogr_geometry.h"
 
 #include "vrtdataset.h"
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: vrtsourcedrasterband.cpp 35897 2016-10-24 11:54:24Z goatbar $");
 
 /*! @cond Doxygen_Suppress */
 

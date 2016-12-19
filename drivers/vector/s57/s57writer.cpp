@@ -32,7 +32,7 @@
 #include "ogr_api.h"
 #include "s57.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: s57writer.cpp 36443 2016-11-22 22:13:31Z rouault $");
 
 /************************************************************************/
 /*                             S57Writer()                              */
@@ -911,6 +911,7 @@ bool S57Writer::WriteCompleteFeature( OGRFeature *poFeature )
         const int *panMASK =
             poFeature->GetFieldAsIntegerList( "MASK", &nItemCount );
 
+        // cppcheck-suppress duplicateExpression
         CPLAssert( sizeof(int) == sizeof(GInt32) );
 
         const int nRawDataSize = nItemCount * 8;
@@ -1031,7 +1032,7 @@ bool S57Writer::WriteATTF( DDFRecord *poRec, OGRFeature *poFeature )
             continue;
 
         GUInt16 nATTL = (GUInt16)nATTLInt;
-        nATTL = CPL_LSBWORD16( nATTL );
+        CPL_LSBPTR16( &nATTL );
         memcpy( achRawData + nRawSize, &nATTL, 2 );
         nRawSize += 2;
 

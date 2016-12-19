@@ -29,7 +29,7 @@
 #include "ogr_dods.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrdodsdriver.cpp 36179 2016-11-09 10:19:21Z rouault $");
 
 /************************************************************************/
 /*                            ~OGRDODSDriver()                            */
@@ -55,7 +55,7 @@ const char *OGRDODSDriver::GetName()
 /************************************************************************/
 
 OGRDataSource *OGRDODSDriver::Open( const char * pszFilename,
-                                     int bUpdate )
+                                     int /*bUpdate*/ )
 
 {
     if( !STARTS_WITH_CI(pszFilename, "DODS:http:") )
@@ -76,7 +76,7 @@ OGRDataSource *OGRDODSDriver::Open( const char * pszFilename,
 /*                           TestCapability()                           */
 /************************************************************************/
 
-int OGRDODSDriver::TestCapability( const char * pszCap )
+int OGRDODSDriver::TestCapability( const char * /*pszCap*/ )
 
 {
     return FALSE;

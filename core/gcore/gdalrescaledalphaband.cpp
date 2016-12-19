@@ -27,9 +27,16 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#include "cpl_port.h"
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id$");
+#include <cstddef>
+
+#include "cpl_error.h"
+#include "cpl_vsi.h"
+#include "gdal.h"
+
+CPL_CVSID("$Id: gdalrescaledalphaband.cpp 36526 2016-11-27 15:46:54Z goatbar $");
 
 //! @cond Doxygen_Suppress
 /************************************************************************/

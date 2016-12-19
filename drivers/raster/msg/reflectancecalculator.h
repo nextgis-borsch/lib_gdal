@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: reflectancecalculator.h 36427 2016-11-22 12:56:01Z rouault $
  *
  * Purpose:  Interface of ReflectanceCalculator class. Calculate reflectance
  *           values from radiance, for visual bands.
@@ -43,12 +43,12 @@ public:
     virtual ~ReflectanceCalculator();
     double rGetReflectance(double rRadiance, double rLat, double rLon) const;
 private:
-  double rZenithAngle(double phi, double rDeclin, double rHourAngle) const;
+  static double rZenithAngle(double phi, double rDeclin, double rHourAngle);
   double rDeclination() const;
   double rHourAngle(double lam) const;
   double rSunDistance() const;
-  int iDaysInYear(int iYear) const;
-    int iDaysInMonth(int iMonth, int iYear) const;
+  static int iDaysInYear(int iYear);
+  static int iDaysInMonth(int iMonth, int iYear);
 
     const double m_rRTOA; // solar irradiance on Top of Atmosphere
     int m_iYear; // e.g. 2005

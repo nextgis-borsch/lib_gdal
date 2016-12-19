@@ -30,7 +30,7 @@
 #include <cmath>
 #include <cstdio>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: unwrapgcps.cpp 35885 2016-10-24 06:23:09Z goatbar $");
 
 // number of histogram bins (36 a 10dg)
 static const int NBIN = 36;

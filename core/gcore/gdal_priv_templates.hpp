@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdal_priv_templates.hpp 36822 2016-12-12 11:18:45Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Inline C++ templates
@@ -274,10 +274,10 @@ static inline void GDALCopyXMMToInt32(const __m128i xmm, void* pDest)
 static inline void GDALCopyXMMToInt64(const __m128i xmm, void* pDest)
 {
 #ifdef CPL_CPU_REQUIRES_ALIGNED_ACCESS
-    GIntBig n64 = _mm_cvtsi128_si64 (xmm);   // Extract lower 64 bit word
+    GInt64 n64 = _mm_cvtsi128_si64 (xmm);   // Extract lower 64 bit word
     memcpy(pDest, &n64, sizeof(n64));
 #else
-    *(GIntBig*)pDest = _mm_cvtsi128_si64 (xmm);
+    *(GInt64*)pDest = _mm_cvtsi128_si64 (xmm);
 #endif
 }
 

@@ -30,7 +30,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: dgnread.cpp 36763 2016-12-09 22:10:55Z rouault $");
 
 static DGNElemCore *DGNParseTCB( DGNInfo * );
 static DGNElemCore *DGNParseColorTable( DGNInfo * );
@@ -723,7 +723,7 @@ static DGNElemCore *DGNProcessElement( DGNInfo *psDGN, int nType, int nLevel )
               {
                   unsigned short w = 0;
                   memcpy(&w, psDGN->abyElem + text_off + 2 + i*2, 2);
-                  w = CPL_LSBWORD16(w);
+                  CPL_LSBPTR16(&w);
                   if (w<256) { // if alpa-numeric code area : Normal character
                       *(psText->string + n) = (char) (w & 0xFF);
                       n++; // skip 1 byte;
@@ -772,7 +772,7 @@ static DGNElemCore *DGNProcessElement( DGNInfo *psDGN, int nType, int nLevel )
 
           psTag->tagType = psDGN->abyElem[74] + psDGN->abyElem[75] * 256;
           memcpy( &(psTag->tagSet), psDGN->abyElem + 68, 4 );
-          psTag->tagSet = CPL_LSBWORD32(psTag->tagSet);
+          CPL_LSBPTR32( &(psTag->tagSet) );
           psTag->tagIndex = psDGN->abyElem[72] + psDGN->abyElem[73] * 256;
           psTag->tagLength = psDGN->abyElem[150] + psDGN->abyElem[151] * 256;
 
@@ -785,8 +785,7 @@ static DGNElemCore *DGNProcessElement( DGNInfo *psDGN, int nType, int nLevel )
           {
               memcpy( &(psTag->tagValue.integer),
                       psDGN->abyElem + 154, 4 );
-              psTag->tagValue.integer =
-                  CPL_LSBWORD32( psTag->tagValue.integer );
+              CPL_LSBPTR32( &(psTag->tagValue.integer) );
           }
           else if( psTag->tagType == 4 )
           {
@@ -1337,8 +1336,7 @@ static DGNElemCore *DGNParseTagSet( DGNInfo * psDGN )
         {
             memcpy( &(tagDef->defaultValue.integer),
                     psDGN->abyElem + nDataOffset, 4 );
-            tagDef->defaultValue.integer =
-                CPL_LSBWORD32( tagDef->defaultValue.integer );
+            CPL_LSBPTR32( &(tagDef->defaultValue.integer) );
             nDataOffset += 4;
         }
         else if( tagDef->type == 4 )
@@ -1821,7 +1819,7 @@ void DGNBuildIndex( DGNInfo *psDGN )
                                  anRegion+3, anRegion+4, anRegion+5 ) )
         {
 #ifdef notdef
-            printf( "panRegion[%d]=%.1f,%.1f,%.1f,%.1f,%.1f,%.1f\n",
+            printf( "panRegion[%d]=%.1f,%.1f,%.1f,%.1f,%.1f,%.1f\n",/*ok*/
                     psDGN->element_count,
                     anRegion[0] - 2147483648.0,
                     anRegion[1] - 2147483648.0,

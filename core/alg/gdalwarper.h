@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalwarper.h 36427 2016-11-22 12:56:01Z rouault $
  *
  * Project:  GDAL High Performance Warper
  * Purpose:  Prototypes, and definitions for warping related work.
@@ -428,7 +428,7 @@ private:
                                          int *pnSrcXExtraSize, int *pnSrcYExtraSize,
                                          double* pdfSrcFillRatio );
 
-    CPLErr          CreateKernelMask( GDALWarpKernel *, int iBand,
+    static CPLErr          CreateKernelMask( GDALWarpKernel *, int iBand,
                                       const char *pszType );
 
     CPLMutex        *hIOMutex;

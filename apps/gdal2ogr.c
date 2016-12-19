@@ -32,7 +32,7 @@
 #include "ogr_srs_api.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdal2ogr.c 34783 2016-07-26 15:05:37Z goatbar $");
 
 /************************************************************************/
 /*                               Usage()                                */

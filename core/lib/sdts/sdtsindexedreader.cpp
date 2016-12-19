@@ -31,7 +31,7 @@
 
 #include "sdts_al.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: sdtsindexedreader.cpp 34968 2016-08-07 21:35:08Z goatbar $");
 
 /************************************************************************/
 /*                         SDTSIndexedReader()                          */

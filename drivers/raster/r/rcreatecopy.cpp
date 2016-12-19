@@ -29,7 +29,7 @@
 #include "cpl_string.h"
 #include "gdal_pam.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: rcreatecopy.cpp 35897 2016-10-24 11:54:24Z goatbar $");
 
 GDALDataset *
 RCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,

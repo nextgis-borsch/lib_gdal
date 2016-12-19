@@ -30,7 +30,7 @@
 #include "cpl_conv.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrmysqldriver.cpp 35911 2016-10-24 15:03:26Z goatbar $");
 
 static CPLMutex* hMutex = NULL;
 static int   bInitialized = FALSE;

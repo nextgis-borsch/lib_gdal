@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: msgcommand.h 36427 2016-11-22 12:56:01Z rouault $
  *
  * Purpose:  Interface of MSGCommand class. Parse the src_dataset string
  *           that is meant for the MSG driver.
@@ -52,9 +52,9 @@ public:
   int channel[12];
 
 private:
-  std::string sTrimSpaces(std::string const& str);
-  std::string sNextTerm(std::string const& str, int & iPos);
-  int iDaysInMonth(int iMonth, int iYear);
+  static std::string sTrimSpaces(std::string const& str);
+  static std::string sNextTerm(std::string const& str, int & iPos);
+  static int iDaysInMonth(int iMonth, int iYear);
   static std::string sChannel(int iChannel);
   static int iChannel(std::string const& sChannel);
   static std::string sTimeStampToFolder(std::string& sTimeStamp);

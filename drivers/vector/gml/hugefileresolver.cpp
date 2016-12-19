@@ -46,7 +46,7 @@
 
 #include <stack>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: hugefileresolver.cpp 36461 2016-11-23 12:05:14Z rouault $");
 
 /****************************************************/
 /*      SQLite is absolutely required in order to   */
@@ -1815,7 +1815,6 @@ bool GMLReader::ParseXMLHugeFile( const char *pszOutputFilename,
                                  const int iSqliteCacheMB )
 
 {
-    int iFeatureUID = 0;
     sqlite3 *hDB = NULL;
     CPLString osSQLiteFilename;
     const char *pszSQLiteFilename = NULL;
@@ -1957,7 +1956,6 @@ bool GMLReader::ParseXMLHugeFile( const char *pszOutputFilename,
                 psNode = papsGeomList[i];
             }
         }
-        iFeatureUID++;
         delete poFeature;
     }
 

@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: gnm_python.i 34525 2016-07-03 02:53:47Z goatbar $
  *
  * python specific code for ogr bindings.
  */

@@ -37,7 +37,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gt_citation.cpp 36091 2016-11-03 17:11:59Z goatbar $");
 
 static const char * const apszUnitMap[] = {
     "meters", "1.0",

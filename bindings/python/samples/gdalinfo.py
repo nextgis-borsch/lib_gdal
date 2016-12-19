@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #*****************************************************************************
-# $Id$
+# $Id: gdalinfo.py 31957 2015-12-02 12:44:54Z goatbar $
 #
 # Project:  GDAL Utilities
 # Purpose:  Python port of Commandline application to list info about a file.

@@ -28,7 +28,7 @@
  ****************************************************************************/
 #include "ogr_gtm.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gtmtracklayer.cpp 35933 2016-10-25 16:46:26Z goatbar $");
 
 GTMTrackLayer::GTMTrackLayer( const char* pszNameIn,
                               OGRSpatialReference *poSRSIn,

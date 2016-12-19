@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: kml.h 35911 2016-10-24 15:03:26Z goatbar $
  *
  * Project:  KML Driver
  * Purpose:  Class for reading, parsing and handling a kmlfile.

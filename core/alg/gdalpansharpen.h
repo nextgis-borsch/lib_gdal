@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalpansharpen.h 36427 2016-11-22 12:56:01Z rouault $
  *
  * Project:  GDAL Pansharpening module
  * Purpose:  Prototypes, and definitions for pansharpening related work.
@@ -212,6 +212,8 @@ class GDALPansharpenOperation
                                                      int nValues,
                                                      int nBandValues,
                                                      WorkDataType nMaxValue) const;
+
+        // cppcheck-suppress functionStatic
         template<class WorkDataType, class OutDataType> void WeightedBrovey(
                                                      const WorkDataType* pPanBuffer,
                                                      const WorkDataType* pUpsampledSpectralBuffer,
@@ -227,6 +229,8 @@ class GDALPansharpenOperation
                                                      int nValues,
                                                      int nBandValues,
                                                      WorkDataType nMaxValue) const;
+
+        // cppcheck-suppress functionStatic
         template<class WorkDataType> CPLErr WeightedBrovey(
                                                      const WorkDataType* pPanBuffer,
                                                      const WorkDataType* pUpsampledSpectralBuffer,

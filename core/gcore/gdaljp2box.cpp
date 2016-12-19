@@ -27,12 +27,24 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include <algorithm>
 #include "cpl_port.h"
-#include "cpl_string.h"
 #include "gdaljp2metadata.h"
 
-CPL_CVSID("$Id$");
+#include <cstddef>
+#include <cstdio>
+#include <cstring>
+#if HAVE_FCNTL_H
+#  include <fcntl.h>
+#endif
+
+#include <algorithm>
+
+#include "cpl_conv.h"
+#include "cpl_error.h"
+#include "cpl_string.h"
+#include "cpl_vsi.h"
+
+CPL_CVSID("$Id: gdaljp2box.cpp 36822 2016-12-12 11:18:45Z rouault $");
 
 /*! @cond Doxygen_Suppress */
 
@@ -170,16 +182,21 @@ int GDALJP2Box::ReadBox()
         if( VSIFReadL( abyXLBox, 8, 1, fpVSIL ) != 1 )
             return FALSE;
 
-        if( sizeof(nBoxLength) == 8 )
+#ifdef CPL_HAS_GINT64
+        CPL_MSBPTR64( abyXLBox );
+        memcpy( &nBoxLength, abyXLBox, 8 );
+#else
+        // In case we lack a 64 bit integer type
+        if( abyXLBox[0] != 0 || abyXLBox[1] != 0 || abyXLBox[2] != 0 ||
+            abyXLBox[3] != 0 )
         {
-            CPL_MSBPTR64( abyXLBox );
-            memcpy( &nBoxLength, abyXLBox, 8 );
+            CPLError(CE_Failure, CPLE_AppDefined,
+                        "Box size requires a 64 bit integer type");
+            return FALSE;
         }
-        else
-        {
-            CPL_MSBPTR32( abyXLBox+4 );
-            memcpy( &nBoxLength, abyXLBox+4, 4 );
-        }
+        CPL_MSBPTR32( abyXLBox+4 );
+        memcpy( &nBoxLength, abyXLBox+4, 4 );
+#endif
         if( nBoxLength < 0 )
         {
             CPLDebug("GDALJP2", "Invalid length for box %s", szBoxType);

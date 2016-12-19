@@ -31,7 +31,7 @@
 #include "idrisi.h"
 #include "ogr_idrisi.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogridrisidatasource.cpp 34996 2016-08-09 02:25:28Z goatbar $");
 
 /************************************************************************/
 /*                        OGRIdrisiDataSource()                         */

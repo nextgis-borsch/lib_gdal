@@ -48,7 +48,7 @@
 #define isnan std::isnan
 #endif
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: vrtsources.cpp 36799 2016-12-11 22:24:14Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -274,7 +274,7 @@ CPLXMLNode *VRTSimpleSource::SerializeToXML( const char *pszVRTPath )
     CPLXMLNode * const psSrc =
         CPLCreateXMLNode( NULL, CXT_Element, "SimpleSource" );
 
-    if( m_osResampling.size() )
+    if( !m_osResampling.empty() )
     {
         CPLCreateXMLNode(
             CPLCreateXMLNode( psSrc, CXT_Attribute, "resampling" ),
@@ -1201,7 +1201,7 @@ VRTSimpleSource::RasterIO( int nXOff, int nYOff, int nXSize, int nYSize,
 /* -------------------------------------------------------------------- */
 /*      Actually perform the IO request.                                */
 /* -------------------------------------------------------------------- */
-    if( m_osResampling.size() )
+    if( !m_osResampling.empty() )
     {
         psExtraArg->eResampleAlg = GDALRasterIOGetResampleAlg(m_osResampling);
     }
@@ -1525,7 +1525,7 @@ CPLErr VRTSimpleSource::DatasetRasterIO(
     if( poDS == NULL )
         return CE_Failure;
 
-    if( m_osResampling.size() )
+    if( !m_osResampling.empty() )
     {
         psExtraArg->eResampleAlg = GDALRasterIOGetResampleAlg(m_osResampling);
     }
@@ -1676,7 +1676,7 @@ VRTAveragedSource::RasterIO( int nXOff, int nYOff, int nXSize, int nYSize,
 /* -------------------------------------------------------------------- */
 /*      Load it.                                                        */
 /* -------------------------------------------------------------------- */
-    if( m_osResampling.size() )
+    if( !m_osResampling.empty() )
     {
         psExtraArg->eResampleAlg = GDALRasterIOGetResampleAlg(m_osResampling);
     }
@@ -2300,7 +2300,7 @@ VRTComplexSource::RasterIO( int nXOff, int nYOff, int nXSize, int nYSize,
         nOutXOff, nOutYOff, nOutXSize, nOutYSize );
 #endif
 
-    if( m_osResampling.size() )
+    if( !m_osResampling.empty() )
     {
         psExtraArg->eResampleAlg = GDALRasterIOGetResampleAlg(m_osResampling);
     }
@@ -2393,7 +2393,7 @@ CPLErr VRTComplexSource::RasterIOInternal( int nReqXOff, int nReqYOff,
         }
 
         const GDALRIOResampleAlg eResampleAlgBack = psExtraArg->eResampleAlg;
-        if( m_osResampling.size() )
+        if( !m_osResampling.empty() )
         {
             psExtraArg->eResampleAlg =
                 GDALRasterIOGetResampleAlg(m_osResampling);
@@ -2410,7 +2410,7 @@ CPLErr VRTComplexSource::RasterIOInternal( int nReqXOff, int nReqYOff,
                                       nWordSize *
                                       static_cast<GSpacing>(nOutXSize),
                                       psExtraArg );
-        if( m_osResampling.size() )
+        if( !m_osResampling.empty() )
             psExtraArg->eResampleAlg = eResampleAlgBack;
 
         if( eErr != CE_None )
@@ -2591,6 +2591,16 @@ CPLErr VRTComplexSource::RasterIOInternal( int nReqXOff, int nReqYOff,
     return CE_None;
 }
 
+// Explicitly instantiate template method, as it is used in another file.
+template
+CPLErr VRTComplexSource::RasterIOInternal<float>( int nReqXOff, int nReqYOff,
+                                    int nReqXSize, int nReqYSize,
+                                    void *pData, int nOutXSize, int nOutYSize,
+                                    GDALDataType eBufType,
+                                    GSpacing nPixelSpace, GSpacing nLineSpace,
+                                    GDALRasterIOExtraArg* psExtraArg,
+                                    GDALDataType eWrkDataType );
+
 /************************************************************************/
 /*                             GetMinimum()                             */
 /************************************************************************/
@@ -2741,8 +2751,9 @@ VRTFuncSource::RasterIO( int nXOff, int nYOff, int nXSize, int nYSize,
     }
     else
     {
-        // TODO(schwehr): Why not use CPLError?  Or at least fprintf(stderr?
-        printf( "%d,%d  %d,%d, %d,%d %d,%d %d,%d\n",
+        CPLError( CE_Failure, CPLE_AppDefined,
+                  "VRTFuncSource::RasterIO() - Irregular request." );
+        CPLDebug("VRT", "Irregular request: %d,%d  %d,%d, %d,%d %d,%d %d,%d",
                 static_cast<int>(nPixelSpace)*8,
                 GDALGetDataTypeSize(eBufType),
                 static_cast<int>(nLineSpace),
@@ -2751,8 +2762,7 @@ VRTFuncSource::RasterIO( int nXOff, int nYOff, int nXSize, int nYSize,
                 nBufYSize, nYSize,
                 static_cast<int>(eBufType),
                 static_cast<int>(eType) );
-        CPLError( CE_Failure, CPLE_AppDefined,
-                  "VRTFuncSource::RasterIO() - Irregular request." );
+
         return CE_Failure;
     }
 }

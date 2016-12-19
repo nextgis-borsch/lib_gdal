@@ -28,34 +28,38 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#include "cpl_port.h"
+#include "gdal_utils.h"
+#include "gdal_utils_priv.h"
+
 #include <cmath>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <new>
+#include <string>
 #include <vector>
 
+#include "commonutils.h"
 #include "cpl_conv.h"
+#include "cpl_error.h"
+#include "cpl_minixml.h"
+#include "cpl_progress.h"
 #include "cpl_string.h"
+#include "cpl_vsi.h"
 #include "gdal.h"
 #include "gdal_alg.h"
-#include "ogr_srs_api.h"
-#include "commonutils.h"
-
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunknown-pragmas"
-#pragma clang diagnostic ignored "-Wdocumentation"
-#endif
-#include "json.h"
-#ifdef __clang
-#pragma clang diagnostic pop
-#endif
-
-#include "ogrgeojsonwriter.h"
-#include "gdal_utils_priv.h"
 #include "gdal_priv.h"
 #include "gdal_rat.h"
+#include "ogr_api.h"
+#include "ogr_json_header.h"
+#include "ogr_srs_api.h"
+#include "ogrgeojsonwriter.h"
 
 using std::vector;
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalinfo_lib.cpp 36762 2016-12-09 21:20:03Z rouault $");
 
 /*! output format */
 typedef enum {

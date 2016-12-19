@@ -30,7 +30,7 @@
 #include "ogr_gtm.h"
 #include "cpl_time.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gtmwaypointlayer.cpp 35933 2016-10-25 16:46:26Z goatbar $");
 
 GTMWaypointLayer::GTMWaypointLayer( const char* pszNameIn,
                                     OGRSpatialReference* poSRSIn,

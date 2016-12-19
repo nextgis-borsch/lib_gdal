@@ -32,7 +32,7 @@
 #include "gdal_frmts.h"
 #include "sdedataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: sdedataset.cpp 36455 2016-11-22 23:11:35Z rouault $");
 
 /************************************************************************/
 /*                          GetRastercount()                            */
@@ -296,8 +296,6 @@ SDEDataset::SDEDataset(  )
     hStream             = NULL;
     hRasterColumn       = NULL;
     pszWKT              = NULL;
-    pszLayerName        = NULL;
-    pszColumnName       = NULL;
     nBands              = 0;
     nRasterXSize        = 0;
     nRasterYSize        = 0;

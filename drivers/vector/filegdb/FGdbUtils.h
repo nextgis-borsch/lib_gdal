@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: FGdbUtils.h 36415 2016-11-21 22:40:20Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Various FileGDB OGR Datasource utility functions
@@ -58,7 +58,7 @@ bool GhettoGDBGeometryToOGRGeometry(bool forceMulti, FileGDBAPI::ShapeBuffer* pG
 //
 // GDB API to OGR Field Mapping
 //
-bool GDBToOGRFieldType(std::string gdbType, OGRFieldType* ogrType, OGRFieldSubType* pSubType);
+bool GDBToOGRFieldType(const std::string& gdbType, OGRFieldType* ogrType, OGRFieldSubType* pSubType);
 bool OGRToGDBFieldType(OGRFieldType ogrType, OGRFieldSubType eSubType, std::string* gdbType);
 
 //
@@ -80,8 +80,8 @@ void FGDB_CPLAddXMLAttribute(CPLXMLNode* node, const char* attrname, const char*
 //
 // Utility for escaping reserved words and cleaning field names
 //
-std::string FGDBLaunderName(const std::string name);
-std::string FGDBEscapeUnsupportedPrefixes(const std::string className);
-std::string FGDBEscapeReservedKeywords(const std::string name);
+std::string FGDBLaunderName(const std::string& name);
+std::string FGDBEscapeUnsupportedPrefixes(const std::string& className);
+std::string FGDBEscapeReservedKeywords(const std::string& name);
 
 #endif

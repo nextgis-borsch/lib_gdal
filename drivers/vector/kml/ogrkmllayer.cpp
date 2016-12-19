@@ -35,7 +35,7 @@
 #include "ogr_api.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrkmllayer.cpp 36883 2016-12-15 13:31:12Z rouault $");
 
 /* Function utility to dump OGRGeometry to KML text. */
 char *OGR_G_ExportToKML( OGRGeometryH hGeometry, const char* pszAltitudeMode );
@@ -341,7 +341,7 @@ OGRErr OGRKMLLayer::ICreateFeature( OGRFeature* poFeature )
     if( poDS_->GetLayerCount() == 1 && nWroteFeatureCount_ == 0 )
     {
         CPLString osRet = WriteSchema();
-        if( osRet.size() )
+        if( !osRet.empty() )
             VSIFPrintfL( fp, "%s", osRet.c_str() );
         bSchemaWritten_ = true;
 
@@ -558,8 +558,15 @@ OGRErr OGRKMLLayer::ICreateFeature( OGRFeature* poFeature )
         pszGeometry =
             OGR_G_ExportToKML( (OGRGeometryH)poWGS84Geom,
                                poDS_->GetAltitudeMode());
-
-        VSIFPrintfL( fp, "      %s\n", pszGeometry );
+        if( pszGeometry != NULL )
+        {
+            VSIFPrintfL( fp, "      %s\n", pszGeometry );
+        }
+        else
+        {
+            CPLError(CE_Failure, CPLE_AppDefined,
+                     "Export of geometry to KML failed");
+        }
         CPLFree( pszGeometry );
 
         poWGS84Geom->getEnvelope( &sGeomBounds );

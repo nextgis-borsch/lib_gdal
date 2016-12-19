@@ -32,7 +32,7 @@
 #include "cpl_time.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrosmlayer.cpp 36455 2016-11-22 23:11:35Z rouault $");
 
 static const int SWITCH_THRESHOLD = 10000;
 static const int MAX_THRESHOLD = 100000;
@@ -506,6 +506,7 @@ int OGROSMLayer::AddInOtherOrAllTags( const char* pszK )
             pszColon[1] = '\0';  /* Evil but OK */
             bAddToOtherTags = ( aoSetIgnoreKeys.find(pszK) ==
                                 aoSetIgnoreKeys.end() );
+            // cppcheck-suppress redundantAssignment
             pszColon[1] = chBackup;
         }
         else

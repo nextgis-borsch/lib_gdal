@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgrassdatasource.cpp 36368 2016-11-21 01:47:49Z rouault $");
 
 #if GRASS_VERSION_MAJOR  >= 7
 #define G__setenv                G_setenv_nogisrc
@@ -40,7 +40,7 @@ CPL_CVSID("$Id$");
 /************************************************************************/
 /*                         Grass2CPLErrorHook()                         */
 /************************************************************************/
-int Grass2OGRErrorHook( char * pszMessage, int bFatal )
+static int Grass2OGRErrorHook( char * pszMessage, int bFatal )
 {
     if( !bFatal )
         CPLError( CE_Warning, CPLE_AppDefined, "GRASS warning: %s", pszMessage );
@@ -94,8 +94,8 @@ typedef int (*GrassErrorHandler)(const char *, int);
 typedef int (*GrassErrorHandler)(char *, int);
 #endif
 
-int OGRGRASSDataSource::Open( const char * pszNewName, int bUpdate,
-                              int bTestOpen, int bSingleNewFileIn )
+int OGRGRASSDataSource::Open( const char * pszNewName, int /*bUpdate*/,
+                              int bTestOpen, int /*bSingleNewFileIn*/ )
 {
     VSIStatBuf  stat;
 
@@ -228,25 +228,9 @@ int OGRGRASSDataSource::Open( const char * pszNewName, int bUpdate,
 }
 
 /************************************************************************/
-/*                           ICreateLayer()                             */
-/************************************************************************/
-OGRLayer *
-OGRGRASSDataSource::ICreateLayer( const char * pszLayerName,
-                                 OGRSpatialReference *poSRS,
-                                 OGRwkbGeometryType eType,
-                                 char ** papszOptions )
-
-{
-    CPLError( CE_Failure, CPLE_NoWriteAccess,
-              "CreateLayer is not supported by GRASS driver" );
-
-    return NULL;
-}
-
-/************************************************************************/
 /*                           TestCapability()                           */
 /************************************************************************/
-int OGRGRASSDataSource::TestCapability( const char * pszCap )
+int OGRGRASSDataSource::TestCapability( const char * /* pszCap*/ )
 {
     return FALSE;
 }

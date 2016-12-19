@@ -29,7 +29,7 @@
 #include "cpl_atomic_ops.h"
 #include "ogr_sqlite.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrsqlitevfs.cpp 36789 2016-12-11 15:21:56Z rouault $");
 
 #ifdef DEBUG_IO
 # define DEBUG_ONLY
@@ -214,7 +214,7 @@ static const sqlite3_io_methods OGRSQLiteIOMethods =
     NULL,  // xShmLock
     NULL,  // xShmBarrier
     NULL,  // xShmUnmap
-#if SQLITE_VERSION_NUMBER >= 3008002L /* perhaps older too ? */
+#if SQLITE_VERSION_NUMBER >= 3007017L /* perhaps older too ? */
     NULL,  // xFetch
     NULL,  // xUnfetch
 #endif

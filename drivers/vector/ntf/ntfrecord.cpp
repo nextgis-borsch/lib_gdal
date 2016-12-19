@@ -30,7 +30,7 @@
 #include "ntf.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ntfrecord.cpp 35614 2016-10-05 16:34:38Z goatbar $");
 
 static int nFieldBufSize = 0;
 static char *pszFieldBuf = NULL;

@@ -30,7 +30,7 @@
 #include "hfa_p.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: hfa_overviews.cpp 35707 2016-10-13 02:46:49Z goatbar $");
 
 CPLErr HFAAuxBuildOverviews( const char *pszOvrFilename,
                              GDALDataset *poParentDS,

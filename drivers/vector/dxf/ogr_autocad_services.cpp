@@ -30,7 +30,7 @@
 #include "ogr_autocad_services.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogr_autocad_services.cpp 36396 2016-11-21 14:53:59Z rouault $");
 
 /************************************************************************/
 /*                           ACTextUnescape()                           */
@@ -76,7 +76,7 @@ CPLString ACTextUnescape( const char *pszRawInput, const char *pszEncoding )
                  && pszInput[2] == '+' )
         {
             CPLString osHex;
-            int iChar = 0;
+            unsigned int iChar = 0;
 
             osHex.assign( pszInput+3, 4 );
             sscanf( osHex.c_str(), "%x", &iChar );

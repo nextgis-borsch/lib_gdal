@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "cpl_csv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrdxfreader.cpp 36347 2016-11-20 20:43:39Z rouault $");
 
 /************************************************************************/
 /*                            OGRDXFReader()                            */
@@ -43,6 +43,9 @@ OGRDXFReader::OGRDXFReader() :
     iSrcBufferOffset(0),
     nSrcBufferBytes(0),
     iSrcBufferFileOffset(0),
+#if HAVE_CXX11
+    achSrcBuffer{},
+#endif
     nLastValueSize(0),
     nLineNumber(0)
 {}

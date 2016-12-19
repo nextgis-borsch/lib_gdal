@@ -29,7 +29,7 @@
 #include "ogr_svg.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrsvgdriver.cpp 36569 2016-11-30 13:04:32Z goatbar $");
 
 CPL_C_START
 void RegisterOGRSVG();
@@ -50,7 +50,7 @@ static GDALDataset *OGRSVGDriverOpen( GDALOpenInfo* poOpenInfo )
     if( strstr((const char*)poOpenInfo->pabyHeader, "<svg") == NULL )
         return NULL;
 
-    OGRSVGDataSource   *poDS = new OGRSVGDataSource();
+    OGRSVGDataSource *poDS = new OGRSVGDataSource();
 
     if( !poDS->Open( poOpenInfo->pszFilename ) )
     {

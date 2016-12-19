@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: gdal_python.i 36845 2016-12-13 13:16:44Z rouault $
  *
  * python specific code for gdal bindings.
  */
@@ -95,10 +95,10 @@
 
 %apply ( void **outPythonObject ) { (void **buf ) };
 %inline %{
-int wrapper_VSIFReadL( void **buf, int nMembSize, int nMembCount, VSILFILE *fp)
+unsigned int wrapper_VSIFReadL( void **buf, unsigned int nMembSize, unsigned int nMembCount, VSILFILE *fp)
 {
     GUIntBig buf_size = (GUIntBig)nMembSize * nMembCount;
-    if( nMembSize < 0 || nMembCount < 0 || buf_size > 0xFFFFFFFFU )
+    if( buf_size > 0xFFFFFFFFU )
    {
         CPLError(CE_Failure, CPLE_AppDefined, "Too big request");
         *buf = NULL;
@@ -127,7 +127,7 @@ int wrapper_VSIFReadL( void **buf, int nMembSize, int nMembCount, VSILFILE *fp)
         _PyBytes_Resize(&o, nRet * nMembSize);
         *buf = o;
     }
-    return nRet;
+    return static_cast<unsigned int>(nRet);
 #else
     *buf = (void *)PyString_FromStringAndSize( NULL, buf_size );
     if (*buf == NULL)
@@ -144,7 +144,7 @@ int wrapper_VSIFReadL( void **buf, int nMembSize, int nMembCount, VSILFILE *fp)
         _PyString_Resize(&o, nRet * nMembSize);
         *buf = o;
     }
-    return nRet;
+    return static_cast<unsigned int>(nRet);
 #endif
 }
 %}
@@ -310,6 +310,19 @@ int wrapper_VSIFReadL( void **buf, int nMembSize, int nMembCount, VSILFILE *fp)
 
 
 %pythoncode %{
+
+  def ComputeStatistics(self, approx_ok):
+    """ComputeStatistics(Band self, bool approx_ok, GDALProgressFunc callback=0, void * callback_data=None) -> CPLErr"""
+
+    # For backward compatibility. New SWIG has stricter typing and really
+    # enforces bool
+    if approx_ok == 0:
+        approx_ok = False
+    elif approx_ok == 1:
+        approx_ok = True
+
+    return _gdal.Band_ComputeStatistics(self, approx_ok)
+
 
   def ReadRaster(self, xoff = 0, yoff = 0, xsize = None, ysize = None,
                    buf_xsize = None, buf_ysize = None, buf_type = None,
@@ -1154,7 +1167,8 @@ def Warp(destNameOrDestDS, srcDSOrSrcDSTab, **kwargs):
 def VectorTranslateOptions(options = [], format = 'ESRI Shapefile',
          accessMode = None,
          srcSRS = None, dstSRS = None, reproject = True,
-         SQLStatement = None, SQLDialect = None, where = None, selectFields = None, spatFilter = None,
+         SQLStatement = None, SQLDialect = None, where = None, selectFields = None,
+         spatFilter = None, spatSRS = None,
          datasetCreationOptions = None,
          layerCreationOptions = None,
          layers = None,
@@ -1178,6 +1192,7 @@ def VectorTranslateOptions(options = [], format = 'ESRI Shapefile',
           where --- WHERE clause to apply to source layer(s)
           selectFields --- list of fields to select
           spatFilter --- spatial filter as (minX, minY, maxX, maxY) bounding box
+          spatSRS --- SRS in which the spatFilter is expressed. If not specified, it is assumed to be the one of the layer(s)
           datasetCreationOptions --- list of dataset creation options
           layerCreationOptions --- list of layer creation options
           layers --- list of layers to convert
@@ -1233,12 +1248,17 @@ def VectorTranslateOptions(options = [], format = 'ESRI Shapefile',
             for opt in layerCreationOptions:
                 new_options += ['-lco', opt ]
         if layers is not None:
-            for lyr in layers:
-                new_options += [ lyr ]
+            if _is_str_or_unicode(layers):
+                new_options += [ layers ]
+            else:
+                for lyr in layers:
+                    new_options += [ lyr ]
         if segmentizeMaxDist is not None:
             new_options += ['-segmentize', str(segmentizeMaxDist) ]
         if spatFilter is not None:
             new_options += ['-spat', str(spatFilter[0]), str(spatFilter[1]), str(spatFilter[2]), str(spatFilter[3]) ]
+        if spatSRS is not None:
+            new_options += ['-spat_srs', str(spatSRS) ]
         if layerName is not None:
             new_options += ['-nln', layerName]
         if geometryType is not None:

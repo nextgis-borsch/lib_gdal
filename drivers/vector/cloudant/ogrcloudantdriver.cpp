@@ -28,7 +28,7 @@
 
 #include "ogr_cloudant.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrcloudantdriver.cpp 35910 2016-10-24 14:08:24Z goatbar $");
 
 extern "C" void RegisterOGRCloudant();
 

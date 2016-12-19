@@ -36,7 +36,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: nitfrasterband.cpp 36418 2016-11-21 22:58:41Z rouault $");
 
 /************************************************************************/
 /*                       NITFMakeColorTable()                           */
@@ -104,7 +104,7 @@ NITFProxyPamRasterBand::~NITFProxyPamRasterBand()
     while(oIter != oMDMap.end())
     {
         CSLDestroy(oIter->second);
-        oIter ++;
+        ++oIter;
     }
 }
 

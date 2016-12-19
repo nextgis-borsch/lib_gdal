@@ -49,7 +49,7 @@
 
 /*! @cond Doxygen_Suppress */
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: vrtderivedrasterband.cpp 36439 2016-11-22 22:08:51Z rouault $");
 
 // #define GDAL_VRT_DISABLE_PYTHON
 // #define PYTHONSO_DEFAULT "libpython2.7.so"
@@ -115,6 +115,7 @@ static void (*PyGILState_Release)(PyGILState_STATE) = NULL;
 
 typedef struct
 {
+    //cppcheck-suppress unusedStructMember
     char big_enough[256];
 } Py_buffer;
 static int (*PyBuffer_FillInfo)(Py_buffer *view, PyObject *obj, void *buf,
@@ -891,7 +892,7 @@ class VRT_GIL_Holder
 
     public:
 
-        VRT_GIL_Holder(bool bExclusiveLock);
+        explicit VRT_GIL_Holder(bool bExclusiveLock);
         virtual ~VRT_GIL_Holder();
 };
 

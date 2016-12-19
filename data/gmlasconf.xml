@@ -7,6 +7,10 @@
     <SchemaCache enabled="true">
         <Directory/> <!-- empty: use $HOME/.gdal/gmlas_xsd_cache by default -->
     </SchemaCache>
+    <SchemaAnalysisOptions>
+        <SchemaFullChecking>true</SchemaFullChecking>
+        <HandleMultipleImports>false</HandleMultipleImports>
+    </SchemaAnalysisOptions>
     <Validation enabled="false">
         <FailIfError>false</FailIfError>
     </Validation>
@@ -96,5 +100,16 @@
         <XPath>@gml:remoteSchema</XPath>
         <XPath>@gml32:remoteSchema</XPath>
     </IgnoredXPaths>
+
+    <!-- Section for GMLAS writer config -->
+    <WriterConfig>
+        <IndentationSize>2</IndentationSize>
+        <Comment/>
+        <LineFormat>NATIVE</LineFormat>
+        <SRSNameFormat>OGC_URL</SRSNameFormat>
+        <Wrapping>WFS2_FEATURECOLLECTION</Wrapping>
+        <!-- <Timestamp></Timestamp> -->
+        <WFS20SchemaLocation>http://schemas.opengis.net/wfs/2.0/wfs.xsd</WFS20SchemaLocation>
+    </WriterConfig>
 
 </Configuration>

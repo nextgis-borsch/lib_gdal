@@ -34,7 +34,7 @@
 #include "ogr_geometry.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gmlfeatureclass.cpp 36332 2016-11-20 15:19:39Z rouault $");
 
 /************************************************************************/
 /*                          GMLFeatureClass()                           */
@@ -429,7 +429,7 @@ bool GMLFeatureClass::InitializeFromXML( CPLXMLNode *psRoot )
     {
         CPLError( CE_Failure, CPLE_AppDefined,
                   "GMLFeatureClass::InitializeFromXML() called on %s node!",
-                  psRoot->pszValue );
+                  psRoot ? psRoot->pszValue : "(null)" );
         return false;
     }
 

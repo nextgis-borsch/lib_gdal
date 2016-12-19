@@ -35,7 +35,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: fitdataset.cpp 36763 2016-12-09 22:10:55Z rouault $");
 
 static const size_t FIT_PAGE_SIZE = 128;
 
@@ -94,11 +94,11 @@ public:
 
     // should override RasterIO eventually.
 
-    virtual CPLErr IReadBlock( int, int, void * );
+    virtual CPLErr IReadBlock( int, int, void * ) override;
 //     virtual CPLErr WriteBlock( int, int, void * );
-    virtual double GetMinimum( int *pbSuccess );
-    virtual double GetMaximum( int *pbSuccess );
-    virtual GDALColorInterp GetColorInterpretation();
+    virtual double GetMinimum( int *pbSuccess ) override;
+    virtual double GetMaximum( int *pbSuccess ) override;
+    virtual GDALColorInterp GetColorInterpretation() override;
 };
 
 /************************************************************************/
@@ -801,7 +801,7 @@ template< class T >
 class DeleteGuard
 {
 public:
-    DeleteGuard( T *p ) : _ptr( p ) { }
+    explicit DeleteGuard( T *p ) : _ptr( p ) { }
     ~DeleteGuard()
     {
         delete _ptr;
@@ -827,7 +827,7 @@ template< class T >
 class FreeGuard
 {
 public:
-    FreeGuard( T *p ) : _ptr( p ) { }
+    explicit FreeGuard( T *p ) : _ptr( p ) { }
     ~FreeGuard()
     {
         if ( _ptr )
@@ -1300,7 +1300,6 @@ static GDALDataset *FITCreateCopy(const char * pszFilename,
             CPL_IGNORE_RET_VAL(VSIFWriteL(output, pageBytes, 1, fpImage));
 
             double perc = ((double) (y * maxx + x)) / (maxx * maxy);
-//             printf("progress %f\n", perc);
             if( !pfnProgress( perc, NULL, pProgressData ) )
             {
                 CPLError( CE_Failure, CPLE_UserInterrupt, "User terminated" );

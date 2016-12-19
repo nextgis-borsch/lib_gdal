@@ -41,7 +41,7 @@
 // Note: JPEG_DIRECT_COPY is not defined by default, because it is mainly
 // useful for debugging purposes.
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gt_jpeg_copy.cpp 36091 2016-11-03 17:11:59Z goatbar $");
 
 #if defined(JPEG_DIRECT_COPY) || defined(HAVE_LIBJPEG)
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ###############################################################################
-# $Id$
+# $Id: histrep.py 33791 2016-03-26 12:51:23Z goatbar $
 #
 # Project:  GDAL Python Samples
 # Purpose:  Report histogram from file.

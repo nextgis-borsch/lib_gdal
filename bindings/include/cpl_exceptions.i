@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: cpl_exceptions.i 34525 2016-07-03 02:53:47Z goatbar $
  *
  * Code for Optional Exception Handling through UseExceptions(),
  * DontUseExceptions()

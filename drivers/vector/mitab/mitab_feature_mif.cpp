@@ -172,7 +172,7 @@
 #include <ctype.h>
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: mitab_feature_mif.cpp 36763 2016-12-09 22:10:55Z rouault $");
 
 /*=====================================================================
  *                      class TABFeature
@@ -209,7 +209,7 @@ static char **MIDTokenize( const char *pszLine, const char *pszDelim )
         }
         else if( !bInQuotes && strncmp(pszLine+iChar,pszDelim,nDelimLen) == 0 )
         {
-            pszToken[iTokenChar++] = '\0';
+            pszToken[iTokenChar] = '\0';
             papszResult = CSLAddString( papszResult, pszToken );
 
             iChar += static_cast<int>(strlen(pszDelim)) - 1;
@@ -2447,7 +2447,7 @@ int TABCollection::WriteGeometryToMIFFile(MIDDATAFile *fp)
 int TABDebugFeature::ReadGeometryFromMIFFile( MIDDATAFile *fp )
 {
     // Go to the first line of the next feature.
-    printf("%s\n", fp->GetLastLine());
+    printf("%s\n", fp->GetLastLine());/*ok*/
 
     const char *pszLine = NULL;
     while (((pszLine = fp->GetLine()) != NULL) &&

@@ -27,13 +27,19 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include <cmath>
-#include <vector>
-#include "cpl_conv.h"
-#include "ogr_geometry.h"
+#include "cpl_port.h"
 #include "ogr_api.h"
 
-CPL_CVSID("$Id$");
+#include <cmath>
+#include <cstddef>
+#include <vector>
+
+#include "ogr_core.h"
+#include "ogr_geometry.h"
+#include "cpl_conv.h"
+#include "cpl_error.h"
+
+CPL_CVSID("$Id: ograssemblepolygon.cpp 36328 2016-11-20 13:44:29Z goatbar $");
 
 /************************************************************************/
 /*                            CheckPoints()                             */
@@ -297,12 +303,12 @@ OGRGeometryH OGRBuildPolygonFromEdges( OGRGeometryH hLines,
 /* -------------------------------------------------------------------- */
         dfBestDist = dfTolerance;
 
-        if( !CheckPoints(poRing,0,poRing,poRing->getNumPoints()-1,
+        if( !CheckPoints(poRing, 0, poRing, poRing->getNumPoints() - 1,
                          &dfBestDist) )
         {
             CPLDebug( "OGR",
                       "Failed to close ring %d.\n"
-                      "End Points are: (%.8f,%.7f) and (%.7f,%.7f)\n",
+                      "End Points are: (%.8f,%.7f) and (%.7f,%.7f)",
                       static_cast<int>(aoRings.size()),
                       poRing->getX(0), poRing->getY(0),
                       poRing->getX(poRing->getNumPoints() - 1),

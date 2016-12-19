@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdal_java.i 35649 2016-10-08 10:16:30Z rouault $
  *
  * Name:     gdal_java.i
  * Project:  GDAL SWIG Interface

@@ -27,11 +27,18 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "cpl_conv.h"
-#include "cpl_vsi.h"
+#include "cpl_port.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id$");
+#include <cstring>
+
+#include "cpl_conv.h"
+#include "cpl_error.h"
+#include "cpl_vsi.h"
+#include "ogr_core.h"
+#include "ogr_srs_api.h"
+
+CPL_CVSID("$Id: ogr_srs_dict.cpp 36289 2016-11-19 06:41:23Z goatbar $");
 
 /************************************************************************/
 /*                           importFromDict()                           */
@@ -131,7 +138,8 @@ OGRErr OGRSpatialReference::importFromDict( const char *pszDictFile,
  * files are searched for in the "GDAL" domain using CPLFindFile().  Normally
  * this results in searching /usr/local/share/gdal or somewhere similar.
  *
- * This method is the same as the C++ method OGRSpatialReference::importFromDict().
+ * This method is the same as the C++ method
+ * OGRSpatialReference::importFromDict().
  *
  * @param hSRS spatial reference system handle.
  *

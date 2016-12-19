@@ -29,7 +29,7 @@
 #include "ogr_odbc.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrodbcdriver.cpp 35145 2016-08-18 14:47:27Z goatbar $");
 
 /************************************************************************/
 /*                            ~OGRODBCDriver()                            */

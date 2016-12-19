@@ -33,7 +33,7 @@
 #include "ogrwarpedlayer.h"
 #include "ogrunionlayer.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrvrtdatasource.cpp 36883 2016-12-15 13:31:12Z rouault $");
 
 /************************************************************************/
 /*                       OGRVRTGetGeometryType()                        */
@@ -61,6 +61,9 @@ static const OGRGeomTypeName asGeomTypeNames[] = { /* 25D versions are implicit 
     { wkbMultiSurface, "wkbMultiSurface" },
     { wkbCurve, "wkbCurve" },
     { wkbSurface, "wkbSurface" },
+    { wkbPolyhedralSurface, "wkbPolyhedralSurface" },
+    { wkbTIN, "wkbTIN" },
+    { wkbTriangle, "wkbTriangle" },
     { wkbNone, "wkbNone" },
     { wkbNone, NULL }
 };

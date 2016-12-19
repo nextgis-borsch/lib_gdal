@@ -28,7 +28,7 @@
 
 #include "gmlregistry.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gmlregistry.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 /************************************************************************/
 /*                           Parse()                                    */
@@ -36,13 +36,13 @@ CPL_CVSID("$Id$");
 
 int GMLRegistry::Parse()
 {
-    if( osRegistryPath.size() == 0 )
+    if( osRegistryPath.empty() )
     {
         const char* pszFilename = CPLFindFile( "gdal", "gml_registry.xml" );
         if( pszFilename )
             osRegistryPath = pszFilename;
     }
-    if( osRegistryPath.size() == 0 )
+    if( osRegistryPath.empty() )
         return FALSE;
     CPLXMLNode* psRootNode = CPLParseXMLFile(osRegistryPath);
     if( psRootNode == NULL )

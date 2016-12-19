@@ -28,7 +28,7 @@
 
 #include "gdal_pdf.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrpdflayer.cpp 35261 2016-08-31 05:17:08Z goatbar $");
 
 #if defined(HAVE_POPPLER) || defined(HAVE_PODOFO) || defined(HAVE_PDFIUM)
 

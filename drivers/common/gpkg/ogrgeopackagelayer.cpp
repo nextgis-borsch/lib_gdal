@@ -31,7 +31,7 @@
 #include "ogrgeopackageutility.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgeopackagelayer.cpp 35933 2016-10-25 16:46:26Z goatbar $");
 
 /************************************************************************/
 /*                      OGRGeoPackageLayer()                            */

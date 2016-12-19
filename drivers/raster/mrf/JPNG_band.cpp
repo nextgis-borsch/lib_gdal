@@ -21,7 +21,7 @@
 #include "marfa.h"
 #include <cassert>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: JPNG_band.cpp 36455 2016-11-22 23:11:35Z rouault $");
 
 CPL_C_START
 #include <jpeglib.h>
@@ -141,10 +141,9 @@ CPLErr JPNG_Band::Decompress(buf_mgr &dst, buf_mgr &src)
 CPLErr JPNG_Band::Compress(buf_mgr &dst, buf_mgr &src)
 {
     ILImage image(img);
-    CPLErr retval = CE_None;
 
     buf_mgr temp = { NULL, static_cast<size_t>(img.pageSizeBytes) };
-    retval = initBuffer(temp);
+    CPLErr retval = initBuffer(temp);
     if (retval != CE_None)
         return retval;
 
@@ -172,7 +171,7 @@ CPLErr JPNG_Band::Compress(buf_mgr &dst, buf_mgr &src)
             retval = codec.CompressPNG(dst, src);
         }
     }
-    catch (CPLErr err) {
+    catch (const CPLErr& err) {
         retval = err;
     }
 

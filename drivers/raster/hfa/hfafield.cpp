@@ -32,7 +32,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: hfafield.cpp 36763 2016-12-09 22:10:55Z rouault $");
 
 static const int MAX_ENTRY_REPORT = 16;
 
@@ -55,7 +55,9 @@ HFAField::HFAField() :
     poItemObjectType(NULL),
     papszEnumNames(NULL),
     pszFieldName(NULL)
-{}
+{
+    memset( szNumberString, 0, sizeof(szNumberString) );
+}
 
 /************************************************************************/
 /*                             ~HFAField()                              */
@@ -1659,7 +1661,7 @@ void HFAField::DumpInstValue( FILE *fpOut,
     }
 
     if( nEntries > MAX_ENTRY_REPORT )
-        printf( "%s ... remaining instances omitted ...\n", pszPrefix );
+         CPL_IGNORE_RET_VAL(VSIFPrintf( fpOut, "%s ... remaining instances omitted ...\n", pszPrefix ) );
 
     if( nEntries == 0 )
         CPL_IGNORE_RET_VAL(

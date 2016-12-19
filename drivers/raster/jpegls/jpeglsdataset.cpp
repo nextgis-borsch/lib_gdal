@@ -35,7 +35,7 @@
 
 /* g++ -Wall -g fmrts/jpegls/jpeglsdataset.cpp -shared -fPIC -o gdal_JPEGLS.so -Iport -Igcore -L. -lgdal -I/home/even/charls-1.0 -L/home/even/charls-1.0/build -lCharLS */
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: jpeglsdataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -83,8 +83,8 @@ class JPEGLSRasterBand : public GDALPamRasterBand
                 JPEGLSRasterBand( JPEGLSDataset * poDS, int nBand);
     virtual ~JPEGLSRasterBand();
 
-    virtual CPLErr          IReadBlock( int, int, void * );
-    virtual GDALColorInterp GetColorInterpretation();
+    virtual CPLErr          IReadBlock( int, int, void * ) override;
+    virtual GDALColorInterp GetColorInterpretation() override;
 };
 
 /************************************************************************/

@@ -40,7 +40,7 @@ static const double NULL3 = -32768.0;
 
 #include <string>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: vicardataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -69,10 +69,10 @@ public:
     VICARDataset();
     virtual ~VICARDataset();
 
-    virtual CPLErr GetGeoTransform( double * padfTransform );
-    virtual const char *GetProjectionRef(void);
+    virtual CPLErr GetGeoTransform( double * padfTransform ) override;
+    virtual const char *GetProjectionRef(void) override;
 
-    virtual char **GetFileList();
+    virtual char **GetFileList() override;
 
     static int          Identify( GDALOpenInfo * );
     static GDALDataset *Open( GDALOpenInfo * );
@@ -95,6 +95,7 @@ VICARDataset::VICARDataset() :
     adfGeoTransform[3] = 0.0;
     adfGeoTransform[4] = 0.0;
     adfGeoTransform[5] = 1.0;
+    memset( abyHeader, 0, sizeof(abyHeader) );
 }
 
 /************************************************************************/

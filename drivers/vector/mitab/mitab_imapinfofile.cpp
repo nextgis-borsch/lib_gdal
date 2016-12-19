@@ -142,7 +142,7 @@
 #  include <wctype.h>      /* iswspace() */
 #endif
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: mitab_imapinfofile.cpp 36461 2016-11-23 12:05:14Z rouault $");
 
 /**********************************************************************
  *                   IMapInfoFile::IMapInfoFile()
@@ -183,6 +183,7 @@ IMapInfoFile::~IMapInfoFile()
 int IMapInfoFile::Open(const char *pszFname, const char* pszAccess,
                        GBool bTestOpenNoError)
 {
+    // cppcheck-suppress nullPointer
     if( STARTS_WITH_CI(pszAccess, "r") )
         return Open(pszFname, TABRead, bTestOpenNoError);
     else if( STARTS_WITH_CI(pszAccess, "w") )

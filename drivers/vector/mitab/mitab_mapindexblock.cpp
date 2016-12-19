@@ -89,7 +89,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: mitab_mapindexblock.cpp 36015 2016-10-29 03:07:25Z goatbar $");
 
 /*=====================================================================
  *                      class TABMAPIndexBlock

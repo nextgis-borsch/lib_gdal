@@ -39,7 +39,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gmlreader.cpp 36461 2016-11-23 12:05:14Z rouault $");
 
 /************************************************************************/
 /*                            ~IGMLReader()                             */
@@ -1518,7 +1518,8 @@ bool GMLReader::SetFilteredClassName(const char* pszClassName)
     {
         for( int i = 0; i < m_nClassCount; i++ )
         {
-            if( strcmp(m_papoClass[i]->GetElementName(), pszClassName) == 0 )
+            if( strcmp(m_papoClass[i]->GetElementName(),
+                       m_pszFilteredClassName) == 0 )
             {
                 m_nFilteredClassIndex = i;
                 break;

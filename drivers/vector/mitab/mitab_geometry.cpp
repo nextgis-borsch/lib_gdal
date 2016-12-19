@@ -54,7 +54,7 @@
 
 #include "mitab_geometry.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: mitab_geometry.cpp 36015 2016-10-29 03:07:25Z goatbar $");
 
 #define OGR_NUM_RINGS(poly)   (poly->getNumInteriorRings()+1)
 #define OGR_GET_RING(poly, i) (i==0?poly->getExteriorRing():poly->getInteriorRing(i-1))

@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id$
+ * $Id: cpl_worker_thread_pool.h 36761 2016-12-09 20:17:31Z goatbar $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  CPL worker thread pool
@@ -69,7 +69,7 @@ typedef enum
     CPLWTS_STOP,
     CPLWTS_ERROR
 } CPLWorkerThreadState;
-#endif
+#endif  // ndef DOXYGEN_SKIP
 
 /** Pool of worker threads */
 class CPL_DLL CPLWorkerThreadPool

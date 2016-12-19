@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: vfkreader.h 36793 2016-12-11 18:04:54Z martinl $
  *
  * Project:  VFK Reader
  * Purpose:  Public Declarations for OGR free VFK Reader code.
@@ -54,8 +54,10 @@ typedef std::vector<VFKFeatureSQLite *> VFKFeatureSQLiteList;
 #define FID_COLUMN   "ogr_fid"
 #define GEOM_COLUMN  "geometry"
 
-#define VFK_DB_HEADER   "vfk_header"
-#define VFK_DB_TABLE    "vfk_tables"
+#define VFK_DB_HEADER_TABLE      "vfk_header"
+#define VFK_DB_TABLE             "vfk_tables"
+#define VFK_DB_GEOMETRY_TABLE    "geometry_columns"
+#define VFK_DB_SPATIAL_REF_TABLE "spatial_ref_sys"
 
 enum RecordType { RecordValid, RecordSkipped, RecordDuplicated };
 
@@ -107,7 +109,7 @@ protected:
     virtual bool         LoadGeometryPolygon() = 0;
 
 public:
-    IVFKFeature(IVFKDataBlock *);
+    explicit IVFKFeature(IVFKDataBlock *);
     virtual ~IVFKFeature();
 
     GIntBig              GetFID() const { return m_nFID; }
@@ -139,10 +141,10 @@ private:
 
     friend class         VFKFeatureSQLite;
 
-    bool                 LoadGeometryPoint();
-    bool                 LoadGeometryLineStringSBP();
-    bool                 LoadGeometryLineStringHP();
-    bool                 LoadGeometryPolygon();
+    bool                 LoadGeometryPoint() override;
+    bool                 LoadGeometryLineStringSBP() override;
+    bool                 LoadGeometryLineStringHP() override;
+    bool                 LoadGeometryPolygon() override;
 
 public:
     VFKFeature(IVFKDataBlock *, GIntBig);
@@ -151,7 +153,7 @@ public:
     const VFKProperty   *GetProperty(int) const;
     const VFKProperty   *GetProperty(const char *) const;
 
-    OGRErr               LoadProperties(OGRFeature *);
+    OGRErr               LoadProperties(OGRFeature *) override;
 
     bool                 AppendLineToRing(int, const OGRLineString *);
 };
@@ -165,21 +167,21 @@ private:
     int                  m_iRowId;           /* rowid in DB */
     sqlite3_stmt        *m_hStmt;
 
-    bool                 LoadGeometryPoint();
-    bool                 LoadGeometryLineStringSBP();
-    bool                 LoadGeometryLineStringHP();
-    bool                 LoadGeometryPolygon();
+    bool                 LoadGeometryPoint() override;
+    bool                 LoadGeometryLineStringSBP() override;
+    bool                 LoadGeometryLineStringHP() override;
+    bool                 LoadGeometryPolygon() override;
 
     OGRErr               SetFIDFromDB();
     OGRErr               ExecuteSQL(const char *);
     void                 FinalizeSQL();
 
 public:
-    VFKFeatureSQLite(IVFKDataBlock *);
+    explicit VFKFeatureSQLite(IVFKDataBlock *);
     VFKFeatureSQLite(IVFKDataBlock *, int, GIntBig);
-    VFKFeatureSQLite(const VFKFeature *);
+    explicit VFKFeatureSQLite(const VFKFeature *);
 
-    OGRErr               LoadProperties(OGRFeature *);
+    OGRErr               LoadProperties(OGRFeature *) override;
     void                 SetRowId(int);
 };
 
@@ -292,10 +294,10 @@ public:
 class VFKDataBlock : public IVFKDataBlock
 {
 private:
-    int                LoadGeometryPoint();
-    int                LoadGeometryLineStringSBP();
-    int                LoadGeometryLineStringHP();
-    int                LoadGeometryPolygon();
+    int                LoadGeometryPoint() override;
+    int                LoadGeometryLineStringSBP() override;
+    int                LoadGeometryLineStringHP() override;
+    int                LoadGeometryPolygon() override;
 
 public:
     VFKDataBlock(const char *pszName, const IVFKReader *poReader) : IVFKDataBlock(pszName, poReader) {}
@@ -317,15 +319,15 @@ private:
                                                bool&, const char *,
                                                std::vector<int>&, int&);
 
-    int                  LoadGeometryPoint();
-    int                  LoadGeometryLineStringSBP();
-    int                  LoadGeometryLineStringHP();
-    int                  LoadGeometryPolygon();
+    int                  LoadGeometryPoint() override;
+    int                  LoadGeometryLineStringSBP() override;
+    int                  LoadGeometryLineStringHP() override;
+    int                  LoadGeometryPolygon() override;
 
     bool                 LoadGeometryFromDB();
     OGRErr               SaveGeometryToDB(const OGRGeometry *, int);
 
-    bool                 IsRingClosed(const OGRLinearRing *);
+    static bool                 IsRingClosed(const OGRLinearRing *);
     void                 UpdateVfkBlocks(int);
     void                 UpdateFID(GIntBig, std::vector<int>);
 
@@ -338,6 +340,9 @@ public:
     VFKFeatureSQLite    *GetFeature( const char **, GUIntBig *, int,
                                      bool = false);
     VFKFeatureSQLiteList GetFeatures(const char **, GUIntBig *, int);
+
+    int                  GetGeometrySQLType() const;
+
 };
 
 /************************************************************************/

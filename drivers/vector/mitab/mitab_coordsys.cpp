@@ -117,7 +117,7 @@
 #include "mitab.h"
 #include "mitab_utils.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: mitab_coordsys.cpp 35933 2016-10-25 16:46:26Z goatbar $");
 
 extern const MapInfoDatumInfo asDatumInfoList[];
 extern const MapInfoSpheroidInfo asSpheroidInfoList[];

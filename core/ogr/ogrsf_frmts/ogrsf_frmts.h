@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrsf_frmts.h 36427 2016-11-22 12:56:01Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Classes related to format registration, and file opening.
@@ -330,13 +330,19 @@ class CPL_DLL OGRSFDriverRegistrar
 //! @cond Doxygen_Suppress
     static OGRSFDriverRegistrar *GetRegistrar() OGR_DEPRECATED("Use GDALDriverManager class instead");
 
+    // cppcheck-suppress functionStatic
     void        RegisterDriver( OGRSFDriver * poDriver ) OGR_DEPRECATED("Use GDALDriverManager class instead");
 
+    // cppcheck-suppress functionStatic
     int         GetDriverCount( void ) OGR_DEPRECATED("Use GDALDriverManager class instead");
+    // cppcheck-suppress functionStatic
     GDALDriver *GetDriver( int iDriver ) OGR_DEPRECATED("Use GDALDriverManager class instead");
+    // cppcheck-suppress functionStatic
     GDALDriver *GetDriverByName( const char * ) OGR_DEPRECATED("Use GDALDriverManager class instead");
 
+    // cppcheck-suppress functionStatic
     int         GetOpenDSCount() OGR_DEPRECATED("Use GDALDriverManager class instead");
+    // cppcheck-suppress functionStatic
     OGRDataSource *GetOpenDS( int ) OGR_DEPRECATED("Use GDALDriverManager class instead");
 //! @endcond
 };

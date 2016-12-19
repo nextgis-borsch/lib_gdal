@@ -27,29 +27,51 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "cpl_string.h"
+#include "cpl_port.h"
+#include "gdal.h"
+#include "gdal_priv.h"
+
+#include <climits>
+#include <cstdarg>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <algorithm>
+#include <map>
+#include <new>
+#include <string>
+#include <utility>
+
+#include "cpl_conv.h"
+#include "cpl_error.h"
 #include "cpl_hash_set.h"
 #include "cpl_multiproc.h"
+#include "cpl_progress.h"
+#include "cpl_string.h"
+#include "cpl_vsi.h"
 #include "cpl_vsi_error.h"
-#include "gdal_priv.h"
+#include "ogr_api.h"
 #include "ogr_attrind.h"
+#include "ogr_core.h"
+#include "ogr_feature.h"
 #include "ogr_featurestyle.h"
 #include "ogr_gensql.h"
+#include "ogr_geometry.h"
 #include "ogr_p.h"
+#include "ogr_spatialref.h"
+#include "ogr_srs_api.h"
 #include "ograpispy.h"
+#include "ogrsf_frmts.h"
 #include "ogrunionlayer.h"
 #include "swq.h"
+
 #include "../frmts/derived/derivedlist.h"
 
 #ifdef SQLITE_ENABLED
 #include "../sqlite/ogrsqliteexecutesql.h"
 #endif
 
-#include <algorithm>
-#include <map>
-#include <new>
-
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdaldataset.cpp 36956 2016-12-19 13:03:21Z rouault $");
 
 CPL_C_START
 GDALAsyncReader *
@@ -317,7 +339,7 @@ GDALDataset::~GDALDataset()
                 }
             }
 
-            if (poAllDatasetMap->size() == 0)
+            if (poAllDatasetMap->empty())
             {
                 delete poAllDatasetMap;
                 poAllDatasetMap = NULL;
@@ -414,6 +436,7 @@ void GDALDataset::FlushCache()
     }
 
     const int nLayers = GetLayerCount();
+    // cppcheck-suppress knownConditionTrueFalse
     if( nLayers > 0 )
     {
         GDALDatasetPrivate* psPrivate = (GDALDatasetPrivate* )m_hPrivateData;
@@ -2438,6 +2461,9 @@ char ** CPL_STDCALL GDALGetFileList( GDALDatasetH hDS )
  * one band.
  * The mask images will be deflate compressed tiled images with the same
  * block size as the original image if possible.
+ * It will have INTERNAL_MASK_FLAGS_xx metadata items set at the dataset
+ * level, where xx matches the band number of a band of the main dataset. The
+ * value of those items will be the one of the nFlagsIn parameter.
  *
  * Note that if you got a mask band with a previous call to GetMaskBand(),
  * it might be invalidated by CreateMaskBand(). So you have to call GetMaskBand()
@@ -2445,10 +2471,13 @@ char ** CPL_STDCALL GDALGetFileList( GDALDatasetH hDS )
  *
  * @since GDAL 1.5.0
  *
- * @param nFlagsIn ignored. GMF_PER_DATASET will be assumed.
+ * @param nFlagsIn 0 or combination of GMF_PER_DATASET / GMF_ALPHA. 
+ *                 GMF_PER_DATASET will be always set, even if not explicitly
+ *                 specified.
  * @return CE_None on success or CE_Failure on an error.
  *
  * @see http://trac.osgeo.org/gdal/wiki/rfc15_nodatabitmask
+ * @see GDALRasterBand::CreateMaskBand()
  *
  */
 CPLErr GDALDataset::CreateMaskBand( int nFlagsIn )
@@ -4217,12 +4246,12 @@ OGRLayer *GDALDataset::CopyLayer( OGRLayer *poSrcLayer,
     {
         if(NULL == pszSRSWKT)
         {
-        poDstLayer =ICreateLayer( pszNewName, poSrcLayer->GetSpatialRef(),
-                                  poSrcDefn->GetGeomType(), papszOptions );
-    }
+            poDstLayer =ICreateLayer( pszNewName, poSrcLayer->GetSpatialRef(),
+                                      poSrcDefn->GetGeomType(), papszOptions );
+        }
         else
         {
-            // remove DST_WKT from option list to prevent WARNINfrom driver
+            // remove DST_WKT from option list to prevent warning from driver
             int nSRSPos = CSLFindName(papszOptions, "DST_SRSWKT");
             papszOptions = CSLRemoveStrings(papszOptions, nSRSPos, 1, NULL);
             poDstLayer = ICreateLayer( pszNewName, &oDstSpaRef,

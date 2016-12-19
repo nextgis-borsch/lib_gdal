@@ -31,7 +31,7 @@
 #include "gdal.h"
 #include "vrtdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: pixelfunctions.cpp 35897 2016-10-24 11:54:24Z goatbar $");
 
 static CPLErr RealPixelFunc( void **papoSources, int nSources, void *pData,
                              int nXSize, int nYSize,

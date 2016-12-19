@@ -29,7 +29,7 @@
 #include "ogr_tiger.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: tigerpolygoneconomic.cpp 35629 2016-10-06 23:39:06Z goatbar $");
 
 static const char FILE_CODE[] = "E";
 

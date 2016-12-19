@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gmlreadstate.cpp 35182 2016-08-22 22:13:36Z goatbar $");
 
 /************************************************************************/
 /*                            GMLReadState()                            */

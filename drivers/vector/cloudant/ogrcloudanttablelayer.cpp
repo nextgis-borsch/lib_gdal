@@ -34,7 +34,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrcloudanttablelayer.cpp 35933 2016-10-25 16:46:26Z goatbar $");
 
 /************************************************************************/
 /*                       OGRCloudantTableLayer()                         */

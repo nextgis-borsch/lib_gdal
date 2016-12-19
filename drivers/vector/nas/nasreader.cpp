@@ -38,7 +38,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: nasreader.cpp 36300 2016-11-19 15:05:34Z jef $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -576,6 +576,7 @@ void NASReader::SetFeaturePropertyDirectly( const char *pszElement,
                       poClass->GetName(), pszElement,
                       poProp->papszSubProperties[0], pszValue,
                       poIdProp && poIdProp->nSubProperties>0 &&
+                      poIdProp->papszSubProperties &&
                       poIdProp->papszSubProperties[0] ?
                       poIdProp->papszSubProperties[0] : "(null)" );
         }

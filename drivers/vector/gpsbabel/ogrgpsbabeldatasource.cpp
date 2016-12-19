@@ -35,7 +35,7 @@
 #include <cstring>
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgpsbabeldatasource.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 /************************************************************************/
 /*                      OGRGPSBabelDataSource()                         */
@@ -65,7 +65,7 @@ OGRGPSBabelDataSource::~OGRGPSBabelDataSource()
 
     CloseDependentDatasets();
 
-    if (osTmpFileName.size() > 0)
+    if (!osTmpFileName.empty())
         VSIUnlink(osTmpFileName.c_str());
 }
 

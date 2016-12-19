@@ -34,7 +34,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: vicarkeywordhandler.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -281,7 +281,7 @@ int VICARKeywordHandler::ReadPair( CPLString &osName, CPLString &osValue ) {
             SkipWhite();
 
             osValue += osWord;
-            if( osWord.size() && osWord[osWord.size()-1] == ')'  ) break;
+            if( !osWord.empty() && osWord[osWord.size()-1] == ')'  ) break;
         }
     }
     else

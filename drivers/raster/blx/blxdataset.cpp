@@ -37,14 +37,14 @@ CPL_C_START
 #include <blx.h>
 CPL_C_END
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: blxdataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 class BLXDataset : public GDALPamDataset
 {
     friend class BLXRasterBand;
 
-    CPLErr      GetGeoTransform( double * padfTransform );
-    const char *GetProjectionRef();
+    CPLErr      GetGeoTransform( double * padfTransform ) override;
+    const char *GetProjectionRef() override;
 
     blxcontext_t *blxcontext;
 
@@ -66,12 +66,12 @@ class BLXRasterBand : public GDALPamRasterBand
   public:
     BLXRasterBand( BLXDataset *, int, int overviewLevel=0 );
 
-    virtual double  GetNoDataValue( int *pbSuccess = NULL );
-    virtual GDALColorInterp GetColorInterpretation(void);
-    virtual int GetOverviewCount();
-    virtual GDALRasterBand *GetOverview( int );
+    virtual double  GetNoDataValue( int *pbSuccess = NULL ) override;
+    virtual GDALColorInterp GetColorInterpretation(void) override;
+    virtual int GetOverviewCount() override;
+    virtual GDALRasterBand *GetOverview( int ) override;
 
-    virtual CPLErr IReadBlock( int, int, void * );
+    virtual CPLErr IReadBlock( int, int, void * ) override;
 };
 
 GDALDataset *BLXDataset::Open( GDALOpenInfo * poOpenInfo )

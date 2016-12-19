@@ -29,7 +29,7 @@
 #include "ogr_tiger.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: tigerpoint.cpp 35609 2016-10-04 14:16:24Z goatbar $");
 
 /************************************************************************/
 /*                             TigerPoint()                             */

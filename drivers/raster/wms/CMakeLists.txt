@@ -51,6 +51,7 @@ if(ENABLE_WMS)
         wmsmetadataset.h
         minidriver_virtualearth.h 
         minidriver_arcgis_server.h
+        minidriver_mrf.h
     )
 
     set(LIB_CSOURCES
@@ -73,6 +74,7 @@ if(ENABLE_WMS)
         minidriver_virtualearth.cpp 
         minidriver_arcgis_server.cpp
         minidriver_iip.cpp
+        minidriver_mrf.cpp
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})

@@ -41,7 +41,7 @@
 #include "ogr_sqlite.h"
 #include <cassert>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrsqlitelayer.cpp 36883 2016-12-15 13:31:12Z rouault $");
 
 /************************************************************************/
 /*                           OGRSQLiteLayer()                           */
@@ -2553,8 +2553,12 @@ int OGRSQLiteLayer::ComputeSpatiaLiteGeometrySize(const OGRGeometry *poGeometry,
         }
 
         default:
-            CPLError(CE_Failure, CPLE_AppDefined, "Unexpected geometry type");
+        {
+            CPLError(CE_Failure, CPLE_AppDefined,
+                     "Unexpected geometry type: %s",
+                     OGRToOGCGeomType(poGeometry->getGeometryType()));
             return 0;
+        }
     }
 }
 
@@ -2980,10 +2984,16 @@ OGRErr OGRSQLiteLayer::ExportSpatiaLiteGeometry( const OGRGeometry *poGeometry,
 
     bUseComprGeom = bUseComprGeom && !bSpatialite2D && CanBeCompressedSpatialiteGeometry(poWorkGeom);
 
-    int nDataLen =
-        44 + ComputeSpatiaLiteGeometrySize( poWorkGeom,
-                                            bSpatialite2D,
-                                            bUseComprGeom );
+    const int nGeomSize = ComputeSpatiaLiteGeometrySize( poWorkGeom,
+                                                         bSpatialite2D,
+                                                         bUseComprGeom );
+    if( nGeomSize == 0 )
+    {
+        *ppabyData = NULL;
+        *pnDataLength = 0;
+        return OGRERR_FAILURE;
+    }
+    const int nDataLen = 44 + nGeomSize;
     OGREnvelope sEnvelope;
 
     *ppabyData =  (GByte *) CPLMalloc( nDataLen );
@@ -3113,7 +3123,9 @@ void OGRSQLiteLayer::ClearStatement()
 {
     if( hStmt != NULL )
     {
+#ifdef DEBUG_VERBOSE
         CPLDebug( "OGR_SQLITE", "finalize %p", hStmt );
+#endif
         sqlite3_finalize( hStmt );
         hStmt = NULL;
     }

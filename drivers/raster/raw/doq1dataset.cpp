@@ -31,7 +31,7 @@
 #include "cpl_string.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: doq1dataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 static const char UTM_FORMAT[] =
     "PROJCS[\"%s / UTM zone %dN\",GEOGCS[%s,PRIMEM[\"Greenwich\",0],"
@@ -123,8 +123,8 @@ class DOQ1Dataset : public RawDataset
                 DOQ1Dataset();
                 ~DOQ1Dataset();
 
-    CPLErr      GetGeoTransform( double * padfTransform );
-    const char  *GetProjectionRef( void );
+    CPLErr      GetGeoTransform( double * padfTransform ) override;
+    const char  *GetProjectionRef( void ) override;
 
     static GDALDataset *Open( GDALOpenInfo * );
 };

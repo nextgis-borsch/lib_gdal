@@ -47,7 +47,7 @@
 #include <algorithm>
 #include <vector>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgmldatasource.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 static bool ExtractSRSName(const char* pszXML, char* szSRSName,
                            size_t sizeof_szSRSName);
@@ -93,7 +93,7 @@ OGRGMLDataSource::OGRGMLDataSource() :
     bIsOutputGML3(false),
     bIsOutputGML3Deegree(false),
     bIsOutputGML32(false),
-    bIsLongSRSRequired(false),
+    eSRSNameFormat(SRSNAME_SHORT),
     bWriteSpaceIndentation(true),
     poWriteGlobalSRS(NULL),
     bWriteGlobalSRS(false),
@@ -149,7 +149,7 @@ OGRGMLDataSource::~OGRGMLDataSource()
                 bool bCoordSwap = false;
                 char* pszSRSName = NULL;
                 if (poWriteGlobalSRS)
-                    pszSRSName = GML_GetSRSName(poWriteGlobalSRS, IsLongSRSRequired(), &bCoordSwap);
+                    pszSRSName = GML_GetSRSName(poWriteGlobalSRS, eSRSNameFormat, &bCoordSwap);
                 else
                     pszSRSName = CPLStrdup("");
                 char szLowerCorner[75], szUpperCorner[75];
@@ -351,7 +351,7 @@ bool OGRGMLDataSource::Open( GDALOpenInfo* poOpenInfo )
 /* -------------------------------------------------------------------- */
 
     size_t nRead = VSIFReadL( szHeader, 1, sizeof(szHeader)-1, fp );
-    if (nRead <= 0)
+    if (nRead == 0)
     {
         if( fpToClose )
             VSIFCloseL( fpToClose );
@@ -378,7 +378,7 @@ bool OGRGMLDataSource::Open( GDALOpenInfo* poOpenInfo )
             return false;
 
         nRead = VSIFReadL( szHeader, 1, sizeof(szHeader) - 1, fp );
-        if (nRead <= 0)
+        if (nRead == 0)
         {
             VSIFCloseL( fpToClose );
             return false;
@@ -751,7 +751,7 @@ bool OGRGMLDataSource::Open( GDALOpenInfo* poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Can we find a GML Feature Schema (.gfs) for the input file?     */
 /* -------------------------------------------------------------------- */
-    if( !bHaveSchema && osXSDFilename.size() == 0)
+    if( !bHaveSchema && osXSDFilename.empty())
     {
         VSIStatBufL sGFSStatBuf;
         if( bCheckAuxFile && VSIStatL( osGFSFilename, &sGFSStatBuf ) == 0 )
@@ -795,7 +795,7 @@ bool OGRGMLDataSource::Open( GDALOpenInfo* poOpenInfo )
         char** papszTypeNames = NULL;
 
         VSIStatBufL sXSDStatBuf;
-        if (osXSDFilename.size() == 0)
+        if (osXSDFilename.empty())
         {
             osXSDFilename = CPLResetExtension( pszFilename, "xsd" );
             if( bCheckAuxFile && VSIStatExL( osXSDFilename, &sXSDStatBuf, VSI_STAT_EXISTS_FLAG ) == 0 )
@@ -847,7 +847,7 @@ bool OGRGMLDataSource::Open( GDALOpenInfo* poOpenInfo )
                             GMLRegistryFeatureType& oFeatureType =
                                         oNamespace.aoFeatureTypes[iTypename];
 
-                            if ( oFeatureType.osElementValue.size() )
+                            if ( !oFeatureType.osElementValue.empty() )
                                 pszElementToFind = CPLSPrintf("%s:%s>%s",
                                                               oNamespace.osPrefix.c_str(),
                                                               oFeatureType.osElementName.c_str(),
@@ -862,7 +862,7 @@ bool OGRGMLDataSource::Open( GDALOpenInfo* poOpenInfo )
                             /* confused with a top-level BasicPropertyUnit feature... */
                             if( osHeader.find(pszElementToFind) != std::string::npos )
                             {
-                                if( oFeatureType.osSchemaLocation.size() )
+                                if( !oFeatureType.osSchemaLocation.empty() )
                                 {
                                     osXSDFilename = oFeatureType.osSchemaLocation;
                                     if( STARTS_WITH(osXSDFilename, "http://") ||
@@ -989,7 +989,7 @@ bool OGRGMLDataSource::Open( GDALOpenInfo* poOpenInfo )
                     GMLFeatureClass* poClass = *oIter;
 
                     delete poClass;
-                    oIter ++;
+                    ++oIter;
                 }
                 aosClasses.resize(0);
                 bHaveSchema = false;
@@ -1009,14 +1009,14 @@ bool OGRGMLDataSource::Open( GDALOpenInfo* poOpenInfo )
                         bHasFeatureProperties = true;
                         break;
                     }
-                    oIter ++;
+                    ++ oIter;
                 }
 
                 oIter = aosClasses.begin();
                 while (oIter != oEndIter)
                 {
                     GMLFeatureClass* poClass = *oIter;
-                    oIter ++;
+                    ++ oIter;
 
                     /* We have no way of knowing if the geometry type is 25D */
                     /* when examining the xsd only, so if there was a hint */
@@ -1575,8 +1575,35 @@ bool OGRGMLDataSource::Create( const char *pszFilename,
     if (bIsOutputGML3Deegree || bIsOutputGML32)
         bIsOutputGML3 = true;
 
-    bIsLongSRSRequired =
-        CPLTestBool(CSLFetchNameValueDef(papszCreateOptions, "GML3_LONGSRS", "YES"));
+    eSRSNameFormat = (bIsOutputGML3) ? SRSNAME_OGC_URN : SRSNAME_SHORT;
+    if( bIsOutputGML3 ) 
+    {
+        const char* pszLongSRS = CSLFetchNameValue(papszCreateOptions, "GML3_LONGSRS");
+        const char* pszSRSNameFormat = CSLFetchNameValue(papszCreateOptions, "SRSNAME_FORMAT");
+        if( pszSRSNameFormat )
+        {
+            if( pszLongSRS )
+            {
+                CPLError(CE_Warning, CPLE_NotSupported,
+                            "Both GML3_LONGSRS and SRSNAME_FORMAT specified. "
+                            "Ignoring GML3_LONGSRS");
+            }
+            if( EQUAL(pszSRSNameFormat, "SHORT") )
+                eSRSNameFormat = SRSNAME_SHORT;
+            else if( EQUAL(pszSRSNameFormat, "OGC_URN") )
+                eSRSNameFormat = SRSNAME_OGC_URN;
+            else if( EQUAL(pszSRSNameFormat, "OGC_URL") )
+                eSRSNameFormat = SRSNAME_OGC_URL;
+            else
+            {
+                CPLError(CE_Warning, CPLE_NotSupported,
+                            "Invalid value for SRSNAME_FORMAT. "
+                            "Using SRSNAME_OGC_URN");
+            }
+        }
+        else if( pszLongSRS && !CPLTestBool(pszLongSRS) )
+            eSRSNameFormat = SRSNAME_SHORT;
+    }
 
     bWriteSpaceIndentation =
         CPLTestBool(CSLFetchNameValueDef(papszCreateOptions, "SPACE_INDENTATION", "YES"));
@@ -2488,13 +2515,13 @@ class OGRGMLSingleFeatureLayer : public OGRLayer
     int                 iNextShapeId;
 
   public:
-                        OGRGMLSingleFeatureLayer(int nVal );
+    explicit            OGRGMLSingleFeatureLayer(int nVal );
     virtual ~OGRGMLSingleFeatureLayer() { poFeatureDefn->Release(); }
 
-    virtual void        ResetReading() { iNextShapeId = 0; }
-    virtual OGRFeature *GetNextFeature();
-    virtual OGRFeatureDefn *GetLayerDefn() { return poFeatureDefn; }
-    virtual int         TestCapability( const char * ) { return FALSE; }
+    virtual void        ResetReading() override { iNextShapeId = 0; }
+    virtual OGRFeature *GetNextFeature() override;
+    virtual OGRFeatureDefn *GetLayerDefn() override { return poFeatureDefn; }
+    virtual int         TestCapability( const char * ) override { return FALSE; }
 };
 
 /************************************************************************/
@@ -2537,7 +2564,7 @@ OGRLayer * OGRGMLDataSource::ExecuteSQL( const char *pszSQLCommand,
     if (poReader != NULL && EQUAL(pszSQLCommand, "SELECT ValidateSchema()"))
     {
         bool bIsValid = false;
-        if (osXSDFilename.size())
+        if (!osXSDFilename.empty() )
         {
             CPLErrorReset();
             bIsValid = CPL_TO_BOOL(CPLValidateXML(osFilename, osXSDFilename, NULL));

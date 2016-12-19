@@ -29,7 +29,7 @@
 
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrregisterall.cpp 36306 2016-11-19 22:11:24Z bishop $");
 
 /************************************************************************/
 /*                           OGRRegisterAll()                           */

@@ -40,7 +40,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: usgsdem_create.cpp 36423 2016-11-22 00:58:41Z rouault $");
 
 /* used by usgsdemdataset.cpp */
 GDALDataset *USGSDEMCreateCopy( const char *, GDALDataset *, int, char **,
@@ -1320,6 +1320,7 @@ static int USGSDEMLoadRaster( CPL_UNUSED USGSDEMWriteInfo *psWInfo,
     char *apszOptions[] = { szDataPointer, NULL };
 
     memset( szDataPointer, 0, sizeof(szDataPointer) );
+    // cppcheck-suppress redundantCopy
     snprintf( szDataPointer, sizeof(szDataPointer), "DATAPOINTER=" );
     CPLPrintPointer( szDataPointer+strlen(szDataPointer),
                      psWInfo->panData,

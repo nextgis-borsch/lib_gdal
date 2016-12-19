@@ -37,7 +37,7 @@
 #include <ogr_api.h>
 #include <ogr_p.h>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgeojsonwriter.cpp 36883 2016-12-15 13:31:12Z rouault $");
 
 
 /************************************************************************/
@@ -848,7 +848,11 @@ json_object* OGRGeoJSONWriteGeometry( OGRGeometry* poGeometry,
 json_object* OGRGeoJSONWriteGeometry( OGRGeometry* poGeometry,
                                       const OGRGeoJSONWriteOptions& oOptions )
 {
-    CPLAssert( NULL != poGeometry );
+    if( poGeometry == NULL )
+    {
+        CPLAssert( false );
+        return NULL;
+    }
 
     OGRwkbGeometryType eType = poGeometry->getGeometryType();
     // For point empty, return a null geometry. For other empty geometry types,
@@ -915,7 +919,15 @@ json_object* OGRGeoJSONWriteGeometry( OGRGeometry* poGeometry,
                       "Feature gets NULL geometry assigned." );
         }
 
-        json_object_object_add( poObj, "coordinates", poObjGeom);
+        if( poObjGeom != NULL )
+        {
+            json_object_object_add( poObj, "coordinates", poObjGeom);
+        }
+        else
+        {
+            json_object_put(poObj);
+            poObj = NULL;
+        }
     }
 
     return poObj;
@@ -1445,7 +1457,7 @@ OGR_json_double_with_significant_figures_to_string( struct json_object *jso,
                 nSize = CPLsnprintf(szBuffer, sizeof(szBuffer),
                                     szFormatting, jso->o.c_double);
                 if( nSize+2 < static_cast<int>(sizeof(szBuffer)) &&
-                    (pszDot = strchr(szBuffer, '.')) == NULL )
+                    strchr(szBuffer, '.') == NULL )
                 {
                     nSize +=
                         CPLsnprintf(szBuffer + nSize, sizeof(szBuffer) - nSize,

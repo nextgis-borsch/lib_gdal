@@ -33,7 +33,7 @@
 
 #include "keacopy.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: keacopy.cpp 36418 2016-11-21 22:58:41Z rouault $");
 
 // Support functions for CreateCopy()
 
@@ -458,7 +458,7 @@ static void KEACopyGCPs(GDALDataset *pDataset, kealib::KEAImageIO *pImageIO)
         {
         }
 
-        for( std::vector<kealib::KEAImageGCP*>::iterator itr = KEAGCPs.begin(); itr != KEAGCPs.end(); itr++)
+        for( std::vector<kealib::KEAImageGCP*>::iterator itr = KEAGCPs.begin(); itr != KEAGCPs.end(); ++itr)
         {
             delete (*itr);
         }

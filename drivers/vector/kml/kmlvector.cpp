@@ -32,7 +32,7 @@
 
 #include <string>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: kmlvector.cpp 34717 2016-07-19 15:29:22Z goatbar $");
 
 KMLVector::~KMLVector() {}
 

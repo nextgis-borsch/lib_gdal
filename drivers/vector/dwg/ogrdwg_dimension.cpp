@@ -34,7 +34,7 @@
 #include "DbRotatedDimension.h"
 #include "DbAlignedDimension.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrdwg_dimension.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 /************************************************************************/
 /*                         TranslateDIMENSION()                         */
@@ -173,9 +173,7 @@ the approach is as above in all these cases.
 /* -------------------------------------------------------------------- */
 /*      Compute the text angle.                                         */
 /* -------------------------------------------------------------------- */
-    double dfAngle = 0.0;
-
-    dfAngle = atan2(dfVec2Y,dfVec2X) * 180.0 / M_PI;
+    double dfAngle = atan2(dfVec2Y,dfVec2X) * 180.0 / M_PI;
 
 /* -------------------------------------------------------------------- */
 /*      Rescale the direction vectors so we can use them in             */
@@ -300,7 +298,7 @@ the approach is as above in all these cases.
     poLabelFeature->SetGeometryDirectly( new OGRPoint( oTextPos.x, oTextPos.y ) );
 
     // Do we need to compute the dimension value?
-    if( osText.size() == 0 )
+    if( osText.empty() )
     {
         FormatDimension( osText, POINT_DIST( oArrow1.x, oArrow1.y,
                                              dfArrowX2, dfArrowY2 ) );

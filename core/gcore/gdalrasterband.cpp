@@ -28,14 +28,30 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "cpl_string.h"
+#include "cpl_port.h"
 #include "gdal_priv.h"
-#include "gdal_rat.h"
 
+#include <climits>
+#include <cmath>
+#include <cstdarg>
+#include <cstddef>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <algorithm>
 #include <limits>
+#include <new>
 
-CPL_CVSID("$Id$");
+#include "cpl_conv.h"
+#include "cpl_error.h"
+#include "cpl_progress.h"
+#include "cpl_string.h"
+#include "cpl_virtualmem.h"
+#include "cpl_vsi.h"
+#include "gdal.h"
+#include "gdal_rat.h"
+
+CPL_CVSID("$Id: gdalrasterband.cpp 36956 2016-12-19 13:03:21Z rouault $");
 
 /************************************************************************/
 /*                           GDALRasterBand()                           */
@@ -230,7 +246,7 @@ GDALRasterBand::~GDALRasterBand()
  *
  * @param nYSize The height of the region of the band to be accessed in lines.
  *
- * @param pData The buffer into which the data should be read, or from which
+ * @param[in,out] pData The buffer into which the data should be read, or from which
  * it should be written. This buffer must contain at least nBufXSize *
  * nBufYSize words of type eBufType. It is organized in left to right,
  * top to bottom pixel order. Spacing is controlled by the nPixelSpace,
@@ -254,7 +270,7 @@ GDALRasterBand::~GDALRasterBand()
  * pData to the start of the next. If defaulted (0) the size of the datatype
  * eBufType * nBufXSize is used.
  *
- * @param psExtraArg (new in GDAL 2.0) pointer to a GDALRasterIOExtraArg structure with additional
+ * @param[in] psExtraArg (new in GDAL 2.0) pointer to a GDALRasterIOExtraArg structure with additional
  * arguments to specify resampling and progress callback, or NULL for default
  * behaviour. The GDAL_RASTERIO_RESAMPLING configuration option can also be defined
  * to override the default resampling to one of BILINEAR, CUBIC, CUBICSPLINE,
@@ -1058,19 +1074,19 @@ CPLErr GDALRasterBand::UnreferenceBlock( GDALRasterBlock* poBlock )
     if( poBandBlockCache == NULL || !poBandBlockCache->IsInitOK() )
     {
         if( poBandBlockCache == NULL )
-            printf("poBandBlockCache == NULL\n");
+            printf("poBandBlockCache == NULL\n");/*ok*/
         else
-            printf("!poBandBlockCache->IsInitOK()\n");
-        printf("caller = %s\n", pszCaller);
-        printf("GDALRasterBand: %p\n", this);
-        printf("GDALRasterBand: nBand=%d\n", nBand);
-        printf("nRasterXSize = %d\n", nRasterXSize);
-        printf("nRasterYSize = %d\n", nRasterYSize);
-        printf("nBlockXSize = %d\n", nBlockXSize);
-        printf("nBlockYSize = %d\n", nBlockYSize);
+            printf("!poBandBlockCache->IsInitOK()\n");/*ok*/
+        printf("caller = %s\n", pszCaller);/*ok*/
+        printf("GDALRasterBand: %p\n", this);/*ok*/
+        printf("GDALRasterBand: nBand=%d\n", nBand);/*ok*/
+        printf("nRasterXSize = %d\n", nRasterXSize);/*ok*/
+        printf("nRasterYSize = %d\n", nRasterYSize);/*ok*/
+        printf("nBlockXSize = %d\n", nBlockXSize);/*ok*/
+        printf("nBlockYSize = %d\n", nBlockYSize);/*ok*/
         poBlock->DumpBlock();
         if( GetDataset() != NULL )
-            printf("Dataset: %s\n", GetDataset()->GetDescription());
+            printf("Dataset: %s\n", GetDataset()->GetDescription());/*ok*/
         GDALRasterBlock::Verify();
         abort();
     }
@@ -3786,6 +3802,8 @@ CPLErr CPL_STDCALL GDALGetRasterStatistics(
         bApproxOK, bForce, pdfMin, pdfMax, pdfMean, pdfStdDev );
 }
 
+#ifdef CPL_HAS_GINT64
+
 /************************************************************************/
 /*                         GDALUInt128                                  */
 /************************************************************************/
@@ -3795,7 +3813,7 @@ class GDALUInt128
 {
         __uint128_t val;
 
-        GDALUInt128(__uint128_t valIn) : val(valIn) {}
+        explicit GDALUInt128(__uint128_t valIn) : val(valIn) {}
 
     public:
         static GDALUInt128 Mul(GUIntBig first, GUIntBig second)
@@ -4623,6 +4641,8 @@ void ComputeStatisticsInternal<GUInt16>( int nXCheck,
 
 #endif // (defined(__x86_64__) || defined(_M_X64)) && (defined(__GNUC__) || defined(_MSC_VER))
 
+#endif // CPL_HAS_GINT64
+
 /************************************************************************/
 /*                         ComputeStatistics()                          */
 /************************************************************************/
@@ -4868,6 +4888,7 @@ GDALRasterBand::ComputeStatistics( int bApproxOK,
               nSampleRate += 1;
         }
 
+#ifdef CPL_HAS_GINT64
         // Particular case for GDT_Byte that only use integral types for all
         // intermediate computations. Only possible if the number of pixels
         // explored is lower than GUINTBIG_MAX / (255*255), so that nSumSquare
@@ -5004,6 +5025,7 @@ GDALRasterBand::ComputeStatistics( int bApproxOK,
                 "Failed to compute statistics, no valid pixels found in sampling." );
             return CE_Failure;
         }
+#endif
 
         for( int iSampleBlock = 0;
              iSampleBlock < nBlocksPerRow * nBlocksPerColumn;
@@ -5309,6 +5331,7 @@ CPLErr GDALRasterBand::ComputeRasterMinMax( int bApproxOK,
 /* -------------------------------------------------------------------- */
 /*      If we have overview bands, use them for min/max.                */
 /* -------------------------------------------------------------------- */
+    // cppcheck-suppress knownConditionTrueFalse
     if ( bApproxOK && GetOverviewCount() > 0 && !HasArbitraryOverviews() )
     {
         GDALRasterBand *poBand =
@@ -5828,8 +5851,20 @@ CPLErr CPL_STDCALL GDALSetDefaultRAT( GDALRasterBandH hBand,
  *     The null flags will return GMF_ALL_VALID.</li>
  * </ul>
  *
- * Note that the GetMaskBand() should always return a GDALRasterBand mask, even if it is only
- * an all 255 mask with the flags indicating GMF_ALL_VALID.
+ * Note that the GetMaskBand() should always return a GDALRasterBand mask, even
+ * if it is only an all 255 mask with the flags indicating GMF_ALL_VALID.
+ *
+ * For an external .msk file to be recognized by GDAL, it must be a valid GDAL
+ * dataset, with the same name as the main dataset and suffixed with .msk,
+ * with either one band (in the GMF_PER_DATASET case), or as many bands as the
+ * main dataset.
+ * It must have INTERNAL_MASK_FLAGS_xx metadata items set at the dataset
+ * level, where xx matches the band number of a band of the main dataset. The
+ * value of those items is a combination of the flags GMF_ALL_VALID,
+ * GMF_PER_DATASET, GMF_ALPHA and GMF_NODATA. If a metadata item is missing for
+ * a band, then the other rules explained above will be used to generate a
+ * on-the-fly mask band.
+ * \see CreateMaskBand() for the characteristics of .msk files created by GDAL.
  *
  * This method is the same as the C function GDALGetMaskBand().
  *
@@ -6066,6 +6101,18 @@ GDALRasterBandH CPL_STDCALL GDALGetMaskBand( GDALRasterBandH hBand )
  *     The null flags will return GMF_ALL_VALID.</li>
  * </ul>
  *
+ * For an external .msk file to be recognized by GDAL, it must be a valid GDAL
+ * dataset, with the same name as the main dataset and suffixed with .msk,
+ * with either one band (in the GMF_PER_DATASET case), or as many bands as the
+ * main dataset.
+ * It must have INTERNAL_MASK_FLAGS_xx metadata items set at the dataset
+ * level, where xx matches the band number of a band of the main dataset. The
+ * value of those items is a combination of the flags GMF_ALL_VALID,
+ * GMF_PER_DATASET, GMF_ALPHA and GMF_NODATA. If a metadata item is missing for
+ * a band, then the other rules explained above will be used to generate a
+ * on-the-fly mask band.
+ * \see CreateMaskBand() for the characteristics of .msk files created by GDAL.
+ * 
  * This method is the same as the C function GDALGetMaskFlags().
  *
  * @since GDAL 1.5.0
@@ -6135,6 +6182,9 @@ void GDALRasterBand::InvalidateMaskBand()
  * as many bands as the original image (or just one for GMF_PER_DATASET).
  * The mask images will be deflate compressed tiled images with the same
  * block size as the original image if possible.
+ * It will have INTERNAL_MASK_FLAGS_xx metadata items set at the dataset
+ * level, where xx matches the band number of a band of the main dataset. The
+ * value of those items will be the one of the nFlagsIn parameter.
  *
  * Note that if you got a mask band with a previous call to GetMaskBand(),
  * it might be invalidated by CreateMaskBand(). So you have to call GetMaskBand()
@@ -6144,9 +6194,12 @@ void GDALRasterBand::InvalidateMaskBand()
  *
  * @since GDAL 1.5.0
  *
+ * @param nFlagsIn 0 or combination of GMF_PER_DATASET / GMF_ALPHA.
+ *
  * @return CE_None on success or CE_Failure on an error.
  *
  * @see http://trac.osgeo.org/gdal/wiki/rfc15_nodatabitmask
+ * @see GDALDataset::CreateMaskBand()
  *
  */
 
@@ -6228,7 +6281,9 @@ unsigned char* GDALRasterBand::GetIndexColorTranslationTo(
     if (poReferenceBand == NULL)
         return NULL;
 
+    // cppcheck-suppress knownConditionTrueFalse
     if (poReferenceBand->GetColorInterpretation() == GCI_PaletteIndex &&
+        // cppcheck-suppress knownConditionTrueFalse
         GetColorInterpretation() == GCI_PaletteIndex &&
         poReferenceBand->GetRasterDataType() == GDT_Byte &&
         GetRasterDataType() == GDT_Byte)

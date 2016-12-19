@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "ogr_pg.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrpgresultlayer.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 #define PQexec this_is_an_error
 
@@ -76,7 +76,7 @@ OGRPGResultLayer::OGRPGResultLayer( OGRPGDataSource *poDSIn,
         int tableCol = PQftablecol(hInitialResultIn, iRawField);
         if( tableOID != InvalidOid && tableCol > 0 )
         {
-            if( osRequest.size() )
+            if( !osRequest.empty() )
                 osRequest += " OR ";
             osRequest += "(attrelid = ";
             osRequest += CPLSPrintf("%d", tableOID);
@@ -86,7 +86,7 @@ OGRPGResultLayer::OGRPGResultLayer( OGRPGDataSource *poDSIn,
         }
     }
 
-    if( osRequest.size() )
+    if( !osRequest.empty() )
     {
         osRequest = "SELECT attnum, attrelid FROM pg_attribute WHERE attnotnull = 't' AND (" + osRequest + ")";
         PGresult* hResult = OGRPG_PQexec(poDS->GetPGConn(), osRequest );

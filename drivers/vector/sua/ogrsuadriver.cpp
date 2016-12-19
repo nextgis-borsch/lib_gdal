@@ -29,7 +29,7 @@
 #include "ogr_sua.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrsuadriver.cpp 34819 2016-07-28 22:32:18Z goatbar $");
 
 extern "C" void RegisterOGRSUA();
 

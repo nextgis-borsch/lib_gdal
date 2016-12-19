@@ -118,7 +118,7 @@
 #  include <mbctype.h>  /* Multibyte chars stuff */
 #endif
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: mitab_utils.cpp 36657 2016-12-03 19:18:54Z rouault $");
 
 /**********************************************************************
  *                       TABGenerateArc()
@@ -328,7 +328,7 @@ static GBool TABAdjustCaseSensitiveFilename(char *
  *
  * Because Unix filenames are case sensitive and MapInfo datasets often have
  * mixed cases filenames, we use this function to find the right filename
- * to use ot open a specific file.
+ * to use to open a specific file.
  *
  * This function works directly on the source string, so the filename it
  * contains at the end of the call is the one that should be used.

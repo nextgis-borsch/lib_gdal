@@ -30,7 +30,7 @@
 
 #include "prologue.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: prologue.cpp 35929 2016-10-25 16:09:00Z goatbar $");
 
 static
 int size_SatelliteStatus()

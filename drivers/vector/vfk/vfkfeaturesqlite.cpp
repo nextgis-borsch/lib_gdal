@@ -34,7 +34,7 @@
 #include "cpl_conv.h"
 #include "cpl_error.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: vfkfeaturesqlite.cpp 35571 2016-09-30 20:37:19Z goatbar $");
 
 /*!
   \brief VFKFeatureSQLite constructor (from DB)

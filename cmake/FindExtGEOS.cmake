@@ -22,4 +22,4 @@
 
 set(repo_name lib_geos)
 set(repo_project geos)
-set(repo_include geos)
+set(repo_include)

@@ -29,7 +29,7 @@
 #include "ogr_arcgen.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ograrcgendriver.cpp 35903 2016-10-24 12:09:43Z goatbar $");
 
 extern "C" void RegisterOGRARCGEN();
 

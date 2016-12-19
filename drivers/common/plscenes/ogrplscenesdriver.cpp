@@ -28,7 +28,7 @@
 
 #include "ogr_plscenes.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrplscenesdriver.cpp 35911 2016-10-24 15:03:26Z goatbar $");
 
 /************************************************************************/
 /*                         OGRPLScenesIdentify()                        */

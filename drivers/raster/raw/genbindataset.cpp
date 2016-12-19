@@ -34,7 +34,7 @@
 
 #include <cstdlib>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: genbindataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 /* ==================================================================== */
 /*      Table relating USGS and ESRI state plane zones.                 */
@@ -207,10 +207,10 @@ class GenBinDataset : public RawDataset
     GenBinDataset();
     virtual ~GenBinDataset();
 
-    virtual CPLErr GetGeoTransform( double * padfTransform );
-    virtual const char *GetProjectionRef(void);
+    virtual CPLErr GetGeoTransform( double * padfTransform ) override;
+    virtual const char *GetProjectionRef(void) override;
 
-    virtual char **GetFileList();
+    virtual char **GetFileList() override;
 
     static GDALDataset *Open( GDALOpenInfo * );
 };
@@ -229,7 +229,7 @@ class GenBinBitRasterBand : public GDALPamRasterBand
     GenBinBitRasterBand( GenBinDataset *poDS, int nBits );
     virtual ~GenBinBitRasterBand() {}
 
-    virtual CPLErr IReadBlock( int, int, void * );
+    virtual CPLErr IReadBlock( int, int, void * ) override;
 };
 
 /************************************************************************/

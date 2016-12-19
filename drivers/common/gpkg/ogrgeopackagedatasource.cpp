@@ -36,7 +36,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgeopackagedatasource.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 // 1.1.1: A GeoPackage SHALL contain 0x47503130 ("GP10" in ASCII) in the
 // application id.
@@ -418,7 +418,7 @@ int GDALGeoPackageDataset::GetSrsId(const OGRSpatialReference * cpoSRS)
     }
 
     // Add new row to gpkg_spatial_ref_sys.
-    err = SQLCommand(hDB, pszSQL);
+    CPL_IGNORE_RET_VAL( SQLCommand(hDB, pszSQL) );
 
     // Free everything that was allocated.
     CPLFree(pszWKT);
@@ -469,7 +469,7 @@ GDALGeoPackageDataset::~GDALGeoPackageDataset()
 {
     SetPamFlags(0);
 
-    if( m_poParentDS == NULL && m_osRasterTable.size() &&
+    if( m_poParentDS == NULL && !m_osRasterTable.empty() &&
         !m_bGeoTransformValid )
     {
         CPLError( CE_Failure, CPLE_AppDefined,
@@ -720,7 +720,7 @@ int GDALGeoPackageDataset::Open( GDALOpenInfo* poOpenInfo )
             "c.table_name = tms.table_name WHERE data_type = 'tiles'";
         if( CSLFetchNameValue( poOpenInfo->papszOpenOptions, "TABLE") )
             osSubdatasetTableName = CSLFetchNameValue( poOpenInfo->papszOpenOptions, "TABLE");
-        if( osSubdatasetTableName.size() )
+        if( !osSubdatasetTableName.empty() )
         {
             char* pszTmp = sqlite3_mprintf(" AND c.table_name='%q'", osSubdatasetTableName.c_str());
             osSQL += pszTmp;
@@ -735,7 +735,7 @@ int GDALGeoPackageDataset::Open( GDALOpenInfo* poOpenInfo )
             return FALSE;
         }
 
-        if( oResult.nRowCount == 0 && osSubdatasetTableName.size() )
+        if( oResult.nRowCount == 0 && !osSubdatasetTableName.empty() )
         {
             CPLError(CE_Failure, CPLE_AppDefined, "Cannot find table '%s' in GeoPackage dataset",
                      osSubdatasetTableName.c_str());
@@ -1074,7 +1074,7 @@ bool GDALGeoPackageDataset::OpenRaster( const char* pszTableName,
     if( CPLTestBool(CSLFetchNameValueDef(papszOpenOptionsIn, "USE_TILE_EXTENT", "NO")) )
     {
         pszSQL = sqlite3_mprintf(
-            "SELECT MIN(tile_column), MIN(tile_row), MAX(tile_column), MAX(tile_row) FROM '%q' WHERE zoom_level = %d",
+            "SELECT MIN(tile_column), MIN(tile_row), MAX(tile_column), MAX(tile_row) FROM \"%w\" WHERE zoom_level = %d",
             pszTableName, atoi(SQLResultGetValue(&oResult, 0, 0)));
         SQLResult oResult2;
         err = SQLQuery(hDB, pszSQL, &oResult2);
@@ -1577,7 +1577,7 @@ CPLErr GDALGeoPackageDataset::IBuildOverviews(
     {
         for(int i=0;i<m_nOverviewCount;i++)
             m_papoOverviewDS[i]->FlushCache();
-        char* pszSQL = sqlite3_mprintf("DELETE FROM '%q' WHERE zoom_level < %d",
+        char* pszSQL = sqlite3_mprintf("DELETE FROM \"%w\" WHERE zoom_level < %d",
                                        m_osRasterTable.c_str(),
                                        m_nZoomLevel);
         char* pszErrMsg = NULL;
@@ -1730,7 +1730,7 @@ CPLErr GDALGeoPackageDataset::IBuildOverviews(
                         return CE_Failure;
                     }
 
-                    pszSQL = sqlite3_mprintf("UPDATE '%q' SET zoom_level = %d "
+                    pszSQL = sqlite3_mprintf("UPDATE \"%w\" SET zoom_level = %d "
                         "WHERE zoom_level = %d",
                         m_osRasterTable.c_str(),
                         m_nZoomLevel - k + 1,
@@ -1867,7 +1867,7 @@ CPLErr GDALGeoPackageDataset::IBuildOverviews(
 char **GDALGeoPackageDataset::GetMetadataDomainList()
 {
     GetMetadata();
-    if( m_osRasterTable.size() != 0 )
+    if( !m_osRasterTable.empty() )
         GetMetadata("GEOPACKAGE");
     return BuildMetadataDomainList(GDALPamDataset::GetMetadataDomainList(),
                                    TRUE,
@@ -1881,7 +1881,7 @@ char **GDALGeoPackageDataset::GetMetadataDomainList()
 const char* GDALGeoPackageDataset::CheckMetadataDomain( const char* pszDomain )
 {
     if( pszDomain != NULL && EQUAL(pszDomain, "GEOPACKAGE") &&
-        m_osRasterTable.size() == 0 )
+        m_osRasterTable.empty() )
     {
         CPLError(CE_Warning, CPLE_IllegalArg,
                  "Using GEOPACKAGE for a non-raster geopackage is not supported. "
@@ -1925,7 +1925,7 @@ char **GDALGeoPackageDataset::GetMetadata( const char *pszDomain )
         return GDALPamDataset::GetMetadata( pszDomain );
 
     char* pszSQL = NULL;
-    if( m_osRasterTable.size() )
+    if( !m_osRasterTable.empty() )
     {
         pszSQL = sqlite3_mprintf(
             "SELECT md.metadata, md.md_standard_uri, md.mime_type, mdr.reference_scope FROM gpkg_metadata md "
@@ -1971,7 +1971,7 @@ char **GDALGeoPackageDataset::GetMetadata( const char *pszDomain )
             {
                 GDALMultiDomainMetadata oLocalMDMD;
                 oLocalMDMD.XMLInit(psXMLNode, FALSE);
-                if( m_osRasterTable.size() && bIsGPKGScope )
+                if( !m_osRasterTable.empty() && bIsGPKGScope )
                 {
                     oMDMD.SetMetadata( oLocalMDMD.GetMetadata(), "GEOPACKAGE" );
                 }
@@ -2012,7 +2012,7 @@ char **GDALGeoPackageDataset::GetMetadata( const char *pszDomain )
             pszMimeType != NULL && EQUAL(pszMimeType, "text/xml") )
             continue;
 
-        if( m_osRasterTable.size() && bIsGPKGScope )
+        if( !m_osRasterTable.empty() && bIsGPKGScope )
         {
             oMDMD.SetMetadataItem( CPLSPrintf("GPKG_METADATA_ITEM_%d", nNonGDALMDIGeopackage),
                                    pszMetadata,
@@ -2057,6 +2057,7 @@ void GDALGeoPackageDataset::WriteMetadata(CPLXMLNode* psXMLNode, /* will be dest
         pszXML = CPLSerializeXMLTree(psMasterXMLNode);
         CPLDestroyXMLNode(psMasterXMLNode);
     }
+    // cppcheck-suppress uselessAssignmentPtrArg
     psXMLNode = NULL;
 
     char* pszSQL = NULL;
@@ -2341,7 +2342,7 @@ CPLErr GDALGeoPackageDataset::FlushMetadata()
         return CE_Failure;
     m_bMetadataDirty = false;
 
-    if( m_osRasterTable.size() )
+    if( !m_osRasterTable.empty() )
     {
         const char* pszIdentifier = GetMetadataItem("IDENTIFIER");
         const char* pszDescription = GetMetadataItem("DESCRIPTION");
@@ -2403,7 +2404,7 @@ CPLErr GDALGeoPackageDataset::FlushMetadata()
 
     WriteMetadata(psXMLNode, m_osRasterTable.c_str() );
 
-    if( m_osRasterTable.size() )
+    if( !m_osRasterTable.empty() )
     {
         char** papszGeopackageMD = GetMetadata("GEOPACKAGE");
 
@@ -2811,7 +2812,7 @@ int GDALGeoPackageDataset::Create( const char * pszFilename,
         m_osDescription = CSLFetchNameValueDef(papszOptions, "RASTER_DESCRIPTION", "");
 
         /* From C.7. sample_tile_pyramid (Informative) Table 31. EXAMPLE: tiles table Create Table SQL (Informative) */
-        char* pszSQL = sqlite3_mprintf("CREATE TABLE '%q' ("
+        char* pszSQL = sqlite3_mprintf("CREATE TABLE \"%w\" ("
           "id INTEGER PRIMARY KEY AUTOINCREMENT,"
           "zoom_level INTEGER NOT NULL,"
           "tile_column INTEGER NOT NULL,"
@@ -2825,44 +2826,44 @@ int GDALGeoPackageDataset::Create( const char * pszFilename,
             return FALSE;
 
         /* From D.5. sample_tile_pyramid Table 43. tiles table Trigger Definition SQL  */
-        char* pszSQLTriggers = sqlite3_mprintf("CREATE TRIGGER '%q_zoom_insert' "
-        "BEFORE INSERT ON '%q' "
+        char* pszSQLTriggers = sqlite3_mprintf("CREATE TRIGGER \"%w_zoom_insert\" "
+        "BEFORE INSERT ON \"%w\" "
         "FOR EACH ROW BEGIN "
         "SELECT RAISE(ABORT, 'insert on table ''%q'' violates constraint: zoom_level not specified for table in gpkg_tile_matrix') "
         "WHERE NOT (NEW.zoom_level IN (SELECT zoom_level FROM gpkg_tile_matrix WHERE table_name = '%q')) ; "
         "END; "
-        "CREATE TRIGGER '%q_zoom_update' "
-        "BEFORE UPDATE OF zoom_level ON '%q' "
+        "CREATE TRIGGER \"%w_zoom_update\" "
+        "BEFORE UPDATE OF zoom_level ON \"%w\" "
         "FOR EACH ROW BEGIN "
         "SELECT RAISE(ABORT, 'update on table ''%q'' violates constraint: zoom_level not specified for table in gpkg_tile_matrix') "
         "WHERE NOT (NEW.zoom_level IN (SELECT zoom_level FROM gpkg_tile_matrix WHERE table_name = '%q')) ; "
         "END; "
-        "CREATE TRIGGER '%q_tile_column_insert' "
-        "BEFORE INSERT ON '%q' "
+        "CREATE TRIGGER \"%w_tile_column_insert\" "
+        "BEFORE INSERT ON \"%w\" "
         "FOR EACH ROW BEGIN "
         "SELECT RAISE(ABORT, 'insert on table ''%q'' violates constraint: tile_column cannot be < 0') "
         "WHERE (NEW.tile_column < 0) ; "
         "SELECT RAISE(ABORT, 'insert on table ''%q'' violates constraint: tile_column must by < matrix_width specified for table and zoom level in gpkg_tile_matrix') "
         "WHERE NOT (NEW.tile_column < (SELECT matrix_width FROM gpkg_tile_matrix WHERE table_name = '%q' AND zoom_level = NEW.zoom_level)); "
         "END; "
-        "CREATE TRIGGER '%q_tile_column_update' "
-        "BEFORE UPDATE OF tile_column ON '%q' "
+        "CREATE TRIGGER \"%w_tile_column_update\" "
+        "BEFORE UPDATE OF tile_column ON \"%w\" "
         "FOR EACH ROW BEGIN "
         "SELECT RAISE(ABORT, 'update on table ''%q'' violates constraint: tile_column cannot be < 0') "
         "WHERE (NEW.tile_column < 0) ; "
         "SELECT RAISE(ABORT, 'update on table ''%q'' violates constraint: tile_column must by < matrix_width specified for table and zoom level in gpkg_tile_matrix') "
         "WHERE NOT (NEW.tile_column < (SELECT matrix_width FROM gpkg_tile_matrix WHERE table_name = '%q' AND zoom_level = NEW.zoom_level)); "
         "END; "
-        "CREATE TRIGGER '%q_tile_row_insert' "
-        "BEFORE INSERT ON '%q' "
+        "CREATE TRIGGER \"%w_tile_row_insert\" "
+        "BEFORE INSERT ON \"%w\" "
         "FOR EACH ROW BEGIN "
         "SELECT RAISE(ABORT, 'insert on table ''%q'' violates constraint: tile_row cannot be < 0') "
         "WHERE (NEW.tile_row < 0) ; "
         "SELECT RAISE(ABORT, 'insert on table ''%q'' violates constraint: tile_row must by < matrix_height specified for table and zoom level in gpkg_tile_matrix') "
         "WHERE NOT (NEW.tile_row < (SELECT matrix_height FROM gpkg_tile_matrix WHERE table_name = '%q' AND zoom_level = NEW.zoom_level)); "
         "END; "
-        "CREATE TRIGGER '%q_tile_row_update' "
-        "BEFORE UPDATE OF tile_row ON '%q' "
+        "CREATE TRIGGER \"%w_tile_row_update\" "
+        "BEFORE UPDATE OF tile_row ON \"%w\" "
         "FOR EACH ROW BEGIN "
         "SELECT RAISE(ABORT, 'update on table ''%q'' violates constraint: tile_row cannot be < 0') "
         "WHERE (NEW.tile_row < 0) ; "
@@ -2933,7 +2934,7 @@ int GDALGeoPackageDataset::Create( const char * pszFilename,
 
         GDALPamDataset::SetMetadataItem("INTERLEAVE", "PIXEL", "IMAGE_STRUCTURE");
         GDALPamDataset::SetMetadataItem("IDENTIFIER", m_osIdentifier);
-        if( m_osDescription.size() )
+        if( !m_osDescription.empty() )
             GDALPamDataset::SetMetadataItem("DESCRIPTION", m_osDescription);
 
         const char* pszTF = CSLFetchNameValue(papszOptions, "TILE_FORMAT");
@@ -3700,7 +3701,7 @@ OGRErr GDALGeoPackageDataset::DeleteLayer( int iLayer )
 
     if( eErr == OGRERR_NONE )
     {
-        pszSQL = sqlite3_mprintf("DROP TABLE '%q'", osLayerName.c_str());
+        pszSQL = sqlite3_mprintf("DROP TABLE \"%w\"", osLayerName.c_str());
         eErr = SQLCommand(hDB, pszSQL);
         sqlite3_free(pszSQL);
     }

@@ -34,7 +34,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: hfaband.cpp 35984 2016-10-27 22:31:52Z goatbar $");
 
 /************************************************************************/
 /*                              HFABand()                               */

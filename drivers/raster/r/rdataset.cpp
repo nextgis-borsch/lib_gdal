@@ -32,7 +32,7 @@
 #include "gdal_pam.h"
 #include "../raw/rawdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: rdataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 GDALDataset *
 RCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
@@ -93,7 +93,7 @@ class RRasterBand : public GDALPamRasterBand
                 RRasterBand( RDataset *, int, const double * );
     virtual ~RRasterBand() {}
 
-    virtual CPLErr          IReadBlock( int, int, void * );
+    virtual CPLErr          IReadBlock( int, int, void * ) override;
 };
 
 /************************************************************************/

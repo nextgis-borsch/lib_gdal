@@ -33,7 +33,7 @@
 #include <string.h>
 #include <fitsio.h>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: fitsdataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -84,8 +84,8 @@ public:
   FITSRasterBand(FITSDataset*, int);
   virtual ~FITSRasterBand();
 
-  virtual CPLErr IReadBlock( int, int, void * );
-  virtual CPLErr IWriteBlock( int, int, void * );
+  virtual CPLErr IReadBlock( int, int, void * ) override;
+  virtual CPLErr IWriteBlock( int, int, void * ) override;
 };
 
 /************************************************************************/

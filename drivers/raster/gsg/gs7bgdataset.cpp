@@ -37,7 +37,7 @@
 #include "gdal_frmts.h"
 #include "gdal_pam.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gs7bgdataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 #ifndef DBL_MAX
 # ifdef __DBL_MAX__
@@ -109,8 +109,8 @@ class GS7BGDataset : public GDALPamDataset
                     GDALProgressFunc pfnProgress,
                     void *pProgressData );
 
-    CPLErr GetGeoTransform( double *padfGeoTransform );
-    CPLErr SetGeoTransform( double *padfGeoTransform );
+    CPLErr GetGeoTransform( double *padfGeoTransform ) override;
+    CPLErr SetGeoTransform( double *padfGeoTransform ) override;
 };
 
 const size_t GS7BGDataset::nHEADER_SIZE = 100;
@@ -151,12 +151,12 @@ class GS7BGRasterBand : public GDALPamRasterBand
     GS7BGRasterBand( GS7BGDataset *, int );
     ~GS7BGRasterBand();
 
-    CPLErr IReadBlock( int, int, void * );
-    CPLErr IWriteBlock( int, int, void * );
-    double GetMinimum( int *pbSuccess = NULL );
-    double GetMaximum( int *pbSuccess = NULL );
+    CPLErr IReadBlock( int, int, void * ) override;
+    CPLErr IWriteBlock( int, int, void * ) override;
+    double GetMinimum( int *pbSuccess = NULL ) override;
+    double GetMaximum( int *pbSuccess = NULL ) override;
 
-    double GetNoDataValue( int *pbSuccess = NULL );
+    double GetNoDataValue( int *pbSuccess = NULL ) override;
 };
 
 /************************************************************************/

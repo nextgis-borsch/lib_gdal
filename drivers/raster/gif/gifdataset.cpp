@@ -33,7 +33,7 @@
 #include "gdal_frmts.h"
 #include "gdal_pam.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gifdataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 CPL_C_START
 #if !(defined(GIFLIB_MAJOR) && GIFLIB_MAJOR >= 5)
@@ -120,7 +120,7 @@ class GIFRasterBand : public GIFAbstractRasterBand
   public:
 
                    GIFRasterBand( GIFDataset *, int, SavedImage *, int );
-    virtual CPLErr IReadBlock( int, int, void * );
+    virtual CPLErr IReadBlock( int, int, void * ) override;
 };
 
 /************************************************************************/

@@ -28,19 +28,34 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "cpl_cpu_features.h"
+#include "cpl_port.h"
+#include "gdal.h"
 #include "gdal_priv.h"
+
+#include <climits>
+#include <cmath>
+#include <cstddef>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+
+#include <algorithm>
+#include <limits>
+#include <stdexcept>
+
+#include "cpl_conv.h"
+#include "cpl_cpu_features.h"
+#include "cpl_error.h"
+#include "cpl_progress.h"
+#include "cpl_string.h"
+#include "cpl_vsi.h"
 #include "gdal_priv_templates.hpp"
 #include "gdal_vrt.h"
 #include "gdalwarper.h"
 #include "memdataset.h"
 #include "vrtdataset.h"
 
-#include <algorithm>
-#include <limits>
-#include <stdexcept>
-
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: rasterio.cpp 36822 2016-12-12 11:18:45Z rouault $");
 
 /************************************************************************/
 /*                             IRasterIO()                              */
@@ -265,7 +280,7 @@ CPLErr GDALRasterBand::IRasterIO( GDALRWFlag eRWFlag,
          && bUseIntegerRequestCoords )
     {
 #if DEBUG_VERBOSE
-        printf( "IRasterIO(%d,%d,%d,%d) rw=%d case 2\n",
+        printf( "IRasterIO(%d,%d,%d,%d) rw=%d case 2\n",/*ok*/
                 nXOff, nYOff, nXSize, nYSize,
                 static_cast<int>(eRWFlag) );
 #endif
@@ -1023,14 +1038,10 @@ CPLErr GDALRasterBand::RasterIOResampled(
                                  nFullResXSizeQueried, nFullResYSizeQueried );
         GByte * pabyChunkNoDataMask = NULL;
 
-        GDALRasterBand* poMaskBand = NULL;
-        int l_nMaskFlags = 0;
-        bool bUseNoDataMask = false;
+        GDALRasterBand* poMaskBand = GetMaskBand();
+        int l_nMaskFlags = GetMaskFlags();
 
-        poMaskBand = GetMaskBand();
-        l_nMaskFlags = GetMaskFlags();
-
-        bUseNoDataMask = ((l_nMaskFlags & GMF_ALL_VALID) == 0);
+        bool bUseNoDataMask = ((l_nMaskFlags & GMF_ALL_VALID) == 0);
         if (bUseNoDataMask)
         {
             pabyChunkNoDataMask = static_cast<GByte *>(
@@ -1472,14 +1483,10 @@ CPLErr GDALDataset::RasterIOResampled(
                 nFullResXSizeQueried, nFullResYSizeQueried );
         GByte * pabyChunkNoDataMask = NULL;
 
-        GDALRasterBand* poMaskBand = NULL;
-        int nMaskFlags = 0;
-        bool bUseNoDataMask = false;
+        GDALRasterBand* poMaskBand = poFirstSrcBand->GetMaskBand();
+        int nMaskFlags = poFirstSrcBand->GetMaskFlags();
 
-        poMaskBand = poFirstSrcBand->GetMaskBand();
-        nMaskFlags = poFirstSrcBand->GetMaskFlags();
-
-        bUseNoDataMask = ((nMaskFlags & GMF_ALL_VALID) == 0);
+        bool bUseNoDataMask = ((nMaskFlags & GMF_ALL_VALID) == 0);
         if (bUseNoDataMask)
         {
             pabyChunkNoDataMask = (GByte *)
@@ -1778,12 +1785,12 @@ void CPL_STDCALL GDALSwapWords( void *pData, int nWordSize, int nWordCount,
 
       case 8:
         CPLAssert( nWordSkip >= 8 || nWordCount == 1 );
-#ifdef CPL_SWAP64
+#ifdef CPL_HAS_GINT64
         if( CPL_IS_ALIGNED(pabyData, 8) && (nWordSkip % 8) == 0 )
         {
             for( int i = 0; i < nWordCount; i++ )
             {
-                *((GUIntBig*)pabyData) = CPL_SWAP64(*((GUIntBig*)pabyData));
+                *((GUInt64*)pabyData) = CPL_SWAP64(*((GUInt64*)pabyData));
                 pabyData += nWordSkip;
             }
         }

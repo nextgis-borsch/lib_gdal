@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogringresdatasource.cpp 36456 2016-11-22 23:34:00Z rouault $");
 
 /************************************************************************/
 /*                            SetConnParam()                            */
@@ -88,6 +88,8 @@ OGRIngresDataSource::OGRIngresDataSource()
     panSRID = NULL;
     papoSRS = NULL;
     poActiveLayer = NULL;
+    bDSUpdate = FALSE;
+    bNewIngres = FALSE;
 }
 
 /************************************************************************/
@@ -838,7 +840,7 @@ OGRIngresDataSource::ICreateLayer( const char * pszLayerNameIn,
                                    char ** papszOptions )
 
 {
-    int                 nDimension = 3; // Ingres only supports 2d currently
+    //int                 nDimension = 3; // Ingres only supports 2d currently
 
     char *pszLayerName = NULL;
     if( CPLFetchBool(papszOptions, "LAUNDER", true) )
@@ -846,8 +848,8 @@ OGRIngresDataSource::ICreateLayer( const char * pszLayerNameIn,
     else
         pszLayerName = CPLStrdup( pszLayerNameIn );
 
-    if( wkbFlatten(eType) == eType )
-        nDimension = 2;
+    //if( wkbFlatten(eType) == eType )
+    //    nDimension = 2;
 
     CPLDebug("INGRES","Creating layer %s.", pszLayerName);
 

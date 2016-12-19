@@ -29,7 +29,7 @@
 
 #include "hfa_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: hfacompress.cpp 35777 2016-10-17 06:07:43Z goatbar $");
 
 HFACompress::HFACompress( void *pData, GUInt32 nBlockSize, EPTType eDataType ) :
     m_pData(pData),

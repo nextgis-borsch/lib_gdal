@@ -30,17 +30,18 @@
 #include "gnm.h"
 #include "gnm_priv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gnmlayer.cpp 36366 2016-11-21 01:21:43Z rouault $");
 
 /**
  * GNMGenericLayer
  */
 GNMGenericLayer::GNMGenericLayer(OGRLayer* poLayer,
-                                 GNMGenericNetwork* poNetwork) : OGRLayer()
+                                 GNMGenericNetwork* poNetwork) :
+    OGRLayer(),
+    m_soLayerName( poLayer->GetName() ),
+    m_poLayer( poLayer ),
+    m_poNetwork( poNetwork )
 {
-    m_poLayer = poLayer;
-    m_poNetwork = poNetwork;
-    m_soLayerName = poLayer->GetName();
 }
 
 /**

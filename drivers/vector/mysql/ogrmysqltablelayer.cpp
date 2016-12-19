@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "ogr_mysql.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrmysqltablelayer.cpp 36482 2016-11-24 03:58:37Z goatbar $");
 
 /************************************************************************/
 /*                         OGRMySQLTableLayer()                         */
@@ -780,7 +780,7 @@ OGRErr OGRMySQLTableLayer::ICreateFeature( OGRFeature *poFeature )
                 CPLString().Printf(
                     "GeometryFromText('%s',%d) ", pszWKT, nSRSId );
 
-            OGRFree( pszWKT );
+            CPLFree( pszWKT );
         }
         else
             osCommand += "''";

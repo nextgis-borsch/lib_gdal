@@ -34,7 +34,7 @@
 #include "gdal_pam.h"
 #include "gifabstractdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: biggifdataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -55,7 +55,7 @@ class BIGGIFDataset : public GIFAbstractDataset
     CPLErr       ReOpen();
 
   protected:
-    virtual int         CloseDependentDatasets();
+    virtual int         CloseDependentDatasets() override;
 
   public:
                  BIGGIFDataset();
@@ -77,7 +77,7 @@ class BIGGifRasterBand : public GIFAbstractRasterBand
   public:
                    BIGGifRasterBand( BIGGIFDataset *, int );
 
-    virtual CPLErr IReadBlock( int, int, void * );
+    virtual CPLErr IReadBlock( int, int, void * ) override;
 };
 
 /************************************************************************/

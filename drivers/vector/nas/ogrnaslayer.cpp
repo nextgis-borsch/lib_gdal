@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "ogr_nas.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrnaslayer.cpp 36455 2016-11-22 23:11:35Z rouault $");
 
 /************************************************************************/
 /*                           OGRNASLayer()                              */
@@ -105,12 +105,10 @@ OGRFeature *OGRNASLayer::GetNextFeature()
 /* -------------------------------------------------------------------- */
 /*      Cleanup last feature, and get a new raw nas feature.            */
 /* -------------------------------------------------------------------- */
-        delete poNASFeature;
         delete poGeom;
-
-        poNASFeature = NULL;
         poGeom = NULL;
 
+        delete poNASFeature;
         poNASFeature = poDS->GetReader()->NextFeature();
         if( poNASFeature == NULL )
             return NULL;

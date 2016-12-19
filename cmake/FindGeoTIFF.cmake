@@ -5,7 +5,7 @@
 # On success, the macro sets the following variables:
 # GEOTIFF_FOUND       = if the library found
 # GEOTIFF_LIBRARIES   = full path to the library
-# GEOTIFF_INCLUDE_DIR = where to find the library headers 
+# GEOTIFF_INCLUDE_DIR = where to find the library headers
 # also defined, but not for general use are
 # GEOTIFF_LIBRARY, where to find the PROJ.4 library.
 #
@@ -44,14 +44,14 @@ IF(WIN32)
         SET(GEOTIFF_INCLUDE_DIR "$ENV{LIB_DIR}/include" CACHE STRING INTERNAL)
 
         SET(GEOTIFF_NAMES ${GEOTIFF_NAMES} geotiff_i)
-        FIND_LIBRARY(GEOTIFF_LIBRARY NAMES 
+        FIND_LIBRARY(GEOTIFF_LIBRARY NAMES
             NAMES ${GEOTIFF_NAMES}
             PATHS
             "$ENV{LIB_DIR}/lib"
             /usr/lib
             c:/msys/local/lib)
     ENDIF(MSVC)
-  
+
 ELSEIF(UNIX)
 
     FIND_PATH(GEOTIFF_INCLUDE_DIR geotiff.h PATH_SUFFIXES geotiff libgeotiff PATHS
@@ -65,7 +65,7 @@ ELSE()
 ENDIF()
 
 
-if(PROJ4_INCLUDE_DIR)
+if(GEOTIFF_INCLUDE_DIR)
     set(GEOTIFF_MAJOR_VERSION 0)
     set(GEOTIFF_MINOR_VERSION 0)
     set(GEOTIFF_PATCH_VERSION 0)
@@ -77,18 +77,18 @@ if(PROJ4_INCLUDE_DIR)
       LIBGEOTIFF_VERSION ${GEOTIFF_H_CONTENTS})
     string (REGEX MATCH "([0-9]+)"
       LIBGEOTIFF_VERSION ${LIBGEOTIFF_VERSION})
-    
+
     string(SUBSTRING ${LIBGEOTIFF_VERSION} 0 1 GEOTIFF_MAJOR_VERSION)
     string(SUBSTRING ${LIBGEOTIFF_VERSION} 1 1 GEOTIFF_MINOR_VERSION)
     string(SUBSTRING ${LIBGEOTIFF_VERSION} 2 1 GEOTIFF_PATCH_VERSION)
     string(SUBSTRING ${LIBGEOTIFF_VERSION} 3 1 GEOTIFF_REVISION_VERSION)
-    
+
     unset(GEOTIFF_H_CONTENTS)
     endif()
-    
-    set(GEOTIFF_VERSION_STRING "${GEOTIFF_MAJOR_VERSION}.${GEOTIFF_MINOR_VERSION}.${GEOTIFF_PATCH_VERSION}.${GEOTIFF_REVISION_VERSION}") 
-    
-endif()    
+
+    set(GEOTIFF_VERSION_STRING "${GEOTIFF_MAJOR_VERSION}.${GEOTIFF_MINOR_VERSION}.${GEOTIFF_PATCH_VERSION}.${GEOTIFF_REVISION_VERSION}")
+
+endif()
 
 # Handle the QUIETLY and REQUIRED arguments and set SPATIALINDEX_FOUND to TRUE
 # if all listed variables are TRUE
@@ -102,4 +102,3 @@ ENDIF()
 
 # Hide internal variables
 mark_as_advanced(GEOTIFF_LIBRARY GEOTIFF_INCLUDE_DIR)
-

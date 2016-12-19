@@ -1,6 +1,6 @@
 %extend OGRLayerShadow {
 // File: ogrlayer_8cpp.xml
-%feature("docstring")  CPL_CVSID "CPL_CVSID(\"$Id$\") ";
+%feature("docstring")  CPL_CVSID "CPL_CVSID(\"$Id: ogr_layer_docs.i 34525 2016-07-03 02:53:47Z goatbar $\") ";
 
 %feature("docstring")  Reference "int OGR_L_Reference(OGRLayerH
 hLayer) ";

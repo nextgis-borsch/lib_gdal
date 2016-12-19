@@ -28,7 +28,7 @@
 
 #include "gifabstractdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gifabstractdataset.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 static const int InterlacedOffset[] = { 0, 4, 2, 1 };
 static const int InterlacedJumps[] = { 8, 8, 4, 2 };
@@ -189,7 +189,7 @@ void GIFAbstractDataset::CollectXMPMetadata()
         return;
 
     CPLString osXMP = GIFCollectXMPMetadata(fp);
-    if (osXMP.size())
+    if (!osXMP.empty() )
     {
         /* Avoid setting the PAM dirty bit just for that */
         int nOldPamFlags = nPamFlags;
@@ -324,7 +324,7 @@ char **GIFAbstractDataset::GetFileList()
 {
     char **papszFileList = GDALPamDataset::GetFileList();
 
-    if (osWldFilename.size() != 0 &&
+    if (!osWldFilename.empty() &&
         CSLFindString(papszFileList, osWldFilename) == -1)
     {
         papszFileList = CSLAddString( papszFileList, osWldFilename );

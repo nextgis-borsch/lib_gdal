@@ -28,7 +28,7 @@
 
 #include "dgnlibp.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: dgnfloat.cpp 35910 2016-10-24 14:08:24Z goatbar $");
 
 typedef struct dbl {
     GUInt32 hi;

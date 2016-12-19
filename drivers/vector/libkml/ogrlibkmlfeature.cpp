@@ -38,7 +38,7 @@
 #include "ogrlibkmlgeometry.h"
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrlibkmlfeature.cpp 35933 2016-10-25 16:46:26Z goatbar $");
 
 using kmldom::AliasPtr;
 using kmldom::CameraPtr;

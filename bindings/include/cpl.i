@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: cpl.i 36791 2016-12-11 16:17:13Z rouault $
  *
  * Name:     cpl.i
  * Project:  GDAL Python Interface
@@ -536,12 +536,12 @@ VSI_RETVAL VSIFTruncateL( VSILFILE* fp, long length );
 %inline {
 int wrapper_VSIFWriteL( int nLen, char *pBuf, int size, int memb, VSILFILE* fp)
 {
-    if (nLen < size * memb)
+    if (nLen < static_cast<GIntBig>(size) * memb)
     {
         CPLError(CE_Failure, CPLE_AppDefined, "Inconsistent buffer size with 'size' and 'memb' values");
         return 0;
     }
-    return VSIFWriteL(pBuf, size, memb, fp);
+    return static_cast<int>(VSIFWriteL(pBuf, size, memb, fp));
 }
 }
 #elif defined(SWIGPERL)

@@ -27,16 +27,17 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "gdal.h"
 #include "commonutils.h"
 #include "cpl_string.h"
+#include "gdal.h"
 #include "gnm.h"
+#include "gnm_priv.h"
 
 //#include "ogr_p.h"
 //#include "gnm.h"
 //#include "gnm_api.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gnmmanage.cpp 36533 2016-11-27 23:45:39Z goatbar $");
 
 enum operation
 {
@@ -159,7 +160,8 @@ static void Usage(int bShort = TRUE)
 
 #define CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(nExtraArg) \
     do { if (iArg + nExtraArg >= nArgc) \
-        Usage(CPLSPrintf("%s option requires %d argument(s)", papszArgv[iArg], nExtraArg)); } while(0)
+        Usage(CPLSPrintf("%s option requires %d argument(s)", \
+                         papszArgv[iArg], nExtraArg)); } while( false )
 
 int main( int nArgc, char ** papszArgv )
 
@@ -386,7 +388,11 @@ int main( int nArgc, char ** papszArgv )
             exit(1);
         }
 
-        CPLAssert( poDriver != NULL);
+        if( poDriver == NULL )
+        {
+            CPLAssert( false );
+            exit(1);
+        }
 
         printf( "INFO: Open of `%s'\n      using driver `%s' successful.\n",
                     pszDataSource, poDriver->GetDescription() );

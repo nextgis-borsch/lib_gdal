@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrociwritablelayer.cpp 36347 2016-11-20 20:43:39Z rouault $");
 
 /************************************************************************/
 /*                        OGROCIWritableLayer()                         */
@@ -53,6 +53,7 @@ OGROCIWritableLayer::OGROCIWritableLayer()
     panElemInfo = NULL;
 
     bLaunderColumnNames = TRUE;
+    bPreservePrecision = FALSE;
     bTruncationReported = FALSE;
     poSRS = NULL;
 

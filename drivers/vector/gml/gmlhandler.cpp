@@ -33,7 +33,7 @@
 #include "cpl_string.h"
 #include "cpl_hash_set.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gmlhandler.cpp 36883 2016-12-15 13:31:12Z rouault $");
 
 #ifdef HAVE_XERCES
 
@@ -429,14 +429,18 @@ static const char* const apszGMLGeometryElements[] =
     "Point",
     "Polygon",
     "PolygonPatch",
+    "PolyhedralSurface",
     "SimplePolygon", /* GML 3.3 compact encoding */
     "SimpleRectangle", /* GML 3.3 compact encoding */
     "SimpleTriangle", /* GML 3.3 compact encoding */
     "SimpleMultiPoint", /* GML 3.3 compact encoding */
     "Solid",
     "Surface",
+    "Tin",
     "TopoCurve",
-    "TopoSurface"
+    "TopoSurface",
+    "Triangle",
+    "TriangulatedSurface"
 };
 
 #define GML_GEOMETRY_TYPE_COUNT  \
@@ -597,8 +601,11 @@ OGRErr GMLHandler::dataHandler(const char *data, int nLen)
     }
 }
 
-#define PUSH_STATE(val) do { nStackDepth ++; CPLAssert(nStackDepth < STACK_SIZE); stateStack[nStackDepth] = val; } while(0)
-#define POP_STATE()     nStackDepth --
+#define PUSH_STATE(val) do { \
+    nStackDepth++; \
+    CPLAssert(nStackDepth < STACK_SIZE); \
+    stateStack[nStackDepth] = val; } while( false )
+#define POP_STATE()     nStackDepth--
 
 /************************************************************************/
 /*                       startElementBoundedBy()                        */
@@ -1087,7 +1094,7 @@ OGRErr GMLHandler::startElementFeatureAttribute(const char *pszName, int nLenNam
         {
             m_nGeometryDepth = m_nDepth;
 
-            CPLAssert(apsXMLNode.size() == 0);
+            CPLAssert(apsXMLNode.empty());
 
             NodeLastChild sNodeLastChild;
             sNodeLastChild.psNode = NULL;

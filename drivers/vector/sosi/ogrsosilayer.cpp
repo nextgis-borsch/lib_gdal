@@ -30,7 +30,7 @@
 #include "ogr_sosi.h"
 #include <map>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrsosilayer.cpp 36418 2016-11-21 22:58:41Z rouault $");
 
 /************************************************************************/
 /*                           OGRSOSILayer()                             */
@@ -268,6 +268,7 @@ OGRFeature *OGRSOSILayer::GetNextFeature() {
         }
         case L_SYMBOL: {
             //CPLError( CE_Warning, CPLE_OpenFailed, "Geometry of type SYMBOL treated as point (PUNKT).");
+            CPL_FALLTHROUGH
         }
         case L_PUNKT: {  /* point */
             oGType = wkbPoint;
@@ -298,7 +299,7 @@ OGRFeature *OGRSOSILayer::GetNextFeature() {
         OGRFeature *poFeature = new OGRFeature( poFeatureDefn );
 
         /* set all headers found in this group - we export everything, just in case */
-        for (iHeaders = oHeaders.begin(); iHeaders != oHeaders.end(); iHeaders++) {
+        for (iHeaders = oHeaders.begin(); iHeaders != oHeaders.end(); ++iHeaders) {
             OGRSOSIDataType *poType = SOSIGetType(iHeaders->first);
             OGRSOSISimpleDataType *poElements = poType->getElements();
 

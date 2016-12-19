@@ -32,7 +32,7 @@
 #include "ogr_p.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogredigeolayer.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 /************************************************************************/
 /*                          OGREDIGEOLayer()                            */
@@ -216,7 +216,7 @@ void OGREDIGEOLayer::AddFieldDefn(const CPLString& osName,
                                   OGRFieldType eType,
                                   const CPLString& osRID)
 {
-    if (osRID.size() != 0)
+    if (!osRID.empty())
         mapAttributeToIndex[osRID] = poFeatureDefn->GetFieldCount();
 
     OGRFieldDefn oFieldDefn(osName, eType);

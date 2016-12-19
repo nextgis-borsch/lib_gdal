@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: generate_test_files.c 34524 2016-07-03 02:47:25Z goatbar $
  *
  * Project:
  * Purpose:  Generate sample .VCT files

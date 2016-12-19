@@ -35,7 +35,7 @@
 #include "cpl_http.h"
 #include <set>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: parsexsd.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 /************************************************************************/
 /*                              StripNS()                               */
@@ -997,7 +997,7 @@ bool GMLParseXSD( const char *pszFile,
 
     CPLDestroyXMLNode( psXSDTree );
 
-    if( aosClasses.size() > 0 )
+    if( !aosClasses.empty() )
     {
         return true;
     }

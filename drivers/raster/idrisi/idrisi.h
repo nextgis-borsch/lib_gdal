@@ -1,5 +1,5 @@
 /*****************************************************************************
-* $Id$
+* $Id: idrisi.h 31777 2015-11-26 14:14:41Z rouault $
 *
 * Project:  Idrisi Raster Image File Driver
 * Purpose:  Read/write Idrisi Raster Image Format RST

@@ -33,7 +33,7 @@
 #include "cpl_string.h"
 #include <vector>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgeomediadatasource.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 /************************************************************************/
 /*                       OGRGeomediaDataSource()                        */
@@ -156,7 +156,7 @@ int OGRGeomediaDataSource::Open( const char * pszNewName, int bUpdate,
 /*      GAliasTable.                                                    */
 /* -------------------------------------------------------------------- */
     CPLString osGFeaturesTable = GetTableNameFromType("INGRFeatures");
-    if (osGFeaturesTable.size() == 0)
+    if (osGFeaturesTable.empty())
         return FALSE;
 
     CPLString osGeometryProperties = GetTableNameFromType("INGRGeometryProperties");
@@ -189,7 +189,7 @@ int OGRGeomediaDataSource::Open( const char * pszNewName, int bUpdate,
     }
 
     std::vector<OGRSpatialReference*> apoSRS;
-    if (osGeometryProperties.size() != 0 && osGCoordSystemTable.size() != 0)
+    if (!osGeometryProperties.empty() && !osGCoordSystemTable.empty())
     {
         std::vector<CPLString> aosGUID;
         {

@@ -32,7 +32,7 @@
 
 /* g++ -fPIC -g -Wall frmts/ozi/ozidataset.cpp -shared -o gdal_OZI.so -Iport -Igcore -Iogr -L. -lgdal  */
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ozidataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -86,12 +86,12 @@ class OZIRasterBand : public GDALPamRasterBand
                                GDALColorTable* poColorTable);
     virtual    ~OZIRasterBand();
 
-    virtual CPLErr IReadBlock( int, int, void * );
-    virtual GDALColorInterp GetColorInterpretation();
-    virtual GDALColorTable *GetColorTable();
+    virtual CPLErr IReadBlock( int, int, void * ) override;
+    virtual GDALColorInterp GetColorInterpretation() override;
+    virtual GDALColorTable *GetColorTable() override;
 
-    virtual int         GetOverviewCount();
-    virtual GDALRasterBand* GetOverview(int nLevel);
+    virtual int         GetOverviewCount() override;
+    virtual GDALRasterBand* GetOverview(int nLevel) override;
 };
 
 /************************************************************************/

@@ -32,7 +32,7 @@
 #ifdef HAVE_SSE_AT_COMPILE_TIME
 #include <xmmintrin.h>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalgridsse.cpp 35882 2016-10-24 04:10:14Z goatbar $");
 
 /************************************************************************/
 /*         GDALGridInverseDistanceToAPower2NoSmoothingNoSearchSSE()     */

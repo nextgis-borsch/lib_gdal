@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: minidriver_tms.h 36611 2016-12-01 23:13:38Z lplesea $
  *
  * Project:  WMS Client Driver
  * Purpose:  Implementation of Dataset and RasterBand classes for WMS
@@ -34,14 +34,8 @@ public:
     virtual ~WMSMiniDriver_TMS();
 
 public:
-    virtual CPLErr Initialize(CPLXMLNode *config, char **papszOpenOptions);
-    virtual void GetCapabilities(WMSMiniDriverCapabilities *caps);
-    virtual void ImageRequest(CPLString *url, const GDALWMSImageRequestInfo &iri);
-    virtual void TiledImageRequest(CPLString *url, const GDALWMSImageRequestInfo &iri, const GDALWMSTiledImageRequestInfo &tiri);
-
-protected:
-    CPLString m_base_url;
-    CPLString m_dataset;
-    CPLString m_version;
-    CPLString m_format;
+    virtual CPLErr Initialize(CPLXMLNode *config, char **papszOpenOptions) override;
+    virtual CPLErr TiledImageRequest(WMSHTTPRequest &request, 
+                                     const GDALWMSImageRequestInfo &iri, 
+                                     const GDALWMSTiledImageRequestInfo &tiri) override;
 };

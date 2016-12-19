@@ -35,11 +35,11 @@
 #pragma clang diagnostic ignored "-Wdocumentation"
 #endif
 #include "epsilon.h"
-#ifdef __clang
+#ifdef __clang__
 #pragma clang diagnostic pop
 #endif
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: epsilondataset.cpp 36758 2016-12-09 16:14:08Z goatbar $");
 
 #define RASTERLITE_WAVELET_HEADER "StartWaveletsImage$$"
 #define RASTERLITE_WAVELET_FOOTER "$$EndWaveletsImage"
@@ -121,8 +121,8 @@ class EpsilonRasterBand : public GDALPamRasterBand
   public:
                             EpsilonRasterBand(EpsilonDataset* poDS, int nBand);
 
-    virtual CPLErr          IReadBlock( int, int, void * );
-    virtual GDALColorInterp GetColorInterpretation();
+    virtual CPLErr          IReadBlock( int, int, void * ) override;
+    virtual GDALColorInterp GetColorInterpretation() override;
 };
 
 /************************************************************************/

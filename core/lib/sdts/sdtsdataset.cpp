@@ -32,7 +32,7 @@
 #include "ogr_spatialref.h"
 #include "sdts_al.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: sdtsdataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 /**
  \file sdtsdataset.cpp
@@ -58,12 +58,13 @@ class SDTSDataset : public GDALPamDataset
     char        *pszProjection;
 
   public:
+                 SDTSDataset();
     virtual     ~SDTSDataset();
 
     static GDALDataset *Open( GDALOpenInfo * );
 
-    virtual const char *GetProjectionRef(void);
-    virtual CPLErr GetGeoTransform( double * );
+    virtual const char *GetProjectionRef(void) override;
+    virtual CPLErr GetGeoTransform( double * ) override;
 };
 
 class SDTSRasterBand : public GDALPamRasterBand
@@ -76,11 +77,24 @@ class SDTSRasterBand : public GDALPamRasterBand
 
                 SDTSRasterBand( SDTSDataset *, int, SDTSRasterReader * );
 
-    virtual CPLErr IReadBlock( int, int, void * );
+    virtual CPLErr IReadBlock( int, int, void * ) override;
 
-    virtual double GetNoDataValue( int *pbSuccess );
-    virtual const char *GetUnitType();
+    virtual double GetNoDataValue( int *pbSuccess ) override;
+    virtual const char *GetUnitType() override;
 };
+
+
+/************************************************************************/
+/*                             SDTSDataset()                            */
+/************************************************************************/
+
+SDTSDataset::SDTSDataset() :
+    poTransfer( NULL ),
+    poRL( NULL ),
+    pszProjection( NULL )
+
+{
+}
 
 /************************************************************************/
 /*                            ~SDTSDataset()                            */
@@ -223,9 +237,7 @@ GDALDataset *SDTSDataset::Open( GDALOpenInfo * poOpenInfo )
         oSRS.SetWellKnownGeogCS( "NAD83" );
     else if( EQUAL(poXREF->pszDatum, "WGC") )
         oSRS.SetWellKnownGeogCS( "WGS72" );
-    else if( EQUAL(poXREF->pszDatum, "WGE") )
-        oSRS.SetWellKnownGeogCS( "WGS84" );
-    else
+    else /* if( EQUAL(poXREF->pszDatum, "WGE") ) or default */
         oSRS.SetWellKnownGeogCS( "WGS84" );
 
     oSRS.Fixup();

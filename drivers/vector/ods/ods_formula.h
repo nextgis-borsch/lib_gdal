@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ods_formula.h 36411 2016-11-21 22:03:48Z rouault $
  *
  * Component: ODS formula Engine
  * Purpose: Implementation of the ods_formula_node class used to represent a
@@ -150,8 +150,11 @@ class ods_formula_node {
     ods_formula_node(
         const char *,
         ods_formula_field_type field_type_in = ODS_FIELD_TYPE_STRING );
+    // cppcheck-suppress noExplicitConstructor
     ods_formula_node( int );
+    // cppcheck-suppress noExplicitConstructor
     ods_formula_node( double );
+    // cppcheck-suppress noExplicitConstructor
     ods_formula_node( ods_formula_op );
 
     ods_formula_node( const ods_formula_node& other );

@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "ogr_mysql.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrmysqlresultlayer.cpp 36384 2016-11-21 12:13:10Z rouault $");
 
 /************************************************************************/
 /*                        OGRMySQLResultLayer()                         */
@@ -40,8 +40,7 @@ CPL_CVSID("$Id$");
 OGRMySQLResultLayer::OGRMySQLResultLayer( OGRMySQLDataSource *poDSIn,
                                           const char * pszRawQueryIn,
                                           MYSQL_RES *hResultSetIn ) :
-    pszRawStatement(CPLStrdup(pszRawQueryIn)),
-    nSRSId(0)  // TODO(schwehr): Does this shadow nSRSId in OGRMySQLLayer?
+    pszRawStatement(CPLStrdup(pszRawQueryIn))
 {
     poDS = poDSIn;
     iNextShapeId = 0;

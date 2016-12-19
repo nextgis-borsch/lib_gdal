@@ -28,20 +28,30 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "cpl_vsi.h"
-#include "cpl_conv.h"
-#include "cpl_string.h"
-#include "gdal_priv.h"
-#include "ogr_spatialref.h"
-#include "vrtdataset.h"
-#include "commonutils.h"
+#include "cpl_port.h"
+#include "gdal_utils.h"
 #include "gdal_utils_priv.h"
 
+#include <cmath>
 #include <cstdlib>
+#include <cstring>
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+#include "commonutils.h"
+#include "cpl_conv.h"
+#include "cpl_error.h"
+#include "cpl_progress.h"
+#include "cpl_string.h"
+#include "cpl_vsi.h"
+#include "gdal.h"
+#include "gdal_priv.h"
+#include "gdal_vrt.h"
+#include "ogr_core.h"
+#include "ogr_spatialref.h"
+#include "vrtdataset.h"
+
+CPL_CVSID("$Id: gdal_translate_lib.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 static int ArgIsNumeric( const char * );
 static void AttachMetadata( GDALDatasetH, char ** );
@@ -695,7 +705,7 @@ GDALDatasetH GDALTranslate( const char *pszDest, GDALDatasetH hSrcDataset,
             return NULL;
         }
 
-        if( osProjSRS.size() )
+        if( !osProjSRS.empty() )
         {
             pszProjection = GDALGetProjectionRef( hSrcDataset );
             if( pszProjection != NULL && strlen(pszProjection) > 0 )
@@ -1755,7 +1765,7 @@ GDALTranslateOptions *GDALTranslateOptionsNew(char** papszArgv, GDALTranslateOpt
 /*      Handle command line arguments.                                  */
 /* -------------------------------------------------------------------- */
     int argc = CSLCount(papszArgv);
-    for( int i = 0; i < argc; i++ )
+    for( int i = 0; papszArgv != NULL && i < argc; i++ )
     {
         if( EQUAL(papszArgv[i],"-of") && i < argc-1 )
         {

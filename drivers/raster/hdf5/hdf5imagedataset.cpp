@@ -50,7 +50,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: hdf5imagedataset.cpp 36763 2016-12-09 22:10:55Z rouault $");
 
 /* release 1.6.3 or 1.6.4 changed the type of count in some api functions */
 
@@ -112,11 +112,11 @@ public:
     static GDALDataset  *Open( GDALOpenInfo * );
     static int           Identify( GDALOpenInfo * );
 
-    const char          *GetProjectionRef();
-    virtual int         GetGCPCount( );
-    virtual const char  *GetGCPProjection();
-    virtual const GDAL_GCP *GetGCPs( );
-    virtual CPLErr GetGeoTransform( double * padfTransform );
+    const char          *GetProjectionRef() override;
+    virtual int         GetGCPCount( ) override;
+    virtual const char  *GetGCPProjection() override;
+    virtual const GDAL_GCP *GetGCPs( ) override;
+    virtual CPLErr GetGeoTransform( double * padfTransform ) override;
 
     Hdf5ProductType GetSubdatasetType() const {return iSubdatasetType;}
     HDF5CSKProductEnum GetCSKProductType() const {return iCSKProductType;}
@@ -176,6 +176,7 @@ HDF5ImageDataset::HDF5ImageDataset() :
     pszGCPProjection(NULL),
     pasGCPList(NULL),
     nGCPCount(0),
+    oSRS( OGRSpatialReference() ),
     dims(NULL),
     maxdims(NULL),
     poH5Objects(NULL),
@@ -249,9 +250,9 @@ public:
     HDF5ImageRasterBand( HDF5ImageDataset *, int, GDALDataType );
     virtual ~HDF5ImageRasterBand();
 
-    virtual CPLErr      IReadBlock( int, int, void * );
-    virtual double      GetNoDataValue( int * );
-    virtual CPLErr      SetNoDataValue( double );
+    virtual CPLErr      IReadBlock( int, int, void * ) override;
+    virtual double      GetNoDataValue( int * ) override;
+    virtual CPLErr      SetNoDataValue( double ) override;
     /*  virtual CPLErr          IWriteBlock( int, int, void * ); */
 };
 
@@ -478,7 +479,6 @@ GDALDataset *HDF5ImageDataset::Open( GDALOpenInfo * poOpenInfo )
     /* -------------------------------------------------------------------- */
     /*      Create a corresponding GDALDataset.                             */
     /* -------------------------------------------------------------------- */
-    /* printf("poOpenInfo->pszFilename %s\n",poOpenInfo->pszFilename); */
     char **papszName =
         CSLTokenizeString2(  poOpenInfo->pszFilename,
                              ":", CSLT_HONOURSTRINGS|CSLT_PRESERVEESCAPES );

@@ -29,7 +29,7 @@
 #include "ogrgeopackageutility.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgeopackageutility.cpp 35911 2016-10-24 15:03:26Z goatbar $");
 
 /* Runs a SQL command and ignores the result (good for INSERT/UPDATE/CREATE) */
 OGRErr SQLCommand(sqlite3 * poDb, const char * pszSQL)

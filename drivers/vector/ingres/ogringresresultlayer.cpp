@@ -29,7 +29,7 @@
 #include "cpl_conv.h"
 #include "ogr_ingres.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogringresresultlayer.cpp 36384 2016-11-21 12:13:10Z rouault $");
 
 /************************************************************************/
 /*                        OGRIngresResultLayer()                         */
@@ -50,6 +50,7 @@ OGRIngresResultLayer::OGRIngresResultLayer( OGRIngresDataSource *poDSIn,
     BuildFullQueryStatement();
 
     poFeatureDefn = ReadResultDefinition();
+    nFeatureCount = 0;
 }
 
 /************************************************************************/

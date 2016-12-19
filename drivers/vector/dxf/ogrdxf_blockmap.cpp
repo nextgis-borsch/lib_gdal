@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "cpl_csv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrdxf_blockmap.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 /************************************************************************/
 /*                          ReadBlockSection()                          */
@@ -108,7 +108,7 @@ bool OGRDXFDataSource::ReadBlocksSection()
         else
             oBlockMap[osBlockName].poGeometry = SimplifyBlockGeometry(poColl);
 
-        if( apoFeatures.size() > 0 )
+        if( !apoFeatures.empty() )
             oBlockMap[osBlockName].apoFeatures = apoFeatures;
     }
     if( nCode < 0 )

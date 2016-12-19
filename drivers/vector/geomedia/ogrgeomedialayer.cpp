@@ -35,7 +35,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgeomedialayer.cpp 36018 2016-10-29 05:37:48Z goatbar $");
 
 /************************************************************************/
 /*                          OGRGeomediaLayer()                          */

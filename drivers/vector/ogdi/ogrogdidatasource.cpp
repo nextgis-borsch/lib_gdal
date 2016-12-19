@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrogdidatasource.cpp 36334 2016-11-20 15:42:08Z rouault $");
 
 /************************************************************************/
 /*                         OGROGDIDataSource()                          */
@@ -235,7 +235,7 @@ int OGROGDIDataSource::Open( const char * pszNewName )
         if( ECSERROR(psResult) )
         {
             CPLError( CE_Failure, CPLE_AppDefined,
-                      "UpdateDictionay failed: %s",
+                      "UpdateDictionary failed: %s",
                       psResult->message ? psResult->message : "(no message string)");
             CPLFree( pszWorkingName );
             return FALSE;

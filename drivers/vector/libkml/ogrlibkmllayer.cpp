@@ -39,7 +39,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrlibkmllayer.cpp 36024 2016-10-29 12:53:38Z goatbar $");
 
 using kmldom::CameraPtr;
 using kmldom::ChangePtr;

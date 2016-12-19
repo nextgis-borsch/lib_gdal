@@ -29,7 +29,7 @@
 #include "ogr_dwg.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrdwgblockslayer.cpp 36418 2016-11-21 22:58:41Z rouault $");
 
 /************************************************************************/
 /*                         OGRDWGBlocksLayer()                          */
@@ -102,7 +102,7 @@ OGRFeature *OGRDWGBlocksLayer::GetNextUnfilteredFeature()
 
     if( iNextSubFeature >= nSubFeatureCount )
     {
-        oIt++;
+        ++oIt;
 
         iNextSubFeature = 0;
 

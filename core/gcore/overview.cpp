@@ -27,15 +27,27 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#include "cpl_port.h"
+#include "gdal_priv.h"
+
+#include <cmath>
+#include <cstddef>
+#include <cstdlib>
+
+#include <algorithm>
 #include <limits>
 #include <vector>
 
-#include "gdal_priv.h"
+#include "cpl_conv.h"
+#include "cpl_error.h"
+#include "cpl_progress.h"
+#include "cpl_vsi.h"
+#include "gdal.h"
+// TODO(schwehr): Fix warning: Software emulation of SSE2.
+// #include "gdalsse_priv.h"
 #include "gdalwarper.h"
 
-#include <algorithm>
-
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: overview.cpp 36763 2016-12-09 22:10:55Z rouault $");
 
 /************************************************************************/
 /*                     GDALResampleChunk32R_Near()                      */
@@ -1629,11 +1641,11 @@ GDALResampleChunk32R_ConvolutionT( double dfXRatioDstToSrc,
 #if 0
         if( nSrcPixelStart < nChunkXOff && nChunkXOff > 0 )
         {
-            printf( "truncated iDstPixel = %d\n", iDstPixel );
+            printf( "truncated iDstPixel = %d\n", iDstPixel );/*ok*/
         }
         if( nSrcPixelStop > nChunkRightXOff && nChunkRightXOff < nSrcWidth )
         {
-            printf( "truncated iDstPixel = %d\n", iDstPixel );
+            printf( "truncated iDstPixel = %d\n", iDstPixel );/*ok*/
         }
 #endif
         const int nSrcPixelCount = nSrcPixelStop - nSrcPixelStart;
@@ -1783,11 +1795,11 @@ GDALResampleChunk32R_ConvolutionT( double dfXRatioDstToSrc,
         if( nSrcLineStart < nChunkYOff &&
             nChunkYOff > 0 )
         {
-            printf( "truncated iDstLine = %d\n", iDstLine );
+            printf( "truncated iDstLine = %d\n", iDstLine );/*ok*/
         }
         if( nSrcLineStop > nChunkBottomYOff && nChunkBottomYOff < nSrcHeight )
         {
-            printf( "truncated iDstLine = %d\n", iDstLine );
+            printf( "truncated iDstLine = %d\n", iDstLine );/*ok*/
         }
 #endif
         const int nSrcLineCount = nSrcLineStop - nSrcLineStart;

@@ -30,7 +30,7 @@
 #include "commonutils.h"
 #include "gdal_utils_priv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: nearblack_bin.cpp 35226 2016-08-28 13:49:13Z goatbar $");
 
 /************************************************************************/
 /*                               Usage()                                */

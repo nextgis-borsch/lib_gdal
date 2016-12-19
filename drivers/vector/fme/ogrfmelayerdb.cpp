@@ -33,7 +33,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrfmelayerdb.cpp 36451 2016-11-22 22:31:47Z rouault $");
 
 /************************************************************************/
 /*                           OGRFMELayerDB()                            */
@@ -119,8 +119,8 @@ OGRFeature *OGRFMELayerDB::GetNextFeature()
     {
         if( !CreateReader() )
         {
-            return NULL;
             poDS->ReleaseSession();
+            return NULL;
         }
     }
 

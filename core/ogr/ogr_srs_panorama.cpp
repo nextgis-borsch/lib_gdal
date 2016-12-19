@@ -33,7 +33,7 @@
 #include "cpl_csv.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogr_srs_panorama.cpp 36238 2016-11-14 20:52:13Z goatbar $");
 
 static const double TO_DEGREES = 57.2957795130823208766;
 static const double TO_RADIANS = 0.017453292519943295769;
@@ -163,9 +163,10 @@ OGRErr OSRImportFromPanorama( OGRSpatialReferenceH hSRS,
 {
     VALIDATE_POINTER1( hSRS, "OSRImportFromPanorama", OGRERR_FAILURE );
 
-    return ((OGRSpatialReference *) hSRS)->importFromPanorama( iProjSys,
-                                                               iDatum, iEllips,
-                                                               padfPrjParams );
+    return reinterpret_cast<OGRSpatialReference *>(hSRS)->
+        importFromPanorama( iProjSys,
+                            iDatum, iEllips,
+                            padfPrjParams );
 }
 
 /************************************************************************/
@@ -257,11 +258,11 @@ OGRErr OGRSpatialReference::importFromPanorama( long iProjSys, long iDatum,
 /* -------------------------------------------------------------------- */
 /*      Use safe defaults if projection parameters are not supplied.    */
 /* -------------------------------------------------------------------- */
-    int bProjAllocated = false;
+    bool bProjAllocated = false;
 
     if( padfPrjParams == NULL )
     {
-        padfPrjParams = (double *)CPLMalloc( 8 * sizeof(double) );
+        padfPrjParams = static_cast<double *>(CPLMalloc(8 * sizeof(double)));
         if( !padfPrjParams )
             return OGRERR_NOT_ENOUGH_MEMORY;
         for( int i = 0; i < 7; i++ )
@@ -279,12 +280,10 @@ OGRErr OGRSpatialReference::importFromPanorama( long iProjSys, long iDatum,
 
         case PAN_PROJ_UTM:
             {
-                int nZone;
-
-                if( padfPrjParams[7] == 0.0 )
-                    nZone = TO_ZONE(padfPrjParams[3]);
-                else
-                    nZone = (int) padfPrjParams[7];
+                const int nZone =
+                    padfPrjParams[7] == 0.0
+                    ? TO_ZONE(padfPrjParams[3])
+                    : static_cast<int>(padfPrjParams[7]);
 
                 // XXX: no way to determine south hemisphere. Always assume
                 // northern hemisphere.
@@ -467,8 +466,7 @@ OGRErr OGRSpatialReference::importFromPanorama( long iProjSys, long iDatum,
                 SetWellKnownGeogCS( "EPSG:4284" );
             }
 
-            if( pszName )
-                CPLFree( pszName );
+            CPLFree( pszName );
         }
         else
         {
@@ -514,10 +512,11 @@ OGRErr OSRExportToPanorama( OGRSpatialReferenceH hSRS,
     VALIDATE_POINTER1( piEllips, "OSRExportToPanorama", OGRERR_FAILURE );
     VALIDATE_POINTER1( padfPrjParams, "OSRExportToPanorama", OGRERR_FAILURE );
 
-    return ((OGRSpatialReference *) hSRS)->exportToPanorama( piProjSys,
-                                                             piDatum, piEllips,
-                                                             piZone,
-                                                             padfPrjParams );
+    return reinterpret_cast<OGRSpatialReference *>(hSRS)->
+        exportToPanorama( piProjSys,
+                          piDatum, piEllips,
+                          piZone,
+                          padfPrjParams );
 }
 
 /************************************************************************/
@@ -555,7 +554,7 @@ OGRErr OGRSpatialReference::exportToPanorama( long *piProjSys, long *piDatum,
 {
     CPLAssert( padfPrjParams );
 
-    const char  *pszProjection = GetAttrValue("PROJECTION");
+    const char *pszProjection = GetAttrValue("PROJECTION");
 
 /* -------------------------------------------------------------------- */
 /*      Fill all projection parameters with zero.                       */
@@ -767,7 +766,7 @@ OGRErr OGRSpatialReference::exportToPanorama( long *piProjSys, long *piDatum,
 /* -------------------------------------------------------------------- */
 /*      Translate the datum.                                            */
 /* -------------------------------------------------------------------- */
-    const char  *pszDatum = GetAttrValue( "DATUM" );
+    const char *pszDatum = GetAttrValue( "DATUM" );
 
     if( pszDatum == NULL )
     {

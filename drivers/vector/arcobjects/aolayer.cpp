@@ -32,7 +32,7 @@
 #include "aoutils.h"
 #include <strstream>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: aolayer.cpp 36332 2016-11-20 15:19:39Z rouault $");
 
 /************************************************************************/
 /*                              AOLayer()                               */
@@ -578,7 +578,7 @@ int AOLayer::TestCapability( const char* pszCap )
 
     else if (EQUAL(pszCap,OLCFastGetExtent))
         return TRUE;
-
+#ifdef notdef
     // Have not implemented this yet
     else if (EQUAL(pszCap,OLCCreateField))
         return FALSE;
@@ -587,7 +587,7 @@ int AOLayer::TestCapability( const char* pszCap )
     else if (EQUAL(pszCap,OLCSequentialWrite)
           || EQUAL(pszCap,OLCRandomWrite))
         return FALSE;
-
+#endif
     else
         return FALSE;
 }

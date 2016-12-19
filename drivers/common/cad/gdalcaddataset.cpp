@@ -39,10 +39,11 @@ class CADWrapperRasterBand : public GDALProxyRasterBand
   GDALRasterBand* poBaseBand;
 
   protected:
-    virtual GDALRasterBand* RefUnderlyingRasterBand() { return poBaseBand; }
+    virtual GDALRasterBand* RefUnderlyingRasterBand() override { return poBaseBand; }
 
   public:
-    explicit CADWrapperRasterBand( GDALRasterBand* /*poBaseBandIn*/ )
+    explicit CADWrapperRasterBand( GDALRasterBand* poBaseBandIn ) :
+                    poBaseBand( poBaseBandIn )
     {
         eDataType = poBaseBand->GetRasterDataType();
         poBaseBand->GetBlockSize(&nBlockXSize, &nBlockYSize);
@@ -206,12 +207,12 @@ int GDALCADDataset::Open( GDALOpenInfo* poOpenInfo, CADFileIO* pFileIO,
                     nSubRasterFID = static_cast<long>( j );
                     GDALDataset::SetMetadataItem( CPLSPrintf("SUBDATASET_%d_NAME",
                         nRasters),
-                        CPLSPrintf("CAD:%s:%ld:%ld", osCADFilename.c_str(), i, j),
-                        "SUBDATASETS" );
+                        CPLSPrintf("CAD:%s:%ld:%ld", osCADFilename.c_str(),
+                            nSubRasterLayer, nSubRasterFID), "SUBDATASETS" );
                     GDALDataset::SetMetadataItem( CPLSPrintf("SUBDATASET_%d_DESC",
                         nRasters),
-                        CPLSPrintf("%s - %ld", oLayer.getName().c_str(), j),
-                        "SUBDATASETS" );
+                        CPLSPrintf("%s - %ld", oLayer.getName().c_str(),
+                                    nSubRasterFID), "SUBDATASETS" );
                     nRasters++;
                 }
             }
@@ -283,7 +284,11 @@ int GDALCADDataset::Open( GDALOpenInfo* poOpenInfo, CADFileIO* pFileIO,
                 if( NULL == papszMetadata )
                     SetMetadata( papszRasterMetadata, *papszDomainList );
                 else
-                    papszMetadata = CSLMerge( papszMetadata, papszRasterMetadata );
+                {
+                    char** papszMD = CSLMerge( CSLDuplicate(papszMetadata), papszRasterMetadata );
+                    SetMetadata( papszMD, *papszDomainList );
+                    CSLDestroy( papszMD );
+                }
                 papszDomainList++;
             }
         }

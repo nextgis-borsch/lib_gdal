@@ -138,7 +138,7 @@
 
 #include "mitab.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: mitab_mapheaderblock.cpp 36435 2016-11-22 21:35:06Z rouault $");
 
 #ifdef WIN32
 inline double round(double r) {
@@ -815,7 +815,7 @@ int  TABMAPHeaderBlock::SetProjInfo(TABProjInfo *psProjInfo)
  **********************************************************************/
 int     TABMAPHeaderBlock::CommitToFile()
 {
-    int i, nStatus = 0;
+    int i;
 
     if ( m_pabyBuf == NULL || m_nRegularBlockSize == 0 )
     {
@@ -924,15 +924,10 @@ int     TABMAPHeaderBlock::CommitToFile()
     /*-----------------------------------------------------------------
      * OK, call the base class to write the block to disk.
      *----------------------------------------------------------------*/
-    if (nStatus == 0)
-    {
 #ifdef DEBUG_VERBOSE
-        CPLDebug("MITAB", "Committing HEADER block to offset %d", m_nFileOffset);
+    CPLDebug("MITAB", "Committing HEADER block to offset %d", m_nFileOffset);
 #endif
-        nStatus = TABRawBinBlock::CommitToFile();
-    }
-
-    return nStatus;
+    return TABRawBinBlock::CommitToFile();
 }
 
 /**********************************************************************

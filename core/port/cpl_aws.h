@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id$
+ * $Id: cpl_aws.h 36373 2016-11-21 05:22:29Z goatbar $
  *
  * Name:     cpl_aws.h
  * Project:  CPL - Common Portability Library
@@ -32,6 +32,8 @@
 #define CPL_AWS_INCLUDED_H
 
 #ifndef DOXYGEN_SKIP
+
+#include <cstddef>
 
 #include "cpl_string.h"
 

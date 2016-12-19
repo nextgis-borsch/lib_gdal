@@ -35,7 +35,7 @@
 
 #include <cstdlib>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogravce00layer.cpp 35952 2016-10-26 17:31:27Z goatbar $");
 
 /************************************************************************/
 /*                           OGRAVCE00Layer()                           */

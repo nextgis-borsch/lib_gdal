@@ -35,7 +35,7 @@
 #include "cpl_error.h"
 #include "mrsidstream.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: mrsidstream.cpp 34811 2016-07-28 15:15:05Z goatbar $");
 
 LT_USE_NAMESPACE(LizardTech)
 

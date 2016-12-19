@@ -28,11 +28,16 @@
 
 #ifdef HAVE_EXPAT
 
-#include "cpl_error.h"
 #include "cpl_port.h"
 #include "ogr_expat.h"
 
-CPL_CVSID("$Id$");
+#include <cstddef>
+#include <cstdlib>
+
+#include "cpl_error.h"
+
+
+CPL_CVSID("$Id: ogr_expat.cpp 36328 2016-11-20 13:44:29Z goatbar $");
 
 static const size_t OGR_EXPAT_MAX_ALLOWED_ALLOC = 10000000;
 

@@ -29,7 +29,7 @@
 #include "ogr_xplane.h"
 #include "ogr_xplane_reader.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrxplanedatasource.cpp 35599 2016-10-02 15:49:33Z goatbar $");
 
 /************************************************************************/
 /*                          OGRXPlaneDataSource()                          */

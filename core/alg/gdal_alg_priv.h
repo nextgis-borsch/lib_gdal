@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdal_alg_priv.h 36411 2016-11-21 22:03:48Z rouault $
  *
  * Project:  GDAL Image Processing Algorithms
  * Purpose:  Prototypes and definitions for various GDAL based algorithms:
@@ -116,7 +116,7 @@ public:  // these are intended to be readonly.
     int      nConnectedness;
 
 public:
-             GDALRasterPolygonEnumeratorT( int nConnectedness=4 );
+    explicit GDALRasterPolygonEnumeratorT( int nConnectedness=4 );
             ~GDALRasterPolygonEnumeratorT();
 
     void     ProcessLine( DataType *panLastLineVal, DataType *panThisLineVal,

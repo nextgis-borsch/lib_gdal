@@ -30,7 +30,7 @@
 #include "cpl_string.h"
 #include "ogr_sqlite.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrsqlitesinglefeaturelayer.cpp 35201 2016-08-25 13:48:52Z goatbar $");
 
 /************************************************************************/
 /*                    OGRSQLiteSingleFeatureLayer()                     */

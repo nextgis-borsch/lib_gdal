@@ -37,7 +37,7 @@
 
 using std::fill;
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: dipxdataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 typedef struct {
     GInt32      NBIH;   /* bytes in header, normally 1024 */
@@ -88,9 +88,9 @@ class DIPExDataset : public GDALPamDataset
                  DIPExDataset();
     virtual ~DIPExDataset();
 
-    virtual CPLErr GetGeoTransform( double * );
+    virtual CPLErr GetGeoTransform( double * ) override;
 
-    virtual const char *GetProjectionRef( void );
+    virtual const char *GetProjectionRef( void ) override;
     static GDALDataset *Open( GDALOpenInfo * );
 };
 

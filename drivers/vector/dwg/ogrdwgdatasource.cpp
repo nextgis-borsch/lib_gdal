@@ -36,17 +36,20 @@
 #include "DbLinetypeTable.h"
 #include "DbLinetypeTableRecord.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrdwgdatasource.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 /************************************************************************/
 /*                          OGRDWGDataSource()                          */
 /************************************************************************/
 
 OGRDWGDataSource::OGRDWGDataSource() :
-  fp(NULL)
+  fp(NULL),
+  iEntitiesSectionOffset(0),
+  bInlineBlocks(FALSE),
+  poServices(NULL),
+  poDb(NULL)
 
 {
-    poDb = NULL;
 }
 
 /************************************************************************/
@@ -59,7 +62,7 @@ OGRDWGDataSource::~OGRDWGDataSource()
 /* -------------------------------------------------------------------- */
 /*      Destroy layers.                                                 */
 /* -------------------------------------------------------------------- */
-    while( apoLayers.size() > 0 )
+    while( !apoLayers.empty() )
     {
         delete apoLayers.back();
         apoLayers.pop_back();

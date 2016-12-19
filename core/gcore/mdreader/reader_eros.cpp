@@ -27,9 +27,18 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#include "cpl_port.h"
 #include "reader_eros.h"
 
-CPL_CVSID("$Id$");
+#include <cstddef>
+#include <cstdio>
+#include <cstdlib>
+
+#include "cpl_conv.h"
+#include "cpl_error.h"
+#include "cpl_string.h"
+
+CPL_CVSID("$Id: reader_eros.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 /**
  * GDALMDReaderEROS()
@@ -101,10 +110,10 @@ GDALMDReaderEROS::GDALMDReaderEROS(const char *pszPath,
         }
     }
 
-    if(m_osIMDSourceFilename.size())
+    if(!m_osIMDSourceFilename.empty() )
         CPLDebug( "MDReaderEROS", "IMD Filename: %s",
               m_osIMDSourceFilename.c_str() );
-    if(m_osRPBSourceFilename.size())
+    if(!m_osRPBSourceFilename.empty() )
         CPLDebug( "MDReaderEROS", "RPB Filename: %s",
               m_osRPBSourceFilename.c_str() );
 }

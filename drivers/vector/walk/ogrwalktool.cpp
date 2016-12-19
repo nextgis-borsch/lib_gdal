@@ -28,7 +28,7 @@
 
 #include "ogrwalk.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrwalktool.cpp 36474 2016-11-24 00:40:09Z rouault $");
 
 /************************************************************************/
 /*                   OGRWalkArcCenterFromEdgePoints()                   */
@@ -401,8 +401,8 @@ static bool TranslateCurveSegment(OGRLineString *poLS, CurveSegment* pSegment)
 
     switch(pSegment->lineType)
     {
-    case wkLineType3PArc:
-    case wkLineType3PCircle:
+    case OGRWALK::wkLineType3PArc:
+    case OGRWALK::wkLineType3PCircle:
         {
             double dfCenterX;
             double dfCenterY;
@@ -428,7 +428,7 @@ static bool TranslateCurveSegment(OGRLineString *poLS, CurveSegment* pSegment)
                 return false;
         }
         break;
-    case wkLineTypeStraight:
+    case OGRWALK::wkLineTypeStraight:
     default:
         {
             for (GUInt32 i = 0; i < pSegment->numPoints; ++i)

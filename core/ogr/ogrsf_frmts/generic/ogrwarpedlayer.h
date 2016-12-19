@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrwarpedlayer.h 36501 2016-11-25 14:09:24Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Defines OGRWarpedLayer class
@@ -67,27 +67,27 @@ class OGRWarpedLayer : public OGRLayerDecorator
 
     void                SetExtent(double dfXMin, double dfYMin, double dfXMax, double dfYMax);
 
-    virtual void        SetSpatialFilter( OGRGeometry * );
+    virtual void        SetSpatialFilter( OGRGeometry * ) override;
     virtual void        SetSpatialFilterRect( double dfMinX, double dfMinY,
-                                              double dfMaxX, double dfMaxY );
-    virtual void        SetSpatialFilter( int iGeomField, OGRGeometry * );
+                                              double dfMaxX, double dfMaxY ) override;
+    virtual void        SetSpatialFilter( int iGeomField, OGRGeometry * ) override;
     virtual void        SetSpatialFilterRect( int iGeomField, double dfMinX, double dfMinY,
-                                              double dfMaxX, double dfMaxY );
+                                              double dfMaxX, double dfMaxY ) override;
 
-    virtual OGRFeature *GetNextFeature();
-    virtual OGRFeature *GetFeature( GIntBig nFID );
-    virtual OGRErr      ISetFeature( OGRFeature *poFeature );
-    virtual OGRErr      ICreateFeature( OGRFeature *poFeature );
+    virtual OGRFeature *GetNextFeature() override;
+    virtual OGRFeature *GetFeature( GIntBig nFID ) override;
+    virtual OGRErr      ISetFeature( OGRFeature *poFeature ) override;
+    virtual OGRErr      ICreateFeature( OGRFeature *poFeature ) override;
 
-    virtual OGRFeatureDefn *GetLayerDefn();
+    virtual OGRFeatureDefn *GetLayerDefn() override;
 
-    virtual OGRSpatialReference *GetSpatialRef();
+    virtual OGRSpatialReference *GetSpatialRef() override;
 
-    virtual GIntBig     GetFeatureCount( int bForce = TRUE );
-    virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce = TRUE);
-    virtual OGRErr      GetExtent(OGREnvelope *psExtent, int bForce = TRUE);
+    virtual GIntBig     GetFeatureCount( int bForce = TRUE ) override;
+    virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce = TRUE) override;
+    virtual OGRErr      GetExtent(OGREnvelope *psExtent, int bForce = TRUE) override;
 
-    virtual int         TestCapability( const char * );
+    virtual int         TestCapability( const char * ) override;
 };
 
 #endif /* #ifndef DOXYGEN_SKIP */

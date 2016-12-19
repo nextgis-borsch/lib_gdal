@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #******************************************************************************
-#  $Id$
+#  $Id: epsg_tr.py 32555 2015-12-30 19:26:44Z goatbar $
 #
 #  Project:  CFS OGC MapServer
 #  Purpose:  Script to create WKT and PROJ.4 dictionaries for EPSG GCS/PCS

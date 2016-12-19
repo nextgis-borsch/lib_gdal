@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: GDALReadDirect.cs 35222 2016-08-28 06:06:11Z goatbar $
  *
  * Name:     GDALReadDirect.cs
  * Project:  GDAL CSharp Interface

@@ -36,6 +36,7 @@
 
 #include "PublicDecompWT_headers.h"
 
+#include <memory>
 #include <vector>
 
 #if _MSC_VER > 1000
@@ -44,7 +45,7 @@
 #include <stdio.h>
 #endif
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: msgdataset.cpp 36450 2016-11-22 22:30:49Z rouault $");
 
 const double MSGDataset::rCentralWvl[12] = {0.635, 0.810, 1.640, 3.900, 6.250, 7.350, 8.701, 9.660, 10.800, 12.000, 13.400, 0.750};
 const double MSGDataset::rVc[12] = {-1, -1, -1, 2569.094, 1598.566, 1362.142, 1149.083, 1034.345, 930.659, 839.661, 752.381, -1};
@@ -555,18 +556,17 @@ CPLErr MSGRasterBand::IReadBlock( int /*nBlockXOff*/, int nBlockYOff,
             // iShift > 0 means upper image moves to the right
           }
 
-          std::auto_ptr< unsigned char > ibuf( new unsigned char[nb_ibytes]);
-
-          if (ibuf.get() == 0)
+          unsigned char* ibuf = new (std::nothrow) unsigned char[nb_ibytes];
+          if (ibuf == NULL )
           {
              CPLError( CE_Failure, CPLE_AppDefined,
                   "Not enough memory to perform wavelet decompression\n");
             return CE_Failure;
           }
 
-          i_file.read( (char *)(ibuf.get()), nb_ibytes);
+          i_file.read( (char *)ibuf, nb_ibytes);
 
-          Util::CDataFieldCompressedImage  img_compressed(ibuf.release(),
+          Util::CDataFieldCompressedImage  img_compressed(ibuf,
                                   nb_ibytes*8,
                                   (unsigned char)chunk_bpp,
                                   chunk_width,
@@ -731,6 +731,8 @@ double MSGRasterBand::rRadiometricCorrection(unsigned int iDN, int iChannel, int
 
                         double cc2 = rC2 * poGDS->rVc[iIndex];
                         double cc1 = rC1 * pow(poGDS->rVc[iIndex], 3) / rRadiance;
+                        // cppcheck suggests using log1p() but not sure how portable this would be
+                        // cppcheck-suppress unpreciseMathCall
                         double rTemperature = ((cc2 / log(cc1 + 1)) - poGDS->rB[iIndex]) / poGDS->rA[iIndex];
                         return rTemperature;
                 }

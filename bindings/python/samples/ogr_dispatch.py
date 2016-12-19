@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 ###############################################################################
-# $Id$
+# $Id: ogr_dispatch.py 31658 2015-11-20 14:27:51Z goatbar $
 #
 # Project:  GDAL/OGR samples
 # Purpose:  Dispatch features into layers according to the value of some fields

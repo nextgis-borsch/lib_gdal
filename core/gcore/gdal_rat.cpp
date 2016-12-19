@@ -27,22 +27,36 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#include "cpl_port.h"
+#include "gdal.h"
 #include "gdal_priv.h"
 #include "gdal_rat.h"
+
+#include <cmath>
+#include <cstddef>
+#include <cstdlib>
+
+#include <algorithm>
+#include <vector>
+
+#include "cpl_conv.h"
+#include "cpl_error.h"
+#include "cpl_string.h"
+#include "cpl_vsi.h"
+
+
 #ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunknown-pragmas"
 #pragma clang diagnostic ignored "-Wdocumentation"
 #endif
 #include "json.h"
-#ifdef __clang
+#ifdef __clang__
 #pragma clang diagnostic pop
 #endif
 #include "ogrgeojsonwriter.h"
 
-#include <algorithm>
-
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdal_rat.cpp 36759 2016-12-09 16:15:51Z goatbar $");
 
 /**
  * \class GDALRasterAttributeTable

@@ -29,7 +29,7 @@
 #include "ogr_dxf.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrdxfdriver.cpp 35645 2016-10-08 00:48:42Z goatbar $");
 
 /************************************************************************/
 /*                       OGRDXFDriverIdentify()                         */

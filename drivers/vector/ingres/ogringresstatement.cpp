@@ -29,7 +29,7 @@
 #include "ogr_ingres.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogringresstatement.cpp 35166 2016-08-21 14:12:23Z goatbar $");
 
 /************************************************************************/
 /*                         OGRIngresStatement()                         */

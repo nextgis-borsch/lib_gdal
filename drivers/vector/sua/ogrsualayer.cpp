@@ -33,7 +33,7 @@
 #include "ogr_xplane_geo_utils.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrsualayer.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 /************************************************************************/
 /*                            OGRSUALayer()                             */
@@ -208,19 +208,19 @@ OGRFeature *OGRSUALayer::GetNextRawFeature()
 
         if (STARTS_WITH_CI(pszLine, "TYPE="))
         {
-            if (osTYPE.size() != 0)
+            if (!osTYPE.empty())
                 break;
             osTYPE = pszLine + 5;
         }
         else if (STARTS_WITH_CI(pszLine, "CLASS="))
         {
-            if (osCLASS.size() != 0)
+            if (!osCLASS.empty())
                 break;
             osCLASS = pszLine + 6;
         }
         else if (STARTS_WITH_CI(pszLine, "TITLE="))
         {
-            if (osTITLE.size() != 0)
+            if (!osTITLE.empty())
                 break;
             osTITLE = pszLine + 6;
         }

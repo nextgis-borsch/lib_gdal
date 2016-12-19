@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id$
+ * $Id: mitab_utils.h 35911 2016-10-24 15:03:26Z goatbar $
  *
  * Name:     mitab_utils.h
  * Project:  MapInfo TAB Read/Write library

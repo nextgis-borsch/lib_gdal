@@ -33,7 +33,7 @@
 #include "pcrasterdataset.h"
 #include "pcrasterutil.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: pcrasterdataset.cpp 36455 2016-11-22 23:11:35Z rouault $");
 
 /*!
   \file
@@ -165,8 +165,7 @@ GDALDataset* PCRasterDataset::createCopy(
   }
 
   // The in-memory type of the cells.
-  CSF_CR appCellRepresentation = CR_UNDEFINED;
-  appCellRepresentation = GDALType2CellRepresentation(
+  CSF_CR appCellRepresentation = GDALType2CellRepresentation(
          raster->GetRasterDataType(), true);
 
   if(appCellRepresentation == CR_UNDEFINED) {

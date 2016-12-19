@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: typemaps_java.i 34525 2016-07-03 02:53:47Z goatbar $
  *
  * Name:     typemaps_java.i
  * Project:  GDAL SWIG Interface

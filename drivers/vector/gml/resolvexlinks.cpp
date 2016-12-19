@@ -36,7 +36,7 @@
 
 #include <stack>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: resolvexlinks.cpp 36455 2016-11-22 23:11:35Z rouault $");
 
 /************************************************************************/
 /*                              GetID()                                 */
@@ -569,8 +569,7 @@ bool GMLReader::ResolveXlinks( const char *pszFile,
     papszResourceHREF = CSLAddString( papszResourceHREF, m_pszFilename );
 
     //call resolver
-    CPLErr eReturned = CE_None;
-    eReturned = Resolve( papsSrcTree[0], &papsSrcTree, &papszResourceHREF, papszSkip, bStrict );
+    CPLErr eReturned = Resolve( papsSrcTree[0], &papsSrcTree, &papszResourceHREF, papszSkip, bStrict );
 
     bool bReturn = true;
     if( eReturned != CE_Failure )

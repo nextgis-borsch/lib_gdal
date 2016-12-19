@@ -33,7 +33,7 @@
 #include <cassert>
 #include <sstream>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrwaspdatasource.cpp 36481 2016-11-24 03:55:49Z goatbar $");
 
 /************************************************************************/
 /*                          OGRWAsPDataSource()                          */
@@ -313,7 +313,7 @@ OGRLayer *OGRWAsPDataSource::ICreateLayer(const char *pszName,
 
     char * ppszWktSpatialRef = NULL ;
     if ( poSpatialRef
-            && poSpatialRef->exportToProj4( &ppszWktSpatialRef ) == OGRERR_NONE )
+         && poSpatialRef->exportToProj4( &ppszWktSpatialRef ) == OGRERR_NONE )
     {
         VSIFPrintfL( hFile, "%s\n", ppszWktSpatialRef );
     }
@@ -321,7 +321,7 @@ OGRLayer *OGRWAsPDataSource::ICreateLayer(const char *pszName,
     {
         VSIFPrintfL( hFile, "no spatial ref sys\n" );
     }
-    OGRFree( ppszWktSpatialRef );
+    CPLFree( ppszWktSpatialRef );
 
     VSIFPrintfL( hFile, "  0.0 0.0 0.0 0.0\n" );
     VSIFPrintfL( hFile, "  1.0 0.0 1.0 0.0\n" );

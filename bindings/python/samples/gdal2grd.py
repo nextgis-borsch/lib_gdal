@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ###############################################################################
-# $Id$
+# $Id: gdal2grd.py 31957 2015-12-02 12:44:54Z goatbar $
 #
 # Project:  GDAL Python samples
 # Purpose:  Script to write out ASCII GRD rasters (used in Golden Software

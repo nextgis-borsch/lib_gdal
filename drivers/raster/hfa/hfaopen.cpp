@@ -44,7 +44,7 @@
 #include <string>
 #include <vector>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: hfaopen.cpp 36818 2016-12-12 10:25:59Z rouault $");
 
 static const char * const apszAuxMetadataItems[] = {
 
@@ -1710,7 +1710,7 @@ static void HFADumpNode( HFAEntry *poEntry, int nIndent, bool bVerbose,
 {
     std::string osSpaces(nIndent * 2, ' ');
 
-    fprintf( fp, "%s%s(%s) @ %d + %d @ %d\n", osSpaces.c_str(),
+    fprintf( fp, "%s%s(%s) @ %u + %u @ %u\n", osSpaces.c_str(),
              poEntry->GetName(), poEntry->GetType(),
              poEntry->GetFilePos(),
              poEntry->GetDataSize(), poEntry->GetDataPos() );
@@ -2506,7 +2506,7 @@ char ** HFAGetMetadata( HFAHandle hHFA, int nBand )
             continue;
 
         const int columnDataPtr = poColumn->GetIntField( "columnDataPtr" );
-        if( columnDataPtr == 0 )
+        if( columnDataPtr <= 0 )
             continue;
 
 /* -------------------------------------------------------------------- */
@@ -2531,7 +2531,10 @@ char ** HFAGetMetadata( HFAHandle hHFA, int nBand )
             }
 
             if( VSIFSeekL( hHFA->fp, columnDataPtr, SEEK_SET ) != 0 )
+            {
+                CPLFree( pszMDValue );
                 continue;
+            }
 
             const int nMDBytes = static_cast<int>(
                 VSIFReadL( pszMDValue, 1, nMaxNumChars, hHFA->fp ));
@@ -3741,6 +3744,29 @@ char **HFAReadCameraModel( HFAHandle hHFA )
     }
 
     return papszMD;
+}
+
+/************************************************************************/
+/*                         HFAReadElevationUnit()                       */
+/************************************************************************/
+
+const char *HFAReadElevationUnit( HFAHandle hHFA, int iBand )
+{
+    if( hHFA->nBands <= iBand )
+        return NULL;
+
+    HFABand    *poBand( hHFA->papoBand[iBand] );
+    if( poBand == NULL || poBand->poNode == NULL )
+    {
+        return NULL;
+    }
+    HFAEntry  *poElevInfo;
+    poElevInfo = poBand->poNode->GetNamedChild( "Elevation_Info" );
+    if( poElevInfo == NULL )
+    {
+        return NULL;
+    }
+    return poElevInfo->GetStringField( "elevationUnit" );
 }
 
 /************************************************************************/

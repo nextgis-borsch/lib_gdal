@@ -35,7 +35,7 @@
 
 #include <cstdlib>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: iso19115_srs.cpp 35951 2016-10-26 16:53:54Z goatbar $");
 
 /* used by bagdataset.cpp */
 OGRErr OGR_SRS_ImportFromISO19115( OGRSpatialReference *poThis,

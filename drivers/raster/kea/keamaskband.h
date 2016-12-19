@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: keamaskband.h 36501 2016-11-25 14:09:24Z rouault $
  *  keamaskband.h
  *
  *  Created by Pete Bunting on 01/08/2012.
@@ -46,8 +46,8 @@ public:
 
 protected:
     // we just override these functions from GDALRasterBand
-    virtual CPLErr IReadBlock( int, int, void * );
-    virtual CPLErr IWriteBlock( int, int, void * );
+    virtual CPLErr IReadBlock( int, int, void * ) override;
+    virtual CPLErr IWriteBlock( int, int, void * ) override;
 };
 
 #endif //KEAMASKBAND_H

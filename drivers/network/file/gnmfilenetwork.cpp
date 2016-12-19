@@ -31,7 +31,7 @@
 #include "gnmfile.h"
 #include "gnm_priv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gnmfilenetwork.cpp 36741 2016-12-07 16:22:35Z rouault $");
 
 GNMFileNetwork::GNMFileNetwork() : GNMGenericNetwork()
 {
@@ -43,6 +43,15 @@ GNMFileNetwork::GNMFileNetwork() : GNMGenericNetwork()
 GNMFileNetwork::~GNMFileNetwork()
 {
     FlushCache();
+
+    for (std::map<OGRLayer*, GDALDataset*>::iterator
+            it = m_mpLayerDatasetMap.begin();
+            it != m_mpLayerDatasetMap.end(); ++it)
+    {
+            GDALClose(it->second);
+    }
+
+    m_mpLayerDatasetMap.clear();
 
     GDALClose(m_pGraphDS);
     GDALClose(m_pFeaturesDS);

@@ -29,7 +29,7 @@
 #include "ntf.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrntflayer.cpp 36332 2016-11-20 15:19:39Z rouault $");
 
 /************************************************************************/
 /*                            OGRNTFLayer()                             */
@@ -179,24 +179,10 @@ OGRFeature *OGRNTFLayer::GetNextFeature()
 /*                           TestCapability()                           */
 /************************************************************************/
 
-int OGRNTFLayer::TestCapability( const char * pszCap )
+int OGRNTFLayer::TestCapability( const char * /* pszCap */ )
 
 {
-    if( EQUAL(pszCap,OLCRandomRead) )
-        return FALSE;
-
-    else if( EQUAL(pszCap,OLCSequentialWrite)
-             || EQUAL(pszCap,OLCRandomWrite) )
-        return FALSE;
-
-    else if( EQUAL(pszCap,OLCFastFeatureCount) )
-        return FALSE;
-
-    else if( EQUAL(pszCap,OLCFastSpatialFilter) )
-        return FALSE;
-
-    else
-        return FALSE;
+    return FALSE;
 }
 
 /************************************************************************/

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: OGRLayerAlg.cs 35222 2016-08-28 06:06:11Z goatbar $
  *
  * Name:     OGRLayerAlg.cs
  * Project:  GDAL CSharp Interface

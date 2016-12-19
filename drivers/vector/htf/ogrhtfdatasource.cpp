@@ -30,7 +30,7 @@
 #include "cpl_string.h"
 #include "ogr_htf.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrhtfdatasource.cpp 35013 2016-08-09 16:03:57Z goatbar $");
 
 /************************************************************************/
 /*                          OGRHTFDataSource()                          */

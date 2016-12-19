@@ -31,7 +31,7 @@
 #include "ogr_oci.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrocilayer.cpp 36347 2016-11-20 20:43:39Z rouault $");
 
 /************************************************************************/
 /*                           OGROCILayer()                               */
@@ -40,10 +40,12 @@ CPL_CVSID("$Id$");
 OGROCILayer::OGROCILayer()
 
 {
+    poFeatureDefn = NULL;
     poDS = NULL;
     poStatement = NULL;
 
     pszQueryStatement = NULL;
+    nResultOffset = 0;
     pszGeomName = NULL;
     iGeomColumn = -1;
     pszFIDName = NULL;

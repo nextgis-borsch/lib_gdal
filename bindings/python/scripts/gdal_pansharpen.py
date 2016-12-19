@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 ###############################################################################
-# $Id$
+# $Id: gdal_pansharpen.py 29568 2015-07-23 14:33:44Z rouault $
 #
 #  Project:  GDAL scripts
 #  Purpose:  Perform a pansharpening operation

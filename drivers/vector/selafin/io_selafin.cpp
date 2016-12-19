@@ -32,7 +32,7 @@
 #include "cpl_error.h"
 #include "cpl_quad_tree.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: io_selafin.cpp 36347 2016-11-20 20:43:39Z rouault $");
 
 namespace Selafin {
 
@@ -89,6 +89,8 @@ namespace Selafin {
         paadfCoords[0] = NULL;
         paadfCoords[1] = NULL;
         for( size_t i = 0; i < 7; ++i ) anUnused[i] = 0;
+        adfOrigin[0] = 0.0;
+        adfOrigin[1] = 0.0;
     }
 
     Header::~Header() {

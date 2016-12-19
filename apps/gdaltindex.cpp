@@ -36,7 +36,7 @@
 
 #include <cmath>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdaltindex.cpp 36537 2016-11-27 23:51:56Z goatbar $");
 
 /************************************************************************/
 /*                               Usage()                                */
@@ -80,7 +80,8 @@ static void Usage(const char* pszErrorMsg)
 
 #define CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(nExtraArg) \
     do { if (iArg + nExtraArg >= argc) \
-        Usage(CPLSPrintf("%s option requires %d argument(s)", argv[iArg], nExtraArg)); } while(0)
+        Usage(CPLSPrintf("%s option requires %d argument(s)", \
+                         argv[iArg], nExtraArg)); } while( false )
 
 typedef enum
 {

@@ -31,7 +31,7 @@
 #include "sdts_al.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: sdtslib.cpp 36461 2016-11-23 12:05:14Z rouault $");
 
 /************************************************************************/
 /*                            SDTSFeature()                             */
@@ -123,10 +123,8 @@ int SDTSModId::Set( DDFField *poField )
             = poField->GetFieldDefn()->FindSubfieldDefn( "MODN" );
         int nBytesRemaining;
         pachData = poField->GetSubfieldData(poSF, &nBytesRemaining);
-        strncpy( szModule,
-                 poSF->ExtractStringData( pachData, nBytesRemaining, NULL),
-                 sizeof(szModule) );
-        szModule[sizeof(szModule)-1] = '\0';
+        snprintf( szModule, sizeof(szModule), "%s",
+                 poSF->ExtractStringData( pachData, nBytesRemaining, NULL) );
 
         poSF = poField->GetFieldDefn()->FindSubfieldDefn( "RCID" );
         if( poSF != NULL )
@@ -147,11 +145,8 @@ int SDTSModId::Set( DDFField *poField )
                 = poField->GetSubfieldData(poSF, &nBytesRemaining);
             if( pachData != NULL )
             {
-                strncpy( szOBRP,
-                        poSF->ExtractStringData( pachData, nBytesRemaining, NULL),
-                        sizeof(szOBRP) );
-
-                szOBRP[sizeof(szOBRP)-1] = '\0';
+                snprintf( szOBRP, sizeof(szOBRP), "%s",
+                        poSF->ExtractStringData( pachData, nBytesRemaining, NULL) );
             }
         }
     }

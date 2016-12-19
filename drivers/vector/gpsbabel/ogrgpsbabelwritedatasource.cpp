@@ -34,7 +34,7 @@
 
 #include "ogr_gpsbabel.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgpsbabelwritedatasource.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 /************************************************************************/
 /*                    OGRGPSBabelWriteDataSource()                      */
@@ -71,7 +71,7 @@ OGRGPSBabelWriteDataSource::~OGRGPSBabelWriteDataSource()
 bool OGRGPSBabelWriteDataSource::Convert()
 {
     int nRet = -1;
-    if( osTmpFileName.size() > 0 && pszFilename != NULL &&
+    if( !osTmpFileName.empty() && pszFilename != NULL &&
          pszGPSBabelDriverName != NULL )
     {
         if (OGRGPSBabelDataSource::IsSpecialFile(pszFilename))

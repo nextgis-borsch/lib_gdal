@@ -7,7 +7,7 @@
  *
  * Author:       David Zwarg, dzwarg@azavea.com
  *
- * Last changes: $Id$
+ * Last changes: $Id: postgisrasterrasterband.cpp 36682 2016-12-04 20:34:45Z rouault $
  *
  ***********************************************************************
  * Copyright (c) 2009 - 2013, Jorge Arevalo, David Zwarg
@@ -35,7 +35,7 @@
  **********************************************************************/
 #include "postgisraster.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: postgisrasterrasterband.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 /**
  * \brief Constructor.
@@ -506,7 +506,7 @@ CPLErr PostGISRasterRasterBand::IRasterIO(GDALRWFlag eRWFlag, int nXOff,
             // If we have a PKID, add the tile PKID to the list
             if (poTile->pszPKID != NULL)
             {
-                if( osIDsToFetch.size() != 0 )
+                if( !osIDsToFetch.empty() )
                     osIDsToFetch += ",";
                 osIDsToFetch += "'";
                 osIDsToFetch += poTile->pszPKID;
@@ -617,7 +617,7 @@ CPLErr PostGISRasterRasterBand::IRasterIO(GDALRWFlag eRWFlag, int nXOff,
             osRasterToFetch.Printf("ST_Band(%s, %d)", pszColumn, nBand);
 
         int bHasWhere = FALSE;
-        if (osIDsToFetch.size() && (poRDS->bIsFastPK || !(poRDS->HasSpatialIndex())) ) {
+        if (!osIDsToFetch.empty() && (poRDS->bIsFastPK || !(poRDS->HasSpatialIndex())) ) {
             osCommand.Printf("SELECT %s, "
                 "ST_Metadata(%s), %s FROM %s.%s",
                 osRasterToFetch.c_str(), pszColumn,

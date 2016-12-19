@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: minidriver_iip.h 36611 2016-12-01 23:13:38Z lplesea $
  *
  * Project:  WMS Client Driver
  * Purpose:  Mini driver for Internet Imaging Protocol (IIP)
@@ -33,10 +33,9 @@ public:
     virtual ~WMSMiniDriver_IIP();
 
 public:
-    virtual CPLErr Initialize(CPLXMLNode *config, char **papszOpenOptions);
-    virtual void GetCapabilities(WMSMiniDriverCapabilities *caps);
-    virtual void TiledImageRequest(CPLString *url, const GDALWMSImageRequestInfo &iri, const GDALWMSTiledImageRequestInfo &tiri);
-
-protected:
-    CPLString m_base_url;
+    virtual CPLErr Initialize(CPLXMLNode *config, char **papszOpenOptions) override;
+    virtual void GetCapabilities(WMSMiniDriverCapabilities *caps) override;
+    virtual CPLErr TiledImageRequest(WMSHTTPRequest &request, 
+                                     const GDALWMSImageRequestInfo &iri,
+                                     const GDALWMSTiledImageRequestInfo &tiri) override;
 };

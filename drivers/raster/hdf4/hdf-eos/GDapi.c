@@ -1,5 +1,5 @@
 /*****************************************************************************
- * $Id$
+ * $Id: GDapi.c 36456 2016-11-22 23:34:00Z rouault $
  *
  * This module has a number of additions and improvements over the original
  * implementation to be suitable for usage in GDAL HDF driver.
@@ -6169,7 +6169,7 @@ GDgetdefaults(int32 projcode, int32 zonecode, float64 projparm[],
 	 * format.
 	 */
 	plon = EHconvAng(projparm[4], HDFE_DMS_DEG);
-	plat = EHconvAng(projparm[5], HDFE_DMS_DEG);
+	/*plat = EHconvAng(projparm[5], HDFE_DMS_DEG); */
 
 	/*
 	 * Compute the longitudes at 90, 180 and 270 degrees from the central

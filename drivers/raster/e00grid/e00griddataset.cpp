@@ -46,7 +46,7 @@ static const int E00_FLOAT_SIZE = 14;
 static const int E00_DOUBLE_SIZE = 21;
 static const int VALS_PER_LINE = 5;
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: e00griddataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 /* g++ -fPIC -Wall -g frmts/e00grid/e00griddataset.cpp -shared -o gdal_E00GRID.so -Iport -Igcore -Iogr -L. -lgdal */
 
@@ -106,8 +106,8 @@ class E00GRIDDataset : public GDALPamDataset
                  E00GRIDDataset();
     virtual     ~E00GRIDDataset();
 
-    virtual CPLErr GetGeoTransform( double * );
-    virtual const char* GetProjectionRef();
+    virtual CPLErr GetGeoTransform( double * ) override;
+    virtual const char* GetProjectionRef() override;
 
     static GDALDataset *Open( GDALOpenInfo * );
     static int          Identify( GDALOpenInfo * );
@@ -126,15 +126,15 @@ class E00GRIDRasterBand : public GDALPamRasterBand
   public:
                 E00GRIDRasterBand( E00GRIDDataset *, int, GDALDataType );
 
-    virtual CPLErr      IReadBlock( int, int, void * );
+    virtual CPLErr      IReadBlock( int, int, void * ) override;
 
-    virtual double      GetNoDataValue( int *pbSuccess = NULL );
-    virtual const char *GetUnitType();
-    virtual double      GetMinimum( int *pbSuccess = NULL );
-    virtual double      GetMaximum( int *pbSuccess = NULL );
+    virtual double      GetNoDataValue( int *pbSuccess = NULL ) override;
+    virtual const char *GetUnitType() override;
+    virtual double      GetMinimum( int *pbSuccess = NULL ) override;
+    virtual double      GetMaximum( int *pbSuccess = NULL ) override;
     virtual CPLErr      GetStatistics( int bApproxOK, int bForce,
                                        double *pdfMin, double *pdfMax,
-                                       double *pdfMean, double *padfStdDev );
+                                       double *pdfMean, double *padfStdDev ) override;
 };
 
 /************************************************************************/

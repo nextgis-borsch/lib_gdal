@@ -32,7 +32,7 @@
 #include "cpl_multiproc.h"
 #include <map>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrcsvdriver.cpp 35910 2016-10-24 14:08:24Z goatbar $");
 
 static CPLMutex* hMutex = NULL;
 static std::map<CPLString, GDALDataset*> *poMap = NULL;

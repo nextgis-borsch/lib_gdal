@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogridbdatasource.cpp 36347 2016-11-20 20:43:39Z rouault $");
 /************************************************************************/
 /*                         OGRIDBDataSource()                          */
 /************************************************************************/
@@ -43,6 +43,7 @@ OGRIDBDataSource::OGRIDBDataSource()
     papoLayers = NULL;
     nLayers = 0;
     poConn = 0;
+    bDSUpdate = FALSE;
 }
 
 /************************************************************************/

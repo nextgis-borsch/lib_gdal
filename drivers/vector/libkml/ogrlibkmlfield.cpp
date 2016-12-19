@@ -36,7 +36,7 @@
 #include "ogr_p.h"
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrlibkmlfield.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 using kmldom::CameraPtr;
 using kmldom::DataPtr;
@@ -1127,7 +1127,7 @@ static const char* TrimSpaces( string& oText )
     // as it breaks round-tripping.
 
     // Trim trailing spaces.
-    while( oText.size() != 0 && oText[oText.size()-1] == ' ' )
+    while( !oText.empty() && oText[oText.size()-1] == ' ' )
         oText.resize(oText.size()-1);
 
     // Skip leading newline and spaces.

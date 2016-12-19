@@ -30,7 +30,7 @@
 #include "cpl_string.h"
 #include "ogr_rec.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrreclayer.cpp 35911 2016-10-24 15:03:26Z goatbar $");
 
 /************************************************************************/
 /*                            OGRRECLayer()                             */

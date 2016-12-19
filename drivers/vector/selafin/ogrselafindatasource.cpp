@@ -34,7 +34,7 @@
 
 #include <ctime>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrselafindatasource.cpp 35562 2016-09-30 19:16:16Z goatbar $");
 
 /************************************************************************/
 /*                          Range                                       */

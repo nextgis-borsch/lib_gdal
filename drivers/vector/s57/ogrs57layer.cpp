@@ -31,7 +31,7 @@
 #include "cpl_string.h"
 #include "ogr_s57.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrs57layer.cpp 34819 2016-07-28 22:32:18Z goatbar $");
 
 /************************************************************************/
 /*                            OGRS57Layer()                             */

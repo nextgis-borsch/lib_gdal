@@ -32,7 +32,7 @@
 #include "cpl_csv.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrbnalayer.cpp 35903 2016-10-24 12:09:43Z goatbar $");
 
 /************************************************************************/
 /*                            OGRBNALayer()                             */

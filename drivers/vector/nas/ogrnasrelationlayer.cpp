@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "ogr_nas.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrnasrelationlayer.cpp 34819 2016-07-28 22:32:18Z goatbar $");
 
 /************************************************************************/
 /*                        OGRNASRelationLayer()                         */

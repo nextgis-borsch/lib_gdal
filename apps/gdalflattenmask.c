@@ -30,7 +30,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalflattenmask.c 36535 2016-11-27 23:49:35Z goatbar $");
 
 /************************************************************************/
 /*                               Usage()                                */
@@ -285,7 +285,7 @@ int main(int argc, char* argv[])
                     }
 
                     default:
-                        CPLAssert(0);
+                        CPLAssert(false);
                         break;
                 }
             }
@@ -307,7 +307,8 @@ int main(int argc, char* argv[])
         GDALRasterBandH hMaskBand = GDALGetMaskBand(hSrcBand);
         int nMaskFlag = GDALGetMaskFlags(hSrcBand);
 
-        int iCol, iLine;
+        int iCol;
+        int iLine;
         for(iLine = 0; iLine < nYSize; iLine++)
         {
             GDALRasterIO( hMaskBand, GF_Read, 0, iLine, nXSize, 1,

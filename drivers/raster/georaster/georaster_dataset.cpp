@@ -37,7 +37,7 @@
 
 #include "georaster_priv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: georaster_dataset.cpp 36763 2016-12-09 22:10:55Z rouault $");
 
 //  ---------------------------------------------------------------------------
 //                                                           GeoRasterDataset()
@@ -1155,7 +1155,7 @@ GDALDataset *GeoRasterDataset::CreateCopy( const char* pszFilename,
 
     if( pfnProgress )
     {
-        printf( "Output dataset: (georaster:%s/%s@%s,%s,%d) on %s%s,%s\n",
+        CPLDebug("GEOR", "Output dataset: (georaster:%s/%s@%s,%s,%d) on %s%s,%s",
             poDstDS->poGeoRaster->poConnection->GetUser(),
             poDstDS->poGeoRaster->poConnection->GetPassword(),
             poDstDS->poGeoRaster->poConnection->GetServer(),

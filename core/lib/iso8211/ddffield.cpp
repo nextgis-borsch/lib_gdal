@@ -26,12 +26,17 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#include "cpl_port.h"
 #include "iso8211.h"
-#include "cpl_conv.h"
+
+#include <cstdio>
+#include <cstdlib>
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+#include "cpl_conv.h"
+
+CPL_CVSID("$Id: ddffield.cpp 36552 2016-11-29 06:01:45Z goatbar $");
 
 // Note, we implement no constructor for this class to make instantiation
 // cheaper.  It is required that the Initialize() be called before anything
@@ -92,9 +97,9 @@ void DDFField::Dump( FILE * fp )
 /* -------------------------------------------------------------------- */
 /*      dump the data of the subfields.                                 */
 /* -------------------------------------------------------------------- */
-    int         iOffset = 0, nLoopCount;
+    int iOffset = 0;
 
-    for( nLoopCount = 0; nLoopCount < GetRepeatCount(); nLoopCount++ )
+    for( int nLoopCount = 0; nLoopCount < GetRepeatCount(); nLoopCount++ )
     {
         if( nLoopCount > nMaxRepeat )
         {
@@ -104,11 +109,10 @@ void DDFField::Dump( FILE * fp )
 
         for( int i = 0; i < poDefn->GetSubfieldCount(); i++ )
         {
-            int         nBytesConsumed;
-
             poDefn->GetSubfield(i)->DumpData( pachData + iOffset,
                                               nDataSize - iOffset, fp );
 
+            int nBytesConsumed = 0;
             poDefn->GetSubfield(i)->GetDataLength( pachData + iOffset,
                                                    nDataSize - iOffset,
                                                    &nBytesConsumed );
@@ -149,11 +153,10 @@ const char *DDFField::GetSubfieldData( DDFSubfieldDefn *poSFDefn,
                                        int *pnMaxBytes, int iSubfieldIndex )
 
 {
-    int         iOffset = 0;
-
     if( poSFDefn == NULL )
         return NULL;
 
+    int iOffset = 0;
     if( iSubfieldIndex > 0 && poDefn->GetFixedWidth() > 0 )
     {
         iOffset = poDefn->GetFixedWidth() * iSubfieldIndex;
@@ -164,7 +167,6 @@ const char *DDFField::GetSubfieldData( DDFSubfieldDefn *poSFDefn,
     {
         for( int iSF = 0; iSF < poDefn->GetSubfieldCount(); iSF++ )
         {
-            int nBytesConsumed;
             DDFSubfieldDefn * poThisSFDefn = poDefn->GetSubfield( iSF );
 
             if( nDataSize < iOffset )
@@ -183,6 +185,7 @@ const char *DDFField::GetSubfieldData( DDFSubfieldDefn *poSFDefn,
                 return pachData + iOffset;
             }
 
+            int nBytesConsumed = 0;
             poThisSFDefn->GetDataLength( pachData+iOffset, nDataSize - iOffset,
                                          &nBytesConsumed);
             iOffset += nBytesConsumed;

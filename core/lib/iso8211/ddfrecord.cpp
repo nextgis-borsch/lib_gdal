@@ -27,10 +27,21 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#include "cpl_port.h"
 #include "iso8211.h"
-#include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+#include <cstddef>
+#include <cstdio>
+#include <cstring>
+#if HAVE_FCNTL_H
+#  include <fcntl.h>
+#endif
+
+#include "cpl_conv.h"
+#include "cpl_error.h"
+#include "cpl_vsi.h"
+
+CPL_CVSID("$Id: ddfrecord.cpp 36552 2016-11-29 06:01:45Z goatbar $");
 
 static const int nLeaderSize = 24;
 

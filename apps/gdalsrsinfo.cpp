@@ -36,7 +36,7 @@
 #include "ogrsf_frmts.h"
 #include "commonutils.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalsrsinfo.cpp 36537 2016-11-27 23:51:56Z goatbar $");
 
 bool FindSRS( const char *pszInput, OGRSpatialReference &oSRS );
 CPLErr PrintSRS( const OGRSpatialReference &oSRS,
@@ -83,7 +83,8 @@ static void Usage(const char* pszErrorMsg = NULL)
 
 #define CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(nExtraArg) \
     do { if (i + nExtraArg >= argc) \
-        Usage(CPLSPrintf("%s option requires %d argument(s)", argv[i], nExtraArg)); } while(0)
+        Usage(CPLSPrintf("%s option requires %d argument(s)", \
+                         argv[i], nExtraArg)); } while( false )
 
 int main( int argc, char ** argv )
 

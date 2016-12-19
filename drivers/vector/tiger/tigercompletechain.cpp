@@ -30,7 +30,7 @@
 #include "ogr_tiger.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: tigercompletechain.cpp 36472 2016-11-23 16:38:20Z rouault $");
 
 static const TigerFieldInfo rt1_2002_fields[] = {
   // fieldname    fmt  type OFTType      beg  end  len  bDefine bSet bWrite
@@ -773,7 +773,7 @@ OGRErr TigerCompleteChain::CreateFeature( OGRFeature *poFeature )
 
             WriteField( poFeature, "TLID", szRecord, 6, 15, 'R', 'N' );
 
-            snprintf( szTemp, sizeof(szTemp), "%3d", nRTSQ );
+            CPLsnprintf( szTemp, sizeof(szTemp), "%3d", nRTSQ );
             strncpy( ((char *)szRecord) + 15, szTemp, 4 );
 
             for( int i = 0; i < 10; i++ )

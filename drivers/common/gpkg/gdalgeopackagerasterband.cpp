@@ -32,7 +32,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalgeopackagerasterband.cpp 36691 2016-12-04 22:45:59Z rouault $");
 
 #if !defined(DEBUG_VERBOSE) && defined(DEBUG_VERBOSE_GPKG)
 #define DEBUG_VERBOSE
@@ -203,14 +203,14 @@ GDALColorTable* GDALGPKGMBTilesLikeRasterBand::GetColorTable()
             char* pszSQL = NULL;
             if( i == 0 )
             {
-                pszSQL = sqlite3_mprintf("SELECT tile_data FROM '%q' "
+                pszSQL = sqlite3_mprintf("SELECT tile_data FROM \"%w\" "
                     "WHERE zoom_level = %d LIMIT 1",
                     m_poTPD->m_osRasterTable.c_str(), m_poTPD->m_nZoomLevel);
             }
             else
             {
                 // Try a tile in the middle of the raster
-                pszSQL = sqlite3_mprintf("SELECT tile_data FROM '%q' "
+                pszSQL = sqlite3_mprintf("SELECT tile_data FROM \"%w\" "
                     "WHERE zoom_level = %d AND tile_column = %d AND tile_row = %d",
                     m_poTPD->m_osRasterTable.c_str(), m_poTPD->m_nZoomLevel,
                     m_poTPD->m_nShiftXTiles + nRasterXSize / 2 / nBlockXSize,
@@ -675,6 +675,7 @@ GByte* GDALGPKGMBTilesLikePseudoDataset::ReadTile( int nRow, int nCol, GByte *pa
     if( nRow < 0 || nCol < 0 || nRow >= m_nTileMatrixHeight ||
         nCol >= m_nTileMatrixWidth )
     {
+        // cppcheck-suppress nullPointer
         memset( pabyData, 0, nBands * nBlockXSize * nBlockYSize );
         return pabyData;
     }
@@ -683,10 +684,10 @@ GByte* GDALGPKGMBTilesLikePseudoDataset::ReadTile( int nRow, int nCol, GByte *pa
     CPLDebug( "GPKG", "ReadTile(row=%d, col=%d)", nRow, nCol );
 #endif
 
-    char *pszSQL = sqlite3_mprintf( "SELECT tile_data FROM '%q' "
+    char *pszSQL = sqlite3_mprintf( "SELECT tile_data FROM \"%w\" "
         "WHERE zoom_level = %d AND tile_row = %d AND tile_column = %d%s",
         m_osRasterTable.c_str(), m_nZoomLevel, GetRowFromIntoTopConvention(nRow), nCol,
-        m_osWHERE.size() ? CPLSPrintf(" AND (%s)", m_osWHERE.c_str()): "");
+        !m_osWHERE.empty() ? CPLSPrintf(" AND (%s)", m_osWHERE.c_str()): "");
 
 #ifdef DEBUG_VERBOSE
     CPLDebug("GPKG", "%s", pszSQL);
@@ -1192,7 +1193,7 @@ CPLErr GDALGPKGMBTilesLikePseudoDataset::WriteTileInternal()
             // If tile is fully transparent, don't serialize it and remove it if it exists
             if( byFirstAlphaVal == 0 )
             {
-                char* pszSQL = sqlite3_mprintf("DELETE FROM '%q' "
+                char* pszSQL = sqlite3_mprintf("DELETE FROM \"%w\" "
                     "WHERE zoom_level = %d AND tile_row = %d AND tile_column = %d",
                     m_osRasterTable.c_str(), m_nZoomLevel, GetRowFromIntoTopConvention(nRow), nCol);
 #ifdef DEBUG_VERBOSE
@@ -1519,7 +1520,7 @@ CPLErr GDALGPKGMBTilesLikePseudoDataset::WriteTileInternal()
             }
             poMainDS->m_nTileInsertionCount ++;
 
-            char* pszSQL = sqlite3_mprintf("INSERT OR REPLACE INTO '%q' "
+            char* pszSQL = sqlite3_mprintf("INSERT OR REPLACE INTO \"%w\" "
                 "(zoom_level, tile_row, tile_column, tile_data) VALUES (%d, %d, %d, ?)",
                 m_osRasterTable.c_str(), m_nZoomLevel, GetRowFromIntoTopConvention(nRow), nCol);
 #ifdef DEBUG_VERBOSE
@@ -1716,10 +1717,10 @@ CPLErr GDALGPKGMBTilesLikePseudoDataset::FlushRemainingShiftedTiles(bool bPartia
             // temporary database
             if( nPartialFlags != nFullFlags )
             {
-                char* pszNewSQL = sqlite3_mprintf("SELECT tile_data FROM '%q' "
+                char* pszNewSQL = sqlite3_mprintf("SELECT tile_data FROM \"%w\" "
                         "WHERE zoom_level = %d AND tile_row = %d AND tile_column = %d%s",
                         m_osRasterTable.c_str(), m_nZoomLevel, GetRowFromIntoTopConvention(nRow), nCol,
-                        m_osWHERE.size() ? CPLSPrintf(" AND (%s)", m_osWHERE.c_str()): "");
+                        !m_osWHERE.empty() ? CPLSPrintf(" AND (%s)", m_osWHERE.c_str()): "");
 #ifdef DEBUG_VERBOSE
                 CPLDebug("GPKG", "%s", pszNewSQL);
 #endif

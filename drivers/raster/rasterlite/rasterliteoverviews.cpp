@@ -32,7 +32,7 @@
 
 #include "rasterlitedataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: rasterliteoverviews.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 /************************************************************************/
 /*                         ReloadOverviews()                            */
@@ -730,7 +730,7 @@ CPLErr RasterliteDataset::IBuildOverviews( const char * pszResampling,
         return CE_Failure;
     }
 
-    if (osTableName.size() == 0)
+    if (osTableName.empty())
         return CE_Failure;
 
 /* -------------------------------------------------------------------- */

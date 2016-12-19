@@ -36,7 +36,7 @@
 #include "ogrgeojsonreader.h"
 #include <limits>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: argdataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -54,13 +54,13 @@ class ARGDataset : public RawDataset
         ARGDataset();
         virtual ~ARGDataset();
 
-        CPLErr GetGeoTransform( double * padfTransform );
+        CPLErr GetGeoTransform( double * padfTransform ) override;
 
         static int Identify( GDALOpenInfo * );
         static GDALDataset *Open( GDALOpenInfo * );
         static GDALDataset *CreateCopy( const char *, GDALDataset *, int,
             char **, GDALProgressFunc, void *);
-        virtual char **GetFileList(void);
+        virtual char **GetFileList(void) override;
 };
 
 /************************************************************************/

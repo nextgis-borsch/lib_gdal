@@ -88,6 +88,8 @@ set(LIB_CSOURCES
     ogrgeomfielddefn.cpp
     ogrlinearring.cpp
     ogrlinestring.cpp
+    ogrpolyhedralsurface.cpp
+    ogrtriangulatedsurface.cpp
     ogrmulticurve.cpp
     ogrmultilinestring.cpp
     ogrmultipoint.cpp
@@ -109,6 +111,7 @@ set(LIB_CSOURCES
     ogr_srs_validate.cpp
     ogr_srs_xml.cpp
     ogrsurface.cpp
+    ogrtriangle.cpp
     ogrutils.cpp
     osr_cs_wkt.c
     swq.cpp

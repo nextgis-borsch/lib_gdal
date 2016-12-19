@@ -1,4 +1,4 @@
-/* $Id$ */
+/* $Id: gvgcpfit.h 35882 2016-10-24 04:10:14Z goatbar $ */
 
 #ifndef GVGCPFIT_H_INCLUDED
 #define GVGCPFIT_H_INCLUDED

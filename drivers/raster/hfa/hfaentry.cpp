@@ -37,7 +37,7 @@
 #include "hfa_p.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: hfaentry.cpp 36461 2016-11-23 12:05:14Z rouault $");
 
 /************************************************************************/
 /*                              HFAEntry()                              */
@@ -151,8 +151,7 @@ HFAEntry::HFAEntry( HFAInfo_t * psHFAIn,
 /* -------------------------------------------------------------------- */
     SetName( pszNodeName );
     memset( szType, 0, sizeof(szType) );
-    strncpy( szType, pszTypeName, sizeof(szType) );
-    szType[sizeof(szType)-1] = '\0';
+    snprintf( szType, sizeof(szType), "%s", pszTypeName );
 
 /* -------------------------------------------------------------------- */
 /*      Update the previous or parent node to refer to this one.        */
@@ -309,8 +308,7 @@ HFAEntry::HFAEntry( const char * pszDictionary,
 /*      Work out the type for this MIFObject.                           */
 /* -------------------------------------------------------------------- */
     memset( szType, 0, sizeof(szType) );
-    strncpy( szType, pszTypeName, sizeof(szType) );
-    szType[sizeof(szType)-1] = '\0';
+    snprintf( szType, sizeof(szType), "%s", pszTypeName );
 
     poType = psHFA->poDictionary->FindType( szType );
 
@@ -397,8 +395,7 @@ CPLErr HFAEntry::RemoveAndDestroy()
 void HFAEntry::SetName( const char *pszNodeName )
 {
   memset( szName, 0, sizeof(szName) );
-  strncpy( szName, pszNodeName, sizeof(szName) );
-  szName[sizeof(szName)-1] = '\0';
+  snprintf( szName, sizeof(szName), "%s", pszNodeName );
 
   MarkDirty();
 }

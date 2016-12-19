@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gxfopen.c 36436 2016-11-22 21:41:51Z rouault $
  *
  * Project:  GXF Reader
  * Purpose:  Majority of Geosoft GXF reading code.
@@ -34,7 +34,7 @@
 #include <ctype.h>
 #include "gxfopen.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gxfopen.c 36436 2016-11-22 21:41:51Z rouault $");
 
 
 /* this is also defined in gdal.h which we avoid in this separable component */
@@ -74,7 +74,7 @@ static char **GXFReadHeaderValue( FILE * fp, char * pszHTitle )
 /*      Extract the title.  It should be terminated by some sort of     */
 /*      white space.                                                    */
 /* -------------------------------------------------------------------- */
-    for( i = 0; !isspace((unsigned char)pszLine[i]) && pszLine[i] != '\0' && i < 70; i++ ) {}
+    for( i = 0; i < 70 && !isspace((unsigned char)pszLine[i]) && pszLine[i] != '\0'; i++ ) {}
 
     strncpy( pszHTitle, pszLine, i );
     pszHTitle[i] = '\0';

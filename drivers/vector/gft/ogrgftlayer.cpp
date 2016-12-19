@@ -29,7 +29,7 @@
 #include "ogr_gft.h"
 #include "cpl_minixml.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgftlayer.cpp 36061 2016-11-01 02:26:58Z goatbar $");
 
 /************************************************************************/
 /*                            OGRGFTLayer()                             */

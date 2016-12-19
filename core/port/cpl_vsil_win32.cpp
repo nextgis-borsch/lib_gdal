@@ -29,7 +29,7 @@
 
 #include "cpl_vsi_virtual.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_vsil_win32.cpp 36837 2016-12-13 03:08:42Z goatbar $");
 
 #if defined(WIN32)
 
@@ -50,6 +50,11 @@ CPL_CVSID("$Id$");
 /* ==================================================================== */
 /************************************************************************/
 
+// To avoid aliasing to GetDiskFreeSpace to GetDiskFreeSpaceA on Windows
+#ifdef GetDiskFreeSpace
+#undef GetDiskFreeSpace
+#endif
+
 class VSIWin32FilesystemHandler CPL_FINAL : public VSIFilesystemHandler
 {
 public:
@@ -58,17 +63,17 @@ public:
 
     virtual VSIVirtualHandle *Open( const char *pszFilename,
                                     const char *pszAccess,
-                                    bool bSetError );
-    virtual int      Stat( const char *pszFilename, VSIStatBufL *pStatBuf, int nFlags );
-    virtual int      Unlink( const char *pszFilename );
-    virtual int      Rename( const char *oldpath, const char *newpath );
-    virtual int      Mkdir( const char *pszDirname, long nMode );
-    virtual int      Rmdir( const char *pszDirname );
-    virtual char   **ReadDirEx( const char *pszDirname, int nMaxFiles );
-    virtual int      IsCaseSensitive( const char* pszFilename )
+                                    bool bSetError ) override;
+    virtual int      Stat( const char *pszFilename, VSIStatBufL *pStatBuf, int nFlags ) override;
+    virtual int      Unlink( const char *pszFilename ) override;
+    virtual int      Rename( const char *oldpath, const char *newpath ) override;
+    virtual int      Mkdir( const char *pszDirname, long nMode ) override;
+    virtual int      Rmdir( const char *pszDirname ) override;
+    virtual char   **ReadDirEx( const char *pszDirname, int nMaxFiles ) override;
+    virtual int      IsCaseSensitive( const char* pszFilename ) override
                       { (void) pszFilename; return FALSE; }
-    virtual GIntBig  GetDiskFreeSpace( const char* pszDirname );
-    virtual int SupportsSparseFiles( const char* pszPath );
+    virtual GIntBig  GetDiskFreeSpace( const char* pszDirname ) override;
+    virtual int SupportsSparseFiles( const char* pszPath ) override;
 };
 
 /************************************************************************/
@@ -83,17 +88,17 @@ class VSIWin32Handle CPL_FINAL : public VSIVirtualHandle
     HANDLE       hFile;
     int          bEOF;
 
-    virtual int       Seek( vsi_l_offset nOffset, int nWhence );
-    virtual vsi_l_offset Tell();
-    virtual size_t    Read( void *pBuffer, size_t nSize, size_t nMemb );
-    virtual size_t    Write( const void *pBuffer, size_t nSize, size_t nMemb );
-    virtual int       Eof();
-    virtual int       Flush();
-    virtual int       Close();
-    virtual int       Truncate( vsi_l_offset nNewSize );
-    virtual void     *GetNativeFileDescriptor() { return (void*) hFile; }
+    virtual int       Seek( vsi_l_offset nOffset, int nWhence ) override;
+    virtual vsi_l_offset Tell() override;
+    virtual size_t    Read( void *pBuffer, size_t nSize, size_t nMemb ) override;
+    virtual size_t    Write( const void *pBuffer, size_t nSize, size_t nMemb ) override;
+    virtual int       Eof() override;
+    virtual int       Flush() override;
+    virtual int       Close() override;
+    virtual int       Truncate( vsi_l_offset nNewSize ) override;
+    virtual void     *GetNativeFileDescriptor() override { return (void*) hFile; }
     virtual VSIRangeStatus GetRangeStatus( vsi_l_offset nOffset,
-                                           vsi_l_offset nLength );
+                                           vsi_l_offset nLength ) override;
 };
 
 /************************************************************************/
@@ -239,8 +244,8 @@ int VSIWin32Handle::Seek( vsi_l_offset nOffset, int nWhence )
                        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                        (LPTSTR) &lpMsgBuf, 0, NULL );
 
-        printf( "[ERROR %d]\n %s\n", GetLastError(), (char *) lpMsgBuf );
-        printf( "nOffset=%u, nMoveLow=%u, dwMoveHigh=%u\n",
+        printf( "[ERROR %d]\n %s\n", GetLastError(), (char *) lpMsgBuf );/*ok*/
+        printf( "nOffset=%u, nMoveLow=%u, dwMoveHigh=%u\n",/*ok*/
                 (GUInt32) nOffset, nMoveLow, dwMoveHigh );
 #endif
         errno = ErrnoFromGetLastError();
@@ -461,17 +466,20 @@ static void VSIWin32TryLongFilename(wchar_t*& pwszFilename)
         pwszFilename[1] == ':' &&
         (pwszFilename[2] == '\\' || pwszFilename[2] == '/' ) )
     {
-        pwszFilename = (wchar_t*) CPLRealloc( pwszFilename,
-                    (4 + nLen + 1) * sizeof(wchar_t));
+        pwszFilename = static_cast<wchar_t *>(
+            CPLRealloc( pwszFilename, (4 + nLen + 1) * sizeof(wchar_t)));
         memmove( pwszFilename + 4, pwszFilename, (nLen+1) * sizeof(wchar_t));
     }
     else
     {
-        wchar_t* pwszCurDir = (wchar_t*) CPLMalloc(32768 * sizeof(wchar_t));
+        // TODO(schwehr): 32768 should be a symbolic constant.
+        wchar_t* pwszCurDir =
+            static_cast<wchar_t *>(CPLMalloc(32768 * sizeof(wchar_t)));
         DWORD nCurDirLen = GetCurrentDirectoryW( 32768, pwszCurDir );
         CPLAssert(nCurDirLen < 32768);
-        pwszFilename = (wchar_t*) CPLRealloc( pwszFilename,
-                    (4 + nCurDirLen + 1 + nLen + 1) * sizeof(wchar_t));
+        pwszFilename = static_cast<wchar_t *>(
+            CPLRealloc(pwszFilename,
+                       (4 + nCurDirLen + 1 + nLen + 1) * sizeof(wchar_t)));
         int nOffset = 0;
         if( pwszFilename[0] == '.' &&
             (pwszFilename[1] == '/' || pwszFilename[1] == '\\') )

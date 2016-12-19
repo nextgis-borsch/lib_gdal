@@ -2,7 +2,7 @@
 #include "sdeerror.h"
 #include "cpl_port.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: sdeerror.cpp 35929 2016-10-25 16:09:00Z goatbar $");
 
 /************************************************************************/
 /*                           IssueSDEError()                            */

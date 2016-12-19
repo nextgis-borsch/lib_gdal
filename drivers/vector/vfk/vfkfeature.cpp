@@ -35,7 +35,7 @@
 #include "cpl_conv.h"
 #include "cpl_error.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: vfkfeature.cpp 36396 2016-11-21 14:53:59Z rouault $");
 
 /*!
   \brief IVFKFeature constructor
@@ -211,7 +211,7 @@ bool IVFKFeature::SetGeometry( OGRGeometry *poGeom, const char *ftype )
                 char s[3] = {}; /* 15 */
 
                 float r = 0.0f;
-                if (2 != sscanf(ftype, "%s %f", s, &r) || r < 0) {
+                if (2 != sscanf(ftype, "%2s %f", s, &r) || r < 0) {
                     CPLDebug("OGR-VFK", "%s: invalid circle (unknown or negative radius) "
                              "fid = " CPL_FRMT_GIB, m_poDataBlock->GetName(), m_nFID);
                     m_bValid = false;

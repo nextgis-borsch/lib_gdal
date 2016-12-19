@@ -45,7 +45,7 @@ static const double NULL3 = -3.4028226550889044521e+38;
 #include "ogr_spatialref.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: isis3dataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 class ISIS3Dataset;
 
@@ -74,7 +74,7 @@ class ISISTiledBand : public GDALPamRasterBand
                                int bNativeOrder );
     virtual     ~ISISTiledBand() {}
 
-    virtual CPLErr          IReadBlock( int, int, void * );
+    virtual CPLErr          IReadBlock( int, int, void * ) override;
 };
 
 /************************************************************************/
@@ -187,10 +187,10 @@ public:
     ISIS3Dataset();
     virtual ~ISIS3Dataset();
 
-    virtual CPLErr GetGeoTransform( double * padfTransform );
-    virtual const char *GetProjectionRef(void);
+    virtual CPLErr GetGeoTransform( double * padfTransform ) override;
+    virtual const char *GetProjectionRef(void) override;
 
-    virtual char **GetFileList();
+    virtual char **GetFileList() override;
 
     static int          Identify( GDALOpenInfo * );
     static GDALDataset *Open( GDALOpenInfo * );

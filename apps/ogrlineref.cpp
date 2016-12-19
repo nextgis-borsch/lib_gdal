@@ -40,7 +40,7 @@
 #include "cpl_error.h"
 #include "ogr_geos.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrlineref.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 #define FIELD_START "beg"
 #define FIELD_FINISH "end"
@@ -472,7 +472,7 @@ static OGRErr CreateSubline(OGRLayer* const poPkLayer,
 
     OGRLineString SubLine;
 
-    if (moParts.size() == 0)
+    if (moParts.empty())
     {
         fprintf(stderr, "Get parts for positions %f - %f failed\n", dfPosBeg, dfPosEnd);
         return OGRERR_FAILURE;
@@ -1186,7 +1186,8 @@ static OGRErr GetCoordinates(OGRLayer* const poPkLayer,
 
 #define CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(nExtraArg) \
     do { if (iArg + nExtraArg >= nArgc) \
-        Usage(CPLSPrintf("%s option requires %d argument(s)", papszArgv[iArg], nExtraArg)); } while(0)
+        Usage(CPLSPrintf("%s option requires %d argument(s)", \
+                         papszArgv[iArg], nExtraArg)); } while( false )
 
 int main( int nArgc, char ** papszArgv )
 

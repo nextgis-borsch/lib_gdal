@@ -36,7 +36,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: vrtwarped.cpp 35929 2016-10-25 16:09:00Z goatbar $");
 
 /************************************************************************/
 /*                      GDALAutoCreateWarpedVRT()                       */

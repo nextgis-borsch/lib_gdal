@@ -35,7 +35,7 @@
 #include "cpl_multiproc.h"
 #include "ogrmutexeddatasource.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: FGdbDriver.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 extern "C" void RegisterOGRFileGDB();
 
@@ -52,7 +52,7 @@ FGdbDriver::FGdbDriver(): OGRSFDriver(), hMutex(NULL)
 FGdbDriver::~FGdbDriver()
 
 {
-    if( oMapConnections.size() != 0 )
+    if( !oMapConnections.empty() )
         CPLDebug("FileGDB", "Remaining %d connections. Bug?",
                  (int)oMapConnections.size());
     if( hMutex != NULL )

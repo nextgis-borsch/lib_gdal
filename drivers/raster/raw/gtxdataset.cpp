@@ -32,7 +32,7 @@
 #include "ogr_srs_api.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gtxdataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 /**
 
@@ -83,9 +83,9 @@ class GTXDataset : public RawDataset
                 }
     virtual ~GTXDataset();
 
-    virtual CPLErr GetGeoTransform( double * padfTransform );
-    virtual CPLErr SetGeoTransform( double * padfTransform );
-    virtual const char *GetProjectionRef();
+    virtual CPLErr GetGeoTransform( double * padfTransform ) override;
+    virtual CPLErr SetGeoTransform( double * padfTransform ) override;
+    virtual const char *GetProjectionRef() override;
 
     static GDALDataset *Open( GDALOpenInfo * );
     static int          Identify( GDALOpenInfo * );

@@ -28,10 +28,11 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "gnm_frmts.h"
 #include "gnmfile.h"
+#include "gnm_frmts.h"
+#include "gnm_priv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gnmfiledriver.cpp 36302 2016-11-19 16:54:08Z bishop $");
 
 static int GNMFileDriverIdentify( GDALOpenInfo* poOpenInfo )
 

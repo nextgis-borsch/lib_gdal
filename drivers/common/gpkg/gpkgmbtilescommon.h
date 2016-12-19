@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gpkgmbtilescommon.h 36501 2016-11-25 14:09:24Z rouault $
  *
  * Project:  GeoPackage/MBTiles Translator
  * Purpose:  Definition of common classes for GeoPackage and MBTiles drivers.
@@ -142,16 +142,16 @@ class GDALGPKGMBTilesLikeRasterBand: public GDALPamRasterBand
                                                               int nTileWidth, int nTileHeight);
 
         virtual CPLErr          IReadBlock(int nBlockXOff, int nBlockYOff,
-                                           void* pData);
+                                           void* pData) override;
         virtual CPLErr          IWriteBlock(int nBlockXOff, int nBlockYOff,
-                                           void* pData);
-        virtual CPLErr          FlushCache();
+                                           void* pData) override;
+        virtual CPLErr          FlushCache() override;
 
-        virtual GDALColorTable* GetColorTable();
-        virtual CPLErr          SetColorTable(GDALColorTable* poCT);
+        virtual GDALColorTable* GetColorTable() override;
+        virtual CPLErr          SetColorTable(GDALColorTable* poCT) override;
 
-        virtual GDALColorInterp GetColorInterpretation();
-        virtual CPLErr          SetColorInterpretation( GDALColorInterp );
+        virtual GDALColorInterp GetColorInterpretation() override;
+        virtual CPLErr          SetColorInterpretation( GDALColorInterp ) override;
 
     protected:
         friend class GDALGPKGMBTilesLikePseudoDataset;

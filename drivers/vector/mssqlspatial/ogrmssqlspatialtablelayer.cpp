@@ -33,7 +33,7 @@
 #include <sqlncli.h>
 #endif
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrmssqlspatialtablelayer.cpp 36366 2016-11-21 01:21:43Z rouault $");
 
 /************************************************************************/
 /*                         OGRMSSQLAppendEscaped( )                     */
@@ -82,7 +82,8 @@ void OGRMSSQLAppendEscaped( CPLODBCStatement* poStatement, const char* pszStrVal
 
 OGRMSSQLSpatialTableLayer::OGRMSSQLSpatialTableLayer( OGRMSSQLSpatialDataSource *poDSIn ) :
     bLaunderColumnNames(FALSE),
-    bPreservePrecision(FALSE)
+    bPreservePrecision(FALSE),
+    eGeomType(wkbNone)
 {
     poDS = poDSIn;
 
@@ -99,8 +100,6 @@ OGRMSSQLSpatialTableLayer::OGRMSSQLSpatialTableLayer( OGRMSSQLSpatialDataSource 
     pszTableName = NULL;
     pszLayerName = NULL;
     pszSchemaName = NULL;
-
-    eGeomType = wkbNone;
 
     bNeedSpatialIndex = FALSE;
 #ifdef SQL_SS_UDT

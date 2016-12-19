@@ -33,7 +33,7 @@
 #include "commonutils.h"
 #include "gdal_utils_priv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdal_translate_bin.cpp 35999 2016-10-28 15:17:40Z rouault $");
 
 /*  ******************************************************************* */
 /*                               Usage()                                */

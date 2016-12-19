@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrvfkdriver.cpp 35911 2016-10-24 15:03:26Z goatbar $");
 
 static int OGRVFKDriverIdentify(GDALOpenInfo* poOpenInfo)
 {

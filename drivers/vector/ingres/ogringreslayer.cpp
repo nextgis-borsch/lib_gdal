@@ -30,7 +30,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogringreslayer.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 /************************************************************************/
 /*                           OGRIngresLayer()                            */
@@ -494,7 +494,7 @@ OGRFeature *OGRIngresLayer::GetNextRawFeature()
 /* -------------------------------------------------------------------- */
     if( iNextShapeId == 0 && poResultSet == NULL )
     {
-        CPLAssert( osQueryStatement.size() != 0 );
+        CPLAssert( !osQueryStatement.empty() );
 
         poDS->EstablishActiveLayer( this );
 

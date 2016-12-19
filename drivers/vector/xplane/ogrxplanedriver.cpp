@@ -29,7 +29,7 @@
 #include "ogr_xplane.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrxplanedriver.cpp 35676 2016-10-10 05:14:51Z goatbar $");
 
 /************************************************************************/
 /*                              GetName()                               */

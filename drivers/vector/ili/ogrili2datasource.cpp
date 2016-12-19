@@ -36,7 +36,7 @@
 
 using namespace std;
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrili2datasource.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 /************************************************************************/
 /*                         OGRILI2DataSource()                         */
@@ -161,7 +161,7 @@ int OGRILI2DataSource::Open( const char * pszNewName,
         return FALSE;
     }
 
-    if (osModelFilename.size())
+    if (!osModelFilename.empty() )
         poReader->ReadModel( poImdReader, osModelFilename );
 
     poReader->SetSourceFile( pszName );
@@ -322,8 +322,8 @@ OGRLayer *OGRILI2DataSource::GetLayer( int iLayer )
     list<OGRLayer *>::const_iterator layerIt = listLayer.begin();
     int i = 0;
     while (i < iLayer && layerIt != listLayer.end()) {
-        i++;
-        layerIt++;
+        ++i;
+        ++layerIt;
     }
 
     if (i == iLayer) {

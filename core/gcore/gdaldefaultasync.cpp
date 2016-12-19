@@ -27,9 +27,17 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#include "cpl_port.h"
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id$");
+#include <cstring>
+
+#include "cpl_conv.h"
+#include "cpl_error.h"
+#include "cpl_string.h"
+#include "gdal.h"
+
+CPL_CVSID("$Id: gdaldefaultasync.cpp 36523 2016-11-27 04:13:26Z goatbar $");
 
 CPL_C_START
 GDALAsyncReader *
@@ -292,7 +300,7 @@ class GDALDefaultAsyncReader : public GDALAsyncReader
                                                      int* pnBufXOff,
                                                      int* pnBufYOff,
                                                      int* pnBufXSize,
-                                                     int* pnBufYSize);
+                                                     int* pnBufYSize) override;
 };
 
 /************************************************************************/

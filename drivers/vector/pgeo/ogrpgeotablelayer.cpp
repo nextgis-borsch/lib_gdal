@@ -31,7 +31,7 @@
 #include "ogr_pgeo.h"
 #include "ogrpgeogeometry.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrpgeotablelayer.cpp 35911 2016-10-24 15:03:26Z goatbar $");
 
 /************************************************************************/
 /*                          OGRPGeoTableLayer()                         */

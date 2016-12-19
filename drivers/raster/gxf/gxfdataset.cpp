@@ -31,7 +31,7 @@
 #include "gdal_pam.h"
 #include "gxfopen.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gxfdataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -57,8 +57,8 @@ class GXFDataset : public GDALPamDataset
 
     static GDALDataset *Open( GDALOpenInfo * );
 
-    CPLErr      GetGeoTransform( double * padfTransform );
-    const char *GetProjectionRef();
+    CPLErr      GetGeoTransform( double * padfTransform ) override;
+    const char *GetProjectionRef() override;
 };
 
 /************************************************************************/
@@ -74,9 +74,9 @@ class GXFRasterBand : public GDALPamRasterBand
   public:
 
                 GXFRasterBand( GXFDataset *, int );
-    double      GetNoDataValue( int* bGotNoDataValue );
+    double      GetNoDataValue( int* bGotNoDataValue ) override;
 
-    virtual CPLErr IReadBlock( int, int, void * );
+    virtual CPLErr IReadBlock( int, int, void * ) override;
 };
 
 /************************************************************************/

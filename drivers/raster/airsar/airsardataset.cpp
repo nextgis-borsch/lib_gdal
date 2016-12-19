@@ -33,7 +33,7 @@
 #include "gdal_frmts.h"
 #include "gdal_pam.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: airsardataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -80,7 +80,7 @@ class AirSARRasterBand : public GDALPamRasterBand
                 AirSARRasterBand( AirSARDataset *, int );
     virtual     ~AirSARRasterBand();
 
-    virtual CPLErr IReadBlock( int, int, void * );
+    virtual CPLErr IReadBlock( int, int, void * ) override;
 };
 
 /* locations of stokes matrix values within padfMatrix ... same order as they

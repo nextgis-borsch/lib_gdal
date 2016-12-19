@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "s57.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ddfrecordindex.cpp 35542 2016-09-29 14:10:37Z goatbar $");
 
 /************************************************************************/
 /*                           DDFRecordIndex()                           */

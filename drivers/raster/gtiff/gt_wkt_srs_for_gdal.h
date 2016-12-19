@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gt_wkt_srs_for_gdal.h 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  GeoTIFF Driver
  * Purpose:  Read/Write in-memory GeoTIFF file

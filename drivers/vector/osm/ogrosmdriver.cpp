@@ -33,7 +33,7 @@
 
 extern "C" void CPL_DLL RegisterOGROSM();
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrosmdriver.cpp 35847 2016-10-21 06:06:13Z goatbar $");
 
 /************************************************************************/
 /*                      OGROSMDriverIdentify()                          */

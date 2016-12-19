@@ -48,7 +48,7 @@
 #  endif
 #endif
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ili1reader.cpp 35911 2016-10-24 15:03:26Z goatbar $");
 
 //
 // ILI1Reader

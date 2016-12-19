@@ -33,7 +33,7 @@
 #include <cctype>
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrtigerdatasource.cpp 36017 2016-10-29 04:27:08Z goatbar $");
 
 /************************************************************************/
 /*                        TigerClassifyVersion()                        */

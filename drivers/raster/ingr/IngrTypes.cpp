@@ -34,7 +34,7 @@
 #include "stdio.h"
 #endif
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: IngrTypes.cpp 36578 2016-11-30 15:05:11Z goatbar $");
 
 static const INGR_FormatDescription INGR_FormatTable[] = {
     {PackedBinary,            "Packed Binary",               GDT_Byte},
@@ -1177,7 +1177,7 @@ INGR_DecodeRunLengthBitonal( GByte *pabySrcData, GByte *pabyDstData,
             bHeader = false;
 
         // Fall through. We have a valid scanline header... probably.
-    } while(0);
+    } while( false );
 
     if( bHeader )
         iInput+=4; // 0x5900 tag, line id, line data size, skip offset

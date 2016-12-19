@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gctp_wrap.c 32162 2015-12-13 14:16:21Z rouault $
  *
  * Project:  Hierarchical Data Format Release 4 (HDF4)
  * Purpose:  This is the wrapper code to use OGR Coordinate Transformation

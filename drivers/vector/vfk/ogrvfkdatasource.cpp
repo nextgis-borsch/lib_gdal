@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrvfkdatasource.cpp 36793 2016-12-11 18:04:54Z martinl $");
 
 /*!
   \brief OGRVFKDataSource constructor
@@ -70,7 +70,7 @@ OGRVFKDataSource::~OGRVFKDataSource()
 */
 int OGRVFKDataSource::Open(const char *pszFileName, int bTestOpen)
 {
-    GDALOpenInfo *poOpenInfo = new GDALOpenInfo(pszFileName, GA_ReadOnly );
+    GDALOpenInfo *poOpenInfo = new GDALOpenInfo(pszFileName, GA_ReadOnly);
 
     if (poOpenInfo->fpL == NULL) {
         if (!bTestOpen)

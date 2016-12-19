@@ -29,7 +29,7 @@
 
 #include <string.h>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cosar_dataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 /* Various offsets, in bytes */
 // Commented out the unused defines.
@@ -61,7 +61,7 @@ class COSARRasterBand : public GDALRasterBand
 
 public:
         COSARRasterBand(COSARDataset *, unsigned long nRTNB);
-        virtual CPLErr IReadBlock(int, int, void *);
+        virtual CPLErr IReadBlock(int, int, void *) override;
 };
 
 /*****************************************************************************

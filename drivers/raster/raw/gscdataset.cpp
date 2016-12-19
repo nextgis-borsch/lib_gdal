@@ -31,7 +31,7 @@
 #include "gdal_frmts.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gscdataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -49,7 +49,7 @@ class GSCDataset : public RawDataset
                 GSCDataset();
                 ~GSCDataset();
 
-    CPLErr      GetGeoTransform( double * padfTransform );
+    CPLErr      GetGeoTransform( double * padfTransform ) override;
 
     static GDALDataset *Open( GDALOpenInfo * );
 };

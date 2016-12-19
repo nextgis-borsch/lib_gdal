@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id$
+ * $Id: avc_misc.c 36763 2016-12-09 22:10:55Z rouault $
  *
  * Name:     avc_misc.c
  * Project:  Arc/Info vector coverage (AVC)  BIN<->E00 conversion library
@@ -424,7 +424,7 @@ int  AVCPrintRealValue(char *pszBuf, size_t nBufLen, int nPrecision, AVCFileType
     static int numExpDigits=-1;
     int        nLen = 0;
 
-    /* WIN32 systems' printf for floating point output generates 3
+    /* WIN32 systems' printf() for floating point output generates 3
      * digits exponents (ex: 1.23E+012), but E00 files must have 2 digits
      * exponents (ex: 1.23E+12).
      * Run a test (only once per prg execution) to establish the number

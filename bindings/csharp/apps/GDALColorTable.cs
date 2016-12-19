@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: GDALColorTable.cs 35222 2016-08-28 06:06:11Z goatbar $
  *
  * Name:     GDALColorTable.cs
  * Project:  GDAL CSharp Interface

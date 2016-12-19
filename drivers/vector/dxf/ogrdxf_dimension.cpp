@@ -31,7 +31,7 @@
 #include "ogr_dxf.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrdxf_dimension.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 /************************************************************************/
 /*                         TranslateDIMENSION()                         */
@@ -316,7 +316,7 @@ the approach is as above in all these cases.
     poLabelFeature->SetGeometryDirectly( new OGRPoint( dfTextX, dfTextY ) );
 
     // Do we need to compute the dimension value?
-    if( osText.size() == 0 )
+    if( osText.empty() )
     {
         FormatDimension( osText, POINT_DIST( dfArrowX1, dfArrowY1,
                                              dfArrowX2, dfArrowY2 ) );

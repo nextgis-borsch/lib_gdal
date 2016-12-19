@@ -29,7 +29,7 @@
 #include "ogr_xlsx.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrxlsxdriver.cpp 35709 2016-10-13 07:21:06Z rouault $");
 
 extern "C" void RegisterOGRXLSX();
 

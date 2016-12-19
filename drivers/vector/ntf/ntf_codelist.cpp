@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ntf_codelist.cpp 35191 2016-08-24 01:33:06Z goatbar $");
 
 /************************************************************************/
 /*                             NTFCodeList                              */

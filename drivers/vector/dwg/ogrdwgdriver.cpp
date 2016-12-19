@@ -29,7 +29,7 @@
 #include "ogr_dwg.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrdwgdriver.cpp 35933 2016-10-25 16:46:26Z goatbar $");
 
 CPL_C_START
 void CPL_DLL RegisterOGRDWG();

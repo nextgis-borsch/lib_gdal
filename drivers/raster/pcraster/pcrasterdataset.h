@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: pcrasterdataset.h 36501 2016-11-25 14:09:24Z rouault $
  *
  * Project:  PCRaster Integration
  * Purpose:  PCRaster CSF 2.0 raster file driver declarations.
@@ -113,7 +113,7 @@ public:
   // CREATORS
   //----------------------------------------------------------------------------
 
-                   PCRasterDataset     (MAP* map);
+  explicit          PCRasterDataset     (MAP* map);
 
   /* virtual */    ~PCRasterDataset    ();
 
@@ -121,14 +121,14 @@ public:
   // MANIPULATORS
   //----------------------------------------------------------------------------
 
-  CPLErr           SetGeoTransform     (double* transform);
+  CPLErr           SetGeoTransform     (double* transform) override;
 
   //----------------------------------------------------------------------------
   // ACCESSORS
   //----------------------------------------------------------------------------
 
   MAP*             map                 () const;
-  CPLErr           GetGeoTransform     (double* transform);
+  CPLErr           GetGeoTransform     (double* transform) override;
   CSF_CR           cellRepresentation  () const;
   CSF_VS           valueScale          () const;
   double           defaultNoDataValue  () const;

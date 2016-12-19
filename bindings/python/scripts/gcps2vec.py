@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #******************************************************************************
-#  $Id$
+#  $Id: gcps2vec.py 33790 2016-03-26 12:42:12Z goatbar $
 #
 #  Project:  GDAL
 #  Purpose:  Convert GCPs to a point layer.

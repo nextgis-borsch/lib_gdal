@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrdodsdatasource.cpp 36182 2016-11-09 12:10:20Z rouault $");
 /************************************************************************/
 /*                         OGRDODSDataSource()                          */
 /************************************************************************/
@@ -99,7 +99,7 @@ int OGRDODSDataSource::Open( const char * pszNewName )
     }
 
     // Trim common requests.
-    int nLen = strlen(pszWrkURL);
+    int nLen = static_cast<int>(strlen(pszWrkURL));
     if( strcmp(pszWrkURL+nLen-4,".das") == 0 )
         pszWrkURL[nLen-4] = '\0';
     else if( strcmp(pszWrkURL+nLen-4,".dds") == 0 )

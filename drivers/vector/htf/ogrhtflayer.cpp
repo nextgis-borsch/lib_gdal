@@ -32,7 +32,7 @@
 #include "ogr_p.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrhtflayer.cpp 36415 2016-11-21 22:40:20Z rouault $");
 
 /************************************************************************/
 /*                            OGRHTFLayer()                             */
@@ -606,7 +606,7 @@ void OGRHTFLayer::SetExtent( double dfMinXIn, double dfMinYIn, double dfMaxXIn,
 /*                        OGRHTFMetadataLayer()                         */
 /************************************************************************/
 
-OGRHTFMetadataLayer::OGRHTFMetadataLayer(std::vector<CPLString> aosMDIn) :
+OGRHTFMetadataLayer::OGRHTFMetadataLayer(const std::vector<CPLString>& aosMDIn) :
     poFeatureDefn(new OGRFeatureDefn( "metadata" )),
     aosMD(aosMDIn),
     nNextFID(0)

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: cpl_vsi_virtual.h 36501 2016-11-25 14:09:24Z rouault $
  *
  * Project:  VSI Virtual File System
  * Purpose:  Declarations for classes related to the virtual filesystem.
@@ -42,6 +42,11 @@
 #include <map>
 #include <vector>
 #include <string>
+
+// To avoid aliasing to GetDiskFreeSpace to GetDiskFreeSpaceA on Windows
+#ifdef GetDiskFreeSpace
+#undef GetDiskFreeSpace
+#endif
 
 /************************************************************************/
 /*                           VSIVirtualHandle                           */
@@ -199,12 +204,12 @@ public:
     VSIArchiveFilesystemHandler();
     virtual ~VSIArchiveFilesystemHandler();
 
-    virtual int      Stat( const char *pszFilename, VSIStatBufL *pStatBuf, int nFlags );
-    virtual int      Unlink( const char *pszFilename );
-    virtual int      Rename( const char *oldpath, const char *newpath );
-    virtual int      Mkdir( const char *pszDirname, long nMode );
-    virtual int      Rmdir( const char *pszDirname );
-    virtual char   **ReadDirEx( const char *pszDirname, int nMaxFiles );
+    virtual int      Stat( const char *pszFilename, VSIStatBufL *pStatBuf, int nFlags ) CPL_OVERRIDE;
+    virtual int      Unlink( const char *pszFilename ) CPL_OVERRIDE;
+    virtual int      Rename( const char *oldpath, const char *newpath ) CPL_OVERRIDE;
+    virtual int      Mkdir( const char *pszDirname, long nMode ) CPL_OVERRIDE;
+    virtual int      Rmdir( const char *pszDirname ) CPL_OVERRIDE;
+    virtual char   **ReadDirEx( const char *pszDirname, int nMaxFiles ) CPL_OVERRIDE;
 
     virtual const VSIArchiveContent* GetContentOfArchive(const char* archiveFilename, VSIArchiveReader* poReader = NULL);
     virtual char* SplitFilename(const char *pszFilename, CPLString &osFileInArchive, int bCheckMainFileExists);

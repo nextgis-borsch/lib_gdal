@@ -32,7 +32,7 @@
 #include "math.h"
 #include "ogrdxf_polyline_smooth.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrdxf_polyline_smooth.cpp 36427 2016-11-22 12:56:01Z rouault $");
 
 /************************************************************************/
 /*                Local helper functions                                */
@@ -101,7 +101,7 @@ OGRGeometry* DXFSmoothPolyline::Tesselate() const
     std::vector<DXFSmoothPolylineVertex>::const_iterator oIter = m_vertices.begin();
     std::vector<DXFSmoothPolylineVertex>::const_iterator oEndIter = m_vertices.end();
 
-    oEndIter--;
+    --oEndIter;
 
     DXFSmoothPolylineVertex begin = *oIter;
 
@@ -110,7 +110,7 @@ OGRGeometry* DXFSmoothPolyline::Tesselate() const
 
     while(oIter != oEndIter)
     {
-        oIter++;
+        ++oIter;
         DXFSmoothPolylineVertex end = *oIter;
 
         const double len = GetLength(begin,end);
@@ -171,7 +171,7 @@ void DXFSmoothPolyline::EmitArc(
     const DXFSmoothPolylineVertex& end,
     double radius, double len, double bulge,
     OGRLineString* poLS,
-    double dfZ ) const
+    double dfZ )
 {
     assert(poLS);
 

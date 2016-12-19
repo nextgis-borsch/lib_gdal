@@ -35,7 +35,7 @@
 #include "gmlreaderp.h"
 #include "ogr_gml.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gfstemplate.cpp 36411 2016-11-21 22:03:48Z rouault $");
 
 /************************************************************************/
 /*                        GFSTemplateItem                               */
@@ -50,7 +50,7 @@ class GFSTemplateItem
     GFSTemplateItem *pNext;
 
   public:
-                    GFSTemplateItem( const char *pszName );
+    explicit        GFSTemplateItem( const char *pszName );
                     ~GFSTemplateItem();
     const char      *GetName() { return m_pszName; }
     void            Update( int b_has_geom );

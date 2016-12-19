@@ -49,7 +49,7 @@
 
 #include "rmfdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: rmflzw.cpp 36404 2016-11-21 17:08:18Z rouault $");
 
 // Code marks that there is no predecessor in the string
 static const GUInt32 NO_PRED = 0xFFFF;
@@ -153,7 +153,7 @@ int RMFDataset::LZWDecompress( const GByte* pabyIn, GUInt32 nSizeIn,
         if( bBitsleft )
         {
             iCode = ((*pabyIn++ & 0x0F) << 8) & 0xF00; nSizeIn--;
-            if( nSizeIn <= 0 )
+            if( nSizeIn == 0 )
                 break;
             iCode += *pabyIn++; nSizeIn--;
             bBitsleft = FALSE;
@@ -161,7 +161,7 @@ int RMFDataset::LZWDecompress( const GByte* pabyIn, GUInt32 nSizeIn,
         else
         {
             iCode = (*pabyIn++ << 4) & 0xFF0; nSizeIn--;
-            if( nSizeIn <= 0 )
+            if( nSizeIn == 0 )
                 break;
             iCode += (*pabyIn >> 4) & 0x00F;
             bBitsleft = TRUE;

@@ -37,7 +37,7 @@
 #include "../../ogr/ogrsf_frmts/mitab/mitab.h"
 #endif
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: grcdataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -67,8 +67,8 @@ class NWT_GRCDataset : public GDALPamDataset
     static GDALDataset *Open( GDALOpenInfo * );
     static int Identify( GDALOpenInfo * poOpenInfo );
 
-    CPLErr GetGeoTransform( double *padfTransform );
-    const char *GetProjectionRef();
+    CPLErr GetGeoTransform( double *padfTransform ) override;
+    const char *GetProjectionRef() override;
 };
 
 /************************************************************************/
@@ -86,12 +86,12 @@ class NWT_GRCRasterBand : public GDALPamRasterBand
     NWT_GRCRasterBand( NWT_GRCDataset *, int );
     virtual ~NWT_GRCRasterBand();
 
-    virtual CPLErr IReadBlock( int, int, void * );
-    virtual double GetNoDataValue( int *pbSuccess );
+    virtual CPLErr IReadBlock( int, int, void * ) override;
+    virtual double GetNoDataValue( int *pbSuccess ) override;
 
-    virtual GDALColorInterp GetColorInterpretation();
-    virtual char **GetCategoryNames();
-    virtual GDALColorTable *GetColorTable();
+    virtual GDALColorInterp GetColorInterpretation() override;
+    virtual char **GetCategoryNames() override;
+    virtual GDALColorTable *GetColorTable() override;
 };
 
 /************************************************************************/
@@ -247,7 +247,9 @@ NWT_GRCDataset::NWT_GRCDataset() :
     papszCategories(NULL),
     pszProjection(NULL),
     poColorTable(NULL)
-{}
+{
+    memset(abyHeader, 0, sizeof(abyHeader) );
+}
 
 /************************************************************************/
 /*                            ~NWT_GRCDataset()                         */

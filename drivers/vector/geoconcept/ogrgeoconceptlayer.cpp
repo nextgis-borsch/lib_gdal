@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "ogrgeoconceptlayer.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgeoconceptlayer.cpp 35933 2016-10-25 16:46:26Z goatbar $");
 
 /************************************************************************/
 /*                         OGRGeoconceptLayer()                         */

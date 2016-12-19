@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "ogr_idb.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogridbselectlayer.cpp 34819 2016-07-28 22:32:18Z goatbar $");
 
 /************************************************************************/
 /*                          OGRIDBSelectLayer()                         */

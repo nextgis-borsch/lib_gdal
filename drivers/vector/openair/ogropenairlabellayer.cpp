@@ -32,7 +32,7 @@
 #include "ogr_p.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogropenairlabellayer.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 /************************************************************************/
 /*                      OGROpenAirLabelLayer()                          */
@@ -130,7 +130,7 @@ OGRFeature *OGROpenAirLabelLayer::GetNextRawFeature()
 
         if (STARTS_WITH_CI(pszLine, "AC "))
         {
-            if (osCLASS.size() != 0)
+            if (!osCLASS.empty())
             {
                 osNAME = "";
                 osCEILING = "";

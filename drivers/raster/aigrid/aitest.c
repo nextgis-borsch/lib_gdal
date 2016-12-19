@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: aitest.c 36393 2016-11-21 14:25:42Z rouault $
  *
  * Project:  Arc/Info Binary Grid Translator
  * Purpose:  Test mainline for examining AIGrid files.
@@ -29,7 +29,7 @@
 
 #include "aigrid.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: aitest.c 36393 2016-11-21 14:25:42Z rouault $");
 
 /************************************************************************/
 /*                             DumpMagic()                              */
@@ -96,7 +96,7 @@ static void DumpMagic( AIGInfo_t * psInfo, int bVerbose )
 
         if( bReport )
         {
-            printf( " %02x %5d %5d @ %d %s\n", byMagic, i,
+            printf( " %02x %5d %5d @ %u %s\n", byMagic, i,
                     psTInfo->panBlockSize[i],
                     psTInfo->panBlockOffset[i],
                     pszMessage );

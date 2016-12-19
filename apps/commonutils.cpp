@@ -27,10 +27,17 @@
  ****************************************************************************/
 
 #include "commonutils.h"
+
+#include <cstdio>
+#include <cstring>
+
+#include <string>
+
+#include "cpl_conv.h"
 #include "cpl_string.h"
 #include "gdal.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: commonutils.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 /* -------------------------------------------------------------------- */
 /*                   DoesDriverHandleExtension()                        */
@@ -85,12 +92,12 @@ void CheckExtensionConsistency(const char* pszDestFilename,
             if( hDriver != hThisDrv &&
                 DoesDriverHandleExtension(hDriver, osExt) )
             {
-                if (osConflictingDriverList.size())
+                if (!osConflictingDriverList.empty() )
                     osConflictingDriverList += ", ";
                 osConflictingDriverList += GDALGetDriverShortName(hDriver);
             }
         }
-        if (osConflictingDriverList.size())
+        if (!osConflictingDriverList.empty() )
         {
             fprintf(
                 stderr,

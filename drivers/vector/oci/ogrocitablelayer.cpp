@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrocitablelayer.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 static int nDiscarded = 0;
 static int nHits = 0;
@@ -2185,15 +2185,15 @@ void OGROCITableLayer::CreateSpatialIndex()
             GetGeomType() != wkbUnknown;
 
         CPLString osParams(CSLFetchNameValueDef(papszOptions,"INDEX_PARAMETERS", ""));
-        if( bAddLayerGType || osParams.size() != 0 )
+        if( bAddLayerGType || !osParams.empty() )
         {
             sIndexCmd.Append( " PARAMETERS( '" );
-            if( osParams.size() != 0 )
+            if( !osParams.empty() )
                 sIndexCmd.Append( osParams.c_str() );
             if( bAddLayerGType &&
                 osParams.ifind("LAYER_GTYPE") == std::string::npos )
             {
-                if( osParams.size() != 0 )
+                if( !osParams.empty() )
                     sIndexCmd.Append( ", " );
                 sIndexCmd.Append( "LAYER_GTYPE=" );
                 if( wkbFlatten(GetGeomType()) == wkbPoint )

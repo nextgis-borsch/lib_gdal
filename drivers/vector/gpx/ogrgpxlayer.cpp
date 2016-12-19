@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgpxlayer.cpp 36350 2016-11-20 22:07:17Z rouault $");
 
 static const int FLD_TRACK_FID = 0;
 static const int FLD_TRACK_SEG_ID = 1;
@@ -59,6 +59,8 @@ OGRGPXLayer::OGRGPXLayer( const char* pszFilename,
                           GPXGeometryType gpxGeomTypeIn,
                           OGRGPXDataSource* poDSIn,
                           int bWriteModeIn ) :
+    poDS( poDSIn ),
+    gpxGeomType( gpxGeomTypeIn ),
     bWriteMode(CPL_TO_BOOL(bWriteModeIn)),
     nNextFID(0),
 #ifdef HAVE_EXPAT
@@ -95,9 +97,6 @@ OGRGPXLayer::OGRGPXLayer( const char* pszFilename,
     nDataHandlerCounter(0)
 #endif
 {
-    poDS = poDSIn;
-    gpxGeomType = gpxGeomTypeIn;
-
 #ifdef HAVE_EXPAT
     const char* gpxVersion = poDS->GetVersion();
 #endif

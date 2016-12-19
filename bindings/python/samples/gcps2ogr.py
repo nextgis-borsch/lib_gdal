@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #******************************************************************************
-#  $Id$
+#  $Id: gcps2ogr.py 31957 2015-12-02 12:44:54Z goatbar $
 #
 #  Project:  GDAL
 #  Purpose:  Outputs GDAL GCPs as OGR points

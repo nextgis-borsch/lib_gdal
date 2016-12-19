@@ -83,7 +83,7 @@
 #include <ctype.h>      /* toupper() */
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: mitab_indfile.cpp 36657 2016-12-03 19:18:54Z rouault $");
 
 /*=====================================================================
  *                      class TABINDFile
@@ -1461,7 +1461,7 @@ int TABINDNode::AddEntry(GByte *pKeyValue, GInt32 nRecordNo,
 
     /*-----------------------------------------------------------------
      * If I'm the root node, then do a FindFirst() to init all the nodes
-     * and to make all of them point ot the insertion point.
+     * and to make all of them point to the insertion point.
      *----------------------------------------------------------------*/
     if (m_poParentNodeRef == NULL && !bAddInThisNodeOnly)
     {

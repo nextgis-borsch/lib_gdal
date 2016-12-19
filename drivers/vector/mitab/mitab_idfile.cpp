@@ -63,7 +63,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: mitab_idfile.cpp 36461 2016-11-23 12:05:14Z rouault $");
 
 /*=====================================================================
  *                      class TABIDFile
@@ -102,6 +102,7 @@ TABIDFile::~TABIDFile()
 
 int TABIDFile::Open(const char *pszFname, const char* pszAccess)
 {
+    // cppcheck-suppress nullPointer
     if( STARTS_WITH_CI(pszAccess, "r") )
         return Open(pszFname, TABRead);
     else if( STARTS_WITH_CI(pszAccess, "w") )

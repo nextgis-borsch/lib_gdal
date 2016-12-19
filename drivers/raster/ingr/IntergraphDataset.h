@@ -1,5 +1,5 @@
 /*****************************************************************************
- * $Id$
+ * $Id: IntergraphDataset.h 36501 2016-11-25 14:09:24Z rouault $
  *
  * Project:  Intergraph Raster Format support
  * Purpose:  Read selected types of Intergraph Raster Format
@@ -68,7 +68,7 @@ public:
         GDALProgressFunc pfnProgress,
         void * pProgressData );
 
-    virtual CPLErr GetGeoTransform( double *padfTransform );
-    virtual CPLErr SetGeoTransform( double *padfTransform );
-    virtual CPLErr SetProjection( const char *pszProjString );
+    virtual CPLErr GetGeoTransform( double *padfTransform ) override;
+    virtual CPLErr SetGeoTransform( double *padfTransform ) override;
+    virtual CPLErr SetProjection( const char *pszProjString ) override;
 };

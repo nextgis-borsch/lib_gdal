@@ -29,7 +29,7 @@
 #include "cpl_conv.h"
 #include "ogr_mssqlspatial.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrmssqlgeometryvalidator.cpp 35675 2016-10-10 04:57:58Z goatbar $");
 
 /************************************************************************/
 /*                   OGRMSSQLGeometryValidator()                        */

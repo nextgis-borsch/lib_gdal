@@ -37,7 +37,7 @@
 #include "gdal_pam.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: sagadataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 #ifndef INT_MAX
 # define INT_MAX 2147483647
@@ -88,12 +88,12 @@ class SAGADataset : public GDALPamDataset
                                     GDALProgressFunc pfnProgress,
                                     void *pProgressData );
 
-    virtual const char *GetProjectionRef(void);
-    virtual CPLErr SetProjection( const char * );
-    virtual char **GetFileList();
+    virtual const char *GetProjectionRef(void) override;
+    virtual CPLErr SetProjection( const char * ) override;
+    virtual char **GetFileList() override;
 
-    CPLErr GetGeoTransform( double *padfGeoTransform );
-    CPLErr SetGeoTransform( double *padfGeoTransform );
+    CPLErr GetGeoTransform( double *padfGeoTransform ) override;
+    CPLErr SetGeoTransform( double *padfGeoTransform ) override;
 };
 
 /************************************************************************/
@@ -121,10 +121,10 @@ class SAGARasterBand : public GDALPamRasterBand
 public:
     SAGARasterBand( SAGADataset *, int );
 
-    CPLErr          IReadBlock( int, int, void * );
-    CPLErr          IWriteBlock( int, int, void * );
+    CPLErr          IReadBlock( int, int, void * ) override;
+    CPLErr          IWriteBlock( int, int, void * ) override;
 
-    double          GetNoDataValue( int *pbSuccess = NULL );
+    double          GetNoDataValue( int *pbSuccess = NULL ) override;
 };
 
 /************************************************************************/

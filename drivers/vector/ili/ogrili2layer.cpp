@@ -31,14 +31,14 @@
 #include "cpl_string.h"
 #include "ogr_ili2.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrili2layer.cpp 36415 2016-11-21 22:40:20Z rouault $");
 
 /************************************************************************/
 /*                           OGRILI2Layer()                              */
 /************************************************************************/
 
 OGRILI2Layer::OGRILI2Layer( OGRFeatureDefn* poFeatureDefnIn,
-                            GeomFieldInfos oGeomFieldInfosIn,
+                            const GeomFieldInfos& oGeomFieldInfosIn,
                             OGRILI2DataSource *poDSIn ) :
     poFeatureDefn(poFeatureDefnIn),
     oGeomFieldInfos(oGeomFieldInfosIn),

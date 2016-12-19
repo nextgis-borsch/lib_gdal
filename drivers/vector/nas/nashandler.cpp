@@ -33,7 +33,7 @@
 #include "cpl_string.h"
 #include "ogr_xerces.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: nashandler.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 /*
   Update modes:
@@ -207,7 +207,7 @@ void NASHandler::startElement( const XMLCh* const /* uri */,
         strcpy( m_pszGeometry+m_nGeomLen, "<" );
         strcpy( m_pszGeometry+m_nGeomLen+1, m_osElementName );
 
-        if( osAttributes.size() > 0 )
+        if( !osAttributes.empty() )
         {
             strcat( m_pszGeometry+m_nGeomLen, " " );
             strcat( m_pszGeometry+m_nGeomLen, osAttributes );

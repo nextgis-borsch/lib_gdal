@@ -33,7 +33,7 @@
 #include "cpl_minixml.h"
 #include <vector>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdallocationinfo.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 /******************************************************************************/
 /*! \page gdallocationinfo gdallocationinfo
@@ -330,7 +330,7 @@ int main( int argc, char ** argv )
 /* -------------------------------------------------------------------- */
 /*      If no bands were requested, we will query them all.             */
 /* -------------------------------------------------------------------- */
-    if( anBandList.size() == 0 )
+    if( anBandList.empty() )
     {
         for( int i = 0; i < GDALGetRasterCount( hSrcDS ); i++ )
             anBandList.push_back( i+1 );

@@ -31,7 +31,7 @@
 #include "ogr_api.h"
 #include "ograpispy.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrdatasource.cpp 35172 2016-08-21 20:33:08Z goatbar $");
 
 /************************************************************************/
 /*                           ~OGRDataSource()                           */

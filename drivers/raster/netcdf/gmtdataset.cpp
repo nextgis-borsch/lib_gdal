@@ -34,7 +34,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gmtdataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 extern CPLMutex *hNCMutex; /* shared with netcdf. See netcdfdataset.cpp */
 
@@ -64,7 +64,7 @@ class GMTDataset : public GDALPamDataset
 
     static GDALDataset *Open( GDALOpenInfo * );
 
-    CPLErr      GetGeoTransform( double * padfTransform );
+    CPLErr      GetGeoTransform( double * padfTransform ) override;
 };
 
 /************************************************************************/
@@ -83,7 +83,7 @@ class GMTRasterBand : public GDALPamRasterBand
     GMTRasterBand( GMTDataset *poDS, int nZId, int nBand );
     virtual ~GMTRasterBand() {}
 
-    virtual CPLErr IReadBlock( int, int, void * );
+    virtual CPLErr IReadBlock( int, int, void * ) override;
 };
 
 /************************************************************************/

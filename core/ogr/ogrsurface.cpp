@@ -26,10 +26,11 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#include "cpl_port.h"
 #include "ogr_geometry.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrsurface.cpp 36324 2016-11-20 02:28:41Z goatbar $");
 
 /**
  * \fn double OGRSurface::get_Area() const;
@@ -48,7 +49,8 @@ CPL_CVSID("$Id$");
 /**
  * \fn OGRErr OGRSurface::PointOnSurface( OGRPoint * poPoint ) const;
  *
- * \brief This method relates to the SFCOM ISurface::get_PointOnSurface() method.
+ * \brief This method relates to the SFCOM
+ * ISurface::get_PointOnSurface() method.
  *
  * NOTE: Only implemented when GEOS included in build.
  *

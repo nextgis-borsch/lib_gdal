@@ -105,7 +105,7 @@
 #include "ogr_geometry.h"
 #include "swq.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: swq_parser.cpp 35336 2016-09-05 20:28:44Z goatbar $");
 
 #define YYSTYPE  swq_expr_node*
 

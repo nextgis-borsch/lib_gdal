@@ -28,7 +28,7 @@
 
 #include "gh5_convenience.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gh5_convenience.cpp 34593 2016-07-07 22:33:32Z goatbar $");
 
 /************************************************************************/
 /*                    GH5_FetchAttribute(CPLString)                     */

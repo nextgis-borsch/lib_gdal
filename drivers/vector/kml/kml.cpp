@@ -37,7 +37,7 @@
 #include <iostream>
 #include <string>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: kml.cpp 35775 2016-10-17 00:43:44Z goatbar $");
 
 KML::KML() :
     poTrunk_(NULL),

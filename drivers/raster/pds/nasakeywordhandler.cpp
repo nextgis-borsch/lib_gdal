@@ -52,7 +52,7 @@
 #include "cpl_string.h"
 #include "nasakeywordhandler.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: nasakeywordhandler.cpp 35264 2016-08-31 15:06:28Z goatbar $");
 
 /************************************************************************/
 /* ==================================================================== */

@@ -56,7 +56,7 @@
 #include <algorithm>
 #include <vector>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: marfa_dataset.cpp 36711 2016-12-06 00:19:18Z rouault $");
 
 using std::vector;
 using std::string;
@@ -80,6 +80,7 @@ GDALMRFDataset::GDALMRFDataset() :
     hasVersions(FALSE),
     verCount(0),
     bCrystalized(FALSE), // Assume not in create mode
+    spacing(0),
     poSrcDS(NULL),
     level(-1),
     cds(NULL),
@@ -294,10 +295,10 @@ CPLErr GDALMRFDataset::IBuildOverviews(
                 CPLDestroyXMLNode(config);
                 config = NULL;
             }
-            catch (CPLErr e) {
+            catch (const CPLErr& ) {
                 if (config)
                     CPLDestroyXMLNode(config);
-                throw e; // Rethrow
+                throw; // Rethrow
             }
 
             // To avoid issues with blacks overviews, if the user asked to
@@ -399,7 +400,7 @@ CPLErr GDALMRFDataset::IBuildOverviews(
             }
         }
     }
-    catch (CPLErr e) {
+    catch (const CPLErr& e) {
         eErr = e;
     }
 
@@ -448,9 +449,21 @@ int GDALMRFDataset::Identify(GDALOpenInfo *poOpenInfo)
     CPLString fn(poOpenInfo->pszFilename);
     if (fn.find(":MRF:") != string::npos)
         return TRUE;
-    if (poOpenInfo->nHeaderBytes >= 10)
-        fn = (char *)poOpenInfo->pabyHeader;
-    return EQUALN(fn.c_str(), "<MRF_META>", 10);
+
+    if (poOpenInfo->nHeaderBytes < 10)
+        return FALSE;
+
+    const char *pszHeader = reinterpret_cast<char *>(poOpenInfo->pabyHeader);
+    fn.assign(pszHeader, pszHeader + poOpenInfo->nHeaderBytes);
+    if (STARTS_WITH(fn, "<MRF_META>"))
+        return TRUE;
+
+#if defined(LERC) // Could be single LERC tile
+    if (LERC_Band::IsLerc(fn))
+        return TRUE;
+#endif
+
+    return FALSE;
 }
 
 /**
@@ -514,6 +527,9 @@ static int getnum(const vector<string> &theStringVector, const char prefix, int 
 GDALDataset *GDALMRFDataset::Open(GDALOpenInfo *poOpenInfo)
 
 {
+    if( !Identify(poOpenInfo) )
+        return NULL;
+
     CPLXMLNode *config = NULL;
     CPLErr ret = CE_None;
     const char* pszFileName = poOpenInfo->pszFilename;
@@ -523,10 +539,18 @@ GDALDataset *GDALMRFDataset::Open(GDALOpenInfo *poOpenInfo)
     int zslice = 0;
     string fn; // Used to parse and adjust the file name
 
-    // Different ways to open it
-    if (poOpenInfo->nHeaderBytes >= 10 &&
-        EQUALN((const char *)poOpenInfo->pabyHeader, "<MRF_META>", 10)) // Regular file name
-        config = CPLParseXMLFile(pszFileName);
+    // Different ways to open an MRF
+    if (poOpenInfo->nHeaderBytes >= 10) {
+
+        const char *pszHeader = reinterpret_cast<char *>(poOpenInfo->pabyHeader);
+        if (STARTS_WITH(pszHeader, "<MRF_META>")) // Regular file name
+            config = CPLParseXMLFile(pszFileName);
+#if defined(LERC)
+        else
+            config = LERC_Band::GetMRFConfig(poOpenInfo);
+#endif
+
+    } 
     else {
         if (EQUALN(pszFileName, "<MRF_META>", 10)) // Content as file name
             config = CPLParseXMLString(pszFileName);
@@ -607,10 +631,10 @@ CPLErr GDALMRFDataset::SetVersion(int version) {
     }
     // Size of one version index
     for (int bcount = 1; bcount <= nBands; bcount++) {
-        GDALMRFRasterBand *srcband = (GDALMRFRasterBand *)GetRasterBand(bcount);
+        GDALMRFRasterBand *srcband = reinterpret_cast<GDALMRFRasterBand *>(GetRasterBand(bcount));
         srcband->img.idxoffset += idxSize*verCount;
         for (int l = 0; l < srcband->GetOverviewCount(); l++) {
-            GDALMRFRasterBand *band = (GDALMRFRasterBand *)srcband->GetOverview(l);
+            GDALMRFRasterBand *band = reinterpret_cast<GDALMRFRasterBand *>(srcband->GetOverview(l));
             if( band != NULL )
                 band->img.idxoffset += idxSize*verCount;
         }
@@ -626,7 +650,8 @@ CPLErr GDALMRFDataset::LevelInit(const int l) {
         return CE_Failure;
     }
 
-    GDALMRFRasterBand *srcband = (GDALMRFRasterBand *)cds->GetRasterBand(1)->GetOverview(l);
+    GDALMRFRasterBand *srcband = 
+        reinterpret_cast<GDALMRFRasterBand *>(cds->GetRasterBand(1)->GetOverview(l));
 
     // Copy the sizes from this level
     full = srcband->img;
@@ -649,11 +674,9 @@ CPLErr GDALMRFDataset::LevelInit(const int l) {
     nBands = current.size.c;
 
     // Add the bands, copy constructor so they can be closed independently
-    for (int i = 1; i <= nBands; i++) {
-        GDALMRFLRasterBand *band = new GDALMRFLRasterBand((GDALMRFRasterBand *)
-            cds->GetRasterBand(i)->GetOverview(l));
-        SetBand(i, band);
-    }
+    for (int i = 1; i <= nBands; i++)
+        SetBand(i, new GDALMRFLRasterBand(reinterpret_cast<GDALMRFRasterBand *>
+                                            (cds->GetRasterBand(i)->GetOverview(l))));
     return CE_None;
 }
 
@@ -768,7 +791,6 @@ static CPLErr Init_Raster(ILImage &image, GDALMRFDataset *ds, CPLXMLNode *defima
         CPLString pModel = CPLGetXMLValue(node, "Model", "RGB");
 
         if ((entries > 0) && (entries < 257)) {
-            int start_idx, end_idx;
             GDALColorEntry ce_start = { 0, 0, 0, 255 }, ce_end = { 0, 0, 0, 255 };
 
             // Create it and initialize it to nothing
@@ -779,7 +801,7 @@ static CPLErr Init_Raster(ILImage &image, GDALMRFDataset *ds, CPLXMLNode *defima
             if (p) {
                 // Initialize the first entry
                 ce_start = GetXMLColorEntry(p);
-                start_idx = static_cast<int>(getXMLNum(p, "idx", 0));
+                int start_idx = static_cast<int>(getXMLNum(p, "idx", 0));
                 if (start_idx < 0) {
                     CPLError(CE_Failure, CPLE_AppDefined,
                         "GDAL MRF: Palette index %d not allowed", start_idx);
@@ -790,17 +812,16 @@ static CPLErr Init_Raster(ILImage &image, GDALMRFDataset *ds, CPLXMLNode *defima
                 while (NULL != (p = SearchXMLSiblings(p, "Entry"))) {
                     // For every entry, create a ramp
                     ce_end = GetXMLColorEntry(p);
-                    end_idx = static_cast<int>(getXMLNum(p, "idx", start_idx + 1));
+                    int end_idx = static_cast<int>(getXMLNum(p, "idx", start_idx + 1));
                     if ((end_idx <= start_idx) || (start_idx >= entries)) {
                         CPLError(CE_Failure, CPLE_AppDefined,
                             "GDAL MRF: Index Error at index %d", end_idx);
                         delete poColorTable;
                         return CE_Failure;
                     }
-                    poColorTable->CreateColorRamp(start_idx, &ce_start,
-                        end_idx, &ce_end);
-ce_start = ce_end;
-start_idx = end_idx;
+                    poColorTable->CreateColorRamp(start_idx, &ce_start, end_idx, &ce_end);
+                    ce_start = ce_end;
+                    start_idx = end_idx;
                 }
             }
 
@@ -923,6 +944,10 @@ VSILFILE *GDALMRFDataset::IdxFP() {
     if (ifp.FP != NULL)
         return ifp.FP;
 
+    // If name starts with '(' it is not a real file name
+    if (current.idxfname[0] == '(')
+        return NULL;
+
     const char *mode = "rb";
     ifp.acc = GF_Read;
 
@@ -973,6 +998,10 @@ VSILFILE *GDALMRFDataset::IdxFP() {
             "GDAL MRF: Timeout on fetching cloned index file %s\n", current.idxfname.c_str());
         return NULL;
     }
+
+    // If single tile, and no index file, let the caller figure it out
+    if (IsSingleTile())
+        return NULL;
 
     // Error if this is not a caching MRF
     if (source.empty()) {
@@ -1092,6 +1121,8 @@ CPLXMLNode * GDALMRFDataset::BuildConfig()
         CPLCreateXMLElementAndValue(raster, "DataFile", full.datfname.c_str());
     if (full.idxfname != getFname(GetFname(), ".idx"))
         CPLCreateXMLElementAndValue(raster, "IndexFile", full.idxfname.c_str());
+    if (spacing != 0)
+        XMLSetAttributeVal(raster, "Spacing", static_cast<double>(spacing), "%.0f");
 
     XMLSetAttributeVal(raster, "Size", full.size, "%.0f");
     XMLSetAttributeVal(raster, "PageSize", full.pagesize, "%.0f");
@@ -1106,7 +1137,7 @@ CPLXMLNode * GDALMRFDataset::BuildConfig()
     if (!photometric.empty())
         CPLCreateXMLElementAndValue(raster, "Photometric", photometric);
 
-    if (vNoData.size() || vMin.size() || vMax.size()) {
+    if (!vNoData.empty() || !vMin.empty() || !vMax.empty() ) {
         CPLXMLNode *values = CPLCreateXMLNode(raster, CXT_Element, "DataValues");
         XMLSetAttributeVal(values, "NoData", vNoData);
         XMLSetAttributeVal(values, "min", vMin);
@@ -1171,7 +1202,7 @@ CPLXMLNode * GDALMRFDataset::BuildConfig()
     if (pszProj && (!EQUAL(pszProj, "")))
         CPLCreateXMLElementAndValue(gtags, "Projection", pszProj);
 
-    if (optlist.size()) {
+    if ( optlist.Count() != 0 ) {
         CPLString options;
         for (int i = 0; i < optlist.size(); i++) {
             options += optlist[i];
@@ -1202,6 +1233,7 @@ CPLErr GDALMRFDataset::Initialize(CPLXMLNode *config)
 
     hasVersions = on(CPLGetXMLValue(config, "Raster.versioned", "no"));
     mp_safe = on(CPLGetXMLValue(config, "Raster.mp_safe", "no"));
+    spacing = atoi(CPLGetXMLValue(config, "Raster.Spacing", "0"));
 
     Quality = full.quality;
     if (CE_None != ret)
@@ -1312,7 +1344,7 @@ CPLErr GDALMRFDataset::Initialize(CPLXMLNode *config)
             ci = GCI_Undefined;
 
         // New style
-        if (photometric.size()) {
+        if (!photometric.empty() ) {
             if ("MULTISPECTRAL" == photometric)
                 ci = GCI_Undefined;
         }
@@ -1427,7 +1459,7 @@ GIntBig GDALMRFDataset::AddOverviews(int scaleIn) {
 
         // Create and register the the overviews for each band
         for (int i = 1; i <= nBands; i++) {
-            GDALMRFRasterBand *b = (GDALMRFRasterBand *)GetRasterBand(i);
+            GDALMRFRasterBand *b = reinterpret_cast<GDALMRFRasterBand *>(GetRasterBand(i));
             if (!(b->GetOverview(static_cast<int>(img.size.l) - 1)))
                 b->AddOverview(newMRFRasterBand(this, img, i, static_cast<int>(img.size.l)));
         }
@@ -1613,6 +1645,9 @@ void GDALMRFDataset::ProcessCreateOptions(char **papszOptions)
     val = opt.FetchNameValue("INDEXNAME");
     if (val) img.idxfname = val;
 
+    val = opt.FetchNameValue("SPACING");
+    if (val) spacing = atoi(val);
+
     optlist.Assign(CSLTokenizeString2(opt.FetchNameValue("OPTIONS"),
         " \t\n\r", CSLT_STRIPLEADSPACES | CSLT_STRIPENDSPACES));
 
@@ -1696,7 +1731,7 @@ GDALMRFDataset::Create(const char * pszName,
         poDS->eAccess = GA_Update;
     }
 
-    catch (CPLString e) {
+    catch (const CPLString& e) {
         CPLError(CE_Failure, CPLE_OpenFailed, "%s", e.c_str());
         delete poDS;
         return NULL;
@@ -1790,6 +1825,7 @@ CPLErr GDALMRFDataset::WriteTile(void *buff, GUIntBig infooffset, GUIntBig size)
     if (l_ifp == NULL || l_dfp == NULL)
         return CE_Failure;
 
+    // If it has versions, might need to start a new one
     if (hasVersions) {
         int new_version = false; // Assume no need to build new version
         int new_tile = false;
@@ -1798,7 +1834,7 @@ CPLErr GDALMRFDataset::WriteTile(void *buff, GUIntBig infooffset, GUIntBig size)
         VSIFSeekL(l_ifp, infooffset, SEEK_SET);
         VSIFReadL(&tinfo, 1, sizeof(ILIdx), l_ifp);
 
-        if (verCount != 0) { // We have at least two versions before we test buffers
+        if (verCount != 0) { // We need at least two versions before we test buffers
             ILIdx prevtinfo = { 0, 0 };
 
             // Read the previous one
@@ -1848,11 +1884,30 @@ CPLErr GDALMRFDataset::WriteTile(void *buff, GUIntBig infooffset, GUIntBig size)
     tinfo.size = net64(size);
 
     if (size) do {
+
         // These statements are the critical MP section for the data file
         VSIFSeekL(l_dfp, 0, SEEK_END);
         GUIntBig offset = VSIFTellL(l_dfp);
+
+        if( spacing != 0 )
+        {
+            // This should not be true in MP safe mode.
+            // Use the same buffer, MRF doesn't care about the spacing content.
+            // TODO(lplesea): Make sure size doesn't overflow.
+            const int pad =
+                static_cast<int>(size) >= spacing
+                ? spacing
+                : static_cast<int>(size);
+            if( pad != spacing )
+                CPLError(CE_Warning, CPLE_FileIO,
+                         "MRF spacing failed, check the output");
+            offset += pad;
+            VSIFWriteL(buff, 1, spacing, l_dfp);
+        }
+
         if (static_cast<size_t>(size) != VSIFWriteL(buff, 1, static_cast<size_t>(size), l_dfp))
             ret = CE_Failure;
+        // End of critical section
 
         tinfo.offset = net64(offset);
         //
@@ -1903,6 +1958,13 @@ CPLErr GDALMRFDataset::SetGeoTransform(double *gt)
     return CE_Failure;
 }
 
+bool GDALMRFDataset::IsSingleTile()
+{
+    if (current.pagecount.l != 1 || !source.empty() || NULL == DataFP())
+        return FALSE;
+    return 0 == reinterpret_cast<GDALMRFRasterBand *>(GetRasterBand(1))->GetOverviewCount();
+}
+
 /*
 *  Returns 0,1,0,0,0,1 even if it was not set
 */
@@ -1926,10 +1988,22 @@ CPLErr GDALMRFDataset::ReadTileIdx(ILIdx &tinfo, const ILSize &pos, const ILImag
 
 {
     VSILFILE *l_ifp = IdxFP();
+
     GIntBig offset = bias + IdxOffset(pos, img);
-    if (l_ifp == NULL && img.comp == IL_NONE) {
+    if (l_ifp == NULL && img.comp == IL_NONE ) {
         tinfo.size = current.pageSizeBytes;
         tinfo.offset = offset * tinfo.size;
+        return CE_None;
+    }
+
+    if (l_ifp == NULL && IsSingleTile()) {
+        tinfo.offset = 0;
+        VSILFILE *l_dfp = DataFP(); // IsSingleTile() checks that fp is valid
+        VSIFSeekL(l_dfp, 0, SEEK_END);
+        tinfo.size = VSIFTellL(l_dfp);
+
+        // It should be less than the pagebuffer
+        tinfo.size = std::min(tinfo.size, static_cast<GIntBig>(pbsize));
         return CE_None;
     }
 
@@ -1987,7 +2061,7 @@ CPLErr GDALMRFDataset::ReadTileIdx(ILIdx &tinfo, const ILSize &pos, const ILImag
     }
 
     // Mark the empty records as checked, by making the offset non-zero
-    for (vector<ILIdx>::iterator it = buf.begin(); it != buf.end(); it++) {
+    for (vector<ILIdx>::iterator it = buf.begin(); it != buf.end(); ++it) {
         if (it->offset == 0 && it->size == 0)
             it->offset = net64(1);
     }

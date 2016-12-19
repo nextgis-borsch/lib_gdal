@@ -35,7 +35,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: rasterlitedataset.cpp 36763 2016-12-09 22:10:55Z rouault $");
 
 /************************************************************************/
 /*                        RasterliteOpenSQLiteDB()                      */
@@ -127,7 +127,7 @@ CPLErr RasterliteBand::IReadBlock( int nBlockXOff, int nBlockYOff, void * pImage
 #ifdef RASTERLITE_DEBUG
     if (nBand == 1)
     {
-        printf("nBlockXOff = %d, nBlockYOff = %d, nBlockXSize = %d, nBlockYSize = %d\n"
+        printf("nBlockXOff = %d, nBlockYOff = %d, nBlockXSize = %d, nBlockYSize = %d\n" /*ok*/
                "minx=%.15f miny=%.15f maxx=%.15f maxy=%.15f\n",
                 nBlockXOff, nBlockYOff, nBlockXSize, nBlockYSize, minx, miny, maxx, maxy);
     }
@@ -157,7 +157,7 @@ CPLErr RasterliteBand::IReadBlock( int nBlockXOff, int nBlockYOff, void * pImage
 #ifdef RASTERLITE_DEBUG
     if (nBand == 1)
     {
-        printf("nTiles = %d\n", static_cast<int>(
+        printf("nTiles = %d\n", static_cast<int>(/*ok*/
             OGR_L_GetFeatureCount(hSQLLyr, TRUE) ));
     }
 #endif
@@ -226,7 +226,7 @@ CPLErr RasterliteBand::IReadBlock( int nBlockXOff, int nBlockYOff, void * pImage
 #ifdef RASTERLITE_DEBUG
         if (nBand == 1)
         {
-            printf("id = %d, minx=%.15f miny=%.15f maxx=%.15f maxy=%.15f\n"
+            printf("id = %d, minx=%.15f miny=%.15f maxx=%.15f maxy=%.15f\n"/*ok*/
                    "nDstXOff = %d, nDstYOff = %d, nSrcXOff = %d, nSrcYOff = %d, "
                    "nReqXSize=%d, nReqYSize=%d\n",
                    nTileId,
@@ -243,7 +243,7 @@ CPLErr RasterliteBand::IReadBlock( int nBlockXOff, int nBlockYOff, void * pImage
 #ifdef RASTERLITE_DEBUG
             if (nBand == 1)
             {
-                printf("id = %d, selected !\n",  nTileId);
+                printf("id = %d, selected !\n",  nTileId);/*ok*/
             }
 #endif
             int nDataSize = 0;
@@ -474,7 +474,7 @@ CPLErr RasterliteBand::IReadBlock( int nBlockXOff, int nBlockYOff, void * pImage
 #ifdef RASTERLITE_DEBUG
             if (nBand == 1)
             {
-                printf("id = %d, NOT selected !\n",  nTileId);
+                printf("id = %d, NOT selected !\n",  nTileId);/*ok*/
             }
 #endif
         }
@@ -490,7 +490,7 @@ CPLErr RasterliteBand::IReadBlock( int nBlockXOff, int nBlockYOff, void * pImage
 
 #ifdef RASTERLITE_DEBUG
     if (nBand == 1)
-        printf("\n");
+        printf("\n");/*ok*/
 #endif
 
     return eErr;
@@ -601,7 +601,7 @@ RasterliteDataset::RasterliteDataset() :
     bCheckForExistingOverview(TRUE),
     hDS(NULL)
 {
-    // TODO(schwehr): Set adfGeoTransform.
+    memset( adfGeoTransform, 0, sizeof(adfGeoTransform) );
 }
 
 /************************************************************************/
@@ -1246,7 +1246,7 @@ GDALDataset* RasterliteDataset::Open(GDALOpenInfo* poOpenInfo)
             OGR_F_Destroy(hFeat);
 
 #ifdef RASTERLITE_DEBUG
-            printf("[%d] xres=%.15f yres=%.15f\n", i,
+            printf("[%d] xres=%.15f yres=%.15f\n", i,/*ok*/
                    poDS->padfXResolutions[i], poDS->padfYResolutions[i]);
 #endif
 

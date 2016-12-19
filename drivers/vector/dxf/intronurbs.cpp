@@ -44,7 +44,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 #include "cpl_port.h" // in case of -DDEBUG_BOOL
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: intronurbs.cpp 35910 2016-10-24 14:08:24Z goatbar $");
 
 /* used by ogrdxflayer.cpp */
 void rbspline2( int npts,int k,int p1,double b[],double h[],

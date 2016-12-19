@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: timedelta.hpp 36411 2016-11-21 22:03:48Z rouault $
  *
  * Project:  APP ENVISAT Support
  * Purpose:  time difference class for handling of Envisat MJD time
@@ -83,7 +83,7 @@ class TimeDelta
     }
 
     /* construct object from floating point number of seconds */
-    TimeDelta( double secsIn )
+    explicit TimeDelta( double secsIn )
     {
         this->fromSeconds( secsIn ) ;
     }

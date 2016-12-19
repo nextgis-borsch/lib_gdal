@@ -37,7 +37,7 @@
 
 #include <set>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrinfo.cpp 36537 2016-11-27 23:51:56Z goatbar $");
 
 int     bReadOnly = FALSE;
 int     bVerbose = TRUE;
@@ -79,7 +79,8 @@ static void RemoveBOM(GByte* pabyData)
 
 #define CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(nExtraArg) \
     do { if (iArg + nExtraArg >= nArgc) \
-        Usage(CPLSPrintf("%s option requires %d argument(s)", papszArgv[iArg], nExtraArg)); } while(0)
+        Usage(CPLSPrintf("%s option requires %d argument(s)", \
+                         papszArgv[iArg], nExtraArg)); } while( false )
 
 int main( int nArgc, char ** papszArgv )
 

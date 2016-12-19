@@ -26,10 +26,12 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include <vector>
+#include "cpl_port.h"
 #include "gdaljp2metadatagenerator.h"
 
-CPL_CVSID("$Id$");
+#include <cstddef>
+
+CPL_CVSID("$Id: gdaljp2metadatagenerator.cpp 36759 2016-12-09 16:15:51Z goatbar $");
 
 #ifdef HAVE_LIBXML2
 
@@ -44,7 +46,7 @@ CPL_CVSID("$Id$");
 #include <libxml/xpath.h>
 #include <libxml/xpathInternals.h>
 
-#ifdef __clang
+#ifdef __clang__
 #pragma clang diagnostic pop
 #endif
 

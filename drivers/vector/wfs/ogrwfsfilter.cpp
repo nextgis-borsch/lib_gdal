@@ -29,7 +29,7 @@
 #include "ogr_wfs.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrwfsfilter.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 typedef struct
 {
@@ -785,7 +785,7 @@ class OGRWFSCustomFuncRegistrar: public swq_custom_func_registrar
 {
     public:
         OGRWFSCustomFuncRegistrar() {};
-        virtual const swq_operation *GetOperator( const char * ) ;
+        virtual const swq_operation *GetOperator( const char * ) override ;
 };
 
 /************************************************************************/

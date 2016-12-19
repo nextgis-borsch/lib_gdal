@@ -1,4 +1,4 @@
-/* $Id$ */
+/* $Id: cpl_minizip_ioapi.h 36484 2016-11-24 06:35:54Z goatbar $ */
 
 /* Modified version by Even Rouault. :
       - change fill_fopen_filefunc to cpl_fill_fopen_filefunc
@@ -23,6 +23,8 @@
 #ifndef DOXYGEN_SKIP
 
 #include "cpl_vsi.h"
+#include "zlib.h"
+
 #define uLong64 vsi_l_offset
 
 #define ZLIB_FILEFUNC_SEEK_CUR (1)

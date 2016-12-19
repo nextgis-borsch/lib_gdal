@@ -29,7 +29,7 @@
 #include "ogr_segy.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrsegydriver.cpp 35674 2016-10-10 04:46:23Z goatbar $");
 
 /************************************************************************/
 /*                           EBCDICToASCII                              */

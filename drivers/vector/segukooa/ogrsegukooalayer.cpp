@@ -32,7 +32,7 @@
 #include "ogr_p.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrsegukooalayer.cpp 35933 2016-10-25 16:46:26Z goatbar $");
 
 /************************************************************************/
 /*                            ExtractField()                            */

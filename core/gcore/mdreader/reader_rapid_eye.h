@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: reader_rapid_eye.h 36501 2016-11-25 14:09:24Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Read metadata from RapidEye imagery.
@@ -51,10 +51,10 @@ class GDALMDReaderRapidEye: public GDALMDReaderBase
 public:
     GDALMDReaderRapidEye(const char *pszPath, char **papszSiblingFiles);
     virtual ~GDALMDReaderRapidEye();
-    virtual bool HasRequiredFiles() const;
-    virtual char** GetMetadataFiles() const;
+    virtual bool HasRequiredFiles() const override;
+    virtual char** GetMetadataFiles() const override;
 protected:
-    virtual void LoadMetadata();
+    virtual void LoadMetadata() override;
 protected:
     CPLString m_osXMLSourceFilename;
 };

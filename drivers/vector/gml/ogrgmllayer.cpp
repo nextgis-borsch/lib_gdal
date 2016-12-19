@@ -35,7 +35,7 @@
 #include "ogr_p.h"
 #include "ogr_api.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgmllayer.cpp 36883 2016-12-15 13:31:12Z rouault $");
 
 /************************************************************************/
 /*                           OGRGMLLayer()                              */
@@ -233,7 +233,7 @@ OGRFeature *OGRGMLLayer::GetNextFeature()
                 nFID = iNextGMLId++;
             }
         }
-        else if( iNextGMLId != 0 )
+        else /* if( iNextGMLId != 0 ) */
         {
             const char* pszFIDPrefix_notnull = pszFIDPrefix;
             if (pszFIDPrefix_notnull == NULL) pszFIDPrefix_notnull = "";
@@ -734,7 +734,7 @@ OGRErr OGRGMLLayer::ICreateFeature( OGRFeature *poFeature )
             {
                 bool bCoordSwap;
 
-                char* pszSRSName = GML_GetSRSName(poGeom->getSpatialReference(), poDS->IsLongSRSRequired(), &bCoordSwap);
+                char* pszSRSName = GML_GetSRSName(poGeom->getSpatialReference(), poDS->GetSRSNameFormat(), &bCoordSwap);
                 char szLowerCorner[75], szUpperCorner[75];
                 if (bCoordSwap)
                 {
@@ -753,9 +753,17 @@ OGRErr OGRGMLLayer::ICreateFeature( OGRFeature *poFeature )
                 CPLFree(pszSRSName);
             }
 
-            char** papszOptions = (bIsGML3Output) ? CSLAddString(NULL, "FORMAT=GML3") : NULL;
-            if (bIsGML3Output && !poDS->IsLongSRSRequired())
-                papszOptions = CSLAddString(papszOptions, "GML3_LONGSRS=NO");
+            char** papszOptions = NULL;
+            if( bIsGML3Output )
+            {
+                papszOptions = CSLAddString(papszOptions, "FORMAT=GML3");
+                if( poDS->GetSRSNameFormat() == SRSNAME_SHORT )
+                    papszOptions = CSLAddString(papszOptions, "SRSNAME_FORMAT=SHORT");
+                else if( poDS->GetSRSNameFormat() == SRSNAME_OGC_URN )
+                    papszOptions = CSLAddString(papszOptions, "SRSNAME_FORMAT=OGC_URN");
+                else if( poDS->GetSRSNameFormat() == SRSNAME_OGC_URL )
+                    papszOptions = CSLAddString(papszOptions, "SRSNAME_FORMAT=OGC_URL");
+            }
             const char* pszSRSDimensionLoc = poDS->GetSRSDimensionLoc();
             if( pszSRSDimensionLoc != NULL )
                 papszOptions = CSLSetNameValue(papszOptions, "SRSDIMENSION_LOC", pszSRSDimensionLoc);
@@ -782,20 +790,47 @@ OGRErr OGRGMLLayer::ICreateFeature( OGRFeature *poFeature )
                 delete poGeomTmp;
             }
             else
-                pszGeometry = poGeom->exportToGML(papszOptions);
+            {
+                if( wkbFlatten(poGeom->getGeometryType()) == wkbTriangle )
+                {
+                    pszGeometry = poGeom->exportToGML(papszOptions);
+
+                    const char* pszGMLID = poDS->IsGML32Output() ?
+                        CPLSPrintf(" gml:id=\"%s\"",
+                                   CSLFetchNameValue(papszOptions, "GMLID")) : "";
+                    char* pszNewGeom = CPLStrdup(CPLSPrintf(
+                        "<gml:TriangulatedSurface%s><gml:patches>%s</gml:patches></gml:TriangulatedSurface>",
+                        pszGMLID,
+                        pszGeometry));
+                    CPLFree(pszGeometry);
+                    pszGeometry = pszNewGeom;
+                }
+                else
+                {
+                    pszGeometry = poGeom->exportToGML(papszOptions);
+                }
+            }
             CSLDestroy(papszOptions);
-            if (bWriteSpaceIndentation)
-                VSIFPrintfL(fp, "      ");
-            if( bRemoveAppPrefix )
-                poDS->PrintLine( fp, "<%s>%s</%s>",
-                                 poFieldDefn->GetNameRef(),
-                                 pszGeometry,
-                                 poFieldDefn->GetNameRef() );
+            if( pszGeometry )
+            {
+                if (bWriteSpaceIndentation)
+                    VSIFPrintfL(fp, "      ");
+                if( bRemoveAppPrefix )
+                    poDS->PrintLine( fp, "<%s>%s</%s>",
+                                    poFieldDefn->GetNameRef(),
+                                    pszGeometry,
+                                    poFieldDefn->GetNameRef() );
+                else
+                    poDS->PrintLine( fp, "<%s:%s>%s</%s:%s>",
+                                     pszPrefix, poFieldDefn->GetNameRef(),
+                                     pszGeometry,
+                                     pszPrefix, poFieldDefn->GetNameRef() );
+            }
             else
-                poDS->PrintLine( fp, "<%s:%s>%s</%s:%s>",
-                                 pszPrefix, poFieldDefn->GetNameRef(),
-                                 pszGeometry,
-                                 pszPrefix, poFieldDefn->GetNameRef() );
+            {
+                 CPLError(CE_Failure, CPLE_AppDefined,
+                     "Export of geometry to GML failed");
+            }
             CPLFree( pszGeometry );
         }
     }

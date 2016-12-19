@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "vrtdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: vrtfilters.cpp 35349 2016-09-07 07:21:42Z rouault $");
 
 /*! @cond Doxygen_Suppress */
 

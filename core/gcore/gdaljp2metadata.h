@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdaljp2metadata.h 36411 2016-11-21 22:03:48Z rouault $
  *
  * Project:  GDAL
  * Purpose:  JP2 Box Reader (and GMLJP2 Interpreter)
@@ -60,7 +60,7 @@ class CPL_DLL GDALJP2Box
     GByte      *pabyData;
 
 public:
-                GDALJP2Box( VSILFILE * = NULL );
+    explicit    GDALJP2Box( VSILFILE * = NULL );
                 ~GDALJP2Box();
 
     int         SetOffset( GIntBig nNewOffset );

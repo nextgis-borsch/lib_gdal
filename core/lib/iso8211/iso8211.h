@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: iso8211.h 36411 2016-11-21 22:03:48Z rouault $
  *
  * Project:  ISO 8211 Access
  * Purpose:  Main declarations for ISO 8211.
@@ -393,7 +393,7 @@ private:
 class CPL_ODLL DDFRecord
 {
   public:
-                DDFRecord( DDFModule * );
+    explicit     DDFRecord( DDFModule * );
                 ~DDFRecord();
 
     DDFRecord  *Clone();
@@ -511,6 +511,8 @@ class CPL_ODLL DDFRecord
 class CPL_ODLL DDFField
 {
   public:
+    DDFField() : poDefn(NULL), nDataSize(0), pachData(NULL) {}
+
     void                Initialize( DDFFieldDefn *, const char *pszData,
                                     int nSize );
 

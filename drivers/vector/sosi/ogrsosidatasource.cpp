@@ -31,7 +31,7 @@
 #include <map>
 #include <math.h>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrsosidatasource.cpp 36457 2016-11-23 00:18:37Z rouault $");
 
 /* This is the most common encoding for SOSI files. Let's at least try if
  * it is supported, or generate a meaningful error message.               */
@@ -155,6 +155,7 @@ OGRSOSIDataSource::OGRSOSIDataSource() {
     poCurveHeaders = NULL;
 
     pszEncoding = CPL_ENC_UTF8;
+    nNumFeatures = 0;
 
     SOSIInitTypes();
 
@@ -209,7 +210,7 @@ OGRFeatureDefn *defineLayer(const char *szName, OGRwkbGeometryType szType, S2I *
     poFeatureDefn->SetGeomType( szType );
     S2I* poHeadersNew  = *ppoHeadersNew;
 
-    for (S2I::iterator i=poHeaders->begin(); i!=poHeaders->end(); i++) {
+    for (S2I::iterator i=poHeaders->begin(); i!=poHeaders->end(); ++i) {
                 OGRSOSIDataType* poType = SOSIGetType(i->first);
                 OGRSOSISimpleDataType* poElements = poType->getElements();
                 for (int k=0; k<poType->getElementCount(); k++) {
@@ -461,7 +462,6 @@ int  OGRSOSIDataSource::Open( const char *pszFilename, int bUpdate ) {
 
     /* Define each layer, using a proper feature definition, geometry type,
      * and adding every SOSI header encountered in the file as field. */
-    S2I::iterator i;
     if (bPolyLayer) {
         S2I * poHeadersNew = new S2I();
         OGRFeatureDefn *poFeatureDefn = defineLayer("polygons", wkbPolygon, poPolyHeaders, &poHeadersNew);

@@ -160,7 +160,7 @@
  * ResetReading() when reading forward.
  *
  * Revision 1.19  2000/07/04 01:50:40  warmerda
- * Removed unprotected debugging printf.
+ * Removed unprotected debugging printf()
  *
  * Revision 1.18  2000/06/28 00:32:04  warmerda
  * Make GetFeatureCountByType() actually work if bForce is TRUE
@@ -199,7 +199,7 @@
 #include <algorithm>
 #include <ctype.h>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: mitab_miffile.cpp 36763 2016-12-09 22:10:55Z rouault $");
 
 /*=====================================================================
  *                      class MIFFile
@@ -1796,14 +1796,14 @@ int MIFFile::AddFieldNative(const char *pszName, TABFieldType eMapInfoType,
                   pszName );
     }
 
-    strncpy(szNewFieldName, pszCleanName, 31);
-    szNewFieldName[31] = '\0';
+    strncpy(szNewFieldName, pszCleanName, sizeof(szNewFieldName)-1);
+    szNewFieldName[sizeof(szNewFieldName)-1] = '\0';
 
     while (m_poDefn->GetFieldIndex(szNewFieldName) >= 0 && nRenameNum < 10)
-      snprintf( szNewFieldName, sizeof(szNewFieldName), "%.29s_%.1d", pszCleanName, nRenameNum++ );
+      CPLsnprintf( szNewFieldName, sizeof(szNewFieldName), "%.29s_%.1d", pszCleanName, nRenameNum++ );
 
     while (m_poDefn->GetFieldIndex(szNewFieldName) >= 0 && nRenameNum < 100)
-      snprintf( szNewFieldName, sizeof(szNewFieldName), "%.29s%.2d", pszCleanName, nRenameNum++ );
+      CPLsnprintf( szNewFieldName, sizeof(szNewFieldName), "%.29s%.2d", pszCleanName, nRenameNum++ );
 
     if (m_poDefn->GetFieldIndex(szNewFieldName) >= 0)
     {

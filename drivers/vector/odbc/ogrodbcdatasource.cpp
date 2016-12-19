@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrodbcdatasource.cpp 36455 2016-11-22 23:11:35Z rouault $");
 /************************************************************************/
 /*                         OGRODBCDataSource()                          */
 /************************************************************************/
@@ -105,8 +105,7 @@ static int CheckDSNStringTemplate(const char* pszStr)
 
 int OGRODBCDataSource::OpenMDB( const char * pszNewName, int bUpdate )
 {
-    const char* pszOptionName = "";
-    pszOptionName = "PGEO_DRIVER_TEMPLATE";
+    const char* pszOptionName = "PGEO_DRIVER_TEMPLATE";
     const char* pszDSNStringTemplate = CPLGetConfigOption( pszOptionName, NULL );
     if( pszDSNStringTemplate == NULL )
     {

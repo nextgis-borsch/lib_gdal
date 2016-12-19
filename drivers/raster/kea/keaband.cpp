@@ -39,7 +39,7 @@
 
 #include <limits.h>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: keaband.cpp 35929 2016-10-25 16:09:00Z goatbar $");
 
 // constructor
 KEARasterBand::KEARasterBand( KEADataset *pDataset, int nSrcBand, GDALAccess eAccessIn, kealib::KEAImageIO *pImageIO, int *pRefCount )

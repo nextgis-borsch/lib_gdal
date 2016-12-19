@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: shptree.c 36727 2016-12-06 20:04:22Z rouault $
  *
  * Project:  Shapelib
  * Purpose:  Implementation of quadtree building and searching functions.
@@ -10,7 +10,7 @@
  * Copyright (c) 2012, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * This software is available under the following "MIT Style" license,
- * or at the option of the licensee under the LGPL (see LICENSE.LGPL).  This
+ * or at the option of the licensee under the LGPL (see COPYING).  This
  * option is discussed in more detail in shapelib.html.
  *
  * --
@@ -40,12 +40,13 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 
 #ifdef USE_CPL
 #include "cpl_error.h"
 #endif
 
-SHP_CVSID("$Id$")
+SHP_CVSID("$Id: shptree.c 36727 2016-12-06 20:04:22Z rouault $")
 
 #ifndef TRUE
 #  define TRUE 1

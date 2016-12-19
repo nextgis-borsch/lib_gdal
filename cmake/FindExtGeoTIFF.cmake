@@ -22,4 +22,4 @@
 
 set(repo_name lib_geotiff)
 set(repo_project geotiff)
-set(repo_include)
+set(repo_include geotiff)

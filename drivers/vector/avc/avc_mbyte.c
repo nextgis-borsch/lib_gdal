@@ -1,4 +1,4 @@
-/* $Id$
+/* $Id: avc_mbyte.c 36763 2016-12-09 22:10:55Z rouault $
  *
  * Name:     avc_mbyte.c
  * Project:  Arc/Info vector coverage (AVC)  E00->BIN conversion library
@@ -377,16 +377,16 @@ static const GByte *_AVCJapanese2ArcDBCS(AVCDBCSInfo *psDBCSInfo,
          */
         psDBCSInfo->nDBCSEncoding = _AVCDetectJapaneseEncoding(pszLine);
 
-/*
+#if 0
         if (psDBCSInfo->nDBCSEncoding == AVC_CODE_JAP_SHIFTJIS)
         {
-            printf("Found Japanese Shift-JIS encoding\n");
+            printf("Found Japanese Shift-JIS encoding\n");/*ok*/
         }
         else if (psDBCSInfo->nDBCSEncoding == AVC_CODE_JAP_EUC)
         {
-            printf("Found Japanese EUC encoding\n");
+            printf("Found Japanese EUC encoding\n");/*ok*/
         }
-*/
+#endif
     }
 
     for(iDst=0; *pszLine && iDst < nMaxOutputLen; pszLine++)

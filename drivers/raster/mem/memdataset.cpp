@@ -27,11 +27,26 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "cpl_string.h"
-#include "gdal_frmts.h"
+#include "cpl_port.h"
 #include "memdataset.h"
 
-CPL_CVSID("$Id$");
+#include <climits>
+#include <cstdlib>
+#include <cstring>
+
+#include <vector>
+
+#include "cpl_config.h"
+#include "cpl_conv.h"
+#include "cpl_error.h"
+#include "cpl_minixml.h"
+#include "cpl_progress.h"
+#include "cpl_string.h"
+#include "cpl_vsi.h"
+#include "gdal.h"
+#include "gdal_frmts.h"
+
+CPL_CVSID("$Id: memdataset.cpp 36553 2016-11-29 06:43:21Z goatbar $");
 
 /************************************************************************/
 /*                        MEMCreateRasterBand()                         */

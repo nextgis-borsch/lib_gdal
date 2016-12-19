@@ -35,7 +35,7 @@
 #include "cpl_minixml.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrkmldatasource.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 /************************************************************************/
 /*                         OGRKMLDataSource()                           */
@@ -81,7 +81,7 @@ OGRKMLDataSource::~OGRKMLDataSource()
                     papoLayers_[i]->nWroteFeatureCount_ != 0 )
                 {
                     CPLString osRet = papoLayers_[i]->WriteSchema();
-                    if( osRet.size() )
+                    if( !osRet.empty() )
                         VSIFPrintfL( fpOutput_, "%s", osRet.c_str() );
                 }
             }

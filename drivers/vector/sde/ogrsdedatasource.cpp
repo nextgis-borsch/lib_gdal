@@ -33,7 +33,7 @@
 #include "cpl_string.h"
 #include "gdal.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrsdedatasource.cpp 36332 2016-11-20 15:19:39Z rouault $");
 
 /************************************************************************/
 /*                          OGRSDEDataSource()                           */
@@ -1462,7 +1462,7 @@ OGRErr OGRSDEDataSource::ConvertOSRtoSDESpatRef( OGRSpatialReference *poSRS,
                   sGenericEnvelope.maxy );
     }
 
-    if( poSRS && poSRS->IsGeographic() )
+    if( poSRS->IsGeographic() )
     {
         LONG nSDEErr;
 

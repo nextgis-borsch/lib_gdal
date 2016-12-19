@@ -32,7 +32,7 @@
 
 /* http://code.google.com/intl/fr/apis/fusiontables/docs/developers_reference.html */
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgftdriver.cpp 35910 2016-10-24 14:08:24Z goatbar $");
 
 extern "C" void RegisterOGRGFT();
 

@@ -32,7 +32,7 @@
 #include "ogr_p.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ograrcgenlayer.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 /************************************************************************/
 /*                            OGRARCGENLayer()                             */
@@ -159,7 +159,7 @@ OGRFeature *OGRARCGENLayer::GetNextRawFeature()
 
         if (EQUAL(pszLine, "END"))
         {
-            if (osID.size() == 0)
+            if (osID.empty())
                 break;
 
             OGRFeature* poFeature = new OGRFeature(poFeatureDefn);
@@ -178,7 +178,7 @@ OGRFeature *OGRARCGENLayer::GetNextRawFeature()
 
         char** papszTokens = CSLTokenizeString2( pszLine, " ,", 0 );
         int nTokens = CSLCount(papszTokens);
-        if (osID.size() == 0)
+        if (osID.empty())
         {
             if (nTokens >= 1)
                 osID = papszTokens[0];

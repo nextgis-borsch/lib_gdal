@@ -30,7 +30,7 @@
 #include "cpl_string.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdaltorture.cpp 35884 2016-10-24 05:56:50Z goatbar $");
 
 /************************************************************************/
 /*                               Usage()                                */

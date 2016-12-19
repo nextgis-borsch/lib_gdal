@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalexif.h 35883 2016-10-24 05:49:15Z goatbar $
  *
  * Project:  JPEG JFIF Driver
  * Purpose:  Implement GDAL JPEG Support based on IJG libjpeg.

@@ -27,9 +27,20 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#include "cpl_port.h"
 #include "reader_geo_eye.h"
 
-CPL_CVSID("$Id$");
+#include <cstddef>
+#include <cstdio>
+#include <cstring>
+
+#include <string>
+
+#include "cpl_conv.h"
+#include "cpl_error.h"
+#include "cpl_string.h"
+
+CPL_CVSID("$Id: reader_geo_eye.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 /**
  * GDALMDReaderGeoEye()
@@ -96,10 +107,10 @@ GDALMDReaderGeoEye::GDALMDReaderGeoEye(const char *pszPath,
         }
     }
 
-    if( m_osIMDSourceFilename.size() )
+    if( !m_osIMDSourceFilename.empty() )
         CPLDebug( "MDReaderGeoEye", "IMD Filename: %s",
                   m_osIMDSourceFilename.c_str() );
-    if( m_osRPBSourceFilename.size() )
+    if( !m_osRPBSourceFilename.empty() )
         CPLDebug( "MDReaderGeoEye", "RPB Filename: %s",
                   m_osRPBSourceFilename.c_str() );
 }

@@ -193,7 +193,7 @@
 #include <algorithm>
 #include <utility>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: mitab_mapfile.cpp 36461 2016-11-23 12:05:14Z rouault $");
 
 /*=====================================================================
  *                      class TABMAPFile
@@ -259,6 +259,7 @@ TABMAPFile::~TABMAPFile()
 int TABMAPFile::Open(const char *pszFname, const char* pszAccess, GBool bNoErrorMsg,
                      int nBlockSizeForCreate)
 {
+    // cppcheck-suppress nullPointer
     if( STARTS_WITH_CI(pszAccess, "r") )
         return Open(pszFname, TABRead, bNoErrorMsg, nBlockSizeForCreate);
     else if( STARTS_WITH_CI(pszAccess, "w") )
