@@ -34,7 +34,7 @@ if(WITH_PYTHON2)
     else()
         message(WARNING "Cannot find python 2")
     endif()
-endif()    
+endif()
 
 unset(PYTHONINTERP_FOUND)
 unset(PYTHON_EXECUTABLE)
@@ -54,7 +54,7 @@ if(WITH_PYTHON3)
     else()
         message(WARNING "Cannot find python 3")
     endif()
-endif()    
+endif()
 
 if(NOT PYTHON2_EXECUTABLE AND NOT PYTHON3_EXECUTABLE)
     message(FATAL_ERROR "Cannot find python")
@@ -113,15 +113,24 @@ set(COPY
 )
 
 set(PY_COMMANDS
-    scripts/epsg_tr.py 
-    scripts/gdalchksum.py 
-    scripts/gdal2xyz.py 
+    scripts/epsg_tr.py
+    scripts/esri2wkt.py
+    scripts/gdalchksum.py
+    scripts/gdal2xyz.py
     scripts/gcps2wld.py
-    scripts/gdalimport.py 
-    scripts/gdal_merge.py 
-    scripts/pct2rgb.py 
+    scripts/gdalimport.py
+    scripts/gdal_merge.py
+    scripts/pct2rgb.py
     scripts/rgb2pct.py
     scripts/gcps2vec.py
+    scripts/gdal_retile.py
+    scripts/gdal_sieve.py
+    scripts/gdal2tiles.py
+    scripts/gdal_fillnodata.py
+    scripts/gdal_polygonize.py
+    scripts/gdal_proximity.py
+    scripts/gdalident.py
+    scripts/mkgraticule.py
 )
 
 add_custom_target(copy_files ALL
@@ -190,7 +199,7 @@ if(MSVC)
 else()
     set(SWIG_PYTHON_LIBRARIES "'${LIB_NAME}'")
 endif()
-    
+
 set(SWIG_PYTHON_LIBRARY_DIRS "'../../Release', '../../Debug', '../../MinSizeRel', '../../RelWithDebInfo', '../../.libs', '../../'")
 
 set(SWIG_PYTHON_INCLUDE_DIRS "'${CMAKE_SOURCE_DIR}/core/alg', '${CMAKE_SOURCE_DIR}/core/port', '${CMAKE_SOURCE_DIR}/core/gcore', '${CMAKE_SOURCE_DIR}/core/gnm', '${CMAKE_SOURCE_DIR}/core/ogr', '${CMAKE_SOURCE_DIR}/core/ogr/ogrsf_frmts', '${CMAKE_SOURCE_DIR}/apps', '${CMAKE_BINARY_DIR}'")
@@ -215,10 +224,10 @@ if(UNIX)
     macro(install_py ver)
         execute_process ( COMMAND ${PYTHON${ver}_EXECUTABLE} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())" OUTPUT_VARIABLE PY_SITE_PACKAGES OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-        set(TEST_CMD "try: 
+        set(TEST_CMD "try:
     import setuptools
     print(1)
-except ImportError: 
+except ImportError:
     pass")
 
         execute_process ( COMMAND ${PYTHON${ver}_EXECUTABLE} -c ${TEST_CMD} OUTPUT_VARIABLE PY_HAVE_SETUPTOOLS OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -228,11 +237,11 @@ except ImportError:
         if(PY_HAVE_SETUPTOOLS)
             set(SETUP_OPTS "${SETUP_OPTS} --single-version-externally-managed --record=rekord.txt")
         endif()
-        
+
         string( LENGTH "$ENV{DESTDIR}" DESTDIRLEN )
         if ( ${DESTDIRLEN} GREATER 0 )
             set(SETUP_OPTS "${SETUP_OPTS} --root=$ENV{DESTDIR}")
-        elseif(PYTHON_DESTDIR)    
+        elseif(PYTHON_DESTDIR)
             set(SETUP_OPTS "${SETUP_OPTS} --root=${PYTHON_DESTDIR}")
         endif()
 
@@ -245,32 +254,32 @@ except ImportError:
         # TODO: do we need --install-lib=$(PYTHON_INSTALL_LIB) ?
 
         set(SETUP_OPTS "${SETUP_OPTS} --prefix=${CMAKE_INSTALL_PREFIX}")
-        
+
         if(NOT SUPPRESS_VERBOSE_OUTPUT)
             message(STATUS "setup tools options: ${SETUP_OPTS}")
         endif()
 
         install(CODE "execute_process(
-                COMMAND ${PYTHON${ver}_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/setup.py install ${SETUP_OPTS}  
+                COMMAND ${PYTHON${ver}_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/setup.py install ${SETUP_OPTS}
                 WORKING_DIRECTORY  ${CMAKE_CURRENT_BINARY_DIR}
                 )")
     endmacro()
-    
+
     if(PYTHON2_EXECUTABLE)
         install_py(2)
     endif()
 
     if(PYTHON3_EXECUTABLE)
         install_py(3)
-    endif()                     
+    endif()
 else()
     macro(install_win_py ver)
-        set(BINDING_PATH ${CMAKE_CURRENT_BINARY_DIR}/build/lib.${PY_PLATFORM_NAME}-${PYTHON${ver}_VERSION_MAJOR}.${PYTHON${ver}_VERSION_MINOR})                  
+        set(BINDING_PATH ${CMAKE_CURRENT_BINARY_DIR}/build/lib.${PY_PLATFORM_NAME}-${PYTHON${ver}_VERSION_MAJOR}.${PYTHON${ver}_VERSION_MINOR})
         install(DIRECTORY "${BINDING_PATH}/"
                 DESTINATION ${INSTALL_LIB_DIR}/Python${PYTHON${ver}_VERSION_MAJOR}${PYTHON${ver}_VERSION_MINOR}/site-packages
                 COMPONENT libraries)
     endmacro()
-    
+
     if(PYTHON2_EXECUTABLE)
         install_win_py(2)
     endif()
@@ -281,9 +290,9 @@ else()
 endif()
 
 #install scripts
-install(PROGRAMS ${PY_COMMANDS} DESTINATION ${INSTALL_BIN_DIR} COMPONENT applications)        
+install(PROGRAMS ${PY_COMMANDS} DESTINATION ${INSTALL_BIN_DIR} COMPONENT applications)
 
-#install examples        
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/samples/ 
-        DESTINATION ${INSTALL_DOC_DIR}/python-samples 
+#install examples
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/samples/
+        DESTINATION ${INSTALL_DOC_DIR}/python-samples
         COMPONENT documents)
