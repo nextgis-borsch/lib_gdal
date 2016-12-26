@@ -63,7 +63,7 @@ endif()
 # build target
 set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
 
-if(UNIX)
+if(UNIX AND NOT OSX_FRAMEWORK)
     if(NOT SKIP_INSTALL_LIBRARIES AND NOT SKIP_INSTALL_ALL )
         install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/gdal-config-inst
                 DESTINATION ${INSTALL_BIN_DIR}
@@ -85,6 +85,9 @@ if(GDAL_BUILD_APPS)
         add_executable(${target} ${sources})
         add_dependencies(${target} ${LIB_NAME})
         target_link_libraries(${target} ${LIB_NAME} ${TARGET_LINK_LIB})
+        if(OSX_FRAMEWORK)
+            set_target_properties(${target} PROPERTIES INSTALL_RPATH "@executable_path/../../../../Library/Frameworks")
+        endif()
         set(INSTALL_TARGETS ${INSTALL_TARGETS} ${target})
     endmacro()
 

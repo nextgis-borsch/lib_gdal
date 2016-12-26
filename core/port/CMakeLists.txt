@@ -115,7 +115,7 @@ set(LIB_CSOURCES
     cpl_sha256.cpp
     cpl_vsil_crypt.cpp
     cpl_vsi_error.cpp
-    
+
     cpl_vsil_curl.cpp
 )
 
@@ -151,7 +151,7 @@ if(ZLIB_FOUND)
         cpl_minizip_unzip.h
         cpl_minizip_zip.h
     )
-    list(APPEND LIB_CSOURCES 
+    list(APPEND LIB_CSOURCES
         cpl_vsil_gzip.cpp
         cpl_minizip_ioapi.cpp
         cpl_minizip_unzip.cpp
@@ -176,5 +176,4 @@ set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
 # install headers
 if(NOT SKIP_INSTALL_HEADERS AND NOT SKIP_INSTALL_ALL )
     install(FILES ${LIB_HHEADERS} DESTINATION ${INSTALL_INC_DIR} COMPONENT headers)
-endif() 
-
+endif()

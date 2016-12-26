@@ -42,26 +42,24 @@ endif()
 if(OSX_FRAMEWORK)
   set(INSTALL_BIN_DIR "${CMAKE_INSTALL_PREFIX}/Applications/${PROJECT_NAME}.app/Contents/MacOS/" CACHE INTERNAL "Installation directory for executables" FORCE)
   set(INSTALL_LIB_DIR "${CMAKE_INSTALL_PREFIX}/Library/Frameworks" CACHE INTERNAL "Installation directory for libraries" FORCE)
-  set(INSTALL_INC_DIR "${INSTALL_LIB_DIR}/${PROJECT_NAME}.framework/Headers" CACHE INTERNAL "Installation directory for headers" FORCE)
   set(SKIP_INSTALL_EXECUTABLES ON)
   set(SKIP_INSTALL_EXPORT ON)
-
   set(CMAKE_MACOSX_RPATH ON)
 
   # use, i.e. don't skip the full RPATH for the build tree
-  set(CMAKE_SKIP_BUILD_RPATH  TRUE)
+  #set(CMAKE_SKIP_BUILD_RPATH  TRUE)
 
   # when building, don't use the install RPATH already
   # (but later on when installing)
-  set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+  #set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 
   # the RPATH to be used when installing
   #set(CMAKE_INSTALL_RPATH "${INSTALL_LIB_DIR}")
-  set(CMAKE_INSTALL_RPATH "@executable_path/../../../../Library/Frameworks")
+  #set(CMAKE_INSTALL_RPATH "@loader_path/../../../../Library/Frameworks")
 
   # don't add the automatically determined parts of the RPATH
   # which point to directories outside the build tree to the install RPATH
-  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
+  #set(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
 
   set(GDAL_BUILD_DOCS OFF CACHE INTERNAL "Don't build docs on Mac OS X" FORCE)
 else()
@@ -85,7 +83,7 @@ set(VERSION ${GDAL_MAJOR_VERSION}.${GDAL_MINOR_VERSION}.${GDAL_REV_VERSION})
 set(SOVERSION 20)
 
 if(OSX_FRAMEWORK)
-    set(FRAMEWORK_VERSION "${GDAL_MAJOR_VERSION}.${GDAL_MINOR_VERSION}")
+    set(FRAMEWORK_VERSION "${GDAL_MAJOR_VERSION}")
     set(INSTALL_INC_DIR "${INSTALL_LIB_DIR}/${PROJECT_NAME}.framework/Versions/${FRAMEWORK_VERSION}/Headers" CACHE INTERNAL "Installation directory for headers" FORCE)
     set(INSTALL_SHARE_DIR "${INSTALL_LIB_DIR}/${PROJECT_NAME}.framework/Versions/${FRAMEWORK_VERSION}/Resources/data")
     set(INSTALL_DOC_DIR "${INSTALL_LIB_DIR}/${PROJECT_NAME}.framework/Versions/${FRAMEWORK_VERSION}/Resources/docs")
@@ -226,7 +224,11 @@ endif()
 add_subdirectory(apps)
 
 if(OSX_FRAMEWORK)
-    add_library(${LIB_NAME} SHARED ${TARGET_OBJECTS})
+    set(INST_HEADER
+        ${CMAKE_CURRENT_SOURCE_DIR}/core/gcore/gdal.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/core/gcore/gdal_version.h
+    )
+    add_library(${LIB_NAME} SHARED ${TARGET_OBJECTS} ${INST_HEADER})
     set_target_properties(${LIB_NAME} PROPERTIES
       FRAMEWORK TRUE
       FRAMEWORK_VERSION ${FRAMEWORK_VERSION}
@@ -234,6 +236,7 @@ if(OSX_FRAMEWORK)
       MACOSX_FRAMEWORK_BUNDLE_VERSION ${VERSION}
       MACOSX_FRAMEWORK_IDENTIFIER org.osgeo.libgdal
       XCODE_ATTRIBUTE_INSTALL_PATH "@rpath"
+      PUBLIC_HEADER "${INST_HEADER}"
     )
 else()
     add_library(${LIB_NAME} ${LIB_TYPE} ${TARGET_OBJECTS})
