@@ -50,6 +50,10 @@ function(check_version major minor rev)
     set(${minor} ${GDAL_MINOR_VERSION} PARENT_SCOPE)
     set(${rev} ${GDAL_REV_VERSION} PARENT_SCOPE)
 
+    # Store version string in file for installer needs
+    file(TIMESTAMP ${CMAKE_CURRENT_SOURCE_DIR}/core/gcore/gdal_version.h VERSION_DATETIME "%Y-%m-%d %H:%M:%S" UTC)
+    file(WRITE ${CMAKE_BINARY_DIR}/version.str "${GDAL_MAJOR_VERSION}.${GDAL_MINOR_VERSION}.${GDAL_REV_VERSION}\n${VERSION_DATETIME}")
+
 endfunction(check_version)
 
 # search python module
@@ -102,8 +106,8 @@ function(set_libraries libs is_shared bld_dir release_name debug_name)
             set(${libs}
                 "${bld_dir}/${CMAKE_STATIC_LIBRARY_PREFIX}${release_name}${CMAKE_STATIC_LIBRARY_SUFFIX}"
             PARENT_SCOPE)
-        endif()            
-    endif()    
+        endif()
+    endif()
 endfunction(set_libraries)
 
 function(report_version name ver)
@@ -111,20 +115,20 @@ function(report_version name ver)
     string(ASCII 27 Esc)
     set(BoldYellow  "${Esc}[1;33m")
     set(ColourReset "${Esc}[m")
-        
+
     message(STATUS "${BoldYellow}${name} version ${ver}${ColourReset}")
-    
-endfunction() 
+
+endfunction()
 
 function(warning_msg text)
     if(NOT SUPPRESS_VERBOSE_OUTPUT)
     string(ASCII 27 Esc)
     set(Red         "${Esc}[31m")
     set(ColourReset "${Esc}[m")
-        
+
     message(STATUS "${Red}${text}${ColourReset}")
     endif()
-endfunction()    
+endfunction()
 
 
 # macro to find packages on the host OS
