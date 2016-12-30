@@ -2,8 +2,12 @@ set(@EXPORT_PACKAGE_NAME_UPPER@_VERSION @VERSION@)
 @PACKAGE_INIT@
 
 if(NOT TARGET @EXPORT_PACKAGE_LIB_NAME@)
-  include("${CMAKE_CURRENT_LIST_DIR}/@EXPORT_PACKAGE_LIB_NAME@-exports.cmake")
-  set_target_properties(@EXPORT_PACKAGE_LIB_NAME@ PROPERTIES INTERFACE_LINK_LIBRARIES "")
+    file (READ "${CMAKE_CURRENT_LIST_DIR}/@EXPORT_PACKAGE_LIB_NAME@-exports.cmake" _file_content)
+    string (REPLACE "IMPORTED)" "IMPORTED GLOBAL)" _file_content "${_file_content}")
+    file(WRITE "${CMAKE_CURRENT_LIST_DIR}/@EXPORT_PACKAGE_LIB_NAME@-exports.cmake" "${_file_content}")
+
+    include("${CMAKE_CURRENT_LIST_DIR}/@EXPORT_PACKAGE_LIB_NAME@-exports.cmake")
+    set_target_properties(@EXPORT_PACKAGE_LIB_NAME@ PROPERTIES INTERFACE_LINK_LIBRARIES "")
 endif()
 
 set_and_check(@EXPORT_PACKAGE_NAME_UPPER@_INCLUDE_DIR "@INSTALL_INC_DIR@")
