@@ -164,16 +164,10 @@ if(MSVC)
 endif()
 
 macro(build_py ver)
-    if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-        set(SETUP_PY_KEY "build") #build_ext --inplace")
-    else()
-        set(SETUP_PY_KEY "build")
-    endif()
-
     add_custom_target(build_py${ver} ALL
         # copy some files to binary_dir
         COMMAND set VS90COMNTOOLS=${VC_DIR}
-        COMMAND ${PYTHON${ver}_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/setup.py ${SETUP_PY_KEY} ${PY_SETUP_PLATFORM_NAME}
+        COMMAND ${PYTHON${ver}_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/setup.py build ${PY_SETUP_PLATFORM_NAME}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         DEPENDS copy_files
     )
@@ -208,14 +202,13 @@ else()
     set(SWIG_PYTHON_LIBRARIES "'${LIB_NAME}'")
 endif()
 
-set(SWIG_PYTHON_LIBRARY_DIRS "")
+set(SWIG_PYTHON_LIBRARY_DIRS "'${CMAKE_BINARY_DIR}'")
 set(FILL_SWIG_PATHS
     "Release"
     "Debug"
     "MinSizeRel"
     "RelWithDebInfo"
     ".libs"
-    ""
 )
 
 macro(FILL_SWIG_PATHS path)
