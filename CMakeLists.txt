@@ -256,7 +256,7 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL GNU)
 	set(LINK_FLAGS "${LINK_FLAGS} -Wl,-Bsymbolic -Wl,--version-script,\"${_version_script}\"")
 endif ()
 
-if(BUILD_SHARED_LIBS)
+if(BUILD_SHARED_LIBS OR OSX_FRAMEWORK)
     if(WIN32)
         set (LIB_VERSION ${GDAL_MAJOR_VERSION}0)
         if(MSVC)
