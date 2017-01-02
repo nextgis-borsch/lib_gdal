@@ -248,8 +248,10 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
         execute_process ( COMMAND ${PYTHON${ver}_EXECUTABLE} -c "import distutils.util; print(distutils.util.get_platform())" OUTPUT_VARIABLE PY_PLATFORM_NAME OUTPUT_STRIP_TRAILING_WHITESPACE)
 
         set(BINDING_PATH ${CMAKE_CURRENT_BINARY_DIR}/build/lib.${PY_PLATFORM_NAME}-${PYTHON${ver}_VERSION_MAJOR}.${PYTHON${ver}_VERSION_MINOR})
+        # Remove /Framveworks
+        get_filename_component(INSTALL_PYTHON_BINDINGS_DIR ${INSTALL_LIB_DIR} DIRECTORY)
         install(DIRECTORY "${BINDING_PATH}/"
-                DESTINATION ${INSTALL_LIB_DIR}/${PROJECT_NAME}.framework/Versions/Current/Python/${PYTHON${ver}_VERSION_MAJOR}.${PYTHON${ver}_VERSION_MINOR}/site-packages
+                DESTINATION ${INSTALL_PYTHON_BINDINGS_DIR}/Python/${PYTHON${ver}_VERSION_MAJOR}.${PYTHON${ver}_VERSION_MINOR}/site-packages
                 COMPONENT libraries)
     endmacro()
 
