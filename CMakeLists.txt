@@ -44,6 +44,7 @@ if(OSX_FRAMEWORK)
   set(INSTALL_LIB_DIR "${CMAKE_INSTALL_PREFIX}/Library/Frameworks" CACHE INTERNAL "Installation directory for libraries" FORCE)
   set(SKIP_INSTALL_EXECUTABLES ON)
   set(SKIP_INSTALL_EXPORT ON)
+  set(SKIP_INSTALL_DOCS ON)
   set(CMAKE_MACOSX_RPATH ON)
 
   # use, i.e. don't skip the full RPATH for the build tree

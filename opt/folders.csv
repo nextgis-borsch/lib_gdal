@@ -252,8 +252,8 @@ gdal/ogr/ogrsf_frmts/xlsx,drivers/vector/xlsx,,"cpp,h,c,hpp"
 gdal/ogr/ogrsf_frmts/xplane,drivers/vector/xplane,,"cpp,h,c,hpp"
 gdal/port,core/port,,"cpp,h,c,hpp"
 gdal/port,docs/port,skip,"dox,Doxyfile"
-gdal/scripts,etc,,"cpp,h,c,hpp"
-gdal/scripts/vagrant,etc/vagrant,,sh
+gdal/scripts,opt,,"cpp,h,c,hpp"
+gdal/scripts/vagrant,opt/vagrant,,sh
 gdal/scripts/vce2008_wine,,skip,
 gdal/swig,bindings,skip,
 gdal/swig/csharp,bindings/csharp,,cs
