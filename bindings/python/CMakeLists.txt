@@ -131,6 +131,7 @@ set(PY_COMMANDS
     scripts/gdal_proximity.py
     scripts/gdalident.py
     scripts/mkgraticule.py
+    scripts/gdal_calc.py
 )
 
 add_custom_target(copy_files ALL
