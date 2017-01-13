@@ -113,15 +113,25 @@ set(COPY
 )
 
 set(PY_COMMANDS
-    scripts/epsg_tr.py 
-    scripts/gdalchksum.py 
-    scripts/gdal2xyz.py 
+    scripts/epsg_tr.py
+    scripts/esri2wkt.py
+    scripts/gdalchksum.py
+    scripts/gdal2xyz.py
     scripts/gcps2wld.py
-    scripts/gdalimport.py 
-    scripts/gdal_merge.py 
-    scripts/pct2rgb.py 
+    scripts/gdalimport.py
+    scripts/gdal_merge.py
+    scripts/pct2rgb.py
     scripts/rgb2pct.py
     scripts/gcps2vec.py
+    scripts/gdal_retile.py
+    scripts/gdal_sieve.py
+    scripts/gdal2tiles.py
+    scripts/gdal_fillnodata.py
+    scripts/gdal_polygonize.py
+    scripts/gdal_proximity.py
+    scripts/gdalident.py
+    scripts/mkgraticule.py
+    scripts/gdal_calc.py
 )
 
 add_custom_target(copy_files ALL
