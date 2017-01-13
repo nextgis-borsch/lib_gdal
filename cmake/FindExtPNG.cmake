@@ -21,5 +21,5 @@
 ################################################################################
 
 set(repo_name lib_png)
-set(repo_project libpng)
+set(repo_project png)
 set(repo_include libpng16)

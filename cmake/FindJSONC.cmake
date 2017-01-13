@@ -16,7 +16,7 @@
 # FIND_* is invoked first with specified paths and NO_DEFAULT_PATH
 # and then again with no specified paths to search the default
 # locations. When an earlier FIND_* succeeds, subsequent FIND_*s
-# searching for the same item do nothing. 
+# searching for the same item do nothing.
 
 # try to use framework on mac
 # want clean framework path, not unix compatibility path
@@ -47,7 +47,7 @@ FIND_PATH(JSONC_INCLUDE_DIR json.h
   NO_DEFAULT_PATH
   )
 
-if(PROJ4_INCLUDE_DIR)
+if(JSONC_INCLUDE_DIR)
     set(JSON_C_MAJOR_VERSION 0)
     set(JSON_C_MINOR_VERSION 0)
     set(JSON_C_MICRO_VERSION 0)
@@ -67,11 +67,11 @@ if(PROJ4_INCLUDE_DIR)
           JSON_C_MICRO_VERSION ${_VERSION_H_CONTENTS})
         string (REGEX MATCH "([0-9]+)"
           JSON_C_MICRO_VERSION ${JSON_C_MICRO_VERSION})
-          
-        unset(_VERSION_H_CONTENTS)  
+
+        unset(_VERSION_H_CONTENTS)
     endif()
-    
-    set(JSON_C_VERSION_STRING "${JSON_C_MAJOR_VERSION}.${JSON_C_MINOR_VERSION}.${JSON_C_MICRO_VERSION}") 
+
+    set(JSON_C_VERSION_STRING "${JSON_C_MAJOR_VERSION}.${JSON_C_MINOR_VERSION}.${JSON_C_MICRO_VERSION}")
 endif()
 
 FIND_LIBRARY(JSONC_LIBRARY NAMES json-c libjson-c libjson PATHS
@@ -81,7 +81,7 @@ FIND_LIBRARY(JSONC_LIBRARY NAMES json-c libjson-c libjson PATHS
   /usr/local/lib
   #mingw
   c:/msys/local/lib
-)  
+)
 
 # Handle the QUIETLY and REQUIRED arguments and set GEOS_FOUND to TRUE
 # if all listed variables are TRUE
