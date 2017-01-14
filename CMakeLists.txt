@@ -3,7 +3,7 @@
 # Purpose:  CMake build scripts
 # Author:   Dmitry Baryshnikov, polimax@mail.ru
 ################################################################################
-# Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
+# Copyright (C) 2015-2017, NextGIS <info@nextgis.com>
 # Copyright (C) 2012,2013,2014 Dmitry Baryshnikov
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -29,9 +29,9 @@ cmake_minimum_required (VERSION 2.8.12 FATAL_ERROR)
 
 project(gdal)
 
-# some init settings
+# Some init settings
 set(CMAKE_COLOR_MAKEFILE ON)
-# set path to additional CMake modules
+# Set path to additional CMake modules
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 
 if(OSX_FRAMEWORK AND (BUILD_SHARED_LIBS OR BUILD_STATIC_LIBS))
@@ -47,18 +47,18 @@ if(OSX_FRAMEWORK)
   set(SKIP_INSTALL_DOCS ON)
   set(CMAKE_MACOSX_RPATH ON)
 
-  # use, i.e. don't skip the full RPATH for the build tree
+  # Use, i.e. don't skip the full RPATH for the build tree
   #set(CMAKE_SKIP_BUILD_RPATH  TRUE)
 
-  # when building, don't use the install RPATH already
+  # When building, don't use the install RPATH already
   # (but later on when installing)
   #set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 
-  # the RPATH to be used when installing
+  # The RPATH to be used when installing
   #set(CMAKE_INSTALL_RPATH "${INSTALL_LIB_DIR}")
   #set(CMAKE_INSTALL_RPATH "@loader_path/../../../../Library/Frameworks")
 
-  # don't add the automatically determined parts of the RPATH
+  # Don't add the automatically determined parts of the RPATH
   # which point to directories outside the build tree to the install RPATH
   #set(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
 
@@ -75,7 +75,7 @@ else()
     set(INSTALL_DOC_DIR ${CMAKE_INSTALL_DOCDIR} CACHE INTERNAL "Installation directory for doc pages" FORCE)
 endif()
 
-# setup package meta-data
+# Setup package meta-data
 include(CMakeDependentOption)
 include(util)
 
@@ -110,7 +110,7 @@ if(WIN32)
 endif()
 
 
-find_anyproject(ICONV DEFAULT ON) #default OFF, to set ON add DEFAULT ON
+find_anyproject(ICONV DEFAULT ON) # If not set anything - default OFF, set ON to check ON by DEFAULT
 if(ICONV_FOUND)
     set(HAVE_ICONV TRUE)
     add_definitions(-DHAVE_ICONV)
@@ -161,7 +161,7 @@ find_anyproject(JSONC REQUIRED)
 find_anyproject(JPEG DEFAULT ON)
 if(JPEG_FOUND)
     add_definitions(-DJPEG_SUPPORTED)
-    add_definitions(-DHAVE_LIBJPEG) # added only after 2.1 release (especially for geotiff.cpp where incorrect #ifdef is used)
+    add_definitions(-DHAVE_LIBJPEG) # Added only after 2.1 release (especially for geotiff.cpp where incorrect #ifdef is used)
 endif()
 
 find_anyproject(JPEG12)
@@ -199,7 +199,7 @@ include(configure)
 
 add_definitions(-DGDAL_COMPILATION)
 
-# setup paths
+# Setup paths
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/core/port)
@@ -208,11 +208,11 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/core/ogr)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/core/alg)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/apps)
 
-# main directories
+# Main directories
 add_subdirectory(core)
 add_subdirectory(drivers)
 
-# link library objects
+# Link library objects
 list(REMOVE_DUPLICATES TARGET_OBJECTS)
 
 set(LIB_NAME ${PROJECT_NAME})
@@ -316,13 +316,13 @@ set(GDAL_BINDINGS)
 add_subdirectory(bindings)
 add_subdirectory(docs)
 
-# install
+# Install
 include(install)
 
-# uninstall
+# Uninstall
 add_custom_target(uninstall COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
 
-# info
+# Info
 if(NOT SUPPRESS_VERBOSE_OUTPUT)
     include(summary)
 endif()
