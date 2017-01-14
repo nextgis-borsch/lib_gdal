@@ -96,19 +96,19 @@ set(AVX_TEST_CODE "
 
 check_cxx_source_compiles("${AVX_TEST_CODE}" HAVE_AVX_AT_COMPILE_TIME)
 
-if(NOT HAVE_AVX_AT_COMPILE_TIME)   
+if(NOT HAVE_AVX_AT_COMPILE_TIME)
     set(CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS} -mavx)
-    check_cxx_source_compiles("${AVX_TEST_CODE}" HAVE_AVX_AT_COMPILE_TIME) 
-    
+    check_cxx_source_compiles("${AVX_TEST_CODE}" HAVE_AVX_AT_COMPILE_TIME)
+
     if(HAVE_AVX_AT_COMPILE_TIME)
         set(AVXFLAGS -mavx)
     endif()
     unset(CMAKE_REQUIRED_FLAGS)
-endif()       
+endif()
 
 if(HAVE_AVX_AT_COMPILE_TIME)
     add_definitions(-DHAVE_AVX_AT_COMPILE_TIME)
-endif() 
+endif()
 
 set(SSE_TEST_CODE "
     #ifdef __SSE__
@@ -137,19 +137,19 @@ else()
     set(SQLITE_HAS_COLUMN_METADATA ON)
 endif()
 
-if(NOT HAVE_SSE_AT_COMPILE_TIME)   
+if(NOT HAVE_SSE_AT_COMPILE_TIME)
     set(CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS} -msse)
-    check_cxx_source_compiles("${SSE_TEST_CODE}" HAVE_SSE_AT_COMPILE_TIME) 
-    
+    check_cxx_source_compiles("${SSE_TEST_CODE}" HAVE_SSE_AT_COMPILE_TIME)
+
     if(HAVE_SSE_AT_COMPILE_TIME)
         set(SSEFLAGS -msse)
     endif()
     unset(CMAKE_REQUIRED_FLAGS)
-endif()       
+endif()
 
 if(HAVE_SSE_AT_COMPILE_TIME)
     add_definitions(-DHAVE_SSE_AT_COMPILE_TIME)
-endif() 
+endif()
 
 if(WITH_TIFF_EXTERNAL)
     #TODO: check cases then HAVE_BIGTIFF False
@@ -160,7 +160,7 @@ endif()
 
 if(HAVE_BIGTIFF)
     add_definitions(-DBIGTIFF_SUPPORT)
-endif() 
+endif()
 
 if(WIN32)
 # windows
@@ -178,7 +178,7 @@ else()
         set(TARGET_LINK_LIB ${TARGET_LINK_LIB} ${CMAKE_THREAD_LIBS_INIT})
         #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_THREAD_LIBS_INIT}")
         #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_THREAD_LIBS_INIT}")
-    else()  
+    else()
         set(_WITH_PT_OPTION_ON FALSE)
     endif()
 
@@ -186,7 +186,7 @@ else()
     set(TARGET_LINK_LIB ${TARGET_LINK_LIB} ${DL_LIB})
     find_library(M_LIB m)
     set(TARGET_LINK_LIB ${TARGET_LINK_LIB} ${M_LIB})
-    
+
     option(GDAL_USE_CPL_MULTIPROC_PTHREAD "Set to ON if you want to use pthreads based multiprocessing support." ${_WITH_PT_OPTION_ON})
     set(CPL_MULTIPROC_PTHREAD ${GDAL_USE_CPL_MULTIPROC_PTHREAD})
     check_c_source_compiles("
@@ -218,23 +218,23 @@ else()
     check_include_file("inttypes.h" HAVE_INTTYPES_H)
 
     check_type_size("long long" LONG_LONG)
-        
+
     check_include_file("strings.h" HAVE_STRINGS_H)
     check_include_file("string.h" HAVE_STRING_H)
-    
+
     check_function_exists(strtof HAVE_STRTOF)
-    
+
     check_include_file("sys/stat.h" HAVE_SYS_STAT_H)
-    
+
     check_function_exists(readlink HAVE_READLINK)
     check_function_exists(posix_spawnp HAVE_POSIX_SPAWNP)
     check_function_exists(vfork HAVE_VFORK)
     check_function_exists(mmap HAVE_MMAP)
     check_function_exists(statvfs HAVE_STATVFS)
     check_function_exists(lstat HAVE_LSTAT)
-    
+
     if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-        set(CPL_CONFIG_EXTRAS "#include \"cpl_config_extras.h\"")
+        # disable by default set(CPL_CONFIG_EXTRAS "#include \"cpl_config_extras.h\"")
         set(MACOSX_FRAMEWORK TRUE)
     else()
         set(MACOSX_FRAMEWORK FALSE)
@@ -251,12 +251,12 @@ else()
         #include <sys/stat.h>
         int main() { struct __stat64 buf; _stat64( \"\", &buf ); return 0; }
     " NO_UNIX_STDIO_64)
-    
+
     if(NO_UNIX_STDIO_64)
         set(VSI_STAT64 _stat64)
-        set(VSI_STAT64_T __stat64)    
+        set(VSI_STAT64_T __stat64)
     endif()
-    
+
     check_function_exists(ftell64 HAVE_FTELL64)
     if(HAVE_FTELL64)
         set(VSI_FTELL64 "ftell64")
@@ -266,7 +266,7 @@ else()
             set(VSI_FTELL64 "ftello64")
         endif()
     endif()
-    
+
     check_function_exists(fseek64 HAVE_FSEEK64)
     if(HAVE_FSEEK64)
         set(VSI_FSEEK64 "fseek64")
@@ -274,9 +274,9 @@ else()
         check_function_exists(fseeko64 HAVE_FSEEKO64)
         if(HAVE_FSEEKO64)
             set(VSI_FSEEK64 "fseeko64")
-        endif()          
-    endif()    
-    
+        endif()
+    endif()
+
     if(NOT VSI_FTELL64 AND NOT VSI_FSEEK64)
         check_c_source_compiles("
             #define _LARGEFILE64_SOURCE
@@ -288,8 +288,8 @@ else()
             set(VSI_FTELL64 "ftello64")
             set(VSI_FSEEK64 "fseeko64")
         endif()
-    endif()    
-   
+    endif()
+
     if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
         if(NOT VSI_FTELL64 AND NOT VSI_FSEEK64)
             set(VSI_FTELL64 "ftello")
@@ -303,37 +303,37 @@ else()
             if(HAVE_FTELLO)
                 set(VSI_FTELL64 "ftello")
             endif()
-            
+
             check_function_exists(fseeko HAVE_FSEEKO)
             if(HAVE_FSEEKO)
                 set(VSI_FSEEK64 "fseeko")
-            endif()  
+            endif()
         endif()
         check_function_exists(stat64 HAVE_STAT64)
-        
+
         if(HAVE_STAT64)
             set(VSI_STAT64 stat64)
             set(VSI_STAT64_T stat64)
         else()
             set(VSI_STAT64 stat)
             set(VSI_STAT64_T stat)
-        endif()   
-    endif()    
-        
+        endif()
+    endif()
+
     check_function_exists(fopen64 HAVE_FOPEN64)
     if(HAVE_FOPEN64)
         set(VSI_FOPEN64 "fopen64")
     else()
         set(VSI_FOPEN64 "fopen")
     endif()
-        
+
     check_function_exists(ftruncate64 HAVE_FTRUNCATE64)
     if(HAVE_FTRUNCATE64)
         set(VSI_FTRUNCATE64 "ftruncate64")
     else()
         set(VSI_FTRUNCATE64 "ftruncate")
     endif()
-    
+
     set(UNIX_STDIO_64 TRUE)
     set(VSI_LARGE_API_SUPPORTED TRUE)
 
@@ -356,7 +356,7 @@ else()
         int main() { return 0; }
     " HAVE_HIDE_INTERNAL_SYMBOLS )
     unset(CMAKE_REQUIRED_FLAGS)
-    
+
     check_c_source_compiles("
         int main() { int i; __sync_add_and_fetch(&i, 1); __sync_sub_and_fetch(&i, 1); __sync_bool_compare_and_swap(&i, 0, 1); return 0; }
     " HAVE_GCC_ATOMIC_BUILTINS )
@@ -387,44 +387,43 @@ else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -fno-strict-aliasing -Wall")
 
     configure_file(${CMAKE_SOURCE_DIR}/cmake/cpl_config.h.cmake ${CMAKE_BINARY_DIR}/cpl_config.h @ONLY)
-    
+
     configure_file(${CMAKE_SOURCE_DIR}/cmake/gdal.pc.cmakein  ${CMAKE_BINARY_DIR}/gdal.pc IMMEDIATE @ONLY)
 
     set(APPS_DIR ${CMAKE_BINARY_DIR}/apps)
-    
+
     if(GDAL_ENABLE_OGR)
         set(GDAL_ENABLE_OGR_YESNO "yes")
-    else()    
+    else()
         set(GDAL_ENABLE_OGR_YESNO "no")
     endif()
 
     if(GDAL_ENABLE_GNM)
         set(GDAL_ENABLE_GNM_YESNO "yes")
-    else()   
+    else()
         set(GDAL_ENABLE_GNM_YESNO "no")
     endif()
-    
+
     set(CONFIG_LIBS "-lgdal")
     set(CONFIG_LIBS_INS "-L${CMAKE_INSTALL_PREFIX}/${INSTALL_LIB_DIR} -lgdal")
-    
+
     # TODO: Add formats from drivers definitions
     set(GDAL_FORMATS "gtiff hfa iso8211 raw mem vrt jpeg png")
-    
+
     # TODO: Add dependency libs -lxxx
     set(LIBS "-L${CMAKE_INSTALL_PREFIX}/${INSTALL_LIB_DIR}")
-        
+
     configure_file(${CMAKE_SOURCE_DIR}/cmake/gdal-config.cmake.in ${CMAKE_BINARY_DIR}/tmp/gdal-config IMMEDIATE @ONLY)
     file(COPY ${CMAKE_BINARY_DIR}/tmp/gdal-config
          DESTINATION ${APPS_DIR}/
          FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ
          GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
-      
+
     configure_file(${CMAKE_SOURCE_DIR}/cmake/gdal-config-inst.cmake.in ${APPS_DIR}/gdal-config-inst IMMEDIATE @ONLY)
-    
-    
+
+
 endif()
 
 #add_definitions (-DHAVE_CONFIG_H) # commented because of need of "config.h" in drivers/vector/wms
 
 configure_file(${CMAKE_SOURCE_DIR}/cmake/uninstall.cmake.in ${CMAKE_BINARY_DIR}/cmake_uninstall.cmake IMMEDIATE @ONLY)
-
