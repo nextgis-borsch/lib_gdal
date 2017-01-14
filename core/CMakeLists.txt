@@ -39,5 +39,4 @@ add_subdirectory(gnm)
 
 # send variables upper
 set(TARGET_OBJECTS ${TARGET_OBJECTS} PARENT_SCOPE)
-set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
-set(DEPENDENCY_LIB ${DEPENDENCY_LIB} PARENT_SCOPE)
+any_project_var_to_parent_scope()
