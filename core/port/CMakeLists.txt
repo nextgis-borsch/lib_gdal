@@ -125,7 +125,7 @@ else()
     list(APPEND LIB_CSOURCES cpl_vsil_unix_stdio_64.cpp)
 endif()
 
-#check odbc
+# Check odbc
 if(WITH_ODBC)
     list(APPEND LIB_HHEADERS_PRIV cpl_odbc.h)
     list(APPEND LIB_CSOURCES cpl_odbc.cpp)
@@ -136,7 +136,7 @@ if(WITH_XMLREFORMAT)
 endif()
 
 if(WITH_ONLY_CRYPTODLL_ALG)
-    #TODO: check cryptopp func
+    # TODO: Check cryptopp func
     add_definitions(-DUSE_ONLY_CRYPTODLL_ALG)
 endif()
 
@@ -144,7 +144,7 @@ if(ICONV_FOUND)
     list(APPEND LIB_CSOURCES cpl_recode_iconv.cpp )
 endif()
 
-#check zip and internal zip
+# Check zip and internal zip
 if(ZLIB_FOUND)
     list(APPEND LIB_HHEADERS_PRIV
         cpl_minizip_ioapi.h
@@ -159,7 +159,7 @@ if(ZLIB_FOUND)
     )
 endif()
 
-#check curl
+# Check curl is present
 if(CURL_FOUND)
   list(APPEND LIB_HHEADERS_PRIV cpl_vsil_curl_priv.h)
   list(APPEND LIB_CSOURCES
@@ -175,6 +175,7 @@ endif()
 # build target
 set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
 set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
+set(DEPENDENCY_LIB ${DEPENDENCY_LIB} ${TARGET_NAME} PARENT_SCOPE)
 
 # install headers
 if(NOT SKIP_INSTALL_HEADERS AND NOT SKIP_INSTALL_ALL )

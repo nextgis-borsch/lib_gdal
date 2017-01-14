@@ -41,7 +41,7 @@ set(LIB_HHEADERS
 )
 
 set(LIB_HHEADERS_PRIV
-    gdal_alg_priv.h    
+    gdal_alg_priv.h
     gdalgrid_priv.h
     internal_qhull_headers.h
 )
@@ -101,12 +101,16 @@ if(OPENCL_FOUND)
 endif()
 
 add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
+if(DEPENDENCY_LIB)
+    add_dependencies(${TARGET_NAME} ${DEPENDENCY_LIB})
+endif()
 
-# build target
+# Build target
 set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
 set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
+set(DEPENDENCY_LIB ${DEPENDENCY_LIB} ${TARGET_NAME} PARENT_SCOPE)
 
-# install headers
+# Install headers
 if(NOT SKIP_INSTALL_HEADERS AND NOT SKIP_INSTALL_ALL )
     install(FILES ${LIB_HHEADERS} DESTINATION ${INSTALL_INC_DIR} COMPONENT headers)
-endif() 
+endif()

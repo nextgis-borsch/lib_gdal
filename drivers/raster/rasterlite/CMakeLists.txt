@@ -5,7 +5,7 @@
 ################################################################################
 # Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
 # Copyright (C) 2016 Mikhail Gusev
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
 # to deal in the Software without restriction, including without limitation
@@ -35,7 +35,7 @@ if(ENABLE_RASTERLITE)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
     include_directories(${CMAKE_SOURCE_DIR}/core/ogr)
-    
+
     # TODO: do we need optional spatialite library support as its written in
     # http://www.gdal.org/frmt_rasterlite.html
 
@@ -46,15 +46,18 @@ if(ENABLE_RASTERLITE)
     )
 
     set(LIB_CSOURCES
-        rasterlitedataset.cpp 
-        rasterlitecreatecopy.cpp 
-        rasterliteoverviews.cpp	
+        rasterlitedataset.cpp
+        rasterlitecreatecopy.cpp
+        rasterliteoverviews.cpp
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
-
+    if(DEPENDENCY_LIB)
+        add_dependencies(${TARGET_NAME} ${DEPENDENCY_LIB})
+    endif()
+    
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
 else()
-    warning_msg("Skip rasterlite")  
+    warning_msg("Skip rasterlite")
 endif()

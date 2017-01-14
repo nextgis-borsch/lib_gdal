@@ -65,21 +65,21 @@ set(LIB_HHEADERS_PRIV
 set(LIB_CSOURCES
     gdalallregister.cpp
     gnmregisterall.cpp
-    ogremulatedtransaction.cpp  
-    ogrlayerdecorator.cpp  
-    ogrmutexeddatasource.cpp  
-    ogrsfdriver.cpp    
-    ogr_attrind.cpp               
+    ogremulatedtransaction.cpp
+    ogrlayerdecorator.cpp
+    ogrmutexeddatasource.cpp
+    ogrsfdriver.cpp
+    ogr_attrind.cpp
     ogrsfdriverregistrar.cpp
-    ogrdatasource.cpp     
-    ogr_gensql.cpp              
-    ogrlayerpool.cpp       
-    ogrmutexedlayer.cpp       
-    ogrunionlayer.cpp 
-    ogreditablelayer.cpp                                    
-    ogrlayer.cpp                
-    ogr_miattrind.cpp      
-    ogrregisterall.cpp        
+    ogrdatasource.cpp
+    ogr_gensql.cpp
+    ogrlayerpool.cpp
+    ogrmutexedlayer.cpp
+    ogrunionlayer.cpp
+    ogreditablelayer.cpp
+    ogrlayer.cpp
+    ogr_miattrind.cpp
+    ogrregisterall.cpp
     ogrwarpedlayer.cpp
 )
 
@@ -93,9 +93,9 @@ set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}>)
 # send variables upper
 set(TARGET_OBJECTS ${TARGET_OBJECTS} PARENT_SCOPE)
 set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
-set(DEPENDENCY_LIB ${DEPENDENCY_LIB} PARENT_SCOPE)
+set(DEPENDENCY_LIB ${DEPENDENCY_LIB} ${TARGET_NAME} PARENT_SCOPE)
 
 # install headers
 if(NOT SKIP_INSTALL_HEADERS AND NOT SKIP_INSTALL_ALL )
     install(FILES ${LIB_HHEADERS} DESTINATION ${INSTALL_INC_DIR} COMPONENT headers)
-endif() 
+endif()

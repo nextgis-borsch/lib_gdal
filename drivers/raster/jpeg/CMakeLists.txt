@@ -35,12 +35,12 @@ if(ENABLE_JPEG)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
     include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/mem)
-    
+
     # NOTE: use of internal jpeg and jpeg12 libraries had been removed. The external only libraries are used.
-    
+
     # TODO: implement jpeg12 support when change according paths to headers in sources.
     # ...
-    
+
     # From GNUMakefile:
     # # Enable this to compile with -Wextra -Werror and get around the jump complaint.
     # CPPFLAGS += -Wno-clobbered
@@ -53,14 +53,17 @@ if(ENABLE_JPEG)
     )
 
     set(LIB_CSOURCES
-        jpgdataset.cpp 
+        jpgdataset.cpp
         vsidataio.cpp
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
-
+    if(DEPENDENCY_LIB)
+        add_dependencies(${TARGET_NAME} ${DEPENDENCY_LIB})
+    endif()
+    
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
 else()
-    warning_msg("Skip jpeg")  
+    warning_msg("Skip jpeg")
 endif()
