@@ -36,6 +36,8 @@ else()
     message(WARNING "No geos support")
 endif()
 
+set(EXPORTS_PATHS ${EXPORTS_PATHS} PARENT_SCOPE)
+
 find_anyproject(PROJ4 DEFAULT ON)
 if(PROJ4_FOUND)
     add_definitions(-DHAVE_PROJ -DPROJ_STATIC)
