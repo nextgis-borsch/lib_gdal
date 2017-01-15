@@ -31,9 +31,9 @@ if(ENABLE_MRSID)
 
     add_definitions(-DFRMT_mrsid)
     set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DFRMT_mrsid" PARENT_SCOPE)
-    
+
     find_anyproject(MRSID REQUIRED)
-    
+
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
     set(LIB_HHEADERS
@@ -47,11 +47,11 @@ if(ENABLE_MRSID)
         mrsidstream.cpp
         mrsiddataset.cpp
     )
-    
-    add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})    
-    
+
+    add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
+
     if(WITH_MrSID_EXTERNAL)
-        add_dependencies(${TARGET_NAME} MRSID_EP)
+        add_dependencies(${TARGET_NAME} ${DEPENDENCY_LIB})
     endif()
 
     # build target
@@ -60,5 +60,5 @@ if(ENABLE_MRSID)
     set(DEPENDENCY_LIB ${DEPENDENCY_LIB} PARENT_SCOPE)
 
 else() # ENABLE_MRSID
-    warning_msg("Skip MrSID")  
+    warning_msg("Skip MrSID")
 endif() # ENABLE_MRSID

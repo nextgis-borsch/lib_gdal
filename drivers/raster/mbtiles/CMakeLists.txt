@@ -5,7 +5,7 @@
 ################################################################################
 # Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
 # Copyright (C) 2016 Mikhail Gusev
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
 # to deal in the Software without restriction, including without limitation
@@ -39,7 +39,7 @@ if(ENABLE_MBTILES)
     include_directories(${CMAKE_SOURCE_DIR}/drivers/common/gpkg)
     include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/sqlite)
     include_directories(${SQLITE3_INCLUDE_DIRS})
-    
+
     # NOTE: we do not use internal z lib, as it is external always.
     if(ZLIB_FOUND)
         include_directories(${ZLIB_INCLUDE_DIRS})
@@ -47,7 +47,7 @@ if(ENABLE_MBTILES)
 
     # TODO: do we need JPEG and PNG drivers as its written in
     # http://www.gdal.org/frmt_mbtiles.html ?
-    
+
     set(LIB_HHEADERS
     )
 
@@ -56,13 +56,16 @@ if(ENABLE_MBTILES)
     )
 
     set(LIB_CSOURCES
-        mbtilesdataset.cpp	
+        mbtilesdataset.cpp
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
-
+    if(DEPENDENCY_LIB)
+        add_dependencies(${TARGET_NAME} ${DEPENDENCY_LIB})
+    endif()
+    
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
 else()
-    warning_msg("Skip mbtiles")  
+    warning_msg("Skip mbtiles")
 endif()

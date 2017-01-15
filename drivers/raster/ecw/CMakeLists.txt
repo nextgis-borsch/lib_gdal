@@ -31,9 +31,9 @@ if(ENABLE_ECW)
 
     add_definitions(-DFRMT_ecw)
     set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DFRMT_ecw" PARENT_SCOPE)
-    
+
     find_anyproject(ECW REQUIRED)
-    
+
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
     set(LIB_HHEADERS
@@ -51,10 +51,10 @@ if(ENABLE_ECW)
         ecwasyncreader.cpp
     )
 
-    add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})    
-    
+    add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
+
     if(WITH_ECW_EXTERNAL)
-        add_dependencies(${TARGET_NAME} ECW_EP)
+        add_dependencies(${TARGET_NAME} ${DEPENDENCY_LIB})
     endif()
 
     # build target
@@ -63,5 +63,5 @@ if(ENABLE_ECW)
     set(DEPENDENCY_LIB ${DEPENDENCY_LIB} PARENT_SCOPE)
 
 else() # ENABLE_ECW
-    warning_msg("Skip ecw")  
+    warning_msg("Skip ecw")
 endif() # ENABLE_ECW

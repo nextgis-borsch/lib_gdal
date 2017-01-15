@@ -27,14 +27,14 @@
 
 if(ENABLE_SQLITE_GPKG)
     set(TARGET_NAME vec_sqlite)
-    
+
     # TODO: add Spatialite library support.
     #find_anyproject(... spatialite ...)
     #if(... spatialite found ...)
     #   add_definitions(-DHAVE_SPATIALITE)
     #   include_directories(${... spatialite includes ...})
     #   if(STREQUAL(HAVE_SPATIALITE,dlopen))
-    #       add_definitions(-DHAVE_SPATIALITE -DSPATIALITE_DLOPEN -DSPATIALITE_412_OR_LATER 
+    #       add_definitions(-DHAVE_SPATIALITE -DSPATIALITE_DLOPEN -DSPATIALITE_412_OR_LATER
     #           -DSPATIALITE_SONAME=\"$(SPATIALITE_SONAME)\")
     #   endif()
     #   if(SPATIALITE_AMALGAMATION)
@@ -54,18 +54,18 @@ if(ENABLE_SQLITE_GPKG)
     if(DEFINED SQLITE_HAS_COLUMN_METADATA)
         add_definitions(-DSQLITE_HAS_COLUMN_METADATA)
     endif()
-    
+
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
     include_directories(${SQLITE3_INCLUDE_DIRS})
-    
+
     set(LIB_HHEADERS
     )
 
     set(LIB_HHEADERS_PRIV
-        ogr_sqlite.h 
-        ogrsqlitevirtualogr.h 
-        ogrsqliteexecutesql.h 
-        ogrsqliteregexp.h 
+        ogr_sqlite.h
+        ogrsqlitevirtualogr.h
+        ogrsqliteexecutesql.h
+        ogrsqliteregexp.h
         ogrsqlitesqlfunctions.h
     )
 
@@ -73,25 +73,28 @@ if(ENABLE_SQLITE_GPKG)
         ogrsqlitedatasource.cpp
         ogrsqlitelayer.cpp
         ogrsqlitedriver.cpp
-		ogrsqlitetablelayer.cpp 
-        ogrsqliteviewlayer.cpp 
-        ogrsqliteselectlayer.cpp 
-        ogrsqlitesinglefeaturelayer.cpp 
-		ogrsqlitevfs.cpp 
-        ogrsqlitevirtualogr.cpp 
-        ogrsqliteexecutesql.cpp 
-        ogrsqliteapiroutines.c	
-        
-        #ogrsqliteregexp.cpp 
+		ogrsqlitetablelayer.cpp
+        ogrsqliteviewlayer.cpp
+        ogrsqliteselectlayer.cpp
+        ogrsqlitesinglefeaturelayer.cpp
+		ogrsqlitevfs.cpp
+        ogrsqlitevirtualogr.cpp
+        ogrsqliteexecutesql.cpp
+        ogrsqliteapiroutines.c
+
+        #ogrsqliteregexp.cpp
         #ogrsqlitesqlfunctions.cpp
     )
-    
+
     # TODO: implement test_load_virtual_ogr target if needed.
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
-
+    if(DEPENDENCY_LIB)
+        add_dependencies(${TARGET_NAME} ${DEPENDENCY_LIB})
+    endif()
+    
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
 else()
-    warning_msg("Skip sqlite")  
+    warning_msg("Skip sqlite")
 endif()

@@ -5,14 +5,14 @@
 ################################################################################
 # Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
 # Copyright (C) 2016 Mikhail Gusev
-#  
+#
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
 # to deal in the Software without restriction, including without limitation
 # the rights to use, copy, modify, merge, publish, distribute, sublicense,
 # and/or sell copies of the Software, and to permit persons to whom the
 # Software is furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included
 # in all copies or substantial portions of the Software.
 #
@@ -41,24 +41,27 @@ if(ENABLE_COUCHDB)
     )
 
     set(LIB_HHEADERS_PRIV
-        ogr_couchdb.h 
-        ${CMAKE_SOURCE_DIR}/core/ogr/swq.h 
-        ${CMAKE_SOURCE_DIR}/drivers/vector/geojson/ogrgeojsonreader.h 
+        ogr_couchdb.h
+        ${CMAKE_SOURCE_DIR}/core/ogr/swq.h
+        ${CMAKE_SOURCE_DIR}/drivers/vector/geojson/ogrgeojsonreader.h
         ${CMAKE_SOURCE_DIR}/drivers/vector/geojson/ogrgeojsonwriter.h
     )
 
     set(LIB_CSOURCES
-        ogrcouchdbdriver.cpp 
-        ogrcouchdbdatasource.cpp 
-        ogrcouchdblayer.cpp 
-        ogrcouchdbtablelayer.cpp 
+        ogrcouchdbdriver.cpp
+        ogrcouchdbdatasource.cpp
+        ogrcouchdblayer.cpp
+        ogrcouchdbtablelayer.cpp
         ogrcouchdbrowslayer.cpp
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
-
+    if(DEPENDENCY_LIB)
+        add_dependencies(${TARGET_NAME} ${DEPENDENCY_LIB})
+    endif()
+    
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
 else()
-    warning_msg("Skip couchdb")  
+    warning_msg("Skip couchdb")
 endif()

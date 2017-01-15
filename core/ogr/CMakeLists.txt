@@ -31,7 +31,7 @@ if(GEOS_FOUND)
     if(GEOS_INCLUDE_DIRS)
         get_filename_component(GEOS_ROOT ${GEOS_INCLUDE_DIRS} PATH)
         include_directories(${GEOS_ROOT}/capi)
-    endif()    
+    endif()
 else()
     message(WARNING "No geos support")
 endif()
@@ -130,7 +130,7 @@ set(LIB_CSOURCES
     swq.cpp
     swq_expr_node.cpp
     swq_op_general.cpp
-    swq_op_registrar.cpp    
+    swq_op_registrar.cpp
     swq_select.cpp
     ograpispy.cpp
     ogrpgeogeometry.cpp
@@ -148,14 +148,14 @@ endif()
 
 option(GDAL_UPDATE_SWQ "Set ON to update swq files" OFF)
 if(GDAL_UPDATE_SWQ)
-    find_package(BISON)    
+    find_package(BISON)
     if(BISON_FOUND)
         BISON_TARGET(SWQParser swq_parser.y ${CMAKE_CURRENT_BINARY_DIR}/swq_parser.cpp)
         BISON_TARGET(WKTGrammarParser osr_cs_wkt_grammar.y ${CMAKE_CURRENT_BINARY_DIR}/osr_cs_wkt_parser.c)
         set(LIB_CSOURCES ${LIB_CSOURCES}
             ${BISON_SWQParser_OUTPUTS}
             ${BISON_WKTGrammarParser_OUTPUTS}
-        )    
+        )
     endif()
 endif()
 
@@ -163,7 +163,7 @@ if(NOT GDAL_UPDATE_SWQ OR NOT BISON_FOUND)
     set(LIB_CSOURCES ${LIB_CSOURCES}
         swq_parser.cpp
         osr_cs_wkt_parser.c
-    ) 
+    )
 endif()
 
 add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
@@ -171,11 +171,11 @@ if(DEPENDENCY_LIB)
     add_dependencies(${TARGET_NAME} ${DEPENDENCY_LIB})
 endif()
 
-# build target
+# Build target
 set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
-set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
+any_project_var_to_parent_scope()
 
-# install headers
+# Install headers
 if(NOT SKIP_INSTALL_HEADERS AND NOT SKIP_INSTALL_ALL )
     install(FILES ${LIB_HHEADERS} DESTINATION ${INSTALL_INC_DIR} COMPONENT headers)
-endif() 
+endif()

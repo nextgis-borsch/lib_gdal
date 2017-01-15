@@ -35,7 +35,7 @@ if(POSTGRESQL_FOUND)
         set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DFRMT_postgisraster" PARENT_SCOPE)
 
         include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-        #include_directories(${POSTGRESQL_INCLUDE_DIRS}) 
+        #include_directories(${POSTGRESQL_INCLUDE_DIRS})
         include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/mem)
         include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/vrt)
 
@@ -43,27 +43,30 @@ if(POSTGRESQL_FOUND)
         )
 
         set(LIB_HHEADERS_PRIV
-            postgisraster.h 
-            ${CMAKE_SOURCE_DIR}/drivers/raster/vrt/vrtdataset.h 
+            postgisraster.h
+            ${CMAKE_SOURCE_DIR}/drivers/raster/vrt/vrtdataset.h
             ${CMAKE_SOURCE_DIR}/drivers/raster/mem/memdataset.h
         )
 
         set(LIB_CSOURCES
-            postgisrasterdriver.cpp 
+            postgisrasterdriver.cpp
             postgisrasterdataset.cpp
-            postgisrasterrasterband.cpp 
-            postgisrastertiledataset.cpp 
-            postgisrastertilerasterband.cpp 
+            postgisrasterrasterband.cpp
+            postgisrastertiledataset.cpp
+            postgisrastertilerasterband.cpp
             postgisrastertools.cpp
         )
 
         add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
-
+        if(DEPENDENCY_LIB)
+            add_dependencies(${TARGET_NAME} ${DEPENDENCY_LIB})
+        endif()
+        
         # build target
         set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
     else()
-        warning_msg("Skip postgisraster")  
+        warning_msg("Skip postgisraster")
     endif()
 else()
-    warning_msg("Skip postgisraster")  
-endif() 
+    warning_msg("Skip postgisraster")
+endif()

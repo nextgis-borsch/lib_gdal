@@ -34,13 +34,12 @@ foreach(FORMAT ${FORMATS})
             set(ColourReset "${Esc}[m")
             get_filename_component(FORMAT_NAME ${FORMAT} NAME)
             message(STATUS "add raster format: ${Blue}${FORMAT_NAME}${ColourReset}")
-        endif()    
+        endif()
         add_subdirectory(${FORMAT})
-    endif()    
+    endif()
 endforeach()
-    
+
 # send variables upper
 set(TARGET_OBJECTS ${TARGET_OBJECTS} PARENT_SCOPE)
-set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
-set(DEPENDENCY_LIB ${DEPENDENCY_LIB} PARENT_SCOPE)
+any_project_var_to_parent_scope()
 set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} PARENT_SCOPE)

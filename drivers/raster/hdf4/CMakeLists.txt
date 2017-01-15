@@ -32,8 +32,8 @@ if(ENABLE_HDF4)
     add_definitions(-DFRMT_hdf4)
     set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DFRMT_hdf4" PARENT_SCOPE)
 
-    find_anyproject(HDF4 REQUIRED)        
-    
+    find_anyproject(HDF4 REQUIRED)
+
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/hdf-eos)
     include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/pds)
@@ -48,7 +48,7 @@ if(ENABLE_HDF4)
         hdf-eos/HdfEosDef.h
         hdf-eos/HDFEOSVersion.h
     )
-    
+
     set(LIB_HDFEOS_CSOURCES
         hdf-eos/EHapi.c
         hdf-eos/GDapi.c
@@ -57,16 +57,16 @@ if(ENABLE_HDF4)
     )
 
     set(LIB_CSOURCES
-        hdf4dataset.cpp 
-        hdf4imagedataset.cpp	
+        hdf4dataset.cpp
+        hdf4imagedataset.cpp
     )
-    
+
     # TODO: implement hdf-eos as separate target if needed.
     # TODO: implement plugin target if needed.
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_HDFEOS_CSOURCES} ${LIB_CSOURCES})
     if(WITH_HDF4_EXTERNAL)
-        add_dependencies(${TARGET_NAME} HDF4_EP)
+        add_dependencies(${TARGET_NAME} ${DEPENDENCY_LIB})
     endif()
 
     # build target
@@ -74,5 +74,5 @@ if(ENABLE_HDF4)
     set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
     set(DEPENDENCY_LIB ${DEPENDENCY_LIB} PARENT_SCOPE)
 else()
-    warning_msg("Skip hdf4")  
+    warning_msg("Skip hdf4")
 endif()
