@@ -137,7 +137,7 @@ if(GDAL_BUILD_APPS)
         add_exe(testreprojmulti testreprojmulti.cpp)
     endif()
 
-    if(NOT SKIP_INSTALL_LIBRARIES AND NOT SKIP_INSTALL_ALL )
+    if(NOT SKIP_INSTALL_EXECUTABLES AND NOT SKIP_INSTALL_ALL )
         install(TARGETS ${INSTALL_TARGETS}
         #    EXPORT ${INSTALL_TARGETS}
             RUNTIME DESTINATION ${INSTALL_BIN_DIR} COMPONENT applications
