@@ -27,7 +27,7 @@
 
 file(GLOB FORMATS ${CMAKE_CURRENT_SOURCE_DIR}/*)
 foreach(FORMAT ${FORMATS})
-    if(EXISTS ${FORMAT}/CMakeLists.txt)    
+    if(EXISTS ${FORMAT}/CMakeLists.txt)
         if(NOT SUPPRESS_VERBOSE_OUTPUT)
             string(ASCII 27 Esc)
             set(Blue        "${Esc}[34m")
@@ -36,12 +36,11 @@ foreach(FORMAT ${FORMATS})
             message(STATUS "add raster+vector format: ${Blue}${FORMAT_NAME}${ColourReset}")
         endif()
         add_subdirectory(${FORMAT})
-    endif()    
+    endif()
 endforeach()
-    
+
 
 # send variables upper
 set(TARGET_OBJECTS ${TARGET_OBJECTS} PARENT_SCOPE)
-set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
-set(DEPENDENCY_LIB ${DEPENDENCY_LIB} PARENT_SCOPE)
+any_project_var_to_parent_scope()
 set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} PARENT_SCOPE)

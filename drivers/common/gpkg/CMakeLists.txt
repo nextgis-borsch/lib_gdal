@@ -5,7 +5,7 @@
 ################################################################################
 # Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
 # Copyright (C) 2016 Mikhail Gusev
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
 # to deal in the Software without restriction, including without limitation
@@ -35,11 +35,11 @@ if(ENABLE_SQLITE_GPKG)
     #       add_definitions(-DSPATIALITE_412_OR_LATER)
     #   endif()
     #endif()
-    
+
     if(DEFINED SQLITE_HAS_COLUMN_METADATA)
         add_definitions(-DSQLITE_HAS_COLUMN_METADATA)
     endif()
-    
+
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
     include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/sqlite)
     include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/mem)
@@ -49,25 +49,28 @@ if(ENABLE_SQLITE_GPKG)
     )
 
     set(LIB_HHEADERS_PRIV
-        ogr_geopackage.h 
-        ogrgeopackageutility.h 
+        ogr_geopackage.h
+        ogrgeopackageutility.h
         ${CMAKE_SOURCE_DIR}/drivers/vector/sqlite/ogr_sqlite.h
     )
 
     set(LIB_CSOURCES
-        ogrgeopackagedriver.cpp 
-        ogrgeopackagedatasource.cpp 
-        ogrgeopackagelayer.cpp 
-        ogrgeopackagetablelayer.cpp 
-        ogrgeopackageselectlayer.cpp 
-        ogrgeopackageutility.cpp 
-        gdalgeopackagerasterband.cpp	
+        ogrgeopackagedriver.cpp
+        ogrgeopackagedatasource.cpp
+        ogrgeopackagelayer.cpp
+        ogrgeopackagetablelayer.cpp
+        ogrgeopackageselectlayer.cpp
+        ogrgeopackageutility.cpp
+        gdalgeopackagerasterband.cpp
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
+    if(DEPENDENCY_LIB)
+        add_dependencies(${TARGET_NAME} ${DEPENDENCY_LIB})
+    endif()
 
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
 else()
-    warning_msg("Skip geopackage")   
+    warning_msg("Skip geopackage")
 endif()

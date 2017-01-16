@@ -5,14 +5,14 @@
 ################################################################################
 # Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
 # Copyright (C) 2016 Mikhail Gusev
-#  
+#
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
 # to deal in the Software without restriction, including without limitation
 # the rights to use, copy, modify, merge, publish, distribute, sublicense,
 # and/or sell copies of the Software, and to permit persons to whom the
 # Software is furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included
 # in all copies or substantial portions of the Software.
 #
@@ -41,27 +41,26 @@ if(ENABLE_PLSCENES)
     )
 
     set(LIB_HHEADERS_PRIV
-        ogr_plscenes.h 
-        ${CMAKE_SOURCE_DIR}/core/ogr/swq.h 
+        ogr_plscenes.h
+        ${CMAKE_SOURCE_DIR}/core/ogr/swq.h
         ${CMAKE_SOURCE_DIR}/drivers/vector/geojson/ogrgeojsonreader.h
     )
 
     set(LIB_CSOURCES
-        ogrplscenesdriver.cpp 
-        ogrplscenesdataset.cpp 
-        ogrplscenesv1dataset.cpp 
-        ogrplsceneslayer.cpp 
+        ogrplscenesdriver.cpp
+        ogrplscenesdataset.cpp
+        ogrplscenesv1dataset.cpp
+        ogrplsceneslayer.cpp
         ogrplscenesv1layer.cpp
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
+    if(DEPENDENCY_LIB)
+        add_dependencies(${TARGET_NAME} ${DEPENDENCY_LIB})
+    endif()
 
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
-    
-    if(DEPENDENCY_LIB)
-        add_dependencies(${TARGET_NAME} ${DEPENDENCY_LIB})  
-    endif() 
 else()
-    warning_msg("Skip plscenes")    
+    warning_msg("Skip plscenes")
 endif()
