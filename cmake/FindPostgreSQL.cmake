@@ -31,7 +31,7 @@ if(PG_CONFIG)
 
   exec_program(${PG_CONFIG}
     ARGS "--includedir"
-    OUTPUT_VARIABLE PG_CONFIG_INCLUDEDIR)  
+    OUTPUT_VARIABLE PG_CONFIG_INCLUDEDIR)
 
   exec_program(${PG_CONFIG}
     ARGS "--libdir"
@@ -41,19 +41,23 @@ else()
 endif()
 
 find_path(POSTGRESQL_INCLUDE_DIR libpq-fe.h
+  PATHS
   ${PG_CONFIG_INCLUDEDIR}
-  /usr/include/server
-  /usr/include/pgsql/server
-  /usr/local/include/pgsql/server
-  /usr/include/postgresql
-  /usr/include/postgresql/server
-  /usr/include/postgresql/*/server
+  /usr/include
+  /usr/local/include
+  /usr/include/postgresql/*/
   $ENV{ProgramFiles}/PostgreSQL/*/include
-  $ENV{SystemDrive}/PostgreSQL/*/include)
+  $ENV{SystemDrive}/PostgreSQL/*/include
+  PATH_SUFFIXES
+  server
+  pgsql/server
+  postgresql
+  libpq
+)
 
 find_library(POSTGRESQL_LIBRARIES NAMES pq libpq
   PATHS
-  ${PG_CONFIG_LIBDIR}  
+  ${PG_CONFIG_LIBDIR}
   /usr/lib
   /usr/local/lib
   /usr/lib/postgresql
@@ -71,17 +75,17 @@ else()
   set(POSTGRESQL_FOUND FALSE)
 endif()
 
-set(POSTGRESQL_VERSION_STRING "${POSTGRESQL_VERSION}")   
+set(POSTGRESQL_VERSION_STRING "${POSTGRESQL_VERSION}")
 
 # Handle the QUIETLY and REQUIRED arguments and set POSTGRESQL_FOUND to TRUE
 # if all listed variables are TRUE
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(PostgreSQL 
-                                  REQUIRED_VARS POSTGRESQL_LIBRARIES POSTGRESQL_INCLUDE_DIR 
+find_package_handle_standard_args(PostgreSQL
+                                  REQUIRED_VARS POSTGRESQL_LIBRARIES POSTGRESQL_INCLUDE_DIR
                                   VERSION_VAR POSTGRESQL_VERSION)
 
 IF(POSTGRESQL_FOUND)
   set(POSTGRESQL_INCLUDE_DIRS ${POSTGRESQL_INCLUDE_DIR})
-ENDIF()  
+ENDIF()
 
 mark_as_advanced(POSTGRESQL_INCLUDE_DIRS POSTGRESQL_LIBRARIES)
