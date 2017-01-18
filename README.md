@@ -2,13 +2,13 @@
 
 This is restructured GDAL sources tree fork with CMake build system [code name borsch].
 
-GDAL is an open source X/MIT licensed translator library for raster and vector 
+GDAL is an open source X/MIT licensed translator library for raster and vector
 geospatial data formats. This is a mirror of the GDAL Subversion repository.
 
 * Main site: http://www.gdal.org - Developer and user docs, links to other resources
 * SVN repository: http://svn.osgeo.org/gdal
 * Download: ftp://ftp.remotesensing.org/gdal, http://download.osgeo.org/gdal
-* Wiki: http://trac.osgeo.org/gdal - Bug tracking, various user and developer 
+* Wiki: http://trac.osgeo.org/gdal - Bug tracking, various user and developer
   contributed documentation and hints
 * Mailing list: http://lists.osgeo.org/mailman/listinfo/gdal-dev
 
@@ -27,25 +27,25 @@ Clone sources
 or update sources if already clonned
 
  $ git pull
- 
+
 Go to script folder of this repo /etc/cmake-build-helpers and execute
 
  $ python ./etc/cmake-build-helpers/gdal_restructure.py /path_to_gdal/gdal-git/ ./ ./etc/cmake-build-helpers/gdal_folders.csv
- 
+
 # Build status
 
 | OS | Status  |
 |---|:-:|
 | Windows | ![build status](http://176.9.38.120/buildbot/png?builder=gdal_win) |
-| Ubuntu (packaging) | ![build status](http://176.9.38.120/buildbot/png?builder=gdal_deb) | 
-| Ubuntu (packaging dev) | ![build status](http://176.9.38.120/buildbot/png?builder=gdal_debdev) | 
+| Ubuntu (packaging) | ![build status](http://176.9.38.120/buildbot/png?builder=gdal_deb) |
+| Ubuntu (packaging dev) | ![build status](http://176.9.38.120/buildbot/png?builder=gdal_debdev) |
 
 # Ubuntu PPA
 
   $ sudo apt-get install software-properties-common python-software-properties
-  
+
   $ sudo apt-add-repository ppa:nextgis/ppa
-  
+
   $ sudo apt-get install gdal-bin python-gdal
 
 # Test status
@@ -54,7 +54,7 @@ TODO:
 
 # Raster drivers
 
-Available raster drivers for now (by all driver dirs in sources). Drivers marked 
+Available raster drivers for now (by all driver dirs in sources). Drivers marked
 with '*' have high priority to be implemented.
 
 | Driver | Cmaked | External dependencies | Notes |
@@ -106,7 +106,7 @@ with '*' have high priority to be implemented.
 | **jaxapalsar** | **yes** | no | - |
 | **jdem** | **yes** | no | - |
 | jp2kak | no |  |  |
-| **jpeg** | **yes** | JPEG, JPEG12 | No jpeg12 support implemented; | 
+| **jpeg** | **yes** | JPEG, JPEG12 | No jpeg12 support implemented |
 | jpeg2000 * | no |  |  |
 | jpegls | no |  |  |
 | jpipkak | no |  |  |
@@ -161,9 +161,9 @@ with '*' have high priority to be implemented.
 | **xyz** | **yes** | no | - |
 | **zmap** | **yes** | no | - |
 
-# Vector drivers 
+# Vector drivers
 
-Available vector drivers for now (by all driver dirs in sources). Drivers marked with '*' have high priority to be implemented. 
+Available vector drivers for now (by all driver directories in sources). Drivers marked with '*' have high priority to be implemented.
 
 | Driver | Cmaked | External dependencies | Notes |
 |---|:-:|---|---|
@@ -216,7 +216,7 @@ Available vector drivers for now (by all driver dirs in sources). Drivers marked
 | null | no |  |  |
 | oci | no |  |  |
 | odbc * | no |  |  |
-| **ods** | **yes** | EXPAT | No additional build targets implemented - workarounding of gcc bug |
+| **ods** | **yes** | EXPAT | No additional build targets implemented - workaround of gcc bug |
 | ogdi | no |  |  |
 | **openair** | **yes** | no | - |
 | **openfilegdb** | **yes** | no | - |
@@ -244,12 +244,12 @@ Available vector drivers for now (by all driver dirs in sources). Drivers marked
 | **vrt** | **yes** | no | Obligatory for building GDAL |
 | walk | no |  |  |
 | **wasp** | **yes** | no | - |
-| **wfs** | **yes** | CURL | Depends on temporary /core/frmts directory; Requires built wms driver |
+| **wfs** | **yes** | CURL | Depends on temporary /core/frmts directory; Requires built WMS driver |
 | xls * | no | [lib_freexl](https://github.com/nextgis-borsch/lib_freexl) |  |
 | **xlsx** | **yes** | EXPAT | - |
 | **xplane** | **yes** | no | Obligatory for building GDAL |
 
-# Common drivers 
+# Common drivers
 
 Available raster+vector drivers for now (by all driver dirs in sources):
 
@@ -259,9 +259,9 @@ Available raster+vector drivers for now (by all driver dirs in sources):
 | **plscenes** | **yes** | CURL | Former OGR format |
 | cad | no | no | GSoC 2016 |
 
-# Network drivers 
+# Network drivers
 
-Available network (GNM) drivers for now (by all driver dirs in sources):
+Available network (GNM) drivers for now (by all driver directories in sources):
 
 | Driver | Cmaked | External dependencies | Notes |
 |---|:-:|---|---|
