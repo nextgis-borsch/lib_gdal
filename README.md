@@ -13,9 +13,11 @@ geospatial data formats. This is a mirror of the GDAL Subversion repository.
 * Mailing list: http://lists.osgeo.org/mailman/listinfo/gdal-dev
 
 # License
+
 X/MIT
 
 # Borsch
+
 Borsch repository link: https://github.com/nextgis-borsch/borsch
 
 # Sync sources with orgin
@@ -50,7 +52,7 @@ Go to script folder of this repo /etc/cmake-build-helpers and execute
 
 # Test status
 
-TODO:
+TODO: Show test states here (AppVeyor, Travis CI, etc.)
 
 # Raster drivers
 
