@@ -95,7 +95,7 @@ with '*' have high priority to be implemented.
 | gta | no |  |  |
 | **gtiff** | **yes** | no | Obligatory for building GDAL |
 | **gxf** | **yes** | no | No additional build targets implemented |
-| **hdf4** | **yes** | [lib_hdf4](https://github.com/nextgis-borsch/lib_hdf4) | 2 drivers in one (HDF4, HDF4Image); hdf-eos target implemented not as a library |
+| **hdf4** | **yes** | [HDF4](https://github.com/nextgis-borsch/lib_hdf4) | 2 drivers in one (HDF4, HDF4Image); [hdf-eos](https://github.com/nextgis-borsch/lib_hdfeos2) target implemented not as a library |
 | hdf5 * | no |  |  |
 | **hf2** | **yes** | no | - |
 | **hfa** | **yes** | no | Obligatory for building GDAL |
@@ -133,12 +133,12 @@ with '*' have high priority to be implemented.
 | pdf * | no |  |  |
 | **pds** | **yes** | no | 4 drivers in one (PDS, ISIS2, ISIS3, VICAR); Has the same dir name in /vector |
 | pgchip | no |  |  |
-| **plmosaic** | **yes** | CURL | - |
-| **png** | **yes** | PNG |  |
-| **postgisraster** | **yes** | PostgreSQL ([lib_pq](https://github.com/nextgis-borsch/lib_pq)) | - |
+| **plmosaic** | **yes** | [CURL](https://github.com/nextgis-borsch/lib_curl) | - |
+| **png** | **yes** | [PNG](https://github.com/nextgis-borsch/lib_png) |  |
+| **postgisraster** | **yes** | [PostgreSQL](https://github.com/nextgis-borsch/lib_pq)) | - |
 | **r** | **yes** | no | - |
 | rasdaman | no |  |  |
-| **rasterlite** | **yes** | Optionally: SPATIALITE? | Requires built sqlite driver |
+| **rasterlite** | **yes** | Optionally: [SPATIALITE](https://github.com/nextgis-borsch/lib_spatialite)? | Requires built sqlite driver |
 | **raw** | **yes** | no | Obligatory for building GDAL |
 | **rik** | **yes** | no | - |
 | **rmf** | **yes** | no | - |
@@ -153,7 +153,7 @@ with '*' have high priority to be implemented.
 | **tsx** | **yes** | no | - |
 | **usgsdem** | **yes** | no | - |
 | **vrt** | **yes** | no | Obligatory for building GDAL |
-| **wcs** | **yes** | CURL | Adds some "HTTP Fetching Wrapper" (raster/vector driver?) |
+| **wcs** | **yes** | [CURL](https://github.com/nextgis-borsch/lib_curl) | Adds some "HTTP Fetching Wrapper" (raster/vector driver?) |
 | webp * | no |  | Need for mobile and server |
 | **wms** | **yes** | [CURL](https://github.com/nextgis-borsch/lib_curl) | - |
 | **wmts** | **yes** | [CURL](https://github.com/nextgis-borsch/lib_curl) | - |
@@ -222,7 +222,7 @@ Available vector drivers for now (by all driver directories in sources). Drivers
 | **openfilegdb** | **yes** | no | - |
 | **osm** | **yes** | [SQLITE3](https://github.com/nextgis-borsch/lib_sqlite); Optionally: EXPAT | No additional build targets implemented |
 | **pds** | **yes** | no | Requires built PDS raster driver; Has the same dir name in /raster |
-| **pg** | **yes** | PostgreSQL ([lib_pq](https://github.com/nextgis-borsch/lib_pq)) | - |
+| **pg** | **yes** | [PostgreSQL](https://github.com/nextgis-borsch/lib_pq)) | - |
 | **pgdump** | **yes** | no | - |
 | pgeo | no |  |  |
 | **rec** | **yes** | no | - |
