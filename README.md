@@ -245,7 +245,7 @@ Available vector drivers for now (by all driver directories in sources). Drivers
 | walk | no |  |  |
 | **wasp** | **yes** | no | - |
 | **wfs** | **yes** | [CURL](https://github.com/nextgis-borsch/lib_curl) | Depends on temporary /core/frmts directory; Requires built WMS driver |
-| xls * | no | [lib_freexl](https://github.com/nextgis-borsch/lib_freexl) |  |
+| xls * | no | [FreeXL](https://github.com/nextgis-borsch/lib_freexl) |  |
 | **xlsx** | **yes** | [EXPAT](https://github.com/nextgis-borsch/lib_expat) | - |
 | **xplane** | **yes** | no | Obligatory for building GDAL |
 
