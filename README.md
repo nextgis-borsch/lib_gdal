@@ -135,7 +135,7 @@ with '*' have high priority to be implemented.
 | pgchip | no |  |  |
 | **plmosaic** | **yes** | [CURL](https://github.com/nextgis-borsch/lib_curl) | - |
 | **png** | **yes** | [PNG](https://github.com/nextgis-borsch/lib_png) |  |
-| **postgisraster** | **yes** | [PostgreSQL](https://github.com/nextgis-borsch/lib_pq)) | - |
+| **postgisraster** | **yes** | [PostgreSQL](https://github.com/nextgis-borsch/lib_pq) | - |
 | **r** | **yes** | no | - |
 | rasdaman | no |  |  |
 | **rasterlite** | **yes** | Optionally: [SPATIALITE](https://github.com/nextgis-borsch/lib_spatialite)? | Requires built sqlite driver |
@@ -220,9 +220,9 @@ Available vector drivers for now (by all driver directories in sources). Drivers
 | ogdi | no |  |  |
 | **openair** | **yes** | no | - |
 | **openfilegdb** | **yes** | no | - |
-| **osm** | **yes** | [SQLITE3](https://github.com/nextgis-borsch/lib_sqlite); Optionally: EXPAT | No additional build targets implemented |
+| **osm** | **yes** | [SQLITE3](https://github.com/nextgis-borsch/lib_sqlite); Optionally: [EXPAT](https://github.com/nextgis-borsch/lib_expat) | No additional build targets implemented |
 | **pds** | **yes** | no | Requires built PDS raster driver; Has the same dir name in /raster |
-| **pg** | **yes** | [PostgreSQL](https://github.com/nextgis-borsch/lib_pq)) | - |
+| **pg** | **yes** | [PostgreSQL](https://github.com/nextgis-borsch/lib_pq) | - |
 | **pgdump** | **yes** | no | - |
 | pgeo | no |  |  |
 | **rec** | **yes** | no | - |
