@@ -52,7 +52,7 @@ Go to script folder of this repo /etc/cmake-build-helpers and execute
 
 # Test status
 
-TODO: Show test states here (AppVeyor, Travis CI, etc.)
+TODO: Show test states here ([AppVeyor](https://www.appveyor.com/), [Travis CI](https://travis-ci.org/), etc.)
 
 # Raster drivers
 
