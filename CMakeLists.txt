@@ -249,8 +249,12 @@ else()
         else()
             set_target_properties(${LIB_NAME}static PROPERTIES OUTPUT_NAME ${LIB_NAME})
         endif()
+        set_target_properties(${LIB_NAME}static PROPERTIES CLEAN_DIRECT_OUTPUT 1)
     endif()
 endif()
+
+set_target_properties(${LIB_NAME} PROPERTIES CLEAN_DIRECT_OUTPUT 1)
+
 set(INSTALL_TARGETS ${INSTALL_TARGETS} ${LIB_NAME})
 
 set(_symbols "GDAL_1.8 { global: *; };")
