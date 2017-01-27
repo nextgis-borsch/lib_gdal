@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr2gmlgeometry.cpp 33631 2016-03-04 06:28:09Z goatbar $
  *
  * Project:  GML Translator
  * Purpose:  Code to translate OGRGeometry to GML string representation.

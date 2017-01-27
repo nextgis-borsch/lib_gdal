@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: cpl_findfile.cpp 33724 2016-03-16 17:14:11Z goatbar $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Generic data file location finder, with application hooking.
@@ -33,7 +33,7 @@
 #include "cpl_multiproc.h"
 #include "cpl_vsi.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_findfile.cpp 33724 2016-03-16 17:14:11Z goatbar $");
 
 typedef struct
 {

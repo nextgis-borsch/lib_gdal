@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrmssqlspatialdriver.cpp 35970 2016-10-27 11:27:30Z jef $
  *
  * Project:  MSSQL Spatial driver
  * Purpose:  Definition of classes for OGR MSSQL Spatial driver.
@@ -30,7 +30,7 @@
 #include "ogr_mssqlspatial.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrmssqlspatialdriver.cpp 35970 2016-10-27 11:27:30Z jef $");
 
 /************************************************************************/
 /*                           ~OGRMSSQLSpatialDriver()                   */
@@ -124,7 +124,11 @@ void RegisterOGRMSSQLSpatial()
     OGRSFDriver* poDriver = new OGRMSSQLSpatialDriver;
 
     poDriver->SetMetadataItem( GDAL_DMD_LONGNAME,
-                               "Microsoft SQL Server Spatial Database" );
+                               "Microsoft SQL Server Spatial Database"
+#ifdef MSSQL_BCP_SUPPORTED
+			       " (BCP)"
+#endif
+	);
     poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, "drv_mssqlspatial.html" );
     poDriver->SetMetadataItem( GDAL_DMD_CREATIONOPTIONLIST,
                                "<CreationOptionList/>");

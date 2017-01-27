@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrtigerdriver.cpp 33105 2016-01-23 15:27:32Z rouault $
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Implements OGRTigerDriver
@@ -30,7 +30,7 @@
 #include "ogr_tiger.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrtigerdriver.cpp 33105 2016-01-23 15:27:32Z rouault $");
 
 /************************************************************************/
 /*                                Open()                                */

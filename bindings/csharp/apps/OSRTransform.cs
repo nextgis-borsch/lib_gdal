@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: OSRTransform.cs 13437 2007-12-21 21:02:38Z tamas $
  *
  * Name:     OSRTransform.cs
  * Project:  GDAL CSharp Interface

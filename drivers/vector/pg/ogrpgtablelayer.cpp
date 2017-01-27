@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrpgtablelayer.cpp 35794 2016-10-17 19:29:48Z rouault $
 
  *
  * Project:  OpenGIS Simple Features Reference Implementation
@@ -37,7 +37,7 @@
 
 #define PQexec this_is_an_error
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrpgtablelayer.cpp 35794 2016-10-17 19:29:48Z rouault $");
 
 
 #define USE_COPY_UNSET  -10

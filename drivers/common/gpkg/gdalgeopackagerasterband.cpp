@@ -30,7 +30,7 @@
 #include "memdataset.h"
 #include "gdal_alg_priv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalgeopackagerasterband.cpp 35697 2016-10-11 18:44:52Z rouault $");
 
 #if !defined(DEBUG_VERBOSE) && defined(DEBUG_VERBOSE_GPKG)
 #define DEBUG_VERBOSE

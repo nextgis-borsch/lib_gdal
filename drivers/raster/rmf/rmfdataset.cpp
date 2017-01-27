@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: rmfdataset.cpp 36638 2016-12-02 19:08:00Z rouault $
  *
  * Project:  Raster Matrix Format
  * Purpose:  Read/write raster files used in GIS "Integratsia"
@@ -34,7 +34,7 @@
 
 #include "rmfdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: rmfdataset.cpp 36638 2016-12-02 19:08:00Z rouault $");
 
 static const int RMF_DEFAULT_BLOCKXSIZE = 256;
 static const int RMF_DEFAULT_BLOCKYSIZE = 256;
@@ -1254,23 +1254,7 @@ do {                                                                    \
                 abyHeader + 248, sizeof(poDS->sHeader.abyInvisibleColors) );
         RMF_READ_DOUBLE( abyHeader, poDS->sHeader.adfElevMinMax[0], 280 );
         RMF_READ_DOUBLE( abyHeader, poDS->sHeader.adfElevMinMax[1], 288 );
-
-        if (poDS->sHeader.nBitDepth == 8)
-        {
-            poDS->sHeader.dfNoData = *reinterpret_cast<char *>(abyHeader + 296);
-        }
-        else if (poDS->sHeader.nBitDepth == 16)
-        {
-            RMF_READ_SHORT(abyHeader, poDS->sHeader.dfNoData, 296);
-        }
-        else if (poDS->sHeader.nBitDepth == 32)
-        {
-            RMF_READ_LONG(abyHeader, poDS->sHeader.dfNoData, 296);
-        }
-        else if (poDS->sHeader.nBitDepth == 64)
-        {
-            RMF_READ_DOUBLE(abyHeader, poDS->sHeader.dfNoData, 296);
-        }
+        RMF_READ_DOUBLE(abyHeader, poDS->sHeader.dfNoData, 296);
 
         RMF_READ_ULONG( abyHeader, poDS->sHeader.iElevationUnit, 304 );
         poDS->sHeader.iElevationType = *(abyHeader + 308);

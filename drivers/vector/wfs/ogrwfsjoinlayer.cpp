@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrwfsjoinlayer.cpp 32983 2016-01-14 18:32:10Z goatbar $
  *
  * Project:  WFS Translator
  * Purpose:  Implements OGRWFSJoinLayer class.
@@ -30,7 +30,7 @@
 #include "ogr_wfs.h"
 #include "../../frmts/wms/md5.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrwfsjoinlayer.cpp 32983 2016-01-14 18:32:10Z goatbar $");
 
 /************************************************************************/
 /*                          OGRWFSJoinLayer()                           */

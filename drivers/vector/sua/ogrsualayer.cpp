@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrsualayer.cpp 31478 2015-11-14 19:13:16Z goatbar $
  *
  * Project:  SUA Translator
  * Purpose:  Implements OGRSUALayer class.
@@ -34,7 +34,7 @@
 #include "ogr_xplane_geo_utils.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrsualayer.cpp 31478 2015-11-14 19:13:16Z goatbar $");
 
 /************************************************************************/
 /*                            OGRSUALayer()                             */

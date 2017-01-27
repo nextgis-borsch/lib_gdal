@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id$
+ * $Id: cpl_getexecpath.cpp 33646 2016-03-05 15:54:03Z goatbar $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Implement CPLGetExecPath().
@@ -30,7 +30,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_getexecpath.cpp 33646 2016-03-05 15:54:03Z goatbar $");
 
 #if defined(WIN32)
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrfielddefn.cpp 33631 2016-03-04 06:28:09Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRFieldDefn class implementation.
@@ -33,7 +33,7 @@
 #include "ogr_p.h"
 #include "ograpispy.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrfielddefn.cpp 33631 2016-03-04 06:28:09Z goatbar $");
 
 /************************************************************************/
 /*                            OGRFieldDefn()                            */

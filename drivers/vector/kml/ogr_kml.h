@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_kml.h 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  KML Driver
  * Purpose:  Declarations for OGR wrapper classes for KML, and OGR->KML

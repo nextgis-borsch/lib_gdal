@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrtigerdatasource.cpp 33710 2016-03-12 06:28:29Z goatbar $
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Implements OGRTigerDataSource class
@@ -33,7 +33,7 @@
 
 #include <cctype>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrtigerdatasource.cpp 33710 2016-03-12 06:28:29Z goatbar $");
 
 /************************************************************************/
 /*                        TigerClassifyVersion()                        */

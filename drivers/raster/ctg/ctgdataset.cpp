@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ctgdataset.cpp 32205 2015-12-17 21:57:20Z goatbar $
  *
  * Project:  CTG driver
  * Purpose:  GDALDataset driver for CTG dataset.
@@ -31,7 +31,7 @@
 #include "gdal_pam.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ctgdataset.cpp 32205 2015-12-17 21:57:20Z goatbar $");
 
 static const int HEADER_LINE_COUNT = 5;
 

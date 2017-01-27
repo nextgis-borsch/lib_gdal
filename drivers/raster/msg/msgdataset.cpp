@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: msgdataset.cpp 33951 2016-04-12 14:51:31Z rouault $
  *
  * Project:  MSG Driver
  * Purpose:  GDALDataset driver for MSG translator for read support.

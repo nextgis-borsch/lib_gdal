@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ntffilereader.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  NTF Translator
  * Purpose:  NTFFileReader class implementation.
@@ -34,7 +34,7 @@
 #include "cpl_string.h"
 #include "ogr_api.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ntffilereader.cpp 33714 2016-03-13 05:42:13Z goatbar $");
 
 static int DefaultNTFRecordGrouper( NTFFileReader *, NTFRecord **,
                                     NTFRecord * );

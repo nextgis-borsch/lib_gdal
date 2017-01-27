@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrshapedatasource.cpp 34069 2016-04-23 17:59:00Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRShapeDataSource class.
@@ -35,7 +35,7 @@
 
 //#define IMMEDIATE_OPENING 1
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrshapedatasource.cpp 34069 2016-04-23 17:59:00Z rouault $");
 
 /************************************************************************/
 /*                          DS_SHPOpen()                                */

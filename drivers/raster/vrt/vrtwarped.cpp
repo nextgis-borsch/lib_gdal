@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: vrtwarped.cpp 34552 2016-07-05 17:47:34Z rouault $
  *
  * Project:  Virtual GDAL Datasets
  * Purpose:  Implementation of VRTWarpedRasterBand *and VRTWarpedDataset.
@@ -38,7 +38,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: vrtwarped.cpp 34552 2016-07-05 17:47:34Z rouault $");
 
 /************************************************************************/
 /*                      GDALAutoCreateWarpedVRT()                       */

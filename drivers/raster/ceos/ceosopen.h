@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ceosopen.h 31777 2015-11-26 14:14:41Z rouault $
  *
  * Project:  CEOS Translator
  * Purpose:  Public (C callable) interface for CEOS and related formats such

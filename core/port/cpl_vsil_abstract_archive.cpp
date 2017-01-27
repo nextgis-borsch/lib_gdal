@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: cpl_vsil_abstract_archive.cpp 33724 2016-03-16 17:14:11Z goatbar $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Implement VSI large file api for archive files.
@@ -35,7 +35,7 @@
 
 #define ENABLE_DEBUG 0
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_vsil_abstract_archive.cpp 33724 2016-03-16 17:14:11Z goatbar $");
 
 /************************************************************************/
 /*                    ~VSIArchiveEntryFileOffset()                      */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ecwdataset.cpp 34287 2016-05-24 15:49:52Z mloskot $
  *
  * Project:  GDAL
  * Purpose:  ECW (ERDAS Wavelet Compression Format) Driver
@@ -37,7 +37,7 @@
 
 #include "../mem/memdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ecwdataset.cpp 34287 2016-05-24 15:49:52Z mloskot $");
 
 #undef NOISY_DEBUG
 

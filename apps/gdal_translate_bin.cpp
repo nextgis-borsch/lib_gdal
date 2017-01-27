@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdal_translate_bin.cpp 34776 2016-07-25 21:22:15Z rouault $
  *
  * Project:  GDAL Utilities
  * Purpose:  GDAL Image Translator Program
@@ -34,7 +34,7 @@
 #include "commonutils.h"
 #include "gdal_utils_priv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdal_translate_bin.cpp 34776 2016-07-25 21:22:15Z rouault $");
 
 /*  ******************************************************************* */
 /*                               Usage()                                */

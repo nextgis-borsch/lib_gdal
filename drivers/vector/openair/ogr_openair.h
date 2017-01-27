@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_openair.h 32976 2016-01-14 00:07:34Z goatbar $
  *
  * Project:  OpenAir Translator
  * Purpose:  Definition of classes for OGR .sua driver.

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrpgdatasource.cpp 35632 2016-10-07 13:45:42Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRPGDataSource class.
@@ -37,7 +37,7 @@
 
 #define PQexec this_is_an_error
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrpgdatasource.cpp 35632 2016-10-07 13:45:42Z rouault $");
 
 static void OGRPGNoticeProcessor( void *arg, const char * pszMessage );
 

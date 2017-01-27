@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrlayerpool.cpp 31925 2015-12-01 15:02:41Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Defines OGRLayerPool and OGRProxiedLayer class
@@ -29,7 +29,7 @@
 
 #include "ogrlayerpool.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrlayerpool.cpp 31925 2015-12-01 15:02:41Z rouault $");
 
 /************************************************************************/
 /*                      OGRAbstractProxiedLayer()                       */

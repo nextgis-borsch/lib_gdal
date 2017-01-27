@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: plmosaicdataset.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  PLMosaic driver
  * Purpose:  PLMosaic driver
@@ -37,7 +37,7 @@
 
 #include <json.h>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: plmosaicdataset.cpp 33720 2016-03-15 00:39:53Z goatbar $");
 
 // g++ -fPIC -g -Wall frmts/plmosaic/*.cpp -shared -o gdal_PLMOSAIC.so -Iport -Igcore -Iogr -Iogr/ogrsf_frmts -Iogr/ogrsf_frmts/geojson/libjson -L. -lgdal
 

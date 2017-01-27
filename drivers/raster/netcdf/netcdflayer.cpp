@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: netcdflayer.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  netCDF read/write Driver
  * Purpose:  GDAL bindings over netCDF library.
@@ -30,7 +30,7 @@
 #include "netcdfdataset.h"
 #include "cpl_time.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: netcdflayer.cpp 33720 2016-03-15 00:39:53Z goatbar $");
 
 /************************************************************************/
 /*                            netCDFLayer()                             */

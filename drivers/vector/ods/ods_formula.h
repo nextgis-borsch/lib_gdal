@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ods_formula.h 32967 2016-01-13 14:40:01Z goatbar $
  *
  * Component: ODS formula Engine
  * Purpose: Implementation of the ods_formula_node class used to represent a

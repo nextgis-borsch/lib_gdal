@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: biggifdataset.cpp 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  BIGGIF Driver
  * Purpose:  Implement GDAL support for reading large GIF files in a
@@ -35,7 +35,7 @@
 #include "gdal_pam.h"
 #include "gifabstractdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: biggifdataset.cpp 33717 2016-03-14 06:29:14Z goatbar $");
 
 /************************************************************************/
 /* ==================================================================== */

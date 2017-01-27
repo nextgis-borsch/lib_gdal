@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_rec.h 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  Epi .REC Translator
  * Purpose:  Definition of classes for OGR .REC support.

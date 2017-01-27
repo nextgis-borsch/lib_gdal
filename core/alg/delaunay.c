@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: delaunay.c 33715 2016-03-13 08:52:06Z goatbar $
  *
  * Project:  GDAL algorithms
  * Purpose:  Delaunay triangulation
@@ -50,7 +50,7 @@
 #include <ctype.h>
 #include <math.h>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: delaunay.c 33715 2016-03-13 08:52:06Z goatbar $");
 
 #if defined(INTERNAL_QHULL) || defined(EXTERNAL_QHULL)
 #define HAVE_INTERNAL_OR_EXTERNAL_QHULL 1

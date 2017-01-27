@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrmssqlspatialselectlayer.cpp 35339 2016-09-05 21:50:17Z tamas $
  *
  * Project:  MSSQL Spatial driver
  * Purpose:  Implements OGRMSSQLSpatialSelectLayer class, layer access to the results
@@ -34,7 +34,7 @@
 #include <sqlncli.h>
 #endif
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrmssqlspatialselectlayer.cpp 35339 2016-09-05 21:50:17Z tamas $");
 /************************************************************************/
 /*                     OGRMSSQLSpatialSelectLayer()                     */
 /************************************************************************/

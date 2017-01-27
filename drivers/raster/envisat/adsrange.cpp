@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: adsrange.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  APP ENVISAT Support
  * Purpose:  Detect range of ADS records matching the MDS records.

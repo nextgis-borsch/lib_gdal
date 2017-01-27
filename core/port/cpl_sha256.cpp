@@ -1,4 +1,4 @@
-/* $Id$ */
+/* $Id: cpl_sha256.cpp 33724 2016-03-16 17:14:11Z goatbar $ */
 
 /* CPL_SHA256* functions derived from http://code.google.com/p/ulib/source/browse/trunk/src/base/sha256sum.c?r=39 */
 
@@ -36,7 +36,7 @@
 #include <string.h>
 #include "cpl_sha256.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_sha256.cpp 33724 2016-03-16 17:14:11Z goatbar $");
 
 #define ROTL(x, n) (((x) << (n)) | ((x) >> (32 - (n))))
 #define ROTR(x, n) (((x) >> (n)) | ((x) << (32 - (n))))

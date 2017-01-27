@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gtiff.h 33806 2016-03-28 22:26:19Z goatbar $
  *
  * Project:  GeoTIFF Driver
  * Purpose:  GDAL GeoTIFF support.

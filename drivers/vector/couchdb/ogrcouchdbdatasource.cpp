@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrcouchdbdatasource.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  CouchDB Translator
  * Purpose:  Implements OGRCouchDBDataSource class
@@ -30,7 +30,7 @@
 #include "ogr_couchdb.h"
 #include "swq.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrcouchdbdatasource.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 /************************************************************************/
 /*                        OGRCouchDBDataSource()                        */

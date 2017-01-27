@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_sosi.h 34420 2016-06-24 21:06:03Z rouault $
  *
  * Project:  SOSI Translator
  * Purpose:  Implements OGRSOSIDriver.

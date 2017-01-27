@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: vrtpansharpened.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  Virtual GDAL Datasets
  * Purpose:  Implementation of VRTPansharpenedRasterBand and VRTPansharpenedDataset.
@@ -40,7 +40,7 @@
 #include <map>
 #include <set>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: vrtpansharpened.cpp 33720 2016-03-15 00:39:53Z goatbar $");
 
 /************************************************************************/
 /*                    GDALCreatePansharpenedVRT()                       */

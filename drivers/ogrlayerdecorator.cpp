@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrlayerdecorator.cpp 32467 2015-12-26 10:54:09Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRLayerDecorator class
@@ -29,7 +29,7 @@
 
 #include "ogrlayerdecorator.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrlayerdecorator.cpp 32467 2015-12-26 10:54:09Z rouault $");
 
 OGRLayerDecorator::OGRLayerDecorator(OGRLayer* poDecoratedLayer,
                                      int bTakeOwnership) :

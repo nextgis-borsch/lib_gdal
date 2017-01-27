@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrsqlitevfs.cpp 33884 2016-04-03 18:50:15Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements SQLite VFS
@@ -30,7 +30,7 @@
 #include "cpl_atomic_ops.h"
 #include "ogr_sqlite.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrsqlitevfs.cpp 33884 2016-04-03 18:50:15Z rouault $");
 
 #ifdef DEBUG_IO
 # define DEBUG_ONLY

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ersdataset.cpp 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  ERMapper .ers Driver
  * Purpose:  Implementation of .ers driver.
@@ -34,7 +34,7 @@
 #include "ogr_spatialref.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ersdataset.cpp 33717 2016-03-14 06:29:14Z goatbar $");
 
 /************************************************************************/
 /* ==================================================================== */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_geocoding.cpp 33757 2016-03-20 20:22:33Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Client of geocoding service.
@@ -77,7 +77,7 @@ int OGR_gettimeofday(struct timeval *tv, CPL_UNUSED struct timezone *tzIgnored)
 #include "ogr_mem.h"
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogr_geocoding.cpp 33757 2016-03-20 20:22:33Z goatbar $");
 
 struct _OGRGeocodingSessionHS
 {

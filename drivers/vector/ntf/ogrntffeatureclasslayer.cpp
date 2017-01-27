@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrntffeatureclasslayer.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  UK NTF Reader
  * Purpose:  Implements OGRNTFFeatureClassLayer class.
@@ -30,7 +30,7 @@
 #include "ntf.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrntffeatureclasslayer.cpp 33714 2016-03-13 05:42:13Z goatbar $");
 
 /************************************************************************/
 /*                      OGRNTFFeatureClassLayer()                       */

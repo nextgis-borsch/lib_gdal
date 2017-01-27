@@ -1,5 +1,5 @@
 /*****************************************************************************
- * $Id$
+ * $Id: IngrTypes.h 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  Intergraph Raster Format support
  * Purpose:  Types, constants and functions definition

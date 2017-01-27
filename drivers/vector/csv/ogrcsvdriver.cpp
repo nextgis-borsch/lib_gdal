@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrcsvdriver.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  CSV Translator
  * Purpose:  Implements OGRCSVDriver.
@@ -33,7 +33,7 @@
 #include "cpl_multiproc.h"
 #include <map>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrcsvdriver.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 static CPLMutex* hMutex = NULL;
 static std::map<CPLString, GDALDataset*> *poMap = NULL;

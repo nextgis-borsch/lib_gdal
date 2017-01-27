@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ograpispy.cpp 33680 2016-03-08 09:59:03Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  OGR C API "Spy"

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrgeojsonreader.cpp 34362 2016-06-17 11:45:09Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implementation of OGRGeoJSONReader class (OGR GeoJSON Driver).

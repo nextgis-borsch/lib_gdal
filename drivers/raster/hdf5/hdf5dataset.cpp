@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: hdf5dataset.cpp 33460 2016-02-15 16:48:24Z rouault $
  *
  * Project:  Hierarchical Data Format Release 5 (HDF5)
  * Purpose:  HDF5 Datasets. Open HDF5 file, fetch metadata and list of
@@ -49,7 +49,7 @@
 #include "gdal_priv.h"
 #include "hdf5dataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: hdf5dataset.cpp 33460 2016-02-15 16:48:24Z rouault $");
 
 static const size_t MAX_METADATA_LEN = 32768;
 

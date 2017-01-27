@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_vdv.h 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  VDV Translator
  * Purpose:  Implements OGRVDVDriver.

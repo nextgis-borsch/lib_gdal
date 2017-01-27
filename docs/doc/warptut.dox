@@ -1,5 +1,5 @@
 #ifndef DOXYGEN_SKIP
-/* $Id$ */
+/* $Id: warptut.dox 33134 2016-01-23 23:10:03Z rouault $ */
 #endif /* DOXYGEN_SKIP */
 
 /*!
@@ -362,7 +362,7 @@ caution at this time.
 
 \htmlonly
 <p>
-$Id$
+$Id: warptut.dox 33134 2016-01-23 23:10:03Z rouault $
 </p>
 \endhtmlonly
 

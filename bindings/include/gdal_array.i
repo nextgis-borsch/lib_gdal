@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdal_array.i 33792 2016-03-26 12:54:28Z goatbar $
  *
  * Name:     gdal_array.i
  * Project:  GDAL Python Interface

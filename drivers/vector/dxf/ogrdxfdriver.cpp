@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrdxfdriver.cpp 32110 2015-12-10 17:19:40Z goatbar $
  *
  * Project:  DXF Translator
  * Purpose:  Implements OGRDXFDriver.
@@ -30,7 +30,7 @@
 #include "ogr_dxf.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrdxfdriver.cpp 32110 2015-12-10 17:19:40Z goatbar $");
 
 /************************************************************************/
 /*                       OGRDXFDriverIdentify()                         */

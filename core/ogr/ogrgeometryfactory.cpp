@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrgeometryfactory.cpp 37132 2017-01-12 21:29:13Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Factory for converting geometry to and from well known binary
@@ -41,7 +41,7 @@
 #define UNUSED_IF_NO_GEOS
 #endif
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgeometryfactory.cpp 37132 2017-01-12 21:29:13Z rouault $");
 
 /************************************************************************/
 /*                           createFromWkb()                            */
@@ -3602,7 +3602,7 @@ OGRLineString* OGRGeometryFactory::curveToLineString(
                                     alpha0, alpha2, dfStep,
                                     bStealth);
 
-        if( bStealth )
+        if( bStealth && poLine->getNumPoints() > 6 )
         {
             /* 'Hide' the angle of the intermediate point in the 8 low-significant */
             /* bits of the x,y of the first 2 computed points (so 32 bits), */

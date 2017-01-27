@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: cpl_vsisimple.cpp 33724 2016-03-16 17:14:11Z goatbar $
  *
  * Project:  Common Portability Library
  * Purpose:  Simple implementation of POSIX VSI functions.
@@ -72,7 +72,7 @@
 extern "C" GIntBig CPL_DLL CPL_STDCALL GDALGetCacheUsed64(void);
 #endif
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_vsisimple.cpp 33724 2016-03-16 17:14:11Z goatbar $");
 
 /* for stat() */
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: grass57dataset.cpp 33893 2016-04-04 14:08:28Z rouault $
  *
  * Project:  GRASS Driver
  * Purpose:  Implement GRASS raster read/write support
@@ -64,7 +64,7 @@ char *GPJ_grass_to_wkt(struct Key_Value *,
 
 #define GRASS_MAX_COLORS 100000  // what is the right value
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: grass57dataset.cpp 33893 2016-04-04 14:08:28Z rouault $");
 
 #if GRASS_VERSION_MAJOR  >= 7
 #define G_get_cellhd             Rast_get_cellhd

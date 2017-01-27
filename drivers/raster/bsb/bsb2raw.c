@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: bsb2raw.c 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  BSB Reader
  * Purpose:  Test program for dumping BSB to PPM raster format.
@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "bsb_read.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: bsb2raw.c 33717 2016-03-14 06:29:14Z goatbar $");
 
 /************************************************************************/
 /*                                main()                                */

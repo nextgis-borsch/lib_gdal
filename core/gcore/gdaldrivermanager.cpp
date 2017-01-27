@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdaldrivermanager.cpp 34979 2016-08-08 09:30:34Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of GDALDriverManager class.
@@ -42,7 +42,7 @@
 #  endif
 #endif
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdaldrivermanager.cpp 34979 2016-08-08 09:30:34Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */

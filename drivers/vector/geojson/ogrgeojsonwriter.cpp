@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrgeojsonwriter.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implementation of GeoJSON writer utilities (OGR GeoJSON Driver).

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: bsb_read.h 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  BSB Reader
  * Purpose:  non-GDAL BSB API Declarations

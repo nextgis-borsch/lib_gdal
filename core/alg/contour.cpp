@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: contour.cpp 34472 2016-06-30 10:51:45Z rouault $
  *
  * Project:  Contour Generation
  * Purpose:  Core algorithm implementation for contour line generation.
@@ -33,7 +33,7 @@
 #include "gdal_alg.h"
 #include "ogr_api.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: contour.cpp 34472 2016-06-30 10:51:45Z rouault $");
 
 // The amount of a contour interval that pixels should be fudged by if they
 // match a contour level exactly.

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrodbclayer.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRODBCLayer class, code shared between
@@ -32,7 +32,7 @@
 #include "ogr_odbc.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrodbclayer.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 /************************************************************************/
 /*                            OGRODBCLayer()                            */

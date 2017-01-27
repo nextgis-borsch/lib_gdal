@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: rikdataset.cpp 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  RIK Reader
  * Purpose:  All code for RIK Reader
@@ -33,7 +33,7 @@
 #include "gdal_frmts.h"
 #include "gdal_pam.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: rikdataset.cpp 33717 2016-03-14 06:29:14Z goatbar $");
 
 #define RIK_HEADER_DEBUG 0
 #define RIK_CLEAR_DEBUG 0

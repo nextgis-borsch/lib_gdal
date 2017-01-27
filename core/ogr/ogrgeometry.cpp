@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrgeometry.cpp 35500 2016-09-23 14:10:22Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements a few base methods on OGRGeometry.
@@ -41,7 +41,7 @@
 #define UNUSED_IF_NO_GEOS
 #endif
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgeometry.cpp 35500 2016-09-23 14:10:22Z rouault $");
 
 int OGRGeometry::bGenerate_DB2_V72_BYTE_ORDER = FALSE;
 

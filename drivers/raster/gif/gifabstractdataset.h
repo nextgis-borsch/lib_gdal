@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gifabstractdataset.h 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  GIF Driver
  * Purpose:  GIF Abstract Dataset

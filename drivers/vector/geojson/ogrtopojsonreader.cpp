@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrtopojsonreader.cpp 34246 2016-05-18 13:25:44Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implementation of OGRTopoJSONReader class

@@ -29,7 +29,7 @@
 #include "ogr_carto.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrcartolayer.cpp 34979 2016-08-08 09:30:34Z rouault $");
 
 /************************************************************************/
 /*                         OGRCARTOLayer()                            */

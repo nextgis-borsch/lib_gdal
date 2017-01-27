@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrlayer.cpp 33754 2016-03-20 17:03:43Z ajolma $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The generic portions of the OGRSFLayer class.
@@ -35,7 +35,7 @@
 #include "swq.h"
 #include "ograpispy.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrlayer.cpp 33754 2016-03-20 17:03:43Z ajolma $");
 
 /************************************************************************/
 /*                              OGRLayer()                              */

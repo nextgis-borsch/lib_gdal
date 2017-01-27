@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalserver.c 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  GDAL
  * Purpose:  Server application that is forked by libgdal
@@ -87,7 +87,7 @@ int  CPL_DLL  GDALServerLoopInstanceRunIteration(void* pInstance);
 void CPL_DLL  GDALServerLoopInstanceDestroy(void* pInstance);
 CPL_C_END
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalserver.c 33720 2016-03-15 00:39:53Z goatbar $");
 
 static int bVerbose = FALSE;
 

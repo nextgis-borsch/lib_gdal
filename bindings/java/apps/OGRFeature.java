@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: OGRFeature.java 16357 2009-02-16 23:30:06Z rouault $
  *
  * Name:     OGRFeature.java
  * Project:  OGR Java Interface

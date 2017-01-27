@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrcsvdatasource.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  CSV Translator
  * Purpose:  Implements OGRCSVDataSource class
@@ -37,7 +37,7 @@
 
 #include "ogreditablelayer.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrcsvdatasource.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 /************************************************************************/
 /*                     OGRCSVEditableLayerSynchronizer                  */

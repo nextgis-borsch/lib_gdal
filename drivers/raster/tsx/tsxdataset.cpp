@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: tsxdataset.cpp 32237 2015-12-18 13:41:27Z goatbar $
  *
  * Project:     TerraSAR-X XML Product Support
  * Purpose:     Support for TerraSAR-X XML Metadata files
@@ -37,7 +37,7 @@
 
 #define MAX_GCPS 5000    //this should be more than enough ground control points
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: tsxdataset.cpp 32237 2015-12-18 13:41:27Z goatbar $");
 
 enum ePolarization {
     HH=0,

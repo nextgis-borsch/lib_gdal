@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrvfklayer.cpp 32177 2015-12-14 07:25:30Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRVFKLayer class.
@@ -33,7 +33,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrvfklayer.cpp 32177 2015-12-14 07:25:30Z goatbar $");
 
 /*!
   \brief OGRVFKLayer constructor

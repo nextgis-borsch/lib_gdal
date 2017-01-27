@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: testgetpoints.java 22044 2011-03-26 14:47:20Z rouault $
  *
  * Name:     testgetpoints.java
  * Project:  OGR Java Interface

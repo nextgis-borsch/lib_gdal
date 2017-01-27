@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #******************************************************************************
-#  $Id$
+#  $Id: gdal_polygonize.py 34304 2016-05-27 17:46:17Z rouault $
 #
 #  Project:  GDAL Python Interface
 #  Purpose:  Application for converting raster data to a vector polygon layer.

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: elasdataset.cpp 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  ELAS Translator
  * Purpose:  Complete implementation of ELAS translator module for GDAL.
@@ -35,7 +35,7 @@
 
 using std::fill;
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: elasdataset.cpp 33717 2016-03-14 06:29:14Z goatbar $");
 
 typedef struct ELASHeader {
     ELASHeader();

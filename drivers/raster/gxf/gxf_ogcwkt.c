@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gxf_ogcwkt.c 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  GXF Reader
  * Purpose:  Handle GXF to OGC WKT projection transformation.
@@ -31,7 +31,7 @@
 #include "gxfopen.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gxf_ogcwkt.c 33720 2016-03-15 00:39:53Z goatbar $");
 
 /* -------------------------------------------------------------------- */
 /* the following #defines come from ogr_spatialref.h in the GDAL/OGR	*/

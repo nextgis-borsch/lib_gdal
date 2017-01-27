@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: sgidataset.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  SGI Image Driver
  * Purpose:  Implement SGI Image Support based on Paul Bourke's SGI Image code.
@@ -39,7 +39,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: sgidataset.cpp 33720 2016-03-15 00:39:53Z goatbar $");
 
 struct ImageRec
 {

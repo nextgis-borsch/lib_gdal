@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: openjpegdataset.cpp 36187 2016-11-09 15:20:50Z rouault $
  *
  * Project:  JPEG2000 driver based on OpenJPEG library
  * Purpose:  JPEG2000 driver based on OpenJPEG library
@@ -46,7 +46,7 @@
 #include "gdaljp2metadata.h"
 #include "vrt/vrtdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: openjpegdataset.cpp 36187 2016-11-09 15:20:50Z rouault $");
 
 /************************************************************************/
 /*                  JP2OpenJPEGDataset_ErrorCallback()                  */
@@ -1690,8 +1690,18 @@ GDALDataset *JP2OpenJPEGDataset::Open( GDALOpenInfo * poOpenInfo )
     }
     else if (poDS->bUseSetDecodeArea)
     {
-        if (nTileW > 1024) nTileW = 1024;
-        if (nTileH > 1024) nTileH = 1024;
+        // Arbitrary threshold... ~4 million at least needed for the GRIB2
+        // images mentionned below.
+        if( nTileH == 1 && nTileW < 20 * 1024 * 1024 )
+        {
+            // Some GRIB2 JPEG2000 compressed images are a 2D image organized
+            // as a single line image...
+        }
+        else
+        {
+            if (nTileW > 1024) nTileW = 1024;
+            if (nTileH > 1024) nTileH = 1024;
+        }
     }
 
     GDALColorTable* poCT = NULL;

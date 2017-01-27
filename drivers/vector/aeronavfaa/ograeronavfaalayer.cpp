@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ograeronavfaalayer.cpp 32381 2015-12-20 21:37:32Z goatbar $
  *
  * Project:  AeronavFAA Translator
  * Purpose:  Implements OGRAeronavFAALayer class.
@@ -33,7 +33,7 @@
 #include "ogr_p.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ograeronavfaalayer.cpp 32381 2015-12-20 21:37:32Z goatbar $");
 
 /************************************************************************/
 /*                        OGRAeronavFAALayer()                          */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrfmecacheindex.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  FMEObjects Translator
  * Purpose:  Implement the OGRFMECacheIndex class, a mechanism to manage a
@@ -35,7 +35,7 @@
 #include "cpl_string.h"
 #include <time.h>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrfmecacheindex.cpp 33714 2016-03-13 05:42:13Z goatbar $");
 
 /************************************************************************/
 /*                          OGRFMECacheIndex()                          */

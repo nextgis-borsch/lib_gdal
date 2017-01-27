@@ -1,6 +1,6 @@
 
 /**********************************************************************
- * $Id$
+ * $Id: cpl_time.cpp 33783 2016-03-24 13:45:22Z goatbar $
  *
  * Name:     cpl_time.cpp
  * Project:  CPL - Common Portability Library

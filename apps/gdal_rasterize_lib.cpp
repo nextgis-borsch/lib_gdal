@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdal_rasterize_lib.cpp 36584 2016-11-30 17:46:24Z rouault $
  *
  * Project:  GDAL Utilities
  * Purpose:  Rasterize OGR shapes into a GDAL raster.
@@ -38,7 +38,7 @@
 #include "gdal_utils_priv.h"
 #include <vector>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdal_rasterize_lib.cpp 36584 2016-11-30 17:46:24Z rouault $");
 
 /************************************************************************/
 /*                            ArgIsNumeric()                            */
@@ -585,7 +585,7 @@ GDALDatasetH GDALRasterize( const char *pszDest, GDALDatasetH hDstDS,
         bCreateOutput = TRUE;
 
     GDALDriverH hDriver = NULL;
-    if (psOptions->bCreateOutput)
+    if (bCreateOutput)
     {
 /* -------------------------------------------------------------------- */
 /*      Find the output driver.                                         */
@@ -665,7 +665,7 @@ GDALDatasetH GDALRasterize( const char *pszDest, GDALDatasetH hDstDS,
 /* -------------------------------------------------------------------- */
     int nLayerCount = (psOptions->pszSQL == NULL && psOptions->papszLayers == NULL) ? 1 : CSLCount(psOptions->papszLayers);
 
-    if (psOptions->bCreateOutput && hDstDS == NULL)
+    if (bCreateOutput && hDstDS == NULL)
     {
         std::vector<OGRLayerH> ahLayers;
 
@@ -787,7 +787,6 @@ GDALRasterizeOptions *GDALRasterizeOptionsNew(char** papszArgv,
     psOptions->papszRasterizeOptions = NULL;
     psOptions->dfXRes = 0;
     psOptions->dfYRes = 0;
-    psOptions->bCreateOutput = FALSE;
     psOptions->eOutputType = GDT_Float64;
     psOptions->bNoDataSet = FALSE;
     psOptions->dfNoData = 0;

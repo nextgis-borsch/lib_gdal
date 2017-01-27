@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: atlsci_spheroid.cpp 33673 2016-03-07 20:40:54Z goatbar $
  *
  * Project:  Spheroid classes
  * Purpose:  Provide spheroid lookup table base classes.
@@ -30,7 +30,7 @@
 #include "atlsci_spheroid.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: atlsci_spheroid.cpp 33673 2016-03-07 20:40:54Z goatbar $");
 
 /**********************************************************************/
 /* ================================================================== */

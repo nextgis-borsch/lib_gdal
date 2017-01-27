@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: webpdataset.cpp 32827 2016-01-08 11:22:33Z rouault $
  *
  * Project:  GDAL WEBP Driver
  * Purpose:  Implement GDAL WEBP Support based on libwebp
@@ -33,7 +33,7 @@
 
 #include "webp_headers.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: webpdataset.cpp 32827 2016-01-08 11:22:33Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */

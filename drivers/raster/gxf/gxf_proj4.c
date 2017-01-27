@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gxf_proj4.c 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  GXF Reader
  * Purpose:  Handle GXF to PROJ.4 projection transformation.
@@ -30,7 +30,7 @@
 
 #include "gxfopen.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gxf_proj4.c 33720 2016-03-15 00:39:53Z goatbar $");
 
 
 #define SAFE_strcat(x,y) snprintf(x + strlen(x),sizeof(x) - strlen(x), "%s", y)

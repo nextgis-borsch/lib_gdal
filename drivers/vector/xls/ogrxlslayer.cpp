@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrxlslayer.cpp 31478 2015-11-14 19:13:16Z goatbar $
  *
  * Project:  XLS Translator
  * Purpose:  Implements OGRXLSLayer class.
@@ -33,7 +33,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrxlslayer.cpp 31478 2015-11-14 19:13:16Z goatbar $");
 
 /************************************************************************/
 /*                            OGRXLSLayer()                             */

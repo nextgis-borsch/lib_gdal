@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrgfttablelayer.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  GFT Translator
  * Purpose:  Implements OGRGFTTableLayer class.
@@ -29,7 +29,7 @@
 
 #include "ogr_gft.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgfttablelayer.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 /************************************************************************/
 /*                         OGRGFTTableLayer()                           */

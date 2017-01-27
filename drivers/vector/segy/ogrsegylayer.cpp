@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrsegylayer.cpp 32011 2015-12-06 10:19:18Z rouault $
  *
  * Project:  SEG-Y Translator
  * Purpose:  Implements OGRSEGYLayer class.
@@ -33,7 +33,7 @@
 #include "ogr_p.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrsegylayer.cpp 32011 2015-12-06 10:19:18Z rouault $");
 
 #define DT_IBM_4BYTES_FP         1
 #define DT_4BYTES_INT            2

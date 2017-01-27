@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogridrisilayer.cpp 32745 2016-01-04 23:16:43Z goatbar $
  *
  * Project:  Idrisi Translator
  * Purpose:  Implements OGRIdrisiLayer class.
@@ -33,7 +33,7 @@
 #include "ogr_p.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogridrisilayer.cpp 32745 2016-01-04 23:16:43Z goatbar $");
 
 /************************************************************************/
 /*                         OGRIdrisiLayer()                             */

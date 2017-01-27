@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: jpgdataset.cpp 33808 2016-03-29 21:15:28Z goatbar $
  *
  * Project:  JPEG JFIF Driver
  * Purpose:  Implement GDAL JPEG Support based on IJG libjpeg.
@@ -60,7 +60,7 @@ typedef struct {
         GUInt32  tiff_diroff;    /* byte offset to first directory */
 } TIFFHeader;
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: jpgdataset.cpp 33808 2016-03-29 21:15:28Z goatbar $");
 
 CPL_C_START
 #ifdef LIBJPEG_12_PATH

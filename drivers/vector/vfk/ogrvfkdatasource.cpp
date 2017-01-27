@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrvfkdatasource.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRVFKDatasource class.
@@ -33,7 +33,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrvfkdatasource.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 /*!
   \brief OGRVFKDataSource constructor

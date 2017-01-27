@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: cpl_vsil_buffered_reader.cpp 33646 2016-03-05 15:54:03Z goatbar $
  *
  * Project:  VSI Virtual File System
  * Purpose:  Implementation of buffered reader IO functions.
@@ -39,7 +39,7 @@
 
 #define MAX_BUFFER_SIZE 65536
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_vsil_buffered_reader.cpp 33646 2016-03-05 15:54:03Z goatbar $");
 
 class VSIBufferedReaderHandle CPL_FINAL : public VSIVirtualHandle
 {

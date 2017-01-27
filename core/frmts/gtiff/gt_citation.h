@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gt_citation.h 33796 2016-03-27 13:21:07Z goatbar $
  *
  * Project:  GeoTIFF Driver
  * Purpose:  Implements special parsing of Imagine citation strings, and

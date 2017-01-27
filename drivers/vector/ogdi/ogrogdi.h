@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrogdi.h 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  OGDI Bridge
  * Purpose:  Private definitions within the OGDI driver to implement

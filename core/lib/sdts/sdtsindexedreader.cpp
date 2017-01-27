@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: sdtsindexedreader.cpp 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  SDTS Translator
  * Purpose:  Implmementation of SDTSIndexedReader class.  This base class for
@@ -32,7 +32,7 @@
 
 #include "sdts_al.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: sdtsindexedreader.cpp 33717 2016-03-14 06:29:14Z goatbar $");
 
 /************************************************************************/
 /*                         SDTSIndexedReader()                          */

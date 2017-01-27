@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrcswdataset.cpp 32983 2016-01-14 18:32:10Z goatbar $
  *
  * Project:  CSW Translator
  * Purpose:  Implements OGRCSWDriver.
@@ -34,7 +34,7 @@
 #include "ogr_p.h"
 #include "gmlutils.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrcswdataset.cpp 32983 2016-01-14 18:32:10Z goatbar $");
 
 extern "C" void RegisterOGRCSW();
 

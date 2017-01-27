@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrvdvdatasource.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  VDV Translator
  * Purpose:  Implements OGRVDVFDriver.
@@ -32,7 +32,7 @@
 #include "cpl_time.h"
 #include <map>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrvdvdatasource.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 #ifndef STARTS_WITH_CI
 #define STARTS_WITH(a,b)               (strncmp(a,b,strlen(b)) == 0)

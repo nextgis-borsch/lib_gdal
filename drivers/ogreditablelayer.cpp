@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogreditablelayer.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGREditableLayer class
@@ -30,7 +30,7 @@
 #include "ogreditablelayer.h"
 #include "../mem/ogr_mem.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogreditablelayer.cpp 33714 2016-03-13 05:42:13Z goatbar $");
 
 /************************************************************************/
 /*                  ~IOGREditableLayerSynchronizer()                    */

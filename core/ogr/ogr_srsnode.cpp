@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_srsnode.cpp 33674 2016-03-07 20:58:21Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGR_SRSNode class.
@@ -31,7 +31,7 @@
 #include "ogr_p.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogr_srsnode.cpp 33674 2016-03-07 20:58:21Z goatbar $");
 
 /************************************************************************/
 /*                            OGR_SRSNode()                             */

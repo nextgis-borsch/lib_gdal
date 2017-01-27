@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: pngdataset.cpp 33794 2016-03-26 13:19:07Z goatbar $
  *
  * Project:  PNG Driver
  * Purpose:  Implement GDAL PNG Support
@@ -49,7 +49,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: pngdataset.cpp 33794 2016-03-26 13:19:07Z goatbar $");
 
 // Define SUPPORT_CREATE if you want Create() call supported.
 // Note: callers must provide blocks in increasing Y order.

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrodbctablelayer.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRODBCTableLayer class, access to an existing table.
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "ogr_odbc.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrodbctablelayer.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 /************************************************************************/
 /*                          OGRODBCTableLayer()                         */
 /************************************************************************/

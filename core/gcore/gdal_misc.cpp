@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdal_misc.cpp 33873 2016-04-03 14:13:37Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Free standing functions for GDAL.
@@ -41,7 +41,7 @@
 #include <limits>
 #include <string>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdal_misc.cpp 33873 2016-04-03 14:13:37Z rouault $");
 
 /************************************************************************/
 /*                         GDALDataTypeUnion()                          */

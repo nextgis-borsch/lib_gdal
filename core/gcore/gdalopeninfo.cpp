@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalopeninfo.cpp 33758 2016-03-21 09:06:22Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of GDALOpenInfo class.
@@ -38,7 +38,7 @@
 
 #include <vector>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalopeninfo.cpp 33758 2016-03-21 09:06:22Z rouault $");
 
 using std::vector;
 

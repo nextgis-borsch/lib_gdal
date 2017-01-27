@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrspatialreference.cpp 33432 2016-02-12 01:11:41Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRSpatialReference class.
@@ -35,7 +35,7 @@
 #include "ogr_p.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrspatialreference.cpp 33432 2016-02-12 01:11:41Z goatbar $");
 
 // The current opinion is that WKT longitudes like central meridian
 // should be relative to Greenwich, not the prime meridian in use.

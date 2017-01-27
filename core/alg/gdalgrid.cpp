@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalgrid.cpp 34393 2016-06-22 21:21:29Z rouault $
  *
  * Project:  GDAL Gridding API.
  * Purpose:  Implementation of GDAL scattered data gridder.
@@ -38,7 +38,7 @@
 #include "gdalgrid_priv.h"
 #include <cstdlib>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalgrid.cpp 34393 2016-06-22 21:21:29Z rouault $");
 
 #define TO_RADIANS (M_PI / 180.0)
 

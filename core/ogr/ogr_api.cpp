@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_api.cpp 33757 2016-03-20 20:22:33Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  C API Functions that don't correspond one-to-one with C++

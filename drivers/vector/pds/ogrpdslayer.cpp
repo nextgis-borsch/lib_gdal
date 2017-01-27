@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrpdslayer.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  PDS Translator
  * Purpose:  Implements OGRPDSLayer class.
@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrpdslayer.cpp 33714 2016-03-13 05:42:13Z goatbar $");
 
 namespace OGRPDS {
 

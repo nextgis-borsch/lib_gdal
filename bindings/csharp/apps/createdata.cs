@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: createdata.cs 27044 2014-03-16 23:41:27Z rouault $
  *
  * Name:     createdata.cs
  * Project:  GDAL CSharp Interface

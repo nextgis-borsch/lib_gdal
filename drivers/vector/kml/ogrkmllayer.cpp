@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrkmllayer.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  KML Driver
  * Purpose:  Implementation of OGRKMLLayer class.

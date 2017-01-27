@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: loslasdataset.cpp 33864 2016-04-02 11:50:14Z goatbar $
  *
  * Project:  Horizontal Datum Formats
  * Purpose:  Implementation of NOAA/NADCON los/las datum shift format.
@@ -33,7 +33,7 @@
 #include "ogr_srs_api.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: loslasdataset.cpp 33864 2016-04-02 11:50:14Z goatbar $");
 
 /**
 

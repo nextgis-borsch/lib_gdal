@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrpgeodatasource.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRPGeoDataSource class.
@@ -33,7 +33,7 @@
 #include "cpl_string.h"
 #include <vector>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrpgeodatasource.cpp 33714 2016-03-13 05:42:13Z goatbar $");
 
 /************************************************************************/
 /*                         OGRPGeoDataSource()                          */

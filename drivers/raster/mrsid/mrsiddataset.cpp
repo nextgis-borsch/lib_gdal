@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: mrsiddataset.cpp 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  Multi-resolution Seamless Image Database (MrSID)
  * Purpose:  Read/write LizardTech's MrSID file format - Version 4+ SDK.
@@ -44,7 +44,7 @@
 #include <geo_normalize.h>
 #include <geovalues.h>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: mrsiddataset.cpp 33717 2016-03-14 06:29:14Z goatbar $");
 
 CPL_C_START
 double GTIFAngleToDD( double dfAngle, int nUOMAngle );

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: vrtfilters.cpp 35350 2016-09-07 07:21:52Z rouault $
  *
  * Project:  Virtual GDAL Datasets
  * Purpose:  Implementation of some filter types.
@@ -32,7 +32,7 @@
 #include "cpl_minixml.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: vrtfilters.cpp 35350 2016-09-07 07:21:52Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */

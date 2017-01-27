@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalallregister.cpp 33546 2016-02-24 21:02:52Z goatbar $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of GDALAllRegister(), primary format registration.
@@ -36,7 +36,7 @@
    #include "gnm_frmts.h"
 #endif
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalallregister.cpp 33546 2016-02-24 21:02:52Z goatbar $");
 
 #ifdef notdef
 // we may have a use for this some day

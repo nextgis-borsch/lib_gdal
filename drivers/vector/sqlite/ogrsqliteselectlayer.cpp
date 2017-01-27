@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrsqliteselectlayer.cpp 35899 2016-10-24 11:56:25Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRSQLiteSelectLayer class, layer access to the results
@@ -34,7 +34,7 @@
 #include "swq.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrsqliteselectlayer.cpp 35899 2016-10-24 11:56:25Z rouault $");
 
 /************************************************************************/
 /*                   OGRSQLiteSelectLayerCommonBehaviour()              */
@@ -69,7 +69,7 @@ OGRSQLiteSelectLayer::OGRSQLiteSelectLayer( OGRSQLiteDataSource *poDSIn,
     this->bAllowMultipleGeomFields = bAllowMultipleGeomFieldsIn;
 
     std::set<CPLString> aosEmpty;
-    BuildFeatureDefn( "SELECT", hStmtIn, aosEmpty, aosEmpty );
+    BuildFeatureDefn( "SELECT", hStmtIn, NULL, aosEmpty );
     SetDescription( "SELECT" );
 
     if( bUseStatementForGetNextFeature )

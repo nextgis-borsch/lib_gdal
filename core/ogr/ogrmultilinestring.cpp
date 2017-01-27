@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrmultilinestring.cpp 33631 2016-03-04 06:28:09Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRMultiLineString class.
@@ -31,7 +31,7 @@
 #include "ogr_geometry.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrmultilinestring.cpp 33631 2016-03-04 06:28:09Z goatbar $");
 
 /************************************************************************/
 /*                        OGRMultiLineString()                          */

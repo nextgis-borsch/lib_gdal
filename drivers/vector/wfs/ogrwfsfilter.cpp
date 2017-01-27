@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrwfsfilter.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  WFS Translator
  * Purpose:  Implements OGR SQL into OGC Filter translation.
@@ -30,7 +30,7 @@
 #include "ogr_wfs.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrwfsfilter.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 typedef struct
 {

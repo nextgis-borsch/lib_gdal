@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: reader_digital_globe.h 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  GDAL Core
  * Purpose:  Read metadata from DigitalGlobe imagery.

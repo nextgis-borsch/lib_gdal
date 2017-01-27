@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: coasp_dataset.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  DRDC Configurable Airborne SAR Processor (COASP) data reader
  * Purpose:  Support in GDAL for the DRDC COASP format data, both Metadata
@@ -40,7 +40,7 @@
 #include "gdal_frmts.h"
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: coasp_dataset.cpp 33720 2016-03-15 00:39:53Z goatbar $");
 
 static const int TYPE_GENERIC = 0;
 static const int TYPE_GEOREF = 1;

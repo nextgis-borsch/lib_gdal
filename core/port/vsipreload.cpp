@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: vsipreload.cpp 33724 2016-03-16 17:14:11Z goatbar $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Standalone shared library that can be LD_PRELOAD'ed as an overload of
@@ -68,7 +68,7 @@
 #include "cpl_string.h"
 #include "cpl_hash_set.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: vsipreload.cpp 33724 2016-03-16 17:14:11Z goatbar $");
 
 static int DEBUG_VSIPRELOAD = 0;
 static int DEBUG_VSIPRELOAD_ONLY_VSIL = 1;

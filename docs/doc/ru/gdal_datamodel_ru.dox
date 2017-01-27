@@ -1,6 +1,6 @@
 #ifndef DOXYGEN_SKIP
 /*
-$Id$
+$Id: gdal_datamodel_ru.dox 30822 2015-10-03 22:38:55Z bishop $
 Translation corresponds to gdal_datamodel.dox 14550 2008-05-28 10:55:15Z
 Translator Andrey Kiselev <dron@remotesensing.org>
 Translator Dmitry Baryshnikov <polimax@mail.ru>

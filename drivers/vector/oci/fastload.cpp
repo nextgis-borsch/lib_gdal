@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: fastload.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  Oracle Spatial Driver
  * Purpose:  Test mainline for fast loading.

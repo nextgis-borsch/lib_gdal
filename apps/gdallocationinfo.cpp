@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdallocationinfo.cpp 33615 2016-03-02 20:19:22Z goatbar $
  *
  * Project:  GDAL
  * Purpose:  Command line raster query tool.
@@ -34,7 +34,7 @@
 #include "cpl_minixml.h"
 #include <vector>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdallocationinfo.cpp 33615 2016-03-02 20:19:22Z goatbar $");
 
 /******************************************************************************/
 /*! \page gdallocationinfo gdallocationinfo

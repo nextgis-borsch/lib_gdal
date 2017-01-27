@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: envisatdataset.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  APP ENVISAT Support
  * Purpose:  Reader for ENVISAT format image data.
@@ -35,7 +35,7 @@
 #include "ogr_srs_api.h"
 #include "timedelta.hpp"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: envisatdataset.cpp 33720 2016-03-15 00:39:53Z goatbar $");
 
 CPL_C_START
 #include "EnvisatFile.h"

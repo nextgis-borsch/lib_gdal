@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: cpl_vsil_gzip.cpp 33758 2016-03-21 09:06:22Z rouault $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Implement VSI large file api for gz/zip files (.gz and .zip).
@@ -84,7 +84,7 @@
 #include "cpl_minizip_unzip.h"
 #include "cpl_time.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_vsil_gzip.cpp 33758 2016-03-21 09:06:22Z rouault $");
 
 #define Z_BUFSIZE 65536  /* original size is 16384 */
 static int const gz_magic[2] = {0x1f, 0x8b}; /* gzip magic header */

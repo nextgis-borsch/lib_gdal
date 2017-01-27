@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: aaigriddataset.cpp 33809 2016-03-29 21:41:38Z goatbar $
  *
  * Project:  GDAL
  * Purpose:  Implements Arc/Info ASCII Grid Format.
@@ -41,7 +41,7 @@
 #include "gdal_frmts.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: aaigriddataset.cpp 33809 2016-03-29 21:41:38Z goatbar $");
 
 static CPLString OSR_GDS( char **papszNV, const char * pszField,
                           const char *pszDefaultValue );

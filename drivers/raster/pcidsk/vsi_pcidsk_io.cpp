@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: vsi_pcidsk_io.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  PCIDSK Database File
  * Purpose:  PCIDSK SDK compatible IO interface built on VSI.
@@ -37,7 +37,7 @@ using PCIDSK::PCIDSKInterfaces;
 using PCIDSK::ThrowPCIDSKException;
 using PCIDSK::uint64;
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: vsi_pcidsk_io.cpp 33720 2016-03-15 00:39:53Z goatbar $");
 
 PCIDSK::EDBFile *GDAL_EDBOpen( std::string osFilename, std::string osAccess );
 const PCIDSK::PCIDSKInterfaces *PCIDSK2GetInterfaces();

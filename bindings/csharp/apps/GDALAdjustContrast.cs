@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: GDALAdjustContrast.cs 14383 2008-05-06 21:12:07Z tamas $
  *
  * Name:     GDALAdjustContrast.cs
  * Project:  GDAL CSharp Interface

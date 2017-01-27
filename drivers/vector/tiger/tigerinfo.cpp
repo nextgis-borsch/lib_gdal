@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: tigerinfo.cpp 33706 2016-03-11 13:33:27Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Simple client for viewing OGR driver data.
@@ -33,7 +33,7 @@
 
 #include "ogr_tiger.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: tigerinfo.cpp 33706 2016-03-11 13:33:27Z goatbar $");
 
 int     bReadOnly = FALSE;
 int     bVerbose = TRUE;

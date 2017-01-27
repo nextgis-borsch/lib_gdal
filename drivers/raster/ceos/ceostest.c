@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ceostest.c 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  CEOS Translator
  * Purpose:  Test mainline.

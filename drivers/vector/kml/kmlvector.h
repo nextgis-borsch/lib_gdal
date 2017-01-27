@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: kmlvector.h 23978 2012-02-14 20:42:34Z rouault $
  *
  * Project:  KML Driver
  * Purpose:  Specialization of the kml class, only for vectors in kml files.

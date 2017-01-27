@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: vfkpropertydefn.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  VFK Reader - Data block property definition
  * Purpose:  Implements VFKPropertyDefn class.

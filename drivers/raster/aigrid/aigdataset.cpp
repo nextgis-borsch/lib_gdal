@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: aigdataset.cpp 33901 2016-04-06 16:31:31Z goatbar $
  *
  * Project:  Arc/Info Binary Grid Driver
  * Purpose:  Implements GDAL interface to underlying library.
@@ -38,7 +38,7 @@
 
 #include <vector>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: aigdataset.cpp 33901 2016-04-06 16:31:31Z goatbar $");
 
 static CPLString OSR_GDS( char **papszNV, const char * pszField,
                            const char *pszDefaultValue );

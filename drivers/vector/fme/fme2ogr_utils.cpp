@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: fme2ogr_utils.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  FMEObjects Translator
  * Purpose:  Various FME related support functions.

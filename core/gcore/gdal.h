@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdal.h 33852 2016-04-01 23:27:53Z goatbar $
  *
  * Project:  GDAL Core
  * Purpose:  GDAL Core C/Public declarations.

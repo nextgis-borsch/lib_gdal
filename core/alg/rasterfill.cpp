@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: rasterfill.cpp 33715 2016-03-13 08:52:06Z goatbar $
  *
  * Project:  GDAL
  * Purpose:  Interpolate in nodata areas.
@@ -33,7 +33,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: rasterfill.cpp 33715 2016-03-13 08:52:06Z goatbar $");
 
 /************************************************************************/
 /*                           GDALFilterLine()                           */

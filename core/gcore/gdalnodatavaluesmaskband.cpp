@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalnodatavaluesmaskband.cpp 33808 2016-03-29 21:15:28Z goatbar $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of GDALNoDataValuesMaskBand, a class implementing
@@ -32,7 +32,7 @@
 
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalnodatavaluesmaskband.cpp 33808 2016-03-29 21:15:28Z goatbar $");
 
 /************************************************************************/
 /*                   GDALNoDataValuesMaskBand()                         */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdal_rpc.cpp 34067 2016-04-23 17:56:51Z rouault $
  *
  * Project:  Image Warper
  * Purpose:  Implements a rational polynomial (RPC) based transformer.
@@ -39,7 +39,7 @@
 #include "gdalsse_priv.h"
 #endif
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdal_rpc.cpp 34067 2016-04-23 17:56:51Z rouault $");
 
 CPL_C_START
 CPLXMLNode *GDALSerializeRPCTransformer( void *pTransformArg );

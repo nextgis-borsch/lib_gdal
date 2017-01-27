@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: netcdfdataset.h 33794 2016-03-26 13:19:07Z goatbar $
  *
  * Project:  netCDF read/write Driver
  * Purpose:  GDAL bindings over netCDF library.

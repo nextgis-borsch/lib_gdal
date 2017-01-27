@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: rasterlitedataset.cpp 33869 2016-04-02 16:53:28Z rouault $
  *
  * Project:  GDAL Rasterlite driver
  * Purpose:  Implement GDAL Rasterlite support using OGR SQLite driver
@@ -36,7 +36,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: rasterlitedataset.cpp 33869 2016-04-02 16:53:28Z rouault $");
 
 
 /************************************************************************/

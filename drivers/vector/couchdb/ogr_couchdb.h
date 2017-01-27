@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_couchdb.h 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  CouchDB Translator
  * Purpose:  Definition of classes for OGR CouchDB / GeoCouch driver.

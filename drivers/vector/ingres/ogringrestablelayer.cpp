@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogringrestablelayer.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRIngresTableLayer class.
@@ -31,7 +31,7 @@
 #include "cpl_string.h"
 #include "ogr_ingres.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogringrestablelayer.cpp 33714 2016-03-13 05:42:13Z goatbar $");
 
 /************************************************************************/
 /*                         OGRIngresTableLayer()                         */

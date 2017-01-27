@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: cpl_odbc.cpp 33807 2016-03-29 19:06:42Z tamas $
  *
  * Project:  OGR ODBC Driver
  * Purpose:  Declarations for ODBC Access Cover API.
@@ -34,7 +34,7 @@
 #include "cpl_error.h"
 
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_odbc.cpp 33807 2016-03-29 19:06:42Z tamas $");
 
 #ifndef SQLColumns_TABLE_CAT
 #define SQLColumns_TABLE_CAT 1

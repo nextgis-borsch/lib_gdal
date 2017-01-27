@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: rasdamandataset.cpp 33717 2016-03-14 06:29:14Z goatbar $
  * Project:  rasdaman Driver
  * Purpose:  Implement Rasdaman GDAL driver
  * Author:   Constantin Jucovschi, jucovschi@yahoo.com
@@ -41,7 +41,7 @@
 
 void CPL_DLL CPL_STDCALL GDALRegister_RASDAMAN();
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: rasdamandataset.cpp 33717 2016-03-14 06:29:14Z goatbar $");
 
 
 class Subset

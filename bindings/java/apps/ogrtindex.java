@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrtindex.java 28375 2015-01-30 12:06:11Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Program to generate a UMN MapServer compatible tile index for a

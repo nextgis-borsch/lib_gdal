@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id$
+ * $Id: gdalvirtualmem.cpp 33808 2016-03-29 21:15:28Z goatbar $
  *
  * Name:     gdalvirtualmem.cpp
  * Project:  GDAL

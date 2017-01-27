@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrhtfdriver.cpp 32744 2016-01-04 22:26:42Z goatbar $
  *
  * Project:  HTF Translator
  * Purpose:  Implements OGRHTFDriver.
@@ -31,7 +31,7 @@
 #include "ogr_htf.h"
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrhtfdriver.cpp 32744 2016-01-04 22:26:42Z goatbar $");
 
 /************************************************************************/
 /*                                Open()                                */

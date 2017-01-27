@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ceosrecipe.c 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  ASI CEOS Translator
  * Purpose:  CEOS field layout recipes.
@@ -29,7 +29,7 @@
 
 #include "ceos.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ceosrecipe.c 33720 2016-03-15 00:39:53Z goatbar $");
 
 /* Array of Datatypes and their names/values */
 

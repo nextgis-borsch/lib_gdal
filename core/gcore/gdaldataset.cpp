@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdaldataset.cpp 35731 2016-10-14 17:07:59Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Base class for raster file formats.
@@ -48,7 +48,7 @@
 #include <map>
 #include <new>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdaldataset.cpp 35731 2016-10-14 17:07:59Z rouault $");
 
 CPL_C_START
 GDALAsyncReader *

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogredigeolayer.cpp 32011 2015-12-06 10:19:18Z rouault $
  *
  * Project:  EDIGEO Translator
  * Purpose:  Implements OGREDIGEOLayer class.
@@ -33,7 +33,7 @@
 #include "ogr_p.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogredigeolayer.cpp 32011 2015-12-06 10:19:18Z rouault $");
 
 /************************************************************************/
 /*                          OGREDIGEOLayer()                            */

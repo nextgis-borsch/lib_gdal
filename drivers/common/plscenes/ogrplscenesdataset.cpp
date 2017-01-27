@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrplscenesdataset.cpp 35828 2016-10-19 23:23:39Z rouault $
  *
  * Project:  PlanetLabs scene driver
  * Purpose:  Implements OGRPLScenesDataset
@@ -29,7 +29,7 @@
 
 #include "ogr_plscenes.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrplscenesdataset.cpp 35828 2016-10-19 23:23:39Z rouault $");
 
 /************************************************************************/
 /*                         OGRPLScenesDataset()                         */

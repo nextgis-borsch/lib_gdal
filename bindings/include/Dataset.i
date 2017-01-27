@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: Dataset.i 32935 2016-01-11 16:49:14Z rouault $
  *
  * Name:     Dataset.i
  * Project:  GDAL Python Interface

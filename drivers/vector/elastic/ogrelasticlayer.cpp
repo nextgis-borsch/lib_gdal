@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrelasticlayer.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  ElasticSearch Translator
  * Purpose:
@@ -40,7 +40,7 @@
 #include "../xplane/ogr_xplane_geo_utils.h"
 #include <set>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrelasticlayer.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 /************************************************************************/
 /*                           OGRElasticLayer()                          */

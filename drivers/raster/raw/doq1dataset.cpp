@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: doq1dataset.cpp 33931 2016-04-09 19:44:09Z goatbar $
  *
  * Project:  USGS DOQ Driver (First Generation Format)
  * Purpose:  Implementation of DOQ1Dataset
@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: doq1dataset.cpp 33931 2016-04-09 19:44:09Z goatbar $");
 
 static const char UTM_FORMAT[] =
     "PROJCS[\"%s / UTM zone %dN\",GEOGCS[%s,PRIMEM[\"Greenwich\",0],"

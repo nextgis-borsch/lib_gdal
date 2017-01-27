@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gridlib.c 35241 2016-08-29 08:49:57Z rouault $
  *
  * Project:  Arc/Info Binary Grid Translator
  * Purpose:  Grid file reading code.
@@ -30,7 +30,7 @@
 
 #include "aigrid.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gridlib.c 35241 2016-08-29 08:49:57Z rouault $");
 
 CPL_INLINE static void CPL_IGNORE_RET_VAL_INT(CPL_UNUSED int unused) {}
 

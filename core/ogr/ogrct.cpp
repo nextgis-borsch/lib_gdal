@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrct.cpp 37167 2017-01-17 16:38:55Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRSCoordinateTransformation class.
@@ -39,7 +39,7 @@
 #include "proj_api.h"
 #endif
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrct.cpp 37167 2017-01-17 16:38:55Z rouault $");
 
 /* ==================================================================== */
 /*      PROJ.4 interface stuff.                                         */
@@ -156,6 +156,8 @@ class OGRProj4CT : public OGRCoordinateTransformation
     double     *padfTargetX;
     double     *padfTargetY;
     double     *padfTargetZ;
+
+    bool        bNoTransform;
 
 public:
                 OGRProj4CT();
@@ -855,20 +857,16 @@ int OGRProj4CT::InitializeNoLock( OGRSpatialReference * poSourceIn,
         return FALSE;
     }
 
-    /* Determine if we really have a transformation to do */
-    bIdentityTransform = (strcmp(pszSrcProj4Defn, pszDstProj4Defn) == 0);
+    // Determine if we really have a transformation to do at the proj.4 level
+    // (but we may have a unit transformation to do)
+    bIdentityTransform = strcmp(pszSrcProj4Defn, pszDstProj4Defn) == 0;
 
-#if 0
-    /* In case of identity transform, under the following conditions, */
-    /* we can also avoid transforming from degrees <--> radians. */
-    if( bIdentityTransform && bSourceLatLong && !bSourceWrap &&
-        bTargetLatLong && !bTargetWrap &&
-        fabs(dfSourceToRadians * dfTargetFromRadians - 1.0) < 1e-10 )
-    {
-        /*bSourceLatLong = FALSE;
-        bTargetLatLong = FALSE;*/
-    }
-#endif
+    // Determine if we can skip the tranformation completely.
+    // Assume that source and target units are defined with at least
+    // 10 correct significant digits; hence the 1E-9 tolerance used.
+    bNoTransform = bIdentityTransform && bSourceLatLong && !bSourceWrap &&
+                   bTargetLatLong && !bTargetWrap &&
+                   fabs(dfSourceToRadians * dfTargetFromRadians - 1.0) < 1E-9;
 
     CPLFree( pszSrcProj4Defn );
     CPLFree( pszDstProj4Defn );
@@ -946,6 +944,20 @@ int OGRProj4CT::TransformEx( int nCount, double *x, double *y, double *z,
                              int *pabSuccess )
 
 {
+    // Prevent any coordinate modification when possible
+    if ( bNoTransform )
+    {
+        if( pabSuccess )
+        {
+            for( int i = 0; i < nCount; i++ )
+            {
+                 pabSuccess[i] = TRUE;
+            }
+        }
+        return TRUE;
+    }
+
+
     int   err, i;
 
 /* -------------------------------------------------------------------- */

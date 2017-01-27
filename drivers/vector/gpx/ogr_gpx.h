@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_gpx.h 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  GPX Translator
  * Purpose:  Definition of classes for OGR .gpx driver.

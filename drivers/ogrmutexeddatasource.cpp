@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrmutexeddatasource.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRMutexedDataSource class
@@ -30,7 +30,7 @@
 #include "ogrmutexeddatasource.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrmutexeddatasource.cpp 33714 2016-03-13 05:42:13Z goatbar $");
 
 OGRMutexedDataSource::OGRMutexedDataSource(OGRDataSource* poBaseDataSource,
                                            int bTakeOwnership,

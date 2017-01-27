@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gifdataset.cpp 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  GIF Driver
  * Purpose:  Implement GDAL GIF Support using libungif code.
@@ -33,7 +33,7 @@
 #include "gdal_pam.h"
 #include "gifabstractdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gifdataset.cpp 33717 2016-03-14 06:29:14Z goatbar $");
 
 CPL_C_START
 #if !(defined(GIFLIB_MAJOR) && GIFLIB_MAJOR >= 5)

@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id$
+ * $Id: gmlreadstate.cpp 33702 2016-03-11 06:20:16Z goatbar $
  *
  * Project:  GML Reader
  * Purpose:  Implementation of GMLReadState class.

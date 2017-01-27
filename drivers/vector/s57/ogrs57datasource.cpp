@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrs57datasource.cpp 34800 2016-07-27 16:52:35Z rouault $
  *
  * Project:  S-57 Translator
  * Purpose:  Implements OGRS57DataSource class
@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "ogr_s57.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrs57datasource.cpp 34800 2016-07-27 16:52:35Z rouault $");
 
 /************************************************************************/
 /*                          OGRS57DataSource()                          */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrsdtslayer.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  SDTSReader
  * Purpose:  Implements OGRSDTSLayer class.
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrsdtslayer.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 /************************************************************************/
 /*                            OGRSDTSLayer()                            */

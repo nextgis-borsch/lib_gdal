@@ -1,6 +1,6 @@
 
 /**********************************************************************
- * $Id$
+ * $Id: cpl_string.cpp 33960 2016-04-13 08:51:33Z rouault $
  *
  * Name:     cpl_string.cpp
  * Project:  CPL - Common Portability Library
@@ -53,7 +53,7 @@
 #include "cpl_string.h"
 #include "cpl_vsi.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_string.cpp 33960 2016-04-13 08:51:33Z rouault $");
 
 /*=====================================================================
                     StringList manipulation functions.

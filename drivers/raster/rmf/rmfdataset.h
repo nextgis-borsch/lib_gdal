@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: rmfdataset.h 33987 2016-04-17 14:56:07Z rouault $
  *
  * Project:  Raster Matrix Format
  * Purpose:  Private class declarations for the RMF classes used to read/write

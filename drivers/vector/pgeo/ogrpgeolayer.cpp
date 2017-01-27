@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrpgeolayer.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRPGeoLayer class, code shared between
@@ -34,7 +34,7 @@
 #include "cpl_string.h"
 #include "ogrpgeogeometry.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrpgeolayer.cpp 33714 2016-03-13 05:42:13Z goatbar $");
 
 /************************************************************************/
 /*                            OGRPGeoLayer()                            */

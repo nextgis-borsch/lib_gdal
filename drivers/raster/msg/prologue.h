@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: prologue.h 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Purpose:  Interface of Prologue class. Parse the prologue of one repeat
  *           cycle and keep the interesting info.

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: dgnread.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  Microstation DGN Access Library
  * Purpose:  DGN Access Library element reading code.
@@ -29,7 +29,7 @@
 
 #include "dgnlibp.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: dgnread.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 static DGNElemCore *DGNParseTCB( DGNInfo * );
 static DGNElemCore *DGNParseColorTable( DGNInfo * );

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrcircularstring.cpp 33631 2016-03-04 06:28:09Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRCircularString geometry class.

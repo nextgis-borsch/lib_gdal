@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: fit.h 31777 2015-11-26 14:14:41Z rouault $
  *
  * Project:  FIT Driver
  * Purpose:  Implement FIT Support - not using the SGI iflFIT library.

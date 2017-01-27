@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: hfatype.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  Erdas Imagine (.img) Translator
  * Purpose:  Implementation of the HFAType class, for managing one type
@@ -31,7 +31,7 @@
 
 #include "hfa_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: hfatype.cpp 33720 2016-03-15 00:39:53Z goatbar $");
 
 /************************************************************************/
 /* ==================================================================== */

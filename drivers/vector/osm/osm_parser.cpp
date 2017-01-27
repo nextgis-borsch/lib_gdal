@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: osm_parser.cpp 33138 2016-01-24 11:18:11Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Author:   Even Rouault, <even dot rouault at mines dash paris dot org>
@@ -45,7 +45,7 @@
 
 #define XML_BUFSIZE 64*1024
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: osm_parser.cpp 33138 2016-01-24 11:18:11Z rouault $");
 
 /************************************************************************/
 /*                            INIT_INFO()                               */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: kml.cpp 34104 2016-04-25 17:17:20Z rouault $
  *
  * Project:  KML Driver
  * Purpose:  Class for reading, parsing and handling a kmlfile.

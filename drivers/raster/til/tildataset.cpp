@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: tildataset.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  EarthWatch .TIL Driver
  * Purpose:  Implementation of the TILDataset class.
@@ -38,7 +38,7 @@
 #include "ogr_spatialref.h"
 #include "vrtdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: tildataset.cpp 33720 2016-03-15 00:39:53Z goatbar $");
 
 /************************************************************************/
 /* ==================================================================== */

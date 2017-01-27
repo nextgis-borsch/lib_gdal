@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id$
+ * $Id: cpl_path.cpp 33817 2016-03-30 17:35:37Z rouault $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Portable filename/path parsing, and forming ala "Glob API".
@@ -33,7 +33,7 @@
 #include "cpl_string.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_path.cpp 33817 2016-03-30 17:35:37Z rouault $");
 
 /* should be size of larged possible filename */
 static const int CPL_PATH_BUF_SIZE = 2048;

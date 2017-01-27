@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id$
+ * $Id: cpl_hash_set.cpp 33724 2016-03-16 17:14:11Z goatbar $
  *
  * Name:     cpl_hash_set.cpp
  * Project:  CPL - Common Portability Library

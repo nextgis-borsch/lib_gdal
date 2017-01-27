@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: msgndataset.cpp 33105 2016-01-23 15:27:32Z rouault $
  *
  * Project:  MSG Native Reader
  * Purpose:  All code for EUMETSAT Archive format reader
@@ -35,7 +35,7 @@
 #include "msg_reader_core.h"
 using namespace msg_native_format;
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: msgndataset.cpp 33105 2016-01-23 15:27:32Z rouault $");
 
 typedef enum {
     MODE_VISIR,     // Visible and Infrared bands (1 through 11) in 10-bit raw mode

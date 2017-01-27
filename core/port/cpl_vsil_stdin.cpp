@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id$
+ * $Id: cpl_vsil_stdin.cpp 33758 2016-03-21 09:06:22Z rouault $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Implement VSI large file api for stdin
@@ -37,7 +37,7 @@
 #include <fcntl.h>
 #endif
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_vsil_stdin.cpp 33758 2016-03-21 09:06:22Z rouault $");
 
 /* We buffer the first 1MB of standard input to enable drivers */
 /* to autodetect data. In the first MB, backward and forward seeking */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: cpl_csv.cpp 33724 2016-03-16 17:14:11Z goatbar $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  CSV (comma separated value) file access.
@@ -33,7 +33,7 @@
 #include "cpl_multiproc.h"
 #include "gdal_csv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_csv.cpp 33724 2016-03-16 17:14:11Z goatbar $");
 
 /* ==================================================================== */
 /*      The CSVTable is a persistent set of info about an open CSV      */

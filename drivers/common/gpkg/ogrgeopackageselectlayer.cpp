@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrgeopackageselectlayer.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  GeoPackage Translator
  * Purpose:  Implements OGRGeoPackageSelectLayer class

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdal_mdreader.cpp 33873 2016-04-03 14:13:37Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Read metadata (mainly the remote sensing imagery) from files of
@@ -48,7 +48,7 @@
 #include "mdreader/reader_rdk1.h"
 #include "mdreader/reader_spot.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdal_mdreader.cpp 33873 2016-04-03 14:13:37Z rouault $");
 
 /**
  * The RPC parameters names

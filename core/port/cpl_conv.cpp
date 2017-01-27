@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: cpl_conv.cpp 33769 2016-03-22 18:20:04Z goatbar $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Convenience functions.
@@ -59,7 +59,7 @@
 
 #endif
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_conv.cpp 33769 2016-03-22 18:20:04Z goatbar $");
 
 static CPLMutex *hConfigMutex = NULL;
 static volatile char **papszConfigOptions = NULL;

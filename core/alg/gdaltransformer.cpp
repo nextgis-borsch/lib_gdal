@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdaltransformer.cpp 36584 2016-11-30 17:46:24Z rouault $
  *
  * Project:  Mapinfo Image Warper
  * Purpose:  Implementation of one or more GDALTrasformerFunc types, including
@@ -38,7 +38,7 @@
 #include "cpl_list.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdaltransformer.cpp 36584 2016-11-30 17:46:24Z rouault $");
 CPL_C_START
 void *GDALDeserializeGCPTransformer( CPLXMLNode *psTree );
 void *GDALDeserializeTPSTransformer( CPLXMLNode *psTree );
@@ -1448,7 +1448,9 @@ GDALCreateGenImgProjTransformer2( GDALDatasetH hSrcDS, GDALDatasetH hDstDS,
         CPLError( CE_Failure, CPLE_AppDefined,
                   "Unable to compute a transformation between pixel/line\n"
                   "and georeferenced coordinates for %s.\n"
-                  "There is no affine transformation and no GCPs.",
+                  "There is no affine transformation and no GCPs.\n"
+                  "Specify transformation option DST_METHOD=NO_GEOTRANSFORM "
+                  "to bypass this check.",
                   GDALGetDescription( hDstDS ) );
 
         GDALDestroyGenImgProjTransformer( psInfo );

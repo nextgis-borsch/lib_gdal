@@ -1,6 +1,6 @@
 
 /******************************************************************************
- * $Id$
+ * $Id: netcdfdataset.cpp 37032 2016-12-29 13:25:51Z rouault $
  *
  * Project:  netCDF read/write Driver
  * Purpose:  GDAL bindings over netCDF library.
@@ -40,7 +40,7 @@
 #include <map> //for NCDFWriteProjAttribs()
 #include <limits>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: netcdfdataset.cpp 37032 2016-12-29 13:25:51Z rouault $");
 
 /* Internal function declarations */
 
@@ -8766,6 +8766,32 @@ static bool NCDFIsVarProjectionY( int nCdfId, int nVarId, const char * pszVarNam
         else
             bVal = FALSE;
     }
+    else if ( bVal )
+    {
+        // Check that the units is not 'm'. See #6759
+        char *pszTemp = NULL;
+        if( NCDFGetAttr( nCdfId, nVarId, "units", &pszTemp ) == CE_None &&
+            pszTemp != NULL )
+        {
+            if( EQUAL( pszTemp, "m") )
+                bVal = false;
+            CPLFree( pszTemp );
+        }
+    }
+
+    else if ( bVal )
+    {
+        // Check that the units is not 'm'. See #6759
+        char *pszTemp = NULL;
+        if( NCDFGetAttr( nCdfId, nVarId, "units", &pszTemp ) == CE_None &&
+            pszTemp != NULL )
+        {
+            if( EQUAL( pszTemp, "m") )
+                bVal = false;
+            CPLFree( pszTemp );
+        }
+    }
+
     return CPL_TO_BOOL(bVal);
 }
 

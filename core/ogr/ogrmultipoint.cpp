@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrmultipoint.cpp 33631 2016-03-04 06:28:09Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRMultiPoint class.
@@ -32,7 +32,7 @@
 #include "ogr_p.h"
 #include <assert.h>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrmultipoint.cpp 33631 2016-03-04 06:28:09Z goatbar $");
 
 /************************************************************************/
 /*                           OGRMultiPoint()                            */

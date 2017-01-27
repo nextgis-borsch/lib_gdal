@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrgeojsonlayer.cpp 34334 2016-06-10 07:37:16Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implementation of OGRGeoJSONLayer class (OGR GeoJSON Driver).

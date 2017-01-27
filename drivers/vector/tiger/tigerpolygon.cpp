@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: tigerpolygon.cpp 33706 2016-03-11 13:33:27Z goatbar $
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Implements TigerPolygon, providing access to .RTA files.
@@ -31,7 +31,7 @@
 #include "ogr_tiger.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: tigerpolygon.cpp 33706 2016-03-11 13:33:27Z goatbar $");
 
 static const TigerFieldInfo rtA_2002_fields[] = {
   // fieldname    fmt  type OFTType      beg  end  len  bDefine bSet bWrite

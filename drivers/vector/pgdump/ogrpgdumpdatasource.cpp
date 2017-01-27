@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrpgdumpdatasource.cpp 33639 2016-03-04 23:39:40Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRPGDumpDataSource class.
@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrpgdumpdatasource.cpp 33639 2016-03-04 23:39:40Z rouault $");
 
 /************************************************************************/
 /*                      OGRPGDumpDataSource()                           */

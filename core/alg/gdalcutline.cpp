@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalcutline.cpp 33715 2016-03-13 08:52:06Z goatbar $
  *
  * Project:  High Performance Image Reprojector
  * Purpose:  Implement cutline/blend mask generator.
@@ -35,7 +35,7 @@
 #include "ogr_geometry.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalcutline.cpp 33715 2016-03-13 08:52:06Z goatbar $");
 
 /************************************************************************/
 /*                         BlendMaskGenerator()                         */

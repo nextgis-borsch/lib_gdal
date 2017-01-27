@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrnulldriver.cpp 32110 2015-12-10 17:19:40Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  NULL output driver.
@@ -36,7 +36,7 @@
 
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrnulldriver.cpp 32110 2015-12-10 17:19:40Z goatbar $");
 
 extern "C" void CPL_DLL RegisterOGRNULL();
 

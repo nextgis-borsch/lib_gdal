@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrpgdumplayer.cpp 34482 2016-06-30 18:57:36Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRPGDumpLayer class
@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrpgdumplayer.cpp 34482 2016-06-30 18:57:36Z rouault $");
 
 #define USE_COPY_UNSET -1
 

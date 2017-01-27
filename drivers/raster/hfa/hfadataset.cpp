@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: hfadataset.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Name:     hfadataset.cpp
  * Project:  Erdas Imagine Driver
@@ -36,7 +36,7 @@
 #include "ogr_spatialref.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: hfadataset.cpp 33720 2016-03-15 00:39:53Z goatbar $");
 
 #ifndef R2D
 #  define R2D	(180/M_PI)

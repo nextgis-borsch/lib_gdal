@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: cpl_vsi_error.cpp 34355 2016-06-16 08:55:20Z rouault $
  *
  * Project:  VSI Virtual File System
  * Purpose:  Implement an error system for reporting file system errors.
@@ -44,7 +44,7 @@
 #define TIMESTAMP_DEBUG
 //#define MEMORY_DEBUG
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_vsi_error.cpp 34355 2016-06-16 08:55:20Z rouault $");
 
 static const int DEFAULT_LAST_ERR_MSG_SIZE =
 #if !defined(HAVE_VSNPRINTF)

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrmemlayer.cpp 35794 2016-10-17 19:29:48Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRMemLayer class.
@@ -32,7 +32,7 @@
 #include "ogr_mem.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrmemlayer.cpp 35794 2016-10-17 19:29:48Z rouault $");
 
 /************************************************************************/
 /*                      IOGRMemLayerFeatureIterator                     */

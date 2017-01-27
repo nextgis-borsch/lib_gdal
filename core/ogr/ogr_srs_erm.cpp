@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_srs_erm.cpp 33553 2016-02-25 14:05:00Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implement ERMapper projection conversions.
@@ -31,7 +31,7 @@
 #include "ogr_spatialref.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogr_srs_erm.cpp 33553 2016-02-25 14:05:00Z goatbar $");
 
 /************************************************************************/
 /*                         OSRImportFromERM()                           */

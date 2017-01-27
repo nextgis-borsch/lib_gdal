@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ace2dataset.cpp 33925 2016-04-09 19:10:47Z goatbar $
  *
  * Project:  ACE2 Driver
  * Purpose:  Implementation of ACE2 elevation format read support.
@@ -32,7 +32,7 @@
 #include "ogr_spatialref.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ace2dataset.cpp 33925 2016-04-09 19:10:47Z goatbar $");
 
 static const char * const apszCategorySource[] =
 {

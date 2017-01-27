@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: sdtspolygonreader.cpp 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  SDTS Translator
  * Purpose:  Implementation of SDTSPolygonReader and SDTSRawPolygon classes.
@@ -31,7 +31,7 @@
 
 #include <cmath>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: sdtspolygonreader.cpp 33717 2016-03-14 06:29:14Z goatbar $");
 
 /************************************************************************/
 /* ==================================================================== */

@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: gdal_python.i 37118 2017-01-12 12:15:16Z rouault $
  *
  * python specific code for gdal bindings.
  */
@@ -1332,7 +1332,7 @@ def DEMProcessingOptions(options = [], colorFilename = None, format = 'GTiff',
         if trigonometric:
             new_options += ['-trigonometric' ]
         if zeroForFlat:
-            new_options += ['zero_for_flat' ]
+            new_options += ['-zero_for_flat' ]
 
     return (GDALDEMProcessingOptions(new_options), colorFilename, callback, callback_data)
 
@@ -1528,6 +1528,7 @@ def Grid(destName, srcDS, **kwargs):
     return GridInternal(destName, srcDS, opts, callback, callback_data)
 
 def RasterizeOptions(options = [], format = None,
+         outputType = GDT_Unknown, 
          creationOptions = None, noData = None, initValues = None,
          outputBounds = None, outputSRS = None,
          width = None, height = None,
@@ -1540,6 +1541,7 @@ def RasterizeOptions(options = [], format = None,
         Keyword arguments are :
           options --- can be be an array of strings, a string or let empty and filled from other keywords.
           format --- output format ("GTiff", etc...)
+          outputType --- output type (gdal.GDT_Byte, etc...)
           creationOptions --- list of creation options
           outputBounds --- assigned output bounds: [minx, miny, maxx, maxy]
           outputSRS --- assigned output SRS
@@ -1570,6 +1572,8 @@ def RasterizeOptions(options = [], format = None,
         new_options = copy.copy(options)
         if format is not None:
             new_options += ['-of', format]
+        if outputType != GDT_Unknown:
+            new_options += ['-ot', GetDataTypeName(outputType) ]
         if creationOptions is not None:
             for opt in creationOptions:
                 new_options += ['-co', opt ]

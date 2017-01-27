@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id$
+ * $Id: cpl_error.cpp 34109 2016-04-25 17:28:36Z rouault $
  *
  * Name:     cpl_error.cpp
  * Project:  CPL - Common Portability Library
@@ -38,7 +38,7 @@
 #define TIMESTAMP_DEBUG
 //#define MEMORY_DEBUG
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_error.cpp 34109 2016-04-25 17:28:36Z rouault $");
 
 static CPLMutex *hErrorMutex = NULL;
 static void *pErrorHandlerUserData = NULL;

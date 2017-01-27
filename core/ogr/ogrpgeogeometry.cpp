@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrpgeogeometry.cpp 33631 2016-03-04 06:28:09Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements decoder of shapebin geometry for PGeo
@@ -35,7 +35,7 @@
 #include "cpl_string.h"
 #include <limits>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrpgeogeometry.cpp 33631 2016-03-04 06:28:09Z goatbar $");
 
 #define SHPP_TRISTRIP   0
 #define SHPP_TRIFAN     1

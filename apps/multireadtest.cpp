@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: multireadtest.cpp 33615 2016-03-02 20:19:22Z goatbar $
  *
  * Project:  GDAL Utilities
  * Purpose:  Multi-threading test application.
@@ -32,7 +32,7 @@
 #include "cpl_multiproc.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: multireadtest.cpp 33615 2016-03-02 20:19:22Z goatbar $");
 
 static int nThreadCount = 4, nIterations = 1, bLockOnOpen = TRUE;
 static int nOpenIterations = 1;

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: cpl_vsil.cpp 33853 2016-04-01 23:30:08Z goatbar $
  *
  * Project:  VSI Virtual File System
  * Purpose:  Implementation VSI*L File API and other file system access
@@ -36,7 +36,7 @@
 #include <cassert>
 #include <string>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_vsil.cpp 33853 2016-04-01 23:30:08Z goatbar $");
 
 /************************************************************************/
 /*                             VSIReadDir()                             */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: hdf4dataset.cpp 35971 2016-10-27 11:27:35Z jef $
  *
  * Project:  Hierarchical Data Format Release 4 (HDF4)
  * Purpose:  HDF4 Datasets. Open HDF4 file, fetch metadata and list of
@@ -40,9 +40,10 @@
 
 #include "HdfEosDef.h"
 
+#include "hdf4compat.h"
 #include "hdf4dataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: hdf4dataset.cpp 35971 2016-10-27 11:27:35Z jef $");
 
 extern const char * const pszGDALSignature;
 

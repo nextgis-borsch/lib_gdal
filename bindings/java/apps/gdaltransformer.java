@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdaltransformer.java 16510 2009-03-07 21:19:14Z rouault $
  *
  * Name:     gdaltransformer.java
  * Project:  GDAL Java Interface

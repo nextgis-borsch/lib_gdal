@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_sdts.h 32177 2015-12-14 07:25:30Z goatbar $
  *
  * Project:  STS Translator
  * Purpose:  Definition of classes finding SDTS support into OGRDriver

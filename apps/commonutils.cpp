@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: commonutils.cpp 33921 2016-04-08 20:02:49Z rouault $
  *
  * Project:  GDAL Utilities
  * Purpose:  Common utility routines
@@ -31,7 +31,7 @@
 #include "cpl_string.h"
 #include "gdal.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: commonutils.cpp 33921 2016-04-08 20:02:49Z rouault $");
 
 /* -------------------------------------------------------------------- */
 /*                   DoesDriverHandleExtension()                        */

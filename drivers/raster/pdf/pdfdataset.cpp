@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: pdfdataset.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  PDF driver
  * Purpose:  GDALDataset driver for PDF dataset.
@@ -55,7 +55,7 @@
 
 /* g++ -fPIC -g -Wall frmts/pdf/pdfdataset.cpp -shared -o gdal_PDF.so -Iport -Igcore -Iogr -L. -lgdal -lpoppler -I/usr/include/poppler */
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: pdfdataset.cpp 33720 2016-03-15 00:39:53Z goatbar $");
 
 #if defined(HAVE_POPPLER) || defined(HAVE_PODOFO) || defined(HAVE_PDFIUM)
 

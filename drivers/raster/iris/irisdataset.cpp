@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: irisdataset.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  IRIS Reader
  * Purpose:  All code for IRIS format Reader
@@ -44,7 +44,7 @@
 
 #include <sstream>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: irisdataset.cpp 33720 2016-03-15 00:39:53Z goatbar $");
 
 #define ARRAY_ELEMENT_COUNT(x) ((sizeof(x))/sizeof(x[0]))
 

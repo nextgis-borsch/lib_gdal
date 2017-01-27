@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrsdedatasource.cpp 36090 2016-11-03 14:22:30Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRSDEDataSource class.
@@ -34,7 +34,7 @@
 #include "cpl_string.h"
 #include "gdal.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrsdedatasource.cpp 36090 2016-11-03 14:22:30Z rouault $");
 
 /************************************************************************/
 /*                          OGRSDEDataSource()                           */
@@ -1324,7 +1324,7 @@ void OGRSDEDataSource::EnumerateSpatialTables()
 
     for( iTable = 0; iTable < nTableListCount; iTable++ )
     {
-       ICreateLayerFromRegInfo( ahTableList[iTable] );
+       CreateLayerFromRegInfo( ahTableList[iTable] );
     }
 
     SE_registration_free_info_list( nTableListCount, ahTableList );
@@ -1354,14 +1354,14 @@ void OGRSDEDataSource::OpenSpatialTable( const char* pszTableName )
     }
     else
     {
-       ICreateLayerFromRegInfo( tableinfo );
+       CreateLayerFromRegInfo( tableinfo );
     }
 
     SE_reginfo_free( tableinfo );
 }
 
 /************************************************************************/
-/*                      ICreateLayerFromRegInfo()                       */
+/*                      CreateLayerFromRegInfo()                       */
 /************************************************************************/
 
 void OGRSDEDataSource::CreateLayerFromRegInfo( SE_REGINFO& reginfo )

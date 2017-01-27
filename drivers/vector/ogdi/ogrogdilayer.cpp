@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrogdilayer.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  OGDI Bridge
  * Purpose:  Implements OGROGDILayer class.
@@ -57,7 +57,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrogdilayer.cpp 33714 2016-03-13 05:42:13Z goatbar $");
 
 /************************************************************************/
 /*                           OGROGDILayer()                            */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_sqlite.h 36600 2016-12-01 13:59:11Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions for OGR/SQLite driver.
@@ -36,6 +36,7 @@
 #include "cpl_error.h"
 #include <map>
 #include <set>
+#include <vector>
 
 #ifdef HAVE_SPATIALITE
   #ifdef SPATIALITE_AMALGAMATION
@@ -259,7 +260,7 @@ class OGRSQLiteLayer : public OGRLayer, public IOGRSQLiteGetSpatialWhere
 
     void                BuildFeatureDefn( const char *pszLayerName,
                                           sqlite3_stmt *hStmt,
-                                          const std::set<CPLString>& aosGeomCols,
+                                          const std::set<CPLString>* paosGeomCols,
                                           const std::set<CPLString>& aosIgnoredCols);
 
     void                ClearStatement();
@@ -774,6 +775,8 @@ class OGRSQLiteDataSource CPL_FINAL : public OGRSQLiteBaseDataSource
 
     void                SaveStatistics();
 
+    std::vector<OGRLayer*> apoInvisibleLayers;
+
   public:
                         OGRSQLiteDataSource();
                         ~OGRSQLiteDataSource();
@@ -792,6 +795,7 @@ class OGRSQLiteDataSource CPL_FINAL : public OGRSQLiteBaseDataSource
     virtual int         GetLayerCount() { return nLayers; }
     virtual OGRLayer   *GetLayer( int );
     virtual OGRLayer   *GetLayerByName( const char* );
+    OGRLayer           *GetLayerByNameNotVisible( const char* );
     virtual std::pair<OGRLayer*, IOGRSQLiteGetSpatialWhere*> GetLayerWithGetSpatialWhereByName( const char* pszName );
 
     virtual OGRLayer    *ICreateLayer( const char *pszLayerName,

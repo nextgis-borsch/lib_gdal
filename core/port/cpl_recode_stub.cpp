@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id$
+ * $Id: cpl_recode_stub.cpp 33724 2016-03-16 17:14:11Z goatbar $
  *
  * Name:     cpl_recode_stub.cpp
  * Project:  CPL - Common Portability Library
@@ -32,7 +32,7 @@
 
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_recode_stub.cpp 33724 2016-03-16 17:14:11Z goatbar $");
 
 #ifdef CPL_RECODE_STUB
 

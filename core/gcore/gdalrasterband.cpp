@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalrasterband.cpp 35549 2016-09-29 22:56:53Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Base class for format specific band class implementation.  This
@@ -33,7 +33,7 @@
 #include "gdal_rat.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalrasterband.cpp 35549 2016-09-29 22:56:53Z rouault $");
 
 /************************************************************************/
 /*                           GDALRasterBand()                           */

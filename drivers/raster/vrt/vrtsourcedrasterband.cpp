@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: vrtsourcedrasterband.cpp 35188 2016-08-23 15:02:58Z rouault $
  *
  * Project:  Virtual GDAL Datasets
  * Purpose:  Implementation of VRTSourcedRasterBand
@@ -32,7 +32,7 @@
 #include "cpl_minixml.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: vrtsourcedrasterband.cpp 35188 2016-08-23 15:02:58Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */

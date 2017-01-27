@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrsqlitetablelayer.cpp 35908 2016-10-24 12:31:58Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRSQLiteTableLayer class, access to an existing table.
@@ -37,7 +37,7 @@
 
 #define UNSUPPORTED_OP_READ_ONLY "%s : unsupported operation on a read-only datasource."
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrsqlitetablelayer.cpp 35908 2016-10-24 12:31:58Z rouault $");
 
 /************************************************************************/
 /*                        OGRSQLiteTableLayer()                         */
@@ -341,13 +341,14 @@ CPLErr OGRSQLiteTableLayer::EstablishFeatureDefn(const char* pszGeomCol)
         aosGeomCols.insert(pszGeomCol);
         std::set<CPLString> aosIgnoredCols(poDS->GetGeomColsForTable(pszTableName));
         aosIgnoredCols.erase(pszGeomCol);
-        BuildFeatureDefn( GetDescription(), hColStmt, aosGeomCols, aosIgnoredCols);
+        BuildFeatureDefn( GetDescription(), hColStmt, &aosGeomCols, aosIgnoredCols);
     }
     else
     {
         std::set<CPLString> aosIgnoredCols;
+        const std::set<CPLString>& aosGeomCols(poDS->GetGeomColsForTable(pszTableName));
         BuildFeatureDefn( GetDescription(), hColStmt,
-                          poDS->GetGeomColsForTable(pszTableName), aosIgnoredCols );
+                          (bIsVirtualShape) ? NULL : &aosGeomCols, aosIgnoredCols );
     }
     sqlite3_finalize( hColStmt );
 
@@ -2647,6 +2648,8 @@ OGRErr OGRSQLiteTableLayer::ISetFeature( OGRFeature *poFeature )
             poFeatureDefn->myGetGeomFieldDefn(iField)->eGeomFormat;
         if( eGeomFormat == OSGF_FGF )
             continue;
+        if( bNeedComma )
+            osCommand += ",";
 
         osCommand += "\"";
         osCommand += OGRSQLiteEscapeName( poFeatureDefn->GetGeomFieldDefn(iField)->GetNameRef());

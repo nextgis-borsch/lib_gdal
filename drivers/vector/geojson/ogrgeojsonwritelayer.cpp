@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrgeojsonwritelayer.cpp 35926 2016-10-25 14:37:41Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implementation of OGRGeoJSONWriteLayer class (OGR GeoJSON Driver).
@@ -132,7 +132,7 @@ OGRErr OGRGeoJSONWriteLayer::ICreateFeature( OGRFeature* poFeature )
     ++nOutCounter_;
 
     OGRGeometry* poGeometry = poFeature->GetGeometryRef();
-    if ( (bWriteBBOX || bWriteFC_BBOX) && !poGeometry->IsEmpty() )
+    if ( (bWriteBBOX || bWriteFC_BBOX) && poGeometry != NULL && !poGeometry->IsEmpty() )
     {
         OGREnvelope3D sEnvelope;
         poGeometry->getEnvelope(&sEnvelope);

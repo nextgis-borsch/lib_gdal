@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogredigeodriver.cpp 32110 2015-12-10 17:19:40Z goatbar $
  *
  * Project:  EDIGEO Translator
  * Purpose:  Implements OGREDIGEODriver.
@@ -30,7 +30,7 @@
 #include "ogr_edigeo.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogredigeodriver.cpp 32110 2015-12-10 17:19:40Z goatbar $");
 
 extern "C" void RegisterOGREDIGEO();
 

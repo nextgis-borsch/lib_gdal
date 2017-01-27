@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: httpdriver.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  WCS Client Driver
  * Purpose:  Implementation of an HTTP fetching driver.
@@ -34,7 +34,7 @@
 #include "gdal_frmts.h"
 #include "gdal_pam.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: httpdriver.cpp 33720 2016-03-15 00:39:53Z goatbar $");
 
 
 /************************************************************************/

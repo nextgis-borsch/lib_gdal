@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_oci.h 34888 2016-08-03 19:59:19Z ilucena $
  *
  * Project:  Oracle Spatial Driver
  * Purpose:  Oracle Spatial OGR Driver Declarations.

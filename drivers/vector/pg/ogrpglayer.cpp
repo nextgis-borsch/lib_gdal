@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrpglayer.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRPGLayer class  which implements shared handling
@@ -65,7 +65,7 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 #define PQexec this_is_an_error
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrpglayer.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 // These originally are defined in libpq-fs.h.
 

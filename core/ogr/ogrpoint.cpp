@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrpoint.cpp 33631 2016-03-04 06:28:09Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The Point geometry class.
@@ -35,7 +35,7 @@
 #include <limits>
 #include <new>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrpoint.cpp 33631 2016-03-04 06:28:09Z goatbar $");
 
 /************************************************************************/
 /*                              OGRPoint()                              */

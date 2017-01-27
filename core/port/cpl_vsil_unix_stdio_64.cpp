@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id$
+ * $Id: cpl_vsil_unix_stdio_64.cpp 36874 2016-12-15 01:53:28Z rouault $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Implement VSI large file api for Unix platforms with fseek64()
@@ -66,7 +66,7 @@
 #include <errno.h>
 #include <new>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_vsil_unix_stdio_64.cpp 36874 2016-12-15 01:53:28Z rouault $");
 
 #if defined(UNIX_STDIO_64)
 
@@ -659,11 +659,21 @@ GIntBig VSIUnixStdioFilesystemHandler::GetDiskFreeSpace( const char*
 {
     GIntBig nRet = -1;
 #ifdef HAVE_STATVFS
+
+#ifdef HAVE_STATVFS64
+    struct statvfs64 buf;
+    if( statvfs64(pszDirname, &buf) == 0 )
+    {
+        nRet = static_cast<GIntBig>(buf.f_frsize * static_cast<GUIntBig>(buf.f_bavail));
+    }
+#else
     struct statvfs buf;
     if( statvfs(pszDirname, &buf) == 0 )
     {
-        nRet = static_cast<GIntBig>(buf.f_frsize * buf.f_bavail);
+        nRet = static_cast<GIntBig>(buf.f_frsize * static_cast<GUIntBig>(buf.f_bavail));
     }
+#endif
+
 #endif
     return nRet;
 }

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalwarpoperation.cpp 33918 2016-04-08 14:02:35Z rouault $
  *
  * Project:  High Performance Image Reprojector
  * Purpose:  Implementation of the GDALWarpOperation class.
@@ -33,7 +33,7 @@
 #include "cpl_multiproc.h"
 #include "ogr_api.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalwarpoperation.cpp 33918 2016-04-08 14:02:35Z rouault $");
 
 struct _GDALWarpChunk {
     int dx, dy, dsx, dsy;

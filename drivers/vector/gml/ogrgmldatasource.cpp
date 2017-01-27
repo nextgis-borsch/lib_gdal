@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrgmldatasource.cpp 35690 2016-10-11 09:56:31Z rouault $
  *
  * Project:  OGR
  * Purpose:  Implements OGRGMLDataSource class.
@@ -47,7 +47,7 @@
 
 #include <vector>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgmldatasource.cpp 35690 2016-10-11 09:56:31Z rouault $");
 
 static bool ExtractSRSName(const char* pszXML, char* szSRSName,
                            size_t sizeof_szSRSName);

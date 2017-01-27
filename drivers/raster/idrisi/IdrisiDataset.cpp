@@ -1,5 +1,5 @@
 /*****************************************************************************
-* $Id$
+* $Id: IdrisiDataset.cpp 36496 2016-11-25 13:09:32Z rouault $
 *
 * Project:  Idrisi Raster Image File Driver
 * Purpose:  Read/write Idrisi Raster Image Format RST
@@ -43,7 +43,7 @@
 #include "ogr_spatialref.h"
 #include "idrisi.h"
 
-CPL_CVSID( "$Id$" );
+CPL_CVSID( "$Id: IdrisiDataset.cpp 36496 2016-11-25 13:09:32Z rouault $" );
 
 #ifdef WIN32
 #  define PATHDELIM       '\\'
@@ -1177,11 +1177,13 @@ GDALDataset *IdrisiDataset::CreateCopy( const char *pszFilename,
     // --------------------------------------------------------------------
 
     double adfGeoTransform[6];
+    if(  poSrcDS->GetGeoTransform(adfGeoTransform) == CE_None )
+    {
+        poDS->SetGeoTransform(adfGeoTransform);
+    }
 
     if (!EQUAL(poSrcDS->GetProjectionRef(),""))
     {
-        poSrcDS->GetGeoTransform(adfGeoTransform);
-        poDS->SetGeoTransform(adfGeoTransform);
         poDS->SetProjection( poSrcDS->GetProjectionRef() );
     }
 

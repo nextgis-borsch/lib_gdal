@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: nasreader.cpp 36296 2016-11-19 15:02:05Z jef $
  *
  * Project:  NAS Reader
  * Purpose:  Implementation of NASReader class.
@@ -602,6 +602,7 @@ void NASReader::SetFeaturePropertyDirectly( const char *pszElement,
                       poClass->GetName(), pszElement,
                       poProp->papszSubProperties[0], pszValue,
                       poIdProp && poIdProp->nSubProperties>0 &&
+                      poIdProp->papszSubProperties &&
                       poIdProp->papszSubProperties[0] ?
                       poIdProp->papszSubProperties[0] : "(null)" );
         }

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: srpdataset.cpp 34458 2016-06-28 08:37:28Z rouault $
  * Purpose:  ASRP/USRP Reader
  * Author:   Frank Warmerdam (warmerdam@pobox.com)
  *
@@ -38,7 +38,7 @@
 // Uncomment to recognize also .gen files in addition to .img files
 // #define OPEN_GEN
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: srpdataset.cpp 34458 2016-06-28 08:37:28Z rouault $");
 
 class SRPDataset : public GDALPamDataset
 {

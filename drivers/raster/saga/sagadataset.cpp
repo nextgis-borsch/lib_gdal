@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: sagadataset.cpp 33720 2016-03-15 00:39:53Z goatbar $
  * Project:  SAGA GIS Binary Driver
  * Purpose:  Implements the SAGA GIS Binary Grid Format.
  * Author:   Volker Wichmann, wichmann@laserdata.at
@@ -38,7 +38,7 @@
 #include "gdal_pam.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: sagadataset.cpp 33720 2016-03-15 00:39:53Z goatbar $");
 
 #ifndef INT_MAX
 # define INT_MAX 2147483647

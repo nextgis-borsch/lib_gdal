@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: minidriver.cpp 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  WMS Client Driver
  * Purpose:  GDALWMSMiniDriver base class implementation.

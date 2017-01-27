@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrutils.cpp 33956 2016-04-12 18:55:40Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Utility functions for OGR classes, including some related to
@@ -39,7 +39,7 @@
 
 # include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrutils.cpp 33956 2016-04-12 18:55:40Z rouault $");
 
 /************************************************************************/
 /*                        OGRFormatDouble()                             */

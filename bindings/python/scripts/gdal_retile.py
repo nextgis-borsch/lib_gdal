@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ###############################################################################
-#  $Id$
+#  $Id: gdal_retile.py 33790 2016-03-26 12:42:12Z goatbar $
 #
 # Purpose:  Module for retiling (merging) tiles and building tiled pyramids
 # Author:   Christian Meuller, christian.mueller@nvoe.at

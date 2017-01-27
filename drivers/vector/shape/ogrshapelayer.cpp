@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrshapelayer.cpp 35625 2016-10-06 13:59:48Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRShapeLayer class.
@@ -40,7 +40,7 @@
 
 #define UNSUPPORTED_OP_READ_ONLY "%s : unsupported operation on a read-only datasource."
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrshapelayer.cpp 35625 2016-10-06 13:59:48Z rouault $");
 
 /************************************************************************/
 /*                           OGRShapeLayer()                            */

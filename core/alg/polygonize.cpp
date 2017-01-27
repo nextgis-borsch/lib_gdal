@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: polygonize.cpp 33757 2016-03-20 20:22:33Z goatbar $
  * Project:  GDAL
  * Purpose:  Raster to Polygon Converter
  * Author:   Frank Warmerdam, warmerdam@pobox.com
@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include <vector>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: polygonize.cpp 33757 2016-03-20 20:22:33Z goatbar $");
 
 /************************************************************************/
 /* ==================================================================== */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: vfkreadersqlite.cpp 34258 2016-05-23 11:49:11Z martinl $
  *
  * Project:  VFK Reader (SQLite)
  * Purpose:  Implements VFKReaderSQLite class.

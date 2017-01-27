@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalpamproxydb.cpp 33766 2016-03-21 19:51:16Z goatbar $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of the GDAL PAM Proxy database interface.
@@ -35,7 +35,7 @@
 #include "gdal_pam.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalpamproxydb.cpp 33766 2016-03-21 19:51:16Z goatbar $");
 
 /************************************************************************/
 /* ==================================================================== */

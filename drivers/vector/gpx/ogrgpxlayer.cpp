@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrgpxlayer.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  GPX Translator
  * Purpose:  Implements OGRGPXLayer class.
@@ -33,7 +33,7 @@
 #include "cpl_string.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgpxlayer.cpp 33714 2016-03-13 05:42:13Z goatbar $");
 
 static const int FLD_TRACK_FID = 0;
 static const int FLD_TRACK_SEG_ID = 1;

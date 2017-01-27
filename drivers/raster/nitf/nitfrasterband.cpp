@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: nitfrasterband.cpp 33808 2016-03-29 21:15:28Z goatbar $
  *
  * Project:  NITF Read/Write Translator
  * Purpose:  NITFRasterBand (and related proxy band) implementations.
@@ -35,7 +35,7 @@
 #include "cpl_string.h"
 #include "cpl_csv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: nitfrasterband.cpp 33808 2016-03-29 21:15:28Z goatbar $");
 
 /************************************************************************/
 /*                       NITFMakeColorTable()                           */

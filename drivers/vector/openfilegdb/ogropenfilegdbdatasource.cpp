@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogropenfilegdbdatasource.cpp 33712 2016-03-12 10:51:56Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements Open FileGDB OGR driver.

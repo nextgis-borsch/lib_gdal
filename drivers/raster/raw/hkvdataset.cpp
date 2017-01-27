@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: hkvdataset.cpp 33943 2016-04-11 17:41:09Z goatbar $
  *
  * Project:  GView
  * Purpose:  Implementation of Atlantis HKV labelled blob support
@@ -36,7 +36,7 @@
 #include "ogr_spatialref.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: hkvdataset.cpp 33943 2016-04-11 17:41:09Z goatbar $");
 
 /************************************************************************/
 /* ==================================================================== */

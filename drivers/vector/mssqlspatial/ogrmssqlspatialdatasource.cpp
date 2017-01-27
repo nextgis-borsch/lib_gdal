@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrmssqlspatialdatasource.cpp 33834 2016-03-31 18:36:27Z tamas $
  *
  * Project:  MSSQL Spatial driver
  * Purpose:  Implements OGRMSSQLSpatialDataSource class..
@@ -30,7 +30,7 @@
 
 #include "ogr_mssqlspatial.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrmssqlspatialdatasource.cpp 33834 2016-03-31 18:36:27Z tamas $");
 
 /************************************************************************/
 /*                          OGRMSSQLSpatialDataSource()                 */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: vrtsources.cpp 36800 2016-12-11 22:24:27Z rouault $
  *
  * Project:  Virtual GDAL Datasets
  * Purpose:  Implementation of VRTSimpleSource, VRTFuncSource and
@@ -43,7 +43,7 @@
 #define isnan std::isnan
 #endif
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: vrtsources.cpp 36800 2016-12-11 22:24:27Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -2407,6 +2407,16 @@ CPLErr VRTComplexSource::RasterIOInternal( int nReqXOff, int nReqYOff,
 
     return CE_None;
 }
+
+// Explicitly instantiate template method, as it is used in another file.
+template
+CPLErr VRTComplexSource::RasterIOInternal<float>( int nReqXOff, int nReqYOff,
+                                    int nReqXSize, int nReqYSize,
+                                    void *pData, int nOutXSize, int nOutYSize,
+                                    GDALDataType eBufType,
+                                    GSpacing nPixelSpace, GSpacing nLineSpace,
+                                    GDALRasterIOExtraArg* psExtraArg,
+                                    GDALDataType eWrkDataType );
 
 /************************************************************************/
 /*                             GetMinimum()                             */

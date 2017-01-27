@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_csv.h 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  CSV Translator
  * Purpose:  Definition of classes for OGR .csv driver.

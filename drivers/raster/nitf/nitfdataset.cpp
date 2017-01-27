@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: nitfdataset.cpp 33808 2016-03-29 21:15:28Z goatbar $
  *
  * Project:  NITF Read/Write Translator
  * Purpose:  NITFDataset and driver related implementations.
@@ -36,7 +36,7 @@
 #include "gdal_frmts.h"
 #include "nitfdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: nitfdataset.cpp 33808 2016-03-29 21:15:28Z goatbar $");
 
 static bool NITFPatchImageLength( const char *pszFilename,
                                   GUIntBig nImageOffset,

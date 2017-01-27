@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrsosidatasource.cpp 34420 2016-06-24 21:06:03Z rouault $
  *
  * Project:  SOSI Data Source
  * Purpose:  Provide SOSI Data to OGR.

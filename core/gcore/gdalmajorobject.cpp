@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalmajorobject.cpp 33694 2016-03-10 17:54:30Z goatbar $
  *
  * Project:  GDAL Core
  * Purpose:  Base class for objects with metadata, etc.
@@ -31,7 +31,7 @@
 #include "gdal_priv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalmajorobject.cpp 33694 2016-03-10 17:54:30Z goatbar $");
 
 /************************************************************************/
 /*                          GDALMajorObject()                           */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: jpeg2000dataset.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  JPEG-2000
  * Purpose:  Partial implementation of the ISO/IEC 15444-1 standard
@@ -36,7 +36,7 @@
 #include <jasper/jasper.h>
 #include "jpeg2000_vsil_io.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: jpeg2000dataset.cpp 33720 2016-03-15 00:39:53Z goatbar $");
 
 // XXX: Part of code below extracted from the JasPer internal headers and
 // must be in sync with JasPer version (this one works with JasPer 1.900.1)

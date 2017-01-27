@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ili2reader.h 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  Interlis 2 Reader
  * Purpose:  Public Declarations for Reader code.

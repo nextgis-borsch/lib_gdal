@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_avc.h 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  Arc/Info Coverage (E00 & Binary) Reader
  * Purpose:  Declarations for OGR wrapper classes for coverage access.

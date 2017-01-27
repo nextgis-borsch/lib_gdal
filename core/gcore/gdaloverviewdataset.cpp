@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdaloverviewdataset.cpp 33816 2016-03-30 13:18:07Z goatbar $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of a dataset overview warping class
@@ -30,7 +30,7 @@
 #include "gdal_mdreader.h"
 #include "gdal_proxy.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdaloverviewdataset.cpp 33816 2016-03-30 13:18:07Z goatbar $");
 
 /** In GDAL, GDALRasterBand::GetOverview() returns a stand-alone band, that may
     have no parent dataset. This can be inconvenient in certain contexts, where

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_fromepsg.cpp 33605 2016-02-29 21:29:59Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Generate an OGRSpatialReference object based on an EPSG
@@ -35,7 +35,7 @@
 
 #include <vector>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogr_fromepsg.cpp 33605 2016-02-29 21:29:59Z goatbar $");
 
 extern void OGRsnPrintDouble( char * pszStrBuf, size_t size, double dfValue );
 

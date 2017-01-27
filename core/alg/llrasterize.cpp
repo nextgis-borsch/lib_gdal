@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: llrasterize.cpp 33715 2016-03-13 08:52:06Z goatbar $
  *
  * Project:  GDAL
  * Purpose:  Vector polygon rasterization code.

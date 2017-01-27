@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gt_overview.cpp 35041 2016-08-10 14:04:52Z rouault $
  *
  * Project:  GeoTIFF Driver
  * Purpose:  Code to build overviews of external databases as a TIFF file.
@@ -37,7 +37,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gt_overview.cpp 35041 2016-08-10 14:04:52Z rouault $");
 
 /************************************************************************/
 /*                         GTIFFWriteDirectory()                        */

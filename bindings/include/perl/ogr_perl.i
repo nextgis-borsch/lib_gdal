@@ -120,7 +120,7 @@ ALTERED_DESTROY(OGRGeometryShadow, OGRc, delete_Geometry)
 %perlcode %{
 
 package Geo::OGR;
-our $VERSION = '2.0102'; # this needs to be the same as that in gdal_perl.i
+our $VERSION = '2.0103'; # this needs to be the same as that in gdal_perl.i
 
 sub Driver {
     return 'Geo::GDAL::Driver' unless @_;
@@ -1661,13 +1661,13 @@ sub Points {
             }
         } elsif ($t eq 'MultiLineString') {
             for my $l (@$points) {
-                my $linestring = Geo::OGR::Geometry->new('Point'.$postfix);
+                my $linestring = Geo::OGR::Geometry->new('LineString'.$postfix);
                 $linestring->Points($l);
                 $self->AddGeometryDirectly($linestring);
             }
         } elsif ($t eq 'MultiPolygon') {
             for my $p (@$points) {
-                my $polygon = Geo::OGR::Geometry->new('Point'.$postfix);
+                my $polygon = Geo::OGR::Geometry->new('Polygon'.$postfix);
                 $polygon->Points($p);
                 $self->AddGeometryDirectly($polygon);
             }

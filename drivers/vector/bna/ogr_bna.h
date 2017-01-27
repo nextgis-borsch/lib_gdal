@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_bna.h 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  BNA Translator
  * Purpose:  Definition of classes for OGR .bna driver.

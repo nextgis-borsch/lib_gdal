@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: srtmhgtdataset.cpp 34884 2016-08-03 16:05:33Z rouault $
  *
  * Project:  SRTM HGT Driver
  * Purpose:  SRTM HGT File Read Support.
@@ -41,7 +41,7 @@
 
 static const GInt16 SRTMHG_NODATA_VALUE = -32768;
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: srtmhgtdataset.cpp 34884 2016-08-03 16:05:33Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */

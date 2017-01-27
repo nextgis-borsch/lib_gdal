@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: pcrasterutil.h 31687 2015-11-21 16:35:21Z rouault $
  *
  * Project:  PCRaster Integration
  * Purpose:  PCRaster driver support declarations.

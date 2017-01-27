@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrntfdatasource.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  UK NTF Reader
  * Purpose:  Implements OGRNTFDataSource class
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrntfdatasource.cpp 33714 2016-03-13 05:42:13Z goatbar $");
 
 /************************************************************************/
 /*                          OGRNTFDataSource()                          */

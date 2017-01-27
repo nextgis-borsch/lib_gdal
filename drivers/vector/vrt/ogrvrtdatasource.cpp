@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrvrtdatasource.cpp 34048 2016-04-21 18:14:02Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRVRTDataSource class.
@@ -34,7 +34,7 @@
 #include "ogrwarpedlayer.h"
 #include "ogrunionlayer.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrvrtdatasource.cpp 34048 2016-04-21 18:14:02Z rouault $");
 
 /************************************************************************/
 /*                       OGRVRTGetGeometryType()                        */

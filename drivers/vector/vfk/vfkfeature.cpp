@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: vfkfeature.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  VFK Reader - Feature definition
  * Purpose:  Implements IVFKFeature/VFKFeature class.

@@ -1,5 +1,5 @@
 /******************************************************************************
-* $Id$
+* $Id: ogr_openfilegdb.h 33024 2016-01-17 16:10:22Z goatbar $
 *
 * Project:  OpenGIS Simple Features Reference Implementation
 * Purpose:  Implements Open FileGDB OGR driver.

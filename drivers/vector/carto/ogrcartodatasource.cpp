@@ -29,7 +29,7 @@
 #include "ogr_carto.h"
 #include "ogr_pgdump.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrcartodatasource.cpp 34979 2016-08-08 09:30:34Z rouault $");
 
 /************************************************************************/
 /*                        OGRCARTODataSource()                        */

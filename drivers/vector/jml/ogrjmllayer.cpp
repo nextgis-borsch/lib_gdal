@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrjmllayer.cpp 33180 2016-01-28 10:13:57Z rouault $
  *
  * Project:  JML Translator
  * Purpose:  Implements OGRJMLLayer class.
@@ -30,7 +30,7 @@
 #include "ogr_jml.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrjmllayer.cpp 33180 2016-01-28 10:13:57Z rouault $");
 
 #ifdef HAVE_EXPAT
 

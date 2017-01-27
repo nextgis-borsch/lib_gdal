@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: usgsdemdataset.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  USGS DEM Driver
  * Purpose:  All reader for USGS DEM Reader
@@ -37,7 +37,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: usgsdemdataset.cpp 33720 2016-03-15 00:39:53Z goatbar $");
 
 typedef struct {
     double	x;

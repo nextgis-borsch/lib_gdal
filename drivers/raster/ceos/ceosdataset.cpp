@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ceosdataset.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  CEOS Translator
  * Purpose:  GDALDataset driver for CEOS translator.
@@ -32,7 +32,7 @@
 #include "gdal_frmts.h"
 #include "gdal_pam.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ceosdataset.cpp 33720 2016-03-15 00:39:53Z goatbar $");
 
 /************************************************************************/
 /* ==================================================================== */

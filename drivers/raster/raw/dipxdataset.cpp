@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: dipxdataset.cpp 33930 2016-04-09 19:28:36Z goatbar $
  *
  * Project:  GDAL
  * Purpose:  Implementation for ELAS DIPEx format variant.
@@ -37,7 +37,7 @@
 
 using std::fill;
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: dipxdataset.cpp 33930 2016-04-09 19:28:36Z goatbar $");
 
 typedef struct {
     GInt32      NBIH;   /* bytes in header, normally 1024 */

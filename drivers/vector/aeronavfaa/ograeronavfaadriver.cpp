@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ograeronavfaadriver.cpp 32110 2015-12-10 17:19:40Z goatbar $
  *
  * Project:  AeronavFAA Translator
  * Purpose:  Implements OGRAeronavFAADriver.
@@ -30,7 +30,7 @@
 #include "ogr_aeronavfaa.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ograeronavfaadriver.cpp 32110 2015-12-10 17:19:40Z goatbar $");
 
 // g++ ogr/ogrsf_frmts/aeronavfaa/*.cpp -Wall -g -fPIC -shared -o ogr_AeronavFAA.so -Iport -Igcore -Iogr -Iogr/ogrsf_frmts/aernovfaa -Iogr/ogrsf_frmts
 

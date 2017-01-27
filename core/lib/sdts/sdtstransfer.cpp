@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: sdtstransfer.cpp 31955 2015-12-02 06:07:22Z goatbar $
  *
  * Project:  SDTS Translator
  * Purpose:  Implementation of SDTSTransfer class.
@@ -31,7 +31,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: sdtstransfer.cpp 31955 2015-12-02 06:07:22Z goatbar $");
 
 /************************************************************************/
 /*                            SDTSTransfer()                            */

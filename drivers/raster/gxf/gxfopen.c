@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gxfopen.c 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  GXF Reader
  * Purpose:  Majority of Geosoft GXF reading code.
@@ -32,7 +32,7 @@
 #include <ctype.h>
 #include "gxfopen.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gxfopen.c 33720 2016-03-15 00:39:53Z goatbar $");
 
 
 /* this is also defined in gdal.h which we avoid in this separable component */

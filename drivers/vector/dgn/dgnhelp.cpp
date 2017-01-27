@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: dgnhelp.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  Microstation DGN Access Library
  * Purpose:  Application visible helper functions for parsing DGN information.
@@ -29,7 +29,7 @@
 
 #include "dgnlibp.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: dgnhelp.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 static const unsigned char abyDefaultPCT[256][3] =
 {

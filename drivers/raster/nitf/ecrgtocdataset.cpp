@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ecrgtocdataset.cpp 33794 2016-03-26 13:19:07Z goatbar $
  *
  * Project:  ECRG TOC read Translator
  * Purpose:  Implementation of ECRGTOCDataset and ECRGTOCSubDataset.
@@ -37,7 +37,7 @@
 
 #include <vector>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ecrgtocdataset.cpp 33794 2016-03-26 13:19:07Z goatbar $");
 
 /** Overview of used classes :
    - ECRGTOCDataset : lists the different subdatasets, listed in the .xml,

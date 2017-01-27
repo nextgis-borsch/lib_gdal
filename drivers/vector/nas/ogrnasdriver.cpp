@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrnasdriver.cpp 32898 2016-01-10 14:44:10Z goatbar $
  *
  * Project:  OGR
  * Purpose:  OGRNASDriver implementation
@@ -32,7 +32,7 @@
 #include "nasreaderp.h"
 #include "ogr_nas.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrnasdriver.cpp 32898 2016-01-10 14:44:10Z goatbar $");
 
 
 /************************************************************************/

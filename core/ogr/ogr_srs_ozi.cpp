@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_srs_ozi.cpp 33631 2016-03-04 06:28:09Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  OGRSpatialReference translation from OziExplorer
@@ -33,7 +33,7 @@
 #include "cpl_conv.h"
 #include "cpl_csv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogr_srs_ozi.cpp 33631 2016-03-04 06:28:09Z goatbar $");
 
 /************************************************************************/
 /*                          OSRImportFromOzi()                          */

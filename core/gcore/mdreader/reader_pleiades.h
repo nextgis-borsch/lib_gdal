@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: reader_pleiades.h 34367 2016-06-17 13:58:32Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Read metadata from Pleiades imagery.

@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id$
+ * $Id: cpl_list.cpp 33671 2016-03-07 18:39:06Z goatbar $
  *
  * Name:     cpl_list.cpp
  * Project:  CPL - Common Portability Library
@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_list.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_list.cpp 33671 2016-03-07 18:39:06Z goatbar $");
 
 /*=====================================================================
                     List manipulation functions.

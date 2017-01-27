@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: pdfio.h 33338 2016-02-03 10:24:38Z rouault $
  *
  * Project:  PDF driver
  * Purpose:  GDALDataset driver for PDF dataset.

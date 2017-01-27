@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ili2reader.cpp 33123 2016-01-23 18:59:28Z rouault $
  *
  * Project:  Interlis 2 Reader
  * Purpose:  Implementation of ILI2Reader class.
@@ -41,7 +41,7 @@ char *tr_strdup( const XMLCh * );
 
 using namespace std;
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ili2reader.cpp 33123 2016-01-23 18:59:28Z rouault $");
 
 //
 // constants

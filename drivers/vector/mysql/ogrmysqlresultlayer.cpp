@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrmysqlresultlayer.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRMySQLResultLayer class.
@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "ogr_mysql.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrmysqlresultlayer.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 /************************************************************************/
 /*                        OGRMySQLResultLayer()                         */

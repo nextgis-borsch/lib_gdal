@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: dgnwritetest.c 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  Microstation DGN Access Library
  * Purpose:  Test program for use of write api.
@@ -29,7 +29,7 @@
 
 #include "dgnlib.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: dgnwritetest.c 33713 2016-03-12 17:41:57Z goatbar $");
 
 /************************************************************************/
 /*                                main()                                */

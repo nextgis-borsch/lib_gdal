@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalrasterblock.cpp 35549 2016-09-29 22:56:53Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of GDALRasterBlock class and related global
@@ -32,7 +32,7 @@
 #include "gdal_priv.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalrasterblock.cpp 35549 2016-09-29 22:56:53Z rouault $");
 
 static bool bCacheMaxInitialized = false;
 static GIntBig nCacheMax = 40 * 1024*1024; /* Will later be overridden by the default 5% if GDAL_CACHEMAX not defined */

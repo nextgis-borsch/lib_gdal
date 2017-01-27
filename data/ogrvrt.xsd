@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 /******************************************************************************
- * $Id$
+ * $Id: ogrvrt.xsd 34203 2016-05-10 14:06:35Z rouault $
  *
  * Project:  GDAL/OGR
  * Purpose:  XML Schema for OGR VRT files.

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: cpl_vsil_sparsefile.cpp 33758 2016-03-21 09:06:22Z rouault $
  *
  * Project:  VSI Virtual File System
  * Purpose:  Implementation of sparse file virtual io driver.
@@ -34,7 +34,7 @@
 #include "cpl_minixml.h"
 #include <map>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_vsil_sparsefile.cpp 33758 2016-03-21 09:06:22Z rouault $");
 
 class SFRegion {
 public:

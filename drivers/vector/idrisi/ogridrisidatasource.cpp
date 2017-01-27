@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogridrisidatasource.cpp 32745 2016-01-04 23:16:43Z goatbar $
  *
  * Project:  Idrisi Translator
  * Purpose:  Implements OGRIdrisiDataSource class
@@ -32,7 +32,7 @@
 #include "idrisi.h"
 #include "ogr_idrisi.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogridrisidatasource.cpp 32745 2016-01-04 23:16:43Z goatbar $");
 
 /************************************************************************/
 /*                        OGRIdrisiDataSource()                         */

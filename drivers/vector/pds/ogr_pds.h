@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_pds.h 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  PDS Translator
  * Purpose:  Definition of classes for OGR .pdstable driver.

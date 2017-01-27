@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: airsardataset.cpp 33901 2016-04-06 16:31:31Z goatbar $
  *
  * Project:  AirSAR Reader
  * Purpose:  Implements read support for AirSAR Polarimetric data.
@@ -34,7 +34,7 @@
 #include "gdal_frmts.h"
 #include "gdal_pam.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: airsardataset.cpp 33901 2016-04-06 16:31:31Z goatbar $");
 
 /************************************************************************/
 /* ==================================================================== */

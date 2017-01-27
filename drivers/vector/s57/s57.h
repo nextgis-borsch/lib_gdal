@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: s57.h 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  S-57 Translator
  * Purpose:  Declarations for S-57 translator not including the

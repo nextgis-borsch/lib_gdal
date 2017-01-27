@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalwarpkernel_opencl.c 36105 2016-11-04 22:15:51Z rouault $
  *
  * Project:  OpenCL Image Reprojector
  * Purpose:  Implementation of the GDALWarpKernel reprojector in OpenCL.
@@ -41,7 +41,7 @@
 #include "cpl_string.h"
 #include "gdalwarpkernel_opencl.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalwarpkernel_opencl.c 36105 2016-11-04 22:15:51Z rouault $");
 
 #define handleErr(err) if((err) != CL_SUCCESS) { \
     CPLError(CE_Failure, CPLE_AppDefined, "Error at file %s line %d: %s", __FILE__, __LINE__, getCLErrorString(err)); \
@@ -317,7 +317,7 @@ cl_int set_supported_formats(struct oclWarper *warper,
 
     //Find what we *can* handle
     handleErr(err = clGetSupportedImageFormats(warper->context,
-                                               CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+                                               CL_MEM_READ_ONLY,
                                                CL_MEM_OBJECT_IMAGE2D,
                                                256, fmtBuf, &numRet));
     for (i = 0; i < numRet; ++i) {
@@ -1249,8 +1249,7 @@ cl_kernel get_kernel(struct oclWarper *warper, char useVec,
             "-D PI=%015.15lff -D outType=%s -D dstMinVal=%015.15lff -D dstMaxVal=%015.15lff "
             "-D useDstNoDataReal=%d -D vecf=%s %s -D doCubicSpline=%d "
             "-D useUseBandSrcValid=%d -D iCoordMult=%d ",
-            /* FIXME: Is it really a ATI specific thing ? */
-            (warper->imageFormat == CL_FLOAT && (warper->eCLVendor == VENDOR_AMD || warper->eCLVendor == VENDOR_INTEL)) ? "-D USE_CLAMP_TO_DST_FLOAT=1 " : "",
+            (warper->imageFormat == CL_FLOAT) ? "-D USE_CLAMP_TO_DST_FLOAT=1 " : "",
             warper->srcWidth, warper->srcHeight, warper->dstWidth, warper->dstHeight,
             warper->useUnifiedSrcDensity, warper->useUnifiedSrcValid,
             warper->useDstDensity, warper->useDstValid, warper->imagWorkCL != NULL,

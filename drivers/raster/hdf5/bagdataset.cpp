@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: bagdataset.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  Hierarchical Data Format Release 5 (HDF5)
  * Purpose:  Read BAG datasets.
@@ -36,7 +36,7 @@
 #include "gdal_priv.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: bagdataset.cpp 33720 2016-03-15 00:39:53Z goatbar $");
 
 OGRErr OGR_SRS_ImportFromISO19115( OGRSpatialReference *poThis,
                                    const char *pszISOXML );

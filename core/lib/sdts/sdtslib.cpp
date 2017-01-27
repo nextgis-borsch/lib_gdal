@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: sdtslib.cpp 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  SDTS Translator
  * Purpose:  Various utility functions that apply to all SDTS profiles.
@@ -32,7 +32,7 @@
 #include "sdts_al.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: sdtslib.cpp 33717 2016-03-14 06:29:14Z goatbar $");
 
 /************************************************************************/
 /*                            SDTSFeature()                             */

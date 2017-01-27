@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: dgndump.c 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  Microstation DGN Access Library
  * Purpose:  Temporary low level DGN dumper application.
@@ -29,7 +29,7 @@
 
 #include "dgnlibp.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: dgndump.c 33713 2016-03-12 17:41:57Z goatbar $");
 
 static void DGNDumpRawElement( DGNHandle hDGN, DGNElemCore *psCore,
                                FILE *fpOut );

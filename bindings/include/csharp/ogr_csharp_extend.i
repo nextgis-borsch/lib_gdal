@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_csharp_extend.i 33721 2016-03-15 00:56:01Z goatbar $
  *
  * Name:     ogr_csharp_extend.i
  * Project:  GDAL CSharp Interface

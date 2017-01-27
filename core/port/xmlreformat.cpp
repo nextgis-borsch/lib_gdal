@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id$
+ * $Id: xmlreformat.cpp 33646 2016-03-05 15:54:03Z goatbar $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  XML Reformatting - mostly for testing minixml implementation.

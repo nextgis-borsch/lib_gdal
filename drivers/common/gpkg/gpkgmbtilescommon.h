@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gpkgmbtilescommon.h 35697 2016-10-11 18:44:52Z rouault $
  *
  * Project:  GeoPackage/MBTiles Translator
  * Purpose:  Definition of common classes for GeoPackage and MBTiles drivers.

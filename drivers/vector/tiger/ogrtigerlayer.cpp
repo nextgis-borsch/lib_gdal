@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrtigerlayer.cpp 33706 2016-03-11 13:33:27Z goatbar $
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Implements OGRTigerLayer class.
@@ -29,7 +29,7 @@
 
 #include "ogr_tiger.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrtigerlayer.cpp 33706 2016-03-11 13:33:27Z goatbar $");
 
 /************************************************************************/
 /*                           OGRTigerLayer()                            */

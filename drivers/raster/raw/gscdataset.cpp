@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gscdataset.cpp 33939 2016-04-11 03:33:00Z goatbar $
  *
  * Project:  GSC Geogrid format driver.
  * Purpose:  Implements support for reading and writing GSC Geogrid format.
@@ -32,7 +32,7 @@
 #include "gdal_frmts.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gscdataset.cpp 33939 2016-04-11 03:33:00Z goatbar $");
 
 /************************************************************************/
 /* ==================================================================== */

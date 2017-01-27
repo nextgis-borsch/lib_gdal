@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalinfo_bin.cpp 33758 2016-03-21 09:06:22Z rouault $
  *
  * Project:  GDAL Utilities
  * Purpose:  Command line application to list info about a file.
@@ -34,7 +34,7 @@
 #include "commonutils.h"
 #include "gdal_utils_priv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalinfo_bin.cpp 33758 2016-03-21 09:06:22Z rouault $");
 
 /************************************************************************/
 /*                               Usage()                                */

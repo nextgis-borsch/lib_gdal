@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: GDALColorTable.cs 13677 2008-02-02 23:05:45Z tamas $
  *
  * Name:     GDALColorTable.cs
  * Project:  GDAL CSharp Interface

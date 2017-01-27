@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrregisterall.cpp 34979 2016-08-08 09:30:34Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Function to register all known OGR drivers.
@@ -30,7 +30,7 @@
 
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrregisterall.cpp 34979 2016-08-08 09:30:34Z rouault $");
 
 /************************************************************************/
 /*                           OGRRegisterAll()                           */

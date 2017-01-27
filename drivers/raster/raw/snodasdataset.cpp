@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: snodasdataset.cpp 33864 2016-04-02 11:50:14Z goatbar $
  *
  * Project:  SNODAS driver
  * Purpose:  Implementation of SNODASDataset
@@ -32,7 +32,7 @@
 #include "ogr_srs_api.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: snodasdataset.cpp 33864 2016-04-02 11:50:14Z goatbar $");
 
 // g++ -g -Wall -fPIC frmts/raw/snodasdataset.cpp -shared -o gdal_SNODAS.so -Iport -Igcore -Ifrmts/raw -Iogr -L. -lgdal
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: s57reader.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  S-57 Translator
  * Purpose:  Implements S57Reader class.
@@ -35,7 +35,7 @@
 
 #include <string>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: s57reader.cpp 33714 2016-03-13 05:42:13Z goatbar $");
 
 /******************************************************************************
 * Recode the given string from a source encoding to UTF-8 encoding.  The source

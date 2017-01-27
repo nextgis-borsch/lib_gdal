@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: xyzdataset.cpp 34022 2016-04-18 19:53:58Z rouault $
  *
  * Project:  XYZ driver
  * Purpose:  GDALDataset driver for XYZ dataset.
@@ -35,7 +35,7 @@
 #include <algorithm>
 #include <vector>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: xyzdataset.cpp 34022 2016-04-18 19:53:58Z rouault $");
 
 static const double RELATIVE_ERROR = 1e-3;
 

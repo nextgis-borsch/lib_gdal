@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: shape2ogr.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements translation of Shapefile shapes into OGR
@@ -33,7 +33,7 @@
 #include "cpl_conv.h"
 #include <limits>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: shape2ogr.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 /************************************************************************/
 /*                        RingStartEnd                                  */

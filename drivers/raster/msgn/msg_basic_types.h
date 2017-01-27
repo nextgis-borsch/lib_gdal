@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: msg_basic_types.h 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  MSG Native Reader
  * Purpose:  Basic types implementation.

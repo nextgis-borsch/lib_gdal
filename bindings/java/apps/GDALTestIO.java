@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: GDALTestIO.java 25018 2012-09-30 13:15:35Z rouault $
  *
  * Name:     GDALTestIO.java
  * Project:  GDAL Java Interface

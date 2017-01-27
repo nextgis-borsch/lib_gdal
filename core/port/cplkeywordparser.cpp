@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: cplkeywordparser.cpp 33646 2016-03-05 15:54:03Z goatbar $
  *
  * Project:  Common Portability Library
  * Purpose:  Implementation of CPLKeywordParser - a class for parsing

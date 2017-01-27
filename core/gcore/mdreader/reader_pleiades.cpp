@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: reader_pleiades.cpp 34367 2016-06-17 13:58:32Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Read metadata from Pleiades imagery.
@@ -30,7 +30,7 @@
 
 #include "reader_pleiades.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: reader_pleiades.cpp 34367 2016-06-17 13:58:32Z rouault $");
 
 /**
  * GDALMDReaderPleiades()

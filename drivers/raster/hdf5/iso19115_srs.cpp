@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: iso19115_srs.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  BAG Driver
  * Purpose:  Implements code to parse ISO 19115 metadata to extract a
@@ -34,7 +34,7 @@
 #include "cpl_minixml.h"
 #include "cpl_error.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: iso19115_srs.cpp 33720 2016-03-15 00:39:53Z goatbar $");
 
 /* used by bagdataset.cpp */
 OGRErr OGR_SRS_ImportFromISO19115( OGRSpatialReference *poThis,

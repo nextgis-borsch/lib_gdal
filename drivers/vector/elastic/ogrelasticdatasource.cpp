@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrelasticdatasource.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  ElasticSearch Translator
  * Purpose:
@@ -37,7 +37,7 @@
 #include "cpl_csv.h"
 #include "cpl_http.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrelasticdatasource.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 /************************************************************************/
 /*                        OGRElasticDataSource()                        */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: pcidskdataset2.cpp 37163 2017-01-17 08:11:27Z rouault $
  *
  * Project:  PCIDSK Database File
  * Purpose:  Read/write PCIDSK Database File used by the PCI software, using
@@ -32,7 +32,7 @@
 #include "gdal_frmts.h"
 #include "pcidskdataset2.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: pcidskdataset2.cpp 37163 2017-01-17 08:11:27Z rouault $");
 
 const PCIDSK::PCIDSKInterfaces *PCIDSK2GetInterfaces(void);
 
@@ -155,6 +155,13 @@ PCIDSK2Band::~PCIDSK2Band()
 void PCIDSK2Band::SetDescription( const char *pszDescription )
 
 {
+    if( GetAccess() == GA_ReadOnly )
+    {
+        CPLError( CE_Failure, CPLE_NoWriteAccess,
+                  "Unable to set description on read-only file." );
+        return;
+    }
+
     try
     {
         poChannel->SetDescription( pszDescription );
@@ -397,6 +404,13 @@ CPLErr PCIDSK2Band::SetColorTable( GDALColorTable *poCT )
     if( poFile == NULL )
         return CE_Failure;
 
+    if( GetAccess() == GA_ReadOnly )
+    {
+        CPLError( CE_Failure, CPLE_NoWriteAccess,
+                  "Unable to set color table on read-only file." );
+        return CE_Failure;
+    }
+
     try
     {
 /* -------------------------------------------------------------------- */
@@ -615,6 +629,13 @@ CPLErr PCIDSK2Band::SetMetadata( char **papszMD,
     CSLDestroy( papszLastMDListValue );
     papszLastMDListValue = NULL;
 
+    if( GetAccess() == GA_ReadOnly )
+    {
+        CPLError( CE_Failure, CPLE_NoWriteAccess,
+                  "Unable to set metadata on read-only file." );
+        return CE_Failure;
+    }
+
     try
     {
         for( int iItem = 0; papszMD && papszMD[iItem]; iItem++ )
@@ -660,6 +681,13 @@ CPLErr PCIDSK2Band::SetMetadataItem( const char *pszName,
 /* -------------------------------------------------------------------- */
     CSLDestroy( papszLastMDListValue );
     papszLastMDListValue = NULL;
+
+    if( GetAccess() == GA_ReadOnly )
+    {
+        CPLError( CE_Failure, CPLE_NoWriteAccess,
+                  "Unable to set metadata on read-only file." );
+        return CE_Failure;
+    }
 
     try
     {
@@ -1038,6 +1066,13 @@ CPLErr PCIDSK2Dataset::SetMetadata( char **papszMD,
     CSLDestroy( papszLastMDListValue );
     papszLastMDListValue = NULL;
 
+    if( GetAccess() == GA_ReadOnly )
+    {
+        CPLError( CE_Failure, CPLE_NoWriteAccess,
+                  "Unable to set metadata on read-only file." );
+        return CE_Failure;
+    }
+
     try
     {
         for( int iItem = 0; papszMD && papszMD[iItem]; iItem++ )
@@ -1082,6 +1117,13 @@ CPLErr PCIDSK2Dataset::SetMetadataItem( const char *pszName,
 /* -------------------------------------------------------------------- */
     CSLDestroy( papszLastMDListValue );
     papszLastMDListValue = NULL;
+
+    if( GetAccess() == GA_ReadOnly )
+    {
+        CPLError( CE_Failure, CPLE_NoWriteAccess,
+                  "Unable to set metadata on read-only file." );
+        return CE_Failure;
+    }
 
     try
     {
@@ -1210,6 +1252,13 @@ CPLErr PCIDSK2Dataset::SetGeoTransform( double * padfTransform )
     if( poGeoref == NULL )
         return GDALPamDataset::SetGeoTransform( padfTransform );
 
+    if( GetAccess() == GA_ReadOnly )
+    {
+        CPLError( CE_Failure, CPLE_NoWriteAccess,
+                  "Unable to set GeoTransform on read-only file." );
+        return CE_Failure;
+    }
+
     try
     {
         poGeoref->WriteSimple( poGeoref->GetGeosys(),
@@ -1323,6 +1372,16 @@ CPLErr PCIDSK2Dataset::SetProjection( const char *pszWKT )
                              &padfPrjParams ) == OGRERR_NONE ) )
     {
         return GDALPamDataset::SetProjection( pszWKT );
+    }
+
+    if( GetAccess() == GA_ReadOnly )
+    {
+        CPLError( CE_Failure, CPLE_NoWriteAccess,
+                  "Unable to set projection on read-only file." );
+        CPLFree( pszGeosys );
+        CPLFree( pszUnits );
+        CPLFree( padfPrjParams );
+        return CE_Failure;
     }
 
     try

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: hfafield.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  Erdas Imagine (.img) Translator
  * Purpose:  Implementation of the HFAField class for managing information
@@ -31,7 +31,7 @@
 
 #include "hfa_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: hfafield.cpp 33720 2016-03-15 00:39:53Z goatbar $");
 
 #define MAX_ENTRY_REPORT   16
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: records.h 32078 2015-12-08 09:09:45Z rouault $
  *
  * Project:  APP ENVISAT Support
  * Purpose:  Low Level Envisat file access (read/write) API.

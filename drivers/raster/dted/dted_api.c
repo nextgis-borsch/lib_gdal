@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: dted_api.c 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  DTED Translator
  * Purpose:  Implementation of DTED/CDED access functions.
@@ -31,7 +31,7 @@
 #include "dted_api.h"
 
 #ifndef AVOID_CPL
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: dted_api.c 33720 2016-03-15 00:39:53Z goatbar $");
 #endif
 
 static int bWarnedTwoComplement = FALSE;

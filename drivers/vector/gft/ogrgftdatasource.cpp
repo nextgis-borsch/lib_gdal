@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrgftdatasource.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  Google Fusion Table Translator
  * Purpose:  Implements OGRGFTDataSource class
@@ -29,7 +29,7 @@
 
 #include "ogr_gft.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgftdatasource.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 #define GDAL_API_KEY "AIzaSyA_2h1_wXMOLHNSVeo-jf1ACME-M1XMgP0"
 #define FUSION_TABLE_SCOPE "https://www.googleapis.com/Fauth/fusiontables"

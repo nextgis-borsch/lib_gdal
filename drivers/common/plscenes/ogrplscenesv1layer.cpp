@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrplscenesv1layer.cpp 33915 2016-04-07 19:38:55Z rouault $
  *
  * Project:  PlanetLabs scene driver
  * Purpose:  Implements OGRPLScenesV1Layer
@@ -30,7 +30,7 @@
 #include "ogr_plscenes.h"
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrplscenesv1layer.cpp 33915 2016-04-07 19:38:55Z rouault $");
 
 /************************************************************************/
 /*                           GetFieldCount()                            */

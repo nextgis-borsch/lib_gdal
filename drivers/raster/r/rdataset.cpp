@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: rdataset.cpp 33841 2016-04-01 01:16:15Z goatbar $
  *
  * Project:  R Format Driver
  * Purpose:  Read/write R stats package object format.
@@ -33,7 +33,7 @@
 #include "gdal_pam.h"
 #include "../raw/rawdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: rdataset.cpp 33841 2016-04-01 01:16:15Z goatbar $");
 
 GDALDataset *
 RCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: overview.cpp 33808 2016-03-29 21:15:28Z goatbar $
  *
  * Project:  GDAL Core
  * Purpose:  Helper code to implement overview support in different drivers.
@@ -33,7 +33,7 @@
 #include "gdal_priv.h"
 #include "gdalwarper.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: overview.cpp 33808 2016-03-29 21:15:28Z goatbar $");
 
 /************************************************************************/
 /*                     GDALResampleChunk32R_Near()                      */

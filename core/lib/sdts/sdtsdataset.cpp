@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: sdtsdataset.cpp 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  SDTS Translator
  * Purpose:  GDALDataset driver for SDTS Raster translator.
@@ -33,7 +33,7 @@
 #include "ogr_spatialref.h"
 #include "sdts_al.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: sdtsdataset.cpp 33717 2016-03-14 06:29:14Z goatbar $");
 
 /**
  \file sdtsdataset.cpp

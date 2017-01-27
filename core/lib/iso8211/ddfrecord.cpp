@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ddfrecord.cpp 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  ISO 8211 Access
  * Purpose:  Implements the DDFRecord class.
@@ -31,7 +31,7 @@
 #include "iso8211.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ddfrecord.cpp 33717 2016-03-14 06:29:14Z goatbar $");
 
 static const int nLeaderSize = 24;
 

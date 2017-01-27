@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrodsdatasource.cpp 33199 2016-01-29 15:48:41Z rouault $
  *
  * Project:  ODS Translator
  * Purpose:  Implements OGRODSDataSource class
@@ -34,7 +34,7 @@
 #include "ods_formula.h"
 #include <set>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrodsdatasource.cpp 33199 2016-01-29 15:48:41Z rouault $");
 
 namespace OGRODS {
 

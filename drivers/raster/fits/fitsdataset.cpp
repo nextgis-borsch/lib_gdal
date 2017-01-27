@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: fitsdataset.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  FITS Driver
  * Purpose:  Implement FITS raster read/write support
@@ -36,7 +36,7 @@
 #include <string.h>
 #include <fitsio.h>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: fitsdataset.cpp 33720 2016-03-15 00:39:53Z goatbar $");
 
 /************************************************************************/
 /* ==================================================================== */

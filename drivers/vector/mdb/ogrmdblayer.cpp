@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrmdblayer.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRMDBLayer class
@@ -33,7 +33,7 @@
 #include "ogrpgeogeometry.h"
 #include "ogrgeomediageometry.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrmdblayer.cpp 33714 2016-03-13 05:42:13Z goatbar $");
 
 /************************************************************************/
 /*                            OGRMDBLayer()                            */

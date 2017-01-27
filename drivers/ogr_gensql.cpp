@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_gensql.cpp 34092 2016-04-25 09:09:46Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRGenSQLResultsLayer.
@@ -36,7 +36,7 @@
 #include "cpl_time.h"
 #include <vector>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogr_gensql.cpp 34092 2016-04-25 09:09:46Z rouault $");
 
 
 class OGRGenSQLGeomFieldDefn: public OGRGeomFieldDefn

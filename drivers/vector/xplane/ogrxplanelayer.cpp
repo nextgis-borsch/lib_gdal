@@ -31,7 +31,7 @@
 #include "ogr_xplane_geo_utils.h"
 #include "ogr_xplane_reader.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrxplanelayer.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 /************************************************************************/
 /*                            OGRXPlaneLayer()                          */

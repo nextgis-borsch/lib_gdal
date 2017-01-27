@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: grddataset.cpp 33757 2016-03-20 20:22:33Z goatbar $
  *
  * Project:  GRD Reader
  * Purpose:  GDAL driver for Northwood Grid Format

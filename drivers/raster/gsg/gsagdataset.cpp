@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gsagdataset.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  GDAL
  * Purpose:  Implements the Golden Software ASCII Grid Format.
@@ -51,7 +51,7 @@
 # define INT_MAX 2147483647
 #endif /* INT_MAX */
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gsagdataset.cpp 33720 2016-03-15 00:39:53Z goatbar $");
 
 /************************************************************************/
 /* ==================================================================== */

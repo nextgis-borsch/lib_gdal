@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: sdts_al.h 32067 2015-12-07 15:34:53Z goatbar $
  *
  * Project:  SDTS Translator
  * Purpose:  Include file for entire SDTS Abstraction Layer functions.

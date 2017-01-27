@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: wmsutils.cpp 31640 2015-11-18 23:17:59Z rouault $
  *
  * Project:  WMS Client Driver
  * Purpose:  Supporting utility functions for GDAL WMS driver.

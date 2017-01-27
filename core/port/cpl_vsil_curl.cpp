@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: cpl_vsil_curl.cpp 35828 2016-10-19 23:23:39Z rouault $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Implement VSI large file api for HTTP/FTP files
@@ -36,7 +36,7 @@
 #include "cpl_aws.h"
 #include "cpl_minixml.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_vsil_curl.cpp 35828 2016-10-19 23:23:39Z rouault $");
 
 #ifndef HAVE_CURL
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrmssqlgeometryparser.cpp 33775 2016-03-23 20:25:05Z tamas $
  *
  * Project:  MSSQL Spatial driver
  * Purpose:  Implements OGRMSSQLGeometryParser class to parse native SqlGeometries.
@@ -30,7 +30,7 @@
 #include "cpl_conv.h"
 #include "ogr_mssqlspatial.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrmssqlgeometryparser.cpp 33775 2016-03-23 20:25:05Z tamas $");
 
 /*   SqlGeometry serialization format
 

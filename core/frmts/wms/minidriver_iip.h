@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: minidriver_iip.h 33844 2016-04-01 08:42:13Z rouault $
  *
  * Project:  WMS Client Driver
  * Purpose:  Mini driver for Internet Imaging Protocol (IIP)

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_geojson.h 34331 2016-06-09 20:03:05Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Definitions of OGR OGRGeoJSON driver types.

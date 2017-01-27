@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: filegdbtable.cpp 34423 2016-06-25 10:03:48Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements reading of FileGDB tables

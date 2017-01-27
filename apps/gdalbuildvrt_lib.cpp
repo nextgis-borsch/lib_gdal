@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalbuildvrt_lib.cpp 33757 2016-03-20 20:22:33Z goatbar $
  *
  * Project:  GDAL Utilities
  * Purpose:  Command line application to build VRT datasets from raster products
@@ -38,7 +38,7 @@
 #include "ogr_api.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalbuildvrt_lib.cpp 33757 2016-03-20 20:22:33Z goatbar $");
 
 #define GEOTRSFRM_TOPLEFT_X            0
 #define GEOTRSFRM_WE_RES               1

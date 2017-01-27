@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: kmlnode.cpp 34104 2016-04-25 17:17:20Z rouault $
  *
  * Project:  KML Driver
  * Purpose:  Class for building up the node structure of the kml file.

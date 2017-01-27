@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: keacopy.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *  keacopy.cpp
  *
  *  Created by Pete Bunting on 01/08/2012.

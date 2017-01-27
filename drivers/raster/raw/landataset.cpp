@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: landataset.cpp 33864 2016-04-02 11:50:14Z goatbar $
  *
  * Project:  eCognition
  * Purpose:  Implementation of Erdas .LAN / .GIS format.
@@ -37,7 +37,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: landataset.cpp 33864 2016-04-02 11:50:14Z goatbar $");
 
 
 /**

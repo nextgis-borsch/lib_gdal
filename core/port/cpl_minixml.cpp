@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id$
+ * $Id: cpl_minixml.cpp 33724 2016-03-16 17:14:11Z goatbar $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Implementation of MiniXML Parser and handling.
@@ -45,7 +45,7 @@
 #include "cpl_string.h"
 #include <ctype.h>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_minixml.cpp 33724 2016-03-16 17:14:11Z goatbar $");
 
 typedef enum {
     TNone,

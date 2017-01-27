@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: fitdataset.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  FIT Driver
  * Purpose:  Implement FIT Support - not using the SGI iflFIT library.
@@ -34,7 +34,7 @@
 #include "gdal_pam.h"
 #include "gstEndian.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: fitdataset.cpp 33720 2016-03-15 00:39:53Z goatbar $");
 
 #define FIT_WRITE
 

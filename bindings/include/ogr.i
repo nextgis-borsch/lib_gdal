@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr.i 34224 2016-05-13 06:04:34Z ajolma $
  *
  * Project:  OGR Core SWIG Interface declarations.
  * Purpose:  OGR declarations.

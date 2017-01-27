@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrxlsdatasource.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  XLS Translator
  * Purpose:  Implements OGRXLSDataSource class
@@ -37,7 +37,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrxlsdatasource.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 /************************************************************************/
 /*                          OGRXLSDataSource()                          */

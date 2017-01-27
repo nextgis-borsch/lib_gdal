@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: blxdataset.cpp 33901 2016-04-06 16:31:31Z goatbar $
  *
  * Project:  BLX Driver
  * Purpose:  GDAL BLX support.
@@ -38,7 +38,7 @@ CPL_C_START
 #include <blx.h>
 CPL_C_END
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: blxdataset.cpp 33901 2016-04-06 16:31:31Z goatbar $");
 
 class BLXDataset : public GDALPamDataset
 {

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrmysqldatasource.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRMySQLDataSource class.
@@ -52,7 +52,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrmysqldatasource.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 /************************************************************************/
 /*                         OGRMySQLDataSource()                         */
 /************************************************************************/

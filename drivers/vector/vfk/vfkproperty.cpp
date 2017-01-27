@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: vfkproperty.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  VFK Reader - Property definition
  * Purpose:  Implements VFKProperty class.

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: nitfbilevel.cpp 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  NITF Read/Write Library
  * Purpose:  Module implement BILEVEL (C1) compressed image reading.
@@ -40,7 +40,7 @@ CPL_C_END
 
 #include "tifvsi.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: nitfbilevel.cpp 33717 2016-03-14 06:29:14Z goatbar $");
 
 /************************************************************************/
 /*                       NITFUncompressBILEVEL()                        */

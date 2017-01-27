@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: wmsdriver.h 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  WMS Client Driver
  * Purpose:  Implementation of Dataset and RasterBand classes for WMS

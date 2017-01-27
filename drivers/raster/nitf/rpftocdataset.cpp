@@ -36,7 +36,7 @@
 #include "rpftoclib.h"
 #include "vrtdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: rpftocdataset.cpp 33794 2016-03-26 13:19:07Z goatbar $");
 
 static const int GEOTRSFRM_TOPLEFT_X = 0;
 static const int GEOTRSFRM_WE_RES = 1;

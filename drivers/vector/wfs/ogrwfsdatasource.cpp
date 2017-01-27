@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrwfsdatasource.cpp 34572 2016-07-06 18:31:02Z rouault $
  *
  * Project:  WFS Translator
  * Purpose:  Implements OGRWFSDataSource class
@@ -37,7 +37,7 @@
 #include "swq.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrwfsdatasource.cpp 34572 2016-07-06 18:31:02Z rouault $");
 
 #define DEFAULT_BASE_START_INDEX     0
 #define DEFAULT_PAGE_SIZE            100

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: WKT2WKB.java 32865 2016-01-08 21:22:17Z goatbar $
  *
  * Name:     WKT2WKB.java
  * Project:  GDAL Java Interface

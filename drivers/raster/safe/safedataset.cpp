@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: safedataset.cpp 34273 2016-05-23 20:00:39Z rouault $
  *
  * Project:  Sentinel SAFE products
  * Purpose:  Sentinel Products (manifest.safe) driver
@@ -35,7 +35,7 @@
 #include <set>
 #include <map>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: safedataset.cpp 34273 2016-05-23 20:00:39Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */

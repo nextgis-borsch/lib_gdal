@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: pauxdataset.cpp 33864 2016-04-02 11:50:14Z goatbar $
  *
  * Project:  PCI .aux Driver
  * Purpose:  Implementation of PAuxDataset
@@ -33,7 +33,7 @@
 #include "ogr_spatialref.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: pauxdataset.cpp 33864 2016-04-02 11:50:14Z goatbar $");
 
 /************************************************************************/
 /* ==================================================================== */

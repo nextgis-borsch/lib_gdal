@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdal_edb.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  PCIDSK Database File
  * Purpose:  External Database access interface implementation (EDBFile).
@@ -32,7 +32,7 @@
 #include "gdal_priv.h"
 #include "pcidsk.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdal_edb.cpp 33720 2016-03-15 00:39:53Z goatbar $");
 
 using PCIDSK::EDBFile;
 using PCIDSK::eChanType;

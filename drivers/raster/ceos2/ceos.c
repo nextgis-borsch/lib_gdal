@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ceos.c 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  ASI CEOS Translator
  * Purpose:  Core CEOS functions.
@@ -29,7 +29,7 @@
 
 #include "ceos.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ceos.c 33720 2016-03-15 00:39:53Z goatbar $");
 
 /* Function implementations of functions described in ceos.h */
 

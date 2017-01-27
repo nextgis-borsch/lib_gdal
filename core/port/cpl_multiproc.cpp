@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id$
+ * $Id: cpl_multiproc.cpp 33817 2016-03-30 17:35:37Z rouault $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  CPL Multi-Threading, and process handling portability functions.
@@ -39,7 +39,7 @@
 #include <time.h>
 #include <assert.h>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_multiproc.cpp 33817 2016-03-30 17:35:37Z rouault $");
 
 #if defined(CPL_MULTIPROC_STUB) && !defined(DEBUG)
 #  define MUTEX_NONE

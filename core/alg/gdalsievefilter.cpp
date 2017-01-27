@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalsievefilter.cpp 33715 2016-03-13 08:52:06Z goatbar $
  *
  * Project:  GDAL
  * Purpose:  Raster to Polygon Converter
@@ -33,7 +33,7 @@
 #include <vector>
 #include <set>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalsievefilter.cpp 33715 2016-03-13 08:52:06Z goatbar $");
 
 #define MY_MAX_INT 2147483647
 

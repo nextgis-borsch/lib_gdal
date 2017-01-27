@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogropenairdriver.cpp 32976 2016-01-14 00:07:34Z goatbar $
  *
  * Project:  OpenAir Translator
  * Purpose:  Implements OGROpenAirDriver.
@@ -31,7 +31,7 @@
 #include "ogr_openair.h"
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogropenairdriver.cpp 32976 2016-01-14 00:07:34Z goatbar $");
 
 /************************************************************************/
 /*                                Open()                                */

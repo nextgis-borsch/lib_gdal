@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalasyncread.cpp 33808 2016-03-29 21:15:28Z goatbar $
  *
  * Project:  GDAL Utilities
  * Purpose:  GDAL Async Image Reader, primarily for testing async api.
@@ -33,7 +33,7 @@
 #include "gdal_priv.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalasyncread.cpp 33808 2016-03-29 21:15:28Z goatbar $");
 
 /* ******************************************************************** */
 /*                               Usage()                                */

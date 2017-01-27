@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalwarp_lib.cpp 35888 2016-10-24 10:45:24Z rouault $
  *
  * Project:  High Performance Image Reprojector
  * Purpose:  Test program for high performance warper API.
@@ -42,7 +42,7 @@
 #include <algorithm>
 #include "gdal_utils_priv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalwarp_lib.cpp 35888 2016-10-24 10:45:24Z rouault $");
 
 /************************************************************************/
 /*                        GDALWarpAppOptions                            */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrdgnlayer.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRDGNLayer class.
@@ -33,7 +33,7 @@
 #include "ogr_api.h"
 #include <list>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrdgnlayer.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 /************************************************************************/
 /*                           OGRDGNLayer()                              */

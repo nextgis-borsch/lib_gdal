@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: GDALMemDataset.cs 25794 2013-03-24 13:15:43Z tamas $
  *
  * Name:     VSIMem.cs
  * Project:  GDAL CSharp Interface

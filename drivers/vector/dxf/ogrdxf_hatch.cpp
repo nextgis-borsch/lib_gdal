@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrdxf_hatch.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  DXF Translator
  * Purpose:  Implements translation support for HATCH elements as part
@@ -35,7 +35,7 @@
 
 #include "ogrdxf_polyline_smooth.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrdxf_hatch.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 /************************************************************************/
 /*                           TranslateHATCH()                           */

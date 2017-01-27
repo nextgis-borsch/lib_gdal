@@ -1,5 +1,5 @@
 /*****************************************************************************
- * $Id$
+ * $Id: IngrTypes.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  Intergraph Raster Format support
  * Purpose:  Types support function

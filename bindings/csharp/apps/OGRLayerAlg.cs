@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: OGRLayerAlg.cs 27014 2014-03-06 20:06:32Z tamas $
  *
  * Name:     OGRLayerAlg.cs
  * Project:  GDAL CSharp Interface

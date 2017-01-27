@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: keaband.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *  keaband.cpp
  *
  *  Created by Pete Bunting on 01/08/2012.

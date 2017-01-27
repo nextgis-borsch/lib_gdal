@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ReadXML.cs 13437 2007-12-21 21:02:38Z tamas $
  *
  * Name:     ReadXML.cs
  * Project:  GDAL CSharp Interface

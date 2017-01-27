@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: cpl_vsil_subfile.cpp 33758 2016-03-21 09:06:22Z rouault $
  *
  * Project:  VSI Virtual File System
  * Purpose:  Implementation of subfile virtual IO functions.
@@ -33,7 +33,7 @@
 #include "cpl_multiproc.h"
 #include <map>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_vsil_subfile.cpp 33758 2016-03-21 09:06:22Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */

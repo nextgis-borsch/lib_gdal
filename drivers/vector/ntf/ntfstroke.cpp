@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ntfstroke.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  NTF Translator
  * Purpose:  NTF Arc to polyline stroking code.  This code is really generic,
@@ -34,7 +34,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ntfstroke.cpp 33714 2016-03-13 05:42:13Z goatbar $");
 
 /************************************************************************/
 /*                     NTFArcCenterFromEdgePoints()                     */

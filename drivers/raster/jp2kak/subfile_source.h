@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: subfile_source.h 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  JPEG-2000
  * Purpose:  Implements read-only virtual io on a subregion of a file.

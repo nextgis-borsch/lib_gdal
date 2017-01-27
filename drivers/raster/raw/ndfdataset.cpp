@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ndfdataset.cpp 33864 2016-04-02 11:50:14Z goatbar $
  *
  * Project:  NDF Driver
  * Purpose:  Implementation of NLAPS Data Format read support.
@@ -33,7 +33,7 @@
 #include "ogr_spatialref.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ndfdataset.cpp 33864 2016-04-02 11:50:14Z goatbar $");
 
 /************************************************************************/
 /* ==================================================================== */

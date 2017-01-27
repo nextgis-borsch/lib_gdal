@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: krodataset.cpp 33862 2016-04-02 11:17:23Z goatbar $
  *
  * Project:  KRO format reader/writer
  * Purpose:  Implementation of KOLOR Raw Format
@@ -32,7 +32,7 @@
 #include "gdal_frmts.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: krodataset.cpp 33862 2016-04-02 11:17:23Z goatbar $");
 
 /* http://www.autopano.net/wiki-en/Format_KRO */
 

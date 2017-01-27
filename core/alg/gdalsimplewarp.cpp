@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalsimplewarp.cpp 33676 2016-03-07 21:38:34Z goatbar $
  *
  * Project:  Mapinfo Image Warper
  * Purpose:  Simple (source in memory) warp algorithm.
@@ -31,7 +31,7 @@
 #include "gdal_alg.h"
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalsimplewarp.cpp 33676 2016-03-07 21:38:34Z goatbar $");
 
 static void
 GDALSimpleWarpRemapping( int nBandCount, GByte **papabySrcData,

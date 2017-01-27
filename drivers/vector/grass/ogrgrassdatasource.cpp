@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrgrassdatasource.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRGRASSDataSource class.
@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgrassdatasource.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 #if GRASS_VERSION_MAJOR  >= 7
 #define G__setenv                G_setenv_nogisrc

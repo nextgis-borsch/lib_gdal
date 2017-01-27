@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: cpgdataset.cpp 33928 2016-04-09 19:15:33Z goatbar $
  *
  * Project:  Polarimetric Workstation
  * Purpose:  Convair PolGASP data (.img/.hdr format).
@@ -33,7 +33,7 @@
 #include "ogr_spatialref.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpgdataset.cpp 33928 2016-04-09 19:15:33Z goatbar $");
 
 enum Interleave { BSQ, BIL, BIP };
 

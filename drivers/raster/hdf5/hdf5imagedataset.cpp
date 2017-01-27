@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: hdf5imagedataset.cpp 35557 2016-09-30 11:12:06Z rouault $
  *
  * Project:  Hierarchical Data Format Release 5 (HDF5)
  * Purpose:  Read subdatasets of HDF5 file.
@@ -49,7 +49,7 @@
 #include "hdf5dataset.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: hdf5imagedataset.cpp 35557 2016-09-30 11:12:06Z rouault $");
 
 /* release 1.6.3 or 1.6.4 changed the type of count in some api functions */
 

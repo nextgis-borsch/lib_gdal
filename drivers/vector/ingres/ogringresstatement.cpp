@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogringresstatement.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRIngresStatement class.
@@ -30,7 +30,7 @@
 #include "ogr_ingres.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogringresstatement.cpp 33714 2016-03-13 05:42:13Z goatbar $");
 
 /************************************************************************/
 /*                         OGRIngresStatement()                         */

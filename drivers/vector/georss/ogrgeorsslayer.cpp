@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrgeorsslayer.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  GeoRSS Translator
  * Purpose:  Implements OGRGeoRSSLayer class.
@@ -33,7 +33,7 @@
 #include "ogr_georss.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgeorsslayer.cpp 33714 2016-03-13 05:42:13Z goatbar $");
 
 static const char* const apszAllowedATOMFieldNamesWithSubElements[] =
     { "author", "contributor", NULL };

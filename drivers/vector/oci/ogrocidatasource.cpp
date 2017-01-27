@@ -30,7 +30,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrocidatasource.cpp 35116 2016-08-15 14:54:25Z ilucena $");
 
 static const int anEPSGOracleMapping[] =
 {

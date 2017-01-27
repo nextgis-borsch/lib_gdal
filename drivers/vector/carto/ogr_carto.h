@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_carto.h 34979 2016-08-08 09:30:34Z rouault $
  *
  * Project:  CARTO Translator
  * Purpose:  Definition of classes for OGR Carto driver.

@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id$
+ * $Id: cpl_recode_iconv.cpp 33724 2016-03-16 17:14:11Z goatbar $
  *
  * Name:     cpl_recode_iconv.cpp
  * Project:  CPL - Common Portability Library
@@ -26,7 +26,7 @@
 
 #include "cpl_port.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_recode_iconv.cpp 33724 2016-03-16 17:14:11Z goatbar $");
 
 #ifdef CPL_RECODE_ICONV
 

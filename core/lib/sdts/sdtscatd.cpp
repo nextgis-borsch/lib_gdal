@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: sdtscatd.cpp 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  SDTS Translator
  * Purpose:  Implementation of SDTS_CATD and SDTS_CATDEntry classes for
@@ -30,7 +30,7 @@
 
 #include "sdts_al.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: sdtscatd.cpp 33717 2016-03-14 06:29:14Z goatbar $");
 
 
 /************************************************************************/

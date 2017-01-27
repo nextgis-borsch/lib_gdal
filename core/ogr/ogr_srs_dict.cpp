@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_srs_dict.cpp 33632 2016-03-04 06:51:02Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implement importFromDict() method to read a WKT SRS from a
@@ -32,7 +32,7 @@
 #include "cpl_vsi.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogr_srs_dict.cpp 33632 2016-03-04 06:51:02Z goatbar $");
 
 /************************************************************************/
 /*                           importFromDict()                           */

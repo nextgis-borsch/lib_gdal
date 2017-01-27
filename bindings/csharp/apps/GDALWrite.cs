@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: GDALWrite.cs 17453 2009-07-25 19:23:06Z tamas $
  *
  * Name:     GDALWrite.cs
  * Project:  GDAL CSharp Interface
