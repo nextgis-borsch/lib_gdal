@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogr2ogr_bin.cpp 34578 2016-07-07 10:26:20Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Simple client for translating between formats.
@@ -31,10 +32,8 @@
 #include "ogr_p.h"
 #include "gdal_utils_priv.h"
 #include "commonutils.h"
-#include <vector>
-#include <algorithm>
 
-CPL_CVSID("$Id: ogr2ogr_bin.cpp 36249 2016-11-16 22:20:22Z rouault $");
+CPL_CVSID("$Id: ogr2ogr_bin.cpp 34578 2016-07-07 10:26:20Z rouault $");
 
 static void Usage(int bShort = TRUE);
 static void Usage(const char* pszAdditionalMsg, int bShort = TRUE);
@@ -197,6 +196,7 @@ int main( int nArgc, char ** papszArgv )
     {
         CheckDestDataSourceNameConsistency(psOptionsForBinary->pszDestDataSource,
                                            psOptionsForBinary->pszFormat);
+
     }
 /* -------------------------------------------------------------------- */
 /*      Open data source.                                               */
@@ -239,52 +239,20 @@ int main( int nArgc, char ** papszArgv )
 /* -------------------------------------------------------------------- */
     if( hDS == NULL )
     {
-        GDALDriverManager *poDM = GetGDALDriverManager();
+        OGRSFDriverRegistrar    *poR = OGRSFDriverRegistrar::GetRegistrar();
 
         fprintf( stderr, "FAILURE:\n"
                 "Unable to open datasource `%s' with the following drivers.\n",
                 psOptionsForBinary->pszDataSource );
 
-        for( int iDriver = 0; iDriver < poDM->GetDriverCount(); iDriver++ )
+        for( int iDriver = 0; iDriver < poR->GetDriverCount(); iDriver++ )
         {
-            GDALDriver* poIter = poDM->GetDriver(iDriver);
-            char** papszDriverMD = poIter->GetMetadata();
-            if( CPLTestBool( CSLFetchNameValueDef(papszDriverMD, GDAL_DCAP_VECTOR, "FALSE") ) )
-            {
-                fprintf( stderr,  "  -> `%s'\n", poIter->GetDescription() );
-            }
+            fprintf( stderr, "  -> %s\n", poR->GetDriver(iDriver)->GetDescription() );
         }
 
         GDALVectorTranslateOptionsFree(psOptions);
         GDALVectorTranslateOptionsForBinaryFree(psOptionsForBinary);
         goto exit;
-    }
-
-    if( hODS != NULL )
-    {
-        GDALDriverManager *poDM = GetGDALDriverManager();
-
-        GDALDriver* poDriver = poDM->GetDriverByName(psOptionsForBinary->pszFormat);
-        if( poDriver == NULL )
-        {
-            fprintf( stderr,  "Unable to find driver `%s'.\n", psOptionsForBinary->pszFormat );
-            fprintf( stderr,  "The following drivers are available:\n" );
-
-            for( int iDriver = 0; iDriver < poDM->GetDriverCount(); iDriver++ )
-            {
-                GDALDriver* poIter = poDM->GetDriver(iDriver);
-                char** papszDriverMD = poIter->GetMetadata();
-                if( CPLTestBool( CSLFetchNameValueDef(papszDriverMD, GDAL_DCAP_VECTOR, "FALSE") ) &&
-                    (CPLTestBool( CSLFetchNameValueDef(papszDriverMD, GDAL_DCAP_CREATE, "FALSE") ) ||
-                     CPLTestBool( CSLFetchNameValueDef(papszDriverMD, GDAL_DCAP_CREATECOPY, "FALSE") )) )
-                {
-                    fprintf( stderr,  "  -> `%s'\n", poIter->GetDescription() );
-                }
-            }
-            GDALVectorTranslateOptionsFree(psOptions);
-            GDALVectorTranslateOptionsForBinaryFree(psOptionsForBinary);
-            goto exit;
-        }
     }
 
     if( !(psOptionsForBinary->bQuiet) )
@@ -323,15 +291,11 @@ static void Usage(int bShort)
     Usage(NULL, bShort);
 }
 
-static bool StringCISortFunction(const CPLString& a, const CPLString& b)
-{
-    return STRCASECMP(a.c_str(), b.c_str()) < 0;
-}
-
 static void Usage(const char* pszAdditionalMsg, int bShort)
 
 {
     OGRSFDriverRegistrar        *poR = OGRSFDriverRegistrar::GetRegistrar();
+
 
     printf( "Usage: ogr2ogr [--help-general] [-skipfailures] [-append] [-update]\n"
             "               [-select field_list] [-where restricted_where|@filename]\n"
@@ -342,8 +306,8 @@ static void Usage(const char* pszAdditionalMsg, int bShort)
             "               [-f format_name] [-overwrite] [[-dsco NAME=VALUE] ...]\n"
             "               dst_datasource_name src_datasource_name\n"
             "               [-lco NAME=VALUE] [-nln name] \n"
-            "               [-nlt type|PROMOTE_TO_MULTI|CONVERT_TO_LINEAR|CONVERT_TO_CURVE]\n"
-            "               [-dim XY|XYZ|XYM|XYZM|layer_dim] [layer [layer ...]]\n"
+            "               [-nlt type|PROMOTE_TO_MULTI|CONVERT_TO_LINEAR]\n"
+            "               [-dim 2|3|layer_dim] [layer [layer ...]]\n"
             "\n"
             "Advanced options :\n"
             "               [-gt n] [-ds_transaction]\n"
@@ -376,18 +340,12 @@ static void Usage(const char* pszAdditionalMsg, int bShort)
 
     printf("\n -f format_name: output file format name, possible values are:\n");
 
-    std::vector<CPLString> aoSetDrivers;
     for( int iDriver = 0; iDriver < poR->GetDriverCount(); iDriver++ )
     {
         GDALDriver *poDriver = poR->GetDriver(iDriver);
 
         if( CPLTestBool( CSLFetchNameValueDef(poDriver->GetMetadata(), GDAL_DCAP_CREATE, "FALSE") ) )
-            aoSetDrivers.push_back( poDriver->GetDescription() );
-    }
-    std::sort (aoSetDrivers.begin(), aoSetDrivers.end(), StringCISortFunction);
-    for( size_t i = 0; i < aoSetDrivers.size(); i++ )
-    {
-        printf( "     -f \"%s\"\n", aoSetDrivers[i].c_str() );
+            printf( "     -f \"%s\"\n", poDriver->GetDescription() );
     }
 
     printf( " -append: Append to existing layer instead of creating new if it exists\n"

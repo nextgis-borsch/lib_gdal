@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: e00read.c 34521 2016-07-02 21:26:43Z goatbar $
+ * $Id: e00read.c,v 1.10 2009-02-24 20:03:50 aboudreault Exp $
  *
  * Name:     e00read.c
  * Project:  Compressed E00 Read/Write library

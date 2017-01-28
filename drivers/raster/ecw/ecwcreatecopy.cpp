@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ecwcreatecopy.cpp 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  GDAL ECW Driver
  * Purpose:  ECW CreateCopy method implementation.
@@ -27,9 +28,6 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-// ncsjpcbuffer.h needs the min and max macros.
-#undef NOMINMAX
-
 #include "gdal_ecw.h"
 #include "gdaljp2metadata.h"
 #include "ogr_spatialref.h"
@@ -39,7 +37,7 @@
 #include "NCSUtil.h"
 #endif
 
-CPL_CVSID("$Id: ecwcreatecopy.cpp 36740 2016-12-07 15:29:01Z rouault $");
+CPL_CVSID("$Id: ecwcreatecopy.cpp 33717 2016-03-14 06:29:14Z goatbar $");
 
 #if defined(FRMT_ecw) && defined(HAVE_COMPRESS)
 
@@ -85,14 +83,14 @@ class GDALECWCompressor : public CNCSFile {
 public:
     GDALECWCompressor();
     virtual ~GDALECWCompressor();
-    virtual CNCSError WriteReadLine(UINT32 nNextLine, void **ppInputArray) override;
+    virtual CNCSError WriteReadLine(UINT32 nNextLine, void **ppInputArray);
 #if ECWSDK_VERSION>=50
-    virtual void WriteStatus(IEEE4 fPercentComplete, const NCS::CString &sStatusText, const CompressionCounters &Counters) override;
+    virtual void WriteStatus(IEEE4 fPercentComplete, const NCS::CString &sStatusText, const CompressionCounters &Counters);
 #else
-    virtual void WriteStatus(UINT32 nCurrentLine) override;
+    virtual void WriteStatus(UINT32 nCurrentLine);
 #endif
 
-    virtual bool WriteCancel() override;
+    virtual bool WriteCancel();
 
     CPLErr  Initialize( const char *pszFilename, char **papszOptions,
                         int nXSize, int nYSize, int nBands, const char * const * papszBandDescriptions, int bRGBColorSpace,
@@ -107,11 +105,9 @@ public:
     CPLErr  WriteJP2Box( GDALJP2Box * );
     void    WriteXMLBoxes();
     CPLErr  ourWriteLineBIL(UINT16 nBands, void **ppOutputLine, UINT32 *pLineSteps = NULL);
-#if ECWSDK_VERSION>=50
-    virtual NCSEcwCellType WriteReadLineGetCellType() override {
+    virtual NCSEcwCellType WriteReadLineGetCellType() {
         return sFileInfo.eCellType;
     }
-#endif
 #ifdef ECW_FW
     CNCSJP2File::CNCSJPXAssocBox  m_oGMLAssoc;
 #endif
@@ -206,6 +202,7 @@ CNCSError GDALECWCompressor::WriteReadLine( UINT32 nNextLine,
 {
     int    iBand, *panBandMap;
     CPLErr eErr;
+    GByte *pabyLineBuf;
     int nWordSize = GDALGetDataTypeSize( eWorkDT ) / 8;
 
 #ifdef DEBUG_VERBOSE
@@ -216,9 +213,8 @@ CNCSError GDALECWCompressor::WriteReadLine( UINT32 nNextLine,
     for( iBand = 0; iBand < sFileInfo.nBands; iBand++ )
         panBandMap[iBand] = iBand+1;
 
-    GByte *pabyLineBuf =
-        (GByte *) CPLMalloc( sFileInfo.nSizeX * sFileInfo.nBands
-                             * nWordSize );
+    pabyLineBuf = (GByte *) CPLMalloc( sFileInfo.nSizeX * sFileInfo.nBands
+                                       * nWordSize );
 
     eErr = m_poSrcDS->RasterIO( GF_Read, 0, nNextLine, sFileInfo.nSizeX, 1,
                                 pabyLineBuf, sFileInfo.nSizeX, 1,
@@ -553,6 +549,7 @@ CPLErr GDALECWCompressor::Initialize(
     GDALDataset* poSrcDS )
 
 {
+     const char *pszOption;
 /* -------------------------------------------------------------------- */
 /*      For 4.x and beyond you need a license key to compress data.     */
 /*      Check for it as a configuration option or a creation option.    */
@@ -629,7 +626,6 @@ CPLErr GDALECWCompressor::Initialize(
 /*      Create and initialize compressor.                               */
 /* -------------------------------------------------------------------- */
     NCSFileViewFileInfoEx    *psClient = &(sFileInfo);
-    const char *pszOption = NULL;
 #if ECWSDK_VERSION >= 50
     if( bIsJPEG2000 == FALSE )
     {
@@ -723,13 +719,11 @@ CPLErr GDALECWCompressor::Initialize(
             bSigned = TRUE;
             break;
 
-#if ECWSDK_VERSION >= 40
         case GDT_Float64:
             psClient->eCellType = NCSCT_IEEE8;
             nBits = 64;
             bSigned = TRUE;
             break;
-#endif
 
         default:
             // We treat complex types as float.
@@ -959,19 +953,16 @@ CPLErr GDALECWCompressor::Initialize(
         oJP2MD.SetRPCMD( papszRPCMD );
 
         if (bIsJPEG2000) {
-            if( CPLFetchBool(papszOptions, "WRITE_METADATA", false) )
+            if( CSLFetchBoolean(papszOptions, "WRITE_METADATA", FALSE) )
             {
-                if( !CPLFetchBool(papszOptions, "MAIN_MD_DOMAIN_ONLY", false) )
+                if( !CSLFetchBoolean(papszOptions, "MAIN_MD_DOMAIN_ONLY", FALSE) )
                 {
                     WriteXMLBoxes();
                 }
-                WriteJP2Box(
-                    GDALJP2Metadata::CreateGDALMultiDomainMetadataXMLBox(
-                        m_poSrcDS,
-                        CPLFetchBool(papszOptions, "MAIN_MD_DOMAIN_ONLY",
-                                     false)));
+                WriteJP2Box(GDALJP2Metadata::CreateGDALMultiDomainMetadataXMLBox(
+                        m_poSrcDS, CSLFetchBoolean(papszOptions, "MAIN_MD_DOMAIN_ONLY", FALSE)));
             }
-            if( CPLFetchBool( papszOptions, "GMLJP2", true ) )
+            if( CSLFetchBoolean( papszOptions, "GMLJP2", TRUE ) )
             {
                 const char* pszGMLJP2V2Def = CSLFetchNameValue( papszOptions, "GMLJP2V2_DEF" );
                 if( pszGMLJP2V2Def != NULL )
@@ -979,10 +970,10 @@ CPLErr GDALECWCompressor::Initialize(
                 else
                     WriteJP2Box( oJP2MD.CreateGMLJP2(nXSize,nYSize) );
             }
-            if( CPLFetchBool( papszOptions, "GeoJP2", true ) )
+            if( CSLFetchBoolean( papszOptions, "GeoJP2", TRUE ) )
                 WriteJP2Box( oJP2MD.CreateJP2GeoTIFF() );
-            if( CPLFetchBool(papszOptions, "WRITE_METADATA", false) &&
-                !CPLFetchBool(papszOptions, "MAIN_MD_DOMAIN_ONLY", false) )
+            if( CSLFetchBoolean(papszOptions, "WRITE_METADATA", FALSE) &&
+                !CSLFetchBoolean(papszOptions, "MAIN_MD_DOMAIN_ONLY", FALSE) )
             {
                 WriteJP2Box(GDALJP2Metadata::CreateXMPBox(m_poSrcDS));
             }
@@ -1009,7 +1000,7 @@ CPLErr GDALECWCompressor::Initialize(
         }
 
         m_OStream.Access( fpVSIL, TRUE, (BOOLEAN) bSeekable, pszFilename,
-                          0, -1 );
+			  0, -1 );
     }
     else
     {
@@ -1078,7 +1069,7 @@ CPLErr GDALECWCompressor::Initialize(
             psClient->pFileMetaData->sCompany = NCSStrDupT(NCS::CString(pszECWCompany).c_str());
         }
         CPLString osCompressionSoftware = GetCompressionSoftwareName();
-        if ( !osCompressionSoftware.empty() ) {
+        if ( osCompressionSoftware.size() > 0 ) {
             psClient->pFileMetaData->sCompressionSoftware = NCSStrDupT(NCS::CString(osCompressionSoftware.c_str()).c_str());
         }
         if (m_poSrcDS && m_poSrcDS->GetMetadataItem("FILE_METADATA_COPYRIGHT")!=NULL){
@@ -1326,7 +1317,7 @@ ECWCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 /*      Re-open dataset, and copy any auxiliary pam information.         */
 /* -------------------------------------------------------------------- */
     GDALOpenInfo oOpenInfo(pszFilename, GA_ReadOnly);
-    GDALPamDataset *poDS = NULL;
+    GDALPamDataset *poDS;
 
     if (bIsJPEG2000)
         poDS = (GDALPamDataset*) ECWDatasetOpenJPEG2000(&oOpenInfo);
@@ -1343,7 +1334,7 @@ ECWCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
             }
             double dHistMin, dHistMax;
             int nBuckets;
-            GUIntBig *pHistogram = NULL;
+            GUIntBig *pHistogram;
             if (poSrcDS->GetRasterBand(i)->GetDefaultHistogram(&dHistMin, &dHistMax,&nBuckets,&pHistogram, FALSE, NULL, NULL) == CE_None){
                 poDS->GetRasterBand(i)->SetDefaultHistogram(dHistMin, dHistMax, nBuckets, pHistogram);
                 VSIFree(pHistogram);
@@ -1354,7 +1345,7 @@ ECWCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
         ((ECWDataset *)poDS)->SetPreventCopyingSomeMetadata(TRUE);
         int nFlags = GCIF_PAM_DEFAULT;
         if( bIsJPEG2000 &&
-            !CPLFetchBool(papszOptions, "WRITE_METADATA", false) )
+            !CSLFetchBoolean(papszOptions, "WRITE_METADATA", FALSE) )
             nFlags &= ~GCIF_METADATA;
         poDS->CloneInfo( poSrcDS, nFlags );
         ((ECWDataset *)poDS)->SetPreventCopyingSomeMetadata(FALSE);
@@ -1487,9 +1478,7 @@ ECWCreateCopyJPEG2000( const char * pszFilename, GDALDataset *poSrcDS,
         && eDataType != GDT_Int32
         && eDataType != GDT_UInt32
         && eDataType != GDT_Float32
-#if ECWSDK_VERSION >= 40
         && eDataType != GDT_Float64
-#endif
         && bStrict )
     {
         CPLError( CE_Failure, CPLE_NotSupported,
@@ -1535,7 +1524,7 @@ ECWCreateCopyJPEG2000( const char * pszFilename, GDALDataset *poSrcDS,
 
 /************************************************************************/
 /* ==================================================================== */
-/*                              ECWWriteDataset                         */
+/*				ECWWriteDataset				*/
 /* ==================================================================== */
 /************************************************************************/
 
@@ -1617,12 +1606,12 @@ class ECWWriteDataset : public GDALDataset
                                  int );
             ~ECWWriteDataset();
 
-    virtual void   FlushCache( void ) override;
+    virtual void   FlushCache( void );
 
-    virtual CPLErr GetGeoTransform( double * ) override;
-    virtual const char* GetProjectionRef() override;
-    virtual CPLErr SetGeoTransform( double * ) override;
-    virtual CPLErr SetProjection( const char *pszWKT ) override;
+    virtual CPLErr GetGeoTransform( double * );
+    virtual const char* GetProjectionRef();
+    virtual CPLErr SetGeoTransform( double * );
+    virtual CPLErr SetProjection( const char *pszWKT );
 
 #ifdef OPTIMIZED_FOR_GDALWARP
     virtual CPLErr IRasterIO( GDALRWFlag eRWFlag,
@@ -1632,7 +1621,7 @@ class ECWWriteDataset : public GDALDataset
                               int nBandCount, int *panBandMap,
                               GSpacing nPixelSpace, GSpacing nLineSpace,
                               GSpacing nBandSpace,
-                              GDALRasterIOExtraArg* psExtraArg) override;
+                              GDALRasterIOExtraArg* psExtraArg);
 #endif
 };
 
@@ -1660,17 +1649,17 @@ class ECWWriteRasterBand : public GDALRasterBand
                    ECWWriteRasterBand( ECWWriteDataset *, int );
                   ~ECWWriteRasterBand();
 
-    virtual CPLErr SetColorInterpretation( GDALColorInterp eInterpIn ) override
+    virtual CPLErr SetColorInterpretation( GDALColorInterp eInterpIn )
         { eInterp = eInterpIn;
           if( strlen(GetDescription()) == 0 )
               SetDescription(ECWGetColorInterpretationName(eInterp, nBand-1));
           return CE_None;
         }
-    virtual GDALColorInterp GetColorInterpretation() override
+    virtual GDALColorInterp GetColorInterpretation()
         { return eInterp; }
 
-    virtual CPLErr IReadBlock( int, int, void * ) override;
-    virtual CPLErr IWriteBlock( int, int, void * ) override;
+    virtual CPLErr IReadBlock( int, int, void * );
+    virtual CPLErr IWriteBlock( int, int, void * );
 
 #ifdef OPTIMIZED_FOR_GDALWARP
     virtual CPLErr IRasterIO( GDALRWFlag eRWFlag,
@@ -1678,7 +1667,7 @@ class ECWWriteRasterBand : public GDALRasterBand
                               void * pData, int nBufXSize, int nBufYSize,
                               GDALDataType eBufType,
                               GSpacing nPixelSpace, GSpacing nLineSpace,
-                              GDALRasterIOExtraArg* psExtraArg) override;
+                              GDALRasterIOExtraArg* psExtraArg);
 #endif
 };
 
@@ -1808,6 +1797,7 @@ CPLErr ECWWriteDataset::SetProjection( const char *pszWKT )
     return CE_None;
 }
 
+
 /************************************************************************/
 /*                             Crystalize()                             */
 /************************************************************************/
@@ -1874,10 +1864,13 @@ CPLErr ECWWriteDataset::FlushLine()
     if( nLoadedLine != -1 )
     {
 
-        void **papOutputLine = (void **) CPLMalloc(sizeof(void*) * nBands);
+        void **papOutputLine;
+
+        papOutputLine = (void **) CPLMalloc(sizeof(void*) * nBands);
         for( int i = 0; i < nBands; i++ )
             papOutputLine[i] =
                 (void *) (pabyBILBuffer + i * nWordSize * nRasterXSize);
+
 
         eErr =  oCompressor.ourWriteLineBIL( (UINT16) nBands, papOutputLine );
         CPLFree( papOutputLine );

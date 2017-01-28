@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ndfdataset.cpp 33864 2016-04-02 11:50:14Z goatbar $
  *
  * Project:  NDF Driver
  * Purpose:  Implementation of NLAPS Data Format read support.
@@ -32,7 +33,7 @@
 #include "ogr_spatialref.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id: ndfdataset.cpp 36682 2016-12-04 20:34:45Z rouault $");
+CPL_CVSID("$Id: ndfdataset.cpp 33864 2016-04-02 11:50:14Z goatbar $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -54,9 +55,9 @@ class NDFDataset : public RawDataset
                 NDFDataset();
     virtual ~NDFDataset();
 
-    virtual CPLErr  GetGeoTransform( double * padfTransform ) override;
-    virtual const char *GetProjectionRef(void) override;
-    virtual char **GetFileList(void) override;
+    virtual CPLErr  GetGeoTransform( double * padfTransform );
+    virtual const char *GetProjectionRef(void);
+    virtual char **GetFileList(void);
 
     static GDALDataset *Open( GDALOpenInfo * );
 };
@@ -180,10 +181,10 @@ GDALDataset *NDFDataset::Open( GDALOpenInfo * poOpenInfo )
     if (fp == NULL)
         return NULL;
 
-    const char *pszLine = NULL;
+    const char *pszLine;
     const int nHeaderMax = 1000;
     int nHeaderLines = 0;
-    char **papszHeader = static_cast<char **>(
+    char **papszHeader = reinterpret_cast<char **>(
         CPLMalloc( sizeof(char *) * (nHeaderMax+1) ) );
 
     while( nHeaderLines < nHeaderMax
@@ -271,7 +272,7 @@ GDALDataset *NDFDataset::Open( GDALOpenInfo * poOpenInfo )
         CPLString osFilename = poDS->Get(szKey,"");
 
         // NDF1 file do not include the band filenames.
-        if( osFilename.empty() )
+        if( osFilename.size() == 0 )
         {
             char szBandExtension[15];
             snprintf( szBandExtension, sizeof(szBandExtension), "I%d", iBand+1 );

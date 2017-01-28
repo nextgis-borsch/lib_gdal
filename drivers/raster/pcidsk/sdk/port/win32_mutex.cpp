@@ -45,8 +45,8 @@ public:
     Win32Mutex();
     ~Win32Mutex();
 
-    int Acquire(void) override;
-    int Release(void) override;
+    int Acquire(void);
+    int Release(void);
 };
 
 /************************************************************************/

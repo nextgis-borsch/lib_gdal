@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrdodsdriver.cpp 31120 2015-10-24 19:55:09Z rouault $
  *
  * Project:  OGR/DODS Interface
  * Purpose:  Implements OGRDODSDriver class.
@@ -29,7 +30,7 @@
 #include "ogr_dods.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrdodsdriver.cpp 36179 2016-11-09 10:19:21Z rouault $");
+CPL_CVSID("$Id: ogrdodsdriver.cpp 31120 2015-10-24 19:55:09Z rouault $");
 
 /************************************************************************/
 /*                            ~OGRDODSDriver()                            */
@@ -55,13 +56,15 @@ const char *OGRDODSDriver::GetName()
 /************************************************************************/
 
 OGRDataSource *OGRDODSDriver::Open( const char * pszFilename,
-                                     int /*bUpdate*/ )
+                                     int bUpdate )
 
 {
+    OGRDODSDataSource     *poDS;
+
     if( !STARTS_WITH_CI(pszFilename, "DODS:http:") )
         return NULL;
 
-    OGRDODSDataSource *poDS = new OGRDODSDataSource();
+    poDS = new OGRDODSDataSource();
 
     if( !poDS->Open( pszFilename ) )
     {
@@ -76,7 +79,7 @@ OGRDataSource *OGRDODSDriver::Open( const char * pszFilename,
 /*                           TestCapability()                           */
 /************************************************************************/
 
-int OGRDODSDriver::TestCapability( const char * /*pszCap*/ )
+int OGRDODSDriver::TestCapability( const char * pszCap )
 
 {
     return FALSE;
@@ -93,3 +96,4 @@ void RegisterOGRDODS()
         return;
     OGRSFDriverRegistrar::GetRegistrar()->RegisterDriver( new OGRDODSDriver );
 }
+

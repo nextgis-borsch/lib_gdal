@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: gdalmanage.cpp 33615 2016-03-02 20:19:22Z goatbar $
  *
  * Project:  GDAL Utilities
  * Purpose:  Command line utility for GDAL identify, delete, rename and copy
@@ -32,7 +33,7 @@
 #include "cpl_string.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: gdalmanage.cpp 34654 2016-07-14 05:53:06Z goatbar $");
+CPL_CVSID("$Id: gdalmanage.cpp 33615 2016-03-02 20:19:22Z goatbar $");
 
 /************************************************************************/
 /*                               Usage()                                */

@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: tigerentitynames.cpp 27745 2014-09-27 16:38:57Z goatbar $
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Implements TigerEntityNames, providing access to .RTC files.
@@ -30,9 +31,9 @@
 #include "ogr_tiger.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: tigerentitynames.cpp 35911 2016-10-24 15:03:26Z goatbar $");
+CPL_CVSID("$Id: tigerentitynames.cpp 27745 2014-09-27 16:38:57Z goatbar $");
 
-static const char FILE_CODE[] = "C";
+#define FILE_CODE "C"
 
 static const TigerFieldInfo rtC_2002_fields[] = {
   // fieldname    fmt  type OFTType      beg  end  len  bDefine bSet bWrite
@@ -112,6 +113,7 @@ static const TigerRecordInfo rtC_info =
     sizeof(rtC_fields) / sizeof(TigerFieldInfo),
     112
   };
+
 
 /************************************************************************/
 /*                          TigerEntityNames()                          */

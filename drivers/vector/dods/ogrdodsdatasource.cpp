@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrdodsdatasource.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  OGR/DODS Interface
  * Purpose:  Implements OGRDODSDataSource class.
@@ -31,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrdodsdatasource.cpp 36182 2016-11-09 12:10:20Z rouault $");
+CPL_CVSID("$Id: ogrdodsdatasource.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 /************************************************************************/
 /*                         OGRDODSDataSource()                          */
 /************************************************************************/
@@ -84,7 +85,9 @@ int OGRDODSDataSource::Open( const char * pszNewName )
 /*      expression.                                                     */
 /* -------------------------------------------------------------------- */
     char *pszWrkURL = CPLStrdup( pszNewName + 5 );
-    char *pszFound = strstr(pszWrkURL, "&");
+    char *pszFound;
+
+    pszFound = strstr(pszWrkURL,"&");
     if( pszFound )
     {
         oConstraints = pszFound;
@@ -99,7 +102,7 @@ int OGRDODSDataSource::Open( const char * pszNewName )
     }
 
     // Trim common requests.
-    int nLen = static_cast<int>(strlen(pszWrkURL));
+    int nLen = strlen(pszWrkURL);
     if( strcmp(pszWrkURL+nLen-4,".das") == 0 )
         pszWrkURL[nLen-4] = '\0';
     else if( strcmp(pszWrkURL+nLen-4,".dds") == 0 )
@@ -122,16 +125,15 @@ int OGRDODSDataSource::Open( const char * pszNewName )
     if( CPLGetConfigOption( "DODS_CONF", NULL ) != NULL
         && getenv("DODS_CONF") == NULL )
     {
-        const int knBufSize = 1000;
-        static char szDODS_CONF[knBufSize];
+        static char szDODS_CONF[1000];
 
-        snprintf( szDODS_CONF, knBufSize, "DODS_CONF=%.980s",
-                  CPLGetConfigOption( "DODS_CONF", "" ) );
+        sprintf( szDODS_CONF, "DODS_CONF=%.980s",
+                 CPLGetConfigOption( "DODS_CONF", "" ) );
         putenv( szDODS_CONF );
     }
 
 /* -------------------------------------------------------------------- */
-/*      If we have a overriding AIS file location, apply it now.       */
+/*      If we have a overridding AIS file location, apply it now.       */
 /* -------------------------------------------------------------------- */
     if( CPLGetConfigOption( "DODS_AIS_FILE", NULL ) != NULL )
     {
@@ -274,7 +276,10 @@ void OGRDODSDataSource::AddLayer( OGRDODSLayer *poLayer )
 int OGRDODSDataSource::TestCapability( const char * pszCap )
 
 {
-    return EQUAL(pszCap,ODsCCreateLayer);
+    if( EQUAL(pszCap,ODsCCreateLayer) )
+        return TRUE;
+    else
+        return FALSE;
 }
 
 /************************************************************************/

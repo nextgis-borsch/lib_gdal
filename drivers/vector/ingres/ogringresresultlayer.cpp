@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogringresresultlayer.cpp 11522 2007-05-15 14:26:10Z mloskot $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRIngresResultLayer class.
@@ -29,7 +30,7 @@
 #include "cpl_conv.h"
 #include "ogr_ingres.h"
 
-CPL_CVSID("$Id: ogringresresultlayer.cpp 36384 2016-11-21 12:13:10Z rouault $");
+CPL_CVSID("$Id: ogringresresultlayer.cpp 11522 2007-05-15 14:26:10Z mloskot $");
 
 /************************************************************************/
 /*                        OGRIngresResultLayer()                         */
@@ -50,7 +51,6 @@ OGRIngresResultLayer::OGRIngresResultLayer( OGRIngresDataSource *poDSIn,
     BuildFullQueryStatement();
 
     poFeatureDefn = ReadResultDefinition();
-    nFeatureCount = 0;
 }
 
 /************************************************************************/

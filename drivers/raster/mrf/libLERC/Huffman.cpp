@@ -231,8 +231,7 @@ bool Huffman::BuildTreeFromCodes(int& numBitsLUT)
   numBitsLUT = min(maxLen, m_maxNumBitsLUT);
 
   m_decodeLUT.clear();
-  const int lutMaxSize = 1 << numBitsLUT;
-  m_decodeLUT.assign(lutMaxSize, pair<short, short>((short)-1, (short)-1));
+  m_decodeLUT.assign(1 << numBitsLUT, pair<short, short>((short)-1, (short)-1));
 
   for (int i = i0; i < i1; i++)
   {
@@ -267,7 +266,7 @@ bool Huffman::BuildTreeFromCodes(int& numBitsLUT)
     }
   }
 
-  /* int numNodesCreated = 1; */
+  int numNodesCreated = 1;
   Node emptyNode((short)-1, 0);
 
   if (!m_root)
@@ -291,7 +290,7 @@ bool Huffman::BuildTreeFromCodes(int& numBitsLUT)
           if (!node->child1)
           {
             node->child1 = new Node(emptyNode);
-            /* numNodesCreated++; */
+            numNodesCreated++;
           }
           node = node->child1;
         }
@@ -300,7 +299,7 @@ bool Huffman::BuildTreeFromCodes(int& numBitsLUT)
           if (!node->child0)
           {
             node->child0 = new Node(emptyNode);
-            /* numNodesCreated++; */
+            numNodesCreated++;
           }
           node = node->child0;
         }
@@ -485,7 +484,6 @@ bool Huffman::BitUnStuffCodes(const Byte** ppByte, int i0, int i1)
       if (32 - bitPos >= len)
       {
         bitPos += len;
-        // cppcheck-suppress shiftTooManyBits
         if (bitPos == 32)
         {
           bitPos = 0;

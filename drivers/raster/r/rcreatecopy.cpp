@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: rcreatecopy.cpp 33841 2016-04-01 01:16:15Z goatbar $
  *
  * Project:  R Format Driver
  * Purpose:  CreateCopy() implementation for R stats package object format.
@@ -29,7 +30,8 @@
 #include "cpl_string.h"
 #include "gdal_pam.h"
 
-CPL_CVSID("$Id: rcreatecopy.cpp 35897 2016-10-24 11:54:24Z goatbar $");
+CPL_CVSID("$Id: rcreatecopy.cpp 33841 2016-04-01 01:16:15Z goatbar $");
+
 
 GDALDataset *
 RCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
@@ -98,8 +100,9 @@ RCreateCopy( const char * pszFilename,
     const int nBands = poSrcDS->GetRasterCount();
     const int nXSize = poSrcDS->GetRasterXSize();
     const int nYSize = poSrcDS->GetRasterYSize();
-    const bool bASCII = CPLFetchBool( papszOptions, "ASCII", false );
-    const bool bCompressed = CPLFetchBool( papszOptions, "COMPRESS", !bASCII );
+    const int bASCII = CSLFetchBoolean( papszOptions, "ASCII", FALSE );
+    const bool bCompressed =
+        CPL_TO_BOOL( CSLFetchBoolean( papszOptions, "COMPRESS", !bASCII ) );
 
 /* -------------------------------------------------------------------- */
 /*      Some some rudimentary checks                                    */

@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: tigerlandmarks.cpp 33706 2016-03-11 13:33:27Z goatbar $
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Implements TigerLandmarks, providing access to .RT7 files.
@@ -29,9 +30,9 @@
 #include "ogr_tiger.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: tigerlandmarks.cpp 35629 2016-10-06 23:39:06Z goatbar $");
+CPL_CVSID("$Id: tigerlandmarks.cpp 33706 2016-03-11 13:33:27Z goatbar $");
 
-static const char FILE_CODE[] = "7";
+#define FILE_CODE "7"
 
 static const TigerFieldInfo rt7_2002_fields[] = {
   // fieldname    fmt  type OFTType      beg  end  len  bDefine bSet bWrite

@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrxlsxdriver.cpp 35710 2016-10-13 07:21:17Z rouault $
  *
  * Project:  XLSX Translator
  * Purpose:  Implements OGRXLSXDriver.
@@ -29,7 +30,7 @@
 #include "ogr_xlsx.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrxlsxdriver.cpp 35709 2016-10-13 07:21:06Z rouault $");
+CPL_CVSID("$Id: ogrxlsxdriver.cpp 35710 2016-10-13 07:21:17Z rouault $");
 
 extern "C" void RegisterOGRXLSX();
 
@@ -60,8 +61,7 @@ const char *OGRXLSXDriver::GetName()
 /*                                Open()                                */
 /************************************************************************/
 
-static const char XLSX_MIMETYPE[] =
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml";
+#define XLSX_MIMETYPE "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"
 
 OGRDataSource *OGRXLSXDriver::Open( const char * pszFilename, int bUpdate )
 
@@ -73,17 +73,17 @@ OGRDataSource *OGRXLSXDriver::Open( const char * pszFilename, int bUpdate )
     if (fp == NULL)
         return NULL;
 
-    bool bOK = false;
+    int bOK = FALSE;
     char szBuffer[2048];
     if (VSIFReadL(szBuffer, sizeof(szBuffer), 1, fp) == 1 &&
         memcmp(szBuffer, "PK", 2) == 0)
     {
-        bOK = true;
+        bOK = TRUE;
     }
 
     VSIFCloseL(fp);
 
-    if( !bOK )
+    if (!bOK)
         return NULL;
 
     VSILFILE* fpContent = VSIFOpenL(CPLSPrintf("/vsizip/%s/[Content_Types].xml", pszFilename), "rb");
@@ -154,7 +154,9 @@ OGRDataSource *OGRXLSXDriver::CreateDataSource( const char * pszName,
 /* -------------------------------------------------------------------- */
 /*      Try to create datasource.                                       */
 /* -------------------------------------------------------------------- */
-    OGRXLSXDataSource *poDS = new OGRXLSXDataSource();
+    OGRXLSXDataSource     *poDS;
+
+    poDS = new OGRXLSXDataSource();
 
     if( !poDS->Create( pszName, papszOptions ) )
     {
@@ -212,3 +214,4 @@ void RegisterOGRXLSX()
 
     OGRSFDriverRegistrar::GetRegistrar()->RegisterDriver( poDriver );
 }
+

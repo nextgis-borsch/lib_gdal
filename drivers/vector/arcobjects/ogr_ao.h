@@ -35,7 +35,7 @@
 #include "cpl_string.h"
 
 //COM ATL Includes
-#include <atlbase.h>
+#include <atlbase.h> 
 #include <atlcom.h>
 #include <atlctl.h>
 #include <atlstr.h> //CString
@@ -47,6 +47,8 @@ using namespace ATL;
 #import "C:\Program Files (x86)\ArcGIS\com\esriGeometry.olb" raw_interfaces_only, raw_native_types, named_guids, exclude("ISegment")
 #import "C:\Program Files (x86)\ArcGIS\com\esriGeoDatabase.olb" raw_interfaces_only, raw_native_types, no_namespace, named_guids
 #import "C:\Program Files (x86)\ArcGIS\com\esriDataSourcesGDB.olb" raw_interfaces_only, raw_native_types, no_namespace, named_guids
+
+
 
 /************************************************************************/
 /*                            AOLayer                                  */
@@ -66,20 +68,21 @@ public:
   const char* GetFIDFieldName() const { return m_strOIDFieldName.c_str(); }
   const char* GetShapeFieldName() const { return m_strShapeFieldName.c_str(); }
 
-  virtual void        ResetReading() override;
-  virtual OGRFeature* GetNextFeature() override;
-  virtual OGRFeature* GetFeature( GIntBig nFeatureId ) override;
+  virtual void        ResetReading();
+  virtual OGRFeature* GetNextFeature();
+  virtual OGRFeature* GetFeature( GIntBig nFeatureId );
 
   HRESULT GetTable(ITable** ppTable);
 
-  virtual OGRErr      GetExtent( OGREnvelope *psExtent, int bForce ) override;
-  virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce) override
+
+  virtual OGRErr      GetExtent( OGREnvelope *psExtent, int bForce );
+  virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce)
                 { return OGRLayer::GetExtent(iGeomField, psExtent, bForce); }
-  virtual GIntBig     GetFeatureCount( int bForce ) override;
-  virtual OGRErr      SetAttributeFilter( const char *pszQuery ) override;
-  virtual void        SetSpatialFilterRect (double dfMinX, double dfMinY, double dfMaxX, double dfMaxY) override;
-  virtual void        SetSpatialFilter( OGRGeometry * ) override;
-  virtual void        SetSpatialFilter( int iGeomField, OGRGeometry *poGeom ) override
+  virtual GIntBig     GetFeatureCount( int bForce );
+  virtual OGRErr      SetAttributeFilter( const char *pszQuery );
+  virtual void 	      SetSpatialFilterRect (double dfMinX, double dfMinY, double dfMaxX, double dfMaxY);
+  virtual void        SetSpatialFilter( OGRGeometry * );
+  virtual void        SetSpatialFilter( int iGeomField, OGRGeometry *poGeom )
                 { OGRLayer::SetSpatialFilter(iGeomField, poGeom); }
 
 /*
@@ -90,11 +93,11 @@ public:
   virtual OGRErr      ICreateFeature( OGRFeature *poFeature );
   virtual OGRErr      DeleteFeature( GIntBig nFID );
 */
-   OGRFeatureDefn *    GetLayerDefn() override { return m_pFeatureDefn; }
+   OGRFeatureDefn *    GetLayerDefn() { return m_pFeatureDefn; }
 
-   virtual OGRSpatialReference *GetSpatialRef() override { return m_pSRS; }
+   virtual OGRSpatialReference *GetSpatialRef() { return m_pSRS; }
 
-  virtual int         TestCapability( const char * ) override;
+  virtual int         TestCapability( const char * );
 
 protected:
     bool OGRFeatureFromAORow(IRow* pRow, OGRFeature** ppFeature);
@@ -130,13 +133,15 @@ public:
   AODataSource();
   virtual ~AODataSource();
 
+
   int         Open(IWorkspace* pWorkspace, const char *, int );
+  
+  const char* GetName() { return m_pszName; }
+  int         GetLayerCount() { return static_cast<int>(m_layers.size()); }
+  
+  OGRLayer*   GetLayer( int );
 
-  const char* GetName() override { return m_pszName; }
-  int         GetLayerCount() override { return static_cast<int>(m_layers.size()); }
-
-  OGRLayer*   GetLayer( int ) override;
-
+  
   /*
   virtual OGRLayer* ICreateLayer( const char *,
                                  OGRSpatialReference* = NULL,
@@ -144,9 +149,9 @@ public:
                                  char** = NULL );
 
  */
-  virtual OGRErr DeleteLayer( int ) override;
+  virtual OGRErr DeleteLayer( int );
 
-  int TestCapability( const char * ) override;
+  int TestCapability( const char * );
 
   /*
 protected:
@@ -160,6 +165,7 @@ protected:
   char* m_pszName;
   std::vector <AOLayer*> m_layers;
   IWorkspacePtr m_ipWorkspace;
+
 };
 
 /************************************************************************/
@@ -175,12 +181,12 @@ public:
 
   bool Init();
 
-  const char *GetName() override;
-  virtual OGRDataSource *Open( const char *, int ) override;
-  int TestCapability( const char * ) override;
-  virtual OGRDataSource *CreateDataSource( const char *pszName, char ** = NULL) override;
+  const char *GetName();
+  virtual OGRDataSource *Open( const char *, int );
+  int TestCapability( const char * );
+  virtual OGRDataSource *CreateDataSource( const char *pszName, char ** = NULL);
 
-  static void OpenWorkspace(std::string, IWorkspace** ppWorkspace);
+  void OpenWorkspace(std::string, IWorkspace** ppWorkspace);
 
 private:
   bool m_licensedCheckedOut;
@@ -193,3 +199,5 @@ void CPL_DLL RegisterOGRao();
 CPL_C_END
 
 #endif /* ndef _OGR_PG_H_INCLUDED */
+
+

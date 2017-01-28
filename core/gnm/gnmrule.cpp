@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id$
  *
  * Project:  GDAL/OGR Geography Network support (Geographic Network Model)
  * Purpose:  GNM rule class.
@@ -30,9 +31,7 @@
 #include "gnm.h"
 #include "gnm_priv.h"
 
-CPL_CVSID("$Id: gnmrule.cpp 36366 2016-11-21 01:21:43Z rouault $");
 
-/*! @cond Doxygen_Suppress */
 GNMRule::GNMRule()
 {
     m_bValid = false;
@@ -40,30 +39,33 @@ GNMRule::GNMRule()
     m_bAny = false;
 }
 
-GNMRule::GNMRule(const std::string &oRule) :
-    m_soRuleString( oRule )
+GNMRule::GNMRule(const std::string &oRule)
 {
+    m_soRuleString = oRule;
     m_bValid = ParseRuleString();
 }
 
-GNMRule::GNMRule(const char *pszRule) :
-    m_soRuleString( pszRule )
+GNMRule::GNMRule(const char *pszRule)
 {
+    m_soRuleString = pszRule;
     m_bValid = ParseRuleString();
 }
 
-GNMRule::GNMRule(const GNMRule &oRule) :
-    m_soSrcLayerName ( oRule.m_soSrcLayerName ),
-    m_soTgtLayerName ( oRule.m_soTgtLayerName ),
-    m_soConnLayerName ( oRule.m_soConnLayerName ),
-    m_bAllow ( oRule.m_bAllow ),
-    m_bValid ( oRule.m_bValid ),
-    m_bAny ( oRule.m_bAny ),
-    m_soRuleString ( oRule.m_soRuleString )
+GNMRule::GNMRule(const GNMRule &oRule)
 {
+    m_soSrcLayerName = oRule.m_soSrcLayerName;
+    m_soTgtLayerName = oRule.m_soTgtLayerName;
+    m_soConnLayerName = oRule.m_soConnLayerName;
+    m_bAllow = oRule.m_bAllow;
+    m_bValid = oRule.m_bValid;
+    m_bAny = oRule.m_bAny;
+    m_soRuleString = oRule.m_soRuleString;
 }
 
-GNMRule::~GNMRule() {}
+GNMRule::~GNMRule()
+{
+
+}
 
 bool GNMRule::IsValid() const
 {
@@ -183,4 +185,5 @@ bool GNMRule::ParseRuleString()
 
     return true;
 }
-/*! @endcond */
+
+

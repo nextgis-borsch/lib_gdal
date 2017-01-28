@@ -5,7 +5,7 @@
  * driver
  * Author:   Jorge Arevalo, jorge.arevalo@deimos-space.com
  *                          jorgearevalo@libregis.org
- * Last changes: $Id: postgisrastertilerasterband.cpp 35929 2016-10-25 16:09:00Z goatbar $
+ * Last changes: $Id: $
  *
  ***********************************************************************
  * Copyright (c) 2009 - 2013, Jorge Arevalo
@@ -33,20 +33,17 @@
  **********************************************************************/
 #include "postgisraster.h"
 
-CPL_CVSID("$Id: postgisrastertilerasterband.cpp 35929 2016-10-25 16:09:00Z goatbar $");
-
 /************************
  * \brief Constructor
  ************************/
 PostGISRasterTileRasterBand::PostGISRasterTileRasterBand(
     PostGISRasterTileDataset * poRTDSIn, int nBandIn,
-    GDALDataType eDataTypeIn, GBool bIsOfflineIn) :
-    bIsOffline(bIsOfflineIn),
-    poSource(NULL)
+    GDALDataType eDataTypeIn, GBool bIsOfflineIn)
 {
-    // Basic properties.
-    poDS = poRTDSIn;
-    nBand = nBandIn;
+    /* Basic properties */
+    this->poDS = poRTDSIn;
+    this->bIsOffline = bIsOfflineIn;
+    this->nBand = nBandIn;
 
 #if 0
     CPLDebug("PostGIS_Raster",
@@ -55,14 +52,16 @@ PostGISRasterTileRasterBand::PostGISRasterTileRasterBand(
         poRTDS->GetRasterYSize());
 #endif
 
-    eDataType = eDataTypeIn;
+    this->eDataType = eDataTypeIn;
 
     nRasterXSize = poRTDSIn->GetRasterXSize();
     nRasterYSize = poRTDSIn->GetRasterYSize();
 
     nBlockXSize = nRasterXSize;
     nBlockYSize = nRasterYSize;
+    poSource = NULL;
 }
+
 
 /************************
  * \brief Destructor
@@ -102,12 +101,12 @@ CPLErr PostGISRasterTileRasterBand::IReadBlock(CPL_UNUSED int nBlockXOff,
         (PostGISRasterTileDataset *)poDS;
 
     // Get by PKID
-    if (poRTDS->poRDS->pszPrimaryKeyName)
-    {
+    if (poRTDS->poRDS->pszPrimaryKeyName) {
         //osCommand.Printf("select ST_AsBinary(st_band(%s, %d),TRUE) from %s.%s where "
         osCommand.Printf("select st_band(%s, %d) from %s.%s where "
             "%s = '%s'", poRTDS->poRDS->pszColumn, nBand, poRTDS->poRDS->pszSchema, poRTDS->poRDS->pszTable,
             poRTDS->poRDS->pszPrimaryKeyName, poRTDS->pszPKID);
+
     }
 
     // Get by upperleft
@@ -141,6 +140,7 @@ CPLErr PostGISRasterTileRasterBand::IReadBlock(CPL_UNUSED int nBlockXOff,
 
         return CE_Failure;
     }
+
 
     // TODO: Check this
     if (bIsOffline) {

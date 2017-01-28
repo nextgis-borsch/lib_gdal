@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gnm.i 34525 2016-07-03 02:53:47Z goatbar $
+ * $Id$
  *
  * Project:  GNM Core SWIG Interface declarations.
  * Purpose:  GNM declarations.
@@ -29,9 +29,9 @@
  * DEALINGS IN THE SOFTWARE.
  *****************************************************************************/
 
-#ifndef FROM_GDAL_I
+//#ifndef FROM_GDAL_I
 %include "exception.i"
-#endif
+//#endif
 %include constraints.i
 
 #ifdef PERL_CPAN_NAMESPACE
@@ -55,51 +55,28 @@
 #endif
 
 %{
-#include <iostream>
-using namespace std;
-
 #include "gdal.h"
-#include "ogr_api.h"
-#include "ogr_p.h"
-#include "ogr_core.h"
-#include "cpl_port.h"
-#include "cpl_string.h"
-#include "ogr_srs_api.h"
 #include "gnm_api.h"
 
 typedef void GDALMajorObjectShadow;
 typedef void GNMNetworkShadow;
 typedef void GNMGenericNetworkShadow;
+%}
 
+#if defined(SWIGPYTHON) || defined(SWIGJAVA) || defined(SWIGPERL)
+%{
 #ifdef DEBUG
-typedef struct OGRSpatialReferenceHS OSRSpatialReferenceShadow;
-#ifndef SWIGPERL
-typedef struct OGRDriverHS OGRDriverShadow;
-typedef struct OGRDataSourceHS OGRDataSourceShadow;
-#endif
 typedef struct OGRLayerHS OGRLayerShadow;
 typedef struct OGRFeatureHS OGRFeatureShadow;
-typedef struct OGRFeatureDefnHS OGRFeatureDefnShadow;
-typedef struct OGRGeometryHS OGRGeometryShadow;
-typedef struct OGRCoordinateTransformationHS OSRCoordinateTransformationShadow;
-typedef struct OGRCoordinateTransformationHS OGRCoordinateTransformationShadow;
-typedef struct OGRFieldDefnHS OGRFieldDefnShadow;
+typedef struct OGRSpatialReferenceHS OSRSpatialReferenceShadow;
 #else
-typedef void OSRSpatialReferenceShadow;
-#ifndef SWIGPERL
-typedef void OGRDriverShadow;
-typedef void OGRDataSourceShadow;
-#endif
 typedef void OGRLayerShadow;
 typedef void OGRFeatureShadow;
-typedef void OGRFeatureDefnShadow;
-typedef void OGRGeometryShadow;
-typedef void OSRCoordinateTransformationShadow;
-typedef void OGRFieldDefnShadow;
+typedef void OSRSpatialReferenceShadow;
 #endif
-typedef struct OGRStyleTableHS OGRStyleTableShadow;
-typedef struct OGRGeomFieldDefnHS OGRGeomFieldDefnShadow;
 %}
+#endif /* #if defined(SWIGPYTHON) || defined(SWIGJAVA) */
+
 
 #if defined(SWIGPYTHON)
 %include python_exceptions.i
@@ -112,7 +89,7 @@ typedef struct OGRGeomFieldDefnHS OGRGeomFieldDefnShadow;
 #elif defined(SWIGCSHARP)
 //%include gnm_csharp.i
 #elif defined(SWIGJAVA)
-%include gnm_java.i
+//%include gnm_java.i
 #elif defined(SWIGPERL)
 //%include gnm_perl.i
 %import typemaps_perl.i
@@ -120,28 +97,15 @@ typedef struct OGRGeomFieldDefnHS OGRGeomFieldDefnShadow;
 %include gdal_typemaps.i
 #endif
 
-#define FROM_OGR_I
-%import ogr.i
-
-
-typedef int GNMDirection;
 typedef int CPLErr;
+typedef int GNMDirection;
 
 //************************************************************************
 //
 // Define the MajorObject object
 //
 //************************************************************************
-#if defined(SWIGPYTHON)
-%{
-#include "gdal.h"
-%}
-#define FROM_PYTHON_OGR_I
-%include MajorObject.i
-#undef FROM_PYTHON_OGR_I
-#else /* defined(SWIGPYTHON) */
-%import MajorObject.i
-#endif /* defined(SWIGPYTHON) */
+%include "MajorObject.i"
 
 %feature("autodoc");
 
@@ -159,7 +123,6 @@ typedef enum
 #define GNM_EDGE_DIR_SRCTOTGT   1   // from source to target
 #define GNM_EDGE_DIR_TGTTOSRC   2   // from target to source
 
-#ifndef SWIGJAVA
 %inline %{
   GNMNetworkShadow* CastToNetwork(GDALMajorObjectShadow* base) {
       return (GNMNetworkShadow*)dynamic_cast<GNMNetwork*>((GDALMajorObject*)base);
@@ -170,6 +133,11 @@ typedef enum
   GNMGenericNetworkShadow* CastToGenericNetwork(GDALMajorObjectShadow* base) {
       return (GNMGenericNetworkShadow*)dynamic_cast<GNMGenericNetwork*>((GDALMajorObject*)base);
   }
+%}
+
+#if !defined(FROM_GDAL_I) && !defined(FROM_OGR_I)
+%inline %{
+typedef char retStringAndCPLFree;
 %}
 #endif
 
@@ -194,13 +162,11 @@ class GNMNetworkShadow : public GDALMajorObjectShadow
             }
         }
 
-#ifndef SWIGJAVA
         %apply SWIGTYPE *DISOWN {OGRLayerShadow *layer};
         void ReleaseResultSet(OGRLayerShadow *layer){
             GDALDatasetReleaseResultSet(self, layer);
         }
         %clear OGRLayerShadow *layer;
-#endif
 
         int GetVersion()
         {
@@ -415,3 +381,4 @@ class GNMGenericNetworkShadow : public GNMNetworkShadow
         }
     }
 };
+

@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: gtadataset.cpp 33005 2016-01-15 17:28:49Z rouault $
  *
  * Project:  GTA read/write Driver
  * Purpose:  GDAL bindings over GTA library.
@@ -91,7 +92,7 @@
 #include "gdal_pam.h"
 #include "gta_headers.h"
 
-CPL_CVSID("$Id: gtadataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
+CPL_CVSID("$Id: gtadataset.cpp 33005 2016-01-15 17:28:49Z rouault $");
 
 /************************************************************************/
 /* Helper functions                                                     */
@@ -148,7 +149,7 @@ class GTAIO : public gta::custom_io
     int open( const char *pszFilename, const char *pszMode )
     {
         fp = VSIFOpenL( pszFilename, pszMode );
-        return fp == NULL ? -1 : 0;
+        return ( fp == NULL ? -1 : 0 );
     }
 
     void close( )
@@ -165,7 +166,7 @@ class GTAIO : public gta::custom_io
         return VSIFTellL( fp );
     }
 
-    virtual size_t read(void *buffer, size_t size, bool *error) throw () override
+    virtual size_t read(void *buffer, size_t size, bool *error) throw ()
     {
         size_t s;
         s = VSIFReadL( buffer, 1, size, fp );
@@ -177,7 +178,7 @@ class GTAIO : public gta::custom_io
         return size;
     }
 
-    virtual size_t write(const void *buffer, size_t size, bool *error) throw () override
+    virtual size_t write(const void *buffer, size_t size, bool *error) throw ()
     {
         size_t s;
         s = VSIFWriteL( buffer, 1, size, fp );
@@ -189,12 +190,12 @@ class GTAIO : public gta::custom_io
         return size;
     }
 
-    virtual bool seekable() throw () override
+    virtual bool seekable() throw ()
     {
         return true;
     }
 
-    virtual void seek(intmax_t offset, int whence, bool *error) throw () override
+    virtual void seek(intmax_t offset, int whence, bool *error) throw ()
     {
         int r;
         r = VSIFSeekL( fp, offset, whence );
@@ -245,16 +246,16 @@ class GTADataset : public GDALPamDataset
 
     static GDALDataset *Open( GDALOpenInfo * );
 
-    CPLErr      GetGeoTransform( double * padfTransform ) override;
-    CPLErr      SetGeoTransform( double * padfTransform ) override;
+    CPLErr      GetGeoTransform( double * padfTransform );
+    CPLErr      SetGeoTransform( double * padfTransform );
 
-    const char *GetProjectionRef( ) override;
-    CPLErr      SetProjection( const char *pszProjection ) override;
+    const char *GetProjectionRef( );
+    CPLErr      SetProjection( const char *pszProjection );
 
-    int         GetGCPCount( ) override;
-    const char *GetGCPProjection( ) override;
-    const GDAL_GCP *GetGCPs( ) override;
-    CPLErr      SetGCPs( int, const GDAL_GCP *, const char * ) override;
+    int         GetGCPCount( );
+    const char *GetGCPProjection( );
+    const GDAL_GCP *GetGCPs( );
+    CPLErr      SetGCPs( int, const GDAL_GCP *, const char * );
 };
 
 /************************************************************************/
@@ -280,25 +281,25 @@ class GTARasterBand : public GDALPamRasterBand
                 GTARasterBand( GTADataset *, int );
                 ~GTARasterBand( );
 
-    CPLErr      IReadBlock( int, int, void * ) override;
-    CPLErr      IWriteBlock( int, int, void * ) override;
+    CPLErr      IReadBlock( int, int, void * );
+    CPLErr      IWriteBlock( int, int, void * );
 
-    char      **GetCategoryNames( ) override;
-    CPLErr      SetCategoryNames( char ** ) override;
+    char      **GetCategoryNames( );
+    CPLErr      SetCategoryNames( char ** );
 
-    double      GetMinimum( int * ) override;
-    double      GetMaximum( int * ) override;
+    double      GetMinimum( int * );
+    double      GetMaximum( int * );
 
-    double      GetNoDataValue( int * ) override;
-    CPLErr      SetNoDataValue( double ) override;
-    double      GetOffset( int * ) override;
-    CPLErr      SetOffset( double ) override;
-    double      GetScale( int * ) override;
-    CPLErr      SetScale( double ) override;
-    const char *GetUnitType( ) override;
-    CPLErr      SetUnitType( const char * ) override;
-    GDALColorInterp GetColorInterpretation( ) override;
-    CPLErr      SetColorInterpretation( GDALColorInterp ) override;
+    double      GetNoDataValue( int * );
+    CPLErr      SetNoDataValue( double );
+    double      GetOffset( int * );
+    CPLErr      SetOffset( double );
+    double      GetScale( int * );
+    CPLErr      SetScale( double );
+    const char *GetUnitType( );
+    CPLErr      SetUnitType( const char * );
+    GDALColorInterp GetColorInterpretation( );
+    CPLErr      SetColorInterpretation( GDALColorInterp );
 };
 
 /************************************************************************/
@@ -774,7 +775,6 @@ GTADataset::GTADataset()
     nLastBlockYOff = -1;
     pBlock = NULL;
     DataOffset = 0;
-    memset( adfGeoTransform, 0, sizeof(adfGeoTransform) );
 }
 
 /************************************************************************/
@@ -931,7 +931,7 @@ const char *GTADataset::GetProjectionRef()
 
 {
     const char *p = oHeader.global_taglist().get("GDAL/PROJECTION");
-    return p ? p : "";
+    return ( p ? p : "" );
 }
 
 /************************************************************************/
@@ -1004,7 +1004,9 @@ GDALDataset *GTADataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Create a corresponding GDALDataset.                             */
 /* -------------------------------------------------------------------- */
-    GTADataset *poDS = new GTADataset();
+    GTADataset  *poDS;
+
+    poDS = new GTADataset();
 
     if( poDS->oGTAIO.open( poOpenInfo->pszFilename,
             poOpenInfo->eAccess == GA_Update ? "r+" : "r" ) != 0 )
@@ -1248,7 +1250,7 @@ GDALDataset *GTADataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
 
-    return poDS;
+    return( poDS );
 }
 
 /************************************************************************/

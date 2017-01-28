@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogridrisidatasource.cpp 32745 2016-01-04 23:16:43Z goatbar $
  *
  * Project:  Idrisi Translator
  * Purpose:  Implements OGRIdrisiDataSource class
@@ -31,7 +32,7 @@
 #include "idrisi.h"
 #include "ogr_idrisi.h"
 
-CPL_CVSID("$Id: ogridrisidatasource.cpp 34996 2016-08-09 02:25:28Z goatbar $");
+CPL_CVSID("$Id: ogridrisidatasource.cpp 32745 2016-01-04 23:16:43Z goatbar $");
 
 /************************************************************************/
 /*                        OGRIdrisiDataSource()                         */
@@ -140,7 +141,7 @@ int OGRIdrisiDataSource::Open( const char * pszFilename )
                                     &pszWTKString);
     }
 
-    GByte chType = 0;
+    GByte chType;
     if (VSIFReadL(&chType, 1, 1, fpVCT) != 1)
     {
         VSIFCloseL(fpVCT);

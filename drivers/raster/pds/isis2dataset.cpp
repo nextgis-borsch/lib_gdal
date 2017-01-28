@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: isis2dataset.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  ISIS Version 2 Driver
  * Purpose:  Implementation of ISIS2Dataset
@@ -46,17 +47,17 @@ static const int RECORD_SIZE = 512;
 #include "ogr_spatialref.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id: isis2dataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
+CPL_CVSID("$Id: isis2dataset.cpp 33720 2016-03-15 00:39:53Z goatbar $");
 
 /************************************************************************/
 /* ==================================================================== */
-/*                      ISISDataset     version2                        */
+/*			ISISDataset	version2	                */
 /* ==================================================================== */
 /************************************************************************/
 
 class ISIS2Dataset : public RawDataset
 {
-    VSILFILE     *fpImage;      // image data file.
+    VSILFILE	*fpImage;	// image data file.
     CPLString    osExternalCube;
 
     NASAKeywordHandler  oKeywords;
@@ -81,12 +82,12 @@ class ISIS2Dataset : public RawDataset
 
 public:
     ISIS2Dataset();
-    virtual ~ISIS2Dataset();
+    ~ISIS2Dataset();
 
-    virtual CPLErr GetGeoTransform( double * padfTransform ) override;
-    virtual const char *GetProjectionRef(void) override;
+    virtual CPLErr GetGeoTransform( double * padfTransform );
+    virtual const char *GetProjectionRef(void);
 
-    virtual char **GetFileList() override;
+    virtual char **GetFileList();
 
     static int          Identify( GDALOpenInfo * );
     static GDALDataset *Open( GDALOpenInfo * );
@@ -98,7 +99,7 @@ public:
     static int WriteRaster(CPLString osFilename, bool includeLabel, GUIntBig iRecord, GUIntBig iLabelRecords, GDALDataType eType, const char * pszInterleaving);
 
     static int WriteLabel(CPLString osFilename, CPLString osRasterFile, CPLString sObjectTag, unsigned int nXSize, unsigned int nYSize, unsigned int nBands, GDALDataType eType,
-                          GUIntBig iRecords, const char * pszInterleaving, GUIntBig & iLabelRecords, bool bRelaunch=false);
+    						GUIntBig iRecords, const char * pszInterleaving, GUIntBig & iLabelRecords, bool bRelaunch=false);
     static int WriteQUBE_Information(VSILFILE *fpLabel, unsigned int iLevel, unsigned int & nWritingBytes,
                                      unsigned int nXSize, unsigned int nYSize, unsigned int nBands, GDALDataType eType, const char * pszInterleaving);
 
@@ -182,6 +183,7 @@ CPLErr ISIS2Dataset::GetGeoTransform( double * padfTransform )
 /************************************************************************/
 /*                              Identify()                              */
 /************************************************************************/
+
 
 int ISIS2Dataset::Identify( GDALOpenInfo * poOpenInfo )
 {
@@ -647,7 +649,7 @@ GDALDataset *ISIS2Dataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Create band information objects.                                */
 /* -------------------------------------------------------------------- */
-    poDS->nBands = nBands;
+    poDS->nBands = nBands;;
     for( int i = 0; i < poDS->nBands; i++ )
     {
         RawRasterBand *poBand =
@@ -731,7 +733,7 @@ GDALDataset *ISIS2Dataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
 
-    return poDS;
+    return( poDS );
 }
 
 /************************************************************************/
@@ -918,6 +920,7 @@ GDALDataset *ISIS2Dataset::Create(const char* pszFilename,
 
     return reinterpret_cast<GDALDataset *>( GDALOpen( osOutFile, GA_Update ) );
 }
+
 
 /************************************************************************/
 /*                            WriteRaster()                             */

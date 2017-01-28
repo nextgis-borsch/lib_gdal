@@ -125,7 +125,7 @@ std::string PCIDSK::DataTypeName( eChanType chan_type )
 /**
  * @brief Return the segment type code based on the contents of type_name
  * 
- * @param type_name the type name, as a string
+ * @param the type name, as a string
  *
  * @return the channel type code
  */
@@ -159,7 +159,7 @@ eChanType PCIDSK::GetDataTypeFromName(std::string const& type_name)
 /**
  * @brief Return whether or not the data type is complex
  * 
- * @param type the type
+ * @param the type
  *
  * @return true if the data type is complex, false otherwise
  */

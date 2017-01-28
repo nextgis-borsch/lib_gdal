@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrdxfwriterlayer.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  DXF Translator
  * Purpose:  Implements OGRDXFWriterLayer - the OGRLayer class used for
@@ -33,19 +34,18 @@
 #include "cpl_string.h"
 #include "ogr_featurestyle.h"
 
-#include <cstdlib>
-
-CPL_CVSID("$Id: ogrdxfwriterlayer.cpp 36883 2016-12-15 13:31:12Z rouault $");
+CPL_CVSID("$Id: ogrdxfwriterlayer.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 /************************************************************************/
 /*                         OGRDXFWriterLayer()                          */
 /************************************************************************/
 
-OGRDXFWriterLayer::OGRDXFWriterLayer( OGRDXFWriterDS *poDSIn, VSILFILE *fpIn ) :
-    fp(fpIn),
-    poFeatureDefn(NULL),  // TODO(schwehr): Can I move the new here?
-    poDS(poDSIn)
+OGRDXFWriterLayer::OGRDXFWriterLayer( OGRDXFWriterDS *poDSIn, VSILFILE *fpIn )
+
 {
+    this->fp = fpIn;
+    this->poDS = poDSIn;
+
     nNextAutoID = 1;
     bWriteHatch = CPLTestBool(CPLGetConfigOption("DXF_WRITE_HATCH", "YES"));
 
@@ -221,31 +221,16 @@ OGRErr OGRDXFWriterLayer::WriteCore( OGRFeature *poFeature )
     }
     else
     {
-        CPLString osSanitizedLayer(pszLayer);
-        // Replaced restricted characters with underscore
-        // See http://docs.autodesk.com/ACD/2010/ENU/AutoCAD%202010%20User%20Documentation/index.html?url=WS1a9193826455f5ffa23ce210c4a30acaf-7345.htm,topicNumber=d0e41665
-        const char achForbiddenChars[] = {
-          '<', '>', '/', '\\', '"', ':', ';', '?', '*', '|', '=', '\'' };
-        for( size_t i = 0; i < CPL_ARRAYSIZE(achForbiddenChars); ++i )
-        {
-            osSanitizedLayer.replaceAll( achForbiddenChars[i], '_' );
-        }
-
-        // also remove newline characters (#15067)
-        osSanitizedLayer.replaceAll( "\r\n", "_" );
-        osSanitizedLayer.replaceAll( '\r', '_' );
-        osSanitizedLayer.replaceAll( '\n', '_' );
-
         const char *pszExists =
-            poDS->oHeaderDS.LookupLayerProperty( osSanitizedLayer, "Exists" );
+            poDS->oHeaderDS.LookupLayerProperty( pszLayer, "Exists" );
         if( (pszExists == NULL || strlen(pszExists) == 0)
-            && CSLFindString( poDS->papszLayersToCreate, osSanitizedLayer ) == -1 )
+            && CSLFindString( poDS->papszLayersToCreate, pszLayer ) == -1 )
         {
             poDS->papszLayersToCreate =
-                CSLAddString( poDS->papszLayersToCreate, osSanitizedLayer );
+                CSLAddString( poDS->papszLayersToCreate, pszLayer );
         }
 
-        WriteValue( 8, osSanitizedLayer );
+        WriteValue( 8, pszLayer );
     }
 
     return OGRERR_NONE;
@@ -277,7 +262,7 @@ OGRErr OGRDXFWriterLayer::WriteINSERT( OGRFeature *poFeature )
     if( poTool && poTool->GetType() == OGRSTCSymbol )
     {
         OGRStyleSymbol *poSymbol = (OGRStyleSymbol *) poTool;
-        GBool bDefault;
+        GBool  bDefault;
 
         if( poSymbol->Color(bDefault) != NULL && !bDefault )
             WriteValue( 62, ColorStringToDXFColor( poSymbol->Color(bDefault) ) );
@@ -302,7 +287,7 @@ OGRErr OGRDXFWriterLayer::WriteINSERT( OGRFeature *poFeature )
 /* -------------------------------------------------------------------- */
 /*      Write scaling.                                                  */
 /* -------------------------------------------------------------------- */
-    int nScaleCount = 0;
+    int nScaleCount;
     const double *padfScale =
         poFeature->GetFieldAsDoubleList( "BlockScale", &nScaleCount );
 
@@ -316,7 +301,7 @@ OGRErr OGRDXFWriterLayer::WriteINSERT( OGRFeature *poFeature )
 /* -------------------------------------------------------------------- */
 /*      Write rotation.                                                 */
 /* -------------------------------------------------------------------- */
-    const double dfAngle = poFeature->GetFieldAsDouble( "BlockAngle" );
+    double dfAngle = poFeature->GetFieldAsDouble( "BlockAngle" );
 
     if( dfAngle != 0.0 )
     {
@@ -389,7 +374,10 @@ CPLString OGRDXFWriterLayer::TextEscape( const char *pszInput )
     wchar_t *panInput = CPLRecodeToWChar( pszInput,
                                           CPL_ENC_UTF8,
                                           CPL_ENC_UCS2 );
-    for( int i = 0; panInput[i] != 0; i++ )
+    int i;
+
+
+    for( i = 0; panInput[i] != 0; i++ )
     {
         if( panInput[i] == '\n' )
             osResult += "\\P";
@@ -456,7 +444,7 @@ OGRErr OGRDXFWriterLayer::WriteTEXT( OGRFeature *poFeature )
 /* -------------------------------------------------------------------- */
 /*      Angle                                                           */
 /* -------------------------------------------------------------------- */
-        const double dfAngle = poLabel->Angle(bDefault);
+        double dfAngle = poLabel->Angle(bDefault);
 
         // The DXF2000 reference says this is in radians, but in files
         // I see it seems to be in degrees. Perhaps this is version dependent?
@@ -468,7 +456,7 @@ OGRErr OGRDXFWriterLayer::WriteTEXT( OGRFeature *poFeature )
 /*      doubt the default translation mechanism will be much good.      */
 /* -------------------------------------------------------------------- */
         poTool->SetUnit( OGRSTUGround );
-        const double dfHeight = poLabel->Size(bDefault);
+        double dfHeight = poLabel->Size(bDefault);
 
         if( !bDefault )
             WriteValue( 40, dfHeight );
@@ -476,7 +464,7 @@ OGRErr OGRDXFWriterLayer::WriteTEXT( OGRFeature *poFeature )
 /* -------------------------------------------------------------------- */
 /*      Anchor / Attachment Point                                       */
 /* -------------------------------------------------------------------- */
-        const int nAnchor = poLabel->Anchor(bDefault);
+        int nAnchor = poLabel->Anchor(bDefault);
 
         if( !bDefault )
         {
@@ -517,6 +505,7 @@ OGRErr OGRDXFWriterLayer::WriteTEXT( OGRFeature *poFeature )
     }
 
     return OGRERR_NONE;
+
 }
 
 /************************************************************************/
@@ -526,13 +515,15 @@ CPLString
 OGRDXFWriterLayer::PrepareLineTypeDefinition( CPL_UNUSED OGRFeature *poFeature,
                                               OGRStyleTool *poTool )
 {
+    CPLString osDef;
     OGRStylePen *poPen = (OGRStylePen *) poTool;
     GBool  bDefault;
+    const char *pszPattern;
 
 /* -------------------------------------------------------------------- */
 /*      Fetch pattern.                                                  */
 /* -------------------------------------------------------------------- */
-    const char *pszPattern = poPen->Pattern( bDefault );
+    pszPattern = poPen->Pattern( bDefault );
     if( bDefault || strlen(pszPattern) == 0 )
         return "";
 
@@ -540,18 +531,18 @@ OGRDXFWriterLayer::PrepareLineTypeDefinition( CPL_UNUSED OGRFeature *poFeature,
 /*      Split into pen up / pen down bits.                              */
 /* -------------------------------------------------------------------- */
     char **papszTokens = CSLTokenizeString(pszPattern);
+    int i;
     double dfTotalLength = 0;
-    CPLString osDef;
 
-    for( int i = 0; papszTokens != NULL && papszTokens[i] != NULL; i++ )
+    for( i = 0; papszTokens != NULL && papszTokens[i] != NULL; i++ )
     {
         const char *pszToken = papszTokens[i];
+        const char *pszUnit;
         CPLString osAmount;
         CPLString osDXFEntry;
 
         // Split amount and unit.
-        const char *pszUnit = pszToken;  // Used after for.
-        for( ;
+        for( pszUnit = pszToken;
              strchr( "0123456789.", *pszUnit) != NULL;
              pszUnit++ ) {}
 
@@ -610,9 +601,10 @@ OGRErr OGRDXFWriterLayer::WritePOLYLINE( OGRFeature *poFeature,
         || wkbFlatten(poGeom->getGeometryType()) == wkbMultiLineString )
     {
         OGRGeometryCollection *poGC = (OGRGeometryCollection *) poGeom;
+        int iGeom;
         OGRErr eErr = OGRERR_NONE;
 
-        for( int iGeom = 0;
+        for( iGeom = 0;
              eErr == OGRERR_NONE && iGeom < poGC->getNumGeometries();
              iGeom++ )
         {
@@ -625,14 +617,14 @@ OGRErr OGRDXFWriterLayer::WritePOLYLINE( OGRFeature *poFeature,
 /* -------------------------------------------------------------------- */
 /*      Polygons are written with on entity per ring.                   */
 /* -------------------------------------------------------------------- */
-    if( wkbFlatten(poGeom->getGeometryType()) == wkbPolygon
-        || wkbFlatten(poGeom->getGeometryType()) == wkbTriangle)
+    if( wkbFlatten(poGeom->getGeometryType()) == wkbPolygon )
     {
         OGRPolygon *poPoly = (OGRPolygon *) poGeom;
+        int iGeom;
         OGRErr eErr;
 
         eErr = WritePOLYLINE( poFeature, poPoly->getExteriorRing() );
-        for( int iGeom = 0;
+        for( iGeom = 0;
              eErr == OGRERR_NONE && iGeom < poPoly->getNumInteriorRings();
              iGeom++ )
         {
@@ -710,14 +702,14 @@ OGRErr OGRDXFWriterLayer::WritePOLYLINE( OGRFeature *poFeature,
     if( poTool && poTool->GetType() == OGRSTCPen )
     {
         OGRStylePen *poPen = (OGRStylePen *) poTool;
-        GBool bDefault;
+        GBool  bDefault;
 
         if( poPen->Color(bDefault) != NULL && !bDefault )
             WriteValue( 62, ColorStringToDXFColor( poPen->Color(bDefault) ) );
 
         // we want to fetch the width in ground units.
         poPen->SetUnit( OGRSTUGround, 1.0 );
-        const double dfWidth = poPen->Width(bDefault);
+        double dfWidth = poPen->Width(bDefault);
 
         if( !bDefault )
             WriteValue( 370, (int) floor(dfWidth * 100 + 0.5) );
@@ -728,7 +720,7 @@ OGRErr OGRDXFWriterLayer::WritePOLYLINE( OGRFeature *poFeature,
 /* -------------------------------------------------------------------- */
     CPLString osLineType = poFeature->GetFieldAsString( "Linetype" );
 
-    if( !osLineType.empty()
+    if( osLineType.size() > 0
         && (poDS->oHeaderDS.LookupLineType( osLineType ) != NULL
             || oNewLineTypes.count(osLineType) > 0 ) )
     {
@@ -747,7 +739,7 @@ OGRErr OGRDXFWriterLayer::WritePOLYLINE( OGRFeature *poFeature,
 
             for( it = oNewLineTypes.begin();
                  it != oNewLineTypes.end();
-                 ++it )
+                 it++ )
             {
                 if( (*it).second == osDefinition )
                 {
@@ -786,7 +778,9 @@ OGRErr OGRDXFWriterLayer::WritePOLYLINE( OGRFeature *poFeature,
             return OGRERR_FAILURE;
     }
 
-    for( int iVert = 0; iVert < poLS->getNumPoints(); iVert++ )
+    int iVert;
+
+    for( iVert = 0; iVert < poLS->getNumPoints(); iVert++ )
     {
         if( bHasDifferentZ )
         {
@@ -833,7 +827,9 @@ OGRErr OGRDXFWriterLayer::WritePOLYLINE( OGRFeature *poFeature,
         WriteValue( 70, 0 );
     WriteValue( 66, "1" );
 
-    for( int iVert = 0; iVert < poLS->getNumPoints(); iVert++ )
+    int iVert;
+
+    for( iVert = 0; iVert < poLS->getNumPoints(); iVert++ )
     {
         WriteValue( 0, "VERTEX" );
         WriteValue( 8, "0" );
@@ -878,9 +874,10 @@ OGRErr OGRDXFWriterLayer::WriteHATCH( OGRFeature *poFeature,
     if( wkbFlatten(poGeom->getGeometryType()) == wkbMultiPolygon )
     {
         OGRGeometryCollection *poGC = (OGRGeometryCollection *) poGeom;
+        int iGeom;
         OGRErr eErr = OGRERR_NONE;
 
-        for( int iGeom = 0;
+        for( iGeom = 0;
              eErr == OGRERR_NONE && iGeom < poGC->getNumGeometries();
              iGeom++ )
         {
@@ -893,11 +890,8 @@ OGRErr OGRDXFWriterLayer::WriteHATCH( OGRFeature *poFeature,
 /* -------------------------------------------------------------------- */
 /*      Do we now have a geometry we can work with?                     */
 /* -------------------------------------------------------------------- */
-    if( wkbFlatten(poGeom->getGeometryType()) != wkbPolygon &&
-        wkbFlatten(poGeom->getGeometryType()) != wkbTriangle )
-    {
+    if( wkbFlatten(poGeom->getGeometryType()) != wkbPolygon )
         return OGRERR_UNSUPPORTED_GEOMETRY_TYPE;
-    }
 
 /* -------------------------------------------------------------------- */
 /*      Write as a hatch.                                               */
@@ -966,7 +960,7 @@ OGRErr OGRDXFWriterLayer::WriteHATCH( OGRFeature *poFeature,
 /* -------------------------------------------------------------------- */
     CPLString osLineType = poFeature->GetFieldAsString( "Linetype" );
 
-    if( !osLineType.empty()
+    if( osLineType.size() > 0
         && (poDS->oHeaderDS.LookupLineType( osLineType ) != NULL
             || oNewLineTypes.count(osLineType) > 0 ) )
     {
@@ -1024,9 +1018,12 @@ OGRErr OGRDXFWriterLayer::WriteHATCH( OGRFeature *poFeature,
 
     for( int iRing = -1; iRing < poPoly->getNumInteriorRings(); iRing++ )
     {
-        OGRLinearRing *poLR = iRing == -1
-            ? poPoly->getExteriorRing()
-            : poPoly->getInteriorRing( iRing );
+        OGRLinearRing *poLR;
+
+        if( iRing == -1 )
+            poLR = poPoly->getExteriorRing();
+        else
+            poLR = poPoly->getInteriorRing( iRing );
 
         WriteValue( 92, 2 ); // Polyline
         WriteValue( 72, 0 ); // has bulge
@@ -1062,7 +1059,9 @@ OGRErr OGRDXFWriterLayer::WriteHATCH( OGRFeature *poFeature,
         WriteValue( 70, 0 );
     WriteValue( 66, "1" );
 
-    for( int iVert = 0; iVert < poLS->getNumPoints(); iVert++ )
+    int iVert;
+
+    for( iVert = 0; iVert < poLS->getNumPoints(); iVert++ )
     {
         WriteValue( 0, "VERTEX" );
         WriteValue( 8, "0" );
@@ -1138,8 +1137,7 @@ OGRErr OGRDXFWriterLayer::ICreateFeature( OGRFeature *poFeature )
         return WritePOLYLINE( poFeature );
 
     else if( eGType == wkbPolygon
-             || eGType == wkbTriangle
-             || eGType == wkbMultiPolygon)
+             || eGType == wkbMultiPolygon )
     {
         if( bWriteHatch )
             return WriteHATCH( poFeature );
@@ -1152,7 +1150,9 @@ OGRErr OGRDXFWriterLayer::ICreateFeature( OGRFeature *poFeature )
     {
         OGRGeometryCollection *poGC = (OGRGeometryCollection *)
             poFeature->StealGeometry();
-        for( int iGeom = 0; iGeom < poGC->getNumGeometries(); iGeom++ )
+        int iGeom;
+
+        for( iGeom = 0; iGeom < poGC->getNumGeometries(); iGeom++ )
         {
             poFeature->SetGeometry( poGC->getGeometryRef(iGeom) );
 
@@ -1160,6 +1160,7 @@ OGRErr OGRDXFWriterLayer::ICreateFeature( OGRFeature *poFeature )
 
             if( eErr != OGRERR_NONE )
                 return eErr;
+
         }
 
         poFeature->SetGeometryDirectly( poGC );
@@ -1187,13 +1188,10 @@ int OGRDXFWriterLayer::ColorStringToDXFColor( const char *pszRGB )
     if( pszRGB == NULL )
         return -1;
 
-    unsigned int nRed = 0;
-    unsigned int nGreen = 0;
-    unsigned int nBlue = 0;
-    unsigned int nTransparency = 255;
+    int nRed, nGreen, nBlue, nTransparency = 255;
 
-    const int nCount =
-        sscanf(pszRGB, "#%2x%2x%2x%2x", &nRed, &nGreen, &nBlue, &nTransparency);
+    int nCount  = sscanf(pszRGB,"#%2x%2x%2x%2x",&nRed,&nGreen,&nBlue,
+                         &nTransparency);
 
     if (nCount < 3 )
         return -1;
@@ -1202,15 +1200,15 @@ int OGRDXFWriterLayer::ColorStringToDXFColor( const char *pszRGB )
 /*      Find near color in DXF palette.                                 */
 /* -------------------------------------------------------------------- */
     const unsigned char *pabyDXFColors = ACGetColorTable();
+    int i;
     int nMinDist = 768;
     int nBestColor = -1;
 
-    for( int i = 1; i < 256; i++ )
+    for( i = 1; i < 256; i++ )
     {
-        const int nDist =
-            std::abs(static_cast<int>(nRed) - pabyDXFColors[i*3+0])
-            + std::abs(static_cast<int>(nGreen) - pabyDXFColors[i*3+1])
-            + std::abs(static_cast<int>(nBlue)  - pabyDXFColors[i*3+2]);
+        int nDist = ABS(nRed - pabyDXFColors[i*3+0])
+            + ABS(nGreen - pabyDXFColors[i*3+1])
+            + ABS(nBlue  - pabyDXFColors[i*3+2]);
 
         if( nDist < nMinDist )
         {

@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrwarpedlayer.cpp 32177 2015-12-14 07:25:30Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRWarpedLayer class
@@ -26,11 +27,9 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#ifndef DOXYGEN_SKIP
-
 #include "ogrwarpedlayer.h"
 
-CPL_CVSID("$Id: ogrwarpedlayer.cpp 35933 2016-10-25 16:46:26Z goatbar $");
+CPL_CVSID("$Id: ogrwarpedlayer.cpp 32177 2015-12-14 07:25:30Z goatbar $");
 
 /************************************************************************/
 /*                          OGRWarpedLayer()                            */
@@ -41,20 +40,24 @@ OGRWarpedLayer::OGRWarpedLayer( OGRLayer* poDecoratedLayer,
                                 int bTakeOwnership,
                                 OGRCoordinateTransformation* poCT,
                                 OGRCoordinateTransformation* poReversedCT ) :
-    OGRLayerDecorator(poDecoratedLayer, bTakeOwnership),
-    m_poFeatureDefn(NULL),
-    m_iGeomField(iGeomField),
-    m_poCT(poCT),
-    m_poReversedCT(poReversedCT),
-    m_poSRS(m_poCT->GetTargetCS())
+                                      OGRLayerDecorator(poDecoratedLayer,
+                                                        bTakeOwnership),
+                                      m_iGeomField(iGeomField),
+                                      m_poCT(poCT),
+                                      m_poReversedCT(poReversedCT)
 {
     CPLAssert(poCT != NULL);
     SetDescription( poDecoratedLayer->GetDescription() );
 
-    if( m_poSRS != NULL )
+    m_poFeatureDefn = NULL;
+
+    if( m_poCT->GetTargetCS() != NULL )
     {
+        m_poSRS = m_poCT->GetTargetCS();
         m_poSRS->Reference();
     }
+    else
+        m_poSRS = NULL;
 }
 
 /************************************************************************/
@@ -159,6 +162,7 @@ void OGRWarpedLayer::SetSpatialFilterRect( int iGeomField, double dfMinX, double
     OGRLayer::SetSpatialFilterRect(iGeomField, dfMinX, dfMinY, dfMaxX, dfMaxY);
 }
 
+
 /************************************************************************/
 /*                     SrcFeatureToWarpedFeature()                      */
 /************************************************************************/
@@ -180,6 +184,7 @@ OGRFeature *OGRWarpedLayer::SrcFeatureToWarpedFeature(OGRFeature* poSrcFeature)
 
     return poFeature;
 }
+
 
 /************************************************************************/
 /*                     WarpedFeatureToSrcFeature()                      */
@@ -290,6 +295,7 @@ OGRErr      OGRWarpedLayer::ICreateFeature( OGRFeature *poFeature )
     return eErr;
 }
 
+
 /************************************************************************/
 /*                            GetLayerDefn()                           */
 /************************************************************************/
@@ -376,11 +382,11 @@ OGRErr      OGRWarpedLayer::GetExtent(int iGeomField, OGREnvelope *psExtent, int
 /************************************************************************/
 
 static double TransformAndUpdateBBAndReturnX(
-    OGRCoordinateTransformation* poCT,
-    double dfX, double dfY,
-    double& dfMinX, double& dfMinY, double& dfMaxX, double& dfMaxY )
+                                   OGRCoordinateTransformation* poCT,
+                                   double dfX, double dfY,
+                                   double& dfMinX, double& dfMinY, double& dfMaxX, double& dfMaxY)
 {
-    int bSuccess = FALSE;
+    int bSuccess;
     poCT->TransformEx( 1, &dfX, &dfY, NULL, &bSuccess );
     if( bSuccess )
     {
@@ -390,8 +396,8 @@ static double TransformAndUpdateBBAndReturnX(
         if( dfY > dfMaxY ) dfMaxY = dfY;
         return dfX;
     }
-
-    return 0.0;
+    else
+        return 0.0;
 }
 
 /************************************************************************/
@@ -426,16 +432,16 @@ static void FindXDiscontinuity(OGRCoordinateTransformation* poCT,
 int OGRWarpedLayer::ReprojectEnvelope( OGREnvelope* psEnvelope,
                                        OGRCoordinateTransformation* poCT )
 {
-    const int NSTEP = 20;
+#define NSTEP   20
     double dfXStep = (psEnvelope->MaxX - psEnvelope->MinX) / NSTEP;
     double dfYStep = (psEnvelope->MaxY - psEnvelope->MinY) / NSTEP;
+    int i, j;
+    double *padfX, *padfY;
+    int* pabSuccess;
 
-    double *padfX = (double*)
-        VSI_MALLOC_VERBOSE((NSTEP + 1) * (NSTEP + 1) * sizeof(double));
-    double *padfY = (double*)
-        VSI_MALLOC_VERBOSE((NSTEP + 1) * (NSTEP + 1) * sizeof(double));
-    int* pabSuccess = (int*)
-        VSI_MALLOC_VERBOSE((NSTEP + 1) * (NSTEP + 1) * sizeof(int));
+    padfX = (double*) VSI_MALLOC_VERBOSE((NSTEP + 1) * (NSTEP + 1) * sizeof(double));
+    padfY = (double*) VSI_MALLOC_VERBOSE((NSTEP + 1) * (NSTEP + 1) * sizeof(double));
+    pabSuccess = (int*) VSI_MALLOC_VERBOSE((NSTEP + 1) * (NSTEP + 1) * sizeof(int));
     if( padfX == NULL || padfY == NULL || pabSuccess == NULL)
     {
         VSIFree(padfX);
@@ -444,9 +450,9 @@ int OGRWarpedLayer::ReprojectEnvelope( OGREnvelope* psEnvelope,
         return FALSE;
     }
 
-    for( int j = 0; j <= NSTEP; j++ )
+    for(j = 0; j <= NSTEP; j++)
     {
-        for( int i = 0; i <= NSTEP; i++ )
+        for(i = 0; i <= NSTEP; i++)
         {
             padfX[j * (NSTEP + 1) + i] = psEnvelope->MinX + i * dfXStep;
             padfY[j * (NSTEP + 1) + i] = psEnvelope->MinY + j * dfYStep;
@@ -458,18 +464,14 @@ int OGRWarpedLayer::ReprojectEnvelope( OGREnvelope* psEnvelope,
     if( poCT->TransformEx( (NSTEP + 1) * (NSTEP + 1), padfX, padfY, NULL,
                             pabSuccess ) )
     {
-        double dfMinX = 0.0;
-        double dfMinY = 0.0;
-        double dfMaxX = 0.0;
-        double dfMaxY = 0.0;
+        double dfMinX = 0.0, dfMinY = 0.0, dfMaxX = 0.0, dfMaxY = 0.0;
         int bSet = FALSE;
-        for( int j = 0; j <= NSTEP; j++ )
+        for(j = 0; j <= NSTEP; j++)
         {
             double dfXOld = 0.0;
             double dfDXOld = 0.0;
-            int iOld = -1;
-            int iOldOld = -1;
-            for( int i = 0; i <= NSTEP; i++ )
+            int iOld = -1, iOldOld = -1;
+            for(i = 0; i <= NSTEP; i++)
             {
                 if( pabSuccess[j * (NSTEP + 1) + i] )
                 {
@@ -478,10 +480,8 @@ int OGRWarpedLayer::ReprojectEnvelope( OGREnvelope* psEnvelope,
 
                     if( !bSet )
                     {
-                        dfMinX = dfX;
-                        dfMaxX = dfX;
-                        dfMinY = dfY;
-                        dfMaxY = dfY;
+                        dfMinX = dfMaxX = dfX;
+                        dfMinY = dfMaxY = dfY;
                         bSet = TRUE;
                     }
                     else
@@ -509,6 +509,7 @@ int OGRWarpedLayer::ReprojectEnvelope( OGREnvelope* psEnvelope,
                     dfXOld = dfX;
                     iOldOld = iOld;
                     iOld = i;
+
                 }
             }
         }
@@ -569,5 +570,3 @@ void OGRWarpedLayer::SetExtent( double dfXMin, double dfYMin,
     sStaticEnvelope.MaxX = dfXMax;
     sStaticEnvelope.MaxY = dfYMax;
 }
-
-#endif /* #ifndef DOXYGEN_SKIP */

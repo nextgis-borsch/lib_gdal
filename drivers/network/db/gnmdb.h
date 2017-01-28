@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gnmdb.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id$
  *
  * Project:  GDAL/OGR Geography Network support (Geographic Network Model)
  * Purpose:  GNM db based generic driver.
@@ -36,22 +36,22 @@ class GNMDatabaseNetwork : public GNMGenericNetwork
 public:
     GNMDatabaseNetwork();
     virtual ~GNMDatabaseNetwork();
-    virtual CPLErr Open( GDALOpenInfo* poOpenInfo ) override;
-    virtual OGRErr      DeleteLayer(int) override;
-    virtual CPLErr Create( const char* pszFilename, char** papszOptions ) override;
+    virtual CPLErr Open( GDALOpenInfo* poOpenInfo );
+    virtual OGRErr      DeleteLayer(int);
+    virtual CPLErr Create( const char* pszFilename, char** papszOptions );
 protected:
     virtual OGRLayer   *ICreateLayer( const char *pszName,
                                    OGRSpatialReference *poSpatialRef = NULL,
                                    OGRwkbGeometryType eGType = wkbUnknown,
-                                   char ** papszOptions = NULL ) override;
-    virtual int CheckNetworkExist( const char* pszFilename, char** papszOptions ) override;
+                                   char ** papszOptions = NULL );
+    virtual int CheckNetworkExist( const char* pszFilename, char** papszOptions );
 protected:
-    virtual CPLErr DeleteMetadataLayer() override;
-    virtual CPLErr DeleteGraphLayer() override;
-    virtual CPLErr DeleteFeaturesLayer() override;
-    virtual CPLErr DeleteNetworkLayers() override;
-    virtual CPLErr LoadNetworkLayer(const char* pszLayername) override;
-    virtual bool CheckStorageDriverSupport(const char* pszDriverName) override;
+    virtual CPLErr DeleteMetadataLayer();
+    virtual CPLErr DeleteGraphLayer();
+    virtual CPLErr DeleteFeaturesLayer();
+    virtual CPLErr DeleteNetworkLayers();
+    virtual CPLErr LoadNetworkLayer(const char* pszLayername);
+    virtual bool CheckStorageDriverSupport(const char* pszDriverName);
 protected:
     CPLErr FormName(const char* pszFilename, char** papszOptions);
     CPLErr DeleteLayerByName(const char* pszLayerName);

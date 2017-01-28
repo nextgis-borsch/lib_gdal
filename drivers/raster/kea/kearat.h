@@ -1,5 +1,5 @@
 /*
- * $Id: kearat.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: kearat.h 33720 2016-03-15 00:39:53Z goatbar $
  *  kearat.h
  *
  *  Created by Pete Bunting on 01/08/2012.
@@ -44,41 +44,42 @@ private:
     CPLString osWorkingResult;
 
 public:
-    explicit KEARasterAttributeTable(kealib::KEAAttributeTable *poKEATable);
+    KEARasterAttributeTable(kealib::KEAAttributeTable *poKEATable);
     ~KEARasterAttributeTable();
 
-    GDALDefaultRasterAttributeTable *Clone() const override;
+    GDALDefaultRasterAttributeTable *Clone() const;
 
-    virtual int           GetColumnCount() const override;
+    virtual int           GetColumnCount() const;
 
-    virtual const char   *GetNameOfCol( int ) const override;
-    virtual GDALRATFieldUsage GetUsageOfCol( int ) const override;
-    virtual GDALRATFieldType GetTypeOfCol( int ) const override;
+    virtual const char   *GetNameOfCol( int ) const;
+    virtual GDALRATFieldUsage GetUsageOfCol( int ) const;
+    virtual GDALRATFieldType GetTypeOfCol( int ) const;
 
-    virtual int           GetColOfUsage( GDALRATFieldUsage ) const override;
+    virtual int           GetColOfUsage( GDALRATFieldUsage ) const;
 
-    virtual int           GetRowCount() const override;
+    virtual int           GetRowCount() const;
 
-    virtual const char   *GetValueAsString( int iRow, int iField ) const override;
-    virtual int           GetValueAsInt( int iRow, int iField ) const override;
-    virtual double        GetValueAsDouble( int iRow, int iField ) const override;
+    virtual const char   *GetValueAsString( int iRow, int iField ) const;
+    virtual int           GetValueAsInt( int iRow, int iField ) const;
+    virtual double        GetValueAsDouble( int iRow, int iField ) const;
 
-    virtual void          SetValue( int iRow, int iField, const char *pszValue ) override;
-    virtual void          SetValue( int iRow, int iField, double dfValue) override;
-    virtual void          SetValue( int iRow, int iField, int nValue ) override;
+    virtual void          SetValue( int iRow, int iField, const char *pszValue );
+    virtual void          SetValue( int iRow, int iField, double dfValue);
+    virtual void          SetValue( int iRow, int iField, int nValue );
 
-    virtual CPLErr        ValuesIO(GDALRWFlag eRWFlag, int iField, int iStartRow, int iLength, double *pdfData) override;
-    virtual CPLErr        ValuesIO(GDALRWFlag eRWFlag, int iField, int iStartRow, int iLength, int *pnData) override;
-    virtual CPLErr        ValuesIO(GDALRWFlag eRWFlag, int iField, int iStartRow, int iLength, char **papszStrList) override;
+    virtual CPLErr        ValuesIO(GDALRWFlag eRWFlag, int iField, int iStartRow, int iLength, double *pdfData);
+    virtual CPLErr        ValuesIO(GDALRWFlag eRWFlag, int iField, int iStartRow, int iLength, int *pnData);
+    virtual CPLErr        ValuesIO(GDALRWFlag eRWFlag, int iField, int iStartRow, int iLength, char **papszStrList);
 
-    virtual int           ChangesAreWrittenToFile() override;
-    virtual void          SetRowCount( int iCount ) override;
+    virtual int           ChangesAreWrittenToFile();
+    virtual void          SetRowCount( int iCount );
 
     virtual CPLErr        CreateColumn( const char *pszFieldName,
                                 GDALRATFieldType eFieldType,
-                                GDALRATFieldUsage eFieldUsage ) override;
+                                GDALRATFieldUsage eFieldUsage );
 
-    virtual CPLXMLNode   *Serialize() const override;
+    virtual CPLXMLNode   *Serialize() const;
+
 };
 
 #endif //KEARAT_H

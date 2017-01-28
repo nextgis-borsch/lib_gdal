@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrnasdriver.cpp 32898 2016-01-10 14:44:10Z goatbar $
  *
  * Project:  OGR
  * Purpose:  OGRNASDriver implementation
@@ -31,7 +32,19 @@
 #include "nasreaderp.h"
 #include "ogr_nas.h"
 
-CPL_CVSID("$Id: ogrnasdriver.cpp 35809 2016-10-19 12:08:05Z rouault $");
+CPL_CVSID("$Id: ogrnasdriver.cpp 32898 2016-01-10 14:44:10Z goatbar $");
+
+
+/************************************************************************/
+/*                       OGRNASDriverUnload()                           */
+/************************************************************************/
+
+static void OGRNASDriverUnload(CPL_UNUSED GDALDriver* poDriver)
+{
+    if( NASReader::hMutex != NULL )
+        CPLDestroyMutex( NASReader::hMutex );
+    NASReader::hMutex = NULL;
+}
 
 /************************************************************************/
 /*                     OGRNASDriverIdentify()                           */
@@ -138,6 +151,7 @@ void RegisterOGRNAS()
 
     poDriver->pfnOpen = OGRNASDriverOpen;
     poDriver->pfnIdentify = OGRNASDriverIdentify;
+    poDriver->pfnUnloadDriver = OGRNASDriverUnload;
 
     GetGDALDriverManager()->RegisterDriver( poDriver );
 }

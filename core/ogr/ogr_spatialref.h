@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_spatialref.h 36411 2016-11-21 22:03:48Z rouault $
+ * $Id: ogr_spatialref.h 33631 2016-03-04 06:28:09Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Classes for manipulating spatial reference systems in a
@@ -70,12 +70,9 @@ class CPL_DLL OGR_SRSNode
     OGRErr      importFromWkt( char **, int nRecLevel, int* pnNodes );
 
   public:
-    explicit     OGR_SRSNode(const char * = NULL);
+                OGR_SRSNode(const char * = NULL);
                 ~OGR_SRSNode();
 
-    /** Return whether this is a leaf node.
-     * @return TRUE or FALSE
-     */
     int         IsLeafNode() const { return nChildren == 0; }
 
     int         GetChildCount() const { return nChildren; }
@@ -154,7 +151,7 @@ class CPL_DLL OGRSpatialReference
                                   const char* pszURN);
   public:
                 OGRSpatialReference(const OGRSpatialReference&);
-    explicit    OGRSpatialReference(const char * = NULL);
+                OGRSpatialReference(const char * = NULL);
 
     virtual    ~OGRSpatialReference();
 
@@ -189,10 +186,9 @@ class CPL_DLL OGRSpatialReference
     OGRErr      importFromESRI( char ** );
     OGRErr      importFromPCI( const char *, const char * = NULL,
                                double * = NULL );
-
-#define USGS_ANGLE_DECIMALDEGREES 0     /**< Angle is in decimal degrees. */
-#define USGS_ANGLE_PACKEDDMS      TRUE  /**< Angle is in packed degree minute second. */
-#define USGS_ANGLE_RADIANS        2     /**< Angle is in radians. */
+#define USGS_ANGLE_DECIMALDEGREES 0
+#define USGS_ANGLE_PACKEDDMS      TRUE /* 1 */
+#define USGS_ANGLE_RADIANS        2
     OGRErr      importFromUSGS( long iProjSys, long iZone,
                                 double *padfPrjParams, long iDatum,
                                 int nUSGSAngleFormat = USGS_ANGLE_PACKEDDMS );
@@ -228,10 +224,7 @@ class CPL_DLL OGRSpatialReference
                          OGRAxisOrientation eYAxisOrientation );
 
     // Machinery for accessing parse nodes
-
-    //! Return root node
     OGR_SRSNode *GetRoot() { return poRoot; }
-    //! Return root node
     const OGR_SRSNode *GetRoot() const { return poRoot; }
     void        SetRoot( OGR_SRSNode * );
 
@@ -354,15 +347,13 @@ class CPL_DLL OGRSpatialReference
                        double dfCenterLat, double dfCenterLong,
                        double dfFalseEasting, double dfFalseNorthing );
 
-    /** Eckert I */
+    /** Eckert I-VI */
     OGRErr      SetEckert( int nVariation, double dfCentralMeridian,
                            double dfFalseEasting, double dfFalseNorthing );
 
-    /** Eckert IV */
     OGRErr      SetEckertIV( double dfCentralMeridian,
                              double dfFalseEasting, double dfFalseNorthing );
 
-    /** Eckert VI */
     OGRErr      SetEckertVI( double dfCentralMeridian,
                              double dfFalseEasting, double dfFalseNorthing );
 
@@ -404,14 +395,12 @@ class CPL_DLL OGRSpatialReference
                         double dfScale,
                         double dfFalseEasting, double dfFalseNorthing );
 
-    /**  Hotine Oblique Mercator 2 points */
     OGRErr      SetHOM2PNO( double dfCenterLat,
                             double dfLat1, double dfLong1,
                             double dfLat2, double dfLong2,
                             double dfScale,
                             double dfFalseEasting, double dfFalseNorthing );
 
-    /** Oblique Mercator */
     OGRErr      SetOM( double dfCenterLat, double dfCenterLong,
                        double dfAzimuth, double dfRectToSkew,
                        double dfScale,
@@ -458,12 +447,11 @@ class CPL_DLL OGRSpatialReference
     OGRErr      SetMC( double dfCenterLat, double dfCenterLong,
                        double dfFalseEasting, double dfFalseNorthing );
 
-    /** Mercator 1SP */
+    /** Mercator */
     OGRErr      SetMercator( double dfCenterLat, double dfCenterLong,
                              double dfScale,
                              double dfFalseEasting, double dfFalseNorthing );
 
-    /** Mercator 2SP */
     OGRErr      SetMercator2SP( double dfStdP1,
                                 double dfCenterLat, double dfCenterLong,
                                 double dfFalseEasting, double dfFalseNorthing );
@@ -559,12 +547,9 @@ class CPL_DLL OGRSpatialReference
                                const char *pszOverrideUnitName = NULL,
                                double dfOverrideUnit = 0.0 );
 
-    /** ImportFromESRIStatePlaneWKT */
     OGRErr      ImportFromESRIStatePlaneWKT(
         int nCode, const char* pszDatumName, const char* pszUnitsName,
         int nPCSCode, const char* pszCSName = NULL );
-
-    /** ImportFromESRIWisconsinWKT */
     OGRErr      ImportFromESRIWisconsinWKT(
         const char* pszPrjName, double dfCentralMeridian, double dfLatOfOrigin,
         const char* pszUnitsName, const char* pszCSName = NULL );
@@ -602,12 +587,6 @@ public:
 
     /** Fetch internal target coordinate system. */
     virtual OGRSpatialReference *GetTargetCS() = 0;
-
-    /** Whether the transformer will emit CPLError */
-    virtual bool GetEmitErrors() { return false; }
-
-    /** Set if the transformer must emit CPLError */
-    virtual void SetEmitErrors(bool /*bEmitErrors*/) {}
 
     // From CT_MathTransform
 
@@ -647,6 +626,7 @@ public:
     virtual int TransformEx( int nCount,
                              double *x, double *y, double *z = NULL,
                              int *pabSuccess = NULL ) = 0;
+
 };
 
 OGRCoordinateTransformation CPL_DLL *

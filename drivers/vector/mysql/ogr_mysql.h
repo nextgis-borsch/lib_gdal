@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_mysql.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: ogr_mysql.h 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Declarations for MySQL OGR Driver Classes.
@@ -31,6 +31,7 @@
 
 #ifndef OGR_MYSQL_H_INCLUDED
 #define OGR_MYSQL_H_INCLUDED
+
 
 #ifdef _MSC_VER
 #pragma warning( push )
@@ -94,24 +95,24 @@ class OGRMySQLLayer : public OGRLayer
 
     MYSQL_RES           *hResultSet;
 
-    int                 FetchSRSId();
+	int                 FetchSRSId();
 
   public:
                         OGRMySQLLayer();
     virtual             ~OGRMySQLLayer();
 
-    virtual void        ResetReading() override;
+    virtual void        ResetReading();
 
-    virtual OGRFeature *GetNextFeature() override;
+    virtual OGRFeature *GetNextFeature();
 
-    virtual OGRFeature *GetFeature( GIntBig nFeatureId ) override;
+    virtual OGRFeature *GetFeature( GIntBig nFeatureId );
 
-    OGRFeatureDefn *    GetLayerDefn() override { return poFeatureDefn; }
+    OGRFeatureDefn *    GetLayerDefn() { return poFeatureDefn; }
 
-    virtual OGRSpatialReference *GetSpatialRef() override;
+    virtual OGRSpatialReference *GetSpatialRef();
 
-    virtual const char *GetFIDColumn() override;
-    virtual const char *GetGeometryColumn() override;
+    virtual const char *GetFIDColumn();
+    virtual const char *GetGeometryColumn();
 
     /* custom methods */
     virtual OGRFeature *RecordToFeature( char **papszRow, unsigned long * );
@@ -128,9 +129,9 @@ class OGRMySQLTableLayer : public OGRMySQLLayer
 
     OGRFeatureDefn     *ReadTableDefinition(const char *);
 
-    void                BuildWhere();
-    char               *BuildFields();
-    void                BuildFullQueryStatement();
+    void                BuildWhere(void);
+    char               *BuildFields(void);
+    void                BuildFullQueryStatement(void);
 
     char                *pszQuery;
     char                *pszWHERE;
@@ -140,36 +141,36 @@ class OGRMySQLTableLayer : public OGRMySQLLayer
 
   public:
                         OGRMySQLTableLayer( OGRMySQLDataSource *,
-                                            const char * pszName,
-                                            int bUpdate, int nSRSId = -2 );
-                        virtual ~OGRMySQLTableLayer();
+                                         const char * pszName,
+                                         int bUpdate, int nSRSId = -2 );
+                        ~OGRMySQLTableLayer();
 
     OGRErr              Initialize(const char* pszTableName);
 
-    virtual OGRFeature *GetFeature( GIntBig nFeatureId ) override;
-    virtual void        ResetReading() override;
-    virtual GIntBig     GetFeatureCount( int ) override;
+    virtual OGRFeature *GetFeature( GIntBig nFeatureId );
+    virtual void        ResetReading();
+    virtual GIntBig     GetFeatureCount( int );
 
-    void                SetSpatialFilter( OGRGeometry * ) override;
-    virtual void        SetSpatialFilter( int iGeomField, OGRGeometry *poGeom ) override
+    void                SetSpatialFilter( OGRGeometry * );
+    virtual void        SetSpatialFilter( int iGeomField, OGRGeometry *poGeom )
                 { OGRLayer::SetSpatialFilter(iGeomField, poGeom); }
 
-    virtual OGRErr      SetAttributeFilter( const char * ) override;
-    virtual OGRErr      ICreateFeature( OGRFeature *poFeature ) override;
-    virtual OGRErr      DeleteFeature( GIntBig nFID ) override;
-    virtual OGRErr      ISetFeature( OGRFeature *poFeature ) override;
+    virtual OGRErr      SetAttributeFilter( const char * );
+    virtual OGRErr      ICreateFeature( OGRFeature *poFeature );
+    virtual OGRErr      DeleteFeature( GIntBig nFID );
+    virtual OGRErr      ISetFeature( OGRFeature *poFeature );
 
     virtual OGRErr      CreateField( OGRFieldDefn *poField,
-                                     int bApproxOK = TRUE ) override;
+                                     int bApproxOK = TRUE );
 
     void                SetLaunderFlag( int bFlag )
                                 { bLaunderColumnNames = bFlag; }
     void                SetPrecisionFlag( int bFlag )
                                 { bPreservePrecision = bFlag; }
 
-    virtual int         TestCapability( const char * ) override;
-    virtual OGRErr      GetExtent(OGREnvelope *psExtent, int bForce = TRUE) override;
-    virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce) override
+    virtual int         TestCapability( const char * );
+    virtual OGRErr      GetExtent(OGREnvelope *psExtent, int bForce = TRUE);
+    virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce)
                 { return OGRLayer::GetExtent(iGeomField, psExtent, bForce); }
 };
 
@@ -179,9 +180,12 @@ class OGRMySQLTableLayer : public OGRMySQLLayer
 
 class OGRMySQLResultLayer : public OGRMySQLLayer
 {
-    void                BuildFullQueryStatement();
+    void                BuildFullQueryStatement(void);
 
     char                *pszRawStatement;
+
+    // Layer srid.
+    int                 nSRSId;
 
   public:
                         OGRMySQLResultLayer( OGRMySQLDataSource *,
@@ -191,10 +195,11 @@ class OGRMySQLResultLayer : public OGRMySQLLayer
 
     OGRFeatureDefn     *ReadResultDefinition();
 
-    virtual void        ResetReading() override;
-    virtual GIntBig     GetFeatureCount( int ) override;
 
-    virtual int         TestCapability( const char * ) override;
+    virtual void        ResetReading();
+    virtual GIntBig     GetFeatureCount( int );
+
+    virtual int         TestCapability( const char * );
 };
 
 /************************************************************************/
@@ -212,7 +217,7 @@ class OGRMySQLDataSource : public OGRDataSource
 
     MYSQL              *hConn;
 
-    OGRErr              DeleteLayer( int iLayer ) override;
+    OGRErr              DeleteLayer( int iLayer );
 
     // We maintain a list of known SRID to reduce the number of trips to
     // the database to get SRSes.
@@ -224,9 +229,10 @@ class OGRMySQLDataSource : public OGRDataSource
 
   public:
                         OGRMySQLDataSource();
-                        virtual ~OGRMySQLDataSource();
+                        ~OGRMySQLDataSource();
 
     MYSQL              *GetConn() { return hConn; }
+
 
     int                 FetchSRSId( OGRSpatialReference * poSRS );
 
@@ -237,21 +243,22 @@ class OGRMySQLDataSource : public OGRDataSource
     int                 Open( const char *, char** papszOpenOptions, int bUpdate );
     int                 OpenTable( const char *, int bUpdate );
 
-    const char          *GetName() override { return pszName; }
-    int                 GetLayerCount() override { return nLayers; }
-    OGRLayer            *GetLayer( int ) override;
+    const char          *GetName() { return pszName; }
+    int                 GetLayerCount() { return nLayers; }
+    OGRLayer            *GetLayer( int );
 
     virtual OGRLayer    *ICreateLayer( const char *,
                                       OGRSpatialReference * = NULL,
                                       OGRwkbGeometryType = wkbUnknown,
-                                      char ** = NULL ) override;
+                                      char ** = NULL );
 
-    int                 TestCapability( const char * ) override;
+
+    int                 TestCapability( const char * );
 
     virtual OGRLayer *  ExecuteSQL( const char *pszSQLCommand,
                                     OGRGeometry *poSpatialFilter,
-                                    const char *pszDialect ) override;
-    virtual void        ReleaseResultSet( OGRLayer * poLayer ) override;
+                                    const char *pszDialect );
+    virtual void        ReleaseResultSet( OGRLayer * poLayer );
 
     // nonstandard
 

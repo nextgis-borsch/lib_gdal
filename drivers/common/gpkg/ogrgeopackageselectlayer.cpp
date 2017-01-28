@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrgeopackageselectlayer.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  GeoPackage Translator
  * Purpose:  Implements OGRGeoPackageSelectLayer class
@@ -28,8 +29,6 @@
 
 #include "ogr_geopackage.h"
 
-CPL_CVSID("$Id: ogrgeopackageselectlayer.cpp 35503 2016-09-23 18:22:45Z goatbar $");
-
 /************************************************************************/
 /*                        OGRGeoPackageSelectLayer()                    */
 /************************************************************************/
@@ -38,23 +37,19 @@ OGRGeoPackageSelectLayer::OGRGeoPackageSelectLayer( GDALGeoPackageDataset *poDS,
                                             CPLString osSQLIn,
                                             sqlite3_stmt *hStmtIn,
                                             int bUseStatementForGetNextFeature,
-                                            int bEmptyLayer ) :
-    OGRGeoPackageLayer(poDS)
-{
-    // Cannot be moved to initializer list because of use of this, which MSVC 2008 doesn't like
-    poBehaviour = new OGRSQLiteSelectLayerCommonBehaviour(poDS, this, osSQLIn, bEmptyLayer);
+                                            int bEmptyLayer ) : OGRGeoPackageLayer(poDS)
 
+{
+    poBehaviour = new OGRSQLiteSelectLayerCommonBehaviour(poDS, this, osSQLIn, bEmptyLayer);
     BuildFeatureDefn( "SELECT", hStmtIn );
 
     if( bUseStatementForGetNextFeature )
     {
         m_poQueryStatement = hStmtIn;
-        bDoStep = false;
+        bDoStep = FALSE;
     }
     else
-    {
         sqlite3_finalize( hStmtIn );
-    }
 }
 
 /************************************************************************/
@@ -100,19 +95,20 @@ GIntBig OGRGeoPackageSelectLayer::GetFeatureCount( int bForce )
 OGRErr OGRGeoPackageSelectLayer::ResetStatement()
 
 {
+    int rc;
+
     ClearStatement();
 
     iNextShapeId = 0;
-    bDoStep = true;
+    bDoStep = TRUE;
 
 #ifdef DEBUG
     CPLDebug( "OGR_GPKG", "prepare(%s)", poBehaviour->osSQLCurrent.c_str() );
 #endif
 
-    const int rc =
-        sqlite3_prepare( m_poDS->GetDB(), poBehaviour->osSQLCurrent,
-                         static_cast<int>(poBehaviour->osSQLCurrent.size()),
-                         &m_poQueryStatement, NULL );
+    rc = sqlite3_prepare( m_poDS->GetDB(), poBehaviour->osSQLCurrent,
+                          static_cast<int>(poBehaviour->osSQLCurrent.size()),
+                          &m_poQueryStatement, NULL );
 
     if( rc == SQLITE_OK )
     {

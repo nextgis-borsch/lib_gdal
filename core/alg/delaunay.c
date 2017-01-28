@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: delaunay.c 36493 2016-11-24 20:53:30Z rouault $
+ * $Id: delaunay.c 33715 2016-03-13 08:52:06Z goatbar $
  *
  * Project:  GDAL algorithms
  * Purpose:  Delaunay triangulation
@@ -50,7 +50,7 @@
 #include <ctype.h>
 #include <math.h>
 
-CPL_CVSID("$Id: delaunay.c 36493 2016-11-24 20:53:30Z rouault $");
+CPL_CVSID("$Id: delaunay.c 33715 2016-03-13 08:52:06Z goatbar $");
 
 #if defined(INTERNAL_QHULL) || defined(EXTERNAL_QHULL)
 #define HAVE_INTERNAL_OR_EXTERNAL_QHULL 1
@@ -63,16 +63,8 @@ CPL_CVSID("$Id: delaunay.c 36493 2016-11-24 20:53:30Z rouault $");
 
 #else /* INTERNAL_QHULL */
 
-#if !defined(QHULL_INCLUDE_SUBDIR_IS_LIBQHULL)
 #include "libqhull.h"
 #include "qset.h"
-#elif QHULL_INCLUDE_SUBDIR_IS_LIBQHULL
-#include "libqhull/libqhull.h"
-#include "libqhull/qset.h"
-#else
-#include "qhull/libqhull.h"
-#include "qhull/qset.h"
-#endif
 
 #endif /* INTERNAL_QHULL */
 
@@ -170,14 +162,6 @@ GDALTriangulation* GDALTriangulationCreateDelaunay(int nPoints,
 
     VSIFree(points);
     points = NULL;
-
-#if qh_QHpointer  /* see user.h */
-    if (qh_qh == NULL)
-    {
-        CPLReleaseMutex(hMutex);
-        return NULL;
-    }
-#endif
 
     /* Establish a map from QHull facet id to the index in our array of sequential facets */
     panMapQHFacetIdToFacetIdx = (int*)VSI_MALLOC2_VERBOSE(sizeof(int), qh facet_id);
@@ -342,12 +326,6 @@ int  GDALTriangulationComputeBarycentricCoefficients(GDALTriangulation* psDT,
 /*               GDALTriangulationComputeBarycentricCoordinates()       */
 /************************************************************************/
 
-#define BARYC_COORD_L1(psCoeffs, dfX, dfY) \
-        (psCoeffs->dfMul1X * ((dfX) - psCoeffs->dfCstX) + psCoeffs->dfMul1Y * ((dfY) - psCoeffs->dfCstY))
-#define BARYC_COORD_L2(psCoeffs, dfX, dfY) \
-        (psCoeffs->dfMul2X * ((dfX) - psCoeffs->dfCstX) + psCoeffs->dfMul2Y * ((dfY) - psCoeffs->dfCstY))
-#define BARYC_COORD_L3(l1, l2)  (1 - (l1) - (l2))
-
 /** Computes the barycentric coordinates of a point.
  *
  * @param psDT triangulation.
@@ -362,6 +340,12 @@ int  GDALTriangulationComputeBarycentricCoefficients(GDALTriangulation* psDT,
  *
  * @since GDAL 2.1
  */
+
+#define BARYC_COORD_L1(psCoeffs, dfX, dfY) \
+        (psCoeffs->dfMul1X * ((dfX) - psCoeffs->dfCstX) + psCoeffs->dfMul1Y * ((dfY) - psCoeffs->dfCstY))
+#define BARYC_COORD_L2(psCoeffs, dfX, dfY) \
+        (psCoeffs->dfMul2X * ((dfX) - psCoeffs->dfCstX) + psCoeffs->dfMul2Y * ((dfY) - psCoeffs->dfCstY))
+#define BARYC_COORD_L3(l1, l2)  (1 - (l1) - (l2))
 
 int  GDALTriangulationComputeBarycentricCoordinates(const GDALTriangulation* psDT,
                                                     int nFacetIdx,

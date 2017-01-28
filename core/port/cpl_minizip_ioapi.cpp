@@ -9,6 +9,7 @@
    Original licence available in port/LICENCE_minizip
 */
 
+
 /* ioapi.c -- IO base function header for compress/uncompress .zip
    files using zlib + zip or unzip API
 
@@ -17,27 +18,17 @@
    Copyright (C) 1998-2005 Gilles Vollant
 */
 
-#include "cpl_port.h"
-#include "cpl_minizip_ioapi.h"
+#include "cpl_vsi.h"
 
-#include <cstddef>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#if HAVE_FCNTL_H
-#include <fcntl.h>
-#endif
 
-#include "cpl_minizip_ioapi.h"
-#include "cpl_vsi.h"
-#include "zconf.h"
 #include "zlib.h"
-
-CPL_CVSID("$Id: cpl_minizip_ioapi.cpp 36848 2016-12-13 14:31:42Z goatbar $");
+#include "cpl_minizip_ioapi.h"
 
 static
-voidpf ZCALLBACK fopen_file_func ( voidpf /* opaque */ ,
-                                   const char* filename, int mode )
+voidpf ZCALLBACK fopen_file_func (CPL_UNUSED voidpf opaque, const char* filename, int mode)
 {
     VSILFILE* file = NULL;
     const char* mode_fopen = NULL;
@@ -56,27 +47,23 @@ voidpf ZCALLBACK fopen_file_func ( voidpf /* opaque */ ,
 }
 
 static
-uLong ZCALLBACK fread_file_func ( voidpf /* opaque */, voidpf stream,
-                                  void* buf, uLong size )
+uLong ZCALLBACK fread_file_func (CPL_UNUSED voidpf opaque, voidpf stream, void* buf, uLong size)
 {
-    uLong ret =
-        static_cast<uLong>(VSIFReadL(buf, 1, static_cast<size_t>(size),
-                                     static_cast<VSILFILE *>(stream)));
+    uLong ret;
+    ret = (uLong)VSIFReadL(buf, 1, (size_t)size, (VSILFILE *)stream);
     return ret;
 }
 
 static
-uLong ZCALLBACK fwrite_file_func ( voidpf /* opaque */, voidpf stream,
-                                   const void* buf, uLong size )
+uLong ZCALLBACK fwrite_file_func (CPL_UNUSED voidpf opaque, voidpf stream, const void* buf, uLong size)
 {
-    uLong ret =
-        static_cast<uLong>(VSIFWriteL(buf, 1, static_cast<size_t>(size),
-                                      static_cast<VSILFILE *>(stream)));
+    uLong ret;
+    ret = (uLong)VSIFWriteL(buf, 1, (size_t)size, (VSILFILE *)stream);
     return ret;
 }
 
 static
-uLong64 ZCALLBACK ftell_file_func ( voidpf /* opaque */, voidpf stream )
+uLong64 ZCALLBACK ftell_file_func (CPL_UNUSED voidpf opaque, voidpf stream)
 {
     uLong64 ret;
     ret = VSIFTellL((VSILFILE *)stream);
@@ -84,8 +71,7 @@ uLong64 ZCALLBACK ftell_file_func ( voidpf /* opaque */, voidpf stream )
 }
 
 static
-long ZCALLBACK fseek_file_func ( voidpf /* opaque */, voidpf stream,
-                                 uLong64 offset, int origin )
+long ZCALLBACK fseek_file_func (CPL_UNUSED voidpf  opaque, voidpf stream, uLong64 offset, int origin)
 {
     int fseek_origin=0;
     switch (origin)
@@ -105,15 +91,18 @@ long ZCALLBACK fseek_file_func ( voidpf /* opaque */, voidpf stream,
 }
 
 static
-int ZCALLBACK fclose_file_func ( voidpf /* opaque */, voidpf stream )
+int ZCALLBACK fclose_file_func (CPL_UNUSED voidpf opaque, voidpf stream)
 {
     return VSIFCloseL((VSILFILE *)stream);
 }
 
 static
-int ZCALLBACK ferror_file_func ( voidpf /* opaque */, voidpf /* stream */ )
+int ZCALLBACK ferror_file_func (CPL_UNUSED voidpf opaque,
+                                CPL_UNUSED voidpf stream)
 {
-    // ret = ferror((FILE *)stream);
+    // int ret;
+    // ret = 0; // FIXME
+    //ret = ferror((FILE *)stream);
     return 0;
 }
 

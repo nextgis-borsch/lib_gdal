@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: netcdfdataset.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: netcdfdataset.h 33794 2016-03-26 13:19:07Z goatbar $
  *
  * Project:  netCDF read/write Driver
  * Purpose:  GDAL bindings over netCDF library.
@@ -42,7 +42,7 @@
 
 /************************************************************************/
 /* ==================================================================== */
-/*                           defines                                    */
+/*			     defines    		                             		*/
 /* ==================================================================== */
 /************************************************************************/
 
@@ -126,6 +126,7 @@ __FILE__, __FUNCTION__, __LINE__ ); }
 #endif
 #endif
 
+
 /* -------------------------------------------------------------------- */
 /*       CF-1 or NUG (NetCDF User's Guide) defs                         */
 /* -------------------------------------------------------------------- */
@@ -162,6 +163,7 @@ __FILE__, __FUNCTION__, __LINE__ ); }
 #define CF_AXIS            "axis"
 /* #define CF_BOUNDS          "bounds" */
 /* #define CF_ORIG_UNITS      "original_units" */
+
 
 /* -------------------------------------------------------------------- */
 /*      CF-1 convention standard variables related to                   */
@@ -212,6 +214,7 @@ __FILE__, __FUNCTION__, __LINE__ ); }
 #define CF_PP_VERT_PERSP             "vertical_perspective" /*not used yet */
 #define CF_PP_PERSPECTIVE_POINT_HEIGHT "perspective_point_height"
 #define CF_PP_SWEEP_ANGLE_AXIS        "sweep_angle_axis"
+
 
 /* -------------------------------------------------------------------- */
 /*         CF-1 Coordinate Type Naming (Chapter 4.  Coordinate Types )  */
@@ -264,6 +267,7 @@ static const char* const papszCFTimeUnitsValues[] = {
     "minutes since", "minute since", "min since",
     "seconds since", "second since", "sec since", "s since",
     NULL };
+
 
 /* -------------------------------------------------------------------- */
 /*         CF-1 to GDAL mappings                                        */
@@ -450,6 +454,7 @@ static const oNetcdfSRS_PP poLCEAMappings[] = {
 //
 // NB: handled as a special case - !isProjected()
 
+
 // Mercator
 //
 // grid_mapping_name = mercator
@@ -476,9 +481,9 @@ static const oNetcdfSRS_PP poM1SPMappings[] = {
 static const oNetcdfSRS_PP poM2SPMappings[] = {
     {CF_PP_LON_PROJ_ORIGIN, SRS_PP_CENTRAL_MERIDIAN},
     {CF_PP_STD_PARALLEL_1, SRS_PP_STANDARD_PARALLEL_1},
-    // From best understanding of this projection, only
-    // actually specify one SP - it is the same N/S of equator.
-    // {CF_PP_STD_PARALLEL_2, SRS_PP_LATITUDE_OF_ORIGIN},
+    //From best understanding of this projection, only
+ 	// actually specify one SP - it is the same N/S of equator.
+    //{CF_PP_STD_PARALLEL_2, SRS_PP_LATITUDE_OF_ORIGIN},
     {CF_PP_FALSE_EASTING, SRS_PP_FALSE_EASTING },
     {CF_PP_FALSE_NORTHING, SRS_PP_FALSE_NORTHING },
     {NULL, NULL}
@@ -620,6 +625,7 @@ static const oNetcdfSRS_PP poTMMappings[] = {
 //
 // TODO: see how to map this to OGR
 
+
 static const oNetcdfSRS_PP poGEOSMappings[] = {
     {CF_PP_LON_PROJ_ORIGIN, SRS_PP_CENTRAL_MERIDIAN},
     {CF_PP_PERSPECTIVE_POINT_HEIGHT, SRS_PP_SATELLITE_HEIGHT},
@@ -628,6 +634,8 @@ static const oNetcdfSRS_PP poGEOSMappings[] = {
     /* { CF_PP_SWEEP_ANGLE_AXIS, .... } handled as a proj.4 extension */
     {NULL, NULL}
   };
+
+
 
 /* Mappings for various projections, including netcdf and GDAL projection names
    and corresponding oNetcdfSRS_PP mapping struct.
@@ -835,12 +843,12 @@ class netCDFDataset : public GDALPamDataset
 
   protected:
 
-    CPLXMLNode *SerializeToXML( const char *pszVRTPath ) override;
+    CPLXMLNode *SerializeToXML( const char *pszVRTPath );
 
     virtual OGRLayer   *ICreateLayer( const char *pszName,
                                      OGRSpatialReference *poSpatialRef,
                                      OGRwkbGeometryType eGType,
-                                     char ** papszOptions ) override;
+                                     char ** papszOptions );
 
   public:
 
@@ -848,18 +856,18 @@ class netCDFDataset : public GDALPamDataset
     virtual ~netCDFDataset();
 
     /* Projection/GT */
-    CPLErr      GetGeoTransform( double * ) override;
-    CPLErr      SetGeoTransform (double *) override;
-    const char * GetProjectionRef() override;
-    CPLErr      SetProjection (const char *) override;
+    CPLErr 	GetGeoTransform( double * );
+    CPLErr 	SetGeoTransform (double *);
+    const char * GetProjectionRef();
+    CPLErr 	SetProjection (const char *);
 
-    virtual char      **GetMetadataDomainList() override;
-    char ** GetMetadata( const char * ) override;
+    virtual char      **GetMetadataDomainList();
+    char ** GetMetadata( const char * );
 
-    virtual int  TestCapability(const char* pszCap) override;
+    virtual int  TestCapability(const char* pszCap);
 
-    virtual int  GetLayerCount() override { return nLayers; }
-    virtual OGRLayer* GetLayer(int nIdx) override;
+    virtual int  GetLayerCount() { return nLayers; }
+    virtual OGRLayer* GetLayer(int nIdx);
 
     int GetCDFID() { return cdfid; }
 
@@ -979,17 +987,17 @@ class netCDFLayer: public OGRLayer
         int             GetCDFID() const { return m_nLayerCDFId; }
         void            SetCDFID(int nId) { m_nLayerCDFId = nId; }
 
-        virtual void ResetReading() override;
-        virtual OGRFeature* GetNextFeature() override;
+        virtual void ResetReading();
+        virtual OGRFeature* GetNextFeature();
 
-        virtual GIntBig GetFeatureCount(int bForce) override;
+        virtual GIntBig GetFeatureCount(int bForce);
 
-        virtual int  TestCapability(const char* pszCap) override;
+        virtual int  TestCapability(const char* pszCap);
 
-        virtual OGRFeatureDefn* GetLayerDefn() override;
+        virtual OGRFeatureDefn* GetLayerDefn();
 
-        virtual OGRErr ICreateFeature(OGRFeature* poFeature) override;
-        virtual OGRErr CreateField(OGRFieldDefn* poFieldDefn, int bApproxOK) override;
+        virtual OGRErr ICreateFeature(OGRFeature* poFeature);
+        virtual OGRErr CreateField(OGRFieldDefn* poFieldDefn, int bApproxOK);
 };
 
 void NCDFWriteLonLatVarsAttributes(int cdfid, int nVarLonID, int nVarLatID);

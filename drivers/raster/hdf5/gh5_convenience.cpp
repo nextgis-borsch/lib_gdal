@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: gh5_convenience.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  Hierarchical Data Format Release 5 (HDF5)
  * Purpose:  HDF5 convenience functions.
@@ -28,7 +29,7 @@
 
 #include "gh5_convenience.h"
 
-CPL_CVSID("$Id: gh5_convenience.cpp 34593 2016-07-07 22:33:32Z goatbar $");
+CPL_CVSID("$Id: gh5_convenience.cpp 33720 2016-03-15 00:39:53Z goatbar $");
 
 /************************************************************************/
 /*                    GH5_FetchAttribute(CPLString)                     */
@@ -38,6 +39,8 @@ bool GH5_FetchAttribute( hid_t loc_id, const char *pszAttrName,
                         CPLString &osResult, bool bReportError )
 
 {
+    bool retVal = false;
+
     hid_t hAttr = H5Aopen_name( loc_id, pszAttrName );
 
     osResult.clear();
@@ -54,25 +57,24 @@ bool GH5_FetchAttribute( hid_t loc_id, const char *pszAttrName,
     hid_t hAttrTypeID      = H5Aget_type( hAttr );
     hid_t hAttrNativeType  = H5Tget_native_type( hAttrTypeID, H5T_DIR_DEFAULT );
 
-    bool retVal = false;
     if( H5Tget_class( hAttrNativeType ) == H5T_STRING )
     {
-        const size_t nAttrSize = H5Tget_size( hAttrTypeID );
-        char *pachBuffer = static_cast<char *>( CPLCalloc(nAttrSize+1, 1) );
-        H5Aread( hAttr, hAttrNativeType, pachBuffer );
+	size_t nAttrSize = H5Tget_size( hAttrTypeID );
+        char *pachBuffer = (char *) CPLCalloc(nAttrSize+1,1);
+	H5Aread( hAttr, hAttrNativeType, pachBuffer );
 
         osResult = pachBuffer;
         CPLFree( pachBuffer );
 
         retVal = true;
     }
+
     else
     {
         if( bReportError )
-            CPLError(
-                CE_Failure, CPLE_AppDefined,
-                "Attribute %s of unsupported type for conversion to string.",
-                pszAttrName );
+            CPLError( CE_Failure, CPLE_AppDefined,
+                      "Attribute %s of unsupported type for conversion to string.",
+                      pszAttrName );
 
         retVal = false;
     }
@@ -91,7 +93,7 @@ bool GH5_FetchAttribute( hid_t loc_id, const char *pszAttrName,
                          double &dfResult, bool bReportError )
 
 {
-    const hid_t hAttr = H5Aopen_name( loc_id, pszAttrName );
+    hid_t hAttr = H5Aopen_name( loc_id, pszAttrName );
 
     dfResult = 0.0;
     if( hAttr < 0 )
@@ -182,19 +184,19 @@ bool GH5_FetchAttribute( hid_t loc_id, const char *pszAttrName,
 GDALDataType GH5_GetDataType(hid_t TypeID)
 {
     if( H5Tequal( H5T_NATIVE_CHAR,        TypeID ) )
-        return GDT_Byte;
+	return GDT_Byte;
     else if( H5Tequal( H5T_NATIVE_SCHAR,  TypeID ) )
-        return GDT_Byte;
+	return GDT_Byte;
     else if( H5Tequal( H5T_NATIVE_UCHAR,  TypeID ) )
-        return GDT_Byte;
+	return GDT_Byte;
     else if( H5Tequal( H5T_NATIVE_SHORT,  TypeID ) )
-        return GDT_Int16;
+	return GDT_Int16;
     else if( H5Tequal( H5T_NATIVE_USHORT, TypeID ) )
-        return GDT_UInt16;
+	return GDT_UInt16;
     else if( H5Tequal( H5T_NATIVE_INT,    TypeID ) )
-        return GDT_Int32;
+	return GDT_Int32;
     else if( H5Tequal( H5T_NATIVE_UINT,   TypeID ) )
-        return GDT_UInt32;
+	return GDT_UInt32;
     else if( H5Tequal( H5T_NATIVE_LONG,   TypeID ) )
     {
         if( sizeof(long) == 4 )
@@ -210,15 +212,15 @@ GDALDataType GH5_GetDataType(hid_t TypeID)
             return GDT_Unknown;
     }
     else if( H5Tequal( H5T_NATIVE_FLOAT,  TypeID ) )
-        return GDT_Float32;
+	return GDT_Float32;
     else if( H5Tequal( H5T_NATIVE_DOUBLE, TypeID ) )
-        return GDT_Float64;
+	return GDT_Float64;
     else if( H5Tequal( H5T_NATIVE_LLONG,  TypeID ) )
-        return GDT_Unknown;
+	return GDT_Unknown;
     else if( H5Tequal( H5T_NATIVE_ULLONG, TypeID ) )
-        return GDT_Unknown;
+	return GDT_Unknown;
     else if( H5Tequal( H5T_NATIVE_DOUBLE, TypeID ) )
-        return GDT_Unknown;
+	return GDT_Unknown;
 
     return GDT_Unknown;
 }

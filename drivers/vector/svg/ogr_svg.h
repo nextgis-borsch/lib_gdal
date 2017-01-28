@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_svg.h 36569 2016-11-30 13:04:32Z goatbar $
+ * $Id: ogr_svg.h 32177 2015-12-14 07:25:30Z goatbar $
  *
  * Project:  SVG Translator
  * Purpose:  Definition of classes for OGR .svg driver.
@@ -53,16 +53,14 @@ class OGRSVGLayer : public OGRLayer
 {
     OGRFeatureDefn*    poFeatureDefn;
     OGRSpatialReference *poSRS;
-#ifdef HAVE_EXPAT
     OGRSVGDataSource*  poDS;
-#endif
     CPLString          osLayerName;
 
     SVGGeometryType    svgGeomType;
 
     int                nTotalFeatures;
     int                nNextFID;
-    VSILFILE*          fpSVG;  // Large file API.
+    VSILFILE*          fpSVG; /* Large file API */
 
 #ifdef HAVE_EXPAT
     XML_Parser         oParser;
@@ -79,9 +77,9 @@ class OGRSVGLayer : public OGRLayer
 
     int                depthLevel;
     int                interestingDepthLevel;
-    bool               inInterestingElement;
+    int                inInterestingElement;
 
-    bool               bStopParsing;
+    int                bStopParsing;
 #ifdef HAVE_EXPAT
     int                nWithoutEventCounter;
     int                nDataHandlerCounter;
@@ -97,19 +95,19 @@ class OGRSVGLayer : public OGRLayer
                                     const char* layerName,
                                     SVGGeometryType svgGeomType,
                                     OGRSVGDataSource* poDS);
-                        virtual ~OGRSVGLayer();
+                        ~OGRSVGLayer();
 
-    virtual void                ResetReading() override;
-    virtual OGRFeature *        GetNextFeature() override;
+    virtual void                ResetReading();
+    virtual OGRFeature *        GetNextFeature();
 
-    virtual const char*         GetName() override { return osLayerName.c_str(); }
-    virtual OGRwkbGeometryType  GetGeomType() override;
+    virtual const char*         GetName() { return osLayerName.c_str(); }
+    virtual OGRwkbGeometryType  GetGeomType();
 
-    virtual GIntBig             GetFeatureCount( int bForce = TRUE ) override;
+    virtual GIntBig             GetFeatureCount( int bForce = TRUE );
 
-    virtual OGRFeatureDefn *    GetLayerDefn() override;
+    virtual OGRFeatureDefn *    GetLayerDefn();
 
-    virtual int                 TestCapability( const char * ) override;
+    virtual int                 TestCapability( const char * );
 
 #ifdef HAVE_EXPAT
     void                startElementCbk(const char *pszName, const char **ppszAttr);
@@ -149,16 +147,17 @@ class OGRSVGDataSource : public OGRDataSource
 
   public:
                         OGRSVGDataSource();
-                        virtual ~OGRSVGDataSource();
+                        ~OGRSVGDataSource();
 
     int                 Open( const char * pszFilename );
 
-    virtual const char*         GetName() override { return pszName; }
+    virtual const char*         GetName() { return pszName; }
 
-    virtual int                 GetLayerCount() override { return nLayers; }
-    virtual OGRLayer*           GetLayer( int ) override;
+    virtual int                 GetLayerCount() { return nLayers; }
+    virtual OGRLayer*           GetLayer( int );
 
-    virtual int                 TestCapability( const char * ) override;
+    virtual int                 TestCapability( const char * );
+
 
 #ifdef HAVE_EXPAT
     void                startElementValidateCbk(const char *pszName, const char **ppszAttr);

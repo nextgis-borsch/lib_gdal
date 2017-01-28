@@ -11,7 +11,6 @@ int dec_png(unsigned char *pngbuf,g2int *width,g2int *height,char *cout){return 
 struct png_stream {
    unsigned char *stream_ptr;     /*  location to write PNG stream  */
    g2int stream_len;               /*  number of bytes written       */
-   g2int stream_total_len;
 };
 typedef struct png_stream png_stream;
 
@@ -28,13 +27,6 @@ void user_read_data(png_structp png_ptr,png_bytep data, png_uint_32 length)
      png_stream *mem;
 
      mem=(png_stream *)png_get_io_ptr(png_ptr);
-     if( (g2int)length + mem->stream_len > mem->stream_total_len )
-     {
-        jmp_buf* psSetJmpContext = (jmp_buf *)png_get_error_ptr( png_ptr );
-        if (psSetJmpContext)
-            longjmp( *psSetJmpContext, 1 );
-     }
-
      ptr=(void *)mem->stream_ptr;
      offset=mem->stream_len;
 /*     printf("SAGrd %ld %ld %x\n",offset,length,ptr);  */
@@ -44,25 +36,23 @@ void user_read_data(png_structp png_ptr,png_bytep data, png_uint_32 length)
 
 
 
-int dec_png(unsigned char *pngbuf,g2int len,g2int *width,g2int *height,unsigned char *cout, g2int ndpts, g2int nbits)
+int dec_png(unsigned char *pngbuf,g2int *width,g2int *height,char *cout)
 {
-    int interlace,color,l_compress,filter,bit_depth;
+    int interlace,color,compress,filter,bit_depth;
     g2int j,k,n,bytes,clen;
     png_structp png_ptr;
     png_infop info_ptr,end_info;
     png_bytepp row_pointers;
     png_stream read_io_ptr;
-    png_uint_32 u_width;
-    png_uint_32 u_height;
 
 /*  check if stream is a valid PNG format   */
 
-    if ( png_sig_cmp(pngbuf,0,8) != 0) 
+    if ( png_sig_cmp(pngbuf,0,8) != 0)
        return (-3);
 
 /* create and initialize png_structs  */
 
-    png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, (png_voidp)NULL, 
+    png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, (png_voidp)NULL,
                                       NULL, NULL);
     if (!png_ptr)
        return (-1);
@@ -93,7 +83,6 @@ int dec_png(unsigned char *pngbuf,g2int len,g2int *width,g2int *height,unsigned 
 
     read_io_ptr.stream_ptr=(png_voidp)pngbuf;
     read_io_ptr.stream_len=0;
-    read_io_ptr.stream_total_len = len;
 
 /*    Set new custom read function    */
 
@@ -111,27 +100,8 @@ int dec_png(unsigned char *pngbuf,g2int len,g2int *width,g2int *height,unsigned 
 /*     Get image info, such as size, depth, colortype, etc...   */
 
     /*printf("SAGT:png %d %d %d\n",info_ptr->width,info_ptr->height,info_ptr->bit_depth);*/
-    if( !png_get_IHDR(png_ptr, info_ptr, &u_width, &u_height,
-               &bit_depth, &color, &interlace, &l_compress, &filter) )
-    {
-        fprintf(stderr, "png_get_IHDR() failed\n");
-        png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
-        return( -4 );
-    }
-    if( u_width > 0x7FFFFFFFU || u_height > 0x7FFFFFFFU )
-    {
-        fprintf(stderr, "invalid width/height\n");
-        png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
-        return( -5 );
-    }
-    *width = (g2int) u_width;
-    *height = (g2int) u_height;
-    if( (*width) * (*height) != ndpts )
-    {
-        fprintf(stderr, "invalid width/height\n");
-        png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
-        return( -6 );
-    }
+    (void)png_get_IHDR(png_ptr, info_ptr, (png_uint_32 *)width, (png_uint_32 *)height,
+               &bit_depth, &color, &interlace, &compress, &filter);
 
 /*     Check if image was grayscale      */
 
@@ -145,12 +115,6 @@ int dec_png(unsigned char *pngbuf,g2int len,g2int *width,g2int *height,unsigned 
     }
     else if ( color == PNG_COLOR_TYPE_RGB_ALPHA ) {
        bit_depth=32;
-    }
-    if( bit_depth != nbits )
-    {
-        fprintf(stderr, "inconsistent PNG bit depth\n");
-        png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
-        return( -7 );
     }
 /*     Copy image data to output string   */
 

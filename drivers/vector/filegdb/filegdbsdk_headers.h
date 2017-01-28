@@ -35,11 +35,6 @@
 #pragma GCC system_header
 #endif
 
-// In C++11 mode, GCC no longer defines linux, as expected by the SDK
-#if defined(__linux__) && !defined(linux)
-#define linux
-#endif
-
 /* FGDB API headers */
 #include "FileGDBAPI.h"
 

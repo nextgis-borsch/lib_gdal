@@ -41,11 +41,11 @@ namespace PCIDSK {
         CPCIDSKToutinModelSegment(PCIDSKFile *file, int segment,const char *segment_pointer);
         ~CPCIDSKToutinModelSegment();
 
-        SRITInfo_t GetInfo() const override;
-        void SetInfo(const SRITInfo_t& poInfo) override;
+        SRITInfo_t GetInfo() const;
+        void SetInfo(const SRITInfo_t& poInfo);
 
         //synchronize the segment on disk.
-        void Synchronize() override;
+        void Synchronize();
     private:
         
         // Helper housekeeping functions

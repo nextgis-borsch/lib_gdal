@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_cloudant.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id$
  *
  * Project:  Cloudant Translator
  * Purpose:  Definition of classes for OGR Cloudant driver.
@@ -46,24 +46,24 @@ class OGRCloudantDataSource;
 
 class OGRCloudantTableLayer : public OGRCouchDBTableLayer
 {
-    int                       bHasStandardSpatial;  // -1, TRUE, FALSE
+    int                       bHasStandardSpatial;
     const char*               pszSpatialView;
     char*                     pszSpatialDDoc;
 
     protected:
-            virtual int               GetFeaturesToFetch() override {
+            virtual int               GetFeaturesToFetch() {
                return atoi(CPLGetConfigOption("CLOUDANT_PAGE_SIZE", "200"));
             }
 
-            virtual bool              RunSpatialFilterQueryIfNecessary() override;
+            virtual int               RunSpatialFilterQueryIfNecessary();
             virtual void              GetSpatialView();
-            virtual void              WriteMetadata() override;
-            virtual void              LoadMetadata() override;
+            virtual void              WriteMetadata();
+            virtual void              LoadMetadata();
 
     public:
-            OGRCloudantTableLayer( OGRCloudantDataSource* poDS,
-                                   const char* pszName );
-            virtual ~OGRCloudantTableLayer();
+            OGRCloudantTableLayer(OGRCloudantDataSource* poDS,
+                                 const char* pszName);
+            ~OGRCloudantTableLayer();
 };
 
 /************************************************************************/
@@ -76,12 +76,12 @@ class OGRCloudantDataSource : public OGRCouchDBDataSource
             OGRLayer*    OpenDatabase(const char* pszLayerName = NULL);
   public:
                         OGRCloudantDataSource();
-    virtual ~OGRCloudantDataSource();
+                        ~OGRCloudantDataSource();
     virtual int Open( const char * pszFilename, int bUpdateIn);
     virtual OGRLayer   *ICreateLayer( const char *pszName,
              OGRSpatialReference *poSpatialRef = NULL,
              OGRwkbGeometryType eGType = wkbUnknown,
-             char ** papszOptions = NULL ) override;
+             char ** papszOptions = NULL );
 };
 
 /************************************************************************/
@@ -91,13 +91,14 @@ class OGRCloudantDataSource : public OGRCouchDBDataSource
 class OGRCloudantDriver : public OGRCouchDBDriver
 {
   public:
-    virtual ~OGRCloudantDriver();
+                ~OGRCloudantDriver();
 
-    virtual const char*         GetName() override;
-    virtual OGRDataSource*      Open( const char *, int ) override;
+    virtual const char*         GetName();
+    virtual OGRDataSource*      Open( const char *, int );
     virtual OGRDataSource*      CreateDataSource( const char * pszName,
-                                                  char **papszOptions ) override;
-    virtual int                 TestCapability( const char * ) override;
+                                                  char **papszOptions );
+    virtual int                 TestCapability( const char * );
+
 };
 
 #endif /* ndef OGR_CLOUDANT_H_INCLUDED */

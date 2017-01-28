@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: bmpdataset.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  Microsoft Windows Bitmap
  * Purpose:  Read/write MS Windows Device Independent Bitmap (DIB) files
@@ -32,7 +33,7 @@
 #include "gdal_frmts.h"
 #include "gdal_pam.h"
 
-CPL_CVSID("$Id: bmpdataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
+CPL_CVSID("$Id: bmpdataset.cpp 33720 2016-03-15 00:39:53Z goatbar $");
 
 // Enable if you want to see lots of BMP debugging output.
 // #define BMP_DEBUG
@@ -87,11 +88,8 @@ enum BMPLCSType                 // Type of logical color space.
 
 typedef struct
 {
-    // cppcheck-suppress unusedStructMember
     GInt32      iCIEX;
-    // cppcheck-suppress unusedStructMember
     GInt32      iCIEY;
-    // cppcheck-suppress unusedStructMember
     GInt32      iCIEZ;
 } BMPCIEXYZ;
 
@@ -148,21 +146,16 @@ typedef struct
                                 // is set to BI_BITFIELDS.
     GUInt32     iGreenMask;     // The same for green component
     GUInt32     iBlueMask;      // The same for blue component
-    // cppcheck-suppress unusedStructMember
     GUInt32     iAlphaMask;     // Colour mask that specifies the alpha
                                 // component of each pixel.
-    // cppcheck-suppress unusedStructMember
     BMPLCSType  iCSType;        // Colour space of the DIB.
     BMPCIEXYZTriple sEndpoints; // This member is ignored unless the iCSType member
                                 // specifies BMPLT_CALIBRATED_RGB.
-    // cppcheck-suppress unusedStructMember
     GUInt32     iGammaRed;      // Toned response curve for red. This member
                                 // is ignored unless color values are calibrated
                                 // RGB values and iCSType is set to
                                 // BMPLT_CALIBRATED_RGB. Specified in 16^16 format.
-    // cppcheck-suppress unusedStructMember
     GUInt32     iGammaGreen;    // Toned response curve for green.
-    // cppcheck-suppress unusedStructMember
     GUInt32     iGammaBlue;     // Toned response curve for blue.
 } BMPInfoHeader;
 
@@ -178,38 +171,36 @@ const unsigned int  BIH_OS22SIZE = 64; // for BMPT_OS22
 // provided for reference
 typedef struct
 {
-    // cppcheck-suppress unusedStructMember
     GByte       bBlue;
-    // cppcheck-suppress unusedStructMember
     GByte       bGreen;
-    // cppcheck-suppress unusedStructMember
     GByte       bRed;
-    // cppcheck-suppress unusedStructMember
     GByte       bReserved;      // Must be 0
 } BMPColorEntry;
 
 /*****************************************************************/
 
-static int countonbits( GUInt32 dw )
+static int countonbits(GUInt32 dw)
 {
     int r = 0;
-    for( int x = 0; x < 32; x++ )
+    for(int x = 0; x < 32; x++)
     {
-        if( (dw & (1U << x)) != 0 )
+        if((dw & (1 << x)) != 0)
             r++;
     }
     return r;
 }
 
-static int findfirstonbit( GUInt32 n )
+
+static int findfirstonbit(GUInt32 n)
 {
-    for( int x = 0; x < 32; x++ )
+    for(int x = 0; x < 32; x++)
     {
-        if( (n & (1U << x)) != 0 )
+        if((n & (1 << x)) != 0)
             return x;
     }
     return -1;
 }
+
 
 /************************************************************************/
 /* ==================================================================== */
@@ -239,11 +230,11 @@ class BMPDataset : public GDALPamDataset
                                    int, int *,
                                    GSpacing nPixelSpace, GSpacing nLineSpace,
                                    GSpacing nBandSpace,
-                                   GDALRasterIOExtraArg* psExtraArg ) override;
+                                   GDALRasterIOExtraArg* psExtraArg );
 
   public:
                 BMPDataset();
-    virtual ~BMPDataset();
+                ~BMPDataset();
 
     static int           Identify( GDALOpenInfo * );
     static GDALDataset  *Open( GDALOpenInfo * );
@@ -251,8 +242,8 @@ class BMPDataset : public GDALPamDataset
                                 int nXSize, int nYSize, int nBands,
                                 GDALDataType eType, char ** papszParmList );
 
-    CPLErr              GetGeoTransform( double * padfTransform ) override;
-    virtual CPLErr      SetGeoTransform( double * ) override;
+    CPLErr              GetGeoTransform( double * padfTransform );
+    virtual CPLErr      SetGeoTransform( double * );
 };
 
 /************************************************************************/
@@ -274,13 +265,13 @@ class BMPRasterBand : public GDALPamRasterBand
   public:
 
                 BMPRasterBand( BMPDataset *, int );
-    virtual    ~BMPRasterBand();
+                ~BMPRasterBand();
 
-    virtual CPLErr          IReadBlock( int, int, void * ) override;
-    virtual CPLErr          IWriteBlock( int, int, void * ) override;
-    virtual GDALColorInterp GetColorInterpretation() override;
-    virtual GDALColorTable  *GetColorTable() override;
-    CPLErr                  SetColorTable( GDALColorTable * ) override;
+    virtual CPLErr          IReadBlock( int, int, void * );
+    virtual CPLErr          IWriteBlock( int, int, void * );
+    virtual GDALColorInterp GetColorInterpretation();
+    virtual GDALColorTable  *GetColorTable();
+    CPLErr                  SetColorTable( GDALColorTable * );
 };
 
 /************************************************************************/
@@ -288,13 +279,12 @@ class BMPRasterBand : public GDALPamRasterBand
 /************************************************************************/
 
 BMPRasterBand::BMPRasterBand( BMPDataset *poDSIn, int nBandIn ) :
-    nScanSize(0),
-    iBytesPerPixel(poDSIn->sInfoHeader.iBitCount / 8),
-    pabyScan(NULL)
+    nScanSize(0)
 {
-    poDS = poDSIn;
-    nBand = nBandIn;
+    this->poDS = poDSIn;
+    this->nBand = nBandIn;
     eDataType = GDT_Byte;
+    iBytesPerPixel = poDSIn->sInfoHeader.iBitCount / 8;
 
     // We will read one scanline per time. Scanlines in BMP aligned at 4-byte
     // boundary
@@ -302,14 +292,11 @@ BMPRasterBand::BMPRasterBand( BMPDataset *poDSIn, int nBandIn ) :
     nBlockYSize = 1;
 
     if (nBlockXSize < (INT_MAX - 31) / poDSIn->sInfoHeader.iBitCount)
-    {
         nScanSize =
-            ((poDS->GetRasterXSize() *
-              poDSIn->sInfoHeader.iBitCount + 31) & ~31) / 8;
-    }
+            ((poDS->GetRasterXSize() * poDSIn->sInfoHeader.iBitCount + 31) & ~31) / 8;
     else
     {
-        // pabyScan = NULL;
+        pabyScan = NULL;
         return;
     }
 
@@ -319,7 +306,7 @@ BMPRasterBand::BMPRasterBand( BMPDataset *poDSIn, int nBandIn ) :
               nBand, nBlockXSize, nBlockYSize, nScanSize );
 #endif
 
-    pabyScan = static_cast<GByte *>(VSIMalloc( nScanSize ));
+    pabyScan = (GByte *) VSIMalloc( nScanSize );
 }
 
 /************************************************************************/
@@ -335,12 +322,12 @@ BMPRasterBand::~BMPRasterBand()
 /*                             IReadBlock()                             */
 /************************************************************************/
 
-CPLErr BMPRasterBand::IReadBlock( int /* nBlockXOff */,
+CPLErr BMPRasterBand::IReadBlock( CPL_UNUSED int nBlockXOff,
                                   int nBlockYOff,
                                   void * pImage )
 {
     BMPDataset  *poGDS = (BMPDataset *) poDS;
-    GUInt32 iScanOffset = 0;
+    GUInt32     iScanOffset;
 
     if ( poGDS->sInfoHeader.iHeight > 0 )
         iScanOffset = poGDS->sFileHeader.iOffBits +
@@ -351,7 +338,7 @@ CPLErr BMPRasterBand::IReadBlock( int /* nBlockXOff */,
     if ( VSIFSeekL( poGDS->fp, iScanOffset, SEEK_SET ) < 0 )
     {
         // XXX: We will not report error here, because file just may be
-        // in update state and data for this block will be available later.
+    // in update state and data for this block will be available later
         if( poGDS->eAccess == GA_Update )
         {
             memset( pImage, 0, nBlockXSize );
@@ -361,7 +348,7 @@ CPLErr BMPRasterBand::IReadBlock( int /* nBlockXOff */,
         {
             CPLError( CE_Failure, CPLE_FileIO,
                       "Can't seek to offset %ld in input file to read data.",
-                      static_cast<long>(iScanOffset) );
+                      (long) iScanOffset );
             return CE_Failure;
         }
     }
@@ -377,7 +364,7 @@ CPLErr BMPRasterBand::IReadBlock( int /* nBlockXOff */,
         {
             CPLError( CE_Failure, CPLE_FileIO,
                       "Can't read from offset %ld in input file.",
-                      static_cast<long>(iScanOffset) );
+                      (long) iScanOffset );
             return CE_Failure;
         }
     }
@@ -687,10 +674,11 @@ class BMPComprRasterBand : public BMPRasterBand
     GByte           *pabyUncomprBuf;
 
   public:
-                BMPComprRasterBand( BMPDataset *, int );
-    virtual    ~BMPComprRasterBand();
 
-    virtual CPLErr          IReadBlock( int, int, void * ) override;
+                BMPComprRasterBand( BMPDataset *, int );
+                ~BMPComprRasterBand();
+
+    virtual CPLErr          IReadBlock( int, int, void * );
 //    virtual CPLErr        IWriteBlock( int, int, void * );
 };
 
@@ -698,10 +686,8 @@ class BMPComprRasterBand : public BMPRasterBand
 /*                           BMPComprRasterBand()                       */
 /************************************************************************/
 
-BMPComprRasterBand::BMPComprRasterBand( BMPDataset *poDSIn, int nBandIn ) :
-    BMPRasterBand( poDSIn, nBandIn ),
-    pabyComprBuf(NULL),
-    pabyUncomprBuf(NULL)
+BMPComprRasterBand::BMPComprRasterBand( BMPDataset *poDSIn, int nBandIn )
+    : BMPRasterBand( poDSIn, nBandIn )
 {
     /* TODO: it might be interesting to avoid uncompressing the whole data */
     /* in a single pass, especially if nXSize * nYSize is big */
@@ -710,6 +696,8 @@ BMPComprRasterBand::BMPComprRasterBand( BMPDataset *poDSIn, int nBandIn ) :
     {
         CPLError(CE_Failure, CPLE_NotSupported, "Too big dimensions : %d x %d",
                  poDS->GetRasterXSize(), poDS->GetRasterYSize());
+        pabyComprBuf = NULL;
+        pabyUncomprBuf = NULL;
         return;
     }
 
@@ -717,6 +705,8 @@ BMPComprRasterBand::BMPComprRasterBand( BMPDataset *poDSIn, int nBandIn ) :
         poDSIn->sFileHeader.iSize - poDSIn->sFileHeader.iOffBits > INT_MAX )
     {
         CPLError(CE_Failure, CPLE_NotSupported, "Invalid header");
+        pabyComprBuf = NULL;
+        pabyUncomprBuf = NULL;
         return;
     }
 
@@ -754,8 +744,7 @@ BMPComprRasterBand::BMPComprRasterBand( BMPDataset *poDSIn, int nBandIn ) :
         pabyUncomprBuf = NULL;
         return;
     }
-    unsigned int k = 0;
-    unsigned int iLength = 0;
+    unsigned int k, iLength = 0;
     unsigned int i = 0;
     unsigned int j = 0;
     if ( poDSIn->sInfoHeader.iBitCount == 8 )         // RLE8
@@ -896,6 +885,7 @@ BMPComprRasterBand::BMPComprRasterBand( BMPDataset *poDSIn, int nBandIn ) :
     // rcg, release compressed buffer here.
     CPLFree( pabyComprBuf );
     pabyComprBuf = NULL;
+
 }
 
 /************************************************************************/
@@ -928,12 +918,8 @@ CPLErr BMPComprRasterBand::IReadBlock( CPL_UNUSED int nBlockXOff,
 /************************************************************************/
 
 BMPDataset::BMPDataset() :
-    nColorElems(0),
-    pabyColorTable(NULL),
-    poColorTable(NULL),
-    bGeoTransformValid(FALSE),
-    pszFilename(NULL),
-    fp(NULL)
+    nColorElems(0), pabyColorTable(NULL),
+    poColorTable(NULL), bGeoTransformValid(FALSE), pszFilename(NULL), fp(NULL)
 {
     nBands = 0;
 
@@ -1367,7 +1353,7 @@ GDALDataset *BMPDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
 
-    return poDS;
+    return( poDS );
 }
 
 /************************************************************************/
@@ -1570,7 +1556,7 @@ GDALDataset *BMPDataset::Create( const char * pszFilename,
 /* -------------------------------------------------------------------- */
 /*      Do we need a world file?                                        */
 /* -------------------------------------------------------------------- */
-    if( CPLFetchBool( papszOptions, "WORLDFILE", false ) )
+    if( CSLFetchBoolean( papszOptions, "WORLDFILE", FALSE ) )
         poDS->bGeoTransformValid = TRUE;
 
     return (GDALDataset *) poDS;

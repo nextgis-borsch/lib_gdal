@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: gdalsimplewarp.cpp 33676 2016-03-07 21:38:34Z goatbar $
  *
  * Project:  Mapinfo Image Warper
  * Purpose:  Simple (source in memory) warp algorithm.
@@ -26,164 +27,16 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "cpl_port.h"
-#include "gdal_alg.h"
-
-#include <cstdlib>
-#include <cstring>
-
-#include <algorithm>
-
-#include "cpl_conv.h"
-#include "cpl_error.h"
-#include "cpl_progress.h"
 #include "cpl_string.h"
-#include "cpl_vsi.h"
-#include "gdal.h"
+#include "gdal_alg.h"
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id: gdalsimplewarp.cpp 36703 2016-12-05 14:56:04Z goatbar $");
-
-/************************************************************************/
-/*                      GDALSimpleWarpRemapping()                       */
-/*                                                                      */
-/*      This function implements any raster remapping requested in      */
-/*      the options list.  The remappings are applied to the source     */
-/*      data before warping.  Two kinds are support ... REMAP           */
-/*      commands which remap selected pixel values for any band and     */
-/*      REMAP_MULTI which only remap pixels matching the input in       */
-/*      all bands at once (i.e. to remap an RGB value to another).       */
-/************************************************************************/
+CPL_CVSID("$Id: gdalsimplewarp.cpp 33676 2016-03-07 21:38:34Z goatbar $");
 
 static void
 GDALSimpleWarpRemapping( int nBandCount, GByte **papabySrcData,
                          int nSrcXSize, int nSrcYSize,
-                         char **papszWarpOptions )
-
-{
-
-/* ==================================================================== */
-/*      Process any and all single value REMAP commands.                */
-/* ==================================================================== */
-    char **papszRemaps = CSLFetchNameValueMultiple( papszWarpOptions,
-                                                    "REMAP" );
-
-    for( int iRemap = 0; iRemap < CSLCount(papszRemaps); iRemap++ )
-    {
-
-/* -------------------------------------------------------------------- */
-/*      What are the pixel values to map from and to?                   */
-/* -------------------------------------------------------------------- */
-        char **papszTokens = CSLTokenizeString( papszRemaps[iRemap] );
-
-        if( CSLCount(papszTokens) != 2 )
-        {
-            CPLError(CE_Warning, CPLE_AppDefined,
-                     "Ill formed REMAP `%s' ignored in "
-                     "GDALSimpleWarpRemapping()",
-                     papszRemaps[iRemap] );
-            CSLDestroy( papszTokens );
-            continue;
-        }
-
-        const int nFromValue = atoi(papszTokens[0]);
-        const int nToValue = atoi(papszTokens[1]);
-
-        CSLDestroy( papszTokens );
-
-/* -------------------------------------------------------------------- */
-/*      Pass over each band searching for matches.                      */
-/* -------------------------------------------------------------------- */
-        for( int iBand = 0; iBand < nBandCount; iBand++ )
-        {
-            GByte *pabyData = papabySrcData[iBand];
-            int nPixelCount = nSrcXSize * nSrcYSize;
-
-            while( nPixelCount != 0 )
-            {
-                if( *pabyData == nFromValue )
-                    *pabyData = static_cast<GByte>( nToValue );
-
-                pabyData++;
-                nPixelCount--;
-            }
-        }
-    }
-
-    CSLDestroy( papszRemaps );
-
-/* ==================================================================== */
-/*      Process any and all REMAP_MULTI commands.                       */
-/* ==================================================================== */
-    papszRemaps = CSLFetchNameValueMultiple( papszWarpOptions,
-                                             "REMAP_MULTI" );
-
-    for( int iRemap = 0; iRemap < CSLCount(papszRemaps); iRemap++ )
-    {
-/* -------------------------------------------------------------------- */
-/*      What are the pixel values to map from and to?                   */
-/* -------------------------------------------------------------------- */
-        char **papszTokens = CSLTokenizeString( papszRemaps[iRemap] );
-
-        if( CSLCount(papszTokens) % 2 == 1
-            || CSLCount(papszTokens) == 0
-            || CSLCount(papszTokens) > nBandCount * 2 )
-        {
-            CPLError(CE_Warning, CPLE_AppDefined,
-                     "Ill formed REMAP_MULTI `%s' ignored in "
-                     "GDALSimpleWarpRemapping()",
-                     papszRemaps[iRemap]);
-            CSLDestroy( papszTokens );
-            continue;
-        }
-
-        const int nMapBandCount = CSLCount(papszTokens) / 2;
-
-        int *panFromValue = static_cast<int *>(
-            CPLMalloc(sizeof(int) * nMapBandCount ) );
-        int *panToValue = static_cast<int *>(
-            CPLMalloc(sizeof(int) * nMapBandCount ) );
-
-        for( int iBand = 0; iBand < nMapBandCount; iBand++ )
-        {
-            panFromValue[iBand] = atoi(papszTokens[iBand]);
-            panToValue[iBand] = atoi(papszTokens[iBand+nMapBandCount]);
-        }
-
-        CSLDestroy( papszTokens );
-
-/* -------------------------------------------------------------------- */
-/*      Search for matching values to replace.                          */
-/* -------------------------------------------------------------------- */
-        const int nPixelCount = nSrcXSize * nSrcYSize;
-
-        for( int iPixel = 0; iPixel < nPixelCount; iPixel++ )
-        {
-            if( papabySrcData[0][iPixel] != panFromValue[0] )
-                continue;
-
-            bool bMatch = true;
-
-            for( int iBand = 1; iBand < nMapBandCount; iBand++ )
-            {
-                if( papabySrcData[iBand][iPixel] != panFromValue[iBand] )
-                    bMatch = false;
-            }
-
-            if( !bMatch )
-                continue;
-
-            for( int iBand = 0; iBand < nMapBandCount; iBand++ )
-                papabySrcData[iBand][iPixel] =
-                    static_cast<GByte>( panToValue[iBand] );
-        }
-
-        CPLFree( panFromValue );
-        CPLFree( panToValue );
-    }
-
-    CSLDestroy( papszRemaps );
-}
+                         char **papszWarpOptions );
 
 /************************************************************************/
 /*                        GDALSimpleImageWarp()                         */
@@ -241,17 +94,17 @@ GDALSimpleImageWarp( GDALDatasetH hSrcDS, GDALDatasetH hDstDS,
     if( nBandCount == 0 )
     {
         nBandCount = GDALGetRasterCount( hSrcDS );
-        if( nBandCount == 0 )
+        if (nBandCount == 0)
         {
             CPLError(CE_Failure, CPLE_AppDefined,
                      "No raster band in source dataset");
             return FALSE;
         }
 
-        panBandList = static_cast<int *>(CPLCalloc(sizeof(int), nBandCount));
+        panBandList = (int *) CPLCalloc(sizeof(int),nBandCount);
 
         for( int iBand = 0; iBand < nBandCount; iBand++ )
-            panBandList[iBand] = iBand + 1;
+            panBandList[iBand] = iBand+1;
 
         const int nResult =
             GDALSimpleImageWarp( hSrcDS, hDstDS, nBandCount, panBandList,
@@ -287,26 +140,24 @@ GDALSimpleImageWarp( GDALDatasetH hSrcDS, GDALDatasetH hDstDS,
         if( papabySrcData[iBand] == NULL )
         {
             CPLError( CE_Failure, CPLE_OutOfMemory,
-                      "GDALSimpleImageWarp out of memory." );
+                      "GDALSimpleImageWarp out of memory.\n" );
             ok = false;
             break;
         }
 
-        if( GDALRasterIO(
-                GDALGetRasterBand(hSrcDS,panBandList[iBand]), GF_Read,
-                0, 0, nSrcXSize, nSrcYSize,
-                papabySrcData[iBand], nSrcXSize, nSrcYSize, GDT_Byte,
-                0, 0 ) != CE_None )
+        if( GDALRasterIO( GDALGetRasterBand(hSrcDS,panBandList[iBand]), GF_Read,
+                      0, 0, nSrcXSize, nSrcYSize,
+                      papabySrcData[iBand], nSrcXSize, nSrcYSize, GDT_Byte,
+                      0, 0 ) != CE_None )
         {
-            CPLError( CE_Failure, CPLE_FileIO,
-                      "GDALSimpleImageWarp GDALRasterIO failure %s",
+            CPLError( CE_Failure, CPLE_FileIO, "GDALSimpleImageWarp "
+                      "GDALRasterIO failure %s ",
                       CPLGetLastErrorMsg() );
             ok = false;
             break;
         }
     }
-    if( !ok )
-    {
+    if( !ok ) {
         for( int i=0; i <= nBandCount; i++ )
         {
             VSIFree(papabySrcData[i]);
@@ -368,7 +219,7 @@ GDALSimpleImageWarp( GDALDatasetH hSrcDS, GDALDatasetH hDstDS,
                 panBandInit[iBand] = 0;
             else
                 panBandInit[iBand] =
-                    atoi(papszTokens[std::min(iBand, nTokenCount- 1)]);
+                    atoi(papszTokens[MIN(iBand,nTokenCount-1)]);
         }
 
         CSLDestroy(papszTokens);
@@ -385,20 +236,17 @@ GDALSimpleImageWarp( GDALDatasetH hSrcDS, GDALDatasetH hDstDS,
         {
             if( panBandInit[iBand] == -1 )
             {
-                if( GDALRasterIO(
-                        GDALGetRasterBand(hDstDS,iBand + 1), GF_Read,
-                        0, iDstY, nDstXSize, 1,
-                        papabyDstLine[iBand], nDstXSize, 1, GDT_Byte,
-                        0, 0 ) != CE_None )
+                if( GDALRasterIO( GDALGetRasterBand(hDstDS,iBand+1), GF_Read,
+                              0, iDstY, nDstXSize, 1,
+                              papabyDstLine[iBand], nDstXSize, 1, GDT_Byte,
+                              0, 0 ) != CE_None )
                 {
                     bError = TRUE;
                     break;
                 }
             }
             else
-            {
                 memset( papabyDstLine[iBand], panBandInit[iBand], nDstXSize );
-            }
         }
 
         // Set point to transform.
@@ -441,11 +289,9 @@ GDALSimpleImageWarp( GDALDatasetH hSrcDS, GDALDatasetH hDstDS,
         // Write scanline to disk.
         for( int iBand = 0; iBand < nBandCount; iBand++ )
         {
-            if( GDALRasterIO(
-                    GDALGetRasterBand(hDstDS,iBand+1), GF_Write,
-                    0, iDstY, nDstXSize, 1,
-                    papabyDstLine[iBand], nDstXSize,
-                    1, GDT_Byte, 0, 0 ) != CE_None )
+            if( GDALRasterIO( GDALGetRasterBand(hDstDS,iBand+1), GF_Write,
+                          0, iDstY, nDstXSize, 1,
+                          papabyDstLine[iBand], nDstXSize, 1, GDT_Byte, 0, 0 ) != CE_None )
             {
                 bError = TRUE;
                 break;
@@ -454,7 +300,7 @@ GDALSimpleImageWarp( GDALDatasetH hSrcDS, GDALDatasetH hDstDS,
 
         if( pfnProgress != NULL )
         {
-            if( !pfnProgress( (iDstY + 1) / static_cast<double>(nDstYSize),
+            if( !pfnProgress( (iDstY+1) / (double) nDstYSize,
                               "", pProgressArg ) )
             {
                 CPLError( CE_Failure, CPLE_UserInterrupt, "User terminated" );
@@ -482,4 +328,143 @@ GDALSimpleImageWarp( GDALDatasetH hSrcDS, GDALDatasetH hDstDS,
     CPLFree( pabSuccess );
 
     return !bError;
+}
+
+/************************************************************************/
+/*                      GDALSimpleWarpRemapping()                       */
+/*                                                                      */
+/*      This function implements any raster remapping requested in      */
+/*      the options list.  The remappings are applied to the source     */
+/*      data before warping.  Two kinds are support ... REMAP           */
+/*      commands which remap selected pixel values for any band and     */
+/*      REMAP_MULTI which only remap pixels matching the input in       */
+/*      all bands at once (i.e. to remap an RGB value to another).       */
+/************************************************************************/
+
+static void
+GDALSimpleWarpRemapping( int nBandCount, GByte **papabySrcData,
+                         int nSrcXSize, int nSrcYSize,
+                         char **papszWarpOptions )
+
+{
+
+/* ==================================================================== */
+/*      Process any and all single value REMAP commands.                */
+/* ==================================================================== */
+    char **papszRemaps = CSLFetchNameValueMultiple( papszWarpOptions,
+                                                    "REMAP" );
+
+    for( int iRemap = 0; iRemap < CSLCount(papszRemaps); iRemap++ )
+    {
+
+/* -------------------------------------------------------------------- */
+/*      What are the pixel values to map from and to?                   */
+/* -------------------------------------------------------------------- */
+        char **papszTokens = CSLTokenizeString( papszRemaps[iRemap] );
+
+        if( CSLCount(papszTokens) != 2 )
+        {
+            CPLError( CE_Warning, CPLE_AppDefined,
+                      "Ill formed REMAP `%s' ignored in GDALSimpleWarpRemapping()",
+                      papszRemaps[iRemap] );
+            CSLDestroy( papszTokens );
+            continue;
+        }
+
+        const int nFromValue = atoi(papszTokens[0]);
+        const int nToValue = atoi(papszTokens[1]);
+
+        CSLDestroy( papszTokens );
+
+/* -------------------------------------------------------------------- */
+/*      Pass over each band searching for matches.                      */
+/* -------------------------------------------------------------------- */
+        for( int iBand = 0; iBand < nBandCount; iBand++ )
+        {
+            GByte *pabyData = papabySrcData[iBand];
+            int nPixelCount = nSrcXSize * nSrcYSize;
+
+            while( nPixelCount != 0 )
+            {
+                if( *pabyData == nFromValue )
+                    *pabyData = static_cast<GByte>( nToValue );
+
+                pabyData++;
+                nPixelCount--;
+            }
+        }
+    }
+
+    CSLDestroy( papszRemaps );
+
+/* ==================================================================== */
+/*      Process any and all REMAP_MULTI commands.                       */
+/* ==================================================================== */
+    papszRemaps = CSLFetchNameValueMultiple( papszWarpOptions,
+                                             "REMAP_MULTI" );
+
+    for( int iRemap = 0; iRemap < CSLCount(papszRemaps); iRemap++ )
+    {
+/* -------------------------------------------------------------------- */
+/*      What are the pixel values to map from and to?                   */
+/* -------------------------------------------------------------------- */
+        char **papszTokens = CSLTokenizeString( papszRemaps[iRemap] );
+
+        if( CSLCount(papszTokens) % 2 == 1
+            || CSLCount(papszTokens) == 0
+            || CSLCount(papszTokens) > nBandCount * 2 )
+        {
+            CPLError( CE_Warning, CPLE_AppDefined,
+                      "Ill formed REMAP_MULTI `%s' ignored in GDALSimpleWarpRemapping()",
+                      papszRemaps[iRemap] );
+            CSLDestroy( papszTokens );
+            continue;
+        }
+
+        const int nMapBandCount = CSLCount(papszTokens) / 2;
+
+        int *panFromValue = static_cast<int *>(
+            CPLMalloc(sizeof(int) * nMapBandCount ) );
+        int *panToValue = static_cast<int *>(
+            CPLMalloc(sizeof(int) * nMapBandCount ) );
+
+        for( int iBand = 0; iBand < nMapBandCount; iBand++ )
+        {
+            panFromValue[iBand] = atoi(papszTokens[iBand]);
+            panToValue[iBand] = atoi(papszTokens[iBand+nMapBandCount]);
+        }
+
+        CSLDestroy( papszTokens );
+
+/* -------------------------------------------------------------------- */
+/*      Search for matching values to replace.                          */
+/* -------------------------------------------------------------------- */
+        const int nPixelCount = nSrcXSize * nSrcYSize;
+
+        for( int iPixel = 0; iPixel < nPixelCount; iPixel++ )
+        {
+            if( papabySrcData[0][iPixel] != panFromValue[0] )
+                continue;
+
+            bool bMatch = true;
+
+            for( int iBand = 1; iBand < nMapBandCount; iBand++ )
+            {
+                if( papabySrcData[iBand][iPixel] != panFromValue[iBand] )
+                    bMatch = false;
+            }
+
+            if( !bMatch )
+                continue;
+
+            for( int iBand = 0; iBand < nMapBandCount; iBand++ )
+                papabySrcData[iBand][iPixel] =
+                    static_cast<GByte>( panToValue[iBand] );
+        }
+
+        CPLFree( panFromValue );
+        CPLFree( panToValue );
+    }
+
+    CSLDestroy( papszRemaps );
 }

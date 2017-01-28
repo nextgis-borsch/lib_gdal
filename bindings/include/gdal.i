@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal.i 35668 2016-10-09 20:52:50Z rouault $
+ * $Id: gdal.i 33758 2016-03-21 09:06:22Z rouault $
  *
  * Name:     gdal.i
  * Project:  GDAL Python Interface
@@ -80,12 +80,10 @@ typedef void GDALAsyncReaderShadow;
 #ifdef DEBUG
 typedef struct OGRSpatialReferenceHS OSRSpatialReferenceShadow;
 typedef struct OGRLayerHS OGRLayerShadow;
-typedef struct OGRFeatureHS OGRFeatureShadow;
 typedef struct OGRGeometryHS OGRGeometryShadow;
 #else
 typedef void OSRSpatialReferenceShadow;
 typedef void OGRLayerShadow;
-typedef void OGRFeatureShadow;
 typedef void OGRGeometryShadow;
 #endif
 typedef struct OGRStyleTableHS OGRStyleTableShadow;
@@ -859,30 +857,6 @@ GDALDriverShadow *IdentifyDriver( const char *utf8_path,
 }
 %}
 %clear char **papszSiblings;
-
-
-%apply (char **options) {char** allowed_drivers};
-%apply (char **options) {char** sibling_files};
-
-#ifndef SWIGJAVA
-%feature( "kwargs" ) IdentifyDriverEx;
-#endif
-%inline %{
-GDALDriverShadow *IdentifyDriverEx( const char* utf8_path,
-                                    unsigned int nIdentifyFlags = 0,
-                                    char** allowed_drivers = NULL,
-                                    char** sibling_files = NULL )
-{
-    return  (GDALDriverShadow *) GDALIdentifyDriverEx( utf8_path,
-                                                nIdentifyFlags,
-                                                allowed_drivers,
-                                                sibling_files );
-}
-%}
-
-%clear char **allowed_drivers;
-%clear char **sibling_files;
-
 
 //************************************************************************
 //

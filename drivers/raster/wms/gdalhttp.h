@@ -1,5 +1,5 @@
 /*****************************************************************************
- * $Id: gdalhttp.h 36613 2016-12-02 00:03:07Z lplesea $
+ * $Id: gdalhttp.h 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  WMS Client Driver
  * Purpose:  Implementation of Dataset and RasterBand classes for WMS
@@ -28,43 +28,29 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#ifndef GDALHTTP_H
-#define GDALHTTP_H
-
-#include "cpl_port.h"
-#include "cpl_http.h"
-
-struct WMSHTTPRequest {
-    WMSHTTPRequest() 
-        :options(NULL), nStatus(0), pabyData(NULL), nDataLen(0), nDataAlloc(0), m_curl_handle(NULL), x(0), y(0) {};
-    ~WMSHTTPRequest();
-
+typedef struct {
     /* Input */
-    CPLString URL;
-    // Not owned, do not release
-    const char *const *options;
-    CPLString Range;
+    char *pszURL;
+    char **papszOptions;
 
     /* Output */
-    CPLString ContentType;
-    CPLString Error;
+    int nStatus;		/* 200 = success, 404 = not found, 0 = no response / error */
+    char *pszContentType;
+    char *pszError;
 
-    int nStatus;  /* 200 = success, 404 = not found, 0 = no response / error */
     GByte *pabyData;
     size_t nDataLen;
     size_t nDataAlloc;
 
-    /* curl internal stuff */
+    //    int nMimePartCount;
+    //    CPLMimePart *pasMimePart;
+
+    /* Internal stuff */
     CURL *m_curl_handle;
-    // Which tile is being requested
-    int x, y;
+    struct curl_slist *m_headers;
+    char *m_curl_error;
+} CPLHTTPRequest;
 
-    // Space for error message, doesn't seem to be used by the multi-request interface
-    std::vector<char> m_curl_error;
-};
-
-// Not public, only for use within WMS
-void WMSHTTPInitializeRequest(WMSHTTPRequest *psRequest);
-CPLErr WMSHTTPFetchMulti(WMSHTTPRequest *psRequest, int nRequestCount = 1);
-
-#endif /*  GDALHTTP_H */
+void CPL_DLL CPLHTTPInitializeRequest(CPLHTTPRequest *psRequest, const char *pszURL = NULL, const char *const *papszOptions = NULL);
+void CPL_DLL CPLHTTPCleanupRequest(CPLHTTPRequest *psRequest);
+CPLErr CPL_DLL CPLHTTPFetchMulti(CPLHTTPRequest *pasRequest, int nRequestCount = 1, const char *const *papszOptions = NULL);

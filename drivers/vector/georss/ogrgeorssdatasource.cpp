@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrgeorssdatasource.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  GeoRSS Translator
  * Purpose:  Implements OGRGeoRSSDataSource class
@@ -31,7 +32,7 @@
 #include "cpl_string.h"
 #include "cpl_csv.h"
 
-CPL_CVSID("$Id: ogrgeorssdatasource.cpp 35933 2016-10-25 16:46:26Z goatbar $");
+CPL_CVSID("$Id: ogrgeorssdatasource.cpp 33714 2016-03-13 05:42:13Z goatbar $");
 
 /************************************************************************/
 /*                          OGRGeoRSSDataSource()                          */
@@ -47,14 +48,14 @@ OGRGeoRSSDataSource::OGRGeoRSSDataSource() :
 #endif
     eFormat(GEORSS_RSS),
     eGeomDialect(GEORSS_SIMPLE),
-    bUseExtensions(false),
-    bWriteHeaderAndFooter(true)
+    bUseExtensions(FALSE),
+    bWriteHeaderAndFooter(TRUE)
 #ifdef HAVE_EXPAT
     ,
     oCurrentParser(NULL),
     nDataHandlerCounter(0)
 #endif
-{}
+{ }
 
 /************************************************************************/
 /*                         ~OGRGeoRSSDataSource()                          */
@@ -63,11 +64,11 @@ OGRGeoRSSDataSource::OGRGeoRSSDataSource() :
 OGRGeoRSSDataSource::~OGRGeoRSSDataSource()
 
 {
-    if( fpOutput != NULL )
+    if ( fpOutput != NULL )
     {
-        if( bWriteHeaderAndFooter )
+        if (bWriteHeaderAndFooter)
         {
-            if( eFormat == GEORSS_RSS )
+            if (eFormat == GEORSS_RSS)
             {
                 VSIFPrintfL(fpOutput, "  </channel>\n");
                 VSIFPrintfL(fpOutput, "</rss>\n");
@@ -95,10 +96,10 @@ int OGRGeoRSSDataSource::TestCapability( const char * pszCap )
 {
     if( EQUAL(pszCap,ODsCCreateLayer) )
         return TRUE;
-    // else if( EQUAL(pszCap,ODsCDeleteLayer) )
-    //    return FALSE;
-
-    return FALSE;
+    else if( EQUAL(pszCap,ODsCDeleteLayer) )
+        return FALSE;
+    else
+        return FALSE;
 }
 
 /************************************************************************/
@@ -130,7 +131,7 @@ OGRLayer * OGRGeoRSSDataSource::ICreateLayer( const char * pszLayerName,
     {
         OGRSpatialReference oSRS;
         oSRS.SetWellKnownGeogCS("WGS84");
-        if( !poSRS->IsSame(&oSRS) )
+        if (poSRS->IsSame(&oSRS) == FALSE)
         {
             CPLError(CE_Failure, CPLE_NotSupported,
                      "For a non GML dialect, only WGS84 SRS is supported");
@@ -185,6 +186,7 @@ void OGRGeoRSSDataSource::startElementValidateCbk(const char *pszNameIn, const c
     }
 }
 
+
 /************************************************************************/
 /*                      dataHandlerValidateCbk()                        */
 /************************************************************************/
@@ -199,6 +201,7 @@ void OGRGeoRSSDataSource::dataHandlerValidateCbk(CPL_UNUSED const char *data,
         XML_StopParser(oCurrentParser, XML_FALSE);
     }
 }
+
 
 static void XMLCALL startElementValidateCbk(void *pUserData, const char *pszName, const char **ppszAttr)
 {
@@ -245,8 +248,8 @@ int OGRGeoRSSDataSource::Open( const char * pszFilename, int bUpdateIn)
     oCurrentParser = oParser;
 
     char aBuf[BUFSIZ];
-    int nDone = 0;
-    unsigned int nLen = 0;
+    int nDone;
+    unsigned int nLen;
     int nCount = 0;
 
     /* Begin to parse the file and look for the <rss> or <feed> element */
@@ -306,7 +309,7 @@ int OGRGeoRSSDataSource::Open( const char * pszFilename, int bUpdateIn)
         papoLayers[0] = new OGRGeoRSSLayer( pszName, "georss", this, NULL, FALSE );
     }
 
-    return validity == GEORSS_VALIDITY_VALID;
+    return (validity == GEORSS_VALIDITY_VALID);
 #else
     char aBuf[256];
     VSILFILE* fp = VSIFOpenL(pszFilename, "r");
@@ -325,6 +328,7 @@ int OGRGeoRSSDataSource::Open( const char * pszFilename, int bUpdateIn)
 #endif
 }
 
+
 /************************************************************************/
 /*                               Create()                               */
 /************************************************************************/
@@ -334,7 +338,7 @@ int OGRGeoRSSDataSource::Create( const char *pszFilename,
 {
     if( fpOutput != NULL)
     {
-        CPLAssert( false );
+        CPLAssert( FALSE );
         return FALSE;
     }
 
@@ -398,11 +402,10 @@ int OGRGeoRSSDataSource::Create( const char *pszFilename,
         }
     }
 
-    const char* pszWriteHeaderAndFooter =
-        CSLFetchNameValue(papszOptions, "WRITE_HEADER_AND_FOOTER");
-    if( pszWriteHeaderAndFooter && !CPLTestBool(pszWriteHeaderAndFooter) )
+    const char* pszWriteHeaderAndFooter = CSLFetchNameValue(papszOptions, "WRITE_HEADER_AND_FOOTER");
+    if (pszWriteHeaderAndFooter && CPLTestBool(pszWriteHeaderAndFooter) == FALSE)
     {
-        bWriteHeaderAndFooter = false;
+        bWriteHeaderAndFooter = FALSE;
         return TRUE;
     }
 
@@ -429,6 +432,7 @@ int OGRGeoRSSDataSource::Create( const char *pszFilename,
         pszLink = CSLFetchNameValue(papszOptions, "LINK");
         if (pszLink == NULL)
             pszLink = "channel_link";
+
     }
     else if (eFormat == GEORSS_ATOM && pszHeader == NULL)
     {
@@ -449,8 +453,7 @@ int OGRGeoRSSDataSource::Create( const char *pszFilename,
             pszId = "id";
     }
 
-    const char* pszUseExtensions =
-        CSLFetchNameValue( papszOptions, "USE_EXTENSIONS");
+    const char* pszUseExtensions = CSLFetchNameValue( papszOptions, "USE_EXTENSIONS");
     bUseExtensions = pszUseExtensions && CPLTestBool(pszUseExtensions);
 
 /* -------------------------------------------------------------------- */

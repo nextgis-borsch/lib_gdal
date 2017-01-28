@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: filegdbtable.h 36411 2016-11-21 22:03:48Z rouault $
+ * $Id: filegdbtable.h 33024 2016-01-17 16:10:22Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements reading of FileGDB tables
@@ -104,7 +104,7 @@ class FileGDBField
 
     public:
 
-        explicit            FileGDBField(FileGDBTable* poParent);
+                            FileGDBField(FileGDBTable* poParent);
         virtual            ~FileGDBField();
 
         const std::string&  GetName() const { return osName; }
@@ -146,7 +146,7 @@ class FileGDBGeomField: public FileGDBField
         int               bHas3D;
 
     public:
-        explicit          FileGDBGeomField(FileGDBTable* poParent);
+                          FileGDBGeomField(FileGDBTable* poParent);
         virtual          ~FileGDBGeomField() {}
 
         const std::string& GetWKT() const { return osWKT; }
@@ -186,10 +186,11 @@ class FileGDBRasterField: public FileGDBGeomField
         std::string       osRasterColumnName;
 
     public:
-        explicit          FileGDBRasterField(FileGDBTable* poParentIn) : FileGDBGeomField(poParentIn) {}
+                          FileGDBRasterField(FileGDBTable* poParentIn) : FileGDBGeomField(poParentIn) {}
         virtual          ~FileGDBRasterField() {}
 
         const std::string& GetRasterColumnName() const { return osRasterColumnName; }
+
 };
 
 /************************************************************************/

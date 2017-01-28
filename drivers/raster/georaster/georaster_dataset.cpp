@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: $
  *
  * Name:     georaster_dataset.cpp
  * Project:  Oracle Spatial GeoRaster Driver
@@ -36,8 +37,6 @@
 #include "ogr_spatialref.h"
 
 #include "georaster_priv.h"
-
-CPL_CVSID("$Id: georaster_dataset.cpp 36763 2016-12-09 22:10:55Z rouault $");
 
 //  ---------------------------------------------------------------------------
 //                                                           GeoRasterDataset()
@@ -149,7 +148,10 @@ GDALDataset* GeoRasterDataset::Open( GDALOpenInfo* poOpenInfo )
     //  Create a corresponding GDALDataset
     //  -------------------------------------------------------------------
 
-    GeoRasterDataset *poGRD = new GeoRasterDataset();
+    GeoRasterDataset *poGRD;
+
+    poGRD = new GeoRasterDataset();
+
     if( ! poGRD )
     {
         return NULL;
@@ -686,19 +688,19 @@ GDALDataset *GeoRasterDataset::Create( const char *pszFilename,
         }
     }
 
-    poGRD->poGeoRaster->bCreateObjectTable =
-        CPLFetchBool( papszOptions, "OBJECTTABLE", false );
+    poGRD->poGeoRaster->bCreateObjectTable = CPL_TO_BOOL(
+        CSLFetchBoolean( papszOptions, "OBJECTTABLE", FALSE ));
 
     //  -------------------------------------------------------------------
     //  Create a SDO_GEORASTER object on the server
     //  -------------------------------------------------------------------
 
-    const bool bSuccess = poGRW->Create( pszDescription, pszInsert, poGRW->bUniqueFound );
+    bool bSucced = poGRW->Create( pszDescription, pszInsert, poGRW->bUniqueFound );
 
     CPLFree( pszInsert );
     CPLFree( pszDescription );
 
-    if( ! bSuccess )
+    if( ! bSucced )
     {
         delete poGRD;
         return NULL;
@@ -745,8 +747,8 @@ GDALDataset *GeoRasterDataset::Create( const char *pszFilename,
         poGRD->poGeoRaster->SetGeoReference( atoi( pszFetched ) );
     }
 
-    poGRD->poGeoRaster->bGenSpatialIndex =
-        CPLFetchBool( papszOptions, "SPATIALEXTENT", TRUE );
+    poGRD->poGeoRaster->bGenSpatialIndex = CPL_TO_BOOL(
+        CSLFetchBoolean( papszOptions, "SPATIALEXTENT", TRUE ));
 
     pszFetched = CSLFetchNameValue( papszOptions, "EXTENTSRID" );
 
@@ -840,13 +842,13 @@ GDALDataset *GeoRasterDataset::CreateCopy( const char* pszFilename,
     //  Create a GeoRaster on the server or select one to overwrite
     //  -----------------------------------------------------------
 
-    GeoRasterDataset *poDstDS =
-        (GeoRasterDataset *) GeoRasterDataset::Create(
-            pszFilename,
-            poSrcDS->GetRasterXSize(),
-            poSrcDS->GetRasterYSize(),
-            poSrcDS->GetRasterCount(),
-            eType, papszOptions );
+    GeoRasterDataset *poDstDS;
+
+    poDstDS = (GeoRasterDataset *) GeoRasterDataset::Create( pszFilename,
+        poSrcDS->GetRasterXSize(),
+        poSrcDS->GetRasterYSize(),
+        poSrcDS->GetRasterCount(),
+        eType, papszOptions );
 
     if( poDstDS == NULL )
     {
@@ -895,12 +897,8 @@ GDALDataset *GeoRasterDataset::CreateCopy( const char* pszFilename,
 
     int    bHasNoDataValue = FALSE;
     double dfNoDataValue = 0.0;
-    double dfMin = 0.0;
-    double dfMax = 0.0;
-    double dfStdDev = 0.0;
-    double dfMean = 0.0;
-    double dfMedian = 0.0;
-    double dfMode = 0.0;
+    double dfMin = 0.0, dfMax = 0.0, dfStdDev = 0.0, dfMean = 0.0;
+    double dfMedian = 0.0, dfMode = 0.0;
     int    iBand = 0;
 
     for( iBand = 1; iBand <= poSrcDS->GetRasterCount(); iBand++ )
@@ -1132,6 +1130,7 @@ GDALDataset *GeoRasterDataset::CreateCopy( const char* pszFilename,
                         return NULL;
                     }
                 }
+
             }
 
             if( ( eErr == CE_None ) && ( ! pfnProgress(
@@ -1155,7 +1154,7 @@ GDALDataset *GeoRasterDataset::CreateCopy( const char* pszFilename,
 
     if( pfnProgress )
     {
-        CPLDebug("GEOR", "Output dataset: (georaster:%s/%s@%s,%s,%d) on %s%s,%s",
+        printf( "Output dataset: (georaster:%s/%s@%s,%s,%d) on %s%s,%s\n",
             poDstDS->poGeoRaster->poConnection->GetUser(),
             poDstDS->poGeoRaster->poConnection->GetPassword(),
             poDstDS->poGeoRaster->poConnection->GetServer(),
@@ -1454,8 +1453,7 @@ CPLErr GeoRasterDataset::SetProjection( const char *pszProjString )
     // Try to extract EPGS authority code
     // --------------------------------------------------------------------
 
-    const char *pszAuthName = NULL;
-    const char *pszAuthCode = NULL;
+    const char *pszAuthName = NULL, *pszAuthCode = NULL;
 
     if( oSRS.IsGeographic() )
     {

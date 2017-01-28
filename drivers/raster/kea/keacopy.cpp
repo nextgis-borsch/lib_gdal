@@ -1,4 +1,5 @@
 /*
+ * $Id: keacopy.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *  keacopy.cpp
  *
  *  Created by Pete Bunting on 01/08/2012.
@@ -32,8 +33,6 @@
 #include "gdal_rat.h"
 
 #include "keacopy.h"
-
-CPL_CVSID("$Id: keacopy.cpp 36418 2016-11-21 22:58:41Z rouault $");
 
 // Support functions for CreateCopy()
 
@@ -311,12 +310,13 @@ static void KEACopyMetadata( GDALMajorObject *pObject, kealib::KEAImageIO *pImag
     char **ppszMetadata = pObject->GetMetadata();
     if( ppszMetadata != NULL )
     {
+        char *pszName;
+        const char *pszValue;
         int nCount = 0;
         while( ppszMetadata[nCount] != NULL )
         {
-            char *pszName = NULL;
-            const char *pszValue =
-                CPLParseNameValue( ppszMetadata[nCount], &pszName );
+            pszName = NULL;
+            pszValue = CPLParseNameValue( ppszMetadata[nCount], &pszName );
             if( pszValue == NULL )
                 pszValue = "";
             if( pszName != NULL )
@@ -458,12 +458,14 @@ static void KEACopyGCPs(GDALDataset *pDataset, kealib::KEAImageIO *pImageIO)
         {
         }
 
-        for( std::vector<kealib::KEAImageGCP*>::iterator itr = KEAGCPs.begin(); itr != KEAGCPs.end(); ++itr)
+        for( std::vector<kealib::KEAImageGCP*>::iterator itr = KEAGCPs.begin(); itr != KEAGCPs.end(); itr++)
         {
             delete (*itr);
         }
     }
 }
+
+
 
 bool KEACopyFile( GDALDataset *pDataset, kealib::KEAImageIO *pImageIO,
                   GDALProgressFunc pfnProgress, void *pProgressData )

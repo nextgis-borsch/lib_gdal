@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ods_formula_node.cpp 32967 2016-01-13 14:40:01Z goatbar $
  *
  * Component: ODS formula Engine
  * Purpose: Implementation of the ods_formula_node class used to represent a
@@ -30,8 +31,6 @@
 
 #include "cpl_conv.h"
 #include "ods_formula.h"
-
-CPL_CVSID("$Id: ods_formula_node.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 /************************************************************************/
 /*                          ods_formula_node()                          */
@@ -113,25 +112,26 @@ ods_formula_node::ods_formula_node( ods_formula_op eOpIn ) :
 /*              ods_formula_node(const ods_formula_node&)               */
 /************************************************************************/
 
-ods_formula_node::ods_formula_node( const ods_formula_node& other ) :
-    eNodeType(other.eNodeType),
-    field_type(other.field_type),
-    eOp(other.eOp),
-    nSubExprCount(other.nSubExprCount),
-    papoSubExpr(NULL),
-    string_value(other.string_value ? CPLStrdup(other.string_value) : NULL),
-    int_value(other.int_value),
-    float_value(other.float_value)
+ods_formula_node::ods_formula_node( const ods_formula_node& other )
 {
-    if( nSubExprCount )
+    eNodeType = other.eNodeType;
+    eOp = other.eOp;
+    field_type = other.field_type;
+    int_value = other.int_value;
+    float_value = other.float_value;
+    string_value = other.string_value ? CPLStrdup(other.string_value) : NULL;
+    nSubExprCount = other.nSubExprCount;
+    if (nSubExprCount)
     {
         papoSubExpr = static_cast<ods_formula_node **>(
             CPLMalloc( sizeof(void*) * nSubExprCount ) );
-        for( int i = 0; i < nSubExprCount; i++ )
+        for(int i=0;i<nSubExprCount;i++)
         {
             papoSubExpr[i] = new ods_formula_node( *(other.papoSubExpr[i]) );
         }
     }
+    else
+        papoSubExpr = NULL;
 }
 
 /************************************************************************/
@@ -280,10 +280,10 @@ void  ods_formula_node::FreeSubExpr()
 /*                              Evaluate()                              */
 /************************************************************************/
 
-bool ods_formula_node::Evaluate(IODSCellEvaluator* poEvaluator)
+int ods_formula_node::Evaluate(IODSCellEvaluator* poEvaluator)
 {
     if (eNodeType == SNT_CONSTANT)
-        return true;
+        return TRUE;
 
     CPLAssert( eNodeType == SNT_OPERATION );
 
@@ -298,7 +298,7 @@ bool ods_formula_node::Evaluate(IODSCellEvaluator* poEvaluator)
             eNodeType = SNT_CONSTANT;
             field_type = ODS_FIELD_TYPE_FLOAT;
             float_value = M_PI;
-            return true;
+            return TRUE;
 
         case ODS_LEN : return EvaluateLEN(poEvaluator);
         case ODS_LEFT : return EvaluateLEFT(poEvaluator);
@@ -326,6 +326,7 @@ bool ods_formula_node::Evaluate(IODSCellEvaluator* poEvaluator)
         case ODS_LOG:
             return EvaluateSingleArgOp(poEvaluator);
 
+
         case ODS_EQ: return EvaluateEQ(poEvaluator);
         case ODS_NE: return EvaluateNE(poEvaluator);
         case ODS_LE: return EvaluateLE(poEvaluator);
@@ -349,7 +350,7 @@ bool ods_formula_node::Evaluate(IODSCellEvaluator* poEvaluator)
             CPLError(CE_Failure, CPLE_AppDefined,
                      "Unhandled case in Evaluate() for %s",
                      ODSGetOperatorName(eOp));
-            return false;
+            return FALSE;
         }
     }
 }
@@ -358,7 +359,7 @@ bool ods_formula_node::Evaluate(IODSCellEvaluator* poEvaluator)
 /*                             EvaluateOR()                             */
 /************************************************************************/
 
-bool ods_formula_node::EvaluateOR( IODSCellEvaluator* poEvaluator )
+int ods_formula_node::EvaluateOR(IODSCellEvaluator* poEvaluator)
 {
     CPLAssert( eNodeType == SNT_OPERATION );
     CPLAssert( eOp == ODS_OR );
@@ -370,7 +371,7 @@ bool ods_formula_node::EvaluateOR( IODSCellEvaluator* poEvaluator )
     for(int i = 0; i < papoSubExpr[0]->nSubExprCount; i++)
     {
         if (!(papoSubExpr[0]->papoSubExpr[i]->Evaluate(poEvaluator)))
-            return false;
+            return FALSE;
         CPLAssert(papoSubExpr[0]->papoSubExpr[i]->eNodeType == SNT_CONSTANT );
         if( papoSubExpr[0]->papoSubExpr[i]->field_type ==
             ODS_FIELD_TYPE_INTEGER )
@@ -386,7 +387,7 @@ bool ods_formula_node::EvaluateOR( IODSCellEvaluator* poEvaluator )
         {
             CPLError( CE_Failure, CPLE_NotSupported,
                       "Bad argument type for %s", ODSGetOperatorName(eOp));
-            return false;
+            return FALSE;
         }
     }
 
@@ -396,14 +397,14 @@ bool ods_formula_node::EvaluateOR( IODSCellEvaluator* poEvaluator )
     field_type = ODS_FIELD_TYPE_INTEGER;
     int_value = bVal;
 
-    return true;
+    return TRUE;
 }
 
 /************************************************************************/
 /*                            EvaluateAND()                             */
 /************************************************************************/
 
-bool ods_formula_node::EvaluateAND( IODSCellEvaluator* poEvaluator )
+int ods_formula_node::EvaluateAND(IODSCellEvaluator* poEvaluator)
 {
     CPLAssert( eNodeType == SNT_OPERATION );
     CPLAssert( eOp == ODS_AND );
@@ -415,7 +416,7 @@ bool ods_formula_node::EvaluateAND( IODSCellEvaluator* poEvaluator )
     for(int i = 0; i < papoSubExpr[0]->nSubExprCount; i++)
     {
         if (!(papoSubExpr[0]->papoSubExpr[i]->Evaluate(poEvaluator)))
-            return false;
+            return FALSE;
         CPLAssert(papoSubExpr[0]->papoSubExpr[i]->eNodeType == SNT_CONSTANT );
         if (papoSubExpr[0]->papoSubExpr[i]->field_type == ODS_FIELD_TYPE_INTEGER)
         {
@@ -430,7 +431,7 @@ bool ods_formula_node::EvaluateAND( IODSCellEvaluator* poEvaluator )
         {
             CPLError( CE_Failure, CPLE_NotSupported,
                       "Bad argument type for %s", ODSGetOperatorName(eOp));
-            return false;
+            return FALSE;
         }
     }
 
@@ -440,21 +441,21 @@ bool ods_formula_node::EvaluateAND( IODSCellEvaluator* poEvaluator )
     field_type = ODS_FIELD_TYPE_INTEGER;
     int_value = bVal;
 
-    return true;
+    return TRUE;
 }
 
 /************************************************************************/
 /*                            EvaluateNOT()                             */
 /************************************************************************/
 
-bool ods_formula_node::EvaluateNOT( IODSCellEvaluator* poEvaluator )
+int ods_formula_node::EvaluateNOT(IODSCellEvaluator* poEvaluator)
 {
     CPLAssert( eNodeType == SNT_OPERATION );
     CPLAssert( eOp == ODS_NOT );
 
     CPLAssert(nSubExprCount == 1);
     if (!(papoSubExpr[0]->Evaluate(poEvaluator)))
-        return false;
+        return FALSE;
     CPLAssert(papoSubExpr[0]->eNodeType == SNT_CONSTANT );
 
     bool bVal = false;
@@ -470,7 +471,7 @@ bool ods_formula_node::EvaluateNOT( IODSCellEvaluator* poEvaluator )
     {
         CPLError(CE_Failure, CPLE_NotSupported,
                  "Bad argument type for %s", ODSGetOperatorName(eOp));
-        return false;
+        return FALSE;
     }
 
     FreeSubExpr();
@@ -479,25 +480,25 @@ bool ods_formula_node::EvaluateNOT( IODSCellEvaluator* poEvaluator )
     field_type = ODS_FIELD_TYPE_INTEGER;
     int_value = bVal;
 
-    return true;
+    return TRUE;
 }
 
 /************************************************************************/
 /*                            EvaluateIF()                              */
 /************************************************************************/
 
-bool ods_formula_node::EvaluateIF( IODSCellEvaluator* poEvaluator )
+int ods_formula_node::EvaluateIF(IODSCellEvaluator* poEvaluator)
 {
     CPLAssert( eNodeType == SNT_OPERATION );
     CPLAssert( eOp == ODS_IF );
 
     CPLAssert(nSubExprCount == 2 || nSubExprCount == 3);
     if (!(papoSubExpr[0]->Evaluate(poEvaluator)))
-        return false;
+        return FALSE;
     if (!(papoSubExpr[1]->Evaluate(poEvaluator)))
-        return false;
+        return FALSE;
     if (nSubExprCount == 3 && !(papoSubExpr[2]->Evaluate(poEvaluator)))
-        return false;
+        return FALSE;
 
     CPLAssert(papoSubExpr[0]->eNodeType == SNT_CONSTANT );
     CPLAssert(papoSubExpr[1]->eNodeType == SNT_CONSTANT );
@@ -518,7 +519,7 @@ bool ods_formula_node::EvaluateIF( IODSCellEvaluator* poEvaluator )
     {
         CPLError(CE_Failure, CPLE_NotSupported,
                  "Bad argument type for %s", ODSGetOperatorName(eOp));
-        return false;
+        return FALSE;
     }
 
     if (bCond)
@@ -558,23 +559,23 @@ bool ods_formula_node::EvaluateIF( IODSCellEvaluator* poEvaluator )
 
     FreeSubExpr();
 
-    return true;
+    return TRUE;
 }
 
 /************************************************************************/
 /*                            EvaluateEQ()                              */
 /************************************************************************/
 
-bool ods_formula_node::EvaluateEQ( IODSCellEvaluator* poEvaluator )
+int ods_formula_node::EvaluateEQ(IODSCellEvaluator* poEvaluator)
 {
     CPLAssert( eNodeType == SNT_OPERATION );
     CPLAssert( eOp == ODS_EQ );
 
     CPLAssert(nSubExprCount == 2);
     if (!(papoSubExpr[0]->Evaluate(poEvaluator)))
-        return false;
+        return FALSE;
     if (!(papoSubExpr[1]->Evaluate(poEvaluator)))
-        return false;
+        return FALSE;
 
     CPLAssert(papoSubExpr[0]->eNodeType == SNT_CONSTANT );
     CPLAssert(papoSubExpr[1]->eNodeType == SNT_CONSTANT );
@@ -616,7 +617,7 @@ bool ods_formula_node::EvaluateEQ( IODSCellEvaluator* poEvaluator )
     {
         CPLError(CE_Failure, CPLE_NotSupported,
                  "Bad argument type for %s", ODSGetOperatorName(eOp));
-        return false;
+        return FALSE;
     }
 
     eNodeType = SNT_CONSTANT;
@@ -625,24 +626,24 @@ bool ods_formula_node::EvaluateEQ( IODSCellEvaluator* poEvaluator )
 
     FreeSubExpr();
 
-    return true;
+    return TRUE;
 }
 
 /************************************************************************/
 /*                           EvaluateNE()                               */
 /************************************************************************/
 
-bool ods_formula_node::EvaluateNE( IODSCellEvaluator* poEvaluator )
+int ods_formula_node::EvaluateNE(IODSCellEvaluator* poEvaluator)
 {
     CPLAssert( eNodeType == SNT_OPERATION );
     CPLAssert( eOp == ODS_NE );
 
     eOp = ODS_EQ;
     if (!EvaluateEQ(poEvaluator))
-        return false;
+        return FALSE;
 
     int_value = !int_value;
-    return true;
+    return TRUE;
 }
 
 /************************************************************************/
@@ -659,7 +660,7 @@ typedef enum
 static CaseType GetCase(const char* pszStr)
 {
     bool bInit = true;
-    char ch = '\0';
+    char ch;
     CaseType eCase = CASE_UNKNOWN;
     while((ch = *(pszStr++)) != '\0')
     {
@@ -687,16 +688,16 @@ static CaseType GetCase(const char* pszStr)
 /*                            EvaluateLE()                              */
 /************************************************************************/
 
-bool ods_formula_node::EvaluateLE( IODSCellEvaluator* poEvaluator )
+int ods_formula_node::EvaluateLE(IODSCellEvaluator* poEvaluator)
 {
     CPLAssert( eNodeType == SNT_OPERATION );
     CPLAssert( eOp == ODS_LE );
 
     CPLAssert(nSubExprCount == 2);
     if (!(papoSubExpr[0]->Evaluate(poEvaluator)))
-        return false;
+        return FALSE;
     if (!(papoSubExpr[1]->Evaluate(poEvaluator)))
-        return false;
+        return FALSE;
 
     CPLAssert(papoSubExpr[0]->eNodeType == SNT_CONSTANT );
     CPLAssert(papoSubExpr[1]->eNodeType == SNT_CONSTANT );
@@ -747,7 +748,7 @@ bool ods_formula_node::EvaluateLE( IODSCellEvaluator* poEvaluator )
     {
         CPLError(CE_Failure, CPLE_NotSupported,
                  "Bad argument type for %s", ODSGetOperatorName(eOp));
-        return false;
+        return FALSE;
     }
 
     eNodeType = SNT_CONSTANT;
@@ -756,23 +757,23 @@ bool ods_formula_node::EvaluateLE( IODSCellEvaluator* poEvaluator )
 
     FreeSubExpr();
 
-    return true;
+    return TRUE;
 }
 
 /************************************************************************/
 /*                            EvaluateGE()                              */
 /************************************************************************/
 
-bool ods_formula_node::EvaluateGE( IODSCellEvaluator* poEvaluator )
+int ods_formula_node::EvaluateGE(IODSCellEvaluator* poEvaluator)
 {
     CPLAssert( eNodeType == SNT_OPERATION );
     CPLAssert( eOp == ODS_GE );
 
     CPLAssert(nSubExprCount == 2);
     if (!(papoSubExpr[0]->Evaluate(poEvaluator)))
-        return false;
+        return FALSE;
     if (!(papoSubExpr[1]->Evaluate(poEvaluator)))
-        return false;
+        return FALSE;
 
     CPLAssert(papoSubExpr[0]->eNodeType == SNT_CONSTANT );
     CPLAssert(papoSubExpr[1]->eNodeType == SNT_CONSTANT );
@@ -821,7 +822,7 @@ bool ods_formula_node::EvaluateGE( IODSCellEvaluator* poEvaluator )
     {
         CPLError(CE_Failure, CPLE_NotSupported,
                  "Bad argument type for %s", ODSGetOperatorName(eOp));
-        return false;
+        return FALSE;
     }
 
     eNodeType = SNT_CONSTANT;
@@ -830,23 +831,23 @@ bool ods_formula_node::EvaluateGE( IODSCellEvaluator* poEvaluator )
 
     FreeSubExpr();
 
-    return true;
+    return TRUE;
 }
 
 /************************************************************************/
 /*                            EvaluateLT()                              */
 /************************************************************************/
 
-bool ods_formula_node::EvaluateLT( IODSCellEvaluator* poEvaluator )
+int ods_formula_node::EvaluateLT(IODSCellEvaluator* poEvaluator)
 {
     CPLAssert( eNodeType == SNT_OPERATION );
     CPLAssert( eOp == ODS_LT );
 
     CPLAssert(nSubExprCount == 2);
     if (!(papoSubExpr[0]->Evaluate(poEvaluator)))
-        return false;
+        return FALSE;
     if (!(papoSubExpr[1]->Evaluate(poEvaluator)))
-        return false;
+        return FALSE;
 
     CPLAssert(papoSubExpr[0]->eNodeType == SNT_CONSTANT );
     CPLAssert(papoSubExpr[1]->eNodeType == SNT_CONSTANT );
@@ -897,7 +898,7 @@ bool ods_formula_node::EvaluateLT( IODSCellEvaluator* poEvaluator )
     {
         CPLError(CE_Failure, CPLE_NotSupported,
                  "Bad argument type for %s", ODSGetOperatorName(eOp));
-        return false;
+        return FALSE;
     }
 
     eNodeType = SNT_CONSTANT;
@@ -906,23 +907,23 @@ bool ods_formula_node::EvaluateLT( IODSCellEvaluator* poEvaluator )
 
     FreeSubExpr();
 
-    return true;
+    return TRUE;
 }
 
 /************************************************************************/
 /*                            EvaluateGT()                              */
 /************************************************************************/
 
-bool ods_formula_node::EvaluateGT( IODSCellEvaluator* poEvaluator )
+int ods_formula_node::EvaluateGT(IODSCellEvaluator* poEvaluator)
 {
     CPLAssert( eNodeType == SNT_OPERATION );
     CPLAssert( eOp == ODS_GT );
 
     CPLAssert(nSubExprCount == 2);
     if (!(papoSubExpr[0]->Evaluate(poEvaluator)))
-        return false;
+        return FALSE;
     if (!(papoSubExpr[1]->Evaluate(poEvaluator)))
-        return false;
+        return FALSE;
 
     CPLAssert(papoSubExpr[0]->eNodeType == SNT_CONSTANT );
     CPLAssert(papoSubExpr[1]->eNodeType == SNT_CONSTANT );
@@ -971,7 +972,7 @@ bool ods_formula_node::EvaluateGT( IODSCellEvaluator* poEvaluator )
     {
         CPLError(CE_Failure, CPLE_NotSupported,
                  "Bad argument type for %s", ODSGetOperatorName(eOp));
-        return false;
+        return FALSE;
     }
 
     eNodeType = SNT_CONSTANT;
@@ -980,14 +981,14 @@ bool ods_formula_node::EvaluateGT( IODSCellEvaluator* poEvaluator )
 
     FreeSubExpr();
 
-    return true;
+    return TRUE;
 }
 
 /************************************************************************/
 /*                         EvaluateSingleArgOp()                        */
 /************************************************************************/
 
-bool ods_formula_node::EvaluateSingleArgOp( IODSCellEvaluator* poEvaluator )
+int ods_formula_node::EvaluateSingleArgOp(IODSCellEvaluator* poEvaluator)
 {
     CPLAssert( eNodeType == SNT_OPERATION );
 
@@ -996,7 +997,7 @@ bool ods_formula_node::EvaluateSingleArgOp( IODSCellEvaluator* poEvaluator )
 
     CPLAssert(nSubExprCount == 1);
     if (!(papoSubExpr[0]->Evaluate(poEvaluator)))
-        return false;
+        return FALSE;
 
     CPLAssert(papoSubExpr[0]->eNodeType == SNT_CONSTANT );
     double dfVal = 0.0;
@@ -1013,7 +1014,7 @@ bool ods_formula_node::EvaluateSingleArgOp( IODSCellEvaluator* poEvaluator )
     {
         CPLError(CE_Failure, CPLE_NotSupported, "Bad argument type for %s",
                  psSingleOp->pszName);
-        return false;
+        return FALSE;
     }
 
     eNodeType = SNT_CONSTANT;
@@ -1022,24 +1023,23 @@ bool ods_formula_node::EvaluateSingleArgOp( IODSCellEvaluator* poEvaluator )
 
     FreeSubExpr();
 
-    return true;
+    return TRUE;
 }
 
 /************************************************************************/
 /*                       EvaluateBinaryArithmetic()                     */
 /************************************************************************/
 
-bool
-ods_formula_node::EvaluateBinaryArithmetic( IODSCellEvaluator* poEvaluator )
+int ods_formula_node::EvaluateBinaryArithmetic(IODSCellEvaluator* poEvaluator)
 {
     CPLAssert( eNodeType == SNT_OPERATION );
     CPLAssert( eOp >= ODS_ADD && eOp<= ODS_MODULUS );
 
     CPLAssert(nSubExprCount == 2);
     if (!(papoSubExpr[0]->Evaluate(poEvaluator)))
-        return false;
+        return FALSE;
     if (!(papoSubExpr[1]->Evaluate(poEvaluator)))
-        return false;
+        return FALSE;
 
     CPLAssert(papoSubExpr[0]->eNodeType == SNT_CONSTANT );
     CPLAssert(papoSubExpr[1]->eNodeType == SNT_CONSTANT );
@@ -1066,17 +1066,17 @@ ods_formula_node::EvaluateBinaryArithmetic( IODSCellEvaluator* poEvaluator )
                         nVal = papoSubExpr[0]->int_value /
                             papoSubExpr[1]->int_value;
                     else
-                        return false;
+                        return FALSE;
                     break;
                 case ODS_MODULUS  :
                     if( papoSubExpr[1]->int_value != 0 )
                         nVal = papoSubExpr[0]->int_value %
                             papoSubExpr[1]->int_value;
                     else
-                        return false;
+                        return FALSE;
                     break;
                 default:
-                    CPLAssert(false);
+                    CPLAssert(0);
             }
 
             eNodeType = SNT_CONSTANT;
@@ -1085,7 +1085,7 @@ ods_formula_node::EvaluateBinaryArithmetic( IODSCellEvaluator* poEvaluator )
 
             FreeSubExpr();
 
-            return true;
+            return TRUE;
         }
         else if (papoSubExpr[1]->field_type == ODS_FIELD_TYPE_FLOAT)
         {
@@ -1096,7 +1096,7 @@ ods_formula_node::EvaluateBinaryArithmetic( IODSCellEvaluator* poEvaluator )
         {
             CPLError(CE_Failure, CPLE_NotSupported,
                      "Bad argument type for %s", ODSGetOperatorName(eOp));
-            return false;
+            return FALSE;
         }
     }
 
@@ -1121,15 +1121,15 @@ ods_formula_node::EvaluateBinaryArithmetic( IODSCellEvaluator* poEvaluator )
                     if (papoSubExpr[1]->float_value != 0)
                         dfVal = (papoSubExpr[0]->float_value / papoSubExpr[1]->float_value);
                     else
-                        return false;
+                        return FALSE;
                     break;
                 case ODS_MODULUS  :
                     if (papoSubExpr[1]->float_value != 0)
                         dfVal = fmod(papoSubExpr[0]->float_value, papoSubExpr[1]->float_value);
                     else
-                        return false;
+                        return FALSE;
                     break;
-                default: CPLAssert(false);
+                default: CPLAssert(0);
             }
 
             eNodeType = SNT_CONSTANT;
@@ -1138,22 +1138,23 @@ ods_formula_node::EvaluateBinaryArithmetic( IODSCellEvaluator* poEvaluator )
 
             FreeSubExpr();
 
-            return true;
+            return TRUE;
         }
         else
         {
             CPLError(CE_Failure, CPLE_NotSupported,
                      "Bad argument type for %s", ODSGetOperatorName(eOp));
-            return false;
+            return FALSE;
         }
     }
     else
     {
         CPLError(CE_Failure, CPLE_NotSupported,
                  "Bad argument type for %s", ODSGetOperatorName(eOp));
-        return false;
+        return FALSE;
     }
 }
+
 
 /************************************************************************/
 /*                         TransformToString()                          */
@@ -1186,16 +1187,16 @@ std::string ods_formula_node::TransformToString() const
 /*                           EvaluateCONCAT()                           */
 /************************************************************************/
 
-bool ods_formula_node::EvaluateCONCAT( IODSCellEvaluator* poEvaluator )
+int ods_formula_node::EvaluateCONCAT(IODSCellEvaluator* poEvaluator)
 {
     CPLAssert( eNodeType == SNT_OPERATION );
     CPLAssert( eOp == ODS_CONCAT );
 
     CPLAssert(nSubExprCount == 2);
     if (!(papoSubExpr[0]->Evaluate(poEvaluator)))
-        return false;
+        return FALSE;
     if (!(papoSubExpr[1]->Evaluate(poEvaluator)))
-        return false;
+        return FALSE;
 
     CPLAssert(papoSubExpr[0]->eNodeType == SNT_CONSTANT );
     CPLAssert(papoSubExpr[1]->eNodeType == SNT_CONSTANT );
@@ -1209,7 +1210,7 @@ bool ods_formula_node::EvaluateCONCAT( IODSCellEvaluator* poEvaluator )
 
     FreeSubExpr();
 
-    return true;
+    return TRUE;
 }
 
 /************************************************************************/
@@ -1240,7 +1241,7 @@ static bool GetRowCol(const char* pszCell, int& nRow, int& nCol)
 /*                         EvaluateListArgOp()                          */
 /************************************************************************/
 
-bool ods_formula_node::EvaluateListArgOp( IODSCellEvaluator* poEvaluator )
+int ods_formula_node::EvaluateListArgOp(IODSCellEvaluator* poEvaluator)
 {
     CPLAssert( eNodeType == SNT_OPERATION );
     CPLAssert( eOp >= ODS_SUM && eOp <= ODS_COUNTA );
@@ -1250,11 +1251,12 @@ bool ods_formula_node::EvaluateListArgOp( IODSCellEvaluator* poEvaluator )
     CPLAssert(papoSubExpr[0]->eOp == ODS_LIST );
 
     std::vector<double> adfVal;
+    int i;
 
     int nCount = 0;
     int nCountA = 0;
 
-    for( int i = 0; i < papoSubExpr[0]->nSubExprCount; i++ )
+    for(i=0;i<papoSubExpr[0]->nSubExprCount;i++)
     {
         if (papoSubExpr[0]->papoSubExpr[i]->eNodeType == SNT_OPERATION &&
             papoSubExpr[0]->papoSubExpr[i]->eOp == ODS_CELL_RANGE)
@@ -1268,7 +1270,7 @@ bool ods_formula_node::EvaluateListArgOp( IODSCellEvaluator* poEvaluator )
             if (poEvaluator == NULL)
             {
                 CPLError(CE_Failure, CPLE_AppDefined, "No cell evaluator provided");
-                return false;
+                return FALSE;
             }
 
             const char* psz1 = papoSubExpr[0]->papoSubExpr[i]->papoSubExpr[0]->string_value;
@@ -1276,11 +1278,11 @@ bool ods_formula_node::EvaluateListArgOp( IODSCellEvaluator* poEvaluator )
             int nRow1 = 0;
             int nCol1 = 0;
             if (!GetRowCol(psz1, nRow1, nCol1))
-                return false;
+                return FALSE;
             int nRow2 = 0;
             int nCol2 = 0;
             if (!GetRowCol(psz2, nRow2, nCol2))
-                return false;
+                return FALSE;
 
             std::vector<ods_formula_node> aoOutValues;
             if (poEvaluator->EvaluateRange(nRow1, nCol1, nRow2, nCol2, aoOutValues))
@@ -1312,7 +1314,7 @@ bool ods_formula_node::EvaluateListArgOp( IODSCellEvaluator* poEvaluator )
         else
         {
             if (!(papoSubExpr[0]->papoSubExpr[i]->Evaluate(poEvaluator)))
-                return false;
+                return FALSE;
 
             CPLAssert (papoSubExpr[0]->papoSubExpr[i]->eNodeType == SNT_CONSTANT );
             if (papoSubExpr[0]->papoSubExpr[i]->field_type == ODS_FIELD_TYPE_INTEGER)
@@ -1337,7 +1339,7 @@ bool ods_formula_node::EvaluateListArgOp( IODSCellEvaluator* poEvaluator )
 
                 CPLError(CE_Failure, CPLE_NotSupported,
                          "Bad argument type for %s", ODSGetOperatorName(eOp));
-                return false;
+                return FALSE;
             }
         }
     }
@@ -1349,7 +1351,7 @@ bool ods_formula_node::EvaluateListArgOp( IODSCellEvaluator* poEvaluator )
         int_value = nCount;
 
         FreeSubExpr();
-        return true;
+        return TRUE;
     }
 
     if (eOp == ODS_COUNTA)
@@ -1359,7 +1361,7 @@ bool ods_formula_node::EvaluateListArgOp( IODSCellEvaluator* poEvaluator )
         int_value = nCountA;
 
         FreeSubExpr();
-        return true;
+        return TRUE;
     }
 
     double dfVal = 0.0;
@@ -1368,7 +1370,7 @@ bool ods_formula_node::EvaluateListArgOp( IODSCellEvaluator* poEvaluator )
     {
         case ODS_SUM:
         {
-            for( int i = 0; i < (int)adfVal.size(); i++ )
+            for(i=0;i<(int)adfVal.size();i++)
             {
                 dfVal += adfVal[i];
             }
@@ -1377,7 +1379,7 @@ bool ods_formula_node::EvaluateListArgOp( IODSCellEvaluator* poEvaluator )
 
         case ODS_AVERAGE:
         {
-            for( int i = 0; i < (int)adfVal.size(); i++ )
+            for(i=0;i<(int)adfVal.size();i++)
             {
                 dfVal += adfVal[i];
             }
@@ -1387,8 +1389,8 @@ bool ods_formula_node::EvaluateListArgOp( IODSCellEvaluator* poEvaluator )
 
         case ODS_MIN:
         {
-            dfVal = (adfVal.empty()) ? 0 :adfVal[0];
-            for( int i = 1; i < (int)adfVal.size(); i++ )
+            dfVal = (adfVal.size() == 0) ? 0 :adfVal[0];
+            for(i=1;i<(int)adfVal.size();i++)
             {
                 if (adfVal[i] < dfVal) dfVal = adfVal[i];
             }
@@ -1397,8 +1399,8 @@ bool ods_formula_node::EvaluateListArgOp( IODSCellEvaluator* poEvaluator )
 
         case ODS_MAX:
         {
-            dfVal = (adfVal.empty()) ? 0 :adfVal[0];
-            for( int i = 1; i < (int)adfVal.size(); i++ )
+            dfVal = (adfVal.size() == 0) ? 0 :adfVal[0];
+            for(i=1;i<(int)adfVal.size();i++)
             {
                 if (adfVal[i] > dfVal) dfVal = adfVal[i];
             }
@@ -1415,14 +1417,14 @@ bool ods_formula_node::EvaluateListArgOp( IODSCellEvaluator* poEvaluator )
 
     FreeSubExpr();
 
-    return true;
+    return TRUE;
 }
 
 /************************************************************************/
 /*                           EvaluateCELL()                             */
 /************************************************************************/
 
-bool ods_formula_node::EvaluateCELL( IODSCellEvaluator* poEvaluator )
+int ods_formula_node::EvaluateCELL(IODSCellEvaluator* poEvaluator)
 {
     CPLAssert( eNodeType == SNT_OPERATION );
     CPLAssert( eOp == ODS_CELL );
@@ -1434,13 +1436,13 @@ bool ods_formula_node::EvaluateCELL( IODSCellEvaluator* poEvaluator )
     if (poEvaluator == NULL)
     {
         CPLError(CE_Failure, CPLE_AppDefined, "No cell evaluator provided");
-        return false;
+        return FALSE;
     }
 
     int nRow = 0;
     int nCol = 0;
     if (!GetRowCol(papoSubExpr[0]->string_value, nRow, nCol))
-        return false;
+        return FALSE;
 
     std::vector<ods_formula_node> aoOutValues;
     if (poEvaluator->EvaluateRange(nRow, nCol, nRow, nCol, aoOutValues) &&
@@ -1457,24 +1459,24 @@ bool ods_formula_node::EvaluateCELL( IODSCellEvaluator* poEvaluator )
             string_value = aoOutValues[0].string_value ?
                 CPLStrdup(aoOutValues[0].string_value) : NULL;
 
-            return true;
+            return TRUE;
         }
     }
 
-    return false;
+    return FALSE;
 }
 
 /************************************************************************/
 /*                           EvaluateLEN()                              */
 /************************************************************************/
 
-bool ods_formula_node::EvaluateLEN( IODSCellEvaluator* poEvaluator )
+int ods_formula_node::EvaluateLEN(IODSCellEvaluator* poEvaluator)
 {
     CPLAssert( eNodeType == SNT_OPERATION );
 
     CPLAssert(nSubExprCount == 1);
     if (!(papoSubExpr[0]->Evaluate(poEvaluator)))
-        return false;
+        return FALSE;
 
     CPLAssert(papoSubExpr[0]->eNodeType == SNT_CONSTANT );
 
@@ -1486,22 +1488,22 @@ bool ods_formula_node::EvaluateLEN( IODSCellEvaluator* poEvaluator )
 
     FreeSubExpr();
 
-    return true;
+    return TRUE;
 }
 
 /************************************************************************/
 /*                           EvaluateLEFT()                             */
 /************************************************************************/
 
-bool ods_formula_node::EvaluateLEFT( IODSCellEvaluator* poEvaluator )
+int ods_formula_node::EvaluateLEFT(IODSCellEvaluator* poEvaluator)
 {
     CPLAssert( eNodeType == SNT_OPERATION );
 
     CPLAssert(nSubExprCount == 2);
     if (!(papoSubExpr[0]->Evaluate(poEvaluator)))
-        return false;
+        return FALSE;
     if (!(papoSubExpr[1]->Evaluate(poEvaluator)))
-        return false;
+        return FALSE;
 
     CPLAssert(papoSubExpr[0]->eNodeType == SNT_CONSTANT );
     CPLAssert(papoSubExpr[1]->eNodeType == SNT_CONSTANT );
@@ -1509,12 +1511,12 @@ bool ods_formula_node::EvaluateLEFT( IODSCellEvaluator* poEvaluator )
     std::string osVal = papoSubExpr[0]->TransformToString();
 
     if (papoSubExpr[1]->field_type != ODS_FIELD_TYPE_INTEGER)
-        return false;
+        return FALSE;
 
     // FIXME : UTF8 support
     const int nVal = papoSubExpr[1]->int_value;
     if (nVal < 0)
-        return false;
+        return FALSE;
 
     osVal = osVal.substr(0,nVal);
 
@@ -1524,22 +1526,22 @@ bool ods_formula_node::EvaluateLEFT( IODSCellEvaluator* poEvaluator )
 
     FreeSubExpr();
 
-    return true;
+    return TRUE;
 }
 
 /************************************************************************/
 /*                           EvaluateRIGHT()                            */
 /************************************************************************/
 
-bool ods_formula_node::EvaluateRIGHT( IODSCellEvaluator* poEvaluator )
+int ods_formula_node::EvaluateRIGHT(IODSCellEvaluator* poEvaluator)
 {
     CPLAssert( eNodeType == SNT_OPERATION );
 
     CPLAssert(nSubExprCount == 2);
     if (!(papoSubExpr[0]->Evaluate(poEvaluator)))
-        return false;
+        return FALSE;
     if (!(papoSubExpr[1]->Evaluate(poEvaluator)))
-        return false;
+        return FALSE;
 
     CPLAssert(papoSubExpr[0]->eNodeType == SNT_CONSTANT );
     CPLAssert(papoSubExpr[1]->eNodeType == SNT_CONSTANT );
@@ -1547,13 +1549,13 @@ bool ods_formula_node::EvaluateRIGHT( IODSCellEvaluator* poEvaluator )
     std::string osVal = papoSubExpr[0]->TransformToString();
 
     if (papoSubExpr[1]->field_type != ODS_FIELD_TYPE_INTEGER)
-        return false;
+        return FALSE;
 
     // FIXME : UTF8 support
     const size_t nLen = osVal.size();
     const int nVal = papoSubExpr[1]->int_value;
     if (nVal < 0)
-        return false;
+        return FALSE;
 
     if (nLen > (size_t) nVal)
         osVal = osVal.substr(nLen-nVal);
@@ -1564,24 +1566,24 @@ bool ods_formula_node::EvaluateRIGHT( IODSCellEvaluator* poEvaluator )
 
     FreeSubExpr();
 
-    return true;
+    return TRUE;
 }
 
 /************************************************************************/
 /*                           EvaluateMID()                             */
 /************************************************************************/
 
-bool ods_formula_node::EvaluateMID( IODSCellEvaluator* poEvaluator )
+int ods_formula_node::EvaluateMID(IODSCellEvaluator* poEvaluator)
 {
     CPLAssert( eNodeType == SNT_OPERATION );
 
     CPLAssert(nSubExprCount == 3);
     if (!(papoSubExpr[0]->Evaluate(poEvaluator)))
-        return false;
+        return FALSE;
     if (!(papoSubExpr[1]->Evaluate(poEvaluator)))
-        return false;
+        return FALSE;
     if (!(papoSubExpr[2]->Evaluate(poEvaluator)))
-        return false;
+        return FALSE;
 
     CPLAssert(papoSubExpr[0]->eNodeType == SNT_CONSTANT );
     CPLAssert(papoSubExpr[1]->eNodeType == SNT_CONSTANT );
@@ -1590,19 +1592,19 @@ bool ods_formula_node::EvaluateMID( IODSCellEvaluator* poEvaluator )
     std::string osVal = papoSubExpr[0]->TransformToString();
 
     if (papoSubExpr[1]->field_type != ODS_FIELD_TYPE_INTEGER)
-        return false;
+        return FALSE;
 
     if (papoSubExpr[2]->field_type != ODS_FIELD_TYPE_INTEGER)
-        return false;
+        return FALSE;
 
     // FIXME : UTF8 support
     const size_t nLen = osVal.size();
     const int nStart = papoSubExpr[1]->int_value;
     const int nExtractLen = papoSubExpr[2]->int_value;
     if (nStart <= 0)
-        return false;
+        return FALSE;
     if (nExtractLen < 0)
-        return false;
+        return FALSE;
 
     if ((size_t)nStart <= nLen)
     {
@@ -1620,5 +1622,5 @@ bool ods_formula_node::EvaluateMID( IODSCellEvaluator* poEvaluator )
 
     FreeSubExpr();
 
-    return true;
+    return TRUE;
 }

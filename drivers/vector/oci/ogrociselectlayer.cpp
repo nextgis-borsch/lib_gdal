@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrociselectlayer.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  Oracle Spatial Driver
  * Purpose:  Implementation of the OGROCISelectLayer class.  This class
@@ -31,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrociselectlayer.cpp 34819 2016-07-28 22:32:18Z goatbar $");
+CPL_CVSID("$Id: ogrociselectlayer.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 /************************************************************************/
 /*                          OGROCISelectLayer()                         */

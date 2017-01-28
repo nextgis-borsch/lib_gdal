@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_aws.h 36373 2016-11-21 05:22:29Z goatbar $
+ * $Id: cpl_aws.h 33758 2016-03-21 09:06:22Z rouault $
  *
  * Name:     cpl_aws.h
  * Project:  CPL - Common Portability Library
@@ -30,10 +30,6 @@
 
 #ifndef CPL_AWS_INCLUDED_H
 #define CPL_AWS_INCLUDED_H
-
-#ifndef DOXYGEN_SKIP
-
-#include <cstddef>
 
 #include "cpl_string.h"
 
@@ -136,7 +132,5 @@ class VSIS3UpdateParams
 };
 
 #endif /* HAVE_CURL */
-
-#endif /* #ifndef DOXYGEN_SKIP */
 
 #endif /* CPL_AWS_INCLUDED_H */

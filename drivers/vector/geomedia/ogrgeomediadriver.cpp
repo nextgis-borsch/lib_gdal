@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrgeomediadriver.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements Personal Geodatabase driver.
@@ -30,7 +31,7 @@
 #include "ogr_geomedia.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrgeomediadriver.cpp 35137 2016-08-17 17:05:45Z goatbar $");
+CPL_CVSID("$Id: ogrgeomediadriver.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 /************************************************************************/
 /*                          ~OGRODBCDriver()                            */
@@ -59,6 +60,8 @@ OGRDataSource *OGRGeomediaDriver::Open( const char * pszFilename,
                                     int bUpdate )
 
 {
+    OGRGeomediaDataSource     *poDS;
+
     if( STARTS_WITH_CI(pszFilename, "WALK:") )
         return NULL;
 
@@ -123,7 +126,7 @@ OGRDataSource *OGRGeomediaDriver::Open( const char * pszFilename,
 #endif /* ndef WIN32 */
 
     // Open data source
-    OGRGeomediaDataSource *poDS = new OGRGeomediaDataSource();
+    poDS = new OGRGeomediaDataSource();
 
     if( !poDS->Open( pszFilename, bUpdate, TRUE ) )
     {

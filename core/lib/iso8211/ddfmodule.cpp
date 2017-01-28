@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ddfmodule.cpp 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  ISO 8211 Access
  * Purpose:  Implements the DDFModule class.
@@ -27,20 +28,10 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "cpl_port.h"
 #include "iso8211.h"
-
-#include <cstdio>
-#include <cstring>
-#if HAVE_FCNTL_H
-#  include <fcntl.h>
-#endif
-
 #include "cpl_conv.h"
-#include "cpl_error.h"
-#include "cpl_vsi.h"
 
-CPL_CVSID("$Id: ddfmodule.cpp 36552 2016-11-29 06:01:45Z goatbar $");
+CPL_CVSID("$Id: ddfmodule.cpp 33717 2016-03-14 06:29:14Z goatbar $");
 
 /************************************************************************/
 /*                             DDFModule()                              */
@@ -51,28 +42,31 @@ CPL_CVSID("$Id: ddfmodule.cpp 36552 2016-11-29 06:01:45Z goatbar $");
  */
 
 DDFModule::DDFModule() :
-    fpDDF(NULL),
-    bReadOnly(TRUE),
-    nFirstRecordOffset(0),
-    _interchangeLevel('\0'),
-    _inlineCodeExtensionIndicator('\0'),
-    _versionNumber('\0'),
-    _appIndicator('\0'),
-    _fieldControlLength(9),
-    _recLength(0),
-    _leaderIden('L'),
-    _fieldAreaStart(0),
-    _sizeFieldLength(0),
-    _sizeFieldPos(0),
-    _sizeFieldTag(0),
-    nFieldDefnCount(0),
-    papoFieldDefns(NULL),
-    poRecord(NULL),
-    nCloneCount(0),
-    nMaxCloneCount(0),
-    papoClones(NULL)
+    nFirstRecordOffset(0)
 {
+    nFieldDefnCount = 0;
+    papoFieldDefns = NULL;
+    poRecord = NULL;
+
+    papoClones = NULL;
+    nCloneCount = nMaxCloneCount = 0;
+
+    fpDDF = NULL;
+    bReadOnly = TRUE;
+
+    _interchangeLevel = '\0';
+    _inlineCodeExtensionIndicator = '\0';
+    _versionNumber = '\0';
+    _appIndicator = '\0';
+    _fieldControlLength = 9;
     strcpy( _extendedCharSet, " ! " );
+
+    _recLength = 0;
+    _leaderIden = 'L';
+    _fieldAreaStart = 0;
+    _sizeFieldLength = 0;
+    _sizeFieldPos = 0;
+    _sizeFieldTag = 0;
 }
 
 /************************************************************************/
@@ -277,7 +271,9 @@ int DDFModule::Open( const char * pszFilename, int bFailQuietly )
 /* -------------------------------------------------------------------- */
 /*      Read the whole record info memory.                              */
 /* -------------------------------------------------------------------- */
-    char *pachRecord = (char *) CPLMalloc(_recLength);
+    char        *pachRecord;
+
+    pachRecord = (char *) CPLMalloc(_recLength);
     memcpy( pachRecord, achLeader, nLeaderSize );
 
     if( (int)VSIFReadL( pachRecord+nLeaderSize, 1, _recLength-nLeaderSize, fpDDF )
@@ -314,6 +310,7 @@ int DDFModule::Open( const char * pszFilename, int bFailQuietly )
         char    szTag[128];
         int     nEntryOffset = nLeaderSize + i*nFieldEntryWidth;
         int     nFieldLength, nFieldPos;
+        DDFFieldDefn *poFDefn;
 
         strncpy( szTag, pachRecord+nEntryOffset, _sizeFieldTag );
         szTag[_sizeFieldTag] = '\0';
@@ -336,7 +333,7 @@ int DDFModule::Open( const char * pszFilename, int bFailQuietly )
             return FALSE;
         }
 
-        DDFFieldDefn *poFDefn = new DDFFieldDefn();
+        poFDefn = new DDFFieldDefn();
         if( poFDefn->Initialize( this, szTag, nFieldLength,
                                  pachRecord+_fieldAreaStart+nFieldPos ) )
             AddField( poFDefn );
@@ -479,10 +476,10 @@ int DDFModule::Create( const char *pszFilename )
 /* -------------------------------------------------------------------- */
 /*      Write out the field descriptions themselves.                    */
 /* -------------------------------------------------------------------- */
-    for( iField = 0; iField < nFieldDefnCount; iField++ )
+    for( iField=0; iField < nFieldDefnCount; iField++ )
     {
-        char *pachData = NULL;
-        int nLength = 0;
+        char *pachData;
+        int nLength;
 
         papoFieldDefns[iField]->GenerateDDREntry( this, &pachData, &nLength );
         bRet &= VSIFWriteL( pachData, nLength, 1, fpDDF ) > 0;
@@ -697,7 +694,7 @@ void DDFModule::RemoveCloneRecord( DDFRecord * poRecordIn )
         }
     }
 
-    CPLAssert( false );
+    CPLAssert( FALSE );
 }
 
 /************************************************************************/

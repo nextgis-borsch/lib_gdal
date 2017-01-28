@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: cpl_conv.cpp 33769 2016-03-22 18:20:04Z goatbar $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Convenience functions.
@@ -27,22 +28,11 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-// For uselocale, define _XOPEN_SOURCE = 700
-// but on Solaris, we don't have uselocale and we cannot have
-// std=c++11 with _XOPEN_SOURCE != 600
-#if defined(__sun__) && __cplusplus >= 201103L
-#if _XOPEN_SOURCE != 600
-#ifdef _XOPEN_SOURCE
-#undef _XOPEN_SOURCE
-#endif
-#define _XOPEN_SOURCE 600
-#endif
-#else
+// For uselocale
 #ifdef _XOPEN_SOURCE
 #undef _XOPEN_SOURCE
 #endif
 #define _XOPEN_SOURCE 700
-#endif
 
 // For atoll (at least for NetBSD)
 #define _ISOC99_SOURCE
@@ -50,32 +40,16 @@
 #ifdef MSVC_USE_VLD
 #include <vld.h>
 #endif
-
 #include "cpl_conv.h"
-
-#include <cctype>
-#include <cerrno>
-#include <climits>
-#include <clocale>
-#include <cmath>
-#include <cstdlib>
-#include <cstring>
-#include <ctime>
-#if HAVE_FCNTL_H
-#include <fcntl.h>
-#endif
-#if HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-
-#include <string>
-
-#include "cpl_config.h"
 #include "cpl_multiproc.h"
 #include "cpl_string.h"
 #include "cpl_vsi.h"
 
-// Uncomment to get list of options that have been fetched and set.
+#include <cerrno>
+#include <clocale>
+#include <cstring>
+
+/* Uncomment to get list of options that have been fetched and set */
 //#define DEBUG_CONFIG_OPTIONS
 
 #ifdef DEBUG_CONFIG_OPTIONS
@@ -85,17 +59,17 @@
 
 #endif
 
-CPL_CVSID("$Id: cpl_conv.cpp 36920 2016-12-16 22:47:35Z goatbar $");
+CPL_CVSID("$Id: cpl_conv.cpp 33769 2016-03-22 18:20:04Z goatbar $");
 
 static CPLMutex *hConfigMutex = NULL;
 static volatile char **papszConfigOptions = NULL;
 
-// Used by CPLOpenShared() and friends.
+/* Used by CPLOpenShared() and friends */
 static CPLMutex *hSharedFileMutex = NULL;
 static volatile int nSharedFileCount = 0;
 static volatile CPLSharedFileInfo *pasSharedFileList = NULL;
 
-// Used by CPLsetlocale().
+/* Used by CPLsetlocale() */
 static CPLMutex *hSetLocaleMutex = NULL;
 
 /* Note: ideally this should be added in CPLSharedFileInfo* */
@@ -171,7 +145,7 @@ void *CPLMalloc( size_t nSize )
     {
         /* coverity[dead_error_begin] */
         CPLError( CE_Failure, CPLE_AppDefined,
-                  "CPLMalloc(%ld): Silly size requested.",
+                  "CPLMalloc(%ld): Silly size requested.\n",
                   static_cast<long>(nSize) );
         return NULL;
     }
@@ -186,7 +160,7 @@ void *CPLMalloc( size_t nSize )
         }
 
         CPLError( CE_Fatal, CPLE_OutOfMemory,
-                  "CPLMalloc(): Out of memory allocating %ld bytes.",
+                  "CPLMalloc(): Out of memory allocating %ld bytes.\n",
                   static_cast<long>(nSize) );
     }
 
@@ -216,10 +190,11 @@ void *CPLMalloc( size_t nSize )
  * @return pointer to allocated memory, only NULL if nNewSize is zero.
  */
 
+
 void * CPLRealloc( void * pData, size_t nNewSize )
 
 {
-    if( nNewSize == 0 )
+    if ( nNewSize == 0 )
     {
         VSIFree(pData);
         return NULL;
@@ -229,7 +204,7 @@ void * CPLRealloc( void * pData, size_t nNewSize )
     {
         /* coverity[dead_error_begin] */
         CPLError( CE_Failure, CPLE_AppDefined,
-                  "CPLRealloc(%ld): Silly size requested.",
+                  "CPLRealloc(%ld): Silly size requested.\n",
                   static_cast<long>( nNewSize ) );
         return NULL;
     }
@@ -254,7 +229,7 @@ void * CPLRealloc( void * pData, size_t nNewSize )
         }
         else
             CPLError( CE_Fatal, CPLE_OutOfMemory,
-                      "CPLRealloc(): Out of memory allocating %ld bytes.",
+                      "CPLRealloc(): Out of memory allocating %ld bytes.\n",
                       static_cast<long>( nNewSize ) );
     }
 
@@ -289,12 +264,12 @@ char *CPLStrdup( const char * pszString )
     if( pszString == NULL )
         pszString = "";
 
-    char *pszReturn =
-        static_cast<char *>( CPLMalloc(strlen(pszString) + 1 ) );
+    char *pszReturn
+        = reinterpret_cast<char *>( CPLMalloc(strlen(pszString) + 1 ) );
     if( pszReturn == NULL )
     {
         CPLError( CE_Fatal, CPLE_OutOfMemory,
-                  "CPLStrdup(): Out of memory allocating %ld bytes.",
+                  "CPLStrdup(): Out of memory allocating %ld bytes.\n",
                   static_cast<long>( strlen(pszString) ) );
     }
 
@@ -324,7 +299,7 @@ char *CPLStrlwr( char *pszString )
 
     char *pszTemp = pszString;
 
-    while( *pszTemp )
+    while (*pszTemp)
     {
         *pszTemp = static_cast<char>( tolower (*pszTemp) );
         pszTemp++;
@@ -360,7 +335,7 @@ char *CPLStrlwr( char *pszString )
 char *CPLFGets( char *pszBuffer, int nBufferSize, FILE * fp )
 
 {
-    if( nBufferSize == 0 || pszBuffer == NULL || fp == NULL )
+    if ( nBufferSize == 0 || pszBuffer == NULL || fp == NULL )
         return NULL;
 
 /* -------------------------------------------------------------------- */
@@ -375,7 +350,7 @@ char *CPLFGets( char *pszBuffer, int nBufferSize, FILE * fp )
         return NULL;
 
     int nActuallyRead = static_cast<int>( strlen(pszBuffer) );
-    if( nActuallyRead == 0 )
+    if ( nActuallyRead == 0 )
         return NULL;
 
 /* -------------------------------------------------------------------- */
@@ -389,7 +364,7 @@ char *CPLFGets( char *pszBuffer, int nBufferSize, FILE * fp )
         if( chCheck != 10 )
         {
             // unget the character.
-            if( VSIFSeek( fp, nOriginalOffset+nActuallyRead, SEEK_SET ) == -1 )
+            if (VSIFSeek( fp, nOriginalOffset+nActuallyRead, SEEK_SET ) == -1)
             {
                 CPLError( CE_Failure, CPLE_FileIO,
                           "Unable to unget a character");
@@ -495,7 +470,7 @@ static char *CPLReadLineBuffer( int nRequiredSize )
 
     if( pnAlloc == NULL )
     {
-        pnAlloc = static_cast<GUInt32 *>( VSI_MALLOC_VERBOSE(200) );
+        pnAlloc = reinterpret_cast<GUInt32 *>( VSI_MALLOC_VERBOSE(200) );
         if( pnAlloc == NULL )
             return NULL;
         *pnAlloc = 196;
@@ -507,8 +482,8 @@ static char *CPLReadLineBuffer( int nRequiredSize )
 /* -------------------------------------------------------------------- */
     if( static_cast<int>( *pnAlloc ) - 1 < nRequiredSize )
     {
-        const int nNewSize = nRequiredSize + 4 + 500;
-        if( nNewSize <= 0 )
+        int nNewSize = nRequiredSize + 4 + 500;
+        if (nNewSize <= 0)
         {
             VSIFree( pnAlloc );
             CPLSetTLS( CTLS_RLBUFFERINFO, NULL, FALSE );
@@ -518,7 +493,7 @@ static char *CPLReadLineBuffer( int nRequiredSize )
             return NULL;
         }
 
-        GUInt32* pnAllocNew = static_cast<GUInt32 *>(
+        GUInt32* pnAllocNew = reinterpret_cast<GUInt32 *>(
             VSI_REALLOC_VERBOSE( pnAlloc, nNewSize ) );
         if( pnAllocNew == NULL )
         {
@@ -545,7 +520,7 @@ static char *CPLReadLineBuffer( int nRequiredSize )
  * Read a line of text from the given file handle, taking care
  * to capture CR and/or LF and strip off ... equivalent of
  * DKReadLine().  Pointer to an internal buffer is returned.
- * The application shouldn't free it, or depend on its value
+ * The application shouldn't free it, or depend on it's value
  * past the next call to CPLReadLine().
  *
  * Note that CPLReadLine() uses VSIFGets(), so any hooking of VSI file
@@ -603,6 +578,7 @@ const char *CPLReadLine( FILE * fp )
 
         nBytesReadThisTime = strlen(pszRLBuffer+nReadSoFar);
         nReadSoFar += nBytesReadThisTime;
+
     } while( nBytesReadThisTime >= 127
              && pszRLBuffer[nReadSoFar-1] != 13
              && pszRLBuffer[nReadSoFar-1] != 10 );
@@ -651,7 +627,7 @@ const char *CPLReadLineL( VSILFILE * fp )
  */
 
 const char *CPLReadLine2L( VSILFILE * fp, int nMaxCars,
-                           CPL_UNUSED const char * const * papszOptions )
+                           char** /*papszOptions */ )
 
 {
 /* -------------------------------------------------------------------- */
@@ -669,7 +645,7 @@ const char *CPLReadLine2L( VSILFILE * fp, int nMaxCars,
 /* -------------------------------------------------------------------- */
     char *pszRLBuffer = NULL;
     const size_t nChunkSize = 40;
-    char szChunk[nChunkSize] = {};
+    char szChunk[nChunkSize];
     size_t nChunkBytesRead = 0;
     int nBufLength = 0;
     size_t nChunkBytesConsumed = 0;
@@ -681,7 +657,7 @@ const char *CPLReadLine2L( VSILFILE * fp, int nMaxCars,
 /* -------------------------------------------------------------------- */
 /*      Read a chunk from the input file.                               */
 /* -------------------------------------------------------------------- */
-        if( nBufLength > INT_MAX - static_cast<int>(nChunkSize) - 1 )
+        if ( nBufLength > INT_MAX - static_cast<int>(nChunkSize) - 1 )
         {
             CPLError( CE_Failure, CPLE_AppDefined,
                       "Too big line : more than 2 billion characters!." );
@@ -689,8 +665,7 @@ const char *CPLReadLine2L( VSILFILE * fp, int nMaxCars,
             return NULL;
         }
 
-        pszRLBuffer =
-            CPLReadLineBuffer(static_cast<int>(nBufLength + nChunkSize + 1));
+        pszRLBuffer = CPLReadLineBuffer( static_cast<int>(nBufLength + nChunkSize + 1) );
         if( pszRLBuffer == NULL )
             return NULL;
 
@@ -741,7 +716,7 @@ const char *CPLReadLine2L( VSILFILE * fp, int nMaxCars,
             else
             {
                 pszRLBuffer[nBufLength++] = szChunk[nChunkBytesConsumed++];
-                if( nMaxCars >= 0 && nBufLength == nMaxCars )
+                if (nMaxCars >= 0 && nBufLength == nMaxCars)
                 {
                     CPLError( CE_Failure, CPLE_AppDefined,
                               "Maximum number of characters allowed reached." );
@@ -817,32 +792,32 @@ const char *CPLReadLine2L( VSILFILE * fp, int nMaxCars,
 char *CPLScanString( const char *pszString, int nMaxLength,
                      int bTrimSpaces, int bNormalize )
 {
-    if( !pszString )
+    if ( !pszString )
         return NULL;
 
-    if( !nMaxLength )
+    if ( !nMaxLength )
         return CPLStrdup( "" );
 
-    char *pszBuffer = static_cast<char *>(CPLMalloc( nMaxLength + 1 ));
-    if( !pszBuffer )
+    char *pszBuffer = reinterpret_cast<char *>( CPLMalloc( nMaxLength + 1 ) );
+    if ( !pszBuffer )
         return NULL;
 
-    strncpy( pszBuffer, pszString, nMaxLength );
+    strncpy( pszBuffer, pszString,  nMaxLength );
     pszBuffer[nMaxLength] = '\0';
 
-    if( bTrimSpaces )
+    if ( bTrimSpaces )
     {
         size_t i = strlen( pszBuffer );
-        while( i-- > 0 && isspace(static_cast<unsigned char>(pszBuffer[i])) )
+        while ( i-- > 0 && isspace((unsigned char)pszBuffer[i]) )
             pszBuffer[i] = '\0';
     }
 
-    if( bNormalize )
+    if ( bNormalize )
     {
         size_t i = strlen( pszBuffer );
-        while( i-- > 0 )
+        while ( i-- > 0 )
         {
-            if( pszBuffer[i] == ':' )
+            if ( pszBuffer[i] == ':' )
                 pszBuffer[i] = '_';
         }
     }
@@ -877,6 +852,7 @@ long CPLScanLong( const char *pszString, int nMaxLength )
     const std::string osValue( pszString, nLength );
     return atol( osValue.c_str() );
 }
+
 
 /************************************************************************/
 /*                            CPLScanULong()                            */
@@ -977,10 +953,10 @@ static int CPLAtoGIntBigExHasOverflow(const char* pszString, GIntBig nVal)
     if( strlen(pszString) <= 18 )
         return FALSE;
     while( *pszString == ' ' )
-        pszString++;
+        pszString ++;
     if( *pszString == '+' )
-        pszString++;
-    char szBuffer[32] = {};
+        pszString ++;
+    char szBuffer[32];
 /* x86_64-w64-mingw32-g++ (GCC) 4.8.2 annoyingly warns */
 #ifdef HAVE_GCC_DIAGNOSTIC_PUSH
 #pragma GCC diagnostic push
@@ -1033,7 +1009,7 @@ GIntBig CPLAtoGIntBigEx( const char* pszString, int bWarn, int *pbOverflow )
                      pszString);
         }
         while( *pszString == ' ' )
-            pszString++;
+            pszString ++;
         return (*pszString == '-' ) ? GINTBIG_MIN : GINTBIG_MAX;
     }
     else if( pbOverflow ) *pbOverflow = FALSE;
@@ -1062,7 +1038,7 @@ GIntBig CPLAtoGIntBigEx( const char* pszString, int bWarn, int *pbOverflow )
 
 void *CPLScanPointer( const char *pszString, int nMaxLength )
 {
-    char szTemp[128] = {};
+    char  szTemp[128];
 
 /* -------------------------------------------------------------------- */
 /*      Compute string into local buffer, and terminate it.             */
@@ -1087,7 +1063,7 @@ void *CPLScanPointer( const char *pszString, int nMaxLength )
         sscanf( szTemp, "%p", &pResult );
 
         /* Solaris actually behaves like MSVCRT... */
-        if( pResult == NULL )
+        if (pResult == NULL)
         {
             sscanf( szTemp+2, "%p", &pResult );
         }
@@ -1125,13 +1101,13 @@ void *CPLScanPointer( const char *pszString, int nMaxLength )
 
 double CPLScanDouble( const char *pszString, int nMaxLength )
 {
-    char szValue[32] = {};
-    char *pszValue = NULL;
+    char        szValue[32];
+    char        *pszValue;
 
     if( nMaxLength + 1 < static_cast<int>( sizeof(szValue) ) )
         pszValue = szValue;
     else
-        pszValue = static_cast<char *>(CPLMalloc( nMaxLength + 1 ));
+        pszValue = reinterpret_cast<char *>( CPLMalloc( nMaxLength + 1 ) );
 
 /* -------------------------------------------------------------------- */
 /*      Compute string into local buffer, and terminate it.             */
@@ -1143,7 +1119,7 @@ double CPLScanDouble( const char *pszString, int nMaxLength )
 /*      Make a pass through converting 'D's to 'E's.                    */
 /* -------------------------------------------------------------------- */
     for( int i = 0; i < nMaxLength; i++ )
-        if( pszValue[i] == 'd' || pszValue[i] == 'D' )
+        if ( pszValue[i] == 'd' || pszValue[i] == 'D' )
             pszValue[i] = 'E';
 
 /* -------------------------------------------------------------------- */
@@ -1177,19 +1153,19 @@ double CPLScanDouble( const char *pszString, int nMaxLength )
 
 int CPLPrintString( char *pszDest, const char *pszSrc, int nMaxLen )
 {
-    if( !pszDest )
+    if ( !pszDest )
         return 0;
 
-    if( !pszSrc )
+    if ( !pszSrc )
     {
         *pszDest = '\0';
         return 1;
     }
 
-    int nChars = 0;
+    int  nChars = 0;
     char *pszTemp = pszDest;
 
-    while( nChars < nMaxLen && *pszSrc )
+    while ( nChars < nMaxLen && *pszSrc )
     {
         *pszTemp++ = *pszSrc++;
         nChars++;
@@ -1221,23 +1197,23 @@ int CPLPrintString( char *pszDest, const char *pszSrc, int nMaxLen )
 
 int CPLPrintStringFill( char *pszDest, const char *pszSrc, int nMaxLen )
 {
-    if( !pszDest )
+    if ( !pszDest )
         return 0;
 
-    if( !pszSrc )
+    if ( !pszSrc )
     {
         memset( pszDest, ' ', nMaxLen );
         return nMaxLen;
     }
 
     char *pszTemp = pszDest;
-    while( nMaxLen && *pszSrc )
+    while ( nMaxLen && *pszSrc )
     {
         *pszTemp++ = *pszSrc++;
         nMaxLen--;
     }
 
-    if( nMaxLen )
+    if ( nMaxLen )
         memset( pszTemp, ' ', nMaxLen );
 
     return nMaxLen;
@@ -1265,13 +1241,13 @@ int CPLPrintStringFill( char *pszDest, const char *pszSrc, int nMaxLen )
 
 int CPLPrintInt32( char *pszBuffer, GInt32 iValue, int nMaxLen )
 {
-    if( !pszBuffer )
+    if ( !pszBuffer )
         return 0;
 
-    if( nMaxLen >= 64 )
+    if ( nMaxLen >= 64 )
         nMaxLen = 63;
 
-    char szTemp[64] = {};
+    char    szTemp[64];
 
 #if UINT_MAX == 65535
     snprintf( szTemp, sizeof(szTemp), "%*ld", nMaxLen, iValue );
@@ -1304,13 +1280,13 @@ int CPLPrintInt32( char *pszBuffer, GInt32 iValue, int nMaxLen )
 
 int CPLPrintUIntBig( char *pszBuffer, GUIntBig iValue, int nMaxLen )
 {
-    if( !pszBuffer )
+    if ( !pszBuffer )
         return 0;
 
-    if( nMaxLen >= 64 )
+    if ( nMaxLen >= 64 )
         nMaxLen = 63;
 
-    char szTemp[64] = {};
+    char szTemp[64];
 
 #if defined(__MSVCRT__) || (defined(WIN32) && defined(_MSC_VER))
 /* x86_64-w64-mingw32-g++ (GCC) 4.8.2 annoyingly warns */
@@ -1319,14 +1295,15 @@ int CPLPrintUIntBig( char *pszBuffer, GUIntBig iValue, int nMaxLen )
 #pragma GCC diagnostic ignored "-Wformat"
 #pragma GCC diagnostic ignored "-Wformat-extra-args"
 #endif
-    snprintf( szTemp, sizeof(szTemp), "%*I64u", nMaxLen, iValue );
+    snprintf( szTemp, sizeof(szTemp), "%*I64d", nMaxLen, iValue );
 #ifdef HAVE_GCC_DIAGNOSTIC_PUSH
 #pragma GCC diagnostic pop
 #endif
 # elif HAVE_LONG_LONG
-    snprintf( szTemp, sizeof(szTemp), "%*llu", nMaxLen, iValue );
+    snprintf( szTemp, sizeof(szTemp), "%*lld", nMaxLen, (long long) iValue );
+//    sprintf( szTemp, "%*Ld", nMaxLen, (long long) iValue );
 #else
-    snprintf( szTemp, sizeof(szTemp), "%*lu", nMaxLen, iValue );
+    snprintf( szTemp, sizeof(szTemp), "%*ld", nMaxLen, iValue );
 #endif
 
     return CPLPrintString( pszBuffer, szTemp, nMaxLen );
@@ -1354,13 +1331,13 @@ int CPLPrintUIntBig( char *pszBuffer, GUIntBig iValue, int nMaxLen )
 
 int CPLPrintPointer( char *pszBuffer, void *pValue, int nMaxLen )
 {
-    if( !pszBuffer )
+    if ( !pszBuffer )
         return 0;
 
-    if( nMaxLen >= 64 )
+    if ( nMaxLen >= 64 )
         nMaxLen = 63;
 
-    char szTemp[64] = {};
+    char szTemp[64];
 
     snprintf( szTemp, sizeof(szTemp), "%p", pValue );
 
@@ -1391,19 +1368,24 @@ int CPLPrintPointer( char *pszBuffer, void *pValue, int nMaxLen )
  *
  * @param dfValue Numerical value to print.
  *
- * @param pszLocale Unused.
+ * @param pszLocale Pointer to a character string containing locale name
+ * ("C", "POSIX", "us_US", "ru_RU.KOI8-R" etc.). If NULL we will not
+ * manipulate with locale settings and current process locale will be used for
+ * printing. With the pszLocale option we can control what exact locale
+ * will be used for printing a numeric value to the string (in most cases
+ * it should be C/POSIX).
  *
  * @return Number of characters printed.
  */
 
 int CPLPrintDouble( char *pszBuffer, const char *pszFormat,
-                    double dfValue, CPL_UNUSED const char * pszLocale )
+                    double dfValue, const char * /* pszLocale */ )
 {
-    if( !pszBuffer )
+    if ( !pszBuffer )
         return 0;
 
     const int double_buffer_size = 64;
-    char szTemp[double_buffer_size] = {};
+    char szTemp[double_buffer_size];
 
     CPLsnprintf( szTemp, double_buffer_size, pszFormat, dfValue );
     szTemp[double_buffer_size - 1] = '\0';
@@ -1457,29 +1439,29 @@ int CPLPrintDouble( char *pszBuffer, const char *pszFormat,
 int CPLPrintTime( char *pszBuffer, int nMaxLen, const char *pszFormat,
                   const struct tm *poBrokenTime, const char *pszLocale )
 {
-    char *pszTemp = static_cast<char *>(
-        CPLMalloc((nMaxLen + 1) * sizeof(char)));
+    char *pszTemp = reinterpret_cast<char *>(
+        CPLMalloc( (nMaxLen + 1) * sizeof(char) ) );
 
 #if defined(HAVE_LOCALE_H) && defined(HAVE_SETLOCALE)
-    char *pszCurLocale = NULL;
+    char        *pszCurLocale = NULL;
 
-    if( pszLocale || EQUAL( pszLocale, "" ) )
+    if ( pszLocale || EQUAL( pszLocale, "" ) )
     {
-        // Save the current locale.
+        // Save the current locale
         pszCurLocale = CPLsetlocale(LC_ALL, NULL );
-        // Set locale to the specified value.
+        // Set locale to the specified value
         CPLsetlocale( LC_ALL, pszLocale );
     }
 #else
     (void) pszLocale;
 #endif
 
-    if( !strftime( pszTemp, nMaxLen + 1, pszFormat, poBrokenTime ) )
+    if ( !strftime( pszTemp, nMaxLen + 1, pszFormat, poBrokenTime ) )
         memset( pszTemp, 0, nMaxLen + 1);
 
 #if defined(HAVE_LOCALE_H) && defined(HAVE_SETLOCALE)
-    // Restore stored locale back.
-    if( pszCurLocale )
+    // Restore stored locale back
+    if ( pszCurLocale )
         CPLsetlocale( LC_ALL, pszCurLocale );
 #endif
 
@@ -1498,8 +1480,7 @@ void CPLVerifyConfiguration()
 
 {
     static bool verified = false;
-    if( !verified )
-    {
+    if (!verified) {
         return;
     }
     verified = true;
@@ -1523,7 +1504,7 @@ void CPLVerifyConfiguration()
     if( reinterpret_cast<GByte *>( &nTest )[3] != 1 )
 #endif
         CPLError( CE_Fatal, CPLE_AppDefined,
-                  "CPLVerifyConfiguration(): byte order set wrong." );
+                  "CPLVerifyConfiguration(): byte order set wrong.\n" );
 }
 
 #ifdef DEBUG_CONFIG_OPTIONS
@@ -1540,38 +1521,37 @@ static void CPLShowAccessedOptions()
 {
     std::set<CPLString>::iterator aoIter;
 
-    printf("Configuration options accessed in reading : "), /*ok*/
+    printf("Configuration options accessed in reading : "),
     aoIter = paoGetKeys->begin();
-    while( aoIter != paoGetKeys->end() )
+    while(aoIter != paoGetKeys->end())
     {
-        printf("%s, ", (*aoIter).c_str());/*ok*/
-        ++aoIter;
+        printf("%s, ", (*aoIter).c_str());
+        aoIter ++;
     }
-    printf("\n");/*ok*/
+    printf("\n");
 
-    printf("Configuration options accessed in writing : "); /*ok*/
+    printf("Configuration options accessed in writing : "),
     aoIter = paoSetKeys->begin();
-    while( aoIter != paoSetKeys->end() )
+    while(aoIter != paoSetKeys->end())
     {
-        printf("%s, ", (*aoIter).c_str()); /*ok*/
-        ++aoIter;
+        printf("%s, ", (*aoIter).c_str());
+        aoIter ++;
     }
-    printf("\n"); /*ok*/
+    printf("\n");
 
     delete paoGetKeys;
     delete paoSetKeys;
-    paoGetKeys = NULL;
-    paoSetKeys = NULL;
+    paoGetKeys = paoSetKeys = NULL;
 }
 
 /************************************************************************/
 /*                       CPLAccessConfigOption()                        */
 /************************************************************************/
 
-static void CPLAccessConfigOption( const char* pszKey, bool bGet )
+static void CPLAccessConfigOption(const char* pszKey, bool bGet)
 {
     CPLMutexHolderD(&hRegisterConfigurationOptionMutex);
-    if( paoGetKeys == NULL )
+    if (paoGetKeys == NULL)
     {
         paoGetKeys = new std::set<CPLString>;
         paoSetKeys = new std::set<CPLString>;
@@ -1656,8 +1636,6 @@ CPLGetConfigOption( const char *pszKey, const char *pszDefault )
 /*                   CPLGetThreadLocalConfigOption()                    */
 /************************************************************************/
 
-/** Same as CPLGetConfigOption() but only with options set with
- * CPLSetThreadLocalConfigOption() */
 const char * CPL_STDCALL
 CPLGetThreadLocalConfigOption( const char *pszKey, const char *pszDefault )
 
@@ -1804,9 +1782,10 @@ void CPL_STDCALL CPLFreeConfig()
 
 /************************************************************************/
 /*                              CPLStat()                               */
+/*                                                                      */
+/*      Same as VSIStat() except it works on "C:" as if it were         */
+/*      "C:\".                                                          */
 /************************************************************************/
-
-/** Same as VSIStat() except it works on "C:" as if it were "C:\". */
 
 int CPLStat( const char *pszPath, VSIStatBuf *psStatBuf )
 
@@ -1827,16 +1806,18 @@ static double
 proj_strtod(char *nptr, char **endptr)
 
 {
-    char c = '\0';
-    char *cp = nptr;
+    char c, *cp = nptr;
 
-    // Scan for characters which cause problems with VC++ strtod().
-    while( (c = *cp) != '\0')
-    {
-        if( c == 'd' || c == 'D' )
-        {
-            // Found one, so NUL it out, call strtod(),
-            // then restore it and return.
+    /*
+     * Scan for characters which cause problems with VC++ strtod()
+     */
+    while ((c = *cp) != '\0') {
+        if (c == 'd' || c == 'D') {
+
+            /*
+             * Found one, so NUL it out, call strtod(),
+             * then restore it and return
+             */
             *cp = '\0';
             const double result = CPLStrtod(nptr, endptr);
             *cp = c;
@@ -1845,7 +1826,7 @@ proj_strtod(char *nptr, char **endptr)
         ++cp;
     }
 
-    // No offending characters, just handle normally.
+    /* no offending characters, just handle normally */
 
     return CPLStrtod(nptr, endptr);
 }
@@ -1857,41 +1838,38 @@ proj_strtod(char *nptr, char **endptr)
 static const char*sym = "NnEeSsWw";
 static const double vm[] = { 1.0, 0.0166666666667, 0.00027777778 };
 
-/** CPLDMSToDec */
 double CPLDMSToDec( const char *is )
 
 {
     int sign = 0;
 
-    // Copy sting into work space.
-    while( isspace(static_cast<unsigned char>(sign = *is)) )
+    /* copy sting into work space */
+    while (isspace(static_cast<unsigned char>(sign = *is)))
         ++is;
 
-    const char *p = is;
-    char work[64] = {};
+    char *p = const_cast<char *>( is );
+    char work[64];
     char *s = work;
     int n = sizeof(work);
     for( ;
-         isgraph(*p) && --n; )
+         isgraph(*p) && --n ; )
         *s++ = *p++;
     *s = '\0';
-    // It is possible that a really odd input (like lots of leading
-    // zeros) could be truncated in copying into work.  But...
+    /* it is possible that a really odd input (like lots of leading
+       zeros) could be truncated in copying into work.  But ... */
     sign = *(s = work);
 
-    if( sign == '+' || sign == '-' ) s++;
+    if (sign == '+' || sign == '-') s++;
     else sign = '+';
 
     int nl = 0;
     double v = 0.0;
-    for( ; nl < 3 ; nl = n + 1 )
-    {
-        if( !(isdigit(*s) || *s == '.') ) break;
+    for ( ; nl < 3 ; nl = n + 1 ) {
+        if (!(isdigit(*s) || *s == '.')) break;
         const double tv = proj_strtod(s, &s);
         if( tv == HUGE_VAL )
             return tv;
-        switch( *s )
-        {
+        switch (*s) {
           case 'D': case 'd':
             n = 0; break;
           case '\'':
@@ -1899,8 +1877,7 @@ double CPLDMSToDec( const char *is )
           case '"':
             n = 2; break;
           case 'r': case 'R':
-            if( nl )
-            {
+            if (nl) {
                 return 0.0;
             }
             ++s;
@@ -1911,30 +1888,30 @@ double CPLDMSToDec( const char *is )
           skip: n = 4;
             continue;
         }
-        if( n < nl )
-        {
+        if (n < nl) {
             return 0.0;
         }
         v += tv * vm[n];
         ++s;
     }
-    // Postfix sign.
-    if( *s && ((p = strchr(sym, *s))) != NULL )
-    {
+    /* postfix sign */
+    if (*s && ((p = (char *) strchr(sym, *s))) != NULL) {
         sign = (p - sym) >= 4 ? '-' : '+';
         ++s;
     }
-    if( sign == '-' )
+    if (sign == '-')
         v = -v;
 
     return v;
 }
 
+
 /************************************************************************/
 /*                            CPLDecToDMS()                             */
+/*                                                                      */
+/*      Translate a decimal degrees value to a DMS string with          */
+/*      hemisphere.                                                     */
 /************************************************************************/
-
-/** Translate a decimal degrees value to a DMS string with hemisphere. */
 
 const char *CPLDecToDMS( double dfAngle, const char * pszAxis,
                          int nPrecision )
@@ -1945,31 +1922,31 @@ const char *CPLDecToDMS( double dfAngle, const char * pszAxis,
     if( CPLIsNan(dfAngle) )
         return "Invalid angle";
 
-    const double dfEpsilon = (0.5 / 3600.0) * pow(0.1, nPrecision);
-    const double dfABSAngle = std::abs(dfAngle) + dfEpsilon;
-    if( dfABSAngle > 361.0 )
+    const double dfEpsilon = (0.5/3600.0) * pow(0.1,nPrecision);
+    const double dfABSAngle = ABS(dfAngle) + dfEpsilon;
+    if (dfABSAngle > 361)
     {
         return "Invalid angle";
     }
 
-    const int nDegrees = static_cast<int>(dfABSAngle);
-    const int nMinutes = static_cast<int>((dfABSAngle - nDegrees) * 60);
+    const int nDegrees = (int) dfABSAngle;
+    const int nMinutes = (int) ((dfABSAngle - nDegrees) * 60);
     double dfSeconds = dfABSAngle * 3600 - nDegrees*3600 - nMinutes*60;
 
     if( dfSeconds > dfEpsilon * 3600.0 )
         dfSeconds -= dfEpsilon * 3600.0;
 
-    const char *pszHemisphere = NULL;
-    if( EQUAL(pszAxis, "Long") && dfAngle < 0.0 )
+    const char  *pszHemisphere;
+    if( EQUAL(pszAxis,"Long") && dfAngle < 0.0 )
         pszHemisphere = "W";
-    else if( EQUAL(pszAxis, "Long") )
+    else if( EQUAL(pszAxis,"Long") )
         pszHemisphere = "E";
     else if( dfAngle < 0.0 )
         pszHemisphere = "S";
     else
         pszHemisphere = "N";
 
-    char szFormat[30] = {};
+    char szFormat[30];
     CPLsnprintf( szFormat, sizeof(szFormat),
                  "%%3dd%%2d\'%%%d.%df\"%s",
                  nPrecision+3, nPrecision, pszHemisphere );
@@ -2033,7 +2010,7 @@ double CPLPackedDMSToDec( double dfPacked )
 {
     const double dfSign = ( dfPacked < 0.0 )? -1 : 1;
 
-    double dfSeconds = std::abs( dfPacked );
+    double dfSeconds = ABS( dfPacked );
     double dfDegrees = floor(dfSeconds / 1000000.0);
     dfSeconds -= dfDegrees * 1000000.0;
     double dfMinutes = floor(dfSeconds / 1000.0);
@@ -2067,7 +2044,7 @@ double CPLDecToPackedDMS( double dfDec )
 {
     const double dfSign = ( dfDec < 0.0 ) ? -1 : 1;
 
-    dfDec = std::abs( dfDec );
+    dfDec = ABS( dfDec );
     const double dfDegrees = floor( dfDec );
     const double dfMinutes = floor( ( dfDec - dfDegrees ) * 60.0 );
     const double dfSeconds = ( dfDec - dfDegrees ) * 3600.0 - dfMinutes * 60.0;
@@ -2079,7 +2056,6 @@ double CPLDecToPackedDMS( double dfDec )
 /*                         CPLStringToComplex()                         */
 /************************************************************************/
 
-/** Fetch the real and imaginary part of a serialized complex number */
 void CPL_DLL CPLStringToComplex( const char *pszString,
                                  double *pdfReal, double *pdfImag )
 
@@ -2094,7 +2070,7 @@ void CPL_DLL CPLStringToComplex( const char *pszString,
     int iImagEnd = -1;
 
     for( int i = 0;
-         i < 100 && pszString[i] != '\0' && pszString[i] != ' ';
+         pszString[i] != '\0' && pszString[i] != ' ' && i < 100;
          i++ )
     {
         if( pszString[i] == '+' && i > 0 )
@@ -2152,13 +2128,13 @@ FILE *CPLOpenShared( const char *pszFilename, const char *pszAccess,
 /* -------------------------------------------------------------------- */
 /*      Is there an existing file we can use?                           */
 /* -------------------------------------------------------------------- */
-    const bool bReuse = EQUAL(pszAccess, "rb") || EQUAL(pszAccess, "rb+");
+    const bool bReuse = EQUAL(pszAccess,"rb") || EQUAL(pszAccess, "rb+");
 
     for( int i = 0; bReuse && i < nSharedFileCount; i++ )
     {
-        if( strcmp(pasSharedFileList[i].pszFilename, pszFilename) == 0
+        if( strcmp(pasSharedFileList[i].pszFilename,pszFilename) == 0
             && !bLarge == !pasSharedFileList[i].bLarge
-            && EQUAL(pasSharedFileList[i].pszAccess, pszAccess)
+            && EQUAL(pasSharedFileList[i].pszAccess,pszAccess)
             && nPID == pasSharedFileListExtra[i].nPID)
         {
             pasSharedFileList[i].nRefCount++;
@@ -2169,7 +2145,7 @@ FILE *CPLOpenShared( const char *pszFilename, const char *pszAccess,
 /* -------------------------------------------------------------------- */
 /*      Open the file.                                                  */
 /* -------------------------------------------------------------------- */
-    FILE *fp = NULL;
+    FILE *fp;
 
     if( bLarge )
         fp = reinterpret_cast<FILE *>( VSIFOpenL( pszFilename, pszAccess ) );
@@ -2184,10 +2160,10 @@ FILE *CPLOpenShared( const char *pszFilename, const char *pszAccess,
 /* -------------------------------------------------------------------- */
     nSharedFileCount++;
 
-    pasSharedFileList = static_cast<CPLSharedFileInfo *>(
+    pasSharedFileList = reinterpret_cast<CPLSharedFileInfo *>(
         CPLRealloc( (void *) pasSharedFileList,
                     sizeof(CPLSharedFileInfo) * nSharedFileCount ) );
-    pasSharedFileListExtra = static_cast<CPLSharedFileInfoExtra *>(
+    pasSharedFileListExtra = reinterpret_cast<CPLSharedFileInfoExtra *>(
         CPLRealloc( (void *) pasSharedFileListExtra,
                     sizeof(CPLSharedFileInfoExtra) * nSharedFileCount ) );
 
@@ -2257,7 +2233,7 @@ void CPLCloseShared( FILE * fp )
     CPLFree( pasSharedFileList[i].pszFilename );
     CPLFree( pasSharedFileList[i].pszAccess );
 
-    nSharedFileCount--;
+    nSharedFileCount --;
     memmove( (void *) (pasSharedFileList + i),
              (void *) (pasSharedFileList + nSharedFileCount),
              sizeof(CPLSharedFileInfo) );
@@ -2273,6 +2249,7 @@ void CPLCloseShared( FILE * fp )
         pasSharedFileListExtra = NULL;
     }
 }
+
 
 /************************************************************************/
 /*                   CPLCleanupSharedFileMutex()                        */
@@ -2355,8 +2332,7 @@ void CPLDumpSharedList( FILE *fp )
 /*                           CPLUnlinkTree()                            */
 /************************************************************************/
 
-/** Recursively unlink a directory.
- *
+/**
  * @return 0 on successful completion, -1 if function fails.
  */
 
@@ -2402,7 +2378,7 @@ int CPLUnlinkTree( const char *pszPath )
 
         for( int i = 0; papszItems != NULL && papszItems[i] != NULL; i++ )
         {
-            if( EQUAL(papszItems[i], ".") || EQUAL(papszItems[i], "..") )
+            if( EQUAL(papszItems[i],".") || EQUAL(papszItems[i],"..") )
                 continue;
 
             char *pszSubPath = CPLStrdup(
@@ -2444,7 +2420,6 @@ int CPLUnlinkTree( const char *pszPath )
 /*                            CPLCopyFile()                             */
 /************************************************************************/
 
-/** Copy a file */
 int CPLCopyFile( const char *pszNewPath, const char *pszOldPath )
 
 {
@@ -2466,7 +2441,8 @@ int CPLCopyFile( const char *pszNewPath, const char *pszOldPath )
 /*      Prepare buffer.                                                 */
 /* -------------------------------------------------------------------- */
     const size_t nBufferSize = 1024 * 1024;
-    GByte *pabyBuffer = static_cast<GByte *>(VSI_MALLOC_VERBOSE(nBufferSize));
+    GByte *pabyBuffer
+        = reinterpret_cast<GByte *>( VSI_MALLOC_VERBOSE(nBufferSize) );
     if( pabyBuffer == NULL )
     {
         CPL_IGNORE_RET_VAL(VSIFCloseL( fpNew ));
@@ -2505,7 +2481,6 @@ int CPLCopyFile( const char *pszNewPath, const char *pszOldPath )
 /*                            CPLCopyTree()                             */
 /************************************************************************/
 
-/** Recursively copy a tree */
 int CPLCopyTree( const char *pszNewPath, const char *pszOldPath )
 
 {
@@ -2521,10 +2496,9 @@ int CPLCopyTree( const char *pszNewPath, const char *pszOldPath )
     }
     if( VSIStatL( pszNewPath, &sStatBuf ) == 0 )
     {
-        CPLError(
-            CE_Failure, CPLE_AppDefined,
-            "It seems that a file system object called '%s' already exists.",
-            pszNewPath);
+        CPLError( CE_Failure, CPLE_AppDefined,
+                  "It seems that a file system object called '%s' already exists.",
+                  pszNewPath );
 
         return -1;
     }
@@ -2544,7 +2518,7 @@ int CPLCopyTree( const char *pszNewPath, const char *pszOldPath )
 
         for( int i = 0; papszItems != NULL && papszItems[i] != NULL; i++ )
         {
-            if( EQUAL(papszItems[i], ".") || EQUAL(papszItems[i], "..") )
+            if( EQUAL(papszItems[i],".") || EQUAL(papszItems[i],"..") )
                 continue;
 
             char *pszNewSubPath = CPLStrdup(
@@ -2584,7 +2558,6 @@ int CPLCopyTree( const char *pszNewPath, const char *pszOldPath )
 /*                            CPLMoveFile()                             */
 /************************************************************************/
 
-/** Move a file */
 int CPLMoveFile( const char *pszNewPath, const char *pszOldPath )
 
 {
@@ -2602,7 +2575,6 @@ int CPLMoveFile( const char *pszNewPath, const char *pszOldPath )
 /*                             CPLSymlink()                             */
 /************************************************************************/
 
-/** Create a symbolic link */
 int CPLSymlink( const char*
 #ifndef WIN32
                 pszOldPath
@@ -2626,7 +2598,6 @@ int CPLSymlink( const char*
 /* ==================================================================== */
 /************************************************************************/
 
-//! @cond Doxygen_Suppress
 /************************************************************************/
 /*                             CPLLocaleC()                             */
 /************************************************************************/
@@ -2634,13 +2605,13 @@ int CPLSymlink( const char*
 CPLLocaleC::CPLLocaleC() :
     pszOldLocale(NULL)
 {
-    if( CPLTestBool(CPLGetConfigOption("GDAL_DISABLE_CPLLOCALEC", "NO")) )
+    if( CSLTestBoolean(CPLGetConfigOption("GDAL_DISABLE_CPLLOCALEC","NO")) )
         return;
 
-    pszOldLocale = CPLStrdup(CPLsetlocale(LC_NUMERIC, NULL));
-    if( EQUAL(pszOldLocale, "C")
-        || EQUAL(pszOldLocale, "POSIX")
-        || CPLsetlocale(LC_NUMERIC, "C") == NULL )
+    pszOldLocale = CPLStrdup(CPLsetlocale(LC_NUMERIC,NULL));
+    if( EQUAL(pszOldLocale,"C")
+        || EQUAL(pszOldLocale,"POSIX")
+        || CPLsetlocale(LC_NUMERIC,"C") == NULL )
     {
         CPLFree( pszOldLocale );
         pszOldLocale = NULL;
@@ -2661,6 +2632,7 @@ CPLLocaleC::~CPLLocaleC()
     CPLFree( pszOldLocale );
 }
 
+
 /************************************************************************/
 /*                        CPLThreadLocaleC()                            */
 /************************************************************************/
@@ -2679,10 +2651,10 @@ CPLThreadLocaleC::CPLThreadLocaleC()
     if( pszOldLocale )
         pszOldLocale = CPLStrdup(pszOldLocale);
 #else
-    pszOldLocale = CPLStrdup(CPLsetlocale(LC_NUMERIC, NULL));
-    if( EQUAL(pszOldLocale, "C")
-        || EQUAL(pszOldLocale, "POSIX")
-        || CPLsetlocale(LC_NUMERIC, "C") == NULL )
+    pszOldLocale = CPLStrdup(CPLsetlocale(LC_NUMERIC,NULL));
+    if( EQUAL(pszOldLocale,"C")
+        || EQUAL(pszOldLocale,"POSIX")
+        || CPLsetlocale(LC_NUMERIC,"C") == NULL )
     {
         CPLFree( pszOldLocale );
         pszOldLocale = NULL;
@@ -2721,7 +2693,7 @@ CPLThreadLocaleC::~CPLThreadLocaleC()
 
 #endif
 }
-//! @endcond
+
 
 /************************************************************************/
 /*                          CPLsetlocale()                              */
@@ -2752,6 +2724,7 @@ char* CPLsetlocale (int category, const char* locale)
     // Make it thread-locale storage.
     return const_cast<char*>( CPLSPrintf("%s", pszRet) );
 }
+
 
 /************************************************************************/
 /*                       CPLCleanupSetlocaleMutex()                     */
@@ -2813,7 +2786,7 @@ int CPLCheckForFile( char *pszFilename, char **papszSiblingFiles )
 
     for( int i = 0; papszSiblingFiles[i] != NULL; i++ )
     {
-        if( EQUAL(papszSiblingFiles[i], osFileOnly) )
+        if( EQUAL(papszSiblingFiles[i],osFileOnly) )
         {
             strcpy( pszFilename + strlen(pszFilename) - strlen(osFileOnly),
                     papszSiblingFiles[i] );
@@ -2830,7 +2803,7 @@ int CPLCheckForFile( char *pszFilename, char **papszSiblingFiles )
 
 #if !defined(HAVE_LIBZ)
 
-void *CPLCreateZip( const char *, char ** )
+void *CPLCreateZip( const char *pszZipFilename, char **papszOptions )
 
 {
     CPLError( CE_Failure, CPLE_NotSupported,
@@ -2838,33 +2811,33 @@ void *CPLCreateZip( const char *, char ** )
     return NULL;
 }
 
-CPLErr CPLCreateFileInZip( void *, const char *,
-                           char ** )
+CPLErr CPLCreateFileInZip( void *hZip, const char *pszFilename,
+                           char **papszOptions )
 
 {
     return CE_Failure;
 }
 
-CPLErr CPLWriteFileInZip( void *, const void *, int )
+CPLErr CPLWriteFileInZip( void *hZip, const void *pBuffer, int nBufferSize )
 
 {
     return CE_Failure;
 }
 
-CPLErr CPLCloseFileInZip( void * )
+CPLErr CPLCloseFileInZip( void *hZip )
 
 {
     return CE_Failure;
 }
 
-CPLErr CPLCloseZip( void * )
+CPLErr CPLCloseZip( void *hZip )
 
 {
     return CE_Failure;
 }
 
-void* CPLZLibDeflate( const void* , size_t , int ,
-                      void* , size_t ,
+void* CPLZLibDeflate( const void* ptr, size_t nBytes, int nLevel,
+                      void* outptr, size_t nOutAvailableBytes,
                       size_t* pnOutBytes )
 {
     if( pnOutBytes != NULL )
@@ -2872,8 +2845,8 @@ void* CPLZLibDeflate( const void* , size_t , int ,
     return NULL;
 }
 
-void* CPLZLibInflate( const void* , size_t ,
-                      void* , size_t ,
+void* CPLZLibInflate( const void* ptr, size_t nBytes,
+                      void* outptr, size_t nOutAvailableBytes,
                       size_t* pnOutBytes )
 {
     if( pnOutBytes != NULL )

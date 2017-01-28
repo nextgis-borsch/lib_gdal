@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: adsrange.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  APP ENVISAT Support
  * Purpose:  Detect range of ADS records matching the MDS records.
@@ -38,8 +39,6 @@ CPL_C_END
 
 #include <cmath>
 
-CPL_CVSID("$Id: adsrange.cpp 35751 2016-10-16 08:52:06Z rouault $");
-
 /* -------------------------------------------------------------------- */
 /*
  * data-set descriptor (private helper class)
@@ -75,7 +74,7 @@ class DataSet
     }
 
   private:
-    CPL_DISALLOW_COPY_ASSIGN(DataSet)
+    CPL_DISALLOW_COPY_ASSIGN(DataSet);
 } ;
 
 /* -------------------------------------------------------------------- */
@@ -84,10 +83,8 @@ class DataSet
  *
  */
 
-ADSRangeLastAfter::ADSRangeLastAfter(
-      EnvisatFile & envfile,
-      int  ads_idx , int mds_idx,
-      const TimeDelta & line_interval )
+ADSRangeLastAfter::ADSRangeLastAfter( EnvisatFile & envfile,
+    int  ads_idx , int mds_idx, const TimeDelta & line_interval )
 {
     /* abs.time tolerance */
     TimeDelta atol = line_interval * 0.5 ;

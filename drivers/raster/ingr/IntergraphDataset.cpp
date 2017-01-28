@@ -1,4 +1,5 @@
 /*****************************************************************************
+ * $Id: IntergraphDataset.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  Intergraph Raster Format support
  * Purpose:  Read/Write Intergraph Raster Format, dataset support
@@ -39,8 +40,6 @@
 #include "IntergraphDataset.h"
 #include "IntergraphBand.h"
 #include "IngrTypes.h"
-
-CPL_CVSID("$Id: IntergraphDataset.cpp 35670 2016-10-09 22:58:16Z goatbar $");
 
 //  ----------------------------------------------------------------------------
 //                                        IntergraphDataset::IntergraphDataset()
@@ -169,7 +168,7 @@ GDALDataset *IntergraphDataset::Open( GDALOpenInfo *poOpenInfo )
     // We need to scan around the file, so we open it now.
     // --------------------------------------------------------------------
 
-    VSILFILE *fp = NULL;
+    VSILFILE   *fp;
 
     if( poOpenInfo->eAccess == GA_ReadOnly  )
     {
@@ -345,7 +344,7 @@ GDALDataset *IntergraphDataset::Open( GDALOpenInfo *poOpenInfo )
         case JPEGRGB:
         case JPEGCMYK:
         {
-            IntergraphBitmapBand* poBand = NULL;
+            IntergraphBitmapBand* poBand;
             nBands++;
             poDS->SetBand( nBands,
                 poBand = new IntergraphBitmapBand( poDS, nBands, nBandOffset, 1 ));
@@ -375,7 +374,7 @@ GDALDataset *IntergraphDataset::Open( GDALOpenInfo *poOpenInfo )
         case JPEGGRAY:
         case CCITTGroup4:
         {
-            IntergraphBitmapBand* poBand = NULL;
+            IntergraphBitmapBand* poBand;
             nBands++;
             poDS->SetBand( nBands,
                 poBand = new IntergraphBitmapBand( poDS, nBands, nBandOffset ));
@@ -390,7 +389,7 @@ GDALDataset *IntergraphDataset::Open( GDALOpenInfo *poOpenInfo )
         case RunLengthEncodedC:
         case AdaptiveGrayScale:
         {
-            IntergraphRLEBand* poBand = NULL;
+            IntergraphRLEBand* poBand;
             nBands++;
             poDS->SetBand( nBands,
                 poBand = new IntergraphRLEBand( poDS, nBands, nBandOffset ));
@@ -404,7 +403,7 @@ GDALDataset *IntergraphDataset::Open( GDALOpenInfo *poOpenInfo )
         case AdaptiveRGB:
         case ContinuousTone:
         {
-            IntergraphRLEBand* poBand = NULL;
+            IntergraphRLEBand* poBand;
             nBands++;
             poDS->SetBand( nBands,
                 poBand = new IntergraphRLEBand( poDS, nBands, nBandOffset, 1 ));
@@ -433,7 +432,7 @@ GDALDataset *IntergraphDataset::Open( GDALOpenInfo *poOpenInfo )
         }
         case Uncompressed24bit:
         {
-            IntergraphRGBBand* poBand = NULL;
+            IntergraphRGBBand* poBand;
             nBands++;
             poDS->SetBand( nBands,
                 poBand = new IntergraphRGBBand( poDS, nBands, nBandOffset, 1 ));
@@ -462,7 +461,7 @@ GDALDataset *IntergraphDataset::Open( GDALOpenInfo *poOpenInfo )
         }
         default:
         {
-            IntergraphRasterBand* poBand = NULL;
+            IntergraphRasterBand* poBand;
             nBands++;
             poDS->SetBand( nBands,
                 poBand = new IntergraphRasterBand( poDS, nBands, nBandOffset ));
@@ -497,7 +496,7 @@ GDALDataset *IntergraphDataset::Open( GDALOpenInfo *poOpenInfo )
 
     poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
 
-    return poDS;
+    return ( poDS );
 }
 
 //  ----------------------------------------------------------------------------

@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: dteddataset.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  DTED Translator
  * Purpose:  GDALDataset driver for DTED translator.
@@ -32,10 +33,9 @@
 #include "gdal_pam.h"
 #include "ogr_spatialref.h"
 
-#include <cstdlib>
 #include <algorithm>
 
-CPL_CVSID("$Id: dteddataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
+CPL_CVSID("$Id: dteddataset.cpp 33720 2016-03-15 00:39:53Z goatbar $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -58,8 +58,8 @@ class DTEDDataset : public GDALPamDataset
                  DTEDDataset();
     virtual     ~DTEDDataset();
 
-    virtual const char *GetProjectionRef(void) override;
-    virtual CPLErr GetGeoTransform( double * ) override;
+    virtual const char *GetProjectionRef(void);
+    virtual CPLErr GetGeoTransform( double * );
 
     const char* GetFileName() { return pszFilename; }
     void SetFileName(const char* pszFilename);
@@ -78,33 +78,35 @@ class DTEDRasterBand : public GDALPamRasterBand
 {
     friend class DTEDDataset;
 
-    int         bNoDataSet;
-    double      dfNoDataValue;
+    int 	bNoDataSet;
+    double	dfNoDataValue;
 
   public:
 
                 DTEDRasterBand( DTEDDataset *, int );
 
-    virtual CPLErr IReadBlock( int, int, void * ) override;
-    virtual CPLErr IWriteBlock( int, int, void * ) override;
+    virtual CPLErr IReadBlock( int, int, void * );
+    virtual CPLErr IWriteBlock( int, int, void * );
 
-    virtual double  GetNoDataValue( int *pbSuccess = NULL ) override;
+    virtual double  GetNoDataValue( int *pbSuccess = NULL );
 
-    virtual const char* GetUnitType() override { return "m"; }
+    virtual const char* GetUnitType() { return "m"; }
 };
+
 
 /************************************************************************/
 /*                           DTEDRasterBand()                            */
 /************************************************************************/
 
 DTEDRasterBand::DTEDRasterBand( DTEDDataset *poDSIn, int nBandIn ) :
-    bNoDataSet(TRUE),
-    dfNoDataValue(static_cast<double>(DTED_NODATA_VALUE))
+    bNoDataSet(TRUE)
 {
-    poDS = poDSIn;
-    nBand = nBandIn;
+    this->poDS = poDSIn;
+    this->nBand = nBandIn;
 
     eDataType = GDT_Int16;
+
+    dfNoDataValue = (double) DTED_NODATA_VALUE;
 
     /* For some applications, it may be valuable to consider the whole DTED */
     /* file as single block, as the column orientation doesn't fit very well */
@@ -199,9 +201,11 @@ CPLErr DTEDRasterBand::IWriteBlock( int nBlockXOff,
     {
         panData = (GInt16 *) pImage;
         GInt16* panBuffer = (GInt16*) CPLMalloc(sizeof(GInt16) * nBlockYSize);
-        for( int i = 0; i < nBlockXSize; i++ )
+        int i;
+        for(i=0;i<nBlockXSize;i++)
         {
-            for( int j = 0; j < nBlockYSize; j++ )
+            int j;
+            for(j=0;j<nBlockYSize;j++)
             {
                 panBuffer[j] = panData[j * nBlockXSize + i];
             }
@@ -240,13 +244,12 @@ double DTEDRasterBand::GetNoDataValue( int * pbSuccess )
 /*                            ~DTEDDataset()                            */
 /************************************************************************/
 
-DTEDDataset::DTEDDataset() :
-    pszFilename(CPLStrdup("unknown")),
-    psDTED(NULL),
-    bVerifyChecksum(CPLTestBool(
-        CPLGetConfigOption("DTED_VERIFY_CHECKSUM", "NO"))),
-    pszProjection(CPLStrdup(""))
-{}
+DTEDDataset::DTEDDataset() : psDTED(NULL)
+{
+    pszFilename = CPLStrdup("unknown");
+    pszProjection = CPLStrdup("");
+    bVerifyChecksum = CPLTestBool(CPLGetConfigOption("DTED_VERIFY_CHECKSUM", "NO"));
+}
 
 /************************************************************************/
 /*                            ~DTEDDataset()                            */
@@ -328,7 +331,7 @@ GDALDataset *DTEDDataset::Open( GDALOpenInfo * poOpenInfo )
                          (poOpenInfo->eAccess == GA_Update) ? "rb+" : "rb", TRUE );
 
     if( psDTED == NULL )
-        return NULL;
+        return( NULL );
 
 /* -------------------------------------------------------------------- */
 /*      Create a corresponding GDALDataset.                             */
@@ -362,8 +365,9 @@ GDALDataset *DTEDDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Collect any metadata available.                                 */
 /* -------------------------------------------------------------------- */
-    char *pszValue =
-        DTEDGetMetadata( psDTED, DTEDMD_VERTACCURACY_UHL );
+    char *pszValue;
+
+    pszValue = DTEDGetMetadata( psDTED, DTEDMD_VERTACCURACY_UHL );
     poDS->SetMetadataItem( "DTED_VerticalAccuracy_UHL", pszValue );
     CPLFree( pszValue );
 
@@ -494,7 +498,7 @@ GDALDataset *DTEDDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename,
                                  poOpenInfo->GetSiblingFiles() );
-    return poDS;
+    return( poDS );
 }
 
 /************************************************************************/
@@ -511,7 +515,7 @@ CPLErr DTEDDataset::GetGeoTransform( double * padfTransform )
     padfTransform[4] = 0.0;
     padfTransform[5] = psDTED->dfPixelSizeY * -1;
 
-    return CE_None;
+    return( CE_None );
 }
 
 /************************************************************************/
@@ -532,11 +536,7 @@ const char *DTEDDataset::GetProjectionRef()
     pszPrj = GetMetadataItem( "DTED_HorizontalDatum");
     if (EQUAL(pszPrj, "WGS84"))
     {
-        return
-            "GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\","
-            "SPHEROID[\"WGS 84\",6378137,298.257223563]],"
-            "PRIMEM[\"Greenwich\",0],UNIT[\"degree\",0.0174532925199433],"
-            "AUTHORITY[\"EPSG\",\"4326\"]]";
+        return( "GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563]],PRIMEM[\"Greenwich\",0],UNIT[\"degree\",0.0174532925199433],AUTHORITY[\"EPSG\",\"4326\"]]" );
     }
     else if (EQUAL(pszPrj, "WGS72"))
     {
@@ -565,11 +565,7 @@ const char *DTEDDataset::GetProjectionRef()
                       "The DTED driver is going to consider it as WGS84.\n"
                       "No more warnings will be issued in this session about this operation.", GetFileName(), pszPrj );
         }
-        return
-            "GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\","
-            "SPHEROID[\"WGS 84\",6378137,298.257223563]],"
-            "PRIMEM[\"Greenwich\",0],UNIT[\"degree\",0.0174532925199433],"
-            "AUTHORITY[\"EPSG\",\"4326\"]]";
+        return( "GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563]],PRIMEM[\"Greenwich\",0],UNIT[\"degree\",0.0174532925199433],AUTHORITY[\"EPSG\",\"4326\"]]" );
     }
 }
 
@@ -668,13 +664,13 @@ DTEDCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 /*     Check horizontal source size.                                    */
 /* -------------------------------------------------------------------- */
     int expectedXSize;
-    if( std::abs(nLLOriginLat) >= 80 )
+    if( ABS(nLLOriginLat) >= 80 )
         expectedXSize = (poSrcDS->GetRasterYSize() - 1) / 6 + 1;
-    else if( std::abs(nLLOriginLat) >= 75 )
+    else if( ABS(nLLOriginLat) >= 75 )
         expectedXSize = (poSrcDS->GetRasterYSize() - 1) / 4 + 1;
-    else if( std::abs(nLLOriginLat) >= 70 )
+    else if( ABS(nLLOriginLat) >= 70 )
         expectedXSize = (poSrcDS->GetRasterYSize() - 1) / 3 + 1;
-    else if( std::abs(nLLOriginLat) >= 50 )
+    else if( ABS(nLLOriginLat) >= 50 )
         expectedXSize = (poSrcDS->GetRasterYSize() - 1) / 2 + 1;
     else
         expectedXSize = poSrcDS->GetRasterYSize();
@@ -793,8 +789,7 @@ DTEDCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
         if (iPartialCell < 1)
            iPartialCell=1;
     }
-
-    CPLsnprintf( szPartialCell, sizeof(szPartialCell), "%02d",iPartialCell);
+    snprintf( szPartialCell, sizeof(szPartialCell), "%02d",iPartialCell);
     DTEDSetMetadata(psDTED, DTEDMD_PARTIALCELL_DSI, szPartialCell);
 
 /* -------------------------------------------------------------------- */

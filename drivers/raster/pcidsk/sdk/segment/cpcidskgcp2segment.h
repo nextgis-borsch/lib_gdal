@@ -40,17 +40,17 @@ namespace PCIDSK {
         ~CPCIDSKGCP2Segment();
 
         // Return all GCPs in the segment
-        std::vector<PCIDSK::GCP> const& GetGCPs(void) const override;
+        std::vector<PCIDSK::GCP> const& GetGCPs(void) const;
         
         // Write the given GCPs to the segment. If the segment already
         // exists, it will be replaced with this one.
-        void SetGCPs(std::vector<PCIDSK::GCP> const& gcps) override;
+        void SetGCPs(std::vector<PCIDSK::GCP> const& gcps);
         
         // Return the count of GCPs in the segment
-        unsigned int GetGCPCount(void) const override;
+        unsigned int GetGCPCount(void) const;
         
         // Clear a GCP Segment
-        void ClearGCPs(void) override;
+        void ClearGCPs(void);
     private:
         void Load();
         void RebuildSegmentData(void);

@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id$
  *
  * Project:  GDAL Core
  * Purpose:  Read metadata from Alos imagery.
@@ -28,18 +29,6 @@
  ****************************************************************************/
 
 #include "reader_alos.h"
-
-#include <cstdio>
-#include <cstdlib>
-
-#include <string>
-
-#include "cpl_conv.h"
-#include "cpl_error.h"
-#include "cpl_string.h"
-#include "gdal_mdreader.h"
-
-CPL_CVSID("$Id: reader_alos.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 /**
  * GDALMDReaderALOS()
@@ -147,13 +136,13 @@ GDALMDReaderALOS::GDALMDReaderALOS(const char *pszPath,
         }
     }
 
-    if(!m_osIMDSourceFilename.empty() )
+    if(m_osIMDSourceFilename.size())
         CPLDebug( "MDReaderALOS", "IMD Filename: %s",
               m_osIMDSourceFilename.c_str() );
-    if(!m_osHDRSourceFilename.empty() )
+    if(m_osHDRSourceFilename.size())
         CPLDebug( "MDReaderALOS", "HDR Filename: %s",
               m_osHDRSourceFilename.c_str() );
-    if(!m_osRPBSourceFilename.empty() )
+    if(m_osRPBSourceFilename.size())
         CPLDebug( "MDReaderALOS", "RPB Filename: %s",
               m_osRPBSourceFilename.c_str() );
 }
@@ -247,6 +236,7 @@ void GDALMDReaderALOS::LoadMetadata()
         m_papszIMAGERYMD = CSLAddNameValue(m_papszIMAGERYMD,
                                 MD_NAME_SATELLITE, CPLStripQuotes(pszSatId2));
     }
+
 
     const char* pszCloudCover = CSLFetchNameValue(m_papszIMDMD,
                                                  "Img_CloudQuantityOfAllImage");

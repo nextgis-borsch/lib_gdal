@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: iso8211.h 36411 2016-11-21 22:03:48Z rouault $
+ * $Id: iso8211.h 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  ISO 8211 Access
  * Purpose:  Main declarations for ISO 8211.
@@ -98,7 +98,7 @@ class CPL_ODLL DDFModule
 
     void        Dump( FILE * fp );
 
-    DDFRecord   *ReadRecord();
+    DDFRecord   *ReadRecord( void );
     void        Rewind( long nOffset = -1 );
 
     DDFFieldDefn *FindFieldDefn( const char * );
@@ -128,6 +128,7 @@ class CPL_ODLL DDFModule
     char        GetAppIndicator() const { return _appIndicator; }
     const char* GetExtendedCharSet() const { return _extendedCharSet; }
     void        SetFieldControlLength(int nVal) { _fieldControlLength = nVal; }
+
 
   private:
     VSILFILE    *fpDDF;
@@ -351,9 +352,11 @@ typedef enum {
     FloatComplex=5
 } DDFBinaryFormat;
 
-    DDFBinaryFormat GetBinaryFormat() const { return eBinaryFormat; }
+    DDFBinaryFormat GetBinaryFormat(void) const { return eBinaryFormat; }
+
 
 private:
+
   char      *pszName;   // a.k.a. subfield mnemonic
   char      *pszFormatString;
 
@@ -393,7 +396,7 @@ private:
 class CPL_ODLL DDFRecord
 {
   public:
-    explicit     DDFRecord( DDFModule * );
+                DDFRecord( DDFModule * );
                 ~DDFRecord();
 
     DDFRecord  *Clone();
@@ -501,7 +504,7 @@ class CPL_ODLL DDFRecord
 
 /**
  * This object represents one field in a DDFRecord.  This
- * models an instance of the fields data, rather than its data definition,
+ * models an instance of the fields data, rather than it's data definition
  * which is handled by the DDFFieldDefn class.  Note that a DDFField
  * doesn't have DDFSubfield children as you would expect.  To extract
  * subfield values use GetSubfieldData() to find the right data pointer and
@@ -511,8 +514,6 @@ class CPL_ODLL DDFRecord
 class CPL_ODLL DDFField
 {
   public:
-    DDFField() : poDefn(NULL), nDataSize(0), pachData(NULL) {}
-
     void                Initialize( DDFFieldDefn *, const char *pszData,
                                     int nSize );
 
@@ -544,5 +545,6 @@ class CPL_ODLL DDFField
 
     const char          *pachData;
 };
+
 
 #endif /* ndef ISO8211_H_INCLUDED */

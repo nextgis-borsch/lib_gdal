@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_avc.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: ogr_avc.h 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  Arc/Info Coverage (E00 & Binary) Reader
  * Purpose:  Declarations for OGR wrapper classes for coverage access.
@@ -49,12 +49,12 @@ class OGRAVCLayer : public OGRLayer
     AVCFileType         eSectionType;
 
     int                 SetupFeatureDefinition( const char *pszName );
-    bool                AppendTableDefinition( AVCTableDef *psTableDef );
+    int                 AppendTableDefinition( AVCTableDef *psTableDef );
 
-    bool                MatchesSpatialFilter( void * );
+    int                 MatchesSpatialFilter( void * );
     OGRFeature          *TranslateFeature( void * );
 
-    bool                TranslateTableFields( OGRFeature *poFeature,
+    int                 TranslateTableFields( OGRFeature *poFeature,
                                               int nFieldBase,
                                               AVCTableDef *psTableDef,
                                               AVCField *pasFields );
@@ -62,13 +62,13 @@ class OGRAVCLayer : public OGRLayer
   public:
                         OGRAVCLayer( AVCFileType eSectionType,
                                      OGRAVCDataSource *poDS );
-    virtual ~OGRAVCLayer();
+    			~OGRAVCLayer();
 
-    OGRFeatureDefn *    GetLayerDefn() override { return poFeatureDefn; }
+    OGRFeatureDefn *	GetLayerDefn() { return poFeatureDefn; }
 
-    virtual OGRSpatialReference *GetSpatialRef() override;
+    virtual OGRSpatialReference *GetSpatialRef();
 
-    virtual int         TestCapability( const char * ) override;
+    virtual int         TestCapability( const char * );
 };
 
 /************************************************************************/
@@ -79,11 +79,11 @@ class OGRAVCDataSource : public OGRDataSource
 {
   protected:
     OGRSpatialReference *poSRS;
-    char                *pszCoverageName;
+    char		*pszCoverageName;
 
   public:
-                        OGRAVCDataSource();
-    virtual ~OGRAVCDataSource();
+		        OGRAVCDataSource();
+    			~OGRAVCDataSource();
 
     virtual OGRSpatialReference *GetSpatialRef();
 
@@ -106,32 +106,32 @@ class OGRAVCBinLayer : public OGRAVCLayer
     AVCBinFile          *hFile;
 
     OGRAVCBinLayer      *poArcLayer;
-    bool                bNeedReset;
+    int                 bNeedReset;
 
-    char                szTableName[128];
+    char		szTableName[128];
     AVCBinFile          *hTable;
     int                 nTableBaseField;
     int                 nTableAttrIndex;
 
     int                 nNextFID;
 
-    bool                FormPolygonGeometry( OGRFeature *poFeature,
+    int                 FormPolygonGeometry( OGRFeature *poFeature,
                                              AVCPal *psPAL );
 
-    bool                CheckSetupTable();
-    bool                AppendTableFields( OGRFeature *poFeature );
+    int                 CheckSetupTable();
+    int                 AppendTableFields( OGRFeature *poFeature );
 
   public:
                         OGRAVCBinLayer( OGRAVCBinDataSource *poDS,
                                         AVCE00Section *psSectionIn );
 
-                        ~OGRAVCBinLayer();
+    			~OGRAVCBinLayer();
 
-    void                ResetReading() override;
-    OGRFeature *        GetNextFeature() override;
-    OGRFeature *        GetFeature( GIntBig nFID ) override;
+    void		ResetReading();
+    OGRFeature *	GetNextFeature();
+    OGRFeature *	GetFeature( GIntBig nFID );
 
-    int                 TestCapability( const char * ) override;
+    int                 TestCapability( const char * );
 };
 
 /************************************************************************/
@@ -141,23 +141,23 @@ class OGRAVCBinLayer : public OGRAVCLayer
 class OGRAVCBinDataSource : public OGRAVCDataSource
 {
     OGRLayer            **papoLayers;
-    int                 nLayers;
+    int			nLayers;
 
-    char                *pszName;
+    char		*pszName;
 
     AVCE00ReadPtr       psAVC;
 
   public:
-                        OGRAVCBinDataSource();
-                        ~OGRAVCBinDataSource();
+    			OGRAVCBinDataSource();
+    			~OGRAVCBinDataSource();
 
-    int                 Open( const char *, int bTestOpen );
+    int			Open( const char *, int bTestOpen );
 
-    const char          *GetName() override { return pszName; }
-    int                 GetLayerCount() override { return nLayers; }
-    OGRLayer            *GetLayer( int ) override;
+    const char	        *GetName() { return pszName; }
+    int			GetLayerCount() { return nLayers; }
+    OGRLayer		*GetLayer( int );
 
-    int                 TestCapability( const char * ) override;
+    int                 TestCapability( const char * );
 
     AVCE00ReadPtr       GetInfo() { return psAVC; }
 };
@@ -175,7 +175,7 @@ class OGRAVCE00Layer : public OGRAVCLayer
     AVCE00ReadE00Ptr    psRead;
     OGRAVCE00Layer      *poArcLayer;
     int                 nFeatureCount;
-    bool                bNeedReset;
+    int                 bNeedReset;
     int                 nNextFID;
 
     AVCE00Section       *psTableSection;
@@ -185,20 +185,20 @@ class OGRAVCE00Layer : public OGRAVCLayer
     int                 nTableBaseField;
     int                 nTableAttrIndex;
 
-    bool                FormPolygonGeometry( OGRFeature *poFeature,
+    int                 FormPolygonGeometry( OGRFeature *poFeature,
                                              AVCPal *psPAL );
   public:
                         OGRAVCE00Layer( OGRAVCDataSource *poDS,
                                         AVCE00Section *psSectionIn );
 
-                        ~OGRAVCE00Layer();
+    			~OGRAVCE00Layer();
 
-    void                ResetReading() override;
-    OGRFeature *        GetNextFeature() override;
-    OGRFeature *GetFeature( GIntBig nFID ) override;
-    GIntBig GetFeatureCount(int bForce) override;
-    bool CheckSetupTable(AVCE00Section *psTblSectionIn);
-    bool AppendTableFields( OGRFeature *poFeature );
+    void		ResetReading();
+    OGRFeature *	GetNextFeature();
+    OGRFeature *GetFeature( GIntBig nFID );
+    GIntBig GetFeatureCount(int bForce);
+    int CheckSetupTable(AVCE00Section *psTblSectionIn);
+    int AppendTableFields( OGRFeature *poFeature );
 };
 
 /************************************************************************/
@@ -217,17 +217,18 @@ class OGRAVCE00DataSource : public OGRAVCDataSource
 
   public:
     OGRAVCE00DataSource();
-    virtual ~OGRAVCE00DataSource();
+    ~OGRAVCE00DataSource();
 
     int Open(const char *, int bTestOpen);
 
     AVCE00ReadE00Ptr GetInfo() { return psE00; }
-    const char *GetName() override { return pszName; }
-    int GetLayerCount() override { return nLayers; }
+    const char *GetName() { return pszName; }
+    int GetLayerCount() { return nLayers; }
 
-    OGRLayer *GetLayer( int ) override;
-    int TestCapability( const char * ) override;
-    virtual OGRSpatialReference *GetSpatialRef() override;
+    OGRLayer *GetLayer( int );
+    int TestCapability( const char * );
+    virtual OGRSpatialReference *GetSpatialRef();
 };
+
 
 #endif /* OGR_AVC_H_INCLUDED */

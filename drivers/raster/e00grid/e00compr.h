@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: e00compr.h 35885 2016-10-24 06:23:09Z goatbar $
+ * $Id: e00compr.h,v 1.10 2009-02-24 20:03:50 aboudreault Exp $
  *
  * Name:     e00compr.h
  * Project:  Compressed E00 Read/Write library
@@ -59,6 +59,7 @@
 
 #ifndef E00COMPR_H_INCLUDED_
 #define E00COMPR_H_INCLUDED_
+
 
 #include <stdio.h>
 
@@ -151,6 +152,7 @@ struct _E00WriteInfo
 
 typedef struct _E00WriteInfo *E00WritePtr;
 
+
 /*=====================================================================
                         Function prototypes
  =====================================================================*/
@@ -170,6 +172,7 @@ E00WritePtr E00WriteCallbackOpen(void *pRefData,
                                  int nComprLevel);
 void        E00WriteClose(E00WritePtr psInfo);
 int         E00WriteNextLine(E00WritePtr psInfo, const char *pszLine);
+
 
 #ifdef __cplusplus
 }

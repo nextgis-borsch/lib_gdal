@@ -41,12 +41,12 @@ namespace PCIDSK {
         ~CPCIDSKADS40ModelSegment();
         
         // Get path
-        std::string GetPath(void) const override;
+        std::string GetPath(void) const;
         // Set path
-        void SetPath(const std::string& oPath) override;
+        void SetPath(const std::string& oPath);
 
         //synchronize the segment on disk.
-        void Synchronize() override;
+        void Synchronize();
     private:
         // Helper housekeeping functions
         void Load();

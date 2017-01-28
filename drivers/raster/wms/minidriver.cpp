@@ -1,17 +1,12 @@
 /******************************************************************************
+ * $Id: minidriver.cpp 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  WMS Client Driver
- * Purpose:  WMSMiniDriverManager implementation.
+ * Purpose:  GDALWMSMiniDriver base class implementation.
  * Author:   Adam Nowacki, nowak@xpam.de
  *
  ******************************************************************************
- *
  * Copyright (c) 2007, Adam Nowacki
- *               2016, Lucian Plesea
- *
- * A single global MiniDriverManager exists, containing factories for all possible
- * types of WMS minidrivers.  Minidriver object factories get registered in wmsdriver.cpp,
- * during the WMS driver registration with GDAL
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -34,60 +29,103 @@
 
 #include "wmsdriver.h"
 
-CPL_CVSID("$Id: minidriver.cpp 36611 2016-12-01 23:13:38Z lplesea $");
+static volatile GDALWMSMiniDriverManager *g_mini_driver_manager = NULL;
+static CPLMutex *g_mini_driver_manager_mutex = NULL;
 
-class WMSMiniDriverManager {
-public:
-    WMSMiniDriverManager() {};
-    ~WMSMiniDriverManager() { erase(); };
-
-public:
-    void Register(WMSMiniDriverFactory *mdf);
-    // Clean up the minidriver factories
-    void erase();
-    WMSMiniDriverFactory *Find(const CPLString &name);
-
-protected:
-    std::vector<WMSMiniDriverFactory *> m_mdfs;
-};
-
-// Called by WMS driver deregister, also by destructor
-void WMSMiniDriverManager::erase() {
-    for (size_t i = 0; i < m_mdfs.size(); i++)
-        delete m_mdfs[i];
-    m_mdfs.clear();
+GDALWMSMiniDriver::GDALWMSMiniDriver() {
+    m_parent_dataset = NULL;
 }
 
-WMSMiniDriverFactory *WMSMiniDriverManager::Find(const CPLString &name) {
-    for (size_t i = 0; i < m_mdfs.size(); i++)
-        if (EQUAL(name.c_str(), m_mdfs[i]->m_name))
-            return m_mdfs[i];
+GDALWMSMiniDriver::~GDALWMSMiniDriver() {
+}
+
+CPLErr GDALWMSMiniDriver::Initialize(CPL_UNUSED CPLXMLNode *config) {
+    return CE_None;
+}
+
+void GDALWMSMiniDriver::GetCapabilities(CPL_UNUSED GDALWMSMiniDriverCapabilities *caps) {
+}
+
+void GDALWMSMiniDriver::ImageRequest(CPL_UNUSED CPLString *url, CPL_UNUSED const GDALWMSImageRequestInfo &iri) {
+}
+
+void GDALWMSMiniDriver::TiledImageRequest(CPL_UNUSED CPLString *url,
+                                          CPL_UNUSED const GDALWMSImageRequestInfo &iri,
+                                          CPL_UNUSED const GDALWMSTiledImageRequestInfo &tiri) {
+}
+
+void GDALWMSMiniDriver::GetTiledImageInfo(CPL_UNUSED CPLString *url,
+                                          CPL_UNUSED const GDALWMSImageRequestInfo &iri,
+                                          CPL_UNUSED const GDALWMSTiledImageRequestInfo &tiri,
+                                          CPL_UNUSED int nXInBlock,
+                                          CPL_UNUSED int nYInBlock)
+{
+}
+
+const char *GDALWMSMiniDriver::GetProjectionInWKT() {
     return NULL;
 }
 
-void WMSMiniDriverManager::Register(WMSMiniDriverFactory *mdf) {
-    // Prevent duplicates
-    if (!Find(mdf->m_name))
-        m_mdfs.push_back(mdf);
-    else // Register takes ownership of factories, so it removes the duplicate
+GDALWMSMiniDriverFactory::GDALWMSMiniDriverFactory() {
+}
+
+GDALWMSMiniDriverFactory::~GDALWMSMiniDriverFactory() {
+}
+
+GDALWMSMiniDriverManager *GetGDALWMSMiniDriverManager() {
+    if (g_mini_driver_manager == NULL) {
+        CPLMutexHolderD(&g_mini_driver_manager_mutex);
+        if (g_mini_driver_manager == NULL) {
+            g_mini_driver_manager = new GDALWMSMiniDriverManager();
+        }
+        CPLAssert(g_mini_driver_manager != NULL);
+    }
+    return const_cast<GDALWMSMiniDriverManager *>(g_mini_driver_manager);
+}
+
+void DestroyWMSMiniDriverManager()
+
+{
+    {
+        CPLMutexHolderD(&g_mini_driver_manager_mutex);
+
+        if( g_mini_driver_manager != NULL )
+        {
+            delete g_mini_driver_manager;
+            g_mini_driver_manager = NULL;
+        }
+    }
+
+    if( g_mini_driver_manager_mutex != NULL )
+    {
+        CPLDestroyMutex(g_mini_driver_manager_mutex);
+        g_mini_driver_manager_mutex = NULL;
+    }
+}
+
+GDALWMSMiniDriverManager::GDALWMSMiniDriverManager() {
+}
+
+GDALWMSMiniDriverManager::~GDALWMSMiniDriverManager() {
+    for (std::list<GDALWMSMiniDriverFactory *>::iterator it = m_mdfs.begin();
+         it != m_mdfs.end(); ++it) {
+        GDALWMSMiniDriverFactory *mdf = *it;
         delete mdf;
+    }
 }
 
-// global object containing minidriver factories
-static WMSMiniDriverManager g_mini_driver_manager;
+void GDALWMSMiniDriverManager::Register(GDALWMSMiniDriverFactory *mdf) {
+    CPLMutexHolderD(&g_mini_driver_manager_mutex);
 
-// If a matching factory is found in the global minidriver manager, it returns a new minidriver object
-WMSMiniDriver *NewWMSMiniDriver(const CPLString &name) {
-    const WMSMiniDriverFactory *factory = g_mini_driver_manager.Find(name);
-    if (factory == NULL) return NULL;
-    return factory->New();
+    m_mdfs.push_back(mdf);
 }
 
-// Registers a minidriver factory with the global minidriver manager
-void WMSRegisterMiniDriverFactory(WMSMiniDriverFactory *mdf) {
-    g_mini_driver_manager.Register(mdf);
-}
+GDALWMSMiniDriverFactory *GDALWMSMiniDriverManager::Find(const CPLString &name) {
+    CPLMutexHolderD(&g_mini_driver_manager_mutex);
 
-void WMSDeregisterMiniDrivers(CPL_UNUSED GDALDriver *) {
-    g_mini_driver_manager.erase();
+    for (std::list<GDALWMSMiniDriverFactory *>::iterator it = m_mdfs.begin(); it != m_mdfs.end(); ++it) {
+        GDALWMSMiniDriverFactory *const mdf = *it;
+        if (EQUAL(mdf->GetName().c_str(), name.c_str())) return mdf;
+    }
+    return NULL;
 }

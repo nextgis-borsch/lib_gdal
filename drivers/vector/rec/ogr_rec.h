@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_rec.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: ogr_rec.h 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  Epi .REC Translator
  * Purpose:  Definition of classes for OGR .REC support.
@@ -42,6 +42,7 @@ int CPL_DLL RECReadRecord( FILE *fp, char *pszRecBuf, int nRecordLength  );
 const char CPL_DLL *RECGetField( const char *pszSrc, int nStart, int nWidth );
 CPL_C_END
 
+
 /************************************************************************/
 /*                             OGRRECLayer                              */
 /************************************************************************/
@@ -68,14 +69,15 @@ class OGRRECLayer : public OGRLayer
                                      int nFieldCount );
                         ~OGRRECLayer();
 
-    void                ResetReading() override;
-    OGRFeature *        GetNextFeature() override;
+    void                ResetReading();
+    OGRFeature *        GetNextFeature();
 
-    OGRFeatureDefn *    GetLayerDefn() override { return poFeatureDefn; }
+    OGRFeatureDefn *    GetLayerDefn() { return poFeatureDefn; }
 
-    int                 TestCapability( const char * ) override;
+    int                 TestCapability( const char * );
 
     int                 IsValid() { return bIsValid; }
+
 };
 
 /************************************************************************/
@@ -94,10 +96,10 @@ class OGRRECDataSource : public OGRDataSource
 
     int                 Open( const char * pszFilename );
 
-    const char          *GetName() override { return pszName; }
-    int                 GetLayerCount() override { return 1; }
-    OGRLayer            *GetLayer( int ) override;
-    int                 TestCapability( const char * ) override;
+    const char          *GetName() { return pszName; }
+    int                 GetLayerCount() { return 1; }
+    OGRLayer            *GetLayer( int );
+    int                 TestCapability( const char * );
 };
 
 #endif /* ndef OGR_REC_H_INCLUDED */

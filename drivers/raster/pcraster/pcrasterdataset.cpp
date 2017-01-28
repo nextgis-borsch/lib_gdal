@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: pcrasterdataset.cpp 33105 2016-01-23 15:27:32Z rouault $
  *
  * Project:  PCRaster Integration
  * Purpose:  PCRaster CSF 2.0 raster file driver
@@ -33,12 +34,15 @@
 #include "pcrasterdataset.h"
 #include "pcrasterutil.h"
 
-CPL_CVSID("$Id: pcrasterdataset.cpp 36455 2016-11-22 23:11:35Z rouault $");
+CPL_CVSID("$Id: pcrasterdataset.cpp 33105 2016-01-23 15:27:32Z rouault $");
+
 
 /*!
   \file
   This file contains the implementation of the PCRasterDataset class.
 */
+
+
 
 //------------------------------------------------------------------------------
 // DEFINITION OF STATIC PCRDATASET MEMBERS
@@ -88,6 +92,8 @@ GDALDataset* PCRasterDataset::open(
 
   return dataset;
 }
+
+
 
 //! Writes a raster to \a filename as a PCRaster raster file.
 /*!
@@ -165,7 +171,8 @@ GDALDataset* PCRasterDataset::createCopy(
   }
 
   // The in-memory type of the cells.
-  CSF_CR appCellRepresentation = GDALType2CellRepresentation(
+  CSF_CR appCellRepresentation = CR_UNDEFINED;
+  appCellRepresentation = GDALType2CellRepresentation(
          raster->GetRasterDataType(), true);
 
   if(appCellRepresentation == CR_UNDEFINED) {
@@ -278,13 +285,15 @@ GDALDataset* PCRasterDataset::createCopy(
   return poDS;
 }
 
+
+
 //------------------------------------------------------------------------------
 // DEFINITION OF PCRDATASET MEMBERS
 //------------------------------------------------------------------------------
 
 //! Constructor.
 /*!
-  \param     mapIn PCRaster map handle. It is ours to close.
+  \param     map PCRaster map handle. It is ours to close.
 */
 PCRasterDataset::PCRasterDataset( MAP* mapIn) :
     GDALPamDataset(),
@@ -320,6 +329,8 @@ PCRasterDataset::PCRasterDataset( MAP* mapIn) :
          d_valueScale).c_str());
 }
 
+
+
 //! Destructor.
 /*!
   \warning   The map given in the constructor is closed.
@@ -329,6 +340,8 @@ PCRasterDataset::~PCRasterDataset()
     FlushCache();
     Mclose(d_map);
 }
+
+
 
 //! Sets projections info.
 /*!
@@ -354,6 +367,8 @@ CPLErr PCRasterDataset::GetGeoTransform(double* transform)
   return CE_None;
 }
 
+
+
 //! Returns the map handle.
 /*!
   \return    Map handle.
@@ -362,6 +377,8 @@ MAP* PCRasterDataset::map() const
 {
   return d_map;
 }
+
+
 
 //! Returns the in-app cell representation.
 /*!
@@ -374,6 +391,8 @@ CSF_CR PCRasterDataset::cellRepresentation() const
   return d_cellRepresentation;
 }
 
+
+
 //! Returns the value scale of the data.
 /*!
   \return    Value scale
@@ -384,6 +403,8 @@ CSF_VS PCRasterDataset::valueScale() const
   return d_valueScale;
 }
 
+
+
 //! Returns the value of the missing value.
 /*!
   \return    Missing value
@@ -392,6 +413,7 @@ double PCRasterDataset::defaultNoDataValue() const
 {
   return d_defaultNoDataValue;
 }
+
 
 GDALDataset* PCRasterDataset::create(
      const char* filename,
@@ -450,6 +472,7 @@ GDALDataset* PCRasterDataset::create(
     return NULL;
   }
 
+
   CSF_VS csf_value_scale = string2ValueScale(valueScale);
 
   if(csf_value_scale == VS_UNDEFINED){
@@ -492,6 +515,7 @@ GDALDataset* PCRasterDataset::create(
   return poDS;
 }
 
+
 CPLErr PCRasterDataset::SetGeoTransform(double* transform)
 {
   if((transform[2] != 0.0) || (transform[4] != 0.0)) {
@@ -515,6 +539,7 @@ CPLErr PCRasterDataset::SetGeoTransform(double* transform)
 
   return CE_None;
 }
+
 
 bool PCRasterDataset::location_changed() const {
   return d_location_changed;

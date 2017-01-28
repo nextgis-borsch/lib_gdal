@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrili2layer.cpp 32765 2016-01-05 19:27:15Z rouault $
  *
  * Project:  Interlis 2 Translator
  * Purpose:  Implements OGRILI2Layer class.
@@ -31,14 +32,14 @@
 #include "cpl_string.h"
 #include "ogr_ili2.h"
 
-CPL_CVSID("$Id: ogrili2layer.cpp 36415 2016-11-21 22:40:20Z rouault $");
+CPL_CVSID("$Id: ogrili2layer.cpp 32765 2016-01-05 19:27:15Z rouault $");
 
 /************************************************************************/
 /*                           OGRILI2Layer()                              */
 /************************************************************************/
 
 OGRILI2Layer::OGRILI2Layer( OGRFeatureDefn* poFeatureDefnIn,
-                            const GeomFieldInfos& oGeomFieldInfosIn,
+                            GeomFieldInfos oGeomFieldInfosIn,
                             OGRILI2DataSource *poDSIn ) :
     poFeatureDefn(poFeatureDefnIn),
     oGeomFieldInfos(oGeomFieldInfosIn),
@@ -66,6 +67,7 @@ OGRILI2Layer::~OGRILI2Layer()
       delete poFeature;
     }
 }
+
 
 /************************************************************************/
 /*                             ISetFeature()                             */
@@ -261,6 +263,7 @@ static int OGR2ILIGeometryAppend( OGRGeometry *poGeometry, VSILFILE* fp,
             if( !OGR2ILIGeometryAppend( poMember, fp, NULL, "" ) )
                 return FALSE;
         }
+
     }
 
     else
@@ -275,7 +278,7 @@ static int OGR2ILIGeometryAppend( OGRGeometry *poGeometry, VSILFILE* fp,
 
 OGRErr OGRILI2Layer::ICreateFeature( OGRFeature *poFeature ) {
     char szTempBuffer[80];
-    const char* tid = NULL;
+    const char* tid;
     int iField = 0;
     if( poFeatureDefn->GetFieldCount() &&
         EQUAL(poFeatureDefn->GetFieldDefn(iField)->GetNameRef(), "TID") )

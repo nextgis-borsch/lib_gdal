@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrdxfdriver.cpp 32110 2015-12-10 17:19:40Z goatbar $
  *
  * Project:  DXF Translator
  * Purpose:  Implements OGRDXFDriver.
@@ -29,7 +30,7 @@
 #include "ogr_dxf.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrdxfdriver.cpp 35645 2016-10-08 00:48:42Z goatbar $");
+CPL_CVSID("$Id: ogrdxfdriver.cpp 32110 2015-12-10 17:19:40Z goatbar $");
 
 /************************************************************************/
 /*                       OGRDXFDriverIdentify()                         */
@@ -43,32 +44,32 @@ static int OGRDXFDriverIdentify( GDALOpenInfo* poOpenInfo )
     if( EQUAL(CPLGetExtension(poOpenInfo->pszFilename),"dxf") )
         return TRUE;
     const char* pszIter = (const char*)poOpenInfo->pabyHeader;
-    bool bFoundZero = false;
-    int i = 0;  // Used after for.
-    for( ; pszIter[i]; i++ )
+    int bFoundZero = FALSE;
+    int i = 0;
+    for(i=0; pszIter[i]; i++)
     {
         if( pszIter[i] == '0' )
         {
-            int j = i-1;  // Used after for.
-            for( ; j >= 0; j-- )
+            int j=i-1;
+            for(; j>=0; j--)
             {
                 if( pszIter[j] != ' ' )
                     break;
             }
             if( j < 0 || pszIter[j] == '\n'|| pszIter[j] == '\r' )
             {
-                bFoundZero = true;
+                bFoundZero = TRUE;
                 break;
             }
         }
     }
     if( !bFoundZero )
         return FALSE;
-    i++;
+    i ++;
     while( pszIter[i] == ' ' )
-        i++;
+        i ++;
     while( pszIter[i] == '\n' || pszIter[i] == '\r' )
-        i++;
+        i ++;
     if( !STARTS_WITH_CI(pszIter + i, "SECTION") )
         return FALSE;
     i += static_cast<int>(strlen("SECTION"));
@@ -85,7 +86,7 @@ static GDALDataset *OGRDXFDriverOpen( GDALOpenInfo* poOpenInfo )
     if( !OGRDXFDriverIdentify(poOpenInfo) )
         return NULL;
 
-    OGRDXFDataSource *poDS = new OGRDXFDataSource();
+    OGRDXFDataSource   *poDS = new OGRDXFDataSource();
 
     if( !poDS->Open( poOpenInfo->pszFilename ) )
     {

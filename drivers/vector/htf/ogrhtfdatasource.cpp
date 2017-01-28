@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrhtfdatasource.cpp 32744 2016-01-04 22:26:42Z goatbar $
  *
  * Project:  HTF Translator
  * Purpose:  Implements OGRHTFDataSource class
@@ -30,7 +31,7 @@
 #include "cpl_string.h"
 #include "ogr_htf.h"
 
-CPL_CVSID("$Id: ogrhtfdatasource.cpp 35013 2016-08-09 16:03:57Z goatbar $");
+CPL_CVSID("$Id: ogrhtfdatasource.cpp 32744 2016-01-04 22:26:42Z goatbar $");
 
 /************************************************************************/
 /*                          OGRHTFDataSource()                          */
@@ -114,6 +115,7 @@ int OGRHTFDataSource::Open( const char * pszFilename )
     if (fp == NULL)
         return FALSE;
 
+    const char* pszLine;
     bool bEndOfHTFHeader = false;
     bool bIsSouth = false;
     bool bGeodeticDatumIsWGS84 = false;
@@ -130,8 +132,6 @@ int OGRHTFDataSource::Open( const char * pszFilename )
     double dfNENorthing = 0;
     std::vector<CPLString> aosMD;
     int nTotalSoundings = 0;
-
-    const char* pszLine = NULL;
     while( (pszLine = CPLReadLine2L(fp, 1024, NULL)) != NULL)
     {
         nLines ++;

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_osm.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: ogr_osm.h 34096 2016-04-25 10:10:12Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions for OGR/OpenStreeMap driver.
@@ -66,8 +66,7 @@ class OGROSMComputedAttribute
         std::vector<int> anIndexToBind;
 
         OGROSMComputedAttribute() : nIndex(-1), eType(OFTString), hStmt(NULL) {}
-        explicit OGROSMComputedAttribute(const char* pszName) :
-                osName(pszName), nIndex(-1), eType(OFTString), hStmt(NULL) {}
+        OGROSMComputedAttribute(const char* pszName) : osName(pszName), nIndex(-1), eType(OFTString), hStmt(NULL) {}
 };
 
 /************************************************************************/
@@ -118,8 +117,7 @@ class OGROSMLayer : public OGRLayer
 
     bool                  bUserInterested;
 
-    bool                  AddToArray( OGRFeature* poFeature,
-                                      int bCheckFeatureThreshold );
+    int                  AddToArray(OGRFeature* poFeature, int bCheckFeatureThreshold);
 
     int                   AddInOtherOrAllTags(const char* pszK);
 
@@ -140,23 +138,18 @@ class OGROSMLayer : public OGRLayer
                                      const char* pszName );
     virtual             ~OGROSMLayer();
 
-    virtual OGRFeatureDefn *GetLayerDefn() override {return poFeatureDefn;}
+    virtual OGRFeatureDefn *GetLayerDefn() {return poFeatureDefn;}
 
-    virtual void        ResetReading() override;
-    virtual int         TestCapability( const char * ) override;
+    virtual void        ResetReading();
+    virtual int         TestCapability( const char * );
 
-    virtual OGRFeature *GetNextFeature() override;
+    virtual OGRFeature *GetNextFeature();
+    virtual GIntBig     GetFeatureCount( int bForce );
 
-    OGRFeature*         MyGetNextFeature( OGROSMLayer** ppoNewCurLayer,
-                                          GDALProgressFunc pfnProgress,
-                                          void* pProgressData );
+    virtual OGRErr      SetAttributeFilter( const char* pszAttrQuery );
 
-    virtual GIntBig     GetFeatureCount( int bForce ) override;
-
-    virtual OGRErr      SetAttributeFilter( const char* pszAttrQuery ) override;
-
-    virtual OGRErr      GetExtent( OGREnvelope *psExtent, int bForce ) override;
-    virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce) override
+    virtual OGRErr      GetExtent( OGREnvelope *psExtent, int bForce );
+    virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce)
                 { return OGRLayer::GetExtent(iGeomField, psExtent, bForce); }
 
     const OGREnvelope*  GetSpatialFilterEnvelope();
@@ -196,7 +189,7 @@ class OGROSMLayer : public OGRLayer
 
     void                SetFieldsFromTags(OGRFeature* poFeature,
                                           GIntBig nID,
-                                          bool bIsWayID,
+                                          int bIsWayID,
                                           unsigned int nTags, OSMTag* pasTags,
                                           OSMInfo* psInfo);
 
@@ -402,10 +395,6 @@ class OGROSMDataSource : public OGRDataSource
 
     bool                bNeedsToSaveWayInfo;
 
-    static const GIntBig FILESIZE_NOT_INIT = -2;
-    static const GIntBig FILESIZE_INVALID = -1;
-    GIntBig             m_nFileSize;
-
     int                 CompressWay (bool bIsArea, unsigned int nTags, IndexedKVP* pasTags,
                                      int nPoints, LonLat* pasLonLatPairs,
                                      OSMInfo* psInfo,
@@ -416,18 +405,18 @@ class OGROSMDataSource : public OGRDataSource
                                        OSMInfo* psInfo );
 
     bool                ParseConf(char** papszOpenOptions);
-    bool                CreateTempDB();
+    int                 CreateTempDB();
     bool                SetDBOptions();
     bool                SetCacheSize();
     bool                CreatePreparedStatements();
     void                CloseDB();
 
-    bool                IndexPoint( OSMNode* psNode );
-    bool                IndexPointSQLite( OSMNode* psNode );
+    int                 IndexPoint(OSMNode* psNode);
+    int                 IndexPointSQLite(OSMNode* psNode);
     bool                FlushCurrentSector();
     bool                FlushCurrentSectorCompressedCase();
     bool                FlushCurrentSectorNonCompressedCase();
-    bool                IndexPointCustom( OSMNode* psNode );
+    bool                IndexPointCustom(OSMNode* psNode);
 
     void                IndexWay(GIntBig nWayID, bool bIsArea,
                                  unsigned int nTags, IndexedKVP* pasTags,
@@ -468,31 +457,24 @@ class OGROSMDataSource : public OGRDataSource
 
   public:
                         OGROSMDataSource();
-                        virtual ~OGROSMDataSource();
+                        ~OGROSMDataSource();
 
-    virtual const char *GetName() override { return pszName; }
-    virtual int         GetLayerCount() override { return nLayers; }
-    virtual OGRLayer   *GetLayer( int ) override;
+    virtual const char *GetName() { return pszName; }
+    virtual int         GetLayerCount() { return nLayers; }
+    virtual OGRLayer   *GetLayer( int );
 
-    virtual int         TestCapability( const char * ) override;
+    virtual int         TestCapability( const char * );
 
     virtual OGRLayer *  ExecuteSQL( const char *pszSQLCommand,
                                     OGRGeometry *poSpatialFilter,
-                                    const char *pszDialect ) override;
-    virtual void        ReleaseResultSet( OGRLayer * poLayer ) override;
+                                    const char *pszDialect );
+    virtual void        ReleaseResultSet( OGRLayer * poLayer );
 
-    virtual void        ResetReading() override;
-    virtual OGRFeature* GetNextFeature( OGRLayer** ppoBelongingLayer,
-                                        double* pdfProgressPct,
-                                       GDALProgressFunc pfnProgress,
-                                        void* pProgressData ) override;
 
     int                 Open ( const char* pszFilename, char** papszOpenOptions );
 
-    int                 MyResetReading();
-    bool                ParseNextChunk(int nIdxLayer,
-                                       GDALProgressFunc pfnProgress,
-                                       void* pProgressData);
+    int                 ResetReading();
+    bool                ParseNextChunk(int nIdxLayer);
     OGRErr              GetExtent( OGREnvelope *psExtent );
     int                 IsInterleavedReading();
 

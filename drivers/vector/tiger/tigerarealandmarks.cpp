@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: tigerarealandmarks.cpp 27745 2014-09-27 16:38:57Z goatbar $
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Implements TigerAreaLandmarks, providing access to .RT8 files.
@@ -29,9 +30,9 @@
 #include "ogr_tiger.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: tigerarealandmarks.cpp 35933 2016-10-25 16:46:26Z goatbar $");
+CPL_CVSID("$Id: tigerarealandmarks.cpp 27745 2014-09-27 16:38:57Z goatbar $");
 
-static const char FILE_CODE[] = "8";
+#define FILE_CODE "8"
 
 static const TigerFieldInfo rt8_fields[] = {
   // fieldname    fmt  type OFTType      beg  end  len  bDefine bSet bWrite
@@ -69,4 +70,5 @@ TigerAreaLandmarks::TigerAreaLandmarks( OGRTigerDataSource * poDSIn,
     /* -------------------------------------------------------------------- */
 
     AddFieldDefns( psRTInfo, poFeatureDefn );
+
 }

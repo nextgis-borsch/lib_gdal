@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: cpl_vsil_tar.cpp 33758 2016-03-21 09:06:22Z rouault $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Implement VSI large file api for tar files (.tar).
@@ -26,26 +27,9 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-//! @cond Doxygen_Suppress
-
-#include "cpl_port.h"
-#include "cpl_vsi.h"
-
-#include <cstring>
-
-#if HAVE_FCNTL_H
-#  include <fcntl.h>
-#endif
-
-#include <string>
-#include <vector>
-
-#include "cpl_conv.h"
-#include "cpl_error.h"
-#include "cpl_string.h"
 #include "cpl_vsi_virtual.h"
 
-CPL_CVSID("$Id: cpl_vsil_tar.cpp 36912 2016-12-16 20:49:28Z goatbar $");
+CPL_CVSID("$Id: cpl_vsil_tar.cpp 33758 2016-03-21 09:06:22Z rouault $");
 
 #if defined(DEBUG) && !defined(HAVE_FUZZER_FRIENDLY_ARCHIVE)
 /* This is a completely custom archive format that is rather inefficient */
@@ -69,7 +53,7 @@ public:
         CPLString m_osFileName;
 #endif
 
-        explicit VSITarEntryFileOffset(GUIntBig nOffset)
+        VSITarEntryFileOffset(GUIntBig nOffset)
         {
             m_nOffset = nOffset;
 #ifdef HAVE_FUZZER_FRIENDLY_ARCHIVE
@@ -78,11 +62,11 @@ public:
         }
 
 #ifdef HAVE_FUZZER_FRIENDLY_ARCHIVE
-        VSITarEntryFileOffset(GUIntBig nOffset, GUIntBig nFileSize, const CPLString& osFileName) :
-            m_nOffset(nOffset),
-            m_nFileSize(nFileSize),
-            m_osFileName(osFileName)
+        VSITarEntryFileOffset(GUIntBig nOffset, GUIntBig nFileSize, const CPLString& osFileName)
         {
+            m_nOffset = nOffset;
+            m_nFileSize = nFileSize;
+            m_osFileName = osFileName;
         }
 #endif
 };
@@ -110,19 +94,20 @@ class VSITarReader CPL_FINAL : public VSIArchiveReader
 #endif
 
     public:
-        explicit VSITarReader(const char* pszTarFileName);
+        VSITarReader(const char* pszTarFileName);
         virtual ~VSITarReader();
 
         int IsValid() { return fp != NULL; }
 
-        virtual int GotoFirstFile() override;
-        virtual int GotoNextFile() override;
-        virtual VSIArchiveEntryFileOffset* GetFileOffset() override;
-        virtual GUIntBig GetFileSize() override { return nNextFileSize; }
-        virtual CPLString GetFileName() override { return osNextFileName; }
-        virtual GIntBig GetModifiedTime() override { return nModifiedTime; }
-        virtual int GotoFileOffset(VSIArchiveEntryFileOffset* pOffset) override;
+        virtual int GotoFirstFile();
+        virtual int GotoNextFile();
+        virtual VSIArchiveEntryFileOffset* GetFileOffset();
+        virtual GUIntBig GetFileSize() { return nNextFileSize; }
+        virtual CPLString GetFileName() { return osNextFileName; }
+        virtual GIntBig GetModifiedTime() { return nModifiedTime; }
+        virtual int GotoFileOffset(VSIArchiveEntryFileOffset* pOffset);
 };
+
 
 /************************************************************************/
 /*                               VSIIsTGZ()                             */
@@ -141,9 +126,6 @@ static bool VSIIsTGZ(const char* pszFilename)
 /*                           VSITarReader()                             */
 /************************************************************************/
 
-// TODO(schwehr): What is this ***NEWFILE*** thing?
-// And make it a symbolic constant.
-
 VSITarReader::VSITarReader(const char* pszTarFileName) :
     nCurOffset(0),
     nNextFileSize(0),
@@ -152,18 +134,16 @@ VSITarReader::VSITarReader(const char* pszTarFileName) :
     fp = VSIFOpenL(pszTarFileName, "rb");
 #ifdef HAVE_FUZZER_FRIENDLY_ARCHIVE
     m_bIsFuzzerFriendly = false;
-    m_abyBuffer[0] = '\0';
     m_abyBufferIdx = 0;
     m_abyBufferSize = 0;
     m_nCurOffsetOld = 0;
     if( fp != NULL )
     {
-        GByte abySignature[24] = {};
+        GByte abySignature[24];
         m_bIsFuzzerFriendly =
             (VSIFReadL(abySignature, 1, 24, fp) == 24) &&
             (memcmp(abySignature, "FUZZER_FRIENDLY_ARCHIVE\n", 24) == 0 ||
-             memcmp(abySignature, "***NEWFILE***:",
-                    strlen("***NEWFILE***:")) == 0);
+             memcmp(abySignature, "***NEWFILE***:", strlen("***NEWFILE***:")) == 0);
         CPL_IGNORE_RET_VAL(VSIFSeekL(fp, 0, SEEK_SET));
     }
 #endif
@@ -188,8 +168,7 @@ VSIArchiveEntryFileOffset* VSITarReader::GetFileOffset()
 #ifdef HAVE_FUZZER_FRIENDLY_ARCHIVE
     if( m_bIsFuzzerFriendly )
     {
-        return new VSITarEntryFileOffset(nCurOffset, nNextFileSize,
-                                         osNextFileName);
+        return new VSITarEntryFileOffset(nCurOffset, nNextFileSize, osNextFileName);
     }
 #endif
     return new VSITarEntryFileOffset(nCurOffset);
@@ -210,8 +189,7 @@ int VSITarReader::GotoNextFile()
             {
                 if( m_abyBufferSize == 0 )
                 {
-                    m_abyBufferSize = static_cast<int>(
-                        VSIFReadL(m_abyBuffer, 1, 2048, fp));
+                    m_abyBufferSize = static_cast<int>(VSIFReadL(m_abyBuffer, 1, 2048, fp));
                     if( m_abyBufferSize == 0 )
                         return FALSE;
                 }
@@ -234,25 +212,16 @@ int VSITarReader::GotoNextFile()
                         return FALSE;
                     }
                     memcpy(m_abyBuffer, m_abyBuffer + 1024, 1024);
-                    m_abyBufferSize = static_cast<int>(
-                         VSIFReadL(m_abyBuffer + 1024, 1, 1024, fp));
+                    m_abyBufferSize = static_cast<int>(VSIFReadL(m_abyBuffer + 1024, 1, 1024, fp));
                     if( m_abyBufferSize == 0 )
                         return FALSE;
                     m_abyBufferIdx = 0;
                     m_abyBufferSize += 1024;
                 }
             }
-            if( ((m_abyBufferSize == 2048 &&
-                  m_abyBufferIdx <
-                  m_abyBufferSize -
-                  (static_cast<int>(strlen("***NEWFILE***:")) + 64)) ||
-                 (m_abyBufferSize < 2048 &&
-                  m_abyBufferIdx < m_abyBufferSize -
-                  (static_cast<int>(strlen("***NEWFILE***:"))+2))) &&
-                m_abyBufferIdx >= 0 &&  // Make CSA happy, but useless.
-                memcmp( m_abyBuffer + m_abyBufferIdx,
-                        "***NEWFILE***:",
-                        strlen("***NEWFILE***:")) == 0 )
+            if( ((m_abyBufferSize == 2048 && m_abyBufferIdx < m_abyBufferSize - ((int)strlen("***NEWFILE***:")+64)) ||
+                 (m_abyBufferSize < 2048 && m_abyBufferIdx < m_abyBufferSize - ((int)strlen("***NEWFILE***:")+2))) &&
+                memcmp( m_abyBuffer + m_abyBufferIdx, "***NEWFILE***:", strlen("***NEWFILE***:")) == 0 )
             {
                 if( nCurOffset > 0 && nCurOffset != m_nCurOffsetOld )
                 {
@@ -266,32 +235,26 @@ int VSITarReader::GotoNextFile()
                         return TRUE;
                     }
                 }
-                m_abyBufferIdx += static_cast<int>(strlen("***NEWFILE***:"));
-                const int nFilenameStartIdx = m_abyBufferIdx;
-                for( ; m_abyBufferIdx < m_abyBufferSize &&
-                       m_abyBuffer[m_abyBufferIdx] != '\n';
-                     ++m_abyBufferIdx)
+                m_abyBufferIdx += (int)strlen("***NEWFILE***:");
+                int nFilenameStartIdx = m_abyBufferIdx;
+                for(; m_abyBuffer[m_abyBufferIdx] != '\n' && m_abyBufferIdx < m_abyBufferSize; ++m_abyBufferIdx)
                 {
-                    // Do nothing.
+                    /* do nothing */
                 }
                 if( m_abyBufferIdx < m_abyBufferSize )
                 {
-                    osNextFileName.assign(
-                        (const char*)(m_abyBuffer + nFilenameStartIdx),
-                        m_abyBufferIdx - nFilenameStartIdx);
+                    osNextFileName.assign( (const char*)(m_abyBuffer + nFilenameStartIdx), m_abyBufferIdx - nFilenameStartIdx );
                     nCurOffset = VSIFTellL(fp);
                     nCurOffset -= m_abyBufferSize;
                     nCurOffset += m_abyBufferIdx + 1;
                 }
             }
             else
-            {
-                m_abyBufferIdx++;
-            }
+                m_abyBufferIdx ++;
         }
     }
 #endif
-    char abyHeader[512] = {};
+    char abyHeader[512];
     if (VSIFReadL(abyHeader, 512, 1, fp) != 1)
         return FALSE;
 
@@ -319,7 +282,7 @@ int VSITarReader::GotoNextFile()
     nCurOffset = VSIFTellL(fp);
 
     const GUIntBig nBytesToSkip = ((nNextFileSize + 511) / 512) * 512;
-    if( nBytesToSkip > (~(static_cast<GUIntBig>(0))) - nCurOffset )
+    if( nBytesToSkip > (~((GUIntBig)0)) - nCurOffset )
     {
         CPLError(CE_Failure, CPLE_AppDefined, "Bad .tar structure");
         return FALSE;
@@ -356,8 +319,7 @@ int VSITarReader::GotoFirstFile()
 
 int VSITarReader::GotoFileOffset(VSIArchiveEntryFileOffset* pOffset)
 {
-    VSITarEntryFileOffset* pTarEntryOffset =
-                    reinterpret_cast<VSITarEntryFileOffset*>(pOffset);
+    VSITarEntryFileOffset* pTarEntryOffset = (VSITarEntryFileOffset*)pOffset;
 #ifdef HAVE_FUZZER_FRIENDLY_ARCHIVE
     if( m_bIsFuzzerFriendly )
     {
@@ -386,16 +348,17 @@ int VSITarReader::GotoFileOffset(VSIArchiveEntryFileOffset* pOffset)
 class VSITarFilesystemHandler CPL_FINAL : public VSIArchiveFilesystemHandler
 {
 public:
-    virtual const char* GetPrefix() override { return "/vsitar"; }
-    virtual std::vector<CPLString> GetExtensions() override;
-    virtual VSIArchiveReader* CreateReader(const char* pszTarFileName) override;
+    virtual const char* GetPrefix() { return "/vsitar"; }
+    virtual std::vector<CPLString> GetExtensions();
+    virtual VSIArchiveReader* CreateReader(const char* pszTarFileName);
 
     using VSIFilesystemHandler::Open;
 
     virtual VSIVirtualHandle *Open( const char *pszFilename,
                                     const char *pszAccess,
-                                    bool bSetError ) override;
+                                    bool bSetError );
 };
+
 
 /************************************************************************/
 /*                          GetExtensions()                             */
@@ -474,8 +437,7 @@ VSIVirtualHandle* VSITarFilesystemHandler::Open( const char *pszFilename,
     }
 
     CPLString osSubFileName("/vsisubfile/");
-    VSITarEntryFileOffset* pOffset = reinterpret_cast<VSITarEntryFileOffset*>(
-                                                    poReader->GetFileOffset());
+    VSITarEntryFileOffset* pOffset = (VSITarEntryFileOffset*) poReader->GetFileOffset();
     osSubFileName += CPLString().Printf(CPL_FRMT_GUIB, pOffset->m_nOffset);
     osSubFileName += "_";
     osSubFileName += CPLString().Printf(CPL_FRMT_GUIB, poReader->GetFileSize());
@@ -495,10 +457,8 @@ VSIVirtualHandle* VSITarFilesystemHandler::Open( const char *pszFilename,
     CPLFree(tarFilename);
     tarFilename = NULL;
 
-    return reinterpret_cast<VSIVirtualHandle*>(VSIFOpenL(osSubFileName, "rb"));
+    return (VSIVirtualHandle* )VSIFOpenL(osSubFileName, "rb");
 }
-
-//! @endcond
 
 /************************************************************************/
 /*                    VSIInstallTarFileHandler()                        */
@@ -513,14 +473,9 @@ VSIVirtualHandle* VSITarFilesystemHandler::Open( const char *pszFilename,
  * All portions of the file system underneath the base path "/vsitar/" will be
  * handled by this driver.
  *
- * The syntax to open a file inside a tar file is /vsitar/path/to/the/file.tar/path/inside/the/tar/file
+ * The syntax to open a file inside a zip file is /vsitar/path/to/the/file.tar/path/inside/the/tar/file
  * were path/to/the/file.tar is relative or absolute and path/inside/the/tar/file
  * is the relative path to the file inside the archive.
- *
- * Starting with GDAL 2.2, an alternate syntax is available so as to enable
- * chaining and not being dependent on .tar extension :
- * /vsitar/{/path/to/the/archive}/path/inside/the/tar/file. Note that /path/to/the/archive
- * may also itself this alternate syntax.
  *
  * If the path is absolute, it should begin with a / on a Unix-like OS (or C:\ on Windows),
  * so the line looks like /vsitar//home/gdal/...

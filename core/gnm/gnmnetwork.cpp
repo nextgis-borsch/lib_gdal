@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id$
  *
  * Project:  GDAL/OGR Geography Network support (Geographic Network Model)
  * Purpose:  GNM network class.
@@ -31,11 +32,15 @@
 #include "gnm_api.h"
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id: gnmnetwork.cpp 35932 2016-10-25 16:22:20Z goatbar $");
+GNMNetwork::GNMNetwork() : GDALDataset()
+{
 
-GNMNetwork::GNMNetwork() : GDALDataset() {}
+}
 
-GNMNetwork::~GNMNetwork() {}
+GNMNetwork::~GNMNetwork()
+{
+
+}
 
 const char *GNMNetwork::GetName() const
 {
@@ -73,6 +78,7 @@ CPLErr CPL_STDCALL GNMDisconnectAll (GNMNetworkH hNet)
     VALIDATE_POINTER1( hNet, "GNMDisconnectAll", CE_Failure );
 
     return ((GNMNetwork*)hNet)->DisconnectAll();
+
 }
 
 OGRFeatureH CPL_STDCALL GNMGetFeatureByGlobalFID (GNMNetworkH hNet, GNMGFID nGFID)

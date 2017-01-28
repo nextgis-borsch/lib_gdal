@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_sua.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: ogr_sua.h 31777 2015-11-26 14:14:41Z rouault $
  *
  * Project:  SUA Translator
  * Purpose:  Definition of classes for OGR .sua driver.
@@ -42,8 +42,8 @@ class OGRSUALayer : public OGRLayer
     OGRSpatialReference *poSRS;
 
     VSILFILE*          fpSUA;
-    bool               bEOF;
-    bool               bHasLastLine;
+    int                bEOF;
+    int                bHasLastLine;
     CPLString          osLastLine;
 
     int                nNextFID;
@@ -51,15 +51,16 @@ class OGRSUALayer : public OGRLayer
     OGRFeature *       GetNextRawFeature();
 
   public:
-    explicit            OGRSUALayer(VSILFILE* fp);
-                        virtual ~OGRSUALayer();
+                        OGRSUALayer(VSILFILE* fp);
+                        ~OGRSUALayer();
 
-    virtual void                ResetReading() override;
-    virtual OGRFeature *        GetNextFeature() override;
 
-    virtual OGRFeatureDefn *    GetLayerDefn() override { return poFeatureDefn; }
+    virtual void                ResetReading();
+    virtual OGRFeature *        GetNextFeature();
 
-    virtual int                 TestCapability( const char * ) override;
+    virtual OGRFeatureDefn *    GetLayerDefn() { return poFeatureDefn; }
+
+    virtual int                 TestCapability( const char * );
 };
 
 /************************************************************************/
@@ -75,16 +76,16 @@ class OGRSUADataSource : public OGRDataSource
 
   public:
                         OGRSUADataSource();
-                        virtual ~OGRSUADataSource();
+                        ~OGRSUADataSource();
 
     int                 Open( const char * pszFilename );
 
-    virtual const char*         GetName() override { return pszName; }
+    virtual const char*         GetName() { return pszName; }
 
-    virtual int                 GetLayerCount() override { return nLayers; }
-    virtual OGRLayer*           GetLayer( int ) override;
+    virtual int                 GetLayerCount() { return nLayers; }
+    virtual OGRLayer*           GetLayer( int );
 
-    virtual int                 TestCapability( const char * ) override;
+    virtual int                 TestCapability( const char * );
 };
 
 #endif /* ndef OGR_SUA_H_INCLUDED */

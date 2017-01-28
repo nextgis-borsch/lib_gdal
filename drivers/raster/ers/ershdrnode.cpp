@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ershdrnode.cpp 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  ERMapper .ers Driver
  * Purpose:  Implementation of ERSHdrNode class for parsing/accessing .ers hdr.
@@ -30,7 +31,8 @@
 #include "cpl_string.h"
 #include "ershdrnode.h"
 
-CPL_CVSID("$Id: ershdrnode.cpp 35885 2016-10-24 06:23:09Z goatbar $");
+CPL_CVSID("$Id: ershdrnode.cpp 33717 2016-03-14 06:29:14Z goatbar $");
+
 
 /************************************************************************/
 /*                             ERSHdrNode()                             */
@@ -42,7 +44,7 @@ ERSHdrNode::ERSHdrNode() :
     papszItemName(NULL),
     papszItemValue(NULL),
     papoItemChild(NULL)
-{}
+{ }
 
 /************************************************************************/
 /*                            ~ERSHdrNode()                             */

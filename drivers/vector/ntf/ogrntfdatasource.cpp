@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrntfdatasource.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  UK NTF Reader
  * Purpose:  Implements OGRNTFDataSource class
@@ -30,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrntfdatasource.cpp 36677 2016-12-04 13:42:55Z rouault $");
+CPL_CVSID("$Id: ogrntfdatasource.cpp 33714 2016-03-13 05:42:13Z goatbar $");
 
 /************************************************************************/
 /*                          OGRNTFDataSource()                          */
@@ -50,22 +51,10 @@ OGRNTFDataSource::OGRNTFDataSource() :
     nFCCount(0),
     papszFCNum(NULL),
     papszFCName(NULL),
-    poSpatialRef(new OGRSpatialReference(
-        "PROJCS[\"OSGB 1936 / British National Grid\",GEOGCS[\"OSGB 1936\","
-        "DATUM[\"OSGB_1936\",SPHEROID[\"Airy 1830\",6377563.396,299.3249646,"
-        "AUTHORITY[\"EPSG\",\"7001\"]],AUTHORITY[\"EPSG\",\"6277\"]],"
-        "PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],"
-        "UNIT[\"degree\",0.0174532925199433],AUTHORITY[\"EPSG\",\"4277\"]],"
-        "PROJECTION[\"Transverse_Mercator\"],"
-        "PARAMETER[\"latitude_of_origin\",49],"
-        "PARAMETER[\"central_meridian\",-2],"
-        "PARAMETER[\"scale_factor\",0.999601272],"
-        "PARAMETER[\"false_easting\",400000],"
-        "PARAMETER[\"false_northing\",-100000],"
-        "UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],"
-        "AUTHORITY[\"EPSG\",\"27700\"]]")),
     papszOptions(NULL)
 {
+    poSpatialRef = new OGRSpatialReference( "PROJCS[\"OSGB 1936 / British National Grid\",GEOGCS[\"OSGB 1936\",DATUM[\"OSGB_1936\",SPHEROID[\"Airy 1830\",6377563.396,299.3249646,AUTHORITY[\"EPSG\",\"7001\"]],AUTHORITY[\"EPSG\",\"6277\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433],AUTHORITY[\"EPSG\",\"4277\"]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"latitude_of_origin\",49],PARAMETER[\"central_meridian\",-2],PARAMETER[\"scale_factor\",0.999601272],PARAMETER[\"false_easting\",400000],PARAMETER[\"false_northing\",-100000],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AUTHORITY[\"EPSG\",\"27700\"]]" );
+
 /* -------------------------------------------------------------------- */
 /*      Allow initialization of options from the environment.           */
 /* -------------------------------------------------------------------- */
@@ -175,6 +164,7 @@ int OGRNTFDataSource::GetLayerCount()
         return nLayers + 1;
 }
 
+
 /************************************************************************/
 /*                                Open()                                */
 /************************************************************************/
@@ -211,9 +201,10 @@ int OGRNTFDataSource::Open( const char * pszFilename, int bTestOpen,
     }
     else
     {
-        char **candidateFileList = VSIReadDir( pszFilename );
+        char      **candidateFileList = VSIReadDir( pszFilename );
+        int         i;
 
-        for( int i = 0;
+        for( i = 0;
              candidateFileList != NULL && candidateFileList[i] != NULL;
              i++ )
         {
@@ -227,7 +218,7 @@ int OGRNTFDataSource::Open( const char * pszFilename, int bTestOpen,
             if( strlen(candidateFileList[i]) > 4
               && STARTS_WITH_CI(candidateFileList[i] + strlen(candidateFileList[i])-4, ".ntf") )
             {
-                char fullFilename[2048];
+                char       fullFilename[2048];
 
                 snprintf( fullFilename, sizeof(fullFilename), "%s%c%s",
                          pszFilename,
@@ -263,18 +254,23 @@ int OGRNTFDataSource::Open( const char * pszFilename, int bTestOpen,
 /*      open ... we don't want to occupy a lot of file handles when      */
 /*      handling a whole directory.                                     */
 /* -------------------------------------------------------------------- */
+    int         i;
+
     papoNTFFileReader = (NTFFileReader **)
         CPLCalloc(sizeof(void*), CSLCount(papszFileList));
 
-    for( int i = 0; papszFileList != NULL && papszFileList[i] != NULL; i++ )
+    for( i = 0; papszFileList != NULL && papszFileList[i] != NULL; i++ )
     {
         if( bTestOpen )
         {
-            FILE *fp = VSIFOpen( papszFileList[i], "rb" );
+            char        szHeader[80];
+            FILE        *fp;
+            int         j;
+
+            fp = VSIFOpen( papszFileList[i], "rb" );
             if( fp == NULL )
                 continue;
 
-            char szHeader[80] = {};
             if( VSIFRead( szHeader, 80, 1, fp ) < 1 )
             {
                 VSIFClose( fp );
@@ -286,8 +282,7 @@ int OGRNTFDataSource::Open( const char * pszFilename, int bTestOpen,
             if( !STARTS_WITH_CI(szHeader, "01") )
                 continue;
 
-            int j = 0;  // Used after for.
-            for( ; j < 80; j++ )
+            for( j = 0; j < 80; j++ )
             {
                 if( szHeader[j] == 10 || szHeader[j] == 13 )
                     break;
@@ -295,9 +290,12 @@ int OGRNTFDataSource::Open( const char * pszFilename, int bTestOpen,
 
             if( j == 80 || szHeader[j-1] != '%' )
                 continue;
+
         }
 
-        NTFFileReader *poFR = new NTFFileReader( this );
+        NTFFileReader   *poFR;
+
+        poFR = new NTFFileReader( this );
 
         if( !poFR->Open( papszFileList[i] ) )
         {
@@ -331,17 +329,16 @@ int OGRNTFDataSource::Open( const char * pszFilename, int bTestOpen,
 /* -------------------------------------------------------------------- */
     for( int iSrcFile = 0; iSrcFile < nNTFFileCount; iSrcFile++ )
     {
-        NTFFileReader *poSrcReader = papoNTFFileReader[iSrcFile];
+        NTFFileReader   *poSrcReader = papoNTFFileReader[iSrcFile];
 
         for( int iSrcFC = 0; iSrcFC < poSrcReader->GetFCCount(); iSrcFC++ )
         {
-            char *pszSrcFCName = NULL;
-            char *pszSrcFCNum = NULL;
+            int         iDstFC;
+            char       *pszSrcFCName, *pszSrcFCNum;
 
             poSrcReader->GetFeatureClass( iSrcFC, &pszSrcFCNum, &pszSrcFCName);
 
-            int iDstFC = 0;
-            for( ; iDstFC < nFCCount; iDstFC++ )
+            for( iDstFC = 0; iDstFC < nFCCount; iDstFC++ )
             {
                 if( EQUAL(pszSrcFCNum,papszFCNum[iDstFC]) )
                     break;
@@ -389,17 +386,9 @@ void OGRNTFDataSource::ResetReading()
 /*                           GetNextFeature()                           */
 /************************************************************************/
 
-OGRFeature *OGRNTFDataSource::GetNextFeature( OGRLayer** ppoBelongingLayer,
-                                              double* pdfProgressPct,
-                                              GDALProgressFunc /* pfnProgress */,
-                                              void* /* pProgressData */ )
+OGRFeature *OGRNTFDataSource::GetNextFeature()
 
 {
-    if( pdfProgressPct != NULL )
-        *pdfProgressPct = 0.0;
-    if( ppoBelongingLayer != NULL )
-        *ppoBelongingLayer = NULL;
-
     OGRFeature  *poFeature = NULL;
 
 /* -------------------------------------------------------------------- */
@@ -453,7 +442,7 @@ OGRFeature *OGRNTFDataSource::GetNextFeature( OGRLayer** ppoBelongingLayer,
         nCurrentPos = -1;
         nCurrentFID = 1;
 
-        poFeature = GetNextFeature(NULL, NULL, NULL, NULL);
+        poFeature = GetNextFeature();
     }
     else
     {
@@ -522,16 +511,16 @@ const char *OGRNTFDataSource::GetOption( const char * pszOption )
 void OGRNTFDataSource::EnsureTileNameUnique( NTFFileReader *poNewReader )
 
 {
-    int iSequenceNumber = -1;
-    bool bIsUnique = false;
-    char szCandidateName[11] = {};
+    int       iSequenceNumber = -1;
+    int       bIsUnique;
+    char      szCandidateName[11];
 
+    szCandidateName[10] = '\0';
     do
     {
         bIsUnique = TRUE;
         if( iSequenceNumber++ == -1 )
-            strncpy( szCandidateName, poNewReader->GetTileName(),
-                     sizeof(szCandidateName) - 1 );
+            strncpy( szCandidateName, poNewReader->GetTileName(), 10 );
         else
             snprintf( szCandidateName, sizeof(szCandidateName), "%010d", iSequenceNumber );
 
@@ -551,4 +540,5 @@ void OGRNTFDataSource::EnsureTileNameUnique( NTFFileReader *poNewReader )
                   "to avoid conflict with other tiles in this data source.",
                   szCandidateName, poNewReader->GetFilename() );
     }
+
 }

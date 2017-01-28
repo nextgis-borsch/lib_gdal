@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_xplane_awy_reader.cpp$
+ * $Id: ogr_xplane_awy_reader.cpp
  *
  * Project:  X-Plane awy.dat file reader header
  * Purpose:  Definition of classes for X-Plane awy.dat file reader
@@ -39,6 +39,7 @@
 /*                   OGRXPlaneAirwaySegmentLayer                        */
 /************************************************************************/
 
+
 class OGRXPlaneAirwaySegmentLayer : public OGRXPlaneLayer
 {
   public:
@@ -66,13 +67,13 @@ class OGRXPlaneAirwayIntersectionLayer : public OGRXPlaneLayer
 
   public:
                         OGRXPlaneAirwayIntersectionLayer();
-                        virtual ~OGRXPlaneAirwayIntersectionLayer();
+                        ~OGRXPlaneAirwayIntersectionLayer();
 
     OGRFeature*         AddFeature(const char* pszIntersectionName,
                                    double dfLat,
                                    double dfLon);
 
-    virtual void        ResetReading() override;
+    virtual void        ResetReading();
 };
 
 /************************************************************************/
@@ -90,12 +91,12 @@ class OGRXPlaneAwyReader : public OGRXPlaneReader
         void                     ParseRecord();
 
     protected:
-        virtual void             Read() override;
+        virtual void             Read();
 
     public:
-        explicit                 OGRXPlaneAwyReader( OGRXPlaneDataSource* poDataSource );
-        virtual OGRXPlaneReader* CloneForLayer(OGRXPlaneLayer* poLayer) override;
-        virtual int              IsRecognizedVersion( const char* pszVersionString) override;
+                                 OGRXPlaneAwyReader( OGRXPlaneDataSource* poDataSource );
+        virtual OGRXPlaneReader* CloneForLayer(OGRXPlaneLayer* poLayer);
+        virtual int              IsRecognizedVersion( const char* pszVersionString);
 };
 
 #endif

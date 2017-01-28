@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: blxdataset.cpp 33901 2016-04-06 16:31:31Z goatbar $
  *
  * Project:  BLX Driver
  * Purpose:  GDAL BLX support.
@@ -37,19 +38,19 @@ CPL_C_START
 #include <blx.h>
 CPL_C_END
 
-CPL_CVSID("$Id: blxdataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
+CPL_CVSID("$Id: blxdataset.cpp 33901 2016-04-06 16:31:31Z goatbar $");
 
 class BLXDataset : public GDALPamDataset
 {
     friend class BLXRasterBand;
 
-    CPLErr      GetGeoTransform( double * padfTransform ) override;
-    const char *GetProjectionRef() override;
+    CPLErr      GetGeoTransform( double * padfTransform );
+    const char *GetProjectionRef();
 
     blxcontext_t *blxcontext;
 
     int nOverviewCount;
-    bool bIsOverview;
+    int bIsOverview;
     BLXDataset *papoOverviewDS[BLX_OVERVIEWLEVELS];
 
   public:
@@ -66,12 +67,12 @@ class BLXRasterBand : public GDALPamRasterBand
   public:
     BLXRasterBand( BLXDataset *, int, int overviewLevel=0 );
 
-    virtual double  GetNoDataValue( int *pbSuccess = NULL ) override;
-    virtual GDALColorInterp GetColorInterpretation(void) override;
-    virtual int GetOverviewCount() override;
-    virtual GDALRasterBand *GetOverview( int ) override;
+    virtual double  GetNoDataValue( int *pbSuccess = NULL );
+    virtual GDALColorInterp GetColorInterpretation(void);
+    virtual int GetOverviewCount();
+    virtual GDALRasterBand *GetOverview( int );
 
-    virtual CPLErr IReadBlock( int, int, void * ) override;
+    virtual CPLErr IReadBlock( int, int, void * );
 };
 
 GDALDataset *BLXDataset::Open( GDALOpenInfo * poOpenInfo )
@@ -128,7 +129,7 @@ GDALDataset *BLXDataset::Open( GDALOpenInfo * poOpenInfo )
     for(int i=0; i < poDS->nOverviewCount; i++) {
         poDS->papoOverviewDS[i] = new BLXDataset();
         poDS->papoOverviewDS[i]->blxcontext = poDS->blxcontext;
-        poDS->papoOverviewDS[i]->bIsOverview = true;
+        poDS->papoOverviewDS[i]->bIsOverview = TRUE;
         poDS->papoOverviewDS[i]->nRasterXSize = poDS->nRasterXSize >> (i+1);
         poDS->papoOverviewDS[i]->nRasterYSize = poDS->nRasterYSize >> (i+1);
         poDS->nBands = 1;
@@ -153,22 +154,20 @@ GDALDataset *BLXDataset::Open( GDALOpenInfo * poOpenInfo )
     poDS->SetDescription( poOpenInfo->pszFilename );
     poDS->TryLoadXML();
 
-    return poDS;
+    return( poDS );
 }
 
 BLXDataset::BLXDataset() :
     blxcontext(NULL),
     nOverviewCount(0),
-    bIsOverview(false)
+    bIsOverview(FALSE)
 {
-    for( int i = 0; i < BLX_OVERVIEWLEVELS; i++ )
-        papoOverviewDS[i] = NULL;
+    for(int i=0; i < BLX_OVERVIEWLEVELS; i++)
+        papoOverviewDS[i]=NULL;
 }
 
-BLXDataset::~BLXDataset()
-{
-    if( !bIsOverview )
-    {
+BLXDataset::~BLXDataset() {
+    if(!bIsOverview) {
         if(blxcontext) {
             blxclose(blxcontext);
             blx_free_context(blxcontext);
@@ -201,14 +200,14 @@ const char *BLXDataset::GetProjectionRef()
         "AUTHORITY[\"EPSG\",\"4326\"]]";
 }
 
-BLXRasterBand::BLXRasterBand( BLXDataset *poDSIn, int nBandIn,
-                              int overviewLevelIn ) :
-    overviewLevel(overviewLevelIn)
+BLXRasterBand::BLXRasterBand( BLXDataset *poDSIn, int nBandIn, int overviewLevelIn )
+
 {
     BLXDataset *poGDS = poDSIn;
 
-    poDS = poDSIn;
-    nBand = nBandIn;
+    this->poDS = poDSIn;
+    this->nBand = nBandIn;
+    this->overviewLevel = overviewLevelIn;
 
     eDataType = GDT_Int16;
 
@@ -376,6 +375,7 @@ BLXCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 
     for(int i=0; (i < ctx->cell_rows) && (eErr == CE_None); i++)
         for(int j=0; j < ctx->cell_cols; j++) {
+            blxdata *celldata;
             GDALRasterBand * poBand = poSrcDS->GetRasterBand( 1 );
             eErr = poBand->RasterIO( GF_Read, j*ctx->cell_xsize, i*ctx->cell_ysize,
                                      ctx->cell_xsize, ctx->cell_ysize,
@@ -383,7 +383,7 @@ BLXCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
                                      0, 0, NULL );
             if(eErr >= CE_Failure)
                  break;
-            blxdata *celldata = pabyTile;
+            celldata = pabyTile;
             if (blx_writecell(ctx, celldata, i, j) != 0)
             {
                 eErr = CE_Failure;
@@ -418,6 +418,7 @@ BLXCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 
     return NULL;
 }
+
 
 void GDALRegister_BLX()
 

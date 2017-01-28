@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: pcrastermisc.cpp 32215 2015-12-18 06:30:54Z goatbar $
  *
  * Project:  PCRaster Integration
  * Purpose:  PCRaster driver support functions.
@@ -29,8 +30,6 @@
 #include "gdal_frmts.h"
 #include "gdal_pam.h"
 #include "pcrasterdataset.h"
-
-CPL_CVSID("$Id: pcrastermisc.cpp 34811 2016-07-28 15:15:05Z goatbar $");
 
 void GDALRegister_PCRaster()
 {

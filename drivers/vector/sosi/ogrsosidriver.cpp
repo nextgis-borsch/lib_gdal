@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrsosidriver.cpp 34420 2016-06-24 21:06:03Z rouault $
  *
  * Project:  SOSI Translator
  * Purpose:  Implements OGRSOSIDriver.
@@ -28,8 +29,6 @@
  ****************************************************************************/
 
 #include "ogr_sosi.h"
-
-CPL_CVSID("$Id: ogrsosidriver.cpp 34819 2016-07-28 22:32:18Z goatbar $");
 
 static int bFYBAInit = FALSE;
 

@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id$
  *
  * Project:  DXF and DWG Translators
  * Purpose:  Implements various generic services shared between autocad related
@@ -30,7 +31,7 @@
 #include "ogr_autocad_services.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogr_autocad_services.cpp 36396 2016-11-21 14:53:59Z rouault $");
+CPL_CVSID("$Id: ogrdwglayer.cpp 22008 2011-03-22 19:45:20Z warmerdam $");
 
 /************************************************************************/
 /*                           ACTextUnescape()                           */
@@ -76,7 +77,7 @@ CPLString ACTextUnescape( const char *pszRawInput, const char *pszEncoding )
                  && pszInput[2] == '+' )
         {
             CPLString osHex;
-            unsigned int iChar = 0;
+            int iChar;
 
             osHex.assign( pszInput+3, 4 );
             sscanf( osHex.c_str(), "%x", &iChar );

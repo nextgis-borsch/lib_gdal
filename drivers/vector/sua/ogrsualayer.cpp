@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrsualayer.cpp 31478 2015-11-14 19:13:16Z goatbar $
  *
  * Project:  SUA Translator
  * Purpose:  Implements OGRSUALayer class.
@@ -33,34 +34,37 @@
 #include "ogr_xplane_geo_utils.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id: ogrsualayer.cpp 36682 2016-12-04 20:34:45Z rouault $");
+CPL_CVSID("$Id: ogrsualayer.cpp 31478 2015-11-14 19:13:16Z goatbar $");
 
 /************************************************************************/
 /*                            OGRSUALayer()                             */
 /************************************************************************/
 
-OGRSUALayer::OGRSUALayer( VSILFILE* fp ) :
-    poFeatureDefn(new OGRFeatureDefn( "layer" )),
-    poSRS(new OGRSpatialReference(SRS_WKT_WGS84)),
-    fpSUA(fp),
-    bEOF(false),
-    bHasLastLine(false),
-    nNextFID(0)
+OGRSUALayer::OGRSUALayer( VSILFILE* fp )
+
 {
+    fpSUA = fp;
+    nNextFID = 0;
+    bEOF = FALSE;
+    bHasLastLine = FALSE;
+
+    poSRS = new OGRSpatialReference(SRS_WKT_WGS84);
+
+    poFeatureDefn = new OGRFeatureDefn( "layer" );
     SetDescription( poFeatureDefn->GetName() );
     poFeatureDefn->Reference();
     poFeatureDefn->SetGeomType( wkbPolygon );
     poFeatureDefn->GetGeomFieldDefn(0)->SetSpatialRef(poSRS);
 
-    OGRFieldDefn oField1( "TYPE", OFTString);
+    OGRFieldDefn    oField1( "TYPE", OFTString);
     poFeatureDefn->AddFieldDefn( &oField1 );
-    OGRFieldDefn oField2( "CLASS", OFTString);
+    OGRFieldDefn    oField2( "CLASS", OFTString);
     poFeatureDefn->AddFieldDefn( &oField2 );
-    OGRFieldDefn oField3( "TITLE", OFTString);
+    OGRFieldDefn    oField3( "TITLE", OFTString);
     poFeatureDefn->AddFieldDefn( &oField3 );
-    OGRFieldDefn oField4( "TOPS", OFTString);
+    OGRFieldDefn    oField4( "TOPS", OFTString);
     poFeatureDefn->AddFieldDefn( &oField4 );
-    OGRFieldDefn oField5( "BASE", OFTString);
+    OGRFieldDefn    oField5( "BASE", OFTString);
     poFeatureDefn->AddFieldDefn( &oField5 );
 }
 
@@ -79,6 +83,7 @@ OGRSUALayer::~OGRSUALayer()
     VSIFCloseL( fpSUA );
 }
 
+
 /************************************************************************/
 /*                            ResetReading()                            */
 /************************************************************************/
@@ -87,10 +92,11 @@ void OGRSUALayer::ResetReading()
 
 {
     nNextFID = 0;
-    bEOF = false;
-    bHasLastLine = false;
+    bEOF = FALSE;
+    bHasLastLine = FALSE;
     VSIFSeekL( fpSUA, 0, SEEK_SET );
 }
+
 
 /************************************************************************/
 /*                           GetNextFeature()                           */
@@ -98,9 +104,11 @@ void OGRSUALayer::ResetReading()
 
 OGRFeature *OGRSUALayer::GetNextFeature()
 {
+    OGRFeature  *poFeature;
+
     while( true )
     {
-        OGRFeature *poFeature = GetNextRawFeature();
+        poFeature = GetNextRawFeature();
         if (poFeature == NULL)
             return NULL;
 
@@ -116,18 +124,20 @@ OGRFeature *OGRSUALayer::GetNextFeature()
     }
 }
 
+
+
 /************************************************************************/
 /*                              GetLatLon()                             */
 /************************************************************************/
 
-static bool GetLatLon( const char* pszStr, double& dfLat, double& dfLon )
+static int GetLatLon(const char* pszStr, double& dfLat, double& dfLon)
 {
     if (pszStr[7] != ' ')
-        return false;
+        return FALSE;
     if (pszStr[0] != 'N' && pszStr[0] != 'S')
-        return false;
+        return FALSE;
     if (pszStr[8] != 'E' && pszStr[8] != 'W')
-        return false;
+        return FALSE;
 
     char szDeg[4], szMin[3], szSec[3];
     szDeg[0] = pszStr[1];
@@ -159,7 +169,7 @@ static bool GetLatLon( const char* pszStr, double& dfLat, double& dfLon )
     if (pszStr[8] == 'W')
         dfLon = -dfLon;
 
-    return true;
+    return TRUE;
 }
 
 /************************************************************************/
@@ -168,39 +178,34 @@ static bool GetLatLon( const char* pszStr, double& dfLat, double& dfLon )
 
 OGRFeature *OGRSUALayer::GetNextRawFeature()
 {
-    if( bEOF )
-        return NULL;
-
-    CPLString osTYPE;
-    CPLString osCLASS;
-    CPLString osTITLE;
-    CPLString osTOPS;
-    CPLString osBASE;
+    const char* pszLine;
+    CPLString osTYPE, osCLASS, osTITLE, osTOPS, osBASE;
     OGRLinearRing oLR;
-    double dfLastLat = 0.0;
-    double dfLastLon = 0.0;
-    bool bFirst = true;
+    double dfLastLat = 0, dfLastLon = 0;
+    int bFirst = TRUE;
+
+    if (bEOF)
+        return NULL;
 
     while( true )
     {
-        const char* pszLine = NULL;
-        if( bFirst && bHasLastLine )
+        if (bFirst && bHasLastLine)
         {
             pszLine = osLastLine.c_str();
-            bFirst = false;
+            bFirst = FALSE;
         }
         else
         {
             pszLine = CPLReadLine2L(fpSUA, 1024, NULL);
             if (pszLine == NULL)
             {
-                bEOF = true;
+                bEOF = TRUE;
                 if (oLR.getNumPoints() == 0)
                     return NULL;
                 break;
             }
             osLastLine = pszLine;
-            bHasLastLine = true;
+            bHasLastLine = TRUE;
         }
 
         if (pszLine[0] == '#' || pszLine[0] == '\0')
@@ -208,19 +213,19 @@ OGRFeature *OGRSUALayer::GetNextRawFeature()
 
         if (STARTS_WITH_CI(pszLine, "TYPE="))
         {
-            if (!osTYPE.empty())
+            if (osTYPE.size() != 0)
                 break;
             osTYPE = pszLine + 5;
         }
         else if (STARTS_WITH_CI(pszLine, "CLASS="))
         {
-            if (!osCLASS.empty())
+            if (osCLASS.size() != 0)
                 break;
             osCLASS = pszLine + 6;
         }
         else if (STARTS_WITH_CI(pszLine, "TITLE="))
         {
-            if (!osTITLE.empty())
+            if (osTITLE.size() != 0)
                 break;
             osTITLE = pszLine + 6;
         }
@@ -234,8 +239,7 @@ OGRFeature *OGRSUALayer::GetNextRawFeature()
             if (strlen(pszLine) != 16)
                 continue;
 
-            double dfLat = 0.0;
-            double dfLon = 0.0;
+            double dfLat, dfLon;
             if (!GetLatLon(pszLine, dfLat, dfLon))
                 continue;
 
@@ -261,8 +265,7 @@ OGRFeature *OGRSUALayer::GetNextRawFeature()
             pszCENTRE += 7;
             if (strlen(pszCENTRE) < 17 || pszCENTRE[16] != ' ')
                 continue;
-            double dfCenterLat = 0.0;
-            double dfCenterLon = 0.0;
+            double dfCenterLat, dfCenterLon;
             if (!GetLatLon(pszCENTRE, dfCenterLat, dfCenterLon))
                 continue;
 
@@ -272,34 +275,26 @@ OGRFeature *OGRSUALayer::GetNextRawFeature()
             pszTO += 3;
             if (strlen(pszTO) != 16)
                 continue;
-            double dfToLat = 0.0;
-            double dfToLon = 0.0;
+            double dfToLat, dfToLon;
             if (!GetLatLon(pszTO, dfToLat, dfToLon))
                 continue;
 
-            const double dfStartDistance =
-                OGRXPlane_Distance(dfCenterLat, dfCenterLon, dfLastLat, dfLastLon);
-            const double dfEndDistance =
-                OGRXPlane_Distance(dfCenterLat, dfCenterLon, dfToLat, dfToLon);
-            const double dfStartAngle =
-                OGRXPlane_Track(dfCenterLat, dfCenterLon, dfLastLat, dfLastLon);
-            double dfEndAngle =
-                OGRXPlane_Track(dfCenterLat, dfCenterLon, dfToLat, dfToLon);
-
-            if( bClockWise && dfEndAngle < dfStartAngle )
+            double dfStartDistance = OGRXPlane_Distance(dfCenterLat, dfCenterLon, dfLastLat, dfLastLon);
+            double dfEndDistance = OGRXPlane_Distance(dfCenterLat, dfCenterLon, dfToLat, dfToLon);
+            double dfStartAngle = OGRXPlane_Track(dfCenterLat, dfCenterLon, dfLastLat, dfLastLon);
+            double dfEndAngle = OGRXPlane_Track(dfCenterLat, dfCenterLon, dfToLat, dfToLon);
+            if (bClockWise && dfEndAngle < dfStartAngle)
                 dfEndAngle += 360;
             else if (!bClockWise && dfStartAngle < dfEndAngle)
                 dfEndAngle -= 360;
 
             int nSign = (bClockWise) ? 1 : -1;
-            for( double dfAngle = dfStartAngle;
-                 (dfAngle - dfEndAngle) * nSign < 0;
-                 dfAngle += nSign )
+            double dfAngle;
+            for(dfAngle = dfStartAngle; (dfAngle - dfEndAngle) * nSign < 0; dfAngle += nSign)
             {
-                const double pct = (dfAngle - dfStartAngle) / (dfEndAngle - dfStartAngle);
-                const double dfDist = dfStartDistance * (1-pct) + dfEndDistance * pct;
-                double dfLat = 0.0;
-                double dfLon = 0.0;
+                double dfLat, dfLon;
+                double pct = (dfAngle - dfStartAngle) / (dfEndAngle - dfStartAngle);
+                double dfDist = dfStartDistance * (1-pct) + dfEndDistance * pct;
                 OGRXPlane_ExtendPosition(dfCenterLat, dfCenterLon, dfDist, dfAngle, &dfLat, &dfLon);
                 oLR.addPoint(dfLon, dfLat);
             }
@@ -321,14 +316,13 @@ OGRFeature *OGRSUALayer::GetNextRawFeature()
             pszCENTRE += 7;
             if (strlen(pszCENTRE) != 16)
                 continue;
-            double dfCenterLat = 0.0;
-            double dfCenterLon = 0.0;
+            double dfCenterLat, dfCenterLon;
             if (!GetLatLon(pszCENTRE, dfCenterLat, dfCenterLon))
                 continue;
 
-            double dfLat = 0.0;
-            double dfLon = 0.0;
-            for( double dfAngle = 0; dfAngle < 360; dfAngle += 1 )
+            double dfAngle;
+            double dfLat, dfLon;
+            for(dfAngle = 0; dfAngle < 360; dfAngle += 1)
             {
                 OGRXPlane_ExtendPosition(dfCenterLat, dfCenterLon, dfRADIUS, dfAngle, &dfLat, &dfLon);
                 oLR.addPoint(dfLon, dfLat);

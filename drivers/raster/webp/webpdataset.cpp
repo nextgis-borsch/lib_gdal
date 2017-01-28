@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: webpdataset.cpp 32827 2016-01-08 11:22:33Z rouault $
  *
  * Project:  GDAL WEBP Driver
  * Purpose:  Implement GDAL WEBP Support based on libwebp
@@ -32,7 +33,7 @@
 
 #include "webp_headers.h"
 
-CPL_CVSID("$Id: webpdataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
+CPL_CVSID("$Id: webpdataset.cpp 32827 2016-01-08 11:22:33Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -56,17 +57,17 @@ class WEBPDataset : public GDALPamDataset
 
   public:
                  WEBPDataset();
-    virtual ~WEBPDataset();
+                 ~WEBPDataset();
 
     virtual CPLErr      IRasterIO( GDALRWFlag, int, int, int, int,
                                    void *, int, int, GDALDataType,
                                    int, int *,
                                    GSpacing nPixelSpace, GSpacing nLineSpace,
                                    GSpacing nBandSpace,
-                                   GDALRasterIOExtraArg* psExtraArg) override;
+                                   GDALRasterIOExtraArg* psExtraArg);
 
-    virtual char      **GetMetadataDomainList() override;
-    virtual char  **GetMetadata( const char * pszDomain = "" ) override;
+    virtual char      **GetMetadataDomainList();
+    virtual char  **GetMetadata( const char * pszDomain = "" );
 
     static GDALDataset *Open( GDALOpenInfo * );
     static int          Identify( GDALOpenInfo * );
@@ -90,8 +91,8 @@ class WEBPRasterBand : public GDALPamRasterBand
   public:
                    WEBPRasterBand( WEBPDataset *, int );
 
-    virtual CPLErr IReadBlock( int, int, void * ) override;
-    virtual GDALColorInterp GetColorInterpretation() override;
+    virtual CPLErr IReadBlock( int, int, void * );
+    virtual GDALColorInterp GetColorInterpretation();
 };
 
 /************************************************************************/
@@ -154,6 +155,7 @@ GDALColorInterp WEBPRasterBand::GetColorInterpretation()
 /*                             WEBPDataset                               */
 /* ==================================================================== */
 /************************************************************************/
+
 
 /************************************************************************/
 /*                            WEBPDataset()                              */
@@ -682,7 +684,7 @@ WEBPDataset::CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     FETCH_AND_SET_OPTION_INT("PARTITION_LIMIT", partition_limit, 0, 100);
 #endif
 #if WEBP_ENCODER_ABI_VERSION >= 0x0100
-    sConfig.lossless = CPLFetchBool(papszOptions, "LOSSLESS", false);
+    sConfig.lossless = CSLFetchBoolean(papszOptions, "LOSSLESS", FALSE);
     if (sConfig.lossless)
         sPicture.use_argb = 1;
 #endif

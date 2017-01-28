@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrwalktablelayer.cpp
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRWalkTableLayer class, access to an existing table.
@@ -29,16 +30,16 @@
 #include "ogrwalk.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrwalktablelayer.cpp 35911 2016-10-24 15:03:26Z goatbar $");
-
 /************************************************************************/
 /*                          OGRWalkTableLayer()                         */
 /************************************************************************/
 
-OGRWalkTableLayer::OGRWalkTableLayer( OGRWalkDataSource *poDSIn ) :
-    pszQuery(NULL)
+OGRWalkTableLayer::OGRWalkTableLayer( OGRWalkDataSource *poDSIn )
+
 {
     poDS = poDSIn;
+
+    pszQuery = NULL;
 
     iNextShapeId = 0;
     poFeatureDefn = NULL;
@@ -170,7 +171,7 @@ CPLErr OGRWalkTableLayer::Initialize( const char *pszLayerName,
         {
             if( CPLODBCStatement::GetTypeMapping(
                     oGetCol.GetColType( iColumn )) == SQL_C_BINARY )
-                bGeomColumnWKB = true;
+                bGeomColumnWKB = TRUE;
         }
     }
 
@@ -286,20 +287,21 @@ OGRErr OGRWalkTableLayer::SetAttributeFilter( const char *pszQueryIn )
 
 {
     CPLFree(m_pszAttrQueryString);
-    m_pszAttrQueryString = pszQueryIn ? CPLStrdup(pszQueryIn) : NULL;
+    m_pszAttrQueryString = (pszQueryIn) ? CPLStrdup(pszQueryIn) : NULL;
 
-    if( (pszQueryIn == NULL && pszQuery == NULL)
-        || (pszQueryIn != NULL && pszQuery != NULL
-            && EQUAL(pszQueryIn, pszQuery)) )
+    if( (pszQueryIn == NULL && this->pszQuery == NULL)
+        || (pszQueryIn != NULL && this->pszQuery != NULL
+            && EQUAL(pszQueryIn,this->pszQuery)) )
         return OGRERR_NONE;
 
-    CPLFree( pszQuery );
-    pszQuery = pszQueryIn != NULL ? CPLStrdup( pszQueryIn ) : NULL;
+    CPLFree( this->pszQuery );
+    this->pszQuery = (pszQueryIn != NULL ) ? CPLStrdup( pszQueryIn ) : NULL;
 
     ClearStatement();
 
     return OGRERR_NONE;
 }
+
 
 /************************************************************************/
 /*                           TestCapability()                           */
@@ -311,7 +313,8 @@ int OGRWalkTableLayer::TestCapability( const char * pszCap )
     if( EQUAL(pszCap,OLCRandomRead) )
         return TRUE;
 
-    return OGRWalkLayer::TestCapability( pszCap );
+    else
+        return OGRWalkLayer::TestCapability( pszCap );
 }
 
 /************************************************************************/

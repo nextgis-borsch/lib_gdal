@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: hdf5imagedataset.cpp 35557 2016-09-30 11:12:06Z rouault $
  *
  * Project:  Hierarchical Data Format Release 5 (HDF5)
  * Purpose:  Read subdatasets of HDF5 file.
@@ -48,9 +49,7 @@
 #include "hdf5dataset.h"
 #include "ogr_spatialref.h"
 
-#include <algorithm>
-
-CPL_CVSID("$Id: hdf5imagedataset.cpp 36763 2016-12-09 22:10:55Z rouault $");
+CPL_CVSID("$Id: hdf5imagedataset.cpp 35557 2016-09-30 11:12:06Z rouault $");
 
 /* release 1.6.3 or 1.6.4 changed the type of count in some api functions */
 
@@ -112,11 +111,11 @@ public:
     static GDALDataset  *Open( GDALOpenInfo * );
     static int           Identify( GDALOpenInfo * );
 
-    const char          *GetProjectionRef() override;
-    virtual int         GetGCPCount( ) override;
-    virtual const char  *GetGCPProjection() override;
-    virtual const GDAL_GCP *GetGCPs( ) override;
-    virtual CPLErr GetGeoTransform( double * padfTransform ) override;
+    const char          *GetProjectionRef();
+    virtual int         GetGCPCount( );
+    virtual const char  *GetGCPProjection();
+    virtual const GDAL_GCP *GetGCPs( );
+    virtual CPLErr GetGeoTransform( double * padfTransform );
 
     Hdf5ProductType GetSubdatasetType() const {return iSubdatasetType;}
     HDF5CSKProductEnum GetCSKProductType() const {return iCSKProductType;}
@@ -176,7 +175,6 @@ HDF5ImageDataset::HDF5ImageDataset() :
     pszGCPProjection(NULL),
     pasGCPList(NULL),
     nGCPCount(0),
-    oSRS( OGRSpatialReference() ),
     dims(NULL),
     maxdims(NULL),
     poH5Objects(NULL),
@@ -248,11 +246,11 @@ class HDF5ImageRasterBand : public GDALPamRasterBand
 public:
 
     HDF5ImageRasterBand( HDF5ImageDataset *, int, GDALDataType );
-    virtual ~HDF5ImageRasterBand();
+    ~HDF5ImageRasterBand();
 
-    virtual CPLErr      IReadBlock( int, int, void * ) override;
-    virtual double      GetNoDataValue( int * ) override;
-    virtual CPLErr      SetNoDataValue( double ) override;
+    virtual CPLErr      IReadBlock( int, int, void * );
+    virtual double      GetNoDataValue( int * );
+    virtual CPLErr      SetNoDataValue( double );
     /*  virtual CPLErr          IWriteBlock( int, int, void * ); */
 };
 
@@ -387,15 +385,15 @@ CPLErr HDF5ImageRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
     count[poGDS->GetXIndex()]  = nBlockXSize;
 
     const int nSizeOfData = static_cast<int>(H5Tget_size( poGDS->native ));
-    memset( pImage, 0, nBlockXSize * nBlockYSize * nSizeOfData );
+    memset( pImage,0,nBlockXSize*nBlockYSize*nSizeOfData );
 
     /*  blocksize may not be a multiple of imagesize */
-    count[poGDS->GetYIndex()] =
-        std::min(hsize_t(nBlockYSize),
-                 poDS->GetRasterYSize() - offset[poGDS->GetYIndex()]);
-    count[poGDS->GetXIndex()] =
-        std::min(hsize_t(nBlockXSize),
-                 poDS->GetRasterXSize()- offset[poGDS->GetXIndex()]);
+    count[poGDS->GetYIndex()]  = MIN( size_t(nBlockYSize),
+                                    poDS->GetRasterYSize() -
+                                    offset[poGDS->GetYIndex()]);
+    count[poGDS->GetXIndex()]  = MIN( size_t(nBlockXSize),
+                                    poDS->GetRasterXSize()-
+                                    offset[poGDS->GetXIndex()]);
 
 /* -------------------------------------------------------------------- */
 /*      Select block from file space                                    */
@@ -479,6 +477,7 @@ GDALDataset *HDF5ImageDataset::Open( GDALOpenInfo * poOpenInfo )
     /* -------------------------------------------------------------------- */
     /*      Create a corresponding GDALDataset.                             */
     /* -------------------------------------------------------------------- */
+    /* printf("poOpenInfo->pszFilename %s\n",poOpenInfo->pszFilename); */
     char **papszName =
         CSLTokenizeString2(  poOpenInfo->pszFilename,
                              ":", CSLT_HONOURSTRINGS|CSLT_PRESERVEESCAPES );
@@ -626,6 +625,7 @@ GDALDataset *HDF5ImageDataset::Open( GDALOpenInfo * poOpenInfo )
 
     return poDS;
 }
+
 
 /************************************************************************/
 /*                        GDALRegister_HDF5Image()                      */
@@ -1145,10 +1145,10 @@ void HDF5ImageDataset::CaptureCSKGeoTransform(int iProductType)
             }
             else
             {
-                // geotransform[1] : width of pixel
-                // geotransform[4] : rotational coefficient, zero for north up images.
-                // geotransform[2] : rotational coefficient, zero for north up images.
-                // geotransform[5] : height of pixel (but negative)
+//            	geotransform[1] : width of pixel
+//            	geotransform[4] : rotational coefficient, zero for north up images.
+//            	geotransform[2] : rotational coefficient, zero for north up images.
+//            	geotransform[5] : height of pixel (but negative)
 
                 adfGeoTransform[0] = pdOutUL[0];
                 adfGeoTransform[1] = pdLineSpacing[0];
@@ -1166,6 +1166,7 @@ void HDF5ImageDataset::CaptureCSKGeoTransform(int iProductType)
         }
     }
 }
+
 
 /************************************************************************/
 /*                          CaptureCSKGCPs()                            */
@@ -1237,7 +1238,7 @@ void HDF5ImageDataset::CaptureCSKGCPs(int iProductType)
                         CPLFree( pasGCPList[i].pszId );
                     if( pasGCPList[i].pszInfo )
                         CPLFree( pasGCPList[i].pszInfo );
-                }
+	            }
                 CPLFree( pasGCPList );
                 pasGCPList = NULL;
                 nGCPCount = 0;

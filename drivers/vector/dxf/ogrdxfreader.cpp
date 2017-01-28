@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrdxf_diskio.cpp 20278 2010-08-14 15:11:01Z warmerdam $
  *
  * Project:  DXF Translator
  * Purpose:  Implements low level DXF reading with caching and parsing of
@@ -32,7 +33,7 @@
 #include "cpl_string.h"
 #include "cpl_csv.h"
 
-CPL_CVSID("$Id: ogrdxfreader.cpp 36347 2016-11-20 20:43:39Z rouault $");
+CPL_CVSID("$Id: ogrdxf_diskio.cpp 20278 2010-08-14 15:11:01Z warmerdam $");
 
 /************************************************************************/
 /*                            OGRDXFReader()                            */
@@ -43,9 +44,6 @@ OGRDXFReader::OGRDXFReader() :
     iSrcBufferOffset(0),
     nSrcBufferBytes(0),
     iSrcBufferFileOffset(0),
-#if HAVE_CXX11
-    achSrcBuffer{},
-#endif
     nLastValueSize(0),
     nLineNumber(0)
 {}

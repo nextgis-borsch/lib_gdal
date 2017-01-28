@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrgmtdatasource.cpp 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRGmtDataSource class.
@@ -30,7 +31,7 @@
 #include "cpl_string.h"
 #include "ogr_gmt.h"
 
-CPL_CVSID("$Id: ogrgmtdatasource.cpp 35008 2016-08-09 11:20:52Z goatbar $");
+CPL_CVSID("$Id: ogrgmtdatasource.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
 
 /************************************************************************/
 /*                          OGRGmtDataSource()                          */
@@ -110,7 +111,7 @@ OGRGmtDataSource::ICreateLayer( const char * pszLayerName,
 /* -------------------------------------------------------------------- */
 /*      Establish the geometry type.  Note this logic                   */
 /* -------------------------------------------------------------------- */
-    const char *pszGeom = NULL;
+    const char *pszGeom;
 
     switch( wkbFlatten(eType) )
     {

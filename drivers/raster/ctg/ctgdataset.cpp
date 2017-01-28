@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ctgdataset.cpp 32205 2015-12-17 21:57:20Z goatbar $
  *
  * Project:  CTG driver
  * Purpose:  GDALDataset driver for CTG dataset.
@@ -30,7 +31,7 @@
 #include "gdal_pam.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: ctgdataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
+CPL_CVSID("$Id: ctgdataset.cpp 32205 2015-12-17 21:57:20Z goatbar $");
 
 static const int HEADER_LINE_COUNT = 5;
 
@@ -129,8 +130,8 @@ class CTGDataset : public GDALPamDataset
                  CTGDataset();
     virtual     ~CTGDataset();
 
-    virtual CPLErr GetGeoTransform( double * ) override;
-    virtual const char* GetProjectionRef() override;
+    virtual CPLErr GetGeoTransform( double * );
+    virtual const char* GetProjectionRef();
 
     static GDALDataset *Open( GDALOpenInfo * );
     static int          Identify( GDALOpenInfo * );
@@ -151,12 +152,13 @@ class CTGRasterBand : public GDALPamRasterBand
   public:
 
                 CTGRasterBand( CTGDataset *, int );
-    virtual ~CTGRasterBand();
+               ~CTGRasterBand();
 
-    virtual CPLErr IReadBlock( int, int, void * ) override;
-    virtual double GetNoDataValue( int *pbSuccess = NULL ) override;
-    virtual char **GetCategoryNames() override;
+    virtual CPLErr IReadBlock( int, int, void * );
+    virtual double GetNoDataValue( int *pbSuccess = NULL );
+    virtual char **GetCategoryNames();
 };
+
 
 /************************************************************************/
 /*                           CTGRasterBand()                            */
@@ -165,8 +167,8 @@ class CTGRasterBand : public GDALPamRasterBand
 CTGRasterBand::CTGRasterBand( CTGDataset *poDSIn, int nBandIn ) :
     papszCategories(NULL)
 {
-    poDS = poDSIn;
-    nBand = nBandIn;
+    this->poDS = poDSIn;
+    this->nBand = nBandIn;
 
     eDataType = GDT_Int32;
 
@@ -255,7 +257,7 @@ CTGDataset::CTGDataset() :
     pszProjection(NULL),
     bHasReadImagery(FALSE),
     pabyImage(NULL)
-{}
+{ }
 
 /************************************************************************/
 /*                            ~CTGDataset()                            */
@@ -266,7 +268,7 @@ CTGDataset::~CTGDataset()
 {
     CPLFree(pszProjection);
     CPLFree(pabyImage);
-    if( fp != NULL )
+    if (fp != NULL)
         VSIFCloseL(fp);
 }
 
@@ -408,6 +410,7 @@ int CTGDataset::Identify( GDALOpenInfo * poOpenInfo )
     delete poOpenInfoToDelete;
     return TRUE;
 }
+
 
 /************************************************************************/
 /*                                Open()                                */

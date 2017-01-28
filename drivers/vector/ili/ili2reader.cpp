@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ili2reader.cpp 33123 2016-01-23 18:59:28Z rouault $
  *
  * Project:  Interlis 2 Reader
  * Purpose:  Implementation of ILI2Reader class.
@@ -34,16 +35,19 @@
 
 #include "ili2reader.h"
 
+
+//from trstring.cpp/gmlreaderp.h
+char *tr_strdup( const XMLCh * );
+
 using namespace std;
 
-CPL_CVSID("$Id: ili2reader.cpp 36682 2016-12-04 20:34:45Z rouault $");
+CPL_CVSID("$Id: ili2reader.cpp 33123 2016-01-23 18:59:28Z rouault $");
 
 //
 // constants
 //
 static const char * const ILI2_TID = "TID";
-static const XMLCh xmlch_ILI2_TID[] = {'T', 'I', 'D', '\0' };
-static const XMLCh ILI2_REF[] = {'R', 'E', 'F', '\0' };
+static const char * const ILI2_REF = "REF";
 
 static const int ILI2_STRING_TYPE = 0;
 static const int ILI2_COORD_TYPE = 1;
@@ -59,6 +63,7 @@ static const char * const ILI2_POLYLINE = "POLYLINE";
 static const char * const ILI2_BOUNDARY = "BOUNDARY";
 static const char * const ILI2_AREA = "AREA";
 static const char * const ILI2_SURFACE = "SURFACE";
+
 
 //
 // helper functions
@@ -125,15 +130,18 @@ static char *getObjValue(DOMElement *elem) {
   DOMNode* child = elem->getFirstChild();
   if ((child != NULL) && (child->getNodeType() == DOMNode::TEXT_NODE))
   {
-    return CPLStrdup(transcode(child->getNodeValue()));
+    char* pszNodeValue = tr_strdup(child->getNodeValue());
+    return pszNodeValue;
   }
 
   return NULL;
 }
 
 static char *getREFValue(DOMElement *elem) {
-  CPLString osREFValue(transcode(elem->getAttribute(ILI2_REF)));
-  return CPLStrdup(osREFValue);
+  XMLCh* pszIli2_ref = XMLString::transcode(ILI2_REF);
+  char* pszREFValue = tr_strdup(elem->getAttribute(pszIli2_ref));
+  XMLString::release(&pszIli2_ref);
+  return pszREFValue;
 }
 
 static OGRPoint *getPoint(DOMElement *elem) {
@@ -404,7 +412,8 @@ static char* fieldName(DOMElement* elem) {
       CPLError(CE_Failure, CPLE_AssertionFailed, "node == NULL");
       return CPLStrdup("***bug***");
   }
-  return CPLStrdup(transcode(node->getNodeName()));
+  char* pszNodeName = tr_strdup(node->getNodeName());
+  return pszNodeName;
 }
 
 void ILI2Reader::setFieldDefn(OGRFeatureDefn *featureDef, DOMElement* elem) {
@@ -475,19 +484,20 @@ void ILI2Reader::SetFieldValues(OGRFeature *feature, DOMElement* elem) {
   }
 }
 
+
 //
 // ILI2Reader
 //
 IILI2Reader::~IILI2Reader() {
 }
 
-ILI2Reader::ILI2Reader() :
-    m_pszFilename(NULL),
-    m_poILI2Handler(NULL),
-    m_poSAXReader(NULL),
-    m_bReadStarted(FALSE),
-    m_bXercesInitialized(false)
-{
+ILI2Reader::ILI2Reader() {
+    m_poILI2Handler = NULL;
+    m_poSAXReader = NULL;
+    m_bReadStarted = FALSE;
+
+    m_pszFilename = NULL;
+
     SetupParser();
 }
 
@@ -496,14 +506,11 @@ ILI2Reader::~ILI2Reader() {
 
     CleanupParser();
 
-    if( m_bXercesInitialized )
-        OGRDeinitializeXerces();
-
     list<OGRLayer *>::const_iterator layerIt = m_listLayer.begin();
     while (layerIt != m_listLayer.end()) {
         OGRILI2Layer *tmpLayer = (OGRILI2Layer *)*layerIt;
         delete tmpLayer;
-        ++layerIt;
+        layerIt++;
     }
 }
 
@@ -514,11 +521,26 @@ void ILI2Reader::SetSourceFile( const char *pszFilename ) {
 
 int ILI2Reader::SetupParser() {
 
-    if( !m_bXercesInitialized )
+    static int bXercesInitialized = FALSE;
+
+    if( !bXercesInitialized )
     {
-        if( !OGRInitializeXerces() )
+        try
+        {
+            XMLPlatformUtils::Initialize();
+        }
+
+        catch (const XMLException& toCatch)
+        {
+            char* msg = tr_strdup(toCatch.getMessage());
+            CPLError( CE_Failure, CPLE_AppDefined,
+                      "Unable to initialize Xerces C++ based ILI2 reader. "
+                      "Error message:\n%s\n", msg );
+            CPLFree(msg);
+
             return FALSE;
-        m_bXercesInitialized = true;
+        }
+        bXercesInitialized = TRUE;
     }
 
     // Cleanup any old parser.
@@ -590,14 +612,15 @@ int ILI2Reader::SaveClasses( const char *pszFile = NULL ) {
     }
     catch (const SAXException& toCatch)
     {
+        char* msg = tr_strdup(toCatch.getMessage());
         CPLError( CE_Failure, CPLE_AppDefined,
-                  "Parsing failed: %s\n",
-                  transcode(toCatch.getMessage()).c_str());
+                    "Parsing failed: %s\n", msg );
+        CPLFree(msg);
 
         return FALSE;
     }
 
-  if (!m_missAttrs.empty()) {
+  if (m_missAttrs.size() != 0) {
     m_missAttrs.sort();
     m_missAttrs.unique();
     string attrs = "";
@@ -633,17 +656,19 @@ OGRLayer* ILI2Reader::GetLayer(const char* pszName) {
 }
 
 int ILI2Reader::AddFeature(DOMElement *elem) {
-  CPLString osName(transcode(elem->getTagName()));
-  //CPLDebug( "OGR_ILI", "Reading layer: %s", osName.c_str() );
+  bool newLayer = true;
+  OGRLayer *curLayer = NULL;
+  char *pszName = tr_strdup(elem->getTagName());
+  //CPLDebug( "OGR_ILI", "Reading layer: %s", pszName );
 
   // test if this layer exist
-  OGRLayer* curLayer = GetLayer(osName);
-  bool newLayer = (curLayer == NULL);
+  curLayer = GetLayer(pszName);
+  newLayer = (curLayer == NULL);
 
   // add a layer
   if (newLayer) {
-    CPLDebug( "OGR_ILI", "Adding layer: %s", osName.c_str() );
-    OGRFeatureDefn* poFeatureDefn = new OGRFeatureDefn(osName);
+    CPLDebug( "OGR_ILI", "Adding layer: %s", pszName );
+    OGRFeatureDefn* poFeatureDefn = new OGRFeatureDefn(pszName);
     poFeatureDefn->SetGeomType( wkbUnknown );
     GeomFieldInfos oGeomFieldInfos;
     curLayer = new OGRILI2Layer(poFeatureDefn, oGeomFieldInfos, NULL);
@@ -666,13 +691,19 @@ int ILI2Reader::AddFeature(DOMElement *elem) {
   // assign TID
   int fIndex = feature->GetFieldIndex(ILI2_TID);
   if (fIndex != -1) {
-      feature->SetField(fIndex, transcode(elem->getAttribute(xmlch_ILI2_TID)).c_str());
+      XMLCh *pszIli2_tid = XMLString::transcode(ILI2_TID);
+      char *fChVal = tr_strdup(elem->getAttribute(pszIli2_tid));
+      feature->SetField(fIndex, fChVal);
+      XMLString::release(&pszIli2_tid);
+      CPLFree(fChVal);
   } else {
       CPLDebug( "OGR_ILI","'%s' not found", ILI2_TID);
   }
 
   SetFieldValues(feature, elem);
   CPL_IGNORE_RET_VAL(curLayer->SetFeature(feature));
+
+  CPLFree(pszName);
 
   return 0;
 }

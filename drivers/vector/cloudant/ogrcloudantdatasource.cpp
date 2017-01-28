@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id$
  *
  * Project:  Cloudant Translator
  * Purpose:  Definition of classes for OGR Cloudant driver.
@@ -32,7 +33,7 @@
 #include "ogrgeojsonwriter.h"
 #include "swq.h"
 
-CPL_CVSID("$Id: ogrcloudantdatasource.cpp 36682 2016-12-04 20:34:45Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                        OGRCloudantDataSource()                       */
@@ -90,7 +91,7 @@ OGRLayer* OGRCloudantDataSource::OpenDatabase(const char* pszLayerName)
         return NULL;
 
     if ( !json_object_is_type(poAnswerObj, json_type_object) ||
-            CPL_json_object_object_get(poAnswerObj, "db_name") == NULL )
+            json_object_object_get(poAnswerObj, "db_name") == NULL )
     {
         IsError(poAnswerObj, "Database opening failed");
 
@@ -100,9 +101,9 @@ OGRLayer* OGRCloudantDataSource::OpenDatabase(const char* pszLayerName)
 
     OGRCloudantTableLayer* poLayer = new OGRCloudantTableLayer(this, osTableName);
 
-    if ( CPL_json_object_object_get(poAnswerObj, "update_seq") != NULL )
+    if ( json_object_object_get(poAnswerObj, "update_seq") != NULL )
     {
-        int nUpdateSeq = json_object_get_int(CPL_json_object_object_get(poAnswerObj, "update_seq"));
+        int nUpdateSeq = json_object_get_int(json_object_object_get(poAnswerObj, "update_seq"));
         poLayer->SetUpdateSeq(nUpdateSeq);
     }
 
@@ -114,6 +115,7 @@ OGRLayer* OGRCloudantDataSource::OpenDatabase(const char* pszLayerName)
     return poLayer;
 }
 
+
 /************************************************************************/
 /*                                Open()                                */
 /************************************************************************/
@@ -121,21 +123,22 @@ OGRLayer* OGRCloudantDataSource::OpenDatabase(const char* pszLayerName)
 int OGRCloudantDataSource::Open( const char * pszFilename, int bUpdateIn)
 
 {
-    const bool bHTTP =
-        STARTS_WITH(pszFilename, "http://") ||
-        STARTS_WITH(pszFilename, "https://");
-    if( !bHTTP && !STARTS_WITH_CI(pszFilename, "cloudant:") )
+    int bHTTP = FALSE;
+    if (STARTS_WITH(pszFilename, "http://") ||
+        STARTS_WITH(pszFilename, "https://"))
+        bHTTP = TRUE;
+    else if (!STARTS_WITH_CI(pszFilename, "cloudant:"))
         return FALSE;
 
-    bReadWrite = CPL_TO_BOOL(bUpdateIn);
+    bReadWrite = bUpdateIn;
 
     pszName = CPLStrdup( pszFilename );
 
-    if( bHTTP )
+    if (bHTTP)
         osURL = pszFilename;
     else
         osURL = pszFilename + 9;
-    if (!osURL.empty() && osURL[osURL.size() - 1] == '/')
+    if (osURL.size() > 0 && osURL[osURL.size() - 1] == '/')
         osURL.resize(osURL.size() - 1);
 
     const char* pszUserPwd = CPLGetConfigOption("CLOUDANT_USERPWD", NULL);
@@ -159,6 +162,7 @@ int OGRCloudantDataSource::Open( const char * pszFilename, int bUpdateIn)
         return OpenDatabase() != NULL;
     }
 
+
     pszKnowProvider = strstr(osURL, "localhost");
     if (pszKnowProvider != NULL &&
         strstr(pszKnowProvider + strlen("localhost"), pszSlash ) != NULL)
@@ -173,8 +177,8 @@ int OGRCloudantDataSource::Open( const char * pszFilename, int bUpdateIn)
     {
         if ( json_object_is_type(poAnswerObj, json_type_object) )
         {
-            json_object* poError = CPL_json_object_object_get(poAnswerObj, "error");
-            json_object* poReason = CPL_json_object_object_get(poAnswerObj, "reason");
+            json_object* poError = json_object_object_get(poAnswerObj, "error");
+            json_object* poReason = json_object_object_get(poAnswerObj, "reason");
 
             const char* pszError = json_object_get_string(poError);
             const char* pszReason = json_object_get_string(poReason);
@@ -221,6 +225,7 @@ int OGRCloudantDataSource::Open( const char * pszFilename, int bUpdateIn)
     return TRUE;
 }
 
+
 /************************************************************************/
 /*                          ICreateLayer()                              */
 /************************************************************************/
@@ -244,7 +249,9 @@ OGRLayer   *OGRCloudantDataSource::ICreateLayer( const char *l_pszName,
 /*      Do we already have this layer?  If so, should we blow it        */
 /*      away?                                                           */
 /* -------------------------------------------------------------------- */
-    for( int iLayer = 0; iLayer < GetLayerCount(); iLayer++ )
+    int iLayer;
+
+    for( iLayer = 0; iLayer < GetLayerCount(); iLayer++ )
     {
         if( EQUAL(osLayerName, papoLayers[iLayer]->GetName()) )
         {
@@ -281,7 +288,7 @@ OGRLayer   *OGRCloudantDataSource::ICreateLayer( const char *l_pszName,
     if (poAnswerObj == NULL)
         return NULL;
 
-    if( !IsOK(poAnswerObj, "Layer creation failed") )
+    if (!IsOK(poAnswerObj, "Layer creation failed"))
     {
         json_object_put(poAnswerObj);
         return NULL;
@@ -352,22 +359,20 @@ OGRLayer   *OGRCloudantDataSource::ICreateLayer( const char *l_pszName,
 
         poAnswerObj = PUT(osURI, json_object_to_json_string(poDoc));
 
-        if( IsOK(poAnswerObj, "Cloudant spatial index creation failed") )
-            nUpdateSeq++;
+        if (IsOK(poAnswerObj, "Cloudant spatial index creation failed"))
+            nUpdateSeq ++;
 
         json_object_put(poDoc);
         json_object_put(poAnswerObj);
     }
 
-    const bool bGeoJSONDocument =
-        CPLTestBool(CSLFetchNameValueDef(papszOptions, "GEOJSON", "TRUE"));
+    int bGeoJSONDocument = CPLTestBool(CSLFetchNameValueDef(papszOptions, "GEOJSON", "TRUE"));
     int nCoordPrecision = atoi(CSLFetchNameValueDef(papszOptions, "COORDINATE_PRECISION", "-1"));
 
     OGRCloudantTableLayer* poLayer = new OGRCloudantTableLayer(this, osLayerName);
     if (nCoordPrecision != -1)
         poLayer->SetCoordinatePrecision(nCoordPrecision);
-    poLayer->SetInfoAfterCreation(eGType, poSpatialRef,
-                                  nUpdateSeq, bGeoJSONDocument);
+    poLayer->SetInfoAfterCreation(eGType, poSpatialRef, nUpdateSeq, bGeoJSONDocument);
     papoLayers = (OGRLayer**) CPLRealloc(papoLayers, (nLayers + 1) * sizeof(OGRLayer*));
     papoLayers[nLayers ++] = poLayer;
     return poLayer;

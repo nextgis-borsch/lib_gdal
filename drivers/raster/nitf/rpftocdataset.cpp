@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: rpftocdataset.cpp
  *
  * Project:  RPF TOC read Translator
  * Purpose:  Implementation of RPFTOCDataset and RPFTOCSubDataset.
@@ -35,7 +36,7 @@
 #include "rpftoclib.h"
 #include "vrtdataset.h"
 
-CPL_CVSID("$Id: rpftocdataset.cpp 36576 2016-11-30 15:04:34Z goatbar $");
+CPL_CVSID("$Id: rpftocdataset.cpp 33794 2016-03-26 13:19:07Z goatbar $");
 
 static const int GEOTRSFRM_TOPLEFT_X = 0;
 static const int GEOTRSFRM_WE_RES = 1;
@@ -61,7 +62,7 @@ static const int GEOTRSFRM_NS_RES = 5;
 
 class RPFTOCDataset : public GDALPamDataset
 {
-  char      **papszSubDatasets;
+  char	    **papszSubDatasets;
   char       *pszProjection;
   int         bGotGeoTransform;
   double      adfGeoTransform[6];
@@ -74,9 +75,7 @@ class RPFTOCDataset : public GDALPamDataset
         pszProjection(NULL),
         bGotGeoTransform(FALSE),
         papszFileList(NULL)
-    {
-        memset( adfGeoTransform, 0, sizeof(adfGeoTransform) );
-    }
+    {}
 
     virtual ~RPFTOCDataset()
     {
@@ -85,9 +84,9 @@ class RPFTOCDataset : public GDALPamDataset
         CSLDestroy( papszFileList );
     }
 
-    virtual char      **GetMetadata( const char * pszDomain = "" ) override;
+    virtual char      **GetMetadata( const char * pszDomain = "" );
 
-    virtual char      **GetFileList() override { return CSLDuplicate(papszFileList); }
+    virtual char      **GetFileList() { return CSLDuplicate(papszFileList); }
 
     void                AddSubDataset(const char* pszFilename, RPFTocEntry* tocEntry );
 
@@ -97,7 +96,7 @@ class RPFTOCDataset : public GDALPamDataset
         nRasterYSize = rasterYSize;
     }
 
-    virtual CPLErr GetGeoTransform( double * padfGeoTransform) override
+    virtual CPLErr GetGeoTransform( double * padfGeoTransform)
     {
         if (bGotGeoTransform)
         {
@@ -107,21 +106,21 @@ class RPFTOCDataset : public GDALPamDataset
         return CE_Failure;
     }
 
-    virtual CPLErr SetGeoTransform( double * padfGeoTransform) override
+    virtual CPLErr SetGeoTransform( double * padfGeoTransform)
     {
         bGotGeoTransform = TRUE;
         memcpy(adfGeoTransform, padfGeoTransform, 6 * sizeof(double));
         return CE_None;
     }
 
-    virtual CPLErr SetProjection( const char * projectionRef ) override
+    virtual CPLErr SetProjection( const char * projectionRef )
     {
         CPLFree(pszProjection);
         pszProjection = CPLStrdup(projectionRef);
         return CE_None;
     }
 
-    virtual const char *GetProjectionRef(void) override
+    virtual const char *GetProjectionRef(void)
     {
         return (pszProjection) ? pszProjection : "";
     }
@@ -178,7 +177,7 @@ class RPFTOCSubDataset : public VRTDataset
         CPLFree(cachedTileData);
     }
 
-    virtual char      **GetFileList() override { return CSLDuplicate(papszFileList); }
+    virtual char      **GetFileList() { return CSLDuplicate(papszFileList); }
 
     void* GetCachedTile(const char* tileFileName, int nBlockXOff, int nBlockYOff)
     {
@@ -223,8 +222,7 @@ class RPFTOCProxyRasterDataSet : public GDALProxyPoolDataset
     /* The following parameters are only for sanity checking */
     int checkDone;
     int checkOK;
-    double nwLong;
-    double nwLat;
+    double nwLong, nwLat;
     GDALColorTable* colorTableRef;
     int bHasNoDataValue;
     double noDataValue;
@@ -250,12 +248,12 @@ class RPFTOCProxyRasterDataSet : public GDALProxyPoolDataset
             return noDataValue;
         }
 
-        GDALDataset* RefUnderlyingDataset() override
+        GDALDataset* RefUnderlyingDataset()
         {
             return GDALProxyPoolDataset::RefUnderlyingDataset();
         }
 
-        void UnrefUnderlyingDataset(GDALDataset* poUnderlyingDataset) override
+        void UnrefUnderlyingDataset(GDALDataset* poUnderlyingDataset)
         {
             GDALProxyPoolDataset::UnrefUnderlyingDataset(poUnderlyingDataset);
         }
@@ -297,18 +295,17 @@ class RPFTOCProxyRasterBandRGBA : public GDALPamRasterBand
             eDataType = GDT_Byte;
             this->nBand = nBandIn;
             blockByteSize = nBlockXSize * nBlockYSize;
-            memset( colorTable, 0, sizeof(colorTable) );
         }
         virtual ~RPFTOCProxyRasterBandRGBA() {}
 
-        virtual GDALColorInterp GetColorInterpretation() override
+        virtual GDALColorInterp GetColorInterpretation()
         {
             return (GDALColorInterp)(GCI_RedBand + nBand - 1);
         }
 
     protected:
         virtual CPLErr IReadBlock( int nBlockXOff, int nBlockYOff,
-                                   void * pImage ) override;
+                                   void * pImage );
 };
 
 /************************************************************************/
@@ -338,6 +335,7 @@ void  RPFTOCProxyRasterBandRGBA::Expand(void* pImage, const void* srcImage)
                     colorTable[four_pixels & 0xFF];
         }
     }
+
 }
 
 /************************************************************************/
@@ -429,11 +427,10 @@ CPLErr RPFTOCProxyRasterBandRGBA::IReadBlock( int nBlockXOff, int nBlockYOff,
             Expand(pImage, cachedImage);
             ret = CE_None;
         }
+
     }
     else
-    {
         ret = CE_Failure;
-    }
 
     proxyDS->UnrefUnderlyingDataset(ds);
 
@@ -467,20 +464,19 @@ class RPFTOCProxyRasterBandPalette : public GDALPamRasterBand
             this->nBlockYSize = nBlockYSizeIn;
             eDataType = GDT_Byte;
             this->nBand = nBandIn;
-            memset( remapLUT, 0, sizeof(remapLUT) );
         }
 
-        virtual GDALColorInterp GetColorInterpretation() override
+        virtual GDALColorInterp GetColorInterpretation()
         {
             return GCI_PaletteIndex;
         }
 
-        virtual double GetNoDataValue(int* bHasNoDataValue) override
+        virtual double GetNoDataValue(int* bHasNoDataValue)
         {
             return ( reinterpret_cast<RPFTOCProxyRasterDataSet *>( poDS ) )->GetNoDataValue(bHasNoDataValue);
         }
 
-        virtual GDALColorTable *GetColorTable() override
+        virtual GDALColorTable *GetColorTable()
         {
             // TODO: This casting is a bit scary.
             return const_cast<GDALColorTable *>(
@@ -489,7 +485,7 @@ class RPFTOCProxyRasterBandPalette : public GDALPamRasterBand
 
     protected:
         virtual CPLErr IReadBlock( int nBlockXOff, int nBlockYOff,
-                                   void * pImage ) override;
+                                   void * pImage );
 };
 
 /************************************************************************/
@@ -534,6 +530,7 @@ CPLErr RPFTOCProxyRasterBandPalette::IReadBlock( int nBlockXOff, int nBlockYOff,
             initDone = TRUE;
         }
 
+
         if (samePalette == FALSE)
         {
             unsigned char* data = (unsigned char*)pImage;
@@ -542,11 +539,10 @@ CPLErr RPFTOCProxyRasterBandPalette::IReadBlock( int nBlockXOff, int nBlockYOff,
                 data[i] = remapLUT[data[i]];
             }
         }
+
     }
     else
-    {
         ret = CE_Failure;
-    }
 
     proxyDS->UnrefUnderlyingDataset(ds);
 
@@ -557,68 +553,50 @@ CPLErr RPFTOCProxyRasterBandPalette::IReadBlock( int nBlockXOff, int nBlockYOff,
 /*                    RPFTOCProxyRasterDataSet()                         */
 /************************************************************************/
 
-RPFTOCProxyRasterDataSet::RPFTOCProxyRasterDataSet(
-    RPFTOCSubDataset* subdatasetIn,
-    const char* fileNameIn,
-    int nRasterXSizeIn, int nRasterYSizeIn,
-    int nBlockXSizeIn, int nBlockYSizeIn,
-    const char* projectionRefIn, double nwLongIn, double nwLatIn,
-    int nBandsIn ) :
-    // Mark as shared since the VRT will take several references if we are in
-    // RGBA mode (4 bands for this dataset).
-    GDALProxyPoolDataset(fileNameIn, nRasterXSizeIn, nRasterYSizeIn,
-                         GA_ReadOnly, TRUE, projectionRefIn),
+RPFTOCProxyRasterDataSet::RPFTOCProxyRasterDataSet
+        (RPFTOCSubDataset* subdatasetIn,
+         const char* fileNameIn,
+         int nRasterXSizeIn, int nRasterYSizeIn,
+         int nBlockXSizeIn, int nBlockYSizeIn,
+         const char* projectionRefIn, double nwLongIn, double nwLatIn,
+         int nBandsIn) :
+    /* Mark as shared since the VRT will take several references if we are in RGBA mode (4 bands for this dataset) */
+            GDALProxyPoolDataset(fileNameIn, nRasterXSizeIn, nRasterYSizeIn, GA_ReadOnly, TRUE, projectionRefIn),
     checkDone(FALSE),
     checkOK(FALSE),
-    nwLong(nwLongIn),
-    nwLat(nwLatIn),
     colorTableRef(NULL),
     bHasNoDataValue(FALSE),
-    noDataValue(0),
-    subdataset(subdatasetIn)
+    noDataValue(0)
 {
+    this->subdataset = subdatasetIn;
+    this->nwLong = nwLongIn;
+    this->nwLat = nwLatIn;
+
     if (nBandsIn == 4)
     {
         for( int i = 0; i < 4; i++ )
         {
-            SetBand(
-                i + 1,
-                new RPFTOCProxyRasterBandRGBA(this, i+1,
-                                              nBlockXSizeIn, nBlockYSizeIn));
+            SetBand(i + 1, new RPFTOCProxyRasterBandRGBA(this, i+1, nBlockXSizeIn, nBlockYSizeIn));
         }
     }
     else
-    {
-        SetBand(
-            1,
-            new RPFTOCProxyRasterBandPalette(this, 1,
-                                             nBlockXSizeIn, nBlockYSizeIn));
-    }
+        SetBand(1, new RPFTOCProxyRasterBandPalette(this, 1, nBlockXSizeIn, nBlockYSizeIn));
 }
 
 /************************************************************************/
 /*                    SanityCheckOK()                                   */
 /************************************************************************/
 
-#define WARN_ON_FAIL(x) do { if (!(x)) { \
-    CPLError(CE_Warning, CPLE_AppDefined, \
-             "For %s, assert '" #x "' failed", \
-             GetDescription()); } } while( false )
-#define ERROR_ON_FAIL(x) do { if (!(x)) { \
-    CPLError(CE_Warning, CPLE_AppDefined, \
-             "For %s, assert '" #x "' failed", \
-             GetDescription()); checkOK = FALSE; } } while( false )
+#define WARN_ON_FAIL(x) do { if (!(x)) { CPLError(CE_Warning, CPLE_AppDefined, "For %s, assert '" #x "' failed", GetDescription()); } } while(0)
+#define ERROR_ON_FAIL(x) do { if (!(x)) { CPLError(CE_Warning, CPLE_AppDefined, "For %s, assert '" #x "' failed", GetDescription()); checkOK = FALSE; } } while(0)
 
 int RPFTOCProxyRasterDataSet::SanityCheckOK(GDALDataset* sourceDS)
 {
+    int src_nBlockXSize, src_nBlockYSize;
+    int nBlockXSize, nBlockYSize;
+    double l_adfGeoTransform[6];
     if (checkDone)
         return checkOK;
-
-    int src_nBlockXSize;
-    int src_nBlockYSize;
-    int nBlockXSize;
-    int nBlockYSize;
-    double l_adfGeoTransform[6] = {};
 
     checkOK = TRUE;
     checkDone = TRUE;
@@ -648,7 +626,7 @@ int RPFTOCProxyRasterDataSet::SanityCheckOK(GDALDataset* sourceDS)
 
 static const char* MakeTOCEntryName(RPFTocEntry* tocEntry )
 {
-    char* str = NULL;
+    char* str;
     if (tocEntry->seriesAbbreviation)
         str = const_cast<char *>(
             CPLSPrintf( "%s_%s_%s_%s_%d", tocEntry->type,
@@ -675,7 +653,7 @@ static const char* MakeTOCEntryName(RPFTocEntry* tocEntry )
 void RPFTOCDataset::AddSubDataset( const char* pszFilename,  RPFTocEntry* tocEntry )
 
 {
-    char szName[80];
+    char	szName[80];
     const int nCount = CSLCount(papszSubDatasets ) / 2;
 
     snprintf( szName, sizeof(szName), "SUBDATASET_%d_NAME", nCount+1 );
@@ -711,21 +689,14 @@ char **RPFTOCDataset::GetMetadata( const char *pszDomain )
 /*                  NITFCreateVRTDataSetFromTocEntry()                  */
 /************************************************************************/
 
-#define ASSERT_CREATE_VRT(x) do { if (!(x)) { \
-    CPLError(CE_Failure, CPLE_AppDefined, \
-             "For %s, assert '" #x "' failed", \
-             entry->frameEntries[i].fullFilePath); \
-    if (poSrcDS) GDALClose(poSrcDS); CPLFree(projectionRef); \
-    return NULL;} } while( false )
+
+#define ASSERT_CREATE_VRT(x) do { if (!(x)) { CPLError(CE_Failure, CPLE_AppDefined, "For %s, assert '" #x "' failed", entry->frameEntries[i].fullFilePath); if (poSrcDS) GDALClose(poSrcDS); CPLFree(projectionRef); return NULL;} } while(0)
 
 /* Builds a RPFTOCSubDataset from the set of files of the toc entry */
-GDALDataset *
-RPFTOCSubDataset::CreateDataSetFromTocEntry( const char* openInformationName,
-                                             const char* pszTOCFileName,
-                                             int nEntry,
-                                             const RPFTocEntry* entry,
-                                             int isRGBA,
-                                             char** papszMetadataRPFTOCFile)
+GDALDataset* RPFTOCSubDataset::CreateDataSetFromTocEntry(const char* openInformationName,
+                                                         const char* pszTOCFileName, int nEntry,
+                                                         const RPFTocEntry* entry, int isRGBA,
+                                                         char** papszMetadataRPFTOCFile)
 {
     GDALDriver *poDriver = GetGDALDriverManager()->GetDriverByName("VRT");
     if( poDriver == NULL )
@@ -742,9 +713,8 @@ RPFTOCSubDataset::CreateDataSetFromTocEntry( const char* openInformationName,
         (entry->nwLat - entry->seLat)
         / (entry->nVertFrames * entry->vertInterval) + 0.5);
 
-    int nBlockXSize = 0;
-    int nBlockYSize = 0;
-    double geoTransf[6] = {};
+    int nBlockXSize = 0, nBlockYSize = 0;
+    double geoTransf[6];
     char* projectionRef = NULL;
     int index = 0;
 
@@ -1094,11 +1064,8 @@ GDALDataset* RPFTOCDataset::OpenFileTOC(NITFFile *psFile,
 
         bool ok = false;
         char* projectionRef = NULL;
-        double nwLong = 0.0;
-        double nwLat = 0.0;
-        double seLong = 0.0;
-        double seLat = 0.0;
-        double adfGeoTransform[6] = {};
+        double nwLong = 0, nwLat = 0, seLong = 0, seLat = 0;
+        double adfGeoTransform[6];
 
         ds->papszFileList = CSLAddString(ds->papszFileList, pszFilename);
 
@@ -1192,8 +1159,8 @@ int RPFTOCDataset::Identify( GDALOpenInfo * poOpenInfo )
         return TRUE;
 
 /* -------------------------------------------------------------------- */
-/*      First we check to see if the file has the expected header       */
-/*      bytes.                                                          */
+/*	First we check to see if the file has the expected header	*/
+/*	bytes.								*/
 /* -------------------------------------------------------------------- */
     if( poOpenInfo->nHeaderBytes < 48 )
         return FALSE;
@@ -1303,6 +1270,7 @@ GDALDataset *RPFTOCDataset::Open( GDALOpenInfo * poOpenInfo )
         CPLFree(entryName);
         return NULL;
     }
+
 }
 
 /************************************************************************/

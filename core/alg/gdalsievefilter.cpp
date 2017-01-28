@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: gdalsievefilter.cpp 33715 2016-03-13 08:52:06Z goatbar $
  *
  * Project:  GDAL
  * Purpose:  Raster to Polygon Converter
@@ -27,24 +28,12 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "cpl_port.h"
-#include "gdal_alg.h"
-
-#include <cstring>
-
-#include <algorithm>
-#include <set>
-#include <vector>
-#include <utility>
-
-#include "cpl_conv.h"
-#include "cpl_error.h"
-#include "cpl_progress.h"
-#include "cpl_vsi.h"
-#include "gdal.h"
 #include "gdal_alg_priv.h"
+#include "cpl_conv.h"
+#include <vector>
+#include <set>
 
-CPL_CVSID("$Id: gdalsievefilter.cpp 36722 2016-12-06 10:55:21Z rouault $");
+CPL_CVSID("$Id: gdalsievefilter.cpp 33715 2016-03-13 08:52:06Z goatbar $");
 
 #define MY_MAX_INT 2147483647
 
@@ -75,17 +64,18 @@ CPL_CVSID("$Id: gdalsievefilter.cpp 36722 2016-12-06 10:55:21Z rouault $");
 /************************************************************************/
 
 static CPLErr
-GPMaskImageData( GDALRasterBandH hMaskBand, GByte *pabyMaskLine,
-                 int iY, int nXSize,
+GPMaskImageData( GDALRasterBandH hMaskBand, GByte *pabyMaskLine, int iY, int nXSize,
                  GInt32 *panImageLine )
 
 {
-    const CPLErr eErr =
-        GDALRasterIO( hMaskBand, GF_Read, 0, iY, nXSize, 1,
-                      pabyMaskLine, nXSize, 1, GDT_Byte, 0, 0 );
+    CPLErr eErr;
+
+    eErr = GDALRasterIO( hMaskBand, GF_Read, 0, iY, nXSize, 1,
+                         pabyMaskLine, nXSize, 1, GDT_Byte, 0, 0 );
     if( eErr == CE_None )
     {
-        for( int i = 0; i < nXSize; i++ )
+        int i;
+        for( i = 0; i < nXSize; i++ )
         {
             if( pabyMaskLine[i] == 0 )
                 panImageLine[i] = GP_NODATA_MARKER;
@@ -101,11 +91,11 @@ GPMaskImageData( GDALRasterBandH hMaskBand, GByte *pabyMaskLine,
 /*                          CompareNeighbour()                          */
 /*                                                                      */
 /*      Compare two neighbouring polygons, and update eaches            */
-/*      "biggest neighbour" if the other is larger than its current     */
+/*      "biggest neighbour" if the other is larger than it's current    */
 /*      largest neighbour.                                              */
 /*                                                                      */
 /*      Note that this should end up with each polygon knowing the      */
-/*      id of its largest neighbour.  No attempt is made to             */
+/*      id of it's largest neighbour.  No attempt is made to            */
 /*      restrict things to small polygons that we will be merging,      */
 /*      nor to exclude assigning "biggest neighbours" that are still    */
 /*      smaller than our sieve threshold.                               */
@@ -118,22 +108,22 @@ static inline void CompareNeighbour( int nPolyId1, int nPolyId2,
                                      std::vector<int> &anBigNeighbour )
 
 {
-    // Nodata polygon do not need neighbours, and cannot be neighbours
+    // nodata polygon do not need neighbours, and cannot be neighbours
     // to valid polygons.
     if( nPolyId1 < 0 || nPolyId2 < 0 )
         return;
 
-    // Make sure we are working with the final merged polygon ids.
+    // make sure we are working with the final merged polygon ids.
     nPolyId1 = panPolyIdMap[nPolyId1];
     nPolyId2 = panPolyIdMap[nPolyId2];
 
     if( nPolyId1 == nPolyId2 )
         return;
 
-    // Nodata polygon do not need neighbours, and cannot be neighbours
+    // nodata polygon do not need neighbours, and cannot be neighbours
     // to valid polygons.
-    // Should no longer happen with r28826 optimization.
-    // if( panPolyValue[nPolyId1] == GP_NODATA_MARKER
+    // should no longer happen with r28826 optimization
+    //if( panPolyValue[nPolyId1] == GP_NODATA_MARKER
     //    || panPolyValue[nPolyId2] == GP_NODATA_MARKER )
     //    return;
 
@@ -187,8 +177,8 @@ static inline void CompareNeighbour( int nPolyId1, int nPolyId2,
  * @param nConnectedness either 4 indicating that diagonal pixels are not
  * considered directly adjacent for polygon membership purposes or 8
  * indicating they are.
- * @param papszOptions algorithm options in name=value list form.  None
- * currently supported.
+ * @param papszOptions algorithm options in name=value list form.  None currently
+ * supported.
  * @param pfnProgress callback for reporting algorithm progress matching the
  * GDALProgressFunc() semantics.  May be NULL.
  * @param pProgressArg callback argument passed to pfnProgress.
@@ -213,26 +203,19 @@ GDALSieveFilter( GDALRasterBandH hSrcBand, GDALRasterBandH hMaskBand,
 /* -------------------------------------------------------------------- */
 /*      Allocate working buffers.                                       */
 /* -------------------------------------------------------------------- */
+    CPLErr eErr = CE_None;
     int nXSize = GDALGetRasterBandXSize( hSrcBand );
     int nYSize = GDALGetRasterBandYSize( hSrcBand );
-    GInt32 *panLastLineVal = static_cast<GInt32 *>(
-        VSI_MALLOC2_VERBOSE(sizeof(GInt32), nXSize));
-    GInt32 *panThisLineVal = static_cast<GInt32 *>(
-        VSI_MALLOC2_VERBOSE(sizeof(GInt32), nXSize));
-    GInt32 *panLastLineId = static_cast<GInt32 *>(
-        VSI_MALLOC2_VERBOSE(sizeof(GInt32), nXSize));
-    GInt32 *panThisLineId = static_cast<GInt32 *>(
-        VSI_MALLOC2_VERBOSE(sizeof(GInt32), nXSize));
-    GInt32 *panThisLineWriteVal = static_cast<GInt32 *>(
-        VSI_MALLOC2_VERBOSE(sizeof(GInt32), nXSize));
-    GByte *pabyMaskLine =
-        hMaskBand != NULL
-        ? static_cast<GByte *>(VSI_MALLOC_VERBOSE(nXSize))
-        : NULL;
-    if( panLastLineVal == NULL || panThisLineVal == NULL ||
+    GInt32 *panLastLineVal = (GInt32 *) VSI_MALLOC2_VERBOSE(sizeof(GInt32), nXSize);
+    GInt32 *panThisLineVal = (GInt32 *) VSI_MALLOC2_VERBOSE(sizeof(GInt32), nXSize);
+    GInt32 *panLastLineId =  (GInt32 *) VSI_MALLOC2_VERBOSE(sizeof(GInt32), nXSize);
+    GInt32 *panThisLineId =  (GInt32 *) VSI_MALLOC2_VERBOSE(sizeof(GInt32), nXSize);
+    GInt32 *panThisLineWriteVal = (GInt32 *) VSI_MALLOC2_VERBOSE(sizeof(GInt32), nXSize);
+    GByte *pabyMaskLine = (hMaskBand != NULL) ? (GByte *) VSI_MALLOC_VERBOSE(nXSize) : NULL;
+    if (panLastLineVal == NULL || panThisLineVal == NULL ||
         panLastLineId == NULL || panThisLineId == NULL ||
         panThisLineWriteVal == NULL ||
-        (hMaskBand != NULL && pabyMaskLine == NULL) )
+        (hMaskBand != NULL && pabyMaskLine == NULL))
     {
         CPLFree( panThisLineId );
         CPLFree( panLastLineId );
@@ -248,11 +231,11 @@ GDALSieveFilter( GDALRasterBandH hSrcBand, GDALRasterBandH hMaskBand,
 /*      polygon id map so we will know in advance what polygons are     */
 /*      what on the second pass.                                        */
 /* -------------------------------------------------------------------- */
+    int iY, iX, iPoly;
     GDALRasterPolygonEnumerator oFirstEnum( nConnectedness );
     std::vector<int> anPolySizes;
 
-    CPLErr eErr = CE_None;
-    for( int iY = 0; eErr == CE_None && iY < nYSize; iY++ )
+    for( iY = 0; eErr == CE_None && iY < nYSize; iY++ )
     {
         eErr = GDALRasterIO(
             hSrcBand,
@@ -260,8 +243,7 @@ GDALSieveFilter( GDALRasterBandH hSrcBand, GDALRasterBandH hMaskBand,
             panThisLineVal, nXSize, 1, GDT_Int32, 0, 0 );
 
         if( eErr == CE_None && hMaskBand != NULL )
-            eErr = GPMaskImageData(hMaskBand, pabyMaskLine, iY, nXSize,
-                                   panThisLineVal);
+            eErr = GPMaskImageData( hMaskBand, pabyMaskLine, iY, nXSize, panThisLineVal );
 
         if( iY == 0 )
             oFirstEnum.ProcessLine(
@@ -275,12 +257,12 @@ GDALSieveFilter( GDALRasterBandH hSrcBand, GDALRasterBandH hMaskBand,
 /* -------------------------------------------------------------------- */
 /*      Accumulate polygon sizes.                                       */
 /* -------------------------------------------------------------------- */
-        if( oFirstEnum.nNextPolygonId > static_cast<int>(anPolySizes.size()) )
+        if( oFirstEnum.nNextPolygonId > (int) anPolySizes.size() )
             anPolySizes.resize( oFirstEnum.nNextPolygonId );
 
-        for( int iX = 0; iX < nXSize; iX++ )
+        for( iX = 0; iX < nXSize; iX++ )
         {
-            const int iPoly = panThisLineId[iX];
+            iPoly = panThisLineId[iX];
 
             if( iPoly >= 0 && anPolySizes[iPoly] < MY_MAX_INT )
                 anPolySizes[iPoly] += 1;
@@ -289,14 +271,19 @@ GDALSieveFilter( GDALRasterBandH hSrcBand, GDALRasterBandH hMaskBand,
 /* -------------------------------------------------------------------- */
 /*      swap this/last lines.                                           */
 /* -------------------------------------------------------------------- */
-        std::swap(panLastLineVal, panThisLineVal);
-        std::swap(panLastLineId, panThisLineId);
+        GInt32 *panTmp = panLastLineVal;
+        panLastLineVal = panThisLineVal;
+        panThisLineVal = panTmp;
+
+        panTmp = panThisLineId;
+        panThisLineId = panLastLineId;
+        panLastLineId = panTmp;
 
 /* -------------------------------------------------------------------- */
 /*      Report progress, and support interrupts.                        */
 /* -------------------------------------------------------------------- */
         if( eErr == CE_None
-            && !pfnProgress( 0.25 * ((iY+1) / static_cast<double>(nYSize)),
+            && !pfnProgress( 0.25 * ((iY+1) / (double) nYSize),
                              "", pProgressArg ) )
         {
             CPLError( CE_Failure, CPLE_UserInterrupt, "User terminated" );
@@ -315,8 +302,7 @@ GDALSieveFilter( GDALRasterBandH hSrcBand, GDALRasterBandH hMaskBand,
 /*      Push the sizes of merged polygon fragments into the             */
 /*      merged polygon id's count.                                      */
 /* -------------------------------------------------------------------- */
-    for( int iPoly = 0; oFirstEnum.panPolyIdMap != NULL && // for Coverity
-                        iPoly < oFirstEnum.nNextPolygonId; iPoly++ )
+    for( iPoly = 0; iPoly < oFirstEnum.nNextPolygonId; iPoly++ )
     {
         if( oFirstEnum.panPolyIdMap[iPoly] != iPoly )
         {
@@ -327,8 +313,7 @@ GDALSieveFilter( GDALRasterBandH hSrcBand, GDALRasterBandH hMaskBand,
             if( nSize > MY_MAX_INT )
                 nSize = MY_MAX_INT;
 
-            anPolySizes[oFirstEnum.panPolyIdMap[iPoly]] =
-                static_cast<int>(nSize);
+            anPolySizes[oFirstEnum.panPolyIdMap[iPoly]] = (int)nSize;
             anPolySizes[iPoly] = 0;
         }
     }
@@ -342,14 +327,14 @@ GDALSieveFilter( GDALRasterBandH hSrcBand, GDALRasterBandH hMaskBand,
     std::vector<int> anBigNeighbour;
     anBigNeighbour.resize( anPolySizes.size() );
 
-    for( int iPoly = 0; iPoly < static_cast<int>(anPolySizes.size()); iPoly++ )
+    for( iPoly = 0; iPoly < (int) anPolySizes.size(); iPoly++ )
         anBigNeighbour[iPoly] = -1;
 
 /* ==================================================================== */
 /*      Second pass ... identify the largest neighbour for each         */
 /*      polygon.                                                        */
 /* ==================================================================== */
-    for( int iY = 0; eErr == CE_None && iY < nYSize; iY++ )
+    for( iY = 0; eErr == CE_None && iY < nYSize; iY++ )
     {
 /* -------------------------------------------------------------------- */
 /*      Read the image data.                                            */
@@ -358,8 +343,7 @@ GDALSieveFilter( GDALRasterBandH hSrcBand, GDALRasterBandH hMaskBand,
                              panThisLineVal, nXSize, 1, GDT_Int32, 0, 0 );
 
         if( eErr == CE_None && hMaskBand != NULL )
-            eErr = GPMaskImageData( hMaskBand, pabyMaskLine, iY, nXSize,
-                                    panThisLineVal );
+            eErr = GPMaskImageData( hMaskBand, pabyMaskLine, iY, nXSize, panThisLineVal );
 
         if( eErr != CE_None )
             continue;
@@ -381,7 +365,7 @@ GDALSieveFilter( GDALRasterBandH hSrcBand, GDALRasterBandH hMaskBand,
 /*      Check our neighbours, and update our biggest neighbour map      */
 /*      as appropriate.                                                 */
 /* -------------------------------------------------------------------- */
-        for( int iX = 0; iX < nXSize; iX++ )
+        for( iX = 0; iX < nXSize; iX++ )
         {
             if( iY > 0 )
             {
@@ -421,15 +405,20 @@ GDALSieveFilter( GDALRasterBandH hSrcBand, GDALRasterBandH hMaskBand,
 /*      Swap pixel value, and polygon id lines to be ready for the      */
 /*      next line.                                                      */
 /* -------------------------------------------------------------------- */
-        std::swap(panLastLineVal, panThisLineVal);
-        std::swap(panLastLineId, panThisLineId);
+        GInt32 *panTmp = panLastLineVal;
+        panLastLineVal = panThisLineVal;
+        panThisLineVal = panTmp;
+
+        panTmp = panThisLineId;
+        panThisLineId = panLastLineId;
+        panLastLineId = panTmp;
 
 /* -------------------------------------------------------------------- */
 /*      Report progress, and support interrupts.                        */
 /* -------------------------------------------------------------------- */
-        if( eErr == CE_None &&
-            !pfnProgress(0.25 + 0.25 * ((iY + 1) / static_cast<double>(nYSize)),
-                         "", pProgressArg) )
+        if( eErr == CE_None
+            && !pfnProgress( 0.25 + 0.25 * ((iY+1) / (double) nYSize),
+                             "", pProgressArg ) )
         {
             CPLError( CE_Failure, CPLE_UserInterrupt, "User terminated" );
             eErr = CE_Failure;
@@ -445,9 +434,7 @@ GDALSieveFilter( GDALRasterBandH hSrcBand, GDALRasterBandH hMaskBand,
     int nIsolatedSmall = 0;
     int nSieveTargets = 0;
 
-    for( int iPoly = 0; oFirstEnum.panPolyIdMap != NULL && // for Coverity
-                        oFirstEnum.panPolyValue != NULL && // for Coverity
-                        iPoly < static_cast<int>(anPolySizes.size()); iPoly++ )
+    for( iPoly = 0; iPoly < (int) anPolySizes.size(); iPoly++ )
     {
         if( oFirstEnum.panPolyIdMap[iPoly] != iPoly )
             continue;
@@ -475,10 +462,10 @@ GDALSieveFilter( GDALRasterBandH hSrcBand, GDALRasterBandH hMaskBand,
         std::set<int> oSetVisitedPoly;
         oSetVisitedPoly.insert(iPoly);
 
-        // Walk through our neighbours until we find a polygon large enough.
+        // Walk through our neighbours until we find a polygon large enough
         int iFinalId = iPoly;
         bool bFoundBigEnoughPoly = false;
-        while( true )
+        while(true)
         {
             iFinalId = anBigNeighbour[iFinalId];
             if( iFinalId < 0 )
@@ -492,7 +479,7 @@ GDALSieveFilter( GDALRasterBandH hSrcBand, GDALRasterBandH hMaskBand,
                 bFoundBigEnoughPoly = true;
                 break;
             }
-            // Check that we don't cycle on an already visited polygon.
+            // Check that we don't cycle on an already visited polygon
             if( oSetVisitedPoly.find(iFinalId) != oSetVisitedPoly.end() )
                 break;
             oSetVisitedPoly.insert(iFinalId);
@@ -505,7 +492,7 @@ GDALSieveFilter( GDALRasterBandH hSrcBand, GDALRasterBandH hMaskBand,
             continue;
         }
 
-        // Map the whole intermediate chain to it.
+        // Map the whole intermediate chain to it
         int iPolyCur = iPoly;
         while( anBigNeighbour[iPolyCur] != iFinalId )
         {
@@ -526,8 +513,7 @@ GDALSieveFilter( GDALRasterBandH hSrcBand, GDALRasterBandH hMaskBand,
 /* ==================================================================== */
     oSecondEnum.Clear();
 
-    for( int iY = 0; oFirstEnum.panPolyIdMap != NULL && // for Coverity
-                     eErr == CE_None && iY < nYSize; iY++ )
+    for( iY = 0; eErr == CE_None && iY < nYSize; iY++ )
     {
 /* -------------------------------------------------------------------- */
 /*      Read the image data.                                            */
@@ -538,8 +524,7 @@ GDALSieveFilter( GDALRasterBandH hSrcBand, GDALRasterBandH hMaskBand,
         memcpy( panThisLineWriteVal, panThisLineVal, 4 * nXSize );
 
         if( eErr == CE_None && hMaskBand != NULL )
-            eErr = GPMaskImageData( hMaskBand, pabyMaskLine, iY, nXSize,
-                                    panThisLineVal );
+            eErr = GPMaskImageData( hMaskBand, pabyMaskLine, iY, nXSize, panThisLineVal );
 
         if( eErr != CE_None )
             continue;
@@ -561,7 +546,7 @@ GDALSieveFilter( GDALRasterBandH hSrcBand, GDALRasterBandH hMaskBand,
 /*      Reprocess the actual pixel values according to the polygon      */
 /*      merging, and write out this line of image data.                 */
 /* -------------------------------------------------------------------- */
-        for( int iX = 0; iX < nXSize; iX++ )
+        for( iX = 0; iX < nXSize; iX++ )
         {
             int iThisPoly = panThisLineId[iX];
             if( iThisPoly >= 0 )
@@ -587,15 +572,20 @@ GDALSieveFilter( GDALRasterBandH hSrcBand, GDALRasterBandH hMaskBand,
 /*      Swap pixel value, and polygon id lines to be ready for the      */
 /*      next line.                                                      */
 /* -------------------------------------------------------------------- */
-        std::swap(panLastLineVal, panThisLineVal);
-        std::swap(panLastLineId, panThisLineId);
+        GInt32 *panTmp = panLastLineVal;
+        panLastLineVal = panThisLineVal;
+        panThisLineVal = panTmp;
+
+        panTmp = panThisLineId;
+        panThisLineId = panLastLineId;
+        panLastLineId = panTmp;
 
 /* -------------------------------------------------------------------- */
 /*      Report progress, and support interrupts.                        */
 /* -------------------------------------------------------------------- */
         if( eErr == CE_None
-            && !pfnProgress(0.5 + 0.5 * ((iY+1) / static_cast<double>(nYSize)),
-                            "", pProgressArg) )
+            && !pfnProgress( 0.5 + 0.5 * ((iY+1) / (double) nYSize),
+                             "", pProgressArg ) )
         {
             CPLError( CE_Failure, CPLE_UserInterrupt, "User terminated" );
             eErr = CE_Failure;

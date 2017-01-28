@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: rasdamandataset.cpp 33717 2016-03-14 06:29:14Z goatbar $
  * Project:  rasdaman Driver
  * Purpose:  Implement Rasdaman GDAL driver
  * Author:   Constantin Jucovschi, jucovschi@yahoo.com
@@ -40,7 +41,8 @@
 
 void CPL_DLL CPL_STDCALL GDALRegister_RASDAMAN();
 
-CPL_CVSID("$Id: rasdamandataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
+CPL_CVSID("$Id: rasdamandataset.cpp 33717 2016-03-14 06:29:14Z goatbar $");
+
 
 class Subset
 {
@@ -67,15 +69,11 @@ public:
     return other.contains(*this);
   }
 
-  Subset& operator = (const Subset& rhs) {
-    if( &rhs != this )
-    {
-        m_x_lo = rhs.m_x_lo;
-        m_x_hi = rhs.m_x_hi;
-        m_y_lo = rhs.m_y_lo;
-        m_y_hi = rhs.m_y_hi;
-    }
-    return *this;
+  void operator = (const Subset& rhs) {
+    m_x_lo = rhs.m_x_lo;
+    m_x_hi = rhs.m_x_hi;
+    m_y_lo = rhs.m_y_lo;
+    m_y_hi = rhs.m_y_hi;
   }
 
   int x_lo() const { return m_x_lo; }
@@ -89,6 +87,7 @@ private:
   int m_y_lo;
   int m_y_hi;
 };
+
 
 /************************************************************************/
 /* ==================================================================== */
@@ -118,7 +117,7 @@ protected:
                             int, int *,
                             GSpacing nPixelSpace, GSpacing nLineSpace,
                             GSpacing nBandSpace,
-                            GDALRasterIOExtraArg* psExtraArg) override;
+                            GDALRasterIOExtraArg* psExtraArg);
 
 private:
 
@@ -129,7 +128,7 @@ private:
 
   void clear_array_cache();
 
-  static r_Set<r_Ref_Any> execute(const char* string);
+  r_Set<r_Ref_Any> execute(const char* string);
 
   void getTypes(const r_Base_Type* baseType, int &counter, int pos);
   void createBands(const char* queryString);
@@ -176,6 +175,7 @@ RasdamanDataset::~RasdamanDataset()
   FlushCache();
 }
 
+
 CPLErr RasdamanDataset::IRasterIO( GDALRWFlag eRWFlag,
                                int nXOff, int nYOff, int nXSize, int nYSize,
                                void * pData, int nBufXSize, int nBufYSize,
@@ -211,6 +211,7 @@ CPLErr RasdamanDataset::IRasterIO( GDALRWFlag eRWFlag,
   return ret;
 }
 
+
 r_Ref<r_GMarray>& RasdamanDataset::request_array(int x_lo, int x_hi, int y_lo, int y_hi, int& offsetX, int& offsetY)
 {
   return request_array(Subset(x_lo, x_hi, y_lo, y_hi), offsetX, offsetY);
@@ -218,8 +219,8 @@ r_Ref<r_GMarray>& RasdamanDataset::request_array(int x_lo, int x_hi, int y_lo, i
 
 r_Ref<r_GMarray>& RasdamanDataset::request_array(const Subset& subset, int& offsetX, int& offsetY)
 {
-  offsetX = 0;
-  offsetY = 0;
+  // set the offsets to 0
+  offsetX = 0; offsetY = 0;
 
   // check whether or not the subset was already requested
   ArrayCache::iterator it = m_array_cache.find(subset);
@@ -284,6 +285,7 @@ r_Ref<r_GMarray>& RasdamanDataset::request_array(const Subset& subset, int& offs
   return inserted.first->second;//*(ptr);
 };
 
+
 void RasdamanDataset::clear_array_cache() {
   m_array_cache.clear();
 };
@@ -307,7 +309,7 @@ public:
   RasdamanRasterBand( RasdamanDataset *, int, GDALDataType type, int offset, int size, int nBlockXSize, int nBlockYSize );
   ~RasdamanRasterBand();
 
-  virtual CPLErr IReadBlock( int, int, void * ) override;
+  virtual CPLErr IReadBlock( int, int, void * );
 };
 
 /************************************************************************/
@@ -326,6 +328,7 @@ public:
   const char *username;
   const char *password;
 };*/
+
 
 /************************************************************************/
 /*                           RasdamanRasterBand()                       */
@@ -365,12 +368,11 @@ CPLErr RasdamanRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
   memset(pImage, 0, nRecordSize);
 
   try {
-    int x_lo = nBlockXOff * nBlockXSize;
-    int x_hi = MIN(poGDS->nRasterXSize, (nBlockXOff + 1) * nBlockXSize);
-    int y_lo = nBlockYOff * nBlockYSize;
-    int y_hi = MIN(poGDS->nRasterYSize, (nBlockYOff + 1) * nBlockYSize);
-    int offsetX = 0;
-    int offsetY = 0;
+    int x_lo = nBlockXOff * nBlockXSize,
+        x_hi = MIN(poGDS->nRasterXSize, (nBlockXOff + 1) * nBlockXSize),
+        y_lo = nBlockYOff * nBlockYSize,
+        y_hi = MIN(poGDS->nRasterYSize, (nBlockYOff + 1) * nBlockYSize),
+        offsetX = 0, offsetY = 0;
 
     r_Ref<r_GMarray>& gmdd = poGDS->request_array(x_lo, x_hi, y_lo, y_hi, offsetX, offsetY);
 
@@ -387,13 +389,11 @@ CPLErr RasdamanRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
     CPLDebug("rasdaman", "Extents (%d, %d).", extentX, extentY);
 
     r_Point access = base;
+    char *resultPtr;
 
-    for( int y = y_lo; y < y_hi; ++y )
-    {
-      for( int x = x_lo; x < x_hi; ++x )
-      {
-        char *resultPtr =
-            (char*)pImage + ((y - y_lo) * nBlockXSize + x - x_lo) * typeSize;
+    for(int y = y_lo; y < y_hi; ++y) {
+      for(int x = x_lo; x < x_hi; ++x) {
+        resultPtr = (char*)pImage + ((y - y_lo) * nBlockXSize + x - x_lo) * typeSize;
         //resultPtr = (char*) pImage
         access[xPos] = x;// base[xPos] + offsetX; TODO: check if required
         access[yPos] = y;// base[yPos] + offsetY;
@@ -402,7 +402,7 @@ CPLErr RasdamanRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
       }
     }
   }
-  catch (const r_Error& error) {
+  catch (r_Error error) {
     CPLError(CE_Failure, CPLE_AppDefined, "%s", error.what());
     return CPLGetLastErrorType();
   }
@@ -448,6 +448,7 @@ static void replace(CPLString& str, const char *from, const char *to) {
   }
 }
 
+
 static CPLString getQuery(const char *templateString, const char* x_lo, const char* x_hi, const char* y_lo, const char* y_hi) {
   CPLString result(templateString);
 
@@ -486,15 +487,14 @@ static GDALDataType mapRasdamanTypesToGDAL(r_Type::r_Type_Id typeId) {
 }
 
 void RasdamanDataset::getTypes(const r_Base_Type* baseType, int &counter, int pos) {
-  if (baseType->isStructType())
-  {
+  if (baseType->isStructType()) {
     r_Structure_Type* tp = (r_Structure_Type*) baseType;
     int elem = tp->count_elements();
-    for (int i = 0; i < elem; ++i)
-    {
+    for (int i = 0; i < elem; ++i) {
       r_Attribute attr = (*tp)[i];
       getTypes(&attr.type_of(), counter, attr.global_offset());
     }
+
   }
   if (baseType->isPrimitiveType()) {
     r_Primitive_Type *primType = (r_Primitive_Type*)baseType;
@@ -525,6 +525,7 @@ r_Set<r_Ref_Any> RasdamanDataset::execute(const char* string) {
   return result_set;
 }
 
+
 static int getExtent(const char *queryString, int &pos) {
   r_Set<r_Ref_Any> result_set;
   r_OQL_Query query (queryString);
@@ -550,6 +551,7 @@ static int getExtent(const char *queryString, int &pos) {
   } else
     return -1;
 }
+
 
 /************************************************************************/
 /*                                Open()                                */
@@ -615,6 +617,7 @@ GDALDataset *RasdamanDataset::Open( GDALOpenInfo * poOpenInfo )
   }
 
   regfree(&optionRegEx);
+
 
   // checking if the whole expressions was matches, if not give an error where
   // the matching stopped and exit
@@ -684,7 +687,7 @@ GDALDataset *RasdamanDataset::Open( GDALOpenInfo * poOpenInfo )
     rasDataset->databasename = databasename;
 
     return rasDataset;
-  } catch (const r_Error& error) {
+  } catch (r_Error error) {
     CPLError(CE_Failure, CPLE_AppDefined, "%s", error.what());
     delete rasDataset;
     return NULL;

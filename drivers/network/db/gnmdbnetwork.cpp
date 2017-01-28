@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id$
  *
  * Project:  GDAL/OGR Geography Network support (Geographic Network Model)
  * Purpose:  GNM db based generic driver.
@@ -30,8 +31,6 @@
 
 #include "gnmdb.h"
 #include "gnm_priv.h"
-
-CPL_CVSID("$Id: gnmdbnetwork.cpp 35902 2016-10-24 12:00:50Z goatbar $");
 
 GNMDatabaseNetwork::GNMDatabaseNetwork() : GNMGenericNetwork()
 {
@@ -215,7 +214,7 @@ int GNMDatabaseNetwork::CheckNetworkExist(const char *pszFilename, char **papszO
                                       GDAL_OF_UPDATE, NULL, NULL, papszOptions );
     }
 
-    const bool bOverwrite = CPLFetchBool(papszOptions, "OVERWRITE", false);
+    bool bOverwrite = CPL_TO_BOOL(CSLFetchBoolean(papszOptions, "OVERWRITE", FALSE));
 
     std::vector<int> anDeleteLayers;
     int i;
@@ -236,7 +235,7 @@ int GNMDatabaseNetwork::CheckNetworkExist(const char *pszFilename, char **papszO
     if(anDeleteLayers.empty())
         return FALSE;
 
-    if( bOverwrite )
+    if(bOverwrite)
     {
         for(i = (int)anDeleteLayers.size(); i > 0; i--)
         {
@@ -250,6 +249,8 @@ int GNMDatabaseNetwork::CheckNetworkExist(const char *pszFilename, char **papszO
     {
         return TRUE;
     }
+
+    return FALSE;
 }
 
 CPLErr GNMDatabaseNetwork::DeleteMetadataLayer()
@@ -446,6 +447,7 @@ OGRLayer *GNMDatabaseNetwork::ICreateLayer(const char *pszName,
         CPLError( CE_Failure, CPLE_FileIO, "Creating global identificator field failed." );
         return NULL;
     }
+
 
     OGRFieldDefn oFieldBlock(GNM_SYSFIELD_BLOCKED, OFTInteger);
     if( poLayer->CreateField( &oFieldBlock ) != OGRERR_NONE )

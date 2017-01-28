@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gmlregistry.h 36411 2016-11-21 22:03:48Z rouault $
+ * $Id: gmlregistry.h 33702 2016-03-11 06:20:16Z goatbar $
  *
  * Project:  GML registry
  * Purpose:  GML reader
@@ -66,8 +66,7 @@ class GMLRegistry
     public:
         std::vector<GMLRegistryNamespace> aoNamespaces;
 
-        explicit GMLRegistry(const CPLString& osRegistryPathIn) :
-                                        osRegistryPath(osRegistryPathIn) {}
+        GMLRegistry(const CPLString& osRegistryPathIn) : osRegistryPath(osRegistryPathIn) {}
         int Parse();
 };
 

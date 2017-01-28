@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id$
  *
  * Project:  GDAL Core
  * Purpose:  Read metadata from EROS imagery.
@@ -27,18 +28,7 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "cpl_port.h"
 #include "reader_eros.h"
-
-#include <cstddef>
-#include <cstdio>
-#include <cstdlib>
-
-#include "cpl_conv.h"
-#include "cpl_error.h"
-#include "cpl_string.h"
-
-CPL_CVSID("$Id: reader_eros.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 /**
  * GDALMDReaderEROS()
@@ -110,10 +100,10 @@ GDALMDReaderEROS::GDALMDReaderEROS(const char *pszPath,
         }
     }
 
-    if(!m_osIMDSourceFilename.empty() )
+    if(m_osIMDSourceFilename.size())
         CPLDebug( "MDReaderEROS", "IMD Filename: %s",
               m_osIMDSourceFilename.c_str() );
-    if(!m_osRPBSourceFilename.empty() )
+    if(m_osRPBSourceFilename.size())
         CPLDebug( "MDReaderEROS", "RPB Filename: %s",
               m_osRPBSourceFilename.c_str() );
 }
@@ -219,6 +209,7 @@ void GDALMDReaderEROS::LoadMetadata()
         m_papszIMAGERYMD = CSLAddNameValue(m_papszIMAGERYMD,
                                            MD_NAME_ACQDATETIME, buffer);
     }
+
 }
 
 /**

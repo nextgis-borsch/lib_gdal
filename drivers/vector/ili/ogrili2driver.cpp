@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrili2driver.cpp 33109 2016-01-23 16:25:42Z rouault $
  *
  * Project:  Interlis 2 Translator
  * Purpose:  Implements OGRILI2Layer class.
@@ -32,7 +33,8 @@
 #include "ogr_ili2.h"
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id: ogrili2driver.cpp 35911 2016-10-24 15:03:26Z goatbar $");
+CPL_CVSID("$Id: ogrili2driver.cpp 33109 2016-01-23 16:25:42Z rouault $");
+
 
 /************************************************************************/
 /*                                Open()                                */
@@ -92,6 +94,16 @@ static GDALDataset *OGRILI2DriverCreate( const char * pszName,
 }
 
 /************************************************************************/
+/*                         OGRILI2DriverUnload()                        */
+/************************************************************************/
+
+static void OGRILI2DriverUnload ( GDALDriver* )
+{
+    if( getenv("ILI2_TERMINATE_XERCES") )
+        XMLPlatformUtils::Terminate();
+}
+
+/************************************************************************/
 /*                           RegisterOGRILI2()                           */
 /************************************************************************/
 
@@ -113,6 +125,7 @@ void RegisterOGRILI2() {
 
     poDriver->pfnOpen = OGRILI2DriverOpen;
     poDriver->pfnCreate = OGRILI2DriverCreate;
+    poDriver->pfnUnloadDriver = OGRILI2DriverUnload;
 
     GetGDALDriverManager()->RegisterDriver( poDriver );
 }

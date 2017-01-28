@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: prologue.h 36411 2016-11-21 22:03:48Z rouault $
+ * $Id: prologue.h 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Purpose:  Interface of Prologue class. Parse the prologue of one repeat
  *           cycle and keep the interesting info.
@@ -39,7 +39,7 @@
 class ReferenceGridRecord
 {
 public:
-  explicit ReferenceGridRecord(std::ifstream & ifile);
+  ReferenceGridRecord(std::ifstream & ifile);
 
   int NumberOfLines;
   int NumberOfColumns;
@@ -51,7 +51,7 @@ public:
 class PlannedCoverageVIS_IRRecord
 {
 public:
-  explicit PlannedCoverageVIS_IRRecord(std::ifstream & ifile);
+  PlannedCoverageVIS_IRRecord(std::ifstream & ifile);
 
   int SouthernLinePlanned;
   int NorthernLinePlanned;
@@ -62,7 +62,7 @@ public:
 class PlannedCoverageHRVRecord
 {
 public:
-  explicit PlannedCoverageHRVRecord(std::ifstream & ifile);
+  PlannedCoverageHRVRecord(std::ifstream & ifile);
   int LowerSouthLinePlanned;
   int LowerNorthLinePlanned;
   int LowerEastColumnPlanned;
@@ -75,10 +75,8 @@ public:
 
 class ImageDescriptionRecord
 {
-  CPL_DISALLOW_COPY_ASSIGN( ImageDescriptionRecord )
-
 public:
-  explicit ImageDescriptionRecord(std::ifstream & ifile);
+  ImageDescriptionRecord(std::ifstream & ifile);
   virtual ~ImageDescriptionRecord();
 
   unsigned char TypeOfProjection; // 1 == Geostationary, Earth centered in grid
@@ -95,7 +93,7 @@ public:
 class RadiometricProcessingRecord
 {
 public:
-  explicit RadiometricProcessingRecord(std::ifstream & ifile);
+  RadiometricProcessingRecord(std::ifstream & ifile);
 
   double Cal_Slope [12];
   double Cal_Offset [12];
@@ -122,6 +120,7 @@ public:
 private:
   ImageDescriptionRecord * m_idr;
   RadiometricProcessingRecord * m_rpr;
+
 };
 
 #endif // !defined(AFX_PROLOGUE_H__777B5B86_04F4_4A01_86F6_24615DCD8446__INCLUDED_)

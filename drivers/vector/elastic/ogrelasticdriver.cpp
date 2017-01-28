@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrelasticdriver.cpp 32110 2015-12-10 17:19:40Z goatbar $
  *
  * Project:  ElasticSearch Translator
  * Purpose:
@@ -29,7 +30,7 @@
 #include "ogr_elastic.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrelasticdriver.cpp 36733 2016-12-07 12:56:02Z rouault $");
+CPL_CVSID("$Id: ogrelasticdriver.cpp 32110 2015-12-10 17:19:40Z goatbar $");
 
 /************************************************************************/
 /*                   OGRElasticSearchDriverIdentify()                   */
@@ -107,8 +108,7 @@ void RegisterOGRElastic() {
     "  <Option name='MAPPING_NAME' type='string' description='Name of the mapping type within the index.' default='FeatureCollection'/>"
     "  <Option name='MAPPING' type='string' description='Filename from which to read a user-defined mapping, or mapping as serialized JSon.'/>"
     "  <Option name='WRITE_MAPPING' type='string' description='Filename where to write the OGR generated mapping.'/>"
-    "  <Option name='OVERWRITE' type='boolean' description='Whether to overwrite an existing type mapping with the layer name to be created' default='NO'/>"
-    "  <Option name='OVERWRITE_INDEX' type='boolean' description='Whether to overwrite the whole index to which the layer belongs to' default='NO'/>"
+    "  <Option name='OVERWRITE' type='boolean' description='Whether to overwrite an existing collection with the layer name to be created' default='NO'/>"
     "  <Option name='GEOMETRY_NAME' type='string' description='Name of geometry column.' default='geometry'/>"
     "  <Option name='GEOM_MAPPING_TYPE' type='string-select' description='Mapping type for geometry fields' default='AUTO'>"
     "    <Value>AUTO</Value>"

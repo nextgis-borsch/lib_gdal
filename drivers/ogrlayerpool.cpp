@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrlayerpool.cpp 31925 2015-12-01 15:02:41Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Defines OGRLayerPool and OGRProxiedLayer class
@@ -26,22 +27,20 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#ifndef DOXYGEN_SKIP
-
 #include "ogrlayerpool.h"
 
-CPL_CVSID("$Id: ogrlayerpool.cpp 35910 2016-10-24 14:08:24Z goatbar $");
+CPL_CVSID("$Id: ogrlayerpool.cpp 31925 2015-12-01 15:02:41Z rouault $");
 
 /************************************************************************/
 /*                      OGRAbstractProxiedLayer()                       */
 /************************************************************************/
 
-OGRAbstractProxiedLayer::OGRAbstractProxiedLayer( OGRLayerPool* poPoolIn ) :
+OGRAbstractProxiedLayer::OGRAbstractProxiedLayer(OGRLayerPool* poPoolIn) :
     poPrevLayer(NULL),
-    poNextLayer(NULL),
-    poPool(poPoolIn)
+    poNextLayer(NULL)
 {
     CPLAssert(poPoolIn != NULL);
+    poPool = poPoolIn;
 }
 
 /************************************************************************/
@@ -54,6 +53,8 @@ OGRAbstractProxiedLayer::~OGRAbstractProxiedLayer()
     poPool->UnchainLayer(this);
 }
 
+
+
 /************************************************************************/
 /*                            OGRLayerPool()                            */
 /************************************************************************/
@@ -61,9 +62,10 @@ OGRAbstractProxiedLayer::~OGRAbstractProxiedLayer()
 OGRLayerPool::OGRLayerPool(int nMaxSimultaneouslyOpenedIn) :
     poMRULayer(NULL),
     poLRULayer(NULL),
-    nMRUListSize(0),
-    nMaxSimultaneouslyOpened(nMaxSimultaneouslyOpenedIn)
-{}
+    nMRUListSize(0)
+{
+    nMaxSimultaneouslyOpened = nMaxSimultaneouslyOpenedIn;
+}
 
 /************************************************************************/
 /*                           ~OGRLayerPool()                            */
@@ -146,23 +148,25 @@ void OGRLayerPool::UnchainLayer(OGRAbstractProxiedLayer* poLayer)
     poLayer->poNextLayer = NULL;
 }
 
+
+
 /************************************************************************/
 /*                          OGRProxiedLayer()                           */
 /************************************************************************/
 
-OGRProxiedLayer::OGRProxiedLayer( OGRLayerPool* poPoolIn,
-                                  OpenLayerFunc pfnOpenLayerIn,
-                                  FreeUserDataFunc pfnFreeUserDataIn,
-                                  void* pUserDataIn ) :
-    OGRAbstractProxiedLayer(poPoolIn),
-    pfnOpenLayer(pfnOpenLayerIn),
-    pfnFreeUserData(pfnFreeUserDataIn),
-    pUserData(pUserDataIn),
-    poUnderlyingLayer(NULL),
-    poFeatureDefn(NULL),
-    poSRS(NULL)
+OGRProxiedLayer::OGRProxiedLayer(OGRLayerPool* poPoolIn,
+                                 OpenLayerFunc pfnOpenLayerIn,
+                                 FreeUserDataFunc pfnFreeUserDataIn,
+                                 void* pUserDataIn) : OGRAbstractProxiedLayer(poPoolIn)
 {
     CPLAssert(pfnOpenLayerIn != NULL);
+
+    pfnOpenLayer = pfnOpenLayerIn;
+    pfnFreeUserData = pfnFreeUserDataIn;
+    pUserData = pUserDataIn;
+    poUnderlyingLayer = NULL;
+    poFeatureDefn = NULL;
+    poSRS = NULL;
 }
 
 /************************************************************************/
@@ -578,5 +582,3 @@ OGRErr      OGRProxiedLayer::SetIgnoredFields( const char **papszFields )
     if( poUnderlyingLayer == NULL && !OpenUnderlyingLayer() ) return OGRERR_FAILURE;
     return poUnderlyingLayer->SetIgnoredFields(papszFields);
 }
-
-#endif /* #ifndef DOXYGEN_SKIP */

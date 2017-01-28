@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ograrcgendriver.cpp 32119 2015-12-11 05:47:58Z goatbar $
  *
  * Project:  Arc/Info Generate Translator
  * Purpose:  Implements OGRARCGENDriver.
@@ -29,9 +30,10 @@
 #include "ogr_arcgen.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ograrcgendriver.cpp 35903 2016-10-24 12:09:43Z goatbar $");
+CPL_CVSID("$Id: ograrcgendriver.cpp 32119 2015-12-11 05:47:58Z goatbar $");
 
 extern "C" void RegisterOGRARCGEN();
+
 
 /************************************************************************/
 /*                                Open()                                */
@@ -51,7 +53,7 @@ static GDALDataset *OGRARCGENDriverOpen( GDALOpenInfo* poOpenInfo )
     bool bFoundEOL = false;
     char* szFirstLine
         = CPLStrdup(reinterpret_cast<char *>( poOpenInfo->pabyHeader ) );
-    for( int i = 0; szFirstLine[i] != '\0'; i++ )
+    for(int i=0;szFirstLine[i] != '\0';i++)
     {
         if (szFirstLine[i] == '\n' || szFirstLine[i] == '\r')
         {
@@ -124,3 +126,4 @@ void RegisterOGRARCGEN()
 
     GetGDALDriverManager()->RegisterDriver( poDriver );
 }
+

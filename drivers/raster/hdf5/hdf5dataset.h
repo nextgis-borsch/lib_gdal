@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hdf5dataset.h 36427 2016-11-22 12:56:01Z rouault $
+ * $Id: hdf5dataset.h 31777 2015-11-26 14:14:41Z rouault $
  *
  * Project:  Hierarchical Data Format Release 5 (HDF5)
  * Purpose:  Header file for HDF5 datasets reader.
@@ -52,6 +52,7 @@ typedef struct HDF5GroupObjects {
   struct HDF5GroupObjects *poHchild;
 } HDF5GroupObjects;
 
+
 herr_t HDF5CreateGroupObjs(hid_t, const char *,void *);
 
 /************************************************************************/
@@ -81,20 +82,20 @@ protected:
   char* CreatePath(HDF5GroupObjects *);
   void DestroyH5Objects(HDF5GroupObjects *);
 
-  static GDALDataType GetDataType(hid_t);
-  static const char * GetDataTypeName(hid_t);
+  GDALDataType GetDataType(hid_t);
+  const char * GetDataTypeName(hid_t);
 
   /**
    * Reads an array of double attributes from the HDF5 metadata.
-   * It reads the attributes directly on its binary form directly,
+   * It reads the attributes directly on it's binary form directly,
    * thus avoiding string conversions.
    *
    * Important: It allocates the memory for the attributes internally,
    * so the caller must free the returned array after using it.
    * @param pszAttrName Name of the attribute to be read.
-   *                    the attribute name must be the form:
-   *                                    root attribute name
-   *                                    SUBDATASET/subdataset attribute name
+   * 			the attribute name must be the form:
+   * 					root attribute name
+   * 					SUBDATASET/subdataset attribute name
    * @param pdfValues pointer which will store the array of doubles read.
    * @param nLen it stores the length of the array read. If NULL it doesn't inform
    *        the length of the array.
@@ -104,7 +105,7 @@ protected:
 
 public:
 
-  char             **papszMetadata;
+  char	           **papszMetadata;
   HDF5GroupObjects *poH5CurrentObject;
 
   HDF5Dataset();

@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrgfttablelayer.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  GFT Translator
  * Purpose:  Implements OGRGFTTableLayer class.
@@ -28,38 +29,37 @@
 
 #include "ogr_gft.h"
 
-#include <algorithm>
-
-CPL_CVSID("$Id: ogrgfttablelayer.cpp 36682 2016-12-04 20:34:45Z rouault $");
+CPL_CVSID("$Id: ogrgfttablelayer.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 /************************************************************************/
 /*                         OGRGFTTableLayer()                           */
 /************************************************************************/
 
-OGRGFTTableLayer::OGRGFTTableLayer( OGRGFTDataSource* poDSIn,
-                                    const char* pszTableName,
-                                    const char* pszTableId,
-                                    const char* pszGeomColumnName ) :
-    OGRGFTLayer(poDSIn),
-    osTableName(pszTableName),
-    osTableId(pszTableId),
-    osGeomColumnName(pszGeomColumnName ? pszGeomColumnName : ""),
-    bHasTriedCreateTable(FALSE),
-    bInTransaction(FALSE),
-    nFeaturesInTransaction(0),
-    eGTypeForCreation(wkbUnknown)
+OGRGFTTableLayer::OGRGFTTableLayer(OGRGFTDataSource* poDSIn,
+                         const char* pszTableName,
+                         const char* pszTableId,
+                         const char* pszGeomColumnName) : OGRGFTLayer(poDSIn)
+
 {
+    osTableName = pszTableName;
+    osTableId = pszTableId;
+    osGeomColumnName = pszGeomColumnName ? pszGeomColumnName : "";
+
+    bHasTriedCreateTable = FALSE;
+    bInTransaction = FALSE;
+    nFeaturesInTransaction = 0;
+
     bFirstTokenIsFID = TRUE;
+    eGTypeForCreation = wkbUnknown;
 
     SetDescription( osTableName );
 
-    if( osTableId.empty() )
+    if (osTableId.size() == 0)
     {
         poFeatureDefn = new OGRFeatureDefn( osTableName );
         poFeatureDefn->Reference();
         poFeatureDefn->GetGeomFieldDefn(0)->SetSpatialRef(poSRS);
-        poFeatureDefn->GetGeomFieldDefn(0)->
-            SetName(GetDefaultGeometryColumnName());
+        poFeatureDefn->GetGeomFieldDefn(0)->SetName(GetDefaultGeometryColumnName());
     }
 }
 
@@ -120,7 +120,7 @@ int OGRGFTTableLayer::FetchDescribe()
 
     const CPLString& osAuth = poDS->GetAccessToken();
     std::vector<CPLString> aosHeaderAndFirstDataLine;
-    if (!osAuth.empty() )
+    if (osAuth.size())
     {
         CPLString osSQL("DESCRIBE ");
         osSQL += osTableId;
@@ -155,7 +155,7 @@ int OGRGFTTableLayer::FetchDescribe()
                 else if (EQUAL(papszTokens[2], "datetime"))
                     eType = OFTDateTime;
 
-                if (EQUAL(papszTokens[2], "location") && osGeomColumnName.empty())
+                if (EQUAL(papszTokens[2], "location") && osGeomColumnName.size() == 0)
                 {
                     if (iGeometryField < 0)
                         iGeometryField = poFeatureDefn->GetFieldCount();
@@ -194,7 +194,7 @@ int OGRGFTTableLayer::FetchDescribe()
         }
 
         ParseCSVResponse(pszLine, aosHeaderAndFirstDataLine);
-        if (!aosHeaderAndFirstDataLine.empty())
+        if (aosHeaderAndFirstDataLine.size() > 0)
         {
             char** papszTokens = OGRGFTCSVSplitLine(aosHeaderAndFirstDataLine[0], ',');
             for(int i=0;papszTokens && papszTokens[i];i++)
@@ -209,7 +209,7 @@ int OGRGFTTableLayer::FetchDescribe()
         CPLHTTPDestroyResult(psResult);
     }
 
-    if (!osGeomColumnName.empty())
+    if (osGeomColumnName.size() > 0)
     {
         iGeometryField = poFeatureDefn->GetFieldIndex(osGeomColumnName);
         if (iGeometryField < 0)
@@ -238,10 +238,9 @@ int OGRGFTTableLayer::FetchDescribe()
         poFeatureDefn->GetFieldDefn(iLongitudeField)->SetType(OFTReal);
         poFeatureDefn->SetGeomType( wkbPoint );
     }
-    else if (iGeometryField < 0 && osGeomColumnName.empty())
+    else if (iGeometryField < 0 && osGeomColumnName.size() == 0)
     {
-        iLatitudeField = -1;
-        iLongitudeField = -1;
+        iLatitudeField = iLongitudeField = -1;
 
         /* In the unauthenticated case, we try to parse the first record to */
         /* auto-detect the geometry field. */
@@ -315,7 +314,7 @@ int OGRGFTTableLayer::FetchDescribe()
 
 static CPLString EscapeAndQuote(const char* pszStr)
 {
-    char ch = '\0';
+    char ch;
     CPLString osRes("'");
     while((ch = *pszStr) != 0)
     {
@@ -358,7 +357,7 @@ int OGRGFTTableLayer::FetchNextRows()
     }
     osSQL += " FROM ";
     osSQL += osTableId;
-    if (!osWHERE.empty() )
+    if (osWHERE.size())
     {
         osSQL += " ";
         osSQL += osWHERE;
@@ -389,7 +388,7 @@ int OGRGFTTableLayer::FetchNextRows()
 
     ParseCSVResponse(pszLine, aosRows);
 
-    if (!aosRows.empty())
+    if (aosRows.size() > 0)
         aosRows.erase(aosRows.begin());
 
     if (nFeaturesToFetch > 0)
@@ -468,7 +467,7 @@ OGRFeatureDefn * OGRGFTTableLayer::GetLayerDefn()
 {
     if (poFeatureDefn == NULL)
     {
-        if (osTableId.empty())
+        if (osTableId.size() == 0)
             return NULL;
         FetchDescribe();
     }
@@ -486,7 +485,7 @@ GIntBig OGRGFTTableLayer::GetFeatureCount(CPL_UNUSED int bForce)
 
     CPLString osSQL("SELECT COUNT() FROM ");
     osSQL += osTableId;
-    if (!osWHERE.empty() )
+    if (osWHERE.size())
     {
         osSQL += " ";
         osSQL += osWHERE;
@@ -540,14 +539,14 @@ OGRErr OGRGFTTableLayer::CreateField( OGRFieldDefn *poField,
         return OGRERR_FAILURE;
     }
 
-    if (!osTableId.empty())
+    if (osTableId.size() != 0)
     {
         CPLError(CE_Failure, CPLE_NotSupported,
                  "Cannot add field to already created table");
         return OGRERR_FAILURE;
     }
 
-    if (poDS->GetAccessToken().empty())
+    if (poDS->GetAccessToken().size() == 0)
     {
         CPLError(CE_Failure, CPLE_AppDefined,
                  "Operation not available in unauthenticated mode");
@@ -565,7 +564,7 @@ OGRErr OGRGFTTableLayer::CreateField( OGRFieldDefn *poField,
 
 void OGRGFTTableLayer::CreateTableIfNecessary()
 {
-    if (bHasTriedCreateTable || !osTableId.empty())
+    if (bHasTriedCreateTable || osTableId.size() != 0)
         return;
 
     bHasTriedCreateTable = TRUE;
@@ -702,10 +701,10 @@ OGRErr OGRGFTTableLayer::ICreateFeature( OGRFeature *poFeature )
         return OGRERR_FAILURE;
     }
 
-    if (osTableId.empty())
+    if (osTableId.size() == 0)
     {
         CreateTableIfNecessary();
-        if (osTableId.empty())
+        if (osTableId.size() == 0)
         {
             CPLError(CE_Failure, CPLE_NotSupported,
                     "Cannot add feature to non-created table");
@@ -713,20 +712,22 @@ OGRErr OGRGFTTableLayer::ICreateFeature( OGRFeature *poFeature )
         }
     }
 
-    if (poDS->GetAccessToken().empty())
+    if (poDS->GetAccessToken().size() == 0)
     {
         CPLError(CE_Failure, CPLE_AppDefined,
                  "Operation not available in unauthenticated mode");
         return OGRERR_FAILURE;
     }
 
-    CPLString osCommand = "INSERT INTO ";
+    CPLString      osCommand;
+
+    osCommand += "INSERT INTO ";
     osCommand += osTableId;
     osCommand += " (";
 
-    const int nFieldCount = poFeatureDefn->GetFieldCount();
-    int iField = 0;  // Used after for
-    for( ; iField < nFieldCount; iField++ )
+    int iField;
+    int nFieldCount = poFeatureDefn->GetFieldCount();
+    for(iField = 0; iField < nFieldCount; iField++)
     {
         if (iField > 0)
             osCommand += ", ";
@@ -757,7 +758,7 @@ OGRErr OGRGFTTableLayer::ICreateFeature( OGRFeature *poFeature )
                 osCommand += "''";
             else
             {
-                char* pszKML = NULL;
+                char* pszKML;
                 if (poGeom->getSpatialReference() != NULL &&
                     !poGeom->getSpatialReference()->IsSame(poSRS))
                 {
@@ -886,14 +887,14 @@ OGRErr      OGRGFTTableLayer::ISetFeature( OGRFeature *poFeature )
         return OGRERR_FAILURE;
     }
 
-    if (osTableId.empty())
+    if (osTableId.size() == 0)
     {
         CPLError(CE_Failure, CPLE_NotSupported,
                 "Cannot set feature to non-created table");
         return OGRERR_FAILURE;
     }
 
-    if (poDS->GetAccessToken().empty())
+    if (poDS->GetAccessToken().size() == 0)
     {
         CPLError(CE_Failure, CPLE_AppDefined,
                  "Operation not available in unauthenticated mode");
@@ -907,12 +908,15 @@ OGRErr      OGRGFTTableLayer::ISetFeature( OGRFeature *poFeature )
         return OGRERR_FAILURE;
     }
 
-    CPLString osCommand = "UPDATE ";
+    CPLString      osCommand;
+
+    osCommand += "UPDATE ";
     osCommand += osTableId;
     osCommand += " SET ";
 
-    const int nFieldCount = poFeatureDefn->GetFieldCount();
-    for( int iField = 0; iField < nFieldCount + bHiddenGeometryField; iField++)
+    int iField;
+    int nFieldCount = poFeatureDefn->GetFieldCount();
+    for(iField = 0; iField < nFieldCount + bHiddenGeometryField; iField++)
     {
         if (iField > 0)
             osCommand += ", ";
@@ -938,7 +942,7 @@ OGRErr      OGRGFTTableLayer::ISetFeature( OGRFeature *poFeature )
                 osCommand += "''";
             else
             {
-                char* pszKML = NULL;
+                char* pszKML;
                 if (poGeom->getSpatialReference() != NULL &&
                     !poGeom->getSpatialReference()->IsSame(poSRS))
                 {
@@ -1046,14 +1050,14 @@ OGRErr OGRGFTTableLayer::DeleteFeature( GIntBig nFID )
         return OGRERR_FAILURE;
     }
 
-    if (osTableId.empty())
+    if (osTableId.size() == 0)
     {
         CPLError(CE_Failure, CPLE_NotSupported,
                 "Cannot delete feature in non-created table");
         return OGRERR_FAILURE;
     }
 
-    if (poDS->GetAccessToken().empty())
+    if (poDS->GetAccessToken().size() == 0)
     {
         CPLError(CE_Failure, CPLE_AppDefined,
                  "Operation not available in unauthenticated mode");
@@ -1119,10 +1123,10 @@ OGRErr OGRGFTTableLayer::StartTransaction()
         return OGRERR_FAILURE;
     }
 
-    if (osTableId.empty())
+    if (osTableId.size() == 0)
     {
         CreateTableIfNecessary();
-        if (osTableId.empty())
+        if (osTableId.size() == 0)
         {
             CPLError(CE_Failure, CPLE_NotSupported,
                     "Cannot add feature to non-created table");
@@ -1130,7 +1134,7 @@ OGRErr OGRGFTTableLayer::StartTransaction()
         }
     }
 
-    if (poDS->GetAccessToken().empty())
+    if (poDS->GetAccessToken().size() == 0)
     {
         CPLError(CE_Failure, CPLE_AppDefined,
                  "Operation not available in unauthenticated mode");
@@ -1245,6 +1249,7 @@ OGRErr OGRGFTTableLayer::SetAttributeFilter( const char *pszQuery )
     return OGRERR_NONE;
 }
 
+
 /************************************************************************/
 /*                          SetSpatialFilter()                          */
 /************************************************************************/
@@ -1282,14 +1287,10 @@ void OGRGFTTableLayer::BuildWhere()
 
         CPLString osQuotedGeomColumn(EscapeAndQuote(GetGeometryColumn()));
 
-        osWHERE.Printf(
-            "WHERE ST_INTERSECTS(%s, "
-            "RECTANGLE(LATLNG(%.12f, %.12f), LATLNG(%.12f, %.12f)))",
-            osQuotedGeomColumn.c_str(),
-            std::max(-90.0, sEnvelope.MinY - 1.0e-11),
-            std::max(-180.0, sEnvelope.MinX - 1.0e-11),
-            std::min(90.0, sEnvelope.MaxY + 1.0e-11),
-            std::min(180.0, sEnvelope.MaxX + 1.0e-11));
+        osWHERE.Printf("WHERE ST_INTERSECTS(%s, RECTANGLE(LATLNG(%.12f, %.12f), LATLNG(%.12f, %.12f)))",
+                       osQuotedGeomColumn.c_str(),
+                       MAX(-90.,sEnvelope.MinY - 1e-11), MAX(-180., sEnvelope.MinX - 1e-11),
+                       MIN(90.,sEnvelope.MaxY + 1e-11), MIN(180.,sEnvelope.MaxX + 1e-11));
     }
 
     if( strlen(osQuery) > 0 )

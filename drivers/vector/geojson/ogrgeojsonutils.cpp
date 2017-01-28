@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrgeojsonutils.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implementation of private utilities used within OGR GeoJSON Driver.
@@ -26,26 +27,23 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
-
 #include "ogrgeojsonutils.h"
 #include <cpl_port.h>
 #include <cpl_conv.h>
 #include <ogr_geometry.h>
 #include <json.h> // JSON-C
 
-CPL_CVSID("$Id: ogrgeojsonutils.cpp 35836 2016-10-20 13:57:15Z goatbar $");
-
 /************************************************************************/
 /*                           GeoJSONIsObject()                          */
 /************************************************************************/
 
-bool GeoJSONIsObject( const char* pszText )
+int GeoJSONIsObject( const char* pszText )
 {
     if( NULL == pszText )
-        return false;
+        return FALSE;
 
     /* Skip UTF-8 BOM (#5630) */
-    const GByte* pabyData = reinterpret_cast<const GByte *>(pszText);
+    const GByte* pabyData = (const GByte*)pszText;
     if( pabyData[0] == 0xEF && pabyData[1] == 0xBB && pabyData[2] == 0xBF )
         pszText += 3;
 
@@ -56,7 +54,7 @@ bool GeoJSONIsObject( const char* pszText )
         pszText++;
 
     const char* const apszPrefix[] = { "loadGeoJSON(", "jsonp(" };
-    for( size_t iP = 0; iP < sizeof(apszPrefix) / sizeof(apszPrefix[0]); iP++ )
+    for(size_t iP = 0; iP < sizeof(apszPrefix) / sizeof(apszPrefix[0]); iP++ )
     {
         if( strncmp(pszText, apszPrefix[iP], strlen(apszPrefix[iP])) == 0 )
         {
@@ -66,17 +64,13 @@ bool GeoJSONIsObject( const char* pszText )
     }
 
     if( *pszText != '{' )
-        return false;
+        return FALSE;
 
-    return
-        (strstr(pszText, "\"type\"") != NULL &&
-         strstr(pszText, "\"coordinates\"") != NULL)
-        || (strstr(pszText, "\"type\"") != NULL &&
-            strstr(pszText, "\"Topology\"") != NULL)
+    return ((strstr(pszText, "\"type\"") != NULL && strstr(pszText, "\"coordinates\"") != NULL)
+        || (strstr(pszText, "\"type\"") != NULL && strstr(pszText, "\"Topology\"") != NULL)
         || strstr(pszText, "\"FeatureCollection\"") != NULL
         || strstr(pszText, "\"Feature\"") != NULL
-        || (strstr(pszText, "\"geometryType\"") != NULL &&
-            strstr(pszText, "\"esriGeometry") != NULL);
+        || (strstr(pszText, "\"geometryType\"") != NULL && strstr(pszText, "\"esriGeometry") != NULL));
 }
 
 /************************************************************************/
@@ -86,9 +80,9 @@ bool GeoJSONIsObject( const char* pszText )
 static
 bool GeoJSONFileIsObject( GDALOpenInfo* poOpenInfo )
 {
-    // By default read first 6000 bytes.
+    // by default read first 6000 bytes
     // 6000 was chosen as enough bytes to
-    // enable all current tests to pass.
+    // enable all current tests to pass
 
     if( poOpenInfo->fpL == NULL ||
         !poOpenInfo->TryToIngest(6000) )
@@ -115,8 +109,7 @@ GeoJSONSourceType GeoJSONGetSourceType( GDALOpenInfo* poOpenInfo )
     // NOTE: Sometimes URL ends with .geojson token, for example
     //       http://example/path/2232.geojson
     //       It's important to test beginning of source first.
-    if( eGeoJSONProtocolUnknown !=
-        GeoJSONGetProtocolType( poOpenInfo->pszFilename ) )
+    if ( eGeoJSONProtocolUnknown != GeoJSONGetProtocolType( poOpenInfo->pszFilename ) )
     {
         if( (strstr(poOpenInfo->pszFilename, "SERVICE=WFS") ||
              strstr(poOpenInfo->pszFilename, "service=WFS") ||
@@ -128,12 +121,9 @@ GeoJSONSourceType GeoJSONGetSourceType( GDALOpenInfo* poOpenInfo )
     else if( EQUAL( CPLGetExtension( poOpenInfo->pszFilename ), "geojson" )
              || EQUAL( CPLGetExtension( poOpenInfo->pszFilename ), "json" )
              || EQUAL( CPLGetExtension( poOpenInfo->pszFilename ), "topojson" )
-             || ((STARTS_WITH_CI(poOpenInfo->pszFilename, "/vsigzip/") ||
-                  STARTS_WITH_CI(poOpenInfo->pszFilename, "/vsizip/")) &&
-                 (strstr( poOpenInfo->pszFilename, ".json") ||
-                  strstr( poOpenInfo->pszFilename, ".JSON") ||
-                  strstr( poOpenInfo->pszFilename, ".geojson") ||
-                  strstr( poOpenInfo->pszFilename, ".GEOJSON")) ))
+             || ((STARTS_WITH_CI(poOpenInfo->pszFilename, "/vsigzip/") || STARTS_WITH_CI(poOpenInfo->pszFilename, "/vsizip/")) &&
+                 (strstr( poOpenInfo->pszFilename, ".json") || strstr( poOpenInfo->pszFilename, ".JSON") ||
+                  strstr( poOpenInfo->pszFilename, ".geojson") || strstr( poOpenInfo->pszFilename, ".GEOJSON")) ))
     {
         if( poOpenInfo->fpL != NULL )
             srcType = eGeoJSONSourceFile;
@@ -172,8 +162,8 @@ GeoJSONProtocolType GeoJSONGetProtocolType( const char* pszSource )
 /*                           GeoJSONPropertyToFieldType()               */
 /************************************************************************/
 
-static const GIntBig MY_INT64_MAX = (((GIntBig)0x7FFFFFFF) << 32) | 0xFFFFFFFF;
-static const GIntBig MY_INT64_MIN = ((GIntBig)0x80000000) << 32;
+#define MY_INT64_MAX ((((GIntBig)0x7FFFFFFF) << 32) | 0xFFFFFFFF)
+#define MY_INT64_MIN ((((GIntBig)0x80000000) << 32))
 
 OGRFieldType GeoJSONPropertyToFieldType( json_object* poObject,
                                          OGRFieldSubType& eSubType,
@@ -181,7 +171,7 @@ OGRFieldType GeoJSONPropertyToFieldType( json_object* poObject,
 {
     eSubType = OFSTNone;
 
-    if( poObject == NULL ) { return OFTString; }
+    if (poObject == NULL) { return OFTString; }
 
     json_type type = json_object_get_type( poObject );
 
@@ -203,11 +193,9 @@ OGRFieldType GeoJSONPropertyToFieldType( json_object* poObject,
                 if( !bWarned )
                 {
                     bWarned = true;
-                    CPLError(
-                        CE_Warning, CPLE_AppDefined,
-                        "Integer values probably ranging out of 64bit integer "
-                        "range have been found. Will be clamped to "
-                        "INT64_MIN/INT64_MAX");
+                    CPLError(CE_Warning, CPLE_AppDefined,
+                             "Integer values probably ranging out of 64bit integer range "
+                             "have been found. Will be clamped to INT64_MIN/INT64_MAX");
                 }
             }
             return OFTInteger64;
@@ -223,42 +211,40 @@ OGRFieldType GeoJSONPropertyToFieldType( json_object* poObject,
     {
         if( bArrayAsString )
             return OFTString;
-        const int nSize = json_object_array_length(poObject);
-        if( nSize == 0 )
-            // We don't know, so let's assume it's a string list.
-            return OFTStringList;
+        int nSize = json_object_array_length(poObject);
+        if (nSize == 0)
+            return OFTStringList; /* we don't know, so let's assume it's a string list */
         OGRFieldType eType = OFTIntegerList;
-        bool bOnlyBoolean = true;
-        for( int i = 0; i < nSize; i++ )
+        int bOnlyBoolean = TRUE;
+        for(int i=0;i<nSize;i++)
         {
             json_object* poRow = json_object_array_get_idx(poObject, i);
-            if( poRow != NULL )
+            if (poRow != NULL)
             {
                 type = json_object_get_type( poRow );
-                bOnlyBoolean &= type == json_type_boolean;
-                if( type == json_type_string )
+                bOnlyBoolean &= (type == json_type_boolean);
+                if (type == json_type_string)
                     return OFTStringList;
-                else if( type == json_type_double )
+                else if (type == json_type_double)
                     eType = OFTRealList;
-                else if( eType == OFTIntegerList &&
-                         type == json_type_int )
+                else if (eType == OFTIntegerList &&
+                         type == json_type_int)
                 {
                     GIntBig nVal = json_object_get_int64(poRow);
                     if( !CPL_INT64_FITS_ON_INT32(nVal) )
                         eType = OFTInteger64List;
                 }
-                else if( type != json_type_int &&
-                         type != json_type_boolean )
+                else if (type != json_type_int &&
+                         type != json_type_boolean)
                     return OFTString;
             }
         }
         if( bOnlyBoolean )
             eSubType = OFSTBoolean;
-
         return eType;
     }
-
-    return OFTString; // null, object
+    else
+        return OFTString; /* null, object */
 }
 
 /************************************************************************/
@@ -267,7 +253,7 @@ OGRFieldType GeoJSONPropertyToFieldType( json_object* poObject,
 
 OGRFieldType GeoJSONStringPropertyToFieldType( json_object* poObject )
 {
-    if( poObject == NULL ) { return OFTString; }
+    if (poObject == NULL) { return OFTString; }
     const char* pszStr = json_object_get_string( poObject );
 
     OGRField sWrkField;
@@ -277,10 +263,9 @@ OGRFieldType GeoJSONStringPropertyToFieldType( json_object* poObject )
     CPLErrorReset();
     if( bSuccess )
     {
-        const bool bHasDate =
-            strchr( pszStr, '/' ) != NULL ||
+        const bool bHasDate = strchr( pszStr, '/' ) != NULL ||
             strchr( pszStr, '-' ) != NULL;
-        const bool bHasTime = strchr( pszStr, ':' ) != NULL;
+        const bool  bHasTime = strchr( pszStr, ':' ) != NULL;
         if( bHasDate && bHasTime )
             return OFTDateTime;
         else if( bHasDate )
@@ -314,8 +299,7 @@ const char* OGRGeoJSONGetGeometryName( OGRGeometry const* poGeometry )
         return "MultiLineString";
     else if( wkbMultiPolygon == eType || wkbMultiPolygon25D == eType )
         return "MultiPolygon";
-    else if( wkbGeometryCollection == eType ||
-             wkbGeometryCollection25D == eType )
+    else if( wkbGeometryCollection == eType || wkbGeometryCollection25D == eType )
         return "GeometryCollection";
 
     return "Unknown";

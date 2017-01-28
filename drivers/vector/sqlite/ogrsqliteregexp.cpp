@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrsqliteregexp.cpp 32982 2016-01-14 16:53:57Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  SQLite REGEXP function
@@ -45,6 +46,7 @@
  * commercial or non-commercial, and by any means.
  */
 
+
 #include "ogrsqliteregexp.h"
 
 #ifdef HAVE_PCRE
@@ -57,19 +59,24 @@ typedef struct {
     pcre_extra *e;
 } cache_entry;
 
-static const int CACHE_SIZE = 16;
+#ifndef CACHE_SIZE
+#define CACHE_SIZE 16
+#endif
 
 /************************************************************************/
 /*                         OGRSQLiteREGEXPFunction()                    */
 /************************************************************************/
 
 static
-void OGRSQLiteREGEXPFunction( sqlite3_context *ctx,
-                              CPL_UNUSED int argc, sqlite3_value **argv )
+void OGRSQLiteREGEXPFunction(sqlite3_context *ctx, CPL_UNUSED int argc, sqlite3_value **argv)
 {
+    const char *re, *str;
+    pcre *p;
+    pcre_extra *e;
+
     CPLAssert(argc == 2);
 
-    const char *re = (const char *) sqlite3_value_text(argv[0]);
+    re = (const char *) sqlite3_value_text(argv[0]);
     if (!re) {
         sqlite3_result_error(ctx, "no regexp", -1);
         return;
@@ -81,29 +88,30 @@ void OGRSQLiteREGEXPFunction( sqlite3_context *ctx,
         return;
     }
 
-    const char *str = (const char *) sqlite3_value_text(argv[1]);
+    str = (const char *) sqlite3_value_text(argv[1]);
     if (!str) {
         sqlite3_result_error(ctx, "no string", -1);
         return;
     }
 
     /* simple LRU cache */
+    int i;
+    int found = 0;
     cache_entry *cache = (cache_entry*) sqlite3_user_data(ctx);
+
     CPLAssert(cache);
 
-    bool found = false;
-    int i = 0;  // Used after for.
-    for( ; i < CACHE_SIZE && cache[i].s; i++ )
+    for (i = 0; i < CACHE_SIZE && cache[i].s; i++)
     {
         if (strcmp(re, cache[i].s) == 0) {
-            found = true;
+            found = 1;
             break;
         }
     }
 
-    if( found )
+    if (found)
     {
-        if( i > 0 )
+        if (i > 0)
         {
             cache_entry c = cache[i];
             memmove(cache + 1, cache, i * sizeof(cache_entry));
@@ -113,8 +121,8 @@ void OGRSQLiteREGEXPFunction( sqlite3_context *ctx,
     else
     {
         cache_entry c;
-        const char *err = NULL;
-        int pos = 0;
+        const char *err;
+        int pos;
         c.p = pcre_compile(re, 0, &err, &pos, NULL);
         if (!c.p)
         {
@@ -143,11 +151,12 @@ void OGRSQLiteREGEXPFunction( sqlite3_context *ctx,
         memmove(cache + 1, cache, i * sizeof(cache_entry));
         cache[0] = c;
     }
-    pcre *p = cache[0].p;
-    CPLAssert(p);
-    pcre_extra *e = cache[0].e;
+    p = cache[0].p;
+    e = cache[0].e;
 
-    int rc = pcre_exec(p, e, str, static_cast<int>(strlen(str)), 0, 0, NULL, 0);
+    int rc;
+    CPLAssert(p);
+    rc = pcre_exec(p, e, str, static_cast<int>(strlen(str)), 0, 0, NULL, 0);
     sqlite3_result_int(ctx, rc >= 0);
 }
 
@@ -207,7 +216,8 @@ void OGRSQLiteFreeRegExpCache(void*
         return;
 
     cache_entry *cache = (cache_entry*) hRegExpCache;
-    for( int i = 0; i < CACHE_SIZE && cache[i].s; i++ )
+    int i;
+    for (i = 0; i < CACHE_SIZE && cache[i].s; i++)
     {
         CPLFree(cache[i].s);
         CPLAssert(cache[i].p);

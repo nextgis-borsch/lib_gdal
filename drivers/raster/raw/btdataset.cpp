@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: btdataset.cpp 34979 2016-08-08 09:30:34Z rouault $
  *
  * Project:  VTP .bt Driver
  * Purpose:  Implementation of VTP .bt elevation format read/write support.
@@ -31,10 +32,8 @@
 #include "gdal_frmts.h"
 #include "ogr_spatialref.h"
 #include "rawdataset.h"
-#include <cmath>
-#include <cstdlib>
 
-CPL_CVSID("$Id: btdataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
+CPL_CVSID("$Id: btdataset.cpp 34979 2016-08-08 09:30:34Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -61,15 +60,16 @@ class BTDataset : public GDALPamDataset
     float        m_fVscale;
 
   public:
-             BTDataset();
+
+                BTDataset();
     virtual ~BTDataset();
 
-    virtual const char *GetProjectionRef(void) override;
-    virtual CPLErr SetProjection( const char * ) override;
-    virtual CPLErr GetGeoTransform( double * ) override;
-    virtual CPLErr SetGeoTransform( double * ) override;
+    virtual const char *GetProjectionRef(void);
+    virtual CPLErr SetProjection( const char * );
+    virtual CPLErr GetGeoTransform( double * );
+    virtual CPLErr SetGeoTransform( double * );
 
-    virtual void   FlushCache() override;
+    virtual void   FlushCache();
 
     static GDALDataset *Open( GDALOpenInfo * );
     static GDALDataset *Create( const char * pszFilename,
@@ -92,13 +92,13 @@ class BTRasterBand : public GDALPamRasterBand
                                  GDALDataType eType );
     virtual ~BTRasterBand() {}
 
-    virtual CPLErr IReadBlock( int, int, void * ) override;
-    virtual CPLErr IWriteBlock( int, int, void * ) override;
+    virtual CPLErr IReadBlock( int, int, void * );
+    virtual CPLErr IWriteBlock( int, int, void * );
 
-    virtual const char* GetUnitType() override;
-    virtual CPLErr SetUnitType(const char*) override;
-    virtual double GetNoDataValue( int* = NULL ) override;
-    virtual CPLErr SetNoDataValue( double ) override;
+    virtual const char* GetUnitType();
+    virtual CPLErr SetUnitType(const char*);
+    virtual double GetNoDataValue( int* = NULL );
+    virtual CPLErr SetNoDataValue( double );
 };
 
 /************************************************************************/
@@ -248,6 +248,7 @@ CPLErr BTRasterBand::IWriteBlock( int nBlockXOff,
     return CE_None;
 }
 
+
 double BTRasterBand::GetNoDataValue( int* pbSuccess /*= NULL */ )
 {
     if(pbSuccess != NULL)
@@ -266,10 +267,10 @@ CPLErr BTRasterBand::SetNoDataValue( double )
 /*                            GetUnitType()                             */
 /************************************************************************/
 
-static bool approx_equals( float a, float b )
+static bool approx_equals(float a, float b)
 {
-    const float epsilon = 1e-5f;
-    return fabs(a - b) <= epsilon;
+    const float epsilon = (float)1e-5;
+    return fabs(a-b) <= epsilon;
 }
 
 const char* BTRasterBand::GetUnitType(void)
@@ -308,6 +309,7 @@ CPLErr BTRasterBand::SetUnitType(const char* psz)
     else
         return CE_Failure;
 
+
     float fScale = ds.m_fVscale;
 
     CPL_LSBPTR32(&fScale);
@@ -343,7 +345,6 @@ BTDataset::BTDataset() :
     adfGeoTransform[3] = 0.0;
     adfGeoTransform[4] = 0.0;
     adfGeoTransform[5] = 1.0;
-    memset( abyHeader, 0, sizeof(abyHeader) );
 }
 
 /************************************************************************/
@@ -412,18 +413,19 @@ CPLErr BTDataset::SetGeoTransform( double *padfTransform )
     if( adfGeoTransform[2] != 0.0 || adfGeoTransform[4] != 0.0 )
     {
         CPLError( CE_Failure, CPLE_AppDefined,
-                  ".bt format does not support rotational coefficients "
-                  "in geotransform, ignoring." );
+                  ".bt format does not support rotational coefficients in geotransform, ignoring." );
         eErr = CE_Failure;
     }
 
 /* -------------------------------------------------------------------- */
 /*      Compute bounds, and update header info.                         */
 /* -------------------------------------------------------------------- */
-    const double dfLeft = adfGeoTransform[0];
-    const double dfRight = dfLeft + adfGeoTransform[1] * nRasterXSize;
-    const double dfTop = adfGeoTransform[3];
-    const double dfBottom = dfTop + adfGeoTransform[5] * nRasterYSize;
+    double dfLeft, dfRight, dfTop, dfBottom;
+
+    dfLeft = adfGeoTransform[0];
+    dfRight = dfLeft + adfGeoTransform[1] * nRasterXSize;
+    dfTop = adfGeoTransform[3];
+    dfBottom = dfTop + adfGeoTransform[5] * nRasterYSize;
 
     memcpy( abyHeader + 28, &dfLeft, 8 );
     memcpy( abyHeader + 36, &dfRight, 8 );
@@ -471,23 +473,20 @@ CPLErr BTDataset::SetProjection( const char *pszNewProjection )
 /*      Parse projection.                                               */
 /* -------------------------------------------------------------------- */
     OGRSpatialReference oSRS( pszProjection );
-    GInt16  nShortTemp = 0;
+    GInt16  nShortTemp;
 
 /* -------------------------------------------------------------------- */
 /*      Linear units.                                                   */
 /* -------------------------------------------------------------------- */
     if( oSRS.IsGeographic() )
-    {
-        // nShortTemp = 0;
-    }
+        nShortTemp = 0;
     else
     {
-        const double dfLinear = oSRS.GetLinearUnits();
+        double dfLinear = oSRS.GetLinearUnits();
 
-        if( std::abs(dfLinear - 0.3048) < 0.0000001 )
+        if( ABS(dfLinear - 0.3048) < 0.0000001 )
             nShortTemp = 2;
-        else if( std::abs(dfLinear - CPLAtof(SRS_UL_US_FOOT_CONV))
-                 < 0.00000001 )
+        else if( ABS(dfLinear - CPLAtof(SRS_UL_US_FOOT_CONV)) < 0.00000001 )
             nShortTemp = 3;
         else
             nShortTemp = 1;
@@ -499,7 +498,7 @@ CPLErr BTDataset::SetProjection( const char *pszNewProjection )
 /* -------------------------------------------------------------------- */
 /*      UTM Zone                                                        */
 /* -------------------------------------------------------------------- */
-    int bNorth = FALSE;
+    int bNorth;
 
     nShortTemp = (GInt16) oSRS.GetUTMZone( &bNorth );
     if( bNorth )
@@ -513,8 +512,7 @@ CPLErr BTDataset::SetProjection( const char *pszNewProjection )
 /* -------------------------------------------------------------------- */
     if( oSRS.GetAuthorityName( "GEOGCS|DATUM" ) != NULL
         && EQUAL(oSRS.GetAuthorityName( "GEOGCS|DATUM" ),"EPSG") )
-        nShortTemp = static_cast<GInt16>(
-            atoi(oSRS.GetAuthorityCode( "GEOGCS|DATUM" )) + 2000);
+        nShortTemp = (GInt16) (atoi(oSRS.GetAuthorityCode( "GEOGCS|DATUM" )) + 2000);
     else
         nShortTemp = -2;
     nShortTemp = CPL_LSBWORD16( nShortTemp ); /* datum unknown */
@@ -541,6 +539,7 @@ CPLErr BTDataset::SetProjection( const char *pszNewProjection )
     return eErr;
 }
 
+
 /************************************************************************/
 /*                                Open()                                */
 /************************************************************************/
@@ -560,42 +559,42 @@ GDALDataset *BTDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Create the dataset.                                             */
 /* -------------------------------------------------------------------- */
-    BTDataset *poDS = new BTDataset();
+    BTDataset  *poDS = new BTDataset();
 
     memcpy( poDS->abyHeader, poOpenInfo->pabyHeader, 256 );
 
 /* -------------------------------------------------------------------- */
 /*      Get the version.                                                */
 /* -------------------------------------------------------------------- */
-    char szVersion[4] = {};
+    char szVersion[4];
 
     strncpy( szVersion, (char *) (poDS->abyHeader + 7), 3 );
     szVersion[3] = '\0';
-    poDS->nVersionCode = static_cast<int>(CPLAtof(szVersion) * 10);
+    poDS->nVersionCode = (int) (CPLAtof(szVersion) * 10);
 
 /* -------------------------------------------------------------------- */
 /*      Extract core header information, being careful about the        */
 /*      version.                                                        */
 /* -------------------------------------------------------------------- */
+    GInt32 nIntTemp;
+    GInt16 nDataSize;
+    GDALDataType eType;
 
-    GInt32 nIntTemp = 0;
     memcpy( &nIntTemp, poDS->abyHeader + 10, 4 );
     poDS->nRasterXSize = CPL_LSBWORD32( nIntTemp );
 
     memcpy( &nIntTemp, poDS->abyHeader + 14, 4 );
     poDS->nRasterYSize = CPL_LSBWORD32( nIntTemp );
 
-    if( !GDALCheckDatasetDimensions(poDS->nRasterXSize, poDS->nRasterYSize) )
+    if (!GDALCheckDatasetDimensions(poDS->nRasterXSize, poDS->nRasterYSize))
     {
         delete poDS;
         return NULL;
     }
 
-    GInt16 nDataSize = 0;
     memcpy( &nDataSize, poDS->abyHeader+18, 2 );
     nDataSize = CPL_LSBWORD16( nDataSize );
 
-    GDALDataType eType = GDT_Unknown;
     if( poDS->abyHeader[20] != 0 && nDataSize == 4 )
         eType = GDT_Float32;
     else if( poDS->abyHeader[20] == 0 && nDataSize == 4 )
@@ -630,24 +629,26 @@ GDALDataset *BTDataset::Open( GDALOpenInfo * poOpenInfo )
     {
         const char  *pszPrjFile = CPLResetExtension( poOpenInfo->pszFilename,
                                                      "prj" );
-        VSILFILE *fp = VSIFOpenL( pszPrjFile, "rt" );
+        VSILFILE *fp;
+
+        fp = VSIFOpenL( pszPrjFile, "rt" );
         if( fp != NULL )
         {
-            const int nBufMax = 10000;
+            char *pszBuffer, *pszBufPtr;
+            int  nBufMax = 10000;
+            int nBytes;
 
-            char *pszBuffer = static_cast<char *>(CPLMalloc(nBufMax));
-            const int nBytes =
-                static_cast<int>(VSIFReadL( pszBuffer, 1, nBufMax-1, fp ));
+            pszBuffer = (char *) CPLMalloc(nBufMax);
+            nBytes = static_cast<int>(VSIFReadL( pszBuffer, 1, nBufMax-1, fp ));
             CPL_IGNORE_RET_VAL(VSIFCloseL( fp ));
 
             pszBuffer[nBytes] = '\0';
 
-            char *pszBufPtr = pszBuffer;
+            pszBufPtr = pszBuffer;
             if( oSRS.importFromWkt( &pszBufPtr ) != OGRERR_NONE )
             {
                 CPLError( CE_Warning, CPLE_AppDefined,
-                          "Unable to parse .prj file, "
-                          "coordinate system missing." );
+                          "Unable to parse .prj file, coordinate system missing." );
             }
             CPLFree( pszBuffer );
         }
@@ -658,20 +659,19 @@ GDALDataset *BTDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     if( oSRS.GetRoot() == NULL )
     {
-        GInt16 nUTMZone = 0;
+        GInt16 nUTMZone, nDatum, nHUnits;
+
         memcpy( &nUTMZone, poDS->abyHeader + 24, 2 );
         nUTMZone = CPL_LSBWORD16( nUTMZone );
 
-        GInt16 nDatum = 0;
         memcpy( &nDatum, poDS->abyHeader + 26, 2 );
         nDatum = CPL_LSBWORD16( nDatum );
 
-        GInt16 nHUnits = 0;
         memcpy( &nHUnits, poDS->abyHeader + 22, 2 );
         nHUnits = CPL_LSBWORD16( nHUnits );
 
         if( nUTMZone != 0 )
-            oSRS.SetUTM( std::abs(static_cast<int>(nUTMZone)), nUTMZone > 0 );
+            oSRS.SetUTM( ABS(nUTMZone), nUTMZone > 0 );
         else if( nHUnits != 0 )
             oSRS.SetLocalCS( "Unknown" );
 
@@ -736,19 +736,17 @@ GDALDataset *BTDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     if( poDS->nVersionCode >= 11 )
     {
-        double dfLeft = 0.0;
+        double dfLeft, dfRight, dfTop, dfBottom;
+
         memcpy( &dfLeft, poDS->abyHeader + 28, 8 );
         CPL_LSBPTR64( &dfLeft );
 
-        double dfRight = 0.0;
         memcpy( &dfRight, poDS->abyHeader + 36, 8 );
         CPL_LSBPTR64( &dfRight );
 
-        double dfBottom = 0.0;
         memcpy( &dfBottom, poDS->abyHeader + 44, 8 );
         CPL_LSBPTR64( &dfBottom );
 
-        double dfTop = 0.0;
         memcpy( &dfTop, poDS->abyHeader + 52, 8 );
         CPL_LSBPTR64( &dfTop );
 
@@ -824,8 +822,8 @@ GDALDataset *BTDataset::Create( const char * pszFilename,
     if( eType != GDT_Int16 && eType != GDT_Int32 && eType != GDT_Float32 )
     {
         CPLError( CE_Failure, CPLE_AppDefined,
-              "Attempt to create .bt dataset with an illegal "
-              "data type (%s), only Int16, Int32 and Float32 supported.",
+              "Attempt to create .bt dataset with an illegal\n"
+              "data type (%s), only Int16, Int32 and Float32 supported.\n",
               GDALGetDataTypeName(eType) );
 
         return NULL;
@@ -833,10 +831,9 @@ GDALDataset *BTDataset::Create( const char * pszFilename,
 
     if( nBands != 1 )
     {
-        CPLError(
-            CE_Failure, CPLE_AppDefined,
-            "Attempt to create .bt dataset with %d bands, only 1 supported",
-            nBands );
+        CPLError( CE_Failure, CPLE_AppDefined,
+               "Attempt to create .bt dataset with %d bands, only 1 supported",
+                  nBands );
 
         return NULL;
     }
@@ -849,7 +846,7 @@ GDALDataset *BTDataset::Create( const char * pszFilename,
     if( fp == NULL )
     {
         CPLError( CE_Failure, CPLE_OpenFailed,
-                  "Attempt to create file `%s' failed.",
+                  "Attempt to create file `%s' failed.\n",
                   pszFilename );
         return NULL;
     }
@@ -857,18 +854,20 @@ GDALDataset *BTDataset::Create( const char * pszFilename,
 /* -------------------------------------------------------------------- */
 /*      Setup base header.                                              */
 /* -------------------------------------------------------------------- */
-    unsigned char abyHeader[256] = {};
+    unsigned char abyHeader[256];
+    GInt32 nTemp;
+    GInt16 nShortTemp;
 
+    memset( abyHeader, 0, 256 );
     memcpy( abyHeader, "binterr1.3", 10 );
 
-    GInt32 nTemp = CPL_LSBWORD32( nXSize );
+    nTemp = CPL_LSBWORD32( nXSize );
     memcpy( abyHeader+10, &nTemp, 4 );
 
     nTemp = CPL_LSBWORD32( nYSize );
     memcpy( abyHeader+14, &nTemp, 4 );
 
-    GInt16 nShortTemp = static_cast<GInt16>(
-         CPL_LSBWORD16( (GInt16)(GDALGetDataTypeSize( eType ) / 8 )) );
+    nShortTemp = (GInt16) (CPL_LSBWORD16( (GInt16)(GDALGetDataTypeSize( eType ) / 8 )) );
     memcpy( abyHeader + 18, &nShortTemp, 2 );
 
     if( eType == GDT_Float32 )
@@ -888,10 +887,7 @@ GDALDataset *BTDataset::Create( const char * pszFilename,
 /* -------------------------------------------------------------------- */
 /*      Set dummy extents.                                              */
 /* -------------------------------------------------------------------- */
-    double dfLeft = 0.0;
-    double dfRight = nXSize;
-    double dfTop = nYSize;
-    double dfBottom = 0.0;
+    double dfLeft=0, dfRight=nXSize, dfTop=nYSize, dfBottom=0;
 
     memcpy( abyHeader + 28, &dfLeft, 8 );
     memcpy( abyHeader + 36, &dfRight, 8 );

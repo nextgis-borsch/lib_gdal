@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ngsgeoiddataset.cpp 32538 2015-12-30 13:12:08Z rouault $
  *
  * Project:  NGSGEOID driver
  * Purpose:  GDALDataset driver for NGSGEOID dataset.
@@ -32,7 +33,7 @@
 #include "gdal_pam.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id: ngsgeoiddataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
+CPL_CVSID("$Id: ngsgeoiddataset.cpp 32538 2015-12-30 13:12:08Z rouault $");
 
 #define HEADER_SIZE (4 * 8 + 3 * 4)
 
@@ -62,8 +63,8 @@ class NGSGEOIDDataset : public GDALPamDataset
                  NGSGEOIDDataset();
     virtual     ~NGSGEOIDDataset();
 
-    virtual CPLErr GetGeoTransform( double * ) override;
-    virtual const char* GetProjectionRef() override;
+    virtual CPLErr GetGeoTransform( double * );
+    virtual const char* GetProjectionRef();
 
     static GDALDataset *Open( GDALOpenInfo * );
     static int          Identify( GDALOpenInfo * );
@@ -80,11 +81,14 @@ class NGSGEOIDRasterBand : public GDALPamRasterBand
     friend class NGSGEOIDDataset;
 
   public:
+
                 explicit NGSGEOIDRasterBand( NGSGEOIDDataset * );
 
-    virtual CPLErr IReadBlock( int, int, void * ) override;
-    virtual const char* GetUnitType() override { return "m"; }
+    virtual CPLErr IReadBlock( int, int, void * );
+
+    virtual const char* GetUnitType() { return "m"; }
 };
+
 
 /************************************************************************/
 /*                        NGSGEOIDRasterBand()                          */
@@ -93,8 +97,8 @@ class NGSGEOIDRasterBand : public GDALPamRasterBand
 NGSGEOIDRasterBand::NGSGEOIDRasterBand( NGSGEOIDDataset *poDSIn )
 
 {
-    poDS = poDSIn;
-    nBand = 1;
+    this->poDS = poDSIn;
+    this->nBand = 1;
 
     eDataType = GDT_Float32;
 
@@ -317,6 +321,7 @@ int NGSGEOIDDataset::Identify( GDALOpenInfo * poOpenInfo )
     return TRUE;
 }
 
+
 /************************************************************************/
 /*                                Open()                                */
 /************************************************************************/
@@ -370,7 +375,7 @@ GDALDataset *NGSGEOIDDataset::Open( GDALOpenInfo * poOpenInfo )
 /*      Support overviews.                                              */
 /* -------------------------------------------------------------------- */
     poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
-    return poDS;
+    return( poDS );
 }
 
 /************************************************************************/
@@ -382,7 +387,7 @@ CPLErr NGSGEOIDDataset::GetGeoTransform( double * padfTransform )
 {
     memcpy(padfTransform, adfGeoTransform, 6 * sizeof(double));
 
-    return CE_None;
+    return( CE_None );
 }
 
 /************************************************************************/

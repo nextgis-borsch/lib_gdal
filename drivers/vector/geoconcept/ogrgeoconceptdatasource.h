@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: ogrgeoconceptdatasource.h$
+ * $Id: ogrgeoconceptdatasource.h
  *
  * Name:     ogrgeoconceptdatasource.h
  * Project:  OpenGIS Simple Features Reference Implementation
@@ -59,16 +59,16 @@ class OGRGeoconceptDataSource : public OGRDataSource
     int            Open( const char* pszName, bool bTestOpen, bool bUpdate );
     int            Create( const char* pszName, char** papszOptions );
 
-    const char*    GetName() override { return _pszName; }
-    int            GetLayerCount() override { return _nLayers; }
-    OGRLayer*      GetLayer( int iLayer ) override;
+    const char*    GetName() { return _pszName; }
+    int            GetLayerCount() { return _nLayers; }
+    OGRLayer*      GetLayer( int iLayer );
 //    OGRErr         DeleteLayer( int iLayer );
-    int            TestCapability( const char* pszCap ) override;
+    int            TestCapability( const char* pszCap );
 
     OGRLayer*      ICreateLayer( const char* pszName,
                                 OGRSpatialReference* poSpatialRef = NULL,
                                 OGRwkbGeometryType eGType = wkbUnknown,
-                                char** papszOptions = NULL ) override;
+                                char** papszOptions = NULL );
   private:
     int            LoadFile( const char * );
 };

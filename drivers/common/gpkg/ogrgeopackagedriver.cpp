@@ -28,9 +28,10 @@
 
 #include "ogr_geopackage.h"
 
-CPL_CVSID("$Id: ogrgeopackagedriver.cpp 35911 2016-10-24 15:03:26Z goatbar $");
+CPL_CVSID("$Id: ogrgeopackagedriver.cpp 34819 2016-07-28 22:32:18Z goatbar $");
 
 // g++ -g -Wall -fPIC -shared -o ogr_geopackage.so -Iport -Igcore -Iogr -Iogr/ogrsf_frmts -Iogr/ogrsf_frmts/gpkg ogr/ogrsf_frmts/gpkg/*.c* -L. -lgdal
+
 
 /* "GP10" in ASCII bytes */
 static const char aGpkgId[4] = {0x47, 0x50, 0x31, 0x30};
@@ -39,6 +40,7 @@ static const char aGpkgId[4] = {0x47, 0x50, 0x31, 0x30};
 /************************************************************************/
 /*                       OGRGeoPackageDriverIdentify()                  */
 /************************************************************************/
+
 
 static int OGRGeoPackageDriverIdentify( GDALOpenInfo* poOpenInfo, bool bEmitWarning )
 {

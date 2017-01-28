@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: avc_e00gen.c 36380 2016-11-21 10:21:20Z rouault $
+ * $Id: avc_e00gen.c,v 1.18 2008/07/23 20:51:38 dmorissette Exp $
  *
  * Name:     avc_e00gen.c
  * Project:  Arc/Info vector coverage (AVC)  BIN->E00 conversion library
@@ -869,8 +869,10 @@ const char *AVCE00GenTxt(AVCE00GenInfo *psInfo, AVCTxt *psTxt, GBool bCont)
          * (This is a little bit less efficient, but will give much easier
          *  code to read ;-)
          *------------------------------------------------------------*/
-        double  dXY[15] = { 0.0 };
+        double  dXY[15];
         int     i, nFirstValue, numValuesPerLine;
+        for(i=0; i<14; i++)
+            dXY[i] = 0.0;
 
         dXY[14] = psTxt->dHeight;
 

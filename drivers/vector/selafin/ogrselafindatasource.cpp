@@ -34,8 +34,6 @@
 
 #include <ctime>
 
-CPL_CVSID("$Id: ogrselafindatasource.cpp 35562 2016-09-30 19:16:16Z goatbar $");
-
 /************************************************************************/
 /*                          Range                                       */
 /************************************************************************/
@@ -64,9 +62,8 @@ void Range::setRange(const char *pszStr) {
         return;
     }
     const char *pszc=pszStr;
-    char *psze = NULL;
-    int nMin = 0;
-    int nMax = 0;
+    char *psze;
+    int nMin,nMax;
     SelafinTypeDef eType;
     while (*pszc!=0 && *pszc!=']') {
         pszc++;
@@ -104,7 +101,7 @@ void Range::setRange(const char *pszStr) {
                 pszc=psze;
             }
         } else nMax=nMin;
-        Range::List *poNew = NULL;
+        Range::List *poNew;
         if (eType!=ALL) poNew=new Range::List(eType,nMin,nMax,NULL); else poNew=new Range::List(POINTS,nMin,nMax,new Range::List(ELEMENTS,nMin,nMax,NULL));
         if (poVals==NULL) {
             poVals=poNew;
@@ -220,19 +217,17 @@ OGRSelafinDataSource::OGRSelafinDataSource() :
     pszLockName(NULL),
     papoLayers(NULL),
     nLayers(0),
-    bUpdate(false),
+    bUpdate(FALSE),
     poHeader(NULL),
     poSpatialRef(NULL)
-{}
+{ }
 
 /************************************************************************/
 /*                         ~OGRSelafinDataSource()                      */
 /************************************************************************/
 
 OGRSelafinDataSource::~OGRSelafinDataSource() {
-#ifdef DEBUG_VERBOSE
-    CPLDebug("Selafin", "~OGRSelafinDataSource(%s)", pszName);
-#endif
+    //CPLDebug("Selafin","~OGRSelafinDataSource(%s)",pszName);
     for( int i = 0; i < nLayers; i++ ) delete papoLayers[i];
     CPLFree( papoLayers );
     CPLFree( pszName );
@@ -264,11 +259,9 @@ OGRLayer *OGRSelafinDataSource::GetLayer( int iLayer ) {
 /************************************************************************/
 /*                                Open()                                */
 /************************************************************************/
-int OGRSelafinDataSource::Open( const char * pszFilename, int bUpdateIn,
-                                int bCreate )
-{
-    // Check if a range is set and extract it and the filename.
-    const char *pszc = pszFilename;
+int OGRSelafinDataSource::Open(const char * pszFilename, int bUpdateIn, int bCreate) {
+    // Check if a range is set and extract it and the filename
+    const char *pszc=pszFilename;
     if (*pszFilename==0) return FALSE;
     while (*pszc) ++pszc;
     if (*(pszc-1)==']') {
@@ -279,7 +272,7 @@ int OGRSelafinDataSource::Open( const char * pszFilename, int bUpdateIn,
     }
     pszName = CPLStrdup( pszFilename );
     pszName[pszc-pszFilename]=0;
-    bUpdate = CPL_TO_BOOL(bUpdateIn);
+    bUpdate = bUpdateIn;
     if (bCreate && EQUAL(pszName, "/vsistdout/")) return TRUE;
     /* For writable /vsizip/, do nothing more */
     if (bCreate && STARTS_WITH(pszName, "/vsizip/")) return TRUE;
@@ -344,11 +337,12 @@ int OGRSelafinDataSource::TakeLock(CPL_UNUSED const char *pszFilename) {
     // For now, this procedure is deactivated and a warning message is issued when a datasource is opened in update mode.
     //CPLDebug("Selafin","TakeLock(%s)",pszFilename);
     if (pszLockName!=0) CPLFree(pszLockName);
+    VSILFILE *fpLock;
     size_t nLen=strlen(pszFilename)+4;
     pszLockName=(char*)CPLMalloc(sizeof(char)*nLen);
     CPLStrlcpy(pszLockName,pszFilename,nLen-3);
     CPLStrlcat(pszLockName,"~~~",nLen);
-    VSILFILE *fpLock = VSIFOpenL(pszLockName, "rb+");
+    fpLock=VSIFOpenL(pszLockName,"rb+");
     // This is not thread-safe but I'm not quite sure how to open a file in exclusive mode and in a portable way
     if (fpLock!=NULL) {
         VSIFCloseL(fpLock);
@@ -375,32 +369,18 @@ void OGRSelafinDataSource::ReleaseLock() {
 /*                              OpenTable()                             */
 /************************************************************************/
 int OGRSelafinDataSource::OpenTable(const char * pszFilename) {
-#ifdef DEBUG_VERBOSE
-    CPLDebug("Selafin", "OpenTable(%s,%i)",
-             pszFilename, static_cast<int>(bUpdate));
-#endif
+    //CPLDebug("Selafin","OpenTable(%s,%i)",pszFilename,bUpdate);
     // Open the file
-    VSILFILE *fp = NULL;
-    if( bUpdate )
-    {
-        // We have to implement this locking feature for write access because
-        // the same file may hold several layers, and some programs (like QGIS)
-        // open each layer in a single datasource, so the same file might be
-        // opened several times for write access.
+    VSILFILE * fp;
+    if( bUpdate ) {
+        // We have to implement this locking feature for write access because the same file may hold several layers, and some programs (like QGIS) open each layer in a single datasource,
+        // so the same file might be opened several times for write access
         if (TakeLock(pszFilename)==0) {
-            CPLError(CE_Failure, CPLE_OpenFailed,
-                     "Failed to open %s for write access, "
-                     "lock file found %s.",
-                     pszFilename, pszLockName);
+            CPLError(CE_Failure,CPLE_OpenFailed,"Failed to open %s for write access, lock file found %s.",pszFilename,pszLockName);
             return FALSE;
         }
         fp = VSIFOpenL( pszFilename, "rb+" );
-    }
-    else
-    {
-        fp = VSIFOpenL( pszFilename, "rb" );
-    }
-
+    } else fp = VSIFOpenL( pszFilename, "rb" );
     if( fp == NULL ) {
         CPLError( CE_Warning, CPLE_OpenFailed, "Failed to open %s, %s.", pszFilename, VSIStrerror( errno ) );
         return FALSE;
@@ -458,8 +438,9 @@ int OGRSelafinDataSource::OpenTable(const char * pszFilename) {
     }
 
     // Create two layers for each selected time step: one for points, the other for elements
+    int nNewLayers;
     poRange.setMaxValue(poHeader->nSteps);
-    const int nNewLayers = static_cast<int>(poRange.getSize());
+    nNewLayers=static_cast<int>(poRange.getSize());
     if (EQUAL(pszFilename, "/vsistdin/")) osBaseLayerName = "layer";
     CPLString osLayerName;
     papoLayers = (OGRSelafinLayer **) CPLRealloc(papoLayers, sizeof(void*) * (nLayers+nNewLayers));
@@ -468,10 +449,8 @@ int OGRSelafinDataSource::OpenTable(const char * pszFilename) {
         for (int i=0;i<poHeader->nSteps;++i) {
             if (poRange.contains(eType,i)) {
                 char szTemp[30];
-                double dfTime = 0.0;
-                if( VSIFSeekL(fp, poHeader->getPosition(i)+4, SEEK_SET)!=0 ||
-                    Selafin::read_float(fp, dfTime)==0 )
-                {
+                double dfTime;
+                if (VSIFSeekL(fp,poHeader->getPosition(i)+4,SEEK_SET)!=0 || Selafin::read_float(fp,dfTime)==0) {
                     VSIFCloseL(fp);
                     CPLError( CE_Failure, CPLE_OpenFailed, "Failed to open %s, wrong format.\n", pszFilename);
                     return FALSE;
@@ -489,9 +468,7 @@ int OGRSelafinDataSource::OpenTable(const char * pszFilename) {
                     strftime(szTemp,29,"%Y_%m_%d_%H_%M_%S",&sDate);
                 }
                 if (eType==POINTS) osLayerName=osBaseLayerName+"_p"+szTemp; else osLayerName=osBaseLayerName+"_e"+szTemp;
-                papoLayers[nLayers++] =
-                    new OGRSelafinLayer( osLayerName, bUpdate, poSpatialRef,
-                                         poHeader, i, eType);
+                papoLayers[nLayers++] = new OGRSelafinLayer( osLayerName, bUpdate, poSpatialRef, poHeader,i,eType);
                 //poHeader->nRefCount++;
             }
         }
@@ -508,23 +485,19 @@ int OGRSelafinDataSource::OpenTable(const char * pszFilename) {
 OGRLayer *OGRSelafinDataSource::ICreateLayer( const char *pszLayerName, OGRSpatialReference *poSpatialRefP, OGRwkbGeometryType eGType, char ** papszOptions  ) {
     CPLDebug("Selafin","CreateLayer(%s,%s)",pszLayerName,(eGType==wkbPoint)?"wkbPoint":"wkbPolygon");
     // Verify we are in update mode.
-    if ( !bUpdate )
-    {
-        CPLError( CE_Failure, CPLE_NoWriteAccess,
-                  "Data source %s opened read-only.  "
-                  "New layer %s cannot be created.",
-                  pszName, pszLayerName );
+    if (!bUpdate) {
+        CPLError( CE_Failure, CPLE_NoWriteAccess, "Data source %s opened read-only.\n" "New layer %s cannot be created.\n", pszName, pszLayerName );
         return NULL;
     }
     // Check that new layer is a point or polygon layer
-    if( eGType != wkbPoint )
-    {
+    if (eGType!=wkbPoint) {
         CPLError( CE_Failure, CPLE_NoWriteAccess, "Selafin format can only handle %s layers whereas input is %s\n.", OGRGeometryTypeToName(wkbPoint),OGRGeometryTypeToName(eGType));
         return NULL;
     }
     // Parse options
+    double dfDate;
     const char *pszTemp=CSLFetchNameValue(papszOptions,"DATE");
-    const double dfDate = pszTemp != NULL ? CPLAtof(pszTemp) : 0.0;
+    if (pszTemp!=NULL) dfDate=CPLAtof(pszTemp); else dfDate=0.0;
     // Set the SRS of the datasource if this is the first layer
     if (nLayers==0 && poSpatialRefP!=NULL) {
         poSpatialRef=poSpatialRefP;
@@ -569,13 +542,9 @@ OGRLayer *OGRSelafinDataSource::ICreateLayer( const char *pszLayerName, OGRSpati
     papoLayers = (OGRSelafinLayer **) CPLRealloc(papoLayers, sizeof(void*) * nLayers);
     CPLString szName=pszLayerName;
     CPLString szNewLayerName=szName+"_p";
-    papoLayers[nLayers-2] =
-        new OGRSelafinLayer( szNewLayerName, bUpdate, poSpatialRef, poHeader,
-                             poHeader->nSteps-1, POINTS );
+    papoLayers[nLayers-2] = new OGRSelafinLayer( szNewLayerName, bUpdate, poSpatialRef, poHeader,poHeader->nSteps-1,POINTS);
     szNewLayerName=szName+"_e";
-    papoLayers[nLayers-1] =
-        new OGRSelafinLayer( szNewLayerName, bUpdate, poSpatialRef, poHeader,
-                             poHeader->nSteps-1, ELEMENTS );
+    papoLayers[nLayers-1] = new OGRSelafinLayer( szNewLayerName, bUpdate, poSpatialRef, poHeader,poHeader->nSteps-1,ELEMENTS);
     return papoLayers[nLayers-2];
 }
 
@@ -584,11 +553,8 @@ OGRLayer *OGRSelafinDataSource::ICreateLayer( const char *pszLayerName, OGRSpati
 /************************************************************************/
 OGRErr OGRSelafinDataSource::DeleteLayer( int iLayer ) {
     // Verify we are in update mode.
-    if( !bUpdate )
-    {
-        CPLError( CE_Failure, CPLE_NoWriteAccess,
-                  "Data source %s opened read-only.  "
-                  "Layer %d cannot be deleted.\n", pszName, iLayer );
+    if( !bUpdate ) {
+        CPLError( CE_Failure, CPLE_NoWriteAccess, "Data source %s opened read-only.\n" "Layer %d cannot be deleted.\n", pszName, iLayer );
         return OGRERR_FAILURE;
     }
     if( iLayer < 0 || iLayer >= nLayers ) {
@@ -596,22 +562,19 @@ OGRErr OGRSelafinDataSource::DeleteLayer( int iLayer ) {
         return OGRERR_FAILURE;
     }
     // Delete layer in file. Here we don't need to create a copy of the file because we only update values and it can't get corrupted even if the system crashes during the operation
-    const int nNum = papoLayers[iLayer]->GetStepNumber();
+    int nNum=papoLayers[iLayer]->GetStepNumber();
+    double dfTime;
     double *dfValues=NULL;
-    for( int i = nNum; i < poHeader->nSteps - 1; ++i )
-    {
-        double dfTime = 0.0;
+    int nTemp;
+    for (int i=nNum;i<poHeader->nSteps-1;++i) {
         if (VSIFSeekL(poHeader->fp,poHeader->getPosition(i+1)+4,SEEK_SET)!=0 ||
-            Selafin::read_float(poHeader->fp, dfTime) == 0 ||
+            Selafin::read_float(poHeader->fp,dfTime)==0 ||
             VSIFSeekL(poHeader->fp,poHeader->getPosition(i)+4,SEEK_SET)!=0 ||
-            Selafin::write_float(poHeader->fp, dfTime) == 0)
-        {
+            Selafin::write_float(poHeader->fp,dfTime)==0) {
             CPLError( CE_Failure, CPLE_FileIO, "Could not update Selafin file %s.\n",pszName);
             return OGRERR_FAILURE;
         }
-        for (int j=0;j<poHeader->nVar;++j)
-        {
-            int nTemp = 0;
+        for (int j=0;j<poHeader->nVar;++j) {
             if (VSIFSeekL(poHeader->fp,poHeader->getPosition(i+1)+12,SEEK_SET)!=0 ||
                 (nTemp=Selafin::read_floatarray(poHeader->fp,&dfValues)) !=poHeader->nPoints ||
                 VSIFSeekL(poHeader->fp,poHeader->getPosition(i)+12,SEEK_SET)!=0 ||

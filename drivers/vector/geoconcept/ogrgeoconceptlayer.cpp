@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrgeoconceptlayer.cpp
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRGeoconceptLayer class.
@@ -32,7 +33,7 @@
 #include "cpl_string.h"
 #include "ogrgeoconceptlayer.h"
 
-CPL_CVSID("$Id: ogrgeoconceptlayer.cpp 35933 2016-10-25 16:46:26Z goatbar $");
+CPL_CVSID("$Id: ogrgeoconceptlayer.cpp 00000 2007-11-03 16:08:14Z drichard $");
 
 /************************************************************************/
 /*                         OGRGeoconceptLayer()                         */
@@ -296,43 +297,43 @@ OGRErr OGRGeoconceptLayer::ICreateFeature( OGRFeature* poFeature )
       }
     }
 
-    int nbGeom = 0;
-    bool isSingle = false;
+    int nbGeom;
+    int isSingle;
 
     switch( eGt ) {
     case wkbPoint                 :
     case wkbPoint25D              :
-      nbGeom = 1;
-      isSingle = true;
+      nbGeom= 1;
+      isSingle= TRUE;
       break;
     case wkbMultiPoint            :
     case wkbMultiPoint25D         :
-      nbGeom = ((OGRGeometryCollection*)poGeom)->getNumGeometries();
-      isSingle = false;
+      nbGeom= ((OGRGeometryCollection*)poGeom)->getNumGeometries();
+      isSingle= FALSE;
       break;
     case wkbLineString            :
     case wkbLineString25D         :
-      nbGeom = 1;
-      isSingle = true;
+      nbGeom= 1;
+      isSingle= TRUE;
       break;
     case wkbMultiLineString       :
     case wkbMultiLineString25D    :
-      nbGeom = ((OGRGeometryCollection*)poGeom)->getNumGeometries();
-      isSingle = false;
+      nbGeom= ((OGRGeometryCollection*)poGeom)->getNumGeometries();
+      isSingle= FALSE;
       break;
     case wkbPolygon               :
     case wkbPolygon25D            :
-      nbGeom = 1;
-      isSingle = true;
+      nbGeom= 1;
+      isSingle= TRUE;
       break;
     case wkbMultiPolygon          :
     case wkbMultiPolygon25D       :
-      nbGeom = ((OGRGeometryCollection*)poGeom)->getNumGeometries();
-      isSingle = false;
+      nbGeom= ((OGRGeometryCollection*)poGeom)->getNumGeometries();
+      isSingle= FALSE;
       break;
     default                       :
-      nbGeom = 0;
-      isSingle = false;
+      nbGeom= 0;
+      isSingle= FALSE;
       break;
     }
 
@@ -508,6 +509,7 @@ OGRErr OGRGeoconceptLayer::CreateField( OGRFieldDefn *poField,
         CPLError( CE_Failure, CPLE_NotSupported,
                   "Can't create fields on a read-only Geoconcept layer.\n");
         return OGRERR_FAILURE;
+
     }
 
 /* -------------------------------------------------------------------- */
@@ -516,10 +518,10 @@ OGRErr OGRGeoconceptLayer::CreateField( OGRFieldDefn *poField,
 
     {
       /* check whether field exists ... */
+      GCField* theField;
       char* pszName = OGRGeoconceptLayer_GetCompatibleFieldName(poField->GetNameRef());
 
-      GCField* theField = FindFeatureField_GCIO(_gcFeature,pszName);
-      if( !theField )
+      if( !(theField= FindFeatureField_GCIO(_gcFeature,pszName)) )
       {
         if( GetFeatureCount(TRUE) > 0 )
         {

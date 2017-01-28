@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: reflectancecalculator.h 36427 2016-11-22 12:56:01Z rouault $
+ * $Id: reflectancecalculator.h 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Purpose:  Interface of ReflectanceCalculator class. Calculate reflectance
  *           values from radiance, for visual bands.
@@ -39,21 +39,21 @@
 class ReflectanceCalculator
 {
 public:
-    ReflectanceCalculator(std::string sTimeStamp, double rRTOA);
-    virtual ~ReflectanceCalculator();
-    double rGetReflectance(double rRadiance, double rLat, double rLon) const;
+	ReflectanceCalculator(std::string sTimeStamp, double rRTOA);
+	virtual ~ReflectanceCalculator();
+	double rGetReflectance(double rRadiance, double rLat, double rLon) const;
 private:
-  static double rZenithAngle(double phi, double rDeclin, double rHourAngle);
-  double rDeclination() const;
+  double rZenithAngle(double phi, double rDeclin, double rHourAngle) const;
+	const double rDeclination() const;
   double rHourAngle(double lam) const;
-  double rSunDistance() const;
-  static int iDaysInYear(int iYear);
-  static int iDaysInMonth(int iMonth, int iYear);
+  const double rSunDistance() const;
+  int iDaysInYear(int iYear) const;
+	int iDaysInMonth(int iMonth, int iYear) const;
 
-    const double m_rRTOA; // solar irradiance on Top of Atmosphere
-    int m_iYear; // e.g. 2005
-    int m_iDay; // 1-365/366
-    double m_rHours; // 0-24
+	const double m_rRTOA; // solar irradiance on Top of Atmosphere
+	int m_iYear; // e.g. 2005
+	int m_iDay; // 1-365/366
+	double m_rHours; // 0-24
 };
 
 #endif // !defined(AFX_REFLECTANCECALCULATOR_H__C9960E01_2A1B_41F0_B903_7957F11618D2__INCLUDED_)

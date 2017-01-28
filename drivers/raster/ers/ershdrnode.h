@@ -28,5 +28,5 @@ public:
     void   Set( const char *pszPath, const char *pszValue );
 
 private:
-    static int    ReadLine( VSILFILE *, CPLString & );
+    int    ReadLine( VSILFILE *, CPLString & );
 };

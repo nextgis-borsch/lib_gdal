@@ -34,17 +34,17 @@ include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/vrt)
 include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/raw)
 
 set(LIB_HHEADERS
-    gdal_utils.h 
+    gdal_utils.h
 )
 
 set(LIB_HHEADERS_PRIV
-    commonutils.h 
-    gdal_utils_priv.h 
+    commonutils.h
+    gdal_utils_priv.h
 )
 
 set(LIB_CSOURCES
     commonutils.cpp
-    gdalinfo_lib.cpp   
+    gdalinfo_lib.cpp
     gdalwarp_lib.cpp
     gdaldem_lib.cpp
     gdal_translate_lib.cpp
@@ -57,13 +57,13 @@ set(LIB_CSOURCES
 
 add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
 if(DEPENDENCY_LIB)
-    add_dependencies(${TARGET_NAME} ${DEPENDENCY_LIB})  
-endif() 
+    add_dependencies(${TARGET_NAME} ${DEPENDENCY_LIB})
+endif()
 
 # build target
 set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
 
-if(UNIX)
+if(UNIX AND NOT OSX_FRAMEWORK)
     if(NOT SKIP_INSTALL_LIBRARIES AND NOT SKIP_INSTALL_ALL )
         install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/gdal-config-inst
                 DESTINATION ${INSTALL_BIN_DIR}
@@ -75,34 +75,33 @@ endif()
 # install headers
 if(NOT SKIP_INSTALL_HEADERS AND NOT SKIP_INSTALL_ALL )
     install(FILES ${LIB_HHEADERS} DESTINATION ${INSTALL_INC_DIR} COMPONENT headers)
-endif() 
+endif()
 
 option(GDAL_BUILD_APPS "Build console applications" ON)
 if(GDAL_BUILD_APPS)
     set(INSTALL_TARGETS)
-    
     macro(ADD_EXE target sources)
         add_executable(${target} ${sources})
         add_dependencies(${target} ${LIB_NAME})
         target_link_libraries(${target} ${LIB_NAME} ${TARGET_LINK_LIB})
+        if(OSX_FRAMEWORK)
+            set_target_properties(${target} PROPERTIES INSTALL_RPATH "@executable_path/../../../../Library/Frameworks")
+        endif()
         set(INSTALL_TARGETS ${INSTALL_TARGETS} ${target})
     endmacro()
-       
-    add_exe(gdalinfo gdalinfo_bin.cpp) 
-    add_exe(gdalwarp gdalwarp_bin.cpp) 
-    add_exe(gdaldem gdaldem_bin.cpp) 
-    add_exe(gdal_translate gdal_translate_bin.cpp) 
-       
+    add_exe(gdalinfo gdalinfo_bin.cpp)
+    add_exe(gdalwarp gdalwarp_bin.cpp)
+    add_exe(gdaldem gdaldem_bin.cpp)
+    add_exe(gdal_translate gdal_translate_bin.cpp)
     add_exe(gdalmanage gdalmanage.cpp)
     add_exe(gdalenhance gdalenhance.cpp)
     add_exe(gdaladdo gdaladdo.cpp)
     add_exe(gdalsrsinfo gdalsrsinfo.cpp)
 
-    add_exe(nearblack nearblack_bin.cpp) 
+    add_exe(nearblack nearblack_bin.cpp)
     add_exe(gdallocationinfo gdallocationinfo.cpp)
     add_exe(gdaltransform gdaltransform.cpp)
     add_exe(gdalserver gdalserver.c)
-    
     if(GDAL_ENABLE_GNM)
         include_directories(${CMAKE_SOURCE_DIR}/core/gnm)
         add_exe(gnmanalyse gnmanalyse.cpp)
@@ -110,11 +109,11 @@ if(GDAL_BUILD_APPS)
     endif()
 
     add_exe(gdal_contour gdal_contour.cpp)
-    add_exe(gdaltindex gdaltindex.cpp)        
+    add_exe(gdaltindex gdaltindex.c)
     add_exe(gdal_rasterize gdal_rasterize_bin.cpp)
     add_exe(ogrinfo ogrinfo.cpp)
-    add_exe(ogrlineref ogrlineref.cpp)        
-    add_exe(ogr2ogr ogr2ogr_bin.cpp) 
+    add_exe(ogrlineref ogrlineref.cpp)
+    add_exe(ogr2ogr ogr2ogr_bin.cpp)
     add_exe(gdal_grid gdal_grid_bin.cpp)
     add_exe(ogrtindex ogrtindex.cpp)
     add_exe(testepsg testepsg.cpp)
@@ -133,14 +132,14 @@ if(GDAL_BUILD_APPS)
         add_exe(gdalasyncread gdalasyncread.cpp)
         add_exe(testreprojmulti testreprojmulti.cpp)
     endif()
-    
-    if(NOT SKIP_INSTALL_LIBRARIES AND NOT SKIP_INSTALL_ALL )
+    if(NOT SKIP_INSTALL_EXECUTABLES AND NOT SKIP_INSTALL_ALL )
         install(TARGETS ${INSTALL_TARGETS}
         #    EXPORT ${INSTALL_TARGETS}
             RUNTIME DESTINATION ${INSTALL_BIN_DIR} COMPONENT applications
             ARCHIVE DESTINATION ${INSTALL_LIB_DIR} COMPONENT applications
             LIBRARY DESTINATION ${INSTALL_LIB_DIR} COMPONENT applications
-        )        
+            FRAMEWORK DESTINATION ${INSTALL_BIN_DIR}
+        )
     endif()
 
 endif()

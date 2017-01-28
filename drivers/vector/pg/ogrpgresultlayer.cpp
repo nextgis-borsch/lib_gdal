@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrpgresultlayer.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRPGResultLayer class, access the resultset from
@@ -31,7 +32,7 @@
 #include "cpl_conv.h"
 #include "ogr_pg.h"
 
-CPL_CVSID("$Id: ogrpgresultlayer.cpp 36682 2016-12-04 20:34:45Z rouault $");
+CPL_CVSID("$Id: ogrpgresultlayer.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 #define PQexec this_is_an_error
 
@@ -41,19 +42,22 @@ CPL_CVSID("$Id: ogrpgresultlayer.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 OGRPGResultLayer::OGRPGResultLayer( OGRPGDataSource *poDSIn,
                                     const char * pszRawQueryIn,
-                                    PGresult *hInitialResultIn ) :
-    pszRawStatement(CPLStrdup(pszRawQueryIn)),
-    pszGeomTableName(NULL),
-    pszGeomTableSchemaName(NULL),
-    osWHERE("")
+                                    PGresult *hInitialResultIn )
 {
     poDS = poDSIn;
 
     iNextShapeId = 0;
 
+    pszRawStatement = CPLStrdup(pszRawQueryIn);
+
+    osWHERE = "";
+
     BuildFullQueryStatement();
 
     ReadResultDefinition(hInitialResultIn);
+
+    pszGeomTableName = NULL;
+    pszGeomTableSchemaName = NULL;
 
     /* Find at which index the geometry column is */
     /* and prepare a request to identify not-nullable fields */
@@ -61,9 +65,7 @@ OGRPGResultLayer::OGRPGResultLayer( OGRPGDataSource *poDSIn,
     CPLString osRequest;
     std::map< std::pair<int,int>, int> oMapAttributeToFieldIndex;
 
-    for( int iRawField = 0;
-         iRawField < PQnfields(hInitialResultIn);
-         iRawField++ )
+    for( int iRawField = 0; iRawField < PQnfields(hInitialResultIn); iRawField++ )
     {
         if( poFeatureDefn->GetGeomFieldCount() == 1 &&
             strcmp(PQfname(hInitialResultIn,iRawField),
@@ -76,7 +78,7 @@ OGRPGResultLayer::OGRPGResultLayer( OGRPGDataSource *poDSIn,
         int tableCol = PQftablecol(hInitialResultIn, iRawField);
         if( tableOID != InvalidOid && tableCol > 0 )
         {
-            if( !osRequest.empty() )
+            if( osRequest.size() )
                 osRequest += " OR ";
             osRequest += "(attrelid = ";
             osRequest += CPLSPrintf("%d", tableOID);
@@ -86,7 +88,7 @@ OGRPGResultLayer::OGRPGResultLayer( OGRPGDataSource *poDSIn,
         }
     }
 
-    if( !osRequest.empty() )
+    if( osRequest.size() )
     {
         osRequest = "SELECT attnum, attrelid FROM pg_attribute WHERE attnotnull = 't' AND (" + osRequest + ")";
         PGresult* hResult = OGRPG_PQexec(poDS->GetPGConn(), osRequest );
@@ -113,6 +115,7 @@ OGRPGResultLayer::OGRPGResultLayer( OGRPGDataSource *poDSIn,
         OGRPGClearResult( hResult );
     }
 
+#ifndef PG_PRE74
     /* Determine the table from which the geometry column is extracted */
     if (iGeomCol != -1)
     {
@@ -134,6 +137,7 @@ OGRPGResultLayer::OGRPGResultLayer( OGRPGDataSource *poDSIn,
             OGRPGClearResult( hTableNameResult );
         }
     }
+#endif
 }
 
 /************************************************************************/
@@ -147,6 +151,7 @@ OGRPGResultLayer::~OGRPGResultLayer()
     CPLFree( pszGeomTableName );
     CPLFree( pszGeomTableSchemaName );
 }
+
 
 /************************************************************************/
 /*                      BuildFullQueryStatement()                       */
@@ -210,6 +215,7 @@ GIntBig OGRPGResultLayer::GetFeatureCount( int bForce )
     return nCount;
 }
 
+
 /************************************************************************/
 /*                           TestCapability()                           */
 /************************************************************************/
@@ -258,6 +264,7 @@ int OGRPGResultLayer::TestCapability( const char * pszCap )
         return FALSE;
 }
 
+
 /************************************************************************/
 /*                           GetNextFeature()                           */
 /************************************************************************/
@@ -271,7 +278,9 @@ OGRFeature *OGRPGResultLayer::GetNextFeature()
 
     while( true )
     {
-        OGRFeature *poFeature = GetNextRawFeature();
+        OGRFeature      *poFeature;
+
+        poFeature = GetNextRawFeature();
         if( poFeature == NULL )
             return NULL;
 
@@ -349,6 +358,7 @@ void OGRPGResultLayer::SetSpatialFilter( int iGeomField, OGRGeometry * poGeomIn 
 
         ResetReading();
     }
+
 }
 
 /************************************************************************/
@@ -387,8 +397,11 @@ void OGRPGResultLayer::ResolveSRID(OGRPGGeomFieldDefn* poGFldDefn)
         {
             CPLString osGetSRID;
 
-            const char* psGetSRIDFct =
-                poDS->sPostGISVersion.nMajor >= 2 ? "ST_SRID" : "getsrid";
+            const char* psGetSRIDFct;
+            if (poDS->sPostGISVersion.nMajor >= 2)
+                psGetSRIDFct = "ST_SRID";
+            else
+                psGetSRIDFct = "getsrid";
 
             osGetSRID += "SELECT ";
             osGetSRID += psGetSRIDFct;

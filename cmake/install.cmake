@@ -33,17 +33,18 @@ if(NOT SKIP_INSTALL_LIBRARIES AND NOT SKIP_INSTALL_ALL )
         RUNTIME DESTINATION ${INSTALL_BIN_DIR} COMPONENT libraries
         ARCHIVE DESTINATION ${INSTALL_LIB_DIR} COMPONENT libraries
         LIBRARY DESTINATION ${INSTALL_LIB_DIR} COMPONENT libraries
-    )
-    if(UNIX) # for work with qgis 2.8.x
+        FRAMEWORK DESTINATION ${INSTALL_LIB_DIR})
+
+    if(UNIX AND BUILD_SHARED_LIBS AND NOT OSX_FRAMEWORK) #NOTE: Hack for work with qgis 2.8.x needed libgdal.so.1.
         install(FILES ${CMAKE_BINARY_DIR}/libgdal.so.${SOVERSION} DESTINATION ${INSTALL_LIB_DIR} RENAME libgdal.so.1 COMPONENT libraries)
     endif()
 endif()
 
 if(NOT SKIP_INSTALL_FILES AND NOT SKIP_INSTALL_ALL )
     install(DIRECTORY ${CMAKE_SOURCE_DIR}/data/ DESTINATION ${INSTALL_SHARE_DIR} COMPONENT libraries FILES_MATCHING PATTERN "*.*")
-    if(UNIX)
-        install(FILES ${CMAKE_BINARY_DIR}/gdal.pc DESTINATION "${INSTALL_PKGCONFIG_DIR}" COMPONENT libraries)
-    endif()    
+    if(UNIX AND NOT OSX_FRAMEWORK)
+        install(FILES ${CMAKE_BINARY_DIR}/gdal.pc DESTINATION ${INSTALL_PKGCONFIG_DIR} COMPONENT libraries)
+    endif()
 endif()
 
 if(NOT DEFINED PACKAGE_VENDOR)
@@ -85,10 +86,10 @@ set (CPACK_ARCHIVE_COMPONENT_INSTALL ON)
 if (WIN32)
 #  set (CPACK_SET_DESTDIR FALSE)
 #  set (CPACK_PACKAGING_INSTALL_PREFIX "/opt")
-  
-  set(scriptPath ${CMAKE_SOURCE_DIR}/cmake/EnvVarUpdate.nsh) 
+
+  set(scriptPath ${CMAKE_SOURCE_DIR}/cmake/EnvVarUpdate.nsh)
   file(TO_NATIVE_PATH ${scriptPath} scriptPath )
-  string(REPLACE "\\" "\\\\" scriptPath  ${scriptPath} ) 
+  string(REPLACE "\\" "\\\\" scriptPath  ${scriptPath} )
   set (CPACK_NSIS_ADDITIONAL_INCLUDES "!include \\\"${scriptPath}\\\" \\n")
 
   set (CPACK_GENERATOR "NSIS;ZIP")
@@ -99,12 +100,12 @@ if (WIN32)
   set (CPACK_NSIS_MODIFY_PATH OFF)
   set (CPACK_NSIS_PACKAGE_NAME "${CPACK_PACKAGE_NAME} ${VERSION}")
   set (CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
-  
+
   string (REPLACE "/" "\\\\" NSIS_INSTALL_SHARE_DIR "${INSTALL_SHARE_DIR}")
   string (REPLACE "/" "\\\\" NSIS_INSTALL_LIB_DIR "${INSTALL_LIB_DIR}")
   string (REPLACE "/" "\\\\" NSIS_INSTALL_BIN_DIR "${INSTALL_BIN_DIR}")
-  
-  
+
+
   set (CPACK_NSIS_EXTRA_INSTALL_COMMANDS
        "  Push 'GDAL_DATA'
     Push 'A'
@@ -112,7 +113,7 @@ if (WIN32)
     Push '$INSTDIR\\\\${NSIS_INSTALL_SHARE_DIR}'
     Call EnvVarUpdate
     Pop  '$0' ")
-          
+
   set (CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS
        "  Push 'GDAL_DATA'
     Push 'R'
@@ -120,8 +121,8 @@ if (WIN32)
     Push '$INSTDIR\\\\${NSIS_INSTALL_SHARE_DIR}'
     Call un.EnvVarUpdate
     Pop  '$0' ")
-    
-    
+
+
   set (CPACK_NSIS_EXTRA_INSTALL_COMMANDS
        "  Push 'PATH'
     Push 'A'
@@ -129,7 +130,7 @@ if (WIN32)
     Push '$INSTDIR\\\\${NSIS_INSTALL_BIN_DIR}'
     Call EnvVarUpdate
     Pop  '$0' ")
-          
+
   set (CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS
        "  Push 'PATH'
     Push 'R'
@@ -137,9 +138,9 @@ if (WIN32)
     Push '$INSTDIR\\\\${NSIS_INSTALL_BIN_DIR}'
     Call un.EnvVarUpdate
     Pop  '$0' ")
-  
-  
-  # https://docs.python.org/3/install/       
+
+
+  # https://docs.python.org/3/install/
   find_package(PythonInterp REQUIRED)
   if(PYTHONINTERP_FOUND)
     set (CPACK_NSIS_EXTRA_INSTALL_COMMANDS ${CPACK_NSIS_EXTRA_INSTALL_COMMANDS}
@@ -148,27 +149,27 @@ if (WIN32)
     Push 'HKCU'
     Push '$INSTDIR\\\\${NSIS_INSTALL_LIB_DIR}\\\\Python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}\\\\site-packages'
     Call EnvVarUpdate
-    Pop  '$0' ")    
-        
-    set (CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS ${CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS}     
+    Pop  '$0' ")
+
+    set (CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS ${CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS}
        "  Push 'PYTHONPATH'
     Push 'R'
     Push 'HKCU'
     Push '$INSTDIR\\\\${NSIS_INSTALL_LIB_DIR}\\\\Python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}\\\\site-packages'
     Call un.EnvVarUpdate
     Pop  '$0' ")
-  endif()   
+  endif()
   string (REPLACE ";" "\n" CPACK_NSIS_EXTRA_INSTALL_COMMANDS "${CPACK_NSIS_EXTRA_INSTALL_COMMANDS}")
   string (REPLACE ";" "\n" CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS "${CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS}")
 
 else ()
   set (CPACK_PROJECT_CONFIG_FILE ${CMAKE_SOURCE_DIR}/cmake/CPackConfig.cmake)
-  set (CPACK_GENERATOR "DEB;RPM;TGZ;ZIP") 
+  set (CPACK_GENERATOR "DEB;RPM;TGZ;ZIP")
 
   set (CPACK_COMPONENTS_ALL applications libraries headers documents)
   set (CPACK_COMPONENTS_ALL_IN_ONE_PACKAGE ON)
 
-  set (CPACK_DEBIAN_COMPONENT_INSTALL ON)  
+  set (CPACK_DEBIAN_COMPONENT_INSTALL ON)
   set (CPACK_DEBIAN_PACKAGE_SECTION "Libraries")
   set (CPACK_DEBIAN_PACKAGE_MAINTAINER "${PACKAGE_BUGREPORT}")
   set (CPACK_DEBIAN_PRE_INSTALL_SCRIPT_FILE "/sbin/ldconfig")
@@ -176,7 +177,6 @@ else ()
   set (CPACK_DEBIAN_POST_INSTALL_SCRIPT_FILE "/sbin/ldconfig")
   set (CPACK_DEBIAN_POST_UNINSTALL_SCRIPT_FILE "/sbin/ldconfig")
   set (CPACK_DEBIAN_PACKAGE_DEPENDS "zlib1g, libjpeg, libpng, libgeos, libcurl4-gnutls | libcurl-ssl, libexpat1, libproj, libxml2, liblzma, libarmadillo4 | libarmadillo5 | libarmadillo6, libtiff5, libgeotiff, libjson-c, libsqlite3, python2.7, python-numpy, libpcre3, libspatialite, libpq, libhdf4")
-  
   set (CPACK_RPM_COMPONENT_INSTALL ON)
   set (CPACK_RPM_PACKAGE_GROUP "Development/Tools")
   set (CPACK_RPM_PACKAGE_LICENSE "X/MIT")
@@ -190,27 +190,25 @@ endif ()
 include(InstallRequiredSystemLibraries)
 
 include (CPack)
-   
+
 #-----------------------------------------------------------------------------
 # Now list the cpack commands
 #-----------------------------------------------------------------------------
-cpack_add_component (applications 
-    DISPLAY_NAME "${PACKAGE_NAME} utility programs" 
+cpack_add_component (applications
+    DISPLAY_NAME "${PACKAGE_NAME} utility programs"
     DEPENDS libraries
     GROUP Applications
 )
-cpack_add_component (libraries 
+cpack_add_component (libraries
     DISPLAY_NAME "${PACKAGE_NAME} libraries"
     GROUP Runtime
 )
-cpack_add_component (headers 
-    DISPLAY_NAME "${PACKAGE_NAME} headers" 
+cpack_add_component (headers
+    DISPLAY_NAME "${PACKAGE_NAME} headers"
     DEPENDS libraries
     GROUP Development
 )
-cpack_add_component (documents 
+cpack_add_component (documents
     DISPLAY_NAME "${PACKAGE_NAME} documents"
     GROUP Documents
 )
-
-   

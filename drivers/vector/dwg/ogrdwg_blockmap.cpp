@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrdwg_blockmap.cpp 22011 2011-03-22 20:13:38Z warmerdam $
  *
  * Project:  DWG Translator
  * Purpose:  Implements BlockMap reading and management portion of
@@ -32,7 +33,7 @@
 #include "cpl_string.h"
 #include "cpl_csv.h"
 
-CPL_CVSID("$Id: ogrdwg_blockmap.cpp 36682 2016-12-04 20:34:45Z rouault $");
+CPL_CVSID("$Id: ogrdwg_blockmap.cpp 22011 2011-03-22 20:13:38Z warmerdam $");
 
 /************************************************************************/
 /*                          ReadBlockSection()                          */
@@ -70,7 +71,7 @@ void OGRDWGDataSource::ReadBlocksSection()
         // We aggregate the geometries of the features into a multi-geometry,
         // but throw away other stuff attached to the features.
 
-        OGRFeature *poFeature = NULL;
+        OGRFeature *poFeature;
         OGRGeometryCollection *poColl = new OGRGeometryCollection();
         std::vector<OGRFeature*> apoFeatures;
 
@@ -94,7 +95,7 @@ void OGRDWGDataSource::ReadBlocksSection()
         else
             oBlockMap[osBlockName].poGeometry = SimplifyBlockGeometry(poColl);
 
-        if( !apoFeatures.empty() )
+        if( apoFeatures.size() > 0 )
             oBlockMap[osBlockName].apoFeatures = apoFeatures;
     }
 

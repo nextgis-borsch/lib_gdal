@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrgpsbabelwritedatasource.cpp 32982 2016-01-14 16:53:57Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRGPSBabelWriteDataSource class.
@@ -34,7 +35,7 @@
 
 #include "ogr_gpsbabel.h"
 
-CPL_CVSID("$Id: ogrgpsbabelwritedatasource.cpp 36682 2016-12-04 20:34:45Z rouault $");
+CPL_CVSID("$Id: ogrgpsbabelwritedatasource.cpp 32982 2016-01-14 16:53:57Z goatbar $");
 
 /************************************************************************/
 /*                    OGRGPSBabelWriteDataSource()                      */
@@ -68,10 +69,10 @@ OGRGPSBabelWriteDataSource::~OGRGPSBabelWriteDataSource()
 /*                                Convert()                             */
 /************************************************************************/
 
-bool OGRGPSBabelWriteDataSource::Convert()
+int OGRGPSBabelWriteDataSource::Convert()
 {
     int nRet = -1;
-    if( !osTmpFileName.empty() && pszFilename != NULL &&
+    if( osTmpFileName.size() > 0 && pszFilename != NULL &&
          pszGPSBabelDriverName != NULL )
     {
         if (OGRGPSBabelDataSource::IsSpecialFile(pszFilename))
@@ -189,7 +190,7 @@ int OGRGPSBabelWriteDataSource::Create( const char * pszNameIn,
     if (poGPXDS == NULL)
         return FALSE;
 
-    pszName = CPLStrdup(pszNameIn);
+    this->pszName = CPLStrdup(pszNameIn);
 
     return TRUE;
 }
@@ -207,6 +208,7 @@ OGRLayer *OGRGPSBabelWriteDataSource::ICreateLayer( const char * pszLayerName,
         return poGPXDS->CreateLayer(pszLayerName, poSRS, eType, papszOptions);
     return NULL;
 }
+
 
 /************************************************************************/
 /*                           TestCapability()                           */

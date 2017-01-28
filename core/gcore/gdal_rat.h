@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_rat.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: gdal_rat.h 33773 2016-03-23 18:39:47Z goatbar $
  *
  * Project:  GDAL Core
  * Purpose:  GDALRasterAttributeTable class declarations.
@@ -79,7 +79,7 @@ public:
      *
      * @return the column name or an empty string for invalid column numbers.
      */
-    virtual const char   *GetNameOfCol( int iCol ) const = 0;
+    virtual const char   *GetNameOfCol( int ) const = 0;
 
     /**
      * \brief Fetch column usage value.
@@ -90,7 +90,7 @@ public:
      *
      * @return the column usage, or GFU_Generic for improper column numbers.
      */
-    virtual GDALRATFieldUsage GetUsageOfCol( int iCol ) const = 0;
+    virtual GDALRATFieldUsage GetUsageOfCol( int ) const = 0;
 
     /**
      * \brief Fetch column type.
@@ -101,7 +101,7 @@ public:
      *
      * @return column type or GFT_Integer if the column index is illegal.
      */
-    virtual GDALRATFieldType GetTypeOfCol( int iCol ) const = 0;
+    virtual GDALRATFieldType GetTypeOfCol( int ) const = 0;
 
     /**
      * \brief Fetch column index for given usage.
@@ -115,7 +115,7 @@ public:
      *
      * @return column index, or -1 on failure.
      */
-    virtual int           GetColOfUsage( GDALRATFieldUsage eUsage ) const = 0;
+    virtual int           GetColOfUsage( GDALRATFieldUsage ) const = 0;
 
     /**
      * \brief Fetch row count.
@@ -279,7 +279,7 @@ public:
 /*                                                                      */
 /*      (private)                                                       */
 /************************************************************************/
-//! @cond Doxygen_Suppress
+
 class GDALRasterAttributeField
 {
  public:
@@ -293,7 +293,6 @@ class GDALRasterAttributeField
     std::vector<double> adfValues;
     std::vector<CPLString> aosValues;
 };
-//! @endcond
 
 /************************************************************************/
 /*                    GDALDefaultRasterAttributeTable                   */
@@ -322,42 +321,42 @@ class CPL_DLL GDALDefaultRasterAttributeTable : public GDALRasterAttributeTable
  public:
     GDALDefaultRasterAttributeTable();
     GDALDefaultRasterAttributeTable( const GDALDefaultRasterAttributeTable& );
-    virtual ~GDALDefaultRasterAttributeTable();
+    ~GDALDefaultRasterAttributeTable();
 
-    GDALDefaultRasterAttributeTable *Clone() const CPL_OVERRIDE;
+    GDALDefaultRasterAttributeTable *Clone() const;
 
-    virtual int           GetColumnCount() const CPL_OVERRIDE;
+    virtual int           GetColumnCount() const;
 
-    virtual const char   *GetNameOfCol( int ) const CPL_OVERRIDE;
-    virtual GDALRATFieldUsage GetUsageOfCol( int ) const CPL_OVERRIDE;
-    virtual GDALRATFieldType GetTypeOfCol( int ) const CPL_OVERRIDE;
+    virtual const char   *GetNameOfCol( int ) const;
+    virtual GDALRATFieldUsage GetUsageOfCol( int ) const;
+    virtual GDALRATFieldType GetTypeOfCol( int ) const;
 
-    virtual int           GetColOfUsage( GDALRATFieldUsage ) const CPL_OVERRIDE;
+    virtual int           GetColOfUsage( GDALRATFieldUsage ) const;
 
-    virtual int           GetRowCount() const CPL_OVERRIDE;
+    virtual int           GetRowCount() const;
 
-    virtual const char   *GetValueAsString( int iRow, int iField ) const CPL_OVERRIDE;
-    virtual int           GetValueAsInt( int iRow, int iField ) const CPL_OVERRIDE;
-    virtual double        GetValueAsDouble( int iRow, int iField ) const CPL_OVERRIDE;
+    virtual const char   *GetValueAsString( int iRow, int iField ) const;
+    virtual int           GetValueAsInt( int iRow, int iField ) const;
+    virtual double        GetValueAsDouble( int iRow, int iField ) const;
 
     virtual void          SetValue( int iRow, int iField,
-                                    const char *pszValue ) CPL_OVERRIDE;
-    virtual void          SetValue( int iRow, int iField, double dfValue) CPL_OVERRIDE;
-    virtual void          SetValue( int iRow, int iField, int nValue ) CPL_OVERRIDE;
+                                    const char *pszValue );
+    virtual void          SetValue( int iRow, int iField, double dfValue);
+    virtual void          SetValue( int iRow, int iField, int nValue );
 
-    virtual int           ChangesAreWrittenToFile() CPL_OVERRIDE;
-    virtual void          SetRowCount( int iCount ) CPL_OVERRIDE;
+    virtual int           ChangesAreWrittenToFile();
+    virtual void          SetRowCount( int iCount );
 
-    virtual int           GetRowOfValue( double dfValue ) const CPL_OVERRIDE;
-    virtual int           GetRowOfValue( int nValue ) const CPL_OVERRIDE;
+    virtual int           GetRowOfValue( double dfValue ) const;
+    virtual int           GetRowOfValue( int nValue ) const;
 
     virtual CPLErr        CreateColumn( const char *pszFieldName,
                                         GDALRATFieldType eFieldType,
-                                        GDALRATFieldUsage eFieldUsage ) CPL_OVERRIDE;
+                                        GDALRATFieldUsage eFieldUsage );
     virtual CPLErr        SetLinearBinning( double dfRow0Min,
-                                            double dfBinSize ) CPL_OVERRIDE;
+                                            double dfBinSize );
     virtual int           GetLinearBinning( double *pdfRow0Min,
-                                            double *pdfBinSize ) const CPL_OVERRIDE;
+                                            double *pdfBinSize ) const;
 };
 
 #endif /* ndef GDAL_RAT_H_INCLUDED */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: OSRTransform.java 35222 2016-08-28 06:06:11Z goatbar $
+ * $Id: OSRTransform.java 25229 2012-11-16 19:06:58Z rouault $
  *
  * Name:     OSRTransform.java
  * Project:  GDAL Java Interface
@@ -43,7 +43,7 @@ import org.gdal.osr.CoordinateTransformation;
 
 /// <summary>
 /// A Java based sample to make simple transformations.
-/// </summary>
+/// </summary> 
 public class OSRTransform {
 	public static void main(String[] args) {
 		try

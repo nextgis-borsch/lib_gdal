@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrocisession.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  Oracle Spatial Driver
  * Purpose:  Implementation of OGROCISession, which encapsulates much of the
@@ -30,7 +31,7 @@
 #include "ogr_oci.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrocisession.cpp 36802 2016-12-11 23:03:54Z rouault $");
+CPL_CVSID("$Id: ogrocisession.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 /************************************************************************/
 /*                          OGRGetOCISession()                          */
@@ -274,14 +275,14 @@ int OGROCISession::EstablishSession( const char *pszUseridIn,
 /* -------------------------------------------------------------------- */
 /*      Record information about the session.                           */
 /* -------------------------------------------------------------------- */
-    pszUserid = CPLStrdup(pszUseridIn);
-    pszPassword = CPLStrdup(pszPasswordIn);
-    pszDatabase = CPLStrdup(pszDatabaseIn);
+    this->pszUserid = CPLStrdup(pszUseridIn);
+    this->pszPassword = CPLStrdup(pszPasswordIn);
+    this->pszDatabase = CPLStrdup(pszDatabaseIn);
 
 /* -------------------------------------------------------------------- */
 /*      Setting up the OGR compatible time formatting rules.            */
 /* -------------------------------------------------------------------- */
-    OGROCIStatement oSetNLSTimeFormat( this );
+    OGROCIStatement     oSetNLSTimeFormat( this );
     if( oSetNLSTimeFormat.Execute( "ALTER SESSION SET NLS_DATE_FORMAT='YYYY/MM/DD' \
         NLS_TIME_FORMAT='HH24:MI:SS' NLS_TIME_TZ_FORMAT='HH24:MI:SS TZHTZM' \
         NLS_TIMESTAMP_FORMAT='YYYY/MM/DD HH24:MI:SS' \
@@ -367,24 +368,24 @@ OGROCISession::GetParmInfo( OCIParam *hParmDesc, OGRFieldDefn *poOGRDefn,
 /* -------------------------------------------------------------------- */
     if( Failed(
         OCIAttrGet( hParmDesc, OCI_DTYPE_PARAM,
-                    &nOCIType, 0, OCI_ATTR_DATA_TYPE, hError ),
+                    (dvoid **)&nOCIType, 0, OCI_ATTR_DATA_TYPE, hError ),
         "OCIAttrGet(Type)" ) )
         return CE_Failure;
 
     if( Failed(
         OCIAttrGet( hParmDesc, OCI_DTYPE_PARAM,
-                    &nOCILen, 0, OCI_ATTR_DATA_SIZE, hError ),
+                    (dvoid **)&nOCILen, 0, OCI_ATTR_DATA_SIZE, hError ),
         "OCIAttrGet(Size)" ) )
         return CE_Failure;
 
     if( Failed(
-        OCIAttrGet( hParmDesc, OCI_DTYPE_PARAM, &pszColName,
+        OCIAttrGet( hParmDesc, OCI_DTYPE_PARAM, (dvoid **)&pszColName,
                     &nColLen, OCI_ATTR_NAME, hError ),
         "OCIAttrGet(Name)") )
         return CE_Failure;
 
     if( Failed(
-        OCIAttrGet( hParmDesc, OCI_DTYPE_PARAM, &bOCINull,
+        OCIAttrGet( hParmDesc, OCI_DTYPE_PARAM, (dvoid **)&bOCINull,
                     0, OCI_ATTR_IS_NULL, hError ),
         "OCIAttrGet(Null)") )
         return CE_Failure;
@@ -426,12 +427,12 @@ OGROCISession::GetParmInfo( OCIParam *hParmDesc, OGRFieldDefn *poOGRDefn,
             sb1  nScale;
 
             if( Failed(
-                OCIAttrGet( hParmDesc, OCI_DTYPE_PARAM, &byPrecision,
+                OCIAttrGet( hParmDesc, OCI_DTYPE_PARAM, (dvoid **)&byPrecision,
                             0, OCI_ATTR_PRECISION, hError ),
                 "OCIAttrGet(Precision)" ) )
                 return CE_Failure;
             if( Failed(
-                OCIAttrGet( hParmDesc, OCI_DTYPE_PARAM, &nScale,
+                OCIAttrGet( hParmDesc, OCI_DTYPE_PARAM, (dvoid **)&nScale,
                             0, OCI_ATTR_SCALE, hError ),
                 "OCIAttrGet(Scale)") )
                 return CE_Failure;

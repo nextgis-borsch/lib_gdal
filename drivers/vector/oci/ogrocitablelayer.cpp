@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrocitablelayer.cpp 36682 2016-12-04 20:34:45Z rouault $");
+CPL_CVSID("$Id: ogrocitablelayer.cpp 34888 2016-08-03 19:59:19Z ilucena $");
 
 static int nDiscarded = 0;
 static int nHits = 0;
@@ -132,6 +132,7 @@ OGROCITableLayer::~OGROCITableLayer()
 
     CPLFree( papsWriteGeomMap );
     CPLFree( pasWriteGeoms );
+
 
     CPLFree( pszQuery );
     CPLFree( pszWHERE );
@@ -915,7 +916,7 @@ OGRErr OGROCITableLayer::ICreateFeature( OGRFeature *poFeature )
 /*      Get the multi load count value from open options                */
 /* -------------------------------------------------------------------- */
 
-    this->bMultiLoad = CPLFetchBool( papszOptions, "MULTI_LOAD", true );
+    this->bMultiLoad = CSLFetchBoolean( papszOptions, "MULTI_LOAD", true );
 
     this->nMultiLoadCount = 100;
 
@@ -972,6 +973,7 @@ OGRErr OGROCITableLayer::UnboundCreateFeature( OGRFeature *poFeature )
         strcat( pszCommand, pszFIDName );
         bNeedComma = TRUE;
     }
+
 
     for( int i = 0; i < poFeatureDefn->GetFieldCount(); i++ )
     {
@@ -1310,6 +1312,7 @@ OGRErr OGROCITableLayer::UnboundCreateFeature( OGRFeature *poFeature )
         return OGRERR_NONE;
 }
 
+
 /************************************************************************/
 /*                           GetExtent()                                */
 /************************************************************************/
@@ -1592,6 +1595,7 @@ void OGROCITableLayer::UpdateLayerExtents()
 
         sDimUpdate.Appendf(static_cast<int>(strlen(poFeatureDefn->GetName()) + 100),
                            ") WHERE TABLE_NAME = '%s'", poFeatureDefn->GetName());
+
     }
     else
     {
@@ -2139,8 +2143,8 @@ void OGROCITableLayer::CreateSpatialIndex()
 /*      If the user has disabled INDEX support then don't create the    */
 /*      index.                                                          */
 /* -------------------------------------------------------------------- */
-        if( !CPLFetchBool( papszOptions, "SPATIAL_INDEX", true ) ||
-            !CPLFetchBool( papszOptions, "INDEX", true ) )
+        if( !CSLFetchBoolean( papszOptions, "SPATIAL_INDEX", true ) ||
+            !CSLFetchBoolean( papszOptions, "INDEX", true ) )
             return;
 
 /* -------------------------------------------------------------------- */
@@ -2174,6 +2178,7 @@ void OGROCITableLayer::CreateSpatialIndex()
         OGROCIStringBuf  sIndexCmd;
         OGROCIStatement oExecStatement( poDS->GetSession() );
 
+
         sIndexCmd.Appendf( 10000, "CREATE INDEX \"%s\" ON %s(\"%s\") "
                            "INDEXTYPE IS MDSYS.SPATIAL_INDEX ",
                            szIndexName,
@@ -2185,15 +2190,15 @@ void OGROCITableLayer::CreateSpatialIndex()
             GetGeomType() != wkbUnknown;
 
         CPLString osParams(CSLFetchNameValueDef(papszOptions,"INDEX_PARAMETERS", ""));
-        if( bAddLayerGType || !osParams.empty() )
+        if( bAddLayerGType || osParams.size() != 0 )
         {
             sIndexCmd.Append( " PARAMETERS( '" );
-            if( !osParams.empty() )
+            if( osParams.size() != 0 )
                 sIndexCmd.Append( osParams.c_str() );
             if( bAddLayerGType &&
                 osParams.ifind("LAYER_GTYPE") == std::string::npos )
             {
-                if( !osParams.empty() )
+                if( osParams.size() != 0 )
                     sIndexCmd.Append( ", " );
                 sIndexCmd.Append( "LAYER_GTYPE=" );
                 if( wkbFlatten(GetGeomType()) == wkbPoint )

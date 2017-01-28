@@ -1,8 +1,10 @@
 /******************************************************************************
+ * $Id: ogrgtmdatasource.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  GTM Driver
  * Purpose:  Implementation of OGRGTMDataSource class.
  * Author:   Leonardo de Paula Rosa Piga; http://lampiao.lsc.ic.unicamp.br/~piga
+ *
  *
  ******************************************************************************
  * Copyright (c) 2009, Leonardo de Paula Rosa Piga
@@ -25,12 +27,7 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
-
 #include "ogr_gtm.h"
-
-#include <algorithm>
-
-CPL_CVSID("$Id: ogrgtmdatasource.cpp 36017 2016-10-29 04:27:08Z goatbar $");
 
 /************************************************************************/
 /*                         OGRGTMDataSource()                           */
@@ -155,6 +152,7 @@ void OGRGTMDataSource::WriteWaypointStyles()
     }
 }
 
+
 /************************************************************************/
 /*                        ~OGRGTMDataSource()                           */
 /************************************************************************/
@@ -210,6 +208,8 @@ OGRGTMDataSource::~OGRGTMDataSource()
     if (poGTMFile != NULL)
         delete poGTMFile;
 }
+
+
 
 /************************************************************************/
 /*                                Open()                                */
@@ -270,6 +270,7 @@ int OGRGTMDataSource::Open(const char* pszFilename, int bUpdate)
     OGRSpatialReference* poSRS = new OGRSpatialReference(NULL);
     poSRS->SetWellKnownGeogCS( "WGS84" );
 
+
     /* Waypoint layer */
     size_t layerNameSize = strlen(pszBaseFileName) + sizeof("_waypoints");
     char* pszLayerName = (char*) CPLMalloc(layerNameSize);
@@ -304,7 +305,9 @@ int OGRGTMDataSource::Open(const char* pszFilename, int bUpdate)
 
     poSRS->Release();
     return TRUE;
+
 }
+
 
 /************************************************************************/
 /*                               Create()                               */
@@ -317,9 +320,10 @@ int OGRGTMDataSource::Create( const char* pszFilename,
 
     if( fpOutput != NULL )
     {
-        CPLAssert( false );
+        CPLAssert( FALSE );
         return FALSE;
     }
+
 
 /* -------------------------------------------------------------------- */
 /*     Do not override exiting file.                                    */
@@ -333,6 +337,7 @@ int OGRGTMDataSource::Create( const char* pszFilename,
                  pszFilename);
         return FALSE;
     }
+
 
 /* -------------------------------------------------------------------- */
 /*      Create the output file.                                         */
@@ -418,6 +423,7 @@ int OGRGTMDataSource::Create( const char* pszFilename,
     return TRUE;
 }
 
+
 /************************************************************************/
 /*                            GetLayer()                                */
 /************************************************************************/
@@ -429,6 +435,7 @@ OGRLayer* OGRGTMDataSource::GetLayer( int iLayer )
 
     return papoLayers[iLayer];
 }
+
 
 /************************************************************************/
 /*                           ICreateLayer()                             */
@@ -446,6 +453,7 @@ OGRLayer * OGRGTMDataSource::ICreateLayer( const char * pszLayerName,
         papoLayers = (OGRGTMLayer **) CPLRealloc(papoLayers, nLayers * sizeof(OGRGTMLayer*));
         papoLayers[nLayers-1] = new GTMWaypointLayer( pszName, poSRS, TRUE, this );
         return papoLayers[nLayers-1];
+
     }
     else if (eType == wkbLineString || eType == wkbLineString25D ||
              eType == wkbMultiLineString || eType == wkbMultiLineString25D)
@@ -469,7 +477,9 @@ OGRLayer * OGRGTMDataSource::ICreateLayer( const char * pszLayerName,
                   OGRGeometryTypeToName(eType) );
         return NULL;
     }
+
 }
+
 
 /************************************************************************/
 /*                           TestCapability()                           */
@@ -500,20 +510,24 @@ void OGRGTMDataSource::checkBounds(float newLat,
     }
     else
     {
-        minlat = std::min(newLat, minlat);
-        maxlat = std::max(newLat, maxlat);
-        minlon = std::min(newLon, minlon);
-        maxlon = std::max(newLon, maxlon);
+        minlat = MIN(newLat, minlat);
+        maxlat = MAX(newLat, maxlat);
+        minlon = MIN(newLon, minlon);
+        maxlon = MAX(newLon, maxlon);
     }
 }
+
+
 
 /************************************************************************/
 /*               Methods for reading existent file                      */
 /************************************************************************/
 
+
 /*======================================================================*/
 /*                           Waypoint Methods                           */
 /*======================================================================*/
+
 
 /*----------------------------------------------------------------------*/
 /*                              getNWpts()                              */
@@ -527,16 +541,18 @@ int OGRGTMDataSource::getNWpts()
     return poGTMFile->getNWpts();
 }
 
+
 /*----------------------------------------------------------------------*/
 /*                         hasNextWaypoint()                            */
 /*----------------------------------------------------------------------*/
 bool OGRGTMDataSource::hasNextWaypoint()
 {
     if (poGTMFile == NULL)
-        return false;
+        return FALSE;
 
     return poGTMFile->hasNextWaypoint();
 }
+
 
 /*----------------------------------------------------------------------*/
 /*                       fetchNextWaypoint()                            */
@@ -549,6 +565,7 @@ Waypoint* OGRGTMDataSource::fetchNextWaypoint()
     return poGTMFile->fetchNextWaypoint();
 }
 
+
 /*----------------------------------------------------------------------*/
 /*                         rewindWaypoint()                            */
 /*----------------------------------------------------------------------*/
@@ -560,9 +577,12 @@ void OGRGTMDataSource::rewindWaypoint()
     poGTMFile->rewindWaypoint();
 }
 
+
+
 /*======================================================================*/
 /*                             Tracks Methods                           */
 /*======================================================================*/
+
 
 /*----------------------------------------------------------------------*/
 /*                              getNTracks()                            */
@@ -576,16 +596,18 @@ int OGRGTMDataSource::getNTracks()
     return poGTMFile->getNTracks();
 }
 
+
 /*----------------------------------------------------------------------*/
 /*                             hasNextTrack()                           */
 /*----------------------------------------------------------------------*/
 bool OGRGTMDataSource::hasNextTrack()
 {
     if (poGTMFile == NULL)
-        return false;
+        return FALSE;
 
     return poGTMFile->hasNextTrack();
 }
+
 
 /*----------------------------------------------------------------------*/
 /*                            fetchNextTrack()                          */
@@ -597,6 +619,7 @@ Track* OGRGTMDataSource::fetchNextTrack()
 
     return poGTMFile->fetchNextTrack();
 }
+
 
 /*----------------------------------------------------------------------*/
 /*                           rewindTrack()                              */

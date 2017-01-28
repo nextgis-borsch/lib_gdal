@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_vrt.h 36558 2016-11-30 01:46:53Z goatbar $
+ * $Id: gdal_vrt.h 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  Virtual GDAL Datasets
  * Purpose:  C/Public declarations of virtual GDAL dataset objects.
@@ -36,17 +36,16 @@
  * Public (C callable) entry points for virtual GDAL dataset objects.
  */
 
+#include "gdal.h"
+#include "cpl_port.h"
 #include "cpl_error.h"
 #include "cpl_minixml.h"
-#include "cpl_port.h"
-#include "gdal.h"
 
-/** Special value to indicate that nodata is not set */
 #define VRT_NODATA_UNSET -1234.56
 
 CPL_C_START
 
-/** Type for a function that returns the pixel data in a provided window */
+void GDALRegister_VRT();
 typedef CPLErr
 (*VRTImageReadFunc)( void *hCBData,
                      int nXOff, int nYOff, int nXSize, int nYSize,
@@ -55,27 +54,22 @@ typedef CPLErr
 /* -------------------------------------------------------------------- */
 /*      Define handle types related to various VRT dataset classes.     */
 /* -------------------------------------------------------------------- */
-/*! @cond Doxygen_Suppress */
-typedef void *VRTAveragedSourceH;
-typedef void *VRTAverageFilteredSourceH;
-typedef void *VRTComplexSourceH;
-typedef void *VRTDerivedRasterBandH;
 typedef void *VRTDriverH;
-typedef void *VRTFilteredSourceH;
-typedef void *VRTFuncSourceH;
-typedef void *VRTKernelFilteredSourceH;
-typedef void *VRTRasterBandH;
-typedef void *VRTRawRasterBandH;
-typedef void *VRTSimpleSourceH;
 typedef void *VRTSourceH;
-typedef void *VRTWarpedDatasetH;
-typedef void *VRTWarpedRasterBandH;
-/*! @endcond */
-
-/** Opaque type for a VRT dataset */
+typedef void *VRTSimpleSourceH;
+typedef void *VRTAveragedSourceH;
+typedef void *VRTComplexSourceH;
+typedef void *VRTFilteredSourceH;
+typedef void *VRTKernelFilteredSourceH;
+typedef void *VRTAverageFilteredSourceH;
+typedef void *VRTFuncSourceH;
 typedef void *VRTDatasetH;
-/** Opaque type for a VRT sourced raster band */
+typedef void *VRTWarpedDatasetH;
+typedef void *VRTRasterBandH;
 typedef void *VRTSourcedRasterBandH;
+typedef void *VRTWarpedRasterBandH;
+typedef void *VRTDerivedRasterBandH;
+typedef void *VRTRawRasterBandH;
 
 /* ==================================================================== */
 /*      VRTDataset class.                                               */

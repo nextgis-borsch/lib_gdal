@@ -42,6 +42,7 @@
           g2int mapgrid[MAXGRIDMAPLEN];
       };
 
+
 const struct gridtemplate *get_templatesgrid(void);
 g2int getgridindex(g2int number);
 

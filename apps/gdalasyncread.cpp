@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: gdalasyncread.cpp 33808 2016-03-29 21:15:28Z goatbar $
  *
  * Project:  GDAL Utilities
  * Purpose:  GDAL Async Image Reader, primarily for testing async api.
@@ -32,7 +33,7 @@
 #include "gdal_priv.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: gdalasyncread.cpp 35931 2016-10-25 16:20:52Z goatbar $");
+CPL_CVSID("$Id: gdalasyncread.cpp 33808 2016-03-29 21:15:28Z goatbar $");
 
 /* ******************************************************************** */
 /*                               Usage()                                */
@@ -75,15 +76,15 @@ static void Usage()
 int main( int argc, char ** argv )
 
 {
-    GDALDatasetH        hSrcDS, hDstDS;
+    GDALDatasetH	hSrcDS, hDstDS;
     GDALDataset *       poSrcDS, *poDstDS = NULL;
-    int                 i;
-    int                 nRasterXSize, nRasterYSize;
-    const char          *pszSource=NULL, *pszDest=NULL, *pszFormat = "GTiff";
-    GDALDriverH         hDriver;
-    int                 *panBandList = NULL, nBandCount = 0, bDefBands = TRUE;
-    GDALDataType        eOutputType = GDT_Unknown;
-    int                 nOXSize = 0, nOYSize = 0;
+    int			i;
+    int			nRasterXSize, nRasterYSize;
+    const char		*pszSource=NULL, *pszDest=NULL, *pszFormat = "GTiff";
+    GDALDriverH		hDriver;
+    int			*panBandList = NULL, nBandCount = 0, bDefBands = TRUE;
+    GDALDataType	eOutputType = GDT_Unknown;
+    int			nOXSize = 0, nOYSize = 0;
     char                **papszCreateOptions = NULL;
     char                **papszAsyncOptions = NULL;
     int                 anSrcWin[4];
@@ -295,7 +296,7 @@ int main( int argc, char ** argv )
     }
 
 /* -------------------------------------------------------------------- */
-/*      Build band list to translate                                    */
+/*	Build band list to translate					*/
 /* -------------------------------------------------------------------- */
     if( nBandCount == 0 )
     {
@@ -491,10 +492,8 @@ int main( int argc, char ** argv )
 /*      Fetch an update and write it to the output file.                */
 /* ==================================================================== */
 
-        int nUpXOff;
-        int nUpYOff;
-        int nUpXSize;
-        int nUpYSize;
+
+        int nUpXOff, nUpYOff, nUpXSize, nUpYSize;
 
         eAStatus = poAsyncReq->GetNextUpdatedRegion( dfTimeout,
                                                      &nUpXOff, &nUpYOff,
@@ -530,9 +529,8 @@ int main( int argc, char ** argv )
             hDstDS = NULL;
         }
         else
-        {
             GDALFlushCache( hDstDS );
-        }
+
     } while( eAStatus != GARIO_ERROR && eAStatus != GARIO_COMPLETE
              && eErr == CE_None );
 

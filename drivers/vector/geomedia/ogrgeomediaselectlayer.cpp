@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrgeomediaselectlayer.cpp 28375 2015-01-30 12:06:11Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRGeomediaSelectLayer class, layer access to the results
@@ -31,15 +32,15 @@
 #include "cpl_conv.h"
 #include "ogr_geomedia.h"
 
-CPL_CVSID("$Id: ogrgeomediaselectlayer.cpp 35175 2016-08-22 03:12:11Z goatbar $");
+CPL_CVSID("$Id: ogrgeomediaselectlayer.cpp 28375 2015-01-30 12:06:11Z rouault $");
 
 /************************************************************************/
 /*                        OGRGeomediaSelectLayer()                      */
 /************************************************************************/
 
 OGRGeomediaSelectLayer::OGRGeomediaSelectLayer( OGRGeomediaDataSource *poDSIn,
-                                                CPLODBCStatement * poStmtIn ) :
-    pszBaseStatement(CPLStrdup( poStmtIn->GetCommand() ))
+                                        CPLODBCStatement * poStmtIn )
+
 {
     poDS = poDSIn;
 
@@ -48,6 +49,7 @@ OGRGeomediaSelectLayer::OGRGeomediaSelectLayer( OGRGeomediaDataSource *poDSIn,
     poFeatureDefn = NULL;
 
     poStmt = poStmtIn;
+    pszBaseStatement = CPLStrdup( poStmtIn->GetCommand() );
 
     BuildFeatureDefn( "SELECT", poStmt );
 }

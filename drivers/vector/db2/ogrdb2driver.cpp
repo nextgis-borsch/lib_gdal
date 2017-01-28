@@ -29,8 +29,6 @@
 #include "ogr_db2.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
-
 /************************************************************************/
 /*                       OGRDB2DriverIdentify()                  */
 /************************************************************************/
@@ -106,6 +104,7 @@ static CPLErr OGRDB2DriverDelete( const char *pszFilename )
         return CE_Failure;
 }
 
+
 /************************************************************************/
 /*                           RegisterOGRDB2()                  */
 /************************************************************************/
@@ -132,6 +131,7 @@ void RegisterOGRDB2()
 "  <Option name='QUALITY' type='int' min='1' max='100' description='Quality for JPEG and WEBP tiles' default='75'/>" \
 "  <Option name='ZLEVEL' type='int' min='1' max='9' description='DEFLATE compression level for PNG tiles' default='6'/>" \
 "  <Option name='DITHER' type='boolean' description='Whether to apply Floyd-Steinberg dithering (for TILE_FORMAT=PNG8)' default='NO'/>"
+
 
     poDriver->SetMetadataItem( GDAL_DMD_OPENOPTIONLIST, "<OpenOptionList>"
                                "  <Option name='TABLE' type='string' description='Name of tile user-table'/>"

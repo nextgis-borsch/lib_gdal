@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: sdtslinereader.cpp 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  SDTS Translator
  * Purpose:  Implementation of SDTSLineReader and SDTSRawLine classes.
@@ -28,7 +29,7 @@
 
 #include "sdts_al.h"
 
-CPL_CVSID("$Id: sdtslinereader.cpp 35671 2016-10-09 23:46:52Z goatbar $");
+CPL_CVSID("$Id: sdtslinereader.cpp 33717 2016-03-14 06:29:14Z goatbar $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -86,8 +87,10 @@ int SDTSRawLine::Read( SDTS_IREF * poIREF, DDFRecord * poRecord )
     for( int iField = 0; iField < poRecord->GetFieldCount(); iField++ )
     {
         DDFField        *poField = poRecord->GetField( iField );
+        const char      *pszFieldName;
+
         CPLAssert( poField != NULL );
-        const char *pszFieldName = poField->GetFieldDefn()->GetName();
+        pszFieldName = poField->GetFieldDefn()->GetName();
 
         if( EQUAL(pszFieldName,"LINE") )
             oModId.Set( poField );
@@ -170,9 +173,11 @@ void SDTSRawLine::Dump( FILE * fp )
 /*                           SDTSLineReader()                           */
 /************************************************************************/
 
-SDTSLineReader::SDTSLineReader( SDTS_IREF * poIREFIn ) :
-    poIREF(poIREFIn)
-{}
+SDTSLineReader::SDTSLineReader( SDTS_IREF * poIREFIn )
+
+{
+    poIREF = poIREFIn;
+}
 
 /************************************************************************/
 /*                             ~SDTSLineReader()                        */
@@ -203,7 +208,7 @@ void SDTSLineReader::Close()
 int SDTSLineReader::Open( const char * pszFilename )
 
 {
-    return oDDFModule.Open( pszFilename );
+    return( oDDFModule.Open( pszFilename ) );
 }
 
 /************************************************************************/
@@ -236,7 +241,7 @@ SDTSRawLine *SDTSLineReader::GetNextLine()
 
     if( poRawLine->Read( poIREF, poRecord ) )
     {
-        return poRawLine;
+        return( poRawLine );
     }
 
     delete poRawLine;
@@ -280,7 +285,7 @@ void SDTSLineReader::AttachToPolygons( SDTSTransfer * poTransfer,
 /*      have as right and left faces.                                   */
 /* ==================================================================== */
     Rewind();
-    SDTSRawLine *poLine = NULL;
+    SDTSRawLine *poLine;
     SDTSPolygonReader *poPolyReader = NULL;
     while( (poLine = reinterpret_cast<SDTSRawLine *>( GetNextFeature()) )
            != NULL )

@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogr_xplane_nav_reader.cpp
  *
  * Project:  X-Plane nav.dat file reader
  * Purpose:  Implements OGRXPlaneNavReader class
@@ -28,7 +29,7 @@
 
 #include "ogr_xplane_nav_reader.h"
 
-CPL_CVSID("$Id: ogr_xplane_nav_reader.cpp 36061 2016-11-01 02:26:58Z goatbar $");
+CPL_CVSID("$Id: ogr_xplane_nav_reader.cpp 31120 2015-10-24 19:55:09Z rouault $");
 
 /************************************************************************/
 /*                   OGRXPlaneCreateNavFileReader                       */
@@ -40,32 +41,35 @@ OGRXPlaneReader* OGRXPlaneCreateNavFileReader( OGRXPlaneDataSource* poDataSource
     return poReader;
 }
 
+
 /************************************************************************/
 /*                         OGRXPlaneNavReader()                         */
 /************************************************************************/
-OGRXPlaneNavReader::OGRXPlaneNavReader() :
-    poILSLayer(NULL),
-    poVORLayer(NULL),
-    poNDBLayer(NULL),
-    poGSLayer(NULL),
-    poMarkerLayer(NULL),
-    poDMELayer(NULL),
-    poDMEILSLayer(NULL)
-{}
+OGRXPlaneNavReader::OGRXPlaneNavReader()
+{
+    poILSLayer = NULL;
+    poVORLayer = NULL;
+    poNDBLayer = NULL;
+    poGSLayer = NULL;
+    poMarkerLayer = NULL;
+    poDMELayer = NULL;
+    poDMEILSLayer = NULL;
+}
 
 /************************************************************************/
 /*                          OGRXPlaneNavReader()                        */
 /************************************************************************/
 
-OGRXPlaneNavReader::OGRXPlaneNavReader( OGRXPlaneDataSource* poDataSource ) :
-    poILSLayer(new OGRXPlaneILSLayer()),
-    poVORLayer(new OGRXPlaneVORLayer()),
-    poNDBLayer(new OGRXPlaneNDBLayer()),
-    poGSLayer(new OGRXPlaneGSLayer()),
-    poMarkerLayer(new OGRXPlaneMarkerLayer()),
-    poDMELayer(new OGRXPlaneDMELayer()),
-    poDMEILSLayer(new OGRXPlaneDMEILSLayer())
+OGRXPlaneNavReader::OGRXPlaneNavReader( OGRXPlaneDataSource* poDataSource )
 {
+    poILSLayer = new OGRXPlaneILSLayer();
+    poVORLayer = new OGRXPlaneVORLayer();
+    poNDBLayer = new OGRXPlaneNDBLayer();
+    poGSLayer = new OGRXPlaneGSLayer();
+    poMarkerLayer = new OGRXPlaneMarkerLayer();
+    poDMELayer = new OGRXPlaneDMELayer();
+    poDMEILSLayer = new OGRXPlaneDMEILSLayer();
+
     poDataSource->RegisterLayer(poILSLayer);
     poDataSource->RegisterLayer(poVORLayer);
     poDataSource->RegisterLayer(poNDBLayer);
@@ -118,29 +122,30 @@ int OGRXPlaneNavReader::IsRecognizedVersion( const char* pszVersionString)
 
 void OGRXPlaneNavReader::Read()
 {
-    const char* pszLine = NULL;
-    while( (pszLine = CPLReadLineL(fp)) != NULL )
+    const char* pszLine;
+    while((pszLine = CPLReadLineL(fp)) != NULL)
     {
+        int nType;
         papszTokens = CSLTokenizeString(pszLine);
         nTokens = CSLCount(papszTokens);
 
-        nLineNumber++;
+        nLineNumber ++;
 
         if (nTokens == 1 && strcmp(papszTokens[0], "99") == 0)
         {
             CSLDestroy(papszTokens);
             papszTokens = NULL;
-            bEOF = true;
+            bEOF = TRUE;
             return;
         }
-        else if( nTokens == 0 || !assertMinCol(9) )
+        else if (nTokens == 0 || assertMinCol(9) == FALSE)
         {
             CSLDestroy(papszTokens);
             papszTokens = NULL;
             continue;
         }
 
-        const int nType = atoi(papszTokens[0]);
+        nType = atoi(papszTokens[0]);
         if (!((nType >= NAVAID_NDB && nType <= NAVAID_IM) ||
                nType == NAVAID_DME_COLOC || nType == NAVAID_DME_STANDALONE))
         {
@@ -156,44 +161,41 @@ void OGRXPlaneNavReader::Read()
         CSLDestroy(papszTokens);
         papszTokens = NULL;
 
-        if( poInterestLayer && !poInterestLayer->IsEmpty() )
+        if (poInterestLayer && poInterestLayer->IsEmpty() == FALSE)
             return;
     }
 
     papszTokens = NULL;
-    bEOF = true;
+    bEOF = TRUE;
 }
 
 /************************************************************************/
 /*                            ParseRecord()                             */
 /************************************************************************/
 
-void OGRXPlaneNavReader::ParseRecord( int nType )
+void    OGRXPlaneNavReader::ParseRecord(int nType)
 {
-    double dfVal = 0.0;
-    double dfTrueHeading = 0.0;
+    double dfVal, dfLat, dfLon, dfElevation, dfFrequency, dfRange;
+    double dfSlavedVariation = 0, dfTrueHeading = 0,
+            dfDMEBias = 0, dfSlope = 0;
+    char* pszNavaidId;
 
-    double dfLat = 0.0;
-    double dfLon = 0.0;
     RET_IF_FAIL(readLatLon(&dfLat, &dfLon, 1));
 
-    double dfElevation = 0.0;
     /* feet to meter */
     RET_IF_FAIL(readDoubleWithBoundsAndConversion(&dfElevation, 3, "elevation", FEET_TO_METER, -1000., 10000.));
 
-    double dfFrequency = 0.0;
     RET_IF_FAIL(readDouble(&dfFrequency, 4, "frequency"));
     /* NDB frequencies are in kHz. Others must be divided by 100 */
     /* to get a frequency in MHz */
     if (nType != NAVAID_NDB)
         dfFrequency /= 100.;
 
-    double dfRange = 0.0;
     /* nautical miles to kilometer */
     RET_IF_FAIL(readDouble(&dfRange, 5, "range"));
     dfRange *= NM_TO_KM;
 
-    char* pszNavaidId = papszTokens[7];
+    pszNavaidId = papszTokens[7];
 
     if (nType == NAVAID_NDB)
     {
@@ -223,9 +225,7 @@ void OGRXPlaneNavReader::ParseRecord( int nType )
         const char* pszSubType = "";
         CPLString osNavaidName;
 
-        double dfSlavedVariation = 0.0;
-        RET_IF_FAIL(readDoubleWithBounds(&dfSlavedVariation, 6,
-                                         "slaved variation", -180., 180.));
+        RET_IF_FAIL(readDoubleWithBounds(&dfSlavedVariation, 6, "slaved variation", -180., 180.));
 
         if (EQUAL(papszTokens[nTokens-1], "VOR") ||
             EQUAL(papszTokens[nTokens-1], "VORTAC") ||
@@ -236,28 +236,27 @@ void OGRXPlaneNavReader::ParseRecord( int nType )
         }
         else
         {
-            CPLDebug("XPlane", "Unexpected VOR subtype : %s",
-                     papszTokens[nTokens-1]);
+            CPLDebug("XPlane", "Unexpected VOR subtype : %s", papszTokens[nTokens-1]);
         }
 
         osNavaidName = readStringUntilEnd(8);
 
         if (poVORLayer)
             poVORLayer->AddFeature(pszNavaidId, osNavaidName, pszSubType,
-                                   dfLat, dfLon,
-                                   dfElevation, dfFrequency,
-                                   dfRange, dfSlavedVariation);
+                                    dfLat, dfLon,
+                                    dfElevation, dfFrequency, dfRange, dfSlavedVariation);
     }
     else if (nType == NAVAID_LOC_ILS || nType == NAVAID_LOC_STANDALONE)
     {
-        RET_IF_FAIL(readDoubleWithBounds(&dfTrueHeading, 6, "true heading",
-                                         0.0, 360.));
+        const char* pszAptICAO, * pszRwyNum, * pszSubType;
+
+        RET_IF_FAIL(readDoubleWithBounds(&dfTrueHeading, 6, "true heading", 0., 360.));
 
         RET_IF_FAIL(assertMinCol(11));
 
-        const char *pszAptICAO = papszTokens[8];
-        const char *pszRwyNum = papszTokens[9];
-        const char *pszSubType = papszTokens[10];
+        pszAptICAO = papszTokens[8];
+        pszRwyNum = papszTokens[9];
+        pszSubType = papszTokens[10];
 
         if (EQUAL(pszSubType, "ILS-cat-I") ||
             EQUAL(pszSubType, "ILS-cat-II") ||
@@ -269,11 +268,9 @@ void OGRXPlaneNavReader::ParseRecord( int nType )
             EQUAL(pszSubType, "LDA-GS"))
         {
             if (poILSLayer)
-                poILSLayer->AddFeature(pszNavaidId, pszAptICAO,
-                                       pszRwyNum, pszSubType,
-                                       dfLat, dfLon,
-                                       dfElevation, dfFrequency,
-                                       dfRange, dfTrueHeading);
+                poILSLayer->AddFeature(pszNavaidId, pszAptICAO, pszRwyNum, pszSubType,
+                                        dfLat, dfLon,
+                                        dfElevation, dfFrequency, dfRange, dfTrueHeading);
         }
         else
         {
@@ -284,8 +281,10 @@ void OGRXPlaneNavReader::ParseRecord( int nType )
     }
     else if (nType == NAVAID_GS)
     {
+        const char* pszAptICAO, * pszRwyNum, * pszSubType;
+
         RET_IF_FAIL(readDouble(&dfVal, 6, "slope & heading"));
-        const double dfSlope = (int)(dfVal / 1000) / 100.;
+        dfSlope = (int)(dfVal / 1000) / 100.;
         dfTrueHeading = dfVal - dfSlope * 100000;
         if (dfTrueHeading < 0 || dfTrueHeading > 360)
         {
@@ -296,17 +295,16 @@ void OGRXPlaneNavReader::ParseRecord( int nType )
 
         RET_IF_FAIL(assertMinCol(11));
 
-        const char *pszAptICAO = papszTokens[8];
-        const char *pszRwyNum = papszTokens[9];
-        const char *pszSubType = papszTokens[10];
+        pszAptICAO = papszTokens[8];
+        pszRwyNum = papszTokens[9];
+        pszSubType = papszTokens[10];
 
         if (EQUAL(pszSubType, "GS") )
         {
             if (poGSLayer)
                 poGSLayer->AddFeature(pszNavaidId, pszAptICAO, pszRwyNum,
-                                      dfLat, dfLon,
-                                      dfElevation, dfFrequency, dfRange,
-                                      dfTrueHeading, dfSlope);
+                                        dfLat, dfLon,
+                                        dfElevation, dfFrequency, dfRange, dfTrueHeading, dfSlope);
         }
         else
         {
@@ -319,8 +317,7 @@ void OGRXPlaneNavReader::ParseRecord( int nType )
     {
         const char* pszAptICAO, * pszRwyNum, * pszSubType;
 
-        RET_IF_FAIL(readDoubleWithBounds(&dfTrueHeading, 6, "true heading",
-                                         0.0, 360.0));
+        RET_IF_FAIL(readDoubleWithBounds(&dfTrueHeading, 6, "true heading", 0., 360.));
 
         RET_IF_FAIL(assertMinCol(11));
 
@@ -339,9 +336,8 @@ void OGRXPlaneNavReader::ParseRecord( int nType )
         }
         else
         {
-            CPLDebug("XPlane",
-                     "Line %d : invalid localizer marker subtype: '%s'",
-                     nLineNumber, pszSubType);
+            CPLDebug("XPlane", "Line %d : invalid localizer marker subtype: '%s'",
+                    nLineNumber, pszSubType);
             return;
         }
     }
@@ -350,7 +346,6 @@ void OGRXPlaneNavReader::ParseRecord( int nType )
         const char* pszSubType = "";
         CPLString osNavaidName;
 
-        double dfDMEBias = 0.0;
         RET_IF_FAIL(readDouble(&dfDMEBias, 6, "DME bias"));
         dfDMEBias *= NM_TO_KM;
 
@@ -403,9 +398,11 @@ void OGRXPlaneNavReader::ParseRecord( int nType )
     }
     else
     {
-        CPLAssert(false);
+        CPLAssert(0);
     }
+
 }
+
 
 /************************************************************************/
 /*                           OGRXPlaneILSLayer()                        */
@@ -488,6 +485,7 @@ OGRFeature*
 /************************************************************************/
 /*                           OGRXPlaneVORLayer()                        */
 /************************************************************************/
+
 
 OGRXPlaneVORLayer::OGRXPlaneVORLayer() : OGRXPlaneLayer("VOR")
 {
@@ -624,8 +622,7 @@ OGRFeature*
 /*                           OGRXPlaneGSLayer                          */
 /************************************************************************/
 
-OGRXPlaneGSLayer::OGRXPlaneGSLayer() :
-    OGRXPlaneLayer("GS")
+OGRXPlaneGSLayer::OGRXPlaneGSLayer() : OGRXPlaneLayer("GS")
 {
     poFeatureDefn->SetGeomType( wkbPoint );
 
@@ -700,12 +697,12 @@ OGRFeature*
     return poFeature;
 }
 
+
 /************************************************************************/
 /*                         OGRXPlaneMarkerLayer                         */
 /************************************************************************/
 
-OGRXPlaneMarkerLayer::OGRXPlaneMarkerLayer() :
-    OGRXPlaneLayer("Marker")
+OGRXPlaneMarkerLayer::OGRXPlaneMarkerLayer() : OGRXPlaneLayer("Marker")
 {
     poFeatureDefn->SetGeomType( wkbPoint );
 
@@ -763,8 +760,7 @@ OGRFeature*
 /*                           OGRXPlaneDMEILSLayer                          */
 /************************************************************************/
 
-OGRXPlaneDMEILSLayer::OGRXPlaneDMEILSLayer() :
-    OGRXPlaneLayer("DMEILS")
+OGRXPlaneDMEILSLayer::OGRXPlaneDMEILSLayer() : OGRXPlaneLayer("DMEILS")
 {
     poFeatureDefn->SetGeomType( wkbPoint );
 
@@ -836,8 +832,8 @@ OGRFeature*
 /*                           OGRXPlaneDMELayer                          */
 /************************************************************************/
 
-OGRXPlaneDMELayer::OGRXPlaneDMELayer() :
-    OGRXPlaneLayer("DME")
+
+OGRXPlaneDMELayer::OGRXPlaneDMELayer() : OGRXPlaneLayer("DME")
 {
     poFeatureDefn->SetGeomType( wkbPoint );
 

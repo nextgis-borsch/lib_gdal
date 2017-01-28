@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: bsb_read.c 34521 2016-07-02 21:26:43Z goatbar $
+ * $Id: bsb_read.c 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  BSB Reader
  * Purpose:  Low level BSB Access API Implementation (non-GDAL).
@@ -37,7 +37,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: bsb_read.c 34521 2016-07-02 21:26:43Z goatbar $");
+CPL_CVSID("$Id: bsb_read.c 33717 2016-03-14 06:29:14Z goatbar $");
 
 static int BSBReadHeaderLine( BSBInfo *psInfo, char* pszLine, int nLineMaxLen, int bNO1 );
 static int BSBSeekAndCheckScanlineNumber ( BSBInfo *psInfo, int nScanline,

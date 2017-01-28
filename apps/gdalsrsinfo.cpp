@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id$
  *
  * Project:  GDAL Utilities
  * Purpose:  Command line application to list info about a given CRS.
@@ -36,7 +37,7 @@
 #include "ogrsf_frmts.h"
 #include "commonutils.h"
 
-CPL_CVSID("$Id: gdalsrsinfo.cpp 36537 2016-11-27 23:51:56Z goatbar $");
+CPL_CVSID("$Id$");
 
 bool FindSRS( const char *pszInput, OGRSpatialReference &oSRS );
 CPLErr PrintSRS( const OGRSpatialReference &oSRS,
@@ -77,14 +78,14 @@ static void Usage(const char* pszErrorMsg = NULL)
     exit( 1 );
 }
 
+
 /************************************************************************/
 /*                                main()                                */
 /************************************************************************/
 
 #define CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(nExtraArg) \
     do { if (i + nExtraArg >= argc) \
-        Usage(CPLSPrintf("%s option requires %d argument(s)", \
-                         argv[i], nExtraArg)); } while( false )
+        Usage(CPLSPrintf("%s option requires %d argument(s)", argv[i], nExtraArg)); } while(0)
 
 int main( int argc, char ** argv )
 
@@ -359,8 +360,10 @@ bool FindSRS( const char *pszInput, OGRSpatialReference &oSRS )
     if( !bDebug )
         CPLSetErrorHandler ( oErrorHandler );
 
+
     return bGotSRS;
 }
+
 
 /************************************************************************/
 /*                      PrintSRS()                                      */
@@ -579,6 +582,7 @@ int SearchCSVForWKT( const char *pszFileCSV, const char *pszTarget )
     VSIFCloseL( fp );
 
     return nFound;
+
 }
 
 /* TODO

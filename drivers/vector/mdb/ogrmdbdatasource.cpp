@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrmdbdatasource.cpp 32983 2016-01-14 18:32:10Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRMDBDataSource class.
@@ -32,7 +33,7 @@
 #include <vector>
 #include "ogrgeomediageometry.h"
 
-CPL_CVSID("$Id: ogrmdbdatasource.cpp 35911 2016-10-24 15:03:26Z goatbar $");
+CPL_CVSID("$Id: ogrmdbdatasource.cpp 32983 2016-01-14 18:32:10Z goatbar $");
 
 /************************************************************************/
 /*                         OGRMDBDataSource()                          */
@@ -68,8 +69,10 @@ OGRMDBDataSource::~OGRMDBDataSource()
         delete papoLayersInvisible[i];
     CPLFree( papoLayersInvisible );
 
+
     delete poDB;
 }
+
 
 /************************************************************************/
 /*                              OpenGDB()                               */

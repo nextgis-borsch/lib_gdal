@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrodbcselectlayer.cpp 28375 2015-01-30 12:06:11Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRODBCSelectLayer class, layer access to the results
@@ -30,14 +31,14 @@
 #include "cpl_conv.h"
 #include "ogr_odbc.h"
 
-CPL_CVSID("$Id: ogrodbcselectlayer.cpp 35191 2016-08-24 01:33:06Z goatbar $");
+CPL_CVSID("$Id: ogrodbcselectlayer.cpp 28375 2015-01-30 12:06:11Z rouault $");
 /************************************************************************/
 /*                          OGRODBCSelectLayer()                         */
 /************************************************************************/
 
 OGRODBCSelectLayer::OGRODBCSelectLayer( OGRODBCDataSource *poDSIn,
-                                        CPLODBCStatement * poStmtIn ) :
-    pszBaseStatement(CPLStrdup(poStmtIn->GetCommand()))
+                                        CPLODBCStatement * poStmtIn )
+
 {
     poDS = poDSIn;
 
@@ -46,6 +47,7 @@ OGRODBCSelectLayer::OGRODBCSelectLayer( OGRODBCDataSource *poDSIn,
     poFeatureDefn = NULL;
 
     poStmt = poStmtIn;
+    pszBaseStatement = CPLStrdup( poStmtIn->GetCommand() );
 
     BuildFeatureDefn( "SELECT", poStmt );
 }

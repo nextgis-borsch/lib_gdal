@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ddfutils.cpp 32179 2015-12-14 16:22:34Z goatbar $
  *
  * Project:  ISO 8211 Access
  * Purpose:  Various utility functions.
@@ -26,15 +27,10 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "cpl_port.h"
 #include "iso8211.h"
-
-#include <cstdlib>
-#include <cstring>
-
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ddfutils.cpp 36552 2016-11-29 06:01:45Z goatbar $");
+CPL_CVSID("$Id: ddfutils.cpp 32179 2015-12-14 16:22:34Z goatbar $");
 
 /************************************************************************/
 /*                             DDFScanInt()                             */
@@ -46,7 +42,7 @@ CPL_CVSID("$Id: ddfutils.cpp 36552 2016-11-29 06:01:45Z goatbar $");
 int DDFScanInt( const char * pszString, int nMaxChars )
 
 {
-    char szWorking[33] = {};
+    char        szWorking[33];
 
     if( nMaxChars > 32 || nMaxChars == 0 )
         nMaxChars = 32;
@@ -54,7 +50,7 @@ int DDFScanInt( const char * pszString, int nMaxChars )
     memcpy( szWorking, pszString, nMaxChars );
     szWorking[nMaxChars] = '\0';
 
-    return atoi(szWorking);
+    return( atoi(szWorking) );
 }
 
 /************************************************************************/
@@ -67,9 +63,9 @@ int DDFScanInt( const char * pszString, int nMaxChars )
 int DDFScanVariable( const char *pszRecord, int nMaxChars, int nDelimChar )
 
 {
-    int i = 0;  // Used after for.
+    int         i;
 
-    for( ; i < nMaxChars - 1 && pszRecord[i] != nDelimChar; i++ ) {}
+    for( i = 0; i < nMaxChars-1 && pszRecord[i] != nDelimChar; i++ ) {}
 
     return i;
 }
@@ -86,19 +82,18 @@ char * DDFFetchVariable( const char *pszRecord, int nMaxChars,
                          int *pnConsumedChars )
 
 {
-    int i = 0;  // Used after for.
-    for( ;
-         i < nMaxChars-1 && pszRecord[i] != nDelimChar1
-         && pszRecord[i] != nDelimChar2;
-         i++ )
-    {}
+    int         i;
+    char        *pszReturn;
+
+    for( i = 0; i < nMaxChars-1 && pszRecord[i] != nDelimChar1
+                                && pszRecord[i] != nDelimChar2; i++ ) {}
 
     *pnConsumedChars = i;
     if( i < nMaxChars
         && (pszRecord[i] == nDelimChar1 || pszRecord[i] == nDelimChar2) )
         (*pnConsumedChars)++;
 
-    char *pszReturn = static_cast<char *>(CPLMalloc(i + 1));
+    pszReturn = (char *) CPLMalloc(i+1);
     pszReturn[i] = '\0';
     strncpy( pszReturn, pszRecord, i );
 

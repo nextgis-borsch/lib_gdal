@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_ods.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: ogr_ods.h 32989 2016-01-14 21:28:07Z rouault $
  *
  * Project:  ODS Translator
  * Purpose:  Definition of classes for OGR OpenOfficeSpreadsheet .ods driver.
@@ -63,37 +63,37 @@ class OGRODSLayer : public OGRMemLayer
     bool                GetHasHeaderLine() { return bHasHeaderLine; }
     void                SetHasHeaderLine(bool bIn) { bHasHeaderLine = bIn; }
 
-    const char         *GetName() override { return OGRMemLayer::GetLayerDefn()->GetName(); };
-    OGRwkbGeometryType  GetGeomType() override { return wkbNone; }
-    virtual OGRSpatialReference *GetSpatialRef() override { return NULL; }
+    const char         *GetName() { return OGRMemLayer::GetLayerDefn()->GetName(); };
+    OGRwkbGeometryType  GetGeomType() { return wkbNone; }
+    virtual OGRSpatialReference *GetSpatialRef() { return NULL; }
 
     /* For external usage. Mess with FID */
-    virtual OGRFeature *        GetNextFeature() override;
-    virtual OGRFeature         *GetFeature( GIntBig nFeatureId ) override;
-    virtual OGRErr              ISetFeature( OGRFeature *poFeature ) override;
-    virtual OGRErr              DeleteFeature( GIntBig nFID ) override;
+    virtual OGRFeature *        GetNextFeature();
+    virtual OGRFeature         *GetFeature( GIntBig nFeatureId );
+    virtual OGRErr              ISetFeature( OGRFeature *poFeature );
+    virtual OGRErr              DeleteFeature( GIntBig nFID );
 
     /* For internal usage, for cell resolver */
     OGRFeature *        GetNextFeatureWithoutFIDHack() { return OGRMemLayer::GetNextFeature(); }
     OGRErr              SetFeatureWithoutFIDHack( OGRFeature *poFeature ) { SetUpdated(); return OGRMemLayer::ISetFeature(poFeature); }
 
-    OGRErr              ICreateFeature( OGRFeature *poFeature ) override
+    OGRErr              ICreateFeature( OGRFeature *poFeature )
     { SetUpdated(); return OGRMemLayer::ICreateFeature(poFeature); }
 
     virtual OGRErr      CreateField( OGRFieldDefn *poField,
-                                     int bApproxOK = TRUE ) override
+                                     int bApproxOK = TRUE )
     {  SetUpdated(); return OGRMemLayer::CreateField(poField, bApproxOK); }
 
-    virtual OGRErr      DeleteField( int iField ) override
+    virtual OGRErr      DeleteField( int iField )
     { SetUpdated(); return OGRMemLayer::DeleteField(iField); }
 
-    virtual OGRErr      ReorderFields( int* panMap ) override
+    virtual OGRErr      ReorderFields( int* panMap )
     { SetUpdated(); return OGRMemLayer::ReorderFields(panMap); }
 
-    virtual OGRErr      AlterFieldDefn( int iField, OGRFieldDefn* poNewFieldDefn, int nFlagsIn ) override
+    virtual OGRErr      AlterFieldDefn( int iField, OGRFieldDefn* poNewFieldDefn, int nFlagsIn )
     { SetUpdated(); return OGRMemLayer::AlterFieldDefn(iField, poNewFieldDefn, nFlagsIn); }
 
-    virtual OGRErr      SyncToDisk() override;
+    virtual OGRErr      SyncToDisk();
 };
 
 /************************************************************************/
@@ -148,7 +148,7 @@ class OGRODSDataSource : public OGRDataSource
     int                 nRowsRepeated;
     int                 nCurCol;
     int                 nCellsRepeated;
-    bool                bEndTableParsing;
+    int                 bEndTableParsing;
 
     OGRODSLayer        *poCurLayer;
 
@@ -184,7 +184,7 @@ class OGRODSDataSource : public OGRDataSource
 
   public:
                         OGRODSDataSource();
-                        virtual ~OGRODSDataSource();
+                        ~OGRODSDataSource();
 
     int                 Open( const char * pszFilename,
                               VSILFILE* fpContentIn,
@@ -192,20 +192,20 @@ class OGRODSDataSource : public OGRDataSource
                               int bUpdatableIn );
     int                 Create( const char * pszName, char **papszOptions );
 
-    virtual const char*         GetName() override { return pszName; }
+    virtual const char*         GetName() { return pszName; }
 
-    virtual int                 GetLayerCount() override;
-    virtual OGRLayer*           GetLayer( int ) override;
+    virtual int                 GetLayerCount();
+    virtual OGRLayer*           GetLayer( int );
 
-    virtual int                 TestCapability( const char * ) override;
+    virtual int                 TestCapability( const char * );
 
     virtual OGRLayer* ICreateLayer( const char * pszLayerName,
                                 OGRSpatialReference *poSRS,
                                 OGRwkbGeometryType eType,
-                                char ** papszOptions ) override;
-    virtual OGRErr      DeleteLayer(int iLayer) override;
+                                char ** papszOptions );
+    virtual OGRErr      DeleteLayer(int iLayer);
 
-    virtual void        FlushCache() override;
+    virtual void        FlushCache();
 
     void startElementCbk(const char *pszName, const char **ppszAttr);
     void endElementCbk(const char *pszName);
@@ -228,15 +228,15 @@ class OGRODSDataSource : public OGRDataSource
 class OGRODSDriver : public OGRSFDriver
 {
   public:
-                virtual ~OGRODSDriver();
+                ~OGRODSDriver();
 
-    virtual const char*         GetName() override;
-    virtual OGRDataSource*      Open( const char *, int ) override;
-    virtual int                 TestCapability( const char * ) override;
+    virtual const char*         GetName();
+    virtual OGRDataSource*      Open( const char *, int );
+    virtual int                 TestCapability( const char * );
 
     virtual OGRDataSource *CreateDataSource( const char *pszName,
-                                             char ** = NULL ) override;
-    virtual OGRErr      DeleteDataSource( const char *pszName ) override;
+                                             char ** = NULL );
+    virtual OGRErr      DeleteDataSource( const char *pszName );
 };
 
 #endif /* ndef OGR_ODS_H_INCLUDED */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: georaster_priv.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: georaster_priv.h 34879 2016-08-03 14:05:32Z ilucena $
  *
  * Name:     georaster_priv.h
  * Project:  Oracle Spatial GeoRaster Driver
@@ -165,13 +165,13 @@ public:
                             char** papszOptions,
                             GDALProgressFunc pfnProgress,
                             void* pProgressData );
-    virtual CPLErr      GetGeoTransform( double* padfTransform ) override;
-    virtual CPLErr      SetGeoTransform( double* padfTransform ) override;
-    virtual const char* GetProjectionRef() override;
-    virtual CPLErr      SetProjection( const char* pszProjString ) override;
-    virtual char      **GetMetadataDomainList() override;
-    virtual char**      GetMetadata( const char* pszDomain ) override;
-    virtual void        FlushCache() override;
+    virtual CPLErr      GetGeoTransform( double* padfTransform );
+    virtual CPLErr      SetGeoTransform( double* padfTransform );
+    virtual const char* GetProjectionRef( void );
+    virtual CPLErr      SetProjection( const char* pszProjString );
+    virtual char      **GetMetadataDomainList();
+    virtual char**      GetMetadata( const char* pszDomain );
+    virtual void        FlushCache( void );
     virtual CPLErr      IRasterIO( GDALRWFlag eRWFlag,
                             int nXOff, int nYOff, int nXSize, int nYSize,
                             void *pData, int nBufXSize, int nBufYSize,
@@ -179,15 +179,15 @@ public:
                             int nBandCount, int *panBandMap,
                             GSpacing nPixelSpace, GSpacing nLineSpace,
                             GSpacing nBandSpace,
-                            GDALRasterIOExtraArg* psExtraArg ) override;
-    virtual int         GetGCPCount() override { return nGCPCount; }
-    virtual const char* GetGCPProjection() override;
+                            GDALRasterIOExtraArg* psExtraArg );
+    virtual int         GetGCPCount() { return nGCPCount; }
+    virtual const char* GetGCPProjection();
     virtual const GDAL_GCP*
-                        GetGCPs() override { return pasGCPList; }
+                        GetGCPs() { return pasGCPList; }
     virtual CPLErr      SetGCPs(
                             int nGCPCount,
                             const GDAL_GCP *pasGCPList,
-                            const char *pszGCPProjection ) override;
+                            const char *pszGCPProjection );
     virtual CPLErr      IBuildOverviews(
                             const char* pszResampling,
                             int nOverviews,
@@ -195,11 +195,11 @@ public:
                             int nListBandsover,
                             int* panBandList,
                             GDALProgressFunc pfnProgress,
-                            void* pProgresoversData ) override;
-    virtual CPLErr      CreateMaskBand( int nFlags ) override;
-    virtual OGRErr      StartTransaction(int /* bForce */ =FALSE) override {return CE_None;};
-    virtual OGRErr      CommitTransaction() override {return CE_None;};
-    virtual OGRErr      RollbackTransaction() override {return CE_None;};
+                            void* pProgresoversData );
+    virtual CPLErr      CreateMaskBand( int nFlags );
+    virtual OGRErr      StartTransaction(int /* bForce */ =FALSE) {return CE_None;};
+    virtual OGRErr      CommitTransaction() {return CE_None;};
+    virtual OGRErr      RollbackTransaction() {return CE_None;};
 
     void                AssignGeoRaster( GeoRasterWrapper* poGRW );
 };
@@ -244,33 +244,33 @@ private:
 
 public:
 
-    virtual double      GetNoDataValue( int *pbSuccess = NULL ) override;
-    virtual CPLErr      SetNoDataValue( double dfNoDataValue ) override;
-    virtual double      GetMinimum( int* pbSuccess = NULL ) override;
-    virtual double      GetMaximum( int* pbSuccess = NULL ) override;
+    virtual double      GetNoDataValue( int *pbSuccess = NULL );
+    virtual CPLErr      SetNoDataValue( double dfNoDataValue );
+    virtual double      GetMinimum( int* pbSuccess = NULL );
+    virtual double      GetMaximum( int* pbSuccess = NULL );
     virtual GDALColorTable*
-                        GetColorTable() override;
-    virtual CPLErr      SetColorTable( GDALColorTable *poInColorTable ) override;
+                        GetColorTable();
+    virtual CPLErr      SetColorTable( GDALColorTable *poInColorTable );
     virtual GDALColorInterp
-                        GetColorInterpretation() override;
+                        GetColorInterpretation();
     virtual CPLErr      IReadBlock( int nBlockXOff, int nBlockYOff,
-                            void *pImage ) override;
+                            void *pImage );
     virtual CPLErr      IWriteBlock( int nBlockXOff, int nBlockYOff,
-                            void *pImage ) override;
+                            void *pImage );
     virtual CPLErr      SetStatistics( double dfMin, double dfMax,
-                            double dfMean, double dfStdDev ) override;
+                            double dfMean, double dfStdDev );
     virtual CPLErr      GetStatistics( int bApproxOK, int bForce,
                             double* pdfMin, double* pdfMax,
-                            double* pdfMean, double* pdfStdDev ) override;
-    virtual             GDALRasterAttributeTable *GetDefaultRAT() override;
-    virtual CPLErr      SetDefaultRAT( const GDALRasterAttributeTable *poRAT ) override;
-    virtual int         GetOverviewCount() override;
+                            double* pdfMean, double* pdfStdDev );
+    virtual             GDALRasterAttributeTable *GetDefaultRAT();
+    virtual CPLErr      SetDefaultRAT( const GDALRasterAttributeTable *poRAT );
+    virtual int         GetOverviewCount();
     virtual GDALRasterBand*
-                        GetOverview( int ) override;
-    virtual CPLErr      CreateMaskBand( int nFlags ) override;
+                        GetOverview( int );
+    virtual CPLErr      CreateMaskBand( int nFlags );
     virtual GDALRasterBand*
-                        GetMaskBand() override;
-    virtual int         GetMaskFlags() override;
+                        GetMaskBand();
+    virtual int         GetMaskFlags();
 };
 
 //  ---------------------------------------------------------------------------
@@ -313,24 +313,24 @@ private:
     bool                bInitializeIO;
     bool                bFlushMetadata;
 
-    void                InitializeLayersNode();
-    bool                InitializeIO();
+    void                InitializeLayersNode( void );
+    bool                InitializeIO( void );
     void                InitializeLevel( int nLevel );
-    bool                FlushMetadata();
+    bool                FlushMetadata( void );
 
-    void                LoadNoDataValues();
+    void                LoadNoDataValues( void );
 
     void                UnpackNBits( GByte* pabyData );
     void                PackNBits( GByte* pabyData );
-    unsigned long       CompressJpeg();
-    unsigned long       CompressDeflate();
+    unsigned long       CompressJpeg( void );
+    unsigned long       CompressDeflate( void );
     void                UncompressJpeg( unsigned long nBufferSize );
     bool                UncompressDeflate( unsigned long nBufferSize );
 
     struct jpeg_decompress_struct sDInfo;
     struct jpeg_compress_struct sCInfo;
     struct jpeg_error_mgr sJErr;
-
+    
     void                GetSpatialReference();
 
 public:
@@ -344,8 +344,8 @@ public:
                             char* pszDescription,
                             char* pszInsert,
                             bool bUpdate );
-    bool                Delete();
-    void                GetRasterInfo();
+    bool                Delete( void );
+    void                GetRasterInfo( void );
     bool                GetStatistics( int nBand,
                                        char* pszMin,
                                        char* pszMax,
@@ -398,7 +398,7 @@ public:
                             const char* pszResampling,
                             bool bInternal = false );
     bool                DeletePyramid();
-    void                PrepareToOverwrite();
+    void                PrepareToOverwrite( void );
     bool                InitializeMask( int nLevel,
                                                 int nBlockColumns,
                                                 int nBlockRows,

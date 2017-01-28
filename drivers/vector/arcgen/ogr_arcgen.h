@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_arcgen.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: ogr_arcgen.h 31777 2015-11-26 14:14:41Z rouault $
  *
  * Project:  Arc/Info Generate Translator
  * Purpose:  Definition of classes for OGR .arcgen driver.
@@ -41,7 +41,7 @@ class OGRARCGENLayer : public OGRLayer
     OGRFeatureDefn*    poFeatureDefn;
 
     VSILFILE*          fp;
-    bool               bEOF;
+    int                bEOF;
 
     int                nNextFID;
 
@@ -50,14 +50,15 @@ class OGRARCGENLayer : public OGRLayer
   public:
                         OGRARCGENLayer(const char* pszFilename,
                                     VSILFILE* fp, OGRwkbGeometryType eType);
-                        virtual ~OGRARCGENLayer();
+                        ~OGRARCGENLayer();
 
-    virtual void                ResetReading() override;
-    virtual OGRFeature *        GetNextFeature() override;
 
-    virtual OGRFeatureDefn *    GetLayerDefn() override { return poFeatureDefn; }
+    virtual void                ResetReading();
+    virtual OGRFeature *        GetNextFeature();
 
-    virtual int                 TestCapability( const char * ) override;
+    virtual OGRFeatureDefn *    GetLayerDefn() { return poFeatureDefn; }
+
+    virtual int                 TestCapability( const char * );
 };
 
 /************************************************************************/
@@ -73,16 +74,16 @@ class OGRARCGENDataSource : public OGRDataSource
 
   public:
                         OGRARCGENDataSource();
-               virtual ~OGRARCGENDataSource();
+                        ~OGRARCGENDataSource();
 
     int                 Open( const char * pszFilename );
 
-    virtual const char*         GetName() override { return pszName; }
+    virtual const char*         GetName() { return pszName; }
 
-    virtual int                 GetLayerCount() override { return nLayers; }
-    virtual OGRLayer*           GetLayer( int ) override;
+    virtual int                 GetLayerCount() { return nLayers; }
+    virtual OGRLayer*           GetLayer( int );
 
-    virtual int                 TestCapability( const char * ) override;
+    virtual int                 TestCapability( const char * );
 };
 
 #endif /* ndef OGR_ARCGEN_H_INCLUDED */

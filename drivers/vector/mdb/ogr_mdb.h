@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_mdb.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: ogr_mdb.h 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions for MDB driver.
@@ -48,6 +48,7 @@ class OGRMDBJavaEnv
         ~OGRMDBJavaEnv();
 
         int Init();
+
 
     JavaVM *jvm;
     JNIEnv *env;
@@ -184,6 +185,7 @@ public:
     int GetColumnAsInt(int iCol);
     double GetColumnAsDouble(int iCol);
     GByte* GetColumnAsBinary(int iCol, int* pnBytes);
+
 };
 
 typedef enum
@@ -266,21 +268,21 @@ class OGRMDBLayer : public OGRLayer
                                     const char *pszGeomCol,
                                     OGRSpatialReference* poSRS );
 
-    virtual void        ResetReading() override;
-    virtual GIntBig     GetFeatureCount( int bForce ) override;
+    virtual void        ResetReading();
+    virtual GIntBig     GetFeatureCount( int bForce );
     virtual OGRFeature *GetNextRawFeature();
-    virtual OGRFeature *GetNextFeature() override;
+    virtual OGRFeature *GetNextFeature();
 
-    virtual OGRFeature *GetFeature( GIntBig nFeatureId ) override;
+    virtual OGRFeature *GetFeature( GIntBig nFeatureId );
 
-    OGRFeatureDefn *    GetLayerDefn() override { return poFeatureDefn; }
+    OGRFeatureDefn *    GetLayerDefn() { return poFeatureDefn; }
 
-    virtual int         TestCapability( const char * ) override;
+    virtual int         TestCapability( const char * );
 
-    virtual const char *GetFIDColumn() override;
+    virtual const char *GetFIDColumn();
 
-    virtual OGRErr      GetExtent( OGREnvelope *psExtent, int bForce ) override;
-    virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce) override
+    virtual OGRErr      GetExtent( OGREnvelope *psExtent, int bForce );
+    virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce)
                 { return OGRLayer::GetExtent(iGeomField, psExtent, bForce); }
 };
 
@@ -316,12 +318,12 @@ class OGRMDBDataSource : public OGRDataSource
                                    const char *pszGeomCol,
                                    int bUpdate );
 
-    const char          *GetName() override { return pszName; }
-    int                 GetLayerCount() override { return nLayers; }
-    OGRLayer            *GetLayer( int ) override;
-    OGRLayer            *GetLayerByName( const char* pszLayerName ) override;
+    const char          *GetName() { return pszName; }
+    int                 GetLayerCount() { return nLayers; }
+    OGRLayer            *GetLayer( int );
+    OGRLayer            *GetLayerByName( const char* pszLayerName );
 
-    int                 TestCapability( const char * ) override;
+    int                 TestCapability( const char * );
 };
 
 /************************************************************************/
@@ -333,10 +335,10 @@ class OGRMDBDriver : public OGRSFDriver
   public:
                 ~OGRMDBDriver();
 
-    const char  *GetName() override;
-    OGRDataSource *Open( const char *, int ) override;
+    const char  *GetName();
+    OGRDataSource *Open( const char *, int );
 
-    int          TestCapability( const char * ) override;
+    int          TestCapability( const char * );
 };
 
 #endif /* ndef OGR_MDB_H_INCLUDED */

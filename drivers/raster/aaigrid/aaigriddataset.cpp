@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: aaigriddataset.cpp 33809 2016-03-29 21:41:38Z goatbar $
  *
  * Project:  GDAL
  * Purpose:  Implements Arc/Info ASCII Grid Format.
@@ -31,36 +32,16 @@
 // We need cpl_port as first include to avoid VSIStatBufL being not
 // defined on i586-mingw32msvc.
 #include "cpl_port.h"
-#include "gdal_frmts.h"
 
-#include <cctype>
+#include <ctype.h>
 #include <climits>
-#include <cmath>
-#include <cstddef>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#if HAVE_FCNTL_H
-#  include <fcntl.h>
-#endif
 
-#include <algorithm>
-#include <limits>
-#include <string>
-
-#include "cpl_conv.h"
-#include "cpl_error.h"
-#include "cpl_progress.h"
 #include "cpl_string.h"
-#include "cpl_vsi.h"
-#include "gdal.h"
 #include "gdal_pam.h"
-#include "gdal_priv.h"
-#include "ogr_core.h"
+#include "gdal_frmts.h"
 #include "ogr_spatialref.h"
 
-
-CPL_CVSID("$Id: aaigriddataset.cpp 36539 2016-11-27 23:57:06Z goatbar $");
+CPL_CVSID("$Id: aaigriddataset.cpp 33809 2016-03-29 21:41:38Z goatbar $");
 
 static CPLString OSR_GDS( char **papszNV, const char * pszField,
                           const char *pszDefaultValue );
@@ -100,8 +81,9 @@ class CPL_DLL AAIGDataset : public GDALPamDataset
   protected:
     GDALDataType eDataType;
     double      adfGeoTransform[6];
-    bool        bNoDataSet;
+    int         bNoDataSet;
     double      dfNoDataValue;
+
 
     virtual int ParseHeader(const char* pszHeader, const char* pszDataType);
 
@@ -109,7 +91,7 @@ class CPL_DLL AAIGDataset : public GDALPamDataset
                 AAIGDataset();
        virtual ~AAIGDataset();
 
-    virtual char **GetFileList(void) override;
+    virtual char **GetFileList(void);
 
     static GDALDataset *CommonOpen( GDALOpenInfo * poOpenInfo,
                                     GridFormat eFormat );
@@ -124,8 +106,8 @@ class CPL_DLL AAIGDataset : public GDALPamDataset
                                     GDALProgressFunc pfnProgress,
                                     void * pProgressData );
 
-    virtual CPLErr GetGeoTransform( double * ) override;
-    virtual const char *GetProjectionRef(void) override;
+    virtual CPLErr GetGeoTransform( double * );
+    virtual const char *GetProjectionRef(void);
 };
 
 /************************************************************************/
@@ -136,7 +118,7 @@ class CPL_DLL AAIGDataset : public GDALPamDataset
 
 class GRASSASCIIDataset : public AAIGDataset
 {
-    virtual int ParseHeader(const char* pszHeader, const char* pszDataType) override;
+    virtual int ParseHeader(const char* pszHeader, const char* pszDataType);
 
   public:
                 GRASSASCIIDataset() : AAIGDataset() {}
@@ -163,9 +145,9 @@ class AAIGRasterBand : public GDALPamRasterBand
                    AAIGRasterBand( AAIGDataset *, int );
     virtual       ~AAIGRasterBand();
 
-    virtual double GetNoDataValue( int * ) override;
-    virtual CPLErr SetNoDataValue( double ) override;
-    virtual CPLErr IReadBlock( int, int, void * ) override;
+    virtual double GetNoDataValue( int * );
+    virtual CPLErr SetNoDataValue( double );
+    virtual CPLErr IReadBlock( int, int, void * );
 };
 
 /************************************************************************/
@@ -226,6 +208,7 @@ CPLErr AAIGRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 
     if( panLineOffset[nBlockYOff] == 0 )
         return CE_Failure;
+
 
     if( poODS->Seek( panLineOffset[nBlockYOff] ) != 0 )
     {
@@ -307,6 +290,7 @@ double AAIGRasterBand::GetNoDataValue( int * pbSuccess )
     return poODS->dfNoDataValue;
 }
 
+
 /************************************************************************/
 /*                           SetNoDataValue()                           */
 /************************************************************************/
@@ -316,7 +300,7 @@ CPLErr AAIGRasterBand::SetNoDataValue( double dfNoData )
 {
     AAIGDataset *poODS = reinterpret_cast<AAIGDataset *>( poDS );
 
-    poODS->bNoDataSet = true;
+    poODS->bNoDataSet = TRUE;
     poODS->dfNoDataValue = dfNoData;
 
     return CE_None;
@@ -339,7 +323,7 @@ AAIGDataset::AAIGDataset() :
     nBufferOffset(0),
     nOffsetInBuffer(256),
     eDataType(GDT_Int32),
-    bNoDataSet(false),
+    bNoDataSet(FALSE),
     dfNoDataValue(-9999.0)
 {
     adfGeoTransform[0] = 0.0;
@@ -348,7 +332,6 @@ AAIGDataset::AAIGDataset() :
     adfGeoTransform[3] = 0.0;
     adfGeoTransform[4] = 0.0;
     adfGeoTransform[5] = 1.0;
-    memset( achReadBuf, 0, sizeof(achReadBuf) );
 }
 
 /************************************************************************/
@@ -547,8 +530,7 @@ int AAIGDataset::ParseHeader(const char* pszHeader, const char* pszDataType)
             CSLDestroy( papszTokens );
             return FALSE;
         }
-        dfCellDY = CPLAtofM( papszTokens[i + 1] );
-        dfCellDX = dfCellDY;
+        dfCellDX = dfCellDY = CPLAtofM( papszTokens[i + 1] );
     }
 
     int j = 0;
@@ -566,8 +548,7 @@ int AAIGDataset::ParseHeader(const char* pszHeader, const char* pszDataType)
             dfCellDX == dfCellDY &&
             fabs(dfCellDX - (360.0 / nRasterXSize)) < 1e-9)
         {
-            dfCellDY = 360.0 / nRasterXSize;
-            dfCellDX = dfCellDY;
+            dfCellDX = dfCellDY = 360.0 / nRasterXSize;
         }
 
         adfGeoTransform[1] = dfCellDX;
@@ -607,7 +588,7 @@ int AAIGDataset::ParseHeader(const char* pszHeader, const char* pszDataType)
     {
         const char* pszNoData = papszTokens[i + 1];
 
-        bNoDataSet = true;
+        bNoDataSet = TRUE;
         dfNoDataValue = CPLAtofM(pszNoData);
         if( pszDataType == NULL &&
             (strchr( pszNoData, '.' ) != NULL ||
@@ -615,12 +596,6 @@ int AAIGDataset::ParseHeader(const char* pszHeader, const char* pszDataType)
              INT_MIN > dfNoDataValue || dfNoDataValue > INT_MAX) )
         {
             eDataType = GDT_Float32;
-            if( !CPLIsInf(dfNoDataValue) &&
-                (fabs(dfNoDataValue) < std::numeric_limits<float>::min() ||
-                 fabs(dfNoDataValue) > std::numeric_limits<float>::max()) )
-            {
-                eDataType = GDT_Float64;
-            }
         }
         if( eDataType == GDT_Float32 )
         {
@@ -644,6 +619,7 @@ GDALDataset *GRASSASCIIDataset::Open( GDALOpenInfo * poOpenInfo )
 
     return CommonOpen(poOpenInfo, FORMAT_GRASSASCII);
 }
+
 
 /************************************************************************/
 /*                          ParseHeader()                               */
@@ -682,8 +658,7 @@ int GRASSASCIIDataset::ParseHeader(const char* pszHeader, const char* pszDataTyp
     const int iWest = CSLFindString( papszTokens, "west" );
 
     if (iNorth == -1 || iSouth == -1 || iEast == -1 || iWest == -1 ||
-        std::max(std::max(iNorth, iSouth),
-                 std::max(iEast, iWest)) + 1 >= nTokens)
+        MAX(MAX(iNorth, iSouth), MAX(iEast, iWest)) + 1 >= nTokens)
     {
         CSLDestroy( papszTokens );
         return FALSE;
@@ -708,7 +683,7 @@ int GRASSASCIIDataset::ParseHeader(const char* pszHeader, const char* pszDataTyp
     {
         const char* pszNoData = papszTokens[i + 1];
 
-        bNoDataSet = true;
+        bNoDataSet = TRUE;
         dfNoDataValue = CPLAtofM(pszNoData);
         if( pszDataType == NULL &&
             (strchr( pszNoData, '.' ) != NULL ||
@@ -846,7 +821,7 @@ GDALDataset *AAIGDataset::CommonOpen( GDALOpenInfo * poOpenInfo,
 /* -------------------------------------------------------------------- */
     CPLAssert( NULL != poDS->fp );
 
-    if( pszDataType == NULL && poDS->eDataType != GDT_Float32 && poDS->eDataType != GDT_Float64)
+    if( pszDataType == NULL && poDS->eDataType != GDT_Float32)
     {
         /* Allocate 100K chunk + 1 extra byte for NULL character. */
         const size_t nChunkSize = 1024 * 100;
@@ -1037,8 +1012,8 @@ GDALDataset * AAIGDataset::CreateCopy(
 
     poSrcDS->GetGeoTransform( adfGeoTransform );
 
-    if( std::abs(adfGeoTransform[1] + adfGeoTransform[5]) < 0.0000001
-        || std::abs(adfGeoTransform[1]-adfGeoTransform[5]) < 0.0000001
+    if( ABS(adfGeoTransform[1]+adfGeoTransform[5]) < 0.0000001
+        || ABS(adfGeoTransform[1]-adfGeoTransform[5]) < 0.0000001
         || (pszForceCellsize && CPLTestBool(pszForceCellsize)) )
         CPLsnprintf( szHeader, sizeof(szHeader),
                  "ncols        %d\n"

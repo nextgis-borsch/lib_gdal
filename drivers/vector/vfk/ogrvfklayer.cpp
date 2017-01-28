@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrvfklayer.cpp 32177 2015-12-14 07:25:30Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRVFKLayer class.
@@ -32,7 +33,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrvfklayer.cpp 35466 2016-09-16 05:03:52Z goatbar $");
+CPL_CVSID("$Id: ogrvfklayer.cpp 32177 2015-12-14 07:25:30Z goatbar $");
 
 /*!
   \brief OGRVFKLayer constructor
@@ -42,29 +43,36 @@ CPL_CVSID("$Id: ogrvfklayer.cpp 35466 2016-09-16 05:03:52Z goatbar $");
   \param eReqType WKB geometry type
   \param poDSIn  data source where to register OGR layer
 */
-OGRVFKLayer::OGRVFKLayer( const char *pszName,
-                          OGRSpatialReference *poSRSIn,
-                          OGRwkbGeometryType eReqType,
-                          OGRVFKDataSource *poDSIn ) :
-    poSRS(poSRSIn == NULL ? new OGRSpatialReference() : poSRSIn->Clone()),
-    poFeatureDefn(new OGRFeatureDefn(pszName)),
-    poDataBlock(poDSIn->GetReader()->GetDataBlock(pszName)),
+OGRVFKLayer::OGRVFKLayer(const char *pszName,
+                         OGRSpatialReference *poSRSIn,
+                         OGRwkbGeometryType eReqType,
+                         OGRVFKDataSource *poDSIn) :
+    poDS(poDSIn),
     m_iNextFeature(0)
 {
+    /* set spatial reference */
     if( poSRSIn == NULL ) {
-        // Default is S-JTSK (EPSG: 5514).
-        if( poSRS->importFromEPSG(5514) != OGRERR_NONE )
-        {
+        /* default is S-JTSK (EPSG: 5514) */
+        poSRS = new OGRSpatialReference();
+        if (poSRS->importFromEPSG(5514) != OGRERR_NONE) {
             delete poSRS;
             poSRS = NULL;
         }
     }
+    else {
+        poSRS = poSRSIn->Clone();
+    }
 
+    /* feature definition */
+    poFeatureDefn = new OGRFeatureDefn(pszName);
     SetDescription( poFeatureDefn->GetName() );
     poFeatureDefn->GetGeomFieldDefn(0)->SetSpatialRef(poSRS);
 
     poFeatureDefn->Reference();
     poFeatureDefn->SetGeomType(eReqType);
+
+    /* data block reference */
+    poDataBlock = poDS->GetReader()->GetDataBlock(pszName);
 }
 
 /*!
@@ -72,10 +80,10 @@ OGRVFKLayer::OGRVFKLayer( const char *pszName,
 */
 OGRVFKLayer::~OGRVFKLayer()
 {
-    if( poFeatureDefn )
+    if(poFeatureDefn)
         poFeatureDefn->Release();
 
-    if( poSRS )
+    if(poSRS)
         poSRS->Release();
 }
 
@@ -127,10 +135,11 @@ OGRGeometry *OGRVFKLayer::CreateGeometry(IVFKFeature * poVfkFeature)
 */
 GIntBig OGRVFKLayer::GetFeatureCount(CPL_UNUSED int bForce)
 {
+    int nfeatures;
+
     /* note that 'nfeatures' is 0 when data are not read from DB */
-    int nfeatures = (int)poDataBlock->GetFeatureCount();
-    if( m_poFilterGeom || m_poAttrQuery || nfeatures < 1 )
-    {
+    nfeatures = (int)poDataBlock->GetFeatureCount();
+    if (m_poFilterGeom || m_poAttrQuery || nfeatures < 1) {
         /* force real feature count */
         nfeatures = (int)OGRLayer::GetFeatureCount();
     }
@@ -175,7 +184,9 @@ OGRFeature *OGRVFKLayer::GetNextFeature()
 */
 OGRFeature *OGRVFKLayer::GetFeature(GIntBig nFID)
 {
-    IVFKFeature *poVFKFeature = poDataBlock->GetFeature(nFID);
+    IVFKFeature *poVFKFeature;
+
+    poVFKFeature = poDataBlock->GetFeature(nFID);
 
     if (!poVFKFeature)
         return NULL;
@@ -193,12 +204,14 @@ OGRFeature *OGRVFKLayer::GetFeature(GIntBig nFID)
 */
 OGRFeature *OGRVFKLayer::GetFeature(IVFKFeature *poVFKFeature)
 {
+    OGRGeometry *poGeom;
+
     /* skip feature with unknown geometry type */
     if (poVFKFeature->GetGeometryType() == wkbUnknown)
         return NULL;
 
     /* get features geometry */
-    OGRGeometry *poGeom = CreateGeometry(poVFKFeature);
+    poGeom = CreateGeometry(poVFKFeature);
     if (poGeom != NULL)
         poGeom->assignSpatialReference(poSRS);
 

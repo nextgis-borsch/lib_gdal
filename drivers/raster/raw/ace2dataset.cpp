@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ace2dataset.cpp 33925 2016-04-09 19:10:47Z goatbar $
  *
  * Project:  ACE2 Driver
  * Purpose:  Implementation of ACE2 elevation format read support.
@@ -31,7 +32,7 @@
 #include "ogr_spatialref.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id: ace2dataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
+CPL_CVSID("$Id: ace2dataset.cpp 33925 2016-04-09 19:10:47Z goatbar $");
 
 static const char * const apszCategorySource[] =
 {
@@ -101,8 +102,8 @@ class ACE2Dataset : public GDALPamDataset
                 ACE2Dataset();
     virtual ~ACE2Dataset() {}
 
-    virtual const char *GetProjectionRef(void) override;
-    virtual CPLErr GetGeoTransform( double * ) override;
+    virtual const char *GetProjectionRef(void);
+    virtual CPLErr GetGeoTransform( double * );
 
     static GDALDataset *Open( GDALOpenInfo * );
     static int Identify( GDALOpenInfo * );
@@ -122,8 +123,8 @@ class ACE2RasterBand : public RawRasterBand
                            int nXSize, int nYSize);
     virtual ~ACE2RasterBand() {}
 
-    virtual const char *GetUnitType() override;
-    virtual char **GetCategoryNames() override;
+    virtual const char *GetUnitType();
+    virtual char **GetCategoryNames();
 };
 
 /************************************************************************/
@@ -171,13 +172,14 @@ const char *ACE2Dataset::GetProjectionRef()
 /*                          ACE2RasterBand()                            */
 /************************************************************************/
 
-ACE2RasterBand::ACE2RasterBand( VSILFILE* fpRawIn,
-                                GDALDataType eDataTypeIn,
-                                int nXSize, int nYSize) :
-    RawRasterBand( fpRawIn, 0, GDALGetDataTypeSizeBytes(eDataTypeIn),
-                   nXSize * GDALGetDataTypeSizeBytes(eDataTypeIn), eDataTypeIn,
-                   CPL_IS_LSB, nXSize, nYSize, TRUE, TRUE )
-{}
+ACE2RasterBand::ACE2RasterBand(VSILFILE* fpRawIn,
+                               GDALDataType eDataTypeIn,
+                               int nXSize, int nYSize) :
+    RawRasterBand( fpRawIn, 0, GDALGetDataTypeSize(eDataTypeIn) / 8,
+                   nXSize * GDALGetDataTypeSize(eDataTypeIn) / 8, eDataTypeIn,
+                   CPL_IS_LSB, nXSize, nYSize, TRUE, TRUE)
+{
+}
 
 /************************************************************************/
 /*                             GetUnitType()                            */
@@ -238,6 +240,7 @@ GDALDataset *ACE2Dataset::Open( GDALOpenInfo * poOpenInfo )
         return NULL;
 
     const char* pszBasename = CPLGetBasename(poOpenInfo->pszFilename);
+    int nXSize = 0, nYSize = 0;
 
     if (strlen(pszBasename) < 7)
         return NULL;
@@ -247,11 +250,9 @@ GDALDataset *ACE2Dataset::Open( GDALOpenInfo * poOpenInfo )
     /* e.g. 30S120W_5M.ACE2 */
     char pszLatLonValueString[4] = { '\0' };
     memset(pszLatLonValueString, 0, 4);
-    // cppcheck-suppress redundantCopy
     strncpy(pszLatLonValueString, &pszBasename[0], 2);
     int southWestLat = atoi(pszLatLonValueString);
     memset(pszLatLonValueString, 0, 4);
-    // cppcheck-suppress redundantCopy
     strncpy(pszLatLonValueString, &pszBasename[3], 3);
     int southWestLon = atoi(pszLatLonValueString);
 
@@ -293,37 +294,30 @@ GDALDataset *ACE2Dataset::Open( GDALOpenInfo * poOpenInfo )
         return NULL;
     }
 
-    int nXSize = 0;
-    int nYSize = 0;
-
     double dfPixelSize = 0;
     if (sStat.st_size == 180 * 180 * nWordSize)
     {
         /* 5 minute */
-        nXSize = 180;
-        nYSize = 180;
-        dfPixelSize = 5.0 / 60;
+        nXSize = nYSize = 180;
+        dfPixelSize = 5. / 60;
     }
     else if (sStat.st_size == 1800 * 1800 * nWordSize)
     {
         /* 30 s */
-        nXSize = 1800;
-        nYSize = 1800;
-        dfPixelSize = 30.0 / 3600;
+        nXSize = nYSize = 1800;
+        dfPixelSize = 30. / 3600;
     }
     else if (sStat.st_size == 6000 * 6000 * nWordSize)
     {
         /* 9 s */
-        nXSize = 6000;
-        nYSize = 6000;
-        dfPixelSize = 9.0 / 3600;
+        nXSize = nYSize = 6000;
+        dfPixelSize = 9. / 3600;
     }
     else if (sStat.st_size == 18000 * 18000 * nWordSize)
     {
         /* 3 s */
-        nXSize = 18000;
-        nYSize = 18000;
-        dfPixelSize = 3.0 / 3600;
+        nXSize = nYSize = 18000;
+        dfPixelSize = 3. / 3600;
     }
     else
         return NULL;

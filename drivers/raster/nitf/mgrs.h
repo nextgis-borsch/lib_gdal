@@ -2,7 +2,7 @@
   #define MGRS_H
 
 /***************************************************************************
- * $Id: mgrs.h 35897 2016-10-24 11:54:24Z goatbar $
+ * $Id: mgrs.h 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  MGRS Converter
  * Purpose:  Geotrans declarations for MGRS translation (slightly adapted)
@@ -35,7 +35,7 @@
  *                                    inclusive.
  *          MGRS_A_ERROR           : Semi-major axis less than or equal to zero
  *          MGRS_INV_F_ERROR       : Inverse flattening outside of valid range
- *                                    (250 to 350)
+ *									                  (250 to 350)
  *          MGRS_EASTING_ERROR     : Easting outside of valid range
  *                                    (100,000 to 900,000 meters for UTM)
  *                                    (0 to 4,000,000 meters for UPS)
@@ -82,6 +82,7 @@
  *
  */
 
+
 /***************************************************************************/
 /*
  *                              DEFINES
@@ -98,6 +99,7 @@
   #define MGRS_NORTHING_ERROR          0x0080
   #define MGRS_ZONE_ERROR              0x0100
   #define MGRS_HEMISPHERE_ERROR        0x0200
+
 
 /***************************************************************************/
 /*
@@ -120,9 +122,10 @@ extern "C" {
  * are returned by the function, otherwise MGRS_NO_ERROR is returned.
  *
  *   a                : Semi-major axis of ellipsoid in meters (input)
- *   f                : Flattening of ellipsoid                (input)
+ *   f                : Flattening of ellipsoid					       (input)
  *   Ellipsoid_Code   : 2-letter code for ellipsoid            (input)
  */
+
 
   void Get_MGRS_Parameters(double *a,
                            double *f,
@@ -132,9 +135,10 @@ extern "C" {
  * parameters.
  *
  *  a                : Semi-major axis of ellipsoid, in meters (output)
- *  f                : Flattening of ellipsoid                 (output)
+ *  f                : Flattening of ellipsoid					       (output)
  *  Ellipsoid_Code   : 2-letter code for ellipsoid             (output)
  */
+
 
   long Convert_Geodetic_To_MGRS (double Latitude,
                                  double Longitude,
@@ -153,6 +157,7 @@ extern "C" {
  *
  */
 
+
   long Convert_MGRS_To_Geodetic (char *MGRS,
                                  double *Latitude,
                                  double *Longitude);
@@ -166,6 +171,7 @@ extern "C" {
  *    Longitude  : Longitude in radians             (output)
  *
  */
+
 
   long Convert_UTM_To_MGRS (long Zone,
                             char Hemisphere,
@@ -187,6 +193,7 @@ extern "C" {
  *    MGRS       : MGRS coordinate string           (output)
  */
 
+
   long Convert_MGRS_To_UTM (char   *MGRS,
                             long   *Zone,
                             char   *Hemisphere,
@@ -205,6 +212,8 @@ extern "C" {
  *    Easting    : Easting (X) in meters            (output)
  *    Northing   : Northing (Y) in meters           (output)
  */
+
+
 
   long Convert_UPS_To_MGRS ( char   Hemisphere,
                              double Easting,
@@ -226,6 +235,7 @@ extern "C" {
  *    MGRS          : MGRS coordinate string           (output)
  */
 
+
   long Convert_MGRS_To_UPS ( char   *MGRS,
                              char   *Hemisphere,
                              double *Easting,
@@ -241,6 +251,8 @@ extern "C" {
  *    Easting       : Easting/X in meters              (output)
  *    Northing      : Northing/Y in meters             (output)
  */
+
+
 
   #ifdef __cplusplus
 }

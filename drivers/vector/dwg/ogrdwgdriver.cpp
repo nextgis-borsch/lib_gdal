@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrdxfdriver.cpp 18535 2010-01-12 01:40:32Z warmerdam $
  *
  * Project:  DWG Translator
  * Purpose:  Implements OGRDWGDriver.
@@ -29,7 +30,7 @@
 #include "ogr_dwg.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrdwgdriver.cpp 35933 2016-10-25 16:46:26Z goatbar $");
+CPL_CVSID("$Id: ogrdxfdriver.cpp 18535 2010-01-12 01:40:32Z warmerdam $");
 
 CPL_C_START
 void CPL_DLL RegisterOGRDWG();
@@ -83,6 +84,7 @@ void OGRDWGDriver::Initialize()
     OdString iniFile = oServices.findFile(OD_T("adinit.dat"));
     if (!iniFile.isEmpty())
       OdCharMapper::initialize(iniFile);
+
 }
 
 /************************************************************************/

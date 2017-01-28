@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrcouchdbrowslayer.cpp 32370 2015-12-20 19:40:13Z rouault $
  *
  * Project:  CouchDB Translator
  * Purpose:  Implements OGRCouchDBRowsLayer class.
@@ -28,7 +29,7 @@
 
 #include "ogr_couchdb.h"
 
-CPL_CVSID("$Id: ogrcouchdbrowslayer.cpp 35298 2016-09-02 23:00:49Z goatbar $");
+CPL_CVSID("$Id: ogrcouchdbrowslayer.cpp 32370 2015-12-20 19:40:13Z rouault $");
 
 /************************************************************************/
 /*                         OGRCouchDBRowsLayer()                        */
@@ -36,7 +37,7 @@ CPL_CVSID("$Id: ogrcouchdbrowslayer.cpp 35298 2016-09-02 23:00:49Z goatbar $");
 
 OGRCouchDBRowsLayer::OGRCouchDBRowsLayer(OGRCouchDBDataSource* poDSIn) :
     OGRCouchDBLayer(poDSIn),
-    bAllInOne(false)
+    bAllInOne(FALSE)
 {
     poFeatureDefn = new OGRFeatureDefn( "rows" );
     poFeatureDefn->Reference();
@@ -65,7 +66,7 @@ void OGRCouchDBRowsLayer::ResetReading()
 {
     OGRCouchDBLayer::ResetReading();
 
-    if( !bAllInOne )
+    if (!bAllInOne)
     {
         json_object_put(poFeatures);
         poFeatures = NULL;
@@ -77,16 +78,16 @@ void OGRCouchDBRowsLayer::ResetReading()
 /*                           FetchNextRows()                            */
 /************************************************************************/
 
-bool OGRCouchDBRowsLayer::FetchNextRows()
+int OGRCouchDBRowsLayer::FetchNextRows()
 {
-    if( bAllInOne )
-        return false;
+    if (bAllInOne)
+        return FALSE;
 
     json_object_put(poFeatures);
     poFeatures = NULL;
     aoFeatures.resize(0);
 
-    bool bHasEsperluet = strstr(poDS->GetURL(), "?") != NULL;
+    int bHasEsperluet = (strstr(poDS->GetURL(), "?") != NULL);
 
     CPLString osURI;
     if (strstr(poDS->GetURL(), "limit=") == NULL &&
@@ -94,7 +95,7 @@ bool OGRCouchDBRowsLayer::FetchNextRows()
     {
         if (!bHasEsperluet)
         {
-            bHasEsperluet = true;
+            bHasEsperluet = TRUE;
             osURI += "?";
         }
 
@@ -103,9 +104,9 @@ bool OGRCouchDBRowsLayer::FetchNextRows()
     }
     if (strstr(poDS->GetURL(), "reduce=") == NULL)
     {
-        if( !bHasEsperluet )
+        if (!bHasEsperluet)
         {
-            // bHasEsperluet = true;
+            /*bHasEsperluet = TRUE;*/
             osURI += "?";
         }
 
@@ -119,18 +120,18 @@ bool OGRCouchDBRowsLayer::FetchNextRows()
 /*                         BuildFeatureDefn()                           */
 /************************************************************************/
 
-bool OGRCouchDBRowsLayer::BuildFeatureDefn()
+int OGRCouchDBRowsLayer::BuildFeatureDefn()
 {
-    bool bRet = FetchNextRows();
+    int bRet = FetchNextRows();
     if (!bRet)
-        return false;
+        return FALSE;
 
     bRet = BuildFeatureDefnFromRows(poFeatures);
     if (!bRet)
-        return false;
+        return FALSE;
 
-    if( bEOF )
-        bAllInOne = true;
+    if ( bEOF )
+        bAllInOne = TRUE;
 
-    return true;
+    return TRUE;
 }

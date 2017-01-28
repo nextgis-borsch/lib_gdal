@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrsqlitevfs.cpp 33884 2016-04-03 18:50:15Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements SQLite VFS
@@ -29,7 +30,7 @@
 #include "cpl_atomic_ops.h"
 #include "ogr_sqlite.h"
 
-CPL_CVSID("$Id: ogrsqlitevfs.cpp 36789 2016-12-11 15:21:56Z rouault $");
+CPL_CVSID("$Id: ogrsqlitevfs.cpp 33884 2016-04-03 18:50:15Z rouault $");
 
 #ifdef DEBUG_IO
 # define DEBUG_ONLY
@@ -214,7 +215,7 @@ static const sqlite3_io_methods OGRSQLiteIOMethods =
     NULL,  // xShmLock
     NULL,  // xShmBarrier
     NULL,  // xShmUnmap
-#if SQLITE_VERSION_NUMBER >= 3007017L /* perhaps older too ? */
+#if SQLITE_VERSION_NUMBER >= 3008002L /* perhaps older too ? */
     NULL,  // xFetch
     NULL,  // xUnfetch
 #endif
@@ -294,7 +295,7 @@ static int OGRSQLiteVFSAccess (DEBUG_ONLY sqlite3_vfs* pVFS,
     CPLDebug("SQLITE", "OGRSQLiteVFSAccess(%s, %d)", zName, flags);
 #endif
     VSIStatBufL sStatBufL;
-    int nRet;  // TODO(schwehr): Cleanup nRet and pResOut.  bools?
+    int nRet;
     if (flags == SQLITE_ACCESS_EXISTS)
     {
         /* Do not try to check the presence of a journal or a wal on /vsicurl ! */
@@ -307,9 +308,7 @@ static int OGRSQLiteVFSAccess (DEBUG_ONLY sqlite3_vfs* pVFS,
             nRet = -1;
         }
         else
-        {
             nRet = VSIStatExL(zName, &sStatBufL, VSI_STAT_EXISTS_FLAG);
-        }
     }
     else if (flags == SQLITE_ACCESS_READ)
     {
@@ -326,9 +325,7 @@ static int OGRSQLiteVFSAccess (DEBUG_ONLY sqlite3_vfs* pVFS,
             VSIFCloseL(fp);
     }
     else
-    {
         nRet = -1;
-    }
     *pResOut = (nRet == 0);
     return SQLITE_OK;
 }

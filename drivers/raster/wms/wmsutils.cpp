@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: wmsutils.cpp 31640 2015-11-18 23:17:59Z rouault $
  *
  * Project:  WMS Client Driver
  * Purpose:  Supporting utility functions for GDAL WMS driver.
@@ -27,8 +28,6 @@
  ****************************************************************************/
 
 #include "wmsdriver.h"
-
-CPL_CVSID("$Id: wmsutils.cpp 36611 2016-12-01 23:13:38Z lplesea $");
 
 CPLString MD5String(const char *s) {
     unsigned char hash[16];
@@ -67,18 +66,32 @@ CPLString ProjToWKT(const CPLString &proj) {
     }
     sr.exportToWkt(&wkt);
     srs = wkt;
-    CPLFree(wkt);
+    OGRFree(wkt);
     return srs;
 }
 
-// Terminates an URL base with either ? or &, so extra args can be appended
-void URLPrepare(CPLString &url) {
-    if (url.find("?") == std::string::npos) {
-        url.append("?");
-    } else {
-        if (*url.rbegin() != '?' && *url.rbegin() != '&')
-            url.append("&");
-    }
+void URLAppend(CPLString *url, const char *s) {
+    if ((s == NULL) || (s[0] == '\0')) return;
+    if (s[0] == '&') {
+        if (url->find('?') == std::string::npos) url->append(1, '?');
+        if (((*url)[url->size() - 1] == '?') || ((*url)[url->size() - 1] == '&')) url->append(s + 1);
+        else url->append(s);
+    } else url->append(s);
+}
+
+void URLAppendF(CPLString *url, const char *s, ...) {
+    CPLString tmp;
+    va_list args;
+
+    va_start(args, s);
+    tmp.vPrintf(s, args);
+    va_end(args);
+
+    URLAppend(url, tmp.c_str());
+}
+
+void URLAppend(CPLString *url, const CPLString &s) {
+    URLAppend(url, s.c_str());
 }
 
 CPLString BufferToVSIFile(GByte *buffer, size_t size) {
@@ -89,6 +102,16 @@ CPLString BufferToVSIFile(GByte *buffer, size_t size) {
     if (f == NULL) return CPLString();
     VSIFCloseL(f);
     return file_name;
+}
+
+CPLErr MakeDirs(const char *path) {
+    char *p = CPLStrdup(CPLGetDirname(path));
+    if (strlen(p) >= 2) {
+        MakeDirs(p);
+    }
+    VSIMkdir(p, 0744);
+    CPLFree(p);
+    return CE_None;
 }
 
 int VersionStringToInt(const char *version) {

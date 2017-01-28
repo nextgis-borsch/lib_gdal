@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_dwg.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: ogr_dxf.h 22008 2011-03-22 19:45:20Z warmerdam $
  *
  * Project:  DWG Translator
  * Purpose:  Definition of classes for OGR .dwg driver.
@@ -93,15 +93,15 @@ class OGRDWGBlocksLayer : public OGRLayer
     std::map<CPLString,DWGBlockDefinition>::iterator oIt;
 
   public:
-    explicit OGRDWGBlocksLayer( OGRDWGDataSource *poDS );
+    OGRDWGBlocksLayer( OGRDWGDataSource *poDS );
     ~OGRDWGBlocksLayer();
 
-    void                ResetReading() override;
-    OGRFeature *        GetNextFeature() override;
+    void                ResetReading();
+    OGRFeature *        GetNextFeature();
 
-    OGRFeatureDefn *    GetLayerDefn() override { return poFeatureDefn; }
+    OGRFeatureDefn *    GetLayerDefn() { return poFeatureDefn; }
 
-    int                 TestCapability( const char * ) override;
+    int                 TestCapability( const char * );
 
     OGRFeature *        GetNextUnfilteredFeature();
 };
@@ -151,15 +151,15 @@ class OGRDWGLayer : public OGRLayer
     OdDbObjectIteratorPtr   poEntIter;
 
   public:
-    explicit OGRDWGLayer( OGRDWGDataSource *poDS );
+    OGRDWGLayer( OGRDWGDataSource *poDS );
     ~OGRDWGLayer();
 
-    void                ResetReading() override;
-    OGRFeature *        GetNextFeature() override;
+    void                ResetReading();
+    OGRFeature *        GetNextFeature();
 
-    OGRFeatureDefn *    GetLayerDefn() override { return poFeatureDefn; }
+    OGRFeatureDefn *    GetLayerDefn() { return poFeatureDefn; }
 
-    int                 TestCapability( const char * ) override;
+    int                 TestCapability( const char * );
 
     OGRFeature *        GetNextUnfilteredFeature();
 
@@ -206,12 +206,12 @@ class OGRDWGDataSource : public OGRDataSource
     int                 Open( OGRDWGServices *poServices,
                               const char * pszFilename, int bHeaderOnly=FALSE );
 
-    const char          *GetName() override { return osName; }
+    const char          *GetName() { return osName; }
 
-    int                 GetLayerCount() override { return apoLayers.size(); }
-    OGRLayer            *GetLayer( int ) override;
+    int                 GetLayerCount() { return apoLayers.size(); }
+    OGRLayer            *GetLayer( int );
 
-    int                 TestCapability( const char * ) override;
+    int                 TestCapability( const char * );
 
     // The following is only used by OGRDWGLayer
 
@@ -270,9 +270,10 @@ class OGRDWGDriver : public OGRSFDriver
 
     OGRDWGServices *GetServices() { return &oServices; }
 
-    const char *GetName() override;
-    OGRDataSource *Open( const char *, int ) override;
-    int         TestCapability( const char * ) override;
+    const char *GetName();
+    OGRDataSource *Open( const char *, int );
+    int         TestCapability( const char * );
 };
+
 
 #endif /* ndef OGR_DWG_H_INCLUDED */

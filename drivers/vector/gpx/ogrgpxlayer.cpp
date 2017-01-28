@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrgpxlayer.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  GPX Translator
  * Purpose:  Implements OGRGPXLayer class.
@@ -32,7 +33,7 @@
 #include "cpl_string.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrgpxlayer.cpp 36350 2016-11-20 22:07:17Z rouault $");
+CPL_CVSID("$Id: ogrgpxlayer.cpp 33714 2016-03-13 05:42:13Z goatbar $");
 
 static const int FLD_TRACK_FID = 0;
 static const int FLD_TRACK_SEG_ID = 1;
@@ -59,8 +60,6 @@ OGRGPXLayer::OGRGPXLayer( const char* pszFilename,
                           GPXGeometryType gpxGeomTypeIn,
                           OGRGPXDataSource* poDSIn,
                           int bWriteModeIn ) :
-    poDS( poDSIn ),
-    gpxGeomType( gpxGeomTypeIn ),
     bWriteMode(CPL_TO_BOOL(bWriteModeIn)),
     nNextFID(0),
 #ifdef HAVE_EXPAT
@@ -97,6 +96,9 @@ OGRGPXLayer::OGRGPXLayer( const char* pszFilename,
     nDataHandlerCounter(0)
 #endif
 {
+    poDS = poDSIn;
+    gpxGeomType = gpxGeomTypeIn;
+
 #ifdef HAVE_EXPAT
     const char* gpxVersion = poDS->GetVersion();
 #endif
@@ -446,11 +448,8 @@ void OGRGPXLayer::ResetReading()
     depthLevel = 0;
     interestingDepthLevel = 0;
 
-    trkFID = 0;
-    trkSegId = 0;
-    trkSegPtId = 0;
-    rteFID = 0;
-    rtePtId = 0;
+    trkFID = trkSegId = trkSegPtId = 0;
+    rteFID = rtePtId = 0;
 }
 
 #ifdef HAVE_EXPAT
@@ -718,25 +717,19 @@ void OGRGPXLayer::startElementCbk(const char *pszName, const char **ppszAttr)
             {
                 for( int iField = 0; iField < poFeatureDefn->GetFieldCount(); iField++ )
                 {
-                    bool bMatch = false;
+                    int bMatch;
                     if (iField >= nGPXFields)
                     {
                         char* pszCompatibleName = OGRGPX_GetOGRCompatibleTagName(pszName);
-                        bMatch =
-                            strcmp(poFeatureDefn->
-                                   GetFieldDefn(iField)->GetNameRef(),
-                                   pszCompatibleName ) == 0;
+                        bMatch = (strcmp(poFeatureDefn->GetFieldDefn(iField)->GetNameRef(),
+                                        pszCompatibleName ) == 0);
                         CPLFree(pszCompatibleName);
                     }
                     else
-                    {
-                        bMatch =
-                            strcmp(poFeatureDefn->
-                                   GetFieldDefn(iField)->GetNameRef(),
-                                   pszName ) == 0;
-                    }
+                        bMatch = (strcmp(poFeatureDefn->GetFieldDefn(iField)->GetNameRef(),
+                                        pszName ) == 0);
 
-                    if( bMatch )
+                    if (bMatch)
                     {
                         iCurrentField = iField;
                         pszSubElementName = CPLStrdup(pszName);
@@ -1088,7 +1081,7 @@ OGRFeature *OGRGPXLayer::GetNextFeature()
     nFeatureTabIndex = 0;
     nWithoutEventCounter = 0;
 
-    int nDone = 0;
+    int nDone;
     do
     {
         nDataHandlerCounter = 0;
@@ -1152,7 +1145,7 @@ static char* OGRGPX_GetXMLCompatibleTagName(const char* pszExtensionsNS,
 
 static char* OGRGPX_GetUTF8String(const char* pszString)
 {
-    char *pszEscaped = NULL;
+    char *pszEscaped;
     if (!CPLIsUTF8(pszString, -1) &&
          CPLTestBool(CPLGetConfigOption("OGR_FORCE_ASCII", "YES")))
     {
@@ -1174,9 +1167,7 @@ static char* OGRGPX_GetUTF8String(const char* pszString)
         pszEscaped = CPLForceToASCII(pszString, -1, '?');
     }
     else
-    {
         pszEscaped = CPLStrdup(pszString);
-    }
 
     return pszEscaped;
 }
@@ -1185,19 +1176,20 @@ static char* OGRGPX_GetUTF8String(const char* pszString)
 /*                   OGRGPX_WriteXMLExtension()                          */
 /************************************************************************/
 
-bool OGRGPXLayer::OGRGPX_WriteXMLExtension( const char* pszTagName,
-                                            const char* pszContent )
+int OGRGPXLayer::OGRGPX_WriteXMLExtension(const char* pszTagName,
+                                          const char* pszContent)
 {
     CPLXMLNode* poXML = CPLParseXMLString(pszContent);
     if (poXML)
     {
+        char* pszTagNameWithNS;
+        const char* pszXMLNS = NULL;
         const char* pszUnderscore = strchr(pszTagName, '_');
-        char* pszTagNameWithNS = CPLStrdup(pszTagName);
+        pszTagNameWithNS = CPLStrdup(pszTagName);
         if (pszUnderscore)
             pszTagNameWithNS[pszUnderscore - pszTagName] = ':';
 
         /* If we detect a Garmin GPX extension, add its xmlns */
-        const char* pszXMLNS = NULL;
         if (strcmp(pszTagName, "gpxx_WaypointExtension") == 0)
             pszXMLNS = " xmlns:gpxx=\"http://www.garmin.com/xmlschemas/GpxExtensions/v3\"";
 
@@ -1210,10 +1202,10 @@ bool OGRGPXLayer::OGRGPX_WriteXMLExtension( const char* pszTagName,
         CPLFree(pszTagNameWithNS);
         CPLDestroyXMLNode(poXML);
 
-        return true;
+        return TRUE;
     }
 
-    return false;
+    return FALSE;
 }
 
 /************************************************************************/
@@ -1310,7 +1302,7 @@ void OGRGPXLayer::WriteFeatureAttributes( OGRFeature *poFeatureIn, int nIdentLev
                     /* Try to detect XML content */
                     if (pszRaw[0] == '<' && pszRaw[strlen(pszRaw) - 1] == '>')
                     {
-                        if( OGRGPX_WriteXMLExtension( compatibleName, pszRaw) )
+                        if (OGRGPX_WriteXMLExtension( compatibleName, pszRaw))
                         {
                             CPLFree(compatibleName);
                             continue;
@@ -1323,8 +1315,7 @@ void OGRGPXLayer::WriteFeatureAttributes( OGRFeature *poFeatureIn, int nIdentLev
                     {
                         char* pszUnescapedContent = CPLUnescapeString( pszRaw, NULL, CPLES_XML );
 
-                        if( OGRGPX_WriteXMLExtension(compatibleName,
-                                                     pszUnescapedContent) )
+                        if (OGRGPX_WriteXMLExtension(compatibleName, pszUnescapedContent))
                         {
                             CPLFree(pszUnescapedContent);
                             CPLFree(compatibleName);
@@ -1730,6 +1721,7 @@ OGRErr OGRGPXLayer::ICreateFeature( OGRFeature *poFeatureIn )
         poDS->PrintLine("  <rtept lat=\"%s\" lon=\"%s\">", szLat, szLon);
         WriteFeatureAttributes(poFeatureIn, 2);
         poDS->PrintLine("  </rtept>");
+
     }
     else
     {
@@ -1825,9 +1817,12 @@ OGRErr OGRGPXLayer::ICreateFeature( OGRFeature *poFeatureIn )
     return OGRERR_NONE;
 }
 
+
+
 /************************************************************************/
 /*                            CreateField()                             */
 /************************************************************************/
+
 
 OGRErr OGRGPXLayer::CreateField( OGRFieldDefn *poField,
                                  CPL_UNUSED int bApproxOK )
@@ -1840,7 +1835,7 @@ OGRErr OGRGPXLayer::CreateField( OGRFieldDefn *poField,
             return OGRERR_NONE;
         }
     }
-    if( !poDS->GetUseExtensions() )
+    if (poDS->GetUseExtensions() == FALSE)
     {
         CPLError(CE_Failure, CPLE_NotSupported,
                 "Field of name '%s' is not supported in GPX schema. "
@@ -1873,6 +1868,7 @@ int OGRGPXLayer::TestCapability( const char * pszCap )
         return FALSE;
 }
 
+
 /************************************************************************/
 /*                       LoadExtensionsSchema()                         */
 /************************************************************************/
@@ -1899,6 +1895,7 @@ static void XMLCALL dataHandlerLoadSchemaCbk(
     static_cast<OGRGPXLayer *>(pUserData)->dataHandlerLoadSchemaCbk(data, nLen);
 }
 
+
 /** This function parses the whole file to detect the extensions fields */
 void OGRGPXLayer::LoadExtensionsSchema()
 {
@@ -1920,7 +1917,7 @@ void OGRGPXLayer::LoadExtensionsSchema()
     bStopParsing = false;
 
     char aBuf[BUFSIZ];
-    int nDone = 0;
+    int nDone;
     do
     {
         nDataHandlerCounter = 0;
@@ -1954,9 +1951,11 @@ void OGRGPXLayer::LoadExtensionsSchema()
     VSIFSeekL( fpGPX, 0, SEEK_SET );
 }
 
+
 /************************************************************************/
 /*                  startElementLoadSchemaCbk()                         */
 /************************************************************************/
+
 
 void OGRGPXLayer::startElementLoadSchemaCbk(const char *pszName,
                                             CPL_UNUSED const char **ppszAttr)
@@ -2008,26 +2007,18 @@ void OGRGPXLayer::startElementLoadSchemaCbk(const char *pszName,
             CPLFree(pszSubElementName);
             pszSubElementName = CPLStrdup(pszName);
 
-            int iField = 0;  // Used after for.
-            for( ; iField < poFeatureDefn->GetFieldCount(); iField++ )
+            int iField;
+            for(iField = 0; iField < poFeatureDefn->GetFieldCount(); iField++ )
             {
-                bool bMatch = false;
-                if( iField >= nGPXFields )
+                int bMatch;
+                if (iField >= nGPXFields)
                 {
                     char* pszCompatibleName = OGRGPX_GetOGRCompatibleTagName(pszName);
-                    bMatch =
-                        strcmp(poFeatureDefn->
-                               GetFieldDefn(iField)->GetNameRef(),
-                               pszCompatibleName ) == 0;
+                    bMatch = (strcmp(poFeatureDefn->GetFieldDefn(iField)->GetNameRef(), pszCompatibleName ) == 0);
                     CPLFree(pszCompatibleName);
                 }
                 else
-                {
-                    bMatch =
-                        strcmp(poFeatureDefn->
-                               GetFieldDefn(iField)->GetNameRef(),
-                               pszName ) == 0;
-                }
+                    bMatch = (strcmp(poFeatureDefn->GetFieldDefn(iField)->GetNameRef(), pszName ) == 0);
 
                 if (bMatch)
                 {
@@ -2058,11 +2049,12 @@ void OGRGPXLayer::startElementLoadSchemaCbk(const char *pszName,
     depthLevel++;
 }
 
+
 /************************************************************************/
 /*                   endElementLoadSchemaCbk()                           */
 /************************************************************************/
 
-static bool OGRGPXIsInt( const char* pszStr )
+static int OGRGPXIsInt(const char* pszStr)
 {
     while(*pszStr == ' ')
         pszStr++;
@@ -2072,13 +2064,14 @@ static bool OGRGPXIsInt( const char* pszStr )
         if (pszStr[i] == '+' || pszStr[i] == '-')
         {
             if (i != 0)
-                return false;
+                return FALSE;
         }
         else if (!(pszStr[i] >= '0' && pszStr[i] <= '9'))
-            return false;
+            return FALSE;
     }
-    return true;
+    return TRUE;
 }
+
 
 void OGRGPXLayer::endElementLoadSchemaCbk(const char *pszName)
 {
@@ -2137,7 +2130,7 @@ void OGRGPXLayer::endElementLoadSchemaCbk(const char *pszName)
                     {
                         if (currentFieldDefn->GetType() == OFTInteger)
                         {
-                            if( !OGRGPXIsInt(pszSubElementValue) )
+                            if (OGRGPXIsInt(pszSubElementValue) == FALSE)
                             {
                                 currentFieldDefn->SetType(OFTReal);
                             }

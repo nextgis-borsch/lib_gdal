@@ -27,8 +27,14 @@
  * DEALINGS IN THE SOFTWARE.
  *****************************************************************************/
 
+using kmldom::SimpleFieldPtr;
+using kmldom::SchemaPtr;
+using kmldom::KmlFactory;
+using kmldom::FeaturePtr;
+using kmldom::PlacemarkPtr;
+
 /******************************************************************************
- Function to output ogr fields in kml.
+ function to output ogr fields in kml
 
  args:
         poOgrFeat       pointer to the feature the field is in
@@ -46,47 +52,47 @@
   LIBKML_DESCRIPTION_FIELD       default: none
   LIBKML_NAME_FIELD              default: OFTString field named name
 
-******************************************************************************/
 
-#include "ogr_libkml.h"
+******************************************************************************/
 
 void field2kml (
     OGRFeature * poOgrFeat,
     OGRLIBKMLLayer * poOgrLayer,
-    kmldom::KmlFactory * poKmlFactory,
-    kmldom::FeaturePtr poKmlPlacemark,
+    KmlFactory * poKmlFactory,
+    FeaturePtr poKmlPlacemark,
     int bUseSimpleField );
 
 /******************************************************************************
- Function to read kml into ogr fields.
+ function to read kml into ogr fields
 ******************************************************************************/
 
 void kml2field (
     OGRFeature * poOgrFeat,
-    kmldom::FeaturePtr poKmlFeature );
+    FeaturePtr poKmlFeature );
 
 /******************************************************************************
- Function create a simplefield from a FieldDefn.
+ function create a simplefield from a FieldDefn
 ******************************************************************************/
 
-kmldom::SimpleFieldPtr FieldDef2kml (
+SimpleFieldPtr FieldDef2kml (
     OGRFieldDefn *poOgrFieldDef,
-    kmldom::KmlFactory * poKmlFactory );
+    KmlFactory * poKmlFactory );
 
 /******************************************************************************
- Function to add the simpleFields in a schema to a featuredefn.
+ function to add the simpleFields in a schema to a featuredefn
 ******************************************************************************/
 
 void kml2FeatureDef (
-    kmldom::SchemaPtr poKmlSchema,
-    OGRFeatureDefn *poOgrFeatureDefn );
+    SchemaPtr poKmlSchema,
+    OGRFeatureDefn *poOgrFeatureDefn);
 
 /*******************************************************************************
- Function to fetch the field config options.
+ * function to fetch the field config options
+ *
 *******************************************************************************/
 
 struct fieldconfig {
-    const char *namefield;
+	const char *namefield;
     const char *descfield;
     const char *tsfield;
     const char *beginfield;
@@ -134,5 +140,5 @@ struct fieldconfig {
 
 void get_fieldconfig( struct fieldconfig *oFC );
 
-int kmlAltitudeModeFromString( const char* pszAltitudeMode,
-                               int& isGX );
+int kmlAltitudeModeFromString(const char* pszAltitudeMode,
+                              int& isGX);

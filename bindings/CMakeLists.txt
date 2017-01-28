@@ -25,7 +25,7 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-if(BUILD_SHARED_LIBS) # not support for static builds
+if(BUILD_SHARED_LIBS OR OSX_FRAMEWORK) # not support for static builds
 option(WITH_PYTHON "Set ON to build python bindings" OFF)
 if(WITH_PYTHON)
     option(WITH_PYTHON2 "Set ON to build python2 bindings" ON)
@@ -69,4 +69,4 @@ if(WITH_JAVA)
     set(BINDING java)
     add_subdirectory(java)
 endif()
-endif(BUILD_SHARED_LIBS)
+endif()

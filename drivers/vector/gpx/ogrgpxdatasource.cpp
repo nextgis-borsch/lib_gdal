@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrgpxdatasource.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  GPX Translator
  * Purpose:  Implements OGRGPXDataSource class
@@ -31,7 +32,7 @@
 #include "cpl_string.h"
 #include "ogr_gpx.h"
 
-CPL_CVSID("$Id: ogrgpxdatasource.cpp 35911 2016-10-24 15:03:26Z goatbar $");
+CPL_CVSID("$Id: ogrgpxdatasource.cpp 33714 2016-03-13 05:42:13Z goatbar $");
 
 static const int SPACE_FOR_METADATA = 160;
 
@@ -240,6 +241,7 @@ void OGRGPXDataSource::startElementValidateCbk(
     }
 }
 
+
 /************************************************************************/
 /*                      dataHandlerValidateCbk()                        */
 /************************************************************************/
@@ -255,6 +257,7 @@ void OGRGPXDataSource::dataHandlerValidateCbk(CPL_UNUSED const char *data,
         XML_StopParser(oCurrentParser, XML_FALSE);
     }
 }
+
 
 static void XMLCALL startElementValidateCbk(
     void *pUserData, const char *pszName, const char **ppszAttr)
@@ -308,8 +311,8 @@ int OGRGPXDataSource::Open( const char * pszFilename, int bUpdateIn)
     XML_SetCharacterDataHandler(oParser, ::dataHandlerValidateCbk);
 
     char aBuf[BUFSIZ];
-    int nDone = 0;
-    unsigned int nLen = 0;
+    int nDone;
+    unsigned int nLen;
     int nCount = 0;
 
     /* Begin to parse the file and look for the <gpx> element */
@@ -401,7 +404,7 @@ int OGRGPXDataSource::Open( const char * pszFilename, int bUpdateIn)
         papoLayers[4] = new OGRGPXLayer( pszName, "track_points", GPX_TRACK_POINT, this, FALSE );
     }
 
-    return validity == GPX_VALIDITY_VALID;
+    return (validity == GPX_VALIDITY_VALID);
 #else
     VSILFILE* fp = VSIFOpenL(pszFilename, "r");
     if (fp)
@@ -420,6 +423,7 @@ int OGRGPXDataSource::Open( const char * pszFilename, int bUpdateIn)
 #endif
 }
 
+
 /************************************************************************/
 /*                               Create()                               */
 /************************************************************************/
@@ -429,7 +433,7 @@ int OGRGPXDataSource::Create( const char *pszFilename,
 {
     if( fpOutput != NULL)
     {
-        CPLAssert( false );
+        CPLAssert( FALSE );
         return FALSE;
     }
 

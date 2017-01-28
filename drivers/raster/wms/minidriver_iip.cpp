@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: minidriver_iip.cpp 33844 2016-04-01 08:42:13Z rouault $
  *
  * Project:  WMS Client Driver
  * Purpose:  Mini driver for Internet Imaging Protocol (IIP)
@@ -29,43 +30,52 @@
 #include "wmsdriver.h"
 #include "minidriver_iip.h"
 
-CPL_CVSID("$Id: minidriver_iip.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
-WMSMiniDriver_IIP::WMSMiniDriver_IIP() {}
+CPP_GDALWMSMiniDriverFactory(IIP)
 
-WMSMiniDriver_IIP::~WMSMiniDriver_IIP() {}
+GDALWMSMiniDriver_IIP::GDALWMSMiniDriver_IIP() {
+}
 
-CPLErr WMSMiniDriver_IIP::Initialize(CPLXMLNode *config, CPL_UNUSED char **papszOpenOptions) {
+GDALWMSMiniDriver_IIP::~GDALWMSMiniDriver_IIP() {
+}
+
+CPLErr GDALWMSMiniDriver_IIP::Initialize(CPLXMLNode *config) {
     CPLErr ret = CE_None;
 
-    m_base_url = CPLGetXMLValue(config, "ServerURL", "");
-    if (m_base_url.empty()) {
-        CPLError(CE_Failure, CPLE_AppDefined, "GDALWMS, IIP mini-driver: ServerURL missing.");
-        return CE_Failure;
+    if (ret == CE_None) {
+        const char *base_url = CPLGetXMLValue(config, "ServerURL", "");
+        if (base_url[0] != '\0') {
+            m_base_url = base_url;
+        } else {
+            CPLError(CE_Failure, CPLE_AppDefined, "GDALWMS, IIP mini-driver: ServerURL missing.");
+            ret = CE_Failure;
+        }
     }
 
     return ret;
 }
 
-void WMSMiniDriver_IIP::GetCapabilities(WMSMiniDriverCapabilities *caps) {
+void GDALWMSMiniDriver_IIP::GetCapabilities(GDALWMSMiniDriverCapabilities *caps) {
+    caps->m_capabilities_version = 1;
+    caps->m_has_arb_overviews = 0;
+    caps->m_has_image_request = 0;
+    caps->m_has_tiled_image_requeset = 1;
+    caps->m_max_overview_count = 32;
     caps->m_overview_dim_computation_method = OVERVIEW_FLOOR;
     caps->m_has_geotransform = false;
 }
 
-CPLErr WMSMiniDriver_IIP::TiledImageRequest(
-    WMSHTTPRequest &request,
+void GDALWMSMiniDriver_IIP::TiledImageRequest(
+    CPLString *url,
     const GDALWMSImageRequestInfo & /* iri */,
     const GDALWMSTiledImageRequestInfo &tiri)
 {
-    CPLString &url = request.URL;
-    url = m_base_url;
-    URLPrepare(url);
-
     int nTileXCount = (
         (m_parent_dataset->GetRasterXSize()
-        >> (m_parent_dataset->GetRasterBand(1)->GetOverviewCount()
-        - tiri.m_level)) + 255) / 256;
+         >> (m_parent_dataset->GetRasterBand(1)->GetOverviewCount()
+          - tiri.m_level)) + 255) / 256;
     int numTile = tiri.m_x + tiri.m_y * nTileXCount;
-    url += CPLOPrintf("jtl=%d,%d", tiri.m_level, numTile);
-    return CE_None;
+
+    *url = m_base_url;
+    *url += CPLSPrintf("&jtl=%d,%d", tiri.m_level, numTile);
 }

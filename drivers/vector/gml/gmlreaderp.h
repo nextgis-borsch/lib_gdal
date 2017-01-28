@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gmlreaderp.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: gmlreaderp.h 35690 2016-10-11 09:56:31Z rouault $
  *
  * Project:  GML Reader
  * Purpose:  Private Declarations for OGR free GML Reader code.
@@ -33,13 +33,10 @@
 
 #if defined(HAVE_XERCES)
 
-// Must be first for DEBUG_BOOL case
 #include "xercesc_headers.h"
-#include "ogr_xerces.h"
 
 #endif /* HAVE_XERCES */
 
-#include "cpl_string.h"
 #include "gmlreader.h"
 #include "ogr_api.h"
 #include "cpl_vsi.h"
@@ -63,14 +60,13 @@ class GFSTemplateItem;
 
 class GFSTemplateList
 {
-  private:
+private:
     bool            m_bSequentialLayers;
     GFSTemplateItem *pFirst;
     GFSTemplateItem *pLast;
     GFSTemplateItem *Insert( const char *pszName );
-
-  public:
-                    GFSTemplateList();
+public:
+                    GFSTemplateList( void );
                     ~GFSTemplateList();
     void            Update( const char *pszName, int bHasGeom );
     GFSTemplateItem *GetFirst() { return pFirst; }
@@ -107,6 +103,7 @@ typedef struct
     CPLXMLNode* psLastChild;
 } NodeLastChild;
 
+
 typedef enum
 {
     APPSCHEMA_GENERIC,
@@ -123,6 +120,7 @@ class GMLHandler
     bool       m_bInCurField;
     int        m_nAttributeIndex;
     int        m_nAttributeDepth;
+
 
     char      *m_pszGeometry;
     unsigned int m_nGeomAlloc;
@@ -189,7 +187,7 @@ protected:
     int              nStackDepth;
     HandlerState     stateStack[STACK_SIZE];
 
-    CPLString           m_osFID;
+    std::string      osFID;
     virtual const char* GetFID(void* attr) = 0;
 
     virtual CPLXMLNode* AddAttributes(CPLXMLNode* psNode, void* attr) = 0;
@@ -201,12 +199,13 @@ protected:
     bool       IsGeometryElement( const char *pszElement );
 
 public:
-    explicit GMLHandler( GMLReader *poReader );
+    GMLHandler( GMLReader *poReader );
     virtual ~GMLHandler();
 
     virtual char*       GetAttributeValue(void* attr, const char* pszAttributeName) = 0;
     virtual char*       GetAttributeByIdx(void* attr, unsigned int idx, char** ppszKey) = 0;
 };
+
 
 #if defined(HAVE_XERCES)
 
@@ -220,12 +219,17 @@ class GMLBinInputStream : public BinInputStream
 
 public :
 
-    explicit GMLBinInputStream(VSILFILE* fp);
+             GMLBinInputStream(VSILFILE* fp);
     virtual ~GMLBinInputStream();
 
-    virtual XMLFilePos curPos() const override;
-    virtual XMLSize_t readBytes(XMLByte* const toFill, const XMLSize_t maxToRead) override;
-    virtual const XMLCh* getContentType() const override ;
+#if XERCES_VERSION_MAJOR >= 3
+    virtual XMLFilePos curPos() const;
+    virtual XMLSize_t readBytes(XMLByte* const toFill, const XMLSize_t maxToRead);
+    virtual const XMLCh* getContentType() const ;
+#else
+    virtual unsigned int curPos() const;
+    virtual unsigned int readBytes(XMLByte* const toFill, const unsigned int maxToRead);
+#endif
 };
 
 /************************************************************************/
@@ -234,7 +238,6 @@ public :
 
 class GMLInputSource : public InputSource
 {
-    // TODO(schwehr): Rename to pBinInputStream to not look like a bool.
     GMLBinInputStream* binInputStream;
 
 public:
@@ -242,8 +245,18 @@ public:
                             MemoryManager* const manager = XMLPlatformUtils::fgMemoryManager);
     virtual ~GMLInputSource();
 
-    virtual BinInputStream* makeStream() const override;
+    virtual BinInputStream* makeStream() const;
 };
+
+
+/************************************************************************/
+/*          XMLCh / char translation functions - trstring.cpp           */
+/************************************************************************/
+int tr_strcmp( const char *, const XMLCh * );
+void tr_strcpy( XMLCh *, const char * );
+void tr_strcpy( char *, const XMLCh * );
+char *tr_strdup( const XMLCh * );
+int tr_strlen( const XMLCh * );
 
 /************************************************************************/
 /*                         GMLXercesHandler                             */
@@ -251,39 +264,41 @@ public:
 class GMLXercesHandler : public DefaultHandler, public GMLHandler
 {
     int        m_nEntityCounter;
-    CPLString  m_osElement;
-    CPLString  m_osCharacters;
-    CPLString  m_osAttrName;
-    CPLString  m_osAttrValue;
 
-  public:
-    explicit GMLXercesHandler( GMLReader *poReader );
+public:
+    GMLXercesHandler( GMLReader *poReader );
 
     void startElement(
         const   XMLCh* const    uri,
         const   XMLCh* const    localname,
         const   XMLCh* const    qname,
         const   Attributes& attrs
-    ) override;
+    );
     void endElement(
         const   XMLCh* const    uri,
         const   XMLCh* const    localname,
         const   XMLCh* const    qname
-    ) override;
+    );
+#if XERCES_VERSION_MAJOR >= 3
     void characters( const XMLCh *const chars,
-                     const XMLSize_t length ) override;
+                     const XMLSize_t length );
+#else
+    void characters( const XMLCh *const chars,
+                     const unsigned int length );
+#endif
 
-    void fatalError(const SAXParseException&) override;
+    void fatalError(const SAXParseException&);
 
-    void startEntity (const XMLCh *const name) override;
+    void startEntity (const XMLCh *const name);
 
-    virtual const char* GetFID(void* attr) override;
-    virtual CPLXMLNode* AddAttributes(CPLXMLNode* psNode, void* attr) override;
-    virtual char*       GetAttributeValue(void* attr, const char* pszAttributeName) override;
-    virtual char*       GetAttributeByIdx(void* attr, unsigned int idx, char** ppszKey) override;
+    virtual const char* GetFID(void* attr);
+    virtual CPLXMLNode* AddAttributes(CPLXMLNode* psNode, void* attr);
+    virtual char*       GetAttributeValue(void* attr, const char* pszAttributeName);
+    virtual char*       GetAttributeByIdx(void* attr, unsigned int idx, char** ppszKey);
 };
 
 #endif
+
 
 #if defined(HAVE_EXPAT)
 
@@ -305,10 +320,10 @@ public:
 
     void        ResetDataHandlerCounter() { m_nDataHandlerCounter = 0; }
 
-    virtual const char* GetFID(void* attr) override;
-    virtual CPLXMLNode* AddAttributes(CPLXMLNode* psNode, void* attr) override;
-    virtual char*       GetAttributeValue(void* attr, const char* pszAttributeName) override;
-    virtual char*       GetAttributeByIdx(void* attr, unsigned int idx, char** ppszKey) override;
+    virtual const char* GetFID(void* attr);
+    virtual CPLXMLNode* AddAttributes(CPLXMLNode* psNode, void* attr);
+    virtual char*       GetAttributeValue(void* attr, const char* pszAttributeName);
+    virtual char*       GetAttributeByIdx(void* attr, unsigned int idx, char** ppszKey);
 
     static void XMLCALL startElementCbk(void *pUserData, const char *pszName,
                                         const char **ppszAttr);
@@ -339,6 +354,7 @@ public:
         return ( m_nPathLength == 0 ) ? "" : aosPathComponents[m_nPathLength-1].c_str();
     }
 
+
     size_t GetLastComponentLen() const {
         return ( m_nPathLength == 0 ) ? 0: aosPathComponents[m_nPathLength-1].size();
     }
@@ -356,9 +372,18 @@ public:
 /*                              GMLReader                               */
 /************************************************************************/
 
+typedef enum
+{
+    OGRGML_XERCES_UNINITIALIZED,
+    OGRGML_XERCES_INIT_FAILED,
+    OGRGML_XERCES_INIT_SUCCESSFUL
+} OGRGMLXercesState;
+
 class GMLReader : public IGMLReader
 {
-  private:
+private:
+    static OGRGMLXercesState    m_eXercesInitState;
+    static int    m_nInstanceCount;
     bool          m_bClassListLocked;
 
     int         m_nClassCount;
@@ -377,7 +402,6 @@ class GMLReader : public IGMLReader
     GMLFeature   *m_poCompleteFeature;
     GMLInputSource *m_GMLInputSource;
     bool          m_bEOF;
-    bool          m_bXercesInitialized;
     bool          SetupParserXerces();
     GMLFeature   *NextFeatureXerces();
 #endif
@@ -446,41 +470,41 @@ public:
                           bool bGetSecondaryGeometryOption);
     virtual     ~GMLReader();
 
-    bool             IsClassListLocked() const override { return m_bClassListLocked; }
-    void             SetClassListLocked( bool bFlag ) override
+    bool             IsClassListLocked() const { return m_bClassListLocked; }
+    void             SetClassListLocked( bool bFlag )
         { m_bClassListLocked = bFlag; }
 
-    void             SetSourceFile( const char *pszFilename ) override;
-    void             SetFP( VSILFILE* fp ) override;
-    const char*      GetSourceFileName() override;
+    void             SetSourceFile( const char *pszFilename );
+    void             SetFP( VSILFILE* fp );
+    const char*      GetSourceFileName();
 
-    int              GetClassCount() const override { return m_nClassCount; }
-    GMLFeatureClass *GetClass( int i ) const override;
-    GMLFeatureClass *GetClass( const char *pszName ) const override;
+    int              GetClassCount() const { return m_nClassCount; }
+    GMLFeatureClass *GetClass( int i ) const;
+    GMLFeatureClass *GetClass( const char *pszName ) const;
 
-    int              AddClass( GMLFeatureClass *poClass ) override;
-    void             ClearClasses() override;
+    int              AddClass( GMLFeatureClass *poClass );
+    void             ClearClasses();
 
-    GMLFeature       *NextFeature() override;
+    GMLFeature       *NextFeature();
 
-    bool             LoadClasses( const char *pszFile = NULL ) override;
-    bool             SaveClasses( const char *pszFile = NULL ) override;
+    bool             LoadClasses( const char *pszFile = NULL );
+    bool             SaveClasses( const char *pszFile = NULL );
 
     bool             ResolveXlinks( const char *pszFile,
                                     bool* pbOutIsTempFile,
                                     char **papszSkip = NULL,
-                                    const bool bStrict = false ) override;
+                                    const bool bStrict = false );
 
     bool             HugeFileResolver( const char *pszFile,
                                        bool bSqliteIsTempFile,
-                                       int iSqliteCacheMB ) override;
+                                       int iSqliteCacheMB );
 
     bool             PrescanForSchema(bool bGetExtents = true,
                                       bool bAnalyzeSRSPerFeature = true,
-                                      bool bOnlyDetectSRS = false ) override;
-    bool             PrescanForTemplate() override;
+                                      bool bOnlyDetectSRS = false );
+    bool             PrescanForTemplate( void );
     bool             ReArrangeTemplateClasses( GFSTemplateList *pCC );
-    void             ResetReading() override;
+    void             ResetReading();
 
 // ---
 
@@ -505,20 +529,20 @@ public:
 
     void        SetWidthFlag(bool bFlag) { m_bSetWidthFlag = bFlag; }
 
-    bool        HasStoppedParsing() override { return m_bStopParsing; }
+    bool        HasStoppedParsing() { return m_bStopParsing; }
 
     bool       FetchAllGeometries() { return m_bFetchAllGeometries; }
 
-    void        SetGlobalSRSName( const char* pszGlobalSRSName ) override ;
-    const char* GetGlobalSRSName() override { return m_pszGlobalSRSName; }
+    void        SetGlobalSRSName( const char* pszGlobalSRSName ) ;
+    const char* GetGlobalSRSName() { return m_pszGlobalSRSName; }
 
-    bool        CanUseGlobalSRSName() override { return m_bCanUseGlobalSRSName; }
+    bool        CanUseGlobalSRSName() { return m_bCanUseGlobalSRSName; }
 
-    bool        SetFilteredClassName(const char* pszClassName) override;
-    const char* GetFilteredClassName() override { return m_pszFilteredClassName; }
+    bool        SetFilteredClassName(const char* pszClassName);
+    const char* GetFilteredClassName() { return m_pszFilteredClassName; }
     int         GetFilteredClassIndex() { return m_nFilteredClassIndex; }
 
-    bool        IsSequentialLayers() const override { return m_nHasSequentialLayers == TRUE; }
+    bool        IsSequentialLayers() const { return m_nHasSequentialLayers == TRUE; }
 
     void        SetReportAllAttributes(bool bFlag) { m_bReportAllAttributes = bFlag; }
     bool        ReportAllAttributes() const { return m_bReportAllAttributes; }

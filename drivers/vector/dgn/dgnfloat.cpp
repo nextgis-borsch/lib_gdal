@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: dgnfloat.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  Microstation DGN Access Library
  * Purpose:  Functions for translating DGN floats into IEEE floats.
@@ -28,7 +29,7 @@
 
 #include "dgnlibp.h"
 
-CPL_CVSID("$Id: dgnfloat.cpp 35910 2016-10-24 14:08:24Z goatbar $");
+CPL_CVSID("$Id: dgnfloat.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 typedef struct dbl {
     GUInt32 hi;
@@ -46,13 +47,15 @@ void    DGN2IEEEDouble(void * dbl)
     GUInt32     sign;
     GUInt32     exponent;
     GUInt32     rndbits;
+    unsigned char       *src;
+    unsigned char       *dest;
 
 /* -------------------------------------------------------------------- */
 /*      Arrange the VAX double so that it may be accessed by a          */
 /*      double64_t structure, (two GUInt32s).                           */
 /* -------------------------------------------------------------------- */
-    unsigned char *src =  (unsigned char *) dbl;
-    unsigned char *dest = (unsigned char *) &dt;
+    src =  (unsigned char *) dbl;
+    dest = (unsigned char *) &dt;
 #ifdef CPL_LSB
     dest[2] = src[0];
     dest[3] = src[1];
@@ -105,6 +108,8 @@ void    DGN2IEEEDouble(void * dbl)
     dt.hi = dt.hi & 0x000fffff;
     dt.hi = dt.hi | (exponent << 20) | sign;
 
+
+
 #ifdef CPL_LSB
 /* -------------------------------------------------------------------- */
 /*      Change the number to a byte swapped format                      */
@@ -126,9 +131,10 @@ void    DGN2IEEEDouble(void * dbl)
 void    IEEE2DGNDouble(void * dbl)
 
 {
-    double64_t dt;
-    GByte  *src = NULL;
-    GByte *dest = NULL;
+    double64_t  dt;
+    GInt32      exponent;
+    GInt32      sign;
+    GByte       *src,*dest;
 
 #ifdef CPL_LSB
     src  = (GByte *) dbl;
@@ -146,8 +152,8 @@ void    IEEE2DGNDouble(void * dbl)
     memcpy( &dt, dbl, 8 );
 #endif
 
-    GInt32 sign = dt.hi & 0x80000000;
-    GInt32 exponent = dt.hi >> 20;
+    sign         = dt.hi & 0x80000000;
+    exponent = dt.hi >> 20;
     exponent = exponent & 0x000007ff;
 
 /* -------------------------------------------------------------------- */

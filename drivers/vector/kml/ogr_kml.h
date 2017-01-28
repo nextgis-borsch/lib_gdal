@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_kml.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: ogr_kml.h 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  KML Driver
  * Purpose:  Declarations for OGR wrapper classes for KML, and OGR->KML
@@ -47,7 +47,8 @@ class OGRKMLDataSource;
 
 class OGRKMLLayer : public OGRLayer
 {
-  public:
+public:
+
     OGRKMLLayer( const char* pszName_,
                  OGRSpatialReference* poSRS,
                  bool bWriter,
@@ -58,13 +59,13 @@ class OGRKMLLayer : public OGRLayer
     //
     // OGRLayer Interface
     //
-    OGRFeatureDefn* GetLayerDefn() override;
-    OGRErr ICreateFeature( OGRFeature* poFeature ) override;
-    OGRErr CreateField( OGRFieldDefn* poField, int bApproxOK = TRUE ) override;
-    void ResetReading() override;
-    OGRFeature* GetNextFeature() override;
-    GIntBig GetFeatureCount( int bForce = TRUE ) override;
-    int TestCapability( const char* pszCap ) override;
+    OGRFeatureDefn* GetLayerDefn();
+    OGRErr ICreateFeature( OGRFeature* poFeature );
+    OGRErr CreateField( OGRFieldDefn* poField, int bApproxOK = TRUE );
+    void ResetReading();
+    OGRFeature* GetNextFeature();
+    GIntBig GetFeatureCount( int bForce = TRUE );
+    int TestCapability( const char* pszCap );
 
     //
     // OGRKMLLayer Interface
@@ -75,12 +76,12 @@ class OGRKMLLayer : public OGRLayer
 
     CPLString WriteSchema();
 
-  private:
+private:
     friend class OGRKMLDataSource;
 
     OGRKMLDataSource* poDS_;
     OGRSpatialReference* poSRS_;
-    OGRCoordinateTransformation *poCT_;
+	OGRCoordinateTransformation *poCT_;
 
     OGRFeatureDefn* poFeatureDefn_;
 
@@ -103,7 +104,7 @@ class OGRKMLLayer : public OGRLayer
 
 class OGRKMLDataSource : public OGRDataSource
 {
-  public:
+public:
     OGRKMLDataSource();
     ~OGRKMLDataSource();
 
@@ -111,14 +112,14 @@ class OGRKMLDataSource : public OGRDataSource
     // OGRDataSource Interface
     //
     int Open( const char* pszName, int bTestOpen );
-    const char* GetName() override { return pszName_; }
-    int GetLayerCount() override { return nLayers_; }
-    OGRLayer* GetLayer( int nLayer ) override;
+    const char* GetName() { return pszName_; }
+    int GetLayerCount() { return nLayers_; }
+    OGRLayer* GetLayer( int nLayer );
     OGRLayer* ICreateLayer( const char* pszName,
                            OGRSpatialReference* poSRS = NULL,
                            OGRwkbGeometryType eGType = wkbUnknown,
-                           char** papszOptions = NULL ) override;
-    int TestCapability( const char* pszCap ) override;
+                           char** papszOptions = NULL );
+    int TestCapability( const char* pszCap );
 
     //
     // OGRKMLDataSource Interface
@@ -133,10 +134,11 @@ class OGRKMLDataSource : public OGRDataSource
     KML* GetKMLFile() { return poKMLFile_; };
 #endif
 
-    bool IsFirstCTError() const { return !bIssuedCTError_; }
-    void IssuedFirstCTError() { bIssuedCTError_ = true; }
+	bool IsFirstCTError() const { return !bIssuedCTError_; }
+	void IssuedFirstCTError() { bIssuedCTError_ = true; }
 
-  private:
+private:
+
 #ifdef HAVE_EXPAT
     KML* poKMLFile_;
 #endif
@@ -146,22 +148,22 @@ class OGRKMLDataSource : public OGRDataSource
     OGRKMLLayer** papoLayers_;
     int nLayers_;
 
-    // The name of the field to use for the KML name element.
+    //The name of the field to use for the KML name element
     char* pszNameField_;
     char* pszDescriptionField_;
 
-    // The KML altitude mode to use.
-    char* pszAltitudeMode_;
+    //The KML altitude mode to use
+ 	char* pszAltitudeMode_;
 
     char** papszCreateOptions_;
 
-    // Output related parameters.
+    // output related parameters
     VSILFILE* fpOutput_;
 
     OGREnvelope oEnvelope_;
 
-    // Have we issued a coordinate transformation already for this datasource.
-    bool bIssuedCTError_;
+	//Have we issued a coordinate transformation already for this datasource
+	bool bIssuedCTError_;
 };
 
 #endif /* OGR_KML_H_INCLUDED */

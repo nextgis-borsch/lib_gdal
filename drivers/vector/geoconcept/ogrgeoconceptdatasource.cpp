@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrgeoconceptdatasource.cpp
  *
  * Name:     ogrgeoconceptdatasource.h
  * Project:  OpenGIS Simple Features Reference Implementation
@@ -33,7 +34,7 @@
 #include "ogrgeoconceptdatasource.h"
 #include "ogrgeoconceptlayer.h"
 
-CPL_CVSID("$Id: ogrgeoconceptdatasource.cpp 35008 2016-08-09 11:20:52Z goatbar $");
+CPL_CVSID("$Id: ogrgeoconceptdatasource.cpp 00000 2007-11-03 11:49:22Z drichard $");
 
 /************************************************************************/
 /*                         OGRGeoconceptDataSource()                    */
@@ -321,7 +322,7 @@ OGRLayer *OGRGeoconceptDataSource::ICreateLayer( const char * pszLayerName,
     /*
      * pszLayerName Class.Subclass if -nln option used, otherwise file name
      */
-    const char *pszFeatureType = NULL;
+    const char *pszFeatureType;
     char pszln[512];
 
     if( !(pszFeatureType = CSLFetchNameValue(papszOptions,"FEATURETYPE")) )
@@ -337,8 +338,8 @@ OGRLayer *OGRGeoconceptDataSource::ICreateLayer( const char * pszLayerName,
         pszFeatureType= pszLayerName;
     }
 
-    char **ft = CSLTokenizeString2(pszFeatureType,".",0);
-    if( !ft ||
+    char **ft;
+    if( !(ft= CSLTokenizeString2(pszFeatureType,".",0)) ||
         CSLCount(ft)!=2 )
     {
       CSLDestroy(ft);
@@ -427,10 +428,10 @@ OGRLayer *OGRGeoconceptDataSource::ICreateLayer( const char * pszLayerName,
       }
     if( !poFile )
     {
-      GCSubType* aSubclass = NULL;
-      GCExportFileMetadata* m = GetGCMeta_GCIO(_hGXT);
+      GCSubType* aSubclass= NULL;
+      GCExportFileMetadata* m;
 
-      if( !m )
+      if( !(m= GetGCMeta_GCIO(_hGXT)) )
       {
         if( !(m= CreateHeader_GCIO()) )
         {

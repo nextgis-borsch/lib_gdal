@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogreditablelayer.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: ogreditablelayer.h 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Defines OGREditableLayer class
@@ -30,7 +30,6 @@
 #ifndef OGREDITABLELAYER_H_INCLUDED
 #define OGREDITABLELAYER_H_INCLUDED
 
-//! @cond Doxygen_Suppress
 #include "ogrlayerdecorator.h"
 #include <set>
 
@@ -80,52 +79,51 @@ class CPL_DLL OGREditableLayer : public OGRLayerDecorator
     void                SetSupportsCreateGeomField(bool SupportsCreateGeomField);
     void                SetSupportsCurveGeometries(bool bSupportsCurveGeometries);
 
-    virtual OGRGeometry *GetSpatialFilter() override;
-    virtual void        SetSpatialFilter( OGRGeometry * ) override;
+    virtual OGRGeometry *GetSpatialFilter();
+    virtual void        SetSpatialFilter( OGRGeometry * );
     virtual void        SetSpatialFilterRect( double dfMinX, double dfMinY,
-                                              double dfMaxX, double dfMaxY ) override;
-    virtual void        SetSpatialFilter( int iGeomField, OGRGeometry * ) override;
+                                              double dfMaxX, double dfMaxY );
+    virtual void        SetSpatialFilter( int iGeomField, OGRGeometry * );
     virtual void        SetSpatialFilterRect( int iGeomField, double dfMinX, double dfMinY,
-                                              double dfMaxX, double dfMaxY ) override;
+                                              double dfMaxX, double dfMaxY );
 
-    virtual OGRErr      SetAttributeFilter( const char * ) override;
+    virtual OGRErr      SetAttributeFilter( const char * );
 
-    virtual void        ResetReading() override;
-    virtual OGRFeature *GetNextFeature() override;
-    virtual OGRErr      SetNextByIndex( GIntBig nIndex ) override;
-    virtual OGRFeature *GetFeature( GIntBig nFID ) override;
-    virtual OGRErr      ISetFeature( OGRFeature *poFeature ) override;
-    virtual OGRErr      ICreateFeature( OGRFeature *poFeature ) override;
-    virtual OGRErr      DeleteFeature( GIntBig nFID ) override;
+    virtual void        ResetReading();
+    virtual OGRFeature *GetNextFeature();
+    virtual OGRErr      SetNextByIndex( GIntBig nIndex );
+    virtual OGRFeature *GetFeature( GIntBig nFID );
+    virtual OGRErr      ISetFeature( OGRFeature *poFeature );
+    virtual OGRErr      ICreateFeature( OGRFeature *poFeature );
+    virtual OGRErr      DeleteFeature( GIntBig nFID );
 
-    virtual OGRwkbGeometryType GetGeomType() override;
-    virtual OGRFeatureDefn *GetLayerDefn() override;
+    virtual OGRwkbGeometryType GetGeomType();
+    virtual OGRFeatureDefn *GetLayerDefn();
 
-    virtual OGRSpatialReference *GetSpatialRef() override;
+    virtual OGRSpatialReference *GetSpatialRef();
 
-    virtual GIntBig     GetFeatureCount( int bForce = TRUE ) override;
-    virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce = TRUE) override;
-    virtual OGRErr      GetExtent(OGREnvelope *psExtent, int bForce = TRUE) override;
+    virtual GIntBig     GetFeatureCount( int bForce = TRUE );
+    virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce = TRUE);
+    virtual OGRErr      GetExtent(OGREnvelope *psExtent, int bForce = TRUE);
 
-    virtual int         TestCapability( const char * ) override;
+    virtual int         TestCapability( const char * );
 
     virtual OGRErr      CreateField( OGRFieldDefn *poField,
-                                     int bApproxOK = TRUE ) override;
-    virtual OGRErr      DeleteField( int iField ) override;
-    virtual OGRErr      ReorderFields( int* panMap ) override;
-    virtual OGRErr      AlterFieldDefn( int iField, OGRFieldDefn* poNewFieldDefn, int nFlags ) override;
+                                     int bApproxOK = TRUE );
+    virtual OGRErr      DeleteField( int iField );
+    virtual OGRErr      ReorderFields( int* panMap );
+    virtual OGRErr      AlterFieldDefn( int iField, OGRFieldDefn* poNewFieldDefn, int nFlags );
 
     virtual OGRErr      CreateGeomField( OGRGeomFieldDefn *poField,
-                                         int bApproxOK = TRUE ) override;
+                                         int bApproxOK = TRUE );
 
-    virtual OGRErr      SyncToDisk() override;
+    virtual OGRErr      SyncToDisk();
 
-    virtual OGRErr      StartTransaction() override;
-    virtual OGRErr      CommitTransaction() override;
-    virtual OGRErr      RollbackTransaction() override;
+    virtual OGRErr      StartTransaction();
+    virtual OGRErr      CommitTransaction();
+    virtual OGRErr      RollbackTransaction();
 
-    virtual const char *GetGeometryColumn() override;
+    virtual const char *GetGeometryColumn();
 };
-//! @endcond
 
 #endif // OGREDITABLELAYER_H_INCLUDED

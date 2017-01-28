@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: sdtsattrreader.cpp 31596 2015-11-18 11:40:37Z rouault $
  *
  * Project:  SDTS Translator
  * Purpose:  Implementation of SDTSAttrReader class.
@@ -28,7 +29,8 @@
 
 #include "sdts_al.h"
 
-CPL_CVSID("$Id: sdtsattrreader.cpp 35897 2016-10-24 11:54:24Z goatbar $");
+CPL_CVSID("$Id: sdtsattrreader.cpp 31596 2015-11-18 11:40:37Z rouault $");
+
 
 /************************************************************************/
 /* ==================================================================== */
@@ -67,6 +69,7 @@ void SDTSAttrRecord::Dump( FILE * fp )
         poATTR->Dump( fp );
 }
 
+
 /************************************************************************/
 /* ==================================================================== */
 /*                             SDTSAttrReader                           */
@@ -81,7 +84,7 @@ void SDTSAttrRecord::Dump( FILE * fp )
 
 SDTSAttrReader::SDTSAttrReader() :
     bIsSecondary(FALSE)
-{}
+{ }
 
 /************************************************************************/
 /*                          ~SDTSAttrReader()                           */
@@ -194,7 +197,7 @@ SDTSAttrRecord *SDTSAttrReader::GetNextAttrRecord()
 
 {
     SDTSModId   oModId;
-    DDFRecord   *poRawRecord = NULL;
+    DDFRecord   *poRawRecord;
 
     DDFField *poATTRField = GetNextRecord( &oModId, &poRawRecord, TRUE );
 

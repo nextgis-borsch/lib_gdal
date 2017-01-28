@@ -40,8 +40,6 @@
 #include "cpl_error.h"
 #include "ogr_geos.h"
 
-CPL_CVSID("$Id: ogrlineref.cpp 36682 2016-12-04 20:34:45Z rouault $");
-
 #define FIELD_START "beg"
 #define FIELD_FINISH "end"
 #define FIELD_SCALE_FACTOR "scale"
@@ -78,6 +76,7 @@ static void Usage(const char* pszAdditionalMsg, int bShort = TRUE) CPL_NO_RETURN
 static void Usage(const char* pszAdditionalMsg, int bShort)
 {
     OGRSFDriverRegistrar        *poR = OGRSFDriverRegistrar::GetRegistrar();
+
 
     printf("Usage: ogrlineref [--help-general] [-progress] [-quiet]\n"
         "               [-f format_name] [[-dsco NAME=VALUE] ...] [[-lco NAME=VALUE]...]\n"
@@ -208,7 +207,7 @@ static OGRLayer* SetupTargetLayer(OGRLayer * poSrcLayer, GDALDataset *poDstDS, c
         {
             fprintf(stderr,
                 "Layer %s not found, and CreateLayer not supported by driver.\n",
-                szLayerName.c_str());
+                pszNewLayerName);
             return NULL;
         }
 
@@ -221,7 +220,7 @@ static OGRLayer* SetupTargetLayer(OGRLayer * poSrcLayer, GDALDataset *poDstDS, c
             eGType = wkbNone;
         }
 
-        poDstLayer = poDstDS->CreateLayer(szLayerName, poOutputSRS,
+        poDstLayer = poDstDS->CreateLayer(pszNewLayerName, poOutputSRS,
             (OGRwkbGeometryType)eGType,
             papszLCO);
 
@@ -244,7 +243,7 @@ static OGRLayer* SetupTargetLayer(OGRLayer * poSrcLayer, GDALDataset *poDstDS, c
     else
     {
         fprintf(stderr, "FAILED: Layer %s already exists.\n",
-            szLayerName.c_str ());
+            pszNewLayerName);
         return NULL;
     }
 
@@ -321,7 +320,7 @@ void CheckDestDataSourceNameConsistency(const char* pszDestFilename,
                                                { "bna"    , "BNA" },
                                                { "csv"    , "CSV" },
                                                { "gml"    , "GML" },
-                                               { "kml"    , "KML" },
+                                               { "kml"    , "KML/LIBKML" },
                                                { "kmz"    , "LIBKML" },
                                                { "json"   , "GeoJSON" },
                                                { "geojson", "GeoJSON" },
@@ -472,7 +471,7 @@ static OGRErr CreateSubline(OGRLayer* const poPkLayer,
 
     OGRLineString SubLine;
 
-    if (moParts.empty())
+    if (moParts.size() == 0)
     {
         fprintf(stderr, "Get parts for positions %f - %f failed\n", dfPosBeg, dfPosEnd);
         return OGRERR_FAILURE;
@@ -938,6 +937,7 @@ static OGRErr CreatePartsFromLineString(OGRLineString* pPathGeom, OGRLayer* cons
         delete oIter->second;
     }
 
+
     if (!bQuiet)
     {
         fprintf(stdout, "\nSuccess!\n\n");
@@ -947,6 +947,7 @@ static OGRErr CreatePartsFromLineString(OGRLineString* pPathGeom, OGRLayer* cons
     {
         GDALDestroyScaledProgress(pProgressArg);
     }
+
 
     return OGRERR_NONE;
 }
@@ -1186,8 +1187,7 @@ static OGRErr GetCoordinates(OGRLayer* const poPkLayer,
 
 #define CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(nExtraArg) \
     do { if (iArg + nExtraArg >= nArgc) \
-        Usage(CPLSPrintf("%s option requires %d argument(s)", \
-                         papszArgv[iArg], nExtraArg)); } while( false )
+        Usage(CPLSPrintf("%s option requires %d argument(s)", papszArgv[iArg], nExtraArg)); } while(0)
 
 int main( int nArgc, char ** papszArgv )
 
@@ -1439,6 +1439,7 @@ int main( int nArgc, char ** papszArgv )
             Usage(CPLSPrintf("Unknown option name '%s'", papszArgv[iArg]));
         }
     }
+
 
     if(stOper == op_create)
     {

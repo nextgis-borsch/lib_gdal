@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: dipxdataset.cpp 33930 2016-04-09 19:28:36Z goatbar $
  *
  * Project:  GDAL
  * Purpose:  Implementation for ELAS DIPEx format variant.
@@ -32,12 +33,11 @@
 #include "ogr_spatialref.h"
 #include "rawdataset.h"
 
-#include <cmath>
 #include <algorithm>
 
 using std::fill;
 
-CPL_CVSID("$Id: dipxdataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
+CPL_CVSID("$Id: dipxdataset.cpp 33930 2016-04-09 19:28:36Z goatbar $");
 
 typedef struct {
     GInt32      NBIH;   /* bytes in header, normally 1024 */
@@ -88,9 +88,9 @@ class DIPExDataset : public GDALPamDataset
                  DIPExDataset();
     virtual ~DIPExDataset();
 
-    virtual CPLErr GetGeoTransform( double * ) override;
+    virtual CPLErr GetGeoTransform( double * );
 
-    virtual const char *GetProjectionRef( void ) override;
+    virtual const char *GetProjectionRef( void );
     static GDALDataset *Open( GDALOpenInfo * );
 };
 
@@ -100,9 +100,11 @@ class DIPExDataset : public GDALPamDataset
 /* ==================================================================== */
 /************************************************************************/
 
+
 /************************************************************************/
 /*                            DIPExDataset()                             */
 /************************************************************************/
+
 
 DIPExDataset::DIPExDataset() :
     fp(NULL),
@@ -309,7 +311,7 @@ GDALDataset *DIPExDataset::Open( GDALOpenInfo * poOpenInfo )
         poDS->adfGeoTransform[2] = 0.0;
         poDS->adfGeoTransform[3] = poDS->sHeader.YOffset;
         poDS->adfGeoTransform[4] = 0.0;
-        poDS->adfGeoTransform[5] = -1.0 * std::abs(poDS->sHeader.YPixSize);
+        poDS->adfGeoTransform[5] = -1.0 * ABS(poDS->sHeader.YPixSize);
 
         poDS->adfGeoTransform[0] -= poDS->adfGeoTransform[1] * 0.5;
         poDS->adfGeoTransform[3] -= poDS->adfGeoTransform[5] * 0.5;

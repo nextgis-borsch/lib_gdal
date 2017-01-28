@@ -1,4 +1,5 @@
 /**********************************************************************
+ * $Id: mitab_miffile.cpp,v 1.58 2011-09-22 21:57:46 dmorissette Exp $
  *
  * Name:     mitab_miffile.cpp
  * Project:  MapInfo TAB Read/Write library
@@ -160,7 +161,7 @@
  * ResetReading() when reading forward.
  *
  * Revision 1.19  2000/07/04 01:50:40  warmerda
- * Removed unprotected debugging printf()
+ * Removed unprotected debugging printf.
  *
  * Revision 1.18  2000/06/28 00:32:04  warmerda
  * Make GetFeatureCountByType() actually work if bForce is TRUE
@@ -195,61 +196,64 @@
 
 #include "mitab.h"
 #include "mitab_utils.h"
-
-#include <algorithm>
 #include <ctype.h>
-
-CPL_CVSID("$Id: mitab_miffile.cpp 36763 2016-12-09 22:10:55Z rouault $");
 
 /*=====================================================================
  *                      class MIFFile
  *====================================================================*/
+
 
 /**********************************************************************
  *                   MIFFile::MIFFile()
  *
  * Constructor.
  **********************************************************************/
-MIFFile::MIFFile() :
-    m_pszFname(NULL),
-    m_eAccessMode(TABRead),
-    m_nVersion(300),
+MIFFile::MIFFile()
+{
+    m_pszFname = NULL;
+    m_nVersion = 300;
+
     // Tab is default delimiter in MIF spec if not explicitly specified.  Use
     // that by default for read mode. In write mode, we will use "," as
     // delimiter since it's more common than tab (we do this in Open())
-    m_pszDelimiter(CPLStrdup("\t")),
-    m_pszUnique(NULL),
-    m_pszIndex(NULL),
-    m_pszCoordSys(NULL),
-    m_paeFieldType(NULL),
-    m_pabFieldIndexed(NULL),
-    m_pabFieldUnique(NULL),
-    m_dfXMultiplier(1.0),
-    m_dfYMultiplier(1.0),
-    m_dfXDisplacement(0.0),
-    m_dfYDisplacement(0.0),
-    m_dXMin(0),
-    m_dYMin(0),
-    m_dXMax(0),
-    m_dYMax(0),
-    m_bExtentsSet(FALSE),
-    m_nPoints(0),
-    m_nLines(0),
-    m_nRegions(0),
-    m_nTexts(0),
-    m_nPreloadedId(0),
-    m_poMIDFile(NULL),
-    m_poMIFFile(NULL),
-    m_poDefn(NULL),
-    m_poSpatialRef(NULL),
-    m_nFeatureCount(0),
-    m_nWriteFeatureId(-1),
-    m_nAttribut(0),
-    m_bPreParsed(FALSE),
-    m_bHeaderWrote(FALSE)
-{
+    m_pszDelimiter = CPLStrdup("\t");
+
+    m_pszUnique = NULL;
+    m_pszIndex = NULL;
+    m_pszCoordSys = NULL;
+
+    m_paeFieldType = NULL;
+    m_pabFieldIndexed = NULL;
+    m_pabFieldUnique = NULL;
+
+    m_dfXMultiplier = 1.0;
+    m_dfYMultiplier = 1.0;
+    m_dfXDisplacement = 0.0;
+    m_dfYDisplacement = 0.0;
+
+    m_poMIDFile = NULL;
+    m_poMIFFile = NULL;
+    m_nPreloadedId = 0;
+
+    m_poDefn = NULL;
+    m_poSpatialRef = NULL;
+
     m_nCurFeatureId = 0;
+    m_nFeatureCount = 0;
+    m_nWriteFeatureId = -1;
     m_poCurFeature = NULL;
+
+    m_bPreParsed = FALSE;
+    m_nAttribut = 0;
+    m_bHeaderWrote = FALSE;
+    m_nPoints = m_nLines = m_nRegions = m_nTexts = 0;
+
+    m_bExtentsSet = FALSE;
+    m_eAccessMode = TABRead;
+    m_dXMin = 0;
+    m_dYMin = 0;
+    m_dXMax = 0;
+    m_dYMax = 0;
 }
 
 /**********************************************************************
@@ -504,6 +508,14 @@ int MIFFile::Open(const char *pszFname, TABAccess eAccess,
  **********************************************************************/
 int MIFFile::ParseMIFHeader(int* pbIsEmpty)
 {
+    GBool  bColumns = FALSE, bAllColumnsRead =  FALSE;
+    int    nColumns = 0;
+    GBool  bCoordSys = FALSE;
+    char  *pszTmp;
+
+    const char *pszLine;
+    char **papszToken;
+
     *pbIsEmpty = FALSE;
 
     char *pszFeatureClassName = TABGetBasename(m_pszFname);
@@ -512,6 +524,7 @@ int MIFFile::ParseMIFHeader(int* pbIsEmpty)
     // Ref count defaults to 0... set it to 1
     m_poDefn->Reference();
 
+
     if (m_eAccessMode != TABRead)
     {
         CPLError(CE_Failure, CPLE_NotSupported,
@@ -519,16 +532,10 @@ int MIFFile::ParseMIFHeader(int* pbIsEmpty)
         return -1;
     }
 
+
     /*-----------------------------------------------------------------
      * Parse header until we find the "Data" line
      *----------------------------------------------------------------*/
-    char **papszToken = NULL;
-    GBool bColumns = FALSE;
-    GBool bAllColumnsRead =  FALSE;
-    int nColumns = 0;
-    GBool bCoordSys = FALSE;
-
-    const char *pszLine = NULL;
     while (((pszLine = m_poMIFFile->GetLine()) != NULL) &&
            ((bAllColumnsRead == FALSE) || !STARTS_WITH_CI(pszLine, "Data")))
     {
@@ -556,6 +563,7 @@ int MIFFile::ParseMIFHeader(int* pbIsEmpty)
               m_nVersion = atoi(papszToken[1]);
 
             CSLDestroy(papszToken);
+
         }
         else if (STARTS_WITH_CI(pszLine, "CHARSET"))
         {
@@ -568,6 +576,7 @@ int MIFFile::ParseMIFHeader(int* pbIsEmpty)
                 m_pszCharset = CPLStrdup(papszToken[1]);
             }
             CSLDestroy(papszToken);
+
         }
         else if (STARTS_WITH_CI(pszLine, "DELIMITER"))
         {
@@ -580,6 +589,7 @@ int MIFFile::ParseMIFHeader(int* pbIsEmpty)
                m_pszDelimiter = CPLStrdup(papszToken[1]);
            }
           CSLDestroy(papszToken);
+
         }
         else if (STARTS_WITH_CI(pszLine, "UNIQUE"))
         {
@@ -599,8 +609,9 @@ int MIFFile::ParseMIFHeader(int* pbIsEmpty)
             m_pszCoordSys = CPLStrdup(pszLine + 9);
 
             // Extract bounds if present
-            char  **papszFields =
-                CSLTokenizeStringComplex(m_pszCoordSys, " ,()\t", TRUE, FALSE );
+            char  **papszFields;
+            papszFields = CSLTokenizeStringComplex(m_pszCoordSys, " ,()\t",
+                                                   TRUE, FALSE );
             int iBounds = CSLFindString( papszFields, "Bounds" );
             if (iBounds >= 0 && iBounds + 4 < CSLCount(papszFields))
             {
@@ -656,13 +667,14 @@ int MIFFile::ParseMIFHeader(int* pbIsEmpty)
         }
         else if (bCoordSys == TRUE)
         {
-            char *pszTmp = m_pszCoordSys;
+            pszTmp = m_pszCoordSys;
             m_pszCoordSys = CPLStrdup(CPLSPrintf("%s %s",m_pszCoordSys,
                                                  pszLine));
             CPLFree(pszTmp);
             //printf("Reading CoordSys\n");
             // Reading CoordSys
         }
+
     }
 
     if (!bAllColumnsRead)
@@ -719,6 +731,7 @@ int MIFFile::ParseMIFHeader(int* pbIsEmpty)
     }
 
     return 0;
+
 }
 
 /************************************************************************/
@@ -727,12 +740,12 @@ int MIFFile::ParseMIFHeader(int* pbIsEmpty)
 
 int  MIFFile::AddFields(const char *pszLine)
 {
-    int nStatus = 0;
+    char **papszToken;
+    int nStatus = 0,numTok;
 
     CPLAssert(m_bHeaderWrote == FALSE);
-    char **papszToken =
-        CSLTokenizeStringComplex(pszLine, " (,)\t", TRUE, FALSE);
-    int numTok = CSLCount(papszToken);
+    papszToken = CSLTokenizeStringComplex(pszLine," (,)\t",TRUE,FALSE);
+    numTok = CSLCount(papszToken);
 
     if (numTok >= 3 && EQUAL(papszToken[1], "char"))
     {
@@ -864,9 +877,10 @@ GIntBig MIFFile::GetFeatureCount (int bForce)
 void MIFFile::ResetReading()
 
 {
+    const char *pszLine;
+
     m_poMIFFile->Rewind();
 
-    const char *pszLine = NULL;
     while ((pszLine = m_poMIFFile->GetLine()) != NULL)
       if (STARTS_WITH_CI(pszLine, "DATA"))
         break;
@@ -901,6 +915,7 @@ void MIFFile::ResetReading()
 void MIFFile::PreParseFile()
 {
     char **papszToken = NULL;
+    const char *pszLine;
 
     GBool bPLine = FALSE;
     GBool bText = FALSE;
@@ -910,7 +925,6 @@ void MIFFile::PreParseFile()
 
     m_poMIFFile->Rewind();
 
-    const char *pszLine = NULL;
     while ((pszLine = m_poMIFFile->GetLine()) != NULL)
       if (STARTS_WITH_CI(pszLine, "DATA"))
         break;
@@ -937,6 +951,7 @@ void MIFFile::PreParseFile()
                 UpdateExtents(m_poMIFFile->GetXTrans(CPLAtof(papszToken[1])),
                              m_poMIFFile->GetYTrans(CPLAtof(papszToken[2])));
             }
+
         }
         else if (STARTS_WITH_CI(pszLine, "LINE") ||
                  STARTS_WITH_CI(pszLine, "RECT") ||
@@ -988,6 +1003,7 @@ void MIFFile::PreParseFile()
                              m_poMIFFile->GetYTrans(CPLAtof(papszToken[3])));
             }
         }
+
       }
 
     CSLDestroy(papszToken);
@@ -1011,6 +1027,7 @@ void MIFFile::PreParseFile()
     }
 
     m_bPreParsed = TRUE;
+
 }
 
 /**********************************************************************
@@ -1022,6 +1039,7 @@ void MIFFile::PreParseFile()
  **********************************************************************/
 int MIFFile::WriteMIFHeader()
 {
+    int iField;
     GBool bFound;
 
     if (m_eAccessMode != TABWrite)
@@ -1051,8 +1069,7 @@ int MIFFile::WriteMIFHeader()
         m_poMIFFile->WriteLine("Delimiter \"%s\"\n", m_pszDelimiter);
 
     bFound = FALSE;
-
-    for( int iField = 0; iField<m_poDefn->GetFieldCount(); iField++ )
+    for(iField=0; iField<m_poDefn->GetFieldCount(); iField++)
     {
         if (m_pabFieldUnique[iField])
         {
@@ -1067,7 +1084,7 @@ int MIFFile::WriteMIFHeader()
         m_poMIFFile->WriteLine("\n");
 
     bFound = FALSE;
-    for( int iField = 0; iField < m_poDefn->GetFieldCount(); iField++ )
+    for(iField=0; iField<m_poDefn->GetFieldCount(); iField++)
     {
         if (m_pabFieldIndexed[iField])
         {
@@ -1100,9 +1117,10 @@ int MIFFile::WriteMIFHeader()
 
     m_poMIFFile->WriteLine("Columns %d\n", m_poDefn->GetFieldCount());
 
-    for( int iField = 0; iField < m_poDefn->GetFieldCount(); iField++ )
+    for(iField=0; iField<m_poDefn->GetFieldCount(); iField++)
     {
-        OGRFieldDefn *poFieldDefn = m_poDefn->GetFieldDefn(iField);
+        OGRFieldDefn *poFieldDefn;
+        poFieldDefn = m_poDefn->GetFieldDefn(iField);
 
         switch(m_paeFieldType[iField])
         {
@@ -1302,7 +1320,7 @@ int MIFFile::GotoFeature(int nFeatureId)
 
 GBool MIFFile::NextFeature()
 {
-    const char *pszLine = NULL;
+    const char *pszLine;
     while ((pszLine = m_poMIFFile->GetLine()) != NULL)
     {
         if (m_poMIFFile->IsValidFeature(pszLine))
@@ -1332,6 +1350,8 @@ GBool MIFFile::NextFeature()
  **********************************************************************/
 TABFeature *MIFFile::GetFeatureRef(GIntBig nFeatureId)
 {
+    const char *pszLine;
+
     if (m_eAccessMode != TABRead)
     {
         CPLError(CE_Failure, CPLE_NotSupported,
@@ -1358,10 +1378,10 @@ TABFeature *MIFFile::GetFeatureRef(GIntBig nFeatureId)
         return NULL;
     }
 
+
     /*-----------------------------------------------------------------
      * Create new feature object of the right type
      *----------------------------------------------------------------*/
-    const char *pszLine = NULL;
     if ((pszLine = m_poMIFFile->GetLastLine()) != NULL)
     {
         // Delete previous feature... we'll start we a clean one.
@@ -1378,8 +1398,8 @@ TABFeature *MIFFile::GetFeatureRef(GIntBig nFeatureId)
         else if (STARTS_WITH_CI(pszLine, "POINT"))
         {
             // Special case, we need to know two lines to decide the type
-            char **papszToken =
-                CSLTokenizeString2(pszLine, " \t", CSLT_HONOURSTRINGS);
+            char **papszToken;
+            papszToken = CSLTokenizeString2(pszLine, " \t", CSLT_HONOURSTRINGS);
 
             if (CSLCount(papszToken) !=3)
             {
@@ -1418,6 +1438,7 @@ TABFeature *MIFFile::GetFeatureRef(GIntBig nFeatureId)
                         return NULL;
                         break;
                     }
+
                 }
             }
             CSLDestroy(papszToken);
@@ -1510,16 +1531,17 @@ TABFeature *MIFFile::GetFeatureRef(GIntBig nFeatureId)
        it to a geometry none */
     if (m_poCurFeature->GetFeatureClass() == TABFCText)
     {
+       TABFeature *poTmpFeature;
        TABText *poTextFeature = (TABText*)m_poCurFeature;
        if (strlen(poTextFeature->GetTextString()) == 0)
        {
-           TABFeature *poTmpFeature = new TABFeature(m_poDefn);
-           for( int i = 0; i < m_poDefn->GetFieldCount(); i++ )
-           {
-               poTmpFeature->SetField( i, m_poCurFeature->GetRawFieldRef( i ) );
-           }
-           delete m_poCurFeature;
-           m_poCurFeature = poTmpFeature;
+          poTmpFeature = new TABFeature(m_poDefn);
+          for( int i = 0; i < m_poDefn->GetFieldCount(); i++ )
+          {
+             poTmpFeature->SetField( i, m_poCurFeature->GetRawFieldRef( i ) );
+          }
+          delete m_poCurFeature;
+          m_poCurFeature = poTmpFeature;
        }
     }
 
@@ -1586,6 +1608,7 @@ OGRErr MIFFile::CreateFeature(TABFeature *poFeature)
         nFeatureId = ++ m_nWriteFeatureId;
     }
 
+
     /*-----------------------------------------------------------------
      * Write geometry to the .Mif file
      *----------------------------------------------------------------*/
@@ -1611,6 +1634,8 @@ OGRErr MIFFile::CreateFeature(TABFeature *poFeature)
 
     return OGRERR_NONE;
 }
+
+
 
 /**********************************************************************
  *                   MIFFile::GetLayerDefn()
@@ -1645,6 +1670,9 @@ OGRFeatureDefn *MIFFile::GetLayerDefn()
 int MIFFile::SetFeatureDefn(OGRFeatureDefn *poFeatureDefn,
                          TABFieldType *paeMapInfoNativeFieldTypes /* =NULL */)
 {
+    int numFields;
+    int nStatus = 0;
+
     /*-----------------------------------------------------------------
      * Check that call happens at the right time in dataset's life.
      *----------------------------------------------------------------*/
@@ -1667,10 +1695,9 @@ int MIFFile::SetFeatureDefn(OGRFeatureDefn *poFeatureDefn,
     /*-----------------------------------------------------------------
      * Copy field information
      *----------------------------------------------------------------*/
-    const int numFields = poFeatureDefn->GetFieldCount();
-    int nStatus = 0;
+    numFields = poFeatureDefn->GetFieldCount();
 
-    for( int iField = 0; iField<numFields; iField++ )
+    for(int iField=0; iField<numFields; iField++)
     {
         TABFieldType eMapInfoType;
         OGRFieldDefn *poFieldDefn = poFeatureDefn->GetFieldDefn(iField);
@@ -1734,6 +1761,7 @@ int MIFFile::AddFieldNative(const char *pszName, TABFieldType eMapInfoType,
                             int nWidth /*=0*/, int nPrecision /*=0*/,
                             GBool bIndexed /*=FALSE*/, GBool bUnique/*=FALSE*/, int bApproxOK )
 {
+    OGRFieldDefn *poFieldDefn;
     char *pszCleanName = NULL;
     int nStatus = 0;
     char szNewFieldName[31+1]; /* 31 is the max characters for a field name*/
@@ -1796,14 +1824,14 @@ int MIFFile::AddFieldNative(const char *pszName, TABFieldType eMapInfoType,
                   pszName );
     }
 
-    strncpy(szNewFieldName, pszCleanName, sizeof(szNewFieldName)-1);
-    szNewFieldName[sizeof(szNewFieldName)-1] = '\0';
+    strncpy(szNewFieldName, pszCleanName, 31);
+    szNewFieldName[31] = '\0';
 
     while (m_poDefn->GetFieldIndex(szNewFieldName) >= 0 && nRenameNum < 10)
-      CPLsnprintf( szNewFieldName, sizeof(szNewFieldName), "%.29s_%.1d", pszCleanName, nRenameNum++ );
+      snprintf( szNewFieldName, sizeof(szNewFieldName), "%.29s_%.1d", pszCleanName, nRenameNum++ );
 
     while (m_poDefn->GetFieldIndex(szNewFieldName) >= 0 && nRenameNum < 100)
-      CPLsnprintf( szNewFieldName, sizeof(szNewFieldName), "%.29s%.2d", pszCleanName, nRenameNum++ );
+      snprintf( szNewFieldName, sizeof(szNewFieldName), "%.29s%.2d", pszCleanName, nRenameNum++ );
 
     if (m_poDefn->GetFieldIndex(szNewFieldName) >= 0)
     {
@@ -1820,10 +1848,11 @@ int MIFFile::AddFieldNative(const char *pszName, TABFieldType eMapInfoType,
                 szNewFieldName );
     }
 
+
     /*-----------------------------------------------------------------
      * Map MapInfo native types to OGR types
      *----------------------------------------------------------------*/
-    OGRFieldDefn *poFieldDefn = NULL;
+    poFieldDefn = NULL;
 
     switch(eMapInfoType)
     {
@@ -1873,7 +1902,7 @@ int MIFFile::AddFieldNative(const char *pszName, TABFieldType eMapInfoType,
                                                    OFTString);
 #endif
         poFieldDefn->SetWidth(10);
-        m_nVersion = std::max(m_nVersion, 450);
+        m_nVersion = MAX(m_nVersion, 450);
         break;
       case TABFTime:
         /*-------------------------------------------------
@@ -1886,7 +1915,7 @@ int MIFFile::AddFieldNative(const char *pszName, TABFieldType eMapInfoType,
                                                    OFTString);
 #endif
         poFieldDefn->SetWidth(9);
-        m_nVersion = std::max(m_nVersion, 900);
+        m_nVersion = MAX(m_nVersion, 900);
         break;
       case TABFDateTime:
         /*-------------------------------------------------
@@ -1900,7 +1929,7 @@ int MIFFile::AddFieldNative(const char *pszName, TABFieldType eMapInfoType,
                                                    OFTString);
 #endif
         poFieldDefn->SetWidth(19);
-        m_nVersion = std::max(m_nVersion, 900);
+        m_nVersion = MAX(m_nVersion, 900);
         break;
       case TABFLogical:
         /*-------------------------------------------------
@@ -1944,6 +1973,7 @@ int MIFFile::AddFieldNative(const char *pszName, TABFieldType eMapInfoType,
     CPLFree(pszCleanName);
     return nStatus;
 }
+
 
 /**********************************************************************
  *                   MIFFile::GetNativeFieldType()
@@ -2006,6 +2036,7 @@ GBool MIFFile::IsFieldUnique( int nFieldId )
     return m_pabFieldUnique[nFieldId];
 }
 
+
 /************************************************************************/
 /*                       MIFFile::SetSpatialRef()                       */
 /************************************************************************/
@@ -2022,8 +2053,9 @@ int MIFFile::SetSpatialRef( OGRSpatialReference * poSpatialRef )
         CPLFree(pszCoordSys);
     }
 
-    return m_pszCoordSys != NULL;
+    return( m_pszCoordSys != NULL );
 }
+
 
 /************************************************************************/
 /*                      MIFFile::SetMIFCoordSys()                       */
@@ -2032,7 +2064,8 @@ int MIFFile::SetSpatialRef( OGRSpatialReference * poSpatialRef )
 int MIFFile::SetMIFCoordSys(const char * pszMIFCoordSys)
 
 {
-    char *pszCoordSys = NULL;
+    char        **papszFields, *pszCoordSys;
+    int         iBounds;
 
     // Extract the word 'COORDSYS' if present
     if (STARTS_WITH_CI(pszMIFCoordSys, "COORDSYS") )
@@ -2045,9 +2078,9 @@ int MIFFile::SetMIFCoordSys(const char * pszMIFCoordSys)
     }
 
     // Extract bounds if present
-    char **papszFields =
-        CSLTokenizeStringComplex(pszCoordSys, " ,()\t", TRUE, FALSE );
-    int iBounds = CSLFindString( papszFields, "Bounds" );
+    papszFields = CSLTokenizeStringComplex(pszCoordSys, " ,()\t",
+                                           TRUE, FALSE );
+    iBounds = CSLFindString( papszFields, "Bounds" );
     if (iBounds >= 0 && iBounds + 4 < CSLCount(papszFields))
     {
         m_dXMin = CPLAtof(papszFields[++iBounds]);
@@ -2069,7 +2102,7 @@ int MIFFile::SetMIFCoordSys(const char * pszMIFCoordSys)
     m_pszCoordSys = CPLStrdup(pszCoordSys);
     CPLFree(pszCoordSys);
 
-    return m_pszCoordSys != NULL;
+    return( m_pszCoordSys != NULL );
 }
 
 /************************************************************************/
@@ -2121,8 +2154,8 @@ void MIFFile::UpdateExtents(double dfX, double dfY)
  *
  * Returns 0 on success, -1 on error.
  **********************************************************************/
-int MIFFile::SetBounds( double dXMin, double dYMin,
-                        double dXMax, double dYMax )
+int MIFFile::SetBounds(double dXMin, double dYMin,
+                       double dXMax, double dYMax)
 {
     if (m_eAccessMode != TABWrite)
     {
@@ -2139,6 +2172,7 @@ int MIFFile::SetBounds( double dXMin, double dYMin,
 
     return 0;
 }
+
 
 /**********************************************************************
  *                   MIFFile::GetFeatureCountByType()

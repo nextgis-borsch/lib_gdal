@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gnmgraph.h 36302 2016-11-19 16:54:08Z bishop $
+ * $Id$
  *
  * Project:  GDAL/OGR Geography Network support (Geographic Network Model)
  * Purpose:  GNM graph implementation.
@@ -29,42 +29,33 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "cpl_port.h"
-#include <map>
+#include "gnm_priv.h"
+#include <vector>
 #include <queue>
 #include <set>
-#include <vector>
-
-// Alias for some big data type to store identificators.
-#define GNMGFID GIntBig
-// Graph constants
-#define GNM_EDGE_DIR_BOTH       0   // bidirectional
-#define GNM_EDGE_DIR_SRCTOTGT   1   // from source to target
-#define GNM_EDGE_DIR_TGTTOSRC   2   // from target to source
 
 // Types declarations.
+
 typedef std::vector<GNMGFID> GNMVECTOR, *LPGNMVECTOR;
 typedef const std::vector<GNMGFID> GNMCONSTVECTOR;
 typedef const std::vector<GNMGFID>* LPGNMCONSTVECTOR;
 typedef std::pair<GNMGFID,GNMGFID> EDGEVERTEXPAIR;
 typedef std::vector< EDGEVERTEXPAIR > GNMPATH;
 
-/** Edge */
 struct GNMStdEdge
 {
-    GNMGFID nSrcVertexFID; /**< Source vertex FID */
-    GNMGFID nTgtVertexFID; /**< Target vertex FID */
-    bool bIsBidir;         /**< Whether the edge is bidirectonal */
-    double dfDirCost;      /**< Direct cost */
-    double dfInvCost;      /**< Inverse cost */
-    bool bIsBloked;        /**< Whether the edge is blocked */
+    GNMGFID nSrcVertexFID;
+    GNMGFID nTgtVertexFID;
+    bool bIsBidir;
+    double dfDirCost;
+    double dfInvCost;
+    bool bIsBloked;
 };
 
-/** Vertex */
 struct GNMStdVertex
 {
-    GNMVECTOR anOutEdgeFIDs; /**< TODO */
-    bool bIsBloked;          /**< Whether the vertex is blocked */
+    GNMVECTOR anOutEdgeFIDs;
+    bool bIsBloked;
 };
 
 /**
@@ -124,7 +115,7 @@ public:
 
     /**
      * @brief Change edge properties
-     * @param nFID Edge identificator
+     * @param nConFID Edge identificator
      * @param dfCost Cost
      * @param dfInvCost Inverse cost
      */
@@ -133,7 +124,7 @@ public:
     /**
      * @brief Change the block state of edge or vertex
      * @param nFID Identificator
-     * @param bBlock Block or unblock
+     * @param bIsBlock Block or unblock
      */
     virtual void ChangeBlockState (GNMGFID nFID, bool bBlock);
 
@@ -149,7 +140,7 @@ public:
      *
      * This is mainly use for unblock all vertices and edges.
      *
-     * @param bBlock Block or unblock
+     * @param bIsBlock Block or unblock
      */
     virtual void ChangeAllBlockState (bool bBlock = false);
 
@@ -181,7 +172,7 @@ public:
      * first in a pair is a vertex identificator and the second is an edge
      * identificator leading to this vertex. The elements in a path array are
      * sorted by the path segments order, i.e. the first is the pair (nStartFID,
-     * -1) and the last is (nEndFID, &lt;some edge&gt;).
+     * -1) and the last is (nEndFID, <some edge>).
      * If there is no any path between start and end vertex the returned array
      * of paths will be empty. Also the actual amount of paths in the returned
      * array can be less or equal than the nK parameter.
@@ -204,7 +195,6 @@ public:
      */
     virtual GNMPATH ConnectedComponents(const GNMVECTOR &anEmittersIDs);
 
-    /** Clear */
     virtual void Clear();
 protected:
     /**
@@ -215,10 +205,9 @@ protected:
      * state of features, i.e. the blocked features are the barriers during the
      * routing process.
      *
-     * @param nFID - Vertex identificator from which to start tree building
-     * @param mstEdges - TODO
-     * @param mnPathTree - means < vertex id, edge id >.
-     * std::map where the first is vertex identificator and the second
+     * @param nFID - Vertex identificator from which to start tree building.
+     * @param mnPathTree - means < vertex id, edge id >
+     * @return std::map where the first is vertex identificator and the second
      * is the edge identificator, which is the best way to the current vertex.
      * The identificator to the start vertex is -1. If the vertex is isolated
      * the returned map will be empty.
@@ -226,10 +215,9 @@ protected:
     virtual void DijkstraShortestPathTree(GNMGFID nFID,
                                   const std::map<GNMGFID, GNMStdEdge> &mstEdges,
                                         std::map<GNMGFID, GNMGFID> &mnPathTree);
-    /** DijkstraShortestPath */
     virtual GNMPATH DijkstraShortestPath(GNMGFID nStartFID, GNMGFID nEndFID,
                                  const std::map<GNMGFID, GNMStdEdge> &mstEdges);
-//! @cond Doxygen_Suppress
+
     virtual LPGNMCONSTVECTOR GetOutEdges(GNMGFID nFID) const;
     virtual GNMGFID GetOppositVertex(GNMGFID nEdgeFID, GNMGFID nVertexFID) const;
     virtual void TraceTargets(std::queue<GNMGFID> &vertexQueue,
@@ -238,5 +226,4 @@ protected:
 protected:
     std::map<GNMGFID, GNMStdVertex> m_mstVertices;
     std::map<GNMGFID, GNMStdEdge>   m_mstEdges;
-//! @endcond
 };

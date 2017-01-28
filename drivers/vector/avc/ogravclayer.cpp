@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogravclayer.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  OGR
  * Purpose:  Implements OGRAVCLayer class.  This is the base class for E00
@@ -33,7 +34,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogravclayer.cpp 35273 2016-09-01 15:39:56Z goatbar $");
+CPL_CVSID("$Id: ogravclayer.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 /************************************************************************/
 /*                           OGRAVCLayer()                           */
@@ -370,11 +371,11 @@ OGRFeature *OGRAVCLayer::TranslateFeature( void *pAVCFeature )
 /*                        MatchesSpatialFilter()                        */
 /************************************************************************/
 
-bool OGRAVCLayer::MatchesSpatialFilter( void *pFeature )
+int OGRAVCLayer::MatchesSpatialFilter( void *pFeature )
 
 {
     if( m_poFilterGeom == NULL )
-        return true;
+        return TRUE;
 
     switch( eSectionType )
     {
@@ -402,10 +403,10 @@ bool OGRAVCLayer::MatchesSpatialFilter( void *pFeature )
                       && psV2->y > m_sFilterEnvelope.MaxY) )
                   /* This segment is completely outside extents */;
               else
-                  return true;
+                  return TRUE;
           }
 
-          return false;
+          return FALSE;
       }
 
 /* ==================================================================== */
@@ -423,9 +424,9 @@ bool OGRAVCLayer::MatchesSpatialFilter( void *pFeature )
               || psPAL->sMax.x < m_sFilterEnvelope.MinX
               || psPAL->sMin.y > m_sFilterEnvelope.MaxY
               || psPAL->sMax.y < m_sFilterEnvelope.MinY )
-              return false;
+              return FALSE;
           else
-              return true;
+              return TRUE;
       }
 
 /* ==================================================================== */
@@ -439,9 +440,9 @@ bool OGRAVCLayer::MatchesSpatialFilter( void *pFeature )
               || psCNT->sCoord.x > m_sFilterEnvelope.MaxX
               || psCNT->sCoord.y < m_sFilterEnvelope.MinY
               || psCNT->sCoord.y > m_sFilterEnvelope.MaxY )
-              return false;
+              return FALSE;
           else
-              return true;
+              return TRUE;
       }
 
 /* ==================================================================== */
@@ -455,9 +456,9 @@ bool OGRAVCLayer::MatchesSpatialFilter( void *pFeature )
               || psLAB->sCoord1.x > m_sFilterEnvelope.MaxX
               || psLAB->sCoord1.y < m_sFilterEnvelope.MinY
               || psLAB->sCoord1.y > m_sFilterEnvelope.MaxY )
-              return false;
+              return FALSE;
           else
-              return true;
+              return TRUE;
       }
 
 /* ==================================================================== */
@@ -469,19 +470,19 @@ bool OGRAVCLayer::MatchesSpatialFilter( void *pFeature )
           AVCTxt *psTXT = static_cast<AVCTxt *>( pFeature );
 
           if( psTXT->numVerticesLine == 0 )
-              return true;
+              return TRUE;
 
           if( psTXT->pasVertices[0].x < m_sFilterEnvelope.MinX
               || psTXT->pasVertices[0].x > m_sFilterEnvelope.MaxX
               || psTXT->pasVertices[0].y < m_sFilterEnvelope.MinY
               || psTXT->pasVertices[0].y > m_sFilterEnvelope.MaxY )
-              return false;
+              return FALSE;
 
-          return true;
+          return TRUE;
       }
 
       default:
-        return true;
+        return TRUE;
     }
 }
 
@@ -492,7 +493,7 @@ bool OGRAVCLayer::MatchesSpatialFilter( void *pFeature )
 /*      definition from the coverage.                                   */
 /************************************************************************/
 
-bool OGRAVCLayer::AppendTableDefinition( AVCTableDef *psTableDef )
+int OGRAVCLayer::AppendTableDefinition( AVCTableDef *psTableDef )
 
 {
     for( int iField = 0; iField < psTableDef->numFields; iField++ )
@@ -541,7 +542,7 @@ bool OGRAVCLayer::AppendTableDefinition( AVCTableDef *psTableDef )
 /*                        TranslateTableFields()                        */
 /************************************************************************/
 
-bool OGRAVCLayer::TranslateTableFields( OGRFeature *poFeature,
+int OGRAVCLayer::TranslateTableFields( OGRFeature *poFeature,
                                        int nFieldBase,
                                        AVCTableDef *psTableDef,
                                        AVCField *pasFields )
@@ -595,10 +596,10 @@ bool OGRAVCLayer::TranslateTableFields( OGRFeature *poFeature,
         }
         else
         {
-            CPLAssert( false );
-            return false;
+            CPLAssert( FALSE );
+            return FALSE;
         }
     }
 
-    return true;
+    return TRUE;
 }

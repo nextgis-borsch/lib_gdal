@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: avc_e00read.c 34524 2016-07-03 02:47:25Z goatbar $
+ * $Id: avc_e00read.c,v 1.28 2008/07/30 19:22:18 dmorissette Exp $
  *
  * Name:     avc_e00read.c
  * Project:  Arc/Info vector coverage (AVC)  BIN->E00 conversion library

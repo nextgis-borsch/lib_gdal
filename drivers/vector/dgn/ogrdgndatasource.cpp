@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrdgndatasource.cpp 33105 2016-01-23 15:27:32Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRPGDataSource class.
@@ -30,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrdgndatasource.cpp 35910 2016-10-24 14:08:24Z goatbar $");
+CPL_CVSID("$Id: ogrdgndatasource.cpp 33105 2016-01-23 15:27:32Z rouault $");
 
 /************************************************************************/
 /*                         OGRDGNDataSource()                           */
@@ -153,6 +154,7 @@ OGRLayer *OGRDGNDataSource::GetLayer( int iLayer )
     return papoLayers[iLayer];
 }
 
+
 /************************************************************************/
 /*                             PreCreate()                              */
 /*                                                                      */
@@ -161,14 +163,14 @@ OGRLayer *OGRDGNDataSource::GetLayer( int iLayer )
 /*      yet.  It will be created by theICreateLayer() call.             */
 /************************************************************************/
 
-bool OGRDGNDataSource::PreCreate( const char *pszFilename,
-                                  char **papszOptionsIn )
+int OGRDGNDataSource::PreCreate( const char *pszFilename,
+                                 char **papszOptionsIn )
 
 {
-    papszOptions = CSLDuplicate( papszOptionsIn );
+    this->papszOptions = CSLDuplicate( papszOptionsIn );
     pszName = CPLStrdup( pszFilename );
 
-    return true;
+    return TRUE;
 }
 
 /************************************************************************/
@@ -223,7 +225,8 @@ OGRLayer *OGRDGNDataSource::ICreateLayer( const char *pszLayerName,
     papszOptions = CSLInsertStrings( papszOptions, 0, papszExtraOptions );
 
     const bool b3DRequested
-        = CPLFetchBool( papszOptions, "3D", wkbHasZ(eGeomType) );
+        = CPL_TO_BOOL(CSLFetchBoolean( papszOptions, "3D",
+                           wkbHasZ(eGeomType) ));
 
     const char *pszSeed = CSLFetchNameValue( papszOptions, "SEED" );
     int nCreationFlags = 0;
@@ -241,9 +244,9 @@ OGRLayer *OGRDGNDataSource::ICreateLayer( const char *pszLayerName,
         return NULL;
     }
 
-    if( CPLFetchBool( papszOptions, "COPY_WHOLE_SEED_FILE", true ) )
+    if( CSLFetchBoolean( papszOptions, "COPY_WHOLE_SEED_FILE", TRUE ) )
         nCreationFlags |= DGNCF_COPY_WHOLE_SEED_FILE;
-    if( CPLFetchBool( papszOptions, "COPY_SEED_FILE_COLOR_TABLE", true ) )
+    if( CSLFetchBoolean( papszOptions, "COPY_SEED_FILE_COLOR_TABLE", TRUE ) )
         nCreationFlags |= DGNCF_COPY_SEED_FILE_COLOR_TABLE;
 
     const char *pszValue

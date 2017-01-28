@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ehdrdataset.cpp 12350 2007-10-08 17:41:32Z rouault $
  *
  * Project:  GDAL
  * Purpose:  Generic Binary format driver (.hdr but not ESRI .hdr!)
@@ -32,9 +33,7 @@
 #include "ogr_spatialref.h"
 #include "rawdataset.h"
 
-#include <cstdlib>
-
-CPL_CVSID("$Id: genbindataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
+CPL_CVSID("$Id: ehdrdataset.cpp 12350 2007-10-08 17:41:32Z rouault $");
 
 /* ==================================================================== */
 /*      Table relating USGS and ESRI state plane zones.                 */
@@ -207,10 +206,10 @@ class GenBinDataset : public RawDataset
     GenBinDataset();
     virtual ~GenBinDataset();
 
-    virtual CPLErr GetGeoTransform( double * padfTransform ) override;
-    virtual const char *GetProjectionRef(void) override;
+    virtual CPLErr GetGeoTransform( double * padfTransform );
+    virtual const char *GetProjectionRef(void);
 
-    virtual char **GetFileList() override;
+    virtual char **GetFileList();
 
     static GDALDataset *Open( GDALOpenInfo * );
 };
@@ -229,7 +228,7 @@ class GenBinBitRasterBand : public GDALPamRasterBand
     GenBinBitRasterBand( GenBinDataset *poDS, int nBits );
     virtual ~GenBinBitRasterBand() {}
 
-    virtual CPLErr IReadBlock( int, int, void * ) override;
+    virtual CPLErr IReadBlock( int, int, void * );
 };
 
 /************************************************************************/
@@ -462,7 +461,7 @@ void GenBinDataset::ParseCoordinateSystem( char **papszHdr )
     if( EQUAL(pszProjName,"UTM") && nZone != 0 )
     {
         // Just getting that the negative zone for southern hemisphere is used.
-        oSRS.SetUTM( std::abs(nZone), nZone > 0 );
+        oSRS.SetUTM( ABS(nZone), nZone > 0 );
     }
 
     else if( EQUAL(pszProjName,"State Plane") && nZone != 0 )
@@ -487,7 +486,7 @@ void GenBinDataset::ParseCoordinateSystem( char **papszHdr )
         else
             pszUnits = NULL;
 
-        oSRS.SetStatePlane( std::abs(nZone),
+        oSRS.SetStatePlane( ABS(nZone),
                             pszDatumName==NULL || !EQUAL(pszDatumName,"NAD27"),
                             pszUnits, dfUnits );
     }

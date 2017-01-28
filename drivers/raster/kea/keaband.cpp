@@ -1,4 +1,5 @@
 /*
+ * $Id: keaband.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *  keaband.cpp
  *
  *  Created by Pete Bunting on 01/08/2012.
@@ -38,8 +39,6 @@
 #include <vector>
 
 #include <limits.h>
-
-CPL_CVSID("$Id: keaband.cpp 35929 2016-10-25 16:09:00Z goatbar $");
 
 // constructor
 KEARasterBand::KEARasterBand( KEADataset *pDataset, int nSrcBand, GDALAccess eAccessIn, kealib::KEAImageIO *pImageIO, int *pRefCount )
@@ -327,14 +326,15 @@ CPLErr KEARasterBand::SetMetadata(char **papszMetadata, const char *pszDomain)
     if( ( pszDomain != NULL ) && ( *pszDomain != '\0' ) )
         return CE_Failure;
     int nIndex = 0;
+    char *pszName;
+    const char *pszValue;
     try
     {
         // iterate through each one
         while( papszMetadata[nIndex] != NULL )
         {
-            char *pszName = NULL;
-            const char *pszValue =
-                CPLParseNameValue( papszMetadata[nIndex], &pszName );
+            pszName = NULL;
+            pszValue = CPLParseNameValue( papszMetadata[nIndex], &pszName );
             if( pszValue == NULL )
                 pszValue = "";
             if( pszName != NULL )
@@ -556,6 +556,7 @@ CPLErr KEARasterBand::SetDefaultRAT(const GDALRasterAttributeTable *poRAT)
                         CPLFree(papszStringData[n]);
                 }
                 CPLFree(papszStringData);
+
             }
         }
     }

@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: nitf_gcprpc.cpp 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  NITF Read/Write Translator
  * Purpose:  GCP / RPC Georeferencing Model (custom by/for ESRI)
@@ -29,7 +30,7 @@
 #include "gdal_priv.h"
 #include "nitflib.h"
 
-CPL_CVSID("$Id: nitf_gcprpc.cpp 35929 2016-10-25 16:09:00Z goatbar $");
+CPL_CVSID("$Id");
 
 /* Unused in normal builds. Caller code in nitfdataset.cpp is protected by #ifdef ESRI_BUILD */
 #ifdef ESRI_BUILD
@@ -104,6 +105,7 @@ void NITFDensifyGCPs( GDAL_GCP **psGCPs, int *pnGCPCount )
             psDensifiedGCPs[count+3].dfGCPY = yRightPt;
 
             count += *pnGCPCount;
+
         }
         catch (...)
         {
@@ -138,8 +140,7 @@ static bool RPCTransform( NITFRPC00BInfo *psRPCInfo,
                           int             nGCPCount )
 {
     if( (psRPCInfo == NULL) || (pGCPXCoord == NULL) ||
-        (pGCPYCoord == NULL) || (nGCPCount <= 0) )
-        return false;
+        (pGCPYCoord == NULL) || (nGCPCount <= 0) ) return (false);
 
     bool   ok = true;
     double H  = 0.0;
@@ -173,7 +174,7 @@ static bool RPCTransform( NITFRPC00BInfo *psRPCInfo,
         }
     }
 
-    return ok;
+    return (ok);
 }
 
 /************************************************************************/

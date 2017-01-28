@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gxfopen.c 36436 2016-11-22 21:41:51Z rouault $
+ * $Id: gxfopen.c 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  GXF Reader
  * Purpose:  Majority of Geosoft GXF reading code.
@@ -29,12 +29,10 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "cpl_port.h"
-
 #include <ctype.h>
 #include "gxfopen.h"
 
-CPL_CVSID("$Id: gxfopen.c 36436 2016-11-22 21:41:51Z rouault $");
+CPL_CVSID("$Id: gxfopen.c 33720 2016-03-15 00:39:53Z goatbar $");
 
 
 /* this is also defined in gdal.h which we avoid in this separable component */
@@ -46,7 +44,7 @@ CPL_CVSID("$Id: gxfopen.c 36436 2016-11-22 21:41:51Z rouault $");
 /************************************************************************/
 /*                         GXFReadHeaderValue()                         */
 /*                                                                      */
-/*      Read one entry from the file header, and return it and its      */
+/*      Read one entry from the file header, and return it and it's     */
 /*      value in clean form.                                            */
 /************************************************************************/
 
@@ -74,7 +72,7 @@ static char **GXFReadHeaderValue( FILE * fp, char * pszHTitle )
 /*      Extract the title.  It should be terminated by some sort of     */
 /*      white space.                                                    */
 /* -------------------------------------------------------------------- */
-    for( i = 0; i < 70 && !isspace((unsigned char)pszLine[i]) && pszLine[i] != '\0'; i++ ) {}
+    for( i = 0; !isspace((unsigned char)pszLine[i]) && pszLine[i] != '\0' && i < 70; i++ ) {}
 
     strncpy( pszHTitle, pszLine, i );
     pszHTitle[i] = '\0';

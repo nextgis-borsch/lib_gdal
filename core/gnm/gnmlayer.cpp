@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id$
  *
  * Project:  GDAL/OGR Geography Network support (Geographic Network Model)
  * Purpose:  GNM layer class.
@@ -30,24 +31,24 @@
 #include "gnm.h"
 #include "gnm_priv.h"
 
-CPL_CVSID("$Id: gnmlayer.cpp 36366 2016-11-21 01:21:43Z rouault $");
-
 /**
  * GNMGenericLayer
  */
 GNMGenericLayer::GNMGenericLayer(OGRLayer* poLayer,
-                                 GNMGenericNetwork* poNetwork) :
-    OGRLayer(),
-    m_soLayerName( poLayer->GetName() ),
-    m_poLayer( poLayer ),
-    m_poNetwork( poNetwork )
+                                 GNMGenericNetwork* poNetwork) : OGRLayer()
 {
+    m_poLayer = poLayer;
+    m_poNetwork = poNetwork;
+    m_soLayerName = poLayer->GetName();
 }
 
 /**
  * ~GNMGenericLayer
  */
-GNMGenericLayer::~GNMGenericLayer() {}
+GNMGenericLayer::~GNMGenericLayer()
+{
+
+}
 
 const char *GNMGenericLayer::GetFIDColumn()
 {
@@ -132,7 +133,6 @@ int GNMGenericLayer::AttributeFilterEvaluationNeedsGeometry()
     return m_poLayer->AttributeFilterEvaluationNeedsGeometry();
 }
 
-//! @cond Doxygen_Suppress
 OGRErr GNMGenericLayer::InitializeIndexSupport(const char *pszVal)
 {
     return m_poLayer->InitializeIndexSupport(pszVal);
@@ -171,7 +171,6 @@ OGRErr GNMGenericLayer::ICreateFeature(OGRFeature *poFeature)
         return OGRERR_FAILURE;
     return m_poLayer->CreateFeature(poFeature);
 }
-//! @endcond
 
 OGRGeometry *GNMGenericLayer::GetSpatialFilter()
 {
@@ -365,3 +364,4 @@ OGRFeatureDefn *GNMGenericLayer::GetLayerDefn()
     //TODO: hide GNM_SYSFIELD_GFID filed
     return m_poLayer->GetLayerDefn();
 }
+

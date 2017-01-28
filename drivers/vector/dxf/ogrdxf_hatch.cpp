@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrdxf_hatch.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  DXF Translator
  * Purpose:  Implements translation support for HATCH elements as part
@@ -34,7 +35,7 @@
 
 #include "ogrdxf_polyline_smooth.h"
 
-CPL_CVSID("$Id: ogrdxf_hatch.cpp 35626 2016-10-06 14:02:20Z rouault $");
+CPL_CVSID("$Id: ogrdxf_hatch.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 /************************************************************************/
 /*                           TranslateHATCH()                           */
@@ -48,7 +49,7 @@ OGRFeature *OGRDXFLayer::TranslateHATCH()
 
 {
     char szLineBuf[257];
-    int nCode = 0;
+    int nCode;
     OGRFeature *poFeature = new OGRFeature( poFeatureDefn );
 
     CPLString osHatchPattern;
@@ -71,10 +72,9 @@ OGRFeature *OGRDXFLayer::TranslateHATCH()
           case 91:
           {
               int nBoundaryPathCount = atoi(szLineBuf);
+              int iBoundary;
 
-              for( int iBoundary = 0;
-                   iBoundary < nBoundaryPathCount;
-                   iBoundary++ )
+              for( iBoundary = 0; iBoundary < nBoundaryPathCount; iBoundary++ )
               {
                   if (CollectBoundaryPath( &oGC ) != OGRERR_NONE)
                       break;
@@ -163,19 +163,20 @@ OGRFeature *OGRDXFLayer::TranslateHATCH()
 OGRErr OGRDXFLayer::CollectBoundaryPath( OGRGeometryCollection *poGC )
 
 {
+    int  nCode;
     char szLineBuf[257];
 
 /* -------------------------------------------------------------------- */
 /*      Read the boundary path type.                                    */
 /* -------------------------------------------------------------------- */
-    int nCode = poDS->ReadValue(szLineBuf,sizeof(szLineBuf));
+    nCode = poDS->ReadValue(szLineBuf,sizeof(szLineBuf));
     if( nCode != 92 )
     {
         DXF_LAYER_READER_ERROR();
         return OGRERR_FAILURE;
     }
 
-    const int nBoundaryPathType = atoi(szLineBuf);
+    int  nBoundaryPathType = atoi(szLineBuf);
 
 /* ==================================================================== */
 /*      Handle polyline loops.                                          */
@@ -197,20 +198,22 @@ OGRErr OGRDXFLayer::CollectBoundaryPath( OGRGeometryCollection *poGC )
         return OGRERR_FAILURE;
     }
 
-    const int nEdgeCount = atoi(szLineBuf);
+    int nEdgeCount = atoi(szLineBuf);
 
 /* -------------------------------------------------------------------- */
 /*      Loop reading edges.                                             */
 /* -------------------------------------------------------------------- */
-    for( int iEdge = 0; iEdge < nEdgeCount; iEdge++ )
+    int iEdge;
+
+    for( iEdge = 0; iEdge < nEdgeCount; iEdge++ )
     {
 /* -------------------------------------------------------------------- */
 /*      Read the edge type.                                             */
 /* -------------------------------------------------------------------- */
-        const int ET_LINE = 1;
-        const int ET_CIRCULAR_ARC = 2;
-        const int ET_ELLIPTIC_ARC = 3;
-        // const int ET_SPLINE = 4;
+#define ET_LINE         1
+#define ET_CIRCULAR_ARC 2
+#define ET_ELLIPTIC_ARC 3
+#define ET_SPLINE       4
 
         nCode = poDS->ReadValue(szLineBuf,sizeof(szLineBuf));
         if( nCode != 72 )
@@ -226,28 +229,25 @@ OGRErr OGRDXFLayer::CollectBoundaryPath( OGRGeometryCollection *poGC )
 /* -------------------------------------------------------------------- */
         if( nEdgeType == ET_LINE )
         {
-            double dfStartX = 0.0;
+            double dfStartX;
+            double dfStartY;
+            double dfEndX;
+            double dfEndY;
 
             if( (nCode = poDS->ReadValue(szLineBuf,sizeof(szLineBuf))) == 10 )
                 dfStartX = CPLAtof(szLineBuf);
             else
                 break;
 
-            double dfStartY = 0.0;
-
             if( (nCode = poDS->ReadValue(szLineBuf,sizeof(szLineBuf))) == 20 )
                 dfStartY = CPLAtof(szLineBuf);
             else
                 break;
 
-            double dfEndX = 0.0;
-
             if( (nCode = poDS->ReadValue(szLineBuf,sizeof(szLineBuf))) == 11 )
                 dfEndX = CPLAtof(szLineBuf);
             else
                 break;
-
-            double dfEndY = 0.0;
 
             if( (nCode = poDS->ReadValue(szLineBuf,sizeof(szLineBuf))) == 21 )
                 dfEndY = CPLAtof(szLineBuf);
@@ -266,45 +266,40 @@ OGRErr OGRDXFLayer::CollectBoundaryPath( OGRGeometryCollection *poGC )
 /* -------------------------------------------------------------------- */
         else if( nEdgeType == ET_CIRCULAR_ARC )
         {
-            double dfCenterX = 0.0;
+            double dfCenterX;
+            double dfCenterY;
+            double dfRadius;
+            double dfStartAngle;
+            double dfEndAngle;
+            int    bCounterClockwise = FALSE;
 
-            if( (nCode = poDS->ReadValue(szLineBuf, sizeof(szLineBuf))) == 10 )
+            if( (nCode = poDS->ReadValue(szLineBuf,sizeof(szLineBuf))) == 10 )
                 dfCenterX = CPLAtof(szLineBuf);
             else
                 break;
 
-            double dfCenterY = 0.0;
-
-            if( (nCode = poDS->ReadValue(szLineBuf, sizeof(szLineBuf))) == 20 )
+            if( (nCode = poDS->ReadValue(szLineBuf,sizeof(szLineBuf))) == 20 )
                 dfCenterY = CPLAtof(szLineBuf);
             else
                 break;
 
-            double dfRadius = 0.0;
-
-            if( (nCode = poDS->ReadValue(szLineBuf, sizeof(szLineBuf))) == 40 )
+            if( (nCode = poDS->ReadValue(szLineBuf,sizeof(szLineBuf))) == 40 )
                 dfRadius = CPLAtof(szLineBuf);
             else
                 break;
 
-            double dfStartAngle = 0.0;
-
-            if( (nCode = poDS->ReadValue(szLineBuf, sizeof(szLineBuf))) == 50 )
+            if( (nCode = poDS->ReadValue(szLineBuf,sizeof(szLineBuf))) == 50 )
                 dfStartAngle = CPLAtof(szLineBuf);
             else
                 break;
 
-            double dfEndAngle = 0.0;
-
-            if( (nCode = poDS->ReadValue(szLineBuf, sizeof(szLineBuf))) == 51 )
+            if( (nCode = poDS->ReadValue(szLineBuf,sizeof(szLineBuf))) == 51 )
                 dfEndAngle = CPLAtof(szLineBuf);
             else
                 break;
 
-            bool bCounterClockwise = false;
-
-            if( (nCode = poDS->ReadValue(szLineBuf, sizeof(szLineBuf))) == 73 )
-                bCounterClockwise = atoi(szLineBuf) != 0;
+            if( (nCode = poDS->ReadValue(szLineBuf,sizeof(szLineBuf))) == 73 )
+                bCounterClockwise = atoi(szLineBuf);
             else if (nCode >= 0)
                 poDS->UnreadValue();
             else
@@ -333,59 +328,53 @@ OGRErr OGRDXFLayer::CollectBoundaryPath( OGRGeometryCollection *poGC )
 /* -------------------------------------------------------------------- */
         else if( nEdgeType == ET_ELLIPTIC_ARC )
         {
-            double dfCenterX = 0.0;
+            double dfCenterX;
+            double dfCenterY;
+            double dfMajorRadius, dfMinorRadius;
+            double dfMajorX, dfMajorY;
+            double dfStartAngle;
+            double dfEndAngle;
+            double dfRotation;
+            double dfRatio;
+            int    bCounterClockwise = FALSE;
 
-            if( (nCode = poDS->ReadValue(szLineBuf, sizeof(szLineBuf))) == 10 )
+            if( (nCode = poDS->ReadValue(szLineBuf,sizeof(szLineBuf))) == 10 )
                 dfCenterX = CPLAtof(szLineBuf);
             else
                 break;
 
-            double dfCenterY = 0.0;
-
-            if( (nCode = poDS->ReadValue(szLineBuf, sizeof(szLineBuf))) == 20 )
+            if( (nCode = poDS->ReadValue(szLineBuf,sizeof(szLineBuf))) == 20 )
                 dfCenterY = CPLAtof(szLineBuf);
             else
                 break;
 
-            double dfMajorX = 0.0;
-
-            if( (nCode = poDS->ReadValue(szLineBuf, sizeof(szLineBuf))) == 11 )
+            if( (nCode = poDS->ReadValue(szLineBuf,sizeof(szLineBuf))) == 11 )
                 dfMajorX = CPLAtof(szLineBuf);
             else
                 break;
 
-            double dfMajorY = 0.0;
-
-            if( (nCode = poDS->ReadValue(szLineBuf, sizeof(szLineBuf))) == 21 )
+            if( (nCode = poDS->ReadValue(szLineBuf,sizeof(szLineBuf))) == 21 )
                 dfMajorY = CPLAtof(szLineBuf);
             else
                 break;
 
-            double dfRatio = 0.0;
-
-            if( (nCode = poDS->ReadValue(szLineBuf, sizeof(szLineBuf))) == 40 )
+            if( (nCode = poDS->ReadValue(szLineBuf,sizeof(szLineBuf))) == 40 )
                 dfRatio = CPLAtof(szLineBuf) / 100.0;
             else
                 break;
-
-            double dfStartAngle = 0.0;
 
             if( (nCode = poDS->ReadValue(szLineBuf,sizeof(szLineBuf))) == 50 )
                 dfStartAngle = CPLAtof(szLineBuf);
             else
                 break;
 
-            double dfEndAngle = 0.0;
-
             if( (nCode = poDS->ReadValue(szLineBuf,sizeof(szLineBuf))) == 51 )
                 dfEndAngle = CPLAtof(szLineBuf);
             else
                 break;
 
-            bool bCounterClockwise = false;
-
             if( (nCode = poDS->ReadValue(szLineBuf,sizeof(szLineBuf))) == 73 )
-                bCounterClockwise = atoi(szLineBuf) != 0;
+                bCounterClockwise = atoi(szLineBuf);
             else if (nCode >= 0)
                 poDS->UnreadValue();
             else
@@ -399,12 +388,10 @@ OGRErr OGRDXFLayer::CollectBoundaryPath( OGRGeometryCollection *poGC )
                 dfEndAngle *= -1;
             }
 
-            const double dfMajorRadius =
-                sqrt( dfMajorX * dfMajorX + dfMajorY * dfMajorY );
-            const double dfMinorRadius = dfMajorRadius * dfRatio;
+            dfMajorRadius = sqrt( dfMajorX * dfMajorX + dfMajorY * dfMajorY );
+            dfMinorRadius = dfMajorRadius * dfRatio;
 
-            const double dfRotation =
-                -1 * atan2( dfMajorY, dfMajorX ) * 180 / M_PI;
+            dfRotation = -1 * atan2( dfMajorY, dfMajorX ) * 180 / M_PI;
 
             OGRGeometry *poArc = OGRGeometryFactory::approximateArcAngles(
                 dfCenterX, dfCenterY, 0.0,
@@ -460,17 +447,15 @@ OGRErr OGRDXFLayer::CollectBoundaryPath( OGRGeometryCollection *poGC )
 OGRErr OGRDXFLayer::CollectPolylinePath( OGRGeometryCollection *poGC )
 
 {
-    int nCode = 0;
+    int  nCode;
     char szLineBuf[257];
     DXFSmoothPolyline oSmoothPolyline;
     double dfBulge = 0.0;
-    double dfX = 0.0;
-    double dfY = 0.0;
-    bool bHaveX = false;
-    bool bHaveY = false;
-    bool bIsClosed = false;
+    double dfX = 0.0, dfY = 0.0;
+    int bHaveX = FALSE, bHaveY = FALSE;
+    int bIsClosed = FALSE;
     int nVertexCount = -1;
-    bool bHaveBulges = false;
+    int bHaveBulges = FALSE;
 
 /* -------------------------------------------------------------------- */
 /*      Read the boundary path type.                                    */
@@ -487,11 +472,11 @@ OGRErr OGRDXFLayer::CollectPolylinePath( OGRGeometryCollection *poGC )
             break;
 
           case 72:
-            bHaveBulges = CPL_TO_BOOL(atoi(szLineBuf));
+            bHaveBulges = atoi(szLineBuf);
             break;
 
           case 73:
-            bIsClosed = CPL_TO_BOOL(atoi(szLineBuf));
+            bIsClosed = atoi(szLineBuf);
             break;
 
           case 10:
@@ -499,10 +484,10 @@ OGRErr OGRDXFLayer::CollectPolylinePath( OGRGeometryCollection *poGC )
             {
                 oSmoothPolyline.AddPoint(dfX, dfY, 0.0, dfBulge);
                 dfBulge = 0.0;
-                bHaveY = false;
+                bHaveY = FALSE;
             }
             dfX = CPLAtof(szLineBuf);
-            bHaveX = true;
+            bHaveX = TRUE;
             break;
 
           case 20:
@@ -510,16 +495,15 @@ OGRErr OGRDXFLayer::CollectPolylinePath( OGRGeometryCollection *poGC )
             {
                 oSmoothPolyline.AddPoint( dfX, dfY, 0.0, dfBulge );
                 dfBulge = 0.0;
-                bHaveX = false;
+                bHaveX = bHaveY = FALSE;
             }
             dfY = CPLAtof(szLineBuf);
-            bHaveY = true;
+            bHaveY = TRUE;
             if( bHaveX && bHaveY && !bHaveBulges )
             {
                 oSmoothPolyline.AddPoint( dfX, dfY, 0.0, dfBulge );
                 dfBulge = 0.0;
-                bHaveX = false;
-                bHaveY = false;
+                bHaveX = bHaveY = FALSE;
             }
             break;
 
@@ -529,8 +513,7 @@ OGRErr OGRDXFLayer::CollectPolylinePath( OGRGeometryCollection *poGC )
             {
                 oSmoothPolyline.AddPoint( dfX, dfY, 0.0, dfBulge );
                 dfBulge = 0.0;
-                bHaveX = false;
-                bHaveY = false;
+                bHaveX = bHaveY = FALSE;
             }
             break;
 

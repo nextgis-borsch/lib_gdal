@@ -3,6 +3,7 @@
 
 #include "gdal_sde.h"
 
+
 class SDEDataset : public GDALDataset
 {
     friend class SDERasterBand;
@@ -17,7 +18,8 @@ class SDEDataset : public GDALDataset
         SE_RASCOLINFO*      paohSDERasterColumns;
         SE_RASCOLINFO       hRasterColumn;
 
-        CPLErr              ComputeRasterInfo();
+
+        CPLErr              ComputeRasterInfo(void);
         SE_RASBANDINFO*     paohSDERasterBands;
 
     public:
@@ -35,12 +37,12 @@ class SDEDataset : public GDALDataset
         char                *pszLayerName;
         char                *pszColumnName;
 
-        virtual CPLErr  GetGeoTransform( double * padfTransform ) override;
-        virtual int     GetRasterCount();
-        virtual int     GetRasterXSize();
-        virtual int     GetRasterYSize();
+        virtual CPLErr  GetGeoTransform( double * padfTransform );
+        virtual int     GetRasterCount(void);
+        virtual int     GetRasterXSize(void);
+        virtual int     GetRasterYSize(void);
 
-        const char *GetProjectionRef() override;
+        const char *GetProjectionRef();
 };
 
 #endif

@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: gdalexif.cpp 33229 2016-01-29 19:45:40Z goatbar $
  *
  * Project:  GDAL
  * Purpose:  Implements a EXIF directory reader
@@ -30,28 +31,20 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "cpl_port.h"
-#include "gdal_priv.h"
-#include "gdalexif.h"
-
-#include <climits>
-#include <cstddef>
-#include <cstdio>
-#include <cstring>
-#if HAVE_FCNTL_H
-#  include <fcntl.h>
-#endif
-
 #include <vector>
 
 #include "cpl_conv.h"
+#include "cpl_port.h"
 #include "cpl_error.h"
 #include "cpl_string.h"
 #include "cpl_vsi.h"
 
+#include "gdal_priv.h"
+#include "gdalexif.h"
+
 using std::vector;
 
-CPL_CVSID("$Id: gdalexif.cpp 36523 2016-11-27 04:13:26Z goatbar $");
+CPL_CVSID("$Id: gdalexif.cpp 33229 2016-01-29 19:45:40Z goatbar $");
 
 static const int MAXSTRINGLENGTH = 65535;
 static const int EXIFOFFSETTAG = 0x8769;
@@ -75,8 +68,7 @@ static void EXIFPrintData(char* pszData, GUInt16 type,
   case TIFF_UNDEFINED:
   case TIFF_BYTE:
     for(;count>0;count--) {
-      snprintf(szTemp, sizeof(szTemp), "%s%#02x", sep, *data++);
-      sep = " ";
+      snprintf(szTemp, sizeof(szTemp), "%s%#02x", sep, *data++), sep = " ";
       if (strlen(szTemp) + pszDataEnd - pszData >= MAXSTRINGLENGTH)
           break;
       strcat(pszDataEnd,szTemp);
@@ -86,8 +78,7 @@ static void EXIFPrintData(char* pszData, GUInt16 type,
 
   case TIFF_SBYTE:
     for(;count>0;count--) {
-      snprintf(szTemp, sizeof(szTemp), "%s%d", sep, *(const char *)data++);
-      sep = " ";
+      snprintf(szTemp, sizeof(szTemp), "%s%d", sep, *(const char *)data++), sep = " ";
       if (strlen(szTemp) + pszDataEnd - pszData >= MAXSTRINGLENGTH)
           break;
       strcat(pszDataEnd,szTemp);
@@ -103,8 +94,7 @@ static void EXIFPrintData(char* pszData, GUInt16 type,
   case TIFF_SHORT: {
     const GUInt16 *wp = (const GUInt16*)data;
     for(;count>0;count--) {
-      snprintf(szTemp, sizeof(szTemp), "%s%u", sep, *wp++);
-      sep = " ";
+      snprintf(szTemp, sizeof(szTemp), "%s%u", sep, *wp++), sep = " ";
       if (strlen(szTemp) + pszDataEnd - pszData >= MAXSTRINGLENGTH)
           break;
       strcat(pszDataEnd,szTemp);
@@ -139,8 +129,7 @@ static void EXIFPrintData(char* pszData, GUInt16 type,
   case TIFF_SLONG: {
     const GInt32 *lp = (const GInt32*)data;
     for(;count>0;count--) {
-      snprintf(szTemp, sizeof(szTemp), "%s%ld", sep, (long) *lp++);
-      sep = " ";
+      snprintf(szTemp, sizeof(szTemp), "%s%ld", sep, (long) *lp++), sep = " ";
       if (strlen(szTemp) + pszDataEnd - pszData >= MAXSTRINGLENGTH)
           break;
       strcat(pszDataEnd,szTemp);
@@ -186,8 +175,7 @@ static void EXIFPrintData(char* pszData, GUInt16 type,
   case TIFF_FLOAT: {
     const float *fp = (const float *)data;
     for(;count>0;count--) {
-      CPLsnprintf(szTemp, sizeof(szTemp), "%s%g", sep, *fp++);
-      sep = " ";
+      CPLsnprintf(szTemp, sizeof(szTemp), "%s%g", sep, *fp++), sep = " ";
       if (strlen(szTemp) + pszDataEnd - pszData >= MAXSTRINGLENGTH)
           break;
       strcat(pszDataEnd,szTemp);
@@ -198,8 +186,7 @@ static void EXIFPrintData(char* pszData, GUInt16 type,
   case TIFF_DOUBLE: {
     const double *dp = (const double *)data;
     for(;count>0;count--) {
-      CPLsnprintf(szTemp, sizeof(szTemp), "%s%g", sep, *dp++);
-      sep = " ";
+      CPLsnprintf(szTemp, sizeof(szTemp), "%s%g", sep, *dp++), sep = " ";
       if (strlen(szTemp) + pszDataEnd - pszData >= MAXSTRINGLENGTH)
           break;
       strcat(pszDataEnd,szTemp);
@@ -307,7 +294,7 @@ CPLErr EXIFExtractMetadata(char**& papszMetadata,
               poExifTags++)
         {
             if(poExifTags->tag == poTIFFDirEntry->tdir_tag) {
-                CPLAssert( NULL != poExifTags->name );
+                CPLAssert( NULL != poExifTags && NULL != poExifTags->name );
 
                 CPLStrlcpy(szName, poExifTags->name, sizeof(szName));
                 break;
@@ -320,7 +307,7 @@ CPLErr EXIFExtractMetadata(char**& papszMetadata,
                  poGPSTags++ )
             {
                 if( poGPSTags->tag == poTIFFDirEntry->tdir_tag ) {
-                    CPLAssert( NULL != poGPSTags->name );
+                    CPLAssert( NULL != poGPSTags && NULL != poGPSTags->name );
                     CPLStrlcpy(szName, poGPSTags->name, sizeof(szName));
                     break;
                 }
@@ -333,7 +320,7 @@ CPLErr EXIFExtractMetadata(char**& papszMetadata,
             const struct intr_tag *poInterTags = intr_tags;
             for( ; poInterTags->tag; poInterTags++)
                 if(poInterTags->tag == poTIFFDirEntry->tdir_tag) {
-                    CPLAssert( NULL != poInterTags->name );
+                    CPLAssert( NULL != poInterTags && NULL != poInterTags->name );
                     CPLStrlcpy(szName, poInterTags->name, sizeof(szName));
                     break;
                 }
@@ -360,7 +347,7 @@ CPLErr EXIFExtractMetadata(char**& papszMetadata,
 /* -------------------------------------------------------------------- */
         if( szName[0] == '\0' )
         {
-            snprintf( szName, sizeof(szName), "EXIF_%u", poTIFFDirEntry->tdir_tag );
+            snprintf( szName, sizeof(szName), "EXIF_%d", poTIFFDirEntry->tdir_tag );
             continue;
         }
 

@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrcouchdbdatasource.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  CouchDB Translator
  * Purpose:  Implements OGRCouchDBDataSource class
@@ -27,22 +28,26 @@
  ****************************************************************************/
 
 #include "ogr_couchdb.h"
-#include "ogrgeojsonreader.h"
 #include "swq.h"
 
-CPL_CVSID("$Id: ogrcouchdbdatasource.cpp 36682 2016-12-04 20:34:45Z rouault $");
+CPL_CVSID("$Id: ogrcouchdbdatasource.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 /************************************************************************/
 /*                        OGRCouchDBDataSource()                        */
 /************************************************************************/
 
-OGRCouchDBDataSource::OGRCouchDBDataSource() :
-    pszName(NULL),
-    papoLayers(NULL),
-    nLayers(0),
-    bReadWrite(false),
-    bMustCleanPersistent(false)
-{}
+OGRCouchDBDataSource::OGRCouchDBDataSource()
+
+{
+    papoLayers = NULL;
+    nLayers = 0;
+
+    pszName = NULL;
+
+    bReadWrite = FALSE;
+
+    bMustCleanPersistent = FALSE;
+}
 
 /************************************************************************/
 /*                       ~OGRCouchDBDataSource()                        */
@@ -55,7 +60,7 @@ OGRCouchDBDataSource::~OGRCouchDBDataSource()
         delete papoLayers[i];
     CPLFree( papoLayers );
 
-    if( bMustCleanPersistent )
+    if (bMustCleanPersistent)
     {
         char** papszOptions = NULL;
         papszOptions = CSLSetNameValue(papszOptions, "CLOSE_PERSISTENT", CPLSPrintf("CouchDB:%p", this));
@@ -73,12 +78,10 @@ OGRCouchDBDataSource::~OGRCouchDBDataSource()
 int OGRCouchDBDataSource::TestCapability( const char * pszCap )
 
 {
-    if( bReadWrite && EQUAL(pszCap, ODsCCreateLayer) )
+    if( bReadWrite && EQUAL(pszCap,ODsCCreateLayer) )
         return TRUE;
-    else if( bReadWrite && EQUAL(pszCap, ODsCDeleteLayer) )
+    else if( bReadWrite && EQUAL(pszCap,ODsCDeleteLayer) )
         return TRUE;
-    else if( EQUAL(pszCap,ODsCRandomLayerWrite) )
-        return bReadWrite;
     else
         return FALSE;
 }
@@ -153,7 +156,7 @@ OGRLayer* OGRCouchDBDataSource::OpenDatabase(const char* pszLayerName)
         return NULL;
 
     if ( !json_object_is_type(poAnswerObj, json_type_object) ||
-            CPL_json_object_object_get(poAnswerObj, "db_name") == NULL )
+            json_object_object_get(poAnswerObj, "db_name") == NULL )
     {
         IsError(poAnswerObj, "Database opening failed");
 
@@ -163,9 +166,9 @@ OGRLayer* OGRCouchDBDataSource::OpenDatabase(const char* pszLayerName)
 
     OGRCouchDBTableLayer* poLayer = new OGRCouchDBTableLayer(this, osTableName);
 
-    if ( CPL_json_object_object_get(poAnswerObj, "update_seq") != NULL )
+    if ( json_object_object_get(poAnswerObj, "update_seq") != NULL )
     {
-        int nUpdateSeq = json_object_get_int(CPL_json_object_object_get(poAnswerObj, "update_seq"));
+        int nUpdateSeq = json_object_get_int(json_object_object_get(poAnswerObj, "update_seq"));
         poLayer->SetUpdateSeq(nUpdateSeq);
     }
 
@@ -203,27 +206,28 @@ OGRLayer* OGRCouchDBDataSource::OpenView()
 int OGRCouchDBDataSource::Open( const char * pszFilename, int bUpdateIn)
 
 {
-    bool bHTTP =
-        STARTS_WITH(pszFilename, "http://") ||
-        STARTS_WITH(pszFilename, "https://");
-
-    if( !bHTTP && !STARTS_WITH_CI(pszFilename, "CouchDB:"))
+    int bHTTP = FALSE;
+    if (STARTS_WITH(pszFilename, "http://") ||
+        STARTS_WITH(pszFilename, "https://"))
+        bHTTP = TRUE;
+    else if (!STARTS_WITH_CI(pszFilename, "CouchDB:"))
         return FALSE;
 
-    bReadWrite = CPL_TO_BOOL(bUpdateIn);
+    bReadWrite = bUpdateIn;
 
     pszName = CPLStrdup( pszFilename );
 
-    if( bHTTP )
+    if (bHTTP)
         osURL = pszFilename;
     else
         osURL = pszFilename + 8;
-    if (!osURL.empty() && osURL[osURL.size() - 1] == '/')
+    if (osURL.size() > 0 && osURL[osURL.size() - 1] == '/')
         osURL.resize(osURL.size() - 1);
 
     const char* pszUserPwd = CPLGetConfigOption("COUCHDB_USERPWD", NULL);
     if (pszUserPwd)
         osUserPwd = pszUserPwd;
+
 
     if ((strstr(osURL, "/_design/") && strstr(osURL, "/_view/")) ||
         strstr(osURL, "/_all_docs"))
@@ -260,8 +264,8 @@ int OGRCouchDBDataSource::Open( const char * pszFilename, int bUpdateIn)
     {
         if ( json_object_is_type(poAnswerObj, json_type_object) )
         {
-            json_object* poError = CPL_json_object_object_get(poAnswerObj, "error");
-            json_object* poReason = CPL_json_object_object_get(poAnswerObj, "reason");
+            json_object* poError = json_object_object_get(poAnswerObj, "error");
+            json_object* poReason = json_object_object_get(poAnswerObj, "reason");
 
             const char* pszError = json_object_get_string(poError);
             const char* pszReason = json_object_get_string(poReason);
@@ -307,6 +311,7 @@ int OGRCouchDBDataSource::Open( const char * pszFilename, int bUpdateIn)
     return TRUE;
 }
 
+
 /************************************************************************/
 /*                          ICreateLayer()                              */
 /************************************************************************/
@@ -316,7 +321,7 @@ OGRLayer   *OGRCouchDBDataSource::ICreateLayer( const char *pszNameIn,
                                            OGRwkbGeometryType eGType,
                                            char ** papszOptions )
 {
-    if( !bReadWrite )
+    if (!bReadWrite)
     {
         CPLError(CE_Failure, CPLE_AppDefined, "Operation not available in read-only mode");
         return NULL;
@@ -326,7 +331,9 @@ OGRLayer   *OGRCouchDBDataSource::ICreateLayer( const char *pszNameIn,
 /*      Do we already have this layer?  If so, should we blow it        */
 /*      away?                                                           */
 /* -------------------------------------------------------------------- */
-    for( int iLayer = 0; iLayer < nLayers; iLayer++ )
+    int iLayer;
+
+    for( iLayer = 0; iLayer < nLayers; iLayer++ )
     {
         if( EQUAL(pszNameIn,papoLayers[iLayer]->GetName()) )
         {
@@ -363,7 +370,7 @@ OGRLayer   *OGRCouchDBDataSource::ICreateLayer( const char *pszNameIn,
     if (poAnswerObj == NULL)
         return NULL;
 
-    if( !IsOK(poAnswerObj, "Layer creation failed") )
+    if (!IsOK(poAnswerObj, "Layer creation failed"))
     {
         json_object_put(poAnswerObj);
         return NULL;
@@ -385,11 +392,12 @@ OGRLayer   *OGRCouchDBDataSource::ICreateLayer( const char *pszNameIn,
 
         poAnswerObj = PUT(osURI, osContent);
 
-        if( IsOK(poAnswerObj, "Spatial index creation failed") )
+        if (IsOK(poAnswerObj, "Spatial index creation failed"))
             nUpdateSeq ++;
 
         json_object_put(poAnswerObj);
     }
+
 
 /* -------------------------------------------------------------------- */
 /*      Create validation function                                      */
@@ -415,7 +423,7 @@ OGRLayer   *OGRCouchDBDataSource::ICreateLayer( const char *pszNameIn,
         osValidation += "\"}";
     }
 
-    if (!osValidation.empty() )
+    if (osValidation.size())
     {
         osURI = "/";
         osURI += osEscapedName;
@@ -423,21 +431,19 @@ OGRLayer   *OGRCouchDBDataSource::ICreateLayer( const char *pszNameIn,
 
         poAnswerObj = PUT(osURI, osValidation);
 
-        if( IsOK(poAnswerObj, "Validation function creation failed") )
+        if (IsOK(poAnswerObj, "Validation function creation failed"))
             nUpdateSeq ++;
 
         json_object_put(poAnswerObj);
     }
 
-    const bool bGeoJSONDocument =
-        CPLTestBool(CSLFetchNameValueDef(papszOptions, "GEOJSON", "TRUE"));
+    int bGeoJSONDocument = CPLTestBool(CSLFetchNameValueDef(papszOptions, "GEOJSON", "TRUE"));
     int nCoordPrecision = atoi(CSLFetchNameValueDef(papszOptions, "COORDINATE_PRECISION", "-1"));
 
     OGRCouchDBTableLayer* poLayer = new OGRCouchDBTableLayer(this, pszNameIn);
     if (nCoordPrecision != -1)
         poLayer->SetCoordinatePrecision(nCoordPrecision);
-    poLayer->SetInfoAfterCreation(eGType, poSpatialRef,
-                                  nUpdateSeq, bGeoJSONDocument);
+    poLayer->SetInfoAfterCreation(eGType, poSpatialRef, nUpdateSeq, bGeoJSONDocument);
     papoLayers = (OGRLayer**) CPLRealloc(papoLayers, (nLayers + 1) * sizeof(OGRLayer*));
     papoLayers[nLayers ++] = poLayer;
     return poLayer;
@@ -450,11 +456,12 @@ OGRLayer   *OGRCouchDBDataSource::ICreateLayer( const char *pszNameIn,
 void OGRCouchDBDataSource::DeleteLayer( const char *pszLayerName )
 
 {
+    int iLayer;
+
 /* -------------------------------------------------------------------- */
 /*      Try to find layer.                                              */
 /* -------------------------------------------------------------------- */
-    int iLayer = 0;  // Used after for.
-    for( ; iLayer < nLayers; iLayer++ )
+    for( iLayer = 0; iLayer < nLayers; iLayer++ )
     {
         if( EQUAL(pszLayerName,papoLayers[iLayer]->GetName()) )
             break;
@@ -477,7 +484,7 @@ void OGRCouchDBDataSource::DeleteLayer( const char *pszLayerName )
 
 OGRErr OGRCouchDBDataSource::DeleteLayer(int iLayer)
 {
-    if( !bReadWrite )
+    if (!bReadWrite)
     {
         CPLError(CE_Failure, CPLE_AppDefined,
                  "Operation not available in read-only mode");
@@ -521,7 +528,7 @@ OGRErr OGRCouchDBDataSource::DeleteLayer(int iLayer)
     if (poAnswerObj == NULL)
         return OGRERR_FAILURE;
 
-    if( !IsOK(poAnswerObj, "Layer deletion failed") )
+    if (!IsOK(poAnswerObj, "Layer deletion failed"))
     {
         json_object_put(poAnswerObj);
         return OGRERR_FAILURE;
@@ -632,7 +639,7 @@ OGRLayer * OGRCouchDBDataSource::ExecuteSQL( const char *pszSQLCommand,
             return NULL;
         OGRCouchDBTableLayer* poTableLayer = (OGRCouchDBTableLayer*)poLayer;
 
-        while( *pszIter == ' ' )
+        while(*pszIter && *pszIter == ' ')
             pszIter ++;
         if (!STARTS_WITH_CI(pszIter, "WHERE "))
         {
@@ -669,6 +676,7 @@ OGRLayer * OGRCouchDBDataSource::ExecuteSQL( const char *pszSQLCommand,
             return NULL;
         }
 
+
         return NULL;
     }
 
@@ -695,7 +703,7 @@ class PointerAutoFree
 {
         void * m_p;
     public:
-        explicit PointerAutoFree(void* p) { m_p = p; }
+        PointerAutoFree(void* p) { m_p = p; }
         ~PointerAutoFree() { CPLFree(m_p); }
 };
 
@@ -704,13 +712,9 @@ class OGRCouchDBOneLineLayer : public OGRLayer
     public:
         OGRFeature* poFeature;
         OGRFeatureDefn* poFeatureDefn;
-        bool bEnd;
+        int bEnd;
 
-        OGRCouchDBOneLineLayer() :
-            poFeature(NULL),
-            poFeatureDefn(NULL),
-            bEnd(false)
-        {}
+        OGRCouchDBOneLineLayer() { poFeature = NULL; poFeatureDefn = NULL; bEnd = FALSE; }
         ~OGRCouchDBOneLineLayer()
         {
             delete poFeature;
@@ -718,15 +722,15 @@ class OGRCouchDBOneLineLayer : public OGRLayer
                 poFeatureDefn->Release();
         }
 
-        virtual void        ResetReading() override { bEnd = false;}
-        virtual OGRFeature *GetNextFeature() override
+        virtual void        ResetReading() { bEnd = FALSE;}
+        virtual OGRFeature *GetNextFeature()
         {
-            if( bEnd ) return NULL;
-            bEnd = true;
+            if (bEnd) return NULL;
+            bEnd = TRUE;
             return poFeature->Clone();
         }
-        virtual OGRFeatureDefn *GetLayerDefn() override { return poFeatureDefn; }
-        virtual int         TestCapability( const char * ) override { return FALSE; }
+        virtual OGRFeatureDefn *GetLayerDefn() { return poFeatureDefn; }
+        virtual int         TestCapability( const char * ) { return FALSE; }
 };
 
 OGRLayer * OGRCouchDBDataSource::ExecuteSQLStats( const char *pszSQLCommand )
@@ -767,21 +771,21 @@ OGRLayer * OGRCouchDBDataSource::ExecuteSQLStats( const char *pszSQLCommand )
     sFieldList.table_defs = sSelectInfo.table_defs;
 
     sFieldList.count = 0;
-    sFieldList.names = static_cast<char **>(
-        CPLMalloc( sizeof(char *) * nFieldCount ));
-    sFieldList.types = static_cast<swq_field_type *>(
-        CPLMalloc( sizeof(swq_field_type) * nFieldCount ));
-    sFieldList.table_ids = static_cast<int *>(
-        CPLMalloc( sizeof(int) * nFieldCount ));
-    sFieldList.ids = static_cast<int *>(
-        CPLMalloc( sizeof(int) * nFieldCount ));
+    sFieldList.names = (char **) CPLMalloc( sizeof(char *) * nFieldCount );
+    sFieldList.types = (swq_field_type *)
+        CPLMalloc( sizeof(swq_field_type) * nFieldCount );
+    sFieldList.table_ids = (int *)
+        CPLMalloc( sizeof(int) * nFieldCount );
+    sFieldList.ids = (int *)
+        CPLMalloc( sizeof(int) * nFieldCount );
 
     PointerAutoFree oHolderNames(sFieldList.names);
     PointerAutoFree oHolderTypes(sFieldList.types);
     PointerAutoFree oHolderTableIds(sFieldList.table_ids);
     PointerAutoFree oHolderIds(sFieldList.ids);
 
-    for( int iField = 0;
+    int iField;
+    for( iField = 0;
          iField < poSrcLayer->GetLayerDefn()->GetFieldCount();
          iField++ )
     {
@@ -802,7 +806,7 @@ OGRLayer * OGRCouchDBDataSource::ExecuteSQLStats( const char *pszSQLCommand )
     }
 
     CPLString osLastFieldName;
-    for( int iField = 0; iField < sSelectInfo.result_columns; iField++ )
+    for( iField = 0; iField < sSelectInfo.result_columns; iField++ )
     {
         swq_col_def *psColDef = sSelectInfo.column_defs + iField;
         if (psColDef->field_name == NULL)
@@ -810,7 +814,7 @@ OGRLayer * OGRCouchDBDataSource::ExecuteSQLStats( const char *pszSQLCommand )
 
         if (strcmp(psColDef->field_name, "*") != 0)
         {
-            if (osLastFieldName.empty())
+            if (osLastFieldName.size() == 0)
                 osLastFieldName = psColDef->field_name;
             else if (strcmp(osLastFieldName, psColDef->field_name) != 0)
                 return NULL;
@@ -830,7 +834,7 @@ OGRLayer * OGRCouchDBDataSource::ExecuteSQLStats( const char *pszSQLCommand )
             return NULL;
     }
 
-    if (osLastFieldName.empty())
+    if (osLastFieldName.size() == 0)
         return NULL;
 
     /* Normalize field name */
@@ -854,7 +858,7 @@ OGRLayer * OGRCouchDBDataSource::ExecuteSQLStats( const char *pszSQLCommand )
         return NULL;
     }
 
-    for( int iField = 0; iField < sSelectInfo.result_columns; iField++ )
+    for( iField = 0; iField < sSelectInfo.result_columns; iField++ )
     {
         swq_col_def *psColDef = sSelectInfo.column_defs + iField;
         if (psColDef->field_index == -1)
@@ -871,9 +875,8 @@ OGRLayer * OGRCouchDBDataSource::ExecuteSQLStats( const char *pszSQLCommand )
         }
     }
 
-    const bool bFoundFilter = CPL_TO_BOOL(
-        poSrcLayer->HasFilterOnFieldOrCreateIfNecessary(osLastFieldName));
-    if( !bFoundFilter )
+    int bFoundFilter = poSrcLayer->HasFilterOnFieldOrCreateIfNecessary(osLastFieldName);
+    if (!bFoundFilter)
         return NULL;
 
     CPLString osURI = "/";
@@ -886,7 +889,7 @@ OGRLayer * OGRCouchDBDataSource::ExecuteSQLStats( const char *pszSQLCommand )
     json_object* poRows = NULL;
     if (!(poAnswerObj != NULL &&
           json_object_is_type(poAnswerObj, json_type_object) &&
-          (poRows = CPL_json_object_object_get(poAnswerObj, "rows")) != NULL &&
+          (poRows = json_object_object_get(poAnswerObj, "rows")) != NULL &&
           json_object_is_type(poRows, json_type_array)))
     {
         json_object_put(poAnswerObj);
@@ -907,17 +910,17 @@ OGRLayer * OGRCouchDBDataSource::ExecuteSQLStats( const char *pszSQLCommand )
         return NULL;
     }
 
-    json_object* poValue = CPL_json_object_object_get(poRow, "value");
+    json_object* poValue = json_object_object_get(poRow, "value");
     if (!(poValue != NULL && json_object_is_type(poValue, json_type_object)))
     {
         json_object_put(poAnswerObj);
         return NULL;
     }
 
-    json_object* poSum = CPL_json_object_object_get(poValue, "sum");
-    json_object* poCount = CPL_json_object_object_get(poValue, "count");
-    json_object* poMin = CPL_json_object_object_get(poValue, "min");
-    json_object* poMax = CPL_json_object_object_get(poValue, "max");
+    json_object* poSum = json_object_object_get(poValue, "sum");
+    json_object* poCount = json_object_object_get(poValue, "count");
+    json_object* poMin = json_object_object_get(poValue, "min");
+    json_object* poMax = json_object_object_get(poValue, "max");
     if (poSum != NULL && (json_object_is_type(poSum, json_type_int) ||
                             json_object_is_type(poSum, json_type_double)) &&
         poCount != NULL && (json_object_is_type(poCount, json_type_int) ||
@@ -939,7 +942,7 @@ OGRLayer * OGRCouchDBDataSource::ExecuteSQLStats( const char *pszSQLCommand )
         OGRFeatureDefn* poFeatureDefn = new OGRFeatureDefn(poSrcLayer->GetName());
         poFeatureDefn->Reference();
 
-        for( int iField = 0; iField < sSelectInfo.result_columns; iField++ )
+        for( iField = 0; iField < sSelectInfo.result_columns; iField++ )
         {
             swq_col_def *psColDef = sSelectInfo.column_defs + iField;
             OGRFieldDefn oFDefn( "", OFTInteger );
@@ -969,7 +972,7 @@ OGRLayer * OGRCouchDBDataSource::ExecuteSQLStats( const char *pszSQLCommand )
 
         OGRFeature* poFeature = new OGRFeature(poFeatureDefn);
 
-        for( int iField = 0; iField < sSelectInfo.result_columns; iField++ )
+        for( iField = 0; iField < sSelectInfo.result_columns; iField++ )
         {
             swq_col_def *psColDef = sSelectInfo.column_defs + iField;
             switch(psColDef->col_func)
@@ -1023,18 +1026,19 @@ void OGRCouchDBDataSource::ReleaseResultSet( OGRLayer * poLayer )
 
 char* OGRCouchDBDataSource::GetETag(const char* pszURI)
 {
+
     // make a head request and only return the etag response header
     char* pszEtag = NULL;
     char **papszTokens;
     char** papszOptions = NULL;
 
-    bMustCleanPersistent = true;
+    bMustCleanPersistent = TRUE;
 
     papszOptions = CSLAddString(papszOptions, CPLSPrintf("PERSISTENT=CouchDB:%p", this));
     papszOptions = CSLAddString(papszOptions, "HEADERS=Content-Type: application/json");
     papszOptions = CSLAddString(papszOptions, "NO_BODY=1");
 
-    if (!osUserPwd.empty() )
+    if (osUserPwd.size())
     {
         CPLString osUserPwdOption("USERPWD=");
         osUserPwdOption += osUserPwd;
@@ -1075,7 +1079,7 @@ json_object* OGRCouchDBDataSource::REQUEST(const char* pszVerb,
                                            const char* pszURI,
                                            const char* pszData)
 {
-    bMustCleanPersistent = true;
+    bMustCleanPersistent = TRUE;
 
     char** papszOptions = NULL;
     papszOptions = CSLAddString(papszOptions, CPLSPrintf("PERSISTENT=CouchDB:%p", this));
@@ -1091,7 +1095,7 @@ json_object* OGRCouchDBDataSource::REQUEST(const char* pszVerb,
 
     papszOptions = CSLAddString(papszOptions, "HEADERS=Content-Type: application/json");
 
-    if (!osUserPwd.empty() )
+    if (osUserPwd.size())
     {
         CPLString osUserPwdOption("USERPWD=");
         osUserPwdOption += osUserPwd;
@@ -1184,17 +1188,17 @@ json_object* OGRCouchDBDataSource::DELETE(const char* pszURI)
 /*                            IsError()                                 */
 /************************************************************************/
 
-bool OGRCouchDBDataSource::IsError(json_object* poAnswerObj,
+int OGRCouchDBDataSource::IsError(json_object* poAnswerObj,
                                   const char* pszErrorMsg)
 {
     if ( poAnswerObj == NULL ||
         !json_object_is_type(poAnswerObj, json_type_object) )
     {
-        return false;
+        return FALSE;
     }
 
-    json_object* poError = CPL_json_object_object_get(poAnswerObj, "error");
-    json_object* poReason = CPL_json_object_object_get(poAnswerObj, "reason");
+    json_object* poError = json_object_object_get(poAnswerObj, "error");
+    json_object* poReason = json_object_object_get(poAnswerObj, "reason");
 
     const char* pszError = json_object_get_string(poError);
     const char* pszReason = json_object_get_string(poReason);
@@ -1206,18 +1210,18 @@ bool OGRCouchDBDataSource::IsError(json_object* poAnswerObj,
                  pszError,
                  pszReason ? pszReason : "");
 
-        return true;
+        return TRUE;
     }
 
-    return false;
+    return FALSE;
 }
 
 /************************************************************************/
 /*                              IsOK()                                  */
 /************************************************************************/
 
-bool OGRCouchDBDataSource::IsOK(json_object* poAnswerObj,
-                                const char* pszErrorMsg)
+int OGRCouchDBDataSource::IsOK(json_object* poAnswerObj,
+                               const char* pszErrorMsg)
 {
     if ( poAnswerObj == NULL ||
         !json_object_is_type(poAnswerObj, json_type_object) )
@@ -1225,15 +1229,15 @@ bool OGRCouchDBDataSource::IsOK(json_object* poAnswerObj,
         CPLError(CE_Failure, CPLE_AppDefined, "%s",
                  pszErrorMsg);
 
-        return false;
+        return FALSE;
     }
 
-    json_object* poOK = CPL_json_object_object_get(poAnswerObj, "ok");
+    json_object* poOK = json_object_object_get(poAnswerObj, "ok");
     if ( !poOK )
     {
         IsError(poAnswerObj, pszErrorMsg);
 
-        return false;
+        return FALSE;
     }
 
     const char* pszOK = json_object_get_string(poOK);
@@ -1241,8 +1245,8 @@ bool OGRCouchDBDataSource::IsOK(json_object* poAnswerObj,
     {
         CPLError(CE_Failure, CPLE_AppDefined, "%s", pszErrorMsg);
 
-        return false;
+        return FALSE;
     }
 
-    return true;
+    return TRUE;
 }

@@ -53,17 +53,17 @@ public:
 
   // when done, call
   // delete[] *arr;
-  // cppcheck-suppress functionStatic
   bool decompress(const Byte* arrRLE, Byte** arr, size_t& numBytes) const;
 
   // arr already allocated, just fill
-  static bool decompress(const Byte* arrRLE, Byte* arr);
+  bool decompress(const Byte* arrRLE, Byte* arr) const;
 
 protected:
   int m_minNumEven;
 
-  static void writeCount(short cnt, Byte** ppCnt, Byte** ppDst);
-  static short readCount(const Byte** ppCnt);
+  void writeCount(short cnt, Byte** ppCnt, Byte** ppDst) const;
+  short readCount(const Byte** ppCnt) const;
+
 };
 
 // -------------------------------------------------------------------------- ;

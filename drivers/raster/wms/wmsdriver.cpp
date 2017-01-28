@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: wmsdriver.cpp 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  WMS Client Driver
  * Purpose:  Implementation of Dataset and RasterBand classes for WMS
@@ -40,11 +41,8 @@
 #include "minidriver_virtualearth.h"
 #include "minidriver_arcgis_server.h"
 #include "minidriver_iip.h"
-#include "minidriver_mrf.h"
 
 #include <limits>
-
-CPL_CVSID("$Id: wmsdriver.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 /************************************************************************/
 /*              GDALWMSDatasetGetConfigFromURL()                        */
@@ -91,17 +89,17 @@ CPLXMLNode * GDALWMSDatasetGetConfigFromURL(GDALOpenInfo *poOpenInfo)
     osBaseURL = CPLURLAddKVP(osBaseURL, "MINRESOLUTION", NULL);
     osBaseURL = CPLURLAddKVP(osBaseURL, "BBOXORDER", NULL);
 
-    if (!osBaseURL.empty() && osBaseURL[osBaseURL.size() - 1] == '&')
+    if (osBaseURL.size() > 0 && osBaseURL[osBaseURL.size() - 1] == '&')
         osBaseURL.resize(osBaseURL.size() - 1);
 
-    if (osVersion.empty())
+    if (osVersion.size() == 0)
         osVersion = "1.1.1";
 
     CPLString osSRSTag;
     CPLString osSRSValue;
     if(VersionStringToInt(osVersion.c_str())>= VersionStringToInt("1.3.0"))
     {
-        if (!osSRS.empty() )
+        if (osSRS.size())
         {
             CPLError(CE_Warning, CPLE_AppDefined,
                      "WMS version 1.3 and above expects CRS however SRS was set instead.");
@@ -111,7 +109,7 @@ CPLXMLNode * GDALWMSDatasetGetConfigFromURL(GDALOpenInfo *poOpenInfo)
     }
     else
     {
-        if (!osCRS.empty() )
+        if (osCRS.size())
         {
             CPLError(CE_Warning, CPLE_AppDefined,
                      "WMS version 1.1.1 and below expects SRS however CRS was set instead.");
@@ -120,10 +118,10 @@ CPLXMLNode * GDALWMSDatasetGetConfigFromURL(GDALOpenInfo *poOpenInfo)
         osSRSTag = "SRS";
     }
 
-    if (osSRSValue.empty())
+    if (osSRSValue.size() == 0)
         osSRSValue = "EPSG:4326";
 
-    if (osBBOX.empty())
+    if (osBBOX.size() == 0)
     {
         if (osBBOXOrder.compare("yxYX") == 0)
             osBBOX = "-90,-180,90,180";
@@ -168,7 +166,7 @@ CPLXMLNode * GDALWMSDatasetGetConfigFromURL(GDALOpenInfo *poOpenInfo)
 
     int nOverviewCount = (osOverviewCount.size()) ? atoi(osOverviewCount) : 20;
 
-    if (!osMinResolution.empty())
+    if (osMinResolution.size() != 0)
     {
         double dfMinResolution = CPLAtofM(osMinResolution);
 
@@ -223,9 +221,9 @@ CPLXMLNode * GDALWMSDatasetGetConfigFromURL(GDALOpenInfo *poOpenInfo)
     nXSize = (int) dXSize;
     nYSize = (int) dYSize;
 
-    bool bTransparent = !osTransparent.empty() && CPLTestBool(osTransparent);
+    bool bTransparent = osTransparent.size() != 0 && CPLTestBool(osTransparent);
 
-    if (osFormat.empty())
+    if (osFormat.size() == 0)
     {
         if (!bTransparent)
         {
@@ -403,7 +401,7 @@ CPLXMLNode * GDALWMSDatasetGetConfigFromTileMap(CPLXMLNode* psXML)
         }
     }
 
-    if (nLevelCount == 0 || osURL.empty())
+    if (nLevelCount == 0 || osURL.size() == 0)
         return NULL;
 
     int nXSize = 0;
@@ -490,15 +488,12 @@ static CPLXMLNode* GDALWMSDatasetGetConfigFromArcGISJSON(const char* pszURL,
                                          strlen(pszContent),
                                          FALSE);
     const char* pszLine;
-    int nTileWidth = -1;
-    int nTileHeight = -1;
+    int nTileWidth = -1, nTileHeight = -1;
     int nWKID = -1;
-    double dfMinX = 0.0;
-    double dfMaxY = 0.0;
-    int bHasMinX = FALSE;
-    int bHasMaxY = FALSE;
+    double dfMinX = 0, dfMaxY = 0;
+    int bHasMinX = FALSE, bHasMaxY = FALSE;
     int nExpectedLevel = 0;
-    double dfBaseResolution = 0.0;
+    double dfBaseResolution = 0;
     while((pszLine = CPLReadLine2L(fp, 4096, NULL)) != NULL)
     {
         const char* pszVal;
@@ -777,7 +772,7 @@ GDALDataset *GDALWMSDataset::Open(GDALOpenInfo *poOpenInfo)
     {
         CPLString osLayers = CPLURLGetValue(pszFilename, "LAYERS");
         CPLString osRequest = CPLURLGetValue(pszFilename, "REQUEST");
-        if (!osLayers.empty())
+        if (osLayers.size() != 0)
             config = GDALWMSDatasetGetConfigFromURL(poOpenInfo);
         else if (EQUAL(osRequest, "GetTileService"))
             return GDALWMSMetaDataset::DownloadGetTileService(poOpenInfo);
@@ -852,7 +847,7 @@ GDALDataset *GDALWMSDataset::Open(GDALOpenInfo *poOpenInfo)
     else if (poOpenInfo->nHeaderBytes == 0 &&
               STARTS_WITH_CI(pszFilename, "AGS:"))
     {
-        return NULL;
+		return NULL;
     }
     else if (poOpenInfo->nHeaderBytes == 0 &&
               STARTS_WITH_CI(pszFilename, "IIP:"))
@@ -915,7 +910,7 @@ GDALDataset *GDALWMSDataset::Open(GDALOpenInfo *poOpenInfo)
     }
 
     GDALWMSDataset *ds = new GDALWMSDataset();
-    ret = ds->Initialize(config, poOpenInfo->papszOpenOptions);
+    ret = ds->Initialize(config);
     if (ret != CE_None) {
         delete ds;
         ds = NULL;
@@ -972,15 +967,15 @@ GDALDataset *GDALWMSDataset::CreateCopy( const char * pszFilename,
     return Open(&oOpenInfo);
 }
 
-// Define a minidriver factory type, create one and register it
-#define RegisterMinidriver(name) \
-    class WMSMiniDriverFactory_##name : public WMSMiniDriverFactory { \
-    public: \
-        WMSMiniDriverFactory_##name() { m_name = CPLString(#name); };\
-        virtual ~WMSMiniDriverFactory_##name() {};\
-        virtual WMSMiniDriver* New() const override { return new WMSMiniDriver_##name;}; \
-    }; \
-    WMSRegisterMiniDriverFactory(new WMSMiniDriverFactory_##name());
+/************************************************************************/
+/*                         GDALDeregister_WMS()                         */
+/************************************************************************/
+
+static void GDALDeregister_WMS( GDALDriver * )
+
+{
+    DestroyWMSMiniDriverManager();
+}
 
 /************************************************************************/
 /*                          GDALRegister_WMS()                          */
@@ -991,17 +986,6 @@ void GDALRegister_WMS()
 {
     if( GDALGetDriverByName( "WMS" ) != NULL )
         return;
-
-    // Register all minidrivers here
-    RegisterMinidriver(WMS);
-    RegisterMinidriver(TileService);
-    RegisterMinidriver(WorldWind);
-    RegisterMinidriver(TMS);
-    RegisterMinidriver(TiledWMS);
-    RegisterMinidriver(VirtualEarth);
-    RegisterMinidriver(AGS);
-    RegisterMinidriver(IIP);
-    RegisterMinidriver(MRF);
 
     GDALDriver *poDriver = new GDALDriver();
 
@@ -1014,8 +998,18 @@ void GDALRegister_WMS()
 
     poDriver->pfnOpen = GDALWMSDataset::Open;
     poDriver->pfnIdentify = GDALWMSDataset::Identify;
-    poDriver->pfnUnloadDriver = WMSDeregisterMiniDrivers;
+    poDriver->pfnUnloadDriver = GDALDeregister_WMS;
     poDriver->pfnCreateCopy = GDALWMSDataset::CreateCopy;
 
     GetGDALDriverManager()->RegisterDriver(poDriver);
+
+    GDALWMSMiniDriverManager *const mdm = GetGDALWMSMiniDriverManager();
+    mdm->Register(new GDALWMSMiniDriverFactory_WMS());
+    mdm->Register(new GDALWMSMiniDriverFactory_TileService());
+    mdm->Register(new GDALWMSMiniDriverFactory_WorldWind());
+    mdm->Register(new GDALWMSMiniDriverFactory_TMS());
+    mdm->Register(new GDALWMSMiniDriverFactory_TiledWMS());
+    mdm->Register(new GDALWMSMiniDriverFactory_VirtualEarth());
+    mdm->Register(new GDALWMSMiniDriverFactory_AGS());
+    mdm->Register(new GDALWMSMiniDriverFactory_IIP());
 }

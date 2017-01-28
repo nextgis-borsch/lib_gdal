@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrodbcdriver.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRODBCDriver class.
@@ -29,7 +30,7 @@
 #include "ogr_odbc.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrodbcdriver.cpp 35145 2016-08-18 14:47:27Z goatbar $");
+CPL_CVSID("$Id: ogrodbcdriver.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 /************************************************************************/
 /*                            ~OGRODBCDriver()                            */
@@ -58,6 +59,8 @@ OGRDataSource *OGRODBCDriver::Open( const char * pszFilename,
                                      int bUpdate )
 
 {
+    OGRODBCDataSource     *poDS;
+
     if( !STARTS_WITH_CI(pszFilename, "ODBC:")
 #ifdef WIN32
         && !EQUAL(CPLGetExtension(pszFilename), "MDB")
@@ -65,7 +68,7 @@ OGRDataSource *OGRODBCDriver::Open( const char * pszFilename,
         )
         return NULL;
 
-    OGRODBCDataSource *poDS = new OGRODBCDataSource();
+    poDS = new OGRODBCDataSource();
 
     if( !poDS->Open( pszFilename, bUpdate, TRUE ) )
     {
@@ -84,10 +87,13 @@ OGRDataSource *OGRODBCDriver::CreateDataSource( const char * pszName,
                                               char ** /* papszOptions */ )
 
 {
+    OGRODBCDataSource     *poDS;
+
     if( !STARTS_WITH_CI(pszName, "ODBC:") )
         return NULL;
 
-    OGRODBCDataSource *poDS = new OGRODBCDataSource();
+    poDS = new OGRODBCDataSource();
+
 
     if( !poDS->Open( pszName, TRUE, TRUE ) )
     {

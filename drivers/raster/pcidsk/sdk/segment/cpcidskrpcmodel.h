@@ -42,20 +42,20 @@ namespace PCIDSK {
         
         // Implementation of PCIDSKRPCSegment
         // Get the X and Y RPC coefficients
-        std::vector<double> GetXNumerator(void) const override;
-        std::vector<double> GetXDenominator(void) const override;
-        std::vector<double> GetYNumerator(void) const override;
-        std::vector<double> GetYDenominator(void) const override;
+        std::vector<double> GetXNumerator(void) const;
+        std::vector<double> GetXDenominator(void) const;
+        std::vector<double> GetYNumerator(void) const;
+        std::vector<double> GetYDenominator(void) const;
         
         // Set the X and Y RPC Coefficients
         void SetCoefficients(const std::vector<double>& xnum,
             const std::vector<double>& xdenom, const std::vector<double>& ynum,
-            const std::vector<double>& ydenom) override;
+            const std::vector<double>& ydenom);
             
         // Get the RPC offset/scale Coefficients
         void GetRPCTranslationCoeffs(double& xoffset, double& xscale,
             double& yoffset, double& yscale, double& zoffset, double& zscale,
-            double& pixoffset, double& pixscale, double& lineoffset, double& linescale) const override;
+            double& pixoffset, double& pixscale, double& lineoffset, double& linescale) const;
             
         // Set the RPC offset/scale Coefficients
         void SetRPCTranslationCoeffs(
@@ -63,55 +63,55 @@ namespace PCIDSK {
             const double yoffset, const double yscale, 
             const double zoffset, const double zscale,
             const double pixoffset, const double pixscale, 
-            const double lineoffset, const double linescale) override;
+            const double lineoffset, const double linescale);
 
         // Get the adjusted X values
-        std::vector<double> GetAdjXValues(void) const override;
+        std::vector<double> GetAdjXValues(void) const;
         // Get the adjusted Y values
-        std::vector<double> GetAdjYValues(void) const override;
+        std::vector<double> GetAdjYValues(void) const;
         
         // Set the adjusted X/Y values
         void SetAdjCoordValues(const std::vector<double>& xcoord,
-            const std::vector<double>& ycoord) override;
+            const std::vector<double>& ycoord);
 
         // Get whether or not this is a user-generated RPC model
-        bool IsUserGenerated(void) const override;
+        bool IsUserGenerated(void) const;
         // Set whether or not this is a user-generated RPC model
-        void SetUserGenerated(bool usergen) override;
+        void SetUserGenerated(bool usergen);
         
         // Get whether the model has been adjusted
-        bool IsNominalModel(void) const override;
+        bool IsNominalModel(void) const;
         // Set whether the model has been adjusted
-        void SetIsNominalModel(bool nominal) override;
+        void SetIsNominalModel(bool nominal);
         
         // Get sensor name
-        std::string GetSensorName(void) const override;
+        std::string GetSensorName(void) const;
         // Set sensor name
-        void SetSensorName(const std::string& name) override;
+        void SetSensorName(const std::string& name);
         
         // Output projection information of RPC Model
         // Get the Geosys String
-        std::string GetGeosysString(void) const override;
+        std::string GetGeosysString(void) const;
         // Set the Geosys string
-        void SetGeosysString(const std::string& geosys) override;
+        void SetGeosysString(const std::string& geosys);
         
         // Get the number of lines
-        unsigned int GetLines(void) const override;
+        unsigned int GetLines(void) const;
         
         // Get the number of pixels
-        unsigned int GetPixels(void) const override;
+        unsigned int GetPixels(void) const;
         
         // Set the number of lines/pixels
-        void SetRasterSize(const unsigned int lines, const unsigned int pixels) override;
+        void SetRasterSize(const unsigned int lines, const unsigned int pixels);
 
         // Set the downsample factor
-        void SetDownsample(const unsigned int downsample) override;
+        void SetDownsample(const unsigned int downsample);
 
         // Get the downsample factor
-        unsigned int GetDownsample(void) const override;
+        unsigned int GetDownsample(void) const;
 
         //synchronize the segment on disk.
-        void Synchronize() override;
+        void Synchronize();
     private:
         // Helper housekeeping functions
         void Load();

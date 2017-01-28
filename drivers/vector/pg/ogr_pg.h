@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_pg.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: ogr_pg.h 35632 2016-10-07 13:45:42Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions for OGR/PostgreSQL driver.
@@ -67,12 +67,12 @@
 #define INT8ARRAYOID            1016
 #define FLOAT4ARRAYOID          1021
 #define FLOAT8ARRAYOID          1022
-#define BPCHAROID               1042
-#define VARCHAROID              1043
-#define DATEOID                 1082
-#define TIMEOID                 1083
-#define TIMESTAMPOID            1114
-#define TIMESTAMPTZOID          1184
+#define BPCHAROID		1042
+#define VARCHAROID		1043
+#define DATEOID			1082
+#define TIMEOID			1083
+#define TIMESTAMPOID	        1114
+#define TIMESTAMPTZOID	        1184
 #define NUMERICOID              1700
 #define NUMERICARRAYOID         1231
 
@@ -122,7 +122,7 @@ class OGRPGGeomFieldDefn : public OGRGeomFieldDefn
             {
             }
 
-        virtual OGRSpatialReference* GetSpatialRef() override;
+        virtual OGRSpatialReference* GetSpatialRef();
 
         void UnsetLayer() { poLayer = NULL; }
 
@@ -138,7 +138,7 @@ class OGRPGGeomFieldDefn : public OGRGeomFieldDefn
 class OGRPGFeatureDefn : public OGRFeatureDefn
 {
     public:
-        explicit OGRPGFeatureDefn( const char * pszName = NULL ) :
+        OGRPGFeatureDefn( const char * pszName = NULL ) :
             OGRFeatureDefn(pszName)
         {
             SetGeomType(wkbNone);
@@ -218,23 +218,23 @@ class OGRPGLayer : public OGRLayer
                         OGRPGLayer();
     virtual             ~OGRPGLayer();
 
-    virtual void        ResetReading() override;
+    virtual void        ResetReading();
 
-    virtual OGRFeatureDefn *    GetLayerDefn() override;
+    virtual OGRFeatureDefn *    GetLayerDefn();
     virtual OGRPGFeatureDefn *  myGetLayerDefn() { return (OGRPGFeatureDefn*) GetLayerDefn(); }
 
-    virtual OGRErr      GetExtent( OGREnvelope *psExtent, int bForce ) override { return GetExtent(0, psExtent, bForce); }
-    virtual OGRErr      GetExtent( int iGeomField, OGREnvelope *psExtent, int bForce ) override;
+    virtual OGRErr      GetExtent( OGREnvelope *psExtent, int bForce ) { return GetExtent(0, psExtent, bForce); }
+    virtual OGRErr      GetExtent( int iGeomField, OGREnvelope *psExtent, int bForce );
 
-    virtual OGRErr      StartTransaction() override;
-    virtual OGRErr      CommitTransaction() override;
-    virtual OGRErr      RollbackTransaction() override;
+    virtual OGRErr      StartTransaction();
+    virtual OGRErr      CommitTransaction();
+    virtual OGRErr      RollbackTransaction();
 
     void                InvalidateCursor();
 
-    virtual const char *GetFIDColumn() override;
+    virtual const char *GetFIDColumn();
 
-    virtual OGRErr      SetNextByIndex( GIntBig nIndex ) override;
+    virtual OGRErr      SetNextByIndex( GIntBig nIndex );
 
     OGRPGDataSource    *GetDS() { return poDS; }
 
@@ -249,9 +249,9 @@ class OGRPGTableLayer : public OGRPGLayer
 {
     int                 bUpdateAccess;
 
-    void                BuildWhere();
-    CPLString           BuildFields();
-    void                BuildFullQueryStatement();
+    void                BuildWhere(void);
+    CPLString           BuildFields(void);
+    void                BuildFullQueryStatement(void);
 
     char               *pszTableName;
     char               *pszSchemaName;
@@ -279,8 +279,8 @@ class OGRPGTableLayer : public OGRPGLayer
     int                 bFIDColumnInCopyFields;
     int                 bFirstInsertion;
 
-    OGRErr              CreateFeatureViaCopy( OGRFeature *poFeature );
-    OGRErr              CreateFeatureViaInsert( OGRFeature *poFeature );
+    OGRErr		CreateFeatureViaCopy( OGRFeature *poFeature );
+    OGRErr		CreateFeatureViaInsert( OGRFeature *poFeature );
     CPLString           BuildCopyFields();
 
     int                 bHasWarnedIncompatibleGeom;
@@ -305,7 +305,7 @@ class OGRPGTableLayer : public OGRPGLayer
 
     CPLString           m_osFirstGeometryFieldName;
 
-    virtual CPLString   GetFromClauseForGetExtent() override { return pszSqlTableName; }
+    virtual CPLString   GetFromClauseForGetExtent() { return pszSqlTableName; }
 
     OGRErr              RunAddGeometryColumn( OGRPGGeomFieldDefn *poGeomField );
     OGRErr              RunCreateSpatialIndex( OGRPGGeomFieldDefn *poGeomField );
@@ -318,47 +318,47 @@ public:
                                          const char * pszDescriptionIn,
                                          const char * pszGeomColForced,
                                          int bUpdate );
-                        virtual ~OGRPGTableLayer();
+                        ~OGRPGTableLayer();
 
     void                SetGeometryInformation(PGGeomColumnDesc* pasDesc,
                                                int nGeomFieldCount);
 
-    virtual OGRFeature *GetFeature( GIntBig nFeatureId ) override;
-    virtual void        ResetReading() override;
-    virtual OGRFeature *GetNextFeature() override;
-    virtual GIntBig     GetFeatureCount( int ) override;
+    virtual OGRFeature *GetFeature( GIntBig nFeatureId );
+    virtual void        ResetReading();
+    virtual OGRFeature *GetNextFeature();
+    virtual GIntBig     GetFeatureCount( int );
 
-    virtual void        SetSpatialFilter( OGRGeometry *poGeom ) override { SetSpatialFilter(0, poGeom); }
-    virtual void        SetSpatialFilter( int iGeomField, OGRGeometry *poGeom ) override;
+    virtual void        SetSpatialFilter( OGRGeometry *poGeom ) { SetSpatialFilter(0, poGeom); }
+    virtual void        SetSpatialFilter( int iGeomField, OGRGeometry *poGeom );
 
-    virtual OGRErr      SetAttributeFilter( const char * ) override;
+    virtual OGRErr      SetAttributeFilter( const char * );
 
-    virtual OGRErr      ISetFeature( OGRFeature *poFeature ) override;
-    virtual OGRErr      DeleteFeature( GIntBig nFID ) override;
-    virtual OGRErr      ICreateFeature( OGRFeature *poFeature ) override;
+    virtual OGRErr      ISetFeature( OGRFeature *poFeature );
+    virtual OGRErr      DeleteFeature( GIntBig nFID );
+    virtual OGRErr      ICreateFeature( OGRFeature *poFeature );
 
     virtual OGRErr      CreateField( OGRFieldDefn *poField,
-                                     int bApproxOK = TRUE ) override;
+                                     int bApproxOK = TRUE );
     virtual OGRErr      CreateGeomField( OGRGeomFieldDefn *poGeomField,
-                                         int bApproxOK = TRUE ) override;
-    virtual OGRErr      DeleteField( int iField ) override;
-    virtual OGRErr      AlterFieldDefn( int iField, OGRFieldDefn* poNewFieldDefn, int nFlags ) override;
+                                         int bApproxOK = TRUE );
+    virtual OGRErr      DeleteField( int iField );
+    virtual OGRErr      AlterFieldDefn( int iField, OGRFieldDefn* poNewFieldDefn, int nFlags );
 
-    virtual int         TestCapability( const char * ) override;
+    virtual int         TestCapability( const char * );
 
-    virtual OGRErr      GetExtent( OGREnvelope *psExtent, int bForce ) override { return GetExtent(0, psExtent, bForce); }
-    virtual OGRErr      GetExtent( int iGeomField, OGREnvelope *psExtent, int bForce ) override;
+    virtual OGRErr      GetExtent( OGREnvelope *psExtent, int bForce ) { return GetExtent(0, psExtent, bForce); }
+    virtual OGRErr      GetExtent( int iGeomField, OGREnvelope *psExtent, int bForce );
 
     const char*         GetTableName() { return pszTableName; }
     const char*         GetSchemaName() { return pszSchemaName; }
 
-    virtual const char *GetFIDColumn() override;
+    virtual const char *GetFIDColumn();
 
-    virtual char      **GetMetadataDomainList() override;
-    virtual char      **GetMetadata(const char* pszDomain = "") override;
-    virtual const char *GetMetadataItem(const char* pszName, const char* pszDomain = "") override;
-    virtual CPLErr      SetMetadata(char** papszMD, const char* pszDomain = "") override;
-    virtual CPLErr      SetMetadataItem(const char* pszName, const char* pszValue, const char* pszDomain = "") override;
+    virtual char      **GetMetadataDomainList();
+    virtual char      **GetMetadata(const char* pszDomain = "");
+    virtual const char *GetMetadataItem(const char* pszName, const char* pszDomain = "");
+    virtual CPLErr      SetMetadata(char** papszMD, const char* pszDomain = "");
+    virtual CPLErr      SetMetadataItem(const char* pszName, const char* pszValue, const char* pszDomain = "");
 
     // follow methods are not base class overrides
     void                SetLaunderFlag( int bFlag )
@@ -393,7 +393,7 @@ public:
     void                SetDeferredCreation(int bDeferredCreationIn, CPLString osCreateTable);
     OGRErr              RunDeferredCreationIfNecessary();
 
-    virtual void        ResolveSRID(OGRPGGeomFieldDefn* poGFldDefn) override;
+    virtual void        ResolveSRID(OGRPGGeomFieldDefn* poGFldDefn);
 };
 
 /************************************************************************/
@@ -402,7 +402,7 @@ public:
 
 class OGRPGResultLayer : public OGRPGLayer
 {
-    void                BuildFullQueryStatement();
+    void                BuildFullQueryStatement(void);
 
     char                *pszRawStatement;
 
@@ -411,7 +411,7 @@ class OGRPGResultLayer : public OGRPGLayer
 
     CPLString           osWHERE;
 
-    virtual CPLString   GetFromClauseForGetExtent() override
+    virtual CPLString   GetFromClauseForGetExtent()
         { CPLString osStr("(");
           osStr += pszRawStatement; osStr += ")"; return osStr; }
 
@@ -421,17 +421,17 @@ class OGRPGResultLayer : public OGRPGLayer
                                           PGresult *hInitialResult );
     virtual             ~OGRPGResultLayer();
 
-    virtual void        ResetReading() override;
-    virtual GIntBig     GetFeatureCount( int ) override;
+    virtual void        ResetReading();
+    virtual GIntBig     GetFeatureCount( int );
 
-    virtual void        SetSpatialFilter( OGRGeometry *poGeom ) override { SetSpatialFilter(0, poGeom); }
-    virtual void        SetSpatialFilter( int iGeomField, OGRGeometry *poGeom ) override;
+    virtual void        SetSpatialFilter( OGRGeometry *poGeom ) { SetSpatialFilter(0, poGeom); }
+    virtual void        SetSpatialFilter( int iGeomField, OGRGeometry *poGeom );
 
-    virtual int         TestCapability( const char * ) override;
+    virtual int         TestCapability( const char * );
 
-    virtual OGRFeature *GetNextFeature() override;
+    virtual OGRFeature *GetNextFeature();
 
-    virtual void        ResolveSRID(OGRPGGeomFieldDefn* poGFldDefn) override;
+    virtual void        ResolveSRID(OGRPGGeomFieldDefn* poGFldDefn);
 };
 
 /************************************************************************/
@@ -462,7 +462,7 @@ class OGRPGDataSource : public OGRDataSource
 
     PGconn              *hPGConn;
 
-    OGRErr              DeleteLayer( int iLayer ) override;
+    OGRErr              DeleteLayer( int iLayer );
 
     Oid                 nGeometryOID;
     Oid                 nGeographyOID;
@@ -475,7 +475,7 @@ class OGRPGDataSource : public OGRDataSource
 
     OGRPGTableLayer     *poLayerInCopyMode;
 
-    static void                OGRPGDecodeVersionString(PGver* psVersion, const char* pszVer);
+    void                OGRPGDecodeVersionString(PGver* psVersion, const char* pszVer);
 
     CPLString           osCurrentSchema;
     CPLString           GetCurrentSchema();
@@ -509,13 +509,13 @@ class OGRPGDataSource : public OGRDataSource
 
   public:
                         OGRPGDataSource();
-                        virtual ~OGRPGDataSource();
+                        ~OGRPGDataSource();
 
     PGconn              *GetPGConn() { return hPGConn; }
 
     int                 FetchSRSId( OGRSpatialReference * poSRS );
     OGRSpatialReference *FetchSRS( int nSRSId );
-    static OGRErr              InitializeMetadataTables();
+    OGRErr              InitializeMetadataTables();
 
     int                 Open( const char *, int bUpdate, int bTestOpen,
                               char** papszOpenOptions );
@@ -526,23 +526,23 @@ class OGRPGDataSource : public OGRDataSource
                                    const char * pszGeomColForced,
                                    int bUpdate, int bTestOpen );
 
-    const char          *GetName() override { return pszName; }
-    int                 GetLayerCount() override;
-    OGRLayer            *GetLayer( int ) override;
-    OGRLayer            *GetLayerByName(const char * pszName) override;
+    const char          *GetName() { return pszName; }
+    int                 GetLayerCount();
+    OGRLayer            *GetLayer( int );
+    OGRLayer            *GetLayerByName(const char * pszName);
 
-    virtual void        FlushCache() override;
+    virtual void        FlushCache(void);
 
     virtual OGRLayer    *ICreateLayer( const char *,
                                       OGRSpatialReference * = NULL,
                                       OGRwkbGeometryType = wkbUnknown,
-                                      char ** = NULL ) override;
+                                      char ** = NULL );
 
-    int                 TestCapability( const char * ) override;
+    int                 TestCapability( const char * );
 
-    virtual OGRErr      StartTransaction(int bForce = FALSE) override;
-    virtual OGRErr      CommitTransaction() override;
-    virtual OGRErr      RollbackTransaction() override;
+    virtual OGRErr      StartTransaction(int bForce = FALSE);
+    virtual OGRErr      CommitTransaction();
+    virtual OGRErr      RollbackTransaction();
 
     OGRErr              SoftStartTransaction();
     OGRErr              SoftCommitTransaction();
@@ -553,11 +553,11 @@ class OGRPGDataSource : public OGRDataSource
 
     virtual OGRLayer *  ExecuteSQL( const char *pszSQLCommand,
                                     OGRGeometry *poSpatialFilter,
-                                    const char *pszDialect ) override;
-    virtual void        ReleaseResultSet( OGRLayer * poLayer ) override;
+                                    const char *pszDialect );
+    virtual void        ReleaseResultSet( OGRLayer * poLayer );
 
     virtual const char* GetMetadataItem(const char* pszKey,
-                                             const char* pszDomain) override;
+                                             const char* pszDomain);
 
     int                 UseCopy();
     void                StartCopy( OGRPGTableLayer *poPGLayer );

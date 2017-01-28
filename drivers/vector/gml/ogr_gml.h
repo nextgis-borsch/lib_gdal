@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_gml.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: ogr_gml.h 35690 2016-10-11 09:56:31Z rouault $
  *
  * Project:  GML Reader
  * Purpose:  Declarations for OGR wrapper classes for GML, and GML<->OGR
@@ -54,6 +54,7 @@ class OGRGMLLayer : public OGRLayer
     OGRFeatureDefn     *poFeatureDefn;
 
     GIntBig             iNextGMLId;
+    int                 nTotalGMLCount;
     bool                bInvalidFIDFound;
     char                *pszFIDPrefix;
 
@@ -75,26 +76,26 @@ class OGRGMLLayer : public OGRLayer
                                      bool bWriter,
                                      OGRGMLDataSource *poDS );
 
-                        virtual ~OGRGMLLayer();
+                        ~OGRGMLLayer();
 
-    void                ResetReading() override;
-    OGRFeature *        GetNextFeature() override;
+    void                ResetReading();
+    OGRFeature *        GetNextFeature();
 
-    GIntBig             GetFeatureCount( int bForce = TRUE ) override;
-    OGRErr              GetExtent(OGREnvelope *psExtent, int bForce = TRUE) override;
-    virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce) override
+    GIntBig             GetFeatureCount( int bForce = TRUE );
+    OGRErr              GetExtent(OGREnvelope *psExtent, int bForce = TRUE);
+    virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce)
                 { return OGRLayer::GetExtent(iGeomField, psExtent, bForce); }
 
-    OGRErr              ICreateFeature( OGRFeature *poFeature ) override;
+    OGRErr              ICreateFeature( OGRFeature *poFeature );
 
-    OGRFeatureDefn *    GetLayerDefn() override { return poFeatureDefn; }
+    OGRFeatureDefn *    GetLayerDefn() { return poFeatureDefn; }
 
     virtual OGRErr      CreateField( OGRFieldDefn *poField,
-                                     int bApproxOK = TRUE ) override;
+                                     int bApproxOK = TRUE );
     virtual OGRErr      CreateGeomField( OGRGeomFieldDefn *poField,
-                                     int bApproxOK = TRUE ) override;
+                                     int bApproxOK = TRUE );
 
-    int                 TestCapability( const char * ) override;
+    int                 TestCapability( const char * );
 };
 
 /************************************************************************/
@@ -124,7 +125,7 @@ class OGRGMLDataSource : public OGRDataSource
     bool                bIsOutputGML3;
     bool                bIsOutputGML3Deegree; /* if TRUE, then bIsOutputGML3 is also TRUE */
     bool                bIsOutputGML32; /* if TRUE, then bIsOutputGML3 is also TRUE */
-    OGRGMLSRSNameFormat eSRSNameFormat;
+    bool                bIsLongSRSRequired;
     bool                bWriteSpaceIndentation;
 
     OGRSpatialReference* poWriteGlobalSRS;
@@ -166,21 +167,21 @@ class OGRGMLDataSource : public OGRDataSource
 
   public:
                         OGRGMLDataSource();
-                        virtual ~OGRGMLDataSource();
+                        ~OGRGMLDataSource();
 
     bool                Open( GDALOpenInfo* poOpenInfo );
     bool                Create( const char *pszFile, char **papszOptions );
 
-    const char          *GetName() override { return pszName; }
-    int                 GetLayerCount() override { return nLayers; }
-    OGRLayer            *GetLayer( int ) override;
+    const char          *GetName() { return pszName; }
+    int                 GetLayerCount() { return nLayers; }
+    OGRLayer            *GetLayer( int );
 
     virtual OGRLayer    *ICreateLayer( const char *,
                                       OGRSpatialReference * = NULL,
                                       OGRwkbGeometryType = wkbUnknown,
-                                      char ** = NULL ) override;
+                                      char ** = NULL );
 
-    int                 TestCapability( const char * ) override;
+    int                 TestCapability( const char * );
 
     VSILFILE            *GetOutputFP() const { return fpOutput; }
     IGMLReader          *GetReader() const { return poReader; }
@@ -194,7 +195,7 @@ class OGRGMLDataSource : public OGRDataSource
     bool                IsGML3Output() const { return bIsOutputGML3; }
     bool                IsGML3DeegreeOutput() const { return bIsOutputGML3Deegree; }
     bool                IsGML32Output() const { return bIsOutputGML32; }
-    OGRGMLSRSNameFormat GetSRSNameFormat() const { return eSRSNameFormat; }
+    bool                IsLongSRSRequired() const { return bIsLongSRSRequired; }
     int                 WriteSpaceIndentation() const { return bWriteSpaceIndentation; }
     const char         *GetGlobalSRSName();
 
@@ -217,8 +218,8 @@ class OGRGMLDataSource : public OGRDataSource
 
     virtual OGRLayer *          ExecuteSQL( const char *pszSQLCommand,
                                             OGRGeometry *poSpatialFilter,
-                                            const char *pszDialect ) override;
-    virtual void                ReleaseResultSet( OGRLayer * poResultsSet ) override;
+                                            const char *pszDialect );
+    virtual void                ReleaseResultSet( OGRLayer * poResultsSet );
 
     static bool          CheckHeader(const char* pszStr);
 };

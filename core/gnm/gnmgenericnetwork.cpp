@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id$
  *
  * Project:  GDAL/OGR Geography Network support (Geographic Network Model)
  * Purpose:  GNM network class.
@@ -29,14 +30,10 @@
  ****************************************************************************/
 
 #include "gnm_api.h"
-#include "gnm_priv.h"
 #include "ogrsf_frmts.h"
 
 #include <set>
 
-CPL_CVSID("$Id: gnmgenericnetwork.cpp 36461 2016-11-23 12:05:14Z rouault $");
-
-//! @cond Doxygen_Suppress
 GNMGenericNetwork::GNMGenericNetwork() :
     GNMNetwork(),
     m_nVersion(0),
@@ -795,8 +792,8 @@ OGRLayer *GNMGenericNetwork::GetPath(GNMGFID nStartFID, GNMGFID nEndFID,
     OGRGNMWrappedResultLayer* poResLayer =
                               new OGRGNMWrappedResultLayer(poMEMDS, poMEMLayer);
 
-    const bool bReturnEdges = CPLFetchBool(papszOptions, GNM_MD_FETCHEDGES, true);
-    const bool bReturnVertices = CPLFetchBool(papszOptions, GNM_MD_FETCHVERTEX, true);
+    bool bReturnEdges = CPL_TO_BOOL(CSLFetchBoolean(papszOptions, GNM_MD_FETCHEDGES, TRUE));
+    bool bReturnVertices = CPL_TO_BOOL(CSLFetchBoolean(papszOptions, GNM_MD_FETCHVERTEX, TRUE));
 
     switch (eAlgorithm)
     {
@@ -1122,7 +1119,6 @@ CPLErr GNMGenericNetwork::CreateMetadataLayer(GDALDataset * const pDS, int nVers
     {
         if(m_soSRS.size() >= nFieldSize)
         {
-            // cppcheck-suppress knownConditionTrueFalse
             if(StoreNetworkSrs() != CE_None)
                 return CE_Failure;
         }
@@ -1258,7 +1254,7 @@ CPLErr GNMGenericNetwork::LoadMetadataLayer(GDALDataset * const pDS)
         }
         else if(EQUALN(pKey, GNM_MD_RULE, nRulePrefixLen))
         {
-            moRules[atoi(pKey + nRulePrefixLen)] = GNMRule(pValue);
+            moRules[atoi(pKey + nRulePrefixLen)] = pValue;
         }
 
         OGRFeature::DestroyFeature(poFeature);
@@ -1273,7 +1269,6 @@ CPLErr GNMGenericNetwork::LoadMetadataLayer(GDALDataset * const pDS)
 
     if(m_soSRS.empty())
     {
-        // cppcheck-suppress knownConditionTrueFalse
         if(LoadNetworkSrs() != CE_None)
             return CE_Failure;
     }
@@ -1454,7 +1449,9 @@ CPLErr CPL_STDCALL GNMDisconnectFeaturesWithId(GNMGenericNetworkH hNet,
     VALIDATE_POINTER1( hNet, "GNMDisconnectFeaturesWithId", CE_Failure );
 
     return ((GNMGenericNetwork*)hNet)->DisconnectFeaturesWithId(nFID);
+
 }
+
 
 CPLErr CPL_STDCALL GNMReconnectFeatures (GNMGenericNetworkH hNet,
                                          GNMGFID nSrcFID, GNMGFID nTgtFID,
@@ -1465,6 +1462,7 @@ CPLErr CPL_STDCALL GNMReconnectFeatures (GNMGenericNetworkH hNet,
 
     return ((GNMGenericNetwork*)hNet)->ReconnectFeatures(nSrcFID, nTgtFID,
                                         nConFID, dfCost, dfInvCost, eDir);
+
 }
 
 CPLErr CPL_STDCALL GNMCreateRule (GNMGenericNetworkH hNet, const char *pszRuleStr)
@@ -1472,6 +1470,7 @@ CPLErr CPL_STDCALL GNMCreateRule (GNMGenericNetworkH hNet, const char *pszRuleSt
     VALIDATE_POINTER1( hNet, "GNMCreateRule", CE_Failure );
 
     return ((GNMGenericNetwork*)hNet)->CreateRule(pszRuleStr);
+
 }
 
 CPLErr CPL_STDCALL GNMDeleteAllRules(GNMGenericNetworkH hNet)
@@ -1525,4 +1524,3 @@ CPLErr CPL_STDCALL GNMChangeAllBlockState (GNMGenericNetworkH hNet,
 
     return ((GNMGenericNetwork*)hNet)->ChangeAllBlockState(bIsBlock == TRUE);
 }
-//! @endcond

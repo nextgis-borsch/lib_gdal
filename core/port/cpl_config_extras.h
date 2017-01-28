@@ -1,4 +1,3 @@
-/* $Id: cpl_config_extras.h 35921 2016-10-25 02:28:29Z goatbar $ */
 
 #ifndef INCLUDED_CPL_CONFIG_EXTRAS
 #define INCLUDED_CPL_CONFIG_EXTRAS
@@ -10,6 +9,7 @@
 #else
   #define HOST_FILLORDER FILLORDER_LSB2MSB
 #endif
+
 
 #ifdef __LP64__
   #define SIZEOF_UNSIGNED_LONG 8

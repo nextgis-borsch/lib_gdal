@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: rdataset.cpp 33841 2016-04-01 01:16:15Z goatbar $
  *
  * Project:  R Format Driver
  * Purpose:  Read/write R stats package object format.
@@ -32,7 +33,7 @@
 #include "gdal_pam.h"
 #include "../raw/rawdataset.h"
 
-CPL_CVSID("$Id: rdataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
+CPL_CVSID("$Id: rdataset.cpp 33841 2016-04-01 01:16:15Z goatbar $");
 
 GDALDataset *
 RCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
@@ -93,7 +94,7 @@ class RRasterBand : public GDALPamRasterBand
                 RRasterBand( RDataset *, int, const double * );
     virtual ~RRasterBand() {}
 
-    virtual CPLErr          IReadBlock( int, int, void * ) override;
+    virtual CPLErr          IReadBlock( int, int, void * );
 };
 
 /************************************************************************/
@@ -141,7 +142,7 @@ RDataset::RDataset() :
     bASCII(FALSE),
     nStartOfData(0),
     padfMatrixValues(NULL)
-{}
+{ }
 
 /************************************************************************/
 /*                             ~RDataset()                              */
@@ -461,8 +462,7 @@ GDALDataset *RDataset::Open( GDALOpenInfo * poOpenInfo )
 /*      Read pairs till we run out, trying to find a few items that     */
 /*      have special meaning to us.                                     */
 /* -------------------------------------------------------------------- */
-    poDS->nRasterXSize = 0;
-    poDS->nRasterYSize = 0;
+    poDS->nRasterXSize = poDS->nRasterYSize = 0;
     int nBandCount = 0;
 
     while( poDS->ReadPair( osObjName, nObjCode ) && nObjCode != 254 )
@@ -543,7 +543,7 @@ GDALDataset *RDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     for( int iBand = 0; iBand < nBandCount; iBand++ )
     {
-        GDALRasterBand *poBand = NULL;
+        GDALRasterBand *poBand;
 
         if( poDS->bASCII )
             poBand = new RRasterBand( poDS, iBand+1,
@@ -570,7 +570,7 @@ GDALDataset *RDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
 
-    return poDS;
+    return( poDS );
 }
 
 /************************************************************************/

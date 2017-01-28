@@ -26,48 +26,55 @@
  * DEALINGS IN THE SOFTWARE.
  *****************************************************************************/
 
-#ifndef OGR_LIBKML_STYLE_H
-#define OGR_LIBKML_STYLE_H
+using kmldom::KmlFactory;
+using kmldom::StyleSelectorPtr;
+using kmldom::StylePtr;
+using kmldom::StyleMapPtr;
+using kmldom::DocumentPtr;
+using kmldom::ContainerPtr;
+using kmldom::FeaturePtr;
 
-#include <string>
-
-kmldom::StylePtr addstylestring2kml (
+StylePtr addstylestring2kml (
     const char *stylestring,
-    kmldom::StylePtr poKmlStyle,
-    kmldom::KmlFactory *poKmlFactory,
-    kmldom::FeaturePtr poKmlFeature );
+    StylePtr poKmlStyle,
+    KmlFactory * poKmlFactory,
+    FeaturePtr poKmlFeature );
+
+
 
 /******************************************************************************
  kml2stylemgr
 ******************************************************************************/
 
 void kml2stylestring(
-    kmldom::StylePtr poKmlStyle,
-    OGRStyleMgr *poOgrSM );
+    StylePtr poKmlStyle,
+    OGRStyleMgr *poOgrSM);
+
+
 
 /******************************************************************************
- Functions to follow the kml stylemap if one exists.
+ functions to follow the kml stylemap if one exists
 ******************************************************************************/
 
-kmldom::StyleSelectorPtr StyleFromStyleSelector(
-    const kmldom::StyleSelectorPtr& styleselector,
-    OGRStyleTable * poStyleTable );
+StyleSelectorPtr StyleFromStyleSelector(
+    const StyleSelectorPtr& styleselector,
+    OGRStyleTable * poStyleTable);
 
-kmldom::StyleSelectorPtr StyleFromStyleURL(
-    const std::string& styleurl,
-    OGRStyleTable * poStyleTable );
+StyleSelectorPtr StyleFromStyleURL(
+    const string styleurl,
+    OGRStyleTable * poStyleTable);
 
-kmldom::StyleSelectorPtr StyleFromStyleMap(
-    const kmldom::StyleMapPtr& stylemap,
-    OGRStyleTable * poStyleTable );
+StyleSelectorPtr StyleFromStyleMap(
+    const StyleMapPtr& stylemap,
+    OGRStyleTable * poStyleTable);
 
 /******************************************************************************
- Function to parse a style table out of a document.
+ function to parse a style table out of a document
 ******************************************************************************/
 
 void ParseStyles (
-    kmldom::DocumentPtr poKmlDocument,
-    OGRStyleTable **poStyleTable );
+    DocumentPtr poKmlDocument,
+    OGRStyleTable **poStyleTable);
 
 /******************************************************************************
  function to add a style table to a kml container
@@ -75,20 +82,18 @@ void ParseStyles (
 
 void styletable2kml (
     OGRStyleTable * poOgrStyleTable,
-    kmldom::KmlFactory * poKmlFactory,
-    kmldom::ContainerPtr poKmlContainer,
-    char** papszOptions = NULL );
+    KmlFactory * poKmlFactory,
+    ContainerPtr poKmlContainer,
+    char** papszOptions = NULL  );
 
 /******************************************************************************
- Function to add a ListStyle and select it to a container.
+ function to add a ListStyle and select it to a container
 ******************************************************************************/
 
 void createkmlliststyle (
-    kmldom::KmlFactory * poKmlFactory,
+    KmlFactory * poKmlFactory,
     const char* pszBaseName,
-    kmldom::ContainerPtr poKmlLayerContainer,
-    kmldom::DocumentPtr poKmlDocument,
+    ContainerPtr poKmlLayerContainer,
+    DocumentPtr poKmlDocument,
     const CPLString& osListStyleType,
-    const CPLString& osListStyleIconHref );
-
-#endif  // OGR_LIBKML_STYLE_H
+    const CPLString& osListStyleIconHref);

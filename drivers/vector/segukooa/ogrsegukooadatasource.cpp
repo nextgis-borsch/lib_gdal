@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrsegukooadatasource.cpp 31122 2015-10-25 09:28:57Z rouault $
  *
  * Project:  SEG-P1 / UKOOA P1-90 Translator
  * Purpose:  Implements OGRSEGUKOOADataSource class
@@ -30,17 +31,20 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrsegukooadatasource.cpp 35199 2016-08-24 21:14:08Z goatbar $");
+CPL_CVSID("$Id: ogrsegukooadatasource.cpp 31122 2015-10-25 09:28:57Z rouault $");
 
 /************************************************************************/
 /*                        OGRSEGUKOOADataSource()                       */
 /************************************************************************/
 
-OGRSEGUKOOADataSource::OGRSEGUKOOADataSource() :
-    pszName(NULL),
-    papoLayers(NULL),
-    nLayers(0)
-{}
+OGRSEGUKOOADataSource::OGRSEGUKOOADataSource()
+
+{
+    papoLayers = NULL;
+    nLayers = 0;
+
+    pszName = NULL;
+}
 
 /************************************************************************/
 /*                       ~OGRSEGUKOOADataSource()                       */
@@ -91,8 +95,9 @@ int OGRSEGUKOOADataSource::Open( const char * pszFilename )
     if (fp == NULL)
         return FALSE;
 
+    const char* pszLine;
     CPLPushErrorHandler(CPLQuietErrorHandler);
-    const char* pszLine = CPLReadLine2L(fp,81,NULL);
+    pszLine = CPLReadLine2L(fp,81,NULL);
     CPLPopErrorHandler();
     CPLErrorReset();
 

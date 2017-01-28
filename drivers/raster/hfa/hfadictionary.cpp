@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: hfadictionary.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  Erdas Imagine (.img) Translator
  * Purpose:  Implementation of the HFADictionary class for managing the
@@ -31,9 +32,10 @@
 #include "hfa_p.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: hfadictionary.cpp 35885 2016-10-24 06:23:09Z goatbar $");
+CPL_CVSID("$Id: hfadictionary.cpp 33720 2016-03-15 00:39:53Z goatbar $");
 
 static const char * const apszDefDefn[] = {
+
     "Edsc_Table",
     "{1:lnumrows,}Edsc_Table",
 
@@ -81,29 +83,26 @@ static const char * const apszDefDefn[] = {
 
 /************************************************************************/
 /* ==================================================================== */
-/*                             HFADictionary                            */
+/*	                       HFADictionary                            */
 /* ==================================================================== */
 /************************************************************************/
+
 
 /************************************************************************/
 /*                           HFADictionary()                            */
 /************************************************************************/
 
 HFADictionary::HFADictionary( const char * pszString ) :
-    nTypes(0),
-    nTypesMax(0),
-    papoTypes(NULL),
-    osDictionaryText(pszString),
-    bDictionaryTextDirty(false)
+    nTypes(0), nTypesMax(0), papoTypes(NULL), osDictionaryText(pszString),
+    bDictionaryTextDirty(FALSE)
 {
 
 /* -------------------------------------------------------------------- */
 /*      Read all the types.                                             */
 /* -------------------------------------------------------------------- */
-    // TODO(schwehr): Refactor this approach to be more obvious.
     while( pszString != NULL && *pszString != '.' )
     {
-        HFAType *poNewType = new HFAType();
+        HFAType	*poNewType = new HFAType();
         pszString = poNewType->Initialize( pszString );
 
         if( pszString != NULL )
@@ -149,8 +148,8 @@ void HFADictionary::AddType( HFAType *poType )
         )
     {
         nTypesMax = nTypes * 2 + 10;
-        papoTypes = static_cast<HFAType **>(
-            CPLRealloc(papoTypes, sizeof(void *) * nTypesMax));
+        papoTypes = (HFAType **) CPLRealloc( papoTypes,
+                                             sizeof(void*) * nTypesMax );
     }
 
     papoTypes[nTypes++] = poType;
@@ -166,8 +165,8 @@ HFAType * HFADictionary::FindType( const char * pszName )
     for( int i = 0; i < nTypes; i++ )
     {
         if( papoTypes[i]->pszTypeName != NULL &&
-            strcmp(pszName, papoTypes[i]->pszTypeName) == 0 )
-            return papoTypes[i];
+            strcmp(pszName,papoTypes[i]->pszTypeName) == 0 )
+            return( papoTypes[i] );
     }
 
 /* -------------------------------------------------------------------- */
@@ -185,12 +184,12 @@ HFAType * HFADictionary::FindType( const char * pszName )
             AddType( poNewType );
             poNewType->CompleteDefn( this );
 
-            if( !osDictionaryText.empty() )
+            if( osDictionaryText.size() > 0 )
                 osDictionaryText.erase( osDictionaryText.size() - 1, 1 );
             osDictionaryText += apszDefDefn[i+1];
             osDictionaryText += ",.";
 
-            bDictionaryTextDirty = true;
+            bDictionaryTextDirty = TRUE;
 
             return poNewType;
         }
@@ -243,7 +242,7 @@ int HFADictionary::GetItemSize( char chType )
         return 0;
 
       default:
-        CPLAssert( false );
+        CPLAssert( FALSE );
     }
 
     return 0;

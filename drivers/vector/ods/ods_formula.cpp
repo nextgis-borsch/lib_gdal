@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ods_formula.cpp 32967 2016-01-13 14:40:01Z goatbar $
  *
  * Component: ODS formula Engine
  * Purpose:
@@ -32,8 +33,6 @@
 
 #include "cpl_conv.h"
 #include "ods_formula.h"
-
-CPL_CVSID("$Id: ods_formula.cpp 34819 2016-07-28 22:32:18Z goatbar $");
 
 namespace {
 #include "ods_formula_parser.hpp"

@@ -32,11 +32,6 @@ Contributors:
 #include "cpl_port.h"
 #endif
 
-// Compatibility hack for non-C++11 compilers
-#if !(__cplusplus >= 201103L || _MSC_VER >= 1500)
-#define override
-#endif
-
 #define NAMESPACE_LERC_START namespace LercNS {
 #define NAMESPACE_LERC_END }
 #define USING_NAMESPACE_LERC using namespace LercNS;
@@ -50,7 +45,7 @@ struct Quant : public std::pair<unsigned int, unsigned int>
 {
     // This is default behavior in C++14, but not before
     bool operator<(const Quant& other) const {
-        return first < other.first;
+	return first < other.first;
     }
 };
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_utils_priv.h 34921 2016-08-04 22:26:31Z rouault $
+ * $Id$
  *
  * Project:  GDAL Utilities
  * Purpose:  GDAL Utilities Private Declarations.
@@ -29,8 +29,6 @@
 
 #ifndef GDAL_UTILS_PRIV_H_INCLUDED
 #define GDAL_UTILS_PRIV_H_INCLUDED
-
-#ifndef DOXYGEN_SKIP
 
 #include "cpl_port.h"
 #include "gdal_utils.h"
@@ -147,7 +145,5 @@ struct GDALBuildVRTOptionsForBinary
 };
 
 CPL_C_END
-
-#endif /* #ifndef DOXYGEN_SKIP */
 
 #endif /* GDAL_UTILS_PRIV_H_INCLUDED */

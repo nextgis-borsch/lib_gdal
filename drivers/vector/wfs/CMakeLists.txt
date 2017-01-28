@@ -5,14 +5,14 @@
 ################################################################################
 # Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
 # Copyright (C) 2016 Mikhail Gusev
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
 # to deal in the Software without restriction, including without limitation
 # the rights to use, copy, modify, merge, publish, distribute, sublicense,
 # and/or sell copies of the Software, and to permit persons to whom the
 # Software is furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included
 # in all copies or substantial portions of the Software.
 #
@@ -36,30 +36,33 @@ if(ENABLE_WFS)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
     include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/gml)
     # TODO: remove this when change relative paths for includes in sources:
-    include_directories(${CMAKE_SOURCE_DIR}/core/frmts/wms) 
+    include_directories(${CMAKE_SOURCE_DIR}/core/frmts/wms)
 
     set(LIB_HHEADERS
     )
 
     set(LIB_HHEADERS_PRIV
-        ogr_wfs.h 
-        ${CMAKE_SOURCE_DIR}/core/ogr/swq.h 
-        ${CMAKE_SOURCE_DIR}/drivers/vector/gml/gmlreader.h 
+        ogr_wfs.h
+        ${CMAKE_SOURCE_DIR}/core/ogr/swq.h
+        ${CMAKE_SOURCE_DIR}/drivers/vector/gml/gmlreader.h
         ${CMAKE_SOURCE_DIR}/drivers/vector/gml/parsexsd.h
     )
 
     set(LIB_CSOURCES
-        ogrwfsdriver.cpp 
-        ogrwfsdatasource.cpp 
-        ogrwfslayer.cpp 
-        ogrwfsfilter.cpp 
+        ogrwfsdriver.cpp
+        ogrwfsdatasource.cpp
+        ogrwfslayer.cpp
+        ogrwfsfilter.cpp
         ogrwfsjoinlayer.cpp
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
-
+    if(DEPENDENCY_LIB)
+        add_dependencies(${TARGET_NAME} ${DEPENDENCY_LIB})
+    endif()
+    
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
 else()
-    warning_msg("Skip wfs")  
+    warning_msg("Skip wfs")
 endif()

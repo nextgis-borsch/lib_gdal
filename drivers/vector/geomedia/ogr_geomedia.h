@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_geomedia.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: ogr_geomedia.h 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions for Geomedia MDB driver.
@@ -73,18 +73,18 @@ class OGRGeomediaLayer : public OGRLayer
                         OGRGeomediaLayer();
     virtual             ~OGRGeomediaLayer();
 
-    virtual void        ResetReading() override;
+    virtual void        ResetReading();
     virtual OGRFeature *GetNextRawFeature();
-    virtual OGRFeature *GetNextFeature() override;
+    virtual OGRFeature *GetNextFeature();
 
-    virtual OGRFeature *GetFeature( GIntBig nFeatureId ) override;
+    virtual OGRFeature *GetFeature( GIntBig nFeatureId );
 
-    OGRFeatureDefn *    GetLayerDefn() override { return poFeatureDefn; }
+    OGRFeatureDefn *    GetLayerDefn() { return poFeatureDefn; }
 
-    virtual int         TestCapability( const char * ) override;
+    virtual int         TestCapability( const char * );
 
-    virtual const char *GetFIDColumn() override;
-    virtual const char *GetGeometryColumn() override;
+    virtual const char *GetFIDColumn();
+    virtual const char *GetGeometryColumn();
 };
 
 /************************************************************************/
@@ -93,28 +93,30 @@ class OGRGeomediaLayer : public OGRLayer
 
 class OGRGeomediaTableLayer : public OGRGeomediaLayer
 {
+    int                 bUpdateAccess;
+
     char                *pszQuery;
 
-    void                ClearStatement();
+    void		ClearStatement();
     OGRErr              ResetStatement();
 
-    virtual CPLODBCStatement *  GetStatement() override;
+    virtual CPLODBCStatement *  GetStatement();
 
   public:
-    explicit            OGRGeomediaTableLayer( OGRGeomediaDataSource * );
-                        virtual ~OGRGeomediaTableLayer();
+                        OGRGeomediaTableLayer( OGRGeomediaDataSource * );
+                        ~OGRGeomediaTableLayer();
 
     CPLErr              Initialize( const char *pszTableName,
                                     const char *pszGeomCol,
                                     OGRSpatialReference* poSRS );
 
-    virtual void        ResetReading() override;
-    virtual GIntBig     GetFeatureCount( int ) override;
+    virtual void        ResetReading();
+    virtual GIntBig     GetFeatureCount( int );
 
-    virtual OGRErr      SetAttributeFilter( const char * ) override;
-    virtual OGRFeature *GetFeature( GIntBig nFeatureId ) override;
+    virtual OGRErr      SetAttributeFilter( const char * );
+    virtual OGRFeature *GetFeature( GIntBig nFeatureId );
 
-    virtual int         TestCapability( const char * ) override;
+    virtual int         TestCapability( const char * );
 };
 
 /************************************************************************/
@@ -125,22 +127,22 @@ class OGRGeomediaSelectLayer : public OGRGeomediaLayer
 {
     char                *pszBaseStatement;
 
-    void                ClearStatement();
+    void		ClearStatement();
     OGRErr              ResetStatement();
 
-    virtual CPLODBCStatement *GetStatement() override;
+    virtual CPLODBCStatement *  GetStatement();
 
   public:
                         OGRGeomediaSelectLayer( OGRGeomediaDataSource *,
-                                                CPLODBCStatement * );
-                        virtual ~OGRGeomediaSelectLayer();
+                                           CPLODBCStatement * );
+                        ~OGRGeomediaSelectLayer();
 
-    virtual void        ResetReading() override;
-    virtual GIntBig     GetFeatureCount( int ) override;
+    virtual void        ResetReading();
+    virtual GIntBig     GetFeatureCount( int );
 
-    virtual OGRFeature *GetFeature( GIntBig nFeatureId ) override;
+    virtual OGRFeature *GetFeature( GIntBig nFeatureId );
 
-    virtual int         TestCapability( const char * ) override;
+    virtual int         TestCapability( const char * );
 };
 
 /************************************************************************/
@@ -166,24 +168,24 @@ class OGRGeomediaDataSource : public OGRDataSource
 
   public:
                         OGRGeomediaDataSource();
-                        virtual ~OGRGeomediaDataSource();
+                        ~OGRGeomediaDataSource();
 
     int                 Open( const char *, int bUpdate, int bTestOpen );
     int                 OpenTable( const char *pszTableName,
                                    const char *pszGeomCol,
                                    int bUpdate );
 
-    const char          *GetName() override { return pszName; }
-    int                 GetLayerCount() override { return nLayers; }
-    OGRLayer            *GetLayer( int ) override;
-    OGRLayer            *GetLayerByName( const char* pszLayerName ) override;
+    const char          *GetName() { return pszName; }
+    int                 GetLayerCount() { return nLayers; }
+    OGRLayer            *GetLayer( int );
+    OGRLayer            *GetLayerByName( const char* pszLayerName );
 
-    int                 TestCapability( const char * ) override;
+    int                 TestCapability( const char * );
 
     virtual OGRLayer *  ExecuteSQL( const char *pszSQLCommand,
                                     OGRGeometry *poSpatialFilter,
-                                    const char *pszDialect ) override;
-    virtual void        ReleaseResultSet( OGRLayer * poLayer ) override;
+                                    const char *pszDialect );
+    virtual void        ReleaseResultSet( OGRLayer * poLayer );
 
     // Internal use
     CPLODBCSession     *GetSession() { return &oSession; }
@@ -198,10 +200,10 @@ class OGRGeomediaDriver : public OGRODBCMDBDriver
   public:
                 ~OGRGeomediaDriver();
 
-    const char  *GetName() override;
-    OGRDataSource *Open( const char *, int ) override;
+    const char  *GetName();
+    OGRDataSource *Open( const char *, int );
 
-    int          TestCapability( const char * ) override;
+    int          TestCapability( const char * );
 };
 
 #endif /* ndef _OGR_Geomedia_H_INCLUDED */

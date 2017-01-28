@@ -5,7 +5,7 @@
 ################################################################################
 # Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
 # Copyright (C) 2016 Mikhail Gusev
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
 # to deal in the Software without restriction, including without limitation
@@ -40,47 +40,50 @@ if(ENABLE_WMS)
     )
 
     set(LIB_HHEADERS_PRIV
-        gdalhttp.h 
-        md5.h 
+        gdalhttp.h
+        md5.h
         minidriver_tileservice.h
-        minidriver_wms.h 
-        minidriver_worldwind.h 
+        minidriver_wms.h
+        minidriver_worldwind.h
         minidriver_tms.h
-        minidriver_tiled_wms.h 
-        wmsdriver.h 
+        minidriver_tiled_wms.h
+        wmsdriver.h
         wmsmetadataset.h
-        minidriver_virtualearth.h 
+        minidriver_virtualearth.h
         minidriver_arcgis_server.h
-        minidriver_mrf.h
+#        minidriver_mrf.h
     )
 
     set(LIB_CSOURCES
-        gdalwmscache.cpp 
+        gdalwmscache.cpp
         #TODO: gdalwmsfilecache.cpp
         #TODO: gdalwmsdbcache.cpp
-        gdalwmsdataset.cpp 
+        gdalwmsdataset.cpp
         gdalwmsrasterband.cpp
-        gdalhttp.cpp 
-        md5.cpp 
+        gdalhttp.cpp
+        md5.cpp
         minidriver.cpp
-        wmsutils.cpp 
-        wmsdriver.cpp 
+        wmsutils.cpp
+        wmsdriver.cpp
         minidriver_wms.cpp
-        minidriver_tileservice.cpp 
+        minidriver_tileservice.cpp
         minidriver_worldwind.cpp
         minidriver_tms.cpp
         minidriver_tiled_wms.cpp
         wmsmetadataset.cpp
-        minidriver_virtualearth.cpp 
+        minidriver_virtualearth.cpp
         minidriver_arcgis_server.cpp
         minidriver_iip.cpp
-        minidriver_mrf.cpp
+#        minidriver_mrf.cpp
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
+    if(DEPENDENCY_LIB)
+        add_dependencies(${TARGET_NAME} ${DEPENDENCY_LIB})
+    endif()
 
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
 else()
-    warning_msg("Skip wms")  
+    warning_msg("Skip wms")
 endif()

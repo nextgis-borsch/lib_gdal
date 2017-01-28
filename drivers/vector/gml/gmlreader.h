@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gmlreader.h 36411 2016-11-21 22:03:48Z rouault $
+ * $Id: gmlreader.h 35690 2016-10-11 09:56:31Z rouault $
  *
  * Project:  GML Reader
  * Purpose:  Public Declarations for OGR free GML Reader code.
@@ -168,9 +168,9 @@ class CPL_DLL GMLFeatureClass
     char       *m_pszSRSName;
     bool        m_bSRSNameConsistent;
 
-  public:
-    explicit  GMLFeatureClass( const char *pszName = "" );
-             ~GMLFeatureClass();
+public:
+            GMLFeatureClass( const char *pszName = "" );
+           ~GMLFeatureClass();
 
     const char *GetElementName() const;
     size_t      GetElementNameLen() const;
@@ -240,7 +240,7 @@ class CPL_DLL GMLFeature
     char           **m_papszOBProperties;
 
 public:
-    explicit        GMLFeature( GMLFeatureClass * );
+                    GMLFeature( GMLFeatureClass * );
                    ~GMLFeature();
 
     GMLFeatureClass*GetClass() const { return m_poClass; }
@@ -271,7 +271,7 @@ public:
 /************************************************************************/
 class CPL_DLL IGMLReader
 {
-  public:
+public:
     virtual     ~IGMLReader();
 
     virtual bool IsClassListLocked() const = 0;
@@ -306,7 +306,7 @@ class CPL_DLL IGMLReader
     virtual bool PrescanForSchema( bool bGetExtents = true,
                                   bool bAnalyzeSRSPerFeature = true,
                                   bool bOnlyDetectSRS = false ) = 0;
-    virtual bool PrescanForTemplate() = 0;
+    virtual bool PrescanForTemplate( void ) = 0;
 
     virtual bool HasStoppedParsing() = 0;
 
@@ -325,5 +325,6 @@ IGMLReader *CreateGMLReader(bool bUseExpatParserPreferably,
                             bool bConsiderEPSGAsURN,
                             GMLSwapCoordinatesEnum eSwapCoordinates,
                             bool bGetSecondaryGeometryOption);
+
 
 #endif /* GMLREADER_H_INCLUDED */

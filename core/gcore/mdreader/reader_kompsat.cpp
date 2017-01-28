@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id$
  *
  * Project:  GDAL Core
  * Purpose:  Read metadata from Kompsat imagery.
@@ -27,35 +28,23 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "cpl_port.h"
 #include "reader_kompsat.h"
-
-#include <cstddef>
-#include <cstdio>
-#include <cstdlib>
-
-#include "cpl_error.h"
-#include "cpl_string.h"
-#include "gdal_mdreader.h"
-#include "gdal_priv.h"
-
-CPL_CVSID("$Id: reader_kompsat.cpp 36528 2016-11-27 16:35:01Z goatbar $");
 
 /**
  * GDALMDReaderKompsat()
  */
 GDALMDReaderKompsat::GDALMDReaderKompsat(const char *pszPath,
-                                         char **papszSiblingFiles) :
-    GDALMDReaderBase(pszPath, papszSiblingFiles),
-    m_osIMDSourceFilename ( GDALFindAssociatedFile( pszPath, "TXT",
-                                                    papszSiblingFiles, 0 ) ),
-    m_osRPBSourceFilename ( GDALFindAssociatedFile( pszPath, "RPC",
-                                                    papszSiblingFiles, 0 ) )
+        char **papszSiblingFiles) : GDALMDReaderBase(pszPath, papszSiblingFiles)
 {
-    if( !m_osIMDSourceFilename.empty() )
+    m_osIMDSourceFilename = GDALFindAssociatedFile( pszPath, "TXT",
+                                                         papszSiblingFiles, 0 );
+    m_osRPBSourceFilename = GDALFindAssociatedFile( pszPath, "RPC",
+                                                         papszSiblingFiles, 0 );
+
+    if(m_osIMDSourceFilename.size())
         CPLDebug( "MDReaderDigitalGlobe", "IMD Filename: %s",
               m_osIMDSourceFilename.c_str() );
-    if( !m_osRPBSourceFilename.empty() )
+    if(m_osRPBSourceFilename.size())
         CPLDebug( "MDReaderDigitalGlobe", "RPB Filename: %s",
               m_osRPBSourceFilename.c_str() );
 }
@@ -234,7 +223,7 @@ char** GDALMDReaderKompsat::ReadTxtToList()
         }
 
         // trim
-        while( pszLine[j] == ' ' ) j++;
+        while( pszLine[j] == ' ' && pszLine[j] != 0) j++;
 
         if(soGroupName.empty())
         {
@@ -245,6 +234,7 @@ char** GDALMDReaderKompsat::ReadTxtToList()
             papszIMD = CSLAddNameValue(papszIMD, CPLSPrintf("%s.%s",
                                        soGroupName.c_str(), szName), pszLine + j);
         }
+
     }
 
     CSLDestroy(papszLines);

@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrili2datasource.cpp 32797 2016-01-07 19:49:33Z rouault $
  *
  * Project:  Interlis 2 Translator
  * Purpose:  Implements OGRILI2DataSource class.
@@ -36,7 +37,8 @@
 
 using namespace std;
 
-CPL_CVSID("$Id: ogrili2datasource.cpp 36682 2016-12-04 20:34:45Z rouault $");
+
+CPL_CVSID("$Id: ogrili2datasource.cpp 32797 2016-01-07 19:49:33Z rouault $");
 
 /************************************************************************/
 /*                         OGRILI2DataSource()                         */
@@ -161,7 +163,7 @@ int OGRILI2DataSource::Open( const char * pszNewName,
         return FALSE;
     }
 
-    if (!osModelFilename.empty() )
+    if (osModelFilename.size())
         poReader->ReadModel( poImdReader, osModelFilename );
 
     poReader->SetSourceFile( pszName );
@@ -176,6 +178,7 @@ int OGRILI2DataSource::Open( const char * pszNewName,
 
     return TRUE;
 }
+
 
 /************************************************************************/
 /*                               Create()                               */
@@ -228,6 +231,7 @@ int OGRILI2DataSource::Create( const char *pszFilename,
         CSLDestroy(filenames);
         return FALSE;
     }
+
 
 /* -------------------------------------------------------------------- */
 /*      Parse model                                                     */
@@ -322,8 +326,8 @@ OGRLayer *OGRILI2DataSource::GetLayer( int iLayer )
     list<OGRLayer *>::const_iterator layerIt = listLayer.begin();
     int i = 0;
     while (i < iLayer && layerIt != listLayer.end()) {
-        ++i;
-        ++layerIt;
+        i++;
+        layerIt++;
     }
 
     if (i == iLayer) {

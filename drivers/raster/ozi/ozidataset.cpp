@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ozidataset.cpp 33105 2016-01-23 15:27:32Z rouault $
  *
  * Project:   OZF2 and OZFx3 binary files driver
  * Purpose:  GDALDataset driver for OZF2 and OZFx3 binary files.
@@ -32,7 +33,7 @@
 
 /* g++ -fPIC -g -Wall frmts/ozi/ozidataset.cpp -shared -o gdal_OZI.so -Iport -Igcore -Iogr -L. -lgdal  */
 
-CPL_CVSID("$Id: ozidataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
+CPL_CVSID("$Id: ozidataset.cpp 33105 2016-01-23 15:27:32Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -86,13 +87,14 @@ class OZIRasterBand : public GDALPamRasterBand
                                GDALColorTable* poColorTable);
     virtual    ~OZIRasterBand();
 
-    virtual CPLErr IReadBlock( int, int, void * ) override;
-    virtual GDALColorInterp GetColorInterpretation() override;
-    virtual GDALColorTable *GetColorTable() override;
+    virtual CPLErr IReadBlock( int, int, void * );
+    virtual GDALColorInterp GetColorInterpretation();
+    virtual GDALColorTable *GetColorTable();
 
-    virtual int         GetOverviewCount() override;
-    virtual GDALRasterBand* GetOverview(int nLevel) override;
+    virtual int         GetOverviewCount();
+    virtual GDALRasterBand* GetOverview(int nLevel);
 };
+
 
 /************************************************************************/
 /*                             I/O functions                            */
@@ -133,7 +135,7 @@ static short ReadShort(GByte**pptr)
     return nVal;
 }
 
-static int ReadInt( VSILFILE* fp, int bOzi3 = FALSE, int nKeyInit = 0 )
+static int ReadInt(VSILFILE* fp, int bOzi3 = FALSE, int nKeyInit = 0)
 {
     int nVal;
     VSIFReadL(&nVal, 1, 4, fp);
@@ -143,7 +145,7 @@ static int ReadInt( VSILFILE* fp, int bOzi3 = FALSE, int nKeyInit = 0 )
     return nVal;
 }
 
-static short ReadShort( VSILFILE* fp, int bOzi3 = FALSE, int nKeyInit = 0 )
+static short ReadShort(VSILFILE* fp, int bOzi3 = FALSE, int nKeyInit = 0)
 {
     short nVal;
     VSIFReadL(&nVal, 1, 2, fp);
@@ -161,21 +163,21 @@ OZIRasterBand::OZIRasterBand( OZIDataset *poDSIn, int nZoomLevelIn,
                               int nRasterXSizeIn, int nRasterYSizeIn,
                               int nXBlocksIn,
                               GDALColorTable* poColorTableIn ) :
-    nXBlocks(nXBlocksIn),
-    nZoomLevel(nZoomLevelIn),
-    poColorTable(poColorTableIn),
     pabyTranslationTable(NULL)
 {
-    poDS = poDSIn;
-    nBand = 1;
+    this->poDS = poDSIn;
+    this->nBand = 1;
 
     eDataType = GDT_Byte;
 
     nBlockXSize = 64;
     nBlockYSize = 64;
 
-    nRasterXSize = nRasterXSizeIn;
-    nRasterYSize = nRasterYSizeIn;
+    this->nZoomLevel = nZoomLevelIn;
+    this->nRasterXSize = nRasterXSizeIn;
+    this->nRasterYSize = nRasterYSizeIn;
+    this->poColorTable = poColorTableIn;
+    this->nXBlocks = nXBlocksIn;
 }
 
 /************************************************************************/
@@ -187,6 +189,7 @@ OZIRasterBand::~OZIRasterBand()
     delete poColorTable;
     CPLFree(pabyTranslationTable);
 }
+
 
 /************************************************************************/
 /*                        GetColorInterpretation()                      */
@@ -645,6 +648,7 @@ GDALDataset *OZIDataset::Open( GDALOpenInfo * poOpenInfo )
             poDS->papoOvrBands[i]->poColorTable = poDS->papoOvrBands[0]->poColorTable->Clone();
             poDS->papoOvrBands[i]->pabyTranslationTable = pabyTranslationTable;
         }
+
     }
 
     poDS->SetBand(1, poDS->papoOvrBands[0]);
@@ -659,7 +663,7 @@ GDALDataset *OZIDataset::Open( GDALOpenInfo * poOpenInfo )
 /*      Support overviews.                                              */
 /* -------------------------------------------------------------------- */
     poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
-    return poDS;
+    return( poDS );
 }
 
 /************************************************************************/

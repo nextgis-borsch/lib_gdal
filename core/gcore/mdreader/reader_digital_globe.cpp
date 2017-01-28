@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: reader_digital_globe.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  GDAL Core
  * Purpose:  Read metadata from DigitalGlobe imagery.
@@ -27,39 +28,30 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "cpl_port.h"
 #include "reader_digital_globe.h"
 
-#include <ctime>
-
-#include "cpl_conv.h"
-#include "cpl_error.h"
-#include "cpl_minixml.h"
-#include "cpl_string.h"
-#include "gdal_priv.h"
-
-CPL_CVSID("$Id: reader_digital_globe.cpp 36528 2016-11-27 16:35:01Z goatbar $");
+CPL_CVSID("$Id: reader_digital_globe.cpp 33720 2016-03-15 00:39:53Z goatbar $");
 
 /**
  * GDALMDReaderDigitalGlobe()
  */
 GDALMDReaderDigitalGlobe::GDALMDReaderDigitalGlobe(const char *pszPath,
-                                                   char **papszSiblingFiles) :
-    GDALMDReaderBase(pszPath, papszSiblingFiles),
-    m_osXMLSourceFilename ( GDALFindAssociatedFile( pszPath, "XML",
-                                                         papszSiblingFiles, 0 ) ),
-    m_osIMDSourceFilename ( GDALFindAssociatedFile( pszPath, "IMD",
-                                                         papszSiblingFiles, 0 ) ),
-    m_osRPBSourceFilename ( GDALFindAssociatedFile( pszPath, "RPB",
-                                                         papszSiblingFiles, 0 ) )
+        char **papszSiblingFiles) : GDALMDReaderBase(pszPath, papszSiblingFiles)
 {
-    if( !m_osIMDSourceFilename.empty() )
+    m_osIMDSourceFilename = GDALFindAssociatedFile( pszPath, "IMD",
+                                                         papszSiblingFiles, 0 );
+    m_osRPBSourceFilename = GDALFindAssociatedFile( pszPath, "RPB",
+                                                         papszSiblingFiles, 0 );
+    m_osXMLSourceFilename = GDALFindAssociatedFile( pszPath, "XML",
+                                                         papszSiblingFiles, 0 );
+
+    if( m_osIMDSourceFilename.size() )
         CPLDebug( "MDReaderDigitalGlobe", "IMD Filename: %s",
                   m_osIMDSourceFilename.c_str() );
-    if( !m_osRPBSourceFilename.empty() )
+    if( m_osRPBSourceFilename.size() )
         CPLDebug( "MDReaderDigitalGlobe", "RPB Filename: %s",
                   m_osRPBSourceFilename.c_str() );
-    if( !m_osXMLSourceFilename.empty() )
+    if( m_osXMLSourceFilename.size() )
         CPLDebug( "MDReaderDigitalGlobe", "XML Filename: %s",
                   m_osXMLSourceFilename.c_str() );
 }

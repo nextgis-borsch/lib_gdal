@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: FGdbDatasource.cpp 33563 2016-02-26 14:57:06Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements FileGDB OGR Datasource.
@@ -36,7 +37,7 @@
 #include "FGdbUtils.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id: FGdbDatasource.cpp 36682 2016-12-04 20:34:45Z rouault $");
+CPL_CVSID("$Id: FGdbDatasource.cpp 33563 2016-02-26 14:57:06Z rouault $");
 
 using std::vector;
 using std::wstring;
@@ -45,7 +46,7 @@ using std::wstring;
 /*                          FGdbDataSource()                           */
 /************************************************************************/
 
-FGdbDataSource::FGdbDataSource(FGdbDriver* poDriverIn,
+FGdbDataSource::FGdbDataSource(FGdbDriver* poDriverIn, 
                                FGdbDatabaseConnection* pConnection):
 OGRDataSource(),
 m_poDriver(poDriverIn), m_pConnection(pConnection), m_pGeodatabase(NULL), m_bUpdate(false),
@@ -61,7 +62,7 @@ m_poOpenFileGDBDrv(NULL)
 FGdbDataSource::~FGdbDataSource()
 {
     CPLMutexHolderOptionalLockD(m_poDriver ? m_poDriver->GetMutex() : NULL);
-
+    
     if( m_pConnection && m_pConnection->IsLocked() )
         CommitTransaction();
 
@@ -116,7 +117,7 @@ int FGdbDataSource::FixIndexes()
             size_t count = m_layers.size();
             for(size_t i = 0; i < count; ++i )
             {
-                if( m_layers[i]->m_oMapOGRFIDToFGDBFID.empty())
+                if( m_layers[i]->m_oMapOGRFIDToFGDBFID.size() == 0)
                     continue;
                 CPLString osFilter = "name = '";
                 osFilter += m_layers[i]->GetName();
@@ -164,11 +165,11 @@ int FGdbDataSource::Open(const char * pszNewName, int bUpdate,
 
     std::vector<std::wstring> typesRequested;
 
-    // We're only interested in Tables, Feature Datasets and Feature Classes
-    typesRequested.push_back(L"Feature Class");
-    typesRequested.push_back(L"Table");
-    typesRequested.push_back(L"Feature Dataset");
-
+	// We're only interested in Tables, Feature Datasets and Feature Classes
+	typesRequested.push_back(L"Feature Class");
+	typesRequested.push_back(L"Table");
+	typesRequested.push_back(L"Feature Dataset");
+	
     bool rv = LoadLayers(L"\\");
 
     return rv;
@@ -219,7 +220,7 @@ int FGdbDataSource::ReOpen()
                  m_osFSName.c_str());
         return FALSE;
     }
-
+    
     int bRet = TRUE;
     size_t count = m_layers.size();
     for(size_t i = 0; i < count; ++i )
@@ -242,14 +243,14 @@ int FGdbDataSource::ReOpen()
         m_layers[i]->m_oMapOGRFIDToFGDBFID.clear();
         m_layers[i]->m_oMapFGDBFIDToOGRFID.clear();
     }
-
+    
     m_pGeodatabase = pDS->m_pGeodatabase;
     pDS->m_pGeodatabase = NULL;
 
     pDS->m_poDriver = NULL;
     pDS->m_pConnection = NULL;
     delete pDS;
-
+    
     return bRet;
 }
 
@@ -268,7 +269,7 @@ bool FGdbDataSource::OpenFGDBTables(const std::wstring &type,
         if (FAILED(hr = m_pGeodatabase->OpenTable(layers[i], *pTable)))
         {
             delete pTable;
-
+            
             std::wstring fgdb_error_desc_w;
             fgdbError er;
             er = FileGDBAPI::ErrorInfo::GetErrorDescription(hr, fgdb_error_desc_w);
@@ -303,7 +304,7 @@ bool FGdbDataSource::OpenFGDBTables(const std::wstring &type,
 /*                            LoadLayers()                             */
 /************************************************************************/
 
-bool FGdbDataSource::LoadLayers(const std::wstring &root)
+bool FGdbDataSource::LoadLayers(const std::wstring &root) 
 {
     std::vector<wstring> tables;
     std::vector<wstring> featureclasses;
@@ -316,7 +317,7 @@ bool FGdbDataSource::LoadLayers(const std::wstring &root)
         return GDBErr(hr, "Error reading Tables in " + WStringToString(root));
     }
     /* Open the tables we found */
-    if ( !tables.empty() && ! OpenFGDBTables(L"Table", tables) )
+    if ( tables.size() > 0 && ! OpenFGDBTables(L"Table", tables) )
         return false;
 
     /* Find all the Feature Classes in the root */
@@ -325,7 +326,7 @@ bool FGdbDataSource::LoadLayers(const std::wstring &root)
         return GDBErr(hr, "Error reading Feature Classes in " + WStringToString(root));
     }
     /* Open the tables we found */
-    if ( !featureclasses.empty() && ! OpenFGDBTables(L"Feature Class", featureclasses) )
+    if ( featureclasses.size() > 0 && ! OpenFGDBTables(L"Feature Class", featureclasses) )
         return false;
 
     /* Find all the Feature Datasets in the root */
@@ -340,11 +341,12 @@ bool FGdbDataSource::LoadLayers(const std::wstring &root)
         {
             return GDBErr(hr, "Error reading Feature Classes in " + WStringToString(featuredatasets[i]));
         }
-        if ( !featureclasses.empty() && ! OpenFGDBTables(L"Feature Class", featureclasses) )
+        if ( featureclasses.size() > 0 && ! OpenFGDBTables(L"Feature Class", featureclasses) )
             return false;
     }
     return true;
 }
+
 
 #if 0
 /************************************************************************/
@@ -373,7 +375,7 @@ bool FGdbDataSource::LoadLayersOld(const std::vector<wstring> & datasetTypes,
         std::vector<wstring> childDatasets;
         m_pGeodatabase->GetChildDatasets( parent, datasetTypes[dsTypeIndex], childDatasets);
 
-        if (!childDatasets.empty())
+        if (childDatasets.size() > 0)
         {
             //it is a container of other datasets
 
@@ -423,6 +425,7 @@ bool FGdbDataSource::LoadLayersOld(const std::vector<wstring> & datasetTypes,
 }
 #endif
 
+
 /************************************************************************/
 /*                            DeleteLayer()                             */
 /************************************************************************/
@@ -434,7 +437,7 @@ OGRErr FGdbDataSource::DeleteLayer( int iLayer )
 
     if( iLayer < 0 || iLayer >= static_cast<int>(m_layers.size()) )
         return OGRERR_FAILURE;
-
+    
     FGdbLayer* poBaseLayer = m_layers[iLayer];
 
     // Fetch FGDBAPI Table before deleting OGR layer object
@@ -453,7 +456,7 @@ OGRErr FGdbDataSource::DeleteLayer( int iLayer )
     m_layers.erase(m_layers.begin() + iLayer);
 
     long hr;
-
+  
     if (FAILED(hr = m_pGeodatabase->Delete(strPath, strType)))
     {
         CPLError( CE_Warning, CPLE_AppDefined,
@@ -476,20 +479,18 @@ int FGdbDataSource::TestCapability( const char * pszCap )
 
     else if( EQUAL(pszCap,ODsCDeleteLayer) )
         return m_bUpdate;
-    else if( EQUAL(pszCap,ODsCCreateGeomFieldAfterCreateLayer) )
+    else if EQUAL(pszCap,ODsCCreateGeomFieldAfterCreateLayer)
         return TRUE;
-    else if( EQUAL(pszCap,ODsCRandomLayerWrite) )
-        return m_bUpdate;
-
     return FALSE;
 }
+
 
 /************************************************************************/
 /*                              GetLayer()                              */
 /************************************************************************/
 
 OGRLayer *FGdbDataSource::GetLayer( int iLayer )
-{
+{ 
     int count = static_cast<int>(m_layers.size());
 
     if( iLayer < 0 || iLayer >= count )
@@ -522,8 +523,9 @@ FGdbDataSource::ICreateLayer( const char * pszLayerName,
 
     m_layers.push_back(pLayer);
 
-    return pLayer;
+    return pLayer;  
 }
+
 
 /************************************************************************/
 /*                   OGRFGdbSingleFeatureLayer                          */
@@ -539,12 +541,12 @@ class OGRFGdbSingleFeatureLayer : public OGRLayer
   public:
                         OGRFGdbSingleFeatureLayer( const char* pszLayerName,
                                                    const char *pszVal );
-               virtual ~OGRFGdbSingleFeatureLayer();
+                        ~OGRFGdbSingleFeatureLayer();
 
-    virtual void        ResetReading() override { iNextShapeId = 0; }
-    virtual OGRFeature *GetNextFeature() override;
-    virtual OGRFeatureDefn *GetLayerDefn() override { return poFeatureDefn; }
-    virtual int         TestCapability( const char * ) override { return FALSE; }
+    virtual void        ResetReading() { iNextShapeId = 0; }
+    virtual OGRFeature *GetNextFeature();
+    virtual OGRFeatureDefn *GetLayerDefn() { return poFeatureDefn; }
+    virtual int         TestCapability( const char * ) { return FALSE; }
 };
 
 /************************************************************************/
@@ -561,7 +563,7 @@ OGRFGdbSingleFeatureLayer::OGRFGdbSingleFeatureLayer(const char* pszLayerName,
     poFeatureDefn->AddFieldDefn( &oField );
 
     iNextShapeId = 0;
-    pszVal = pszValIn ? CPLStrdup(pszValIn) : NULL;
+    this->pszVal = pszValIn ? CPLStrdup(pszValIn) : NULL;
 }
 
 /************************************************************************/
@@ -574,6 +576,7 @@ OGRFGdbSingleFeatureLayer::~OGRFGdbSingleFeatureLayer()
         poFeatureDefn->Release();
     CPLFree(pszVal);
 }
+
 
 /************************************************************************/
 /*                           GetNextFeature()                           */
@@ -613,7 +616,7 @@ OGRLayer * FGdbDataSource::ExecuteSQL( const char *pszSQLCommand,
     {
         m_layers[i]->EndBulkLoad();
     }
-
+    
 /* -------------------------------------------------------------------- */
 /*      Use generic implementation for recognized dialects              */
 /* -------------------------------------------------------------------- */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ili1readerp.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: ili1readerp.h 31777 2015-11-26 14:14:41Z rouault $
  *
  * Project:  Interlis 1 Reader
  * Purpose:  Private Declarations for Reader code.
@@ -33,6 +33,7 @@
 #include "ili1reader.h"
 #include "ogr_ili1.h"
 
+
 class ILI1Reader;
 class OGRILI1Layer;
 
@@ -55,19 +56,20 @@ public:
                  ILI1Reader();
                 ~ILI1Reader();
 
-    int          OpenFile( const char *pszFilename ) override;
-    int          ReadModel( ImdReader *poImdReader, const char *pszModelFilename, OGRILI1DataSource *poDS ) override;
-    int          ReadFeatures() override;
+    int          OpenFile( const char *pszFilename );
+    int          ReadModel( ImdReader *poImdReader, const char *pszModelFilename, OGRILI1DataSource *poDS );
+    int          ReadFeatures();
     int          ReadTable(const char *layername);
     void         ReadGeom(char **stgeom, int geomIdx, OGRwkbGeometryType eType, OGRFeature *feature);
     char         **ReadParseLine();
 
     void         AddLayer( OGRILI1Layer * poNewLayer );
-    OGRILI1Layer *GetLayer( int ) override;
-    OGRILI1Layer *GetLayerByName( const char* ) override;
-    int          GetLayerCount() override;
+    OGRILI1Layer *GetLayer( int );
+    OGRILI1Layer *GetLayerByName( const char* );
+    int          GetLayerCount();
 
-    static const char*  GetLayerNameString(const char* topicname, const char* tablename);
+    const char*  GetLayerNameString(const char* topicname, const char* tablename);
 };
+
 
 #endif

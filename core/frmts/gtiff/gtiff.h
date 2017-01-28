@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gtiff.h 36488 2016-11-24 15:51:09Z rouault $
+ * $Id: gtiff.h 33806 2016-03-28 22:26:19Z goatbar $
  *
  * Project:  GeoTIFF Driver
  * Purpose:  GDAL GeoTIFF support.
@@ -42,22 +42,13 @@ void CPL_DLL LibgeotiffOneTimeInit();
 void   LibgeotiffOneTimeCleanupMutex();
 CPL_C_END
 
-void    GTIFFSetInExternalOvr( bool b );
-void    GTIFFGetOverviewBlockSize( int* pnBlockXSize, int* pnBlockYSize );
-void    GTIFFSetJpegQuality( GDALDatasetH hGTIFFDS, int nJpegQuality );
-void    GTIFFSetJpegTablesMode( GDALDatasetH hGTIFFDS, int nJpegTablesMode );
-int     GTIFFGetCompressionMethod( const char* pszValue,
-                                   const char* pszVariableName );
+void    GTIFFSetInExternalOvr(bool b);
+void    GTIFFGetOverviewBlockSize(int* pnBlockXSize, int* pnBlockYSize);
+void    GTIFFSetJpegQuality(GDALDatasetH hGTIFFDS, int nJpegQuality);
+int     GTIFFGetCompressionMethod(const char* pszValue, const char* pszVariableName);
 
 void GTiffDatasetWriteRPCTag( TIFF *hTIFF, char **papszRPCMD );
 char** GTiffDatasetReadRPCTag( TIFF *hTIFF );
-
-void GTiffWriteJPEGTables( TIFF* hTIFF,
-                           const char* pszPhotometric,
-                           const char* pszJPEGQuality,
-                           const char* pszJPEGTablesMode );
-
-const int knGTIFFJpegTablesModeDefault = 1; /* JPEGTABLESMODE_QUANT */
 
 #define TIFFTAG_GDAL_METADATA  42112
 #define TIFFTAG_GDAL_NODATA    42113

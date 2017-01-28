@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrsdtsdriver.cpp 32110 2015-12-10 17:19:40Z goatbar $
  *
  * Project:  SDTS Translator
  * Purpose:  Implements OGRSDTSDriver
@@ -29,7 +30,7 @@
 #include "ogr_sdts.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrsdtsdriver.cpp 34819 2016-07-28 22:32:18Z goatbar $");
+CPL_CVSID("$Id: ogrsdtsdriver.cpp 32110 2015-12-10 17:19:40Z goatbar $");
 
 /************************************************************************/
 /*                                Open()                                */

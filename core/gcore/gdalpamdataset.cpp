@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: gdalpamdataset.cpp 33760 2016-03-21 13:52:50Z goatbar $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of GDALPamDataset, a dataset base class that
@@ -28,26 +29,11 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "cpl_port.h"
-#include "gdal_pam.h"
-
-#include <cstddef>
-#include <cstdlib>
-#include <cstring>
-#include <string>
-
-#include "cpl_conv.h"
-#include "cpl_error.h"
-#include "cpl_minixml.h"
-#include "cpl_progress.h"
 #include "cpl_string.h"
-#include "cpl_vsi.h"
-#include "gdal.h"
-#include "gdal_priv.h"
-#include "ogr_core.h"
+#include "gdal_pam.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: gdalpamdataset.cpp 36682 2016-12-04 20:34:45Z rouault $");
+CPL_CVSID("$Id: gdalpamdataset.cpp 33760 2016-03-21 13:52:50Z goatbar $");
 
 /************************************************************************/
 /*                           GDALPamDataset()                           */
@@ -138,7 +124,6 @@ CPL_CVSID("$Id: gdalpamdataset.cpp 36682 2016-12-04 20:34:45Z rouault $");
  *      poDS->TryLoadXML();
  * \endcode
  */
-class GDALPamDataset;
 
 GDALPamDataset::GDALPamDataset() :
     nPamFlags(0),
@@ -179,7 +164,6 @@ void GDALPamDataset::FlushCache()
 /*                           SerializeToXML()                           */
 /************************************************************************/
 
-//! @cond Doxygen_Suppress
 CPLXMLNode *GDALPamDataset::SerializeToXML( const char *pszUnused )
 
 {
@@ -451,8 +435,7 @@ CPLErr GDALPamDataset::XMLInit( CPLXMLNode *psTree, const char *pszUnused )
 /*      Process bands.                                                  */
 /* -------------------------------------------------------------------- */
     for( CPLXMLNode *psBandTree = psTree->psChild;
-         psBandTree != NULL;
-         psBandTree = psBandTree->psNext )
+         psBandTree != NULL; psBandTree = psBandTree->psNext )
     {
         if( psBandTree->eType != CXT_Element
             || !EQUAL(psBandTree->pszValue,"PAMRasterBand") )
@@ -639,10 +622,6 @@ CPLErr GDALPamDataset::TryLoadXML(char **papszSiblingFiles)
     VSIStatBufL sStatBuf;
     CPLXMLNode *psTree = NULL;
 
-    CPLErr eLastErr = CPLGetLastErrorType();
-    int nLastErrNo = CPLGetLastErrorNo();
-    CPLString osLastErrorMsg = CPLGetLastErrorMsg();
-
     if (papszSiblingFiles != NULL && IsPamFilenameAPotentialSiblingFile())
     {
         const int iSibling =
@@ -654,7 +633,6 @@ CPLErr GDALPamDataset::TryLoadXML(char **papszSiblingFiles)
             CPLPushErrorHandler( CPLQuietErrorHandler );
             psTree = CPLParseXMLFile( psPam->pszPamFilename );
             CPLPopErrorHandler();
-            CPLErrorReset();
         }
     }
     else
@@ -666,16 +644,13 @@ CPLErr GDALPamDataset::TryLoadXML(char **papszSiblingFiles)
         CPLPushErrorHandler( CPLQuietErrorHandler );
         psTree = CPLParseXMLFile( psPam->pszPamFilename );
         CPLPopErrorHandler();
-        CPLErrorReset();
     }
 
-    if( eLastErr != CE_None )
-        CPLErrorSetState( eLastErr, nLastErrNo, osLastErrorMsg.c_str() );
-
 /* -------------------------------------------------------------------- */
-/*      If we are looking for a subdataset, search for its subtree not. */
+/*      If we are looking for a subdataset, search for it's subtree     */
+/*      now.                                                            */
 /* -------------------------------------------------------------------- */
-    if( psTree && !psPam->osSubdatasetName.empty() )
+    if( psTree && psPam->osSubdatasetName.size() )
     {
         CPLXMLNode *psSubTree = psTree->psChild;
 
@@ -760,7 +735,7 @@ CPLErr GDALPamDataset::TrySaveXML()
 /*      the subdataset tree within the whole existing pam tree,         */
 /*      after removing any old version of the same subdataset.          */
 /* -------------------------------------------------------------------- */
-    if( !psPam->osSubdatasetName.empty() )
+    if( psPam->osSubdatasetName.size() != 0 )
     {
         CPLXMLNode *psOldTree, *psSubTree;
 
@@ -990,7 +965,6 @@ CPLErr GDALPamDataset::CloneInfo( GDALDataset *poSrcDS, int nCloneFlags )
 
     return CE_None;
 }
-//! @endcond
 
 /************************************************************************/
 /*                            GetFileList()                             */
@@ -1003,7 +977,7 @@ char **GDALPamDataset::GetFileList()
 {
     char **papszFileList = GDALDataset::GetFileList();
 
-    if( psPam && !psPam->osPhysicalFilename.empty()
+    if( psPam && psPam->osPhysicalFilename.size() > 0
         && CSLFindString( papszFileList, psPam->osPhysicalFilename ) == -1 )
     {
         papszFileList = CSLInsertString( papszFileList, 0,
@@ -1033,7 +1007,7 @@ char **GDALPamDataset::GetFileList()
         }
     }
 
-    if( psPam && !psPam->osAuxFilename.empty() &&
+    if( psPam && psPam->osAuxFilename.size() > 0 &&
         CSLFindString( papszFileList, psPam->osAuxFilename ) == -1 )
     {
         papszFileList = CSLAddString( papszFileList, psPam->osAuxFilename );
@@ -1045,7 +1019,6 @@ char **GDALPamDataset::GetFileList()
 /*                          IBuildOverviews()                           */
 /************************************************************************/
 
-//! @cond Doxygen_Suppress
 CPLErr GDALPamDataset::IBuildOverviews( const char *pszResampling,
                                         int nOverviews, int *panOverviewList,
                                         int nListBands, int *panBandList,
@@ -1082,7 +1055,7 @@ CPLErr GDALPamDataset::IBuildOverviews( const char *pszResampling,
                                          nListBands, panBandList,
                                          pfnProgress, pProgressData );
 }
-//! @endcond
+
 
 /************************************************************************/
 /*                          GetProjectionRef()                          */
@@ -1340,7 +1313,6 @@ char **GDALPamDataset::GetMetadata( const char *pszDomain )
 /*                             TryLoadAux()                             */
 /************************************************************************/
 
-//! @cond Doxygen_Suppress
 CPLErr GDALPamDataset::TryLoadAux(char **papszSiblingFiles)
 
 {
@@ -1499,4 +1471,3 @@ CPLErr GDALPamDataset::TryLoadAux(char **papszSiblingFiles)
 
     return CE_Failure;
 }
-//! @endcond

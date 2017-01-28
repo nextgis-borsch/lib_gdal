@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: rmfdataset.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: rmfdataset.h 33987 2016-04-17 14:56:07Z rouault $
  *
  * Project:  Raster Matrix Format
  * Purpose:  Private class declarations for the RMF classes used to read/write
@@ -147,8 +147,8 @@ class RMFDataset : public GDALDataset
 
     char            *pszUnitType;
 
-    bool            bBigEndian;
-    bool            bHeaderDirty;
+    int             bBigEndian;
+    int             bHeaderDirty;
 
     const char      *pszFilename;
     VSILFILE        *fp;
@@ -156,25 +156,25 @@ class RMFDataset : public GDALDataset
     CPLErr          WriteHeader();
     static int      LZWDecompress( const GByte*, GUInt32, GByte*, GUInt32 );
     static int      DEMDecompress( const GByte*, GUInt32, GByte*, GUInt32 );
-    int             (*Decompress)( const GByte*, GUInt32, GByte*, GUInt32 );
+   int             (*Decompress)( const GByte*, GUInt32, GByte*, GUInt32 );
 
   public:
                 RMFDataset();
-        virtual ~RMFDataset();
+                ~RMFDataset();
 
     static int          Identify( GDALOpenInfo * poOpenInfo );
     static GDALDataset  *Open( GDALOpenInfo * );
     static GDALDataset  *Create( const char *, int, int, int,
                                  GDALDataType, char ** );
-    virtual void        FlushCache() override;
+    virtual void        FlushCache( void );
 
-    virtual CPLErr      GetGeoTransform( double * padfTransform ) override;
-    virtual CPLErr      SetGeoTransform( double * ) override;
-    virtual const char  *GetProjectionRef() override;
-    virtual CPLErr      SetProjection( const char * ) override;
-
+    virtual CPLErr      GetGeoTransform( double * padfTransform );
+    virtual CPLErr      SetGeoTransform( double * );
+    virtual const char  *GetProjectionRef();
+    virtual CPLErr      SetProjection( const char * );
+    
     vsi_l_offset        GetFileOffset( GUInt32 iRMFOffset );
-    GUInt32             GetRMFOffset( vsi_l_offset iFileOffset, vsi_l_offset* piNewFileOffset );
+    GUInt32             GetRMFOffset( vsi_l_offset iFileOffset, vsi_l_offset* piNewFileOffset );    
 };
 
 /************************************************************************/
@@ -188,10 +188,8 @@ class RMFRasterBand : public GDALRasterBand
   private:
 
     GUInt32     nBytesPerPixel;
-    GUInt32     nBlockSize;
-    GUInt32     nBlockBytes;
-    GUInt32     nLastTileWidth;
-    GUInt32     nLastTileHeight;
+    GUInt32     nBlockSize, nBlockBytes;
+    GUInt32     nLastTileWidth, nLastTileHeight;
     GUInt32     nDataSize;
 
     CPLErr   ReadBuffer( GByte *, GUInt32 ) const;
@@ -199,14 +197,14 @@ class RMFRasterBand : public GDALRasterBand
   public:
 
                 RMFRasterBand( RMFDataset *, int, GDALDataType );
-        virtual ~RMFRasterBand();
+                ~RMFRasterBand();
 
-    virtual CPLErr          IReadBlock( int, int, void * ) override;
-    virtual CPLErr          IWriteBlock( int, int, void * ) override;
-    virtual double          GetNoDataValue(int *pbSuccess = NULL) override;
-    virtual const char      *GetUnitType() override;
-    virtual GDALColorInterp GetColorInterpretation() override;
-    virtual GDALColorTable  *GetColorTable() override;
-    virtual CPLErr          SetUnitType( const char * ) override;
-    virtual CPLErr          SetColorTable( GDALColorTable * ) override;
+    virtual CPLErr          IReadBlock( int, int, void * );
+    virtual CPLErr          IWriteBlock( int, int, void * );
+    virtual double          GetNoDataValue(int *pbSuccess = NULL);
+    virtual const char      *GetUnitType();
+    virtual GDALColorInterp GetColorInterpretation();
+    virtual GDALColorTable  *GetColorTable();
+    virtual CPLErr          SetUnitType(const char *);
+    virtual CPLErr          SetColorTable( GDALColorTable * );
 };

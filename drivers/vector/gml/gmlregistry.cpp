@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: gmlregistry.cpp 33702 2016-03-11 06:20:16Z goatbar $
  *
  * Project:  GML registry
  * Purpose:  GML reader
@@ -28,21 +29,19 @@
 
 #include "gmlregistry.h"
 
-CPL_CVSID("$Id: gmlregistry.cpp 36682 2016-12-04 20:34:45Z rouault $");
-
 /************************************************************************/
 /*                           Parse()                                    */
 /************************************************************************/
 
 int GMLRegistry::Parse()
 {
-    if( osRegistryPath.empty() )
+    if( osRegistryPath.size() == 0 )
     {
         const char* pszFilename = CPLFindFile( "gdal", "gml_registry.xml" );
         if( pszFilename )
             osRegistryPath = pszFilename;
     }
-    if( osRegistryPath.empty() )
+    if( osRegistryPath.size() == 0 )
         return FALSE;
     CPLXMLNode* psRootNode = CPLParseXMLFile(osRegistryPath);
     if( psRootNode == NULL )

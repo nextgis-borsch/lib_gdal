@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_sde.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: ogr_sde.h 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions for OGR SDE driver.
@@ -49,6 +49,7 @@
 /*                            OGRSDELayer                                */
 /************************************************************************/
 
+
 class OGRSDEDataSource;
 
 class OGRSDELayer : public OGRLayer
@@ -89,6 +90,7 @@ class OGRSDELayer : public OGRLayer
 
     int                 bUseNSTRING;
 
+
     char              **papszAllColumns;
     std::vector<int>    anFieldMap;     // SDE index of OGR field.
     std::vector<int>    anFieldTypeMap; // SDE type
@@ -116,30 +118,30 @@ class OGRSDELayer : public OGRLayer
 
     int                 Initialize( const char *, const char *, const char * );
 
-    virtual void        ResetReading() override;
+    virtual void        ResetReading();
     OGRErr              ResetStream();
 
-    virtual OGRFeature *GetNextFeature() override;
-    virtual OGRFeature *GetFeature( GIntBig nFeatureId ) override;
-    virtual OGRErr      GetExtent( OGREnvelope *psExtent, int bForce ) override;
-    virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce) override
+    virtual OGRFeature *GetNextFeature();
+    virtual OGRFeature *GetFeature( GIntBig nFeatureId );
+    virtual OGRErr      GetExtent( OGREnvelope *psExtent, int bForce );
+    virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce)
                 { return OGRLayer::GetExtent(iGeomField, psExtent, bForce); }
-    virtual GIntBig     GetFeatureCount( int bForce ) override;
+    virtual GIntBig     GetFeatureCount( int bForce );
 
-    virtual OGRErr      SetAttributeFilter( const char *pszQuery ) override;
+    virtual OGRErr      SetAttributeFilter( const char *pszQuery );
 
     virtual OGRErr      CreateField( OGRFieldDefn *poFieldIn,
-                                     int bApproxOK ) override;
+                                     int bApproxOK );
 
-    virtual OGRErr      ISetFeature( OGRFeature *poFeature ) override;
-    virtual OGRErr      ICreateFeature( OGRFeature *poFeature ) override;
-    virtual OGRErr      DeleteFeature( GIntBig nFID ) override;
+    virtual OGRErr      ISetFeature( OGRFeature *poFeature );
+    virtual OGRErr      ICreateFeature( OGRFeature *poFeature );
+    virtual OGRErr      DeleteFeature( GIntBig nFID );
 
-    OGRFeatureDefn *    GetLayerDefn() override { return poFeatureDefn; }
+    OGRFeatureDefn *    GetLayerDefn() { return poFeatureDefn; }
 
-    virtual OGRSpatialReference *GetSpatialRef() override;
+    virtual OGRSpatialReference *GetSpatialRef();
 
-    virtual int         TestCapability( const char * ) override;
+    virtual int         TestCapability( const char * );
 
     // The following methods are not base class overrides
     //void                SetOptions( char ** );
@@ -181,18 +183,18 @@ class OGRSDEDataSource : public OGRDataSource
                                    const char *pszShapeColumn,
                                    LONG nFIDColumnType );
 
-    const char          *GetName() override { return pszName; }
-    int                 GetLayerCount() override { return nLayers; }
-    OGRLayer            *GetLayer( int ) override;
+    const char          *GetName() { return pszName; }
+    int                 GetLayerCount() { return nLayers; }
+    OGRLayer            *GetLayer( int );
 
     virtual OGRLayer    *ICreateLayer( const char *,
                                       OGRSpatialReference * = NULL,
                                       OGRwkbGeometryType = wkbUnknown,
-                                      char ** = NULL ) override;
+                                      char ** = NULL );
 
-    virtual OGRErr      DeleteLayer( int ) override;
+    virtual OGRErr      DeleteLayer( int );
 
-    int                 TestCapability( const char * ) override;
+    int                 TestCapability( const char * );
 
     SE_CONNECTION       GetConnection() { return hConnection; }
     LONG                GetState() {return nState; }
@@ -221,14 +223,15 @@ class OGRSDEDataSource : public OGRDataSource
 class OGRSDEDriver : public OGRSFDriver
 {
   public:
-    virtual ~OGRSDEDriver();
+                ~OGRSDEDriver();
 
-    const char *GetName() override;
-    OGRDataSource *Open( const char *, int ) override;
+    const char *GetName();
+    OGRDataSource *Open( const char *, int );
 
-    int                 TestCapability( const char * ) override;
+    int                 TestCapability( const char * );
     virtual OGRDataSource *CreateDataSource( const char *pszName,
-                                             char ** = NULL) override;
+                                             char ** = NULL);
 };
+
 
 #endif /* ndef _OGR_PG_H_INCLUDED */

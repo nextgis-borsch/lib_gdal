@@ -32,8 +32,6 @@
 #include "cpl_error.h"
 #include "cpl_quad_tree.h"
 
-CPL_CVSID("$Id: io_selafin.cpp 36347 2016-11-20 20:43:39Z rouault $");
-
 namespace Selafin {
 
     const char SELAFIN_ERROR_MESSAGE[]="Error when reading Selafin file\n";
@@ -43,8 +41,7 @@ namespace Selafin {
         const Header *poHeader;
     };
 
-    static void GetBoundsFunc( const void *hFeature,CPLRectObj *poBounds )
-    {
+    static void GetBoundsFunc(const void *hFeature,CPLRectObj *poBounds) {
         const Point *poPoint=(const Point*)hFeature;
         poBounds->minx=poPoint->poHeader->paadfCoords[0][poPoint->nIndex];
         poBounds->maxx=poPoint->poHeader->paadfCoords[0][poPoint->nIndex];
@@ -52,13 +49,13 @@ namespace Selafin {
         poBounds->maxy=poPoint->poHeader->paadfCoords[1][poPoint->nIndex];
     }
 
-    static int DumpFeatures( void *pElt,
-                             void * /* pUserData */ )
-    {
+    static int DumpFeatures(void *pElt,
+                     CPL_UNUSED void *pUserData) {
         Point *poPoint=(Point*)pElt;
         delete poPoint;
         return TRUE;
     }
+
 
     /****************************************************************/
     /*                         Header                               */
@@ -84,33 +81,28 @@ namespace Selafin {
         panBorder(NULL),
         panStartDate(NULL),
         nSteps(0),
-        nEpsg(0)
-    {
-        paadfCoords[0] = NULL;
-        paadfCoords[1] = NULL;
-        for( size_t i = 0; i < 7; ++i ) anUnused[i] = 0;
-        adfOrigin[0] = 0.0;
-        adfOrigin[1] = 0.0;
+        nEpsg(0) {
+        paadfCoords[0]=NULL;
+        paadfCoords[1]=NULL;
+        for (size_t i=0;i<7;++i) anUnused[i]=0;
     }
 
     Header::~Header() {
         CPLFree(pszFilename);
         CPLFree(pszTitle);
-        if( papszVariables!=NULL )
-        {
-            for( int i = 0; i < nVar; ++i ) CPLFree(papszVariables[i]);
+        if (papszVariables!=NULL) {
+            for (int i=0;i<nVar;++i) CPLFree(papszVariables[i]);
             CPLFree(papszVariables);
         }
         CPLFree(panConnectivity);
         CPLFree(panBorder);
-        if( poTree!=NULL )
-        {
+        if (poTree!=NULL) {
             CPLQuadTreeForeach(poTree,DumpFeatures,NULL);
             CPLQuadTreeDestroy(poTree);
         }
         CPLFree(panStartDate);
-        for( size_t i = 0; i < 2; ++i ) CPLFree(paadfCoords[i]);
-        if( fp != NULL ) VSIFCloseL(fp);
+        for (size_t i=0;i<2;++i) CPLFree(paadfCoords[i]);
+        if (fp!=NULL) VSIFCloseL(fp);
     }
 
     void Header::setUpdated() {
@@ -146,9 +138,7 @@ namespace Selafin {
         }
     }
 
-    int Header::getClosestPoint( const double &dfx, const double &dfy,
-                                 const double &dfMax)
-    {
+    int Header::getClosestPoint(const double &dfx,const double &dfy,const double &dfMax) {
         // If there is no quad-tree of the points, build it now
         if (bTreeUpdateNeeded) {
             if (poTree!=NULL) {
@@ -170,26 +160,25 @@ namespace Selafin {
             }
         }
         // Now we can look for the nearest neighbour using this tree
-        int nIndex = -1;
+        int nIndex=-1;
+        double dfMin;
         CPLRectObj poObj;
-        poObj.minx = dfx-dfMax;
-        poObj.maxx = dfx+dfMax;
+        poObj.minx=dfx-dfMax;
+        poObj.maxx=dfx+dfMax;
         poObj.miny=dfy-dfMax;
         poObj.maxy=dfy+dfMax;
-        int nFeatureCount = 0;
-        void **phResults = CPLQuadTreeSearch(poTree, &poObj, &nFeatureCount);
-        if( nFeatureCount <=0 ) return -1;
-        double dfMin = dfMax * dfMax;
-        for( int i=0;i<nFeatureCount;++i )
-        {
+        int nFeatureCount;
+        void **phResults=CPLQuadTreeSearch(poTree,&poObj,&nFeatureCount);
+        if (nFeatureCount<=0) return -1;
+        double dfa,dfb,dfc;
+        dfMin=dfMax*dfMax;
+        for (int i=0;i<nFeatureCount;++i) {
             Point *poPoint=(Point*)(phResults[i]);
-            double dfa =
-                dfx-poPoint->poHeader->paadfCoords[0][poPoint->nIndex];
-            dfa *= dfa;
+            dfa=dfx-poPoint->poHeader->paadfCoords[0][poPoint->nIndex];
+            dfa*=dfa;
             if (dfa>=dfMin) continue;
-            const double dfb =
-                dfy-poPoint->poHeader->paadfCoords[1][poPoint->nIndex];
-            const double dfc = dfa + dfb * dfb;
+            dfb=dfy-poPoint->poHeader->paadfCoords[1][poPoint->nIndex];
+            dfc=dfa+dfb*dfb;
             if (dfc<dfMin) {
                 dfMin=dfc;
                 nIndex=poPoint->nIndex;
@@ -230,8 +219,8 @@ namespace Selafin {
         // We must also remove all the elements referencing the deleted feature, otherwise the file will not be consistent any inter
         int nOldElements=nElements;
         for (int i=0;i<nElements;++i) {
-            bool bReferencing = false;
-            int *panTemp = panConnectivity + i * nPointsPerElement;
+            bool bReferencing=false;
+            int *panTemp=panConnectivity+i*nPointsPerElement;
             for (int j=0;j<nPointsPerElement;++j) bReferencing |= (panTemp[j]==nIndex+1);
             if (bReferencing) {
                 nElements--;
@@ -271,9 +260,7 @@ namespace Selafin {
     /****************************************************************/
     /*                         TimeStep                             */
     /****************************************************************/
-    TimeStep::TimeStep( int nRecordsP, int nFieldsP ) :
-        nFields(nFieldsP)
-    {
+    TimeStep::TimeStep(int nRecordsP,int nFieldsP):nFields(nFieldsP) {
         papadfData=(double**)VSI_MALLOC2_VERBOSE(sizeof(double*),nFieldsP);
         for (int i=0;i<nFieldsP;++i) papadfData[i]=(double*)VSI_MALLOC2_VERBOSE(sizeof(double),nRecordsP);
     }
@@ -288,12 +275,12 @@ namespace Selafin {
     /****************************************************************/
     TimeStepList::~TimeStepList() {
         TimeStepList *poFirst=this;
-        while( poFirst != 0 )
-        {
-            TimeStepList *poTmp = poFirst->poNext;
+        TimeStepList *poTmp;
+        while (poFirst!=0) {
+            poTmp=poFirst->poNext;
             delete poFirst->poStep;
             delete poFirst;
-            poFirst = poTmp;
+            poFirst=poTmp;
         }
     }
 #endif
@@ -410,9 +397,8 @@ namespace Selafin {
         return 1;
     }
 
-    int read_float(VSILFILE *fp, double &dfData, bool bDiscard)
-    {
-        float dfVal = 0.0;
+    int read_float(VSILFILE *fp,double &dfData,bool bDiscard) {
+        float dfVal;
         if (VSIFReadL(&dfVal,1,4,fp)<4) {
             CPLError(CE_Failure,CPLE_FileIO,"%s",SELAFIN_ERROR_MESSAGE);
             return 0;
@@ -424,7 +410,7 @@ namespace Selafin {
         return 1;
     }
 
-    int write_float(VSILFILE *fp, double dfData) {
+    int write_float(VSILFILE *fp,double dfData) {
         float dfVal=(float)dfData;
         CPL_MSBPTR32(&dfVal);
         if (VSIFWriteL(&dfVal,1,4,fp)<4) {
@@ -480,16 +466,18 @@ namespace Selafin {
 
     Header *read_header(VSILFILE *fp,const char *pszFilename) {
         // Get the total file size (used later to estimate the number of time steps)
+        int nFileSize;
         VSIFSeekL(fp,0,SEEK_END);
-        int nFileSize = (int)VSIFTellL(fp);
+        nFileSize=(int)VSIFTellL(fp);
         VSIRewindL(fp);
         // Save the filename
+        int nLength;
         Header *poHeader=new Header();
         poHeader->fp=fp;
         poHeader->pszFilename=CPLStrdup(pszFilename);
         int *panTemp = NULL;
         // Read the title
-        int nLength = read_string(fp,poHeader->pszTitle);
+        nLength=read_string(fp,poHeader->pszTitle);
         if (nLength==0) {
             delete poHeader;
             return NULL;
@@ -620,8 +608,8 @@ namespace Selafin {
         if (write_intarray(fp,anTemp,4)==0) return 0;
         if (write_intarray(fp,poHeader->panConnectivity,poHeader->nElements*poHeader->nPointsPerElement)==0) return 0;
         if (write_intarray(fp,poHeader->panBorder,poHeader->nPoints)==0) return 0;
-        double *dfVals = (double*)
-            VSI_MALLOC2_VERBOSE(sizeof(double),poHeader->nPoints);
+        double *dfVals;
+        dfVals=(double*)VSI_MALLOC2_VERBOSE(sizeof(double),poHeader->nPoints);
         if (poHeader->nPoints>0 && dfVals==NULL) return 0;
         for (size_t i=0;i<2;++i) {
             for (int j=0;j<poHeader->nPoints;++j) dfVals[j]=poHeader->paadfCoords[i][j]-poHeader->adfOrigin[i];
@@ -637,7 +625,7 @@ namespace Selafin {
 #ifdef notdef
     int read_step(VSILFILE *fp,const Header *poHeader,TimeStep *&poStep) {
         poStep=new TimeStep(poHeader->nPoints,poHeader->nVar);
-        int nLength = 0;
+        int nLength;
         if (read_integer(fp,nLength)==0 || nLength!=1) {
             delete poStep;
             return 0;
@@ -659,6 +647,7 @@ namespace Selafin {
         }
         return 1;
     }
+
 
     int write_step(VSILFILE *fp,const Header *poHeader,const TimeStep *poStep) {
         if (write_integer(fp,1)==0) return 0;

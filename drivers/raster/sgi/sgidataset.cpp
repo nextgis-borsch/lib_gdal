@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: sgidataset.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  SGI Image Driver
  * Purpose:  Implement SGI Image Support based on Paul Bourke's SGI Image code.
@@ -38,7 +39,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id: sgidataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
+CPL_CVSID("$Id: sgidataset.cpp 33720 2016-03-15 00:39:53Z goatbar $");
 
 struct ImageRec
 {
@@ -198,7 +199,7 @@ static CPLErr ImageGetRow(ImageRec* image, unsigned char* buf, int y, int z)
         else
         {
             pixel = *iPtr++;
-            memset(oPtr, pixel, count);
+    	memset(oPtr, pixel, count);
         }
         oPtr += count;
         xsizeCount += count;
@@ -209,7 +210,7 @@ static CPLErr ImageGetRow(ImageRec* image, unsigned char* buf, int y, int z)
 
 /************************************************************************/
 /* ==================================================================== */
-/*                              SGIDataset                              */
+/*				SGIDataset				*/
 /* ==================================================================== */
 /************************************************************************/
 
@@ -221,16 +222,16 @@ class SGIDataset : public GDALPamDataset
 
     VSILFILE*  fpImage;
 
-    int    bGeoTransformValid;
+    int	   bGeoTransformValid;
     double adfGeoTransform[6];
 
     ImageRec image;
 
 public:
     SGIDataset();
-    virtual ~SGIDataset();
+    ~SGIDataset();
 
-    virtual CPLErr GetGeoTransform(double*) override;
+    virtual CPLErr GetGeoTransform(double*);
     static GDALDataset* Open(GDALOpenInfo*);
     static GDALDataset *Create( const char * pszFilename,
                                 int nXSize, int nYSize, int nBands,
@@ -250,16 +251,17 @@ class SGIRasterBand : public GDALPamRasterBand
 public:
     SGIRasterBand(SGIDataset*, int);
 
-    virtual CPLErr IReadBlock(int, int, void*) override;
-    virtual CPLErr IWriteBlock(int, int, void*) override;
-    virtual GDALColorInterp GetColorInterpretation() override;
+    virtual CPLErr IReadBlock(int, int, void*);
+    virtual CPLErr IWriteBlock(int, int, void*);
+    virtual GDALColorInterp GetColorInterpretation();
 };
+
 
 /************************************************************************/
 /*                           SGIRasterBand()                            */
 /************************************************************************/
 
-SGIRasterBand::SGIRasterBand( SGIDataset* poDSIn, int nBandIn )
+SGIRasterBand::SGIRasterBand(SGIDataset* poDSIn, int nBandIn)
 
 {
   poDS = poDSIn;
@@ -278,9 +280,9 @@ SGIRasterBand::SGIRasterBand( SGIDataset* poDSIn, int nBandIn )
 /*                             IReadBlock()                             */
 /************************************************************************/
 
-CPLErr SGIRasterBand::IReadBlock( CPL_UNUSED int nBlockXOff,
-                                  int nBlockYOff,
-                                  void* pImage )
+CPLErr SGIRasterBand::IReadBlock(CPL_UNUSED int nBlockXOff,
+                                 int nBlockYOff,
+				 void*  pImage)
 {
     SGIDataset* poGDS = reinterpret_cast<SGIDataset *>( poDS );
 
@@ -458,12 +460,13 @@ GDALColorInterp SGIRasterBand::GetColorInterpretation()
 /* ==================================================================== */
 /************************************************************************/
 
+
 /************************************************************************/
 /*                            SGIDataset()                              */
 /************************************************************************/
 
-SGIDataset::SGIDataset() :
-    fpImage(NULL),
+SGIDataset::SGIDataset()
+  : fpImage(NULL),
     bGeoTransformValid(FALSE)
 {
     adfGeoTransform[0] = 0.0;
@@ -530,20 +533,14 @@ GDALDataset* SGIDataset::Open(GDALOpenInfo* poOpenInfo)
 
 {
 /* -------------------------------------------------------------------- */
-/*      First we check to see if the file has the expected header       */
-/*      bytes.                                                          */
+/*	First we check to see if the file has the expected header	*/
+/*	bytes.								*/
 /* -------------------------------------------------------------------- */
     if(poOpenInfo->nHeaderBytes < 12)
         return NULL;
 
     ImageRec tmpImage;
-    memcpy(&tmpImage.imagic, poOpenInfo->pabyHeader + 0, 2);
-    memcpy(&tmpImage.type,   poOpenInfo->pabyHeader + 2, 1);
-    memcpy(&tmpImage.bpc,    poOpenInfo->pabyHeader + 3, 1);
-    memcpy(&tmpImage.dim,    poOpenInfo->pabyHeader + 4, 2);
-    memcpy(&tmpImage.xsize,  poOpenInfo->pabyHeader + 6, 2);
-    memcpy(&tmpImage.ysize,  poOpenInfo->pabyHeader + 8, 2);
-    memcpy(&tmpImage.zsize,  poOpenInfo->pabyHeader + 10, 2);
+    memcpy(&tmpImage, poOpenInfo->pabyHeader, 12);
     tmpImage.Swap();
 
     if(tmpImage.imagic != 474)
@@ -589,7 +586,7 @@ GDALDataset* SGIDataset::Open(GDALOpenInfo* poOpenInfo)
     }
 
 /* -------------------------------------------------------------------- */
-/*      Read pre-image data after ensuring the file is rewound.         */
+/*	Read pre-image data after ensuring the file is rewound.         */
 /* -------------------------------------------------------------------- */
     VSIFSeekL(poDS->fpImage, 0, SEEK_SET);
     if(VSIFReadL(reinterpret_cast<void*>( &(poDS->image) ),
@@ -616,7 +613,7 @@ GDALDataset* SGIDataset::Open(GDALOpenInfo* poOpenInfo)
         delete poDS;
         return NULL;
     }
-    poDS->nBands = std::max(static_cast<GUInt16>(1), poDS->image.zsize);
+    poDS->nBands = MAX(1,poDS->image.zsize);
     if (poDS->nBands > 256)
     {
         CPLError(CE_Failure, CPLE_OpenFailed,
@@ -775,8 +772,8 @@ GDALDataset *SGIDataset::Create( const char * pszFilename,
     GInt32 nIntValue = CPL_MSBWORD32(0);
     memcpy( abyHeader + 12, &nIntValue, 4 );
 
-    GUInt32 nUIntValue = CPL_MSBWORD32(255);
-    memcpy( abyHeader + 16, &nUIntValue, 4 );
+    nIntValue = CPL_MSBWORD32(255);
+    memcpy( abyHeader + 16, &nIntValue, 4 );
 
     VSIFWriteL( abyHeader, 1, 512, fp );
 

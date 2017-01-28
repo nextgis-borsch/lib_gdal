@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_segukooa.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: ogr_segukooa.h 31777 2015-11-26 14:14:41Z rouault $
  *
  * Project:  SEG-P1 / UKOOA P1-90 Translator
  * Purpose:  Definition of classes for OGR SEG-P1 / UKOOA P1-90 driver.
@@ -40,17 +40,17 @@ class OGRSEGUKOOABaseLayer : public OGRLayer
 {
   protected:
     OGRFeatureDefn*    poFeatureDefn;
-    bool               bEOF;
+    int                bEOF;
     int                nNextFID;
 
     virtual OGRFeature *       GetNextRawFeature() = 0;
 
   public:
-    virtual OGRFeature *        GetNextFeature() override;
+    virtual OGRFeature *        GetNextFeature();
 
-    virtual OGRFeatureDefn *    GetLayerDefn() override { return poFeatureDefn; }
+    virtual OGRFeatureDefn *    GetLayerDefn() { return poFeatureDefn; }
 
-    virtual int                 TestCapability( const char * ) override { return FALSE; }
+    virtual int                 TestCapability( const char * ) { return FALSE; }
 };
 
 /************************************************************************/
@@ -68,14 +68,15 @@ class OGRUKOOAP190Layer : public OGRSEGUKOOABaseLayer
     void               ParseHeaders();
 
   protected:
-    OGRFeature *       GetNextRawFeature() override;
+    OGRFeature *       GetNextRawFeature();
 
   public:
                         OGRUKOOAP190Layer(const char* pszFilename,
                                          VSILFILE* fp);
-                        virtual ~OGRUKOOAP190Layer();
+                        ~OGRUKOOAP190Layer();
 
-    virtual void                ResetReading() override;
+
+    virtual void                ResetReading();
 };
 
 /************************************************************************/
@@ -88,15 +89,16 @@ class OGRSEGUKOOALineLayer : public OGRSEGUKOOABaseLayer
     OGRFeature        *poNextBaseFeature;
 
   protected:
-    OGRFeature *       GetNextRawFeature() override;
+    OGRFeature *       GetNextRawFeature();
 
   public:
                         OGRSEGUKOOALineLayer(const char* pszFilename,
                                              OGRLayer *poBaseLayer);
-                        virtual ~OGRSEGUKOOALineLayer();
+                        ~OGRSEGUKOOALineLayer();
 
-    virtual void                ResetReading() override;
+    virtual void                ResetReading();
 };
+
 
 /************************************************************************/
 /*                         OGRSEGP1Layer                                */
@@ -112,15 +114,15 @@ class OGRSEGP1Layer: public OGRSEGUKOOABaseLayer
     int                bUseEastingNorthingAsGeometry;
 
   protected:
-    OGRFeature *       GetNextRawFeature() override;
+    OGRFeature *       GetNextRawFeature();
 
   public:
                         OGRSEGP1Layer(const char* pszFilename,
                                       VSILFILE* fp,
                                       int nLatitudeCol);
-                        virtual ~OGRSEGP1Layer();
+                        ~OGRSEGP1Layer();
 
-    virtual void                ResetReading() override;
+    virtual void                ResetReading();
 
 public:
     static char* ExpandTabs(const char* pszLine);
@@ -140,16 +142,16 @@ class OGRSEGUKOOADataSource : public OGRDataSource
 
   public:
                         OGRSEGUKOOADataSource();
-                        virtual ~OGRSEGUKOOADataSource();
+                        ~OGRSEGUKOOADataSource();
 
     int                 Open( const char * pszFilename );
 
-    virtual const char*         GetName() override { return pszName; }
+    virtual const char*         GetName() { return pszName; }
 
-    virtual int                 GetLayerCount() override { return nLayers; }
-    virtual OGRLayer*           GetLayer( int ) override;
+    virtual int                 GetLayerCount() { return nLayers; }
+    virtual OGRLayer*           GetLayer( int );
 
-    virtual int                 TestCapability( const char * ) override;
+    virtual int                 TestCapability( const char * );
 };
 
 #endif /* ndef OGR_SEGUKOOA_H_INCLUDED */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_sosi.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: ogr_sosi.h 34420 2016-06-24 21:06:03Z rouault $
  *
  * Project:  SOSI Translator
  * Purpose:  Implements OGRSOSIDriver.
@@ -70,14 +70,14 @@ public:
     OGRSOSILayer( OGRSOSIDataSource *poPar, OGRFeatureDefn *poFeatDefn, LC_FILADM *poFil, S2I *poHeadDefn);
     ~OGRSOSILayer();
 
-    void                ResetReading() override;
-    OGRFeature *        GetNextFeature() override;
-    OGRFeatureDefn *    GetLayerDefn() override;
+    void                ResetReading();
+    OGRFeature *        GetNextFeature();
+    OGRFeatureDefn *    GetLayerDefn();
 #ifdef WRITE_SUPPORT
     OGRErr              CreateField(OGRFieldDefn *poField, int bApproxOK=TRUE);
     OGRErr              ICreateFeature(OGRFeature *poFeature);
 #endif
-    int                 TestCapability( const char * ) override;
+    int                 TestCapability( const char * );
 };
 
 /************************************************************************
@@ -122,18 +122,19 @@ public:
 #ifdef WRITE_SUPPORT
     int                 Create( const char * pszFilename );
 #endif
-    const char          *GetName() override {
+    const char          *GetName() {
         return pszName;
     }
-    int                 GetLayerCount() override {
+    int                 GetLayerCount() {
         return nLayers;
     }
-    OGRLayer            *GetLayer( int ) override;
+    OGRLayer            *GetLayer( int );
 #ifdef WRITE_SUPPORT
     OGRLayer            *ICreateLayer( const char *pszName, OGRSpatialReference  *poSpatialRef=NULL, OGRwkbGeometryType eGType=wkbUnknown, char **papszOptions=NULL);
 #endif
-    int                 TestCapability( const char * ) override;
+    int                 TestCapability( const char * );
 };
+
 
 /************************************************************************
  *                           OGRSOSIDataTypes                           *
@@ -142,7 +143,7 @@ public:
  ************************************************************************/
 
 class OGRSOSISimpleDataType {
-    const char          *pszName;
+    const char          *pszName; 
     OGRFieldType        nType;
 
 public:
@@ -157,22 +158,14 @@ public:
     OGRFieldType        GetType() {
         return nType;
     };
+
 };
 
 class OGRSOSIDataType {
-    // cppcheck is right here. The disgn of this class is disputable
-    // cppcheck-suppress unsafeClassCanLeak
     OGRSOSISimpleDataType* poElements;
     int                    nElementCount;
-
 public:
-    explicit OGRSOSIDataType (int nSize);
-
-    OGRSOSIDataType( const OGRSOSIDataType& oSrc ) :
-            // cppcheck-suppress copyCtorPointerCopying
-            poElements( oSrc.poElements ),
-            nElementCount( oSrc.nElementCount ) {}
-
+    OGRSOSIDataType (int nSize);
     ~OGRSOSIDataType();
 
     void setElement(int nIndex, const char *name, OGRFieldType type);

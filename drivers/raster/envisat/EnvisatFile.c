@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: EnvisatFile.c 36380 2016-11-21 10:21:20Z rouault $
+ * $Id: EnvisatFile.c 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  APP ENVISAT Support
  * Purpose:  Low Level Envisat file access (read/write) API.
@@ -35,7 +35,7 @@
 #  include "cpl_conv.h"
 #  include "EnvisatFile.h"
 
-CPL_CVSID("$Id: EnvisatFile.c 36380 2016-11-21 10:21:20Z rouault $");
+CPL_CVSID("$Id: EnvisatFile.c 33720 2016-03-15 00:39:53Z goatbar $");
 
 #else
 #  include "APP/app.h"
@@ -1234,7 +1234,7 @@ int EnvisatFile_GetDatasetIndex( EnvisatFile *self, const char *ds_name )
 
     /*
      * Padd the name.  While the normal product spec says the DS_NAME will
-     * be 28 characters, I try to pad more than this in case the specification
+     * be 28 characters, I try to pad more than this incase the specification
      * is changed.
      */
     strncpy( padded_ds_name, ds_name, sizeof(padded_ds_name) );
@@ -1752,8 +1752,6 @@ int S_NameValueList_Parse( const char *text, int text_offset,
         int     src_char = 0;
         int     line_offset = 0;
         EnvisatNameValue *entry = NULL;
-        /* workaround cppcheck false positive by using a pointer */
-        char* pszLine = line;
 
         /*
          * Extract one line of text into the "line" buffer, and remove the
@@ -1773,10 +1771,10 @@ int S_NameValueList_Parse( const char *text, int text_offset,
                 return FAILURE;
             }
 
-            pszLine[line_len++] = *(next_text++);
+            line[line_len++] = *(next_text++);
         }
 
-        pszLine[line_len] = '\0';
+        line[line_len] = '\0';
         if( *next_text == '\n' )
             next_text++;
 

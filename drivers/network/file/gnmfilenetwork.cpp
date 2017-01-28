@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id$
  *
  * Project:  GDAL/OGR Geography Network support (Geographic Network Model)
  * Purpose:  GNM file based generic driver.
@@ -31,8 +32,6 @@
 #include "gnmfile.h"
 #include "gnm_priv.h"
 
-CPL_CVSID("$Id: gnmfilenetwork.cpp 36741 2016-12-07 16:22:35Z rouault $");
-
 GNMFileNetwork::GNMFileNetwork() : GNMGenericNetwork()
 {
     m_pMetadataDS = NULL;
@@ -43,15 +42,6 @@ GNMFileNetwork::GNMFileNetwork() : GNMGenericNetwork()
 GNMFileNetwork::~GNMFileNetwork()
 {
     FlushCache();
-
-    for (std::map<OGRLayer*, GDALDataset*>::iterator
-            it = m_mpLayerDatasetMap.begin();
-            it != m_mpLayerDatasetMap.end(); ++it)
-    {
-            GDALClose(it->second);
-    }
-
-    m_mpLayerDatasetMap.clear();
 
     GDALClose(m_pGraphDS);
     GDALClose(m_pFeaturesDS);
@@ -144,7 +134,7 @@ int GNMFileNetwork::CheckNetworkExist(const char *pszFilename, char **papszOptio
     // if path exist check if network already present and OVERWRITE option
     // else create the path
 
-    const bool bOverwrite = CPLFetchBool(papszOptions, "OVERWRITE", false);
+    bool bOverwrite = CPL_TO_BOOL(CSLFetchBoolean(papszOptions, "OVERWRITE", FALSE));
 
     if(m_soName.empty())
     {
@@ -180,7 +170,7 @@ int GNMFileNetwork::CheckNetworkExist(const char *pszFilename, char **papszOptio
                 EQUAL(CPLGetBasename(papszFiles[i]), GNM_SYSLAYER_FEATURES) ||
                 EQUAL(papszFiles[i], GNM_SRSFILENAME) )
             {
-                if( bOverwrite )
+                if(bOverwrite)
                 {
                     const char* pszDeleteFile = CPLFormFilename(
                                 m_soNetworkFullName, papszFiles[i], NULL);
@@ -555,6 +545,7 @@ OGRLayer *GNMFileNetwork::ICreateLayer(const char *pszName,
         GDALClose(poDS);
         return NULL;
     }
+
 
     OGRFieldDefn oFieldBlock(GNM_SYSFIELD_BLOCKED, OFTInteger);
     if( poLayer->CreateField( &oFieldBlock ) != OGRERR_NONE )

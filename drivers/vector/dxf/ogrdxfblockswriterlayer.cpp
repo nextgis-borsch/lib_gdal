@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrdxfwriterlayer.cpp 20670 2010-09-22 00:21:17Z warmerdam $
  *
  * Project:  DXF Translator
  * Purpose:  Implements OGRDXFBlocksWriterLayer used for capturing block
@@ -32,7 +33,7 @@
 #include "cpl_string.h"
 #include "ogr_featurestyle.h"
 
-CPL_CVSID("$Id: ogrdxfblockswriterlayer.cpp 35645 2016-10-08 00:48:42Z goatbar $");
+CPL_CVSID("$Id: ogrdxfwriterlayer.cpp 20670 2010-09-22 00:21:17Z warmerdam $");
 
 /************************************************************************/
 /*                      OGRDXFBlocksWriterLayer()                       */
@@ -87,7 +88,10 @@ OGRDXFBlocksWriterLayer::~OGRDXFBlocksWriterLayer()
 int OGRDXFBlocksWriterLayer::TestCapability( const char * pszCap )
 
 {
-    return EQUAL(pszCap,OLCSequentialWrite);
+    if( EQUAL(pszCap,OLCSequentialWrite) )
+        return TRUE;
+    else
+        return FALSE;
 }
 
 /************************************************************************/

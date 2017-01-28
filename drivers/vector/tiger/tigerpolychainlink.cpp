@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: tigerpolychainlink.cpp 27745 2014-09-27 16:38:57Z goatbar $
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Implements TigerPolyChainLink, providing access to .RTI files.
@@ -29,9 +30,9 @@
 #include "ogr_tiger.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: tigerpolychainlink.cpp 35911 2016-10-24 15:03:26Z goatbar $");
+CPL_CVSID("$Id: tigerpolychainlink.cpp 27745 2014-09-27 16:38:57Z goatbar $");
 
-static const char FILE_CODE[] = "I";
+#define FILE_CODE "I"
 
 static const TigerFieldInfo rtI_2002_fields[] = {
   // fieldname    fmt  type OFTType      beg  end  len  bDefine bSet bWrite
@@ -76,6 +77,7 @@ static const TigerRecordInfo rtI_info =
     sizeof(rtI_fields) / sizeof(TigerFieldInfo),
     52
   };
+
 
 /************************************************************************/
 /*                         TigerPolyChainLink()                         */

@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: gdalwarp.cpp 12380 2007-10-12 17:35:00Z rouault $
  *
  * Project:  GDAL
  * Purpose:  Command line point transformer.
@@ -31,7 +32,7 @@
 #include "cpl_string.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: gdaltransform.cpp 36537 2016-11-27 23:51:56Z goatbar $");
+CPL_CVSID("$Id: gdaltransform.cpp 12380 2007-10-12 17:35:00Z rouault $");
 
 /************************************************************************/
 /*                               Usage()                                */
@@ -88,8 +89,7 @@ static char *SanitizeSRS( const char *pszUserInput )
 
 #define CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(nExtraArg) \
     do { if (i + nExtraArg >= argc) \
-        Usage(CPLSPrintf("%s option requires %d argument(s)", \
-                         argv[i], nExtraArg)); } while( false )
+        Usage(CPLSPrintf("%s option requires %d argument(s)", argv[i], nExtraArg)); } while(0)
 
 int main( int argc, char ** argv )
 

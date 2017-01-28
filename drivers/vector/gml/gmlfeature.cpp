@@ -1,4 +1,5 @@
 /**********************************************************************
+ * $Id: gmlfeature.cpp 33702 2016-03-11 06:20:16Z goatbar $
  *
  * Project:  GML Reader
  * Purpose:  Implementation of GMLFeature.
@@ -31,23 +32,25 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: gmlfeature.cpp 36763 2016-12-09 22:10:55Z rouault $");
-
 /************************************************************************/
 /*                             GMLFeature()                             */
 /************************************************************************/
 
-GMLFeature::GMLFeature( GMLFeatureClass *poClass ) :
-    m_poClass(poClass),
-    m_pszFID(NULL),
-    m_nPropertyCount(0),
-    m_pasProperties(NULL),
-    m_nGeometryCount(0),
-    m_papsGeometry(m_apsGeometry),  // TODO(schwehr): Allowed in init list?
-    m_papszOBProperties(NULL)
+GMLFeature::GMLFeature( GMLFeatureClass *poClass )
+
 {
+    m_poClass = poClass;
+    m_pszFID = NULL;
+
+    m_nPropertyCount = 0;
+    m_pasProperties = NULL;
+
+    m_nGeometryCount = 0;
+    m_papsGeometry = m_apsGeometry;
     m_apsGeometry[0] = NULL;
     m_apsGeometry[1] = NULL;
+
+    m_papszOBProperties = NULL;
 }
 
 /************************************************************************/
@@ -162,27 +165,27 @@ void GMLFeature::SetPropertyDirectly( int iIndex, char *pszValue )
 
 void GMLFeature::Dump( CPL_UNUSED FILE * fp )
 {
-    printf( "GMLFeature(%s):\n", m_poClass->GetName() );/*ok*/
+    printf( "GMLFeature(%s):\n", m_poClass->GetName() );
 
     if( m_pszFID != NULL )
-        printf( "  FID = %s\n", m_pszFID );/*ok*/
+        printf( "  FID = %s\n", m_pszFID );
 
     for( int i = 0; i < m_nPropertyCount; i++ )
     {
         const GMLProperty * psGMLProperty = GetProperty( i );
-        printf( "  %s = ", m_poClass->GetProperty( i )->GetName());/*ok*/
+        printf( "  %s = ", m_poClass->GetProperty( i )->GetName());
         for ( int j = 0; j < psGMLProperty->nSubProperties; j ++)
         {
-            if (j > 0) printf(", ");/*ok*/
-            printf("%s", psGMLProperty->papszSubProperties[j]);/*ok*/
+            if (j > 0) printf(", ");
+            printf("%s", psGMLProperty->papszSubProperties[j]);
         }
-        printf("\n");/*ok*/
+        printf("\n");
     }
 
     for( int i=0; i < m_nGeometryCount; i++ )
     {
         char* pszXML = CPLSerializeXMLTree(m_papsGeometry[i]);
-        printf( "  %s\n", pszXML );/*ok*/
+        printf( "  %s\n", pszXML );
         CPLFree(pszXML);
     }
 }

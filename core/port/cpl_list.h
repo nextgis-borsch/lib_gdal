@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_list.h 34518 2016-07-02 21:01:34Z goatbar $
+ * $Id: cpl_list.h 33671 2016-03-07 18:39:06Z goatbar $
  *
  * Name:     cpl_list.h
  * Project:  CPL - Common Portability Library

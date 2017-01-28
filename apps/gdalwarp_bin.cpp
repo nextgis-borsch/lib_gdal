@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: gdalwarp_bin.cpp 34776 2016-07-25 21:22:15Z rouault $
  *
  * Project:  High Performance Image Reprojector
  * Purpose:  Test program for high performance warper API.
@@ -33,7 +34,7 @@
 #include "commonutils.h"
 #include "gdal_utils_priv.h"
 
-CPL_CVSID("$Id: gdalwarp_bin.cpp 36636 2016-12-02 18:31:59Z rouault $");
+CPL_CVSID("$Id: gdalwarp_bin.cpp 34776 2016-07-25 21:22:15Z rouault $");
 
 /******************************************************************************/
 /*! \page gdalwarp gdalwarp
@@ -54,8 +55,7 @@ gdalwarp [--help-general] [--formats]
     [-te xmin ymin xmax ymax] [-te_srs srs_def]
     [-tr xres yres] [-tap] [-ts width height]
     [-ovr level|AUTO|AUTO-n|NONE] [-wo "NAME=VALUE"] [-ot Byte/Int16/...] [-wt Byte/Int16]
-    [-srcnodata "value [value...]"] [-dstnodata "value [value...]"]
-    [-srcalpha|-nosrcalpha] [-dstalpha]
+    [-srcnodata "value [value...]"] [-dstnodata "value [value...]"] -dstalpha
     [-r resampling_method] [-wm memory_in_mb] [-multi] [-q]
     [-cutline datasource] [-cl layer] [-cwhere expression]
     [-csql statement] [-cblend dist_in_pixels] [-crop_to_cutline]
@@ -168,10 +168,6 @@ as a single operating system argument.  New files will be initialized to this
 value and if possible the nodata value will be recorded in the output
 file. Use a value of <tt>None</tt> to ensure that nodata is not defined (GDAL>=1.11).
 If this argument is not used then nodata values will be copied from the source dataset (GDAL>=1.11).</dd>
-<dt> <b>-srcalpha</b>:</dt><dd> Force the last band of a source image to be
-considered as a source alpha band. </dd>
-<dt> <b>-nosrcalpha</b>:</dt><dd> Prevent the alpha band of a source image to be
-considered as such (it will be warped as a regular band) (GDAL>=2.2). </dd>
 <dt> <b>-dstalpha</b>:</dt><dd> Create an output alpha band to identify
 nodata (unset/transparent) pixels. </dd>
 <dt> <b>-wm</b> <em>memory_in_mb</em>:</dt><dd> Set the amount of memory (in
@@ -182,9 +178,8 @@ input/output operation simultaneously.</dd>
 <dt> <b>-q</b>:</dt><dd> Be quiet.</dd>
 <dt> <b>-of</b> <em>format</em>:</dt><dd> Select the output format. The default is GeoTIFF (GTiff). Use the short format name. </dd>
 <dt> <b>-co</b> <em>"NAME=VALUE"</em>:</dt><dd> passes a creation option to
-the output format driver. Multiple <b>-co</b> options may be listed. See <a class="el"
-href="formats_list.html" title="GDAL Raster Formats">format specific
-documentation for legal creation options for each format</a>
+the output format driver. Multiple <b>-co</b> options may be listed. See
+format specific documentation for legal creation options for each format.
 </dd>
 
 <dt> <b>-cutline</b> <em>datasource</em>:</dt><dd>Enable use of a blend cutline from the name OGR support datasource.</dd>
@@ -222,14 +217,14 @@ not yet existing target dataset, its extent will be the one of the
 original raster unless -te or -crop_to_cutline are specified.
 
 <p>
-\section gdalwarp_examples EXAMPLES
+\section gdalwarp_example EXAMPLE
 
 For instance, an eight bit spot scene stored in GeoTIFF with
 control points mapping the corners to lat/long could be warped to a UTM
 projection with a command like this:<p>
 
 \verbatim
-gdalwarp -t_srs '+proj=utm +zone=11 +datum=WGS84' -overwrite raw_spot.tif utm11.tif
+gdalwarp -t_srs '+proj=utm +zone=11 +datum=WGS84' raw_spot.tif utm11.tif
 \endverbatim
 
 For instance, the second channel of an ASTER image stored in HDF with
@@ -237,19 +232,7 @@ control points mapping the corners to lat/long could be warped to a UTM
 projection with a command like this:<p>
 
 \verbatim
-gdalwarp -overwrite HDF4_SDS:ASTER_L1B:"pg-PR1B0000-2002031402_100_001":2 pg-PR1B0000-2002031402_100_001_2.tif
-\endverbatim
-
-(GDAL &gt;= 2.2) To apply a cutline on a un-georeferenced image and clip from pixel (220,60) to pixel (1160,690):<p>
-
-\verbatim
-gdalwarp -overwrite -to SRC_METHOD=NO_GEOTRANSFORM -to DST_METHOD=NO_GEOTRANSFORM -te 220 60 1160 690 -cutline cutline.csv in.png out.tif
-\endverbatim
-
-where cutline.csv content is like:
-\verbatim
-id,WKT
-1,"POLYGON((....))"
+gdalwarp HDF4_SDS:ASTER_L1B:"pg-PR1B0000-2002031402_100_001":2 pg-PR1B0000-2002031402_100_001_2.tif
 \endverbatim
 
 <p>
@@ -400,7 +383,7 @@ int main( int argc, char ** argv )
     {
 #if defined(__MACH__) && defined(__APPLE__)
         // On Mach, the default limit is 256 files per process
-        // TODO We should eventually dynamically query the limit for all OS
+        // We should eventually dynamically query the limit
         CPLSetConfigOption("GDAL_MAX_DATASET_POOL_SIZE", "100");
 #else
         CPLSetConfigOption("GDAL_MAX_DATASET_POOL_SIZE", "450");

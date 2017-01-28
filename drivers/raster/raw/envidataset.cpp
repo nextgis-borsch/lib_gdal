@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: envidataset.cpp 35524 2016-09-27 13:21:23Z rouault $
  *
  * Project:  ENVI .hdr Driver
  * Purpose:  Implementation of ENVI .hdr labelled raw raster support.
@@ -34,7 +35,7 @@
 #include "rawdataset.h"
 #include <algorithm>
 
-CPL_CVSID("$Id: envidataset.cpp 36682 2016-12-04 20:34:45Z rouault $");
+CPL_CVSID("$Id: envidataset.cpp 35524 2016-09-27 13:21:23Z rouault $");
 
 static const int anUsgsEsriZones[] =
 {
@@ -245,11 +246,11 @@ class ENVIDataset : public RawDataset
     int         ProcessMapinfo( const char * );
     void        ProcessRPCinfo( const char * ,int ,int);
     void        ProcessStatsFile();
-    static int         byteSwapInt(int);
-    static float       byteSwapFloat(float);
-    static double      byteSwapDouble(double);
-    static void        SetENVIDatum( OGRSpatialReference *, const char * );
-    static void        SetENVIEllipse( OGRSpatialReference *, char ** );
+    int         byteSwapInt(int);
+    float       byteSwapFloat(float);
+    double      byteSwapDouble(double);
+    void        SetENVIDatum( OGRSpatialReference *, const char * );
+    void        SetENVIEllipse( OGRSpatialReference *, char ** );
     void        WriteProjectionInfo();
     int         ParseRpcCoeffsMetaDataString( const char *psName,
                                               char *papszVal[], int& idx );
@@ -267,22 +268,22 @@ class ENVIDataset : public RawDataset
             ENVIDataset();
     virtual ~ENVIDataset();
 
-    virtual void    FlushCache( void ) override;
-    virtual CPLErr  GetGeoTransform( double * padfTransform ) override;
-    virtual CPLErr  SetGeoTransform( double * ) override;
-    virtual const char *GetProjectionRef(void) override;
-    virtual CPLErr  SetProjection( const char * ) override;
-    virtual char  **GetFileList(void) override;
+    virtual void    FlushCache( void );
+    virtual CPLErr  GetGeoTransform( double * padfTransform );
+    virtual CPLErr  SetGeoTransform( double * );
+    virtual const char *GetProjectionRef(void);
+    virtual CPLErr  SetProjection( const char * );
+    virtual char  **GetFileList(void);
 
-    virtual void        SetDescription( const char * ) override;
+    virtual void        SetDescription( const char * );
 
     virtual CPLErr      SetMetadata( char ** papszMetadata,
-                                     const char * pszDomain = "" ) override;
+                                     const char * pszDomain = "" );
     virtual CPLErr      SetMetadataItem( const char * pszName,
                                          const char * pszValue,
-                                         const char * pszDomain = "" ) override;
+                                         const char * pszDomain = "" );
     virtual CPLErr SetGCPs( int nGCPCount, const GDAL_GCP *pasGCPList,
-                            const char *pszGCPProjection ) override;
+                            const char *pszGCPProjection );
 
     static GDALDataset *Open( GDALOpenInfo * );
     static GDALDataset *Create( const char * pszFilename,
@@ -306,9 +307,9 @@ class ENVIRasterBand : public RawRasterBand
                                 int bIsVSIL = FALSE, int bOwnsFP = FALSE );
     virtual ~ENVIRasterBand() {}
 
-    virtual void        SetDescription( const char * ) override;
+    virtual void        SetDescription( const char * );
 
-    virtual CPLErr SetCategoryNames( char ** ) override;
+    virtual CPLErr SetCategoryNames( char ** );
 };
 
 /************************************************************************/
@@ -608,7 +609,7 @@ char **ENVIDataset::GetFileList()
     papszFileList = CSLAddString( papszFileList, pszHDRFilename );
 
     // Statistics file
-    if (!osStaFilename.empty())
+    if (osStaFilename.size() != 0)
         papszFileList = CSLAddString( papszFileList, osStaFilename );
 
     return papszFileList;
@@ -1091,7 +1092,7 @@ int ENVIDataset::ParseRpcCoeffsMetaDataString(
         return FALSE;
 
     int x = 0;
-    while ( (x < 20) && (papszArr[x] != NULL) )
+    while ((papszArr[x] != NULL) && (x < 20))
     {
         papszVal[idx++] = CPLStrdup(papszArr[x]);
         x++;
@@ -1109,6 +1110,7 @@ static char *CPLStrdupIfNotNull( const char *pszString )
 
   return CPLStrdup( pszString );
 }
+
 
 /************************************************************************/
 /*                          WriteRpcInfo()                              */
@@ -1822,7 +1824,7 @@ void ENVIDataset::ProcessRPCinfo( const char *pszRPCinfo,
     // Handle the chipping case where the image is a subset.
     const double rowOffset = (nCount == 93) ? CPLAtof(papszFields[90]) : 0;
     const double colOffset = (nCount == 93) ? CPLAtof(papszFields[91]) : 0;
-    if (rowOffset != 0.0 || colOffset != 0.0)
+    if (rowOffset || colOffset)
     {
         SetMetadataItem("ICHIP_SCALE_FACTOR", "1");
         SetMetadataItem("ICHIP_ANAMORPH_CORR", "0");
@@ -1950,6 +1952,7 @@ double ENVIDataset::byteSwapDouble(double swapMe)
     CPL_MSBPTR64(&swapMe);
     return swapMe;
 }
+
 
 /************************************************************************/
 /*                             ReadHeader()                             */
@@ -2079,6 +2082,7 @@ GDALDataset *ENVIDataset::Open( GDALOpenInfo * poOpenInfo )
                                             "HDR" );
             fpHeader = VSIFOpenL( osHdrFilename, pszMode );
         }
+
     }
     else
     {
@@ -2549,6 +2553,7 @@ GDALDataset *ENVIDataset::Open( GDALOpenInfo * poOpenInfo )
                         "wavelength_units", pszWLUnits);
                 }
             }
+
         }
         CSLDestroy( papszWL );
         CSLDestroy( papszBandNames );

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: Operations.i 34525 2016-07-03 02:53:47Z goatbar $
+ * $Id: Operations.i 33447 2016-02-12 20:59:51Z goatbar $
  *
  * Name:     Operations.i
  * Project:  GDAL Python Interface

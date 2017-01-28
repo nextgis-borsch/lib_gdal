@@ -1,4 +1,3 @@
-/* $Id: gdal_version.h 34561 2016-07-06 06:00:03Z goatbar $ */
 
 /* -------------------------------------------------------------------- */
 /*      GDAL Version Information.                                       */
@@ -7,11 +6,11 @@
 #ifndef GDAL_VERSION_MAJOR
 #  define GDAL_VERSION_MAJOR    2
 #  define GDAL_VERSION_MINOR    1
-#  define GDAL_VERSION_REV      3
+#  define GDAL_VERSION_REV      4
 #  define GDAL_VERSION_BUILD    0
 #endif
 
-/* GDAL_COMPUTE_VERSION macro introduced in GDAL 1.10 */
+    /* GDAL_COMPUTE_VERSION macro introduced in GDAL 1.10 */
 /* Must be used ONLY to compare with version numbers for GDAL >= 1.10 */
 #ifndef GDAL_COMPUTE_VERSION
 #define GDAL_COMPUTE_VERSION(maj,min,rev) ((maj)*1000000+(min)*10000+(rev)*100)
@@ -23,8 +22,8 @@
 #endif
 
 #ifndef GDAL_RELEASE_DATE
-#  define GDAL_RELEASE_DATE     20161219
+#  define GDAL_RELEASE_DATE     20172001
 #endif
 #ifndef GDAL_RELEASE_NAME
-#  define GDAL_RELEASE_NAME     "2.1.3nextgis"
+#  define GDAL_RELEASE_NAME     "2.1.4nextgis"
 #endif

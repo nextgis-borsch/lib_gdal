@@ -51,52 +51,52 @@ namespace PCIDSK
         CPCIDSKBitmap(PCIDSKFile *file,int segment,const char*segment_pointer);
         virtual     ~CPCIDSKBitmap();
 
-        virtual void Initialize() override;
+        virtual void Initialize();
 
         // Channel interface
-        virtual int GetBlockWidth() const override;
-        virtual int GetBlockHeight() const override;
-        virtual int GetBlockCount() const override;
-        virtual int GetWidth() const override;
-        virtual int GetHeight() const override;
-        virtual eChanType GetType() const override;
+        virtual int GetBlockWidth() const;
+        virtual int GetBlockHeight() const;
+        virtual int GetBlockCount() const;
+        virtual int GetWidth() const;
+        virtual int GetHeight() const;
+        virtual eChanType GetType() const;
         virtual int ReadBlock( int block_index, void *buffer,
             int win_xoff=-1, int win_yoff=-1,
-            int win_xsize=-1, int win_ysize=-1 ) override;
-        virtual int WriteBlock( int block_index, void *buffer ) override;
-        virtual int GetOverviewCount() override;
-        virtual PCIDSKChannel *GetOverview( int i ) override;
-        virtual bool IsOverviewValid( int i ) override;
-        virtual std::string GetOverviewResampling( int i ) override;
-        virtual void SetOverviewValidity( int i, bool validity ) override;
-        virtual std::vector<int> GetOverviewLevelMapping() const override;
+            int win_xsize=-1, int win_ysize=-1 );
+        virtual int WriteBlock( int block_index, void *buffer );
+        virtual int GetOverviewCount();
+        virtual PCIDSKChannel *GetOverview( int i );
+        virtual bool IsOverviewValid( int i );
+        virtual std::string GetOverviewResampling( int i );
+        virtual void SetOverviewValidity( int i, bool validity );
+        virtual std::vector<int> GetOverviewLevelMapping() const;
 
-        virtual std::string GetMetadataValue( const std::string &key ) const override;
-        virtual void SetMetadataValue( const std::string &key, const std::string &value ) override;
-        virtual std::vector<std::string> GetMetadataKeys() const override;
+        virtual std::string GetMetadataValue( const std::string &key ) const;
+        virtual void SetMetadataValue( const std::string &key, const std::string &value );
+        virtual std::vector<std::string> GetMetadataKeys() const;
 
-        virtual void Synchronize() override;
+        virtual void Synchronize();
 
-        virtual std::string GetDescription() override;
-        virtual void SetDescription( const std::string &description ) override;
+        virtual std::string GetDescription();
+        virtual void SetDescription( const std::string &description );
 
-        virtual std::vector<std::string> GetHistoryEntries() const override;
-        virtual void SetHistoryEntries( const std::vector<std::string> &entries ) override;
+        virtual std::vector<std::string> GetHistoryEntries() const;
+        virtual void SetHistoryEntries( const std::vector<std::string> &entries );
         virtual void PushHistory(const std::string &app,
-                                 const std::string &message) override;
+                                 const std::string &message);
 
         virtual void GetChanInfo( std::string &filename, uint64 &image_offset, 
                                   uint64 &pixel_offset, uint64 &line_offset, 
-                                  bool &little_endian ) const override;
+                                  bool &little_endian ) const;
         virtual void SetChanInfo( std::string filename, uint64 image_offset, 
                                   uint64 pixel_offset, uint64 line_offset, 
-                                  bool little_endian ) override;
+                                  bool little_endian );
         virtual void GetEChanInfo( std::string &filename, int &echannel,
                                    int &exoff, int &eyoff, 
-                                   int &exsize, int &eysize ) const override;
+                                   int &exsize, int &eysize ) const;
         virtual void SetEChanInfo( std::string filename, int echannel,
                                    int exoff, int eyoff, 
-                                   int exsize, int eysize ) override;
+                                   int exsize, int eysize );
 
     private:
         bool      loaded;

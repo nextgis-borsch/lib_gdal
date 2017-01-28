@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: gdalarraybandblockcache.cpp 33694 2016-03-10 17:54:30Z goatbar $
  *
  * Project:  GDAL Core
  * Purpose:  Store cached blocks in a array or a two-level array
@@ -27,25 +28,15 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "cpl_port.h"
 #include "gdal_priv.h"
-
-#include <climits>
-#include <cstddef>
-#include <new>
-
-#include "cpl_conv.h"
-#include "cpl_error.h"
 #include "cpl_multiproc.h"
-#include "cpl_vsi.h"
-
-//! @cond Doxygen_Suppress
+#include <new>
 
 static const int SUBBLOCK_SIZE = 64;
 #define TO_SUBBLOCK(x) ((x) >> 6)
 #define WITHIN_SUBBLOCK(x) ((x) & 0x3f)
 
-CPL_CVSID("$Id: gdalarraybandblockcache.cpp 36522 2016-11-26 16:04:27Z goatbar $");
+CPL_CVSID("$Id: gdalarraybandblockcache.cpp 33694 2016-03-10 17:54:30Z goatbar $");
 
 /* ******************************************************************** */
 /*                        GDALArrayBandBlockCache                       */
@@ -63,16 +54,16 @@ class GDALArrayBandBlockCache CPL_FINAL : public GDALAbstractBandBlockCache
     } u;
 
     public:
-           explicit GDALArrayBandBlockCache( GDALRasterBand* poBand );
-           virtual ~GDALArrayBandBlockCache();
+            explicit GDALArrayBandBlockCache(GDALRasterBand* poBand);
+           ~GDALArrayBandBlockCache();
 
-           virtual bool             Init() override;
-           virtual bool             IsInitOK() override;
-           virtual CPLErr           FlushCache() override;
-           virtual CPLErr           AdoptBlock( GDALRasterBlock * )  override;
-           virtual GDALRasterBlock *TryGetLockedBlockRef( int nXBlockOff, int nYBlockYOff ) override;
-           virtual CPLErr           UnreferenceBlock( GDALRasterBlock* poBlock ) override;
-           virtual CPLErr           FlushBlock( int nXBlockOff, int nYBlockOff, int bWriteDirtyBlock ) override;
+           virtual bool             Init();
+           virtual bool             IsInitOK();
+           virtual CPLErr           FlushCache();
+           virtual CPLErr           AdoptBlock( GDALRasterBlock * );
+           virtual GDALRasterBlock *TryGetLockedBlockRef( int nXBlockOff, int nYBlockYOff );
+           virtual CPLErr           UnreferenceBlock( GDALRasterBlock* poBlock );
+           virtual CPLErr           FlushBlock( int nXBlockOff, int nYBlockOff, int bWriteDirtyBlock );
 };
 
 /************************************************************************/
@@ -159,6 +150,7 @@ bool GDALArrayBandBlockCache::Init()
                                     "Out of memory in InitBlockInfo()." );
                 return false;
             }
+
         }
         else
         {
@@ -487,5 +479,3 @@ GDALRasterBlock *GDALArrayBandBlockCache::TryGetLockedBlockRef( int nXBlockOff,
 
     return poBlock;
 }
-
-//! @endcond

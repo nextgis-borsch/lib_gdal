@@ -40,28 +40,28 @@ namespace PCIDSK {
         CPCIDSKPolyModelSegment(PCIDSKFile *file, int segment,const char *segment_pointer);
         ~CPCIDSKPolyModelSegment();
         
-        std::vector<double> GetXForwardCoefficients() const override;
-        std::vector<double> GetYForwardCoefficients() const override;
-        std::vector<double> GetXBackwardCoefficients() const override;
-        std::vector<double> GetYBackwardCoefficients() const override;
+        std::vector<double> GetXForwardCoefficients() const;
+        std::vector<double> GetYForwardCoefficients() const;
+        std::vector<double> GetXBackwardCoefficients() const;
+        std::vector<double> GetYBackwardCoefficients() const;
 
         void SetCoefficients(const std::vector<double>& oXForward,
                              const std::vector<double>& oYForward,
                              const std::vector<double>& oXBackward,
-                             const std::vector<double>& oYBackward) override ;
+                             const std::vector<double>& oYBackward) ;
 
-        unsigned int GetLines() const override;
-        unsigned int GetPixels() const override;
-        void SetRasterSize(unsigned int nLines,unsigned int nPixels) override ;
+        unsigned int GetLines() const;
+        unsigned int GetPixels() const;
+        void SetRasterSize(unsigned int nLines,unsigned int nPixels) ;
 
-        std::string GetGeosysString() const override;
-        void SetGeosysString(const std::string& oGeosys) override ;
+        std::string GetGeosysString() const;
+        void SetGeosysString(const std::string& oGeosys) ;
 
-        std::vector<double> GetProjParmInfo() const override;
-        void SetProjParmInfo(const std::vector<double>& oInfo) override ;
+        std::vector<double> GetProjParmInfo() const;
+        void SetProjParmInfo(const std::vector<double>& oInfo) ;
 
         //synchronize the segment on disk.
-        void Synchronize() override;
+        void Synchronize();
     private:
         // Helper housekeeping functions
         void Load();

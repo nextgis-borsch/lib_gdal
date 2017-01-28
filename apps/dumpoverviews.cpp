@@ -1,4 +1,5 @@
 /* ****************************************************************************
+ * $Id: dumpoverviews.cpp 33615 2016-03-02 20:19:22Z goatbar $
  *
  * Project:  GDAL Utilities
  * Purpose:  Dump overviews to external files.
@@ -32,7 +33,7 @@
 #include "gdal_priv.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: dumpoverviews.cpp 35884 2016-10-24 05:56:50Z goatbar $");
+CPL_CVSID("$Id: dumpoverviews.cpp 33615 2016-03-02 20:19:22Z goatbar $");
 
 static void DumpBand( GDALDatasetH hBaseDS, GDALRasterBandH hBand,
                       const char *pszName );
@@ -54,6 +55,11 @@ static void Usage()
 int main( int argc, char ** argv )
 
 {
+    const char *pszSrcFilename = NULL;
+    int anReqOverviews[1000];
+    int nReqOverviewCount = 0;
+    bool bMasks = false;
+
     GDALAllRegister();
 
     argc = GDALGeneralCmdLineProcessor( argc, &argv, 0 );
@@ -63,11 +69,6 @@ int main( int argc, char ** argv )
 /* -------------------------------------------------------------------- */
 /*      Process arguments.                                              */
 /* -------------------------------------------------------------------- */
-    const char *pszSrcFilename = NULL;
-    int anReqOverviews[1000] = {};
-    int nReqOverviewCount = 0;
-    bool bMasks = false;
-
     for( int iArg = 1; iArg < argc; iArg++ )
     {
         if( EQUAL(argv[iArg],"-masks") )
@@ -102,25 +103,26 @@ int main( int argc, char ** argv )
 /* ==================================================================== */
 /*      Process all bands.                                              */
 /* ==================================================================== */
-    const int nBandCount = GDALGetRasterCount( hSrcDS );
+    int iBand;
+    int nBandCount = GDALGetRasterCount( hSrcDS );
 
-    for( int iBand = 0; iBand < nBandCount; iBand++ )
+    for( iBand = 0; iBand < nBandCount; iBand++ )
     {
         GDALRasterBandH hBaseBand = GDALGetRasterBand( hSrcDS, iBand+1 );
 
 /* -------------------------------------------------------------------- */
 /*      Process all overviews.                                          */
 /* -------------------------------------------------------------------- */
-        const int nOverviewCount = GDALGetOverviewCount( hBaseBand );
+        int iOverview;
+        int nOverviewCount = GDALGetOverviewCount( hBaseBand );
 
-        for( int iOverview = 0; iOverview < nOverviewCount; iOverview++ )
+        for( iOverview = 0; iOverview < nOverviewCount; iOverview++ )
         {
             GDALRasterBandH hSrcOver = GDALGetOverview( hBaseBand, iOverview );
 
-            if( hSrcOver == NULL )
+            if (hSrcOver == NULL)
             {
-                fprintf(stderr, "skipping overview %d as being null\n",
-                        iOverview);
+                fprintf(stderr, "skipping overview %d as being null\n", iOverview);
                 continue;
             }
 
@@ -129,9 +131,9 @@ int main( int argc, char ** argv )
 /* -------------------------------------------------------------------- */
             if( nReqOverviewCount > 0 )
             {
-              int i = 0;  // Used after for.
+                int i;
 
-                for( ; i < nReqOverviewCount; i++ )
+                for( i = 0; i < nReqOverviewCount; i++ )
                 {
                     if( anReqOverviews[i] == iOverview )
                         break;
@@ -152,11 +154,11 @@ int main( int argc, char ** argv )
 
             if( bMasks )
             {
-                CPLString osMaskFilename;
-                osMaskFilename.Printf( "%s_%d_%d_mask.tif",
-                                       CPLGetBasename(pszSrcFilename),
-                                       iBand+1, iOverview );
-                DumpBand( hSrcDS, GDALGetMaskBand(hSrcOver), osMaskFilename );
+                CPLString osFilename;
+                osFilename.Printf( "%s_%d_%d_mask.tif",
+                                CPLGetBasename(pszSrcFilename),
+                                iBand+1, iOverview );
+                DumpBand( hSrcDS, GDALGetMaskBand(hSrcOver), osFilename );
             }
         }
 
@@ -192,18 +194,18 @@ static void DumpBand( GDALDatasetH hBaseDS, GDALRasterBandH hSrcOver,
 /* -------------------------------------------------------------------- */
 /*      Get base ds info.                                               */
 /* -------------------------------------------------------------------- */
-    double adfGeoTransform[6] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+    double adfGeoTransform[6];
     bool bHaveGT = GDALGetGeoTransform( hBaseDS, adfGeoTransform ) == CE_None;
 
-    const int nOrigXSize = GDALGetRasterXSize( hBaseDS );
-    const int nOrigYSize = GDALGetRasterYSize( hBaseDS );
+    int nOrigXSize = GDALGetRasterXSize( hBaseDS );
+    int nOrigYSize = GDALGetRasterYSize( hBaseDS );
 
 /* -------------------------------------------------------------------- */
 /*      Create matching output file.                                    */
 /* -------------------------------------------------------------------- */
-    const int nXSize = GDALGetRasterBandXSize( hSrcOver );
-    const int nYSize = GDALGetRasterBandYSize( hSrcOver );
-    const GDALDataType eDT = GDALGetRasterDataType( hSrcOver );
+    int nXSize = GDALGetRasterBandXSize( hSrcOver );
+    int nYSize = GDALGetRasterBandYSize( hSrcOver );
+    GDALDataType eDT = GDALGetRasterDataType( hSrcOver );
     GDALDriverH hDriver = GDALGetDriverByName( "GTiff" );
 
     GDALDatasetH hDstDS = GDALCreate( hDriver, pszName, nXSize, nYSize,
@@ -217,15 +219,15 @@ static void DumpBand( GDALDatasetH hBaseDS, GDALRasterBandH hSrcOver,
 /* -------------------------------------------------------------------- */
     if( bHaveGT )
     {
-        double adfOvGeoTransform[6] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+        double adfOvGeoTransform[6];
 
         memcpy( adfOvGeoTransform, adfGeoTransform,
                 sizeof(double) * 6 );
 
-        adfOvGeoTransform[1] *= nOrigXSize / static_cast<double>(nXSize);
-        adfOvGeoTransform[2] *= nOrigXSize / static_cast<double>(nXSize);
-        adfOvGeoTransform[4] *= nOrigYSize / static_cast<double>(nYSize);
-        adfOvGeoTransform[5] *= nOrigYSize / static_cast<double>(nYSize);
+        adfOvGeoTransform[1] *= (nOrigXSize / (double) nXSize);
+        adfOvGeoTransform[2] *= (nOrigXSize / (double) nXSize);
+        adfOvGeoTransform[4] *= (nOrigYSize / (double) nYSize);
+        adfOvGeoTransform[5] *= (nOrigYSize / (double) nYSize);
 
         GDALSetGeoTransform( hDstDS, adfOvGeoTransform );
 
@@ -239,22 +241,11 @@ static void DumpBand( GDALDatasetH hBaseDS, GDALRasterBandH hSrcOver,
 
     for( int iLine = 0; iLine < nYSize; iLine++ )
     {
-        {
-            const CPLErr err =
-                GDALRasterIO( hSrcOver, GF_Read, 0, iLine, nXSize, 1,
-                              pData, nXSize, 1, eDT, 0, 0 );
-            if( err != CE_None )
-                CPLError( CE_Failure, CPLE_FileIO,
-                          "GDALRasterIO read failed at %d.", iLine );
-        }
-
-        const CPLErr err =
-            GDALRasterIO( GDALGetRasterBand( hDstDS, 1 ), GF_Write,
-                          0, iLine, nXSize, 1,
-                          pData, nXSize, 1, eDT, 0, 0 );
-        if( err != CE_None )
-            CPLError( CE_Failure, CPLE_FileIO,
-                      "GDALRasterIO write failed at %d.", iLine );
+        GDALRasterIO( hSrcOver, GF_Read, 0, iLine, nXSize, 1,
+                      pData, nXSize, 1, eDT, 0, 0 );
+        GDALRasterIO( GDALGetRasterBand( hDstDS, 1 ), GF_Write,
+                      0, iLine, nXSize, 1,
+                      pData, nXSize, 1, eDT, 0, 0 );
     }
     CPLFree( pData );
 

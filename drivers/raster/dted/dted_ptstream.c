@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: dted_ptstream.c 35839 2016-10-20 21:17:17Z rouault $
+ * $Id: dted_ptstream.c 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  DTED Translator
  * Purpose:  DTED Point Stream Writer.
@@ -29,7 +29,7 @@
 
 #include "dted_api.h"
 
-CPL_CVSID("$Id: dted_ptstream.c 35839 2016-10-20 21:17:17Z rouault $");
+CPL_CVSID("$Id: dted_ptstream.c 33720 2016-03-15 00:39:53Z goatbar $");
 
 typedef struct {
     char     *pszFilename;
@@ -101,7 +101,9 @@ void *DTEDCreatePtStream( const char *pszPath, int nLevel )
         psStream->dfPixelSize = 1.0 / 120.0;
     else if( nLevel == 1 )
         psStream->dfPixelSize = 1.0 / 1200.0;
-    else /* if( nLevel == 2 ) */
+    else if( nLevel == 2 )
+        psStream->dfPixelSize = 1.0 / 3600.0;
+    else
         psStream->dfPixelSize = 1.0 / 3600.0;
 
     return (void *) psStream;

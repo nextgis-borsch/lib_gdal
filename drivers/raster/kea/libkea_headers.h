@@ -53,4 +53,5 @@
 #pragma warning( pop )
 #endif
 
+
 #endif /* GDAL_LIBKEA_HEADERS_H */

@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: gmlutils.cpp 35690 2016-10-11 09:56:31Z rouault $
  *
  * Project:  GML Utils
  * Purpose:  GML reader
@@ -33,8 +34,6 @@
 #include "ogr_p.h"
 #include <string>
 #include <map>
-
-CPL_CVSID("$Id: gmlutils.cpp 36158 2016-11-08 13:53:11Z rouault $");
 
 /************************************************************************/
 /*                GML_ExtractSrsNameFromGeometry()                      */
@@ -104,6 +103,7 @@ bool GML_IsSRSLatLongOrder(const char* pszSRSName)
         return false;
     }
 }
+
 
 /************************************************************************/
 /*                GML_BuildOGRGeometryFromList_CreateCache()            */
@@ -298,49 +298,56 @@ OGRGeometry* GML_BuildOGRGeometryFromList(const CPLXMLNode* const * papsGeometry
 /*                           GML_GetSRSName()                           */
 /************************************************************************/
 
-char* GML_GetSRSName(const OGRSpatialReference* poSRS,
-                     OGRGMLSRSNameFormat eSRSNameFormat, bool *pbCoordSwap)
+char* GML_GetSRSName(const OGRSpatialReference* poSRS, bool bLongSRS, bool *pbCoordSwap)
 {
     *pbCoordSwap = false;
     if (poSRS == NULL)
         return CPLStrdup("");
 
-    const char* pszTarget = poSRS->IsProjected() ? "PROJCS" : "GEOGCS";
-    const char* pszAuthName = poSRS->GetAuthorityName( pszTarget );
-    const char* pszAuthCode = poSRS->GetAuthorityCode( pszTarget );
-    if( NULL != pszAuthName && NULL != pszAuthCode )
+    const char* pszAuthName = NULL;
+    const char* pszAuthCode = NULL;
+    const char* pszTarget = NULL;
+
+    if (poSRS->IsProjected())
+        pszTarget = "PROJCS";
+    else
+        pszTarget = "GEOGCS";
+
+    char szSrsName[50];
+    szSrsName[0] = 0;
+
+    pszAuthName = poSRS->GetAuthorityName( pszTarget );
+    if( NULL != pszAuthName )
     {
-        if ( EQUAL( pszAuthName, "EPSG" ) &&
-            eSRSNameFormat != SRSNAME_SHORT &&
-            !(((OGRSpatialReference*)poSRS)->EPSGTreatsAsLatLong() ||
-                ((OGRSpatialReference*)poSRS)->EPSGTreatsAsNorthingEasting()))
+        if( EQUAL( pszAuthName, "EPSG" ) )
         {
-            OGRSpatialReference oSRS;
-            if (oSRS.importFromEPSGA(atoi(pszAuthCode)) == OGRERR_NONE)
+            pszAuthCode = poSRS->GetAuthorityCode( pszTarget );
+            if( NULL != pszAuthCode && strlen(pszAuthCode) < 10 )
             {
-                if (oSRS.EPSGTreatsAsLatLong() || oSRS.EPSGTreatsAsNorthingEasting())
-                    *pbCoordSwap = true;
+                if (bLongSRS && !(((OGRSpatialReference*)poSRS)->EPSGTreatsAsLatLong() ||
+                                  ((OGRSpatialReference*)poSRS)->EPSGTreatsAsNorthingEasting()))
+                {
+                    OGRSpatialReference oSRS;
+                    if (oSRS.importFromEPSGA(atoi(pszAuthCode)) == OGRERR_NONE)
+                    {
+                        if (oSRS.EPSGTreatsAsLatLong() || oSRS.EPSGTreatsAsNorthingEasting())
+                            *pbCoordSwap = true;
+                    }
+                }
+
+                if (bLongSRS)
+                {
+                    snprintf( szSrsName, sizeof(szSrsName), " srsName=\"urn:ogc:def:crs:%s::%s\"",
+                        pszAuthName, pszAuthCode );
+                }
+                else
+                {
+                    snprintf( szSrsName, sizeof(szSrsName), " srsName=\"%s:%s\"",
+                            pszAuthName, pszAuthCode );
+                }
             }
         }
-
-        if (eSRSNameFormat == SRSNAME_SHORT)
-        {
-            return CPLStrdup(CPLSPrintf(
-                        " srsName=\"%s:%s\"",
-                        pszAuthName, pszAuthCode ));
-        }
-        else if (eSRSNameFormat == SRSNAME_OGC_URN)
-        {
-            return CPLStrdup(CPLSPrintf(
-                        " srsName=\"urn:ogc:def:crs:%s::%s\"",
-                        pszAuthName, pszAuthCode ));
-        }
-        else if (eSRSNameFormat == SRSNAME_OGC_URL)
-        {
-            return CPLStrdup(CPLSPrintf(
-                        " srsName=\"http://www.opengis.net/def/crs/%s/0/%s\"",
-                        pszAuthName, pszAuthCode ));
-        }
     }
-    return CPLStrdup("");
+
+    return CPLStrdup(szSrsName);
 }

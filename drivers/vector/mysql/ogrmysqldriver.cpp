@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrmysqldriver.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRMySQLDriver class.
@@ -30,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id: ogrmysqldriver.cpp 35911 2016-10-24 15:03:26Z goatbar $");
+CPL_CVSID("$Id: ogrmysqldriver.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 static CPLMutex* hMutex = NULL;
 static int   bInitialized = FALSE;
@@ -100,6 +101,7 @@ static GDALDataset *OGRMySQLDriverOpen( GDALOpenInfo* poOpenInfo )
         return poDS;
 }
 
+
 /************************************************************************/
 /*                               Create()                               */
 /************************************************************************/
@@ -114,6 +116,7 @@ static GDALDataset *OGRMySQLDriverCreate( const char * pszName,
     OGRMySQLDataSource     *poDS;
 
     poDS = new OGRMySQLDataSource();
+
 
     if( !poDS->Open( pszName, NULL, TRUE ) )
     {

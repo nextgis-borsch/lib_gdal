@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrnaslayer.cpp 32898 2016-01-10 14:44:10Z goatbar $
  *
  * Project:  OGR
  * Purpose:  Implements OGRNASLayer class.
@@ -32,7 +33,7 @@
 #include "cpl_string.h"
 #include "ogr_nas.h"
 
-CPL_CVSID("$Id: ogrnaslayer.cpp 36455 2016-11-22 23:11:35Z rouault $");
+CPL_CVSID("$Id: ogrnaslayer.cpp 32898 2016-01-10 14:44:10Z goatbar $");
 
 /************************************************************************/
 /*                           OGRNASLayer()                              */
@@ -105,10 +106,12 @@ OGRFeature *OGRNASLayer::GetNextFeature()
 /* -------------------------------------------------------------------- */
 /*      Cleanup last feature, and get a new raw nas feature.            */
 /* -------------------------------------------------------------------- */
+        delete poNASFeature;
         delete poGeom;
+
+        poNASFeature = NULL;
         poGeom = NULL;
 
-        delete poNASFeature;
         poNASFeature = poDS->GetReader()->NextFeature();
         if( poNASFeature == NULL )
             return NULL;
@@ -265,10 +268,10 @@ GIntBig OGRNASLayer::GetFeatureCount( int bForce )
 OGRErr OGRNASLayer::GetExtent(OGREnvelope *psExtent, int bForce )
 
 {
-    double dfXMin = 0.0;
-    double dfXMax = 0.0;
-    double dfYMin = 0.0;
-    double dfYMax = 0.0;
+    double dfXMin;
+    double dfXMax;
+    double dfYMin;
+    double dfYMax;
 
     if( poFClass != NULL &&
         poFClass->GetExtents( &dfXMin, &dfXMax, &dfYMin, &dfYMax ) )
@@ -293,13 +296,13 @@ int OGRNASLayer::TestCapability( const char * pszCap )
 {
     if( EQUAL(pszCap,OLCFastGetExtent) )
     {
+        double  dfXMin;
+        double  dfXMax;
+        double  dfYMin;
+        double  dfYMax;
+
         if( poFClass == NULL )
             return FALSE;
-
-        double dfXMin = 0.0;
-        double dfXMax = 0.0;
-        double dfYMin = 0.0;
-        double dfYMax = 0.0;
 
         return poFClass->GetExtents( &dfXMin, &dfXMax, &dfYMin, &dfYMax );
     }

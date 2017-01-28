@@ -1,4 +1,5 @@
 /**********************************************************************
+ * $Id: xmlreformat.cpp 33646 2016-03-05 15:54:03Z goatbar $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  XML Reformatting - mostly for testing minixml implementation.
@@ -29,22 +30,17 @@
 #include "cpl_minixml.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: xmlreformat.cpp 36907 2016-12-16 17:16:35Z goatbar $");
-
 int main( int argc, char **argv )
 
 {
-    // TODO(schwehr): Switch to using std::string.
-    static char szXML[20000000] = {};
-    FILE *fp = NULL;
+    static char  szXML[20000000];
+    FILE       *fp;
 
     if( argc == 1 )
-    {
         fp = stdin;
-    }
     else if( argv[1][0] == '-' )
     {
-        printf( "Usage: xmlreformat [filename]\n" );/*ok*/
+        printf( "Usage: xmlreformat [filename]\n" );
         exit( 0 );
     }
     else
@@ -52,17 +48,16 @@ int main( int argc, char **argv )
         fp = fopen( argv[1], "rt" );
         if( fp == NULL )
         {
-            printf( "Failed to open file %s.\n", argv[1] );/*ok*/
+            printf( "Failed to open file %s.\n", argv[1] );
             exit( 1 );
         }
     }
 
-    const int nLen = static_cast<int>(fread(szXML, 1, sizeof(szXML), fp));
-    if( nLen >= static_cast<int>(sizeof(szXML)) - 2 )
-    {
+    int nLen = fread( szXML, 1, sizeof(szXML), fp );
+    if( nLen >= (int) sizeof(szXML)-2 ) {
         fprintf( stderr,
                  "xmlreformat fixed sized buffer (%d bytes) exceeded.\n",
-                 static_cast<int>(sizeof(szXML)) );
+                 (int) sizeof(szXML) );
         exit(1);
     }
 
@@ -75,7 +70,7 @@ int main( int argc, char **argv )
     if( poTree != NULL )
     {
         char *pszRawXML = CPLSerializeXMLTree( poTree );
-        printf( "%s", pszRawXML );/*ok*/
+        printf( "%s", pszRawXML );
         CPLFree( pszRawXML );
         CPLDestroyXMLNode( poTree );
     }

@@ -30,7 +30,6 @@
 #include "cpl_conv.h"
 #include "aoutils.h"
 
-CPL_CVSID("$Id: aodriver.cpp 35903 2016-10-24 12:09:43Z goatbar $");
 
 /************************************************************************/
 /*                            AODriver()                            */
@@ -63,6 +62,7 @@ bool AODriver::Init()
   ::CoInitialize(NULL);
   m_initialized = true; //need to mark to un-init COM system on destruction
 
+
   m_licensedCheckedOut = InitializeDriver();
   if (!m_licensedCheckedOut)
   {
@@ -77,6 +77,7 @@ bool AODriver::Init()
 
   return true;
 }
+
 
 /************************************************************************/
 /*                              GetName()                               */
@@ -112,21 +113,24 @@ OGRDataSource *AODriver::Open( const char* pszFilename,
 
   const char* pInitString = pszFilename + 3; //skip chars
 
+
   IWorkspacePtr ipWorkspace = NULL;
   OpenWorkspace(pInitString, &ipWorkspace);
 
   if (ipWorkspace == NULL)
     return NULL;
 
-  AODataSource* pDS = new AODataSource();
+  AODataSource* pDS;
+
+  pDS = new AODataSource();
 
   if(!pDS->Open( ipWorkspace, pszFilename, bUpdate ) )
   {
     delete pDS;
     return NULL;
   }
-
-  return pDS;
+  else
+    return pDS;
 }
 
 /************************************************************************
@@ -138,6 +142,7 @@ OGRDataSource* AODriver::CreateDataSource( const char * pszName,
 {
   return NULL;
 }
+
 
 void AODriver::OpenWorkspace(std::string conn, IWorkspace** ppWorkspace)
 {
@@ -182,6 +187,7 @@ void AODriver::OpenWorkspace(std::string conn, IWorkspace** ppWorkspace)
     return;
   }
 
+
   *ppWorkspace = NULL;
 }
 
@@ -217,3 +223,4 @@ void RegisterOGRao()
     return;
   OGRSFDriverRegistrar::GetRegistrar()->RegisterDriver( new AODriver );
 }
+

@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogravce00layer.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  OGR
  * Purpose:  Implements OGRAVCE00Layer class.
@@ -33,29 +34,27 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-#include <cstdlib>
-
-CPL_CVSID("$Id: ogravce00layer.cpp 35952 2016-10-26 17:31:27Z goatbar $");
+CPL_CVSID("$Id: ogravce00layer.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 /************************************************************************/
 /*                           OGRAVCE00Layer()                           */
 /************************************************************************/
 
 OGRAVCE00Layer::OGRAVCE00Layer( OGRAVCDataSource *poDSIn,
-                                AVCE00Section *psSectionIn ) :
-    OGRAVCLayer( psSectionIn->eType, poDSIn ),
-    psSection(psSectionIn),
-    psRead(NULL),
-    poArcLayer(NULL),
-    nFeatureCount(-1),
-    bNeedReset(false),
-    nNextFID(1),
-    psTableSection(NULL),
-    psTableRead(NULL),
-    pszTableFilename(NULL),
-    nTablePos(0),
-    nTableBaseField(0),
-    nTableAttrIndex(-1)
+                                AVCE00Section *psSectionIn )
+        : OGRAVCLayer( psSectionIn->eType, poDSIn ),
+          psSection(psSectionIn),
+          psRead(NULL),
+          poArcLayer(NULL),
+          nFeatureCount(-1),
+          bNeedReset(0),
+          nNextFID(1),
+          psTableSection(NULL),
+          psTableRead(NULL),
+          pszTableFilename(NULL),
+          nTablePos(0),
+          nTableBaseField(0),
+          nTableAttrIndex(-1)
 {
     SetupFeatureDefinition( psSection->pszName );
     /* psRead = AVCE00ReadOpenE00(psSection->pszFilename); */
@@ -128,7 +127,7 @@ void OGRAVCE00Layer::ResetReading()
         AVCE00ReadGotoSectionE00(psTableRead, psTableSection, 0);
     }
 
-    bNeedReset = false;
+    bNeedReset = FALSE;
     nNextFID = 1;
 }
 
@@ -170,7 +169,7 @@ OGRFeature *OGRAVCE00Layer::GetFeature( GIntBig nFID )
     }
     else
     {
-        bNeedReset = true;
+        bNeedReset = TRUE;
 
         if (nNextFID > nFID)
         {
@@ -284,8 +283,8 @@ int OGRAVCE00Layer::TestCapability( const char * pszCap )
 /*      them into the appropriate OGR geometry on the target feature.   */
 /************************************************************************/
 
-bool OGRAVCE00Layer::FormPolygonGeometry( OGRFeature *poFeature,
-                                          AVCPal *psPAL )
+int OGRAVCE00Layer::FormPolygonGeometry( OGRFeature *poFeature,
+                                         AVCPal *psPAL )
 {
 /* -------------------------------------------------------------------- */
 /*      Try to find the corresponding ARC layer if not already          */
@@ -303,7 +302,7 @@ bool OGRAVCE00Layer::FormPolygonGeometry( OGRFeature *poFeature,
         }
 
         if( poArcLayer == NULL )
-            return false;
+            return FALSE;
     }
 
 /* -------------------------------------------------------------------- */
@@ -326,13 +325,13 @@ bool OGRAVCE00Layer::FormPolygonGeometry( OGRFeature *poFeature,
             continue;
 
         OGRFeature *poArc
-            = poArcLayer->GetFeature( std::abs(psPAL->pasArcs[iArc].nArcId) );
+            = poArcLayer->GetFeature( ABS(psPAL->pasArcs[iArc].nArcId) );
 
         if( poArc == NULL )
-            return false;
+            return FALSE;
 
         if( poArc->GetGeometryRef() == NULL )
-            return false;
+            return FALSE;
 
         oArcs.addGeometry( poArc->GetGeometryRef() );
         OGRFeature::DestroyFeature( poArc );
@@ -356,10 +355,10 @@ bool OGRAVCE00Layer::FormPolygonGeometry( OGRFeature *poFeature,
 /*      definition.                                                     */
 /************************************************************************/
 
-bool OGRAVCE00Layer::CheckSetupTable(AVCE00Section *psTblSectionIn)
+int OGRAVCE00Layer::CheckSetupTable(AVCE00Section *psTblSectionIn)
 {
     if (psTableRead)
-        return false;
+        return FALSE;
 
     const char *pszTableType = NULL;
     switch (eSectionType)
@@ -382,7 +381,7 @@ bool OGRAVCE00Layer::CheckSetupTable(AVCE00Section *psTblSectionIn)
 /*      a case insensitive check.                                       */
 /* -------------------------------------------------------------------- */
     if( pszTableType == NULL )
-        return false;
+        return FALSE;
 
     int iCheckOff = 0;
     for( ;
@@ -395,7 +394,7 @@ bool OGRAVCE00Layer::CheckSetupTable(AVCE00Section *psTblSectionIn)
     }
 
     if( psTblSectionIn->pszName[iCheckOff] == '\0' )
-        return false;
+        return FALSE;
 
     psTableSection = psTblSectionIn;
 
@@ -404,18 +403,18 @@ bool OGRAVCE00Layer::CheckSetupTable(AVCE00Section *psTblSectionIn)
 /* -------------------------------------------------------------------- */
     psTableRead = AVCE00ReadOpenE00(psTblSectionIn->pszFilename);
     if (psTableRead == NULL)
-        return false;
+        return FALSE;
 
     /* advance to the specified line number */
     if (AVCE00ReadGotoSectionE00(psTableRead, psTableSection, 0) != 0)
     {
         AVCE00ReadCloseE00(psTableRead);
         psTableRead = NULL;
-        return false;
+        return FALSE;
     }
 
     AVCE00ReadNextObjectE00(psTableRead);
-    bNeedReset = true;
+    bNeedReset = 1;
 
     pszTableFilename = CPLStrdup(psTblSectionIn->pszFilename);
     nTableBaseField = poFeatureDefn->GetFieldCount();
@@ -441,18 +440,18 @@ bool OGRAVCE00Layer::CheckSetupTable(AVCE00Section *psTblSectionIn)
 /* -------------------------------------------------------------------- */
     /* AVCE00ReadCloseE00( psTableRead ); */
 
-    return true;
+    return TRUE;
 }
 
 /************************************************************************/
 /*                         AppendTableFields()                          */
 /************************************************************************/
 
-bool OGRAVCE00Layer::AppendTableFields( OGRFeature *poFeature )
+int OGRAVCE00Layer::AppendTableFields( OGRFeature *poFeature )
 
 {
     if (psTableRead == NULL)
-        return false;
+        return FALSE;
 
 /* -------------------------------------------------------------------- */
 /*      Open the table if it is currently closed.                       */
@@ -461,14 +460,14 @@ bool OGRAVCE00Layer::AppendTableFields( OGRFeature *poFeature )
     {
         psTableRead = AVCE00ReadOpenE00(pszTableFilename);
         if (psTableRead == NULL)
-            return false;
+            return FALSE;
 
         /* Advance to the specified line number */
         if (AVCE00ReadGotoSectionE00(psTableRead, psTableSection, 0) != 0)
         {
             AVCE00ReadCloseE00(psTableRead);
             psTableRead = NULL;
-            return false;
+            return FALSE;
         }
         nTablePos = 0;
     }
@@ -482,14 +481,17 @@ bool OGRAVCE00Layer::AppendTableFields( OGRFeature *poFeature )
 /*      nTableAttrIndex will already be setup to refer to the           */
 /*      PolyId field.                                                   */
 /* -------------------------------------------------------------------- */
-    const int nRecordId = nTableAttrIndex == -1
-        ? static_cast<int>( poFeature->GetFID() )
-        : poFeature->GetFieldAsInteger( nTableAttrIndex );
+    int nRecordId;
+
+    if( nTableAttrIndex == -1 )
+        nRecordId = static_cast<int>( poFeature->GetFID() );
+    else
+        nRecordId = poFeature->GetFieldAsInteger( nTableAttrIndex );
 
     if (nRecordId <= nTablePos)
     {
         if( AVCE00ReadGotoSectionE00(psTableRead, psTableSection, 0) != 0 )
-            return false;
+            return FALSE;
         nTablePos = 0;
     }
 
@@ -502,7 +504,7 @@ bool OGRAVCE00Layer::AppendTableFields( OGRFeature *poFeature )
     while (NULL != hRecord && nTablePos < nRecordId);
 
     if( hRecord == NULL )
-        return false;
+        return FALSE;
 
 /* -------------------------------------------------------------------- */
 /*      Translate it.                                                   */
@@ -511,6 +513,7 @@ bool OGRAVCE00Layer::AppendTableFields( OGRFeature *poFeature )
                                  psTableRead->hParseInfo->hdr.psTableDef,
                                  static_cast<AVCField *>( hRecord ) );
 }
+
 
 GIntBig OGRAVCE00Layer::GetFeatureCount(int bForce)
 {

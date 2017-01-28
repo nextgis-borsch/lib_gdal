@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrgftresultlayer.cpp 32177 2015-12-14 07:25:30Z goatbar $
  *
  * Project:  GFT Translator
  * Purpose:  Implements OGRGFTResultLayer class.
@@ -28,20 +29,19 @@
 
 #include "ogr_gft.h"
 
-CPL_CVSID("$Id: ogrgftresultlayer.cpp 36691 2016-12-04 22:45:59Z rouault $");
+CPL_CVSID("$Id: ogrgftresultlayer.cpp 32177 2015-12-14 07:25:30Z goatbar $");
 
 /************************************************************************/
 /*                        OGRGFTResultLayer()                           */
 /************************************************************************/
 
-OGRGFTResultLayer::OGRGFTResultLayer( OGRGFTDataSource* poDSIn,
-                                      const char* pszSQL ) :
-    OGRGFTLayer(poDSIn),
-    osSQL( CPLString() ),
-    bGotAllRows(FALSE)
+OGRGFTResultLayer::OGRGFTResultLayer(OGRGFTDataSource* poDSIn,
+                                     const char* pszSQL) : OGRGFTLayer(poDSIn)
+
 {
-    // cppcheck-suppress useInitializationList
     osSQL = PatchSQL(pszSQL);
+
+    bGotAllRows = FALSE;
 
     poFeatureDefn = new OGRFeatureDefn( "result" );
     poFeatureDefn->Reference();
@@ -198,7 +198,7 @@ int OGRGFTResultLayer::RunSQL()
             poTableDefn = poTableLayer->GetLayerDefn();
 
         if (poTableLayer != NULL &&
-            !poTableLayer->GetTableId().empty() &&
+            poTableLayer->GetTableId().size() &&
             !EQUAL(osTableId, poTableLayer->GetTableId()))
         {
             osChangedSQL = osSQL;
@@ -221,8 +221,7 @@ int OGRGFTResultLayer::RunSQL()
     }
     else
     {
-        bGotAllRows = TRUE;
-        bEOF = TRUE;
+        bGotAllRows = bEOF = TRUE;
         poFeatureDefn->SetGeomType( wkbNone );
     }
 
@@ -245,7 +244,7 @@ int OGRGFTResultLayer::RunSQL()
         STARTS_WITH_CI(osSQL.c_str(), "DESCRIBE"))
     {
         ParseCSVResponse(pszLine, aosRows);
-        if (!aosRows.empty())
+        if (aosRows.size() > 0)
         {
             char** papszTokens = OGRGFTCSVSplitLine(aosRows[0], ',');
             for(int i=0;papszTokens && papszTokens[i];i++)
@@ -283,15 +282,9 @@ int OGRGFTResultLayer::RunSQL()
         }
 
         if (bHasSetLimit)
-        {
-            bEOF = (int)aosRows.size() < GetFeaturesToFetch();
-            bGotAllRows = bEOF;
-        }
+            bGotAllRows = bEOF = (int)aosRows.size() < GetFeaturesToFetch();
         else
-        {
-            bGotAllRows = TRUE;
-            bEOF = TRUE;
-        }
+            bGotAllRows = bEOF = TRUE;
     }
 
     SetGeomFieldName();

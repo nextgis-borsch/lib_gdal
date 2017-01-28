@@ -30,7 +30,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrocidatasource.cpp 36385 2016-11-21 12:24:06Z rouault $");
+CPL_CVSID("$Id: ogrocidatasource.cpp 35116 2016-08-15 14:54:25Z ilucena $");
 
 static const int anEPSGOracleMapping[] =
 {
@@ -58,8 +58,6 @@ OGROCIDataSource::OGROCIDataSource()
     pszDBName = NULL;
     papoLayers = NULL;
     nLayers = 0;
-    bDSUpdate = FALSE;
-    bNoLogging = FALSE;
     poSession = NULL;
     papoSRS = NULL;
     panSRID = NULL;
@@ -502,7 +500,7 @@ OGROCIDataSource::ICreateLayer( const char * pszLayerName,
     poSession->CleanName( pszSafeLayerName );
     CPLDebug( "OCI", "In Create Layer ..." );
 
-    bNoLogging = CPLFetchBool( papszOptions, "NO_LOGGING", false );
+    bNoLogging = CSLFetchBoolean( papszOptions, "NO_LOGGING", false );
 
 /* -------------------------------------------------------------------- */
 /*      Do we already have this layer?  If so, should we blow it        */
@@ -510,7 +508,7 @@ OGROCIDataSource::ICreateLayer( const char * pszLayerName,
 /* -------------------------------------------------------------------- */
     int iLayer;
 
-    if( CPLFetchBool( papszOptions, "TRUNCATE", false ) )
+    if( CSLFetchBoolean( papszOptions, "TRUNCATE", false ) )
     {
         CPLDebug( "OCI", "Calling TruncateLayer for %s", pszLayerName );
         TruncateLayer( pszSafeLayerName );
@@ -547,9 +545,8 @@ OGROCIDataSource::ICreateLayer( const char * pszLayerName,
 /* -------------------------------------------------------------------- */
     char szSRSId[100];
 
-    const char* pszSRID = CSLFetchNameValue( papszOptions, "SRID" );
-    if( pszSRID != NULL )
-        snprintf( szSRSId, sizeof(szSRSId), "%s", pszSRID );
+    if( CSLFetchNameValue( papszOptions, "SRID" ) != NULL )
+        strcpy( szSRSId, CSLFetchNameValue( papszOptions, "SRID" ) );
     else if( poSRS != NULL )
         snprintf( szSRSId, sizeof(szSRSId), "%d", FetchSRSId( poSRS ) );
     else
@@ -563,7 +560,7 @@ OGROCIDataSource::ICreateLayer( const char * pszLayerName,
     if( pszGeometryName == NULL )
         pszGeometryName = "ORA_GEOMETRY";
     const bool bGeomNullable =
-        CPLFetchBool(papszOptions, "GEOMETRY_NULLABLE", true);
+        CPLFetchBool(const_cast<const char**>(papszOptions), "GEOMETRY_NULLABLE", true);
 
 /* -------------------------------------------------------------------- */
 /*      Create a basic table with the FID.  Also include the            */
@@ -602,7 +599,7 @@ OGROCIDataSource::ICreateLayer( const char * pszLayerName,
         {
             char     szCommand2[1024];
 
-            snprintf( szCommand2, sizeof(szCommand2), "%s", szCommand );
+            strncpy( szCommand2, szCommand, sizeof(szCommand) );
 
             snprintf( szCommand, sizeof(szCommand), "%s NOLOGGING "
               "VARRAY %s.SDO_ELEM_INFO STORE AS SECUREFILE LOB (NOCACHE NOLOGGING) "
@@ -637,14 +634,11 @@ OGROCIDataSource::ICreateLayer( const char * pszLayerName,
 /* -------------------------------------------------------------------- */
 /*      Set various options on the layer.                               */
 /* -------------------------------------------------------------------- */
-    poLayer->SetLaunderFlag( CPLFetchBool(papszOptions, "LAUNDER", false) );
-    poLayer->SetPrecisionFlag( CPLFetchBool(papszOptions, "PRECISION", true));
+    poLayer->SetLaunderFlag( CSLFetchBoolean(papszOptions, "LAUNDER", false) );
+    poLayer->SetPrecisionFlag( CSLFetchBoolean(papszOptions, "PRECISION", true));
 
-    const char* pszDIM = CSLFetchNameValue(papszOptions,"DIM");
-    if( pszDIM != NULL )
-        poLayer->SetDimension( atoi(pszDIM) );
-    else if( eType != wkbNone )
-        poLayer->SetDimension( (wkbFlatten(eType) == eType) ? 2 : 3 );
+    if( CSLFetchNameValue(papszOptions,"DIM") != NULL )
+        poLayer->SetDimension( atoi(CSLFetchNameValue(papszOptions,"DIM")) );
 
     poLayer->SetOptions( papszOptions );
     if( eType != wkbNone && !bGeomNullable )
@@ -674,8 +668,6 @@ int OGROCIDataSource::TestCapability( const char * pszCap )
         return TRUE;
     else if( EQUAL(pszCap,ODsCDeleteLayer) && bDSUpdate )
         return TRUE;
-    else if( EQUAL(pszCap,ODsCRandomLayerWrite) )
-        return bDSUpdate;
     else
         return FALSE;
 }
@@ -692,6 +684,8 @@ OGRLayer *OGROCIDataSource::GetLayer( int iLayer )
     else
         return papoLayers[iLayer];
 }
+
+
 
 /************************************************************************/
 /*                             ExecuteSQL()                             */
@@ -1024,6 +1018,7 @@ int OGROCIDataSource::FetchSRSId( OGRSpatialReference * poSRS )
         return nSRSId;
 }
 
+
 /************************************************************************/
 /*                           GetLayerByName()                           */
 /************************************************************************/
@@ -1035,7 +1030,7 @@ OGRLayer *OGROCIDataSource::GetLayerByName( const char *pszNameIn )
     int  i, count;
 
     if ( !pszNameIn )
-        return NULL;
+	return NULL;
 
     count = GetLayerCount();
 

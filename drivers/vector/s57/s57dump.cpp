@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: s57dump.cpp 32445 2015-12-25 01:28:55Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Simple client for viewing S57 driver data.
@@ -30,7 +31,7 @@
 #include "cpl_string.h"
 #include "s57.h"
 
-CPL_CVSID("$Id: s57dump.cpp 35147 2016-08-18 17:36:16Z goatbar $");
+CPL_CVSID("$Id: s57dump.cpp 32445 2015-12-25 01:28:55Z goatbar $");
 
 /************************************************************************/
 /*                                main()                                */
@@ -188,8 +189,8 @@ int main( int nArgc, char ** papszArgv )
 
         oReader.AddFeatureDefn( S57GenerateDSIDFeatureDefn() );
 
-        OGRFeature *poFeature = NULL;
-        int nFeatures = 0;
+        OGRFeature      *poFeature;
+        int             nFeatures = 0;
 
         while( (poFeature = oReader.ReadNextFeature()) != NULL )
         {
@@ -203,3 +204,4 @@ int main( int nArgc, char ** papszArgv )
 
     return 0;
 }
+

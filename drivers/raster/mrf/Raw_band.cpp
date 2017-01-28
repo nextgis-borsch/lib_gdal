@@ -34,6 +34,7 @@
 */
 
 /*
+ * $Id$
  * raw band
  * raw page compression and decompression functions
  * Simple copy of data
@@ -41,8 +42,6 @@
  */
 
 #include "marfa.h"
-
-CPL_CVSID("$Id: Raw_band.cpp 34811 2016-07-28 15:15:05Z goatbar $");
 
 NAMESPACE_MRF_START
 

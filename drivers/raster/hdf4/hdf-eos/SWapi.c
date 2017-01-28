@@ -1,5 +1,5 @@
 /*****************************************************************************
- * $Id: SWapi.c 36473 2016-11-23 16:43:20Z rouault $
+ * $Id: SWapi.c 32805 2016-01-07 19:53:43Z rouault $
  *
  * This module has a number of additions and improvements over the original
  * implementation to be suitable for usage in GDAL HDF driver.
@@ -75,8 +75,6 @@ June 05, 2003 Abe Taaheri / Bruce Beaumont
 ******************************************************************************/
 
 #include "cpl_port.h" /* for M_PI */
-#include "cpl_string.h" /* for CPLsnprintf */
-
 #include "mfhdf.h"
 #include "hcomp.h"
 #include "HdfEosDef.h"
@@ -201,14 +199,14 @@ static intn SWscan2longlat(int32, char *, VOIDP, int32 [], int32 [],
 |  END_PROLOG                                                                 |
 -----------------------------------------------------------------------------*/
 int32
-SWopen(char *filename, intn i_access)
+SWopen(char *filename, intn access)
 
 {
     int32           fid /* HDF-EOS file ID */ ;
 
     /* Call EHopen to perform file access */
     /* ---------------------------------- */
-    fid = EHopen(filename, i_access);
+    fid = EHopen(filename, access);
 
     return (fid);
 }
@@ -251,7 +249,7 @@ SWcreate(int32 fid, char *swathname)
     intn            nswathopen = 0;	/* # of swath structures open */
     intn            status = 0;	/* routine return status variable */
 
-    uint8           l_access;	/* Read/Write file access code */
+    uint8           access;	/* Read/Write file access code */
 
     int32           HDFfid;	/* HDF file id */
     int32           vgRef;	/* Vgroup reference number */
@@ -272,7 +270,7 @@ SWcreate(int32 fid, char *swathname)
      * Check HDF-EOS file ID, get back HDF file ID, SD interface ID  and
      * access code
      */
-    status = EHchkfid(fid, swathname, &HDFfid, &sdInterfaceID, &l_access);
+    status = EHchkfid(fid, swathname, &HDFfid, &sdInterfaceID, &access);
 
 
     /* Check swathname for length */
@@ -404,7 +402,7 @@ SWcreate(int32 fid, char *swathname)
 		strcat(utlbuf, "\t\tEND_GROUP=DataField\n");
 		strcat(utlbuf, "\t\tGROUP=MergedFields\n");
 		strcat(utlbuf, "\t\tEND_GROUP=MergedFields\n");
-		CPLsnprintf(utlbuf2, sizeof(utlbuf2), "%s%ld%s",
+		snprintf(utlbuf2, sizeof(utlbuf2), "%s%ld%s",
 			"\tEND_GROUP=SWATH_", (long)nSwath + 1, "\n");
 		strcat(utlbuf, utlbuf2);
 
@@ -823,7 +821,7 @@ SWchkswid(int32 swathID, char *routname,
 
 {
     intn            status = 0;	/* routine return status variable */
-    uint8           l_access;	/* Read/Write access code */
+    uint8           access;	/* Read/Write access code */
 
     int32           idOffset = SWIDOFFSET;	/* Swath ID offset */
 
@@ -857,7 +855,7 @@ SWchkswid(int32 swathID, char *routname,
 	    /* Get file & SDS ids and Swath Vgroup */
 	    /* ----------------------------------- */
 	    status = EHchkfid(SWXSwath[swathID % idOffset].fid, " ", fid,
-			      sdInterfaceID, &l_access);
+			      sdInterfaceID, &access);
 	    *swVgrpID = SWXSwath[swathID % idOffset].IDTable;
 	}
     }
@@ -1264,7 +1262,7 @@ SWidxmapinfo(int32 swathID, char *geodim, char *datadim, int32 l_index[])
 	}
 	else
 	{
-	    /*status = -1;*/
+	    status = -1;
 	    HEpush(DFE_GENAPP, "SWidxmapinfo", __FILE__, __LINE__);
 	    HEreport("Index Mapping \"%s\" not found.\n", utlbuf);
 	}
@@ -4401,7 +4399,7 @@ SWinqswath(char *filename, char *swathlist, int32 * strbufsize)
 |  END_PROLOG                                                                 |
 -----------------------------------------------------------------------------*/
 static intn
-SW1dfldsrch(int32 fid, int32 swathID, const char *fieldname, const char *i_access,
+SW1dfldsrch(int32 fid, int32 swathID, const char *fieldname, const char *access,
 	    int32 * vgidout, int32 * vdataIDout, int32 * fldtype)
 
 {
@@ -4421,7 +4419,7 @@ SW1dfldsrch(int32 fid, int32 swathID, const char *fieldname, const char *i_acces
     /* Get Geolocation Vgroup id and 1D field name Vdata id */
     /* ---------------------------------------------------- */
     vgid = SWXSwath[sID].VIDTable[0];
-    vdataID = EHgetid(fid, vgid, fieldname, 1, i_access);
+    vdataID = EHgetid(fid, vgid, fieldname, 1, access);
     *fldtype = 0;
 
 
@@ -4432,7 +4430,7 @@ SW1dfldsrch(int32 fid, int32 swathID, const char *fieldname, const char *i_acces
     if (vdataID == -1)
     {
 	vgid = SWXSwath[sID].VIDTable[1];;
-	vdataID = EHgetid(fid, vgid, fieldname, 1, i_access);
+	vdataID = EHgetid(fid, vgid, fieldname, 1, access);
 	*fldtype = 1;
 
 	/* If field also not found in Data Vgroup then set error status */
@@ -5031,7 +5029,8 @@ SWwrrdfield(int32 swathID, const char *fieldname, const char *code,
 
 		    /* Fill buffer with "Fill" value (if any) */
 		    /* -------------------------------------- */
-                    snprintf( attrName, sizeof(attrName), "_FV_%s", fieldname);
+		    strncpy(attrName, "_FV_", 80);
+		    strcat(attrName, fieldname);
 
 		    status = SWreadattr(swathID, attrName, (char *) fillbuf);
 		    if (status == 0)

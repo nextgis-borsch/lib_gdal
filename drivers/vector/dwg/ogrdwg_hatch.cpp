@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrdwg_hatch.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  DWG Translator
  * Purpose:  Implements translation support for HATCH elements as part
@@ -40,7 +41,8 @@
 #include "Ge/GeCircArc2d.h"
 #include "Ge/GeEllipArc2d.h"
 
-CPL_CVSID("$Id: ogrdwg_hatch.cpp 35910 2016-10-24 14:08:24Z goatbar $");
+CPL_CVSID("$Id: ogrdwg_hatch.cpp 33713 2016-03-12 17:41:57Z goatbar $");
+
 
 static OGRErr DWGCollectBoundaryLoop( OdDbHatchPtr poHatch, int iLoop,
                                       OGRGeometryCollection *poGC );

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: pdfio.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: pdfio.h 33338 2016-02-03 10:24:38Z rouault $
  *
  * Project:  PDF driver
  * Purpose:  GDALDataset driver for PDF dataset.
@@ -38,6 +38,7 @@
 
 #define BUFFER_SIZE 1024
 
+
 #ifdef POPPLER_0_23_OR_LATER
 #define getPos_ret_type Goffset
 #define getStart_ret_type Goffset
@@ -52,6 +53,7 @@
 #define moveStart_delta_type int
 #endif
 
+
 class VSIPDFFileStream: public BaseStream
 {
     public:
@@ -62,32 +64,32 @@ class VSIPDFFileStream: public BaseStream
         virtual ~VSIPDFFileStream();
 
 #ifdef POPPLER_0_23_OR_LATER
-        virtual BaseStream* copy() override;
+        virtual BaseStream* copy();
 #endif
 
         virtual Stream *   makeSubStream(makeSubStream_offset_type startA, GBool limitedA,
-                                         makeSubStream_offset_type lengthA, Object *dictA) override;
-        virtual getPos_ret_type      getPos() override;
-        virtual getStart_ret_type    getStart() override;
+                                         makeSubStream_offset_type lengthA, Object *dictA);
+        virtual getPos_ret_type      getPos();
+        virtual getStart_ret_type    getStart();
 
-        virtual void       setPos(setPos_offset_type pos, int dir = 0) override;
-        virtual void       moveStart(moveStart_delta_type delta) override;
+        virtual void       setPos(setPos_offset_type pos, int dir = 0);
+        virtual void       moveStart(moveStart_delta_type delta);
 
-        virtual StreamKind getKind() override;
-        virtual GooString *getFileName() override;
+        virtual StreamKind getKind();
+        virtual GooString *getFileName();
 
-        virtual int        getChar() override;
-        virtual int        getUnfilteredChar () override;
-        virtual int        lookChar() override;
+        virtual int        getChar();
+        virtual int        getUnfilteredChar ();
+        virtual int        lookChar();
 
-        virtual void       reset() override;
-        virtual void       unfilteredReset () override;
-        virtual void       close() override;
+        virtual void       reset();
+        virtual void       unfilteredReset ();
+        virtual void       close();
 
     private:
         /* Added in poppler 0.15.0 */
-        virtual GBool hasGetChars() override;
-        virtual int getChars(int nChars, Guchar *buffer) override;
+        virtual GBool hasGetChars();
+        virtual int getChars(int nChars, Guchar *buffer);
 
         VSIPDFFileStream  *poParent;
         GooString         *poFilename;

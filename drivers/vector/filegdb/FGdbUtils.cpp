@@ -1,4 +1,5 @@
 /******************************************************************************
+* $Id: FGdbUtils.cpp 33563 2016-02-26 14:57:06Z rouault $
 *
 * Project:  OpenGIS Simple Features Reference Implementation
 * Purpose:  Different utility functions used in FileGDB OGR driver.
@@ -35,7 +36,7 @@
 #include "ogr_api.h"
 #include "ogrpgeogeometry.h"
 
-CPL_CVSID("$Id: FGdbUtils.cpp 36883 2016-12-15 13:31:12Z rouault $");
+CPL_CVSID("$Id: FGdbUtils.cpp 33563 2016-02-26 14:57:06Z rouault $");
 
 using std::string;
 
@@ -60,7 +61,7 @@ std::string WStringToString(const std::wstring& utf16string)
     char* pszUTF8 = CPLRecodeFromWChar( utf16string.c_str(), CPL_ENC_UCS2, CPL_ENC_UTF8 );
     std::string utf8string = pszUTF8;
     CPLFree(pszUTF8);
-    return utf8string;
+    return utf8string; 
 }
 
 /*************************************************************************/
@@ -191,14 +192,7 @@ bool OGRGeometryToGDB(OGRwkbGeometryType ogrType, std::string *gdbType, bool *ha
             *gdbType = "esriGeometryPolygon";
             break;
         }
-
-        case wkbTIN:
-        case wkbPolyhedralSurface:
-        {
-            *gdbType = "esriGeometryMultiPatch";
-            break;
-        }
-
+        
         default:
         {
             CPLError( CE_Failure, CPLE_AppDefined, "Cannot map OGRwkbGeometryType (%s) to ESRI type",
@@ -216,7 +210,7 @@ bool OGRGeometryToGDB(OGRwkbGeometryType ogrType, std::string *gdbType, bool *ha
 // We could make this function far more robust by doing automatic coercion of
 // types, and/or skipping fields we do not know. But, for our purposes. this
 // works fine.
-bool GDBToOGRFieldType(const std::string& gdbType, OGRFieldType* pOut, OGRFieldSubType* pSubType)
+bool GDBToOGRFieldType(std::string gdbType, OGRFieldType* pOut, OGRFieldSubType* pSubType)
 {
     /*
     ESRI types
@@ -448,30 +442,17 @@ bool GDBGeometryToOGRGeometry(bool forceMulti, FileGDBAPI::ShapeBuffer* pGdbGeom
         // force geometries to multi if requested
 
         // If it is a polygon, force to MultiPolygon since we always produce multipolygons
-        OGRwkbGeometryType eFlattenType = wkbFlatten(pOGRGeometry->getGeometryType());
-        if (eFlattenType == wkbPolygon)
+        if (wkbFlatten(pOGRGeometry->getGeometryType()) == wkbPolygon)
         {
             pOGRGeometry = OGRGeometryFactory::forceToMultiPolygon(pOGRGeometry);
         }
-        else if (eFlattenType == wkbCurvePolygon)
-        {
-            OGRMultiSurface* poMS = new OGRMultiSurface();
-            poMS->addGeometryDirectly( pOGRGeometry );
-            pOGRGeometry = poMS;
-        }
         else if (forceMulti)
         {
-            if (eFlattenType == wkbLineString)
+            if (wkbFlatten(pOGRGeometry->getGeometryType()) == wkbLineString)
             {
                 pOGRGeometry = OGRGeometryFactory::forceToMultiLineString(pOGRGeometry);
             }
-            else if (eFlattenType == wkbCompoundCurve)
-            {
-                OGRMultiCurve* poMC = new OGRMultiCurve();
-                poMC->addGeometryDirectly( pOGRGeometry );
-                pOGRGeometry = poMC;
-            }
-            else if (eFlattenType == wkbPoint)
+            else if (wkbFlatten(pOGRGeometry->getGeometryType()) == wkbPoint)
             {
                 pOGRGeometry = OGRGeometryFactory::forceToMultiPoint(pOGRGeometry);
             }
@@ -480,6 +461,7 @@ bool GDBGeometryToOGRGeometry(bool forceMulti, FileGDBAPI::ShapeBuffer* pGdbGeom
         if (pOGRGeometry)
             pOGRGeometry->assignSpatialReference( pOGRSR );
     }
+
 
     *ppOutGeometry = pOGRGeometry;
 
@@ -533,7 +515,7 @@ void FGDB_CPLAddXMLAttribute(CPLXMLNode* node, const char* attrname, const char*
 /*                          FGDBLaunderName()                            */
 /*************************************************************************/
 
-std::string FGDBLaunderName(const std::string& name)
+std::string FGDBLaunderName(const std::string name)
 {
     std::string newName = name;
 
@@ -546,7 +528,7 @@ std::string FGDBLaunderName(const std::string& name)
     {
         if ( !( newName[i] == '_' ||
               ( newName[i]>='0' && newName[i]<='9') ||
-              ( newName[i]>='a' && newName[i]<='z') ||
+              ( newName[i]>='a' && newName[i]<='z') || 
               ( newName[i]>='A' && newName[i]<='Z') ))
         {
             newName[i] = '_';
@@ -560,7 +542,7 @@ std::string FGDBLaunderName(const std::string& name)
 /*                     FGDBEscapeUnsupportedPrefixes()                   */
 /*************************************************************************/
 
-std::string FGDBEscapeUnsupportedPrefixes(const std::string& className)
+std::string FGDBEscapeUnsupportedPrefixes(const std::string className)
 {
     std::string newName = className;
     // From ESRI docs
@@ -569,7 +551,6 @@ std::string FGDBEscapeUnsupportedPrefixes(const std::string& className)
 
     for (int i = 0; UNSUPPORTED_PREFIXES[i] != NULL; i++)
     {
-        // cppcheck-suppress stlIfStrFind
         if (newName.find(UNSUPPORTED_PREFIXES[i]) == 0)
         {
             newName = "_" + newName;
@@ -584,7 +565,7 @@ std::string FGDBEscapeUnsupportedPrefixes(const std::string& className)
 /*                        FGDBEscapeReservedKeywords()                   */
 /*************************************************************************/
 
-std::string FGDBEscapeReservedKeywords(const std::string& name)
+std::string FGDBEscapeReservedKeywords(const std::string name)
 {
     std::string newName = name;
     std::string upperName = name;

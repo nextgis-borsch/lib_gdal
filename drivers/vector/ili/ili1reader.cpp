@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ili1reader.cpp 33829 2016-03-31 16:21:01Z rouault $
  *
  * Project:  Interlis 1 Reader
  * Purpose:  Implementation of ILI1Reader class.
@@ -48,7 +49,7 @@
 #  endif
 #endif
 
-CPL_CVSID("$Id: ili1reader.cpp 35911 2016-10-24 15:03:26Z goatbar $");
+CPL_CVSID("$Id: ili1reader.cpp 33829 2016-03-31 16:21:01Z rouault $");
 
 //
 // ILI1Reader
@@ -470,7 +471,6 @@ void ILI1Reader::ReadGeom( char **stgeom, int geomIdx, OGRwkbGeometryType eType,
           OGRErr error =  ogrCurve->addCurveDirectly(arc);
           if (error != OGRERR_NONE) {
             CPLError(CE_Warning, CPLE_AppDefined, "Added geometry: %s", arc->exportToJson() );
-            delete arc;
           }
           arc = NULL;
         }
@@ -488,7 +488,6 @@ void ILI1Reader::ReadGeom( char **stgeom, int geomIdx, OGRwkbGeometryType eType,
         } else {
           ogrLine->empty();
         }
-        delete arc;
         arc = new OGRCircularString();
         arc->addPoint(&ogrPoint);
         ogrPoint.setX(CPLAtof(tokens[1])); ogrPoint.setY(CPLAtof(tokens[2]));
@@ -547,7 +546,6 @@ void ILI1Reader::ReadGeom( char **stgeom, int geomIdx, OGRwkbGeometryType eType,
 
       CSLDestroy(tokens);
     }
-    delete arc;
 
     delete ogrLine;
 
@@ -639,11 +637,11 @@ char ** ILI1Reader::ReadParseLine()
 {
     CPLAssert( fpItf != NULL );
     if( fpItf == NULL )
-        return NULL;
+        return( NULL );
 
     const char  *pszLine = CPLReadLine( fpItf );
     if( pszLine == NULL )
-        return NULL;
+        return( NULL );
 
     if (strlen(pszLine) == 0) return NULL;
 
@@ -677,6 +675,8 @@ char ** ILI1Reader::ReadParseLine()
     }
     return tokens;
 }
+
+
 
 IILI1Reader *CreateILI1Reader() {
     return new ILI1Reader();

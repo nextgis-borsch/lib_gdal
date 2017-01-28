@@ -56,8 +56,8 @@ namespace PCIDSK
 
         virtual        ~SysBlockMap();
 
-        virtual void    Synchronize() override;
-        virtual void    Initialize() override;
+        virtual void    Synchronize();
+        virtual void    Initialize();
 
         SysVirtualFile *GetVirtualFile( int image );
         int             CreateVirtualFile();

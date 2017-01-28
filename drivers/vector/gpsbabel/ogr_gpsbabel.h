@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_gpsbabel.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: ogr_gpsbabel.h 32577 2015-12-31 06:39:56Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions for OGR/GPSBabel driver.
@@ -49,23 +49,24 @@ class OGRGPSBabelDataSource : public OGRDataSource
 
   public:
                         OGRGPSBabelDataSource();
-                        virtual ~OGRGPSBabelDataSource();
+                        ~OGRGPSBabelDataSource();
 
-    virtual int         CloseDependentDatasets() override;
+    virtual int         CloseDependentDatasets();
 
-    virtual const char  *GetName() override { return pszName; }
-    virtual int         GetLayerCount() override { return nLayers; }
-    virtual OGRLayer   *GetLayer( int ) override;
+    virtual const char  *GetName() { return pszName; }
+    virtual int         GetLayerCount() { return nLayers; }
+    virtual OGRLayer   *GetLayer( int );
 
-    virtual int         TestCapability( const char * ) override;
+    virtual int         TestCapability( const char * );
 
     int                 Open ( const char* pszFilename,
                                const char* pszGPSBabelDriverNameIn,
                                char** papszOpenOptions );
 
-    static bool         IsSpecialFile( const char* pszFilename );
-    static bool         IsValidDriverName( const char* pszGPSBabelDriverName );
+    static int          IsSpecialFile(const char* pszFilename);
+    static int          IsValidDriverName(const char* pszGPSBabelDriverName);
 };
+
 
 /************************************************************************/
 /*                   OGRGPSBabelWriteDataSource                         */
@@ -79,22 +80,22 @@ class OGRGPSBabelWriteDataSource : public OGRDataSource
     CPLString           osTmpFileName;
     GDALDataset        *poGPXDS;
 
-    bool                Convert();
+    int                 Convert();
 
   public:
                         OGRGPSBabelWriteDataSource();
-                        virtual ~OGRGPSBabelWriteDataSource();
+                        ~OGRGPSBabelWriteDataSource();
 
-    virtual const char  *GetName() override { return pszName; }
-    virtual int         GetLayerCount() override;
-    virtual OGRLayer   *GetLayer( int ) override;
+    virtual const char  *GetName() { return pszName; }
+    virtual int         GetLayerCount();
+    virtual OGRLayer   *GetLayer( int );
 
-    virtual int         TestCapability( const char * ) override;
+    virtual int         TestCapability( const char * );
 
     virtual OGRLayer   *ICreateLayer( const char * pszLayerName,
                                      OGRSpatialReference *poSRS,
                                      OGRwkbGeometryType eType,
-                                     char ** papszOptions ) override;
+                                     char ** papszOptions );
 
     int                 Create ( const char* pszFilename, char **papszOptions );
 };

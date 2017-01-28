@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_pds.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: ogr_pds.h 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  PDS Translator
  * Purpose:  Definition of classes for OGR .pdstable driver.
@@ -85,20 +85,21 @@ class OGRPDSLayer : public OGRLayer
                                          int nRecords,
                                          int nStartBytes, int nRecordSize,
                                          GByte* pabyRecord, bool bIsASCII);
-                        virtual ~OGRPDSLayer();
+                        ~OGRPDSLayer();
 
-    virtual void                ResetReading() override;
-    virtual OGRFeature *        GetNextFeature() override;
 
-    virtual OGRFeatureDefn *    GetLayerDefn() override { return poFeatureDefn; }
+    virtual void                ResetReading();
+    virtual OGRFeature *        GetNextFeature();
 
-    virtual int                 TestCapability( const char * ) override;
+    virtual OGRFeatureDefn *    GetLayerDefn() { return poFeatureDefn; }
 
-    virtual GIntBig             GetFeatureCount(int bForce = TRUE ) override;
+    virtual int                 TestCapability( const char * );
 
-    virtual OGRFeature         *GetFeature( GIntBig nFID ) override;
+    virtual GIntBig             GetFeatureCount(int bForce = TRUE );
 
-    virtual OGRErr              SetNextByIndex( GIntBig nIndex ) override;
+    virtual OGRFeature         *GetFeature( GIntBig nFID );
+
+    virtual OGRErr              SetNextByIndex( GIntBig nIndex );
 };
 
 } /* end of OGRPDS namespace */
@@ -121,22 +122,22 @@ class OGRPDSDataSource : public OGRDataSource
                                        int iSubscript,
                                        const char *pszDefault );
 
-    bool                LoadTable( const char* pszFilename,
-                                   int nRecordSize,
-                                   CPLString osTableID );
+    int                 LoadTable(const char* pszFilename,
+                                  int nRecordSize,
+                                  CPLString osTableID);
 
   public:
                         OGRPDSDataSource();
-                        virtual ~OGRPDSDataSource();
+                        ~OGRPDSDataSource();
 
     int                 Open( const char * pszFilename );
 
-    virtual const char*         GetName() override { return pszName; }
+    virtual const char*         GetName() { return pszName; }
 
-    virtual int                 GetLayerCount() override { return nLayers; }
-    virtual OGRLayer*           GetLayer( int ) override;
+    virtual int                 GetLayerCount() { return nLayers; }
+    virtual OGRLayer*           GetLayer( int );
 
-    virtual int                 TestCapability( const char * ) override;
+    virtual int                 TestCapability( const char * );
 
     static void         CleanString( CPLString &osInput );
 };

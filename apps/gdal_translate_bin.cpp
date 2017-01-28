@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: gdal_translate_bin.cpp 34776 2016-07-25 21:22:15Z rouault $
  *
  * Project:  GDAL Utilities
  * Purpose:  GDAL Image Translator Program
@@ -33,7 +34,7 @@
 #include "commonutils.h"
 #include "gdal_utils_priv.h"
 
-CPL_CVSID("$Id: gdal_translate_bin.cpp 35999 2016-10-28 15:17:40Z rouault $");
+CPL_CVSID("$Id: gdal_translate_bin.cpp 34776 2016-07-25 21:22:15Z rouault $");
 
 /*  ******************************************************************* */
 /*                               Usage()                                */
@@ -168,7 +169,7 @@ int main( int argc, char ** argv )
     {
 #if defined(__MACH__) && defined(__APPLE__)
         // On Mach, the default limit is 256 files per process
-        // TODO We should eventually dynamically query the limit for all OS
+        // We should eventually dynamically query the limit
         CPLSetConfigOption("GDAL_MAX_DATASET_POOL_SIZE", "100");
 #else
         CPLSetConfigOption("GDAL_MAX_DATASET_POOL_SIZE", "450");
@@ -202,38 +203,6 @@ int main( int argc, char ** argv )
     if( !(psOptionsForBinary->bQuiet) )
     {
         GDALTranslateOptionsSetProgress(psOptions, GDALTermProgress, NULL);
-    }
-
-    if( psOptionsForBinary->pszFormat )
-    {
-        GDALDriverH hDriver = GDALGetDriverByName( psOptionsForBinary->pszFormat );
-        if( hDriver == NULL )
-        {
-            int iDr;
-
-            fprintf(stderr, "Output driver `%s' not recognised.\n",
-                    psOptionsForBinary->pszFormat);
-            fprintf(stderr, "The following format drivers are configured and support output:\n" );
-            for( iDr = 0; iDr < GDALGetDriverCount(); iDr++ )
-            {
-                hDriver = GDALGetDriver(iDr);
-
-                if( GDALGetMetadataItem( hDriver, GDAL_DCAP_RASTER, NULL) != NULL &&
-                    (GDALGetMetadataItem( hDriver, GDAL_DCAP_CREATE, NULL ) != NULL
-                    || GDALGetMetadataItem( hDriver, GDAL_DCAP_CREATECOPY, NULL ) != NULL) )
-                {
-                    fprintf(stderr, "  %s: %s\n",
-                            GDALGetDriverShortName( hDriver  ),
-                            GDALGetDriverLongName( hDriver ) );
-                }
-            }
-
-            GDALTranslateOptionsFree(psOptions);
-            GDALTranslateOptionsForBinaryFree(psOptionsForBinary);
-
-            GDALDestroyDriverManager();
-            exit(1);
-        }
     }
 
     if (!psOptionsForBinary->bQuiet && !psOptionsForBinary->bFormatExplicitlySet)
@@ -320,6 +289,7 @@ int main( int argc, char ** argv )
 
         GDALDestroyDriverManager();
         return 0;
+
     }
 
     if( !psOptionsForBinary->bQuiet )

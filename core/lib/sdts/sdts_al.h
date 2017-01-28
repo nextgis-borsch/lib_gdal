@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: sdts_al.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: sdts_al.h 32067 2015-12-07 15:34:53Z goatbar $
  *
  * Project:  SDTS Translator
  * Purpose:  Include file for entire SDTS Abstraction Layer functions.
@@ -296,7 +296,7 @@ class SDTSRawLine : public SDTSFeature
         subfield. */
     SDTSModId   oEndNode;               /* ENID */
 
-    void        Dump( FILE * ) override;
+    void        Dump( FILE * );
 };
 
 /************************************************************************/
@@ -322,10 +322,10 @@ class SDTSLineReader : public SDTSIndexedReader
                 ~SDTSLineReader();
 
     int         Open( const char * );
-    SDTSRawLine *GetNextLine();
+    SDTSRawLine *GetNextLine( void );
     void        Close();
 
-    SDTSFeature *GetNextRawFeature() override { return GetNextLine(); }
+    SDTSFeature *GetNextRawFeature( void ) { return GetNextLine(); }
 
     void        AttachToPolygons( SDTSTransfer *, int iPolyLayer  );
 };
@@ -357,7 +357,7 @@ class SDTSAttrRecord : public SDTSFeature
 
     DDFField    *poATTR;
 
-    virtual void Dump( FILE * ) override;
+    virtual void Dump( FILE * );
 };
 
 /************************************************************************/
@@ -390,7 +390,7 @@ class SDTSAttrReader : public SDTSIndexedReader
       */
     int         IsSecondary() { return bIsSecondary; }
 
-    SDTSFeature *GetNextRawFeature() override { return GetNextAttrRecord(); }
+    SDTSFeature *GetNextRawFeature( void ) { return GetNextAttrRecord(); }
 };
 
 /************************************************************************/
@@ -418,7 +418,7 @@ class SDTSRawPoint : public SDTSFeature
     /** Optional identifier of area marked by this point (i.e. PC01:27). */
     SDTSModId   oAreaId;                /* ARID */
 
-    virtual void Dump( FILE * ) override;
+    virtual void Dump( FILE * );
 };
 
 /************************************************************************/
@@ -439,10 +439,10 @@ class SDTSPointReader : public SDTSIndexedReader
     virtual    ~SDTSPointReader();
 
     int         Open( const char * );
-    SDTSRawPoint *GetNextPoint();
+    SDTSRawPoint *GetNextPoint( void );
     void        Close();
 
-    SDTSFeature *GetNextRawFeature() override { return GetNextPoint(); }
+    SDTSFeature *GetNextRawFeature( void ) { return GetNextPoint(); }
 };
 
 /************************************************************************/
@@ -453,7 +453,7 @@ class SDTSPointReader : public SDTSIndexedReader
   Class for holding information about a polygon feature.
 
   When directly read from a polygon module, the polygon has no concept
-  of its geometry.  Just it's ID, and references to attribute records.
+  of it's geometry.  Just it's ID, and references to attribute records.
   However, if the SDTSLineReader::AttachToPolygons() method is called on
   the module containing the lines forming the polygon boundaries, then the
   nEdges/papoEdges information on the SDTSRawPolygon will be filled in.
@@ -503,7 +503,7 @@ class SDTSRawPolygon : public SDTSFeature
       rings via panRingStart.  The values are almost always zero. */
     double      *padfZ;
 
-    virtual void Dump( FILE * ) override;
+    virtual void Dump( FILE * );
 };
 
 /************************************************************************/
@@ -521,10 +521,10 @@ class SDTSPolygonReader : public SDTSIndexedReader
     virtual    ~SDTSPolygonReader();
 
     int         Open( const char * );
-    SDTSRawPolygon *GetNextPolygon();
+    SDTSRawPolygon *GetNextPolygon( void );
     void        Close();
 
-    SDTSFeature *GetNextRawFeature() override { return GetNextPolygon(); }
+    SDTSFeature *GetNextRawFeature( void ) { return GetNextPolygon(); }
 
     void        AssembleRings( SDTSTransfer *, int iPolyLayer );
 };

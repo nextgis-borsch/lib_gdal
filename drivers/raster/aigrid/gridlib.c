@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gridlib.c 35251 2016-08-30 04:28:53Z goatbar $
+ * $Id: gridlib.c 35241 2016-08-29 08:49:57Z rouault $
  *
  * Project:  Arc/Info Binary Grid Translator
  * Purpose:  Grid file reading code.
@@ -30,7 +30,7 @@
 
 #include "aigrid.h"
 
-CPL_CVSID("$Id: gridlib.c 35251 2016-08-30 04:28:53Z goatbar $");
+CPL_CVSID("$Id: gridlib.c 35241 2016-08-29 08:49:57Z rouault $");
 
 CPL_INLINE static void CPL_IGNORE_RET_VAL_INT(CPL_UNUSED int unused) {}
 
@@ -1147,6 +1147,8 @@ CPLErr AIGReadStatistics( const char * pszCoverName, AIGInfo_t * psInfo )
         return( CE_Failure );
     }
 
+    CPLFree( pszHDRFilename );
+
 /* -------------------------------------------------------------------- */
 /*      Get the contents - 3 or 4 doubles.                              */
 /* -------------------------------------------------------------------- */
@@ -1184,10 +1186,8 @@ CPLErr AIGReadStatistics( const char * pszCoverName, AIGInfo_t * psInfo )
     {
         CPLError( CE_Failure, CPLE_AppDefined, "Wrong content for %s",
                   pszHDRFilename );
-        CPLFree( pszHDRFilename );
         return CE_Failure;
     }
 
-    CPLFree( pszHDRFilename );
-    return CE_None;
+    return( CE_None );
 }

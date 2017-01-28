@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: loslasdataset.cpp 33864 2016-04-02 11:50:14Z goatbar $
  *
  * Project:  Horizontal Datum Formats
  * Purpose:  Implementation of NOAA/NADCON los/las datum shift format.
@@ -32,7 +33,7 @@
 #include "ogr_srs_api.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id: loslasdataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
+CPL_CVSID("$Id: loslasdataset.cpp 33864 2016-04-02 11:50:14Z goatbar $");
 
 /**
 
@@ -84,8 +85,8 @@ class LOSLASDataset : public RawDataset
                 LOSLASDataset();
     virtual ~LOSLASDataset();
 
-    virtual CPLErr GetGeoTransform( double * padfTransform ) override;
-    virtual const char *GetProjectionRef() override;
+    virtual CPLErr GetGeoTransform( double * padfTransform );
+    virtual const char *GetProjectionRef();
 
     static GDALDataset *Open( GDALOpenInfo * );
     static int          Identify( GDALOpenInfo * );
@@ -101,10 +102,7 @@ class LOSLASDataset : public RawDataset
 /*                             LOSLASDataset()                          */
 /************************************************************************/
 
-LOSLASDataset::LOSLASDataset() : fpImage(NULL), nRecordLength(0)
-{
-    memset( adfGeoTransform, 0, sizeof(adfGeoTransform) );
-}
+LOSLASDataset::LOSLASDataset() : fpImage(NULL), nRecordLength(0) { }
 
 /************************************************************************/
 /*                            ~LOSLASDataset()                          */
@@ -233,7 +231,7 @@ GDALDataset *LOSLASDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
 
-    return poDS;
+    return( poDS );
 }
 
 /************************************************************************/

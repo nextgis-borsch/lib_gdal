@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id$
  *
  * Project:  Interlis 1/2 Translator
  * Purpose:  IlisMeta model reader.
@@ -28,6 +29,7 @@
 
 // IlisMeta model: http://www.interlis.ch/models/core/IlisMeta07-20111222.ili
 
+
 #include "cpl_minixml.h"
 #include "imdreader.h"
 
@@ -35,7 +37,8 @@
 #include <vector>
 #include <algorithm>
 
-CPL_CVSID("$Id: imdreader.cpp 35933 2016-10-25 16:46:26Z goatbar $");
+
+CPL_CVSID("$Id$");
 
 typedef std::map<CPLString,CPLXMLNode*> StrNodeMap;
 typedef std::vector<CPLXMLNode*> NodeVector;
@@ -191,7 +194,7 @@ public:
         // Delete default geometry field
         poTableDefn->DeleteGeomFieldDefn(0);
 
-        const char* psKind = CPLGetXMLValue( node, "Kind", "" );
+        const char* psKind = CPLGetXMLValue( node, "Kind", NULL );
 #ifdef DEBUG_VERBOSE
         CPLDebug( "OGR_ILI", "InitFieldDefinitions of '%s' kind: %s",
                   GetName(), psKind );
@@ -273,7 +276,7 @@ public:
                 }
                 else if (EQUAL(typeName, "IlisMeta07.ModelData.LineType"))
                 {
-                    const char* psKind = CPLGetXMLValue( psElementNode, "Kind", "" );
+                    const char* psKind = CPLGetXMLValue( psElementNode, "Kind", NULL );
                     poGeomFieldInfos[psName].iliGeomType = psKind;
                     bool isLinearType = (std::find(oArcLineTypes.begin(), oArcLineTypes.end(), psElementNode) == oArcLineTypes.end());
                     bool linearGeom = isLinearType || CPLTestBool(CPLGetConfigOption("OGR_STROKE_CURVE", "FALSE"));
@@ -331,18 +334,20 @@ public:
     }
 
   private:
-    CPL_DISALLOW_COPY_ASSIGN(IliClass)
+    CPL_DISALLOW_COPY_ASSIGN(IliClass);
 };
+
 
 ImdReader::ImdReader(int iliVersionIn) :
     iliVersion(iliVersionIn),
-    modelInfos(),  // TODO(schwehr): Remove.  No need for default ctor, correct?
-    mainModelName("OGR"),
-    mainTopicName("OGR"),
-    codeBlank('_'),
-    codeUndefined('@'),
-    codeContinue('\\')
-{}
+    modelInfos()
+{
+    mainModelName = "OGR";
+    mainTopicName = "OGR";
+    codeBlank = '_';
+    codeUndefined = '@';
+    codeContinue = '\\';
+}
 
 ImdReader::~ImdReader() {}
 
@@ -361,12 +366,13 @@ void ImdReader::ReadModel(const char *pszFilename) {
     ClassesMap oClasses;
     NodeCountMap oAxisCount;
     NodeVector oArcLineTypes;
+    const char *modelName;
 
     /* Fill TID lookup map and IliClasses lookup map */
     CPLXMLNode* psModel = psSectionNode->psChild;
     while( psModel != NULL )
     {
-        const char *modelName = CPLGetXMLValue( psModel, "BID", NULL );
+        modelName = CPLGetXMLValue( psModel, "BID", NULL );
 #ifdef DEBUG_VERBOSE
         CPLDebug( "OGR_ILI", "Model: '%s'", modelName);
 #endif
@@ -382,6 +388,7 @@ void ImdReader::ReadModel(const char *pszFilename) {
                 const char* psTID = CPLGetXMLValue( psEntry, "TID", NULL );
                 if( psTID != NULL )
                     oTidLookup[psTID] = psEntry;
+
 
                 if( EQUAL(psEntry->pszValue, "IlisMeta07.ModelData.Model") &&
                     !EQUAL(modelName, "MODEL.INTERLIS"))
@@ -495,6 +502,7 @@ void ImdReader::ReadModel(const char *pszFilename) {
                 }
             }
             psEntry = psEntry->psNext;
+
         }
 
         psModel = psModel->psNext;

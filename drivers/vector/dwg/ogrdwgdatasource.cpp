@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrdxfdatasource.cpp 22009 2011-03-22 20:01:34Z warmerdam $
  *
  * Project:  DWG Translator
  * Purpose:  Implements OGRDWGDataSource class
@@ -36,20 +37,17 @@
 #include "DbLinetypeTable.h"
 #include "DbLinetypeTableRecord.h"
 
-CPL_CVSID("$Id: ogrdwgdatasource.cpp 36682 2016-12-04 20:34:45Z rouault $");
+CPL_CVSID("$Id: ogrdxfdatasource.cpp 22009 2011-03-22 20:01:34Z warmerdam $");
 
 /************************************************************************/
 /*                          OGRDWGDataSource()                          */
 /************************************************************************/
 
 OGRDWGDataSource::OGRDWGDataSource() :
-  fp(NULL),
-  iEntitiesSectionOffset(0),
-  bInlineBlocks(FALSE),
-  poServices(NULL),
-  poDb(NULL)
+  fp(NULL)
 
 {
+    poDb = NULL;
 }
 
 /************************************************************************/
@@ -62,7 +60,7 @@ OGRDWGDataSource::~OGRDWGDataSource()
 /* -------------------------------------------------------------------- */
 /*      Destroy layers.                                                 */
 /* -------------------------------------------------------------------- */
-    while( !apoLayers.empty() )
+    while( apoLayers.size() > 0 )
     {
         delete apoLayers.back();
         apoLayers.pop_back();
@@ -82,6 +80,7 @@ int OGRDWGDataSource::TestCapability( const char * pszCap )
 /************************************************************************/
 /*                              GetLayer()                              */
 /************************************************************************/
+
 
 OGRLayer *OGRDWGDataSource::GetLayer( int iLayer )
 

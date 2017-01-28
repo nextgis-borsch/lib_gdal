@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrsfdriverregistrar.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRSFDriverRegistrar class implementation.
@@ -31,7 +32,7 @@
 #include "ogr_api.h"
 #include "ograpispy.h"
 
-CPL_CVSID("$Id: ogrsfdriverregistrar.cpp 35910 2016-10-24 14:08:24Z goatbar $");
+CPL_CVSID("$Id: ogrsfdriverregistrar.cpp 33714 2016-03-13 05:42:13Z goatbar $");
 
 /************************************************************************/
 /*                         OGRSFDriverRegistrar                         */
@@ -51,12 +52,15 @@ OGRSFDriverRegistrar::OGRSFDriverRegistrar() {}
 /*                       ~OGRSFDriverRegistrar()                        */
 /************************************************************************/
 
-OGRSFDriverRegistrar::~OGRSFDriverRegistrar() {}
+OGRSFDriverRegistrar::~OGRSFDriverRegistrar()
 
-//! @cond Doxygen_Suppress
+{
+}
+
 /************************************************************************/
 /*                           GetRegistrar()                             */
 /************************************************************************/
+
 
 OGRSFDriverRegistrar *OGRSFDriverRegistrar::GetRegistrar()
 {
@@ -171,6 +175,7 @@ int OGRSFDriverRegistrar::GetOpenDSCount()
     CPLError(CE_Failure, CPLE_AppDefined, "Stub implementation in GDAL 2.0");
     return 0;
 }
+
 
 /************************************************************************/
 /*                         OGRGetOpenDSCount()                          */
@@ -406,4 +411,3 @@ OGRSFDriverH OGRGetDriverByName( const char *pszName )
     return (OGRSFDriverH)
         OGRSFDriverRegistrar::GetRegistrar()->GetDriverByName( pszName );
 }
-//! @endcond

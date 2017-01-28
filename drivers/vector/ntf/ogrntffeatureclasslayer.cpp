@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrntffeatureclasslayer.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  UK NTF Reader
  * Purpose:  Implements OGRNTFFeatureClassLayer class.
@@ -29,7 +30,7 @@
 #include "ntf.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrntffeatureclasslayer.cpp 35191 2016-08-24 01:33:06Z goatbar $");
+CPL_CVSID("$Id: ogrntffeatureclasslayer.cpp 33714 2016-03-13 05:42:13Z goatbar $");
 
 /************************************************************************/
 /*                      OGRNTFFeatureClassLayer()                       */
@@ -38,25 +39,29 @@ CPL_CVSID("$Id: ogrntffeatureclasslayer.cpp 35191 2016-08-24 01:33:06Z goatbar $
 /*      OGRFeatureDefn object.                                          */
 /************************************************************************/
 
-OGRNTFFeatureClassLayer::OGRNTFFeatureClassLayer( OGRNTFDataSource *poDSIn ) :
-    poFeatureDefn(new OGRFeatureDefn("FEATURE_CLASSES")),
-    poFilterGeom(NULL),
-    poDS(poDSIn),
-    iCurrentFC(0)
+OGRNTFFeatureClassLayer::OGRNTFFeatureClassLayer( OGRNTFDataSource *poDSIn )
+
 {
+    poFilterGeom = NULL;
+
+    poDS = poDSIn;
+
+    iCurrentFC = 0;
+
 /* -------------------------------------------------------------------- */
 /*      Establish the schema.                                           */
 /* -------------------------------------------------------------------- */
+    poFeatureDefn = new OGRFeatureDefn( "FEATURE_CLASSES" );
     SetDescription( poFeatureDefn->GetName() );
     poFeatureDefn->SetGeomType( wkbNone );
     poFeatureDefn->Reference();
 
-    OGRFieldDefn oFCNum( "FEAT_CODE", OFTString );
+    OGRFieldDefn      oFCNum( "FEAT_CODE", OFTString );
 
     oFCNum.SetWidth( 4 );
     poFeatureDefn->AddFieldDefn( &oFCNum );
 
-    OGRFieldDefn oFCName( "FC_NAME", OFTString );
+    OGRFieldDefn      oFCName( "FC_NAME", OFTString );
 
     oFCNum.SetWidth( 80 );
     poFeatureDefn->AddFieldDefn( &oFCName );

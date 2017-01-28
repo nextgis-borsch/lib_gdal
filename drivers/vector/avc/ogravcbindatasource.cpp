@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogravcbindatasource.cpp 32122 2015-12-11 16:01:28Z goatbar $
  *
  * Project:  OGR
  * Purpose:  Implements OGRAVCBinDataSource class.
@@ -30,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogravcbindatasource.cpp 34819 2016-07-28 22:32:18Z goatbar $");
+CPL_CVSID("$Id: ogravcbindatasource.cpp 32122 2015-12-11 16:01:28Z goatbar $");
 
 /************************************************************************/
 /*                        OGRAVCBinDataSource()                         */

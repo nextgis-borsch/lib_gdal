@@ -31,7 +31,7 @@
 #include "ogr_idrisi.h"
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id: ogridrisidriver.cpp 34996 2016-08-09 02:25:28Z goatbar $");
+CPL_CVSID("$Id: ogridrisidriver.cpp 32745 2016-01-04 23:16:43Z goatbar $");
 
 // g++ ogr/ogrsf_frmts/idrisi/*.cpp -Wall -g -fPIC -shared -o ogr_Idrisi.so -Iport -Igcore -Iogr -Iogr/ogrsf_frmts/idrisi -Iogr/ogrsf_frmts -Ifrmts/idrisi
 
@@ -96,9 +96,6 @@ int OGRIdrisiDriver::TestCapability( const char * /* pszCap */ )
 void RegisterOGRIdrisi()
 
 {
-    if( GDALGetDriverByName( "Idrisi" ) != NULL )
-        return;
-
     OGRSFDriver* poDriver = new OGRIdrisiDriver;
     poDriver->SetMetadataItem( GDAL_DMD_LONGNAME, "Idrisi Vector (.vct)" );
     poDriver->SetMetadataItem( GDAL_DMD_EXTENSION, "vct" );

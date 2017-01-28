@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: sdedataset.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  ESRI ArcSDE Raster reader
  * Purpose:  Dataset implementation for ESRI ArcSDE Rasters
@@ -32,8 +33,6 @@
 #include "gdal_frmts.h"
 #include "sdedataset.h"
 
-CPL_CVSID("$Id: sdedataset.cpp 36455 2016-11-22 23:11:35Z rouault $");
-
 /************************************************************************/
 /*                          GetRastercount()                            */
 /************************************************************************/
@@ -63,6 +62,7 @@ int SDEDataset::GetRasterYSize( void )
 {
     return nRasterYSize;
 }
+
 
 /************************************************************************/
 /*                          ComputeRasterInfo()                         */
@@ -191,6 +191,7 @@ CPLErr SDEDataset::ComputeRasterInfo() {
         return CE_Fatal;
     }
 
+
     for (int i=0; i < nBands; i++) {
         SetBand( i+1, new SDERasterBand( this, i+1, -1, &(paohSDERasterBands[i]) ));
     }
@@ -203,6 +204,7 @@ CPLErr SDEDataset::ComputeRasterInfo() {
 
     return CE_None;
 }
+
 
 /************************************************************************/
 /*                          GetGeoTransform()                           */
@@ -247,13 +249,13 @@ const char *SDEDataset::GetProjectionRef()
     if (!hRasterColumn){
         CPLError ( CE_Failure, CPLE_AppDefined,
                    "Raster Column not defined");
-        return "";
+        return ("");
     }
 
     nSDEErr = SE_rascolinfo_get_coordref(hRasterColumn, coordref);
 
     if (nSDEErr == SE_NO_COORDREF) {
-        return "";
+        return ("");
     }
 
     if( nSDEErr != SE_SUCCESS )
@@ -269,8 +271,9 @@ const char *SDEDataset::GetProjectionRef()
     }
     SE_coordref_free(coordref);
 
+    OGRSpatialReference *poSRS;
     CPLDebug ("SDERASTER", "SDE says the coordinate system is: %s'", szWKT);
-    OGRSpatialReference *poSRS = new OGRSpatialReference(szWKT);
+    poSRS = new OGRSpatialReference(szWKT);
     poSRS->morphFromESRI();
 
     poSRS->exportToWkt(&pszWKT);
@@ -295,7 +298,9 @@ SDEDataset::SDEDataset(  )
     paohSDERasterBands  = NULL;
     hStream             = NULL;
     hRasterColumn       = NULL;
-    pszWKT              = NULL;
+    pszWKT		= NULL;
+    pszLayerName 	= NULL;
+    pszColumnName 	= NULL;
     nBands              = 0;
     nRasterXSize        = 0;
     nRasterYSize        = 0;
@@ -305,7 +310,10 @@ SDEDataset::SDEDataset(  )
     dfMaxX              = 0.0;
     dfMaxY              = 0.0;
     SE_rascolinfo_create(&hRasterColumn);
+
 }
+
+
 
 /************************************************************************/
 /*                            ~SDEDataset()                             */
@@ -340,6 +348,7 @@ SDEDataset::~SDEDataset()
         CPLFree(pszColumnName);
 }
 
+
 /************************************************************************/
 /*                                Open()                                */
 /************************************************************************/
@@ -366,6 +375,7 @@ GDALDataset *SDEDataset::Open( GDALOpenInfo * poOpenInfo )
                 poOpenInfo->pszFilename,
                 CSLCount( papszTokens ) );
 
+
     if( CSLCount( papszTokens ) < 5 || CSLCount( papszTokens ) > 7 )
     {
         CPLError( CE_Failure, CPLE_OpenFailed,
@@ -381,7 +391,9 @@ GDALDataset *SDEDataset::Open( GDALOpenInfo * poOpenInfo )
 /*      Create a corresponding GDALDataset.                             */
 /* -------------------------------------------------------------------- */
 
-    SDEDataset *poDS = new SDEDataset();
+    SDEDataset *poDS;
+
+    poDS = new SDEDataset();
 /* -------------------------------------------------------------------- */
 /*      Try to establish connection.                                    */
 /* -------------------------------------------------------------------- */
@@ -400,6 +412,7 @@ GDALDataset *SDEDataset::Open( GDALOpenInfo * poOpenInfo )
         IssueSDEError( nSDEErr, "SE_connection_create" );
         return NULL;
     }
+
 
 /* -------------------------------------------------------------------- */
 /*      Set unprotected concurrency policy, suitable for single         */
@@ -452,6 +465,9 @@ GDALDataset *SDEDataset::Open( GDALOpenInfo * poOpenInfo )
             return NULL;
         }
         poDS->ComputeRasterInfo();
+
+
+
     } else {
 
         nSDEErr = SE_rastercolumn_get_info_list(poDS->hConnection,
@@ -488,7 +504,7 @@ GDALDataset *SDEDataset::Open( GDALOpenInfo * poOpenInfo )
     return NULL;
     }
     CSLDestroy( papszTokens);
-    return poDS;
+    return( poDS );
 }
 
 /************************************************************************/

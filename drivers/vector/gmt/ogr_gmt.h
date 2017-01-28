@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_gmt.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: ogr_mem.h 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions within the OGR GMT driver.
@@ -54,39 +54,39 @@ class OGRGmtLayer : public OGRLayer
 
     VSILFILE           *fp;
 
-    bool                ReadLine();
+    int                 ReadLine();
     CPLString           osLine;
     char              **papszKeyedValues;
 
-    bool                ScanAheadForHole();
-    bool                NextIsFeature();
+    int                 ScanAheadForHole();
+    int                 NextIsFeature();
 
     OGRFeature         *GetNextRawFeature();
 
-    OGRErr              WriteGeometry( OGRGeometryH hGeom, bool bHaveAngle );
+    OGRErr              WriteGeometry( OGRGeometryH hGeom, int bHaveAngle );
     OGRErr              CompleteHeader( OGRGeometry * );
 
   public:
-    bool                bValidFile;
+    int                 bValidFile;
 
                         OGRGmtLayer( const char *pszFilename, int bUpdate );
-                        virtual ~OGRGmtLayer();
+                        ~OGRGmtLayer();
 
-    void                ResetReading() override;
-    OGRFeature *        GetNextFeature() override;
+    void                ResetReading();
+    OGRFeature *        GetNextFeature();
 
-    OGRFeatureDefn *    GetLayerDefn() override { return poFeatureDefn; }
+    OGRFeatureDefn *    GetLayerDefn() { return poFeatureDefn; }
 
-    OGRErr              GetExtent(OGREnvelope *psExtent, int bForce) override;
-    virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce) override
+    OGRErr              GetExtent(OGREnvelope *psExtent, int bForce);
+    virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce)
                 { return OGRLayer::GetExtent(iGeomField, psExtent, bForce); }
 
-    OGRErr              ICreateFeature( OGRFeature *poFeature ) override;
+    OGRErr              ICreateFeature( OGRFeature *poFeature );
 
     virtual OGRErr      CreateField( OGRFieldDefn *poField,
-                                     int bApproxOK = TRUE ) override;
+                                     int bApproxOK = TRUE );
 
-    int                 TestCapability( const char * ) override;
+    int                 TestCapability( const char * );
 };
 
 /************************************************************************/
@@ -104,20 +104,20 @@ class OGRGmtDataSource : public OGRDataSource
 
   public:
                         OGRGmtDataSource();
-                        virtual ~OGRGmtDataSource();
+                        ~OGRGmtDataSource();
 
     int                 Open( const char *pszFilename, int bUpdate );
     int                 Create( const char *pszFilename, char **papszOptions );
 
-    const char          *GetName() override { return pszName; }
-    int                 GetLayerCount() override { return nLayers; }
-    OGRLayer            *GetLayer( int ) override;
+    const char          *GetName() { return pszName; }
+    int                 GetLayerCount() { return nLayers; }
+    OGRLayer            *GetLayer( int );
 
     virtual OGRLayer    *ICreateLayer( const char *,
                                       OGRSpatialReference * = NULL,
                                       OGRwkbGeometryType = wkbUnknown,
-                                      char ** = NULL ) override;
-    int                 TestCapability( const char * ) override;
+                                      char ** = NULL );
+    int                 TestCapability( const char * );
 };
 
 /************************************************************************/
@@ -127,15 +127,16 @@ class OGRGmtDataSource : public OGRDataSource
 class OGRGmtDriver : public OGRSFDriver
 {
   public:
-                virtual ~OGRGmtDriver();
+                ~OGRGmtDriver();
 
-    const char *GetName() override;
-    OGRDataSource *Open( const char *, int ) override;
+    const char *GetName();
+    OGRDataSource *Open( const char *, int );
 
     virtual OGRDataSource *CreateDataSource( const char *pszName,
-                                             char ** = NULL ) override;
+                                             char ** = NULL );
 
-    int                 TestCapability( const char * ) override;
+    int                 TestCapability( const char * );
 };
+
 
 #endif /* ndef OGRGMT_H_INCLUDED */

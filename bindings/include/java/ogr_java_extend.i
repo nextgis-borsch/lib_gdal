@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_java_extend.i 34525 2016-07-03 02:53:47Z goatbar $
+ * $Id: ogr_java_extend.i 10639 2007-01-17 20:57:32Z tamas $
  *
  * Name:     ogr_java_extend.i
  * Project:  GDAL SWIG Interface

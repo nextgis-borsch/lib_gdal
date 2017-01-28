@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: pcrasterdataset.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: pcrasterdataset.h 31137 2015-10-26 12:58:08Z goatbar $
  *
  * Project:  PCRaster Integration
  * Purpose:  PCRaster CSF 2.0 raster file driver declarations.
@@ -40,7 +40,11 @@ namespace gdal {
   class PCRasterDatasetTest;
 }
 
+
+
 // namespace {
+
+
 
 //! This class specialises the GDALDataset class for PCRaster datasets.
 /*!
@@ -113,7 +117,7 @@ public:
   // CREATORS
   //----------------------------------------------------------------------------
 
-  explicit          PCRasterDataset     (MAP* map);
+                   PCRasterDataset     (MAP* map);
 
   /* virtual */    ~PCRasterDataset    ();
 
@@ -121,18 +125,24 @@ public:
   // MANIPULATORS
   //----------------------------------------------------------------------------
 
-  CPLErr           SetGeoTransform     (double* transform) override;
+  CPLErr           SetGeoTransform     (double* transform);
 
   //----------------------------------------------------------------------------
   // ACCESSORS
   //----------------------------------------------------------------------------
 
   MAP*             map                 () const;
-  CPLErr           GetGeoTransform     (double* transform) override;
+
+  CPLErr           GetGeoTransform     (double* transform);
+
   CSF_CR           cellRepresentation  () const;
+
   CSF_VS           valueScale          () const;
+
   double           defaultNoDataValue  () const;
+
   bool             location_changed    () const;
+
 };
 // } // namespace
 

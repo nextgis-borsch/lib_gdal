@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: gdalbuildvrt_lib.cpp 33757 2016-03-20 20:22:33Z goatbar $
  *
  * Project:  GDAL Utilities
  * Purpose:  Command line application to build VRT datasets from raster products
@@ -27,35 +28,17 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "ogr_api.h"
-#include "ogr_srs_api.h"
-
-#include "cpl_port.h"
+#include "cpl_string.h"
+#include "gdal_proxy.h"
 #include "gdal_utils.h"
 #include "gdal_utils_priv.h"
-
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-
-#include <algorithm>
-
-#include "cpl_conv.h"
-#include "cpl_error.h"
-#include "cpl_progress.h"
-#include "cpl_string.h"
-#include "cpl_vsi.h"
-#include "gdal.h"
 #include "gdal_vrt.h"
-#include "gdal_priv.h"
-#include "gdal_proxy.h"
-#include "ogr_api.h"
-#include "ogr_core.h"
-#include "ogr_srs_api.h"
 #include "vrtdataset.h"
 
-CPL_CVSID("$Id: gdalbuildvrt_lib.cpp 36538 2016-11-27 23:52:16Z goatbar $");
+#include "ogr_api.h"
+#include "ogr_srs_api.h"
+
+CPL_CVSID("$Id: gdalbuildvrt_lib.cpp 33757 2016-03-20 20:22:33Z goatbar $");
 
 #define GEOTRSFRM_TOPLEFT_X            0
 #define GEOTRSFRM_WE_RES               1
@@ -106,6 +89,7 @@ static int ArgIsNumeric( const char *pszArg )
 {
     return CPLGetValueType(pszArg) != CPL_VALUE_STRING;
 }
+
 
 /************************************************************************/
 /*                         GetSrcDstWin()                               */
@@ -241,6 +225,7 @@ class VRTBuilder
 
         GDALDataset*     Build(GDALProgressFunc pfnProgress, void * pProgressData);
 };
+
 
 /************************************************************************/
 /*                          VRTBuilder()                                */
@@ -735,6 +720,7 @@ int VRTBuilder::AnalyseRaster( GDALDatasetH hDS, DatasetProperty* psDatasetPrope
                     }
                 }
             }
+
         }
         if (!bUserExtent)
         {
@@ -759,15 +745,15 @@ int VRTBuilder::AnalyseRaster( GDALDatasetH hDS, DatasetProperty* psDatasetPrope
         }
         else if (resolutionStrategy == HIGHEST_RESOLUTION)
         {
-            we_res = std::min(we_res, padfGeoTransform[GEOTRSFRM_WE_RES]);
-            //ns_res is negative, the highest resolution is the max value.
-            ns_res = std::max(ns_res, padfGeoTransform[GEOTRSFRM_NS_RES]);
+            we_res = MIN(we_res, padfGeoTransform[GEOTRSFRM_WE_RES]);
+            /* Yes : as ns_res is negative, the highest resolution is the max value */
+            ns_res = MAX(ns_res, padfGeoTransform[GEOTRSFRM_NS_RES]);
         }
         else
         {
-            we_res = std::max(we_res, padfGeoTransform[GEOTRSFRM_WE_RES]);
-            // ns_res is negative, the lowest resolution is the min value.
-            ns_res = std::min(ns_res, padfGeoTransform[GEOTRSFRM_NS_RES]);
+            we_res = MAX(we_res, padfGeoTransform[GEOTRSFRM_WE_RES]);
+            /* Yes : as ns_res is negative, the lowest resolution is the min value */
+            ns_res = MIN(ns_res, padfGeoTransform[GEOTRSFRM_NS_RES]);
         }
     }
 
@@ -892,21 +878,16 @@ void VRTBuilder::CreateVRTNonSeparate(VRTDatasetH hVRTDS)
         poMaskVRTBand = (VRTSourcedRasterBand*)GDALGetMaskBand(GDALGetRasterBand(hVRTDS, 1));
     }
 
-    for( int i = 0; i < nInputFiles; i++ )
+
+    for(int i=0;i<nInputFiles;i++)
     {
         DatasetProperty* psDatasetProperties = &pasDatasetProperties[i];
 
         if (psDatasetProperties->isFileOK == FALSE)
             continue;
 
-        double dfSrcXOff;
-        double dfSrcYOff;
-        double dfSrcXSize;
-        double dfSrcYSize;
-        double dfDstXOff;
-        double dfDstYOff;
-        double dfDstXSize;
-        double dfDstYSize;
+        double dfSrcXOff, dfSrcYOff, dfSrcXSize, dfSrcYSize,
+            dfDstXOff, dfDstYOff, dfDstXSize, dfDstYSize;
         if ( ! GetSrcDstWin(psDatasetProperties,
                         we_res, ns_res, minX, minY, maxX, maxY,
                         &dfSrcXOff, &dfSrcYOff, &dfSrcXSize, &dfSrcYSize,
@@ -1524,7 +1505,7 @@ GDALBuildVRTOptions *GDALBuildVRTOptionsNew(char** papszArgv,
 /*      Parse arguments.                                                */
 /* -------------------------------------------------------------------- */
     int argc = CSLCount(papszArgv);
-    for( int iArg = 0; papszArgv != NULL && iArg < argc; iArg++ )
+    for( int iArg = 0; iArg < argc; iArg++ )
     {
         if( EQUAL(papszArgv[iArg],"-tileindex") && iArg + 1 < argc )
         {

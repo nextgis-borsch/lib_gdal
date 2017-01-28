@@ -149,25 +149,25 @@ class OGRWAsPLayer : public OGRLayer
                                       VSILFILE * hFile,
                                       OGRSpatialReference * poSpatialRef );
 
-                        virtual ~OGRWAsPLayer();
+                        ~OGRWAsPLayer();
 
-    virtual OGRFeatureDefn *    GetLayerDefn() override { return poLayerDefn; }
+    virtual OGRFeatureDefn *    GetLayerDefn() { return poLayerDefn; }
 
-    virtual void        ResetReading() override;
-    virtual int         TestCapability( const char * ) override;
+    virtual void        ResetReading();
+    virtual int         TestCapability( const char * );
 
     virtual OGRErr      CreateField( OGRFieldDefn *poField,
-                                     int bApproxOK = TRUE ) override;
+                                     int bApproxOK = TRUE );
     virtual OGRErr      CreateGeomField( OGRGeomFieldDefn *poGeomField,
-                                         int bApproxOK = TRUE ) override;
+                                         int bApproxOK = TRUE );
 
-    virtual OGRErr      ICreateFeature( OGRFeature * poFeature ) override;
+    virtual OGRErr      ICreateFeature( OGRFeature * poFeature );
 
-    virtual OGRFeature *GetNextFeature() override;
+    virtual OGRFeature *GetNextFeature();
     OGRFeature *GetNextRawFeature();
-    virtual OGRwkbGeometryType  GetGeomType() override { return wkbLineString25D; }
-    virtual OGRSpatialReference *GetSpatialRef() override { return poSpatialReference; }
-    virtual const char *GetName() override { return sName.c_str(); }
+    virtual OGRwkbGeometryType  GetGeomType() { return wkbLineString25D; }
+    virtual OGRSpatialReference *GetSpatialRef() { return poSpatialReference; }
+    virtual const char *GetName() { return sName.c_str(); }
 };
 
 /************************************************************************/
@@ -188,19 +188,19 @@ class OGRWAsPDataSource : public OGRDataSource
                         /** @note takes ownership of hFile (i.e. responsibility for closing) */
                         OGRWAsPDataSource( const char * pszName,
                                            VSILFILE * hFile );
-                        virtual ~OGRWAsPDataSource();
+                        ~OGRWAsPDataSource();
 
-    virtual const char *GetName() override { return sFilename.c_str(); }
-    virtual int         GetLayerCount() override { return oLayer.get() ? 1 : 0; }
-    virtual OGRLayer   *GetLayer( int ) override;
-    virtual OGRLayer   *GetLayerByName( const char * ) override;
+    virtual const char *GetName() { return sFilename.c_str(); }
+    virtual int         GetLayerCount() { return oLayer.get() ? 1 : 0; }
+    virtual OGRLayer   *GetLayer( int );
+    virtual OGRLayer   *GetLayerByName( const char * );
 
     virtual OGRLayer   *ICreateLayer( const char *pszName,
                                      OGRSpatialReference *poSpatialRef = NULL,
                                      OGRwkbGeometryType eGType = wkbUnknown,
-                                     char ** papszOptions = NULL ) override;
+                                     char ** papszOptions = NULL );
 
-    virtual int        TestCapability( const char * ) override;
+    virtual int        TestCapability( const char * );
     OGRErr             Load( bool bSilent = false );
 };
 
@@ -214,15 +214,16 @@ class OGRWAsPDriver : public OGRSFDriver
   public:
                                 ~OGRWAsPDriver() {}
 
-    virtual const char*         GetName() override { return "WAsP"; }
-    virtual OGRDataSource*      Open( const char *, int ) override;
+    virtual const char*         GetName() { return "WAsP"; }
+    virtual OGRDataSource*      Open( const char *, int );
 
     virtual OGRDataSource       *CreateDataSource( const char *pszName,
-                                                   char ** = NULL ) override;
+                                                   char ** = NULL );
 
-    virtual OGRErr              DeleteDataSource (const char *pszName) override;
+    virtual OGRErr 	        DeleteDataSource (const char *pszName);
 
-    virtual int                 TestCapability( const char * ) override;
+    virtual int                 TestCapability( const char * );
 };
+
 
 #endif /* ndef OGR_WASP_H_INCLUDED */

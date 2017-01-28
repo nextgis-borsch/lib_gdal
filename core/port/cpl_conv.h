@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_conv.h 34931 2016-08-05 17:13:05Z rouault $
+ * $Id: cpl_conv.h 33666 2016-03-07 05:21:07Z goatbar $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Convenience functions declarations.
@@ -48,9 +48,7 @@
 /* -------------------------------------------------------------------- */
 CPL_C_START
 
-/*! @cond Doxygen_Suppress */
 void CPL_DLL CPLVerifyConfiguration(void);
-/*! @endcond */
 
 const char CPL_DLL * CPL_STDCALL
 CPLGetConfigOption( const char *, const char * ) CPL_WARN_UNUSED_RESULT;
@@ -59,9 +57,7 @@ CPLGetThreadLocalConfigOption( const char *, const char * ) CPL_WARN_UNUSED_RESU
 void CPL_DLL CPL_STDCALL CPLSetConfigOption( const char *, const char * );
 void CPL_DLL CPL_STDCALL CPLSetThreadLocalConfigOption( const char *pszKey,
                                                         const char *pszValue );
-/*! @cond Doxygen_Suppress */
 void CPL_DLL CPL_STDCALL CPLFreeConfig(void);
-/*! @endcond */
 
 /* -------------------------------------------------------------------- */
 /*      Safe malloc() API.  Thin cover over VSI functions with fatal    */
@@ -73,7 +69,6 @@ void CPL_DLL *CPLRealloc( void *, size_t ) CPL_WARN_UNUSED_RESULT;
 char CPL_DLL *CPLStrdup( const char * ) CPL_WARN_UNUSED_RESULT CPL_RETURNS_NONNULL;
 char CPL_DLL *CPLStrlwr( char *);
 
-/** Alias of VSIFree() */
 #define CPLFree VSIFree
 
 /* -------------------------------------------------------------------- */
@@ -82,13 +77,7 @@ char CPL_DLL *CPLStrlwr( char *);
 char CPL_DLL *CPLFGets( char *, int, FILE *);
 const char CPL_DLL *CPLReadLine( FILE * );
 const char CPL_DLL *CPLReadLineL( VSILFILE * );
-#ifdef __cplusplus
-const char CPL_DLL *CPLReadLine2L( VSILFILE * , int nMaxCols,
-                                   const char * const * papszOptions );
-#else
-const char CPL_DLL *CPLReadLine2L( VSILFILE * , int nMaxCols,
-                                   char** papszOptions );
-#endif
+const char CPL_DLL *CPLReadLine2L( VSILFILE * , int nMaxCols, char** papszOptions);
 
 /* -------------------------------------------------------------------- */
 /*      Convert ASCII string to floating point number                  */
@@ -173,8 +162,6 @@ const char CPL_DLL *CPLGenerateTempFilename( const char *pszStem ) CPL_WARN_UNUS
 /* -------------------------------------------------------------------- */
 /*      Find File Function                                              */
 /* -------------------------------------------------------------------- */
-
-/** Callback for CPLPushFileFinder */
 typedef const char *(*CPLFileFinder)(const char *, const char *);
 
 const char    CPL_DLL *CPLFindFile(const char *pszClass,
@@ -196,23 +183,19 @@ int CPL_DLL     CPLStat( const char *, VSIStatBuf * ) CPL_WARN_UNUSED_RESULT;
 /*      Reference counted file handle manager.  Makes sharing file      */
 /*      handles more practical.                                         */
 /* -------------------------------------------------------------------- */
-
-/** Information on a shared file */
 typedef struct {
-    FILE *fp;               /**< File pointer */
-    int   nRefCount;        /**< Reference counter */
-    int   bLarge;           /**< Whether fp must be interpreted as VSIFILE* */
-    char  *pszFilename;     /**< Filename */
-    char  *pszAccess;       /**< Access mode */
+    FILE *fp;
+    int   nRefCount;
+    int   bLarge;
+    char  *pszFilename;
+    char  *pszAccess;
 } CPLSharedFileInfo;
 
 FILE CPL_DLL    *CPLOpenShared( const char *, const char *, int );
 void CPL_DLL     CPLCloseShared( FILE * );
 CPLSharedFileInfo CPL_DLL *CPLGetSharedList( int * );
 void CPL_DLL     CPLDumpSharedList( FILE * );
-/*! @cond Doxygen_Suppress */
 void CPL_DLL     CPLCleanupSharedFileMutex( void );
-/*! @endcond */
 
 /* -------------------------------------------------------------------- */
 /*      DMS to Dec to DMS conversion.                                   */
@@ -238,10 +221,7 @@ int CPL_DLL CPLSymlink( const char* pszOldPath, const char* pszNewPath, char** p
 /* -------------------------------------------------------------------- */
 /*      ZIP Creation.                                                   */
 /* -------------------------------------------------------------------- */
-
-/*! @cond Doxygen_Suppress */
 #define CPL_ZIP_API_OFFERED
-/*! @endcond */
 void CPL_DLL  *CPLCreateZip( const char *pszZipFilename, char **papszOptions );
 CPLErr CPL_DLL CPLCreateFileInZip( void *hZip, const char *pszFilename,
                                    char **papszOptions );
@@ -271,9 +251,7 @@ int CPL_DLL CPLValidateXML(const char* pszXMLFilename,
 /*      Locale handling. Prevents parallel executions of setlocale().   */
 /* -------------------------------------------------------------------- */
 char* CPLsetlocale (int category, const char* locale);
-/*! @cond Doxygen_Suppress */
 void CPLCleanupSetlocaleMutex(void);
-/*! @endcond */
 
 CPL_C_END
 
@@ -281,7 +259,6 @@ CPL_C_END
 /*      C++ object for temporarily forcing a LC_NUMERIC locale to "C".  */
 /* -------------------------------------------------------------------- */
 
-//! @cond Doxygen_Suppress
 #if defined(__cplusplus) && !defined(CPL_SUPRESS_CPLUSPLUS)
 
 class CPL_DLL CPLLocaleC
@@ -325,6 +302,6 @@ private:
 };
 
 #endif /* def __cplusplus */
-//! @endcond
+
 
 #endif /* ndef CPL_CONV_H_INCLUDED */

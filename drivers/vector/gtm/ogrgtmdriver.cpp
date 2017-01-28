@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrgtmdriver.cpp 32110 2015-12-10 17:19:40Z goatbar $
  *
  * Project:  GTM Driver
  * Purpose:  Implementation of OGRGTMDriver class.
@@ -29,8 +30,6 @@
 #include "cpl_conv.h"
 #include "cpl_error.h"
 
-CPL_CVSID("$Id: ogrgtmdriver.cpp 36948 2016-12-18 13:32:14Z rouault $");
-
 /************************************************************************/
 /*                                Open()                                */
 /************************************************************************/
@@ -53,7 +52,7 @@ static GDALDataset *OGRGTMDriverOpen( GDALOpenInfo* poOpenInfo )
     }
     else
     {
-        short version = CPL_LSBSINT16PTR(poOpenInfo->pabyHeader);
+        short version = CPL_LSBINT16PTR(poOpenInfo->pabyHeader);
         if (version != 211 ||
             !STARTS_WITH((const char*)poOpenInfo->pabyHeader + 2, "TrackMaker") )
         {

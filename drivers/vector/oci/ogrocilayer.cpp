@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrocilayer.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  Oracle Spatial Driver
  * Purpose:  Implementation of the OGROCILayer class.  This is layer semantics
@@ -31,7 +32,7 @@
 #include "ogr_oci.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrocilayer.cpp 36347 2016-11-20 20:43:39Z rouault $");
+CPL_CVSID("$Id: ogrocilayer.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 /************************************************************************/
 /*                           OGROCILayer()                               */
@@ -40,12 +41,10 @@ CPL_CVSID("$Id: ogrocilayer.cpp 36347 2016-11-20 20:43:39Z rouault $");
 OGROCILayer::OGROCILayer()
 
 {
-    poFeatureDefn = NULL;
     poDS = NULL;
     poStatement = NULL;
 
     pszQueryStatement = NULL;
-    nResultOffset = 0;
     pszGeomName = NULL;
     iGeomColumn = -1;
     pszFIDName = NULL;
@@ -515,6 +514,7 @@ OGROCILayer::LoadElementInfo( int iElement, int nElemCount, int nTotalOrdCount,
     return TRUE;
 }
 
+
 /************************************************************************/
 /*                      TranslateGeometryElement()                      */
 /************************************************************************/
@@ -798,6 +798,7 @@ OGROCILayer::TranslateGeometryElement( int *piElement,
 
                 delete poElemLS;
             }
+
         }
 
         *piElement -= 3;
@@ -876,6 +877,7 @@ int OGROCILayer::TestCapability( const char * pszCap )
     else
         return FALSE;
 }
+
 
 /************************************************************************/
 /*                          LookupTableSRID()                           */

@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrgeomediadatasource.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRGeomediaDataSource class.
@@ -33,20 +34,22 @@
 #include "cpl_string.h"
 #include <vector>
 
-CPL_CVSID("$Id: ogrgeomediadatasource.cpp 36682 2016-12-04 20:34:45Z rouault $");
+CPL_CVSID("$Id: ogrgeomediadatasource.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 /************************************************************************/
 /*                       OGRGeomediaDataSource()                        */
 /************************************************************************/
 
-OGRGeomediaDataSource::OGRGeomediaDataSource() :
-    papoLayers(NULL),
-    nLayers(0),
-    papoLayersInvisible(NULL),
-    nLayersWithInvisible(0),
-    pszName(NULL),
-    bDSUpdate(FALSE)
-{}
+OGRGeomediaDataSource::OGRGeomediaDataSource()
+
+{
+    pszName = NULL;
+    papoLayers = NULL;
+    papoLayersInvisible = NULL;
+    nLayers = 0;
+    nLayersWithInvisible = 0;
+    bDSUpdate = FALSE;
+}
 
 /************************************************************************/
 /*                       ~OGRGeomediaDataSource()                       */
@@ -55,13 +58,15 @@ OGRGeomediaDataSource::OGRGeomediaDataSource() :
 OGRGeomediaDataSource::~OGRGeomediaDataSource()
 
 {
+    int         i;
+
     CPLFree( pszName );
 
-    for( int i = 0; i < nLayers; i++ )
+    for( i = 0; i < nLayers; i++ )
         delete papoLayers[i];
     CPLFree( papoLayers );
 
-    for( int i = 0; i < nLayersWithInvisible; i++ )
+    for( i = 0; i < nLayersWithInvisible; i++ )
         delete papoLayersInvisible[i];
     CPLFree( papoLayersInvisible );
 }
@@ -111,7 +116,7 @@ int OGRGeomediaDataSource::Open( const char * pszNewName, int bUpdate,
 /*      get the DSN.                                                    */
 /*                                                                      */
 /* -------------------------------------------------------------------- */
-    char *pszDSN = NULL;
+    char *pszDSN;
     if( STARTS_WITH_CI(pszNewName, "GEOMEDIA:") )
         pszDSN = CPLStrdup( pszNewName + 9 );
     else
@@ -156,7 +161,7 @@ int OGRGeomediaDataSource::Open( const char * pszNewName, int bUpdate,
 /*      GAliasTable.                                                    */
 /* -------------------------------------------------------------------- */
     CPLString osGFeaturesTable = GetTableNameFromType("INGRFeatures");
-    if (osGFeaturesTable.empty())
+    if (osGFeaturesTable.size() == 0)
         return FALSE;
 
     CPLString osGeometryProperties = GetTableNameFromType("INGRGeometryProperties");
@@ -189,7 +194,7 @@ int OGRGeomediaDataSource::Open( const char * pszNewName, int bUpdate,
     }
 
     std::vector<OGRSpatialReference*> apoSRS;
-    if (!osGeometryProperties.empty() && !osGCoordSystemTable.empty())
+    if (osGeometryProperties.size() != 0 && osGCoordSystemTable.size() != 0)
     {
         std::vector<CPLString> aosGUID;
         {
@@ -218,7 +223,8 @@ int OGRGeomediaDataSource::Open( const char * pszNewName, int bUpdate,
             }
         }
 
-        for( size_t i = 0; i < aosGUID.size(); i++ )
+        int i;
+        for(i=0; i<(int)aosGUID.size();i++)
         {
             apoSRS.push_back(GetGeomediaSRS(osGCoordSystemTable, aosGUID[i]));
         }
@@ -227,14 +233,17 @@ int OGRGeomediaDataSource::Open( const char * pszNewName, int bUpdate,
 /* -------------------------------------------------------------------- */
 /*      Create a layer for each spatial table.                          */
 /* -------------------------------------------------------------------- */
+    unsigned int iTable;
 
     papoLayers = (OGRGeomediaLayer **) CPLCalloc(apapszGeomColumns.size(),
                                              sizeof(void*));
 
-    for( unsigned int iTable = 0; iTable < apapszGeomColumns.size(); iTable++ )
+    for( iTable = 0; iTable < apapszGeomColumns.size(); iTable++ )
     {
         char **papszRecord = apapszGeomColumns[iTable];
-        OGRGeomediaTableLayer *poLayer = new OGRGeomediaTableLayer( this );
+        OGRGeomediaTableLayer  *poLayer;
+
+        poLayer = new OGRGeomediaTableLayer( this );
 
         if( poLayer->Initialize( papszRecord[0], papszRecord[1], (apoSRS.size()) ? apoSRS[iTable] : NULL )
             != CE_None )
@@ -250,6 +259,7 @@ int OGRGeomediaDataSource::Open( const char * pszNewName, int bUpdate,
 
     return TRUE;
 }
+
 
 /************************************************************************/
 /*                     GetTableNameFromType()                           */
@@ -278,6 +288,7 @@ CPLString OGRGeomediaDataSource::GetTableNameFromType(const char* pszTableType)
     return "";
 }
 
+
 /************************************************************************/
 /*                          GetGeomediaSRS()                            */
 /************************************************************************/
@@ -294,7 +305,7 @@ OGRSpatialReference* OGRGeomediaDataSource::GetGeomediaSRS(const char* pszGCoord
 
     poGCoordSystemTable->ResetReading();
 
-    OGRFeature* poFeature = NULL;
+    OGRFeature* poFeature;
     while((poFeature = poGCoordSystemTable->GetNextFeature()) != NULL)
     {
         const char* pszCSGUID = poFeature->GetFieldAsString("CSGUID");
@@ -333,6 +344,7 @@ OGRLayer *OGRGeomediaDataSource::GetLayer( int iLayer )
         return papoLayers[iLayer];
 }
 
+
 /************************************************************************/
 /*                          GetLayerByName()                            */
 /************************************************************************/
@@ -354,7 +366,9 @@ OGRLayer *OGRGeomediaDataSource::GetLayerByName( const char* pszNameIn )
             return poLayer;
     }
 
-    OGRGeomediaTableLayer *poGeomediaLayer = new OGRGeomediaTableLayer( this );
+    OGRGeomediaTableLayer  *poGeomediaLayer;
+
+    poGeomediaLayer = new OGRGeomediaTableLayer( this );
 
     if( poGeomediaLayer->Initialize(pszNameIn, NULL, NULL) != CE_None )
     {

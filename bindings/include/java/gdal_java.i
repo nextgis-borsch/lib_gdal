@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_java.i 35649 2016-10-08 10:16:30Z rouault $
+ * $Id: gdal_java.i 33123 2016-01-23 18:59:28Z rouault $
  *
  * Name:     gdal_java.i
  * Project:  GDAL SWIG Interface
@@ -41,7 +41,6 @@ import org.gdal.osr.SpatialReference;
 import org.gdal.ogr.Geometry;
 import org.gdal.ogr.StyleTable;
 import org.gdal.ogr.Layer;
-import org.gdal.ogr.Feature;
 %}
 
 %pragma(java) moduleimports=%{
@@ -49,7 +48,6 @@ import org.gdal.osr.SpatialReference;
 import org.gdal.ogr.Geometry;
 import org.gdal.ogr.StyleTable;
 import org.gdal.ogr.Layer;
-import org.gdal.ogr.Feature;
 %}
 
 %typemap(javaimports) GDALDatasetShadow %{
@@ -57,7 +55,6 @@ import org.gdal.osr.SpatialReference;
 import org.gdal.ogr.Geometry;
 import org.gdal.ogr.StyleTable;
 import org.gdal.ogr.Layer;
-import org.gdal.ogr.Feature;
 %}
 
 

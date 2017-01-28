@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: pcrasterrasterband.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: pcrasterrasterband.h 31137 2015-10-26 12:58:08Z goatbar $
  *
  * Project:  PCRaster Integration
  * Purpose:  PCRaster raster band declaration.
@@ -58,7 +58,7 @@ private:
                                         void *, int, int, GDALDataType,
                                         GSpacing nPixelSpace,
                                         GSpacing nLineSpace,
-                                        GDALRasterIOExtraArg* psExtraArg) override;
+                                        GDALRasterIOExtraArg* psExtraArg);
 
   //! Assignment operator. NOT IMPLEMENTED.
   PCRasterRasterBand& operator=        (const PCRasterRasterBand&);
@@ -67,12 +67,12 @@ private:
                    PCRasterRasterBand  (const PCRasterRasterBand&);
 
 protected:
-  double           GetNoDataValue      (int* success=NULL) override;
-  double           GetMinimum          (int* success) override;
-  double           GetMaximum          (int* success) override;
+  double           GetNoDataValue      (int* success=NULL);
+  double           GetMinimum          (int* success);
+  double           GetMaximum          (int* success);
 
 public:
-  explicit          PCRasterRasterBand  (PCRasterDataset* dataset);
+                   PCRasterRasterBand  (PCRasterDataset* dataset);
   /* virtual */    ~PCRasterRasterBand ();
 
   //----------------------------------------------------------------------------
@@ -81,9 +81,9 @@ public:
 
   CPLErr           IWriteBlock         (CPL_UNUSED int nBlockXoff,
                                         int nBlockYoff,
-                                        void* buffer) override;
+                                        void* buffer);
 
-  CPLErr           SetNoDataValue      (double no_data) override;
+  CPLErr           SetNoDataValue      (double no_data);
 
   //----------------------------------------------------------------------------
   // ACCESSORS
@@ -91,7 +91,7 @@ public:
 
   CPLErr           IReadBlock          (int nBlockXoff,
                                         int nBlockYoff,
-                                        void* buffer) override;
+                                        void* buffer);
 };
 // } // namespace
 

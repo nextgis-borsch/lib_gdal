@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrdxf_blockmap.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  DXF Translator
  * Purpose:  Implements BlockMap reading and management portion of
@@ -32,7 +33,7 @@
 #include "cpl_string.h"
 #include "cpl_csv.h"
 
-CPL_CVSID("$Id: ogrdxf_blockmap.cpp 36682 2016-12-04 20:34:45Z rouault $");
+CPL_CVSID("$Id: ogrdxf_blockmap.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 /************************************************************************/
 /*                          ReadBlockSection()                          */
@@ -41,15 +42,14 @@ CPL_CVSID("$Id: ogrdxf_blockmap.cpp 36682 2016-12-04 20:34:45Z rouault $");
 bool OGRDXFDataSource::ReadBlocksSection()
 
 {
-    OGRDXFLayer *poReaderLayer = static_cast<OGRDXFLayer *>(
-        GetLayerByName( "Entities" ));
-    const bool bMergeBlockGeometries = CPLTestBool(
+    char szLineBuf[257];
+    int  nCode;
+    OGRDXFLayer *poReaderLayer = (OGRDXFLayer *) GetLayerByName( "Entities" );
+    int bMergeBlockGeometries = CPLTestBool(
         CPLGetConfigOption( "DXF_MERGE_BLOCK_GEOMETRIES", "TRUE" ) );
 
     iEntitiesSectionOffset = oReader.iSrcBufferFileOffset + oReader.iSrcBufferOffset;
 
-    char szLineBuf[257];
-    int nCode = 0;
     while( (nCode = ReadValue( szLineBuf, sizeof(szLineBuf) )) > -1
            && !EQUAL(szLineBuf,"ENDSEC") )
     {
@@ -84,7 +84,7 @@ bool OGRDXFDataSource::ReadBlocksSection()
         // we aggregate the geometries of the features into a multi-geometry,
         // but throw away other stuff attached to the features.
 
-        OGRFeature *poFeature = NULL;
+        OGRFeature *poFeature;
         OGRGeometryCollection *poColl = new OGRGeometryCollection();
         std::vector<OGRFeature*> apoFeatures;
 
@@ -108,7 +108,7 @@ bool OGRDXFDataSource::ReadBlocksSection()
         else
             oBlockMap[osBlockName].poGeometry = SimplifyBlockGeometry(poColl);
 
-        if( !apoFeatures.empty() )
+        if( apoFeatures.size() > 0 )
             oBlockMap[osBlockName].apoFeatures = apoFeatures;
     }
     if( nCode < 0 )
@@ -137,58 +137,16 @@ OGRGeometry *OGRDXFDataSource::SimplifyBlockGeometry(
     if( poCollection->getNumGeometries() == 1 )
     {
         OGRGeometry *poReturn = poCollection->getGeometryRef(0);
-        poCollection->removeGeometry(0, FALSE);
+        poCollection->removeGeometry(0,FALSE);
         delete poCollection;
         return poReturn;
     }
 
 /* -------------------------------------------------------------------- */
-/*      Convert to polygon, multipolygon, multilinestring or multipoint */
+/*      Eventually we likely ought to have logic to convert to          */
+/*      polygon, multipolygon, multilinestring or multipoint but        */
+/*      I'll put that off till it would be meaningful.                  */
 /* -------------------------------------------------------------------- */
-
-    OGRwkbGeometryType eType =
-                wkbFlatten(poCollection->getGeometryRef(0)->getGeometryType());
-    int i;
-    for(i=1;i<poCollection->getNumGeometries();i++)
-    {
-        if (wkbFlatten(poCollection->getGeometryRef(i)->getGeometryType())
-            != eType)
-        {
-            eType = wkbUnknown;
-            break;
-        }
-    }
-    if (eType == wkbPoint || eType == wkbLineString)
-    {
-        OGRGeometryCollection* poNewColl;
-        if (eType == wkbPoint)
-            poNewColl = new OGRMultiPoint();
-        else
-            poNewColl = new OGRMultiLineString();
-        while(poCollection->getNumGeometries() > 0)
-        {
-            OGRGeometry *poGeom = poCollection->getGeometryRef(0);
-            poCollection->removeGeometry(0,FALSE);
-            poNewColl->addGeometryDirectly(poGeom);
-        }
-        delete poCollection;
-        return poNewColl;
-    }
-    else if (eType == wkbPolygon)
-    {
-        std::vector<OGRGeometry*> aosPolygons;
-        while(poCollection->getNumGeometries() > 0)
-        {
-            OGRGeometry *poGeom = poCollection->getGeometryRef(0);
-            poCollection->removeGeometry(0,FALSE);
-            aosPolygons.push_back(poGeom);
-        }
-        delete poCollection;
-        int bIsValidGeometry;
-        return OGRGeometryFactory::organizePolygons(
-            &aosPolygons[0], (int)aosPolygons.size(),
-            &bIsValidGeometry, NULL);
-    }
 
     return poCollection;
 }

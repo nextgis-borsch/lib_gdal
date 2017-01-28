@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrmssqlgeometryvalidator.cpp 27745 2014-09-27 16:38:57Z goatbar $
  *
  * Project:  MSSQL Spatial driver
  * Purpose:  Implements OGRMSSQLGeometryValidator class to create valid SqlGeometries.
@@ -29,7 +30,7 @@
 #include "cpl_conv.h"
 #include "ogr_mssqlspatial.h"
 
-CPL_CVSID("$Id: ogrmssqlgeometryvalidator.cpp 35675 2016-10-10 04:57:58Z goatbar $");
+CPL_CVSID("$Id: ogrmssqlgeometryvalidator.cpp 27745 2014-09-27 16:38:57Z goatbar $");
 
 /************************************************************************/
 /*                   OGRMSSQLGeometryValidator()                        */
@@ -108,7 +109,7 @@ int OGRMSSQLGeometryValidator::ValidateLineString(OGRLineString * poGeom)
         {
             CPLError( CE_Warning, CPLE_NotSupported,
                       "Linestring has no distinct points constructing point geometry instead." );
-
+            
             // create a point
             poValidGeometry = poPoint0;
             poPoint0 = NULL;
@@ -169,7 +170,7 @@ int OGRMSSQLGeometryValidator::ValidateLinearRing(OGRLinearRing * poGeom)
     {
         if (poValidGeometry)
             delete poValidGeometry;
-
+        
         poValidGeometry = NULL;
 
         // create a compatible geometry
@@ -177,7 +178,7 @@ int OGRMSSQLGeometryValidator::ValidateLinearRing(OGRLinearRing * poGeom)
         {
             CPLError( CE_Warning, CPLE_NotSupported,
                       "Linear ring has only 2 distinct points constructing linestring geometry instead." );
-
+            
             // create a linestring
             poValidGeometry = new OGRLineString();
             ((OGRLineString*)poValidGeometry)->setNumPoints( 2 );
@@ -188,7 +189,7 @@ int OGRMSSQLGeometryValidator::ValidateLinearRing(OGRLinearRing * poGeom)
         {
             CPLError( CE_Warning, CPLE_NotSupported,
                       "Linear ring has no distinct points constructing point geometry instead." );
-
+            
             // create a point
             poValidGeometry = poPoint0;
             poPoint0 = NULL;
@@ -248,7 +249,7 @@ int OGRMSSQLGeometryValidator::ValidateMultiLineString(OGRMultiLineString * poGe
                 for (j = 0; j < i; j++)
                     poGeometries->addGeometry(poGeom->getGeometryRef(j));
             }
-
+            
             poGeometries->addGeometry(poValidGeometry);
             continue;
         }
@@ -265,7 +266,7 @@ int OGRMSSQLGeometryValidator::ValidateMultiLineString(OGRMultiLineString * poGe
         poValidGeometry = poGeometries;
     }
 
-    return poValidGeometry == NULL;
+    return (poValidGeometry == NULL);
 }
 
 /************************************************************************/
@@ -321,7 +322,7 @@ int OGRMSSQLGeometryValidator::ValidatePolygon(OGRPolygon* poGeom)
         poValidGeometry = poGeometries;
     }
 
-    return poValidGeometry == NULL;
+    return (poValidGeometry == NULL);
 }
 
 /************************************************************************/
@@ -363,7 +364,7 @@ int OGRMSSQLGeometryValidator::ValidateMultiPolygon(OGRMultiPolygon* poGeom)
                 for (j = 0; j < i; j++)
                     poGeometries->addGeometry(poGeom->getGeometryRef(j));
             }
-
+            
             poGeometries->addGeometry(poValidGeometry);
             continue;
         }
@@ -396,7 +397,7 @@ int OGRMSSQLGeometryValidator::ValidateGeometryCollection(OGRGeometryCollection*
     for (i = 0; i < poGeom->getNumGeometries(); i++)
     {
         poGeometry = poGeom->getGeometryRef(i);
-
+        
         if (!ValidateGeometry(poGeometry))
         {
             // non valid geometry
@@ -406,7 +407,7 @@ int OGRMSSQLGeometryValidator::ValidateGeometryCollection(OGRGeometryCollection*
                 for (j = 0; j < i; j++)
                     poGeometries->addGeometry(poGeom->getGeometryRef(j));
             }
-
+            
             if (poValidGeometry)
                 poGeometries->addGeometry(poValidGeometry);
             continue;
@@ -424,7 +425,7 @@ int OGRMSSQLGeometryValidator::ValidateGeometryCollection(OGRGeometryCollection*
         poValidGeometry = poGeometries;
     }
 
-    return poValidGeometry == NULL;
+    return (poValidGeometry == NULL);
 }
 
 /************************************************************************/
@@ -435,7 +436,7 @@ int OGRMSSQLGeometryValidator::ValidateGeometry(OGRGeometry* poGeom)
 {
     if (!poGeom)
         return FALSE;
-
+    
     switch (poGeom->getGeometryType())
     {
     case wkbPoint:

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ReadXML.cs 35222 2016-08-28 06:06:11Z goatbar $
+ * $Id: ReadXML.cs 13437 2007-12-21 21:02:38Z tamas $
  *
  * Name:     ReadXML.cs
  * Project:  GDAL CSharp Interface
@@ -43,23 +43,23 @@ using OSGeo.GDAL;
 
 /// <summary>
 /// A C# based sample for demonstrating the usage of the XMLNode class.
-/// </summary>
+/// </summary> 
 
 class ReadXML {
+	
+	public static void usage() 
 
-	public static void usage()
-
-	{
+	{ 
 		Console.WriteLine("usage example: readxml {xml string}");
 		System.Environment.Exit(-1);
 	}
-
+ 
 	public static void Main(string[] args) {
 
 		if (args.Length != 1) usage();
 
         XMLNode node = new XMLNode(args[0]);
-
+        
         PrintNode(0, node);
 	}
 

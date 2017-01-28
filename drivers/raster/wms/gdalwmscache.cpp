@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: gdalwmscache.cpp 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  WMS Client Driver
  * Purpose:  Implementation of Dataset and RasterBand classes for WMS
@@ -29,15 +30,14 @@
 
 #include "wmsdriver.h"
 
-CPL_CVSID("$Id: gdalwmscache.cpp 36682 2016-12-04 20:34:45Z rouault $");
+GDALWMSCache::GDALWMSCache() {
+    m_cache_path = "./gdalwmscache";
+    m_postfix = "";
+    m_cache_depth = 2;
+}
 
-GDALWMSCache::GDALWMSCache() :
-    m_cache_path("./gdalwmscache"),
-    // No need to do the default: m_postfix("");
-    m_cache_depth(2)
-{}
-
-GDALWMSCache::~GDALWMSCache() {}
+GDALWMSCache::~GDALWMSCache() {
+}
 
 CPLErr GDALWMSCache::Initialize(CPLXMLNode *config) {
     const char *xmlcache_path = CPLGetXMLValue(config, "Path", NULL);
@@ -67,25 +67,14 @@ CPLErr GDALWMSCache::Initialize(CPLXMLNode *config) {
     return CE_None;
 }
 
-// Recursive makedirs, ignoring errors
-static void MakeDirs(const CPLString & path) {
-    CPLString p(CPLGetDirname(path));
-    if (p.size() >= 2)
-        MakeDirs(p);
-    VSIMkdir(p, 0744);
-}
-
-// Warns if it fails to write, but returns success
 CPLErr GDALWMSCache::Write(const char *key, const CPLString &file_name) {
     CPLString cache_file(KeyToCacheFile(key));
-    // printf("GDALWMSCache::Write(%s, %s) -> %s\n", key, file_name.c_str());
-    if (CPLCopyFile(cache_file, file_name) == CE_None)
-        return CE_None;
-    MakeDirs(cache_file.c_str());
-    if (CPLCopyFile(cache_file, file_name) == CE_None)
-        return CE_None;
-    // Warn if it fails after folder creation
-    CPLError(CE_Warning, CPLE_FileIO, "Error writing to WMS cache %s", m_cache_path.c_str());
+    //	printf("GDALWMSCache::Write(%s, %s) -> %s\n", key, file_name.c_str());
+    if (CPLCopyFile(cache_file.c_str(), file_name.c_str()) != CE_None) {
+        MakeDirs(cache_file.c_str());
+        CPLCopyFile(cache_file.c_str(), file_name.c_str());
+    }
+
     return CE_None;
 }
 
@@ -99,6 +88,7 @@ CPLErr GDALWMSCache::Read(const char *key, CPLString *file_name) {
         *file_name = cache_file;
         ret = CE_None;
     }
+    //    printf("GDALWMSCache::Read(...) -> %s\n", cache_file.c_str());
 
     return ret;
 }
@@ -107,7 +97,7 @@ CPLString GDALWMSCache::KeyToCacheFile(const char *key) {
     CPLString hash(MD5String(key));
     CPLString cache_file(m_cache_path);
 
-    if (!cache_file.empty() && (cache_file[cache_file.size() - 1] != '/')) cache_file.append(1, '/');
+    if (cache_file.size() && (cache_file[cache_file.size() - 1] != '/')) cache_file.append(1, '/');
     for (int i = 0; i < m_cache_depth; ++i) {
         cache_file.append(1, hash[i]);
         cache_file.append(1, '/');

@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: northwood.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  GRC/GRD Reader
  * Purpose:  Northwood Format basic implementation
@@ -32,9 +33,6 @@
 #include "northwood.h"
 
 #include <algorithm>
-#include <string>
-
-CPL_CVSID("$Id: northwood.cpp 36776 2016-12-10 11:17:47Z rouault $");
 
 int nwt_ParseHeader( NWT_GRID * pGrd, char *nwtHeader )
 {
@@ -190,6 +188,7 @@ int nwt_ParseHeader( NWT_GRID * pGrd, char *nwtHeader )
 
     pGrd->cFormat += nwtHeader[1023];    // the msb for grd/grc was already set
 
+
     // there are more types than this - need to build other types for testing
     if( pGrd->cFormat & 0x80 )
     {
@@ -200,6 +199,7 @@ int nwt_ParseHeader( NWT_GRID * pGrd, char *nwtHeader )
     }
     else
         pGrd->nBitsPerPixel = nwtHeader[1023] * 8;
+
 
     if( pGrd->cFormat & 0x80 )        // if is GRC load the Dictionary
     {
@@ -271,6 +271,7 @@ int nwt_ParseHeader( NWT_GRID * pGrd, char *nwtHeader )
 
     return TRUE;
 }
+
 
 // Create a color gradient ranging from ZMin to Zmax using the color
 // inflections defined in grid
@@ -440,14 +441,16 @@ void nwt_HillShade( unsigned char *r, unsigned char *g, unsigned char *b,
     return;
 }
 
+
 NWT_GRID *nwtOpenGrid( char *filename )
 {
+    NWT_GRID *pGrd;
     char nwtHeader[1024];
-    VSILFILE *fp = VSIFOpenL( filename, "rb" );
+    VSILFILE *fp;
 
-    if( fp == NULL )
+    if( (fp = VSIFOpenL( filename, "rb" )) == NULL )
     {
-        CPLError(CE_Failure, CPLE_OpenFailed, "Can't open %s", filename );
+        fprintf( stderr, "\nCan't open %s\n", filename );
         return NULL;
     }
 
@@ -460,7 +463,7 @@ NWT_GRID *nwtOpenGrid( char *filename )
         nwtHeader[3] != 'C' )
           return NULL;
 
-    NWT_GRID *pGrd = reinterpret_cast<NWT_GRID *>(
+    pGrd = reinterpret_cast<NWT_GRID *>(
         calloc( sizeof(NWT_GRID), 1 ) );
 
     if( nwtHeader[4] == '1' )
@@ -469,8 +472,7 @@ NWT_GRID *nwtOpenGrid( char *filename )
         pGrd->cFormat = 0x80;        //  grc classified type
     else
     {
-        CPLError(CE_Failure, CPLE_NotSupported,
-                 "Unhandled Northwood format type = %0xd",
+        fprintf( stderr, "\nUnhandled Northwood format type = %0xd\n",
                  nwtHeader[4] );
         if( pGrd )
             free( pGrd );
@@ -507,77 +509,77 @@ void nwtPrintGridHeader( NWT_GRID * pGrd )
 {
     if( pGrd->cFormat & 0x80 )
     {
-        printf( "\n%s\n\nGrid type is Classified ", pGrd->szFileName );/*ok*/
+        printf( "\n%s\n\nGrid type is Classified ", pGrd->szFileName );
         if( pGrd->cFormat == 0x81 )
-            printf( "4 bit (Less than 16 Classes)" );/*ok*/
+            printf( "4 bit (Less than 16 Classes)" );
         else if( pGrd->cFormat == 0x82 )
-            printf( "8 bit (Less than 256 Classes)" );/*ok*/
+            printf( "8 bit (Less than 256 Classes)" );
         else if( pGrd->cFormat == 0x84 )
-            printf( "16 bit (Less than 65536 Classes)" );/*ok*/
+            printf( "16 bit (Less than 65536 Classes)" );
         else
         {
-            printf( "GRC - Unhandled Format or Type %d", pGrd->cFormat );/*ok*/
+            printf( "GRC - Unhandled Format or Type %d", pGrd->cFormat );
             return;
         }
     }
     else
     {
-        printf( "\n%s\n\nGrid type is Numeric ", pGrd->szFileName );/*ok*/
+        printf( "\n%s\n\nGrid type is Numeric ", pGrd->szFileName );
         if( pGrd->cFormat == 0x00 )
-            printf( "16 bit (Standard Precision)" );/*ok*/
+            printf( "16 bit (Standard Percision)" );
         else if( pGrd->cFormat == 0x01 )
-            printf( "32 bit (High Precision)" );/*ok*/
+            printf( "32 bit (High Percision)" );
         else
         {
-            printf( "GRD - Unhandled Format or Type %d", pGrd->cFormat );/*ok*/
+            printf( "GRD - Unhandled Format or Type %d", pGrd->cFormat );
             return;
         }
     }
-    printf( "\nDim (x,y) = (%u,%u)", pGrd->nXSide, pGrd->nYSide );/*ok*/
-    printf( "\nStep Size = %f", pGrd->dfStepSize );/*ok*/
-    printf( "\nBounds = (%f,%f) (%f,%f)", pGrd->dfMinX, pGrd->dfMinY,/*ok*/
+    printf( "\nDim (x,y) = (%d,%d)", pGrd->nXSide, pGrd->nYSide );
+    printf( "\nStep Size = %f", pGrd->dfStepSize );
+    printf( "\nBounds = (%f,%f) (%f,%f)", pGrd->dfMinX, pGrd->dfMinY,
             pGrd->dfMaxX, pGrd->dfMaxY );
-    printf( "\nCoordinate System = %s", pGrd->cMICoordSys );/*ok*/
+    printf( "\nCoordinate System = %s", pGrd->cMICoordSys );
 
     if( !(pGrd->cFormat & 0x80) )    // print the numeric specific stuff
     {
-        printf( "\nMin Z = %f Max Z = %f Z Units = %d \"%s\"", pGrd->fZMin,/*ok*/
+        printf( "\nMin Z = %f Max Z = %f Z Units = %d \"%s\"", pGrd->fZMin,
                 pGrd->fZMax, pGrd->iZUnits, pGrd->cZUnits );
 
-        printf( "\n\nDisplay Mode =" );/*ok*/
+        printf( "\n\nDisplay Mode =" );
         if( pGrd->bShowGradient )
-            printf( " Color Gradient" );/*ok*/
+            printf( " Color Gradient" );
 
         if( pGrd->bShowGradient && pGrd->bShowHillShade )
-            printf( " and" );/*ok*/
+            printf( " and" );
 
         if( pGrd->bShowHillShade )
-            printf( " Hill Shading" );/*ok*/
+            printf( " Hill Shading" );
 
         for( int i = 0; i < pGrd->iNumColorInflections; i++ )
         {
-            printf( "\nColor Inflection %d - %f (%d,%d,%d)", i + 1,/*ok*/
+            printf( "\nColor Inflection %d - %f (%d,%d,%d)", i + 1,
                     pGrd->stInflection[i].zVal, pGrd->stInflection[i].r,
                     pGrd->stInflection[i].g, pGrd->stInflection[i].b );
         }
 
         if( pGrd->bHillShadeExists )
         {
-            printf("\n\nHill Shade Azumith = %.1f Inclination = %.1f "/*ok*/
+            printf("\n\nHill Shade Azumith = %.1f Inclination = %.1f "
                    "Brightness = %d Contrast = %d",
                    pGrd->fHillShadeAzimuth, pGrd->fHillShadeAngle,
                    pGrd->cHillShadeBrightness, pGrd->cHillShadeContrast );
         }
         else
-            printf( "\n\nNo Hill Shade Data" );/*ok*/
+            printf( "\n\nNo Hill Shade Data" );
     }
     else                            // print the classified specific stuff
     {
-        printf( "\nNumber of Classes defined = %u",/*ok*/
+        printf( "\nNumber of Classes defined = %d",
                 pGrd->stClassDict->nNumClassifiedItems );
         for( int i = 0; i < static_cast<int>( pGrd->stClassDict->nNumClassifiedItems ); i++ )
         {
-            printf( "\n%s - (%d,%d,%d)  Raw = %d  %d %d",/*ok*/
+            printf( "\n%s - (%d,%d,%d)  Raw = %d  %d %d",
                     pGrd->stClassDict->stClassifedItem[i]->szClassName,
                     pGrd->stClassDict->stClassifedItem[i]->r,
                     pGrd->stClassDict->stClassifedItem[i]->g,
@@ -641,6 +643,7 @@ HLS RGBtoHLS( NWT_RGB rgb )
     return hls;
 }
 
+
 /* utility routine for HLStoRGB */
 static short HueToRGB( short n1, short n2, short hue )
 {
@@ -653,16 +656,15 @@ static short HueToRGB( short n1, short n2, short hue )
 
     /* return r,g, or b value from this tridrant */
     if( hue < (HLSMAX / 6) )
-        return n1 + (((n2 - n1) * hue + (HLSMAX / 12)) / (HLSMAX / 6));
+        return (n1 + (((n2 - n1) * hue + (HLSMAX / 12)) / (HLSMAX / 6)));
     if( hue < (HLSMAX / 2) )
-        return n2;
+        return (n2);
     if( hue < ((HLSMAX * 2) / 3) )
-        return
-            n1 +
-            (((n2 - n1) * (((HLSMAX * 2) / 3) - hue) +
-              (HLSMAX / 12)) / (HLSMAX / 6));
+        return (n1 +
+                (((n2 - n1) * (((HLSMAX * 2) / 3) - hue) +
+                (HLSMAX / 12)) / (HLSMAX / 6)));
     else
-        return n1;
+        return (n1);
 }
 
 NWT_RGB HLStoRGB( HLS hls )
@@ -671,9 +673,7 @@ NWT_RGB HLStoRGB( HLS hls )
 
     if( hls.s == 0 )
     {                            /* achromatic case */
-        rgb.r = static_cast<unsigned char>( (hls.l * RGBMAX) / HLSMAX );
-        rgb.g = rgb.r;
-        rgb.b = rgb.r;
+        rgb.r = rgb.g = rgb.b = static_cast<unsigned char>( (hls.l * RGBMAX) / HLSMAX );
         if( hls.h != UNDEFINED )
         {
             /* ERROR */

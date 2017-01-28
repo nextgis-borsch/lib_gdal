@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: dted_api.c 36422 2016-11-22 00:10:35Z rouault $
+ * $Id: dted_api.c 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  DTED Translator
  * Purpose:  Implementation of DTED/CDED access functions.
@@ -31,7 +31,7 @@
 #include "dted_api.h"
 
 #ifndef AVOID_CPL
-CPL_CVSID("$Id: dted_api.c 36422 2016-11-22 00:10:35Z rouault $");
+CPL_CVSID("$Id: dted_api.c 33720 2016-03-15 00:39:53Z goatbar $");
 #endif
 
 static int bWarnedTwoComplement = FALSE;
@@ -1034,7 +1034,6 @@ int DTEDSetMetadata( DTEDInfo *psDInfo, DTEDMetaDataCode eCode,
 /*      Update it, padding with spaces.                                 */
 /* -------------------------------------------------------------------- */
     memset( pszFieldSrc, ' ', nFieldLen );
-    /* cppcheck-suppress redundantCopy */
     strncpy( pszFieldSrc, pszNewValue,
              MIN((size_t)nFieldLen,strlen(pszNewValue)) );
 

@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: s57reader.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  S-57 Translator
  * Purpose:  Implements S57Reader class.
@@ -32,21 +33,18 @@
 #include "ogr_api.h"
 #include "s57.h"
 
-#include <cmath>
-
-#include <algorithm>
 #include <string>
 
-CPL_CVSID("$Id: s57reader.cpp 36948 2016-12-18 13:32:14Z rouault $");
+CPL_CVSID("$Id: s57reader.cpp 33714 2016-03-13 05:42:13Z goatbar $");
 
-/**
+/******************************************************************************
 * Recode the given string from a source encoding to UTF-8 encoding.  The source
 * encoding is established by inspecting the AALL and NALL fields of the S57
 * DSSI record. If first time, the DSSI is read to setup appropriate
 * variables. Main scope of this function is to have the strings of all
 * attributes encoded/recoded to the same codepage in the final Shapefiles .DBF.
 *
-* @param[in] SourceString source string to be recoded to UTF-8.
+* @param[in] SourceString: source string to be recoded to UTF-8.
 *     LookAtAALL-NALL: flag indicating if the string becomes from an
 *     international attribute (e.g.  INFORM, OBJNAM) or national attribute (e.g
 *     NINFOM, NOBJNM). The type of encoding is contained in two different
@@ -58,9 +56,9 @@ CPL_CVSID("$Id: s57reader.cpp 36948 2016-12-18 13:32:14Z rouault $");
 *     0: the type of endoding is for international attributes
 *     1: the type of endoding is for national attributes
 *
-* @param[in] LookAtAALL_NALL to be documented
+* @param[out]
 *
-* @return the output string recoded to UTF-8 or left unchanged if no valid
+* @return: the output string recoded to UTF-8 or left unchanged if no valid
 *     recoding applicable. The recodinf relies on GDAL functions appropriately
 *     called, which allocate themselves the necessary memory to hold the
 *     recoded string.
@@ -141,7 +139,7 @@ char *S57Reader::RecodeByDSSI(const char *SourceString, bool LookAtAALL_NALL)
     if( RecodedString == NULL )
         RecodedString = CPLStrdup(SourceString);
 
-    return RecodedString;
+    return(RecodedString);
 }
 
 /************************************************************************/
@@ -342,7 +340,7 @@ OGRFeature *S57Reader::NextPendingMultiPoint()
 /*                             SetOptions()                             */
 /************************************************************************/
 
-bool S57Reader::SetOptions( char ** papszOptionsIn )
+int S57Reader::SetOptions( char ** papszOptionsIn )
 
 {
     CSLDestroy( papszOptions );
@@ -367,7 +365,7 @@ bool S57Reader::SetOptions( char ** papszOptionsIn )
         CPLError(CE_Failure, CPLE_AppDefined,
                  "Inconsistent options : ADD_SOUNDG_DEPTH should only be "
                  "enabled if SPLIT_MULTIPOINT is also enabled");
-        return false;
+        return FALSE;
     }
 
     pszOptionValue = CSLFetchNameValue( papszOptions, S57O_LNAM_REFS );
@@ -415,7 +413,7 @@ bool S57Reader::SetOptions( char ** papszOptionsIn )
     else
         nOptionFlags &= ~S57M_RECODE_BY_DSSI;
 
-    return true;
+    return TRUE;
 }
 
 /************************************************************************/
@@ -453,23 +451,23 @@ void S57Reader::Rewind()
 /*      indexes.                                                        */
 /************************************************************************/
 
-bool S57Reader::Ingest()
+int S57Reader::Ingest()
 
 {
     if( poModule == NULL || bFileIngested )
-        return true;
+        return TRUE;
 
 /* -------------------------------------------------------------------- */
 /*      Read all the records in the module, and place them in           */
 /*      appropriate indexes.                                            */
 /* -------------------------------------------------------------------- */
     CPLErrorReset();
-    DDFRecord *poRecord = NULL;
+    DDFRecord *poRecord;
     while( (poRecord = poModule->ReadRecord()) != NULL )
     {
-        DDFField *poKeyField = poRecord->GetField(1);
+        DDFField        *poKeyField = poRecord->GetField(1);
         if (poKeyField == NULL)
-            return false;
+            return FALSE;
 
         if( EQUAL(poKeyField->GetFieldDefn()->GetName(),"VRID") )
         {
@@ -525,8 +523,8 @@ bool S57Reader::Ingest()
 
         else if( EQUAL(poKeyField->GetFieldDefn()->GetName(),"DSPM") )
         {
-            nCOMF = std::max(1, poRecord->GetIntSubfield( "DSPM",0, "COMF",0));
-            nSOMF = std::max(1, poRecord->GetIntSubfield( "DSPM",0, "SOMF",0));
+            nCOMF = MAX(1,poRecord->GetIntSubfield( "DSPM",0, "COMF",0));
+            nSOMF = MAX(1,poRecord->GetIntSubfield( "DSPM",0, "SOMF",0));
 
             if( nOptionFlags & S57M_RETURN_DSID )
             {
@@ -540,13 +538,13 @@ bool S57Reader::Ingest()
         else
         {
             CPLDebug( "S57",
-                      "Skipping %s record in S57Reader::Ingest().",
+                      "Skipping %s record in S57Reader::Ingest().\n",
                       poKeyField->GetFieldDefn()->GetName() );
         }
     }
 
     if( CPLGetLastErrorType() == CE_Failure )
-        return false;
+        return FALSE;
 
     bFileIngested = true;
 
@@ -556,7 +554,7 @@ bool S57Reader::Ingest()
     if( nOptionFlags & S57M_UPDATES )
         return FindAndApplyUpdates();
 
-    return true;
+    return TRUE;
 }
 
 /************************************************************************/
@@ -778,6 +776,7 @@ OGRFeature *S57Reader::ReadFeature( int nFeatureId, OGRFeatureDefn *poTarget )
     return poFeature;
 }
 
+
 /************************************************************************/
 /*                          AssembleFeature()                           */
 /*                                                                      */
@@ -901,7 +900,7 @@ void S57Reader::ApplyObjectClassAttributes( DDFRecord * poRecord,
         {
             if( !bAttrWarningIssued )
             {
-                bAttrWarningIssued = true;
+                bAttrWarningIssued = TRUE;
                 CPLError( CE_Warning, CPLE_AppDefined,
                           "Illegal feature attribute id (ATTF:ATTL[%d]) of %d\n"
                           "on feature FIDN=%d, FIDS=%d.\n"
@@ -933,7 +932,7 @@ void S57Reader::ApplyObjectClassAttributes( DDFRecord * poRecord,
         {
             if( !bMissingWarningIssued )
             {
-                bMissingWarningIssued = true;
+                bMissingWarningIssued = TRUE;
                 CPLError( CE_Warning, CPLE_AppDefined,
                           "Attributes %s ignored, not in expected schema.\n"
                           "No more warnings will be issued for this dataset.",
@@ -984,7 +983,7 @@ void S57Reader::ApplyObjectClassAttributes( DDFRecord * poRecord,
         {
             if( !bAttrWarningIssued )
             {
-                bAttrWarningIssued = true;
+                bAttrWarningIssued = TRUE;
                 CPLError( CE_Warning, CPLE_AppDefined,
                           "Illegal feature attribute id (NATF:ATTL[%d]) of %d\n"
                           "on feature FIDN=%d, FIDS=%d.\n"
@@ -1177,7 +1176,7 @@ OGRFeature *S57Reader::ReadDSID()
 
     if( poFDefn == NULL )
     {
-        // CPLAssert( false );
+        //CPLAssert( FALSE );
         return NULL;
     }
 
@@ -1285,6 +1284,7 @@ OGRFeature *S57Reader::ReadDSID()
     return poFeature;
 }
 
+
 /************************************************************************/
 /*                             ReadVector()                             */
 /*                                                                      */
@@ -1324,7 +1324,7 @@ OGRFeature *S57Reader::ReadVector( int nFeatureId, int nRCNM )
         break;
 
       default:
-        CPLAssert( false );
+        CPLAssert( FALSE );
         return NULL;
     }
 
@@ -1349,7 +1349,7 @@ OGRFeature *S57Reader::ReadVector( int nFeatureId, int nRCNM )
 
     if( poFDefn == NULL )
     {
-        // CPLAssert( false );
+        //CPLAssert( FALSE );
         return NULL;
     }
 
@@ -1414,6 +1414,7 @@ OGRFeature *S57Reader::ReadVector( int nFeatureId, int nRCNM )
                 poFeature->SetGeometryDirectly( poMP );
             }
         }
+
     }
 
 /* -------------------------------------------------------------------- */
@@ -1516,8 +1517,8 @@ OGRFeature *S57Reader::ReadVector( int nFeatureId, int nRCNM )
 /*      Fetch the location of a spatial point object.                   */
 /************************************************************************/
 
-bool S57Reader::FetchPoint( int nRCNM, int nRCID,
-                            double *pdfX, double *pdfY, double *pdfZ )
+int S57Reader::FetchPoint( int nRCNM, int nRCID,
+                           double * pdfX, double * pdfY, double * pdfZ )
 
 {
     DDFRecord *poSRecord = NULL;
@@ -1528,7 +1529,7 @@ bool S57Reader::FetchPoint( int nRCNM, int nRCID,
         poSRecord = oVC_Index.FindRecord( nRCID );
 
     if( poSRecord == NULL )
-        return false;
+        return FALSE;
 
     double dfX = 0.0;
     double dfY = 0.0;
@@ -1551,7 +1552,7 @@ bool S57Reader::FetchPoint( int nRCNM, int nRCID,
             / static_cast<double>( nSOMF );
     }
     else
-        return false;
+        return FALSE;
 
     if( pdfX != NULL )
         *pdfX = dfX;
@@ -1560,7 +1561,7 @@ bool S57Reader::FetchPoint( int nRCNM, int nRCID,
     if( pdfZ != NULL )
         *pdfZ = dfZ;
 
-    return true;
+    return TRUE;
 }
 
 /************************************************************************/
@@ -1576,7 +1577,7 @@ S57StrokeArcToOGRGeometry_Angles( double dfCenterX, double dfCenterY,
 {
     OGRLineString * const poLine = new OGRLineString;
 
-    nVertexCount = std::max(2, nVertexCount);
+    nVertexCount = MAX(2,nVertexCount);
     const double dfSlice = (dfEndAngle-dfStartAngle)/(nVertexCount-1);
 
     poLine->setNumPoints( nVertexCount );
@@ -1594,6 +1595,7 @@ S57StrokeArcToOGRGeometry_Angles( double dfCenterX, double dfCenterY,
     return poLine;
 }
 
+
 /************************************************************************/
 /*                  S57StrokeArcToOGRGeometry_Points()                  */
 /************************************************************************/
@@ -1605,13 +1607,14 @@ S57StrokeArcToOGRGeometry_Points( double dfStartX, double dfStartY,
                                   int nVertexCount )
 
 {
-    double dfStartAngle = 0.0;
-    double dfEndAngle = 360.0;
+    double      dfStartAngle;
+    double      dfEndAngle;
+    double      dfRadius;
 
     if( dfStartX == dfEndX && dfStartY == dfEndY )
     {
-        // dfStartAngle = 0.0;
-        // dfEndAngle = 360.0;
+        dfStartAngle = 0.0;
+        dfEndAngle = 360.0;
     }
     else
     {
@@ -1654,9 +1657,8 @@ S57StrokeArcToOGRGeometry_Points( double dfStartX, double dfStartY,
         }
     }
 
-    const double dfRadius =
-        sqrt( (dfCenterX - dfStartX) * (dfCenterX - dfStartX)
-              + (dfCenterY - dfStartY) * (dfCenterY - dfStartY) );
+    dfRadius = sqrt( (dfCenterX - dfStartX) * (dfCenterX - dfStartX)
+                     + (dfCenterY - dfStartY) * (dfCenterY - dfStartY) );
 
     return S57StrokeArcToOGRGeometry_Angles( dfCenterX, dfCenterY,
                                              dfRadius,
@@ -1668,7 +1670,7 @@ S57StrokeArcToOGRGeometry_Points( double dfStartX, double dfStartY,
 /*                             FetchLine()                              */
 /************************************************************************/
 
-bool S57Reader::FetchLine( DDFRecord *poSRecord,
+int S57Reader::FetchLine( DDFRecord *poSRecord,
                           int iStartVertex, int iDirection,
                           OGRLineString *poLine )
 
@@ -1714,7 +1716,7 @@ bool S57Reader::FetchLine( DDFRecord *poSRecord,
         if( poXCOO == NULL || poYCOO == NULL )
         {
             CPLDebug( "S57", "XCOO or YCOO are NULL" );
-            return false;
+            return FALSE;
         }
 
         const int nVCount = poSG2D->GetRepeatCount();
@@ -1764,12 +1766,12 @@ bool S57Reader::FetchLine( DDFRecord *poSRecord,
         {
             int nBytesRemaining = 0;
 
-            const char *pachData =
-                poSG2D->GetSubfieldData( poYCOO, &nBytesRemaining, 0 );
+            const char *pachData
+                = poSG2D->GetSubfieldData( poYCOO,&nBytesRemaining, 0 );
 
             for( int i = 0; i < nVCount; i++ )
             {
-                GInt32 nYCOO = 0;
+                GInt32      nYCOO;
                 memcpy( &nYCOO, pachData, 4 );
                 pachData += 4;
 
@@ -1848,7 +1850,7 @@ bool S57Reader::FetchLine( DDFRecord *poSRecord,
         }
     }
 
-    return true;
+    return TRUE;
 }
 
 /************************************************************************/
@@ -1869,7 +1871,7 @@ void S57Reader::AssemblePointGeometry( DDFRecord * poFRecord,
     if( poFSPT->GetRepeatCount() != 1 )
     {
 #ifdef DEBUG
-        fprintf( stderr, /*ok*/
+        fprintf( stderr,
                  "Point features with other than one spatial linkage.\n" );
         poFRecord->Dump( stderr );
 #endif
@@ -1920,9 +1922,11 @@ void S57Reader::AssembleSoundingGeometry( DDFRecord * poFRecord,
     int nRCNM = 0;
     const int nRCID = ParseName( poFSPT, 0, &nRCNM );
 
-    DDFRecord *poSRecord = nRCNM == RCNM_VI
-        ? oVI_Index.FindRecord( nRCID )
-        : oVC_Index.FindRecord( nRCID );
+    DDFRecord *poSRecord;
+    if( nRCNM == RCNM_VI )
+        poSRecord = oVI_Index.FindRecord( nRCID );
+    else
+        poSRecord = oVC_Index.FindRecord( nRCID );
 
     if( poSRecord == NULL )
         return;
@@ -1961,7 +1965,7 @@ void S57Reader::AssembleSoundingGeometry( DDFRecord * poFRecord,
 
     for( int i = 0; i < nPointCount; i++ )
     {
-        int nBytesConsumed = 0;
+        int nBytesConsumed;
 
         const double dfY = poYCOO->ExtractIntData( pachData, nBytesLeft,
                                                    &nBytesConsumed )
@@ -2015,7 +2019,7 @@ GetIntSubfield( DDFField *poField,
                                 &nBytesRemaining,
                                 iSubfieldIndex );
 
-    return poSFDefn->ExtractIntData( pachData, nBytesRemaining, NULL );
+    return( poSFDefn->ExtractIntData( pachData, nBytesRemaining, NULL ) );
 }
 
 /************************************************************************/
@@ -2159,8 +2163,8 @@ void S57Reader::AssembleLineGeometry( DDFRecord * poFRecord,
             {
                 poLine->addPoint( dfX, dfY );
             }
-            else if( std::abs(dlastfX - dfX) > 0.00000001 ||
-                std::abs(dlastfY - dfY) > 0.00000001 )
+            else if( ABS(dlastfX - dfX) > 0.00000001 ||
+                ABS(dlastfY - dfY) > 0.00000001 )
             {
                 // we need to start a new linestring.
                 poMLS->addGeometryDirectly( poLine );
@@ -2350,8 +2354,7 @@ void S57Reader::AssembleAreaGeometry( DDFRecord * poFRecord,
             if( poVRPT != NULL )
             {
                 int nVC_RCID = ParseName( poVRPT );
-                double dfX = 0.0;
-                double dfY = 0.0;
+                double dfX, dfY;
 
                 if( nVC_RCID != -1
                     && FetchPoint( RCNM_VC, nVC_RCID, &dfX, &dfY ) )
@@ -2373,8 +2376,8 @@ void S57Reader::AssembleAreaGeometry( DDFRecord * poFRecord,
             if( poVRPT != NULL && poVRPT->GetRepeatCount() > 1 )
             {
                 const int nVC_RCID = ParseName( poVRPT, 1 );
-                double dfX = 0.0;
-                double dfY = 0.0;
+                double dfX;
+                double dfY;
 
                 if( nVC_RCID != -1
                     && FetchPoint( RCNM_VC, nVC_RCID, &dfX, &dfY ) )
@@ -2383,8 +2386,8 @@ void S57Reader::AssembleAreaGeometry( DDFRecord * poFRecord,
             else if( (poVRPT = poSRecord->FindField( "VRPT", 1 )) != NULL )
             {
                 const int nVC_RCID = ParseName( poVRPT );
-                double dfX = 0.0;
-                double dfY = 0.0;
+                double dfX;
+                double dfY;
 
                 if( nVC_RCID != -1
                     && FetchPoint( RCNM_VC, nVC_RCID, &dfX, &dfY ) )
@@ -2449,10 +2452,8 @@ OGRFeatureDefn * S57Reader::FindFDefn( DDFRecord * poRecord )
 
         for( int i = 0; i < nFDefnCount; i++ )
         {
-            const char* pszAcronym = poClassContentExplorer->GetAcronym();
-            if( pszAcronym != NULL &&
-                EQUAL(papoFDefnList[i]->GetName(),
-                      pszAcronym) )
+            if( EQUAL(papoFDefnList[i]->GetName(),
+                      poClassContentExplorer->GetAcronym()) )
                 return papoFDefnList[i];
         }
 
@@ -2505,7 +2506,7 @@ int S57Reader::ParseName( DDFField * poField, int nIndex, int * pnRCNM )
     if( poName == NULL )
         return -1;
 
-    int nMaxBytes = 0;
+    int nMaxBytes;
     unsigned char *pabyData = reinterpret_cast<unsigned char *>(
         const_cast<char *>(
             poField->GetSubfieldData( poName, &nMaxBytes, nIndex ) ) );
@@ -2556,11 +2557,11 @@ void S57Reader::AddFeatureDefn( OGRFeatureDefn * poFDefn )
 /*      occur in this dataset.                                          */
 /************************************************************************/
 
-bool S57Reader::CollectClassList(std::vector<int> &anClassCount)
+int S57Reader::CollectClassList(std::vector<int> &anClassCount)
 
 {
     if( !bFileIngested && !Ingest() )
-        return false;
+        return FALSE;
 
     bool bSuccess = true;
 
@@ -2577,6 +2578,7 @@ bool S57Reader::CollectClassList(std::vector<int> &anClassCount)
                 anClassCount.resize(nOBJL+1);
             anClassCount[nOBJL]++;
         }
+
     }
 
     return bSuccess;
@@ -2589,7 +2591,7 @@ bool S57Reader::CollectClassList(std::vector<int> &anClassCount)
 /*      (RUIN=3).                                                       */
 /************************************************************************/
 
-bool S57Reader::ApplyRecordUpdate( DDFRecord *poTarget, DDFRecord *poUpdate )
+int S57Reader::ApplyRecordUpdate( DDFRecord *poTarget, DDFRecord *poUpdate )
 
 {
     const char *pszKey = poUpdate->GetField(1)->GetFieldDefn()->GetName();
@@ -2605,8 +2607,8 @@ bool S57Reader::ApplyRecordUpdate( DDFRecord *poTarget, DDFRecord *poUpdate )
                   poTarget->GetIntSubfield( pszKey, 0, "RCNM", 0 ),
                   poTarget->GetIntSubfield( pszKey, 0, "RCID", 0 ) );
 
-        // CPLAssert( false );
-        return false;
+        // CPLAssert( FALSE );
+        return FALSE;
     }
 
 /* -------------------------------------------------------------------- */
@@ -2616,14 +2618,14 @@ bool S57Reader::ApplyRecordUpdate( DDFRecord *poTarget, DDFRecord *poUpdate )
 
     if( poKey == NULL )
     {
-        // CPLAssert( false );
-        return false;
+        // CPLAssert( FALSE );
+        return FALSE;
     }
 
     DDFSubfieldDefn *poRVER_SFD
         = poKey->GetFieldDefn()->FindSubfieldDefn( "RVER" );
     if( poRVER_SFD == NULL )
-        return false;
+        return FALSE;
 
     unsigned char *pnRVER
         = (unsigned char *) poKey->GetSubfieldData( poRVER_SFD, NULL, 0 );
@@ -2642,8 +2644,8 @@ bool S57Reader::ApplyRecordUpdate( DDFRecord *poTarget, DDFRecord *poUpdate )
 
         if( (poSrcFSPT == NULL && nFSUI != 2) || poDstFSPT == NULL )
         {
-            // CPLAssert( false );
-            return false;
+            // CPLAssert( FALSE );
+            return FALSE;
         }
 
         const int nFSIX = poUpdate->GetIntSubfield( "FSPC", 0, "FSIX", 0 );
@@ -2660,7 +2662,7 @@ bool S57Reader::ApplyRecordUpdate( DDFRecord *poTarget, DDFRecord *poUpdate )
                 CPLDebug( "S57", "Not enough bytes in source FSPT field. "
                           "Has %d, requires %d",
                           poSrcFSPT->GetDataSize(), nInsertionBytes );
-                return false;
+                return FALSE;
             }
 
             char *pachInsertion
@@ -2680,7 +2682,7 @@ bool S57Reader::ApplyRecordUpdate( DDFRecord *poTarget, DDFRecord *poUpdate )
                               "Has %d, requires %d",
                               poDstFSPT->GetDataSize(), nPtrSize * nFSIX );
                     CPLFree( pachInsertion );
-                    return false;
+                    return FALSE;
                 }
 
                 memcpy( pachInsertion + nInsertionBytes,
@@ -2708,7 +2710,7 @@ bool S57Reader::ApplyRecordUpdate( DDFRecord *poTarget, DDFRecord *poUpdate )
             {
                 CPLDebug("S57", "Not enough bytes in source FSPT field. Has %d, requires %d",
                          poSrcFSPT->GetDataSize(), nNSPT * nPtrSize );
-                return false;
+                return FALSE;
             }
 
             for( int i = 0; i < nNSPT; i++ )
@@ -2732,8 +2734,8 @@ bool S57Reader::ApplyRecordUpdate( DDFRecord *poTarget, DDFRecord *poUpdate )
 
         if( (poSrcVRPT == NULL && nVPUI != 2) || poDstVRPT == NULL )
         {
-            // CPLAssert( false );
-            return false;
+            //CPLAssert( FALSE );
+            return FALSE;
         }
 
         const int nVPIX = poUpdate->GetIntSubfield( "VRPC", 0, "VPIX", 0 );
@@ -2749,7 +2751,7 @@ bool S57Reader::ApplyRecordUpdate( DDFRecord *poTarget, DDFRecord *poUpdate )
             {
                 CPLDebug("S57", "Not enough bytes in source VRPT field. Has %d, requires %d",
                          poSrcVRPT->GetDataSize(), nInsertionBytes );
-                return false;
+                return FALSE;
             }
 
             char *pachInsertion
@@ -2768,7 +2770,7 @@ bool S57Reader::ApplyRecordUpdate( DDFRecord *poTarget, DDFRecord *poUpdate )
                     CPLDebug("S57", "Not enough bytes in dest VRPT field. Has %d, requires %d",
                          poDstVRPT->GetDataSize(), nPtrSize * nVPIX );
                     CPLFree( pachInsertion );
-                    return false;
+                    return FALSE;
                 }
 
                 memcpy( pachInsertion + nInsertionBytes,
@@ -2796,7 +2798,7 @@ bool S57Reader::ApplyRecordUpdate( DDFRecord *poTarget, DDFRecord *poUpdate )
                 CPLDebug( "S57", "Not enough bytes in source VRPT field. "
                           "Has %d, requires %d",
                           poSrcVRPT->GetDataSize(), nNVPT * nPtrSize );
-                return false;
+                return FALSE;
             }
 
             /* copy over each ptr */
@@ -2833,8 +2835,8 @@ bool S57Reader::ApplyRecordUpdate( DDFRecord *poTarget, DDFRecord *poUpdate )
         if( (poSrcSG2D == NULL && nCCUI != 2)
             || (poDstSG2D == NULL && nCCUI != 1) )
         {
-            // CPLAssert( false );
-            return false;
+            //CPLAssert( FALSE );
+            return FALSE;
         }
 
         if (poDstSG2D == NULL)
@@ -2842,8 +2844,8 @@ bool S57Reader::ApplyRecordUpdate( DDFRecord *poTarget, DDFRecord *poUpdate )
             poTarget->AddField(poTarget->GetModule()->FindFieldDefn("SG2D"));
             poDstSG2D = poTarget->FindField("SG2D");
             if (poDstSG2D == NULL) {
-                // CPLAssert( false );
-                return false;
+                //CPLAssert( FALSE );
+                return FALSE;
             }
 
             // Delete null default data that was created
@@ -2863,7 +2865,7 @@ bool S57Reader::ApplyRecordUpdate( DDFRecord *poTarget, DDFRecord *poUpdate )
                 CPLDebug( "S57", "Not enough bytes in source SG2D field. "
                           "Has %d, requires %d",
                           poSrcSG2D->GetDataSize(), nInsertionBytes );
-                return false;
+                return FALSE;
             }
 
             char *pachInsertion
@@ -2884,7 +2886,7 @@ bool S57Reader::ApplyRecordUpdate( DDFRecord *poTarget, DDFRecord *poUpdate )
                               "Has %d, requires %d",
                               poDstSG2D->GetDataSize(), nCoordSize * nCCIX );
                     CPLFree( pachInsertion );
-                    return false;
+                    return FALSE;
                 }
 
                 memcpy( pachInsertion + nInsertionBytes,
@@ -2912,7 +2914,7 @@ bool S57Reader::ApplyRecordUpdate( DDFRecord *poTarget, DDFRecord *poUpdate )
                 CPLDebug( "S57", "Not enough bytes in source SG2D field. "
                           "Has %d, requires %d",
                           poSrcSG2D->GetDataSize(), nCCNC * nCoordSize );
-                return false;
+                return FALSE;
             }
 
             /* copy over each ptr */
@@ -2940,8 +2942,8 @@ bool S57Reader::ApplyRecordUpdate( DDFRecord *poTarget, DDFRecord *poUpdate )
             || (poDstFFPT == NULL && nFFUI != 1) )
         {
             CPLDebug( "S57", "Missing source or target FFPT applying update.");
-            // CPLAssert( false );
-            return false;
+            //CPLAssert( FALSE );
+            return FALSE;
         }
 
         // Create FFPT field on target record, if it does not yet exist.
@@ -2951,8 +2953,8 @@ bool S57Reader::ApplyRecordUpdate( DDFRecord *poTarget, DDFRecord *poUpdate )
             poTarget->AddField(poTarget->GetModule()->FindFieldDefn("FFPT"));
             poDstFFPT = poTarget->FindField("FFPT");
             if (poDstFFPT == NULL) {
-                // CPLAssert( false );
-                return false;
+                //CPLAssert( FALSE );
+                return FALSE;
             }
 
             // Delete null default data that was created
@@ -2980,7 +2982,7 @@ bool S57Reader::ApplyRecordUpdate( DDFRecord *poTarget, DDFRecord *poUpdate )
                 CPLDebug( "S57", "Not enough bytes in source FFPT field. "
                           "Has %d, requires %d",
                           poSrcFFPT->GetDataSize(), nInsertionBytes );
-                return false;
+                return FALSE;
             }
 
             char *pachInsertion
@@ -3000,7 +3002,7 @@ bool S57Reader::ApplyRecordUpdate( DDFRecord *poTarget, DDFRecord *poUpdate )
                               "Has %d, requires %d",
                               poDstFFPT->GetDataSize(), nFFPTSize * nFFIX );
                     CPLFree( pachInsertion );
-                    return false;
+                    return FALSE;
                 }
 
                 memcpy( pachInsertion + nInsertionBytes,
@@ -3031,7 +3033,7 @@ bool S57Reader::ApplyRecordUpdate( DDFRecord *poTarget, DDFRecord *poUpdate )
                 CPLDebug( "S57", "Not enough bytes in source FFPT field. "
                           "Has %d, requires %d",
                           poSrcFFPT->GetDataSize(), nNFPT * nFFPTSize );
-                return false;
+                return FALSE;
             }
 
             /* copy over each ptr */
@@ -3057,7 +3059,7 @@ bool S57Reader::ApplyRecordUpdate( DDFRecord *poTarget, DDFRecord *poUpdate )
             CPLError( CE_Warning, CPLE_AppDefined,
                       "Unable to apply ATTF change to target record without "
                       "an ATTF field (see GDAL/OGR Bug #1648)" );
-            return false;
+            return FALSE;
         }
 
         DDFField *poSrcATTF = poUpdate->FindField( "ATTF" );
@@ -3067,9 +3069,9 @@ bool S57Reader::ApplyRecordUpdate( DDFRecord *poTarget, DDFRecord *poUpdate )
         {
             const int nATTL
                 = poUpdate->GetIntSubfield( "ATTF", 0, "ATTL", iAtt );
-            int iTAtt = poDstATTF->GetRepeatCount() - 1;  // Used after for.
+            int iTAtt;
 
-            for( ; iTAtt >= 0; iTAtt-- )
+            for( iTAtt = poDstATTF->GetRepeatCount()-1; iTAtt >= 0; iTAtt-- )
             {
                 if( poTarget->GetIntSubfield( "ATTF", 0, "ATTL", iTAtt )
                     == nATTL )
@@ -3078,9 +3080,9 @@ bool S57Reader::ApplyRecordUpdate( DDFRecord *poTarget, DDFRecord *poUpdate )
             if( iTAtt == -1 )
                 iTAtt = poDstATTF->GetRepeatCount();
 
-            int nDataBytes = 0;
-            const char *pszRawData =
-                poSrcATTF->GetInstanceData( iAtt, &nDataBytes );
+            int nDataBytes;
+            const char *pszRawData
+                = poSrcATTF->GetInstanceData( iAtt, &nDataBytes );
             if( pszRawData[2] == 0x7f /* delete marker */ )
             {
                 poTarget->SetFieldRaw( poDstATTF, iTAtt, NULL, 0 );
@@ -3093,8 +3095,9 @@ bool S57Reader::ApplyRecordUpdate( DDFRecord *poTarget, DDFRecord *poUpdate )
         }
     }
 
-    return true;
+    return TRUE;
 }
+
 
 /************************************************************************/
 /*                            ApplyUpdates()                            */
@@ -3103,27 +3106,27 @@ bool S57Reader::ApplyRecordUpdate( DDFRecord *poTarget, DDFRecord *poUpdate )
 /*      currently loaded index of features.                             */
 /************************************************************************/
 
-bool S57Reader::ApplyUpdates( DDFModule *poUpdateModule )
+int S57Reader::ApplyUpdates( DDFModule *poUpdateModule )
 
 {
 /* -------------------------------------------------------------------- */
 /*      Ensure base file is loaded.                                     */
 /* -------------------------------------------------------------------- */
     if( !bFileIngested && !Ingest() )
-        return false;
+        return FALSE;
 
 /* -------------------------------------------------------------------- */
 /*      Read records, and apply as updates.                             */
 /* -------------------------------------------------------------------- */
     CPLErrorReset();
 
-    DDFRecord *poRecord = NULL;
+    DDFRecord *poRecord;
 
     while( (poRecord = poUpdateModule->ReadRecord()) != NULL )
     {
         DDFField *poKeyField = poRecord->GetField(1);
         if( poKeyField == NULL )
-            return false;
+            return FALSE;
 
         const char *pszKey = poKeyField->GetFieldDefn()->GetName();
 
@@ -3156,8 +3159,8 @@ bool S57Reader::ApplyUpdates( DDFModule *poUpdateModule )
                     break;
 
                   default:
-                    // CPLAssert( false );
-                    return false;
+                    //CPLAssert( FALSE );
+                    return FALSE;
                     break;
                 }
             }
@@ -3245,7 +3248,7 @@ bool S57Reader::ApplyUpdates( DDFModule *poUpdateModule )
 /*      base file.                                                      */
 /************************************************************************/
 
-bool S57Reader::FindAndApplyUpdates( const char * pszPath )
+int S57Reader::FindAndApplyUpdates( const char * pszPath )
 
 {
     if( pszPath == NULL )
@@ -3256,7 +3259,7 @@ bool S57Reader::FindAndApplyUpdates( const char * pszPath )
         CPLError( CE_Failure, CPLE_AppDefined,
                   "Can't apply updates to a base file with a different\n"
                   "extension than .000.\n" );
-        return false;
+        return FALSE;
     }
 
     bool bSuccess = true;
@@ -3266,11 +3269,10 @@ bool S57Reader::FindAndApplyUpdates( const char * pszPath )
         //Creaing file extension
         CPLString extension;
         CPLString dirname;
-
         if( 1 <= iUpdate &&  iUpdate < 10 )
         {
             char buf[2];
-            CPLsnprintf( buf, sizeof(buf), "%i", iUpdate );
+            snprintf( buf, sizeof(buf), "%i", iUpdate );
             extension.append("00");
             extension.append(buf);
             dirname.append(buf);
@@ -3278,7 +3280,7 @@ bool S57Reader::FindAndApplyUpdates( const char * pszPath )
         else if( 10 <= iUpdate && iUpdate < 100 )
         {
             char buf[3];
-            CPLsnprintf( buf, sizeof(buf), "%i", iUpdate );
+            snprintf( buf, sizeof(buf), "%i", iUpdate );
             extension.append("0");
             extension.append(buf);
             dirname.append(buf);
@@ -3286,7 +3288,7 @@ bool S57Reader::FindAndApplyUpdates( const char * pszPath )
         else if( 100 <= iUpdate && iUpdate < 1000 )
         {
             char buf[4];
-            CPLsnprintf( buf, sizeof(buf), "%i", iUpdate );
+            snprintf( buf, sizeof(buf), "%i", iUpdate );
             extension.append(buf);
             dirname.append(buf);
         }
@@ -3308,7 +3310,7 @@ bool S57Reader::FindAndApplyUpdates( const char * pszPath )
                 CPLDebug( "S57", "Applying feature updates from %s.",
                           pszUpdateFilename );
                 if( !ApplyUpdates( &oUpdateModule ) )
-                    return false;
+                    return FALSE;
             }
         }
         else // File is store on Primar generated CD.
@@ -3334,13 +3336,13 @@ bool S57Reader::FindAndApplyUpdates( const char * pszPath )
             if( bSuccess )
             {
                 if( !ApplyUpdates( &oUpdateModule ) )
-                    return false;
+                    return FALSE;
             }
         }//end for if-else
         CPLFree( pszUpdateFilename );
     }
 
-    return true;
+    return TRUE;
 }
 
 /************************************************************************/
@@ -3401,15 +3403,15 @@ OGRErr S57Reader::GetExtent( OGREnvelope *psExtent, int bForce )
 
                 for( int i = 0; i < nVCount; i++ )
                 {
-                    GInt32 nX = CPL_LSBSINT32PTR(pabyData + 4*(i*3+1));
-                    GInt32 nY = CPL_LSBSINT32PTR(pabyData + 4*(i*3+0));
+                    GInt32 nX = CPL_LSBINT32PTR(pabyData + 4*(i*3+1));
+                    GInt32 nY = CPL_LSBINT32PTR(pabyData + 4*(i*3+0));
 
                     if( bGotExtents )
                     {
-                        nXMin = std::min(nXMin, nX);
-                        nXMax = std::max(nXMax, nX);
-                        nYMin = std::min(nYMin, nY);
-                        nYMax = std::max(nYMax, nY);
+                        nXMin = MIN(nXMin,nX);
+                        nXMax = MAX(nXMax,nX);
+                        nYMin = MIN(nYMin,nY);
+                        nYMax = MAX(nYMax,nY);
                     }
                     else
                     {
@@ -3417,30 +3419,31 @@ OGRErr S57Reader::GetExtent( OGREnvelope *psExtent, int bForce )
                         nXMax = nX;
                         nYMin = nY;
                         nYMax = nY;
-                        bGotExtents = true;
+                        bGotExtents = TRUE;
                     }
                 }
             }
             else if( poSG2D != NULL )
             {
-                const int nVCount = poSG2D->GetRepeatCount();
+                int     i, nVCount = poSG2D->GetRepeatCount();
+                GInt32  nX, nY;
+                const GByte   *pabyData;
 
+                pabyData = (const GByte*)poSG2D->GetData();
                 if( poSG2D->GetDataSize() < 2 * nVCount * (int)sizeof(int) )
                     return OGRERR_FAILURE;
 
-                const GByte *pabyData = (const GByte*)poSG2D->GetData();
-
-                for( int i = 0; i < nVCount; i++ )
+                for( i = 0; i < nVCount; i++ )
                 {
-                    const GInt32 nX = CPL_LSBSINT32PTR(pabyData + 4*(i*2+1));
-                    const GInt32 nY = CPL_LSBSINT32PTR(pabyData + 4*(i*2+0));
+                    nX = CPL_LSBINT32PTR(pabyData + 4*(i*2+1));
+                    nY = CPL_LSBINT32PTR(pabyData + 4*(i*2+0));
 
                     if( bGotExtents )
                     {
-                        nXMin = std::min(nXMin, nX);
-                        nXMax = std::max(nXMax, nX);
-                        nYMin = std::min(nYMin, nY);
-                        nYMax = std::max(nYMax, nY);
+                        nXMin = MIN(nXMin,nX);
+                        nXMax = MAX(nXMax,nX);
+                        nYMin = MIN(nYMin,nY);
+                        nYMax = MAX(nYMax,nY);
                     }
                     else
                     {
@@ -3448,7 +3451,7 @@ OGRErr S57Reader::GetExtent( OGREnvelope *psExtent, int bForce )
                         nXMax = nX;
                         nYMin = nY;
                         nYMax = nY;
-                        bGotExtents = true;
+                        bGotExtents = TRUE;
                     }
                 }
             }
@@ -3456,9 +3459,7 @@ OGRErr S57Reader::GetExtent( OGREnvelope *psExtent, int bForce )
     }
 
     if( !bGotExtents )
-    {
         return OGRERR_FAILURE;
-    }
     else
     {
         psExtent->MinX = nXMin / static_cast<double>( nCOMF );

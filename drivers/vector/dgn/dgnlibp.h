@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: dgnlibp.h 35374 2016-09-09 13:32:13Z goatbar $
+ * $Id: dgnlibp.h 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  Microstation DGN Access Library
  * Purpose:  Internal (privatE) datastructures, and prototypes for DGN Access
@@ -40,7 +40,7 @@ typedef struct {
     int         nElemBytes;
     GByte       abyElem[131076];
 
-    bool        got_tcb;
+    int         got_tcb;
     int         dimension;
     int         options;
     double      scale;
@@ -48,7 +48,7 @@ typedef struct {
     double      origin_y;
     double      origin_z;
 
-    bool        index_built;
+    int         index_built;
     int         element_count;
     int         max_element_count;
     DGNElementInfo *element_index;
@@ -56,7 +56,7 @@ typedef struct {
     int         got_color_table;
     GByte       color_table[256][3];
 
-    bool        got_bounds;
+    int         got_bounds;
     GUInt32     min_x;
     GUInt32     min_y;
     GUInt32     min_z;
@@ -64,11 +64,11 @@ typedef struct {
     GUInt32     max_y;
     GUInt32     max_z;
 
-    bool        has_spatial_filter;
-    bool        sf_converted_to_uor;
+    int         has_spatial_filter;
+    int         sf_converted_to_uor;
 
-    bool        select_complex_group;
-    bool        in_complex_group;
+    int         select_complex_group;
+    int         in_complex_group;
 
     GUInt32     sf_min_x;
     GUInt32     sf_min_y;

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_htf.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: ogr_htf.h 32744 2016-01-04 22:26:42Z goatbar $
  *
  * Project:  HTF Translator
  * Purpose:  Definition of classes for OGR .htf driver.
@@ -59,17 +59,17 @@ protected:
 
   public:
                         OGRHTFLayer(const char* pszFilename, int nZone, int bIsNorth);
-                        virtual ~OGRHTFLayer();
+                        ~OGRHTFLayer();
 
-    virtual void                ResetReading() override;
-    virtual OGRFeature *        GetNextFeature() override;
+    virtual void                ResetReading();
+    virtual OGRFeature *        GetNextFeature();
 
-    virtual OGRFeatureDefn *    GetLayerDefn() override { return poFeatureDefn; }
+    virtual OGRFeatureDefn *    GetLayerDefn() { return poFeatureDefn; }
 
-    virtual int                 TestCapability( const char * ) override;
+    virtual int                 TestCapability( const char * );
 
-    virtual OGRErr      GetExtent(OGREnvelope *psExtent, int bForce = TRUE) override;
-    virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce) override
+    virtual OGRErr      GetExtent(OGREnvelope *psExtent, int bForce = TRUE);
+    virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce)
                 { return OGRLayer::GetExtent(iGeomField, psExtent, bForce); }
     void    SetExtent(double dfMinX, double dfMinY, double dfMaxX, double dfMaxY);
 };
@@ -81,12 +81,12 @@ protected:
 class OGRHTFPolygonLayer : public OGRHTFLayer
 {
 protected:
-    virtual OGRFeature *       GetNextRawFeature() override;
+    virtual OGRFeature *       GetNextRawFeature();
 
   public:
                         OGRHTFPolygonLayer(const char* pszFilename, int nZone, int bIsNorth);
 
-    virtual void                ResetReading() override;
+    virtual void                ResetReading();
 };
 
 /************************************************************************/
@@ -104,17 +104,17 @@ private:
     int                        nTotalSoundings;
 
 protected:
-    virtual OGRFeature *       GetNextRawFeature() override;
+    virtual OGRFeature *       GetNextRawFeature();
 
   public:
                         OGRHTFSoundingLayer(const char* pszFilename, int nZone, int bIsNorth, int nTotalSoundings);
-                       virtual ~OGRHTFSoundingLayer();
+                       ~OGRHTFSoundingLayer();
 
-    virtual void                ResetReading() override;
+    virtual void                ResetReading();
 
-    virtual int                 TestCapability( const char * ) override;
+    virtual int                 TestCapability( const char * );
 
-    virtual GIntBig             GetFeatureCount(int bForce = TRUE) override;
+    virtual GIntBig             GetFeatureCount(int bForce = TRUE);
 };
 
 /************************************************************************/
@@ -131,15 +131,15 @@ protected:
     int                nNextFID;
 
   public:
-    explicit            OGRHTFMetadataLayer(const std::vector<CPLString>& aosMD);
-                        virtual ~OGRHTFMetadataLayer();
+                        OGRHTFMetadataLayer(std::vector<CPLString> aosMD);
+                        ~OGRHTFMetadataLayer();
 
-    virtual void                ResetReading() override { nNextFID = 0; }
-    virtual OGRFeature *        GetNextFeature() override;
+    virtual void                ResetReading() { nNextFID = 0; }
+    virtual OGRFeature *        GetNextFeature();
 
-    virtual OGRFeatureDefn *    GetLayerDefn() override { return poFeatureDefn; }
+    virtual OGRFeatureDefn *    GetLayerDefn() { return poFeatureDefn; }
 
-    virtual int                 TestCapability( const char * ) override { return FALSE; }
+    virtual int                 TestCapability( const char * ) { return FALSE; }
 };
 
 /************************************************************************/
@@ -156,17 +156,17 @@ class OGRHTFDataSource : public OGRDataSource
 
   public:
                         OGRHTFDataSource();
-                        virtual ~OGRHTFDataSource();
+                        ~OGRHTFDataSource();
 
     int                 Open( const char * pszFilename );
 
-    virtual const char*         GetName() override { return pszName; }
+    virtual const char*         GetName() { return pszName; }
 
-    virtual int                 GetLayerCount() override { return nLayers; }
-    virtual OGRLayer*           GetLayer( int ) override;
-    virtual OGRLayer*           GetLayerByName( const char* pszLayerName ) override;
+    virtual int                 GetLayerCount() { return nLayers; }
+    virtual OGRLayer*           GetLayer( int );
+    virtual OGRLayer*           GetLayerByName( const char* pszLayerName );
 
-    virtual int                 TestCapability( const char * ) override;
+    virtual int                 TestCapability( const char * );
 };
 
 #endif /* ndef OGR_HTF_H_INCLUDED */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_vfk.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: ogr_vfk.h 32177 2015-12-14 07:25:30Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions for OGR/VFK driver.
@@ -53,6 +53,9 @@ private:
     /* feature definition */
     OGRFeatureDefn      *poFeatureDefn;
 
+    /* OGR data source */
+    OGRVFKDataSource    *poDS;
+
     /* VFK data block */
     IVFKDataBlock       *poDataBlock;
 
@@ -68,16 +71,16 @@ public:
                 OGRwkbGeometryType, OGRVFKDataSource *);
     ~OGRVFKLayer();
 
-    OGRFeature          *GetNextFeature() override;
-    OGRFeature          *GetFeature(GIntBig) override;
+    OGRFeature          *GetNextFeature();
+    OGRFeature          *GetFeature(GIntBig);
 
-    OGRFeatureDefn      *GetLayerDefn() override { return poFeatureDefn; }
+    OGRFeatureDefn      *GetLayerDefn() { return poFeatureDefn; }
 
-    void                 ResetReading() override;
+    void                 ResetReading();
 
-    int                  TestCapability(const char *) override;
+    int                  TestCapability(const char *);
 
-    GIntBig              GetFeatureCount(int = TRUE) override;
+    GIntBig              GetFeatureCount(int = TRUE);
 };
 
 /************************************************************************/
@@ -104,12 +107,12 @@ public:
 
     int            Open(const char *, int);
 
-    const char    *GetName() override { return pszName; }
+    const char    *GetName() { return pszName; }
 
-    int            GetLayerCount() override { return nLayers; }
-    OGRLayer      *GetLayer(int) override;
+    int            GetLayerCount() { return nLayers; }
+    OGRLayer      *GetLayer(int);
 
-    int            TestCapability(const char *) override;
+    int            TestCapability(const char *);
 
     IVFKReader    *GetReader() const { return poReader; }
 };

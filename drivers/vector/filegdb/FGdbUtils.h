@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: FGdbUtils.h 36415 2016-11-21 22:40:20Z rouault $
+ * $Id: FGdbUtils.h 33563 2016-02-26 14:57:06Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Various FileGDB OGR Datasource utility functions
@@ -27,6 +27,7 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+
 #ifndef FGDB_UTILS_H_INCLUDED
 #define FGDB_UTILS_H_INCLUDED
 
@@ -46,19 +47,20 @@ std::string WStringToString(const std::wstring& s);
 bool GDBToOGRGeometry(std::string geoType, bool hasZ, bool hasM, OGRwkbGeometryType* pOut);
 bool OGRGeometryToGDB(OGRwkbGeometryType ogrType, std::string *gdbType, bool *hasZ, bool *hasM);
 
+
 bool GDBToOGRSpatialReference(const std::string & wkt, OGRSpatialReference** ppSR);
 
-// Feature mapping
-bool GDBGeometryToOGRGeometry(bool forceMulti, FileGDBAPI::ShapeBuffer* pGdbGeometry,
+// Feature mapping 
+bool GDBGeometryToOGRGeometry(bool forceMulti, FileGDBAPI::ShapeBuffer* pGdbGeometry, 
                               OGRSpatialReference* pOGRSR, OGRGeometry** ppOutGeometry);
 
 //temporary version - until we can parse the full binary format
-bool GhettoGDBGeometryToOGRGeometry(bool forceMulti, FileGDBAPI::ShapeBuffer* pGdbGeometry,
+bool GhettoGDBGeometryToOGRGeometry(bool forceMulti, FileGDBAPI::ShapeBuffer* pGdbGeometry, 
                                     OGRSpatialReference* pOGRSR, OGRGeometry** ppOutGeometry);
 //
 // GDB API to OGR Field Mapping
 //
-bool GDBToOGRFieldType(const std::string& gdbType, OGRFieldType* ogrType, OGRFieldSubType* pSubType);
+bool GDBToOGRFieldType(std::string gdbType, OGRFieldType* ogrType, OGRFieldSubType* pSubType);
 bool OGRToGDBFieldType(OGRFieldType ogrType, OGRFieldSubType eSubType, std::string* gdbType);
 
 //
@@ -80,8 +82,8 @@ void FGDB_CPLAddXMLAttribute(CPLXMLNode* node, const char* attrname, const char*
 //
 // Utility for escaping reserved words and cleaning field names
 //
-std::string FGDBLaunderName(const std::string& name);
-std::string FGDBEscapeUnsupportedPrefixes(const std::string& className);
-std::string FGDBEscapeReservedKeywords(const std::string& name);
+std::string FGDBLaunderName(const std::string name);
+std::string FGDBEscapeUnsupportedPrefixes(const std::string className);
+std::string FGDBEscapeReservedKeywords(const std::string name);
 
 #endif

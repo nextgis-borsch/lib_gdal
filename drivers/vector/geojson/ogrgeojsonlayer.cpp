@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrgeojsonlayer.cpp 34334 2016-06-10 07:37:16Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implementation of OGRGeoJSONLayer class (OGR GeoJSON Driver).
@@ -26,36 +27,14 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
-
-#include <algorithm>
-
-#if !DEBUG_JSON
-#  ifdef __clang__
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wunknown-pragmas"
-#    pragma clang diagnostic ignored "-Wdocumentation"
-#  endif
-#endif  // !DEBUG_VERBOSE
-
-#include <json.h>
-
-#if !DEBUG_JSON
-#  ifdef __clang
-#    pragma clang diagnostic pop
-#  endif
-#endif  // !DEBUG_VERBOSE
-
+#include <algorithm> // for_each, find_if
+#include <json.h> // JSON-C
 #include "ogr_geojson.h"
 
-// Remove annoying warnings Microsoft Visual C++:
-//   'class': assignment operator could not be generated.
-//     The compiler cannot generate an assignment operator for the given
-//     class. No assignment operator was created.
+/* Remove annoying warnings Microsoft Visual C++ */
 #if defined(_MSC_VER)
 #  pragma warning(disable:4512)
 #endif
-
-CPL_CVSID("$Id: ogrgeojsonlayer.cpp 35836 2016-10-20 13:57:15Z goatbar $");
 
 /************************************************************************/
 /*                       STATIC MEMBERS DEFINITION                      */
@@ -71,10 +50,8 @@ const OGRwkbGeometryType OGRGeoJSONLayer::DefaultGeometryType = wkbUnknown;
 OGRGeoJSONLayer::OGRGeoJSONLayer( const char* pszName,
                                   OGRSpatialReference* poSRSIn,
                                   OGRwkbGeometryType eGType,
-                                  OGRGeoJSONDataSource* poDS ) :
-    OGRMemLayer( pszName, poSRSIn, eGType),
-    poDS_(poDS),
-    bUpdated_(false),
+                                  OGRGeoJSONDataSource* poDS )
+  : OGRMemLayer( pszName, poSRSIn, eGType), poDS_(poDS), bUpdated_(false),
     bOriginalIdModified_(false)
 {
     SetAdvertizeUTF8(true);
@@ -85,7 +62,9 @@ OGRGeoJSONLayer::OGRGeoJSONLayer( const char* pszName,
 /*                          ~OGRGeoJSONLayer                            */
 /************************************************************************/
 
-OGRGeoJSONLayer::~OGRGeoJSONLayer() {}
+OGRGeoJSONLayer::~OGRGeoJSONLayer()
+{
+}
 
 /************************************************************************/
 /*                           GetFIDColumn                               */
@@ -93,7 +72,7 @@ OGRGeoJSONLayer::~OGRGeoJSONLayer() {}
 
 const char* OGRGeoJSONLayer::GetFIDColumn()
 {
-    return sFIDColumn_.c_str();
+	return sFIDColumn_.c_str();
 }
 
 /************************************************************************/
@@ -102,7 +81,7 @@ const char* OGRGeoJSONLayer::GetFIDColumn()
 
 void OGRGeoJSONLayer::SetFIDColumn( const char* pszFIDColumn )
 {
-    sFIDColumn_ = pszFIDColumn;
+	sFIDColumn_ = pszFIDColumn;
 }
 
 /************************************************************************/
@@ -134,39 +113,37 @@ OGRErr OGRGeoJSONLayer::SyncToDisk()
 void OGRGeoJSONLayer::AddFeature( OGRFeature* poFeature )
 {
     GIntBig nFID = poFeature->GetFID();
-
+    
     // Detect potential FID duplicates and make sure they are eventually
-    // unique.
+    // unique
     if( -1 == nFID )
     {
         nFID = GetFeatureCount(FALSE);
-        OGRFeature* poTryFeature = NULL;
+        OGRFeature* poTryFeature;
         while( (poTryFeature = GetFeature(nFID) ) != NULL )
         {
-            nFID++;
+            nFID ++;
             delete poTryFeature;
         }
     }
     else
     {
-        OGRFeature* poTryFeature = NULL;
+        OGRFeature* poTryFeature;
         if( (poTryFeature = GetFeature(nFID) ) != NULL )
         {
             if( !bOriginalIdModified_ )
             {
-                CPLError(
-                    CE_Warning, CPLE_AppDefined,
-                    "Several features with id = " CPL_FRMT_GIB " have been "
-                    "found. Altering it to be unique. This warning will not "
-                    "be emitted for this layer",
-                    nFID );
+                CPLError(CE_Warning, CPLE_AppDefined,
+                         "Several features with id = " CPL_FRMT_GIB " have been found. "
+                         "Altering it to be unique. This warning will not be emitted for this layer",
+                         nFID);
                 bOriginalIdModified_ = true;
             }
             delete poTryFeature;
             nFID = GetFeatureCount(FALSE);
             while( (poTryFeature = GetFeature(nFID) ) != NULL )
             {
-                nFID++;
+                nFID ++;
                 delete poTryFeature;
             }
         }
@@ -176,7 +153,7 @@ void OGRGeoJSONLayer::AddFeature( OGRFeature* poFeature )
     if( !CPL_INT64_FITS_ON_INT32(nFID) )
         SetMetadataItem(OLMD_FID64, "YES");
 
-    SetUpdatable( true );  // Temporary toggle on updatable flag.
+    SetUpdatable( true ); /* temporary toggle on updatable flag */
     CPL_IGNORE_RET_VAL(OGRMemLayer::SetFeature(poFeature));
     SetUpdatable( poDS_->IsUpdatable() );
     SetUpdated( false );
@@ -188,13 +165,13 @@ void OGRGeoJSONLayer::AddFeature( OGRFeature* poFeature )
 
 void OGRGeoJSONLayer::DetectGeometryType()
 {
-    if( GetLayerDefn()->GetGeomType() != wkbUnknown )
+    if (GetLayerDefn()->GetGeomType() != wkbUnknown)
         return;
 
     ResetReading();
     bool bFirstGeometry = true;
     OGRwkbGeometryType eLayerGeomType = wkbUnknown;
-    OGRFeature* poFeature = NULL;
+    OGRFeature* poFeature;
     while( (poFeature = GetNextFeature()) != NULL )
     {
         OGRGeometry* poGeometry = poFeature->GetGeometryRef();

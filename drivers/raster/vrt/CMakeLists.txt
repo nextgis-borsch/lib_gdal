@@ -42,17 +42,17 @@ set(LIB_HHEADERS_PRIV
 )
 
 set(LIB_CSOURCES
-    vrtdriver.cpp   
-    vrtpansharpened.cpp  
-    vrtrawrasterband.cpp      
-    vrtsources.cpp    
+    vrtdriver.cpp
+    vrtpansharpened.cpp
+    vrtrawrasterband.cpp
+    vrtsources.cpp
     vrtwarped.cpp
-    vrtdataset.cpp  
-    vrtderivedrasterband.cpp  
-    vrtfilters.cpp  
-    vrtrasterband.cpp    
+    vrtdataset.cpp
+    vrtderivedrasterband.cpp
+    vrtfilters.cpp
+    vrtrasterband.cpp
     vrtsourcedrasterband.cpp
-    pixelfunctions.cpp
+#    pixelfunctions.cpp
 )
 
 add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
@@ -63,4 +63,4 @@ set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCO
 # install headers
 if(NOT SKIP_INSTALL_HEADERS AND NOT SKIP_INSTALL_ALL )
     install(FILES ${LIB_HHEADERS} DESTINATION ${INSTALL_INC_DIR} COMPONENT headers)
-endif() 
+endif()

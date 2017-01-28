@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_typemaps.i 34525 2016-07-03 02:53:47Z goatbar $
+ * $Id: gdal_typemaps.i 10967 2007-03-15 20:04:37Z warmerdam $
  *
  * Name:     typemaps.i
  * Project:  GDAL Typemap library

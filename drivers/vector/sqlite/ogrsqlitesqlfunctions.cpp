@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrsqlitesqlfunctions.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Extension SQL functions
@@ -38,8 +39,6 @@
 #include "ogrsqliteregexp.cpp" /* yes the .cpp file, to make it work on Windows with load_extension('gdalXX.dll') */
 #include "swq.h"
 
-CPL_CVSID("$Id: ogrsqlitesqlfunctions.cpp 36411 2016-11-21 22:03:48Z rouault $");
-
 #ifndef HAVE_SPATIALITE
 #define MINIMAL_SPATIAL_FUNCTIONS
 #endif
@@ -56,7 +55,7 @@ class OGRSQLiteExtensionData
     OGRGeocodingSessionH hGeocodingSession;
 
   public:
-    explicit                     OGRSQLiteExtensionData(sqlite3* hDB);
+                                 OGRSQLiteExtensionData(sqlite3* hDB);
                                 ~OGRSQLiteExtensionData();
 
     OGRCoordinateTransformation* GetTransform(int nSrcSRSId, int nDstSRSId);
@@ -72,12 +71,12 @@ class OGRSQLiteExtensionData
 /************************************************************************/
 
 OGRSQLiteExtensionData::OGRSQLiteExtensionData(CPL_UNUSED sqlite3* hDB) :
+        hRegExpCache(NULL), hGeocodingSession(NULL)
+{
 #ifdef DEBUG
-    pDummy(CPLMalloc(1)),
+    pDummy = CPLMalloc(1);
 #endif
-    hRegExpCache(NULL),
-    hGeocodingSession(NULL)
-{}
+}
 
 /************************************************************************/
 /*                       ~OGRSQLiteExtensionData()                      */
@@ -235,7 +234,7 @@ void OGR2SQLITE_ogr_deflate(sqlite3_context* pContext,
     }
 
     size_t nOutBytes = 0;
-    void* pOut = NULL;
+    void* pOut;
     if( sqlite3_value_type (argv[0]) == SQLITE_TEXT )
     {
         const char* pszVal = (const char*)sqlite3_value_text(argv[0]);
@@ -275,10 +274,11 @@ void OGR2SQLITE_ogr_inflate(sqlite3_context* pContext,
     }
 
     size_t nOutBytes = 0;
+    void* pOut;
 
     const void* pSrc = sqlite3_value_blob (argv[0]);
     int nLen = sqlite3_value_bytes (argv[0]);
-    void* pOut = CPLZLibInflate( pSrc, nLen, NULL, 0, &nOutBytes);
+    pOut = CPLZLibInflate( pSrc, nLen, NULL, 0, &nOutBytes);
 
     if( pOut != NULL )
     {
@@ -377,8 +377,9 @@ void OGR2SQLITE_ogr_geocode(sqlite3_context* pContext,
         osField = (const char*)sqlite3_value_text(argv[1]);
     }
 
+    int i;
     char** papszOptions = NULL;
-    for( int i = 2; i < argc; i++ )
+    for(i = 2; i < argc; i++)
     {
         if( sqlite3_value_type (argv[i]) == SQLITE_TEXT )
         {
@@ -476,11 +477,9 @@ void OGR2SQLITE_ogr_geocode_reverse(sqlite3_context* pContext,
     OGRSQLiteExtensionData* poModule =
                     (OGRSQLiteExtensionData*) sqlite3_user_data(pContext);
 
-    double dfLon = 0.0;
-    double dfLat = 0.0;
+    double dfLon = 0.0, dfLat = 0.0;
     int iAfterGeomIdx = 0;
-    int bGotLon = FALSE;
-    int bGotLat = FALSE;
+    int bGotLon = FALSE, bGotLat = FALSE;
 
     if( argc >= 2 )
     {
@@ -521,8 +520,9 @@ void OGR2SQLITE_ogr_geocode_reverse(sqlite3_context* pContext,
 
     const char* pszField = (const char*)sqlite3_value_text(argv[iAfterGeomIdx]);
 
+    int i;
     char** papszOptions = NULL;
-    for( int i = iAfterGeomIdx + 1; i < argc; i++ )
+    for(i = iAfterGeomIdx + 1; i < argc; i++)
     {
         if( sqlite3_value_type (argv[i]) == SQLITE_TEXT )
         {
@@ -997,7 +997,7 @@ void OGR2SQLITE_ST_Buffer(sqlite3_context* pContext,
 {
     int nSRSId = -1;
     OGRGeometry* poGeom = OGR2SQLITE_GetGeom(pContext, argc, argv, &nSRSId);
-    int bGotVal = FALSE;
+    int bGotVal;
     double dfDist = OGR2SQLITE_GetValAsDouble(argv[1], &bGotVal);
     if( poGeom != NULL && bGotVal )
         OGR2SQLITE_SetGeom_AndDestroy(pContext, poGeom->Buffer(dfDist), nSRSId);
@@ -1014,9 +1014,9 @@ static
 void OGR2SQLITE_ST_MakePoint(sqlite3_context* pContext,
                              int argc, sqlite3_value** argv)
 {
-    double dfY = 0.0;
-    int bGotVal = FALSE;
-    const double dfX = OGR2SQLITE_GetValAsDouble(argv[0], &bGotVal);
+    double dfX, dfY = 0.0;
+    int bGotVal;
+    dfX = OGR2SQLITE_GetValAsDouble(argv[0], &bGotVal);
     if( bGotVal )
         dfY = OGR2SQLITE_GetValAsDouble(argv[1], &bGotVal);
     if( !bGotVal )
@@ -1025,7 +1025,7 @@ void OGR2SQLITE_ST_MakePoint(sqlite3_context* pContext,
         return;
     }
 
-    OGRPoint* poPoint = NULL;
+    OGRPoint* poPoint;
     if( argc == 3 )
     {
         double dfZ = OGR2SQLITE_GetValAsDouble(argv[2], &bGotVal);
@@ -1038,14 +1038,13 @@ void OGR2SQLITE_ST_MakePoint(sqlite3_context* pContext,
         poPoint = new OGRPoint(dfX, dfY, dfZ);
     }
     else
-    {
         poPoint = new OGRPoint(dfX, dfY);
-    }
 
     OGR2SQLITE_SetGeom_AndDestroy(pContext, poPoint, -1);
 }
 
 #endif // #ifdef MINIMAL_SPATIAL_FUNCTIONS
+
 
 /************************************************************************/
 /*                     OGRSQLITE_hstore_get_value()                     */

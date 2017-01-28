@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: rasterlitecreatecopy.cpp 32984 2016-01-14 19:08:12Z goatbar $
  *
  * Project:  GDAL Rasterlite driver
  * Purpose:  Implement GDAL Rasterlite support using OGR SQLite driver
@@ -32,7 +33,7 @@
 
 #include "rasterlitedataset.h"
 
-CPL_CVSID("$Id: rasterlitecreatecopy.cpp 36682 2016-12-04 20:34:45Z rouault $");
+CPL_CVSID("$Id: rasterlitecreatecopy.cpp 32984 2016-01-14 19:08:12Z goatbar $");
 
 /************************************************************************/
 /*                  RasterliteGetTileDriverOptions ()                   */
@@ -144,7 +145,7 @@ static int RasterliteInsertSRID(OGRDataSourceH hDS, const char* pszWKT)
 
     CPLString osSQL;
     int nSRSId = -1;
-    if (nAuthorityCode != 0 && !osAuthorityName.empty())
+    if (nAuthorityCode != 0 && osAuthorityName.size() != 0)
     {
         osSQL.Printf   ("SELECT srid FROM spatial_ref_sys WHERE auth_srid = %d", nAuthorityCode);
         OGRLayerH hLyr = OGR_DS_ExecuteSQL(hDS, osSQL.c_str(), NULL, NULL);
@@ -152,7 +153,7 @@ static int RasterliteInsertSRID(OGRDataSourceH hDS, const char* pszWKT)
         {
             nSRSId = nAuthorityCode;
 
-            if ( !osProjCS.empty() )
+            if ( osProjCS.size() != 0 )
                 osSQL.Printf(
                     "INSERT INTO spatial_ref_sys "
                     "(srid, auth_name, auth_srid, ref_sys_name, proj4text) "
@@ -188,7 +189,7 @@ static int RasterliteInsertSRID(OGRDataSourceH hDS, const char* pszWKT)
 /*                     RasterliteCreateTables ()                        */
 /************************************************************************/
 
-static
+static 
 OGRDataSourceH RasterliteCreateTables(OGRDataSourceH hDS, const char* pszTableName,
                                       int nSRSId, int bWipeExistingData)
 {
@@ -434,7 +435,7 @@ RasterliteCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     VSIStatBuf sBuf;
     const bool bExists = (VSIStat(osDBName.c_str(), &sBuf) == 0);
 
-    if (osTableName.empty())
+    if (osTableName.size() == 0)
     {
         if (bExists)
         {
@@ -588,8 +589,7 @@ RasterliteCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 /* -------------------------------------------------------------------- */
 /*      Create in-memory tile                                           */
 /* -------------------------------------------------------------------- */
-            int nReqXSize = nBlockXSize;
-            int nReqYSize = nBlockYSize;
+            int nReqXSize = nBlockXSize, nReqYSize = nBlockYSize;
             if ((nBlockXOff+1) * nBlockXSize > nXSize)
                 nReqXSize = nXSize - nBlockXOff * nBlockXSize;
             if ((nBlockYOff+1) * nBlockYSize > nYSize)
@@ -608,7 +608,7 @@ RasterliteCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
             }
 
             GDALDatasetH hMemDS = GDALCreate(hMemDriver, "MEM:::",
-                                              nReqXSize, nReqYSize, 0,
+                                              nReqXSize, nReqYSize, 0, 
                                               eDataType, NULL);
             if (hMemDS == NULL)
             {

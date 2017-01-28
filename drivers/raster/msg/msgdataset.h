@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: msgdataset.h 36562 2016-11-30 02:12:01Z goatbar $
+ * $Id: msgdataset.h 32190 2015-12-16 13:50:27Z goatbar $
  *
  * Project:  MSG Driver
  * Purpose:  GDALDataset driver for MSG translator for read support.
@@ -35,6 +35,10 @@
 #include <string>
 #include <fstream>
 
+CPL_C_START
+void GDALRegister_MSG();
+CPL_C_END
+
 /************************************************************************/
 /*                            MSGRasterBand                             */
 /************************************************************************/
@@ -49,7 +53,7 @@ class MSGRasterBand : public GDALRasterBand
   public:
     MSGRasterBand( MSGDataset *, int );
     virtual ~MSGRasterBand();
-    virtual CPLErr IReadBlock( int, int, void * ) override;
+    virtual CPLErr IReadBlock( int, int, void * );
 
   private:
     double rRadiometricCorrection(unsigned int iDN, int iChannel, int iRow, int iCol, MSGDataset* poGDS);
@@ -71,12 +75,12 @@ class MSGDataset : public GDALDataset
 
   public:
     MSGDataset();
-    virtual ~MSGDataset();
+    ~MSGDataset();
 
     static GDALDataset *Open( GDALOpenInfo * );
-    virtual const char *GetProjectionRef() override;
-    virtual CPLErr SetProjection( const char * ) override;
-    virtual CPLErr GetGeoTransform( double * padfTransform ) override;
+    virtual const char *GetProjectionRef(void);
+    virtual CPLErr SetProjection( const char * );
+    virtual CPLErr GetGeoTransform( double * padfTransform );
 
   private:
     MSGCommand command;
@@ -92,7 +96,5 @@ class MSGDataset : public GDALDataset
     static const double rVc[12];
     static const double rA[12];
     static const double rB[12];
-    static const int iCentralPixelVIS_IR;
-    static const int iCentralPixelHRV;
-    static const char *metadataDomain;
 };
+

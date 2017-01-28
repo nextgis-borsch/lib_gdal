@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #******************************************************************************
-#  $Id: gdal_polygonize.py 36130 2016-11-06 15:51:48Z rouault $
+#  $Id: gdal_polygonize.py 34304 2016-05-27 17:46:17Z rouault $
 #
 #  Project:  GDAL Python Interface
 #  Purpose:  Application for converting raster data to a vector polygon layer.
@@ -39,7 +39,7 @@ from osgeo import osr
 
 def Usage():
     print("""
-gdal_polygonize [-8] [-nomask] [-mask filename] raster_file [-b band|mask]
+gdal_polygonize [-8] [-nomask] [-mask filename] raster_file [-b band]
                 [-q] [-f ogr_format] out_file [layer] [fieldname]
 """)
     sys.exit(1)
@@ -90,10 +90,7 @@ while i < len(argv):
 
     elif arg == '-b':
         i = i + 1
-        if argv[i].startswith('mask'):
-            src_band_n = argv[i]
-        else:
-            src_band_n = int(argv[i])
+        src_band_n = int(argv[i])
 
     elif src_filename is None:
         src_filename = argv[i]
@@ -140,16 +137,7 @@ if src_ds is None:
     print('Unable to open %s' % src_filename)
     sys.exit(1)
 
-if src_band_n == 'mask':
-    srcband = src_ds.GetRasterBand(1).GetMaskBand()
-    # Workaround the fact that most source bands have no dataset attached
-    options.append('DATASET_FOR_GEOREF=' + src_filename)
-elif isinstance(src_band_n, str) and src_band_n.startswith('mask,'):
-    srcband = src_ds.GetRasterBand(int(src_band_n[len('mask,'):])).GetMaskBand()
-    # Workaround the fact that most source bands have no dataset attached
-    options.append('DATASET_FOR_GEOREF=' + src_filename)
-else:
-    srcband = src_ds.GetRasterBand(src_band_n)
+srcband = src_ds.GetRasterBand(src_band_n)
 
 if mask is 'default':
     maskband = srcband.GetMaskBand()

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: typemaps_php.i 34525 2016-07-03 02:53:47Z goatbar $
+ * $Id: typemaps_php.i 33721 2016-03-15 00:56:01Z goatbar $
  *
  * Name:     typemaps_php.i
  * Project:  GDAL PHP Interface

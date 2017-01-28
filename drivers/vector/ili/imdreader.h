@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: imdreader.h 36411 2016-11-21 22:03:48Z rouault $
+ * $Id$
  *
  * Project:  Interlis 1/2 Translator
  * Purpose:  IlisMeta model reader.
@@ -35,6 +35,7 @@
 #include "ogr_feature.h"
 #include <list>
 #include <map>
+
 
 class GeomFieldInfo
 {
@@ -140,7 +141,7 @@ typedef std::list<IliModelInfo> IliModelInfos;
 
 class ImdReader
 {
-  public:  // TODO(schwehr): Private?
+public:
     int                  iliVersion; /* 1 or 2 */
     IliModelInfos        modelInfos;
     CPLString            mainModelName;
@@ -150,8 +151,8 @@ class ImdReader
     char                 codeBlank;
     char                 codeUndefined;
     char                 codeContinue;
-  public:
-    explicit             ImdReader(int iliVersion);
+public:
+                         ImdReader(int iliVersion);
                         ~ImdReader();
     void                 ReadModel(const char *pszFilename);
     FeatureDefnInfo      GetFeatureDefnInfo(const char *pszLayerName);

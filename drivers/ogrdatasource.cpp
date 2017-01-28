@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrdatasource.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The generic portions of the GDALDataset class.
@@ -31,25 +32,26 @@
 #include "ogr_api.h"
 #include "ograpispy.h"
 
-CPL_CVSID("$Id: ogrdatasource.cpp 35172 2016-08-21 20:33:08Z goatbar $");
+CPL_CVSID("$Id: ogrdatasource.cpp 33714 2016-03-13 05:42:13Z goatbar $");
 
 /************************************************************************/
 /*                           ~OGRDataSource()                           */
 /************************************************************************/
 
-OGRDataSource::OGRDataSource() {}
+OGRDataSource::OGRDataSource()
+
+{
+}
 
 /************************************************************************/
 /*                         DestroyDataSource()                          */
 /************************************************************************/
 
-//! @cond Doxygen_Suppress
 void OGRDataSource::DestroyDataSource( OGRDataSource *poDS )
 
 {
     delete poDS;
 }
-//! @endcond
 
 /************************************************************************/
 /*                           OGR_DS_Destroy()                           */

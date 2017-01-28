@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: sdtstransfer.cpp 31955 2015-12-02 06:07:22Z goatbar $
  *
  * Project:  SDTS Translator
  * Purpose:  Implementation of SDTSTransfer class.
@@ -30,7 +31,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id: sdtstransfer.cpp 35897 2016-10-24 11:54:24Z goatbar $");
+CPL_CVSID("$Id: sdtstransfer.cpp 31955 2015-12-02 06:07:22Z goatbar $");
 
 /************************************************************************/
 /*                            SDTSTransfer()                            */
@@ -51,6 +52,7 @@ SDTSTransfer::~SDTSTransfer()
 {
     Close();
 }
+
 
 /************************************************************************/
 /*                                Open()                                */
@@ -201,7 +203,7 @@ SDTSLayerType SDTSTransfer::GetLayerType( int iEntry )
 
 /**
   Fetch the CATD module index for a layer.   This can be used to fetch
-  details about the layer/module from the SDTS_CATD object, such as its
+  details about the layer/module from the SDTS_CATD object, such as it's
   filename, and description.
 
   @param iEntry the layer index from 0 to GetLayerCount()-1.
@@ -406,7 +408,7 @@ DDFModule *SDTSTransfer::GetLayerModuleReader( int iEntry )
   GetLayerIndexedReader(), it will be returned instead of creating a new
   reader.  Among other things this means that the returned reader may not
   be positioned to read from the beginning of the module, and may already
-  have its index filled.
+  have it's index filled.
 
   <li> The returned reader will be of a type appropriate to the layer.
   See SDTSTransfer::GetLayerType() to see what reader classes correspond
@@ -579,7 +581,7 @@ int SDTSTransfer::GetBounds( double *pdfMinX, double *pdfMinY,
 
             poLayer->Rewind();
 
-            SDTSRawPoint *poPoint = NULL;
+            SDTSRawPoint *poPoint;
             while( (poPoint = reinterpret_cast<SDTSRawPoint *>(
                       poLayer->GetNextFeature() ) ) != NULL )
             {

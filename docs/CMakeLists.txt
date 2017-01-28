@@ -29,10 +29,10 @@ option(GDAL_BUILD_DOCS "Build documentation" ON)
 if(GDAL_BUILD_DOCS)
     find_package(Doxygen)
     if(DOXYGEN_FOUND)
-        set(DOX_INPUT "${CMAKE_SOURCE_DIR}/core/port \\ 
+        set(DOX_INPUT "${CMAKE_SOURCE_DIR}/core/port \\
         ${CMAKE_SOURCE_DIR}/core/gcore \\
-        ${CMAKE_SOURCE_DIR}/core/alg \\ 
-        ${CMAKE_SOURCE_DIR}/docs/doc \\ 
+        ${CMAKE_SOURCE_DIR}/core/alg \\
+        ${CMAKE_SOURCE_DIR}/docs/doc \\
         ${CMAKE_SOURCE_DIR}/apps \\
         ${CMAKE_SOURCE_DIR}/core/ogr \\
         ${CMAKE_SOURCE_DIR}/bindings/python/scripts \\
@@ -41,7 +41,7 @@ if(GDAL_BUILD_DOCS)
         ${CMAKE_SOURCE_DIR}/docs/gnm \\
         ${CMAKE_SOURCE_DIR}/docs/ogr"
         )
-        
+
         #                         frmts/gdalallregister.cpp \ \n
         #                         frmts/vrt \ \n
         #                         ogr/ogrsf_frmts \ \n
@@ -50,57 +50,57 @@ if(GDAL_BUILD_DOCS)
         #                         ogr/ogrsf_frmts/kml/ogr2kmlgeometry.cpp \ \n
 
 
-        set(DOX_FILE_PATTERNS "*.h *.cpp *.c *.dox")                             
-        set(DOX_GENERATE_HTML "YES")                         
+        set(DOX_FILE_PATTERNS "*.h *.cpp *.c *.dox")
+        set(DOX_GENERATE_HTML "YES")
         set(DOX_GENERATE_MAN "NO")
         set(DOX_EXAMPLE_PATH "${CMAKE_SOURCE_DIR}/apps # frmts \ frmts/jdem")
-        set(HTML_FOOTER "${CMAKE_CURRENT_BINARY_DIR}/html/gdal_footer.html")      
-                  
+        set(HTML_FOOTER "${CMAKE_CURRENT_BINARY_DIR}/html/gdal_footer.html")
+
         find_package(Perl)
         set(PERL_PATH ${PERL_EXECUTABLE})
-        
+
         #prepare translation
         set(TRANSLATIONS ru br)
         macro(prepare_translation trans)
             file(STRINGS ${CMAKE_CURRENT_SOURCE_DIR}/doc/${trans}/Doxyfile Contents)
             foreach(Line ${Contents})
-                if("${Line}" MATCHES "^# " OR 
-                   "${Line}" MATCHES "^USE_WINDOWS_ENCODING " OR 
-                   "${Line}" MATCHES "^DETAILS_AT_TOP " OR 
+                if("${Line}" MATCHES "^# " OR
+                   "${Line}" MATCHES "^USE_WINDOWS_ENCODING " OR
+                   "${Line}" MATCHES "^DETAILS_AT_TOP " OR
                    "${Line}" MATCHES "^HTML_ALIGN_MEMBERS " OR
-                   "${Line}" MATCHES "^XML_SCHEMA " OR 
-                   "${Line}" MATCHES "^XML_DTD " OR 
-                   "${Line}" MATCHES "^MAX_DOT_GRAPH_WIDTH " OR 
+                   "${Line}" MATCHES "^XML_SCHEMA " OR
+                   "${Line}" MATCHES "^XML_DTD " OR
+                   "${Line}" MATCHES "^MAX_DOT_GRAPH_WIDTH " OR
                    "${Line}" MATCHES "^MAX_DOT_GRAPH_HEIGHT")
-                    set(Line "NOP")   
+                    set(Line "NOP")
                 elseif("${Line}" MATCHES "^INPUT ")
                     set(Line "INPUT = ${CMAKE_CURRENT_SOURCE_DIR}/doc/${trans}")
                 elseif("${Line}" MATCHES "^FILE_PATTERNS ")
                     set(Line "FILE_PATTERNS = ${DOX_FILE_PATTERNS}")
-                elseif("${Line}" MATCHES "^HTML_FOOTER ") 
-                    set(Line "HTML_FOOTER = ${CMAKE_CURRENT_BINARY_DIR}/html/gdal_footer.html")   
-                elseif("${Line}" MATCHES "^EXAMPLE_PATH ") 
-                    set(Line "EXAMPLE_PATH = ${DOX_EXAMPLE_PATH}") 
-                elseif("${Line}" MATCHES "^PERL_PATH ") 
-                    set(Line "PERL_PATH = ${PERL_PATH}") 
+                elseif("${Line}" MATCHES "^HTML_FOOTER ")
+                    set(Line "HTML_FOOTER = ${CMAKE_CURRENT_BINARY_DIR}/html/gdal_footer.html")
+                elseif("${Line}" MATCHES "^EXAMPLE_PATH ")
+                    set(Line "EXAMPLE_PATH = ${DOX_EXAMPLE_PATH}")
+                elseif("${Line}" MATCHES "^PERL_PATH ")
+                    set(Line "PERL_PATH = ${PERL_PATH}")
                 endif()
                 if(NOT "${Line}" STREQUAL "NOP")
                     set(ModifiedContents "${ModifiedContents}${Line}\n")
                 endif()
             endforeach()
-            file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile_${trans}.html ${ModifiedContents})        
+            file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile_${trans}.html ${ModifiedContents})
         endmacro()
-        
+
         foreach(TRANSLATION ${TRANSLATIONS})
             prepare_translation(${TRANSLATION})
         endforeach()
-        
+
         #get images list
         file(GLOB DOX_HTML_IMAGES ${CMAKE_CURRENT_SOURCE_DIR}/doc/grid/*.png
                                   ${CMAKE_CURRENT_SOURCE_DIR}/doc/images/* )
-        set(DOX_HTML_IMAGES ${DOX_HTML_IMAGES} ${CMAKE_CURRENT_SOURCE_DIR}/data/gdalicon.png)                           
+        set(DOX_HTML_IMAGES ${DOX_HTML_IMAGES} ${CMAKE_CURRENT_SOURCE_DIR}/data/gdalicon.png)
 
-        configure_file(${CMAKE_SOURCE_DIR}/cmake/Doxyfile.cmakein  ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile.html IMMEDIATE @ONLY)    
+        configure_file(${CMAKE_SOURCE_DIR}/cmake/Doxyfile.cmakein  ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile.html IMMEDIATE @ONLY)
 
         add_custom_target(prepare_html
             COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/doc/gdal_footer.html ${CMAKE_CURRENT_BINARY_DIR}/html/gdal_footer.html
@@ -108,13 +108,13 @@ if(GDAL_BUILD_DOCS)
             COMMENT "Create html templates"
         )
 
-        add_custom_target (docs  
+        add_custom_target (docs
             COMMAND ${DOXYGEN_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile.html"
             DEPENDS prepare_html
             COMMENT "Create html"
-        )  
-        
-        foreach(TRANSLATION ${TRANSLATIONS})        
+        )
+
+        foreach(TRANSLATION ${TRANSLATIONS})
             add_custom_command(TARGET prepare_html POST_BUILD
                   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_BINARY_DIR}/html/header.html ${CMAKE_CURRENT_BINARY_DIR}/html/header_${TRANSLATION}.html
                   COMMAND ${DOXYGEN_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile_${TRANSLATION}.html"
@@ -126,8 +126,8 @@ if(GDAL_BUILD_DOCS)
             add_custom_command(TARGET docs POST_BUILD
                  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${DOX_HTML_IMAGE} ${CMAKE_CURRENT_BINARY_DIR}/html
             )
-        endforeach()     
-        
+        endforeach()
+
     # TODO:
     #	cp frmts/*.html frmts/*/frmt_*.html html
     #	cp frmts/openjpeg/*.xml html
@@ -139,34 +139,34 @@ if(GDAL_BUILD_DOCS)
     #	cp ogr/*.gif html
 
 
-        
-        set(DOX_GENERATE_HTML "NO")                         
-        set(DOX_GENERATE_MAN "YES")   
+
+        set(DOX_GENERATE_HTML "NO")
+        set(DOX_GENERATE_MAN "YES")
         set(ENABLED_SECTIONS "man")
         set(DOX_FILE_PATTERNS "*.cpp *.dox")
         set(DOX_INPUT "${CMAKE_SOURCE_DIR}/apps ${CMAKE_SOURCE_DIR}/docs/apps ${CMAKE_SOURCE_DIR}/bindings/python/scripts")
 
-        configure_file(${CMAKE_SOURCE_DIR}/cmake/Doxyfile.cmakein  ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile.man IMMEDIATE @ONLY)     
-        
+        configure_file(${CMAKE_SOURCE_DIR}/cmake/Doxyfile.cmakein  ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile.man IMMEDIATE @ONLY)
+
         #build by default
         add_custom_target (man ALL
             COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile.man
             DEPENDS prepare_html
             COMMENT "Create manuals"
         )
-        
+
         if(NOT SKIP_INSTALL_FILES AND NOT SKIP_INSTALL_ALL )
             install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/man/man1
                     DESTINATION ${INSTALL_MAN_DIR}
-                    COMPONENT documents 
+                    COMPONENT documents
                     OPTIONAL
-                    FILES_MATCHING 
+                    FILES_MATCHING
                     PATTERN "*.1"
                     PATTERN "_*_apps_.1" EXCLUDE
                    )
-        
+
         endif()
-                      
+
     endif()
 
     set (DOC_FILES
@@ -181,15 +181,17 @@ if(GDAL_BUILD_DOCS)
             ${CMAKE_CURRENT_SOURCE_DIR}/install.txt
         )
     endif()
-            
+
+    if(NOT SKIP_INSTALL_DOCS AND NOT SKIP_INSTALL_ALL )        
     install(FILES ${DOC_FILES}
             DESTINATION ${INSTALL_DOC_DIR}
             COMPONENT documents
             OPTIONAL
            )
 
-    install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.TXT 
+    install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.TXT
             DESTINATION ${INSTALL_SHARE_DIR}
             COMPONENT documents)
-            
+    endif()
+
 endif()

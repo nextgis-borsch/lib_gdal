@@ -65,34 +65,34 @@ set(LIB_HHEADERS_PRIV
 set(LIB_CSOURCES
     gdalallregister.cpp
     gnmregisterall.cpp
-    ogremulatedtransaction.cpp  
-    ogrlayerdecorator.cpp  
-    ogrmutexeddatasource.cpp  
-    ogrsfdriver.cpp    
-    ogr_attrind.cpp               
+    ogremulatedtransaction.cpp
+    ogrlayerdecorator.cpp
+    ogrmutexeddatasource.cpp
+    ogrsfdriver.cpp
+    ogr_attrind.cpp
     ogrsfdriverregistrar.cpp
-    ogrdatasource.cpp     
-    ogr_gensql.cpp              
-    ogrlayerpool.cpp       
-    ogrmutexedlayer.cpp       
-    ogrunionlayer.cpp 
-    ogreditablelayer.cpp                                    
-    ogrlayer.cpp                
-    ogr_miattrind.cpp      
-    ogrregisterall.cpp        
+    ogrdatasource.cpp
+    ogr_gensql.cpp
+    ogrlayerpool.cpp
+    ogrmutexedlayer.cpp
+    ogrunionlayer.cpp
+    ogreditablelayer.cpp
+    ogrlayer.cpp
+    ogr_miattrind.cpp
+    ogrregisterall.cpp
     ogrwarpedlayer.cpp
 )
 
 add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
+if(DEPENDENCY_LIB)
+    add_dependencies(${TARGET_NAME} ${DEPENDENCY_LIB})
+endif()
 
-set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}>)
+# Send variables upper
+set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
+any_project_var_to_parent_scope()
 
-# send variables upper
-set(TARGET_OBJECTS ${TARGET_OBJECTS} PARENT_SCOPE)
-set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
-set(DEPENDENCY_LIB ${DEPENDENCY_LIB} PARENT_SCOPE)
-
-# install headers
+# Install headers
 if(NOT SKIP_INSTALL_HEADERS AND NOT SKIP_INSTALL_ALL )
     install(FILES ${LIB_HHEADERS} DESTINATION ${INSTALL_INC_DIR} COMPONENT headers)
-endif() 
+endif()

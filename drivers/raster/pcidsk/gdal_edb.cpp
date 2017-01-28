@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: gdal_edb.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  PCIDSK Database File
  * Purpose:  External Database access interface implementation (EDBFile).
@@ -31,7 +32,7 @@
 #include "gdal_priv.h"
 #include "pcidsk.h"
 
-CPL_CVSID("$Id: gdal_edb.cpp 36501 2016-11-25 14:09:24Z rouault $");
+CPL_CVSID("$Id: gdal_edb.cpp 33720 2016-03-15 00:39:53Z goatbar $");
 
 using PCIDSK::EDBFile;
 using PCIDSK::eChanType;
@@ -43,7 +44,7 @@ using PCIDSK::CHN_32R;
 using PCIDSK::CHN_C16S;
 using PCIDSK::CHN_UNKNOWN;
 
-EDBFile *GDAL_EDBOpen( const std::string& osFilename, const std::string& osAccess );
+EDBFile *GDAL_EDBOpen( std::string osFilename, std::string osAccess );
 
 /************************************************************************/
 /* ==================================================================== */
@@ -60,28 +61,28 @@ public:
     explicit GDAL_EDBFile( GDALDataset *poDSIn ) { poDS = poDSIn; }
     ~GDAL_EDBFile() { if( poDS ) Close(); }
 
-    int Close() const override;
-    int GetWidth() const override;
-    int GetHeight() const override;
-    int GetChannels() const override;
-    int GetBlockWidth(int channel ) const override;
-    int GetBlockHeight(int channel ) const override;
-    eChanType GetType(int channel ) const override;
+    int Close() const;
+    int GetWidth() const;
+    int GetHeight() const;
+    int GetChannels() const;
+    int GetBlockWidth(int channel ) const;
+    int GetBlockHeight(int channel ) const;
+    eChanType GetType(int channel ) const;
     int ReadBlock(int channel,
                   int block_index, void *buffer,
                   int win_xoff, int win_yoff,
-                  int win_xsize, int win_ysize ) override;
-    int WriteBlock( int channel, int block_index, void *buffer) override;
+                  int win_xsize, int win_ysize );
+    int WriteBlock( int channel, int block_index, void *buffer);
 };
 
 /************************************************************************/
 /*                            GDAL_EDBOpen()                            */
 /************************************************************************/
 
-EDBFile *GDAL_EDBOpen( const std::string& osFilename, const std::string& osAccess )
+EDBFile *GDAL_EDBOpen( std::string osFilename, std::string osAccess )
 
 {
-    GDALDataset *poDS = NULL;
+    GDALDataset *poDS;
 
     if( osAccess == "r" )
         poDS = reinterpret_cast<GDALDataset *>( GDALOpen( osFilename.c_str(), GA_ReadOnly )) ;

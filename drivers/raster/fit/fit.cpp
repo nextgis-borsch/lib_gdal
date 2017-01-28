@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: fit.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  FIT Driver
  * Purpose:  Implement FIT Support - not using the SGI iflFIT library.
@@ -29,19 +30,19 @@
 #include <limits.h>
 #include "fit.h"
 
-CPL_CVSID("$Id: fit.cpp 36776 2016-12-10 11:17:47Z rouault $");
+CPL_CVSID("$Id: fit.cpp 33720 2016-03-15 00:39:53Z goatbar $");
 
 GDALDataType fitDataType(int dtype) {
     switch (dtype) {
     case 1: // iflBit   /* single-bit */
-        CPLError(CE_Failure, CPLE_NotSupported,
-                "GDAL unsupported data type (single-bit) in fitDataType");
+        fprintf(stderr,
+                "GDAL unsupported data type (single-bit) in fitDataType\n");
         return GDT_Unknown;
     case 2: // iflUChar    /* unsigned character (byte) */
         return GDT_Byte;
     case 4: // iflChar     /* signed character (byte) */
-        CPLError(CE_Failure, CPLE_NotSupported,
-                "GDAL unsupported data type (signed char) in fitDataType");
+        fprintf(stderr,
+                "GDAL unsupported data type (signed char) in fitDataType\n");
         return GDT_Unknown;
 //         return Byte;
     case 8: // iflUShort   /* unsigned short integer (nominally 16 bits) */
@@ -96,6 +97,7 @@ int fitGetDataType(GDALDataType eDataType) {
                      "and %i bands) - ignoring color model", \
                      GDALGetColorInterpretationName(colorInterp), nBands); \
             return 0
+
 
 int fitGetColorModel(GDALColorInterp colorInterp, int nBands) {
     // XXX - Should check colorInterp for all bands, not just first one.

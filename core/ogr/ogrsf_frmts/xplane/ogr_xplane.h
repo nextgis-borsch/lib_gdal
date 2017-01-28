@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_xplane.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: ogr_xplane.h $
  *
  * Project:  X-Plane aeronautical data reader
  * Purpose:  Definition of classes for OGR X-Plane aeronautical data driver.
@@ -55,8 +55,7 @@ class OGRXPlaneLayer : public OGRLayer
   protected:
     OGRXPlaneReader*   poReader;
     OGRFeatureDefn*    poFeatureDefn;
-
-    explicit           OGRXPlaneLayer(const char* pszLayerName);
+                       OGRXPlaneLayer(const char* pszLayerName);
 
     void               RegisterFeature(OGRFeature* poFeature);
 
@@ -69,15 +68,16 @@ class OGRXPlaneLayer : public OGRLayer
     int                       IsEmpty() { return nFeatureArraySize == 0; }
     void                      AutoAdjustColumnsWidth();
 
-    virtual void              ResetReading() override;
-    virtual OGRFeature *      GetNextFeature() override;
-    virtual OGRFeature *      GetFeature( GIntBig nFID ) override;
-    virtual OGRErr            SetNextByIndex( GIntBig nIndex ) override;
-    virtual GIntBig           GetFeatureCount( int bForce = TRUE ) override;
+    virtual void              ResetReading();
+    virtual OGRFeature *      GetNextFeature();
+    virtual OGRFeature *      GetFeature( GIntBig nFID );
+    virtual OGRErr            SetNextByIndex( GIntBig nIndex );
+    virtual GIntBig           GetFeatureCount( int bForce = TRUE );
 
-    virtual OGRFeatureDefn *  GetLayerDefn() override;
-    virtual int               TestCapability( const char * pszCap ) override;
+    virtual OGRFeatureDefn *  GetLayerDefn();
+    virtual int               TestCapability( const char * pszCap );
 };
+
 
 /************************************************************************/
 /*                           OGRXPlaneDataSource                        */
@@ -91,24 +91,24 @@ class OGRXPlaneDataSource : public OGRDataSource
     int                 nLayers;
 
     OGRXPlaneReader*    poReader;
-    bool                bReadWholeFile;
-    bool                bWholeFiledReadingDone;
+    int                 bReadWholeFile;
+    int                 bWholeFiledReadingDone;
 
     void                Reset();
 
   public:
                         OGRXPlaneDataSource();
-                        virtual ~OGRXPlaneDataSource();
+                        ~OGRXPlaneDataSource();
 
     int                 Open( const char * pszFilename, int bReadWholeFile = TRUE );
 
     void                RegisterLayer( OGRXPlaneLayer* poLayer );
 
-    virtual int         GetLayerCount() override { return nLayers; }
-    virtual OGRLayer*   GetLayer( int ) override;
-    virtual const char* GetName() override { return pszName; }
+    virtual int         GetLayerCount() { return nLayers; }
+    virtual OGRLayer*   GetLayer( int );
+    virtual const char* GetName() { return pszName; }
 
-    virtual int         TestCapability( const char * pszCap ) override;
+    virtual int         TestCapability( const char * pszCap );
 
     void                ReadWholeFileIfNecessary();
 };
@@ -121,10 +121,11 @@ class OGRXPlaneDriver : public OGRSFDriver
 {
   public:
 
-    virtual const char* GetName() override;
-    OGRDataSource*      Open( const char *, int ) override;
+    virtual const char* GetName();
+    OGRDataSource*      Open( const char *, int );
 
-    virtual int         TestCapability( const char * pszCap ) override;
+    virtual int         TestCapability( const char * pszCap );
 };
+
 
 #endif /* ndef OGR_XPLANE_H_INCLUDED */

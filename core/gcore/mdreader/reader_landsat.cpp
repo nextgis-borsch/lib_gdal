@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: reader_landsat.cpp 31120 2015-10-24 19:55:09Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Read metadata from Landsat imagery.
@@ -27,18 +28,9 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "cpl_port.h"
 #include "reader_landsat.h"
 
-#include <cstddef>
-#include <cstring>
-#include <ctime>
-
-#include "cpl_conv.h"
-#include "cpl_error.h"
-#include "cpl_string.h"
-
-CPL_CVSID("$Id: reader_landsat.cpp 36682 2016-12-04 20:34:45Z rouault $");
+CPL_CVSID("$Id: reader_landsat.cpp 31120 2015-10-24 19:55:09Z rouault $");
 
 /**
  * GDALMDReaderLandsat()
@@ -83,7 +75,7 @@ GDALMDReaderLandsat::GDALMDReaderLandsat(const char *pszPath,
         }
     }
 
-    if( !m_osIMDSourceFilename.empty() )
+    if( m_osIMDSourceFilename.size() )
         CPLDebug( "MDReaderLandsat", "IMD Filename: %s",
                   m_osIMDSourceFilename.c_str() );
 }
@@ -199,4 +191,5 @@ void GDALMDReaderLandsat::LoadMetadata()
         m_papszIMAGERYMD = CSLAddNameValue(m_papszIMAGERYMD,
                                            MD_NAME_ACQDATETIME, buffer);
     }
+
 }

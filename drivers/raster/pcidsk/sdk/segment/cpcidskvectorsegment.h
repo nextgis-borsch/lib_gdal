@@ -62,45 +62,45 @@ namespace PCIDSK
 
         virtual        ~CPCIDSKVectorSegment();
 
-        void            Initialize() override;
-        void            Synchronize() override;
+        void            Initialize();
+        void            Synchronize();
 
-        std::string     GetRst() override { return ""; }
-        std::vector<double> GetProjection( std::string &geosys ) override;
+        std::string     GetRst() { return ""; }
+        std::vector<double> GetProjection( std::string &geosys );
         void            SetProjection(std::string geosys, 
-                                      std::vector<double> parms) override;
+                                      std::vector<double> parms);
 
-        int             GetFieldCount() override;
-        std::string     GetFieldName(int) override;
-        std::string     GetFieldDescription(int) override;
-        ShapeFieldType  GetFieldType(int) override;
-        std::string     GetFieldFormat(int) override;
-        ShapeField      GetFieldDefault(int) override;
+        int             GetFieldCount();
+        std::string     GetFieldName(int);
+        std::string     GetFieldDescription(int);
+        ShapeFieldType  GetFieldType(int);
+        std::string     GetFieldFormat(int);
+        ShapeField      GetFieldDefault(int);
 
-        ShapeIterator   begin() override { return ShapeIterator(this); }
-        ShapeIterator   end() override { return ShapeIterator(this,NullShapeId); }
+        ShapeIterator   begin() { return ShapeIterator(this); }
+        ShapeIterator   end() { return ShapeIterator(this,NullShapeId); }
 
-        ShapeId         FindFirst() override;
-        ShapeId         FindNext(ShapeId) override;
+        ShapeId         FindFirst();
+        ShapeId         FindNext(ShapeId);
 
-        int             GetShapeCount() override;
+        int             GetShapeCount();
         
-        void            GetVertices( ShapeId, std::vector<ShapeVertex>& ) override;
-        void            GetFields( ShapeId, std::vector<ShapeField>& ) override;
+        void            GetVertices( ShapeId, std::vector<ShapeVertex>& );
+        void            GetFields( ShapeId, std::vector<ShapeField>& );
 
         void            AddField( std::string name, ShapeFieldType type,
                                   std::string description,
                                   std::string format,
-                                  ShapeField *default_value ) override;
+                                  ShapeField *default_value );
         
-        ShapeId         CreateShape( ShapeId id ) override;
-        void            DeleteShape( ShapeId id ) override;
+        ShapeId         CreateShape( ShapeId id );
+        void            DeleteShape( ShapeId id );
         void            SetVertices( ShapeId id, 
-                                     const std::vector<ShapeVertex>& list ) override;
+                                     const std::vector<ShapeVertex>& list );
         void            SetFields( ShapeId id, 
-                                   const std::vector<ShapeField>& list ) override;
+                                   const std::vector<ShapeField>& list );
 
-        std::string     ConsistencyCheck() override;
+        std::string     ConsistencyCheck();
 
         // Essentially internal stuff.
         char                *GetData( int section, uint32 offset, 

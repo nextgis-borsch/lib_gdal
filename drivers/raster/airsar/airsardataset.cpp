@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: airsardataset.cpp 33901 2016-04-06 16:31:31Z goatbar $
  *
  * Project:  AirSAR Reader
  * Purpose:  Implements read support for AirSAR Polarimetric data.
@@ -33,7 +34,7 @@
 #include "gdal_frmts.h"
 #include "gdal_pam.h"
 
-CPL_CVSID("$Id: airsardataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
+CPL_CVSID("$Id: airsardataset.cpp 33901 2016-04-06 16:31:31Z goatbar $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -80,7 +81,7 @@ class AirSARRasterBand : public GDALPamRasterBand
                 AirSARRasterBand( AirSARDataset *, int );
     virtual     ~AirSARRasterBand();
 
-    virtual CPLErr IReadBlock( int, int, void * ) override;
+    virtual CPLErr IReadBlock( int, int, void * );
 };
 
 /* locations of stokes matrix values within padfMatrix ... same order as they
@@ -105,8 +106,8 @@ AirSARRasterBand::AirSARRasterBand( AirSARDataset *poDSIn,
                                     int nBandIn )
 
 {
-    poDS = poDSIn;
-    nBand = nBandIn;
+    this->poDS = poDSIn;
+    this->nBand = nBandIn;
 
     nBlockXSize = poDS->GetRasterXSize();
     nBlockYSize = 1;
@@ -272,7 +273,7 @@ AirSARDataset::AirSARDataset() :
     padfMatrix(NULL),
     nDataStart(0),
     nRecordLength(0)
-{}
+{ }
 
 /************************************************************************/
 /*                           ~AirSARDataset()                           */
@@ -491,10 +492,12 @@ char ** AirSARDataset::ReadHeader( VSILFILE * fp, int nFileOffset,
 
         papszHeadInfo =
             CSLSetNameValue( papszHeadInfo, szPrefixedKeyName, szLine+iValue );
+
     }
 
     return papszHeadInfo;
 }
+
 
 /************************************************************************/
 /*                                Open()                                */
@@ -622,7 +625,7 @@ GDALDataset *AirSARDataset::Open( GDALOpenInfo * poOpenInfo )
 
     poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
 
-    return poDS;
+    return( poDS );
 }
 
 /************************************************************************/

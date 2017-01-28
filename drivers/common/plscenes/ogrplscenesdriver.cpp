@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrplscenesdriver.cpp 33915 2016-04-07 19:38:55Z rouault $
  *
  * Project:  PlanetLabs scene driver
  * Purpose:  PlanetLabs scene driver
@@ -28,8 +29,6 @@
 
 #include "ogr_plscenes.h"
 
-CPL_CVSID("$Id: ogrplscenesdriver.cpp 35911 2016-10-24 15:03:26Z goatbar $");
-
 /************************************************************************/
 /*                         OGRPLScenesIdentify()                        */
 /************************************************************************/
@@ -38,6 +37,7 @@ static int OGRPLScenesIdentify(GDALOpenInfo* poOpenInfo)
 {
     return STARTS_WITH_CI(poOpenInfo->pszFilename, "PLSCENES:");
 }
+
 
 /************************************************************************/
 /*                            OGRPLScenesOpen()                         */

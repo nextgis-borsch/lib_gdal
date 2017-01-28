@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrdxf_dimension.cpp 19643 2010-05-08 21:56:18Z rouault $
  *
  * Project:  DWG Translator
  * Purpose:  Implements translation support for DIMENSION elements as a part
@@ -34,7 +35,7 @@
 #include "DbRotatedDimension.h"
 #include "DbAlignedDimension.h"
 
-CPL_CVSID("$Id: ogrdwg_dimension.cpp 36682 2016-12-04 20:34:45Z rouault $");
+CPL_CVSID("$Id: ogrdxf_dimension.cpp 19643 2010-05-08 21:56:18Z rouault $");
 
 /************************************************************************/
 /*                         TranslateDIMENSION()                         */
@@ -173,7 +174,9 @@ the approach is as above in all these cases.
 /* -------------------------------------------------------------------- */
 /*      Compute the text angle.                                         */
 /* -------------------------------------------------------------------- */
-    double dfAngle = atan2(dfVec2Y,dfVec2X) * 180.0 / M_PI;
+    double dfAngle = 0.0;
+
+    dfAngle = atan2(dfVec2Y,dfVec2X) * 180.0 / M_PI;
 
 /* -------------------------------------------------------------------- */
 /*      Rescale the direction vectors so we can use them in             */
@@ -298,7 +301,7 @@ the approach is as above in all these cases.
     poLabelFeature->SetGeometryDirectly( new OGRPoint( oTextPos.x, oTextPos.y ) );
 
     // Do we need to compute the dimension value?
-    if( osText.empty() )
+    if( osText.size() == 0 )
     {
         FormatDimension( osText, POINT_DIST( oArrow1.x, oArrow1.y,
                                              dfArrowX2, dfArrowY2 ) );
@@ -306,7 +309,7 @@ the approach is as above in all these cases.
 
     CPLString osStyle;
     char szBuffer[64];
-    char* pszComma = NULL;
+    char* pszComma;
 
     osStyle.Printf("LABEL(f:\"Arial\",t:\"%s\",p:5",osText.c_str());
 

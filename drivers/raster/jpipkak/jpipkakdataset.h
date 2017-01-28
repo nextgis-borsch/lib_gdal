@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: jpipkakdataset.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: jpipkakdataset.cpp 2008-10-01 nbarker $
  *
  * Project:  jpip read driver
  * Purpose:  GDAL bindings for JPIP.
@@ -40,10 +40,12 @@
 
 #include <time.h>
 
+
 #if KDU_MAJOR_VERSION > 7 || (KDU_MAJOR_VERSION == 7 && KDU_MINOR_VERSION >= 5)
     using namespace kdu_core;
     using namespace kdu_supp;
 #endif
+
 
 static void JPIPWorkerFunc(void *);
 
@@ -133,7 +135,7 @@ private:
     JPIPDataSegment* ReadSegment(GByte* pabyData, int nLen, int& bError);
     int Initialize(const char* url, int bReinitializing );
     void Deinitialize();
-    static int KakaduClassId(int nClassId);
+    int KakaduClassId(int nClassId);
 
     CPLMutex *pGlobalMutex;
 
@@ -146,8 +148,6 @@ private:
     // transmission counts
     volatile long nHighThreadByteCount;
     volatile long nLowThreadByteCount;
-
-    static void KakaduInitialize();
 
 public:
     JPIPKAKDataset();
@@ -162,9 +162,9 @@ public:
                                               int nBandCount, int* bandMap,
                                               int nPixelSpace, int nLineSpace,
                                               int nBandSpace,
-                                              char **papszOptions) override;
+                                              char **papszOptions);
 
-    virtual void EndAsyncReader(GDALAsyncReader *) override;
+    virtual void EndAsyncReader(GDALAsyncReader *);
     int GetNQualityLayers(){return nQualityLayers;}
     int GetNResolutionLevels(){return nResLevels;}
     int GetNComponents(){return nComps;}
@@ -176,11 +176,11 @@ public:
                         int nBandCount, int *panBandList );
 
     //gdaldataset methods
-    virtual CPLErr GetGeoTransform( double * ) override;
-    virtual const char *GetProjectionRef() override;
-    virtual int    GetGCPCount() override;
-    virtual const char *GetGCPProjection() override;
-    virtual const GDAL_GCP *GetGCPs() override;
+    virtual CPLErr GetGeoTransform( double * );
+    virtual const char *GetProjectionRef(void);
+    virtual int    GetGCPCount();
+    virtual const char *GetGCPProjection();
+    virtual const GDAL_GCP *GetGCPs();
     virtual CPLErr IRasterIO( GDALRWFlag eRWFlag,
                               int nXOff, int nYOff, int nXSize, int nYSize,
                               void * pData, int nBufXSize, int nBufYSize,
@@ -188,7 +188,7 @@ public:
                               int nBandCount, int *panBandMap,
                               GSpacing nPixelSpace, GSpacing nLineSpace,
                               GSpacing nBandSpace,
-                              GDALRasterIOExtraArg* psExtraArg) override;
+                              GDALRasterIOExtraArg* psExtraArg);
 
     static GDALDataset *Open(GDALOpenInfo *);
     static const GByte JPIP_EOR_IMAGE_DONE = 1;
@@ -218,9 +218,9 @@ class JPIPKAKRasterBand : public GDALPamRasterBand
 
     int         nDiscardLevels;
 
-    kdu_dims    band_dims;
+    kdu_dims 	band_dims;
 
-    int         nOverviewCount;
+    int		nOverviewCount;
     JPIPKAKRasterBand **papoOverviewBand;
 
     kdu_codestream *oCodeStream;
@@ -232,16 +232,16 @@ public:
 
     JPIPKAKRasterBand( int, int, kdu_codestream *, int,
                        JPIPKAKDataset * );
-    virtual ~JPIPKAKRasterBand();
+    ~JPIPKAKRasterBand();
 
-    virtual CPLErr IReadBlock( int, int, void * ) override;
+    virtual CPLErr IReadBlock( int, int, void * );
     virtual CPLErr IRasterIO( GDALRWFlag, int, int, int, int,
                               void *, int, int, GDALDataType,
                               GSpacing nPixelSpace, GSpacing nLineSpace,
-                              GDALRasterIOExtraArg* psExtraArg ) override;
+                              GDALRasterIOExtraArg* psExtraArg );
 
-    virtual int    GetOverviewCount() override;
-    virtual GDALRasterBand *GetOverview( int ) override;
+    virtual int    GetOverviewCount();
+    virtual GDALRasterBand *GetOverview( int );
 };
 
 /************************************************************************/
@@ -277,7 +277,7 @@ public:
                                                      int* pnxbufoff,
                                                      int* pnybufoff,
                                                      int* pnxbufsize,
-                                                     int* pnybufsize) override;
+                                                     int* pnybufsize);
     void SetComplete(int bFinished){this->bComplete = bFinished;};
 
     friend class JPIPKAKDataset;

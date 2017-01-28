@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrpdsdatasource.cpp 33047 2016-01-19 14:47:32Z goatbar $
  *
  * Project:  PDS Translator
  * Purpose:  Implements OGRPDSDataSource class
@@ -30,7 +31,7 @@
 #include "cpl_string.h"
 #include "ogr_pds.h"
 
-CPL_CVSID("$Id: ogrpdsdatasource.cpp 36682 2016-12-04 20:34:45Z rouault $");
+CPL_CVSID("$Id: ogrpdsdatasource.cpp 33047 2016-01-19 14:47:32Z goatbar $");
 
 using namespace OGRPDS;
 
@@ -79,6 +80,7 @@ OGRLayer *OGRPDSDataSource::GetLayer( int iLayer )
 
     return papoLayers[iLayer];
 }
+
 
 /************************************************************************/
 /*                          GetKeywordSub()                             */
@@ -149,12 +151,12 @@ static CPLString MakeAttr(CPLString os1, CPLString os2)
     return os1 + "." + os2;
 }
 
-bool OGRPDSDataSource::LoadTable( const char* pszFilename,
-                                  int nRecordSize,
-                                  CPLString osTableID )
+int OGRPDSDataSource::LoadTable( const char* pszFilename,
+                                 int nRecordSize,
+                                 CPLString osTableID )
 {
     CPLString osTableFilename;
-    int nStartBytes = 0;
+    int nStartBytes;
 
     CPLString osTableLink = "^";
     osTableLink += osTableID;
@@ -165,12 +167,12 @@ bool OGRPDSDataSource::LoadTable( const char* pszFilename,
         osTableFilename = GetKeywordSub(osTableLink, 1, "");
         CPLString osStartRecord = GetKeywordSub(osTableLink, 2, "");
         nStartBytes = (atoi(osStartRecord.c_str()) - 1) * nRecordSize;
-        if (osTableFilename.empty() || osStartRecord.empty() ||
+        if (osTableFilename.size() == 0 || osStartRecord.size() == 0 ||
             nStartBytes < 0)
         {
             CPLError(CE_Failure, CPLE_NotSupported,
                     "Cannot parse %s line", osTableLink.c_str());
-            return false;
+            return FALSE;
         }
         CPLString osTPath = CPLGetPath(pszFilename);
         CleanString( osTableFilename );
@@ -179,7 +181,7 @@ bool OGRPDSDataSource::LoadTable( const char* pszFilename,
     else
     {
         osTableFilename = oKeywords.GetKeyword( osTableLink, "" );
-        if (!osTableFilename.empty() && osTableFilename[0] >= '0' &&
+        if (osTableFilename.size() != 0 && osTableFilename[0] >= '0' &&
             osTableFilename[0] <= '9')
         {
             nStartBytes = atoi(osTableFilename.c_str()) - 1;
@@ -199,7 +201,7 @@ bool OGRPDSDataSource::LoadTable( const char* pszFilename,
 
     CPLString osTableName =
         oKeywords.GetKeyword( MakeAttr(osTableID, "NAME"), "" );
-    if (osTableName.empty())
+    if (osTableName.size() == 0)
     {
         if (GetLayerByName(osTableID.c_str()) == NULL)
             osTableName = osTableID;
@@ -213,12 +215,12 @@ bool OGRPDSDataSource::LoadTable( const char* pszFilename,
     CPLString osTableRows =
         oKeywords.GetKeyword( MakeAttr(osTableID, "ROWS"), "" );
     const int nRecords = atoi(osTableRows);
-    if (osTableInterchangeFormat.empty() ||
-        osTableRows.empty() || nRecords < 0)
+    if (osTableInterchangeFormat.size() == 0 ||
+        osTableRows.size() == 0 || nRecords < 0)
     {
         CPLError(CE_Failure, CPLE_NotSupported,
                  "One of TABLE.INTERCHANGE_FORMAT or TABLE.ROWS is missing");
-        return false;
+        return FALSE;
     }
 
     CleanString(osTableInterchangeFormat);
@@ -227,7 +229,7 @@ bool OGRPDSDataSource::LoadTable( const char* pszFilename,
     {
         CPLError(CE_Failure, CPLE_NotSupported,
                  "Only INTERCHANGE_FORMAT=ASCII or BINARY is supported");
-        return false;
+        return FALSE;
     }
 
     VSILFILE* fp = VSIFOpenL(osTableFilename, "rb");
@@ -235,12 +237,12 @@ bool OGRPDSDataSource::LoadTable( const char* pszFilename,
     {
         CPLError(CE_Failure, CPLE_AppDefined, "Cannot open %s",
                  osTableFilename.c_str());
-        return false;
+        return FALSE;
     }
 
     CPLString osTableStructure =
         oKeywords.GetKeyword( MakeAttr(osTableID, "^STRUCTURE"), "" );
-    if (!osTableStructure.empty())
+    if (osTableStructure.size() != 0)
     {
         CPLString osTPath = CPLGetPath(pszFilename);
         CleanString( osTableStructure );
@@ -251,7 +253,7 @@ bool OGRPDSDataSource::LoadTable( const char* pszFilename,
     if (pabyRecord == NULL)
     {
         VSIFCloseL(fp);
-        return false;
+        return FALSE;
     }
     pabyRecord[nRecordSize] = 0;
 
@@ -266,7 +268,7 @@ bool OGRPDSDataSource::LoadTable( const char* pszFilename,
         osTableInterchangeFormat.compare("ASCII") == 0);
     nLayers++;
 
-    return true;
+    return TRUE;
 }
 
 /************************************************************************/
@@ -311,8 +313,8 @@ int OGRPDSDataSource::Open( const char * pszFilename )
     CPLString osFileRecords = oKeywords.GetKeyword( "FILE_RECORDS", "" );
     CPLString osRecordBytes = oKeywords.GetKeyword( "RECORD_BYTES", "" );
     int nRecordSize = atoi(osRecordBytes);
-    if (osRecordType.empty() || osFileRecords.empty() ||
-        osRecordBytes.empty() || nRecordSize <= 0)
+    if (osRecordType.size() == 0 || osFileRecords.size() == 0 ||
+        osRecordBytes.size() == 0 || nRecordSize <= 0)
     {
         CPLError(CE_Failure, CPLE_NotSupported,
                  "One of RECORD_TYPE, FILE_RECORDS or RECORD_BYTES is missing");
@@ -327,10 +329,8 @@ int OGRPDSDataSource::Open( const char * pszFilename )
     }
 
     CPLString osTable = oKeywords.GetKeyword( "^TABLE", "" );
-    if (!osTable.empty())
-    {
+    if (osTable.size() != 0)
         LoadTable(pszFilename, nRecordSize, "TABLE");
-    }
     else
     {
         fp = VSIFOpenL(pszFilename, "rb");

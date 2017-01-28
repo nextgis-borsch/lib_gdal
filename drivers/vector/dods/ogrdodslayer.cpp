@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrdodslayer.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  OGR/DODS Interface
  * Purpose:  Implements OGRDODSLayer class.
@@ -29,7 +30,7 @@
 #include "ogr_dods.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrdodslayer.cpp 35933 2016-10-25 16:46:26Z goatbar $");
+CPL_CVSID("$Id: ogrdodslayer.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 /************************************************************************/
 /*                            OGRDODSLayer()                            */
@@ -46,12 +47,12 @@ OGRDODSLayer::OGRDODSLayer( OGRDODSDataSource *poDSIn,
     pszFIDColumn (NULL),
     pszTarget(CPLStrdup( pszTargetIn )),
     papoFields(NULL),
-    bDataLoaded(false),
+    bDataLoaded(FALSE),
     poConnection(NULL),
     poDataDDS(new DataDDS( poDSIn->poBTF )),
     poTargetVar(NULL),
     poOGRLayerInfo(poOGRLayerInfoIn),
-    bKnowExtent(false)
+    bKnowExtent(FALSE)
 {
 /* ==================================================================== */
 /*      Harvest some metadata if available.                             */
@@ -83,12 +84,13 @@ OGRDODSLayer::OGRDODSLayer( OGRDODSDataSource *poDSIn,
         AttrTable *poLayerExt=poOGRLayerInfo->find_container("layer_extents");
         if( poLayerExt != NULL )
         {
-            bKnowExtent = true;
+            bKnowExtent = TRUE;
             sExtent.MinX = CPLAtof(poLayerExt->get_attr("x_min").c_str());
             sExtent.MaxX = CPLAtof(poLayerExt->get_attr("x_max").c_str());
             sExtent.MinY = CPLAtof(poLayerExt->get_attr("y_min").c_str());
             sExtent.MaxY = CPLAtof(poLayerExt->get_attr("y_max").c_str());
         }
+
     }
 
 /* ==================================================================== */
@@ -157,7 +159,9 @@ void OGRDODSLayer::ResetReading()
 OGRFeature *OGRDODSLayer::GetNextFeature()
 
 {
-    for( OGRFeature *poFeature = GetFeature( iNextShapeId++ );
+    OGRFeature *poFeature;
+
+    for( poFeature = GetFeature( iNextShapeId++ );
          poFeature != NULL;
          poFeature = GetFeature( iNextShapeId++ ) )
     {
@@ -176,7 +180,7 @@ OGRFeature *OGRDODSLayer::GetNextFeature()
 /*                           TestCapability()                           */
 /************************************************************************/
 
-int OGRDODSLayer::TestCapability( const char * /* pszCap */ )
+int OGRDODSLayer::TestCapability( const char * pszCap )
 
 {
     return FALSE;
@@ -196,13 +200,13 @@ OGRSpatialReference *OGRDODSLayer::GetSpatialRef()
 /*                           ProvideDataDDS()                           */
 /************************************************************************/
 
-bool OGRDODSLayer::ProvideDataDDS()
+int OGRDODSLayer::ProvideDataDDS()
 
 {
     if( bDataLoaded )
         return poTargetVar != NULL;
 
-    bDataLoaded = true;
+    bDataLoaded = TRUE;
     try
     {
         poConnection = new AISConnect( poDS->oBaseURL );
@@ -219,7 +223,7 @@ bool OGRDODSLayer::ProvideDataDDS()
         CPLError( CE_Failure, CPLE_AppDefined,
                   "DataDDS request failed:\n%s",
                   e.get_error_message().c_str() );
-        return false;
+        return FALSE;
     }
 
     poTargetVar = poDataDDS->var( pszTarget );
@@ -234,19 +238,21 @@ bool OGRDODSLayer::ProvideDataDDS()
 OGRErr OGRDODSLayer::GetExtent(OGREnvelope *psExtent, int bForce)
 
 {
+    OGRErr eErr;
+
     if( bKnowExtent )
     {
-        *psExtent = sExtent;
+        *psExtent = this->sExtent;
         return OGRERR_NONE;
     }
 
     if( !bForce )
         return OGRERR_FAILURE;
 
-    const OGRErr eErr = OGRLayer::GetExtent( &sExtent, bForce );
+    eErr = OGRLayer::GetExtent( &sExtent, bForce );
     if( eErr == OGRERR_NONE )
     {
-        bKnowExtent = true;
+        bKnowExtent = TRUE;
         *psExtent = sExtent;
     }
 

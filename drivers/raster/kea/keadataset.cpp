@@ -1,4 +1,5 @@
 /*
+ * $Id: keadataset.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *  keadataset.cpp
  *
  *  Created by Pete Bunting on 01/08/2012.
@@ -30,8 +31,6 @@
 #include "keadataset.h"
 #include "keaband.h"
 #include "keacopy.h"
-
-CPL_CVSID("$Id: keadataset.cpp 36418 2016-11-21 22:58:41Z rouault $");
 
 // Function for converting a libkea type into a GDAL type
 GDALDataType KEA_to_GDAL_Type( kealib::KEADataType ekeaType )
@@ -172,6 +171,7 @@ int KEADataset::Identify( GDALOpenInfo * poOpenInfo )
     else
         return 0;
 }
+
 
 // static function
 H5::H5File *KEADataset::CreateLL( const char * pszFilename,
@@ -399,6 +399,7 @@ GDALDataset *KEADataset::CreateCopy( const char * pszFilename, GDALDataset *pSrc
                   pszFilename, e.what() );
         return NULL;
     }
+
 }
 
 // constructor
@@ -660,15 +661,16 @@ CPLErr KEADataset::SetMetadata(char **papszMetadata, const char *pszDomain)
         return CE_Failure;
 
     int nIndex = 0;
+    char *pszName;
+    const char *pszValue;
     try
     {
         // go through each item
         while( papszMetadata[nIndex] != NULL )
         {
             // get the value/name
-            char *pszName = NULL;
-            const char *pszValue =
-                CPLParseNameValue( papszMetadata[nIndex], &pszName );
+            pszName = NULL;
+            pszValue = CPLParseNameValue( papszMetadata[nIndex], &pszName );
             if( pszValue == NULL )
                 pszValue = "";
             if( pszName != NULL )
@@ -743,6 +745,7 @@ CPLErr KEADataset::AddBand(GDALDataType eType, char **papszOptions)
     return CE_None;
 }
 
+
 int KEADataset::GetGCPCount()
 {
     try
@@ -753,6 +756,7 @@ int KEADataset::GetGCPCount()
     {
         return 0;
     }
+
 }
 
 const char* KEADataset::GetGCPProjection()
@@ -840,7 +844,7 @@ CPLErr KEADataset::SetGCPs(int nGCPCount, const GDAL_GCP *pasGCPList, const char
         result = CE_Failure;
     }
 
-    for( std::vector<kealib::KEAImageGCP*>::iterator itr = pKEAGCPs->begin(); itr != pKEAGCPs->end(); ++itr)
+    for( std::vector<kealib::KEAImageGCP*>::iterator itr = pKEAGCPs->begin(); itr != pKEAGCPs->end(); itr++)
     {
         kealib::KEAImageGCP *pKEA = (*itr);
         delete pKEA;

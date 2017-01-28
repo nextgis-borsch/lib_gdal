@@ -2477,7 +2477,7 @@ int ParseUglyString (UglyStringType * ugly, char *wxData, int simpleVer)
       }
 */
    }
-   if (start != NULL) {
+   if (start != '\0') {
       if (UglyLookUp (ugly, start, word, place, attNum) != 0) {
 #ifdef VERBOSE
          printf ("(E) '%s'\n", wxData);

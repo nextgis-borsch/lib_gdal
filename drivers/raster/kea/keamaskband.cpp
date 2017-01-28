@@ -1,4 +1,5 @@
 /*
+ * $Id: keamaskband.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *  keamaskband.cpp
  *
  *  Created by Pete Bunting on 01/08/2012.
@@ -28,8 +29,6 @@
  */
 
 #include "keamaskband.h"
-
-CPL_CVSID("$Id: keamaskband.cpp 34811 2016-07-28 15:15:05Z goatbar $");
 
 // constructor
 KEAMaskBand::KEAMaskBand(GDALRasterBand *pParent,

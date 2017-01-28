@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ograeronavfaadriver.cpp 32110 2015-12-10 17:19:40Z goatbar $
  *
  * Project:  AeronavFAA Translator
  * Purpose:  Implements OGRAeronavFAADriver.
@@ -29,11 +30,12 @@
 #include "ogr_aeronavfaa.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ograeronavfaadriver.cpp 35903 2016-10-24 12:09:43Z goatbar $");
+CPL_CVSID("$Id: ograeronavfaadriver.cpp 32110 2015-12-10 17:19:40Z goatbar $");
 
 // g++ ogr/ogrsf_frmts/aeronavfaa/*.cpp -Wall -g -fPIC -shared -o ogr_AeronavFAA.so -Iport -Igcore -Iogr -Iogr/ogrsf_frmts/aernovfaa -Iogr/ogrsf_frmts
 
 extern "C" void RegisterOGRAeronavFAA();
+
 
 /************************************************************************/
 /*                                Open()                                */
@@ -82,3 +84,4 @@ void RegisterOGRAeronavFAA()
 
     GetGDALDriverManager()->RegisterDriver( poDriver );
 }
+

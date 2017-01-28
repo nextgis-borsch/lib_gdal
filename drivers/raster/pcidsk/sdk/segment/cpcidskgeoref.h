@@ -53,20 +53,20 @@ namespace PCIDSK
 
         // PCIDSKSegment 
 
-        void        Initialize() override;
+        void        Initialize();
 
         // PCIDSKGeoref
 
         void        GetTransform( double &a1, double &a2, double &xrot, 
-                                  double &b1, double &yrot, double &b3 ) override;
-        std::string GetGeosys() override;
+                                  double &b1, double &yrot, double &b3 );
+        std::string GetGeosys();
 
-        std::vector<double> GetParameters() override;
+        std::vector<double> GetParameters();
 
         void        WriteSimple( std::string const& geosys, 
                                  double a1, double a2, double xrot, 
-                                 double b1, double yrot, double b3 ) override;
-        void        WriteParameters( std::vector<double> const& parameters ) override;
+                                 double b1, double yrot, double b3 );
+        void        WriteParameters( std::vector<double> const& parameters );
 
         // special interface just for testing.
         std::vector<double> GetUSGSParameters();

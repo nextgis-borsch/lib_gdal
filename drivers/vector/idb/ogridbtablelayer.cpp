@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogridbtablelayer.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRIDBTableLayer class, access to an existing table
@@ -31,7 +32,7 @@
 #include "cpl_string.h"
 #include "ogr_idb.h"
 
-CPL_CVSID("$Id: ogridbtablelayer.cpp 35911 2016-10-24 15:03:26Z goatbar $");
+CPL_CVSID("$Id: ogridbtablelayer.cpp 33714 2016-03-13 05:42:13Z goatbar $");
 /************************************************************************/
 /*                          OGRIDBTableLayer()                         */
 /************************************************************************/
@@ -189,6 +190,7 @@ CPLErr OGRIDBTableLayer::Initialize( const char *pszTableName,
                 bGeomColumnWKB = TRUE;
         }*/
     }
+
 
     return CE_None;
 }
@@ -538,6 +540,7 @@ OGRErr OGRIDBTableLayer::ISetFeature( OGRFeature *poFeature )
             CPLDebug("OGR_IDB", "SetFeature(): Unknown geometry type. Geometry will not be updated.");
     }
 
+
     // Create query
     CPLString osSql;
     CPLString osFields;
@@ -754,9 +757,8 @@ OGRErr OGRIDBTableLayer::ISetFeature( OGRFeature *poFeature )
         }
     }
     else
-    {
         bUpdateGeom = FALSE;
-    }
+
 
     // Create query
     CPLString osSql;

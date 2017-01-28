@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: gdalcolortable.cpp 33694 2016-03-10 17:54:30Z goatbar $
  *
  * Project:  GDAL Core
  * Purpose:  Color table implementation.
@@ -27,18 +28,9 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "cpl_port.h"
 #include "gdal_priv.h"
 
-#include <cstring>
-#include <exception>
-#include <memory>
-#include <vector>
-
-#include "cpl_error.h"
-#include "gdal.h"
-
-CPL_CVSID("$Id: gdalcolortable.cpp 36682 2016-12-04 20:34:45Z rouault $");
+CPL_CVSID("$Id: gdalcolortable.cpp 33694 2016-03-10 17:54:30Z goatbar $");
 
 /************************************************************************/
 /*                           GDALColorTable()                           */
@@ -71,6 +63,7 @@ GDALColorTableH CPL_STDCALL GDALCreateColorTable( GDALPaletteInterp eInterp )
 {
     return reinterpret_cast<GDALColorTableH>( new GDALColorTable( eInterp ) );
 }
+
 
 /************************************************************************/
 /*                          ~GDALColorTable()                           */
@@ -126,6 +119,7 @@ const GDALColorEntry *GDALColorTable::GetColorEntry( int i ) const
 /*                         GDALGetColorEntry()                          */
 /************************************************************************/
 
+
 /**
  * \brief Fetch a color entry from table.
  *
@@ -139,6 +133,7 @@ GDALGetColorEntry( GDALColorTableH hTable, int i )
 
     return reinterpret_cast<GDALColorTable *>( hTable )->GetColorEntry( i );
 }
+
 
 /************************************************************************/
 /*                         GetColorEntryAsRGB()                         */
@@ -220,7 +215,8 @@ void GDALColorTable::SetColorEntry( int i, const GDALColorEntry * poEntry )
     {
         if( i >= static_cast<int>(aoEntries.size()) )
         {
-            GDALColorEntry oBlack = { 0, 0, 0, 0 };
+            GDALColorEntry oBlack;
+            oBlack.c1 = oBlack.c2 = oBlack.c3 = oBlack.c4 = 0;
             aoEntries.resize(i+1, oBlack);
         }
 
@@ -251,6 +247,7 @@ void CPL_STDCALL GDALSetColorEntry( GDALColorTableH hTable, int i,
     reinterpret_cast<GDALColorTable *>( hTable )->SetColorEntry( i, poEntry );
 }
 
+
 /************************************************************************/
 /*                               Clone()                                */
 /************************************************************************/
@@ -264,7 +261,7 @@ void CPL_STDCALL GDALSetColorEntry( GDALColorTableH hTable, int i,
 GDALColorTable *GDALColorTable::Clone() const
 
 {
-    return new GDALColorTable(*this);
+	return new GDALColorTable(*this);
 }
 
 /************************************************************************/
@@ -484,7 +481,7 @@ GDALCreateColorRamp( GDALColorTableH hTable,
 int GDALColorTable::IsSame(const GDALColorTable* poOtherCT) const
 {
     return aoEntries.size() == poOtherCT->aoEntries.size() &&
-           (aoEntries.empty() ||
+           (aoEntries.size() == 0 ||
             memcmp(&aoEntries[0], &poOtherCT->aoEntries[0], aoEntries.size()
                    * sizeof(GDALColorEntry)) == 0);
 }

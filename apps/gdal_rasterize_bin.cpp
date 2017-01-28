@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: gdal_rasterize_bin.cpp 33615 2016-03-02 20:19:22Z goatbar $
  *
  * Project:  GDAL Utilities
  * Purpose:  Rasterize OGR shapes into a GDAL raster.
@@ -29,9 +30,8 @@
 #include "cpl_string.h"
 #include "commonutils.h"
 #include "gdal_utils_priv.h"
-#include "gdal_priv.h"
 
-CPL_CVSID("$Id: gdal_rasterize_bin.cpp 36231 2016-11-14 13:22:06Z rouault $");
+CPL_CVSID("$Id: gdal_rasterize_bin.cpp 33615 2016-03-02 20:19:22Z goatbar $");
 
 /************************************************************************/
 /*                               Usage()                                */
@@ -42,7 +42,7 @@ static void Usage(const char* pszErrorMsg = NULL)
 {
     printf(
         "Usage: gdal_rasterize [-b band]* [-i] [-at]\n"
-        "       {[-burn value]* | [-a attribute_name] | [-3d]} [-add]\n"
+        "       [-burn value]* | [-a attribute_name] [-3d] [-add]\n"
         "       [-l layername]* [-where expression] [-sql select_statement]\n"
         "       [-dialect dialect] [-of format] [-a_srs srs_def]\n"
         "       [-co \"NAME=VALUE\"]* [-a_nodata value] [-init value]*\n"
@@ -155,37 +155,10 @@ int main(int argc, char** argv)
                                         NULL, NULL, NULL );
         CPLPopErrorHandler();
     }
-    
-
-    if( psOptionsForBinary->bCreateOutput || hDstDS == NULL )
-    {
-        GDALDriverManager *poDM = GetGDALDriverManager();
-        GDALDriver* poDriver = poDM->GetDriverByName(psOptionsForBinary->pszFormat);
-        char** papszDriverMD = (poDriver) ? poDriver->GetMetadata(): NULL;
-        if( poDriver == NULL
-            || !CPLTestBool( CSLFetchNameValueDef(papszDriverMD, GDAL_DCAP_RASTER, "FALSE") )
-            || !CPLTestBool( CSLFetchNameValueDef(papszDriverMD, GDAL_DCAP_CREATE, "FALSE") ) )
-        {
-            fprintf( stderr,  "Output driver `%s' not recognised or does not support "
-                    "direct output file creation.\n", psOptionsForBinary->pszFormat);
-            fprintf(stderr, "The following format drivers are configured and support direct output:\n" );
-
-            for( int iDriver = 0; iDriver < poDM->GetDriverCount(); iDriver++ )
-            {
-                GDALDriver* poIter = poDM->GetDriver(iDriver);
-                papszDriverMD = poIter->GetMetadata();
-                if( CPLTestBool( CSLFetchNameValueDef(papszDriverMD, GDAL_DCAP_RASTER, "FALSE") ) &&
-                    CPLTestBool( CSLFetchNameValueDef(papszDriverMD, GDAL_DCAP_CREATE, "FALSE") ) )
-                {
-                    fprintf( stderr,  "  -> `%s'\n", poIter->GetDescription() );
-                }
-            }
-            exit( 1 );
-        }
-    }
 
     if (hDstDS == NULL && !psOptionsForBinary->bQuiet && !psOptionsForBinary->bFormatExplicitlySet)
         CheckExtensionConsistency(psOptionsForBinary->pszDest, psOptionsForBinary->pszFormat);
+
 
     int bUsageError = FALSE;
     GDALDatasetH hRetDS = GDALRasterize(psOptionsForBinary->pszDest,

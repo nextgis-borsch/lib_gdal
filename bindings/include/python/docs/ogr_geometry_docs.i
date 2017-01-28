@@ -504,7 +504,7 @@ hGeom:  handle on the geometry to convert to a text format from.
 
 ppszSrcText:  a text buffer is allocated by the program, and assigned
 to the passed pointer. After use, *ppszDstText should be freed with
-CPLFree().
+OGRFree().
 
 Currently OGRERR_NONE is always returned. ";
 
@@ -528,7 +528,7 @@ hGeom:  handle on the geometry to convert to a text format from.
 
 ppszSrcText:  a text buffer is allocated by the program, and assigned
 to the passed pointer. After use, *ppszDstText should be freed with
-CPLFree().
+OGRFree().
 
 Currently OGRERR_NONE is always returned.
 

@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrsqliteselectlayer.cpp 35899 2016-10-24 11:56:25Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRSQLiteSelectLayer class, layer access to the results
@@ -33,25 +34,22 @@
 #include "swq.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrsqliteselectlayer.cpp 36682 2016-12-04 20:34:45Z rouault $");
+CPL_CVSID("$Id: ogrsqliteselectlayer.cpp 35899 2016-10-24 11:56:25Z rouault $");
 
 /************************************************************************/
 /*                   OGRSQLiteSelectLayerCommonBehaviour()              */
 /************************************************************************/
 
-OGRSQLiteSelectLayerCommonBehaviour::OGRSQLiteSelectLayerCommonBehaviour(
-    OGRSQLiteBaseDataSource* poDSIn,
-    IOGRSQLiteSelectLayer* poLayerIn,
-    CPLString osSQLIn,
-    int bEmptyLayerIn) :
-    poDS(poDSIn),
-    poLayer(poLayerIn),
-    osSQLBase(osSQLIn),
-    bEmptyLayer(bEmptyLayerIn),
-    bAllowResetReadingEvenIfIndexAtZero(FALSE),
-    bSpatialFilterInSQL(TRUE),
-    osSQLCurrent(osSQLIn)
-{}
+OGRSQLiteSelectLayerCommonBehaviour::OGRSQLiteSelectLayerCommonBehaviour(OGRSQLiteBaseDataSource* poDSIn,
+                                            IOGRSQLiteSelectLayer* poLayerIn,
+                                            CPLString osSQLIn,
+                                            int bEmptyLayerIn) :
+            poDS(poDSIn), poLayer(poLayerIn), osSQLBase(osSQLIn),
+            bEmptyLayer(bEmptyLayerIn), osSQLCurrent(osSQLIn)
+{
+    bAllowResetReadingEvenIfIndexAtZero = FALSE;
+    bSpatialFilterInSQL = TRUE;
+}
 
 /************************************************************************/
 /*                        OGRSQLiteSelectLayer()                        */
@@ -63,13 +61,12 @@ OGRSQLiteSelectLayer::OGRSQLiteSelectLayer( OGRSQLiteDataSource *poDSIn,
                                             int bUseStatementForGetNextFeature,
                                             int bEmptyLayer,
                                             int bAllowMultipleGeomFieldsIn )
-{
-    poDS = poDSIn;
-    // Cannot be moved to initializer list because of use of this, which MSVC 2008 doesn't like
-    poBehaviour = new OGRSQLiteSelectLayerCommonBehaviour(poDSIn, this, osSQLIn,
-                                                          bEmptyLayer);
 
-    bAllowMultipleGeomFields = bAllowMultipleGeomFieldsIn;
+{
+    poBehaviour = new OGRSQLiteSelectLayerCommonBehaviour(poDSIn, this, osSQLIn, bEmptyLayer);
+    poDS = poDSIn;
+
+    this->bAllowMultipleGeomFields = bAllowMultipleGeomFieldsIn;
 
     std::set<CPLString> aosEmpty;
     BuildFeatureDefn( "SELECT", hStmtIn, NULL, aosEmpty );
@@ -90,8 +87,9 @@ OGRSQLiteSelectLayer::OGRSQLiteSelectLayer( OGRSQLiteDataSource *poDSIn,
             if( wkbFlatten(poGeomFieldDefn->GetType()) != wkbUnknown )
                 continue;
 
+            int nBytes;
             if( sqlite3_column_type( hStmt, poGeomFieldDefn->iCol ) == SQLITE_BLOB &&
-                sqlite3_column_bytes( hStmt, poGeomFieldDefn->iCol ) > 39 )
+                (nBytes = sqlite3_column_bytes( hStmt, poGeomFieldDefn->iCol )) > 39 )
             {
                 const GByte* pabyBlob = (const GByte*)sqlite3_column_blob( hStmt, poGeomFieldDefn->iCol );
                 int eByteOrder = pabyBlob[1];
@@ -99,7 +97,7 @@ OGRSQLiteSelectLayer::OGRSQLiteSelectLayer( OGRSQLiteDataSource *poDSIn,
                     (eByteOrder == wkbNDR || eByteOrder == wkbXDR) &&
                     pabyBlob[38] == 0x7C )
                 {
-                    int nSRSId = 0;
+                    int nSRSId;
                     memcpy(&nSRSId, pabyBlob + 2, 4);
 #ifdef CPL_LSB
                     if( eByteOrder != wkbNDR)
@@ -288,9 +286,8 @@ GIntBig OGRSQLiteSelectLayerCommonBehaviour::GetFeatureCount( int bForce )
 /*      Execute.                                                        */
 /* -------------------------------------------------------------------- */
     char *pszErrMsg = NULL;
-    char **papszResult = NULL;
-    int nRowCount = 0;
-    int nColCount = 0;
+    char **papszResult;
+    int nRowCount, nColCount;
     int nResult = -1;
 
     if( sqlite3_get_table( poDS->GetDB(), osFeatureCountSQL, &papszResult,
@@ -318,6 +315,8 @@ GIntBig OGRSQLiteSelectLayerCommonBehaviour::GetFeatureCount( int bForce )
 OGRErr OGRSQLiteSelectLayer::ResetStatement()
 
 {
+    int rc;
+
     ClearStatement();
 
     iNextShapeId = 0;
@@ -327,19 +326,22 @@ OGRErr OGRSQLiteSelectLayer::ResetStatement()
     CPLDebug( "OGR_SQLITE", "prepare(%s)", poBehaviour->osSQLCurrent.c_str() );
 #endif
 
-    const int rc =
-        sqlite3_prepare( poDS->GetDB(), poBehaviour->osSQLCurrent,
-                         static_cast<int>(poBehaviour->osSQLCurrent.size()),
-                         &hStmt, NULL );
+    rc = sqlite3_prepare( poDS->GetDB(), poBehaviour->osSQLCurrent,
+                          static_cast<int>(poBehaviour->osSQLCurrent.size()),
+                          &hStmt, NULL );
 
     if( rc == SQLITE_OK )
+    {
         return OGRERR_NONE;
-
-    CPLError( CE_Failure, CPLE_AppDefined,
-              "In ResetStatement(): sqlite3_prepare(%s):\n  %s",
-              poBehaviour->osSQLCurrent.c_str(), sqlite3_errmsg(poDS->GetDB()) );
-    hStmt = NULL;
-    return OGRERR_FAILURE;
+    }
+    else
+    {
+        CPLError( CE_Failure, CPLE_AppDefined,
+                  "In ResetStatement(): sqlite3_prepare(%s):\n  %s",
+                  poBehaviour->osSQLCurrent.c_str(), sqlite3_errmsg(poDS->GetDB()) );
+        hStmt = NULL;
+        return OGRERR_FAILURE;
+    }
 }
 
 /************************************************************************/
@@ -504,7 +506,7 @@ int OGRSQLiteSelectLayerCommonBehaviour::BuildSQL()
         else
         {
             osSpatialWhere = oPair.second->GetSpatialWhere(nIdx, poLayer->GetFilterGeom());
-            if (osSpatialWhere.empty())
+            if (osSpatialWhere.size() == 0)
             {
                 CPLDebug("SQLITE", "Cannot get spatial where clause");
                 bSpatialFilterInSQL = FALSE;
@@ -513,21 +515,21 @@ int OGRSQLiteSelectLayerCommonBehaviour::BuildSQL()
     }
 
     CPLString osCustomWhere;
-    if( !osSpatialWhere.empty() )
+    if( osSpatialWhere.size() != 0 )
     {
         osCustomWhere = osSpatialWhere;
     }
     if( poLayer->GetAttrQueryString() != NULL && poLayer->GetAttrQueryString()[0] != '\0' )
     {
-        if( !osSpatialWhere.empty())
+        if( osSpatialWhere.size() != 0)
             osCustomWhere += " AND (";
         osCustomWhere += poLayer->GetAttrQueryString();
-        if( !osSpatialWhere.empty())
+        if( osSpatialWhere.size() != 0)
             osCustomWhere += ")";
     }
 
     /* Nothing to do */
-    if( osCustomWhere.empty() )
+    if( osCustomWhere.size() == 0 )
         return TRUE;
 
     while (i < osSQLBase.size() && osSQLBase[i] == ' ')

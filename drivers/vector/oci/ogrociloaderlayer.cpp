@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrociloaderlayer.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  Oracle Spatial Driver
  * Purpose:  Implementation of the OGROCILoaderLayer class.  This implements
@@ -31,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrociloaderlayer.cpp 36440 2016-11-22 22:09:36Z rouault $");
+CPL_CVSID("$Id: ogrociloaderlayer.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 /************************************************************************/
 /*                         OGROCILoaderLayer()                          */
@@ -59,6 +60,7 @@ OGROCILoaderLayer::OGROCILoaderLayer( OGROCIDataSource *poDSIn,
     pszGeomName = CPLStrdup( pszGeomColIn );
     pszFIDName = (char*)CPLGetConfigOption( "OCI_FID", "OGR_FID" );
 
+
     nSRID = nSRIDIn;
     poSRS = poDSIn->FetchSRS( nSRID );
 
@@ -79,6 +81,7 @@ OGROCILoaderLayer::OGROCILoaderLayer( OGROCIDataSource *poDSIn,
                   pszLoaderFilename );
         return;
     }
+
 }
 
 /************************************************************************/
@@ -188,7 +191,7 @@ void OGROCILoaderLayer::WriteLoaderHeader()
             VSIFPrintf( fpLoader, "    \"%s\" INTEGER EXTERNAL",
                         poFldDefn->GetNameRef() );
         }
-        else if( poFldDefn->GetType() == OFTInteger64 )
+        else if( poFldDefn->GetType() == OFTInteger )
         {
             VSIFPrintf( fpLoader, "    \"%s\" LONGINTEGER EXTERNAL",
                         poFldDefn->GetNameRef() );
@@ -198,7 +201,12 @@ void OGROCILoaderLayer::WriteLoaderHeader()
             VSIFPrintf( fpLoader, "    \"%s\" FLOAT EXTERNAL",
                         poFldDefn->GetNameRef() );
         }
-        else /* if( poFldDefn->GetType() == OFTString ) or default case */
+        else if( poFldDefn->GetType() == OFTString )
+        {
+            VSIFPrintf( fpLoader, "    \"%s\" VARCHARC(4)",
+                        poFldDefn->GetNameRef() );
+        }
+        else
         {
             VSIFPrintf( fpLoader, "    \"%s\" VARCHARC(4)",
                         poFldDefn->GetNameRef() );

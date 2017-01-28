@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_http.h 36628 2016-12-02 02:22:02Z rouault $
+ * $Id: cpl_http.h 33666 2016-03-07 05:21:07Z goatbar $
  *
  * Project:  Common Portability Library
  * Purpose:  Function wrapper for libcurl HTTP access.
@@ -64,7 +64,6 @@ typedef struct {
 
     /*! Length of the pabyData buffer */
     int     nDataLen;
-    /*! Allocated size of the pabyData buffer */
     int     nDataAlloc;
 
     /*! Buffer with downloaded data */
@@ -102,10 +101,5 @@ char CPL_DLL *GOA2GetAccessToken( const char *pszRefreshToken,
                                   const char *pszScope );
 
 CPL_C_END
-
-/*! @cond Doxygen_Suppress */
-// Not sure if this belong here, used in cpl_http.cpp, cpl_vsil_curl.cpp and frmts/wms/gdalhttp.cpp
-void CPLHTTPSetOptions(void *pcurl, const char * const* papszOptions);
-/*! @endcond */
 
 #endif /* ndef CPL_HTTP_H_INCLUDED */

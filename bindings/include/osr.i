@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: osr.i 35418 2016-09-13 13:37:01Z rouault $
+ * $Id: osr.i 33909 2016-04-07 08:10:58Z rouault $
  *
  * Project:  GDAL SWIG Interfaces.
  * Purpose:  OGRSpatialReference related declarations.
@@ -26,10 +26,6 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  *****************************************************************************/
-
-#ifdef SWIGPYTHON
-%nothread;
-#endif
 
 %include constraints.i
 
@@ -356,11 +352,6 @@ public:
 
   OGRErr SetLinearUnitsAndUpdateParameters( const char*name, double to_meters) {
     return OSRSetLinearUnitsAndUpdateParameters( self, name, to_meters );
-  }
-
-  double GetTargetLinearUnits( const char *target_key ) {
-    // Return code ignored.
-    return OSRGetTargetLinearUnits( self, target_key, 0 );
   }
 
   double GetLinearUnits() {
@@ -1026,8 +1017,3 @@ public:
     return obj;
 }
 %}
-
-
-#ifdef SWIGPYTHON
-%thread;
-#endif

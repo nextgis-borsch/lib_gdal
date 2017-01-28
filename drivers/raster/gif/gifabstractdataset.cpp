@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: gifabstractdataset.cpp 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  GIF Driver
  * Purpose:  GIF Abstract Dataset
@@ -28,7 +29,7 @@
 
 #include "gifabstractdataset.h"
 
-CPL_CVSID("$Id: gifabstractdataset.cpp 36682 2016-12-04 20:34:45Z rouault $");
+CPL_CVSID("$Id: gifabstractdataset.cpp 33717 2016-03-14 06:29:14Z goatbar $");
 
 static const int InterlacedOffset[] = { 0, 4, 2, 1 };
 static const int InterlacedJumps[] = { 8, 8, 4, 2 };
@@ -38,6 +39,7 @@ static const int InterlacedJumps[] = { 8, 8, 4, 2 };
 /*                         GIFAbstractDataset                           */
 /* ==================================================================== */
 /************************************************************************/
+
 
 /************************************************************************/
 /*                         GIFAbstractDataset()                         */
@@ -189,7 +191,7 @@ void GIFAbstractDataset::CollectXMPMetadata()
         return;
 
     CPLString osXMP = GIFCollectXMPMetadata(fp);
-    if (!osXMP.empty() )
+    if (osXMP.size())
     {
         /* Avoid setting the PAM dirty bit just for that */
         int nOldPamFlags = nPamFlags;
@@ -324,7 +326,7 @@ char **GIFAbstractDataset::GetFileList()
 {
     char **papszFileList = GDALPamDataset::GetFileList();
 
-    if (!osWldFilename.empty() &&
+    if (osWldFilename.size() != 0 &&
         CSLFindString(papszFileList, osWldFilename) == -1)
     {
         papszFileList = CSLAddString( papszFileList, osWldFilename );
@@ -432,7 +434,7 @@ GifRecordType GIFAbstractDataset::FindFirstImage( GifFileType* hGifFile )
         if (RecordType == EXTENSION_RECORD_TYPE)
         {
             int nFunction;
-            GifByteType *pExtData = NULL;
+            GifByteType *pExtData;
             if (DGifGetExtension(hGifFile, &nFunction, &pExtData) == GIF_ERROR)
                 break;
             while (pExtData != NULL)
@@ -451,23 +453,24 @@ GifRecordType GIFAbstractDataset::FindFirstImage( GifFileType* hGifFile )
 /************************************************************************/
 
 GIFAbstractRasterBand::GIFAbstractRasterBand(
-    GIFAbstractDataset *poDSIn, int nBandIn,
-    SavedImage *psSavedImage, int nBackground,
-    int bAdvertizeInterlacedMDI ) :
-    psImage(psSavedImage),
+                              GIFAbstractDataset *poDSIn, int nBandIn,
+                              SavedImage *psSavedImage, int nBackground,
+                              int bAdvertizeInterlacedMDI ) :
     panInterlaceMap(NULL),
     poColorTable(NULL),
     nTransparentColor(0)
 {
-    poDS = poDSIn;
-    nBand = nBandIn;
+    this->poDS = poDSIn;
+    this->nBand = nBandIn;
 
     eDataType = GDT_Byte;
 
     nBlockXSize = poDS->GetRasterXSize();
     nBlockYSize = 1;
 
-    if( psImage == NULL )
+    psImage = psSavedImage;
+
+    if (psImage == NULL)
         return;
 
 /* -------------------------------------------------------------------- */
@@ -492,9 +495,7 @@ GIFAbstractRasterBand::GIFAbstractRasterBand(
         }
     }
     else if( bAdvertizeInterlacedMDI )
-    {
         poDS->SetMetadataItem( "INTERLACED", "NO", "IMAGE_STRUCTURE" );
-    }
 
 /* -------------------------------------------------------------------- */
 /*      Check for transparency.  We just take the first graphic         */
@@ -503,12 +504,13 @@ GIFAbstractRasterBand::GIFAbstractRasterBand(
     nTransparentColor = -1;
     for( int iExtBlock = 0; iExtBlock < psImage->ExtensionBlockCount; iExtBlock++ )
     {
+        unsigned char *pExtData;
+
         if( psImage->ExtensionBlocks[iExtBlock].Function != 0xf9 ||
             psImage->ExtensionBlocks[iExtBlock].ByteCount < 4 )
             continue;
 
-        unsigned char *pExtData = reinterpret_cast<unsigned char *>(
-            psImage->ExtensionBlocks[iExtBlock].Bytes);
+        pExtData = (unsigned char *) psImage->ExtensionBlocks[iExtBlock].Bytes;
 
         /* check if transparent color flag is set */
         if( !(pExtData[0] & 0x1) )
@@ -520,7 +522,7 @@ GIFAbstractRasterBand::GIFAbstractRasterBand(
 /* -------------------------------------------------------------------- */
 /*      Setup colormap.                                                 */
 /* -------------------------------------------------------------------- */
-    ColorMapObject  *psGifCT = psImage->ImageDesc.ColorMap;
+    ColorMapObject      *psGifCT = psImage->ImageDesc.ColorMap;
     if( psGifCT == NULL )
         psGifCT = poDSIn->hGifFile->SColorMap;
 

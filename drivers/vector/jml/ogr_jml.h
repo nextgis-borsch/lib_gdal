@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_jml.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: ogr_jml.h 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  JML .jml Translator
  * Purpose:  Definition of classes for OGR JML driver.
@@ -117,14 +117,14 @@ class OGRJMLLayer : public OGRLayer
                                          VSILFILE* fp );
                         ~OGRJMLLayer();
 
-    const char         *GetName() override { return poFeatureDefn->GetName(); }
+    const char         *GetName() { return poFeatureDefn->GetName(); }
 
-    void                ResetReading() override;
-    OGRFeature *        GetNextFeature() override;
+    void                ResetReading();
+    OGRFeature *        GetNextFeature();
 
-    OGRFeatureDefn *    GetLayerDefn() override;
+    OGRFeatureDefn *    GetLayerDefn();
 
-    int                 TestCapability( const char * ) override;
+    int                 TestCapability( const char * );
 
     void                startElementCbk(const char *pszName, const char **ppszAttr);
     void                endElementCbk(const char *pszName);
@@ -162,15 +162,15 @@ class OGRJMLWriterLayer : public OGRLayer
                                            bool bClassicGML );
                         ~OGRJMLWriterLayer();
 
-    void                ResetReading() override {}
-    OGRFeature *        GetNextFeature() override { return NULL; }
+    void                ResetReading() {}
+    OGRFeature *        GetNextFeature() { return NULL; }
 
-    OGRErr              ICreateFeature( OGRFeature *poFeature ) override;
-    OGRErr              CreateField( OGRFieldDefn *poField, int bApproxOK ) override;
+    OGRErr              ICreateFeature( OGRFeature *poFeature );
+    OGRErr              CreateField( OGRFieldDefn *poField, int bApproxOK );
 
-    OGRFeatureDefn *    GetLayerDefn() override { return poFeatureDefn; }
+    OGRFeatureDefn *    GetLayerDefn() { return poFeatureDefn; }
 
-    int                 TestCapability( const char * ) override;
+    int                 TestCapability( const char * );
 };
 
 /************************************************************************/
@@ -188,15 +188,15 @@ class OGRJMLDataset : public GDALDataset
                         OGRJMLDataset();
                         ~OGRJMLDataset();
 
-    int                 GetLayerCount() override { return poLayer != NULL ? 1 : 0; }
-    OGRLayer*           GetLayer( int ) override;
+    int                 GetLayerCount() { return poLayer != NULL ? 1 : 0; }
+    OGRLayer*           GetLayer( int );
 
     OGRLayer *          ICreateLayer( const char * pszLayerName,
                                     OGRSpatialReference *poSRS,
                                     OGRwkbGeometryType eType,
-                                    char ** papszOptions ) override;
+                                    char ** papszOptions );
 
-    int                 TestCapability( const char * ) override;
+    int                 TestCapability( const char * );
 
     static int          Identify( GDALOpenInfo* poOpenInfo );
     static GDALDataset* Open( GDALOpenInfo* poOpenInfo );

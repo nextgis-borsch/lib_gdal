@@ -28,7 +28,8 @@
 
 #include "ogr_oci.h"
 
-CPL_CVSID("$Id: ogrocidriver.cpp 35911 2016-10-24 15:03:26Z goatbar $");
+CPL_CVSID("$Id: ogrocidriver.cpp 34888 2016-08-03 19:59:19Z ilucena $");
+
 
 /************************************************************************/
 /*                        OGROCIDriverIdentify()                        */
@@ -78,6 +79,7 @@ static GDALDataset *OGROCIDriverCreate( const char * pszName,
     OGROCIDataSource    *poDS;
 
     poDS = new OGROCIDataSource();
+
 
     if( !poDS->Open( pszName, NULL, TRUE, TRUE ) )
     {

@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: mitab_utils.h 35911 2016-10-24 15:03:26Z goatbar $
+ * $Id: mitab_utils.h,v 1.10 2004-06-30 20:29:04 dmorissette Exp $
  *
  * Name:     mitab_utils.h
  * Project:  MapInfo TAB Read/Write library
@@ -80,6 +80,7 @@ int TABGenerateArc(OGRLineString *poLine, int numPoints,
                    double dXRadius, double dYRadius,
                    double dStartAngle, double dEndAngle);
 int TABCloseRing(OGRLineString *poRing);
+
 
 GBool TABAdjustFilenameExtension(char *pszFname);
 char *TABGetBasename(const char *pszFname);

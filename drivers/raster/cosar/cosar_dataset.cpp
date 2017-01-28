@@ -29,8 +29,6 @@
 
 #include <string.h>
 
-CPL_CVSID("$Id: cosar_dataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
-
 /* Various offsets, in bytes */
 // Commented out the unused defines.
 // #define BIB_OFFSET   0  /* Bytes in burst, valid only for ScanSAR */
@@ -39,7 +37,7 @@ const static int RS_OFFSET = 8;  /* Range Samples, the length of a range line */
 // #define AS_OFFSET    12 /* Azimuth Samples, the length of an azimuth column */
 // #define BI_OFFSET    16 /* Burst Index, the index number of the burst */
 const static int RTNB_OFFSET = 20;  /* Rangeline total number of bytes, incl. annot. */
-// #define TNL_OFFSET   24 /* Total Number of Lines */
+// #define TNL_OFFSET	24 /* Total Number of Lines */
 const static int MAGIC1_OFFSET = 28; /* Magic number 1: 0x43534152 */
 // #define MAGIC2_OFFSET 32 /* Magic number 2: Version number */
 
@@ -50,30 +48,31 @@ class COSARDataset : public GDALDataset
 {
 public:
         COSARDataset() : fp(NULL) { }
-        VSILFILE *fp;
+	VSILFILE *fp;
 
-        static GDALDataset *Open( GDALOpenInfo * );
+	static GDALDataset *Open( GDALOpenInfo * );
 };
 
 class COSARRasterBand : public GDALRasterBand
 {
     unsigned long nRTNB;
-
+    // int nBurstNumber;
 public:
-        COSARRasterBand(COSARDataset *, unsigned long nRTNB);
-        virtual CPLErr IReadBlock(int, int, void *) override;
+	COSARRasterBand(COSARDataset *, unsigned long nRTNB);
+	virtual CPLErr IReadBlock(int, int, void *);
 };
 
 /*****************************************************************************
  * COSARRasterBand Implementation
  *****************************************************************************/
 
-COSARRasterBand::COSARRasterBand( COSARDataset *pDS, unsigned long nRTNBIn ) :
-    nRTNB(nRTNBIn)
+COSARRasterBand::COSARRasterBand(COSARDataset *pDS, unsigned long nRTNBIn)  // :
+    // nBurstNumber(1)
 {
-        nBlockXSize = pDS->GetRasterXSize();
-        nBlockYSize = 1;
-        eDataType = GDT_CInt16;
+	this->nRTNB = nRTNBIn;
+	nBlockXSize = pDS->GetRasterXSize();
+	nBlockYSize = 1;
+	eDataType = GDT_CInt16;
 }
 
 CPLErr COSARRasterBand::IReadBlock(CPL_UNUSED int nBlockXOff,
@@ -136,6 +135,7 @@ CPLErr COSARRasterBand::IReadBlock(CPL_UNUSED int nBlockXOff,
     return CE_None;
 }
 
+
 /*****************************************************************************
  * COSARDataset Implementation
  *****************************************************************************/
@@ -188,6 +188,7 @@ GDALDataset *COSARDataset::Open( GDALOpenInfo * pOpenInfo ) {
     pDS->SetBand(1, new COSARRasterBand(pDS, nRTNB));
     return pDS;
 }
+
 
 /* register the driver with GDAL */
 void GDALRegister_COSAR()

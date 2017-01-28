@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: cpl_vsil_simple.cpp 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  VSI Virtual File System
  * Purpose:  Alternatve simplified implementation VSI*L File API that just
@@ -31,7 +32,7 @@
 
 #include "cpl_vsi.h"
 
-CPL_CVSID("$Id: cpl_vsil_simple.cpp 36888 2016-12-15 19:26:17Z goatbar $");
+CPL_CVSID("$Id: cpl_vsil_simple.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
 
 #ifdef WIN32
 #  include <sys/stat.h>
@@ -127,7 +128,7 @@ int VSIFCloseL( FILE * fp )
 int VSIFSeekL( FILE * fp, vsi_l_offset nOffset, int nWhence )
 
 {
-    return VSIFSeek(fp, static_ast<int>(nOffset), nWhence);
+    return VSIFSeek( fp, (int) nOffset, nWhence );
 }
 
 /************************************************************************/
@@ -137,7 +138,7 @@ int VSIFSeekL( FILE * fp, vsi_l_offset nOffset, int nWhence )
 vsi_l_offset VSIFTellL( FILE * fp )
 
 {
-    return static_cast<vsi_l_offset>(VSIFTell(fp));
+    return (vsi_l_offset) VSIFTell( fp );
 }
 
 /************************************************************************/

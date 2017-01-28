@@ -34,16 +34,13 @@
 #include "cpl_string.h"
 #include "cpl_minixml.h"
 
-CPL_CVSID("$Id: georaster_wrapper.cpp 36367 2016-11-21 01:25:12Z rouault $");
+CPL_CVSID("$Id: georaster_wrapper.cpp 34811 2016-07-28 15:15:05Z goatbar $");
 
 //  ---------------------------------------------------------------------------
 //                                                           GeoRasterWrapper()
 //  ---------------------------------------------------------------------------
 
-GeoRasterWrapper::GeoRasterWrapper() :
-    sPyramidResampling  ( "NN" ),
-    sCompressionType    ( "NONE" ),
-    sInterleaving       ( "BSQ" )
+GeoRasterWrapper::GeoRasterWrapper()
 {
     nRasterId           = -1;
     phMetadata          = NULL;
@@ -64,9 +61,11 @@ GeoRasterWrapper::GeoRasterWrapper() :
     dfYCoefficient[0]   = 0.0;
     dfYCoefficient[1]   = 1.0;
     dfYCoefficient[2]   = 0.0;
+    sCompressionType    = "NONE";
     nCompressQuality    = 75;
     bGenPyramid         = false;
     nPyramidLevels      = 0;
+    sPyramidResampling  = "NN";
     pahLocator          = NULL;
     pabyBlockBuf        = NULL;
     pabyCompressBuf     = NULL;
@@ -76,6 +75,7 @@ GeoRasterWrapper::GeoRasterWrapper() :
     nCurrentLevel       = -1;
     pahLevels           = NULL;
     nLevelOffset        = 0L;
+    sInterleaving       = "BSQ";
     bUpdate             = false;
     bInitializeIO       = false;
     bFlushMetadata      = false;
@@ -93,19 +93,13 @@ GeoRasterWrapper::GeoRasterWrapper() :
     bFlushBlock         = false;
     nFlushBlockSize     = 0L;
     bUniqueFound        = false;
+    sValueAttributeTab  = "";
     psNoDataList        = NULL;
     bWriteOnly          = false;
     bBlocking           = true;
     bAutoBlocking       = false;
     eModelCoordLocation = MCL_DEFAULT;
     phRPC               = NULL;
-    poConnection        = NULL;
-    iDefaultRedBand     = 0;
-    iDefaultGreenBand   = 0;
-    iDefaultBlueBand    = 0;
-    anULTCoordinate[0]  = 0;
-    anULTCoordinate[1]  = 0;
-    anULTCoordinate[2]  = 0;
 }
 
 //  ---------------------------------------------------------------------------
@@ -202,6 +196,7 @@ char** GeoRasterWrapper::ParseIdentificator( const char* pszStringID )
     }
 
     return papszParam;
+
 }
 
 //  ---------------------------------------------------------------------------
@@ -605,7 +600,9 @@ bool GeoRasterWrapper::Create( char* pszDescription,
             int nBlockYSize = nRowBlockSize;
             int nBlockBSize = nBandBlockSize;
 
-            OWStatement* poStmt = poConnection->CreateStatement(
+            OWStatement* poStmt;
+
+            poStmt = poConnection->CreateStatement(
                 "DECLARE\n"
                 "  dimensionSize    sdo_number_array;\n"
                 "  blockSize        sdo_number_array;\n"
@@ -738,7 +735,7 @@ bool GeoRasterWrapper::Create( char* pszDescription,
     //  Create Georaster Table if needed
     //  -------------------------------------------------------------------
 
-    OWStatement* poStmt = NULL;
+    OWStatement* poStmt;
 
     if( ! bUpdateIn )
     {
@@ -930,6 +927,7 @@ bool GeoRasterWrapper::Create( char* pszDescription,
         nRasterId  = nBindRID;
 
         OCIDescriptorFree( phLocator, OCI_DTYPE_LOB );
+
 
         delete poStmt;
 
@@ -1442,9 +1440,11 @@ bool GeoRasterWrapper::SetStatistics( int nBand,
 
 bool GeoRasterWrapper::HasColorMap( int nBand )
 {
+    CPLXMLNode *psLayers;
+
     int n = 1;
 
-    CPLXMLNode *psLayers = CPLGetXMLNode( phMetadata, "layerInfo.subLayer" );
+    psLayers = CPLGetXMLNode( phMetadata, "layerInfo.subLayer" );
 
     for( ; psLayers; psLayers = psLayers->psNext, n++ )
     {
@@ -1497,9 +1497,11 @@ void GeoRasterWrapper::GetColorMap( int nBand, GDALColorTable* poCT )
 {
     GDALColorEntry oEntry;
 
+    CPLXMLNode* psLayers;
+
     int n = 1;
 
-    CPLXMLNode* psLayers = CPLGetXMLNode( phMetadata, "layerInfo.subLayer" );
+    psLayers = CPLGetXMLNode( phMetadata, "layerInfo.subLayer" );
 
     for( ; psLayers; psLayers = psLayers->psNext, n++ )
     {
@@ -1590,6 +1592,7 @@ void GeoRasterWrapper::SetColorMap( int nBand, GDALColorTable* poCT )
             default:
                 nCount = poCT->GetColorEntryCount();
         }
+
 
         for( iColor = 0; iColor < nCount; iColor++ )
         {
@@ -2241,15 +2244,15 @@ void GeoRasterWrapper::GetSpatialReference()
     int i;
 
     CPLXMLNode* phSRSInfo = CPLGetXMLNode( phMetadata, "spatialReferenceInfo" );
-
+    
     if( phSRSInfo == NULL )
     {
         return;
     }
-
-    const char* pszMCL = CPLGetXMLValue( phSRSInfo, "modelCoordinateLocation",
+    
+    const char* pszMCL = CPLGetXMLValue( phSRSInfo, "modelCoordinateLocation", 
                                                     "CENTER" );
-
+    
     if( EQUAL( pszMCL, "CENTER" ) )
     {
       eModelCoordLocation = MCL_CENTER;
@@ -2260,7 +2263,7 @@ void GeoRasterWrapper::GetSpatialReference()
     }
 
     const char* pszModelType = CPLGetXMLValue( phSRSInfo, "modelType", "None" );
-
+    
     if( EQUAL( pszModelType, "FunctionalFitting" ) == false )
     {
         return;
@@ -2282,21 +2285,21 @@ void GeoRasterWrapper::GetSpatialReference()
 
     int nNumCoeff = atoi( CPLGetXMLValue( phPolynomial, "nCoefficients", "0" ));
 
-    if ( nNumCoeff != 3 )
+    if ( nNumCoeff != 3 ) 
     {
         return;
     }
 
-    const char* pszPolyCoeff = CPLGetXMLValue(phPolynomial,
-                                              "polynomialCoefficients", "None");
+    const char* pszPolyCoeff = CPLGetXMLValue( phPolynomial, 
+                                             "polynomialCoefficients", "None" );
 
     if ( EQUAL( pszPolyCoeff, "None" ) )
     {
         return;
     }
 
-    char** papszCeoff = CSLTokenizeString2( pszPolyCoeff, " ",
-                                            CSLT_STRIPLEADSPACES );
+    char** papszCeoff = CSLTokenizeString2( pszPolyCoeff, " ", 
+                                           CSLT_STRIPLEADSPACES );
 
     if( CSLCount( papszCeoff ) < 3 )
     {
@@ -2304,7 +2307,7 @@ void GeoRasterWrapper::GetSpatialReference()
     }
 
     double adfPCoef[3];
-
+    
     for( i = 0; i < 3; i++ )
     {
         adfPCoef[i] = CPLAtof( papszCeoff[i] );
@@ -2330,7 +2333,7 @@ void GeoRasterWrapper::GetSpatialReference()
     {
         return;
     }
-
+    
     double adfRCoef[3];
 
     for( i = 0; i < 3; i++ )
@@ -2345,7 +2348,7 @@ void GeoRasterWrapper::GetSpatialReference()
     double adfVal[6] = {1.0, 0.0, 0.0, 1.0, 0.0, 0.0};
 
     double dfDet = adfRCoef[1] * adfPCoef[2] - adfRCoef[2] * adfPCoef[1];
-
+   
     if( CPLIsEqual( dfDet, 0.0 ) )
     {
         dfDet = 0.0000000001; // to avoid divide by zero
@@ -2362,26 +2365,26 @@ void GeoRasterWrapper::GetSpatialReference()
     //  -------------------------------------------------------------------
     //  Adjust Model Coordinate Location
     //  -------------------------------------------------------------------
-
+    
     if ( eModelCoordLocation == MCL_CENTER )
     {
         adfVal[2] -= adfVal[0] / 2.0;
         adfVal[5] -= adfVal[4] / 2.0;
     }
 /*
-    CPLDebug("GEOR", "m = [%g, %g, %g, %g, %g, %g]", adfRCoef[1], adfRCoef[2],
+    CPLDebug("GEOR", "m = [%g, %g, %g, %g, %g, %g]", adfRCoef[1], adfRCoef[2], 
              adfRCoef[0], adfPCoef[1], adfPCoef[2], adfPCoef[0]);
-
-    CPLDebug("GEOR", "i = [%g, %g, %g, %g, %g, %g]", adfVal[0], adfVal[1],
+    
+    CPLDebug("GEOR", "i = [%g, %g, %g, %g, %g, %g]", adfVal[0], adfVal[1], 
              adfVal[2], adfVal[3], adfVal[4], adfVal[5]);
-*/
+*/    
     dfXCoefficient[0] = adfVal[0];
     dfXCoefficient[1] = adfVal[1];
     dfXCoefficient[2] = adfVal[2];
     dfYCoefficient[0] = adfVal[3];
     dfYCoefficient[1] = adfVal[4];
     dfYCoefficient[2] = adfVal[5];
-
+    
     //  -------------------------------------------------------------------
     //  Apply ULTCoordinate
     //  -------------------------------------------------------------------
@@ -3813,6 +3816,7 @@ void GeoRasterWrapper::UncompressJpeg( unsigned long nInSize )
                              sDInfo.dc_huff_tbl_ptrs[n],
                              nCompressQuality );
         }
+
     }
 
     jpeg_vsiio_src( &sDInfo, fpImage );

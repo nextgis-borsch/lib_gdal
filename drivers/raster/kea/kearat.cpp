@@ -1,4 +1,5 @@
 /*
+ * $Id: kearat.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *  kearat.cpp
  *
  *  Created by Pete Bunting on 01/08/2012.
@@ -28,8 +29,6 @@
  */
 
 #include "kearat.h"
-
-CPL_CVSID("$Id: kearat.cpp 36776 2016-12-10 11:17:47Z rouault $");
 
 KEARasterAttributeTable::KEARasterAttributeTable(kealib::KEAAttributeTable *poKEATable)
 {
@@ -182,10 +181,12 @@ GDALDefaultRasterAttributeTable *KEARasterAttributeTable::Clone() const
     return poRAT;
 }
 
+
 int KEARasterAttributeTable::GetColumnCount() const
 {
     return (int)m_aoFields.size();
 }
+
 
 const char *KEARasterAttributeTable::GetNameOfCol(int nCol) const
 {
@@ -248,6 +249,7 @@ GDALRATFieldType KEARasterAttributeTable::GetTypeOfCol( int nCol ) const
     }
     return eGDALType;
 }
+
 
 int KEARasterAttributeTable::GetColOfUsage( GDALRATFieldUsage eUsage ) const
 {
@@ -575,7 +577,7 @@ CPLErr KEARasterAttributeTable::ValuesIO(GDALRWFlag eRWFlag, int iField, int iSt
             }
             catch(kealib::KEAException &e)
             {
-                //fprintf(stderr,"Failed to read/write attribute table: %s %d %d %ld\n", e.what(), iStartRow, iLength, m_poKEATable->getSize() );
+                fprintf(stderr,"Failed to read/write attribute table: %s %d %d %ld\n", e.what(), iStartRow, iLength, m_poKEATable->getSize() );
                 CPLError( CE_Failure, CPLE_AppDefined, "Failed to read/write attribute table: %s", e.what() );
                 return CE_Failure;
             }
@@ -727,6 +729,7 @@ CPLErr KEARasterAttributeTable::ValuesIO(GDALRWFlag eRWFlag, int iField, int iSt
                 return eVal;
             }
 
+
             if( eRWFlag == GF_Read )
             {
                 // convert ints back to strings
@@ -773,6 +776,7 @@ CPLErr KEARasterAttributeTable::ValuesIO(GDALRWFlag eRWFlag, int iField, int iSt
                 }
             }
             CPLFree(padfColData);
+
         }
         break;
         case kealib::kea_att_string:

@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrcsvdriver.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  CSV Translator
  * Purpose:  Implements OGRCSVDriver.
@@ -32,7 +33,7 @@
 #include "cpl_multiproc.h"
 #include <map>
 
-CPL_CVSID("$Id: ogrcsvdriver.cpp 35910 2016-10-24 14:08:24Z goatbar $");
+CPL_CVSID("$Id: ogrcsvdriver.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 static CPLMutex* hMutex = NULL;
 static std::map<CPLString, GDALDataset*> *poMap = NULL;
@@ -133,7 +134,7 @@ void OGRCSVDriverRemoveFromMap(const char* pszName, GDALDataset* poDS)
 static GDALDataset *OGRCSVDriverOpen( GDALOpenInfo* poOpenInfo )
 
 {
-    if( !OGRCSVDriverIdentify(poOpenInfo) )
+    if( OGRCSVDriverIdentify(poOpenInfo) == FALSE )
         return NULL;
 
     if( poMap != NULL )
@@ -266,6 +267,7 @@ static CPLErr OGRCSVDriverDelete( const char *pszFilename )
     return CE_Failure;
 }
 
+
 /************************************************************************/
 /*                           OGRCSVDriverUnload()                       */
 /************************************************************************/
@@ -369,7 +371,7 @@ void RegisterOGRCSV()
     poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
     poDriver->SetMetadataItem( GDAL_DMD_CREATIONFIELDDATATYPES,
                                "Integer Integer64 Real String Date DateTime "
-                               "Time IntegerList Integer64List RealList StringList" );
+                               "Time" );
 
     poDriver->pfnOpen = OGRCSVDriverOpen;
     poDriver->pfnIdentify = OGRCSVDriverIdentify;

@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrgmtlayer.cpp 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRGmtLayer class.
@@ -30,9 +31,7 @@
 #include "cpl_conv.h"
 #include "ogr_p.h"
 
-#include <algorithm>
-
-CPL_CVSID("$Id: ogrgmtlayer.cpp 36024 2016-10-29 12:53:38Z goatbar $");
+CPL_CVSID("$Id: ogrgmtlayer.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
 
 /************************************************************************/
 /*                            OGRGmtLayer()                             */
@@ -47,10 +46,18 @@ OGRGmtLayer::OGRGmtLayer( const char * pszFilename, int bUpdateIn ) :
     bHeaderComplete(CPL_TO_BOOL(!bUpdate)),
     bRegionComplete(false),
     nRegionOffset(0),
-    fp(VSIFOpenL( pszFilename, (bUpdateIn ? "r+" : "r" ))),
     papszKeyedValues(NULL),
-    bValidFile(false)
+    bValidFile(FALSE)
 {
+
+/* -------------------------------------------------------------------- */
+/*      Open file.                                                      */
+/* -------------------------------------------------------------------- */
+    if( bUpdate )
+        fp = VSIFOpenL( pszFilename, "r+" );
+    else
+        fp = VSIFOpenL( pszFilename, "r" );
+
     if( fp == NULL )
         return;
 
@@ -70,7 +77,7 @@ OGRGmtLayer::OGRGmtLayer( const char * pszFilename, int bUpdateIn ) :
     {
         if( strstr( osLine, "FEATURE_DATA" ) )
         {
-            bHeaderComplete = true;
+            bHeaderComplete = TRUE;
             ReadLine();
             break;
         }
@@ -185,7 +192,7 @@ OGRGmtLayer::OGRGmtLayer( const char * pszFilename, int bUpdateIn ) :
             sRegion.MaxY = CPLAtofM(papszTokens[3]);
         }
 
-        bRegionComplete = true;
+        bRegionComplete = TRUE;
 
         CSLDestroy( papszTokens );
     }
@@ -199,7 +206,7 @@ OGRGmtLayer::OGRGmtLayer( const char * pszFilename, int bUpdateIn ) :
                                                    TRUE, TRUE );
         char **papszFT = CSLTokenizeStringComplex( osFieldTypes, "|",
                                                    TRUE, TRUE );
-        const int nFieldCount = std::max(CSLCount(papszFN), CSLCount(papszFT));
+        const int nFieldCount = MAX(CSLCount(papszFN),CSLCount(papszFT));
 
         for( int iField = 0; iField < nFieldCount; iField++ )
         {
@@ -227,7 +234,7 @@ OGRGmtLayer::OGRGmtLayer( const char * pszFilename, int bUpdateIn ) :
         CSLDestroy( papszFT );
     }
 
-    bValidFile = true;
+    bValidFile = TRUE;
 }
 
 /************************************************************************/
@@ -281,7 +288,7 @@ OGRGmtLayer::~OGRGmtLayer()
 /*      papszKeyedValues.                                               */
 /************************************************************************/
 
-bool OGRGmtLayer::ReadLine()
+int OGRGmtLayer::ReadLine()
 
 {
 /* -------------------------------------------------------------------- */
@@ -299,7 +306,7 @@ bool OGRGmtLayer::ReadLine()
 /* -------------------------------------------------------------------- */
     const char *pszLine = CPLReadLineL( fp );
     if( pszLine == NULL )
-        return false; // end of file.
+        return FALSE; // end of file.
 
     osLine = pszLine;
 
@@ -308,7 +315,7 @@ bool OGRGmtLayer::ReadLine()
 /* -------------------------------------------------------------------- */
 
     if( osLine[0] != '#' || osLine.find_first_of('@') == std::string::npos )
-        return true;
+        return TRUE;
 
     for( size_t i = 0; i < osLine.length(); i++ )
     {
@@ -316,8 +323,8 @@ bool OGRGmtLayer::ReadLine()
         {
             bool bInQuotes = false;
 
-            size_t iValEnd = i+2;  // Used after for.
-            for( ; iValEnd < osLine.length(); iValEnd++ )
+            size_t iValEnd;
+            for( iValEnd = i+2; iValEnd < osLine.length(); iValEnd++ )
             {
                 if( !bInQuotes && isspace((unsigned char)osLine[iValEnd]) )
                     break;
@@ -347,7 +354,7 @@ bool OGRGmtLayer::ReadLine()
         }
     }
 
-    return true;
+    return TRUE;
 }
 
 /************************************************************************/
@@ -369,11 +376,11 @@ void OGRGmtLayer::ResetReading()
 /*                          ScanAheadForHole()                          */
 /*                                                                      */
 /*      Scan ahead to see if the next geometry is a hole.  If so        */
-/*      return true, otherwise seek back to where we were and return    */
-/*      false.                                                          */
+/*      return TRUE, otherwise seek back to where we were and return    */
+/*      FALSE.                                                          */
 /************************************************************************/
 
-bool OGRGmtLayer::ScanAheadForHole()
+int OGRGmtLayer::ScanAheadForHole()
 
 {
     const CPLString osSavedLine = osLine;
@@ -382,7 +389,7 @@ bool OGRGmtLayer::ScanAheadForHole()
     while( ReadLine() && osLine[0] == '#' )
     {
         if( papszKeyedValues != NULL && papszKeyedValues[0][0] == 'H' )
-            return true;
+            return TRUE;
     }
 
     VSIFSeekL( fp, nSavedLocation, SEEK_SET );
@@ -392,18 +399,18 @@ bool OGRGmtLayer::ScanAheadForHole()
     // assume it does not matter since this method is only called
     // when processing the '>' line.
 
-    return false;
+    return FALSE;
 }
 
 /************************************************************************/
 /*                           NextIsFeature()                            */
 /*                                                                      */
-/*      Returns true if the next line is a feature attribute line.      */
+/*      Returns TRUE if the next line is a feature attribute line.      */
 /*      This generally indicates the end of a multilinestring or        */
 /*      multipolygon feature.                                           */
 /************************************************************************/
 
-bool OGRGmtLayer::NextIsFeature()
+int OGRGmtLayer::NextIsFeature()
 
 {
     const CPLString osSavedLine = osLine;
@@ -433,7 +440,7 @@ OGRFeature *OGRGmtLayer::GetNextRawFeature()
 
 {
 #if 0
-    bool bMultiVertex =
+    int bMultiVertex =
         poFeatureDefn->GetGeomType() != wkbPoint
         && poFeatureDefn->GetGeomType() != wkbUnknown;
 #endif
@@ -496,7 +503,7 @@ OGRFeature *OGRGmtLayer::GetNextRawFeature()
             else if( poFeatureDefn->GetGeomType() == wkbUnknown )
             {
                 poFeatureDefn->SetGeomType( wkbLineString );
-                // bMultiVertex = true;
+                /* bMultiVertex = TRUE; */
             }
         }
         else if( osLine[0] == '#' )
@@ -512,11 +519,11 @@ OGRFeature *OGRGmtLayer::GetNextRawFeature()
         else
         {
             // Parse point line.
-            double dfX = 0.0;
-            double dfY = 0.0;
+            double dfX;
+            double dfY;
             double dfZ = 0.0;
-            const int nDim =
-                CPLsscanf( osLine, "%lf %lf %lf", &dfX, &dfY, &dfZ );
+            const int nDim
+                = CPLsscanf( osLine, "%lf %lf %lf", &dfX, &dfY, &dfZ );
 
             if( nDim >= 2 )
             {
@@ -561,6 +568,7 @@ OGRFeature *OGRGmtLayer::GetNextRawFeature()
                         poGeom = new OGRPoint();
                         break;
                     }
+
                 }
 
                 switch( wkbFlatten(poGeom->getGeometryType()) )
@@ -624,7 +632,7 @@ OGRFeature *OGRGmtLayer::GetNextRawFeature()
                   break;
 
                   default:
-                    CPLAssert( false );
+                    CPLAssert( FALSE );
                 }
             }
         }
@@ -789,8 +797,8 @@ OGRErr OGRGmtLayer::CompleteHeader( OGRGeometry *poThisGeom )
 /* -------------------------------------------------------------------- */
     VSIFPrintfL( fp, "# FEATURE_DATA\n" );
 
-    bHeaderComplete = true;
-    bRegionComplete = true; // no feature written, so we know them all!
+    bHeaderComplete = TRUE;
+    bRegionComplete = TRUE; // no feature written, so we know them all!
 
     return OGRERR_NONE;
 }
@@ -882,13 +890,13 @@ OGRErr OGRGmtLayer::ICreateFeature( OGRFeature *poFeature )
 /* -------------------------------------------------------------------- */
 /*      Write Geometry                                                  */
 /* -------------------------------------------------------------------- */
-    return WriteGeometry( reinterpret_cast<OGRGeometryH>(poGeom), true );
+    return WriteGeometry( reinterpret_cast<OGRGeometryH>(poGeom), TRUE );
 }
 
 /************************************************************************/
 /*                           WriteGeometry()                            */
 /*                                                                      */
-/*      Write a geometry to the file.  If bHaveAngle is true it         */
+/*      Write a geometry to the file.  If bHaveAngle is TRUE it         */
 /*      means the angle bracket preceding the point stream has          */
 /*      already been written out.                                       */
 /*                                                                      */
@@ -896,7 +904,7 @@ OGRErr OGRGmtLayer::ICreateFeature( OGRFeature *poFeature )
 /*      simplified access to vertices and children geometries.          */
 /************************************************************************/
 
-OGRErr OGRGmtLayer::WriteGeometry( OGRGeometryH hGeom, bool bHaveAngle )
+OGRErr OGRGmtLayer::WriteGeometry( OGRGeometryH hGeom, int bHaveAngle )
 
 {
 /* -------------------------------------------------------------------- */
@@ -918,7 +926,7 @@ OGRErr OGRGmtLayer::WriteGeometry( OGRGeometryH hGeom, bool bHaveAngle )
                 if( !bHaveAngle )
                 {
                     VSIFPrintfL( fp, ">\n" );
-                    bHaveAngle = true;
+                    bHaveAngle = TRUE;
                 }
                 if( iGeom == 0 )
                     VSIFPrintfL( fp, "# @P\n" );
@@ -928,7 +936,7 @@ OGRErr OGRGmtLayer::WriteGeometry( OGRGeometryH hGeom, bool bHaveAngle )
 
             eErr = WriteGeometry( OGR_G_GetGeometryRef( hGeom, iGeom ),
                                   bHaveAngle );
-            bHaveAngle = false;
+            bHaveAngle = FALSE;
         }
         return eErr;
     }

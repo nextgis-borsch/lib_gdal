@@ -115,7 +115,7 @@ set(LIB_CSOURCES
     cpl_aws.cpp
     cpl_sha256.cpp
     cpl_vsil_crypt.cpp
-    cpl_vsi_error.cpp    
+    cpl_vsi_error.cpp
     cpl_vsil_curl.cpp
     cpl_cpu_features.cpp
 )
@@ -126,7 +126,7 @@ else()
     list(APPEND LIB_CSOURCES cpl_vsil_unix_stdio_64.cpp)
 endif()
 
-#check odbc
+# Check odbc
 if(WITH_ODBC)
     list(APPEND LIB_HHEADERS_PRIV cpl_odbc.h)
     list(APPEND LIB_CSOURCES cpl_odbc.cpp)
@@ -137,7 +137,7 @@ if(WITH_XMLREFORMAT)
 endif()
 
 if(WITH_ONLY_CRYPTODLL_ALG)
-    #TODO: check cryptopp func
+    # TODO: Check cryptopp func
     add_definitions(-DUSE_ONLY_CRYPTODLL_ALG)
 endif()
 
@@ -145,14 +145,14 @@ if(ICONV_FOUND)
     list(APPEND LIB_CSOURCES cpl_recode_iconv.cpp )
 endif()
 
-#check zip and internal zip
+# Check zip and internal zip
 if(ZLIB_FOUND)
     list(APPEND LIB_HHEADERS_PRIV
         cpl_minizip_ioapi.h
         cpl_minizip_unzip.h
         cpl_minizip_zip.h
     )
-    list(APPEND LIB_CSOURCES 
+    list(APPEND LIB_CSOURCES
         cpl_vsil_gzip.cpp
         cpl_minizip_ioapi.cpp
         cpl_minizip_unzip.cpp
@@ -160,7 +160,7 @@ if(ZLIB_FOUND)
     )
 endif()
 
-#check curl
+# Check curl is present
 if(CURL_FOUND)
   list(APPEND LIB_HHEADERS_PRIV cpl_vsil_curl_priv.h)
   list(APPEND LIB_CSOURCES
@@ -169,13 +169,15 @@ if(CURL_FOUND)
 endif()
 
 add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
+if(DEPENDENCY_LIB)
+    add_dependencies(${TARGET_NAME} ${DEPENDENCY_LIB})
+endif()
 
-# build target
+# Build target
 set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
-set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
+set(DEPENDENCY_LIB ${DEPENDENCY_LIB} ${TARGET_NAME} PARENT_SCOPE)
 
-# install headers
+# Install headers
 if(NOT SKIP_INSTALL_HEADERS AND NOT SKIP_INSTALL_ALL )
     install(FILES ${LIB_HHEADERS} DESTINATION ${INSTALL_INC_DIR} COMPONENT headers)
-endif() 
-
+endif()

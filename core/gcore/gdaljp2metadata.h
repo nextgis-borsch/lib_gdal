@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdaljp2metadata.h 36411 2016-11-21 22:03:48Z rouault $
+ * $Id: gdaljp2metadata.h 33694 2016-03-10 17:54:30Z goatbar $
  *
  * Project:  GDAL
  * Purpose:  JP2 Box Reader (and GMLJP2 Interpreter)
@@ -31,8 +31,6 @@
 #ifndef GDAL_JP2READER_H_INCLUDED
 #define GDAL_JP2READER_H_INCLUDED
 
-#ifndef DOXYGEN_SKIP
-
 #include "cpl_conv.h"
 #include "cpl_minixml.h"
 #include "cpl_vsi.h"
@@ -60,7 +58,7 @@ class CPL_DLL GDALJP2Box
     GByte      *pabyData;
 
 public:
-    explicit    GDALJP2Box( VSILFILE * = NULL );
+                GDALJP2Box( VSILFILE * = NULL );
                 ~GDALJP2Box();
 
     int         SetOffset( GIntBig nNewOffset );
@@ -143,9 +141,9 @@ private:
 public:
     char  **papszGMLMetadata;
 
-    bool    bHaveGeoTransform;
+    int     bHaveGeoTransform;
     double  adfGeoTransform[6];
-    bool    bPixelIsPoint;
+    int     bPixelIsPoint;
 
     char   *pszProjection;
 
@@ -169,12 +167,8 @@ public:
     int     ParseMSIG();
     int     ParseGMLCoverageDesc();
 
-    int     ReadAndParse( VSILFILE * fpVSIL,
-                          int nGEOJP2Index = 0, int nGMLJP2Index = 1,
-                          int nMSIGIndex = 2, int *pnIndexUsed = NULL );
-    int     ReadAndParse( const char *pszFilename, int nGEOJP2Index = 0,
-                          int nGMLJP2Index = 1, int nMSIGIndex = 2,
-                          int nWorldFileIndex = 3, int *pnIndexUsed = NULL );
+    int     ReadAndParse( VSILFILE * fpVSIL );
+    int     ReadAndParse( const char *pszFilename );
 
     // Write oriented.
     void    SetProjection( const char *pszWKT );
@@ -198,7 +192,5 @@ public:
     static int   IsUUID_MSI(const GByte *abyUUID);
     static int   IsUUID_XMP(const GByte *abyUUID);
 };
-
-#endif /* #ifndef DOXYGEN_SKIP */
 
 #endif /* ndef GDAL_JP2READER_H_INCLUDED */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrsf_frmts.h 36427 2016-11-22 12:56:01Z rouault $
+ * $Id: ogrsf_frmts.h 35040 2016-08-10 14:02:46Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Classes related to format registration, and file opening.
@@ -42,13 +42,11 @@
  * Classes related to registration of format support, and opening datasets.
  */
 
-//! @cond Doxygen_Suppress
 #if !defined(GDAL_COMPILATION) && !defined(SUPPRESS_DEPRECATION_WARNINGS)
 #define OGR_DEPRECATED(x) CPL_WARN_DEPRECATED(x)
 #else
 #define OGR_DEPRECATED(x)
 #endif
-//! @endcond
 
 class OGRLayerAttrIndex;
 class OGRSFDriver;
@@ -71,7 +69,6 @@ class CPL_DLL OGRLayer : public GDALMajorObject
     void         ConvertGeomsIfNecessary( OGRFeature *poFeature );
 
   protected:
-//! @cond Doxygen_Suppress
     int          m_bFilterIsEnvelope;
     OGRGeometry *m_poFilterGeom;
     OGRPreparedGeometry *m_pPreparedFilterGeom; /* m_poFilterGeom compiled as a prepared geometry */
@@ -84,7 +81,6 @@ class CPL_DLL OGRLayer : public GDALMajorObject
     int          InstallFilter( OGRGeometry * );
 
     OGRErr       GetExtentInternal(int iGeomField, OGREnvelope *psExtent, int bForce );
-//! @endcond
 
     virtual OGRErr      ISetFeature( OGRFeature *poFeature ) CPL_WARN_UNUSED_RESULT;
     virtual OGRErr      ICreateFeature( OGRFeature *poFeature )  CPL_WARN_UNUSED_RESULT;
@@ -193,23 +189,19 @@ class CPL_DLL OGRLayer : public GDALMajorObject
     int                 Reference();
     int                 Dereference();
     int                 GetRefCount() const;
-//! @cond Doxygen_Suppress
+
     GIntBig             GetFeaturesRead();
-//! @endcond
 
     /* non virtual : convenience wrapper for ReorderFields() */
     OGRErr              ReorderField( int iOldFieldPos, int iNewFieldPos );
 
-//! @cond Doxygen_Suppress
     int                 AttributeFilterEvaluationNeedsGeometry();
 
     /* consider these private */
     OGRErr               InitializeIndexSupport( const char * );
     OGRLayerAttrIndex   *GetIndex() { return m_poAttrIndex; }
-//! @endcond
 
  protected:
-//! @cond Doxygen_Suppress
     OGRStyleTable       *m_poStyleTable;
     OGRFeatureQuery     *m_poAttrQuery;
     char                *m_pszAttrQueryString;
@@ -218,7 +210,6 @@ class CPL_DLL OGRLayer : public GDALMajorObject
     int                  m_nRefCount;
 
     GIntBig              m_nFeaturesRead;
-//! @endcond
 };
 
 /************************************************************************/
@@ -248,11 +239,10 @@ class CPL_DLL OGRDataSource : public GDALDataset
 {
 public:
                         OGRDataSource();
-//! @cond Doxygen_Suppress
+
     virtual const char  *GetName() OGR_DEPRECATED("Use GDALDataset class instead") = 0;
 
     static void         DestroyDataSource( OGRDataSource * ) OGR_DEPRECATED("Use GDALDataset class instead");
-//! @endcond
 };
 
 /************************************************************************/
@@ -280,7 +270,6 @@ public:
 class CPL_DLL OGRSFDriver : public GDALDriver
 {
   public:
-//! @cond Doxygen_Suppress
     virtual     ~OGRSFDriver();
 
     virtual const char  *GetName() OGR_DEPRECATED("Use GDALDriver class instead") = 0;
@@ -292,8 +281,8 @@ class CPL_DLL OGRSFDriver : public GDALDriver
     virtual OGRDataSource *CreateDataSource( const char *pszName,
                                              char ** = NULL ) OGR_DEPRECATED("Use GDALDriver class instead");
     virtual OGRErr      DeleteDataSource( const char *pszName ) OGR_DEPRECATED("Use GDALDriver class instead");
-//! @endcond
 };
+
 
 /************************************************************************/
 /*                         OGRSFDriverRegistrar                         */
@@ -327,24 +316,17 @@ class CPL_DLL OGRSFDriverRegistrar
                                           const char * pszName );
 
   public:
-//! @cond Doxygen_Suppress
+
     static OGRSFDriverRegistrar *GetRegistrar() OGR_DEPRECATED("Use GDALDriverManager class instead");
 
-    // cppcheck-suppress functionStatic
     void        RegisterDriver( OGRSFDriver * poDriver ) OGR_DEPRECATED("Use GDALDriverManager class instead");
 
-    // cppcheck-suppress functionStatic
     int         GetDriverCount( void ) OGR_DEPRECATED("Use GDALDriverManager class instead");
-    // cppcheck-suppress functionStatic
     GDALDriver *GetDriver( int iDriver ) OGR_DEPRECATED("Use GDALDriverManager class instead");
-    // cppcheck-suppress functionStatic
     GDALDriver *GetDriverByName( const char * ) OGR_DEPRECATED("Use GDALDriverManager class instead");
 
-    // cppcheck-suppress functionStatic
     int         GetOpenDSCount() OGR_DEPRECATED("Use GDALDriverManager class instead");
-    // cppcheck-suppress functionStatic
     OGRDataSource *GetOpenDS( int ) OGR_DEPRECATED("Use GDALDriverManager class instead");
-//! @endcond
 };
 
 /* -------------------------------------------------------------------- */
@@ -352,8 +334,6 @@ class CPL_DLL OGRSFDriverRegistrar
 /* -------------------------------------------------------------------- */
 CPL_C_START
 void CPL_DLL OGRRegisterAll();
-
-//! @cond Doxygen_Suppress
 void OGRRegisterAllInternal();
 
 void CPL_DLL RegisterOGRFileGDB();
@@ -392,7 +372,6 @@ void CPL_DLL RegisterOGRGRASS();
 void CPL_DLL RegisterOGRPGeo();
 void CPL_DLL RegisterOGRDXFDWG();
 void CPL_DLL RegisterOGRDXF();
-void CPL_DLL RegisterOGRCAD();
 void CPL_DLL RegisterOGRDWG();
 void CPL_DLL RegisterOGRSDE();
 void CPL_DLL RegisterOGRIDB();
@@ -434,6 +413,7 @@ void CPL_DLL RegisterOGRElastic();
 void CPL_DLL RegisterOGRGeoPackage();
 void CPL_DLL RegisterOGRWalk();
 void CPL_DLL RegisterOGRCarto();
+void CPL_DLL RegisterOGRCartoDB(); // Just kept for C ABI stability
 void CPL_DLL RegisterOGRAmigoCloud();
 void CPL_DLL RegisterOGRSXF();
 void CPL_DLL RegisterOGROpenFileGDB();
@@ -443,9 +423,6 @@ void CPL_DLL RegisterOGRPLSCENES();
 void CPL_DLL RegisterOGRCSW();
 void CPL_DLL RegisterOGRMongoDB();
 void CPL_DLL RegisterOGRVDV();
-void CPL_DLL RegisterOGRGMLAS();
-// @endcond
-
 CPL_C_END
 
 #endif /* ndef OGRSF_FRMTS_H_INCLUDED */

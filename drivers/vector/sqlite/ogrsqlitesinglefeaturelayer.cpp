@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrsqlitesinglefeaturelayer.cpp 32011 2015-12-06 10:19:18Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRSQLiteSingleFeatureLayer class.
@@ -30,24 +31,25 @@
 #include "cpl_string.h"
 #include "ogr_sqlite.h"
 
-CPL_CVSID("$Id: ogrsqlitesinglefeaturelayer.cpp 35201 2016-08-25 13:48:52Z goatbar $");
+CPL_CVSID("$Id: ogrsqlitesinglefeaturelayer.cpp 32011 2015-12-06 10:19:18Z rouault $");
 
 /************************************************************************/
 /*                    OGRSQLiteSingleFeatureLayer()                     */
 /************************************************************************/
 
 OGRSQLiteSingleFeatureLayer::OGRSQLiteSingleFeatureLayer(
-    const char* pszLayerName,
-    int nValIn ) :
-    nVal(nValIn),
-    pszVal(NULL),
-    poFeatureDefn(new OGRFeatureDefn( "SELECT" )),
-    iNextShapeId(0)
+                                                     const char* pszLayerName,
+                                                     int nValIn )
 {
+    poFeatureDefn = new OGRFeatureDefn( "SELECT" );
     SetDescription( poFeatureDefn->GetName() );
     poFeatureDefn->Reference();
     OGRFieldDefn oField( pszLayerName, OFTInteger );
     poFeatureDefn->AddFieldDefn( &oField );
+
+    iNextShapeId = 0;
+    this->nVal = nValIn;
+    pszVal = NULL;
 }
 
 /************************************************************************/
@@ -55,16 +57,17 @@ OGRSQLiteSingleFeatureLayer::OGRSQLiteSingleFeatureLayer(
 /************************************************************************/
 
 OGRSQLiteSingleFeatureLayer::OGRSQLiteSingleFeatureLayer(
-    const char* pszLayerName,
-    const char *pszValIn ) :
-    nVal(0),
-    pszVal(CPLStrdup(pszValIn)),
-    poFeatureDefn(new OGRFeatureDefn( "SELECT" )),
-    iNextShapeId(0)
+                                                     const char* pszLayerName,
+                                                     const char *pszValIn )
 {
+    poFeatureDefn = new OGRFeatureDefn( "SELECT" );
     poFeatureDefn->Reference();
     OGRFieldDefn oField( pszLayerName, OFTString );
     poFeatureDefn->AddFieldDefn( &oField );
+
+    iNextShapeId = 0;
+    nVal = 0;
+    this->pszVal = CPLStrdup(pszValIn);
 }
 
 /************************************************************************/

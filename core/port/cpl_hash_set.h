@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_hash_set.h 34931 2016-08-05 17:13:05Z rouault $
+ * $Id: cpl_hash_set.h 33666 2016-03-07 05:21:07Z goatbar $
  *
  * Name:     cpl_hash_set.h
  * Project:  CPL - Common Portability Library
@@ -48,19 +48,14 @@ CPL_C_START
 
 /* Types */
 
-/** Opaque type for a hash set */
 typedef struct _CPLHashSet CPLHashSet;
 
-/** CPLHashSetHashFunc */
 typedef unsigned long (*CPLHashSetHashFunc)(const void* elt);
 
-/** CPLHashSetEqualFunc */
 typedef int          (*CPLHashSetEqualFunc)(const void* elt1, const void* elt2);
 
-/** CPLHashSetFreeEltFunc */
 typedef void         (*CPLHashSetFreeEltFunc)(void* elt);
 
-/** CPLHashSetIterEltFunc */
 typedef int          (*CPLHashSetIterEltFunc)(void* elt, void* user_data);
 
 /* Functions */

@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: s57filecollector.cpp 33712 2016-03-12 10:51:56Z goatbar $
  *
  * Project:  S-57 Translator
  * Purpose:  Implements S57FileCollector() function.  This function collects
@@ -32,7 +33,7 @@
 #include "cpl_string.h"
 #include "s57.h"
 
-CPL_CVSID("$Id: s57filecollector.cpp 35911 2016-10-24 15:03:26Z goatbar $");
+CPL_CVSID("$Id: s57filecollector.cpp 33712 2016-03-12 10:51:56Z goatbar $");
 
 /************************************************************************/
 /*                          S57FileCollector()                          */
@@ -112,6 +113,7 @@ char **S57FileCollector( const char *pszDataset )
         papszRetList = CSLAddString( papszRetList, pszDataset );
         return papszRetList;
     }
+
 
 /* -------------------------------------------------------------------- */
 /*      We presumably have a catalog.  It contains paths to files       */

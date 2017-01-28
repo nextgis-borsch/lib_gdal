@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrodbctablelayer.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRODBCTableLayer class, access to an existing table.
@@ -30,23 +31,29 @@
 #include "cpl_conv.h"
 #include "ogr_odbc.h"
 
-CPL_CVSID("$Id: ogrodbctablelayer.cpp 35911 2016-10-24 15:03:26Z goatbar $");
+CPL_CVSID("$Id: ogrodbctablelayer.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 /************************************************************************/
 /*                          OGRODBCTableLayer()                         */
 /************************************************************************/
 
-OGRODBCTableLayer::OGRODBCTableLayer( OGRODBCDataSource *poDSIn ) :
-    pszQuery(NULL),
-    bHaveSpatialExtents(FALSE),
-    pszTableName(NULL),
-    pszSchemaName(NULL)
+OGRODBCTableLayer::OGRODBCTableLayer( OGRODBCDataSource *poDSIn )
+
 {
     poDS = poDSIn;
+
+    pszQuery = NULL;
+
+    bUpdateAccess = TRUE;
+    bHaveSpatialExtents = FALSE;
+
     iNextShapeId = 0;
 
     nSRSId = -1;
 
     poFeatureDefn = NULL;
+
+    pszTableName = NULL;
+    pszSchemaName = NULL;
 }
 
 /************************************************************************/
@@ -180,6 +187,7 @@ CPLErr OGRODBCTableLayer::Initialize( const char *pszLayerName,
         }
     }
 
+
     return CE_None;
 }
 
@@ -304,18 +312,19 @@ OGRErr OGRODBCTableLayer::SetAttributeFilter( const char *pszQueryIn )
     CPLFree(m_pszAttrQueryString);
     m_pszAttrQueryString = (pszQueryIn) ? CPLStrdup(pszQueryIn) : NULL;
 
-    if( (pszQueryIn == NULL && pszQuery == NULL)
-        || (pszQueryIn != NULL && pszQuery != NULL
-            && EQUAL(pszQueryIn, pszQuery)) )
+    if( (pszQueryIn == NULL && this->pszQuery == NULL)
+        || (pszQueryIn != NULL && this->pszQuery != NULL
+            && EQUAL(pszQueryIn,this->pszQuery)) )
         return OGRERR_NONE;
 
-    CPLFree( pszQuery );
-    pszQuery = pszQueryIn != NULL ? CPLStrdup( pszQueryIn ) : NULL;
+    CPLFree( this->pszQuery );
+    this->pszQuery = (pszQueryIn != NULL ) ? CPLStrdup( pszQueryIn ) : NULL;
 
     ClearStatement();
 
     return OGRERR_NONE;
 }
+
 
 /************************************************************************/
 /*                           TestCapability()                           */
@@ -379,17 +388,18 @@ OGRSpatialReference *OGRODBCTableLayer::GetSpatialRef()
     if( nSRSId == -2 )
     {
         PGconn          *hPGConn = poDS->GetPGConn();
+        PGresult        *hResult;
+        char            szCommand[1024];
 
         nSRSId = -1;
 
         poDS->SoftStartTransaction();
 
-        char szCommand[1024] = {};
         sprintf( szCommand,
                  "SELECT srid FROM geometry_columns "
                  "WHERE f_table_name = '%s'",
                  poFeatureDefn->GetName() );
-        PGresult *hResult = PQexec(hPGConn, szCommand );
+        hResult = PQexec(hPGConn, szCommand );
 
         if( hResult
             && PQresultStatus(hResult) == PGRES_TUPLES_OK

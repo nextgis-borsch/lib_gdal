@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gifabstractdataset.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: gifabstractdataset.h 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  GIF Driver
  * Purpose:  GIF Abstract Dataset
@@ -67,18 +67,18 @@ class GIFAbstractDataset : public GDALPamDataset
 
   public:
                  GIFAbstractDataset();
-    virtual      ~GIFAbstractDataset();
+                 ~GIFAbstractDataset();
 
-    virtual const char *GetProjectionRef() override;
-    virtual CPLErr GetGeoTransform( double * ) override;
-    virtual int    GetGCPCount() override;
-    virtual const char *GetGCPProjection() override;
-    virtual const GDAL_GCP *GetGCPs() override;
+    virtual const char *GetProjectionRef();
+    virtual CPLErr GetGeoTransform( double * );
+    virtual int    GetGCPCount();
+    virtual const char *GetGCPProjection();
+    virtual const GDAL_GCP *GetGCPs();
 
-    virtual char      **GetMetadataDomainList() override;
-    virtual char  **GetMetadata( const char * pszDomain = "" ) override;
+    virtual char      **GetMetadataDomainList();
+    virtual char  **GetMetadata( const char * pszDomain = "" );
 
-    virtual char **GetFileList() override;
+    virtual char **GetFileList(void);
 
     static int          Identify( GDALOpenInfo * );
 
@@ -114,9 +114,10 @@ class GIFAbstractRasterBand : public GDALPamRasterBand
                                          int bAdvertizeInterlacedMDI );
     virtual       ~GIFAbstractRasterBand();
 
-    virtual double GetNoDataValue( int *pbSuccess = NULL ) override;
-    virtual GDALColorInterp GetColorInterpretation() override;
-    virtual GDALColorTable *GetColorTable() override;
+    virtual double GetNoDataValue( int *pbSuccess = NULL );
+    virtual GDALColorInterp GetColorInterpretation();
+    virtual GDALColorTable *GetColorTable();
 };
+
 
 #endif

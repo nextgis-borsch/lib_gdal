@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id$
  *
  * Project:  Common Portability Library
  * Purpose:  Google OAuth2 Authentication Services
@@ -27,15 +28,8 @@
  ****************************************************************************/
 
 #include "cpl_http.h"
-#include "cpl_port.h"
 
-#include <cstring>
-
-#include "cpl_conv.h"
-#include "cpl_error.h"
-#include "cpl_string.h"
-
-CPL_CVSID("$Id: cpl_google_oauth2.cpp 36925 2016-12-17 04:17:39Z goatbar $");
+CPL_CVSID("$Id$");
 
 /* ==================================================================== */
 /*      Values related to OAuth2 authorization to use fusion            */
@@ -186,29 +180,28 @@ char CPL_DLL *GOA2GetRefreshToken( const char *pszAuthToken,
     CPLHTTPResult * psResult =
         CPLHTTPFetch( GOOGLE_AUTH_URL "/token", oOptions);
 
-    if( psResult == NULL )
+    if (psResult == NULL)
         return NULL;
 
 /* -------------------------------------------------------------------- */
 /*      One common mistake is to try and reuse the auth token.          */
 /*      After the first use it will return invalid_grant.               */
 /* -------------------------------------------------------------------- */
-    if( psResult->pabyData != NULL &&
-        strstr(reinterpret_cast<char *>(psResult->pabyData), "invalid_grant")
-        != NULL )
+    if( psResult->pabyData != NULL
+        && strstr((const char *) psResult->pabyData,"invalid_grant") != NULL)
     {
         CPLString osURL;
         osURL.Seize( GOA2GetAuthorizationURL(pszScope) );
         CPLError( CE_Failure, CPLE_AppDefined,
-                  "Attempt to use a OAuth2 authorization code multiple times.  "
-                  "Request a fresh authorization token at %s.",
+                  "Attempt to use a OAuth2 authorization code multiple times.\n"
+                  "Request a fresh authorization token at\n%s.",
                   osURL.c_str() );
         CPLHTTPDestroyResult(psResult);
         return NULL;
     }
 
-    if( psResult->pabyData == NULL ||
-        psResult->pszErrBuf != NULL )
+    if (psResult->pabyData == NULL ||
+        psResult->pszErrBuf != NULL)
     {
         if( psResult->pszErrBuf != NULL )
             CPLDebug( "GOA2", "%s", psResult->pszErrBuf );
@@ -222,7 +215,7 @@ char CPL_DLL *GOA2GetRefreshToken( const char *pszAuthToken,
     }
 
     CPLDebug( "GOA2", "Access Token Response:\n%s",
-              reinterpret_cast<char *>(psResult->pabyData) );
+              (const char *) psResult->pabyData );
 
 /* -------------------------------------------------------------------- */
 /*      This response is in JSON and will look something like:          */
@@ -236,7 +229,7 @@ char CPL_DLL *GOA2GetRefreshToken( const char *pszAuthToken,
 }
 */
     CPLStringList oResponse = ParseSimpleJson(
-        reinterpret_cast<char *>(psResult->pabyData));
+        (const char *) psResult->pabyData );
     CPLHTTPDestroyResult(psResult);
 
     CPLString osAccessToken = oResponse.FetchNameValueDef( "access_token", "" );
@@ -244,7 +237,7 @@ char CPL_DLL *GOA2GetRefreshToken( const char *pszAuthToken,
     CPLDebug("GOA2", "Access Token : '%s'", osAccessToken.c_str());
     CPLDebug("GOA2", "Refresh Token : '%s'", osRefreshToken.c_str());
 
-    if( osRefreshToken.empty() )
+    if( osRefreshToken.size() == 0)
     {
         CPLError( CE_Failure, CPLE_AppDefined,
                   "Unable to identify a refresh token in the OAuth2 response.");
@@ -272,13 +265,13 @@ char CPL_DLL *GOA2GetRefreshToken( const char *pszAuthToken,
  * user or http connection problems.
  *
  * @param pszRefreshToken the refresh token from GOA2GetRefreshToken().
- * @param pszScope the scope for which it is valid. Currently unused
+ * @param pszScope the scope for which it is valid.
  *
  * @return access token, to be freed with CPLFree(), null on failure.
  */
 
 char *GOA2GetAccessToken( const char *pszRefreshToken,
-                          CPL_UNUSED const char * pszScope )
+                          CPL_UNUSED const char *pszScope )
 {
 /* -------------------------------------------------------------------- */
 /*      Prepare request.                                                */
@@ -305,11 +298,11 @@ char *GOA2GetAccessToken( const char *pszRefreshToken,
 /* -------------------------------------------------------------------- */
     CPLHTTPResult *psResult = CPLHTTPFetch(GOOGLE_AUTH_URL "/token", oOptions);
 
-    if( psResult == NULL )
+    if (psResult == NULL)
         return NULL;
 
-    if( psResult->pabyData == NULL ||
-        psResult->pszErrBuf != NULL )
+    if (psResult->pabyData == NULL ||
+        psResult->pszErrBuf != NULL)
     {
         if( psResult->pszErrBuf != NULL )
             CPLDebug( "GFT", "%s", psResult->pszErrBuf );
@@ -323,7 +316,7 @@ char *GOA2GetAccessToken( const char *pszRefreshToken,
     }
 
     CPLDebug( "GOA2", "Refresh Token Response:\n%s",
-              reinterpret_cast<char *>(psResult->pabyData) );
+              (const char *) psResult->pabyData );
 
 /* -------------------------------------------------------------------- */
 /*      This response is in JSON and will look something like:          */
@@ -336,14 +329,14 @@ char *GOA2GetAccessToken( const char *pszRefreshToken,
 }
 */
     CPLStringList oResponse = ParseSimpleJson(
-        reinterpret_cast<char *>(psResult->pabyData));
+        (const char *) psResult->pabyData );
     CPLHTTPDestroyResult(psResult);
 
     CPLString osAccessToken = oResponse.FetchNameValueDef( "access_token", "" );
 
     CPLDebug("GOA2", "Access Token : '%s'", osAccessToken.c_str());
 
-    if( osAccessToken.empty() )
+    if (osAccessToken.size() == 0)
     {
         CPLError( CE_Failure, CPLE_AppDefined,
                   "Unable to identify an access token in the OAuth2 response.");

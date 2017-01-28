@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: subfile_source.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: subfile_source.h 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  JPEG-2000
  * Purpose:  Implements read-only virtual io on a subregion of a file.
@@ -46,15 +46,9 @@
 class subfile_source : public kdu_compressed_source {
 
   public:
-    subfile_source() :
-        capabilities( 0 ),
-        subfile_offset( 0 ),
-        subfile_size( 0 ),
-        file( NULL )
-    {
-    }
-
+    subfile_source() { file = NULL; }
     ~subfile_source() { close(); }
+
 
     bool exists() { return (file != NULL); }
 
@@ -131,9 +125,9 @@ class subfile_source : public kdu_compressed_source {
           seek( 0 );
       }
 
-    int get_capabilities() override { return capabilities; }
+    int get_capabilities() { return capabilities; }
 
-    bool seek(kdu_long offset) override
+    bool seek(kdu_long offset)
       {
           assert(file != NULL);
           if( file == NULL )
@@ -148,7 +142,7 @@ class subfile_source : public kdu_compressed_source {
               return false;
       }
 
-    kdu_long get_pos() override
+    kdu_long get_pos()
       {
         if (file == NULL) return -1;
         kdu_long result = VSIFTellL( file );
@@ -156,7 +150,7 @@ class subfile_source : public kdu_compressed_source {
         return result;
       }
 
-    int read(kdu_byte *buf, int num_bytes) override
+    int read(kdu_byte *buf, int num_bytes)
       {
         assert(file != NULL);
 
@@ -164,7 +158,7 @@ class subfile_source : public kdu_compressed_source {
         return num_bytes;
       }
 
-    bool close() override
+    bool close()
       {
         if (file != NULL)
             VSIFCloseL( file );

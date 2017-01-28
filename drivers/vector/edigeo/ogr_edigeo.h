@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_edigeo.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: ogr_edigeo.h 31777 2015-11-26 14:14:41Z rouault $
  *
  * Project:  EDIGEO Translator
  * Purpose:  Definition of classes for OGR .edigeo driver.
@@ -61,19 +61,20 @@ class OGREDIGEOLayer : public OGRLayer
                         OGREDIGEOLayer(OGREDIGEODataSource* poDS,
                                        const char* pszName, OGRwkbGeometryType eType,
                                        OGRSpatialReference* poSRS);
-                        virtual ~OGREDIGEOLayer();
+                        ~OGREDIGEOLayer();
 
-    virtual void                ResetReading() override;
-    virtual OGRFeature *        GetNextFeature() override;
-    virtual OGRFeature *        GetFeature(GIntBig nFID) override;
-    virtual GIntBig             GetFeatureCount( int bForce ) override;
 
-    virtual OGRFeatureDefn *    GetLayerDefn() override { return poFeatureDefn; }
+    virtual void                ResetReading();
+    virtual OGRFeature *        GetNextFeature();
+    virtual OGRFeature *        GetFeature(GIntBig nFID);
+    virtual GIntBig             GetFeatureCount( int bForce );
 
-    virtual int                 TestCapability( const char * ) override;
+    virtual OGRFeatureDefn *    GetLayerDefn() { return poFeatureDefn; }
 
-    virtual OGRErr              GetExtent(OGREnvelope *psExtent, int bForce) override;
-    virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce) override
+    virtual int                 TestCapability( const char * );
+
+    virtual OGRErr              GetExtent(OGREnvelope *psExtent, int bForce);
+    virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce)
                 { return OGRLayer::GetExtent(iGeomField, psExtent, bForce); }
 
     void                        AddFeature(OGRFeature* poFeature);
@@ -150,7 +151,7 @@ class OGREDIGEODataSource : public OGRDataSource
     VSILFILE*           OpenFile(const char *pszType,
                                  const CPLString& osExt);
 
-    // TODO: Translate comments to English.
+    // TODO: Tranlate comments to English.
     CPLString osLON; /* Nom du lot */
     CPLString osGNN; /* Nom du sous-ensemble de données générales */
     CPLString osGON; /* Nom du sous-ensemble de la référence de coordonnées */
@@ -227,18 +228,19 @@ class OGREDIGEODataSource : public OGRDataSource
 
   public:
                         OGREDIGEODataSource();
-                        virtual ~OGREDIGEODataSource();
+                        ~OGREDIGEODataSource();
 
     int                 Open( const char * pszFilename );
 
-    virtual const char*         GetName() override { return pszName; }
+    virtual const char*         GetName() { return pszName; }
 
-    virtual int                 GetLayerCount() override;
-    virtual OGRLayer*           GetLayer( int ) override;
+    virtual int                 GetLayerCount();
+    virtual OGRLayer*           GetLayer( int );
 
-    virtual int                 TestCapability( const char * ) override;
+    virtual int                 TestCapability( const char * );
 
     int                         HasUTF8ContentOnly() { return bHasUTF8ContentOnly; }
 };
+
 
 #endif /* ndef OGR_EDIGEO_H_INCLUDED */

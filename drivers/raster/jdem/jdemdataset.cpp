@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: jdemdataset.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  JDEM Reader
  * Purpose:  All code for Japanese DEM Reader
@@ -30,9 +31,7 @@
 #include "gdal_frmts.h"
 #include "gdal_pam.h"
 
-#include <algorithm>
-
-CPL_CVSID("$Id: jdemdataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
+CPL_CVSID("$Id: jdemdataset.cpp 33720 2016-03-15 00:39:53Z goatbar $");
 
 /************************************************************************/
 /*                            JDEMGetField()                            */
@@ -41,7 +40,7 @@ CPL_CVSID("$Id: jdemdataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 static int JDEMGetField( char *pszField, int nWidth )
 
 {
-    char szWork[32];
+    char	szWork[32];
 
     CPLAssert( nWidth < (int) sizeof(szWork) );
 
@@ -58,7 +57,7 @@ static int JDEMGetField( char *pszField, int nWidth )
 static double JDEMGetAngle( char *pszField )
 
 {
-    int nAngle = JDEMGetField( pszField, 7 );
+    int		nAngle = JDEMGetField( pszField, 7 );
 
     // Note, this isn't very general purpose, but it would appear
     // from the field widths that angles are never negative.  Nice
@@ -73,7 +72,7 @@ static double JDEMGetAngle( char *pszField )
 
 /************************************************************************/
 /* ==================================================================== */
-/*                              JDEMDataset                             */
+/*				JDEMDataset				*/
 /* ==================================================================== */
 /************************************************************************/
 
@@ -83,8 +82,8 @@ class JDEMDataset : public GDALPamDataset
 {
     friend class JDEMRasterBand;
 
-    VSILFILE    *fp;
-    GByte       abyHeader[1012];
+    VSILFILE	*fp;
+    GByte	abyHeader[1012];
 
   public:
                      JDEMDataset();
@@ -93,8 +92,8 @@ class JDEMDataset : public GDALPamDataset
     static GDALDataset *Open( GDALOpenInfo * );
     static int Identify( GDALOpenInfo * );
 
-    CPLErr GetGeoTransform( double * padfTransform ) override;
-    const char *GetProjectionRef() override;
+    CPLErr 	GetGeoTransform( double * padfTransform );
+    const char *GetProjectionRef();
 };
 
 /************************************************************************/
@@ -112,29 +111,32 @@ class JDEMRasterBand : public GDALPamRasterBand
     int          bBufferAllocFailed;
 
   public:
-                JDEMRasterBand( JDEMDataset *, int );
-    virtual ~JDEMRasterBand();
 
-    virtual CPLErr IReadBlock( int, int, void * ) override;
+    		JDEMRasterBand( JDEMDataset *, int );
+                ~JDEMRasterBand();
+
+    virtual CPLErr IReadBlock( int, int, void * );
 };
+
 
 /************************************************************************/
 /*                           JDEMRasterBand()                            */
 /************************************************************************/
 
 JDEMRasterBand::JDEMRasterBand( JDEMDataset *poDSIn, int nBandIn ) :
-    // Cannot overflow as nBlockXSize <= 999.
-    nRecordSize(poDSIn->GetRasterXSize() * 5 + 9 + 2),
     pszRecord(NULL),
     bBufferAllocFailed(FALSE)
 {
-    poDS = poDSIn;
-    nBand = nBandIn;
+    this->poDS = poDSIn;
+    this->nBand = nBandIn;
 
     eDataType = GDT_Float32;
 
     nBlockXSize = poDS->GetRasterXSize();
     nBlockYSize = 1;
+
+    /* Cannot overflow as nBlockXSize <= 999 */
+    nRecordSize = nBlockXSize*5 + 9 + 2;
 }
 
 /************************************************************************/
@@ -199,7 +201,7 @@ CPLErr JDEMRasterBand::IReadBlock( CPL_UNUSED int nBlockXOff,
 
 /************************************************************************/
 /* ==================================================================== */
-/*                              JDEMDataset                             */
+/*				JDEMDataset				*/
 /* ==================================================================== */
 /************************************************************************/
 
@@ -209,9 +211,7 @@ CPLErr JDEMRasterBand::IReadBlock( CPL_UNUSED int nBlockXOff,
 
 JDEMDataset::JDEMDataset() :
     fp(NULL)
-{
-    std::fill_n(abyHeader, CPL_ARRAYSIZE(abyHeader), 0);
-}
+{ }
 
 /************************************************************************/
 /*                           ~JDEMDataset()                             */
@@ -255,13 +255,7 @@ CPLErr JDEMDataset::GetGeoTransform( double * padfTransform )
 const char *JDEMDataset::GetProjectionRef()
 
 {
-    return
-        "GEOGCS[\"Tokyo\",DATUM[\"Tokyo\","
-        "SPHEROID[\"Bessel 1841\",6377397.155,299.1528128,"
-        "AUTHORITY[\"EPSG\",7004]],TOWGS84[-148,507,685,0,0,0,0],"
-        "AUTHORITY[\"EPSG\",6301]],PRIMEM[\"Greenwich\",0,"
-        "AUTHORITY[\"EPSG\",8901]],UNIT[\"DMSH\",0.0174532925199433,"
-        "AUTHORITY[\"EPSG\",9108]],AUTHORITY[\"EPSG\",4301]]";
+    return( "GEOGCS[\"Tokyo\",DATUM[\"Tokyo\",SPHEROID[\"Bessel 1841\",6377397.155,299.1528128,AUTHORITY[\"EPSG\",7004]],TOWGS84[-148,507,685,0,0,0,0],AUTHORITY[\"EPSG\",6301]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",8901]],UNIT[\"DMSH\",0.0174532925199433,AUTHORITY[\"EPSG\",9108]],AUTHORITY[\"EPSG\",4301]]" );
 }
 
 /************************************************************************/
@@ -363,7 +357,7 @@ GDALDataset *JDEMDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
 
-    return poDS;
+    return( poDS );
 }
 
 /************************************************************************/

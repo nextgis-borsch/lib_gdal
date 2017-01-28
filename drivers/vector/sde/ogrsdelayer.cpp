@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrsdelayer.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRSDELayer class.
@@ -32,7 +33,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrsdelayer.cpp 36682 2016-12-04 20:34:45Z rouault $");
+CPL_CVSID("$Id: ogrsdelayer.cpp 33714 2016-03-13 05:42:13Z goatbar $");
 
 /************************************************************************/
 /*                            OGRSDELayer()                             */
@@ -60,11 +61,6 @@ OGRSDELayer::OGRSDELayer( OGRSDEDataSource *poDSIn, int bUpdate )
     papszAllColumns = NULL;
     bHaveLayerInfo = FALSE;
     bUseNSTRING = FALSE;
-
-    pszOwnerName = NULL;
-    pszDbTableName = NULL;
-    bVersioned = FALSE;
-    bQueryActive = FALSE;
 }
 
 /************************************************************************/
@@ -355,15 +351,8 @@ int OGRSDELayer::NeedLayerInfo()
 
         LFLOAT falsex, falsey, xyunits;
         nSDEErr = SE_coordref_get_xy( hCoordRef, &falsex, &falsey, &xyunits );
-        if( nSDEErr != SE_SUCCESS )
-        {
-            poDS->IssueSDEError( nSDEErr, "SE_coordref_get_xy" );
-        }
-        else
-        {
-            CPLDebug( "SDE", "SE_coordref_get_xy(%s) = %g/%g/%g",
-                    pszDbTableName, falsex, falsey, xyunits );
-        }
+        CPLDebug( "SDE", "SE_coordref_get_xy(%s) = %g/%g/%g",
+                  pszDbTableName, falsex, falsey, xyunits );
     }
 
     return TRUE;
@@ -395,7 +384,7 @@ OGRwkbGeometryType OGRSDELayer::DiscoverLayerType()
         return wkbUnknown;
     }
 
-    int bIsMultipart = (nShapeTypeMask & SE_MULTIPART_TYPE_MASK) ? 1 : 0;
+    int bIsMultipart = ( nShapeTypeMask & SE_MULTIPART_TYPE_MASK ? 1 : 0);
     nShapeTypeMask &= ~SE_MULTIPART_TYPE_MASK;
 
     // Since we assume that all layers can bear a NULL geometry,
@@ -636,7 +625,7 @@ int OGRSDELayer::InstallQuery( int bCountingOnly )
         SE_SHAPE hRectShape;
         SHORT nSearchOrder = SE_SPATIAL_FIRST;
 
-        if( !osAttributeFilter.empty() )
+        if( osAttributeFilter.size() > 0 )
         {
             const char *pszOrder = CPLGetConfigOption( "OGR_SDE_SEARCHORDER",
                                                        "ATTRIBUTE_FIRST" );
@@ -891,6 +880,7 @@ OGRErr OGRSDELayer::TranslateOGRRecord( OGRFeature *poFeature,
         poDS->IssueSDEError( nSDEErr, pszMethod );
         return OGRERR_FAILURE;
     }
+
 
 /* -------------------------------------------------------------------- */
 /*      Set the feature attributes                                      */
@@ -1200,7 +1190,6 @@ OGRErr OGRSDELayer::TranslateOGRGeometry( OGRGeometry *poGeom,
                 poDS->IssueSDEError( nSDEErr, "SE_shape_make_nil" );
                 return OGRERR_FAILURE;
             }
-            return OGRERR_NONE;
         }
 
         // Get total number of points in polygon
@@ -1294,6 +1283,7 @@ OGRErr OGRSDELayer::TranslateOGRGeometry( OGRGeometry *poGeom,
         if( b3D )
             panfZcoords = (LFLOAT *) CPLMalloc( sizeof(LFLOAT) * nPoints );
 
+
         // Build arrays of points and part offsets
         for( i=0; i < nParts; i++ )
         {
@@ -1353,6 +1343,7 @@ OGRErr OGRSDELayer::TranslateOGRGeometry( OGRGeometry *poGeom,
             return OGRERR_FAILURE;
         }
     }
+
 
 /* -------------------------------------------------------------------- */
 /*      Translate LINESTRING/MULTILINESTRING type.                      */
@@ -1601,7 +1592,7 @@ OGRGeometry *OGRSDELayer::TranslateSDEGeometry( SE_SHAPE hShape )
       case SG_MULTI_SIMPLE_LINE_SHAPE:
       {
           OGRMultiLineString *poMLS = new OGRMultiLineString();
-          int iPart;
+	  int iPart;
 
           CPLAssert( nPartCount == nSubPartCount );
 
@@ -1842,6 +1833,7 @@ OGRFeature *OGRSDELayer::TranslateSDERecord()
 
                   poFeat->SetField( i, pszUTF8 );
                   CPLFree( pszUTF8 );
+
               }
               else if( nSDEErr != SE_NULL_VALUE )
               {
@@ -1907,7 +1899,7 @@ OGRFeature *OGRSDELayer::TranslateSDERecord()
                   /* the returned string is not null-terminated */
                   char* sClobstring = (char*)CPLMalloc(sizeof(char)*(sClobVal.clob_length+1));
                   memcpy(sClobstring, sClobVal.clob_buffer, sClobVal.clob_length);
-                  sClobstring[sClobVal.clob_length] = '\0';
+				  sClobstring[sClobVal.clob_length] = '\0';
 
                   poFeat->SetField( i, sClobstring );
                   SE_clob_free( &sClobVal );
@@ -1936,7 +1928,7 @@ OGRFeature *OGRSDELayer::TranslateSDERecord()
                   /* the returned string is not null-terminated */
                   SE_WCHAR* sNclobstring = (SE_WCHAR*)CPLMalloc(sizeof(char)*(sNclobVal.nclob_length+2));
                   memcpy(sNclobstring, sNclobVal.nclob_buffer, sNclobVal.nclob_length);
-                  sNclobstring[sNclobVal.nclob_length / 2] = '\0';
+				  sNclobstring[sNclobVal.nclob_length / 2] = '\0';
 
                   char* pszUTF8 = CPLRecodeFromWChar((const wchar_t*)sNclobstring, CPL_ENC_UTF16, CPL_ENC_UTF8);
 
@@ -1963,9 +1955,9 @@ OGRFeature *OGRSDELayer::TranslateSDERecord()
               nSDEErr = SE_stream_get_date( hStream, anFieldMap[i]+1,
                                             &sDateVal );
               if( nSDEErr == SE_SUCCESS )
-              {
-                poFeat->SetField( i, sDateVal.tm_year + 1900, sDateVal.tm_mon + 1, sDateVal.tm_mday,
-                                  sDateVal.tm_hour, sDateVal.tm_min, sDateVal.tm_sec, (sDateVal.tm_isdst > 0));
+			  {
+			      poFeat->SetField( i, sDateVal.tm_year + 1900, sDateVal.tm_mon + 1, sDateVal.tm_mday,
+					  sDateVal.tm_hour, sDateVal.tm_min, sDateVal.tm_sec, (sDateVal.tm_isdst > 0));
               }
               else if( nSDEErr != SE_NULL_VALUE )
               {
@@ -1974,6 +1966,7 @@ OGRFeature *OGRSDELayer::TranslateSDERecord()
               }
           }
           break;
+
         }
     }
 
@@ -2108,6 +2101,7 @@ OGRFeature *OGRSDELayer::GetFeature( GIntBig nFeatureId )
 /* -------------------------------------------------------------------- */
     return TranslateSDERecord();
 }
+
 
 /************************************************************************/
 /*                          ResetStream()                               */
@@ -2356,6 +2350,7 @@ OGRErr OGRSDELayer::CreateField( OGRFieldDefn *poFieldIn, int bApproxOK )
         return OGRERR_FAILURE;
     }
 
+
 /* -------------------------------------------------------------------- */
 /*      Set field width and precision                                   */
 /* -------------------------------------------------------------------- */
@@ -2388,6 +2383,7 @@ OGRErr OGRSDELayer::CreateField( OGRFieldDefn *poFieldIn, int bApproxOK )
         }
     }
 
+
 /* -------------------------------------------------------------------- */
 /*      Create the new field                                            */
 /* -------------------------------------------------------------------- */
@@ -2405,6 +2401,7 @@ OGRErr OGRSDELayer::CreateField( OGRFieldDefn *poFieldIn, int bApproxOK )
 
     return OGRERR_NONE;
 }
+
 
 /************************************************************************/
 /*                           ISetFeature()                               */
@@ -2550,6 +2547,7 @@ OGRErr OGRSDELayer::DeleteFeature( GIntBig nFID )
 
     return OGRERR_NONE;
 }
+
 
 /************************************************************************/
 /*                           TestCapability()                           */

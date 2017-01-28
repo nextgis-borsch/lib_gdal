@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogridblayer.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRIDBLayer class, code shared between
@@ -32,7 +33,7 @@
 #include "ogr_idb.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogridblayer.cpp 36394 2016-11-21 14:30:55Z rouault $");
+CPL_CVSID("$Id: ogridblayer.cpp 33714 2016-03-13 05:42:13Z goatbar $");
 
 /************************************************************************/
 /*                            OGRIDBLayer()                            */
@@ -53,7 +54,6 @@ OGRIDBLayer::OGRIDBLayer()
 
     poSRS = NULL;
     nSRSId = -2; // we haven't even queried the database for it yet.
-    poFeatureDefn = NULL;
 }
 
 /************************************************************************/
@@ -217,6 +217,7 @@ CPLErr OGRIDBLayer::BuildFeatureDefn( const char *pszLayerName,
     return CE_None;
 }
 
+
 /************************************************************************/
 /*                            ResetReading()                            */
 /************************************************************************/
@@ -329,6 +330,7 @@ OGRFeature *OGRIDBLayer::GetNextRawFeature()
 
             v->Release();
 
+
             if ( eErr != OGRERR_NONE )
             {
                 const char *pszMessage;
@@ -343,7 +345,6 @@ OGRFeature *OGRIDBLayer::GetNextRawFeature()
                         break;
                     case OGRERR_CORRUPT_DATA:
                         pszMessage = "Corrupt data";
-                        break;
                     default:
                         pszMessage = "Unrecognized error";
                 }
@@ -401,10 +402,23 @@ OGRFeature *OGRIDBLayer::GetFeature( GIntBig nFeatureId )
 /*                           TestCapability()                           */
 /************************************************************************/
 
-int OGRIDBLayer::TestCapability( const char * /*pszCap*/ )
+int OGRIDBLayer::TestCapability( const char * pszCap )
 
 {
-    return FALSE;
+    if( EQUAL(pszCap,OLCRandomRead) )
+        return FALSE;
+
+    else if( EQUAL(pszCap,OLCFastFeatureCount) )
+        return FALSE;
+
+    else if( EQUAL(pszCap,OLCFastSpatialFilter) )
+        return FALSE;
+
+    else if( EQUAL(pszCap,OLCTransactions) )
+        return FALSE;
+
+    else
+        return FALSE;
 }
 
 /************************************************************************/

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgeopackageutility.h 35911 2016-10-24 15:03:26Z goatbar $
+ * $Id: ogrgeopackageutility.h 35679 2016-10-10 14:15:22Z rouault $
  *
  * Project:  GeoPackage Translator
  * Purpose:  Utility header for OGR GeoPackage driver.
@@ -59,6 +59,7 @@ typedef struct
 #endif
     size_t szHeader;
 } GPkgHeader;
+
 
 OGRErr              SQLCommand(sqlite3 *poDb, const char * pszSQL);
 int                 SQLGetInteger(sqlite3 * poDb, const char * pszSQL, OGRErr *err);

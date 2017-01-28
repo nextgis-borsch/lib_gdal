@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: tigerzipcodes.cpp 27745 2014-09-27 16:38:57Z goatbar $
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Implements TigerZipCodes, providing access to .RT6 files.
@@ -29,9 +30,9 @@
 #include "ogr_tiger.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: tigerzipcodes.cpp 35629 2016-10-06 23:39:06Z goatbar $");
+CPL_CVSID("$Id: tigerzipcodes.cpp 27745 2014-09-27 16:38:57Z goatbar $");
 
-static const char FILE_CODE[] = "6";
+#define FILE_CODE "6"
 
 static const TigerFieldInfo rt6_fields[] = {
   // fieldname    fmt  type OFTType     beg  end  len  bDefine bSet bWrite

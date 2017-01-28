@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrmemdriver.cpp 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRGmtDriver class.
@@ -30,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrgmtdriver.cpp 35911 2016-10-24 15:03:26Z goatbar $");
+CPL_CVSID("$Id: ogrmemdriver.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
 
 /************************************************************************/
 /*                          ~OGRGmtDriver()                           */
@@ -81,6 +82,7 @@ OGRDataSource *OGRGmtDriver::CreateDataSource( const char * pszName,
 
     if( poDS->Create( pszName, papszOptions ) )
         return poDS;
+
 
     delete poDS;
     return NULL;

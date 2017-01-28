@@ -33,7 +33,10 @@
 * limitations under the License.
 */
 
+
+
 /*
+ * $Id$
  * PNG band
  * PNG page compression and decompression functions
  * These functions are not methods, they reside in the global space
@@ -50,8 +53,6 @@ CPL_C_START
 #include <png.h>
 #endif
 CPL_C_END
-
-CPL_CVSID("$Id: PNG_band.cpp 35897 2016-10-24 11:54:24Z goatbar $");
 
 NAMESPACE_MRF_START
 
@@ -173,7 +174,7 @@ CPLErr PNG_Codec::DecompressPNG(buf_mgr &dst, buf_mgr &src)
 }
 
 /**
-*\brief Compress a page in PNG format
+*\Brief Compress a page in PNG format
 * Returns the compressed size in dst.size
 *
 */
@@ -236,7 +237,7 @@ CPLErr PNG_Codec::CompressPNG(buf_mgr &dst, buf_mgr &src)
     png_set_asm_flags(pngp, flags | mask); // use flags &~mask to disable all
 
     // Test that the MMX is compiled into PNG
-    // fprintf(stderr,"MMX support is %d\n", png_mmx_support());
+    //	fprintf(stderr,"MMX support is %d\n", png_mmx_support());
 
 #endif
 
@@ -326,7 +327,7 @@ CPLErr PNG_Band::Decompress(buf_mgr &dst, buf_mgr &src)
 }
 
 CPLErr PNG_Band::Compress(buf_mgr &dst, buf_mgr &src)
-{
+{   
     if (!codec.PNGColors && img.comp == IL_PPNG) { // Late set PNG palette to conserve memory
         GDALColorTable *poCT = GetColorTable();
         if (!poCT) {
@@ -341,25 +342,20 @@ CPLErr PNG_Band::Compress(buf_mgr &dst, buf_mgr &src)
 }
 
 /**
- * \brief For PPNG, builds the data structures needed to write the palette
+ * \Brief For PPNG, builds the data structures needed to write the palette
  * The presence of the PNGColors and PNGAlpha is used as a flag for PPNG only
  */
 
-PNG_Band::PNG_Band( GDALMRFDataset *pDS, const ILImage &image,
-                    int b, int level ) :
-    GDALMRFRasterBand(pDS, image, b, level),
-    codec(image)
+PNG_Band::PNG_Band(GDALMRFDataset *pDS, const ILImage &image, int b, int level) :
+GDALMRFRasterBand(pDS, image, b, level), codec(image)
+
 {   // Check error conditions
-    if (image.dt != GDT_Byte && image.dt != GDT_Int16 && image.dt != GDT_UInt16)
-    {
-        CPLError(CE_Failure, CPLE_NotSupported,
-                 "Data type not supported by MRF PNG");
+    if (image.dt != GDT_Byte && image.dt != GDT_Int16 && image.dt != GDT_UInt16) {
+        CPLError(CE_Failure, CPLE_NotSupported, "Data type not supported by MRF PNG");
         return;
     }
-    if (image.pagesize.c > 4)
-    {
-        CPLError(CE_Failure, CPLE_NotSupported,
-                 "MRF PNG can only handle up to 4 bands per page");
+    if (image.pagesize.c > 4) {
+        CPLError(CE_Failure, CPLE_NotSupported, "MRF PNG can only handle up to 4 bands per page");
         return;
     }
     // PNGs can be larger than the source, especially for small page size

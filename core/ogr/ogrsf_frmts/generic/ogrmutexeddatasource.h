@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrmutexeddatasource.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: ogrmutexeddatasource.h 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Defines OGRLMutexedDataSource class
@@ -29,8 +29,6 @@
 
 #ifndef OGRMUTEXEDDATASOURCELAYER_H_INCLUDED
 #define OGRMUTEXEDDATASOURCELAYER_H_INCLUDED
-
-#ifndef DOXYGEN_SKIP
 
 #include "ogrsf_frmts.h"
 #include "cpl_multiproc.h"
@@ -69,49 +67,47 @@ class CPL_DLL OGRMutexedDataSource : public OGRDataSource
 
     OGRDataSource*      GetBaseDataSource() { return m_poBaseDataSource; }
 
-    virtual const char  *GetName() override;
+    virtual const char  *GetName();
 
-    virtual int         GetLayerCount() override ;
-    virtual OGRLayer    *GetLayer(int) override;
-    virtual OGRLayer    *GetLayerByName(const char *) override;
-    virtual OGRErr      DeleteLayer(int) override;
+    virtual int         GetLayerCount() ;
+    virtual OGRLayer    *GetLayer(int);
+    virtual OGRLayer    *GetLayerByName(const char *);
+    virtual OGRErr      DeleteLayer(int);
 
-    virtual int         TestCapability( const char * ) override;
+    virtual int         TestCapability( const char * );
 
     virtual OGRLayer   *ICreateLayer( const char *pszName,
                                      OGRSpatialReference *poSpatialRef = NULL,
                                      OGRwkbGeometryType eGType = wkbUnknown,
-                                     char ** papszOptions = NULL ) override;
+                                     char ** papszOptions = NULL );
     virtual OGRLayer   *CopyLayer( OGRLayer *poSrcLayer,
                                    const char *pszNewName,
-                                   char **papszOptions = NULL ) override;
+                                   char **papszOptions = NULL );
 
-    virtual OGRStyleTable *GetStyleTable() override;
-    virtual void        SetStyleTableDirectly( OGRStyleTable *poStyleTable ) override;
+    virtual OGRStyleTable *GetStyleTable();
+    virtual void        SetStyleTableDirectly( OGRStyleTable *poStyleTable );
 
-    virtual void        SetStyleTable(OGRStyleTable *poStyleTable) override;
+    virtual void        SetStyleTable(OGRStyleTable *poStyleTable);
 
     virtual OGRLayer *  ExecuteSQL( const char *pszStatement,
                                     OGRGeometry *poSpatialFilter,
-                                    const char *pszDialect ) override;
-    virtual void        ReleaseResultSet( OGRLayer * poResultsSet ) override;
+                                    const char *pszDialect );
+    virtual void        ReleaseResultSet( OGRLayer * poResultsSet );
 
-    virtual void        FlushCache() override;
+    virtual void        FlushCache();
 
-    virtual OGRErr      StartTransaction(int bForce=FALSE) override;
-    virtual OGRErr      CommitTransaction() override;
-    virtual OGRErr      RollbackTransaction() override;
+    virtual OGRErr      StartTransaction(int bForce=FALSE);
+    virtual OGRErr      CommitTransaction();
+    virtual OGRErr      RollbackTransaction();
 
-    virtual char      **GetMetadata( const char * pszDomain = "" ) override;
+    virtual char      **GetMetadata( const char * pszDomain = "" );
     virtual CPLErr      SetMetadata( char ** papszMetadata,
-                                     const char * pszDomain = "" ) override;
+                                     const char * pszDomain = "" );
     virtual const char *GetMetadataItem( const char * pszName,
-                                         const char * pszDomain = "" ) override;
+                                         const char * pszDomain = "" );
     virtual CPLErr      SetMetadataItem( const char * pszName,
                                          const char * pszValue,
-                                         const char * pszDomain = "" ) override;
+                                         const char * pszDomain = "" );
 };
-
-#endif /* #ifndef DOXYGEN_SKIP */
 
 #endif // OGRMUTEXEDDATASOURCELAYER_H_INCLUDED

@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id$
  *
  * Project:  GDAL Core
  * Purpose:  Read metadata from RapidEye imagery.
@@ -29,15 +30,6 @@
 
 #include "reader_rapid_eye.h"
 
-#include <ctime>
-
-#include "cpl_conv.h"
-#include "cpl_error.h"
-#include "cpl_minixml.h"
-#include "cpl_string.h"
-
-CPL_CVSID("$Id: reader_rapid_eye.cpp 36682 2016-12-04 20:34:45Z rouault $");
-
 /**
  * GDALMDReaderRapidEye()
  */
@@ -65,7 +57,7 @@ GDALMDReaderRapidEye::GDALMDReaderRapidEye(const char *pszPath,
         }
     }
 
-    if(!m_osXMLSourceFilename.empty() )
+    if(m_osXMLSourceFilename.size())
         CPLDebug( "MDReaderRapidEye", "XML Filename: %s",
               m_osXMLSourceFilename.c_str() );
 }
@@ -159,4 +151,5 @@ void GDALMDReaderRapidEye::LoadMetadata()
         m_papszIMAGERYMD = CSLAddNameValue(m_papszIMAGERYMD,
                                 MD_NAME_CLOUDCOVER, pszCC);
     }
+
 }

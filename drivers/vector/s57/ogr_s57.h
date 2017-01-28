@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_s57.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: ogr_s57.h 32433 2015-12-23 23:48:56Z goatbar $
  *
  * Project:  S-57 Translator
  * Purpose:  Declarations for classes binding S57 support onto OGRLayer,
@@ -60,20 +60,20 @@ class OGRS57Layer : public OGRLayer
                                      int nOBJL = -1 );
     virtual             ~OGRS57Layer();
 
-    void                ResetReading() override;
-    OGRFeature *        GetNextFeature() override;
+    void                ResetReading();
+    OGRFeature *        GetNextFeature();
     OGRFeature *        GetNextUnfilteredFeature();
-    virtual OGRFeature *GetFeature( GIntBig nFeatureId ) override;
+    virtual OGRFeature *GetFeature( GIntBig nFeatureId );
 
-    virtual GIntBig     GetFeatureCount( int bForce = TRUE ) override;
-    virtual OGRErr      GetExtent(OGREnvelope *psExtent, int bForce = TRUE) override;
-    virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce) override
+    virtual GIntBig     GetFeatureCount( int bForce = TRUE );
+    virtual OGRErr      GetExtent(OGREnvelope *psExtent, int bForce = TRUE);
+    virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce)
                 { return OGRLayer::GetExtent(iGeomField, psExtent, bForce); }
 
-    OGRFeatureDefn *    GetLayerDefn() override { return poFeatureDefn; }
+    OGRFeatureDefn *    GetLayerDefn() { return poFeatureDefn; }
 
-    virtual OGRErr      ICreateFeature( OGRFeature *poFeature ) override;
-    int                 TestCapability( const char * ) override;
+    virtual OGRErr      ICreateFeature( OGRFeature *poFeature );
+    int                 TestCapability( const char * );
 };
 
 /************************************************************************/
@@ -102,7 +102,7 @@ class OGRS57DataSource : public OGRDataSource
     OGREnvelope         oExtents;
 
   public:
-    explicit            OGRS57DataSource(char** papszOpenOptions = NULL);
+                        OGRS57DataSource(char** papszOpenOptions = NULL);
                         ~OGRS57DataSource();
 
     void                SetOptionList( char ** );
@@ -111,11 +111,11 @@ class OGRS57DataSource : public OGRDataSource
     int                 Open( const char * pszName );
     int                 Create( const char *pszName, char **papszOptions );
 
-    const char          *GetName() override { return pszName; }
-    int                 GetLayerCount() override { return nLayers; }
-    OGRLayer            *GetLayer( int ) override;
+    const char          *GetName() { return pszName; }
+    int                 GetLayerCount() { return nLayers; }
+    OGRLayer            *GetLayer( int );
     void                AddLayer( OGRS57Layer * );
-    int                 TestCapability( const char * ) override;
+    int                 TestCapability( const char * );
 
     OGRSpatialReference *GetSpatialRef() { return poSpatialRef; }
 

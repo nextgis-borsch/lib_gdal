@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ntf.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: ntf.h 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  NTF Translator
  * Purpose:  Main declarations for NTF translator.
@@ -118,10 +118,10 @@ class NTFRecord
     int      nLength;
     char    *pszData;
 
-    static int      ReadPhysicalLine( FILE *fp, char *pszLine );
+    int      ReadPhysicalLine( FILE *fp, char *pszLine );
 
   public:
-    explicit  NTFRecord( FILE * );
+             NTFRecord( FILE * );
              ~NTFRecord();
 
     int      GetType() { return nType; }
@@ -161,7 +161,7 @@ public:
 class NTFCodeList
 {
 public:
-    explicit     NTFCodeList( NTFRecord * );
+                NTFCodeList( NTFRecord * );
                 ~NTFCodeList();
 
     const char  *Lookup( const char * );
@@ -172,6 +172,7 @@ public:
     int         nNumCode;
     char        **papszCodeVal; /* Short code value */
     char        **papszCodeDes; /* Long description of code */
+
 };
 
 /************************************************************************/
@@ -187,6 +188,7 @@ typedef struct
   NTFCodeList *poCodeList;
 
 } NTFAttDesc;
+
 
 class OGRNTFLayer;
 class OGRNTFRasterLayer;
@@ -280,7 +282,7 @@ class NTFFileReader
     OGRGeometry     **papoLineCache;
 
   public:
-    explicit           NTFFileReader( OGRNTFDataSource * );
+                      NTFFileReader( OGRNTFDataSource * );
                       ~NTFFileReader();
 
     int               Open( const char * pszFilename = NULL );
@@ -291,9 +293,10 @@ class NTFFileReader
     void              Reset();
     void              SetBaseFID( long nFeatureId );
 
+
     OGRGeometry      *ProcessGeometry( NTFRecord *, int * = NULL );
     OGRGeometry      *ProcessGeometry3D( NTFRecord *, int * = NULL );
-    static int               ProcessAttDesc( NTFRecord *, NTFAttDesc * );
+    int               ProcessAttDesc( NTFRecord *, NTFAttDesc * );
     int               ProcessAttRec( NTFRecord *, int *, char ***, char ***);
     int               ProcessAttRecGroup( NTFRecord **, char ***, char ***);
 
@@ -389,8 +392,8 @@ class OGRNTFLayer : public OGRLayer
 
                         ~OGRNTFLayer();
 
-    void                ResetReading() override;
-    OGRFeature *        GetNextFeature() override;
+    void                ResetReading();
+    OGRFeature *        GetNextFeature();
 
 #ifdef notdef
     OGRFeature         *GetFeature( GIntBig nFeatureId );
@@ -398,13 +401,13 @@ class OGRNTFLayer : public OGRLayer
     OGRErr              ICreateFeature( OGRFeature *poFeature );
 #endif
 
-    OGRFeatureDefn *    GetLayerDefn() override { return poFeatureDefn; }
+    OGRFeatureDefn *    GetLayerDefn() { return poFeatureDefn; }
 
 #ifdef notdef
     GIntBig             GetFeatureCount( int );
 #endif
 
-    int                 TestCapability( const char * ) override;
+    int                 TestCapability( const char * );
 
     // special to NTF
     OGRFeature         *FeatureTranslate( NTFFileReader *, NTFRecord ** );
@@ -424,24 +427,24 @@ class OGRNTFFeatureClassLayer : public OGRLayer
     int                 iCurrentFC;
 
   public:
-    explicit             OGRNTFFeatureClassLayer( OGRNTFDataSource * poDS );
+                        OGRNTFFeatureClassLayer( OGRNTFDataSource * poDS );
                         ~OGRNTFFeatureClassLayer();
 
-    OGRGeometry *       GetSpatialFilter() override { return poFilterGeom; }
-    void                SetSpatialFilter( OGRGeometry * ) override;
-    virtual void        SetSpatialFilter( int iGeomField, OGRGeometry *poGeom ) override
+    OGRGeometry *       GetSpatialFilter() { return poFilterGeom; }
+    void                SetSpatialFilter( OGRGeometry * );
+    virtual void        SetSpatialFilter( int iGeomField, OGRGeometry *poGeom )
                 { OGRLayer::SetSpatialFilter(iGeomField, poGeom); }
 
-    void                ResetReading() override;
-    OGRFeature *        GetNextFeature() override;
+    void                ResetReading();
+    OGRFeature *        GetNextFeature();
 
-    OGRFeature         *GetFeature( GIntBig nFeatureId ) override;
+    OGRFeature         *GetFeature( GIntBig nFeatureId );
 
-    OGRFeatureDefn *    GetLayerDefn() override { return poFeatureDefn; }
+    OGRFeatureDefn *    GetLayerDefn() { return poFeatureDefn; }
 
-    GIntBig             GetFeatureCount( int = TRUE ) override;
+    GIntBig             GetFeatureCount( int = TRUE );
 
-    int                 TestCapability( const char * ) override;
+    int                 TestCapability( const char * );
 };
 
 /************************************************************************/
@@ -452,6 +455,8 @@ class OGRNTFRasterLayer : public OGRLayer
 {
     OGRFeatureDefn     *poFeatureDefn;
     OGRGeometry        *poFilterGeom;
+
+    OGRNTFDataSource   *poDS;
 
     NTFFileReader      *poReader;
 
@@ -466,23 +471,23 @@ class OGRNTFRasterLayer : public OGRLayer
   public:
                         OGRNTFRasterLayer( OGRNTFDataSource * poDS,
                                            NTFFileReader * poReaderIn );
-                        virtual ~OGRNTFRasterLayer();
+                        ~OGRNTFRasterLayer();
 
-    OGRGeometry *       GetSpatialFilter() override { return poFilterGeom; }
-    void                SetSpatialFilter( OGRGeometry * ) override;
-    virtual void        SetSpatialFilter( int iGeomField, OGRGeometry *poGeom ) override
+    OGRGeometry *       GetSpatialFilter() { return poFilterGeom; }
+    void                SetSpatialFilter( OGRGeometry * );
+    virtual void        SetSpatialFilter( int iGeomField, OGRGeometry *poGeom )
                 { OGRLayer::SetSpatialFilter(iGeomField, poGeom); }
 
-    void                ResetReading() override;
-    OGRFeature *        GetNextFeature() override;
+    void                ResetReading();
+    OGRFeature *        GetNextFeature();
 
-    OGRFeature         *GetFeature( GIntBig nFeatureId ) override;
+    OGRFeature         *GetFeature( GIntBig nFeatureId );
 
-    OGRFeatureDefn *    GetLayerDefn() override { return poFeatureDefn; }
+    OGRFeatureDefn *    GetLayerDefn() { return poFeatureDefn; }
 
-    GIntBig             GetFeatureCount( int = TRUE ) override;
+    GIntBig             GetFeatureCount( int = TRUE );
 
-    int                 TestCapability( const char * ) override;
+    int                 TestCapability( const char * );
 };
 
 /************************************************************************/
@@ -528,19 +533,16 @@ class OGRNTFDataSource : public OGRDataSource
     int                 Open( const char * pszName, int bTestOpen = FALSE,
                               char ** papszFileList = NULL );
 
-    const char          *GetName() override { return pszName; }
-    int                 GetLayerCount() override;
-    OGRLayer            *GetLayer( int ) override;
-    int                 TestCapability( const char * ) override;
+    const char          *GetName() { return pszName; }
+    int                 GetLayerCount();
+    OGRLayer            *GetLayer( int );
+    int                 TestCapability( const char * );
 
     // Note: these are specific to NTF for now, but eventually might
     // might be available as part of a more object oriented approach to
     // features like that in FME or SFCORBA.
-    virtual void        ResetReading() override;
-    virtual OGRFeature* GetNextFeature( OGRLayer** ppoBelongingLayer,
-                                        double* pdfProgressPct,
-                                        GDALProgressFunc pfnProgress,
-                                        void* pProgressData ) override;
+    void                ResetReading();
+    OGRFeature *        GetNextFeature();
 
     // these are only for the use of the NTFFileReader class.
     OGRNTFLayer         *GetNamedLayer( const char * );

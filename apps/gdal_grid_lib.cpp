@@ -1,4 +1,5 @@
 /* ****************************************************************************
+ * $Id: gdal_grid_lib.cpp 33808 2016-03-29 21:15:28Z goatbar $
  *
  * Project:  GDAL Utilities
  * Purpose:  GDAL scattered data gridding (interpolation) tool
@@ -27,33 +28,20 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "cpl_port.h"
-#include "gdal_utils.h"
-#include "gdal_utils_priv.h"
-
-#include <cstdio>
-#include <cstdlib>
-#include <algorithm>
-#include <vector>
-
-#include "cpl_conv.h"
-#include "cpl_error.h"
-#include "cpl_progress.h"
 #include "cpl_string.h"
-#include "cpl_vsi.h"
 #include "gdal.h"
 #include "gdal_alg.h"
-#include "gdal_priv.h"
-#include "gdalgrid.h"
-#include "ogr_api.h"
-#include "ogr_core.h"
-#include "ogr_feature.h"
-#include "ogr_geometry.h"
 #include "ogr_spatialref.h"
-#include "ogr_srs_api.h"
+#include "ogr_api.h"
 #include "ogrsf_frmts.h"
+#include "gdalgrid.h"
+#include "gdal_utils_priv.h"
 
-CPL_CVSID("$Id: gdal_grid_lib.cpp 36682 2016-12-04 20:34:45Z rouault $");
+#include <cstdlib>
+#include <vector>
+#include <algorithm>
+
+CPL_CVSID("$Id: gdal_grid_lib.cpp 33808 2016-03-29 21:15:28Z goatbar $");
 
 /************************************************************************/
 /*                          GDALGridOptions                             */
@@ -408,7 +396,7 @@ static CPLErr ProcessLayer( OGRLayerH hSrcLayer, GDALDatasetH hDstDS,
         OGRFeature::DestroyFeature( poFeat );
     }
 
-    if ( adfX.empty() )
+    if ( adfX.size() == 0 )
     {
         printf( "No point geometry found on layer %s, skipping.\n",
                 OGR_FD_GetName( OGR_L_GetLayerDefn( hSrcLayer ) ) );
@@ -461,7 +449,7 @@ static CPLErr ProcessLayer( OGRLayerH hSrcLayer, GDALDatasetH hDstDS,
 
     GDALRasterBandH hBand = GDALGetRasterBand( hDstDS, nBand );
 
-    if (adfX.empty())
+    if (adfX.size() == 0)
     {
         // FIXME: Should have set to nodata value instead
         GDALFillRaster( hBand, 0.0 , 0.0 );
@@ -962,7 +950,7 @@ GDALGridOptions *GDALGridOptionsNew(char** papszArgv, GDALGridOptionsForBinary* 
 /*      Handle command line arguments.                                  */
 /* -------------------------------------------------------------------- */
     int argc = CSLCount(papszArgv);
-    for( int i = 0; papszArgv != NULL && i < argc; i++ )
+    for( int i = 0; i < argc; i++ )
     {
         if( EQUAL(papszArgv[i],"-of") && i < argc-1 )
         {

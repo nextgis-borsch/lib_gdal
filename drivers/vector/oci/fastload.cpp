@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: fastload.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  Oracle Spatial Driver
  * Purpose:  Test mainline for fast loading.
@@ -28,8 +29,6 @@
 
 #include <stdio.h>
 #include "ogr_oci.h"
-
-CPL_CVSID("$Id: fastload.cpp 36456 2016-11-22 23:34:00Z rouault $");
 
 int main()
 
@@ -73,7 +72,7 @@ int main()
     SDO_GEOMETRY_ind   aoGeometryIndicators[100];
     SDO_GEOMETRY_TYPE *apoGeomMap[100];
     SDO_GEOMETRY_ind  *apoGeomIndMap[100];
-    //double adfX[100], adfY[100];
+    double adfX[100], adfY[100];
 
     memset( aphElemInfos, 0, sizeof(OCIArray*) * 100 );
     memset( aphOrdinates, 0, sizeof(OCIArray*) * 100 );
@@ -123,13 +122,12 @@ int main()
 
     for( iRow = 0; iRow < 100; iRow++ )
     {
-        // cppcheck-suppress unreadVariable
         anField1[iRow] = iRow;
         sprintf( szField2 + iRow*4, "%3d", iRow );
         anGType[iRow] = 3001;
         anSRID[iRow] = -1;
-        //adfX[iRow] = 100.0 + iRow;
-        //adfY[iRow] = 100.0 - iRow;
+        adfX[iRow] = 100.0 + iRow;
+        adfY[iRow] = 100.0 - iRow;
 
         //---------------------------------------------------------------
         int anElemInfo[3], nElemInfoCount;

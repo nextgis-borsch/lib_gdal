@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: sdtscatd.cpp 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  SDTS Translator
  * Purpose:  Implementation of SDTS_CATD and SDTS_CATDEntry classes for
@@ -29,7 +30,8 @@
 
 #include "sdts_al.h"
 
-CPL_CVSID("$Id: sdtscatd.cpp 35897 2016-10-24 11:54:24Z goatbar $");
+CPL_CVSID("$Id: sdtscatd.cpp 33717 2016-03-14 06:29:14Z goatbar $");
+
 
 /************************************************************************/
 /* ==================================================================== */
@@ -138,7 +140,7 @@ int SDTS_CATD::Read( const char * pszFilename )
 /*      Loop reading CATD records, and adding to our list of entries    */
 /*      for each.                                                       */
 /* ==================================================================== */
-    DDFRecord *poRecord = NULL;
+    DDFRecord *poRecord;
     while( (poRecord = oCATDFile.ReadRecord()) != NULL )
     {
 /* -------------------------------------------------------------------- */
@@ -178,6 +180,7 @@ int SDTS_CATD::Read( const char * pszFilename )
 
     return nEntries > 0;
 }
+
 
 /************************************************************************/
 /*                         GetModuleFilePath()                          */

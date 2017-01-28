@@ -35,7 +35,7 @@ NAMESPACE_LERC_START
 // see the old stream IO functions below on how to call.
 // if you change write(...) / read(...), don't forget to update computeNumBytesNeeded(...).
 
-bool BitStuffer::write(Byte** ppByte, const vector<unsigned int>& dataVec)
+bool BitStuffer::write(Byte** ppByte, const vector<unsigned int>& dataVec) const
 {
   if (!ppByte || dataVec.empty())
     return false;
@@ -117,7 +117,6 @@ bool BitStuffer::write(Byte** ppByte, const vector<unsigned int>& dataVec)
     for (unsigned int i = 0; i < numUInts; i++)
     {
       SWAP_4(*dstPtr);
-      // cppcheck-suppress unreadVariable
       dstPtr++;
     }
 
@@ -129,7 +128,7 @@ bool BitStuffer::write(Byte** ppByte, const vector<unsigned int>& dataVec)
 
 // -------------------------------------------------------------------------- ;
 
-bool BitStuffer::read(Byte** ppByte, vector<unsigned int>& dataVec)
+bool BitStuffer::read(Byte** ppByte, vector<unsigned int>& dataVec) const
 {
   if (!ppByte)
     return false;
@@ -193,7 +192,6 @@ bool BitStuffer::read(Byte** ppByte, vector<unsigned int>& dataVec)
         unsigned int n3 = srcValue << bitPos;
         *dstPtr++ = n3 >> (32 - numBits);
         bitPos += numBits;
-        // cppcheck-suppress shiftTooManyBits
         if (bitPos == 32)    // shift >= 32 is undefined
         {
           bitPos = 0;
@@ -236,7 +234,7 @@ unsigned int BitStuffer::computeNumBytesNeeded(unsigned int numElem, unsigned in
 
 // -------------------------------------------------------------------------- ;
 // -------------------------------------------------------------------------- ;
-unsigned int BitStuffer::findMax(const vector<unsigned int>& dataVec)
+unsigned int BitStuffer::findMax(const vector<unsigned int>& dataVec) const
 {
   unsigned int maxElem = 0;
   for (size_t i = 0; i < dataVec.size(); i++)
@@ -246,7 +244,7 @@ unsigned int BitStuffer::findMax(const vector<unsigned int>& dataVec)
 
 // -------------------------------------------------------------------------- ;
 
-bool BitStuffer::writeUInt(Byte** ppByte, unsigned int k, int numBytes)
+bool BitStuffer::writeUInt(Byte** ppByte, unsigned int k, int numBytes) const
 {
   Byte* ptr = *ppByte;
 
@@ -274,7 +272,7 @@ bool BitStuffer::writeUInt(Byte** ppByte, unsigned int k, int numBytes)
 
 // -------------------------------------------------------------------------- ;
 
-bool BitStuffer::readUInt(Byte** ppByte, unsigned int& k, int numBytes)
+bool BitStuffer::readUInt(Byte** ppByte, unsigned int& k, int numBytes) const
 {
   Byte* ptr = *ppByte;
 

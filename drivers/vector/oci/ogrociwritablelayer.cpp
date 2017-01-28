@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrociwritablelayer.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  Oracle Spatial Driver
  * Purpose:  Implementation of the OGROCIWritableLayer class.  This provides
@@ -32,7 +33,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrociwritablelayer.cpp 36347 2016-11-20 20:43:39Z rouault $");
+CPL_CVSID("$Id: ogrociwritablelayer.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 /************************************************************************/
 /*                        OGROCIWritableLayer()                         */
@@ -53,7 +54,6 @@ OGROCIWritableLayer::OGROCIWritableLayer()
     panElemInfo = NULL;
 
     bLaunderColumnNames = TRUE;
-    bPreservePrecision = FALSE;
     bTruncationReported = FALSE;
     poSRS = NULL;
 

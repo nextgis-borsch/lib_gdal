@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: multireadtest.cpp 33615 2016-03-02 20:19:22Z goatbar $
  *
  * Project:  GDAL Utilities
  * Purpose:  Multi-threading test application.
@@ -31,7 +32,7 @@
 #include "cpl_multiproc.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: multireadtest.cpp 35884 2016-10-24 05:56:50Z goatbar $");
+CPL_CVSID("$Id: multireadtest.cpp 33615 2016-03-02 20:19:22Z goatbar $");
 
 static int nThreadCount = 4, nIterations = 1, bLockOnOpen = TRUE;
 static int nOpenIterations = 1;
@@ -54,6 +55,7 @@ static void Usage()
             "              filename\n" );
     exit( 1 );
 }
+
 
 /************************************************************************/
 /*                                main()                                */
@@ -106,8 +108,6 @@ int main( int argc, char ** argv )
     GDALDatasetH hDS;
 
     GDALAllRegister();
-    for( int i = 0; i < 2; i++ )
-    {
     hDS = GDALOpen( pszFilename, GA_ReadOnly );
     if( hDS == NULL )
         exit( 1 );
@@ -118,7 +118,6 @@ int main( int argc, char ** argv )
                                    GDALGetRasterYSize( hDS ) );
 
     GDALClose( hDS );
-    }
 
     printf( "Got checksum %d, launching %d worker threads on %s, %d iterations.\n",
             nChecksum, nThreadCount, pszFilename, nIterations );
@@ -155,6 +154,7 @@ int main( int argc, char ** argv )
 
     return 0;
 }
+
 
 /************************************************************************/
 /*                             WorkerFunc()                             */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrunionlayer.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: ogrunionlayer.h 31777 2015-11-26 14:14:41Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Defines OGRUnionLayer class
@@ -30,8 +30,6 @@
 #ifndef OGRUNIONLAYER_H_INCLUDED
 #define OGRUNIONLAYER_H_INCLUDED
 
-#ifndef DOXYGEN_SKIP
-
 #include "ogrsf_frmts.h"
 
 /************************************************************************/
@@ -47,8 +45,8 @@ class OGRUnionLayerGeomFieldDefn: public OGRGeomFieldDefn
     OGREnvelope     sStaticEnvelope;
 
             OGRUnionLayerGeomFieldDefn(const char* pszName, OGRwkbGeometryType eType);
-   explicit OGRUnionLayerGeomFieldDefn(OGRGeomFieldDefn* poSrc);
-   explicit OGRUnionLayerGeomFieldDefn(OGRUnionLayerGeomFieldDefn* poSrc);
+            OGRUnionLayerGeomFieldDefn(OGRGeomFieldDefn* poSrc);
+            OGRUnionLayerGeomFieldDefn(OGRUnionLayerGeomFieldDefn* poSrc);
            ~OGRUnionLayerGeomFieldDefn();
 };
 
@@ -119,39 +117,37 @@ class OGRUnionLayer : public OGRLayer
     void                SetSourceLayerFieldName(const char* pszSourceLayerFieldName);
     void                SetPreserveSrcFID(int bPreserveSrcFID);
     void                SetFeatureCount(int nFeatureCount);
-    virtual const char  *GetName() override { return osName.c_str(); }
-    virtual OGRwkbGeometryType GetGeomType() override;
+    virtual const char  *GetName() { return osName.c_str(); }
+    virtual OGRwkbGeometryType GetGeomType();
 
-    virtual void        ResetReading() override;
-    virtual OGRFeature *GetNextFeature() override;
+    virtual void        ResetReading();
+    virtual OGRFeature *GetNextFeature();
 
-    virtual OGRFeature *GetFeature( GIntBig nFeatureId ) override;
+    virtual OGRFeature *GetFeature( GIntBig nFeatureId );
 
-    virtual OGRErr      ICreateFeature( OGRFeature* poFeature ) override;
+    virtual OGRErr      ICreateFeature( OGRFeature* poFeature );
 
-    virtual OGRErr      ISetFeature( OGRFeature* poFeature ) override;
+    virtual OGRErr      ISetFeature( OGRFeature* poFeature );
 
-    virtual OGRFeatureDefn *GetLayerDefn() override;
+    virtual OGRFeatureDefn *GetLayerDefn();
 
-    virtual OGRSpatialReference *GetSpatialRef() override;
+    virtual OGRSpatialReference *GetSpatialRef();
 
-    virtual GIntBig     GetFeatureCount( int ) override;
+    virtual GIntBig     GetFeatureCount( int );
 
-    virtual OGRErr      SetAttributeFilter( const char * ) override;
+    virtual OGRErr      SetAttributeFilter( const char * );
 
-    virtual int         TestCapability( const char * ) override;
+    virtual int         TestCapability( const char * );
 
-    virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce = TRUE) override;
-    virtual OGRErr      GetExtent( OGREnvelope *psExtent, int bForce ) override;
+    virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce = TRUE);
+    virtual OGRErr      GetExtent( OGREnvelope *psExtent, int bForce );
 
-    virtual void        SetSpatialFilter( OGRGeometry * poGeomIn ) override;
-    virtual void        SetSpatialFilter( int iGeomField, OGRGeometry * ) override;
+    virtual void        SetSpatialFilter( OGRGeometry * poGeomIn );
+    virtual void        SetSpatialFilter( int iGeomField, OGRGeometry * );
 
-    virtual OGRErr      SetIgnoredFields( const char **papszFields ) override;
+    virtual OGRErr      SetIgnoredFields( const char **papszFields );
 
-    virtual OGRErr      SyncToDisk() override;
+    virtual OGRErr      SyncToDisk();
 };
-
-#endif /* #ifndef DOXYGEN_SKIP */
 
 #endif // OGRUNIONLAYER_H_INCLUDED

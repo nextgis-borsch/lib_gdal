@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrdxfdatasource.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  DXF Translator
  * Purpose:  Implements OGRDXFDataSource class
@@ -31,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrdxfdatasource.cpp 36682 2016-12-04 20:34:45Z rouault $");
+CPL_CVSID("$Id: ogrdxfdatasource.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 /************************************************************************/
 /*                          OGRDXFDataSource()                          */
@@ -40,8 +41,8 @@ CPL_CVSID("$Id: ogrdxfdatasource.cpp 36682 2016-12-04 20:34:45Z rouault $");
 OGRDXFDataSource::OGRDXFDataSource() :
     fp(NULL),
     iEntitiesSectionOffset(0),
-    bInlineBlocks(false)
-{}
+    bInlineBlocks(FALSE)
+{ }
 
 /************************************************************************/
 /*                         ~OGRDXFDataSource()                          */
@@ -53,7 +54,7 @@ OGRDXFDataSource::~OGRDXFDataSource()
 /* -------------------------------------------------------------------- */
 /*      Destroy layers.                                                 */
 /* -------------------------------------------------------------------- */
-    while( !apoLayers.empty() )
+    while( apoLayers.size() > 0 )
     {
         delete apoLayers.back();
         apoLayers.pop_back();
@@ -81,6 +82,7 @@ int OGRDXFDataSource::TestCapability( CPL_UNUSED const char * pszCap )
 /************************************************************************/
 /*                              GetLayer()                              */
 /************************************************************************/
+
 
 OGRLayer *OGRDXFDataSource::GetLayer( int iLayer )
 
@@ -122,7 +124,8 @@ int OGRDXFDataSource::Open( const char * pszFilename, int bHeaderOnly )
 /*      Confirm we have a header section.                               */
 /* -------------------------------------------------------------------- */
     char szLineBuf[257];
-    bool bEntitiesOnly = false;
+    int  nCode;
+    int  bEntitiesOnly = FALSE;
 
     if( ReadValue( szLineBuf ) != 0 || !EQUAL(szLineBuf,"SECTION") )
         return FALSE;
@@ -132,12 +135,13 @@ int OGRDXFDataSource::Open( const char * pszFilename, int bHeaderOnly )
         return FALSE;
 
     if( EQUAL(szLineBuf,"ENTITIES") )
-        bEntitiesOnly = true;
+        bEntitiesOnly = TRUE;
 
     /* Some files might have no header but begin directly with a TABLES section */
     else if( EQUAL(szLineBuf,"TABLES") )
     {
-        osEncoding = CPLGetConfigOption( "DXF_ENCODING", osEncoding );
+        if( CPLGetConfigOption( "DXF_ENCODING", NULL ) != NULL )
+            osEncoding = CPLGetConfigOption( "DXF_ENCODING", NULL );
 
         if( !ReadTablesSection() )
             return FALSE;
@@ -185,8 +189,7 @@ int OGRDXFDataSource::Open( const char * pszFilename, int bHeaderOnly )
 
         if( EQUAL(szLineBuf,"CLASSES") )
         {
-            // int nCode = 0;
-            while( (/* nCode = */ ReadValue( szLineBuf,sizeof(szLineBuf) )) > -1
+            while( (nCode = ReadValue( szLineBuf,sizeof(szLineBuf) )) > -1
                    && !EQUAL(szLineBuf,"ENDSEC") )
             {
                 //printf("C:%d/%s\n", nCode, szLineBuf );
@@ -308,7 +311,7 @@ bool OGRDXFDataSource::ReadTablesSection()
 
 {
     char szLineBuf[257];
-    int nCode = 0;
+    int  nCode;
 
     while( (nCode = ReadValue( szLineBuf, sizeof(szLineBuf) )) > -1
            && !EQUAL(szLineBuf,"ENDSEC") )
@@ -363,8 +366,8 @@ bool OGRDXFDataSource::ReadLayerDefinition()
 
 {
     char szLineBuf[257];
-    int nCode = 0;
-    std::map<CPLString,CPLString>  oLayerProperties;
+    int  nCode;
+    std::map<CPLString,CPLString> oLayerProperties;
     CPLString osLayerName = "";
 
     oLayerProperties["Hidden"] = "0";
@@ -411,7 +414,7 @@ bool OGRDXFDataSource::ReadLayerDefinition()
         return false;
     }
 
-    if( !oLayerProperties.empty() )
+    if( oLayerProperties.size() > 0 )
         oLayerTable[osLayerName] = oLayerProperties;
 
     if( nCode == 0 )
@@ -445,7 +448,7 @@ bool OGRDXFDataSource::ReadLineTypeDefinition()
 
 {
     char szLineBuf[257];
-    int nCode = 0;
+    int  nCode;
     CPLString osLineTypeName;
     CPLString osLineTypeDef;
 
@@ -510,7 +513,7 @@ bool OGRDXFDataSource::ReadHeaderSection()
 
 {
     char szLineBuf[257];
-    int nCode = 0;
+    int  nCode;
 
     while( (nCode = ReadValue( szLineBuf, sizeof(szLineBuf) )) > -1
            && !EQUAL(szLineBuf,"ENDSEC") )
@@ -597,9 +600,8 @@ bool OGRDXFDataSource::ReadHeaderSection()
         osEncoding = CPL_ENC_ISO8859_1;
     }
 
-    const char *pszEncoding = CPLGetConfigOption( "DXF_ENCODING", NULL );
-    if( pszEncoding != NULL )
-        osEncoding = pszEncoding;
+    if( CPLGetConfigOption( "DXF_ENCODING", NULL ) != NULL )
+        osEncoding = CPLGetConfigOption( "DXF_ENCODING", NULL );
 
     if( osEncoding != CPL_ENC_ISO8859_1 )
         CPLDebug( "DXF", "Treating DXF as encoding '%s', $DWGCODEPAGE='%s'",

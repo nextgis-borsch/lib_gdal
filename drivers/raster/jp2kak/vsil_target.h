@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: vsil_target.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: subfile_source.h 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  JPEG-2000
  * Purpose:  Implements VSI*L based writer.
@@ -54,7 +54,7 @@ public:
             }
         }
 
-    bool write(const kdu_byte *buf, int num_bytes) override
+    bool write(const kdu_byte *buf, int num_bytes)
         {
             if( file == NULL )
                 return false;
@@ -65,7 +65,7 @@ public:
                 return true;
         }
 
-    bool start_rewrite(kdu_long backtrack) override
+    bool start_rewrite(kdu_long backtrack)
         {
             if( file == NULL )
                 return false;
@@ -76,7 +76,7 @@ public:
                 return true;
         }
 
-    bool end_rewrite() override
+    bool end_rewrite()
         {
             if( file == NULL )
                 return false;
@@ -87,7 +87,7 @@ public:
                 return true;
         }
 
-    bool close() override
+    bool close()
         {
             if (file != NULL)
                 VSIFCloseL( file );

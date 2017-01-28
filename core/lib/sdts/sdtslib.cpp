@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: sdtslib.cpp 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  SDTS Translator
  * Purpose:  Various utility functions that apply to all SDTS profiles.
@@ -31,7 +32,7 @@
 #include "sdts_al.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: sdtslib.cpp 36461 2016-11-23 12:05:14Z rouault $");
+CPL_CVSID("$Id: sdtslib.cpp 33717 2016-03-14 06:29:14Z goatbar $");
 
 /************************************************************************/
 /*                            SDTSFeature()                             */
@@ -53,7 +54,7 @@ void SDTSFeature::ApplyATID( DDFField * poField )
         = poField->GetFieldDefn()->FindSubfieldDefn( "MODN" );
     if( poMODN == NULL )
     {
-        // CPLAssert( false );
+        //CPLAssert( FALSE );
         return;
     }
 
@@ -123,8 +124,10 @@ int SDTSModId::Set( DDFField *poField )
             = poField->GetFieldDefn()->FindSubfieldDefn( "MODN" );
         int nBytesRemaining;
         pachData = poField->GetSubfieldData(poSF, &nBytesRemaining);
-        snprintf( szModule, sizeof(szModule), "%s",
-                 poSF->ExtractStringData( pachData, nBytesRemaining, NULL) );
+        strncpy( szModule,
+                 poSF->ExtractStringData( pachData, nBytesRemaining, NULL),
+                 sizeof(szModule) );
+        szModule[sizeof(szModule)-1] = '\0';
 
         poSF = poField->GetFieldDefn()->FindSubfieldDefn( "RCID" );
         if( poSF != NULL )
@@ -145,8 +148,11 @@ int SDTSModId::Set( DDFField *poField )
                 = poField->GetSubfieldData(poSF, &nBytesRemaining);
             if( pachData != NULL )
             {
-                snprintf( szOBRP, sizeof(szOBRP), "%s",
-                        poSF->ExtractStringData( pachData, nBytesRemaining, NULL) );
+                strncpy( szOBRP,
+                        poSF->ExtractStringData( pachData, nBytesRemaining, NULL),
+                        sizeof(szOBRP) );
+
+                szOBRP[sizeof(szOBRP)-1] = '\0';
             }
         }
     }
@@ -192,9 +198,10 @@ char **SDTSScanModuleReferences( DDFModule * poModule, const char * pszFName )
 /* -------------------------------------------------------------------- */
 /*      Scan the file.                                                  */
 /* -------------------------------------------------------------------- */
+
     poModule->Rewind();
 
-    DDFRecord *poRecord = NULL;
+    DDFRecord *poRecord;
     char **papszModnList = NULL;
     while( (poRecord = poModule->ReadRecord()) != NULL )
     {

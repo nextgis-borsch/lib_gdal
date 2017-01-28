@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: minidriver_wms.h 36611 2016-12-01 23:13:38Z lplesea $
+ * $Id: minidriver_wms.h 23722 2012-01-07 22:15:29Z rouault $
  *
  * Project:  WMS Client Driver
  * Purpose:  Implementation of Dataset and RasterBand classes for WMS
@@ -28,36 +28,33 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-/*
- * Base class for a WMS minidriver.
- * At least Initialize() and one of the ImageRequest() or TiledImageRequest() has to be provided
- * All minidrivers are instantiated in wmsdriver.cpp, in GDALRegister_WMS()
- */
+H_GDALWMSMiniDriverFactory(WMS)
 
-class WMSMiniDriver_WMS : public WMSMiniDriver {
-public:
-    WMSMiniDriver_WMS();
-    virtual ~WMSMiniDriver_WMS();
+class GDALWMSMiniDriver_WMS : public GDALWMSMiniDriver {
+
+    void    BuildURL(CPLString *url, const GDALWMSImageRequestInfo &iri, const char* pszRequest);
 
 public:
-    virtual CPLErr Initialize(CPLXMLNode *config, char **papszOpenOptions) override;
-    virtual void GetCapabilities(WMSMiniDriverCapabilities *caps) override;
+    GDALWMSMiniDriver_WMS();
+    virtual ~GDALWMSMiniDriver_WMS();
 
-    // Return error message in request.Error
-    virtual CPLErr TiledImageRequest(WMSHTTPRequest &request,
-                                        const GDALWMSImageRequestInfo &iri, 
-                                        const GDALWMSTiledImageRequestInfo &tiri) override;
-
-    virtual void GetTiledImageInfo(CPLString &url,
-                                        const GDALWMSImageRequestInfo &iri,
-                                        const GDALWMSTiledImageRequestInfo &tiri,
-                                        int nXInBlock,
-                                        int nYInBlock) override;
-
-protected:
-    void   BuildURL(CPLString &url, const GDALWMSImageRequestInfo &iri, const char* pszRequest);
+public:
+    virtual CPLErr Initialize(CPLXMLNode *config);
+    virtual void GetCapabilities(GDALWMSMiniDriverCapabilities *caps);
+    virtual void ImageRequest(CPLString *url, const GDALWMSImageRequestInfo &iri);
+    virtual void TiledImageRequest(CPLString *url, const GDALWMSImageRequestInfo &iri, const GDALWMSTiledImageRequestInfo &tiri);
+    virtual void GetTiledImageInfo(CPLString *url,
+                                              const GDALWMSImageRequestInfo &iri,
+                                              const GDALWMSTiledImageRequestInfo &tiri,
+                                              int nXInBlock,
+                                              int nYInBlock);
+    virtual const char *GetProjectionInWKT();
 
 protected:
+    double GetBBoxCoord(const GDALWMSImageRequestInfo &iri, char what);
+
+protected:
+    CPLString m_base_url;
     CPLString m_version;
     int m_iversion;
     CPLString m_layers;
@@ -65,7 +62,7 @@ protected:
     CPLString m_srs;
     CPLString m_crs;
     CPLString m_image_format;
-    CPLString m_info_format;
+    CPLString m_projection_wkt;
     CPLString m_bbox_order;
     CPLString m_transparent;
 };

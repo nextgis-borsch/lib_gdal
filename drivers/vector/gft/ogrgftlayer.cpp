@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrgftlayer.cpp 32370 2015-12-20 19:40:13Z rouault $
  *
  * Project:  GFT Translator
  * Purpose:  Implements OGRGFTLayer class.
@@ -29,25 +30,32 @@
 #include "ogr_gft.h"
 #include "cpl_minixml.h"
 
-CPL_CVSID("$Id: ogrgftlayer.cpp 36061 2016-11-01 02:26:58Z goatbar $");
+CPL_CVSID("$Id: ogrgftlayer.cpp 32370 2015-12-20 19:40:13Z rouault $");
 
 /************************************************************************/
 /*                            OGRGFTLayer()                             */
 /************************************************************************/
 
-OGRGFTLayer::OGRGFTLayer(OGRGFTDataSource* poDSIn) :
-    poDS(poDSIn),
-    poFeatureDefn(NULL),
-    poSRS(new OGRSpatialReference(SRS_WKT_WGS84)),
-    nNextInSeq(0),
-    iGeometryField(-1),
-    iLatitudeField(-1),
-    iLongitudeField(-1),
-    bHiddenGeometryField(FALSE),
-    nOffset(0),
-    bEOF(FALSE),
-    bFirstTokenIsFID(FALSE)
-{}
+OGRGFTLayer::OGRGFTLayer(OGRGFTDataSource* poDSIn)
+
+{
+    this->poDS = poDSIn;
+
+    nNextInSeq = 0;
+
+    poSRS = new OGRSpatialReference(SRS_WKT_WGS84);
+
+    poFeatureDefn = NULL;
+
+    nOffset = 0;
+    bEOF = FALSE;
+
+    iLatitudeField = iLongitudeField = -1;
+    iGeometryField = -1;
+    bHiddenGeometryField = FALSE;
+
+    bFirstTokenIsFID = FALSE;
+}
 
 /************************************************************************/
 /*                            ~OGRGFTLayer()                            */
@@ -91,6 +99,8 @@ OGRFeatureDefn * OGRGFTLayer::GetLayerDefn()
 
 OGRFeature *OGRGFTLayer::GetNextFeature()
 {
+    OGRFeature  *poFeature;
+
     GetLayerDefn();
 
     while( true )
@@ -106,7 +116,7 @@ OGRFeature *OGRGFTLayer::GetNextFeature()
                 return NULL;
         }
 
-        OGRFeature *poFeature = GetNextRawFeature();
+        poFeature = GetNextRawFeature();
         if (poFeature == NULL)
             return NULL;
 
@@ -134,15 +144,18 @@ OGRFeature *OGRGFTLayer::GetNextFeature()
 char **OGRGFTCSVSplitLine( const char *pszString, char chDelimiter )
 
 {
-    char **papszRetList = NULL;
-    char *pszToken = (char *) CPLCalloc(10,1);
-    int nTokenMax = 10;
+    char        **papszRetList = NULL;
+    char        *pszToken;
+    int         nTokenMax, nTokenLen;
+
+    pszToken = (char *) CPLCalloc(10,1);
+    nTokenMax = 10;
 
     while( pszString != NULL && *pszString != '\0' )
     {
         int     bInString = FALSE;
 
-        int nTokenLen = 0;
+        nTokenLen = 0;
 
         /* Try to find the next delimiter, marking end of token */
         for( ; *pszString != '\0'; pszString++ )
@@ -291,7 +304,7 @@ static OGRGeometry* ParseKMLGeometry(/* const */ CPLXMLNode* psXML)
     }
     else if (strcmp(pszGeomType, "MultiGeometry") == 0)
     {
-        CPLXMLNode* psIter = NULL;
+        CPLXMLNode* psIter;
         OGRwkbGeometryType eType = wkbUnknown;
         for(psIter = psXML->psChild; psIter; psIter = psIter->psNext)
         {
@@ -328,7 +341,7 @@ static OGRGeometry* ParseKMLGeometry(/* const */ CPLXMLNode* psXML)
         else if (eType == wkbPolygon)
             poColl = new OGRMultiPolygon();
         else {
-            CPLAssert(false);
+            CPLAssert(0);
         }
 
         for(psIter = psXML->psChild; psIter; psIter = psIter->psNext)
@@ -364,6 +377,7 @@ static OGRGeometry* ParseKMLGeometry(const char* pszKML)
     CPLDestroyXMLNode(psXML);
     return poGeom;
 }
+
 
 /************************************************************************/
 /*                         BuildFeatureFromSQL()                        */
@@ -640,17 +654,14 @@ void OGRGFTLayer::SetGeomFieldName()
 {
     if (iGeometryField >= 0 && poFeatureDefn->GetGeomFieldCount() > 0)
     {
-        const char* pszGeomColName = NULL;
+        const char* pszGeomColName;
         if (iGeometryField == poFeatureDefn->GetFieldCount())
         {
             CPLAssert(bHiddenGeometryField);
             pszGeomColName = GetDefaultGeometryColumnName();
         }
         else
-        {
-            pszGeomColName =
-                poFeatureDefn->GetFieldDefn(iGeometryField)->GetNameRef();
-        }
+            pszGeomColName = poFeatureDefn->GetFieldDefn(iGeometryField)->GetNameRef();
         poFeatureDefn->GetGeomFieldDefn(0)->SetName(pszGeomColName);
     }
 }

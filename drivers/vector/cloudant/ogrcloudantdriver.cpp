@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id$
  *
  * Project:  CouchDB Translator
  * Purpose:  Implements OGRCouchDBDriver.
@@ -28,7 +29,7 @@
 
 #include "ogr_cloudant.h"
 
-CPL_CVSID("$Id: ogrcloudantdriver.cpp 35910 2016-10-24 14:08:24Z goatbar $");
+CPL_CVSID("$Id$");
 
 extern "C" void RegisterOGRCloudant();
 
@@ -71,6 +72,7 @@ OGRDataSource *OGRCloudantDriver::Open( const char * pszFilename, int bUpdate )
 
     return poDS;
 }
+
 
 /************************************************************************/
 /*                          CreateDataSource()                          */

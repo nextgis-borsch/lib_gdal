@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: tsxdataset.cpp 32237 2015-12-18 13:41:27Z goatbar $
  *
  * Project:     TerraSAR-X XML Product Support
  * Purpose:     Support for TerraSAR-X XML Metadata files
@@ -36,7 +37,7 @@
 
 #define MAX_GCPS 5000    //this should be more than enough ground control points
 
-CPL_CVSID("$Id: tsxdataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
+CPL_CVSID("$Id: tsxdataset.cpp 32237 2015-12-18 13:41:27Z goatbar $");
 
 enum ePolarization {
     HH=0,
@@ -91,14 +92,14 @@ class TSXDataset : public GDALPamDataset {
     eProductType nProduct;
 public:
     TSXDataset();
-    virtual ~TSXDataset();
+    ~TSXDataset();
 
-    virtual int GetGCPCount() override;
-    virtual const char *GetGCPProjection() override;
-    virtual const GDAL_GCP *GetGCPs() override;
+    virtual int GetGCPCount();
+    virtual const char *GetGCPProjection();
+    virtual const GDAL_GCP *GetGCPs();
 
-    CPLErr GetGeoTransform( double* padfTransform) override;
-    const char* GetProjectionRef() override;
+    CPLErr GetGeoTransform( double* padfTransform);
+    const char* GetProjectionRef();
 
     static GDALDataset *Open( GDALOpenInfo *poOpenInfo );
     static int Identify( GDALOpenInfo *poOpenInfo );
@@ -120,7 +121,7 @@ public:
         ePolarization ePol, GDALDataset *poBand );
     virtual ~TSXRasterBand();
 
-    virtual CPLErr IReadBlock( int nBlockXOff, int nBlockYOff, void *pImage ) override;
+    virtual CPLErr IReadBlock( int nBlockXOff, int nBlockYOff, void *pImage );
 
     static GDALDataset *Open( GDALOpenInfo *poOpenInfo );
 };
@@ -332,12 +333,12 @@ bool TSXDataset::getGCPsFromGEOREF_XML(char *pszGeorefFilename)
     nGCPCount
         = atoi(CPLGetXMLValue( psGeolocationGrid, "numberOfGridPoints.total", "0" ));
     //count the gcps if the given count value is invalid
-    CPLXMLNode *psNode = NULL;
-    if( nGCPCount<=0 )
+    CPLXMLNode *psNode;
+    if (nGCPCount<=0)
     {
         for( psNode = psGeolocationGrid->psChild; psNode != NULL; psNode = psNode->psNext )
             if( EQUAL(psNode->pszValue,"gridPoint") )
-                nGCPCount++;
+                nGCPCount++ ;
     }
     //if there are no gcps, fail
     if(nGCPCount<=0)
@@ -709,9 +710,9 @@ GDALDataset *TSXDataset::Open( GDALOpenInfo *poOpenInfo ) {
             poDS->adfGeoTransform[4] = 0.0;
             poDS->adfGeoTransform[5] = 1.0;
         }
+
     }
-    else
-    {
+    else {
         CPLError(CE_Warning, CPLE_AppDefined,
             "Unable to find sceneInfo tag in XML document. "
             "Proceeding with caution.");
@@ -775,9 +776,9 @@ CPLErr TSXDataset::GetGeoTransform(double* padfTransform)
     memcpy( padfTransform, adfGeoTransform, sizeof(double) * 6 );
 
     if (bHaveGeoTransform)
-        return CE_None;
+        return( CE_None );
 
-    return CE_Failure;
+    return( CE_Failure );
 }
 
 /************************************************************************/

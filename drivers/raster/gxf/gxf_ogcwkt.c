@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gxf_ogcwkt.c 36380 2016-11-21 10:21:20Z rouault $
+ * $Id: gxf_ogcwkt.c 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  GXF Reader
  * Purpose:  Handle GXF to OGC WKT projection transformation.
@@ -31,7 +31,7 @@
 #include "gxfopen.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id: gxf_ogcwkt.c 36380 2016-11-21 10:21:20Z rouault $");
+CPL_CVSID("$Id: gxf_ogcwkt.c 33720 2016-03-15 00:39:53Z goatbar $");
 
 /* -------------------------------------------------------------------- */
 /* the following #defines come from ogr_spatialref.h in the GDAL/OGR	*/
@@ -207,7 +207,7 @@ static void OGCWKTSetProj( char * pszProjection,
 
 {
     int		iParm, nCount = CSLCount(papszMethods);
-    const char	*apszParmNames[8] = { NULL };
+    const char	*apszParmNames[8];
 
     apszParmNames[0] = pszParm1;
     apszParmNames[1] = pszParm2;

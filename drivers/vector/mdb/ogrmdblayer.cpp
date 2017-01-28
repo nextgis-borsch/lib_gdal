@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrmdblayer.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRMDBLayer class
@@ -32,27 +33,34 @@
 #include "ogrpgeogeometry.h"
 #include "ogrgeomediageometry.h"
 
-CPL_CVSID("$Id: ogrmdblayer.cpp 36350 2016-11-20 22:07:17Z rouault $");
+CPL_CVSID("$Id: ogrmdblayer.cpp 33714 2016-03-13 05:42:13Z goatbar $");
 
 /************************************************************************/
 /*                            OGRMDBLayer()                            */
 /************************************************************************/
 
-OGRMDBLayer::OGRMDBLayer(OGRMDBDataSource* poDSIn, OGRMDBTable* poMDBTableIn) :
-    poMDBTable(poMDBTableIn),
-    eGeometryType(MDB_GEOM_NONE),
-    poFeatureDefn(NULL),
-    poSRS(NULL),
-    nSRSId(-2), // we haven't even queried the database for it yet.
-    iNextShapeId(0),
-    poDS(poDSIn),
-    iGeomColumn(-1),
-    pszGeomColumn(NULL),
-    pszFIDColumn(NULL),
-    panFieldOrdinals(NULL),
-    bHasExtent(FALSE)
+OGRMDBLayer::OGRMDBLayer(OGRMDBDataSource* poDSIn, OGRMDBTable* poMDBTableIn)
 
 {
+    this->poDS = poDSIn;
+    this->poMDBTable = poMDBTableIn;
+
+    eGeometryType = MDB_GEOM_NONE;
+
+    iGeomColumn = -1;
+    pszGeomColumn = NULL;
+    pszFIDColumn = NULL;
+
+    panFieldOrdinals = NULL;
+
+    poFeatureDefn = NULL;
+
+    iNextShapeId = 0;
+
+    poSRS = NULL;
+    nSRSId = -2; // we haven't even queried the database for it yet.
+
+    bHasExtent = FALSE;
 }
 
 /************************************************************************/
@@ -103,6 +111,7 @@ CPLErr OGRMDBLayer::BuildFeatureDefn()
     SetDescription( poFeatureDefn->GetName() );
 
     poFeatureDefn->Reference();
+
 
     int nRawColumns = poMDBTable->GetColumnCount();
     panFieldOrdinals = (int *) CPLMalloc( sizeof(int) * nRawColumns );
@@ -175,6 +184,7 @@ CPLErr OGRMDBLayer::BuildFeatureDefn()
 
     return CE_None;
 }
+
 
 /************************************************************************/
 /*                            ResetReading()                            */
@@ -483,6 +493,7 @@ CPLErr OGRMDBLayer::Initialize( CPL_UNUSED const char *pszTableName,
                                 int nSRID,
                                 int bHasZ )
 
+
 {
     CPLFree( pszGeomColumn );
 
@@ -554,6 +565,7 @@ CPLErr OGRMDBLayer::Initialize( CPL_UNUSED const char *pszTableName,
     return CE_None;
 }
 
+
 /************************************************************************/
 /*                             Initialize()                             */
 /************************************************************************/
@@ -561,6 +573,7 @@ CPLErr OGRMDBLayer::Initialize( CPL_UNUSED const char *pszTableName,
 CPLErr OGRMDBLayer::Initialize( const char * /*pszTableName */,
                                 const char *pszGeomCol,
                                 OGRSpatialReference* poSRSIn )
+
 
 {
     CPLFree( pszGeomColumn );

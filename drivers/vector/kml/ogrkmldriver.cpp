@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrkmldriver.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  KML Driver
  * Purpose:  Implementation of OGRKMLDriver class.
@@ -28,12 +29,9 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "ogr_kml.h"
-
 #include "cpl_conv.h"
 #include "cpl_error.h"
-
-CPL_CVSID("$Id: ogrkmldriver.cpp 34821 2016-07-29 05:16:17Z goatbar $");
+#include "ogr_kml.h"
 
 /************************************************************************/
 /*                         OGRKMLDriverIdentify()                       */
@@ -45,9 +43,7 @@ static int OGRKMLDriverIdentify( GDALOpenInfo* poOpenInfo )
     if( poOpenInfo->fpL == NULL )
         return FALSE;
 
-    return
-        strstr(reinterpret_cast<char *>(poOpenInfo->pabyHeader),
-               "<kml") != NULL;
+    return( strstr((const char*)poOpenInfo->pabyHeader, "<kml") != NULL );
 }
 
 /************************************************************************/
@@ -68,16 +64,14 @@ static GDALDataset *OGRKMLDriverOpen( GDALOpenInfo* poOpenInfo )
 
     if( poDS->Open( poOpenInfo->pszFilename, TRUE ) )
     {
-#ifdef DEBUG_VERBOSE
-        if( poDS->GetLayerCount() == 0 )
+        /*if( poDS->GetLayerCount() == 0 )
         {
             CPLError( CE_Failure, CPLE_OpenFailed,
                 "No layers in KML file: %s.", pszName );
 
             delete poDS;
             poDS = NULL;
-        }
-#endif
+        }*/
     }
     else
     {

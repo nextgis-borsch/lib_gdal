@@ -1,5 +1,5 @@
 /*
- * $Id: ogr_php.i 34525 2016-07-03 02:53:47Z goatbar $
+ * $Id: ogr_php.i 28039 2014-11-30 18:24:59Z rouault $
  *
  * php specific code for ogr bindings.
  */

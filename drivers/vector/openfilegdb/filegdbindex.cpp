@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: filegdbindex.cpp 33027 2016-01-17 18:47:10Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements reading of FileGDB indexes
@@ -31,7 +32,7 @@
 #include "cpl_time.h"
 #include <algorithm>
 
-CPL_CVSID("$Id: filegdbindex.cpp 36501 2016-11-25 14:09:24Z rouault $");
+CPL_CVSID("$Id");
 
 namespace OpenFileGDB
 {
@@ -44,17 +45,15 @@ static bool FileGDBOGRDateToDoubleDate( const OGRField* psField,
                                         double *pdfVal )
 {
     struct tm brokendowntime;
-    /* workaround cppcheck false positive */
-    struct tm* pBrokendowntime = &brokendowntime;
 
-    pBrokendowntime->tm_year = psField->Date.Year - 1900;
-    pBrokendowntime->tm_mon = psField->Date.Month - 1;
-    pBrokendowntime->tm_mday = psField->Date.Day;
-    pBrokendowntime->tm_hour = psField->Date.Hour;
-    pBrokendowntime->tm_min = psField->Date.Minute;
-    pBrokendowntime->tm_sec = static_cast<int>(psField->Date.Second);
+    brokendowntime.tm_year = psField->Date.Year - 1900;
+    brokendowntime.tm_mon = psField->Date.Month - 1;
+    brokendowntime.tm_mday = psField->Date.Day;
+    brokendowntime.tm_hour = psField->Date.Hour;
+    brokendowntime.tm_min = psField->Date.Minute;
+    brokendowntime.tm_sec = static_cast<int>(psField->Date.Second);
 
-    const GIntBig nTime = CPLYMDHMSToUnixTime(pBrokendowntime);
+    const GIntBig nTime = CPLYMDHMSToUnixTime(&brokendowntime);
 
     *pdfVal = nTime / 3600. / 24 + 25569;
 
@@ -72,24 +71,24 @@ class FileGDBTrivialIterator CPL_FINAL : public FileGDBIterator
         int                         iRow;
 
     public:
-        explicit                     FileGDBTrivialIterator(FileGDBIterator *poParentIter);
+                                     FileGDBTrivialIterator(FileGDBIterator *poParentIter);
         virtual                     ~FileGDBTrivialIterator() { delete poParentIter; }
 
-        virtual FileGDBTable        *GetTable() override { return poTable; }
-        virtual void                 Reset() override { iRow = 0; poParentIter->Reset(); }
-        virtual int                  GetNextRowSortedByFID() override;
-        virtual int                  GetRowCount() override
+        virtual FileGDBTable        *GetTable() { return poTable; }
+        virtual void                 Reset() { iRow = 0; poParentIter->Reset(); }
+        virtual int                  GetNextRowSortedByFID();
+        virtual int                  GetRowCount()
                 { return poTable->GetTotalRecordCount(); }
 
-        virtual int                  GetNextRowSortedByValue() override
+        virtual int                  GetNextRowSortedByValue()
                 { return poParentIter->GetNextRowSortedByValue(); }
 
-        virtual const OGRField*      GetMinValue(int& eOutType) override
+        virtual const OGRField*      GetMinValue(int& eOutType)
                 { return poParentIter->GetMinValue(eOutType); }
-        virtual const OGRField*      GetMaxValue(int& eOutType) override
+        virtual const OGRField*      GetMaxValue(int& eOutType)
                 { return poParentIter->GetMaxValue(eOutType); }
         virtual int                  GetMinMaxSumCount(double& dfMin, double& dfMax,
-                                                       double& dfSum, int& nCount) override
+                                                       double& dfSum, int& nCount)
             { return poParentIter->GetMinMaxSumCount(dfMin, dfMax, dfSum, nCount); }
 };
 
@@ -106,13 +105,13 @@ class FileGDBNotIterator CPL_FINAL : public FileGDBIterator
         int                         bNoHoles;
 
     public:
-        explicit                     FileGDBNotIterator(FileGDBIterator* poIterBase);
+                                     FileGDBNotIterator(FileGDBIterator* poIterBase);
         virtual                     ~FileGDBNotIterator();
 
-        virtual FileGDBTable        *GetTable() override { return poTable; }
-        virtual void                 Reset() override;
-        virtual int                  GetNextRowSortedByFID() override;
-        virtual int                  GetRowCount() override;
+        virtual FileGDBTable        *GetTable() { return poTable; }
+        virtual void                 Reset();
+        virtual int                  GetNextRowSortedByFID();
+        virtual int                  GetRowCount();
 };
 
 /************************************************************************/
@@ -131,9 +130,9 @@ class FileGDBAndIterator CPL_FINAL : public FileGDBIterator
                                                         FileGDBIterator* poIter2);
         virtual                     ~FileGDBAndIterator();
 
-        virtual FileGDBTable        *GetTable() override { return poIter1->GetTable(); }
-        virtual void                 Reset() override;
-        virtual int                  GetNextRowSortedByFID() override;
+        virtual FileGDBTable        *GetTable() { return poIter1->GetTable(); }
+        virtual void                 Reset();
+        virtual int                  GetNextRowSortedByFID();
 };
 
 /************************************************************************/
@@ -155,10 +154,10 @@ class FileGDBOrIterator CPL_FINAL : public FileGDBIterator
                                                        int bIteratorAreExclusive = FALSE);
         virtual                     ~FileGDBOrIterator();
 
-        virtual FileGDBTable        *GetTable() override { return poIter1->GetTable(); }
-        virtual void                 Reset() override;
-        virtual int                  GetNextRowSortedByFID() override;
-        virtual int                  GetRowCount() override;
+        virtual FileGDBTable        *GetTable() { return poIter1->GetTable(); }
+        virtual void                 Reset();
+        virtual int                  GetNextRowSortedByFID();
+        virtual int                  GetRowCount();
 };
 
 /************************************************************************/
@@ -239,17 +238,17 @@ class FileGDBIndexIterator CPL_FINAL : public FileGDBIterator
                                            OGRFieldType eOGRFieldType,
                                            const OGRField* psValue);
 
-        virtual FileGDBTable        *GetTable() override { return poParent; }
-        virtual void                 Reset() override;
-        virtual int                  GetNextRowSortedByFID() override;
-        virtual int                  GetRowCount() override;
+        virtual FileGDBTable        *GetTable() { return poParent; }
+        virtual void                 Reset();
+        virtual int                  GetNextRowSortedByFID();
+        virtual int                  GetRowCount();
 
-        virtual int                  GetNextRowSortedByValue() override { return GetNextRow(); }
+        virtual int                  GetNextRowSortedByValue() { return GetNextRow(); }
 
-        virtual const OGRField*      GetMinValue(int& eOutType) override;
-        virtual const OGRField*      GetMaxValue(int& eOutType) override;
+        virtual const OGRField*      GetMinValue(int& eOutType);
+        virtual const OGRField*      GetMaxValue(int& eOutType);
         virtual int                  GetMinMaxSumCount(double& dfMin, double& dfMax,
-                                                       double& dfSum, int& nCount) override;
+                                                       double& dfSum, int& nCount);
 };
 
 /************************************************************************/
@@ -384,12 +383,10 @@ int FileGDBIterator::GetRowCount()
 /*                         FileGDBTrivialIterator()                     */
 /************************************************************************/
 
-FileGDBTrivialIterator::FileGDBTrivialIterator(
-    FileGDBIterator* poParentIterIn ) :
-    poParentIter(poParentIterIn),
-    poTable(poParentIterIn->GetTable()),
-    iRow(0)
-{}
+FileGDBTrivialIterator::FileGDBTrivialIterator(FileGDBIterator* poParentIterIn) :
+        poParentIter(poParentIterIn), poTable(poParentIterIn->GetTable()), iRow(0)
+{
+}
 
 /************************************************************************/
 /*                        GetNextRowSortedByFID()                       */
@@ -408,10 +405,7 @@ int FileGDBTrivialIterator::GetNextRowSortedByFID()
 /************************************************************************/
 
 FileGDBNotIterator::FileGDBNotIterator(FileGDBIterator* poIterBaseIn) :
-    poIterBase(poIterBaseIn),
-    poTable(poIterBaseIn->GetTable()),
-    iRow(0),
-    iNextRowBase(-1)
+    poIterBase(poIterBaseIn), poTable(poIterBaseIn->GetTable()), iRow(0), iNextRowBase(-1)
 {
     bNoHoles = (poTable->GetValidRecordCount() == poTable->GetTotalRecordCount());
 }
@@ -483,16 +477,15 @@ int FileGDBNotIterator::GetRowCount()
     return poTable->GetValidRecordCount() - poIterBase->GetRowCount();
 }
 
+
 /************************************************************************/
 /*                          FileGDBAndIterator()                        */
 /************************************************************************/
 
-FileGDBAndIterator::FileGDBAndIterator( FileGDBIterator* poIter1In,
-                                        FileGDBIterator* poIter2In ) :
-    poIter1(poIter1In),
-    poIter2(poIter2In),
-    iNextRow1(-1),
-    iNextRow2(-1)
+FileGDBAndIterator::FileGDBAndIterator(FileGDBIterator* poIter1In,
+                                       FileGDBIterator* poIter2In) :
+                                       poIter1(poIter1In), poIter2(poIter2In),
+                                       iNextRow1(-1), iNextRow2(-1)
 {
     CPLAssert(poIter1->GetTable() == poIter2->GetTable());
 }
@@ -558,9 +551,10 @@ int FileGDBAndIterator::GetNextRowSortedByFID()
 /*                          FileGDBOrIterator()                         */
 /************************************************************************/
 
-FileGDBOrIterator::FileGDBOrIterator( FileGDBIterator* poIter1In,
-                                      FileGDBIterator* poIter2In,
-                                      int bIteratorAreExclusiveIn ) :
+
+FileGDBOrIterator::FileGDBOrIterator(FileGDBIterator* poIter1In,
+                                     FileGDBIterator* poIter2In,
+                                     int bIteratorAreExclusiveIn) :
     poIter1(poIter1In),
     poIter2(poIter2In),
     bIteratorAreExclusive(bIteratorAreExclusiveIn),
@@ -652,7 +646,7 @@ int FileGDBOrIterator::GetRowCount()
 /************************************************************************/
 
 FileGDBIndexIterator::FileGDBIndexIterator( FileGDBTable* poParentIn,
-                                            int bAscendingIn ) :
+                                            int bAscendingIn) :
   poParent(poParentIn),
   bAscending(CPL_TO_BOOL(bAscendingIn)),
   fpCurIdx(NULL),
@@ -721,7 +715,7 @@ static const char* FileGDBSQLOpToStr(FileGDBSQLOp op)
     switch( op )
     {
         case FGSO_ISNOTNULL : return "IS NOT NULL";
-        case FGSO_LT: return "<";
+        case FGSO_LT: return "<";;
         case FGSO_LE: return "<=";
         case FGSO_EQ: return "=";
         case FGSO_GE: return ">=";
@@ -922,7 +916,6 @@ int FileGDBIndexIterator::SetConstraint(int nFieldIdx,
             {
                 returnErrorIf(eOGRFieldType != OFTString);
                 memset(szUUID, 0, UUID_LEN_AS_STRING + 1);
-                // cppcheck-suppress redundantCopy
                 strncpy(szUUID, psValue->String, UUID_LEN_AS_STRING);
                 bEvaluateToFALSE =
                     eOp == FGSO_EQ &&
@@ -933,7 +926,7 @@ int FileGDBIndexIterator::SetConstraint(int nFieldIdx,
         }
 
         default:
-            CPLAssert(false);
+            CPLAssert(FALSE);
             break;
     }
 
@@ -1057,8 +1050,7 @@ int FileGDBIndexIterator::FindPages(int iLevel, int nPage)
             case FGFT_FLOAT64:
             case FGFT_DATETIME:
             {
-                const double dfVal =
-                    GetFloat64(abyPage[iLevel] + nOffsetFirstValInPage, i);
+                double dfVal = GetFloat64(abyPage[iLevel] + nOffsetFirstValInPage, i);
 #ifdef DEBUG_INDEX_CONSISTENCY
                 returnErrorIf(i > 0 && dfVal < dfLastMax);
                 dfLastMax = dfVal;
@@ -1105,7 +1097,7 @@ int FileGDBIndexIterator::FindPages(int iLevel, int nPage)
             }
 
             default:
-                CPLAssert(false);
+                CPLAssert(FALSE);
                 nComp = 0;
                 break;
         }
@@ -1172,7 +1164,7 @@ int FileGDBIndexIterator::FindPages(int iLevel, int nPage)
                 break;
 
             default:
-                CPLAssert(false);
+                CPLAssert(FALSE);
                 break;
         }
         if( bStop )
@@ -1324,39 +1316,36 @@ int FileGDBIndexIterator::GetNextRow()
             }
         }
 
-        bool bMatch = false;
+        int bMatch;
         if( eOp == FGSO_ISNOTNULL )
         {
-            bMatch = true;
+            bMatch = TRUE;
         }
         else
         {
-            int nComp = 0;
+            int nComp;
             switch( eFieldType )
             {
                 case FGFT_INT16:
                 {
-                    const GInt16 nVal =
-                        GetInt16(abyPageFeature + nOffsetFirstValInPage,
-                                 iCurFeatureInPage);
+                    GInt16 nVal = GetInt16(abyPageFeature + nOffsetFirstValInPage,
+                                           iCurFeatureInPage);
                     nComp = COMPARE(sValue.Integer, nVal);
                     break;
                 }
 
                 case FGFT_INT32:
                 {
-                    const GInt32 nVal =
-                        GetInt32(abyPageFeature + nOffsetFirstValInPage,
-                                 iCurFeatureInPage);
+                    GInt32 nVal = GetInt32(abyPageFeature + nOffsetFirstValInPage,
+                                           iCurFeatureInPage);
                     nComp = COMPARE(sValue.Integer, nVal);
                     break;
                 }
 
                 case FGFT_FLOAT32:
                 {
-                    const float fVal =
-                        GetFloat32(abyPageFeature + nOffsetFirstValInPage,
-                                   iCurFeatureInPage);
+                    float fVal = GetFloat32(abyPageFeature + nOffsetFirstValInPage,
+                                           iCurFeatureInPage);
                     nComp = COMPARE(sValue.Real, fVal);
                     break;
                 }
@@ -1364,9 +1353,8 @@ int FileGDBIndexIterator::GetNextRow()
                 case FGFT_FLOAT64:
                 case FGFT_DATETIME:
                 {
-                    const double dfVal =
-                        GetFloat64(abyPageFeature + nOffsetFirstValInPage,
-                                   iCurFeatureInPage);
+                    double dfVal = GetFloat64(abyPageFeature + nOffsetFirstValInPage,
+                                           iCurFeatureInPage);
                     nComp = COMPARE(sValue.Real, dfVal);
                     break;
                 }
@@ -1399,12 +1387,12 @@ int FileGDBIndexIterator::GetNextRow()
                 }
 
                 default:
-                    CPLAssert(false);
+                    CPLAssert(FALSE);
                     nComp = 0;
                     break;
             }
 
-            bMatch = false;
+            bMatch = FALSE;
             CPL_IGNORE_RET_VAL(bMatch);
             switch( eOp )
             {
@@ -1414,7 +1402,7 @@ int FileGDBIndexIterator::GetNextRow()
                         bEOF = TRUE;
                         return -1;
                     }
-                    bMatch = true;
+                    bMatch = TRUE;
                     break;
 
                 case FGSO_LE:
@@ -1423,7 +1411,7 @@ int FileGDBIndexIterator::GetNextRow()
                         bEOF = TRUE;
                         return -1;
                     }
-                    bMatch = true;
+                    bMatch = TRUE;
                     break;
 
                 case FGSO_EQ:
@@ -1432,27 +1420,26 @@ int FileGDBIndexIterator::GetNextRow()
                         bEOF = TRUE;
                         return -1;
                     }
-                    bMatch = nComp == 0;
+                    bMatch = ( nComp == 0 );
                     break;
 
                 case FGSO_GE:
-                    bMatch = nComp <= 0;
+                    bMatch = ( nComp <= 0 );
                     break;
 
                 case FGSO_GT:
-                    bMatch = nComp < 0;
+                    bMatch = ( nComp < 0 );
                     break;
 
                 default:
-                    CPLAssert(false);
+                    CPLAssert(FALSE);
                     break;
             }
         }
 
         if( bMatch )
         {
-            const GUInt32 nFID =
-                GetUInt32(abyPageFeature + 12, iCurFeatureInPage);
+            GUInt32 nFID = GetUInt32(abyPageFeature + 12, iCurFeatureInPage);
             if( bAscending )
                 iCurFeatureInPage ++;
             else
@@ -1606,8 +1593,7 @@ const OGRField* FileGDBIndexIterator::GetMinMaxValue(OGRField* psField,
     {
         case FGFT_INT16:
         {
-            const GInt16 nVal =
-                GetInt16(l_abyPage + nOffsetFirstValInPage, iFeature);
+            GInt16 nVal = GetInt16(l_abyPage + nOffsetFirstValInPage, iFeature);
             psField->Integer = nVal;
             eOutType = OFTInteger;
             return psField;
@@ -1615,8 +1601,7 @@ const OGRField* FileGDBIndexIterator::GetMinMaxValue(OGRField* psField,
 
         case FGFT_INT32:
         {
-            const GInt32 nVal =
-                GetInt32(l_abyPage + nOffsetFirstValInPage, iFeature);
+            GInt32 nVal = GetInt32(l_abyPage + nOffsetFirstValInPage, iFeature);
             psField->Integer = nVal;
             eOutType = OFTInteger;
             return psField;
@@ -1624,8 +1609,7 @@ const OGRField* FileGDBIndexIterator::GetMinMaxValue(OGRField* psField,
 
         case FGFT_FLOAT32:
         {
-            const float fVal =
-                GetFloat32(l_abyPage + nOffsetFirstValInPage, iFeature);
+            float fVal = GetFloat32(l_abyPage + nOffsetFirstValInPage, iFeature);
             psField->Real = fVal;
             eOutType = OFTReal;
             return psField;
@@ -1633,8 +1617,7 @@ const OGRField* FileGDBIndexIterator::GetMinMaxValue(OGRField* psField,
 
         case FGFT_FLOAT64:
         {
-            const double dfVal =
-                GetFloat64(l_abyPage + nOffsetFirstValInPage, iFeature);
+            double dfVal = GetFloat64(l_abyPage + nOffsetFirstValInPage, iFeature);
             psField->Real = dfVal;
             eOutType = OFTReal;
             return psField;
@@ -1642,8 +1625,7 @@ const OGRField* FileGDBIndexIterator::GetMinMaxValue(OGRField* psField,
 
         case FGFT_DATETIME:
         {
-            const double dfVal =
-                GetFloat64(l_abyPage + nOffsetFirstValInPage, iFeature);
+            double dfVal = GetFloat64(l_abyPage + nOffsetFirstValInPage, iFeature);
             FileGDBDoubleDateToOGRDate(dfVal, psField);
             eOutType = OFTDateTime;
             return psField;
@@ -1651,7 +1633,7 @@ const OGRField* FileGDBIndexIterator::GetMinMaxValue(OGRField* psField,
 
         case FGFT_STRING:
         {
-            wchar_t awsVal[MAX_CAR_COUNT_STR+1] = { 0 };
+            wchar_t awsVal[MAX_CAR_COUNT_STR+1];
             for(int j=0;j<nStrLen;j++)
             {
                 GUInt16 nCh = GetUInt16(l_abyPage + nOffsetFirstValInPage +
@@ -1681,7 +1663,7 @@ const OGRField* FileGDBIndexIterator::GetMinMaxValue(OGRField* psField,
         }
 
         default:
-            CPLAssert(false);
+            CPLAssert(FALSE);
             break;
     }
     return NULL;
@@ -1828,7 +1810,7 @@ int FileGDBIndexIterator::GetMinMaxSumCount(double& dfMin, double& dfMax,
             break;
         }
         default:
-            CPLAssert(false);
+            CPLAssert(FALSE);
             break;
     }
 

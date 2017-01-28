@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogringresstatement.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRIngresStatement class.
@@ -29,7 +30,7 @@
 #include "ogr_ingres.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogringresstatement.cpp 35166 2016-08-21 14:12:23Z goatbar $");
+CPL_CVSID("$Id: ogringresstatement.cpp 33714 2016-03-13 05:42:13Z goatbar $");
 
 /************************************************************************/
 /*                         OGRIngresStatement()                         */
@@ -132,8 +133,8 @@ int OGRIngresStatement::ExecuteSQL( const char *pszStatement )
 /* -------------------------------------------------------------------- */
 /*      Issue the query.                                                */
 /* -------------------------------------------------------------------- */
-    IIAPI_WAITPARM waitParm = { -1 };
-    IIAPI_QUERYPARM queryParm;
+    IIAPI_WAITPARM	waitParm = { -1 };
+    IIAPI_QUERYPARM	queryParm;
 
     queryParm.qy_genParm.gp_callback = NULL;
     queryParm.qy_genParm.gp_closure = NULL;
@@ -153,7 +154,7 @@ int OGRIngresStatement::ExecuteSQL( const char *pszStatement )
 /*      Capture handles for result.                                     */
 /* -------------------------------------------------------------------- */
     while( queryParm.qy_genParm.gp_completed == FALSE )
-        IIapi_wait( &waitParm );
+	IIapi_wait( &waitParm );
 
     if( queryParm.qy_genParm.gp_status != IIAPI_ST_SUCCESS
         || hConn == NULL )
@@ -193,7 +194,7 @@ int OGRIngresStatement::ExecuteSQL( const char *pszStatement )
     IIapi_getDescriptor( &getDescrParm );
 
     while( getDescrParm.gd_genParm.gp_completed == FALSE )
-        IIapi_wait( &waitParm );
+	IIapi_wait( &waitParm );
 
     if( getDescrParm.gd_genParm.gp_status != IIAPI_ST_SUCCESS )
     {
@@ -306,8 +307,8 @@ int OGRIngresStatement::ExecuteSQL( const char *pszStatement )
 char **OGRIngresStatement::GetRow()
 
 {
-    IIAPI_WAITPARM waitParm = { -1 };
-    int            iBaseCol;
+    IIAPI_WAITPARM	waitParm = { -1 };
+    int                 iBaseCol;
 
     ClearDynamicColumns();
 
@@ -495,39 +496,39 @@ void OGRIngresStatement::ReportError( IIAPI_GENPARM *genParm,
 
     do
     {
-        /*
-        ** Invoke API function call.
-        */
-        IIapi_getErrorInfo( &getErrParm );
+	/*
+	** Invoke API function call.
+ 	*/
+    	IIapi_getErrorInfo( &getErrParm );
 
-        /*
-        ** Break out of the loop if no data or failed.
-        */
-        if ( getErrParm.ge_status != IIAPI_ST_SUCCESS )
-            break;
+ 	/*
+	** Break out of the loop if no data or failed.
+	*/
+    	if ( getErrParm.ge_status != IIAPI_ST_SUCCESS )
+	    break;
 
-        /*
-        ** Process result.
-        */
+	/*
+	** Process result.
+	*/
 
-        switch( getErrParm.ge_type )
-        {
-           case IIAPI_GE_ERROR:
+	switch( getErrParm.ge_type )
+	{
+           case IIAPI_GE_ERROR		:
             eType = CE_Failure;
             break;
 
-          case IIAPI_GE_WARNING:
+          case IIAPI_GE_WARNING	:
             eType = CE_Warning;
             break;
 
-          case IIAPI_GE_MESSAGE:
+          case IIAPI_GE_MESSAGE	:
             eType = CE_Debug;
             break;
 
           default:
             eType = CE_Failure;
             break;
-        }
+	}
 
         CPLString osMoreMsg;
 
@@ -547,11 +548,11 @@ void OGRIngresStatement::ReportError( IIAPI_GENPARM *genParm,
 int OGRIngresStatement::SendParms()
 
 {
-    IIAPI_SETDESCRPARM setDescrParm;
-    IIAPI_PUTPARMPARM  putParmParm;
-    IIAPI_DESCRIPTOR   DescrBuffer;
-    IIAPI_DATAVALUE    DataBuffer;
-    IIAPI_WAITPARM     waitParm = { -1 };
+    IIAPI_SETDESCRPARM		setDescrParm;
+    IIAPI_PUTPARMPARM		putParmParm;
+    IIAPI_DESCRIPTOR    	DescrBuffer;
+    IIAPI_DATAVALUE    		DataBuffer;
+    IIAPI_WAITPARM	        waitParm = { -1 };
 
 /* -------------------------------------------------------------------- */
 /*      Describe the parameter.                                         */
@@ -573,7 +574,7 @@ int OGRIngresStatement::SendParms()
     IIapi_setDescriptor( &setDescrParm );
 
     while( setDescrParm.sd_genParm.gp_completed == FALSE )
-        IIapi_wait( &waitParm );
+	IIapi_wait( &waitParm );
 
     if( setDescrParm.sd_genParm.gp_status != IIAPI_ST_SUCCESS )
     {
@@ -607,14 +608,14 @@ int OGRIngresStatement::SendParms()
         putParmParm.pp_parmData[0].dv_length = nLen+2;
         putParmParm.pp_parmData[0].dv_value = abyChunk;
 
-        putParmParm.pp_moreSegments = nBytesSent < nParmLen;
+	putParmParm.pp_moreSegments = nBytesSent < nParmLen;
 
-        IIapi_putParms( &putParmParm );
+	IIapi_putParms( &putParmParm );
 
-        while( putParmParm.pp_genParm.gp_completed == FALSE )
-            IIapi_wait( &waitParm );
+	while( putParmParm.pp_genParm.gp_completed == FALSE )
+	    IIapi_wait( &waitParm );
 
-        if ( putParmParm.pp_genParm.gp_status != IIAPI_ST_SUCCESS )
+	if ( putParmParm.pp_genParm.gp_status != IIAPI_ST_SUCCESS )
         {
             ReportError( &(putParmParm.pp_genParm), "SendParm()" );
 

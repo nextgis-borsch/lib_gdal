@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: sdtsdataset.cpp 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  SDTS Translator
  * Purpose:  GDALDataset driver for SDTS Raster translator.
@@ -32,7 +33,7 @@
 #include "ogr_spatialref.h"
 #include "sdts_al.h"
 
-CPL_CVSID("$Id: sdtsdataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
+CPL_CVSID("$Id: sdtsdataset.cpp 33717 2016-03-14 06:29:14Z goatbar $");
 
 /**
  \file sdtsdataset.cpp
@@ -58,13 +59,12 @@ class SDTSDataset : public GDALPamDataset
     char        *pszProjection;
 
   public:
-                 SDTSDataset();
     virtual     ~SDTSDataset();
 
     static GDALDataset *Open( GDALOpenInfo * );
 
-    virtual const char *GetProjectionRef(void) override;
-    virtual CPLErr GetGeoTransform( double * ) override;
+    virtual const char *GetProjectionRef(void);
+    virtual CPLErr GetGeoTransform( double * );
 };
 
 class SDTSRasterBand : public GDALPamRasterBand
@@ -77,24 +77,12 @@ class SDTSRasterBand : public GDALPamRasterBand
 
                 SDTSRasterBand( SDTSDataset *, int, SDTSRasterReader * );
 
-    virtual CPLErr IReadBlock( int, int, void * ) override;
+    virtual CPLErr IReadBlock( int, int, void * );
 
-    virtual double GetNoDataValue( int *pbSuccess ) override;
-    virtual const char *GetUnitType() override;
+    virtual double GetNoDataValue( int *pbSuccess );
+    virtual const char *GetUnitType();
 };
 
-
-/************************************************************************/
-/*                             SDTSDataset()                            */
-/************************************************************************/
-
-SDTSDataset::SDTSDataset() :
-    poTransfer( NULL ),
-    poRL( NULL ),
-    pszProjection( NULL )
-
-{
-}
 
 /************************************************************************/
 /*                            ~SDTSDataset()                            */
@@ -237,7 +225,9 @@ GDALDataset *SDTSDataset::Open( GDALOpenInfo * poOpenInfo )
         oSRS.SetWellKnownGeogCS( "NAD83" );
     else if( EQUAL(poXREF->pszDatum, "WGC") )
         oSRS.SetWellKnownGeogCS( "WGS72" );
-    else /* if( EQUAL(poXREF->pszDatum, "WGE") ) or default */
+    else if( EQUAL(poXREF->pszDatum, "WGE") )
+        oSRS.SetWellKnownGeogCS( "WGS84" );
+    else
         oSRS.SetWellKnownGeogCS( "WGS84" );
 
     oSRS.Fixup();
@@ -245,6 +235,7 @@ GDALDataset *SDTSDataset::Open( GDALOpenInfo * poOpenInfo )
     poDS->pszProjection = NULL;
     if( oSRS.exportToWkt( &poDS->pszProjection ) != OGRERR_NONE )
         poDS->pszProjection = CPLStrdup("");
+
 
 /* -------------------------------------------------------------------- */
 /*      Get metadata from the IDEN file.                                */
@@ -255,7 +246,7 @@ GDALDataset *SDTSDataset::Open( GDALOpenInfo * poOpenInfo )
         DDFModule   oIDENFile;
         if( oIDENFile.Open( pszIDENFilePath ) )
         {
-            DDFRecord* poRecord = NULL;
+            DDFRecord* poRecord;
 
             while( (poRecord = oIDENFile.ReadRecord()) != NULL )
             {

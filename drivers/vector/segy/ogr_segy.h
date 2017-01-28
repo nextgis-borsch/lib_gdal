@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_segy.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: ogr_segy.h 31777 2015-11-26 14:14:41Z rouault $
  *
  * Project:  SEG-Y Translator
  * Purpose:  Definition of classes for OGR SEG-Y driver.
@@ -77,7 +77,7 @@ typedef struct
 class OGRSEGYLayer: public OGRLayer
 {
     OGRFeatureDefn*    poFeatureDefn;
-    bool               bEOF;
+    int                bEOF;
     int                nNextFID;
     VSILFILE*          fp;
 
@@ -87,18 +87,18 @@ class OGRSEGYLayer: public OGRLayer
     OGRFeature *       GetNextRawFeature();
 
   public:
-                        OGRSEGYLayer( const char* pszFilename,
-                                      VSILFILE* fp,
-                                      SEGYBinaryFileHeader* psBFH );
-                        virtual ~OGRSEGYLayer();
+                        OGRSEGYLayer(const char* pszFilename,
+                                     VSILFILE* fp,
+                                     SEGYBinaryFileHeader* psBFH);
+                        ~OGRSEGYLayer();
 
-    virtual OGRFeature *        GetNextFeature() override;
+    virtual OGRFeature *        GetNextFeature();
 
-    virtual void                ResetReading() override;
+    virtual void                ResetReading();
 
-    virtual OGRFeatureDefn *    GetLayerDefn() override { return poFeatureDefn; }
+    virtual OGRFeatureDefn *    GetLayerDefn() { return poFeatureDefn; }
 
-    virtual int                 TestCapability( const char * ) override { return FALSE; }
+    virtual int                 TestCapability( const char * ) { return FALSE; }
 };
 
 /************************************************************************/
@@ -108,7 +108,7 @@ class OGRSEGYLayer: public OGRLayer
 class OGRSEGYHeaderLayer: public OGRLayer
 {
     OGRFeatureDefn*    poFeatureDefn;
-    bool               bEOF;
+    int                bEOF;
 
     SEGYBinaryFileHeader sBFH;
     char*                pszHeaderText;
@@ -116,18 +116,18 @@ class OGRSEGYHeaderLayer: public OGRLayer
     OGRFeature *       GetNextRawFeature();
 
   public:
-                        OGRSEGYHeaderLayer( const char* pszLayerName,
-                                            SEGYBinaryFileHeader* psBFH,
-                                            const char* pszHeaderText );
-                        virtual ~OGRSEGYHeaderLayer();
+                        OGRSEGYHeaderLayer(const char* pszLayerName,
+                                           SEGYBinaryFileHeader* psBFH,
+                                           const char* pszHeaderText);
+                        ~OGRSEGYHeaderLayer();
 
-    virtual OGRFeature *        GetNextFeature() override;
+    virtual OGRFeature *        GetNextFeature();
 
-    virtual void                ResetReading() override;
+    virtual void                ResetReading();
 
-    virtual OGRFeatureDefn *    GetLayerDefn() override { return poFeatureDefn; }
+    virtual OGRFeatureDefn *    GetLayerDefn() { return poFeatureDefn; }
 
-    virtual int                 TestCapability( const char * ) override { return FALSE; }
+    virtual int                 TestCapability( const char * ) { return FALSE; }
 };
 
 /************************************************************************/
@@ -143,16 +143,16 @@ class OGRSEGYDataSource : public OGRDataSource
 
   public:
                         OGRSEGYDataSource();
-                        virtual ~OGRSEGYDataSource();
+                        ~OGRSEGYDataSource();
 
     int                 Open( const char * pszFilename, const char* pszHeaderText );
 
-    virtual const char*         GetName() override { return pszName; }
+    virtual const char*         GetName() { return pszName; }
 
-    virtual int                 GetLayerCount() override { return nLayers; }
-    virtual OGRLayer*           GetLayer( int ) override;
+    virtual int                 GetLayerCount() { return nLayers; }
+    virtual OGRLayer*           GetLayer( int );
 
-    virtual int                 TestCapability( const char * ) override;
+    virtual int                 TestCapability( const char * );
 };
 
 #endif /* ndef OGR_SEGY_H_INCLUDED */

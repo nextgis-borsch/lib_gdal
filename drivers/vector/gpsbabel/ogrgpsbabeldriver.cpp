@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRGPSbabelDriver class.
@@ -31,7 +32,7 @@
 
 #include "ogr_gpsbabel.h"
 
-CPL_CVSID("$Id: ogrgpsbabeldriver.cpp 35504 2016-09-23 18:40:40Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                         OGRGPSBabelDriverIdentify()                  */
@@ -92,7 +93,7 @@ static bool OGRGPSBabelDriverIdentifyInternal(
             const char* const apszArgs[] = { "gpsbabel", "-V", NULL };
             CPLString osTmpFileName("/vsimem/gpsbabel_tmp.tmp");
             VSILFILE* tmpfp = VSIFOpenL(osTmpFileName, "wb");
-            bGPSBabelFound = CPLSpawn(apszArgs, NULL, tmpfp, FALSE) == 0;
+            bGPSBabelFound = (CPLSpawn(apszArgs, NULL, tmpfp, FALSE) == 0);
             VSIFCloseL(tmpfp);
             VSIUnlink(osTmpFileName);
         }

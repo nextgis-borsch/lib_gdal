@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: gdaladdo.cpp 33843 2016-04-01 08:37:57Z rouault $
  *
  * Project:  GDAL Utilities
  * Purpose:  Command line application to build overviews.
@@ -30,7 +31,7 @@
 #include "gdal_priv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: gdaladdo.cpp 36536 2016-11-27 23:50:21Z goatbar $");
+CPL_CVSID("$Id: gdaladdo.cpp 33843 2016-04-01 08:37:57Z rouault $");
 
 /************************************************************************/
 /*                               Usage()                                */
@@ -101,8 +102,7 @@ static void CPL_STDCALL GDALAddoErrorHandler( CPLErr eErr, CPLErrorNum errNum, c
 
 #define CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(nExtraArg) \
     do { if (iArg + nExtraArg >= nArgc) \
-        Usage(CPLSPrintf("%s option requires %d argument(s)", \
-                         papszArgv[iArg], nExtraArg)); } while( false )
+        Usage(CPLSPrintf("%s option requires %d argument(s)", papszArgv[iArg], nExtraArg)); } while(0)
 
 int main( int nArgc, char ** papszArgv )
 

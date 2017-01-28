@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: dgnopen.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  Microstation DGN Access Library
  * Purpose:  DGN Access Library file open code.
@@ -28,7 +29,7 @@
 
 #include "dgnlibp.h"
 
-CPL_CVSID("$Id: dgnopen.cpp 35933 2016-10-25 16:46:26Z goatbar $");
+CPL_CVSID("$Id: dgnopen.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 
 /************************************************************************/
 /*                            DGNTestOpen()                             */
@@ -95,10 +96,16 @@ int DGNTestOpen( GByte *pabyHeader, int nByteCount )
 DGNHandle DGNOpen( const char * pszFilename, int bUpdate )
 
 {
+
 /* -------------------------------------------------------------------- */
 /*      Open the file.                                                  */
 /* -------------------------------------------------------------------- */
-    FILE *fp = VSIFOpen( pszFilename, bUpdate ? "rb+" : "rb");
+    FILE *fp;
+
+    if( bUpdate )
+        fp = VSIFOpen( pszFilename, "rb+" );
+    else
+        fp = VSIFOpen( pszFilename, "rb" );
     if( fp == NULL )
     {
         CPLError( CE_Failure, CPLE_OpenFailed,
@@ -111,8 +118,7 @@ DGNHandle DGNOpen( const char * pszFilename, int bUpdate )
 /*      Verify the format ... add later.                                */
 /* -------------------------------------------------------------------- */
     GByte abyHeader[512];
-    const int nHeaderBytes =
-        static_cast<int>(VSIFRead( abyHeader, 1, sizeof(abyHeader), fp ));
+    const int nHeaderBytes = static_cast<int>(VSIFRead( abyHeader, 1, sizeof(abyHeader), fp ));
     if( !DGNTestOpen( abyHeader, nHeaderBytes ) )
     {
         CPLError( CE_Failure, CPLE_AppDefined,
@@ -127,31 +133,31 @@ DGNHandle DGNOpen( const char * pszFilename, int bUpdate )
 /* -------------------------------------------------------------------- */
 /*      Create the info structure.                                      */
 /* -------------------------------------------------------------------- */
-    DGNInfo *psDGN = static_cast<DGNInfo *>(CPLCalloc(sizeof(DGNInfo), 1));
+    DGNInfo *psDGN = (DGNInfo *) CPLCalloc(sizeof(DGNInfo),1);
     psDGN->fp = fp;
     psDGN->next_element_id = 0;
 
-    psDGN->got_tcb = false;
+    psDGN->got_tcb = FALSE;
     psDGN->scale = 1.0;
     psDGN->origin_x = 0.0;
     psDGN->origin_y = 0.0;
     psDGN->origin_z = 0.0;
 
-    psDGN->index_built = false;
+    psDGN->index_built = FALSE;
     psDGN->element_count = 0;
     psDGN->element_index = NULL;
 
-    psDGN->got_bounds = false;
+    psDGN->got_bounds = FALSE;
 
     if( abyHeader[0] == 0xC8 )
         psDGN->dimension = 3;
     else
         psDGN->dimension = 2;
 
-    psDGN->has_spatial_filter = false;
-    psDGN->sf_converted_to_uor = false;
-    psDGN->select_complex_group = false;
-    psDGN->in_complex_group = false;
+    psDGN->has_spatial_filter = FALSE;
+    psDGN->sf_converted_to_uor = FALSE;
+    psDGN->select_complex_group = FALSE;
+    psDGN->in_complex_group = FALSE;
 
     return (DGNHandle) psDGN;
 }
@@ -216,17 +222,17 @@ void DGNSetSpatialFilter( DGNHandle hDGN,
                           double dfXMax, double dfYMax )
 
 {
-    DGNInfo *psDGN = (DGNInfo *) hDGN;
+    DGNInfo     *psDGN = (DGNInfo *) hDGN;
 
     if( dfXMin == 0.0 && dfXMax == 0.0
         && dfYMin == 0.0 && dfYMax == 0.0 )
     {
-        psDGN->has_spatial_filter = false;
+        psDGN->has_spatial_filter = FALSE;
         return;
     }
 
-    psDGN->has_spatial_filter = true;
-    psDGN->sf_converted_to_uor = false;
+    psDGN->has_spatial_filter = TRUE;
+    psDGN->sf_converted_to_uor = FALSE;
 
     psDGN->sf_min_x_geo = dfXMin;
     psDGN->sf_min_y_geo = dfYMin;
@@ -234,6 +240,7 @@ void DGNSetSpatialFilter( DGNHandle hDGN,
     psDGN->sf_max_y_geo = dfYMax;
 
     DGNSpatialFilterToUOR( psDGN );
+
 }
 
 /************************************************************************/
@@ -243,22 +250,20 @@ void DGNSetSpatialFilter( DGNHandle hDGN,
 void DGNSpatialFilterToUOR( DGNInfo *psDGN )
 
 {
+    DGNPoint    sMin, sMax;
+
     if( psDGN->sf_converted_to_uor
         || !psDGN->has_spatial_filter
         || !psDGN->got_tcb )
         return;
 
-    DGNPoint sMin = {
-        psDGN->sf_min_x_geo,
-        psDGN->sf_min_y_geo,
-        0
-    };
+    sMin.x = psDGN->sf_min_x_geo;
+    sMin.y = psDGN->sf_min_y_geo;
+    sMin.z = 0;
 
-    DGNPoint sMax = {
-        psDGN->sf_max_x_geo,
-        psDGN->sf_max_y_geo,
-        0
-    };
+    sMax.x = psDGN->sf_max_x_geo;
+    sMax.y = psDGN->sf_max_y_geo;
+    sMax.z = 0;
 
     DGNInverseTransformPoint( psDGN, &sMin );
     DGNInverseTransformPoint( psDGN, &sMax );
@@ -268,7 +273,7 @@ void DGNSpatialFilterToUOR( DGNInfo *psDGN )
     psDGN->sf_max_x = (GUInt32) (sMax.x + 2147483648.0);
     psDGN->sf_max_y = (GUInt32) (sMax.y + 2147483648.0);
 
-    psDGN->sf_converted_to_uor = true;
+    psDGN->sf_converted_to_uor = TRUE;
 }
 
 /************************************************************************/

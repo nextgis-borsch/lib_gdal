@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id$
  *
  * Project:  GDAL Core
  * Purpose:  The library set-up/clean-up routines.
@@ -27,20 +28,16 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "cpl_port.h"
 #include "gdal.h"
-
-#include "cpl_conv.h"
-#include "cpl_error.h"
-#include "cpl_multiproc.h"
-#include "cpl_string.h"
 #include "ogr_api.h"
+#include "cpl_multiproc.h"
+#include "cpl_conv.h"
+#include "cpl_string.h"
 
+static int bInGDALGlobalDestructor = FALSE;
+extern "C" int CPL_DLL GDALIsInGlobalDestructor(void);
 
-static bool bInGDALGlobalDestructor = false;
-extern "C" int CPL_DLL GDALIsInGlobalDestructor();
-
-int GDALIsInGlobalDestructor()
+int GDALIsInGlobalDestructor(void)
 {
     return bInGDALGlobalDestructor;
 }
@@ -73,11 +70,11 @@ void GDALDestroy(void)
     bGDALDestroyAlreadyCalled = true;
 
     CPLDebug("GDAL", "In GDALDestroy - unloading GDAL shared library.");
-    bInGDALGlobalDestructor = true;
+    bInGDALGlobalDestructor = TRUE;
     GDALDestroyDriverManager();
 
     OGRCleanupAll();
-    bInGDALGlobalDestructor = false;
+    bInGDALGlobalDestructor = FALSE;
 
     /* See https://trac.osgeo.org/gdal/ticket/6139 */
     /* Needed in case no driver manager has been instantiated. */
@@ -128,6 +125,7 @@ static void GDALDestructor(void)
 
 #endif // __GNUC__
 
+
 /************************************************************************/
 /*  The library set-up/clean-up routine implemented as DllMain entry    */
 /*  point specific for Windows.                                         */
@@ -136,10 +134,11 @@ static void GDALDestructor(void)
 
 #include <windows.h>
 
-extern "C" int WINAPI DllMain( HINSTANCE /* hInstance */,
-                               DWORD dwReason,
-                               LPVOID /* lpReserved */ )
+extern "C" int WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
 {
+    UNREFERENCED_PARAMETER(hInstance);
+    UNREFERENCED_PARAMETER(lpReserved);
+
     if (dwReason == DLL_PROCESS_ATTACH)
     {
         // nothing to do

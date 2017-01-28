@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogr2kmlgeometry.cpp 32879 2016-01-09 12:45:12Z rouault $
  *
  * Project:  KML Driver
  * Purpose:  Implementation of OGR -> KML geometries writer.
@@ -34,9 +35,6 @@
 #include "ogr_geometry.h"
 #include "ogr_p.h"
 
-#include <algorithm>
-
-CPL_CVSID("$Id: ogr2kmlgeometry.cpp 36017 2016-10-29 04:27:08Z goatbar $");
 
 static const double EPSILON = 1e-8;
 
@@ -45,7 +43,7 @@ static const double EPSILON = 1e-8;
 /************************************************************************/
 
 static void MakeKMLCoordinate( char *pszTarget, size_t nTargetLen,
-                               double x, double y, double z, bool b3D )
+                               double x, double y, double z, int b3D )
 
 {
     if (y < -90 || y > 90)
@@ -152,7 +150,7 @@ static void _GrowBuffer( size_t nNeeded, char **ppszText, size_t *pnMaxLength )
 {
     if( nNeeded+1 >= *pnMaxLength )
     {
-        *pnMaxLength = std::max(*pnMaxLength * 2, nNeeded + 1);
+        *pnMaxLength = MAX(*pnMaxLength * 2,nNeeded+1);
         *ppszText = static_cast<char *>( CPLRealloc(*ppszText, *pnMaxLength) );
     }
 }
@@ -172,6 +170,7 @@ static void AppendString( char **ppszText, size_t *pnLength,
     strcat( *ppszText + *pnLength, pszTextToAppend );
     *pnLength += strlen( *ppszText + *pnLength );
 }
+
 
 /************************************************************************/
 /*                        AppendCoordinateList()                        */
@@ -240,7 +239,7 @@ static bool OGR2KMLGeometryAppend( OGRGeometry *poGeometry,
         {
             char szCoordinate[256] = { 0 };
             MakeKMLCoordinate( szCoordinate, sizeof(szCoordinate),
-                               poPoint->getX(), poPoint->getY(), 0.0, false );
+                            poPoint->getX(), poPoint->getY(), 0.0, FALSE );
 
             _GrowBuffer( *pnLength + strlen(szCoordinate) + 60,
                          ppszText, pnMaxLength );
@@ -442,7 +441,7 @@ CPLXMLNode* OGR_G_ExportEnvelopeToKMLTree( OGRGeometryH hGeometry )
 
     char szCoordinate[256] = { 0 };
     MakeKMLCoordinate( szCoordinate, sEnvelope.MinX, sEnvelope.MinY, 0.0,
-                       false );
+                       FALSE );
     char* pszY = strstr(szCoordinate,",") + 1;
     pszY[-1] = '\0';
 
@@ -455,7 +454,7 @@ CPLXMLNode* OGR_G_ExportEnvelopeToKMLTree( OGRGeometryH hGeometry )
     psCoord = CPLCreateXMLNode( psBox, CXT_Element, "coord" );
 
     MakeKMLCoordinate( szCoordinate, sEnvelope.MaxX, sEnvelope.MaxY, 0.0,
-                       false );
+                       FALSE );
     pszY = strstr(szCoordinate,",") + 1;
     pszY[-1] = '\0';
 

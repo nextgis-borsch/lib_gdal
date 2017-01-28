@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: gscdataset.cpp 33939 2016-04-11 03:33:00Z goatbar $
  *
  * Project:  GSC Geogrid format driver.
  * Purpose:  Implements support for reading and writing GSC Geogrid format.
@@ -31,7 +32,7 @@
 #include "gdal_frmts.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id: gscdataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
+CPL_CVSID("$Id: gscdataset.cpp 33939 2016-04-11 03:33:00Z goatbar $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -49,7 +50,7 @@ class GSCDataset : public RawDataset
                 GSCDataset();
                 ~GSCDataset();
 
-    CPLErr      GetGeoTransform( double * padfTransform ) override;
+    CPLErr      GetGeoTransform( double * padfTransform );
 
     static GDALDataset *Open( GDALOpenInfo * );
 };

@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrdgndriver.cpp 32154 2015-12-13 05:34:45Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRDGNDriver class.
@@ -29,7 +30,7 @@
 #include "ogr_dgn.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrdgndriver.cpp 34819 2016-07-28 22:32:18Z goatbar $");
+CPL_CVSID("$Id: ogrdgndriver.cpp 32154 2015-12-13 05:34:45Z goatbar $");
 
 /************************************************************************/
 /*                                Open()                                */

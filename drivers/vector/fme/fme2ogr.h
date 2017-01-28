@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: fme2ogr.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: fme2ogr.h 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  FMEObjects Translator
  * Purpose:  Declarations for translating IFMEFeatures to OGRFeatures.
@@ -61,17 +61,17 @@ class OGRFMELayer : public OGRLayer
     IFMEFeature         *poFMEFeature;
 
   public:
-    explicit            OGRFMELayer( OGRFMEDataSource * );
+                        OGRFMELayer( OGRFMEDataSource * );
     virtual             ~OGRFMELayer();
 
     virtual int         Initialize( IFMEFeature *,
                                     OGRSpatialReference * );
 
-    virtual OGRErr      SetAttributeFilter( const char * ) override;
+    virtual OGRErr      SetAttributeFilter( const char * );
 
-    OGRSpatialReference *GetSpatialRef() override;
+    OGRSpatialReference *GetSpatialRef();
 
-    OGRFeatureDefn *    GetLayerDefn() override { return poFeatureDefn; }
+    OGRFeatureDefn *    GetLayerDefn() { return poFeatureDefn; }
 };
 
 /************************************************************************/
@@ -93,16 +93,16 @@ class OGRFMELayerCached : public OGRFMELayer
     int                 bQueryActive;
 
   public:
-    explicit            OGRFMELayerCached( OGRFMEDataSource * );
+                       OGRFMELayerCached( OGRFMEDataSource * );
     virtual            ~OGRFMELayerCached();
 
-    virtual void        ResetReading() override;
-    virtual OGRFeature *GetNextFeature() override;
-    virtual GIntBig     GetFeatureCount( int bForce ) override;
+    virtual void        ResetReading();
+    virtual OGRFeature *GetNextFeature();
+    virtual GIntBig     GetFeatureCount( int bForce );
 
-    virtual OGRErr      GetExtent(OGREnvelope *psExtent, int bForce = TRUE) override;
+    virtual OGRErr      GetExtent(OGREnvelope *psExtent, int bForce = TRUE);
 
-    virtual int         TestCapability( const char * ) override;
+    virtual int         TestCapability( const char * );
 
     int                 AssignIndex( const char *pszBase, const OGREnvelope*,
                                      OGRSpatialReference *poSRS );
@@ -134,13 +134,13 @@ class OGRFMELayerDB : public OGRFMELayer
                                       IFMEStringArray *poUserDirectives );
     virtual            ~OGRFMELayerDB();
 
-    virtual OGRErr      SetAttributeFilter( const char * ) override;
+    virtual OGRErr      SetAttributeFilter( const char * );
 
-    virtual void        ResetReading() override;
-    virtual OGRFeature *GetNextFeature() override;
-    virtual GIntBig     GetFeatureCount( int bForce ) override;
+    virtual void        ResetReading();
+    virtual OGRFeature *GetNextFeature();
+    virtual GIntBig     GetFeatureCount( int bForce );
 
-    virtual int         TestCapability( const char * ) override;
+    virtual int         TestCapability( const char * );
 
     void                AssignIndex( const char *pszBase );
 };
@@ -190,18 +190,18 @@ class OGRFMEDataSource : public OGRDataSource
     IFMESession *       AcquireSession();
     void                ReleaseSession();
 
-    int                 TestCapability( const char * ) override;
+    int                 TestCapability( const char * );
 
     OGRGeometry        *ProcessGeometry( OGRFMELayer *, IFMEFeature *,
                                          OGRwkbGeometryType );
     OGRFeature         *ProcessFeature( OGRFMELayer *, IFMEFeature * );
-    void                ResetReading() override;
+    void                ResetReading();
 
     int                 Open( const char * );
 
-    const char          *GetName() override { return pszName; }
-    int                 GetLayerCount() override { return nLayers; }
-    OGRLayer            *GetLayer( int ) override;
+    const char          *GetName() { return pszName; }
+    int                 GetLayerCount() { return nLayers; }
+    OGRLayer            *GetLayer( int );
 
     IFMESession         *GetFMESession() { return poSession; }
     IFMEUniversalReader *GetFMEReader() { return poReader; }
@@ -224,10 +224,10 @@ class OGRFMEDriver : public OGRSFDriver
   public:
                 ~OGRFMEDriver();
 
-    int                 TestCapability( const char * ) override;
+    int                 TestCapability( const char * );
 
-    const char *GetName() override;
-    OGRDataSource *Open( const char *, int ) override;
+    const char *GetName();
+    OGRDataSource *Open( const char *, int );
 };
 
 /************************************************************************/
@@ -242,7 +242,7 @@ class OGRFMECacheIndex
     void        *hLock;
 
   public:
-    explicit     OGRFMECacheIndex( const char *pszPath );
+                OGRFMECacheIndex( const char *pszPath );
                 ~OGRFMECacheIndex();
 
     const char *GetPath() { return pszPath; }
@@ -257,10 +257,10 @@ class OGRFMECacheIndex
     int         Lock();
     int         Unlock();
 
-    static void        Touch( CPLXMLNode * );
+    void        Touch( CPLXMLNode * );
     void        Add( CPLXMLNode * );
-    static void        Reference( CPLXMLNode * );
-    static void        Dereference( CPLXMLNode * );
+    void        Reference( CPLXMLNode * );
+    void        Dereference( CPLXMLNode * );
 
     int         ExpireOldCaches( IFMESession * );
 };
@@ -284,6 +284,7 @@ class OGRFMECacheIndex
 #ifndef FMECACHE_MAX_RETENTION
 #  define FMECACHE_MAX_RETENTION    3600
 #endif
+
 
 CPL_C_START
 void RegisterOGRFME();

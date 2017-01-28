@@ -29,21 +29,9 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "cpl_port.h"
-#include "swq.h"
-
-#include <cctype>
-#include <climits>
-#include <cstdlib>
-#include <cstring>
-#include <string>
-
 #include "cpl_conv.h"
-#include "cpl_error.h"
-#include "cpl_string.h"
+#include "swq.h"
 #include "ogr_geometry.h"
-
-CPL_CVSID("$Id: swq_op_general.cpp 36323 2016-11-20 02:18:05Z goatbar $");
 
 /************************************************************************/
 /*                           swq_test_like()                            */
@@ -51,8 +39,7 @@ CPL_CVSID("$Id: swq_op_general.cpp 36323 2016-11-20 02:18:05Z goatbar $");
 /*      Does input match pattern?                                       */
 /************************************************************************/
 
-static int swq_test_like( const char *input, const char *pattern,
-                          char chEscape )
+static int swq_test_like( const char *input, const char *pattern, char chEscape )
 
 {
     if( input == NULL || pattern == NULL )
@@ -84,13 +71,15 @@ static int swq_test_like( const char *input, const char *pattern,
         }
         else if( *pattern == '%' )
         {
+            int   eat;
+
             if( pattern[1] == '\0' )
                 return 1;
 
-            // Try eating varying amounts of the input till we get a positive.
-            for( int eat = 0; input[eat] != '\0'; eat++ )
+            /* try eating varying amounts of the input till we get a positive*/
+            for( eat = 0; input[eat] != '\0'; eat++ )
             {
-                if( swq_test_like(input + eat, pattern + 1, chEscape) )
+                if( swq_test_like(input+eat,pattern+1, chEscape) )
                     return 1;
             }
 
@@ -108,7 +97,7 @@ static int swq_test_like( const char *input, const char *pattern,
         }
     }
 
-    if( *pattern != '\0' && strcmp(pattern, "%") != 0 )
+    if( *pattern != '\0' && strcmp(pattern,"%") != 0 )
         return 0;
     else
         return 1;
@@ -118,48 +107,36 @@ static int swq_test_like( const char *input, const char *pattern,
 /*                        OGRHStoreGetValue()                           */
 /************************************************************************/
 
-static char* OGRHStoreCheckEnd( char* pszIter, int bIsKey )
+static char* OGRHStoreCheckEnd(char* pszIter, int bIsKey)
 {
-    pszIter++;
+    pszIter ++;
     for( ; *pszIter != '\0'; pszIter ++ )
     {
         if( bIsKey )
         {
             if( *pszIter == ' ' )
-            {
                 ;
-            }
             else if( *pszIter == '=' && pszIter[1] == '>' )
-            {
                 return pszIter + 2;
-            }
             else
-            {
                 return NULL;
-            }
         }
         else
         {
             if( *pszIter == ' ' )
-            {
                 ;
-            }
             else if( *pszIter == ',' )
-            {
                 return pszIter + 1;
-            }
             else
-            {
                 return NULL;
-            }
         }
     }
     return pszIter;
 }
 
-static char* OGRHStoreGetNextString( char* pszIter,
-                                     char** ppszOut,
-                                     int bIsKey )
+static char* OGRHStoreGetNextString(char* pszIter,
+                                    char** ppszOut,
+                                    int bIsKey)
 {
     char ch;
     bool bInString = false;
@@ -176,12 +153,12 @@ static char* OGRHStoreGetNextString( char* pszIter,
             }
             else if( ch == '\\')
             {
-                pszIter++;
+                pszIter ++;
                 if( (ch = *pszIter) == '\0' )
                     return NULL;
             }
             *pszOut = ch;
-            pszOut++;
+            pszOut ++;
         }
         else
         {
@@ -211,15 +188,11 @@ static char* OGRHStoreGetNextString( char* pszIter,
             }
             else if( ch == '"' )
             {
-                pszOut = pszIter + 1;
-                *ppszOut = pszOut;
+                pszOut = *ppszOut = pszIter + 1;
                 bInString = true;
             }
             else if( pszOut == NULL )
-            {
-                pszOut = pszIter;
-                *ppszOut = pszIter;
-            }
+                pszOut = *ppszOut = pszIter;
         }
     }
 
@@ -289,12 +262,10 @@ swq_expr_node *SWQGeneralEvaluator( swq_expr_node *node,
         poRet->field_type = node->field_type;
 
         if( SWQ_IS_INTEGER(sub_node_values[0]->field_type) )
-            sub_node_values[0]->float_value =
-                static_cast<double>(sub_node_values[0]->int_value);
+            sub_node_values[0]->float_value = (double) sub_node_values[0]->int_value;
         if( node->nSubExprCount > 1 &&
             SWQ_IS_INTEGER(sub_node_values[1]->field_type) )
-            sub_node_values[1]->float_value =
-                static_cast<double>(sub_node_values[1]->int_value);
+            sub_node_values[1]->float_value = (double)sub_node_values[1]->int_value;
 
         if( node->nOperation != SWQ_ISNULL )
         {
@@ -359,8 +330,9 @@ swq_expr_node *SWQGeneralEvaluator( swq_expr_node *node,
 
           case SWQ_IN:
           {
+              int i;
               poRet->int_value = 0;
-              for( int i = 1; i < node->nSubExprCount; i++ )
+              for( i = 1; i < node->nSubExprCount; i++ )
               {
                   if( sub_node_values[0]->float_value
                       == sub_node_values[i]->float_value )
@@ -410,7 +382,7 @@ swq_expr_node *SWQGeneralEvaluator( swq_expr_node *node,
           {
             GIntBig nRight = (GIntBig) sub_node_values[1]->float_value;
             poRet->field_type = SWQ_INTEGER;
-            if( nRight == 0 )
+            if (nRight == 0)
                 poRet->int_value = INT_MAX;
             else
                 poRet->int_value = ((GIntBig) sub_node_values[0]->float_value)
@@ -419,7 +391,7 @@ swq_expr_node *SWQGeneralEvaluator( swq_expr_node *node,
           }
 
           default:
-            CPLAssert( false );
+            CPLAssert( FALSE );
             delete poRet;
             poRet = NULL;
             break;
@@ -559,7 +531,7 @@ swq_expr_node *SWQGeneralEvaluator( swq_expr_node *node,
             break;
 
           default:
-            CPLAssert( false );
+            CPLAssert( FALSE );
             delete poRet;
             poRet = NULL;
             break;
@@ -599,8 +571,8 @@ swq_expr_node *SWQGeneralEvaluator( swq_expr_node *node,
         {
           case SWQ_EQ:
           {
-            // When comparing timestamps, the +00 at the end might be discarded
-            // if the other member has no explicit timezone.
+            /* When comparing timestamps, the +00 at the end might be discarded */
+            /* if the other member has no explicit timezone */
             if( (sub_node_values[0]->field_type == SWQ_TIMESTAMP ||
                  sub_node_values[0]->field_type == SWQ_STRING) &&
                 (sub_node_values[1]->field_type == SWQ_TIMESTAMP ||
@@ -621,7 +593,7 @@ swq_expr_node *SWQGeneralEvaluator( swq_expr_node *node,
                       sub_node_values[1]->field_type == SWQ_STRING) &&
                      strlen(sub_node_values[0]->string_value) > 3 &&
                      strlen(sub_node_values[1]->string_value) > 3 &&
-                     (sub_node_values[0]->string_value[strlen(sub_node_values[0]->string_value)-3] == ':') &&
+                     (sub_node_values[0]->string_value[strlen(sub_node_values[0]->string_value)-3] == ':')  &&
                       strcmp(sub_node_values[1]->string_value + strlen(sub_node_values[1]->string_value)-3, "+00") == 0)
             {
                 poRet->int_value =
@@ -670,8 +642,9 @@ swq_expr_node *SWQGeneralEvaluator( swq_expr_node *node,
 
           case SWQ_IN:
           {
+              int i;
               poRet->int_value = 0;
-              for( int i = 1; i < node->nSubExprCount; i++ )
+              for( i = 1; i < node->nSubExprCount; i++ )
               {
                   if( strcasecmp(sub_node_values[0]->string_value,
                                  sub_node_values[i]->string_value) == 0 )
@@ -721,34 +694,34 @@ swq_expr_node *SWQGeneralEvaluator( swq_expr_node *node,
 
           case SWQ_SUBSTR:
           {
+              int nOffset, nSize;
               const char *pszSrcStr = sub_node_values[0]->string_value;
 
-              int nOffset = 0;
               if( SWQ_IS_INTEGER(sub_node_values[1]->field_type) )
-                  nOffset = static_cast<int>(sub_node_values[1]->int_value);
+                  nOffset = (int)sub_node_values[1]->int_value;
               else if( sub_node_values[1]->field_type == SWQ_FLOAT )
-                  nOffset = static_cast<int>(sub_node_values[1]->float_value);
-              // else
-              //     nOffset = 0;
+                  nOffset = (int) sub_node_values[1]->float_value;
+              else
+                  nOffset = 0;
 
-              int nSize = 0;
               if( node->nSubExprCount < 3 )
                   nSize = 100000;
               else if( SWQ_IS_INTEGER(sub_node_values[2]->field_type) )
-                  nSize = static_cast<int>(sub_node_values[2]->int_value);
+                  nSize = (int)sub_node_values[2]->int_value;
               else if( sub_node_values[2]->field_type == SWQ_FLOAT )
-                  nSize = static_cast<int>(sub_node_values[2]->float_value);
-              // else
-              //    nSize = 0;
+                  nSize = (int) sub_node_values[2]->float_value;
+              else
+                  nSize = 0;
 
-              const int nSrcStrLen = static_cast<int>(strlen(pszSrcStr));
+              int nSrcStrLen = (int)strlen(pszSrcStr);
 
-              // In SQL, the first character is at offset 1.
-              // 0 is considered as 1.
-              if( nOffset > 0 )
-                  nOffset--;
-              // Some implementations allow negative offsets, to start
-              // from the end of the string.
+
+              /* In SQL, the first character is at offset 1 */
+              /* And 0 is considered as 1 */
+              if (nOffset > 0)
+                  nOffset --;
+              /* Some implementations allow negative offsets, to start */
+              /* from the end of the string */
               else if( nOffset < 0 )
               {
                   if( nSrcStrLen + nOffset >= 0 )
@@ -766,7 +739,7 @@ swq_expr_node *SWQGeneralEvaluator( swq_expr_node *node,
                   nSize = nSrcStrLen - nOffset;
 
               CPLString osResult = pszSrcStr + nOffset;
-              if( static_cast<int>(osResult.size()) > nSize )
+              if( (int)osResult.size() > nSize )
                   osResult.resize( nSize );
 
               poRet->string_value = CPLStrdup(osResult);
@@ -785,7 +758,7 @@ swq_expr_node *SWQGeneralEvaluator( swq_expr_node *node,
           }
 
           default:
-            CPLAssert( false );
+            CPLAssert( FALSE );
             delete poRet;
             poRet = NULL;
             break;
@@ -906,7 +879,7 @@ static void SWQAutoConvertStringToNumeric( swq_expr_node *poNode )
     {
         swq_expr_node *poSubNode = poNode->papoSubExpr[i];
 
-        // Identify the mixture of the argument type.
+        /* identify the mixture of the argument type */
         if( (eArgType == SWQ_STRING
             && (SWQ_IS_INTEGER(poSubNode->field_type)
                || poSubNode->field_type == SWQ_FLOAT)) ||
@@ -927,20 +900,18 @@ static void SWQAutoConvertStringToNumeric( swq_expr_node *poNode )
         {
             if( poSubNode->eNodeType == SNT_CONSTANT )
             {
-                // Apply the string to numeric conversion.
+                /* apply the string to numeric conversion */
                 char* endPtr = NULL;
-                poSubNode->float_value =
-                    CPLStrtod(poSubNode->string_value, &endPtr);
-                if( !(endPtr == NULL || *endPtr == '\0') )
+                poSubNode->float_value = CPLStrtod(poSubNode->string_value, &endPtr);
+                if ( !(endPtr == NULL || *endPtr == '\0') )
                 {
                     CPLError(CE_Warning, CPLE_NotSupported,
-                             "Conversion failed when converting the string "
-                             "value '%s' to data type float.",
+                             "Conversion failed when converting the string value '%s' to data type float.",
                              poSubNode->string_value);
                     continue;
                 }
 
-                // Should also fill the integer value in this case.
+                /* we should also fill the integer value in this case */
                 poSubNode->int_value = (GIntBig)poSubNode->float_value;
                 poSubNode->field_type = SWQ_FLOAT;
             }
@@ -975,7 +946,7 @@ static bool SWQCheckSubExprAreNotGeometries( swq_expr_node *poNode )
 /************************************************************************/
 
 swq_field_type SWQGeneralChecker( swq_expr_node *poNode,
-                                  int bAllowMismatchTypeOnFieldComparison )
+                                  int bAllowMismatchTypeOnFieldComparison  )
 
 {
     swq_field_type eRetType = SWQ_ERROR;
@@ -1032,25 +1003,13 @@ swq_field_type SWQGeneralChecker( swq_expr_node *poNode,
             return SWQ_ERROR;
         SWQAutoPromoteIntegerToInteger64OrFloat( poNode );
         if( poNode->papoSubExpr[0]->field_type == SWQ_STRING )
-        {
-            eRetType = SWQ_STRING;
-            eArgType = SWQ_STRING;
-        }
+            eRetType = eArgType = SWQ_STRING;
         else if( poNode->papoSubExpr[0]->field_type == SWQ_FLOAT )
-        {
-            eRetType = SWQ_FLOAT;
-            eArgType = SWQ_FLOAT;
-        }
+            eRetType = eArgType = SWQ_FLOAT;
         else if( poNode->papoSubExpr[0]->field_type == SWQ_INTEGER64 )
-        {
-            eRetType = SWQ_INTEGER64;
-            eArgType = SWQ_INTEGER64;
-        }
+            eRetType = eArgType = SWQ_INTEGER64;
         else
-        {
-            eRetType = SWQ_INTEGER;
-            eArgType = SWQ_INTEGER;
-        }
+            eRetType = eArgType = SWQ_INTEGER;
         break;
 
       case SWQ_SUBTRACT:
@@ -1060,20 +1019,11 @@ swq_field_type SWQGeneralChecker( swq_expr_node *poNode,
             return SWQ_ERROR;
         SWQAutoPromoteIntegerToInteger64OrFloat( poNode );
         if( poNode->papoSubExpr[0]->field_type == SWQ_FLOAT )
-        {
-            eRetType = SWQ_FLOAT;
-            eArgType = SWQ_FLOAT;
-        }
+            eRetType = eArgType = SWQ_FLOAT;
         else if( poNode->papoSubExpr[0]->field_type == SWQ_INTEGER64 )
-        {
-            eRetType = SWQ_INTEGER64;
-            eArgType = SWQ_INTEGER64;
-        }
+            eRetType = eArgType = SWQ_INTEGER64;
         else
-        {
-            eRetType = SWQ_INTEGER;
-            eArgType = SWQ_INTEGER;
-        }
+            eRetType = eArgType = SWQ_INTEGER;
         break;
 
       case SWQ_CONCAT:
@@ -1099,9 +1049,8 @@ swq_field_type SWQGeneralChecker( swq_expr_node *poNode,
             || (poNode->nSubExprCount > 2
                 && poNode->papoSubExpr[2]->field_type != SWQ_INTEGER) )
         {
-            CPLError(CE_Failure, CPLE_AppDefined,
-                     "Wrong argument type for SUBSTR(), "
-                     "expected SUBSTR(string,int,int) or SUBSTR(string,int).");
+            CPLError( CE_Failure, CPLE_AppDefined,
+                      "Wrong argument type for SUBSTR(), expected SUBSTR(string,int,int) or SUBSTR(string,int)." );
             return SWQ_ERROR;
         }
         break;
@@ -1121,8 +1070,7 @@ swq_field_type SWQGeneralChecker( swq_expr_node *poNode,
             || poNode->papoSubExpr[1]->field_type != SWQ_STRING )
         {
             CPLError( CE_Failure, CPLE_AppDefined,
-                      "Wrong argument type for hstore_get_value(), "
-                      "expected hstore_get_value(string,string)." );
+                      "Wrong argument type for hstore_get_value(), expected hstore_get_value(string,string)." );
             return SWQ_ERROR;
         }
         break;
@@ -1149,13 +1097,13 @@ swq_field_type SWQGeneralChecker( swq_expr_node *poNode,
         for( int i = 0; i < poNode->nSubExprCount; i++ )
         {
             swq_field_type eThisArgType = poNode->papoSubExpr[i]->field_type;
-            if( SWQ_IS_INTEGER(eThisArgType) || eThisArgType == SWQ_BOOLEAN )
+            if( SWQ_IS_INTEGER(eThisArgType) ||  eThisArgType == SWQ_BOOLEAN )
                 eThisArgType = SWQ_FLOAT;
 
             if( eArgType != eThisArgType )
             {
                 // Convenience for join. We allow comparing numeric columns
-                // and string columns, by casting string columns to numeric.
+                // and string columns, by casting string columns to numeric
                 if( bAllowMismatchTypeOnFieldComparison &&
                     poNode->nSubExprCount == 2 &&
                     poNode->nOperation == SWQ_EQ &&
@@ -1189,8 +1137,7 @@ swq_field_type SWQGeneralChecker( swq_expr_node *poNode,
                     swq_op_registrar::GetOperator((swq_op)poNode->nOperation);
 
                 CPLError( CE_Failure, CPLE_AppDefined,
-                          "Type mismatch or improper type of arguments "
-                          "to %s operator.",
+                          "Type mismatch or improper type of arguments to %s operator.",
                           poOp->pszName );
                 return SWQ_ERROR;
             }
@@ -1246,15 +1193,12 @@ swq_expr_node *SWQCastEvaluator( swq_expr_node *node,
                     break;
 
                 case SWQ_INTEGER64:
-                    // TODO: Warn in case of overflow?
-                    poRetNode->int_value =
-                      static_cast<int>(poSrcNode->int_value);
+                    // TODO: warn in case of overflow ?
+                    poRetNode->int_value = (int) poSrcNode->int_value;
                     break;
 
                 case SWQ_FLOAT:
-                    // TODO: Warn in case of overflow?
-                    poRetNode->int_value =
-                        static_cast<int>(poSrcNode->float_value);
+                    poRetNode->int_value = (int) poSrcNode->float_value;
                     break;
 
                 default:
@@ -1279,13 +1223,11 @@ swq_expr_node *SWQCastEvaluator( swq_expr_node *node,
                     break;
 
                 case SWQ_FLOAT:
-                    poRetNode->int_value =
-                        static_cast<GIntBig>(poSrcNode->float_value);
+                    poRetNode->int_value = (GIntBig) poSrcNode->float_value;
                     break;
 
                 default:
-                    poRetNode->int_value =
-                        CPLAtoGIntBig(poSrcNode->string_value);
+                    poRetNode->int_value = CPLAtoGIntBig(poSrcNode->string_value);
                     break;
             }
         }
@@ -1301,8 +1243,7 @@ swq_expr_node *SWQCastEvaluator( swq_expr_node *node,
                 case SWQ_INTEGER:
                 case SWQ_INTEGER64:
                 case SWQ_BOOLEAN:
-                    poRetNode->float_value =
-                        static_cast<double>(poSrcNode->int_value);
+                    poRetNode->float_value = (double) poSrcNode->int_value;
                     break;
 
                 case SWQ_FLOAT:
@@ -1348,7 +1289,7 @@ swq_expr_node *SWQCastEvaluator( swq_expr_node *node,
             break;
         }
 
-        // Everything else is a string.
+        // everything else is a string.
         default:
         {
             CPLString osRet;
@@ -1369,7 +1310,7 @@ swq_expr_node *SWQCastEvaluator( swq_expr_node *node,
                 {
                     if( poSrcNode->geometry_value != NULL )
                     {
-                        char* pszWKT = NULL;
+                        char* pszWKT;
                         poSrcNode->geometry_value->exportToWkt(&pszWKT);
                         osRet = pszWKT;
                         CPLFree(pszWKT);
@@ -1386,8 +1327,10 @@ swq_expr_node *SWQCastEvaluator( swq_expr_node *node,
 
             if( node->nSubExprCount > 2 )
             {
-                int nWidth = static_cast<int>(sub_node_values[2]->int_value);
-                if( nWidth > 0 && static_cast<int>(strlen(osRet)) > nWidth )
+                int nWidth;
+
+                nWidth = (int) sub_node_values[2]->int_value;
+                if( nWidth > 0 && (int) strlen(osRet) > nWidth )
                     osRet.resize(nWidth);
             }
 
@@ -1404,35 +1347,30 @@ swq_expr_node *SWQCastEvaluator( swq_expr_node *node,
 /************************************************************************/
 
 swq_field_type SWQCastChecker( swq_expr_node *poNode,
-                               int /* bAllowMismatchTypeOnFieldComparison */ )
+                               CPL_UNUSED int bAllowMismatchTypeOnFieldComparison )
 
 {
     swq_field_type eType = SWQ_ERROR;
     const char *pszTypeName = poNode->papoSubExpr[1]->string_value;
 
     if( poNode->papoSubExpr[0]->field_type == SWQ_GEOMETRY &&
-        !(EQUAL(pszTypeName, "character") ||
-          EQUAL(pszTypeName, "geometry")) )
+        !(EQUAL(pszTypeName,"character") ||
+          EQUAL(pszTypeName,"geometry")) )
     {
         CPLError( CE_Failure, CPLE_AppDefined, "Cannot cast geometry to %s",
                   pszTypeName );
     }
-    else if( EQUAL(pszTypeName, "boolean") )
-    {
+
+    else if( EQUAL(pszTypeName,"boolean") )
         eType = SWQ_BOOLEAN;
-    }
-    else if( EQUAL(pszTypeName, "character") )
-    {
+    else if( EQUAL(pszTypeName,"character") )
         eType = SWQ_STRING;
-    }
-    else if( EQUAL(pszTypeName, "integer") )
-    {
+    else if( EQUAL(pszTypeName,"integer") )
         eType = SWQ_INTEGER;
-    }
-    else if( EQUAL(pszTypeName, "bigint") )
+    else if( EQUAL(pszTypeName,"bigint") )
     {
-        // Handle CAST(fid AS bigint) by changing the field_type of fid to
-        // Integer64.  A bit of a hack.
+        // Handle CAST(fid AS bigint) by changing the field_type of fid to Integer64
+        // A bit of a hack
         if( poNode->papoSubExpr[0]->eNodeType == SNT_COLUMN &&
             poNode->papoSubExpr[0]->field_type == SWQ_INTEGER &&
             strcmp(poNode->papoSubExpr[0]->string_value, "fid") == 0 )
@@ -1441,37 +1379,25 @@ swq_field_type SWQCastChecker( swq_expr_node *poNode,
         }
         eType = SWQ_INTEGER64;
     }
-    else if( EQUAL(pszTypeName, "smallint") )
-    {
+    else if( EQUAL(pszTypeName,"smallint") )
         eType = SWQ_INTEGER;
-    }
-    else if( EQUAL(pszTypeName, "float") )
-    {
+    else if( EQUAL(pszTypeName,"float") )
         eType = SWQ_FLOAT;
-    }
-    else if( EQUAL(pszTypeName, "numeric") )
-    {
+    else if( EQUAL(pszTypeName,"numeric") )
         eType = SWQ_FLOAT;
-    }
-    else if( EQUAL(pszTypeName, "timestamp") )
-    {
+    else if( EQUAL(pszTypeName,"timestamp") )
         eType = SWQ_TIMESTAMP;
-    }
-    else if( EQUAL(pszTypeName, "date") )
-    {
+    else if( EQUAL(pszTypeName,"date") )
         eType = SWQ_DATE;
-    }
-    else if( EQUAL(pszTypeName, "time") )
-    {
+    else if( EQUAL(pszTypeName,"time") )
         eType = SWQ_TIME;
-    }
-    else if( EQUAL(pszTypeName, "geometry") )
+    else if( EQUAL(pszTypeName,"geometry") )
     {
         if( !(poNode->papoSubExpr[0]->field_type == SWQ_GEOMETRY ||
               poNode->papoSubExpr[0]->field_type == SWQ_STRING) )
         {
-            CPLError(CE_Failure, CPLE_AppDefined, "Cannot cast %s to geometry",
-                     SWQFieldTypeToString(poNode->papoSubExpr[0]->field_type));
+            CPLError( CE_Failure, CPLE_AppDefined, "Cannot cast %s to geometry",
+                      SWQFieldTypeToString(poNode->papoSubExpr[0]->field_type) );
         }
         else
             eType = SWQ_GEOMETRY;
@@ -1479,8 +1405,8 @@ swq_field_type SWQCastChecker( swq_expr_node *poNode,
     else
     {
         CPLError( CE_Failure, CPLE_AppDefined,
-                  "Unrecognized typename %s in CAST operator.",
-                  pszTypeName );
+                    "Unrecognized typename %s in CAST operator.",
+                    pszTypeName );
     }
 
     poNode->field_type = eType;

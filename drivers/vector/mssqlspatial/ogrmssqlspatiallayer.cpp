@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrmssqlspatiallayer.cpp 33807 2016-03-29 19:06:42Z tamas $
  *
  * Project:  MSSQL Spatial driver
  * Purpose:  Definition of classes for OGR MSSQL Spatial driver.
@@ -28,7 +29,7 @@
 
 #include "ogr_mssqlspatial.h"
 
-CPL_CVSID("$Id: ogrmssqlspatiallayer.cpp 35911 2016-10-24 15:03:26Z goatbar $");
+CPL_CVSID("$Id: ogrmssqlspatiallayer.cpp 33807 2016-03-29 19:06:42Z tamas $");
 /************************************************************************/
 /*                        OGRMSSQLSpatialLayer()                        */
 /************************************************************************/
@@ -50,7 +51,7 @@ OGRMSSQLSpatialLayer::OGRMSSQLSpatialLayer()
     iNextShapeId = 0;
 
     poSRS = NULL;
-    nSRSId = -1; // we haven't even queried the database for it yet.
+    nSRSId = -1; // we haven't even queried the database for it yet. 
     nLayerStatus = MSSQLLAYERSTATUS_ORIGINAL;
 
     nGeomColumnIndex = -1;
@@ -68,7 +69,7 @@ OGRMSSQLSpatialLayer::~OGRMSSQLSpatialLayer()
     if( m_nFeaturesRead > 0 && poFeatureDefn != NULL )
     {
         CPLDebug( "OGR_MSSQLSpatial", "%d features read on layer '%s'.",
-                  (int) m_nFeaturesRead,
+                  (int) m_nFeaturesRead, 
                   poFeatureDefn->GetName() );
     }
 
@@ -99,7 +100,7 @@ OGRMSSQLSpatialLayer::~OGRMSSQLSpatialLayer()
 /*      set on a statement.  Sift out geometry and FID fields.          */
 /************************************************************************/
 
-CPLErr OGRMSSQLSpatialLayer::BuildFeatureDefn( const char *pszLayerName,
+CPLErr OGRMSSQLSpatialLayer::BuildFeatureDefn( const char *pszLayerName, 
                                     CPLODBCStatement *poStmtIn )
 
 {
@@ -255,7 +256,7 @@ CPLErr OGRMSSQLSpatialLayer::BuildFeatureDefn( const char *pszLayerName,
         oField.SetNullable( poStmtIn->GetColNullable(iCol) );
 
         if ( poStmtIn->GetColColumnDef(iCol) )
-        {
+        {         
             /* process default value specification */
             if ( EQUAL(poStmtIn->GetColColumnDef(iCol), "(getdate())") )
                 oField.SetDefault( "CURRENT_TIMESTAMP" );
@@ -314,6 +315,7 @@ CPLErr OGRMSSQLSpatialLayer::BuildFeatureDefn( const char *pszLayerName,
 
     return CE_None;
 }
+
 
 /************************************************************************/
 /*                            ResetReading()                            */
@@ -375,10 +377,9 @@ OGRFeature *OGRMSSQLSpatialLayer::GetNextRawFeature()
 /* -------------------------------------------------------------------- */
     OGRFeature *poFeature = new OGRFeature( poFeatureDefn );
 
-    const char* pszFID;
-    if( pszFIDColumn != NULL && poStmt->GetColId(pszFIDColumn) > -1 &&
-        (pszFID = poStmt->GetColData(poStmt->GetColId(pszFIDColumn))) != NULL )
-        poFeature->SetFID( CPLAtoGIntBig(pszFID) );
+    if( pszFIDColumn != NULL && poStmt->GetColId(pszFIDColumn) > -1 )
+        poFeature->SetFID( 
+            CPLAtoGIntBig(poStmt->GetColData(poStmt->GetColId(pszFIDColumn))) );
     else
         poFeature->SetFID( iNextShapeId );
 
@@ -392,14 +393,14 @@ OGRFeature *OGRMSSQLSpatialLayer::GetNextRawFeature()
     {
         if ( poFeatureDefn->GetFieldDefn(iField)->IsIgnored() )
             continue;
-
+        
         int iSrcField = panFieldOrdinals[iField];
         const char *pszValue = poStmt->GetColData( iSrcField );
 
         if( pszValue == NULL )
             /* no value */;
         else if( poFeature->GetFieldDefnRef(iField)->GetType() == OFTBinary )
-            poFeature->SetField( iField,
+            poFeature->SetField( iField, 
                                  poStmt->GetColDataLength(iSrcField),
                                  (GByte *) pszValue );
         else
@@ -420,7 +421,7 @@ OGRFeature *OGRMSSQLSpatialLayer::GetNextRawFeature()
         {
             int nLength = poStmt->GetColDataLength( iField );
 
-            if ( nGeomColumnType == MSSQLCOLTYPE_GEOMETRY ||
+            if ( nGeomColumnType == MSSQLCOLTYPE_GEOMETRY || 
                  nGeomColumnType == MSSQLCOLTYPE_GEOGRAPHY ||
                  nGeomColumnType == MSSQLCOLTYPE_BINARY)
             {
@@ -428,8 +429,8 @@ OGRFeature *OGRMSSQLSpatialLayer::GetNextRawFeature()
                 {
                 case MSSQLGEOMETRY_NATIVE:
                     {
-                        OGRMSSQLGeometryParser oParser( nGeomColumnType );
-                        eErr = oParser.ParseSqlGeometry(
+                        OGRMSSQLGeometryParser oParser( nGeomColumnType ); 
+                        eErr = oParser.ParseSqlGeometry( 
                             (unsigned char *) pszGeomText, nLength, &poGeom );
                         nSRSId = oParser.GetSRSId();
                     }
@@ -443,15 +444,15 @@ OGRFeature *OGRMSSQLSpatialLayer::GetNextRawFeature()
                     eErr = OGRGeometryFactory::createFromWkt((char **) &pszGeomText,
                                                       NULL, &poGeom);
                     break;
-                }
+                } 
             }
             else if (nGeomColumnType == MSSQLCOLTYPE_TEXT)
             {
                 eErr = OGRGeometryFactory::createFromWkt((char **) &pszGeomText,
                                                       NULL, &poGeom);
-            }
+            }    
         }
-
+        
         if ( eErr != OGRERR_NONE )
         {
             const char *pszMessage;
@@ -578,7 +579,7 @@ OGRSpatialReference *OGRMSSQLSpatialLayer::GetSpatialRef()
 /*                            GetFIDColumn()                            */
 /************************************************************************/
 
-const char *OGRMSSQLSpatialLayer::GetFIDColumn()
+const char *OGRMSSQLSpatialLayer::GetFIDColumn() 
 
 {
     GetLayerDefn();
@@ -593,7 +594,7 @@ const char *OGRMSSQLSpatialLayer::GetFIDColumn()
 /*                         GetGeometryColumn()                          */
 /************************************************************************/
 
-const char *OGRMSSQLSpatialLayer::GetGeometryColumn()
+const char *OGRMSSQLSpatialLayer::GetGeometryColumn() 
 
 {
     GetLayerDefn();

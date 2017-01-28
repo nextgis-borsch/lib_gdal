@@ -31,26 +31,33 @@
 
 #include "libkml_headers.h"
 
+using kmldom::ElementPtr;
+using kmldom::KmlFactory;
+using kmldom::GeometryPtr;
+using kmldom::LatLonBoxPtr;
+using kmldom::GxLatLonQuadPtr;
+
 /*******************************************************************************
- Function to write out a ogr geometry to km.
+	function to write out a ogr geometry to km
 
 args:
-            poOgrGeom     the ogr geometry
-            extra         used in recursion, just pass -1
-            poKmlFactory  pointer to the libkml dom factory
+						poOgrGeom		the ogr geometry
+						extra		used in recursion, just pass -1
+						poKmlFactory	pointer to the libkml dom factory
 
 returns:
-            ElementPtr to the geometry created
+						ElementPtr to the geometry created
 
 *******************************************************************************/
 
-kmldom::ElementPtr geom2kml (
+ElementPtr geom2kml (
     OGRGeometry * poOgrGeom,
     int extra,
-    kmldom::KmlFactory * poKmlFactory );
+    KmlFactory * poKmlFactory );
+
 
 /******************************************************************************
- Function to read a kml geometry and translate to ogr.
+ function to read a kml geometry and translate to ogr
 
 Args:
             poKmlGeometry   pointer to the kml geometry to translate
@@ -62,15 +69,15 @@ Returns:
 ******************************************************************************/
 
 OGRGeometry *kml2geom (
-    kmldom::GeometryPtr poKmlGeometry,
-    OGRSpatialReference *poOgrSRS );
+    GeometryPtr poKmlGeometry,
+    OGRSpatialReference *poOgrSRS);
 
 OGRGeometry *kml2geom_latlonbox (
-    kmldom::LatLonBoxPtr poKmlLatLonBox,
-    OGRSpatialReference *poOgrSRS );
+    LatLonBoxPtr poKmlLatLonBox,
+    OGRSpatialReference *poOgrSRS);
 
 OGRGeometry *kml2geom_latlonquad (
-    kmldom::GxLatLonQuadPtr poKmlLatLonQuad,
-    OGRSpatialReference *poOgrSRS );
+    GxLatLonQuadPtr poKmlLatLonQuad,
+    OGRSpatialReference *poOgrSRS);
 
-#endif  // OGR_LIBKML_GEOMETRY_H
+#endif /* OGR_LIBKML_GEOMETRY_H */

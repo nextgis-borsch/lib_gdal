@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ograpispy.h 35912 2016-10-24 16:41:45Z goatbar $
+ * $Id: ograpispy.h 33631 2016-03-04 06:28:09Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  OGR C API "Spy"
@@ -60,6 +60,7 @@
  *
  * @since GDAL 2.0
  */
+
 
 #ifdef DEBUG
 #define OGRAPISPY_ENABLED

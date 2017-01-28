@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: gdalgrid.cpp 34393 2016-06-22 21:21:29Z rouault $
  *
  * Project:  GDAL Gridding API.
  * Purpose:  Implementation of GDAL scattered data gridder.
@@ -27,33 +28,19 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "cpl_port.h"
-#include "gdalgrid.h"
-#include "gdalgrid_priv.h"
-
-#include <cfloat>
-#include <climits>
-#include <cmath>
-#include <cstdlib>
-#include <cstring>
-
-#include <map>
-#include <utility>
-
-#include "cpl_conv.h"
-#include "cpl_cpu_features.h"
-#include "cpl_error.h"
-#include "cpl_multiproc.h"
-#include "cpl_progress.h"
-#include "cpl_quad_tree.h"
-#include "cpl_string.h"
 #include "cpl_vsi.h"
+#include "cpl_string.h"
+#include "gdalgrid.h"
+#include <float.h>
+#include <limits.h>
+#include <map>
 #include "cpl_worker_thread_pool.h"
-#include "gdal.h"
+#include "gdalgrid_priv.h"
+#include <cstdlib>
 
-CPL_CVSID("$Id: gdalgrid.cpp 36717 2016-12-06 04:46:02Z goatbar $");
+CPL_CVSID("$Id: gdalgrid.cpp 34393 2016-06-22 21:21:29Z rouault $");
 
-static const double TO_RADIANS = M_PI / 180.0;
+#define TO_RADIANS (M_PI / 180.0)
 
 #ifndef DBL_MAX
 # ifdef __DBL_MAX__
@@ -67,18 +54,18 @@ static const double TO_RADIANS = M_PI / 180.0;
 /*                        GDALGridGetPointBounds()                      */
 /************************************************************************/
 
-static void GDALGridGetPointBounds( const void* hFeature, CPLRectObj* pBounds )
+static void GDALGridGetPointBounds(const void* hFeature, CPLRectObj* pBounds)
 {
-    const GDALGridPoint* psPoint = static_cast<const GDALGridPoint*>(hFeature);
+    GDALGridPoint* psPoint = (GDALGridPoint*) hFeature;
     GDALGridXYArrays* psXYArrays = psPoint->psXYArrays;
-    const int i = psPoint->i;
-    const double dfX = psXYArrays->padfX[i];
-    const double dfY = psXYArrays->padfY[i];
+    int i = psPoint->i;
+    double dfX = psXYArrays->padfX[i];
+    double dfY = psXYArrays->padfY[i];
     pBounds->minx = dfX;
     pBounds->miny = dfY;
     pBounds->maxx = dfX;
     pBounds->maxy = dfY;
-}
+};
 
 /************************************************************************/
 /*                   GDALGridInverseDistanceToAPower()                  */
@@ -115,7 +102,7 @@ static void GDALGridGetPointBounds( const void* hFeature, CPLRectObj* pBounds )
  *      w=\frac{1}{r^p}
  *  \f]
  *
- * @param poOptionsIn Algorithm parameters. This should point to
+ * @param poOptions Algorithm parameters. This should point to
  * GDALGridInverseDistanceToAPowerOptions object.
  * @param nPoints Number of elements in input arrays.
  * @param padfX Input array of X coordinates.
@@ -125,89 +112,100 @@ static void GDALGridGetPointBounds( const void* hFeature, CPLRectObj* pBounds )
  * @param dfYPoint Y coordinate of the point to compute.
  * @param pdfValue Pointer to variable where the computed grid node value
  * will be returned.
- * @param hExtraParamsIn extra parameters (unused)
+ * @param hExtraParamsIn extra parameters.
  *
  * @return CE_None on success or CE_Failure if something goes wrong.
  */
 
 CPLErr
-GDALGridInverseDistanceToAPower( const void *poOptionsIn, GUInt32 nPoints,
+GDALGridInverseDistanceToAPower( const void *poOptions, GUInt32 nPoints,
                                  const double *padfX, const double *padfY,
                                  const double *padfZ,
                                  double dfXPoint, double dfYPoint,
                                  double *pdfValue,
-                                 CPL_UNUSED void* hExtraParamsIn)
+                                 CPL_UNUSED void* hExtraParamsIn )
 {
     // TODO: For optimization purposes pre-computed parameters should be moved
     // out of this routine to the calling function.
 
-    const GDALGridInverseDistanceToAPowerOptions * const poOptions =
-        static_cast<const GDALGridInverseDistanceToAPowerOptions *>(
-            poOptionsIn);
+    // Pre-compute search ellipse parameters
+    double      dfRadius1 =
+        ((GDALGridInverseDistanceToAPowerOptions *)poOptions)->dfRadius1;
+    double      dfRadius2 =
+        ((GDALGridInverseDistanceToAPowerOptions *)poOptions)->dfRadius2;
+    double  dfR12;
 
-    // Pre-compute search ellipse parameters.
-    const double dfRadius1 = poOptions->dfRadius1 * poOptions->dfRadius1;
-    const double dfRadius2 = poOptions->dfRadius2 * poOptions->dfRadius2;
-    const double dfR12 = dfRadius1 * dfRadius2;
+    dfRadius1 *= dfRadius1;
+    dfRadius2 *= dfRadius2;
+    dfR12 = dfRadius1 * dfRadius2;
 
     // Compute coefficients for coordinate system rotation.
-    const double dfAngle = TO_RADIANS * poOptions->dfAngle;
-    const bool bRotated = dfAngle != 0.0;
-    const double dfCoeff1 = bRotated ? cos(dfAngle) : 0.0;
-    const double dfCoeff2 = bRotated ? sin(dfAngle) : 0.0;
-
-    const double dfPowerDiv2 = poOptions->dfPower / 2;
-    const double dfSmoothing = poOptions->dfSmoothing;
-    const GUInt32 nMaxPoints = poOptions->nMaxPoints;
-    double dfNominator = 0.0;
-    double dfDenominator = 0.0;
-    GUInt32 n = 0;
-
-    for( GUInt32 i = 0; i < nPoints; i++ )
+    double      dfCoeff1 = 0.0, dfCoeff2 = 0.0;
+    const double dfAngle = TO_RADIANS
+        * ((GDALGridInverseDistanceToAPowerOptions *)poOptions)->dfAngle;
+    const bool  bRotated = ( dfAngle == 0.0 ) ? false : true;
+    if ( bRotated )
     {
-        double dfRX = padfX[i] - dfXPoint;
-        double dfRY = padfY[i] - dfYPoint;
+        dfCoeff1 = cos(dfAngle);
+        dfCoeff2 = sin(dfAngle);
+    }
+
+    const double    dfPowerDiv2 =
+        ((GDALGridInverseDistanceToAPowerOptions *)poOptions)->dfPower / 2;
+    const double    dfSmoothing =
+        ((GDALGridInverseDistanceToAPowerOptions *)poOptions)->dfSmoothing;
+    const GUInt32   nMaxPoints =
+        ((GDALGridInverseDistanceToAPowerOptions *)poOptions)->nMaxPoints;
+    double  dfNominator = 0.0, dfDenominator = 0.0;
+    GUInt32 i, n = 0;
+
+    for ( i = 0; i < nPoints; i++ )
+    {
+        double  dfRX = padfX[i] - dfXPoint;
+        double  dfRY = padfY[i] - dfYPoint;
         const double dfR2 =
             dfRX * dfRX + dfRY * dfRY + dfSmoothing * dfSmoothing;
 
-        if( bRotated )
+        if ( bRotated )
         {
-            const double dfRXRotated = dfRX * dfCoeff1 + dfRY * dfCoeff2;
-            const double dfRYRotated = dfRY * dfCoeff1 - dfRX * dfCoeff2;
+            double dfRXRotated = dfRX * dfCoeff1 + dfRY * dfCoeff2;
+            double dfRYRotated = dfRY * dfCoeff1 - dfRX * dfCoeff2;
 
             dfRX = dfRXRotated;
             dfRY = dfRYRotated;
         }
 
         // Is this point located inside the search ellipse?
-        if( dfRadius2 * dfRX * dfRX + dfRadius1 * dfRY * dfRY <= dfR12 )
+        if ( dfRadius2 * dfRX * dfRX + dfRadius1 * dfRY * dfRY <= dfR12 )
         {
             // If the test point is close to the grid node, use the point
             // value directly as a node value to avoid singularity.
-            if( dfR2 < 0.0000000000001 )
+            if ( dfR2 < 0.0000000000001 )
             {
-                *pdfValue = padfZ[i];
+                (*pdfValue) = padfZ[i];
                 return CE_None;
             }
-
-            const double dfW = pow( dfR2, dfPowerDiv2 );
-            const double dfInvW = 1.0 / dfW;
-            dfNominator += dfInvW * padfZ[i];
-            dfDenominator += dfInvW;
-            n++;
-            if( nMaxPoints > 0 && n > nMaxPoints )
-                break;
+            else
+            {
+                const double dfW = pow( dfR2, dfPowerDiv2 );
+                double dfInvW = 1.0 / dfW;
+                dfNominator += dfInvW * padfZ[i];
+                dfDenominator += dfInvW;
+                n++;
+                if ( nMaxPoints > 0 && n > nMaxPoints )
+                    break;
+            }
         }
     }
 
-    if( n < poOptions->nMinPoints || dfDenominator == 0.0 )
+    if ( n < ((GDALGridInverseDistanceToAPowerOptions *)poOptions)->nMinPoints
+         || dfDenominator == 0.0 )
     {
-        *pdfValue = poOptions->dfNoDataValue;
+        (*pdfValue) =
+            ((GDALGridInverseDistanceToAPowerOptions*)poOptions)->dfNoDataValue;
     }
     else
-    {
-        *pdfValue = dfNominator / dfDenominator;
-    }
+        (*pdfValue) = dfNominator / dfDenominator;
 
     return CE_None;
 }
@@ -248,7 +246,7 @@ GDALGridInverseDistanceToAPower( const void *poOptionsIn, GUInt32 nPoints,
  *      w=\frac{1}{r^p}
  *  \f]
  *
- * @param poOptionsIn Algorithm parameters. This should point to
+ * @param poOptions Algorithm parameters. This should point to
  * GDALGridInverseDistanceToAPowerNearestNeighborOptions object.
  * @param nPoints Number of elements in input arrays.
  * @param padfX Input array of X coordinates.
@@ -264,25 +262,22 @@ GDALGridInverseDistanceToAPower( const void *poOptionsIn, GUInt32 nPoints,
  */
 
 CPLErr
-GDALGridInverseDistanceToAPowerNearestNeighbor(
-    const void *poOptionsIn, GUInt32 nPoints,
-    const double *padfX, const double *padfY,
-    const double *padfZ,
-    double dfXPoint, double dfYPoint,
-    double *pdfValue,
-    void* hExtraParamsIn )
+GDALGridInverseDistanceToAPowerNearestNeighbor( const void *poOptions, GUInt32 nPoints,
+                                 const double *padfX, const double *padfY,
+                                 const double *padfZ,
+                                 double dfXPoint, double dfYPoint,
+                                 double *pdfValue,
+                                 void* hExtraParamsIn )
 {
-    const
-    GDALGridInverseDistanceToAPowerNearestNeighborOptions *const poOptions =
-      static_cast<
-          const GDALGridInverseDistanceToAPowerNearestNeighborOptions *>(
-          poOptionsIn);
-    const double dfRadius = poOptions->dfRadius;
+    double dfRadius =
+        ((GDALGridInverseDistanceToAPowerNearestNeighborOptions *)poOptions)->dfRadius;
 
-    const GUInt32 nMaxPoints = poOptions->nMaxPoints;
+    const GUInt32 nMaxPoints =
+        ((GDALGridInverseDistanceToAPowerNearestNeighborOptions *)poOptions)->nMaxPoints;
+    double dfNominator = 0.0, dfDenominator = 0.0;
+    GUInt32 n = 0;
 
-    GDALGridExtraParameters* psExtraParams =
-        static_cast<GDALGridExtraParameters *>(hExtraParamsIn);
+    GDALGridExtraParameters* psExtraParams = (GDALGridExtraParameters*) hExtraParamsIn;
     CPLQuadTree* phQuadTree = psExtraParams->hQuadTree;
 
     const double dfRPower2 = psExtraParams->dfRadiusPower2PreComp;
@@ -291,36 +286,35 @@ GDALGridInverseDistanceToAPowerNearestNeighbor(
     const double dfPowerDiv2 = psExtraParams->dfPowerDiv2PreComp;
 
     std::multimap<double, double> oMapDistanceToZValues;
-    if( phQuadTree != NULL )
+    if (phQuadTree != NULL)
     {
-        const double dfSearchRadius = dfRadius;
         CPLRectObj sAoi;
+        double dfSearchRadius = dfRadius;
         sAoi.minx = dfXPoint - dfSearchRadius;
         sAoi.miny = dfYPoint - dfSearchRadius;
         sAoi.maxx = dfXPoint + dfSearchRadius;
         sAoi.maxy = dfYPoint + dfSearchRadius;
         int nFeatureCount = 0;
-        GDALGridPoint** papsPoints = reinterpret_cast<GDALGridPoint **>(
-                CPLQuadTreeSearch(phQuadTree, &sAoi, &nFeatureCount) );
-        if( nFeatureCount != 0 )
+        GDALGridPoint** papsPoints = (GDALGridPoint**)
+                CPLQuadTreeSearch(phQuadTree, &sAoi, &nFeatureCount);
+        if (nFeatureCount != 0)
         {
-            for( int k = 0; k < nFeatureCount; k++ )
+            for(int k = 0; k < nFeatureCount; k++)
             {
-                const int i = papsPoints[k]->i;
-                const double dfRX = padfX[i] - dfXPoint;
-                const double dfRY = padfY[i] - dfYPoint;
+                int i = papsPoints[k]->i;
+                double  dfRX = padfX[i] - dfXPoint;
+                double  dfRY = padfY[i] - dfYPoint;
 
                 const double dfR2 = dfRX * dfRX + dfRY * dfRY;
-                if( dfR2 < 0.0000000000001 )
+                if (dfR2 < 0.0000000000001)
                 {
-                    *pdfValue = padfZ[i];
+                    (*pdfValue) = padfZ[i];
                     CPLFree(papsPoints);
                     return CE_None;
                 }
-                if( dfR2 <= dfRPower2 )
+                if(dfR2 <= dfRPower2)
                 {
-                    oMapDistanceToZValues.insert(
-                        std::make_pair(dfR2, padfZ[i]) );
+                    oMapDistanceToZValues.insert(std::make_pair(dfR2, padfZ[i]));
                 }
             }
         }
@@ -328,61 +322,61 @@ GDALGridInverseDistanceToAPowerNearestNeighbor(
     }
     else
     {
-        for( GUInt32 i = 0; i < nPoints; i++ )
+        for (GUInt32 i = 0; i < nPoints; i++)
         {
-            const double dfRX = padfX[i] - dfXPoint;
-            const double dfRY = padfY[i] - dfYPoint;
-            const double dfR2 = dfRX * dfRX + dfRY * dfRY;
+            double dfRX = padfX[i] - dfXPoint;
+            double dfRY = padfY[i] - dfYPoint;
+            const double dfR2 =    dfRX * dfRX + dfRY * dfRY;
 
             // Is this point located inside the search circle?
-            if( dfRPower2 * dfRX * dfRX + dfRPower2 * dfRY * dfRY <= dfRPower4 )
+            if (dfRPower2 * dfRX * dfRX + dfRPower2 * dfRY * dfRY <= dfRPower4)
             {
                 // If the test point is close to the grid node, use the point
                 // value directly as a node value to avoid singularity.
-                if( dfR2 < 0.0000000000001 )
+                if (dfR2 < 0.0000000000001)
                 {
-                    *pdfValue = padfZ[i];
+                    (*pdfValue) = padfZ[i];
                     return CE_None;
                 }
-
-                oMapDistanceToZValues.insert(std::make_pair(dfR2, padfZ[i]) );
+                else
+                {
+                    oMapDistanceToZValues.insert(std::make_pair(dfR2, padfZ[i]));
+                }
             }
         }
     }
 
-    double dfNominator = 0.0;
-    double dfDenominator = 0.0;
-    GUInt32 n = 0;
-
-    // Examine all "neighbors" within the radius (sorted by distance via the
-    // multimap), and use the closest n points based on distance until the max
-    // is reached.
-    for( std::multimap<double, double>::iterator oMapDistanceToZValuesIter =
-             oMapDistanceToZValues.begin();
-         oMapDistanceToZValuesIter != oMapDistanceToZValues.end();
-         ++oMapDistanceToZValuesIter)
+    /**
+     * Examine all "neighbors" within the radius (sorted by distance via the multimap), and use the
+     * closest n points based on distance until the max is reached.
+     */
+    for(std::multimap<double, double>::iterator oMapDistanceToZValuesIter = oMapDistanceToZValues.begin();
+        oMapDistanceToZValuesIter != oMapDistanceToZValues.end();
+        ++oMapDistanceToZValuesIter)
     {
-        const double dfR2 = oMapDistanceToZValuesIter->first;
-        const double dfZ = oMapDistanceToZValuesIter->second;
+        double dfR2 = (*oMapDistanceToZValuesIter).first;
+        double dfZ = (*oMapDistanceToZValuesIter).second;
 
         const double dfW = pow(dfR2, dfPowerDiv2);
-        const double dfInvW = 1.0 / dfW;
+        double dfInvW = 1.0 / dfW;
         dfNominator += dfInvW * dfZ;
         dfDenominator += dfInvW;
         n++;
-        if( nMaxPoints > 0 && n >= nMaxPoints )
+        if (nMaxPoints > 0 && n >= nMaxPoints)
         {
             break;
         }
     }
 
-    if( n < poOptions->nMinPoints || dfDenominator == 0.0 )
+    if (n < ((GDALGridInverseDistanceToAPowerNearestNeighborOptions *)poOptions)->nMinPoints
+         || dfDenominator == 0.0 )
     {
-        *pdfValue = poOptions->dfNoDataValue;
+        (*pdfValue) =
+            ((GDALGridInverseDistanceToAPowerNearestNeighborOptions*)poOptions)->dfNoDataValue;
     }
     else
     {
-        *pdfValue = dfNominator / dfDenominator;
+        (*pdfValue) = dfNominator / dfDenominator;
     }
 
     return CE_None;
@@ -404,95 +398,99 @@ GDALGridInverseDistanceToAPowerNearestNeighbor(
  */
 
 CPLErr
-GDALGridInverseDistanceToAPowerNoSearch(
-    const void *poOptionsIn, GUInt32 nPoints,
-    const double *padfX, const double *padfY, const double *padfZ,
-    double dfXPoint, double dfYPoint,
-    double *pdfValue,
-    void * /* hExtraParamsIn */)
+GDALGridInverseDistanceToAPowerNoSearch( const void *poOptions, GUInt32 nPoints,
+                                         const double *padfX, const double *padfY,
+                                         const double *padfZ,
+                                         double dfXPoint, double dfYPoint,
+                                         double *pdfValue,
+                                         CPL_UNUSED void* hExtraParamsIn )
 {
-    const GDALGridInverseDistanceToAPowerOptions  * const poOptions =
-        static_cast<const GDALGridInverseDistanceToAPowerOptions *>(
-            poOptionsIn);
-    const double dfPowerDiv2 = poOptions->dfPower / 2.0;
-    const double dfSmoothing = poOptions->dfSmoothing;
-    const double dfSmoothing2 = dfSmoothing * dfSmoothing;
-    double dfNominator = 0.0;
-    double dfDenominator = 0.0;
-    const bool bPower2 = dfPowerDiv2 == 1.0;
+    const double    dfPowerDiv2 =
+        ((GDALGridInverseDistanceToAPowerOptions *)poOptions)->dfPower / 2;
+    const double    dfSmoothing =
+        ((GDALGridInverseDistanceToAPowerOptions *)poOptions)->dfSmoothing;
+    const double    dfSmoothing2 = dfSmoothing * dfSmoothing;
+    double  dfNominator = 0.0, dfDenominator = 0.0;
+    GUInt32 i = 0;
+    int bPower2 = (dfPowerDiv2 == 1.0);
 
-    GUInt32 i = 0;  // Used after if.
     if( bPower2 )
     {
         if( dfSmoothing2 > 0 )
         {
-            for( i = 0; i < nPoints; i++ )
+            for ( i = 0; i < nPoints; i++ )
             {
                 const double dfRX = padfX[i] - dfXPoint;
                 const double dfRY = padfY[i] - dfYPoint;
-                const double dfR2 = dfRX * dfRX + dfRY * dfRY + dfSmoothing2;
+                const double dfR2 =
+                    dfRX * dfRX + dfRY * dfRY + dfSmoothing2;
 
-                const double dfInvR2 = 1.0 / dfR2;
+                double dfInvR2 = 1.0 / dfR2;
                 dfNominator += dfInvR2 * padfZ[i];
                 dfDenominator += dfInvR2;
             }
         }
         else
         {
-            for( i = 0; i < nPoints; i++ )
+            for ( i = 0; i < nPoints; i++ )
             {
                 const double dfRX = padfX[i] - dfXPoint;
                 const double dfRY = padfY[i] - dfYPoint;
-                const double dfR2 = dfRX * dfRX + dfRY * dfRY;
+                const double dfR2 =
+                    dfRX * dfRX + dfRY * dfRY;
 
                 // If the test point is close to the grid node, use the point
                 // value directly as a node value to avoid singularity.
-                if( dfR2 < 0.0000000000001 )
+                if ( dfR2 < 0.0000000000001 )
                 {
                     break;
                 }
-
-                const double dfInvR2 = 1.0 / dfR2;
-                dfNominator += dfInvR2 * padfZ[i];
-                dfDenominator += dfInvR2;
+                else
+                {
+                    double dfInvR2 = 1.0 / dfR2;
+                    dfNominator += dfInvR2 * padfZ[i];
+                    dfDenominator += dfInvR2;
+                }
             }
         }
     }
     else
     {
-        for( i = 0; i < nPoints; i++ )
+        for ( i = 0; i < nPoints; i++ )
         {
             const double dfRX = padfX[i] - dfXPoint;
             const double dfRY = padfY[i] - dfYPoint;
-            const double dfR2 = dfRX * dfRX + dfRY * dfRY + dfSmoothing2;
+            const double dfR2 =
+                dfRX * dfRX + dfRY * dfRY + dfSmoothing2;
 
             // If the test point is close to the grid node, use the point
             // value directly as a node value to avoid singularity.
-            if( dfR2 < 0.0000000000001 )
+            if ( dfR2 < 0.0000000000001 )
             {
                 break;
             }
-
-            const double dfW = pow( dfR2, dfPowerDiv2 );
-            const double dfInvW = 1.0 / dfW;
-            dfNominator += dfInvW * padfZ[i];
-            dfDenominator += dfInvW;
+            else
+            {
+                const double dfW = pow( dfR2, dfPowerDiv2 );
+                double dfInvW = 1.0 / dfW;
+                dfNominator += dfInvW * padfZ[i];
+                dfDenominator += dfInvW;
+            }
         }
     }
 
     if( i != nPoints )
     {
-        *pdfValue = padfZ[i];
+        (*pdfValue) = padfZ[i];
     }
     else
-    if( dfDenominator == 0.0 )
+    if ( dfDenominator == 0.0 )
     {
-        *pdfValue = poOptions->dfNoDataValue;
+        (*pdfValue) =
+            ((GDALGridInverseDistanceToAPowerOptions*)poOptions)->dfNoDataValue;
     }
     else
-    {
-        *pdfValue = dfNominator / dfDenominator;
-    }
+        (*pdfValue) = dfNominator / dfDenominator;
 
     return CE_None;
 }
@@ -524,7 +522,7 @@ GDALGridInverseDistanceToAPowerNoSearch(
  *      <li> \f$n\f$ is a total number of points in search ellipse.
  *  </ul>
  *
- * @param poOptionsIn Algorithm parameters. This should point to
+ * @param poOptions Algorithm parameters. This should point to
  * GDALGridMovingAverageOptions object.
  * @param nPoints Number of elements in input arrays.
  * @param padfX Input array of X coordinates.
@@ -534,69 +532,75 @@ GDALGridInverseDistanceToAPowerNoSearch(
  * @param dfYPoint Y coordinate of the point to compute.
  * @param pdfValue Pointer to variable where the computed grid node value
  * will be returned.
- * @param hExtraParamsIn extra parameters (unused)
  *
  * @return CE_None on success or CE_Failure if something goes wrong.
  */
 
 CPLErr
-GDALGridMovingAverage( const void *poOptionsIn, GUInt32 nPoints,
+GDALGridMovingAverage( const void *poOptions, GUInt32 nPoints,
                        const double *padfX, const double *padfY,
                        const double *padfZ,
                        double dfXPoint, double dfYPoint, double *pdfValue,
-                       CPL_UNUSED void * hExtraParamsIn )
+                       CPL_UNUSED void* hExtraParamsIn )
 {
     // TODO: For optimization purposes pre-computed parameters should be moved
     // out of this routine to the calling function.
 
-    const GDALGridMovingAverageOptions * const poOptions =
-        static_cast<const GDALGridMovingAverageOptions *>(poOptionsIn);
-    // Pre-compute search ellipse parameters.
-    const double dfRadius1 = poOptions->dfRadius1 * poOptions->dfRadius1;
-    const double dfRadius2 = poOptions->dfRadius2 * poOptions->dfRadius2;
-    const double dfR12 = dfRadius1 * dfRadius2;
+    // Pre-compute search ellipse parameters
+    double  dfRadius1 = ((GDALGridMovingAverageOptions *)poOptions)->dfRadius1;
+    double  dfRadius2 = ((GDALGridMovingAverageOptions *)poOptions)->dfRadius2;
+    double  dfR12;
+
+    dfRadius1 *= dfRadius1;
+    dfRadius2 *= dfRadius2;
+    dfR12 = dfRadius1 * dfRadius2;
 
     // Compute coefficients for coordinate system rotation.
-    const double dfAngle = TO_RADIANS * poOptions->dfAngle;
-    const bool bRotated = dfAngle != 0.0;
-
-    const double dfCoeff1 = bRotated ? cos(dfAngle) : 0.0;
-    const double dfCoeff2 = bRotated ? sin(dfAngle) : 0.0;
-
-    double dfAccumulator = 0.0;
-
-    GUInt32 n = 0;  // Used after for.
-
-    for( GUInt32 i = 0; i < nPoints; i++ )
+    double      dfCoeff1 = 0.0, dfCoeff2 = 0.0;
+    const double    dfAngle =
+        TO_RADIANS * ((GDALGridMovingAverageOptions *)poOptions)->dfAngle;
+    const bool  bRotated = ( dfAngle == 0.0 ) ? false : true;
+    if ( bRotated )
     {
-        double dfRX = padfX[i] - dfXPoint;
-        double dfRY = padfY[i] - dfYPoint;
+        dfCoeff1 = cos(dfAngle);
+        dfCoeff2 = sin(dfAngle);
+    }
 
-        if( bRotated )
+    double  dfAccumulator = 0.0;
+    GUInt32 i = 0, n = 0;
+
+    while ( i < nPoints )
+    {
+        double  dfRX = padfX[i] - dfXPoint;
+        double  dfRY = padfY[i] - dfYPoint;
+
+        if ( bRotated )
         {
-            const double dfRXRotated = dfRX * dfCoeff1 + dfRY * dfCoeff2;
-            const double dfRYRotated = dfRY * dfCoeff1 - dfRX * dfCoeff2;
+            double dfRXRotated = dfRX * dfCoeff1 + dfRY * dfCoeff2;
+            double dfRYRotated = dfRY * dfCoeff1 - dfRX * dfCoeff2;
 
             dfRX = dfRXRotated;
             dfRY = dfRYRotated;
         }
 
         // Is this point located inside the search ellipse?
-        if( dfRadius2 * dfRX * dfRX + dfRadius1 * dfRY * dfRY <= dfR12 )
+        if ( dfRadius2 * dfRX * dfRX + dfRadius1 * dfRY * dfRY <= dfR12 )
         {
             dfAccumulator += padfZ[i];
             n++;
         }
+
+        i++;
     }
 
-    if( n < poOptions->nMinPoints || n == 0 )
+    if ( n < ((GDALGridMovingAverageOptions *)poOptions)->nMinPoints
+         || n == 0 )
     {
-        *pdfValue = poOptions->dfNoDataValue;
+        (*pdfValue) =
+            ((GDALGridMovingAverageOptions *)poOptions)->dfNoDataValue;
     }
     else
-    {
-        *pdfValue = dfAccumulator / n;
-    }
+        (*pdfValue) = dfAccumulator / n;
 
     return CE_None;
 }
@@ -613,7 +617,7 @@ GDALGridMovingAverage( const void *poOptionsIn, GUInt32 nPoints,
  * and returns it as a result. If there are no points found, the specified
  * NODATA value will be returned.
  *
- * @param poOptionsIn Algorithm parameters. This should point to
+ * @param poOptions Algorithm parameters. This should point to
  * GDALGridNearestNeighborOptions object.
  * @param nPoints Number of elements in input arrays.
  * @param padfX Input array of X coordinates.
@@ -623,13 +627,12 @@ GDALGridMovingAverage( const void *poOptionsIn, GUInt32 nPoints,
  * @param dfYPoint Y coordinate of the point to compute.
  * @param pdfValue Pointer to variable where the computed grid node value
  * will be returned.
- * @param hExtraParamsIn extra parameters.
  *
  * @return CE_None on success or CE_Failure if something goes wrong.
  */
 
 CPLErr
-GDALGridNearestNeighbor( const void *poOptionsIn, GUInt32 nPoints,
+GDALGridNearestNeighbor( const void *poOptions, GUInt32 nPoints,
                          const double *padfX, const double *padfY,
                          const double *padfZ,
                          double dfXPoint, double dfYPoint, double *pdfValue,
@@ -638,55 +641,64 @@ GDALGridNearestNeighbor( const void *poOptionsIn, GUInt32 nPoints,
     // TODO: For optimization purposes pre-computed parameters should be moved
     // out of this routine to the calling function.
 
-    const GDALGridNearestNeighborOptions * const poOptions =
-        static_cast<const GDALGridNearestNeighborOptions *>(poOptionsIn);
-    // Pre-compute search ellipse parameters.
-    const double dfRadius1 = poOptions->dfRadius1 * poOptions->dfRadius1;
-    const double dfRadius2 = poOptions->dfRadius2 * poOptions->dfRadius2;
-    double dfR12 = dfRadius1 * dfRadius2;
-    GDALGridExtraParameters* psExtraParams =
-        static_cast<GDALGridExtraParameters *>(hExtraParamsIn);
+    // Pre-compute search ellipse parameters
+    double  dfRadius1 =
+        ((GDALGridNearestNeighborOptions *)poOptions)->dfRadius1;
+    double  dfRadius2 =
+        ((GDALGridNearestNeighborOptions *)poOptions)->dfRadius2;
+    double  dfR12;
+    GDALGridExtraParameters* psExtraParams = (GDALGridExtraParameters*) hExtraParamsIn;
     CPLQuadTree* hQuadTree = psExtraParams->hQuadTree;
 
+    dfRadius1 *= dfRadius1;
+    dfRadius2 *= dfRadius2;
+    dfR12 = dfRadius1 * dfRadius2;
+
     // Compute coefficients for coordinate system rotation.
-    const double dfAngle = TO_RADIANS * poOptions->dfAngle;
-    const bool bRotated = dfAngle != 0.0;
-    const double dfCoeff1 = bRotated ? cos(dfAngle) : 0.0;
-    const double dfCoeff2 = bRotated ? sin(dfAngle) : 0.0;
+    double      dfCoeff1 = 0.0, dfCoeff2 = 0.0;
+    const double    dfAngle =
+        TO_RADIANS * ((GDALGridNearestNeighborOptions *)poOptions)->dfAngle;
+    const bool  bRotated = ( dfAngle == 0.0 ) ? false : true;
+    if ( bRotated )
+    {
+        dfCoeff1 = cos(dfAngle);
+        dfCoeff2 = sin(dfAngle);
+    }
 
     // If the nearest point will not be found, its value remains as NODATA.
-    double dfNearestValue = poOptions->dfNoDataValue;
+    double      dfNearestValue =
+        ((GDALGridNearestNeighborOptions *)poOptions)->dfNoDataValue;
     // Nearest distance will be initialized with the distance to the first
     // point in array.
-    double dfNearestR = DBL_MAX;
+    double      dfNearestR = DBL_MAX;
     GUInt32 i = 0;
 
     double dfSearchRadius = psExtraParams->dfInitialSearchRadius;
     if( hQuadTree != NULL && dfRadius1 == dfRadius2 && dfSearchRadius > 0 )
     {
-        if( dfRadius1 > 0 )
-            dfSearchRadius = poOptions->dfRadius1;
         CPLRectObj sAoi;
-        while( dfSearchRadius > 0 )
+        if( dfRadius1 > 0 )
+            dfSearchRadius = ((GDALGridNearestNeighborOptions *)poOptions)->dfRadius1;
+        while(dfSearchRadius > 0)
         {
             sAoi.minx = dfXPoint - dfSearchRadius;
             sAoi.miny = dfYPoint - dfSearchRadius;
             sAoi.maxx = dfXPoint + dfSearchRadius;
             sAoi.maxy = dfYPoint + dfSearchRadius;
             int nFeatureCount = 0;
-            GDALGridPoint** papsPoints = reinterpret_cast<GDALGridPoint **>(
-                    CPLQuadTreeSearch(hQuadTree, &sAoi, &nFeatureCount) );
+            GDALGridPoint** papsPoints = (GDALGridPoint**)
+                    CPLQuadTreeSearch(hQuadTree, &sAoi, &nFeatureCount);
             if( nFeatureCount != 0 )
             {
                 if( dfRadius1 > 0 )
                     dfNearestR = dfRadius1;
-                for( int k = 0; k < nFeatureCount; k++)
+                for(int k=0; k<nFeatureCount; k++)
                 {
-                    const int idx = papsPoints[k]->i;
-                    const double dfRX = padfX[idx] - dfXPoint;
-                    const double dfRY = padfY[idx] - dfYPoint;
+                    int idx = papsPoints[k]->i;
+                    double  dfRX = padfX[idx] - dfXPoint;
+                    double  dfRY = padfY[idx] - dfYPoint;
 
-                    const double dfR2 = dfRX * dfRX + dfRY * dfRY;
+                    const double    dfR2 = dfRX * dfRX + dfRY * dfRY;
                     if( dfR2 <= dfNearestR )
                     {
                         dfNearestR = dfR2;
@@ -697,39 +709,37 @@ GDALGridNearestNeighbor( const void *poOptionsIn, GUInt32 nPoints,
                 CPLFree(papsPoints);
                 break;
             }
-
-            CPLFree(papsPoints);
-            if( dfRadius1 > 0 )
-                break;
-            dfSearchRadius *= 2;
-#if DEBUG_VERBOSE
-            CPLDebug(
-                "GDAL_GRID", "Increasing search radius to %.16g",
-                dfSearchRadius);
-#endif
+            else
+            {
+                CPLFree(papsPoints);
+                if( dfRadius1 > 0 )
+                    break;
+                dfSearchRadius *= 2;
+                //CPLDebug("GDAL_GRID", "Increasing search radius to %.16g", dfSearchRadius);
+            }
         }
     }
     else
     {
-        while( i < nPoints )
+        while ( i < nPoints )
         {
-            double dfRX = padfX[i] - dfXPoint;
-            double dfRY = padfY[i] - dfYPoint;
+            double  dfRX = padfX[i] - dfXPoint;
+            double  dfRY = padfY[i] - dfYPoint;
 
-            if( bRotated )
+            if ( bRotated )
             {
-                const double dfRXRotated = dfRX * dfCoeff1 + dfRY * dfCoeff2;
-                const double dfRYRotated = dfRY * dfCoeff1 - dfRX * dfCoeff2;
+                double dfRXRotated = dfRX * dfCoeff1 + dfRY * dfCoeff2;
+                double dfRYRotated = dfRY * dfCoeff1 - dfRX * dfCoeff2;
 
                 dfRX = dfRXRotated;
                 dfRY = dfRYRotated;
             }
 
             // Is this point located inside the search ellipse?
-            if( dfRadius2 * dfRX * dfRX + dfRadius1 * dfRY * dfRY <= dfR12 )
+            if ( dfRadius2 * dfRX * dfRX + dfRadius1 * dfRY * dfRY <= dfR12 )
             {
-                const double dfR2 = dfRX * dfRX + dfRY * dfRY;
-                if( dfR2 <= dfNearestR )
+                const double    dfR2 = dfRX * dfRX + dfRY * dfRY;
+                if ( dfR2 <= dfNearestR )
                 {
                     dfNearestR = dfR2;
                     dfNearestValue = padfZ[i];
@@ -740,7 +750,7 @@ GDALGridNearestNeighbor( const void *poOptionsIn, GUInt32 nPoints,
         }
     }
 
-    *pdfValue = dfNearestValue;
+    (*pdfValue) = dfNearestValue;
 
     return CE_None;
 }
@@ -766,7 +776,7 @@ GDALGridNearestNeighbor( const void *poOptionsIn, GUInt32 nPoints,
  *      <li> \f$n\f$ is a total number of points in search ellipse.
  *  </ul>
  *
- * @param poOptionsIn Algorithm parameters. This should point to
+ * @param poOptions Algorithm parameters. This should point to
  * GDALGridDataMetricsOptions object.
  * @param nPoints Number of elements in input arrays.
  * @param padfX Input array of X coordinates.
@@ -776,79 +786,83 @@ GDALGridNearestNeighbor( const void *poOptionsIn, GUInt32 nPoints,
  * @param dfYPoint Y coordinate of the point to compute.
  * @param pdfValue Pointer to variable where the computed grid node value
  * will be returned.
- * @param hExtraParamsIn unused.
  *
  * @return CE_None on success or CE_Failure if something goes wrong.
  */
 
 CPLErr
-GDALGridDataMetricMinimum( const void *poOptionsIn, GUInt32 nPoints,
+GDALGridDataMetricMinimum( const void *poOptions, GUInt32 nPoints,
                            const double *padfX, const double *padfY,
                            const double *padfZ,
                            double dfXPoint, double dfYPoint, double *pdfValue,
-                           CPL_UNUSED void * hExtraParamsIn )
+                           CPL_UNUSED void* hExtraParamsIn )
 {
     // TODO: For optimization purposes pre-computed parameters should be moved
     // out of this routine to the calling function.
 
-    const GDALGridDataMetricsOptions *const poOptions =
-        static_cast<const GDALGridDataMetricsOptions *>(poOptionsIn);
+    // Pre-compute search ellipse parameters
+    double  dfRadius1 =
+        ((GDALGridDataMetricsOptions *)poOptions)->dfRadius1;
+    double  dfRadius2 =
+        ((GDALGridDataMetricsOptions *)poOptions)->dfRadius2;
+    double  dfR12;
 
-    // Pre-compute search ellipse parameters.
-    const double dfRadius1 = poOptions->dfRadius1 * poOptions->dfRadius1;
-    const double dfRadius2 = poOptions->dfRadius2 * poOptions->dfRadius2;
-    const double dfR12 = dfRadius1 * dfRadius2;
+    dfRadius1 *= dfRadius1;
+    dfRadius2 *= dfRadius2;
+    dfR12 = dfRadius1 * dfRadius2;
 
     // Compute coefficients for coordinate system rotation.
-    const double dfAngle = TO_RADIANS * poOptions->dfAngle;
-    const bool bRotated = dfAngle != 0.0;
-    const double dfCoeff1 = bRotated ? cos(dfAngle) : 0.0;
-    const double dfCoeff2 = bRotated ? sin(dfAngle) : 0.0;
-
-    double dfMinimumValue=0.0;
-    GUInt32 i = 0;
-    GUInt32 n = 0;
-
-    while( i < nPoints )
+    double      dfCoeff1 = 0.0, dfCoeff2 = 0.0;
+    const double dfAngle =
+        TO_RADIANS * ((GDALGridDataMetricsOptions *)poOptions)->dfAngle;
+    const bool  bRotated = ( dfAngle == 0.0 ) ? false : true;
+    if ( bRotated )
     {
-        double dfRX = padfX[i] - dfXPoint;
-        double dfRY = padfY[i] - dfYPoint;
+        dfCoeff1 = cos(dfAngle);
+        dfCoeff2 = sin(dfAngle);
+    }
 
-        if( bRotated )
+    double      dfMinimumValue=0.0;
+    GUInt32     i = 0, n = 0;
+
+    while ( i < nPoints )
+    {
+        double  dfRX = padfX[i] - dfXPoint;
+        double  dfRY = padfY[i] - dfYPoint;
+
+        if ( bRotated )
         {
-            const double dfRXRotated = dfRX * dfCoeff1 + dfRY * dfCoeff2;
-            const double dfRYRotated = dfRY * dfCoeff1 - dfRX * dfCoeff2;
+            double dfRXRotated = dfRX * dfCoeff1 + dfRY * dfCoeff2;
+            double dfRYRotated = dfRY * dfCoeff1 - dfRX * dfCoeff2;
 
             dfRX = dfRXRotated;
             dfRY = dfRYRotated;
         }
 
         // Is this point located inside the search ellipse?
-        if( dfRadius2 * dfRX * dfRX + dfRadius1 * dfRY * dfRY <= dfR12 )
+        if ( dfRadius2 * dfRX * dfRX + dfRadius1 * dfRY * dfRY <= dfR12 )
         {
-            if( n > 0 )
+            if ( n )
             {
-                if( dfMinimumValue > padfZ[i] )
+                if ( dfMinimumValue > padfZ[i] )
                     dfMinimumValue = padfZ[i];
             }
             else
-            {
                 dfMinimumValue = padfZ[i];
-            }
             n++;
         }
 
         i++;
     }
 
-    if( n < poOptions->nMinPoints || n == 0 )
+    if ( n < ((GDALGridDataMetricsOptions *)poOptions)->nMinPoints
+         || n == 0 )
     {
-        *pdfValue = poOptions->dfNoDataValue;
+        (*pdfValue) =
+            ((GDALGridDataMetricsOptions *)poOptions)->dfNoDataValue;
     }
     else
-    {
-        *pdfValue = dfMinimumValue;
-    }
+        (*pdfValue) = dfMinimumValue;
 
     return CE_None;
 }
@@ -874,7 +888,7 @@ GDALGridDataMetricMinimum( const void *poOptionsIn, GUInt32 nPoints,
  *      <li> \f$n\f$ is a total number of points in search ellipse.
  *  </ul>
  *
- * @param poOptionsIn Algorithm parameters. This should point to
+ * @param poOptions Algorithm parameters. This should point to
  * GDALGridDataMetricsOptions object.
  * @param nPoints Number of elements in input arrays.
  * @param padfX Input array of X coordinates.
@@ -884,13 +898,12 @@ GDALGridDataMetricMinimum( const void *poOptionsIn, GUInt32 nPoints,
  * @param dfYPoint Y coordinate of the point to compute.
  * @param pdfValue Pointer to variable where the computed grid node value
  * will be returned.
- * @param hExtraParamsIn extra parameters (unused)
  *
  * @return CE_None on success or CE_Failure if something goes wrong.
  */
 
 CPLErr
-GDALGridDataMetricMaximum( const void *poOptionsIn, GUInt32 nPoints,
+GDALGridDataMetricMaximum( const void *poOptions, GUInt32 nPoints,
                            const double *padfX, const double *padfY,
                            const double *padfZ,
                            double dfXPoint, double dfYPoint, double *pdfValue,
@@ -899,65 +912,69 @@ GDALGridDataMetricMaximum( const void *poOptionsIn, GUInt32 nPoints,
     // TODO: For optimization purposes pre-computed parameters should be moved
     // out of this routine to the calling function.
 
-    const GDALGridDataMetricsOptions *const poOptions =
-        static_cast<const GDALGridDataMetricsOptions *>(poOptionsIn);
+    // Pre-compute search ellipse parameters
+    double  dfRadius1 =
+        ((GDALGridDataMetricsOptions *)poOptions)->dfRadius1;
+    double  dfRadius2 =
+        ((GDALGridDataMetricsOptions *)poOptions)->dfRadius2;
+    double  dfR12;
 
-    // Pre-compute search ellipse parameters.
-    const double dfRadius1 = poOptions->dfRadius1 * poOptions->dfRadius1;
-    const double dfRadius2 = poOptions->dfRadius2 * poOptions->dfRadius2;
-    const double dfR12 = dfRadius1 * dfRadius2;
+    dfRadius1 *= dfRadius1;
+    dfRadius2 *= dfRadius2;
+    dfR12 = dfRadius1 * dfRadius2;
 
     // Compute coefficients for coordinate system rotation.
-    const double dfAngle = TO_RADIANS * poOptions->dfAngle;
-    const bool bRotated = dfAngle != 0.0;
-    const double dfCoeff1 = bRotated ? cos(dfAngle) : 0.0;
-    const double dfCoeff2 = bRotated ? sin(dfAngle) : 0.0;
-
-    double dfMaximumValue=0.0;
-    GUInt32 i = 0;
-    GUInt32 n = 0;
-
-    while( i < nPoints )
+    double      dfCoeff1 = 0.0, dfCoeff2 = 0.0;
+    const double    dfAngle =
+        TO_RADIANS * ((GDALGridDataMetricsOptions *)poOptions)->dfAngle;
+    const bool  bRotated = ( dfAngle == 0.0 ) ? false : true;
+    if ( bRotated )
     {
-        double dfRX = padfX[i] - dfXPoint;
-        double dfRY = padfY[i] - dfYPoint;
+        dfCoeff1 = cos(dfAngle);
+        dfCoeff2 = sin(dfAngle);
+    }
 
-        if( bRotated )
+    double      dfMaximumValue=0.0;
+    GUInt32     i = 0, n = 0;
+
+    while ( i < nPoints )
+    {
+        double  dfRX = padfX[i] - dfXPoint;
+        double  dfRY = padfY[i] - dfYPoint;
+
+        if ( bRotated )
         {
-            const double dfRXRotated = dfRX * dfCoeff1 + dfRY * dfCoeff2;
-            const double dfRYRotated = dfRY * dfCoeff1 - dfRX * dfCoeff2;
+            double dfRXRotated = dfRX * dfCoeff1 + dfRY * dfCoeff2;
+            double dfRYRotated = dfRY * dfCoeff1 - dfRX * dfCoeff2;
 
             dfRX = dfRXRotated;
             dfRY = dfRYRotated;
         }
 
         // Is this point located inside the search ellipse?
-        if( dfRadius2 * dfRX * dfRX + dfRadius1 * dfRY * dfRY <= dfR12 )
+        if ( dfRadius2 * dfRX * dfRX + dfRadius1 * dfRY * dfRY <= dfR12 )
         {
-            if( n )
+            if ( n )
             {
-                if( dfMaximumValue < padfZ[i] )
+                if ( dfMaximumValue < padfZ[i] )
                     dfMaximumValue = padfZ[i];
             }
             else
-            {
                 dfMaximumValue = padfZ[i];
-            }
             n++;
         }
 
         i++;
     }
 
-    if( n < poOptions->nMinPoints
+    if ( n < ((GDALGridDataMetricsOptions *)poOptions)->nMinPoints
          || n == 0 )
     {
-        *pdfValue = poOptions->dfNoDataValue;
+        (*pdfValue) =
+            ((GDALGridDataMetricsOptions *)poOptions)->dfNoDataValue;
     }
     else
-    {
-        *pdfValue = dfMaximumValue;
-    }
+        (*pdfValue) = dfMaximumValue;
 
     return CE_None;
 }
@@ -984,7 +1001,7 @@ GDALGridDataMetricMaximum( const void *poOptionsIn, GUInt32 nPoints,
  *      <li> \f$n\f$ is a total number of points in search ellipse.
  *  </ul>
  *
- * @param poOptionsIn Algorithm parameters. This should point to
+ * @param poOptions Algorithm parameters. This should point to
  * GDALGridDataMetricsOptions object.
  * @param nPoints Number of elements in input arrays.
  * @param padfX Input array of X coordinates.
@@ -994,82 +1011,85 @@ GDALGridDataMetricMaximum( const void *poOptionsIn, GUInt32 nPoints,
  * @param dfYPoint Y coordinate of the point to compute.
  * @param pdfValue Pointer to variable where the computed grid node value
  * will be returned.
- * @param hExtraParamsIn extra parameters (unused)
  *
  * @return CE_None on success or CE_Failure if something goes wrong.
  */
 
 CPLErr
-GDALGridDataMetricRange( const void *poOptionsIn, GUInt32 nPoints,
+GDALGridDataMetricRange( const void *poOptions, GUInt32 nPoints,
                          const double *padfX, const double *padfY,
                          const double *padfZ,
                          double dfXPoint, double dfYPoint, double *pdfValue,
-                         CPL_UNUSED void * hExtraParamsIn )
+                         CPL_UNUSED void* hExtraParamsIn )
 {
     // TODO: For optimization purposes pre-computed parameters should be moved
     // out of this routine to the calling function.
 
-    const GDALGridDataMetricsOptions *const poOptions =
-        static_cast<const GDALGridDataMetricsOptions *>(poOptionsIn);
-    // Pre-compute search ellipse parameters.
-    const double dfRadius1 = poOptions->dfRadius1 * poOptions->dfRadius1;
-    const double dfRadius2 = poOptions->dfRadius2 * poOptions->dfRadius2;
-    const double dfR12 = dfRadius1 * dfRadius2;
+    // Pre-compute search ellipse parameters
+    double  dfRadius1 =
+        ((GDALGridDataMetricsOptions *)poOptions)->dfRadius1;
+    double  dfRadius2 =
+        ((GDALGridDataMetricsOptions *)poOptions)->dfRadius2;
+    double  dfR12;
+
+    dfRadius1 *= dfRadius1;
+    dfRadius2 *= dfRadius2;
+    dfR12 = dfRadius1 * dfRadius2;
 
     // Compute coefficients for coordinate system rotation.
-    const double dfAngle = TO_RADIANS * poOptions->dfAngle;
-    const bool bRotated = dfAngle != 0.0;
-    const double dfCoeff1 = bRotated ? cos(dfAngle) : 0.0;
-    const double dfCoeff2 = bRotated ? sin(dfAngle) : 0.0;
-
-    double dfMaximumValue = 0.0;
-    double dfMinimumValue = 0.0;
-    GUInt32 i = 0;
-    GUInt32 n = 0;
-
-    while( i < nPoints )
+    double      dfCoeff1 = 0.0, dfCoeff2 = 0.0;
+    const double    dfAngle =
+        TO_RADIANS * ((GDALGridDataMetricsOptions *)poOptions)->dfAngle;
+    const bool  bRotated = ( dfAngle == 0.0 ) ? false : true;
+    if ( bRotated )
     {
-        double dfRX = padfX[i] - dfXPoint;
-        double dfRY = padfY[i] - dfYPoint;
+        dfCoeff1 = cos(dfAngle);
+        dfCoeff2 = sin(dfAngle);
+    }
 
-        if( bRotated )
+    double      dfMaximumValue=0.0, dfMinimumValue=0.0;
+    GUInt32     i = 0, n = 0;
+
+    while ( i < nPoints )
+    {
+        double  dfRX = padfX[i] - dfXPoint;
+        double  dfRY = padfY[i] - dfYPoint;
+
+        if ( bRotated )
         {
-            const double dfRXRotated = dfRX * dfCoeff1 + dfRY * dfCoeff2;
-            const double dfRYRotated = dfRY * dfCoeff1 - dfRX * dfCoeff2;
+            double dfRXRotated = dfRX * dfCoeff1 + dfRY * dfCoeff2;
+            double dfRYRotated = dfRY * dfCoeff1 - dfRX * dfCoeff2;
 
             dfRX = dfRXRotated;
             dfRY = dfRYRotated;
         }
 
         // Is this point located inside the search ellipse?
-        if( dfRadius2 * dfRX * dfRX + dfRadius1 * dfRY * dfRY <= dfR12 )
+        if ( dfRadius2 * dfRX * dfRX + dfRadius1 * dfRY * dfRY <= dfR12 )
         {
-            if( n > 0 )
+            if ( n )
             {
-                if( dfMinimumValue > padfZ[i] )
+                if ( dfMinimumValue > padfZ[i] )
                     dfMinimumValue = padfZ[i];
-                if( dfMaximumValue < padfZ[i] )
+                if ( dfMaximumValue < padfZ[i] )
                     dfMaximumValue = padfZ[i];
             }
             else
-            {
-                dfMinimumValue = padfZ[i];
-                dfMaximumValue = padfZ[i];
-            }
+                dfMinimumValue = dfMaximumValue = padfZ[i];
             n++;
         }
 
         i++;
     }
 
-    if( n < poOptions->nMinPoints || n == 0 )
+    if ( n < ((GDALGridDataMetricsOptions *)poOptions)->nMinPoints
+         || n == 0 )
     {
-        *pdfValue = poOptions->dfNoDataValue;
+        (*pdfValue) =
+            ((GDALGridDataMetricsOptions *)poOptions)->dfNoDataValue;
     }
     else
-    {
-        *pdfValue = dfMaximumValue - dfMinimumValue;
-    }
+        (*pdfValue) = dfMaximumValue - dfMinimumValue;
 
     return CE_None;
 }
@@ -1093,7 +1113,7 @@ GDALGridDataMetricRange( const void *poOptionsIn, GUInt32 nPoints,
  *      <li> \f$n\f$ is a total number of points in search ellipse.
  *  </ul>
  *
- * @param poOptionsIn Algorithm parameters. This should point to
+ * @param poOptions Algorithm parameters. This should point to
  * GDALGridDataMetricsOptions object.
  * @param nPoints Number of elements in input arrays.
  * @param padfX Input array of X coordinates.
@@ -1103,69 +1123,72 @@ GDALGridDataMetricRange( const void *poOptionsIn, GUInt32 nPoints,
  * @param dfYPoint Y coordinate of the point to compute.
  * @param pdfValue Pointer to variable where the computed grid node value
  * will be returned.
- * @param hExtraParamsIn extra parameters (unused)
  *
  * @return CE_None on success or CE_Failure if something goes wrong.
  */
 
 CPLErr
-GDALGridDataMetricCount( const void *poOptionsIn, GUInt32 nPoints,
+GDALGridDataMetricCount( const void *poOptions, GUInt32 nPoints,
                          const double *padfX, const double *padfY,
-                         CPL_UNUSED const double * padfZ,
+                         CPL_UNUSED const double *padfZ,
                          double dfXPoint, double dfYPoint, double *pdfValue,
-                         CPL_UNUSED void * hExtraParamsIn )
+                         CPL_UNUSED void* hExtraParamsIn )
 {
     // TODO: For optimization purposes pre-computed parameters should be moved
     // out of this routine to the calling function.
 
-    const GDALGridDataMetricsOptions *const poOptions =
-        static_cast<const GDALGridDataMetricsOptions *>(poOptionsIn);
+    // Pre-compute search ellipse parameters
+    double  dfRadius1 =
+        ((GDALGridDataMetricsOptions *)poOptions)->dfRadius1;
+    double  dfRadius2 =
+        ((GDALGridDataMetricsOptions *)poOptions)->dfRadius2;
+    double  dfR12;
 
-    // Pre-compute search ellipse parameters.
-    const double dfRadius1 = poOptions->dfRadius1 * poOptions->dfRadius1;
-    const double dfRadius2 = poOptions->dfRadius2 * poOptions->dfRadius2;
-    const double dfR12 = dfRadius1 * dfRadius2;
+    dfRadius1 *= dfRadius1;
+    dfRadius2 *= dfRadius2;
+    dfR12 = dfRadius1 * dfRadius2;
 
     // Compute coefficients for coordinate system rotation.
-    const double    dfAngle = TO_RADIANS * poOptions->dfAngle;
-    const bool bRotated = dfAngle != 0.0;
-    const double dfCoeff1 = bRotated ? cos(dfAngle) : 0.0;
-    const double dfCoeff2 = bRotated ? sin(dfAngle) : 0.0;
-
-    GUInt32 i = 0;
-    GUInt32 n = 0;
-
-    while( i < nPoints )
+    double      dfCoeff1 = 0.0, dfCoeff2 = 0.0;
+    const double    dfAngle =
+        TO_RADIANS * ((GDALGridDataMetricsOptions *)poOptions)->dfAngle;
+    const bool  bRotated = ( dfAngle == 0.0 ) ? false : true;
+    if ( bRotated )
     {
-        double dfRX = padfX[i] - dfXPoint;
-        double dfRY = padfY[i] - dfYPoint;
+        dfCoeff1 = cos(dfAngle);
+        dfCoeff2 = sin(dfAngle);
+    }
 
-        if( bRotated )
+    GUInt32     i = 0, n = 0;
+
+    while ( i < nPoints )
+    {
+        double  dfRX = padfX[i] - dfXPoint;
+        double  dfRY = padfY[i] - dfYPoint;
+
+        if ( bRotated )
         {
-            const double dfRXRotated = dfRX * dfCoeff1 + dfRY * dfCoeff2;
-            const double dfRYRotated = dfRY * dfCoeff1 - dfRX * dfCoeff2;
+            double dfRXRotated = dfRX * dfCoeff1 + dfRY * dfCoeff2;
+            double dfRYRotated = dfRY * dfCoeff1 - dfRX * dfCoeff2;
 
             dfRX = dfRXRotated;
             dfRY = dfRYRotated;
         }
 
         // Is this point located inside the search ellipse?
-        if( dfRadius2 * dfRX * dfRX + dfRadius1 * dfRY * dfRY <= dfR12 )
-        {
+        if ( dfRadius2 * dfRX * dfRX + dfRadius1 * dfRY * dfRY <= dfR12 )
             n++;
-        }
 
         i++;
     }
 
-    if( n < poOptions->nMinPoints )
+    if ( n < ((GDALGridDataMetricsOptions *)poOptions)->nMinPoints )
     {
-        *pdfValue = poOptions->dfNoDataValue;
+        (*pdfValue) =
+            ((GDALGridDataMetricsOptions *)poOptions)->dfNoDataValue;
     }
     else
-    {
-        *pdfValue = static_cast<double>(n);
-    }
+        (*pdfValue) = (double)n;
 
     return CE_None;
 }
@@ -1193,66 +1216,72 @@ GDALGridDataMetricCount( const void *poOptionsIn, GUInt32 nPoints,
  *      <li> \f$n\f$ is a total number of points in search ellipse.
  *  </ul>
  *
- * @param poOptionsIn Algorithm parameters. This should point to
+ * @param poOptions Algorithm parameters. This should point to
  * GDALGridDataMetricsOptions object.
  * @param nPoints Number of elements in input arrays.
  * @param padfX Input array of X coordinates.
  * @param padfY Input array of Y coordinates.
- * @param padfZ Input array of Z values (unused)
+ * @param padfZ Input array of Z values.
  * @param dfXPoint X coordinate of the point to compute.
  * @param dfYPoint Y coordinate of the point to compute.
  * @param pdfValue Pointer to variable where the computed grid node value
  * will be returned.
- * @param hExtraParamsIn extra parameters (unused)
  *
  * @return CE_None on success or CE_Failure if something goes wrong.
  */
 
 CPLErr
-GDALGridDataMetricAverageDistance( const void *poOptionsIn, GUInt32 nPoints,
+GDALGridDataMetricAverageDistance( const void *poOptions, GUInt32 nPoints,
                                    const double *padfX, const double *padfY,
-                                   CPL_UNUSED const double * padfZ,
+                                   CPL_UNUSED const double *padfZ,
                                    double dfXPoint, double dfYPoint,
                                    double *pdfValue,
-                                   CPL_UNUSED void * hExtraParamsIn )
+                                   CPL_UNUSED void* hExtraParamsIn )
 {
     // TODO: For optimization purposes pre-computed parameters should be moved
     // out of this routine to the calling function.
 
-    const GDALGridDataMetricsOptions *const poOptions =
-        static_cast<const GDALGridDataMetricsOptions *>(poOptionsIn);
+    // Pre-compute search ellipse parameters
+    double  dfRadius1 =
+        ((GDALGridDataMetricsOptions *)poOptions)->dfRadius1;
+    double  dfRadius2 =
+        ((GDALGridDataMetricsOptions *)poOptions)->dfRadius2;
+    double  dfR12;
 
-    // Pre-compute search ellipse parameters.
-    const double dfRadius1 = poOptions->dfRadius1 * poOptions->dfRadius1;
-    const double dfRadius2 = poOptions->dfRadius2 * poOptions->dfRadius2;
-    const double dfR12 = dfRadius1 * dfRadius2;
+    dfRadius1 *= dfRadius1;
+    dfRadius2 *= dfRadius2;
+    dfR12 = dfRadius1 * dfRadius2;
 
     // Compute coefficients for coordinate system rotation.
-    const double dfAngle = TO_RADIANS * poOptions->dfAngle;
-    const bool bRotated = dfAngle != 0.0;
-    const double dfCoeff1 = bRotated ? cos(dfAngle) : 0.0;
-    const double dfCoeff2 = bRotated ? sin(dfAngle) : 0.0;
-
-    double dfAccumulator = 0.0;
-    GUInt32 i = 0;
-    GUInt32 n = 0;
-
-    while( i < nPoints )
+    double      dfCoeff1 = 0.0, dfCoeff2 = 0.0;
+    const double    dfAngle =
+        TO_RADIANS * ((GDALGridDataMetricsOptions *)poOptions)->dfAngle;
+    const bool  bRotated = ( dfAngle == 0.0 ) ? false : true;
+    if ( bRotated )
     {
-        double dfRX = padfX[i] - dfXPoint;
-        double dfRY = padfY[i] - dfYPoint;
+        dfCoeff1 = cos(dfAngle);
+        dfCoeff2 = sin(dfAngle);
+    }
 
-        if( bRotated )
+    double      dfAccumulator = 0.0;
+    GUInt32     i = 0, n = 0;
+
+    while ( i < nPoints )
+    {
+        double  dfRX = padfX[i] - dfXPoint;
+        double  dfRY = padfY[i] - dfYPoint;
+
+        if ( bRotated )
         {
-            const double dfRXRotated = dfRX * dfCoeff1 + dfRY * dfCoeff2;
-            const double dfRYRotated = dfRY * dfCoeff1 - dfRX * dfCoeff2;
+            double dfRXRotated = dfRX * dfCoeff1 + dfRY * dfCoeff2;
+            double dfRYRotated = dfRY * dfCoeff1 - dfRX * dfCoeff2;
 
             dfRX = dfRXRotated;
             dfRY = dfRYRotated;
         }
 
         // Is this point located inside the search ellipse?
-        if( dfRadius2 * dfRX * dfRX + dfRadius1 * dfRY * dfRY <= dfR12 )
+        if ( dfRadius2 * dfRX * dfRX + dfRadius1 * dfRY * dfRY <= dfR12 )
         {
             dfAccumulator += sqrt( dfRX * dfRX + dfRY * dfRY );
             n++;
@@ -1261,14 +1290,14 @@ GDALGridDataMetricAverageDistance( const void *poOptionsIn, GUInt32 nPoints,
         i++;
     }
 
-    if( n < poOptions->nMinPoints || n == 0 )
+    if ( n < ((GDALGridDataMetricsOptions *)poOptions)->nMinPoints
+         || n == 0 )
     {
-        *pdfValue = poOptions->dfNoDataValue;
+        (*pdfValue) =
+            ((GDALGridDataMetricsOptions *)poOptions)->dfNoDataValue;
     }
     else
-    {
-        *pdfValue = dfAccumulator / n;
-    }
+        (*pdfValue) = dfAccumulator / n;
 
     return CE_None;
 }
@@ -1298,87 +1327,93 @@ GDALGridDataMetricAverageDistance( const void *poOptionsIn, GUInt32 nPoints,
  *      <li> \f$n\f$ is a total number of points in search ellipse.
  *  </ul>
  *
- * @param poOptionsIn Algorithm parameters. This should point to
+ * @param poOptions Algorithm parameters. This should point to
  * GDALGridDataMetricsOptions object.
  * @param nPoints Number of elements in input arrays.
  * @param padfX Input array of X coordinates.
  * @param padfY Input array of Y coordinates.
- * @param padfZ Input array of Z values (unused)
+ * @param padfZ Input array of Z values.
  * @param dfXPoint X coordinate of the point to compute.
  * @param dfYPoint Y coordinate of the point to compute.
  * @param pdfValue Pointer to variable where the computed grid node value
  * will be returned.
- * @param hExtraParamsIn extra parameters (unused)
  *
  * @return CE_None on success or CE_Failure if something goes wrong.
  */
 
 CPLErr
-GDALGridDataMetricAverageDistancePts( const void *poOptionsIn, GUInt32 nPoints,
+GDALGridDataMetricAverageDistancePts( const void *poOptions, GUInt32 nPoints,
                                       const double *padfX, const double *padfY,
-                                      CPL_UNUSED const double * padfZ,
+                                      CPL_UNUSED const double *padfZ,
                                       double dfXPoint, double dfYPoint,
                                       double *pdfValue,
-                                      CPL_UNUSED void * hExtraParamsIn )
+                                      CPL_UNUSED void* hExtraParamsIn )
 {
     // TODO: For optimization purposes pre-computed parameters should be moved
     // out of this routine to the calling function.
 
-    const GDALGridDataMetricsOptions *const poOptions =
-        static_cast<const GDALGridDataMetricsOptions *>(poOptionsIn);
-    // Pre-compute search ellipse parameters.
-    const double dfRadius1 = poOptions->dfRadius1 * poOptions->dfRadius1;
-    const double dfRadius2 = poOptions->dfRadius2 * poOptions->dfRadius2;
-    const double dfR12 = dfRadius1 * dfRadius2;
+    // Pre-compute search ellipse parameters
+    double  dfRadius1 =
+        ((GDALGridDataMetricsOptions *)poOptions)->dfRadius1;
+    double  dfRadius2 =
+        ((GDALGridDataMetricsOptions *)poOptions)->dfRadius2;
+    double  dfR12;
+
+    dfRadius1 *= dfRadius1;
+    dfRadius2 *= dfRadius2;
+    dfR12 = dfRadius1 * dfRadius2;
 
     // Compute coefficients for coordinate system rotation.
-    const double dfAngle = TO_RADIANS * poOptions->dfAngle;
-    const bool bRotated = dfAngle != 0.0;
-    const double dfCoeff1 = bRotated ? cos(dfAngle) : 0.0;
-    const double dfCoeff2 = bRotated ? sin(dfAngle) : 0.0;
-
-    double dfAccumulator = 0.0;
-    GUInt32 i = 0;
-    GUInt32 n = 0;
-
-    // Search for the first point within the search ellipse.
-    while( i < nPoints - 1 )
+    double      dfCoeff1 = 0.0, dfCoeff2 = 0.0;
+    const double    dfAngle =
+        TO_RADIANS * ((GDALGridDataMetricsOptions *)poOptions)->dfAngle;
+    const bool  bRotated = ( dfAngle == 0.0 ) ? false : true;
+    if ( bRotated )
     {
-        double dfRX1 = padfX[i] - dfXPoint;
-        double dfRY1 = padfY[i] - dfYPoint;
+        dfCoeff1 = cos(dfAngle);
+        dfCoeff2 = sin(dfAngle);
+    }
 
-        if( bRotated )
+    double      dfAccumulator = 0.0;
+    GUInt32     i = 0, n = 0;
+
+    // Search for the first point within the search ellipse
+    while ( i < nPoints - 1 )
+    {
+        double  dfRX1 = padfX[i] - dfXPoint;
+        double  dfRY1 = padfY[i] - dfYPoint;
+
+        if ( bRotated )
         {
-            const double dfRXRotated = dfRX1 * dfCoeff1 + dfRY1 * dfCoeff2;
-            const double dfRYRotated = dfRY1 * dfCoeff1 - dfRX1 * dfCoeff2;
+            double dfRXRotated = dfRX1 * dfCoeff1 + dfRY1 * dfCoeff2;
+            double dfRYRotated = dfRY1 * dfCoeff1 - dfRX1 * dfCoeff2;
 
             dfRX1 = dfRXRotated;
             dfRY1 = dfRYRotated;
         }
 
         // Is this point located inside the search ellipse?
-        if( dfRadius2 * dfRX1 * dfRX1 + dfRadius1 * dfRY1 * dfRY1 <= dfR12 )
+        if ( dfRadius2 * dfRX1 * dfRX1 + dfRadius1 * dfRY1 * dfRY1 <= dfR12 )
         {
-            // Search all the remaining points within the ellipse and compute
-            // distances between them and the first point.
-            for( GUInt32 j = i + 1; j < nPoints; j++ )
-            {
-                double dfRX2 = padfX[j] - dfXPoint;
-                double dfRY2 = padfY[j] - dfYPoint;
+            GUInt32 j;
 
-                if( bRotated )
+            // Search all the remaining points within the ellipse and compute
+            // distances between them and the first point
+            for ( j = i + 1; j < nPoints; j++ )
+            {
+                double  dfRX2 = padfX[j] - dfXPoint;
+                double  dfRY2 = padfY[j] - dfYPoint;
+
+                if ( bRotated )
                 {
-                    const double dfRXRotated =
-                        dfRX2 * dfCoeff1 + dfRY2 * dfCoeff2;
-                    const double dfRYRotated =
-                        dfRY2 * dfCoeff1 - dfRX2 * dfCoeff2;
+                    double dfRXRotated = dfRX2 * dfCoeff1 + dfRY2 * dfCoeff2;
+                    double dfRYRotated = dfRY2 * dfCoeff1 - dfRX2 * dfCoeff2;
 
                     dfRX2 = dfRXRotated;
                     dfRY2 = dfRYRotated;
                 }
 
-                if( dfRadius2 * dfRX2 * dfRX2 + dfRadius1 * dfRY2 * dfRY2
-                    <= dfR12 )
+                if ( dfRadius2 * dfRX2 * dfRX2 + dfRadius1 * dfRY2 * dfRY2 <= dfR12 )
                 {
                     const double dfRX = padfX[j] - padfX[i];
                     const double dfRY = padfY[j] - padfY[i];
@@ -1392,14 +1427,14 @@ GDALGridDataMetricAverageDistancePts( const void *poOptionsIn, GUInt32 nPoints,
         i++;
     }
 
-    if( n < poOptions->nMinPoints || n == 0 )
+    if ( n < ((GDALGridDataMetricsOptions *)poOptions)->nMinPoints
+         || n == 0 )
     {
-        *pdfValue = poOptions->dfNoDataValue;
+        (*pdfValue) =
+            ((GDALGridDataMetricsOptions *)poOptions)->dfNoDataValue;
     }
     else
-    {
-        *pdfValue = dfAccumulator / n;
-    }
+        (*pdfValue) = dfAccumulator / n;
 
     return CE_None;
 }
@@ -1417,7 +1452,7 @@ GDALGridDataMetricAverageDistancePts( const void *poOptionsIn, GUInt32 nPoints,
  * If the point is not in any triangle, depending on the radius, the
  * algorithm will use the value of the nearest point or the nodata value.
  *
- * @param poOptionsIn Algorithm parameters. This should point to
+ * @param poOptions Algorithm parameters. This should point to
  * GDALGridLinearOptions object.
  * @param nPoints Number of elements in input arrays.
  * @param padfX Input array of X coordinates.
@@ -1427,7 +1462,6 @@ GDALGridDataMetricAverageDistancePts( const void *poOptionsIn, GUInt32 nPoints,
  * @param dfYPoint Y coordinate of the point to compute.
  * @param pdfValue Pointer to variable where the computed grid node value
  * will be returned.
- * @param hExtraParams extra parameters
  *
  * @return CE_None on success or CE_Failure if something goes wrong.
  *
@@ -1435,67 +1469,74 @@ GDALGridDataMetricAverageDistancePts( const void *poOptionsIn, GUInt32 nPoints,
  */
 
 CPLErr
-GDALGridLinear( const void *poOptionsIn, GUInt32 nPoints,
+GDALGridLinear( const void *poOptions, CPL_UNUSED GUInt32 nPoints,
                 const double *padfX, const double *padfY,
                 const double *padfZ,
                 double dfXPoint, double dfYPoint, double *pdfValue,
-                void *hExtraParams )
+                void* hExtraParams )
 {
-    GDALGridExtraParameters* psExtraParams =
-        static_cast<GDALGridExtraParameters *>(hExtraParams);
+    GDALGridExtraParameters* psExtraParams = (GDALGridExtraParameters*) hExtraParams;
     GDALTriangulation* psTriangulation = psExtraParams->psTriangulation;
 
     int nOutputFacetIdx = -1;
-    const bool bRet = CPL_TO_BOOL( GDALTriangulationFindFacetDirected(
-        psTriangulation, psExtraParams->nInitialFacetIdx,
-        dfXPoint, dfYPoint, &nOutputFacetIdx ) );
-
+    int bRet = GDALTriangulationFindFacetDirected( psTriangulation,
+                                                   psExtraParams->nInitialFacetIdx,
+                                                   dfXPoint, dfYPoint,
+                                                   &nOutputFacetIdx );
     CPLAssert(nOutputFacetIdx >= 0);
-    // Reuse output facet idx as next initial index since we proceed line by
-    // line.
+    // Reuse output facet idx as next initial index since we proceed line by line
     psExtraParams->nInitialFacetIdx = nOutputFacetIdx;
 
     if( bRet )
     {
-        double lambda1 = 0.0;
-        double lambda2 = 0.0;
-        double lambda3 = 0.0;
+        double lambda1, lambda2, lambda3;
         GDALTriangulationComputeBarycentricCoordinates(
                                                 psTriangulation,
                                                 nOutputFacetIdx,
                                                 dfXPoint, dfYPoint,
                                                 &lambda1, &lambda2, &lambda3);
-        const int i1 =
-            psTriangulation->pasFacets[nOutputFacetIdx].anVertexIdx[0];
-        const int i2 =
-            psTriangulation->pasFacets[nOutputFacetIdx].anVertexIdx[1];
-        const int i3 =
-            psTriangulation->pasFacets[nOutputFacetIdx].anVertexIdx[2];
-        *pdfValue =
-            lambda1 * padfZ[i1] +
-            lambda2 * padfZ[i2] +
-            lambda3 * padfZ[i3];
+        int i1 = psTriangulation->pasFacets[nOutputFacetIdx].anVertexIdx[0];
+        int i2 = psTriangulation->pasFacets[nOutputFacetIdx].anVertexIdx[1];
+        int i3 = psTriangulation->pasFacets[nOutputFacetIdx].anVertexIdx[2];
+        *pdfValue = lambda1 * padfZ[i1] + lambda2 * padfZ[i2] + lambda3 * padfZ[i3];
     }
     else
     {
-        const GDALGridLinearOptions *const poOptions =
-            static_cast<const GDALGridLinearOptions *>(poOptionsIn);
-        const double dfRadius = poOptions->dfRadius;
-        if( dfRadius == 0.0 )
-        {
-            *pdfValue = poOptions->dfNoDataValue;
-        }
+        double dfRadius = ((GDALGridLinearOptions*)poOptions)->dfRadius;
+        if( dfRadius == 0 )
+            *pdfValue = ((GDALGridLinearOptions*)poOptions)->dfNoDataValue;
         else
         {
             GDALGridNearestNeighborOptions sNeighbourOptions;
-            sNeighbourOptions.dfRadius1 = dfRadius < 0.0 ? 0.0 : dfRadius;
-            sNeighbourOptions.dfRadius2 = dfRadius < 0.0 ? 0.0 : dfRadius;
-            sNeighbourOptions.dfAngle = 0.0;
-            sNeighbourOptions.dfNoDataValue = poOptions->dfNoDataValue;
-            return GDALGridNearestNeighbor( &sNeighbourOptions, nPoints,
-                                            padfX, padfY, padfZ,
-                                            dfXPoint, dfYPoint, pdfValue,
-                                            hExtraParams );
+            sNeighbourOptions.dfRadius1 = dfRadius < 0 ? 0 : dfRadius;
+            sNeighbourOptions.dfRadius2 = dfRadius < 0 ? 0 : dfRadius;
+            sNeighbourOptions.dfAngle = 0;
+            sNeighbourOptions.dfNoDataValue = ((GDALGridLinearOptions*)poOptions)->dfNoDataValue;
+            return GDALGridNearestNeighbor(&sNeighbourOptions, nPoints,
+                                        padfX, padfY, padfZ,
+                                        dfXPoint, dfYPoint, pdfValue,
+                                        hExtraParams);
+#if 0
+            // Disabled since the nearest point is not necessarily the nearest
+            // vertex of the "nearest" triangle
+            int iBestIdx;
+            double dfBestDist;
+            for(int i=0;i<3;i++)
+            {
+                int idx = psTriangulation->pasFacets[nOutputFacetIdx].anVertexIdx[i];
+                double dfDist = (padfX[idx] - dfXPoint) * (padfX[idx] - dfXPoint) +
+                                (padfY[idx] - dfYPoint) * (padfY[idx] - dfYPoint);
+                if( i == 0 || dfDist < dfBestDist )
+                {
+                    iBestIdx = idx;
+                    dfBestDist = dfDist;
+                }
+            }
+            if( dfRadius < 0 || dfBestDist <= dfRadius * dfRadius )
+                *pdfValue = padfZ[iBestIdx];
+            else
+                *pdfValue = ((GDALGridLinearOptions*)poOptions)->dfNoDataValue;
+#endif
         }
     }
 
@@ -1543,13 +1584,13 @@ struct _GDALGridJob
 /*                   GDALGridProgressMultiThread()                      */
 /************************************************************************/
 
-// Return TRUE if the computation must be interrupted.
-static int GDALGridProgressMultiThread( GDALGridJob* psJob )
+/* Return TRUE if the computation must be interrupted */
+static int GDALGridProgressMultiThread(GDALGridJob* psJob)
 {
     CPLAcquireMutex(psJob->hCondMutex, 1.0);
-    ++(*psJob->pnCounter);
+    (*(psJob->pnCounter)) ++;
     CPLCondSignal(psJob->hCond);
-    const int bStop = *psJob->pbStop;
+    int bStop = *(psJob->pbStop);
     CPLReleaseMutex(psJob->hCondMutex);
 
     return bStop;
@@ -1559,15 +1600,15 @@ static int GDALGridProgressMultiThread( GDALGridJob* psJob )
 /*                      GDALGridProgressMonoThread()                    */
 /************************************************************************/
 
-// Return TRUE if the computation must be interrupted.
-static int GDALGridProgressMonoThread( GDALGridJob* psJob )
+/* Return TRUE if the computation must be interrupted */
+static int GDALGridProgressMonoThread(GDALGridJob* psJob)
 {
-    const int nCounter = ++(*psJob->pnCounter);
-    if( !psJob->pfnRealProgress( nCounter / static_cast<double>(psJob->nYSize),
+    int nCounter = ++(*(psJob->pnCounter));
+    if( !psJob->pfnRealProgress( (nCounter / (double) psJob->nYSize),
                                  "", psJob->pRealProgressArg ) )
     {
         CPLError( CE_Failure, CPLE_UserInterrupt, "User terminated" );
-        *psJob->pbStop = TRUE;
+        *(psJob->pbStop) = TRUE;
         return TRUE;
     }
     return FALSE;
@@ -1577,70 +1618,69 @@ static int GDALGridProgressMonoThread( GDALGridJob* psJob )
 /*                         GDALGridJobProcess()                         */
 /************************************************************************/
 
-static void GDALGridJobProcess( void* user_data )
+static void GDALGridJobProcess(void* user_data)
 {
-    GDALGridJob* const psJob = static_cast<GDALGridJob *>(user_data);
-    int (*pfnProgress)(GDALGridJob* psJob) = psJob->pfnProgress;
+    GDALGridJob* psJob = (GDALGridJob*)user_data;
+    GUInt32 nXPoint, nYPoint;
+
+    const GUInt32 nYStart = psJob->nYStart;
+    const GUInt32 nYStep = psJob->nYStep;
+    GByte *pabyData = psJob->pabyData;
+
     const GUInt32 nXSize = psJob->nXSize;
+    const GUInt32 nYSize = psJob->nYSize;
+    const double dfXMin = psJob->dfXMin;
+    const double dfYMin = psJob->dfYMin;
+    const double dfDeltaX = psJob->dfDeltaX;
+    const double dfDeltaY = psJob->dfDeltaY;
+    GUInt32 nPoints = psJob->nPoints;
+    const double* padfX = psJob->padfX;
+    const double* padfY = psJob->padfY;
+    const double* padfZ = psJob->padfZ;
+    const void *poOptions = psJob->poOptions;
+    GDALGridFunction  pfnGDALGridMethod = psJob->pfnGDALGridMethod;
+    // Have a local copy of sExtraParameters since we want to modify
+    // nInitialFacetIdx
+    GDALGridExtraParameters sExtraParameters = *(psJob->psExtraParameters);
+    GDALDataType eType = psJob->eType;
+    int (*pfnProgress)(GDALGridJob* psJob) = psJob->pfnProgress;
+
+    int         nDataTypeSize = GDALGetDataTypeSizeBytes(eType);
+    int         nLineSpace = nXSize * nDataTypeSize;
 
     /* -------------------------------------------------------------------- */
     /*  Allocate a buffer of scanline size, fill it with gridded values     */
     /*  and use GDALCopyWords() to copy values into output data array with  */
     /*  appropriate data type conversion.                                   */
     /* -------------------------------------------------------------------- */
-    double *padfValues =
-        static_cast<double *>(VSI_MALLOC2_VERBOSE( sizeof(double), nXSize ));
+    double      *padfValues = (double *)VSI_MALLOC2_VERBOSE( sizeof(double), nXSize );
     if( padfValues == NULL )
     {
         *(psJob->pbStop) = TRUE;
         if( pfnProgress != NULL )
-            pfnProgress(psJob);  // To notify the main thread.
+            pfnProgress(psJob); /* to notify the main thread */
         return;
     }
 
-    const GUInt32 nYStart = psJob->nYStart;
-    const GUInt32 nYStep = psJob->nYStep;
-    GByte *pabyData = psJob->pabyData;
-
-    const GUInt32 nYSize = psJob->nYSize;
-    const double dfXMin = psJob->dfXMin;
-    const double dfYMin = psJob->dfYMin;
-    const double dfDeltaX = psJob->dfDeltaX;
-    const double dfDeltaY = psJob->dfDeltaY;
-    const GUInt32 nPoints = psJob->nPoints;
-    const double* padfX = psJob->padfX;
-    const double* padfY = psJob->padfY;
-    const double* padfZ = psJob->padfZ;
-    const void *poOptions = psJob->poOptions;
-    GDALGridFunction pfnGDALGridMethod = psJob->pfnGDALGridMethod;
-    // Have a local copy of sExtraParameters since we want to modify
-    // nInitialFacetIdx.
-    GDALGridExtraParameters sExtraParameters = *psJob->psExtraParameters;
-    const GDALDataType eType = psJob->eType;
-
-    const int nDataTypeSize = GDALGetDataTypeSizeBytes(eType);
-    const int nLineSpace = nXSize * nDataTypeSize;
-
-    for( GUInt32 nYPoint = nYStart; nYPoint < nYSize; nYPoint += nYStep )
+    for ( nYPoint = nYStart; nYPoint < nYSize; nYPoint += nYStep )
     {
-        const double dfYPoint = dfYMin + ( nYPoint + 0.5 ) * dfDeltaY;
+        const double    dfYPoint = dfYMin + ( nYPoint + 0.5 ) * dfDeltaY;
 
-        for( GUInt32 nXPoint = 0; nXPoint < nXSize; nXPoint++ )
+        for ( nXPoint = 0; nXPoint < nXSize; nXPoint++ )
         {
-            const double dfXPoint = dfXMin + ( nXPoint + 0.5 ) * dfDeltaX;
+            const double    dfXPoint = dfXMin + ( nXPoint + 0.5 ) * dfDeltaX;
 
-            if( (*pfnGDALGridMethod)(poOptions, nPoints, padfX, padfY, padfZ,
-                                     dfXPoint, dfYPoint,
-                                     padfValues + nXPoint,
-                                     &sExtraParameters) != CE_None )
+            if ( (*pfnGDALGridMethod)( poOptions, nPoints, padfX, padfY, padfZ,
+                                       dfXPoint, dfYPoint,
+                                       padfValues + nXPoint, &sExtraParameters ) != CE_None )
             {
                 CPLError( CE_Failure, CPLE_AppDefined,
                           "Gridding failed at X position %lu, Y position %lu",
-                          static_cast<long unsigned int>(nXPoint),
-                          static_cast<long unsigned int>(nYPoint) );
-                *psJob->pbStop = TRUE;
+                          (long unsigned int)nXPoint,
+                          (long unsigned int)nYPoint );
+                *(psJob->pbStop) = TRUE;
                 if( pfnProgress != NULL )
-                    pfnProgress(psJob);  // To notify the main thread.
+                    pfnProgress(psJob); /* to notify the main thread */
                 break;
             }
         }
@@ -1649,7 +1689,7 @@ static void GDALGridJobProcess( void* user_data )
                        pabyData + nYPoint * nLineSpace, eType, nDataTypeSize,
                        nXSize );
 
-        if( *psJob->pbStop || (pfnProgress != NULL && pfnProgress(psJob)) )
+        if( *(psJob->pbStop) || (pfnProgress != NULL && pfnProgress(psJob)) )
             break;
     }
 
@@ -1674,12 +1714,16 @@ struct GDALGridContext
     double*             padfX;
     double*             padfY;
     double*             padfZ;
-    bool                bFreePadfXYZArrays;
+    int                 bFreePadfXYZArrays;
+
+    void               *pabyX;
+    void               *pabyY;
+    void               *pabyZ;
 
     CPLWorkerThreadPool *poWorkerThreadPool;
 };
 
-static void GDALGridContextCreateQuadTree( GDALGridContext* psContext );
+static void GDALGridContextCreateQuadTree(GDALGridContext* psContext);
 
 /**
  * Creates a context to do regular gridding from the scattered data.
@@ -1711,13 +1755,12 @@ static void GDALGridContextCreateQuadTree( GDALGridContext* psContext );
  * @param padfX Input array of X coordinates.
  * @param padfY Input array of Y coordinates.
  * @param padfZ Input array of Z values.
- * @param bCallerWillKeepPointArraysAlive Whether the provided padfX, padfY,
- *        padfZ arrays will still be "alive" during the calls to
- *        GDALGridContextProcess().  Setting to TRUE prevent them from being
- *        duplicated in the context.  If unsure, set to FALSE.
+ * @param bCallerWillKeepPointArraysAlive Whether the provided padfX, padfY, padfZ
+ *        arrays will still be "alive" during the calls to GDALGridContextProcess().
+ *        Setting to TRUE prevent them from being duplicated in the context.
+ *        If unsure, set to FALSE.
  *
- * @return the context (to be freed with GDALGridContextFree()) or NULL in case
- *         or error.
+ * @return the context (to be freed with GDALGridContextFree()) or NULL in case or error
  *
  * @since GDAL 2.1
  */
@@ -1725,239 +1768,210 @@ static void GDALGridContextCreateQuadTree( GDALGridContext* psContext );
 GDALGridContext*
 GDALGridContextCreate( GDALGridAlgorithm eAlgorithm, const void *poOptions,
                        GUInt32 nPoints,
-                       const double *padfX, const double *padfY,
-                       const double *padfZ,
+                       const double *padfX, const double *padfY, const double *padfZ,
                        int bCallerWillKeepPointArraysAlive )
 {
+    GDALGridFunction    pfnGDALGridMethod = NULL;
     CPLAssert( poOptions );
     CPLAssert( padfX );
     CPLAssert( padfY );
     CPLAssert( padfZ );
-    bool bCreateQuadTree = false;
+    int bCreateQuadTree = FALSE;
 
-    // Starting address aligned on 32-byte boundary for AVX.
+    /* Potentially unaligned pointers */
+    void* pabyX = NULL;
+    void* pabyY = NULL;
+    void* pabyZ = NULL;
+
+    /* Starting address aligned on 16-byte boundary */
     float* pafXAligned = NULL;
     float* pafYAligned = NULL;
     float* pafZAligned = NULL;
 
     void *poOptionsNew = NULL;
 
-    GDALGridFunction pfnGDALGridMethod = NULL;
-
-    switch( eAlgorithm )
+    switch ( eAlgorithm )
     {
         case GGA_InverseDistanceToAPower:
-        {
-            poOptionsNew =
-                CPLMalloc(sizeof(GDALGridInverseDistanceToAPowerOptions));
-            memcpy(poOptionsNew, poOptions,
-                   sizeof(GDALGridInverseDistanceToAPowerOptions));
+            poOptionsNew = CPLMalloc(sizeof(GDALGridInverseDistanceToAPowerOptions));
+            memcpy(poOptionsNew, poOptions, sizeof(GDALGridInverseDistanceToAPowerOptions));
 
-            const GDALGridInverseDistanceToAPowerOptions * const poPower =
-                static_cast<const GDALGridInverseDistanceToAPowerOptions *>(
-                    poOptions);
-            if( poPower->dfRadius1 == 0.0 && poPower->dfRadius2 == 0.0 )
+            if ( ((GDALGridInverseDistanceToAPowerOptions *)poOptions)->
+                 dfRadius1 == 0.0 &&
+                 ((GDALGridInverseDistanceToAPowerOptions *)poOptions)->
+                 dfRadius2 == 0.0 )
             {
-                const double dfPower = poPower->dfPower;
-                const double dfSmoothing = poPower->dfSmoothing;
+                const double    dfPower =
+                    ((GDALGridInverseDistanceToAPowerOptions *)poOptions)->dfPower;
+                const double    dfSmoothing =
+                    ((GDALGridInverseDistanceToAPowerOptions *)poOptions)->dfSmoothing;
 
                 pfnGDALGridMethod = GDALGridInverseDistanceToAPowerNoSearch;
                 if( dfPower == 2.0 && dfSmoothing == 0.0 )
                 {
 #ifdef HAVE_AVX_AT_COMPILE_TIME
 
-                    if( CPLTestBool(
-                            CPLGetConfigOption("GDAL_USE_AVX", "YES")) &&
+#define ALIGN32(x)  (((char*)(x)) + ((32 - (((size_t)(x)) % 32)) % 32))
+
+                    if( CPLTestBool(CPLGetConfigOption("GDAL_USE_AVX", "YES")) &&
                         CPLHaveRuntimeAVX() )
                     {
-                        pafXAligned = static_cast<float *>(
-                            VSI_MALLOC_ALIGNED_AUTO_VERBOSE(
-                                sizeof(float) * nPoints) );
-                        pafYAligned = static_cast<float *>(
-                            VSI_MALLOC_ALIGNED_AUTO_VERBOSE(
-                                sizeof(float) * nPoints) );
-                        pafZAligned = static_cast<float *>(
-                            VSI_MALLOC_ALIGNED_AUTO_VERBOSE(
-                                sizeof(float) * nPoints) );
-                        if( pafXAligned != NULL && pafYAligned != NULL &&
-                            pafZAligned != NULL )
+                        pabyX = (float*)VSI_MALLOC_VERBOSE(sizeof(float) * nPoints + 31);
+                        pabyY = (float*)VSI_MALLOC_VERBOSE(sizeof(float) * nPoints + 31);
+                        pabyZ = (float*)VSI_MALLOC_VERBOSE(sizeof(float) * nPoints + 31);
+                        if( pabyX != NULL && pabyY != NULL && pabyZ != NULL)
                         {
-                            CPLDebug("GDAL_GRID",
-                                     "Using AVX optimized version");
-                            pfnGDALGridMethod =
-                                GDALGridInverseDistanceToAPower2NoSmoothingNoSearchAVX;
-                            for( GUInt32 i = 0; i < nPoints; i++ )
+                            CPLDebug("GDAL_GRID", "Using AVX optimized version");
+                            pafXAligned = (float*) ALIGN32(pabyX);
+                            pafYAligned = (float*) ALIGN32(pabyY);
+                            pafZAligned = (float*) ALIGN32(pabyZ);
+                            pfnGDALGridMethod = GDALGridInverseDistanceToAPower2NoSmoothingNoSearchAVX;
+                            GUInt32 i;
+                            for(i=0;i<nPoints;i++)
                             {
-                                pafXAligned[i] = static_cast<float>(padfX[i]);
-                                pafYAligned[i] = static_cast<float>(padfY[i]);
-                                pafZAligned[i] = static_cast<float>(padfZ[i]);
+                                pafXAligned[i] = (float) padfX[i];
+                                pafYAligned[i] = (float) padfY[i];
+                                pafZAligned[i] = (float) padfZ[i];
                             }
                         }
                         else
                         {
-                            VSIFree(pafXAligned);
-                            VSIFree(pafYAligned);
-                            VSIFree(pafZAligned);
-                            pafXAligned = NULL;
-                            pafYAligned = NULL;
-                            pafZAligned = NULL;
+                            VSIFree(pabyX);
+                            VSIFree(pabyY);
+                            VSIFree(pabyZ);
+                            pabyX = pabyY = pabyZ = NULL;
                         }
                     }
 #endif
 
 #ifdef HAVE_SSE_AT_COMPILE_TIME
 
+#define ALIGN16(x)  (((char*)(x)) + ((16 - (((size_t)(x)) % 16)) % 16))
+
                     if( pafXAligned == NULL &&
-                        CPLTestBool(
-                            CPLGetConfigOption("GDAL_USE_SSE", "YES")) &&
+                        CPLTestBool(CPLGetConfigOption("GDAL_USE_SSE", "YES")) &&
                         CPLHaveRuntimeSSE() )
                     {
-                        pafXAligned = static_cast<float *>(
-                            VSI_MALLOC_ALIGNED_AUTO_VERBOSE(
-                                sizeof(float) * nPoints) );
-                        pafYAligned = static_cast<float *>(
-                            VSI_MALLOC_ALIGNED_AUTO_VERBOSE(
-                                sizeof(float) * nPoints) );
-                        pafZAligned = static_cast<float *>(
-                            VSI_MALLOC_ALIGNED_AUTO_VERBOSE(
-                                sizeof(float) * nPoints) );
-                        if( pafXAligned != NULL && pafYAligned != NULL &&
-                            pafZAligned != NULL )
+                        pabyX = (float*)VSI_MALLOC_VERBOSE(sizeof(float) * nPoints + 15);
+                        pabyY = (float*)VSI_MALLOC_VERBOSE(sizeof(float) * nPoints + 15);
+                        pabyZ = (float*)VSI_MALLOC_VERBOSE(sizeof(float) * nPoints + 15);
+                        if( pabyX != NULL && pabyY != NULL && pabyZ != NULL)
                         {
-                            CPLDebug("GDAL_GRID",
-                                     "Using SSE optimized version");
-                            pfnGDALGridMethod =
-                                GDALGridInverseDistanceToAPower2NoSmoothingNoSearchSSE;
-                            for( GUInt32 i = 0; i < nPoints; i++ )
+                            CPLDebug("GDAL_GRID", "Using SSE optimized version");
+                            pafXAligned = (float*) ALIGN16(pabyX);
+                            pafYAligned = (float*) ALIGN16(pabyY);
+                            pafZAligned = (float*) ALIGN16(pabyZ);
+                            pfnGDALGridMethod = GDALGridInverseDistanceToAPower2NoSmoothingNoSearchSSE;
+                            GUInt32 i;
+                            for(i=0;i<nPoints;i++)
                             {
-                                pafXAligned[i] = static_cast<float>(padfX[i]);
-                                pafYAligned[i] = static_cast<float>(padfY[i]);
-                                pafZAligned[i] = static_cast<float>(padfZ[i]);
+                                pafXAligned[i] = (float) padfX[i];
+                                pafYAligned[i] = (float) padfY[i];
+                                pafZAligned[i] = (float) padfZ[i];
                             }
                         }
                         else
                         {
-                            VSIFree(pafXAligned);
-                            VSIFree(pafYAligned);
-                            VSIFree(pafZAligned);
-                            pafXAligned = NULL;
-                            pafYAligned = NULL;
-                            pafZAligned = NULL;
+                            VSIFree(pabyX);
+                            VSIFree(pabyY);
+                            VSIFree(pabyZ);
+                            pabyX = pabyY = pabyZ = NULL;
                         }
                     }
 #endif // HAVE_SSE_AT_COMPILE_TIME
                 }
             }
             else
-            {
                 pfnGDALGridMethod = GDALGridInverseDistanceToAPower;
-            }
             break;
-        }
+
         case GGA_InverseDistanceToAPowerNearestNeighbor:
-        {
-            poOptionsNew = CPLMalloc(
-                sizeof(GDALGridInverseDistanceToAPowerNearestNeighborOptions));
-            memcpy(poOptionsNew, poOptions,
-                   sizeof(
-                       GDALGridInverseDistanceToAPowerNearestNeighborOptions));
+            poOptionsNew = CPLMalloc(sizeof(GDALGridInverseDistanceToAPowerNearestNeighborOptions));
+            memcpy(poOptionsNew, poOptions, sizeof(GDALGridInverseDistanceToAPowerNearestNeighborOptions));
 
             pfnGDALGridMethod = GDALGridInverseDistanceToAPowerNearestNeighbor;
             bCreateQuadTree = TRUE;
             break;
-        }
+
         case GGA_MovingAverage:
-        {
             poOptionsNew = CPLMalloc(sizeof(GDALGridMovingAverageOptions));
-            memcpy(poOptionsNew,
-                   poOptions,
-                   sizeof(GDALGridMovingAverageOptions));
+            memcpy(poOptionsNew, poOptions, sizeof(GDALGridMovingAverageOptions));
 
             pfnGDALGridMethod = GDALGridMovingAverage;
             break;
-        }
+
         case GGA_NearestNeighbor:
-        {
             poOptionsNew = CPLMalloc(sizeof(GDALGridNearestNeighborOptions));
-            memcpy(poOptionsNew, poOptions,
-                   sizeof(GDALGridNearestNeighborOptions));
+            memcpy(poOptionsNew, poOptions, sizeof(GDALGridNearestNeighborOptions));
 
             pfnGDALGridMethod = GDALGridNearestNeighbor;
             bCreateQuadTree = (nPoints > 100 &&
                 (((GDALGridNearestNeighborOptions *)poOptions)->dfRadius1 ==
                 ((GDALGridNearestNeighborOptions *)poOptions)->dfRadius2));
             break;
-        }
+
         case GGA_MetricMinimum:
-        {
             poOptionsNew = CPLMalloc(sizeof(GDALGridDataMetricsOptions));
             memcpy(poOptionsNew, poOptions, sizeof(GDALGridDataMetricsOptions));
 
             pfnGDALGridMethod = GDALGridDataMetricMinimum;
             break;
-        }
+
         case GGA_MetricMaximum:
-        {
             poOptionsNew = CPLMalloc(sizeof(GDALGridDataMetricsOptions));
             memcpy(poOptionsNew, poOptions, sizeof(GDALGridDataMetricsOptions));
 
             pfnGDALGridMethod = GDALGridDataMetricMaximum;
             break;
-        }
+
         case GGA_MetricRange:
-        {
             poOptionsNew = CPLMalloc(sizeof(GDALGridDataMetricsOptions));
             memcpy(poOptionsNew, poOptions, sizeof(GDALGridDataMetricsOptions));
 
             pfnGDALGridMethod = GDALGridDataMetricRange;
             break;
-        }
+
         case GGA_MetricCount:
-        {
             poOptionsNew = CPLMalloc(sizeof(GDALGridDataMetricsOptions));
             memcpy(poOptionsNew, poOptions, sizeof(GDALGridDataMetricsOptions));
 
             pfnGDALGridMethod = GDALGridDataMetricCount;
             break;
-        }
+
         case GGA_MetricAverageDistance:
-        {
             poOptionsNew = CPLMalloc(sizeof(GDALGridDataMetricsOptions));
             memcpy(poOptionsNew, poOptions, sizeof(GDALGridDataMetricsOptions));
 
             pfnGDALGridMethod = GDALGridDataMetricAverageDistance;
             break;
-        }
+
         case GGA_MetricAverageDistancePts:
-        {
             poOptionsNew = CPLMalloc(sizeof(GDALGridDataMetricsOptions));
             memcpy(poOptionsNew, poOptions, sizeof(GDALGridDataMetricsOptions));
 
             pfnGDALGridMethod = GDALGridDataMetricAverageDistancePts;
             break;
-        }
+
         case GGA_Linear:
-        {
             poOptionsNew = CPLMalloc(sizeof(GDALGridLinearOptions));
             memcpy(poOptionsNew, poOptions, sizeof(GDALGridLinearOptions));
 
             pfnGDALGridMethod = GDALGridLinear;
             break;
-        }
+
         default:
             CPLError( CE_Failure, CPLE_IllegalArg,
                       "GDAL does not support gridding method %d", eAlgorithm );
             return NULL;
     }
 
-    if( pafXAligned == NULL && !bCallerWillKeepPointArraysAlive )
+    if( pafXAligned != NULL )
+        bCallerWillKeepPointArraysAlive = TRUE;
+    if( !bCallerWillKeepPointArraysAlive )
     {
-        double* padfXNew =
-            static_cast<double *>(VSI_MALLOC2_VERBOSE(nPoints, sizeof(double)));
-        double* padfYNew =
-            static_cast<double *>(VSI_MALLOC2_VERBOSE(nPoints, sizeof(double)));
-        double* padfZNew =
-            static_cast<double *>(VSI_MALLOC2_VERBOSE(nPoints, sizeof(double)));
+        double* padfXNew = (double*)VSI_MALLOC2_VERBOSE(nPoints, sizeof(double));
+        double* padfYNew = (double*)VSI_MALLOC2_VERBOSE(nPoints, sizeof(double));
+        double* padfZNew = (double*)VSI_MALLOC2_VERBOSE(nPoints, sizeof(double));
         if( padfXNew == NULL || padfYNew == NULL || padfZNew == NULL )
         {
             VSIFree(padfXNew);
@@ -1973,8 +1987,7 @@ GDALGridContextCreate( GDALGridAlgorithm eAlgorithm, const void *poOptions,
         padfY = padfYNew;
         padfZ = padfZNew;
     }
-    GDALGridContext* psContext =
-        static_cast<GDALGridContext *>(CPLCalloc(1, sizeof(GDALGridContext)));
+    GDALGridContext* psContext = (GDALGridContext*)CPLCalloc(1, sizeof(GDALGridContext));
     psContext->eAlgorithm = eAlgorithm;
     psContext->poOptions = poOptionsNew;
     psContext->pfnGDALGridMethod = pfnGDALGridMethod;
@@ -1983,17 +1996,19 @@ GDALGridContextCreate( GDALGridAlgorithm eAlgorithm, const void *poOptions,
     psContext->sXYArrays.padfX = padfX;
     psContext->sXYArrays.padfY = padfY;
     psContext->sExtraParameters.hQuadTree = NULL;
-    psContext->sExtraParameters.dfInitialSearchRadius = 0.0;
+    psContext->sExtraParameters.dfInitialSearchRadius = 0;
     psContext->sExtraParameters.pafX = pafXAligned;
     psContext->sExtraParameters.pafY = pafYAligned;
     psContext->sExtraParameters.pafZ = pafZAligned;
     psContext->sExtraParameters.psTriangulation = NULL;
     psContext->sExtraParameters.nInitialFacetIdx = 0;
-    psContext->padfX = pafXAligned ? NULL : const_cast<double *>(padfX);
-    psContext->padfY = pafXAligned ? NULL : const_cast<double *>(padfY);
-    psContext->padfZ = pafXAligned ? NULL : const_cast<double *>(padfZ);
-    psContext->bFreePadfXYZArrays =
-        pafXAligned ? false : !bCallerWillKeepPointArraysAlive;
+    psContext->padfX = pafXAligned ? NULL : (double*)padfX;
+    psContext->padfY = pafXAligned ? NULL : (double*)padfY;
+    psContext->padfZ = pafXAligned ? NULL : (double*)padfZ;
+    psContext->bFreePadfXYZArrays = !bCallerWillKeepPointArraysAlive;
+    psContext->pabyX = pabyX;
+    psContext->pabyY = pabyY;
+    psContext->pabyZ = pabyZ;
 
 /* -------------------------------------------------------------------- */
 /*  Create quadtree if requested and possible.                          */
@@ -2035,12 +2050,12 @@ GDALGridContextCreate( GDALGridAlgorithm eAlgorithm, const void *poOptions,
 /*  Start thread pool.                                                  */
 /* -------------------------------------------------------------------- */
     const char* pszThreads = CPLGetConfigOption("GDAL_NUM_THREADS", "ALL_CPUS");
-    int nThreads = 0;
-    if( EQUAL(pszThreads, "ALL_CPUS") )
+    int nThreads;
+    if (EQUAL(pszThreads, "ALL_CPUS"))
         nThreads = CPLGetNumCPUs();
     else
         nThreads = atoi(pszThreads);
-    if( nThreads > 128 )
+    if (nThreads > 128)
         nThreads = 128;
     if( nThreads > 1 )
     {
@@ -2065,23 +2080,25 @@ GDALGridContextCreate( GDALGridAlgorithm eAlgorithm, const void *poOptions,
 /*                      GDALGridContextCreateQuadTree()                 */
 /************************************************************************/
 
-void GDALGridContextCreateQuadTree( GDALGridContext* psContext )
+void GDALGridContextCreateQuadTree(GDALGridContext* psContext)
 {
-    const GUInt32 nPoints = psContext->nPoints;
-    psContext->pasGridPoints = static_cast<GDALGridPoint *>(
-            VSI_MALLOC2_VERBOSE(nPoints, sizeof(GDALGridPoint)) );
+    GUInt32 nPoints = psContext->nPoints;
+    psContext->pasGridPoints = (GDALGridPoint*)
+            VSI_MALLOC2_VERBOSE(nPoints, sizeof(GDALGridPoint));
     if( psContext->pasGridPoints != NULL )
     {
-        const double * const padfX = psContext->padfX;
-        const double * const padfY = psContext->padfY;
+        const double* padfX = psContext->padfX;
+        const double* padfY = psContext->padfY;
 
-        // Determine point extents.
         CPLRectObj sRect;
+        GUInt32 i;
+
+        /* Determine point extents */
         sRect.minx = padfX[0];
         sRect.miny = padfY[0];
         sRect.maxx = padfX[0];
         sRect.maxy = padfY[0];
-        for( GUInt32 i = 1; i < nPoints; i++ )
+        for(i = 1; i < nPoints; i++)
         {
             if( padfX[i] < sRect.minx ) sRect.minx = padfX[i];
             if( padfY[i] < sRect.miny ) sRect.miny = padfY[i];
@@ -2089,16 +2106,16 @@ void GDALGridContextCreateQuadTree( GDALGridContext* psContext )
             if( padfY[i] > sRect.maxy ) sRect.maxy = padfY[i];
         }
 
-        // Initial value for search radius is the typical dimension of a
-        // "pixel" of the point array (assuming rather uniform distribution).
+        /* Initial value for search radius is the typical dimension of a */
+        /* "pixel" of the point array (assuming rather uniform distribution) */
         psContext->sExtraParameters.dfInitialSearchRadius =
-            sqrt((sRect.maxx - sRect.minx) *
-                 (sRect.maxy - sRect.miny) / nPoints);
+                                sqrt((sRect.maxx - sRect.minx) *
+                                        (sRect.maxy - sRect.miny) / nPoints);
 
         psContext->sExtraParameters.hQuadTree =
-            CPLQuadTreeCreate(&sRect, GDALGridGetPointBounds );
+                    CPLQuadTreeCreate(&sRect, GDALGridGetPointBounds );
 
-        for( GUInt32 i = 0; i < nPoints; i++ )
+        for(i = 0; i < nPoints; i++)
         {
             psContext->pasGridPoints[i].psXYArrays = &(psContext->sXYArrays);
             psContext->pasGridPoints[i].i = i;
@@ -2119,7 +2136,7 @@ void GDALGridContextCreateQuadTree( GDALGridContext* psContext )
  *
  * @since GDAL 2.1
  */
-void GDALGridContextFree( GDALGridContext* psContext )
+void GDALGridContextFree(GDALGridContext* psContext)
 {
     if( psContext )
     {
@@ -2133,11 +2150,11 @@ void GDALGridContextFree( GDALGridContext* psContext )
             CPLFree(psContext->padfY);
             CPLFree(psContext->padfZ);
         }
-        VSIFreeAligned(psContext->sExtraParameters.pafX);
-        VSIFreeAligned(psContext->sExtraParameters.pafY);
-        VSIFreeAligned(psContext->sExtraParameters.pafZ);
+        CPLFree(psContext->pabyX);
+        CPLFree(psContext->pabyY);
+        CPLFree(psContext->pabyZ);
         if( psContext->sExtraParameters.psTriangulation )
-            GDALTriangulationFree(psContext->sExtraParameters.psTriangulation);
+            GDALTriangulationFree( psContext->sExtraParameters.psTriangulation );
         delete psContext->poWorkerThreadPool;
         CPLFree(psContext);
     }
@@ -2173,82 +2190,73 @@ void GDALGridContextFree( GDALGridContext* psContext )
  * @since GDAL 2.1
  */
 
-CPLErr GDALGridContextProcess(
-    GDALGridContext* psContext,
-    double dfXMin, double dfXMax, double dfYMin, double dfYMax,
-    GUInt32 nXSize, GUInt32 nYSize, GDALDataType eType, void *pData,
-    GDALProgressFunc pfnProgress, void *pProgressArg )
+CPLErr GDALGridContextProcess(GDALGridContext* psContext,
+                              double dfXMin, double dfXMax, double dfYMin, double dfYMax,
+                              GUInt32 nXSize, GUInt32 nYSize, GDALDataType eType, void *pData,
+                              GDALProgressFunc pfnProgress, void *pProgressArg )
 {
     CPLAssert( psContext );
     CPLAssert( pData );
 
-    if( nXSize == 0 || nYSize == 0 )
+    if ( nXSize == 0 || nYSize == 0 )
     {
         CPLError( CE_Failure, CPLE_IllegalArg,
                   "Output raster dimensions should have non-zero size." );
         return CE_Failure;
     }
 
-    const double dfDeltaX = ( dfXMax - dfXMin ) / nXSize;
-    const double dfDeltaY = ( dfYMax - dfYMin ) / nYSize;
+    const double    dfDeltaX = ( dfXMax - dfXMin ) / nXSize;
+    const double    dfDeltaY = ( dfYMax - dfYMin ) / nYSize;
 
     // For linear, check if we will need to fallback to nearest neighbour
-    // by sampling along the edges.  If all points on edges are within
-    // triangles, then interior points will also be.
+    // by sampling along the edges (if all points on edges are within triangles,
+    // then interior points will also be!)
     if( psContext->eAlgorithm == GGA_Linear &&
         psContext->sExtraParameters.hQuadTree == NULL )
     {
-        bool bNeedNearest = false;
-        int nStartLeft = 0;
-        int nStartRight = 0;
-        const double dfXPointMin = dfXMin + ( 0 + 0.5 ) * dfDeltaX;
-        const double dfXPointMax = dfXMin + ( nXSize - 1 + 0.5 ) * dfDeltaX;
-        for( GUInt32 nYPoint = 0; !bNeedNearest && nYPoint < nYSize; nYPoint++ )
+        int bNeedNearest = FALSE;
+        int nStartLeft = 0, nStartRight = 0;
+        const double    dfXPointMin = dfXMin + ( 0 + 0.5 ) * dfDeltaX;
+        const double    dfXPointMax = dfXMin + ( nXSize - 1 + 0.5 ) * dfDeltaX;
+        for ( GUInt32 nYPoint = 0; !bNeedNearest && nYPoint < nYSize; nYPoint ++ )
         {
-            const double dfYPoint = dfYMin + ( nYPoint + 0.5 ) * dfDeltaY;
+            const double    dfYPoint = dfYMin + ( nYPoint + 0.5 ) * dfDeltaY;
 
-            if( !GDALTriangulationFindFacetDirected(
-                psContext->sExtraParameters.psTriangulation,
-                nStartLeft,
-                dfXPointMin, dfYPoint,
-                &nStartLeft) )
+            if( !GDALTriangulationFindFacetDirected( psContext->sExtraParameters.psTriangulation,
+                                                     nStartLeft,
+                                                     dfXPointMin, dfYPoint,
+                                                     &nStartLeft) )
             {
-                bNeedNearest = true;
+                bNeedNearest = TRUE;
             }
-            if( !GDALTriangulationFindFacetDirected(
-                psContext->sExtraParameters.psTriangulation,
-                nStartRight,
-                dfXPointMax, dfYPoint,
-                &nStartRight) )
+            if( !GDALTriangulationFindFacetDirected( psContext->sExtraParameters.psTriangulation,
+                                                     nStartRight,
+                                                     dfXPointMax, dfYPoint,
+                                                     &nStartRight) )
             {
-                bNeedNearest = true;
+                bNeedNearest = TRUE;
             }
         }
-        int nStartTop = 0;
-        int nStartBottom = 0;
-        const double dfYPointMin = dfYMin + ( 0 + 0.5 ) * dfDeltaY;
-        const double dfYPointMax = dfYMin + ( nYSize - 1 + 0.5 ) * dfDeltaY;
-        for( GUInt32 nXPoint = 1;
-             !bNeedNearest && nXPoint + 1 < nXSize;
-             nXPoint++ )
+        int nStartTop = 0, nStartBottom = 0;
+        const double    dfYPointMin = dfYMin + ( 0 + 0.5 ) * dfDeltaY;
+        const double    dfYPointMax = dfYMin + ( nYSize - 1 + 0.5 ) * dfDeltaY;
+        for ( GUInt32 nXPoint = 1; !bNeedNearest && nXPoint + 1 < nXSize; nXPoint ++ )
         {
-            const double dfXPoint = dfXMin + ( nXPoint + 0.5 ) * dfDeltaX;
+            const double    dfXPoint = dfXMin + ( nXPoint + 0.5 ) * dfDeltaX;
 
-            if( !GDALTriangulationFindFacetDirected(
-                psContext->sExtraParameters.psTriangulation,
-                nStartTop,
-                dfXPoint, dfYPointMin,
-                &nStartTop) )
+            if( !GDALTriangulationFindFacetDirected( psContext->sExtraParameters.psTriangulation,
+                                                     nStartTop,
+                                                     dfXPoint, dfYPointMin,
+                                                     &nStartTop) )
             {
-                bNeedNearest = true;
+                bNeedNearest = TRUE;
             }
-            if( !GDALTriangulationFindFacetDirected(
-                psContext->sExtraParameters.psTriangulation,
-                nStartBottom,
-                dfXPoint, dfYPointMax,
-                &nStartBottom) )
+            if( !GDALTriangulationFindFacetDirected( psContext->sExtraParameters.psTriangulation,
+                                                     nStartBottom,
+                                                     dfXPoint, dfYPointMax,
+                                                     &nStartBottom) )
             {
-                bNeedNearest = true;
+                bNeedNearest = TRUE;
             }
         }
         if( bNeedNearest )
@@ -2262,7 +2270,7 @@ CPLErr GDALGridContextProcess(
     volatile int bStop = FALSE;
     GDALGridJob sJob;
     sJob.nYStart = 0;
-    sJob.pabyData = static_cast<GByte *>(pData);
+    sJob.pabyData = (GByte*) pData;
     sJob.nYStep = 1;
     sJob.nXSize = nXSize;
     sJob.nYSize = nYSize;
@@ -2288,19 +2296,16 @@ CPLErr GDALGridContextProcess(
 
     if( psContext->poWorkerThreadPool == NULL )
     {
-        if( sJob.pfnRealProgress != NULL &&
-            sJob.pfnRealProgress != GDALDummyProgress )
-        {
+        if( sJob.pfnRealProgress != NULL && sJob.pfnRealProgress != GDALDummyProgress )
             sJob.pfnProgress = GDALGridProgressMonoThread;
-        }
 
         GDALGridJobProcess(&sJob);
     }
     else
     {
         int nThreads  = psContext->poWorkerThreadPool->GetThreadCount();
-        GDALGridJob* pasJobs = static_cast<GDALGridJob *>(
-            CPLMalloc(sizeof(GDALGridJob) * nThreads) );
+        GDALGridJob* pasJobs = (GDALGridJob*) CPLMalloc(sizeof(GDALGridJob) * nThreads);
+        int i;
 
         sJob.nYStep = nThreads;
         sJob.hCondMutex = CPLCreateMutex(); /* and  implicitly take the mutex */
@@ -2310,18 +2315,18 @@ CPLErr GDALGridContextProcess(
 /* -------------------------------------------------------------------- */
 /*      Start threads.                                                  */
 /* -------------------------------------------------------------------- */
-        for( int i = 0; i < nThreads && !bStop; i++ )
+        for(i = 0; i < nThreads && !bStop; i++)
         {
             memcpy(&pasJobs[i], &sJob, sizeof(GDALGridJob));
             pasJobs[i].nYStart = i;
             psContext->poWorkerThreadPool->SubmitJob( GDALGridJobProcess,
-                                                      &pasJobs[i] );
+                                                      (void*) &pasJobs[i] );
         }
 
 /* -------------------------------------------------------------------- */
 /*      Report progress.                                                */
 /* -------------------------------------------------------------------- */
-        while( nCounter < static_cast<int>(nYSize) && !bStop )
+        while(nCounter < (int)nYSize && !bStop)
         {
             CPLCondWait(sJob.hCond, sJob.hCondMutex);
 
@@ -2329,8 +2334,7 @@ CPLErr GDALGridContextProcess(
             CPLReleaseMutex(sJob.hCondMutex);
 
             if( pfnProgress != NULL &&
-                !pfnProgress( nLocalCounter / static_cast<double>(nYSize),
-                              "", pProgressArg ) )
+                !pfnProgress( nLocalCounter / (double) nYSize, "", pProgressArg ) )
             {
                 CPLError( CE_Failure, CPLE_UserInterrupt, "User terminated" );
                 bStop = TRUE;
@@ -2339,8 +2343,8 @@ CPLErr GDALGridContextProcess(
             CPLAcquireMutex(sJob.hCondMutex, 1.0);
         }
 
-        // Release mutex before joining threads, otherwise they will dead-lock
-        // forever in GDALGridProgressMultiThread().
+        /* Release mutex before joining threads, otherwise they will dead-lock */
+        /* forever in GDALGridProgressMultiThread() */
         CPLReleaseMutex(sJob.hCondMutex);
 
 /* -------------------------------------------------------------------- */
@@ -2419,11 +2423,11 @@ GDALGridCreate( GDALGridAlgorithm eAlgorithm, const void *poOptions,
                 GUInt32 nXSize, GUInt32 nYSize, GDALDataType eType, void *pData,
                 GDALProgressFunc pfnProgress, void *pProgressArg )
 {
-    GDALGridContext* psContext = GDALGridContextCreate(eAlgorithm, poOptions,
-                                                       nPoints,
-                                                       padfX, padfY, padfZ,
-                                                       TRUE);
     CPLErr eErr = CE_Failure;
+    GDALGridContext* psContext = GDALGridContextCreate( eAlgorithm,poOptions,
+                                                        nPoints,
+                                                        padfX, padfY, padfZ,
+                                                        TRUE );
     if( psContext )
     {
         eErr = GDALGridContextProcess( psContext,
@@ -2438,11 +2442,12 @@ GDALGridCreate( GDALGridAlgorithm eAlgorithm, const void *poOptions,
 
 /************************************************************************/
 /*                      ParseAlgorithmAndOptions()                      */
+/*                                                                      */
+/*      Translates mnemonic gridding algorithm names into               */
+/*      GDALGridAlgorithm code, parse control parameters and assign     */
+/*      defaults.                                                       */
 /************************************************************************/
 
-/** Translates mnemonic gridding algorithm names into GDALGridAlgorithm code,
- * parse control parameters and assign defaults.
- */
 CPLErr ParseAlgorithmAndOptions( const char *pszAlgorithm,
                                  GDALGridAlgorithm *peAlgorithm,
                                  void **ppOptions )
@@ -2455,61 +2460,38 @@ CPLErr ParseAlgorithmAndOptions( const char *pszAlgorithm,
 
     char **papszParms = CSLTokenizeString2( pszAlgorithm, ":", FALSE );
 
-    if( CSLCount(papszParms) < 1 )
+    if ( CSLCount(papszParms) < 1 )
     {
         CSLDestroy( papszParms );
         return CE_Failure;
     }
 
-    if( EQUAL(papszParms[0], szAlgNameInvDist) )
-    {
+    if ( EQUAL(papszParms[0], szAlgNameInvDist) )
         *peAlgorithm = GGA_InverseDistanceToAPower;
-    }
-    else if( EQUAL(papszParms[0], szAlgNameInvDistNearestNeighbor) )
-    {
+    else if ( EQUAL(papszParms[0], szAlgNameInvDistNearestNeighbor) )
         *peAlgorithm = GGA_InverseDistanceToAPowerNearestNeighbor;
-    }
-    else if( EQUAL(papszParms[0], szAlgNameAverage) )
-    {
+    else if ( EQUAL(papszParms[0], szAlgNameAverage) )
         *peAlgorithm = GGA_MovingAverage;
-    }
-    else if( EQUAL(papszParms[0], szAlgNameNearest) )
-    {
+    else if ( EQUAL(papszParms[0], szAlgNameNearest) )
         *peAlgorithm = GGA_NearestNeighbor;
-    }
-    else if( EQUAL(papszParms[0], szAlgNameMinimum) )
-    {
+    else if ( EQUAL(papszParms[0], szAlgNameMinimum) )
         *peAlgorithm = GGA_MetricMinimum;
-    }
-    else if( EQUAL(papszParms[0], szAlgNameMaximum) )
-    {
+    else if ( EQUAL(papszParms[0], szAlgNameMaximum) )
         *peAlgorithm = GGA_MetricMaximum;
-    }
-    else if( EQUAL(papszParms[0], szAlgNameRange) )
-    {
+    else if ( EQUAL(papszParms[0], szAlgNameRange) )
         *peAlgorithm = GGA_MetricRange;
-    }
-    else if( EQUAL(papszParms[0], szAlgNameCount) )
-    {
+    else if ( EQUAL(papszParms[0], szAlgNameCount) )
         *peAlgorithm = GGA_MetricCount;
-    }
-    else if( EQUAL(papszParms[0], szAlgNameAverageDistance) )
-    {
+    else if ( EQUAL(papszParms[0], szAlgNameAverageDistance) )
         *peAlgorithm = GGA_MetricAverageDistance;
-    }
-    else if( EQUAL(papszParms[0], szAlgNameAverageDistancePts) )
-    {
+    else if ( EQUAL(papszParms[0], szAlgNameAverageDistancePts) )
         *peAlgorithm = GGA_MetricAverageDistancePts;
-    }
-    else if( EQUAL(papszParms[0], szAlgNameLinear) )
-    {
+    else if ( EQUAL(papszParms[0], szAlgNameLinear) )
         *peAlgorithm = GGA_Linear;
-    }
     else
     {
-        CPLError( CE_Failure, CPLE_IllegalArg,
-                  "Unsupported gridding method \"%s\"",
-                  papszParms[0] );
+        fprintf( stderr, "Unsupported gridding method \"%s\".\n",
+                 papszParms[0] );
         CSLDestroy( papszParms );
         return CE_Failure;
     }
@@ -2517,171 +2499,318 @@ CPLErr ParseAlgorithmAndOptions( const char *pszAlgorithm,
 /* -------------------------------------------------------------------- */
 /*      Parse algorithm parameters and assign defaults.                 */
 /* -------------------------------------------------------------------- */
-    switch( *peAlgorithm )
+    const char  *pszValue;
+
+    switch ( *peAlgorithm )
     {
         case GGA_InverseDistanceToAPower:
         default:
-        {
             *ppOptions =
                 CPLMalloc( sizeof(GDALGridInverseDistanceToAPowerOptions) );
 
-            GDALGridInverseDistanceToAPowerOptions * const poPowerOpts =
-                static_cast<GDALGridInverseDistanceToAPowerOptions *>(
-                    *ppOptions);
-
-            const char *pszValue = CSLFetchNameValue( papszParms, "power" );
-            poPowerOpts->dfPower = pszValue ? CPLAtofM(pszValue) : 2.0;
+            pszValue = CSLFetchNameValue( papszParms, "power" );
+            ((GDALGridInverseDistanceToAPowerOptions *)*ppOptions)->
+                dfPower = (pszValue) ? CPLAtofM(pszValue) : 2.0;
 
             pszValue = CSLFetchNameValue( papszParms, "smoothing" );
-            poPowerOpts->dfSmoothing = pszValue ? CPLAtofM(pszValue) : 0.0;
+            ((GDALGridInverseDistanceToAPowerOptions *)*ppOptions)->
+                dfSmoothing = (pszValue) ? CPLAtofM(pszValue) : 0.0;
 
             pszValue = CSLFetchNameValue( papszParms, "radius1" );
-            poPowerOpts->dfRadius1 = pszValue ? CPLAtofM(pszValue) : 0.0;
+            ((GDALGridInverseDistanceToAPowerOptions *)*ppOptions)->
+                dfRadius1 = (pszValue) ? CPLAtofM(pszValue) : 0.0;
 
             pszValue = CSLFetchNameValue( papszParms, "radius2" );
-            poPowerOpts->dfRadius2 = pszValue ? CPLAtofM(pszValue) : 0.0;
+            ((GDALGridInverseDistanceToAPowerOptions *)*ppOptions)->
+                dfRadius2 = (pszValue) ? CPLAtofM(pszValue) : 0.0;
 
             pszValue = CSLFetchNameValue( papszParms, "angle" );
-            poPowerOpts->dfAngle = pszValue ? CPLAtofM(pszValue) : 0.0;
+            ((GDALGridInverseDistanceToAPowerOptions *)*ppOptions)->
+                dfAngle = (pszValue) ? CPLAtofM(pszValue) : 0.0;
 
             pszValue = CSLFetchNameValue( papszParms, "max_points" );
-            poPowerOpts->nMaxPoints = static_cast<GUInt32>(
-                pszValue ? CPLAtofM(pszValue) : 0);
+            ((GDALGridInverseDistanceToAPowerOptions *)*ppOptions)->
+                nMaxPoints = (GUInt32) ((pszValue) ? CPLAtofM(pszValue) : 0);
 
             pszValue = CSLFetchNameValue( papszParms, "min_points" );
-            poPowerOpts->nMinPoints = static_cast<GUInt32>(
-                pszValue ? CPLAtofM(pszValue) : 0);
+            ((GDALGridInverseDistanceToAPowerOptions *)*ppOptions)->
+                nMinPoints = (GUInt32) ((pszValue) ? CPLAtofM(pszValue) : 0);
 
             pszValue = CSLFetchNameValue( papszParms, "nodata" );
-            poPowerOpts->dfNoDataValue = pszValue ? CPLAtofM(pszValue) : 0.0;
-
+            ((GDALGridInverseDistanceToAPowerOptions *)*ppOptions)->
+                dfNoDataValue = (pszValue) ? CPLAtofM(pszValue) : 0.0;
             break;
-        }
+
         case GGA_InverseDistanceToAPowerNearestNeighbor:
-        {
             *ppOptions =
-                CPLMalloc( sizeof(
-                    GDALGridInverseDistanceToAPowerNearestNeighborOptions) );
+                CPLMalloc( sizeof(GDALGridInverseDistanceToAPowerNearestNeighborOptions) );
 
-            GDALGridInverseDistanceToAPowerNearestNeighborOptions * const
-                poPowerOpts =
-                    static_cast<
-                    GDALGridInverseDistanceToAPowerNearestNeighborOptions *>(
-                        *ppOptions);
-
-            const char *pszValue = CSLFetchNameValue( papszParms, "power" );
-            poPowerOpts->dfPower = pszValue ? CPLAtofM(pszValue) : 2.0;
+            pszValue = CSLFetchNameValue( papszParms, "power" );
+            ((GDALGridInverseDistanceToAPowerNearestNeighborOptions *)*ppOptions)->
+                dfPower = (pszValue) ? CPLAtofM(pszValue) : 2.0;
 
             pszValue = CSLFetchNameValue( papszParms, "radius" );
-            poPowerOpts->dfRadius = pszValue ? CPLAtofM(pszValue) : 1.0;
+            ((GDALGridInverseDistanceToAPowerNearestNeighborOptions *)*ppOptions)->
+                dfRadius = (pszValue) ? CPLAtofM(pszValue) : 1.0;
 
             pszValue = CSLFetchNameValue( papszParms, "max_points" );
-            poPowerOpts->nMaxPoints = static_cast<GUInt32>(
-                pszValue ? CPLAtofM(pszValue) : 12);
+            ((GDALGridInverseDistanceToAPowerNearestNeighborOptions *)*ppOptions)->
+                nMaxPoints = (GUInt32) ((pszValue) ? CPLAtofM(pszValue) : 12);
 
             pszValue = CSLFetchNameValue( papszParms, "min_points" );
-            poPowerOpts->nMinPoints = static_cast<GUInt32>(
-                pszValue ? CPLAtofM(pszValue) : 0);
+            ((GDALGridInverseDistanceToAPowerNearestNeighborOptions *)*ppOptions)->
+                nMinPoints = (GUInt32) ((pszValue) ? CPLAtofM(pszValue) : 0);
 
             pszValue = CSLFetchNameValue( papszParms, "nodata" );
-            poPowerOpts->dfNoDataValue = pszValue ? CPLAtofM(pszValue) : 0.0;
-
+            ((GDALGridInverseDistanceToAPowerNearestNeighborOptions *)*ppOptions)->
+                dfNoDataValue = (pszValue) ? CPLAtofM(pszValue) : 0.0;
             break;
-        }
+
         case GGA_MovingAverage:
-        {
             *ppOptions =
                 CPLMalloc( sizeof(GDALGridMovingAverageOptions) );
 
-            GDALGridMovingAverageOptions * const poAverageOpts =
-                static_cast<GDALGridMovingAverageOptions *>(*ppOptions);
-
-            const char *pszValue = CSLFetchNameValue( papszParms, "radius1" );
-            poAverageOpts->dfRadius1 = pszValue ? CPLAtofM(pszValue) : 0.0;
+            pszValue = CSLFetchNameValue( papszParms, "radius1" );
+            ((GDALGridMovingAverageOptions *)*ppOptions)->
+                dfRadius1 = (pszValue) ? CPLAtofM(pszValue) : 0.0;
 
             pszValue = CSLFetchNameValue( papszParms, "radius2" );
-            poAverageOpts->dfRadius2 = pszValue ? CPLAtofM(pszValue) : 0.0;
+            ((GDALGridMovingAverageOptions *)*ppOptions)->
+                dfRadius2 = (pszValue) ? CPLAtofM(pszValue) : 0.0;
 
             pszValue = CSLFetchNameValue( papszParms, "angle" );
-            poAverageOpts->dfAngle = pszValue ? CPLAtofM(pszValue) : 0.0;
+            ((GDALGridMovingAverageOptions *)*ppOptions)->
+                dfAngle = (pszValue) ? CPLAtofM(pszValue) : 0.0;
 
             pszValue = CSLFetchNameValue( papszParms, "min_points" );
-            poAverageOpts->nMinPoints = static_cast<GUInt32>(
-                pszValue ? CPLAtofM(pszValue) : 0);
+            ((GDALGridMovingAverageOptions *)*ppOptions)->
+                nMinPoints = (GUInt32) ((pszValue) ? CPLAtofM(pszValue) : 0);
 
             pszValue = CSLFetchNameValue( papszParms, "nodata" );
-            poAverageOpts->dfNoDataValue = pszValue ? CPLAtofM(pszValue) : 0.0;
-
+            ((GDALGridMovingAverageOptions *)*ppOptions)->
+                dfNoDataValue = (pszValue) ? CPLAtofM(pszValue) : 0.0;
             break;
-        }
+
         case GGA_NearestNeighbor:
-        {
             *ppOptions =
                 CPLMalloc( sizeof(GDALGridNearestNeighborOptions) );
 
-            GDALGridNearestNeighborOptions * const poNeighborOpts =
-                static_cast<GDALGridNearestNeighborOptions *>(*ppOptions);
-
-            const char *pszValue = CSLFetchNameValue( papszParms, "radius1" );
-            poNeighborOpts->dfRadius1 = pszValue ? CPLAtofM(pszValue) : 0.0;
+            pszValue = CSLFetchNameValue( papszParms, "radius1" );
+            ((GDALGridNearestNeighborOptions *)*ppOptions)->
+                dfRadius1 = (pszValue) ? CPLAtofM(pszValue) : 0.0;
 
             pszValue = CSLFetchNameValue( papszParms, "radius2" );
-            poNeighborOpts->dfRadius2 = pszValue ? CPLAtofM(pszValue) : 0.0;
+            ((GDALGridNearestNeighborOptions *)*ppOptions)->
+                dfRadius2 = (pszValue) ? CPLAtofM(pszValue) : 0.0;
 
             pszValue = CSLFetchNameValue( papszParms, "angle" );
-            poNeighborOpts->dfAngle = pszValue ? CPLAtofM(pszValue) : 0.0;
+            ((GDALGridNearestNeighborOptions *)*ppOptions)->
+                dfAngle = (pszValue) ? CPLAtofM(pszValue) : 0.0;
 
             pszValue = CSLFetchNameValue( papszParms, "nodata" );
-            poNeighborOpts->dfNoDataValue = pszValue ? CPLAtofM(pszValue) : 0.0;
+            ((GDALGridNearestNeighborOptions *)*ppOptions)->
+                dfNoDataValue = (pszValue) ? CPLAtofM(pszValue) : 0.0;
             break;
-        }
+
         case GGA_MetricMinimum:
         case GGA_MetricMaximum:
         case GGA_MetricRange:
         case GGA_MetricCount:
         case GGA_MetricAverageDistance:
         case GGA_MetricAverageDistancePts:
-        {
             *ppOptions =
                 CPLMalloc( sizeof(GDALGridDataMetricsOptions) );
 
-            GDALGridDataMetricsOptions * const poMetricsOptions =
-                static_cast<GDALGridDataMetricsOptions *>(*ppOptions);
-
-            const char *pszValue = CSLFetchNameValue( papszParms, "radius1" );
-            poMetricsOptions->dfRadius1 = pszValue ? CPLAtofM(pszValue) : 0.0;
+            pszValue = CSLFetchNameValue( papszParms, "radius1" );
+            ((GDALGridDataMetricsOptions *)*ppOptions)->
+                dfRadius1 = (pszValue) ? CPLAtofM(pszValue) : 0.0;
 
             pszValue = CSLFetchNameValue( papszParms, "radius2" );
-            poMetricsOptions->dfRadius2 = pszValue ? CPLAtofM(pszValue) : 0.0;
+            ((GDALGridDataMetricsOptions *)*ppOptions)->
+                dfRadius2 = (pszValue) ? CPLAtofM(pszValue) : 0.0;
 
             pszValue = CSLFetchNameValue( papszParms, "angle" );
-            poMetricsOptions->dfAngle = pszValue ? CPLAtofM(pszValue) : 0.0;
+            ((GDALGridDataMetricsOptions *)*ppOptions)->
+                dfAngle = (pszValue) ? CPLAtofM(pszValue) : 0.0;
 
             pszValue = CSLFetchNameValue( papszParms, "min_points" );
-            poMetricsOptions->nMinPoints = pszValue ? atoi(pszValue) : 0;
+            ((GDALGridDataMetricsOptions *)*ppOptions)->
+                nMinPoints = (pszValue) ? atoi(pszValue) : 0;
 
             pszValue = CSLFetchNameValue( papszParms, "nodata" );
-            poMetricsOptions->dfNoDataValue =
-                pszValue ? CPLAtofM(pszValue) : 0.0;
+            ((GDALGridDataMetricsOptions *)*ppOptions)->
+                dfNoDataValue = (pszValue) ? CPLAtofM(pszValue) : 0.0;
             break;
-        }
+
         case GGA_Linear:
-        {
             *ppOptions =
                 CPLMalloc( sizeof(GDALGridLinearOptions) );
 
-            GDALGridLinearOptions * const poLinearOpts =
-                static_cast<GDALGridLinearOptions *>(*ppOptions);
-
-            const char *pszValue = CSLFetchNameValue( papszParms, "radius" );
-            poLinearOpts->dfRadius = pszValue ? CPLAtofM(pszValue) : -1.0;
+            pszValue = CSLFetchNameValue( papszParms, "radius" );
+            ((GDALGridLinearOptions *)*ppOptions)->
+                dfRadius = (pszValue) ? CPLAtofM(pszValue) : -1.0;
 
             pszValue = CSLFetchNameValue( papszParms, "nodata" );
-            poLinearOpts->dfNoDataValue = pszValue ? CPLAtofM(pszValue) : 0.0;
+            ((GDALGridLinearOptions *)*ppOptions)->
+                dfNoDataValue = (pszValue) ? CPLAtofM(pszValue) : 0.0;
             break;
-         }
-    }
+   }
 
     CSLDestroy( papszParms );
     return CE_None;
 }
+
+#ifdef HAVE_SSE_AT_COMPILE_TIME
+
+/************************************************************************/
+/*                          CPLHaveRuntimeSSE()                         */
+/************************************************************************/
+
+#define CPUID_SSE_EDX_BIT     25
+
+#if (defined(_M_X64) || defined(__x86_64))
+
+int CPLHaveRuntimeSSE()
+{
+    return TRUE;
+}
+
+#elif defined(__GNUC__) && defined(__i386__)
+
+int CPLHaveRuntimeSSE()
+{
+    int cpuinfo[4] = {0,0,0,0};
+    GCC_CPUID(1, cpuinfo[0], cpuinfo[1], cpuinfo[2], cpuinfo[3]);
+    return (cpuinfo[3] & (1 << CPUID_SSE_EDX_BIT)) != 0;
+}
+
+#elif defined(_MSC_VER) && defined(_M_IX86)
+
+#if _MSC_VER <= 1310
+static void inline __cpuid(int cpuinfo[4], int level)
+{
+    __asm
+    {
+        push   ebx
+        push   esi
+
+        mov    esi,cpuinfo
+        mov    eax,level
+        cpuid
+        mov    dword ptr [esi], eax
+        mov    dword ptr [esi+4],ebx
+        mov    dword ptr [esi+8],ecx
+        mov    dword ptr [esi+0Ch],edx
+
+        pop    esi
+        pop    ebx
+    }
+}
+#else
+#include <intrin.h>
+#endif
+
+int CPLHaveRuntimeSSE()
+{
+    int cpuinfo[4] = {0,0,0,0};
+    __cpuid(cpuinfo, 1);
+    return (cpuinfo[3] & (1 << CPUID_SSE_EDX_BIT)) != 0;
+}
+
+#else
+
+int CPLHaveRuntimeSSE()
+{
+    return FALSE;
+}
+#endif
+
+#endif // HAVE_SSE_AT_COMPILE_TIME
+
+#ifdef HAVE_AVX_AT_COMPILE_TIME
+
+/************************************************************************/
+/*                          CPLHaveRuntimeAVX()                         */
+/************************************************************************/
+
+#define CPUID_OSXSAVE_ECX_BIT   27
+#define CPUID_AVX_ECX_BIT       28
+
+#define BIT_XMM_STATE           (1 << 1)
+#define BIT_YMM_STATE           (2 << 1)
+
+#if defined(__GNUC__) && (defined(__i386__) ||defined(__x86_64))
+
+int CPLHaveRuntimeAVX()
+{
+    int cpuinfo[4] = {0,0,0,0};
+    GCC_CPUID(1, cpuinfo[0], cpuinfo[1], cpuinfo[2], cpuinfo[3]);
+
+    /* Check OSXSAVE feature */
+    if( (cpuinfo[2] & (1 << CPUID_OSXSAVE_ECX_BIT)) == 0 )
+    {
+        return FALSE;
+    }
+
+    /* Check AVX feature */
+    if( (cpuinfo[2] & (1 << CPUID_AVX_ECX_BIT)) == 0 )
+    {
+        return FALSE;
+    }
+
+    /* Issue XGETBV and check the XMM and YMM state bit */
+    unsigned int nXCRLow;
+    unsigned int nXCRHigh;
+    __asm__ ("xgetbv" : "=a" (nXCRLow), "=d" (nXCRHigh) : "c" (0));
+    if( (nXCRLow & ( BIT_XMM_STATE | BIT_YMM_STATE )) !=
+                   ( BIT_XMM_STATE | BIT_YMM_STATE ) )
+    {
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+#elif defined(_MSC_FULL_VER) && (_MSC_FULL_VER >= 160040219) && (defined(_M_IX86) || defined(_M_X64))
+// _xgetbv available only in Visual Studio 2010 SP1 or later
+
+#include <intrin.h>
+
+int CPLHaveRuntimeAVX()
+{
+    int cpuinfo[4] = {0,0,0,0};
+    __cpuid(cpuinfo, 1);
+
+    /* Check OSXSAVE feature */
+    if( (cpuinfo[2] & (1 << CPUID_OSXSAVE_ECX_BIT)) == 0 )
+    {
+        return FALSE;
+    }
+
+    /* Check AVX feature */
+    if( (cpuinfo[2] & (1 << CPUID_AVX_ECX_BIT)) == 0 )
+    {
+        return FALSE;
+    }
+
+    /* Issue XGETBV and check the XMM and YMM state bit */
+    unsigned __int64 xcrFeatureMask = _xgetbv(_XCR_XFEATURE_ENABLED_MASK);
+    if( (xcrFeatureMask & ( BIT_XMM_STATE | BIT_YMM_STATE )) !=
+                          ( BIT_XMM_STATE | BIT_YMM_STATE ) )
+    {
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+#else
+
+int CPLHaveRuntimeAVX()
+{
+    return FALSE;
+}
+
+#endif
+
+#endif //  HAVE_AVX_AT_COMPILE_TIME

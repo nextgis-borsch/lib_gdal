@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_gensql.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: ogr_gensql.h 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Classes related to generic implementation of ExecuteSQL().
@@ -34,8 +34,6 @@
 #include "ogrsf_frmts.h"
 #include "swq.h"
 #include "cpl_hash_set.h"
-
-/*! @cond Doxygen_Suppress */
 
 #define GEOM_FIELD_INDEX_TO_ALL_FIELD_INDEX(poFDefn, iGeom) \
     ((poFDefn)->GetFieldCount() + SPECIAL_FIELD_COUNT + (iGeom))
@@ -107,26 +105,24 @@ class CPL_DLL OGRGenSQLResultsLayer : public OGRLayer
                                        const char *pszDialect );
     virtual     ~OGRGenSQLResultsLayer();
 
-    virtual OGRGeometry *GetSpatialFilter() override;
+    virtual OGRGeometry *GetSpatialFilter();
 
-    virtual void        ResetReading() override;
-    virtual OGRFeature *GetNextFeature() override;
-    virtual OGRErr      SetNextByIndex( GIntBig nIndex ) override;
-    virtual OGRFeature *GetFeature( GIntBig nFID ) override;
+    virtual void        ResetReading();
+    virtual OGRFeature *GetNextFeature();
+    virtual OGRErr      SetNextByIndex( GIntBig nIndex );
+    virtual OGRFeature *GetFeature( GIntBig nFID );
 
-    virtual OGRFeatureDefn *GetLayerDefn() override;
+    virtual OGRFeatureDefn *GetLayerDefn();
 
-    virtual GIntBig     GetFeatureCount( int bForce = TRUE ) override;
-    virtual OGRErr      GetExtent(OGREnvelope *psExtent, int bForce = TRUE) override { return GetExtent(0, psExtent, bForce); }
-    virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce = TRUE) override;
+    virtual GIntBig     GetFeatureCount( int bForce = TRUE );
+    virtual OGRErr      GetExtent(OGREnvelope *psExtent, int bForce = TRUE) { return GetExtent(0, psExtent, bForce); }
+    virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce = TRUE);
 
-    virtual int         TestCapability( const char * ) override;
+    virtual int         TestCapability( const char * );
 
-    virtual void        SetSpatialFilter( OGRGeometry * poGeom ) override { SetSpatialFilter(0, poGeom); }
-    virtual void        SetSpatialFilter( int iGeomField, OGRGeometry * ) override;
-    virtual OGRErr      SetAttributeFilter( const char * ) override;
+    virtual void        SetSpatialFilter( OGRGeometry * poGeom ) { SetSpatialFilter(0, poGeom); }
+    virtual void        SetSpatialFilter( int iGeomField, OGRGeometry * );
+    virtual OGRErr      SetAttributeFilter( const char * );
 };
-
-/*! @endcond */
 
 #endif /* ndef OGR_GENSQL_H_INCLUDED */

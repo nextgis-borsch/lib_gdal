@@ -32,7 +32,7 @@
 #include "cpl_time.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrgeopackagetablelayer.cpp 36883 2016-12-15 13:31:12Z rouault $");
+CPL_CVSID("$Id: ogrgeopackagetablelayer.cpp 35695 2016-10-11 17:39:33Z rouault $");
 
 static const char UNSUPPORTED_OP_READ_ONLY[] =
   "%s : unsupported operation on a read-only datasource.";
@@ -227,7 +227,7 @@ OGRErr OGRGeoPackageTableLayer::FeatureBindParameters( OGRFeature *poFeature,
 
             // FIXME: in case the geometry is a GeometryCollection, we should
             // inspect its subgeometries to see if there's non-linear ones.
-            if( wkbFlatten(poGeom->getGeometryType()) > wkbGeometryCollection )
+            if( OGR_GT_IsNonLinear(poGeom->getGeometryType()) )
                 CreateGeometryExtensionIfNecessary(poGeom->getGeometryType());
         }
         /* NULL geometry */
@@ -396,6 +396,7 @@ OGRErr OGRGeoPackageTableLayer::FeatureBindUpdateParameters( OGRFeature *poFeatu
     return OGRERR_NONE;
 }
 
+
 //----------------------------------------------------------------------
 // FeatureBindInsertParameters()
 //
@@ -414,6 +415,7 @@ OGRErr OGRGeoPackageTableLayer::FeatureBindInsertParameters( OGRFeature *poFeatu
         FeatureBindParameters( poFeature, poStmt, &nColCount,
                                bAddFID, bBindNullFields );
 }
+
 
 //----------------------------------------------------------------------
 // FeatureGenerateInsertSQL()
@@ -503,6 +505,7 @@ CPLString OGRGeoPackageTableLayer::FeatureGenerateInsertSQL( OGRFeature *poFeatu
     return osSQLFront + osSQLBack;
 }
 
+
 //----------------------------------------------------------------------
 // FeatureGenerateUpdateSQL()
 //
@@ -557,6 +560,7 @@ CPLString OGRGeoPackageTableLayer::FeatureGenerateUpdateSQL( OGRFeature *poFeatu
 
     return osUpdate + osWhere;
 }
+
 
 //----------------------------------------------------------------------
 // ReadTableDefinition()
@@ -719,7 +723,7 @@ OGRErr OGRGeoPackageTableLayer::ReadTableDefinition(bool bIsSpatial, bool bIsGpk
         const OGRFieldType oType = GPkgFieldToOGR(pszType, eSubType, nMaxWidth);
 
         /* Not a standard field type... */
-        if ( (oType > OFTMaxType && !osGeomColsType.empty() ) || EQUAL(osGeomColumnName, pszName) )
+        if ( (oType > OFTMaxType && osGeomColsType.size()) || EQUAL(osGeomColumnName, pszName) )
         {
             /* Maybe it's a geometry type? */
             OGRwkbGeometryType oGeomType;
@@ -763,6 +767,7 @@ OGRErr OGRGeoPackageTableLayer::ReadTableDefinition(bool bIsSpatial, bool bIsGpk
                     SQLResultFree(&oResultTable);
                     return OGRERR_FAILURE;
                 }
+
             }
             else
             {
@@ -771,6 +776,7 @@ OGRErr OGRGeoPackageTableLayer::ReadTableDefinition(bool bIsSpatial, bool bIsGpk
                 CPLError(CE_Warning, CPLE_AppDefined,
                          "geometry column '%s' of type '%s' ignored", pszName, pszType);
             }
+
         }
         else
         {
@@ -898,6 +904,7 @@ OGRErr OGRGeoPackageTableLayer::ReadTableDefinition(bool bIsSpatial, bool bIsGpk
     return OGRERR_NONE;
 }
 
+
 /************************************************************************/
 /*                      OGRGeoPackageTableLayer()                       */
 /************************************************************************/
@@ -929,6 +936,7 @@ OGRGeoPackageTableLayer::OGRGeoPackageTableLayer(
     m_poQueryStatement = NULL;
     memset(m_abHasGeometryExtension, 0, sizeof(m_abHasGeometryExtension));
 }
+
 
 /************************************************************************/
 /*                      ~OGRGeoPackageTableLayer()                      */
@@ -970,6 +978,7 @@ OGRGeoPackageTableLayer::~OGRGeoPackageTableLayer()
     if ( m_poInsertStatement )
         sqlite3_finalize(m_poInsertStatement);
 }
+
 
 /************************************************************************/
 /*                      CreateField()                                   */
@@ -1312,6 +1321,7 @@ OGRErr OGRGeoPackageTableLayer::ICreateFeature( OGRFeature *poFeature )
     return OGRERR_NONE;
 }
 
+
 /************************************************************************/
 /*                          ISetFeature()                                */
 /************************************************************************/
@@ -1449,6 +1459,8 @@ OGRErr OGRGeoPackageTableLayer::ISetFeature( OGRFeature *poFeature )
     return eErr;
 }
 
+
+
 /************************************************************************/
 /*                         SetAttributeFilter()                         */
 /************************************************************************/
@@ -1470,6 +1482,7 @@ OGRErr OGRGeoPackageTableLayer::SetAttributeFilter( const char *pszQuery )
 
     return OGRERR_NONE;
 }
+
 
 /************************************************************************/
 /*                      ResetReading()                                  */
@@ -1497,6 +1510,7 @@ void OGRGeoPackageTableLayer::ResetReading()
     BuildColumns();
     return;
 }
+
 
 /************************************************************************/
 /*                           ResetStatement()                           */
@@ -1678,6 +1692,7 @@ OGRErr OGRGeoPackageTableLayer::StartTransaction()
     return m_poDS->StartTransaction();
 }
 
+
 /************************************************************************/
 /*                        CommitTransaction()                           */
 /************************************************************************/
@@ -1687,6 +1702,7 @@ OGRErr OGRGeoPackageTableLayer::CommitTransaction()
     return m_poDS->CommitTransaction();
 }
 
+
 /************************************************************************/
 /*                        RollbackTransaction()                         */
 /************************************************************************/
@@ -1695,6 +1711,7 @@ OGRErr OGRGeoPackageTableLayer::RollbackTransaction()
 {
     return m_poDS->RollbackTransaction();
 }
+
 
 /************************************************************************/
 /*                        GetFeatureCount()                             */
@@ -1728,6 +1745,7 @@ GIntBig OGRGeoPackageTableLayer::GetFeatureCount( CPL_UNUSED int bForce )
     else
         return -1;
 }
+
 
 /************************************************************************/
 /*                        GetExtent()                                   */
@@ -2120,7 +2138,6 @@ void OGRGeoPackageTableLayer::CheckUnknownExtensions()
                     "AND column_name='%q' AND extension_name NOT IN ('gpkg_geom_CIRCULARSTRING', "
                     "'gpkg_geom_COMPOUNDCURVE', 'gpkg_geom_CURVEPOLYGON', 'gpkg_geom_MULTICURVE', "
                     "'gpkg_geom_MULTISURFACE', 'gpkg_geom_CURVE', 'gpkg_geom_SURFACE', "
-                    "'gpkg_geom_POLYHEDRALSURFACE', 'gpkg_geom_TIN', 'gpkg_geom_TRIANGLE', "
                     "'gpkg_rtree_index', 'gpkg_geometry_type_trigger', 'gpkg_srs_id_trigger'))"
 #ifdef WORKAROUND_SQLITE3_BUGS
                     " OR 0"
@@ -2177,7 +2194,7 @@ void OGRGeoPackageTableLayer::CheckUnknownExtensions()
 bool OGRGeoPackageTableLayer::CreateGeometryExtensionIfNecessary(OGRwkbGeometryType eGType)
 {
     eGType = wkbFlatten(eGType);
-    CPLAssert(eGType <= wkbTriangle);
+    CPLAssert(eGType <= wkbTIN);
     if( m_abHasGeometryExtension[eGType] )
         return true;
 
@@ -2199,14 +2216,6 @@ bool OGRGeoPackageTableLayer::CreateGeometryExtensionIfNecessary(OGRwkbGeometryT
 
     if( err != OGRERR_NONE )
     {
-        if( eGType == wkbPolyhedralSurface ||
-            eGType == wkbTIN || eGType == wkbTriangle )
-        {
-            CPLError(CE_Warning, CPLE_AppDefined,
-                     "Registering non-standard gpkg_geom_%s extension",
-                     pszGeometryType);
-        }
-
         /* Register the table in gpkg_extensions */
         pszSQL = sqlite3_mprintf(
                     "INSERT INTO gpkg_extensions "
@@ -2544,14 +2553,14 @@ void OGRGeoPackageTableLayer::BuildWhere()
 
     CPLString osSpatialWHERE = GetSpatialWhere(m_iGeomFieldFilter,
                                                m_poFilterGeom);
-    if (!osSpatialWHERE.empty())
+    if (osSpatialWHERE.size() != 0)
     {
         m_soFilter += osSpatialWHERE;
     }
 
-    if( !osQuery.empty() )
+    if( osQuery.size() > 0 )
     {
-        if( m_soFilter.empty() )
+        if( m_soFilter.size() == 0 )
         {
             m_soFilter += osQuery;
         }
@@ -2631,7 +2640,8 @@ OGRErr OGRGeoPackageTableLayer::RegisterGeometryColumn()
     if ( err != OGRERR_NONE )
         return OGRERR_FAILURE;
 
-    if( wkbFlatten(eGType) > wkbGeometryCollection )
+    if( OGR_GT_IsNonLinear( eGType ) || wkbFlatten(eGType) == wkbCurve ||
+        wkbFlatten(eGType) == wkbSurface )
     {
         CreateGeometryExtensionIfNecessary(eGType);
     }
@@ -2643,7 +2653,7 @@ OGRErr OGRGeoPackageTableLayer::RegisterGeometryColumn()
 /*                        GetColumnsOfCreateTable()                     */
 /************************************************************************/
 
-CPLString OGRGeoPackageTableLayer::GetColumnsOfCreateTable(const std::vector<OGRFieldDefn*>& apoFields)
+CPLString OGRGeoPackageTableLayer::GetColumnsOfCreateTable(const std::vector<OGRFieldDefn*> apoFields)
 {
     CPLString osSQL;
 
@@ -2749,7 +2759,7 @@ OGRErr OGRGeoPackageTableLayer::RunDeferredCreationIfNecessary()
     /* Create the table! */
     CPLString osCommand;
 
-    char* pszSQL = sqlite3_mprintf("CREATE TABLE \"%w\" ( ", pszLayerName);
+    char* pszSQL = sqlite3_mprintf("CREATE TABLE '%q' ( ", pszLayerName);
     osCommand += pszSQL;
     sqlite3_free(pszSQL);
 
@@ -2954,9 +2964,9 @@ CPLErr OGRGeoPackageTableLayer::SetMetadata( char ** papszMetadata, const char *
     m_poDS->SetMetadataDirty();
     if( pszDomain == NULL || EQUAL(pszDomain, "") )
     {
-        if( !m_osIdentifierLCO.empty() )
+        if( m_osIdentifierLCO.size() )
             OGRLayer::SetMetadataItem("IDENTIFIER", m_osIdentifierLCO);
-        if( !m_osDescriptionLCO.empty() )
+        if( m_osDescriptionLCO.size() )
             OGRLayer::SetMetadataItem("DESCRIPTION", m_osDescriptionLCO);
     }
     return eErr;
@@ -2971,10 +2981,10 @@ CPLErr OGRGeoPackageTableLayer::SetMetadataItem( const char * pszName,
                                                  const char * pszDomain )
 {
     GetMetadata(); /* force loading from storage if needed */
-    if( !m_osIdentifierLCO.empty() && EQUAL(pszName, "IDENTIFIER") &&
+    if( m_osIdentifierLCO.size() && EQUAL(pszName, "IDENTIFIER") &&
         (pszDomain == NULL || EQUAL(pszDomain, "")) )
         return CE_None;
-    if( !m_osDescriptionLCO.empty() && EQUAL(pszName, "DESCRIPTION") &&
+    if( m_osDescriptionLCO.size() && EQUAL(pszName, "DESCRIPTION") &&
         (pszDomain == NULL || EQUAL(pszDomain, "")) )
         return CE_None;
     m_poDS->SetMetadataDirty();
@@ -3065,7 +3075,7 @@ OGRErr OGRGeoPackageTableLayer::RecreateTable(const CPLString& osColumnsForCreat
 /*                          BuildSelectFieldList()                      */
 /************************************************************************/
 
-CPLString OGRGeoPackageTableLayer::BuildSelectFieldList(const std::vector<OGRFieldDefn*>& apoFields)
+CPLString OGRGeoPackageTableLayer::BuildSelectFieldList(const std::vector<OGRFieldDefn*> apoFields)
 {
     CPLString osFieldListForSelect;
 
@@ -3274,7 +3284,7 @@ OGRErr OGRGeoPackageTableLayer::AlterFieldDefn( int iFieldToAlter,
     }
 
 /* -------------------------------------------------------------------- */
-/*      Deferred actions, reset state.                                   */
+/*      Defered actions, reset state.                                   */
 /* -------------------------------------------------------------------- */
     ResetReading();
     RunDeferredCreationIfNecessary();
@@ -3407,7 +3417,7 @@ OGRErr OGRGeoPackageTableLayer::AlterFieldDefn( int iFieldToAlter,
     if( !bUseFastMethod )
     {
 /* -------------------------------------------------------------------- */
-/*      If we are within a transaction, we cannot use the method       */
+/*      If we are withing a transaction, we cannot use the method       */
 /*      that consists in altering the database in a raw way.            */
 /* -------------------------------------------------------------------- */
         const CPLString osFieldListForSelect( BuildSelectFieldList(apoFieldsOld) );
@@ -3421,7 +3431,7 @@ OGRErr OGRGeoPackageTableLayer::AlterFieldDefn( int iFieldToAlter,
     {
 /* -------------------------------------------------------------------- */
 /*      Rewrite schema in a transaction by altering the database        */
-/*      schema in a rather raw way, as described at bottom of           */
+/*      schema in a rather raw way, as discribed at bottom of           */
 /*      https://www.sqlite.org/lang_altertable.html                     */
 /* -------------------------------------------------------------------- */
 
@@ -3619,7 +3629,7 @@ OGRErr OGRGeoPackageTableLayer::ReorderFields( int* panMap )
         return eErr;
 
 /* -------------------------------------------------------------------- */
-/*      Deferred actions, reset state.                                   */
+/*      Defered actions, reset state.                                   */
 /* -------------------------------------------------------------------- */
     ResetReading();
     RunDeferredCreationIfNecessary();

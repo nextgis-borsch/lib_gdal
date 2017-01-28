@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: pdfcreatecopy.h 36347 2016-11-20 20:43:39Z rouault $
+ * $Id: pdfcreatecopy.h 33757 2016-03-20 20:22:33Z goatbar $
  *
  * Project:  PDF driver
  * Purpose:  GDALDataset driver for PDF dataset.
@@ -116,21 +116,6 @@ class GDALPDFPageContext
         std::vector<GDALPDFRasterDesc> asRasterDesc;
         int          nAnnotsId;
         std::vector<int> anAnnotationsId;
-
-        GDALPDFPageContext() :
-            poClippingDS( NULL ),
-            eStreamCompressMethod( COMPRESS_NONE ),
-            dfDPI( 0.0 ),
-            nPageId( 0 ),
-            nContentId( 0 ),
-            nResourcesId( 0 ),
-            nAnnotsId( 0 )
-        {
-            sMargins.nLeft = 0;
-            sMargins.nRight = 0;
-            sMargins.nTop = 0;
-            sMargins.nBottom = 0;
-        }
 };
 
 class GDALPDFOCGDesc
@@ -169,6 +154,8 @@ class GDALPDFWriter
     CPLString    osOffLayers;
     CPLString    osExclusiveLayers;
 
+    void    Init();
+
     void    StartObj(int nObjectId, int nGen = 0);
     void    EndObj();
     void    WriteXRefTableAndTrailer();
@@ -192,7 +179,7 @@ class GDALPDFWriter
     int     AllocNewObject();
 
     public:
-        GDALPDFWriter( VSILFILE* fpIn, int bAppend = FALSE );
+        GDALPDFWriter(VSILFILE* fpIn, int bAppend = FALSE);
        ~GDALPDFWriter();
 
        void Close();
@@ -221,7 +208,6 @@ class GDALPDFWriter
 
        int  StartPage(GDALDataset* poSrcDS,
                       double dfDPI,
-                      bool bWriteUserUnit,
                       const char* pszGEO_ENCODING,
                       const char* pszNEATLINE,
                       PDFMargins* psMargins,

@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: geoconcept_syscoord.h$
+ * $Id: geoconcept_syscoord.h
  *
  * Name:     geoconcept_syscoord.h
  * Project:  OpenGIS Simple Features Reference Implementation
@@ -184,5 +184,6 @@ OGRSpatialReferenceH GCSRSAPI_CALL SysCoord2OGRSpatialReference_GCSRS ( GCSysCoo
 #ifdef __cplusplus
 }
 #endif
+
 
 #endif /* ndef GEOCONCEPT_SYSCOORD_H_INCLUDED */

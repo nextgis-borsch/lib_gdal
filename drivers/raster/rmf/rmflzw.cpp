@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: rmflzw.cpp 33105 2016-01-23 15:27:32Z rouault $
  *
  * Project:  Raster Matrix Format
  * Purpose:  Implementation of the LZW compression algorithm as used in
@@ -49,14 +50,12 @@
 
 #include "rmfdataset.h"
 
-CPL_CVSID("$Id: rmflzw.cpp 36404 2016-11-21 17:08:18Z rouault $");
-
 // Code marks that there is no predecessor in the string
-static const GUInt32 NO_PRED = 0xFFFF;
+#define NO_PRED     0xFFFF
 
 // We are using 12-bit codes in this particular implementation
-static const GUInt32 TABSIZE = 4096U;
-static const GUInt32 STACKSIZE = TABSIZE;
+#define TABSIZE     4096U
+#define STACKSIZE   TABSIZE
 
 /************************************************************************/
 /*                           LZWStringTab                               */
@@ -64,7 +63,7 @@ static const GUInt32 STACKSIZE = TABSIZE;
 
 typedef struct
 {
-    bool    bUsed;
+    int     bUsed;
     GUInt32 iNext;          // hi bit is 'used' flag
     GUInt32 iPredecessor;   // 12 bit code
     GByte   iFollower;
@@ -76,6 +75,8 @@ typedef struct
 
 static void LZWUpdateTab(LZWStringTab *poCodeTab, GUInt32 iPred, char bFoll)
 {
+    GUInt32 nNext;
+
 /* -------------------------------------------------------------------- */
 /* Hash uses the 'mid-square' algorithm. I.E. for a hash val of n bits  */
 /* hash = middle binary digits of (key * key).  Upon collision, hash    */
@@ -87,18 +88,19 @@ static void LZWUpdateTab(LZWStringTab *poCodeTab, GUInt32 iPred, char bFoll)
     nLocal = (nLocal*nLocal >> 6) & 0x0FFF;      // middle 12 bits of result
 
     // If string is not used
-    GUInt32 nNext = nLocal;
-    if( poCodeTab[nLocal].bUsed )
+    if (poCodeTab[nLocal].bUsed == FALSE)
+        nNext = nLocal;
+    else
     {
         // If collision has occurred
-        while( (nNext = poCodeTab[nLocal].iNext) != 0 )
+        while ( (nNext = poCodeTab[nLocal].iNext) != 0 )
             nLocal = nNext;
 
         // Search for free entry from nLocal + 101
         nNext = (nLocal + 101) & 0x0FFF;
-        while( poCodeTab[nNext].bUsed )
+        while ( poCodeTab[nNext].bUsed )
         {
-            if( ++nNext >= TABSIZE )
+            if ( ++nNext >= TABSIZE )
                 nNext = 0;
         }
 
@@ -106,7 +108,7 @@ static void LZWUpdateTab(LZWStringTab *poCodeTab, GUInt32 iPred, char bFoll)
         poCodeTab[nLocal].iNext = nNext;
     }
 
-    poCodeTab[nNext].bUsed = true;
+    poCodeTab[nNext].bUsed = TRUE;
     poCodeTab[nNext].iNext = 0;
     poCodeTab[nNext].iPredecessor = iPred;
     poCodeTab[nNext].iFollower = bFoll;
@@ -119,41 +121,47 @@ static void LZWUpdateTab(LZWStringTab *poCodeTab, GUInt32 iPred, char bFoll)
 int RMFDataset::LZWDecompress( const GByte* pabyIn, GUInt32 nSizeIn,
                                GByte* pabyOut, GUInt32 nSizeOut )
 {
-    if( pabyIn == NULL ||
-        pabyOut == NULL ||
-        nSizeOut < nSizeIn ||
-        nSizeIn < 2 )
+    GUInt32         nCount = TABSIZE - 256;
+    GUInt32         iCode, iOldCode, iInCode;
+    GByte           iFinChar, bLastChar=FALSE;
+    LZWStringTab    *poCodeTab;
+    int             bBitsleft;
+
+    if ( pabyIn == NULL ||
+         pabyOut == NULL ||
+         nSizeOut < nSizeIn ||
+         nSizeIn < 2 )
         return 0;
 
     // Allocate space for the new table and pre-fill it
-    LZWStringTab *poCodeTab =
-        (LZWStringTab *)CPLMalloc( TABSIZE * sizeof(LZWStringTab) );
-    if( !poCodeTab )
+    poCodeTab = (LZWStringTab *)CPLMalloc( TABSIZE * sizeof(LZWStringTab) );
+    if ( !poCodeTab )
         return 0;
     memset( poCodeTab, 0, TABSIZE * sizeof(LZWStringTab) );
-    GUInt32 iCode = 0;
-    for( ; iCode < 256; iCode++ )
+    for ( iCode = 0; iCode < 256; iCode++ )
         LZWUpdateTab( poCodeTab, NO_PRED, (char)iCode );
 
     // The first code is always known
     iCode = (*pabyIn++ << 4) & 0xFF0; nSizeIn--;
     iCode += (*pabyIn >> 4) & 0x00F;
-    GUInt32 iOldCode = iCode;
-    bool bBitsleft = true;
+    iOldCode = iCode;
+    bBitsleft = TRUE;
 
-    GByte iFinChar = poCodeTab[iCode].iFollower; nSizeOut--;
-    *pabyOut++ = iFinChar;
-
-    GUInt32 nCount = TABSIZE - 256;
+    *pabyOut++ = iFinChar = poCodeTab[iCode].iFollower; nSizeOut--;
 
     // Decompress the input buffer
-    while( nSizeIn > 0 )
+    while ( nSizeIn > 0 )
     {
+        int     bNewCode;
+        GUInt32 nStackCount = 0;
+        GByte   abyStack[STACKSIZE];
+        GByte   *pabyTail = abyStack + STACKSIZE;
+
         // Fetch 12-bit code from input stream
-        if( bBitsleft )
+        if ( bBitsleft )
         {
             iCode = ((*pabyIn++ & 0x0F) << 8) & 0xF00; nSizeIn--;
-            if( nSizeIn == 0 )
+            if ( nSizeIn <= 0 )
                 break;
             iCode += *pabyIn++; nSizeIn--;
             bBitsleft = FALSE;
@@ -161,46 +169,40 @@ int RMFDataset::LZWDecompress( const GByte* pabyIn, GUInt32 nSizeIn,
         else
         {
             iCode = (*pabyIn++ << 4) & 0xFF0; nSizeIn--;
-            if( nSizeIn == 0 )
+            if ( nSizeIn <= 0 )
                 break;
             iCode += (*pabyIn >> 4) & 0x00F;
             bBitsleft = TRUE;
         }
-
-        const GUInt32 iInCode = iCode;
-        GByte bLastChar = 0;  // TODO(schwehr): Why not nLastChar?
+        iInCode = iCode;
 
         // Do we have unknown code?
-        bool bNewCode = false;
-        if( !poCodeTab[iCode].bUsed )
+        if ( poCodeTab[iCode].bUsed )
+            bNewCode = FALSE;
+        else
         {
             iCode = iOldCode;
             bLastChar = iFinChar;
-            bNewCode = true;
+            bNewCode = TRUE;
         }
 
-        GByte abyStack[STACKSIZE] = {};
-        GByte *pabyTail = abyStack + STACKSIZE;
-        GUInt32 nStackCount = 0;
-
-        while( poCodeTab[iCode].iPredecessor != NO_PRED )
+        while ( poCodeTab[iCode].iPredecessor != NO_PRED )
         {
             // Stack overrun
-            if( nStackCount >= STACKSIZE )
+            if ( nStackCount >= STACKSIZE )
                 goto bad;
             // Put the decoded character into stack
             *(--pabyTail) = poCodeTab[iCode].iFollower; nStackCount++;
             iCode = poCodeTab[iCode].iPredecessor;
         }
 
-        if( !nSizeOut )
+        if ( !nSizeOut )
             goto bad;
         // The first character
-        iFinChar = poCodeTab[iCode].iFollower; nSizeOut--;
-        *pabyOut++ = iFinChar;
+        *pabyOut++ = iFinChar = poCodeTab[iCode].iFollower; nSizeOut--;
 
         // Output buffer overrun
-        if( nStackCount > nSizeOut )
+        if ( nStackCount > nSizeOut )
             goto bad;
 
         // Now copy the stack contents into output buffer. Our stack was
@@ -210,17 +212,16 @@ int RMFDataset::LZWDecompress( const GByte* pabyIn, GUInt32 nSizeIn,
         pabyOut += nStackCount;
 
         // If code isn't known
-        if( bNewCode )
+        if ( bNewCode )
         {
             // Output buffer overrun
-            if( !nSizeOut )
+            if ( !nSizeOut )
                 goto bad;
-            iFinChar = bLastChar;  // the follower char of last
-            *pabyOut++ = iFinChar;
+            *pabyOut++ = iFinChar = bLastChar;  // the follower char of last
             nSizeOut--;
         }
 
-        if( nCount > 0 )
+        if ( nCount > 0 )
         {
             nCount--;
             // Add code to the table
@@ -237,3 +238,4 @@ bad:
     CPLFree( poCodeTab );
     return 0;
 }
+

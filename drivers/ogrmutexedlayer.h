@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrmutexedlayer.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: ogrmutexedlayer.h 31812 2015-11-28 22:37:37Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Defines OGRLMutexedLayer class
@@ -30,8 +30,6 @@
 #ifndef OGRMUTEXEDLAYER_H_INCLUDED
 #define OGRMUTEXEDLAYER_H_INCLUDED
 
-#ifndef DOXYGEN_SKIP
-
 #include "ogrlayerdecorator.h"
 #include "cpl_multiproc.h"
 
@@ -57,68 +55,66 @@ class CPL_DLL OGRMutexedLayer : public OGRLayerDecorator
     /* The destruction of the object isn't protected by the mutex */
     virtual           ~OGRMutexedLayer();
 
-    virtual OGRGeometry *GetSpatialFilter() override;
-    virtual void        SetSpatialFilter( OGRGeometry * ) override;
+    virtual OGRGeometry *GetSpatialFilter();
+    virtual void        SetSpatialFilter( OGRGeometry * );
     virtual void        SetSpatialFilterRect( double dfMinX, double dfMinY,
-                                              double dfMaxX, double dfMaxY ) override;
-    virtual void        SetSpatialFilter( int iGeomField, OGRGeometry * ) override;
+                                              double dfMaxX, double dfMaxY );
+    virtual void        SetSpatialFilter( int iGeomField, OGRGeometry * );
     virtual void        SetSpatialFilterRect( int iGeomField, double dfMinX, double dfMinY,
-                                              double dfMaxX, double dfMaxY ) override;
+                                              double dfMaxX, double dfMaxY );
 
-    virtual OGRErr      SetAttributeFilter( const char * ) override;
+    virtual OGRErr      SetAttributeFilter( const char * );
 
-    virtual void        ResetReading() override;
-    virtual OGRFeature *GetNextFeature() override;
-    virtual OGRErr      SetNextByIndex( GIntBig nIndex ) override;
-    virtual OGRFeature *GetFeature( GIntBig nFID ) override;
-    virtual OGRErr      ISetFeature( OGRFeature *poFeature ) override;
-    virtual OGRErr      ICreateFeature( OGRFeature *poFeature ) override;
-    virtual OGRErr      DeleteFeature( GIntBig nFID ) override;
+    virtual void        ResetReading();
+    virtual OGRFeature *GetNextFeature();
+    virtual OGRErr      SetNextByIndex( GIntBig nIndex );
+    virtual OGRFeature *GetFeature( GIntBig nFID );
+    virtual OGRErr      ISetFeature( OGRFeature *poFeature );
+    virtual OGRErr      ICreateFeature( OGRFeature *poFeature );
+    virtual OGRErr      DeleteFeature( GIntBig nFID );
 
-    virtual const char *GetName() override;
-    virtual OGRwkbGeometryType GetGeomType() override;
-    virtual OGRFeatureDefn *GetLayerDefn() override;
+    virtual const char *GetName();
+    virtual OGRwkbGeometryType GetGeomType();
+    virtual OGRFeatureDefn *GetLayerDefn();
 
-    virtual OGRSpatialReference *GetSpatialRef() override;
+    virtual OGRSpatialReference *GetSpatialRef();
 
-    virtual GIntBig     GetFeatureCount( int bForce = TRUE ) override;
-    virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce = TRUE) override;
-    virtual OGRErr      GetExtent(OGREnvelope *psExtent, int bForce = TRUE) override;
+    virtual GIntBig     GetFeatureCount( int bForce = TRUE );
+    virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce = TRUE);
+    virtual OGRErr      GetExtent(OGREnvelope *psExtent, int bForce = TRUE);
 
-    virtual int         TestCapability( const char * ) override;
+    virtual int         TestCapability( const char * );
 
     virtual OGRErr      CreateField( OGRFieldDefn *poField,
-                                     int bApproxOK = TRUE ) override;
-    virtual OGRErr      DeleteField( int iField ) override;
-    virtual OGRErr      ReorderFields( int* panMap ) override;
-    virtual OGRErr      AlterFieldDefn( int iField, OGRFieldDefn* poNewFieldDefn, int nFlags ) override;
+                                     int bApproxOK = TRUE );
+    virtual OGRErr      DeleteField( int iField );
+    virtual OGRErr      ReorderFields( int* panMap );
+    virtual OGRErr      AlterFieldDefn( int iField, OGRFieldDefn* poNewFieldDefn, int nFlags );
 
-    virtual OGRErr      SyncToDisk() override;
+    virtual OGRErr      SyncToDisk();
 
-    virtual OGRStyleTable *GetStyleTable() override;
-    virtual void        SetStyleTableDirectly( OGRStyleTable *poStyleTable ) override;
+    virtual OGRStyleTable *GetStyleTable();
+    virtual void        SetStyleTableDirectly( OGRStyleTable *poStyleTable );
 
-    virtual void        SetStyleTable(OGRStyleTable *poStyleTable) override;
+    virtual void        SetStyleTable(OGRStyleTable *poStyleTable);
 
-    virtual OGRErr      StartTransaction() override;
-    virtual OGRErr      CommitTransaction() override;
-    virtual OGRErr      RollbackTransaction() override;
+    virtual OGRErr      StartTransaction();
+    virtual OGRErr      CommitTransaction();
+    virtual OGRErr      RollbackTransaction();
 
-    virtual const char *GetFIDColumn() override;
-    virtual const char *GetGeometryColumn() override;
+    virtual const char *GetFIDColumn();
+    virtual const char *GetGeometryColumn();
 
-    virtual OGRErr      SetIgnoredFields( const char **papszFields ) override;
+    virtual OGRErr      SetIgnoredFields( const char **papszFields );
 
-    virtual char      **GetMetadata( const char * pszDomain = "" ) override;
+    virtual char      **GetMetadata( const char * pszDomain = "" );
     virtual CPLErr      SetMetadata( char ** papszMetadata,
-                                     const char * pszDomain = "" ) override;
+                                     const char * pszDomain = "" );
     virtual const char *GetMetadataItem( const char * pszName,
-                                         const char * pszDomain = "" ) override;
+                                         const char * pszDomain = "" );
     virtual CPLErr      SetMetadataItem( const char * pszName,
                                          const char * pszValue,
-                                         const char * pszDomain = "" ) override;
+                                         const char * pszDomain = "" );
 };
-
-#endif /* #ifndef DOXYGEN_SKIP */
 
 #endif // OGRMUTEXEDLAYER_H_INCLUDED

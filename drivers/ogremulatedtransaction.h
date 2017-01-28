@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogremulatedtransaction.h 35910 2016-10-24 14:08:24Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Defines OGRDataSourceWithTransaction class
@@ -90,6 +90,7 @@ class CPL_DLL IOGRTransactionBehaviour
        virtual OGRErr RollbackTransaction(OGRDataSource*& poDSInOut,
                                           int& bOutHasReopenedDS) = 0;
 };
+
 
 /** Returns a new datasource object that adds transactional behaviour to an existing datasource.
  *

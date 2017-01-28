@@ -33,8 +33,6 @@
 #include "cpl_string.h"
 #include "cpl_error.h"
 
-CPL_CVSID("$Id$");
-
 #ifndef SQLColumns_TABLE_CAT
 #define SQLColumns_TABLE_CAT 1
 #define SQLColumns_TABLE_SCHEM 2
@@ -85,6 +83,7 @@ OGRDB2Session::~OGRDB2Session()
     DB2_DEBUG_ENTER("OGRDB2Session::~OGRDB2Session");
     CloseSession();
 }
+
 
 /************************************************************************/
 /*                       RollbackTransaction()                          */
@@ -352,6 +351,8 @@ const char *OGRDB2Session::GetLastError()
     return m_szLastError;
 }
 
+
+
 /************************************************************************/
 /* ==================================================================== */
 /*                           OGRDB2Statement                           */
@@ -484,9 +485,8 @@ int OGRDB2Statement::DB2Execute(const char *pszCallingFunction)
     if (m_bPrepared)
     {
         m_nLastRetCode = SQLExecute(m_hStmt);
-    }
-    else
-    {
+
+    } else {
         m_nLastRetCode = SQLExecDirect( m_hStmt, (SQLCHAR *) m_pszStatement, SQL_NTS );
     }
 
@@ -498,6 +498,7 @@ int OGRDB2Statement::DB2Execute(const char *pszCallingFunction)
     }
     return CollectResultsInfo();
 }
+
 
 /************************************************************************/
 /*                             ExecuteSQL()                             */
@@ -857,6 +858,7 @@ int OGRDB2Statement::Fetch( int nOrientation, int nOffset )
                           m_poSession->GetLastError() );
             }
 
+
             return FALSE;
         }
     }
@@ -934,6 +936,7 @@ int OGRDB2Statement::Fetch( int nOrientation, int nOffset )
                     while ((cbDataLen > 1) && (szWrkData[cbDataLen - 1] == 0)
                         && (szWrkData[cbDataLen - 2] == 0))
                         cbDataLen -= 2; // trimming the extra terminators
+
             }
 
             m_papszColValues[iCol] = (char *) CPLMalloc(cbDataLen+2);
@@ -1374,6 +1377,7 @@ void OGRDB2Statement::Clear()
         CPLFree( m_panColValueLengths );
         m_panColValueLengths = NULL;
     }
+
 }
 
 /************************************************************************/
@@ -1841,3 +1845,5 @@ SQLSMALLINT OGRDB2Statement::GetTypeMapping( SQLSMALLINT nTypeCode )
             return SQL_C_CHAR;
     }
 }
+
+

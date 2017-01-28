@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: hfatest.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  Erdas Imagine (.img) Translator
  * Purpose:  Testing mainline for HFA services - transitory.
@@ -30,7 +31,7 @@
 #include "hfa_p.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id: hfatest.cpp 35929 2016-10-25 16:09:00Z goatbar $");
+CPL_CVSID("$Id: hfatest.cpp 33720 2016-03-15 00:39:53Z goatbar $");
 
 /************************************************************************/
 /*                               Usage()                                */
@@ -74,22 +75,14 @@ int main( int argc, char ** argv )
 
     for( int i = 1; i < argc; i++ )
     {
-        if( EQUAL(argv[i], "-dd") )
-        {
-            bDumpDict = true;
-        }
-        else if( EQUAL(argv[i], "-dt") )
-        {
-            bDumpTree = true;
-        }
-        else if( EQUAL(argv[i], "-dr") )
-        {
-            bRastReport = true;
-        }
+        if( EQUAL(argv[i],"-dd") )
+            bDumpDict = TRUE;
+        else if( EQUAL(argv[i],"-dt") )
+            bDumpTree = TRUE;
+        else if( EQUAL(argv[i],"-dr") )
+            bRastReport = TRUE;
         else if( pszFilename == NULL )
-        {
             pszFilename = argv[i];
-        }
         else
         {
             Usage();
@@ -133,9 +126,7 @@ int main( int argc, char ** argv )
 /* -------------------------------------------------------------------- */
 /*      Dump indirectly collected data about bands.                     */
 /* -------------------------------------------------------------------- */
-    int nXSize = 0;
-    int nYSize = 0;
-    int nBands = 0;
+    int nXSize, nYSize, nBands;
     HFAGetRasterInfo( hHFA, &nXSize, &nYSize, &nBands );
 
     if( bRastReport )
@@ -145,13 +136,13 @@ int main( int argc, char ** argv )
         for( int i = 1; i <= nBands; i++ )
         {
             EPTType eDataType;
-            int nBlockXSize = 0;
-            int nBlockYSize = 0;
-            int nCompressionType = 0;
+            int nBlockXSize;
+            int nBlockYSize;
+            int nCompressionType;
 
             HFAGetBandInfo( hHFA, i, &eDataType, &nBlockXSize, &nBlockYSize,
                             &nCompressionType );
-            const int nOverviews = HFAGetOverviewCount( hHFA, i );
+            int nOverviews = HFAGetOverviewCount( hHFA, i );
 
             printf( "Band %d: %dx%d tiles, type = %d\n",
                     i, nBlockXSize, nBlockYSize, eDataType );
@@ -165,24 +156,18 @@ int main( int argc, char ** argv )
                         nXSize, nYSize, nBlockXSize, nBlockYSize );
             }
 
-            int nColors = 0;
-            double *padfRed = NULL;
-            double *padfGreen = NULL;
-            double *padfBlue = NULL;
-            double *padfAlpha = NULL;
-            double *padfBins = NULL;
+            int nColors;
+            double *padfRed, *padfGreen, *padfBlue, *padfAlpha, *padfBins;
             if( HFAGetPCT( hHFA, i, &nColors, &padfRed, &padfGreen,
-                           &padfBlue, &padfAlpha, &padfBins )
+			   &padfBlue, &padfAlpha, &padfBins )
                 == CE_None )
             {
                 for( int j = 0; j < nColors; j++ )
                 {
                     printf( "PCT[%d] = %f,%f,%f %f\n",
-                            (padfBins != NULL)
-                            ? static_cast<int>(padfBins[j])
-                            : j,
+                            (padfBins != NULL) ? (int) padfBins[j] : j,
                             padfRed[j], padfGreen[j],
-                            padfBlue[j], padfAlpha[j]);
+			    padfBlue[j], padfAlpha[j]);
                 }
             }
 
@@ -204,9 +189,7 @@ int main( int argc, char ** argv )
                         poStats->GetDoubleField( "stddev" ) );
             }
             else
-            {
                 printf( "   No Statistics found.\n" );
-            }
         }
 
 /* -------------------------------------------------------------------- */
@@ -226,7 +209,9 @@ int main( int argc, char ** argv )
         {
             printf( "No Map Info found\n" );
         }
+
     }
+
 
     // const Eprj_ProParameters *psProParameters;
     // psProParameters =

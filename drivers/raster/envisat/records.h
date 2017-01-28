@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: records.h 35885 2016-10-24 06:23:09Z goatbar $
+ * $Id: records.h 32078 2015-12-08 09:09:45Z rouault $
  *
  * Project:  APP ENVISAT Support
  * Purpose:  Low Level Envisat file access (read/write) API.
@@ -36,6 +36,7 @@
 extern "C"
 {
 #endif
+
 
 #define MJD_FIELD_SIZE 12
 
@@ -75,6 +76,7 @@ const EnvisatRecordDescr* EnvisatFile_GetRecordDescriptor(const char* pszProduct
                                               const char* pszDataset);
 
 CPLErr EnvisatFile_GetFieldAsString(const void*, int, const EnvisatFieldDescr*, char*, size_t);
+
 
 #ifdef __cplusplus
 } /* extern "C" */

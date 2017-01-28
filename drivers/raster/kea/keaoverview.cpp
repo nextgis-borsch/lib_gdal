@@ -1,4 +1,5 @@
 /*
+ * $Id: keaoverview.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *  keaoverview.cpp
  *
  *  Created by Pete Bunting on 01/08/2012.
@@ -29,8 +30,6 @@
 
 #include "keaoverview.h"
 
-CPL_CVSID("$Id: keaoverview.cpp 35929 2016-10-25 16:09:00Z goatbar $");
-
 // constructor
 KEAOverview::KEAOverview(KEADataset *pDataset, int nSrcBand, GDALAccess eAccessIn,
                 kealib::KEAImageIO *pImageIO, int *pRefCount,
@@ -45,7 +44,10 @@ KEAOverview::KEAOverview(KEADataset *pDataset, int nSrcBand, GDALAccess eAccessI
     this->nRasterYSize = static_cast<int>(nYSize);
 }
 
-KEAOverview::~KEAOverview() {}
+KEAOverview::~KEAOverview()
+{
+
+}
 
 // overridden implementation - calls readFromOverview instead
 CPLErr KEAOverview::IReadBlock( int nBlockXOff, int nBlockYOff, void * pImage )

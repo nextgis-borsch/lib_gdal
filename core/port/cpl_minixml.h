@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_minixml.h 35921 2016-10-25 02:28:29Z goatbar $
+ * $Id: cpl_minixml.h 33666 2016-03-07 05:21:07Z goatbar $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Declarations for MiniXML Handler.
@@ -40,7 +40,6 @@
 
 CPL_C_START
 
-/** XML node type */
 typedef enum
 {
     /*! Node is an element */           CXT_Element = 0,
@@ -118,6 +117,7 @@ typedef struct CPLXMLNode
     struct CPLXMLNode  *psChild;
 } CPLXMLNode;
 
+
 CPLXMLNode CPL_DLL *CPLParseXMLString( const char * );
 void       CPL_DLL  CPLDestroyXMLNode( CPLXMLNode * );
 CPLXMLNode CPL_DLL *CPLGetXMLNode( CPLXMLNode *poRoot,
@@ -158,27 +158,19 @@ int        CPL_DLL CPLSerializeXMLTreeToFile( const CPLXMLNode *psTree,
 CPL_C_END
 
 #ifdef __cplusplus
-/** Manage a tree of XML nodes so that all nodes are freed when the instance goes
- * out of scope.  Only the top level node should be in a CPLXMLTreeCloser.
- */
+// Manage a tree of XML nodes so that all nodes are freed when the instance goes
+// out of scope.  Only the top level node should be in a CPLXMLTreeCloser.
 class CPLXMLTreeCloser {
  public:
-  /** Constructor */
   explicit CPLXMLTreeCloser(CPLXMLNode* data) { the_data_ = data; }
 
-  /** Destructor */
   ~CPLXMLTreeCloser() {
     if (the_data_) CPLDestroyXMLNode(the_data_);
   }
 
-  /** Returns the node pointer/
-   * Modifying the contents pointed to by the return is allowed.
-   * @return the node pointer */
+  // Modifying the contents pointed to by the return is allowed.
   CPLXMLNode* get() const { return the_data_; }
 
-  /** Returns the node pointer/
-   * Modifying the contents pointed to by the return is allowed.
-   * @return the node pointer */
   CPLXMLNode* operator->() const { return get(); }
 
  private:

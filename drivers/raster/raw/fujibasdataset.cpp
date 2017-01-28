@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: fujibasdataset.cpp 33937 2016-04-10 15:40:56Z goatbar $
  *
  * Project:  eCognition
  * Purpose:  Implementation of FUJI BAS Format
@@ -31,7 +32,11 @@
 #include "gdal_frmts.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id: fujibasdataset.cpp 34643 2016-07-12 13:09:59Z goatbar $");
+CPL_CVSID("$Id: fujibasdataset.cpp 33937 2016-04-10 15:40:56Z goatbar $");
+
+CPL_C_START
+void GDALRegister_FujiBAS();
+CPL_C_END
 
 /************************************************************************/
 /* ==================================================================== */
@@ -188,11 +193,11 @@ GDALDataset *FujiBASDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Create band information object.                                 */
 /* -------------------------------------------------------------------- */
-    const bool bNativeOrder =
+    const int bNativeOrder =
 #ifdef CPL_MSB
-    true
+    TRUE
 #else
-    false
+    FALSE
 #endif
         ;
     poDS->SetBand(

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_gft.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: ogr_gft.h 33138 2016-01-24 11:18:11Z rouault $
  *
  * Project:  GFT Translator
  * Purpose:  Definition of classes for OGR Google Fusion Tables driver.
@@ -71,19 +71,19 @@ protected:
     void                SetGeomFieldName();
 
   public:
-    explicit              OGRGFTLayer(OGRGFTDataSource* poDS);
-                         virtual ~OGRGFTLayer();
+                         OGRGFTLayer(OGRGFTDataSource* poDS);
+                        ~OGRGFTLayer();
 
-    virtual void                ResetReading() override;
-    virtual OGRFeature *        GetNextFeature() override;
+    virtual void                ResetReading();
+    virtual OGRFeature *        GetNextFeature();
 
-    virtual OGRFeatureDefn *    GetLayerDefn() override;
+    virtual OGRFeatureDefn *    GetLayerDefn();
 
-    virtual int                 TestCapability( const char * ) override;
+    virtual int                 TestCapability( const char * );
 
-    virtual OGRErr              SetNextByIndex( GIntBig nIndex ) override;
+    virtual OGRErr              SetNextByIndex( GIntBig nIndex );
 
-    static const char *         GetDefaultGeometryColumnName() { return "geometry"; }
+    const char *        GetDefaultGeometryColumnName() { return "geometry"; }
 
     static int                  ParseCSVResponse(char* pszLine,
                                                  std::vector<CPLString>& aosRes);
@@ -93,7 +93,7 @@ protected:
     int                         GetLatitudeFieldIndex() { return iLatitudeField; }
     int                         GetLongitudeFieldIndex() { return iLongitudeField; }
 
-    static int                  GetFeaturesToFetch() { return atoi(CPLGetConfigOption("GFT_PAGE_SIZE", "500")); }
+    int                         GetFeaturesToFetch() { return atoi(CPLGetConfigOption("GFT_PAGE_SIZE", "500")); }
 };
 
 /************************************************************************/
@@ -112,54 +112,54 @@ class OGRGFTTableLayer : public OGRGFTLayer
     CPLString           osWHERE;
     CPLString           osQuery;
 
-    void                BuildWhere();
+    void                BuildWhere(void);
 
     CPLString          osTransaction;
     int                bInTransaction;
     int                nFeaturesInTransaction;
 
     int                FetchDescribe();
-    virtual int        FetchNextRows() override;
+    virtual int                FetchNextRows();
 
     OGRwkbGeometryType eGTypeForCreation;
 
     std::vector<CPLString>  aosColumnInternalName;
 
     public:
-            OGRGFTTableLayer( OGRGFTDataSource* poDS,
-                              const char* pszTableName,
-                              const char* pszTableId = "",
-                              const char* pszGeomColumnName = "" );
-            virtual ~OGRGFTTableLayer();
+            OGRGFTTableLayer(OGRGFTDataSource* poDS,
+                             const char* pszTableName,
+                             const char* pszTableId = "",
+                             const char* pszGeomColumnName = "");
+            ~OGRGFTTableLayer();
 
-    virtual void                ResetReading() override;
+    virtual void                ResetReading();
 
-    virtual OGRFeatureDefn *    GetLayerDefn() override;
+    virtual OGRFeatureDefn *    GetLayerDefn();
 
-    virtual const char *        GetName() override { return osTableName.c_str(); }
-    virtual GIntBig     GetFeatureCount( int bForce = TRUE ) override;
+    virtual const char *        GetName() { return osTableName.c_str(); }
+    virtual GIntBig     GetFeatureCount( int bForce = TRUE );
 
-    virtual OGRFeature *        GetFeature( GIntBig nFID ) override;
+    virtual OGRFeature *        GetFeature( GIntBig nFID );
 
-    virtual void        SetSpatialFilter( OGRGeometry * ) override;
-    virtual void        SetSpatialFilter( int iGeomField, OGRGeometry *poGeom ) override
+    virtual void        SetSpatialFilter( OGRGeometry * );
+    virtual void        SetSpatialFilter( int iGeomField, OGRGeometry *poGeom )
                 { OGRLayer::SetSpatialFilter(iGeomField, poGeom); }
 
-    virtual OGRErr      SetAttributeFilter( const char * ) override;
+    virtual OGRErr      SetAttributeFilter( const char * );
 
     virtual OGRErr      CreateField( OGRFieldDefn *poField,
-                                     int bApproxOK = TRUE ) override;
-    virtual OGRErr      ICreateFeature( OGRFeature *poFeature ) override;
-    virtual OGRErr      ISetFeature( OGRFeature *poFeature ) override;
-    virtual OGRErr      DeleteFeature( GIntBig nFID ) override;
+                                     int bApproxOK = TRUE );
+    virtual OGRErr      ICreateFeature( OGRFeature *poFeature );
+    virtual OGRErr      ISetFeature( OGRFeature *poFeature );
+    virtual OGRErr      DeleteFeature( GIntBig nFID );
 
-    virtual OGRErr      StartTransaction() override;
-    virtual OGRErr      CommitTransaction() override;
-    virtual OGRErr      RollbackTransaction() override;
+    virtual OGRErr      StartTransaction();
+    virtual OGRErr      CommitTransaction();
+    virtual OGRErr      RollbackTransaction();
 
     const CPLString&            GetTableId() const { return osTableId; }
 
-    virtual int                 TestCapability( const char * ) override;
+    virtual int                 TestCapability( const char * );
 
     void                SetGeometryType(OGRwkbGeometryType eGType);
 };
@@ -173,14 +173,14 @@ class OGRGFTResultLayer : public OGRGFTLayer
     CPLString   osSQL;
     int         bGotAllRows;
 
-    virtual int                FetchNextRows() override;
+    virtual int                FetchNextRows();
 
     public:
             OGRGFTResultLayer(OGRGFTDataSource* poDS,
                               const char* pszSQL);
-            virtual ~OGRGFTResultLayer();
+            ~OGRGFTResultLayer();
 
-    virtual void                ResetReading() override;
+    virtual void                ResetReading();
 
     int     RunSQL();
 };
@@ -213,29 +213,29 @@ class OGRGFTDataSource : public OGRDataSource
 
   public:
                         OGRGFTDataSource();
-                        virtual ~OGRGFTDataSource();
+                        ~OGRGFTDataSource();
 
     int                 Open( const char * pszFilename,
                               int bUpdate );
 
-    virtual const char* GetName() override { return pszName; }
+    virtual const char* GetName() { return pszName; }
 
-    virtual int         GetLayerCount() override { return nLayers; }
-    virtual OGRLayer*   GetLayer( int ) override;
-    virtual OGRLayer    *GetLayerByName(const char *) override;
+    virtual int         GetLayerCount() { return nLayers; }
+    virtual OGRLayer*   GetLayer( int );
+    virtual OGRLayer    *GetLayerByName(const char *);
 
-    virtual int         TestCapability( const char * ) override;
+    virtual int         TestCapability( const char * );
 
     virtual OGRLayer   *ICreateLayer( const char *pszName,
                                      OGRSpatialReference *poSpatialRef = NULL,
                                      OGRwkbGeometryType eGType = wkbUnknown,
-                                     char ** papszOptions = NULL ) override;
-    virtual OGRErr      DeleteLayer(int) override;
+                                     char ** papszOptions = NULL );
+    virtual OGRErr      DeleteLayer(int);
 
     virtual OGRLayer*  ExecuteSQL( const char *pszSQLCommand,
                                    OGRGeometry *poSpatialFilter,
-                                   const char *pszDialect ) override;
-    virtual void       ReleaseResultSet( OGRLayer * poLayer ) override;
+                                   const char *pszDialect );
+    virtual void       ReleaseResultSet( OGRLayer * poLayer );
 
     const CPLString&            GetAccessToken() const { return osAccessToken;}
     const char*                 GetAPIURL() const;
@@ -251,13 +251,13 @@ class OGRGFTDataSource : public OGRDataSource
 class OGRGFTDriver : public OGRSFDriver
 {
   public:
-                virtual ~OGRGFTDriver();
+                ~OGRGFTDriver();
 
-    virtual const char*         GetName() override;
-    virtual OGRDataSource*      Open( const char *, int ) override;
+    virtual const char*         GetName();
+    virtual OGRDataSource*      Open( const char *, int );
     virtual OGRDataSource*      CreateDataSource( const char * pszName,
-                                                  char **papszOptions ) override;
-    virtual int                 TestCapability( const char * ) override;
+                                                  char **papszOptions );
+    virtual int                 TestCapability( const char * );
 };
 
 char **OGRGFTCSVSplitLine( const char *pszString, char chDelimiter );

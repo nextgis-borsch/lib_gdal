@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id:  $
  *
  * Project:  Erdas EIR Raw Driver
  * Purpose:  Implementation of EIRDataset
@@ -32,7 +33,7 @@
 #include "ogr_spatialref.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id: eirdataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
+CPL_CVSID("$Id:  $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -58,13 +59,14 @@ class EIRDataset : public RawDataset
     EIRDataset();
     virtual ~EIRDataset();
 
-    virtual CPLErr GetGeoTransform( double * padfTransform ) override;
+    virtual CPLErr GetGeoTransform( double * padfTransform );
 
-    virtual char **GetFileList() override;
+    virtual char **GetFileList();
 
     static int          Identify( GDALOpenInfo * );
     static GDALDataset *Open( GDALOpenInfo * );
 };
+
 
 /************************************************************************/
 /* ==================================================================== */
@@ -82,9 +84,7 @@ EIRDataset::EIRDataset() :
     bHDRDirty(false),
     papszHDR(NULL),
     papszExtraFiles(NULL)
-{
-    memset( adfGeoTransform, 0, sizeof(adfGeoTransform) );
-}
+{}
 
 /************************************************************************/
 /*                            ~EIRDataset()                            */
@@ -176,6 +176,7 @@ void EIRDataset::ResetKeyValue( const char *pszKey, const char *pszValue )
     bHDRDirty = true;
     papszHDR = CSLAddString( papszHDR, szNewLine );
 }
+
 
 /************************************************************************/
 /*                          GetGeoTransform()                           */
@@ -333,7 +334,8 @@ GDALDataset *EIRDataset::Open( GDALOpenInfo * poOpenInfo )
         }
         else if( EQUAL(papszTokens[0], "FORMAT") )
         {
-            snprintf( szLayout, sizeof(szLayout), "%s", papszTokens[1] );
+            strncpy( szLayout, papszTokens[1], sizeof(szLayout) );
+            szLayout[sizeof(szLayout)-1] = '\0';
         }
         else if( EQUAL(papszTokens[0], "DATATYPE")
                  || EQUAL(papszTokens[0], "DATA_TYPE") )
@@ -530,6 +532,7 @@ GDALDataset *EIRDataset::Open( GDALOpenInfo * poOpenInfo )
 
     return poDS;
 }
+
 
 /************************************************************************/
 /*                         GDALRegister_EIR()                           */

@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ogrwalkdatasource.cpp
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRWalkDatasource class.
@@ -29,8 +30,6 @@
 #include "ogrwalk.h"
 #include <vector>
 
-CPL_CVSID("$Id: ogrwalkdatasource.cpp 35577 2016-09-30 23:30:37Z goatbar $");
-
 /************************************************************************/
 /*                         OGRWalkDataSource()                          */
 /************************************************************************/
@@ -38,8 +37,9 @@ CPL_CVSID("$Id: ogrwalkdatasource.cpp 35577 2016-09-30 23:30:37Z goatbar $");
 OGRWalkDataSource::OGRWalkDataSource() :
     pszName(NULL),
     papoLayers(NULL),
-    nLayers(0)
-{}
+    nLayers(0),
+    bDSUpdate(FALSE)
+{ }
 
 /************************************************************************/
 /*                        ~OGRWalkDataSource()                          */
@@ -63,19 +63,17 @@ OGRWalkDataSource::~OGRWalkDataSource()
 /*                              Open()                                  */
 /************************************************************************/
 
-int OGRWalkDataSource::Open( const char * pszNewName, int /* bUpdate */ )
+int OGRWalkDataSource::Open( const char * pszNewName, int bUpdate )
 {
 /* -------------------------------------------------------------------- */
 /*      If this is the name of an MDB file, then construct the          */
 /*      appropriate connection string.  Otherwise clip of WALK: to      */
 /*      get the DSN.                                                    */
 /* -------------------------------------------------------------------- */
-    char *pszDSN = NULL;
+    char *pszDSN;
 
     if( STARTS_WITH_CI(pszNewName, "WALK:") )
-    {
         pszDSN = CPLStrdup( pszNewName + 5 );
-    }
     else
     {
         const char *pszDSNStringTemplate = "DRIVER=Microsoft Access Driver (*.mdb);DBQ=%s";
@@ -103,6 +101,8 @@ int OGRWalkDataSource::Open( const char * pszNewName, int /* bUpdate */ )
     CPLFree( pszDSN );
 
     pszName = CPLStrdup( pszNewName );
+
+    bDSUpdate = bUpdate;
 
 /* -------------------------------------------------------------------- */
 /*      Collect list of layers and their attributes.                    */
@@ -135,10 +135,12 @@ int OGRWalkDataSource::Open( const char * pszNewName, int /* bUpdate */ )
 /* -------------------------------------------------------------------- */
 /*      Create a layer for each spatial table.                          */
 /* -------------------------------------------------------------------- */
+    unsigned int iTable;
+
     papoLayers = (OGRWalkLayer **) CPLCalloc(apapszGeomColumns.size(),
                                              sizeof( void * ));
 
-    for( unsigned int iTable = 0; iTable < apapszGeomColumns.size(); iTable++ )
+    for( iTable = 0; iTable < apapszGeomColumns.size(); iTable++ )
     {
         char **papszRecord = apapszGeomColumns[iTable];
 

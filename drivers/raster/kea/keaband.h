@@ -1,5 +1,5 @@
 /*
- * $Id: keaband.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: keaband.h 33720 2016-03-15 00:39:53Z goatbar $
  *  keaband.h
  *
  *  Created by Pete Bunting on 01/08/2012.
@@ -60,39 +60,39 @@ public:
     ~KEARasterBand();
 
     // virtual methods for overview support
-    int GetOverviewCount() override;
-    GDALRasterBand* GetOverview(int nOverview) override;
+    int GetOverviewCount();
+    GDALRasterBand* GetOverview(int nOverview);
 
     // virtual methods for band names (aka description)
-    void SetDescription(const char *) override;
+    void SetDescription(const char *);
 
     // virtual methods for handling the metadata
-    CPLErr SetMetadataItem (const char *pszName, const char *pszValue, const char *pszDomain="") override;
-    const char *GetMetadataItem (const char *pszName, const char *pszDomain="") override;
-    char **GetMetadata(const char *pszDomain="") override;
-    CPLErr SetMetadata(char **papszMetadata, const char *pszDomain="") override;
+    CPLErr SetMetadataItem (const char *pszName, const char *pszValue, const char *pszDomain="");
+    const char *GetMetadataItem (const char *pszName, const char *pszDomain="");
+    char **GetMetadata(const char *pszDomain="");
+    CPLErr SetMetadata(char **papszMetadata, const char *pszDomain="");
 
     // virtual methods for the no data value
-    double GetNoDataValue(int *pbSuccess=NULL) override;
-    CPLErr SetNoDataValue(double dfNoData) override;
-    virtual CPLErr DeleteNoDataValue() override;
+    double GetNoDataValue(int *pbSuccess=NULL);
+    CPLErr SetNoDataValue(double dfNoData);
+    virtual CPLErr DeleteNoDataValue();
 
     // virtual methods for RATs
-    GDALRasterAttributeTable *GetDefaultRAT() override;
-    CPLErr SetDefaultRAT(const GDALRasterAttributeTable *poRAT) override;
+    GDALRasterAttributeTable *GetDefaultRAT();
+    CPLErr SetDefaultRAT(const GDALRasterAttributeTable *poRAT);
 
     // virtual methods for color tables
-    GDALColorTable *GetColorTable() override;
-    CPLErr SetColorTable(GDALColorTable *poCT) override;
+    GDALColorTable *GetColorTable();
+    CPLErr SetColorTable(GDALColorTable *poCT);
 
     // virtual methods for color interpretation
-    GDALColorInterp GetColorInterpretation() override;
-    CPLErr SetColorInterpretation(GDALColorInterp gdalinterp) override;
+    GDALColorInterp GetColorInterpretation();
+    CPLErr SetColorInterpretation(GDALColorInterp gdalinterp);
 
     // Virtual methods for band masks.
-    CPLErr CreateMaskBand(int nFlags) override;
-    GDALRasterBand* GetMaskBand() override;
-    int GetMaskFlags() override;
+    CPLErr CreateMaskBand(int nFlags);
+    GDALRasterBand* GetMaskBand();
+    int GetMaskFlags();
 
     // internal methods for overviews
     void readExistingOverviews();
@@ -102,8 +102,8 @@ public:
 
 protected:
     // methods for accessing data as blocks
-    virtual CPLErr IReadBlock( int, int, void * ) override;
-    virtual CPLErr IWriteBlock( int, int, void * ) override;
+    virtual CPLErr IReadBlock( int, int, void * );
+    virtual CPLErr IWriteBlock( int, int, void * );
 
     // updates m_papszMetadataList
     void UpdateMetadataList();
@@ -112,5 +112,6 @@ protected:
     char               **m_papszMetadataList; // CPLStringList of metadata
     kealib::KEADataType  m_eKEADataType; // data type as KEA enum
 };
+
 
 #endif //KEABAND_H

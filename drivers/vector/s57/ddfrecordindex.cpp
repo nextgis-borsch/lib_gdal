@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ddfrecordindex.cpp 33271 2016-01-30 16:01:55Z goatbar $
  *
  * Project:  S-57 Translator
  * Purpose:  Implements DDFRecordIndex class.  This class is used to cache
@@ -31,7 +32,7 @@
 #include "cpl_conv.h"
 #include "s57.h"
 
-CPL_CVSID("$Id: ddfrecordindex.cpp 35542 2016-09-29 14:10:37Z goatbar $");
+CPL_CVSID("$Id: ddfrecordindex.cpp 33271 2016-01-30 16:01:55Z goatbar $");
 
 /************************************************************************/
 /*                           DDFRecordIndex()                           */
@@ -190,7 +191,7 @@ DDFRecord * DDFRecordIndex::FindRecordByObjl( int nObjl )
 /*                            RemoveRecord()                            */
 /************************************************************************/
 
-bool DDFRecordIndex::RemoveRecord( int nKey )
+int DDFRecordIndex::RemoveRecord( int nKey )
 
 {
     if( !bSorted )
@@ -216,7 +217,7 @@ bool DDFRecordIndex::RemoveRecord( int nKey )
     }
 
     if( nMinIndex > nMaxIndex )
-        return false;
+        return FALSE;
 
 /* -------------------------------------------------------------------- */
 /*      Delete this record.                                             */
@@ -233,7 +234,7 @@ bool DDFRecordIndex::RemoveRecord( int nKey )
 
     nRecordCount--;
 
-    return true;
+    return TRUE;
 }
 
 /************************************************************************/

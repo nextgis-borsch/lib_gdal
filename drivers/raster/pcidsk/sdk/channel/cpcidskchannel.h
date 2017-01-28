@@ -58,52 +58,52 @@ namespace PCIDSK
             int channel_number );
         virtual   ~CPCIDSKChannel();
 
-        virtual int GetBlockWidth() const override { return block_width; }
-        virtual int GetBlockHeight() const override { return block_height; }
-        virtual int GetBlockCount() const override;
+        virtual int GetBlockWidth() const { return block_width; }
+        virtual int GetBlockHeight() const { return block_height; }
+        virtual int GetBlockCount() const;
 
-        virtual int GetWidth() const override { return width; }
-        virtual int GetHeight() const override { return height; }
-        virtual eChanType GetType() const override { return pixel_type; }
+        virtual int GetWidth() const { return width; }
+        virtual int GetHeight() const { return height; }
+        virtual eChanType GetType() const { return pixel_type; }
 
-        int       GetOverviewCount() override;
-        PCIDSKChannel  *GetOverview( int i ) override;
-        bool IsOverviewValid( int i ) override;
-        void SetOverviewValidity( int i, bool validity ) override;
-        std::string GetOverviewResampling( int i ) override;
-        std::vector<int> GetOverviewLevelMapping() const override;
+        int       GetOverviewCount();
+        PCIDSKChannel  *GetOverview( int i );
+        bool IsOverviewValid( int i );
+        void SetOverviewValidity( int i, bool validity );
+        std::string GetOverviewResampling( int i );
+        std::vector<int> GetOverviewLevelMapping() const;
 
         int         GetChannelNumber() { return channel_number; }
 
-        std::string GetMetadataValue( const std::string &key ) const override 
+        std::string GetMetadataValue( const std::string &key ) const 
             { return metadata.GetMetadataValue(key); }
-        void        SetMetadataValue( const std::string &key, const std::string &value ) override 
+        void        SetMetadataValue( const std::string &key, const std::string &value ) 
             { metadata.SetMetadataValue(key,value); }
-        std::vector<std::string> GetMetadataKeys() const override
+        std::vector<std::string> GetMetadataKeys() const
             { return metadata.GetMetadataKeys(); }
 
-        virtual void Synchronize() override {}
+        virtual void Synchronize() {}
 
-        std::string GetDescription() override;
-        void SetDescription( const std::string &description ) override;
+        std::string GetDescription();
+        void SetDescription( const std::string &description );
 
-        virtual std::vector<std::string> GetHistoryEntries() const override;
-        virtual void SetHistoryEntries( const std::vector<std::string> &entries ) override;
+        virtual std::vector<std::string> GetHistoryEntries() const;
+        virtual void SetHistoryEntries( const std::vector<std::string> &entries );
         virtual void PushHistory(const std::string &app,
-                                 const std::string &message) override;
+                                 const std::string &message);
 
         virtual void GetChanInfo( std::string &filename, uint64 &image_offset, 
                                   uint64 &pixel_offset, uint64 &line_offset, 
-                                  bool &little_endian ) const override;
+                                  bool &little_endian ) const;
         virtual void SetChanInfo( std::string filename, uint64 image_offset, 
                                   uint64 pixel_offset, uint64 line_offset, 
-                                  bool little_endian ) override;
+                                  bool little_endian );
         virtual void GetEChanInfo( std::string &filename, int &echannel,
                                    int &exoff, int &eyoff, 
-                                   int &exsize, int &eysize ) const override;
+                                   int &exsize, int &eysize ) const;
         virtual void SetEChanInfo( std::string filename, int echannel,
                                    int exoff, int eyoff, 
-                                   int exsize, int eysize ) override;
+                                   int exsize, int eysize );
 
     // Just for CPCIDSKFile.
         void      InvalidateOverviewInfo();

@@ -27,17 +27,16 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#include "gdal.h"
 #include "commonutils.h"
 #include "cpl_string.h"
-#include "gdal.h"
 #include "gnm.h"
-#include "gnm_priv.h"
 
 //#include "ogr_p.h"
 //#include "gnm.h"
 //#include "gnm_api.h"
 
-CPL_CVSID("$Id: gnmmanage.cpp 36533 2016-11-27 23:45:39Z goatbar $");
+CPL_CVSID("$Id$");
 
 enum operation
 {
@@ -94,27 +93,27 @@ static void Usage(const char* pszAdditionalMsg, int bShort)
         const char *pszRFlag = "", *pszWFlag, *pszVirtualIO, *pszSubdatasets;
         char** papszMD = GDALGetMetadata( hDriver, NULL );
 
-        if( CPLFetchBool( papszMD, GDAL_DCAP_RASTER, false ) )
+        if( CSLFetchBoolean( papszMD, GDAL_DCAP_RASTER, FALSE ) )
             continue;
-        if( CPLFetchBool( papszMD, GDAL_DCAP_VECTOR, false ) )
+        if( CSLFetchBoolean( papszMD, GDAL_DCAP_VECTOR, FALSE ) )
             continue;
 
-        if( CPLFetchBool( papszMD, GDAL_DCAP_OPEN, false ) )
+        if( CSLFetchBoolean( papszMD, GDAL_DCAP_OPEN, FALSE ) )
             pszRFlag = "r";
 
-        if( CPLFetchBool( papszMD, GDAL_DCAP_CREATE, false ) )
+        if( CSLFetchBoolean( papszMD, GDAL_DCAP_CREATE, FALSE ) )
             pszWFlag = "w+";
-        else if( CPLFetchBool( papszMD, GDAL_DCAP_CREATECOPY, false ) )
+        else if( CSLFetchBoolean( papszMD, GDAL_DCAP_CREATECOPY, FALSE ) )
             pszWFlag = "w";
         else
             pszWFlag = "o";
 
-        if( CPLFetchBool( papszMD, GDAL_DCAP_VIRTUALIO, false ) )
+        if( CSLFetchBoolean( papszMD, GDAL_DCAP_VIRTUALIO, FALSE ) )
             pszVirtualIO = "v";
         else
             pszVirtualIO = "";
 
-        if( CPLFetchBool( papszMD, GDAL_DMD_SUBDATASETS, false ) )
+        if( CSLFetchBoolean( papszMD, GDAL_DMD_SUBDATASETS, FALSE ) )
             pszSubdatasets = "s";
         else
             pszSubdatasets = "";
@@ -154,14 +153,14 @@ static void Usage(int bShort = TRUE)
     Usage(NULL, bShort);
 }
 
+
 /************************************************************************/
 /*                                main()                                */
 /************************************************************************/
 
 #define CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(nExtraArg) \
     do { if (iArg + nExtraArg >= nArgc) \
-        Usage(CPLSPrintf("%s option requires %d argument(s)", \
-                         papszArgv[iArg], nExtraArg)); } while( false )
+        Usage(CPLSPrintf("%s option requires %d argument(s)", papszArgv[iArg], nExtraArg)); } while(0)
 
 int main( int nArgc, char ** papszArgv )
 
@@ -388,11 +387,7 @@ int main( int nArgc, char ** papszArgv )
             exit(1);
         }
 
-        if( poDriver == NULL )
-        {
-            CPLAssert( false );
-            exit(1);
-        }
+        CPLAssert( poDriver != NULL);
 
         printf( "INFO: Open of `%s'\n      using driver `%s' successful.\n",
                     pszDataSource, poDriver->GetDescription() );
@@ -474,6 +469,7 @@ int main( int nArgc, char ** papszArgv )
                 }
             }
         }
+
     }
     else if(stOper == op_create)
     {
@@ -518,7 +514,7 @@ int main( int nArgc, char ** papszArgv )
 
         char** papszMD = poDriver->GetMetadata();
 
-        if( !CPLFetchBool( papszMD, GDAL_DCAP_GNM, false ) )
+        if( !CSLFetchBoolean( papszMD, GDAL_DCAP_GNM, FALSE ) )
             Usage("not a GNM driver");
 
         poDS = (GNMNetwork*) poDriver->Create( pszPath, 0, 0, 0, GDT_Unknown,
@@ -538,6 +534,7 @@ int main( int nArgc, char ** papszArgv )
                    "new dataset at %s\n", CPLFormFilename(pszPath,
                     pszNetworkName, NULL));
         }
+
     }
     else if(stOper == op_import)
     {
@@ -546,6 +543,7 @@ int main( int nArgc, char ** papszArgv )
 
         if(pszInputDataset == NULL)
             Usage("No input dataset name provided");
+
 
         // open
         poDS = (GNMNetwork*) GDALOpenEx( pszDataSource,
@@ -788,6 +786,7 @@ int main( int nArgc, char ** papszArgv )
         {
             printf("Features connected successfully\n");
         }
+
     }
     else if(stOper == op_delete)
     {

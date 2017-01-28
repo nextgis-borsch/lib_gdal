@@ -1,5 +1,5 @@
 /*
- * $Id: ogr_python.i 34525 2016-07-03 02:53:47Z goatbar $
+ * $Id: ogr_python.i 33763 2016-03-21 16:31:17Z rouault $
  *
  * python specific code for ogr bindings.
  */

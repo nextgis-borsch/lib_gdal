@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: ddfrecord.cpp 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  ISO 8211 Access
  * Purpose:  Implements the DDFRecord class.
@@ -27,21 +28,10 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "cpl_port.h"
 #include "iso8211.h"
-
-#include <cstddef>
-#include <cstdio>
-#include <cstring>
-#if HAVE_FCNTL_H
-#  include <fcntl.h>
-#endif
-
 #include "cpl_conv.h"
-#include "cpl_error.h"
-#include "cpl_vsi.h"
 
-CPL_CVSID("$Id: ddfrecord.cpp 36552 2016-11-29 06:01:45Z goatbar $");
+CPL_CVSID("$Id: ddfrecord.cpp 33717 2016-03-14 06:29:14Z goatbar $");
 
 static const int nLeaderSize = 24;
 
@@ -49,19 +39,27 @@ static const int nLeaderSize = 24;
 /*                             DDFRecord()                              */
 /************************************************************************/
 
-DDFRecord::DDFRecord( DDFModule * poModuleIn ) :
-    poModule(poModuleIn),
-    nReuseHeader(FALSE),
-    nFieldOffset(0),
-    _sizeFieldTag(poModuleIn->GetSizeFieldTag()),
-    _sizeFieldPos(5),
-    _sizeFieldLength(5),
-    nDataSize(0),
-    pachData(NULL),
-    nFieldCount(0),
-    paoFields(NULL),
-    bIsClone(FALSE)
-{}
+DDFRecord::DDFRecord( DDFModule * poModuleIn )
+
+{
+    poModule = poModuleIn;
+
+    nReuseHeader = FALSE;
+
+    nFieldOffset = 0;
+
+    nDataSize = 0;
+    pachData = NULL;
+
+    nFieldCount = 0;
+    paoFields = NULL;
+
+    bIsClone = FALSE;
+
+    _sizeFieldTag = poModuleIn->GetSizeFieldTag();
+    _sizeFieldPos = 5;
+    _sizeFieldLength = 5;
+}
 
 /************************************************************************/
 /*                             ~DDFRecord()                             */
@@ -83,7 +81,7 @@ DDFRecord::~DDFRecord()
 /**
  * Write out record contents to debugging file.
  *
- * A variety of information about this record, and all its fields and
+ * A variety of information about this record, and all it's fields and
  * subfields is written to the given debugging file handle.  Note that
  * field definition information (ala DDFFieldDefn) isn't written.
  *
@@ -127,7 +125,7 @@ int DDFRecord::Read()
 /* -------------------------------------------------------------------- */
     if( !nReuseHeader )
     {
-        return ReadHeader();
+        return( ReadHeader() );
     }
 
 /* -------------------------------------------------------------------- */
@@ -710,7 +708,8 @@ int DDFRecord::GetIntSubfield( const char * pszField, int iFieldIndex,
                                int * pnSuccess )
 
 {
-    int nDummyErr = FALSE;
+    DDFField    *poField;
+    int         nDummyErr;
 
     if( pnSuccess == NULL )
         pnSuccess = &nDummyErr;
@@ -720,15 +719,16 @@ int DDFRecord::GetIntSubfield( const char * pszField, int iFieldIndex,
 /* -------------------------------------------------------------------- */
 /*      Fetch the field. If this fails, return zero.                    */
 /* -------------------------------------------------------------------- */
-    DDFField *poField = FindField( pszField, iFieldIndex );
+    poField = FindField( pszField, iFieldIndex );
     if( poField == NULL )
         return 0;
 
 /* -------------------------------------------------------------------- */
 /*      Get the subfield definition                                     */
 /* -------------------------------------------------------------------- */
-    DDFSubfieldDefn *poSFDefn =
-        poField->GetFieldDefn()->FindSubfieldDefn( pszSubfield );
+    DDFSubfieldDefn     *poSFDefn;
+
+    poSFDefn = poField->GetFieldDefn()->FindSubfieldDefn( pszSubfield );
     if( poSFDefn == NULL )
         return 0;
 
@@ -779,12 +779,12 @@ int DDFRecord::GetIntSubfield( const char * pszField, int iFieldIndex,
  */
 
 double DDFRecord::GetFloatSubfield( const char * pszField, int iFieldIndex,
-                                    const char * pszSubfield,
-                                    int iSubfieldIndex,
+                                 const char * pszSubfield, int iSubfieldIndex,
                                     int * pnSuccess )
 
 {
-    int nDummyErr = FALSE;
+    DDFField    *poField;
+    int         nDummyErr;
 
     if( pnSuccess == NULL )
         pnSuccess = &nDummyErr;
@@ -794,15 +794,16 @@ double DDFRecord::GetFloatSubfield( const char * pszField, int iFieldIndex,
 /* -------------------------------------------------------------------- */
 /*      Fetch the field. If this fails, return zero.                    */
 /* -------------------------------------------------------------------- */
-    DDFField *poField = FindField( pszField, iFieldIndex );
+    poField = FindField( pszField, iFieldIndex );
     if( poField == NULL )
         return 0;
 
 /* -------------------------------------------------------------------- */
 /*      Get the subfield definition                                     */
 /* -------------------------------------------------------------------- */
-    DDFSubfieldDefn *poSFDefn =
-        poField->GetFieldDefn()->FindSubfieldDefn( pszSubfield );
+    DDFSubfieldDefn     *poSFDefn;
+
+    poSFDefn = poField->GetFieldDefn()->FindSubfieldDefn( pszSubfield );
     if( poSFDefn == NULL )
         return 0;
 
@@ -858,7 +859,8 @@ DDFRecord::GetStringSubfield( const char * pszField, int iFieldIndex,
                               int * pnSuccess )
 
 {
-    int nDummyErr = FALSE;
+    DDFField    *poField;
+    int         nDummyErr;
 
     if( pnSuccess == NULL )
         pnSuccess = &nDummyErr;
@@ -868,15 +870,16 @@ DDFRecord::GetStringSubfield( const char * pszField, int iFieldIndex,
 /* -------------------------------------------------------------------- */
 /*      Fetch the field. If this fails, return zero.                    */
 /* -------------------------------------------------------------------- */
-    DDFField *poField = FindField( pszField, iFieldIndex );
+    poField = FindField( pszField, iFieldIndex );
     if( poField == NULL )
         return NULL;
 
 /* -------------------------------------------------------------------- */
 /*      Get the subfield definition                                     */
 /* -------------------------------------------------------------------- */
-    DDFSubfieldDefn *poSFDefn =
-        poField->GetFieldDefn()->FindSubfieldDefn( pszSubfield );
+    DDFSubfieldDefn     *poSFDefn;
+
+    poSFDefn = poField->GetFieldDefn()->FindSubfieldDefn( pszSubfield );
     if( poSFDefn == NULL )
         return NULL;
 
@@ -896,7 +899,7 @@ DDFRecord::GetStringSubfield( const char * pszField, int iFieldIndex,
 /* -------------------------------------------------------------------- */
     *pnSuccess = TRUE;
 
-    return poSFDefn->ExtractStringData( l_pachData, nBytesRemaining, NULL );
+    return( poSFDefn->ExtractStringData( l_pachData, nBytesRemaining, NULL ) );
 }
 
 /************************************************************************/
@@ -908,7 +911,7 @@ DDFRecord::GetStringSubfield( const char * pszField, int iFieldIndex,
  *
  * This method is used to make a copy of a record that will become (mostly)
  * the properly of application.  However, it is automatically destroyed if
- * the DDFModule it was created relative to is destroyed, as its field
+ * the DDFModule it was created relative to is destroyed, as it's field
  * and subfield definitions relate to that DDFModule.  However, it does
  * persist even when the record returned by DDFModule::ReadRecord() is
  * invalidated, such as when reading a new record.  This allows an application
@@ -922,7 +925,9 @@ DDFRecord::GetStringSubfield( const char * pszField, int iFieldIndex,
 DDFRecord * DDFRecord::Clone()
 
 {
-    DDFRecord *poNR = new DDFRecord( poModule );
+    DDFRecord   *poNR;
+
+    poNR = new DDFRecord( poModule );
 
     poNR->nReuseHeader = FALSE;
     poNR->nFieldOffset = nFieldOffset;
@@ -980,7 +985,9 @@ DDFRecord *DDFRecord::CloneOn( DDFModule *poTargetModule )
 /*      Verify that all fields have a corresponding field definition    */
 /*      on the target module.                                           */
 /* -------------------------------------------------------------------- */
-    for( int i = 0; i < nFieldCount; i++ )
+    int         i;
+
+    for( i = 0; i < nFieldCount; i++ )
     {
         DDFFieldDefn    *poDefn = paoFields[i].GetFieldDefn();
 
@@ -991,16 +998,20 @@ DDFRecord *DDFRecord::CloneOn( DDFModule *poTargetModule )
 /* -------------------------------------------------------------------- */
 /*      Create a clone.                                                 */
 /* -------------------------------------------------------------------- */
-    DDFRecord *poClone = Clone();
+    DDFRecord   *poClone;
+
+    poClone = Clone();
 
 /* -------------------------------------------------------------------- */
 /*      Update all internal information to reference other module.      */
 /* -------------------------------------------------------------------- */
-    for( int i = 0; i < nFieldCount; i++ )
+    for( i = 0; i < nFieldCount; i++ )
     {
-        DDFField *poField = poClone->paoFields + i;
-        DDFFieldDefn *poDefn =
-            poTargetModule->FindFieldDefn( poField->GetFieldDefn()->GetName() );
+        DDFField        *poField = poClone->paoFields+i;
+        DDFFieldDefn    *poDefn;
+
+        poDefn = poTargetModule->FindFieldDefn(
+            poField->GetFieldDefn()->GetName() );
 
         poField->Initialize( poDefn, poField->GetData(),
                              poField->GetDataSize() );
@@ -1012,6 +1023,7 @@ DDFRecord *DDFRecord::CloneOn( DDFModule *poTargetModule )
 
     return poClone;
 }
+
 
 /************************************************************************/
 /*                            DeleteField()                             */
@@ -1109,7 +1121,7 @@ int DDFRecord::ResizeField( DDFField *poField, int nNewDataSize )
 
     if( iTarget == nFieldCount )
     {
-        CPLAssert( false );
+        CPLAssert( FALSE );
         return FALSE;
     }
 
@@ -1167,7 +1179,9 @@ int DDFRecord::ResizeField( DDFField *poField, int nNewDataSize )
     {
         for( i = iTarget+1; i < nFieldCount; i++ )
         {
-            char *pszOldDataLocation = (char *) paoFields[i].GetData();
+            char *pszOldDataLocation;
+
+            pszOldDataLocation = (char *) paoFields[i].GetData();
 
             paoFields[i].Initialize( paoFields[i].GetFieldDefn(),
                                      pszOldDataLocation + nBytesToAdd,
@@ -1178,7 +1192,9 @@ int DDFRecord::ResizeField( DDFField *poField, int nNewDataSize )
     {
         for( i = nFieldCount-1; i > iTarget; i-- )
         {
-            char *pszOldDataLocation = (char *) paoFields[i].GetData();
+            char *pszOldDataLocation;
+
+            pszOldDataLocation = (char *) paoFields[i].GetData();
 
             paoFields[i].Initialize( paoFields[i].GetFieldDefn(),
                                      pszOldDataLocation + nBytesToAdd,
@@ -1217,7 +1233,9 @@ DDFField *DDFRecord::AddField( DDFFieldDefn *poDefn )
 /*      Reallocate the fields array larger by one, and initialize       */
 /*      the new field.                                                  */
 /* -------------------------------------------------------------------- */
-    DDFField *paoNewFields = new DDFField[nFieldCount+1];
+    DDFField    *paoNewFields;
+
+    paoNewFields = new DDFField[nFieldCount+1];
     if( nFieldCount > 0 )
     {
         memcpy( paoNewFields, paoFields, sizeof(DDFField) * nFieldCount );
@@ -1298,17 +1316,20 @@ DDFRecord::SetFieldRaw( DDFField *poField, int iIndexWithinField,
     if( iIndexWithinField == nRepeatCount
         || !poField->GetFieldDefn()->IsRepeating() )
     {
+        char    *pachFieldData;
+        int     nOldSize;
+
         if( !poField->GetFieldDefn()->IsRepeating() && iIndexWithinField != 0 )
             return FALSE;
 
-        int nOldSize = poField->GetDataSize();
+        nOldSize = poField->GetDataSize();
         if( nOldSize == 0 )
             nOldSize++; // for added DDF_FIELD_TERMINATOR.
 
         if( !ResizeField( poField, nOldSize + nRawDataSize ) )
             return FALSE;
 
-        char *pachFieldData = (char *) poField->GetData();
+        pachFieldData = (char *) poField->GetData();
         memcpy( pachFieldData + nOldSize - 1,
                 pachRawData, nRawDataSize );
         pachFieldData[nOldSize+nRawDataSize-1] = DDF_FIELD_TERMINATOR;
@@ -1320,14 +1341,15 @@ DDFRecord::SetFieldRaw( DDFField *poField, int iIndexWithinField,
 /*      Get a pointer to the start of the existing data for this        */
 /*      iteration of the field.                                         */
 /* -------------------------------------------------------------------- */
-    const char *pachWrkData = NULL;
-    int nInstanceSize = 0;
+    const char *pachWrkData;
+    int         nInstanceSize;
 
     // We special case this to avoid a lot of warnings when initializing
     // the field the first time.
     if( poField->GetDataSize() == 0 )
     {
         pachWrkData = poField->GetData();
+        nInstanceSize = 0;
     }
     else
     {
@@ -1338,12 +1360,15 @@ DDFRecord::SetFieldRaw( DDFField *poField, int iIndexWithinField,
 /* -------------------------------------------------------------------- */
 /*      Create new image of this whole field.                           */
 /* -------------------------------------------------------------------- */
-    int nNewFieldSize = poField->GetDataSize() - nInstanceSize + nRawDataSize;
+    char        *pachNewImage;
+    int         nPreBytes, nPostBytes, nNewFieldSize;
 
-    char *pachNewImage = (char *) CPLMalloc(nNewFieldSize);
+    nNewFieldSize = poField->GetDataSize() - nInstanceSize + nRawDataSize;
 
-    int nPreBytes = static_cast<int>(pachWrkData - poField->GetData());
-    int nPostBytes = poField->GetDataSize() - nPreBytes - nInstanceSize;
+    pachNewImage = (char *) CPLMalloc(nNewFieldSize);
+
+    nPreBytes = static_cast<int>(pachWrkData - poField->GetData());
+    nPostBytes = poField->GetDataSize() - nPreBytes - nInstanceSize;
 
     memcpy( pachNewImage, poField->GetData(), nPreBytes );
     memcpy( pachNewImage + nPreBytes + nRawDataSize,
@@ -1394,12 +1419,13 @@ DDFRecord::UpdateFieldRaw( DDFField *poField, int iIndexWithinField,
 /* -------------------------------------------------------------------- */
 /*      Figure out how much pre and post data there is.                 */
 /* -------------------------------------------------------------------- */
-    int nInstanceSize = 0;
+    char *pachWrkData;
+    int         nInstanceSize, nPostBytes, nPreBytes;
 
-    char *pachWrkData = (char *) poField->GetInstanceData( iIndexWithinField,
-                                                           &nInstanceSize );
-    int nPreBytes = static_cast<int>(pachWrkData - poField->GetData() + nStartOffset);
-    int nPostBytes = poField->GetDataSize() - nPreBytes - nOldSize;
+    pachWrkData = (char *) poField->GetInstanceData( iIndexWithinField,
+                                                     &nInstanceSize );
+    nPreBytes = static_cast<int>(pachWrkData - poField->GetData() + nStartOffset);
+    nPostBytes = poField->GetDataSize() - nPreBytes - nOldSize;
 
 /* -------------------------------------------------------------------- */
 /*      If we aren't changing the size, just copy over the existing     */
@@ -1477,8 +1503,11 @@ int DDFRecord::ResetDirectory()
 /* -------------------------------------------------------------------- */
     if( nDirSize != nFieldOffset )
     {
-        const int nNewDataSize = nDataSize - nFieldOffset + nDirSize;
-        char *pachNewData = (char *) CPLMalloc(nNewDataSize);
+        char *pachNewData;
+        int  nNewDataSize;
+
+        nNewDataSize = nDataSize - nFieldOffset + nDirSize;
+        pachNewData = (char *) CPLMalloc(nNewDataSize);
         memcpy( pachNewData + nDirSize,
                 pachData + nFieldOffset,
                 nNewDataSize - nDirSize );
@@ -1549,13 +1578,14 @@ int DDFRecord::CreateDefaultFieldInstance( DDFField *poField,
                                            int iIndexWithinField )
 
 {
-    int nRawSize = 0;
-    char *pachRawData = poField->GetFieldDefn()->GetDefaultValue( &nRawSize );
+    int nRawSize, nSuccess;
+    char *pachRawData;
+
+    pachRawData = poField->GetFieldDefn()->GetDefaultValue( &nRawSize );
     if( pachRawData == NULL )
         return FALSE;
 
-    const int nSuccess =
-        SetFieldRaw( poField, iIndexWithinField, pachRawData, nRawSize);
+    nSuccess = SetFieldRaw( poField, iIndexWithinField, pachRawData, nRawSize);
 
     CPLFree( pachRawData );
 
@@ -1592,15 +1622,18 @@ int DDFRecord::SetStringSubfield( const char *pszField, int iFieldIndex,
 /* -------------------------------------------------------------------- */
 /*      Fetch the field. If this fails, return zero.                    */
 /* -------------------------------------------------------------------- */
-    DDFField *poField = FindField( pszField, iFieldIndex );
+    DDFField *poField;
+
+    poField = FindField( pszField, iFieldIndex );
     if( poField == NULL )
         return FALSE;
 
 /* -------------------------------------------------------------------- */
 /*      Get the subfield definition                                     */
 /* -------------------------------------------------------------------- */
-    DDFSubfieldDefn *poSFDefn =
-        poField->GetFieldDefn()->FindSubfieldDefn( pszSubfield );
+    DDFSubfieldDefn     *poSFDefn;
+
+    poSFDefn = poField->GetFieldDefn()->FindSubfieldDefn( pszSubfield );
     if( poSFDefn == NULL )
         return FALSE;
 
@@ -1656,22 +1689,22 @@ int DDFRecord::SetStringSubfield( const char *pszField, int iFieldIndex,
 /* -------------------------------------------------------------------- */
 /*      We will need to resize the raw data.                            */
 /* -------------------------------------------------------------------- */
-    int nInstanceSize = 0;
+    const char *pachFieldInstData;
+    int         nInstanceSize, nStartOffset, nSuccess;
+    char *pachNewData;
 
-    const char *pachFieldInstData = poField->GetInstanceData( iFieldIndex,
-                                                              &nInstanceSize );
+    pachFieldInstData = poField->GetInstanceData( iFieldIndex,
+                                                  &nInstanceSize );
 
-    const int nStartOffset =
-        static_cast<int>(pachSubfieldData - pachFieldInstData);
+    nStartOffset = static_cast<int>(pachSubfieldData - pachFieldInstData);
 
-    char *pachNewData = (char *) CPLMalloc(nFormattedLen);
+    pachNewData = (char *) CPLMalloc(nFormattedLen);
     poSFDefn->FormatStringValue( pachNewData, nFormattedLen, NULL,
                                  pszValue, nValueLength );
 
-    const int nSuccess =
-        UpdateFieldRaw( poField, iFieldIndex,
-                        nStartOffset, nExistingLength,
-                        pachNewData, nFormattedLen );
+    nSuccess = UpdateFieldRaw( poField, iFieldIndex,
+                               nStartOffset, nExistingLength,
+                               pachNewData, nFormattedLen );
 
     CPLFree( pachNewData );
 
@@ -1705,15 +1738,18 @@ int DDFRecord::SetIntSubfield( const char *pszField, int iFieldIndex,
 /* -------------------------------------------------------------------- */
 /*      Fetch the field. If this fails, return zero.                    */
 /* -------------------------------------------------------------------- */
-    DDFField *poField = FindField( pszField, iFieldIndex );
+    DDFField *poField;
+
+    poField = FindField( pszField, iFieldIndex );
     if( poField == NULL )
         return FALSE;
 
 /* -------------------------------------------------------------------- */
 /*      Get the subfield definition                                     */
 /* -------------------------------------------------------------------- */
-    DDFSubfieldDefn *poSFDefn =
-        poField->GetFieldDefn()->FindSubfieldDefn( pszSubfield );
+    DDFSubfieldDefn     *poSFDefn;
+
+    poSFDefn = poField->GetFieldDefn()->FindSubfieldDefn( pszSubfield );
     if( poSFDefn == NULL )
         return FALSE;
 
@@ -1768,22 +1804,22 @@ int DDFRecord::SetIntSubfield( const char *pszField, int iFieldIndex,
 /* -------------------------------------------------------------------- */
 /*      We will need to resize the raw data.                            */
 /* -------------------------------------------------------------------- */
-    int nInstanceSize = 0;
+    const char *pachFieldInstData;
+    int         nInstanceSize, nStartOffset, nSuccess;
+    char *pachNewData;
 
-    const char *pachFieldInstData = poField->GetInstanceData( iFieldIndex,
-                                                              &nInstanceSize );
+    pachFieldInstData = poField->GetInstanceData( iFieldIndex,
+                                                  &nInstanceSize );
 
-    const int nStartOffset =
-        static_cast<int>(pachSubfieldData - pachFieldInstData);
+    nStartOffset = static_cast<int>(pachSubfieldData - pachFieldInstData);
 
-    char *pachNewData = (char *) CPLMalloc(nFormattedLen);
+    pachNewData = (char *) CPLMalloc(nFormattedLen);
     poSFDefn->FormatIntValue( pachNewData, nFormattedLen, NULL,
                               nNewValue );
 
-    const int nSuccess =
-        UpdateFieldRaw( poField, iFieldIndex,
-                        nStartOffset, nExistingLength,
-                        pachNewData, nFormattedLen );
+    nSuccess = UpdateFieldRaw( poField, iFieldIndex,
+                               nStartOffset, nExistingLength,
+                               pachNewData, nFormattedLen );
 
     CPLFree( pachNewData );
 
@@ -1817,15 +1853,18 @@ int DDFRecord::SetFloatSubfield( const char *pszField, int iFieldIndex,
 /* -------------------------------------------------------------------- */
 /*      Fetch the field. If this fails, return zero.                    */
 /* -------------------------------------------------------------------- */
-    DDFField *poField = FindField( pszField, iFieldIndex );
+    DDFField *poField;
+
+    poField = FindField( pszField, iFieldIndex );
     if( poField == NULL )
         return FALSE;
 
 /* -------------------------------------------------------------------- */
 /*      Get the subfield definition                                     */
 /* -------------------------------------------------------------------- */
-    DDFSubfieldDefn *poSFDefn =
-        poField->GetFieldDefn()->FindSubfieldDefn( pszSubfield );
+    DDFSubfieldDefn     *poSFDefn;
+
+    poSFDefn = poField->GetFieldDefn()->FindSubfieldDefn( pszSubfield );
     if( poSFDefn == NULL )
         return FALSE;
 
@@ -1880,21 +1919,22 @@ int DDFRecord::SetFloatSubfield( const char *pszField, int iFieldIndex,
 /* -------------------------------------------------------------------- */
 /*      We will need to resize the raw data.                            */
 /* -------------------------------------------------------------------- */
-    int nInstanceSize = 0;
+    const char *pachFieldInstData;
+    int         nInstanceSize, nStartOffset, nSuccess;
+    char *pachNewData;
 
-    const char *pachFieldInstData =
-        poField->GetInstanceData( iFieldIndex, &nInstanceSize );
+    pachFieldInstData = poField->GetInstanceData( iFieldIndex,
+                                                  &nInstanceSize );
 
-    const int nStartOffset = (int) (pachSubfieldData - pachFieldInstData);
+    nStartOffset = (int) (pachSubfieldData - pachFieldInstData);
 
-    char *pachNewData = (char *) CPLMalloc(nFormattedLen);
+    pachNewData = (char *) CPLMalloc(nFormattedLen);
     poSFDefn->FormatFloatValue( pachNewData, nFormattedLen, NULL,
                               dfNewValue );
 
-    const int nSuccess =
-        UpdateFieldRaw( poField, iFieldIndex,
-                        nStartOffset, nExistingLength,
-                        pachNewData, nFormattedLen );
+    nSuccess = UpdateFieldRaw( poField, iFieldIndex,
+                               nStartOffset, nExistingLength,
+                               pachNewData, nFormattedLen );
 
     CPLFree( pachNewData );
 

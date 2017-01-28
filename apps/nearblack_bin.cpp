@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: nearblack_bin.cpp 33011 2016-01-15 22:20:29Z goatbar $
  *
  * Project:  GDAL Utilities
  * Purpose:  Convert nearly black or nearly white border to exact black/white.
@@ -30,7 +31,7 @@
 #include "commonutils.h"
 #include "gdal_utils_priv.h"
 
-CPL_CVSID("$Id: nearblack_bin.cpp 35226 2016-08-28 13:49:13Z goatbar $");
+CPL_CVSID("$Id: nearblack_bin.cpp 33011 2016-01-15 22:20:29Z goatbar $");
 
 /************************************************************************/
 /*                               Usage()                                */
@@ -87,7 +88,7 @@ int main(int argc, char** argv)
 /* -------------------------------------------------------------------- */
     GDALAllRegister();
     if( CPLGetConfigOption("GDAL_CACHEMAX", NULL) == NULL )
-        GDALSetCacheMax( 100000000 );
+	GDALSetCacheMax( 100000000 );
     argc = GDALGeneralCmdLineProcessor( argc, &argv, 0 );
     if( argc < 1 )
         exit( -argc );

@@ -34,6 +34,19 @@
 
 #include "libkml_headers.h"
 
+using kmldom::KmlFactory;
+using kmldom::KmlPtr;
+using kmldom::DocumentPtr;
+using kmldom::ContainerPtr;
+using kmldom::ElementPtr;
+using kmldom::SchemaPtr;
+using kmldom::UpdatePtr;
+using kmlengine::KmzFile;
+using kmlengine::KmzFilePtr;
+
+using kmlengine::KmlFile;
+using kmlengine::KmlFilePtr;
+
 class OGRLIBKMLDataSource;
 
 CPLString OGRLIBKMLGetSanitizedNCName(const char* pszName);
@@ -45,27 +58,29 @@ CPLString OGRLIBKMLGetSanitizedNCName(const char* pszName);
 class OGRLIBKMLLayer:public OGRLayer
 {
     int                       bUpdate;
-    bool                      bUpdated;
+    int                       bUpdated;
     int                       nFeatures;
     int                       iFeature;
     long                      nFID;
     const char                *m_pszName;
     const char                *m_pszFileName;
 
-    kmldom::ContainerPtr      m_poKmlLayer;
-    kmldom::ElementPtr        m_poKmlLayerRoot;
-    kmldom::UpdatePtr         m_poKmlUpdate;
+    ContainerPtr              m_poKmlLayer;
+    ElementPtr                m_poKmlLayerRoot;
+    UpdatePtr                 m_poKmlUpdate;
 
+    DocumentPtr               m_poKmlDocument;
+    //OGRStyleTable            *m_poStyleTable;
     OGRLIBKMLDataSource      *m_poOgrDS;
     OGRFeatureDefn           *m_poOgrFeatureDefn;
-    kmldom::SchemaPtr         m_poKmlSchema;
+    SchemaPtr                 m_poKmlSchema;
     OGRSpatialReference      *m_poOgrSRS;
 
-    bool                      m_bReadGroundOverlay;
-    bool                      m_bUseSimpleField;
+    int                       m_bReadGroundOverlay;
+    int                       m_bUseSimpleField;
 
-    bool                      m_bWriteRegion;
-    bool                      m_bRegionBoundsAuto;
+    int                       m_bWriteRegion;
+    int                       m_bRegionBoundsAuto;
     double                    m_dfRegionMinLodPixels;
     double                    m_dfRegionMaxLodPixels;
     double                    m_dfRegionMinFadeExtent;
@@ -78,99 +93,98 @@ class OGRLIBKMLLayer:public OGRLayer
     CPLString                 osListStyleType;
     CPLString                 osListStyleIconHref;
 
-    bool                      m_bUpdateIsFolder;
+    int                       m_bUpdateIsFolder;
 
   public:
     OGRLIBKMLLayer            ( const char *pszLayerName,
                                 OGRSpatialReference * poSpatialRef,
                                 OGRwkbGeometryType eGType,
                                 OGRLIBKMLDataSource *poOgrDS,
-                                kmldom::ElementPtr poKmlRoot,
-                                kmldom::ContainerPtr poKmlContainer,
-                                kmldom::UpdatePtr poKmlUpdate,
+                                ElementPtr poKmlRoot,
+                                ContainerPtr poKmlContainer,
+                                UpdatePtr poKmlUpdate,
                                 const char *pszFileName,
                                 int bNew,
-                                int bUpdate );
-    virtual ~OGRLIBKMLLayer();
+                                int bUpdate);
+    ~OGRLIBKMLLayer           (  );
 
-    void                      ResetReading() override { iFeature = 0; nFID = 1; };
-    OGRFeature               *GetNextFeature() override;
-    OGRFeature               *GetNextRawFeature();
-    OGRFeatureDefn           *GetLayerDefn() override { return m_poOgrFeatureDefn; };
-    // OGRErr                    SetAttributeFilter(const char * );
-    OGRErr                    ICreateFeature( OGRFeature * poOgrFeat ) override;
-    OGRErr                    ISetFeature( OGRFeature * poOgrFeat ) override;
-    OGRErr                    DeleteFeature( GIntBig nFID ) override;
+    void                      ResetReading  (  ) { iFeature = 0; nFID = 1; };
+    OGRFeature               *GetNextFeature (  );
+    OGRFeature               *GetNextRawFeature (  );
+    OGRFeatureDefn           *GetLayerDefn (  ) { return m_poOgrFeatureDefn; };
+    //OGRErr                    SetAttributeFilter (const char * );
+    OGRErr                    ICreateFeature( OGRFeature * poOgrFeat );
+    OGRErr                    ISetFeature( OGRFeature * poOgrFeat );
+    OGRErr                    DeleteFeature( GIntBig nFID );
 
-    GIntBig                   GetFeatureCount( int bForce = TRUE ) override;
-    OGRErr                    GetExtent( OGREnvelope * psExtent,
-                                         int bForce = TRUE ) override;
-    virtual OGRErr GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce) override
+    GIntBig                   GetFeatureCount ( int bForce = TRUE );
+    OGRErr                    GetExtent ( OGREnvelope * psExtent,
+                                          int bForce = TRUE );
+    virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce)
                 { return OGRLayer::GetExtent(iGeomField, psExtent, bForce); }
 
-    //const char               *GetInfo( const char * );
+    //const char               *GetInfo ( const char * );
 
-    OGRErr                    CreateField( OGRFieldDefn * poField,
-                                           int bApproxOK = TRUE ) override;
+    OGRErr                    CreateField ( OGRFieldDefn * poField,
+                                            int bApproxOK = TRUE );
 
-    OGRErr                    SyncToDisk() override;
+    OGRErr                    SyncToDisk (  );
 
-    OGRStyleTable            *GetStyleTable() override;
-    void                  SetStyleTableDirectly( OGRStyleTable * poStyleTable ) override;
-    void                      SetStyleTable( OGRStyleTable * poStyleTable ) override;
-    const char               *GetName() override { return m_pszName; };
-    int                       TestCapability( const char * ) override;
-    kmldom::ContainerPtr      GetKmlLayer() { return m_poKmlLayer; };
-    kmldom::ElementPtr        GetKmlLayerRoot() { return m_poKmlLayerRoot; };
-    kmldom::SchemaPtr         GetKmlSchema() { return m_poKmlSchema; };
-    const char               *GetFileName() { return m_pszFileName; };
+    OGRStyleTable            *GetStyleTable (  );
+    void                      SetStyleTableDirectly ( OGRStyleTable * poStyleTable );
+    void                      SetStyleTable ( OGRStyleTable * poStyleTable );
+    const char               *GetName(  ) { return m_pszName; };
+    int                       TestCapability ( const char * );
+    ContainerPtr              GetKmlLayer () { return m_poKmlLayer; };
+    ElementPtr                GetKmlLayerRoot () { return m_poKmlLayerRoot; };
+    SchemaPtr                 GetKmlSchema () { return m_poKmlSchema; };
+    const char               *GetFileName (  ) { return m_pszFileName; };
 
-    void                      SetLookAt( const char* pszLookatLongitude,
-                                         const char* pszLookatLatitude,
-                                         const char* pszLookatAltitude,
-                                         const char* pszLookatHeading,
-                                         const char* pszLookatTilt,
-                                         const char* pszLookatRange,
-                                         const char* pszLookatAltitudeMode );
-    void                      SetCamera( const char* pszCameraLongitude,
-                                         const char* pszCameraLatitude,
-                                         const char* pszCameraAltitude,
-                                         const char* pszCameraHeading,
-                                         const char* pszCameraTilt,
-                                         const char* pszCameraRoll,
-                                         const char* pszCameraAltitudeMode );
+    void                      SetLookAt(const char* pszLookatLongitude,
+                                        const char* pszLookatLatitude,
+                                        const char* pszLookatAltitude,
+                                        const char* pszLookatHeading,
+                                        const char* pszLookatTilt,
+                                        const char* pszLookatRange,
+                                        const char* pszLookatAltitudeMode);
+    void                      SetCamera(const char* pszCameraLongitude,
+                                        const char* pszCameraLatitude,
+                                        const char* pszCameraAltitude,
+                                        const char* pszCameraHeading,
+                                        const char* pszCameraTilt,
+                                        const char* pszCameraRoll,
+                                        const char* pszCameraAltitudeMode);
 
-    static CPLString          LaunderFieldNames( CPLString osName );
+    static CPLString          LaunderFieldNames(CPLString osName);
 
-    void                      SetWriteRegion( double dfMinLodPixels,
-                                              double dfMaxLodPixels,
-                                              double dfMinFadeExtent,
-                                              double dfMaxFadeExtent );
-    void                      SetRegionBounds( double dfMinX, double dfMinY,
-                                               double dfMaxX, double dfMaxY );
+    void                      SetWriteRegion(double dfMinLodPixels,
+                                             double dfMaxLodPixels,
+                                             double dfMinFadeExtent,
+                                             double dfMaxFadeExtent);
+    void                      SetRegionBounds(double dfMinX, double dfMinY,
+                                              double dfMaxX, double dfMaxY);
 
-    void                      SetScreenOverlay( const char* pszSOHref,
-                                                const char* pszSOName,
-                                                const char* pszSODescription,
-                                                const char* pszSOOverlayX,
-                                                const char* pszSOOverlayY,
-                                                const char* pszSOOverlayXUnits,
-                                                const char* pszSOOverlayYUnits,
-                                                const char* pszSOScreenX,
-                                                const char* pszSOScreenY,
-                                                const char* pszSOScreenXUnits,
-                                                const char* pszSOScreenYUnits,
-                                                const char* pszSOSizeX,
-                                                const char* pszSOSizeY,
-                                                const char* pszSOSizeXUnits,
-                                                const char* pszSOSizeYUnits );
+    void                      SetScreenOverlay(const char* pszSOHref,
+                                               const char* pszSOName,
+                                               const char* pszSODescription,
+                                               const char* pszSOOverlayX,
+                                               const char* pszSOOverlayY,
+                                               const char* pszSOOverlayXUnits,
+                                               const char* pszSOOverlayYUnits,
+                                               const char* pszSOScreenX,
+                                               const char* pszSOScreenY,
+                                               const char* pszSOScreenXUnits,
+                                               const char* pszSOScreenYUnits,
+                                               const char* pszSOSizeX,
+                                               const char* pszSOSizeY,
+                                               const char* pszSOSizeXUnits,
+                                               const char* pszSOSizeYUnits);
 
-    void                      SetListStyle( const char* pszListStyleType,
-                                            const char* pszListStyleIconHref );
+    void                      SetListStyle(const char* pszListStyleType,
+                                           const char* pszListStyleIconHref);
 
-    void                      Finalize( kmldom::DocumentPtr poKmlDocument );
-    void                      SetUpdateIsFolder( int bUpdateIsFolder )
-        { m_bUpdateIsFolder = CPL_TO_BOOL(bUpdateIsFolder); }
+    void                      Finalize(DocumentPtr poKmlDocument);
+    void                      SetUpdateIsFolder(int bUpdateIsFolder) { m_bUpdateIsFolder = bUpdateIsFolder; }
 };
 
 /******************************************************************************
@@ -182,140 +196,151 @@ class OGRLIBKMLDataSource:public OGRDataSource
     char                     *pszName;
 
     /***** layers *****/
+
     OGRLIBKMLLayer          **papoLayers;
     int                       nLayers;
     int                       nAlloced;
 
-    bool                      bUpdate;
-    bool                      bUpdated;
+    int                       bUpdate;
+    int                       bUpdated;
     CPLString                 osUpdateTargetHref;
 
     char                    **m_papszOptions;
 
     /***** for kml files *****/
-    bool                      m_isKml;
-    kmldom::KmlPtr            m_poKmlDSKml;
-    kmldom::ContainerPtr      m_poKmlDSContainer;
-    kmldom::UpdatePtr         m_poKmlUpdate;
+    int                       m_isKml;
+    KmlPtr                    m_poKmlDSKml;
+    ContainerPtr              m_poKmlDSContainer;
+    UpdatePtr                 m_poKmlUpdate;
 
     /***** for kmz files *****/
-    bool                      m_isKmz;
-    kmldom::ContainerPtr      m_poKmlDocKml;
-    kmldom::ElementPtr        m_poKmlDocKmlRoot;
-    kmldom::ContainerPtr      m_poKmlStyleKml;
-    char                     *pszStylePath;
+
+    int                       m_isKmz;
+    ContainerPtr              m_poKmlDocKml;
+    ElementPtr                m_poKmlDocKmlRoot;
+    ContainerPtr              m_poKmlStyleKml;
+    char               *pszStylePath;
 
     /***** for dir *****/
+
     int                       m_isDir;
 
     /***** the kml factory *****/
-    kmldom::KmlFactory       *m_poKmlFactory;
+
+    KmlFactory               *m_poKmlFactory;
 
     /***** style table pointer *****/
-    void                      SetCommonOptions(
-        kmldom::ContainerPtr poKmlContainer,
-        char** papszOptions );
 
-    void                      ParseDocumentOptions(
-        kmldom::KmlPtr poKml,
-        kmldom::DocumentPtr poKmlDocument );
+    void                      SetCommonOptions(ContainerPtr poKmlContainer,
+                                               char** papszOptions);
+
+    void                      ParseDocumentOptions(KmlPtr poKml,
+                                                   DocumentPtr poKmlDocument);
 
   public:
-    explicit OGRLIBKMLDataSource       ( kmldom::KmlFactory *poKmlFactory );
-    ~OGRLIBKMLDataSource      ();
+    OGRLIBKMLDataSource       ( KmlFactory *poKmlFactory );
+    ~OGRLIBKMLDataSource      (  );
 
-    const char               *GetName() override { return pszName; };
+    const char               *GetName (  ) { return pszName; };
 
-    int                       GetLayerCount() override { return nLayers; }
-    OGRLayer                 *GetLayer( int ) override;
-    OGRLayer                 *GetLayerByName( const char * ) override;
-    OGRErr                    DeleteLayer( int ) override;
+    int                       GetLayerCount (  ) { return nLayers; }
+    OGRLayer                 *GetLayer ( int );
+    OGRLayer                 *GetLayerByName ( const char * );
+    OGRErr                    DeleteLayer ( int );
+
 
     OGRLayer                 *ICreateLayer( const char *pszName,
                                             OGRSpatialReference * poSpatialRef = NULL,
                                             OGRwkbGeometryType eGType = wkbUnknown,
-                                            char **papszOptions = NULL ) override;
+                                            char **papszOptions = NULL );
 
-    OGRStyleTable            *GetStyleTable() override;
-    void                      SetStyleTableDirectly( OGRStyleTable * poStyleTable ) override;
-    void                      SetStyleTable( OGRStyleTable * poStyleTable ) override;
+    OGRStyleTable            *GetStyleTable (  );
+    void                      SetStyleTableDirectly ( OGRStyleTable * poStyleTable );
+    void                      SetStyleTable ( OGRStyleTable * poStyleTable );
 
-    int                       Open( const char *pszFilename,
+    int                       Open ( const char *pszFilename,
                                      int bUpdate );
-    int                       Create( const char *pszFilename,
-                                      char **papszOptions );
+    int                       Create ( const char *pszFilename,
+                                       char **papszOptions );
 
-    void                      FlushCache() override;
-    int                       TestCapability(const char * ) override;
+    void                      FlushCache (  );
+    int                       TestCapability (const char * );
 
-    kmldom::KmlFactory       *GetKmlFactory() { return m_poKmlFactory; };
+    KmlFactory               *GetKmlFactory() { return m_poKmlFactory; };
 
-    const char               *GetStylePath() { return pszStylePath; };
-    int                       ParseIntoStyleTable( std::string * oKmlStyleKml,
-                                                   const char *pszStylePath );
+    const char               *GetStylePath() {return pszStylePath; };
+    int                       ParseIntoStyleTable ( std::string * oKmlStyleKml,
+                                                    const char *pszStylePath);
 
-    // KmzFile                  *GetKmz() { return m_poKmlKmzfile; };
+    //KmzFile                  *GetKmz() { return m_poKmlKmzfile; };
 
-    int                       IsKml() const { return m_isKml; };
-    int                       IsKmz() const { return m_isKmz; };
-    int                       IsDir() const { return m_isDir; };
+    int                       IsKml() {return m_isKml;};
+    int                       IsKmz() {return m_isKmz;};
+    int                       IsDir() {return m_isDir;};
 
-    void                      Updated() { bUpdated = true; };
+    void                      Updated() {bUpdated = TRUE;};
 
-    int                       ParseLayers( kmldom::ContainerPtr poKmlContainer,
-                                           OGRSpatialReference *poOgrSRS );
-    kmldom::SchemaPtr         FindSchema( const char *pszSchemaUrl);
+    int                       ParseLayers ( ContainerPtr poKmlContainer,
+                                            OGRSpatialReference *poOgrSRS );
+    SchemaPtr                 FindSchema ( const char *pszSchemaUrl);
 
   private:
+
     /***** methods to write out various datasource types at destroy *****/
+
     void                      WriteKml();
     void                      WriteKmz();
     void                      WriteDir();
 
     /***** methods to open various datasource types *****/
-    int                       OpenKmz( const char *pszFilename,
-                                       int bUpdate );
-    int                       OpenKml( const char *pszFilename,
-                                       int bUpdate );
-    int                       OpenDir( const char *pszFilename,
-                                       int bUpdate );
+
+    int                       OpenKmz ( const char *pszFilename,
+                                        int bUpdate );
+    int                       OpenKml ( const char *pszFilename,
+                                        int bUpdate );
+    int                       OpenDir ( const char *pszFilename,
+                                        int bUpdate );
 
     /***** methods to create various datasource types *****/
-    int                       CreateKml( const char *pszFilename,
-                                         char **papszOptions );
-    int                       CreateKmz( const char *pszFilename,
-                                         char **papszOptions );
-    int                       CreateDir( const char *pszFilename,
-                                         char **papszOptions );
+
+    int                       CreateKml ( const char *pszFilename,
+                                          char **papszOptions );
+    int                       CreateKmz ( const char *pszFilename,
+                                          char **papszOptions );
+    int                       CreateDir ( const char *pszFilename,
+                                          char **papszOptions );
 
     /***** methods to create layers on various datasource types *****/
-    OGRLIBKMLLayer           *CreateLayerKml( const char *pszLayerName,
-                                              OGRSpatialReference * poOgrSRS,
-                                              OGRwkbGeometryType eGType,
-                                              char **papszOptions );
-    OGRLIBKMLLayer           *CreateLayerKmz( const char *pszLayerName,
-                                              OGRSpatialReference * poOgrSRS,
-                                              OGRwkbGeometryType eGType,
-                                              char **papszOptions );
+
+    OGRLIBKMLLayer           *CreateLayerKml ( const char *pszLayerName,
+                                               OGRSpatialReference * poOgrSRS,
+                                               OGRwkbGeometryType eGType,
+                                               char **papszOptions );
+    OGRLIBKMLLayer           *CreateLayerKmz ( const char *pszLayerName,
+                                               OGRSpatialReference * poOgrSRS,
+                                               OGRwkbGeometryType eGType,
+                                               char **papszOptions );
 
     /***** methods to delete layers on various datasource types *****/
-    OGRErr                    DeleteLayerKml( int );
-    OGRErr                    DeleteLayerKmz( int );
+
+    OGRErr                    DeleteLayerKml ( int );
+    OGRErr                    DeleteLayerKmz ( int );
 
     /***** methods to write a styletable to various datasource types *****/
-    void                      SetStyleTable2Kml( OGRStyleTable * poStyleTable );
-    void                      SetStyleTable2Kmz( OGRStyleTable * poStyleTable );
 
-    OGRLIBKMLLayer           *AddLayer( const char *pszLayerName,
-                                        OGRSpatialReference * poSpatialRef,
-                                        OGRwkbGeometryType eGType,
-                                        OGRLIBKMLDataSource * poOgrDS,
-                                        kmldom::ElementPtr poKmlRoot,
-                                        kmldom::ContainerPtr poKmlContainer,
-                                        const char *pszFileName,
-                                        int bNew,
-                                        int bUpdate,
-                                        int nGuess);
+    void                      SetStyleTable2Kml ( OGRStyleTable * poStyleTable );
+    void                      SetStyleTable2Kmz ( OGRStyleTable * poStyleTable );
+
+    OGRLIBKMLLayer           *AddLayer ( const char *pszLayerName,
+                                         OGRSpatialReference * poSpatialRef,
+                                         OGRwkbGeometryType eGType,
+                                         OGRLIBKMLDataSource * poOgrDS,
+                                         ElementPtr poKmlRoot,
+                                         ContainerPtr poKmlContainer,
+                                         const char *pszFileName,
+                                         int bNew,
+                                         int bUpdate,
+                                         int nGuess);
 };
 
 #endif

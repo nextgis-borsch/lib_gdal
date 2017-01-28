@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: reader_geo_eye.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  GDAL Core
  * Purpose:  Read metadata from GeoEye imagery.
@@ -27,20 +28,9 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "cpl_port.h"
 #include "reader_geo_eye.h"
 
-#include <cstddef>
-#include <cstdio>
-#include <cstring>
-
-#include <string>
-
-#include "cpl_conv.h"
-#include "cpl_error.h"
-#include "cpl_string.h"
-
-CPL_CVSID("$Id: reader_geo_eye.cpp 36682 2016-12-04 20:34:45Z rouault $");
+CPL_CVSID("$Id: reader_geo_eye.cpp 33720 2016-03-15 00:39:53Z goatbar $");
 
 /**
  * GDALMDReaderGeoEye()
@@ -107,10 +97,10 @@ GDALMDReaderGeoEye::GDALMDReaderGeoEye(const char *pszPath,
         }
     }
 
-    if( !m_osIMDSourceFilename.empty() )
+    if( m_osIMDSourceFilename.size() )
         CPLDebug( "MDReaderGeoEye", "IMD Filename: %s",
                   m_osIMDSourceFilename.c_str() );
-    if( !m_osRPBSourceFilename.empty() )
+    if( m_osRPBSourceFilename.size() )
         CPLDebug( "MDReaderGeoEye", "RPB Filename: %s",
                   m_osRPBSourceFilename.c_str() );
 }

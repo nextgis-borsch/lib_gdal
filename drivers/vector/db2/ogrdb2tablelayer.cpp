@@ -29,8 +29,6 @@
 #include "cpl_conv.h"
 #include "ogr_db2.h"
 
-CPL_CVSID("$Id$");
-
 /************************************************************************/
 /*                         OGRDB2AppendEscaped( )                     */
 /************************************************************************/
@@ -296,6 +294,7 @@ CPLErr OGRDB2TableLayer::Initialize( const char *pszSchema,
               "nSRId: '%d', eType: '%d', srText: '%s'",
               nSRId, eType, pszSRText);
 
+
     /* -------------------------------------------------------------------- */
     /*      Parse out schema name if present in layer.  We assume a         */
     /*      schema is provided if there is a dot in the name, and that      */
@@ -418,6 +417,7 @@ OGRErr OGRDB2TableLayer::CreateSpatialIndex()
     GetLayerDefn();
 
     OGRDB2Statement oStatement( poDS->GetSession() );
+
 
     OGREnvelope oExt;
     if (GetExtent(&oExt, TRUE) != OGRERR_NONE)
@@ -574,6 +574,7 @@ OGRDB2Statement *OGRDB2TableLayer::GetStatement()
     return m_poStmt;
 }
 
+
 /************************************************************************/
 /*                           BuildStatement()                           */
 /************************************************************************/
@@ -683,6 +684,7 @@ OGRErr OGRDB2TableLayer::SetAttributeFilter( const char *pszQuery )
     return OGRERR_NONE;
 }
 
+
 /************************************************************************/
 /*                           TestCapability()                           */
 /************************************************************************/
@@ -697,7 +699,7 @@ int OGRDB2TableLayer::TestCapability( const char * pszCap )
             return TRUE;
 
         else if( EQUAL(pszCap,OLCRandomWrite) )
-            return pszFIDColumn != NULL;
+            return (pszFIDColumn != NULL);
     }
 
     if( EQUAL(pszCap,OLCTransactions) )
@@ -707,7 +709,7 @@ int OGRDB2TableLayer::TestCapability( const char * pszCap )
         return TRUE;
 
     if( EQUAL(pszCap,OLCRandomRead) )
-        return pszFIDColumn != NULL;
+        return (pszFIDColumn != NULL);
     else if( EQUAL(pszCap,OLCFastFeatureCount) )
         return TRUE;
     else
@@ -740,6 +742,7 @@ GIntBig OGRDB2TableLayer::GetFeatureCount( int bForce )
     delete poStatement;
     return nRet;
 }
+
 
 /************************************************************************/
 /*                            CreateField()                             */
@@ -897,6 +900,7 @@ OGRErr OGRDB2TableLayer::ISetFeature( OGRFeature *poFeature )
                   "Unable to update features in tables without\n"
                   "a recognised FID column.");
         return eErr;
+
     }
 
     ClearStatement();
@@ -906,6 +910,7 @@ OGRErr OGRDB2TableLayer::ISetFeature( OGRFeature *poFeature )
     /* -------------------------------------------------------------------- */
     if (PrepareFeature(poFeature, 'U'))
         return OGRERR_FAILURE;
+
 
     int nFieldCount = poFeatureDefn->GetFieldCount();
     int nBindNum = 0;
@@ -956,6 +961,7 @@ OGRErr OGRDB2TableLayer::ISetFeature( OGRFeature *poFeature )
         }
         nBindNum++;
     }
+
 
     /* -------------------------------------------------------------------- */
     /*      Execute the update.                                             */
@@ -1019,6 +1025,11 @@ OGRErr OGRDB2TableLayer::DeleteFeature( GIntBig nFID )
     }
     return OGRERR_NONE;
 }
+
+
+
+
+
 
 /************************************************************************/
 /*                          isFieldTypeSupported()                      */
@@ -1179,9 +1190,8 @@ OGRErr OGRDB2TableLayer::ICreateFeature( OGRFeature *poFeature )
             {
                 papBindBuffer[nBindNum] = pszWKT;
                 nBindNum++;
-            }
-            else
-            {
+
+            } else {
                 CPLDebug("OGRDB2TableLayer::ICreateFeature",
                          "Bind parameter failed");
                 FreeBindBuffer(nBindNum, papBindBuffer);
@@ -1205,9 +1215,8 @@ OGRErr OGRDB2TableLayer::ICreateFeature( OGRFeature *poFeature )
         {
             papBindBuffer[nBindNum] = NULL;
             nBindNum++;
-        }
-        else
-        {
+
+        } else {
             CPLDebug("OGRDB2TableLayer::ICreateFeature",
                      "Bind parameter failed");
             FreeBindBuffer(nBindNum, papBindBuffer);
@@ -1265,6 +1274,7 @@ OGRErr OGRDB2TableLayer::ICreateFeature( OGRFeature *poFeature )
             if ( oStatement2.GetColData( 0 ) )
             {
                 poFeature->SetFID( atoi(oStatement2.GetColData( 0 ) ));
+
             }
         }
         CPLDebug("OGR_DB2TableLayer::ICreateFeature","Old FID: " CPL_FRMT_GIB
@@ -1346,6 +1356,7 @@ OGRErr OGRDB2TableLayer::BindFieldValue(OGRDB2Statement *poStatement,
         nParameterType = SQL_BIGINT;
     }
 
+
     if (pValuePointer) {
         if (!m_poPrepStmt->DB2BindParameterIn(
                     "OGRDB2TableLayer::BindFieldValue",
@@ -1363,6 +1374,7 @@ OGRErr OGRDB2TableLayer::BindFieldValue(OGRDB2Statement *poStatement,
     return OGRERR_NONE;
 }
 
+
 /************************************************************************/
 /*                     CreateSpatialIndexIfNecessary()                  */
 /************************************************************************/
@@ -1374,6 +1386,8 @@ void OGRDB2TableLayer::CreateSpatialIndexIfNecessary()
         CreateSpatialIndex();
     }
 }
+
+
 
 /************************************************************************/
 /*                      RunDeferredCreationIfNecessary()                */
@@ -1468,6 +1482,7 @@ OGRErr OGRDB2TableLayer::RunDeferredCreationIfNecessary()
     }
 
     osCommand += ")";
+
 
     OGRErr err = SQLCommand(m_poDS->GetDB(), osCommand.c_str());
     if ( OGRERR_NONE != err )
