@@ -20,19 +20,19 @@ X/MIT
 
 Borsch repository link: https://github.com/nextgis-borsch/borsch
 
-# Sync sources with orgin
+# Sync sources with origin
 
 Clone sources
 
  $ git clone https://github.com/OSGeo/gdal.git gdal-git
 
-or update sources if already clonned
+or update sources
 
  $ git pull
 
-Go to script folder of this repo /etc/cmake-build-helpers and execute
+Go to borsch repository (opt folder) and execute
 
- $ python ./etc/cmake-build-helpers/gdal_restructure.py /path_to_gdal/gdal-git/ ./ ./etc/cmake-build-helpers/gdal_folders.csv
+ $ python tools.py organize --src /path_to_gdal_sources/ --dst_name lib_gdal
 
 # Build status
 
@@ -56,10 +56,10 @@ TODO: Show test states here ([AppVeyor](https://www.appveyor.com/), [Travis CI](
 
 # Raster drivers
 
-Available raster drivers for now (by all driver dirs in sources). Drivers marked
-with '*' have high priority to be implemented.
+Available raster drivers for now (by all driver directories in sources). Drivers marked
+with '\*' have high priority to be implemented.
 
-| Driver | Cmaked | External dependencies | Notes |
+| Driver | CMaked | External dependencies | Notes |
 |---|:-:|---|---|
 | **aaigrid** | **yes** | no | 2 drivers in one (AAIGrid, GRASSASCIIGrid) |
 | **adrg** | **yes** | no | 2 drivers in one (ADRG, SRP) |
@@ -165,9 +165,9 @@ with '*' have high priority to be implemented.
 
 # Vector drivers
 
-Available vector drivers for now (by all driver directories in sources). Drivers marked with '*' have high priority to be implemented.
+Available vector drivers for now (by all driver directories in sources). Drivers marked with '\*' have high priority to be implemented.
 
-| Driver | Cmaked | External dependencies | Notes |
+| Driver | CMaked | External dependencies | Notes |
 |---|:-:|---|---|
 | **aeronavfaa** | **yes** | no | - |
 | **arcgen** | **yes** | no | - |
@@ -255,7 +255,7 @@ Available vector drivers for now (by all driver directories in sources). Drivers
 
 Available raster+vector drivers for now (by all driver dirs in sources):
 
-| Driver | Cmaked | External dependencies | Notes |
+| Driver | CMaked | External dependencies | Notes |
 |---|:-:|---|---|
 | **gpkg** | **yes** | [SQLITE3](https://github.com/nextgis-borsch/lib_sqlite); Optionally: SPATIALITE | Requires [PNG](https://github.com/nextgis-borsch/lib_png)?, [JPEG](https://github.com/nextgis-borsch/lib_jpeg)?, WEBP? drivers; No Spatialite support implemented; Former OGR format |
 | **plscenes** | **yes** | [CURL](https://github.com/nextgis-borsch/lib_curl) | Former OGR format |
@@ -265,7 +265,7 @@ Available raster+vector drivers for now (by all driver dirs in sources):
 
 Available network (GNM) drivers for now (by all driver directories in sources):
 
-| Driver | Cmaked | External dependencies | Notes |
+| Driver | CMaked | External dependencies | Notes |
 |---|:-:|---|---|
 | db | no | no | Requires built PostGIS driver |
 | **file** | **yes** | no | - |
