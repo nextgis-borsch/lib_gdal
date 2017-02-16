@@ -153,8 +153,10 @@ endif()
 
 if(WITH_TIFF_EXTERNAL)
     #TODO: check cases then HAVE_BIGTIFF False
-    SET(HAVE_BIGTIFF TRUE)
+    set(HAVE_BIGTIFF TRUE)
 else()
+    set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${TIFF_INCLUDE_DIR})
+    set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${TIFF_LIBRARIES})
     check_function_exists(TIFFScanlineSize64 HAVE_BIGTIFF)
 endif()
 
@@ -240,7 +242,7 @@ else()
         set(MACOSX_FRAMEWORK FALSE)
     endif()
 
-    
+
     check_c_source_compiles("
         #if defined(__MINGW32__)
         #ifndef __MSVCRT_VERSION__
