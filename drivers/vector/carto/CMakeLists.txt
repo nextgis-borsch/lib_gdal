@@ -27,7 +27,7 @@
 
 CMAKE_DEPENDENT_OPTION(ENABLE_CARTO "Build Carto format" ON
                        "CURL_FOUND" OFF)
-if(ENABLE_CARTO)
+if(ENABLE_CARTO AND ENABLE_PGDUMP)
     set(TARGET_NAME vec_carto)
 
     add_definitions(-DCARTO_ENABLED)
