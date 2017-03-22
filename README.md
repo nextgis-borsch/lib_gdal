@@ -14,7 +14,7 @@ geospatial data formats. This is a mirror of the GDAL Subversion repository.
 
 # License
 
-X/MIT
+![License](https://img.shields.io/badge/License-X/MIT-blue.svg?maxAge=2592000)
 
 # Borsch
 
