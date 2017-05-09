@@ -107,11 +107,12 @@ with '\*' have high priority to be implemented.
 | **iris** | **yes** | no | - |
 | **jaxapalsar** | **yes** | no | - |
 | **jdem** | **yes** | no | - |
-| jp2kak | no |  |  |
+| jp2kak | no |  | needs Kakadu library |
+| jp2lura | no |  | Requires Lurawave library |
 | **jpeg** | **yes** | [JPEG, JPEG12](https://github.com/nextgis-borsch/lib_jpeg) | No jpeg12 support implemented? |
-| jpeg2000 * | no |  |  |
-| jpegls | no |  |  |
-| jpipkak | no |  |  |
+| jpeg2000 * | no |  | needs libjasper |
+| jpegls | no |  | needs CharLS library |
+| jpipkak | no |  | needs Kakadu library |
 | kea | no |  |  |
 | **kmlsuperoverlay** | **yes** | no | - |
 | **l1b** | **yes** | no | - |
@@ -259,7 +260,7 @@ Available raster+vector drivers for now (by all driver dirs in sources):
 |---|:-:|---|---|
 | **gpkg** | **yes** | [SQLITE3](https://github.com/nextgis-borsch/lib_sqlite); Optionally: SPATIALITE | Requires [PNG](https://github.com/nextgis-borsch/lib_png)?, [JPEG](https://github.com/nextgis-borsch/lib_jpeg)?, WEBP? drivers; No Spatialite support implemented; Former OGR format |
 | **plscenes** | **yes** | [CURL](https://github.com/nextgis-borsch/lib_curl) | Former OGR format |
-| cad | no | [OpenCAD](https://github.com/nextgis-borsch/lib_opencad) | GSoC 2016 |
+| cad | yes | [OpenCAD](https://github.com/nextgis-borsch/lib_opencad) | GSoC 2016 |
 
 # Network drivers
 
