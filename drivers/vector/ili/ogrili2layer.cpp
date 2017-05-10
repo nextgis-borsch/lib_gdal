@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrili2layer.cpp 32765 2016-01-05 19:27:15Z rouault $
  *
  * Project:  Interlis 2 Translator
  * Purpose:  Implements OGRILI2Layer class.
@@ -32,14 +31,14 @@
 #include "cpl_string.h"
 #include "ogr_ili2.h"
 
-CPL_CVSID("$Id: ogrili2layer.cpp 32765 2016-01-05 19:27:15Z rouault $");
+CPL_CVSID("$Id: ogrili2layer.cpp 37743 2017-03-17 13:14:00Z rouault $");
 
 /************************************************************************/
 /*                           OGRILI2Layer()                              */
 /************************************************************************/
 
 OGRILI2Layer::OGRILI2Layer( OGRFeatureDefn* poFeatureDefnIn,
-                            GeomFieldInfos oGeomFieldInfosIn,
+                            const GeomFieldInfos& oGeomFieldInfosIn,
                             OGRILI2DataSource *poDSIn ) :
     poFeatureDefn(poFeatureDefnIn),
     oGeomFieldInfos(oGeomFieldInfosIn),
@@ -68,15 +67,14 @@ OGRILI2Layer::~OGRILI2Layer()
     }
 }
 
-
 /************************************************************************/
-/*                             ISetFeature()                             */
+/*                             AddFeature()                             */
 /************************************************************************/
 
-OGRErr OGRILI2Layer::ISetFeature (OGRFeature *poFeature)
+void OGRILI2Layer::AddFeature (OGRFeature *poFeature)
 {
+    poFeature->SetFID( static_cast<GIntBig>(1 + listFeature.size()) );
     listFeature.push_back(poFeature);
-    return OGRERR_NONE;
 }
 
 /************************************************************************/
@@ -263,7 +261,6 @@ static int OGR2ILIGeometryAppend( OGRGeometry *poGeometry, VSILFILE* fp,
             if( !OGR2ILIGeometryAppend( poMember, fp, NULL, "" ) )
                 return FALSE;
         }
-
     }
 
     else
@@ -278,7 +275,7 @@ static int OGR2ILIGeometryAppend( OGRGeometry *poGeometry, VSILFILE* fp,
 
 OGRErr OGRILI2Layer::ICreateFeature( OGRFeature *poFeature ) {
     char szTempBuffer[80];
-    const char* tid;
+    const char* tid = NULL;
     int iField = 0;
     if( poFeatureDefn->GetFieldCount() &&
         EQUAL(poFeatureDefn->GetFieldDefn(iField)->GetNameRef(), "TID") )
@@ -321,7 +318,7 @@ OGRErr OGRILI2Layer::ICreateFeature( OGRFeature *poFeature ) {
 
         OGRFieldDefn *poField = poFeatureDefn->GetFieldDefn( iField );
 
-        if( poFeature->IsFieldSet( iField ) )
+        if( poFeature->IsFieldSetAndNotNull( iField ) )
         {
             const char *pszRaw = poFeature->GetFieldAsString( iField );
             VSIFPrintfL(fp, "<%s>%s</%s>\n", poField->GetNameRef(), pszRaw, poField->GetNameRef());

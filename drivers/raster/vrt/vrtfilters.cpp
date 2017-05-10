@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: vrtfilters.cpp 35350 2016-09-07 07:21:52Z rouault $
  *
  * Project:  Virtual GDAL Datasets
  * Purpose:  Implementation of some filter types.
@@ -28,11 +27,24 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#include "cpl_port.h"
 #include "vrtdataset.h"
+
+#include <cstddef>
+#include <cstdlib>
+#include <cstring>
+
+#include "cpl_conv.h"
+#include "cpl_error.h"
 #include "cpl_minixml.h"
 #include "cpl_string.h"
+#include "cpl_vsi.h"
+#include "gdal.h"
+#include "gdal_priv.h"
 
-CPL_CVSID("$Id: vrtfilters.cpp 35350 2016-09-07 07:21:52Z rouault $");
+CPL_CVSID("$Id: vrtfilters.cpp 37310 2017-02-06 11:42:54Z goatbar $");
+
+/*! @cond Doxygen_Suppress */
 
 /************************************************************************/
 /* ==================================================================== */
@@ -48,6 +60,9 @@ VRTFilteredSource::VRTFilteredSource() :
     m_nSupportedTypesCount(1),
     m_nExtraEdgePixels(0)
 {
+    for( size_t i = 0; i < CPL_ARRAYSIZE(m_aeSupportedTypes); ++i )
+        m_aeSupportedTypes[i] = GDT_Unknown;
+
     m_aeSupportedTypes[0] = GDT_Float32;
 }
 
@@ -78,7 +93,7 @@ void VRTFilteredSource::SetFilteringDataTypesSupported( int nTypeCount,
     if( nTypeCount >
         static_cast<int>( sizeof(m_aeSupportedTypes) / sizeof(GDALDataType) ) )
     {
-        CPLAssert( FALSE );
+        CPLAssert( false );
         nTypeCount = static_cast<int>(
             sizeof(m_aeSupportedTypes) / sizeof(GDALDataType) );
     }
@@ -125,15 +140,25 @@ VRTFilteredSource::RasterIO( int nXOff, int nYOff, int nXSize, int nYSize,
     {
         return VRTComplexSource::RasterIO( nXOff, nYOff, nXSize, nYSize,
                                            pData, nBufXSize, nBufYSize,
-                                           eBufType, nPixelSpace, nLineSpace, psExtraArg );
+                                           eBufType, nPixelSpace, nLineSpace,
+                                           psExtraArg );
     }
 
     // The window we will actually request from the source raster band.
-    double dfReqXOff, dfReqYOff, dfReqXSize, dfReqYSize;
-    int nReqXOff, nReqYOff, nReqXSize, nReqYSize;
+    double dfReqXOff = 0.0;
+    double dfReqYOff = 0.0;
+    double dfReqXSize = 0.0;
+    double dfReqYSize = 0.0;
+    int nReqXOff = 0;
+    int nReqYOff = 0;
+    int nReqXSize = 0;
+    int nReqYSize = 0;
 
     // The window we will actual set _within_ the pData buffer.
-    int nOutXOff, nOutYOff, nOutXSize, nOutYSize;
+    int nOutXOff = 0;
+    int nOutYOff = 0;
+    int nOutXSize = 0;
+    int nOutYSize = 0;
 
     if( !GetSrcDstWindow( nXOff, nYOff, nXSize, nYSize, nBufXSize, nBufYSize,
                         &dfReqXOff, &dfReqYOff, &dfReqXSize, &dfReqYSize,
@@ -195,7 +220,7 @@ VRTFilteredSource::RasterIO( int nXOff, int nYOff, int nXSize, int nYSize,
     const int nExtraYSize = nOutYSize + 2 * m_nExtraEdgePixels;
 
     // FIXME? : risk of multiplication overflow
-    GByte *pabyWorkData = reinterpret_cast<GByte *>(
+    GByte *pabyWorkData = static_cast<GByte *>(
         VSI_CALLOC_VERBOSE( nExtraXSize * nExtraYSize,
                    GDALGetDataTypeSize(eOperDataType) / 8 ) );
 
@@ -204,7 +229,7 @@ VRTFilteredSource::RasterIO( int nXOff, int nYOff, int nXSize, int nYSize,
         return CE_Failure;
     }
 
-    const int nPixelOffset = GDALGetDataTypeSize( eOperDataType ) / 8;
+    const int nPixelOffset = GDALGetDataTypeSizeBytes( eOperDataType );
     const int nLineOffset = nPixelOffset * nExtraXSize;
 
 /* -------------------------------------------------------------------- */
@@ -217,7 +242,7 @@ VRTFilteredSource::RasterIO( int nXOff, int nYOff, int nXSize, int nYSize,
     if( nPixelSpace != nPixelOffset || nLineSpace != nLineOffset
         || eOperDataType != eBufType )
     {
-        pabyOutData = reinterpret_cast<GByte *>(
+        pabyOutData = static_cast<GByte *>(
             VSI_MALLOC3_VERBOSE( nOutXSize, nOutYSize, nPixelOffset ) );
 
         if( pabyOutData == NULL )
@@ -227,7 +252,9 @@ VRTFilteredSource::RasterIO( int nXOff, int nYOff, int nXSize, int nYSize,
         }
     }
     else
+    {
         pabyOutData = reinterpret_cast<GByte *>( pData );
+    }
 
 /* -------------------------------------------------------------------- */
 /*      Figure out the extended window that we want to load.  Note      */
@@ -239,10 +266,10 @@ VRTFilteredSource::RasterIO( int nXOff, int nYOff, int nXSize, int nYSize,
     int nFileXSize = nExtraXSize;
     int nFileYSize = nExtraYSize;
 
-    int nTopFill=0;
-    int nLeftFill=0;
-    int nRightFill=0;
-    int nBottomFill=0;
+    int nTopFill = 0;
+    int nLeftFill = 0;
+    int nRightFill = 0;
+    int nBottomFill = 0;
 
     if( nFileXOff < 0 )
     {
@@ -273,24 +300,26 @@ VRTFilteredSource::RasterIO( int nXOff, int nYOff, int nXSize, int nYSize,
 /* -------------------------------------------------------------------- */
 /*      Load the data.                                                  */
 /* -------------------------------------------------------------------- */
-    const bool bIsComplex = CPL_TO_BOOL( GDALDataTypeIsComplex(eOperDataType) );
-    CPLErr eErr
-        = VRTComplexSource::RasterIOInternal<float>(
-            nFileXOff, nFileYOff, nFileXSize, nFileYSize,
-            pabyWorkData + nLineOffset * nTopFill + nPixelOffset * nLeftFill,
-            nFileXSize, nFileYSize, eOperDataType,
-            nPixelOffset, nLineOffset, psExtraArg,
-            bIsComplex ? GDT_CFloat32 : GDT_Float32 );
-
-    if( eErr != CE_None )
     {
-        if( pabyWorkData != pData )
-            VSIFree( pabyWorkData );
+        const bool bIsComplex = CPL_TO_BOOL( GDALDataTypeIsComplex(eOperDataType) );
+        const CPLErr eErr
+            = VRTComplexSource::RasterIOInternal<float>(
+                nFileXOff, nFileYOff, nFileXSize, nFileYSize,
+                pabyWorkData + nLineOffset * nTopFill + nPixelOffset * nLeftFill,
+                nFileXSize, nFileYSize, eOperDataType,
+                nPixelOffset, nLineOffset, psExtraArg,
+                bIsComplex ? GDT_CFloat32 : GDT_Float32 );
 
-        if( pabyOutData != pData )
-            VSIFree( pabyOutData );
+        if( eErr != CE_None )
+        {
+            if( pabyWorkData != pData )
+                VSIFree( pabyWorkData );
 
-        return eErr;
+            if( pabyOutData != pData )
+                VSIFree( pabyOutData );
+
+            return eErr;
+        }
     }
 
 /* -------------------------------------------------------------------- */
@@ -336,8 +365,8 @@ VRTFilteredSource::RasterIO( int nXOff, int nYOff, int nXSize, int nYSize,
 /* -------------------------------------------------------------------- */
 /*      Filter the data.                                                */
 /* -------------------------------------------------------------------- */
-    eErr = FilterData( nOutXSize, nOutYSize, eOperDataType,
-                       pabyWorkData, pabyOutData );
+    const CPLErr eErr = FilterData( nOutXSize, nOutYSize, eOperDataType,
+                                    pabyWorkData, pabyOutData );
 
     VSIFree( pabyWorkData );
     if( eErr != CE_None )
@@ -417,7 +446,8 @@ CPLErr VRTKernelFilteredSource::SetKernel( int nNewKernelSize,
     if( nNewKernelSize < 1 || (nNewKernelSize % 2) != 1 )
     {
         CPLError( CE_Failure, CPLE_AppDefined,
-                  "Illegal filtering kernel size %d, must be odd positive number.",
+                  "Illegal filtering kernel size %d, "
+                  "must be odd positive number.",
                   nNewKernelSize );
         return CE_Failure;
     }
@@ -425,7 +455,7 @@ CPLErr VRTKernelFilteredSource::SetKernel( int nNewKernelSize,
     CPLFree( m_padfKernelCoefs );
     m_nKernelSize = nNewKernelSize;
 
-    m_padfKernelCoefs = reinterpret_cast<double *>(
+    m_padfKernelCoefs = static_cast<double *>(
         CPLMalloc(sizeof(double) * m_nKernelSize * m_nKernelSize ) );
     memcpy( m_padfKernelCoefs, padfNewCoefs,
             sizeof(double) * m_nKernelSize * m_nKernelSize );
@@ -439,9 +469,10 @@ CPLErr VRTKernelFilteredSource::SetKernel( int nNewKernelSize,
 /*                             FilterData()                             */
 /************************************************************************/
 
-CPLErr VRTKernelFilteredSource::
-FilterData( int nXSize, int nYSize, GDALDataType eType,
-            GByte *pabySrcData, GByte *pabyDstData )
+CPLErr VRTKernelFilteredSource::FilterData( int nXSize, int nYSize,
+                                            GDALDataType eType,
+                                            GByte *pabySrcData,
+                                            GByte *pabyDstData )
 
 {
 /* -------------------------------------------------------------------- */
@@ -464,37 +495,40 @@ FilterData( int nXSize, int nYSize, GDALDataType eType,
 /* -------------------------------------------------------------------- */
     if( eType == GDT_Float32 )
     {
-        int bHasNoData;
-        float fNoData
-            = static_cast<float>( m_poRasterBand->GetNoDataValue(&bHasNoData) );
+        int bHasNoData = FALSE;
+        const float fNoData =
+            static_cast<float>( m_poRasterBand->GetNoDataValue(&bHasNoData) );
 
         for( int iY = 0; iY < nYSize; iY++ )
         {
             for( int iX = 0; iX < nXSize; iX++ )
             {
-                const int iIndex
-                    = (iY+m_nKernelSize/2 ) * (nXSize+2*m_nExtraEdgePixels)
-                    + iX + m_nKernelSize/2;
-                const float  fCenter
-                    = reinterpret_cast<float *>( pabySrcData )[iIndex];
+                const int iIndex =
+                    ( iY + m_nKernelSize / 2 ) *
+                    ( nXSize + 2 * m_nExtraEdgePixels )
+                    + iX + m_nKernelSize / 2;
+                const float fCenter =
+                    reinterpret_cast<float *>( pabySrcData )[iIndex];
 
-                int iKern = 0;
-                double dfSum = 0.0;
-                double dfKernSum = 0.0;
                 float fResult = 0.0;
 
                 // Check if center srcpixel is NoData
-                if(!bHasNoData || fCenter != fNoData)
+                if( !bHasNoData || fCenter != fNoData )
                 {
+                    int iKern = 0;
+                    double dfSum = 0.0;
+                    double dfKernSum = 0.0;
+
                     for( int iYY = 0; iYY < m_nKernelSize; iYY++ )
                     {
-                        float *pafData
-                            = reinterpret_cast<float *>( pabySrcData )
+                        float *pafData =
+                            reinterpret_cast<float *>( pabySrcData )
                             + (iY+iYY) * (nXSize+2*m_nExtraEdgePixels) + iX;
 
-                        for( int i = 0; i < m_nKernelSize; i++, pafData++, iKern++ )
+                        for( int i = 0; i < m_nKernelSize; i++, pafData++,
+                             iKern++ )
                         {
-                            if(!bHasNoData || *pafData != fNoData)
+                            if( !bHasNoData || *pafData != fNoData )
                             {
                                 dfSum += *pafData * m_padfKernelCoefs[iKern];
                                 dfKernSum += m_padfKernelCoefs[iKern];
@@ -509,14 +543,18 @@ FilterData( int nXSize, int nYSize, GDALDataType eType,
                             fResult = 0.0;
                     }
                     else
+                    {
                         fResult = static_cast<float>( dfSum );
+                    }
 
-                    reinterpret_cast<float *>( pabyDstData )[iX + iY * nXSize]
-                        = fResult;
+                    reinterpret_cast<float *>( pabyDstData )[iX + iY * nXSize] =
+                        fResult;
                 }
                 else
-                    reinterpret_cast<float *>( pabyDstData )[iX + iY * nXSize]
-                        = fNoData;
+                {
+                    reinterpret_cast<float *>( pabyDstData )[iX + iY * nXSize] =
+                        fNoData;
+                }
             }
         }
     }
@@ -532,9 +570,11 @@ CPLErr VRTKernelFilteredSource::XMLInit( CPLXMLNode *psTree,
                                          const char *pszVRTPath )
 
 {
-    CPLErr eErr = VRTFilteredSource::XMLInit( psTree, pszVRTPath );
-    if( eErr != CE_None )
-        return eErr;
+    {
+        const CPLErr eErr = VRTFilteredSource::XMLInit( psTree, pszVRTPath );
+        if( eErr != CE_None )
+            return eErr;
+    }
 
     const int nNewKernelSize = atoi(CPLGetXMLValue(psTree,"Kernel.Size","0"));
 
@@ -550,20 +590,20 @@ CPLErr VRTKernelFilteredSource::XMLInit( CPLXMLNode *psTree,
     {
         CSLDestroy( papszCoefItems );
         CPLError( CE_Failure, CPLE_AppDefined,
-                  "Got wrong number of filter kernel coefficients (%s).\n"
+                  "Got wrong number of filter kernel coefficients (%s).  "
                   "Expected %d, got %d.",
                   CPLGetXMLValue(psTree,"Kernel.Coefs",""),
                   nNewKernelSize * nNewKernelSize, nCoefs );
         return CE_Failure;
     }
 
-    double *padfNewCoefs = reinterpret_cast<double *>(
+    double *padfNewCoefs = static_cast<double *>(
         CPLMalloc( sizeof(double) * nCoefs ) );
 
     for( int i = 0; i < nCoefs; i++ )
         padfNewCoefs[i] = CPLAtof(papszCoefItems[i]);
 
-    eErr = SetKernel( nNewKernelSize, padfNewCoefs );
+    const CPLErr eErr = SetKernel( nNewKernelSize, padfNewCoefs );
 
     CPLFree( padfNewCoefs );
     CSLDestroy( papszCoefItems );
@@ -604,14 +644,13 @@ CPLXMLNode *VRTKernelFilteredSource::SerializeToXML( const char *pszVRTPath )
 
     const int nCoefCount = m_nKernelSize * m_nKernelSize;
     const size_t nBufLen = nCoefCount * 32;
-    char *pszKernelCoefs = reinterpret_cast<char *>(
-        CPLMalloc(nBufLen) );
+    char *pszKernelCoefs = static_cast<char *>( CPLMalloc(nBufLen) );
 
     strcpy( pszKernelCoefs, "" );
     for( int iCoef = 0; iCoef < nCoefCount; iCoef++ )
         CPLsnprintf( pszKernelCoefs + strlen(pszKernelCoefs),
                      nBufLen - strlen(pszKernelCoefs),
-                 "%.8g ", m_padfKernelCoefs[iCoef] );
+                     "%.8g ", m_padfKernelCoefs[iCoef] );
 
     CPLSetXMLValue( psKernel, "Size", CPLSPrintf( "%d", m_nKernelSize ) );
     CPLSetXMLValue( psKernel, "Coefs", pszKernelCoefs );
@@ -628,14 +667,16 @@ CPLXMLNode *VRTKernelFilteredSource::SerializeToXML( const char *pszVRTPath )
 VRTSource *VRTParseFilterSources( CPLXMLNode *psChild, const char *pszVRTPath )
 
 {
-    if( EQUAL(psChild->pszValue,"KernelFilteredSource") )
+    if( EQUAL(psChild->pszValue, "KernelFilteredSource") )
     {
         VRTSource *poSrc = new VRTKernelFilteredSource();
         if( poSrc->XMLInit( psChild, pszVRTPath ) == CE_None )
             return poSrc;
-        else
-            delete poSrc;
+
+        delete poSrc;
     }
 
     return NULL;
 }
+
+/*! @endcond */

@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrsdedriver.cpp 36090 2016-11-03 14:22:30Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRSDEDriver class.
@@ -32,7 +31,7 @@
 #include "ogr_sde.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrsdedriver.cpp 36090 2016-11-03 14:22:30Z rouault $");
+CPL_CVSID("$Id: ogrsdedriver.cpp 36089 2016-11-03 14:22:21Z rouault $");
 
 /************************************************************************/
 /*                            ~OGRSDEDriver()                            */

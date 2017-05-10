@@ -1,0 +1,104 @@
+.TH "ogrlineref" 1 "Fri Apr 28 2017" "GDAL" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+ogrlineref \- The utility can be used for:
+.IP "\(bu" 2
+create linear reference file from input data
+.IP "\(bu" 2
+return the 'linear referenced' distance for the projection of the input coordinates (point) on the path
+.IP "\(bu" 2
+return the coordinates (point) on the path according to the 'linear referenced' distance
+.IP "\(bu" 2
+return the portion of the path according to the 'linear referenced' begin and end distances
+.PP
+.SH "SYNOPSIS"
+.PP
+.PP
+.PP
+.nf
+ogrlineref [--help-general] [-progress] [-quiet]
+           [-f format_name] [[-dsco NAME=VALUE] ...] [[-lco NAME=VALUE]...]
+           [-create]
+           [-l src_line_datasource_name] [-ln layer_name] [-lf field_name]
+           [-p src_repers_datasource_name] [-pn layer_name] [-pm pos_field_name] [-pf field_name]
+           [-r src_parts_datasource_name] [-rn layer_name]
+           [-o dst_datasource_name] [-on layer_name]  [-of field_name] [-s step]
+           [-get_pos] [-x long] [-y lat]
+           [-get_coord] [-m position]
+           [-get_subline] [-mb position] [-me position]
+.fi
+.PP
+.SH "DESCRIPTION"
+.PP
+The ogrlineref program can be used to create a linear reference - a file containing a segments of special length (e\&.g\&. 1 km in reference units) and get coordinates, linear referenced distances or sublines (subpaths) from this file\&. The utility not required the M or Z values in geometry\&. The results can be stored in any OGR supported format\&. Also some information is written to the stdout\&.
+.PP
+.IP "\fB\fB--help-general\fP:\fP" 1c
+Show the usage\&. 
+.IP "\fB\fB-progress\fP:\fP" 1c
+Show progress\&. 
+.IP "\fB\fB-quiet\fP:\fP" 1c
+Suppress all messages except errors and results\&. 
+.IP "\fB\fB-f\fP \fIformat_name\fP:\fP" 1c
+Select an output format name\&. The default is to create a shapefile\&. 
+.IP "\fB\fB-dsco\fP \fINAME=VALUE\fP:\fP" 1c
+Dataset creation option (format specific) 
+.IP "\fB\fB-lco\fP\fI NAME=VALUE\fP:\fP" 1c
+Layer creation option (format specific) 
+.IP "\fB\fB-create\fP:\fP" 1c
+Create the linear reference file (linestring of parts)\&. 
+.IP "\fB\fB-l\fP\fIsrc_line_datasource_name\fP:\fP" 1c
+The path to input linestring datasource (e\&.g\&. the road) 
+.IP "\fB\fB-ln\fP\fIlayer_name\fP:\fP" 1c
+The layer name in datasource 
+.IP "\fB\fB-lf\fP\fIfield_name\fP:\fP" 1c
+The field name of unique values to separate the input lines (e\&.g\&. the set of roads) 
+.IP "\fB\fB-p\fP\fIsrc_repers_datasource_name\fP:\fP" 1c
+The path to linear references points (e\&.g\&. the road mile-stones) 
+.IP "\fB\fB-pn\fP\fIlayer_name\fP:\fP" 1c
+The layer name in datasource 
+.IP "\fB\fB-pm\fP\fIpos_field_name\fP:\fP" 1c
+The field name of distances along path (e\&.g\&. mile-stones values) 
+.IP "\fB\fB-pf\fP\fIfield_name\fP:\fP" 1c
+The field name of unique values to map input reference points to lines 
+.IP "\fB\fB-r\fP\fIsrc_parts_datasource_name\fP:\fP" 1c
+The path to linear reference file 
+.IP "\fB\fB-rn\fP\fIlayer_name\fP:\fP" 1c
+The layer name in datasource 
+.IP "\fB\fB-o\fP\fIdst_datasource_name\fP:\fP" 1c
+The path to output linear reference file (linestring datasource) 
+.IP "\fB\fB-on\fP\fIlayer_name\fP:\fP" 1c
+The layer name in datasource 
+.IP "\fB\fB-of\fP\fIfield_name\fP:\fP" 1c
+The field name for storing the unique values of input lines 
+.IP "\fB\fB-s\fP\fIstep\fP:\fP" 1c
+The part size in linear units 
+.IP "\fB\fB-get_pos\fP:\fP" 1c
+Return linear referenced position for input X, Y 
+.IP "\fB\fB-x\fP\fIlong\fP:\fP" 1c
+Input X coordinate 
+.IP "\fB\fB-y\fP\fIlat\fP:\fP" 1c
+Input Y coordinate 
+.IP "\fB\fB-get_coord\fP:\fP" 1c
+Return point on path for input linear distance 
+.IP "\fB\fB-m\fP\fIposition\fP:\fP" 1c
+The input linear distance 
+.IP "\fB\fB-get_subline\fP:\fP" 1c
+Return the portion of the input path from and to input linear positions 
+.IP "\fB\fB-mb\fP\fIposition\fP:\fP" 1c
+The input begin linear distance 
+.IP "\fB\fB-me\fP\fIposition\fP:\fP" 1c
+The input end linear distance 
+.PP
+.SH "EXAMPLE"
+.PP
+This example would create a shapefile (parts\&.shp) containing a data needed for linear referencing (1 km parts): 
+.PP
+.nf
+% ogrlineref -create -l roads.shp -p references.shp -pm dist -o parts.shp -s 1000 -progress
+
+.fi
+.PP
+.SH "AUTHORS"
+.PP
+Dmitry Baryshnikov polimax@mail.ru 

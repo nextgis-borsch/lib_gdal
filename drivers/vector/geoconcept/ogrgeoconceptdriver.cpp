@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrgeoconceptdriver.cpp
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRGeoconceptDriver class.
@@ -33,7 +32,7 @@
 #include "ogrgeoconceptdatasource.h"
 #include "ogrgeoconceptdriver.h"
 
-CPL_CVSID("$Id: ogrgeoconceptdriver.cpp 00000 2007-11-03 10:42:48Z drichard $");
+CPL_CVSID("$Id: ogrgeoconceptdriver.cpp 35910 2016-10-24 14:08:24Z goatbar $");
 
 /************************************************************************/
 /*                          ~OGRGeoconceptDriver()                      */
@@ -212,7 +211,6 @@ OGRErr OGRGeoconceptDriver::DeleteDataSource( const char *pszDataSource )
 
     return OGRERR_NONE;
 }
-
 
 /************************************************************************/
 /*                           TestCapability()                           */

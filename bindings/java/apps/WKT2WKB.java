@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: WKT2WKB.java 32865 2016-01-08 21:22:17Z goatbar $
+ * $Id: WKT2WKB.java 35222 2016-08-28 06:06:11Z goatbar $
  *
  * Name:     WKT2WKB.java
  * Project:  GDAL Java Interface
@@ -45,11 +45,11 @@ import org.gdal.ogr.Geometry;
 
 /// <summary>
 /// A Java based sample for demonstrating the usage of ExportToWkb.
-/// </summary> 
+/// </summary>
 
 public class WKT2WKB {
 
-        public static void usage() 
+        public static void usage()
         {
                 System.out.println("usage example: wkt2wkb \"POINT(47.0 19.2)\"");
                 System.exit(-1);
@@ -68,7 +68,7 @@ public class WKT2WKB {
             {
                 System.exit(-1);
             }
-            if (wkbSize > 0) 
+            if (wkbSize > 0)
             {
                 System.out.print( "wkt-->wkb: ");
                 for(int i=0;i<wkbSize;i++)

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ReadXML.java 32865 2016-01-08 21:22:17Z goatbar $
+ * $Id: ReadXML.java 35222 2016-08-28 06:06:11Z goatbar $
  *
  * Name:     ReadXML.java
  * Project:  GDAL Java Interface
@@ -46,11 +46,11 @@ import org.gdal.gdal.XMLNodeType;
 
 /// <summary>
 /// A C# based sample for demonstrating the usage of the XMLNode class.
-/// </summary> 
+/// </summary>
 
 public class ReadXML {
 
-    public static void usage() 
+    public static void usage()
 
     {
             System.out.println("usage example: readxml {xml string}");

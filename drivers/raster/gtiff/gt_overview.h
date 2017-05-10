@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gt_overview.h 13297 2007-12-09 19:03:50Z rouault $
+ * $Id: gt_overview.h 37184 2017-01-19 12:26:29Z rouault $
  *
  * Project:  GeoTIFF Driver
  * Purpose:  Code to build overviews of external databases as a TIFF file.
@@ -35,18 +35,22 @@
 #include "gdal_priv.h"
 #include "tiffio.h"
 
-toff_t GTIFFWriteDirectory(TIFF *hTIFF, int nSubfileType, int nXSize, int nYSize,
-                           int nBitsPerPixel, int nPlanarConfig, int nSamples,
-                           int nBlockXSize, int nBlockYSize,
-                           int bTiled, int nCompressFlag, int nPhotometric,
-                           int nSampleFormat,
-                           int nPredictor,
-                           unsigned short *panRed,
-                           unsigned short *panGreen,
-                           unsigned short *panBlue,
-                           int nExtraSamples,
-                           unsigned short *panExtraSampleValues,
-                           const char *pszMetadata );
+toff_t GTIFFWriteDirectory( TIFF *hTIFF, int nSubfileType,
+                            int nXSize, int nYSize,
+                            int nBitsPerPixel, int nPlanarConfig, int nSamples,
+                            int nBlockXSize, int nBlockYSize,
+                            int bTiled, int nCompressFlag, int nPhotometric,
+                            int nSampleFormat,
+                            int nPredictor,
+                            unsigned short *panRed,
+                            unsigned short *panGreen,
+                            unsigned short *panBlue,
+                            int nExtraSamples,
+                            unsigned short *panExtraSampleValues,
+                            const char *pszMetadata,
+                            const char* pszJPEGQuality,
+                            const char* pszJPEGTablesMode,
+                            const char* pszNoData );
 
 void GTIFFBuildOverviewMetadata( const char *pszResampling,
                                  GDALDataset *poBaseDS,

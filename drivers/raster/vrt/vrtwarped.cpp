@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: vrtwarped.cpp 34552 2016-07-05 17:47:34Z rouault $
  *
  * Project:  Virtual GDAL Datasets
  * Purpose:  Implementation of VRTWarpedRasterBand *and VRTWarpedDataset.
@@ -28,17 +27,28 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#include "cpl_port.h"
 #include "vrtdataset.h"
-#include "cpl_minixml.h"
-#include "cpl_string.h"
-#include "gdal_alg_priv.h"
-#include "gdalwarper.h"
 
-#include <cassert>
-
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <algorithm>
 
-CPL_CVSID("$Id: vrtwarped.cpp 34552 2016-07-05 17:47:34Z rouault $");
+#include "cpl_conv.h"
+#include "cpl_error.h"
+#include "cpl_minixml.h"
+#include "cpl_progress.h"
+#include "cpl_string.h"
+#include "cpl_vsi.h"
+#include "gdal.h"
+#include "gdal_alg.h"
+#include "gdal_alg_priv.h"
+#include "gdal_priv.h"
+#include "gdalwarper.h"
+
+CPL_CVSID("$Id: vrtwarped.cpp 37723 2017-03-16 17:07:53Z rouault $");
 
 /************************************************************************/
 /*                      GDALAutoCreateWarpedVRT()                       */
@@ -100,7 +110,7 @@ GDALAutoCreateWarpedVRT( GDALDatasetH hSrcDS,
 /* -------------------------------------------------------------------- */
 /*      Populate the warp options.                                      */
 /* -------------------------------------------------------------------- */
-    GDALWarpOptions *psWO;
+    GDALWarpOptions *psWO = NULL;
     if( psOptionsIn != NULL )
         psWO = GDALCloneWarpOptions( psOptionsIn );
     else
@@ -111,9 +121,9 @@ GDALAutoCreateWarpedVRT( GDALDatasetH hSrcDS,
     psWO->hSrcDS = hSrcDS;
 
     psWO->nBandCount = GDALGetRasterCount( hSrcDS );
-    psWO->panSrcBands = reinterpret_cast<int *>(
+    psWO->panSrcBands = static_cast<int *>(
         CPLMalloc( sizeof(int) * psWO->nBandCount ) );
-    psWO->panDstBands = reinterpret_cast<int *>(
+    psWO->panDstBands = static_cast<int *>(
         CPLMalloc( sizeof(int) * psWO->nBandCount ) );
 
     for( int i = 0; i < psWO->nBandCount; i++ )
@@ -142,8 +152,9 @@ GDALAutoCreateWarpedVRT( GDALDatasetH hSrcDS,
 /* -------------------------------------------------------------------- */
 /*      Figure out the desired output bounds and resolution.            */
 /* -------------------------------------------------------------------- */
-    double adfDstGeoTransform[6];
-    int    nDstPixels, nDstLines;
+    double adfDstGeoTransform[6] = { 0.0 };
+    int nDstPixels = 0;
+    int nDstLines = 0;
     CPLErr eErr =
         GDALSuggestedWarpOutput( hSrcDS, psWO->pfnTransformer,
                                  psWO->pTransformerArg,
@@ -219,7 +230,8 @@ GDALAutoCreateWarpedVRT( GDALDatasetH hSrcDS,
  *
  * @param nLines Height of the virtual warped dataset to create
  *
- * @param padfGeoTransform Geotransform matrix of the virtual warped dataset to create
+ * @param padfGeoTransform Geotransform matrix of the virtual warped dataset
+ * to create
  *
  * @param psOptions Warp options. Must be different from NULL.
  *
@@ -239,18 +251,18 @@ GDALCreateWarpedVRT( GDALDatasetH hSrcDS,
 /* -------------------------------------------------------------------- */
     VRTWarpedDataset *poDS = new VRTWarpedDataset( nPixels, nLines );
 
-    psOptions->hDstDS = (GDALDatasetH) poDS;
+    psOptions->hDstDS = poDS;
 
     poDS->SetGeoTransform( padfGeoTransform );
 
     for( int i = 0; i < psOptions->nBandCount; i++ )
     {
-        GDALRasterBand *poSrcBand = reinterpret_cast<GDALRasterBand *>(
+        GDALRasterBand *poSrcBand = static_cast<GDALRasterBand *>(
             GDALGetRasterBand( hSrcDS, i+1 ) );
 
         poDS->AddBand( poSrcBand->GetRasterDataType(), NULL );
 
-        VRTWarpedRasterBand *poBand = reinterpret_cast<VRTWarpedRasterBand *>(
+        VRTWarpedRasterBand *poBand = static_cast<VRTWarpedRasterBand *>(
             poDS->GetRasterBand( i+1 ) );
         poBand->CopyCommonInfoFrom( poSrcBand );
     }
@@ -265,7 +277,7 @@ GDALCreateWarpedVRT( GDALDatasetH hSrcDS,
 /* -------------------------------------------------------------------- */
 /*      Initialize the warp on the VRTWarpedDataset.                    */
 /* -------------------------------------------------------------------- */
-    CPLErr eErr = poDS->Initialize( psOptions );
+    const CPLErr eErr = poDS->Initialize( psOptions );
     if( eErr == CE_Failure )
     {
          psOptions->hDstDS = NULL;
@@ -273,8 +285,10 @@ GDALCreateWarpedVRT( GDALDatasetH hSrcDS,
          return NULL;
     }
 
-    return reinterpret_cast<GDALDatasetH>( poDS );
+    return poDS;
 }
+
+/*! @cond Doxygen_Suppress */
 
 /************************************************************************/
 /* ==================================================================== */
@@ -317,21 +331,18 @@ int VRTWarpedDataset::CloseDependentDatasets()
 {
     FlushCache();
 
-    int bHasDroppedRef = VRTDataset::CloseDependentDatasets();
+    bool bHasDroppedRef = CPL_TO_BOOL( VRTDataset::CloseDependentDatasets() );
 
 /* -------------------------------------------------------------------- */
 /*      Cleanup overviews.                                              */
 /* -------------------------------------------------------------------- */
     for( int iOverview = 0; iOverview < m_nOverviewCount; iOverview++ )
     {
-        GDALDatasetH hDS
-            = reinterpret_cast<GDALDatasetH>( m_papoOverviews[iOverview] );
+        GDALDatasetH hDS = m_papoOverviews[iOverview];
 
-        if( GDALDereferenceDataset( hDS ) < 1 )
+        if( GDALReleaseDataset( hDS ) )
         {
-            GDALReferenceDataset( hDS );
-            GDALClose( hDS );
-            bHasDroppedRef = TRUE;
+            bHasDroppedRef = true;
         }
     }
 
@@ -356,10 +367,8 @@ int VRTWarpedDataset::CloseDependentDatasets()
 /* -------------------------------------------------------------------- */
         if( psWO != NULL && psWO->hSrcDS != NULL )
         {
-            if( GDALDereferenceDataset( psWO->hSrcDS ) < 1 )
+            if( GDALReleaseDataset( psWO->hSrcDS ) )
             {
-                GDALReferenceDataset( psWO->hSrcDS );
-                GDALClose( psWO->hSrcDS );
                 bHasDroppedRef = true;
             }
         }
@@ -394,8 +403,8 @@ CPLErr VRTWarpedDataset::SetMetadataItem( const char *pszName, const char *pszVa
                                           const char *pszDomain )
 
 {
-
-    if( (pszDomain == NULL || EQUAL(pszDomain, "")) && EQUAL(pszName, "SrcOvrLevel") )
+    if( (pszDomain == NULL || EQUAL(pszDomain, "")) &&
+        EQUAL(pszName, "SrcOvrLevel") )
     {
         const int nOldValue = m_nSrcOvrLevel;
         if( pszValue == NULL || EQUAL(pszValue, "AUTO") )
@@ -428,21 +437,25 @@ CPLErr VRTWarpedDataset::Initialize( void *psWO )
     m_poWarper = new GDALWarpOperation();
 
     GDALWarpOptions* psWO_Dup
-        = GDALCloneWarpOptions(reinterpret_cast<GDALWarpOptions *>( psWO ) );
+        = GDALCloneWarpOptions(static_cast<GDALWarpOptions *>( psWO ) );
 
     /* Avoid errors when adding an alpha band, but source dataset has */
     /* no alpha band (#4571) */
     if (CSLFetchNameValue( psWO_Dup->papszWarpOptions, "INIT_DEST" ) == NULL)
-        psWO_Dup->papszWarpOptions = CSLSetNameValue(psWO_Dup->papszWarpOptions, "INIT_DEST", "0");
+        psWO_Dup->papszWarpOptions =
+            CSLSetNameValue(psWO_Dup->papszWarpOptions, "INIT_DEST", "0");
+
+    CPLErr eErr = m_poWarper->Initialize( psWO_Dup );
 
     // The act of initializing this warped dataset with this warp options
     // will result in our assuming ownership of a reference to the
     // hSrcDS.
 
-    if( reinterpret_cast<GDALWarpOptions *>( psWO )->hSrcDS != NULL )
+    if( eErr == CE_None &&
+        static_cast<GDALWarpOptions *>( psWO )->hSrcDS != NULL )
+    {
         GDALReferenceDataset( psWO_Dup->hSrcDS );
-
-    CPLErr eErr = m_poWarper->Initialize( psWO_Dup );
+    }
 
     GDALDestroyWarpOptions(psWO_Dup);
 
@@ -466,33 +479,34 @@ void VRTWarpedDataset::CreateImplicitOverviews()
     if( psWO->hSrcDS == NULL || GDALGetRasterCount(psWO->hSrcDS) == 0 )
         return;
 
-    GDALDataset* poSrcDS = reinterpret_cast<GDALDataset *>( psWO->hSrcDS );
+    GDALDataset* poSrcDS = static_cast<GDALDataset *>( psWO->hSrcDS );
     const int nOvrCount = poSrcDS->GetRasterBand(1)->GetOverviewCount();
-    for(int iOvr = 0; iOvr < nOvrCount; iOvr++)
+    for( int iOvr = 0; iOvr < nOvrCount; iOvr++ )
     {
-        bool bDeleteSrcOvrDataset = false;
         GDALDataset* poSrcOvrDS = poSrcDS;
         if( m_nSrcOvrLevel < -2 )
         {
             if( iOvr + m_nSrcOvrLevel + 2 >= 0 )
             {
-                bDeleteSrcOvrDataset = true;
-                poSrcOvrDS = GDALCreateOverviewDataset(poSrcDS,
-                                               iOvr + m_nSrcOvrLevel + 2, FALSE, FALSE);
+                poSrcOvrDS =
+                    GDALCreateOverviewDataset( poSrcDS,
+                                               iOvr + m_nSrcOvrLevel + 2,
+                                               FALSE );
             }
         }
         else if( m_nSrcOvrLevel == -2 )
         {
-            bDeleteSrcOvrDataset = true;
-            poSrcOvrDS = GDALCreateOverviewDataset(poSrcDS, iOvr, FALSE, FALSE);
+            poSrcOvrDS = GDALCreateOverviewDataset(poSrcDS, iOvr, FALSE);
         }
         else if( m_nSrcOvrLevel >= 0 )
         {
-            bDeleteSrcOvrDataset = true;
-            poSrcOvrDS = GDALCreateOverviewDataset(poSrcDS, m_nSrcOvrLevel, TRUE, FALSE);
+            poSrcOvrDS = GDALCreateOverviewDataset( poSrcDS, m_nSrcOvrLevel,
+                                                    TRUE );
         }
         if( poSrcOvrDS == NULL )
             break;
+        if( poSrcOvrDS == poSrcDS )
+            poSrcOvrDS->Reference();
 
         const double dfSrcRatioX = static_cast<double>(
             poSrcDS->GetRasterXSize() ) / poSrcOvrDS->GetRasterXSize();
@@ -510,7 +524,7 @@ void VRTWarpedDataset::CreateImplicitOverviews()
         const int nDstLines
             = static_cast<int>(nRasterYSize / dfTargetRatio + 0.5);
 
-        double adfDstGeoTransform[6];
+        double adfDstGeoTransform[6] = { 0.0 };
         GetGeoTransform(adfDstGeoTransform);
         if( adfDstGeoTransform[2] == 0.0 && adfDstGeoTransform[4] == 0.0 )
         {
@@ -529,26 +543,25 @@ void VRTWarpedDataset::CreateImplicitOverviews()
 
         if( nDstPixels < 1 || nDstLines < 1 )
         {
-            if( bDeleteSrcOvrDataset )
-                delete poSrcOvrDS;
+            poSrcOvrDS->ReleaseRef();
             break;
         }
 
 /* -------------------------------------------------------------------- */
 /*      Create transformer and warping options.                         */
 /* -------------------------------------------------------------------- */
-        void *pTransformerArg = GDALCreateSimilarTransformer(psWO->pTransformerArg,
-                                                             dfSrcRatioX,
-                                                             dfSrcRatioY);
+        void *pTransformerArg =
+                         GDALCreateSimilarTransformer( psWO->pTransformerArg,
+                                                       dfSrcRatioX,
+                                                       dfSrcRatioY );
         if( pTransformerArg == NULL )
         {
-            if( bDeleteSrcOvrDataset )
-                delete poSrcOvrDS;
+            poSrcOvrDS->ReleaseRef();
             break;
         }
 
         GDALWarpOptions* psWOOvr = GDALCloneWarpOptions( psWO );
-        psWOOvr->hSrcDS = (GDALDatasetH)poSrcOvrDS;
+        psWOOvr->hSrcDS = poSrcOvrDS;
         psWOOvr->pfnTransformer = psWO->pfnTransformer;
         psWOOvr->pTransformerArg = pTransformerArg;
 
@@ -564,18 +577,11 @@ void VRTWarpedDataset::CreateImplicitOverviews()
 /*      Create the VRT file.                                            */
 /* -------------------------------------------------------------------- */
         GDALDatasetH hDstDS = GDALCreateWarpedVRT(
-            reinterpret_cast<GDALDatasetH>( poSrcOvrDS ),
+            poSrcOvrDS,
             nDstPixels, nDstLines,
             adfDstGeoTransform, psWOOvr );
 
-        if( bDeleteSrcOvrDataset )
-        {
-            if( hDstDS == NULL )
-                delete poSrcOvrDS;
-            else
-                GDALDereferenceDataset(
-                    reinterpret_cast<GDALDatasetH>( poSrcOvrDS ) );
-        }
+        poSrcOvrDS->ReleaseRef();
 
         GDALDestroyWarpOptions(psWOOvr);
 
@@ -586,11 +592,11 @@ void VRTWarpedDataset::CreateImplicitOverviews()
         }
 
         m_nOverviewCount++;
-        m_papoOverviews = reinterpret_cast<VRTWarpedDataset **>(
+        m_papoOverviews = static_cast<VRTWarpedDataset **>(
             CPLRealloc( m_papoOverviews, sizeof(void*) * m_nOverviewCount ) );
 
         m_papoOverviews[m_nOverviewCount-1]
-            = reinterpret_cast<VRTWarpedDataset *>( hDstDS );
+            = static_cast<VRTWarpedDataset *>( hDstDS );
     }
 }
 
@@ -605,7 +611,7 @@ char** VRTWarpedDataset::GetFileList()
     if( m_poWarper != NULL )
     {
         const GDALWarpOptions *psWO = m_poWarper->GetOptions();
-        const char* pszFilename;
+        const char* pszFilename = NULL;
 
         if( psWO->hSrcDS != NULL &&
             (pszFilename =
@@ -622,6 +628,24 @@ char** VRTWarpedDataset::GetFileList()
     return papszFileList;
 }
 
+/************************************************************************/
+/*                      SetApplyVerticalShiftGrid()                     */
+/************************************************************************/
+
+void  VRTWarpedDataset::SetApplyVerticalShiftGrid(const char* pszVGrids,
+                                               int bInverse,
+                                               double dfToMeterSrc,
+                                               double dfToMeterDest,
+                                               char** papszOptions )
+{
+    VerticalShiftGrid oVertShiftGrid;
+    oVertShiftGrid.osVGrids = pszVGrids;
+    oVertShiftGrid.bInverse = bInverse;
+    oVertShiftGrid.dfToMeterSrc = dfToMeterSrc;
+    oVertShiftGrid.dfToMeterDest = dfToMeterDest;
+    oVertShiftGrid.aosOptions.Assign(papszOptions,FALSE);
+    m_aoVerticalShiftGrids.push_back(oVertShiftGrid);
+}
 
 
 /************************************************************************/
@@ -635,12 +659,11 @@ typedef struct {
 
     GDALTransformerFunc pfnBaseTransformer;
     void              *pBaseTransformerArg;
-    int                bOwnSubtransformer;
+    bool               bOwnSubtransformer;
 
     double            dfXOverviewFactor;
     double            dfYOverviewFactor;
 } VWOTInfo;
-
 
 static
 void* VRTCreateWarpedOverviewTransformer( GDALTransformerFunc pfnBaseTransformer,
@@ -665,15 +688,17 @@ static CPLXMLNode *
 VRTSerializeWarpedOverviewTransformer( void *pTransformArg )
 
 {
-    VWOTInfo *psInfo = reinterpret_cast<VWOTInfo *>( pTransformArg );
+    VWOTInfo *psInfo = static_cast<VWOTInfo *>( pTransformArg );
 
     CPLXMLNode *psTree
         = CPLCreateXMLNode( NULL, CXT_Element, "WarpedOverviewTransformer" );
 
-    CPLCreateXMLElementAndValue( psTree, "XFactor",
-                                 CPLString().Printf("%g",psInfo->dfXOverviewFactor) );
-    CPLCreateXMLElementAndValue( psTree, "YFactor",
-                                 CPLString().Printf("%g",psInfo->dfYOverviewFactor) );
+    CPLCreateXMLElementAndValue(
+        psTree, "XFactor",
+        CPLString().Printf("%g",psInfo->dfXOverviewFactor) );
+    CPLCreateXMLElementAndValue(
+        psTree, "YFactor",
+        CPLString().Printf("%g",psInfo->dfYOverviewFactor) );
 
 /* -------------------------------------------------------------------- */
 /*      Capture underlying transformer.                                 */
@@ -683,7 +708,7 @@ VRTSerializeWarpedOverviewTransformer( void *pTransformArg )
 
     CPLXMLNode *psTransformer
         = GDALSerializeTransformer( psInfo->pfnBaseTransformer,
-                                              psInfo->pBaseTransformerArg );
+                                    psInfo->pBaseTransformerArg );
     if( psTransformer != NULL )
         CPLAddXMLChild( psTransformerContainer, psTransformer );
 
@@ -695,9 +720,9 @@ VRTSerializeWarpedOverviewTransformer( void *pTransformArg )
 /************************************************************************/
 
 static void VRTWarpedOverviewTransformerOwnsSubtransformer( void *pTransformArg,
-                                                          int bOwnFlag )
+                                                            bool bOwnFlag )
 {
-    VWOTInfo *psInfo = reinterpret_cast<VWOTInfo *>( pTransformArg );
+    VWOTInfo *psInfo = static_cast<VWOTInfo *>( pTransformArg );
 
     psInfo->bOwnSubtransformer = bOwnFlag;
 }
@@ -709,20 +734,20 @@ static void VRTWarpedOverviewTransformerOwnsSubtransformer( void *pTransformArg,
 void* VRTDeserializeWarpedOverviewTransformer( CPLXMLNode *psTree )
 
 {
-    double dfXOverviewFactor = CPLAtof(CPLGetXMLValue( psTree, "XFactor",  "1" ));
-    double dfYOverviewFactor = CPLAtof(CPLGetXMLValue( psTree, "YFactor",  "1" ));
-    CPLXMLNode *psContainer;
+    const double dfXOverviewFactor =
+        CPLAtof(CPLGetXMLValue( psTree, "XFactor",  "1" ));
+    const double dfYOverviewFactor =
+        CPLAtof(CPLGetXMLValue( psTree, "YFactor",  "1" ));
     GDALTransformerFunc pfnBaseTransform = NULL;
     void *pBaseTransformerArg = NULL;
 
-    psContainer = CPLGetXMLNode( psTree, "BaseTransformer" );
+    CPLXMLNode *psContainer = CPLGetXMLNode( psTree, "BaseTransformer" );
 
     if( psContainer != NULL && psContainer->psChild != NULL )
     {
         GDALDeserializeTransformer( psContainer->psChild,
                                     &pfnBaseTransform,
                                     &pBaseTransformerArg );
-
     }
 
     if( pfnBaseTransform == NULL )
@@ -738,7 +763,7 @@ void* VRTDeserializeWarpedOverviewTransformer( CPLXMLNode *psTree )
                                                            pBaseTransformerArg,
                                                            dfXOverviewFactor,
                                                            dfYOverviewFactor );
-        VRTWarpedOverviewTransformerOwnsSubtransformer( pApproxCBData, TRUE );
+        VRTWarpedOverviewTransformerOwnsSubtransformer( pApproxCBData, true );
 
         return pApproxCBData;
     }
@@ -759,15 +784,17 @@ void* VRTCreateWarpedOverviewTransformer( GDALTransformerFunc pfnBaseTransformer
     if (pfnBaseTransformer == NULL)
         return NULL;
 
-    VWOTInfo *psSCTInfo = reinterpret_cast<VWOTInfo*>(
+    VWOTInfo *psSCTInfo = static_cast<VWOTInfo*>(
         CPLMalloc( sizeof(VWOTInfo) ) );
     psSCTInfo->pfnBaseTransformer = pfnBaseTransformer;
     psSCTInfo->pBaseTransformerArg = pBaseTransformerArg;
     psSCTInfo->dfXOverviewFactor = dfXOverviewFactor;
     psSCTInfo->dfYOverviewFactor = dfYOverviewFactor;
-    psSCTInfo->bOwnSubtransformer = FALSE;
+    psSCTInfo->bOwnSubtransformer = false;
 
-    memcpy( psSCTInfo->sTI.abySignature, GDAL_GTI2_SIGNATURE, strlen(GDAL_GTI2_SIGNATURE) );
+    memcpy( psSCTInfo->sTI.abySignature,
+            GDAL_GTI2_SIGNATURE,
+            strlen(GDAL_GTI2_SIGNATURE) );
     psSCTInfo->sTI.pszClassName = "VRTWarpedOverviewTransformer";
     psSCTInfo->sTI.pfnTransform = VRTWarpedOverviewTransform;
     psSCTInfo->sTI.pfnCleanup = VRTDestroyWarpedOverviewTransformer;
@@ -784,7 +811,7 @@ void* VRTCreateWarpedOverviewTransformer( GDALTransformerFunc pfnBaseTransformer
 static
 void VRTDestroyWarpedOverviewTransformer(void* pTransformArg)
 {
-    VWOTInfo *psInfo = reinterpret_cast<VWOTInfo *>( pTransformArg );
+    VWOTInfo *psInfo = static_cast<VWOTInfo *>( pTransformArg );
 
     if( psInfo->bOwnSubtransformer )
         GDALDestroyTransformer( psInfo->pBaseTransformerArg );
@@ -803,7 +830,7 @@ int VRTWarpedOverviewTransform( void *pTransformArg, int bDstToSrc,
                                 int *panSuccess )
 
 {
-    VWOTInfo *psInfo = reinterpret_cast<VWOTInfo *>( pTransformArg );
+    VWOTInfo *psInfo = static_cast<VWOTInfo *>( pTransformArg );
 
     if( bDstToSrc )
     {
@@ -814,10 +841,11 @@ int VRTWarpedOverviewTransform( void *pTransformArg, int bDstToSrc,
         }
     }
 
-    int bSuccess = psInfo->pfnBaseTransformer( psInfo->pBaseTransformerArg,
-                                           bDstToSrc,
-                                           nPointCount, padfX, padfY, padfZ,
-                                           panSuccess );
+    const int bSuccess =
+        psInfo->pfnBaseTransformer( psInfo->pBaseTransformerArg,
+                                    bDstToSrc,
+                                    nPointCount, padfX, padfY, padfZ,
+                                    panSuccess );
 
     if( !bDstToSrc )
     {
@@ -840,11 +868,11 @@ int VRTWarpedOverviewTransform( void *pTransformArg, int bDstToSrc,
 /************************************************************************/
 
 CPLErr
-VRTWarpedDataset::IBuildOverviews( CPL_UNUSED const char *pszResampling,
+VRTWarpedDataset::IBuildOverviews( const char * /* pszResampling */,
                                    int nOverviews,
                                    int *panOverviewList,
-                                   CPL_UNUSED int nListBands,
-                                   CPL_UNUSED int *panBandList,
+                                   int /* nListBands */,
+                                   int * /* panBandList */,
                                    GDALProgressFunc pfnProgress,
                                    void * pProgressData )
 {
@@ -865,18 +893,19 @@ VRTWarpedDataset::IBuildOverviews( CPL_UNUSED const char *pszResampling,
 /*      which are new.                                                  */
 /* -------------------------------------------------------------------- */
     int nNewOverviews = 0;
-    int *panNewOverviewList = reinterpret_cast<int *>(
+    int *panNewOverviewList = static_cast<int *>(
         CPLCalloc( sizeof(int), nOverviews ) );
     for( int i = 0; i < nOverviews; i++ )
     {
         for( int j = 0; j < m_nOverviewCount; j++ )
         {
-            GDALDataset *poOverview = m_papoOverviews[j];
+            GDALDataset * const poOverview = m_papoOverviews[j];
 
-            int nOvFactor = GDALComputeOvFactor(poOverview->GetRasterXSize(),
-                                            GetRasterXSize(),
-                                            poOverview->GetRasterYSize(),
-                                            GetRasterYSize());
+            const int nOvFactor =
+                GDALComputeOvFactor( poOverview->GetRasterXSize(),
+                                     GetRasterXSize(),
+                                     poOverview->GetRasterYSize(),
+                                     GetRasterYSize() );
 
             if( nOvFactor == panOverviewList[i]
                 || nOvFactor == GDALOvLevelAdjust2( panOverviewList[i],
@@ -918,7 +947,8 @@ VRTWarpedDataset::IBuildOverviews( CPL_UNUSED const char *pszResampling,
             if( m_papoOverviews[j]->GetRasterXSize() > nOXSize &&
                 m_papoOverviews[j]->m_poWarper->GetOptions()->pfnTransformer !=
                                                 VRTWarpedOverviewTransform &&
-                m_papoOverviews[j]->GetRasterXSize() < poBaseDataset->GetRasterXSize() )
+                m_papoOverviews[j]->GetRasterXSize() <
+                poBaseDataset->GetRasterXSize() )
             {
                 poBaseDataset = m_papoOverviews[j];
             }
@@ -932,8 +962,8 @@ VRTWarpedDataset::IBuildOverviews( CPL_UNUSED const char *pszResampling,
 
         for( int iBand = 0; iBand < GetRasterCount(); iBand++ )
         {
-            GDALRasterBand *poOldBand = GetRasterBand(iBand+1);
-            VRTWarpedRasterBand *poNewBand =
+            GDALRasterBand * const poOldBand = GetRasterBand(iBand+1);
+            VRTWarpedRasterBand * const poNewBand =
                 new VRTWarpedRasterBand( poOverviewDS, iBand+1,
                                          poOldBand->GetRasterDataType() );
 
@@ -974,11 +1004,10 @@ VRTWarpedDataset::IBuildOverviews( CPL_UNUSED const char *pszResampling,
         }
 
         m_nOverviewCount++;
-        m_papoOverviews = reinterpret_cast<VRTWarpedDataset **>(
+        m_papoOverviews = static_cast<VRTWarpedDataset **>(
             CPLRealloc( m_papoOverviews, sizeof(void*) * m_nOverviewCount ) );
 
         m_papoOverviews[m_nOverviewCount-1] = poOverviewDS;
-
     }
 
     CPLFree( panNewOverviewList );
@@ -992,6 +1021,8 @@ VRTWarpedDataset::IBuildOverviews( CPL_UNUSED const char *pszResampling,
 
     return eErr;
 }
+
+/*! @endcond */
 
 /************************************************************************/
 /*                      GDALInitializeWarpedVRT()                       */
@@ -1023,6 +1054,8 @@ GDALInitializeWarpedVRT( GDALDatasetH hDS, GDALWarpOptions *psWO )
     return reinterpret_cast<VRTWarpedDataset *>( hDS )->Initialize( psWO );
 }
 
+/*! @cond Doxygen_Suppress */
+
 /************************************************************************/
 /*                              XMLInit()                               */
 /************************************************************************/
@@ -1036,22 +1069,25 @@ CPLErr VRTWarpedDataset::XMLInit( CPLXMLNode *psTree, const char *pszVRTPathIn )
 /*      band initializers can get it from the dataset object when       */
 /*      they are created.                                               */
 /* -------------------------------------------------------------------- */
-    m_nBlockXSize = atoi(CPLGetXMLValue(psTree,"BlockXSize","512"));
-    m_nBlockYSize = atoi(CPLGetXMLValue(psTree,"BlockYSize","128"));
+    m_nBlockXSize = atoi(CPLGetXMLValue(psTree, "BlockXSize", "512"));
+    m_nBlockYSize = atoi(CPLGetXMLValue(psTree, "BlockYSize", "128"));
 
 /* -------------------------------------------------------------------- */
 /*      Initialize all the general VRT stuff.  This will even           */
 /*      create the VRTWarpedRasterBands and initialize them.            */
 /* -------------------------------------------------------------------- */
-    CPLErr eErr = VRTDataset::XMLInit( psTree, pszVRTPathIn );
+    {
+        const CPLErr eErr = VRTDataset::XMLInit( psTree, pszVRTPathIn );
 
-    if( eErr != CE_None )
-        return eErr;
+        if( eErr != CE_None )
+            return eErr;
+    }
 
 /* -------------------------------------------------------------------- */
 /*      Find the GDALWarpOptions XML tree.                              */
 /* -------------------------------------------------------------------- */
-    CPLXMLNode *psOptionsTree = CPLGetXMLNode( psTree, "GDALWarpOptions" );
+    CPLXMLNode * const psOptionsTree =
+        CPLGetXMLNode( psTree, "GDALWarpOptions" );
     if( psOptionsTree == NULL )
     {
         CPLError( CE_Failure, CPLE_AppDefined,
@@ -1069,7 +1105,7 @@ CPLErr VRTWarpedDataset::XMLInit( CPLXMLNode *psTree, const char *pszVRTPathIn )
 
     const char *pszRelativePath = CPLGetXMLValue(psOptionsTree,
                                                  "SourceDataset", "" );
-    char *pszAbsolutePath;
+    char *pszAbsolutePath = NULL;
 
     if( bRelativeToVRT )
         pszAbsolutePath =
@@ -1091,10 +1127,11 @@ CPLErr VRTWarpedDataset::XMLInit( CPLXMLNode *psTree, const char *pszVRTPathIn )
 
     /* Avoid errors when adding an alpha band, but source dataset has */
     /* no alpha band (#4571) */
-    if (CSLFetchNameValue( psWO->papszWarpOptions, "INIT_DEST" ) == NULL)
-        psWO->papszWarpOptions = CSLSetNameValue(psWO->papszWarpOptions, "INIT_DEST", "0");
+    if( CSLFetchNameValue( psWO->papszWarpOptions, "INIT_DEST" ) == NULL )
+        psWO->papszWarpOptions =
+            CSLSetNameValue(psWO->papszWarpOptions, "INIT_DEST", "0");
 
-    this->eAccess = GA_Update;
+    eAccess = GA_Update;
 
     if( psWO->hDstDS != NULL )
     {
@@ -1105,11 +1142,88 @@ CPLErr VRTWarpedDataset::XMLInit( CPLXMLNode *psTree, const char *pszVRTPathIn )
     psWO->hDstDS = this;
 
 /* -------------------------------------------------------------------- */
+/*      Deserialize vertical shift grids.                               */
+/* -------------------------------------------------------------------- */
+    CPLXMLNode* psIter = psTree->psChild;
+    for( ; psWO->hSrcDS != NULL && psIter != NULL; psIter = psIter->psNext )
+    {
+        if( psIter->eType != CXT_Element ||
+            !EQUAL(psIter->pszValue, "VerticalShiftGrids") )
+        {
+            continue;
+        }
+        const char* pszVGrids = CPLGetXMLValue(psIter, "Grids", NULL);
+        if( pszVGrids )
+        {
+            int bInverse = CSLTestBoolean(
+                CPLGetXMLValue(psIter, "Inverse", "FALSE") );
+            double dfToMeterSrc = CPLAtof(
+                CPLGetXMLValue( psIter, "ToMeterSrc", "1.0") );
+            double dfToMeterDest = CPLAtof(
+                CPLGetXMLValue( psIter, "ToMeterDest", "1.0") );
+            char** papszOptions = NULL;
+            CPLXMLNode* psIter2 = psIter->psChild;
+            for( ; psIter2 != NULL; psIter2 = psIter2->psNext )
+            {
+                if( psIter2->eType != CXT_Element ||
+                    !EQUAL(psIter2->pszValue, "Option") )
+                {
+                    continue;
+                }
+                const char* pszName = CPLGetXMLValue(psIter2, "name", NULL);
+                const char* pszValue = CPLGetXMLValue(psIter2, NULL, NULL);
+                if( pszName && pszValue )
+                {
+                    papszOptions = CSLSetNameValue(papszOptions, pszName,
+                                                   pszValue);
+                }
+            }
+            SetApplyVerticalShiftGrid(pszVGrids, bInverse,
+                                      dfToMeterSrc, dfToMeterDest,
+                                      papszOptions );
+            int bError = FALSE;
+            GDALDatasetH hGridDataset =
+                GDALOpenVerticalShiftGrid(pszVGrids, &bError);
+            if( bError && hGridDataset == NULL )
+            {
+                CPLError(CE_Warning, CPLE_AppDefined,
+                            "Cannot open %s. Source dataset will no "
+                            "be vertically adjusted regarding "
+                            "vertical datum", pszVGrids);
+            }
+            else if( hGridDataset != NULL )
+            {
+                // Transform from source vertical datum to WGS84
+                GDALDatasetH hTmpDS = GDALApplyVerticalShiftGrid(
+                    psWO->hSrcDS, hGridDataset, bInverse,
+                    dfToMeterSrc, dfToMeterDest, papszOptions );
+                GDALReleaseDataset(hGridDataset);
+                if( hTmpDS == NULL )
+                {
+                    CPLError(CE_Warning, CPLE_AppDefined,
+                            "Source dataset will no "
+                            "be vertically adjusted regarding "
+                            "vertical datum %s", pszVGrids);
+                }
+                else
+                {
+                    CPLDebug("GDALWARP", "Adjusting source dataset "
+                            "with vertical datum using %s", pszVGrids);
+                    GDALReleaseDataset(psWO->hSrcDS);
+                    psWO->hSrcDS = hTmpDS;
+                }
+            }
+
+            CSLDestroy(papszOptions);
+        }
+    }
+
+/* -------------------------------------------------------------------- */
 /*      Instantiate the warp operation.                                 */
 /* -------------------------------------------------------------------- */
     m_poWarper = new GDALWarpOperation();
 
-    eErr = m_poWarper->Initialize( psWO );
+    const CPLErr eErr = m_poWarper->Initialize( psWO );
     if( eErr != CE_None)
     {
 /* -------------------------------------------------------------------- */
@@ -1150,10 +1264,10 @@ CPLErr VRTWarpedDataset::XMLInit( CPLXMLNode *psTree, const char *pszVRTPathIn )
 
     CreateImplicitOverviews();
 
-    /* OverviewList is historical, and quite inefficient, since it uses */
-    /* the full resolution source dataset, so only build it afterwards */
+    // OverviewList is historical, and quite inefficient, since it uses
+    // the full resolution source dataset, so only build it afterwards.
     char **papszTokens = CSLTokenizeString(
-        CPLGetXMLValue( psTree, "OverviewList", "" ));
+        CPLGetXMLValue( psTree, "OverviewList", "" ) );
 
     for( int iOverview = 0;
          papszTokens != NULL && papszTokens[iOverview] != NULL;
@@ -1164,8 +1278,9 @@ CPLErr VRTWarpedDataset::XMLInit( CPLXMLNode *psTree, const char *pszVRTPathIn )
         if (nOvFactor > 0)
             BuildOverviews( "NEAREST", 1, &nOvFactor, 0, NULL, NULL, NULL );
         else
-            CPLError(CE_Failure, CPLE_AppDefined,
-                     "Bad value for overview factor : %s", papszTokens[iOverview]);
+            CPLError(
+                CE_Failure, CPLE_AppDefined,
+                "Bad value for overview factor : %s", papszTokens[iOverview] );
     }
 
     CSLDestroy( papszTokens );
@@ -1211,21 +1326,19 @@ CPLXMLNode *VRTWarpedDataset::SerializeToXML( const char *pszVRTPathIn )
             GDALGetRasterCount(m_poWarper->GetOptions()->hSrcDS) > 0 )
         {
             nSrcDSOvrCount
-                = reinterpret_cast<GDALDataset*>(
+                = static_cast<GDALDataset*>(
                     m_poWarper->GetOptions()->hSrcDS)->
                 GetRasterBand(1)->GetOverviewCount();
         }
 
-        char *pszOverviewList;
         if( m_nOverviewCount != nSrcDSOvrCount )
         {
-            const size_t nLen = m_nOverviewCount*8 + 10;
-            pszOverviewList = reinterpret_cast<char *>(
-                CPLMalloc( nLen ) );
+            const size_t nLen = m_nOverviewCount * 8 + 10;
+            char *pszOverviewList = static_cast<char *>( CPLMalloc( nLen ) );
             pszOverviewList[0] = '\0';
             for( int iOverview = 0; iOverview < m_nOverviewCount; iOverview++ )
             {
-                int nOvFactor = static_cast<int>(
+                const int nOvFactor = static_cast<int>(
                     0.5 + GetRasterXSize()
                     / static_cast<double>(
                         m_papoOverviews[iOverview]->GetRasterXSize() ) );
@@ -1235,7 +1348,8 @@ CPLXMLNode *VRTWarpedDataset::SerializeToXML( const char *pszVRTPathIn )
                          "%d ", nOvFactor );
             }
 
-            CPLCreateXMLElementAndValue( psTree, "OverviewList", pszOverviewList );
+            CPLCreateXMLElementAndValue( psTree, "OverviewList",
+                                         pszOverviewList );
 
             CPLFree( pszOverviewList );
         }
@@ -1247,28 +1361,67 @@ CPLXMLNode *VRTWarpedDataset::SerializeToXML( const char *pszVRTPathIn )
     if( m_nSrcOvrLevel != -2 )
     {
         if( m_nSrcOvrLevel < -2 )
-            CPLCreateXMLElementAndValue( psTree, "SrcOvrLevel", CPLSPrintf("AUTO%d", m_nSrcOvrLevel+2) );
+            CPLCreateXMLElementAndValue(
+                psTree, "SrcOvrLevel", CPLSPrintf("AUTO%d", m_nSrcOvrLevel+2) );
         else if( m_nSrcOvrLevel == -1 )
             CPLCreateXMLElementAndValue( psTree, "SrcOvrLevel", "NONE" );
         else
-            CPLCreateXMLElementAndValue( psTree, "SrcOvrLevel", CPLSPrintf("%d", m_nSrcOvrLevel) );
+            CPLCreateXMLElementAndValue(
+                psTree, "SrcOvrLevel", CPLSPrintf("%d", m_nSrcOvrLevel) );
+    }
+
+/* -------------------------------------------------------------------- */
+/*      Serialize vertical shift grids.                                 */
+/* -------------------------------------------------------------------- */
+    for(size_t i = 0; i < m_aoVerticalShiftGrids.size(); ++i )
+    {
+        CPLXMLNode* psVertShiftGridNode = 
+            CPLCreateXMLNode( psTree, CXT_Element, "VerticalShiftGrids" );
+        CPLCreateXMLElementAndValue(psVertShiftGridNode,
+                                    "Grids",
+                                    m_aoVerticalShiftGrids[i].osVGrids);
+        CPLCreateXMLElementAndValue(psVertShiftGridNode,
+                "Inverse",
+                m_aoVerticalShiftGrids[i].bInverse ? "TRUE" : "FALSE");
+        CPLCreateXMLElementAndValue(psVertShiftGridNode,
+                "ToMeterSrc",
+                CPLSPrintf("%.18g", m_aoVerticalShiftGrids[i].dfToMeterSrc));
+        CPLCreateXMLElementAndValue(psVertShiftGridNode,
+                "ToMeterDest",
+                CPLSPrintf("%.18g", m_aoVerticalShiftGrids[i].dfToMeterDest));
+        for( int j=0; j < m_aoVerticalShiftGrids[i].aosOptions.size(); ++j )
+        {
+            char* pszKey = NULL;
+            const char* pszValue = CPLParseNameValue(
+                m_aoVerticalShiftGrids[i].aosOptions[j], &pszKey);
+            if( pszKey && pszValue )
+            {
+                CPLXMLNode* psOption = CPLCreateXMLElementAndValue(
+                    psVertShiftGridNode,
+                    "Option",
+                    pszValue);
+                CPLCreateXMLNode(
+                    CPLCreateXMLNode( psOption, CXT_Attribute, "name" ),
+                    CXT_Text, pszKey );
+            }
+            CPLFree(pszKey);
+        }
     }
 
 /* ==================================================================== */
 /*      Serialize the warp options.                                     */
 /* ==================================================================== */
-    CPLXMLNode *psWOTree;
-
     if( m_poWarper != NULL )
     {
 /* -------------------------------------------------------------------- */
 /*      We reset the destination dataset name so it doesn't get         */
 /*      written out in the serialize warp options.                      */
 /* -------------------------------------------------------------------- */
-        char *pszSavedName = CPLStrdup(GetDescription());
+        char * const pszSavedName = CPLStrdup(GetDescription());
         SetDescription("");
 
-        psWOTree = GDALSerializeWarpOptions( m_poWarper->GetOptions() );
+        CPLXMLNode * const psWOTree =
+            GDALSerializeWarpOptions( m_poWarper->GetOptions() );
         CPLAddXMLChild( psTree, psWOTree );
 
         SetDescription( pszSavedName );
@@ -1280,7 +1433,7 @@ CPLXMLNode *VRTWarpedDataset::SerializeToXML( const char *pszVRTPathIn )
 /* -------------------------------------------------------------------- */
         CPLXMLNode *psSDS = CPLGetXMLNode( psWOTree, "SourceDataset" );
         int bRelativeToVRT = FALSE;
-        VSIStatBufL  sStat;
+        VSIStatBufL sStat;
 
         if( VSIStatExL( psSDS->psChild->pszValue, &sStat,
                         VSI_STAT_EXISTS_FLAG) == 0 )
@@ -1308,8 +1461,8 @@ CPLXMLNode *VRTWarpedDataset::SerializeToXML( const char *pszVRTPathIn )
 void VRTWarpedDataset::GetBlockSize( int *pnBlockXSize, int *pnBlockYSize )
 
 {
-    assert( NULL != pnBlockXSize );
-    assert( NULL != pnBlockYSize );
+    CPLAssert( NULL != pnBlockXSize );
+    CPLAssert( NULL != pnBlockYSize );
 
     *pnBlockXSize = m_nBlockXSize;
     *pnBlockYSize = m_nBlockYSize;
@@ -1334,7 +1487,7 @@ CPLErr VRTWarpedDataset::ProcessBlock( int iBlockX, int iBlockY )
 /*      Allocate block of memory large enough to hold all the bands     */
 /*      for this block.                                                 */
 /* -------------------------------------------------------------------- */
-    const int nWordSize = (GDALGetDataTypeSize(psWO->eWorkingDataType) / 8);
+    const int nWordSize = GDALGetDataTypeSizeBytes(psWO->eWorkingDataType);
 
     int nReqXSize = m_nBlockXSize;
     if( iBlockX * m_nBlockXSize + nReqXSize > nRasterXSize )
@@ -1348,7 +1501,7 @@ CPLErr VRTWarpedDataset::ProcessBlock( int iBlockX, int iBlockY )
     const int nDstBufferSize
         = nReqXSize * nReqYSize * psWO->nBandCount * nWordSize;
 
-    GByte *pabyDstBuffer = reinterpret_cast<GByte *>(
+    GByte *pabyDstBuffer = static_cast<GByte *>(
         VSI_MALLOC_VERBOSE(nDstBufferSize) );
 
     if( pabyDstBuffer == NULL )
@@ -1379,7 +1532,7 @@ CPLErr VRTWarpedDataset::ProcessBlock( int iBlockX, int iBlockY )
             const char *pszBandInit
                 = papszInitValues[std::min( iBand, nInitCount - 1 )];
 
-            double adfInitRealImag[2];
+            double adfInitRealImag[2] = { 0.0, 0.0 };
             if( EQUAL(pszBandInit,"NO_DATA")
                 && psWO->padfDstNoDataReal != NULL )
             {
@@ -1397,14 +1550,20 @@ CPLErr VRTWarpedDataset::ProcessBlock( int iBlockX, int iBlockY )
 
             if( psWO->eWorkingDataType == GDT_Byte )
                 memset( pBandData,
-                        std::max(0,std::min(255,static_cast<int>( adfInitRealImag[0] ))),
+                        std::max( 0,
+                                  std::min( 255,
+                                            static_cast<int>(
+                                                adfInitRealImag[0] ) ) ),
                         nBandSize);
-            else if( !CPLIsNan(adfInitRealImag[0]) && adfInitRealImag[0] == 0.0 &&
-                     !CPLIsNan(adfInitRealImag[1]) && adfInitRealImag[1] == 0.0 )
+            else if( !CPLIsNan(adfInitRealImag[0]) &&
+                     adfInitRealImag[0] == 0.0 &&
+                     !CPLIsNan(adfInitRealImag[1]) &&
+                     adfInitRealImag[1] == 0.0 )
             {
                 memset( pBandData, 0, nBandSize );
             }
-            else if( !CPLIsNan(adfInitRealImag[1]) && adfInitRealImag[1] == 0.0 )
+            else if( !CPLIsNan(adfInitRealImag[1]) &&
+                     adfInitRealImag[1] == 0.0 )
             {
                 GDALCopyWords( &adfInitRealImag, GDT_Float64, 0,
                                pBandData,psWO->eWorkingDataType,nWordSize,
@@ -1425,8 +1584,8 @@ CPLErr VRTWarpedDataset::ProcessBlock( int iBlockX, int iBlockY )
 /*      Warp into this buffer.                                          */
 /* -------------------------------------------------------------------- */
 
-    CPLErr eErr
-        = m_poWarper->WarpRegionToBuffer(
+    const CPLErr eErr =
+        m_poWarper->WarpRegionToBuffer(
             iBlockX * m_nBlockXSize, iBlockY * m_nBlockYSize,
             nReqXSize, nReqYSize,
             pabyDstBuffer, psWO->eWorkingDataType );
@@ -1452,26 +1611,32 @@ CPLErr VRTWarpedDataset::ProcessBlock( int iBlockX, int iBlockY )
             {
                 if( nReqXSize == m_nBlockXSize && nReqYSize == m_nBlockYSize )
                 {
-                    GDALCopyWords( pabyDstBuffer + iBand*m_nBlockXSize*m_nBlockYSize*nWordSize,
-                                psWO->eWorkingDataType, nWordSize,
-                                poBlock->GetDataRef(),
-                                poBlock->GetDataType(),
-                                GDALGetDataTypeSize(poBlock->GetDataType())/8,
-                                m_nBlockXSize * m_nBlockYSize );
+                    GDALCopyWords(
+                        pabyDstBuffer +
+                        iBand*m_nBlockXSize*m_nBlockYSize*nWordSize,
+                        psWO->eWorkingDataType, nWordSize,
+                        poBlock->GetDataRef(),
+                        poBlock->GetDataType(),
+                        GDALGetDataTypeSizeBytes(poBlock->GetDataType()),
+                        m_nBlockXSize * m_nBlockYSize );
                 }
                 else
                 {
                     GByte* pabyBlock = reinterpret_cast<GByte *>(
                         poBlock->GetDataRef() );
-                    const int nDTSize = GDALGetDataTypeSize(poBlock->GetDataType())/8;
+                    const int nDTSize =
+                        GDALGetDataTypeSizeBytes(poBlock->GetDataType());
                     for(int iY=0;iY<nReqYSize;iY++)
                     {
-                        GDALCopyWords( pabyDstBuffer + iBand*nReqXSize*nReqYSize*nWordSize + iY * nReqXSize*nWordSize,
-                                       psWO->eWorkingDataType, nWordSize,
-                                       pabyBlock + iY * m_nBlockXSize * nDTSize,
-                                       poBlock->GetDataType(),
-                                       nDTSize,
-                                       nReqXSize );
+                        GDALCopyWords(
+                            pabyDstBuffer +
+                            iBand*nReqXSize*nReqYSize*nWordSize +
+                            iY * nReqXSize*nWordSize,
+                            psWO->eWorkingDataType, nWordSize,
+                            pabyBlock + iY * m_nBlockXSize * nDTSize,
+                            poBlock->GetDataType(),
+                            nDTSize,
+                            nReqXSize );
                     }
                 }
             }
@@ -1489,11 +1654,9 @@ CPLErr VRTWarpedDataset::ProcessBlock( int iBlockX, int iBlockY )
 /*                              AddBand()                               */
 /************************************************************************/
 
-CPLErr VRTWarpedDataset::AddBand( GDALDataType eType, char **papszOptions )
+CPLErr VRTWarpedDataset::AddBand( GDALDataType eType, char ** /* papszOptions */ )
 
 {
-    UNREFERENCED_PARAM( papszOptions );
-
     SetBand( GetRasterCount() + 1,
              new VRTWarpedRasterBand( this, GetRasterCount() + 1, eType ) );
 
@@ -1516,9 +1679,9 @@ VRTWarpedRasterBand::VRTWarpedRasterBand( GDALDataset *poDSIn, int nBandIn,
 {
     Initialize( poDSIn->GetRasterXSize(), poDSIn->GetRasterYSize() );
 
-    this->poDS = poDSIn;
-    this->nBand = nBandIn;
-    this->eAccess = GA_Update;
+    poDS = poDSIn;
+    nBand = nBandIn;
+    eAccess = GA_Update;
 
     reinterpret_cast<VRTWarpedDataset *>( poDS )->GetBlockSize( &nBlockXSize,
                                                                 &nBlockYSize );
@@ -1542,7 +1705,7 @@ VRTWarpedRasterBand::~VRTWarpedRasterBand()
 /************************************************************************/
 
 CPLErr VRTWarpedRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
-                                     void * pImage )
+                                        void * pImage )
 
 {
     VRTWarpedDataset *poWDS = reinterpret_cast<VRTWarpedDataset *>( poDS );
@@ -1550,7 +1713,7 @@ CPLErr VRTWarpedRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
     if( poBlock == NULL )
         return CE_Failure;
 
-    CPLErr eErr = poWDS->ProcessBlock( nBlockXOff, nBlockYOff );
+    const CPLErr eErr = poWDS->ProcessBlock( nBlockXOff, nBlockYOff );
 
     if( eErr == CE_None && pImage != poBlock->GetDataRef() )
     {
@@ -1570,28 +1733,23 @@ CPLErr VRTWarpedRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 /************************************************************************/
 
 CPLErr VRTWarpedRasterBand::IWriteBlock( int nBlockXOff, int nBlockYOff,
-                                     void * pImage )
+                                         void * pImage )
 
 {
     VRTWarpedDataset *poWDS = reinterpret_cast<VRTWarpedDataset *>( poDS );
 
-    /* This is a bit tricky. In the case we are warping a VRTWarpedDataset */
-    /* with a destination alpha band, IWriteBlock can be called on that alpha */
-    /* band by GDALWarpDstAlphaMasker */
-    /* We don't need to do anything since the data will be kept in the block */
-    /* cache by VRTWarpedRasterBand::IReadBlock */
-    CPLErr eErr;
-    if (poWDS->m_poWarper->GetOptions()->nDstAlphaBand == nBand)
-    {
-        eErr = CE_None;
-    }
-    else
+    // This is a bit tricky. In the case we are warping a VRTWarpedDataset
+    // with a destination alpha band, IWriteBlock can be called on that alpha
+    // band by GDALWarpDstAlphaMasker
+    // We don't need to do anything since the data will be kept in the block
+    // cache by VRTWarpedRasterBand::IReadBlock.
+    if (poWDS->m_poWarper->GetOptions()->nDstAlphaBand != nBand)
     {
         /* Otherwise, call the superclass method, that will fail of course */
-        eErr = VRTRasterBand::IWriteBlock(nBlockXOff, nBlockYOff, pImage);
+        return VRTRasterBand::IWriteBlock(nBlockXOff, nBlockYOff, pImage);
     }
 
-    return eErr;
+    return CE_None;
 }
 
 /************************************************************************/
@@ -1599,7 +1757,7 @@ CPLErr VRTWarpedRasterBand::IWriteBlock( int nBlockXOff, int nBlockYOff,
 /************************************************************************/
 
 CPLErr VRTWarpedRasterBand::XMLInit( CPLXMLNode * psTree,
-                                  const char *pszVRTPathIn )
+                                     const char *pszVRTPathIn )
 
 {
     return VRTRasterBand::XMLInit( psTree, pszVRTPathIn );
@@ -1612,7 +1770,7 @@ CPLErr VRTWarpedRasterBand::XMLInit( CPLXMLNode * psTree,
 CPLXMLNode *VRTWarpedRasterBand::SerializeToXML( const char *pszVRTPathIn )
 
 {
-    CPLXMLNode *psTree = VRTRasterBand::SerializeToXML( pszVRTPathIn );
+    CPLXMLNode * const psTree = VRTRasterBand::SerializeToXML( pszVRTPathIn );
 
 /* -------------------------------------------------------------------- */
 /*      Set subclass.                                                   */
@@ -1631,7 +1789,8 @@ CPLXMLNode *VRTWarpedRasterBand::SerializeToXML( const char *pszVRTPathIn )
 int VRTWarpedRasterBand::GetOverviewCount()
 
 {
-    VRTWarpedDataset *poWDS = reinterpret_cast<VRTWarpedDataset *>( poDS );
+    VRTWarpedDataset * const poWDS =
+        reinterpret_cast<VRTWarpedDataset *>( poDS );
 
     poWDS->CreateImplicitOverviews();
 
@@ -1645,10 +1804,13 @@ int VRTWarpedRasterBand::GetOverviewCount()
 GDALRasterBand *VRTWarpedRasterBand::GetOverview( int iOverview )
 
 {
-    VRTWarpedDataset *poWDS = reinterpret_cast<VRTWarpedDataset *>( poDS );
+    VRTWarpedDataset * const poWDS =
+        reinterpret_cast<VRTWarpedDataset *>( poDS );
 
     if( iOverview < 0 || iOverview >= GetOverviewCount() )
         return NULL;
 
     return poWDS->m_papoOverviews[iOverview]->GetRasterBand( nBand );
 }
+
+/*! @endcond */

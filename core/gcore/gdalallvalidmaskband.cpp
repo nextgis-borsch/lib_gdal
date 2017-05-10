@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: gdalallvalidmaskband.cpp 31440 2015-11-12 01:38:25Z goatbar $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of GDALAllValidMaskBand, a class implementing all
@@ -28,10 +27,17 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#include "cpl_port.h"
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id: gdalallvalidmaskband.cpp 31440 2015-11-12 01:38:25Z goatbar $");
+#include <cstring>
 
+#include "gdal.h"
+#include "cpl_error.h"
+
+CPL_CVSID("$Id: gdalallvalidmaskband.cpp 36522 2016-11-26 16:04:27Z goatbar $");
+
+//! @cond Doxygen_Suppress
 /************************************************************************/
 /*                        GDALAllValidMaskBand()                        */
 /************************************************************************/
@@ -87,3 +93,4 @@ int GDALAllValidMaskBand::GetMaskFlags()
 {
     return GMF_ALL_VALID;
 }
+//! @endcond

@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrili2datasource.cpp 32797 2016-01-07 19:49:33Z rouault $
  *
  * Project:  Interlis 2 Translator
  * Purpose:  Implements OGRILI2DataSource class.
@@ -37,8 +36,7 @@
 
 using namespace std;
 
-
-CPL_CVSID("$Id: ogrili2datasource.cpp 32797 2016-01-07 19:49:33Z rouault $");
+CPL_CVSID("$Id: ogrili2datasource.cpp 37745 2017-03-17 13:43:46Z rouault $");
 
 /************************************************************************/
 /*                         OGRILI2DataSource()                         */
@@ -163,7 +161,7 @@ int OGRILI2DataSource::Open( const char * pszNewName,
         return FALSE;
     }
 
-    if (osModelFilename.size())
+    if (!osModelFilename.empty() )
         poReader->ReadModel( poImdReader, osModelFilename );
 
     poReader->SetSourceFile( pszName );
@@ -179,7 +177,6 @@ int OGRILI2DataSource::Open( const char * pszNewName,
     return TRUE;
 }
 
-
 /************************************************************************/
 /*                               Create()                               */
 /************************************************************************/
@@ -194,9 +191,8 @@ int OGRILI2DataSource::Create( const char *pszFilename,
 
     if( pszModelFilename == NULL )
     {
-        CPLError( CE_Warning, CPLE_OpenFailed,
-                  "Model file '%s' (%s) not found : %s.",
-                  pszModelFilename, pszFilename, VSIStrerror( errno ) );
+        CPLError( CE_Warning, CPLE_AppDefined,
+                  "Model file not specified." );
         CSLDestroy(filenames);
         return FALSE;
     }
@@ -231,7 +227,6 @@ int OGRILI2DataSource::Create( const char *pszFilename,
         CSLDestroy(filenames);
         return FALSE;
     }
-
 
 /* -------------------------------------------------------------------- */
 /*      Parse model                                                     */
@@ -326,11 +321,11 @@ OGRLayer *OGRILI2DataSource::GetLayer( int iLayer )
     list<OGRLayer *>::const_iterator layerIt = listLayer.begin();
     int i = 0;
     while (i < iLayer && layerIt != listLayer.end()) {
-        i++;
-        layerIt++;
+        ++i;
+        ++layerIt;
     }
 
-    if (i == iLayer) {
+    if (i == iLayer && layerIt != listLayer.end()) {
         OGRILI2Layer *tmpLayer = reinterpret_cast<OGRILI2Layer *>(*layerIt);
         return tmpLayer;
     }

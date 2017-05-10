@@ -3,7 +3,7 @@
 # Purpose:  CMake build scripts
 # Author:   Mikhail Gusev, gusevmihs@gmail.com
 ################################################################################
-# Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
+# Copyright (C) 2015-2017, NextGIS <info@nextgis.com>
 # Copyright (C) 2016 Mikhail Gusev
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -34,7 +34,7 @@ if(ENABLE_CARTO AND ENABLE_PGDUMP)
 	set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DCARTO_ENABLED" PARENT_SCOPE)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-    #include_directories(${JSONC_INCLUDE_DIR})
+    include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/geojson)
     include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/pgdump)
 
     set(LIB_HHEADERS
@@ -56,7 +56,7 @@ if(ENABLE_CARTO AND ENABLE_PGDUMP)
     if(DEPENDENCY_LIB)
         add_dependencies(${TARGET_NAME} ${DEPENDENCY_LIB})
     endif()
-    
+
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
 else()

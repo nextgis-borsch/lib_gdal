@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: gdalbuildvrt_bin.cpp 33757 2016-03-20 20:22:33Z goatbar $
  *
  * Project:  GDAL Utilities
  * Purpose:  Command line application to build VRT datasets from raster products or content of SHP tile index
@@ -32,7 +31,7 @@
 #include "commonutils.h"
 #include "gdal_utils_priv.h"
 
-CPL_CVSID("$Id: gdalbuildvrt_bin.cpp 33757 2016-03-20 20:22:33Z goatbar $");
+CPL_CVSID("$Id: gdalbuildvrt_bin.cpp 37978 2017-04-13 15:25:54Z rouault $");
 
 /************************************************************************/
 /*                               Usage()                                */
@@ -53,6 +52,7 @@ static void Usage(const char* pszErrorMsg)
             "                    [-srcnodata \"value [value...]\"] [-vrtnodata \"value [value...]\"] \n"
             "                    [-a_srs srs_def]\n"
             "                    [-r {nearest,bilinear,cubic,cubicspline,lanczos,average,mode}]\n"
+            "                    [-oo NAME=VALUE]*\n"
             "                    [-input_file_list my_list.txt] [-overwrite] output.vrt [gdalfile]*\n"
             "\n"
             "e.g.\n"

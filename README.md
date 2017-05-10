@@ -77,6 +77,7 @@ with '\*' have high priority to be implemented.
 | **cosar** | **yes** | no | - |
 | **ctg** | **yes** | no | - |
 | dds | no |  |  |
+| derived | no |  |  |
 | **dimap** | **yes** | no | - |
 | dods | no |  |  |
 | **dted** | **yes** | no | No additional build targets implemented |
@@ -195,6 +196,7 @@ Available vector drivers for now (by all driver directories in sources). Drivers
 | **gft** | **yes** | [CURL](https://github.com/nextgis-borsch/lib_curl) | - |
 | gme | no |  |  |
 | **gml** | **yes** | Optionally: [EXPAT](https://github.com/nextgis-borsch/lib_expat), XERCES, [SQLITE3](https://github.com/nextgis-borsch/lib_sqlite) | No Xerces support implemented; No additional build targets implemented |
+| gmlas | no |  | requires Xerces |
 | **gmt** | **yes** | no | - |
 | **gpsbabel** | **yes** | ? | Built without GPX driver - do we need it? |
 | **gpx** | **yes** | Optionally: [EXPAT](https://github.com/nextgis-borsch/lib_expat) | - |

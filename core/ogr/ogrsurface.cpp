@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrsurface.cpp 33631 2016-03-04 06:28:09Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRSurface class.
@@ -27,8 +26,11 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#include "cpl_port.h"
 #include "ogr_geometry.h"
 #include "ogr_p.h"
+
+CPL_CVSID("$Id: ogrsurface.cpp 36324 2016-11-20 02:28:41Z goatbar $");
 
 /**
  * \fn double OGRSurface::get_Area() const;
@@ -47,7 +49,8 @@
 /**
  * \fn OGRErr OGRSurface::PointOnSurface( OGRPoint * poPoint ) const;
  *
- * \brief This method relates to the SFCOM ISurface::get_PointOnSurface() method.
+ * \brief This method relates to the SFCOM
+ * ISurface::get_PointOnSurface() method.
  *
  * NOTE: Only implemented when GEOS included in build.
  *
@@ -60,6 +63,7 @@
 /*                          CastToPolygon()                             */
 /************************************************************************/
 
+/*! @cond Doxygen_Suppress */
 /**
  * \brief Cast to polygon
  *
@@ -70,7 +74,7 @@
  * @return new geometry.
  */
 
-OGRPolygon* OGRSurface::CastToPolygon(OGRSurface* poSurface)
+OGRPolygon* OGRSurface::CastToPolygon( OGRSurface* poSurface )
 {
     OGRSurfaceCasterToPolygon pfn = poSurface->GetCasterToPolygon();
     return pfn(poSurface);
@@ -90,8 +94,9 @@ OGRPolygon* OGRSurface::CastToPolygon(OGRSurface* poSurface)
  * @return new geometry.
  */
 
-OGRCurvePolygon* OGRSurface::CastToCurvePolygon(OGRSurface* poSurface)
+OGRCurvePolygon* OGRSurface::CastToCurvePolygon( OGRSurface* poSurface )
 {
     OGRSurfaceCasterToCurvePolygon pfn = poSurface->GetCasterToCurvePolygon();
     return pfn(poSurface);
 }
+/*! @endcond */

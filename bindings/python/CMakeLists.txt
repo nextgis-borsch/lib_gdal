@@ -3,7 +3,7 @@
 # Purpose:  CMake build scripts
 # Author:   Dmitry Baryshnikov, polimax@mail.ru
 ################################################################################
-# Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
+# Copyright (C) 2015-2017, NextGIS <info@nextgis.com>
 # Copyright (C) 2012,2013,2014 Dmitry Baryshnikov
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -132,6 +132,7 @@ set(PY_COMMANDS
     scripts/gdalident.py
     scripts/mkgraticule.py
     scripts/gdal_calc.py
+    scripts/ogrmerge.py
 )
 
 add_custom_target(copy_files ALL

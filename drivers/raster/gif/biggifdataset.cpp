@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: biggifdataset.cpp 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  BIGGIF Driver
  * Purpose:  Implement GDAL support for reading large GIF files in a
@@ -35,7 +34,7 @@
 #include "gdal_pam.h"
 #include "gifabstractdataset.h"
 
-CPL_CVSID("$Id: biggifdataset.cpp 33717 2016-03-14 06:29:14Z goatbar $");
+CPL_CVSID("$Id: biggifdataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -56,11 +55,11 @@ class BIGGIFDataset : public GIFAbstractDataset
     CPLErr       ReOpen();
 
   protected:
-    virtual int         CloseDependentDatasets();
+    virtual int         CloseDependentDatasets() override;
 
   public:
                  BIGGIFDataset();
-                 ~BIGGIFDataset();
+    virtual ~BIGGIFDataset();
 
     static GDALDataset *Open( GDALOpenInfo * );
 };
@@ -76,10 +75,9 @@ class BIGGifRasterBand : public GIFAbstractRasterBand
     friend class BIGGIFDataset;
 
   public:
-
                    BIGGifRasterBand( BIGGIFDataset *, int );
 
-    virtual CPLErr IReadBlock( int, int, void * );
+    virtual CPLErr IReadBlock( int, int, void * ) override;
 };
 
 /************************************************************************/
@@ -87,10 +85,10 @@ class BIGGifRasterBand : public GIFAbstractRasterBand
 /************************************************************************/
 
 BIGGifRasterBand::BIGGifRasterBand( BIGGIFDataset *poDSIn, int nBackground ) :
-    GIFAbstractRasterBand(poDSIn, 1, poDSIn->hGifFile->SavedImages, nBackground, TRUE)
+    GIFAbstractRasterBand(poDSIn, 1, poDSIn->hGifFile->SavedImages,
+                          nBackground, TRUE)
 
-{
-}
+{}
 
 /************************************************************************/
 /*                             IReadBlock()                             */
@@ -161,7 +159,6 @@ CPLErr BIGGifRasterBand::IReadBlock( CPL_UNUSED int nBlockXOff,
 /* ==================================================================== */
 /************************************************************************/
 
-
 /************************************************************************/
 /*                            BIGGIFDataset()                            */
 /************************************************************************/
@@ -169,8 +166,7 @@ CPLErr BIGGifRasterBand::IReadBlock( CPL_UNUSED int nBlockXOff,
 BIGGIFDataset::BIGGIFDataset() :
     nLastLineRead(-1),
     poWorkDS(NULL)
-{
-}
+{}
 
 /************************************************************************/
 /*                           ~BIGGIFDataset()                            */
@@ -294,7 +290,6 @@ CPLErr BIGGIFDataset::ReOpen()
 
     return CE_None;
 }
-
 
 /************************************************************************/
 /*                                Open()                                */

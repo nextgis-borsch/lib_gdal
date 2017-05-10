@@ -29,6 +29,8 @@
 
 #include "ogr_db2.h"
 
+CPL_CVSID("$Id: ogrdb2layer.cpp 37371 2017-02-13 11:41:59Z rouault $");
+
 /************************************************************************/
 /*                        OGRDB2Layer()                        */
 /************************************************************************/
@@ -36,13 +38,17 @@
 OGRDB2Layer::OGRDB2Layer()
 
 {
+    m_poDS = NULL;
+    poFeatureDefn = NULL;
     poDS = NULL;
     pszGeomColumn = NULL;
     pszFIDColumn = NULL;
     bIsIdentityFid = FALSE;
     cGenerated = ' ';
+    nLayerStatus = 0;
     panFieldOrdinals = NULL;
     m_poStmt = NULL;
+    m_poPrepStmt = NULL;
     iNextShapeId = 0;
     poSRS = NULL;
     nSRSId = -1; // we haven't even queried the database for it yet.
@@ -57,7 +63,8 @@ OGRDB2Layer::~OGRDB2Layer()
 {
     CPLDebug("OGRDB2Layer::~OGRDB2Layer","entering");
     CPLDebug("OGRDB2Layer::~OGRDB2Layer",
-             "m_nFeaturesRead: %d; poFeatureDefn: %p", m_nFeaturesRead,poFeatureDefn);
+             "m_nFeaturesRead: " CPL_FRMT_GIB "; poFeatureDefn: %p",
+             m_nFeaturesRead,poFeatureDefn);
     if( m_nFeaturesRead > 0 && poFeatureDefn != NULL )
     {
         CPLDebug( "OGR_DB2Layer",
@@ -217,7 +224,6 @@ CPLErr OGRDB2Layer::BuildFeatureDefn( const char *pszLayerName,
     return CE_None;
 }
 
-
 /************************************************************************/
 /*                            ResetReading()                            */
 /************************************************************************/
@@ -303,7 +309,7 @@ OGRFeature *OGRDB2Layer::GetNextRawFeature()
         const char *pszValue = m_poStmt->GetColData( iSrcField );
 
         if( pszValue == NULL )
-            /* no value */;
+            poFeature->SetFieldNull( iField );
         else if( poFeature->GetFieldDefnRef(iField)->GetType() == OFTBinary )
             poFeature->SetField( iField,
                                  m_poStmt->GetColDataLength(iSrcField),
@@ -473,8 +479,9 @@ const char *OGRDB2Layer::GetGeometryColumn()
 char* OGRDB2Layer::GByteArrayToHexString( const GByte* pabyData, int nLen)
 {
     char* pszTextBuf;
+    const size_t nBufLen = nLen*2+3;
 
-    pszTextBuf = (char *) CPLMalloc(nLen*2+3);
+    pszTextBuf = (char *) CPLMalloc(nBufLen);
 
     int  iSrc, iDst=0;
 
@@ -482,12 +489,12 @@ char* OGRDB2Layer::GByteArrayToHexString( const GByte* pabyData, int nLen)
     {
         if( iSrc == 0 )
         {
-            sprintf( pszTextBuf+iDst, "0x%02x", pabyData[iSrc] );
+            snprintf( pszTextBuf+iDst, nBufLen - iDst, "0x%02x", pabyData[iSrc] );
             iDst += 4;
         }
         else
         {
-            sprintf( pszTextBuf+iDst, "%02x", pabyData[iSrc] );
+            snprintf( pszTextBuf+iDst, nBufLen - iDst, "%02x", pabyData[iSrc] );
             iDst += 2;
         }
     }

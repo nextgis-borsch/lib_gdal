@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrpgeodriver.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements Personal Geodatabase driver.
@@ -31,7 +30,7 @@
 #include "ogr_pgeo.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrpgeodriver.cpp 33714 2016-03-13 05:42:13Z goatbar $");
+CPL_CVSID("$Id: ogrpgeodriver.cpp 35911 2016-10-24 15:03:26Z goatbar $");
 
 /************************************************************************/
 /*                            ~OGRODBCDriver()                            */
@@ -60,8 +59,6 @@ OGRDataSource *OGRPGeoDriver::Open( const char * pszFilename,
                                     int bUpdate )
 
 {
-    OGRPGeoDataSource     *poDS;
-
     if( STARTS_WITH_CI(pszFilename, "WALK:") )
         return NULL;
 
@@ -132,7 +129,7 @@ OGRDataSource *OGRPGeoDriver::Open( const char * pszFilename,
 #endif /* ndef WIN32 */
 
     // Open data source
-    poDS = new OGRPGeoDataSource();
+    OGRPGeoDataSource *poDS = new OGRPGeoDataSource();
 
     if( !poDS->Open( pszFilename, bUpdate, TRUE ) )
     {
@@ -151,7 +148,6 @@ int OGRPGeoDriver::TestCapability( CPL_UNUSED const char * pszCap )
 {
     return FALSE;
 }
-
 
 /*
  * START OF UNIX-only features.

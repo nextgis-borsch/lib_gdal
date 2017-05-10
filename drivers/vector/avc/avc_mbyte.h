@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: avc_mbyte.h,v 1.4 2008/07/23 20:51:38 dmorissette Exp $
+ * $Id: avc_mbyte.h 35903 2016-10-24 12:09:43Z goatbar $
  *
  * Name:     avc.h
  * Project:  Arc/Info Vector coverage (AVC) BIN<->E00 conversion library
@@ -63,7 +63,6 @@ CPL_C_START
 #define AVC_CODE_JAP_UNKNOWN    0
 #define AVC_CODE_JAP_SHIFTJIS   1
 #define AVC_CODE_JAP_EUC        2
-
 
 /*---------------------------------------------------------------------
  * We use the following structure to keep track of DBCS info.

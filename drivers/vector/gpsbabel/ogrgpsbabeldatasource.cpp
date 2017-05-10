@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrgpsbabeldatasource.cpp 32982 2016-01-14 16:53:57Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRGPSBabelDataSource class.
@@ -34,8 +33,9 @@
 #include "ogr_gpsbabel.h"
 
 #include <cstring>
+#include <algorithm>
 
-CPL_CVSID("$Id: ogrgpsbabeldatasource.cpp 32982 2016-01-14 16:53:57Z goatbar $");
+CPL_CVSID("$Id: ogrgpsbabeldatasource.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 /************************************************************************/
 /*                      OGRGPSBabelDataSource()                         */
@@ -48,10 +48,8 @@ OGRGPSBabelDataSource::OGRGPSBabelDataSource() :
     pszFilename(NULL),
     poGPXDS(NULL)
 {
-  for(int i=0; i<5; ++i)
-  {
-    apoLayers[i] = NULL;
-  }
+  std::fill_n(apoLayers, CPL_ARRAYSIZE(apoLayers),
+              static_cast<OGRLayer*>(NULL));
 }
 
 /************************************************************************/
@@ -67,7 +65,7 @@ OGRGPSBabelDataSource::~OGRGPSBabelDataSource()
 
     CloseDependentDatasets();
 
-    if (osTmpFileName.size() > 0)
+    if (!osTmpFileName.empty())
         VSIUnlink(osTmpFileName.c_str());
 }
 
@@ -116,18 +114,20 @@ static char** GetArgv( int bExplicitFeatures, int bWaypoints, int bRoutes,
 /*                         IsSpecialFile()                              */
 /************************************************************************/
 
-int OGRGPSBabelDataSource::IsSpecialFile(const char* pszFilename)
+bool OGRGPSBabelDataSource::IsSpecialFile( const char* pszFilename )
 {
-    return (STARTS_WITH(pszFilename, "/dev/") ||
-            STARTS_WITH(pszFilename, "usb:") ||
-            (STARTS_WITH(pszFilename, "COM")  && atoi(pszFilename + 3) > 0));
+    return
+        STARTS_WITH(pszFilename, "/dev/") ||
+        STARTS_WITH(pszFilename, "usb:") ||
+        (STARTS_WITH(pszFilename, "COM")  && atoi(pszFilename + 3) > 0);
 }
 
 /************************************************************************/
 /*                       IsValidDriverName()                            */
 /************************************************************************/
 
-int OGRGPSBabelDataSource::IsValidDriverName(const char* pszGPSBabelDriverName)
+bool
+OGRGPSBabelDataSource::IsValidDriverName( const char* pszGPSBabelDriverName )
 {
     for( int i = 0; pszGPSBabelDriverName[i] != '\0'; i++ )
     {
@@ -139,10 +139,10 @@ int OGRGPSBabelDataSource::IsValidDriverName(const char* pszGPSBabelDriverName)
         {
             CPLError( CE_Failure, CPLE_AppDefined,
                       "Invalid GPSBabel driver name");
-            return FALSE;
+            return false;
         }
     }
-    return TRUE;
+    return true;
 }
 
 /************************************************************************/
@@ -342,7 +342,6 @@ int OGRGPSBabelDataSource::Open( const char * pszDatasourceName,
             }
         }
     }
-
 
     if (bRet)
     {

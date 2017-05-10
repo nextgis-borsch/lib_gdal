@@ -1,6 +1,8 @@
 #include <map>
 #include "ogr_sosi.h"
 
+CPL_CVSID("$Id: ogrsosidatatypes.cpp 36347 2016-11-20 20:43:39Z rouault $");
+
 C2F oTypes;
 C2F::iterator iTypes;
 
@@ -17,7 +19,11 @@ void OGRSOSIDataType::setElement(int nIndex, const char *name, OGRFieldType type
     poElements[nIndex].setType(name, type);
 }
 
-OGRSOSISimpleDataType::OGRSOSISimpleDataType () {}
+OGRSOSISimpleDataType::OGRSOSISimpleDataType ():
+    pszName(""),
+    nType(OFTString)
+{}
+
 OGRSOSISimpleDataType::OGRSOSISimpleDataType (const char *name, OGRFieldType type) {
     setType(name, type);
 }
@@ -26,7 +32,6 @@ void OGRSOSISimpleDataType::setType (const char *name, OGRFieldType type) {
     nType   = type;
 }
 OGRSOSISimpleDataType::~OGRSOSISimpleDataType () {}
-
 
 /*** utility methods ***/
 

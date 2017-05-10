@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_attrind.h 32177 2015-12-14 07:25:30Z goatbar $
+ * $Id: ogr_attrind.h 34921 2016-08-04 22:26:31Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Classes related to generic implementation of attribute indexing.
@@ -31,6 +31,8 @@
 #define OGR_ATTRIND_H_INCLUDED
 
 #include "ogrsf_frmts.h"
+
+//! @cond Doxygen_Suppress
 
 /************************************************************************/
 /*                             OGRAttrIndex                             */
@@ -88,6 +90,7 @@ public:
 
 OGRLayerAttrIndex CPL_DLL *OGRCreateDefaultLayerIndex();
 
+//! @endcond
 
 #endif /* ndef OGR_ATTRIND_H_INCLUDED */
 

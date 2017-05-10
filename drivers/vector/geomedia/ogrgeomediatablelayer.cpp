@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrgeomediatablelayer.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRGeomediaTableLayer class, access to an existing table.
@@ -31,18 +30,16 @@
 #include "cpl_conv.h"
 #include "ogr_geomedia.h"
 
-CPL_CVSID("$Id: ogrgeomediatablelayer.cpp 33713 2016-03-12 17:41:57Z goatbar $");
+CPL_CVSID("$Id: ogrgeomediatablelayer.cpp 35910 2016-10-24 14:08:24Z goatbar $");
 
 /************************************************************************/
 /*                          OGRGeomediaTableLayer()                     */
 /************************************************************************/
 
-OGRGeomediaTableLayer::OGRGeomediaTableLayer( OGRGeomediaDataSource *poDSIn )
-
+OGRGeomediaTableLayer::OGRGeomediaTableLayer( OGRGeomediaDataSource *poDSIn ) :
+    pszQuery(NULL)
 {
     poDS = poDSIn;
-    pszQuery = NULL;
-    bUpdateAccess = TRUE;
     iNextShapeId = 0;
     nSRSId = -1;
     poFeatureDefn = NULL;
@@ -67,7 +64,6 @@ CPLErr OGRGeomediaTableLayer::Initialize( const char *pszTableName,
                                           const char *pszGeomCol,
                                           OGRSpatialReference* poSRSIn )
 
-
 {
     CPLODBCSession *poSession = poDS->GetSession();
 
@@ -80,7 +76,7 @@ CPLErr OGRGeomediaTableLayer::Initialize( const char *pszTableName,
     CPLFree( pszFIDColumn );
     pszFIDColumn = NULL;
 
-    this->poSRS = poSRSIn;
+    poSRS = poSRSIn;
 
 /* -------------------------------------------------------------------- */
 /*      Do we have a simple primary key?                                */
@@ -237,19 +233,18 @@ OGRFeature *OGRGeomediaTableLayer::GetFeature( GIntBig nFeatureId )
 OGRErr OGRGeomediaTableLayer::SetAttributeFilter( const char *pszQueryIn )
 
 {
-    if( (pszQueryIn == NULL && this->pszQuery == NULL)
-        || (pszQueryIn != NULL && this->pszQuery != NULL
-            && EQUAL(pszQueryIn,this->pszQuery)) )
+    if( (pszQueryIn == NULL && pszQuery == NULL)
+        || (pszQueryIn != NULL && pszQuery != NULL
+            && EQUAL(pszQueryIn, pszQuery)) )
         return OGRERR_NONE;
 
-    CPLFree( this->pszQuery );
-    this->pszQuery = pszQueryIn ? CPLStrdup( pszQueryIn ) : NULL;
+    CPLFree( pszQuery );
+    pszQuery = pszQueryIn ? CPLStrdup( pszQueryIn ) : NULL;
 
     ClearStatement();
 
     return OGRERR_NONE;
 }
-
 
 /************************************************************************/
 /*                           TestCapability()                           */

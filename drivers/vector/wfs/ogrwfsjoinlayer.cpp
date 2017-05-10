@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrwfsjoinlayer.cpp 32983 2016-01-14 18:32:10Z goatbar $
  *
  * Project:  WFS Translator
  * Purpose:  Implements OGRWFSJoinLayer class.
@@ -30,35 +29,33 @@
 #include "ogr_wfs.h"
 #include "../../frmts/wms/md5.h"
 
-CPL_CVSID("$Id: ogrwfsjoinlayer.cpp 32983 2016-01-14 18:32:10Z goatbar $");
+CPL_CVSID("$Id: ogrwfsjoinlayer.cpp 37371 2017-02-13 11:41:59Z rouault $");
 
 /************************************************************************/
 /*                          OGRWFSJoinLayer()                           */
 /************************************************************************/
 
-OGRWFSJoinLayer::OGRWFSJoinLayer(OGRWFSDataSource* poDSIn,
-                                 const swq_select* psSelectInfo,
-                                 const CPLString& osGlobalFilterIn)
+OGRWFSJoinLayer::OGRWFSJoinLayer( OGRWFSDataSource* poDSIn,
+                                  const swq_select* psSelectInfo,
+                                  const CPLString& osGlobalFilterIn ) :
+    poDS(poDSIn),
+    poFeatureDefn(NULL),
+    osGlobalFilter(osGlobalFilterIn),
+    bDistinct(psSelectInfo->query_mode == SWQM_DISTINCT_LIST),
+    poBaseDS(NULL),
+    poBaseLayer(NULL),
+    bReloadNeeded(false),
+    bHasFetched(false),
+    bPagingActive(false),
+    nPagingStartIndex(0),
+    nFeatureRead(0),
+    nFeatureCountRequested(0)
 {
-    this->poDS = poDSIn;
-    this->osGlobalFilter = osGlobalFilterIn;
-    poFeatureDefn = NULL;
-    bPagingActive = FALSE;
-    nPagingStartIndex = 0;
-    nFeatureRead = 0;
-    nFeatureCountRequested = 0;
-    poBaseDS = NULL;
-    poBaseLayer = NULL;
-    bReloadNeeded = FALSE;
-    bHasFetched = FALSE;
-    bDistinct = (psSelectInfo->query_mode == SWQM_DISTINCT_LIST);
-
     CPLString osName("join_");
-    CPLString osLayerName;
-    osLayerName = psSelectInfo->table_defs[0].table_name;
+    CPLString osLayerName = psSelectInfo->table_defs[0].table_name;
     apoLayers.push_back((OGRWFSLayer*)poDS->GetLayerByName(osLayerName));
     osName += osLayerName;
-    for(int i=0;i<psSelectInfo->join_count;i++)
+    for( int i = 0; i < psSelectInfo->join_count; i++ )
     {
         osName += "_";
         osLayerName = psSelectInfo->table_defs[
@@ -68,7 +65,7 @@ OGRWFSJoinLayer::OGRWFSJoinLayer(OGRWFSDataSource* poDSIn,
     }
 
     osFeatureTypes = "(";
-    for(int i=0;i<(int)apoLayers.size();i++)
+    for( int i = 0; i < (int)apoLayers.size(); i++ )
     {
         if( i > 0 )
             osFeatureTypes += ",";
@@ -85,7 +82,7 @@ OGRWFSJoinLayer::OGRWFSJoinLayer(OGRWFSDataSource* poDSIn,
     for( int i = 0; i < psSelectInfo->result_columns; i++ )
     {
         swq_col_def *def = psSelectInfo->column_defs + i;
-        int table_index;
+        int table_index = 0;
         if( def->table_index >= 0 )
             table_index = def->table_index;
         else
@@ -154,7 +151,7 @@ OGRWFSJoinLayer::OGRWFSJoinLayer(OGRWFSDataSource* poDSIn,
         /* Make sure to have the right case */
         const char* pszFieldName = apoLayers[0]->GetLayerDefn()->
             GetFieldDefn(nFieldIndex)->GetNameRef();
-        if( osSortBy.size() )
+        if( !osSortBy.empty() )
             osSortBy += ",";
         osSortBy += pszFieldName;
         if( !psSelectInfo->order_defs[i].ascending_flag )
@@ -174,8 +171,8 @@ OGRWFSJoinLayer::OGRWFSJoinLayer(OGRWFSDataSource* poDSIn,
             psGlobalSchema = NULL;
             break;
         }
-        CPLXMLNode* psIter;
-        for(psIter = psSchema->psChild; psIter != NULL; psIter = psIter->psNext )
+        CPLXMLNode* psIter = psSchema->psChild;  // Used after for.
+        for( ; psIter != NULL; psIter = psIter->psNext )
         {
             if( psIter->eType == CXT_Element )
                 break;
@@ -266,7 +263,7 @@ OGRWFSJoinLayer* OGRWFSJoinLayer::Build(OGRWFSDataSource* poDS,
     {
         OGRWFSRemoveReferenceToTableAlias(psSelectInfo->join_defs[i].poExpr,
                                           psSelectInfo);
-        int bOutNeedsNullCheck;
+        int bOutNeedsNullCheck = FALSE;
         CPLString osFilter = WFS_TurnSQLFilterToOGCFilter(
                                       psSelectInfo->join_defs[i].poExpr,
                                       poDS,
@@ -277,7 +274,7 @@ OGRWFSJoinLayer* OGRWFSJoinLayer::Build(OGRWFSDataSource* poDS,
                                       FALSE, /* bGmlObjectIdNeedsGMLPrefix */
                                       "",
                                       &bOutNeedsNullCheck);
-        if( osFilter.size() == 0 )
+        if( osFilter.empty() )
         {
             CPLError(CE_Failure, CPLE_NotSupported,
                      "Unsupported JOIN clause");
@@ -289,7 +286,7 @@ OGRWFSJoinLayer* OGRWFSJoinLayer::Build(OGRWFSDataSource* poDS,
     {
         OGRWFSRemoveReferenceToTableAlias(psSelectInfo->where_expr,
                                           psSelectInfo);
-        int bOutNeedsNullCheck;
+        int bOutNeedsNullCheck = FALSE;
         CPLString osFilter = WFS_TurnSQLFilterToOGCFilter(
                                       psSelectInfo->where_expr,
                                       poDS,
@@ -300,7 +297,7 @@ OGRWFSJoinLayer* OGRWFSJoinLayer::Build(OGRWFSDataSource* poDS,
                                       FALSE, /* bGmlObjectIdNeedsGMLPrefix */
                                       "",
                                       &bOutNeedsNullCheck);
-        if( osFilter.size() == 0 )
+        if( osFilter.empty() )
         {
             CPLError(CE_Failure, CPLE_NotSupported,
                      "Unsupported WHERE clause");
@@ -323,18 +320,18 @@ OGRWFSJoinLayer* OGRWFSJoinLayer::Build(OGRWFSDataSource* poDS,
 
 void OGRWFSJoinLayer::ResetReading()
 {
-    if (bPagingActive)
-        bReloadNeeded = TRUE;
+    if( bPagingActive )
+        bReloadNeeded = true;
     nPagingStartIndex = 0;
     nFeatureRead = 0;
     nFeatureCountRequested = 0;
-    if (bReloadNeeded)
+    if( bReloadNeeded )
     {
         GDALClose(poBaseDS);
         poBaseDS = NULL;
         poBaseLayer = NULL;
-        bHasFetched = FALSE;
-        bReloadNeeded = FALSE;
+        bHasFetched = false;
+        bReloadNeeded = false;
     }
     if (poBaseLayer)
         poBaseLayer->ResetReading();
@@ -355,14 +352,14 @@ CPLString OGRWFSJoinLayer::MakeGetFeatureURL(int bRequestHits)
 
     int nRequestMaxFeatures = 0;
     if (poDS->IsPagingAllowed() && !bRequestHits &&
-        CPLURLGetValue(osURL, "COUNT").size() == 0 )
+        CPLURLGetValue(osURL, "COUNT").empty() )
     {
         osURL = CPLURLAddKVP(osURL, "STARTINDEX",
             CPLSPrintf("%d", nPagingStartIndex +
                                 poDS->GetBaseStartIndex()));
         nRequestMaxFeatures = poDS->GetPageSize();
         nFeatureCountRequested = nRequestMaxFeatures;
-        bPagingActive = TRUE;
+        bPagingActive = true;
     }
 
     if (nRequestMaxFeatures)
@@ -402,7 +399,7 @@ CPLString OGRWFSJoinLayer::MakeGetFeatureURL(int bRequestHits)
     {
         osURL = CPLURLAddKVP(osURL, "RESULTTYPE", "hits");
     }
-    else if( osSortBy.size() )
+    else if( !osSortBy.empty() )
     {
         osURL = CPLURLAddKVP(osURL, "SORTBY", WFS_EscapeURL(osSortBy));
     }
@@ -445,7 +442,7 @@ GDALDataset* OGRWFSJoinLayer::FetchGetFeature()
                            apszOpenOptions, NULL);
         if (poGML_DS)
         {
-            //bStreamingDS = TRUE;
+            // bStreamingDS = true;
             return poGML_DS;
         }
 
@@ -473,7 +470,7 @@ GDALDataset* OGRWFSJoinLayer::FetchGetFeature()
         }
     }
 
-    //bStreamingDS = FALSE;
+    // bStreamingDS = false;
     psResult = poDS->HTTPFetch( osURL, NULL);
     if (psResult == NULL)
     {
@@ -509,9 +506,8 @@ GDALDataset* OGRWFSJoinLayer::FetchGetFeature()
 
     CPLHTTPDestroyResult(psResult);
 
-    OGRDataSource* l_poDS;
-
-    l_poDS = (OGRDataSource*) OGROpen(osTmpFileName, FALSE, NULL);
+    OGRDataSource* l_poDS =
+        (OGRDataSource*) OGROpen(osTmpFileName, FALSE, NULL);
     if (l_poDS == NULL)
     {
         if( strstr((const char*)pabyData, "<wfs:FeatureCollection") == NULL &&
@@ -543,22 +539,23 @@ OGRFeature* OGRWFSJoinLayer::GetNextFeature()
 {
     while( true )
     {
-        if (bPagingActive && nFeatureRead == nPagingStartIndex + nFeatureCountRequested)
+        if( bPagingActive &&
+            nFeatureRead == nPagingStartIndex + nFeatureCountRequested )
         {
-            bReloadNeeded = TRUE;
+            bReloadNeeded = true;
             nPagingStartIndex = nFeatureRead;
         }
-        if (bReloadNeeded)
+        if( bReloadNeeded )
         {
             GDALClose(poBaseDS);
             poBaseDS = NULL;
             poBaseLayer = NULL;
-            bHasFetched = FALSE;
-            bReloadNeeded = FALSE;
+            bHasFetched = false;
+            bReloadNeeded = false;
         }
-        if (poBaseDS == NULL && !bHasFetched)
+        if( poBaseDS == NULL && !bHasFetched )
         {
-            bHasFetched = TRUE;
+            bHasFetched = true;
             poBaseDS = FetchGetFeature();
             if (poBaseDS)
             {
@@ -583,7 +580,7 @@ OGRFeature* OGRWFSJoinLayer::GetNextFeature()
         for(int i=0;i<(int)aoSrcFieldNames.size();i++)
         {
             int iSrcField = poSrcFeature->GetFieldIndex(aoSrcFieldNames[i]);
-            if( iSrcField >= 0 && poSrcFeature->IsFieldSet(iSrcField) )
+            if( iSrcField >= 0 && poSrcFeature->IsFieldSetAndNotNull(iSrcField) )
             {
                 OGRFieldType eType = poFeatureDefn->GetFieldDefn(i)->GetType();
                 if( eType == poSrcFeature->GetFieldDefnRef(iSrcField)->GetType() )
@@ -744,16 +741,14 @@ GIntBig OGRWFSJoinLayer::ExecuteGetFeatureResultTypeHits()
 
 GIntBig OGRWFSJoinLayer::GetFeatureCount( int bForce )
 {
-    GIntBig nFeatures;
-
     if( !bDistinct )
     {
-        nFeatures = ExecuteGetFeatureResultTypeHits();
+        const GIntBig nFeatures = ExecuteGetFeatureResultTypeHits();
         if (nFeatures >= 0)
             return nFeatures;
     }
 
-    nFeatures = OGRLayer::GetFeatureCount(bForce);
+    const GIntBig nFeatures = OGRLayer::GetFeatureCount(bForce);
     return nFeatures;
 }
 

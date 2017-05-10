@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrplscenesv1dataset.cpp 35828 2016-10-19 23:23:39Z rouault $
  *
  * Project:  PlanetLabs scene driver
  * Purpose:  Implements OGRPLScenesV1Dataset
@@ -28,22 +27,22 @@
  ****************************************************************************/
 
 #include "ogr_plscenes.h"
+#include "ogrgeojsonreader.h"
 #include <time.h>
 
-CPL_CVSID("$Id: ogrplscenesv1dataset.cpp 35828 2016-10-19 23:23:39Z rouault $");
+CPL_CVSID("$Id: ogrplscenesv1dataset.cpp 38115 2017-04-23 07:24:41Z rouault $");
 
 /************************************************************************/
 /*                         OGRPLScenesV1Dataset()                       */
 /************************************************************************/
 
-OGRPLScenesV1Dataset::OGRPLScenesV1Dataset()
-{
-    m_bLayerListInitialized = false;
-    m_bMustCleanPersistent = false;
-    m_nLayers = 0;
-    m_papoLayers = NULL;
-    m_bFollowLinks = false;
-}
+OGRPLScenesV1Dataset::OGRPLScenesV1Dataset() :
+    m_bLayerListInitialized(false),
+    m_bMustCleanPersistent(false),
+    m_nLayers(0),
+    m_papoLayers(NULL),
+    m_bFollowLinks(false)
+{}
 
 /************************************************************************/
 /*                         ~OGRPLScenesV1Dataset()                      */
@@ -51,14 +50,15 @@ OGRPLScenesV1Dataset::OGRPLScenesV1Dataset()
 
 OGRPLScenesV1Dataset::~OGRPLScenesV1Dataset()
 {
-    for(int i=0;i<m_nLayers;i++)
+    for( int i = 0; i < m_nLayers; i++ )
         delete m_papoLayers[i];
     CPLFree(m_papoLayers);
 
-    if (m_bMustCleanPersistent)
+    if( m_bMustCleanPersistent )
     {
-        char** papszOptions = NULL;
-        papszOptions = CSLSetNameValue(papszOptions, "CLOSE_PERSISTENT", CPLSPrintf("PLSCENES:%p", this));
+        char **papszOptions =
+            CSLSetNameValue(
+                NULL, "CLOSE_PERSISTENT", CPLSPrintf("PLSCENES:%p", this));
         CPLHTTPDestroyResult(CPLHTTPFetch(m_osBaseURL, papszOptions));
         CSLDestroy(papszOptions);
     }
@@ -97,30 +97,30 @@ OGRLayer* OGRPLScenesV1Dataset::ParseCatalog(json_object* poCatalog)
 {
     if( poCatalog == NULL || json_object_get_type(poCatalog) != json_type_object )
         return NULL;
-    json_object* poId = json_object_object_get(poCatalog, "id");
+    json_object* poId = CPL_json_object_object_get(poCatalog, "id");
     if( poId == NULL || json_object_get_type(poId) != json_type_string )
         return NULL;
-    json_object* poLinks = json_object_object_get(poCatalog, "_links");
+    json_object* poLinks = CPL_json_object_object_get(poCatalog, "_links");
     if( poLinks == NULL || json_object_get_type(poLinks) != json_type_object )
         return NULL;
-    json_object* poSpec = json_object_object_get(poLinks, "spec");
+    json_object* poSpec = CPL_json_object_object_get(poLinks, "spec");
     if( poSpec == NULL || json_object_get_type(poSpec) != json_type_string )
         return NULL;
-    json_object* poItems = json_object_object_get(poLinks, "items");
+    json_object* poItems = CPL_json_object_object_get(poLinks, "items");
     if( poItems == NULL || json_object_get_type(poItems) != json_type_string )
         return NULL;
-    json_object* poCount = json_object_object_get(poCatalog, "item_count");
+    json_object* poCount = CPL_json_object_object_get(poCatalog, "item_count");
     GIntBig nCount = -1;
     if( poCount != NULL && json_object_get_type(poCount) == json_type_int )
     {
         nCount = json_object_get_int64(poCount);
     }
     CPLString osDisplayDescription;
-    json_object* poDisplayDescription = json_object_object_get(poCatalog, "display_description");
+    json_object* poDisplayDescription = CPL_json_object_object_get(poCatalog, "display_description");
     if( poDisplayDescription != NULL && json_object_get_type(poDisplayDescription) == json_type_string )
         osDisplayDescription = json_object_get_string(poDisplayDescription);
     CPLString osDisplayName;
-    json_object* poDisplayName = json_object_object_get(poCatalog, "display_name");
+    json_object* poDisplayName = CPL_json_object_object_get(poCatalog, "display_name");
     if( poDisplayName != NULL && json_object_get_type(poDisplayName) == json_type_string )
         osDisplayName = json_object_get_string(poDisplayName);
 
@@ -141,16 +141,15 @@ OGRLayer* OGRPLScenesV1Dataset::ParseCatalog(json_object* poCatalog)
 
     OGRPLScenesV1Layer* poPLLayer = new OGRPLScenesV1Layer(
                             this, pszId, pszSpecURL, pszItemsURL, nCount);
-    if( osDisplayName.size() )
+    if( !osDisplayName.empty() )
         poPLLayer->SetMetadataItem("SHORT_DESCRIPTION", osDisplayName.c_str());
-    if( osDisplayDescription.size() )
+    if( !osDisplayDescription.empty() )
         poPLLayer->SetMetadataItem("DESCRIPTION", osDisplayDescription.c_str());
     m_papoLayers = (OGRPLScenesV1Layer**) CPLRealloc(m_papoLayers,
                                 sizeof(OGRPLScenesV1Layer*) * (m_nLayers + 1));
     m_papoLayers[m_nLayers ++] = poPLLayer;
     return poPLLayer;
 }
-
 
 /************************************************************************/
 /*                          ParseCatalogsPage()                         */
@@ -159,7 +158,7 @@ OGRLayer* OGRPLScenesV1Dataset::ParseCatalog(json_object* poCatalog)
 bool OGRPLScenesV1Dataset::ParseCatalogsPage(json_object* poObj,
                                              CPLString& osNext)
 {
-    json_object* poCatalogs = json_object_object_get(poObj, "catalogs");
+    json_object* poCatalogs = CPL_json_object_object_get(poObj, "catalogs");
     if( poCatalogs == NULL || json_object_get_type(poCatalogs) != json_type_array )
     {
         CPLError(CE_Failure, CPLE_AppDefined,
@@ -175,10 +174,10 @@ bool OGRPLScenesV1Dataset::ParseCatalogsPage(json_object* poObj,
 
     // Is there a next page ?
     osNext = "";
-    json_object* poLinks = json_object_object_get(poObj, "_links");
+    json_object* poLinks = CPL_json_object_object_get(poObj, "_links");
     if( poLinks && json_object_get_type(poLinks) == json_type_object )
     {
-        json_object* poNext = json_object_object_get(poLinks, "_next");
+        json_object* poNext = CPL_json_object_object_get(poLinks, "_next");
         if( poNext && json_object_get_type(poNext) == json_type_string )
         {
             osNext = json_object_get_string(poNext);
@@ -197,7 +196,7 @@ void OGRPLScenesV1Dataset::EstablishLayerList()
     CPLString osURL(m_osNextCatalogPageURL);
     m_osNextCatalogPageURL = "";
 
-    while( osURL.size() != 0 )
+    while( !osURL.empty() )
     {
         json_object* poObj = RunRequest(osURL);
         if( poObj == NULL )
@@ -243,8 +242,12 @@ char** OGRPLScenesV1Dataset::GetBaseHTTPOptions()
     m_bMustCleanPersistent = true;
 
     char** papszOptions = NULL;
-    papszOptions = CSLAddString(papszOptions, CPLSPrintf("PERSISTENT=PLSCENES:%p", this));
-    papszOptions = CSLAddString(papszOptions, CPLSPrintf("HEADERS=Authorization: api-key %s", m_osAPIKey.c_str()));
+    papszOptions =
+        CSLAddString(papszOptions, CPLSPrintf("PERSISTENT=PLSCENES:%p", this));
+    papszOptions =
+        CSLAddString(papszOptions,
+                     CPLSPrintf("HEADERS=Authorization: api-key %s",
+                                m_osAPIKey.c_str()));
     return papszOptions;
 }
 
@@ -271,11 +274,10 @@ json_object* OGRPLScenesV1Dataset::RunRequest(const char* pszURL,
         papszOptions = CSLSetNameValue(papszOptions, "POSTFIELDS", pszPostContent);
     }
     papszOptions = CSLSetNameValue(papszOptions, "MAX_RETRY", "3");
-    CPLHTTPResult * psResult;
+    CPLHTTPResult *psResult = NULL;
     if( STARTS_WITH(m_osBaseURL, "/vsimem/") &&
         STARTS_WITH(pszURL, "/vsimem/") )
     {
-        CPLDebug("PLSCENES", "Fetching %s", pszURL);
         psResult = (CPLHTTPResult*) CPLCalloc(1, sizeof(CPLHTTPResult));
         vsi_l_offset nDataLengthLarge = 0;
         CPLString osURL(pszURL);
@@ -286,6 +288,7 @@ json_object* OGRPLScenesV1Dataset::RunRequest(const char* pszURL,
             osURL += "&POSTFIELDS=";
             osURL += pszPostContent;
         }
+        CPLDebug("PLSCENES", "Fetching %s", osURL.c_str());
         GByte* pabyBuf = VSIGetMemFileBuffer(osURL, &nDataLengthLarge, FALSE);
         size_t nDataLength = static_cast<size_t>(nDataLengthLarge);
         if( pabyBuf )
@@ -312,8 +315,8 @@ json_object* OGRPLScenesV1Dataset::RunRequest(const char* pszURL,
             CPLPopErrorHandler();
     }
     CSLDestroy(papszOptions);
-    
-    if ( pszPostContent != NULL && m_bMustCleanPersistent)
+
+    if( pszPostContent != NULL && m_bMustCleanPersistent )
     {
         papszOptions = CSLSetNameValue(NULL, "CLOSE_PERSISTENT", CPLSPrintf("PLSCENES:%p", this));
         CPLHTTPDestroyResult(CPLHTTPFetch(m_osBaseURL, papszOptions));
@@ -346,25 +349,17 @@ json_object* OGRPLScenesV1Dataset::RunRequest(const char* pszURL,
         return NULL;
     }
 
-    json_tokener* jstok = NULL;
-    json_object* poObj = NULL;
-
+    const char* pszText = reinterpret_cast<const char*>(psResult->pabyData);
 #ifdef DEBUG_VERBOSE
-    CPLDebug("PLScenes", "%s", (const char*) psResult->pabyData);
+    CPLDebug("PLScenes", "%s", (pszText);
 #endif
 
-    jstok = json_tokener_new();
-    poObj = json_tokener_parse_ex(jstok, (const char*) psResult->pabyData, -1);
-    if( jstok->err != json_tokener_success)
+    json_object* poObj = NULL;
+    if( !OGRJSonParse(pszText, &poObj, true) )
     {
-        CPLError( CE_Failure, CPLE_AppDefined,
-                    "JSON parsing error: %s (at offset %d)",
-                    json_tokener_error_desc(jstok->err), jstok->char_offset);
-        json_tokener_free(jstok);
         CPLHTTPDestroyResult(psResult);
         return NULL;
     }
-    json_tokener_free(jstok);
 
     CPLHTTPDestroyResult(psResult);
 
@@ -415,7 +410,7 @@ GDALDataset* OGRPLScenesV1Dataset::OpenRasterScene(GDALOpenInfo* poOpenInfo,
 
     for( char** papszIter = papszOptions; papszIter && *papszIter; papszIter ++ )
     {
-        char* pszKey;
+        char* pszKey = NULL;
         const char* pszValue = CPLParseNameValue(*papszIter, &pszKey);
         if( pszValue != NULL )
         {
@@ -466,19 +461,19 @@ retry:
 
     json_object* poSubObj = NULL;
     if( pszProductType != NULL &&
-        (poSubObj = json_object_object_get(poObj, pszProductType)) != NULL )
+        (poSubObj = CPL_json_object_object_get(poObj, pszProductType)) != NULL )
     {
        /* do nothing */
     }
     else if( pszProductType != NULL && !EQUAL(pszProductType, "LIST") &&
-        (poSubObj = json_object_object_get(poObj, pszProductType)) == NULL )
+        (poSubObj = CPL_json_object_object_get(poObj, pszProductType)) == NULL )
     {
        CPLError(CE_Failure, CPLE_AppDefined, "Cannot find asset %s", pszProductType);
        json_object_put(poObj);
        return NULL;
     }
     else if( pszProductType == NULL &&
-             (poSubObj = json_object_object_get(poObj, "visual")) != NULL )
+             (poSubObj = CPL_json_object_object_get(poObj, "visual")) != NULL )
     {
         /* do nothing */
     }
@@ -519,7 +514,7 @@ retry:
         return NULL;
     }
 
-    json_object* poPermissions = json_object_object_get(poSubObj, "_permissions");
+    json_object* poPermissions = CPL_json_object_object_get(poSubObj, "_permissions");
     if( poPermissions != NULL )
     {
         const char* pszPermissions = json_object_to_json_string_ext( poPermissions, 0 );
@@ -537,8 +532,8 @@ retry:
         json_object_put(poObj);
         return NULL;
     }
-    json_object* poLocation = json_object_object_get(poHTTP, "location");
-    json_object* poStatus = json_object_object_get(poHTTP, "status");
+    json_object* poLocation = CPL_json_object_object_get(poHTTP, "location");
+    json_object* poStatus = CPL_json_object_object_get(poHTTP, "status");
     bool bActive = false;
     if( poStatus != NULL && json_object_get_type(poStatus) == json_type_string )
     {
@@ -580,7 +575,7 @@ retry:
 
     osRasterURL = pszLink ? pszLink : "";
     json_object_put(poObj);
-    if( osRasterURL.size() == 0 )
+    if( osRasterURL.empty() )
     {
         CPLError(CE_Failure, CPLE_AppDefined, "Cannot find link to scene %s",
                  osScene.c_str());
@@ -592,7 +587,8 @@ retry:
     CPLString osOldHead(CPLGetConfigOption("CPL_VSIL_CURL_USE_HEAD", ""));
     CPLString osOldAllowedFilename(CPLGetConfigOption("CPL_VSIL_CURL_ALLOWED_FILENAME", ""));
 
-    int bUseVSICURL = CSLFetchBoolean(poOpenInfo->papszOpenOptions, "RANDOM_ACCESS", TRUE);
+    const bool bUseVSICURL =
+        CPLFetchBool(poOpenInfo->papszOpenOptions, "RANDOM_ACCESS", true);
     if( bUseVSICURL && !(STARTS_WITH(m_osBaseURL, "/vsimem/")) )
     {
         CPLSetThreadLocalConfigOption("CPL_VSIL_CURL_USE_HEAD", "NO");
@@ -611,7 +607,14 @@ retry:
         }
     }
 
-    GDALDataset* poOutDS = (GDALDataset*) GDALOpenEx(osRasterURL, GDAL_OF_RASTER, NULL, NULL, NULL);
+    char** papszAllowedDrivers = NULL;
+    papszAllowedDrivers = CSLAddString(papszAllowedDrivers, "HTTP");
+    papszAllowedDrivers = CSLAddString(papszAllowedDrivers, "GTiff");
+    papszAllowedDrivers = CSLAddString(papszAllowedDrivers, "PNG");
+    papszAllowedDrivers = CSLAddString(papszAllowedDrivers, "JPEG");
+    GDALDataset* poOutDS = (GDALDataset*) GDALOpenEx(osRasterURL, GDAL_OF_RASTER,
+                                                     papszAllowedDrivers, NULL, NULL);
+    CSLDestroy(papszAllowedDrivers);
     if( poOutDS )
     {
         OGRLayer* poLayer = GetLayerByName(pszCatalog);
@@ -628,7 +631,7 @@ retry:
             {
                 for(int i=0;i<poFeat->GetFieldCount();i++)
                 {
-                    if( poFeat->IsFieldSet(i) )
+                    if( poFeat->IsFieldSetAndNotNull(i) )
                     {
                         const char* pszKey = poFeat->GetFieldDefnRef(i)->GetNameRef();
                         const char* pszVal = poFeat->GetFieldAsString(i);
@@ -651,7 +654,7 @@ retry:
 
         CPLErrorReset();
         poOutDS->SetDescription(poOpenInfo->pszFilename);
-        CSLDestroy(poOutDS->GetFileList()); /* so as to probe all auxiliary files before reseting the allowed extensions */
+        CSLDestroy(poOutDS->GetFileList()); /* so as to probe all auxiliary files before resetting the allowed extensions */
     }
     else if( CPLGetLastErrorType() == CE_None )
     {
@@ -672,9 +675,9 @@ retry:
     if( bUseVSICURL )
     {
         CPLSetThreadLocalConfigOption("CPL_VSIL_CURL_USE_HEAD",
-                                    osOldHead.size() ? osOldHead.c_str(): NULL);
+                                    !osOldHead.empty() ? osOldHead.c_str(): NULL);
         CPLSetThreadLocalConfigOption("CPL_VSIL_CURL_ALLOWED_FILENAME",
-                                    osOldAllowedFilename.size() ? osOldAllowedFilename.c_str(): NULL);
+                                    !osOldAllowedFilename.empty() ? osOldAllowedFilename.c_str(): NULL);
     }
 
     return poOutDS;
@@ -696,7 +699,7 @@ GDALDataset* OGRPLScenesV1Dataset::Open(GDALOpenInfo* poOpenInfo)
     poDS->m_osAPIKey = CSLFetchNameValueDef(papszOptions, "api_key",
         CSLFetchNameValueDef(poOpenInfo->papszOpenOptions, "API_KEY",
                                 CPLGetConfigOption("PL_API_KEY","")) );
-    if( poDS->m_osAPIKey.size() == 0 )
+    if( poDS->m_osAPIKey.empty() )
     {
         CPLError(CE_Failure, CPLE_AppDefined,
                  "Missing PL_API_KEY configuration option or API_KEY open option");
@@ -733,7 +736,7 @@ GDALDataset* OGRPLScenesV1Dataset::Open(GDALOpenInfo* poOpenInfo)
 
     for( char** papszIter = papszOptions; papszIter && *papszIter; papszIter ++ )
     {
-        char* pszKey;
+        char* pszKey = NULL;
         const char* pszValue = CPLParseNameValue(*papszIter, &pszKey);
         if( pszValue != NULL )
         {

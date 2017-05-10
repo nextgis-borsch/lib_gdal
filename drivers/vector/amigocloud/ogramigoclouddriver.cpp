@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  AmigoCloud Translator
  * Purpose:  Implements OGRAMIGOCLOUDDriver.
@@ -29,7 +28,7 @@
 
 #include "ogr_amigocloud.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogramigoclouddriver.cpp 35611 2016-10-04 14:58:17Z goatbar $");
 
 extern "C" void RegisterOGRAmigoCloud();
 
@@ -69,11 +68,11 @@ static GDALDataset *OGRAmigoCloudDriverOpen( GDALOpenInfo* poOpenInfo )
 /************************************************************************/
 
 static GDALDataset *OGRAmigoCloudDriverCreate( const char * pszName,
-                                            CPL_UNUSED int nBands,
-                                            CPL_UNUSED int nXSize,
-                                            CPL_UNUSED int nYSize,
-                                            CPL_UNUSED GDALDataType eDT,
-                                            CPL_UNUSED char **papszOptions )
+                                               CPL_UNUSED int nBands,
+                                               CPL_UNUSED int nXSize,
+                                               CPL_UNUSED int nYSize,
+                                               CPL_UNUSED GDALDataType eDT,
+                                               CPL_UNUSED char **papszOptions )
 
 {
     OGRAmigoCloudDataSource   *poDS = new OGRAmigoCloudDataSource();
@@ -135,4 +134,3 @@ void RegisterOGRAmigoCloud()
 
     GetGDALDriverManager()->RegisterDriver( poDriver );
 }
-

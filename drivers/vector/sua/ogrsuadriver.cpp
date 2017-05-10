@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrsuadriver.cpp 32110 2015-12-10 17:19:40Z goatbar $
  *
  * Project:  SUA Translator
  * Purpose:  Implements OGRSUADriver.
@@ -30,7 +29,7 @@
 #include "ogr_sua.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrsuadriver.cpp 32110 2015-12-10 17:19:40Z goatbar $");
+CPL_CVSID("$Id: ogrsuadriver.cpp 34819 2016-07-28 22:32:18Z goatbar $");
 
 extern "C" void RegisterOGRSUA();
 
@@ -125,4 +124,3 @@ void RegisterOGRSUA()
 
     GetGDALDriverManager()->RegisterDriver( poDriver );
 }
-

@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrregisterall.cpp 34979 2016-08-08 09:30:34Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Function to register all known OGR drivers.
@@ -30,7 +29,7 @@
 
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id: ogrregisterall.cpp 34979 2016-08-08 09:30:34Z rouault $");
+CPL_CVSID("$Id: ogrregisterall.cpp 37968 2017-04-12 07:16:55Z rouault $");
 
 /************************************************************************/
 /*                           OGRRegisterAll()                           */
@@ -158,11 +157,17 @@ void OGRRegisterAllInternal()
 #ifdef XPLANE_ENABLED
     RegisterOGRXPlane();
 #endif
-#ifdef DWGDIRECT_ENABLED
-    RegisterOGRDXFDWG();
+#ifdef DWG_ENABLED
+    RegisterOGRDWG();
+#endif
+#ifdef DGNV8_ENABLED
+    RegisterOGRDGNV8();
 #endif
 #ifdef DXF_ENABLED
     RegisterOGRDXF();
+#endif
+#ifdef CAD_ENABLED
+    RegisterOGRCAD();
 #endif
 #ifdef GRASS_ENABLED
     RegisterOGRGRASS();
@@ -287,6 +292,9 @@ void OGRRegisterAllInternal()
 #endif
 #ifdef VDV_ENABLED
     RegisterOGRVDV();
+#endif
+#ifdef GMLAS_ENABLED
+    RegisterOGRGMLAS();
 #endif
 
 /* Put TIGER and AVCBIN at end since they need poOpenInfo->GetSiblingFiles() */

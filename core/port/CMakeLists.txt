@@ -63,6 +63,9 @@ set(LIB_HHEADERS
     cpl_vsi_virtual.h
     cpl_worker_thread_pool.h
     gdal_csv.h
+    cpl_cpu_features.h
+    cpl_google_cloud.h
+    cpl_sha1.h
 )
 
 set(LIB_HHEADERS_PRIV
@@ -115,8 +118,10 @@ set(LIB_CSOURCES
     cpl_sha256.cpp
     cpl_vsil_crypt.cpp
     cpl_vsi_error.cpp
-
     cpl_vsil_curl.cpp
+    cpl_cpu_features.cpp
+    cpl_google_cloud.cpp
+    cpl_sha1.cpp
 )
 
 if(WIN32)

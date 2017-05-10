@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrgpxdriver.cpp 32663 2016-01-02 03:39:54Z goatbar $
  *
  * Project:  GPX Translator
  * Purpose:  Implements OGRGPXDriver.
@@ -30,7 +29,7 @@
 #include "ogr_gpx.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrgpxdriver.cpp 32663 2016-01-02 03:39:54Z goatbar $");
+CPL_CVSID("$Id: ogrgpxdriver.cpp 34819 2016-07-28 22:32:18Z goatbar $");
 
 /************************************************************************/
 /*                                Open()                                */

@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrgeorssdriver.cpp 32110 2015-12-10 17:19:40Z goatbar $
  *
  * Project:  GeoRSS Translator
  * Purpose:  Implements OGRGeoRSSDriver.
@@ -30,7 +29,7 @@
 #include "ogr_georss.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrgeorssdriver.cpp 32110 2015-12-10 17:19:40Z goatbar $");
+CPL_CVSID("$Id: ogrgeorssdriver.cpp 34819 2016-07-28 22:32:18Z goatbar $");
 
 /************************************************************************/
 /*                                Open()                                */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: Operations.i 33447 2016-02-12 20:59:51Z goatbar $
+ * $Id: Operations.i 37723 2017-03-16 17:07:53Z rouault $
  *
  * Name:     Operations.i
  * Project:  GDAL Python Interface
@@ -693,3 +693,31 @@ public:
 
 } /*extend */
 };
+
+/************************************************************************/
+/*                        ApplyVerticalShiftGrid()                      */
+/************************************************************************/
+
+%newobject ApplyVerticalShiftGrid;
+%apply Pointer NONNULL {GDALDatasetShadow *src_ds, GDALDatasetShadow *grid_ds};
+#ifndef SWIGJAVA
+%feature( "kwargs" ) ApplyVerticalShiftGrid;
+#endif
+%inline %{
+GDALDatasetShadow* ApplyVerticalShiftGrid( GDALDatasetShadow *src_ds,
+                                           GDALDatasetShadow *grid_ds,
+                                           bool inverse = false,
+                                           double srcUnitToMeter = 1.0,
+                                           double dstUnitToMeter = 1.0,
+                                           char** options = NULL ) {
+  GDALDatasetShadow *ds = GDALApplyVerticalShiftGrid( src_ds, grid_ds,
+                                                      inverse,
+                                                      srcUnitToMeter,
+                                                      dstUnitToMeter,
+                                                      options );
+  return ds;
+
+}
+%}
+%clear GDALDatasetShadow *src_ds, GDALDatasetShadow *grid_ds;
+

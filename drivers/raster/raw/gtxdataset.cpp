@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: gtxdataset.cpp 33940 2016-04-11 05:13:28Z goatbar $
  *
  * Project:  Vertical Datum Transformation
  * Purpose:  Implementation of NOAA .gtx vertical datum shift file format.
@@ -33,7 +32,7 @@
 #include "ogr_srs_api.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id: gtxdataset.cpp 33940 2016-04-11 05:13:28Z goatbar $");
+CPL_CVSID("$Id: gtxdataset.cpp 38048 2017-04-17 19:04:42Z rouault $");
 
 /**
 
@@ -84,9 +83,9 @@ class GTXDataset : public RawDataset
                 }
     virtual ~GTXDataset();
 
-    virtual CPLErr GetGeoTransform( double * padfTransform );
-    virtual CPLErr SetGeoTransform( double * padfTransform );
-    virtual const char *GetProjectionRef();
+    virtual CPLErr GetGeoTransform( double * padfTransform ) override;
+    virtual CPLErr SetGeoTransform( double * padfTransform ) override;
+    virtual const char *GetProjectionRef() override;
 
     static GDALDataset *Open( GDALOpenInfo * );
     static int          Identify( GDALOpenInfo * );
@@ -199,6 +198,15 @@ GDALDataset *GTXDataset::Open( GDALOpenInfo * poOpenInfo )
     poDS->adfGeoTransform[3] += poDS->adfGeoTransform[5] * 0.5;
 
     poDS->adfGeoTransform[5] *= -1;
+
+    if( CPLFetchBool(poOpenInfo->papszOpenOptions,
+                                "SHIFT_ORIGIN_IN_MINUS_180_PLUS_180", false) )
+    {
+        if( poDS->adfGeoTransform[0] < -180.0 - poDS->adfGeoTransform[1] )
+            poDS->adfGeoTransform[0] += 360.0;
+        else if( poDS->adfGeoTransform[0] > 180.0 )
+            poDS->adfGeoTransform[0] -= 360.0;
+    }
 
     if (!GDALCheckDatasetDimensions(poDS->nRasterXSize, poDS->nRasterYSize))
     {
@@ -386,7 +394,6 @@ GDALDataset *GTXDataset::Create( const char * pszFilename,
         GDALOpen( pszFilename, GA_Update ) );
 }
 
-
 /************************************************************************/
 /*                          GDALRegister_GTX()                          */
 /************************************************************************/
@@ -406,6 +413,12 @@ void GDALRegister_GTX()
     poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
     // poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC,
     //                            "frmt_various.html#GTX" );
+    poDriver->SetMetadataItem( GDAL_DMD_OPENOPTIONLIST,
+"<OpenOptionList>"
+"   <Option name='SHIFT_ORIGIN_IN_MINUS_180_PLUS_180' type='boolean' "
+    "description='Whether to apply a +/-360 deg shift to the longitude of "
+    "the top left corner so that it is in the [-180,180] range' default='NO'/>"
+"</OpenOptionList>" );
 
     poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES,
                                "Float32" );

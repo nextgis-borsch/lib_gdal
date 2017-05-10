@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrsqliteexecutesql.h 31777 2015-11-26 14:14:41Z rouault $
+ * $Id: ogrsqliteexecutesql.h 35911 2016-10-24 15:03:26Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Run SQL requests with SQLite SQL engine
@@ -39,7 +39,6 @@ OGRLayer * OGRSQLiteExecuteSQL( GDALDataset* poDS,
                                 OGRGeometry *poSpatialFilter,
                                 const char *pszDialect );
 
-
 /************************************************************************/
 /*                               LayerDesc                              */
 /************************************************************************/
@@ -63,5 +62,4 @@ class LayerDesc
 std::set<LayerDesc> OGRSQLiteGetReferencedLayers(const char* pszStatement);
 
 #endif /* ndef OGR_SQLITE_EXECUTE_SQL_H_INCLUDED */
-
 

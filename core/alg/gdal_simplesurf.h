@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: gdal_simplesurf.h 36666 2016-12-04 04:32:31Z goatbar $
  * Project:  GDAL
  * Purpose:  Correlator
  * Author:   Andrew Migal, migal.drew@gmail.com
@@ -76,6 +77,7 @@ public:
     GDALFeaturePoint(int nX, int nY, int nScale, int nRadius, int nSign);
     virtual ~GDALFeaturePoint();
 
+    /** Assignment operator */
     GDALFeaturePoint& operator=(const GDALFeaturePoint& point);
 
     /**
@@ -89,7 +91,7 @@ public:
      */
     double& operator[](int nIndex);
 
-    // Descriptor length
+    /** Descriptor length */
     static const int DESC_SIZE = 64;
 
     /**
@@ -97,7 +99,7 @@ public:
      *
      * @return X-coordinate in pixels
      */
-    int GetX();
+    int GetX() const;
 
     /**
      * Set X coordinate of point
@@ -111,7 +113,7 @@ public:
      *
      * @return Y-coordinate in pixels.
      */
-    int  GetY();
+    int GetY() const;
 
     /**
      * Set Y coordinate of point.
@@ -125,7 +127,7 @@ public:
      *
      * @return Scale for this point.
      */
-    int  GetScale();
+    int GetScale() const ;
 
     /**
      * Set scale of point.
@@ -139,7 +141,7 @@ public:
      *
      * @return Radius for this point.
      */
-    int  GetRadius();
+    int  GetRadius() const;
 
     /**
      * Set radius of point.
@@ -153,7 +155,7 @@ public:
      *
      * @return Sign for this point.
      */
-    int  GetSign();
+    int GetSign() const;
 
     /**
      * Set sign of point.
@@ -340,6 +342,8 @@ public:
  */
 class GDALOctaveMap
 {
+    CPL_DISALLOW_COPY_ASSIGN( GDALOctaveMap )
+
 public:
     /**
      * Create octave space. Octave numbers are start with one. (1, 2, 3, 4, ... )
@@ -375,7 +379,7 @@ public:
      *
      * @return TRUE if candidate was evaluated as feature point or FALSE otherwise.
      */
-    bool PointIsExtremum(int row, int col, GDALOctaveLayer *bot,
+    static bool PointIsExtremum(int row, int col, GDALOctaveLayer *bot,
                          GDALOctaveLayer *mid, GDALOctaveLayer *top, double threshold);
 
     /**
@@ -431,6 +435,8 @@ private:
         int ind_2;
         double euclideanDist;
     };
+
+    CPL_DISALLOW_COPY_ASSIGN( GDALSimpleSURF )
 
 public:
     /**
@@ -501,7 +507,7 @@ public:
      * Find corresponding points (equal points in two collections).
      *
      * @param poMatchPairs Resulting collection for matched points
-     * @param poSecondCollect Points on the first image
+     * @param poFirstCollect Points on the first image
      * @param poSecondCollect Points on the second image
      * @param dfThreshold Value from 0 to 1. Threshold affects to number of
      * matched points. If threshold is lower, amount of corresponding
@@ -541,14 +547,12 @@ private:
      * @param poPoint Feature point instance
      * @param poImg image where feature point was found
      */
-    void SetDescriptor(GDALFeaturePoint *poPoint, GDALIntegralImage *poImg);
-
+    static void SetDescriptor(GDALFeaturePoint *poPoint, GDALIntegralImage *poImg);
 
 private:
     int octaveStart;
     int octaveEnd;
     GDALOctaveMap *poOctMap;
 };
-
 
 #endif /* GDALSIMPLESURF_H_ */

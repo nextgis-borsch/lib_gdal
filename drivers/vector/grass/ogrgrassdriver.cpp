@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrgrassdriver.cpp 32110 2015-12-10 17:19:40Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRGRASSDriver class.
@@ -31,7 +30,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrgrassdriver.cpp 32110 2015-12-10 17:19:40Z goatbar $");
+CPL_CVSID("$Id: ogrgrassdriver.cpp 36368 2016-11-21 01:47:49Z rouault $");
 
 /************************************************************************/
 /*                          ~OGRGRASSDriver()                           */
@@ -54,9 +53,7 @@ const char *OGRGRASSDriver::GetName()
 OGRDataSource *OGRGRASSDriver::Open( const char * pszFilename,
                                      int bUpdate )
 {
-    OGRGRASSDataSource  *poDS;
-
-    poDS = new OGRGRASSDataSource();
+    OGRGRASSDataSource  *poDS = new OGRGRASSDataSource();
 
     if( !poDS->Open( pszFilename, bUpdate, TRUE ) )
     {
@@ -70,32 +67,9 @@ OGRDataSource *OGRGRASSDriver::Open( const char * pszFilename,
 }
 
 /************************************************************************/
-/*                          CreateDataSource()                          */
-/************************************************************************/
-OGRDataSource *OGRGRASSDriver::CreateDataSource( const char * pszName,
-                                                 char **papszOptions )
-{
-    CPLError( CE_Failure, CPLE_AppDefined,
-              "CreateDataSource is not supported by GRASS driver.\n" );
-
-    return NULL;
-}
-
-/************************************************************************/
-/*                          DeleteDataSource()                          */
-/************************************************************************/
-OGRErr OGRGRASSDriver::DeleteDataSource( const char *pszDataSource )
-{
-    CPLError( CE_Failure, CPLE_AppDefined,
-              "DeleteDataSource is not supported by GRASS driver" );
-
-    return OGRERR_FAILURE;
-}
-
-/************************************************************************/
 /*                           TestCapability()                           */
 /************************************************************************/
-int OGRGRASSDriver::TestCapability( const char * pszCap )
+int OGRGRASSDriver::TestCapability( const char * /*pszCap*/ )
 {
     return FALSE;
 }
@@ -120,4 +94,3 @@ void RegisterOGRGRASS()
 
     OGRSFDriverRegistrar::GetRegistrar()->RegisterDriver( poDriver );
 }
-

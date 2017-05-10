@@ -1,5 +1,8 @@
 
 #include "sdeerror.h"
+#include "cpl_port.h"
+
+CPL_CVSID("$Id: sdeerror.cpp 35929 2016-10-25 16:09:00Z goatbar $");
 
 /************************************************************************/
 /*                           IssueSDEError()                            */
@@ -49,8 +52,9 @@ void IssueSDEExtendedError ( int nErrorCode,
                    pszFunction, nErrorCode, szErrorMsg,
                    err.sde_error, err.ext_error,
                    err.err_msg1, err.err_msg2 );
-
-    } else {
+    }
+    else
+    {
         CPLError ( CE_Failure, CPLE_AppDefined,
            "%s: %d/%s",
            pszFunction, nErrorCode, szErrorMsg );

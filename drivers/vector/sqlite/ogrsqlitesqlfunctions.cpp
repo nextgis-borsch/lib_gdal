@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrsqlitesqlfunctions.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Extension SQL functions
@@ -39,6 +38,8 @@
 #include "ogrsqliteregexp.cpp" /* yes the .cpp file, to make it work on Windows with load_extension('gdalXX.dll') */
 #include "swq.h"
 
+CPL_CVSID("$Id: ogrsqlitesqlfunctions.cpp 37810 2017-03-20 16:23:30Z rouault $");
+
 #ifndef HAVE_SPATIALITE
 #define MINIMAL_SPATIAL_FUNCTIONS
 #endif
@@ -55,7 +56,7 @@ class OGRSQLiteExtensionData
     OGRGeocodingSessionH hGeocodingSession;
 
   public:
-                                 OGRSQLiteExtensionData(sqlite3* hDB);
+    explicit                     OGRSQLiteExtensionData(sqlite3* hDB);
                                 ~OGRSQLiteExtensionData();
 
     OGRCoordinateTransformation* GetTransform(int nSrcSRSId, int nDstSRSId);
@@ -71,12 +72,12 @@ class OGRSQLiteExtensionData
 /************************************************************************/
 
 OGRSQLiteExtensionData::OGRSQLiteExtensionData(CPL_UNUSED sqlite3* hDB) :
-        hRegExpCache(NULL), hGeocodingSession(NULL)
-{
 #ifdef DEBUG
-    pDummy = CPLMalloc(1);
+    pDummy(CPLMalloc(1)),
 #endif
-}
+    hRegExpCache(NULL),
+    hGeocodingSession(NULL)
+{}
 
 /************************************************************************/
 /*                       ~OGRSQLiteExtensionData()                      */
@@ -234,7 +235,7 @@ void OGR2SQLITE_ogr_deflate(sqlite3_context* pContext,
     }
 
     size_t nOutBytes = 0;
-    void* pOut;
+    void* pOut = NULL;
     if( sqlite3_value_type (argv[0]) == SQLITE_TEXT )
     {
         const char* pszVal = (const char*)sqlite3_value_text(argv[0]);
@@ -274,11 +275,10 @@ void OGR2SQLITE_ogr_inflate(sqlite3_context* pContext,
     }
 
     size_t nOutBytes = 0;
-    void* pOut;
 
     const void* pSrc = sqlite3_value_blob (argv[0]);
     int nLen = sqlite3_value_bytes (argv[0]);
-    pOut = CPLZLibInflate( pSrc, nLen, NULL, 0, &nOutBytes);
+    void* pOut = CPLZLibInflate( pSrc, nLen, NULL, 0, &nOutBytes);
 
     if( pOut != NULL )
     {
@@ -329,7 +329,7 @@ void OGR2SQLITE_ogr_geocode_set_result(sqlite3_context* pContext,
             }
         }
         else if( (nIdx = poFDefn->GetFieldIndex(pszField)) >= 0 &&
-                 poFeature->IsFieldSet(nIdx) )
+                 poFeature->IsFieldSetAndNotNull(nIdx) )
         {
             OGRFieldType eType = poFDefn->GetFieldDefn(nIdx)->GetType();
             if( eType == OFTInteger )
@@ -377,9 +377,8 @@ void OGR2SQLITE_ogr_geocode(sqlite3_context* pContext,
         osField = (const char*)sqlite3_value_text(argv[1]);
     }
 
-    int i;
     char** papszOptions = NULL;
-    for(i = 2; i < argc; i++)
+    for( int i = 2; i < argc; i++ )
     {
         if( sqlite3_value_type (argv[i]) == SQLITE_TEXT )
         {
@@ -477,9 +476,11 @@ void OGR2SQLITE_ogr_geocode_reverse(sqlite3_context* pContext,
     OGRSQLiteExtensionData* poModule =
                     (OGRSQLiteExtensionData*) sqlite3_user_data(pContext);
 
-    double dfLon = 0.0, dfLat = 0.0;
+    double dfLon = 0.0;
+    double dfLat = 0.0;
     int iAfterGeomIdx = 0;
-    int bGotLon = FALSE, bGotLat = FALSE;
+    int bGotLon = FALSE;
+    int bGotLat = FALSE;
 
     if( argc >= 2 )
     {
@@ -520,9 +521,8 @@ void OGR2SQLITE_ogr_geocode_reverse(sqlite3_context* pContext,
 
     const char* pszField = (const char*)sqlite3_value_text(argv[iAfterGeomIdx]);
 
-    int i;
     char** papszOptions = NULL;
-    for(i = iAfterGeomIdx + 1; i < argc; i++)
+    for( int i = iAfterGeomIdx + 1; i < argc; i++ )
     {
         if( sqlite3_value_type (argv[i]) == SQLITE_TEXT )
         {
@@ -603,37 +603,29 @@ void OGR2SQLITE_ogr_datasource_load_layers(sqlite3_context* pContext,
         return;
     }
 
-    CPLString osEscapedDataSource = OGRSQLiteEscape(pszDataSource);
+    CPLString osEscapedDataSource = SQLEscapeLiteral(pszDataSource);
     for(int i=0;i<poDS->GetLayerCount();i++)
     {
         const char* pszLayerName = poDS->GetLayer(i)->GetName();
-        CPLString osEscapedLayerName = OGRSQLiteEscape(pszLayerName);
+        CPLString osEscapedLayerName = SQLEscapeLiteral(pszLayerName);
         CPLString osTableName;
         if( pszPrefix != NULL )
         {
             osTableName = pszPrefix;
             osTableName += "_";
-            osTableName += OGRSQLiteEscapeName(pszLayerName);
+            osTableName += SQLEscapeName(pszLayerName);
         }
         else
         {
-            osTableName = OGRSQLiteEscapeName(pszLayerName);
+            osTableName = SQLEscapeName(pszLayerName);
         }
 
-        char* pszErrMsg = NULL;
-        if( sqlite3_exec(hDB, CPLSPrintf(
+        SQLCommand(hDB, CPLSPrintf(
             "CREATE VIRTUAL TABLE \"%s\" USING VirtualOGR('%s', %d, '%s')",
                 osTableName.c_str(),
                 osEscapedDataSource.c_str(),
                 bUpdate,
-                osEscapedLayerName.c_str()),
-            NULL, NULL, &pszErrMsg) != SQLITE_OK )
-        {
-            CPLError(CE_Failure, CPLE_AppDefined,
-                     "Cannot create table \"%s\" : %s",
-                     osTableName.c_str(), pszErrMsg);
-            sqlite3_free(pszErrMsg);
-        }
+                osEscapedLayerName.c_str()));
     }
 
     poDS->Release();
@@ -997,7 +989,7 @@ void OGR2SQLITE_ST_Buffer(sqlite3_context* pContext,
 {
     int nSRSId = -1;
     OGRGeometry* poGeom = OGR2SQLITE_GetGeom(pContext, argc, argv, &nSRSId);
-    int bGotVal;
+    int bGotVal = FALSE;
     double dfDist = OGR2SQLITE_GetValAsDouble(argv[1], &bGotVal);
     if( poGeom != NULL && bGotVal )
         OGR2SQLITE_SetGeom_AndDestroy(pContext, poGeom->Buffer(dfDist), nSRSId);
@@ -1014,9 +1006,9 @@ static
 void OGR2SQLITE_ST_MakePoint(sqlite3_context* pContext,
                              int argc, sqlite3_value** argv)
 {
-    double dfX, dfY = 0.0;
-    int bGotVal;
-    dfX = OGR2SQLITE_GetValAsDouble(argv[0], &bGotVal);
+    double dfY = 0.0;
+    int bGotVal = FALSE;
+    const double dfX = OGR2SQLITE_GetValAsDouble(argv[0], &bGotVal);
     if( bGotVal )
         dfY = OGR2SQLITE_GetValAsDouble(argv[1], &bGotVal);
     if( !bGotVal )
@@ -1025,7 +1017,7 @@ void OGR2SQLITE_ST_MakePoint(sqlite3_context* pContext,
         return;
     }
 
-    OGRPoint* poPoint;
+    OGRPoint* poPoint = NULL;
     if( argc == 3 )
     {
         double dfZ = OGR2SQLITE_GetValAsDouble(argv[2], &bGotVal);
@@ -1038,13 +1030,14 @@ void OGR2SQLITE_ST_MakePoint(sqlite3_context* pContext,
         poPoint = new OGRPoint(dfX, dfY, dfZ);
     }
     else
+    {
         poPoint = new OGRPoint(dfX, dfY);
+    }
 
     OGR2SQLITE_SetGeom_AndDestroy(pContext, poPoint, -1);
 }
 
 #endif // #ifdef MINIMAL_SPATIAL_FUNCTIONS
-
 
 /************************************************************************/
 /*                     OGRSQLITE_hstore_get_value()                     */
@@ -1075,55 +1068,73 @@ void OGRSQLITE_hstore_get_value(sqlite3_context* pContext,
 /*                   OGRSQLiteRegisterSQLFunctions()                    */
 /************************************************************************/
 
+#ifndef SQLITE_DETERMINISTIC
+#define SQLITE_DETERMINISTIC 0
+#endif
+
 static
 void* OGRSQLiteRegisterSQLFunctions(sqlite3* hDB)
 {
     OGRSQLiteExtensionData* pData = new OGRSQLiteExtensionData(hDB);
 
-    sqlite3_create_function(hDB, "ogr_version", 0, SQLITE_ANY, NULL,
-                           OGR2SQLITE_ogr_version, NULL, NULL);
+    sqlite3_create_function(hDB, "ogr_version", 0,
+                            SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL,
+                            OGR2SQLITE_ogr_version, NULL, NULL);
 
-    sqlite3_create_function(hDB, "ogr_version", 1, SQLITE_ANY, NULL,
-                           OGR2SQLITE_ogr_version, NULL, NULL);
+    sqlite3_create_function(hDB, "ogr_version", 1,
+                            SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL,
+                            OGR2SQLITE_ogr_version, NULL, NULL);
 
-    sqlite3_create_function(hDB, "ogr_deflate", 1, SQLITE_ANY, NULL,
+    sqlite3_create_function(hDB, "ogr_deflate", 1,
+                            SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL,
                             OGR2SQLITE_ogr_deflate, NULL, NULL);
 
-    sqlite3_create_function(hDB, "ogr_deflate", 2, SQLITE_ANY, NULL,
+    sqlite3_create_function(hDB, "ogr_deflate", 2,
+                            SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL,
                             OGR2SQLITE_ogr_deflate, NULL, NULL);
 
-    sqlite3_create_function(hDB, "ogr_inflate", 1, SQLITE_ANY, NULL,
+    sqlite3_create_function(hDB, "ogr_inflate", 1,
+                            SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL,
                             OGR2SQLITE_ogr_inflate, NULL, NULL);
 
-    sqlite3_create_function(hDB, "ogr_geocode", -1, SQLITE_ANY, pData,
+    sqlite3_create_function(hDB, "ogr_geocode", -1,
+                            SQLITE_UTF8, pData,
                             OGR2SQLITE_ogr_geocode, NULL, NULL);
 
-    sqlite3_create_function(hDB, "ogr_geocode_reverse", -1, SQLITE_ANY, pData,
+    sqlite3_create_function(hDB, "ogr_geocode_reverse", -1,
+                            SQLITE_UTF8, pData,
                             OGR2SQLITE_ogr_geocode_reverse, NULL, NULL);
 
-    sqlite3_create_function(hDB, "ogr_datasource_load_layers", 1, SQLITE_ANY, hDB,
+    sqlite3_create_function(hDB, "ogr_datasource_load_layers", 1,
+                            SQLITE_UTF8, hDB,
                             OGR2SQLITE_ogr_datasource_load_layers, NULL, NULL);
 
-    sqlite3_create_function(hDB, "ogr_datasource_load_layers", 2, SQLITE_ANY, hDB,
+    sqlite3_create_function(hDB, "ogr_datasource_load_layers", 2,
+                            SQLITE_UTF8, hDB,
                             OGR2SQLITE_ogr_datasource_load_layers, NULL, NULL);
 
-    sqlite3_create_function(hDB, "ogr_datasource_load_layers", 3, SQLITE_ANY, hDB,
+    sqlite3_create_function(hDB, "ogr_datasource_load_layers", 3,
+                            SQLITE_UTF8, hDB,
                             OGR2SQLITE_ogr_datasource_load_layers, NULL, NULL);
 
 #if notdef
-    sqlite3_create_function(hDB, "ogr_GetConfigOption", 1, SQLITE_ANY, NULL,
+    sqlite3_create_function(hDB, "ogr_GetConfigOption", 1,
+                            SQLITE_UTF8, NULL,
                             OGR2SQLITE_ogr_GetConfigOption, NULL, NULL);
 
-    sqlite3_create_function(hDB, "ogr_SetConfigOption", 2, SQLITE_ANY, NULL,
+    sqlite3_create_function(hDB, "ogr_SetConfigOption", 2,
+                            SQLITE_UTF8, NULL,
                             OGR2SQLITE_ogr_SetConfigOption, NULL, NULL);
 #endif
 
     // Custom and undocumented function, not sure I'll keep it.
-    sqlite3_create_function(hDB, "Transform3", 3, SQLITE_ANY, pData,
+    sqlite3_create_function(hDB, "Transform3", 3,
+                            SQLITE_UTF8 | SQLITE_DETERMINISTIC, pData,
                             OGR2SQLITE_Transform, NULL, NULL);
 
     // HSTORE functions
-    sqlite3_create_function(hDB, "hstore_get_value", 2, SQLITE_ANY, NULL,
+    sqlite3_create_function(hDB, "hstore_get_value", 2,
+                            SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL,
                             OGRSQLITE_hstore_get_value, NULL, NULL);
 
 #ifdef MINIMAL_SPATIAL_FUNCTIONS
@@ -1140,9 +1151,11 @@ void* OGRSQLiteRegisterSQLFunctions(sqlite3* hDB)
                  "Spatialite not available. Implementing a few functions");
 
 #define REGISTER_ST_op(argc, op) \
-        sqlite3_create_function(hDB, #op, argc, SQLITE_ANY, NULL, \
+        sqlite3_create_function(hDB, #op, argc, \
+                                SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, \
                                 OGR2SQLITE_ST_##op, NULL, NULL); \
-        sqlite3_create_function(hDB, "ST_" #op, argc, SQLITE_ANY, NULL, \
+        sqlite3_create_function(hDB, "ST_" #op, argc, \
+                                SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, \
                                 OGR2SQLITE_ST_##op, NULL, NULL);
 
         REGISTER_ST_op(1, AsText);

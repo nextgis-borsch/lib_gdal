@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrmdbdriver.cpp 32110 2015-12-10 17:19:40Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements Personal Geodatabase driver.
@@ -30,7 +29,7 @@
 #include "ogr_mdb.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrmdbdriver.cpp 32110 2015-12-10 17:19:40Z goatbar $");
+CPL_CVSID("$Id: ogrmdbdriver.cpp 35911 2016-10-24 15:03:26Z goatbar $");
 
 // g++ -fPIC -g -Wall ogr/ogrsf_frmts/mdb/*.cpp -shared -o ogr_MDB.so -Iport -Igcore -Iogr -Iogr/ogrsf_frmts -Iogr/ogrsf_frmts/mdb -L. -lgdal -I/usr/lib/jvm/java-6-openjdk/include -I/usr/lib/jvm/java-6-openjdk/include/linux  -L/usr/lib/jvm/java-6-openjdk/jre/lib/amd64/server -ljvm
 
@@ -106,7 +105,6 @@ int OGRMDBDriver::TestCapability( CPL_UNUSED const char * pszCap )
     return FALSE;
 }
 
-
 /************************************************************************/
 /*                           RegisterOGRMDB()                           */
 /************************************************************************/
@@ -121,4 +119,3 @@ void RegisterOGRMDB()
     poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, "drv_mdb.html" );
     OGRSFDriverRegistrar::GetRegistrar()->RegisterDriver( poDriver );
 }
-

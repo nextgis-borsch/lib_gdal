@@ -24,7 +24,6 @@ extern "C" {
 
 #include "datasource.h"
 
-
 typedef struct {
    sChar GribVersion;        /* 1 if GRIB1, 2 if GRIB2, -1 if it is TDLP */
    sInt4 start;           /* Where this message starts in file. */
@@ -39,7 +38,7 @@ typedef struct {
                               * for the others it is refTime + foreSec. */
    char *element;            /* Character look up of variable type. */
    char *comment;            /* A more descriptive look up of variable type. */
-   char *unitName;           /* The unit of this element. */ 
+   char *unitName;           /* The unit of this element. */
    double foreSec;           /* Forecast element in seconds. */
    char *shortFstLevel;      /* Short description of the level of this data
                                 (above ground) (500 mb), etc */

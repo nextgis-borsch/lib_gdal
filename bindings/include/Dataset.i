@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: Dataset.i 32935 2016-01-11 16:49:14Z rouault $
+ * $Id: Dataset.i 37423 2017-02-19 13:25:24Z rouault $
  *
  * Name:     Dataset.i
  * Project:  GDAL Python Interface
@@ -139,7 +139,7 @@ CPLErr DSReadRaster_internal( GDALDatasetShadow *obj,
   }
   else
   {
-    CPLError(CE_Failure, CPLE_OutOfMemory, "Not enough memory to allocate "CPL_FRMT_GIB" bytes", *buf_size);
+    CPLError(CE_Failure, CPLE_OutOfMemory, "Not enough memory to allocate " CPL_FRMT_GIB " bytes", *buf_size);
     result = CE_Failure;
     *buf = 0;
     *buf_size = 0;
@@ -199,7 +199,11 @@ static void DeleteAsyncReaderWrapper(GDALAsyncReaderWrapperH hWrapper)
 %}
 
 #if defined(SWIGPYTHON)
+
+%nothread;
+
 %{
+
 static GDALAsyncReaderWrapper* CreateAsyncReaderWrapper(GDALAsyncReaderH  hAsyncReader,
                                                         void             *pyObject)
 {
@@ -220,8 +224,10 @@ static void DisableAsyncReaderWrapper(GDALAsyncReaderWrapperH hWrapper)
     psWrapper->pyObject = NULL;
     psWrapper->hAsyncReader = NULL;
 }
-
 %}
+
+%thread;
+
 #endif
 
 class GDALAsyncReaderShadow {
@@ -611,8 +617,8 @@ CPLErr ReadRaster(  int xoff, int yoff, int xsize, int ysize,
             else
             {
                 int nRes = 1 << nLevel;
-                buf_xsize = ceil(xSize / (1.0 * nRes));
-                buf_ysize = ceil(ySize / (1.0 * nRes));
+                buf_xsize = static_cast<int>(ceil(xSize / (1.0 * nRes)));
+                buf_ysize = static_cast<int>(ceil(ySize / (1.0 * nRes)));
             }
         }
     }
@@ -701,7 +707,7 @@ CPLErr ReadRaster(  int xoff, int yoff, int xsize, int ysize,
                                       char** options = NULL )
     {
         int nPixelSpace;
-        GIntBig nBandSpace;
+        int nBandSpace;
         if( bIsBandSequential != 0 && bIsBandSequential != 1 )
             return NULL;
         if( band_list == 0 )
@@ -714,7 +720,7 @@ CPLErr ReadRaster(  int xoff, int yoff, int xsize, int ysize,
         else
         {
             nBandSpace = GDALGetDataTypeSize(eBufType) / 8;
-            nPixelSpace  = nBandSpace * band_list;
+            nPixelSpace = nBandSpace * band_list;
         }
         CPLVirtualMem* vmem = GDALDatasetGetVirtualMem( self,
                                          eRWFlag,
@@ -842,6 +848,33 @@ CPLErr ReadRaster(  int xoff, int yoff, int xsize, int ysize,
     OGRLayerShadow* layer = (OGRLayerShadow*) GDALDatasetGetLayerByName(self, layer_name);
     return layer;
   }
+
+  void ResetReading()
+  {
+    GDALDatasetResetReading( self );
+  }
+
+#ifdef SWIGPYTHON
+%newobject GetNextFeature;
+%feature( "kwargs" ) GetNextFeature;
+  OGRFeatureShadow* GetNextFeature( bool include_layer = true,
+                                    bool include_pct = false,
+                                    OGRLayerShadow** ppoBelongingLayer = NULL,
+                                    double* pdfProgressPct = NULL,
+                                    GDALProgressFunc callback = NULL,
+                                    void* callback_data=NULL )
+  {
+    return GDALDatasetGetNextFeature( self, ppoBelongingLayer, pdfProgressPct,
+                                      callback, callback_data );
+  }
+#else
+    // FIXME: return layer
+%newobject GetNextFeature;
+  OGRFeatureShadow* GetNextFeature()
+  {
+    return GDALDatasetGetNextFeature( self, NULL, NULL, NULL, NULL );
+  }
+#endif
 
   bool TestCapability(const char * cap) {
     return (GDALDatasetTestCapability(self, cap) > 0);

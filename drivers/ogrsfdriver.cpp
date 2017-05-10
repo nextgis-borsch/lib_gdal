@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrsfdriver.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The generic portions of the OGRSFDriver class.
@@ -33,7 +32,9 @@
 #include "ogr_p.h"
 #include "ograpispy.h"
 
-CPL_CVSID("$Id: ogrsfdriver.cpp 33714 2016-03-13 05:42:13Z goatbar $");
+CPL_CVSID("$Id: ogrsfdriver.cpp 34999 2016-08-09 04:12:18Z goatbar $");
+
+//! @cond Doxygen_Suppress
 
 /************************************************************************/
 /*                            ~OGRSFDriver()                            */
@@ -209,9 +210,8 @@ OGRDataSourceH OGR_Dr_CopyDataSource( OGRSFDriverH hDriver,
     }
 
     GDALDataset *poSrcDS = (GDALDataset*) hSrcDS;
-    GDALDataset *poODS;
-
-    poODS = poDriver->Create( pszNewName, 0, 0, 0, GDT_Unknown, papszOptions );
+    GDALDataset *poODS =
+        poDriver->Create( pszNewName, 0, 0, 0, GDT_Unknown, papszOptions );
     if( poODS == NULL )
         return NULL;
 
@@ -231,3 +231,5 @@ OGRDataSourceH OGR_Dr_CopyDataSource( OGRSFDriverH hDriver,
 
     return (OGRDataSourceH)poODS;
 }
+
+//! @endcond

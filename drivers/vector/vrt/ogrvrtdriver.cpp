@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrvrtdriver.cpp 32982 2016-01-14 16:53:57Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRVRTDriver class.
@@ -31,7 +30,7 @@
 #include "ogr_vrt.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrvrtdriver.cpp 32982 2016-01-14 16:53:57Z goatbar $");
+CPL_CVSID("$Id: ogrvrtdriver.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 /************************************************************************/
 /*                           OGRVRTErrorHandler()                       */
@@ -153,7 +152,7 @@ static GDALDataset *OGRVRTDriverOpen( GDALOpenInfo* poOpenInfo )
             CPLPopErrorHandler();
             if( !bRet )
             {
-                if( aosErrors.size() > 0 &&
+                if( !aosErrors.empty() &&
                     strstr(aosErrors[0].c_str(), "missing libxml2 support") == NULL )
                 {
                     for(size_t i = 0; i < aosErrors.size(); i++)

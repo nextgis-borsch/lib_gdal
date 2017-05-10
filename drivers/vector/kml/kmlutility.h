@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: kmlutility.h 33339 2016-02-03 11:48:06Z rouault $
+ * $Id: kmlutility.h 35516 2016-09-25 14:49:04Z goatbar $
  *
  * Project:  KML Driver
  * Purpose:  KML driver utilities
@@ -54,10 +54,13 @@ struct Coordinate
     double dfLongitude;
     double dfLatitude;
     double dfAltitude;
-    int    bHasZ;
+    bool   bHasZ;
 
-    Coordinate()
-        : dfLongitude(0), dfLatitude(0), dfAltitude(0), bHasZ(FALSE)
+    Coordinate() :
+        dfLongitude(0),
+        dfLatitude(0),
+        dfAltitude(0),
+        bHasZ(false)
     {}
 };
 

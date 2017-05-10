@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrmemdatasource.cpp 33400 2016-02-10 07:55:48Z ajolma $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRMemDataSource class.
@@ -27,11 +26,11 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "ogr_mem.h"
 #include "cpl_conv.h"
 #include "cpl_string.h"
+#include "ogr_mem.h"
 
-CPL_CVSID("$Id: ogrmemdatasource.cpp 33400 2016-02-10 07:55:48Z ajolma $");
+CPL_CVSID("$Id: ogrmemdatasource.cpp 35649 2016-10-08 10:16:30Z rouault $");
 
 /************************************************************************/
 /*                          OGRMemDataSource()                          */
@@ -74,14 +73,14 @@ OGRMemDataSource::ICreateLayer( const char * pszLayerName,
 /* -------------------------------------------------------------------- */
     OGRMemLayer *poLayer = new OGRMemLayer( pszLayerName, poSRS, eType );
 
-    if( CSLFetchBoolean(papszOptions, "ADVERTIZE_UTF8", FALSE) )
-        poLayer->SetAdvertizeUTF8(TRUE);
+    if( CPLFetchBool(papszOptions, "ADVERTIZE_UTF8", false) )
+        poLayer->SetAdvertizeUTF8(true);
 
 /* -------------------------------------------------------------------- */
 /*      Add layer to data source layer list.                            */
 /* -------------------------------------------------------------------- */
-    papoLayers = (OGRMemLayer **)
-        CPLRealloc( papoLayers,  sizeof(OGRMemLayer *) * (nLayers+1) );
+    papoLayers = static_cast<OGRMemLayer **>(
+        CPLRealloc( papoLayers,  sizeof(OGRMemLayer *) * (nLayers+1) ) );
 
     papoLayers[nLayers++] = poLayer;
 
@@ -99,10 +98,10 @@ OGRErr OGRMemDataSource::DeleteLayer( int iLayer )
     {
         delete papoLayers[iLayer];
 
-        for( int i = iLayer+1; i < nLayers; i++ )
+        for( int i = iLayer+1; i < nLayers; ++i )
             papoLayers[i-1] = papoLayers[i];
 
-        nLayers--;
+        --nLayers;
 
         return OGRERR_NONE;
     }
@@ -126,6 +125,8 @@ int OGRMemDataSource::TestCapability( const char * pszCap )
     else if( EQUAL(pszCap,ODsCCurveGeometries) )
         return TRUE;
     else if( EQUAL(pszCap,ODsCMeasuredGeometries) )
+        return TRUE;
+    else if( EQUAL(pszCap,ODsCRandomLayerWrite) )
         return TRUE;
 
     return FALSE;

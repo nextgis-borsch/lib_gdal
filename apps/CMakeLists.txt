@@ -113,7 +113,7 @@ if(GDAL_BUILD_APPS)
     endif()
 
     add_exe(gdal_contour gdal_contour.cpp)
-    add_exe(gdaltindex gdaltindex.c)
+    add_exe(gdaltindex gdaltindex.cpp)
     add_exe(gdal_rasterize gdal_rasterize_bin.cpp)
     add_exe(ogrinfo ogrinfo.cpp)
     add_exe(ogrlineref ogrlineref.cpp)

@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: doq2dataset.cpp 33932 2016-04-09 20:01:39Z goatbar $
  *
  * Project:  USGS DOQ Driver (Second Generation Format)
  * Purpose:  Implementation of DOQ2Dataset
@@ -32,7 +31,7 @@
 #include "gdal_frmts.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id: doq2dataset.cpp 33932 2016-04-09 20:01:39Z goatbar $");
+CPL_CVSID("$Id: doq2dataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 static const char UTM_FORMAT[] =
     "PROJCS[\"%s / UTM zone %dN\",GEOGCS[%s,PRIMEM[\"Greenwich\",0],"
@@ -76,8 +75,8 @@ class DOQ2Dataset : public RawDataset
                 DOQ2Dataset();
                 ~DOQ2Dataset();
 
-    CPLErr      GetGeoTransform( double * padfTransform );
-    const char  *GetProjectionRef( void );
+    CPLErr      GetGeoTransform( double * padfTransform ) override;
+    const char  *GetProjectionRef( void ) override;
 
     static GDALDataset *Open( GDALOpenInfo * );
 };
@@ -169,7 +168,8 @@ GDALDataset *DOQ2Dataset::Open( GDALOpenInfo * poOpenInfo )
     char *pszQuadname = NULL;
     char *pszQuadquad = NULL;
     char *pszState = NULL;
-    int nZone=0, nProjType=0;
+    int nZone = 0;
+    int nProjType = 0;
     int nSkipBytes = 0;
     int nBandCount = 0;
     double dfULXMap=0.0;

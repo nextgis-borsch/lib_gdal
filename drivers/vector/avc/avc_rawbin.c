@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: avc_rawbin.c,v 1.14 2008/07/23 20:51:38 dmorissette Exp $
+ * $Id: avc_rawbin.c 34524 2016-07-03 02:47:25Z goatbar $
  *
  * Name:     avc_rawbin.c
  * Project:  Arc/Info vector coverage (AVC)  BIN->E00 conversion library

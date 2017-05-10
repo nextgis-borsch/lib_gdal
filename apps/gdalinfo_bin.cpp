@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: gdalinfo_bin.cpp 33758 2016-03-21 09:06:22Z rouault $
  *
  * Project:  GDAL Utilities
  * Purpose:  Command line application to list info about a file.
@@ -34,7 +33,7 @@
 #include "commonutils.h"
 #include "gdal_utils_priv.h"
 
-CPL_CVSID("$Id: gdalinfo_bin.cpp 33758 2016-03-21 09:06:22Z rouault $");
+CPL_CVSID("$Id: gdalinfo_bin.cpp 35931 2016-10-25 16:20:52Z goatbar $");
 
 /************************************************************************/
 /*                               Usage()                                */
@@ -53,7 +52,6 @@ static void Usage(const char* pszErrorMsg = NULL)
 
     exit( 1 );
 }
-
 
 /************************************************************************/
 /*                         GDALInfoOptionsForBinary()                   */
@@ -207,7 +205,6 @@ int main( int argc, char ** argv )
                      "gdalinfo warning: subdataset %d of %d requested. "
                      "Reading the main dataset.\n",
                      psOptionsForBinary->nSubdataset, nSubdatasets );
-
         }
     }
 
@@ -237,5 +234,4 @@ int main( int argc, char ** argv )
     CPLCleanupTLS();
 
     exit( 0 );
-
 }

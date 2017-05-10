@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrrecdriver.cpp 33089 2016-01-22 15:02:53Z goatbar $
  *
  * Project:  REC Translator
  * Purpose:  Implements EpiInfo .REC driver.
@@ -30,7 +29,7 @@
 #include "ogr_rec.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrrecdriver.cpp 33089 2016-01-22 15:02:53Z goatbar $");
+CPL_CVSID("$Id: ogrrecdriver.cpp 34819 2016-07-28 22:32:18Z goatbar $");
 
 /************************************************************************/
 /*                                Open()                                */
@@ -84,4 +83,3 @@ void RegisterOGRREC()
 
     GetGDALDriverManager()->RegisterDriver( poDriver );
 }
-

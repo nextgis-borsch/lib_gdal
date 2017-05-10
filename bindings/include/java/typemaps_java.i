@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: typemaps_java.i 34011 2016-04-18 16:22:21Z rouault $
+ * $Id: typemaps_java.i 37359 2017-02-12 19:40:53Z rouault $
  *
  * Name:     typemaps_java.i
  * Project:  GDAL SWIG Interface
@@ -643,7 +643,7 @@
  *  Java typemaps for (int* pnList, int** ppListOut)
  *
  ***************************************************/
-%typemap(in) (int* pnList, int** ppListOut) (int nLen, int* pBuf)
+%typemap(in) (int* pnList, int** ppListOut) (int nLen = 0, int* pBuf = NULL)
 {
   /* %typemap(in) (int* pnList, int** ppListOut) */
   $1 = &nLen;

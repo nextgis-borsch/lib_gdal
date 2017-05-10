@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: gdalpamproxydb.cpp 33766 2016-03-21 19:51:16Z goatbar $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of the GDAL PAM Proxy database interface.
@@ -30,12 +29,31 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#include "cpl_port.h"
+#include "gdal_pam.h"
+
+#include <cerrno>
+#include <cstddef>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#if HAVE_FCNTL_H
+#  include <fcntl.h>
+#endif
+
+#include <memory>
+#include <string>
+#include <vector>
+
+#include "cpl_conv.h"
+#include "cpl_error.h"
 #include "cpl_multiproc.h"
 #include "cpl_string.h"
+#include "cpl_vsi.h"
 #include "gdal_pam.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: gdalpamproxydb.cpp 33766 2016-03-21 19:51:16Z goatbar $");
+CPL_CVSID("$Id: gdalpamproxydb.cpp 36526 2016-11-27 15:46:54Z goatbar $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -268,7 +286,6 @@ void GDALPamProxyDB::SaveDB()
     if( hLock )
         CPLUnlockFile( hLock );
 }
-
 
 /************************************************************************/
 /*                            InitProxyDB()                             */

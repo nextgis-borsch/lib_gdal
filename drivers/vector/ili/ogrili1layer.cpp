@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrili1layer.cpp 36502 2016-11-25 14:21:53Z rouault $
  *
  * Project:  Interlis 1 Translator
  * Purpose:  Implements OGRILI1Layer class.
@@ -36,14 +35,14 @@
 #include <map>
 #include <vector>
 
-CPL_CVSID("$Id: ogrili1layer.cpp 36502 2016-11-25 14:21:53Z rouault $");
+CPL_CVSID("$Id: ogrili1layer.cpp 37472 2017-02-26 02:47:45Z goatbar $");
 
 /************************************************************************/
 /*                           OGRILI1Layer()                              */
 /************************************************************************/
 
 OGRILI1Layer::OGRILI1Layer( OGRFeatureDefn* poFeatureDefnIn,
-                            GeomFieldInfos oGeomFieldInfosIn,
+                            const GeomFieldInfos& oGeomFieldInfosIn,
                             OGRILI1DataSource *poDSIn ) :
     poFeatureDefn(poFeatureDefnIn),
     oGeomFieldInfos(oGeomFieldInfosIn),
@@ -73,7 +72,6 @@ OGRILI1Layer::~OGRILI1Layer()
         poFeatureDefn->Release();
 }
 
-
 OGRErr OGRILI1Layer::AddFeature (OGRFeature *poFeature)
 {
     nFeatures++;
@@ -101,13 +99,11 @@ void OGRILI1Layer::ResetReading()
 
 OGRFeature *OGRILI1Layer::GetNextFeature()
 {
-    OGRFeature *poFeature;
-
     if (!bGeomsJoined) JoinGeomLayers();
 
     while(nFeatureIdx < nFeatures)
     {
-        poFeature = GetNextFeatureRef();
+        OGRFeature *poFeature = GetNextFeatureRef();
         if (poFeature)
             return poFeature->Clone();
     }
@@ -136,9 +132,9 @@ OGRFeature *OGRILI1Layer::GetNextFeatureRef() {
 OGRFeature *OGRILI1Layer::GetFeatureRef( GIntBig nFID )
 
 {
-    OGRFeature *poFeature;
-
     ResetReading();
+
+    OGRFeature *poFeature = NULL;
     while( (poFeature = GetNextFeatureRef()) != NULL )
     {
         if( poFeature->GetFID() == nFID )
@@ -151,9 +147,9 @@ OGRFeature *OGRILI1Layer::GetFeatureRef( GIntBig nFID )
 OGRFeature *OGRILI1Layer::GetFeatureRef( const char *fid )
 
 {
-    OGRFeature *poFeature;
-
     ResetReading();
+
+    OGRFeature *poFeature = NULL;
     while( (poFeature = GetNextFeatureRef()) != NULL )
     {
         if( !strcmp( poFeature->GetFieldAsString(0), fid ) )
@@ -328,7 +324,6 @@ int OGRILI1Layer::GeometryAppend( OGRGeometry *poGeometry )
             if( !GeometryAppend( poMember ) )
                 return FALSE;
         }
-
     }
     else if( poGeometry->getGeometryType() == wkbCompoundCurve
              || poGeometry->getGeometryType() == wkbCompoundCurveZ )
@@ -394,7 +389,7 @@ OGRErr OGRILI1Layer::ICreateFeature( OGRFeature *poFeature ) {
     // Write all fields.
     for( int iField = 0; iField < poFeatureDefn->GetFieldCount(); iField++ )
     {
-        if ( poFeature->IsFieldSet( iField ) )
+        if ( poFeature->IsFieldSetAndNotNull( iField ) )
         {
           const char *pszRaw = poFeature->GetFieldAsString( iField );
           if (poFeatureDefn->GetFieldDefn( iField )->GetType() == OFTString) {
@@ -448,7 +443,6 @@ OGRErr OGRILI1Layer::CreateField( OGRFieldDefn *poField, int /* bApproxOK */ ) {
     return OGRERR_NONE;
 }
 
-
 /************************************************************************/
 /*                         Internal routines                            */
 /************************************************************************/
@@ -495,7 +489,6 @@ void OGRILI1Layer::JoinGeomLayers()
         CPLSetThreadLocalConfigOption("OGR_ARC_STEPSIZE", NULL);
 }
 
-
 void OGRILI1Layer::JoinSurfaceLayer( OGRILI1Layer* poSurfaceLineLayer,
                                      int nSurfaceFieldIndex )
 {
@@ -511,7 +504,7 @@ void OGRILI1Layer::JoinSurfaceLayer( OGRILI1Layer* poSurfaceLineLayer,
     // First map: for each target curvepolygon, find all belonging curves
     while (OGRFeature *linefeature = poSurfaceLineLayer->GetNextFeatureRef()) {
         //OBJE entries with same _RefTID are polygon rings of same feature
-        OGRFeature *feature;
+        OGRFeature *feature = NULL;
         if (poFeatureDefn->GetFieldDefn(0)->GetType() == OFTString)
         {
           feature = GetFeatureRef(linefeature->GetFieldAsString(1));
@@ -563,7 +556,7 @@ void OGRILI1Layer::JoinSurfaceLayer( OGRILI1Layer* poSurfaceLineLayer,
 
             OGRPoint endPointCC;
             OGRCompoundCurve* poCC = new OGRCompoundCurve();
- 
+
             bool bFirst = true;
             while( true )
             {
@@ -727,7 +720,6 @@ void OGRILI1Layer::JoinSurfaceLayer( OGRILI1Layer* poSurfaceLineLayer,
     }
 
     ResetReading();
-    poSurfaceLineLayer = NULL;
 }
 
 OGRMultiPolygon* OGRILI1Layer::Polygonize( OGRGeometryCollection* poLines,
@@ -814,7 +806,6 @@ OGRMultiPolygon* OGRILI1Layer::Polygonize( OGRGeometryCollection* poLines,
 #endif
 }
 
-
 void OGRILI1Layer::PolygonizeAreaLayer( OGRILI1Layer* poAreaLineLayer,
                                         int
 #if defined(HAVE_GEOS)
@@ -899,6 +890,5 @@ void OGRILI1Layer::PolygonizeAreaLayer( OGRILI1Layer* poAreaLineLayer,
     CPLFree( ahInGeoms );
     OGRGeometry::freeGEOSContext( hGEOSCtxt );
 #endif
-    poAreaLineLayer = NULL;
     delete polys;
 }

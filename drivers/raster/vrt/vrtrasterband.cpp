@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: vrtrasterband.cpp 33902 2016-04-06 19:07:34Z rouault $
  *
  * Project:  Virtual GDAL Datasets
  * Purpose:  Implementation of VRTRasterBand
@@ -28,13 +27,29 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#include "cpl_port.h"
 #include "vrtdataset.h"
-#include "cpl_minixml.h"
-#include "cpl_string.h"
 
+#include <cstdlib>
+#include <cstring>
 #include <algorithm>
+#include <memory>
+#include <vector>
 
-CPL_CVSID("$Id: vrtrasterband.cpp 33902 2016-04-06 19:07:34Z rouault $");
+#include "gdal.h"
+#include "gdal_pam.h"
+#include "gdal_priv.h"
+#include "cpl_conv.h"
+#include "cpl_error.h"
+#include "cpl_hash_set.h"
+#include "cpl_minixml.h"
+#include "cpl_progress.h"
+#include "cpl_string.h"
+#include "cpl_vsi.h"
+
+/*! @cond Doxygen_Suppress */
+
+CPL_CVSID("$Id: vrtrasterband.cpp 37310 2017-02-06 11:42:54Z goatbar $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -46,10 +61,29 @@ CPL_CVSID("$Id: vrtrasterband.cpp 33902 2016-04-06 19:07:34Z rouault $");
 /*                           VRTRasterBand()                            */
 /************************************************************************/
 
-VRTRasterBand::VRTRasterBand()
-
+VRTRasterBand::VRTRasterBand() :
+    m_bIsMaskBand(FALSE),
+    m_bNoDataValueSet(FALSE),
+    m_bHideNoDataValue(FALSE),
+    m_dfNoDataValue(-10000.0),
+    m_poColorTable(NULL),
+    m_eColorInterp(GCI_Undefined),
+    m_pszUnitType(NULL),
+    m_papszCategoryNames(NULL),
+    m_dfOffset(0.0),
+    m_dfScale(1.0),
+    m_psSavedHistograms(NULL),
+    m_poMaskBand(NULL)
 {
-    Initialize( 0, 0 );
+    // Initialize( 0, 0 );
+    poDS = NULL;
+    nBand = 0;
+    eAccess = GA_ReadOnly;
+    eDataType = GDT_Byte;
+    nRasterXSize = 0;
+    nRasterYSize = 0;
+    nBlockXSize = 0;
+    nBlockYSize = 0;
 }
 
 /************************************************************************/
@@ -383,6 +417,11 @@ CPLErr VRTRasterBand::XMLInit( CPLXMLNode * psTree,
         for( CPLXMLNode *psEntry = CPLGetXMLNode( psTree, "ColorTable" )->psChild;
              psEntry != NULL; psEntry = psEntry->psNext )
         {
+            if( !(psEntry->eType == CXT_Element &&
+                  EQUAL(psEntry->pszValue, "Entry")) )
+            {
+                continue;
+            }
             GDALColorEntry sCEntry;
 
             sCEntry.c1 = (short) atoi(CPLGetXMLValue( psEntry, "c1", "0" ));
@@ -459,8 +498,8 @@ CPLErr VRTRasterBand::XMLInit( CPLXMLNode * psTree,
         const int nSrcBand = atoi(CPLGetXMLValue( psNode, "SourceBand", "1" ) );
 
         m_apoOverviews.resize( m_apoOverviews.size() + 1 );
-        m_apoOverviews[m_apoOverviews.size()-1].osFilename = pszSrcDSName;
-        m_apoOverviews[m_apoOverviews.size()-1].nBand = nSrcBand;
+        m_apoOverviews.back().osFilename = pszSrcDSName;
+        m_apoOverviews.back().nBand = nSrcBand;
 
         CPLFree( pszSrcDSName );
     }
@@ -505,7 +544,6 @@ CPLErr VRTRasterBand::XMLInit( CPLXMLNode * psTree,
                         pszSubclass );
             break;
         }
-
 
         if( poBand->XMLInit( psNode, pszVRTPath ) == CE_None )
         {
@@ -639,8 +677,8 @@ CPLXMLNode *VRTRasterBand::SerializeToXML( const char *pszVRTPath )
         CPLXMLNode *psOVR_XML = CPLCreateXMLNode( psTree, CXT_Element,
                                                  "Overview" );
 
-        int              bRelativeToVRT;
-        const char      *pszRelativePath;
+        int bRelativeToVRT = FALSE;
+        const char *pszRelativePath = NULL;
         VSIStatBufL sStat;
 
         if( VSIStatExL( m_apoOverviews[iOvr].osFilename, &sStat, VSI_STAT_EXISTS_FLAG ) != 0 )
@@ -992,7 +1030,7 @@ int VRTRasterBand::GetOverviewCount()
 
 {
     // First: overviews declared in <Overview> element
-    if( m_apoOverviews.size() > 0 )
+    if( !m_apoOverviews.empty() )
         return static_cast<int>(m_apoOverviews.size());
 
     // If not found, external .ovr overviews
@@ -1003,7 +1041,7 @@ int VRTRasterBand::GetOverviewCount()
     // If not found, implicit virtual overviews
     VRTDataset* poVRTDS = reinterpret_cast<VRTDataset *>( poDS );
     poVRTDS->BuildVirtualOverviews();
-    if( poVRTDS->m_apoOverviews.size() && poVRTDS->m_apoOverviews[0] )
+    if( !poVRTDS->m_apoOverviews.empty() && poVRTDS->m_apoOverviews[0] )
         return static_cast<int>( poVRTDS->m_apoOverviews.size() );
 
     return 0;
@@ -1017,7 +1055,7 @@ GDALRasterBand *VRTRasterBand::GetOverview( int iOverview )
 
 {
     // First: overviews declared in <Overview> element
-    if( m_apoOverviews.size() > 0 )
+    if( !m_apoOverviews.empty() )
     {
         if( iOverview < 0
             || iOverview >= static_cast<int>( m_apoOverviews.size() ) )
@@ -1055,7 +1093,7 @@ GDALRasterBand *VRTRasterBand::GetOverview( int iOverview )
     // If not found, implicit virtual overviews
     VRTDataset* poVRTDS = reinterpret_cast<VRTDataset *>( poDS );
     poVRTDS->BuildVirtualOverviews();
-    if( poVRTDS->m_apoOverviews.size() && poVRTDS->m_apoOverviews[0] )
+    if( !poVRTDS->m_apoOverviews.empty() && poVRTDS->m_apoOverviews[0] )
     {
         if( iOverview < 0
             || iOverview >= static_cast<int>( poVRTDS->m_apoOverviews.size() ) )
@@ -1170,3 +1208,5 @@ int VRTRasterBand::CloseDependentDatasets()
 {
     return FALSE;
 }
+
+/*! @endcond */

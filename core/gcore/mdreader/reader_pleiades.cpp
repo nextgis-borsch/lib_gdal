@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: reader_pleiades.cpp 34367 2016-06-17 13:58:32Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Read metadata from Pleiades imagery.
@@ -28,17 +27,32 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#include "cpl_port.h"
 #include "reader_pleiades.h"
 
-CPL_CVSID("$Id: reader_pleiades.cpp 34367 2016-06-17 13:58:32Z rouault $");
+#include <cstddef>
+#include <cstring>
+#include <ctime>
+
+#include <string>
+
+#include "cpl_conv.h"
+#include "cpl_error.h"
+#include "cpl_minixml.h"
+#include "cpl_string.h"
+
+CPL_CVSID("$Id: reader_pleiades.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 /**
  * GDALMDReaderPleiades()
  */
 GDALMDReaderPleiades::GDALMDReaderPleiades(const char *pszPath,
-        char **papszSiblingFiles) : GDALMDReaderBase(pszPath, papszSiblingFiles)
+                                        char **papszSiblingFiles) :
+    GDALMDReaderBase(pszPath, papszSiblingFiles),
+    m_osBaseFilename( pszPath ),
+    m_osIMDSourceFilename( CPLString() ),
+    m_osRPBSourceFilename( CPLString() )
 {
-    m_osBaseFilename = pszPath;
     const char* pszBaseName = CPLGetBasename(pszPath);
     size_t nBaseNameLen = strlen(pszBaseName);
     if( nBaseNameLen < 4 || nBaseNameLen > 511 )
@@ -91,12 +105,23 @@ GDALMDReaderPleiades::GDALMDReaderPleiades(const char *pszPath,
         }
     }
 
-    if( m_osIMDSourceFilename.size() )
+    if( !m_osIMDSourceFilename.empty() )
         CPLDebug( "MDReaderPleiades", "IMD Filename: %s",
                   m_osIMDSourceFilename.c_str() );
-    if( m_osRPBSourceFilename.size() )
+    if( !m_osRPBSourceFilename.empty() )
         CPLDebug( "MDReaderPleiades", "RPB Filename: %s",
                   m_osRPBSourceFilename.c_str() );
+}
+
+GDALMDReaderPleiades::GDALMDReaderPleiades() : GDALMDReaderBase(NULL, NULL)
+{
+}
+
+GDALMDReaderPleiades* GDALMDReaderPleiades::CreateReaderForRPC(const char* pszRPCSourceFilename)
+{
+    GDALMDReaderPleiades* poReader = new GDALMDReaderPleiades();
+    poReader->m_osRPBSourceFilename = pszRPCSourceFilename;
+    return poReader;
 }
 
 /**
@@ -189,7 +214,6 @@ void GDALMDReaderPleiades::LoadMetadata()
         }
     }
 
-
     const char* pszSatId2;
     if(nCounter == -1)
         pszSatId2 = CSLFetchNameValue(m_papszIMDMD,
@@ -216,7 +240,6 @@ void GDALMDReaderPleiades::LoadMetadata()
         m_papszIMAGERYMD = CSLAddNameValue(m_papszIMAGERYMD,
                                 MD_NAME_SATELLITE, CPLStripQuotes(pszSatId2));
     }
-
 
     const char* pszDate;
     if(nCounter == -1)

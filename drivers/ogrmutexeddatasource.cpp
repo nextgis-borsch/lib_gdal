@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrmutexeddatasource.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRMutexedDataSource class
@@ -27,26 +26,28 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#ifndef DOXYGEN_SKIP
+
 #include "ogrmutexeddatasource.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id: ogrmutexeddatasource.cpp 33714 2016-03-13 05:42:13Z goatbar $");
+CPL_CVSID("$Id: ogrmutexeddatasource.cpp 35172 2016-08-21 20:33:08Z goatbar $");
 
-OGRMutexedDataSource::OGRMutexedDataSource(OGRDataSource* poBaseDataSource,
-                                           int bTakeOwnership,
-                                           CPLMutex* hMutexIn,
-                                           int bWrapLayersInMutexedLayer) :
-            m_poBaseDataSource(poBaseDataSource),
-            m_bHasOwnership(bTakeOwnership),
-            m_hGlobalMutex(hMutexIn),
-            m_bWrapLayersInMutexedLayer(bWrapLayersInMutexedLayer)
-{
-}
+OGRMutexedDataSource::OGRMutexedDataSource( OGRDataSource* poBaseDataSource,
+                                            int bTakeOwnership,
+                                            CPLMutex* hMutexIn,
+                                            int bWrapLayersInMutexedLayer ) :
+    m_poBaseDataSource(poBaseDataSource),
+    m_bHasOwnership(bTakeOwnership),
+    m_hGlobalMutex(hMutexIn),
+    m_bWrapLayersInMutexedLayer(bWrapLayersInMutexedLayer)
+{}
 
 OGRMutexedDataSource::~OGRMutexedDataSource()
 {
-    std::map<OGRLayer*, OGRMutexedLayer*>::iterator oIter = m_oMapLayers.begin();
-    for(; oIter != m_oMapLayers.end(); ++oIter )
+    std::map<OGRLayer*, OGRMutexedLayer*>::iterator oIter =
+        m_oMapLayers.begin();
+    for( ; oIter != m_oMapLayers.end(); ++oIter )
         delete oIter->second;
 
     if( m_bHasOwnership )
@@ -240,3 +241,5 @@ void OGRRegisterMutexedDataSource()
     delete new OGRMutexedDataSource(NULL, FALSE, NULL, FALSE);
 }
 #endif
+
+#endif /* #ifndef DOXYGEN_SKIP */

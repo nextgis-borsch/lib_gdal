@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrtigerlayer.cpp 33706 2016-03-11 13:33:27Z goatbar $
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Implements OGRTigerLayer class.
@@ -29,7 +28,7 @@
 
 #include "ogr_tiger.h"
 
-CPL_CVSID("$Id: ogrtigerlayer.cpp 33706 2016-03-11 13:33:27Z goatbar $");
+CPL_CVSID("$Id: ogrtigerlayer.cpp 35911 2016-10-24 15:03:26Z goatbar $");
 
 /************************************************************************/
 /*                           OGRTigerLayer()                            */
@@ -39,19 +38,15 @@ CPL_CVSID("$Id: ogrtigerlayer.cpp 33706 2016-03-11 13:33:27Z goatbar $");
 /************************************************************************/
 
 OGRTigerLayer::OGRTigerLayer( OGRTigerDataSource *poDSIn,
-                              TigerFileBase * poReaderIn )
-
+                              TigerFileBase * poReaderIn ) :
+    poReader(poReaderIn),
+    poDS(poDSIn),
+    nFeatureCount(0),
+    panModuleFCount(NULL),
+    panModuleOffset(NULL),
+    iLastFeatureId(0),
+    iLastModule(-1)
 {
-    poDS = poDSIn;
-    poReader = poReaderIn;
-
-    iLastFeatureId = 0;
-    iLastModule = -1;
-
-    nFeatureCount = 0;
-    panModuleFCount = NULL;
-    panModuleOffset = NULL;
-
 /* -------------------------------------------------------------------- */
 /*      Setup module feature counts.                                    */
 /* -------------------------------------------------------------------- */
@@ -146,9 +141,7 @@ OGRFeature *OGRTigerLayer::GetFeature( GIntBig nFeatureId )
 /* -------------------------------------------------------------------- */
 /*      Fetch the feature associated with the record.                   */
 /* -------------------------------------------------------------------- */
-    OGRFeature  *poFeature;
-
-    poFeature =
+    OGRFeature  *poFeature =
         poReader->GetFeature( (int)nFeatureId-panModuleOffset[iLastModule]-1 );
 
     if( poFeature != NULL )
@@ -166,7 +159,6 @@ OGRFeature *OGRTigerLayer::GetFeature( GIntBig nFeatureId )
 
     return poFeature;
 }
-
 
 /************************************************************************/
 /*                           GetNextFeature()                           */

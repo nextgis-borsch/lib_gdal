@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: gtmtracklayer.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  GTM Driver
  * Purpose:  Implementation of GTMTrackLayer class.
@@ -29,6 +28,7 @@
  ****************************************************************************/
 #include "ogr_gtm.h"
 
+CPL_CVSID("$Id: gtmtracklayer.cpp 37371 2017-02-13 11:41:59Z rouault $");
 
 GTMTrackLayer::GTMTrackLayer( const char* pszNameIn,
                               OGRSpatialReference *poSRSIn,
@@ -100,7 +100,6 @@ GTMTrackLayer::GTMTrackLayer( const char* pszNameIn,
 
     OGRFieldDefn oFieldColor( "color", OFTInteger );
     poFeatureDefn->AddFieldDefn( &oFieldColor );
-
 }
 
 GTMTrackLayer::~GTMTrackLayer()
@@ -108,7 +107,6 @@ GTMTrackLayer::~GTMTrackLayer()
     /* poDS, poSRS, poCT, pszName, and poFeatureDefn are released in
        parent class */
 }
-
 
 /************************************************************************/
 /*                      WriteFeatureAttributes()                        */
@@ -121,7 +119,7 @@ void GTMTrackLayer::WriteFeatureAttributes( OGRFeature *poFeature )
     for (int i = 0; i < poFeatureDefn->GetFieldCount(); ++i)
     {
         OGRFieldDefn *poFieldDefn = poFeatureDefn->GetFieldDefn( i );
-        if( poFeature->IsFieldSet( i ) )
+        if( poFeature->IsFieldSetAndNotNull( i ) )
         {
             const char* l_pszName = poFieldDefn->GetNameRef();
             /* track name */
@@ -217,7 +215,6 @@ inline void GTMTrackLayer::WriteTrackpoint( double lat, double lon,
     CPLFree(pBuffer);
 }
 
-
 /************************************************************************/
 /*                           ICreateFeature()                            */
 /************************************************************************/
@@ -307,7 +304,6 @@ OGRErr GTMTrackLayer::ICreateFeature (OGRFeature *poFeature)
     return OGRERR_NONE;
 }
 
-
 OGRFeature* GTMTrackLayer::GetNextFeature()
 {
     if( bError )
@@ -359,7 +355,6 @@ GIntBig GTMTrackLayer::GetFeatureCount(int bForce)
 
     return OGRLayer::GetFeatureCount(bForce);
 }
-
 
 void GTMTrackLayer::ResetReading()
 {

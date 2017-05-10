@@ -3,16 +3,16 @@
 # Purpose:  CMake build scripts
 # Author:   Mikhail Gusev, gusevmihs@gmail.com
 ################################################################################
-# Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
+# Copyright (C) 2015-2017, NextGIS <info@nextgis.com>
 # Copyright (C) 2016 Mikhail Gusev
-#  
+#
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
 # to deal in the Software without restriction, including without limitation
 # the rights to use, copy, modify, merge, publish, distribute, sublicense,
 # and/or sell copies of the Software, and to permit persons to whom the
 # Software is furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included
 # in all copies or substantial portions of the Software.
 #
@@ -34,20 +34,18 @@ if(ENABLE_ELASTIC)
 	set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DELASTIC_ENABLED" PARENT_SCOPE)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-    #include_directories(${JSONC_INCLUDE_DIRS})
+    include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/geojson)
 
     set(LIB_HHEADERS
     )
 
     set(LIB_HHEADERS_PRIV
-        ogr_elastic.h 
-        ${CMAKE_SOURCE_DIR}/drivers/vector/geojson/ogrgeojsonreader.h 
-        ${CMAKE_SOURCE_DIR}/drivers/vector/geojson/ogrgeojsonwriter.h
+        ogr_elastic.h
     )
 
     set(LIB_CSOURCES
-        ogrelasticdriver.cpp 
-        ogrelasticdatasource.cpp 
+        ogrelasticdriver.cpp
+        ogrelasticdatasource.cpp
         ogrelasticlayer.cpp
     )
 
@@ -56,5 +54,5 @@ if(ENABLE_ELASTIC)
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
 else()
-    warning_msg("Skip elastic")  
+    warning_msg("Skip elastic")
 endif()

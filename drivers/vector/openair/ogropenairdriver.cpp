@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogropenairdriver.cpp 32976 2016-01-14 00:07:34Z goatbar $
  *
  * Project:  OpenAir Translator
  * Purpose:  Implements OGROpenAirDriver.
@@ -31,7 +30,7 @@
 #include "ogr_openair.h"
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id: ogropenairdriver.cpp 32976 2016-01-14 00:07:34Z goatbar $");
+CPL_CVSID("$Id: ogropenairdriver.cpp 34819 2016-07-28 22:32:18Z goatbar $");
 
 /************************************************************************/
 /*                                Open()                                */
@@ -125,4 +124,3 @@ void RegisterOGROpenAir()
 
     GetGDALDriverManager()->RegisterDriver( poDriver );
 }
-

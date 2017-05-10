@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: gdalbuildvrt_lib.cpp 33757 2016-03-20 20:22:33Z goatbar $
  *
  * Project:  GDAL Utilities
  * Purpose:  Command line application to build VRT datasets from raster products
@@ -28,17 +27,35 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "cpl_string.h"
-#include "gdal_proxy.h"
-#include "gdal_utils.h"
-#include "gdal_utils_priv.h"
-#include "gdal_vrt.h"
-#include "vrtdataset.h"
-
 #include "ogr_api.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id: gdalbuildvrt_lib.cpp 33757 2016-03-20 20:22:33Z goatbar $");
+#include "cpl_port.h"
+#include "gdal_utils.h"
+#include "gdal_utils_priv.h"
+
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+
+#include <algorithm>
+
+#include "cpl_conv.h"
+#include "cpl_error.h"
+#include "cpl_progress.h"
+#include "cpl_string.h"
+#include "cpl_vsi.h"
+#include "gdal.h"
+#include "gdal_vrt.h"
+#include "gdal_priv.h"
+#include "gdal_proxy.h"
+#include "ogr_api.h"
+#include "ogr_core.h"
+#include "ogr_srs_api.h"
+#include "vrtdataset.h"
+
+CPL_CVSID("$Id: gdalbuildvrt_lib.cpp 37978 2017-04-13 15:25:54Z rouault $");
 
 #define GEOTRSFRM_TOPLEFT_X            0
 #define GEOTRSFRM_WE_RES               1
@@ -89,7 +106,6 @@ static int ArgIsNumeric( const char *pszArg )
 {
     return CPLGetValueType(pszArg) != CPL_VALUE_STRING;
 }
-
 
 /************************************************************************/
 /*                         GetSrcDstWin()                               */
@@ -180,6 +196,7 @@ class VRTBuilder
     char               *pszVRTNoData;
     char               *pszOutputSRS;
     char               *pszResampling;
+    char              **papszOpenOptions;
 
     /* Internal variables */
     char               *pszProjectionRef;
@@ -219,13 +236,13 @@ class VRTBuilder
                            int bAddAlpha, int bHideNoData, int nSubdataset,
                            const char* pszSrcNoData, const char* pszVRTNoData,
                            const char* pszOutputSRS,
-                           const char* pszResampling);
+                           const char* pszResampling,
+                           const char* const* papszOpenOptionsIn );
 
                ~VRTBuilder();
 
         GDALDataset*     Build(GDALProgressFunc pfnProgress, void * pProgressData);
 };
-
 
 /************************************************************************/
 /*                          VRTBuilder()                                */
@@ -244,12 +261,14 @@ VRTBuilder::VRTBuilder(const char* pszOutputFilenameIn,
                        int bAddAlphaIn, int bHideNoDataIn, int nSubdatasetIn,
                        const char* pszSrcNoDataIn, const char* pszVRTNoDataIn,
                        const char* pszOutputSRSIn,
-                       const char* pszResamplingIn)
+                       const char* pszResamplingIn,
+                       const char* const * papszOpenOptionsIn )
 {
     pszOutputFilename = CPLStrdup(pszOutputFilenameIn);
     nInputFiles = nInputFilesIn;
     pahSrcDS = NULL;
     ppszInputFilenames = NULL;
+    papszOpenOptions = CSLDuplicate(const_cast<char**>(papszOpenOptionsIn));
 
     if( ppszInputFilenamesIn )
     {
@@ -357,6 +376,7 @@ VRTBuilder::~VRTBuilder()
     CPLFree(padfVRTNoData);
     CPLFree(pszOutputSRS);
     CPLFree(pszResampling);
+    CSLDestroy(papszOpenOptions);
 }
 
 /************************************************************************/
@@ -720,7 +740,6 @@ int VRTBuilder::AnalyseRaster( GDALDatasetH hDS, DatasetProperty* psDatasetPrope
                     }
                 }
             }
-
         }
         if (!bUserExtent)
         {
@@ -745,15 +764,15 @@ int VRTBuilder::AnalyseRaster( GDALDatasetH hDS, DatasetProperty* psDatasetPrope
         }
         else if (resolutionStrategy == HIGHEST_RESOLUTION)
         {
-            we_res = MIN(we_res, padfGeoTransform[GEOTRSFRM_WE_RES]);
-            /* Yes : as ns_res is negative, the highest resolution is the max value */
-            ns_res = MAX(ns_res, padfGeoTransform[GEOTRSFRM_NS_RES]);
+            we_res = std::min(we_res, padfGeoTransform[GEOTRSFRM_WE_RES]);
+            //ns_res is negative, the highest resolution is the max value.
+            ns_res = std::max(ns_res, padfGeoTransform[GEOTRSFRM_NS_RES]);
         }
         else
         {
-            we_res = MAX(we_res, padfGeoTransform[GEOTRSFRM_WE_RES]);
-            /* Yes : as ns_res is negative, the lowest resolution is the min value */
-            ns_res = MIN(ns_res, padfGeoTransform[GEOTRSFRM_NS_RES]);
+            we_res = std::max(we_res, padfGeoTransform[GEOTRSFRM_WE_RES]);
+            // ns_res is negative, the lowest resolution is the min value.
+            ns_res = std::min(ns_res, padfGeoTransform[GEOTRSFRM_NS_RES]);
         }
     }
 
@@ -801,6 +820,9 @@ void VRTBuilder::CreateVRTSeparate(VRTDatasetH hVRTDS)
                                         psDatasetProperties->nRasterYSize,
                                         GA_ReadOnly, TRUE, pszProjectionRef,
                                         psDatasetProperties->adfGeoTransform);
+        reinterpret_cast<GDALProxyPoolDataset*>(hProxyDS)->
+                                        SetOpenOptions( papszOpenOptions );
+
         GDALProxyPoolDatasetAddSrcBandDescription(hProxyDS,
                                             psDatasetProperties->firstBandType,
                                             psDatasetProperties->nBlockXSize,
@@ -878,16 +900,21 @@ void VRTBuilder::CreateVRTNonSeparate(VRTDatasetH hVRTDS)
         poMaskVRTBand = (VRTSourcedRasterBand*)GDALGetMaskBand(GDALGetRasterBand(hVRTDS, 1));
     }
 
-
-    for(int i=0;i<nInputFiles;i++)
+    for( int i = 0; i < nInputFiles; i++ )
     {
         DatasetProperty* psDatasetProperties = &pasDatasetProperties[i];
 
         if (psDatasetProperties->isFileOK == FALSE)
             continue;
 
-        double dfSrcXOff, dfSrcYOff, dfSrcXSize, dfSrcYSize,
-            dfDstXOff, dfDstYOff, dfDstXSize, dfDstYSize;
+        double dfSrcXOff;
+        double dfSrcYOff;
+        double dfSrcXSize;
+        double dfSrcYSize;
+        double dfDstXOff;
+        double dfDstYOff;
+        double dfDstXSize;
+        double dfDstYSize;
         if ( ! GetSrcDstWin(psDatasetProperties,
                         we_res, ns_res, minX, minY, maxX, maxY,
                         &dfSrcXOff, &dfSrcYOff, &dfSrcXSize, &dfSrcYSize,
@@ -902,6 +929,8 @@ void VRTBuilder::CreateVRTNonSeparate(VRTDatasetH hVRTDS)
                                         psDatasetProperties->nRasterYSize,
                                         GA_ReadOnly, TRUE, pszProjectionRef,
                                         psDatasetProperties->adfGeoTransform);
+        reinterpret_cast<GDALProxyPoolDataset*>(hProxyDS)->
+                                        SetOpenOptions( papszOpenOptions );
 
         for(int j=0;j<nMaxBandNo;j++)
         {
@@ -1037,7 +1066,10 @@ GDALDataset* VRTBuilder::Build(GDALProgressFunc pfnProgress, void * pProgressDat
             padfSrcNoData = (double *) CPLMalloc(sizeof(double) * nSrcNoDataCount);
             for(int i=0;i<nSrcNoDataCount;i++)
             {
-                if( !ArgIsNumeric(papszTokens[i]) && !EQUAL(papszTokens[i], "nan") )
+                if( !ArgIsNumeric(papszTokens[i]) &&
+                    !EQUAL(papszTokens[i], "nan") &&
+                    !EQUAL(papszTokens[i], "-inf") &&
+                    !EQUAL(papszTokens[i], "inf") )
                 {
                     CPLError(CE_Failure, CPLE_IllegalArg, "Invalid -srcnodata value");
                     CSLDestroy(papszTokens);
@@ -1062,7 +1094,10 @@ GDALDataset* VRTBuilder::Build(GDALProgressFunc pfnProgress, void * pProgressDat
             padfVRTNoData = (double *) CPLMalloc(sizeof(double) * nVRTNoDataCount);
             for(int i=0;i<nVRTNoDataCount;i++)
             {
-                if( !ArgIsNumeric(papszTokens[i]) && !EQUAL(papszTokens[i], "nan") )
+                if( !ArgIsNumeric(papszTokens[i]) &&
+                    !EQUAL(papszTokens[i], "nan") &&
+                    !EQUAL(papszTokens[i], "-inf") &&
+                    !EQUAL(papszTokens[i], "inf") )
                 {
                     CPLError(CE_Failure, CPLE_IllegalArg, "Invalid -vrtnodata value");
                     CSLDestroy(papszTokens);
@@ -1086,7 +1121,9 @@ GDALDataset* VRTBuilder::Build(GDALProgressFunc pfnProgress, void * pProgressDat
 
         GDALDatasetH hDS =
             (pahSrcDS) ? pahSrcDS[i] :
-                         GDALOpen(ppszInputFilenames[i], GA_ReadOnly );
+                GDALOpenEx( ppszInputFilenames[i],
+                            GDAL_OF_RASTER | GDAL_OF_VERBOSE_ERROR, NULL,
+                            papszOpenOptions, NULL );
         pasDatasetProperties[i].isFileOK = FALSE;
 
         if (hDS)
@@ -1290,6 +1327,7 @@ struct GDALBuildVRTOptions
     int nBandCount;
     int nMaxBandNo;
     char* pszResampling;
+    char** papszOpenOptions;
 
     /*! allow or suppress progress monitor and other non-error output */
     int bQuiet;
@@ -1321,6 +1359,7 @@ GDALBuildVRTOptions* GDALBuildVRTOptionsClone(const GDALBuildVRTOptions *psOptio
         psOptions->panBandList = static_cast<int*>(CPLMalloc(sizeof(int) * psOptionsIn->nBandCount));
         memcpy(psOptions->panBandList, psOptionsIn->panBandList, sizeof(int) * psOptionsIn->nBandCount);
     }
+    if( psOptionsIn->papszOpenOptions ) psOptions->papszOpenOptions = CSLDuplicate(psOptionsIn->papszOpenOptions);
     return psOptions;
 }
 
@@ -1433,7 +1472,8 @@ GDALDatasetH GDALBuildVRT( const char *pszDest,
                         psOptions->bSeparate, psOptions->bAllowProjectionDifference,
                         psOptions->bAddAlpha, psOptions->bHideNoData, psOptions->nSubdataset,
                         psOptions->pszSrcNoData, psOptions->pszVRTNoData,
-                        psOptions->pszOutputSRS, psOptions->pszResampling);
+                        psOptions->pszOutputSRS, psOptions->pszResampling,
+                        psOptions->papszOpenOptions);
 
     GDALDatasetH hDstDS =
         (GDALDatasetH)oBuilder.Build(psOptions->pfnProgress, psOptions->pProgressData);
@@ -1505,7 +1545,7 @@ GDALBuildVRTOptions *GDALBuildVRTOptionsNew(char** papszArgv,
 /*      Parse arguments.                                                */
 /* -------------------------------------------------------------------- */
     int argc = CSLCount(papszArgv);
-    for( int iArg = 0; iArg < argc; iArg++ )
+    for( int iArg = 0; papszArgv != NULL && iArg < argc; iArg++ )
     {
         if( EQUAL(papszArgv[iArg],"-tileindex") && iArg + 1 < argc )
         {
@@ -1669,6 +1709,12 @@ GDALBuildVRTOptions *GDALBuildVRTOptionsNew(char** papszArgv,
             CPLFree(psOptions->pszResampling);
             psOptions->pszResampling = CPLStrdup(papszArgv[++iArg]);
         }
+        else if( EQUAL(papszArgv[iArg], "-oo") && iArg+1 < argc )
+        {
+            psOptions->papszOpenOptions =
+                    CSLAddString( psOptions->papszOpenOptions,
+                                  papszArgv[++iArg] );
+        }
         else if( papszArgv[iArg][0] == '-' )
         {
             CPLError(CE_Failure, CPLE_NotSupported,
@@ -1721,6 +1767,7 @@ void GDALBuildVRTOptionsFree( GDALBuildVRTOptions *psOptions )
         CPLFree( psOptions->pszOutputSRS );
         CPLFree( psOptions->panBandList );
         CPLFree( psOptions->pszResampling );
+        CSLDestroy( psOptions->papszOpenOptions );
     }
 
     CPLFree(psOptions);

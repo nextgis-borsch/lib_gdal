@@ -3,8 +3,8 @@
 # Purpose:  CMake build scripts
 # Author:   Dmitry Baryshnikov, polimax@mail.ru
 ################################################################################
-# Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
-# Copyright (C) 2012,2013,2014 Dmitry Baryshnikov
+# Copyright (C) 2015-2017, NextGIS <info@nextgis.com>
+# Copyright (C) 2012-2014 Dmitry Baryshnikov
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -42,16 +42,17 @@ set(LIB_HHEADERS_PRIV
 )
 
 set(LIB_CSOURCES
-    vrtdriver.cpp   
-    vrtpansharpened.cpp  
-    vrtrawrasterband.cpp      
-    vrtsources.cpp    
+    vrtdriver.cpp
+    vrtpansharpened.cpp
+    vrtrawrasterband.cpp
+    vrtsources.cpp
     vrtwarped.cpp
-    vrtdataset.cpp  
-    vrtderivedrasterband.cpp  
-    vrtfilters.cpp  
-    vrtrasterband.cpp    
+    vrtdataset.cpp
+    vrtderivedrasterband.cpp
+    vrtfilters.cpp
+    vrtrasterband.cpp
     vrtsourcedrasterband.cpp
+    pixelfunctions.cpp
 )
 
 add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
@@ -62,4 +63,4 @@ set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCO
 # install headers
 if(NOT SKIP_INSTALL_HEADERS AND NOT SKIP_INSTALL_ALL )
     install(FILES ${LIB_HHEADERS} DESTINATION ${INSTALL_INC_DIR} COMPONENT headers)
-endif() 
+endif()

@@ -1,5 +1,4 @@
 /**********************************************************************
- * $Id: mitab_mapheaderblock.cpp,v 1.33 2008-02-01 19:36:31 dmorissette Exp $
  *
  * Name:     mitab_mapheaderblock.cpp
  * Project:  MapInfo TAB Read/Write library
@@ -29,115 +28,20 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- **********************************************************************
- *
- * $Log: mitab_mapheaderblock.cpp,v $
- * Revision 1.33  2008-02-01 19:36:31  dmorissette
- * Initial support for V800 REGION and MULTIPLINE (bug 1496)
- *
- * Revision 1.32  2006/11/28 18:49:08  dmorissette
- * Completed changes to split TABMAPObjectBlocks properly and produce an
- * optimal spatial index (bug 1585)
- *
- * Revision 1.31  2005/09/29 20:16:54  dmorissette
- *  Support for writing affine projection params in .MAP header (AJD, bug 1155)
- *
- * Revision 1.30  2005/05/12 20:46:15  dmorissette
- * Initialize m_sProj.nDatumId in InitNewBlock(). (hss/geh)
- *
- * Revision 1.29  2005/03/22 23:24:54  dmorissette
- * Added support for datum id in .MAP header (bug 910)
- *
- * Revision 1.28  2004/12/15 22:52:49  dmorissette
- * Revert back to using doubles for range check in CoordSys2Int(). Hopefully
- * I got it right this time. (bug 894)
- *
- * Revision 1.27  2004/12/08 23:27:35  dmorissette
- * Fixed coordinates rounding error in Coordsys2Int() (bug 894)
- *
- * Revision 1.26  2004/06/30 20:29:04  dmorissette
- * Fixed refs to old address danmo@videotron.ca
- *
- * Revision 1.25  2003/08/12 23:17:21  dmorissette
- * Added reading of v500+ coordsys affine params (Anthony D. - Encom)
- *
- * Revision 1.24  2002/06/28 18:32:37  julien
- * Add SetSpatialFilter() in TABSeamless class (Bug 164, MapServer)
- * Use double for comparison in Coordsys2Int() in mitab_mapheaderblock.cpp
- *
- * Revision 1.23  2002/04/25 16:05:24  julien
- * Disabled the overflow warning in SetCoordFilter() by adding bIgnoreOverflow
- * variable in Coordsys2Int of the TABMAPFile class and TABMAPHeaderBlock class
- *
- * Revision 1.22  2002/03/26 01:48:40  daniel
- * Added Multipoint object type (V650)
- *
- * Revision 1.21  2001/12/05 22:23:06  daniel
- * Can't use rint() on Windows... replace rint() with (int)(val+0.5)
- *
- * Revision 1.20  2001/12/05 21:56:15  daniel
- * Mod. CoordSys2Int() to use rint() for double to integer coord. conversion.
- *
- * Revision 1.19  2001/11/19 15:05:42  daniel
- * Prevent writing of coordinates outside of the +/-1e9 integer bounds.
- *
- * Revision 1.18  2000/12/07 03:58:20  daniel
- * Pass first arg of pow() as double
- *
- * Revision 1.17  2000/09/19 19:35:53  daniel
- * Set default scale/displacement when reading V100 headers
- *
- * Revision 1.16  2000/07/10 14:56:52  daniel
- * Handle m_nOriginQuadrant==0 as quadrant 3 (reverse x and y axis)
- *
- * Revision 1.15  2000/03/13 05:59:25  daniel
- * Switch from V400 to V500 .MAP header (1024 bytes)
- *
- * Revision 1.14  2000/02/28 17:01:05  daniel
- * Use a #define for header version number
- *
- * Revision 1.13  2000/02/07 18:09:10  daniel
- * OOpppps ... test on version number was reversed!
- *
- * Revision 1.12  2000/02/07 17:41:02  daniel
- * Ignore the values of 5 last datum params in version=200 headers
- *
- * Revision 1.11  2000/01/15 22:30:44  daniel
- * Switch to MIT/X-Consortium OpenSource license
- *
- * Revision 1.10  2000/01/15 05:37:47  daniel
- * Use a #define for default quadrant value in new files
- *
- * Revision 1.9  1999/10/19 16:27:10  warmerda
- * Default unitsid to 7 (meters) instead of 0 (miles).
- *
- * Revision 1.8  1999/10/19 06:05:35  daniel
- * Removed obsolete code segments in the coord. conversion functions.
- *
- * Revision 1.7  1999/10/06 13:21:37  daniel
- * Reworked int<->coordsys coords. conversion... hopefully it's OK this time!
- *
- * Revision 1.6  1999/10/01 03:47:38  daniel
- * Better defaults for header fields, and more complete Dump() for debugging
- *
- * Revision 1.5  1999/09/29 04:25:03  daniel
- * Set default scale so that default coord range is +/-1000000.000
- *
- * Revision 1.4  1999/09/26 14:59:36  daniel
- * Implemented write support
- *
- * Revision 1.3  1999/09/21 03:36:33  warmerda
- * slight modification to dump precision
- *
- * Revision 1.2  1999/09/16 02:39:16  daniel
- * Completed read support for most feature types
- *
- * Revision 1.1  1999/07/12 04:18:24  daniel
- * Initial checkin
- *
  **********************************************************************/
 
+#include "cpl_port.h"
 #include "mitab.h"
+
+#include <cmath>
+#include <cstddef>
+
+#include "cpl_conv.h"
+#include "cpl_error.h"
+#include "cpl_vsi.h"
+#include "mitab_priv.h"
+
+CPL_CVSID("$Id: mitab_mapheaderblock.cpp 37351 2017-02-12 05:22:20Z goatbar $");
 
 #ifdef WIN32
 inline double round(double r) {
@@ -148,17 +52,17 @@ inline double round(double r) {
 /*---------------------------------------------------------------------
  * Set various constants used in generating the header block.
  *--------------------------------------------------------------------*/
-#define HDR_MAGIC_COOKIE        42424242
-#define HDR_VERSION_NUMBER      500
+static const GInt32 HDR_MAGIC_COOKIE = 42424242;
+static const GInt16 HDR_VERSION_NUMBER = 500;
 
-#define HDR_DEF_ORG_QUADRANT    1       // N-E Quadrant
-#define HDR_DEF_REFLECTXAXIS    0
+static const GByte HDR_DEF_ORG_QUADRANT = 1;  // N-E Quadrant
+static const GByte HDR_DEF_REFLECTXAXIS = 0;
 
 /*---------------------------------------------------------------------
  * The header block starts with an array of map object length constants.
  *--------------------------------------------------------------------*/
-#define HDR_OBJ_LEN_ARRAY_SIZE   73
-static const GByte  gabyObjLenArray[ HDR_OBJ_LEN_ARRAY_SIZE  ] = {
+static const GByte HDR_OBJ_LEN_ARRAY_SIZE = 73;
+static const GByte gabyObjLenArray[ HDR_OBJ_LEN_ARRAY_SIZE  ] = {
             0x00,0x0a,0x0e,0x15,0x0e,0x16,0x1b,0xa2,
             0xa6,0xab,0x1a,0x2a,0x2f,0xa5,0xa9,0xb5,
             0xa7,0xb5,0xd9,0x0f,0x17,0x23,0x13,0x1f,
@@ -170,24 +74,22 @@ static const GByte  gabyObjLenArray[ HDR_OBJ_LEN_ARRAY_SIZE  ] = {
             0xc7,0xcb,0xd0,0xd3,0xd7,0xfd,0xc2,0xc2,
             0xf9};
 
-
-
 /*=====================================================================
  *                      class TABMAPHeaderBlock
  *====================================================================*/
-
 
 /**********************************************************************
  *                   TABMAPHeaderBlock::TABMAPHeaderBlock()
  *
  * Constructor.
  **********************************************************************/
-TABMAPHeaderBlock::TABMAPHeaderBlock(TABAccess eAccessMode /*= TABRead*/):
+TABMAPHeaderBlock::TABMAPHeaderBlock( TABAccess eAccessMode /*= TABRead*/ ):
     TABRawBinBlock(eAccessMode, TRUE)
 {
+    // TODO(schwehr): Consider using initializer list for most values.
     InitMembersWithDefaultValues();
 
-    /* We don't want to reset it once it is set */
+    // We don't want to reset it once it is set.
     m_bIntBoundsOverflow = FALSE;
 }
 
@@ -196,18 +98,13 @@ TABMAPHeaderBlock::TABMAPHeaderBlock(TABAccess eAccessMode /*= TABRead*/):
  *
  * Destructor.
  **********************************************************************/
-TABMAPHeaderBlock::~TABMAPHeaderBlock()
-{
-
-}
+TABMAPHeaderBlock::~TABMAPHeaderBlock() {}
 
 /**********************************************************************
  *            TABMAPHeaderBlock::InitMembersWithDefaultValues()
  **********************************************************************/
 void TABMAPHeaderBlock::InitMembersWithDefaultValues()
 {
-    int i;
-
     /*-----------------------------------------------------------------
      * Set acceptable default values for member vars.
      *----------------------------------------------------------------*/
@@ -254,13 +151,13 @@ void TABMAPHeaderBlock::InitMembersWithDefaultValues()
     m_XPrecision = 0.0;  // not specified
     m_YPrecision = 0.0;  // not specified
 
-    for(i=0; i<6; i++)
+    for( int i = 0; i<6; i++ )
         m_sProj.adProjParams[i] = 0.0;
 
     m_sProj.dDatumShiftX = 0.0;
     m_sProj.dDatumShiftY = 0.0;
     m_sProj.dDatumShiftZ = 0.0;
-    for(i=0; i<5; i++)
+    for( int i = 0; i < 5; i++ )
         m_sProj.adDatumParams[i] = 0.0;
 
     m_sProj.nAffineFlag = 0;    // Only in version 500 and up
@@ -272,7 +169,6 @@ void TABMAPHeaderBlock::InitMembersWithDefaultValues()
     m_sProj.dAffineParamE = 0.0;
     m_sProj.dAffineParamF = 0.0;
 }
-
 
 /**********************************************************************
  *                   TABMAPHeaderBlock::InitBlockFromData()
@@ -289,16 +185,14 @@ int     TABMAPHeaderBlock::InitBlockFromData(GByte *pabyBuf,
                                              VSILFILE *fpSrc /* = NULL */,
                                              int nOffset /* = 0 */)
 {
-    int i, nStatus;
-    GInt32 nMagicCookie;
-
     /*-----------------------------------------------------------------
      * First of all, we must call the base class' InitBlockFromData()
      *----------------------------------------------------------------*/
-    nStatus = TABRawBinBlock::InitBlockFromData(pabyBuf,
-                                                nBlockSize, nSizeUsed,
-                                                bMakeCopy,
-                                                fpSrc, nOffset);
+    const int nStatus =
+        TABRawBinBlock::InitBlockFromData(pabyBuf,
+                                          nBlockSize, nSizeUsed,
+                                          bMakeCopy,
+                                          fpSrc, nOffset);
     if (nStatus != 0)
         return nStatus;
 
@@ -307,7 +201,7 @@ int     TABMAPHeaderBlock::InitBlockFromData(GByte *pabyBuf,
      * Header blocks have a magic cookie at byte 0x100
      *----------------------------------------------------------------*/
     GotoByteInBlock(0x100);
-    nMagicCookie = ReadInt32();
+    const GInt32 nMagicCookie = ReadInt32();
     if (nMagicCookie != HDR_MAGIC_COOKIE)
     {
         CPLError(CE_Failure, CPLE_FileIO,
@@ -397,17 +291,19 @@ int     TABMAPHeaderBlock::InitBlockFromData(GByte *pabyBuf,
      */
     if (m_nMAPVersionNumber <= 100)
     {
-        m_XScale = m_YScale = pow(10.0, m_nCoordPrecision);
-        m_XDispl = m_YDispl = 0.0;
+        m_XScale = pow(10.0, m_nCoordPrecision);
+        m_YScale = m_XScale;
+        m_XDispl = 0.0;
+        m_YDispl = 0.0;
     }
 
-    for(i=0; i<6; i++)
+    for( int i = 0; i < 6; i++ )
         m_sProj.adProjParams[i] = ReadDouble();
 
     m_sProj.dDatumShiftX = ReadDouble();
     m_sProj.dDatumShiftY = ReadDouble();
     m_sProj.dDatumShiftZ = ReadDouble();
-    for(i=0; i<5; i++)
+    for( int i = 0; i < 5; i++ )
     {
         /* In V.200 files, the next 5 datum params are unused and they
          * sometimes contain junk bytes... in this case we set adDatumParams[]
@@ -443,7 +339,6 @@ int     TABMAPHeaderBlock::InitBlockFromData(GByte *pabyBuf,
     return 0;
 }
 
-
 /**********************************************************************
  *                   TABMAPHeaderBlock::Int2Coordsys()
  *
@@ -455,8 +350,8 @@ int     TABMAPHeaderBlock::InitBlockFromData(GByte *pabyBuf,
  *
  * Returns 0 on success, -1 on error.
  **********************************************************************/
-int TABMAPHeaderBlock::Int2Coordsys(GInt32 nX, GInt32 nY,
-                                    double &dX, double &dY)
+int TABMAPHeaderBlock::Int2Coordsys( GInt32 nX, GInt32 nY,
+                                     double &dX, double &dY )
 {
     if (m_pabyBuf == NULL)
         return -1;
@@ -501,9 +396,9 @@ int TABMAPHeaderBlock::Int2Coordsys(GInt32 nX, GInt32 nY,
  *
  * Returns 0 on success, -1 on error.
  **********************************************************************/
-int TABMAPHeaderBlock::Coordsys2Int(double dX, double dY,
-                                    GInt32 &nX, GInt32 &nY,
-                                    GBool bIgnoreOverflow /*=FALSE*/)
+int TABMAPHeaderBlock::Coordsys2Int( double dX, double dY,
+                                     GInt32 &nX, GInt32 &nY,
+                                     GBool bIgnoreOverflow /*=FALSE*/ )
 {
     if (m_pabyBuf == NULL)
         return -1;
@@ -518,7 +413,8 @@ int TABMAPHeaderBlock::Coordsys2Int(double dX, double dY,
      * NOTE: double values must be used here, the limit of integer value
      * have been reached some times due to the very big numbers used here.
      *----------------------------------------------------------------*/
-    double dTempX, dTempY;
+    double dTempX = 0.0;
+    double dTempY = 0.0;
 
     if (m_nCoordOriginQuadrant==2 || m_nCoordOriginQuadrant==3 ||
         m_nCoordOriginQuadrant==0 )
@@ -589,16 +485,15 @@ int TABMAPHeaderBlock::Coordsys2Int(double dX, double dY,
  *
  * Returns 0 on success, -1 on error.
  **********************************************************************/
-int TABMAPHeaderBlock::ComprInt2Coordsys(GInt32 nCenterX, GInt32 nCenterY,
-                                         int nDeltaX, int nDeltaY,
-                                         double &dX, double &dY)
+int TABMAPHeaderBlock::ComprInt2Coordsys( GInt32 nCenterX, GInt32 nCenterY,
+                                          int nDeltaX, int nDeltaY,
+                                          double &dX, double &dY )
 {
     if (m_pabyBuf == NULL)
         return -1;
 
     return Int2Coordsys(nCenterX+nDeltaX, nCenterY+nDeltaY, dX, dY);
 }
-
 
 /**********************************************************************
  *                   TABMAPHeaderBlock::Int2CoordsysDist()
@@ -615,8 +510,8 @@ int TABMAPHeaderBlock::ComprInt2Coordsys(GInt32 nCenterX, GInt32 nCenterY,
  *
  * Returns 0 on success, -1 on error.
  **********************************************************************/
-int TABMAPHeaderBlock::Int2CoordsysDist(GInt32 nX, GInt32 nY,
-                                    double &dX, double &dY)
+int TABMAPHeaderBlock::Int2CoordsysDist( GInt32 nX, GInt32 nY,
+                                         double &dX, double &dY )
 {
     if (m_pabyBuf == NULL)
         return -1;
@@ -642,8 +537,8 @@ int TABMAPHeaderBlock::Int2CoordsysDist(GInt32 nX, GInt32 nY,
  *
  * Returns 0 on success, -1 on error.
  **********************************************************************/
-int TABMAPHeaderBlock::Coordsys2IntDist(double dX, double dY,
-                                        GInt32 &nX, GInt32 &nY)
+int TABMAPHeaderBlock::Coordsys2IntDist( double dX, double dY,
+                                         GInt32 &nX, GInt32 &nY )
 {
     if (m_pabyBuf == NULL)
         return -1;
@@ -653,7 +548,6 @@ int TABMAPHeaderBlock::Coordsys2IntDist(double dX, double dY,
 
     return 0;
 }
-
 
 /**********************************************************************
  *                   TABMAPHeaderBlock::SetCoordsysBounds()
@@ -666,8 +560,8 @@ int TABMAPHeaderBlock::Coordsys2IntDist(double dX, double dY,
  *
  * Returns 0 on success, -1 on error.
  **********************************************************************/
-int TABMAPHeaderBlock::SetCoordsysBounds(double dXMin, double dYMin,
-                                         double dXMax, double dYMax)
+int TABMAPHeaderBlock::SetCoordsysBounds( double dXMin, double dYMin,
+                                          double dXMax, double dYMax )
 {
 //printf("SetCoordsysBounds(%10g, %10g, %10g, %10g)\n", dXMin, dYMin, dXMax, dYMax);
     /*-----------------------------------------------------------------
@@ -733,7 +627,7 @@ int TABMAPHeaderBlock::GetMapObjectSize(int nObjType)
     }
 
     // Byte 0x80 is set for objects that have coordinates inside type 3 blocks
-    return (m_pabyBuf[nObjType] & 0x7f);
+    return m_pabyBuf[nObjType] & 0x7f;
 }
 
 /**********************************************************************
@@ -763,7 +657,6 @@ GBool TABMAPHeaderBlock::MapObjectUsesCoordBlock(int nObjType)
 
     return ((m_pabyBuf[nObjType] & 0x80) != 0) ? TRUE: FALSE;
 }
-
 
 /**********************************************************************
  *                   TABMAPHeaderBlock::GetProjInfo()
@@ -810,7 +703,6 @@ int  TABMAPHeaderBlock::SetProjInfo(TABProjInfo *psProjInfo)
     return 0;
 }
 
-
 /**********************************************************************
  *                   TABMAPHeaderBlock::CommitToFile()
  *
@@ -826,7 +718,7 @@ int  TABMAPHeaderBlock::SetProjInfo(TABProjInfo *psProjInfo)
  **********************************************************************/
 int     TABMAPHeaderBlock::CommitToFile()
 {
-    int i, nStatus = 0;
+    int i;
 
     if ( m_pabyBuf == NULL || m_nRegularBlockSize == 0 )
     {
@@ -935,15 +827,10 @@ int     TABMAPHeaderBlock::CommitToFile()
     /*-----------------------------------------------------------------
      * OK, call the base class to write the block to disk.
      *----------------------------------------------------------------*/
-    if (nStatus == 0)
-    {
 #ifdef DEBUG_VERBOSE
-        CPLDebug("MITAB", "Committing HEADER block to offset %d", m_nFileOffset);
+    CPLDebug("MITAB", "Committing HEADER block to offset %d", m_nFileOffset);
 #endif
-        nStatus = TABRawBinBlock::CommitToFile();
-    }
-
-    return nStatus;
+    return TABRawBinBlock::CommitToFile();
 }
 
 /**********************************************************************
@@ -1017,8 +904,6 @@ void TABMAPHeaderBlock::UpdatePrecision()
 
 void TABMAPHeaderBlock::Dump(FILE *fpOut /*=NULL*/)
 {
-    int i;
-
     if (fpOut == NULL)
         fpOut = stdout;
 
@@ -1072,7 +957,7 @@ void TABMAPHeaderBlock::Dump(FILE *fpOut /*=NULL*/)
                                                     (int)m_sProj.nEllipsoidId);
         fprintf(fpOut,"  m_sProj.nUnitsId      = %d\n", (int)m_sProj.nUnitsId);
         fprintf(fpOut,"  m_sProj.adProjParams  =");
-        for(i=0; i<6; i++)
+        for( int i = 0; i < 6; i++)
             fprintf(fpOut, " %g",  m_sProj.adProjParams[i]);
         fprintf(fpOut,"\n");
 
@@ -1080,7 +965,7 @@ void TABMAPHeaderBlock::Dump(FILE *fpOut /*=NULL*/)
         fprintf(fpOut,"  m_sProj.dDatumShiftY  = %.15g\n", m_sProj.dDatumShiftY);
         fprintf(fpOut,"  m_sProj.dDatumShiftZ  = %.15g\n", m_sProj.dDatumShiftZ);
         fprintf(fpOut,"  m_sProj.adDatumParams =");
-        for(i=0; i<5; i++)
+        for( int i = 0; i < 5; i++ )
             fprintf(fpOut, " %.15g",  m_sProj.adDatumParams[i]);
         fprintf(fpOut,"\n");
 
@@ -1088,7 +973,7 @@ void TABMAPHeaderBlock::Dump(FILE *fpOut /*=NULL*/)
         if (FALSE)
         {
             fprintf(fpOut, "-- Header bytes 00-FF: Array of map object lengths --\n");
-            for(i=0; i<256; i++)
+            for( int i = 0; i < 256; i++ )
             {
                 fprintf(fpOut, "0x%2.2x", (int)m_pabyBuf[i]);
                 if (i != 255)
@@ -1097,7 +982,6 @@ void TABMAPHeaderBlock::Dump(FILE *fpOut /*=NULL*/)
                     fprintf(fpOut, "\n");
             }
         }
-
     }
 
     fflush(fpOut);

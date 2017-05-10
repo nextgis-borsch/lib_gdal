@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: sdtsindexedreader.cpp 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  SDTS Translator
  * Purpose:  Implmementation of SDTSIndexedReader class.  This base class for
@@ -32,7 +31,7 @@
 
 #include "sdts_al.h"
 
-CPL_CVSID("$Id: sdtsindexedreader.cpp 33717 2016-03-14 06:29:14Z goatbar $");
+CPL_CVSID("$Id: sdtsindexedreader.cpp 34968 2016-08-07 21:35:08Z goatbar $");
 
 /************************************************************************/
 /*                         SDTSIndexedReader()                          */
@@ -139,7 +138,7 @@ SDTSFeature *SDTSIndexedReader::GetNextFeature()
 /************************************************************************/
 
 /**
- Fetch a feature based on it's record number.
+ Fetch a feature based on its record number.
 
  This method will forcibly fill the feature cache, reading all the
  features in the file into memory, if they haven't already been loaded.
@@ -179,13 +178,12 @@ SDTSFeature *SDTSIndexedReader::GetIndexedFeatureRef( int iRecordId )
 void SDTSIndexedReader::FillIndex()
 
 {
-
     if( nIndexSize != 0 )
         return;
 
     Rewind();
 
-    SDTSFeature *poFeature;
+    SDTSFeature *poFeature = NULL;
     while( (poFeature = GetNextRawFeature()) != NULL )
     {
         const int iRecordId = poFeature->oModId.nRecord;

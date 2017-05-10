@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrociloaderlayer.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  Oracle Spatial Driver
  * Purpose:  Implementation of the OGROCILoaderLayer class.  This implements
@@ -32,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrociloaderlayer.cpp 33713 2016-03-12 17:41:57Z goatbar $");
+CPL_CVSID("$Id: ogrociloaderlayer.cpp 37371 2017-02-13 11:41:59Z rouault $");
 
 /************************************************************************/
 /*                         OGROCILoaderLayer()                          */
@@ -60,7 +59,6 @@ OGROCILoaderLayer::OGROCILoaderLayer( OGROCIDataSource *poDSIn,
     pszGeomName = CPLStrdup( pszGeomColIn );
     pszFIDName = (char*)CPLGetConfigOption( "OCI_FID", "OGR_FID" );
 
-
     nSRID = nSRIDIn;
     poSRS = poDSIn->FetchSRS( nSRID );
 
@@ -81,7 +79,6 @@ OGROCILoaderLayer::OGROCILoaderLayer( OGROCIDataSource *poDSIn,
                   pszLoaderFilename );
         return;
     }
-
 }
 
 /************************************************************************/
@@ -191,7 +188,7 @@ void OGROCILoaderLayer::WriteLoaderHeader()
             VSIFPrintf( fpLoader, "    \"%s\" INTEGER EXTERNAL",
                         poFldDefn->GetNameRef() );
         }
-        else if( poFldDefn->GetType() == OFTInteger )
+        else if( poFldDefn->GetType() == OFTInteger64 )
         {
             VSIFPrintf( fpLoader, "    \"%s\" LONGINTEGER EXTERNAL",
                         poFldDefn->GetNameRef() );
@@ -201,12 +198,7 @@ void OGROCILoaderLayer::WriteLoaderHeader()
             VSIFPrintf( fpLoader, "    \"%s\" FLOAT EXTERNAL",
                         poFldDefn->GetNameRef() );
         }
-        else if( poFldDefn->GetType() == OFTString )
-        {
-            VSIFPrintf( fpLoader, "    \"%s\" VARCHARC(4)",
-                        poFldDefn->GetNameRef() );
-        }
-        else
+        else /* if( poFldDefn->GetType() == OFTString ) or default case */
         {
             VSIFPrintf( fpLoader, "    \"%s\" VARCHARC(4)",
                         poFldDefn->GetNameRef() );
@@ -327,7 +319,7 @@ OGRErr OGROCILoaderLayer::WriteFeatureStreamMode( OGRFeature *poFeature )
     {
         OGRFieldDefn *poFldDefn = poFeatureDefn->GetFieldDefn(i);
 
-        if( !poFeature->IsFieldSet( i ) )
+        if( !poFeature->IsFieldSetAndNotNull( i ) )
         {
             if( poFldDefn->GetType() != OFTInteger
                 && poFldDefn->GetType() != OFTInteger64
@@ -451,7 +443,7 @@ OGRErr OGROCILoaderLayer::WriteFeatureVariableMode( OGRFeature *poFeature )
     {
         OGRFieldDefn *poFldDefn = poFeatureDefn->GetFieldDefn(i);
 
-        if( !poFeature->IsFieldSet( i ) )
+        if( !poFeature->IsFieldSetAndNotNull( i ) )
         {
             if( poFldDefn->GetType() != OFTInteger
                 && poFldDefn->GetType() != OFTInteger64

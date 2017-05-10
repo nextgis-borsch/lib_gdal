@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: tigerpip.cpp 33706 2016-03-11 13:33:27Z goatbar $
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Implements TigerPIP, providing access to .RTP files.
@@ -30,9 +29,9 @@
 #include "ogr_tiger.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: tigerpip.cpp 33706 2016-03-11 13:33:27Z goatbar $");
+CPL_CVSID("$Id: tigerpip.cpp 35911 2016-10-24 15:03:26Z goatbar $");
 
-#define FILE_CODE "P"
+static const char FILE_CODE[] = "P";
 
 static const TigerFieldInfo rtP_2002_fields[] = {
   // fieldname    fmt  type OFTType      beg  end  len  bDefine bSet bWrite
@@ -66,7 +65,6 @@ static const TigerRecordInfo rtP_info =
     sizeof(rtP_fields) / sizeof(TigerFieldInfo),
     44
   };
-
 
 /************************************************************************/
 /*                              TigerPIP()                              */

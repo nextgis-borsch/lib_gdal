@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: aigdataset.cpp 33901 2016-04-06 16:31:31Z goatbar $
  *
  * Project:  Arc/Info Binary Grid Driver
  * Purpose:  Implements GDAL interface to underlying library.
@@ -38,11 +37,10 @@
 
 #include <vector>
 
-CPL_CVSID("$Id: aigdataset.cpp 33901 2016-04-06 16:31:31Z goatbar $");
+CPL_CVSID("$Id: aigdataset.cpp 36979 2016-12-20 18:40:40Z rouault $");
 
 static CPLString OSR_GDS( char **papszNV, const char * pszField,
-                           const char *pszDefaultValue );
-
+                          const char *pszDefaultValue );
 
 /************************************************************************/
 /* ==================================================================== */
@@ -62,7 +60,7 @@ class CPL_DLL AIGDataset : public GDALPamDataset
     char        *pszProjection;
 
     GDALColorTable *poCT;
-    int         bHasReadRat;
+    bool        bHasReadRat;
 
     void        TranslateColorTable( const char * );
 
@@ -71,13 +69,13 @@ class CPL_DLL AIGDataset : public GDALPamDataset
 
   public:
                 AIGDataset();
-                ~AIGDataset();
+    virtual ~AIGDataset();
 
     static GDALDataset *Open( GDALOpenInfo * );
 
-    virtual CPLErr GetGeoTransform( double * );
-    virtual const char *GetProjectionRef(void);
-    virtual char **GetFileList(void);
+    virtual CPLErr GetGeoTransform( double * ) override;
+    virtual const char *GetProjectionRef(void) override;
+    virtual char **GetFileList(void) override;
 };
 
 /************************************************************************/
@@ -95,14 +93,14 @@ class AIGRasterBand : public GDALPamRasterBand
 
                    AIGRasterBand( AIGDataset *, int );
 
-    virtual CPLErr IReadBlock( int, int, void * );
-    virtual double GetMinimum( int *pbSuccess );
-    virtual double GetMaximum( int *pbSuccess );
-    virtual double GetNoDataValue( int *pbSuccess );
+    virtual CPLErr IReadBlock( int, int, void * ) override;
+    virtual double GetMinimum( int *pbSuccess ) override;
+    virtual double GetMaximum( int *pbSuccess ) override;
+    virtual double GetNoDataValue( int *pbSuccess ) override;
 
-    virtual GDALColorInterp GetColorInterpretation();
-    virtual GDALColorTable *GetColorTable();
-    virtual GDALRasterAttributeTable *GetDefaultRAT();
+    virtual GDALColorInterp GetColorInterpretation() override;
+    virtual GDALColorTable *GetColorTable() override;
+    virtual GDALRasterAttributeTable *GetDefaultRAT() override;
 };
 
 /************************************************************************/
@@ -112,8 +110,8 @@ class AIGRasterBand : public GDALPamRasterBand
 AIGRasterBand::AIGRasterBand( AIGDataset *poDSIn, int nBandIn )
 
 {
-    this->poDS = poDSIn;
-    this->nBand = nBandIn;
+    poDS = poDSIn;
+    nBand = nBandIn;
 
     nBlockXSize = poDSIn->psInfo->nBlockXSize;
     nBlockYSize = poDSIn->psInfo->nBlockYSize;
@@ -212,7 +210,7 @@ GDALRasterAttributeTable *AIGRasterBand::GetDefaultRAT()
     if (!poODS->bHasReadRat)
     {
         poODS->ReadRAT();
-        poODS->bHasReadRat = TRUE;
+        poODS->bHasReadRat = true;
     }
 
     if( poODS->poRAT )
@@ -309,7 +307,6 @@ GDALColorTable *AIGRasterBand::GetColorTable()
 /* ==================================================================== */
 /************************************************************************/
 
-
 /************************************************************************/
 /*                            AIGDataset()                            */
 /************************************************************************/
@@ -317,12 +314,11 @@ GDALColorTable *AIGRasterBand::GetColorTable()
 AIGDataset::AIGDataset() :
     psInfo(NULL),
     papszPrj(NULL),
+    pszProjection(CPLStrdup("")),
     poCT(NULL),
-    bHasReadRat(FALSE),
+    bHasReadRat(false),
     poRAT(NULL)
-{
-    pszProjection = CPLStrdup("");
-}
+{}
 
 /************************************************************************/
 /*                           ~AIGDataset()                            */
@@ -487,7 +483,7 @@ void AIGDataset::ReadRAT()
 /* -------------------------------------------------------------------- */
 /*      Process all records into RAT.                                   */
 /* -------------------------------------------------------------------- */
-    AVCField *pasFields;
+    AVCField *pasFields = NULL;
     int iRecord = 0;
 
     while( (pasFields = AVCBinReadNextTableRec(psFile)) != NULL )
@@ -549,8 +545,6 @@ void AIGDataset::ReadRAT()
 GDALDataset *AIGDataset::Open( GDALOpenInfo * poOpenInfo )
 
 {
-    AIGInfo_t *psInfo;
-
 /* -------------------------------------------------------------------- */
 /*      If the pass name ends in .adf assume a file within the          */
 /*      coverage has been selected, and strip that off the coverage     */
@@ -617,7 +611,7 @@ GDALDataset *AIGDataset::Open( GDALOpenInfo * poOpenInfo )
                 bGotOne = true;
                 break;
             }
-        } while(0);
+        } while( false );
     }
 
     for( int iFile = 0;
@@ -650,7 +644,7 @@ GDALDataset *AIGDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Open the file.                                                  */
 /* -------------------------------------------------------------------- */
-    psInfo = AIGOpen( osCoverName.c_str(), "r" );
+    AIGInfo_t *psInfo = AIGOpen( osCoverName.c_str(), "r" );
 
     if( psInfo == NULL )
     {
@@ -698,7 +692,7 @@ GDALDataset *AIGDataset::Open( GDALOpenInfo * poOpenInfo )
     CSLDestroy( papszFiles );
 
     // Look in parent if we don't find a .clr in the coverage dir.
-    if( strlen(osClrFilename) == 0 )
+    if( osClrFilename.empty() )
     {
         osTestName.Printf( "%s/../%s.clr",
                            psInfo->pszCoverName,
@@ -717,7 +711,7 @@ GDALDataset *AIGDataset::Open( GDALOpenInfo * poOpenInfo )
             osClrFilename = osTestName;
     }
 
-    if( strlen(osClrFilename) > 0 )
+    if( !osClrFilename.empty() )
         poDS->TranslateColorTable( osClrFilename );
 
 /* -------------------------------------------------------------------- */
@@ -772,7 +766,7 @@ GDALDataset *AIGDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     poDS->oOvManager.Initialize( poDS, psInfo->pszCoverName );
 
-    return( poDS );
+    return poDS;
 }
 
 /************************************************************************/
@@ -790,7 +784,7 @@ CPLErr AIGDataset::GetGeoTransform( double * padfTransform )
     padfTransform[4] = 0;
     padfTransform[5] = -psInfo->dfCellSizeY;
 
-    return( CE_None );
+    return CE_None;
 }
 
 /************************************************************************/
@@ -933,13 +927,13 @@ static CPLErr AIGRename( const char *pszNewName, const char *pszOldName )
     {
         CPLString osNewFilename;
 
-        if( !EQUALN(papszFileList[i],osOldPath,strlen(osOldPath)) )
+        if( !EQUALN(papszFileList[i],osOldPath,osOldPath.size()) )
         {
-            CPLAssert( FALSE );
+            CPLAssert( false );
             return CE_Failure;
         }
 
-        osNewFilename = osNewPath + (papszFileList[i] + strlen(osOldPath));
+        osNewFilename = osNewPath + (papszFileList[i] + osOldPath.size());
 
         papszNewFileList = CSLAddString( papszNewFileList, osNewFilename );
     }

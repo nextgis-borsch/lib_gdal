@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ceosdataset.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  CEOS Translator
  * Purpose:  GDALDataset driver for CEOS translator.
@@ -32,11 +31,11 @@
 #include "gdal_frmts.h"
 #include "gdal_pam.h"
 
-CPL_CVSID("$Id: ceosdataset.cpp 33720 2016-03-15 00:39:53Z goatbar $");
+CPL_CVSID("$Id: ceosdataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
-/*				CEOSDataset				*/
+/*                              CEOSDataset                             */
 /* ==================================================================== */
 /************************************************************************/
 
@@ -46,7 +45,7 @@ class CEOSDataset : public GDALPamDataset
 {
     friend class CEOSRasterBand;
 
-    CEOSImage	*psCEOS;
+    CEOSImage   *psCEOS;
 
   public:
                  CEOSDataset();
@@ -66,11 +65,10 @@ class CEOSRasterBand : public GDALPamRasterBand
 
   public:
 
-    		CEOSRasterBand( CEOSDataset *, int );
+                CEOSRasterBand( CEOSDataset *, int );
 
-    virtual CPLErr IReadBlock( int, int, void * );
+    virtual CPLErr IReadBlock( int, int, void * ) override;
 };
-
 
 /************************************************************************/
 /*                           CEOSRasterBand()                            */
@@ -79,8 +77,8 @@ class CEOSRasterBand : public GDALPamRasterBand
 CEOSRasterBand::CEOSRasterBand( CEOSDataset *poDSIn, int nBandIn )
 
 {
-    this->poDS = poDSIn;
-    this->nBand = nBandIn;
+    poDS = poDSIn;
+    nBand = nBandIn;
 
     eDataType = GDT_Byte;
 
@@ -96,11 +94,11 @@ CPLErr CEOSRasterBand::IReadBlock( CPL_UNUSED int nBlockXOff,
                                    int nBlockYOff,
                                    void * pImage )
 {
-    CEOSDataset	*poCEOS_DS = (CEOSDataset *) poDS;
+    CEOSDataset *poCEOS_DS = (CEOSDataset *) poDS;
 
     CPLAssert( nBlockXOff == 0 );
 
-    return( CEOSReadScanline(poCEOS_DS->psCEOS, nBand, nBlockYOff+1, pImage) );
+    return CEOSReadScanline(poCEOS_DS->psCEOS, nBand, nBlockYOff+1, pImage);
 }
 
 /************************************************************************/
@@ -113,11 +111,9 @@ CPLErr CEOSRasterBand::IReadBlock( CPL_UNUSED int nBlockXOff,
 /*                            CEOSDataset()                             */
 /************************************************************************/
 
-CEOSDataset::CEOSDataset()
-
-{
-    psCEOS = NULL;
-}
+CEOSDataset::CEOSDataset() :
+    psCEOS(NULL)
+{}
 
 /************************************************************************/
 /*                            ~CEOSDataset()                            */
@@ -156,7 +152,7 @@ GDALDataset *CEOSDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     CEOSImage *psCEOS = CEOSOpen( poOpenInfo->pszFilename, "rb" );
     if( psCEOS == NULL )
-        return( NULL );
+        return NULL;
 
     if( psCEOS->nBitsPerPixel != 8 )
     {
@@ -201,7 +197,7 @@ GDALDataset *CEOSDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Create band information objects.                                */
 /* -------------------------------------------------------------------- */
-    poDS->nBands = psCEOS->nBands;;
+    poDS->nBands = psCEOS->nBands;
 
     for( int i = 0; i < poDS->nBands; i++ )
         poDS->SetBand( i+1, new CEOSRasterBand( poDS, i+1 ) );
@@ -217,7 +213,7 @@ GDALDataset *CEOSDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
 
-    return( poDS );
+    return poDS;
 }
 
 /************************************************************************/

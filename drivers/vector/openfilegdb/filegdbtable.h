@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: filegdbtable.h 33024 2016-01-17 16:10:22Z goatbar $
+ * $Id: filegdbtable.h 37648 2017-03-08 02:32:09Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements reading of FileGDB tables
@@ -104,7 +104,7 @@ class FileGDBField
 
     public:
 
-                            FileGDBField(FileGDBTable* poParent);
+        explicit            FileGDBField(FileGDBTable* poParent);
         virtual            ~FileGDBField();
 
         const std::string&  GetName() const { return osName; }
@@ -146,7 +146,7 @@ class FileGDBGeomField: public FileGDBField
         int               bHas3D;
 
     public:
-                          FileGDBGeomField(FileGDBTable* poParent);
+        explicit          FileGDBGeomField(FileGDBTable* poParent);
         virtual          ~FileGDBGeomField() {}
 
         const std::string& GetWKT() const { return osWKT; }
@@ -186,11 +186,10 @@ class FileGDBRasterField: public FileGDBGeomField
         std::string       osRasterColumnName;
 
     public:
-                          FileGDBRasterField(FileGDBTable* poParentIn) : FileGDBGeomField(poParentIn) {}
+        explicit          FileGDBRasterField(FileGDBTable* poParentIn) : FileGDBGeomField(poParentIn) {}
         virtual          ~FileGDBRasterField() {}
 
         const std::string& GetRasterColumnName() const { return osRasterColumnName; }
-
 };
 
 /************************************************************************/
@@ -228,7 +227,7 @@ class FileGDBTable
         int                         bHasReadGDBIndexes;
         std::vector<FileGDBIndex*>  apoIndexes;
 
-        GUInt32                     nOffsetFieldDesc;
+        GUIntBig                    nOffsetFieldDesc;
         GUInt32                     nFieldDescLength;
 
         GUInt32                     nTablxOffsetSize;
@@ -266,7 +265,7 @@ class FileGDBTable
 
         GUIntBig                    nFilterXMin, nFilterXMax, nFilterYMin, nFilterYMax;
 
-        GUInt32                     nOffsetHeaderEnd;
+        GUIntBig                    nOffsetHeaderEnd;
 
         int                         ReadTableXHeader();
         int                         IsLikelyFeatureAtOffset(

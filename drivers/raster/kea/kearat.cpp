@@ -1,5 +1,4 @@
 /*
- * $Id: kearat.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *  kearat.cpp
  *
  *  Created by Pete Bunting on 01/08/2012.
@@ -30,7 +29,10 @@
 
 #include "kearat.h"
 
-KEARasterAttributeTable::KEARasterAttributeTable(kealib::KEAAttributeTable *poKEATable)
+CPL_CVSID("$Id: kearat.cpp 37966 2017-04-11 19:34:57Z rouault $");
+
+KEARasterAttributeTable::KEARasterAttributeTable(kealib::KEAAttributeTable *poKEATable,
+                            KEARasterBand *poBand)
 {
     for( size_t nColumnIndex = 0; nColumnIndex < poKEATable->getMaxGlobalColIdx(); nColumnIndex++ )
     {
@@ -47,6 +49,7 @@ KEARasterAttributeTable::KEARasterAttributeTable(kealib::KEAAttributeTable *poKE
         m_aoFields.push_back(sKEAField);
     }
     m_poKEATable = poKEATable;
+    m_poBand = poBand;
 }
 
 KEARasterAttributeTable::~KEARasterAttributeTable()
@@ -181,12 +184,10 @@ GDALDefaultRasterAttributeTable *KEARasterAttributeTable::Clone() const
     return poRAT;
 }
 
-
 int KEARasterAttributeTable::GetColumnCount() const
 {
     return (int)m_aoFields.size();
 }
-
 
 const char *KEARasterAttributeTable::GetNameOfCol(int nCol) const
 {
@@ -249,7 +250,6 @@ GDALRATFieldType KEARasterAttributeTable::GetTypeOfCol( int nCol ) const
     }
     return eGDALType;
 }
-
 
 int KEARasterAttributeTable::GetColOfUsage( GDALRATFieldUsage eUsage ) const
 {
@@ -577,7 +577,7 @@ CPLErr KEARasterAttributeTable::ValuesIO(GDALRWFlag eRWFlag, int iField, int iSt
             }
             catch(kealib::KEAException &e)
             {
-                fprintf(stderr,"Failed to read/write attribute table: %s %d %d %ld\n", e.what(), iStartRow, iLength, m_poKEATable->getSize() );
+                //fprintf(stderr,"Failed to read/write attribute table: %s %d %d %ld\n", e.what(), iStartRow, iLength, m_poKEATable->getSize() );
                 CPLError( CE_Failure, CPLE_AppDefined, "Failed to read/write attribute table: %s", e.what() );
                 return CE_Failure;
             }
@@ -729,7 +729,6 @@ CPLErr KEARasterAttributeTable::ValuesIO(GDALRWFlag eRWFlag, int iField, int iSt
                 return eVal;
             }
 
-
             if( eRWFlag == GF_Read )
             {
                 // convert ints back to strings
@@ -776,7 +775,6 @@ CPLErr KEARasterAttributeTable::ValuesIO(GDALRWFlag eRWFlag, int iField, int iSt
                 }
             }
             CPLFree(padfColData);
-
         }
         break;
         case kealib::kea_att_string:
@@ -907,6 +905,38 @@ CPLErr KEARasterAttributeTable::CreateColumn( const char *pszFieldName,
     }
 
     return CE_None;
+}
+
+CPLErr KEARasterAttributeTable::SetLinearBinning( double dfRow0Min,
+                                            double dfBinSize )
+{
+    size_t nRows = m_poKEATable->getSize();
+
+    osWorkingResult.Printf( "%.16g", dfRow0Min);
+    m_poBand->SetMetadataItem("STATISTICS_HISTOMIN", osWorkingResult);
+    osWorkingResult.Printf( "%.16g", (nRows - 1) * dfBinSize + dfRow0Min);
+    m_poBand->SetMetadataItem("STATISTICS_HISTOMAX", osWorkingResult);
+    osWorkingResult.Printf( "%lu", (unsigned long)nRows);
+    m_poBand->SetMetadataItem("STATISTICS_HISTONUMBINS", osWorkingResult);
+
+    return CE_None;
+}
+
+int KEARasterAttributeTable::GetLinearBinning( double *pdfRow0Min,
+                                            double *pdfBinSize ) const
+{
+    const char *pszMin = m_poBand->GetMetadataItem("STATISTICS_HISTOMIN");
+    const char *pszMax = m_poBand->GetMetadataItem("STATISTICS_HISTOMAX");
+    const char *pszNumBins = m_poBand->GetMetadataItem("STATISTICS_HISTONUMBINS");
+    if( ( pszMin == NULL ) || ( pszMax == NULL ) || ( pszNumBins == NULL ) )
+    {
+        return FALSE;
+    } 
+    *pdfRow0Min = atof(pszMin);
+    long nRows = atol(pszNumBins);
+    *pdfBinSize = (atof(pszMax) - *pdfRow0Min) / (nRows - 1);
+
+    return TRUE;
 }
 
 CPLXMLNode *KEARasterAttributeTable::Serialize() const

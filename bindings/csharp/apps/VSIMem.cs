@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: VSIMem.cs 25805 2013-03-26 10:46:39Z tamas $
+ * $Id: VSIMem.cs 35222 2016-08-28 06:06:11Z goatbar $
  *
  * Name:     VSIMem.cs
  * Project:  GDAL CSharp Interface
@@ -47,17 +47,17 @@ using OSGeo.GDAL;
 
 /// <summary>
 /// A C# based sample for demonstrating the in-memory virtual file support.
-/// </summary> 
+/// </summary>
 
 class VSIMem {
-	
-	public static void usage() 
 
-	{ 
+	public static void usage()
+
+	{
 		Console.WriteLine("usage example: vsimem [image file]");
 		System.Environment.Exit(-1);
 	}
- 
+
 	public static void Main(string[] args) {
 
 		if (args.Length != 1) usage();

@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: sdtspointreader.cpp 31332 2015-11-03 17:34:39Z goatbar $
  *
  * Project:  SDTS Translator
  * Purpose:  Implementation of SDTSPointReader and SDTSRawPoint classes.
@@ -29,7 +28,7 @@
 
 #include "sdts_al.h"
 
-CPL_CVSID("$Id: sdtspointreader.cpp 31332 2015-11-03 17:34:39Z goatbar $");
+CPL_CVSID("$Id: sdtspointreader.cpp 35897 2016-10-24 11:54:24Z goatbar $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -118,7 +117,6 @@ void SDTSRawPoint::Dump( FILE * fp )
     fprintf( fp, "  Vertex = (%.2f,%.2f,%.2f)\n", dfX, dfY, dfZ );
 }
 
-
 /************************************************************************/
 /* ==================================================================== */
 /*                             SDTSPointReader                          */
@@ -161,7 +159,7 @@ void SDTSPointReader::Close()
 int SDTSPointReader::Open( const char * pszFilename )
 
 {
-    return( oDDFModule.Open( pszFilename ) );
+    return oDDFModule.Open( pszFilename );
 }
 
 /************************************************************************/
@@ -191,7 +189,7 @@ SDTSRawPoint * SDTSPointReader::GetNextPoint()
 
     if( poRawPoint->Read( poIREF, poRecord ) )
     {
-        return( poRawPoint );
+        return poRawPoint;
     }
 
     delete poRawPoint;

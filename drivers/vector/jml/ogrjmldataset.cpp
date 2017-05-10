@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrjmldataset.cpp 32786 2016-01-06 18:29:00Z goatbar $
  *
  * Project:  JML Translator
  * Purpose:  Implements OGRJMLDataset class
@@ -34,7 +33,7 @@
 
 // g++ -DHAVE_EXPAT -fPIC -shared -Wall -g -DDEBUG ogr/ogrsf_frmts/jml/*.cpp -o ogr_JML.so -Iport -Igcore -Iogr -Iogr/ogrsf_frmts -Iogr/ogrsf_frmts/jml -L. -lgdal
 
-CPL_CVSID("$Id: ogrjmldataset.cpp 32786 2016-01-06 18:29:00Z goatbar $");
+CPL_CVSID("$Id: ogrjmldataset.cpp 34819 2016-07-28 22:32:18Z goatbar $");
 
 /************************************************************************/
 /*                          OGRJMLDataset()                             */

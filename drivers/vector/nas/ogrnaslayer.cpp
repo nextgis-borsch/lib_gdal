@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrnaslayer.cpp 32898 2016-01-10 14:44:10Z goatbar $
  *
  * Project:  OGR
  * Purpose:  Implements OGRNASLayer class.
@@ -33,7 +32,7 @@
 #include "cpl_string.h"
 #include "ogr_nas.h"
 
-CPL_CVSID("$Id: ogrnaslayer.cpp 32898 2016-01-10 14:44:10Z goatbar $");
+CPL_CVSID("$Id: ogrnaslayer.cpp 37141 2017-01-14 13:09:04Z rouault $");
 
 /************************************************************************/
 /*                           OGRNASLayer()                              */
@@ -106,12 +105,10 @@ OGRFeature *OGRNASLayer::GetNextFeature()
 /* -------------------------------------------------------------------- */
 /*      Cleanup last feature, and get a new raw nas feature.            */
 /* -------------------------------------------------------------------- */
-        delete poNASFeature;
         delete poGeom;
-
-        poNASFeature = NULL;
         poGeom = NULL;
 
+        delete poNASFeature;
         poNASFeature = poDS->GetReader()->NextFeature();
         if( poNASFeature == NULL )
             return NULL;
@@ -137,16 +134,43 @@ OGRFeature *OGRNASLayer::GetNextFeature()
             poNASFeature->GetGeometryList();
         if (papsGeometry[0] != NULL)
         {
+            CPLString osLastErrorMsg;
+            CPLPushErrorHandler(CPLQuietErrorHandler);
             poGeom = (OGRGeometry*) OGR_G_CreateFromGMLTree(papsGeometry[0]);
+            CPLPopErrorHandler();
+            if( poGeom == NULL )
+                osLastErrorMsg = CPLGetLastErrorMsg();
             poGeom = NASReader::ConvertGeometry(poGeom);
             poGeom = OGRGeometryFactory::forceTo(poGeom, GetGeomType());
             // poGeom->dumpReadable( 0, "NAS: " );
 
-            // We assume the OGR_G_CreateFromGMLTree() function would
-            // have already reported an error.
             if( poGeom == NULL )
             {
+                CPLString osGMLId;
+                if( poFClass->GetPropertyIndex("gml_id") == 0 )
+                {
+                     const GMLProperty *psGMLProperty =
+                            poNASFeature->GetProperty( 0 );
+                    if( psGMLProperty && psGMLProperty->nSubProperties == 1 )
+                    {
+                        osGMLId.Printf("(gml_id=%s) ",
+                                       psGMLProperty->papszSubProperties[0]);
+                    }
+                }
+
+                const bool bGoOn =CPLTestBool(
+                    CPLGetConfigOption("NAS_SKIP_CORRUPTED_FEATURES", "NO"));
+                CPLError(bGoOn ? CE_Warning : CE_Failure, CPLE_AppDefined,
+                         "Geometry of feature %d %scannot be parsed: %s%s",
+                         iNextNASId, osGMLId.c_str(), osLastErrorMsg.c_str(),
+                         bGoOn ? ". Skipping to next feature.":
+                         ". You may set the NAS_SKIP_CORRUPTED_FEATURES "
+                         "configuration option to YES to skip to the next "
+                         "feature");
                 delete poNASFeature;
+                poNASFeature = NULL;
+                if( bGoOn )
+                    continue;
                 return NULL;
             }
 
@@ -268,10 +292,10 @@ GIntBig OGRNASLayer::GetFeatureCount( int bForce )
 OGRErr OGRNASLayer::GetExtent(OGREnvelope *psExtent, int bForce )
 
 {
-    double dfXMin;
-    double dfXMax;
-    double dfYMin;
-    double dfYMax;
+    double dfXMin = 0.0;
+    double dfXMax = 0.0;
+    double dfYMin = 0.0;
+    double dfYMax = 0.0;
 
     if( poFClass != NULL &&
         poFClass->GetExtents( &dfXMin, &dfXMax, &dfYMin, &dfYMax ) )
@@ -296,13 +320,13 @@ int OGRNASLayer::TestCapability( const char * pszCap )
 {
     if( EQUAL(pszCap,OLCFastGetExtent) )
     {
-        double  dfXMin;
-        double  dfXMax;
-        double  dfYMin;
-        double  dfYMax;
-
         if( poFClass == NULL )
             return FALSE;
+
+        double dfXMin = 0.0;
+        double dfXMax = 0.0;
+        double dfYMin = 0.0;
+        double dfYMax = 0.0;
 
         return poFClass->GetExtents( &dfXMin, &dfXMax, &dfYMin, &dfYMax );
     }

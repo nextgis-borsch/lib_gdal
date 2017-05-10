@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrfmelayer.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  FMEObjects Translator
  * Purpose:  Implementation of the OGRFMELayer base class.  The class
@@ -33,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrfmelayer.cpp 33714 2016-03-13 05:42:13Z goatbar $");
+CPL_CVSID("$Id: ogrfmelayer.cpp 36763 2016-12-09 22:10:55Z rouault $");
 
 /************************************************************************/
 /*                            OGRFMELayer()                             */
@@ -252,7 +251,8 @@ int OGRFMELayer::Initialize( IFMEFeature * poSchemaFeature,
         }
         else
         {
-            printf( "Not able to translate field type: %s\n",
+            CPLError( CE_Warning, CPLE_AppDefined,
+                      "Not able to translate field type: %s",
                     poAttrValue->data() );
             CSLDestroy( papszTokens );
             continue;

@@ -28,7 +28,7 @@
 
 #include "ogr_carto.h"
 
-CPL_CVSID("$Id: ogrcartoresultlayer.cpp 34979 2016-08-08 09:30:34Z rouault $");
+CPL_CVSID("$Id: ogrcartoresultlayer.cpp 35298 2016-09-02 23:00:49Z goatbar $");
 
 /************************************************************************/
 /*                          OGRCARTOResultLayer()                     */
@@ -87,7 +87,7 @@ OGRFeature  *OGRCARTOResultLayer::GetNextRawFeature()
 /*                                IsOK()                                */
 /************************************************************************/
 
-int  OGRCARTOResultLayer::IsOK()
+bool OGRCARTOResultLayer::IsOK()
 {
     CPLErrorReset();
     poFirstFeature = GetNextFeature();

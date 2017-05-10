@@ -3,7 +3,7 @@
 # Purpose:  CMake build scripts
 # Author:   Mikhail Gusev, gusevmihs@gmail.com
 ################################################################################
-# Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
+# Copyright (C) 2015-2017, NextGIS <info@nextgis.com>
 # Copyright (C) 2016 Mikhail Gusev
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -34,23 +34,25 @@ if(ENABLE_PDS_ISIS2_ISIS3_VICAR)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
     include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/raw)
+    include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/geojson)
+    include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/vrt)
 
     set(LIB_HHEADERS
     )
 
     set(LIB_HHEADERS_PRIV
-        nasakeywordhandler.h 
-        vicarkeywordhandler.h 
+        nasakeywordhandler.h
+        vicarkeywordhandler.h
         ${CMAKE_SOURCE_DIR}/drivers/raster/raw/rawdataset.h
     )
 
     set(LIB_CSOURCES
-        pdsdataset.cpp 
-        isis2dataset.cpp 
-        isis3dataset.cpp 
-        vicardataset.cpp 
-        nasakeywordhandler.cpp 
-        vicarkeywordhandler.cpp	
+        pdsdataset.cpp
+        isis2dataset.cpp
+        isis3dataset.cpp
+        vicardataset.cpp
+        nasakeywordhandler.cpp
+        vicarkeywordhandler.cpp
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
@@ -58,5 +60,5 @@ if(ENABLE_PDS_ISIS2_ISIS3_VICAR)
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
 else()
-    warning_msg("Skip pds")  
+    warning_msg("Skip pds")
 endif()

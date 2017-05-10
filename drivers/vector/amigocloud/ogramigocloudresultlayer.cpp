@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id
  *
  * Project:  AmigoCloud Translator
  * Purpose:  Implements OGRAmigoCloudResultLayer class.
@@ -29,7 +28,7 @@
 
 #include "ogr_amigocloud.h"
 
-CPL_CVSID("$Id");
+CPL_CVSID("$Id: ogramigocloudresultlayer.cpp 34819 2016-07-28 22:32:18Z goatbar $");
 
 /************************************************************************/
 /*                          OGRAmigoCloudResultLayer()                     */

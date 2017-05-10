@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrxlsdatasource.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  XLS Translator
  * Purpose:  Implements OGRXLSDataSource class
@@ -37,22 +36,18 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrxlsdatasource.cpp 33713 2016-03-12 17:41:57Z goatbar $");
+CPL_CVSID("$Id: ogrxlsdatasource.cpp 35205 2016-08-26 18:17:08Z goatbar $");
 
 /************************************************************************/
 /*                          OGRXLSDataSource()                          */
 /************************************************************************/
 
-OGRXLSDataSource::OGRXLSDataSource()
-
-{
-    papoLayers = NULL;
-    nLayers = 0;
-
-    pszName = NULL;
-
-    xlshandle = NULL;
-}
+OGRXLSDataSource::OGRXLSDataSource() :
+    pszName(NULL),
+    papoLayers(NULL),
+    nLayers(0),
+    xlshandle(NULL)
+{}
 
 /************************************************************************/
 /*                         ~OGRXLSDataSource()                          */
@@ -67,7 +62,7 @@ OGRXLSDataSource::~OGRXLSDataSource()
 
     CPLFree( pszName );
 
-    if (xlshandle)
+    if( xlshandle )
         freexl_close(xlshandle);
 }
 

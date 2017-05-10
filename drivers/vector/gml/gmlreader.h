@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gmlreader.h 35690 2016-10-11 09:56:31Z rouault $
+ * $Id: gmlreader.h 37371 2017-02-13 11:41:59Z rouault $
  *
  * Project:  GML Reader
  * Purpose:  Public Declarations for OGR free GML Reader code.
@@ -37,6 +37,9 @@
 #include "gmlutils.h"
 
 #include <vector>
+
+// Special value to map to a NULL field
+#define OGR_GML_NULL "___OGR_GML_NULL___"
 
 typedef enum {
     GMLPT_Untyped = 0,
@@ -168,9 +171,9 @@ class CPL_DLL GMLFeatureClass
     char       *m_pszSRSName;
     bool        m_bSRSNameConsistent;
 
-public:
-            GMLFeatureClass( const char *pszName = "" );
-           ~GMLFeatureClass();
+  public:
+    explicit  GMLFeatureClass( const char *pszName = "" );
+             ~GMLFeatureClass();
 
     const char *GetElementName() const;
     size_t      GetElementNameLen() const;
@@ -240,7 +243,7 @@ class CPL_DLL GMLFeature
     char           **m_papszOBProperties;
 
 public:
-                    GMLFeature( GMLFeatureClass * );
+    explicit        GMLFeature( GMLFeatureClass * );
                    ~GMLFeature();
 
     GMLFeatureClass*GetClass() const { return m_poClass; }
@@ -271,7 +274,7 @@ public:
 /************************************************************************/
 class CPL_DLL IGMLReader
 {
-public:
+  public:
     virtual     ~IGMLReader();
 
     virtual bool IsClassListLocked() const = 0;
@@ -306,7 +309,7 @@ public:
     virtual bool PrescanForSchema( bool bGetExtents = true,
                                   bool bAnalyzeSRSPerFeature = true,
                                   bool bOnlyDetectSRS = false ) = 0;
-    virtual bool PrescanForTemplate( void ) = 0;
+    virtual bool PrescanForTemplate() = 0;
 
     virtual bool HasStoppedParsing() = 0;
 
@@ -325,6 +328,5 @@ IGMLReader *CreateGMLReader(bool bUseExpatParserPreferably,
                             bool bConsiderEPSGAsURN,
                             GMLSwapCoordinatesEnum eSwapCoordinates,
                             bool bGetSecondaryGeometryOption);
-
 
 #endif /* GMLREADER_H_INCLUDED */

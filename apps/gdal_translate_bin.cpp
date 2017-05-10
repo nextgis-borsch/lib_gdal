@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: gdal_translate_bin.cpp 34776 2016-07-25 21:22:15Z rouault $
  *
  * Project:  GDAL Utilities
  * Purpose:  GDAL Image Translator Program
@@ -34,7 +33,7 @@
 #include "commonutils.h"
 #include "gdal_utils_priv.h"
 
-CPL_CVSID("$Id: gdal_translate_bin.cpp 34776 2016-07-25 21:22:15Z rouault $");
+CPL_CVSID("$Id: gdal_translate_bin.cpp 37258 2017-01-31 14:12:05Z rouault $");
 
 /*  ******************************************************************* */
 /*                               Usage()                                */
@@ -169,7 +168,7 @@ int main( int argc, char ** argv )
     {
 #if defined(__MACH__) && defined(__APPLE__)
         // On Mach, the default limit is 256 files per process
-        // We should eventually dynamically query the limit
+        // TODO We should eventually dynamically query the limit for all OS
         CPLSetConfigOption("GDAL_MAX_DATASET_POOL_SIZE", "100");
 #else
         CPLSetConfigOption("GDAL_MAX_DATASET_POOL_SIZE", "450");
@@ -205,6 +204,38 @@ int main( int argc, char ** argv )
         GDALTranslateOptionsSetProgress(psOptions, GDALTermProgress, NULL);
     }
 
+    if( psOptionsForBinary->pszFormat )
+    {
+        GDALDriverH hDriver = GDALGetDriverByName( psOptionsForBinary->pszFormat );
+        if( hDriver == NULL )
+        {
+            int iDr;
+
+            fprintf(stderr, "Output driver `%s' not recognised.\n",
+                    psOptionsForBinary->pszFormat);
+            fprintf(stderr, "The following format drivers are configured and support output:\n" );
+            for( iDr = 0; iDr < GDALGetDriverCount(); iDr++ )
+            {
+                hDriver = GDALGetDriver(iDr);
+
+                if( GDALGetMetadataItem( hDriver, GDAL_DCAP_RASTER, NULL) != NULL &&
+                    (GDALGetMetadataItem( hDriver, GDAL_DCAP_CREATE, NULL ) != NULL
+                    || GDALGetMetadataItem( hDriver, GDAL_DCAP_CREATECOPY, NULL ) != NULL) )
+                {
+                    fprintf(stderr, "  %s: %s\n",
+                            GDALGetDriverShortName( hDriver  ),
+                            GDALGetDriverLongName( hDriver ) );
+                }
+            }
+
+            GDALTranslateOptionsFree(psOptions);
+            GDALTranslateOptionsForBinaryFree(psOptionsForBinary);
+
+            GDALDestroyDriverManager();
+            exit(1);
+        }
+    }
+
     if (!psOptionsForBinary->bQuiet && !psOptionsForBinary->bFormatExplicitlySet)
         CheckExtensionConsistency(psOptionsForBinary->pszDest, psOptionsForBinary->pszFormat);
 
@@ -225,8 +256,8 @@ int main( int argc, char ** argv )
 /*      Handle subdatasets.                                             */
 /* -------------------------------------------------------------------- */
     if( !psOptionsForBinary->bCopySubDatasets
-        && CSLCount(GDALGetMetadata( hDataset, "SUBDATASETS" )) > 0
-        && GDALGetRasterCount(hDataset) == 0 )
+        && GDALGetRasterCount(hDataset) == 0
+        && CSLCount(GDALGetMetadata( hDataset, "SUBDATASETS" )) > 0 )
     {
         fprintf( stderr,
                  "Input file contains subdatasets. Please, select one of them for reading.\n" );
@@ -235,8 +266,8 @@ int main( int argc, char ** argv )
         exit( 1 );
     }
 
-    if( CSLCount(GDALGetMetadata( hDataset, "SUBDATASETS" )) > 0
-        && psOptionsForBinary->bCopySubDatasets )
+    if( psOptionsForBinary->bCopySubDatasets &&
+        CSLCount(GDALGetMetadata( hDataset, "SUBDATASETS" )) > 0 )
     {
         char **papszSubdatasets = GDALGetMetadata(hDataset,"SUBDATASETS");
         char *pszSubDest = (char *) CPLMalloc(strlen(psOptionsForBinary->pszDest)+32);
@@ -289,7 +320,6 @@ int main( int argc, char ** argv )
 
         GDALDestroyDriverManager();
         return 0;
-
     }
 
     if( !psOptionsForBinary->bQuiet )

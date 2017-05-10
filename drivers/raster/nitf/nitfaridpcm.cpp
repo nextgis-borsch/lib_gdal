@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: nitfaridpcm.cpp 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  NITF Read/Write Library
  * Purpose:  ARIDPCM reading code.
@@ -28,11 +27,16 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "cpl_conv.h"
-#include "gdal.h"
+#include "cpl_port.h"
 #include "nitflib.h"
 
-CPL_CVSID("$Id: nitfaridpcm.cpp 33717 2016-03-14 06:29:14Z goatbar $");
+#include <cstring>
+
+#include "gdal.h"
+#include "cpl_conv.h"
+#include "cpl_error.h"
+
+CPL_CVSID("$Id: nitfaridpcm.cpp 37346 2017-02-11 23:03:44Z goatbar $");
 
 static const int neighbourhood_size_75[4] = { 23, 47, 74, 173 };
 static const int bits_per_level_by_busycode_75[4/*busy code*/][4/*level*/] = {

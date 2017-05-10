@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrs57datasource.cpp 34800 2016-07-27 16:52:35Z rouault $
  *
  * Project:  S-57 Translator
  * Purpose:  Implements OGRS57DataSource class
@@ -32,7 +31,10 @@
 #include "cpl_string.h"
 #include "ogr_s57.h"
 
-CPL_CVSID("$Id: ogrs57datasource.cpp 34800 2016-07-27 16:52:35Z rouault $");
+#include <algorithm>
+#include <set>
+
+CPL_CVSID("$Id: ogrs57datasource.cpp 36017 2016-10-29 04:27:08Z goatbar $");
 
 /************************************************************************/
 /*                          OGRS57DataSource()                          */
@@ -84,7 +86,6 @@ OGRS57DataSource::OGRS57DataSource(char** papszOpenOptionsIn) :
         }
         CPLFree(pszKey);
     }
-
 }
 
 /************************************************************************/
@@ -211,7 +212,7 @@ int OGRS57DataSource::Open( const char * pszFilename )
                              GetOption(S57O_RECODE_BY_DSSI) );
 
     S57Reader *poModule = new S57Reader( pszFilename );
-    int bRet = poModule->SetOptions( papszReaderOptions );
+    bool bRet = poModule->SetOptions( papszReaderOptions );
     CSLDestroy( papszReaderOptions );
 
     if( !bRet )
@@ -440,10 +441,10 @@ OGRErr OGRS57DataSource::GetDSExtent( OGREnvelope *psExtent, int bForce )
             oExtents = oModuleEnvelope;
         else
         {
-            oExtents.MinX = MIN(oExtents.MinX,oModuleEnvelope.MinX);
-            oExtents.MaxX = MAX(oExtents.MaxX,oModuleEnvelope.MaxX);
-            oExtents.MinY = MIN(oExtents.MinY,oModuleEnvelope.MinY);
-            oExtents.MaxX = MAX(oExtents.MaxY,oModuleEnvelope.MaxY);
+            oExtents.MinX = std::min(oExtents.MinX, oModuleEnvelope.MinX);
+            oExtents.MaxX = std::max(oExtents.MaxX, oModuleEnvelope.MaxX);
+            oExtents.MinY = std::min(oExtents.MinY, oModuleEnvelope.MinY);
+            oExtents.MaxX = std::max(oExtents.MaxY, oModuleEnvelope.MaxY);
         }
     }
 
@@ -509,16 +510,24 @@ int OGRS57DataSource::Create( const char *pszFilename,
 /*      Initialize a feature definition for each object class.          */
 /* -------------------------------------------------------------------- */
     poClassContentExplorer->Rewind();
+    std::set<int> aoSetOBJL;
     while( poClassContentExplorer->NextClass() )
     {
+        const int nOBJL = poClassContentExplorer->GetOBJL();
+        // Detect potential duplicates in the classes
+        if( aoSetOBJL.find(nOBJL) != aoSetOBJL.end() )
+        {
+            CPLDebug("S57", "OBJL %d already registered!", nOBJL);
+            continue;
+        }
+        aoSetOBJL.insert(nOBJL);
         poDefn =
             S57GenerateObjectClassDefn( OGRS57Driver::GetS57Registrar(),
                                         poClassContentExplorer,
-                                        poClassContentExplorer->GetOBJL(),
+                                        nOBJL,
                                         nOptionFlags );
 
-        AddLayer( new OGRS57Layer( this, poDefn, 0,
-                                   poClassContentExplorer->GetOBJL() ) );
+        AddLayer( new OGRS57Layer( this, poDefn, 0, nOBJL ) );
     }
 
 /* -------------------------------------------------------------------- */

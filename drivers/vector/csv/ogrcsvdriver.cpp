@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrcsvdriver.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  CSV Translator
  * Purpose:  Implements OGRCSVDriver.
@@ -28,12 +27,24 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#include "cpl_port.h"
 #include "ogr_csv.h"
-#include "cpl_conv.h"
-#include "cpl_multiproc.h"
-#include <map>
 
-CPL_CVSID("$Id: ogrcsvdriver.cpp 33713 2016-03-12 17:41:57Z goatbar $");
+#include <cerrno>
+#include <cstring>
+#include <map>
+#include <string>
+#include <utility>
+
+#include "cpl_conv.h"
+#include "cpl_error.h"
+#include "cpl_multiproc.h"
+#include "cpl_string.h"
+#include "cpl_vsi.h"
+#include "gdal.h"
+#include "gdal_priv.h"
+
+CPL_CVSID("$Id: ogrcsvdriver.cpp 38032 2017-04-16 08:26:01Z rouault $");
 
 static CPLMutex* hMutex = NULL;
 static std::map<CPLString, GDALDataset*> *poMap = NULL;
@@ -70,9 +81,9 @@ static int OGRCSVDriverIdentify( GDALOpenInfo* poOpenInfo )
               STARTS_WITH_CI(osBaseFilename, "NationalFedCodes_") ||
               STARTS_WITH_CI(osBaseFilename, "AllStates_") ||
               STARTS_WITH_CI(osBaseFilename, "AllStatesFedCodes_") ||
-              (strlen(osBaseFilename) > 2
+              (osBaseFilename.size() > 2
                && STARTS_WITH_CI(osBaseFilename+2, "_Features_")) ||
-              (strlen(osBaseFilename) > 2
+              (osBaseFilename.size() > 2
                && STARTS_WITH_CI(osBaseFilename+2, "_FedCodes_"))) &&
              (EQUAL(osExt, "txt") || EQUAL(osExt, "zip")) )
         {
@@ -134,7 +145,7 @@ void OGRCSVDriverRemoveFromMap(const char* pszName, GDALDataset* poDS)
 static GDALDataset *OGRCSVDriverOpen( GDALOpenInfo* poOpenInfo )
 
 {
-    if( OGRCSVDriverIdentify(poOpenInfo) == FALSE )
+    if( !OGRCSVDriverIdentify(poOpenInfo) )
         return NULL;
 
     if( poMap != NULL )
@@ -267,7 +278,6 @@ static CPLErr OGRCSVDriverDelete( const char *pszFilename )
     return CE_Failure;
 }
 
-
 /************************************************************************/
 /*                           OGRCSVDriverUnload()                       */
 /************************************************************************/
@@ -371,7 +381,7 @@ void RegisterOGRCSV()
     poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
     poDriver->SetMetadataItem( GDAL_DMD_CREATIONFIELDDATATYPES,
                                "Integer Integer64 Real String Date DateTime "
-                               "Time" );
+                               "Time IntegerList Integer64List RealList StringList" );
 
     poDriver->pfnOpen = OGRCSVDriverOpen;
     poDriver->pfnIdentify = OGRCSVDriverIdentify;

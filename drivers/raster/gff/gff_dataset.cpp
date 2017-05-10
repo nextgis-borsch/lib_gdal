@@ -1,9 +1,8 @@
 /******************************************************************************
- * $Id: gff_dataset.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  Ground-based SAR Applitcations Testbed File Format driver
  * Purpose:  Support in GDAL for Sandia National Laboratory's GFF format
- * 	     blame Tisham for putting me up to this
+ *           blame Tisham for putting me up to this
  * Author:   Philippe Vachon <philippe@cowpig.ca>
  *
  ******************************************************************************
@@ -37,7 +36,7 @@
 #include "gdal_pam.h"
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id: gff_dataset.cpp 33720 2016-03-15 00:39:53Z goatbar $");
+CPL_CVSID("$Id: gff_dataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 /*******************************************************************
  * Declaration of the GFFDataset class                             *
@@ -80,15 +79,23 @@ public:
 };
 
 GFFDataset::GFFDataset() :
-    fp(NULL), eDataType(GDT_Unknown), nEndianness(0), nVersionMajor(0),
-    nVersionMinor(0), nLength(0), nBPP(0), nFrameCnt(0), nImageType(0),
-    nRowMajor(0), nRgCnt(0), nAzCnt(0)
-{
-}
+    fp(NULL),
+    eDataType(GDT_Unknown),
+    nEndianness(0),
+    nVersionMajor(0),
+    nVersionMinor(0),
+    nLength(0),
+    nBPP(0),
+    nFrameCnt(0),
+    nImageType(0),
+    nRowMajor(0),
+    nRgCnt(0),
+    nAzCnt(0)
+{}
 
 GFFDataset::~GFFDataset()
 {
-    if (fp != NULL)
+    if( fp != NULL )
         VSIFCloseL(fp);
 }
 
@@ -101,25 +108,13 @@ class GFFRasterBand : public GDALPamRasterBand {
     int nSampleSize;
 public:
     GFFRasterBand( GFFDataset *, int, GDALDataType );
-    virtual CPLErr IReadBlock( int, int, void * );
+    virtual CPLErr IReadBlock( int, int, void * ) override;
 };
 
-/************************************************************************/
-/*                           GFFRasterBand()                            */
-/************************************************************************/
-GFFRasterBand::GFFRasterBand( GFFDataset *poDSIn, int nBandIn,
-	GDALDataType eDataTypeIn )
+static unsigned long GFFSampleSize( GDALDataType eDataType )
 {
-    this->poDS = poDSIn;
-    this->nBand = nBandIn;
-
-    this->eDataType = eDataTypeIn;
-
-    nBlockXSize = poDS->GetRasterXSize();
-    nBlockYSize = 1;
-
-    /* Determine the number of bytes per sample */
-    unsigned long nBytes;
+    // Determine the number of bytes per sample.
+    unsigned long nBytes = 1;
     switch (eDataType) {
       case GDT_CInt16:
         nBytes = 4;
@@ -132,8 +127,24 @@ GFFRasterBand::GFFRasterBand( GFFDataset *poDSIn, int nBandIn,
         nBytes = 1;
     }
 
-    nRasterBandMemory = nBytes * poDS->GetRasterXSize();
-    nSampleSize = static_cast<int>(nBytes);
+    return nBytes;
+}
+
+/************************************************************************/
+/*                           GFFRasterBand()                            */
+/************************************************************************/
+GFFRasterBand::GFFRasterBand( GFFDataset *poDSIn, int nBandIn,
+                              GDALDataType eDataTypeIn ) :
+    nRasterBandMemory(GFFSampleSize(eDataTypeIn) * poDSIn->GetRasterXSize()),
+    nSampleSize(static_cast<int>(GFFSampleSize(eDataTypeIn)))
+{
+    poDS = poDSIn;
+    nBand = nBandIn;
+
+    eDataType = eDataTypeIn;
+
+    nBlockXSize = poDS->GetRasterXSize();
+    nBlockYSize = 1;
 }
 
 /************************************************************************/

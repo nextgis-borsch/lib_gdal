@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrpgdumpdriver.cpp 33639 2016-03-04 23:39:40Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRPGDumpDriver class.
@@ -30,7 +29,7 @@
 #include "ogr_pgdump.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrpgdumpdriver.cpp 33639 2016-03-04 23:39:40Z rouault $");
+CPL_CVSID("$Id: ogrpgdumpdriver.cpp 35219 2016-08-27 22:39:24Z goatbar $");
 
 /************************************************************************/
 /*                         OGRPGDumpDriverCreate()                      */
@@ -43,12 +42,10 @@ static GDALDataset* OGRPGDumpDriverCreate( const char * pszName,
                                            CPL_UNUSED GDALDataType eDT,
                                            char ** papszOptions )
 {
-    OGRPGDumpDataSource     *poDS;
-
     if (strcmp(pszName, "/dev/stdout") == 0)
         pszName = "/vsistdout/";
 
-    poDS = new OGRPGDumpDataSource(pszName, papszOptions);
+    OGRPGDumpDataSource *poDS = new OGRPGDumpDataSource(pszName, papszOptions);
     if( !poDS->Log("SET standard_conforming_strings = OFF") )
     {
         delete poDS;

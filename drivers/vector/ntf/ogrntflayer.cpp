@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrntflayer.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  UK NTF Reader
  * Purpose:  Implements OGRNTFLayer class.
@@ -30,7 +29,7 @@
 #include "ntf.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrntflayer.cpp 33714 2016-03-13 05:42:13Z goatbar $");
+CPL_CVSID("$Id: ogrntflayer.cpp 36332 2016-11-20 15:19:39Z rouault $");
 
 /************************************************************************/
 /*                            OGRNTFLayer()                             */
@@ -41,17 +40,15 @@ CPL_CVSID("$Id: ogrntflayer.cpp 33714 2016-03-13 05:42:13Z goatbar $");
 
 OGRNTFLayer::OGRNTFLayer( OGRNTFDataSource *poDSIn,
                           OGRFeatureDefn * poFeatureDefine,
-                          NTFFeatureTranslator pfnTranslatorIn )
-
+                          NTFFeatureTranslator pfnTranslatorIn ) :
+    poFeatureDefn(poFeatureDefine),
+    pfnTranslator(pfnTranslatorIn),
+    poDS(poDSIn),
+    iCurrentReader(-1),
+    nCurrentPos(-1),
+    nCurrentFID(1)
 {
-    poDS = poDSIn;
-    poFeatureDefn = poFeatureDefine;
     SetDescription( poFeatureDefn->GetName() );
-    pfnTranslator = pfnTranslatorIn;
-
-    iCurrentReader = -1;
-    nCurrentPos = -1;
-    nCurrentFID = 1;
 }
 
 /************************************************************************/
@@ -182,24 +179,10 @@ OGRFeature *OGRNTFLayer::GetNextFeature()
 /*                           TestCapability()                           */
 /************************************************************************/
 
-int OGRNTFLayer::TestCapability( const char * pszCap )
+int OGRNTFLayer::TestCapability( const char * /* pszCap */ )
 
 {
-    if( EQUAL(pszCap,OLCRandomRead) )
-        return FALSE;
-
-    else if( EQUAL(pszCap,OLCSequentialWrite)
-             || EQUAL(pszCap,OLCRandomWrite) )
-        return FALSE;
-
-    else if( EQUAL(pszCap,OLCFastFeatureCount) )
-        return FALSE;
-
-    else if( EQUAL(pszCap,OLCFastSpatialFilter) )
-        return FALSE;
-
-    else
-        return FALSE;
+    return FALSE;
 }
 
 /************************************************************************/

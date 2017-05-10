@@ -31,6 +31,8 @@
 #include "cpl_conv.h"
 #include "ogr_db2.h"
 
+CPL_CVSID("$Id: ogrdb2geometryvalidator.cpp 35675 2016-10-10 04:57:58Z goatbar $");
+
 /************************************************************************/
 /*                   OGRDB2GeometryValidator()                        */
 /************************************************************************/
@@ -276,7 +278,7 @@ int OGRDB2GeometryValidator::ValidateMultiLineString(
         poValidGeometry = poGeometries;
     }
 
-    return (poValidGeometry == NULL);
+    return poValidGeometry == NULL;
 }
 
 /************************************************************************/
@@ -332,7 +334,7 @@ int OGRDB2GeometryValidator::ValidatePolygon(OGRPolygon* poGeom)
         poValidGeometry = poGeometries;
     }
 
-    return (poValidGeometry == NULL);
+    return poValidGeometry == NULL;
 }
 
 /************************************************************************/
@@ -437,7 +439,7 @@ int OGRDB2GeometryValidator::ValidateGeometryCollection(
         poValidGeometry = poGeometries;
     }
 
-    return (poValidGeometry == NULL);
+    return poValidGeometry == NULL;
 }
 
 /************************************************************************/

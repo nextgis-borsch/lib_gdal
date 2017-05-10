@@ -1,0 +1,85 @@
+.TH "gnmmanage" 1 "Fri Apr 28 2017" "GDAL" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+gnmmanage \- gnmmanage 
+Manages networks
+.SH "SYNOPSIS"
+.PP
+.PP
+.nf
+gnmmanage [--help][-q][-quiet][--long-usage]
+          [info]
+          [create [-f format_name] [-t_srs srs_name] [-dsco NAME=VALUE]... ]
+          [import src_dataset_name] [-l layer_name]
+          [connect gfid_src gfid_tgt gfid_con [-c cost] [-ic inv_cost] [-dir dir]]
+          [disconnect gfid_src gfid_tgt gfid_con]
+          [rule rule_str]
+          [autoconnect tolerance]
+          [delete]
+          [change [-bl gfid][-unbl gfid][-unblall]]
+          gnm_name [layer [layer ...]].fi
+.PP
+.SH "DESCRIPTION"
+.PP
+The gnmmanage program can perform various managing operations on geographical networks in GDAL\&. In addition to creating and deleting networks this includes capabilities of managing network's features, topology and rules\&.
+.PP
+.IP "\fB\fBinfo\fP:\fP" 1c
+Different information about network: system and class layers, network metadata, network spatial reference\&. 
+.PP
+.IP "\fB\fBcreate\fP:\fP" 1c
+Create network\&.  
+.IP "\fB\fB-f\fP \fIformat_name\fP:\fP" 1c
+Output file format name\&.  
+.IP "\fB\fB-t_srs\fP \fIsrs_name\fP:\fP" 1c
+Spatial reference input\&.  
+.IP "\fB\fB-dsco\fP \fINAME=VALUE\fP:\fP" 1c
+Network creation option set as pair name=value\&.  
+.PP
+.PP
+.IP "\fB\fBimport\fP \fIsrc_dataset_name\fP:\fP" 1c
+Import layer with dataset name to copy\&.  
+.IP "\fB\fB-l\fP \fIlayer_name\fP:\fP" 1c
+Layer name in dataset\&. If unset, 0 layer is copied\&.  
+.PP
+.PP
+.IP "\fB\fBconnect\fP \fIgfid_src\fP \fIgfid_tgt\fP \fIgfid_con\fP:\fP" 1c
+Make a topological connection, where the gfid_src and gfid_tgt are vertexes and gfid_con is edge (gfid_con can be -1, so the system edge will be inserted)\&.  
+.IP "\fB\fB-c\fP \fIcost\fP \fB-ic\fP \fIinv_cost\fP \fB-dir\fP \fIdir\fP:\fP" 1c
+Manually assign the following values: the cost (weight), inverse cost and direction of the edge (optional)\&.  
+.PP
+.PP
+.IP "\fB\fBdisconnect\fP \fIgfid_src\fP \fIgfid_tgt\fP \fIgfid_con\fP:\fP" 1c
+Removes the connection from the graph\&. 
+.PP
+.IP "\fB\fBrule\fP \fIrule_str\fP:\fP" 1c
+Creates a rule in the network by the given rule_str string\&. 
+.PP
+.IP "\fB\fBautoconnect\fP \fItolerance\fP:\fP" 1c
+Create topology automatically with the given double tolerance and layer names\&. In no layer name provided all layers of network will be used\&.
+.PP
+.IP "\fB\fBdelete\fP:\fP" 1c
+Delete network\&. 
+.PP
+.IP "\fB\fBchange\fP:\fP" 1c
+Change blocking state of network edges or vertices\&. 
+.PP
+.IP "\fB\fB-bl\fP \fIgfid\fP:\fP" 1c
+Block feature before the main operation\&. Blocking features are saved in the special layer\&. 
+.PP
+.IP "\fB\fB-unbl\fP \fIgfid\fP:\fP" 1c
+Unblock feature before the main operation\&. 
+.PP
+.IP "\fB\fB-unblall\fP:\fP" 1c
+Unblock all blocked features before the main operation\&. 
+.PP
+.IP "\fB\fIgnm_name\fP:\fP" 1c
+The network to work with (path and name)\&. 
+.PP
+.IP "\fB\fIlayer\fP:\fP" 1c
+The network layer name\&. 
+.PP
+.PP
+.SH "AUTHORS"
+.PP
+Mikhail Gusev gusevmihs@gmail.com Dmitry Baryshnikov polimax@mail.ru 

@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: fme2ogr_utils.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  FMEObjects Translator
  * Purpose:  Various FME related support functions.
@@ -30,6 +29,8 @@
 #include "fme2ogr.h"
 #include "cpl_conv.h"
 #include <stdarg.h>
+
+CPL_CVSID("$Id: fme2ogr_utils.cpp 34819 2016-07-28 22:32:18Z goatbar $");
 
 /************************************************************************/
 /*                            CPLFMEError()                             */

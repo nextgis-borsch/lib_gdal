@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: gdalwarpoperation.cpp 33918 2016-04-08 14:02:35Z rouault $
  *
  * Project:  High Performance Image Reprojector
  * Purpose:  Implementation of the GDALWarpOperation class.
@@ -28,12 +27,29 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#include "cpl_port.h"
 #include "gdalwarper.h"
-#include "cpl_string.h"
-#include "cpl_multiproc.h"
-#include "ogr_api.h"
 
-CPL_CVSID("$Id: gdalwarpoperation.cpp 33918 2016-04-08 14:02:35Z rouault $");
+#include <climits>
+#include <cmath>
+#include <cstddef>
+#include <cstdlib>
+#include <cstring>
+
+#include <algorithm>
+
+#include "cpl_config.h"
+#include "cpl_conv.h"
+#include "cpl_error.h"
+#include "cpl_multiproc.h"
+#include "cpl_string.h"
+#include "cpl_vsi.h"
+#include "gdal.h"
+#include "gdal_priv.h"
+#include "ogr_api.h"
+#include "ogr_core.h"
+
+CPL_CVSID("$Id: gdalwarpoperation.cpp 38093 2017-04-21 21:02:44Z rouault $");
 
 struct _GDALWarpChunk {
     int dx, dy, dsx, dsy;
@@ -118,22 +134,17 @@ GDALWarpKernel.
 /*                         GDALWarpOperation()                          */
 /************************************************************************/
 
-GDALWarpOperation::GDALWarpOperation()
-
-{
-    psOptions = NULL;
-
-    hIOMutex = NULL;
-    hWarpMutex = NULL;
-
-    nChunkListCount = 0;
-    nChunkListMax = 0;
-    pasChunkList = NULL;
-
-    bReportTimings = FALSE;
-    nLastTimeReported = 0;
-    psThreadData = NULL;
-}
+GDALWarpOperation::GDALWarpOperation() :
+    psOptions(NULL),
+    hIOMutex(NULL),
+    hWarpMutex(NULL),
+    nChunkListCount(0),
+    nChunkListMax(0),
+    pasChunkList(NULL),
+    bReportTimings(FALSE),
+    nLastTimeReported(0),
+    psThreadData(NULL)
+{}
 
 /************************************************************************/
 /*                         ~GDALWarpOperation()                         */
@@ -159,6 +170,7 @@ GDALWarpOperation::~GDALWarpOperation()
 /*                             GetOptions()                             */
 /************************************************************************/
 
+/** Return warp options */
 const GDALWarpOptions *GDALWarpOperation::GetOptions()
 
 {
@@ -189,16 +201,16 @@ int GDALWarpOperation::ValidateOptions()
     if( psOptions == NULL )
     {
         CPLError( CE_Failure, CPLE_IllegalArg,
-                  "GDALWarpOptions.Validate()\n"
-                  "  no options currently initialized." );
+                  "GDALWarpOptions.Validate(): "
+                  "no options currently initialized." );
         return FALSE;
     }
 
     if( psOptions->dfWarpMemoryLimit < 100000.0 )
     {
         CPLError( CE_Failure, CPLE_IllegalArg,
-                  "GDALWarpOptions.Validate()\n"
-                  "  dfWarpMemoryLimit=%g is unreasonably small.",
+                  "GDALWarpOptions.Validate(): "
+                  "dfWarpMemoryLimit=%g is unreasonably small.",
                   psOptions->dfWarpMemoryLimit );
         return FALSE;
     }
@@ -217,18 +229,18 @@ int GDALWarpOperation::ValidateOptions()
         && psOptions->eResampleAlg != GRA_Q3)
     {
         CPLError( CE_Failure, CPLE_IllegalArg,
-                  "GDALWarpOptions.Validate()\n"
-                  "  eResampleArg=%d is not a supported value.",
+                  "GDALWarpOptions.Validate(): "
+                  "eResampleArg=%d is not a supported value.",
                   psOptions->eResampleAlg );
         return FALSE;
     }
 
-    if( (int) psOptions->eWorkingDataType < 1
-        || (int) psOptions->eWorkingDataType >= GDT_TypeCount )
+    if( static_cast<int>(psOptions->eWorkingDataType) < 1 ||
+        static_cast<int>(psOptions->eWorkingDataType) >= GDT_TypeCount )
     {
         CPLError( CE_Failure, CPLE_IllegalArg,
-                  "GDALWarpOptions.Validate()\n"
-                  "  eWorkingDataType=%d is not a supported value.",
+                  "GDALWarpOptions.Validate(): "
+                  "eWorkingDataType=%d is not a supported value.",
                   psOptions->eWorkingDataType );
         return FALSE;
     }
@@ -236,32 +248,32 @@ int GDALWarpOperation::ValidateOptions()
     if( psOptions->hSrcDS == NULL )
     {
         CPLError( CE_Failure, CPLE_IllegalArg,
-                  "GDALWarpOptions.Validate()\n"
-                  "  hSrcDS is not set." );
+                  "GDALWarpOptions.Validate(): "
+                  "hSrcDS is not set." );
         return FALSE;
     }
 
     if( psOptions->nBandCount == 0 )
     {
         CPLError( CE_Failure, CPLE_IllegalArg,
-                  "GDALWarpOptions.Validate()\n"
-                  "  nBandCount=0, no bands configured!" );
+                  "GDALWarpOptions.Validate(): "
+                  "nBandCount=0, no bands configured!" );
         return FALSE;
     }
 
     if( psOptions->panSrcBands == NULL )
     {
         CPLError( CE_Failure, CPLE_IllegalArg,
-                  "GDALWarpOptions.Validate()\n"
-                  "  panSrcBands is NULL." );
+                  "GDALWarpOptions.Validate(): "
+                  "panSrcBands is NULL." );
         return FALSE;
     }
 
     if( psOptions->hDstDS != NULL && psOptions->panDstBands == NULL )
     {
         CPLError( CE_Failure, CPLE_IllegalArg,
-                  "GDALWarpOptions.Validate()\n"
-                  "  panDstBands is NULL." );
+                  "GDALWarpOptions.Validate(): "
+                  "panDstBands is NULL." );
         return FALSE;
     }
 
@@ -303,8 +315,8 @@ int GDALWarpOperation::ValidateOptions()
     if( psOptions->nBandCount == 0 )
     {
         CPLError( CE_Failure, CPLE_IllegalArg,
-                  "GDALWarpOptions.Validate()\n"
-                  "  nBandCount=0, no bands configured!" );
+                  "GDALWarpOptions.Validate(): "
+                  "nBandCount=0, no bands configured!" );
         return FALSE;
     }
 
@@ -312,24 +324,24 @@ int GDALWarpOperation::ValidateOptions()
         && psOptions->padfSrcNoDataImag == NULL )
     {
         CPLError( CE_Failure, CPLE_IllegalArg,
-                  "GDALWarpOptions.Validate()\n"
-                  "  padfSrcNoDataReal set, but padfSrcNoDataImag not set." );
+                  "GDALWarpOptions.Validate(): "
+                  "padfSrcNoDataReal set, but padfSrcNoDataImag not set." );
         return FALSE;
     }
 
     if( psOptions->pfnProgress == NULL )
     {
         CPLError( CE_Failure, CPLE_IllegalArg,
-                  "GDALWarpOptions.Validate()\n"
-                  "  pfnProgress is NULL." );
+                  "GDALWarpOptions.Validate(): "
+                  "pfnProgress is NULL." );
         return FALSE;
     }
 
     if( psOptions->pfnTransformer == NULL )
     {
         CPLError( CE_Failure, CPLE_IllegalArg,
-                  "GDALWarpOptions.Validate()\n"
-                  "  pfnTransformer is NULL." );
+                  "GDALWarpOptions.Validate(): "
+                  "pfnTransformer is NULL." );
         return FALSE;
     }
 
@@ -340,16 +352,16 @@ int GDALWarpOperation::ValidateOptions()
                                     "SAMPLE_STEPS" )) < 2 )
         {
             CPLError( CE_Failure, CPLE_IllegalArg,
-                      "GDALWarpOptions.Validate()\n"
-                      "  SAMPLE_STEPS warp option has illegal value." );
+                      "GDALWarpOptions.Validate(): "
+                      "SAMPLE_STEPS warp option has illegal value." );
             return FALSE;
         }
     }
 
     if( psOptions->nSrcAlphaBand > 0)
     {
-        if ( psOptions->hSrcDS == NULL ||
-             psOptions->nSrcAlphaBand > GDALGetRasterCount(psOptions->hSrcDS) )
+        if( psOptions->hSrcDS == NULL ||
+            psOptions->nSrcAlphaBand > GDALGetRasterCount(psOptions->hSrcDS) )
         {
             CPLError( CE_Failure, CPLE_IllegalArg,
                       "nSrcAlphaBand = %d ... out of range for dataset.",
@@ -360,8 +372,8 @@ int GDALWarpOperation::ValidateOptions()
 
     if( psOptions->nDstAlphaBand > 0)
     {
-        if ( psOptions->hDstDS == NULL ||
-             psOptions->nDstAlphaBand > GDALGetRasterCount(psOptions->hDstDS) )
+        if( psOptions->hDstDS == NULL ||
+            psOptions->nDstAlphaBand > GDALGetRasterCount(psOptions->hDstDS) )
         {
             CPLError( CE_Failure, CPLE_IllegalArg,
                       "nDstAlphaBand = %d ... out of range for dataset.",
@@ -374,8 +386,8 @@ int GDALWarpOperation::ValidateOptions()
         && psOptions->pfnSrcDensityMaskFunc != NULL )
     {
         CPLError( CE_Failure, CPLE_IllegalArg,
-               "GDALWarpOptions.Validate()\n"
-               "  pfnSrcDensityMaskFunc provided as well as a SrcAlphaBand." );
+                  "GDALWarpOptions.Validate(): "
+                  "pfnSrcDensityMaskFunc provided as well as a SrcAlphaBand." );
         return FALSE;
     }
 
@@ -383,12 +395,43 @@ int GDALWarpOperation::ValidateOptions()
         && psOptions->pfnDstDensityMaskFunc != NULL )
     {
         CPLError( CE_Failure, CPLE_IllegalArg,
-               "GDALWarpOptions.Validate()\n"
-               "  pfnDstDensityMaskFunc provided as well as a DstAlphaBand." );
+                  "GDALWarpOptions.Validate(): "
+                  "pfnDstDensityMaskFunc provided as well as a DstAlphaBand." );
         return FALSE;
     }
 
     return TRUE;
+}
+
+/************************************************************************/
+/*                            SetAlphaMax()                             */
+/************************************************************************/
+
+static void SetAlphaMax( GDALWarpOptions* psOptions,
+                         GDALRasterBandH hBand,
+                         const char* pszKey )
+{
+    const char* pszNBits =
+        GDALGetMetadataItem(hBand, "NBITS", "IMAGE_STRUCTURE");
+    const char *pszAlphaMax = NULL;
+    if( pszNBits )
+    {
+        pszAlphaMax = CPLSPrintf("%u", (1U << atoi(pszNBits)) - 1U);
+    }
+    else if( GDALGetRasterDataType( hBand ) == GDT_Int16 )
+    {
+        pszAlphaMax = "32767";
+    }
+    else if( GDALGetRasterDataType( hBand ) == GDT_UInt16 )
+    {
+        pszAlphaMax = "65535";
+    }
+
+    if( pszAlphaMax != NULL )
+        psOptions->papszWarpOptions = CSLSetNameValue(
+            psOptions->papszWarpOptions, pszKey, pszAlphaMax);
+    else
+        CPLDebug("WARP", "SetAlphaMax: AlphaMax not set.");
 }
 
 /************************************************************************/
@@ -417,8 +460,6 @@ int GDALWarpOperation::ValidateOptions()
 CPLErr GDALWarpOperation::Initialize( const GDALWarpOptions *psNewOptions )
 
 {
-    CPLErr eErr = CE_None;
-
 /* -------------------------------------------------------------------- */
 /*      Copy the passed in options.                                     */
 /* -------------------------------------------------------------------- */
@@ -438,16 +479,14 @@ CPLErr GDALWarpOperation::Initialize( const GDALWarpOptions *psNewOptions )
         && GDALGetRasterCount( psOptions->hSrcDS )
         == GDALGetRasterCount( psOptions->hDstDS ) )
     {
-        int  i;
-
         psOptions->nBandCount = GDALGetRasterCount( psOptions->hSrcDS );
 
-        psOptions->panSrcBands = (int *)
-            CPLMalloc(sizeof(int) * psOptions->nBandCount );
-        psOptions->panDstBands = (int *)
-            CPLMalloc(sizeof(int) * psOptions->nBandCount );
+        psOptions->panSrcBands = static_cast<int *>(
+            CPLMalloc(sizeof(int) * psOptions->nBandCount));
+        psOptions->panDstBands = static_cast<int *>(
+            CPLMalloc(sizeof(int) * psOptions->nBandCount));
 
-        for( i = 0; i < psOptions->nBandCount; i++ )
+        for( int i = 0; i < psOptions->nBandCount; i++ )
         {
             psOptions->panSrcBands[i] = i+1;
             psOptions->panDstBands[i] = i+1;
@@ -467,10 +506,9 @@ CPLErr GDALWarpOperation::Initialize( const GDALWarpOptions *psNewOptions )
         && psOptions->hDstDS != NULL
         && psOptions->nBandCount >= 1 )
     {
-        int iBand;
         psOptions->eWorkingDataType = GDT_Byte;
 
-        for( iBand = 0; iBand < psOptions->nBandCount; iBand++ )
+        for( int iBand = 0; iBand < psOptions->nBandCount; iBand++ )
         {
             GDALRasterBandH hDstBand = GDALGetRasterBand(
                 psOptions->hDstDS, psOptions->panDstBands[iBand] );
@@ -485,38 +523,38 @@ CPLErr GDALWarpOperation::Initialize( const GDALWarpOptions *psNewOptions )
             if( hSrcBand != NULL
                 && psOptions->padfSrcNoDataReal != NULL )
             {
-                int bMergeSource = FALSE;
+                bool bMergeSource = false;
 
                 if( psOptions->padfSrcNoDataImag != NULL
                     && psOptions->padfSrcNoDataImag[iBand] != 0.0
                     && !GDALDataTypeIsComplex( psOptions->eWorkingDataType ) )
-                    bMergeSource = TRUE;
+                    bMergeSource = true;
                 else if( psOptions->padfSrcNoDataReal[iBand] < 0.0
                          && (psOptions->eWorkingDataType == GDT_Byte
                              || psOptions->eWorkingDataType == GDT_UInt16
                              || psOptions->eWorkingDataType == GDT_UInt32) )
-                    bMergeSource = TRUE;
+                    bMergeSource = true;
                 else if( psOptions->padfSrcNoDataReal[iBand] < -32768.0
                          && psOptions->eWorkingDataType == GDT_Int16 )
-                    bMergeSource = TRUE;
+                    bMergeSource = true;
                 else if( psOptions->padfSrcNoDataReal[iBand] < -2147483648.0
                          && psOptions->eWorkingDataType == GDT_Int32 )
-                    bMergeSource = TRUE;
+                    bMergeSource = true;
                 else if( psOptions->padfSrcNoDataReal[iBand] > 256
                          && psOptions->eWorkingDataType == GDT_Byte )
-                    bMergeSource = TRUE;
+                    bMergeSource = true;
                 else if( psOptions->padfSrcNoDataReal[iBand] > 32767
                          && psOptions->eWorkingDataType == GDT_Int16 )
-                    bMergeSource = TRUE;
+                    bMergeSource = true;
                 else if( psOptions->padfSrcNoDataReal[iBand] > 65535
                          && psOptions->eWorkingDataType == GDT_UInt16 )
-                    bMergeSource = TRUE;
+                    bMergeSource = true;
                 else if( psOptions->padfSrcNoDataReal[iBand] > 2147483648.0
                          && psOptions->eWorkingDataType == GDT_Int32 )
-                    bMergeSource = TRUE;
+                    bMergeSource = true;
                 else if( psOptions->padfSrcNoDataReal[iBand] > 4294967295.0
                          && psOptions->eWorkingDataType == GDT_UInt32 )
-                    bMergeSource = TRUE;
+                    bMergeSource = true;
 
                 if( bMergeSource )
                     psOptions->eWorkingDataType =
@@ -541,8 +579,8 @@ CPLErr GDALWarpOperation::Initialize( const GDALWarpOptions *psNewOptions )
 /* -------------------------------------------------------------------- */
 /*      Are we doing timings?                                           */
 /* -------------------------------------------------------------------- */
-    bReportTimings = CSLFetchBoolean( psOptions->papszWarpOptions,
-                                      "REPORT_TIMINGS", FALSE );
+    bReportTimings = CPLFetchBool( psOptions->papszWarpOptions,
+                                   "REPORT_TIMINGS", false );
 
 /* -------------------------------------------------------------------- */
 /*      Support creating cutline from text warpoption.                  */
@@ -550,6 +588,7 @@ CPLErr GDALWarpOperation::Initialize( const GDALWarpOptions *psNewOptions )
     const char *pszCutlineWKT =
         CSLFetchNameValue( psOptions->papszWarpOptions, "CUTLINE" );
 
+    CPLErr eErr = CE_None;
     if( pszCutlineWKT )
     {
         if( OGR_G_CreateFromWkt( (char **) &pszCutlineWKT, NULL,
@@ -570,13 +609,43 @@ CPLErr GDALWarpOperation::Initialize( const GDALWarpOptions *psNewOptions )
     }
 
 /* -------------------------------------------------------------------- */
+/*      Set SRC_ALPHA_MAX if not provided.                              */
+/* -------------------------------------------------------------------- */
+    if( psOptions->hSrcDS != NULL &&
+        psOptions->nSrcAlphaBand > 0 &&
+        psOptions->nSrcAlphaBand <= GDALGetRasterCount(psOptions->hSrcDS) &&
+        CSLFetchNameValue( psOptions->papszWarpOptions,
+                           "SRC_ALPHA_MAX" ) == NULL )
+    {
+        GDALRasterBandH hSrcAlphaBand = GDALGetRasterBand(
+                          psOptions->hSrcDS, psOptions->nSrcAlphaBand);
+        SetAlphaMax( psOptions, hSrcAlphaBand, "SRC_ALPHA_MAX" );
+    }
+
+/* -------------------------------------------------------------------- */
+/*      Set DST_ALPHA_MAX if not provided.                              */
+/* -------------------------------------------------------------------- */
+    if( psOptions->hDstDS != NULL &&
+        psOptions->nDstAlphaBand > 0 &&
+        psOptions->nDstAlphaBand <= GDALGetRasterCount(psOptions->hDstDS) &&
+        CSLFetchNameValue( psOptions->papszWarpOptions,
+                           "DST_ALPHA_MAX" ) == NULL )
+    {
+        GDALRasterBandH hDstAlphaBand = GDALGetRasterBand(
+            psOptions->hDstDS, psOptions->nDstAlphaBand);
+        SetAlphaMax( psOptions, hDstAlphaBand, "DST_ALPHA_MAX" );
+    }
+
+/* -------------------------------------------------------------------- */
 /*      If the options don't validate, then wipe them.                  */
 /* -------------------------------------------------------------------- */
     if( !ValidateOptions() )
         eErr = CE_Failure;
 
     if( eErr != CE_None )
+    {
         WipeOptions();
+    }
     else
     {
         psThreadData = GWKThreadsCreate(psOptions->papszWarpOptions,
@@ -600,16 +669,14 @@ CPLErr GDALWarpOperation::Initialize( const GDALWarpOptions *psNewOptions )
 GDALWarpOperationH GDALCreateWarpOperation(
     const GDALWarpOptions *psNewOptions )
 {
-    GDALWarpOperation *poOperation;
-
-    poOperation = new GDALWarpOperation;
-    if ( poOperation->Initialize( psNewOptions ) != CE_None )
+    GDALWarpOperation *poOperation = new GDALWarpOperation;
+    if( poOperation->Initialize( psNewOptions ) != CE_None )
     {
         delete poOperation;
         return NULL;
     }
 
-    return (GDALWarpOperationH)poOperation;
+    return reinterpret_cast<GDALWarpOperationH>(poOperation);
 }
 
 /************************************************************************/
@@ -622,7 +689,7 @@ GDALWarpOperationH GDALCreateWarpOperation(
 
 void GDALDestroyWarpOperation( GDALWarpOperationH hOperation )
 {
-    if ( hOperation )
+    if( hOperation )
         delete static_cast<GDALWarpOperation *>(hOperation);
 }
 
@@ -632,15 +699,15 @@ void GDALDestroyWarpOperation( GDALWarpOperationH hOperation )
 
 static int OrderWarpChunk(const void* _a, const void *_b)
 {
-    const GDALWarpChunk* a = (const GDALWarpChunk* )_a;
-    const GDALWarpChunk* b = (const GDALWarpChunk* )_b;
-    if (a->dy < b->dy)
+    const GDALWarpChunk* a = static_cast<const GDALWarpChunk *>(_a);
+    const GDALWarpChunk* b = static_cast<const GDALWarpChunk *>(_b);
+    if( a->dy < b->dy )
         return -1;
-    else if (a->dy > b->dy)
+    else if( a->dy > b->dy )
         return 1;
-    else if (a->dx < b->dx)
+    else if( a->dx < b->dx )
         return -1;
-    else if (a->dx > b->dx)
+    else if( a->dx > b->dx )
         return 1;
     else
         return 0;
@@ -679,20 +746,24 @@ CPLErr GDALWarpOperation::ChunkAndWarpImage(
     WipeChunkList();
     CollectChunkList( nDstXOff, nDstYOff, nDstXSize, nDstYSize );
 
-    /* Sort chucks from top to bottom, and for equal y, from left to right */
+    // Sort chucks from top to bottom, and for equal y, from left to right.
+    // TODO(schwehr): Use std::sort.
     if( pasChunkList )
-        qsort(pasChunkList, nChunkListCount, sizeof(GDALWarpChunk), OrderWarpChunk);
+        qsort(pasChunkList, nChunkListCount, sizeof(GDALWarpChunk),
+              OrderWarpChunk);
 
 /* -------------------------------------------------------------------- */
 /*      Total up output pixels to process.                              */
 /* -------------------------------------------------------------------- */
-    int iChunk;
-    double dfTotalPixels = 0;
+    double dfTotalPixels = 0.0;
 
-    for( iChunk = 0; pasChunkList != NULL && iChunk < nChunkListCount; iChunk++ )
+    for( int iChunk = 0;
+         pasChunkList != NULL && iChunk < nChunkListCount;
+         iChunk++ )
     {
         GDALWarpChunk *pasThisChunk = pasChunkList + iChunk;
-        double dfChunkPixels = pasThisChunk->dsx * (double) pasThisChunk->dsy;
+        const double dfChunkPixels =
+          pasThisChunk->dsx * static_cast<double>(pasThisChunk->dsy);
 
         dfTotalPixels += dfChunkPixels;
     }
@@ -703,21 +774,24 @@ CPLErr GDALWarpOperation::ChunkAndWarpImage(
 /* -------------------------------------------------------------------- */
     double dfPixelsProcessed=0.0;
 
-    for( iChunk = 0; pasChunkList != NULL && iChunk < nChunkListCount; iChunk++ )
+    for( int iChunk = 0;
+         pasChunkList != NULL && iChunk < nChunkListCount;
+         iChunk++ )
     {
         GDALWarpChunk *pasThisChunk = pasChunkList + iChunk;
-        double dfChunkPixels = pasThisChunk->dsx * (double) pasThisChunk->dsy;
-        CPLErr eErr;
+        const double dfChunkPixels =
+            pasThisChunk->dsx * static_cast<double>(pasThisChunk->dsy);
 
-        double dfProgressBase = dfPixelsProcessed / dfTotalPixels;
-        double dfProgressScale = dfChunkPixels / dfTotalPixels;
+        const double dfProgressBase = dfPixelsProcessed / dfTotalPixels;
+        const double dfProgressScale = dfChunkPixels / dfTotalPixels;
 
-        eErr = WarpRegion( pasThisChunk->dx, pasThisChunk->dy,
-                           pasThisChunk->dsx, pasThisChunk->dsy,
-                           pasThisChunk->sx, pasThisChunk->sy,
-                           pasThisChunk->ssx, pasThisChunk->ssy,
-                           pasThisChunk->sExtraSx, pasThisChunk->sExtraSy,
-                           dfProgressBase, dfProgressScale);
+        CPLErr eErr =
+            WarpRegion(pasThisChunk->dx, pasThisChunk->dy,
+                       pasThisChunk->dsx, pasThisChunk->dsy,
+                       pasThisChunk->sx, pasThisChunk->sy,
+                       pasThisChunk->ssx, pasThisChunk->ssy,
+                       pasThisChunk->sExtraSx, pasThisChunk->sExtraSy,
+                       dfProgressBase, dfProgressScale);
 
         if( eErr != CE_None )
             return eErr;
@@ -745,7 +819,7 @@ CPLErr GDALChunkAndWarpImage( GDALWarpOperationH hOperation,
 {
     VALIDATE_POINTER1( hOperation, "GDALChunkAndWarpImage", CE_Failure );
 
-    return ( (GDALWarpOperation *)hOperation )->
+    return reinterpret_cast<GDALWarpOperation *>(hOperation) ->
         ChunkAndWarpImage( nDstXOff, nDstYOff, nDstXSize, nDstYSize );
 }
 
@@ -768,7 +842,6 @@ typedef struct
     CPLCond           *hCond;
 } ChunkThreadData;
 
-
 static void ChunkThreadMain( void *pThreadData )
 
 {
@@ -787,7 +860,7 @@ static void ChunkThreadMain( void *pThreadData )
     }
     else
     {
-        if (psData->hCond != NULL)
+        if( psData->hCond != NULL )
         {
             CPLAcquireMutex( psData->hCondMutex, 1.0 );
             psData->bIOMutexTaken = TRUE;
@@ -800,7 +873,8 @@ static void ChunkThreadMain( void *pThreadData )
                                     pasChunkInfo->dsx, pasChunkInfo->dsy,
                                     pasChunkInfo->sx, pasChunkInfo->sy,
                                     pasChunkInfo->ssx, pasChunkInfo->ssy,
-                                    pasChunkInfo->sExtraSx, pasChunkInfo->sExtraSy,
+                                    pasChunkInfo->sExtraSx,
+                                    pasChunkInfo->sExtraSy,
                                     psData->dfProgressBase,
                                     psData->dfProgressScale);
 
@@ -855,28 +929,30 @@ CPLErr GDALWarpOperation::ChunkAndWarpMulti(
     WipeChunkList();
     CollectChunkList( nDstXOff, nDstYOff, nDstXSize, nDstYSize );
 
-    /* Sort chucks from top to bottom, and for equal y, from left to right */
+    // Sort chucks from top to bottom, and for equal y, from left to right.
+    // TODO(schwehr): Use std::sort.
     if( pasChunkList )
-        qsort(pasChunkList, nChunkListCount, sizeof(GDALWarpChunk), OrderWarpChunk);
+        qsort(pasChunkList, nChunkListCount, sizeof(GDALWarpChunk),
+              OrderWarpChunk);
 
 /* -------------------------------------------------------------------- */
 /*      Process them one at a time, updating the progress               */
 /*      information for each region.                                    */
 /* -------------------------------------------------------------------- */
-    ChunkThreadData volatile asThreadData[2];
+    ChunkThreadData volatile asThreadData[2] = {};
     memset((void*)&asThreadData, 0, sizeof(asThreadData));
     asThreadData[0].poOperation = this;
     asThreadData[0].hIOMutex = hIOMutex;
     asThreadData[1].poOperation = this;
     asThreadData[1].hIOMutex = hIOMutex;
 
-    int iChunk;
-    double dfPixelsProcessed=0.0, dfTotalPixels = nDstXSize*(double)nDstYSize;
+    double dfPixelsProcessed = 0.0;
+    double dfTotalPixels = nDstXSize*(double)nDstYSize;
 
     CPLErr eErr = CE_None;
-    for( iChunk = 0; iChunk < nChunkListCount+1; iChunk++ )
+    for( int iChunk = 0; iChunk < nChunkListCount+1; iChunk++ )
     {
-        int    iThread = iChunk % 2;
+        int iThread = iChunk % 2;
 
 /* -------------------------------------------------------------------- */
 /*      Launch thread for this chunk.                                   */
@@ -884,16 +960,19 @@ CPLErr GDALWarpOperation::ChunkAndWarpMulti(
         if( pasChunkList != NULL && iChunk < nChunkListCount )
         {
             GDALWarpChunk *pasThisChunk = pasChunkList + iChunk;
-            double dfChunkPixels = pasThisChunk->dsx * (double) pasThisChunk->dsy;
+            const double dfChunkPixels =
+                pasThisChunk->dsx * static_cast<double>(pasThisChunk->dsy);
 
-            asThreadData[iThread].dfProgressBase = dfPixelsProcessed / dfTotalPixels;
-            asThreadData[iThread].dfProgressScale = dfChunkPixels / dfTotalPixels;
+            asThreadData[iThread].dfProgressBase =
+                dfPixelsProcessed / dfTotalPixels;
+            asThreadData[iThread].dfProgressScale =
+                dfChunkPixels / dfTotalPixels;
 
             dfPixelsProcessed += dfChunkPixels;
 
             asThreadData[iThread].pasChunkInfo = pasThisChunk;
 
-            if ( iChunk == 0 )
+            if( iChunk == 0 )
             {
                 asThreadData[iThread].hCond = hCond;
                 asThreadData[iThread].hCondMutex = hCondMutex;
@@ -906,22 +985,25 @@ CPLErr GDALWarpOperation::ChunkAndWarpMulti(
             asThreadData[iThread].bIOMutexTaken = FALSE;
 
             CPLDebug( "GDAL", "Start chunk %d.", iChunk );
-            asThreadData[iThread].hThreadHandle =
-                CPLCreateJoinableThread( ChunkThreadMain, (void*) &asThreadData[iThread] );
+            asThreadData[iThread].hThreadHandle = CPLCreateJoinableThread(
+                ChunkThreadMain,
+                const_cast<ChunkThreadData *>(&asThreadData[iThread]));
             if( asThreadData[iThread].hThreadHandle == NULL )
             {
-                CPLError( CE_Failure, CPLE_AppDefined,
-                          "CPLCreateJoinableThread() failed in ChunkAndWarpMulti()" );
+                CPLError(
+                    CE_Failure, CPLE_AppDefined,
+                    "CPLCreateJoinableThread() failed in ChunkAndWarpMulti()");
                 eErr = CE_Failure;
                 break;
             }
 
-            /* Wait that the first thread has acquired the IO mutex before proceeding. */
-            /* (This will ensure that the first thread will run before the second one). */
+            // Wait that the first thread has acquired the IO mutex before
+            // proceeding.  This will ensure that the first thread will run
+            // before the second one.
             if( iChunk == 0 )
             {
                 CPLAcquireMutex(hCondMutex, 1.0);
-                while (asThreadData[iThread].bIOMutexTaken == FALSE)
+                while( asThreadData[iThread].bIOMutexTaken == FALSE )
                     CPLCondWait(hCond, hCondMutex);
                 CPLReleaseMutex(hCondMutex);
             }
@@ -934,7 +1016,7 @@ CPLErr GDALWarpOperation::ChunkAndWarpMulti(
         {
             iThread = (iChunk-1) % 2;
 
-            /* Wait for thread to finish. */
+            // Wait for thread to finish.
             CPLJoinThread(asThreadData[iThread].hThreadHandle);
             asThreadData[iThread].hThreadHandle = NULL;
 
@@ -950,10 +1032,9 @@ CPLErr GDALWarpOperation::ChunkAndWarpMulti(
     /* -------------------------------------------------------------------- */
     /*      Wait for all threads to complete.                               */
     /* -------------------------------------------------------------------- */
-    int iThread;
-    for(iThread = 0; iThread < 2; iThread ++)
+    for( int iThread = 0; iThread < 2; iThread++ )
     {
-        if (asThreadData[iThread].hThreadHandle)
+        if( asThreadData[iThread].hThreadHandle )
             CPLJoinThread(asThreadData[iThread].hThreadHandle);
     }
 
@@ -978,7 +1059,7 @@ CPLErr GDALChunkAndWarpMulti( GDALWarpOperationH hOperation,
 {
     VALIDATE_POINTER1( hOperation, "GDALChunkAndWarpMulti", CE_Failure );
 
-    return ( (GDALWarpOperation *)hOperation )->
+    return reinterpret_cast<GDALWarpOperation *>(hOperation)->
         ChunkAndWarpMulti( nDstXOff, nDstYOff, nDstXSize, nDstYSize );
 }
 
@@ -1007,20 +1088,24 @@ CPLErr GDALWarpOperation::CollectChunkList(
 /*      Compute the bounds of the input area corresponding to the       */
 /*      output area.                                                    */
 /* -------------------------------------------------------------------- */
-    int nSrcXOff, nSrcYOff, nSrcXSize, nSrcYSize;
-    int nSrcXExtraSize, nSrcYExtraSize;
-    double dfSrcFillRatio;
-    CPLErr eErr;
-
-    eErr = ComputeSourceWindow( nDstXOff, nDstYOff, nDstXSize, nDstYSize,
-                                &nSrcXOff, &nSrcYOff, &nSrcXSize, &nSrcYSize,
-                                &nSrcXExtraSize, &nSrcYExtraSize, &dfSrcFillRatio );
+    int nSrcXOff = 0;
+    int nSrcYOff = 0;
+    int nSrcXSize = 0;
+    int nSrcYSize = 0;
+    int nSrcXExtraSize = 0;
+    int nSrcYExtraSize = 0;
+    double dfSrcFillRatio = 0.0;
+    CPLErr eErr =
+        ComputeSourceWindow(nDstXOff, nDstYOff, nDstXSize, nDstYSize,
+                            &nSrcXOff, &nSrcYOff, &nSrcXSize, &nSrcYSize,
+                            &nSrcXExtraSize, &nSrcYExtraSize, &dfSrcFillRatio);
 
     if( eErr != CE_None )
     {
-        CPLError( CE_Warning, CPLE_AppDefined,
-                  "Unable to compute source region for output window %d,%d,%d,%d, skipping.",
-                  nDstXOff, nDstYOff, nDstXSize, nDstYSize );
+        CPLError(CE_Warning, CPLE_AppDefined,
+                 "Unable to compute source region for "
+                 "output window %d,%d,%d,%d, skipping.",
+                 nDstXOff, nDstYOff, nDstXSize, nDstYSize);
         return eErr;
     }
 
@@ -1029,21 +1114,19 @@ CPLErr GDALWarpOperation::CollectChunkList(
 /*      appropriate.                                                    */
 /* -------------------------------------------------------------------- */
     if( (nSrcXSize == 0 || nSrcYSize == 0)
-        && CSLFetchBoolean( psOptions->papszWarpOptions, "SKIP_NOSOURCE",0 ))
+        && CPLFetchBool( psOptions->papszWarpOptions, "SKIP_NOSOURCE", false ))
         return CE_None;
 
 /* -------------------------------------------------------------------- */
 /*      Based on the types of masks in use, how many bits will each     */
 /*      source pixel cost us?                                           */
 /* -------------------------------------------------------------------- */
-    int nSrcPixelCostInBits;
-
-    nSrcPixelCostInBits =
+    int nSrcPixelCostInBits =
         GDALGetDataTypeSize( psOptions->eWorkingDataType )
         * psOptions->nBandCount;
 
     if( psOptions->pfnSrcDensityMaskFunc != NULL )
-        nSrcPixelCostInBits += 32; /* ?? float mask */
+        nSrcPixelCostInBits += 32;  // Float mask?
 
     GDALRasterBandH hSrcBand = NULL;
     if( psOptions->nBandCount > 0 )
@@ -1051,23 +1134,22 @@ CPLErr GDALWarpOperation::CollectChunkList(
                                      psOptions->panSrcBands[0]);
 
     if( psOptions->nSrcAlphaBand > 0 || psOptions->hCutline != NULL )
-        nSrcPixelCostInBits += 32; /* UnifiedSrcDensity float mask */
-    else if (hSrcBand != NULL && (GDALGetMaskFlags(hSrcBand) & GMF_PER_DATASET))
-        nSrcPixelCostInBits += 1; /* UnifiedSrcValid bit mask */
+        nSrcPixelCostInBits += 32;  // UnifiedSrcDensity float mask.
+    else if( hSrcBand != NULL &&
+             (GDALGetMaskFlags(hSrcBand) & GMF_PER_DATASET) )
+        nSrcPixelCostInBits += 1;  // UnifiedSrcValid bit mask.
 
     if( psOptions->papfnSrcPerBandValidityMaskFunc != NULL
         || psOptions->padfSrcNoDataReal != NULL )
-        nSrcPixelCostInBits += psOptions->nBandCount; /* bit/band mask */
+        nSrcPixelCostInBits += psOptions->nBandCount;  // Bit/band mask.
 
     if( psOptions->pfnSrcValidityMaskFunc != NULL )
-        nSrcPixelCostInBits += 1; /* bit mask */
+        nSrcPixelCostInBits += 1;  // Bit mask.
 
 /* -------------------------------------------------------------------- */
 /*      What about the cost for the destination.                        */
 /* -------------------------------------------------------------------- */
-    int nDstPixelCostInBits;
-
-    nDstPixelCostInBits =
+    int nDstPixelCostInBits =
         GDALGetDataTypeSize( psOptions->eWorkingDataType )
         * psOptions->nBandCount;
 
@@ -1079,21 +1161,20 @@ CPLErr GDALWarpOperation::CollectChunkList(
         nDstPixelCostInBits += psOptions->nBandCount;
 
     if( psOptions->nDstAlphaBand > 0 )
-        nDstPixelCostInBits += 32; /* DstDensity float mask */
+        nDstPixelCostInBits += 32;  // DstDensity float mask.
 
 /* -------------------------------------------------------------------- */
 /*      Does the cost of the current rectangle exceed our memory        */
 /*      limit? If so, split the destination along the longest           */
 /*      dimension and recurse.                                          */
 /* -------------------------------------------------------------------- */
-    double dfTotalMemoryUse;
+    double dfTotalMemoryUse =
+      (static_cast<double>(nSrcPixelCostInBits) * nSrcXSize * nSrcYSize +
+       static_cast<double>(nDstPixelCostInBits) * nDstXSize * nDstYSize) / 8.0;
 
-    dfTotalMemoryUse =
-        (((double) nSrcPixelCostInBits) * nSrcXSize * nSrcYSize
-         + ((double) nDstPixelCostInBits) * nDstXSize * nDstYSize) / 8.0;
-
-    int nBlockXSize = 1, nBlockYSize = 1;
-    if (psOptions->hDstDS)
+    int nBlockXSize = 1;
+    int nBlockYSize = 1;
+    if( psOptions->hDstDS )
     {
         GDALGetBlockSize(GDALGetRasterBand(psOptions->hDstDS, 1),
                          &nBlockXSize, &nBlockYSize);
@@ -1105,35 +1186,46 @@ CPLErr GDALWarpOperation::CollectChunkList(
     // only if there's at least some source pixel intersecting. The
     // SRC_FILL_RATIO_HEURISTICS warping option is undocumented and only here
     // in case the heuristics would cause issues.
-    /*CPLDebug("WARP", "dst=(%d,%d,%d,%d) src=(%d,%d,%d,%d) srcfillratio=%.18g",
+#if DEBUG_VERBOSE
+    CPLDebug("WARP",
+             "dst=(%d,%d,%d,%d) src=(%d,%d,%d,%d) srcfillratio=%.18g",
              nDstXOff, nDstYOff, nDstXSize, nDstYSize,
-             nSrcXOff, nSrcYOff, nSrcXSize, nSrcYSize, dfSrcFillRatio);*/
-    if( (dfTotalMemoryUse > psOptions->dfWarpMemoryLimit && (nDstXSize > 2 || nDstYSize > 2)) ||
-        (dfSrcFillRatio > 0 && dfSrcFillRatio < 0.5 && (nDstXSize > 100 || nDstYSize > 100) &&
-         CSLFetchBoolean( psOptions->papszWarpOptions, "SRC_FILL_RATIO_HEURISTICS", TRUE )) )
+             nSrcXOff, nSrcYOff, nSrcXSize, nSrcYSize, dfSrcFillRatio);
+#endif
+    if( (dfTotalMemoryUse > psOptions->dfWarpMemoryLimit &&
+         (nDstXSize > 2 || nDstYSize > 2)) ||
+        (dfSrcFillRatio > 0 && dfSrcFillRatio < 0.5 &&
+         (nDstXSize > 100 || nDstYSize > 100) &&
+         CPLFetchBool( psOptions->papszWarpOptions, "SRC_FILL_RATIO_HEURISTICS",
+                       true )) )
     {
-        CPLErr eErr2 = CE_None;
-
         int bStreamableOutput =
-                CSLFetchBoolean( psOptions->papszWarpOptions, "STREAMABLE_OUTPUT", FALSE );
-        int bOptimizeSize = !bStreamableOutput &&
-                CSLFetchBoolean( psOptions->papszWarpOptions, "OPTIMIZE_SIZE", FALSE );
+            CPLFetchBool( psOptions->papszWarpOptions, "STREAMABLE_OUTPUT",
+                          false );
+        const bool bOptimizeSize =
+            !bStreamableOutput &&
+            CPLFetchBool( psOptions->papszWarpOptions, "OPTIMIZE_SIZE", false );
 
-        /* If the region width is greater than the region height, */
-        /* cut in half in the width. When we want to optimize the size */
-        /* of a compressed output dataset, do this only if each half part */
-        /* is at least as wide as the block width */
-        int bHasDivided = FALSE;
+        // If the region width is greater than the region height,
+        // cut in half in the width. When we want to optimize the size
+        // of a compressed output dataset, do this only if each half part
+        // is at least as wide as the block width.
+        bool bHasDivided = false;
+        CPLErr eErr2 = CE_None;
         if( nDstXSize > nDstYSize &&
             ((!bOptimizeSize && !bStreamableOutput) ||
-             (bOptimizeSize && (nDstXSize / 2 >= nBlockXSize || nDstYSize == 1)) ||
-             (bStreamableOutput && nDstXSize / 2 >= nBlockXSize && nDstYSize == nBlockYSize)) )
+             (bOptimizeSize &&
+              (nDstXSize / 2 >= nBlockXSize || nDstYSize == 1)) ||
+             (bStreamableOutput &&
+              nDstXSize / 2 >= nBlockXSize &&
+              nDstYSize == nBlockYSize)) )
         {
-            bHasDivided = TRUE;
+            bHasDivided = true;
             int nChunk1 = nDstXSize / 2;
 
-            /* In the optimize size case, try to stick on target block boundaries */
-            if ((bOptimizeSize || bStreamableOutput) && nChunk1 > nBlockXSize)
+            // In the optimize size case, try to stick on target block
+            // boundaries.
+            if( (bOptimizeSize || bStreamableOutput) && nChunk1 > nBlockXSize )
                 nChunk1 = (nChunk1 / nBlockXSize) * nBlockXSize;
 
             int nChunk2 = nDstXSize - nChunk1;
@@ -1146,14 +1238,15 @@ CPLErr GDALWarpOperation::CollectChunkList(
         }
         else if( !(bStreamableOutput && nDstYSize / 2 < nBlockYSize) )
         {
-            bHasDivided = TRUE;
+            bHasDivided = true;
             int nChunk1 = nDstYSize / 2;
 
-            /* In the optimize size case, try to stick on target block boundaries */
-            if ((bOptimizeSize || bStreamableOutput) && nChunk1 > nBlockYSize)
+            // In the optimize size case, try to stick on target block
+            // boundaries.
+            if( (bOptimizeSize || bStreamableOutput) && nChunk1 > nBlockYSize )
                 nChunk1 = (nChunk1 / nBlockYSize) * nBlockYSize;
 
-            int nChunk2 = nDstYSize - nChunk1;
+            const int nChunk2 = nDstYSize - nChunk1;
 
             eErr = CollectChunkList( nDstXOff, nDstYOff,
                                      nDstXSize, nChunk1 );
@@ -1177,8 +1270,8 @@ CPLErr GDALWarpOperation::CollectChunkList(
     if( nChunkListCount == nChunkListMax )
     {
         nChunkListMax = nChunkListMax * 2 + 1;
-        pasChunkList = (GDALWarpChunk *)
-            CPLRealloc(pasChunkList,sizeof(GDALWarpChunk)*nChunkListMax );
+        pasChunkList = static_cast<GDALWarpChunk *>(
+            CPLRealloc(pasChunkList, sizeof(GDALWarpChunk) * nChunkListMax));
     }
 
     pasChunkList[nChunkListCount].dx = nDstXOff;
@@ -1197,19 +1290,11 @@ CPLErr GDALWarpOperation::CollectChunkList(
     return CE_None;
 }
 
-
 /************************************************************************/
 /*                             WarpRegion()                             */
 /************************************************************************/
 
 /**
- * \fn CPLErr GDALWarpOperation::WarpRegion(int nDstXOff, int nDstYOff,
-                                            int nDstXSize, int nDstYSize,
-                                            int nSrcXOff=0, int nSrcYOff=0,
-                                            int nSrcXSize=0, int nSrcYSize=0,
-                                            double dfProgressBase = 0,
-                                            double dfProgressScale = 1);
- *
  * This method requests the indicated region of the output file be generated.
  *
  * Note that WarpRegion() will produce the requested area in one low level warp
@@ -1243,7 +1328,7 @@ CPLErr GDALWarpOperation::WarpRegion( int nDstXOff, int nDstYOff,
                                       int nSrcXOff, int nSrcYOff,
                                       int nSrcXSize, int nSrcYSize,
                                       double dfProgressBase,
-                                      double dfProgressScale)
+                                      double dfProgressScale )
 {
     return WarpRegion(nDstXOff, nDstYOff,
                       nDstXSize, nDstYSize,
@@ -1252,6 +1337,39 @@ CPLErr GDALWarpOperation::WarpRegion( int nDstXOff, int nDstYOff,
                       0, 0,
                       dfProgressBase, dfProgressScale);
 }
+
+/**
+ * This method requests the indicated region of the output file be generated.
+ *
+ * Note that WarpRegion() will produce the requested area in one low level warp
+ * operation without verifying that this does not exceed the stated memory
+ * limits for the warp operation.  Applications should take care not to call
+ * WarpRegion() on too large a region!  This function
+ * is normally called by ChunkAndWarpImage(), the normal entry point for
+ * applications.  Use it instead if staying within memory constraints is
+ * desired.
+ *
+ * Progress is reported from dfProgressBase to dfProgressBase + dfProgressScale
+ * for the indicated region.
+ *
+ * @param nDstXOff X offset to window of destination data to be produced.
+ * @param nDstYOff Y offset to window of destination data to be produced.
+ * @param nDstXSize Width of output window on destination file to be produced.
+ * @param nDstYSize Height of output window on destination file to be produced.
+ * @param nSrcXOff source window X offset (computed if window all zero)
+ * @param nSrcYOff source window Y offset (computed if window all zero)
+ * @param nSrcXSize source window X size (computed if window all zero)
+ * @param nSrcYSize source window Y size (computed if window all zero)
+ * @param nSrcXExtraSize Extra pixels (included in nSrcXSize) reserved
+ * for filter window. Should be ignored in scale computation
+ * @param nSrcYExtraSize Extra pixels (included in nSrcYSize) reserved
+ * for filter window. Should be ignored in scale computation
+ * @param dfProgressBase minimum progress value reported
+ * @param dfProgressScale value such as dfProgressBase + dfProgressScale is the
+ *                        maximum progress value reported
+ *
+ * @return CE_None on success or CE_Failure if an error occurs.
+ */
 
 CPLErr GDALWarpOperation::WarpRegion( int nDstXOff, int nDstYOff,
                                       int nDstXSize, int nDstYSize,
@@ -1262,20 +1380,16 @@ CPLErr GDALWarpOperation::WarpRegion( int nDstXOff, int nDstYOff,
                                       double dfProgressScale)
 
 {
-    CPLErr eErr;
-    int   iBand;
-
     ReportTiming( NULL );
 
 /* -------------------------------------------------------------------- */
 /*      Allocate the output buffer.                                     */
 /* -------------------------------------------------------------------- */
-    void *pDstBuffer;
     const int nWordSize = GDALGetDataTypeSizeBytes(psOptions->eWorkingDataType);
-    int  nBandSize = nWordSize * nDstXSize * nDstYSize;
+    const int nBandSize = nWordSize * nDstXSize * nDstYSize;
 
-    if (nDstXSize > INT_MAX / nDstYSize ||
-        nDstXSize * nDstYSize > INT_MAX / (nWordSize * psOptions->nBandCount))
+    if( nDstXSize > INT_MAX / nDstYSize ||
+        nDstXSize * nDstYSize > INT_MAX / (nWordSize * psOptions->nBandCount) )
     {
         CPLError( CE_Failure, CPLE_AppDefined,
                   "Integer overflow : nDstXSize=%d, nDstYSize=%d",
@@ -1283,7 +1397,7 @@ CPLErr GDALWarpOperation::WarpRegion( int nDstXOff, int nDstYOff,
         return CE_Failure;
     }
 
-    pDstBuffer = VSI_MALLOC_VERBOSE( nBandSize * psOptions->nBandCount );
+    void *pDstBuffer = VSI_MALLOC_VERBOSE( nBandSize * psOptions->nBandCount );
     if( pDstBuffer == NULL )
     {
         return CE_Failure;
@@ -1305,15 +1419,15 @@ CPLErr GDALWarpOperation::WarpRegion( int nDstXOff, int nDstYOff,
     {
         char **papszInitValues =
             CSLTokenizeStringComplex( pszInitDest, ",", FALSE, FALSE );
-        int nInitCount = CSLCount(papszInitValues);
+        const int nInitCount = CSLCount(papszInitValues);
 
-        for( iBand = 0; iBand < psOptions->nBandCount; iBand++ )
+        for( int iBand = 0; iBand < psOptions->nBandCount; iBand++ )
         {
-            double adfInitRealImag[2];
-            GByte *pBandData;
-            const char *pszBandInit = papszInitValues[MIN(iBand,nInitCount-1)];
+            double adfInitRealImag[2] = { 0.0, 0.0 };
+            const char *pszBandInit =
+                papszInitValues[std::min(iBand, nInitCount - 1)];
 
-            if( EQUAL(pszBandInit,"NO_DATA")
+            if( EQUAL(pszBandInit, "NO_DATA")
                 && psOptions->padfDstNoDataReal != NULL )
             {
                 adfInitRealImag[0] = psOptions->padfDstNoDataReal[iBand];
@@ -1325,27 +1439,35 @@ CPLErr GDALWarpOperation::WarpRegion( int nDstXOff, int nDstYOff,
                                     adfInitRealImag + 0, adfInitRealImag + 1);
             }
 
-            pBandData = ((GByte *) pDstBuffer) + iBand * nBandSize;
+            GByte *pBandData =
+                static_cast<GByte *>(pDstBuffer) + iBand * nBandSize;
 
             if( psOptions->eWorkingDataType == GDT_Byte )
                 memset( pBandData,
-                        MAX(0,MIN(255,(int)adfInitRealImag[0])),
+                        std::max(
+                            0, std::min(255,
+                                        static_cast<int>(adfInitRealImag[0]))),
                         nBandSize);
-            else if( !CPLIsNan(adfInitRealImag[0]) && adfInitRealImag[0] == 0.0 &&
-                     !CPLIsNan(adfInitRealImag[1]) && adfInitRealImag[1] == 0.0 )
+            else if( !CPLIsNan(adfInitRealImag[0]) &&
+                     adfInitRealImag[0] == 0.0 &&
+                     !CPLIsNan(adfInitRealImag[1]) &&
+                     adfInitRealImag[1] == 0.0 )
             {
                 memset( pBandData, 0, nBandSize );
             }
-            else if( !CPLIsNan(adfInitRealImag[1]) && adfInitRealImag[1] == 0.0 )
+            else if( !CPLIsNan(adfInitRealImag[1]) &&
+                     adfInitRealImag[1] == 0.0 )
             {
                 GDALCopyWords( &adfInitRealImag, GDT_Float64, 0,
-                               pBandData,psOptions->eWorkingDataType,nWordSize,
+                               pBandData, psOptions->eWorkingDataType,
+                               nWordSize,
                                nDstXSize * nDstYSize );
             }
             else
             {
                 GDALCopyWords( &adfInitRealImag, GDT_CFloat64, 0,
-                               pBandData,psOptions->eWorkingDataType,nWordSize,
+                               pBandData, psOptions->eWorkingDataType,
+                               nWordSize,
                                nDstXSize * nDstYSize );
             }
         }
@@ -1357,15 +1479,32 @@ CPLErr GDALWarpOperation::WarpRegion( int nDstXOff, int nDstYOff,
 /*      If we aren't doing fixed initialization of the output buffer    */
 /*      then read it from disk so we can overlay on existing imagery.   */
 /* -------------------------------------------------------------------- */
+    GDALDataset* poDstDS = reinterpret_cast<GDALDataset*>(psOptions->hDstDS);
     if( pszInitDest == NULL )
     {
-        eErr = GDALDatasetRasterIO( psOptions->hDstDS, GF_Read,
-                                    nDstXOff, nDstYOff, nDstXSize, nDstYSize,
-                                    pDstBuffer, nDstXSize, nDstYSize,
-                                    psOptions->eWorkingDataType,
-                                    psOptions->nBandCount,
-                                    psOptions->panDstBands,
-                                    0, 0, 0 );
+        CPLErr eErr = CE_None;
+        if( psOptions->nBandCount == 1 )
+        {
+            // Particular case to simplify the stack a bit.
+            // TODO(rouault): Need an explanation of what and why r34502 helps.
+            eErr = poDstDS->GetRasterBand(psOptions->panDstBands[0])->RasterIO(
+                GF_Read,
+                nDstXOff, nDstYOff, nDstXSize, nDstYSize,
+                pDstBuffer, nDstXSize, nDstYSize,
+                psOptions->eWorkingDataType,
+                0, 0, NULL);
+        }
+        else
+        {
+            eErr = poDstDS->RasterIO(
+                GF_Read,
+                nDstXOff, nDstYOff, nDstXSize, nDstYSize,
+                pDstBuffer, nDstXSize, nDstYSize,
+                psOptions->eWorkingDataType,
+                psOptions->nBandCount,
+                psOptions->panDstBands,
+                0, 0, 0, NULL);
+        }
 
         if( eErr != CE_None )
         {
@@ -1379,33 +1518,48 @@ CPLErr GDALWarpOperation::WarpRegion( int nDstXOff, int nDstYOff,
 /* -------------------------------------------------------------------- */
 /*      Perform the warp.                                               */
 /* -------------------------------------------------------------------- */
-    eErr = WarpRegionToBuffer( nDstXOff, nDstYOff, nDstXSize, nDstYSize,
-                               pDstBuffer, psOptions->eWorkingDataType,
-                               nSrcXOff, nSrcYOff, nSrcXSize, nSrcYSize,
-                               nSrcXExtraSize, nSrcYExtraSize,
-                               dfProgressBase, dfProgressScale);
+    CPLErr eErr =
+        WarpRegionToBuffer(nDstXOff, nDstYOff, nDstXSize, nDstYSize,
+                           pDstBuffer, psOptions->eWorkingDataType,
+                           nSrcXOff, nSrcYOff, nSrcXSize, nSrcYSize,
+                           nSrcXExtraSize, nSrcYExtraSize,
+                           dfProgressBase, dfProgressScale);
 
 /* -------------------------------------------------------------------- */
 /*      Write the output data back to disk if all went well.            */
 /* -------------------------------------------------------------------- */
     if( eErr == CE_None )
     {
-        eErr = GDALDatasetRasterIO( psOptions->hDstDS, GF_Write,
+        if( psOptions->nBandCount == 1 )
+        {
+            // Particular case to simplify the stack a bit.
+            eErr = poDstDS->GetRasterBand(psOptions->panDstBands[0])->RasterIO(
+                  GF_Write,
+                  nDstXOff, nDstYOff, nDstXSize, nDstYSize,
+                  pDstBuffer, nDstXSize, nDstYSize,
+                  psOptions->eWorkingDataType,
+                  0, 0, NULL );
+        }
+        else
+        {
+            eErr = poDstDS->RasterIO( GF_Write,
                                     nDstXOff, nDstYOff, nDstXSize, nDstYSize,
                                     pDstBuffer, nDstXSize, nDstYSize,
                                     psOptions->eWorkingDataType,
                                     psOptions->nBandCount,
                                     psOptions->panDstBands,
-                                    0, 0, 0 );
+                                    0, 0, 0, NULL );
+        }
+
         if( eErr == CE_None &&
-            CSLFetchBoolean( psOptions->papszWarpOptions, "WRITE_FLUSH",
-                             FALSE ) )
+            CPLFetchBool( psOptions->papszWarpOptions, "WRITE_FLUSH", false ) )
         {
-            CPLErr eOldErr = CPLGetLastErrorType();
-            CPLString osLastErrMsg = CPLGetLastErrorMsg();
+            const CPLErr eOldErr = CPLGetLastErrorType();
+            const CPLString osLastErrMsg = CPLGetLastErrorMsg();
             GDALFlushCache( psOptions->hDstDS );
-            CPLErr eNewErr = CPLGetLastErrorType();
-            if (eNewErr != eOldErr || osLastErrMsg.compare(CPLGetLastErrorMsg()) != 0)
+            const CPLErr eNewErr = CPLGetLastErrorType();
+            if( eNewErr != eOldErr ||
+                osLastErrMsg.compare(CPLGetLastErrorMsg()) != 0 )
                 eErr = CE_Failure;
         }
         ReportTiming( "Output buffer write" );
@@ -1436,7 +1590,7 @@ CPLErr GDALWarpRegion( GDALWarpOperationH hOperation,
 {
     VALIDATE_POINTER1( hOperation, "GDALWarpRegion", CE_Failure );
 
-    return ( (GDALWarpOperation *)hOperation )->
+    return reinterpret_cast<GDALWarpOperation *>(hOperation)->
         WarpRegion( nDstXOff, nDstYOff, nDstXSize, nDstYSize,
                     nSrcXOff, nSrcYOff, nSrcXSize, nSrcYSize);
 }
@@ -1446,16 +1600,6 @@ CPLErr GDALWarpRegion( GDALWarpOperationH hOperation,
 /************************************************************************/
 
 /**
- * \fn CPLErr GDALWarpOperation::WarpRegionToBuffer(
-                                  int nDstXOff, int nDstYOff,
-                                  int nDstXSize, int nDstYSize,
-                                  void *pDataBuf,
-                                  GDALDataType eBufDataType,
-                                  int nSrcXOff=0, int nSrcYOff=0,
-                                  int nSrcXSize=0, int nSrcYSize=0,
-                                  double dfProgressBase = 0,
-                                  double dfProgressScale = 1 );
- *
  * This method requests that a particular window of the output dataset
  * be warped and the result put into the provided data buffer.  The output
  * dataset doesn't even really have to exist to use this method as long as
@@ -1495,19 +1639,50 @@ CPLErr GDALWarpOperation::WarpRegionToBuffer(
                               dfProgressBase, dfProgressScale);
 }
 
+/**
+ * This method requests that a particular window of the output dataset
+ * be warped and the result put into the provided data buffer.  The output
+ * dataset doesn't even really have to exist to use this method as long as
+ * the transformation function in the GDALWarpOptions is setup to map to
+ * a virtual pixel/line space.
+ *
+ * This method will do the whole region in one chunk, so be wary of the
+ * amount of memory that might be used.
+ *
+ * @param nDstXOff X offset to window of destination data to be produced.
+ * @param nDstYOff Y offset to window of destination data to be produced.
+ * @param nDstXSize Width of output window on destination file to be produced.
+ * @param nDstYSize Height of output window on destination file to be produced.
+ * @param pDataBuf the data buffer to place result in, of type eBufDataType.
+ * @param eBufDataType the type of the output data buffer.  For now this
+ * must match GDALWarpOptions::eWorkingDataType.
+ * @param nSrcXOff source window X offset (computed if window all zero)
+ * @param nSrcYOff source window Y offset (computed if window all zero)
+ * @param nSrcXSize source window X size (computed if window all zero)
+ * @param nSrcYSize source window Y size (computed if window all zero)
+ * @param nSrcXExtraSize Extra pixels (included in nSrcXSize) reserved
+ * for filter window. Should be ignored in scale computation
+ * @param nSrcYExtraSize Extra pixels (included in nSrcYSize) reserved
+ * for filter window. Should be ignored in scale computation
+ * @param dfProgressBase minimum progress value reported
+ * @param dfProgressScale value such as dfProgressBase + dfProgressScale is the
+ *                        maximum progress value reported
+ *
+ * @return CE_None on success or CE_Failure if an error occurs.
+ */
+
 CPLErr GDALWarpOperation::WarpRegionToBuffer(
     int nDstXOff, int nDstYOff, int nDstXSize, int nDstYSize,
-    void *pDataBuf, GDALDataType eBufDataType,
+    void *pDataBuf,
+    // Only in a CPLAssert.
+    CPL_UNUSED GDALDataType eBufDataType,
     int nSrcXOff, int nSrcYOff, int nSrcXSize, int nSrcYSize,
     int nSrcXExtraSize, int nSrcYExtraSize,
     double dfProgressBase, double dfProgressScale)
 
 {
-    CPLErr eErr = CE_None;
-    int    i;
     const int nWordSize = GDALGetDataTypeSizeBytes(psOptions->eWorkingDataType);
 
-    (void) eBufDataType;
     CPLAssert( eBufDataType == psOptions->eWorkingDataType );
 
 /* -------------------------------------------------------------------- */
@@ -1515,10 +1690,22 @@ CPLErr GDALWarpOperation::WarpRegionToBuffer(
 /* -------------------------------------------------------------------- */
     if( nSrcXSize == 0 && nSrcYSize == 0 )
     {
-        eErr = ComputeSourceWindow( nDstXOff, nDstYOff, nDstXSize, nDstYSize,
-                                    &nSrcXOff, &nSrcYOff,
-                                    &nSrcXSize, &nSrcYSize,
-                                    &nSrcXExtraSize, &nSrcYExtraSize, NULL );
+        // TODO: This taking of the warp mutex is suboptimal. We could get rid
+        // of it, but that would require making sure ComputeSourceWindow()
+        // uses a different pTransformerArg than the warp kernel.
+        if( hWarpMutex != NULL && !CPLAcquireMutex( hWarpMutex, 600.0 ) )
+        {
+            CPLError( CE_Failure, CPLE_AppDefined,
+                      "Failed to acquire WarpMutex in WarpRegion()." );
+            return CE_Failure;
+        }
+        const CPLErr eErr =
+            ComputeSourceWindow( nDstXOff, nDstYOff, nDstXSize, nDstYSize,
+                                 &nSrcXOff, &nSrcYOff,
+                                 &nSrcXSize, &nSrcYSize,
+                                 &nSrcXExtraSize, &nSrcYExtraSize, NULL );
+        if( hWarpMutex != NULL )
+            CPLReleaseMutex( hWarpMutex );
         if( eErr != CE_None )
             return eErr;
     }
@@ -1526,7 +1713,7 @@ CPLErr GDALWarpOperation::WarpRegionToBuffer(
 /* -------------------------------------------------------------------- */
 /*      Prepare a WarpKernel object to match this operation.            */
 /* -------------------------------------------------------------------- */
-    GDALWarpKernel   oWK;
+    GDALWarpKernel oWK;
 
     oWK.eResample = psOptions->eResampleAlg;
     oWK.nBands = psOptions->nBandCount;
@@ -1558,9 +1745,10 @@ CPLErr GDALWarpOperation::WarpRegionToBuffer(
     oWK.nSrcXExtraSize = nSrcXExtraSize;
     oWK.nSrcYExtraSize = nSrcYExtraSize;
 
-    if (nSrcXSize != 0 && nSrcYSize != 0 &&
+    if( nSrcXSize != 0 && nSrcYSize != 0 &&
         (nSrcXSize > INT_MAX / nSrcYSize ||
-         nSrcXSize * nSrcYSize > INT_MAX / (nWordSize * psOptions->nBandCount) - WARP_EXTRA_ELTS))
+         nSrcXSize * nSrcYSize >
+         INT_MAX / (nWordSize * psOptions->nBandCount) - WARP_EXTRA_ELTS) )
     {
         CPLError( CE_Failure, CPLE_AppDefined,
                   "Integer overflow : nSrcXSize=%d, nSrcYSize=%d",
@@ -1568,28 +1756,47 @@ CPLErr GDALWarpOperation::WarpRegionToBuffer(
         return CE_Failure;
     }
 
-    oWK.papabySrcImage = (GByte **)
-        CPLCalloc(sizeof(GByte*),psOptions->nBandCount);
-    oWK.papabySrcImage[0] = (GByte *)
-        VSI_MALLOC_VERBOSE( nWordSize * (nSrcXSize * nSrcYSize + WARP_EXTRA_ELTS) * psOptions->nBandCount );
+    oWK.papabySrcImage = static_cast<GByte **>(
+        CPLCalloc(sizeof(GByte*), psOptions->nBandCount));
+    oWK.papabySrcImage[0] = static_cast<GByte *>(
+        VSI_MALLOC_VERBOSE(nWordSize * (nSrcXSize * nSrcYSize + WARP_EXTRA_ELTS)
+                           * psOptions->nBandCount));
 
-    if( nSrcXSize != 0 && nSrcYSize != 0 && oWK.papabySrcImage[0] == NULL )
-    {
-        eErr = CE_Failure;
-    }
+    CPLErr eErr =
+        nSrcXSize != 0 && nSrcYSize != 0 && oWK.papabySrcImage[0] == NULL
+        ? CE_Failure
+        : CE_None;
 
-    for( i = 0; i < psOptions->nBandCount && eErr == CE_None; i++ )
+
+    for( int i = 0; i < psOptions->nBandCount && eErr == CE_None; i++ )
         oWK.papabySrcImage[i] = ((GByte *) oWK.papabySrcImage[0])
             + nWordSize * (nSrcXSize * nSrcYSize + WARP_EXTRA_ELTS) * i;
 
     if( eErr == CE_None && nSrcXSize > 0 && nSrcYSize > 0 )
-        eErr =
-            GDALDatasetRasterIO( psOptions->hSrcDS, GF_Read,
-                                 nSrcXOff, nSrcYOff, nSrcXSize, nSrcYSize,
-                                 oWK.papabySrcImage[0], nSrcXSize, nSrcYSize,
-                                 psOptions->eWorkingDataType,
-                                 psOptions->nBandCount, psOptions->panSrcBands,
-                                 0, 0, nWordSize * (nSrcXSize * nSrcYSize + WARP_EXTRA_ELTS) );
+    {
+        GDALDataset* poSrcDS =
+            reinterpret_cast<GDALDataset*>(psOptions->hSrcDS);
+        if( psOptions->nBandCount == 1 )
+        {
+            // Particular case to simplify the stack a bit.
+            eErr = poSrcDS->GetRasterBand(psOptions->panDstBands[0])->RasterIO(
+                                  GF_Read,
+                                  nSrcXOff, nSrcYOff, nSrcXSize, nSrcYSize,
+                                  oWK.papabySrcImage[0], nSrcXSize, nSrcYSize,
+                                  psOptions->eWorkingDataType,
+                                  0, 0, NULL );
+        }
+        else
+        {
+            eErr = poSrcDS->RasterIO( GF_Read,
+                  nSrcXOff, nSrcYOff, nSrcXSize, nSrcYSize,
+                  oWK.papabySrcImage[0], nSrcXSize, nSrcYSize,
+                  psOptions->eWorkingDataType,
+                  psOptions->nBandCount, psOptions->panSrcBands,
+                  0, 0, nWordSize * (nSrcXSize * nSrcYSize + WARP_EXTRA_ELTS),
+                  NULL );
+        }
+    }
 
     ReportTiming( "Input buffer read" );
 
@@ -1601,13 +1808,14 @@ CPLErr GDALWarpOperation::WarpRegionToBuffer(
     oWK.nDstXSize = nDstXSize;
     oWK.nDstYSize = nDstYSize;
 
-    oWK.papabyDstImage = (GByte **)
-        CPLCalloc(sizeof(GByte*),psOptions->nBandCount);
+    oWK.papabyDstImage = reinterpret_cast<GByte **>(
+        CPLCalloc(sizeof(GByte*), psOptions->nBandCount));
 
-    for( i = 0; i < psOptions->nBandCount && eErr == CE_None; i++ )
+    int i1 = 0;  // Used after for.
+    for( ; i1 < psOptions->nBandCount && eErr == CE_None; i1++ )
     {
-        oWK.papabyDstImage[i] = ((GByte *) pDataBuf)
-            + i * nDstXSize * nDstYSize * nWordSize;
+        oWK.papabyDstImage[i1] = static_cast<GByte *>(pDataBuf)
+            + i1 * nDstXSize * nDstYSize * nWordSize;
     }
 
 /* -------------------------------------------------------------------- */
@@ -1615,7 +1823,7 @@ CPLErr GDALWarpOperation::WarpRegionToBuffer(
 /*      validity and density masks here.                                */
 /* -------------------------------------------------------------------- */
 
-    /* TODO */
+    // TODO
 
 /* -------------------------------------------------------------------- */
 /*      Generate a source density mask if we have a source alpha band   */
@@ -1641,7 +1849,11 @@ CPLErr GDALWarpOperation::WarpRegionToBuffer(
                                         &bOutAllOpaque );
             if( bOutAllOpaque )
             {
-                //CPLDebug("WARP", "No need for a source density mask as all values are opaque");
+#if DEBUG_VERBOSE
+                CPLDebug("WARP",
+                         "No need for a source density mask as all values "
+                         "are opaque");
+#endif
                 CPLFree(oWK.pafUnifiedSrcDensity);
                 oWK.pafUnifiedSrcDensity = NULL;
             }
@@ -1660,7 +1872,7 @@ CPLErr GDALWarpOperation::WarpRegionToBuffer(
 
             if( eErr == CE_None )
             {
-                for( int j = oWK.nSrcXSize * oWK.nSrcYSize - 1; j >= 0; j-- )
+                for( int j = 0; j < oWK.nSrcXSize * oWK.nSrcYSize; j++ )
                     oWK.pafUnifiedSrcDensity[j] = 1.0;
             }
         }
@@ -1684,7 +1896,7 @@ CPLErr GDALWarpOperation::WarpRegionToBuffer(
     {
         CPLAssert( oWK.pafDstDensity == NULL );
 
-        eErr = CreateKernelMask( &oWK, i, "DstDensity" );
+        eErr = CreateKernelMask( &oWK, i1, "DstDensity" );
 
         if( eErr == CE_None )
             eErr =
@@ -1705,16 +1917,18 @@ CPLErr GDALWarpOperation::WarpRegionToBuffer(
     {
         CPLAssert( oWK.papanBandSrcValid == NULL );
 
-        int bAllBandsAllValid = TRUE;
-        for( i = 0; i < psOptions->nBandCount && eErr == CE_None; i++ )
+        bool bAllBandsAllValid = true;
+        int i2 = 0;  // Used after for.
+        for( ; i2 < psOptions->nBandCount && eErr == CE_None; i2++ )
         {
-            eErr = CreateKernelMask( &oWK, i, "BandSrcValid" );
+            eErr = CreateKernelMask( &oWK, i2, "BandSrcValid" );
             if( eErr == CE_None )
             {
-                double adfNoData[2];
-
-                adfNoData[0] = psOptions->padfSrcNoDataReal[i];
-                adfNoData[1] = psOptions->padfSrcNoDataImag[i];
+                double adfNoData[2] =
+                {
+                    psOptions->padfSrcNoDataReal[i2],
+                    psOptions->padfSrcNoDataImag[i2]
+                };
 
                 int bAllValid = FALSE;
                 eErr =
@@ -1722,21 +1936,25 @@ CPLErr GDALWarpOperation::WarpRegionToBuffer(
                                           psOptions->eWorkingDataType,
                                           oWK.nSrcXOff, oWK.nSrcYOff,
                                           oWK.nSrcXSize, oWK.nSrcYSize,
-                                          &(oWK.papabySrcImage[i]),
-                                          FALSE, oWK.papanBandSrcValid[i],
+                                          &(oWK.papabySrcImage[i2]),
+                                          FALSE, oWK.papanBandSrcValid[i2],
                                           &bAllValid );
                 if( !bAllValid )
-                    bAllBandsAllValid = FALSE;
+                    bAllBandsAllValid = false;
             }
         }
 
-        /* Optimization: if all pixels in all bands are valid, */
-        /* we don't need a mask */
+        // Optimization: if all pixels in all bands are valid,
+        // we don't need a mask.
         if( bAllBandsAllValid )
         {
-            //CPLDebug("WARP", "No need for a source nodata mask as all values are valid");
-            for( i = 0; i < oWK.nBands; i++ )
-                CPLFree( oWK.papanBandSrcValid[i] );
+#if DEBUG_VERBOSE
+            CPLDebug(
+                "WARP",
+                "No need for a source nodata mask as all values are valid");
+#endif
+            for( int k = 0; k < oWK.nBands; k++ )
+                CPLFree( oWK.papanBandSrcValid[k] );
             CPLFree( oWK.papanBandSrcValid );
             oWK.papanBandSrcValid = NULL;
         }
@@ -1748,26 +1966,25 @@ CPLErr GDALWarpOperation::WarpRegionToBuffer(
 /*      respective nodata values.                                       */
 /* -------------------------------------------------------------------- */
         if( oWK.papanBandSrcValid != NULL &&
-            CSLFetchBoolean( psOptions->papszWarpOptions, "UNIFIED_SRC_NODATA",
-                             FALSE )
+            CPLFetchBool( psOptions->papszWarpOptions, "UNIFIED_SRC_NODATA",
+                          false )
             && eErr == CE_None )
         {
-            int nBytesInMask = (oWK.nSrcXSize * oWK.nSrcYSize + 31) / 8;
-            int iWord;
+            const int nBytesInMask = (oWK.nSrcXSize * oWK.nSrcYSize + 31) / 8;
 
-            eErr = CreateKernelMask( &oWK, i, "UnifiedSrcValid" );
+            eErr = CreateKernelMask( &oWK, i2, "UnifiedSrcValid" );
 
             if( eErr == CE_None )
             {
                 memset( oWK.panUnifiedSrcValid, 0, nBytesInMask );
 
-                for( i = 0; i < psOptions->nBandCount; i++ )
+                for( int k = 0; k < psOptions->nBandCount; k++ )
                 {
-                    for( iWord = nBytesInMask/4 - 1; iWord >= 0; iWord-- )
+                    for( int iWord = nBytesInMask/4 - 1; iWord >= 0; iWord-- )
                         oWK.panUnifiedSrcValid[iWord] |=
-                            oWK.papanBandSrcValid[i][iWord];
-                    CPLFree( oWK.papanBandSrcValid[i] );
-                    oWK.papanBandSrcValid[i] = NULL;
+                            oWK.papanBandSrcValid[k][iWord];
+                    CPLFree( oWK.papanBandSrcValid[k] );
+                    oWK.papanBandSrcValid[k] = NULL;
                 }
 
                 CPLFree( oWK.papanBandSrcValid );
@@ -1777,19 +1994,23 @@ CPLErr GDALWarpOperation::WarpRegionToBuffer(
     }
 
 /* -------------------------------------------------------------------- */
-/*      Generate a source validity mask if we have a source mask for     */
+/*      Generate a source validity mask if we have a source mask for    */
 /*      the whole input dataset (and didn't already treat it as         */
 /*      alpha band).                                                    */
 /* -------------------------------------------------------------------- */
-    GDALRasterBandH hSrcBand = NULL;
-    if( psOptions->nBandCount > 0 )
-        hSrcBand = GDALGetRasterBand(psOptions->hSrcDS,
-                                     psOptions->panSrcBands[0]);
+    GDALRasterBandH hSrcBand =
+        psOptions->nBandCount < 1
+        ? NULL
+        : GDALGetRasterBand(psOptions->hSrcDS, psOptions->panSrcBands[0]);
 
     if( eErr == CE_None
         && oWK.pafUnifiedSrcDensity == NULL
-        && (GDALGetMaskFlags(hSrcBand) & GMF_PER_DATASET) &&
-        nSrcXSize > 0 && nSrcYSize > 0 )
+        && oWK.panUnifiedSrcValid == NULL
+        && psOptions->nSrcAlphaBand <= 0
+        && (GDALGetMaskFlags(hSrcBand) & GMF_PER_DATASET)
+        // Need to double check for -nosrcalpha case.
+        && !(GDALGetMaskFlags(hSrcBand) & GMF_ALPHA)
+        && nSrcXSize > 0 && nSrcYSize > 0 )
 
     {
         eErr = CreateKernelMask( &oWK, 0, "UnifiedSrcValid" );
@@ -1818,27 +2039,25 @@ CPLErr GDALWarpOperation::WarpRegionToBuffer(
     {
         CPLAssert( oWK.panDstValid == NULL );
 
-        GUInt32 *panBandMask = NULL;
-        int     nMaskWords = (oWK.nDstXSize * oWK.nDstYSize + 31)/32;
+        const int nMaskWords = (oWK.nDstXSize * oWK.nDstYSize + 31)/32;
 
         eErr = CreateKernelMask( &oWK, 0, "DstValid" );
-        if( eErr == CE_None )
-        {
-            panBandMask = (GUInt32 *) CPLMalloc(nMaskWords*4);
-        }
+        GUInt32 *panBandMask =
+            eErr == CE_None
+            ? static_cast<GUInt32 *>(CPLMalloc(nMaskWords * 4))
+            : NULL;
 
         if( eErr == CE_None && panBandMask != NULL )
         {
-            int iBand, iWord;
-
-            for( iBand = 0; iBand < psOptions->nBandCount; iBand++ )
+            for( int iBand = 0; iBand < psOptions->nBandCount; iBand++ )
             {
-                double adfNoData[2];
-
                 memset( panBandMask, 0xff, nMaskWords * 4 );
 
-                adfNoData[0] = psOptions->padfDstNoDataReal[iBand];
-                adfNoData[1] = psOptions->padfDstNoDataImag[iBand];
+                double adfNoData[2] =
+                {
+                    psOptions->padfDstNoDataReal[iBand],
+                    psOptions->padfDstNoDataImag[iBand]
+                };
 
                 int bAllValid = FALSE;
                 eErr =
@@ -1850,17 +2069,21 @@ CPLErr GDALWarpOperation::WarpRegionToBuffer(
                                           FALSE, panBandMask,
                                           &bAllValid );
 
-                /* Optimization: if there's a single band and all pixels are */
-                /* valid then we don't need a mask */
+                // Optimization: if there's a single band and all pixels are
+                // valid then we don't need a mask.
                 if( bAllValid && psOptions->nBandCount == 1 )
                 {
-                    //CPLDebug("WARP", "No need for a destination nodata mask as all values are valid");
+#if DEBUG_VERBOSE
+                    CPLDebug("WARP",
+                             "No need for a destination nodata mask as "
+                             "all values are valid");
+#endif
                     CPLFree(oWK.panDstValid);
                     oWK.panDstValid = NULL;
                     break;
                 }
 
-                for( iWord = nMaskWords - 1; iWord >= 0; iWord-- )
+                for( int iWord = nMaskWords - 1; iWord >= 0; iWord-- )
                     oWK.panDstValid[iWord] |= panBandMask[iWord];
             }
             CPLFree( panBandMask );
@@ -1886,7 +2109,7 @@ CPLErr GDALWarpOperation::WarpRegionToBuffer(
 /* -------------------------------------------------------------------- */
     if( eErr == CE_None && psOptions->pfnPreWarpChunkProcessor != NULL )
         eErr = psOptions->pfnPreWarpChunkProcessor(
-            (void *) &oWK, psOptions->pPreWarpProcessorArg );
+            &oWK, psOptions->pPreWarpProcessorArg );
 
 /* -------------------------------------------------------------------- */
 /*      Perform the warp.                                               */
@@ -1902,7 +2125,7 @@ CPLErr GDALWarpOperation::WarpRegionToBuffer(
 /* -------------------------------------------------------------------- */
     if( eErr == CE_None && psOptions->pfnPostWarpChunkProcessor != NULL )
         eErr = psOptions->pfnPostWarpChunkProcessor(
-            (void *) &oWK, psOptions->pPostWarpProcessorArg );
+            &oWK, psOptions->pPostWarpProcessorArg );
 
 /* -------------------------------------------------------------------- */
 /*      Release Warp Mutex, and acquire io mutex.                       */
@@ -1942,7 +2165,7 @@ CPLErr GDALWarpOperation::WarpRegionToBuffer(
 
     if( oWK.papanBandSrcValid != NULL )
     {
-        for( i = 0; i < oWK.nBands; i++ )
+        for( int i = 0; i < oWK.nBands; i++ )
             CPLFree( oWK.papanBandSrcValid[i] );
         CPLFree( oWK.papanBandSrcValid );
     }
@@ -1970,7 +2193,7 @@ CPLErr GDALWarpRegionToBuffer( GDALWarpOperationH hOperation,
 {
     VALIDATE_POINTER1( hOperation, "GDALWarpRegionToBuffer", CE_Failure );
 
-    return ( (GDALWarpOperation *)hOperation )->
+    return reinterpret_cast<GDALWarpOperation *>(hOperation )->
         WarpRegionToBuffer( nDstXOff, nDstYOff, nDstXSize, nDstYSize,
                             pDataBuf, eBufDataType,
                             nSrcXOff, nSrcYOff, nSrcXSize, nSrcYSize );
@@ -1989,65 +2212,72 @@ CPLErr GDALWarpOperation::CreateKernelMask( GDALWarpKernel *poKernel,
                                             int iBand, const char *pszType )
 
 {
-    void **ppMask;
-    int  nXSize, nYSize, nBitsPerPixel, nDefault;
+    void **ppMask = NULL;
+    int nXSize = 0;
+    int nYSize = 0;
+    int nBitsPerPixel = 0;
+    int nDefault = 0;
     int  nExtraElts = 0;
+    bool bDoMemset = true;
 
 /* -------------------------------------------------------------------- */
 /*      Get particulars of mask to be updated.                          */
 /* -------------------------------------------------------------------- */
-    if( EQUAL(pszType,"BandSrcValid") )
+    if( EQUAL(pszType, "BandSrcValid") )
     {
         if( poKernel->papanBandSrcValid == NULL )
-            poKernel->papanBandSrcValid = (GUInt32 **)
-                CPLCalloc( sizeof(void*),poKernel->nBands);
+            poKernel->papanBandSrcValid = static_cast<GUInt32 **>(
+                CPLCalloc(sizeof(void*), poKernel->nBands));
 
-        ppMask = (void **) &(poKernel->papanBandSrcValid[iBand]);
+        ppMask =
+            reinterpret_cast<void **>(&(poKernel->papanBandSrcValid[iBand]));
         nExtraElts = WARP_EXTRA_ELTS;
         nXSize = poKernel->nSrcXSize;
         nYSize = poKernel->nSrcYSize;
         nBitsPerPixel = 1;
         nDefault = 0xff;
     }
-    else if( EQUAL(pszType,"UnifiedSrcValid") )
+    else if( EQUAL(pszType, "UnifiedSrcValid") )
     {
-        ppMask = (void **) &(poKernel->panUnifiedSrcValid);
+        ppMask = reinterpret_cast<void **>(&(poKernel->panUnifiedSrcValid));
         nExtraElts = WARP_EXTRA_ELTS;
         nXSize = poKernel->nSrcXSize;
         nYSize = poKernel->nSrcYSize;
         nBitsPerPixel = 1;
         nDefault = 0xff;
     }
-    else if( EQUAL(pszType,"UnifiedSrcDensity") )
+    else if( EQUAL(pszType, "UnifiedSrcDensity") )
     {
-        ppMask = (void **) &(poKernel->pafUnifiedSrcDensity);
+        ppMask = reinterpret_cast<void **>(&(poKernel->pafUnifiedSrcDensity));
         nExtraElts = WARP_EXTRA_ELTS;
         nXSize = poKernel->nSrcXSize;
         nYSize = poKernel->nSrcYSize;
         nBitsPerPixel = 32;
         nDefault = 0;
+        bDoMemset = false;
     }
-    else if( EQUAL(pszType,"DstValid") )
+    else if( EQUAL(pszType, "DstValid") )
     {
-        ppMask = (void **) &(poKernel->panDstValid);
+        ppMask = reinterpret_cast<void **>(&(poKernel->panDstValid));
         nXSize = poKernel->nDstXSize;
         nYSize = poKernel->nDstYSize;
         nBitsPerPixel = 1;
         nDefault = 0;
     }
-    else if( EQUAL(pszType,"DstDensity") )
+    else if( EQUAL(pszType, "DstDensity") )
     {
-        ppMask = (void **) &(poKernel->pafDstDensity);
+        ppMask = reinterpret_cast<void **>(&(poKernel->pafDstDensity));
         nXSize = poKernel->nDstXSize;
         nYSize = poKernel->nDstYSize;
         nBitsPerPixel = 32;
         nDefault = 0;
+        bDoMemset = false;
     }
     else
     {
-        CPLError( CE_Failure, CPLE_AppDefined,
-                  "Internal error in CreateKernelMask(%s).",
-                  pszType );
+        CPLError(CE_Failure, CPLE_AppDefined,
+                 "Internal error in CreateKernelMask(%s).",
+                 pszType);
         return CE_Failure;
     }
 
@@ -2056,19 +2286,19 @@ CPLErr GDALWarpOperation::CreateKernelMask( GDALWarpKernel *poKernel,
 /* -------------------------------------------------------------------- */
     if( *ppMask == NULL )
     {
-        GIntBig nBytes;
-
-        if( nBitsPerPixel == 32 )
-            nBytes = (static_cast<GIntBig>(nXSize) * nYSize + nExtraElts) * 4;
-        else
-            nBytes = (static_cast<GIntBig>(nXSize) * nYSize + nExtraElts + 31) / 8;
+        const GIntBig nBytes =
+          nBitsPerPixel == 32
+          ? (static_cast<GIntBig>(nXSize) * nYSize + nExtraElts) * 4
+          : (static_cast<GIntBig>(nXSize) * nYSize + nExtraElts + 31) / 8;
 
         const size_t nByteSize_t = static_cast<size_t>(nBytes);
 #if SIZEOF_VOIDP != 8
         if( static_cast<GIntBig>(nByteSize_t) != nBytes )
         {
-            CPLError( CE_Failure, CPLE_OutOfMemory, "Cannot allocate " CPL_FRMT_GIB " bytes",
-                      nBytes );
+            CPLError(
+                CE_Failure, CPLE_OutOfMemory,
+                "Cannot allocate " CPL_FRMT_GIB " bytes",
+                nBytes );
             return CE_Failure;
         }
 #endif
@@ -2080,24 +2310,24 @@ CPLErr GDALWarpOperation::CreateKernelMask( GDALWarpKernel *poKernel,
             return CE_Failure;
         }
 
-        memset( *ppMask, nDefault, nByteSize_t );
+        if( bDoMemset )
+            memset( *ppMask, nDefault, nByteSize_t );
     }
 
     return CE_None;
 }
 
-
-
 /************************************************************************/
 /*                        ComputeSourceWindow()                         */
 /************************************************************************/
 
-CPLErr GDALWarpOperation::ComputeSourceWindow(int nDstXOff, int nDstYOff,
-                                              int nDstXSize, int nDstYSize,
-                                              int *pnSrcXOff, int *pnSrcYOff,
-                                              int *pnSrcXSize, int *pnSrcYSize,
-                                              int *pnSrcXExtraSize, int *pnSrcYExtraSize,
-                                              double *pdfSrcFillRatio)
+CPLErr GDALWarpOperation::ComputeSourceWindow(
+    int nDstXOff, int nDstYOff,
+    int nDstXSize, int nDstYSize,
+    int *pnSrcXOff, int *pnSrcYOff,
+    int *pnSrcXSize, int *pnSrcYSize,
+    int *pnSrcXExtraSize, int *pnSrcYExtraSize,
+    double *pdfSrcFillRatio )
 
 {
 /* -------------------------------------------------------------------- */
@@ -2107,12 +2337,14 @@ CPLErr GDALWarpOperation::ComputeSourceWindow(int nDstXOff, int nDstYOff,
 /*      polar stereographic around the pole.   Also figure out the      */
 /*      sampling rate.                                                  */
 /* -------------------------------------------------------------------- */
-    double dfStepSize;
-    int nSampleMax, nStepCount = 21, bUseGrid;
+    int nSampleMax = 0;
+    int nStepCount = 21;
     int *pabSuccess = NULL;
-    double *padfX, *padfY, *padfZ;
-    int    nSamplePoints;
-    double dfRatio;
+    double *padfX = NULL;
+    double *padfY = NULL;
+    double *padfZ = NULL;
+    int nSamplePoints = 0;
+    double dfRatio = 0.0;
 
     if( CSLFetchNameValue( psOptions->papszWarpOptions,
                            "SAMPLE_STEPS" ) != NULL )
@@ -2120,19 +2352,19 @@ CPLErr GDALWarpOperation::ComputeSourceWindow(int nDstXOff, int nDstYOff,
         nStepCount =
             atoi(CSLFetchNameValue( psOptions->papszWarpOptions,
                                     "SAMPLE_STEPS" ));
-        nStepCount = MAX(2,nStepCount);
+        nStepCount = std::max(2, nStepCount);
     }
 
-    dfStepSize = 1.0 / (nStepCount-1);
+    const double dfStepSize = 1.0 / (nStepCount - 1);
 
-    bUseGrid = CSLFetchBoolean( psOptions->papszWarpOptions,
-                                "SAMPLE_GRID", FALSE );
+    bool bUseGrid =
+        CPLFetchBool(psOptions->papszWarpOptions, "SAMPLE_GRID", false);
 
   TryAgainWithGrid:
     nSamplePoints = 0;
     if( bUseGrid )
     {
-        if (nStepCount > INT_MAX / nStepCount)
+        if( nStepCount > INT_MAX / nStepCount )
         {
             CPLError( CE_Failure, CPLE_AppDefined,
                       "Too many steps : %d", nStepCount);
@@ -2142,7 +2374,7 @@ CPLErr GDALWarpOperation::ComputeSourceWindow(int nDstXOff, int nDstYOff,
     }
     else
     {
-        if (nStepCount > INT_MAX / 4)
+        if( nStepCount > INT_MAX / 4 )
         {
             CPLError( CE_Failure, CPLE_AppDefined,
                       "Too many steps : %d", nStepCount);
@@ -2151,9 +2383,11 @@ CPLErr GDALWarpOperation::ComputeSourceWindow(int nDstXOff, int nDstYOff,
         nSampleMax = nStepCount * 4;
     }
 
-    pabSuccess = (int *) VSI_MALLOC2_VERBOSE(sizeof(int), nSampleMax);
-    padfX = (double *) VSI_MALLOC2_VERBOSE(sizeof(double) * 3, nSampleMax);
-    if (pabSuccess == NULL || padfX == NULL)
+    pabSuccess =
+        static_cast<int *>(VSI_MALLOC2_VERBOSE(sizeof(int), nSampleMax));
+    padfX = static_cast<double *>(VSI_MALLOC2_VERBOSE(sizeof(double) * 3,
+                                                      nSampleMax));
+    if( pabSuccess == NULL || padfX == NULL )
     {
         CPLFree( padfX );
         CPLFree( pabSuccess );
@@ -2167,9 +2401,7 @@ CPLErr GDALWarpOperation::ComputeSourceWindow(int nDstXOff, int nDstYOff,
 /* -------------------------------------------------------------------- */
     if( bUseGrid )
     {
-        double dfRatioY;
-
-        for( dfRatioY = 0.0;
+        for( double dfRatioY = 0.0;
              dfRatioY <= 1.0 + dfStepSize*0.5;
              dfRatioY += dfStepSize )
         {
@@ -2188,7 +2420,9 @@ CPLErr GDALWarpOperation::ComputeSourceWindow(int nDstXOff, int nDstYOff,
  /* -------------------------------------------------------------------- */
     else
     {
-        for( dfRatio = 0.0; dfRatio <= 1.0 + dfStepSize*0.5; dfRatio += dfStepSize )
+        for( dfRatio = 0.0;
+             dfRatio <= 1.0 + dfStepSize*0.5;
+             dfRatio += dfStepSize )
         {
             // Along top
             padfX[nSamplePoints]   = dfRatio * nDstXSize + nDstXOff;
@@ -2225,7 +2459,7 @@ CPLErr GDALWarpOperation::ComputeSourceWindow(int nDstXOff, int nDstYOff,
         CPLFree( pabSuccess );
 
         CPLError( CE_Failure, CPLE_AppDefined,
-                  "GDALWarperOperation::ComputeSourceWindow() failed because\n"
+                  "GDALWarperOperation::ComputeSourceWindow() failed because "
                   "the pfnTransformer failed." );
         return CE_Failure;
     }
@@ -2233,11 +2467,14 @@ CPLErr GDALWarpOperation::ComputeSourceWindow(int nDstXOff, int nDstYOff,
 /* -------------------------------------------------------------------- */
 /*      Collect the bounds, ignoring any failed points.                 */
 /* -------------------------------------------------------------------- */
-    double dfMinXOut=0.0, dfMinYOut=0.0, dfMaxXOut=0.0, dfMaxYOut=0.0;
-    int    bGotInitialPoint = FALSE;
-    int    nFailedCount = 0, i;
+    double dfMinXOut = 0.0;
+    double dfMinYOut = 0.0;
+    double dfMaxXOut = 0.0;
+    double dfMaxYOut = 0.0;
+    bool bGotInitialPoint = false;
+    int nFailedCount = 0;
 
-    for( i = 0; i < nSamplePoints; i++ )
+    for( int i = 0; i < nSamplePoints; i++ )
     {
         if( !pabSuccess[i] )
         {
@@ -2245,18 +2482,33 @@ CPLErr GDALWarpOperation::ComputeSourceWindow(int nDstXOff, int nDstYOff,
             continue;
         }
 
+        // If this happens this is likely the symptom of a bug somewhere.
+        if( CPLIsNan(padfX[i]) || CPLIsNan(padfY[i]) )
+        {
+            static bool bNanCoordFound = false;
+            if( !bNanCoordFound )
+            {
+                CPLDebug("WARP", "NaN coordinate found.");
+                bNanCoordFound = true;
+            }
+            nFailedCount++;
+            continue;
+        }
+
         if( !bGotInitialPoint )
         {
-            bGotInitialPoint = TRUE;
-            dfMinXOut = dfMaxXOut = padfX[i];
-            dfMinYOut = dfMaxYOut = padfY[i];
+            bGotInitialPoint = true;
+            dfMinXOut = padfX[i];
+            dfMaxXOut = padfX[i];
+            dfMinYOut = padfY[i];
+            dfMaxYOut = padfY[i];
         }
         else
         {
-            dfMinXOut = MIN(dfMinXOut,padfX[i]);
-            dfMinYOut = MIN(dfMinYOut,padfY[i]);
-            dfMaxXOut = MAX(dfMaxXOut,padfX[i]);
-            dfMaxYOut = MAX(dfMaxYOut,padfY[i]);
+            dfMinXOut = std::min(dfMinXOut, padfX[i]);
+            dfMinYOut = std::min(dfMinYOut, padfY[i]);
+            dfMaxXOut = std::max(dfMaxXOut, padfX[i]);
+            dfMaxYOut = std::max(dfMaxYOut, padfY[i]);
         }
     }
 
@@ -2270,7 +2522,7 @@ CPLErr GDALWarpOperation::ComputeSourceWindow(int nDstXOff, int nDstYOff,
 /* -------------------------------------------------------------------- */
     if( !bUseGrid && nFailedCount > 0 )
     {
-        bUseGrid = TRUE;
+        bUseGrid = true;
         goto TryAgainWithGrid;
     }
 
@@ -2281,7 +2533,7 @@ CPLErr GDALWarpOperation::ComputeSourceWindow(int nDstXOff, int nDstYOff,
     if( nFailedCount > nSamplePoints - 5 )
     {
         CPLError( CE_Failure, CPLE_AppDefined,
-                  "Too many points (%d out of %d) failed to transform,\n"
+                  "Too many points (%d out of %d) failed to transform, "
                   "unable to compute output bounds.",
                   nFailedCount, nSamplePoints );
         return CE_Failure;
@@ -2289,7 +2541,8 @@ CPLErr GDALWarpOperation::ComputeSourceWindow(int nDstXOff, int nDstYOff,
 
     if( nFailedCount > 0 )
         CPLDebug( "GDAL",
-                  "GDALWarpOperation::ComputeSourceWindow() %d out of %d points failed to transform.",
+                  "GDALWarpOperation::ComputeSourceWindow() %d out of %d "
+                  "points failed to transform.",
                   nFailedCount, nSamplePoints );
 
 /* -------------------------------------------------------------------- */
@@ -2312,7 +2565,7 @@ CPLErr GDALWarpOperation::ComputeSourceWindow(int nDstXOff, int nDstYOff,
         if( pnSrcYExtraSize )
             *pnSrcYExtraSize = 0;
         if( pdfSrcFillRatio )
-            *pdfSrcFillRatio = 0;
+            *pdfSrcFillRatio = 0.0;
         return CE_None;
     }
 
@@ -2325,14 +2578,16 @@ CPLErr GDALWarpOperation::ComputeSourceWindow(int nDstXOff, int nDstYOff,
 /* -------------------------------------------------------------------- */
     int nResWinSize = GWKGetFilterRadius(psOptions->eResampleAlg);
 
-    /* Take scaling into account */
-    double dfXScale = (double)nDstXSize / (dfMaxXOut - dfMinXOut);
-    double dfYScale = (double)nDstYSize / (dfMaxYOut - dfMinYOut);
-    int nXRadius = ( dfXScale < 1.0 ) ?
-        (int)ceil( nResWinSize / dfXScale ) :nResWinSize;
-    int nYRadius = ( dfYScale < 1.0 ) ?
-        (int)ceil( nResWinSize / dfYScale ) : nResWinSize;
-    nResWinSize = MAX(nXRadius, nYRadius);
+    // Take scaling into account.
+    const double dfXScale =
+        static_cast<double>(nDstXSize) / (dfMaxXOut - dfMinXOut);
+    const double dfYScale =
+        static_cast<double>(nDstYSize) / (dfMaxYOut - dfMinYOut);
+    const int nXRadius = dfXScale < 1.0 ?
+        static_cast<int>(ceil( nResWinSize / dfXScale )) : nResWinSize;
+    const int nYRadius = dfYScale < 1.0 ?
+        static_cast<int>(ceil( nResWinSize / dfYScale )) : nResWinSize;
+    nResWinSize = std::max(nXRadius, nYRadius);
 
 /* -------------------------------------------------------------------- */
 /*      Allow addition of extra sample pixels to source window to       */
@@ -2347,19 +2602,24 @@ CPLErr GDALWarpOperation::ComputeSourceWindow(int nDstXOff, int nDstYOff,
             CSLFetchNameValue( psOptions->papszWarpOptions, "SOURCE_EXTRA" ));
     }
     else if( nFailedCount > 0 )
+    {
         nResWinSize += 10;
+    }
 
 /* -------------------------------------------------------------------- */
 /*      return bounds.                                                  */
 /* -------------------------------------------------------------------- */
-    /*CPLDebug("WARP", "dst=(%d,%d,%d,%d) raw src=(minx=%.8g,miny=%.8g,maxx=%.8g,maxy=%.8g)",
-             nDstXOff, nDstYOff, nDstXSize, nDstYSize,
-             dfMinXOut, dfMinYOut, dfMaxXOut, dfMaxYOut);
-    */
-    *pnSrcXOff = MAX(0,(int) floor( dfMinXOut ) );
-    *pnSrcYOff = MAX(0,(int) floor( dfMinYOut ) );
-    *pnSrcXOff = MIN(*pnSrcXOff,nRasterXSize);
-    *pnSrcYOff = MIN(*pnSrcYOff,nRasterYSize);
+#if DEBUG_VERBOSE
+    CPLDebug(
+        "WARP",
+        "dst=(%d,%d,%d,%d) raw src=(minx=%.8g,miny=%.8g,maxx=%.8g,maxy=%.8g)",
+        nDstXOff, nDstYOff, nDstXSize, nDstYSize,
+        dfMinXOut, dfMinYOut, dfMaxXOut, dfMaxYOut);
+#endif
+    *pnSrcXOff = std::max(0, static_cast<int>(floor(dfMinXOut)));
+    *pnSrcYOff = std::max(0, static_cast<int>(floor(dfMinYOut)));
+    *pnSrcXOff = std::min(*pnSrcXOff, nRasterXSize);
+    *pnSrcYOff = std::min(*pnSrcYOff, nRasterYSize);
 
     double dfCeilMaxXOut = ceil(dfMaxXOut);
     if( dfCeilMaxXOut > INT_MAX )
@@ -2368,24 +2628,26 @@ CPLErr GDALWarpOperation::ComputeSourceWindow(int nDstXOff, int nDstYOff,
     if( dfCeilMaxYOut > INT_MAX )
         dfCeilMaxYOut = INT_MAX;
 
-    int nSrcXSizeRaw = MIN( nRasterXSize - *pnSrcXOff,
-                       ((int) dfCeilMaxXOut) - *pnSrcXOff );
-    int nSrcYSizeRaw = MIN( nRasterYSize - *pnSrcYOff,
-                       ((int) dfCeilMaxYOut) - *pnSrcYOff );
-    nSrcXSizeRaw = MAX(0,nSrcXSizeRaw);
-    nSrcYSizeRaw = MAX(0,nSrcYSizeRaw);
+    int nSrcXSizeRaw = std::min(nRasterXSize - *pnSrcXOff,
+                                static_cast<int>(dfCeilMaxXOut) - *pnSrcXOff);
+    int nSrcYSizeRaw = std::min(nRasterYSize - *pnSrcYOff,
+                                static_cast<int>(dfCeilMaxYOut) - *pnSrcYOff);
+    nSrcXSizeRaw = std::max(0, nSrcXSizeRaw);
+    nSrcYSizeRaw = std::max(0, nSrcYSizeRaw);
 
-    *pnSrcXOff = MAX(0,(int) floor( dfMinXOut ) - nResWinSize );
-    *pnSrcYOff = MAX(0,(int) floor( dfMinYOut ) - nResWinSize );
-    *pnSrcXOff = MIN(*pnSrcXOff,nRasterXSize);
-    *pnSrcYOff = MIN(*pnSrcYOff,nRasterYSize);
+    *pnSrcXOff = std::max(0, static_cast<int>(floor(dfMinXOut)) - nResWinSize);
+    *pnSrcYOff = std::max(0, static_cast<int>(floor(dfMinYOut)) - nResWinSize);
+    *pnSrcXOff = std::min(*pnSrcXOff, nRasterXSize);
+    *pnSrcYOff = std::min(*pnSrcYOff, nRasterYSize);
 
-    *pnSrcXSize = MIN( nRasterXSize - *pnSrcXOff,
-                       ((int) dfCeilMaxXOut) - *pnSrcXOff + nResWinSize );
-    *pnSrcYSize = MIN( nRasterYSize - *pnSrcYOff,
-                       ((int) dfCeilMaxYOut) - *pnSrcYOff + nResWinSize );
-    *pnSrcXSize = MAX(0,*pnSrcXSize);
-    *pnSrcYSize = MAX(0,*pnSrcYSize);
+    *pnSrcXSize =
+        std::min(nRasterXSize - *pnSrcXOff,
+                 static_cast<int>(dfCeilMaxXOut) - *pnSrcXOff + nResWinSize);
+    *pnSrcYSize =
+        std::min(nRasterYSize - *pnSrcYOff,
+                 static_cast<int>(dfCeilMaxYOut) - *pnSrcYOff + nResWinSize);
+    *pnSrcXSize = std::max(0, *pnSrcXSize);
+    *pnSrcYSize = std::max(0, *pnSrcYSize);
 
     if( pnSrcXExtraSize )
         *pnSrcXExtraSize = *pnSrcXSize - nSrcXSizeRaw;
@@ -2393,10 +2655,13 @@ CPLErr GDALWarpOperation::ComputeSourceWindow(int nDstXOff, int nDstYOff,
         *pnSrcYExtraSize = *pnSrcYSize - nSrcYSizeRaw;
 
     // Computed the ratio of the clamped source raster window size over
-    // the unclamped source raster window size
+    // the unclamped source raster window size.
     if( pdfSrcFillRatio )
-        *pdfSrcFillRatio = *pnSrcXSize * *pnSrcYSize / MAX(1.0,
-        (dfMaxXOut - dfMinXOut + 2 * nResWinSize) * (dfMaxYOut - dfMinYOut + 2 * nResWinSize));
+        *pdfSrcFillRatio =
+            *pnSrcXSize * *pnSrcYSize /
+            std::max(1.0,
+                     (dfMaxXOut - dfMinXOut + 2 * nResWinSize) *
+                     (dfMaxYOut - dfMinYOut + 2 * nResWinSize));
 
     return CE_None;
 }
@@ -2411,12 +2676,12 @@ void GDALWarpOperation::ReportTiming( const char * pszMessage )
     if( !bReportTimings )
         return;
 
-    unsigned long nNewTime = VSITime(NULL);
+    const unsigned long nNewTime = VSITime(NULL);
 
     if( pszMessage != NULL )
     {
         CPLDebug( "WARP_TIMING", "%s: %lds",
-                  pszMessage, (long)(nNewTime - nLastTimeReported) );
+                  pszMessage, static_cast<long>(nNewTime - nLastTimeReported) );
     }
 
     nLastTimeReported = nNewTime;

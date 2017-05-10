@@ -47,6 +47,7 @@ if(ENABLE_JPEG)
     add_definitions(-DENABLE_LIBJPEG_NO_RETURN)
 
     set(LIB_HHEADERS
+        jpgdataset.h
     )
 
     set(LIB_HHEADERS_PRIV
@@ -61,7 +62,7 @@ if(ENABLE_JPEG)
     if(DEPENDENCY_LIB)
         add_dependencies(${TARGET_NAME} ${DEPENDENCY_LIB})
     endif()
-    
+
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
 else()

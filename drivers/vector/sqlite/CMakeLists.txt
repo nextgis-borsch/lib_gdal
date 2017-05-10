@@ -51,6 +51,8 @@ if(ENABLE_SQLITE_GPKG)
     #    add_definitions(-DHAVE_PCRE)
     #endif()
 
+    # TODO: Add rasterlite2 support.
+
     if(DEFINED SQLITE_HAS_COLUMN_METADATA)
         add_definitions(-DSQLITE_HAS_COLUMN_METADATA)
     endif()
@@ -67,6 +69,8 @@ if(ENABLE_SQLITE_GPKG)
         ogrsqliteexecutesql.h
         ogrsqliteregexp.h
         ogrsqlitesqlfunctions.h
+        rasterlite2_header.h
+        ogrsqliteutility.h
     )
 
     set(LIB_CSOURCES
@@ -81,9 +85,8 @@ if(ENABLE_SQLITE_GPKG)
         ogrsqlitevirtualogr.cpp
         ogrsqliteexecutesql.cpp
         ogrsqliteapiroutines.c
-
-        #ogrsqliteregexp.cpp
-        #ogrsqlitesqlfunctions.cpp
+        rasterlite2.cpp
+        ogrsqliteutility.cpp
     )
 
     # TODO: implement test_load_virtual_ogr target if needed.
@@ -92,7 +95,7 @@ if(ENABLE_SQLITE_GPKG)
     if(DEPENDENCY_LIB)
         add_dependencies(${TARGET_NAME} ${DEPENDENCY_LIB})
     endif()
-    
+
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
 else()

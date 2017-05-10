@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrkmldriver.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  KML Driver
  * Purpose:  Implementation of OGRKMLDriver class.
@@ -29,9 +28,12 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#include "ogr_kml.h"
+
 #include "cpl_conv.h"
 #include "cpl_error.h"
-#include "ogr_kml.h"
+
+CPL_CVSID("$Id: ogrkmldriver.cpp 37108 2017-01-12 10:16:27Z rouault $");
 
 /************************************************************************/
 /*                         OGRKMLDriverIdentify()                       */
@@ -43,7 +45,9 @@ static int OGRKMLDriverIdentify( GDALOpenInfo* poOpenInfo )
     if( poOpenInfo->fpL == NULL )
         return FALSE;
 
-    return( strstr((const char*)poOpenInfo->pabyHeader, "<kml") != NULL );
+    return
+        strstr(reinterpret_cast<char *>(poOpenInfo->pabyHeader),
+               "<kml") != NULL;
 }
 
 /************************************************************************/
@@ -64,14 +68,16 @@ static GDALDataset *OGRKMLDriverOpen( GDALOpenInfo* poOpenInfo )
 
     if( poDS->Open( poOpenInfo->pszFilename, TRUE ) )
     {
-        /*if( poDS->GetLayerCount() == 0 )
+#ifdef DEBUG_VERBOSE
+        if( poDS->GetLayerCount() == 0 )
         {
             CPLError( CE_Failure, CPLE_OpenFailed,
                 "No layers in KML file: %s.", pszName );
 
             delete poDS;
             poDS = NULL;
-        }*/
+        }
+#endif
     }
     else
     {
@@ -130,6 +136,7 @@ void RegisterOGRKML()
 
     poDriver->SetMetadataItem( GDAL_DMD_CREATIONOPTIONLIST,
 "<CreationOptionList>"
+"  <Option name='DOCUMENT_ID' type='string' description='Id of the root &lt;Document&gt; node' default='root_doc'/>'"
 "  <Option name='GPX_USE_EXTENSIONS' type='boolean' description='Whether to write non-GPX attributes in an <extensions> tag' default='NO'/>"
 "  <Option name='NameField' type='string' description='Field to use to fill the KML <name> element' default='Name'/>"
 "  <Option name='DescriptionField' type='string' description='Field to use to fill the KML <description> element' default='Description'/>"

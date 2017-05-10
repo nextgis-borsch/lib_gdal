@@ -4,7 +4,7 @@
 # Author:   Dmitry Baryshnikov, polimax@mail.ru
 ################################################################################
 # Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
-# Copyright (C) 2012,2013,2014 Dmitry Baryshnikov
+# Copyright (C) 2012-2014 Dmitry Baryshnikov
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -50,5 +50,5 @@ if(ENABLE_SAGA)
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
 else()
-    warning_msg("Skip saga")  
-endif() 
+    warning_msg("Skip saga")
+endif()

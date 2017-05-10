@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  DXF and DWG Translators
  * Purpose:  Implements various generic services shared between autocad related
@@ -31,7 +30,7 @@
 #include "ogr_autocad_services.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrdwglayer.cpp 22008 2011-03-22 19:45:20Z warmerdam $");
+CPL_CVSID("$Id: ogr_autocad_services.cpp 36981 2016-12-20 19:46:41Z rouault $");
 
 /************************************************************************/
 /*                           ACTextUnescape()                           */
@@ -77,7 +76,7 @@ CPLString ACTextUnescape( const char *pszRawInput, const char *pszEncoding )
                  && pszInput[2] == '+' )
         {
             CPLString osHex;
-            int iChar;
+            unsigned int iChar = 0;
 
             osHex.assign( pszInput+3, 4 );
             sscanf( osHex.c_str(), "%x", &iChar );
@@ -459,7 +458,7 @@ void ACAdjustText( double dfAngle, double dfScale, OGRFeature *poFeature )
     }
     else
     {
-        CPLAssert( osOldStyle[osOldStyle.size()-1] == ')' );
+        CPLAssert( osOldStyle.back() == ')' );
         osPreAngle.assign( osOldStyle, 0, osOldStyle.size() - 1 );
         osPostAngle = ")";
     }
@@ -497,7 +496,7 @@ void ACAdjustText( double dfAngle, double dfScale, OGRFeature *poFeature )
     }
     else
     {
-        CPLAssert( osOldStyle[osOldStyle.size()-1] == ')' );
+        CPLAssert( osOldStyle.back() == ')' );
         osPreScale.assign( osOldStyle, 0, osOldStyle.size() - 1 );
         osPostScale = ")";
     }

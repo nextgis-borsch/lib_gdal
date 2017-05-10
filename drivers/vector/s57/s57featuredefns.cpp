@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: s57featuredefns.cpp 33271 2016-01-30 16:01:55Z goatbar $
  *
  * Project:  S-57 Translator
  * Purpose:  Implements methods to create OGRFeatureDefns for various
@@ -33,8 +32,7 @@
 #include "ogr_api.h"
 #include "s57.h"
 
-CPL_CVSID("$Id: s57featuredefns.cpp 33271 2016-01-30 16:01:55Z goatbar $");
-
+CPL_CVSID("$Id: s57featuredefns.cpp 38140 2017-04-26 08:41:23Z rouault $");
 
 /************************************************************************/
 /*                     S57GenerateGeomFeatureDefn()                     */
@@ -269,6 +267,15 @@ S57GenerateVectorPrimitiveFeatureDefn( int nRCNM,
     poFDefn->AddFieldDefn( &oField );
 
 /* -------------------------------------------------------------------- */
+/*      Geometric primitive attributes                                  */
+/* -------------------------------------------------------------------- */
+    oField.Set( "POSACC", OFTReal, 10, 2 );
+    poFDefn->AddFieldDefn( &oField );
+
+    oField.Set( "QUAPOS", OFTInteger, 2, 0 );
+    poFDefn->AddFieldDefn( &oField );
+
+/* -------------------------------------------------------------------- */
 /*      For lines we want to capture the point links for the first      */
 /*      and last nodes.                                                 */
 /* -------------------------------------------------------------------- */
@@ -424,7 +431,8 @@ OGRFeatureDefn *S57GenerateObjectClassDefn(
 /* -------------------------------------------------------------------- */
 /*      Do we need to add DEPTH attributes to soundings?                */
 /* -------------------------------------------------------------------- */
-    if( EQUAL(poClassContentExplorer->GetAcronym(), "SOUNDG")
+    const char* pszClassAcronym = poClassContentExplorer->GetAcronym();
+    if( pszClassAcronym != NULL && EQUAL(pszClassAcronym, "SOUNDG")
         && (nOptionFlags & S57M_ADD_SOUNDG_DEPTH) )
     {
         OGRFieldDefn oField( "DEPTH", OFTReal );

@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: reader_rdk1.cpp 31812 2015-11-28 22:37:37Z goatbar $
  *
  * Project:  GDAL Core
  * Purpose:  Read metadata from Resurs-DK1 imagery.
@@ -28,19 +27,28 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#include "cpl_port.h"
 #include "reader_rdk1.h"
 
-CPL_CVSID("$Id: reader_rdk1.cpp 31812 2015-11-28 22:37:37Z goatbar $");
+#include <cstdio>
+
+#include "cpl_error.h"
+#include "cpl_minixml.h"
+#include "cpl_string.h"
+#include "gdal_priv.h"
+
+CPL_CVSID("$Id: reader_rdk1.cpp 36528 2016-11-27 16:35:01Z goatbar $");
 
 /**
  * GDALMDReaderResursDK1()
  */
 GDALMDReaderResursDK1::GDALMDReaderResursDK1(const char *pszPath,
-        char **papszSiblingFiles) : GDALMDReaderBase(pszPath, papszSiblingFiles)
+                                             char **papszSiblingFiles) :
+    GDALMDReaderBase(pszPath, papszSiblingFiles),
+    m_osXMLSourceFilename( GDALFindAssociatedFile( pszPath, "XML",
+                                                    papszSiblingFiles, 0 ) )
 {
-    m_osXMLSourceFilename = GDALFindAssociatedFile( pszPath, "XML",
-                                                         papszSiblingFiles, 0 );
-    if( m_osXMLSourceFilename.size() )
+    if( !m_osXMLSourceFilename.empty() )
         CPLDebug( "MDReaderResursDK1", "XML Filename: %s",
                   m_osXMLSourceFilename.c_str() );
 }
@@ -117,7 +125,6 @@ void GDALMDReaderResursDK1::LoadMetadata()
         m_papszIMAGERYMD = CSLAddNameValue(m_papszIMAGERYMD, MD_NAME_SATELLITE,
                                            CPLStripQuotes(pszSatId));
     }
-
 
     const char* pszDate = CSLFetchNameValue(m_papszIMDMD,
                                             "MSP_ROOT.Normal.dSceneDate");

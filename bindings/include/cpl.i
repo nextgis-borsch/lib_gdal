@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl.i 33758 2016-03-21 09:06:22Z rouault $
+ * $Id: cpl.i 37544 2017-03-01 18:36:56Z rouault $
  *
  * Name:     cpl.i
  * Project:  GDAL Python Interface
@@ -71,15 +71,21 @@ typedef char retStringAndCPLFree;
 
 #ifdef SWIGPYTHON
 
+%nothread;
+
 %{
 void CPL_STDCALL PyCPLErrorHandler(CPLErr eErrClass, int err_no, const char* pszErrorMsg)
 {
     void* user_data = CPLGetErrorHandlerUserData();
     PyObject *psArgs;
 
+    SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+
     psArgs = Py_BuildValue("(iis)", eErrClass, err_no, pszErrorMsg );
     PyEval_CallObject( (PyObject*)user_data, psArgs);
     Py_XDECREF(psArgs);
+
+    SWIG_PYTHON_THREAD_END_BLOCK;
 }
 %}
 
@@ -99,10 +105,14 @@ void CPL_STDCALL PyCPLErrorHandler(CPLErr eErrClass, int err_no, const char* psz
   {
      void* user_data = CPLGetErrorHandlerUserData();
      if( user_data != NULL )
-       Py_XDECREF((PyObject*)user_data);
+     {
+         Py_XDECREF((PyObject*)user_data);
+     }
      CPLPopErrorHandler();
   }
 %}
+
+%thread;
 
 #else
 %inline %{
@@ -361,10 +371,25 @@ GByte *CPLHexToBinary( const char *pszHex, int *pnBytes );
 
 %apply Pointer NONNULL {const char * pszFilename};
 /* Added in GDAL 1.7.0 */
-#ifdef SWIGJAVA
+
+#if defined(SWIGPYTHON)
+
+%apply (GIntBig nLen, char *pBuf) {( GIntBig nBytes, const GByte *pabyData )};
+%inline {
+void wrapper_VSIFileFromMemBuffer( const char* utf8_path, GIntBig nBytes, const GByte *pabyData)
+{
+    const size_t nSize = static_cast<size_t>(nBytes);
+    GByte* pabyDataDup = (GByte*)VSIMalloc(nSize);
+    if (pabyDataDup == NULL)
+            return;
+    memcpy(pabyDataDup, pabyData, nSize);
+    VSIFCloseL(VSIFileFromMemBuffer(utf8_path, (GByte*) pabyDataDup, nSize, TRUE));
+}
+}
+%clear ( GIntBig nBytes, const GByte *pabyData );
+#else
+#if defined(SWIGJAVA)
 %apply (int nLen, unsigned char *pBuf ) {( int nBytes, const GByte *pabyData )};
-#elif defined(SWIGPYTHON)
-%apply (int nLen, char *pBuf) {( int nBytes, const GByte *pabyData )};
 #endif
 %inline {
 void wrapper_VSIFileFromMemBuffer( const char* utf8_path, int nBytes, const GByte *pabyData)
@@ -377,8 +402,9 @@ void wrapper_VSIFileFromMemBuffer( const char* utf8_path, int nBytes, const GByt
 }
 
 }
-#if defined(SWIGJAVA) || defined(SWIGPYTHON)
+#if defined(SWIGJAVA)
 %clear ( int nBytes, const GByte *pabyData );
+#endif
 #endif
 
 /* Added in GDAL 1.7.0 */
@@ -509,6 +535,14 @@ VSI_RETVAL VSIFCloseL( VSILFILE* fp );
 int     VSIFSeekL( VSILFILE* fp, GIntBig offset, int whence);
 GIntBig    VSIFTellL( VSILFILE* fp );
 int     VSIFTruncateL( VSILFILE* fp, GIntBig length );
+
+int     VSISupportsSparseFiles( const char* utf8_path );
+
+#define VSI_RANGE_STATUS_UNKNOWN    0
+#define VSI_RANGE_STATUS_DATA       1
+#define VSI_RANGE_STATUS_HOLE       2
+
+int     VSIFGetRangeStatusL( VSILFILE* fp, GIntBig offset, GIntBig length );
 #else
 VSI_RETVAL VSIFSeekL( VSILFILE* fp, long offset, int whence);
 long    VSIFTellL( VSILFILE* fp );
@@ -520,12 +554,12 @@ VSI_RETVAL VSIFTruncateL( VSILFILE* fp, long length );
 %inline {
 int wrapper_VSIFWriteL( int nLen, char *pBuf, int size, int memb, VSILFILE* fp)
 {
-    if (nLen < size * memb)
+    if (nLen < static_cast<GIntBig>(size) * memb)
     {
         CPLError(CE_Failure, CPLE_AppDefined, "Inconsistent buffer size with 'size' and 'memb' values");
         return 0;
     }
-    return VSIFWriteL(pBuf, size, memb, fp);
+    return static_cast<int>(VSIFWriteL(pBuf, size, memb, fp));
 }
 }
 #elif defined(SWIGPERL)

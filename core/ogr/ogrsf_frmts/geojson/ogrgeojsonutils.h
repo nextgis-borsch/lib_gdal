@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgeojsonutils.h 32181 2015-12-15 10:41:07Z rouault $
+ * $Id: ogrgeojsonutils.h 36477 2016-11-24 01:41:10Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private utilities within OGR OGRGeoJSON Driver.
@@ -30,7 +30,9 @@
 #define OGR_GEOJSONUTILS_H_INCLUDED
 
 #include <ogr_core.h>
-#include <json.h> // JSON-C
+
+#include "ogr_json_header.h"
+
 #include "cpl_vsi.h"
 #include "gdal_priv.h"
 
@@ -68,7 +70,7 @@ GeoJSONProtocolType GeoJSONGetProtocolType( const char* pszSource );
 /*                           GeoJSONIsObject                            */
 /************************************************************************/
 
-int GeoJSONIsObject( const char* pszText );
+bool GeoJSONIsObject( const char* pszText );
 
 /************************************************************************/
 /*                           GeoJSONPropertyToFieldType                 */
@@ -77,7 +79,6 @@ int GeoJSONIsObject( const char* pszText );
 OGRFieldType GeoJSONPropertyToFieldType( json_object* poObject,
                                          OGRFieldSubType& eSubType,
                                          bool bArrayAsString = false );
-
 
 /************************************************************************/
 /*                      GeoJSONStringPropertyToFieldType                */
@@ -91,4 +92,4 @@ OGRFieldType GeoJSONStringPropertyToFieldType( json_object* poObject );
 
 const char* OGRGeoJSONGetGeometryName( OGRGeometry const* poGeometry );
 
-#endif /* OGR_GEOJSONUTILS_H_INCLUDED */
+#endif  // OGR_GEOJSONUTILS_H_INCLUDED

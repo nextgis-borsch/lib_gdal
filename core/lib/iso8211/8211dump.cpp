@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: 8211dump.cpp 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  SDTS Translator
  * Purpose:  Dump 8211 file in verbose form - just a junk program.
@@ -33,8 +32,7 @@
 #include "cpl_vsi.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: 8211dump.cpp 33717 2016-03-14 06:29:14Z goatbar $");
-
+CPL_CVSID("$Id: 8211dump.cpp 35929 2016-10-25 16:09:00Z goatbar $");
 
 int main( int nArgc, char ** papszArgv )
 
@@ -92,7 +90,6 @@ int main( int nArgc, char ** papszArgv )
 /* -------------------------------------------------------------------- */
 /*      Dump header, and all records.                                   */
 /* -------------------------------------------------------------------- */
-    DDFRecord       *poRecord;
     if( bXML )
     {
         printf("<DDFModule");
@@ -115,7 +112,7 @@ int main( int nArgc, char ** papszArgv )
         for( int i = 0; i < nFieldDefnCount; i++ )
         {
             DDFFieldDefn* poFieldDefn = oModule.GetField(i);
-            const char* pszDataStructCode;
+            const char* pszDataStructCode = NULL;
             switch( poFieldDefn->GetDataStructCode() )
             {
                 case dsc_elementary:
@@ -139,7 +136,7 @@ int main( int nArgc, char ** papszArgv )
                     break;
             }
 
-            const char* pszDataTypeCode;
+            const char* pszDataTypeCode = NULL;
             switch( poFieldDefn->GetDataTypeCode() )
             {
                 case dtc_char_string:
@@ -197,8 +194,10 @@ int main( int nArgc, char ** papszArgv )
             printf("</DDFFieldDefn>\n");
         }
 
-        for( poRecord = oModule.ReadRecord();
-             poRecord != NULL; poRecord = oModule.ReadRecord() )
+        // DDFRecord       *poRecord;
+        for( DDFRecord *poRecord = oModule.ReadRecord();
+             poRecord != NULL;
+             poRecord = oModule.ReadRecord() )
         {
             printf("<DDFRecord");
             if( bAllDetails )
@@ -305,8 +304,9 @@ int main( int nArgc, char ** papszArgv )
         long nStartLoc;
 
         nStartLoc = VSIFTellL( oModule.GetFP() );
-        for( poRecord = oModule.ReadRecord();
-            poRecord != NULL; poRecord = oModule.ReadRecord() )
+        for( DDFRecord *poRecord = oModule.ReadRecord();
+             poRecord != NULL;
+             poRecord = oModule.ReadRecord() )
         {
             printf( "File Offset: %ld\n", nStartLoc );
             poRecord->Dump( stdout );
@@ -320,5 +320,4 @@ int main( int nArgc, char ** papszArgv )
 #ifdef DBMALLOC
     malloc_dump(1);
 #endif
-
 }

@@ -1,5 +1,4 @@
 /**********************************************************************
- * $Id: cpl_getexecpath.cpp 33646 2016-03-05 15:54:03Z goatbar $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Implement CPLGetExecPath().
@@ -27,10 +26,18 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#include "cpl_port.h"
 #include "cpl_conv.h"
+
+#if HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#include "cpl_multiproc.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: cpl_getexecpath.cpp 33646 2016-03-05 15:54:03Z goatbar $");
+
+CPL_CVSID("$Id: cpl_getexecpath.cpp 36862 2016-12-14 22:16:39Z goatbar $");
 
 #if defined(WIN32)
 
@@ -44,11 +51,10 @@ CPL_CVSID("$Id: cpl_getexecpath.cpp 33646 2016-03-05 15:54:03Z goatbar $");
 
 int CPLGetExecPath( char *pszPathBuf, int nMaxLength )
 {
-    if( CSLTestBoolean(
-            CPLGetConfigOption( "GDAL_FILENAME_IS_UTF8", "YES" ) ) )
+    if( CPLTestBool( CPLGetConfigOption( "GDAL_FILENAME_IS_UTF8", "YES" ) ) )
     {
-        wchar_t *pwszPathBuf = (wchar_t*)
-            CPLCalloc(nMaxLength+1,sizeof(wchar_t));
+        wchar_t *pwszPathBuf = static_cast<wchar_t *>(
+            CPLCalloc(nMaxLength + 1, sizeof(wchar_t)));
 
         if( GetModuleFileNameW( NULL, pwszPathBuf, nMaxLength ) == 0 )
         {
@@ -58,7 +64,7 @@ int CPLGetExecPath( char *pszPathBuf, int nMaxLength )
         else
         {
             char *pszDecoded =
-                CPLRecodeFromWChar(pwszPathBuf,CPL_ENC_UCS2,CPL_ENC_UTF8);
+                CPLRecodeFromWChar(pwszPathBuf, CPL_ENC_UCS2, CPL_ENC_UTF8);
 
             strncpy( pszPathBuf, pszDecoded, nMaxLength );
             CPLFree( pszDecoded );
@@ -123,7 +129,7 @@ int CPLGetExecPath( char *pszPathBuf, int nMaxLength )
 
 #ifndef HAVE_IMPLEMENTATION
 
-int CPLGetExecPath( CPL_UNUSED char *pszPathBuf, CPL_UNUSED int nMaxLength )
+int CPLGetExecPath( CPL_UNUSED char * pszPathBuf, CPL_UNUSED int nMaxLength )
 {
     return FALSE;
 }

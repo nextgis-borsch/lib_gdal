@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrfmedatasource.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  FMEObjects Translator
  * Purpose:  Implementations of the OGRFMEDataSource class.
@@ -39,7 +38,7 @@
 
 const char* kPROVIDERNAME = "FME_OLEDB";
 
-CPL_CVSID("$Id: ogrfmedatasource.cpp 33714 2016-03-13 05:42:13Z goatbar $");
+CPL_CVSID("$Id: ogrfmedatasource.cpp 36347 2016-11-20 20:43:39Z rouault $");
 
 #ifdef WIN32
 #define FMEDLL_NAME "fme.dll"
@@ -174,6 +173,8 @@ OGRFMEDataSource::OGRFMEDataSource()
     poUserDirectives = NULL;
 
     bUseCaching = FALSE;
+    poFMEString = NULL;
+    bCoordSysOverride = FALSE;
 }
 
 /************************************************************************/
@@ -600,7 +601,6 @@ int OGRFMEDataSource::Open( const char * pszCompositeName )
 
             psMatchDS = CPLCloneXMLTree( psMatchDS );
             oCacheIndex.Unlock();
-
         }
         else
         {
@@ -1515,7 +1515,6 @@ IFMESession *OGRFMEDataSource::AcquireSession()
             CPLError( CE_Warning, CPLE_AppDefined,
                       "Something has gone wonky with createStringArray() on the IFMESession.\n"
                       "Is it possible you built with gcc 3.2 on Linux?  This seems problematic." );
-
         }
         else
         {

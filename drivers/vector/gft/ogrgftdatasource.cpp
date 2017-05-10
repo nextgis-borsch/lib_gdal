@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrgftdatasource.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  Google Fusion Table Translator
  * Purpose:  Implements OGRGFTDataSource class
@@ -29,7 +28,7 @@
 
 #include "ogr_gft.h"
 
-CPL_CVSID("$Id: ogrgftdatasource.cpp 33713 2016-03-12 17:41:57Z goatbar $");
+CPL_CVSID("$Id: ogrgftdatasource.cpp 36979 2016-12-20 18:40:40Z rouault $");
 
 #define GDAL_API_KEY "AIzaSyA_2h1_wXMOLHNSVeo-jf1ACME-M1XMgP0"
 #define FUSION_TABLE_SCOPE "https://www.googleapis.com/Fauth/fusiontables"
@@ -38,19 +37,14 @@ CPL_CVSID("$Id: ogrgftdatasource.cpp 33713 2016-03-12 17:41:57Z goatbar $");
 /*                          OGRGFTDataSource()                          */
 /************************************************************************/
 
-OGRGFTDataSource::OGRGFTDataSource()
-
-{
-    papoLayers = NULL;
-    nLayers = 0;
-
-    pszName = NULL;
-
-    bReadWrite = FALSE;
-    bUseHTTPS = FALSE;
-
-    bMustCleanPersistent = FALSE;
-}
+OGRGFTDataSource::OGRGFTDataSource() :
+    pszName(NULL),
+    papoLayers(NULL),
+    nLayers(0),
+    bReadWrite(FALSE),
+    bUseHTTPS(FALSE),
+    bMustCleanPersistent(FALSE)
+{}
 
 /************************************************************************/
 /*                         ~OGRGFTDataSource()                          */
@@ -161,7 +155,7 @@ static CPLString OGRGFTGetOptionValue(const char* pszFilename,
     if (!pszOptionValue)
         return "";
 
-    CPLString osOptionValue(pszOptionValue + strlen(osOptionName));
+    CPLString osOptionValue(pszOptionValue + osOptionName.size());
     const char* pszSpace = strchr(osOptionValue.c_str(), ' ');
     if (pszSpace)
         osOptionValue.resize(pszSpace - osOptionValue.c_str());
@@ -180,11 +174,11 @@ int OGRGFTDataSource::Open( const char * pszFilename, int bUpdateIn)
     pszName = CPLStrdup( pszFilename );
 
     osAuth = OGRGFTGetOptionValue(pszFilename, "auth");
-    if (osAuth.size() == 0)
+    if (osAuth.empty())
         osAuth = CPLGetConfigOption("GFT_AUTH", "");
 
     osRefreshToken = OGRGFTGetOptionValue(pszFilename, "refresh");
-    if (osRefreshToken.size() == 0)
+    if (osRefreshToken.empty())
         osRefreshToken = CPLGetConfigOption("GFT_REFRESH_TOKEN", "");
 
     osAPIKey = CPLGetConfigOption("GFT_APIKEY", GDAL_API_KEY);
@@ -194,26 +188,26 @@ int OGRGFTDataSource::Open( const char * pszFilename, int bUpdateIn)
     bUseHTTPS = TRUE;
 
     osAccessToken = OGRGFTGetOptionValue(pszFilename, "access");
-    if (osAccessToken.size() == 0)
+    if (osAccessToken.empty())
         osAccessToken = CPLGetConfigOption("GFT_ACCESS_TOKEN","");
-    if (osAccessToken.size() == 0 && osRefreshToken.size() > 0)
+    if (osAccessToken.empty() && !osRefreshToken.empty())
     {
         osAccessToken.Seize(GOA2GetAccessToken(osRefreshToken,
                                                FUSION_TABLE_SCOPE));
-        if (osAccessToken.size() == 0)
+        if (osAccessToken.empty())
             return FALSE;
     }
     /* coverity[copy_paste_error] */
-    if (osAccessToken.size() == 0 && osAuth.size() > 0)
+    if (osAccessToken.empty() && !osAuth.empty())
     {
         osRefreshToken.Seize(GOA2GetRefreshToken(osAuth, FUSION_TABLE_SCOPE));
-        if (osRefreshToken.size() == 0)
+        if (osRefreshToken.empty())
             return FALSE;
     }
 
-    if (osAccessToken.size() == 0)
+    if (osAccessToken.empty())
     {
-        if (osTables.size() == 0)
+        if (osTables.empty())
         {
             CPLError(CE_Failure, CPLE_AppDefined,
                     "Unauthenticated access requires explicit tables= parameter");
@@ -221,7 +215,7 @@ int OGRGFTDataSource::Open( const char * pszFilename, int bUpdateIn)
         }
     }
 
-    if (osTables.size() != 0)
+    if (!osTables.empty())
     {
         char** papszTables = CSLTokenizeString2(osTables, ",", 0);
         for(int i=0;papszTables && papszTables[i];i++)
@@ -313,7 +307,7 @@ OGRLayer   *OGRGFTDataSource::ICreateLayer( const char *pszNameIn,
         return NULL;
     }
 
-    if (osAccessToken.size() == 0)
+    if (osAccessToken.empty())
     {
         CPLError(CE_Failure, CPLE_AppDefined, "Operation not available in unauthenticated mode");
         return NULL;
@@ -323,9 +317,8 @@ OGRLayer   *OGRGFTDataSource::ICreateLayer( const char *pszNameIn,
 /*      Do we already have this layer?  If so, should we blow it        */
 /*      away?                                                           */
 /* -------------------------------------------------------------------- */
-    int iLayer;
 
-    for( iLayer = 0; iLayer < nLayers; iLayer++ )
+    for( int iLayer = 0; iLayer < nLayers; iLayer++ )
     {
         if( EQUAL(pszNameIn,papoLayers[iLayer]->GetName()) )
         {
@@ -361,12 +354,11 @@ OGRLayer   *OGRGFTDataSource::ICreateLayer( const char *pszNameIn,
 void OGRGFTDataSource::DeleteLayer( const char *pszLayerName )
 
 {
-    int iLayer;
-
 /* -------------------------------------------------------------------- */
 /*      Try to find layer.                                              */
 /* -------------------------------------------------------------------- */
-    for( iLayer = 0; iLayer < nLayers; iLayer++ )
+    int iLayer = 0;  // Used after for.
+    for( ; iLayer < nLayers; iLayer++ )
     {
         if( EQUAL(pszLayerName,papoLayers[iLayer]->GetName()) )
             break;
@@ -396,7 +388,7 @@ OGRErr OGRGFTDataSource::DeleteLayer(int iLayer)
         return OGRERR_FAILURE;
     }
 
-    if (osAccessToken.size() == 0)
+    if (osAccessToken.empty())
     {
         CPLError(CE_Failure, CPLE_AppDefined,
                  "Operation not available in unauthenticated mode");
@@ -454,7 +446,7 @@ char** OGRGFTDataSource::AddHTTPOptions(char** papszOptions)
 {
     bMustCleanPersistent = TRUE;
 
-    if (strlen(osAccessToken) > 0)
+    if( !osAccessToken.empty() )
       papszOptions = CSLAddString(papszOptions,
         CPLSPrintf("HEADERS=Authorization: Bearer %s",
                    osAccessToken.c_str()));

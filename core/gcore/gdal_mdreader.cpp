@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: gdal_mdreader.cpp 33873 2016-04-03 14:13:37Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Read metadata (mainly the remote sensing imagery) from files of
@@ -31,9 +30,23 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "cpl_string.h"
-#include "cplkeywordparser.h"
+#include "cpl_port.h"
 #include "gdal_mdreader.h"
+
+#include <cctype>
+#include <cstddef>
+#include <cstdio>
+#include <cstring>
+#include <ctime>
+#include <string>
+
+#include "cpl_conv.h"
+#include "cpl_error.h"
+#include "cpl_minixml.h"
+#include "cpl_string.h"
+#include "cpl_vsi.h"
+#include "cplkeywordparser.h"
+#include "gdal_priv.h"
 
 //readers
 #include "mdreader/reader_alos.h"
@@ -48,7 +61,7 @@
 #include "mdreader/reader_rdk1.h"
 #include "mdreader/reader_spot.h"
 
-CPL_CVSID("$Id: gdal_mdreader.cpp 33873 2016-04-03 14:13:37Z rouault $");
+CPL_CVSID("$Id: gdal_mdreader.cpp 36981 2016-12-20 19:46:41Z rouault $");
 
 /**
  * The RPC parameters names
@@ -90,7 +103,7 @@ GDALMDReaderManager::GDALMDReaderManager() :
  */
 GDALMDReaderManager::~GDALMDReaderManager()
 {
-   if(NULL != m_pReader)
+   if( NULL != m_pReader )
    {
        delete m_pReader;
    }
@@ -411,7 +424,6 @@ char** GDALMDReaderBase::ReadXMLToList(CPLXMLNode* psNode, char** papszList,
 // Miscellaneous functions
 //------------------------------------------------------------------------------
 
-
 /**
  * GDALCheckFileHeader()
  */
@@ -455,7 +467,7 @@ CPLString CPLStrip(const CPLString& sString, const char cChar)
         dCopyCount--;
     }
 
-    if (sString[sString.size() - 1] == cChar)
+    if (sString.back() == cChar)
         dCopyCount--;
 
     if(dCopyCount == 0)
@@ -471,9 +483,6 @@ CPLString CPLStripQuotes(const CPLString& sString)
 {
     return CPLStrip( CPLStrip(sString, '"'), '\'');
 }
-
-
-
 
 /************************************************************************/
 /*                          GDALLoadRPBFile()                           */
@@ -691,7 +700,6 @@ CPLErr GDALWriteRPCTXTFile( const char *pszFilename, char **papszMD )
         bOK &= VSIFPrintfL( fp, "%s: %s\n", apszRPCTXTSingleValItems[i], pszRPCVal ) > 0;
     }
 
-
     for( int i = 0; apszRPCTXT20ValItems[i] != NULL; i ++ )
     {
         const char *pszRPCVal = CSLFetchNameValue( papszMD, apszRPCTXT20ValItems[i] );
@@ -727,7 +735,6 @@ CPLErr GDALWriteRPCTXTFile( const char *pszFilename, char **papszMD )
         }
         CSLDestroy( papszItems );
     }
-
 
     if( VSIFCloseL( fp ) != 0 )
         bOK = false;
@@ -1068,10 +1075,10 @@ CPLErr GDALWriteIMDFile( const char *pszFilename, char **papszMD )
 /* -------------------------------------------------------------------- */
 /*      Close and/or start sections as needed.                          */
 /* -------------------------------------------------------------------- */
-        if( osCurSection.size() && !EQUAL(osCurSection,osKeySection) )
+        if( !osCurSection.empty() && !EQUAL(osCurSection,osKeySection) )
             bOK &= VSIFPrintfL( fp, "END_GROUP = %s\n", osCurSection.c_str() ) > 0;
 
-        if( osKeySection.size() && !EQUAL(osCurSection,osKeySection) )
+        if( !osKeySection.empty() && !EQUAL(osCurSection,osKeySection) )
             bOK &= VSIFPrintfL( fp, "BEGIN_GROUP = %s\n", osKeySection.c_str() ) > 0;
 
         osCurSection = osKeySection;
@@ -1079,7 +1086,7 @@ CPLErr GDALWriteIMDFile( const char *pszFilename, char **papszMD )
 /* -------------------------------------------------------------------- */
 /*      Print out simple item.                                          */
 /* -------------------------------------------------------------------- */
-        if( osCurSection.size() )
+        if( !osCurSection.empty() )
             bOK &= VSIFPrintfL( fp, "\t%s = ", osKeyItem.c_str() ) > 0;
         else
             bOK &= VSIFPrintfL( fp, "%s = ", osKeyItem.c_str() ) > 0;
@@ -1093,7 +1100,7 @@ CPLErr GDALWriteIMDFile( const char *pszFilename, char **papszMD )
 /* -------------------------------------------------------------------- */
 /*      Close off.                                                      */
 /* -------------------------------------------------------------------- */
-    if( osCurSection.size() )
+    if( !osCurSection.empty() )
         bOK &= VSIFPrintfL( fp, "END_GROUP = %s\n", osCurSection.c_str() ) > 0;
 
     bOK &= VSIFPrintfL( fp, "END;\n" ) > 0;

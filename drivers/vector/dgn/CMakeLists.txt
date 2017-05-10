@@ -39,23 +39,24 @@ if(ENABLE_DGN)
 
     set(LIB_HHEADERS_PRIV
     )
-    
+
     set(LIB_MINSOURCES
-        dgnopen.cpp 
+        dgnopen.cpp
         dgnread.cpp
-        dgnfloat.cpp 
-        dgnhelp.cpp 
-        dgnwrite.cpp 
+        dgnfloat.cpp
+        dgnhelp.cpp
+        dgnwrite.cpp
         dgnstroke.cpp
+        dgndump.cpp
     )
 
     set(LIB_CSOURCES
-        ogrdgndriver.cpp 
-        ogrdgndatasource.cpp 
+        ogrdgndriver.cpp
+        ogrdgndatasource.cpp
         ogrdgnlayer.cpp
         ${LIB_MINSOURCES}
     )
-    
+
     # TODO: implement zip target if needed
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
@@ -63,5 +64,5 @@ if(ENABLE_DGN)
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
 else()
-    warning_msg("Skip dgn")  
+    warning_msg("Skip dgn")
 endif()

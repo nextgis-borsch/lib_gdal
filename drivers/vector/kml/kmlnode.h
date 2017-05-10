@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: kmlnode.h 32872 2016-01-09 10:16:42Z goatbar $
+ * $Id: kmlnode.h 36411 2016-11-21 22:03:48Z rouault $
  *
  * Project:  KML Driver
  * Purpose:  Class for building up the node structure of the kml file.
@@ -41,6 +41,7 @@ std::string Nodetype2String(Nodetype const& type);
 
 class KMLNode
 {
+    CPL_DISALLOW_COPY_ASSIGN( KMLNode );
 public:
 
     KMLNode();

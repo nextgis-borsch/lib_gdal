@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogravce00datasource.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  OGR
  * Purpose:  Implements OGRAVCE00DataSource class.
@@ -33,16 +32,18 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogravce00datasource.cpp 33713 2016-03-12 17:41:57Z goatbar $");
+CPL_CVSID("$Id: ogravce00datasource.cpp 35903 2016-10-24 12:09:43Z goatbar $");
 
 /************************************************************************/
 /*                        OGRAVCE00DataSource()                         */
 /************************************************************************/
 
-OGRAVCE00DataSource::OGRAVCE00DataSource()
-    : nLayers(0), pszName(NULL), psE00(NULL), papoLayers(NULL)
-{
-}
+OGRAVCE00DataSource::OGRAVCE00DataSource() :
+    nLayers(0),
+    pszName(NULL),
+    psE00(NULL),
+    papoLayers(NULL)
+{}
 
 /************************************************************************/
 /*                        ~OGRAVCE00DataSource()                        */
@@ -182,7 +183,7 @@ int OGRAVCE00DataSource::CheckAddTable( AVCE00Section *psTblSection )
     int nCount = 0;
     for (int i = 0; i < nLayers; ++i)
     {
-        if (papoLayers[i]->CheckSetupTable(psTblSection))
+        if( papoLayers[i]->CheckSetupTable(psTblSection) )
             ++nCount;
     }
     return nCount;
@@ -219,7 +220,6 @@ OGRSpatialReference *OGRAVCE00DataSource::GetSpatialRef()
         return poSRS;
     if (psE00 == NULL)
         return NULL;
-
 
     for( int iSection = 0; iSection < psE00->numSections; iSection++ )
     {

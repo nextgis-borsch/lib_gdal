@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: dted_test.c 33720 2016-03-15 00:39:53Z goatbar $
+ * $Id: dted_test.c 34521 2016-07-02 21:26:43Z goatbar $
  *
  * Project:  DTED Translator
  * Purpose:  Test mainline for DTED writer.

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: pcrasterutil.h 31687 2015-11-21 16:35:21Z rouault $
+ * $Id: pcrasterutil.h 35897 2016-10-24 11:54:24Z goatbar $
  *
  * Project:  PCRaster Integration
  * Purpose:  PCRaster driver support declarations.
@@ -33,7 +33,6 @@
 #include "csf.h"
 #include "gdal_priv.h"
 #include "pcrtypes.h"
-
 
 GDALDataType       cellRepresentation2GDALType(CSF_CR cellRepresentation);
 
@@ -107,7 +106,6 @@ struct CastToBooleanRange
   }
 };
 
-
 template<>
 struct CastToBooleanRange<UINT1>
 {
@@ -117,7 +115,6 @@ struct CastToBooleanRange<UINT1>
     }
   }
 };
-
 
 template<>
 struct CastToBooleanRange<UINT2>
@@ -129,7 +126,6 @@ struct CastToBooleanRange<UINT2>
   }
 };
 
-
 template<>
 struct CastToBooleanRange<UINT4>
 {
@@ -140,7 +136,6 @@ struct CastToBooleanRange<UINT4>
   }
 };
 
-
 struct CastToDirection
 {
   void operator()(REAL4& value) {
@@ -150,7 +145,6 @@ struct CastToDirection
     }
   }
 };
-
 
 struct CastToLdd
 {

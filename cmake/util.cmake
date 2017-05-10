@@ -30,8 +30,9 @@ function(check_version major minor rev)
 
     # parse the version number from gdal_version.h and include in
     # major, minor and rev parameters
+    set(VERSION_FILE ${CMAKE_CURRENT_SOURCE_DIR}/core/gcore/gdal_version.h)
 
-    file(READ ${CMAKE_CURRENT_SOURCE_DIR}/core/gcore/gdal_version.h GDAL_VERSION_H_CONTENTS)
+    file(READ ${VERSION_FILE} GDAL_VERSION_H_CONTENTS)
 
     string(REGEX MATCH "GDAL_VERSION_MAJOR[ \t]+([0-9]+)"
       GDAL_MAJOR_VERSION ${GDAL_VERSION_H_CONTENTS})
@@ -51,7 +52,7 @@ function(check_version major minor rev)
     set(${rev} ${GDAL_REV_VERSION} PARENT_SCOPE)
 
     # Store version string in file for installer needs
-    file(TIMESTAMP ${CMAKE_CURRENT_SOURCE_DIR}/core/gcore/gdal_version.h VERSION_DATETIME "%Y-%m-%d %H:%M:%S" UTC)
+    file(TIMESTAMP ${VERSION_FILE} VERSION_DATETIME "%Y-%m-%d %H:%M:%S" UTC)
     file(WRITE ${CMAKE_BINARY_DIR}/version.str "${GDAL_MAJOR_VERSION}.${GDAL_MINOR_VERSION}.${GDAL_REV_VERSION}\n${VERSION_DATETIME}")
 
 endfunction(check_version)

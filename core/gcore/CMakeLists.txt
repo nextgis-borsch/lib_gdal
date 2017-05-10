@@ -60,6 +60,7 @@ set(LIB_HHEADERS_PRIV
     gdaljp2abstractdataset.h
     gdaljp2metadatagenerator.h
     gdalsse_priv.h
+    gdal_avx2_emulation.hpp
 )
 
 set(LIB_CSOURCES
@@ -101,6 +102,7 @@ set(LIB_CSOURCES
     gdalvirtualmem.cpp
     overview.cpp
     rasterio.cpp
+    rasterio_ssse3.cpp
 )
 
 if(GDAL_PAM_ENABLED)

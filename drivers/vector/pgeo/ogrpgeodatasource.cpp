@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrpgeodatasource.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRPGeoDataSource class.
@@ -33,7 +32,7 @@
 #include "cpl_string.h"
 #include <vector>
 
-CPL_CVSID("$Id: ogrpgeodatasource.cpp 33714 2016-03-13 05:42:13Z goatbar $");
+CPL_CVSID("$Id: ogrpgeodatasource.cpp 35911 2016-10-24 15:03:26Z goatbar $");
 
 /************************************************************************/
 /*                         OGRPGeoDataSource()                          */
@@ -44,7 +43,7 @@ OGRPGeoDataSource::OGRPGeoDataSource() :
     nLayers(0),
     pszName(NULL),
     bDSUpdate(FALSE)
-{ }
+{}
 
 /************************************************************************/
 /*                         ~OGRPGeoDataSource()                         */
@@ -106,7 +105,7 @@ int OGRPGeoDataSource::Open( const char * pszNewName, int bUpdate,
 /*      get the DSN.                                                    */
 /*                                                                      */
 /* -------------------------------------------------------------------- */
-    char *pszDSN;
+    char *pszDSN = NULL;
     const char* pszOptionName = "";
     const char* pszDSNStringTemplate = NULL;
     if( STARTS_WITH_CI(pszNewName, "PGEO:") )
@@ -210,9 +209,7 @@ int OGRPGeoDataSource::Open( const char * pszNewName, int bUpdate,
     for( iTable = 0; iTable < apapszGeomColumns.size(); iTable++ )
     {
         char **papszRecord = apapszGeomColumns[iTable];
-        OGRPGeoTableLayer  *poLayer;
-
-        poLayer = new OGRPGeoTableLayer( this );
+        OGRPGeoTableLayer  *poLayer = new OGRPGeoTableLayer( this );
 
         if( poLayer->Initialize( papszRecord[0],         // TableName
                                  papszRecord[1],         // FieldName
@@ -257,7 +254,6 @@ OGRLayer *OGRPGeoDataSource::GetLayer( int iLayer )
     else
         return papoLayers[iLayer];
 }
-
 
 /************************************************************************/
 /*                             ExecuteSQL()                             */

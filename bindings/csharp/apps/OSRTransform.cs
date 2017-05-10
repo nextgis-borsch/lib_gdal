@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: OSRTransform.cs 13437 2007-12-21 21:02:38Z tamas $
+ * $Id: OSRTransform.cs 35222 2016-08-28 06:06:11Z goatbar $
  *
  * Name:     OSRTransform.cs
  * Project:  GDAL CSharp Interface
@@ -40,7 +40,7 @@ using OSGeo.OSR;
 
 /// <summary>
 /// A C# based sample to make simple transformations.
-/// </summary> 
+/// </summary>
 class OSRTransform {
 	public static void Main(string[] args) {
 		try

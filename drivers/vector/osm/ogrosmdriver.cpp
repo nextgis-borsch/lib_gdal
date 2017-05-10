@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrosmdriver.cpp 33039 2016-01-18 17:04:21Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGROSMDriver class.
@@ -34,7 +33,7 @@
 
 extern "C" void CPL_DLL RegisterOGROSM();
 
-CPL_CVSID("$Id: ogrosmdriver.cpp 33039 2016-01-18 17:04:21Z rouault $");
+CPL_CVSID("$Id: ogrosmdriver.cpp 35847 2016-10-21 06:06:13Z goatbar $");
 
 /************************************************************************/
 /*                      OGROSMDriverIdentify()                          */
@@ -43,7 +42,7 @@ CPL_CVSID("$Id: ogrosmdriver.cpp 33039 2016-01-18 17:04:21Z rouault $");
 static int OGROSMDriverIdentify( GDALOpenInfo* poOpenInfo )
 
 {
-    if (poOpenInfo->fpL == NULL || poOpenInfo->nHeaderBytes == 0)
+    if( poOpenInfo->fpL == NULL || poOpenInfo->nHeaderBytes == 0 )
         return GDAL_IDENTIFY_FALSE;
 
     if( strstr((const char*)poOpenInfo->pabyHeader, "<osm") != NULL )
@@ -72,7 +71,7 @@ static int OGROSMDriverIdentify( GDALOpenInfo* poOpenInfo )
 static GDALDataset *OGROSMDriverOpen( GDALOpenInfo* poOpenInfo )
 
 {
-    if (poOpenInfo->eAccess == GA_Update )
+    if( poOpenInfo->eAccess == GA_Update )
         return NULL;
     if( OGROSMDriverIdentify(poOpenInfo) == FALSE )
         return NULL;
@@ -123,4 +122,3 @@ void RegisterOGROSM()
 
     GetGDALDriverManager()->RegisterDriver( poDriver );
 }
-

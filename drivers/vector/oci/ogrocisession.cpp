@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrocisession.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  Oracle Spatial Driver
  * Purpose:  Implementation of OGROCISession, which encapsulates much of the
@@ -31,7 +30,7 @@
 #include "ogr_oci.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrocisession.cpp 33713 2016-03-12 17:41:57Z goatbar $");
+CPL_CVSID("$Id: ogrocisession.cpp 38061 2017-04-19 05:23:56Z ilucena $");
 
 /************************************************************************/
 /*                          OGRGetOCISession()                          */
@@ -73,6 +72,9 @@ OGROCISession::OGROCISession()
     pszUserid = NULL;
     pszPassword = NULL;
     pszDatabase = NULL;
+    nServerVersion = 10;
+    nServerRelease = 1;
+    nMaxNameLength = 30;
 }
 
 /************************************************************************/
@@ -275,14 +277,59 @@ int OGROCISession::EstablishSession( const char *pszUseridIn,
 /* -------------------------------------------------------------------- */
 /*      Record information about the session.                           */
 /* -------------------------------------------------------------------- */
-    this->pszUserid = CPLStrdup(pszUseridIn);
-    this->pszPassword = CPLStrdup(pszPasswordIn);
-    this->pszDatabase = CPLStrdup(pszDatabaseIn);
+    pszUserid = CPLStrdup(pszUseridIn);
+    pszPassword = CPLStrdup(pszPasswordIn);
+    pszDatabase = CPLStrdup(pszDatabaseIn);
+
+/* -------------------------------------------------------------------- */
+/*      Get server version information                                  */
+/* -------------------------------------------------------------------- */
+
+    char szVersionTxt[256];
+
+    OCIServerVersion( hSvcCtx, hError, (text*) szVersionTxt, 
+                    (ub4) sizeof(szVersionTxt), (ub1) OCI_HTYPE_SVCCTX );
+
+    char** papszNameValue = CSLTokenizeString2( szVersionTxt, " .", 
+                                                CSLT_STRIPLEADSPACES );
+
+    int count = CSLCount( papszNameValue);
+
+    for( int i = 0; i < count; i++)
+    {
+        if( EQUAL(papszNameValue[i], "Release") )
+        {
+            if( i + 1 < count )
+            {
+                nServerVersion = atoi(papszNameValue[i + 1]);
+            }
+            if( i + 2 < count )
+            {
+                nServerRelease = atoi(papszNameValue[i + 2]);
+            }
+            break;
+        }
+    }
+
+    CPLDebug("OCI", "From '%s' :", szVersionTxt);
+    CPLDebug("OCI", "Version:%d", nServerVersion);
+    CPLDebug("OCI", "Release:%d", nServerRelease);
+
+/* -------------------------------------------------------------------- */
+/*      Set maximun name length (before 12.2 ? 30 : 128)                */
+/* -------------------------------------------------------------------- */
+
+    if( nServerVersion >= 12 && nServerRelease >= 2 )
+    {
+        nMaxNameLength = 128;
+    }
+
+    CPLFree( papszNameValue );
 
 /* -------------------------------------------------------------------- */
 /*      Setting up the OGR compatible time formatting rules.            */
 /* -------------------------------------------------------------------- */
-    OGROCIStatement     oSetNLSTimeFormat( this );
+    OGROCIStatement oSetNLSTimeFormat( this );
     if( oSetNLSTimeFormat.Execute( "ALTER SESSION SET NLS_DATE_FORMAT='YYYY/MM/DD' \
         NLS_TIME_FORMAT='HH24:MI:SS' NLS_TIME_TZ_FORMAT='HH24:MI:SS TZHTZM' \
         NLS_TIMESTAMP_FORMAT='YYYY/MM/DD HH24:MI:SS' \
@@ -368,24 +415,24 @@ OGROCISession::GetParmInfo( OCIParam *hParmDesc, OGRFieldDefn *poOGRDefn,
 /* -------------------------------------------------------------------- */
     if( Failed(
         OCIAttrGet( hParmDesc, OCI_DTYPE_PARAM,
-                    (dvoid **)&nOCIType, 0, OCI_ATTR_DATA_TYPE, hError ),
+                    &nOCIType, 0, OCI_ATTR_DATA_TYPE, hError ),
         "OCIAttrGet(Type)" ) )
         return CE_Failure;
 
     if( Failed(
         OCIAttrGet( hParmDesc, OCI_DTYPE_PARAM,
-                    (dvoid **)&nOCILen, 0, OCI_ATTR_DATA_SIZE, hError ),
+                    &nOCILen, 0, OCI_ATTR_DATA_SIZE, hError ),
         "OCIAttrGet(Size)" ) )
         return CE_Failure;
 
     if( Failed(
-        OCIAttrGet( hParmDesc, OCI_DTYPE_PARAM, (dvoid **)&pszColName,
+        OCIAttrGet( hParmDesc, OCI_DTYPE_PARAM, &pszColName,
                     &nColLen, OCI_ATTR_NAME, hError ),
         "OCIAttrGet(Name)") )
         return CE_Failure;
 
     if( Failed(
-        OCIAttrGet( hParmDesc, OCI_DTYPE_PARAM, (dvoid **)&bOCINull,
+        OCIAttrGet( hParmDesc, OCI_DTYPE_PARAM, &bOCINull,
                     0, OCI_ATTR_IS_NULL, hError ),
         "OCIAttrGet(Null)") )
         return CE_Failure;
@@ -427,12 +474,12 @@ OGROCISession::GetParmInfo( OCIParam *hParmDesc, OGRFieldDefn *poOGRDefn,
             sb1  nScale;
 
             if( Failed(
-                OCIAttrGet( hParmDesc, OCI_DTYPE_PARAM, (dvoid **)&byPrecision,
+                OCIAttrGet( hParmDesc, OCI_DTYPE_PARAM, &byPrecision,
                             0, OCI_ATTR_PRECISION, hError ),
                 "OCIAttrGet(Precision)" ) )
                 return CE_Failure;
             if( Failed(
-                OCIAttrGet( hParmDesc, OCI_DTYPE_PARAM, (dvoid **)&nScale,
+                OCIAttrGet( hParmDesc, OCI_DTYPE_PARAM, &nScale,
                             0, OCI_ATTR_SCALE, hError ),
                 "OCIAttrGet(Scale)") )
                 return CE_Failure;
@@ -511,8 +558,8 @@ void OGROCISession::CleanName( char * pszName )
 {
     int   i;
 
-    if( strlen(pszName) > 30 )
-        pszName[30] = '\0';
+    if( strlen(pszName) > nMaxNameLength )
+        pszName[nMaxNameLength] = '\0';
 
     for( i = 0; pszName[i] != '\0'; i++ )
     {

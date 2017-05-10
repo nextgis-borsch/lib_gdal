@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: cplkeywordparser.cpp 33646 2016-03-05 15:54:03Z goatbar $
  *
  * Project:  Common Portability Library
  * Purpose:  Implementation of CPLKeywordParser - a class for parsing
@@ -31,10 +30,19 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "cpl_string.h"
+//! @cond Doxygen_Suppress
+
+#include "cpl_port.h"
 #include "cplkeywordparser.h"
 
-CPL_CVSID("$Id");
+#include <cctype>
+#include <cstring>
+#include <string>
+
+#include "cpl_string.h"
+#include "cpl_vsi.h"
+
+CPL_CVSID("$Id: cplkeywordparser.cpp 36979 2016-12-20 18:40:40Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -69,11 +77,11 @@ int CPLKeywordParser::Ingest( VSILFILE *fp )
 
 {
 /* -------------------------------------------------------------------- */
-/*      Read in buffer till we find END all on it's own line.           */
+/*      Read in buffer till we find END all on its own line.            */
 /* -------------------------------------------------------------------- */
     for( ; true; )
     {
-        char szChunk[513];
+        char szChunk[513] = {};
         const size_t nBytesRead = VSIFReadL( szChunk, 1, 512, fp );
 
         szChunk[nBytesRead] = '\0';
@@ -82,14 +90,14 @@ int CPLKeywordParser::Ingest( VSILFILE *fp )
         if( nBytesRead < 512 )
             break;
 
-        const char *pszCheck;
+        const char *pszCheck = NULL;
         if( osHeaderText.size() > 520 )
             pszCheck = osHeaderText.c_str() + (osHeaderText.size() - 520);
         else
             pszCheck = szChunk;
 
-        if( strstr(pszCheck,"\r\nEND;\r\n") != NULL
-            || strstr(pszCheck,"\nEND;\n") != NULL )
+        if( strstr(pszCheck, "\r\nEND;\r\n") != NULL
+            || strstr(pszCheck, "\nEND;\n") != NULL )
             break;
     }
 
@@ -108,16 +116,17 @@ int CPLKeywordParser::Ingest( VSILFILE *fp )
 int CPLKeywordParser::ReadGroup( const char *pszPathPrefix )
 
 {
-    CPLString osName, osValue;
+    CPLString osName;
+    CPLString osValue;
 
     for( ; true; )
     {
         if( !ReadPair( osName, osValue ) )
             return FALSE;
 
-        if( EQUAL(osName,"BEGIN_GROUP") || EQUAL(osName,"GROUP") )
+        if( EQUAL(osName, "BEGIN_GROUP") || EQUAL(osName, "GROUP") )
         {
-            if( !ReadGroup( (CPLString(pszPathPrefix) + osValue + ".").c_str() ) )
+            if( !ReadGroup((CPLString(pszPathPrefix) + osValue + ".").c_str()) )
                 return FALSE;
         }
         else if( STARTS_WITH_CI(osName, "END") )
@@ -151,13 +160,13 @@ int CPLKeywordParser::ReadPair( CPLString &osName, CPLString &osValue )
 
     SkipWhite();
 
-    if( EQUAL(osName,"END") )
+    if( EQUAL(osName, "END") )
         return TRUE;
 
     if( *pszHeaderNext != '=' )
     {
         // ISIS3 does not have anything after the end group/object keyword.
-        if( EQUAL(osName,"End_Group") || EQUAL(osName,"End_Object") )
+        if( EQUAL(osName, "End_Group") || EQUAL(osName, "End_Object") )
             return TRUE;
         else
             return FALSE;
@@ -170,7 +179,7 @@ int CPLKeywordParser::ReadPair( CPLString &osName, CPLString &osValue )
     osValue = "";
 
     // Handle value lists like:     Name   = (Red, Red)
-    // or list of lists like : TLCList = ( (0,  0.000000), (8299,  4.811014) );
+    // or list of lists like: TLCList = ( (0, 0.000000), (8299, 4.811014) );
     if( *pszHeaderNext == '(' )
     {
         CPLString osWord;
@@ -185,24 +194,24 @@ int CPLKeywordParser::ReadPair( CPLString &osName, CPLString &osValue )
             osValue += osWord;
             const char* pszIter = osWord.c_str();
             bool bInQuote = false;
-            while(*pszIter != '\0')
+            while( *pszIter != '\0' )
             {
-                if (*pszIter == '"')
+                if( *pszIter == '"' )
                     bInQuote = !bInQuote;
-                else if (!bInQuote)
+                else if( !bInQuote )
                 {
-                    if (*pszIter == '(')
-                        nDepth ++;
-                    else if (*pszIter == ')')
+                    if( *pszIter == '(' )
+                        nDepth++;
+                    else if( *pszIter == ')' )
                     {
-                        nDepth --;
-                        if (nDepth == 0)
+                        nDepth--;
+                        if( nDepth == 0 )
                             break;
                     }
                 }
-                pszIter ++;
+                pszIter++;
             }
-            if (*pszIter == ')' && nDepth == 0)
+            if( *pszIter == ')' && nDepth == 0 )
                 break;
         }
     }
@@ -211,7 +220,6 @@ int CPLKeywordParser::ReadPair( CPLString &osName, CPLString &osValue )
     {
         if( !ReadWord( osValue ) )
             return FALSE;
-
     }
 
     SkipWhite();
@@ -232,7 +240,7 @@ int CPLKeywordParser::ReadPair( CPLString &osName, CPLString &osValue )
         SkipWhite();
 
         osValue += osWord;
-        if( osWord[strlen(osWord)-1] == '>' )
+        if( osWord.back() == '>' )
             break;
     }
 
@@ -328,7 +336,7 @@ void CPLKeywordParser::SkipWhite()
         }
 
         // Skip # style comments
-        if( *pszHeaderNext == '#'  )
+        if( *pszHeaderNext == '#' )
         {
             pszHeaderNext += 1;
 
@@ -361,3 +369,5 @@ const char *CPLKeywordParser::GetKeyword( const char *pszPath,
 
     return pszResult;
 }
+
+//! @endcond

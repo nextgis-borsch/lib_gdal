@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: sdtsiref.cpp 31332 2015-11-03 17:34:39Z goatbar $
  *
  * Project:  SDTS Translator
  * Purpose:  Implementation of SDTS_IREF class for reading IREF module.
@@ -29,7 +28,7 @@
 
 #include "sdts_al.h"
 
-CPL_CVSID("$Id: sdtsiref.cpp 31332 2015-11-03 17:34:39Z goatbar $");
+CPL_CVSID("$Id: sdtsiref.cpp 35897 2016-10-24 11:54:24Z goatbar $");
 
 /************************************************************************/
 /*                             SDTS_IREF()                              */
@@ -187,14 +186,13 @@ int SDTS_IREF::GetSADR( DDFField * poField, int nVertices,
 
         for( int iVertex = 0; iVertex < nVertices; iVertex++ )
         {
-            double adfXYZ[3] = {0.0, 0.0, 0.0};
-
+            double adfXYZ[3] = { 0.0, 0.0, 0.0 };
 
             for( int iEntry = 0;
                  iEntry < poFieldDefn->GetSubfieldCount();
                  iEntry++ )
             {
-                int     nBytesConsumed = 0;
+                int nBytesConsumed = 0;
                 DDFSubfieldDefn *poSF = poFieldDefn->GetSubfield(iEntry);
 
                 switch( poSF->GetType() )

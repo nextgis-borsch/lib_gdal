@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrmssqlspatialselectlayer.cpp 35339 2016-09-05 21:50:17Z tamas $
  *
  * Project:  MSSQL Spatial driver
  * Purpose:  Implements OGRMSSQLSpatialSelectLayer class, layer access to the results
@@ -34,7 +33,7 @@
 #include <sqlncli.h>
 #endif
 
-CPL_CVSID("$Id: ogrmssqlspatialselectlayer.cpp 35339 2016-09-05 21:50:17Z tamas $");
+CPL_CVSID("$Id: ogrmssqlspatialselectlayer.cpp 35338 2016-09-05 21:49:05Z tamas $");
 /************************************************************************/
 /*                     OGRMSSQLSpatialSelectLayer()                     */
 /************************************************************************/
@@ -116,7 +115,7 @@ OGRMSSQLSpatialSelectLayer::OGRMSSQLSpatialSelectLayer( OGRMSSQLSpatialDataSourc
             }
 #endif
             break;
-        }   
+        }
     }
 
     if (pszGeomColumn == NULL && iImageCol >= 0)

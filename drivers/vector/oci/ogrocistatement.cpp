@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrocistatement.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  Oracle Spatial Driver
  * Purpose:  Implementation of OGROCIStatement, which encapsulates the
@@ -31,7 +30,7 @@
 #include "ogr_oci.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrocistatement.cpp 33713 2016-03-12 17:41:57Z goatbar $");
+CPL_CVSID("$Id: ogrocistatement.cpp 34819 2016-07-28 22:32:18Z goatbar $");
 
 /************************************************************************/
 /*                          OGROCIStatement()                           */

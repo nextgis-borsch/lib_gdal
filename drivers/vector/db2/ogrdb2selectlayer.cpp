@@ -31,6 +31,8 @@
 #include "cpl_conv.h"
 #include "ogr_db2.h"
 
+CPL_CVSID("$Id: ogrdb2selectlayer.cpp 36342 2016-11-20 18:25:31Z rouault $");
+
 /************************************************************************/
 /*                     OGRDB2SelectLayer()                     */
 /************************************************************************/
@@ -77,7 +79,7 @@ OGRDB2SelectLayer::OGRDB2SelectLayer( OGRDB2DataSource *poDSIn,
     if (nNameLength > 0)
     {
         char szLayerName[512];
-        sprintf(szLayerName, "%s.%s",szSchemaName, szTableName);
+        snprintf(szLayerName, sizeof(szLayerName), "%s.%s",szSchemaName, szTableName);
         poBaseLayer = (OGRDB2Layer *) poDS->GetLayerByName((const char*)
                       szLayerName);
         if (poBaseLayer != NULL)

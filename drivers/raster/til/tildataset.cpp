@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: tildataset.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  EarthWatch .TIL Driver
  * Purpose:  Implementation of the TILDataset class.
@@ -38,11 +37,11 @@
 #include "ogr_spatialref.h"
 #include "vrtdataset.h"
 
-CPL_CVSID("$Id: tildataset.cpp 33720 2016-03-15 00:39:53Z goatbar $");
+CPL_CVSID("$Id: tildataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
-/*				TILDataset				*/
+/*                              TILDataset                              */
 /* ==================================================================== */
 /************************************************************************/
 
@@ -54,13 +53,13 @@ class CPL_DLL TILDataset : public GDALPamDataset
     char **papszMetadataFiles;
 
   protected:
-    virtual int         CloseDependentDatasets();
+    virtual int         CloseDependentDatasets() override;
 
   public:
     TILDataset();
-    ~TILDataset();
+    virtual ~TILDataset();
 
-    virtual char **GetFileList(void);
+    virtual char **GetFileList(void) override;
 
     static GDALDataset *Open( GDALOpenInfo * );
     static int Identify( GDALOpenInfo *poOpenInfo );
@@ -82,11 +81,11 @@ class TILRasterBand : public GDALPamRasterBand
                    TILRasterBand( TILDataset *, int, VRTSourcedRasterBand * );
     virtual       ~TILRasterBand() {};
 
-    virtual CPLErr IReadBlock( int, int, void * );
+    virtual CPLErr IReadBlock( int, int, void * ) override;
     virtual CPLErr IRasterIO( GDALRWFlag, int, int, int, int,
                               void *, int, int, GDALDataType,
                               GSpacing nPixelSpace, GSpacing nLineSpace,
-                              GDALRasterIOExtraArg* psExtraArg );
+                              GDALRasterIOExtraArg* psExtraArg ) override;
 };
 
 /************************************************************************/

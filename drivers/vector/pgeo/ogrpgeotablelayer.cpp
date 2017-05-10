@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrpgeotablelayer.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRPGeoTableLayer class, access to an existing table.
@@ -32,18 +31,16 @@
 #include "ogr_pgeo.h"
 #include "ogrpgeogeometry.h"
 
-CPL_CVSID("$Id: ogrpgeotablelayer.cpp 33714 2016-03-13 05:42:13Z goatbar $");
+CPL_CVSID("$Id: ogrpgeotablelayer.cpp 35911 2016-10-24 15:03:26Z goatbar $");
 
 /************************************************************************/
 /*                          OGRPGeoTableLayer()                         */
 /************************************************************************/
 
-OGRPGeoTableLayer::OGRPGeoTableLayer( OGRPGeoDataSource *poDSIn )
-
+OGRPGeoTableLayer::OGRPGeoTableLayer( OGRPGeoDataSource *poDSIn ) :
+    pszQuery(NULL)
 {
     poDS = poDSIn;
-    pszQuery = NULL;
-    bUpdateAccess = TRUE;
     iNextShapeId = 0;
     nSRSId = -1;
     poFeatureDefn = NULL;
@@ -305,19 +302,18 @@ OGRErr OGRPGeoTableLayer::SetAttributeFilter( const char *pszQueryIn )
     CPLFree(m_pszAttrQueryString);
     m_pszAttrQueryString = (pszQueryIn) ? CPLStrdup(pszQueryIn) : NULL;
 
-    if( (pszQueryIn == NULL && this->pszQuery == NULL)
-        || (pszQueryIn != NULL && this->pszQuery != NULL
-            && EQUAL(pszQueryIn,this->pszQuery)) )
+    if( (pszQueryIn == NULL && pszQuery == NULL)
+        || (pszQueryIn != NULL && pszQuery != NULL
+            && EQUAL(pszQueryIn, pszQuery)) )
         return OGRERR_NONE;
 
-    CPLFree( this->pszQuery );
-    this->pszQuery = pszQueryIn ? CPLStrdup( pszQueryIn ) : NULL;
+    CPLFree( pszQuery );
+    pszQuery = pszQueryIn ? CPLStrdup( pszQueryIn ) : NULL;
 
     ClearStatement();
 
     return OGRERR_NONE;
 }
-
 
 /************************************************************************/
 /*                           TestCapability()                           */

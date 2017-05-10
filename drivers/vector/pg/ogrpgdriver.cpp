@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrpgdriver.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRPGDriver class.
@@ -30,8 +29,7 @@
 #include "ogr_pg.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrpgdriver.cpp 33713 2016-03-12 17:41:57Z goatbar $");
-
+CPL_CVSID("$Id: ogrpgdriver.cpp 35911 2016-10-24 15:03:26Z goatbar $");
 
 /************************************************************************/
 /*                              Identify()                              */
@@ -52,12 +50,10 @@ static int OGRPGDriverIdentify( GDALOpenInfo* poOpenInfo )
 static GDALDataset *OGRPGDriverOpen( GDALOpenInfo* poOpenInfo )
 
 {
-    OGRPGDataSource     *poDS;
-
     if( !OGRPGDriverIdentify(poOpenInfo) )
         return NULL;
 
-    poDS = new OGRPGDataSource();
+    OGRPGDataSource *poDS = new OGRPGDataSource();
 
     if( !poDS->Open( poOpenInfo->pszFilename,
                      poOpenInfo->eAccess == GA_Update, TRUE,
@@ -82,9 +78,7 @@ static GDALDataset *OGRPGDriverCreate( const char * pszName,
                                           char **papszOptions )
 
 {
-    OGRPGDataSource     *poDS;
-
-    poDS = new OGRPGDataSource();
+    OGRPGDataSource *poDS = new OGRPGDataSource();
 
     if( !poDS->Open( pszName, TRUE, TRUE, papszOptions ) )
     {

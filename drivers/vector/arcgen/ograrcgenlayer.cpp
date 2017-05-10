@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ograrcgenlayer.cpp 32330 2015-12-20 14:24:33Z rouault $
  *
  * Project:  Arc/Info Generate Translator
  * Purpose:  Implements OGRARCGENLayer class.
@@ -33,7 +32,7 @@
 #include "ogr_p.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id: ograrcgenlayer.cpp 32330 2015-12-20 14:24:33Z rouault $");
+CPL_CVSID("$Id: ograrcgenlayer.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 /************************************************************************/
 /*                            OGRARCGENLayer()                             */
@@ -43,7 +42,7 @@ OGRARCGENLayer::OGRARCGENLayer( const char* pszFilename,
                                 VSILFILE* fpIn, OGRwkbGeometryType eType ) :
     poFeatureDefn(NULL),
     fp(fpIn),
-    bEOF(FALSE),
+    bEOF(false),
     nNextFID(0)
 {
     poFeatureDefn = new OGRFeatureDefn( CPLGetBasename(pszFilename) );
@@ -67,7 +66,6 @@ OGRARCGENLayer::~OGRARCGENLayer()
     VSIFCloseL( fp );
 }
 
-
 /************************************************************************/
 /*                            ResetReading()                            */
 /************************************************************************/
@@ -76,10 +74,9 @@ void OGRARCGENLayer::ResetReading()
 
 {
     nNextFID = 0;
-    bEOF = FALSE;
+    bEOF = false;
     VSIFSeekL( fp, 0, SEEK_SET );
 }
-
 
 /************************************************************************/
 /*                           GetNextFeature()                           */
@@ -123,7 +120,7 @@ OGRFeature *OGRARCGENLayer::GetNextRawFeature()
             const char* pszLine = CPLReadLine2L(fp,256,NULL);
             if (pszLine == NULL || EQUAL(pszLine, "END"))
             {
-                bEOF = TRUE;
+                bEOF = true;
                 return NULL;
             }
             char** papszTokens = CSLTokenizeString2( pszLine, " ,", 0 );
@@ -162,7 +159,7 @@ OGRFeature *OGRARCGENLayer::GetNextRawFeature()
 
         if (EQUAL(pszLine, "END"))
         {
-            if (osID.size() == 0)
+            if (osID.empty())
                 break;
 
             OGRFeature* poFeature = new OGRFeature(poFeatureDefn);
@@ -181,7 +178,7 @@ OGRFeature *OGRARCGENLayer::GetNextRawFeature()
 
         char** papszTokens = CSLTokenizeString2( pszLine, " ,", 0 );
         int nTokens = CSLCount(papszTokens);
-        if (osID.size() == 0)
+        if (osID.empty())
         {
             if (nTokens >= 1)
                 osID = papszTokens[0];
@@ -213,7 +210,7 @@ OGRFeature *OGRARCGENLayer::GetNextRawFeature()
         CSLDestroy(papszTokens);
     }
 
-    bEOF = TRUE;
+    bEOF = true;
     delete poLS;
     return NULL;
 }

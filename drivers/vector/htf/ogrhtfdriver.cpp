@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrhtfdriver.cpp 32744 2016-01-04 22:26:42Z goatbar $
  *
  * Project:  HTF Translator
  * Purpose:  Implements OGRHTFDriver.
@@ -31,7 +30,7 @@
 #include "ogr_htf.h"
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id: ogrhtfdriver.cpp 32744 2016-01-04 22:26:42Z goatbar $");
+CPL_CVSID("$Id: ogrhtfdriver.cpp 34819 2016-07-28 22:32:18Z goatbar $");
 
 /************************************************************************/
 /*                                Open()                                */
@@ -82,4 +81,3 @@ void RegisterOGRHTF()
 
     GetGDALDriverManager()->RegisterDriver( poDriver );
 }
-

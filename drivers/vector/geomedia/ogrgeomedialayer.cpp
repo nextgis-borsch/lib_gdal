@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrgeomedialayer.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRGeomediaLayer class, code shared between
@@ -34,29 +33,25 @@
 #include "cpl_string.h"
 #include "ogrgeomediageometry.h"
 
-CPL_CVSID("$Id: ogrgeomedialayer.cpp 33713 2016-03-12 17:41:57Z goatbar $");
+#include <algorithm>
+
+CPL_CVSID("$Id: ogrgeomedialayer.cpp 37371 2017-02-13 11:41:59Z rouault $");
 
 /************************************************************************/
 /*                          OGRGeomediaLayer()                          */
 /************************************************************************/
 
-OGRGeomediaLayer::OGRGeomediaLayer()
-
-{
-    poDS = NULL;
-
-    pszGeomColumn = NULL;
-    pszFIDColumn = NULL;
-
-    poStmt = NULL;
-
-    iNextShapeId = 0;
-
-    poSRS = NULL;
-    nSRSId = -2; // we haven't even queried the database for it yet.
-    poFeatureDefn = NULL;
-    panFieldOrdinals = NULL;
-}
+OGRGeomediaLayer::OGRGeomediaLayer() :
+    poFeatureDefn(NULL),
+    poStmt(NULL),
+    poSRS(NULL),
+    nSRSId(-2), // we haven't even queried the database for it yet.
+    iNextShapeId(0),
+    poDS(NULL),
+    pszGeomColumn(NULL),
+    pszFIDColumn(NULL),
+    panFieldOrdinals(NULL)
+{}
 
 /************************************************************************/
 /*                         ~OGRGeomediaLayer()                          */
@@ -119,7 +114,8 @@ CPLErr OGRGeomediaLayer::BuildFeatureDefn( const char *pszLayerName,
     {
         OGRFieldDefn    oField( poStmtIn->GetColName(iCol), OFTString );
 
-        oField.SetWidth( MAX(0,poStmtIn->GetColSize( iCol )) );
+        oField.SetWidth(std::max(static_cast<short>(0),
+                                 poStmtIn->GetColSize(iCol)));
 
         if( pszGeomColumn != NULL
             && EQUAL(poStmtIn->GetColName(iCol),pszGeomColumn) )
@@ -127,9 +123,9 @@ CPLErr OGRGeomediaLayer::BuildFeatureDefn( const char *pszLayerName,
 
         if( pszGeomColumn == NULL
             && EQUAL(poStmtIn->GetColName(iCol),"Geometry")
-			&& (poStmtIn->GetColType(iCol) == SQL_BINARY ||
-			    poStmtIn->GetColType(iCol) == SQL_VARBINARY ||
-				poStmtIn->GetColType(iCol) == SQL_LONGVARBINARY) )
+            && (poStmtIn->GetColType(iCol) == SQL_BINARY ||
+                poStmtIn->GetColType(iCol) == SQL_VARBINARY ||
+                poStmtIn->GetColType(iCol) == SQL_LONGVARBINARY) )
         {
             pszGeomColumn = CPLStrdup(poStmtIn->GetColName(iCol));
             continue;
@@ -183,7 +179,6 @@ CPLErr OGRGeomediaLayer::BuildFeatureDefn( const char *pszLayerName,
     return CE_None;
 }
 
-
 /************************************************************************/
 /*                            ResetReading()                            */
 /************************************************************************/
@@ -203,9 +198,7 @@ OGRFeature *OGRGeomediaLayer::GetNextFeature()
 {
     while( true )
     {
-        OGRFeature      *poFeature;
-
-        poFeature = GetNextRawFeature();
+        OGRFeature *poFeature = GetNextRawFeature();
         if( poFeature == NULL )
             return NULL;
 
@@ -264,7 +257,7 @@ OGRFeature *OGRGeomediaLayer::GetNextRawFeature()
         const char *pszValue = poStmt->GetColData( iSrcField );
 
         if( pszValue == NULL )
-            /* no value */;
+            poFeature->SetFieldNull( iField );
         else if( poFeature->GetFieldDefnRef(iField)->GetType() == OFTBinary )
             poFeature->SetField( iField,
                                  poStmt->GetColDataLength(iSrcField),

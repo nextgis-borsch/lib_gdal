@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrjmlwriterlayer.cpp 32783 2016-01-06 16:11:09Z goatbar $
  *
  * Project:  JML Translator
  * Purpose:  Implements OGRJMLWriterLayer class.
@@ -30,7 +29,9 @@
 #include "cpl_conv.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrjmlwriterlayer.cpp 32783 2016-01-06 16:11:09Z goatbar $");
+#include <cstdlib>
+
+CPL_CVSID("$Id: ogrjmlwriterlayer.cpp 37371 2017-02-13 11:41:59Z rouault $");
 
 /************************************************************************/
 /*                           OGRJMLWriterLayer()                        */
@@ -61,7 +62,6 @@ OGRJMLWriterLayer::OGRJMLWriterLayer( const char* pszLayerName,
                     "<FeatureElement>feature</FeatureElement>\n"
                     "<GeometryElement>geometry</GeometryElement>\n"
                     "<ColumnDefinitions>\n");
-
 }
 
 /************************************************************************/
@@ -161,7 +161,7 @@ OGRErr OGRJMLWriterLayer::ICreateFeature( OGRFeature *poFeature )
             VSIFPrintfL(fp, "          <%s>", pszName);
         else
             VSIFPrintfL(fp, "          <property name=\"%s\">", pszName);
-        if( poFeature->IsFieldSet(i) )
+        if( poFeature->IsFieldSetAndNotNull(i) )
         {
             const OGRFieldType eType = poFeatureDefn->GetFieldDefn(i)->GetType();
             if( eType == OFTString )
@@ -173,13 +173,13 @@ OGRErr OGRJMLWriterLayer::ICreateFeature( OGRFeature *poFeature )
             }
             else if( eType == OFTDateTime )
             {
-                int nYear;
-                int nMonth;
-                int nDay;
-                int nHour;
-                int nMinute;
-                int nTZFlag;
-                float fSecond;
+                int nYear = 0;
+                int nMonth = 0;
+                int nDay = 0;
+                int nHour = 0;
+                int nMinute = 0;
+                int nTZFlag = 0;
+                float fSecond = 0.0f;
                 poFeature->GetFieldAsDateTime(i, &nYear, &nMonth, &nDay,
                                               &nHour, &nMinute, &fSecond, &nTZFlag);
                 /* When writing time zone, OpenJUMP expects .XXX seconds */
@@ -196,12 +196,12 @@ OGRErr OGRJMLWriterLayer::ICreateFeature( OGRFeature *poFeature )
                 {
                     int nOffset = (nTZFlag - 100) * 15;
                     int nHours = (int) (nOffset / 60);  // round towards zero
-                    int nMinutes = ABS(nOffset - nHours * 60);
+                    int nMinutes = std::abs(nOffset - nHours * 60);
 
                     if( nOffset < 0 )
                     {
                         VSIFPrintfL(fp, "-" );
-                        nHours = ABS(nHours);
+                        nHours = std::abs(nHours);
                     }
                     else
                         VSIFPrintfL(fp, "+" );
@@ -310,16 +310,24 @@ OGRErr OGRJMLWriterLayer::CreateField( OGRFieldDefn *poFieldDefn,
     if( !bAddRGBField && strcmp( poFieldDefn->GetNameRef(), "R_G_B" ) == 0 )
         return OGRERR_FAILURE;
 
-    const char* pszType;
+    const char* pszType = NULL;
     OGRFieldType eType = poFieldDefn->GetType();
     if( eType == OFTInteger )
+    {
         pszType = "INTEGER";
+    }
     else if( eType == OFTInteger64 )
+    {
         pszType = "OBJECT";
+    }
     else if( eType == OFTReal )
+    {
         pszType = "DOUBLE";
+    }
     else if( eType == OFTDate || eType == OFTDateTime )
+    {
         pszType = "DATE";
+    }
     else
     {
         if( eType != OFTString )

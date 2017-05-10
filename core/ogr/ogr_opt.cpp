@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogr_opt.cpp 33631 2016-03-04 06:28:09Z goatbar $
  *
  * Project:  OpenGIS Simple Features
  * Purpose:  Functions for getting list of projection types, and their parms.
@@ -28,10 +27,15 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#include "cpl_port.h"
 #include "ogr_srs_api.h"
+
+#include <cstddef>
+
+#include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogr_opt.cpp 33631 2016-03-04 06:28:09Z goatbar $");
+CPL_CVSID("$Id: ogr_opt.cpp 36290 2016-11-19 06:42:09Z goatbar $");
 
 static const char * const papszParameterDefinitions[] = {
     SRS_PP_CENTRAL_MERIDIAN,    "Central Meridian",     "Long",  "0.0",
@@ -61,7 +65,6 @@ static const char * const papszParameterDefinitions[] = {
 };
 
 static const char * const papszProjectionDefinitions[] = {
-
     "*",
     SRS_PT_TRANSVERSE_MERCATOR,
     "Transverse Mercator",
@@ -489,9 +492,6 @@ static const char * const papszProjectionDefinitions[] = {
     NULL
 };
 
-
-
-
 /************************************************************************/
 /*                      OPTGetProjectionMethods()                       */
 /************************************************************************/
@@ -506,13 +506,12 @@ static const char * const papszProjectionDefinitions[] = {
 char **OPTGetProjectionMethods()
 
 {
-    int         i;
-    char        **papszList = NULL;
+    char **papszList = NULL;
 
-    for( i = 1; papszProjectionDefinitions[i] != NULL; i++ )
+    for( int i = 1; papszProjectionDefinitions[i] != NULL; ++i )
     {
-        if( EQUAL(papszProjectionDefinitions[i-1],"*") )
-            papszList = CSLAddString(papszList,papszProjectionDefinitions[i]);
+        if( EQUAL(papszProjectionDefinitions[i-1], "*") )
+            papszList = CSLAddString(papszList, papszProjectionDefinitions[i]);
     }
 
     return papszList;
@@ -543,28 +542,28 @@ char **OPTGetParameterList( const char *pszProjectionMethod,
 
 {
     char **papszList = NULL;
-    int  i;
 
-    for( i = 1; papszProjectionDefinitions[i] != NULL; i++ )
+    for( int i = 1; papszProjectionDefinitions[i] != NULL; ++i )
     {
         if( papszProjectionDefinitions[i-1][0] == '*'
-            && EQUAL(papszProjectionDefinitions[i],pszProjectionMethod) )
+            && EQUAL(papszProjectionDefinitions[i], pszProjectionMethod) )
         {
-            i++;
+            ++i;
 
             if( ppszUserName != NULL )
                 *ppszUserName = (char *)papszProjectionDefinitions[i];
 
-            i++;
+            ++i;
             while( papszProjectionDefinitions[i] != NULL
                    && papszProjectionDefinitions[i][0] != '*' )
             {
                 papszList = CSLAddString( papszList,
                                           papszProjectionDefinitions[i] );
-                i++;
+                ++i;
             }
-            if( papszList == NULL) /* IGH has no parameter, so return an empty list instead of NULL */
-                papszList = (char**) CPLCalloc(1, sizeof(char*));
+            // IGH has no parameter, so return an empty list instead of NULL.
+            if( papszList == NULL)
+                papszList = static_cast<char**>( CPLCalloc(1, sizeof(char*)) );
             return papszList;
         }
     }
@@ -592,7 +591,7 @@ char **OPTGetParameterList( const char *pszProjectionMethod,
  * returned name should not be modified or freed.
  *
  * @param ppszType location at which to return the parameter type for
- * the parameter.  This pointer may be NULL to skip.  The  returned type
+ * the parameter.  This pointer may be NULL to skip.  The returned type
  * should not be modified or freed.  The type values are described above.
  *
  * @param pdfDefaultValue location at which to put the default value for
@@ -601,25 +600,22 @@ char **OPTGetParameterList( const char *pszProjectionMethod,
  * @return TRUE if parameter found, or FALSE otherwise.
  */
 
-int OPTGetParameterInfo( const char * pszProjectionMethod,
+int OPTGetParameterInfo( CPL_UNUSED const char * pszProjectionMethod,
                          const char * pszParameterName,
                          char ** ppszUserName,
                          char ** ppszType,
                          double *pdfDefaultValue )
 
 {
-    int         i;
-
-    (void) pszProjectionMethod;
-
-    for( i = 0; papszParameterDefinitions[i] != NULL; i += 4 )
+    for( int i = 0; papszParameterDefinitions[i] != NULL; i += 4 )
     {
-        if( EQUAL(papszParameterDefinitions[i],pszParameterName) )
+        if( EQUAL(papszParameterDefinitions[i], pszParameterName) )
         {
             if( ppszUserName != NULL )
-                *ppszUserName = (char *)papszParameterDefinitions[i+1];
+                *ppszUserName =
+                    const_cast<char *>(papszParameterDefinitions[i+1]);
             if( ppszType != NULL )
-                *ppszType = (char *)papszParameterDefinitions[i+2];
+                *ppszType = const_cast<char *>(papszParameterDefinitions[i+2]);
             if( pdfDefaultValue != NULL )
                 *pdfDefaultValue = CPLAtof(papszParameterDefinitions[i+3]);
 

@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrvfkdriver.cpp 32110 2015-12-10 17:19:40Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRVFKDriver class.
@@ -33,13 +32,31 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrvfkdriver.cpp 32110 2015-12-10 17:19:40Z goatbar $");
+CPL_CVSID("$Id: ogrvfkdriver.cpp 37757 2017-03-18 14:03:33Z rouault $");
 
 static int OGRVFKDriverIdentify(GDALOpenInfo* poOpenInfo)
 {
-    return ( poOpenInfo->fpL != NULL &&
-             poOpenInfo->nHeaderBytes >= 2 &&
-             STARTS_WITH((const char*)poOpenInfo->pabyHeader, "&H") );
+    if( poOpenInfo->fpL == NULL )
+        return FALSE;
+
+    if( poOpenInfo->nHeaderBytes >= 2 &&
+        STARTS_WITH((const char*)poOpenInfo->pabyHeader, "&H") )
+        return TRUE;
+
+    /* valid datasource can be also SQLite DB previously created by
+       VFK driver, the real check is done by VFKReaderSQLite */
+    if ( poOpenInfo->nHeaderBytes >= 100 &&
+         STARTS_WITH((const char*)poOpenInfo->pabyHeader, "SQLite format 3") )
+    {
+        VSIStatBuf sStat;
+        if (CPLStat(poOpenInfo->pszFilename, &sStat) == 0 &&
+            VSI_ISREG(sStat.st_mode))
+        {
+            return GDAL_IDENTIFY_UNKNOWN;
+        }
+    }
+
+    return FALSE;
 }
 
 /*
@@ -48,22 +65,21 @@ static int OGRVFKDriverIdentify(GDALOpenInfo* poOpenInfo)
 */
 static GDALDataset *OGRVFKDriverOpen(GDALOpenInfo* poOpenInfo)
 {
-    OGRVFKDataSource *poDS;
-
     if( poOpenInfo->eAccess == GA_Update ||
         !OGRVFKDriverIdentify(poOpenInfo) )
         return NULL;
 
-    poDS = new OGRVFKDataSource();
+    OGRVFKDataSource *poDS = new OGRVFKDataSource();
 
-    if(!poDS->Open(poOpenInfo->pszFilename, TRUE) || poDS->GetLayerCount() == 0) {
+    if( !poDS->Open(poOpenInfo) ||
+        poDS->GetLayerCount() == 0 )
+    {
         delete poDS;
         return NULL;
     }
     else
         return poDS;
 }
-
 
 /*!
   \brief Register VFK driver

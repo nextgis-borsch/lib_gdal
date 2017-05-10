@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogropenfilegdbdriver.cpp 33031 2016-01-17 19:21:44Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements Open FileGDB OGR driver.
@@ -29,14 +28,13 @@
 
 #include "ogr_openfilegdb.h"
 
-CPL_CVSID("$Id");
+CPL_CVSID("$Id: ogropenfilegdbdriver.cpp 35911 2016-10-24 15:03:26Z goatbar $");
 
 // g++ -O2 -Wall -Wextra -g -shared -fPIC ogr/ogrsf_frmts/openfilegdb/*.cpp
 // -o ogr_OpenFileGDB.so -Iport -Igcore -Iogr -Iogr/ogrsf_frmts
 // -Iogr/ogrsf_frmts/mem -Iogr/ogrsf_frmts/openfilegdb -L. -lgdal
 
 extern "C" void RegisterOGROpenFileGDB();
-
 
 #define ENDS_WITH(str, strLen, end) \
     (strLen >= strlen(end) && EQUAL(str + strLen - strlen(end), end))
@@ -123,6 +121,19 @@ static GDALIdentifyEnum OGROpenFileGDBDriverIdentifyInternal( GDALOpenInfo* poOp
         return GDAL_IDENTIFY_UNKNOWN;
     }
 #endif
+
+    else if( EQUAL(pszFilename, ".") )
+    {
+        GDALIdentifyEnum eRet = GDAL_IDENTIFY_FALSE;
+        char* pszCurrentDir = CPLGetCurrentDir();
+        if( pszCurrentDir )
+        {
+            const char* pszTmp = pszCurrentDir;
+            eRet = OGROpenFileGDBDriverIdentifyInternal(poOpenInfo, pszTmp);
+            CPLFree(pszCurrentDir);
+        }
+        return eRet;
+    }
 
     else
     {

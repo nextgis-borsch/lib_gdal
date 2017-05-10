@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: gdalopeninfo.cpp 33758 2016-03-21 09:06:22Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of GDALOpenInfo class.
@@ -29,18 +28,25 @@
  ****************************************************************************/
 
 #include "gdal_priv.h"  // Must be included first for mingw VSIStatBufL.
-#include "cpl_conv.h"
-#include "cpl_vsi.h"
+#include "cpl_port.h"
 
+#include <cstdlib>
+#include <cstring>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 
+#include <algorithm>
 #include <vector>
 
-CPL_CVSID("$Id: gdalopeninfo.cpp 33758 2016-03-21 09:06:22Z rouault $");
+#include "cpl_config.h"
+#include "cpl_conv.h"
+#include "cpl_error.h"
+#include "cpl_string.h"
+#include "cpl_vsi.h"
+#include "gdal.h"
 
-using std::vector;
+CPL_CVSID("$Id: gdalopeninfo.cpp 37005 2016-12-23 15:03:59Z goatbar $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -52,6 +58,11 @@ using std::vector;
 /*                            GDALOpenInfo()                            */
 /************************************************************************/
 
+/** Constructor/
+ * @param pszFilenameIn filename
+ * @param nOpenFlagsIn open flags
+ * @param papszSiblingsIn list of sibling files, or NULL.
+ */
 GDALOpenInfo::GDALOpenInfo( const char * pszFilenameIn, int nOpenFlagsIn,
                             char **papszSiblingsIn ) :
     bHasGotSiblingFiles(false),
@@ -65,7 +76,8 @@ GDALOpenInfo::GDALOpenInfo( const char * pszFilenameIn, int nOpenFlagsIn,
     bIsDirectory(FALSE),
     fpL(NULL),
     nHeaderBytes(0),
-    pabyHeader(NULL)
+    pabyHeader(NULL),
+    papszAllowedDrivers(NULL)
 {
 
 /* -------------------------------------------------------------------- */
@@ -186,13 +198,13 @@ retry:  // TODO(schwehr): Stop using goto.
             // my_remote_utm.tif.  This helps a lot for GDAL based readers that
             // only provide file explorers to open datasets.
             const int nBufSize = 2048;
-            vector<char> oFilename(nBufSize);
+            std::vector<char> oFilename(nBufSize);
             char *szPointerFilename = &oFilename[0];
             int nBytes = static_cast<int>(
                 readlink( pszFilename, szPointerFilename, nBufSize ) );
             if (nBytes != -1)
             {
-                szPointerFilename[MIN(nBytes, nBufSize - 1)] = 0;
+                szPointerFilename[std::min(nBytes, nBufSize - 1)] = 0;
                 CPLFree(pszFilename);
                 pszFilename = CPLStrdup(szPointerFilename);
                 papszSiblingsIn = NULL;
@@ -261,6 +273,9 @@ GDALOpenInfo::~GDALOpenInfo()
 /*                         GetSiblingFiles()                            */
 /************************************************************************/
 
+/** Return sibling files.
+ * @return sibling files. Ownership below to the object.
+ */
 char** GDALOpenInfo::GetSiblingFiles()
 {
     if( bHasGotSiblingFiles )
@@ -299,6 +314,9 @@ char** GDALOpenInfo::GetSiblingFiles()
 /*      member variable is set to NULL.                                 */
 /************************************************************************/
 
+/** Return sibling files and steal reference
+ * @return sibling files. Ownership below to the caller (must be freed with CSLDestroy)
+ */
 char** GDALOpenInfo::StealSiblingFiles()
 {
     char** papszRet = GetSiblingFiles();
@@ -310,6 +328,9 @@ char** GDALOpenInfo::StealSiblingFiles()
 /*                        AreSiblingFilesLoaded()                       */
 /************************************************************************/
 
+/** Return whether sibling files have been loaded.
+ * @return true or false.
+ */
 bool GDALOpenInfo::AreSiblingFilesLoaded() const
 {
     return bHasGotSiblingFiles;
@@ -319,6 +340,10 @@ bool GDALOpenInfo::AreSiblingFilesLoaded() const
 /*                           TryToIngest()                              */
 /************************************************************************/
 
+/** Ingest bytes from the file.
+ * @param nBytes number of bytes to ingest.
+ * @return TRUE if successful
+ */
 int GDALOpenInfo::TryToIngest(int nBytes)
 {
     if( fpL == NULL )

@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrpgutility.cpp 35632 2016-10-07 13:45:42Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Utility methods
@@ -30,7 +29,7 @@
 #include "ogr_pg.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrpgutility.cpp 35632 2016-10-07 13:45:42Z rouault $");
+CPL_CVSID("$Id: ogrpgutility.cpp 35911 2016-10-24 15:03:26Z goatbar $");
 
 /************************************************************************/
 /*                         OGRPG_PQexec()                               */
@@ -39,21 +38,13 @@ CPL_CVSID("$Id: ogrpgutility.cpp 35632 2016-10-07 13:45:42Z rouault $");
 PGresult *OGRPG_PQexec(PGconn *conn, const char *query, int bMultipleCommandAllowed,
                        int bErrorAsDebug)
 {
-    PGresult* hResult;
-#if defined(PG_PRE74)
-    /* PQexecParams introduced in PG >= 7.4 */
-    hResult = PQexec(conn, query);
-#else
-    if (bMultipleCommandAllowed)
-        hResult = PQexec(conn, query);
-    else
-        hResult = PQexecParams(conn, query, 0, NULL, NULL, NULL, NULL, 0);
-#endif
+    PGresult* hResult = bMultipleCommandAllowed
+        ? PQexec(conn, query)
+        : PQexecParams(conn, query, 0, NULL, NULL, NULL, NULL, 0);
 
 #ifdef DEBUG
     const char* pszRetCode = "UNKNOWN";
-    char szNTuples[32];
-    szNTuples[0] = '\0';
+    char szNTuples[32] = {};
     if (hResult)
     {
         switch(PQresultStatus(hResult))
@@ -94,7 +85,6 @@ PGresult *OGRPG_PQexec(PGconn *conn, const char *query, int bMultipleCommandAllo
 
     return hResult;
 }
-
 
 /************************************************************************/
 /*                       OGRPG_Check_Table_Exists()                     */

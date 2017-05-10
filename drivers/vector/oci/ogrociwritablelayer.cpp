@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrociwritablelayer.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  Oracle Spatial Driver
  * Purpose:  Implementation of the OGROCIWritableLayer class.  This provides
@@ -33,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrociwritablelayer.cpp 33713 2016-03-12 17:41:57Z goatbar $");
+CPL_CVSID("$Id: ogrociwritablelayer.cpp 38061 2017-04-19 05:23:56Z ilucena $");
 
 /************************************************************************/
 /*                        OGROCIWritableLayer()                         */
@@ -54,6 +53,7 @@ OGROCIWritableLayer::OGROCIWritableLayer()
     panElemInfo = NULL;
 
     bLaunderColumnNames = TRUE;
+    bPreservePrecision = FALSE;
     bTruncationReported = FALSE;
     poSRS = NULL;
 
@@ -246,7 +246,7 @@ OGRErr OGROCIWritableLayer::CreateField( OGRFieldDefn *poFieldIn, int bApproxOK 
 {
     OGROCISession      *poSession = poDS->GetSession();
     char                szFieldType[256];
-    char                szFieldName[30];     // specify at most 30 characters, see ORA-00972
+    char                szFieldName[128]; // 12.2 max identifier name
     OGRFieldDefn        oField( poFieldIn );
 
 /* -------------------------------------------------------------------- */

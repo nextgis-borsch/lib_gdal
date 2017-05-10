@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: vfkreaderp.h 33713 2016-03-12 17:41:57Z goatbar $
+ * $Id: vfkreaderp.h 36501 2016-11-25 14:09:24Z rouault $
  *
  * Project:  VFK Reader
  * Purpose:  Private Declarations for OGR free VFK Reader code.
@@ -50,39 +50,42 @@ class VFKReader : public IVFKReader
 private:
     bool           m_bLatin2;
 
-    FILE          *m_poFD;
-    char          *ReadLine(bool = FALSE);
+    VSILFILE      *m_poFD;
+    char          *ReadLine( bool = false );
 
-    void          AddInfo(const char *);
+    void          AddInfo(const char *) override;
 
 protected:
     char           *m_pszFilename;
+    VSIStatBuf     *m_poFStat;
+    bool            m_bAmendment;
     int             m_nDataBlockCount;
     IVFKDataBlock **m_papoDataBlock;
 
-    IVFKDataBlock  *CreateDataBlock(const char *);
-    void            AddDataBlock(IVFKDataBlock *, const char *);
-    OGRErr          AddFeature(IVFKDataBlock *, VFKFeature *);
+    IVFKDataBlock  *CreateDataBlock(const char *) override;
+    void            AddDataBlock(IVFKDataBlock *, const char *) override;
+    virtual OGRErr          AddFeature(IVFKDataBlock *, VFKFeature *) override;
 
-    /* metadata */
+    // Metadata.
     std::map<CPLString, CPLString> poInfo;
 
 public:
-    VFKReader(const char *);
+    explicit VFKReader( const char *pszFilename );
     virtual ~VFKReader();
 
-    bool           IsLatin2() const { return m_bLatin2; }
-    bool           IsSpatial() const { return FALSE; }
-    bool           IsPreProcessed() const { return FALSE; }
-    int            ReadDataBlocks();
-    int            ReadDataRecords(IVFKDataBlock * = NULL);
-    int            LoadGeometry();
+    bool           IsLatin2() const override { return m_bLatin2; }
+    bool           IsSpatial() const override { return false; }
+    bool           IsPreProcessed() const override { return false; }
+    bool           IsValid() const override { return true; }
+    int            ReadDataBlocks() override;
+    int            ReadDataRecords(IVFKDataBlock * = NULL) override;
+    int            LoadGeometry() override;
 
-    int            GetDataBlockCount() const { return m_nDataBlockCount; }
-    IVFKDataBlock *GetDataBlock(int) const;
-    IVFKDataBlock *GetDataBlock(const char *) const;
+    int            GetDataBlockCount() const override { return m_nDataBlockCount; }
+    IVFKDataBlock *GetDataBlock(int) const override;
+    IVFKDataBlock *GetDataBlock(const char *) const override;
 
-    const char    *GetInfo(const char *);
+    const char    *GetInfo(const char *) override;
 };
 
 /************************************************************************/
@@ -96,27 +99,29 @@ private:
     sqlite3       *m_poDB;
     bool           m_bSpatial;
     bool           m_bNewDb;
+    bool           m_bDbSource;
 
-    IVFKDataBlock *CreateDataBlock(const char *);
-    void           AddDataBlock(IVFKDataBlock *, const char *);
-    OGRErr         AddFeature(IVFKDataBlock *, VFKFeature *);
+    IVFKDataBlock *CreateDataBlock(const char *) override;
+    void           AddDataBlock(IVFKDataBlock *, const char *) override;
+    OGRErr         AddFeature(IVFKDataBlock *, VFKFeature *) override;
 
     void           StoreInfo2DB();
 
-    void           CreateIndex(const char *, const char *, const char *, bool = TRUE);
+    void           CreateIndex(const char *, const char *, const char *, bool = true);
 
     friend class   VFKFeatureSQLite;
 public:
-    VFKReaderSQLite(const char *);
+    explicit VFKReaderSQLite(const char *);
     virtual ~VFKReaderSQLite();
 
-    bool          IsSpatial() const { return m_bSpatial; }
-    bool          IsPreProcessed() const { return !m_bNewDb; }
-    int           ReadDataBlocks();
-    int           ReadDataRecords(IVFKDataBlock * = NULL);
+    bool          IsSpatial() const override { return m_bSpatial; }
+    bool          IsPreProcessed() const override { return !m_bNewDb; }
+    bool          IsValid() const override { return m_poDB != NULL; }
+    int           ReadDataBlocks() override;
+    int           ReadDataRecords(IVFKDataBlock * = NULL) override;
 
     sqlite3_stmt *PrepareStatement(const char *);
-    OGRErr        ExecuteSQL(const char *, bool = FALSE);
+    OGRErr        ExecuteSQL( const char *, bool = false );
     OGRErr        ExecuteSQL(sqlite3_stmt *);
 };
 

@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrocitablelayer.cpp 34888 2016-08-03 19:59:19Z ilucena $");
+CPL_CVSID("$Id: ogrocitablelayer.cpp 37371 2017-02-13 11:41:59Z rouault $");
 
 static int nDiscarded = 0;
 static int nHits = 0;
@@ -132,7 +132,6 @@ OGROCITableLayer::~OGROCITableLayer()
 
     CPLFree( papsWriteGeomMap );
     CPLFree( pasWriteGeoms );
-
 
     CPLFree( pszQuery );
     CPLFree( pszWHERE );
@@ -916,7 +915,7 @@ OGRErr OGROCITableLayer::ICreateFeature( OGRFeature *poFeature )
 /*      Get the multi load count value from open options                */
 /* -------------------------------------------------------------------- */
 
-    this->bMultiLoad = CSLFetchBoolean( papszOptions, "MULTI_LOAD", true );
+    this->bMultiLoad = CPLFetchBool( papszOptions, "MULTI_LOAD", true );
 
     this->nMultiLoadCount = 100;
 
@@ -974,10 +973,9 @@ OGRErr OGROCITableLayer::UnboundCreateFeature( OGRFeature *poFeature )
         bNeedComma = TRUE;
     }
 
-
     for( int i = 0; i < poFeatureDefn->GetFieldCount(); i++ )
     {
-        if( !poFeature->IsFieldSet( i ) )
+        if( !poFeature->IsFieldSetAndNotNull( i ) )
             continue;
 
         if( !bNeedComma )
@@ -1081,7 +1079,7 @@ OGRErr OGROCITableLayer::UnboundCreateFeature( OGRFeature *poFeature )
 /* -------------------------------------------------------------------- */
     for( int i = 0; i < poFeatureDefn->GetFieldCount(); i++ )
     {
-        if( !poFeature->IsFieldSet( i ) )
+        if( !poFeature->IsFieldSetAndNotNull( i ) )
             continue;
 
         OGRFieldDefn *poFldDefn = poFeatureDefn->GetFieldDefn(i);
@@ -1311,7 +1309,6 @@ OGRErr OGROCITableLayer::UnboundCreateFeature( OGRFeature *poFeature )
     else
         return OGRERR_NONE;
 }
-
 
 /************************************************************************/
 /*                           GetExtent()                                */
@@ -1595,7 +1592,6 @@ void OGROCITableLayer::UpdateLayerExtents()
 
         sDimUpdate.Appendf(static_cast<int>(strlen(poFeatureDefn->GetName()) + 100),
                            ") WHERE TABLE_NAME = '%s'", poFeatureDefn->GetName());
-
     }
     else
     {
@@ -1852,7 +1848,7 @@ OGRErr OGROCITableLayer::BoundCreateFeature( OGRFeature *poFeature )
     /* of BoundCreateFeature() doesn't work. */
     for( i = 0; i < poFeatureDefn->GetFieldCount(); i++ )
     {
-        if( !poFeature->IsFieldSet( i ) &&
+        if( !poFeature->IsFieldSetAndNotNull( i ) &&
             poFeature->GetFieldDefnRef(i)->GetDefault() != NULL )
         {
             FlushPendingFeatures();
@@ -2018,7 +2014,7 @@ OGRErr OGROCITableLayer::BoundCreateFeature( OGRFeature *poFeature )
 /* -------------------------------------------------------------------- */
     for( i = 0; i < poFeatureDefn->GetFieldCount(); i++ )
     {
-        if( !poFeature->IsFieldSet( i ) )
+        if( !poFeature->IsFieldSetAndNotNull( i ) )
         {
             papaeWriteFieldInd[i][iCache] = OCI_IND_NULL;
             continue;
@@ -2143,8 +2139,8 @@ void OGROCITableLayer::CreateSpatialIndex()
 /*      If the user has disabled INDEX support then don't create the    */
 /*      index.                                                          */
 /* -------------------------------------------------------------------- */
-        if( !CSLFetchBoolean( papszOptions, "SPATIAL_INDEX", true ) ||
-            !CSLFetchBoolean( papszOptions, "INDEX", true ) )
+        if( !CPLFetchBool( papszOptions, "SPATIAL_INDEX", true ) ||
+            !CPLFetchBool( papszOptions, "INDEX", true ) )
             return;
 
 /* -------------------------------------------------------------------- */
@@ -2178,7 +2174,6 @@ void OGROCITableLayer::CreateSpatialIndex()
         OGROCIStringBuf  sIndexCmd;
         OGROCIStatement oExecStatement( poDS->GetSession() );
 
-
         sIndexCmd.Appendf( 10000, "CREATE INDEX \"%s\" ON %s(\"%s\") "
                            "INDEXTYPE IS MDSYS.SPATIAL_INDEX ",
                            szIndexName,
@@ -2190,15 +2185,15 @@ void OGROCITableLayer::CreateSpatialIndex()
             GetGeomType() != wkbUnknown;
 
         CPLString osParams(CSLFetchNameValueDef(papszOptions,"INDEX_PARAMETERS", ""));
-        if( bAddLayerGType || osParams.size() != 0 )
+        if( bAddLayerGType || !osParams.empty() )
         {
             sIndexCmd.Append( " PARAMETERS( '" );
-            if( osParams.size() != 0 )
+            if( !osParams.empty() )
                 sIndexCmd.Append( osParams.c_str() );
             if( bAddLayerGType &&
                 osParams.ifind("LAYER_GTYPE") == std::string::npos )
             {
-                if( osParams.size() != 0 )
+                if( !osParams.empty() )
                     sIndexCmd.Append( ", " );
                 sIndexCmd.Append( "LAYER_GTYPE=" );
                 if( wkbFlatten(GetGeomType()) == wkbPoint )

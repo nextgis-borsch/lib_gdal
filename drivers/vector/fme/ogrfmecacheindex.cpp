@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrfmecacheindex.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  FMEObjects Translator
  * Purpose:  Implement the OGRFMECacheIndex class, a mechanism to manage a
@@ -35,7 +34,7 @@
 #include "cpl_string.h"
 #include <time.h>
 
-CPL_CVSID("$Id: ogrfmecacheindex.cpp 33714 2016-03-13 05:42:13Z goatbar $");
+CPL_CVSID("$Id: ogrfmecacheindex.cpp 36332 2016-11-20 15:19:39Z rouault $");
 
 /************************************************************************/
 /*                          OGRFMECacheIndex()                          */
@@ -322,13 +321,18 @@ void OGRFMECacheIndex::Dereference( CPLXMLNode *psDSNode )
 void OGRFMECacheIndex::Add( CPLXMLNode *psDSNode )
 
 {
-    CPLAssert( psTree != NULL );
+    if( psTree == NULL )
+    {
+        CPLAssert( false );
+        return;
+    }
+
+    if( psDSNode == NULL || !EQUAL(psDSNode->pszValue,"DataSource") )
+        return;
 
     psDSNode->psNext = psTree->psChild;
     psTree->psChild = psDSNode;
 
-    if( psDSNode == NULL || !EQUAL(psDSNode->pszValue,"DataSource") )
-        return;
 
 /* -------------------------------------------------------------------- */
 /*      Prepare the creation time value to use.                         */

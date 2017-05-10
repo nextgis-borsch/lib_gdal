@@ -4,7 +4,7 @@
 # Author:   Dmitry Baryshnikov, polimax@mail.ru
 ################################################################################
 # Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
-# Copyright (C) 2012,2013,2014 Dmitry Baryshnikov
+# Copyright (C) 2012-2014 Dmitry Baryshnikov
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -34,7 +34,7 @@ if(NOT SKIP_INSTALL_LIBRARIES AND NOT SKIP_INSTALL_ALL )
         ARCHIVE DESTINATION ${INSTALL_LIB_DIR} COMPONENT libraries
         LIBRARY DESTINATION ${INSTALL_LIB_DIR} COMPONENT libraries
         FRAMEWORK DESTINATION ${INSTALL_LIB_DIR})
-        
+
     if(UNIX AND BUILD_SHARED_LIBS AND NOT OSX_FRAMEWORK) #NOTE: Hack for work with qgis 2.8.x needed libgdal.so.1.
         install(FILES ${CMAKE_BINARY_DIR}/libgdal.so.${SOVERSION} DESTINATION ${INSTALL_LIB_DIR} RENAME libgdal.so.1 COMPONENT libraries)
     endif()

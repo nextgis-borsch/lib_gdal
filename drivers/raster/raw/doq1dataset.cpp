@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: doq1dataset.cpp 33931 2016-04-09 19:44:09Z goatbar $
  *
  * Project:  USGS DOQ Driver (First Generation Format)
  * Purpose:  Implementation of DOQ1Dataset
@@ -32,7 +31,7 @@
 #include "cpl_string.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id: doq1dataset.cpp 33931 2016-04-09 19:44:09Z goatbar $");
+CPL_CVSID("$Id: doq1dataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 static const char UTM_FORMAT[] =
     "PROJCS[\"%s / UTM zone %dN\",GEOGCS[%s,PRIMEM[\"Greenwich\",0],"
@@ -113,8 +112,10 @@ class DOQ1Dataset : public RawDataset
 {
     VSILFILE    *fpImage;       // image data file.
 
-    double      dfULX, dfULY;
-    double      dfXPixelSize, dfYPixelSize;
+    double      dfULX;
+    double      dfULY;
+    double      dfXPixelSize;
+    double      dfYPixelSize;
 
     char        *pszProjection;
 
@@ -122,8 +123,8 @@ class DOQ1Dataset : public RawDataset
                 DOQ1Dataset();
                 ~DOQ1Dataset();
 
-    CPLErr      GetGeoTransform( double * padfTransform );
-    const char  *GetProjectionRef( void );
+    CPLErr      GetGeoTransform( double * padfTransform ) override;
+    const char  *GetProjectionRef( void ) override;
 
     static GDALDataset *Open( GDALOpenInfo * );
 };
@@ -139,7 +140,7 @@ DOQ1Dataset::DOQ1Dataset() :
     dfXPixelSize(0.0),
     dfYPixelSize(0.0),
     pszProjection(NULL)
-{ }
+{}
 
 /************************************************************************/
 /*                            ~DOQ1Dataset()                            */

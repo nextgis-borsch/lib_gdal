@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrpgeoselectlayer.cpp 32177 2015-12-14 07:25:30Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRPGeoSelectLayer class, layer access to the results
@@ -32,15 +31,15 @@
 #include "cpl_conv.h"
 #include "ogr_pgeo.h"
 
-CPL_CVSID("$Id: ogrpgeoselectlayer.cpp 32177 2015-12-14 07:25:30Z goatbar $");
+CPL_CVSID("$Id: ogrpgeoselectlayer.cpp 35198 2016-08-24 19:34:58Z goatbar $");
 
 /************************************************************************/
 /*                          OGRPGeoSelectLayer()                        */
 /************************************************************************/
 
 OGRPGeoSelectLayer::OGRPGeoSelectLayer( OGRPGeoDataSource *poDSIn,
-                                        CPLODBCStatement * poStmtIn )
-
+                                        CPLODBCStatement * poStmtIn ) :
+    pszBaseStatement(CPLStrdup(poStmtIn->GetCommand()))
 {
     poDS = poDSIn;
 
@@ -49,10 +48,9 @@ OGRPGeoSelectLayer::OGRPGeoSelectLayer( OGRPGeoDataSource *poDSIn,
     poFeatureDefn = NULL;
 
     poStmt = poStmtIn;
-    pszBaseStatement = CPLStrdup( poStmtIn->GetCommand() );
 
-    /* Just to make test_ogrsf happy, but would/could need be extended to */
-    /* other cases */
+    // Just to make test_ogrsf happy, but would/could need be extended to
+    // other cases.
     if( STARTS_WITH_CI(pszBaseStatement, "SELECT * FROM ") )
     {
 

@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrnasdatasource.cpp 32898 2016-01-10 14:44:10Z goatbar $
  *
  * Project:  OGR
  * Purpose:  Implements OGRNASDataSource class.
@@ -32,7 +31,7 @@
 #include "cpl_string.h"
 #include "ogr_nas.h"
 
-CPL_CVSID("$Id: ogrnasdatasource.cpp 32898 2016-01-10 14:44:10Z goatbar $");
+CPL_CVSID("$Id: ogrnasdatasource.cpp 35142 2016-08-18 11:30:22Z goatbar $");
 
 static const char * const apszURNNames[] =
 {
@@ -320,9 +319,9 @@ int OGRNASDataSource::TestCapability( const char * /* pszCap */ )
 void OGRNASDataSource::PopulateRelations()
 
 {
-    GMLFeature  *poFeature;
-
     poReader->ResetReading();
+
+    GMLFeature  *poFeature = NULL;
     while( (poFeature = poReader->NextFeature()) != NULL )
     {
         char **papszOBProperties = poFeature->GetOBProperties();

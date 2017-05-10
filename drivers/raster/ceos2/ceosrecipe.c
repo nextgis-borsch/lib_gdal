@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ceosrecipe.c 33720 2016-03-15 00:39:53Z goatbar $
+ * $Id: ceosrecipe.c 36380 2016-11-21 10:21:20Z rouault $
  *
  * Project:  ASI CEOS Translator
  * Purpose:  CEOS field layout recipes.
@@ -29,7 +29,7 @@
 
 #include "ceos.h"
 
-CPL_CVSID("$Id: ceosrecipe.c 33720 2016-03-15 00:39:53Z goatbar $");
+CPL_CVSID("$Id: ceosrecipe.c 36380 2016-11-21 10:21:20Z rouault $");
 
 /* Array of Datatypes and their names/values */
 
@@ -307,7 +307,7 @@ int CeosDefaultRecipe( CeosSARVolume_t *volume, const void *token )
 {
     const CeosRecipeType_t *recipe;
     CeosRecord_t *record;
-    CeosTypeCode_t TypeCode;
+    CeosTypeCode_t TypeCode = { 0 };
     struct CeosSARImageDesc *ImageDesc = &(volume->ImageDesc);
     char temp_str[1024];
     int i /*, temp_int */;
@@ -521,7 +521,7 @@ int ScanSARRecipeFCN( CeosSARVolume_t *volume, const void *token )
 static int SIRCRecipeFCN( CeosSARVolume_t *volume, const void *token )
 {
     struct CeosSARImageDesc *ImageDesc = &(volume->ImageDesc);
-    CeosTypeCode_t TypeCode;
+    CeosTypeCode_t TypeCode = { 0 };
     CeosRecord_t *record;
     char szSARDataFormat[29];
 
@@ -588,7 +588,7 @@ static int SIRCRecipeFCN( CeosSARVolume_t *volume, const void *token )
 static int PALSARRecipeFCN( CeosSARVolume_t *volume, const void *token )
 {
     struct CeosSARImageDesc *ImageDesc = &(volume->ImageDesc);
-    CeosTypeCode_t TypeCode;
+    CeosTypeCode_t TypeCode = { 0 };
     CeosRecord_t *record;
     char szSARDataFormat[29], szProduct[32];
 

@@ -38,10 +38,11 @@ if(ENABLE_AAIGRID_GRASSASCIIGRID)
     )
 
     set(LIB_HHEADERS_PRIV
+        aaigriddataset.h
     )
 
     set(LIB_CSOURCES
-        aaigriddataset.cpp	
+        aaigriddataset.cpp
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
@@ -49,5 +50,5 @@ if(ENABLE_AAIGRID_GRASSASCIIGRID)
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
 else()
-    warning_msg("Skip aaigrid")  
+    warning_msg("Skip aaigrid")
 endif()

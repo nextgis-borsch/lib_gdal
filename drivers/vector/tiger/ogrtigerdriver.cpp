@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrtigerdriver.cpp 33105 2016-01-23 15:27:32Z rouault $
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Implements OGRTigerDriver
@@ -30,7 +29,7 @@
 #include "ogr_tiger.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrtigerdriver.cpp 33105 2016-01-23 15:27:32Z rouault $");
+CPL_CVSID("$Id: ogrtigerdriver.cpp 35466 2016-09-16 05:03:52Z goatbar $");
 
 /************************************************************************/
 /*                                Open()                                */
@@ -44,16 +43,15 @@ static GDALDataset *OGRTigerDriverOpen( GDALOpenInfo* poOpenInfo )
     char** papszSiblingFiles = poOpenInfo->GetSiblingFiles();
     if( papszSiblingFiles != NULL )
     {
-        int i;
-        int bFoundCompatibleFile = FALSE;
-        for( i = 0; papszSiblingFiles[i] != NULL; i++ )
+        bool bFoundCompatibleFile = false;
+        for( int i = 0; papszSiblingFiles[i] != NULL; i++ )
         {
             int nLen = (int)strlen(papszSiblingFiles[i]);
             if( nLen > 4 &&
                 papszSiblingFiles[i][nLen-4] == '.' &&
                 papszSiblingFiles[i][nLen-1] == '1' )
             {
-                bFoundCompatibleFile = TRUE;
+                bFoundCompatibleFile = true;
                 break;
             }
         }
@@ -91,9 +89,7 @@ static GDALDataset *OGRTigerDriverCreate( const char * pszName,
                                           CPL_UNUSED GDALDataType eDT,
                                           char **papszOptions )
 {
-    OGRTigerDataSource *poDS;
-
-    poDS = new OGRTigerDataSource();
+    OGRTigerDataSource *poDS = new OGRTigerDataSource();
 
     if( poDS->Create( pszName, papszOptions ) )
         return poDS;

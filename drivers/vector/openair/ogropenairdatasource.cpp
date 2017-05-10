@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogropenairdatasource.cpp 32976 2016-01-14 00:07:34Z goatbar $
  *
  * Project:  OpenAir Translator
  * Purpose:  Implements OGROpenAirDataSource class
@@ -31,7 +30,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogropenairdatasource.cpp 32976 2016-01-14 00:07:34Z goatbar $");
+CPL_CVSID("$Id: ogropenairdatasource.cpp 35911 2016-10-24 15:03:26Z goatbar $");
 
 /************************************************************************/
 /*                        OGROpenAirDataSource()                        */
@@ -109,7 +108,6 @@ int OGROpenAirDataSource::Open( const char * pszFilename )
     return TRUE;
 }
 
-
 /************************************************************************/
 /*                              GetLatLon()                             */
 /************************************************************************/
@@ -128,7 +126,7 @@ bool OGROpenAirGetLatLon( const char* pszStr, double& dfLat, double& dfLon )
     double dfDegree = 0;
     double dfMinute = 0;
     double dfSecond = 0;
-    char c;
+    char c = '\0';
     bool bHasLat = false;
     bool bHasLon = false;
     while((c = *pszStr) != 0)

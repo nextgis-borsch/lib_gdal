@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: gdaloverviewdataset.cpp 33816 2016-03-30 13:18:07Z goatbar $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of a dataset overview warping class
@@ -27,10 +26,20 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#include "cpl_port.h"
+#include "gdal_priv.h"
+
+#include <cstring>
+
+#include "cpl_conv.h"
+#include "cpl_error.h"
+#include "cpl_progress.h"
+#include "cpl_string.h"
+#include "gdal.h"
 #include "gdal_mdreader.h"
 #include "gdal_proxy.h"
 
-CPL_CVSID("$Id: gdaloverviewdataset.cpp 33816 2016-03-30 13:18:07Z goatbar $");
+CPL_CVSID("$Id: gdaloverviewdataset.cpp 37723 2017-03-16 17:07:53Z rouault $");
 
 /** In GDAL, GDALRasterBand::GetOverview() returns a stand-alone band, that may
     have no parent dataset. This can be inconvenient in certain contexts, where
@@ -53,9 +62,8 @@ class GDALOverviewDataset : public GDALDataset
         friend class GDALOverviewBand;
 
         GDALDataset* poMainDS;
-        int          bOwnDS;
 
-        GDALDataset* poOvrDS; /* will be often NULL */
+        GDALDataset* poOvrDS;  // Will be often NULL.
         int          nOvrLevel;
         int          bThisLevelOnly;
 
@@ -64,37 +72,37 @@ class GDALOverviewDataset : public GDALDataset
         char       **papszMD_RPC;
         char       **papszMD_GEOLOCATION;
 
-        static void  Rescale(char**& papszMD, const char* pszItem,
-                             double dfRatio, double dfDefaultVal);
+        static void  Rescale( char**& papszMD, const char* pszItem,
+                              double dfRatio, double dfDefaultVal );
 
     protected:
         virtual CPLErr IRasterIO( GDALRWFlag, int, int, int, int,
-                                void *, int, int, GDALDataType,
-                                int, int *,
-                                GSpacing, GSpacing, GSpacing,
-                                GDALRasterIOExtraArg* psExtraArg );
+                                  void *, int, int, GDALDataType,
+                                  int, int *,
+                                  GSpacing, GSpacing, GSpacing,
+                                  GDALRasterIOExtraArg* psExtraArg ) override;
 
     public:
-                        GDALOverviewDataset(GDALDataset* poMainDS, int nOvrLevel,
-                                            int bThisLevelOnly,
-                                            int bOwnDS);
+                        GDALOverviewDataset( GDALDataset* poMainDS,
+                                             int nOvrLevel,
+                                             int bThisLevelOnly );
         virtual        ~GDALOverviewDataset();
 
-        virtual const char *GetProjectionRef(void);
-        virtual CPLErr GetGeoTransform( double * );
+        virtual const char *GetProjectionRef( void ) override;
+        virtual CPLErr GetGeoTransform( double * ) override;
 
-        virtual int    GetGCPCount();
-        virtual const char *GetGCPProjection();
-        virtual const GDAL_GCP *GetGCPs();
+        virtual int    GetGCPCount() override;
+        virtual const char *GetGCPProjection() override;
+        virtual const GDAL_GCP *GetGCPs() override;
 
-        virtual char  **GetMetadata( const char * pszDomain = "" );
+        virtual char  **GetMetadata( const char * pszDomain = "" ) override;
         virtual const char *GetMetadataItem( const char * pszName,
-                                             const char * pszDomain = "" );
+                                             const char * pszDomain = "" ) override;
 
-        virtual int        CloseDependentDatasets();
+        virtual int        CloseDependentDatasets() override;
 
   private:
-    CPL_DISALLOW_COPY_ASSIGN(GDALOverviewDataset);
+    CPL_DISALLOW_COPY_ASSIGN(GDALOverviewDataset)
 };
 
 /* ******************************************************************** */
@@ -107,34 +115,35 @@ class GDALOverviewBand : public GDALProxyRasterBand
         friend class GDALOverviewDataset;
 
         GDALRasterBand*         poUnderlyingBand;
-        virtual GDALRasterBand* RefUnderlyingRasterBand();
+        virtual GDALRasterBand* RefUnderlyingRasterBand() override;
 
     public:
-                    GDALOverviewBand(GDALOverviewDataset* poDS, int nBand);
+                    GDALOverviewBand( GDALOverviewDataset* poDS, int nBand );
         virtual    ~GDALOverviewBand();
 
-        virtual CPLErr FlushCache();
+        virtual CPLErr FlushCache() override;
 
-        virtual int GetOverviewCount();
-        virtual GDALRasterBand *GetOverview(int);
+        virtual int GetOverviewCount() override;
+        virtual GDALRasterBand *GetOverview( int ) override;
 
   private:
-    CPL_DISALLOW_COPY_ASSIGN(GDALOverviewBand);
+    CPL_DISALLOW_COPY_ASSIGN(GDALOverviewBand)
 };
 
 /************************************************************************/
 /*                       GDALCreateOverviewDataset()                    */
 /************************************************************************/
 
-GDALDataset* GDALCreateOverviewDataset(GDALDataset* poMainDS, int nOvrLevel,
-                                       int bThisLevelOnly, int bOwnDS)
+// Takes a reference on poMainDS in case of success.
+GDALDataset* GDALCreateOverviewDataset( GDALDataset* poMainDS, int nOvrLevel,
+                                        int bThisLevelOnly )
 {
-    /* Sanity checks */
+    // Sanity checks.
     const int nBands = poMainDS->GetRasterCount();
     if( nBands == 0 )
         return NULL;
 
-    for( int i = 1; i<= nBands; i++ )
+    for( int i = 1; i<= nBands; ++i )
     {
         if( poMainDS->GetRasterBand(i)->GetOverview(nOvrLevel) == NULL )
         {
@@ -149,19 +158,17 @@ GDALDataset* GDALCreateOverviewDataset(GDALDataset* poMainDS, int nOvrLevel,
         }
     }
 
-    return new GDALOverviewDataset(poMainDS, nOvrLevel, bThisLevelOnly, bOwnDS);
+    return new GDALOverviewDataset(poMainDS, nOvrLevel, bThisLevelOnly);
 }
 
 /************************************************************************/
 /*                        GDALOverviewDataset()                         */
 /************************************************************************/
 
-GDALOverviewDataset::GDALOverviewDataset(GDALDataset* poMainDSIn,
-                                         int nOvrLevelIn,
-                                         int bThisLevelOnlyIn,
-                                         int bOwnDSIn) :
+GDALOverviewDataset::GDALOverviewDataset( GDALDataset* poMainDSIn,
+                                          int nOvrLevelIn,
+                                          int bThisLevelOnlyIn ) :
     poMainDS(poMainDSIn),
-    bOwnDS(bOwnDSIn),
     nOvrLevel(nOvrLevelIn),
     bThisLevelOnly(bThisLevelOnlyIn),
     nGCPCount(0),
@@ -169,6 +176,7 @@ GDALOverviewDataset::GDALOverviewDataset(GDALDataset* poMainDSIn,
     papszMD_RPC(NULL),
     papszMD_GEOLOCATION(NULL)
 {
+    poMainDSIn->Reference();
     eAccess = poMainDS->GetAccess();
     nRasterXSize =
         poMainDS->GetRasterBand(1)->GetOverview(nOvrLevel)->GetXSize();
@@ -183,15 +191,15 @@ GDALOverviewDataset::GDALOverviewDataset(GDALDataset* poMainDSIn,
         poOvrDS = NULL;
     }
     nBands = poMainDS->GetRasterCount();
-    for(int i=0;i<nBands;i++)
+    for( int i = 0; i < nBands; ++i )
     {
         SetBand(i+1, new GDALOverviewBand(this, i+1));
     }
 
-    /* We create a fake driver that has the same name as the original */
-    /* one, but we cannot use the real driver object, so that code */
-    /* doesn't try to cast the GDALOverviewDataset* as a native dataset */
-    /* object */
+    // We create a fake driver that has the same name as the original
+    // one, but we cannot use the real driver object, so that code
+    // doesn't try to cast the GDALOverviewDataset* as a native dataset
+    // object.
     if( poMainDS->GetDriver() != NULL )
     {
         poDriver = new GDALDriver();
@@ -202,10 +210,10 @@ GDALOverviewDataset::GDALOverviewDataset(GDALDataset* poMainDSIn,
     SetDescription( poMainDS->GetDescription() );
 
     CPLDebug( "GDAL", "GDALOverviewDataset(%s, this=%p) creation.",
-                          poMainDS->GetDescription(), this );
+              poMainDS->GetDescription(), this );
 
     papszOpenOptions = CSLDuplicate(poMainDS->GetOpenOptions());
-    /* Add OVERVIEW_LEVEL if not called from GDALOpenEx() but directly */
+    // Add OVERVIEW_LEVEL if not called from GDALOpenEx(), but directly.
     papszOpenOptions = CSLSetNameValue(papszOpenOptions, "OVERVIEW_LEVEL",
                                        CPLSPrintf("%d", nOvrLevel));
 }
@@ -238,26 +246,25 @@ GDALOverviewDataset::~GDALOverviewDataset()
 
 int GDALOverviewDataset::CloseDependentDatasets()
 {
-    int bRet = FALSE;
+    bool bRet = false;
 
-    if( bOwnDS )
+    if( poMainDS )
     {
-        for(int i=0;i<nBands;i++)
+        for( int i = 0; i < nBands; ++i )
         {
             GDALOverviewBand* const band =
                 dynamic_cast<GDALOverviewBand*>(papoBands[i]);
             if( band == NULL )
             {
                 CPLError( CE_Fatal, CPLE_AppDefined,
-                          "OverviewBand cast fail." );
-                return FALSE;
+                            "OverviewBand cast fail." );
+                return false;
             }
             band->poUnderlyingBand = NULL;
         }
-        GDALClose( poMainDS );
+        if( poMainDS->ReleaseRef() )
+            bRet = true;
         poMainDS = NULL;
-        bOwnDS = FALSE;
-        bRet = TRUE;
     }
 
     return bRet;
@@ -272,22 +279,26 @@ int GDALOverviewDataset::CloseDependentDatasets()
 /************************************************************************/
 
 CPLErr GDALOverviewDataset::IRasterIO( GDALRWFlag eRWFlag,
-                               int nXOff, int nYOff, int nXSize, int nYSize,
-                               void * pData, int nBufXSize, int nBufYSize,
-                               GDALDataType eBufType,
-                               int nBandCount, int *panBandMap,
-                               GSpacing nPixelSpace, GSpacing nLineSpace,
-                               GSpacing nBandSpace,
-                               GDALRasterIOExtraArg* psExtraArg)
+                                       int nXOff, int nYOff,
+                                       int nXSize, int nYSize,
+                                       void * pData,
+                                       int nBufXSize, int nBufYSize,
+                                       GDALDataType eBufType,
+                                       int nBandCount, int *panBandMap,
+                                       GSpacing nPixelSpace,
+                                       GSpacing nLineSpace,
+                                       GSpacing nBandSpace,
+                                       GDALRasterIOExtraArg* psExtraArg )
 
 {
-    /* In case the overview bands are really linked to a dataset, then issue */
-    /* the request to that dataset */
+    // In case the overview bands are really linked to a dataset, then issue
+    // the request to that dataset.
     if( poOvrDS != NULL )
     {
         return poOvrDS->RasterIO(
             eRWFlag, nXOff, nYOff, nXSize, nYSize, pData, nBufXSize, nBufYSize,
-            eBufType, nBandCount, panBandMap, nPixelSpace, nLineSpace, nBandSpace,
+            eBufType, nBandCount, panBandMap, nPixelSpace,
+            nLineSpace, nBandSpace,
             psExtraArg);
     }
 
@@ -297,12 +308,12 @@ CPLErr GDALOverviewDataset::IRasterIO( GDALRWFlag eRWFlag,
 
     for( int iBandIndex = 0;
          iBandIndex < nBandCount && eErr == CE_None;
-         iBandIndex++ )
+         ++iBandIndex )
     {
         GDALOverviewBand *poBand =
             dynamic_cast<GDALOverviewBand *>(
                 GetRasterBand(panBandMap[iBandIndex]) );
-        if (poBand == NULL)
+        if( poBand == NULL )
         {
             eErr = CE_Failure;
             break;
@@ -350,7 +361,7 @@ const char *GDALOverviewDataset::GetProjectionRef()
 CPLErr GDALOverviewDataset::GetGeoTransform( double * padfTransform )
 
 {
-    double adfGeoTransform[6] = { 0.0 };
+    double adfGeoTransform[6] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
     if( poMainDS->GetGeoTransform(adfGeoTransform) != CE_None )
         return CE_Failure;
 
@@ -404,7 +415,7 @@ const GDAL_GCP *GDALOverviewDataset::GetGCPs()
     nGCPCount = poMainDS->GetGCPCount();
 
     pasGCPList = GDALDuplicateGCPs( nGCPCount, pasGCPsMain );
-    for(int i = 0; i < nGCPCount; i++)
+    for( int i = 0; i < nGCPCount; ++i )
     {
         pasGCPList[i].dfGCPPixel *= static_cast<double>(nRasterXSize) /
             poMainDS->GetRasterXSize();
@@ -418,8 +429,8 @@ const GDAL_GCP *GDALOverviewDataset::GetGCPs()
 /*                             Rescale()                                */
 /************************************************************************/
 
-void GDALOverviewDataset::Rescale(char**& papszMD, const char* pszItem,
-                                  double dfRatio, double dfDefaultVal)
+void GDALOverviewDataset::Rescale( char**& papszMD, const char* pszItem,
+                                   double dfRatio, double dfDefaultVal )
 {
     double dfVal =
         CPLAtofM( CSLFetchNameValueDef(papszMD, pszItem,
@@ -434,7 +445,7 @@ void GDALOverviewDataset::Rescale(char**& papszMD, const char* pszItem,
 
 char  **GDALOverviewDataset::GetMetadata( const char * pszDomain )
 {
-    if (poOvrDS != NULL)
+    if( poOvrDS != NULL )
     {
         char** papszMD = poOvrDS->GetMetadata(pszDomain);
         if( papszMD != NULL )
@@ -443,7 +454,7 @@ char  **GDALOverviewDataset::GetMetadata( const char * pszDomain )
 
     char** papszMD = poMainDS->GetMetadata(pszDomain);
 
-    /* We may need to rescale some values from the RPC metadata domain */
+    // We may need to rescale some values from the RPC metadata domain.
     if( pszDomain != NULL && EQUAL(pszDomain, MD_DOMAIN_RPC) &&
         papszMD != NULL )
     {
@@ -502,7 +513,7 @@ char  **GDALOverviewDataset::GetMetadata( const char * pszDomain )
 const char *GDALOverviewDataset::GetMetadataItem( const char * pszName,
                                                   const char * pszDomain )
 {
-    if (poOvrDS != NULL)
+    if( poOvrDS != NULL )
     {
         const char* pszValue = poOvrDS->GetMetadataItem(pszName, pszDomain);
         if( pszValue != NULL )
@@ -523,11 +534,12 @@ const char *GDALOverviewDataset::GetMetadataItem( const char * pszName,
 /*                          GDALOverviewBand()                          */
 /************************************************************************/
 
-GDALOverviewBand::GDALOverviewBand(GDALOverviewDataset* poDSIn, int nBandIn)
+GDALOverviewBand::GDALOverviewBand( GDALOverviewDataset* poDSIn, int nBandIn ) :
+    poUnderlyingBand(poDSIn->poMainDS->GetRasterBand(nBandIn)->
+                         GetOverview(poDSIn->nOvrLevel))
 {
     poDS = poDSIn;
     nBand = nBandIn;
-    poUnderlyingBand = poDSIn->poMainDS->GetRasterBand(nBand)->GetOverview(poDSIn->nOvrLevel);
     nRasterXSize = poDSIn->nRasterXSize;
     nRasterYSize = poDSIn->nRasterYSize;
     eDataType = poUnderlyingBand->GetRasterDataType();
@@ -590,7 +602,7 @@ int GDALOverviewBand::GetOverviewCount()
 /*                           GetOverview()                              */
 /************************************************************************/
 
-GDALRasterBand *GDALOverviewBand::GetOverview(int iOvr)
+GDALRasterBand *GDALOverviewBand::GetOverview( int iOvr )
 {
     if( iOvr < 0 || iOvr >= GetOverviewCount() )
         return NULL;

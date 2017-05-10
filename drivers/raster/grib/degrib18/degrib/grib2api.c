@@ -143,7 +143,7 @@ static int mdl_LocalUnpack (unsigned char *local, sInt4 locallen,
       MEMCPY_BIG (&numVal, local, sizeof (sInt4));
       MEMCPY_BIG (&refVal, local + 4, sizeof (float));
       scale = GRIB_UNSIGN_INT2 (local[8], local[9]);
-      recScale10 = 1 / pow (10.0, scale);
+      recScale10 = (sInt4)(1 / pow (10.0, scale));
       numBits = local[10];
       if (numBits >= 32) {
 #ifdef DEBUG
@@ -207,7 +207,7 @@ static int mdl_LocalUnpack (unsigned char *local, sInt4 locallen,
                         &bufLoc, &numUsed);
             local += numUsed;
             BytesUsed += (int) numUsed;
-            idat[curIndex] = (refVal + uli_temp) * recScale10;
+            idat[curIndex] = (sInt4)((refVal + uli_temp) * recScale10);
             curIndex++;
          }
          idat[curIndex] = 0;
@@ -378,14 +378,14 @@ static int TransferInt (float * fld, sInt4 ngrdpts, sInt4 ibitmap,
             ib[i] = bmap[i];
             /* Check if we are supposed to insert xmissp into the field */
             if ((iclean != 0) && (ib[i] == 0)) {
-               iain[i] = xmissp;
+               iain[i] = (sInt4)xmissp;
             } else {
-               iain[i] = fld[i];
+               iain[i] = (sInt4)fld[i];
             }
          }
       } else {
          for (i = 0; i < ngrdpts; i++) {
-            iain[i] = fld[i];
+            iain[i] = (sInt4)fld[i];
          }
       }
    } else {
@@ -404,9 +404,9 @@ static int TransferInt (float * fld, sInt4 ngrdpts, sInt4 ibitmap,
             ib[curIndex] = bmap[i];
             /* Check if we are supposed to insert xmissp into the field */
             if ((iclean != 0) && (ib[curIndex] == 0)) {
-               iain[i] = xmissp;
+               iain[i] = (sInt4)xmissp;
             } else {
-               iain[curIndex] = fld[i];
+               iain[curIndex] = (sInt4)fld[i];
             }
          }
       } else {
@@ -415,7 +415,7 @@ static int TransferInt (float * fld, sInt4 ngrdpts, sInt4 ibitmap,
             /* ScanIndex returns value as if scan was 0100(0000) */
             curIndex = (x - 1) + (y - 1) * nx;
             myAssert (curIndex < nd2x3);
-            iain[curIndex] = fld[i];
+            iain[curIndex] = (sInt4)fld[i];
          }
       }
       *scan = 64 + (*scan & 0x0f);
@@ -1999,7 +1999,7 @@ void pk_grib2 (CPL_UNUSED sInt4 * kfildo, CPL_UNUSED float * ain,
                CPL_UNUSED sInt4 * nidat, CPL_UNUSED float * rdat,
                CPL_UNUSED sInt4 * nrdat, CPL_UNUSED sInt4 * is0,
                CPL_UNUSED sInt4 * ns0, CPL_UNUSED sInt4 * is1,
-               CPL_UNUSED sInt4 * ns1, CPL_UNUSED sInt4 * is3, 
+               CPL_UNUSED sInt4 * ns1, CPL_UNUSED sInt4 * is3,
                CPL_UNUSED sInt4 * ns3, CPL_UNUSED sInt4 * is4,
                CPL_UNUSED sInt4 * ns4, CPL_UNUSED sInt4 * is5,
                CPL_UNUSED sInt4 * ns5, CPL_UNUSED sInt4 * is6,
@@ -2014,7 +2014,7 @@ void pk_grib2 (CPL_UNUSED sInt4 * kfildo, CPL_UNUSED float * ain,
                CPL_UNUSED sInt4 * ndjer, CPL_UNUSED sInt4 * kjer)
 {
 #ifndef _FORTRAN
-   
+
    printf ("Can not pack things unless using FORTRAN!\n");
    return;
 

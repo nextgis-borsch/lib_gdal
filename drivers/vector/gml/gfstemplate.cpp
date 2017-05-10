@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: gfstemplate.cpp 32099 2015-12-09 00:24:06Z goatbar $
  *
  * Project:  GML Reader
  * Purpose:  Implementation of GML GFS template management
@@ -33,10 +32,18 @@
  *
  ****************************************************************************/
 
+#include "cpl_port.h"
 #include "gmlreaderp.h"
 #include "ogr_gml.h"
 
-CPL_CVSID("$Id: gfstemplate.cpp 32099 2015-12-09 00:24:06Z goatbar $");
+#include <cstddef>
+
+#include "cpl_conv.h"
+#include "cpl_minixml.h"
+#include "gmlreader.h"
+#include "ogr_core.h"
+
+CPL_CVSID("$Id: gfstemplate.cpp 37154 2017-01-16 00:26:43Z goatbar $");
 
 /************************************************************************/
 /*                        GFSTemplateItem                               */
@@ -44,13 +51,14 @@ CPL_CVSID("$Id: gfstemplate.cpp 32099 2015-12-09 00:24:06Z goatbar $");
 
 class GFSTemplateItem
 {
-private:
+  private:
     char            *m_pszName;
     int             n_nItemCount;
     int             n_nGeomCount;
     GFSTemplateItem *pNext;
-public:
-                    GFSTemplateItem( const char *pszName );
+
+  public:
+    explicit        GFSTemplateItem( const char *pszName );
                     ~GFSTemplateItem();
     const char      *GetName() { return m_pszName; }
     void            Update( int b_has_geom );
@@ -68,9 +76,8 @@ public:
                                 GMLReader *pReader,
                                 int *pbSequentialLayers )
 {
-/* updating the FeatureClass list */
-    int clIdx;
-    for (clIdx = 0; clIdx < pReader->GetClassCount(); clIdx++)
+    // Updating the FeatureClass list.
+    for( int clIdx = 0; clIdx < pReader->GetClassCount(); clIdx++ )
     {
         GMLFeatureClass* poClass = pReader->GetClass( clIdx );
         if (poClass != NULL)
@@ -80,13 +87,15 @@ public:
     GFSTemplateItem *pItem = pCC->GetFirst();
     while ( pItem != NULL )
     {
-    /* updating Classes */
+        // Updating Classes.
         GMLFeatureClass* poClass = pReader->GetClass( pItem->GetName() );
         if (poClass != NULL)
         {
             poClass->SetFeatureCount( pItem->GetCount() );
-            if ( pItem->GetGeomCount() != 0 && poClass->GetGeometryPropertyCount() == 0 )
-                poClass->AddGeometryProperty( new GMLGeometryPropertyDefn( "", "", wkbUnknown, -1, true ) );
+            if ( pItem->GetGeomCount() != 0 &&
+                 poClass->GetGeometryPropertyCount() == 0 )
+                poClass->AddGeometryProperty(
+                    new GMLGeometryPropertyDefn( "", "", wkbUnknown, -1, true));
             bValid = true;
         }
         pItem = pItem->GetNext();
@@ -101,32 +110,31 @@ public:
 
 bool GMLReader::ReArrangeTemplateClasses ( GFSTemplateList *pCC )
 {
-/* rearranging the final FeatureClass list [SEQUENTIAL] */
-    int m_nSavedClassCount = GetClassCount();
+    // Rearranging the final FeatureClass list [SEQUENTIAL].
+    // TODO(schwehr): Why the m_ for m_nSavedClassCount?  Not a member.
+    const int m_nSavedClassCount = GetClassCount();
 
-/* saving the previous FeatureClass list */
-    GMLFeatureClass **m_papoSavedClass = (GMLFeatureClass **)
-                    CPLMalloc( sizeof(void*) * m_nSavedClassCount );
-    int clIdx;
-    for (clIdx = 0; clIdx < GetClassCount(); clIdx++)
+    // Saving the previous FeatureClass list.
+    GMLFeatureClass **m_papoSavedClass = static_cast<GMLFeatureClass **>(
+                    CPLMalloc(sizeof(void*) * m_nSavedClassCount));
+
+    for( int clIdx = 0; clIdx < GetClassCount(); clIdx++ )
     {
-    /* Transferring any previous FeatureClass */
+        // Transferring any previous FeatureClass.
         m_papoSavedClass[clIdx] = m_papoClass[clIdx];
     }
 
-/* cleaning the previous FeatureClass list */
-    SetClassListLocked( false );
-    CPLFree( m_papoClass );
+    // Cleaning the previous FeatureClass list.
+    SetClassListLocked(false);
+    CPLFree(m_papoClass);
     m_nClassCount = 0;
     m_papoClass = NULL;
 
     GFSTemplateItem *pItem = pCC->GetFirst();
     while ( pItem != NULL )
     {
-    /*
-    * re-inserting any required FeatureClassup
-    * accordingly to actual SEQUENTIAL layout
-    */
+        // Re-inserting any required FeatureClassup
+        // accordingly to actual SEQUENTIAL layout.
         GMLFeatureClass* poClass = NULL;
         for( int iClass = 0; iClass < m_nSavedClassCount; iClass++ )
         {
@@ -140,13 +148,13 @@ bool GMLReader::ReArrangeTemplateClasses ( GFSTemplateList *pCC )
         if (poClass != NULL)
         {
             if (poClass->GetFeatureCount() > 0)
-                AddClass( poClass );
+                AddClass(poClass);
         }
         pItem = pItem->GetNext();
     }
-    SetClassListLocked( true );
+    SetClassListLocked(true);
 
-/* destroying the saved List and any unused FeatureClass */
+    // Destroying the saved List and any unused FeatureClass.
     for( int iClass = 0; iClass < m_nSavedClassCount; iClass++ )
     {
         bool bUnused = true;
@@ -162,7 +170,7 @@ bool GMLReader::ReArrangeTemplateClasses ( GFSTemplateList *pCC )
         if ( bUnused )
             delete poClass;
     }
-    CPLFree( m_papoSavedClass );
+    CPLFree(m_papoSavedClass);
     return true;
 }
 
@@ -170,13 +178,12 @@ bool GMLReader::ReArrangeTemplateClasses ( GFSTemplateList *pCC )
 /*       GMLReader::PrescanForTemplate()           */
 /***************************************************/
 
-bool GMLReader::PrescanForTemplate ()
+bool GMLReader::PrescanForTemplate()
 {
-    int iCount = 0;
-    GMLFeature      *poFeature;
+    GMLFeature *poFeature = NULL;
     GFSTemplateList *pCC = new GFSTemplateList();
 
-    /* processing GML features */
+    // Processing GML features.
     while( (poFeature = NextFeature()) != NULL )
     {
         GMLFeatureClass *poClass = poFeature->GetClass();
@@ -199,26 +206,24 @@ bool GMLReader::PrescanForTemplate ()
         delete poFeature;
     }
 
-    gmlUpdateFeatureClasses( pCC, this, &m_nHasSequentialLayers );
+    gmlUpdateFeatureClasses(pCC, this, &m_nHasSequentialLayers);
     if ( m_nHasSequentialLayers == TRUE )
-        ReArrangeTemplateClasses( pCC );
-    iCount = pCC->GetClassCount();
+        ReArrangeTemplateClasses(pCC);
+    const int iCount = pCC->GetClassCount();
     delete pCC;
     CleanupParser();
     return iCount > 0;
 }
 
-
 /***************************************************/
 /*                 GFSTemplateList()               */
 /***************************************************/
 
-GFSTemplateList::GFSTemplateList( void )
-{
-    m_bSequentialLayers = true;
-    pFirst = NULL;
-    pLast = NULL;
-}
+GFSTemplateList::GFSTemplateList() :
+    m_bSequentialLayers(true),
+    pFirst(NULL),
+    pLast(NULL)
+{}
 
 /***************************************************/
 /*                 GFSTemplateList()               */
@@ -226,11 +231,10 @@ GFSTemplateList::GFSTemplateList( void )
 
 GFSTemplateList::~GFSTemplateList()
 {
-    GFSTemplateItem *pNext;
     GFSTemplateItem *pItem = pFirst;
     while ( pItem != NULL )
     {
-        pNext = pItem->GetNext();
+        GFSTemplateItem *pNext = pItem->GetNext();
         delete pItem;
         pItem = pNext;
     }
@@ -242,10 +246,9 @@ GFSTemplateList::~GFSTemplateList()
 
 GFSTemplateItem *GFSTemplateList::Insert( const char *pszName )
 {
-    GFSTemplateItem *pItem;
-    pItem = new GFSTemplateItem( pszName );
+    GFSTemplateItem *pItem = new GFSTemplateItem( pszName );
 
-    /* inserting into the linked list */
+    // Inserting into the linked list.
     if( pFirst == NULL )
         pFirst = pItem;
     if( pLast != NULL )
@@ -260,18 +263,18 @@ GFSTemplateItem *GFSTemplateList::Insert( const char *pszName )
 
 void GFSTemplateList::Update( const char *pszName, int bHasGeom )
 {
-    GFSTemplateItem *pItem;
+    GFSTemplateItem *pItem = NULL;
 
     if( pFirst == NULL )
     {
-    /* empty List: first item */
+        // Empty List: first item.
         pItem = Insert( pszName );
         pItem->Update( bHasGeom );
         return;
     }
     if( EQUAL(pszName, pLast->GetName() ) )
     {
-    /* continuing with the current Class Item */
+        // Continuing with the current Class Item.
         pLast->Update( bHasGeom );
         return;
     }
@@ -281,7 +284,7 @@ void GFSTemplateList::Update( const char *pszName, int bHasGeom )
     {
         if( EQUAL(pszName, pItem->GetName() ))
         {
-        /* Class Item previously declared: NOT SEQUENTIAL */
+            // Class Item previously declared: NOT SEQUENTIAL.
             m_bSequentialLayers = false;
             pItem->Update( bHasGeom );
             return;
@@ -289,22 +292,19 @@ void GFSTemplateList::Update( const char *pszName, int bHasGeom )
         pItem = pItem->GetNext();
     }
 
-    /* inserting a new Class Item */
+    // Inserting a new Class Item.
     pItem = Insert( pszName );
     pItem->Update( bHasGeom );
 }
-
 
 /***************************************************/
 /*          GFSTemplateList::GetClassCount()       */
 /***************************************************/
 
-int GFSTemplateList::GetClassCount( )
+int GFSTemplateList::GetClassCount()
 {
     int iCount = 0;
-    GFSTemplateItem *pItem;
-
-    pItem = pFirst;
+    GFSTemplateItem *pItem = pFirst;
     while( pItem != NULL )
     {
         iCount++;
@@ -318,13 +318,12 @@ int GFSTemplateList::GetClassCount( )
 /*                 GFSTemplateItem()               */
 /***************************************************/
 
-GFSTemplateItem::GFSTemplateItem( const char *pszName )
-{
-    m_pszName = CPLStrdup( pszName );
-    n_nItemCount = 0;
-    n_nGeomCount = 0;
-    pNext = NULL;
-}
+GFSTemplateItem::GFSTemplateItem( const char *pszName ) :
+    m_pszName(CPLStrdup( pszName )),
+    n_nItemCount(0),
+    n_nGeomCount(0),
+    pNext(NULL)
+{}
 
 /***************************************************/
 /*                ~GFSTemplateItem()               */

@@ -1,5 +1,4 @@
 /*
- * $Id: keaband.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *  keaband.cpp
  *
  *  Created by Pete Bunting on 01/08/2012.
@@ -39,6 +38,8 @@
 #include <vector>
 
 #include <limits.h>
+
+CPL_CVSID("$Id: keaband.cpp 37966 2017-04-11 19:34:57Z rouault $");
 
 // constructor
 KEARasterBand::KEARasterBand( KEADataset *pDataset, int nSrcBand, GDALAccess eAccessIn, kealib::KEAImageIO *pImageIO, int *pRefCount )
@@ -326,15 +327,14 @@ CPLErr KEARasterBand::SetMetadata(char **papszMetadata, const char *pszDomain)
     if( ( pszDomain != NULL ) && ( *pszDomain != '\0' ) )
         return CE_Failure;
     int nIndex = 0;
-    char *pszName;
-    const char *pszValue;
     try
     {
         // iterate through each one
         while( papszMetadata[nIndex] != NULL )
         {
-            pszName = NULL;
-            pszValue = CPLParseNameValue( papszMetadata[nIndex], &pszName );
+            char *pszName = NULL;
+            const char *pszValue =
+                CPLParseNameValue( papszMetadata[nIndex], &pszName );
             if( pszValue == NULL )
                 pszValue = "";
             if( pszName != NULL )
@@ -459,7 +459,7 @@ GDALRasterAttributeTable *KEARasterBand::GetDefaultRAT()
         {
             // we assume this is never NULL - creates a new one if none exists
             kealib::KEAAttributeTable *pKEATable = this->m_pImageIO->getAttributeTable(kealib::kea_att_file, this->nBand);
-            this->m_pAttributeTable = new KEARasterAttributeTable(pKEATable);
+            this->m_pAttributeTable = new KEARasterAttributeTable(pKEATable, this);
         }
         catch(const kealib::KEAException &e)
         {
@@ -556,7 +556,6 @@ CPLErr KEARasterBand::SetDefaultRAT(const GDALRasterAttributeTable *poRAT)
                         CPLFree(papszStringData[n]);
                 }
                 CPLFree(papszStringData);
-
             }
         }
     }

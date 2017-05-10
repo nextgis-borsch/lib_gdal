@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrmultilinestring.cpp 33631 2016-03-04 06:28:09Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRMultiLineString class.
@@ -28,10 +27,16 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#include "cpl_port.h"
 #include "ogr_geometry.h"
+
+#include <cstddef>
+
+#include "cpl_error.h"
+#include "ogr_core.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrmultilinestring.cpp 33631 2016-03-04 06:28:09Z goatbar $");
+CPL_CVSID("$Id: ogrmultilinestring.cpp 36328 2016-11-20 13:44:29Z goatbar $");
 
 /************************************************************************/
 /*                        OGRMultiLineString()                          */
@@ -41,9 +46,7 @@ CPL_CVSID("$Id: ogrmultilinestring.cpp 33631 2016-03-04 06:28:09Z goatbar $");
  * \brief Create an empty multi line string collection.
  */
 
-OGRMultiLineString::OGRMultiLineString()
-{
-}
+OGRMultiLineString::OGRMultiLineString() {}
 
 /************************************************************************/
 /*           OGRMultiLineString( const OGRMultiLineString& )            */
@@ -60,16 +63,13 @@ OGRMultiLineString::OGRMultiLineString()
 
 OGRMultiLineString::OGRMultiLineString( const OGRMultiLineString& other ) :
     OGRMultiCurve(other)
-{
-}
+{}
 
 /************************************************************************/
 /*                       ~OGRMultiLineString()                          */
 /************************************************************************/
 
-OGRMultiLineString::~OGRMultiLineString()
-{
-}
+OGRMultiLineString::~OGRMultiLineString() {}
 
 /************************************************************************/
 /*                  operator=( const OGRMultiCurve&)                    */
@@ -84,15 +84,15 @@ OGRMultiLineString::~OGRMultiLineString()
  * @since GDAL 2.1
  */
 
-OGRMultiLineString& OGRMultiLineString::operator=( const OGRMultiLineString& other )
+OGRMultiLineString &
+OGRMultiLineString::operator=( const OGRMultiLineString& other )
 {
-    if( this != &other)
+    if( this != &other )
     {
         OGRMultiCurve::operator=( other );
     }
     return *this;
 }
-
 
 /************************************************************************/
 /*                          getGeometryType()                           */
@@ -103,7 +103,7 @@ OGRwkbGeometryType OGRMultiLineString::getGeometryType() const
 {
     if( (flags & OGR_G_3D) && (flags & OGR_G_MEASURED) )
         return wkbMultiLineStringZM;
-    else if( flags & OGR_G_MEASURED  )
+    else if( flags & OGR_G_MEASURED )
         return wkbMultiLineStringM;
     else if( flags & OGR_G_3D )
         return wkbMultiLineString25D;
@@ -125,7 +125,8 @@ const char * OGRMultiLineString::getGeometryName() const
 /*                          isCompatibleSubType()                       */
 /************************************************************************/
 
-OGRBoolean OGRMultiLineString::isCompatibleSubType( OGRwkbGeometryType eGeomType ) const
+OGRBoolean
+OGRMultiLineString::isCompatibleSubType( OGRwkbGeometryType eGeomType ) const
 {
     return wkbFlatten(eGeomType) == wkbLineString;
 }
@@ -145,9 +146,10 @@ OGRErr OGRMultiLineString::exportToWkt( char ** ppszDstText,
 /*                         hasCurveGeometry()                           */
 /************************************************************************/
 
-OGRBoolean OGRMultiLineString::hasCurveGeometry(CPL_UNUSED int bLookForNonLinear) const
+OGRBoolean OGRMultiLineString::hasCurveGeometry(
+    int /* bLookForNonLinear */ ) const
 {
-    return FALSE;
+    return false;
 }
 
 /************************************************************************/
@@ -157,13 +159,22 @@ OGRBoolean OGRMultiLineString::hasCurveGeometry(CPL_UNUSED int bLookForNonLinear
 /**
  * \brief Cast to multicurve.
  *
- * The passed in geometry is consumed and a new one returned .
+ * The passed in geometry is consumed and a new one returned.
  *
  * @param poMLS the input geometry - ownership is passed to the method.
  * @return new geometry.
  */
 
-OGRMultiCurve* OGRMultiLineString::CastToMultiCurve(OGRMultiLineString* poMLS)
+OGRMultiCurve* OGRMultiLineString::CastToMultiCurve( OGRMultiLineString* poMLS )
 {
-    return (OGRMultiCurve*) TransferMembersAndDestroy(poMLS, new OGRMultiCurve());
+    OGRMultiCurve *poMultiCurve = dynamic_cast<OGRMultiCurve *>(
+        TransferMembersAndDestroy(poMLS, new OGRMultiCurve()) );
+    if( poMultiCurve == NULL )
+    {
+        CPLError( CE_Fatal, CPLE_AppDefined,
+                  "OGRMultiCurve dynamic_cast failed." );
+        return NULL;
+    }
+
+    return poMultiCurve;
 }

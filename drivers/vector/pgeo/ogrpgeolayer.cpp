@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrpgeolayer.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRPGeoLayer class, code shared between
@@ -34,29 +33,25 @@
 #include "cpl_string.h"
 #include "ogrpgeogeometry.h"
 
-CPL_CVSID("$Id: ogrpgeolayer.cpp 33714 2016-03-13 05:42:13Z goatbar $");
+#include <algorithm>
+
+CPL_CVSID("$Id: ogrpgeolayer.cpp 37371 2017-02-13 11:41:59Z rouault $");
 
 /************************************************************************/
 /*                            OGRPGeoLayer()                            */
 /************************************************************************/
 
-OGRPGeoLayer::OGRPGeoLayer()
-
-{
-    poDS = NULL;
-
-    pszGeomColumn = NULL;
-    pszFIDColumn = NULL;
-
-    poStmt = NULL;
-
-    iNextShapeId = 0;
-
-    poSRS = NULL;
-    nSRSId = -2; // we haven't even queried the database for it yet.
-    poFeatureDefn = NULL;
-    panFieldOrdinals = NULL;
-}
+OGRPGeoLayer::OGRPGeoLayer() :
+    poFeatureDefn(NULL),
+    poStmt(NULL),
+    poSRS(NULL),
+    nSRSId(-2), // we haven't even queried the database for it yet.
+    iNextShapeId(0),
+    poDS(NULL),
+    pszGeomColumn(NULL),
+    pszFIDColumn(NULL),
+    panFieldOrdinals(NULL)
+{}
 
 /************************************************************************/
 /*                            ~OGRPGeoLayer()                             */
@@ -68,7 +63,7 @@ OGRPGeoLayer::~OGRPGeoLayer()
     if( m_nFeaturesRead > 0 && poFeatureDefn != NULL )
     {
         CPLDebug( "PGeo", "%d features read on layer '%s'.",
-                  (int) m_nFeaturesRead,
+                  static_cast<int>(m_nFeaturesRead),
                   poFeatureDefn->GetName() );
     }
 
@@ -119,7 +114,8 @@ CPLErr OGRPGeoLayer::BuildFeatureDefn( const char *pszLayerName,
     {
         OGRFieldDefn    oField( poStmtIn->GetColName(iCol), OFTString );
 
-        oField.SetWidth( MAX(0,poStmtIn->GetColSize( iCol )) );
+        oField.SetWidth(
+            std::max(static_cast<short>(0), poStmtIn->GetColSize( iCol )));
 
         if( pszGeomColumn != NULL
             && EQUAL(poStmtIn->GetColName(iCol),pszGeomColumn) )
@@ -189,7 +185,6 @@ CPLErr OGRPGeoLayer::BuildFeatureDefn( const char *pszLayerName,
     return CE_None;
 }
 
-
 /************************************************************************/
 /*                            ResetReading()                            */
 /************************************************************************/
@@ -209,9 +204,7 @@ OGRFeature *OGRPGeoLayer::GetNextFeature()
 {
     while( true )
     {
-        OGRFeature      *poFeature;
-
-        poFeature = GetNextRawFeature();
+        OGRFeature *poFeature = GetNextRawFeature();
         if( poFeature == NULL )
             return NULL;
 
@@ -270,7 +263,7 @@ OGRFeature *OGRPGeoLayer::GetNextRawFeature()
         const char *pszValue = poStmt->GetColData( iSrcField );
 
         if( pszValue == NULL )
-            /* no value */;
+            poFeature->SetFieldNull( iField );
         else if( poFeature->GetFieldDefnRef(iField)->GetType() == OFTBinary )
             poFeature->SetField( iField,
                                  poStmt->GetColDataLength(iSrcField),

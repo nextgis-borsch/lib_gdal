@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: zmapdataset.cpp 32984 2016-01-14 19:08:12Z goatbar $
  *
  * Project:  ZMap driver
  * Purpose:  GDALDataset driver for ZMap dataset.
@@ -34,7 +33,7 @@
 
 #include <cmath>
 
-CPL_CVSID("$Id: zmapdataset.cpp 32984 2016-01-14 19:08:12Z goatbar $");
+CPL_CVSID("$Id: zmapdataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -61,7 +60,7 @@ class ZMapDataset : public GDALPamDataset
                  ZMapDataset();
     virtual     ~ZMapDataset();
 
-    virtual CPLErr GetGeoTransform( double * );
+    virtual CPLErr GetGeoTransform( double * ) override;
 
     static GDALDataset *Open( GDALOpenInfo * );
     static int          Identify( GDALOpenInfo * );
@@ -83,10 +82,9 @@ class ZMapRasterBand : public GDALPamRasterBand
   public:
     explicit ZMapRasterBand( ZMapDataset * );
 
-    virtual CPLErr IReadBlock( int, int, void * );
-    virtual double GetNoDataValue( int *pbSuccess = NULL );
+    virtual CPLErr IReadBlock( int, int, void * ) override;
+    virtual double GetNoDataValue( int *pbSuccess = NULL ) override;
 };
-
 
 /************************************************************************/
 /*                           ZMapRasterBand()                           */
@@ -458,9 +456,8 @@ GDALDataset *ZMapDataset::Open( GDALOpenInfo * poOpenInfo )
 /*      Support overviews.                                              */
 /* -------------------------------------------------------------------- */
     poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
-    return( poDS );
+    return poDS;
 }
-
 
 /************************************************************************/
 /*                       WriteRightJustified()                          */
@@ -689,7 +686,7 @@ CPLErr ZMapDataset::GetGeoTransform( double * padfTransform )
 {
     memcpy(padfTransform, adfGeoTransform, 6 * sizeof(double));
 
-    return( CE_None );
+    return CE_None;
 }
 
 /************************************************************************/

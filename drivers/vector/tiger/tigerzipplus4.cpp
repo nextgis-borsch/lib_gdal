@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: tigerzipplus4.cpp 27745 2014-09-27 16:38:57Z goatbar $
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Implements TigerZipPlus4, providing access to .RTZ files.
@@ -30,9 +29,9 @@
 #include "ogr_tiger.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: tigerzipplus4.cpp 27745 2014-09-27 16:38:57Z goatbar $");
+CPL_CVSID("$Id: tigerzipplus4.cpp 35629 2016-10-06 23:39:06Z goatbar $");
 
-#define FILE_CODE       "Z"
+static const char FILE_CODE[] = "Z";
 
 static const TigerFieldInfo rtZ_fields[] = {
   // fieldname    fmt  type OFTType      beg  end  len  bDefine bSet bWrite
@@ -65,7 +64,5 @@ TigerZipPlus4::TigerZipPlus4( OGRTigerDataSource * poDSIn,
     /* -------------------------------------------------------------------- */
     /*      Fields from type Z record.                                      */
     /* -------------------------------------------------------------------- */
-
     AddFieldDefns( psRTInfo, poFeatureDefn );
-
 }

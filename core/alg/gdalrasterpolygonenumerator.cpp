@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: gdalrasterpolygonenumerator.cpp 33757 2016-03-20 20:22:33Z goatbar $
  *
  * Project:  GDAL
  * Purpose:  Raster Polygon Enumerator
@@ -28,11 +27,17 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#include "cpl_port.h"
 #include "gdal_alg_priv.h"
-#include "cpl_conv.h"
-#include <vector>
 
-CPL_CVSID("$Id: gdalrasterpolygonenumerator.cpp 33757 2016-03-20 20:22:33Z goatbar $");
+#include <cstddef>
+
+#include "cpl_conv.h"
+#include "cpl_error.h"
+
+CPL_CVSID("$Id: gdalrasterpolygonenumerator.cpp 36698 2016-12-05 04:25:21Z goatbar $");
+
+/*! @cond Doxygen_Suppress */
 
 /************************************************************************/
 /*                    GDALRasterPolygonEnumeratorT()                    */
@@ -90,12 +95,12 @@ template<class DataType, class EqualityTest>
 void GDALRasterPolygonEnumeratorT<DataType,EqualityTest>::MergePolygon( int nSrcId, int nDstIdInit )
 
 {
-    // Figure out the final dest id
+    // Figure out the final dest id.
     int nDstIdFinal = nDstIdInit;
     while( panPolyIdMap[nDstIdFinal] != nDstIdFinal )
         nDstIdFinal = panPolyIdMap[nDstIdFinal];
 
-    // Map the whole intermediate chain to it
+    // Map the whole intermediate chain to it.
     int nDstIdCur = nDstIdInit;
     while( panPolyIdMap[nDstIdCur] != nDstIdCur )
     {
@@ -104,7 +109,7 @@ void GDALRasterPolygonEnumeratorT<DataType,EqualityTest>::MergePolygon( int nSrc
         nDstIdCur = nNextDstId;
     }
 
-    // And map the whole source chain to it too (can be done in one pass)
+    // And map the whole source chain to it too (can be done in one pass).
     while( panPolyIdMap[nSrcId] != nSrcId )
     {
         int nNextSrcId = panPolyIdMap[nSrcId];
@@ -122,16 +127,19 @@ void GDALRasterPolygonEnumeratorT<DataType,EqualityTest>::MergePolygon( int nSrc
 /************************************************************************/
 
 template<class DataType, class EqualityTest>
-int GDALRasterPolygonEnumeratorT<DataType,EqualityTest>::NewPolygon( DataType nValue )
+int GDALRasterPolygonEnumeratorT<DataType,EqualityTest>::NewPolygon(
+    DataType nValue )
 
 {
-    int nPolyId = nNextPolygonId;
+    const int nPolyId = nNextPolygonId;
 
     if( nNextPolygonId >= nPolyAlloc )
     {
         nPolyAlloc = nPolyAlloc * 2 + 20;
-        panPolyIdMap = (GInt32 *) CPLRealloc(panPolyIdMap,nPolyAlloc*sizeof(GInt32));
-        panPolyValue = (DataType *) CPLRealloc(panPolyValue,nPolyAlloc*sizeof(DataType));
+        panPolyIdMap = static_cast<GInt32 *>(
+            CPLRealloc(panPolyIdMap,nPolyAlloc*sizeof(GInt32)));
+        panPolyValue = static_cast<DataType *>(
+            CPLRealloc(panPolyValue,nPolyAlloc*sizeof(DataType)));
     }
 
     nNextPolygonId++;
@@ -159,14 +167,14 @@ void GDALRasterPolygonEnumeratorT<DataType,EqualityTest>::CompleteMerges()
 
     for( iPoly = 0; iPoly < nNextPolygonId; iPoly++ )
     {
-        // Figure out the final id
+        // Figure out the final id.
         int nId = panPolyIdMap[iPoly];
         while( nId != panPolyIdMap[nId] )
         {
             nId = panPolyIdMap[nId];
         }
 
-        // Then map the whole intermediate chain to it
+        // Then map the whole intermediate chain to it.
         int nIdCur = panPolyIdMap[iPoly];
         panPolyIdMap[iPoly] = nId;
         while( nIdCur != panPolyIdMap[nIdCur] )
@@ -290,3 +298,5 @@ void GDALRasterPolygonEnumeratorT<DataType,EqualityTest>::ProcessLine(
 template class GDALRasterPolygonEnumeratorT<GInt32, IntEqualityTest>;
 
 template class GDALRasterPolygonEnumeratorT<float, FloatEqualityTest>;
+
+/*! @endcond */

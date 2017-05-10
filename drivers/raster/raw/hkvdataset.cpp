@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: hkvdataset.cpp 33943 2016-04-11 17:41:09Z goatbar $
  *
  * Project:  GView
  * Purpose:  Implementation of Atlantis HKV labelled blob support
@@ -36,7 +35,11 @@
 #include "ogr_spatialref.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id: hkvdataset.cpp 33943 2016-04-11 17:41:09Z goatbar $");
+#include <cmath>
+
+#include <algorithm>
+
+CPL_CVSID("$Id: hkvdataset.cpp 36763 2016-12-09 22:10:55Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -57,7 +60,7 @@ class HKVRasterBand : public RawRasterBand
                                GDALDataType eDataType, int bNativeOrder );
     virtual     ~HKVRasterBand() {};
 
-    virtual CPLErr SetNoDataValue( double );
+    virtual CPLErr SetNoDataValue( double ) override;
 };
 
 /************************************************************************/
@@ -165,7 +168,7 @@ class HKVDataset : public RawDataset
         // Update stored info.
         MFF2version = version_number;
     }
-    float       GetVersion() const { return MFF2version; }
+
     float       MFF2version;
 
     CPLErr      SetGCPProjection(const char *); // For use in CreateCopy.
@@ -196,15 +199,15 @@ class HKVDataset : public RawDataset
                 HKVDataset();
     virtual     ~HKVDataset();
 
-    virtual int GetGCPCount() /* const */ { return nGCPCount; };
-    virtual const char *GetGCPProjection();
-    virtual const GDAL_GCP *GetGCPs();
+    virtual int GetGCPCount() override /* const */ { return nGCPCount; };
+    virtual const char *GetGCPProjection() override;
+    virtual const GDAL_GCP *GetGCPs() override;
 
-    virtual const char *GetProjectionRef(void);
-    virtual CPLErr GetGeoTransform( double * );
+    virtual const char *GetProjectionRef(void) override;
+    virtual CPLErr GetGeoTransform( double * ) override;
 
-    virtual CPLErr SetGeoTransform( double * );
-    virtual CPLErr SetProjection( const char * );
+    virtual CPLErr SetGeoTransform( double * ) override;
+    virtual CPLErr SetProjection( const char * ) override;
 
     static GDALDataset *Open( GDALOpenInfo * );
     static GDALDataset *Create( const char * pszFilename,
@@ -427,7 +430,6 @@ CPLErr SaveHKVAttribFile( const char *pszFilenameIn,
         return CE_Failure;
     return CE_None;
 }
-
 
 /************************************************************************/
 /*                          GetProjectionRef()                          */
@@ -784,7 +786,7 @@ CPLErr HKVDataset::SetProjection( const char * pszNewProjection )
     // Update a georef file.
 
 #ifdef DEBUG_VERBOSE
-    printf( "HKVDataset::SetProjection(%s)\n", pszNewProjection );
+    printf( "HKVDataset::SetProjection(%s)\n", pszNewProjection );/*ok*/
 #endif
 
     if( !STARTS_WITH_CI(pszNewProjection, "GEOGCS")
@@ -1756,8 +1758,8 @@ HKVDataset::CreateCopy( const char * pszFilename,
                     return NULL;
                 }
 
-                const int nTBXSize = MIN(nBlockXSize,nXSize-iXOffset);
-                const int nTBYSize = MIN(nBlockYSize,nYSize-iYOffset);
+                const int nTBXSize = std::min(nBlockXSize, nXSize - iXOffset);
+                const int nTBYSize = std::min(nBlockYSize, nYSize - iYOffset);
 
                 eErr = poSrcBand->RasterIO( GF_Read,
                                             iXOffset, iYOffset,
@@ -1799,8 +1801,9 @@ HKVDataset::CreateCopy( const char * pszFilename,
 
     if (( poSrcDS->GetGeoTransform( tempGeoTransform ) == CE_None)
         && (tempGeoTransform[0] != 0.0 || tempGeoTransform[1] != 1.0
-        || tempGeoTransform[2] != 0.0 || tempGeoTransform[3] != 0.0
-        || tempGeoTransform[4] != 0.0 || ABS(tempGeoTransform[5]) != 1.0 ))
+            || tempGeoTransform[2] != 0.0 || tempGeoTransform[3] != 0.0
+            || tempGeoTransform[4] != 0.0
+            || std::abs(tempGeoTransform[5]) != 1.0 ))
     {
 
           poDS->SetGCPProjection(poSrcDS->GetProjectionRef());
@@ -1825,7 +1828,6 @@ HKVDataset::CreateCopy( const char * pszFilename,
         poDstBand->FlushCache();
     }
 
-
     if( !pfnProgress( 1.0, NULL, pProgressData ) )
     {
         CPLError( CE_Failure, CPLE_UserInterrupt, "User terminated" );
@@ -1841,7 +1843,6 @@ HKVDataset::CreateCopy( const char * pszFilename,
 
     return poDS;
 }
-
 
 /************************************************************************/
 /*                         GDALRegister_HKV()                           */

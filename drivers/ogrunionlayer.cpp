@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrunionlayer.cpp 32177 2015-12-14 07:25:30Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRUnionLayer class
@@ -27,30 +26,35 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#ifndef DOXYGEN_SKIP
+
 #include "ogrunionlayer.h"
 #include "ogrwarpedlayer.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrunionlayer.cpp 32177 2015-12-14 07:25:30Z goatbar $");
-
-/************************************************************************/
-/*                      OGRUnionLayerGeomFieldDefn()                    */
-/************************************************************************/
-
-OGRUnionLayerGeomFieldDefn::OGRUnionLayerGeomFieldDefn(const char* pszNameIn,
-                                                       OGRwkbGeometryType eType) :
-        OGRGeomFieldDefn(pszNameIn, eType), bGeomTypeSet(FALSE), bSRSSet(FALSE)
-{
-}
+CPL_CVSID("$Id: ogrunionlayer.cpp 37371 2017-02-13 11:41:59Z rouault $");
 
 /************************************************************************/
 /*                      OGRUnionLayerGeomFieldDefn()                    */
 /************************************************************************/
 
 OGRUnionLayerGeomFieldDefn::OGRUnionLayerGeomFieldDefn(
-                                    OGRGeomFieldDefn* poSrc) :
+    const char* pszNameIn,
+    OGRwkbGeometryType eType) :
+    OGRGeomFieldDefn(pszNameIn, eType),
+    bGeomTypeSet(FALSE),
+    bSRSSet(FALSE)
+{}
+
+/************************************************************************/
+/*                      OGRUnionLayerGeomFieldDefn()                    */
+/************************************************************************/
+
+OGRUnionLayerGeomFieldDefn::OGRUnionLayerGeomFieldDefn(
+    OGRGeomFieldDefn* poSrc) :
     OGRGeomFieldDefn(poSrc->GetNameRef(), poSrc->GetType()),
-    bGeomTypeSet(FALSE), bSRSSet(FALSE)
+    bGeomTypeSet(FALSE),
+    bSRSSet(FALSE)
 {
     SetSpatialRef(poSrc->GetSpatialRef());
 }
@@ -60,9 +64,10 @@ OGRUnionLayerGeomFieldDefn::OGRUnionLayerGeomFieldDefn(
 /************************************************************************/
 
 OGRUnionLayerGeomFieldDefn::OGRUnionLayerGeomFieldDefn(
-                                    OGRUnionLayerGeomFieldDefn* poSrc) :
+    OGRUnionLayerGeomFieldDefn* poSrc) :
     OGRGeomFieldDefn(poSrc->GetNameRef(), poSrc->GetType()),
-    bGeomTypeSet(poSrc->bGeomTypeSet), bSRSSet(poSrc->bSRSSet)
+    bGeomTypeSet(poSrc->bGeomTypeSet),
+    bSRSSet(poSrc->bSRSSet)
 {
     SetSpatialRef(poSrc->GetSpatialRef());
     sStaticEnvelope = poSrc->sStaticEnvelope;
@@ -72,9 +77,7 @@ OGRUnionLayerGeomFieldDefn::OGRUnionLayerGeomFieldDefn(
 /*                     ~OGRUnionLayerGeomFieldDefn()                    */
 /************************************************************************/
 
-OGRUnionLayerGeomFieldDefn::~OGRUnionLayerGeomFieldDefn()
-{
-}
+OGRUnionLayerGeomFieldDefn::~OGRUnionLayerGeomFieldDefn() {}
 
 /************************************************************************/
 /*                          OGRUnionLayer()                             */
@@ -102,16 +105,13 @@ OGRUnionLayer::OGRUnionLayer( const char* pszName,
     panMap(NULL),
     papszIgnoredFields(NULL),
     bAttrFilterPassThroughValue(-1),
+    pabModifiedLayers(static_cast<int*>(CPLCalloc(sizeof(int), nSrcLayers))),
+    pabCheckIfAutoWrap(static_cast<int*>(CPLCalloc(sizeof(int), nSrcLayers))),
     poGlobalSRS(NULL)
 {
     CPLAssert(nSrcLayersIn > 0);
 
     SetDescription( pszName );
-
-    pabModifiedLayers
-        = reinterpret_cast<int*>(CPLCalloc(sizeof(int), nSrcLayers));
-    pabCheckIfAutoWrap
-        = reinterpret_cast<int*>(CPLCalloc(sizeof(int), nSrcLayers));
 }
 
 /************************************************************************/
@@ -185,7 +185,7 @@ void OGRUnionLayer::SetSourceLayerFieldName(const char* pszSourceLayerFieldName)
 {
     CPLAssert(poFeatureDefn == NULL);
 
-    CPLAssert(osSourceLayerFieldName.size() == 0);
+    CPLAssert(osSourceLayerFieldName.empty());
     if( pszSourceLayerFieldName != NULL )
         osSourceLayerFieldName = pszSourceLayerFieldName;
 }
@@ -261,7 +261,7 @@ OGRFeatureDefn *OGRUnionLayer::GetLayerDefn()
     poFeatureDefn->SetGeomType(wkbNone);
 
     int iCompareFirstIndex = 0;
-    if( osSourceLayerFieldName.size() )
+    if( !osSourceLayerFieldName.empty() )
     {
         OGRFieldDefn oField(osSourceLayerFieldName, OFTString);
         poFeatureDefn->AddFieldDefn(&oField);
@@ -270,19 +270,19 @@ OGRFeatureDefn *OGRUnionLayer::GetLayerDefn()
 
     if( eFieldStrategy == FIELD_SPECIFIED )
     {
-        int i;
-        for(i = 0; i < nFields; i++)
+        for( int i = 0; i < nFields; i++ )
             poFeatureDefn->AddFieldDefn(papoFields[i]);
-        for(i = 0; i < nGeomFields; i++)
+        for( int i = 0; i < nGeomFields; i++ )
         {
-            poFeatureDefn->AddGeomFieldDefn(new OGRUnionLayerGeomFieldDefn(papoGeomFields[i]), FALSE);
+            poFeatureDefn->AddGeomFieldDefn(
+                new OGRUnionLayerGeomFieldDefn(papoGeomFields[i]), FALSE);
             OGRUnionLayerGeomFieldDefn* poGeomFieldDefn =
                 (OGRUnionLayerGeomFieldDefn* ) poFeatureDefn->GetGeomFieldDefn(i);
 
             if( poGeomFieldDefn->bGeomTypeSet == FALSE ||
                 poGeomFieldDefn->bSRSSet == FALSE )
             {
-                for(int iLayer = 0; iLayer < nSrcLayers; iLayer++)
+                for( int iLayer = 0; iLayer < nSrcLayers; iLayer++ )
                 {
                     OGRFeatureDefn* poSrcFeatureDefn =
                                 papoSrcLayers[iLayer]->GetLayerDefn();
@@ -317,10 +317,11 @@ OGRFeatureDefn *OGRUnionLayer::GetLayerDefn()
     else if( eFieldStrategy == FIELD_FROM_FIRST_LAYER )
     {
         OGRFeatureDefn* poSrcFeatureDefn = papoSrcLayers[0]->GetLayerDefn();
-        int i;
-        for(i = 0; i < poSrcFeatureDefn->GetFieldCount(); i++)
+        for( int i = 0; i < poSrcFeatureDefn->GetFieldCount(); i++)
             poFeatureDefn->AddFieldDefn(poSrcFeatureDefn->GetFieldDefn(i));
-        for(i = 0;  nGeomFields != - 1 && i < poSrcFeatureDefn->GetGeomFieldCount(); i++)
+        for( int i = 0;
+             nGeomFields != - 1 && i < poSrcFeatureDefn->GetGeomFieldCount();
+             i++ )
         {
             OGRGeomFieldDefn* poFldDefn = poSrcFeatureDefn->GetGeomFieldDefn(i);
             poFeatureDefn->AddGeomFieldDefn(
@@ -341,8 +342,7 @@ OGRFeatureDefn *OGRUnionLayer::GetLayerDefn()
                                 papoSrcLayers[iLayer]->GetLayerDefn();
 
             /* Add any field that is found in the source layers */
-            int i;
-            for(i = 0; i < poSrcFeatureDefn->GetFieldCount(); i++)
+            for( int i = 0; i < poSrcFeatureDefn->GetFieldCount(); i++ )
             {
                 OGRFieldDefn* poSrcFieldDefn = poSrcFeatureDefn->GetFieldDefn(i);
                 int nIndex =
@@ -357,7 +357,10 @@ OGRFeatureDefn *OGRUnionLayer::GetLayerDefn()
                 }
             }
 
-            for(i = 0; nGeomFields != - 1 && i < poSrcFeatureDefn->GetGeomFieldCount(); i++)
+            for( int i = 0;
+                 nGeomFields != - 1 &&
+                 i < poSrcFeatureDefn->GetGeomFieldCount();
+                 i++)
             {
                 OGRGeomFieldDefn* poSrcFieldDefn = poSrcFeatureDefn->GetGeomFieldDefn(i);
                 int nIndex =
@@ -400,10 +403,9 @@ OGRFeatureDefn *OGRUnionLayer::GetLayerDefn()
     else if (eFieldStrategy == FIELD_INTERSECTION_ALL_LAYERS )
     {
         OGRFeatureDefn* poSrcFeatureDefn = papoSrcLayers[0]->GetLayerDefn();
-        int i;
-        for(i = 0; i < poSrcFeatureDefn->GetFieldCount(); i++)
+        for( int i = 0; i < poSrcFeatureDefn->GetFieldCount(); i++ )
             poFeatureDefn->AddFieldDefn(poSrcFeatureDefn->GetFieldDefn(i));
-        for(i = 0; i < poSrcFeatureDefn->GetGeomFieldCount(); i++)
+        for( int i = 0; i < poSrcFeatureDefn->GetGeomFieldCount(); i++ )
         {
             OGRGeomFieldDefn* poFldDefn = poSrcFeatureDefn->GetGeomFieldDefn(i);
             poFeatureDefn->AddGeomFieldDefn(
@@ -411,11 +413,14 @@ OGRFeatureDefn *OGRUnionLayer::GetLayerDefn()
         }
 
         /* Remove any field that is not found in the source layers */
-        for(int iLayer = 1; iLayer < nSrcLayers; iLayer++)
+        for( int iLayer = 1; iLayer < nSrcLayers; iLayer++ )
         {
             OGRFeatureDefn* l_poSrcFeatureDefn =
                                         papoSrcLayers[iLayer]->GetLayerDefn();
-            for(i = iCompareFirstIndex; i < poFeatureDefn->GetFieldCount();)
+            for( int i = iCompareFirstIndex;
+                 i < poFeatureDefn->GetFieldCount();
+                 // No increment.
+                 )
             {
                 OGRFieldDefn* poFieldDefn = poFeatureDefn->GetFieldDefn(i);
                 int nSrcIndex = l_poSrcFeatureDefn->GetFieldIndex(
@@ -430,10 +435,13 @@ OGRFeatureDefn *OGRUnionLayer::GetLayerDefn()
                         l_poSrcFeatureDefn->GetFieldDefn(nSrcIndex);
                     MergeFieldDefn(poFieldDefn, poSrcFieldDefn);
 
-                    i ++;
+                    i++;
                 }
             }
-            for(i = 0; i < poFeatureDefn->GetGeomFieldCount();)
+            for( int i = 0;
+                 i < poFeatureDefn->GetGeomFieldCount();
+                 // No increment.
+                 )
             {
                 OGRGeomFieldDefn* poFieldDefn = poFeatureDefn->GetGeomFieldDefn(i);
                 int nSrcIndex = l_poSrcFeatureDefn->GetGeomFieldIndex(
@@ -446,7 +454,7 @@ OGRFeatureDefn *OGRUnionLayer::GetLayerDefn()
                 {
                     /* TODO: merge type, SRS, extent ? */
 
-                    i ++;
+                    i++;
                 }
             }
         }
@@ -768,7 +776,7 @@ OGRFeature *OGRUnionLayer::GetFeature( GIntBig nFeatureId )
 
 OGRErr OGRUnionLayer::ICreateFeature( OGRFeature* poFeature )
 {
-    if( osSourceLayerFieldName.size() == 0 )
+    if( osSourceLayerFieldName.empty() )
     {
         CPLError(CE_Failure, CPLE_NotSupported,
                  "CreateFeature() not supported when SourceLayerFieldName is not set");
@@ -782,7 +790,7 @@ OGRErr OGRUnionLayer::ICreateFeature( OGRFeature* poFeature )
         return OGRERR_FAILURE;
     }
 
-    if( !poFeature->IsFieldSet(0) )
+    if( !poFeature->IsFieldSetAndNotNull(0) )
     {
         CPLError(CE_Failure, CPLE_NotSupported,
                  "CreateFeature() not supported when '%s' field is not set",
@@ -827,7 +835,7 @@ OGRErr OGRUnionLayer::ISetFeature( OGRFeature* poFeature )
         return OGRERR_FAILURE;
     }
 
-    if( osSourceLayerFieldName.size() == 0 )
+    if( osSourceLayerFieldName.empty() )
     {
         CPLError(CE_Failure, CPLE_NotSupported,
                  "SetFeature() not supported when SourceLayerFieldName is not set");
@@ -841,7 +849,7 @@ OGRErr OGRUnionLayer::ISetFeature( OGRFeature* poFeature )
         return OGRERR_FAILURE;
     }
 
-    if( !poFeature->IsFieldSet(0) )
+    if( !poFeature->IsFieldSetAndNotNull(0) )
     {
         CPLError(CE_Failure, CPLE_NotSupported,
                  "SetFeature() not supported when '%s' field is not set",
@@ -1090,7 +1098,7 @@ int  OGRUnionLayer::TestCapability( const char * pszCap )
 
     if( EQUAL(pszCap, OLCRandomWrite ) )
     {
-        if( !bPreserveSrcFID || osSourceLayerFieldName.size() == 0)
+        if( !bPreserveSrcFID || osSourceLayerFieldName.empty())
             return FALSE;
 
         for(int i = 0; i < nSrcLayers; i++)
@@ -1103,7 +1111,7 @@ int  OGRUnionLayer::TestCapability( const char * pszCap )
 
     if( EQUAL(pszCap, OLCSequentialWrite ) )
     {
-        if( osSourceLayerFieldName.size() == 0)
+        if( osSourceLayerFieldName.empty())
             return FALSE;
 
         for(int i = 0; i < nSrcLayers; i++)
@@ -1213,7 +1221,6 @@ void OGRUnionLayer::SetSpatialFilter( int iGeomField, OGRGeometry *poGeom )
     }
 }
 
-
 /************************************************************************/
 /*                        TranslateFromSrcLayer()                       */
 /************************************************************************/
@@ -1226,7 +1233,7 @@ OGRFeature* OGRUnionLayer::TranslateFromSrcLayer(OGRFeature* poSrcFeature)
     OGRFeature* poFeature = new OGRFeature(poFeatureDefn);
     poFeature->SetFrom(poSrcFeature, panMap, TRUE);
 
-    if( osSourceLayerFieldName.size() &&
+    if( !osSourceLayerFieldName.empty() &&
         !poFeatureDefn->GetFieldDefn(0)->IsIgnored() )
     {
         poFeature->SetField(0, papoSrcLayers[iCurLayer]->GetName());
@@ -1287,3 +1294,5 @@ OGRErr OGRUnionLayer::SyncToDisk()
 
     return OGRERR_NONE;
 }
+
+#endif /* #ifndef DOXYGEN_SKIP */

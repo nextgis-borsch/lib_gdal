@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: GDALMemDataset.cs 25794 2013-03-24 13:15:43Z tamas $
+ * $Id: GDALMemDataset.cs 35222 2016-08-28 06:06:11Z goatbar $
  *
  * Name:     VSIMem.cs
  * Project:  GDAL CSharp Interface
@@ -49,17 +49,17 @@ using System.Drawing.Imaging;
 
 /// <summary>
 /// A C# based sample for demonstrating the in-memory dataset driver..
-/// </summary> 
+/// </summary>
 
 class GDALMemDataset {
-	
-	public static void usage() 
 
-	{ 
+	public static void usage()
+
+	{
 		Console.WriteLine("usage example: GDALMemDataset [image file]");
 		System.Environment.Exit(-1);
 	}
- 
+
 	public static void Main(string[] args) {
 
 		if (args.Length != 1) usage();

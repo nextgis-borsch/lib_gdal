@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: tigertlidrange.cpp 27745 2014-09-27 16:38:57Z goatbar $
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Implements TigerTLIDRange, providing access to .RTR files.
@@ -30,9 +29,9 @@
 #include "ogr_tiger.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: tigertlidrange.cpp 27745 2014-09-27 16:38:57Z goatbar $");
+CPL_CVSID("$Id: tigertlidrange.cpp 35933 2016-10-25 16:46:26Z goatbar $");
 
-#define FILE_CODE "R"
+static const char FILE_CODE[] = "R";
 
 static const TigerFieldInfo rtR_2002_fields[] = {
   // fieldname    fmt  type OFTType      beg  end  len  bDefine bSet bWrite
@@ -97,5 +96,4 @@ TigerTLIDRange::TigerTLIDRange( OGRTigerDataSource * poDSIn,
     /* -------------------------------------------------------------------- */
 
     AddFieldDefns( psRTInfo, poFeatureDefn );
-
 }

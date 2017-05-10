@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gnm_api.h 35902 2016-10-24 12:00:50Z goatbar $
  *
  * Project:  GDAL/OGR Geography Network support (Geographic Network Model)
  * Purpose:  GNM C API.
@@ -51,8 +51,6 @@ OGRLayerH CPL_DLL CPL_STDCALL GNMGetPath (GNMNetworkH hNet, GNMGFID nStartFID,
                               GNMGFID nEndFID, GNMGraphAlgorithmType eAlgorithm,
                               char** papszOptions);
 
-
-
 CPLErr CPL_DLL CPL_STDCALL GNMConnectFeatures (GNMGenericNetworkH hNet,
                                                GNMGFID nSrcFID, GNMGFID nTgtFID,
                                                GNMGFID nConFID, double dfCost,
@@ -65,7 +63,6 @@ CPLErr CPL_DLL CPL_STDCALL GNMDisconnectFeatures (GNMGenericNetworkH hNet,
 
 CPLErr CPL_DLL CPL_STDCALL GNMDisconnectFeaturesWithId(GNMGenericNetworkH hNet,
                                                        GNMGFID nFID);
-
 
 CPLErr CPL_DLL CPL_STDCALL GNMReconnectFeatures (GNMGenericNetworkH hNet,
                                                  GNMGFID nSrcFID, GNMGFID nTgtFID,
