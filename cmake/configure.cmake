@@ -168,6 +168,7 @@ if(WIN32)
 # windows
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -W4 -wd4127 -wd4251 -wd4275 -wd4786 -wd4100 -wd4245 -wd4206 -wd4018 -wd4389")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W4 -wd4127 -wd4251 -wd4275 -wd4786 -wd4100 -wd4245 -wd4206 -wd4018 -wd4389")
+    add_definitions(-DNOMINMAX)
     check_include_file("search.h" HAVE_SEARCH_H)
     check_function_exists(localtime_r HAVE_LOCALTIME_R)
     check_include_file("dbmalloc.h" HAVE_LIBDBMALLOC)
