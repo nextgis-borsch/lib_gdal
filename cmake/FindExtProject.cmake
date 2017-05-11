@@ -138,6 +138,7 @@ function(find_extproject name)
         set(SUPPRESS_VERBOSE_OUTPUT TRUE)
     endif()
 
+    list(APPEND find_extproject_CMAKE_ARGS -DSKIP_DEFAULTS=ON)
     list(APPEND find_extproject_CMAKE_ARGS -DEP_PREFIX=${EP_PREFIX})
     list(APPEND find_extproject_CMAKE_ARGS -DEXT_BUILD_DIR=${EXT_BUILD_DIR})
     list(APPEND find_extproject_CMAKE_ARGS -DEXT_TMP_DIR=${EXT_TMP_DIR})

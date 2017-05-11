@@ -34,6 +34,10 @@ set(CMAKE_COLOR_MAKEFILE ON)
 # Set path to additional CMake modules
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 
+if(NOT SKIP_DEFAULTS)
+    include(defaults)
+endif()
+
 if(OSX_FRAMEWORK AND (BUILD_SHARED_LIBS OR BUILD_STATIC_LIBS))
   message(FATAL_ERROR "Only OSX_FRAMEWORK key or any or both BUILD_SHARED_LIBS
                        and BUILD_STATIC_LIBS keys are permitted")
