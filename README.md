@@ -111,7 +111,7 @@ with '\*' have high priority to be implemented.
 | jp2kak | no |  | needs Kakadu library |
 | jp2lura | no |  | Requires Lurawave library |
 | **jpeg** | **yes** | [JPEG, JPEG12](https://github.com/nextgis-borsch/lib_jpeg) | No jpeg12 support implemented? |
-| jpeg2000 * | no |  | needs libjasper |
+| jpeg2000 | no |  | needs libjasper |
 | jpegls | no |  | needs CharLS library |
 | jpipkak | no |  | needs Kakadu library |
 | kea | no |  |  |
@@ -130,7 +130,7 @@ with '\*' have high priority to be implemented.
 | **nitf** | **yes** | Optionally: [JPEG, JPEG12](https://github.com/nextgis-borsch/lib_jpeg), [TIFF](https://github.com/nextgis-borsch/lib_tiff)? | 3 drivers in one (NITF, RPFTOC, ECRGTOC); Requires built jpeg driver; No JPEG12 support implemented; No additional build targets implemented;  |
 | **northwood** | **yes** | no | 2 drivers in one (NWT_GRC, NWT_GRD) |
 | ogdi | no |  |  |
-| openjpeg | no |  |  |
+| **openjpeg** | **yes** | [OPENJPEG](https://github.com/nextgis-borsch/lib_openjpeg) | This is JPEG2000 implementation; No additional build targets implemented (plugin so/dll) |
 | **ozi** | **yes** | [ZLIB](https://github.com/nextgis-borsch/lib_z)?, GIF? | - |
 | pcidsk | no |  |  |
 | pcraster | no |  |  |
