@@ -34,6 +34,7 @@ Go to borsch repository (opt folder) and execute
 
  $ python tools.py organize --src /path_to_gdal_sources/ --dst_name lib_gdal
 
+<!---
 # Build status
 
 | OS | Status  |
@@ -41,6 +42,7 @@ Go to borsch repository (opt folder) and execute
 | Windows | ![build status](http://176.9.38.120/buildbot/png?builder=gdal_win) |
 | Ubuntu (packaging) | ![build status](http://176.9.38.120/buildbot/png?builder=gdal_deb) |
 | Ubuntu (packaging dev) | ![build status](http://176.9.38.120/buildbot/png?builder=gdal_debdev) |
+-->
 
 # Ubuntu PPA
 
