@@ -264,7 +264,7 @@ Available raster+vector drivers for now (by all driver dirs in sources):
 |---|:-:|---|---|
 | **gpkg** | **yes** | [SQLITE3](https://github.com/nextgis-borsch/lib_sqlite); Optionally: SPATIALITE | Requires [PNG](https://github.com/nextgis-borsch/lib_png)?, [JPEG](https://github.com/nextgis-borsch/lib_jpeg)?, WEBP? drivers; No Spatialite support implemented; Former OGR format |
 | **plscenes** | **yes** | [CURL](https://github.com/nextgis-borsch/lib_curl) | Former OGR format |
-| cad | yes | [OpenCAD](https://github.com/nextgis-borsch/lib_opencad) | GSoC 2016 |
+| **cad** | **yes** | [OpenCAD](https://github.com/nextgis-borsch/lib_opencad) | GSoC 2016 |
 
 # Network drivers
 
