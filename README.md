@@ -93,7 +93,7 @@ with '\*' have high priority to be implemented.
 | fits | no |  |  |
 | georaster | no |  |  |
 | **gff** | **yes** | no | - |
-| gif * | no |  | Russian maps in internet are in gif and ozi |
+| gif * | no |  | Russian maps in internet are in gif and OZI |
 | grass * | no |  |  |
 | **grib** | **yes** | Optionally: JASPER | No JASPER support implemented; No additional build targets implemented |
 | **gsg** | **yes** | no | 3 drivers in one (GSAG, GSBG, GS7BG) |
@@ -150,7 +150,7 @@ with '\*' have high priority to be implemented.
 | **rmf** | **yes** | no | - |
 | **rs2** | **yes** | no | - |
 | **saga** | **yes** | no | ... |
-| sde * | no |  |  |
+| sde | no |  | Needs ESRI SDE (ESRI provided ArcSDE client libraries) |
 | **sdts** | **yes** | no | Requires inner sdts lib; Has the same dir name in /vector |
 | **sgi** | **yes** | no | - |
 | **srtmhgt** | **yes** | no | - |
@@ -212,7 +212,7 @@ Available vector drivers for now (by all driver directories in sources). Drivers
 | **jml** | **yes** | Optionally: [EXPAT](https://github.com/nextgis-borsch/lib_expat) | - |
 | **kml** | **yes** | ... | ... |
 | libkml * | no | Google LibKML |  |
-| mdb * | no |  |  |
+| mdb | no |  |  |
 | **mem** | **yes** | no | Obligatory for building GDAL |
 | **mitab** | **yes** | no | Obligatory for building GDAL; Depends on temporary /core/ogr directory |
 | mongodb * | no |  |  |
@@ -222,7 +222,7 @@ Available vector drivers for now (by all driver directories in sources). Drivers
 | **ntf** | **yes** | no | No additional build targets implemented |
 | null | no |  |  |
 | oci | no |  |  |
-| odbc * | no |  |  |
+| odbc | no |  |  |
 | **ods** | **yes** | [EXPAT](https://github.com/nextgis-borsch/lib_expat) | No additional build targets implemented - workaround of gcc bug |
 | ogdi | no |  |  |
 | **openair** | **yes** | no | - |
@@ -234,7 +234,7 @@ Available vector drivers for now (by all driver directories in sources). Drivers
 | pgeo | no |  |  |
 | **rec** | **yes** | no | - |
 | **s57** | **yes** | no | Requires inner iso8211 lib; No additional build targets implemented |
-| sde* | no |  |  |
+| sde | no |  | Needs ESRI SDE (ESRI provided ArcSDE client libraries) |
 | **sdts** | **yes** | no | Requires inner sdts and iso8211 libs; No additional build targets implemented; Has the same dir name in /raster |
 | **segukooa** | **yes** | no | - |
 | **segy** | **yes** | no | - |
