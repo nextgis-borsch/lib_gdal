@@ -29,11 +29,41 @@ option(ENABLE_OPENJPEG "Build OPENJPEG (JPEG2000 via OpenJPEG library) format" O
 if(ENABLE_OPENJPEG)
     set(TARGET_NAME ras_openjpeg)
 
-    find_anyproject(OpenJPEG REQUIRED)
+    find_anyproject(OpenJPEG REQUIRED) 
+           
     if(NOT OPENJPEG_VERSION_NUM)
-        set(OPENJPEG_VERSION_NUM 0)
-    endif()
+        set(MAJOR_VERSION 0)
+        set(MINOR_VERSION 0)
+        set(REV_VERSION 0)
 
+        if(EXISTS "${OPENJPEG_INCLUDE_DIRS}/opj_config.h")
+            file(READ "${OPENJPEG_INCLUDE_DIRS}/opj_config.h" VERSION_H_CONTENTS)
+
+            string(REGEX MATCH "OPJ_VERSION_MAJOR[ \t]+([0-9]+)"
+              MAJOR_VERSION ${VERSION_H_CONTENTS})
+            string (REGEX MATCH "([0-9]+)"
+              MAJOR_VERSION ${MAJOR_VERSION})
+            string(REGEX MATCH "OPJ_VERSION_MINOR[ \t]+([0-9]+)"
+              MINOR_VERSION ${VERSION_H_CONTENTS})
+            string (REGEX MATCH "([0-9]+)"
+              MINOR_VERSION ${MINOR_VERSION})
+            string(REGEX MATCH "OPJ_VERSION_BUILD[ \t]+([0-9]+)"
+              REV_VERSION ${VERSION_H_CONTENTS})
+            string (REGEX MATCH "([0-9]+)"
+              REV_VERSION ${REV_VERSION})
+
+            unset(VERSION_H_CONTENTS)
+        endif()
+
+        set(OPENJPEG_VERSION_STRING "${MAJOR_VERSION}.${MINOR_VERSION}.${REV_VERSION}")
+        math(EXPR OPENJPEG_VERSION_NUM "${MAJOR_VERSION} * 10000 + ${MINOR_VERSION} * 100 + ${REV_VERSION}")
+
+    endif()
+    
+    if(OPENJPEG_VERSION_NUM LESS 20000)
+        warning_msg("Skip openjpeg")
+        # message(STATUS "OPENJPEG_VERSION_NUM set to ${OPENJPEG_VERSION_NUM}")
+    else()
     add_definitions(-DFRMT_openjpeg -DOPENJPEG_VERSION=${OPENJPEG_VERSION_NUM})
     set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DFRMT_openjpeg" PARENT_SCOPE)
 
@@ -63,6 +93,7 @@ if(ENABLE_OPENJPEG)
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
     set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
     set(DEPENDENCY_LIB ${DEPENDENCY_LIB} PARENT_SCOPE)
+    endif()
 else()
     warning_msg("Skip openjpeg")
 endif()

@@ -49,7 +49,7 @@ if(OPENJPEG_INCLUDE_DIR)
     set(REV_VERSION 0)
 
     if(EXISTS "${OPENJPEG_INCLUDE_DIR}/opj_config.h")
-        file(READ "${OPENJPEG_INCLUDE_DIR}/proj_api.h" VERSION_H_CONTENTS)
+        file(READ "${OPENJPEG_INCLUDE_DIR}/opj_config.h" VERSION_H_CONTENTS)
 
         string(REGEX MATCH "OPJ_VERSION_MAJOR[ \t]+([0-9]+)"
           MAJOR_VERSION ${VERSION_H_CONTENTS})
