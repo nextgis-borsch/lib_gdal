@@ -24,7 +24,8 @@ FIND_PATH(OPENJPEG_INCLUDE_DIR openjpeg.h
     /usr/include/openjpeg
     /usr/include
   PATH_SUFFIXES
-    openjpeg-2.1 
+    openjpeg-2.0
+    openjpeg-2.1
     openjpeg-2.2
   DOC "Location of OpenJPEG Headers"
 )
@@ -42,6 +43,33 @@ ELSE (OPENJPEG_LIBRARY AND OPENJPEG_INCLUDE_DIR)
   SET(OPENJPEG_FOUND "NO")
 ENDIF (OPENJPEG_LIBRARY AND OPENJPEG_INCLUDE_DIR)
 
+if(OPENJPEG_INCLUDE_DIR)
+    set(MAJOR_VERSION 0)
+    set(MINOR_VERSION 0)
+    set(REV_VERSION 0)
+
+    if(EXISTS "${OPENJPEG_INCLUDE_DIR}/opj_config.h")
+        file(READ "${OPENJPEG_INCLUDE_DIR}/proj_api.h" VERSION_H_CONTENTS)
+
+        string(REGEX MATCH "OPJ_VERSION_MAJOR[ \t]+([0-9]+)"
+          MAJOR_VERSION ${VERSION_H_CONTENTS})
+        string (REGEX MATCH "([0-9]+)"
+          MAJOR_VERSION ${MAJOR_VERSION})
+        string(REGEX MATCH "OPJ_VERSION_MINOR[ \t]+([0-9]+)"
+          MINOR_VERSION ${VERSION_H_CONTENTS})
+        string (REGEX MATCH "([0-9]+)"
+          MINOR_VERSION ${MINOR_VERSION})
+        string(REGEX MATCH "OPJ_VERSION_BUILD[ \t]+([0-9]+)"
+          REV_VERSION ${VERSION_H_CONTENTS})
+        string (REGEX MATCH "([0-9]+)"
+          REV_VERSION ${REV_VERSION})
+
+        unset(VERSION_H_CONTENTS)
+    endif()
+
+    set(OPENJPEG_VERSION_STRING "${MAJOR_VERSION}.${MINOR_VERSION}.${REV_VERSION}")
+    math(OPENJPEG_VERSION_NUM "${MAJOR_VERSION} * 10000 + ${MINOR_VERSION} * 100 + ${REV_VERSION}")
+endif ()
 
 IF (OPENJPEG_FOUND)
    IF (NOT OPENJPEG_FIND_QUIETLY)

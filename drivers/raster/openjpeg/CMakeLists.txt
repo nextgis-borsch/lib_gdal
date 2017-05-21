@@ -5,7 +5,7 @@
 ################################################################################
 # Copyright (C) 2015-2017, NextGIS <info@nextgis.com>
 # Copyright (C) 2017 Mikhail Gusev
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
 # to deal in the Software without restriction, including without limitation
@@ -28,15 +28,18 @@
 option(ENABLE_OPENJPEG "Build OPENJPEG (JPEG2000 via OpenJPEG library) format" OFF)
 if(ENABLE_OPENJPEG)
     set(TARGET_NAME ras_openjpeg)
-    
-    find_anyproject(OPENJPEG REQUIRED)
 
-    add_definitions(-DFRMT_openjpeg)
+    find_anyproject(OpenJPEG REQUIRED)
+    if(NOT OPENJPEG_VERSION_NUM)
+        set(OPENJPEG_VERSION_NUM 0)
+    endif()
+
+    add_definitions(-DFRMT_openjpeg -DOPENJPEG_VERSION=${OPENJPEG_VERSION_NUM})
     set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DFRMT_openjpeg" PARENT_SCOPE)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
     include_directories(${CMAKE_SOURCE_DIR}/drivers/raster) # for /vrt/vrtdataset.h
-    
+
     # TODO: maybe add openjpeg library version to definitions (not required for now).
 
     set(LIB_HHEADERS
@@ -48,7 +51,7 @@ if(ENABLE_OPENJPEG)
     set(LIB_CSOURCES
         openjpegdataset.cpp
     )
-    
+
     # TODO: implement plugin target (according so/dll) if needed.
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
