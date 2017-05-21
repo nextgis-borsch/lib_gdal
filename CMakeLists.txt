@@ -136,6 +136,16 @@ else()
     message(WARNING "No zlib support")
 endif()
 
+find_anyproject(EXPAT DEFAULT ON)
+if(EXPAT_FOUND)
+    add_definitions(-DHAVE_EXPAT)
+    if(NOT BUILD_SHARED_LIBS)
+        add_definitions(-DXML_STATIC)
+    endif()
+endif()
+
+find_anyproject(JSONC REQUIRED)
+
 find_anyproject(CURL DEFAULT ON CMAKE_ARGS
     -DBUILD_CURL_EXE=OFF
     -DHTTP_ONLY=ON
@@ -150,16 +160,6 @@ find_anyproject(LibXml2 DEFAULT ON)
 if(LIBXML2_FOUND)
     add_definitions(-DHAVE_LIBXML2)
 endif()
-
-find_anyproject(EXPAT DEFAULT ON)
-if(EXPAT_FOUND)
-    add_definitions(-DHAVE_EXPAT)
-    if(NOT BUILD_SHARED_LIBS)
-        add_definitions(-DXML_STATIC)
-    endif()
-endif()
-
-find_anyproject(JSONC REQUIRED)
 
 # TODO: move this to /drivers or /drivers/raster while it's not needed for the core GDAL
 find_anyproject(JPEG DEFAULT ON)
