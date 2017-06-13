@@ -228,6 +228,16 @@ function(find_extproject name)
         endif()
     endif()
 
+    if(IOS)
+        list(APPEND find_extproject_CMAKE_ARGS -DIOS=ON)
+        if(DEFINED CMAKE_OSX_ARCHITECTURES)
+            list(APPEND find_extproject_CMAKE_ARGS -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES})
+        endif()
+        if(DEFINED IOS_PLATFORM)
+            list(APPEND find_extproject_CMAKE_ARGS -DIOS_PLATFORM=${IOS_PLATFORM})
+        endif()        
+    endif()
+
     set_property(DIRECTORY PROPERTY "EP_PREFIX" ${EP_PREFIX})
 
     set(EXT_SOURCE_DIR "${EXT_DOWNLOAD_DIR}/${name}_EP")
