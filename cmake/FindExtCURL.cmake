@@ -22,5 +22,4 @@
 
 set(repo_name lib_curl)
 set(repo_project curl)
-set(repo_include curl)
-
+set(repo_include)
