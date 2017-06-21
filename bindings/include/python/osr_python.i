@@ -1,5 +1,5 @@
 /*
- * $Id: osr_python.i 32939 2016-01-11 18:01:28Z rouault $
+ * $Id$
  *
  * python specific code for ogr bindings.
  */
@@ -7,6 +7,10 @@
 %feature("autodoc");
 
 #ifndef FROM_GDAL_I
+%{
+#define MODULE_NAME           "osr"
+%}
+
 %include "python_exceptions.i"
 %include "python_strings.i"
 #endif

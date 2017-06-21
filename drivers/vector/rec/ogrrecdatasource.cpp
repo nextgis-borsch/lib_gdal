@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrrecdatasource.cpp 33089 2016-01-22 15:02:53Z goatbar $
  *
  * Project:  Epiinfo .REC Translator
  * Purpose:  Implements OGRRECDataSource class
@@ -31,7 +30,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrrecdatasource.cpp 33089 2016-01-22 15:02:53Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                          OGRRECDataSource()                          */
@@ -106,6 +105,11 @@ int OGRRECDataSource::Open( const char * pszFilename )
 /*      field that is a number greater than zero.                       */
 /* -------------------------------------------------------------------- */
     const char * pszLine = CPLReadLine( fp );
+    if( pszLine == NULL )
+    {
+        VSIFClose( fp );
+        return FALSE;
+    }
 
     const int nFieldCount = atoi(pszLine);
     if( nFieldCount < 1 || nFieldCount > 1000 )

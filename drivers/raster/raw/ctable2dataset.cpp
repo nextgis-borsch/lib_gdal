@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  Horizontal Datum Formats
  * Purpose:  Implementation of the CTable2 format, a PROJ.4 specific format
@@ -52,10 +51,10 @@ class CTable2Dataset : public RawDataset
                 CTable2Dataset();
     virtual ~CTable2Dataset();
 
-    virtual CPLErr SetGeoTransform( double * padfTransform );
-    virtual CPLErr GetGeoTransform( double * padfTransform );
-    virtual const char *GetProjectionRef();
-    virtual void   FlushCache(void);
+    virtual CPLErr SetGeoTransform( double * padfTransform ) override;
+    virtual CPLErr GetGeoTransform( double * padfTransform ) override;
+    virtual const char *GetProjectionRef() override;
+    virtual void   FlushCache(void) override;
 
     static GDALDataset *Open( GDALOpenInfo * );
     static int          Identify( GDALOpenInfo * );
@@ -76,7 +75,9 @@ class CTable2Dataset : public RawDataset
 
 CTable2Dataset::CTable2Dataset() :
     fpImage(NULL)
-{}
+{
+    memset( adfGeoTransform, 0, sizeof(adfGeoTransform) );
+}
 
 /************************************************************************/
 /*                            ~CTable2Dataset()                          */
@@ -186,7 +187,9 @@ GDALDataset *CTable2Dataset::Open( GDALOpenInfo * poOpenInfo )
     int nRasterXSize, nRasterYSize;
     memcpy( &nRasterXSize, achHeader + 128, 4 );
     memcpy( &nRasterYSize, achHeader + 132, 4 );
-    if (!GDALCheckDatasetDimensions(nRasterXSize, nRasterYSize))
+    if (!GDALCheckDatasetDimensions(nRasterXSize, nRasterYSize) ||
+        /* to avoid overflow in later -8 * nRasterXSize computation */
+        nRasterXSize >= INT_MAX / 8 )
     {
         delete poDS;
         return NULL;
@@ -213,7 +216,8 @@ GDALDataset *CTable2Dataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     RawRasterBand *poBand =
         new RawRasterBand( poDS, 1, poDS->fpImage,
-                           160 + 4 + nRasterXSize * (nRasterYSize-1) * 2 * 4,
+                           160 + 4 + static_cast<vsi_l_offset>(nRasterXSize) *
+                                (nRasterYSize-1) * 2 * 4,
                            8, -8 * nRasterXSize,
                            GDT_Float32, CPL_IS_LSB, TRUE, FALSE );
     poBand->SetDescription( "Latitude Offset (radians)" );
@@ -221,7 +225,8 @@ GDALDataset *CTable2Dataset::Open( GDALOpenInfo * poOpenInfo )
 
     poBand =
         new RawRasterBand( poDS, 2, poDS->fpImage,
-                           160 + nRasterXSize * (nRasterYSize-1) * 2 * 4,
+                           160 + static_cast<vsi_l_offset>(nRasterXSize) *
+                                (nRasterYSize-1) * 2 * 4,
                            8, -8 * nRasterXSize,
                            GDT_Float32, CPL_IS_LSB, TRUE, FALSE );
     poBand->SetDescription( "Longitude Offset (radians)" );
@@ -314,7 +319,6 @@ CPLErr CTable2Dataset::SetGeoTransform( double * padfTransform )
 
     return CE_None;
 }
-
 
 /************************************************************************/
 /*                          GetProjectionRef()                          */

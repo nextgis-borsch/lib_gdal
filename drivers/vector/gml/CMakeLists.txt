@@ -78,6 +78,7 @@ if(ENABLE_GML)
         gmlutils.cpp 
 		gmlreadstate.cpp 
         gmlhandler.cpp 
+        trstring.cpp 
         gfstemplate.cpp 
         gmlregistry.cpp
     )

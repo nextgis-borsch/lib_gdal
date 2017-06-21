@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ntffilereader.cpp 33714 2016-03-13 05:42:13Z goatbar $
  *
  * Project:  NTF Translator
  * Purpose:  NTFFileReader class implementation.
@@ -34,7 +33,11 @@
 #include "cpl_string.h"
 #include "ogr_api.h"
 
-CPL_CVSID("$Id: ntffilereader.cpp 33714 2016-03-13 05:42:13Z goatbar $");
+#include <algorithm>
+
+CPL_CVSID("$Id$");
+
+#define DIGIT_ZERO '0'
 
 static int DefaultNTFRecordGrouper( NTFFileReader *, NTFRecord **,
                                     NTFRecord * );
@@ -87,6 +90,9 @@ NTFFileReader::NTFFileReader( OGRNTFDataSource * poDataSource ) :
     papoLineCache(NULL)
 {
     apoCGroup[0] = NULL;
+    apoCGroup[1] = NULL;
+    apoCGroup[MAX_REC_GROUP] = NULL;
+    memset( adfGeoTransform, 0, sizeof(adfGeoTransform) );
     memset( apoTypeTranslation, 0, sizeof(apoTypeTranslation) );
     for( int i = 0; i < 100; i++ )
     {
@@ -136,8 +142,6 @@ void NTFFileReader::SetBaseFID( long nNewBase )
 void NTFFileReader::ClearDefs()
 
 {
-    int         i;
-
     Close();
 
     ClearCGroup();
@@ -148,7 +152,7 @@ void NTFFileReader::ClearDefs()
     papszFCName = NULL;
     nFCCount = 0;
 
-    for( i = 0; i < nAttCount; i++ )
+    for( int i = 0; i < nAttCount; i++ )
     {
         if( pasAttDesc[i].poCodeList != NULL )
             delete pasAttDesc[i].poCodeList;
@@ -186,7 +190,7 @@ void NTFFileReader::Close()
     nSavedFeatureId = nBaseFeatureId;
     if( fp != NULL )
     {
-        VSIFClose( fp );
+        VSIFCloseL( fp );
         fp = NULL;
     }
 
@@ -213,7 +217,7 @@ int NTFFileReader::Open( const char * pszFilenameIn )
 /* -------------------------------------------------------------------- */
 /*      Open the file.                                                  */
 /* -------------------------------------------------------------------- */
-    fp = VSIFOpen( pszFilename, "rb" );
+    fp = VSIFOpenL( pszFilename, "rb" );
 
     // notdef: we should likely issue a proper CPL error message based
     // based on errno here.
@@ -231,7 +235,7 @@ int NTFFileReader::Open( const char * pszFilenameIn )
 /* -------------------------------------------------------------------- */
     if( pszFilenameIn == NULL )
     {
-        NTFRecord      *poRecord;
+        NTFRecord *poRecord = NULL;
 
         for( poRecord = new NTFRecord( fp );
              poRecord->GetType() != NRT_VTR && poRecord->GetType() != NRT_SHR;
@@ -269,7 +273,7 @@ int NTFFileReader::Open( const char * pszFilenameIn )
 /* -------------------------------------------------------------------- */
 /*      Read records till we get the section header.                    */
 /* -------------------------------------------------------------------- */
-    NTFRecord      *poRecord;
+    NTFRecord *poRecord = NULL;
 
     for( poRecord = new NTFRecord( fp );
          poRecord->GetType() != NRT_VTR && poRecord->GetType() != NRT_SHR;
@@ -278,20 +282,18 @@ int NTFFileReader::Open( const char * pszFilenameIn )
 /* -------------------------------------------------------------------- */
 /*      Handle feature class name records.                              */
 /* -------------------------------------------------------------------- */
-        if( poRecord->GetType() == NRT_FCR )
+        if( poRecord->GetType() == NRT_FCR && poRecord->GetLength() >= 37 )
         {
-            const char      *pszData;
-            int             iChar;
-
             nFCCount++;
 
             papszFCNum = CSLAddString( papszFCNum, poRecord->GetField(3,6) );
 
             CPLString osFCName;
-            pszData = poRecord->GetData();
+            const char *pszData = poRecord->GetData();
 
             // CODE_COM
-            for( iChar = 15; pszData[iChar] == ' ' && iChar > 5; iChar-- ) {}
+            int iChar = 15;
+            for( ; pszData[iChar] == ' ' && iChar > 5; iChar-- ) {}
 
             if( iChar > 6 )
                 osFCName += poRecord->GetField(7,iChar+1);
@@ -301,7 +303,7 @@ int NTFFileReader::Open( const char * pszFilenameIn )
 
             if( iChar > 15 )
             {
-                if( osFCName.size() )
+                if( !osFCName.empty() )
                     osFCName += " : " ;
                 osFCName += poRecord->GetField(17,iChar+1);
             }
@@ -313,7 +315,7 @@ int NTFFileReader::Open( const char * pszFilenameIn )
 
             if( iChar > 37 )
             {
-                if( osFCName.size() )
+                if( !osFCName.empty() )
                     osFCName += " : " ;
                 osFCName += poRecord->GetField(37,iChar);
             }
@@ -328,8 +330,8 @@ int NTFFileReader::Open( const char * pszFilenameIn )
         {
             nAttCount++;
 
-            pasAttDesc = (NTFAttDesc *)
-                CPLRealloc( pasAttDesc, sizeof(NTFAttDesc) * nAttCount );
+            pasAttDesc = static_cast<NTFAttDesc *>(
+                CPLRealloc( pasAttDesc, sizeof(NTFAttDesc) * nAttCount ));
 
             ProcessAttDesc( poRecord, pasAttDesc + nAttCount - 1 );
         }
@@ -339,15 +341,17 @@ int NTFFileReader::Open( const char * pszFilenameIn )
 /* -------------------------------------------------------------------- */
         else if( poRecord->GetType() == NRT_CODELIST )
         {
-            NTFCodeList *poCodeList;
-            NTFAttDesc  *psAttDesc;
-
-            poCodeList = new NTFCodeList( poRecord );
-            psAttDesc = GetAttDesc( poCodeList->szValType );
+            NTFCodeList *poCodeList = new NTFCodeList( poRecord );
+            NTFAttDesc  *psAttDesc = GetAttDesc( poCodeList->szValType );
             if( psAttDesc == NULL )
             {
                 CPLDebug( "NTF", "Got CODELIST for %s without ATTDESC.",
                           poCodeList->szValType );
+                delete poCodeList;
+            }
+            else if( psAttDesc->poCodeList != NULL )
+            {
+                // Should not happen on sane files.
                 delete poCodeList;
             }
             else
@@ -359,19 +363,17 @@ int NTFFileReader::Open( const char * pszFilenameIn )
 /* -------------------------------------------------------------------- */
 /*      Handle database header record.                                  */
 /* -------------------------------------------------------------------- */
-        else if( poRecord->GetType() == NRT_DHR )
+        else if( poRecord->GetType() == NRT_DHR && pszProduct == NULL )
         {
-            int         iChar;
             pszProduct = CPLStrdup(poRecord->GetField(3,22));
-            for( iChar = static_cast<int>(strlen(pszProduct))-1;
+            for( int iChar = static_cast<int>(strlen(pszProduct))-1;
                  iChar > 0 && pszProduct[iChar] == ' ';
                  pszProduct[iChar--] = '\0' ) {}
 
             pszPVName = CPLStrdup(poRecord->GetField(76+3,76+22));
-            for( iChar = static_cast<int>(strlen(pszPVName))-1;
+            for( int iChar = static_cast<int>(strlen(pszPVName))-1;
                  iChar > 0 && pszPVName[iChar] == ' ';
                  pszPVName[iChar--] = '\0' ) {}
-
         }
 
         delete poRecord;
@@ -402,7 +404,8 @@ int NTFFileReader::Open( const char * pszFilenameIn )
 /* -------------------------------------------------------------------- */
 /*      Classify the product type.                                      */
 /* -------------------------------------------------------------------- */
-    if( STARTS_WITH_CI(pszProduct, "LAND-LINE") && CPLAtof(pszPVName+5) < 1.3 )
+    if( STARTS_WITH_CI(pszProduct, "LAND-LINE") && strlen(pszPVName) > 5 &&
+        CPLAtof(pszPVName+5) < 1.3 )
         nProduct = NPC_LANDLINE;
     else if( STARTS_WITH_CI(pszProduct, "LAND-LINE") )
         nProduct = NPC_LANDLINE99;
@@ -460,18 +463,22 @@ int NTFFileReader::Open( const char * pszFilenameIn )
 /*      Handle the section header record.                               */
 /* -------------------------------------------------------------------- */
     nSavedFeatureId = nBaseFeatureId;
-    nStartPos = VSIFTell(fp);
+    nStartPos = VSIFTellL(fp);
 
     pszTileName = CPLStrdup(poRecord->GetField(3,12));        // SECT_REF
-    while( pszTileName[strlen(pszTileName)-1] == ' ' )
-        pszTileName[strlen(pszTileName)-1] = '\0';
+    size_t nTileNameLen = strlen(pszTileName);
+    while( nTileNameLen > 0 && pszTileName[nTileNameLen-1] == ' ' )
+    {
+        pszTileName[nTileNameLen-1] = '\0';
+        nTileNameLen --;
+    }
 
     nCoordWidth = atoi(poRecord->GetField(15,19));            // XYLEN
-    if( nCoordWidth == 0 )
+    if( nCoordWidth <= 0 )
         nCoordWidth = 10;
 
     nZWidth = atoi(poRecord->GetField(31,35));                // ZLEN
-    if( nZWidth == 0 )
+    if( nZWidth <= 0 )
         nZWidth = 10;
 
     dfXYMult = atoi(poRecord->GetField(21,30)) / 1000.0;      // XY_MULT
@@ -501,9 +508,7 @@ int NTFFileReader::Open( const char * pszFilenameIn )
         dfScale = 10000;
     else if( nProduct == NPC_BASEDATA )
         dfScale = 625000;
-    else if( nProduct == NPC_BOUNDARYLINE )
-        dfScale = 10000;
-    else
+    else /*if( nProduct == NPC_BOUNDARYLINE ) or default case */
         dfScale = 10000;
 
     if( dfScale != 0.0 )
@@ -555,30 +560,28 @@ OGRGeometry *NTFFileReader::ProcessGeometry( NTFRecord * poRecord,
                                              int * pnGeomId )
 
 {
-    int            nGType, nNumCoord;
-    OGRGeometry    *poGeometry = NULL;
-
     if( poRecord->GetType() == NRT_GEOMETRY3D )
         return ProcessGeometry3D( poRecord, pnGeomId );
 
     else if( poRecord->GetType() != NRT_GEOMETRY )
         return NULL;
 
-    nGType = atoi(poRecord->GetField(9,9));            // GTYPE
-    nNumCoord = atoi(poRecord->GetField(10,13));       // NUM_COORD
+    const int nGType = atoi(poRecord->GetField(9,9));            // GTYPE
+    const int nNumCoord = atoi(poRecord->GetField(10,13));       // NUM_COORD
     if( pnGeomId != NULL )
         *pnGeomId = atoi(poRecord->GetField(3,8));     // GEOM_ID
 
 /* -------------------------------------------------------------------- */
 /*      Point                                                           */
 /* -------------------------------------------------------------------- */
+    OGRGeometry *poGeometry = NULL;
     if( nGType == 1 )
     {
-        double      dfX, dfY;
-
-        dfX = atoi(poRecord->GetField(14,14+GetXYLen()-1)) * GetXYMult()
+        const double dfX =
+            atoi(poRecord->GetField(14,14+GetXYLen()-1)) * GetXYMult()
             + GetXOrigin();
-        dfY = atoi(poRecord->GetField(14+GetXYLen(),14+GetXYLen()*2-1))
+        const double dfY =
+            atoi(poRecord->GetField(14+GetXYLen(),14+GetXYLen()*2-1))
             * GetXYMult() + GetYOrigin();
 
         poGeometry = new OGRPoint( dfX, dfY );
@@ -590,19 +593,20 @@ OGRGeometry *NTFFileReader::ProcessGeometry( NTFRecord * poRecord,
     else if( nGType == 2 || nGType == 3 || nGType == 4 )
     {
         OGRLineString      *poLine = new OGRLineString;
-        double             dfX, dfY, dfXLast=0.0, dfYLast=0.0;
-        int                iCoord, nOutCount = 0;
+        double dfXLast = 0.0;
+        double dfYLast = 0.0;
+        int nOutCount = 0;
 
         poGeometry = poLine;
         poLine->setNumPoints( nNumCoord );
-        for( iCoord = 0; iCoord < nNumCoord; iCoord++ )
+        for( int iCoord = 0; iCoord < nNumCoord; iCoord++ )
         {
-            int            iStart = 14 + iCoord * (GetXYLen()*2+1);
+            const int iStart = 14 + iCoord * (GetXYLen()*2+1);
 
-            dfX = atoi(poRecord->GetField(iStart+0,
+            const double dfX = atoi(poRecord->GetField(iStart+0,
                                           iStart+GetXYLen()-1))
                 * GetXYMult() + GetXOrigin();
-            dfY = atoi(poRecord->GetField(iStart+GetXYLen(),
+            const double dfY = atoi(poRecord->GetField(iStart+GetXYLen(),
                                           iStart+GetXYLen()*2-1))
                 * GetXYMult() + GetYOrigin();
 
@@ -629,12 +633,12 @@ OGRGeometry *NTFFileReader::ProcessGeometry( NTFRecord * poRecord,
 /* -------------------------------------------------------------------- */
     else if( nGType == 5 && nNumCoord == 3 )
     {
-        double  adfX[3], adfY[3];
-        int     iCoord;
+        double adfX[3] = { 0.0, 0.0, 0.0 };
+        double adfY[3] = { 0.0, 0.0, 0.0 };
 
-        for( iCoord = 0; iCoord < nNumCoord; iCoord++ )
+        for( int iCoord = 0; iCoord < nNumCoord; iCoord++ )
         {
-            int            iStart = 14 + iCoord * (GetXYLen()*2+1);
+            const int iStart = 14 + iCoord * (GetXYLen()*2+1);
 
             adfX[iCoord] = atoi(poRecord->GetField(iStart+0,
                                                   iStart+GetXYLen()-1))
@@ -654,26 +658,28 @@ OGRGeometry *NTFFileReader::ProcessGeometry( NTFRecord * poRecord,
 /* -------------------------------------------------------------------- */
     else if( nGType == 7 )
     {
-        double  dfCenterX, dfCenterY, dfArcX, dfArcY, dfRadius;
-        int     iCenterStart = 14;
-        int     iArcStart = 14 + 2 * GetXYLen() + 1;
+        const int iCenterStart = 14;
+        const int iArcStart = 14 + 2 * GetXYLen() + 1;
 
-        dfCenterX = atoi(poRecord->GetField(iCenterStart,
-                                            iCenterStart+GetXYLen()-1))
+        const double dfCenterX =
+            atoi(poRecord->GetField(iCenterStart, iCenterStart+GetXYLen()-1))
             * GetXYMult() + GetXOrigin();
-        dfCenterY = atoi(poRecord->GetField(iCenterStart+GetXYLen(),
-                                            iCenterStart+GetXYLen()*2-1))
+        const double dfCenterY =
+            atoi(poRecord->GetField(iCenterStart+GetXYLen(),
+                                    iCenterStart+GetXYLen()*2-1))
             * GetXYMult() + GetYOrigin();
 
-        dfArcX = atoi(poRecord->GetField(iArcStart,
-                                         iArcStart+GetXYLen()-1))
+        const double dfArcX =
+            atoi(poRecord->GetField(iArcStart, iArcStart+GetXYLen()-1))
             * GetXYMult() + GetXOrigin();
-        dfArcY = atoi(poRecord->GetField(iArcStart+GetXYLen(),
-                                         iArcStart+GetXYLen()*2-1))
+        const double dfArcY =
+            atoi(poRecord->GetField(iArcStart+GetXYLen(),
+                                    iArcStart+GetXYLen()*2-1))
             * GetXYMult() + GetYOrigin();
 
-        dfRadius = sqrt( (dfCenterX - dfArcX) * (dfCenterX - dfArcX)
-                         + (dfCenterY - dfArcY) * (dfCenterY - dfArcY) );
+        const double dfRadius =
+            sqrt( (dfCenterX - dfArcX) * (dfCenterX - dfArcX)
+                  + (dfCenterY - dfArcY) * (dfCenterY - dfArcY) );
 
         poGeometry = NTFStrokeArcToOGRGeometry_Angles( dfCenterX, dfCenterY,
                                                        dfRadius,
@@ -683,8 +689,8 @@ OGRGeometry *NTFFileReader::ProcessGeometry( NTFRecord * poRecord,
 
     else
     {
-        fprintf( stderr, "GType = %d\n", nGType );
-        CPLAssert( FALSE );
+        CPLError(CE_Failure, CPLE_AppDefined,
+                 "Unhandled GType = %d", nGType );
     }
 
     if( poGeometry != NULL )
@@ -701,52 +707,52 @@ OGRGeometry *NTFFileReader::ProcessGeometry3D( NTFRecord * poRecord,
                                                int * pnGeomId )
 
 {
-    int            nGType, nNumCoord;
-    OGRGeometry    *poGeometry = NULL;
+    OGRGeometry *poGeometry = NULL;
 
     if( poRecord->GetType() != NRT_GEOMETRY3D )
         return NULL;
 
-    nGType = atoi(poRecord->GetField(9,9));            // GTYPE
-    nNumCoord = atoi(poRecord->GetField(10,13));       // NUM_COORD
+    const int nGType = atoi(poRecord->GetField(9,9));  // GTYPE
+    const int nNumCoord = atoi(poRecord->GetField(10,13));       // NUM_COORD
     if( pnGeomId != NULL )
         *pnGeomId = atoi(poRecord->GetField(3,8));     // GEOM_ID
 
     if( nGType == 1 )
     {
-        double      dfX, dfY, dfZ;
-
-        dfX = atoi(poRecord->GetField(14,14+GetXYLen()-1)) * GetXYMult()
+        const double dfX =
+            atoi(poRecord->GetField(14,14+GetXYLen()-1)) * GetXYMult()
             + GetXOrigin();
-        dfY = atoi(poRecord->GetField(14+GetXYLen(),14+GetXYLen()*2-1))
+        const double dfY =
+            atoi(poRecord->GetField(14+GetXYLen(),14+GetXYLen()*2-1))
             * GetXYMult() + GetYOrigin();
-        dfZ = atoi(poRecord->GetField(14+1+2*GetXYLen(),
-                                      14+1+2*GetXYLen()+nZWidth-1)) * dfZMult;
-
+        const double dfZ =
+            atoi(poRecord->GetField(14+1+2*GetXYLen(),
+                                    14+1+2*GetXYLen()+nZWidth-1)) * dfZMult;
 
         poGeometry = new OGRPoint( dfX, dfY, dfZ );
     }
 
     else if( nGType == 2 )
     {
-        OGRLineString      *poLine = new OGRLineString;
-        double             dfX, dfY, dfZ, dfXLast=0.0, dfYLast=0.0;
-        int                iCoord, nOutCount = 0;
+        OGRLineString *poLine = new OGRLineString;
+        double dfXLast = 0.0;
+        double dfYLast = 0.0;
+        int nOutCount = 0;
 
         poGeometry = poLine;
         poLine->setNumPoints( nNumCoord );
-        for( iCoord = 0; iCoord < nNumCoord; iCoord++ )
+        for( int iCoord = 0; iCoord < nNumCoord; iCoord++ )
         {
-            int            iStart = 14 + iCoord * (GetXYLen()*2+nZWidth+2);
+            const int iStart = 14 + iCoord * (GetXYLen()*2+nZWidth+2);
 
-            dfX = atoi(poRecord->GetField(iStart+0,
+            const double dfX = atoi(poRecord->GetField(iStart+0,
                                           iStart+GetXYLen()-1))
                 * GetXYMult() + GetXOrigin();
-            dfY = atoi(poRecord->GetField(iStart+GetXYLen(),
+            const double dfY = atoi(poRecord->GetField(iStart+GetXYLen(),
                                           iStart+GetXYLen()*2-1))
                 * GetXYMult() + GetYOrigin();
 
-            dfZ = atoi(poRecord->GetField(iStart+1+2*GetXYLen(),
+            const double dfZ = atoi(poRecord->GetField(iStart+1+2*GetXYLen(),
                                           iStart+1+2*GetXYLen()+nZWidth-1))
                 * dfZMult;
 
@@ -781,19 +787,17 @@ OGRGeometry *NTFFileReader::ProcessGeometry3D( NTFRecord * poRecord,
 int NTFFileReader::ProcessAttDesc( NTFRecord * poRecord, NTFAttDesc* psAD )
 
 {
-    int      iChar;
-    const char *pszData;
-
-    if( poRecord->GetType() != NRT_ADR )
+    psAD->poCodeList = NULL;
+    if( poRecord->GetType() != NRT_ADR || poRecord->GetLength() < 13 )
         return FALSE;
 
-    psAD->poCodeList = NULL;
     snprintf( psAD->val_type, sizeof(psAD->val_type), "%s", poRecord->GetField( 3, 4 ));
     snprintf( psAD->fwidth, sizeof(psAD->fwidth), "%s", poRecord->GetField( 5, 7 ));
     snprintf( psAD->finter, sizeof(psAD->finter), "%s", poRecord->GetField( 8, 12 ));
 
-    pszData = poRecord->GetData();
-    for( iChar = 12;
+    const char *pszData = poRecord->GetData();
+    int iChar = 12;  // Used after for.
+    for( ;
          pszData[iChar] != '\0' && pszData[iChar] != '\\';
          iChar++ ) {}
 
@@ -819,14 +823,20 @@ int NTFFileReader::ProcessAttRecGroup( NTFRecord **papoRecords,
 
     for( int iRec = 0; papoRecords[iRec] != NULL; iRec++ )
     {
-        char    **papszTypes1 = NULL, **papszValues1 = NULL;
-
         if( papoRecords[iRec]->GetType() != NRT_ATTREC )
             continue;
 
+        char **papszTypes1 = NULL;
+        char **papszValues1 = NULL;
         if( !ProcessAttRec( papoRecords[iRec], NULL,
                             &papszTypes1, &papszValues1 ) )
+        {
+            CSLDestroy(*ppapszTypes);
+            CSLDestroy(*ppapszValues);
+            *ppapszTypes = NULL;
+            *ppapszValues = NULL;
             return FALSE;
+        }
 
         if( *ppapszTypes == NULL )
         {
@@ -858,10 +868,12 @@ int NTFFileReader::ProcessAttRec( NTFRecord * poRecord,
                                   char *** ppapszValues )
 
 {
-    int            iOffset;
-    const char     *pszData;
+    if( pnAttId != NULL )
+        *pnAttId = 0;
+    *ppapszTypes = NULL;
+    *ppapszValues = NULL;
 
-    if( poRecord->GetType() != NRT_ATTREC )
+    if( poRecord->GetType() != NRT_ATTREC || poRecord->GetLength() < 8 )
         return FALSE;
 
 /* -------------------------------------------------------------------- */
@@ -874,28 +886,24 @@ int NTFFileReader::ProcessAttRec( NTFRecord * poRecord,
 /*      Loop handling attribute till we get a '0' indicating the end    */
 /*      of the record.                                                  */
 /* ==================================================================== */
-    *ppapszTypes = NULL;
-    *ppapszValues = NULL;
 
-    iOffset = 8;
-    pszData = poRecord->GetData();
+    int iOffset = 8;
+    const char *pszData = poRecord->GetData();
+    bool bError = false;
 
-    while( pszData[iOffset] != '0' && pszData[iOffset] != '\0' )
+    while( iOffset < poRecord->GetLength() && pszData[iOffset] != DIGIT_ZERO )
     {
-        NTFAttDesc *psAttDesc;
-        int         nEnd;
-        int         nFWidth;
-
 /* -------------------------------------------------------------------- */
 /*      Extract the two letter code name for the attribute, and use     */
 /*      it to find the correct ATTDESC info.                            */
 /* -------------------------------------------------------------------- */
-        psAttDesc = GetAttDesc(pszData + iOffset );
+        NTFAttDesc *psAttDesc = GetAttDesc(pszData + iOffset );
         if( psAttDesc == NULL )
         {
             CPLDebug( "NTF", "Couldn't translate attrec type `%2.2s'.",
                       pszData + iOffset );
-            return FALSE;
+            bError = true;
+            break;
         }
 
         *ppapszTypes =
@@ -906,11 +914,21 @@ int NTFFileReader::ProcessAttRec( NTFRecord * poRecord,
 /*      Establish the width of the value.  Zero width fields are        */
 /*      terminated by a backslash.                                      */
 /* -------------------------------------------------------------------- */
-        nFWidth = atoi(psAttDesc->fwidth);
+        const int nFWidth = atoi(psAttDesc->fwidth);
+        if( nFWidth < 0 )
+        {
+            bError = true;
+            break;
+        }
+        int nEnd = 0;
         if( nFWidth == 0 )
         {
             const char * pszData2 = poRecord->GetData();
-
+            if( iOffset + 2 >= poRecord->GetLength() )
+            {
+                bError = true;
+                break;
+            }
             for( nEnd = iOffset + 2;
                  pszData2[nEnd] != '\\' && pszData2[nEnd] != '\0';
                  nEnd++ ) {}
@@ -933,14 +951,27 @@ int NTFFileReader::ProcessAttRec( NTFRecord * poRecord,
         if( nFWidth == 0 )
         {
             iOffset = nEnd;
+            if( iOffset >= poRecord->GetLength() )
+            {
+                bError = true;
+                break;
+            }
             if( pszData[iOffset] == '\\' )
                 iOffset++;
         }
         else
-            iOffset += 2 + atoi(psAttDesc->fwidth);
+            iOffset += 2 + nFWidth;
     }
 
-    return TRUE;
+    if( bError )
+    {
+        CSLDestroy(*ppapszTypes);
+        CSLDestroy(*ppapszValues);
+        *ppapszTypes = NULL;
+        *ppapszValues = NULL;
+    }
+
+    return( *ppapszTypes != NULL );
 }
 
 /************************************************************************/
@@ -969,19 +1000,22 @@ NTFAttDesc * NTFFileReader::GetAttDesc( const char * pszType )
 /*      the long user name.  The value will be transformed from         */
 /*      fixed point (with the decimal implicit) to fixed point with     */
 /*      an explicit decimal point if it has a "R" format.               */
+/*      Note: the returned *ppszAttValue has a very short lifetime      */
+/*      and should immediately be used. Further calls to                */
+/*      ProcessAttValue or CPLSPrintf() will invalidate it.             */
 /************************************************************************/
 
 int NTFFileReader::ProcessAttValue( const char *pszValType,
                                     const char *pszRawValue,
-                                    char **ppszAttName,
-                                    char **ppszAttValue,
-                                    char **ppszCodeDesc )
+                                    const char **ppszAttName,
+                                    const char **ppszAttValue,
+                                    const char **ppszCodeDesc )
 
 {
 /* -------------------------------------------------------------------- */
 /*      Find the ATTDESC for this attribute, and assign return name value.*/
 /* -------------------------------------------------------------------- */
-    NTFAttDesc      *psAttDesc = GetAttDesc(pszValType);
+    NTFAttDesc *psAttDesc = GetAttDesc(pszValType);
 
     if( psAttDesc == NULL )
         return FALSE;
@@ -995,23 +1029,33 @@ int NTFFileReader::ProcessAttValue( const char *pszValType,
 /* -------------------------------------------------------------------- */
     if( psAttDesc->finter[0] == 'R' )
     {
-        static char      szRealString[30];
-        const char *pszDecimalPortion;
-        int       nWidth, nPrecision;
+        const char *pszDecimalPortion = NULL; // Used after for.
 
         for( pszDecimalPortion = psAttDesc->finter;
              *pszDecimalPortion != ',' && *pszDecimalPortion != '\0';
              pszDecimalPortion++ ) {}
+        if( *pszDecimalPortion == '\0' )
+        {
+            *ppszAttValue = "";
+        }
+        else
+        {
+            const int nWidth = static_cast<int>(strlen(pszRawValue));
+            const int nPrecision = atoi(pszDecimalPortion+1);
+            if( nPrecision < 0 || nPrecision >= nWidth )
+            {
+                *ppszAttValue = "";
+            }
+            else
+            {
+                CPLString osResult(pszRawValue);
+                osResult.resize(nWidth - nPrecision);
+                osResult += ".";
+                osResult += pszRawValue+nWidth-nPrecision;
 
-        nWidth = static_cast<int>(strlen(pszRawValue));
-        nPrecision = atoi(pszDecimalPortion+1);
-
-        strncpy( szRealString, pszRawValue, nWidth - nPrecision );
-        szRealString[nWidth-nPrecision] = '.';
-        strcpy( szRealString+nWidth-nPrecision+1,
-                pszRawValue+nWidth-nPrecision );
-
-        *ppszAttValue = szRealString;
+                *ppszAttValue = CPLSPrintf("%s", osResult.c_str());
+            }
+        }
     }
 
 /* -------------------------------------------------------------------- */
@@ -1020,11 +1064,7 @@ int NTFFileReader::ProcessAttValue( const char *pszValType,
 /* -------------------------------------------------------------------- */
     else if( psAttDesc->finter[0] == 'I' )
     {
-        static char    szIntString[30]; // FIXME thread unsafe
-
-        snprintf( szIntString, sizeof(szIntString), "%d", atoi(pszRawValue) );
-
-        *ppszAttValue = szIntString;
+        *ppszAttValue = CPLSPrintf("%d", atoi(pszRawValue) );
     }
 
 /* -------------------------------------------------------------------- */
@@ -1032,7 +1072,7 @@ int NTFFileReader::ProcessAttValue( const char *pszValType,
 /* -------------------------------------------------------------------- */
     else
     {
-        *ppszAttValue = (char *) pszRawValue;
+        *ppszAttValue = pszRawValue;
     }
 
 /* -------------------------------------------------------------------- */
@@ -1044,7 +1084,7 @@ int NTFFileReader::ProcessAttValue( const char *pszValType,
     }
     else if( psAttDesc->poCodeList != NULL )
     {
-        *ppszCodeDesc = (char *)psAttDesc->poCodeList->Lookup( *ppszAttValue );
+        *ppszCodeDesc = psAttDesc->poCodeList->Lookup( *ppszAttValue );
     }
     else
     {
@@ -1065,25 +1105,26 @@ void NTFFileReader::ApplyAttributeValues( OGRFeature * poFeature,
                                           NTFRecord ** papoGroup, ... )
 
 {
-    char        **papszTypes = NULL, **papszValues = NULL;
-
 /* -------------------------------------------------------------------- */
 /*      Extract attribute values from record group.                     */
 /* -------------------------------------------------------------------- */
+    char **papszTypes = NULL;
+    char **papszValues = NULL;
+
     if( !ProcessAttRecGroup( papoGroup, &papszTypes, &papszValues ) )
         return;
 
 /* -------------------------------------------------------------------- */
 /*      Handle attribute pairs                                          */
 /* -------------------------------------------------------------------- */
-    va_list     hVaArgs;
-    const char  *pszAttName;
+    va_list hVaArgs;
 
     va_start(hVaArgs, papoGroup);
 
+    const char *pszAttName = NULL;
     while( (pszAttName = va_arg(hVaArgs, const char *)) != NULL )
     {
-        int     iField = va_arg(hVaArgs, int);
+        const int iField = va_arg(hVaArgs, int);
 
         ApplyAttributeValue( poFeature, iField, pszAttName,
                              papszTypes, papszValues );
@@ -1097,7 +1138,6 @@ void NTFFileReader::ApplyAttributeValues( OGRFeature * poFeature,
     CSLDestroy( papszTypes );
     CSLDestroy( papszValues );
 }
-
 
 /************************************************************************/
 /*                        ApplyAttributeValue()                         */
@@ -1117,9 +1157,7 @@ int NTFFileReader::ApplyAttributeValue( OGRFeature * poFeature, int iField,
 /*      provided.  If not found that's fine, just return with           */
 /*      notification.                                                   */
 /* -------------------------------------------------------------------- */
-    int         iValue;
-
-    iValue = CSLFindString( papszTypes, pszAttName );
+    const int iValue = CSLFindString( papszTypes, pszAttName );
     if( iValue < 0 )
         return FALSE;
 
@@ -1128,10 +1166,12 @@ int NTFFileReader::ApplyAttributeValue( OGRFeature * poFeature, int iField,
 /*      Process the attribute value ... this really only has a          */
 /*      useful effect for real numbers.                                 */
 /* -------------------------------------------------------------------- */
-    char        *pszAttLongName, *pszAttValue, *pszCodeDesc;
+    const char *pszAttLongName = NULL;
+    const char *pszAttValue = NULL;
+    const char *pszCodeDesc = NULL;
 
     if( !ProcessAttValue( pszAttName, papszValues[iValue],
-                     &pszAttLongName, &pszAttValue, &pszCodeDesc ) )
+                          &pszAttLongName, &pszAttValue, &pszCodeDesc ) )
         return FALSE;
 
 /* -------------------------------------------------------------------- */
@@ -1176,9 +1216,7 @@ NTFRecord *NTFFileReader::ReadRecord()
 {
     if( poSavedRecord != NULL )
     {
-        NTFRecord       *poReturn;
-
-        poReturn = poSavedRecord;
+        NTFRecord *poReturn = poSavedRecord;
 
         poSavedRecord = NULL;
 
@@ -1186,14 +1224,12 @@ NTFRecord *NTFFileReader::ReadRecord()
     }
     else
     {
-        NTFRecord       *poRecord;
-
         CPLErrorReset();
         if( fp != NULL )
-            nPreSavedPos = VSIFTell( fp );
-        poRecord = new NTFRecord( fp );
+            nPreSavedPos = VSIFTellL( fp );
+        NTFRecord *poRecord = new NTFRecord( fp );
         if( fp != NULL )
-            nPostSavedPos = VSIFTell( fp );
+            nPostSavedPos = VSIFTellL( fp );
 
         /* ensure termination if we fail to read a record */
         if( CPLGetLastErrorType() == CE_Failure )
@@ -1212,7 +1248,7 @@ NTFRecord *NTFFileReader::ReadRecord()
 /*      Return the current file pointer position.                       */
 /************************************************************************/
 
-void NTFFileReader::GetFPPos( long *pnPos, long *pnFID )
+void NTFFileReader::GetFPPos( vsi_l_offset *pnPos, long *pnFID )
 
 {
     if( poSavedRecord != NULL )
@@ -1228,7 +1264,7 @@ void NTFFileReader::GetFPPos( long *pnPos, long *pnFID )
 /*                              SetFPPos()                              */
 /************************************************************************/
 
-int NTFFileReader::SetFPPos( long nNewPos, long nNewFID )
+int NTFFileReader::SetFPPos( vsi_l_offset nNewPos, long nNewFID )
 
 {
     if( nNewFID == nSavedFeatureId )
@@ -1240,7 +1276,7 @@ int NTFFileReader::SetFPPos( long nNewPos, long nNewFID )
         poSavedRecord = NULL;
     }
 
-    if( fp != NULL && VSIFSeek( fp, nNewPos, SEEK_SET ) == 0 )
+    if( fp != NULL && VSIFSeekL( fp, nNewPos, SEEK_SET ) == 0 )
     {
         nPreSavedPos = nPostSavedPos = nNewPos;
         nSavedFeatureId = nNewFID;
@@ -1350,8 +1386,8 @@ int DefaultNTFRecordGrouper( NTFFileReader *, NTFRecord ** papoGroup,
 /* -------------------------------------------------------------------- */
     if (poCandidate->GetType() != NRT_ATTREC )
     {
-        int     iRec;
-        for( iRec = 0; papoGroup[iRec] != NULL; iRec++ )
+        int iRec = 0;  // Used after for.
+        for( ; papoGroup[iRec] != NULL; iRec++ )
         {
             if( poCandidate->GetType() == papoGroup[iRec]->GetType() )
                 break;
@@ -1373,17 +1409,16 @@ int DefaultNTFRecordGrouper( NTFFileReader *, NTFRecord ** papoGroup,
 NTFRecord **NTFFileReader::ReadRecordGroup()
 
 {
-   NTFRecord     *poRecord;
-   int            nRecordCount = 0;
 
    ClearCGroup();
 
 /* -------------------------------------------------------------------- */
 /*      Loop, reading records till we think we have a grouping.         */
 /* -------------------------------------------------------------------- */
+   int nRecordCount = 0;
+   NTFRecord *poRecord = NULL;
    while( (poRecord = ReadRecord()) != NULL && poRecord->GetType() != NRT_VTR )
    {
-       CPLAssert( nRecordCount < MAX_REC_GROUP);
        if( nRecordCount >= MAX_REC_GROUP )
        {
            CPLError( CE_Failure, CPLE_AppDefined,
@@ -1444,10 +1479,6 @@ int NTFFileReader::GetFeatureClass( int iFCIndex,
 OGRFeature * NTFFileReader::ReadOGRFeature( OGRNTFLayer * poTargetLayer )
 
 {
-    OGRNTFLayer *poLayer = NULL;
-    NTFRecord   **papoGroup;
-    OGRFeature  *poFeature = NULL;
-
 /* -------------------------------------------------------------------- */
 /*      If this is a raster file, use a custom method to read the       */
 /*      feature.                                                        */
@@ -1459,8 +1490,13 @@ OGRFeature * NTFFileReader::ReadOGRFeature( OGRNTFLayer * poTargetLayer )
 /*      Loop looking for a group we can translate, and that if          */
 /*      needed matches our layer request.                               */
 /* -------------------------------------------------------------------- */
+    OGRNTFLayer *poLayer = NULL;
+    OGRFeature *poFeature = NULL;
+
     while( true )
     {
+        NTFRecord **papoGroup = NULL;
+
         if( GetProductId() == NPC_UNKNOWN && nNTFLevel > 2 )
             papoGroup = GetNextIndexedRecordGroup( apoCGroup + 1 );
         else
@@ -1495,7 +1531,9 @@ OGRFeature * NTFFileReader::ReadOGRFeature( OGRNTFLayer * poTargetLayer )
                       GetProduct() );
         }
         else
+        {
             break;
+        }
     }
 
 /* -------------------------------------------------------------------- */
@@ -1503,9 +1541,7 @@ OGRFeature * NTFFileReader::ReadOGRFeature( OGRNTFLayer * poTargetLayer )
 /* -------------------------------------------------------------------- */
     if( poFeature != NULL )
     {
-        int             iTileRefField;
-
-        iTileRefField = poLayer->GetLayerDefn()->GetFieldCount()-1;
+        int iTileRefField = poLayer->GetLayerDefn()->GetFieldCount()-1;
 
         CPLAssert( EQUAL(poLayer->GetLayerDefn()->GetFieldDefn(iTileRefField)->
                          GetNameRef(), "TILE_REF") );
@@ -1522,12 +1558,14 @@ OGRFeature * NTFFileReader::ReadOGRFeature( OGRNTFLayer * poTargetLayer )
 /* -------------------------------------------------------------------- */
     else
     {
-        CPLAssert( nFeatureCount == -1
-                   || nFeatureCount == nSavedFeatureId - nBaseFeatureId );
+        // This assertion was triggered by https://bugs.chromium.org/p/oss-fuzz/issues/detail?id=1982
+        // it doesn't look critical enough to be enabled.
+        //CPLAssert( nFeatureCount == -1
+        //           || nFeatureCount == nSavedFeatureId - nBaseFeatureId );
         nFeatureCount = nSavedFeatureId - nBaseFeatureId;
     }
 
-    return( poFeature );
+    return poFeature;
 }
 
 /************************************************************************/
@@ -1572,8 +1610,6 @@ void NTFFileReader::FreshenIndex()
 void NTFFileReader::IndexFile()
 
 {
-    NTFRecord   *poRecord;
-
     Reset();
 
     DestroyIndex();
@@ -1586,10 +1622,11 @@ void NTFFileReader::IndexFile()
 /*      Process all records after the section header, and before 99     */
 /*      to put them in the index.                                       */
 /* -------------------------------------------------------------------- */
+    NTFRecord *poRecord = NULL;
     while( (poRecord = ReadRecord()) != NULL && poRecord->GetType() != 99 )
     {
-        int     iType = poRecord->GetType();
-        int     iId = atoi(poRecord->GetField( 3, 8 ));
+        const int iType = poRecord->GetType();
+        const int iId = atoi(poRecord->GetField( 3, 8 ));
 
         if( iType < 0 || iType >= 100 )
         {
@@ -1599,17 +1636,25 @@ void NTFFileReader::IndexFile()
             delete poRecord;
             continue;
         }
+        if( iId < 0 )
+        {
+            CPLError( CE_Failure, CPLE_AppDefined,
+                      "Illegal id %d record, skipping.",
+                      iId );
+            delete poRecord;
+            continue;
+        }
 
 /* -------------------------------------------------------------------- */
 /*      Grow type specific subindex if needed.                          */
 /* -------------------------------------------------------------------- */
         if( anIndexSize[iType] <= iId )
         {
-            int nNewSize = MAX(iId+1,anIndexSize[iType] * 2 + 10);
+            const int nNewSize = std::max(iId+1, anIndexSize[iType] * 2 + 10);
 
-            apapoRecordIndex[iType] = (NTFRecord **)
+            apapoRecordIndex[iType] = static_cast<NTFRecord **>(
                 CPLRealloc(apapoRecordIndex[iType],
-                           sizeof(void *) * nNewSize);
+                           sizeof(void *) * nNewSize));
 
             for( int i = anIndexSize[iType]; i < nNewSize; i++ )
                 (apapoRecordIndex[iType])[i] = NULL;
@@ -1684,17 +1729,30 @@ NTFRecord * NTFFileReader::GetIndexedRecord( int iType, int iId )
 /*                          AddToIndexGroup()                           */
 /************************************************************************/
 
-static void AddToIndexGroup( NTFRecord **papoGroup, NTFRecord * poRecord )
+void NTFFileReader::AddToIndexGroup( NTFRecord * poRecord )
 
 {
-    int         i;
+    int i = 1;  // Used after for.
+    for( ; apoCGroup[i] != NULL; i++ )
+    {
+        if( apoCGroup[i] == poRecord )
+        {
+            CPLError(CE_Failure, CPLE_AppDefined,
+                    "Record already inserted in group");
+            return;
+        }
+    }
+    if( i == MAX_REC_GROUP )
+    {
+        CPLError(CE_Failure, CPLE_AppDefined,
+                 "Maximum number of records in group reached");
+        delete poRecord;
+        return;
+    }
 
-    for( i = 1; papoGroup[i] != NULL; i++ ) {}
-
-    papoGroup[i] = poRecord;
-    papoGroup[i+1] = NULL;
+    apoCGroup[i] = poRecord;
+    apoCGroup[i+1] = NULL;
 }
-
 
 /************************************************************************/
 /*                     GetNextIndexedRecordGroup()                      */
@@ -1719,6 +1777,8 @@ NTFRecord **NTFFileReader::GetNextIndexedRecordGroup( NTFRecord **
     {
         nPrevType = papoPrevGroup[0]->GetType();
         nPrevId = atoi(papoPrevGroup[0]->GetField(3,8));
+        if( nPrevId < 0 )
+            return NULL;
     }
 
 /* -------------------------------------------------------------------- */
@@ -1774,8 +1834,7 @@ NTFRecord **NTFFileReader::GetNextIndexedRecordGroup( NTFRecord **
     {
         int             l_nAttCount = 0;
 
-        AddToIndexGroup( apoCGroup,
-                         GetIndexedRecord( NRT_GEOMETRY,
+        AddToIndexGroup( GetIndexedRecord( NRT_GEOMETRY,
                                            atoi(poAnchor->GetField(9,14)) ) );
 
         if( poAnchor->GetLength() >= 16 )
@@ -1784,7 +1843,6 @@ NTFRecord **NTFFileReader::GetNextIndexedRecordGroup( NTFRecord **
         for( int iAtt = 0; iAtt < l_nAttCount; iAtt++ )
         {
             AddToIndexGroup(
-                apoCGroup,
                 GetIndexedRecord( NRT_ATTREC,
                                   atoi(poAnchor->GetField(17+6*iAtt,
                                                           22+6*iAtt)) ) );
@@ -1801,13 +1859,14 @@ NTFRecord **NTFFileReader::GetNextIndexedRecordGroup( NTFRecord **
 
         // Add all the text position records.
         nSelCount = atoi(poAnchor->GetField(9,10));
+        if( nSelCount < 0 )
+            return NULL;
 
         for( int iSel = 0; iSel < nSelCount; iSel++ )
         {
             int iStart = 11 + 12*iSel + 6;
 
             AddToIndexGroup(
-                apoCGroup,
                 GetIndexedRecord( NRT_TEXTPOS,
                                   atoi(poAnchor->GetField(iStart,iStart+5)) ));
         }
@@ -1816,22 +1875,19 @@ NTFRecord **NTFFileReader::GetNextIndexedRecordGroup( NTFRecord **
         // records.
         for( int iRec = 1; apoCGroup[iRec] != NULL; iRec++ )
         {
-            int         nNumTEXR;
             NTFRecord  *poRecord = apoCGroup[iRec];
 
             if( poRecord->GetType() != NRT_TEXTPOS )
                 continue;
 
-            nNumTEXR = atoi(poRecord->GetField(9,10));
+            const int nNumTEXR = atoi(poRecord->GetField(9,10));
             for( int iTEXR = 0; iTEXR < nNumTEXR; iTEXR++ )
             {
                 AddToIndexGroup(
-                    apoCGroup,
                     GetIndexedRecord( NRT_TEXTREP,
                                       atoi(poRecord->GetField(11+iTEXR*12,
                                                               16+iTEXR*12))));
                 AddToIndexGroup(
-                    apoCGroup,
                     GetIndexedRecord( NRT_GEOMETRY,
                                       atoi(poRecord->GetField(17+iTEXR*12,
                                                               22+iTEXR*12))));
@@ -1848,11 +1904,9 @@ NTFRecord **NTFFileReader::GetNextIndexedRecordGroup( NTFRecord **
             int iStart = 13 + nSelCount*12 + 6 * iAtt;
 
             AddToIndexGroup(
-                apoCGroup,
                 GetIndexedRecord( NRT_ATTREC,
                                   atoi(poAnchor->GetField(iStart,iStart+5)) ));
         }
-
     }
 
 /* -------------------------------------------------------------------- */
@@ -1860,8 +1914,7 @@ NTFRecord **NTFFileReader::GetNextIndexedRecordGroup( NTFRecord **
 /* -------------------------------------------------------------------- */
     else if( poAnchor->GetType() == NRT_NODEREC )
     {
-        AddToIndexGroup( apoCGroup,
-                         GetIndexedRecord( NRT_GEOMETRY,
+        AddToIndexGroup( GetIndexedRecord( NRT_GEOMETRY,
                                            atoi(poAnchor->GetField(9,14)) ) );
     }
 
@@ -1870,19 +1923,20 @@ NTFRecord **NTFFileReader::GetNextIndexedRecordGroup( NTFRecord **
 /* -------------------------------------------------------------------- */
     else if( poAnchor->GetType() == NRT_COLLECT )
     {
-        int     nParts = atoi(poAnchor->GetField(9,12));
-        int     nAttOffset = 13 + nParts * 8;
-        int     l_nAttCount = 0;
+        const int nParts = atoi(poAnchor->GetField(9,12));
+        if( nParts < 0 )
+            return NULL;
+        const int nAttOffset = 13 + nParts * 8;
+        int l_nAttCount = 0;
 
         if( poAnchor->GetLength() > nAttOffset + 2 )
             l_nAttCount = atoi(poAnchor->GetField(nAttOffset,nAttOffset+1));
 
         for( int iAtt = 0; iAtt < l_nAttCount; iAtt++ )
         {
-            int iStart = nAttOffset + 2 + iAtt * 6;
+            const int iStart = nAttOffset + 2 + iAtt * 6;
 
             AddToIndexGroup(
-                apoCGroup,
                 GetIndexedRecord( NRT_ATTREC,
                                   atoi(poAnchor->GetField(iStart,iStart+5)) ));
         }
@@ -1893,18 +1947,16 @@ NTFRecord **NTFFileReader::GetNextIndexedRecordGroup( NTFRecord **
 /* -------------------------------------------------------------------- */
     else if( poAnchor->GetType() == NRT_POLYGON )
     {
-        AddToIndexGroup( apoCGroup,
-                         GetIndexedRecord( NRT_CHAIN,
+        AddToIndexGroup( GetIndexedRecord( NRT_CHAIN,
                                            atoi(poAnchor->GetField(9,14)) ) );
 
         if( poAnchor->GetLength() >= 20 )
-            AddToIndexGroup( apoCGroup,
+            AddToIndexGroup(
                         GetIndexedRecord( NRT_GEOMETRY,
                                           atoi(poAnchor->GetField(15,20)) ) );
 
         // Attributes
-
-        int     l_nAttCount = 0;
+        int l_nAttCount = 0;
 
         if( poAnchor->GetLength() >= 22 )
             l_nAttCount = atoi(poAnchor->GetField(21,22));
@@ -1912,7 +1964,6 @@ NTFRecord **NTFFileReader::GetNextIndexedRecordGroup( NTFRecord **
         for( int iAtt = 0; iAtt < l_nAttCount; iAtt++ )
         {
             AddToIndexGroup(
-                apoCGroup,
                 GetIndexedRecord( NRT_ATTREC,
                                   atoi(poAnchor->GetField(23+6*iAtt,
                                                           28+6*iAtt)) ) );
@@ -1923,15 +1974,16 @@ NTFRecord **NTFFileReader::GetNextIndexedRecordGroup( NTFRecord **
 /* -------------------------------------------------------------------- */
     else if( poAnchor->GetType() == NRT_CPOLY )
     {
-        int     nPolyCount = atoi(poAnchor->GetField(9,12));
-        int     nPostPoly = nPolyCount*7 + 12;
+        int nPolyCount = atoi(poAnchor->GetField(9,12));
+        if( nPolyCount < 0 )
+            return NULL;
+        int nPostPoly = nPolyCount*7 + 12;
 
         if( poAnchor->GetLength() >= nPostPoly + 6 )
         {
             int  nGeomId = atoi(poAnchor->GetField(nPostPoly+1,nPostPoly+6));
 
-            AddToIndexGroup( apoCGroup,
-                             GetIndexedRecord( NRT_GEOMETRY, nGeomId) );
+            AddToIndexGroup( GetIndexedRecord( NRT_GEOMETRY, nGeomId) );
         }
 
         if( poAnchor->GetLength() >= nPostPoly + 8 )
@@ -1942,8 +1994,7 @@ NTFRecord **NTFFileReader::GetNextIndexedRecordGroup( NTFRecord **
             {
                 int nAttId = atoi(poAnchor->GetField(nPostPoly+9+iAtt*6,
                                                      nPostPoly+14+iAtt*6));
-                AddToIndexGroup( apoCGroup,
-                                 GetIndexedRecord( NRT_ATTREC, nAttId) );
+                AddToIndexGroup( GetIndexedRecord( NRT_ATTREC, nAttId) );
             }
         }
     }
@@ -1983,10 +2034,10 @@ void NTFFileReader::CacheAddByGeomId( int nGeomId, OGRGeometry *poGeometry )
 /* -------------------------------------------------------------------- */
     if( nGeomId >= nLineCacheSize )
     {
-        int     nNewSize = nGeomId + 100;
+        const int nNewSize = nGeomId + 100;
 
-        papoLineCache = (OGRGeometry **)
-            CPLRealloc( papoLineCache, sizeof(void*) * nNewSize );
+        papoLineCache = static_cast<OGRGeometry **>(
+            CPLRealloc( papoLineCache, sizeof(void*) * nNewSize ));
         memset( papoLineCache + nLineCacheSize, 0,
                 sizeof(void*) * (nNewSize - nLineCacheSize) );
         nLineCacheSize = nNewSize;
@@ -2074,20 +2125,20 @@ int NTFFileReader::FormPolygonFromCache( OGRFeature * poFeature )
     if( !bCacheLines )
         return FALSE;
 
-    OGRGeometryCollection oLines;
-    const int *panLinks;
-    int        nLinkCount, i;
-
 /* -------------------------------------------------------------------- */
 /*      Collect all the linked lines.                                   */
 /* -------------------------------------------------------------------- */
-    panLinks = poFeature->GetFieldAsIntegerList( "GEOM_ID_OF_LINK",
-                                                 &nLinkCount );
+    int nLinkCount = 0;
+    const int *panLinks =
+        poFeature->GetFieldAsIntegerList( "GEOM_ID_OF_LINK",
+                                          &nLinkCount );
 
     if( panLinks == NULL )
         return FALSE;
 
-    for( i = 0; i < nLinkCount; i++ )
+    OGRGeometryCollection oLines;
+
+    for( int i = 0; i < nLinkCount; i++ )
     {
         OGRGeometry *poLine = CacheGetByGeomId( panLinks[i] );
         if( poLine == NULL )
@@ -2102,9 +2153,7 @@ int NTFFileReader::FormPolygonFromCache( OGRFeature * poFeature )
 /* -------------------------------------------------------------------- */
 /*      Assemble into a polygon geometry.                               */
 /* -------------------------------------------------------------------- */
-    OGRPolygon *poPoly;
-
-    poPoly = (OGRPolygon *)
+    OGRPolygon *poPoly = (OGRPolygon *)
         OGRBuildPolygonFromEdges( (OGRGeometryH) &oLines, FALSE, FALSE, 0.1,
                                   NULL );
 

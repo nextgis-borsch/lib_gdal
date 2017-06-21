@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrtigerdatasource.cpp 33710 2016-03-12 06:28:29Z goatbar $
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Implements OGRTigerDataSource class
@@ -32,8 +31,11 @@
 #include "ogr_tiger.h"
 
 #include <cctype>
+#include <algorithm>
 
-CPL_CVSID("$Id: ogrtigerdatasource.cpp 33710 2016-03-12 06:28:29Z goatbar $");
+CPL_CVSID("$Id$");
+
+#define DIGIT_ZERO '0'
 
 /************************************************************************/
 /*                        TigerClassifyVersion()                        */
@@ -194,19 +196,18 @@ OGRTigerDataSource::OGRTigerDataSource() :
     pszName(NULL),
     nLayers(0),
     papoLayers(NULL),
+    poSpatialRef(new OGRSpatialReference(
+        "GEOGCS[\"NAD83\",DATUM[\"North_American_Datum_1983\","
+        "SPHEROID[\"GRS 1980\",6378137,298.257222101]],PRIMEM[\"Greenwich\",0],"
+        "UNIT[\"degree\",0.0174532925199433]]")),
     papszOptions(NULL),
     pszPath(NULL),
     nModules(0),
     papszModules(NULL),
     nVersionCode(0),
     nVersion(TIGER_Unknown),
-    bWriteMode(FALSE)
-{
-    poSpatialRef = new OGRSpatialReference(
-        "GEOGCS[\"NAD83\",DATUM[\"North_American_Datum_1983\","
-        "SPHEROID[\"GRS 1980\",6378137,298.257222101]],PRIMEM[\"Greenwich\",0],"
-        "UNIT[\"degree\",0.0174532925199433]]" );
-}
+    bWriteMode(false)
+{}
 
 /************************************************************************/
 /*                        ~OGRTigerDataSource()                         */
@@ -359,10 +360,11 @@ int OGRTigerDataSource::Open( const char * pszFilename, int bTestOpen,
             {
                 char       szModule[128];
 
-                strncpy( szModule, candidateFileList[i],
-                         strlen(candidateFileList[i])-1 );
-
-                szModule[strlen(candidateFileList[i])-1] = '\0';
+                snprintf( szModule, sizeof(szModule), "%s",
+                          candidateFileList[i] );
+                const size_t nLen = strlen(szModule);
+                if( nLen )
+                    szModule[nLen-1] = '\0';
 
                 papszFileList = CSLAddString(papszFileList, szModule);
             }
@@ -395,20 +397,15 @@ int OGRTigerDataSource::Open( const char * pszFilename, int bTestOpen,
     {
         if( bTestOpen || i == 0 )
         {
-            char        szHeader[500];
-            VSILFILE    *fp;
-            char        *pszRecStart = NULL;
-            int         bIsGDT = FALSE;
-            char       *l_pszFilename;
+            char *l_pszFilename = BuildFilename( papszFileList[i], "1" );
 
-            l_pszFilename = BuildFilename( papszFileList[i], "1" );
-
-            fp = VSIFOpenL( l_pszFilename, "rb" );
+            VSILFILE *fp = VSIFOpenL( l_pszFilename, "rb" );
             CPLFree( l_pszFilename );
 
             if( fp == NULL )
                 continue;
 
+            char szHeader[500] = {};
             if( VSIFReadL( szHeader, sizeof(szHeader)-1, 1, fp ) < 1 )
             {
                 VSIFCloseL( fp );
@@ -417,13 +414,15 @@ int OGRTigerDataSource::Open( const char * pszFilename, int bTestOpen,
 
             VSIFCloseL( fp );
 
-            pszRecStart = szHeader;
+            char *pszRecStart = szHeader;
             szHeader[sizeof(szHeader)-1] = '\0';
+
+            bool bIsGDT = false;
 
             if( STARTS_WITH_CI(pszRecStart, "Copyright (C)")
                 && strstr(pszRecStart,"Geographic Data Tech") != NULL )
             {
-                bIsGDT = TRUE;
+                bIsGDT = true;
 
                 while( *pszRecStart != '\0'
                        && *pszRecStart != 10
@@ -455,7 +454,7 @@ int OGRTigerDataSource::Open( const char * pszFilename, int bTestOpen,
                 && nVersionCode != 21
                 && nVersionCode != 24
                 && pszRecStart[3]  != '9'
-                && pszRecStart[3]  != '0'
+                && pszRecStart[3]  != DIGIT_ZERO
                 && !bIsGDT )
                 continue;
 
@@ -490,16 +489,16 @@ int OGRTigerDataSource::Open( const char * pszFilename, int bTestOpen,
 /* -------------------------------------------------------------------- */
 /*      Do we have a user provided version override?                    */
 /* -------------------------------------------------------------------- */
-    if( CPLGetConfigOption( "TIGER_VERSION", NULL ) != NULL )
-    {
-        const char *pszRequestedVersion =
+    const char *pszRequestedVersion =
             CPLGetConfigOption( "TIGER_VERSION", NULL );
+    if( pszRequestedVersion != NULL )
+    {
 
         if( STARTS_WITH_CI(pszRequestedVersion, "TIGER_") )
         {
-            int iCode;
+            int iCode = 1;  // Used after for.
 
-            for( iCode = 1; iCode < TIGER_Unknown; iCode++ )
+            for( ; iCode < TIGER_Unknown; iCode++ )
             {
                 if( EQUAL(TigerVersionString((TigerVersion)iCode),
                           pszRequestedVersion) )
@@ -683,17 +682,15 @@ const char *OGRTigerDataSource::GetModule( int iModule )
 /*      written to before.                                              */
 /************************************************************************/
 
-int OGRTigerDataSource::CheckModule( const char *pszModule )
+bool OGRTigerDataSource::CheckModule( const char *pszModule )
 
 {
-    int         i;
-
-    for( i = 0; i < nModules; i++ )
+    for( int i = 0; i < nModules; i++ )
     {
-        if( EQUAL(pszModule,papszModules[i]) )
-            return TRUE;
+        if( EQUAL(pszModule, papszModules[i]) )
+            return true;
     }
-    return FALSE;
+    return false;
 }
 
 /************************************************************************/
@@ -715,16 +712,14 @@ void OGRTigerDataSource::AddModule( const char *pszModule )
 /************************************************************************/
 
 char *OGRTigerDataSource::BuildFilename( const char *pszModuleName,
-                                    const char *pszExtension )
+                                         const char *pszExtension )
 
 {
-    char        *pszFilename;
-    char        szLCExtension[3];
-
 /* -------------------------------------------------------------------- */
 /*      Force the record type to lower case if the filename appears     */
 /*      to be in lower case.                                            */
 /* -------------------------------------------------------------------- */
+    char szLCExtension[3] = {};
     if( *pszExtension >= 'A' && *pszExtension <= 'Z' && *pszModuleName == 't' )
     {
         szLCExtension[0] = (*pszExtension) + 'a' - 'A';
@@ -735,10 +730,11 @@ char *OGRTigerDataSource::BuildFilename( const char *pszModuleName,
 /* -------------------------------------------------------------------- */
 /*      Build the filename.                                             */
 /* -------------------------------------------------------------------- */
-    const size_t nFilenameLen = strlen(GetDirPath())
-                                     + strlen(pszModuleName)
-                                     + strlen(pszExtension) + 10;
-    pszFilename = (char *) CPLMalloc(nFilenameLen);
+    const size_t nFilenameLen =
+        strlen(GetDirPath())
+        + strlen(pszModuleName)
+        + strlen(pszExtension) + 10;
+    char *pszFilename = (char *) CPLMalloc(nFilenameLen);
 
     if( strlen(GetDirPath()) == 0 )
         snprintf( pszFilename, nFilenameLen, "%s%s",
@@ -793,7 +789,7 @@ int OGRTigerDataSource::Create( const char *pszNameIn, char **papszOptionsIn )
 /* -------------------------------------------------------------------- */
     pszPath = CPLStrdup( pszNameIn );
     pszName = CPLStrdup( pszNameIn );
-    bWriteMode = TRUE;
+    bWriteMode = true;
 
     SetOptionList( papszOptionsIn );
 
@@ -806,7 +802,7 @@ int OGRTigerDataSource::Create( const char *pszNameIn, char **papszOptionsIn )
     if( GetOption("VERSION") != NULL )
     {
         nVersionCode = atoi(GetOption("VERSION"));
-        nVersionCode = MAX(0,MIN(9999,nVersionCode));
+        nVersionCode = std::max(0, std::min(9999, nVersionCode));
     }
     nVersion = TigerClassifyVersion(nVersionCode);
 
@@ -957,16 +953,14 @@ OGRLayer *OGRTigerDataSource::ICreateLayer( const char *pszLayerName,
 void OGRTigerDataSource::DeleteModuleFiles( const char *pszModule )
 
 {
-    char        **papszDirFiles = VSIReadDir( GetDirPath() );
-    int         i, nCount = CSLCount(papszDirFiles);
+    char **papszDirFiles = VSIReadDir( GetDirPath() );
+    const int nCount = CSLCount(papszDirFiles);
 
-    for( i = 0; i < nCount; i++ )
+    for( int i = 0; i < nCount; i++ )
     {
         if( EQUALN(pszModule,papszDirFiles[i],strlen(pszModule)) )
         {
-            const char  *pszFilename;
-
-            pszFilename = CPLFormFilename( GetDirPath(),
+            const char *pszFilename = CPLFormFilename( GetDirPath(),
                                            papszDirFiles[i],
                                            NULL );
             if( VSIUnlink( pszFilename ) != 0 )

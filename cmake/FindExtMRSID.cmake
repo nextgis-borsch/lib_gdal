@@ -23,4 +23,4 @@
 set(repo_name lib_mrsid)
 set(repo_project mrsid)
 set(repo_include mrsid)
-set(repo_intetrface ON)
+set(repo_interface ON)

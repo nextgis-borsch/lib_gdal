@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrgmtdatasource.cpp 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRGmtDataSource class.
@@ -31,7 +30,7 @@
 #include "cpl_string.h"
 #include "ogr_gmt.h"
 
-CPL_CVSID("$Id: ogrgmtdatasource.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                          OGRGmtDataSource()                          */
@@ -73,9 +72,10 @@ int OGRGmtDataSource::Open( const char *pszFilename, int bUpdateIn )
         return FALSE;
     }
 
-    nLayers = 1;
-    papoLayers = static_cast<OGRGmtLayer **>( CPLMalloc(sizeof(void*)) );
-    papoLayers[0] = poLayer;
+    papoLayers = static_cast<OGRGmtLayer **>( CPLRealloc( papoLayers,
+                                        (nLayers + 1) *sizeof(OGRGmtLayer*)) );
+    papoLayers[nLayers] = poLayer;
+    nLayers ++;
 
     CPLFree (pszName);
     pszName = CPLStrdup( pszFilename );
@@ -108,10 +108,13 @@ OGRGmtDataSource::ICreateLayer( const char * pszLayerName,
                                 OGRwkbGeometryType eType,
                                 CPL_UNUSED char ** papszOptions )
 {
+    if( nLayers != 0 )
+        return NULL;
+
 /* -------------------------------------------------------------------- */
 /*      Establish the geometry type.  Note this logic                   */
 /* -------------------------------------------------------------------- */
-    const char *pszGeom;
+    const char *pszGeom = NULL;
 
     switch( wkbFlatten(eType) )
     {

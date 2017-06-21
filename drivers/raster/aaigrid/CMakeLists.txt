@@ -38,6 +38,7 @@ if(ENABLE_AAIGRID_GRASSASCIIGRID)
     )
 
     set(LIB_HHEADERS_PRIV
+        aaigriddataset.h
     )
 
     set(LIB_CSOURCES

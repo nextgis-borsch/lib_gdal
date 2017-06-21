@@ -80,19 +80,22 @@ endif()
 option(GDAL_BUILD_APPS "Build console applications" ON)
 if(GDAL_BUILD_APPS)
     set(INSTALL_TARGETS)
+
     macro(ADD_EXE target sources)
         add_executable(${target} ${sources})
         add_dependencies(${target} ${LIB_NAME})
         target_link_libraries(${target} ${LIB_NAME} ${TARGET_LINK_LIB})
         if(OSX_FRAMEWORK)
-            set_target_properties(${target} PROPERTIES INSTALL_RPATH "@executable_path/../../../../Library/Frameworks")
+            set_target_properties(${target} PROPERTIES INSTALL_RPATH "@executable_path/../../Library/Frameworks")
         endif()
         set(INSTALL_TARGETS ${INSTALL_TARGETS} ${target})
     endmacro()
+
     add_exe(gdalinfo gdalinfo_bin.cpp)
     add_exe(gdalwarp gdalwarp_bin.cpp)
     add_exe(gdaldem gdaldem_bin.cpp)
     add_exe(gdal_translate gdal_translate_bin.cpp)
+
     add_exe(gdalmanage gdalmanage.cpp)
     add_exe(gdalenhance gdalenhance.cpp)
     add_exe(gdaladdo gdaladdo.cpp)
@@ -102,6 +105,7 @@ if(GDAL_BUILD_APPS)
     add_exe(gdallocationinfo gdallocationinfo.cpp)
     add_exe(gdaltransform gdaltransform.cpp)
     add_exe(gdalserver gdalserver.c)
+
     if(GDAL_ENABLE_GNM)
         include_directories(${CMAKE_SOURCE_DIR}/core/gnm)
         add_exe(gnmanalyse gnmanalyse.cpp)
@@ -109,7 +113,7 @@ if(GDAL_BUILD_APPS)
     endif()
 
     add_exe(gdal_contour gdal_contour.cpp)
-    add_exe(gdaltindex gdaltindex.c)
+    add_exe(gdaltindex gdaltindex.cpp)
     add_exe(gdal_rasterize gdal_rasterize_bin.cpp)
     add_exe(ogrinfo ogrinfo.cpp)
     add_exe(ogrlineref ogrlineref.cpp)
@@ -132,6 +136,7 @@ if(GDAL_BUILD_APPS)
         add_exe(gdalasyncread gdalasyncread.cpp)
         add_exe(testreprojmulti testreprojmulti.cpp)
     endif()
+
     if(NOT SKIP_INSTALL_EXECUTABLES AND NOT SKIP_INSTALL_ALL )
         install(TARGETS ${INSTALL_TARGETS}
         #    EXPORT ${INSTALL_TARGETS}
@@ -143,4 +148,3 @@ if(GDAL_BUILD_APPS)
     endif()
 
 endif()
-

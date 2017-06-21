@@ -1,7 +1,6 @@
-# GDAL - Geospatial Data Abstraction Library [devel]
+# GDAL - Geospatial Data Abstraction Library
 
 This is restructured GDAL sources tree fork with CMake build system [code name borsch].
-This branch for testing and fast bug fixing.
 
 GDAL is an open source X/MIT licensed translator library for raster and vector
 geospatial data formats. This is a mirror of the GDAL Subversion repository.
@@ -15,26 +14,27 @@ geospatial data formats. This is a mirror of the GDAL Subversion repository.
 
 # License
 
-X/MIT
+![License](https://img.shields.io/badge/License-X/MIT-blue.svg?maxAge=2592000)
 
 # Borsch
 
 Borsch repository link: https://github.com/nextgis-borsch/borsch
 
-# Sync sources with orgin
+# Sync sources with origin
 
 Clone sources
 
  $ git clone https://github.com/OSGeo/gdal.git gdal-git
 
-or update sources if already clonned
+or update sources
 
  $ git pull
 
-Go to script folder of this repo /etc/cmake-build-helpers and execute
+Go to borsch repository (opt folder) and execute
 
- $ python ./etc/cmake-build-helpers/gdal_restructure.py /path_to_gdal/gdal-git/ ./ ./etc/cmake-build-helpers/gdal_folders.csv
+ $ python tools.py organize --src /path_to_gdal_sources/ --dst_name lib_gdal
 
+<!---
 # Build status
 
 | OS | Status  |
@@ -42,6 +42,7 @@ Go to script folder of this repo /etc/cmake-build-helpers and execute
 | Windows | ![build status](http://176.9.38.120/buildbot/png?builder=gdal_win) |
 | Ubuntu (packaging) | ![build status](http://176.9.38.120/buildbot/png?builder=gdal_deb) |
 | Ubuntu (packaging dev) | ![build status](http://176.9.38.120/buildbot/png?builder=gdal_debdev) |
+-->
 
 # Ubuntu PPA
 
@@ -57,10 +58,10 @@ TODO: Show test states here ([AppVeyor](https://www.appveyor.com/), [Travis CI](
 
 # Raster drivers
 
-Available raster drivers for now (by all driver dirs in sources). Drivers marked
-with '*' have high priority to be implemented.
+Available raster drivers for now (by all driver directories in sources). Drivers marked
+with '\*' have high priority to be implemented.
 
-| Driver | Cmaked | External dependencies | Notes |
+| Driver | CMaked | External dependencies | Notes |
 |---|:-:|---|---|
 | **aaigrid** | **yes** | no | 2 drivers in one (AAIGrid, GRASSASCIIGrid) |
 | **adrg** | **yes** | no | 2 drivers in one (ADRG, SRP) |
@@ -78,6 +79,7 @@ with '*' have high priority to be implemented.
 | **cosar** | **yes** | no | - |
 | **ctg** | **yes** | no | - |
 | dds | no |  |  |
+| derived | no |  |  |
 | **dimap** | **yes** | no | - |
 | dods | no |  |  |
 | **dted** | **yes** | no | No additional build targets implemented |
@@ -91,7 +93,7 @@ with '*' have high priority to be implemented.
 | fits | no |  |  |
 | georaster | no |  |  |
 | **gff** | **yes** | no | - |
-| gif * | no |  | Russian maps in internet are in gif and ozi |
+| gif * | no |  | Russian maps in internet are in gif and OZI |
 | grass * | no |  |  |
 | **grib** | **yes** | Optionally: JASPER | No JASPER support implemented; No additional build targets implemented |
 | **gsg** | **yes** | no | 3 drivers in one (GSAG, GSBG, GS7BG) |
@@ -108,11 +110,12 @@ with '*' have high priority to be implemented.
 | **iris** | **yes** | no | - |
 | **jaxapalsar** | **yes** | no | - |
 | **jdem** | **yes** | no | - |
-| jp2kak | no |  |  |
+| jp2kak | no |  | needs Kakadu library |
+| jp2lura | no |  | Requires Lurawave library |
 | **jpeg** | **yes** | [JPEG, JPEG12](https://github.com/nextgis-borsch/lib_jpeg) | No jpeg12 support implemented? |
-| jpeg2000 * | no |  |  |
-| jpegls | no |  |  |
-| jpipkak | no |  |  |
+| jpeg2000 | no |  | needs libjasper |
+| jpegls | no |  | needs CharLS library |
+| jpipkak | no |  | needs Kakadu library |
 | kea | no |  |  |
 | **kmlsuperoverlay** | **yes** | no | - |
 | **l1b** | **yes** | no | - |
@@ -129,7 +132,7 @@ with '*' have high priority to be implemented.
 | **nitf** | **yes** | Optionally: [JPEG, JPEG12](https://github.com/nextgis-borsch/lib_jpeg), [TIFF](https://github.com/nextgis-borsch/lib_tiff)? | 3 drivers in one (NITF, RPFTOC, ECRGTOC); Requires built jpeg driver; No JPEG12 support implemented; No additional build targets implemented;  |
 | **northwood** | **yes** | no | 2 drivers in one (NWT_GRC, NWT_GRD) |
 | ogdi | no |  |  |
-| openjpeg | no |  |  |
+| **openjpeg** | **yes** | [OPENJPEG](https://github.com/nextgis-borsch/lib_openjpeg) | This is JPEG2000 implementation; No additional build targets implemented (plugin so/dll) |
 | **ozi** | **yes** | [ZLIB](https://github.com/nextgis-borsch/lib_z)?, GIF? | - |
 | pcidsk | no |  |  |
 | pcraster | no |  |  |
@@ -147,7 +150,7 @@ with '*' have high priority to be implemented.
 | **rmf** | **yes** | no | - |
 | **rs2** | **yes** | no | - |
 | **saga** | **yes** | no | ... |
-| sde * | no |  |  |
+| sde | no |  | Needs ESRI SDE (ESRI provided ArcSDE client libraries) |
 | **sdts** | **yes** | no | Requires inner sdts lib; Has the same dir name in /vector |
 | **sgi** | **yes** | no | - |
 | **srtmhgt** | **yes** | no | - |
@@ -166,9 +169,9 @@ with '*' have high priority to be implemented.
 
 # Vector drivers
 
-Available vector drivers for now (by all driver directories in sources). Drivers marked with '*' have high priority to be implemented.
+Available vector drivers for now (by all driver directories in sources). Drivers marked with '\*' have high priority to be implemented.
 
-| Driver | Cmaked | External dependencies | Notes |
+| Driver | CMaked | External dependencies | Notes |
 |---|:-:|---|---|
 | **aeronavfaa** | **yes** | no | - |
 | **arcgen** | **yes** | no | - |
@@ -195,6 +198,7 @@ Available vector drivers for now (by all driver directories in sources). Drivers
 | **gft** | **yes** | [CURL](https://github.com/nextgis-borsch/lib_curl) | - |
 | gme | no |  |  |
 | **gml** | **yes** | Optionally: [EXPAT](https://github.com/nextgis-borsch/lib_expat), XERCES, [SQLITE3](https://github.com/nextgis-borsch/lib_sqlite) | No Xerces support implemented; No additional build targets implemented |
+| gmlas | no |  | requires Xerces |
 | **gmt** | **yes** | no | - |
 | **gpsbabel** | **yes** | ? | Built without GPX driver - do we need it? |
 | **gpx** | **yes** | Optionally: [EXPAT](https://github.com/nextgis-borsch/lib_expat) | - |
@@ -208,7 +212,7 @@ Available vector drivers for now (by all driver directories in sources). Drivers
 | **jml** | **yes** | Optionally: [EXPAT](https://github.com/nextgis-borsch/lib_expat) | - |
 | **kml** | **yes** | ... | ... |
 | libkml * | no | Google LibKML |  |
-| mdb * | no |  |  |
+| mdb | no |  |  |
 | **mem** | **yes** | no | Obligatory for building GDAL |
 | **mitab** | **yes** | no | Obligatory for building GDAL; Depends on temporary /core/ogr directory |
 | mongodb * | no |  |  |
@@ -218,7 +222,7 @@ Available vector drivers for now (by all driver directories in sources). Drivers
 | **ntf** | **yes** | no | No additional build targets implemented |
 | null | no |  |  |
 | oci | no |  |  |
-| odbc * | no |  |  |
+| odbc | no |  |  |
 | **ods** | **yes** | [EXPAT](https://github.com/nextgis-borsch/lib_expat) | No additional build targets implemented - workaround of gcc bug |
 | ogdi | no |  |  |
 | **openair** | **yes** | no | - |
@@ -230,7 +234,7 @@ Available vector drivers for now (by all driver directories in sources). Drivers
 | pgeo | no |  |  |
 | **rec** | **yes** | no | - |
 | **s57** | **yes** | no | Requires inner iso8211 lib; No additional build targets implemented |
-| sde* | no |  |  |
+| sde | no |  | Needs ESRI SDE (ESRI provided ArcSDE client libraries) |
 | **sdts** | **yes** | no | Requires inner sdts and iso8211 libs; No additional build targets implemented; Has the same dir name in /raster |
 | **segukooa** | **yes** | no | - |
 | **segy** | **yes** | no | - |
@@ -256,17 +260,17 @@ Available vector drivers for now (by all driver directories in sources). Drivers
 
 Available raster+vector drivers for now (by all driver dirs in sources):
 
-| Driver | Cmaked | External dependencies | Notes |
+| Driver | CMaked | External dependencies | Notes |
 |---|:-:|---|---|
-| **gpkg** | **yes** | SQLITE3; Optionally: SPATIALITE | Requires PNG?, JPEG?, WEBP? drivers; No Spatialite support implemented; Former OGR format |
-| **plscenes** | **yes** | CURL | Former OGR format |
-| **cad** | **yes** | [OpenCAD](https://github.com/nextgis-borsch/lib_opencad) | GSoC 2016, build of OpenCAD |
+| **gpkg** | **yes** | [SQLITE3](https://github.com/nextgis-borsch/lib_sqlite); Optionally: SPATIALITE | Requires [PNG](https://github.com/nextgis-borsch/lib_png)?, [JPEG](https://github.com/nextgis-borsch/lib_jpeg)?, WEBP? drivers; No Spatialite support implemented; Former OGR format |
+| **plscenes** | **yes** | [CURL](https://github.com/nextgis-borsch/lib_curl) | Former OGR format |
+| **cad** | **yes** | [OpenCAD](https://github.com/nextgis-borsch/lib_opencad) | GSoC 2016 |
 
 # Network drivers
 
 Available network (GNM) drivers for now (by all driver directories in sources):
 
-| Driver | Cmaked | External dependencies | Notes |
+| Driver | CMaked | External dependencies | Notes |
 |---|:-:|---|---|
 | db | no | no | Requires built PostGIS driver |
 | **file** | **yes** | no | - |

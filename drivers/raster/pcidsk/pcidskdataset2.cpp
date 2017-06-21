@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: pcidskdataset2.cpp 37163 2017-01-17 08:11:27Z rouault $
  *
  * Project:  PCIDSK Database File
  * Purpose:  Read/write PCIDSK Database File used by the PCI software, using
@@ -32,7 +31,9 @@
 #include "gdal_frmts.h"
 #include "pcidskdataset2.h"
 
-CPL_CVSID("$Id: pcidskdataset2.cpp 37163 2017-01-17 08:11:27Z rouault $");
+#include <algorithm>
+
+CPL_CVSID("$Id$");
 
 const PCIDSK::PCIDSKInterfaces *PCIDSK2GetInterfaces(void);
 
@@ -48,18 +49,14 @@ const PCIDSK::PCIDSKInterfaces *PCIDSK2GetInterfaces(void);
 /*      This constructor is used for main file channels.                */
 /************************************************************************/
 
-PCIDSK2Band::PCIDSK2Band( PCIDSK2Dataset *poDSIn,
-                          PCIDSKFile *poFileIn,
-                          int nBandIn )
+PCIDSK2Band::PCIDSK2Band( PCIDSKFile *poFileIn,
+                          PCIDSKChannel *poChannelIn )
 
 {
     Initialize();
 
-    this->poDS = poDSIn;
-    this->poFile = poFileIn;
-    this->nBand = nBandIn;
-
-    poChannel = poFile->GetChannel( nBand );
+    poFile = poFileIn;
+    poChannel = poChannelIn;
 
     nBlockXSize = static_cast<int>( poChannel->GetBlockWidth() );
     nBlockYSize = static_cast<int>( poChannel->GetBlockHeight() );
@@ -137,9 +134,9 @@ void PCIDSK2Band::Initialize()
 PCIDSK2Band::~PCIDSK2Band()
 
 {
-    while( apoOverviews.size() > 0 )
+    while( !apoOverviews.empty() )
     {
-        delete apoOverviews[apoOverviews.size()-1];
+        delete apoOverviews.back();
         apoOverviews.pop_back();
     }
     CSLDestroy( papszLastMDListValue );
@@ -270,7 +267,7 @@ bool PCIDSK2Band::CheckForColorTable()
 
         // If there is no metadata, assume a single PCT in a file with only
         // one raster band must be intended for it.
-        if( osDefaultPCT.size() == 0
+        if( osDefaultPCT.empty()
             && poDS != NULL
             && poDS->GetRasterCount() == 1 )
         {
@@ -281,7 +278,7 @@ bool PCIDSK2Band::CheckForColorTable()
                 poPCTSeg = NULL;
         }
         // Parse default PCT ref assuming an in file reference.
-        else if( osDefaultPCT.size() != 0
+        else if( !osDefaultPCT.empty()
                  && strstr(osDefaultPCT.c_str(),"PCT:") != NULL )
         {
             poPCTSeg = poFile->GetSegment(
@@ -447,7 +444,7 @@ CPLErr PCIDSK2Band::SetColorTable( GDALColorTable *poCT )
 /* -------------------------------------------------------------------- */
 /*      Write out the PCT.                                              */
 /* -------------------------------------------------------------------- */
-        const int nColorCount = MIN(256,poCT->GetColorEntryCount());
+        const int nColorCount = std::min(256, poCT->GetColorEntryCount());
 
         unsigned char abyPCT[768];
         memset( abyPCT, 0, 768 );
@@ -509,9 +506,9 @@ void PCIDSK2Band::RefreshOverviewList()
 /* -------------------------------------------------------------------- */
 /*      Clear existing overviews.                                       */
 /* -------------------------------------------------------------------- */
-    while( apoOverviews.size() > 0 )
+    while( !apoOverviews.empty() )
     {
-        delete apoOverviews[apoOverviews.size()-1];
+        delete apoOverviews.back();
         apoOverviews.pop_back();
     }
 
@@ -590,7 +587,7 @@ CPLErr PCIDSK2Band::IWriteBlock( int iBlockX, int iBlockY, void *pData )
 int PCIDSK2Band::GetOverviewCount()
 
 {
-    if( apoOverviews.size() > 0 )
+    if( !apoOverviews.empty() )
         return static_cast<int>( apoOverviews.size() );
 
     return GDALPamRasterBand::GetOverviewCount();
@@ -825,7 +822,7 @@ PCIDSK2Dataset::~PCIDSK2Dataset()
 {
     FlushCache();
 
-    while( apoLayers.size() > 0 )
+    while( !apoLayers.empty() )
     {
         delete apoLayers.back();
         apoLayers.pop_back();
@@ -1177,7 +1174,6 @@ const char *PCIDSK2Dataset::GetMetadataItem( const char *pszName,
                   "%s", ex.what() );
         return NULL;
     }
-
 
     if( osLastMDValue == "" )
         return NULL;
@@ -1713,8 +1709,9 @@ GDALDataset *PCIDSK2Dataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Try opening the file.                                           */
 /* -------------------------------------------------------------------- */
+    PCIDSKFile *poFile = NULL;
     try {
-        PCIDSKFile *poFile =
+        poFile =
             PCIDSK::Open( poOpenInfo->pszFilename,
                           poOpenInfo->eAccess == GA_ReadOnly ? "r" : "r+",
                           PCIDSK2GetInterfaces() );
@@ -1723,6 +1720,16 @@ GDALDataset *PCIDSK2Dataset::Open( GDALOpenInfo * poOpenInfo )
             CPLError( CE_Failure, CPLE_OpenFailed,
                       "Failed to re-open %s within PCIDSK driver.\n",
                       poOpenInfo->pszFilename );
+            return NULL;
+        }
+
+        const bool bValidRasterDimensions = poFile->GetWidth() &&
+                                            poFile->GetHeight();
+        if( !bValidRasterDimensions &&
+            (poOpenInfo->nOpenFlags & GDAL_OF_RASTER) != 0 &&
+            (poOpenInfo->nOpenFlags & GDAL_OF_VECTOR) == 0 )
+        {
+            delete poFile;
             return NULL;
         }
 
@@ -1762,12 +1769,14 @@ GDALDataset *PCIDSK2Dataset::Open( GDALOpenInfo * poOpenInfo )
     {
         CPLError( CE_Failure, CPLE_AppDefined,
                   "%s", ex.what() );
+        delete poFile;
         return NULL;
     }
     catch( ... )
     {
         CPLError( CE_Failure, CPLE_AppDefined,
                   "PCIDSK::Create() failed, unexpected exception." );
+        delete poFile;
         return NULL;
     }
 }
@@ -1794,6 +1803,14 @@ GDALDataset *PCIDSK2Dataset::LLOpen( const char *pszFilename,
     poDS->nRasterXSize = poFile->GetWidth();
     poDS->nRasterYSize = poFile->GetHeight();
 
+    const bool bValidRasterDimensions = poFile->GetWidth() &&
+                                        poFile->GetHeight();
+    if( !bValidRasterDimensions )
+    {
+        poDS->nRasterXSize = 512;
+        poDS->nRasterYSize = 512;
+    }
+
     try {
 
 /* -------------------------------------------------------------------- */
@@ -1812,7 +1829,8 @@ GDALDataset *PCIDSK2Dataset::LLOpen( const char *pszFilename,
 /* -------------------------------------------------------------------- */
 /*      Create band objects.                                            */
 /* -------------------------------------------------------------------- */
-        for( int iBand = 0; iBand < poFile->GetChannels(); iBand++ )
+        for( int iBand = 0; bValidRasterDimensions &&
+                            iBand < poFile->GetChannels(); iBand++ )
         {
             PCIDSKChannel* poChannel = poFile->GetChannel( iBand + 1 );
             if (poChannel->GetBlockWidth() <= 0 ||
@@ -1822,16 +1840,24 @@ GDALDataset *PCIDSK2Dataset::LLOpen( const char *pszFilename,
                 return NULL;
             }
 
-            poDS->SetBand( iBand+1, new PCIDSK2Band( poDS, poFile, iBand+1 ));
+            if( PCIDSK2Dataset::PCIDSKTypeToGDAL( poChannel->GetType() )
+                    == GDT_Unknown )
+            {
+                continue;
+            }
+
+            poDS->SetBand( poDS->GetRasterCount() + 1,
+                new PCIDSK2Band( poFile, poChannel ));
         }
 
 /* -------------------------------------------------------------------- */
 /*      Create band objects for bitmap segments.                        */
 /* -------------------------------------------------------------------- */
         int nLastBitmapSegment = 0;
-        PCIDSKSegment *poBitSeg;
+        PCIDSKSegment *poBitSeg = NULL;
 
-        while( (poBitSeg = poFile->GetSegment( SEG_BIT, "",
+        while( bValidRasterDimensions &&
+               (poBitSeg = poFile->GetSegment( SEG_BIT, "",
                                                nLastBitmapSegment)) != NULL )
         {
             PCIDSKChannel *poChannel =
@@ -1842,6 +1868,12 @@ GDALDataset *PCIDSK2Dataset::LLOpen( const char *pszFilename,
             {
                 delete poDS;
                 return NULL;
+            }
+
+            if( PCIDSK2Dataset::PCIDSKTypeToGDAL( poChannel->GetType() )
+                    == GDT_Unknown )
+            {
+                continue;
             }
 
             poDS->SetBand( poDS->GetRasterCount()+1,
@@ -1881,7 +1913,7 @@ GDALDataset *PCIDSK2Dataset::LLOpen( const char *pszFilename,
 /* -------------------------------------------------------------------- */
         poDS->oOvManager.Initialize( poDS, pszFilename, papszSiblingFiles );
 
-        return( poDS );
+        return poDS;
     }
 
 /* -------------------------------------------------------------------- */
@@ -1922,17 +1954,17 @@ GDALDataset *PCIDSK2Dataset::Create( const char * pszFilename,
     std::vector<eChanType> aeChanTypes;
 
     if( eType == GDT_Float32 )
-        aeChanTypes.resize( MAX(1,nBands), CHN_32R );
+      aeChanTypes.resize( std::max(1, nBands), CHN_32R );
     else if( eType == GDT_Int16 )
-        aeChanTypes.resize( MAX(1,nBands), CHN_16S );
+        aeChanTypes.resize( std::max(1, nBands), CHN_16S );
     else if( eType == GDT_UInt16 )
-        aeChanTypes.resize( MAX(1,nBands), CHN_16U );
+        aeChanTypes.resize( std::max(1, nBands), CHN_16U );
     else if( eType == GDT_CInt16 )
-        aeChanTypes.resize( MAX(1, nBands), CHN_C16S );
+        aeChanTypes.resize( std::max(1, nBands), CHN_C16S );
     else if( eType == GDT_CFloat32 )
-        aeChanTypes.resize( MAX(1, nBands), CHN_C32R );
+        aeChanTypes.resize( std::max(1, nBands), CHN_C32R );
     else
-        aeChanTypes.resize( MAX(1,nBands), CHN_8U );
+        aeChanTypes.resize( std::max(1, nBands), CHN_8U );
 
 /* -------------------------------------------------------------------- */
 /*      Reformat options.  Currently no support for jpeg compression    */
@@ -1965,7 +1997,10 @@ GDALDataset *PCIDSK2Dataset::Create( const char * pszFilename,
 
     try {
         if( nBands == 0 )
-            nXSize = nYSize = 512;
+        {
+            nXSize = 512;
+            nYSize = 512;
+        }
         PCIDSKFile *poFile = PCIDSK::Create( pszFilename, nXSize, nYSize, nBands,
                                              &(aeChanTypes[0]), osOptions,
                                              PCIDSK2GetInterfaces() );
@@ -2015,6 +2050,8 @@ int PCIDSK2Dataset::TestCapability( const char * pszCap )
 
 {
     if( EQUAL(pszCap,ODsCCreateLayer) )
+        return eAccess == GA_Update;
+    if( EQUAL(pszCap,ODsCRandomLayerWrite) )
         return eAccess == GA_Update;
 
     return FALSE;
@@ -2150,7 +2187,7 @@ PCIDSK2Dataset::ICreateLayer( const char * pszLayerName,
 
     apoLayers.push_back( new OGRPCIDSKLayer( poSeg, poVecSeg, TRUE ) );
 
-    return apoLayers[apoLayers.size()-1];
+    return apoLayers.back();
 }
 
 /************************************************************************/

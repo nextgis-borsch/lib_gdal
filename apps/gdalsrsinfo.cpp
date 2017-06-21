@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  GDAL Utilities
  * Purpose:  Command line application to list info about a given CRS.
@@ -78,14 +77,14 @@ static void Usage(const char* pszErrorMsg = NULL)
     exit( 1 );
 }
 
-
 /************************************************************************/
 /*                                main()                                */
 /************************************************************************/
 
 #define CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(nExtraArg) \
     do { if (i + nExtraArg >= argc) \
-        Usage(CPLSPrintf("%s option requires %d argument(s)", argv[i], nExtraArg)); } while(0)
+        Usage(CPLSPrintf("%s option requires %d argument(s)", \
+                         argv[i], nExtraArg)); } while( false )
 
 int main( int argc, char ** argv )
 
@@ -345,6 +344,9 @@ bool FindSRS( const char *pszInput, OGRSpatialReference &oSRS )
         CPLDebug( "gdalsrsinfo",
                   "trying to get SRS from user input [%s]", pszInput );
 
+        if( CPLGetConfigOption("CPL_ALLOW_VSISTDIN", NULL) == NULL )
+            CPLSetConfigOption("CPL_ALLOW_VSISTDIN", "YES");
+
         eErr = oSRS.SetFromUserInput( pszInput );
 
        if(  eErr != OGRERR_NONE ) {
@@ -360,10 +362,8 @@ bool FindSRS( const char *pszInput, OGRSpatialReference &oSRS )
     if( !bDebug )
         CPLSetErrorHandler ( oErrorHandler );
 
-
     return bGotSRS;
 }
-
 
 /************************************************************************/
 /*                      PrintSRS()                                      */
@@ -387,7 +387,7 @@ CPLErr PrintSRS( const OGRSpatialReference &oSRS,
     if ( EQUAL("proj4", pszOutputType ) ) {
         if ( bPrintSep ) printf( "PROJ.4 : ");
         oSRS.exportToProj4( &pszOutput );
-        printf( "\'%s\'\n", pszOutput );
+        printf( "%s\n", pszOutput );
     }
 
     else if ( EQUAL("wkt", pszOutputType ) ) {
@@ -582,7 +582,6 @@ int SearchCSVForWKT( const char *pszFileCSV, const char *pszTarget )
     VSIFCloseL( fp );
 
     return nFound;
-
 }
 
 /* TODO

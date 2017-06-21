@@ -3,7 +3,7 @@
 # Purpose:  CMake build scripts
 # Author:   Dmitry Baryshnikov, polimax@mail.ru
 ################################################################################
-# Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
+# Copyright (C) 2015-2017, NextGIS <info@nextgis.com>
 # Copyright (C) 2012,2013,2014 Dmitry Baryshnikov
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -29,6 +29,7 @@ set(TARGET_NAME alg)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_SOURCE_DIR}/core/ogr/ogrsf_frmts)
+include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/vrt)
 
 set(LIB_HHEADERS
     gdal_alg.h
@@ -79,6 +80,7 @@ set(LIB_CSOURCES
     llrasterize.cpp
     polygonize.cpp
     rasterfill.cpp
+    gdalapplyverticalshiftgrid.cpp
 )
 
 find_anyproject(QHULL DEFAULT OFF)
@@ -96,7 +98,7 @@ if(OPENCL_FOUND)
         gdalwarpkernel_opencl.h
     )
     set(LIB_CSOURCES ${LIB_CSOURCES}
-        gdalwarpkernel_opencl.c
+        gdalwarpkernel_opencl.cpp
     )
 endif()
 

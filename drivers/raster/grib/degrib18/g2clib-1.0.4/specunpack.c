@@ -11,8 +11,8 @@ g2int specunpack(unsigned char *cpack,g2int *idrstmpl,g2int ndpts,g2int JJ,
 // SUBPROGRAM:    specunpack
 //   PRGMMR: Gilbert          ORG: W/NP11    DATE: 2000-06-21
 //
-// ABSTRACT: This subroutine unpacks a spectral data field that was packed 
-//   using the complex packing algorithm for spherical harmonic data as 
+// ABSTRACT: This subroutine unpacks a spectral data field that was packed
+//   using the complex packing algorithm for spherical harmonic data as
 //   defined in the GRIB2 documentation,
 //   using info from the GRIB2 Data Representation Template 5.51.
 //
@@ -39,7 +39,7 @@ g2int specunpack(unsigned char *cpack,g2int *idrstmpl,g2int ndpts,g2int JJ,
 //
 // ATTRIBUTES:
 //   LANGUAGE: C
-//   MACHINE:  
+//   MACHINE:
 //
 //$$$
 {
@@ -51,8 +51,8 @@ g2int specunpack(unsigned char *cpack,g2int *idrstmpl,g2int ndpts,g2int JJ,
       g2int   inc,incu,incp;
 
       rdieee(idrstmpl+0,&ref,1);
-      bscale = int_power(2.0,idrstmpl[1]);
-      dscale = int_power(10.0,-idrstmpl[2]);
+      bscale = (float)int_power(2.0,idrstmpl[1]);
+      dscale = (float)int_power(10.0,-idrstmpl[2]);
       nbits = idrstmpl[3];
       Js=idrstmpl[5];
       Ks=idrstmpl[6];
@@ -64,17 +64,17 @@ g2int specunpack(unsigned char *cpack,g2int *idrstmpl,g2int ndpts,g2int JJ,
          unpk=(g2float *)malloc(ndpts*sizeof(g2float));
          ifld=(g2int *)malloc(ndpts*sizeof(g2int));
 
-         gbits(cpack,ifld,0,32,0,Ts);
+         gbits(cpack,G2_UNKNOWN_SIZE,ifld,0,32,0,Ts);
          iofst=32*Ts;
          rdieee(ifld,unpk,Ts);          // read IEEE unpacked floats
-         gbits(cpack,ifld,iofst,nbits,0,ndpts-Ts);  // unpack scaled data
+         gbits(cpack,G2_UNKNOWN_SIZE,ifld,iofst,nbits,0,ndpts-Ts);  // unpack scaled data
 //
 //   Calculate Laplacian scaling factors for each possible wave number.
 //
          pscale=(g2float *)malloc((JJ+MM+1)*sizeof(g2float));
-         tscale=(g2float)idrstmpl[4]*1E-6;
-         for (n=Js;n<=JJ+MM;n++) 
-              pscale[n]=pow((g2float)(n*(n+1)),-tscale);
+         tscale=(g2float)(idrstmpl[4]*1E-6);
+         for (n=Js;n<=JJ+MM;n++)
+              pscale[n]=(float)pow((g2float)(n*(n+1)),-tscale);
 //
 //   Assemble spectral coeffs back to original order.
 //

@@ -4,7 +4,7 @@
 # Author:   Dmitry Baryshnikov, polimax@mail.ru
 ################################################################################
 # Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
-# Copyright (C) 2012,2013,2014 Dmitry Baryshnikov
+# Copyright (C) 2012-2014 Dmitry Baryshnikov
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -176,7 +176,8 @@ else ()
   set (CPACK_DEBIAN_PRE_UNINSTALL_SCRIPT_FILE "/sbin/ldconfig")
   set (CPACK_DEBIAN_POST_INSTALL_SCRIPT_FILE "/sbin/ldconfig")
   set (CPACK_DEBIAN_POST_UNINSTALL_SCRIPT_FILE "/sbin/ldconfig")
-  set (CPACK_DEBIAN_PACKAGE_DEPENDS "zlib1g, libjpeg, libpng, libgeos, libcurl4-gnutls | libcurl-ssl, libexpat1, libproj, libxml2, liblzma, libarmadillo4 | libarmadillo5 | libarmadillo6, libtiff5, libgeotiff, libjson-c, libsqlite3, python2.7, python-numpy, libpcre3, libspatialite, libpq, libhdf4")
+  set (CPACK_DEBIAN_PACKAGE_DEPENDS "zlib1g, libjpeg, libpng, libgeos, libcurl4-gnutls | libcurl-ssl, libexpat1, libproj, libxml2, liblzma, libarmadillo4 | libarmadillo5 | libarmadillo6, libtiff5, libgeotiff, libjson-c, libsqlite3, python2.7, python-numpy, libpcre3, libspatialite, libpq")
+
   set (CPACK_RPM_COMPONENT_INSTALL ON)
   set (CPACK_RPM_PACKAGE_GROUP "Development/Tools")
   set (CPACK_RPM_PACKAGE_LICENSE "X/MIT")

@@ -3,7 +3,7 @@
 # Purpose:  CMake build scripts
 # Author:   Dmitry Baryshnikov, polimax@mail.ru
 ################################################################################
-# Copyright (C) 2015, NextGIS <info@nextgis.com>
+# Copyright (C) 2015-2017, NextGIS <info@nextgis.com>
 # Copyright (C) 2012,2013,2014 Dmitry Baryshnikov
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -64,6 +64,8 @@ set(LIB_HHEADERS
     cpl_worker_thread_pool.h
     gdal_csv.h
     cpl_cpu_features.h
+    cpl_google_cloud.h
+    cpl_sha1.h
 )
 
 set(LIB_HHEADERS_PRIV
@@ -79,7 +81,6 @@ set(LIB_CSOURCES
     cpl_findfile.cpp
     cpl_getexecpath.cpp
     cplgetsymbol.cpp
-    cpl_google_oauth2.cpp
     cpl_hash_set.cpp
     cpl_http.cpp
     cplkeywordparser.cpp
@@ -118,6 +119,7 @@ set(LIB_CSOURCES
     cpl_vsi_error.cpp
     cpl_vsil_curl.cpp
     cpl_cpu_features.cpp
+    cpl_sha1.cpp
 )
 
 if(WIN32)
@@ -165,7 +167,9 @@ if(CURL_FOUND)
   list(APPEND LIB_HHEADERS_PRIV cpl_vsil_curl_priv.h)
   list(APPEND LIB_CSOURCES
       #cpl_vsil_curl.cpp
-      cpl_vsil_curl_streaming.cpp )
+      cpl_vsil_curl_streaming.cpp
+      cpl_google_oauth2.cpp
+      cpl_google_cloud.cpp )
 endif()
 
 add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})

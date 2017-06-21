@@ -123,10 +123,10 @@ int ReadSECT0 (DataSource &fp, char **buff, uInt4 *buffLen, sInt4 limit,
    wordType word;       /* Used to check that the edition is correct. */
    uInt4 curLen;        /* Where we currently are in buff. */
    uInt4 i;             /* Used to loop over the first few char's */
-   uInt4 stillNeed;     /* Number of bytes still needed to get 1st 8 bytes of 
+   uInt4 stillNeed;     /* Number of bytes still needed to get 1st 8 bytes of
                          * message into memory. */
 
-   /* Get first 8 bytes.  If GRIB we don't care.  If TDLP, this is the length 
+   /* Get first 8 bytes.  If GRIB we don't care.  If TDLP, this is the length
     * of record.  Read at least 1 record (length + 2 * 8) + 8 (next record
     * length) + 8 bytes before giving up. */
    curLen = 8;
@@ -263,7 +263,7 @@ int ReadSECT0 (DataSource &fp, char **buff, uInt4 *buffLen, sInt4 limit,
  *  msgNum = Which message to look for. (Input)
  *  offset = Where in the file the message starts (this is before the
  *           wmo ASCII part if there is one.) (Output)
- *  curMsg = The current # of messages we have looked through. (In/Out) 
+ *  curMsg = The current # of messages we have looked through. (In/Out)
  *
  * FILES/DATABASES:
  *   An already opened "GRIB2" File
@@ -286,7 +286,7 @@ int ReadSECT0 (DataSource &fp, char **buff, uInt4 *buffLen, sInt4 limit,
 int FindGRIBMsg (DataSource &fp, int msgNum, sInt4 *offset, int *curMsg)
 {
    int cnt;             /* The current message we are looking at. */
-   char *buff;          /* Holds the info between records. */
+   char *buff = NULL;   /* Holds the info between records. */
    uInt4 buffLen;       /* Length of info between records. */
    sInt4 sect0[SECT0LEN_WORD]; /* Holds the current Section 0. */
    uInt4 gribLen;       /* Length of the current GRIB message. */
@@ -376,7 +376,7 @@ static int FindSectLen2to7 (char *c_ipack, sInt4 gribLen, sInt4 ns[8],
 
    if ((sectNum == 2) || (sectNum == 3)) {
       /* Figure out the size of section 2 and 3. */
-      if (*curTot + 5 > gribLen) {
+      if (*curTot + 6 + 4 > gribLen) {
          errSprintf ("ERROR: Ran out of data in Section 2 or 3\n");
          return -1;
       }
@@ -386,7 +386,7 @@ static int FindSectLen2to7 (char *c_ipack, sInt4 gribLen, sInt4 ns[8],
          *curTot = *curTot + sectLen;
          if (ns[2] < sectLen)
             ns[2] = sectLen;
-         if (*curTot + 5 > gribLen) {
+         if (*curTot + 6 + 4 > gribLen) {
             errSprintf ("ERROR: Ran out of data in Section 3\n");
             return -1;
          }
@@ -432,7 +432,7 @@ static int FindSectLen2to7 (char *c_ipack, sInt4 gribLen, sInt4 ns[8],
 */
 
    /* Figure out the size of section 5. */
-   if (*curTot + 5 > gribLen) {
+   if (*curTot + 9 + 2 > gribLen) {
       errSprintf ("ERROR: Ran out of data in Section 5\n");
       return -1;
    }
@@ -564,6 +564,10 @@ static int FindSectLen (char *c_ipack, sInt4 gribLen, sInt4 ns[8],
       if ((ans = FindSectLen2to7 (c_ipack, gribLen, ns, sectNum, &curTot,
                                   nd2x3, table50)) != 0) {
          return ans;
+      }
+      if( curTot + 4 > gribLen ) {
+            errSprintf ("ERROR: Ran out of data in Section 1\n");
+            return -1;
       }
       /* Try to read section 8.  If it is "7777" == 926365495 regardless of
        * endian'ness then we have a simple message, otherwise it is complex,
@@ -821,13 +825,14 @@ int ReadGrib2Record (DataSource &fp, sChar f_unit, double **Grib_Data,
    sInt4 l3264b;        /* Number of bits in a sInt4.  Needed by FORTRAN
                          * unpack library to determine if system has a 4
                          * byte_ sInt4 or an 8 byte sInt4. */
-   char *buff;          /* Holds the info between records. */
+   char *buff = NULL;   /* Holds the info between records. */
    uInt4 buffLen;       /* Length of info between records. */
    sInt4 sect0[SECT0LEN_WORD]; /* Holds the current Section 0. */
    uInt4 gribLen;       /* Length of the current GRIB message. */
    sInt4 nd5;           /* Size of grib message rounded up to the nearest
                          * sInt4. */
-   char *c_ipack;       /* A char ptr to the message stored in IS->ipack */
+   /* A char ptr to the message stored in IS->ipack */
+   char *c_ipack = NULL;
    sInt4 local_ns[8];   /* Local copy of section lengths. */
    sInt4 nd2x3;         /* Total number of grid points. */
    short int table50;   /* Type of packing used. (See code table 5.0)
@@ -874,7 +879,6 @@ int ReadGrib2Record (DataSource &fp, sChar f_unit, double **Grib_Data,
     * don't want to throw it out, nor have to re-read ipack from disk.
     */
    l3264b = sizeof (sInt4) * 8;
-   buff = NULL;
    buffLen = 0;
    if (*f_endMsg == 1) {
       if (ReadSECT0 (fp, &buff, &buffLen, -1, sect0, &gribLen, &version) < 0) {
@@ -979,6 +983,21 @@ int ReadGrib2Record (DataSource &fp, sChar f_unit, double **Grib_Data,
       }
       /* Make sure we have room for the GRID part of the output. */
       if (nd2x3 > IS->nd2x3) {
+        if( nd2x3 > 100 * 1024 * 1024 )
+        {
+            long curPos = fp.DataSourceFtell();
+            fp.DataSourceFseek(0, SEEK_END);
+            long fileSize = fp.DataSourceFtell();
+            fp.DataSourceFseek(curPos, SEEK_SET);
+            // allow a compression ratio of 1:1000
+            if( nd2x3 / 1000 > fileSize )
+            {
+                preErrSprintf ("File too short\n");
+                free (buff);
+                return -2;
+            }
+        }
+
          IS->nd2x3 = nd2x3;
          IS->iain = (sInt4 *) realloc ((void *) IS->iain,
                                        IS->nd2x3 * sizeof (sInt4));
@@ -1134,6 +1153,12 @@ int ReadGrib2Record (DataSource &fp, sChar f_unit, double **Grib_Data,
       f_subGrid = 0;
    }
    */
+   if( meta->gds.Nx == 0 || meta->gds.Nx > INT_MAX ||
+       meta->gds.Ny == 0 || meta->gds.Ny > INT_MAX )
+   {
+      errSprintf ("Invalid grid dimension.\n");
+      return -3;
+   }
    Nx = meta->gds.Nx;
    Ny = meta->gds.Ny;
    x1 = 1;
@@ -1150,17 +1175,21 @@ int ReadGrib2Record (DataSource &fp, sChar f_unit, double **Grib_Data,
    }
 
    if (strcmp (meta->element, "Wx") != 0) {
-      ParseGrid (&(meta->gridAttrib), Grib_Data, grib_DataLen, Nx, Ny,
-                 meta->gds.scan, IS->iain, ibitmap, IS->ib, unitM, unitB, 0,
+      ParseGrid (fp, &(meta->gridAttrib), Grib_Data, grib_DataLen, Nx, Ny,
+                 meta->gds.scan, IS->nd2x3, IS->iain, ibitmap, IS->ib, unitM, unitB, 0,
                  NULL, f_subGrid, x1, y1, x2, y2);
+      if( *Grib_Data == NULL )
+          return -1;
    } else {
       /* Handle weather grid.  ParseGrid looks up the values... If they are
        * "<Invalid>" it sets it to missing (or creates one).  If the table
        * entry is used it sets f_valid to 2. */
-      ParseGrid (&(meta->gridAttrib), Grib_Data, grib_DataLen, Nx, Ny,
-                 meta->gds.scan, IS->iain, ibitmap, IS->ib, unitM, unitB, 1,
+      ParseGrid (fp, &(meta->gridAttrib), Grib_Data, grib_DataLen, Nx, Ny,
+                 meta->gds.scan, IS->nd2x3, IS->iain, ibitmap, IS->ib, unitM, unitB, 1,
                  (sect2_WxType *) &(meta->pds2.sect2.wx), f_subGrid, x1, y1,
                  x2, y2);
+      if( *Grib_Data == NULL )
+          return -1;
 
       /* compact the table to only those which are actually used. */
       cnt = 0;

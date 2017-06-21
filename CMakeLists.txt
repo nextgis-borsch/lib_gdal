@@ -4,7 +4,7 @@
 # Author:   Dmitry Baryshnikov, polimax@mail.ru
 ################################################################################
 # Copyright (C) 2015-2017, NextGIS <info@nextgis.com>
-# Copyright (C) 2012,2013,2014 Dmitry Baryshnikov
+# Copyright (C) 2012-2014 Dmitry Baryshnikov
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -34,15 +34,19 @@ set(CMAKE_COLOR_MAKEFILE ON)
 # Set path to additional CMake modules
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 
+if(NOT SKIP_DEFAULTS)
+    include(defaults)
+endif()
+
 if(OSX_FRAMEWORK AND (BUILD_SHARED_LIBS OR BUILD_STATIC_LIBS))
   message(FATAL_ERROR "Only OSX_FRAMEWORK key or any or both BUILD_SHARED_LIBS
                        and BUILD_STATIC_LIBS keys are permitted")
 endif()
 
 if(OSX_FRAMEWORK)
-  set(INSTALL_BIN_DIR "${CMAKE_INSTALL_PREFIX}/Applications/${PROJECT_NAME}.app/Contents/MacOS/" CACHE INTERNAL "Installation directory for executables" FORCE)
+  set(INSTALL_BIN_DIR "${CMAKE_INSTALL_PREFIX}/bin" CACHE INTERNAL "Installation directory for executables" FORCE)
   set(INSTALL_LIB_DIR "${CMAKE_INSTALL_PREFIX}/Library/Frameworks" CACHE INTERNAL "Installation directory for libraries" FORCE)
-  set(SKIP_INSTALL_EXECUTABLES ON)
+  set(SKIP_INSTALL_EXECUTABLES OFF)
   set(SKIP_INSTALL_EXPORT ON)
   set(SKIP_INSTALL_DOCS ON)
   set(CMAKE_MACOSX_RPATH ON)
@@ -132,6 +136,16 @@ else()
     message(WARNING "No zlib support")
 endif()
 
+find_anyproject(EXPAT DEFAULT ON)
+if(EXPAT_FOUND)
+    add_definitions(-DHAVE_EXPAT)
+    if(NOT BUILD_SHARED_LIBS)
+        add_definitions(-DXML_STATIC)
+    endif()
+endif()
+
+find_anyproject(JSONC REQUIRED)
+
 find_anyproject(CURL DEFAULT ON CMAKE_ARGS
     -DBUILD_CURL_EXE=OFF
     -DHTTP_ONLY=ON
@@ -146,16 +160,6 @@ find_anyproject(LibXml2 DEFAULT ON)
 if(LIBXML2_FOUND)
     add_definitions(-DHAVE_LIBXML2)
 endif()
-
-find_anyproject(EXPAT DEFAULT ON)
-if(EXPAT_FOUND)
-    add_definitions(-DHAVE_EXPAT)
-    if(NOT BUILD_SHARED_LIBS)
-        add_definitions(-DXML_STATIC)
-    endif()
-endif()
-
-find_anyproject(JSONC REQUIRED)
 
 # TODO: move this to /drivers or /drivers/raster while it's not needed for the core GDAL
 find_anyproject(JPEG DEFAULT ON)
@@ -297,7 +301,7 @@ target_link_extlibraries(${LIB_NAME})
 if (REGISTER_PACKAGE)
     export(TARGETS ${LIB_NAME} FILE ${LIB_NAME}-exports.cmake)
     set(EXPORT_PACKAGE_NAME GDAL)
-    set(EXPORT_PACKAGE_NAME_UPPER GDAL)
+    string(TOUPPER ${EXPORT_PACKAGE_NAME} EXPORT_PACKAGE_NAME_UPPER)
     set(EXPORT_PACKAGE_LIB_NAME ${LIB_NAME})
 
     export(PACKAGE ${EXPORT_PACKAGE_NAME})

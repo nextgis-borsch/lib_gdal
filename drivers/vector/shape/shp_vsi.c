@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: shp_vsi.c 33714 2016-03-13 05:42:13Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  IO Redirection via VSI services for shp/dbf io.
@@ -31,8 +31,9 @@
 #include "shp_vsi.h"
 #include "cpl_error.h"
 #include "cpl_conv.h"
+#include "cpl_vsi_error.h"
 
-CPL_CVSID("$Id: shp_vsi.c 33714 2016-03-13 05:42:13Z goatbar $");
+CPL_CVSID("$Id$");
 
 typedef struct
 {
@@ -73,7 +74,7 @@ SAFile VSI_SHP_OpenInternal( const char *pszFilename, const char *pszAccess,
 
 {
     OGRSHPDBFFile* pFile;
-    VSILFILE* fp = VSIFOpenL( pszFilename, pszAccess );
+    VSILFILE* fp = VSIFOpenExL( pszFilename, pszAccess, TRUE );
     if( fp == NULL )
         return NULL;
     pFile = (OGRSHPDBFFile* )CPLCalloc(1,sizeof(OGRSHPDBFFile));

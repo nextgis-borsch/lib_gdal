@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrtriangulatedsurface.cpp 36883 2016-12-15 13:31:12Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRTriangulatedSurface geometry class.
@@ -32,7 +32,7 @@
 #include "ogr_p.h"
 #include "ogr_api.h"
 
-CPL_CVSID("$Id: ogrtriangulatedsurface.cpp 36883 2016-12-15 13:31:12Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                        OGRTriangulatedSurface()                      */
@@ -58,8 +58,10 @@ OGRTriangulatedSurface::OGRTriangulatedSurface()
 
 OGRTriangulatedSurface::OGRTriangulatedSurface(
                                         const OGRTriangulatedSurface& other ) :
-    OGRPolyhedralSurface(other)
-{ }
+    OGRPolyhedralSurface()
+{
+    *this = other;
+}
 
 /************************************************************************/
 /*                        ~OGRTriangulatedSurface()                     */
@@ -88,8 +90,18 @@ OGRTriangulatedSurface& OGRTriangulatedSurface::operator=(
 {
     if( this != &other)
     {
-        OGRPolyhedralSurface::operator=( other );
-        oMP = other.oMP;
+        // We need to do it manually. We cannot rely on the = operator
+        // of OGRPolyhedralSurface since it will be confused by a multipolygon
+        // of triangles.
+        OGRSurface::operator=( other );
+        empty();
+        set3D( other.Is3D() );
+        setMeasured( other.IsMeasured() );
+        assignSpatialReference( other.getSpatialReference() );
+        for(int i=0;i<other.oMP.nGeomCount;i++)
+        {
+            addGeometry( other.oMP.getGeometryRef(i) );
+        }
     }
     return *this;
 }

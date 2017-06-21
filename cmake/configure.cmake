@@ -151,9 +151,10 @@ if(HAVE_SSE_AT_COMPILE_TIME)
     add_definitions(-DHAVE_SSE_AT_COMPILE_TIME)
 endif()
 
-if(WITH_TIFF_EXTERNAL)
+if(WITH_TIFF_EXTERNAL OR BIGTIFF_SUPPORTED)
     #TODO: check cases then HAVE_BIGTIFF False
-    SET(HAVE_BIGTIFF TRUE)
+    set(HAVE_BIGTIFF TRUE)
+    add_definitions(-DTIFFLIB_VERSION_STR=${TIFF_VERSION}) 
 else()
     set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${TIFF_INCLUDE_DIR})
     set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${TIFF_LIBRARIES})
@@ -168,6 +169,7 @@ if(WIN32)
 # windows
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -W4 -wd4127 -wd4251 -wd4275 -wd4786 -wd4100 -wd4245 -wd4206 -wd4018 -wd4389")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W4 -wd4127 -wd4251 -wd4275 -wd4786 -wd4100 -wd4245 -wd4206 -wd4018 -wd4389")
+    add_definitions(-DNOMINMAX)
     check_include_file("search.h" HAVE_SEARCH_H)
     check_function_exists(localtime_r HAVE_LOCALTIME_R)
     check_include_file("dbmalloc.h" HAVE_LIBDBMALLOC)
@@ -242,7 +244,7 @@ else()
         set(MACOSX_FRAMEWORK FALSE)
     endif()
 
-    
+
     check_c_source_compiles("
         #if defined(__MINGW32__)
         #ifndef __MSVCRT_VERSION__

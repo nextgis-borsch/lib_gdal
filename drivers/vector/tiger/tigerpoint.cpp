@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: tigerpoint.cpp 33706 2016-03-11 13:33:27Z goatbar $
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Implements TigerPoint class.
@@ -30,16 +29,16 @@
 #include "ogr_tiger.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: tigerpoint.cpp 33706 2016-03-11 13:33:27Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                             TigerPoint()                             */
 /************************************************************************/
 TigerPoint::TigerPoint( int bRequireGeomIn, const TigerRecordInfo *psRTInfoIn,
-                        const char            *m_pszFileCodeIn ) : TigerFileBase(psRTInfoIn, m_pszFileCodeIn)
-{
-    this->bRequireGeom = bRequireGeomIn;
-}
+                        const char *m_pszFileCodeIn ) :
+    TigerFileBase(psRTInfoIn, m_pszFileCodeIn),
+    bRequireGeom(bRequireGeomIn)
+{}
 
 /************************************************************************/
 /*                             GetFeature()                             */
@@ -71,6 +70,8 @@ OGRFeature *TigerPoint::GetFeature( int nRecordId,
         return NULL;
     }
 
+    // Overflow cannot happen since psRTInfo->nRecordLength is unsigned
+    // char and sizeof(achRecord) == OGR_TIGER_RECBUF_LEN > 255
     if( VSIFReadL( achRecord, psRTInfo->nRecordLength, 1, fpPrimary ) != 1 ) {
         CPLError( CE_Failure, CPLE_FileIO,
                   "Failed to read record %d of %sP",
@@ -82,7 +83,7 @@ OGRFeature *TigerPoint::GetFeature( int nRecordId,
     /*      Set fields.                                                     */
     /* -------------------------------------------------------------------- */
 
-    OGRFeature  *poFeature = new OGRFeature( poFeatureDefn );
+    OGRFeature *poFeature = new OGRFeature( poFeatureDefn );
 
     SetFields( psRTInfo, poFeature, achRecord);
 
@@ -90,10 +91,8 @@ OGRFeature *TigerPoint::GetFeature( int nRecordId,
     /*      Set geometry                                                    */
     /* -------------------------------------------------------------------- */
 
-    double      dfX, dfY;
-
-    dfX = atoi(GetField(achRecord, nX0, nX1)) / 1000000.0;
-    dfY = atoi(GetField(achRecord, nY0, nY1)) / 1000000.0;
+    const double dfX = atoi(GetField(achRecord, nX0, nX1)) / 1000000.0;
+    const double dfY = atoi(GetField(achRecord, nY0, nY1)) / 1000000.0;
 
     if( dfX != 0.0 || dfY != 0.0 ) {
         poFeature->SetGeometryDirectly( new OGRPoint( dfX, dfY ) );

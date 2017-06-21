@@ -47,6 +47,7 @@ if(ENABLE_DGN)
         dgnhelp.cpp 
         dgnwrite.cpp 
         dgnstroke.cpp
+        dgndump.cpp
     )
 
     set(LIB_CSOURCES

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #******************************************************************************
-#  $Id: make_fuzzer_friendly_archive.py 32639 2016-01-01 16:41:52Z rouault $
+#  $Id$
 #
 #  Project:  GDAL
 #  Purpose:  Make fuzzer friendly archive (only works in DEBUG mode)

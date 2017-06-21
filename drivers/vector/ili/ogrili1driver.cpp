@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrili1driver.cpp 32746 2016-01-05 05:18:43Z goatbar $
  *
  * Project:  Interlis 1 Translator
  * Purpose:  Implements OGRILI1Layer class.
@@ -31,7 +30,7 @@
 #include "ogr_ili1.h"
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id: ogrili1driver.cpp 32746 2016-01-05 05:18:43Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                                Open()                                */
@@ -108,6 +107,7 @@ void RegisterOGRILI1() {
 "<OpenOptionList>"
 "  <Option name='MODEL' type='string' description='Filename of the model in IlisMeta format (.imd)'/>"
 "</OpenOptionList>" );
+    poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
 
     poDriver->pfnOpen = OGRILI1DriverOpen;
     poDriver->pfnCreate = OGRILI1DriverCreate;

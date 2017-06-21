@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: dted_api.c 33720 2016-03-15 00:39:53Z goatbar $
+ * $Id$
  *
  * Project:  DTED Translator
  * Purpose:  Implementation of DTED/CDED access functions.
@@ -31,7 +31,7 @@
 #include "dted_api.h"
 
 #ifndef AVOID_CPL
-CPL_CVSID("$Id: dted_api.c 33720 2016-03-15 00:39:53Z goatbar $");
+CPL_CVSID("$Id$");
 #endif
 
 static int bWarnedTwoComplement = FALSE;
@@ -40,6 +40,8 @@ static void DTEDDetectVariantWithMissingColumns(DTEDInfo* psDInfo);
 
 CPL_INLINE static void CPL_IGNORE_RET_VAL_INT(CPL_UNUSED int unused) {}
 CPL_INLINE static void CPL_IGNORE_RET_VAL_SIZET(CPL_UNUSED size_t unused) {}
+
+#define DIGIT_ZERO '0'
 
 /************************************************************************/
 /*                            DTEDGetField()                            */
@@ -74,7 +76,7 @@ static const char* stripLeadingZeros(const char* buf)
 
     /* Go until we run out of characters  or hit something non-zero */
 
-    while( *ptr == '0' && *(ptr+1) != '\0' )
+    while( *ptr == DIGIT_ZERO && *(ptr+1) != '\0' )
     {
         ptr++;
     }
@@ -1034,6 +1036,7 @@ int DTEDSetMetadata( DTEDInfo *psDInfo, DTEDMetaDataCode eCode,
 /*      Update it, padding with spaces.                                 */
 /* -------------------------------------------------------------------- */
     memset( pszFieldSrc, ' ', nFieldLen );
+    /* cppcheck-suppress redundantCopy */
     strncpy( pszFieldSrc, pszNewValue,
              MIN((size_t)nFieldLen,strlen(pszNewValue)) );
 

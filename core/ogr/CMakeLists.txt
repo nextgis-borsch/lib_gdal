@@ -3,8 +3,8 @@
 # Purpose:  CMake build scripts
 # Author:   Dmitry Baryshnikov, polimax@mail.ru
 ################################################################################
-# Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
-# Copyright (C) 2012,2013,2014 Dmitry Baryshnikov
+# Copyright (C) 2015-2017, NextGIS <info@nextgis.com>
+# Copyright (C) 2012-2014, Dmitry Baryshnikov
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -54,7 +54,7 @@ set(TARGET_NAME ogr)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/ogrsf_frmts)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/ogrsf_frmts/mem)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/ogrsf_frmts/geojson)
+include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/geojson)
 
 set(LIB_HHEADERS
     ogr_api.h
@@ -67,6 +67,7 @@ set(LIB_HHEADERS
     ogr_srs_api.h
     ogr_geocoding.h
     ogrsf_frmts/ogrsf_frmts.h
+    ogr_geo_utils.h
 )
 
 set(LIB_HHEADERS_PRIV
@@ -77,7 +78,8 @@ set(LIB_HHEADERS_PRIV
     osr_cs_wkt.h
     osr_cs_wkt_parser.h
     swq.h
-    ogr_xerces.h
+    ogr_json_header.h
+    ogr_libs.h
 )
 
 set(LIB_CSOURCES
@@ -106,8 +108,6 @@ set(LIB_CSOURCES
     ogrgeomfielddefn.cpp
     ogrlinearring.cpp
     ogrlinestring.cpp
-#    ogrpolyhedralsurface.cpp
-#    ogrtriangulatedsurface.cpp
     ogrmulticurve.cpp
     ogrmultilinestring.cpp
     ogrmultipoint.cpp
@@ -129,7 +129,6 @@ set(LIB_CSOURCES
     ogr_srs_validate.cpp
     ogr_srs_xml.cpp
     ogrsurface.cpp
-#    ogrtriangle.cpp
     ogrutils.cpp
     osr_cs_wkt.c
     swq.cpp
@@ -139,9 +138,11 @@ set(LIB_CSOURCES
     swq_select.cpp
     ograpispy.cpp
     ogrpgeogeometry.cpp
-    ogr_xerces.cpp
+    ogrpolyhedralsurface.cpp
+    ogrtriangle.cpp
+    ogrtriangulatedsurface.cpp
+    ogr_geo_utils.cpp
 )
-
 
 if(EXPAT_FOUND)
     set(LIB_HHEADERS_PRIV ${LIB_HHEADERS_PRIV}
@@ -149,6 +150,22 @@ if(EXPAT_FOUND)
     )
     set(LIB_CSOURCES ${LIB_CSOURCES}
         ogr_expat.cpp
+    )
+endif()
+
+# if(XERCES_FOUND)
+    set(LIB_HHEADERS_PRIV ${LIB_HHEADERS_PRIV}
+        ogr_xerces_headers.h
+        ogr_xerces.h
+    )
+    set(LIB_CSOURCES ${LIB_CSOURCES}
+        ogr_xerces.cpp
+    )
+# endif()
+
+if(SFCGAL_FOUND)
+    set(LIB_HHEADERS_PRIV ${LIB_HHEADERS_PRIV}
+        ogr_sfcgal.h
     )
 endif()
 

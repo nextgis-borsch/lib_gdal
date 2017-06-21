@@ -33,7 +33,7 @@ macro(summary_message text value)
     set(BoldCyan    "${Esc}[1;36m")
     set(White       "${Esc}[37m")
     set(ColourReset "${Esc}[m")
-  
+
     if("${${value}}")
         message(STATUS "${BoldCyan}  ${text} yes${ColourReset}")
     else()
@@ -52,7 +52,7 @@ message(STATUS "")
 summary_message("LIBZ support:              " WITH_ZLIB)
 summary_message("LIBLZMA support:           " WITH_LibLZMA)
 summary_message("cryptopp support:          " WITH_CRYPTOPP)
-summary_message("GRASS support:             " WITH_GRASS) 
+summary_message("GRASS support:             " WITH_GRASS)
 summary_message("CFITSIO support:           " WITH_CFITSIO)
 summary_message("PCRaster support:          " WITH_PCRASTER)
 summary_message("LIBPNG support:            " WITH_PNG)
@@ -62,11 +62,11 @@ if(HAVE_BIGTIFF OR WITH_TIFF_EXTERNAL)
     summary_message("LIBTIFF support (BigTIFF=yes)" WITH_TIFF)
 else()
     summary_message("LIBTIFF support            " WITH_TIFF)
-endif()    
+endif()
 summary_message("LIBGEOTIFF support:        " WITH_GeoTIFF)
 summary_message("LIBJPEG support:           " WITH_JPEG)
 summary_message("12 bit JPEG:               " WITH_JPEG12)
-if(WITH_JPEG12 AND WITH_TIFF_EXTERAL)
+if(WITH_JPEG12 AND WITH_TIFF)
     set(TIFF_JPEG12_ENABLED ON)
 endif()
 summary_message("12 bit JPEG-in-TIFF:       " TIFF_JPEG12_ENABLED)
@@ -74,6 +74,7 @@ summary_message("LIBGIF support:            " WITH_GIF)
 summary_message("OGDI support:              " WITH_OGDI)
 summary_message("HDF4 support:              " WITH_HDF4)
 summary_message("HDF5 support:              " WITH_HDF5)
+summary_message("OpenJPEG support:          " WITH_OpenJPEG)
 summary_message("Kea support:               " WITH_KEA)
 summary_message("NetCDF support:            " WITH_NETCDF)
 summary_message("Kakadu support:            " WITH_KAKADU)
@@ -84,7 +85,6 @@ else()
 summary_message("JasPer support:            " WITH_JASPER)
 endif()
 
-summary_message("OpenJPEG support:          " WITH_OPENJPEG)
 summary_message("ECW support:               " WITH_ECW)
 summary_message("MrSID support:             " WITH_MRSID)
 summary_message("MrSID/MG4 Lidar support:   " WITH_MRSID_LIDAR)
@@ -115,7 +115,6 @@ summary_message("DODS support:              " WITH_DODS)
 summary_message("SQLite support:            " WITH_SQLite3)
 summary_message("PCRE support:              " WITH_PCRE)
 summary_message("SpatiaLite support:        " WITH_SPATIALITE)
-summary_message("DWGdirect support          " WITH_DWGDIRECT)
 summary_message("INFORMIX DataBlade support:" WITH_IDB)
 summary_message("GEOS support:              " WITH_GEOS)
 summary_message("QHull support:             " WITH_QHULL)
@@ -129,7 +128,7 @@ summary_message("SOSI support:              " WITH_SOSI)
 summary_message("MongoDB support:           " WITH_MONGODB)
 message(STATUS "")
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-summary_message("Mac OS X Framework :       " MACOSX_FRAMEWORK)
+summary_message("Mac OS X Framework:        " MACOSX_FRAMEWORK)
 message(STATUS "")
 endif()
 if(GDAL_BINDINGS)
@@ -148,26 +147,25 @@ summary_message("enable POSIX iconv support:" WITH_ICONV)
 summary_message("hide internal symbols:     " GDAL_HIDE_INTERNAL_SYMBOLS)
 
 if(WITH_PODOFO AND WITH_POPPLER AND WITH_PDFIUM)
-    message(WARNING "--with-podofo, --with-poppler and --with-pdfium available. 
-                     This is unusual setup, but will work. Pdfium will be used 
+    message(WARNING "--with-podofo, --with-poppler and --with-pdfium available.
+                     This is unusual setup, but will work. Pdfium will be used
                      by default...")
 elseif(WITH_PODOFO AND WITH_POPPLER)
-    message(WARNING "--with-podofo and --with-poppler are both available. 
-                     This is unusual setup, but will work. Poppler will be used 
+    message(WARNING "--with-podofo and --with-poppler are both available.
+                     This is unusual setup, but will work. Poppler will be used
                      by default...")
 elseif(WITH_POPPLER AND WITH_PDFIUM)
-    message(WARNING "--with-poppler and --with-pdfium are both available. This 
-                     is unusual setup, but will work. Pdfium will be used by 
+    message(WARNING "--with-poppler and --with-pdfium are both available. This
+                     is unusual setup, but will work. Pdfium will be used by
                      default...")
 elseif(WITH_PODOFO AND WITH_PDFIUM)
-    message(WARNING "--with-podofo and --with-pdfium are both available. This is 
-                     unusual setup, but will work. Pdfium will be used by 
+    message(WARNING "--with-podofo and --with-pdfium are both available. This is
+                     unusual setup, but will work. Pdfium will be used by
                      default...")
 endif()
 
 if(WITH_LIBXML2 AND WITH_FGDB)
-    message(WARNING "-DWITH_LIBXML2 and -DWITH_FGDB are both available. 
-                     There might be some incompatibility between system libxml2 
+    message(WARNING "-DWITH_LIBXML2 and -DWITH_FGDB are both available.
+                     There might be some incompatibility between system libxml2
                      and the embedded copy within libFileGDBAPI")
-endif()   
-
+endif()

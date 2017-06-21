@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: avc_e00parse.c,v 1.19 2008/07/23 20:51:38 dmorissette Exp $
+ * $Id$
  *
  * Name:     avc_e00parse.c
  * Project:  Arc/Info vector coverage (AVC)  E00->BIN conversion library
@@ -1964,7 +1964,7 @@ static AVCField   *_AVCE00ParseTableRecord(AVCE00ParseInfo *psInfo)
     AVCFieldInfo *pasDef;
     AVCTableDef *psTableDef;
     int         i, nType, nSize;
-    char        szFormat[10];
+    char        szFormat[20];
     char        *pszBuf, szTmp[30];
 
     pasFields =  psInfo->cur.pasFields;

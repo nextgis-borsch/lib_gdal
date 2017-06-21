@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: isis2dataset.cpp 33720 2016-03-15 00:39:53Z goatbar $
  *
  * Project:  ISIS Version 2 Driver
  * Purpose:  Implementation of ISIS2Dataset
@@ -47,17 +46,17 @@ static const int RECORD_SIZE = 512;
 #include "ogr_spatialref.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id: isis2dataset.cpp 33720 2016-03-15 00:39:53Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /* ==================================================================== */
-/*			ISISDataset	version2	                */
+/*                      ISISDataset     version2                        */
 /* ==================================================================== */
 /************************************************************************/
 
 class ISIS2Dataset : public RawDataset
 {
-    VSILFILE	*fpImage;	// image data file.
+    VSILFILE     *fpImage;      // image data file.
     CPLString    osExternalCube;
 
     NASAKeywordHandler  oKeywords;
@@ -82,12 +81,12 @@ class ISIS2Dataset : public RawDataset
 
 public:
     ISIS2Dataset();
-    ~ISIS2Dataset();
+    virtual ~ISIS2Dataset();
 
-    virtual CPLErr GetGeoTransform( double * padfTransform );
-    virtual const char *GetProjectionRef(void);
+    virtual CPLErr GetGeoTransform( double * padfTransform ) override;
+    virtual const char *GetProjectionRef(void) override;
 
-    virtual char **GetFileList();
+    virtual char **GetFileList() override;
 
     static int          Identify( GDALOpenInfo * );
     static GDALDataset *Open( GDALOpenInfo * );
@@ -99,7 +98,7 @@ public:
     static int WriteRaster(CPLString osFilename, bool includeLabel, GUIntBig iRecord, GUIntBig iLabelRecords, GDALDataType eType, const char * pszInterleaving);
 
     static int WriteLabel(CPLString osFilename, CPLString osRasterFile, CPLString sObjectTag, unsigned int nXSize, unsigned int nYSize, unsigned int nBands, GDALDataType eType,
-    						GUIntBig iRecords, const char * pszInterleaving, GUIntBig & iLabelRecords, bool bRelaunch=false);
+                          GUIntBig iRecords, const char * pszInterleaving, GUIntBig & iLabelRecords, bool bRelaunch=false);
     static int WriteQUBE_Information(VSILFILE *fpLabel, unsigned int iLevel, unsigned int & nWritingBytes,
                                      unsigned int nXSize, unsigned int nYSize, unsigned int nBands, GDALDataType eType, const char * pszInterleaving);
 
@@ -145,7 +144,7 @@ char **ISIS2Dataset::GetFileList()
 {
     char **papszFileList = GDALPamDataset::GetFileList();
 
-    if( strlen(osExternalCube) > 0 )
+    if( !osExternalCube.empty() )
         papszFileList = CSLAddString( papszFileList, osExternalCube );
 
     return papszFileList;
@@ -158,7 +157,7 @@ char **ISIS2Dataset::GetFileList()
 const char *ISIS2Dataset::GetProjectionRef()
 
 {
-    if( strlen(osProjection) > 0 )
+    if( !osProjection.empty() )
         return osProjection;
 
     return GDALPamDataset::GetProjectionRef();
@@ -183,7 +182,6 @@ CPLErr ISIS2Dataset::GetGeoTransform( double * padfTransform )
 /************************************************************************/
 /*                              Identify()                              */
 /************************************************************************/
-
 
 int ISIS2Dataset::Identify( GDALOpenInfo * poOpenInfo )
 {
@@ -624,32 +622,49 @@ GDALDataset *ISIS2Dataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Compute the line offset.                                        */
 /* -------------------------------------------------------------------- */
-    int nItemSize = GDALGetDataTypeSize(eDataType)/8;
-    int nLineOffset, nPixelOffset, nBandOffset;
+    int nItemSize = GDALGetDataTypeSizeBytes(eDataType);
+    int nLineOffset, nPixelOffset;
+    vsi_l_offset nBandOffset;
 
     if( EQUAL(szLayout,"BIP") )
     {
         nPixelOffset = nItemSize * nBands;
+        if( nPixelOffset > INT_MAX / nBands )
+        {
+            delete poDS;
+            return NULL;
+        }
         nLineOffset = nPixelOffset * nCols;
         nBandOffset = nItemSize;
     }
     else if( EQUAL(szLayout,"BSQ") )
     {
         nPixelOffset = nItemSize;
+        if( nPixelOffset > INT_MAX / nCols )
+        {
+            delete poDS;
+            return NULL;
+        }
         nLineOffset = nPixelOffset * nCols;
-        nBandOffset = nLineOffset * nRows;
+        nBandOffset = static_cast<vsi_l_offset>(nLineOffset) * nRows;
     }
     else /* assume BIL */
     {
         nPixelOffset = nItemSize;
+        if( nPixelOffset > INT_MAX / nBands ||
+            nPixelOffset * nBands > INT_MAX / nCols )
+        {
+            delete poDS;
+            return NULL;
+        }
         nLineOffset = nItemSize * nBands * nCols;
-        nBandOffset = nItemSize * nCols;
+        nBandOffset = static_cast<vsi_l_offset>(nItemSize) * nCols;
     }
 
 /* -------------------------------------------------------------------- */
 /*      Create band information objects.                                */
 /* -------------------------------------------------------------------- */
-    poDS->nBands = nBands;;
+    poDS->nBands = nBands;
     for( int i = 0; i < poDS->nBands; i++ )
     {
         RawRasterBand *poBand =
@@ -733,7 +748,7 @@ GDALDataset *ISIS2Dataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
 
-    return( poDS );
+    return poDS;
 }
 
 /************************************************************************/
@@ -789,8 +804,8 @@ void ISIS2Dataset::CleanString( CPLString &osInput )
 
 {
    if(  ( osInput.size() < 2 ) ||
-        ((osInput.at(0) != '"'   || osInput.at(osInput.size()-1) != '"' ) &&
-        ( osInput.at(0) != '\'' || osInput.at(osInput.size()-1) != '\'')) )
+        ((osInput.at(0) != '"'   || osInput.back() != '"' ) &&
+        ( osInput.at(0) != '\'' || osInput.back() != '\'')) )
         return;
 
     char *pszWrk = CPLStrdup(osInput.c_str() + 1);
@@ -920,7 +935,6 @@ GDALDataset *ISIS2Dataset::Create(const char* pszFilename,
 
     return reinterpret_cast<GDALDataset *>( GDALOpen( osOutFile, GA_Update ) );
 }
-
 
 /************************************************************************/
 /*                            WriteRaster()                             */

@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrmemdriver.cpp 32896 2016-01-10 13:37:26Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRMemDriver class.
@@ -27,14 +26,14 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "ogr_mem.h"
 #include "cpl_conv.h"
 #include "cpl_string.h"
+#include "ogr_mem.h"
 
-CPL_CVSID("$Id: ogrmemdriver.cpp 32896 2016-01-10 13:37:26Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
-/*                          ~OGRMemDriver()                           */
+/*                          ~OGRMemDriver()                             */
 /************************************************************************/
 
 OGRMemDriver::~OGRMemDriver() {}
@@ -43,11 +42,7 @@ OGRMemDriver::~OGRMemDriver() {}
 /*                              GetName()                               */
 /************************************************************************/
 
-const char *OGRMemDriver::GetName()
-
-{
-    return "Memory";
-}
+const char *OGRMemDriver::GetName() { return "Memory"; }
 
 /************************************************************************/
 /*                                Open()                                */
@@ -62,21 +57,21 @@ OGRDataSource *OGRMemDriver::Open( const char * /* pszFilename */, int )
 /*                          CreateDataSource()                          */
 /************************************************************************/
 
-OGRDataSource *OGRMemDriver::CreateDataSource( const char * pszName,
+OGRDataSource *OGRMemDriver::CreateDataSource( const char *pszName,
                                                char **papszOptions )
 
 {
-    return new OGRMemDataSource( pszName, papszOptions );
+    return new OGRMemDataSource(pszName, papszOptions);
 }
 
 /************************************************************************/
 /*                           TestCapability()                           */
 /************************************************************************/
 
-int OGRMemDriver::TestCapability( const char * pszCap )
+int OGRMemDriver::TestCapability( const char *pszCap )
 
 {
-    if( EQUAL(pszCap,ODrCCreateDataSource) )
+    if( EQUAL(pszCap, ODrCCreateDataSource) )
         return TRUE;
 
     return FALSE;
@@ -89,22 +84,22 @@ int OGRMemDriver::TestCapability( const char * pszCap )
 void RegisterOGRMEM()
 
 {
-    if( GDALGetDriverByName( "Memory" ) != NULL )
-      return;
+    if( GDALGetDriverByName("Memory") != NULL )
+        return;
 
-    OGRSFDriver* poDriver = new OGRMemDriver;
+    OGRSFDriver *poDriver = new OGRMemDriver;
 
     poDriver->SetMetadataItem(
         GDAL_DMD_CREATIONFIELDDATATYPES,
         "Integer Integer64 Real String Date DateTime Time IntegerList "
-        "Integer64List RealList StringList Binary" );
+        "Integer64List RealList StringList Binary");
 
     poDriver->SetMetadataItem(
         GDAL_DS_LAYER_CREATIONOPTIONLIST,
         "<LayerCreationOptionList>"
         "  <Option name='ADVERTIZE_UTF8' type='boolean' description='Whether "
         "the layer will contain UTF-8 strings' default='NO'/>"
-        "</LayerCreationOptionList>" );
+        "</LayerCreationOptionList>");
 
-    OGRSFDriverRegistrar::GetRegistrar()->RegisterDriver( poDriver );
+    OGRSFDriverRegistrar::GetRegistrar()->RegisterDriver(poDriver);
 }

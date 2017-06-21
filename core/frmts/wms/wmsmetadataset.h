@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: wmsmetadataset.h 31777 2015-11-26 14:14:41Z rouault $
+ * $Id$
  *
  * Project:  WMS Client Driver
  * Purpose:  Declaration of GDALWMSMetaDataset class
@@ -103,10 +103,10 @@ class GDALWMSMetaDataset : public GDALPamDataset
 
   public:
         GDALWMSMetaDataset();
-       ~GDALWMSMetaDataset();
+    virtual ~GDALWMSMetaDataset();
 
-    virtual char      **GetMetadataDomainList();
-    virtual char      **GetMetadata( const char * pszDomain = "" );
+    virtual char      **GetMetadataDomainList() override;
+    virtual char      **GetMetadata( const char * pszDomain = "" ) override;
 
     static GDALDataset* AnalyzeGetCapabilities(CPLXMLNode* psXML,
                                                CPLString osFormat = "",

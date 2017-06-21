@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id:  $
  *
  * Project:  Erdas EIR Raw Driver
  * Purpose:  Implementation of EIRDataset
@@ -33,7 +32,7 @@
 #include "ogr_spatialref.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id:  $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -59,14 +58,13 @@ class EIRDataset : public RawDataset
     EIRDataset();
     virtual ~EIRDataset();
 
-    virtual CPLErr GetGeoTransform( double * padfTransform );
+    virtual CPLErr GetGeoTransform( double * padfTransform ) override;
 
-    virtual char **GetFileList();
+    virtual char **GetFileList() override;
 
     static int          Identify( GDALOpenInfo * );
     static GDALDataset *Open( GDALOpenInfo * );
 };
-
 
 /************************************************************************/
 /* ==================================================================== */
@@ -84,7 +82,9 @@ EIRDataset::EIRDataset() :
     bHDRDirty(false),
     papszHDR(NULL),
     papszExtraFiles(NULL)
-{}
+{
+    memset( adfGeoTransform, 0, sizeof(adfGeoTransform) );
+}
 
 /************************************************************************/
 /*                            ~EIRDataset()                            */
@@ -176,7 +176,6 @@ void EIRDataset::ResetKeyValue( const char *pszKey, const char *pszValue )
     bHDRDirty = true;
     papszHDR = CSLAddString( papszHDR, szNewLine );
 }
-
 
 /************************************************************************/
 /*                          GetGeoTransform()                           */
@@ -296,6 +295,7 @@ GDALDataset *EIRDataset::Open( GDALOpenInfo * poOpenInfo )
         nLineCount++;
 
         if ( (nLineCount == 1) && !EQUAL(pszLine, "IMAGINE_RAW_FILE") ) {
+            CPL_IGNORE_RET_VAL(VSIFCloseL( fp ));
             return NULL;
         }
 
@@ -334,8 +334,7 @@ GDALDataset *EIRDataset::Open( GDALOpenInfo * poOpenInfo )
         }
         else if( EQUAL(papszTokens[0], "FORMAT") )
         {
-            strncpy( szLayout, papszTokens[1], sizeof(szLayout) );
-            szLayout[sizeof(szLayout)-1] = '\0';
+            snprintf( szLayout, sizeof(szLayout), "%s", papszTokens[1] );
         }
         else if( EQUAL(papszTokens[0], "DATATYPE")
                  || EQUAL(papszTokens[0], "DATA_TYPE") )
@@ -467,18 +466,33 @@ GDALDataset *EIRDataset::Open( GDALOpenInfo * poOpenInfo )
     if( EQUAL(szLayout, "BIP") )
     {
         nPixelOffset = nItemSize * nBands;
+        if( nPixelOffset > INT_MAX / nCols )
+        {
+            delete poDS;
+            return NULL;
+        }
         nLineOffset = nPixelOffset * nCols;
         nBandOffset = static_cast<vsi_l_offset>(nItemSize);
     }
     else if( EQUAL(szLayout, "BSQ") )
     {
         nPixelOffset = nItemSize;
+        if( nPixelOffset > INT_MAX / nCols )
+        {
+            delete poDS;
+            return NULL;
+        }
         nLineOffset = nPixelOffset * nCols;
         nBandOffset = static_cast<vsi_l_offset>(nLineOffset) * nRows;
     }
     else /* assume BIL */
     {
         nPixelOffset = nItemSize;
+        if( nItemSize > INT_MAX / nBands || nItemSize * nBands > INT_MAX / nCols )
+        {
+            delete poDS;
+            return NULL;
+        }
         nLineOffset = nItemSize * nBands * nCols;
         nBandOffset = static_cast<vsi_l_offset>(nItemSize) * nCols;
     }
@@ -532,7 +546,6 @@ GDALDataset *EIRDataset::Open( GDALOpenInfo * poOpenInfo )
 
     return poDS;
 }
-
 
 /************************************************************************/
 /*                         GDALRegister_EIR()                           */

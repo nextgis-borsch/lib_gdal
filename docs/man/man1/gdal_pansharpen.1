@@ -1,0 +1,98 @@
+.TH "gdal_pansharpen" 1 "Fri Apr 28 2017" "GDAL" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+gdal_pansharpen \- Perform a pansharpen operation\&.
+.PP
+(Since GDAL 2\&.1)
+.SH "SYNOPSIS"
+.PP
+.PP
+.nf
+gdal_pansharpen [--help-general] pan_dataset {spectral_dataset[,band=num]}+ out_dataset
+                [-of format] [-b band]* [-w weight_val]*
+                [-r {nearest,bilinear,cubic,cubicspline,lanczos,average}]
+                [-threads {ALL_CPUS|number}] [-bitdepth val] [-nodata val]
+                [-spat_adjust {union,intersection,none,nonewithoutwarning}]
+                [-co NAME=VALUE]* [-q]
+.fi
+.PP
+.SH "DESCRIPTION"
+.PP
+The gdal_pansharpen\&.py script performs a pan-sharpening operation\&. It can create a 'classic' output dataset (such as GeoTIFF), or a VRT dataset describing the pan-sharpening operation\&.
+.PP
+More details can be found in the \fCVRT tutorial\fP\&.
+.PP
+.IP "\fB\fB-of\fP \fIformat\fP:\fP" 1c
+Select the output format\&. The default is GeoTIFF (GTiff)\&. 'VRT' can also be used\&. Use the short format name\&. 
+.IP "\fB\fB-b\fP \fIband\fP:\fP" 1c
+Select band \fIband\fP from the input spectral bands for output\&. Bands are numbered from 1 in the order spectral bands are specified\&. Multiple \fB-b\fP switches may be used\&. When no -b switch is used, all input spectral bands are set for output\&. 
+.IP "\fB\fB-w\fP \fIweight_val\fP:\fP" 1c
+Specify a weight for the computation of the pseudo panchromatic value\&. There must be as many -w switches as input spectral bands\&. 
+.IP "\fB\fB-r\fP \fI{nearest,bilinear,cubic (default),cubicspline,lanczos,average}\fP:\fP" 1c
+Select a resampling algorithm\&. 
+.IP "\fB\fB-threads\fP \fI{ALL_CPUS,number}\fP:\fP" 1c
+Specify number of threads to use to do the resampling and pan-sharpening itself\&. Can be an integer number or ALL_CPUS\&. 
+.IP "\fB\fB-bitdepth\fP \fIval\fP:\fP" 1c
+Specify the bit depth of the panchromatic and spectral bands (e\&.g\&. 12)\&. If not specified, the NBITS metadata item from the panchromatic band will be used if it exists\&. 
+.IP "\fB\fB-nodata\fP \fIval\fP:\fP" 1c
+Specify nodata value for bands\&. Used for the resampling and pan-sharpening computation itself\&. If not set, deduced from the input bands, provided they have a consistent setting\&. 
+.IP "\fB\fB-spat_adjust\fP \fI{union (default),intersection,none,nonewithoutwarning}\fP:\fP" 1c
+Select behaviour when bands have not the same extent\&. See \fISpatialExtentAdjustment\fP documentation in \fCVRT tutorial\fP 
+.IP "\fB\fB-co\fP \fI'NAME=VALUE'\fP:\fP" 1c
+Passes a creation option to the output format driver\&. Multiple \fB-co\fP options may be listed\&. See \fCformat specific documentation for legal creation options for each format\fP\&. 
+.IP "\fB\fB-q\fP:\fP" 1c
+Suppress progress monitor and other non-error output\&. 
+.IP "\fB\fIpan_dataset\fP\fP" 1c
+Dataset with panchromatic band (first band will be used)\&. 
+.IP "\fB\fIspectral_dataset[,band=num]\fP\fP" 1c
+Dataset with one or several spectral bands\&. If the band option is not specified, all bands of the datasets are taken into account\&. Otherwise, only the specified (num)th band\&. The same dataset can be repeated several times\&. 
+.IP "\fB\fIout_dataset\fP\fP" 1c
+Output dataset 
+.PP
+.PP
+Bands should be in the same projection\&.
+.SH "EXAMPLE"
+.PP
+With spectral bands in a single dataset : 
+.PP
+.nf
+gdal_pansharpen.py panchro.tif multispectral.tif pansharpened_out.tif
+
+.fi
+.PP
+.PP
+With a few spectral bands from a single dataset, reordered : 
+.PP
+.nf
+gdal_pansharpen.py panchro.tif multispectral.tif,band=3 multispectral.tif,band=2 multispectral.tif,band=1 pansharpened_out.tif
+
+.fi
+.PP
+.PP
+With spectral bands in several datasets : 
+.PP
+.nf
+gdal_pansharpen.py panchro.tif band1.tif band2.tif band3.tif pansharpened_out.tif
+
+.fi
+.PP
+.PP
+Specify weights: 
+.PP
+.nf
+gdal_pansharpen.py -w 0.7 -w 0.2 -w 0.1 panchro.tif multispectral.tif pansharpened_out.tif
+
+.fi
+.PP
+.PP
+Specify RGB bands from a RGBNir multispectral dataset while computing the pseudo panchromatic intensity on the 4 RGBNir bands: 
+.PP
+.nf
+gdal_pansharpen.py -b 1 -b 2 -b 3 panchro.tif rgbnir.tif pansharpened_out.tif
+
+.fi
+.PP
+.SH "AUTHORS"
+.PP
+Even Rouault <even\&.rouault at spatialys\&.com> 

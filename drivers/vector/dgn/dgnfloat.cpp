@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: dgnfloat.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  Microstation DGN Access Library
  * Purpose:  Functions for translating DGN floats into IEEE floats.
@@ -29,7 +28,7 @@
 
 #include "dgnlibp.h"
 
-CPL_CVSID("$Id: dgnfloat.cpp 33713 2016-03-12 17:41:57Z goatbar $");
+CPL_CVSID("$Id$");
 
 typedef struct dbl {
     GUInt32 hi;
@@ -45,17 +44,15 @@ void    DGN2IEEEDouble(void * dbl)
 {
     double64_t  dt;
     GUInt32     sign;
-    GUInt32     exponent;
+    int     exponent;
     GUInt32     rndbits;
-    unsigned char       *src;
-    unsigned char       *dest;
 
 /* -------------------------------------------------------------------- */
 /*      Arrange the VAX double so that it may be accessed by a          */
 /*      double64_t structure, (two GUInt32s).                           */
 /* -------------------------------------------------------------------- */
-    src =  (unsigned char *) dbl;
-    dest = (unsigned char *) &dt;
+    unsigned char *src =  (unsigned char *) dbl;
+    unsigned char *dest = (unsigned char *) &dt;
 #ifdef CPL_LSB
     dest[2] = src[0];
     dest[3] = src[1];
@@ -84,8 +81,7 @@ void    DGN2IEEEDouble(void * dbl)
 /* -------------------------------------------------------------------- */
 /*      Adjust the exponent so that we may work with it                 */
 /* -------------------------------------------------------------------- */
-    exponent = dt.hi >> 23;
-    exponent = exponent & 0x000000ff;
+    exponent = (dt.hi >> 23) & 0x000000ff;
 
     if (exponent)
         exponent = exponent -129 + 1023;
@@ -106,9 +102,7 @@ void    DGN2IEEEDouble(void * dbl)
 /* -------------------------------------------------------------------- */
     dt.hi = dt.hi >> 3;
     dt.hi = dt.hi & 0x000fffff;
-    dt.hi = dt.hi | (exponent << 20) | sign;
-
-
+    dt.hi = dt.hi | ((GUInt32)exponent << 20) | sign;
 
 #ifdef CPL_LSB
 /* -------------------------------------------------------------------- */
@@ -131,10 +125,9 @@ void    DGN2IEEEDouble(void * dbl)
 void    IEEE2DGNDouble(void * dbl)
 
 {
-    double64_t  dt;
-    GInt32      exponent;
-    GInt32      sign;
-    GByte       *src,*dest;
+    double64_t dt;
+    GByte  *src = NULL;
+    GByte *dest = NULL;
 
 #ifdef CPL_LSB
     src  = (GByte *) dbl;
@@ -152,8 +145,8 @@ void    IEEE2DGNDouble(void * dbl)
     memcpy( &dt, dbl, 8 );
 #endif
 
-    sign         = dt.hi & 0x80000000;
-    exponent = dt.hi >> 20;
+    GInt32 sign = dt.hi & 0x80000000;
+    GInt32 exponent = dt.hi >> 20;
     exponent = exponent & 0x000007ff;
 
 /* -------------------------------------------------------------------- */

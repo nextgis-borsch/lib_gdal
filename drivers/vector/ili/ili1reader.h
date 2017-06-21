@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ili1reader.h 33713 2016-03-12 17:41:57Z goatbar $
+ * $Id$
  *
  * Project:  Interlis 1 Reader
  * Purpose:  Private Declarations for Reader code.

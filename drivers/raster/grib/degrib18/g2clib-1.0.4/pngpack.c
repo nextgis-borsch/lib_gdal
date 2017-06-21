@@ -2,8 +2,6 @@
 #include <math.h>
 #include "grib2.h"
 
-int enc_png(char *,g2int ,g2int ,g2int ,char *);
-
 void pngpack(g2float *fld,g2int width,g2int height,g2int *idrstmpl,
              unsigned char *cpack,g2int *lcpack)
 //$$$  SUBPROGRAM DOCUMENTATION BLOCK
@@ -14,7 +12,7 @@ void pngpack(g2float *fld,g2int width,g2int height,g2int *idrstmpl,
 // ABSTRACT: This subroutine packs up a data field into PNG image format.
 //   After the data field is scaled, and the reference value is subtracted out,
 //   it is treated as a grayscale image and passed to a PNG encoder.
-//   It also fills in GRIB2 Data Representation Template 5.41 or 5.40010 with 
+//   It also fills in GRIB2 Data Representation Template 5.41 or 5.40010 with
 //   the appropriate values.
 //
 // PROGRAM HISTORY LOG:
@@ -35,7 +33,7 @@ void pngpack(g2float *fld,g2int width,g2int height,g2int *idrstmpl,
 //                [4] = Original field type - currently ignored on input
 //                      Data values assumed to be reals.
 //
-//   OUTPUT ARGUMENT LIST: 
+//   OUTPUT ARGUMENT LIST:
 //     idrstmpl - Contains the array of values for Data Representation
 //                Template 5.41 or 5.40010
 //                [0] = Reference value - set by pngpack routine.
@@ -44,7 +42,7 @@ void pngpack(g2float *fld,g2int width,g2int height,g2int *idrstmpl,
 //                [3] = Number of bits containing each grayscale pixel value
 //                [4] = Original field type - currently set = 0 on output.
 //                      Data values assumed to be reals.
-//     cpack    - The packed data field 
+//     cpack    - The packed data field
 //     lcpack   - length of packed field cpack.
 //
 // REMARKS: None
@@ -56,16 +54,16 @@ void pngpack(g2float *fld,g2int width,g2int height,g2int *idrstmpl,
 //$$$
 {
       g2int  *ifld;
-      static g2float alog2=0.69314718;       //  ln(2.0)
+      const g2float alog2=0.69314718f;       //  ln(2.0)
       g2int  j,nbits,imin,imax,maxdif;
       g2int  ndpts,nbytes;
       g2float  bscale,dscale,rmax,rmin,temp;
       unsigned char *ctemp;
-      
+
       ifld=0;
       ndpts=width*height;
-      bscale=int_power(2.0,-idrstmpl[1]);
-      dscale=int_power(10.0,idrstmpl[2]);
+      bscale=(g2float)int_power(2.0,-idrstmpl[1]);
+      dscale=(g2float)int_power(10.0,idrstmpl[2]);
 //
 //  Find max and min values in the data
 //
@@ -85,18 +83,18 @@ void pngpack(g2float *fld,g2int width,g2int height,g2int *idrstmpl,
       if (rmin != rmax  &&  maxdif != 0 ) {
         ifld=(g2int *)malloc(ndpts*sizeof(g2int));
         //
-        //  Determine which algorithm to use based on user-supplied 
+        //  Determine which algorithm to use based on user-supplied
         //  binary scale factor and number of bits.
         //
         if (idrstmpl[1] == 0) {
            //
-           //  No binary scaling and calculate minimum number of 
+           //  No binary scaling and calculate minimum number of
            //  bits in which the data will fit.
            //
            imin=(g2int)RINT(rmin*dscale);
            imax=(g2int)RINT(rmax*dscale);
            maxdif=imax-imin;
-           temp=log((double)(maxdif+1))/alog2;
+           temp=(g2float)log((double)(maxdif+1))/alog2;
            nbits=(g2int)ceil(temp);
            rmin=(g2float)imin;
            //   scale data
@@ -105,13 +103,13 @@ void pngpack(g2float *fld,g2int width,g2int height,g2int *idrstmpl,
         }
         else {
            //
-           //  Use binary scaling factor and calculate minimum number of 
+           //  Use binary scaling factor and calculate minimum number of
            //  bits in which the data will fit.
            //
            rmin=rmin*dscale;
            rmax=rmax*dscale;
            maxdif=(g2int)RINT((rmax-rmin)*bscale);
-           temp=log((double)(maxdif+1))/alog2;
+           temp=(g2float)log((double)(maxdif+1))/alog2;
            nbits=(g2int)ceil(temp);
            //   scale data
            for (j=0;j<ndpts;j++)

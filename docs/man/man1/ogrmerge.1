@@ -1,0 +1,146 @@
+.TH "ogrmerge" 1 "Fri Apr 28 2017" "GDAL" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+ogrmerge \- Merge several vector datasets into a single one\&.
+.SH "SYNOPSIS"
+.PP
+.PP
+.nf
+ogrmerge.py -o out_dsname src_dsname [src_dsname]*
+            [-f format] [-single] [-nln layer_name_template]
+            [-update | -overwrite_ds] [-append | -overwrite_layer]
+            [-src_geom_type geom_type_name[,geom_type_name]*]
+            [-dsco NAME=VALUE]* [-lco NAME=VALUE]*
+            [-s_srs srs_def] [-t_srs srs_def | -a_srs srs_def]
+            [-progress] [-skipfailures] [--help-general]
+
+Options specific to -single:
+            [-field_strategy FirstLayer|Union|Intersection]
+            [-src_layer_field_name name]
+            [-src_layer_field_content layer_name_template]
+.fi
+.PP
+.SH "DESCRIPTION"
+.PP
+(Available since GDAL 2\&.2)
+.PP
+The ogrmerge\&.py script takes as input several vector datasets, each of them having one or several vector layers, and copy them in a target dataset\&.
+.PP
+There are essential two modes :
+.IP "\(bu" 2
+the default one, where each input vector layer, is copied as a separate layer into the target dataset
+.IP "\(bu" 2
+another one, activated with the -single switch, where the content of all input vector layers is appended into a single target layer\&. This assumes that the schema of those vector layers is more or less the same\&.
+.PP
+.PP
+Internally this generates a \fCVRT\fP file, and if the output format is not VRT, final translation is done with ogr2ogr / gdal\&.VectorTranslate\&. So for advanced uses, output to VRT, potential manual editing of it and ogr2ogr can be done\&.
+.PP
+.IP "\fB\fB-o\fP \fIout_dsname\fP:\fP" 1c
+Output dataset name\&. Required\&. 
+.PP
+.IP "\fB\fIsrc_dsname\fP:\fP" 1c
+One or several input vector datasets\&. Required 
+.PP
+.IP "\fB\fB-f\fP \fIformat\fP:\fP" 1c
+Select the output format\&. VRT is a valid output format as well\&. Defaults to 'ESRI Shapefile'
+.PP
+.IP "\fB\fB-single\fP:\fP" 1c
+If specified, all input vector layers will be merged into a single one\&.
+.PP
+.IP "\fB\fB-nln\fP \fIlayer_name_template\fP:\fP" 1c
+Name of the output vector layer (in single mode, and the default is 'merged'), or template to name the output vector layers in default mode (the default value is '{AUTO_NAME}')\&. The template can be a string with the following variables that will be susbstitued with a value computed from the input layer being processed:
+.PP
+.IP "\(bu" 2
+{AUTO_NAME}: equivalent to {DS_BASENAME}_{LAYER_NAME} if both values are different, or {LAYER_NAME} when they are identical (case of shapefile)\&. 'different
+.IP "\(bu" 2
+{DS_NAME} : name of the source dataset
+.IP "\(bu" 2
+{DS_BASENAME}: base name of the source dataset
+.IP "\(bu" 2
+{DS_INDEX} : index of the source dataset
+.IP "\(bu" 2
+{LAYER_NAME} : name of the source layer
+.IP "\(bu" 2
+{LAYER_INDEX}: index of the source layer 
+.PP
+.PP
+.IP "\fB\fB-update\fP \fP" 1c
+Open an existing dataset in update mode\&.
+.PP
+.IP "\fB\fB-overwrite_ds\fP \fP" 1c
+Overwrite the existing dataset if it already exists (for file based datasets)
+.PP
+.IP "\fB\fB-append\fP \fP" 1c
+Open an existing dataset in update mode, and if output layers already exist, append the content of input layers to them\&. 
+.PP
+.IP "\fB\fB-overwrite_layer\fP \fP" 1c
+Open an existing dataset in update mode, and if output layers already exist, replace their content with the one of the input layer\&.
+.PP
+.IP "\fB\fB-src_geom_type\fP \fIgeom_type_name[,geom_type_name]*]\fP:\fP" 1c
+Only take into account input layers whose geometry type match the type(s) specified\&. Valid values for geom_type_name are GEOMETRY, POINT, LINESTRING, POLYGON, MULTIPOINT, MULTILINESTRING, MULTIPOINT, GEOMETRYCOLLECTION, CIRCULARSTRING, CURVEPOLYGON, MULTICURVE, MULTISURFACE, CURVE, SURFACE, TRIANGLE, POLYHEDRALSURFACE and TIN\&.
+.PP
+.IP "\fB\fB-dsco\fP \fINAME=VALUE\fP:\fP" 1c
+Dataset creation option (format specific)
+.PP
+.IP "\fB\fB-lco\fP\fI NAME=VALUE\fP:\fP" 1c
+Layer creation option (format specific)
+.PP
+.IP "\fB\fB-a_srs\fP\fI srs_def\fP:\fP" 1c
+Assign an output SRS
+.PP
+.IP "\fB\fB-t_srs\fP\fI srs_def\fP:\fP" 1c
+Reproject/transform to this SRS on output
+.PP
+.IP "\fB\fB-s_srs\fP\fI srs_def\fP:\fP" 1c
+Override source SRS
+.PP
+.IP "\fB\fB-progress\fP:\fP" 1c
+Display progress on terminal\&. Only works if input layers have the 'fast feature count' capability\&.
+.PP
+.IP "\fB\fB-skipfailures\fP:\fP" 1c
+Continue after a failure, skipping the failed feature\&.
+.PP
+.IP "\fB\fB-field_strategy\fP\fI FirstLayer|Union|Intersection\fP:\fP" 1c
+Only used with -single\&. Determines how the schema of the target layer is built from the schemas of the input layers\&. May be FirstLayer to use the fields from the first layer found, Union to use a super-set of all the fields from all source layers, or Intersection to use a sub-set of all the common fields from all source layers\&. Defaults to Union\&.
+.PP
+.IP "\fB\fB-src_layer_field_name\fP\fI name\fP:\fP" 1c
+Only used with -single\&. If specified, the schema of the target layer will be extended with a new field 'name', whose content is determined by -src_layer_field_content\&.
+.PP
+.IP "\fB\fB-src_layer_field_content\fP\fI layer_name_template\fP:\fP" 1c
+Only used with -single\&. If specified, the schema of the target layer will be extended with a new field (whose name is given by -src_layer_field_name, or 'source_ds_lyr' otherwise), whose content is determined by layer_name_template\&. The syntax of layer_name_template is the same as for -nln\&. 
+.PP
+.PP
+.SH "EXAMPLES"
+.PP
+.IP "\(bu" 2
+Creates a VRT with a layer for each input shapefiles 
+.PP
+.nf
+ogrmerge.py -f VRT -o merged.vrt *.shp
+
+.fi
+.PP
+
+.IP "\(bu" 2
+Same, but creates a GeoPackage file 
+.PP
+.nf
+ogrmerge.py -f GPKG -o merged.gpkg *.shp
+
+.fi
+.PP
+
+.IP "\(bu" 2
+Concatenate the content of france\&.shp and germany\&.shp in merged\&.shp, and adds a 'country' field to each feature whose value is 'france' or 'germany' depending where it comes from\&. 
+.PP
+.nf
+ogrmerge.py -single -o merged.shp france.shp germany.shp -src_layer_field_name country
+
+.fi
+.PP
+
+.PP
+.SH "AUTHORS"
+.PP
+Even Rouault even.rouault@spatialys.com 

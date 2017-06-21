@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ili1reader.cpp 33829 2016-03-31 16:21:01Z rouault $
  *
  * Project:  Interlis 1 Reader
  * Purpose:  Implementation of ILI1Reader class.
@@ -49,7 +48,7 @@
 #  endif
 #endif
 
-CPL_CVSID("$Id: ili1reader.cpp 33829 2016-03-31 16:21:01Z rouault $");
+CPL_CVSID("$Id$");
 
 //
 // ILI1Reader
@@ -68,7 +67,7 @@ ILI1Reader::ILI1Reader() :
 
 ILI1Reader::~ILI1Reader()
 {
-  if (fpItf) VSIFClose( fpItf );
+  if (fpItf) VSIFCloseL( fpItf );
 
   for( int i=0; i < nLayers; i++)
      delete papoLayers[i];
@@ -80,7 +79,7 @@ ILI1Reader::~ILI1Reader()
 /* -------------------------------------------------------------------- */
 int ILI1Reader::OpenFile( const char *pszFilename )
 {
-    fpItf = VSIFOpen( pszFilename, "r" );
+    fpItf = VSIFOpenL( pszFilename, "r" );
     if( fpItf == NULL )
     {
         CPLError( CE_Failure, CPLE_OpenFailed,
@@ -109,7 +108,7 @@ int ILI1Reader::ReadModel( ImdReader *poImdReader,
   {
 #if DEBUG_VERBOSE
     CPLDebug( "OGR_ILI", "Adding OGRILI1Layer with table '%s'",
-              it->poTableDefn->GetName() );
+              it->GetTableDefnRef()->GetName() );
 #endif
     OGRILI1Layer* layer = new OGRILI1Layer( it->GetTableDefnRef(),
                                             it->poGeomFieldInfos, poDS);
@@ -130,7 +129,7 @@ int ILI1Reader::ReadModel( ImdReader *poImdReader,
             = it2->second.iliGeomType;
 #if DEBUG_VERBOSE
         CPLDebug( "OGR_ILI", "Adding OGRILI1Layer with geometry table '%s'",
-                  it2->second.geomTable->GetName() );
+                  poGeomTableDefn->GetName() );
 #endif
         OGRILI1Layer* geomlayer
             = new OGRILI1Layer(poGeomTableDefn, oGeomFieldInfos, poDS);
@@ -164,7 +163,7 @@ int ILI1Reader::ReadFeatures() {
         //read description
         do
         {
-          pszLine = CPLReadLine( fpItf );
+          pszLine = CPLReadLineL( fpItf );
         }
         while (pszLine && !STARTS_WITH_CI(pszLine, "////"));
         ret = (pszLine != NULL);
@@ -174,7 +173,7 @@ int ILI1Reader::ReadFeatures() {
         //read model
         do
         {
-          pszLine = CPLReadLine( fpItf );
+          pszLine = CPLReadLineL( fpItf );
         }
         while (pszLine && !STARTS_WITH_CI(pszLine, "////"));
         ret = (pszLine != NULL);
@@ -260,7 +259,7 @@ int ILI1Reader::ReadTable(CPL_UNUSED const char *layername) {
       const char *firsttok = CSLGetField(tokens, 0);
       if (EQUAL(firsttok, "OBJE"))
       {
-        if (featureDef->GetFieldCount() == 0)
+        if (featureDef->GetFieldCount() == 0 && curLayer->GetFeatureCount() == 0)
         {
           CPLError( CE_Warning, CPLE_AppDefined,
                     "No field definition found for table: %s",
@@ -376,7 +375,8 @@ int ILI1Reader::ReadTable(CPL_UNUSED const char *layername) {
         OGRwkbGeometryType geomType
             = (geomIdx < featureDef->GetGeomFieldCount()) ?
                featureDef->GetGeomFieldDefn(geomIdx)->GetType() : wkbNone;
-        ReadGeom(tokens, geomIdx, geomType, feature);
+        if( CSLCount(tokens) >= 3 )
+            ReadGeom(tokens, geomIdx, geomType, feature);
       }
       else if (EQUAL(firsttok, "ELIN"))
       {
@@ -391,7 +391,8 @@ int ILI1Reader::ReadTable(CPL_UNUSED const char *layername) {
             geomIdx++;
         } while (geomIdx < featureDef->GetGeomFieldCount() &&
                  featureDef->GetGeomFieldDefn(geomIdx)->GetType() == wkbPoint);
-        ReadGeom(tokens, geomIdx, wkbMultiLineString, feature);
+        if( CSLCount(tokens) >= 3 )
+            ReadGeom(tokens, geomIdx, wkbMultiLineString, feature);
       }
       else if (EQUAL(firsttok, "PERI"))
       {
@@ -463,31 +464,44 @@ void ILI1Reader::ReadGeom( char **stgeom, int geomIdx, OGRwkbGeometryType eType,
     while (!end && (tokens = ReadParseLine()) != NULL)
     {
       const char *firsttok = CSLGetField(tokens, 0);
-      if (EQUAL(firsttok, "LIPT"))
+      if( firsttok == NULL )
+      {
+          // do nothing
+      }
+      else if (EQUAL(firsttok, "LIPT") && CSLCount(tokens) >= 3)
       {
         ogrPoint.setX(CPLAtof(tokens[1])); ogrPoint.setY(CPLAtof(tokens[2]));
         if (arc) {
           arc->addPoint(&ogrPoint);
           OGRErr error =  ogrCurve->addCurveDirectly(arc);
           if (error != OGRERR_NONE) {
-            CPLError(CE_Warning, CPLE_AppDefined, "Added geometry: %s", arc->exportToJson() );
+            char* pszJSon = arc->exportToJson();
+            CPLError(CE_Warning, CPLE_AppDefined, "Could not add geometry: %s",
+                     pszJSon ? pszJSon : "(null)" );
+            CPLFree(pszJSon);
+            delete arc;
           }
           arc = NULL;
         }
         ogrLine->addPoint(&ogrPoint);
       }
-      else if (EQUAL(firsttok, "ARCP"))
+      else if (EQUAL(firsttok, "ARCP") && CSLCount(tokens) >= 3)
       {
         //Finish line and start arc
         if (ogrLine->getNumPoints() > 1) {
           OGRErr error = ogrCurve->addCurveDirectly(ogrLine);
           if (error != OGRERR_NONE) {
-            CPLError(CE_Warning, CPLE_AppDefined, "Added geometry: %s", ogrLine->exportToJson() );
+            char* pszJSon = ogrLine->exportToJson();
+            CPLError(CE_Warning, CPLE_AppDefined, "Could not add geometry: %s",
+                     pszJSon ? pszJSon : "(null)" );
+            CPLFree(pszJSon);
+            delete ogrLine;
           }
           ogrLine = new OGRLineString();
         } else {
           ogrLine->empty();
         }
+        delete arc;
         arc = new OGRCircularString();
         arc->addPoint(&ogrPoint);
         ogrPoint.setX(CPLAtof(tokens[1])); ogrPoint.setY(CPLAtof(tokens[2]));
@@ -498,7 +512,11 @@ void ILI1Reader::ReadGeom( char **stgeom, int geomIdx, OGRwkbGeometryType eType,
         if (ogrLine->getNumPoints() > 1) { // Ignore single LIPT after ARCP
           OGRErr error = ogrCurve->addCurveDirectly(ogrLine);
           if (error != OGRERR_NONE) {
-            CPLError(CE_Warning, CPLE_AppDefined, "Added geometry: %s", ogrLine->exportToJson() );
+            char* pszJSon = ogrLine->exportToJson();
+            CPLError(CE_Warning, CPLE_AppDefined, "Could not add geometry: %s",
+                     pszJSon ? pszJSon : "(null)" );
+            CPLFree(pszJSon);
+            delete ogrLine;
           }
           ogrLine = NULL;
         }
@@ -507,7 +525,11 @@ void ILI1Reader::ReadGeom( char **stgeom, int geomIdx, OGRwkbGeometryType eType,
           {
             OGRErr error = ogrMultiLine->addGeometryDirectly(ogrCurve);
             if (error != OGRERR_NONE) {
-              CPLError(CE_Warning, CPLE_AppDefined, "Added geometry: %s", ogrCurve->exportToJson() );
+              char* pszJSon = ogrCurve->exportToJson();
+              CPLError(CE_Warning, CPLE_AppDefined, "Could not add geometry: %s",
+                       pszJSon ? pszJSon : "(null)" );
+              CPLFree(pszJSon);
+              delete ogrCurve;
             }
             ogrCurve = NULL;
           }
@@ -515,7 +537,11 @@ void ILI1Reader::ReadGeom( char **stgeom, int geomIdx, OGRwkbGeometryType eType,
           {
             OGRErr error = ogrPoly->addRingDirectly(ogrCurve);
             if (error != OGRERR_NONE) {
-              CPLError(CE_Warning, CPLE_AppDefined, "Added geometry: %s", ogrCurve->exportToJson() );
+              char* pszJSon = ogrCurve->exportToJson();
+              CPLError(CE_Warning, CPLE_AppDefined, "Could not add geometry: %s",
+                       pszJSon ? pszJSon : "(null)" );
+              CPLFree(pszJSon);
+              delete ogrCurve;
             }
             ogrCurve = NULL;
           }
@@ -546,6 +572,7 @@ void ILI1Reader::ReadGeom( char **stgeom, int geomIdx, OGRwkbGeometryType eType,
 
       CSLDestroy(tokens);
     }
+    delete arc;
 
     delete ogrLine;
 
@@ -637,16 +664,22 @@ char ** ILI1Reader::ReadParseLine()
 {
     CPLAssert( fpItf != NULL );
     if( fpItf == NULL )
-        return( NULL );
+        return NULL;
 
-    const char  *pszLine = CPLReadLine( fpItf );
+    const char  *pszLine = CPLReadLineL( fpItf );
     if( pszLine == NULL )
-        return( NULL );
+        return NULL;
 
     if (strlen(pszLine) == 0) return NULL;
 
     char **tokens = CSLTokenizeString2( pszLine, " ", CSLT_PRESERVEESCAPES );
-    char *token = tokens[CSLCount(tokens)-1];
+    int nCount = CSLCount(tokens);
+    if( nCount == 0 )
+    {
+        CSLDestroy(tokens);
+        return NULL;
+    }
+    const char *token = tokens[nCount-1];
 
     //Append CONT lines
     while (strlen(pszLine) && token[0] == codeContinue && token[1] == '\0')
@@ -655,13 +688,14 @@ char ** ILI1Reader::ReadParseLine()
       CPLFree(tokens[CSLCount(tokens)-1]);
       tokens[CSLCount(tokens)-1] = NULL;
 
-      pszLine = CPLReadLine( fpItf );
+      pszLine = CPLReadLineL( fpItf );
       if( pszLine == NULL )
       {
           break;
       }
       char **conttok = CSLTokenizeString2( pszLine, " ", CSLT_PRESERVEESCAPES );
-      if (!conttok || !EQUAL(conttok[0], "CONT"))
+      if (!conttok || conttok[0] == NULL || !EQUAL(conttok[0], "CONT") ||
+          conttok[1] == NULL)
       {
           CSLDestroy(conttok);
           break;
@@ -673,10 +707,13 @@ char ** ILI1Reader::ReadParseLine()
 
       CSLDestroy(conttok);
     }
+    if( tokens[0] == NULL )
+    {
+        CSLDestroy(tokens);
+        tokens = NULL;
+    }
     return tokens;
 }
-
-
 
 IILI1Reader *CreateILI1Reader() {
     return new ILI1Reader();

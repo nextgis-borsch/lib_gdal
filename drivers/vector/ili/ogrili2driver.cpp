@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrili2driver.cpp 33109 2016-01-23 16:25:42Z rouault $
  *
  * Project:  Interlis 2 Translator
  * Purpose:  Implements OGRILI2Layer class.
@@ -33,8 +32,7 @@
 #include "ogr_ili2.h"
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id: ogrili2driver.cpp 33109 2016-01-23 16:25:42Z rouault $");
-
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                                Open()                                */
@@ -94,16 +92,6 @@ static GDALDataset *OGRILI2DriverCreate( const char * pszName,
 }
 
 /************************************************************************/
-/*                         OGRILI2DriverUnload()                        */
-/************************************************************************/
-
-static void OGRILI2DriverUnload ( GDALDriver* )
-{
-    if( getenv("ILI2_TERMINATE_XERCES") )
-        XMLPlatformUtils::Terminate();
-}
-
-/************************************************************************/
 /*                           RegisterOGRILI2()                           */
 /************************************************************************/
 
@@ -122,10 +110,10 @@ void RegisterOGRILI2() {
 "<OpenOptionList>"
 "  <Option name='MODEL' type='string' description='Filename of the model in IlisMeta format (.imd)'/>"
 "</OpenOptionList>" );
+    poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
 
     poDriver->pfnOpen = OGRILI2DriverOpen;
     poDriver->pfnCreate = OGRILI2DriverCreate;
-    poDriver->pfnUnloadDriver = OGRILI2DriverUnload;
 
     GetGDALDriverManager()->RegisterDriver( poDriver );
 }

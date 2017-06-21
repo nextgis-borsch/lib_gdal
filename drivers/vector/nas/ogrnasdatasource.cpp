@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrnasdatasource.cpp 32898 2016-01-10 14:44:10Z goatbar $
  *
  * Project:  OGR
  * Purpose:  Implements OGRNASDataSource class.
@@ -32,7 +31,7 @@
 #include "cpl_string.h"
 #include "ogr_nas.h"
 
-CPL_CVSID("$Id: ogrnasdatasource.cpp 32898 2016-01-10 14:44:10Z goatbar $");
+CPL_CVSID("$Id$");
 
 static const char * const apszURNNames[] =
 {
@@ -101,11 +100,11 @@ int OGRNASDataSource::Open( const char * pszNewName )
     bool bHaveSchema = false;
 
     const char *pszGFSFilename = CPLResetExtension( pszNewName, "gfs" );
-    VSIStatBuf sGFSStatBuf;
-    if( CPLStat( pszGFSFilename, &sGFSStatBuf ) == 0 )
+    VSIStatBufL sGFSStatBuf;
+    if( VSIStatL( pszGFSFilename, &sGFSStatBuf ) == 0 )
     {
-        VSIStatBuf sNASStatBuf;
-        if( CPLStat( pszNewName, &sNASStatBuf ) == 0 &&
+        VSIStatBufL sNASStatBuf;
+        if( VSIStatL( pszNewName, &sNASStatBuf ) == 0 &&
             sNASStatBuf.st_mtime > sGFSStatBuf.st_mtime )
         {
             CPLDebug( "NAS",
@@ -139,13 +138,13 @@ int OGRNASDataSource::Open( const char * pszNewName )
 /* -------------------------------------------------------------------- */
     if( !bHaveSchema && poReader->GetClassCount() > 0 )
     {
-        FILE *fp = NULL;
+        VSILFILE *fp = NULL;
 
         pszGFSFilename = CPLResetExtension( pszNewName, "gfs" );
-        if( CPLStat( pszGFSFilename, &sGFSStatBuf ) != 0
-            && (fp = VSIFOpen( pszGFSFilename, "wt" )) != NULL )
+        if( VSIStatL( pszGFSFilename, &sGFSStatBuf ) != 0
+            && (fp = VSIFOpenL( pszGFSFilename, "wt" )) != NULL )
         {
-            VSIFClose( fp );
+            VSIFCloseL( fp );
             poReader->SaveClasses( pszGFSFilename );
         }
         else
@@ -320,9 +319,9 @@ int OGRNASDataSource::TestCapability( const char * /* pszCap */ )
 void OGRNASDataSource::PopulateRelations()
 
 {
-    GMLFeature  *poFeature;
-
     poReader->ResetReading();
+
+    GMLFeature  *poFeature = NULL;
     while( (poFeature = poReader->NextFeature()) != NULL )
     {
         char **papszOBProperties = poFeature->GetOBProperties();

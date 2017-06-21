@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: nearblack_lib.cpp 33615 2016-03-02 20:19:22Z goatbar $
  *
  * Project:  GDAL Utilities
  * Purpose:  Convert nearly black or nearly white border to exact black/white.
@@ -28,13 +27,24 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "gdal.h"
-#include "cpl_conv.h"
-#include "cpl_string.h"
-#include <vector>
+#include "cpl_port.h"
+#include "gdal_utils.h"
 #include "gdal_utils_priv.h"
 
-CPL_CVSID("$Id: nearblack_lib.cpp 33615 2016-03-02 20:19:22Z goatbar $");
+#include <cstdlib>
+#include <cstring>
+
+#include <algorithm>
+#include <memory>
+#include <vector>
+
+#include "cpl_conv.h"
+#include "cpl_error.h"
+#include "cpl_progress.h"
+#include "cpl_string.h"
+#include "gdal.h"
+
+CPL_CVSID("$Id$");
 
 typedef std::vector<int> Color;
 typedef std::vector< Color > Colors;
@@ -228,7 +238,7 @@ GDALDatasetH CPL_DLL GDALNearblack( const char *pszDest, GDALDatasetH hDstDS,
 
     /***** set a color if there are no colors set? *****/
 
-    if ( oColors.size() == 0) {
+    if ( oColors.empty()) {
         Color oColor;
 
         /***** loop over the bands to get the right number of values *****/
@@ -483,7 +493,6 @@ GDALDatasetH CPL_DLL GDALNearblack( const char *pszDest, GDALDatasetH hDstDS,
             }
         }
 
-
         if( !(psOptions->pfnProgress( 0.5 + 0.5 * (nYSize-iLine) / (double) nYSize, NULL, psOptions->pProgressData )) )
         {
             if( bCloseOutDSOnError )
@@ -525,7 +534,7 @@ static void ProcessLine( GByte *pabyLine, GByte *pabyMask, int iStart,
 
     if( bDoVerticalCheck )
     {
-        int nXSize = MAX(iStart+1,iEnd+1);
+        const int nXSize = std::max(iStart + 1, iEnd + 1);
 
         for( i = 0; i < nXSize; i++ )
         {
@@ -694,9 +703,7 @@ static void ProcessLine( GByte *pabyLine, GByte *pabyMask, int iStart,
             }
         }
     }
-
 }
-
 
 /************************************************************************/
 /*                            IsInt()                                   */
@@ -757,9 +764,9 @@ GDALNearblackOptions *GDALNearblackOptionsNew(char** papszArgv,
 /*      Handle command line arguments.                                  */
 /* -------------------------------------------------------------------- */
     int argc = CSLCount(papszArgv);
-    for( int i = 0; i < argc; i++ )
+    for( int i = 0; papszArgv != NULL && i < argc; i++ )
     {
-        if( EQUAL(papszArgv[i],"-of") && i < argc-1 )
+        if( i < argc-1 && EQUAL(papszArgv[i],"-of") )
         {
             ++i;
             CPLFree(psOptions->pszFormat);
@@ -775,11 +782,11 @@ GDALNearblackOptions *GDALNearblackOptionsNew(char** papszArgv,
             if( psOptionsForBinary )
                 psOptionsForBinary->bQuiet = TRUE;
         }
-        else if( EQUAL(papszArgv[i],"-co") && i+1<argc )
+        else if( i+1<argc && EQUAL(papszArgv[i],"-co")  )
         {
             psOptions->papszCreationOptions = CSLAddString( psOptions->papszCreationOptions, papszArgv[++i] );
         }
-        else if( EQUAL(papszArgv[i], "-o") && i+1<argc )
+        else if( i+1<argc && EQUAL(papszArgv[i], "-o") )
         {
             i++;
             if( psOptionsForBinary )
@@ -794,7 +801,7 @@ GDALNearblackOptions *GDALNearblackOptionsNew(char** papszArgv,
 
         /***** -color c1,c2,c3...cn *****/
 
-        else if( EQUAL(papszArgv[i], "-color") && i+1<argc )
+        else if( i+1<argc && EQUAL(papszArgv[i], "-color") )
         {
             Color oColor;
 
@@ -827,7 +834,7 @@ GDALNearblackOptions *GDALNearblackOptionsNew(char** papszArgv,
 
             /***** check if the number of bands is consistent *****/
 
-            if ( psOptions->oColors.size() > 0 &&
+            if ( !psOptions->oColors.empty() &&
                  psOptions->oColors.front().size() != oColor.size() )
             {
                 CPLError(CE_Failure, CPLE_AppDefined,
@@ -841,11 +848,11 @@ GDALNearblackOptions *GDALNearblackOptionsNew(char** papszArgv,
             psOptions->oColors.push_back( oColor );
         }
 
-        else if( EQUAL(papszArgv[i], "-nb") && i+1<argc )
+        else if( i+1<argc && EQUAL(papszArgv[i], "-nb") )
         {
             psOptions->nMaxNonBlack = atoi(papszArgv[++i]);
         }
-        else if( EQUAL(papszArgv[i], "-near") && i+1<argc )
+        else if( i+1<argc && EQUAL(papszArgv[i], "-near") )
         {
             psOptions->nNearDist = atoi(papszArgv[++i]);
         }

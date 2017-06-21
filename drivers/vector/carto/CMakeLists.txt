@@ -3,7 +3,7 @@
 # Purpose:  CMake build scripts
 # Author:   Mikhail Gusev, gusevmihs@gmail.com
 ################################################################################
-# Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
+# Copyright (C) 2015-2017, NextGIS <info@nextgis.com>
 # Copyright (C) 2016 Mikhail Gusev
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -27,16 +27,15 @@
 
 CMAKE_DEPENDENT_OPTION(ENABLE_CARTO "Build Carto format" ON
                        "CURL_FOUND" OFF)
-if(ENABLE_CARTO)
+if(ENABLE_CARTO AND ENABLE_PGDUMP)
     set(TARGET_NAME vec_carto)
 
     add_definitions(-DCARTO_ENABLED)
 	set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DCARTO_ENABLED" PARENT_SCOPE)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-    #include_directories(${JSONC_INCLUDE_DIR})
-    include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/pgdump)
     include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/geojson)
+    include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/pgdump)
 
     set(LIB_HHEADERS
     )

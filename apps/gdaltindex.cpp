@@ -36,7 +36,7 @@
 
 #include <cmath>
 
-CPL_CVSID("$Id: gdaltindex.cpp 36537 2016-11-27 23:51:56Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                               Usage()                                */
@@ -628,8 +628,16 @@ int main( int argc, char *argv[] )
             {
                 if( nMaxFieldSize == 0 ||
                     strlen(projectionRef) <= nMaxFieldSize )
+                {
                     OGR_F_SetFieldString( hFeature, i_SrcSRSName,
                                           projectionRef );
+                }
+                else
+                {
+                    fprintf(stderr,
+                            "Cannot write WKT for file %s as it is too long!\n",
+                            fileNameToWrite);
+                }
             }
             else if( eSrcSRSFormat == FORMAT_PROJ )
             {

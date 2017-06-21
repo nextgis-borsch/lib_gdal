@@ -3,7 +3,7 @@
 # Purpose:  CMake build scripts
 # Author:   Mikhail Gusev, gusevmihs@gmail.com
 ################################################################################
-# Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
+# Copyright (C) 2015-2017, NextGIS <info@nextgis.com>
 # Copyright (C) 2016 Mikhail Gusev
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -34,6 +34,8 @@ if(ENABLE_PDS_ISIS2_ISIS3_VICAR)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
     include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/raw)
+    include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/geojson)
+    include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/vrt)
 
     set(LIB_HHEADERS
     )

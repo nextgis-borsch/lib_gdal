@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrocistatement.cpp 33713 2016-03-12 17:41:57Z goatbar $
  *
  * Project:  Oracle Spatial Driver
  * Purpose:  Implementation of OGROCIStatement, which encapsulates the
@@ -31,7 +30,7 @@
 #include "ogr_oci.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrocistatement.cpp 33713 2016-03-12 17:41:57Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                          OGROCIStatement()                           */
@@ -200,6 +199,19 @@ CPLErr OGROCIStatement::BindScalar( const char *pszPlaceName,
         return CE_Failure;
     else
         return CE_None;
+}
+
+/************************************************************************/
+/*                             BindString()                             */
+/************************************************************************/
+
+CPLErr OGROCIStatement::BindString( const char *pszPlaceName,
+                                    const char *pszData, sb2 *paeInd )
+
+{
+    return BindScalar(
+        pszPlaceName, const_cast<void*>(reinterpret_cast<const void*>(pszData)),
+        static_cast<int>(strlen(pszData)) + 1, SQLT_STR , paeInd);
 }
 
 /************************************************************************/

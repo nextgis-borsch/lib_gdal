@@ -7,7 +7,7 @@
 //   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2002-10-25
 //
 //   Each element of structure gribfield is defined as:
-//   
+//
 //   gribfield gfld;
 //
 //        gfld->version = GRIB edition number ( currently 2 )
@@ -124,10 +124,10 @@
 //        gfld->unpacked = logical value indicating whether the bitmap and
 //                        data values were unpacked.  If false,
 //                        gfld->bmap and gfld->fld pointers are nullified.
-//        gfld->expanded = Logical value indicating whether the data field 
-//                         was expanded to the grid in the case where a 
+//        gfld->expanded = Logical value indicating whether the data field
+//                         was expanded to the grid in the case where a
 //                         bit-map is present.  If true, the data points in
-//                         gfld->fld match the grid points and zeros were 
+//                         gfld->fld match the grid points and zeros were
 //                         inserted at grid points where data was bit-mapped
 //                         out.  If false, the data values in gfld->fld were
 //                         not expanded to the grid and are just a consecutive
@@ -198,16 +198,18 @@ typedef struct gribfield gribfield;
 
 #define RINT(d)   (floor(d+0.5))
 
+#define G2_UNKNOWN_SIZE -1
+
 /*  Prototypes for unpacking API  */
 void seekgb(FILE *,g2int ,g2int ,g2int *,g2int *);
 g2int g2_info(unsigned char *,g2int *,g2int *,g2int *,g2int *);
-g2int g2_getfld(unsigned char *,g2int ,g2int ,g2int ,gribfield **);
+g2int g2_getfld(unsigned char *,g2int cgrib_length,g2int ,g2int ,g2int ,gribfield **);
 void g2_free(gribfield *);
 
 /*  Prototypes for packing API  */
 g2int g2_create(unsigned char *,g2int *,g2int *);
 g2int g2_addlocal(unsigned char *,unsigned char *,g2int );
-g2int g2_addgrid(unsigned char *,g2int *,g2int *,g2int *,g2int ); 
+g2int g2_addgrid(unsigned char *,g2int *,g2int *,g2int *,g2int );
 g2int g2_addfield(unsigned char *,g2int ,g2int *,
                        g2float *,g2int ,g2int ,g2int *,
                        g2float *,g2int ,g2int ,g2int *);
@@ -226,9 +228,10 @@ extern xxtemplate *extgridtemplate(g2int,g2int *);
 extern void simpack(g2float *,g2int,g2int *,unsigned char *,g2int *);
 extern void compack(g2float *,g2int,g2int,g2int *,unsigned char *,g2int *);
 void misspack(g2float *,g2int ,g2int ,g2int *, unsigned char *, g2int *);
-void gbit(unsigned char *,g2int *,g2int ,g2int );
+int gbit(unsigned char *,g2int *,g2int ,g2int );
+int gbit2(unsigned char *,g2int in_length,g2int *,g2int ,g2int );
 void sbit(unsigned char *,const g2int *,g2int ,g2int );
-void gbits(unsigned char *,g2int *,g2int ,g2int ,g2int ,g2int );
+int gbits(unsigned char *,g2int in_length,g2int *,g2int ,g2int ,g2int ,g2int );
 void sbits(unsigned char *,const g2int *,g2int ,g2int ,g2int ,g2int );
 
 int pack_gp(g2int *, g2int *, g2int *,
@@ -239,18 +242,18 @@ int pack_gp(g2int *, g2int *, g2int *,
 
 g2int g2_unpack1(unsigned char *cgrib,g2int *iofst,g2int **ids,g2int *idslen);
 g2int g2_unpack2(unsigned char *cgrib,g2int *iofst,g2int *lencsec2,unsigned char **csec2);
-g2int g2_unpack3(unsigned char *cgrib,g2int *iofst,g2int **igds,g2int **igdstmpl,
+g2int g2_unpack3(unsigned char *cgrib,g2int cgrib_length,g2int *iofst,g2int **igds,g2int **igdstmpl,
                          g2int *mapgridlen,g2int **ideflist,g2int *idefnum);
-g2int g2_unpack4(unsigned char *cgrib,g2int *iofst,g2int *ipdsnum,g2int **ipdstmpl,
+g2int g2_unpack4(unsigned char *cgrib,g2int cgrib_length,g2int *iofst,g2int *ipdsnum,g2int **ipdstmpl,
                g2int *mappdslen,g2float **coordlist,g2int *numcoord);
-g2int g2_unpack5(unsigned char *cgrib,g2int *iofst,g2int *ndpts,g2int *idrsnum,
+g2int g2_unpack5(unsigned char *cgrib,g2int cgrib_length,g2int *iofst,g2int *ndpts,g2int *idrsnum,
                g2int **idrstmpl,g2int *mapdrslen);
-g2int g2_unpack6(unsigned char *cgrib,g2int *iofst,g2int ngpts,g2int *ibmap,
+g2int g2_unpack6(unsigned char *cgrib,g2int cgrib_length,g2int *iofst,g2int ngpts,g2int *ibmap,
                g2int **bmap);
-g2int g2_unpack7(unsigned char *cgrib,g2int *iofst,g2int igdsnum,g2int *igdstmpl,
+g2int g2_unpack7(unsigned char *cgrib,g2int cgrib_length,g2int *iofst,g2int igdsnum,g2int *igdstmpl,
                g2int idrsnum,g2int *idrstmpl,g2int ndpts,g2float **fld);
-g2int simunpack(unsigned char *,g2int *, g2int,g2float *);
-int comunpack(unsigned char *,g2int,g2int,g2int *,g2int,g2float *);
+g2int simunpack(unsigned char *,g2int cpack_length,g2int *, g2int,g2float *);
+int comunpack(unsigned char *,g2int cpack_length,g2int,g2int,g2int *,g2int,g2float *);
 g2int specunpack(unsigned char *,g2int *,g2int,g2int,g2int, g2int, g2float *);
 g2int jpcunpack(unsigned char *,g2int,g2int *,g2int, g2float *);
 void specpack(g2float *fld,g2int ndpts,g2int JJ,g2int KK,g2int MM,
@@ -270,8 +273,17 @@ g2int getpoly(unsigned char *csec3,g2int *jj,g2int *kk,g2int *mm);
 void jpcpack(g2float *fld,g2int width,g2int height,g2int *idrstmpl,
              unsigned char *cpack,g2int *lcpack);
 int enc_jpeg2000(unsigned char *cin,g2int width,g2int height,g2int nbits,
-                 g2int ltype, g2int ratio, g2int retry, char *outjpc, 
+                 g2int ltype, g2int ratio, g2int retry, char *outjpc,
                  g2int jpclen);
+
+int dec_png(unsigned char *pngbuf,g2int len,g2int *width,g2int *height,unsigned char *cout, g2int ndpts, g2int nbits);
+int enc_png(char *data,g2int width,g2int height,g2int nbits,char *pngbuf);
+g2int pngunpack(unsigned char *cpack,g2int len,g2int *idrstmpl,g2int ndpts,
+                g2float *fld);
+void pngpack(g2float *fld,g2int width,g2int height,g2int *idrstmpl,
+             unsigned char *cpack,g2int *lcpack);
+
+int dec_jpeg2000(const void *injpc,g2int bufsize,g2int *outfld,g2int outpixels);
 
 #endif  /*  grib2_H  */
 

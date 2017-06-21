@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: rpftocfile.cpp 33717 2016-03-14 06:29:14Z goatbar $
  *
  * Project:  RPF A.TOC read Library
  * Purpose:  Module responsible for opening a RPF TOC file, populating RPFToc
@@ -44,12 +43,22 @@
  ******************************************************************************
  */
 
+#include "cpl_port.h"
 #include "rpftoclib.h"
-#include "cpl_vsi.h"
-#include "cpl_conv.h"
-#include "cpl_string.h"
 
-CPL_CVSID("$Id: rpftocfile.cpp 33717 2016-03-14 06:29:14Z goatbar $");
+#include <climits>
+#include <cstring>
+#if HAVE_FCNTL_H
+#  include <fcntl.h>
+#endif
+
+#include "cpl_conv.h"
+#include "cpl_error.h"
+#include "cpl_string.h"
+#include "cpl_vsi.h"
+#include "nitflib.h"
+
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                        RPFTOCTrim()                                    */
@@ -103,7 +112,6 @@ RPFToc* RPFTOCRead(const char* pszFilename, NITFFile* psFile)
 
     return  RPFTOCReadFromBuffer(pszFilename, psFile->fp, pachTRE);
 }
-
 
 /* This function is directly inspired by function parse_toc coming from ogdi/driver/rpf/utils.c */
 
@@ -298,10 +306,40 @@ RPFToc* RPFTOCReadFromBuffer(const char* pszFilename, VSILFILE* fp, const char* 
             return NULL;
         }
 
-        if( toc->entries[i].nHorizFrames == 0 ||
+        if( toc->entries[i].vertInterval <= 1e-10 ||
+            !CPLIsFinite(toc->entries[i].vertInterval) ||
+            toc->entries[i].horizInterval <= 1e-10 ||
+            !CPLIsFinite(toc->entries[i].horizInterval) ||
+            !(fabs(toc->entries[i].seLong) <= 360.0) ||
+            !(fabs(toc->entries[i].nwLong) <= 360.0) ||
+            !(fabs(toc->entries[i].nwLat) <= 90.0) ||
+            !(fabs(toc->entries[i].seLat) <= 90.0) ||
+            toc->entries[i].seLong < toc->entries[i].nwLong ||
+            toc->entries[i].nwLat < toc->entries[i].seLat ||
+            toc->entries[i].nHorizFrames == 0 ||
             toc->entries[i].nVertFrames == 0 ||
             toc->entries[i].nHorizFrames > INT_MAX / toc->entries[i].nVertFrames )
         {
+            CPLError(CE_Failure, CPLE_FileIO, "Invalid TOC entry");
+            toc->entries[i].nVertFrames = 0;
+            toc->entries[i].nHorizFrames = 0;
+            RPFTOCFree(toc);
+            return NULL;
+        }
+
+        // TODO: We could probably use another data structure, like a list,
+        // instead of an array referenced by the frame coordinate...
+        if( static_cast<int>(toc->entries[i].nHorizFrames *
+                                  toc->entries[i].nVertFrames) >
+                 atoi(CPLGetConfigOption("RPFTOC_MAX_FRAME_COUNT", "1000000")) )
+        {
+            CPLError(CE_Failure, CPLE_AppDefined,
+                     "nHorizFrames=%d x nVertFrames=%d > %d. Please raise "
+                     "the value of the RPFTOC_MAX_FRAME_COUNT configuration "
+                     "option to more than %d if this dataset is legitimate.",
+                     toc->entries[i].nHorizFrames, toc->entries[i].nVertFrames,
+                     atoi(CPLGetConfigOption("RPFTOC_MAX_FRAME_COUNT", "1000000")),
+                     toc->entries[i].nHorizFrames * toc->entries[i].nVertFrames );
             toc->entries[i].frameEntries = NULL;
         }
         else
@@ -518,10 +556,10 @@ RPFToc* RPFTOCReadFromBuffer(const char* pszFilename, VSILFILE* fp, const char* 
 
         /* if nFrameFileIndexRecords == 65535 and pathLength == 65535 for each record,
            this leads to 4 GB allocation... Protect against this case */
-        if (!bOK || pathLength > 256)
+        if (!bOK || pathLength == 0 || pathLength > 256)
         {
             CPLError( CE_Failure, CPLE_NotSupported,
-                      "Path length is big : %d. Probably corrupted TOC file.",
+                      "Path length is invalid : %d. Probably corrupted TOC file.",
                       static_cast<int>( pathLength ) );
             RPFTOCFree(toc);
             return NULL;
@@ -557,7 +595,7 @@ RPFToc* RPFTOCReadFromBuffer(const char* pszFilename, VSILFILE* fp, const char* 
         {
             char* baseDir = CPLStrdup(CPLGetDirname(pszFilename));
             VSIStatBufL sStatBuf;
-            char* subdir;
+            char* subdir = NULL;
             if (CPLIsFilenameRelative(frameEntry->directory) == FALSE)
                 subdir = CPLStrdup(frameEntry->directory);
             else if (frameEntry->directory[0] == '.' && frameEntry->directory[1] == 0)

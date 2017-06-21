@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cplkeywordparser.h 33666 2016-03-07 05:21:07Z goatbar $
+ * $Id$
  *
  * Project:  Common Portability Library
  * Purpose:  Implementation of CPLKeywordParser - a class for parsing
@@ -41,6 +41,8 @@
 /* ==================================================================== */
 /************************************************************************/
 
+/*! @cond Doxygen_Suppress */
+
 class CPLKeywordParser
 {
     char     **papszKeywordList;
@@ -62,5 +64,7 @@ public:
     const char *GetKeyword( const char *pszPath, const char *pszDefault=NULL );
     char  **GetAllKeywords() { return papszKeywordList; }
 };
+
+/*! @endcond */
 
 #endif /* def CPL_KEYWORD_PARSER */

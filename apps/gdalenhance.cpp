@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: gdalenhance.cpp 33615 2016-03-02 20:19:22Z goatbar $
  *
  * Project:  GDAL Utilities
  * Purpose:  Command line application to do image enhancement.
@@ -35,7 +34,9 @@
 #include "vrtdataset.h"
 #include "commonutils.h"
 
-CPL_CVSID("$Id: gdalenhance.cpp 33615 2016-03-02 20:19:22Z goatbar $");
+#include <algorithm>
+
+CPL_CVSID("$Id$");
 
 static int
 ComputeEqualizationLUTs( GDALDatasetH hDataset,  int nLUTBins,
@@ -66,11 +67,11 @@ static void Usage()
             "       [-of format] [-co \"NAME=VALUE\"]*\n"
             "       [-ot {Byte/Int16/UInt16/UInt32/Int32/Float32/Float64/\n"
             "             CInt16/CInt32/CFloat32/CFloat64}]\n"
-            "       [-src_scale[_n] src_min src_max]\n"
-            "       [-dst_scale[_n] dst_min dst_max]\n"
-            "       [-lutbins count]\n"
-            "       [-s_nodata[_n] value]\n"
-            "       [-stddev multiplier]\n"
+//            "       [-src_scale[_n] src_min src_max]\n"
+//            "       [-dst_scale[_n] dst_min dst_max]\n"
+//            "       [-lutbins count]\n"
+//            "       [-s_nodata[_n] value]\n"
+//            "       [-stddev multiplier]\n"
             "       [-equalize]\n"
             "       [-config filename]\n"
             "       src_dataset dst_dataset\n\n" );
@@ -85,12 +86,12 @@ static void Usage()
 int main( int argc, char ** argv )
 
 {
-    GDALDatasetH	hDataset, hOutDS;
-    int			i;
-    const char		*pszSource=NULL, *pszDest=NULL, *pszFormat = "GTiff";
+    GDALDatasetH        hDataset, hOutDS;
+    int                 i;
+    const char          *pszSource=NULL, *pszDest=NULL, *pszFormat = "GTiff";
     int bFormatExplicitlySet = FALSE;
-    GDALDriverH		hDriver;
-    GDALDataType	eOutputType = GDT_Unknown;
+    GDALDriverH         hDriver;
+    GDALDataType        eOutputType = GDT_Unknown;
     char                **papszCreateOptions = NULL;
     GDALProgressFunc    pfnProgress = GDALTermProgress;
     int                 nLUTBins = 256;
@@ -126,13 +127,13 @@ int main( int argc, char ** argv )
                    argv[0], GDAL_RELEASE_NAME, GDALVersionInfo("RELEASE_NAME"));
             return 0;
         }
-        else if( EQUAL(argv[i],"-of") && i < argc-1 )
+        else if( i < argc-1 && EQUAL(argv[i],"-of") )
         {
             pszFormat = argv[++i];
             bFormatExplicitlySet = TRUE;
         }
 
-        else if( EQUAL(argv[i],"-ot") && i < argc-1 )
+        else if( i < argc-1 && EQUAL(argv[i],"-ot") )
         {
             int iType;
 
@@ -160,24 +161,24 @@ int main( int argc, char ** argv )
             i += 1;
         }
 
-        else if( EQUAL(argv[i],"-co") && i < argc-1 )
+        else if( i < argc-1 && EQUAL(argv[i],"-co") )
         {
             papszCreateOptions = CSLAddString( papszCreateOptions, argv[++i] );
         }
 
-        else if( STARTS_WITH_CI(argv[i], "-src_scale") && i < argc-2)
+        else if( i < argc-1 && STARTS_WITH_CI(argv[i], "-src_scale") )
         {
             // TODO
             i += 2;
         }
 
-        else if( STARTS_WITH_CI(argv[i], "-dst_scale") && i < argc-2 )
+        else if( i < argc-2 && STARTS_WITH_CI(argv[i], "-dst_scale") )
         {
             // TODO
             i += 2;
         }
 
-        else if( EQUAL(argv[i],"-config") && i < argc-1 )
+        else if( i < argc-1 && EQUAL(argv[i],"-config") )
         {
             pszConfigFile = argv[++i];
         }
@@ -556,8 +557,7 @@ ComputeEqualizationLUTs( GDALDatasetH hDataset, int nLUTBins,
             iHist = (iLUT * nHistSize) / nLUTBins;
             int nValue = (int) ((panCumHist[iHist] * nLUTBins) / nTotal);
 
-            panLUT[iLUT] = MAX(0,MIN(nLUTBins-1,nValue));
-
+            panLUT[iLUT] = std::max(0, std::min(nLUTBins - 1, nValue));
         }
 
         (*ppapanLUTs)[iBand] = panLUT;
@@ -615,8 +615,9 @@ static CPLErr EnhancerCallback( void *hCBData,
             continue;
         }
 
-        int iBin = (int) ((pafSrcImage[iPixel] - psEInfo->dfScaleMin)*dfScale);
-        iBin = MAX(0,MIN(psEInfo->nLUTBins-1,iBin));
+        int iBin = static_cast<int>(
+            (pafSrcImage[iPixel] - psEInfo->dfScaleMin) * dfScale);
+        iBin = std::max(0, std::min(psEInfo->nLUTBins - 1, iBin));
 
         if( psEInfo->panLUT )
             pabyOutImage[iPixel] = (GByte) psEInfo->panLUT[iBin];

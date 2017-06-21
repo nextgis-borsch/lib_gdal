@@ -7,7 +7,7 @@
 # Howard Butler hobu.inc@gmail.com
 
 
-gdal_version = '2.1.3'
+gdal_version = '2.2.0'
 
 import sys
 import os
@@ -34,7 +34,7 @@ if 'CXX' in os.environ and os.environ['CXX'].strip().find(' ') >= 0:
 HAVE_NUMPY=False
 HAVE_SETUPTOOLS = False
 BUILD_FOR_CHEESESHOP = False
-GNM_ENABLED = False
+GNM_ENABLED = True
 
 # ---------------------------------------------------------------------------
 # Default build options
@@ -190,8 +190,14 @@ class gdal_ext(build_ext):
     def finalize_options(self):
         if self.include_dirs is None:
             self.include_dirs = include_dirs
+        # Needed on recent MacOSX
+        elif isinstance(self.include_dirs, str) and sys.platform == 'darwin':
+            self.include_dirs += ':' + ':'.join(include_dirs)
         if self.library_dirs is None:
             self.library_dirs = library_dirs
+        # Needed on recent MacOSX
+        elif isinstance(self.library_dirs, str) and sys.platform == 'darwin':
+            self.library_dirs += ':' + ':'.join(library_dirs)
         if self.libraries is None:
             if self.get_compiler() == 'msvc':
                 libraries.remove('gdal')
@@ -262,8 +268,8 @@ py_modules = ['gdal',
 if os.path.exists('setup_vars.ini'):
     with open('setup_vars.ini') as f:
         lines = f.readlines()
-        if 'GNM_ENABLED=yes' in lines or 'GNM_ENABLED=yes\n' in lines:
-            GNM_ENABLED = True
+        if 'GNM_ENABLED=no' in lines or 'GNM_ENABLED=no\n' in lines:
+            GNM_ENABLED = False
 
 if GNM_ENABLED:
     ext_modules.append(gnm_module)

@@ -1,5 +1,5 @@
 /*
- * $Id: gnm_php.i 34525 2016-07-03 02:53:47Z goatbar $
+ * $Id$
  *
  * php specific code for gnm bindings.
  */

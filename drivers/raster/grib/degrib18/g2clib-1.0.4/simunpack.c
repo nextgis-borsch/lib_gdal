@@ -2,15 +2,13 @@
 #include <stdlib.h>
 #include "grib2.h"
 
-g2int simunpack(unsigned char *cpack,g2int *idrstmpl,g2int ndpts,g2float *fld);
-
-g2int simunpack(unsigned char *cpack,g2int *idrstmpl,g2int ndpts,g2float *fld)
+g2int simunpack(unsigned char *cpack,g2int cpack_length,g2int *idrstmpl,g2int ndpts,g2float *fld)
 ////$$$  SUBPROGRAM DOCUMENTATION BLOCK
 //                .      .    .                                       .
 // SUBPROGRAM:    simunpack
 //   PRGMMR: Gilbert          ORG: W/NP11    DATE: 2002-10-29
 //
-// ABSTRACT: This subroutine unpacks a data field that was packed using a 
+// ABSTRACT: This subroutine unpacks a data field that was packed using a
 //   simple packing algorithm as defined in the GRIB2 documentation,
 //   using info from the GRIB2 Data Representation Template 5.0.
 //
@@ -44,8 +42,8 @@ g2int simunpack(unsigned char *cpack,g2int *idrstmpl,g2int ndpts,g2float *fld)
       g2float ref,bscale,dscale;
 
       rdieee(idrstmpl+0,&ref,1);
-      bscale = int_power(2.0,idrstmpl[1]);
-      dscale = int_power(10.0,-idrstmpl[2]);
+      bscale = (float)int_power(2.0,idrstmpl[1]);
+      dscale = (float)int_power(10.0,-idrstmpl[2]);
       nbits = idrstmpl[3];
       /* itype = idrstmpl[4]; */
 
@@ -61,7 +59,7 @@ g2int simunpack(unsigned char *cpack,g2int *idrstmpl,g2int ndpts,g2float *fld)
 //  is the data value at each gridpoint
 //
       if (nbits != 0) {
-         gbits(cpack,ifld,0,nbits,0,ndpts);
+         gbits(cpack,cpack_length,ifld,0,nbits,0,ndpts);
          for (j=0;j<ndpts;j++) {
            fld[j]=(((g2float)ifld[j]*bscale)+ref)*dscale;
          }

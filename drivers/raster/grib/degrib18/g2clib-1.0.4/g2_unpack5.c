@@ -3,11 +3,11 @@
 #include "grib2.h"
 
 
-g2int g2_unpack5(unsigned char *cgrib,g2int *iofst,g2int *ndpts,g2int *idrsnum,
+g2int g2_unpack5(unsigned char *cgrib,g2int cgrib_length,g2int *iofst,g2int *ndpts,g2int *idrsnum,
                g2int **idrstmpl,g2int *mapdrslen)
 ////$$$  SUBPROGRAM DOCUMENTATION BLOCK
 //                .      .    .                                       .
-// SUBPROGRAM:    g2_unpack5 
+// SUBPROGRAM:    g2_unpack5
 //   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2002-10-31
 //
 // ABSTRACT: This subroutine unpacks Section 5 (Data Representation Section)
@@ -22,11 +22,11 @@ g2int g2_unpack5(unsigned char *cgrib,g2int *iofst,g2int *ndpts,g2int *idrsnum,
 //     cgrib    - char array containing Section 5 of the GRIB2 message
 //     iofst    - Bit offset for the beginning of Section 5 in cgrib.
 //
-//   OUTPUT ARGUMENTS:      
+//   OUTPUT ARGUMENTS:
 //     iofst    - Bit offset at the end of Section 5, returned.
 //     ndpts    - Number of data points unpacked and returned.
 //     idrsnum  - Data Representation Template Number ( see Code Table 5.0)
-//     idrstmpl - Pointer to an integer array containing the data values for 
+//     idrstmpl - Pointer to an integer array containing the data values for
 //                the specified Data Representation
 //                Template ( N=idrsnum ).  Each element of this integer
 //                array contains an entry (in the order specified) of Data
@@ -46,7 +46,7 @@ g2int g2_unpack5(unsigned char *cgrib,g2int *iofst,g2int *ndpts,g2int *idrsnum,
 //
 // ATTRIBUTES:
 //   LANGUAGE: C
-//   MACHINE:  
+//   MACHINE:
 //
 //$$$//
 {
@@ -58,9 +58,9 @@ g2int g2_unpack5(unsigned char *cgrib,g2int *iofst,g2int *ndpts,g2int *idrsnum,
       ierr=0;
       *idrstmpl=0;       //NULL
 
-      gbit(cgrib,&lensec,*iofst,32);        // Get Length of Section
+      gbit2(cgrib,cgrib_length,&lensec,*iofst,32);        // Get Length of Section
       *iofst=*iofst+32;
-      gbit(cgrib,&isecnum,*iofst,8);         // Get Section Number
+      gbit2(cgrib,cgrib_length,&isecnum,*iofst,8);         // Get Section Number
       *iofst=*iofst+8;
 
       if ( isecnum != 5 ) {
@@ -71,9 +71,9 @@ g2int g2_unpack5(unsigned char *cgrib,g2int *iofst,g2int *ndpts,g2int *idrsnum,
          return(ierr);
       }
 
-      gbit(cgrib,ndpts,*iofst,32);    // Get num of data points
+      gbit2(cgrib,cgrib_length,ndpts,*iofst,32);    // Get num of data points
       *iofst=*iofst+32;
-      gbit(cgrib,idrsnum,*iofst,16);     // Get Data Rep Template Num.
+      gbit2(cgrib,cgrib_length,idrsnum,*iofst,16);     // Get Data Rep Template Num.
       *iofst=*iofst+16;
 
       //   Gen Data Representation Template
@@ -95,7 +95,7 @@ g2int g2_unpack5(unsigned char *cgrib,g2int *iofst,g2int *ndpts,g2int *idrsnum,
          ierr=6;
          *mapdrslen=0;
          *idrstmpl=0;     //NULL
-         if ( mapdrs != 0 ) free(mapdrs);
+         free(mapdrs);
          return(ierr);
       }
       else {
@@ -104,11 +104,11 @@ g2int g2_unpack5(unsigned char *cgrib,g2int *iofst,g2int *ndpts,g2int *idrsnum,
       for (i=0;i<mapdrs->maplen;i++) {
         nbits=abs(mapdrs->map[i])*8;
         if ( mapdrs->map[i] >= 0 ) {
-          gbit(cgrib,lidrstmpl+i,*iofst,nbits);
+          gbit2(cgrib,cgrib_length,lidrstmpl+i,*iofst,nbits);
         }
         else {
-          gbit(cgrib,&isign,*iofst,1);
-          gbit(cgrib,lidrstmpl+i,*iofst+1,nbits-1);
+          gbit2(cgrib,cgrib_length,&isign,*iofst,1);
+          gbit2(cgrib,cgrib_length,lidrstmpl+i,*iofst+1,nbits-1);
           if (isign == 1) lidrstmpl[i]=-1*lidrstmpl[i];
         }
         *iofst=*iofst+nbits;
@@ -131,11 +131,11 @@ g2int g2_unpack5(unsigned char *cgrib,g2int *iofst,g2int *ndpts,g2int *idrsnum,
         for (i=*mapdrslen;i<newlen;i++) {
           nbits=abs(mapdrs->ext[j])*8;
           if ( mapdrs->ext[j] >= 0 ) {
-            gbit(cgrib,lidrstmpl+i,*iofst,nbits);
+            gbit2(cgrib,cgrib_length,lidrstmpl+i,*iofst,nbits);
           }
           else {
-            gbit(cgrib,&isign,*iofst,1);
-            gbit(cgrib,lidrstmpl+i,*iofst+1,nbits-1);
+            gbit2(cgrib,cgrib_length,&isign,*iofst,1);
+            gbit2(cgrib,cgrib_length,lidrstmpl+i,*iofst+1,nbits-1);
             if (isign == 1) lidrstmpl[i]=-1*lidrstmpl[i];
           }
           *iofst=*iofst+nbits;

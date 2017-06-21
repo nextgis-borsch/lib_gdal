@@ -13,7 +13,7 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h> 
+#include <string.h>
 #include <math.h>
 
 #include "grib2api.h"
@@ -577,7 +577,7 @@ int fillSect3 (enGribMeta *en, uShort2 tmplNum, double majEarth,
  * NOTES
  *****************************************************************************
  */
-static int getCodedTime (uChar timeCode, double time, sInt4 *ans)
+static int getCodedTime (uChar timeCode, double l_time, sInt4 *ans)
 {
    /* Following is a lookup table for unit conversion (see code table 4.4). */
    static const sInt4 unit2sec[] = {
@@ -588,7 +588,7 @@ static int getCodedTime (uChar timeCode, double time, sInt4 *ans)
 
    if (timeCode < 14) {
       if (unit2sec[timeCode] != 0) {
-         *ans = NearestInt (time / unit2sec[timeCode]);
+         *ans = NearestInt (l_time / unit2sec[timeCode]);
          return 0;
       }
    }
@@ -1350,7 +1350,7 @@ int fillSect5 (enGribMeta *en, uShort2 tmplNum, sShort2 BSF, sShort2 DSF,
  *    > 0 (max length of sect 6 and sect 7).
  *    -1 Can't handle this kind of bitmap (pre-defined).
  *    -2 No missing value when trying to create the bmap.
- *    -3 Can't handle Nx * Ny != lenData. 
+ *    -3 Can't handle Nx * Ny != lenData.
  *
  *  4/2006 Arthur Taylor (MDL): Created.
  *

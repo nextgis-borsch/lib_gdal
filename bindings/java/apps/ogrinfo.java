@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrinfo.java 34011 2016-04-18 16:22:21Z rouault $
+ * $Id$
  *
  * Name:     ogrinfo.java
  * Project:  GDAL SWIG Interface

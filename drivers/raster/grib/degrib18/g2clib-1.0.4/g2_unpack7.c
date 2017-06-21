@@ -10,11 +10,11 @@
 
 
 
-g2int g2_unpack7(unsigned char *cgrib,g2int *iofst,g2int igdsnum,g2int *igdstmpl,
+g2int g2_unpack7(unsigned char *cgrib,g2int cgrib_length,g2int *iofst,g2int igdsnum,g2int *igdstmpl,
                g2int idrsnum,g2int *idrstmpl,g2int ndpts,g2float **fld)
 //$$$  SUBPROGRAM DOCUMENTATION BLOCK
 //                .      .    .                                       .
-// SUBPROGRAM:    g2_unpack7 
+// SUBPROGRAM:    g2_unpack7
 //   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2002-10-31
 //
 // ABSTRACT: This subroutine unpacks Section 7 (Data Section)
@@ -52,7 +52,7 @@ g2int g2_unpack7(unsigned char *cgrib,g2int *iofst,g2int igdsnum,g2int *igdstmpl
 //                Representation Template 5.N
 //     ndpts    - Number of data points unpacked and returned.
 //
-//   OUTPUT ARGUMENTS:      
+//   OUTPUT ARGUMENTS:
 //     iofst    - Bit offset at the end of Section 7, returned.
 //     fld      - Pointer to a float array containing the unpacked data field.
 //
@@ -81,7 +81,7 @@ g2int g2_unpack7(unsigned char *cgrib,g2int *iofst,g2int igdsnum,g2int *igdstmpl
       *fld=0;     //NULL
 
       gbit(cgrib,&lensec,*iofst,32);        // Get Length of Section
-      *iofst=*iofst+32;    
+      *iofst=*iofst+32;
       gbit(cgrib,&isecnum,*iofst,8);         // Get Section Number
       *iofst=*iofst+8;
 
@@ -92,6 +92,9 @@ g2int g2_unpack7(unsigned char *cgrib,g2int *iofst,g2int igdsnum,g2int *igdstmpl
       }
 
       ipos=(*iofst/8);
+      if( ipos >= cgrib_length ) {
+          return 7;
+      }
       lfld=(g2float *)calloc(ndpts,sizeof(g2float));
       if (lfld == 0) {
          ierr=6;
@@ -101,19 +104,19 @@ g2int g2_unpack7(unsigned char *cgrib,g2int *iofst,g2int igdsnum,g2int *igdstmpl
          *fld=lfld;
       }
 
-      if (idrsnum == 0) 
-        simunpack(cgrib+ipos,idrstmpl,ndpts,lfld);
+      if (idrsnum == 0)
+        simunpack(cgrib+ipos,cgrib_length-ipos,idrstmpl,ndpts,lfld);
       else if (idrsnum == 2 || idrsnum == 3) {
-        if (comunpack(cgrib+ipos,lensec,idrsnum,idrstmpl,ndpts,lfld) != 0) {
+        if (comunpack(cgrib+ipos,cgrib_length-ipos,lensec,idrsnum,idrstmpl,ndpts,lfld) != 0) {
           return 7;
         }
       }
       else if (idrsnum == 50) {            // Spectral Simple
-        simunpack(cgrib+ipos,idrstmpl,ndpts-1,lfld+1);
+        simunpack(cgrib+ipos,cgrib_length-ipos,idrstmpl,ndpts-1,lfld+1);
         rdieee(idrstmpl+4,lfld+0,1);
       }
       else if (idrsnum == 51)              //  Spectral complex
-        if ( igdsnum>=50 && igdsnum <=53 ) 
+        if ( igdsnum>=50 && igdsnum <=53 )
           specunpack(cgrib+ipos,idrstmpl,ndpts,igdstmpl[0],igdstmpl[2],igdstmpl[2],lfld);
         else {
           fprintf(stderr,"g2_unpack7: Cannot use GDT 3.%d to unpack Data Section 5.51.\n",(int)igdsnum);
@@ -139,7 +142,7 @@ g2int g2_unpack7(unsigned char *cgrib,g2int *iofst,g2int igdsnum,g2int *igdstmpl
       }
 
       *iofst=*iofst+(8*lensec);
-      
+
       return(ierr);    // End of Section 7 processing
 
 }

@@ -1,5 +1,5 @@
 /*
- * $Id: gnm_python.i 34525 2016-07-03 02:53:47Z goatbar $
+ * $Id$
  *
  * python specific code for ogr bindings.
  */
@@ -19,6 +19,9 @@
 %rename (RegisterAll) OGRRegisterAll();
 
 #ifndef FROM_GDAL_I
+%{
+#define MODULE_NAME           "gnm"
+%}
 %include "python_exceptions.i"
 %include "python_strings.i"
 

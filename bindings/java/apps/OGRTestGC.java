@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: OGRTestGC.java 16357 2009-02-16 23:30:06Z rouault $
+ * $Id$
  *
  * Name:     OGRTestGC.java
  * Project:  OGR Java Interface

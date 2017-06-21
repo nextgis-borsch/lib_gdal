@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: ogrdgndriver.cpp 32154 2015-12-13 05:34:45Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRDGNDriver class.
@@ -30,7 +29,7 @@
 #include "ogr_dgn.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrdgndriver.cpp 32154 2015-12-13 05:34:45Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                                Open()                                */
@@ -129,6 +128,7 @@ void RegisterOGRDGN()
 
     poDriver->SetMetadataItem( GDAL_DS_LAYER_CREATIONOPTIONLIST,
                                "<LayerCreationOptionList/>" );
+    poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
 
     poDriver->pfnOpen = OGRDGNDriverOpen;
     poDriver->pfnIdentify = OGRDGNDriverIdentify;

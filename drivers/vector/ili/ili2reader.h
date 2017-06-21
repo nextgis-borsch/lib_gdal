@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ili2reader.h 33713 2016-03-12 17:41:57Z goatbar $
+ * $Id$
  *
  * Project:  Interlis 2 Reader
  * Purpose:  Public Declarations for Reader code.
@@ -38,7 +38,6 @@
 
 #include "imdreader.h"
 #include <list>
-
 
 class CPL_DLL IILI2Reader
 {

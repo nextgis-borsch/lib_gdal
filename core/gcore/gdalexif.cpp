@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: gdalexif.cpp 33229 2016-01-29 19:45:40Z goatbar $
  *
  * Project:  GDAL
  * Purpose:  Implements a EXIF directory reader
@@ -31,20 +30,28 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#include "cpl_port.h"
+#include "gdal_priv.h"
+#include "gdalexif.h"
+
+#include <climits>
+#include <cstddef>
+#include <cstdio>
+#include <cstring>
+#if HAVE_FCNTL_H
+#  include <fcntl.h>
+#endif
+
 #include <vector>
 
 #include "cpl_conv.h"
-#include "cpl_port.h"
 #include "cpl_error.h"
 #include "cpl_string.h"
 #include "cpl_vsi.h"
 
-#include "gdal_priv.h"
-#include "gdalexif.h"
-
 using std::vector;
 
-CPL_CVSID("$Id: gdalexif.cpp 33229 2016-01-29 19:45:40Z goatbar $");
+CPL_CVSID("$Id$");
 
 static const int MAXSTRINGLENGTH = 65535;
 static const int EXIFOFFSETTAG = 0x8769;
@@ -68,7 +75,8 @@ static void EXIFPrintData(char* pszData, GUInt16 type,
   case TIFF_UNDEFINED:
   case TIFF_BYTE:
     for(;count>0;count--) {
-      snprintf(szTemp, sizeof(szTemp), "%s%#02x", sep, *data++), sep = " ";
+      snprintf(szTemp, sizeof(szTemp), "%s%#02x", sep, *data++);
+      sep = " ";
       if (strlen(szTemp) + pszDataEnd - pszData >= MAXSTRINGLENGTH)
           break;
       strcat(pszDataEnd,szTemp);
@@ -78,7 +86,8 @@ static void EXIFPrintData(char* pszData, GUInt16 type,
 
   case TIFF_SBYTE:
     for(;count>0;count--) {
-      snprintf(szTemp, sizeof(szTemp), "%s%d", sep, *(const char *)data++), sep = " ";
+      snprintf(szTemp, sizeof(szTemp), "%s%d", sep, *(const char *)data++);
+      sep = " ";
       if (strlen(szTemp) + pszDataEnd - pszData >= MAXSTRINGLENGTH)
           break;
       strcat(pszDataEnd,szTemp);
@@ -94,7 +103,8 @@ static void EXIFPrintData(char* pszData, GUInt16 type,
   case TIFF_SHORT: {
     const GUInt16 *wp = (const GUInt16*)data;
     for(;count>0;count--) {
-      snprintf(szTemp, sizeof(szTemp), "%s%u", sep, *wp++), sep = " ";
+      snprintf(szTemp, sizeof(szTemp), "%s%u", sep, *wp++);
+      sep = " ";
       if (strlen(szTemp) + pszDataEnd - pszData >= MAXSTRINGLENGTH)
           break;
       strcat(pszDataEnd,szTemp);
@@ -129,7 +139,8 @@ static void EXIFPrintData(char* pszData, GUInt16 type,
   case TIFF_SLONG: {
     const GInt32 *lp = (const GInt32*)data;
     for(;count>0;count--) {
-      snprintf(szTemp, sizeof(szTemp), "%s%ld", sep, (long) *lp++), sep = " ";
+      snprintf(szTemp, sizeof(szTemp), "%s%ld", sep, (long) *lp++);
+      sep = " ";
       if (strlen(szTemp) + pszDataEnd - pszData >= MAXSTRINGLENGTH)
           break;
       strcat(pszDataEnd,szTemp);
@@ -142,7 +153,7 @@ static void EXIFPrintData(char* pszData, GUInt16 type,
       //      if(bSwabflag)
       //      TIFFSwabArrayOfLong((GUInt32*) data, 2*count);
     for(;count>0;count--) {
-      if( (lp[0]==0) && (lp[1] == 0) ) {
+      if( (lp[0]==0) || (lp[1] == 0) ) {
           snprintf(szTemp, sizeof(szTemp), "%s(0)",sep);
       }
       else{
@@ -161,8 +172,13 @@ static void EXIFPrintData(char* pszData, GUInt16 type,
   case TIFF_SRATIONAL: {
     const GInt32 *lp = (const GInt32*)data;
     for(;count>0;count--) {
-      CPLsnprintf(szTemp, sizeof(szTemp), "%s(%g)", sep,
-          (float) lp[0]/ (float) lp[1]);
+      if( (lp[0]==0) || (lp[1] == 0) ) {
+          snprintf(szTemp, sizeof(szTemp), "%s(0)",sep);
+      }
+      else{
+        CPLsnprintf(szTemp, sizeof(szTemp), "%s(%g)", sep,
+            (float) lp[0]/ (float) lp[1]);
+      }
       sep = " ";
       lp += 2;
       if (strlen(szTemp) + pszDataEnd - pszData >= MAXSTRINGLENGTH)
@@ -175,7 +191,8 @@ static void EXIFPrintData(char* pszData, GUInt16 type,
   case TIFF_FLOAT: {
     const float *fp = (const float *)data;
     for(;count>0;count--) {
-      CPLsnprintf(szTemp, sizeof(szTemp), "%s%g", sep, *fp++), sep = " ";
+      CPLsnprintf(szTemp, sizeof(szTemp), "%s%g", sep, *fp++);
+      sep = " ";
       if (strlen(szTemp) + pszDataEnd - pszData >= MAXSTRINGLENGTH)
           break;
       strcat(pszDataEnd,szTemp);
@@ -186,7 +203,8 @@ static void EXIFPrintData(char* pszData, GUInt16 type,
   case TIFF_DOUBLE: {
     const double *dp = (const double *)data;
     for(;count>0;count--) {
-      CPLsnprintf(szTemp, sizeof(szTemp), "%s%g", sep, *dp++), sep = " ";
+      CPLsnprintf(szTemp, sizeof(szTemp), "%s%g", sep, *dp++);
+      sep = " ";
       if (strlen(szTemp) + pszDataEnd - pszData >= MAXSTRINGLENGTH)
           break;
       strcat(pszDataEnd,szTemp);
@@ -204,6 +222,41 @@ static void EXIFPrintData(char* pszData, GUInt16 type,
       CPLError(CE_Warning, CPLE_AppDefined, "EXIF metadata truncated");
   }
 }
+
+
+/*
+ * Return size of TIFFDataType in bytes
+ */
+static int EXIF_TIFFDataWidth(GDALEXIFTIFFDataType type)
+{
+    switch(type)
+    {
+        case 0:  /* nothing */
+        case TIFF_BYTE:
+        case TIFF_ASCII:
+        case TIFF_SBYTE:
+        case TIFF_UNDEFINED:
+            return 1;
+        case TIFF_SHORT:
+        case TIFF_SSHORT:
+            return 2;
+        case TIFF_LONG:
+        case TIFF_SLONG:
+        case TIFF_FLOAT:
+        case TIFF_IFD:
+            return 4;
+        case TIFF_RATIONAL:
+        case TIFF_SRATIONAL:
+        case TIFF_DOUBLE:
+        //case TIFF_LONG8:
+        //case TIFF_SLONG8:
+        //case TIFF_IFD8:
+            return 8;
+        default:
+            return 0; /* will return 0 for unknown types */
+    }
+}
+
 
 /************************************************************************/
 /*                        EXIFExtractMetadata()                         */
@@ -232,7 +285,7 @@ CPLErr EXIFExtractMetadata(char**& papszMetadata,
     }
 
     if (bSwabflag)
-        TIFFSwabShort(&nEntryCount);
+        CPL_SWAP16PTR(&nEntryCount);
 
     // Some apps write empty directories - see bug 1523.
     if( nEntryCount == 0 )
@@ -277,10 +330,10 @@ CPLErr EXIFExtractMetadata(char**& papszMetadata,
 
     for( unsigned int i = nEntryCount; i > 0; i--,poTIFFDirEntry++ ) {
         if (bSwabflag) {
-            TIFFSwabShort(&poTIFFDirEntry->tdir_tag);
-            TIFFSwabShort(&poTIFFDirEntry->tdir_type);
-            TIFFSwabLong (&poTIFFDirEntry->tdir_count);
-            TIFFSwabLong (&poTIFFDirEntry->tdir_offset);
+            CPL_SWAP16PTR(&poTIFFDirEntry->tdir_tag);
+            CPL_SWAP16PTR(&poTIFFDirEntry->tdir_type);
+            CPL_SWAP32PTR(&poTIFFDirEntry->tdir_count);
+            CPL_SWAP32PTR(&poTIFFDirEntry->tdir_offset);
         }
 
 /* -------------------------------------------------------------------- */
@@ -294,7 +347,7 @@ CPLErr EXIFExtractMetadata(char**& papszMetadata,
               poExifTags++)
         {
             if(poExifTags->tag == poTIFFDirEntry->tdir_tag) {
-                CPLAssert( NULL != poExifTags && NULL != poExifTags->name );
+                CPLAssert( NULL != poExifTags->name );
 
                 CPLStrlcpy(szName, poExifTags->name, sizeof(szName));
                 break;
@@ -307,7 +360,7 @@ CPLErr EXIFExtractMetadata(char**& papszMetadata,
                  poGPSTags++ )
             {
                 if( poGPSTags->tag == poTIFFDirEntry->tdir_tag ) {
-                    CPLAssert( NULL != poGPSTags && NULL != poGPSTags->name );
+                    CPLAssert( NULL != poGPSTags->name );
                     CPLStrlcpy(szName, poGPSTags->name, sizeof(szName));
                     break;
                 }
@@ -320,7 +373,7 @@ CPLErr EXIFExtractMetadata(char**& papszMetadata,
             const struct intr_tag *poInterTags = intr_tags;
             for( ; poInterTags->tag; poInterTags++)
                 if(poInterTags->tag == poTIFFDirEntry->tdir_tag) {
-                    CPLAssert( NULL != poInterTags && NULL != poInterTags->name );
+                    CPLAssert( NULL != poInterTags->name );
                     CPLStrlcpy(szName, poInterTags->name, sizeof(szName));
                     break;
                 }
@@ -347,7 +400,7 @@ CPLErr EXIFExtractMetadata(char**& papszMetadata,
 /* -------------------------------------------------------------------- */
         if( szName[0] == '\0' )
         {
-            snprintf( szName, sizeof(szName), "EXIF_%d", poTIFFDirEntry->tdir_tag );
+            snprintf( szName, sizeof(szName), "EXIF_%u", poTIFFDirEntry->tdir_tag );
             continue;
         }
 
@@ -379,7 +432,7 @@ CPLErr EXIFExtractMetadata(char**& papszMetadata,
 /*      Print tags                                                      */
 /* -------------------------------------------------------------------- */
         const int nDataWidth =
-            TIFFDataWidth((GDALEXIFTIFFDataType) poTIFFDirEntry->tdir_type);
+            EXIF_TIFFDataWidth((GDALEXIFTIFFDataType) poTIFFDirEntry->tdir_type);
         const int space = poTIFFDirEntry->tdir_count * nDataWidth;
 
         /* Previous multiplication could overflow, hence this additional check */
@@ -404,20 +457,27 @@ CPLErr EXIFExtractMetadata(char**& papszMetadata,
             memcpy(data, &poTIFFDirEntry->tdir_offset, 4);
             if (bSwabflag)
             {
+                GUInt32 nValUInt32;
                 // Unswab 32bit value, and reswab per data type.
-                TIFFSwabLong((GUInt32*) data);
+                memcpy(&nValUInt32, data, 4);
+                CPL_SWAP32PTR(&nValUInt32);
+                memcpy(data, &nValUInt32, 4);
 
                 switch (poTIFFDirEntry->tdir_type) {
                   case TIFF_LONG:
                   case TIFF_SLONG:
                   case TIFF_FLOAT:
-                    TIFFSwabLong((GUInt32*) data);
+                    memcpy(&nValUInt32, data, 4);
+                    CPL_SWAP32PTR(&nValUInt32);
+                    memcpy(data, &nValUInt32, 4);
                     break;
 
                   case TIFF_SSHORT:
                   case TIFF_SHORT:
-                    TIFFSwabArrayOfShort((GUInt16*) data,
-                                         poTIFFDirEntry->tdir_count);
+                    for( unsigned j = 0; j < poTIFFDirEntry->tdir_count; j++ )
+                    {
+                        CPL_SWAP16PTR( reinterpret_cast<GUInt16*>(data) + j );
+                    }
                   break;
 
                   default:
@@ -445,24 +505,40 @@ CPLErr EXIFExtractMetadata(char**& papszMetadata,
                     switch (poTIFFDirEntry->tdir_type) {
                       case TIFF_SHORT:
                       case TIFF_SSHORT:
-                        TIFFSwabArrayOfShort((GUInt16*) data,
-                                             poTIFFDirEntry->tdir_count);
+                      {
+                        for( unsigned j = 0; j < poTIFFDirEntry->tdir_count; j++ )
+                        {
+                            CPL_SWAP16PTR( reinterpret_cast<GUInt16*>(data) + j );
+                        }
                         break;
+                      }
                       case TIFF_LONG:
                       case TIFF_SLONG:
                       case TIFF_FLOAT:
-                        TIFFSwabArrayOfLong((GUInt32*) data,
-                                            poTIFFDirEntry->tdir_count);
+                      {
+                        for( unsigned j = 0; j < poTIFFDirEntry->tdir_count; j++ )
+                        {
+                            CPL_SWAP32PTR( reinterpret_cast<GUInt32*>(data) + j );
+                        }
                         break;
+                      }
                       case TIFF_RATIONAL:
                       case TIFF_SRATIONAL:
-                        TIFFSwabArrayOfLong((GUInt32*) data,
-                                            2*poTIFFDirEntry->tdir_count);
+                      {
+                        for( unsigned j = 0; j < 2 * poTIFFDirEntry->tdir_count; j++ )
+                        {
+                            CPL_SWAP32PTR( reinterpret_cast<GUInt32*>(data) + j );
+                        }
                         break;
+                      }
                       case TIFF_DOUBLE:
-                        TIFFSwabArrayOfDouble((double*) data,
-                                              poTIFFDirEntry->tdir_count);
+                      {
+                        for( unsigned j = 0; j < poTIFFDirEntry->tdir_count; j++ )
+                        {
+                            CPL_SWAPDOUBLE( reinterpret_cast<double*>(data) + j );
+                        }
                         break;
+                      }
                       default:
                         break;
                     }

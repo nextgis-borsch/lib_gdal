@@ -23,7 +23,7 @@ FUNCTION (GET_VERSION_PLIST PLISTFILE OUTVAR)
 	ENDIF (EXISTS ${PLISTFILE})
 	SET (${OUTVAR} ${PVERSION} PARENT_SCOPE)
 ENDFUNCTION (GET_VERSION_PLIST)
-
+ 
 IF(WIN32)
 
   IF (MINGW)
@@ -47,6 +47,7 @@ IF(WIN32)
          CACHE STRING INTERNAL)
     ENDIF (GEOS_LIBRARY)
   ENDIF (MSVC)
+
 ELSE(WIN32)
 
  IF(UNIX)
@@ -88,6 +89,7 @@ ELSE(WIN32)
       #MESSAGE("DBG GEOS_CONFIG ${GEOS_CONFIG}")
 
       IF (GEOS_CONFIG)
+
         EXEC_PROGRAM(${GEOS_CONFIG}
             ARGS --version
             OUTPUT_VARIABLE GEOS_VERSION)
@@ -120,6 +122,7 @@ ELSE(WIN32)
         #MESSAGE("DBG  GEOS_LINK_DIRECTORIES_WITH_PREFIX=${GEOS_LINK_DIRECTORIES_WITH_PREFIX}")
 
         ## remove prefix -L because we need the pure directory for LINK_DIRECTORIES
+
         IF (GEOS_LINK_DIRECTORIES_WITH_PREFIX)
           STRING(REGEX REPLACE "[-][L]" "" GEOS_LINK_DIRECTORIES ${GEOS_LINK_DIRECTORIES_WITH_PREFIX} )
         ENDIF (GEOS_LINK_DIRECTORIES_WITH_PREFIX)
@@ -136,6 +139,7 @@ ELSE(WIN32)
         SET(GEOS_LIB_NAME_WITH_PREFIX -lgeos_c CACHE STRING INTERNAL)
 
         ## remove prefix -l because we need the pure name
+
         IF (GEOS_LIB_NAME_WITH_PREFIX)
           STRING(REGEX REPLACE "[-][l]" "" GEOS_LIB_NAME ${GEOS_LIB_NAME_WITH_PREFIX} )
         ENDIF (GEOS_LIB_NAME_WITH_PREFIX)
@@ -152,6 +156,7 @@ ELSE(WIN32)
           SET(GEOS_LIBRARY ${GEOS_LINK_DIRECTORIES}/lib${GEOS_LIB_NAME}.so CACHE STRING INTERNAL)
         ENDIF (APPLE)
         #MESSAGE("DBG  GEOS_LIBRARY=${GEOS_LIBRARY}")
+
       ELSE(GEOS_CONFIG)
         MESSAGE("FindGEOS.cmake: geos-config not found. Please set it manually. GEOS_CONFIG=${GEOS_CONFIG}")
       ENDIF(GEOS_CONFIG)
@@ -162,7 +167,6 @@ ENDIF(WIN32)
 # Handle the QUIETLY and REQUIRED arguments and set GEOS_FOUND to TRUE
 # if all listed variables are TRUE
 include(FindPackageHandleStandardArgs)
-
 find_package_handle_standard_args(GEOS
                                   REQUIRED_VARS GEOS_LIBRARY GEOS_INCLUDE_DIR
                                   VERSION_VAR GEOS_VERSION)

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrtriangle.cpp 36883 2016-12-15 13:31:12Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRTriangle geometry class.
@@ -32,7 +32,7 @@
 #include "ogr_api.h"
 #include "cpl_error.h"
 
-CPL_CVSID("$Id: ogrtriangle.cpp 36883 2016-12-15 13:31:12Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                             OGRTriangle()                            */
@@ -125,10 +125,6 @@ OGRTriangle::OGRTriangle(const OGRPoint &p, const OGRPoint &q,
 
 OGRTriangle::~OGRTriangle()
 {
-    if (!oCC.IsEmpty())
-    {
-        oCC.empty(this);
-    }
 }
 
 /************************************************************************/
@@ -149,7 +145,6 @@ OGRTriangle& OGRTriangle::operator=( const OGRTriangle& other )
     if( this != &other)
     {
         OGRPolygon::operator=( other );
-        oCC = other.oCC;
     }
     return *this;
 }
@@ -195,39 +190,19 @@ bool OGRTriangle::quickValidityCheck() const
 /*                           importFromWkb()                            */
 /************************************************************************/
 
-OGRErr OGRTriangle::importFromWkb( unsigned char *pabyData,
-                                  int nSize,
-                                  OGRwkbVariant eWkbVariant )
+OGRErr OGRTriangle::importFromWkb( const unsigned char *pabyData,
+                                   int nSize,
+                                   OGRwkbVariant eWkbVariant,
+                                   int& nBytesConsumedOut )
 {
-    OGRErr eErr = OGRPolygon::importFromWkb( pabyData, nSize, eWkbVariant );
+    OGRErr eErr = OGRPolygon::importFromWkb( pabyData, nSize, eWkbVariant,
+                                             nBytesConsumedOut );
     if( eErr != OGRERR_NONE )
         return eErr;
 
     if ( !quickValidityCheck() )
     {
         CPLDebug("OGR", "Triangle is not made of a closed rings of 3 points");
-        empty();
-        return OGRERR_CORRUPT_DATA;
-    }
-
-    return OGRERR_NONE;
-}
-
-/************************************************************************/
-/*                           importFromWkt()                            */
-/************************************************************************/
-
-OGRErr OGRTriangle::importFromWkt( char ** ppszInput )
-
-{
-    OGRErr eErr = OGRPolygon::importFromWkt( ppszInput );
-    if( eErr != OGRERR_NONE )
-        return eErr;
-
-    if ( !quickValidityCheck() )
-    {
-        CPLDebug("OGR",
-                 "Triangle is not made of a closed rings of 3 points");
         empty();
         return OGRERR_CORRUPT_DATA;
     }
@@ -286,8 +261,17 @@ OGRErr OGRTriangle::addRingDirectly( OGRCurve * poNewRing )
 /*                      GetCasterToPolygon()                            */
 /************************************************************************/
 
+OGRPolygon* OGRTriangle::CasterToPolygon(OGRSurface* poSurface)
+{
+    OGRTriangle* poTriangle = dynamic_cast<OGRTriangle*>(poSurface);
+    CPLAssert(poTriangle);
+    OGRPolygon* poRet = new OGRPolygon( *poTriangle );
+    delete poTriangle;
+    return poRet;
+}
+
 OGRSurfaceCasterToPolygon OGRTriangle::GetCasterToPolygon() const {
-    return (OGRSurfaceCasterToPolygon) OGRTriangle::CastToPolygon;
+    return OGRTriangle::CasterToPolygon;
 }
 
 /************************************************************************/

@@ -1,5 +1,5 @@
 /*
- * $Id: gdal_python.i 37118 2017-01-12 12:15:16Z rouault $
+ * $Id$
  *
  * python specific code for gdal bindings.
  */
@@ -81,6 +81,9 @@
     return 0
 %}
 
+%{
+#define MODULE_NAME           "gdal"
+%}
 
 %include "python_exceptions.i"
 %include "python_strings.i"
@@ -95,10 +98,10 @@
 
 %apply ( void **outPythonObject ) { (void **buf ) };
 %inline %{
-int wrapper_VSIFReadL( void **buf, int nMembSize, int nMembCount, VSILFILE *fp)
+unsigned int wrapper_VSIFReadL( void **buf, unsigned int nMembSize, unsigned int nMembCount, VSILFILE *fp)
 {
-    GUIntBig buf_size = (GUIntBig)nMembSize * nMembCount;
-    if( nMembSize < 0 || nMembCount < 0 || buf_size > 0xFFFFFFFFU )
+    size_t buf_size = static_cast<size_t>(nMembSize) * nMembCount;
+    if( buf_size > 0xFFFFFFFFU )
    {
         CPLError(CE_Failure, CPLE_AppDefined, "Too big request");
         *buf = NULL;
@@ -127,7 +130,7 @@ int wrapper_VSIFReadL( void **buf, int nMembSize, int nMembCount, VSILFILE *fp)
         _PyBytes_Resize(&o, nRet * nMembSize);
         *buf = o;
     }
-    return nRet;
+    return static_cast<unsigned int>(nRet);
 #else
     *buf = (void *)PyString_FromStringAndSize( NULL, buf_size );
     if (*buf == NULL)
@@ -144,7 +147,7 @@ int wrapper_VSIFReadL( void **buf, int nMembSize, int nMembCount, VSILFILE *fp)
         _PyString_Resize(&o, nRet * nMembSize);
         *buf = o;
     }
-    return nRet;
+    return static_cast<unsigned int>(nRet);
 #endif
 }
 %}
@@ -195,15 +198,17 @@ int wrapper_VSIFReadL( void **buf, int nMembSize, int nMembCount, VSILFILE *fp)
                      GDALRIOResampleAlg resample_alg = GRIORA_NearestNeighbour,
                      GDALProgressFunc callback = NULL,
                      void* callback_data=NULL) {
-    int nxsize = (buf_xsize==0) ? xsize : *buf_xsize;
-    int nysize = (buf_ysize==0) ? ysize : *buf_ysize;
+    int nxsize = (buf_xsize==0) ? static_cast<int>(xsize) : *buf_xsize;
+    int nysize = (buf_ysize==0) ? static_cast<int>(ysize) : *buf_ysize;
     GDALDataType ntype  = (buf_type==0) ? GDALGetRasterDataType(self)
                                         : (GDALDataType)*buf_type;
     GIntBig pixel_space = (buf_pixel_space == 0) ? 0 : *buf_pixel_space;
     GIntBig line_space = (buf_line_space == 0) ? 0 : *buf_line_space;
 
-    GIntBig buf_size = ComputeBandRasterIOSize( nxsize, nysize, GDALGetDataTypeSize( ntype ) / 8,
-                                            pixel_space, line_space, FALSE );
+    size_t buf_size = static_cast<size_t>(
+        ComputeBandRasterIOSize( nxsize, nysize,
+                                 GDALGetDataTypeSize( ntype ) / 8,
+                                 pixel_space, line_space, FALSE ) );
     if (buf_size == 0)
     {
         *buf = NULL;
@@ -276,7 +281,8 @@ int wrapper_VSIFReadL( void **buf, int nMembSize, int nMembCount, VSILFILE *fp)
     int nBlockXSize, nBlockYSize;
     GDALGetBlockSize(self, &nBlockXSize, &nBlockYSize);
     int nDataTypeSize = (GDALGetDataTypeSize(GDALGetRasterDataType(self)) / 8);
-    GIntBig buf_size = (GIntBig)nBlockXSize * nBlockYSize * nDataTypeSize;
+    size_t buf_size = static_cast<size_t>(nBlockXSize) *
+                                                nBlockYSize * nDataTypeSize;
 
 %#if PY_VERSION_HEX >= 0x03000000
     *buf = (void *)PyBytes_FromStringAndSize( NULL, buf_size );
@@ -310,6 +316,23 @@ int wrapper_VSIFReadL( void **buf, int nMembSize, int nMembCount, VSILFILE *fp)
 
 
 %pythoncode %{
+
+  def ComputeStatistics(self, *args):
+    """ComputeStatistics(Band self, bool approx_ok, GDALProgressFunc callback=0, void * callback_data=None) -> CPLErr"""
+
+    # For backward compatibility. New SWIG has stricter typing and really
+    # enforces bool
+    approx_ok = args[0]
+    if approx_ok == 0:
+        approx_ok = False
+    elif approx_ok == 1:
+        approx_ok = True
+    new_args = [ approx_ok ]
+    for arg in args[1:]:
+        new_args.append( arg )
+
+    return _gdal.Band_ComputeStatistics(self, *new_args)
+
 
   def ReadRaster(self, xoff = 0, yoff = 0, xsize = None, ysize = None,
                    buf_xsize = None, buf_ysize = None, buf_type = None,
@@ -462,9 +485,13 @@ CPLErr ReadRaster1(  int xoff, int yoff, int xsize, int ysize,
     GIntBig band_space = (buf_band_space == 0) ? 0 : *buf_band_space;
 
     int ntypesize = GDALGetDataTypeSize( ntype ) / 8;
-    GIntBig buf_size = ComputeDatasetRasterIOSize (nxsize, nysize, ntypesize,
-                                               band_list ? band_list : GDALGetRasterCount(self), pband_list, band_list,
-                                               pixel_space, line_space, band_space, FALSE);
+    size_t buf_size = static_cast<size_t>(
+        ComputeDatasetRasterIOSize (nxsize, nysize, ntypesize,
+                                    band_list ? band_list :
+                                        GDALGetRasterCount(self),
+                                    pband_list, band_list,
+                                    pixel_space, line_space, band_space,
+                                    FALSE));
     if (buf_size == 0)
     {
         *buf = NULL;
@@ -952,7 +979,7 @@ def Translate(destName, srcDS, **kwargs):
           destName --- Output dataset name
           srcDS --- a Dataset object or a filename
         Keyword arguments are :
-          options --- return of gdal.InfoOptions(), string or array of strings
+          options --- return of gdal.TranslateOptions(), string or array of strings
           other keywords arguments of gdal.TranslateOptions()
         If options is provided as a gdal.TranslateOptions() object, other keywords are ignored. """
 
@@ -1125,7 +1152,7 @@ def Warp(destNameOrDestDS, srcDSOrSrcDSTab, **kwargs):
           destNameOrDestDS --- Output dataset name or object
           srcDSOrSrcDSTab --- an array of Dataset objects or filenames, or a Dataset object or a filename
         Keyword arguments are :
-          options --- return of gdal.InfoOptions(), string or array of strings
+          options --- return of gdal.WarpOptions(), string or array of strings
           other keywords arguments of gdal.WarpOptions()
         If options is provided as a gdal.WarpOptions() object, other keywords are ignored. """
 
@@ -1154,7 +1181,8 @@ def Warp(destNameOrDestDS, srcDSOrSrcDSTab, **kwargs):
 def VectorTranslateOptions(options = [], format = 'ESRI Shapefile',
          accessMode = None,
          srcSRS = None, dstSRS = None, reproject = True,
-         SQLStatement = None, SQLDialect = None, where = None, selectFields = None, spatFilter = None,
+         SQLStatement = None, SQLDialect = None, where = None, selectFields = None,
+         spatFilter = None, spatSRS = None,
          datasetCreationOptions = None,
          layerCreationOptions = None,
          layers = None,
@@ -1164,6 +1192,7 @@ def VectorTranslateOptions(options = [], format = 'ESRI Shapefile',
          segmentizeMaxDist= None,
          zField = None,
          skipFailures = False,
+         limit = None,
          callback = None, callback_data = None):
     """ Create a VectorTranslateOptions() object that can be passed to gdal.VectorTranslate()
         Keyword arguments are :
@@ -1178,6 +1207,7 @@ def VectorTranslateOptions(options = [], format = 'ESRI Shapefile',
           where --- WHERE clause to apply to source layer(s)
           selectFields --- list of fields to select
           spatFilter --- spatial filter as (minX, minY, maxX, maxY) bounding box
+          spatSRS --- SRS in which the spatFilter is expressed. If not specified, it is assumed to be the one of the layer(s)
           datasetCreationOptions --- list of dataset creation options
           layerCreationOptions --- list of layer creation options
           layers --- list of layers to convert
@@ -1187,6 +1217,7 @@ def VectorTranslateOptions(options = [], format = 'ESRI Shapefile',
           segmentizeMaxDist --- maximum distance between consecutive nodes of a line geometry
           zField --- name of field to use to set the Z component of geometries
           skipFailures --- whether to skip failures
+          limit -- maximum number of features to read per layer
           callback --- callback method
           callback_data --- user data for callback
     """
@@ -1233,12 +1264,17 @@ def VectorTranslateOptions(options = [], format = 'ESRI Shapefile',
             for opt in layerCreationOptions:
                 new_options += ['-lco', opt ]
         if layers is not None:
-            for lyr in layers:
-                new_options += [ lyr ]
+            if _is_str_or_unicode(layers):
+                new_options += [ layers ]
+            else:
+                for lyr in layers:
+                    new_options += [ lyr ]
         if segmentizeMaxDist is not None:
             new_options += ['-segmentize', str(segmentizeMaxDist) ]
         if spatFilter is not None:
             new_options += ['-spat', str(spatFilter[0]), str(spatFilter[1]), str(spatFilter[2]), str(spatFilter[3]) ]
+        if spatSRS is not None:
+            new_options += ['-spat_srs', str(spatSRS) ]
         if layerName is not None:
             new_options += ['-nln', layerName]
         if geometryType is not None:
@@ -1249,7 +1285,8 @@ def VectorTranslateOptions(options = [], format = 'ESRI Shapefile',
             new_options += ['-zfield', zField]
         if skipFailures:
             new_options += ['-skip']
-
+        if limit is not None:
+            new_options += ['-limit', str(limit)]
     if callback is not None:
         new_options += [ '-progress' ]
 
@@ -1261,7 +1298,7 @@ def VectorTranslate(destNameOrDestDS, srcDS, **kwargs):
           destNameOrDestDS --- Output dataset name or object
           srcDS --- a Dataset object or a filename
         Keyword arguments are :
-          options --- return of gdal.InfoOptions(), string or array of strings
+          options --- return of gdal.VectorTranslateOptions(), string or array of strings
           other keywords arguments of gdal.VectorTranslateOptions()
         If options is provided as a gdal.VectorTranslateOptions() object, other keywords are ignored. """
 
@@ -1279,7 +1316,8 @@ def VectorTranslate(destNameOrDestDS, srcDS, **kwargs):
 
 def DEMProcessingOptions(options = [], colorFilename = None, format = 'GTiff',
               creationOptions = None, computeEdges = False, alg = 'Horn', band = 1,
-              zFactor = None, scale = None, azimuth = None, altitude = None, combined = False,
+              zFactor = None, scale = None, azimuth = None, altitude = None,
+              combined = False, multiDirectional = False,
               slopeFormat = None, trigonometric = False, zeroForFlat = False,
               callback = None, callback_data = None):
     """ Create a DEMProcessingOptions() object that can be passed to gdal.DEMProcessing()
@@ -1296,6 +1334,7 @@ def DEMProcessingOptions(options = [], colorFilename = None, format = 'GTiff',
           azimuth --- (hillshade only) azimuth of the light, in degrees. 0 if it comes from the top of the raster, 90 from the east, ... The default value, 315, should rarely be changed as it is the value generally used to generate shaded maps.
           altitude ---(hillshade only) altitude of the light, in degrees. 90 if the light comes from above the DEM, 0 if it is raking light.
           combined --- (hillshade only) whether to compute combined shading, a combination of slope and oblique shading.
+          multiDirectional --- (hillshade only) whether to compute multi-directional shading
           slopeformat --- (slope only) "degree" or "percent".
           trigonometric --- (aspect only) whether to return trigonometric angle instead of azimuth. Thus 0deg means East, 90deg North, 180deg West, 270deg South.
           zeroForFlat --- (aspect only) whether to return 0 for flat areas with slope=0, instead of -9999.
@@ -1327,6 +1366,8 @@ def DEMProcessingOptions(options = [], colorFilename = None, format = 'GTiff',
             new_options += ['-alt', str(altitude) ]
         if combined:
             new_options += ['-combined' ]
+        if multiDirectional:
+            new_options += ['-multidirectional' ]
         if slopeFormat == 'percent':
             new_options += ['-p' ]
         if trigonometric:
@@ -1343,7 +1384,7 @@ def DEMProcessing(destName, srcDS, processing, **kwargs):
           srcDS --- a Dataset object or a filename
           processing --- one of "hillshade", "slope", "aspect", "color-relief", "TRI", "TPI", "Roughness"
         Keyword arguments are :
-          options --- return of gdal.InfoOptions(), string or array of strings
+          options --- return of gdal.DEMProcessingOptions(), string or array of strings
           other keywords arguments of gdal.DEMProcessingOptions()
         If options is provided as a gdal.DEMProcessingOptions() object, other keywords are ignored. """
 
@@ -1412,7 +1453,7 @@ def Nearblack(destNameOrDestDS, srcDS, **kwargs):
           destNameOrDestDS --- Output dataset name or object
           srcDS --- a Dataset object or a filename
         Keyword arguments are :
-          options --- return of gdal.InfoOptions(), string or array of strings
+          options --- return of gdal.NearblackOptions(), string or array of strings
           other keywords arguments of gdal.NearblackOptions()
         If options is provided as a gdal.NearblackOptions() object, other keywords are ignored. """
 
@@ -1514,7 +1555,7 @@ def Grid(destName, srcDS, **kwargs):
           destName --- Output dataset name
           srcDS --- a Dataset object or a filename
         Keyword arguments are :
-          options --- return of gdal.InfoOptions(), string or array of strings
+          options --- return of gdal.GridOptions(), string or array of strings
           other keywords arguments of gdal.GridOptions()
         If options is provided as a gdal.GridOptions() object, other keywords are ignored. """
 
@@ -1531,11 +1572,12 @@ def RasterizeOptions(options = [], format = None,
          outputType = GDT_Unknown, 
          creationOptions = None, noData = None, initValues = None,
          outputBounds = None, outputSRS = None,
+         transformerOptions = None,
          width = None, height = None,
          xRes = None, yRes = None, targetAlignedPixels = False,
          bands = None, inverse = False, allTouched = False,
          burnValues = None, attribute = None, useZ = False, layers = None,
-         SQLStatement = None, SQLDialect = None, where = None,
+         SQLStatement = None, SQLDialect = None, where = None, optim = None,
          callback = None, callback_data = None):
     """ Create a RasterizeOptions() object that can be passed to gdal.Rasterize()
         Keyword arguments are :
@@ -1545,6 +1587,7 @@ def RasterizeOptions(options = [], format = None,
           creationOptions --- list of creation options
           outputBounds --- assigned output bounds: [minx, miny, maxx, maxy]
           outputSRS --- assigned output SRS
+          transformerOptions --- list of transformer options
           width --- width of the output raster in pixel
           height --- height of the output raster in pixel
           xRes, yRes --- output resolution in target SRS
@@ -1592,6 +1635,9 @@ def RasterizeOptions(options = [], format = None,
             new_options += ['-te', str(outputBounds[0]), str(outputBounds[1]), str(outputBounds[2]), str(outputBounds[3])]
         if outputSRS is not None:
             new_options += ['-a_srs', str(outputSRS) ]
+        if transformerOptions is not None:
+            for opt in transformerOptions:
+                new_options += ['-to', opt ]
         if width is not None and height is not None:
             new_options += ['-ts', str(width), str(height)]
         if xRes is not None and yRes is not None:
@@ -1626,6 +1672,8 @@ def RasterizeOptions(options = [], format = None,
             new_options += ['-dialect', str(SQLDialect) ]
         if where is not None:
             new_options += ['-where', str(where) ]
+        if optim is not None:
+            new_options += ['-optim', str(optim) ]
 
     return (GDALRasterizeOptions(new_options), callback, callback_data)
 
@@ -1635,7 +1683,7 @@ def Rasterize(destNameOrDestDS, srcDS, **kwargs):
           destNameOrDestDS --- Output dataset name or object
           srcDS --- a Dataset object or a filename
         Keyword arguments are :
-          options --- return of gdal.InfoOptions(), string or array of strings
+          options --- return of gdal.RasterizeOptions(), string or array of strings
           other keywords arguments of gdal.RasterizeOptions()
         If options is provided as a gdal.RasterizeOptions() object, other keywords are ignored. """
 
@@ -1745,7 +1793,7 @@ def BuildVRT(destName, srcDSOrSrcDSTab, **kwargs):
           destName --- Output dataset name
           srcDSOrSrcDSTab --- an array of Dataset objects or filenames, or a Dataset object or a filename
         Keyword arguments are :
-          options --- return of gdal.InfoOptions(), string or array of strings
+          options --- return of gdal.BuildVRTOptions(), string or array of strings
           other keywords arguments of gdal.BuildVRTOptions()
         If options is provided as a gdal.BuildVRTOptions() object, other keywords are ignored. """
 

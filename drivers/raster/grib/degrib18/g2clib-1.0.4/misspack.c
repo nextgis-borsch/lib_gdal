@@ -13,7 +13,7 @@ void misspack(g2float *fld,g2int ndpts,g2int idrsnum,g2int *idrstmpl,
 //   packing algorithm as defined in the GRIB2 documentation.  It
 //   supports GRIB2 complex packing templates with or without
 //   spatial differences (i.e. DRTs 5.2 and 5.3).
-//   It also fills in GRIB2 Data Representation Template 5.2 or 5.3 
+//   It also fills in GRIB2 Data Representation Template 5.2 or 5.3
 //   with the appropriate values.
 //   This version assumes that Missing Value Management is being used and that
 //   1 or 2 missing values appear in the data.
@@ -44,7 +44,7 @@ void misspack(g2float *fld,g2int ndpts,g2int idrsnum,g2int *idrstmpl,
 //                    .
 //                    .
 //
-//   OUTPUT ARGUMENT LIST: 
+//   OUTPUT ARGUMENT LIST:
 //     idrstmpl - Contains the array of values for Data Representation
 //                Template 5.3
 //                [0] = Reference value - set by misspack routine.
@@ -59,7 +59,7 @@ void misspack(g2float *fld,g2int ndpts,g2int idrsnum,g2int *idrstmpl,
 //
 // ATTRIBUTES:
 //   LANGUAGE: C
-//   MACHINE:  
+//   MACHINE:
 //
 //$$$
 {
@@ -78,11 +78,11 @@ void misspack(g2float *fld,g2int ndpts,g2int idrsnum,g2int *idrstmpl,
       g2int  kfildo, minpk, inc, maxgrps, ibit, jbit, kbit, novref, lbitref;
       g2float  rmissp, rmisss, bscale, dscale, rmin, temp;
       const g2int simple_alg = 0;
-      const g2float alog2=0.69314718;       //  ln(2.0)
+      const g2float alog2=0.69314718f;       //  ln(2.0)
       const g2int one=1;
 
-      bscale=int_power(2.0,-idrstmpl[1]);
-      dscale=int_power(10.0,idrstmpl[2]);
+      bscale=(float)int_power(2.0,-idrstmpl[1]);
+      dscale=(float)int_power(10.0,idrstmpl[2]);
       missopt=idrstmpl[6];
       if ( missopt != 1 && missopt != 2 ) {
          printf("misspack: Unrecognized option.\n");
@@ -98,7 +98,7 @@ void misspack(g2float *fld,g2int ndpts,g2int idrsnum,g2int *idrstmpl,
 //  AND set up missing value mapping of the field.
 //
       ifldmiss = calloc(ndpts,sizeof(g2int));
-      rmin=1E+37;
+      rmin=1E+37f;
       if ( missopt ==  1 ) {        // Primary missing value only
          for ( j=0; j<ndpts; j++) {
            if (fld[j] == rmissp) {
@@ -126,10 +126,10 @@ void misspack(g2float *fld,g2int ndpts,g2int idrsnum,g2int *idrstmpl,
       }
 //
 //  Allocate work arrays:
-//  Note: -ifldmiss[j],j=0,ndpts-1 is a map of original field indicating 
+//  Note: -ifldmiss[j],j=0,ndpts-1 is a map of original field indicating
 //         which of the original data values
 //         are primary missing (1), secondary missing (2) or non-missing (0).
-//        -jfld[j],j=0,nonmiss-1 is a subarray of just the non-missing values 
+//        -jfld[j],j=0,nonmiss-1 is a subarray of just the non-missing values
 //         from the original field.
 //
       //if (rmin != rmax) {
@@ -194,7 +194,7 @@ void misspack(g2float *fld,g2int ndpts,g2int idrsnum,g2int *idrstmpl,
            //   find num of bits need to store minsd and add 1 extra bit
            //   to indicate sign
            //
-           temp=log((double)(abs(minsd)+1))/alog2;
+           temp=(float)(log((double)(abs(minsd)+1))/alog2);
            nbitsd=(g2int)ceil(temp)+1;
            //
            //   find num of bits need to store ifld[0] ( and ifld[1]
@@ -202,7 +202,7 @@ void misspack(g2float *fld,g2int ndpts,g2int idrsnum,g2int *idrstmpl,
            //
            maxorig=ival1;
            if (idrstmpl[16]==2 && ival2>ival1) maxorig=ival2;
-           temp=log((double)(maxorig+1))/alog2;
+           temp=(float)(log((double)(maxorig+1))/alog2);
            nbitorig=(g2int)ceil(temp)+1;
            if (nbitorig > nbitsd) nbitsd=nbitorig;
            //   increase number of bits to even multiple of 8 ( octet )
@@ -306,7 +306,7 @@ void misspack(g2float *fld,g2int ndpts,g2int idrsnum,g2int *idrstmpl,
            free(jmax);
            free(lbit);
         }
-        //  
+        //
         //  For each group, find the group's reference value (min)
         //  and the number of bits needed to hold the remaining values
         //
@@ -341,7 +341,7 @@ void misspack(g2float *fld,g2int ndpts,g2int idrsnum,g2int *idrstmpl,
              for ( lg=0; lg<glen[ng]; lg++ ) {
                 if ( ifldmiss[j] == 0 ) {
                   if (ifld[j] < gref[ng]) gref[ng]=ifld[j];
-                  if (ifld[j] > imax) imax=ifld[j]; 
+                  if (ifld[j] > imax) imax=ifld[j];
                 }
                 j++;
              }
@@ -349,7 +349,7 @@ void misspack(g2float *fld,g2int ndpts,g2int idrsnum,g2int *idrstmpl,
              if (missopt == 2) imax=imax+2;
              //   calc num of bits needed to hold data
              if ( gref[ng] != imax ) {
-                temp=log((double)(imax-gref[ng]+1))/alog2;
+                temp=(float)(log((double)(imax-gref[ng]+1))/alog2);
                 gwidth[ng]=(g2int)ceil(temp);
              }
              else {
@@ -366,14 +366,14 @@ void misspack(g2float *fld,g2int ndpts,g2int idrsnum,g2int *idrstmpl,
                  ifld[j]=mtemp-1;
               else if (ifldmiss[j] == 2)         // secondary missing
                  ifld[j]=mtemp-2;
-              
+
               j++;
            }
            //   increment fld array counter
            n=n+glen[ng];
         }
-        //  
-        //  Find max of the group references and calc num of bits needed 
+        //
+        //  Find max of the group references and calc num of bits needed
         //  to pack each groups reference value, then
         //  pack up group reference values
         //
@@ -384,7 +384,7 @@ void misspack(g2float *fld,g2int ndpts,g2int idrsnum,g2int *idrstmpl,
         if (missopt == 1) igmax=igmax+1;
         if (missopt == 2) igmax=igmax+2;
         if (igmax != 0) {
-           temp=log((double)(igmax+1))/alog2;
+           temp=(float)(log((double)(igmax+1))/alog2);
            nbitsgref=(g2int)ceil(temp);
            // reset the ref values of any "missing only" groups.
            mtemp=(g2int)int_power(2.,nbitsgref);
@@ -418,7 +418,7 @@ void misspack(g2float *fld,g2int ndpts,g2int idrsnum,g2int *idrstmpl,
            if (gwidth[j] < ngwidthref) ngwidthref=gwidth[j];
         }
         if (iwmax != ngwidthref) {
-           temp=log((double)(iwmax-ngwidthref+1))/alog2;
+           temp=(float)(log((double)(iwmax-ngwidthref+1))/alog2);
            nbitsgwidth=(g2int)ceil(temp);
            for ( i=0; i<ngroups; i++) gwidth[i]=gwidth[i]-ngwidthref;
            sbits(cpack,gwidth,iofst,nbitsgwidth,0,ngroups);
@@ -450,7 +450,7 @@ void misspack(g2float *fld,g2int ndpts,g2int idrsnum,g2int *idrstmpl,
         }
         nglenlast=glen[ngroups-1];
         if (ilmax != nglenref) {
-           temp=log((double)(ilmax-nglenref+1))/alog2;
+           temp=(float)(log((double)(ilmax-nglenref+1))/alog2);
            nbitsglen=(g2int)ceil(temp);
            for ( i=0; i<ngroups-1; i++) glen[i]=glen[i]-nglenref;
            sbits(cpack,glen,iofst,nbitsglen,0,ngroups);

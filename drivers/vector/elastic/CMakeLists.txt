@@ -3,7 +3,7 @@
 # Purpose:  CMake build scripts
 # Author:   Mikhail Gusev, gusevmihs@gmail.com
 ################################################################################
-# Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
+# Copyright (C) 2015-2017, NextGIS <info@nextgis.com>
 # Copyright (C) 2016 Mikhail Gusev
 #  
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -34,7 +34,6 @@ if(ENABLE_ELASTIC)
 	set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DELASTIC_ENABLED" PARENT_SCOPE)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-    #include_directories(${JSONC_INCLUDE_DIRS})
     include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/geojson)
 
     set(LIB_HHEADERS
@@ -42,8 +41,6 @@ if(ENABLE_ELASTIC)
 
     set(LIB_HHEADERS_PRIV
         ogr_elastic.h 
-        ${CMAKE_SOURCE_DIR}/drivers/vector/geojson/ogrgeojsonreader.h 
-        ${CMAKE_SOURCE_DIR}/drivers/vector/geojson/ogrgeojsonwriter.h
     )
 
     set(LIB_CSOURCES

@@ -48,10 +48,8 @@ if(ENABLE_PLSCENES)
 
     set(LIB_CSOURCES
         ogrplscenesdriver.cpp
-        ogrplscenesdataset.cpp
-        ogrplscenesv1dataset.cpp
-        ogrplsceneslayer.cpp
-        ogrplscenesv1layer.cpp
+        ogrplscenesdatav1dataset.cpp
+        ogrplscenesdatav1layer.cpp
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})

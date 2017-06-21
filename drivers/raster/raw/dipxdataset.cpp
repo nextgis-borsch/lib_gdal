@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: dipxdataset.cpp 33930 2016-04-09 19:28:36Z goatbar $
  *
  * Project:  GDAL
  * Purpose:  Implementation for ELAS DIPEx format variant.
@@ -33,11 +32,12 @@
 #include "ogr_spatialref.h"
 #include "rawdataset.h"
 
+#include <cmath>
 #include <algorithm>
 
 using std::fill;
 
-CPL_CVSID("$Id: dipxdataset.cpp 33930 2016-04-09 19:28:36Z goatbar $");
+CPL_CVSID("$Id$");
 
 typedef struct {
     GInt32      NBIH;   /* bytes in header, normally 1024 */
@@ -88,9 +88,9 @@ class DIPExDataset : public GDALPamDataset
                  DIPExDataset();
     virtual ~DIPExDataset();
 
-    virtual CPLErr GetGeoTransform( double * );
+    virtual CPLErr GetGeoTransform( double * ) override;
 
-    virtual const char *GetProjectionRef( void );
+    virtual const char *GetProjectionRef( void ) override;
     static GDALDataset *Open( GDALOpenInfo * );
 };
 
@@ -100,11 +100,9 @@ class DIPExDataset : public GDALPamDataset
 /* ==================================================================== */
 /************************************************************************/
 
-
 /************************************************************************/
 /*                            DIPExDataset()                             */
 /************************************************************************/
-
 
 DIPExDataset::DIPExDataset() :
     fp(NULL),
@@ -232,11 +230,23 @@ GDALDataset *DIPExDataset::Open( GDALOpenInfo * poOpenInfo )
 
     int nStart = CPL_LSBWORD32( poDS->sHeader.IL );
     int nEnd = CPL_LSBWORD32( poDS->sHeader.LL );
-    poDS->nRasterYSize = nEnd - nStart + 1;
+    GIntBig nDiff = static_cast<GIntBig>(nEnd) - nStart + 1;
+    if( nDiff <= 0 || nDiff > INT_MAX )
+    {
+        delete poDS;
+        return NULL;
+    }
+    poDS->nRasterYSize = static_cast<int>(nDiff);
 
     nStart = CPL_LSBWORD32( poDS->sHeader.IE );
     nEnd = CPL_LSBWORD32( poDS->sHeader.LE );
-    poDS->nRasterXSize = nEnd - nStart + 1;
+    nDiff = static_cast<GIntBig>(nEnd) - nStart + 1;
+    if( nDiff <= 0 || nDiff > INT_MAX )
+    {
+        delete poDS;
+        return NULL;
+    }
+    poDS->nRasterXSize = static_cast<int>(nDiff);
 
     const int nBands = CPL_LSBWORD32( poDS->sHeader.NC );
 
@@ -311,7 +321,7 @@ GDALDataset *DIPExDataset::Open( GDALOpenInfo * poOpenInfo )
         poDS->adfGeoTransform[2] = 0.0;
         poDS->adfGeoTransform[3] = poDS->sHeader.YOffset;
         poDS->adfGeoTransform[4] = 0.0;
-        poDS->adfGeoTransform[5] = -1.0 * ABS(poDS->sHeader.YPixSize);
+        poDS->adfGeoTransform[5] = -1.0 * std::abs(poDS->sHeader.YPixSize);
 
         poDS->adfGeoTransform[0] -= poDS->adfGeoTransform[1] * 0.5;
         poDS->adfGeoTransform[3] -= poDS->adfGeoTransform[5] * 0.5;

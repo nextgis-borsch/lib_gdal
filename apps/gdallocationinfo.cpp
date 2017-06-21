@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: gdallocationinfo.cpp 33615 2016-03-02 20:19:22Z goatbar $
  *
  * Project:  GDAL
  * Purpose:  Command line raster query tool.
@@ -34,7 +33,7 @@
 #include "cpl_minixml.h"
 #include <vector>
 
-CPL_CVSID("$Id: gdallocationinfo.cpp 33615 2016-03-02 20:19:22Z goatbar $");
+CPL_CVSID("$Id$");
 
 /******************************************************************************/
 /*! \page gdallocationinfo gdallocationinfo
@@ -58,7 +57,7 @@ Usage: gdallocationinfo [--help-general] [-xml] [-lifonly] [-valonly]
 
 <p>
 The gdallocationinfo utility provide a mechanism to query information about
-a pixel given it's location in one of a variety of coordinate systems.  Several
+a pixel given its location in one of a variety of coordinate systems.  Several
 reporting options are provided.
 
 <p>
@@ -242,15 +241,15 @@ int main( int argc, char ** argv )
             CSLDestroy(argv);
             return 0;
         }
-        else if( EQUAL(argv[i],"-b") && i < argc-1 )
+        else if( i < argc-1 && EQUAL(argv[i],"-b") )
         {
             anBandList.push_back( atoi(argv[++i]) );
         }
-        else if( EQUAL(argv[i],"-overview") && i < argc-1 )
+        else if( i < argc-1 && EQUAL(argv[i],"-overview") )
         {
             nOverview = atoi(argv[++i]) - 1;
         }
-        else if( EQUAL(argv[i],"-l_srs") && i < argc-1 )
+        else if( i < argc-1 && EQUAL(argv[i],"-l_srs") )
         {
             CPLFree(pszSourceSRS);
             pszSourceSRS = SanitizeSRS(argv[++i]);
@@ -279,7 +278,7 @@ int main( int argc, char ** argv )
             bValOnly = true;
             bQuiet = true;
         }
-        else if( EQUAL(argv[i], "-oo") && i < argc-1 )
+        else if( i < argc-1 && EQUAL(argv[i], "-oo") )
         {
             papszOpenOptions = CSLAddString( papszOpenOptions,
                                                 argv[++i] );
@@ -331,7 +330,7 @@ int main( int argc, char ** argv )
 /* -------------------------------------------------------------------- */
 /*      If no bands were requested, we will query them all.             */
 /* -------------------------------------------------------------------- */
-    if( anBandList.size() == 0 )
+    if( anBandList.empty() )
     {
         for( int i = 0; i < GDALGetRasterCount( hSrcDS ); i++ )
             anBandList.push_back( i+1 );
@@ -603,7 +602,6 @@ int main( int argc, char ** argv )
         {
             inputAvailable = 0;
         }
-
     }
 
 /* -------------------------------------------------------------------- */

@@ -3,7 +3,7 @@
 # Purpose:  CMake build scripts
 # Author:   Mikhail Gusev, gusevmihs@gmail.com
 ################################################################################
-# Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
+# Copyright (C) 2015-2017, NextGIS <info@nextgis.com>
 # Copyright (C) 2016 Mikhail Gusev
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -35,6 +35,7 @@ if(ENABLE_R)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
     set(LIB_HHEADERS
+        rdataset.h
     )
 
     set(LIB_HHEADERS_PRIV

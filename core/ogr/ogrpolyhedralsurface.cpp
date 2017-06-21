@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrpolyhedralsurface.cpp 36894 2016-12-15 22:57:29Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRPolyhedralSurface geometry class.
@@ -34,7 +34,7 @@
 #include "ogr_api.h"
 #include "ogr_libs.h"
 
-CPL_CVSID("$Id: ogrpolyhedralsurface.cpp 36894 2016-12-15 22:57:29Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                         OGRPolyhedralSurface()                       */
@@ -213,10 +213,12 @@ void OGRPolyhedralSurface::getEnvelope( OGREnvelope3D * psEnvelope ) const
 /*                           importFromWkb()                            */
 /************************************************************************/
 
-OGRErr OGRPolyhedralSurface::importFromWkb ( unsigned char * pabyData,
+OGRErr OGRPolyhedralSurface::importFromWkb ( const unsigned char * pabyData,
                                              int nSize,
-                                             OGRwkbVariant eWkbVariant )
+                                             OGRwkbVariant eWkbVariant,
+                                             int& nBytesConsumedOut )
 {
+    nBytesConsumedOut = -1;
     oMP.nGeomCount = 0;
     OGRwkbByteOrder eByteOrder = wkbXDR;
     int nDataOffset = 0;
@@ -246,7 +248,7 @@ OGRErr OGRPolyhedralSurface::importFromWkb ( unsigned char * pabyData,
     for( int iGeom = 0; iGeom < oMP.nGeomCount; iGeom++ )
     {
         // Parse the polygons
-        unsigned char* pabySubData = pabyData + nDataOffset;
+        const unsigned char* pabySubData = pabyData + nDataOffset;
         if( nSize < 9 && nSize != -1 )
             return OGRERR_NOT_ENOUGH_DATA;
 
@@ -265,9 +267,11 @@ OGRErr OGRPolyhedralSurface::importFromWkb ( unsigned char * pabyData,
         }
 
         OGRGeometry* poSubGeom = NULL;
+        int nSubGeomBytesConsumed = -1;
         eErr = OGRGeometryFactory::createFromWkb( pabySubData, NULL,
                                                   &poSubGeom, nSize,
-                                                  eWkbVariant );
+                                                  eWkbVariant,
+                                                  nSubGeomBytesConsumed );
 
         if( eErr != OGRERR_NONE )
         {
@@ -283,12 +287,16 @@ OGRErr OGRPolyhedralSurface::importFromWkb ( unsigned char * pabyData,
         if (oMP.papoGeoms[iGeom]->IsMeasured())
             flags |= OGR_G_MEASURED;
 
-        int nSubGeomWkbSize = oMP.papoGeoms[iGeom]->WkbSize();
+        CPLAssert( nSubGeomBytesConsumed > 0 );
         if( nSize != -1 )
-            nSize -= nSubGeomWkbSize;
+        {
+            CPLAssert( nSize >= nSubGeomBytesConsumed );
+            nSize -= nSubGeomBytesConsumed;
+        }
 
-        nDataOffset += nSubGeomWkbSize;
+        nDataOffset += nSubGeomBytesConsumed;
     }
+    nBytesConsumedOut = nDataOffset;
 
     return OGRERR_NONE;
 }
@@ -627,6 +635,9 @@ error:
 void OGRPolyhedralSurface::flattenTo2D()
 {
     oMP.flattenTo2D();
+
+    flags &= ~OGR_G_3D;
+    flags &= ~OGR_G_MEASURED;
 }
 
 /************************************************************************/
@@ -643,9 +654,17 @@ OGRErr OGRPolyhedralSurface::transform( OGRCoordinateTransformation *poCT )
 /************************************************************************/
 
 //! @cond Doxygen_Suppress
+static OGRPolygon* CasterToPolygon(OGRSurface* poGeom)
+{
+    CPLError(CE_Failure, CPLE_AppDefined,
+             "%s found. Conversion impossible", poGeom->getGeometryName());
+    delete poGeom;
+    return NULL;
+}
+
 OGRSurfaceCasterToPolygon OGRPolyhedralSurface::GetCasterToPolygon() const
 {
-    return (OGRSurfaceCasterToPolygon) OGRGeometry::CastToError;
+    return ::CasterToPolygon;
 }
 //! @endcond
 
@@ -654,9 +673,17 @@ OGRSurfaceCasterToPolygon OGRPolyhedralSurface::GetCasterToPolygon() const
 /************************************************************************/
 
 //! @cond Doxygen_Suppress
+static OGRCurvePolygon* CasterToCurvePolygon(OGRSurface* poGeom)
+{
+    CPLError(CE_Failure, CPLE_AppDefined,
+             "%s found. Conversion impossible", poGeom->getGeometryName());
+    delete poGeom;
+    return NULL;
+}
+
 OGRSurfaceCasterToCurvePolygon OGRPolyhedralSurface::GetCasterToCurvePolygon() const
 {
-    return (OGRSurfaceCasterToCurvePolygon) OGRGeometry::CastToError;
+    return ::CasterToCurvePolygon;
 }
 //! @endcond
 
@@ -1069,5 +1096,5 @@ OGRBoolean OGRPolyhedralSurface::hasCurveGeometry(int) const
 
 OGRErr OGRPolyhedralSurface::removeGeometry(int iGeom, int bDelete)
 {
-    return this->oMP.removeGeometry(iGeom,bDelete);
+    return oMP.removeGeometry(iGeom,bDelete);
 }

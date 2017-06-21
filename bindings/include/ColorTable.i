@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ColorTable.i 32864 2016-01-08 21:00:50Z goatbar $
+ * $Id$
  *
  * Name:     ColorTable.i
  * Project:  GDAL Python Interface

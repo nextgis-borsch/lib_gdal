@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: gdal_rasterize_lib.cpp 36584 2016-11-30 17:46:24Z rouault $
  *
  * Project:  GDAL Utilities
  * Purpose:  Rasterize OGR shapes into a GDAL raster.
@@ -28,17 +27,30 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "gdal.h"
-#include "gdal_alg.h"
-#include "cpl_conv.h"
-#include "ogr_api.h"
-#include "ogr_srs_api.h"
-#include "cpl_string.h"
-#include "commonutils.h"
+#include "cpl_port.h"
+#include "gdal_utils.h"
 #include "gdal_utils_priv.h"
+
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <algorithm>
 #include <vector>
 
-CPL_CVSID("$Id: gdal_rasterize_lib.cpp 36584 2016-11-30 17:46:24Z rouault $");
+#include "commonutils.h"
+#include "cpl_conv.h"
+#include "cpl_error.h"
+#include "cpl_progress.h"
+#include "cpl_string.h"
+#include "gdal.h"
+#include "gdal_alg.h"
+#include "gdal_priv.h"
+#include "ogr_api.h"
+#include "ogr_core.h"
+#include "ogr_srs_api.h"
+
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                            ArgIsNumeric()                            */
@@ -51,7 +63,6 @@ static bool ArgIsNumeric( const char *pszArg )
     CPLStrtod(pszArg, &pszEnd);
     return pszEnd != NULL && pszEnd[0] == '\0';
 }
-
 
 /************************************************************************/
 /*                          InvertGeometries()                          */
@@ -130,6 +141,7 @@ static CPLErr ProcessLayer(
     GDALDatasetH hDstDS, std::vector<int> anBandList,
     const std::vector<double> &adfBurnValues, int b3D, int bInverse,
     const char *pszBurnAttribute, char **papszRasterizeOptions,
+    char** papszTO,
     GDALProgressFunc pfnProgress, void* pProgressData )
 
 {
@@ -141,18 +153,21 @@ static CPLErr ProcessLayer(
     if (!bSRSIsSet)
     {
         OGRSpatialReferenceH  hDstSRS = NULL;
-        if( GDALGetProjectionRef( hDstDS ) != NULL )
+        const char* pszProjection = GDALGetProjectionRef( hDstDS );
+        if( pszProjection != NULL && pszProjection[0] != '\0' )
         {
-            char *pszProjection;
-
-            pszProjection = (char *) GDALGetProjectionRef( hDstDS );
-
             hDstSRS = OSRNewSpatialReference(NULL);
-            if( OSRImportFromWkt( hDstSRS, &pszProjection ) != OGRERR_NONE )
+            char* pszProjectionTmp = const_cast<char*>(pszProjection);
+            if( OSRImportFromWkt( hDstSRS, &pszProjectionTmp ) != OGRERR_NONE )
             {
                 OSRDestroySpatialReference(hDstSRS);
                 hDstSRS = NULL;
             }
+        }
+        else if( GDALGetMetadata(hDstDS, "RPC") != NULL )
+        {
+            hDstSRS = OSRNewSpatialReference(NULL);
+            CPL_IGNORE_RET_VAL( OSRSetFromUserInput(hDstSRS, SRS_WKT_WGS84) );
         }
 
         OGRSpatialReferenceH hSrcSRS = OGR_L_GetSpatialRef(hSrcLayer);
@@ -242,23 +257,20 @@ static CPLErr ProcessLayer(
 
         for( unsigned int iBand = 0; iBand < anBandList.size(); iBand++ )
         {
-            if( adfBurnValues.size() > 0 )
+            if( !adfBurnValues.empty() )
                 adfFullBurnValues.push_back(
-                    adfBurnValues[MIN(iBand,adfBurnValues.size()-1)] );
+                    adfBurnValues[
+                        std::min(iBand,
+                                 static_cast<unsigned int>(
+                                     adfBurnValues.size()) - 1)] );
             else if( pszBurnAttribute )
             {
                 adfFullBurnValues.push_back( OGR_F_GetFieldAsDouble( hFeat, iBurnField ) );
             }
-            /* I have made the 3D option exclusive to other options since it
-               can be used to modify the value from "-burn value" or
-               "-a attribute_name" */
-            if( b3D )
+            else if( b3D )
             {
-                // TODO: get geometry "z" value
                 /* Points and Lines will have their "z" values collected at the
-                   point and line levels respectively. However filled polygons
-                   (GDALdllImageFilledPolygon) can use some help by getting
-                   their "z" values here. */
+                   point and line levels respectively. Not implemented for polygons */
                 adfFullBurnValues.push_back( 0.0 );
             }
         }
@@ -276,13 +288,16 @@ static CPLErr ProcessLayer(
 /* -------------------------------------------------------------------- */
     if( bInverse )
     {
-        if( ahGeometries.size() == 0 )
+        if( ahGeometries.empty() )
         {
             for( unsigned int iBand = 0; iBand < anBandList.size(); iBand++ )
             {
-                if( adfBurnValues.size() > 0 )
+                if( !adfBurnValues.empty() )
                     adfFullBurnValues.push_back(
-                        adfBurnValues[MIN(iBand,adfBurnValues.size()-1)] );
+                        adfBurnValues[
+                            std::min(iBand,
+                                     static_cast<unsigned int>(
+                                        adfBurnValues.size()) - 1)] );
                 else /* FIXME? Not sure what to do exactly in the else case, but we must insert a value */
                     adfFullBurnValues.push_back( 0.0 );
             }
@@ -292,20 +307,65 @@ static CPLErr ProcessLayer(
     }
 
 /* -------------------------------------------------------------------- */
+/*      If we have transformer options, create the transformer here     */
+/*      Coordinate transformation to the target SRS has already been    */
+/*      done, so we just need to convert to target raster space.        */
+/*      Note: this is somewhat identical to what is done in             */
+/*      GDALRasterizeGeometries() itself, except we can pass transformer*/
+/*      options.                                                        */
+/* -------------------------------------------------------------------- */
+
+    void* pTransformArg = NULL;
+    GDALTransformerFunc pfnTransformer = NULL;
+    CPLErr eErr = CE_None;
+    if( papszTO != NULL )
+    {
+        GDALDataset* poDS = reinterpret_cast<GDALDataset*>(hDstDS);
+        char** papszTransformerOptions = CSLDuplicate(papszTO);
+        double adfGeoTransform[6] = { 0.0 };
+        if( poDS->GetGeoTransform( adfGeoTransform ) != CE_None &&
+            poDS->GetGCPCount() == 0 &&
+            poDS->GetMetadata("RPC") == NULL )
+        {
+            papszTransformerOptions = CSLSetNameValue(
+                papszTransformerOptions, "DST_METHOD", "NO_GEOTRANSFORM");
+        }
+
+        pTransformArg =
+            GDALCreateGenImgProjTransformer2( NULL, hDstDS,
+                                              papszTransformerOptions );
+        CSLDestroy( papszTransformerOptions );
+
+        pfnTransformer = GDALGenImgProjTransform;
+        if( pTransformArg == NULL )
+        {
+            eErr = CE_Failure;
+        }
+    }
+
+/* -------------------------------------------------------------------- */
 /*      Perform the burn.                                               */
 /* -------------------------------------------------------------------- */
-    CPLErr eErr = GDALRasterizeGeometries( hDstDS, static_cast<int>(anBandList.size()), &(anBandList[0]),
-                             static_cast<int>(ahGeometries.size()), &(ahGeometries[0]),
-                             NULL, NULL, &(adfFullBurnValues[0]),
-                             papszRasterizeOptions,
-                             pfnProgress, pProgressData );
+    if( eErr == CE_None )
+    {
+        eErr = GDALRasterizeGeometries(
+            hDstDS,
+            static_cast<int>(anBandList.size()), &(anBandList[0]),
+            static_cast<int>(ahGeometries.size()), &(ahGeometries[0]),
+            pfnTransformer, pTransformArg,
+            &(adfFullBurnValues[0]),
+            papszRasterizeOptions,
+            pfnProgress, pProgressData );
+    }
 
 /* -------------------------------------------------------------------- */
-/*      Cleanup geometries.                                             */
+/*      Cleanup                                                         */
 /* -------------------------------------------------------------------- */
-    int iGeom;
 
-    for( iGeom = static_cast<int>(ahGeometries.size())-1; iGeom >= 0; iGeom-- )
+    if( pTransformArg )
+        GDALDestroyTransformer( pTransformArg );
+
+    for( int iGeom = static_cast<int>(ahGeometries.size())-1; iGeom >= 0; iGeom-- )
         OGR_G_DestroyGeometry( ahGeometries[iGeom] );
 
     return eErr;
@@ -369,10 +429,10 @@ GDALDatasetH CreateOutputDataset(std::vector<OGRLayerH> ahLayers,
             }
             else
             {
-                sEnvelop.MinX = MIN(sEnvelop.MinX, sLayerEnvelop.MinX);
-                sEnvelop.MinY = MIN(sEnvelop.MinY, sLayerEnvelop.MinY);
-                sEnvelop.MaxX = MAX(sEnvelop.MaxX, sLayerEnvelop.MaxX);
-                sEnvelop.MaxY = MAX(sEnvelop.MaxY, sLayerEnvelop.MaxY);
+                sEnvelop.MinX = std::min(sEnvelop.MinX, sLayerEnvelop.MinX);
+                sEnvelop.MinY = std::min(sEnvelop.MinY, sLayerEnvelop.MinY);
+                sEnvelop.MaxX = std::max(sEnvelop.MaxX, sLayerEnvelop.MaxX);
+                sEnvelop.MaxY = std::max(sEnvelop.MaxY, sLayerEnvelop.MaxY);
             }
         }
         else
@@ -389,6 +449,12 @@ GDALDatasetH CreateOutputDataset(std::vector<OGRLayerH> ahLayers,
 
     if (dfXRes == 0 && dfYRes == 0)
     {
+        if( nXSize == 0 || nYSize == 0 )
+        {
+            CPLError(CE_Failure, CPLE_AppDefined,
+                     "Size and resolutions are missing");
+            return NULL;
+        }
         dfXRes = (sEnvelop.MaxX - sEnvelop.MinX) / nXSize;
         dfYRes = (sEnvelop.MaxY - sEnvelop.MinY) / nYSize;
     }
@@ -449,9 +515,11 @@ GDALDatasetH CreateOutputDataset(std::vector<OGRLayerH> ahLayers,
         }
     }
 
-    if (adfInitVals.size() != 0)
+    if (!adfInitVals.empty())
     {
-        for(iBand = 0; iBand < MIN(nBandCount,(int)adfInitVals.size()); iBand++)
+        for( iBand = 0;
+             iBand < std::min(nBandCount, static_cast<int>(adfInitVals.size()));
+             iBand++ )
         {
             GDALRasterBandH hBand = GDALGetRasterBand(hDstDS, iBand + 1);
             GDALFillRaster(hBand, adfInitVals[iBand], 0);
@@ -460,7 +528,6 @@ GDALDatasetH CreateOutputDataset(std::vector<OGRLayerH> ahLayers,
 
     return hDstDS;
 }
-
 
 struct GDALRasterizeOptions
 {
@@ -484,6 +551,7 @@ struct GDALRasterizeOptions
     std::vector<int> anBandList;
     std::vector<double> adfBurnValues;
     char **papszRasterizeOptions;
+    char **papszTO;
     double dfXRes;
     double dfYRes;
     char **papszCreationOptions;
@@ -497,7 +565,6 @@ struct GDALRasterizeOptions
     OGRSpatialReferenceH hSRS;
     int bTargetAlignedPixels;
 };
-
 
 /************************************************************************/
 /*                             GDALRasterize()                          */
@@ -591,29 +658,14 @@ GDALDatasetH GDALRasterize( const char *pszDest, GDALDatasetH hDstDS,
 /*      Find the output driver.                                         */
 /* -------------------------------------------------------------------- */
         hDriver = GDALGetDriverByName( psOptions->pszFormat );
+        char** papszDriverMD = (hDriver) ? GDALGetMetadata(hDriver, NULL): NULL;
         if( hDriver == NULL
-            || GDALGetMetadataItem( hDriver, GDAL_DCAP_CREATE, NULL ) == NULL )
+            || !CPLTestBool( CSLFetchNameValueDef(papszDriverMD, GDAL_DCAP_RASTER, "FALSE") )
+            || !CPLTestBool( CSLFetchNameValueDef(papszDriverMD, GDAL_DCAP_CREATE, "FALSE") ) )
         {
-            int	iDr;
-
             CPLError( CE_Failure, CPLE_NotSupported,
                       "Output driver `%s' not recognised or does not support "
-                      " direct output file creation.", psOptions->pszFormat);
-            fprintf(stderr, "The following format drivers are configured\n"
-                    "and support direct output:\n" );
-
-            for( iDr = 0; iDr < GDALGetDriverCount(); iDr++ )
-            {
-                hDriver = GDALGetDriver(iDr);
-
-                if( GDALGetMetadataItem( hDriver, GDAL_DCAP_CREATE, NULL) != NULL )
-                {
-                    fprintf(stderr, "  %s: %s\n",
-                            GDALGetDriverShortName( hDriver  ),
-                            GDALGetDriverLongName( hDriver ) );
-                }
-            }
-            fprintf(stderr, "\n" );
+                      "direct output file creation.", psOptions->pszFormat);
             GDALRasterizeOptionsFree(psOptionsToFree);
             return NULL;
         }
@@ -654,7 +706,10 @@ GDALDatasetH GDALRasterize( const char *pszDest, GDALDatasetH hDstDS,
 
             eErr = ProcessLayer( hLayer, psOptions->hSRS != NULL, hDstDS, psOptions->anBandList,
                           psOptions->adfBurnValues, psOptions->b3D, psOptions->bInverse, psOptions->pszBurnAttribute,
-                          psOptions->papszRasterizeOptions, psOptions->pfnProgress, psOptions->pProgressData );
+                          psOptions->papszRasterizeOptions,
+                          psOptions->papszTO,
+                          psOptions->pfnProgress,
+                          psOptions->pProgressData );
 
             GDALDatasetReleaseResultSet( hSrcDataset, hLayer );
         }
@@ -729,7 +784,9 @@ GDALDatasetH GDALRasterize( const char *pszDest, GDALDatasetH hDstDS,
 
         eErr = ProcessLayer( hLayer, psOptions->hSRS != NULL, hDstDS, psOptions->anBandList,
                       psOptions->adfBurnValues, psOptions->b3D, psOptions->bInverse, psOptions->pszBurnAttribute,
-                      psOptions->papszRasterizeOptions, GDALScaledProgress, pScaledProgress );
+                      psOptions->papszRasterizeOptions,
+                      psOptions->papszTO,
+                      GDALScaledProgress, pScaledProgress );
 
         GDALDestroyScaledProgress( pScaledProgress );
         if( eErr != CE_None )
@@ -785,6 +842,7 @@ GDALRasterizeOptions *GDALRasterizeOptionsNew(char** papszArgv,
     psOptions->pszBurnAttribute = NULL;
     psOptions->pszWHERE = NULL;
     psOptions->papszRasterizeOptions = NULL;
+    psOptions->papszTO = NULL;
     psOptions->dfXRes = 0;
     psOptions->dfYRes = 0;
     psOptions->eOutputType = GDT_Float64;
@@ -800,9 +858,9 @@ GDALRasterizeOptions *GDALRasterizeOptionsNew(char** papszArgv,
 /*      Handle command line arguments.                                  */
 /* -------------------------------------------------------------------- */
     int argc = CSLCount(papszArgv);
-    for( int i = 0; i < argc; i++ )
+    for( int i = 0; papszArgv != NULL && i < argc; i++ )
     {
-        if( EQUAL(papszArgv[i],"-of") && i < argc-1 )
+        if( i < argc-1 && EQUAL(papszArgv[i],"-of") )
         {
             ++i;
             CPLFree(psOptions->pszFormat);
@@ -820,12 +878,12 @@ GDALRasterizeOptions *GDALRasterizeOptionsNew(char** papszArgv,
                 psOptionsForBinary->bQuiet = TRUE;
         }
 
-        else if( EQUAL(papszArgv[i],"-a") && i < argc-1 )
+        else if( i < argc-1 && EQUAL(papszArgv[i],"-a") )
         {
             CPLFree(psOptions->pszBurnAttribute);
             psOptions->pszBurnAttribute = CPLStrdup(papszArgv[++i]);
         }
-        else if( EQUAL(papszArgv[i],"-b") && i < argc-1 )
+        else if( i < argc-1 && EQUAL(papszArgv[i],"-b") )
         {
             if (strchr(papszArgv[i+1], ' '))
             {
@@ -859,7 +917,7 @@ GDALRasterizeOptions *GDALRasterizeOptionsNew(char** papszArgv,
             psOptions->papszRasterizeOptions =
                 CSLSetNameValue( psOptions->papszRasterizeOptions, "MERGE_ALG", "ADD");
         }
-        else if( EQUAL(papszArgv[i],"-chunkysize") && i < argc-1 )
+        else if( i < argc-1 && EQUAL(papszArgv[i],"-chunkysize") )
         {
             psOptions->papszRasterizeOptions =
                 CSLSetNameValue( psOptions->papszRasterizeOptions, "CHUNKYSIZE",
@@ -874,7 +932,12 @@ GDALRasterizeOptions *GDALRasterizeOptionsNew(char** papszArgv,
             psOptions->papszRasterizeOptions =
                 CSLSetNameValue( psOptions->papszRasterizeOptions, "ALL_TOUCHED", "TRUE" );
         }
-        else if( EQUAL(papszArgv[i],"-burn") && i < argc-1 )
+        else if( i < argc-1 && EQUAL(papszArgv[i],"-optim") )
+        {
+            psOptions->papszRasterizeOptions = 
+                CSLSetNameValue( psOptions->papszRasterizeOptions, "OPTIM", papszArgv[++i] );
+        }
+        else if( i < argc-1 && EQUAL(papszArgv[i],"-burn") )
         {
             if (strchr(papszArgv[i+1], ' '))
             {
@@ -897,26 +960,26 @@ GDALRasterizeOptions *GDALRasterizeOptionsNew(char** papszArgv,
                 }
             }
         }
-        else if( EQUAL(papszArgv[i],"-where") && i < argc-1 )
+        else if( i < argc-1 && EQUAL(papszArgv[i],"-where") )
         {
             CPLFree(psOptions->pszWHERE);
             psOptions->pszWHERE = CPLStrdup(papszArgv[++i]);
         }
-        else if( EQUAL(papszArgv[i],"-l") && i < argc-1 )
+        else if( i < argc-1 && EQUAL(papszArgv[i],"-l") )
         {
             psOptions->papszLayers = CSLAddString( psOptions->papszLayers, papszArgv[++i] );
         }
-        else if( EQUAL(papszArgv[i],"-sql") && i < argc-1 )
+        else if( i < argc-1 && EQUAL(papszArgv[i],"-sql") )
         {
             CPLFree(psOptions->pszSQL);
             psOptions->pszSQL = CPLStrdup(papszArgv[++i]);
         }
-        else if( EQUAL(papszArgv[i],"-dialect") && i < argc-1 )
+        else if( i < argc-1 && EQUAL(papszArgv[i],"-dialect") )
         {
             CPLFree(psOptions->pszDialect);
             psOptions->pszDialect = CPLStrdup(papszArgv[++i]);
         }
-        else if( EQUAL(papszArgv[i],"-init") && i < argc - 1 )
+        else if( i < argc-1 && EQUAL(papszArgv[i],"-init") )
         {
             if (strchr(papszArgv[i+1], ' '))
             {
@@ -940,14 +1003,14 @@ GDALRasterizeOptions *GDALRasterizeOptionsNew(char** papszArgv,
             }
             psOptions->bCreateOutput = TRUE;
         }
-        else if( EQUAL(papszArgv[i],"-a_nodata") && i < argc - 1 )
+        else if( i < argc-1 && EQUAL(papszArgv[i],"-a_nodata") )
         {
             psOptions->dfNoData = CPLAtof(papszArgv[i+1]);
             psOptions->bNoDataSet = TRUE;
             i += 1;
             psOptions->bCreateOutput = TRUE;
         }
-        else if( EQUAL(papszArgv[i],"-a_srs") && i < argc-1 )
+        else if( i < argc-1 && EQUAL(papszArgv[i],"-a_srs") )
         {
             OSRDestroySpatialReference(psOptions->hSRS);
             psOptions->hSRS = OSRNewSpatialReference( NULL );
@@ -965,7 +1028,7 @@ GDALRasterizeOptions *GDALRasterizeOptionsNew(char** papszArgv,
             psOptions->bCreateOutput = TRUE;
         }
 
-        else if( EQUAL(papszArgv[i],"-te") && i < argc - 4 )
+        else if( i < argc-4 && EQUAL(papszArgv[i],"-te") )
         {
             psOptions->sEnvelop.MinX = CPLAtof(papszArgv[++i]);
             psOptions->sEnvelop.MinY = CPLAtof(papszArgv[++i]);
@@ -974,7 +1037,7 @@ GDALRasterizeOptions *GDALRasterizeOptionsNew(char** papszArgv,
             psOptions->bGotBounds = TRUE;
             psOptions->bCreateOutput = TRUE;
         }
-        else if( EQUAL(papszArgv[i],"-a_ullr") && i < argc - 4 )
+        else if( i < argc-4 && EQUAL(papszArgv[i],"-a_ullr") )
         {
             psOptions->sEnvelop.MinX = CPLAtof(papszArgv[++i]);
             psOptions->sEnvelop.MaxY = CPLAtof(papszArgv[++i]);
@@ -983,12 +1046,12 @@ GDALRasterizeOptions *GDALRasterizeOptionsNew(char** papszArgv,
             psOptions->bGotBounds = TRUE;
             psOptions->bCreateOutput = TRUE;
         }
-        else if( EQUAL(papszArgv[i],"-co") && i < argc-1 )
+        else if( i < argc-1 && EQUAL(papszArgv[i],"-co") )
         {
             psOptions->papszCreationOptions = CSLAddString( psOptions->papszCreationOptions, papszArgv[++i] );
             psOptions->bCreateOutput = TRUE;
         }
-        else if( EQUAL(papszArgv[i],"-ot") && i < argc-1 )
+        else if( i < argc-1 && EQUAL(papszArgv[i],"-ot") )
         {
             int iType;
 
@@ -1012,7 +1075,7 @@ GDALRasterizeOptions *GDALRasterizeOptionsNew(char** papszArgv,
             i++;
             psOptions->bCreateOutput = TRUE;
         }
-        else if( (EQUAL(papszArgv[i],"-ts") || EQUAL(papszArgv[i],"-outsize")) && i < argc-2 )
+        else if( i < argc-2 && (EQUAL(papszArgv[i],"-ts") || EQUAL(papszArgv[i],"-outsize")) )
         {
             psOptions->nXSize = atoi(papszArgv[++i]);
             psOptions->nYSize = atoi(papszArgv[++i]);
@@ -1025,7 +1088,7 @@ GDALRasterizeOptions *GDALRasterizeOptionsNew(char** papszArgv,
             }
             psOptions->bCreateOutput = TRUE;
         }
-        else if( EQUAL(papszArgv[i],"-tr") && i < argc-2 )
+        else if( i < argc-2 && EQUAL(papszArgv[i],"-tr") )
         {
             psOptions->dfXRes = CPLAtof(papszArgv[++i]);
             psOptions->dfYRes = fabs(CPLAtof(papszArgv[++i]));
@@ -1042,6 +1105,11 @@ GDALRasterizeOptions *GDALRasterizeOptionsNew(char** papszArgv,
         {
             psOptions->bTargetAlignedPixels = TRUE;
             psOptions->bCreateOutput = TRUE;
+        }
+        else if( i < argc-1 && EQUAL(papszArgv[i],"-to") )
+        {
+            psOptions->papszTO =
+                CSLAddString( psOptions->papszTO, papszArgv[++i] );
         }
 
         else if( papszArgv[i][0] == '-' )
@@ -1068,14 +1136,17 @@ GDALRasterizeOptions *GDALRasterizeOptionsNew(char** papszArgv,
         }
     }
 
-    if( psOptions->adfBurnValues.size() == 0 &&
-        psOptions->pszBurnAttribute == NULL && !(psOptions->b3D) )
+    int nExclusiveOptionsCount = 0;
+    nExclusiveOptionsCount += (!psOptions->adfBurnValues.empty()) ? 1 : 0;
+    nExclusiveOptionsCount += (psOptions->pszBurnAttribute != NULL) ? 1 : 0;
+    nExclusiveOptionsCount += (psOptions->b3D) ? 1 : 0;
+    if( nExclusiveOptionsCount != 1 )
     {
-        if( psOptionsForBinary == NULL )
+        if( nExclusiveOptionsCount == 0 && psOptionsForBinary == NULL )
             psOptions->adfBurnValues.push_back(255);
         else
         {
-            CPLError(CE_Failure, CPLE_NotSupported, "At least one of -3d, -burn or -a required." );
+            CPLError(CE_Failure, CPLE_NotSupported, "One and only one of -3d, -burn or -a is required." );
             GDALRasterizeOptionsFree(psOptions);
             return NULL;
         }
@@ -1094,10 +1165,10 @@ GDALRasterizeOptions *GDALRasterizeOptionsNew(char** papszArgv,
         {
             CPLError(CE_Failure, CPLE_NotSupported, "-tap option cannot be used without using -tr.");
             GDALRasterizeOptionsFree(psOptions);
-            return NULL;;
+            return NULL;
         }
 
-        if( psOptions->anBandList.size() != 0 )
+        if( !psOptions->anBandList.empty() )
         {
             CPLError(CE_Failure, CPLE_NotSupported, "-b option cannot be used when creating a GDAL dataset." );
             GDALRasterizeOptionsFree(psOptions);
@@ -1106,7 +1177,7 @@ GDALRasterizeOptions *GDALRasterizeOptionsNew(char** papszArgv,
 
         int nBandCount = 1;
 
-        if (psOptions->adfBurnValues.size() != 0)
+        if (!psOptions->adfBurnValues.empty())
             nBandCount = static_cast<int>(psOptions->adfBurnValues.size());
 
         if ((int)psOptions->adfInitVals.size() > nBandCount)
@@ -1124,7 +1195,7 @@ GDALRasterizeOptions *GDALRasterizeOptionsNew(char** papszArgv,
     }
     else
     {
-        if( psOptions->anBandList.size() == 0 )
+        if( psOptions->anBandList.empty() )
             psOptions->anBandList.push_back( 1 );
     }
 
@@ -1163,6 +1234,7 @@ void GDALRasterizeOptionsFree(GDALRasterizeOptions *psOptions)
         CSLDestroy(psOptions->papszCreationOptions);
         CSLDestroy(psOptions->papszLayers);
         CSLDestroy(psOptions->papszRasterizeOptions);
+        CSLDestroy(psOptions->papszTO);
         CPLFree(psOptions->pszSQL);
         CPLFree(psOptions->pszDialect);
         CPLFree(psOptions->pszBurnAttribute);

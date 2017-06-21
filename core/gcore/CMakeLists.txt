@@ -51,7 +51,7 @@ set(LIB_HHEADERS
     gdalgeorefpamdataset.h
     gdaljp2abstractdataset.h
     gdaljp2metadatagenerator.h
-    gdal_avx2_emulation.hpp
+
 )
 
 set(LIB_HHEADERS_PRIV
@@ -60,6 +60,7 @@ set(LIB_HHEADERS_PRIV
     gdaljp2abstractdataset.h
     gdaljp2metadatagenerator.h
     gdalsse_priv.h
+    gdal_avx2_emulation.hpp
 )
 
 set(LIB_CSOURCES

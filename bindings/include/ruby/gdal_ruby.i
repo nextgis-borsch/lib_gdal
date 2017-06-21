@@ -1,5 +1,5 @@
 /*
- * $Id: gdal_ruby.i 33721 2016-03-15 00:56:01Z goatbar $
+ * $Id$
  *
  * ruby specific code for gdal bindings.
  */

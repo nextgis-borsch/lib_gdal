@@ -22,4 +22,4 @@
 
 set(repo_name lib_openssl)
 set(repo_project openssl)
-set(repo_include openssl)
+set(repo_include)

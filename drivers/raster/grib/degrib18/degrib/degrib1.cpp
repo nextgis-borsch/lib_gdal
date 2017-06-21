@@ -12,6 +12,7 @@
  *****************************************************************************
  */
 
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -352,6 +353,7 @@ static double fval_360 (uInt4 aval)
  *
  * ARGUMENTS
  *       pds = The compressed part of the message dealing with "PDS". (Input)
+ *    pdsLen = Size of pds in bytes. (Input)
  *   gribLen = The total length of the GRIB1 message. (Input)
  *    curLoc = Current location in the GRIB1 message. (Output)
  *   pdsMeta = The filled out pdsMeta data structure. (Output)
@@ -377,13 +379,13 @@ static double fval_360 (uInt4 aval)
  * NOTES
  *****************************************************************************
  */
-static int ReadGrib1Sect1 (uChar *pds, uInt4 gribLen, uInt4 *curLoc,
+static int ReadGrib1Sect1 (uChar *pds, uInt4 pdsLen, uInt4 gribLen, uInt4 *curLoc,
                            pdsG1Type *pdsMeta, char *f_gds, uChar *gridID,
                            char *f_bms, short int *DSF,
                            unsigned short int *center,
                            unsigned short int *subcenter)
 {
-   sInt4 sectLen;       /* Length in bytes of the current section. */
+   uInt4 sectLen;       /* Length in bytes of the current section. */
    int year;            /* The year of the GRIB1 Message. */
    double P1_DeltaTime; /* Used to parse the time for P1 */
    double P2_DeltaTime; /* Used to parse the time for P2 */
@@ -393,8 +395,13 @@ static int ReadGrib1Sect1 (uChar *pds, uInt4 gribLen, uInt4 *curLoc,
    int i;
 */
 #endif
+   /* We will read the first required 28 bytes */
+   if( pdsLen < 28 )
+       return -1;
 
    sectLen = GRIB_UNSIGN_INT3 (*pds, pds[1], pds[2]);
+   if( sectLen > pdsLen )
+       return -1;
 #ifdef DEBUG
 /*
    printf ("Section 1 length = %ld\n", sectLen);
@@ -448,13 +455,13 @@ static int ReadGrib1Sect1 (uChar *pds, uInt4 gribLen, uInt4 *curLoc,
       pdsMeta->P1 = pdsMeta->refTime + P1_DeltaTime;
    } else {
       pdsMeta->P1 = pdsMeta->refTime;
-      printf ("Warning! : Can't figure out time unit of %d\n", *pds);
+      printf ("Warning! : Can't figure out time unit of %u\n", *pds);
    }
    if (ParseSect4Time2secV1 (pds[2], *pds, &P2_DeltaTime) == 0) {
       pdsMeta->P2 = pdsMeta->refTime + P2_DeltaTime;
    } else {
       pdsMeta->P2 = pdsMeta->refTime;
-      printf ("Warning! : Can't figure out time unit of %d\n", *pds);
+      printf ("Warning! : Can't figure out time unit of %u\n", *pds);
    }
    /* The following is based on Table 5. */
    /* Note: For ensemble forecasts, 119 has meaning. */
@@ -487,7 +494,7 @@ static int ReadGrib1Sect1 (uChar *pds, uInt4 gribLen, uInt4 *curLoc,
             pdsMeta->P2 = pdsMeta->P1 = pdsMeta->refTime + P1_DeltaTime;
          } else {
             pdsMeta->P2 = pdsMeta->P1 = pdsMeta->refTime;
-            printf ("Warning! : Can't figure out time unit of %d\n", *pds);
+            printf ("Warning! : Can't figure out time unit of %u\n", *pds);
          }
          pdsMeta->validTime = pdsMeta->P1;
          break;
@@ -547,7 +554,7 @@ static int ReadGrib1Sect1 (uChar *pds, uInt4 gribLen, uInt4 *curLoc,
          /* 87 ... 100 was reserved, but may not be encoded */
          if ((sectLen < 100) && (sectLen != 86)) {
             printf ("Warning! Problems with Ensemble Clustering section\n");
-            printf ("Section length == %d\n", sectLen);
+            printf ("Section length == %u\n", sectLen);
             return 0;
          }
          if (pdsMeta->f_hasProb == 0) {
@@ -594,8 +601,8 @@ static int ReadGrib1Sect1 (uChar *pds, uInt4 gribLen, uInt4 *curLoc,
               sectLen);
       */
    } else {
-      printf ("Un-handled possible ensemble section center %d "
-              "subcenter %d\n", *center, *subcenter);
+      printf ("Un-handled possible ensemble section center %u "
+              "subcenter %u\n", *center, *subcenter);
    }
    return 0;
 }
@@ -629,7 +636,7 @@ static int ReadGrib1Sect1 (uChar *pds, uInt4 gribLen, uInt4 *curLoc,
  */
 int GRIB1_Inventory (DataSource &fp, uInt4 gribLen, inventoryType *inv)
 {
-   char temp[3];        /* Used to determine the section length. */
+   uChar temp[3];        /* Used to determine the section length. */
    uInt4 sectLen;       /* Length in bytes of the current section. */
    uChar *pds;          /* The part of the message dealing with the PDS. */
    pdsG1Type pdsMeta;   /* The pds parsed into a usable data structure. */
@@ -675,7 +682,7 @@ int GRIB1_Inventory (DataSource &fp, uInt4 gribLen, inventoryType *inv)
       return -1;
    }
 
-   if (ReadGrib1Sect1 (pds, gribLen, &curLoc, &pdsMeta, &f_gds, &gridID,
+   if (ReadGrib1Sect1 (pds, sectLen, gribLen, &curLoc, &pdsMeta, &f_gds, &gridID,
                        &f_bms, &DSF, &center, &subcenter) != 0) {
       preErrSprintf ("Inside GRIB1_Inventory\n");
       free (pds);
@@ -712,7 +719,7 @@ int GRIB1_Inventory (DataSource &fp, uInt4 gribLen, inventoryType *inv)
 
 int GRIB1_RefTime (DataSource &fp, uInt4 gribLen, double *refTime)
 {
-   char temp[3];        /* Used to determine the section length. */
+   uChar temp[3];        /* Used to determine the section length. */
    uInt4 sectLen;       /* Length in bytes of the current section. */
    uChar *pds;          /* The part of the message dealing with the PDS. */
    pdsG1Type pdsMeta;   /* The pds parsed into a usable data structure. */
@@ -744,7 +751,7 @@ int GRIB1_RefTime (DataSource &fp, uInt4 gribLen, double *refTime)
       return -1;
    }
 
-   if (ReadGrib1Sect1 (pds, gribLen, &curLoc, &pdsMeta, &f_gds, &gridID,
+   if (ReadGrib1Sect1 (pds, sectLen, gribLen, &curLoc, &pdsMeta, &f_gds, &gridID,
                        &f_bms, &DSF, &center, &subcenter) != 0) {
       preErrSprintf ("Inside GRIB1_Inventory\n");
       free (pds);
@@ -831,7 +838,7 @@ static int ReadGrib1Sect2 (uChar *gds, uInt4 gribLen, uInt4 *curLoc,
 #ifdef DEBUG
    if (gds[1] != 255) {
       printf ("\n\tCaution: GRIB1 GDS: FOR ALL NWS products, PV should be "
-              "255 rather than %d\n", gds[1]);
+              "255 rather than %u\n", gds[1]);
    }
 #endif
    if ((gds[1] != 255) && (gds[1] > 6)) {
@@ -1209,7 +1216,7 @@ static int ReadGrib1Sect3 (uChar *bms, uInt4 gribLen, uInt4 *curLoc,
    return 0;
 }
 
-#ifdef DEBUG
+#ifdef USE_UNPACKCMPLX
 static int UnpackCmplx (uChar *bds, CPL_UNUSED uInt4 gribLen, CPL_UNUSED uInt4 *curLoc,
                         CPL_UNUSED short int DSF, CPL_UNUSED double *data, CPL_UNUSED grib_MetaData *meta,
                         CPL_UNUSED char f_bms, CPL_UNUSED uChar *bitmap, CPL_UNUSED double unitM,
@@ -1248,7 +1255,7 @@ static int UnpackCmplx (uChar *bds, CPL_UNUSED uInt4 gribLen, CPL_UNUSED uInt4 *
    P1 = GRIB_UNSIGN_INT2 (bds[5], bds[6]);
    P2 = GRIB_UNSIGN_INT2 (bds[7], bds[8]);
    printf ("N1 N2 P1 P2 : %d %d %d %d\n", N1, N2, P1, P2);
-   printf ("Reserved %d\n", bds[9]);
+   printf ("Reserved %u\n", bds[9]);
    bds += 10;
    secLen += 10;
 
@@ -1256,7 +1263,7 @@ static int UnpackCmplx (uChar *bds, CPL_UNUSED uInt4 gribLen, CPL_UNUSED uInt4 *
 
    for (i = 0; i < P1; i++) {
       width[i] = *bds;
-      printf ("(Width %d %d)\n", i, width[i]);
+      printf ("(Width %d %u)\n", i, width[i]);
       bds++;
       secLen++;
    }
@@ -1264,7 +1271,7 @@ static int UnpackCmplx (uChar *bds, CPL_UNUSED uInt4 gribLen, CPL_UNUSED uInt4 *
       bufLoc = 8;
       for (i = 0; i < P2; i++) {
          memBitRead (&uli_temp, sizeof (sInt4), bds, 1, &bufLoc, &numUsed);
-         printf ("(%d %d) ", i, uli_temp);
+         printf ("(%d %u) ", i, uli_temp);
          if (numUsed != 0) {
             printf ("\n");
             bds += numUsed;
@@ -1275,7 +1282,7 @@ static int UnpackCmplx (uChar *bds, CPL_UNUSED uInt4 gribLen, CPL_UNUSED uInt4 *
          bds++;
          secLen++;
       }
-      printf ("Observed Sec Len %d\n", secLen);
+      printf ("Observed Sec Len %u\n", secLen);
    } else {
       /* Jump over widths and secondary bitmap */
       bds += (N1 - 21);
@@ -1285,7 +1292,7 @@ static int UnpackCmplx (uChar *bds, CPL_UNUSED uInt4 gribLen, CPL_UNUSED uInt4 *
    bufLoc = 8;
    for (i = 0; i < P1; i++) {
       memBitRead (&uli_temp, sizeof (sInt4), bds, numBits, &bufLoc, &numUsed);
-      printf ("(%d %d) (numUsed %ld numBits %d)", i, uli_temp, 
+      printf ("(%d %u) (numUsed %ld numBits %d)", i, uli_temp,
               (long) numUsed, numBits);
       if (numUsed != 0) {
          printf ("\n");
@@ -1294,11 +1301,12 @@ static int UnpackCmplx (uChar *bds, CPL_UNUSED uInt4 gribLen, CPL_UNUSED uInt4 *
       }
    }
    if (bufLoc != 8) {
+      // cppcheck-suppress uselessAssignmentPtrArg
       bds++;
       secLen++;
    }
 
-   printf ("Observed Sec Len %d\n", secLen);
+   printf ("Observed Sec Len %u\n", secLen);
    printf ("N2 = %d\n", N2);
 
    errSprintf ("Don't know how to handle Complex GRIB1 packing yet.\n");
@@ -1306,7 +1314,7 @@ static int UnpackCmplx (uChar *bds, CPL_UNUSED uInt4 gribLen, CPL_UNUSED uInt4 *
    return -2;
 
 }
-#endif /* DEBUG */
+#endif /* USE_UNPACKCMPLX */
 
 /*****************************************************************************
  * ReadGrib1Sect4() --
@@ -1319,7 +1327,7 @@ static int UnpackCmplx (uChar *bds, CPL_UNUSED uInt4 gribLen, CPL_UNUSED uInt4 *
  * ARGUMENTS
  *     bds = The compressed part of the message dealing with "BDS". (Input)
  * gribLen = The total length of the GRIB1 message. (Input)
- *  curLoc = Current location in the GRIB1 message. (Output)
+ *  curLoc = Current location in the GRIB1 message. (Input/Output)
  *     DSF = Decimal Scale Factor for unpacking the data. (Input)
  *    data = The extracted grid. (Output)
  *    meta = The meta data associated with the grid (Input/Output)
@@ -1360,7 +1368,7 @@ static int ReadGrib1Sect4 (uChar *bds, uInt4 gribLen, uInt4 *curLoc,
    uChar numUnusedBit;  /* # of extra bits at end of record. */
    uChar f_spherHarm;   /* Flag if data contains Spherical Harmonics. */
    uChar f_cmplxPack;   /* Flag if complex packing was used. */
-#ifdef DEBUG
+#ifdef USE_UNPACKCMPLX
    uChar f_octet14;     /* Flag if octet 14 was used. */
 #endif
    uChar bufLoc;        /* Keeps track of where to start getting more data
@@ -1382,6 +1390,13 @@ static int ReadGrib1Sect4 (uChar *bds, uInt4 gribLen, uInt4 *curLoc,
       errSprintf ("(Nx * Ny != numPts) ?? in BDS (GRIB 1 Section 4)\n");
       return -2;
    }
+   if( *curLoc >= gribLen )
+       return -1;
+
+   uInt4 bdsRemainingSize = gribLen - *curLoc;
+   if( bdsRemainingSize < 3 )
+       return -1;
+
    sectLen = GRIB_UNSIGN_INT3 (*bds, bds[1], bds[2]);
 #ifdef DEBUG
 /*
@@ -1394,12 +1409,15 @@ static int ReadGrib1Sect4 (uChar *bds, uInt4 gribLen, uInt4 *curLoc,
       return -1;
    }
    bds += 3;
+   bdsRemainingSize -= 3;
 
    /* Assert: bds now points to the main pack flag. */
+   if( bdsRemainingSize < 1 )
+       return -1;
    f_spherHarm = (*bds) & GRIB2BIT_1;
    f_cmplxPack = (*bds) & GRIB2BIT_2;
    meta->gridAttrib.fieldType = (*bds) & GRIB2BIT_3;
-#ifdef DEBUG
+#ifdef USE_UNPACKCMPLX
    f_octet14 = (*bds) & GRIB2BIT_4;
 #endif
 
@@ -1429,15 +1447,25 @@ static int ReadGrib1Sect4 (uChar *bds, uInt4 gribLen, uInt4 *curLoc,
       meta->gridAttrib.packType = 0;
    }
    bds++;
+   bdsRemainingSize --;
 
    /* Assert: bds now points to E (power of 2 scaling factor). */
+   if( bdsRemainingSize < 2 )
+       return -1;
    ESF = GRIB_SIGN_INT2 (*bds, bds[1]);
    bds += 2;
+   bdsRemainingSize -= 2;
+
+   if( bdsRemainingSize < 4 )
+       return -1;
    MEMCPY_BIG (&uli_temp, bds, sizeof (sInt4));
    refVal = fval_360 (uli_temp);
    bds += 4;
+   bdsRemainingSize -= 4;
 
    /* Assert: bds is now the number of bits in a group. */
+   if( bdsRemainingSize < 1 )
+       return -1;
    numBits = *bds;
 /*
 #ifdef DEBUG
@@ -1446,8 +1474,9 @@ static int ReadGrib1Sect4 (uChar *bds, uInt4 gribLen, uInt4 *curLoc,
 #endif
 */
    if (f_cmplxPack) {
+#ifdef USE_UNPACKCMPLX
       bds++;
-#ifdef DEBUG
+      bdsRemainingSize --;
       return UnpackCmplx (bds, gribLen, curLoc, DSF, data, meta, f_bms,
                           bitmap, unitM, unitB, ESF, refVal, numBits,
                           f_octet14);
@@ -1476,20 +1505,29 @@ static int ReadGrib1Sect4 (uChar *bds, uInt4 gribLen, uInt4 *curLoc,
       return -2;
    }
    bds++;
+   bdsRemainingSize -= 1;
 
    /* Convert Units. */
+   {
+   double pow_10_DSF = pow (10.0, DSF);
+   if( pow_10_DSF == 0.0 ) {
+      errSprintf ("pow_10_DSF == 0.0\n");
+      return -2;
+   }
    if (unitM == -10) {
       meta->gridAttrib.min = pow (10.0, (refVal * pow (2.0, ESF) /
-                                       pow (10.0, DSF)));
+                                       pow_10_DSF));
    } else {
 /*      meta->gridAttrib.min = unitM * (refVal / pow (10.0, DSF)) + unitB; */
       meta->gridAttrib.min = unitM * (refVal * pow (2.0, ESF) /
-                                      pow (10.0, DSF)) + unitB;
+                                      pow_10_DSF) + unitB;
    }
+   }
+
    meta->gridAttrib.max = meta->gridAttrib.min;
    meta->gridAttrib.f_maxmin = 1;
    meta->gridAttrib.numMiss = 0;
-   meta->gridAttrib.refVal = refVal;
+   meta->gridAttrib.refVal = (float)refVal;
    meta->gridAttrib.ESF = ESF;
    meta->gridAttrib.DSF = DSF;
    bufLoc = 8;
@@ -1517,14 +1555,19 @@ static int ReadGrib1Sect4 (uChar *bds, uInt4 gribLen, uInt4 *curLoc,
             newIndex = i;
          }
          /* A 0 in bitmap means no data. A 1 in bitmap means data. */
+         // cppcheck-suppress nullPointer
          if (!bitmap[i]) {
             meta->gridAttrib.numMiss++;
             data[newIndex] = UNDEFINED;
          } else {
             if (numBits != 0) {
+               if( bdsRemainingSize < (unsigned) (numBits + 7) / 8)
+                   return -1;
                memBitRead (&uli_temp, sizeof (sInt4), bds, numBits,
                            &bufLoc, &numUsed);
+               assert( numUsed <= bdsRemainingSize );
                bds += numUsed;
+               bdsRemainingSize -= (uInt4)numUsed;
                d_temp = (refVal + (uli_temp * pow (2.0, ESF))) / pow (10.0, DSF);
                /* Convert Units. */
                if (unitM == -10) {
@@ -1566,6 +1609,7 @@ static int ReadGrib1Sect4 (uChar *bds, uInt4 gribLen, uInt4 *curLoc,
             } else {
                newIndex = i;
             }
+            // cppcheck-suppress nullPointer
             if (!bitmap[i]) {
                data[newIndex] = resetPrim;
             }
@@ -1594,9 +1638,13 @@ static int ReadGrib1Sect4 (uChar *bds, uInt4 gribLen, uInt4 *curLoc,
                newIndex = i;
             }
 
+            if( bdsRemainingSize < (unsigned) (numBits + 7) / 8)
+                return -1;
             memBitRead (&uli_temp, sizeof (sInt4), bds, numBits, &bufLoc,
                         &numUsed);
+            assert( numUsed <= bdsRemainingSize );
             bds += numUsed;
+            bdsRemainingSize -= (uInt4)numUsed;
             d_temp = (refVal + (uli_temp * pow (2.0, ESF))) / pow (10.0, DSF);
 
 #ifdef DEBUG
@@ -1724,7 +1772,7 @@ int ReadGrib1Record (DataSource &fp, sChar f_unit, double **Grib_Data,
 
    /* Preceding was in degrib2, next part is specific to GRIB1. */
    curLoc = 8;
-   if (ReadGrib1Sect1 (c_ipack + curLoc, gribLen, &curLoc, &(meta->pds1),
+   if (ReadGrib1Sect1 (c_ipack + curLoc, gribLen - curLoc, gribLen, &curLoc, &(meta->pds1),
                        &f_gds, &gridID, &f_bms, &DSF, &(meta->center),
                        &(meta->subcenter)) != 0) {
       preErrSprintf ("Inside ReadGrib1Record\n");
@@ -1769,6 +1817,22 @@ int ReadGrib1Record (DataSource &fp, sChar f_unit, double **Grib_Data,
 
    /* Allocate memory for the grid. */
    if (meta->gds.numPts > *grib_DataLen) {
+      if( meta->gds.numPts > 100 * 1024 * 1024 )
+      {
+          long curPos = fp.DataSourceFtell();
+          fp.DataSourceFseek(0, SEEK_END);
+          long fileSize = fp.DataSourceFtell();
+          fp.DataSourceFseek(curPos, SEEK_SET);
+          // allow a compression ratio of 1:1000
+          if( meta->gds.numPts / 1000 > (uInt4)fileSize )
+          {
+            errSprintf ("ERROR: File too short\n");
+            *grib_DataLen = 0;
+            *Grib_Data = NULL;
+            return -2;
+          }
+      }
+
       *grib_DataLen = meta->gds.numPts;
       *Grib_Data = (double *) realloc ((void *) (*Grib_Data),
                                        (*grib_DataLen) * sizeof (double));

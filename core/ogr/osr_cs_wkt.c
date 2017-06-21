@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: osr_cs_wkt.c 33714 2016-03-13 05:42:13Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  CS WKT parser
@@ -27,15 +27,11 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#include "cpl_port.h"
 #include <stdio.h>
 #include <string.h>
 
-#define MIN(a, b) (((a) < (b)) ? (a) : (b))
-#define MAX(a, b) (((a) > (b)) ? (a) : (b))
-
 #include "osr_cs_wkt.h"
-
-#include "cpl_port.h"
 
 /************************************************************************/
 /*                        osr_cs_wkt_error()                            */
