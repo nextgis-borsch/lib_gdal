@@ -3,7 +3,7 @@
 # Purpose:  CMake build scripts
 # Author:   Dmitry Baryshnikov, polimax@mail.ru
 ################################################################################
-# Copyright (C) 2015, NextGIS <info@nextgis.com>
+# Copyright (C) 2015,2017, NextGIS <info@nextgis.com>
 # Copyright (C) 2015 Dmitry Baryshnikov
 #
 # This script is free software: you can redistribute it and/or modify
@@ -30,34 +30,14 @@
 include(CheckCCompilerFlag)
 include(CheckCSourceCompiles)
 
-if (ICONV_INCLUDE_DIR AND ICONV_LIBRARIES)
+if(ICONV_INCLUDE_DIR AND ICONV_LIBRARIES)
   # Already in cache, be silent
   set(ICONV_FIND_QUIETLY TRUE)
-endif ()
+endif(ICONV_INCLUDE_DIR AND ICONV_LIBRARIES)
 
-if(APPLE)
-    find_path(ICONV_INCLUDE_DIR iconv.h
-             PATHS
-             /opt/local/include/
-             NO_CMAKE_SYSTEM_PATH
-    )
+find_path(ICONV_INCLUDE_DIR iconv.h PATH_SUFFIXES include)
 
-    find_library(ICONV_LIBRARIES NAMES iconv libiconv c
-             PATHS
-             /opt/local/lib/
-             NO_CMAKE_SYSTEM_PATH
-    )
-endif()
-
-find_path(ICONV_INCLUDE_DIR iconv.h PATHS /opt/local/include /sw/include /usr/include /usr/local/include)
-
-string(REGEX REPLACE "(.*)/include/?" "\\1" ICONV_INCLUDE_BASE_DIR "${ICONV_INCLUDE_DIR}")
-
-find_library(ICONV_LIBRARIES NAMES libiconv iconv libiconv.lib libiconv.dylib)
-
-if(NOT ICONV_LIBRARIES AND UNIX)
-    find_library(ICONV_LIBRARIES NAMES c libc)
-endif()
+find_library(ICONV_LIBRARIES NAMES iconv libiconv libiconv-2 c PATH_SUFFIXES lib)
 
 if(ICONV_INCLUDE_DIR AND ICONV_LIBRARIES)
     set(CMAKE_REQUIRED_INCLUDES ${ICONV_INCLUDE_DIR})
@@ -80,6 +60,8 @@ if(ICONV_INCLUDE_DIR AND ICONV_LIBRARIES)
         }
     " ICONV_SECOND_ARGUMENT_IS_CONST )
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS_BACKUP}")
+    set(CMAKE_REQUIRED_INCLUDES)
+    set(CMAKE_REQUIRED_LIBRARIES)
 endif()
 
 include(FindPackageHandleStandardArgs)
