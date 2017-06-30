@@ -27,7 +27,17 @@
 
 option(ENABLE_CAD "Build CAD (.dwg) format" ON)
 include(CheckCXXCompilerFlag)
-CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
+
+if(NOT MSVC)
+  include(CheckCXXCompilerFlag)
+  CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
+endif()
+if(MSVC AND MSVC_VERSION LESS 1700)
+  message(FATAL_ERROR "C++11 support required. The compiled version is less than VC 2012.")
+  set(COMPILER_SUPPORTS_CXX11 FALSE)
+else()
+    set(COMPILER_SUPPORTS_CXX11 TRUE)
+endif()
 
 if(ENABLE_CAD AND COMPILER_SUPPORTS_CXX11)
     set(TARGET_NAME com_cad)
