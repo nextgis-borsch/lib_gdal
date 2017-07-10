@@ -40,7 +40,7 @@
 #include "cpl_error.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ddfsubfielddefn.cpp 36552 2016-11-29 06:01:45Z goatbar $");
+CPL_CVSID("$Id: ddfsubfielddefn.cpp 38799 2017-06-02 08:54:26Z rouault $");
 
 /************************************************************************/
 /*                          DDFSubfieldDefn()                           */
@@ -476,6 +476,12 @@ DDFSubfieldDefn::ExtractFloatData( const char * pachSourceData,
                         "Attempt to extract float subfield %s with format %s\n"
                         "failed as only %d bytes available.  Using zero.",
                         pszName, pszFormatString, nMaxBytes );
+              return 0;
+          }
+          if( nFormatWidth > static_cast<int>(sizeof(abyData)) )
+          {
+              CPLError( CE_Failure, CPLE_AppDefined,
+                        "Format width %d too large", nFormatWidth );
               return 0;
           }
 

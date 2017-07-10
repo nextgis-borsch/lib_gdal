@@ -32,7 +32,7 @@
 #include "ogr_georss.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrgeorsslayer.cpp 37371 2017-02-13 11:41:59Z rouault $");
+CPL_CVSID("$Id: ogrgeorsslayer.cpp 38386 2017-05-15 11:55:09Z rouault $");
 
 static const char* const apszAllowedATOMFieldNamesWithSubElements[] =
     { "author", "contributor", NULL };
@@ -605,9 +605,7 @@ void OGRGeoRSSLayer::endElementCbk(const char *pszName)
     if( pszColon )
         pszNoNSName = pszColon + 1;
 
-    if ((eFormat == GEORSS_ATOM && currentDepth == 1 && strcmp(pszNoNSName, "entry") == 0) ||
-        ((eFormat == GEORSS_RSS || eFormat == GEORSS_RSS_RDF) &&
-         (currentDepth == 1 || currentDepth == 2) && strcmp(pszNoNSName, "item") == 0))
+    if( bInFeature && currentDepth == featureDepth )
     {
         bInFeature = false;
         bInTagWithSubTag = false;

@@ -44,7 +44,7 @@
 #include "gmlutils.h"
 #include "ogr_geometry.h"
 
-CPL_CVSID("$Id: gmlreader.cpp 37914 2017-04-06 17:38:46Z rouault $");
+CPL_CVSID("$Id: gmlreader.cpp 38566 2017-05-21 16:59:47Z rouault $");
 
 /************************************************************************/
 /*                            ~IGMLReader()                             */
@@ -897,6 +897,11 @@ void GMLReader::PopState()
             m_poCompleteFeature == NULL )
         {
             m_poCompleteFeature = m_poState->m_poFeature;
+            m_poState->m_poFeature = NULL;
+        }
+        else if( !bUseExpatReader && m_poState->m_poFeature != NULL )
+        {
+            delete m_poState->m_poFeature;
             m_poState->m_poFeature = NULL;
         }
 #endif

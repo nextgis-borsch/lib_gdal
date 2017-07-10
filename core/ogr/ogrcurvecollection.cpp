@@ -40,7 +40,7 @@
 #include "cpl_string.h"
 #include "cpl_vsi.h"
 
-CPL_CVSID("$Id: ogrcurvecollection.cpp 37852 2017-03-27 15:31:30Z rouault $");
+CPL_CVSID("$Id: ogrcurvecollection.cpp 39065 2017-06-11 13:17:51Z rouault $");
 
 //! @cond Doxygen_Suppress
 
@@ -272,15 +272,16 @@ OGRErr OGRCurveCollection::importBodyFromWkb(
         if( nSize < 9 && nSize != -1 )
             return OGRERR_NOT_ENOUGH_DATA;
 
-        OGRwkbGeometryType eSubGeomType = wkbUnknown;
+        OGRwkbGeometryType eFlattenSubGeomType = wkbUnknown;
         if( OGRReadWKBGeometryType( pabySubData, eWkbVariant,
-                                    &eSubGeomType ) != OGRERR_NONE )
+                                    &eFlattenSubGeomType ) != OGRERR_NONE )
             return OGRERR_FAILURE;
+        eFlattenSubGeomType = wkbFlatten(eFlattenSubGeomType);
 
         OGRErr eErr = OGRERR_NONE;
-        if( (eSubGeomType != wkbCompoundCurve &&
-             OGR_GT_IsCurve(eSubGeomType)) ||
-            (bAcceptCompoundCurve && eSubGeomType == wkbCompoundCurve) )
+        if( (eFlattenSubGeomType != wkbCompoundCurve &&
+             OGR_GT_IsCurve(eFlattenSubGeomType)) ||
+            (bAcceptCompoundCurve && eFlattenSubGeomType == wkbCompoundCurve) )
         {
             eErr = OGRGeometryFactory::
                 createFromWkb( pabySubData, NULL,
@@ -291,12 +292,20 @@ OGRErr OGRCurveCollection::importBodyFromWkb(
             CPLDebug(
                 "OGR",
                 "Cannot add geometry of type (%d) to geometry of type (%d)",
-                eSubGeomType, poGeom->getGeometryType());
+                eFlattenSubGeomType, poGeom->getGeometryType());
             return OGRERR_UNSUPPORTED_GEOMETRY_TYPE;
         }
 
         if( eErr == OGRERR_NONE )
         {
+            // Do that before adding the curve to the collection, since that
+            // might change its dimensions.
+            const int nSubGeomWkbSize = poSubGeom->WkbSize();
+            if( nSize != -1 )
+                nSize -= nSubGeomWkbSize;
+
+            nDataOffset += nSubGeomWkbSize;
+
             OGRCurve *poCurve = dynamic_cast<OGRCurve *>(poSubGeom);
             if( poCurve == NULL )
             {
@@ -311,11 +320,6 @@ OGRErr OGRCurveCollection::importBodyFromWkb(
             return eErr;
         }
 
-        const int nSubGeomWkbSize = poSubGeom->WkbSize();
-        if( nSize != -1 )
-            nSize -= nSubGeomWkbSize;
-
-        nDataOffset += nSubGeomWkbSize;
     }
 
     return OGRERR_NONE;

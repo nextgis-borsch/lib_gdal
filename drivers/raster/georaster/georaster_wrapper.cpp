@@ -34,7 +34,7 @@
 #include "cpl_string.h"
 #include "cpl_minixml.h"
 
-CPL_CVSID("$Id: georaster_wrapper.cpp 38020 2017-04-14 21:40:01Z rouault $");
+CPL_CVSID("$Id: georaster_wrapper.cpp 38500 2017-05-19 19:21:32Z ilucena $");
 
 //  ---------------------------------------------------------------------------
 //                                                           GeoRasterWrapper()
@@ -72,7 +72,6 @@ GeoRasterWrapper::GeoRasterWrapper() :
     pabyCompressBuf     = NULL;
     bIsReferenced       = false;
     poBlockStmt         = NULL;
-    poStmtWrite         = NULL;
     nCacheBlockId       = -1;
     nCurrentLevel       = -1;
     pahLevels           = NULL;
@@ -2385,6 +2384,12 @@ void GeoRasterWrapper::GetSpatialReference()
     //  Adjust Model Coordinate Location
     //  -------------------------------------------------------------------
     
+    if ( eModelCoordLocation == MCL_CENTER )
+    {
+       adfVal[2] -= ( adfVal[0] / 2.0 );
+       adfVal[5] -= ( adfVal[4] / 2.0 );
+    }    
+
     dfXCoefficient[0] = adfVal[0];
     dfXCoefficient[1] = adfVal[1];
     dfXCoefficient[2] = adfVal[2];
@@ -3193,11 +3198,13 @@ bool GeoRasterWrapper::FlushMetadata()
 
     if ( eModelCoordLocation == MCL_CENTER )
     {
-      nMLC = MCL_CENTER;
+        dfXCoef[2] += ( dfXCoefficient[0] / 2.0 );
+        dfYCoef[2] += ( dfYCoefficient[1] / 2.0 );
+        nMLC = MCL_CENTER;
     }
     else
     {
-      nMLC = MCL_UPPERLEFT;
+        nMLC = MCL_UPPERLEFT;
     }
 
     if( phRPC )

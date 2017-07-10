@@ -30,7 +30,7 @@
 #include "cpl_string.h"
 #include "ogr_pds.h"
 
-CPL_CVSID("$Id: ogrpdsdatasource.cpp 36682 2016-12-04 20:34:45Z rouault $");
+CPL_CVSID("$Id: ogrpdsdatasource.cpp 38382 2017-05-15 11:30:15Z rouault $");
 
 using namespace OGRPDS;
 
@@ -183,8 +183,22 @@ bool OGRPDSDataSource::LoadTable( const char* pszFilename,
             osTableFilename[0] <= '9')
         {
             nStartBytes = atoi(osTableFilename.c_str()) - 1;
+            if( nStartBytes < 0)
+            {
+                CPLError(CE_Failure, CPLE_NotSupported,
+                        "Cannot parse %s line", osTableFilename.c_str());
+                return false;
+            }
             if (strstr(osTableFilename.c_str(), "<BYTES>") == NULL)
+            {
+                if( nRecordSize > 0 && nStartBytes > INT_MAX / nRecordSize )
+                {
+                    CPLError(CE_Failure, CPLE_NotSupported,
+                             "Too big StartBytes value");
+                    return false;
+                }
                 nStartBytes *= nRecordSize;
+            }
             osTableFilename = pszFilename;
         }
         else

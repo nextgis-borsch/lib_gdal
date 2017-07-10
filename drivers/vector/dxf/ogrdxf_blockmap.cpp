@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "cpl_csv.h"
 
-CPL_CVSID("$Id: ogrdxf_blockmap.cpp 36682 2016-12-04 20:34:45Z rouault $");
+CPL_CVSID("$Id: ogrdxf_blockmap.cpp 38342 2017-05-14 18:13:16Z rouault $");
 
 /************************************************************************/
 /*                          ReadBlockSection()                          */
@@ -80,6 +80,12 @@ bool OGRDXFDataSource::ReadBlocksSection()
         if (nCode >= 0)
             UnreadValue();
 
+        if( oBlockMap.find(osBlockName) != oBlockMap.end() )
+        {
+            DXF_READER_ERROR();
+            return false;
+        }
+
         // Now we will process entities till we run out at the ENDBLK code.
         // we aggregate the geometries of the features into a multi-geometry,
         // but throw away other stuff attached to the features.
@@ -98,7 +104,9 @@ bool OGRDXFDataSource::ReadBlocksSection()
             }
             else
             {
-                poColl->addGeometryDirectly( poFeature->StealGeometry() );
+                OGRGeometry* poSubGeom = poFeature->StealGeometry();
+                if( poSubGeom )
+                    poColl->addGeometryDirectly( poSubGeom );
                 delete poFeature;
             }
         }

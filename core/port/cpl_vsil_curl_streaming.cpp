@@ -41,7 +41,7 @@
 #include "cpl_string.h"
 #include "cpl_time.h"
 
-CPL_CVSID("$Id: cpl_vsil_curl_streaming.cpp 37645 2017-03-08 00:15:33Z rouault $");
+CPL_CVSID("$Id: cpl_vsil_curl_streaming.cpp 38248 2017-05-13 12:58:34Z rouault $");
 
 #if !defined(HAVE_CURL) || defined(CPL_MULTIPROC_STUB)
 
@@ -1588,6 +1588,9 @@ VSIVirtualHandle* VSICurlStreamingFSHandler::Open( const char *pszFilename,
                                                    const char *pszAccess,
                                                    bool /* bSetError */ )
 {
+    if( !STARTS_WITH_CI(pszFilename, GetFSPrefix()) )
+        return NULL;
+
     if( strchr(pszAccess, 'w') != NULL ||
         strchr(pszAccess, '+') != NULL )
     {
@@ -1620,6 +1623,9 @@ int VSICurlStreamingFSHandler::Stat( const char *pszFilename,
                                      VSIStatBufL *pStatBuf,
                                      int nFlags )
 {
+    if( !STARTS_WITH_CI(pszFilename, GetFSPrefix()) )
+        return -1;
+
     CPLString osFilename(pszFilename);
 
     memset(pStatBuf, 0, sizeof(VSIStatBufL));

@@ -106,7 +106,7 @@
 #include "xtiffio.h"
 
 
-CPL_CVSID("$Id: geotiff.cpp 37723 2017-03-16 17:07:53Z rouault $");
+CPL_CVSID("$Id: geotiff.cpp 39129 2017-06-15 10:32:38Z rouault $");
 
 #if SIZEOF_VOIDP == 4
 static bool bGlobalStripIntegerOverflow = false;
@@ -6402,7 +6402,9 @@ CPLErr GTiffOddBitsBand::IReadBlock( int nBlockXOff, int nBlockYOff,
     else if( eDataType == GDT_Float32 )
     {
         const int nWordBytes = poGDS->nBitsPerSample / 8;
-        GByte *pabyImage = poGDS->pabyBlockBuf + (nBand - 1) * nWordBytes;
+        const GByte *pabyImage = poGDS->pabyBlockBuf +
+            ( ( poGDS->nPlanarConfig == PLANARCONFIG_SEPARATE ) ? 0 :
+              (nBand - 1) * nWordBytes );
         const int iSkipBytes =
             ( poGDS->nPlanarConfig == PLANARCONFIG_SEPARATE ) ?
             nWordBytes : poGDS->nBands * nWordBytes;
@@ -6413,7 +6415,7 @@ CPLErr GTiffOddBitsBand::IReadBlock( int nBlockXOff, int nBlockYOff,
             for( int i = 0; i < nBlockPixels; ++i )
             {
                 static_cast<GUInt32 *>(pImage)[i] =
-                    HalfToFloat( *reinterpret_cast<GUInt16 *>(pabyImage) );
+                    HalfToFloat( *reinterpret_cast<const GUInt16 *>(pabyImage) );
                 pabyImage += iSkipBytes;
             }
         }
@@ -12082,8 +12084,11 @@ GDALDataset *GTiffDataset::OpenDir( GDALOpenInfo * poOpenInfo )
         pszFilename += strlen("GTIFF_RAW:");
     }
 
-    if( !STARTS_WITH_CI(pszFilename, "GTIFF_DIR:") )
+    if( !STARTS_WITH_CI(pszFilename, "GTIFF_DIR:") ||
+        pszFilename[strlen("GTIFF_DIR:")] == '\0' )
+    {
         return NULL;
+    }
 
 /* -------------------------------------------------------------------- */
 /*      Split out filename, and dir#/offset.                            */

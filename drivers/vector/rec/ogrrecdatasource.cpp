@@ -30,7 +30,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrrecdatasource.cpp 34819 2016-07-28 22:32:18Z goatbar $");
+CPL_CVSID("$Id: ogrrecdatasource.cpp 38951 2017-06-07 21:40:45Z rouault $");
 
 /************************************************************************/
 /*                          OGRRECDataSource()                          */
@@ -105,6 +105,11 @@ int OGRRECDataSource::Open( const char * pszFilename )
 /*      field that is a number greater than zero.                       */
 /* -------------------------------------------------------------------- */
     const char * pszLine = CPLReadLine( fp );
+    if( pszLine == NULL )
+    {
+        VSIFClose( fp );
+        return FALSE;
+    }
 
     const int nFieldCount = atoi(pszLine);
     if( nFieldCount < 1 || nFieldCount > 1000 )

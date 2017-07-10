@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ceosopen.c 36380 2016-11-21 10:21:20Z rouault $
+ * $Id: ceosopen.c 39139 2017-06-16 15:32:12Z rouault $
  *
  * Project:  CEOS Translator
  * Purpose:  Implementation of non-GDAL dependent CEOS support.
@@ -30,7 +30,7 @@
 
 #include "ceosopen.h"
 
-CPL_CVSID("$Id: ceosopen.c 36380 2016-11-21 10:21:20Z rouault $");
+CPL_CVSID("$Id: ceosopen.c 39139 2017-06-16 15:32:12Z rouault $");
 
 CPL_INLINE static void CPL_IGNORE_RET_VAL_INT(CPL_UNUSED int unused) {}
 
@@ -164,8 +164,11 @@ CEOSRecord * CEOSReadRecord( CEOSImage *psImage )
 void CEOSDestroyRecord( CEOSRecord * psRecord )
 
 {
-    CPLFree( psRecord->pachData );
-    CPLFree( psRecord );
+    if( psRecord )
+    {
+        CPLFree( psRecord->pachData );
+        CPLFree( psRecord );
+    }
 }
 
 /************************************************************************/
@@ -232,8 +235,9 @@ CEOSImage * CEOSOpen( const char * pszFilename, const char * pszAccess )
 /*      Try to read the header record.                                  */
 /* -------------------------------------------------------------------- */
     psRecord = CEOSReadRecord( psImage );
-    if( psRecord == NULL )
+    if( psRecord == NULL || psRecord->nLength < 288 + 4 )
     {
+        CEOSDestroyRecord( psRecord );
         CEOSClose( psImage );
         return NULL;
     }

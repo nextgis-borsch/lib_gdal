@@ -50,7 +50,7 @@
 #include "ogrgeojsonutils.h"
 // #include "symbol_renames.h"
 
-CPL_CVSID("$Id: ogresrijsonreader.cpp 38127 2017-04-23 14:58:22Z rouault $");
+CPL_CVSID("$Id: ogresrijsonreader.cpp 38620 2017-05-23 09:32:47Z rouault $");
 
 /************************************************************************/
 /*                          OGRESRIJSONReader()                         */
@@ -771,9 +771,7 @@ OGRGeometry* OGRESRIJSONReadLineString( json_object* poObj )
             if( !OGRESRIJSONReaderParseXYZMArray (
               poObjCoords, bHasZ, bHasM, &dfX, &dfY, &dfZ, &dfM, &nNumCoords) )
             {
-                if( poRet != poLine )
-                    delete poRet;
-                delete poLine;
+                delete poRet;
                 return NULL;
             }
 
@@ -995,7 +993,9 @@ OGRSpatialReference* OGRESRIJSONReadSpatialReference( json_object* poObj )
         OGRGeoJSONFindMemberByName( poObj, "spatialReference" );
     if( NULL != poObjSrs )
     {
-        json_object* poObjWkid = OGRGeoJSONFindMemberByName( poObjSrs, "wkid" );
+        json_object* poObjWkid = OGRGeoJSONFindMemberByName( poObjSrs, "latestWkid" );
+        if( poObjWkid == NULL )
+            poObjWkid = OGRGeoJSONFindMemberByName( poObjSrs, "wkid" );
         if( poObjWkid == NULL )
         {
             json_object* poObjWkt =

@@ -139,10 +139,15 @@ static void DumpGeoTIFFBox(CPLXMLNode* psBox,
     {
         CPLString osTmpFilename(CPLSPrintf("/vsimem/tmp_%p.tif", oBox.GetFILE()));
         CPL_IGNORE_RET_VAL(VSIFCloseL(VSIFileFromMemBuffer(
-            osTmpFilename, pabyBoxData, nBoxDataLength, TRUE) ));
+            osTmpFilename, pabyBoxData, nBoxDataLength, FALSE) ));
         CPLPushErrorHandler(CPLQuietErrorHandler);
         GDALDataset* poDS = (GDALDataset*) GDALOpen(osTmpFilename, GA_ReadOnly);
         CPLPopErrorHandler();
+        if( poDS && poDS->GetRasterCount() > 1 )
+        {
+            GDALClose(poDS);
+            poDS = NULL;
+        }
         if( poDS )
         {
             CPLString osTmpVRTFilename(CPLSPrintf("/vsimem/tmp_%p.vrt", oBox.GetFILE()));
@@ -180,6 +185,7 @@ static void DumpGeoTIFFBox(CPLXMLNode* psBox,
         }
         VSIUnlink(osTmpFilename);
     }
+    CPLFree(pabyBoxData);
 }
 
 static void DumpFTYPBox(CPLXMLNode* psBox, GDALJP2Box& oBox)
@@ -714,6 +720,8 @@ static void DumpRREQBox(CPLXMLNode* psBox, GDALJP2Box& oBox)
                 pabyIter += 2;
                 nRemainingLength -= 2;
             }
+            else
+                break;
             if( nRemainingLength >= ML )
             {
                 CPLString osHex("0x");
@@ -727,6 +735,8 @@ static void DumpRREQBox(CPLXMLNode* psBox, GDALJP2Box& oBox)
                             CPLSPrintf("SM%d", iNSF),
                             (int)ML, osHex.c_str());
             }
+            else
+                break;
         }
         GUInt16 NVF = 0;
         if( nRemainingLength >= 2 )
@@ -754,6 +764,8 @@ static void DumpRREQBox(CPLXMLNode* psBox, GDALJP2Box& oBox)
                             CPLSPrintf("VF%d", iNVF),
                             (int)ML, osHex.c_str());
             }
+            else
+                break;
             if( nRemainingLength >= ML )
             {
                 CPLString osHex("0x");
@@ -767,6 +779,8 @@ static void DumpRREQBox(CPLXMLNode* psBox, GDALJP2Box& oBox)
                             CPLSPrintf("VM%d", iNVF),
                             (int)ML, osHex.c_str());
             }
+            else
+                break;
         }
         if( nRemainingLength > 0 )
             CPLCreateXMLElementAndValue(
@@ -937,6 +951,7 @@ static CPLXMLNode* DumpJPK2CodeStream(CPLXMLNode* psBox,
         GByte* pabyMarkerDataIter = pabyMarkerData;
         GUInt16 nRemainingMarkerSize = nMarkerSize - 2;
         GUInt32 nLastVal = 0;
+        bool bError = false;
 
 #define READ_MARKER_FIELD_UINT8_COMMENT(name, comment) \
         do { if( nRemainingMarkerSize >= 1 ) { \
@@ -948,6 +963,7 @@ static CPLXMLNode* DumpJPK2CodeStream(CPLXMLNode* psBox,
             else { \
                 AddError(psMarker, CPLSPrintf("Cannot read field %s", name)); \
                 nLastVal = 0; \
+                bError = true; \
             } \
         } while( false )
 
@@ -967,6 +983,7 @@ static CPLXMLNode* DumpJPK2CodeStream(CPLXMLNode* psBox,
             else { \
                 AddError(psMarker, CPLSPrintf("Cannot read field %s", name)); \
                 nLastVal = 0; \
+                bError = true; \
             } \
         } while( false )
 
@@ -986,6 +1003,7 @@ static CPLXMLNode* DumpJPK2CodeStream(CPLXMLNode* psBox,
             else { \
                 AddError(psMarker, CPLSPrintf("Cannot read field %s", name)); \
                 nLastVal = 0; \
+                bError = true; \
             } \
         } while( false )
 
@@ -1023,7 +1041,8 @@ static CPLXMLNode* DumpJPK2CodeStream(CPLXMLNode* psBox,
             READ_MARKER_FIELD_UINT32("YTOSiz");
             READ_MARKER_FIELD_UINT16("Csiz");
             int CSiz = nLastVal;
-            for(int i=0;i<CSiz;i++)
+            bError = false;
+            for(int i=0;i<CSiz && !bError;i++)
             {
                 READ_MARKER_FIELD_UINT8_COMMENT(CPLSPrintf("Ssiz%d", i),
                         GetInterpretationOfBPC(static_cast<GByte>(nLastVal)));
@@ -1215,6 +1234,8 @@ static CPLXMLNode* DumpJPK2CodeStream(CPLXMLNode* psBox,
             AddError(psCSBox, "Cannot seek to next marker", nOffset + 2 + nMarkerSize);
             break;
         }
+
+        CPL_IGNORE_RET_VAL(bError);
     }
     CPLFree(pabyMarkerData);
     return psCSBox;

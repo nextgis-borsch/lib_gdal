@@ -50,7 +50,7 @@
 #include "ogr_p.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id: ogr_srs_esri.cpp 36472 2016-11-23 16:38:20Z rouault $");
+CPL_CVSID("$Id: ogr_srs_esri.cpp 38677 2017-05-29 11:07:01Z rouault $");
 
 extern void OGREPSGDatumNameMassage( char ** ppszDatum );
 
@@ -2102,7 +2102,7 @@ OGRErr OGRSpatialReference::morphFromESRI()
                 FindProjParm( "Standard_Parallel_1", poPROJCS );
             const int iLatOrigChild =
                 FindProjParm( "Latitude_Of_Origin", poPROJCS );
-            if( iSP1Child != -1 && iLatOrigChild != 1 )
+            if( iSP1Child != -1 && iLatOrigChild != -1 )
             {
                 // Do a sanity check before removing Standard_Parallel_1.
                 if( EQUAL(poPROJCS->GetChild(iSP1Child)->GetValue(),
@@ -2132,6 +2132,12 @@ OGRErr OGRSpatialReference::morphFromESRI()
                               const_cast<char **>(papszDatumMapping+2),
                               3 );
 
+    // Refresh poDatum as the above SetNode() calls might have invalidated
+    // it.
+    poDatum = GetAttrNode( "DATUM" );
+    if( poDatum != NULL )
+        poDatum = poDatum->GetChild(0);
+
 /* -------------------------------------------------------------------- */
 /*      Special case for Peru96 related SRS that should use the         */
 /*      Peru96 DATUM, but in ESRI world, both Peru96 and SIRGAS-Chile   */
@@ -2143,7 +2149,7 @@ OGRErr OGRSpatialReference::morphFromESRI()
         const char* pszSRSName = GetAttrValue("PROJCS");
         if( pszSRSName == NULL )
             pszSRSName = GetAttrValue("GEOGCS");
-        if( strstr(pszSRSName, "Peru96") )
+        if( pszSRSName != NULL && strstr(pszSRSName, "Peru96") )
         {
             bPeru96Datum = true;
             poDatum->SetValue( "Peru96" );

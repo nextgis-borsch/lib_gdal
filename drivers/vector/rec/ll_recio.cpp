@@ -30,7 +30,7 @@
 #include "cpl_string.h"
 #include "ogr_rec.h"
 
-CPL_CVSID("$Id: ll_recio.cpp 36547 2016-11-28 22:27:56Z goatbar $");
+CPL_CVSID("$Id: ll_recio.cpp 39002 2017-06-09 00:06:16Z rouault $");
 
 static int nNextRecLine = 0;
 
@@ -123,6 +123,8 @@ const char *RECGetField( const char *pszSrc, int nStart, int nWidth )
 {
     static char szWorkField[128] = {};
 
+    if( nWidth >= static_cast<int>(sizeof(szWorkField)) )
+        nWidth = sizeof(szWorkField)-1;
     strncpy( szWorkField, pszSrc + nStart - 1, nWidth );
     szWorkField[nWidth] = '\0';
 

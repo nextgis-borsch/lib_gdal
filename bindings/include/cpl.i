@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl.i 37544 2017-03-01 18:36:56Z rouault $
+ * $Id: cpl.i 39224 2017-06-21 08:50:19Z rouault $
  *
  * Name:     cpl.i
  * Project:  GDAL Python Interface
@@ -582,6 +582,8 @@ void VSIStdoutUnsetRedirection()
 }
 }
 #endif
+
+void VSICurlClearCache();
 
 #endif /* !defined(SWIGJAVA) */
 

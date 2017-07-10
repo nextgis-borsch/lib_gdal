@@ -55,7 +55,7 @@
 #include "ogr_spatialref.h"
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id: mitab_tabfile.cpp 37351 2017-02-12 05:22:20Z goatbar $");
+CPL_CVSID("$Id: mitab_tabfile.cpp 38309 2017-05-14 09:26:54Z rouault $");
 
 static const char UNSUPPORTED_OP_READ_ONLY[] =
   "%s : unsupported operation on a read-only datasource.";
@@ -659,7 +659,7 @@ int TABFile::ParseTABFileFields()
         while(*pszStr != '\0' && isspace((unsigned char)*pszStr))
             pszStr++;
 
-        if (STARTS_WITH_CI(pszStr, "Fields"))
+        if (STARTS_WITH_CI(pszStr, "Fields") && CPLStrnlen(pszStr, 7) >= 7)
         {
             /*---------------------------------------------------------
              * We found the list of table fields

@@ -33,7 +33,7 @@
 #include <cctype>
 #include <algorithm>
 
-CPL_CVSID("$Id: ogrtigerdatasource.cpp 36017 2016-10-29 04:27:08Z goatbar $");
+CPL_CVSID("$Id: ogrtigerdatasource.cpp 38363 2017-05-14 22:30:05Z rouault $");
 
 /************************************************************************/
 /*                        TigerClassifyVersion()                        */
@@ -358,10 +358,11 @@ int OGRTigerDataSource::Open( const char * pszFilename, int bTestOpen,
             {
                 char       szModule[128];
 
-                strncpy( szModule, candidateFileList[i],
-                         strlen(candidateFileList[i])-1 );
-
-                szModule[strlen(candidateFileList[i])-1] = '\0';
+                snprintf( szModule, sizeof(szModule), "%s",
+                          candidateFileList[i] );
+                const size_t nLen = strlen(szModule);
+                if( nLen )
+                    szModule[nLen-1] = '\0';
 
                 papszFileList = CSLAddString(papszFileList, szModule);
             }

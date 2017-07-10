@@ -37,7 +37,7 @@
 #include <iostream>
 #include <string>
 
-CPL_CVSID("$Id: kml.cpp 35775 2016-10-17 00:43:44Z goatbar $");
+CPL_CVSID("$Id: kml.cpp 38409 2017-05-16 09:58:58Z rouault $");
 
 KML::KML() :
     poTrunk_(NULL),
@@ -213,7 +213,8 @@ void XMLCALL KML::startElement( void* pUserData, const char* pszName,
     poKML->nWithoutEventCounter = 0;
 
     if(poKML->poTrunk_ == NULL
-    || (poKML->poCurrent_->getName()).compare("description") != 0)
+    || (poKML->poCurrent_ != NULL &&
+        poKML->poCurrent_->getName().compare("description") != 0))
     {
         if (poKML->nDepth_ == 1024)
         {
@@ -244,7 +245,7 @@ void XMLCALL KML::startElement( void* pUserData, const char* pszName,
 
         poKML->nDepth_++;
     }
-    else
+    else if( poKML->poCurrent_ != NULL )
     {
         std::string sNewContent = "<";
         sNewContent += pszName;
@@ -635,11 +636,11 @@ void KML::unregisterLayerIfMatchingThisNode(KMLNode* poNode)
         {
             if( i < nNumLayers_ - 1 )
             {
-                memcpy( papoLayers_ + i, papoLayers_ + i + 1,
+                memmove( papoLayers_ + i, papoLayers_ + i + 1,
                         (nNumLayers_ - 1 - i) * sizeof(KMLNode*) );
             }
             nNumLayers_ --;
-            continue;
+            break;
         }
         i++;
     }

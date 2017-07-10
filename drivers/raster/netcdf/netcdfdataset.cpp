@@ -62,7 +62,7 @@
 #include "ogr_core.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id: netcdfdataset.cpp 38132 2017-04-25 16:34:14Z rouault $");
+CPL_CVSID("$Id: netcdfdataset.cpp 39160 2017-06-18 10:59:08Z rouault $");
 
 // Internal function declarations.
 
@@ -2827,6 +2827,23 @@ void netCDFDataset::SetProjectionFromVar( int nVarId, bool bReadSRSOnly )
     {
         nc_inq_varid(cdfid, poDS->papszDimName[nXDimID], &nVarDimXID);
         nc_inq_varid(cdfid, poDS->papszDimName[nYDimID], &nVarDimYID);
+
+        // Check that they are 1D or 2D variables
+        if( nVarDimXID >= 0 )
+        {
+            int ndims = -1;
+            nc_inq_varndims(cdfid, nVarDimXID, &ndims);
+            if( ndims == 0 || ndims > 2 )
+                nVarDimXID = -1;
+        }
+
+        if( nVarDimYID >= 0 )
+        {
+            int ndims = -1;
+            nc_inq_varndims(cdfid, nVarDimYID, &ndims);
+            if( ndims == 0 || ndims > 2 )
+                nVarDimYID = -1;
+        }
     }
 
     if( !bReadSRSOnly && (nVarDimXID != -1) && (nVarDimYID != -1) )
@@ -3115,6 +3132,58 @@ void netCDFDataset::SetProjectionFromVar( int nVarId, bool bReadSRSOnly )
                 yMinMax[0] = dfCoordOffset + yMinMax[0] * dfCoordScale;
                 yMinMax[1] = dfCoordOffset + yMinMax[1] * dfCoordScale;
             }
+
+
+            // Geostationary satellites can specify units in (micro)radians
+            // So we check if they do, and if so convert to linear units (meters)
+            const char *pszProjName = oSRS.GetAttrValue( "PROJECTION" );
+            if( pszProjName != NULL )
+            {
+                if( EQUAL( pszProjName, SRS_PT_GEOSTATIONARY_SATELLITE ) )
+                {
+                    double satelliteHeight = oSRS.GetProjParm(SRS_PP_SATELLITE_HEIGHT, 1.0);
+                    size_t nAttlen = 0;
+                    char szUnits[NC_MAX_NAME+1];
+                    szUnits[0] = '\0';
+                    nc_type nAttype=NC_NAT;
+                    nc_inq_att(cdfid, nVarDimXID, "units", &nAttype, &nAttlen);
+                    if( nAttlen < sizeof(szUnits) &&
+                        nc_get_att_text( cdfid, nVarDimXID, "units",
+                        szUnits ) == NC_NOERR )
+                    {
+                        szUnits[nAttlen] = '\0';
+                        if( EQUAL( szUnits, "microradian" ) )
+                        {
+                            xMinMax[0] = xMinMax[0] * satelliteHeight * 0.000001;
+                            xMinMax[1] = xMinMax[1] * satelliteHeight * 0.000001;
+                        }
+                        else if( EQUAL( szUnits, "rad" ) )
+                        {
+                            xMinMax[0] = xMinMax[0] * satelliteHeight;
+                            xMinMax[1] = xMinMax[1] * satelliteHeight;
+                        }
+                    }
+                    szUnits[0] = '\0';
+                    nc_inq_att(cdfid, nVarDimYID, "units", &nAttype, &nAttlen);
+                    if( nAttlen < sizeof(szUnits) &&
+                       nc_get_att_text( cdfid, nVarDimYID, "units",
+                       szUnits ) == NC_NOERR )
+                    {
+                        szUnits[nAttlen] = '\0';
+                        if( EQUAL( szUnits, "microradian" ) )
+                        {
+                            yMinMax[0] = yMinMax[0] * satelliteHeight * 0.000001;
+                            yMinMax[1] = yMinMax[1] * satelliteHeight * 0.000001;
+                        }
+                        else if( EQUAL( szUnits, "rad" ) )
+                        {
+                            yMinMax[0] = yMinMax[0] * satelliteHeight;
+                            yMinMax[1] = yMinMax[1] * satelliteHeight;
+                        }
+                    }
+                }
+            }
+
 
             adfTempGeoTransform[0] = xMinMax[0];
             adfTempGeoTransform[2] = 0;

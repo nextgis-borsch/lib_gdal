@@ -46,7 +46,7 @@
 #define TIMESTAMP_DEBUG
 // #define MEMORY_DEBUG
 
-CPL_CVSID("$Id: cpl_error.cpp 37003 2016-12-23 14:54:07Z goatbar $");
+CPL_CVSID("$Id: cpl_error.cpp 38237 2017-05-13 10:04:44Z rouault $");
 
 static CPLMutex *hErrorMutex = NULL;
 static void *pErrorHandlerUserData = NULL;
@@ -711,10 +711,10 @@ void CPL_DLL CPLErrorSetState( CPLErr eErrClass, CPLErrorNum err_no,
     }
 
     psCtx->nLastErrNo = err_no;
-    strncpy(psCtx->szLastErrMsg, pszMsg, psCtx->nLastErrMsgMax);
-    psCtx->szLastErrMsg[
-        std::max(psCtx->nLastErrMsgMax-1,
-                 static_cast<int>( strlen(pszMsg) ))] = '\0';
+    const size_t size = std::min(
+        static_cast<size_t>(psCtx->nLastErrMsgMax-1), strlen(pszMsg) );
+    strncpy( psCtx->szLastErrMsg, pszMsg, size );
+    psCtx->szLastErrMsg[size] = '\0';
     psCtx->eLastErrType = eErrClass;
 }
 

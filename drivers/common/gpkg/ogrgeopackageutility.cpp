@@ -29,7 +29,7 @@
 #include "ogrgeopackageutility.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrgeopackageutility.cpp 37806 2017-03-20 14:59:36Z rouault $");
+CPL_CVSID("$Id: ogrgeopackageutility.cpp 38970 2017-06-08 08:32:05Z rouault $");
 
 /* Requirement 20: A GeoPackage SHALL store feature table geometries */
 /* with the basic simple feature geometry types (Geometry, Point, */
@@ -366,6 +366,10 @@ OGRErr GPkgHeaderFromWKB(const GByte *pabyGpkg, size_t nGpkgLen, GPkgHeader *poH
             poHeader->bExtentHasM = true;
 #endif
             nEnvelopeDim = 4; /* 2D+ZM envelope */
+        }
+        else
+        {
+            return OGRERR_FAILURE;
         }
     }
 

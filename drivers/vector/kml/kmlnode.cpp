@@ -32,7 +32,7 @@
 #include <string>
 #include <vector>
 
-CPL_CVSID("$Id: kmlnode.cpp 36981 2016-12-20 19:46:41Z rouault $");
+CPL_CVSID("$Id: kmlnode.cpp 38371 2017-05-15 10:59:39Z rouault $");
 
 /************************************************************************/
 /*                           Help functions                             */
@@ -331,6 +331,16 @@ int KMLNode::classify(KML* poKML, int nRecLevel)
     return TRUE;
 }
 
+
+void KMLNode::unregisterLayerIfMatchingThisNode(KML* poKML)
+{
+    for(std::size_t z = 0; z < countChildren(); z++)
+    {
+        getChild(z)->unregisterLayerIfMatchingThisNode(poKML);
+    }
+    poKML->unregisterLayerIfMatchingThisNode(this);
+}
+
 void KMLNode::eliminateEmpty(KML* poKML)
 {
     for(kml_nodes_t::size_type z = 0; z < pvpoChildren_->size(); z++)
@@ -339,7 +349,7 @@ void KMLNode::eliminateEmpty(KML* poKML)
            && (poKML->isContainer((*pvpoChildren_)[z]->sName_)
                || poKML->isFeatureContainer((*pvpoChildren_)[z]->sName_)))
         {
-            poKML->unregisterLayerIfMatchingThisNode((*pvpoChildren_)[z]);
+            (*pvpoChildren_)[z]->unregisterLayerIfMatchingThisNode(poKML);
             delete (*pvpoChildren_)[z];
             pvpoChildren_->erase(pvpoChildren_->begin() + z);
             z--;

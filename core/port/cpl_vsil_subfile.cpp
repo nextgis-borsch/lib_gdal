@@ -42,7 +42,7 @@
 #include "cpl_string.h"
 #include "cpl_vsi_virtual.h"
 
-CPL_CVSID("$Id: cpl_vsil_subfile.cpp 36990 2016-12-21 19:42:05Z goatbar $");
+CPL_CVSID("$Id: cpl_vsil_subfile.cpp 38421 2017-05-16 17:09:42Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -157,7 +157,10 @@ int VSISubFileHandle::Seek( vsi_l_offset nOffset, int nWhence )
 vsi_l_offset VSISubFileHandle::Tell()
 
 {
-    return VSIFTellL( fp ) - nSubregionOffset;
+    vsi_l_offset nBasePos = VSIFTellL( fp );
+    if( nBasePos >= nSubregionOffset )
+        return nBasePos - nSubregionOffset;
+    return 0;
 }
 
 /************************************************************************/
@@ -332,6 +335,9 @@ VSISubFileFilesystemHandler::Open( const char *pszFilename,
                                    bool /* bSetError */ )
 
 {
+    if( !STARTS_WITH_CI(pszFilename, "/vsisubfile/") )
+        return NULL;
+
     CPLString osSubFilePath;
     vsi_l_offset nOff = 0;
     vsi_l_offset nSize = 0;
@@ -384,6 +390,9 @@ int VSISubFileFilesystemHandler::Stat( const char * pszFilename,
                                        int nFlags )
 
 {
+    if( !STARTS_WITH_CI(pszFilename, "/vsisubfile/") )
+        return -1;
+
     CPLString osSubFilePath;
     vsi_l_offset nOff = 0;
     vsi_l_offset nSize = 0;

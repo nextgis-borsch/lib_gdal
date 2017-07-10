@@ -39,7 +39,7 @@
 
 /*! @cond Doxygen_Suppress */
 
-CPL_CVSID("$Id: vrtdataset.cpp 37212 2017-01-26 10:01:56Z rouault $");
+CPL_CVSID("$Id: vrtdataset.cpp 38964 2017-06-08 08:09:07Z rouault $");
 
 /************************************************************************/
 /*                            VRTDataset()                             */
@@ -288,6 +288,11 @@ CPLXMLNode *VRTDataset::SerializeToXML( const char *pszVRTPathIn )
     /* -------------------------------------------------------------------- */
     /*      Serialize bands.                                                */
     /* -------------------------------------------------------------------- */
+    CPLXMLNode* psLastChild = psDSTree->psChild;
+    for( ; psLastChild != NULL && psLastChild->psNext;
+                                    psLastChild = psLastChild->psNext )
+    {
+    }
     for( int iBand = 0; iBand < nBands; iBand++ )
     {
         CPLXMLNode *psBandTree =
@@ -295,7 +300,17 @@ CPLXMLNode *VRTDataset::SerializeToXML( const char *pszVRTPathIn )
                 papoBands[iBand])->SerializeToXML( pszVRTPathIn );
 
         if( psBandTree != NULL )
-            CPLAddXMLChild( psDSTree, psBandTree );
+        {
+            if( psLastChild == NULL )
+            {
+                CPLAddXMLChild( psDSTree, psBandTree );
+            }
+            else
+            {
+                psLastChild->psNext = psBandTree;
+            }
+            psLastChild = psBandTree;
+        }
     }
 
     /* -------------------------------------------------------------------- */

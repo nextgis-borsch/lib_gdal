@@ -30,7 +30,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrntfdatasource.cpp 36677 2016-12-04 13:42:55Z rouault $");
+CPL_CVSID("$Id: ogrntfdatasource.cpp 38675 2017-05-29 11:02:44Z rouault $");
 
 /************************************************************************/
 /*                          OGRNTFDataSource()                          */
@@ -293,7 +293,7 @@ int OGRNTFDataSource::Open( const char * pszFilename, int bTestOpen,
                     break;
             }
 
-            if( j == 80 || szHeader[j-1] != '%' )
+            if( j == 80 || (j > 0 && szHeader[j-1] != '%') )
                 continue;
         }
 
@@ -537,9 +537,12 @@ void OGRNTFDataSource::EnsureTileNameUnique( NTFFileReader *poNewReader )
 
         for( int iReader = 0; iReader < nNTFFileCount && bIsUnique; iReader++ )
         {
-            if( strcmp( szCandidateName,
-                        GetFileReader( iReader )->GetTileName() ) == 0 )
+            const char* pszTileName = GetFileReader( iReader )->GetTileName();
+            if( pszTileName != NULL &&
+                strcmp( szCandidateName, pszTileName ) == 0 )
+            {
                 bIsUnique = FALSE;
+            }
         }
     } while( !bIsUnique );
 

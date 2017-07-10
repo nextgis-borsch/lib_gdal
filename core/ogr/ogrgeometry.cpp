@@ -56,7 +56,7 @@
 #define UNUSED_IF_NO_GEOS
 #endif
 
-CPL_CVSID("$Id: ogrgeometry.cpp 37004 2016-12-23 14:57:46Z goatbar $");
+CPL_CVSID("$Id: ogrgeometry.cpp 38291 2017-05-14 00:40:31Z rouault $");
 
 //! @cond Doxygen_Suppress
 int OGRGeometry::bGenerate_DB2_V72_BYTE_ORDER = FALSE;
@@ -6122,7 +6122,7 @@ OGRErr OGRGeometry::importPreambuleOfCollectionFromWkb( unsigned char * pabyData
     if( OGR_SWAP( eByteOrder ) )
         nGeomCount = CPL_SWAP32(nGeomCount);
 
-    if( nGeomCount < 0 || nGeomCount > INT_MAX / 4 )
+    if( nGeomCount < 0 || nGeomCount > INT_MAX / nMinSubGeomSize )
     {
         nGeomCount = 0;
         return OGRERR_CORRUPT_DATA;
@@ -6232,8 +6232,8 @@ OGRErr OGRGeometry::importCurveCollectionFromWkt(
             poCurve = dynamic_cast<OGRCurve *>(poGeom);
             if( poCurve == NULL )
             {
-                CPLError(CE_Fatal, CPLE_AppDefined,
-                         "dynamic_cast failed.  Expected OGRCurve.");
+                delete poGeom;
+                eErr = OGRERR_CORRUPT_DATA;
             }
         }
         else

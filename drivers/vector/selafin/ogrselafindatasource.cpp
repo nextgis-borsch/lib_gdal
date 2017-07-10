@@ -34,7 +34,7 @@
 
 #include <ctime>
 
-CPL_CVSID("$Id: ogrselafindatasource.cpp 35562 2016-09-30 19:16:16Z goatbar $");
+CPL_CVSID("$Id: ogrselafindatasource.cpp 39100 2017-06-13 08:53:49Z rouault $");
 
 /************************************************************************/
 /*                          Range                                       */
@@ -442,9 +442,9 @@ int OGRSelafinDataSource::OpenTable(const char * pszFilename) {
     }
 
     // Read header of file to get common information for all layers
+    // poHeader now owns fp
     poHeader=Selafin::read_header(fp,pszFilename);
     if (poHeader==NULL) {
-        VSIFCloseL(fp);
         CPLError( CE_Failure, CPLE_OpenFailed, "Failed to open %s, wrong format.\n", pszFilename);
         return FALSE;
     }
@@ -472,7 +472,6 @@ int OGRSelafinDataSource::OpenTable(const char * pszFilename) {
                 if( VSIFSeekL(fp, poHeader->getPosition(i)+4, SEEK_SET)!=0 ||
                     Selafin::read_float(fp, dfTime)==0 )
                 {
-                    VSIFCloseL(fp);
                     CPLError( CE_Failure, CPLE_OpenFailed, "Failed to open %s, wrong format.\n", pszFilename);
                     return FALSE;
                 }

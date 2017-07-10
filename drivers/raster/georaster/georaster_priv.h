@@ -86,6 +86,9 @@ CPL_C_END
 #define DEFAULT_BLOCK_ROWS 512
 #define DEFAULT_BLOCK_COLUMNS 512
 
+#define DEFAULT_JP2_TILE_ROWS 512
+#define DEFAULT_JP2_TILE_COLUMNS 512
+
 //  Default Model Coordinate Location (internal pixel geo-reference)
 
 #define MCL_CENTER      0
@@ -322,7 +325,6 @@ private:
     GByte*              pabyBlockBuf;
     GByte*              pabyCompressBuf;
     OWStatement*        poBlockStmt;
-    OWStatement*        poStmtWrite;
 
     int                 nCurrentLevel;
     long                nLevelOffset;

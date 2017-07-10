@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gxfopen.c 36436 2016-11-22 21:41:51Z rouault $
+ * $Id: gxfopen.c 39055 2017-06-11 08:20:42Z rouault $
  *
  * Project:  GXF Reader
  * Purpose:  Majority of Geosoft GXF reading code.
@@ -34,7 +34,7 @@
 #include <ctype.h>
 #include "gxfopen.h"
 
-CPL_CVSID("$Id: gxfopen.c 36436 2016-11-22 21:41:51Z rouault $");
+CPL_CVSID("$Id: gxfopen.c 39055 2017-06-11 08:20:42Z rouault $");
 
 
 /* this is also defined in gdal.h which we avoid in this separable component */
@@ -327,6 +327,12 @@ GXFHandle GXFOpen( const char * pszFilename )
         else if( STARTS_WITH_CI(szTitle,"#GTYPE") )
         {
             psGXF->nGType = atoi(papszList[0]);
+            if( psGXF->nGType < 0 || psGXF->nGType > 20 )
+            {
+                CSLDestroy( papszList );
+                GXFClose( psGXF );
+                return NULL;
+            }
         }
 
         CSLDestroy( papszList );
@@ -352,10 +358,26 @@ GXFHandle GXFOpen( const char * pszFilename )
 /* -------------------------------------------------------------------- */
 /*      Allocate, and initialize the raw scanline offset array.         */
 /* -------------------------------------------------------------------- */
-    if( psGXF->nRawYSize <= 0 )
+    if( psGXF->nRawYSize <= 0 || psGXF->nRawYSize >= INT_MAX )
     {
         GXFClose( psGXF );
         return NULL;
+    }
+
+    /* Avoid excessive memory allocation */
+    if( psGXF->nRawYSize >= 1000000 )
+    {
+        long nCurOffset;
+        long nFileSize;
+        nCurOffset = VSIFTell( psGXF->fp );
+        VSIFSeek( psGXF->fp, 0, SEEK_END );
+        nFileSize = VSIFTell( psGXF->fp );
+        VSIFSeek( psGXF->fp, nCurOffset, SEEK_SET );
+        if( psGXF->nRawYSize > nFileSize )
+        {
+            GXFClose( psGXF );
+            return NULL;
+        }
     }
 
     psGXF->panRawLineOffset = (long *)

@@ -29,7 +29,7 @@
 
 #include "gtm.h"
 
-CPL_CVSID("$Id: gtm.cpp 36948 2016-12-18 13:32:14Z rouault $");
+CPL_CVSID("$Id: gtm.cpp 38444 2017-05-17 08:54:05Z rouault $");
 
 /************************************************************************/
 /*        Methods for dealing with write on files and buffers           */
@@ -339,7 +339,11 @@ bool GTM::isValid()
         {
             VSILFILE* pGTMFileOri = pGTMFile;
             pGTMFile = fp;
-            if (isValid())
+            char* pszFilenameOri = pszFilename;
+            pszFilename = pszGZIPFileName;
+            const bool bRet = isValid();
+            pszFilename = pszFilenameOri;
+            if (bRet)
             {
                 VSIFCloseL(pGTMFileOri);
                 CPLFree(pszGZIPFileName);

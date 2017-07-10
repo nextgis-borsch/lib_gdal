@@ -49,7 +49,7 @@
 #include "ogr_core.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id: gdal_rasterize_lib.cpp 36682 2016-12-04 20:34:45Z rouault $");
+CPL_CVSID("$Id: gdal_rasterize_lib.cpp 39050 2017-06-10 20:18:19Z rouault $");
 
 /************************************************************************/
 /*                            ArgIsNumeric()                            */
@@ -151,18 +151,21 @@ static CPLErr ProcessLayer(
     if (!bSRSIsSet)
     {
         OGRSpatialReferenceH  hDstSRS = NULL;
-        if( GDALGetProjectionRef( hDstDS ) != NULL )
+        const char* pszProjection = GDALGetProjectionRef( hDstDS );
+        if( pszProjection != NULL && pszProjection[0] != '\0' )
         {
-            char *pszProjection;
-
-            pszProjection = (char *) GDALGetProjectionRef( hDstDS );
-
             hDstSRS = OSRNewSpatialReference(NULL);
-            if( OSRImportFromWkt( hDstSRS, &pszProjection ) != OGRERR_NONE )
+            char* pszProjectionTmp = const_cast<char*>(pszProjection);
+            if( OSRImportFromWkt( hDstSRS, &pszProjectionTmp ) != OGRERR_NONE )
             {
                 OSRDestroySpatialReference(hDstSRS);
                 hDstSRS = NULL;
             }
+        }
+        else if( GDALGetMetadata(hDstDS, "RPC") != NULL )
+        {
+            hDstSRS = OSRNewSpatialReference(NULL);
+            OSRSetFromUserInput(hDstSRS, SRS_WKT_WGS84);
         }
 
         OGRSpatialReferenceH hSrcSRS = OGR_L_GetSpatialRef(hSrcLayer);

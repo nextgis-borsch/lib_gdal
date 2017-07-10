@@ -71,7 +71,7 @@
 #include "../sqlite/ogrsqliteexecutesql.h"
 #endif
 
-CPL_CVSID("$Id: gdaldataset.cpp 37723 2017-03-16 17:07:53Z rouault $");
+CPL_CVSID("$Id: gdaldataset.cpp 38303 2017-05-14 09:16:00Z rouault $");
 
 CPL_C_START
 GDALAsyncReader *
@@ -3446,7 +3446,7 @@ void GDALDataset::ReportError(CPLErr eErrClass, CPLErrorNum err_no,
     const char *pszDSName = GetDescription();
     if (strlen(fmt) + strlen(pszDSName) + 3 >= sizeof(szNewFmt) - 1)
         pszDSName = CPLGetFilename(pszDSName);
-    if (pszDSName[0] != '\0' &&
+    if (pszDSName[0] != '\0' && strchr(pszDSName, '%') == NULL &&
         strlen(fmt) + strlen(pszDSName) + 3 < sizeof(szNewFmt) - 1)
     {
         snprintf(szNewFmt, sizeof(szNewFmt), "%s: %s", pszDSName, fmt);
