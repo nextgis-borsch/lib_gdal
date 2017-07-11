@@ -165,6 +165,14 @@ if(MSVC)
     set(PY_SETUP_PLATFORM_NAME --plat-name=${PY_PLATFORM_NAME})
 endif()
 
+if(WIN32)
+    find_anyproject(numpy DEFAULT ON)
+    if(NUMPY_FOUND)
+        set(NUMPY_PACKAGE_PATH ${NUMPY_PACKAGE_PATH})
+        file(COPY ${NUMPY_PACKAGE_PATH}/numpy DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+    endif()
+endif()
+
 macro(build_py ver)
     add_custom_target(build_py${ver} ALL
         # copy some files to binary_dir
