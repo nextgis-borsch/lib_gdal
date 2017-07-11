@@ -34,7 +34,7 @@
 #include <algorithm>
 #include <string>
 
-CPL_CVSID("$Id: northwood.cpp 36776 2016-12-10 11:17:47Z rouault $");
+CPL_CVSID("$Id: northwood.cpp 38735 2017-05-31 20:39:50Z dmorissette $");
 
 int nwt_ParseHeader( NWT_GRID * pGrd, char *nwtHeader )
 {
@@ -264,7 +264,10 @@ int nwt_ParseHeader( NWT_GRID * pGrd, char *nwtHeader )
                 return FALSE;
             }
 
-            if( !VSIFReadL( &psItem->szClassName, psItem->usLen, 1, pGrd->fp ) )
+            // 0-len class names are possible
+            psItem->szClassName[0] = '\0';
+            if( psItem->usLen > 0 &&
+                !VSIFReadL( &psItem->szClassName, psItem->usLen, 1, pGrd->fp ) )
                 return FALSE;
         }
     }

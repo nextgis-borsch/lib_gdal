@@ -38,7 +38,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id: nasreader.cpp 36300 2016-11-19 15:05:34Z jef $");
+CPL_CVSID("$Id: nasreader.cpp 38566 2017-05-21 16:59:47Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -404,6 +404,11 @@ void NASReader::PopState()
         if( m_poState->m_poFeature != NULL && m_poCompleteFeature == NULL )
         {
             m_poCompleteFeature = m_poState->m_poFeature;
+            m_poState->m_poFeature = NULL;
+        }
+        else if( m_poState->m_poFeature != NULL )
+        {
+            delete m_poState->m_poFeature;
             m_poState->m_poFeature = NULL;
         }
 

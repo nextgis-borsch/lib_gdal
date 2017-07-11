@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_port.h 37456 2017-02-25 18:35:03Z rouault $
+ * $Id: cpl_port.h 38517 2017-05-20 11:35:37Z rouault $
  *
  * Project:  CPL - Common Portability Library
  * Author:   Frank Warmerdam, warmerdam@pobox.com
@@ -653,10 +653,11 @@ static inline char* CPL_afl_friendly_strstr(const char* haystack, const char* ne
 #  define CPLIsNan(x) _isnan(x)
 #  define CPLIsInf(x) (!_isnan(x) && !_finite(x))
 #  define CPLIsFinite(x) _finite(x)
-#elif defined(__cplusplus) && defined(__MINGW32__) &&  __GNUC__ == 4 && __GNUC_MINOR__ == 2
-/* Hack for compatibility with ancient i586-mingw32msvc toolchain */
+#elif defined(__cplusplus) && defined(HAVE_STD_IS_NAN) && HAVE_STD_IS_NAN
 extern "C++" {
+#ifndef DOXYGEN_SKIP
 #include <cmath>
+#endif
 static inline int CPLIsNan(float f) { return std::isnan(f); }
 static inline int CPLIsNan(double f) { return std::isnan(f); }
 static inline int CPLIsInf(float f) { return std::isinf(f); }

@@ -37,7 +37,7 @@
 #include "cpl_conv.h"
 #include "cpl_error.h"
 
-CPL_CVSID("$Id: vfkdatablock.cpp 36682 2016-12-04 20:34:45Z rouault $");
+CPL_CVSID("$Id: vfkdatablock.cpp 38846 2017-06-04 09:00:01Z rouault $");
 
 /*!
   \brief VFK Data Block constructor
@@ -108,7 +108,7 @@ void IVFKDataBlock::SetProperties(const char *poLine)
     const char *poChar = NULL;
 
     /* skip data block name */
-    for (poChar = poLine; *poChar != '0' && *poChar != ';'; poChar++)
+    for (poChar = poLine; *poChar != '\0' && *poChar != ';'; poChar++)
         ;
     if (*poChar == '\0')
         return;

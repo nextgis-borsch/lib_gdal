@@ -59,7 +59,7 @@
 #include "cpl_multiproc.h"
 #include "cpl_vsi.h"
 
-CPL_CVSID("$Id: cpl_string.cpp 37457 2017-02-25 18:57:53Z rouault $");
+CPL_CVSID("$Id: cpl_string.cpp 38379 2017-05-15 11:25:22Z rouault $");
 
 /*=====================================================================
                     StringList manipulation functions.
@@ -2497,14 +2497,15 @@ static const unsigned char hex2char[256] = {
 
 GByte *CPLHexToBinary( const char *pszHex, int *pnBytes )
 {
+    const GByte* pabyHex = reinterpret_cast<const GByte*>(pszHex);
     const size_t nHexLen = strlen(pszHex);
 
     GByte *pabyWKB = static_cast<GByte *>( CPLMalloc(nHexLen / 2 + 2) );
 
     for( size_t i = 0; i < nHexLen/2; ++i )
     {
-        const unsigned char h1 = hex2char[static_cast<int>( pszHex[2*i] )];
-        const unsigned char h2 = hex2char[static_cast<int>( pszHex[2*i+1] )];
+        const unsigned char h1 = hex2char[pabyHex[2*i]];
+        const unsigned char h2 = hex2char[pabyHex[2*i+1]];
 
         // First character is high bits, second is low bits.
         pabyWKB[i] = static_cast<GByte>( (h1 << 4) | h2 );

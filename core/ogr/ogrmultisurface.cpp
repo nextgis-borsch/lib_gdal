@@ -37,7 +37,7 @@
 #include "ogr_core.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrmultisurface.cpp 36379 2016-11-21 09:38:41Z rouault $");
+CPL_CVSID("$Id: ogrmultisurface.cpp 38291 2017-05-14 00:40:31Z rouault $");
 
 /************************************************************************/
 /*                          OGRMultiSurface()                           */
@@ -216,8 +216,9 @@ OGRErr OGRMultiSurface::importFromWkt( char ** ppszInput )
             poSurface = dynamic_cast<OGRSurface*>(poGeom);
             if( poSurface == NULL )
             {
-                CPLError(CE_Fatal, CPLE_AppDefined,
-                         "dynamic_cast failed.  Expected OGRSurface.");
+                delete poGeom;
+                eErr = OGRERR_CORRUPT_DATA;
+                break;
             }
         }
         else

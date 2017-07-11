@@ -45,7 +45,7 @@
 #include "gt_wkt_srs_priv.h"
 #include "ogr_core.h"
 
-CPL_CVSID("$Id: gt_citation.cpp 37477 2017-02-26 03:04:08Z goatbar $");
+CPL_CVSID("$Id: gt_citation.cpp 38890 2017-06-05 08:45:27Z rouault $");
 
 static const char * const apszUnitMap[] = {
     "meters", "1.0",
@@ -108,7 +108,7 @@ char* ImagineCitationTranslation( char* psCitation, geokey_t keyID )
             "NAD = ", "Datum = ", "Ellipsoid = ", "Units = ", NULL };
 
         // This is a handle IMAGING style citation.
-        char name[256] = { '\0' };
+        CPLString osName;
         char* p1 = NULL;
 
         char* p = strchr(psCitation, '$');
@@ -139,21 +139,21 @@ char* ImagineCitationTranslation( char* psCitation, geokey_t keyID )
             {
               case PCSCitationGeoKey:
                 if( strstr(psCitation, "Projection = ") )
-                    strcpy(name, "PRJ Name = ");
+                    osName = "PRJ Name = ";
                 else
-                    strcpy(name, "PCS Name = ");
+                    osName = "PCS Name = ";
                 break;
               case GTCitationGeoKey:
-                strcpy(name, "PCS Name = ");
+                osName = "PCS Name = ";
                 break;
               case GeogCitationGeoKey:
                 if( !strstr(p, "Unable to") )
-                    strcpy(name, "GCS Name = ");
+                    osName = "GCS Name = ";
                 break;
               default:
                 break;
             }
-            if( strlen(name)>0 )
+            if( !osName.empty() )
             {
                 // TODO(schwehr): What exactly is this code trying to do?
                 // Added in r15993 and modified in r21844 by warmerdam.
@@ -176,9 +176,8 @@ char* ImagineCitationTranslation( char* psCitation, geokey_t keyID )
                 }
                 if( p1 >= p )
                 {
-                    strncat(name, p, p1 - p + 1);
-                    strcat(name, "|");
-                    name[strlen(name)] = '\0';
+                    osName.append(p, p1 - p + 1);
+                    osName += '|';
                 }
             }
         }
@@ -207,9 +206,9 @@ char* ImagineCitationTranslation( char* psCitation, geokey_t keyID )
             if( p && p1 && p1>p )
             {
                 if( EQUAL(keyNames[i], "Units = ") )
-                    strcat(name, "LUnits = ");
+                    osName += "LUnits = ";
                 else
-                    strcat(name, keyNames[i]);
+                    osName += keyNames[i];
                 if( p1[0] == '\0' || p1[0] == '\n' || p1[0] == ' ' )
                     p1--;
                 char* p2 = p1 - 1;
@@ -224,14 +223,13 @@ char* ImagineCitationTranslation( char* psCitation, geokey_t keyID )
                 }
                 if( p1 >= p )
                 {
-                    strncat(name, p, p1 - p + 1);
-                    strcat(name, "|");
-                    name[strlen(name)] = '\0';
+                    osName.append(p, p1 - p + 1);
+                    osName += '|';
                 }
             }
         }
-        if( strlen(name) > 0 )
-            ret = CPLStrdup(name);
+        if( !osName.empty() )
+            ret = CPLStrdup(osName);
     }
     return ret;
 }
@@ -630,11 +628,11 @@ OGRBoolean CheckCitationKeyForStatePlaneUTM( GTIF* hGTIF, GTIFDefn* psDefn,
             const char *pStr =
                 strstr( szCTString, "Projection Name = ") +
                 strlen("Projection Name = ");
+            CPLString osCSName(pStr);
             const char* pReturn = strchr( pStr, '\n');
-            char CSName[128] = { '\0' };
-            strncpy(CSName, pStr, pReturn - pStr);
-            CSName[pReturn-pStr] = '\0';
-            if( poSRS->ImportFromESRIStatePlaneWKT(0, NULL, NULL, 32767, CSName)
+            if( pReturn )
+                osCSName.resize(pReturn - pStr);
+            if( poSRS->ImportFromESRIStatePlaneWKT(0, NULL, NULL, 32767, osCSName)
                 == OGRERR_NONE )
             {
                 // For some erdas citation keys, the state plane CS name is

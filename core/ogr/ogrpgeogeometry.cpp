@@ -51,7 +51,7 @@
 #include "ogr_core.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrpgeogeometry.cpp 37654 2017-03-09 07:42:07Z rouault $");
+CPL_CVSID("$Id: ogrpgeogeometry.cpp 38691 2017-05-30 14:03:26Z rouault $");
 
 static const int SHPP_TRISTRIP  = 0;
 static const int SHPP_TRIFAN    = 1;
@@ -411,7 +411,16 @@ OGRGeometry* OGRCreateFromMultiPatch       ( int nParts,
             nPartPoints == 4 &&
             padfX[nPartStart] == padfX[nPartStart + 3] &&
             padfY[nPartStart] == padfY[nPartStart + 3] &&
-            padfZ[nPartStart] == padfZ[nPartStart + 3] )
+            padfZ[nPartStart] == padfZ[nPartStart + 3] &&
+            !CPLIsNan(padfX[nPartStart]) &&
+            !CPLIsNan(padfX[nPartStart+1]) &&
+            !CPLIsNan(padfX[nPartStart+2]) &&
+            !CPLIsNan(padfY[nPartStart]) &&
+            !CPLIsNan(padfY[nPartStart+1]) &&
+            !CPLIsNan(padfY[nPartStart+2]) &&
+            !CPLIsNan(padfZ[nPartStart]) &&
+            !CPLIsNan(padfZ[nPartStart+1]) &&
+            !CPLIsNan(padfZ[nPartStart+2]) )
         {
             bool bDuplicate = false;
             if( iPart > 0 )

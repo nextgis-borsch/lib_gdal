@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_vsi.h 37640 2017-03-07 15:20:35Z rouault $
+ * $Id: cpl_vsi.h 39224 2017-06-21 08:50:19Z rouault $
  *
  * Project:  CPL - Common Portability Library
  * Author:   Frank Warmerdam, warmerdam@pobox.com
@@ -306,6 +306,7 @@ void CPL_DLL VSIInstallLargeFileHandler(void);
 /*! @endcond */
 void CPL_DLL VSIInstallSubFileHandler(void);
 void VSIInstallCurlFileHandler(void);
+void CPL_DLL VSICurlClearCache(void);
 void VSIInstallCurlStreamingFileHandler(void);
 void VSIInstallS3FileHandler(void);
 void VSIInstallS3StreamingFileHandler(void);

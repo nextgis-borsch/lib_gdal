@@ -36,7 +36,7 @@
 
 #define PQexec this_is_an_error
 
-CPL_CVSID("$Id: ogrpgdatasource.cpp 36981 2016-12-20 19:46:41Z rouault $");
+CPL_CVSID("$Id: ogrpgdatasource.cpp 38594 2017-05-22 09:53:07Z rouault $");
 
 static void OGRPGNoticeProcessor( void *arg, const char * pszMessage );
 
@@ -710,7 +710,7 @@ int OGRPGDataSource::Open( const char * pszNewName, int bUpdate,
 /*      so we will get the value of the gist indexes.                   */
 /* -------------------------------------------------------------------- */
     hResult = OGRPG_PQexec(hPGConn,
-                        "SELECT oid, typname FROM pg_type WHERE typname IN ('geometry', 'geography')" );
+                        "SELECT oid, typname FROM pg_type WHERE typname IN ('geometry', 'geography') AND typtype='b'" );
 
     if( hResult && PQresultStatus(hResult) == PGRES_TUPLES_OK
         && PQntuples(hResult) > 0  && CPLTestBool(CPLGetConfigOption("PG_USE_POSTGIS", "YES")))

@@ -39,7 +39,7 @@
 // Uncomment to recognize also .gen files in addition to .img files
 // #define OPEN_GEN
 
-CPL_CVSID("$Id: srpdataset.cpp 36979 2016-12-20 18:40:40Z rouault $");
+CPL_CVSID("$Id: srpdataset.cpp 39068 2017-06-11 13:30:59Z rouault $");
 
 class SRPDataset : public GDALPamDataset
 {
@@ -555,9 +555,12 @@ bool SRPDataset::GetFromRecord( const char* pszFileName, DDFRecord * record )
 
         const int nIndexValueWidth = subfieldDefn->GetWidth();
 
+        char offset[30] = {0};
         /* Should be strict comparison, but apparently a few datasets */
         /* have GetDataSize() greater than the required minimum (#3862) */
-        if (nIndexValueWidth > (INT_MAX - 1) / (NFL * NFC) ||
+        if (nIndexValueWidth <= 0 ||
+            static_cast<size_t>(nIndexValueWidth) >= sizeof(offset) ||
+            nIndexValueWidth > (INT_MAX - 1) / (NFL * NFC) ||
             field->GetDataSize() < nIndexValueWidth * NFL * NFC + 1)
         {
             return false;
@@ -572,7 +575,6 @@ bool SRPDataset::GetFromRecord( const char* pszFileName, DDFRecord * record )
             return false;
         }
         const char* ptr = field->GetData();
-        char offset[30] = {0};
         offset[nIndexValueWidth] = '\0';
 
         for( int i = 0; i < NFL * NFC; i++ )

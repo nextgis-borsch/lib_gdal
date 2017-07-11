@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: kmlnode.h 36411 2016-11-21 22:03:48Z rouault $
+ * $Id: kmlnode.h 38371 2017-05-15 10:59:39Z rouault $
  *
  * Project:  KML Driver
  * Purpose:  Class for building up the node structure of the kml file.
@@ -110,6 +110,8 @@ private:
 
     int nLayerNumber_;
     int nNumFeatures_;
+
+    void unregisterLayerIfMatchingThisNode(KML* poKML);
 };
 
 #endif /* KMLNODE_H_INCLUDED */

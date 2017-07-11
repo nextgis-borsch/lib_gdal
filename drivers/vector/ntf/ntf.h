@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ntf.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: ntf.h 39074 2017-06-11 19:04:21Z rouault $
  *
  * Project:  NTF Translator
  * Purpose:  Main declarations for NTF translator.
@@ -278,6 +278,8 @@ class NTFFileReader
     int               bCacheLines;
     int               nLineCacheSize;
     OGRGeometry     **papoLineCache;
+    
+    void              AddToIndexGroup( NTFRecord * poRecord );
 
   public:
     explicit           NTFFileReader( OGRNTFDataSource * );
@@ -306,9 +308,9 @@ class NTFFileReader
 
     int               ProcessAttValue( const char *pszValType,
                                        const char *pszRawValue,
-                                       char **ppszAttName,
-                                       char **ppszAttValue,
-                                       char **ppszCodeDesc );
+                                       const char **ppszAttName,
+                                       const char **ppszAttValue,
+                                       const char **ppszCodeDesc );
 
     int               TestForLayer( OGRNTFLayer * );
     OGRFeature       *ReadOGRFeature( OGRNTFLayer * = NULL );
@@ -421,7 +423,7 @@ class OGRNTFFeatureClassLayer : public OGRLayer
 
     OGRNTFDataSource   *poDS;
 
-    int                 iCurrentFC;
+    GIntBig            iCurrentFC;
 
   public:
     explicit             OGRNTFFeatureClassLayer( OGRNTFDataSource * poDS );
@@ -458,7 +460,7 @@ class OGRNTFRasterLayer : public OGRLayer
     float              *pafColumn;
     int                 iColumnOffset;
 
-    int                 iCurrentFC;
+    GIntBig             iCurrentFC;
 
     int                 nDEMSample;
     int                 nFeatureCount;

@@ -48,7 +48,7 @@
 
 //! @cond Doxygen_Suppress
 
-CPL_CVSID("$Id: cpl_vsil_abstract_archive.cpp 37597 2017-03-04 17:27:00Z rouault $");
+CPL_CVSID("$Id: cpl_vsil_abstract_archive.cpp 38389 2017-05-15 12:23:59Z rouault $");
 
 static bool IsEitherSlash( char c )
 {
@@ -457,9 +457,9 @@ char* VSIArchiveFilesystemHandler::SplitFilename( const char *pszFilename,
     else
         pszFilename += strlen(GetPrefix()) + 1;
 
+    const std::vector<CPLString> oExtensions = GetExtensions();
     while( pszFilename[i] )
     {
-        const std::vector<CPLString> oExtensions = GetExtensions();
         int nToSkip = 0;
 
         for( std::vector<CPLString>::const_iterator iter = oExtensions.begin();

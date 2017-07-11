@@ -42,7 +42,7 @@
 #include "ogr_sfcgal.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrpolygon.cpp 36883 2016-12-15 13:31:12Z rouault $");
+CPL_CVSID("$Id: ogrpolygon.cpp 38291 2017-05-14 00:40:31Z rouault $");
 
 /************************************************************************/
 /*                             OGRPolygon()                             */
@@ -542,6 +542,7 @@ OGRErr OGRPolygon::importFromWKTListOnly( char ** ppszInput,
                                       &nMaxPoints, &nPoints );
         if( pszInput == NULL || nPoints == 0 )
         {
+            CPLFree(padfM);
             return OGRERR_CORRUPT_DATA;
         }
         if( (flagsFromInput & OGR_G_3D) && !(flags & OGR_G_3D) )

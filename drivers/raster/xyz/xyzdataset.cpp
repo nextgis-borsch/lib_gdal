@@ -34,7 +34,7 @@
 #include <algorithm>
 #include <vector>
 
-CPL_CVSID("$Id: xyzdataset.cpp 36822 2016-12-12 11:18:45Z rouault $");
+CPL_CVSID("$Id: xyzdataset.cpp 39210 2017-06-20 18:19:21Z rouault $");
 
 static const double RELATIVE_ERROR = 1e-3;
 
@@ -930,6 +930,7 @@ GDALDataset *XYZDataset::Open( GDALOpenInfo * poOpenInfo )
                                  fabs(*oIter - static_cast<int>(*oIter / dfStepX + 0.5) * dfStepX) / dfStepX < RELATIVE_ERROR )
                         {
                             nCountStepX = -1; // disable update of mean
+                            ++ oIter;
                         }
                         else if( dfStepX > *oIter &&
                                  fabs(dfStepX - static_cast<int>(dfStepX / *oIter + 0.5) * (*oIter)) / dfStepX < RELATIVE_ERROR )

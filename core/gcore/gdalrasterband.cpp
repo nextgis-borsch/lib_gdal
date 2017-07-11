@@ -51,7 +51,7 @@
 #include "gdal.h"
 #include "gdal_rat.h"
 
-CPL_CVSID("$Id: gdalrasterband.cpp 37473 2017-02-26 02:48:38Z goatbar $");
+CPL_CVSID("$Id: gdalrasterband.cpp 38303 2017-05-14 09:16:00Z rouault $");
 
 /************************************************************************/
 /*                           GDALRasterBand()                           */
@@ -6509,7 +6509,7 @@ void GDALRasterBand::ReportError( CPLErr eErrClass, CPLErrorNum err_no,
     const char* pszDSName = poDS ? poDS->GetDescription() : "";
     if( strlen(fmt) + strlen(pszDSName) + 20 >= sizeof(szNewFmt) - 1 )
         pszDSName = CPLGetFilename(pszDSName);
-    if( pszDSName[0] != '\0' &&
+    if( pszDSName[0] != '\0' && strchr(pszDSName, '%') == NULL &&
         strlen(fmt) + strlen(pszDSName) + 20 < sizeof(szNewFmt) - 1 )
     {
         snprintf(szNewFmt, sizeof(szNewFmt), "%s, band %d: %s",

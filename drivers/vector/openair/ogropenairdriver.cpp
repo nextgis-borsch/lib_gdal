@@ -30,7 +30,7 @@
 #include "ogr_openair.h"
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id: ogropenairdriver.cpp 34819 2016-07-28 22:32:18Z goatbar $");
+CPL_CVSID("$Id: ogropenairdriver.cpp 38286 2017-05-14 00:10:56Z rouault $");
 
 /************************************************************************/
 /*                                Open()                                */
@@ -82,6 +82,7 @@ static GDALDataset *OGROpenAirDriverOpen( GDALOpenInfo* poOpenInfo )
             return NULL;
         if( !poOpenInfo->TryToIngest(30000) )
             return NULL;
+        pabyHeader = reinterpret_cast<char *>(poOpenInfo->pabyHeader);
         bIsOpenAir =
             strstr(pabyHeader, "\nAC ") != NULL &&
             strstr(pabyHeader, "\nAN ") != NULL &&

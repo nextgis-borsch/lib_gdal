@@ -44,7 +44,7 @@
 #include "mitab_priv.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: mitab_coordsys.cpp 37428 2017-02-19 23:32:58Z goatbar $");
+CPL_CVSID("$Id: mitab_coordsys.cpp 38441 2017-05-17 08:38:50Z rouault $");
 
 extern const MapInfoDatumInfo asDatumInfoList[];
 extern const MapInfoSpheroidInfo asSpheroidInfoList[];
@@ -252,7 +252,7 @@ int MITABCoordSys2TABProjInfo(const char * pszCoordSys, TABProjInfo *psProj)
     // Parse the passed string into words.
     while(*pszCoordSys == ' ')
         pszCoordSys++;  // Eat leading spaces.
-    if( STARTS_WITH_CI(pszCoordSys, "CoordSys") )
+    if( STARTS_WITH_CI(pszCoordSys, "CoordSys") && pszCoordSys[8] != '\0' )
         pszCoordSys += 9;
 
     char **papszFields =

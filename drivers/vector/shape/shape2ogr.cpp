@@ -36,7 +36,7 @@
 #include <algorithm>
 #include <limits>
 
-CPL_CVSID("$Id: shape2ogr.cpp 37371 2017-02-13 11:41:59Z rouault $");
+CPL_CVSID("$Id: shape2ogr.cpp 38412 2017-05-16 10:07:10Z rouault $");
 
 /************************************************************************/
 /*                        RingStartEnd                                  */
@@ -178,7 +178,8 @@ OGRGeometry *SHPReadOGRObject( SHPHandle hSHP, int iShape, SHPObject *psShape )
                             psShape->padfZ[i] );
                     }
                 }
-                else if( psShape->nSHPType == SHPT_MULTIPOINTM )
+                else if( psShape->nSHPType == SHPT_MULTIPOINTM &&
+                         psShape->padfM )
                 {
                     poPoint = new OGRPoint(psShape->padfX[i], psShape->padfY[i],
                                            0.0, psShape->padfM[i]);

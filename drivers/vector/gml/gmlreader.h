@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gmlreader.h 37371 2017-02-13 11:41:59Z rouault $
+ * $Id: gmlreader.h 38566 2017-05-21 16:59:47Z rouault $
  *
  * Project:  GML Reader
  * Purpose:  Public Declarations for OGR free GML Reader code.
@@ -256,7 +256,7 @@ public:
 
     void            SetPropertyDirectly( int i, char *pszValue );
 
-    const GMLProperty*GetProperty( int i ) const { return (i < m_nPropertyCount) ? &m_pasProperties[i] : NULL; }
+    const GMLProperty*GetProperty( int i ) const { return (i >= 0 && i < m_nPropertyCount) ? &m_pasProperties[i] : NULL; }
 
     const char      *GetFID() const { return m_pszFID; }
     void             SetFID( const char *pszFID );

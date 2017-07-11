@@ -32,7 +32,7 @@
 #include "ogr_p.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id: ogrsegukooalayer.cpp 37371 2017-02-13 11:41:59Z rouault $");
+CPL_CVSID("$Id: ogrsegukooalayer.cpp 39045 2017-06-10 09:39:08Z rouault $");
 
 /************************************************************************/
 /*                            ExtractField()                            */
@@ -420,7 +420,7 @@ OGRFeature *OGRUKOOAP190Layer::GetNextRawFeature()
                 if ((bIsLeap && nDayOfYear >= 1 && nDayOfYear <= 366) ||
                     (!bIsLeap && nDayOfYear >= 1 && nDayOfYear <= 365))
                 {
-                    static const int leap_offset = bIsLeap ? 0 : 1;
+                    static const int leap_offset = bIsLeap ? 1 : 0;
                     while( nDayOfYear >
                            nDays +
                            mon_lengths[leap_offset][nMonth] )
@@ -605,7 +605,7 @@ OGRFeature *OGRSEGP1Layer::GetNextRawFeature()
         }
 
         /* Normal layout -> extract other fields */
-        if (nLatitudeCol == 27)
+        if (nLatitudeCol == 27 && nLineLen >= 26-1+1)
         {
             char szLineName[16 + 1];
             ExtractField(szLineName, pszLine, 2-1, 16);

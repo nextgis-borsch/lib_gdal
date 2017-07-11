@@ -29,7 +29,7 @@
 #include "ogr_jml.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrjmllayer.cpp 37371 2017-02-13 11:41:59Z rouault $");
+CPL_CVSID("$Id: ogrjmllayer.cpp 38401 2017-05-16 08:29:26Z rouault $");
 
 #ifdef HAVE_EXPAT
 
@@ -193,6 +193,8 @@ void OGRJMLLayer::startElementCbk(const char *pszName, const char **ppszAttr)
             {
                 if( !oColumn.osAttributeName.empty() &&
                     ppszAttr != NULL &&
+                    ppszAttr[0] != NULL &&
+                    ppszAttr[1] != NULL &&
                     oColumn.osAttributeName.compare(ppszAttr[0]) == 0 &&
                     oColumn.osAttributeValue.compare(ppszAttr[1]) == 0 )
                 {
@@ -215,6 +217,8 @@ void OGRJMLLayer::startElementCbk(const char *pszName, const char **ppszAttr)
             }
             else if( !oColumn.osAttributeName.empty() &&
                       ppszAttr != NULL &&
+                      ppszAttr[0] != NULL &&
+                      ppszAttr[1] != NULL &&
                       oColumn.osAttributeName.compare(ppszAttr[0]) == 0 )
             {
                 /* <osElementName osAttributeName="value"></osElementName> */

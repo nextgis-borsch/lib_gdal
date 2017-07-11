@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_mysql.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id: ogr_mysql.h 38631 2017-05-23 20:07:01Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Declarations for MySQL OGR Driver Classes.
@@ -31,6 +31,10 @@
 
 #ifndef OGR_MYSQL_H_INCLUDED
 #define OGR_MYSQL_H_INCLUDED
+
+// Include cpl_port.h before mysql stuff to avoid issues with CPLIsFinite()
+// See https://trac.osgeo.org/gdal/ticket/6899
+#include "cpl_port.h"
 
 #ifdef _MSC_VER
 #pragma warning( push )

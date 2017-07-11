@@ -30,7 +30,7 @@
 #include "ogr_autocad_services.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogr_autocad_services.cpp 36981 2016-12-20 19:46:41Z rouault $");
+CPL_CVSID("$Id: ogr_autocad_services.cpp 38338 2017-05-14 15:21:43Z rouault $");
 
 /************************************************************************/
 /*                           ACTextUnescape()                           */
@@ -73,7 +73,7 @@ CPLString ACTextUnescape( const char *pszRawInput, const char *pszEncoding )
             pszInput++;
         }
         else if( pszInput[0] == '\\' && pszInput[1] == 'U'
-                 && pszInput[2] == '+' )
+                 && pszInput[2] == '+' && CPLStrnlen(pszInput, 7) >= 7 )
         {
             CPLString osHex;
             unsigned int iChar = 0;
@@ -107,6 +107,8 @@ CPLString ACTextUnescape( const char *pszRawInput, const char *pszEncoding )
 
             while( *pszInput != ';' && *pszInput != '\0' )
                 pszInput++;
+            if( *pszInput == '\0' )
+                break;
         }
         else if( pszInput[0] == '\\' && pszInput[1] == '\\' )
         {

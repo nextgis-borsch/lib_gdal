@@ -36,7 +36,7 @@
 
 using namespace std;
 
-CPL_CVSID("$Id: ogrili2datasource.cpp 37745 2017-03-17 13:43:46Z rouault $");
+CPL_CVSID("$Id: ogrili2datasource.cpp 38486 2017-05-19 10:12:42Z rouault $");
 
 /************************************************************************/
 /*                         OGRILI2DataSource()                         */
@@ -96,10 +96,15 @@ int OGRILI2DataSource::Open( const char * pszNewName,
     else
     {
         char **filenames = CSLTokenizeString2( pszNewName, ",", 0 );
-
+        int nCount = CSLCount(filenames);
+        if( nCount == 0 )
+        {
+            CSLDestroy(filenames);
+            return FALSE;
+        }
         osBasename = filenames[0];
 
-        if( CSLCount(filenames) > 1 )
+        if( nCount > 1 )
             osModelFilename = filenames[1];
 
         CSLDestroy( filenames );

@@ -32,7 +32,7 @@
 #include "cpl_error.h"
 #include "cpl_quad_tree.h"
 
-CPL_CVSID("$Id: io_selafin.cpp 36347 2016-11-20 20:43:39Z rouault $");
+CPL_CVSID("$Id: io_selafin.cpp 39100 2017-06-13 08:53:49Z rouault $");
 
 namespace Selafin {
 
@@ -369,6 +369,7 @@ namespace Selafin {
     int read_intarray(VSILFILE *fp,int *&panData,bool bDiscard) {
         int nLength=0;
         read_integer(fp,nLength);
+        panData = NULL;
         if (nLength<0 || nLength+1<=0) {
             CPLError(CE_Failure,CPLE_FileIO,"%s",SELAFIN_ERROR_MESSAGE);
             return -1;
@@ -386,11 +387,13 @@ namespace Selafin {
             }
             for (int i=0;i<nLength/4;++i) if (read_integer(fp,panData[i])==0) {
                 CPLFree(panData);
+                panData = NULL;
                 CPLError(CE_Failure,CPLE_FileIO,"%s",SELAFIN_ERROR_MESSAGE);
                 return -1;
             }
             if (VSIFSeekL(fp,4,SEEK_CUR)!=0) {
                 CPLFree(panData);
+                panData = NULL;
                 CPLError(CE_Failure,CPLE_FileIO,"%s",SELAFIN_ERROR_MESSAGE);
                 return -1;
             }

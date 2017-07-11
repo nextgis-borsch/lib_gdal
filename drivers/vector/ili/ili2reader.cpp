@@ -36,7 +36,7 @@
 
 using namespace std;
 
-CPL_CVSID("$Id: ili2reader.cpp 37743 2017-03-17 13:14:00Z rouault $");
+CPL_CVSID("$Id: ili2reader.cpp 39035 2017-06-09 18:10:22Z rouault $");
 
 //
 // constants
@@ -144,12 +144,15 @@ static OGRPoint *getPoint(DOMElement *elem) {
   while (coordElem != NULL) {
     char* pszTagName = XMLString::transcode(coordElem->getTagName());
     char* pszObjValue = getObjValue(coordElem);
-    if (cmpStr("C1", pszTagName) == 0)
-      pt->setX(CPLAtof(pszObjValue));
-    else if (cmpStr("C2", pszTagName) == 0)
-      pt->setY(CPLAtof(pszObjValue));
-    else if (cmpStr("C3", pszTagName) == 0)
-      pt->setZ(CPLAtof(pszObjValue));
+    if( pszObjValue )
+    {
+        if (cmpStr("C1", pszTagName) == 0)
+        pt->setX(CPLAtof(pszObjValue));
+        else if (cmpStr("C2", pszTagName) == 0)
+        pt->setY(CPLAtof(pszObjValue));
+        else if (cmpStr("C3", pszTagName) == 0)
+        pt->setZ(CPLAtof(pszObjValue));
+    }
     CPLFree(pszObjValue);
     XMLString::release(&pszTagName);
     coordElem = (DOMElement *)coordElem->getNextSibling();
@@ -173,20 +176,23 @@ OGRCircularString *ILI2Reader::getArc(DOMElement *elem) {
   while (arcElem != NULL) {
     char* pszTagName = XMLString::transcode(arcElem->getTagName());
     char* pszObjValue = getObjValue(arcElem);
-    if (cmpStr("C1", pszTagName) == 0)
-      ptEnd->setX(CPLAtof(pszObjValue));
-    else if (cmpStr("C2", pszTagName) == 0)
-      ptEnd->setY(CPLAtof(pszObjValue));
-    else if (cmpStr("C3", pszTagName) == 0)
-      ptEnd->setZ(CPLAtof(pszObjValue));
-    else if (cmpStr("A1", pszTagName) == 0)
-      ptOnArc->setX(CPLAtof(pszObjValue));
-    else if (cmpStr("A2", pszTagName) == 0)
-      ptOnArc->setY(CPLAtof(pszObjValue));
-    else if (cmpStr("A3", pszTagName) == 0)
-      ptOnArc->setZ(CPLAtof(pszObjValue));
-    else if (cmpStr("R", pszTagName) == 0) {
-      // radius = CPLAtof(pszObjValue);
+    if( pszObjValue )
+    {
+        if (cmpStr("C1", pszTagName) == 0)
+        ptEnd->setX(CPLAtof(pszObjValue));
+        else if (cmpStr("C2", pszTagName) == 0)
+        ptEnd->setY(CPLAtof(pszObjValue));
+        else if (cmpStr("C3", pszTagName) == 0)
+        ptEnd->setZ(CPLAtof(pszObjValue));
+        else if (cmpStr("A1", pszTagName) == 0)
+        ptOnArc->setX(CPLAtof(pszObjValue));
+        else if (cmpStr("A2", pszTagName) == 0)
+        ptOnArc->setY(CPLAtof(pszObjValue));
+        else if (cmpStr("A3", pszTagName) == 0)
+        ptOnArc->setZ(CPLAtof(pszObjValue));
+        else if (cmpStr("R", pszTagName) == 0) {
+        // radius = CPLAtof(pszObjValue);
+        }
     }
     CPLFree(pszObjValue);
     XMLString::release(&pszTagName);
@@ -235,20 +241,23 @@ static OGRCompoundCurve *getPolyline(DOMElement *elem) {
       while (arcElem != NULL) {
         char* pszTagName2 = XMLString::transcode(arcElem->getTagName());
         char* pszObjValue = getObjValue(arcElem);
-        if (cmpStr("C1", pszTagName2) == 0)
-          ptEnd->setX(CPLAtof(pszObjValue));
-        else if (cmpStr("C2", pszTagName2) == 0)
-          ptEnd->setY(CPLAtof(pszObjValue));
-        else if (cmpStr("C3", pszTagName2) == 0)
-          ptEnd->setZ(CPLAtof(pszObjValue));
-        else if (cmpStr("A1", pszTagName2) == 0)
-          ptOnArc->setX(CPLAtof(pszObjValue));
-        else if (cmpStr("A2", pszTagName2) == 0)
-          ptOnArc->setY(CPLAtof(pszObjValue));
-        else if (cmpStr("A3", pszTagName2) == 0)
-          ptOnArc->setZ(CPLAtof(pszObjValue));
-        else if (cmpStr("R", pszTagName2) == 0) {
-          // radius = CPLAtof(pszObjValue);
+        if( pszObjValue )
+        {
+            if (cmpStr("C1", pszTagName2) == 0)
+            ptEnd->setX(CPLAtof(pszObjValue));
+            else if (cmpStr("C2", pszTagName2) == 0)
+            ptEnd->setY(CPLAtof(pszObjValue));
+            else if (cmpStr("C3", pszTagName2) == 0)
+            ptEnd->setZ(CPLAtof(pszObjValue));
+            else if (cmpStr("A1", pszTagName2) == 0)
+            ptOnArc->setX(CPLAtof(pszObjValue));
+            else if (cmpStr("A2", pszTagName2) == 0)
+            ptOnArc->setY(CPLAtof(pszObjValue));
+            else if (cmpStr("A3", pszTagName2) == 0)
+            ptOnArc->setZ(CPLAtof(pszObjValue));
+            else if (cmpStr("R", pszTagName2) == 0) {
+            // radius = CPLAtof(pszObjValue);
+            }
         }
         CPLFree(pszObjValue);
         XMLString::release(&pszTagName2);
@@ -301,13 +310,13 @@ static OGRCompoundCurve *getBoundary(DOMElement *elem) {
 static OGRCurvePolygon *getPolygon(DOMElement *elem) {
   OGRCurvePolygon *pg = new OGRCurvePolygon();
 
-  DOMElement *boundaryElem = (DOMElement *)elem->getFirstChild(); // outer boundary
+  DOMElement *boundaryElem = dynamic_cast<DOMElement *>(elem->getFirstChild()); // outer boundary
   while (boundaryElem != NULL) {
     char* pszTagName = XMLString::transcode(boundaryElem->getTagName());
     if (cmpStr(ILI2_BOUNDARY, pszTagName) == 0)
       pg->addRingDirectly(getBoundary(boundaryElem));
     XMLString::release(&pszTagName);
-    boundaryElem = (DOMElement *)boundaryElem->getNextSibling(); // inner boundaries
+    boundaryElem = dynamic_cast<DOMElement *>(boundaryElem->getNextSibling()); // inner boundaries
   }
 
   return pg;
@@ -588,12 +597,19 @@ int ILI2Reader::SaveClasses( const char *pszFile = NULL ) {
         CPLDebug( "OGR_ILI", "Parsing %s", pszFile);
         m_poSAXReader->parse(pszFile);
     }
+    catch (const DOMException& toCatch)
+    {
+        // Can happen with createElement() in ILI2Handler::startElement()
+        CPLError( CE_Failure, CPLE_AppDefined,
+                  "DOMException: %s\n",
+                  transcode(toCatch.getMessage()).c_str());
+        return FALSE;
+    }
     catch (const SAXException& toCatch)
     {
         CPLError( CE_Failure, CPLE_AppDefined,
                   "Parsing failed: %s\n",
                   transcode(toCatch.getMessage()).c_str());
-
         return FALSE;
     }
 

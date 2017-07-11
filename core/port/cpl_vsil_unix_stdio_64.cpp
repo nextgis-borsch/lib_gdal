@@ -81,7 +81,7 @@
 #include "cpl_string.h"
 #include "cpl_vsi_error.h"
 
-CPL_CVSID("$Id: cpl_vsil_unix_stdio_64.cpp 36990 2016-12-21 19:42:05Z goatbar $");
+CPL_CVSID("$Id: cpl_vsil_unix_stdio_64.cpp 38821 2017-06-02 12:42:27Z rouault $");
 
 #if defined(UNIX_STDIO_64)
 
@@ -503,6 +503,7 @@ int VSIUnixStdioHandle::Truncate( vsi_l_offset nNewSize )
 #ifdef __linux
 #include <linux/fs.h> /* FS_IOC_FIEMAP */
 #ifdef FS_IOC_FIEMAP
+#include <linux/types.h> // for types used in linux/fiemap;h
 #include <linux/fiemap.h> /* struct fiemap */
 #endif
 #include <sys/ioctl.h>

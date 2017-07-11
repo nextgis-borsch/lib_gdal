@@ -29,7 +29,7 @@
 
 #include <string.h>
 
-CPL_CVSID("$Id: cosar_dataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
+CPL_CVSID("$Id: cosar_dataset.cpp 38793 2017-06-02 08:21:52Z rouault $");
 
 /* Various offsets, in bytes */
 // Commented out the unused defines.
@@ -50,6 +50,7 @@ class COSARDataset : public GDALDataset
 {
 public:
         COSARDataset() : fp(NULL) { }
+        ~COSARDataset();
         VSILFILE *fp;
 
         static GDALDataset *Open( GDALOpenInfo * );
@@ -140,10 +141,18 @@ CPLErr COSARRasterBand::IReadBlock(CPL_UNUSED int nBlockXOff,
  * COSARDataset Implementation
  *****************************************************************************/
 
+COSARDataset::~COSARDataset()
+{
+    if( fp != NULL )
+    {
+        VSIFCloseL(fp);
+    }
+}
+
 GDALDataset *COSARDataset::Open( GDALOpenInfo * pOpenInfo ) {
     long nRTNB;
     /* Check if we're actually a COSAR data set. */
-    if( pOpenInfo->nHeaderBytes < 4 )
+    if( pOpenInfo->nHeaderBytes < 4 || pOpenInfo->fpL == NULL)
         return NULL;
 
     if (!STARTS_WITH_CI((char *)pOpenInfo->pabyHeader+MAGIC1_OFFSET, "CSAR"))

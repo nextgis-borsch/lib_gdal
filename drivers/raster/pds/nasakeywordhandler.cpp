@@ -55,7 +55,7 @@
 #include "ogrgeojsonreader.h"
 #include "ogr_json_header.h"
 
-CPL_CVSID("$Id: nasakeywordhandler.cpp 37651 2017-03-08 18:26:09Z rouault $");
+CPL_CVSID("$Id: nasakeywordhandler.cpp 38306 2017-05-14 09:21:58Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -537,6 +537,8 @@ void NASAKeywordHandler::SkipWhite()
             {
                 pszHeaderNext++;
             }
+            if( *pszHeaderNext == '\0' )
+                return;
 
             pszHeaderNext += 2;
 

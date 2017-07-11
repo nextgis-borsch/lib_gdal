@@ -40,7 +40,7 @@
 
 #include "ogr_geometry.h"
 
-CPL_CVSID("$Id: vfkreader.cpp 35911 2016-10-24 15:03:26Z goatbar $");
+CPL_CVSID("$Id: vfkreader.cpp 38376 2017-05-15 11:16:16Z rouault $");
 
 static char *GetDataBlockName(const char *);
 
@@ -293,6 +293,7 @@ int VFKReader::ReadDataRecords(IVFKDataBlock *poDataBlock)
                     CPLFree(pszLine);
 
                     while ((pszLine = ReadLine()) != NULL &&
+                           pszLine[0] != '\0' &&
                            pszLine[strlen(pszLine) - 1] == '\244') {
                         /* append line */
                         osMultiLine += pszLine;

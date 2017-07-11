@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gridlib.c 35251 2016-08-30 04:28:53Z goatbar $
+ * $Id: gridlib.c 38227 2017-05-12 16:31:33Z rouault $
  *
  * Project:  Arc/Info Binary Grid Translator
  * Purpose:  Grid file reading code.
@@ -30,7 +30,7 @@
 
 #include "aigrid.h"
 
-CPL_CVSID("$Id: gridlib.c 35251 2016-08-30 04:28:53Z goatbar $");
+CPL_CVSID("$Id: gridlib.c 38227 2017-05-12 16:31:33Z rouault $");
 
 CPL_INLINE static void CPL_IGNORE_RET_VAL_INT(CPL_UNUSED int unused) {}
 
@@ -106,21 +106,16 @@ CPLErr AIGProcessIntConstBlock( GByte *pabyCur, int nDataSize, int nMin,
     return( CE_None );
 }
 
-/**********************************************************************
- *                       AIGSaturatedAdd()
- ***********************************************************************/
+/************************************************************************/
+/*                         AIGRolloverSignedAdd()                       */
+/************************************************************************/
 
-static GInt32 AIGSaturatedAdd(GInt32 nVal, GInt32 nAdd)
+static GInt32 AIGRolloverSignedAdd(GInt32 a, GInt32 b)
 {
-    if( nAdd >= 0 && nVal > INT_MAX - nAdd )
-        nVal = INT_MAX;
-    else if( nAdd == INT_MIN && nVal < 0 )
-        nVal = INT_MIN;
-    else if( nAdd != INT_MIN && nAdd < 0 && nVal < INT_MIN - nAdd )
-        nVal = INT_MIN;
-    else
-        nVal += nAdd;
-    return nVal;
+    // Not really portable as assumes complement to 2 representation
+    // but AIG assumes typical unsigned rollover on signed
+    // integer operations.
+    return (GInt32)((GUInt32)(a) + (GUInt32)(b));
 }
 
 /************************************************************************/
@@ -150,7 +145,7 @@ CPLErr AIGProcessRaw32BitBlock( GByte *pabyCur, int nDataSize, int nMin,
     {
         memcpy(panData + i, pabyCur, 4);
         panData[i] = CPL_MSBWORD32(panData[i]);
-        panData[i] = AIGSaturatedAdd(panData[i], nMin);
+        panData[i] = AIGRolloverSignedAdd(panData[i], nMin);
         pabyCur += 4;
     }
 
@@ -393,8 +388,7 @@ CPLErr AIGProcessBlock( GByte *pabyCur, int nDataSize, int nMin, int nMagic,
             nDataSize -= 4;
 
             nValue = CPL_MSBWORD32( nValue );
-
-            nValue += nMin;
+            nValue = AIGRolloverSignedAdd(nValue, nMin);
             for( i = 0; i < nMarker; i++ )
                 panData[nPixels++] = nValue;
         }
