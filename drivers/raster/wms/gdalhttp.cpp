@@ -75,14 +75,27 @@ void WMSHTTPInitializeRequest(WMSHTTPRequest *psRequest) {
     psRequest->nDataLen = 0;
     psRequest->nDataAlloc = 0;
 
+    const char* pszAuthHeader = CPLHTTPAuthStore::instance().GetAuthHeader(
+                psRequest->URL);
+    if( EQUAL( pszAuthHeader, "expired" ) )
+    {
+        psRequest->nStatus = 401;
+        psRequest->m_curl_handle = NULL;
+        CPLError(CE_Failure, CPLE_AppDefined, "CPLHTTPInitializeRequest(): Authorization expired.");
+        return;
+    }
+
     psRequest->m_curl_handle = curl_easy_init();
-    if (psRequest->m_curl_handle == NULL) {
+    if (psRequest->m_curl_handle == NULL)
+    {
         CPLError(CE_Fatal, CPLE_AppDefined, "CPLHTTPInitializeRequest(): Unable to create CURL handle.");
         // This should return somehow?
     }
 
     if (!psRequest->Range.empty())
+    {
         curl_easy_setopt(psRequest->m_curl_handle, CURLOPT_RANGE, psRequest->Range.c_str());
+    }
 
     curl_easy_setopt(psRequest->m_curl_handle, CURLOPT_URL, psRequest->URL.c_str());
     curl_easy_setopt(psRequest->m_curl_handle, CURLOPT_WRITEDATA, psRequest);
@@ -93,10 +106,16 @@ void WMSHTTPInitializeRequest(WMSHTTPRequest *psRequest) {
 
     psRequest->m_headers = static_cast<struct curl_slist*>(
             CPLHTTPSetOptions(psRequest->m_curl_handle, psRequest->options));
+    if( !EQUAL(pszAuthHeader, "") )
+    {
+        psRequest->m_headers = curl_slist_append(psRequest->m_headers, pszAuthHeader);
+    }
+
     if( psRequest->m_headers != NULL )
+    {
         curl_easy_setopt(psRequest->m_curl_handle, CURLOPT_HTTPHEADER,
                          psRequest->m_headers);
-
+    }
 }
 
 WMSHTTPRequest::~WMSHTTPRequest() {

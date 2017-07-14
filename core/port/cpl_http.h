@@ -35,6 +35,8 @@
 #include "cpl_string.h"
 #include "cpl_vsi.h"
 
+#include <vector>
+
 /**
  * \file cpl_http.h
  *
@@ -103,6 +105,23 @@ char CPL_DLL *GOA2GetRefreshToken( const char *pszAuthToken,
                                    const char *pszScope );
 char CPL_DLL *GOA2GetAccessToken( const char *pszRefreshToken,
                                   const char *pszScope );
+/* HTTP Auth event triggers */
+typedef enum  {
+    HTTPAUTH_UPDATE = 1, /*< Auth properties updated */
+    HTTPAUTH_EXPIRED     /*< Auth properties is expired and cannot be used any more. Need user interaction */
+} CPLHTTPAuthChangeCode;
+
+/**
+ * @brief Prototype of function, which executed when changes accured.
+ * @param pszUrl The URL of server which token changed
+ * @param eOperation Operation which trigger notification.
+ */
+typedef void (*HTTPAuthNotifyFunc)(const char* pszUrl, CPLHTTPAuthChangeCode eOperation);
+
+int CPL_DLL CPLHTTPAuthAdd(const char* pszUrl, char** papszOptions,
+                            HTTPAuthNotifyFunc func);
+void CPL_DLL CPLHTTPAuthDelete(const char* pszUrl);
+char** CPL_DLL CPLHTTPAuthProperties(const char* pszUrl);
 
 CPL_C_END
 
@@ -111,6 +130,81 @@ CPL_C_END
 // Not sure if this belong here, used in cpl_http.cpp, cpl_vsil_curl.cpp and frmts/wms/gdalhttp.cpp
 void* CPLHTTPSetOptions(void *pcurl, const char * const* papszOptions);
 char** CPLHTTPGetOptionsFromEnv();
+
+/**
+ * @brief The IHTTPAuth class is base class for HTTP Authorization headers
+ */
+class IHTTPAuth {
+public:
+    virtual ~IHTTPAuth() {}
+    virtual const char* GetUrl() const = 0;
+    virtual const char* GetHeader() = 0;
+    virtual char** GetProperties() const = 0;
+};
+
+/**
+ * @brief The CPLHTTPAuthBearer class The oAuth2 bearer update token class
+ */
+class CPLHTTPAuthBearer : public IHTTPAuth {
+
+public:
+    explicit CPLHTTPAuthBearer(const CPLString& soUrl, const CPLString& soClientId,
+                               const CPLString& soTokenServer,
+                               const CPLString& soAccessToken,
+                               const CPLString& soUpdateToken, int nExpiresIn,
+                               HTTPAuthNotifyFunc function,
+                               const CPLString& soConnTimeout,
+                               const CPLString& soTimeout,
+                               const CPLString& soMaxRetry,
+                               const CPLString& soRetryDelay);
+    virtual ~CPLHTTPAuthBearer() {}
+    virtual const char* GetUrl() const CPL_OVERRIDE { return m_soUrl; }
+    virtual const char* GetHeader() CPL_OVERRIDE;
+    virtual char** GetProperties() const CPL_OVERRIDE;
+
+private:
+    CPLString m_soUrl;
+    CPLString m_soClientId;
+    CPLString m_soAccessToken;
+    CPLString m_soUpdateToken;
+    CPLString m_soTokenServer;
+    int m_nExpiresIn;
+    HTTPAuthNotifyFunc m_NotifyFunction;
+    CPLString m_soConnTimeout;
+    CPLString m_soTimeout;
+    CPLString m_soMaxRetry;
+    CPLString m_soRetryDelay;
+    time_t m_nLastCheck;
+};
+
+/**
+ * @brief The CPLHTTPAuthStore class Storage for authorisation options
+ */
+class CPLHTTPAuthStore
+{
+public:
+    static bool Add(const char *pszUrl, char **papszOptions,
+                    HTTPAuthNotifyFunc func = NULL);
+    static CPLHTTPAuthStore& instance();
+
+public:
+    void Add(IHTTPAuth* poAuth);
+    void Delete(const char* pszUrl);
+    const char* GetAuthHeader(const char* pszUrl);
+    char** GetProperties(const char* pszUrl) const;
+
+private:
+    CPLHTTPAuthStore() {}
+    ~CPLHTTPAuthStore() {}
+    CPLHTTPAuthStore(CPLHTTPAuthStore const&) {}
+    CPLHTTPAuthStore& operator= (CPLHTTPAuthStore const&) { return *this; }
+
+private:
+    std::vector<IHTTPAuth*> m_poAuths;
+};
+
+
+
 /*! @endcond */
 #endif // __cplusplus
 

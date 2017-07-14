@@ -48,7 +48,7 @@ set(WITH_OpenCAD ON CACHE BOOL "Build with opencad")
 
 set(GDAL_ENABLE_GNM ON CACHE BOOL "Build geometry network model support")
 set(GDAL_BUILD_APPS ON CACHE BOOL "Build applications")
-set(CMAKE_BUILD_TYPE Release)
+#set(CMAKE_BUILD_TYPE Release)
 if(APPLE)
     set(OSX_FRAMEWORK ON CACHE INTERNAL "Build Mac OS X framework")
 elseif(WIN32 OR UNIX)

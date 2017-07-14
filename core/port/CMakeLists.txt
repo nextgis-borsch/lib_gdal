@@ -172,6 +172,11 @@ if(CURL_FOUND)
       cpl_google_cloud.cpp )
 endif()
 
+if(JSONC_FOUND)
+    list(APPEND LIB_HHEADERS cpl_json.h)
+    list(APPEND LIB_CSOURCES cpl_json.cpp)
+endif()
+
 add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
 if(DEPENDENCY_LIB)
     add_dependencies(${TARGET_NAME} ${DEPENDENCY_LIB})

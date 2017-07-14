@@ -36,6 +36,7 @@
 #include <map>
 #include <string>
 
+#include "cpl_json.h"
 #include "cpl_http.h"
 #include "cpl_error.h"
 #include "cpl_multiproc.h"
@@ -413,10 +414,24 @@ CPLHTTPResult *CPLHTTPFetch( const char *pszURL, char **papszOptions )
     CPLHTTPResult *psResult =
         static_cast<CPLHTTPResult *>(CPLCalloc(1, sizeof(CPLHTTPResult)));
 
+    const char* pszAuthHeader = CPLHTTPAuthStore::instance().GetAuthHeader(pszURL);
+    if( EQUAL( pszAuthHeader, "expired" ) )
+    {
+        psResult->nDataAlloc = 0;
+        psResult->nDataLen = 0;
+        psResult->nHTTPResponseCode = 401;
+        psResult->nStatus = 0;
+        return psResult;
+    }
     curl_easy_setopt(http_handle, CURLOPT_URL, pszURL );
 
     struct curl_slist* headers= reinterpret_cast<struct curl_slist*>(
                             CPLHTTPSetOptions(http_handle, papszOptions));
+
+    if( !EQUAL(pszAuthHeader, "") )
+    {
+        headers = curl_slist_append(headers, pszAuthHeader);
+    }
 
     // Set Headers.
     const char *pszHeaders = CSLFetchNameValue( papszOptions, "HEADERS" );
@@ -1156,4 +1171,276 @@ int CPLHTTPParseMultipartMime( CPLHTTPResult *psResult )
     }
 
     return TRUE;
+}
+
+/**
+ * @brief CPLHTTPAuthAdd Adds HTTP Authorization to store. When some HTTP
+ * request executed it will ask store for authorization header.
+ * @param pszUrl The URL this authorization options belongs to. All requests
+ * started with this URL will add authorization header.
+ * @param papszOptions Authorization options.
+ * HTTPAUTH_TYPE - Requered. The authorization type (i.e. bearer).
+ * HTTPAUTH_CLIENT_ID - Client identificator for bearer
+ * HTTPAUTH_TOKEN_SERVER - Token validate/update server
+ * HTTPAUTH_ACCESS_TOKEN - Access token
+ * HTTPAUTH_REFRESH_TOKEN - Refresh token
+ * HTTPAUTH_EXPIRES_IN - Expires ime in sec.
+ * HTTPAUTH_CONNECTION_TIMEOUT - Connection timeout to token server. Default 5.
+ * HTTPAUTH_TIMEOUT - Network timeout to token server. Default 15.
+ * HTTPAUTH_MAX_RETRY - Retries count to token server. Default 5.
+ * HTTPAUTH_RETRY_DELAY - Delay between retries. Default 5.
+ * @param func The function executed when some authorization event occured. May be NULL.
+ */
+int CPLHTTPAuthAdd(const char* pszUrl, char** papszOptions,
+                            HTTPAuthNotifyFunc func)
+{
+    return CPLHTTPAuthStore::instance().Add(pszUrl, papszOptions, func) ?
+                CE_None : CE_Failure;
+}
+
+/**
+ * @brief CPLHTTPAuthDelete Removes authorization from store
+ * @param pszUrl The URL to search authorization options.
+ */
+void CPLHTTPAuthDelete(const char* pszUrl)
+{
+    CPLHTTPAuthStore::instance().Delete(pszUrl);
+}
+
+/**
+ * @brief CPLHTTPAuthDProperties If Authorization properties changed, this
+ * function helps to get them back.
+ * @param pszUrl The URL to search authorization options.
+ * @return NULL if no authorization options find or list. User mast free returned
+ * value via CSLDestroy.
+ */
+char** CPLHTTPAuthProperties(const char* pszUrl)
+{
+    return CPLHTTPAuthStore::instance().GetProperties(pszUrl);
+}
+
+//------------------------------------------------------------------------------
+// AuthBearer
+//------------------------------------------------------------------------------
+CPLHTTPAuthBearer::CPLHTTPAuthBearer(const CPLString &soUrl,
+                                     const CPLString &soClientId,
+                                     const CPLString &soTokenServer,
+                                     const CPLString &soAccessToken,
+                                     const CPLString &soUpdateToken,
+                                     int nExpiresIn,
+                                     HTTPAuthNotifyFunc function,
+                                     const CPLString &soConnTimeout,
+                                     const CPLString &soTimeout,
+                                     const CPLString &soMaxRetry,
+                                     const CPLString &soRetryDelay) :
+    m_soUrl(soUrl),
+    m_soClientId(soClientId),
+    m_soAccessToken(soAccessToken),
+    m_soUpdateToken(soUpdateToken),
+    m_soTokenServer(soTokenServer),
+    m_nExpiresIn(nExpiresIn),
+    m_NotifyFunction(function),
+    m_soConnTimeout(soConnTimeout),
+    m_soTimeout(soTimeout),
+    m_soMaxRetry(soMaxRetry),
+    m_soRetryDelay(soRetryDelay),
+    m_nLastCheck(0)
+{
+
+}
+
+char** CPLHTTPAuthBearer::GetProperties() const
+{
+    char** papszProperties = NULL;
+    papszProperties = CSLAddNameValue(papszProperties, "HTTPAUTH_TYPE", "bearer");
+    papszProperties = CSLAddNameValue(papszProperties, "HTTPAUTH_ACCESS_TOKEN",
+                                      m_soAccessToken);
+    papszProperties = CSLAddNameValue(papszProperties, "HTTPAUTH_UPDATE_TOKEN",
+                                      m_soUpdateToken);
+    papszProperties = CSLAddNameValue(papszProperties, "HTTPAUTH_TOKEN_SERVER",
+                                      m_soTokenServer);
+    papszProperties = CSLAddNameValue(papszProperties, "HTTPAUTH_URL", m_soUrl);
+    papszProperties = CSLAddNameValue(papszProperties, "HTTPAUTH_EXPIRES_IN",
+                                      CPLSPrintf("%d", m_nExpiresIn));
+    return papszProperties;
+}
+
+const char *CPLHTTPAuthBearer::GetHeader()
+{
+    // 1. Check if expires if not return current access token
+    time_t now = time(nullptr);
+    double seconds = difftime(now, m_nLastCheck);
+    if(seconds < m_nExpiresIn) {
+        CPLDebug("HTTPAuthBearer", "Token is not expired. Url: %s", m_soUrl.c_str());
+        return CPLSPrintf("Authorization: bearer %s", m_soAccessToken.c_str());
+    }
+    // 2. Try to update token
+
+    char** papszOptions = NULL;
+    papszOptions = CSLAddNameValue(papszOptions, "CUSTOMREQUEST", "POST");
+    papszOptions = CSLAddNameValue(papszOptions, "POSTFIELDS",
+                                   CPLSPrintf("grant_type=refresh_token&client_id=%s&refresh_token=%s",
+                                              m_soClientId.c_str(),
+                                              m_soUpdateToken.c_str()));
+    papszOptions = CSLAddNameValue(papszOptions, "CONNECTTIMEOUT", m_soConnTimeout);
+    papszOptions = CSLAddNameValue(papszOptions, "TIMEOUT", m_soTimeout);
+    papszOptions = CSLAddNameValue(papszOptions, "MAX_RETRY", m_soMaxRetry);
+    papszOptions = CSLAddNameValue(papszOptions, "RETRY_DELAY", m_soRetryDelay);
+
+    CPLHTTPResult* result = CPLHTTPFetch(m_soTokenServer, papszOptions);
+    CSLDestroy(papszOptions);
+
+    if(result->nHTTPResponseCode >= 400 && result->nHTTPResponseCode < 404) {
+        // 3. If failed to update - return "expired"
+        CPLDebug("HTTPAuthBearer", "Failed to update token. Url: %s",
+                 m_soUrl.c_str());
+
+        CPLHTTPDestroyResult( result );
+
+        if(m_NotifyFunction != NULL)
+        {
+            m_NotifyFunction(m_soUrl, HTTPAUTH_EXPIRED);
+        }
+
+        return "expired";
+    }
+
+    CPLJSONDocument resultJson;
+    if(!resultJson.Load(result->pabyData, result->nDataLen)) {
+        CPLHTTPDestroyResult( result );
+        return CPLSPrintf("Authorization: bearer %s", m_soAccessToken.c_str());
+    }
+    CPLHTTPDestroyResult( result );
+
+    // 4. Save new update and access tokens
+    CPLJSONObject root = resultJson.GetRoot();
+    m_soAccessToken = root.GetString("access_token", m_soAccessToken);
+    m_soUpdateToken = root.GetString("refresh_token", m_soUpdateToken);
+    m_nExpiresIn = root.GetInteger("expires_in", m_nExpiresIn);
+    m_nLastCheck = now;
+
+    // 5. Return new Auth Header
+    CPLDebug("HTTPAuthBearer", "Token is expired. Url: %s", m_soUrl.c_str());
+
+    if(m_NotifyFunction != NULL)
+    {
+        m_NotifyFunction(m_soUrl, HTTPAUTH_UPDATE);
+    }
+
+    return CPLSPrintf("Authorization: bearer %s", m_soAccessToken.c_str());
+}
+
+
+//------------------------------------------------------------------------------
+// AuthStore
+//------------------------------------------------------------------------------
+
+bool CPLHTTPAuthStore::Add(const char *pszUrl, char **papszOptions,
+                           HTTPAuthNotifyFunc func)
+{
+    const char *pszType = CSLFetchNameValue(papszOptions, "HTTPAUTH_TYPE");
+    // NOTE: Now only bearer supported
+    if(EQUAL(pszType, "bearer"))
+    {
+        const char *pszClientId = CSLFetchNameValue(papszOptions,
+                                                          "HTTPAUTH_CLIENT_ID");
+        const char *pszTokenServer = CSLFetchNameValue(papszOptions,
+                                                       "HTTPAUTH_TOKEN_SERVER");
+        const char *pszAccessToken = CSLFetchNameValue(papszOptions,
+                                                       "HTTPAUTH_ACCESS_TOKEN");
+        const char *pszRefreshToken = CSLFetchNameValue(papszOptions,
+                                                      "HTTPAUTH_REFRESH_TOKEN");
+        const char *pszExpiresIn = CSLFetchNameValue(papszOptions,
+                                                         "HTTPAUTH_EXPIRES_IN");
+        const char *pszConnTimeout = CSLFetchNameValueDef(papszOptions,
+                                            "HTTPAUTH_CONNECTION_TIMEOUT", "5");
+        const char *pszTimeout = CSLFetchNameValueDef(papszOptions,
+                                                      "HTTPAUTH_TIMEOUT", "15");
+        const char *pszMaxRetry = CSLFetchNameValueDef(papszOptions,
+                                                     "HTTPAUTH_MAX_RETRY", "5");
+        const char *pszRetryDelay = CSLFetchNameValueDef(papszOptions,
+                                                   "HTTPAUTH_RETRY_DELAY", "5");
+        IHTTPAuth* newAuth = new CPLHTTPAuthBearer(pszUrl,
+                                                   pszClientId,
+                                                   pszTokenServer,
+                                                   pszAccessToken,
+                                                   pszRefreshToken,
+                                                   atoi(pszExpiresIn),
+                                                   func,
+                                                   pszConnTimeout,
+                                                   pszTimeout,
+                                                   pszMaxRetry,
+                                                   pszRetryDelay);
+
+        CPLHTTPAuthStore::instance().Add(newAuth);
+        return true;
+    }
+    return false;
+}
+
+CPLHTTPAuthStore &CPLHTTPAuthStore::instance()
+{
+    static CPLHTTPAuthStore n;
+    return n;
+}
+
+void CPLHTTPAuthStore::Add(IHTTPAuth *poAuth)
+{
+    if( poAuth == NULL )
+    {
+        return;
+    }
+
+    for( std::vector<IHTTPAuth*>::const_iterator auth = m_poAuths.begin();
+            auth != m_poAuths.end(); ++auth )
+    {
+        if( EQUAL( (*auth)->GetUrl(), poAuth->GetUrl() ) )
+        {
+            return;
+        }
+    }
+
+    m_poAuths.push_back(poAuth);
+}
+
+void CPLHTTPAuthStore::Delete(const char* pszUrl)
+{
+    for( std::vector<IHTTPAuth*>::iterator auth = m_poAuths.begin();
+            auth != m_poAuths.end(); ++auth )
+    {
+        if( EQUAL( (*auth)->GetUrl(), pszUrl) )
+        {
+            delete (*auth);
+            m_poAuths.erase(auth);
+            return;
+        }
+    }
+}
+
+const char *CPLHTTPAuthStore::GetAuthHeader(const char *pszUrl)
+{
+    for( std::vector<IHTTPAuth*>::const_iterator auth = m_poAuths.begin();
+            auth != m_poAuths.end(); ++auth )
+    {
+        const char* baseUrl = (*auth)->GetUrl();
+        if( EQUALN( baseUrl, pszUrl, CPLStrnlen( baseUrl, 512 ) ) )
+        {
+            return (*auth)->GetHeader();
+        }
+    }
+    return "";
+}
+
+char** CPLHTTPAuthStore::GetProperties(const char *pszUrl) const
+{
+    for( std::vector<IHTTPAuth*>::const_iterator auth = m_poAuths.begin();
+            auth != m_poAuths.end(); ++auth )
+    {
+        if( EQUAL( (*auth)->GetUrl(), pszUrl ) )
+        {
+            return (*auth)->GetProperties();
+        }
+    }
+
+    return NULL;
 }
