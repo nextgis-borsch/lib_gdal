@@ -427,13 +427,13 @@ CPLJSONObject **CPLJSONObject::GetChildren() const
         CPLJSONObject *child = new CPLJSONObject(key, val);
         papoChildren = reinterpret_cast<CPLJSONObject **>(
             CPLRealloc( papoChildren,  sizeof(CPLJSONObject *) *
-                        (nChildrenCount + 1) );
+                        (nChildrenCount + 1) ) );
         papoChildren[nChildrenCount++] = child;
     }
 
     papoChildren = reinterpret_cast<CPLJSONObject **>(
         CPLRealloc( papoChildren,  sizeof(CPLJSONObject *) *
-                    (nChildrenCount + 1) );
+                    (nChildrenCount + 1) ) );
     papoChildren[nChildrenCount] = NULL;
 
     return papoChildren;
