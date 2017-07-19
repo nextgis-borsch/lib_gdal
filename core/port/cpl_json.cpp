@@ -158,6 +158,18 @@ CPLJSONObject::CPLJSONObject(const CPLString &soName, JSONObjectH poJsonObject) 
 
 }
 
+void CPLJSONObject::Add(const char *pszName, const CPLString soValue)
+{
+    char objectName[JSON_NAME_MAX_SIZE];
+    CPLJSONObject object = GetObjectByPath( pszName, &objectName[0] );
+    if( object.IsValid() )
+    {
+        json_object *poVal = json_object_new_string( soValue.c_str() );
+        json_object_object_add( TO_JSONOBJ(object.m_poJsonObject), objectName,
+                                poVal );
+    }
+}
+
 void CPLJSONObject::Add(const char *pszName, const char *pszValue)
 {
     if( NULL == pszName )
@@ -419,6 +431,11 @@ CPLJSONObject **CPLJSONObject::GetChildren() const
         papoChildren[nChildrenCount++] = child;
     }
 
+    papoChildren = reinterpret_cast<CPLJSONObject **>(
+        CPLRealloc( papoChildren,  sizeof(CPLJSONObject *) *
+                    static_cast<size_t>(nChildrenCount + 1) ) );
+    papoChildren[nChildrenCount++] = NULL;
+
     return papoChildren;
 }
 
@@ -488,6 +505,19 @@ CPLJSONObject::Type CPLJSONObject::GetType() const
 bool CPLJSONObject::IsValid() const
 {
     return NULL != m_poJsonObject;
+}
+
+void CPLJSONObject::DestroyJSONObjectList(CPLJSONObject **papsoList)
+{
+    if( !papsoList )
+        return;
+
+    for( CPLJSONObject **papsoPtr = papsoList; *papsoPtr != NULL; ++papsoPtr )
+    {
+        CPLFree(*papsoList);
+    }
+
+    CPLFree(papsoList);
 }
 
 //------------------------------------------------------------------------------
