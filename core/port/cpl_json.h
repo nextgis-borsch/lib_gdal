@@ -64,7 +64,7 @@ public:
     explicit CPLJSONObject(const char *pszName, const CPLJSONObject& oParent);
 
 private:
-    CPLJSONObject(JSONObjectH poJsonObject);
+    CPLJSONObject(const CPLString& soName, JSONObjectH poJsonObject);
 
 public:
     // setters
@@ -88,24 +88,27 @@ public:
     int GetInteger(const char *pszName, int nDefault) const;
     long GetLong(const char *pszName, long nDdefault) const;
     bool GetBool(const char *pszName, bool bDefault) const;
-
-    //
-    void Delete(const char* pszName);
-    CPLJSONArray GetArray(const char *pszName) const;
-    CPLJSONObject GetObject(const char *pszName) const;
-    enum Type GetType() const;
-    bool IsValid() const;
-
-protected:
-    CPLJSONObject GetObjectByPath(const char *pszPath, char *pszName) const;
     const char* GetString(const char *pszDefault) const;
     double GetDouble(double dfDefault) const;
     int GetInteger(int nDefault) const;
     long GetLong(long nDefault) const;
     bool GetBool(bool bDefault) const;
 
+    //
+    void Delete(const char* pszName);
+    CPLJSONArray GetArray(const char *pszName) const;
+    CPLJSONObject GetObject(const char *pszName) const;
+    enum Type GetType() const;
+    const char* GetName() const { return m_soKey; }
+    CPLJSONObject** GetChildren() const;
+    bool IsValid() const;
+
+protected:
+    CPLJSONObject GetObjectByPath(const char *pszPath, char *pszName) const;
+
 private:
     JSONObjectH m_poJsonObject;
+    CPLString m_soKey;
 };
 
 /**
@@ -115,9 +118,9 @@ class CPL_DLL CPLJSONArray : public CPLJSONObject
 {
     friend class CPLJSONObject;
 public:
-    CPLJSONArray();
+    CPLJSONArray(const CPLString& soName);
 private:
-    explicit CPLJSONArray(JSONObjectH poJsonObject);
+    explicit CPLJSONArray(const CPLString& soName, JSONObjectH poJsonObject);
 public:
     int Size() const;
     void Add(const CPLJSONObject& oValue);

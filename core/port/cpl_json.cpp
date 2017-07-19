@@ -75,7 +75,7 @@ CPLJSONObject CPLJSONDocument::GetRoot()
 {
     if( NULL == m_poRootJsonObject )
         m_poRootJsonObject = json_object_new_object();
-    return CPLJSONObject( m_poRootJsonObject );
+    return CPLJSONObject( "", m_poRootJsonObject );
 }
 
 bool CPLJSONDocument::Load(const char *pszPath)
@@ -143,15 +143,17 @@ CPLJSONObject::CPLJSONObject()
     m_poJsonObject = json_object_new_object();
 }
 
-CPLJSONObject::CPLJSONObject(const char *pszName, const CPLJSONObject &oParent)
+CPLJSONObject::CPLJSONObject(const char *pszName, const CPLJSONObject &oParent) :
+    m_soKey(pszName)
 {
     m_poJsonObject = json_object_new_object();
     json_object_object_add( TO_JSONOBJ(oParent.m_poJsonObject), pszName,
                             TO_JSONOBJ(m_poJsonObject) );
 }
 
-CPLJSONObject::CPLJSONObject(JSONObjectH poJsonObject) :
-    m_poJsonObject(poJsonObject)
+CPLJSONObject::CPLJSONObject(const CPLString &soName, JSONObjectH poJsonObject) :
+    m_poJsonObject(poJsonObject),
+    m_soKey(soName)
 {
 
 }
@@ -296,7 +298,7 @@ CPLJSONArray CPLJSONObject::GetArray(const char *pszName) const
         {
             if( poVal && json_object_get_type( poVal ) == json_type_array )
             {
-                return CPLJSONArray( poVal );
+                return CPLJSONArray( objectName, poVal );
             }
         }
     }
@@ -315,10 +317,10 @@ CPLJSONObject CPLJSONObject::GetObject(const char *pszName) const
         if(json_object_object_get_ex( TO_JSONOBJ(object.m_poJsonObject),
                                       objectName, &poVal ) )
         {
-            return CPLJSONObject( poVal );
+            return CPLJSONObject( objectName, poVal );
         }
     }
-    return CPLJSONObject( NULL );
+    return CPLJSONObject( "", NULL );
 }
 
 void CPLJSONObject::Delete(const char *pszName)
@@ -405,6 +407,21 @@ bool CPLJSONObject::GetBool(const char *pszName, bool bDefault) const
     return object.GetBool( bDefault );
 }
 
+CPLJSONObject **CPLJSONObject::GetChildren() const
+{
+    CPLJSONObject **papoChildren = NULL;
+    int nChildrenCount = 0;
+    json_object_object_foreach( TO_JSONOBJ(m_poJsonObject), key, val ) {
+        CPLJSONObject *child = new CPLJSONObject(key, val);
+        papoChildren = reinterpret_cast<CPLJSONObject **>(
+            CPLRealloc( papoChildren,  sizeof(CPLJSONObject *) *
+                        static_cast<size_t>(nChildrenCount + 1) ) );
+        papoChildren[nChildrenCount++] = child;
+    }
+
+    return papoChildren;
+}
+
 bool CPLJSONObject::GetBool(bool bDefault) const
 {
     if( m_poJsonObject && json_object_get_type( TO_JSONOBJ(m_poJsonObject) ) ==
@@ -420,7 +437,7 @@ CPLJSONObject CPLJSONObject::GetObjectByPath(const char *pszPath, char *pszName)
                                                     0 ) );
     int portionsCount = pathPortions.size();
     if( 0 == portionsCount )
-        return CPLJSONObject( NULL );
+        return CPLJSONObject( "", NULL );
     CPLJSONObject object = *this;
     for( int i = 0; i < portionsCount - 1; ++i ) {
         // TODO: check array index in path - i.e. settings/catalog/root/id:1/name
@@ -428,7 +445,7 @@ CPLJSONObject CPLJSONObject::GetObjectByPath(const char *pszPath, char *pszName)
         if( json_object_object_get_ex( TO_JSONOBJ(object.m_poJsonObject),
                                        pathPortions[i], &poVal ) )
         {
-            object = CPLJSONObject( poVal );
+            object = CPLJSONObject( pathPortions[i], poVal );
         }
         else
         {
@@ -477,12 +494,14 @@ bool CPLJSONObject::IsValid() const
 // JSONArray
 //------------------------------------------------------------------------------
 
-CPLJSONArray::CPLJSONArray() : CPLJSONObject( json_object_new_array() )
+CPLJSONArray::CPLJSONArray(const CPLString& soName) :
+    CPLJSONObject( soName, json_object_new_array() )
 {
 
 }
 
-CPLJSONArray::CPLJSONArray(JSONObjectH poJsonObject) : CPLJSONObject(poJsonObject)
+CPLJSONArray::CPLJSONArray(const CPLString &soName, JSONObjectH poJsonObject) :
+    CPLJSONObject(soName, poJsonObject)
 {
 
 }
@@ -503,12 +522,14 @@ void CPLJSONArray::Add(const CPLJSONObject &oValue)
 
 CPLJSONObject CPLJSONArray::operator[](int nKey)
 {
-    return CPLJSONObject( json_object_array_get_idx( TO_JSONOBJ(m_poJsonObject),
+    return CPLJSONObject( CPLSPrintf("id:%d", nKey),
+                          json_object_array_get_idx( TO_JSONOBJ(m_poJsonObject),
                                                      nKey ) );
 }
 
 const CPLJSONObject CPLJSONArray::operator[](int nKey) const
 {
-    return CPLJSONObject( json_object_array_get_idx( TO_JSONOBJ(m_poJsonObject),
+    return CPLJSONObject( CPLSPrintf("id:%d", nKey),
+                          json_object_array_get_idx( TO_JSONOBJ(m_poJsonObject),
                                                      nKey ) );
 }

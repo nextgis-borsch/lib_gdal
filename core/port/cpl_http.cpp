@@ -3,10 +3,12 @@
  * Project:  libcurl based HTTP client
  * Purpose:  libcurl based HTTP client
  * Author:   Frank Warmerdam, warmerdam@pobox.com
+ * Author:   Dmitry Baryshnikov, dmitry.baryshnikov@nextgis.com
  *
  ******************************************************************************
  * Copyright (c) 2006, Frank Warmerdam
  * Copyright (c) 2008-2013, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2017 NextGIS, <info@nextgis.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -1268,7 +1270,7 @@ char** CPLHTTPAuthBearer::GetProperties() const
 const char *CPLHTTPAuthBearer::GetHeader()
 {
     // 1. Check if expires if not return current access token
-    time_t now = time(nullptr);
+    time_t now = time(NULL);
     double seconds = difftime(now, m_nLastCheck);
     if(seconds < m_nExpiresIn) {
         CPLDebug("HTTPAuthBearer", "Token is not expired. Url: %s", m_soUrl.c_str());

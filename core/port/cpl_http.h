@@ -4,10 +4,12 @@
  * Project:  Common Portability Library
  * Purpose:  Function wrapper for libcurl HTTP access.
  * Author:   Frank Warmerdam, warmerdam@pobox.com
+ * Author:   Dmitry Baryshnikov, dmitry.baryshnikov@nextgis.com
  *
  ******************************************************************************
  * Copyright (c) 2006, Frank Warmerdam
  * Copyright (c) 2009, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2017 NextGIS, <info@nextgis.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
