@@ -422,18 +422,18 @@ bool CPLJSONObject::GetBool(const char *pszName, bool bDefault) const
 CPLJSONObject **CPLJSONObject::GetChildren() const
 {
     CPLJSONObject **papoChildren = NULL;
-    int nChildrenCount = 0;
+    size_t nChildrenCount = 0;
     json_object_object_foreach( TO_JSONOBJ(m_poJsonObject), key, val ) {
         CPLJSONObject *child = new CPLJSONObject(key, val);
         papoChildren = reinterpret_cast<CPLJSONObject **>(
             CPLRealloc( papoChildren,  sizeof(CPLJSONObject *) *
-                        static_cast<size_t>(nChildrenCount + 1) ) );
+                        (nChildrenCount + 1) );
         papoChildren[nChildrenCount++] = child;
     }
 
     papoChildren = reinterpret_cast<CPLJSONObject **>(
         CPLRealloc( papoChildren,  sizeof(CPLJSONObject *) *
-                    static_cast<size_t>(nChildrenCount + 1) ) );
+                    (nChildrenCount + 1) );
     papoChildren[nChildrenCount] = NULL;
 
     return papoChildren;
@@ -514,7 +514,7 @@ void CPLJSONObject::DestroyJSONObjectList(CPLJSONObject **papsoList)
 
     for( CPLJSONObject **papsoPtr = papsoList; *papsoPtr != NULL; ++papsoPtr )
     {
-        CPLFree(*papsoList);
+        CPLFree(*papsoPtr);
     }
 
     CPLFree(papsoList);
