@@ -433,8 +433,8 @@ CPLJSONObject **CPLJSONObject::GetChildren() const
 
     papoChildren = reinterpret_cast<CPLJSONObject **>(
         CPLRealloc( papoChildren,  sizeof(CPLJSONObject *) *
-                    static_cast<size_t>(nChildrenCount + 1) ) );
-    papoChildren[nChildrenCount++] = NULL;
+                    static_cast<size_t>(nChildrenCount) ) );
+    papoChildren[nChildrenCount] = NULL;
 
     return papoChildren;
 }
