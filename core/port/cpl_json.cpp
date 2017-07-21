@@ -454,7 +454,7 @@ CPLJSONObject CPLJSONObject::GetObjectByPath(const char *pszPath, char *pszName)
                                                     0 ) );
     int portionsCount = pathPortions.size();
     if( 0 == portionsCount )
-        return CPLJSONObject( "", NULL );
+        return CPLJSONObject( CPLString(""), NULL );
     CPLJSONObject object = *this;
     for( int i = 0; i < portionsCount - 1; ++i ) {
         // TODO: check array index in path - i.e. settings/catalog/root/id:1/name
@@ -466,7 +466,7 @@ CPLJSONObject CPLJSONObject::GetObjectByPath(const char *pszPath, char *pszName)
         }
         else
         {
-            object = CPLJSONObject( pathPortions[i], object.m_poJsonObject );
+            object = CPLJSONObject( pathPortions[i], object );
         }
     }
 

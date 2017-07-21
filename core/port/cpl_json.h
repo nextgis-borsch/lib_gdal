@@ -64,7 +64,7 @@ public:
     explicit CPLJSONObject(const char *pszName, const CPLJSONObject& oParent);
 
 private:
-    CPLJSONObject(const CPLString& soName, JSONObjectH poJsonObject);
+    explicit CPLJSONObject(const CPLString& soName, JSONObjectH poJsonObject);
 
 public:
     // setters
