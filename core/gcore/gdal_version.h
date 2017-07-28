@@ -7,7 +7,7 @@
 #ifndef GDAL_VERSION_MAJOR
 #  define GDAL_VERSION_MAJOR    2
 #  define GDAL_VERSION_MINOR    3
-#  define GDAL_VERSION_REV      2
+#  define GDAL_VERSION_REV      3
 #  define GDAL_VERSION_BUILD    0
 #endif
 
@@ -26,5 +26,5 @@
 #  define GDAL_RELEASE_DATE     20179999
 #endif
 #ifndef GDAL_RELEASE_NAME
-#  define GDAL_RELEASE_NAME     "2.3.2dev-nextgis"
+#  define GDAL_RELEASE_NAME     "2.3.3dev-nextgis"
 #endif
