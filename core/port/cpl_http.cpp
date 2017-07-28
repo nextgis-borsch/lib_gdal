@@ -81,11 +81,12 @@ static size_t
 CPLWriteFct(void *buffer, size_t size, size_t nmemb, void *reqInfo)
 
 {
+    size_t nLength = size * nmemb;
     CPLHTTPResultWithLimit *psResultWithLimit =
         static_cast<CPLHTTPResultWithLimit *>(reqInfo);
     CPLHTTPResult* psResult = psResultWithLimit->psResult;
 
-    int nBytesToWrite = static_cast<int>(nmemb)*static_cast<int>(size);
+    int nBytesToWrite = static_cast<int>(nLength);
     int nNewSize = psResult->nDataLen + nBytesToWrite + 1;
     if( nNewSize > psResult->nDataAlloc )
     {
@@ -116,7 +117,7 @@ CPLWriteFct(void *buffer, size_t size, size_t nmemb, void *reqInfo)
         return 0;
     }
 
-    return nmemb;
+    return nLength;
 }
 
 /************************************************************************/
@@ -125,19 +126,20 @@ CPLWriteFct(void *buffer, size_t size, size_t nmemb, void *reqInfo)
 static size_t CPLHdrWriteFct( void *buffer, size_t size, size_t nmemb,
                               void *reqInfo )
 {
+    size_t nLength = size * nmemb;
     CPLHTTPResult *psResult = static_cast<CPLHTTPResult *>(reqInfo);
     // Copy the buffer to a char* and initialize with zeros (zero
     // terminate as well).
     char* pszHdr = static_cast<char *>(CPLCalloc(nmemb + 1, size));
     CPLPrintString(pszHdr, static_cast<char *>(buffer),
-                   static_cast<int>(nmemb) * static_cast<int>(size));
+                   static_cast<int>(nLength));
     char *pszKey = NULL;
     const char *pszValue = CPLParseNameValue(pszHdr, &pszKey );
     psResult->papszHeaders =
         CSLSetNameValue(psResult->papszHeaders, pszKey, pszValue);
     CPLFree(pszHdr);
     CPLFree(pszKey);
-    return nmemb;
+    return nLength;
 }
 
 #endif /* def HAVE_CURL */

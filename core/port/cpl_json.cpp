@@ -27,10 +27,23 @@
 
 #include "cpl_json.h"
 
-#include "cpl_vsi.h"
+
 #include "cpl_error.h"
+#include "cpl_vsi.h"
 
 #include "json.h"
+
+#ifdef HAVE_CURL
+#include "cpl_http.h"
+#include "cpl_multiproc.h"
+#  include <curl/curl.h>
+// CURLINFO_RESPONSE_CODE was known as CURLINFO_HTTP_CODE in libcurl 7.10.7 and
+// earlier.
+#if LIBCURL_VERSION_NUM < 0x070a07
+#define CURLINFO_RESPONSE_CODE CURLINFO_HTTP_CODE
+#endif
+
+#endif
 
 #define TO_JSONOBJ(x) static_cast<json_object*>(x)
 
@@ -80,36 +93,17 @@ CPLJSONObject CPLJSONDocument::GetRoot()
 
 bool CPLJSONDocument::Load(const char *pszPath)
 {
-    VSILFILE *fp = VSIFOpenL( pszPath, "rt" );
-    if( fp == NULL )
-    {
-        CPLError( CE_Failure, CPLE_OpenFailed, "Open file %s failed", pszPath );
-        return false;
-    }
-
     GByte *pabyOut = NULL;
-    if( !VSIIngestFile( fp, pszPath, &pabyOut, NULL, -1) )
+    vsi_l_offset nSize = 0;
+    if( !VSIIngestFile( NULL, pszPath, &pabyOut, &nSize, 4 * 1024 * 1024) ) // Maximum 4 Mb allowed
     {
-        CPLError( CE_Failure, CPLE_FileIO, "Read file %s failed", pszPath );
+        CPLError( CE_Failure, CPLE_FileIO, "Load json file %s failed", pszPath );
         return false;
     }
 
-    VSIFCloseL(fp);
-
-    // load from ngs.ngmd file
-    json_tokener *jstok = json_tokener_new();
-    m_poRootJsonObject = json_tokener_parse_ex(jstok,
-                                    reinterpret_cast<const char*>(pabyOut), -1);
-    bool bParsed = jstok->err == json_tokener_success;
-    if( !bParsed )
-    {
-        CPLError( CE_Failure, CPLE_AppDefined, "JSON parsing error: %s (at offset %d)",
-                 json_tokener_error_desc( jstok->err ), jstok->char_offset );
-
-        return false;
-    }
-    json_tokener_free( jstok );
-    return bParsed;
+    bool bResult = Load(pabyOut, static_cast<int>(nSize));
+    VSIFree(pabyOut);
+    return bResult;
 }
 
 bool CPLJSONDocument::Load(GByte *pabyData, int nLength)
@@ -122,8 +116,8 @@ bool CPLJSONDocument::Load(GByte *pabyData, int nLength)
     m_poRootJsonObject = json_tokener_parse_ex( jstok,
                                                 reinterpret_cast<const char*>(pabyData),
                                                 nLength );
-    bool parsed = jstok->err == json_tokener_success;
-    if(!parsed)
+    bool bParsed = jstok->err == json_tokener_success;
+    if(!bParsed)
     {
         CPLError( CE_Failure, CPLE_AppDefined, "JSON parsing error: %s (at offset %d)",
                  json_tokener_error_desc( jstok->err ), jstok->char_offset );
@@ -131,7 +125,337 @@ bool CPLJSONDocument::Load(GByte *pabyData, int nLength)
         return false;
     }
     json_tokener_free( jstok );
-    return parsed;
+    return bParsed;
+}
+
+bool CPLJSONDocument::LoadChunks(const char *pszPath, size_t nChunkSize,
+                                 GDALProgressFunc pfnProgress,
+                                 void *pProgressArg)
+{
+    VSIStatBufL sStatBuf;
+    if(VSIStatL(pszPath, &sStatBuf) != 0)
+    {
+        CPLError(CE_Failure, CPLE_FileIO, "Cannot open %s", pszPath);
+        return false;
+    }
+
+    VSILFILE *fp = VSIFOpenL(pszPath, "rb");
+    if( fp == NULL )
+    {
+        CPLError(CE_Failure, CPLE_FileIO, "Cannot open %s", pszPath);
+        return false;
+    }
+
+
+    void *pBuffer = CPLMalloc( nChunkSize );
+    json_tokener *tok = json_tokener_new();
+    bool bSuccess = true;
+    GUInt32 nFileSize = static_cast<GUInt32>(sStatBuf.st_size);
+    double dfTotalRead = 0.0;
+
+    while( true )
+    {
+        size_t nRead = VSIFReadL( pBuffer, 1, nChunkSize, fp );
+        dfTotalRead += nRead;
+
+        m_poRootJsonObject = json_tokener_parse_ex(tok,
+                                                   static_cast<const char*>(pBuffer),
+                                                   static_cast<int>(nRead));
+
+        enum json_tokener_error jerr = json_tokener_get_error(tok);
+        if(jerr != json_tokener_continue && jerr != json_tokener_success)
+        {
+            CPLError( CE_Failure, CPLE_AppDefined, "JSON error: %s",
+                     json_tokener_error_desc(jerr) );
+            bSuccess = false;
+            break;
+        }
+
+        if( nRead < nChunkSize )
+        {
+            break;
+        }
+
+        if( NULL != pfnProgress )
+        {
+            pfnProgress(dfTotalRead / nFileSize, "Loading ...", pProgressArg);
+        }
+    }
+
+    json_tokener_free(tok);
+    CPLFree(pBuffer);
+    VSIFCloseL(fp);
+
+    if( NULL != pfnProgress )
+    {
+        pfnProgress(1.0, "Loading ...", pProgressArg);
+    }
+
+    return bSuccess;
+}
+
+typedef struct {
+    json_object *pObject;
+    json_tokener *pTokener;
+    int nDataLen;
+} JsonContext, *JsonContextL;
+
+static size_t WriteFunction(char *pBuffer, size_t nSize, size_t nMemb,
+                                           void *pUserData)
+{
+    size_t nLength = nSize * nMemb;
+    JsonContextL ctx = static_cast<JsonContextL>(pUserData);
+    ctx->pObject = json_tokener_parse_ex(ctx->pTokener, pBuffer,
+                                         static_cast<int>(nLength));
+    ctx->nDataLen = static_cast<int>(nLength);
+    switch (json_tokener_get_error(ctx->pTokener)) {
+    case json_tokener_continue:
+    case json_tokener_success:
+        return nLength;
+    default:
+        return 0; /* error: interrupt the transfer */
+    }
+}
+
+#ifdef HAVE_CURL
+
+typedef struct {
+    GDALProgressFunc pfnProgress;
+    void *pProgressArg;
+} CurlProcessData, *CurlProcessDataL;
+
+static int NewProcessFunction(void *p,
+                              curl_off_t dltotal, curl_off_t dlnow,
+                              curl_off_t /*ultotal*/, curl_off_t /*ulnow*/)
+{
+    CurlProcessDataL pData = static_cast<CurlProcessDataL>(p);
+    if(pData->pfnProgress) {
+        double dfDone = double(dlnow) / dltotal;
+        return pData->pfnProgress(dfDone, "Downloading ...",
+                                  pData->pProgressArg) == TRUE ? 0 : 1;
+    }
+
+    return 0;
+}
+
+static int ProcessFunction(void *p, double dltotal, double dlnow,
+                                     double ultotal, double ulnow)
+{
+    return NewProcessFunction(p, static_cast<curl_off_t>(dltotal),
+                              static_cast<curl_off_t>(dlnow),
+                              static_cast<curl_off_t>(ultotal),
+                              static_cast<curl_off_t>(ulnow));
+}
+
+static size_t HeaderWriteFunction( void *buffer, size_t size, size_t nmemb,
+                                   void *reqInfo )
+{
+    size_t nLength = size * nmemb;
+    char **papszHeaders = static_cast<char**>(reqInfo);
+    char* pszHdr = static_cast<char *>(CPLCalloc(nmemb + 1, size));
+    CPLPrintString(pszHdr, static_cast<char *>(buffer),
+                   static_cast<int>(nLength));
+    char *pszKey = NULL;
+    const char *pszValue = CPLParseNameValue(pszHdr, &pszKey );
+    papszHeaders = CSLSetNameValue(papszHeaders, pszKey, pszValue);
+    CPLFree(pszHdr);
+    CPLFree(pszKey);
+    return nLength;
+}
+#endif // HAVE_CURL
+
+bool CPLJSONDocument::LoadUrl(const char* pszUrl, char **papszOptions,
+                              GDALProgressFunc pfnProgress,
+                              void *pProgressArg)
+{
+#ifdef HAVE_CURL
+    const char* pszAuthHeader = CPLHTTPAuthStore::instance().GetAuthHeader(pszUrl);
+    if( EQUAL( pszAuthHeader, "expired" ) )
+    {
+        return false;
+    }
+
+    CURL *http_handle = curl_easy_init();
+    CURLcode res;
+    char szCurlErrBuf[CURL_ERROR_SIZE+1] = {};
+
+    const char *pszArobase = strchr(pszUrl, '@');
+    const char *pszSlash = strchr(pszUrl, '/');
+    const char *pszColon = (pszSlash) ? strchr(pszSlash, ':') : NULL;
+    if( pszArobase != NULL && pszColon != NULL && pszArobase - pszColon > 0 )
+    {
+        /* http://user:password@www.example.com */
+        char *pszSanitizedURL = CPLStrdup(pszUrl);
+        pszSanitizedURL[pszColon-pszUrl] = 0;
+        CPLDebug( "JSON HTTP", "Fetch(%s:#password#%s)", pszSanitizedURL, pszArobase );
+        CPLFree(pszSanitizedURL);
+    }
+    else
+    {
+        CPLDebug( "JSON HTTP", "Fetch(%s)", pszUrl );
+    }
+
+    CurlProcessData stProcessData = { pfnProgress, pProgressArg };
+    curl_easy_setopt(http_handle, CURLOPT_URL, pszUrl );
+    curl_easy_setopt(http_handle, CURLOPT_PROGRESSFUNCTION, ProcessFunction);
+    curl_easy_setopt(http_handle, CURLOPT_PROGRESSDATA, &stProcessData);
+
+#if LIBCURL_VERSION_NUM >= 0x072000
+    curl_easy_setopt(http_handle, CURLOPT_XFERINFOFUNCTION, NewProcessFunction);
+    curl_easy_setopt(http_handle, CURLOPT_XFERINFODATA, &stProcessData);
+#endif
+    curl_easy_setopt(http_handle, CURLOPT_NOPROGRESS, 0L);
+
+    struct curl_slist *headers= reinterpret_cast<struct curl_slist*>(
+                            CPLHTTPSetOptions(http_handle, papszOptions));
+
+    if( !EQUAL(pszAuthHeader, "") )
+    {
+        headers = curl_slist_append(headers, pszAuthHeader);
+    }
+
+    const char *pszHeaders = CSLFetchNameValue( papszOptions, "HEADERS" );
+    if( pszHeaders != NULL )
+    {
+        CPLDebug ("JSON HTTP", "These HTTP headers were set: %s", pszHeaders);
+        char** papszTokensHeaders = CSLTokenizeString2(pszHeaders, "\r\n", 0);
+        for( int i=0; papszTokensHeaders[i] != NULL; ++i )
+            headers = curl_slist_append(headers, papszTokensHeaders[i]);
+        CSLDestroy(papszTokensHeaders);
+    }
+
+    if( headers != NULL )
+    {
+        curl_easy_setopt(http_handle, CURLOPT_HTTPHEADER, headers);
+    }
+
+    int nDepth = atoi( CSLFetchNameValueDef( papszOptions, "JSON_DEPTH", "10") );
+    JsonContext ctx = { NULL, json_tokener_new_ex(nDepth), 0 };
+    curl_easy_setopt(http_handle, CURLOPT_WRITEDATA, &ctx );
+    curl_easy_setopt(http_handle, CURLOPT_WRITEFUNCTION, WriteFunction );
+
+    // Capture response headers.
+    char **papszHeaders = NULL;
+    curl_easy_setopt(http_handle, CURLOPT_HEADERDATA, papszHeaders);
+    curl_easy_setopt(http_handle, CURLOPT_HEADERFUNCTION, HeaderWriteFunction);
+
+    szCurlErrBuf[0] = '\0';
+    curl_easy_setopt(http_handle, CURLOPT_ERRORBUFFER, szCurlErrBuf );
+
+    static bool bHasCheckVersion = false;
+    static bool bSupportGZip = false;
+    if( !bHasCheckVersion )
+    {
+        bSupportGZip = strstr(curl_version(), "zlib/") != NULL;
+        bHasCheckVersion = true;
+    }
+    bool bGZipRequested = false;
+    if( bSupportGZip &&
+        CPLTestBool(CPLGetConfigOption("CPL_CURL_GZIP", "YES")) )
+    {
+        bGZipRequested = true;
+        curl_easy_setopt(http_handle, CURLOPT_ENCODING, "gzip");
+    }
+
+    const char *pszRetryDelay =
+        CSLFetchNameValue( papszOptions, "RETRY_DELAY" );
+    if( pszRetryDelay == NULL )
+        pszRetryDelay = CPLGetConfigOption( "GDAL_HTTP_RETRY_DELAY", "30" );
+    const char *pszMaxRetries = CSLFetchNameValue( papszOptions, "MAX_RETRY" );
+    if( pszMaxRetries == NULL )
+        pszMaxRetries = CPLGetConfigOption( "GDAL_HTTP_MAX_RETRY", "0" );
+    int nRetryDelaySecs = atoi(pszRetryDelay);
+    int nMaxRetries = atoi(pszMaxRetries);
+    int nRetryCount = 0;
+    bool bRequestRetry;
+
+    do
+    {
+        bRequestRetry = false;
+        res = curl_easy_perform(http_handle);
+
+        if( strlen(szCurlErrBuf) > 0 )
+        {
+            bool bSkipError = false;
+            if( bGZipRequested &&
+                strstr(szCurlErrBuf, "transfer closed with") &&
+                strstr(szCurlErrBuf, "bytes remaining to read") )
+            {
+                const char* pszContentLength =
+                    CSLFetchNameValue(papszHeaders, "Content-Length");
+                if( pszContentLength && ctx.nDataLen != 0 &&
+                    atoi(pszContentLength) == ctx.nDataLen )
+                {
+                    const char* pszCurlGZIPOption =
+                        CPLGetConfigOption("CPL_CURL_GZIP", NULL);
+                    if( pszCurlGZIPOption == NULL )
+                    {
+                        CPLSetConfigOption("CPL_CURL_GZIP", "NO");
+                        CPLDebug("JSON HTTP",
+                                 "Disabling CPL_CURL_GZIP, "
+                                 "because %s doesn't support it properly",
+                                 pszUrl);
+                    }
+                    bSkipError = true;
+                }
+            }
+            if( !bSkipError )
+            {
+                CPLError( CE_Failure, CPLE_AppDefined, "%s", szCurlErrBuf );
+            }
+        }
+        else
+        {
+            long nHTTPResponseCode = 0;
+            curl_easy_getinfo(http_handle, CURLINFO_RESPONSE_CODE,
+                              &nHTTPResponseCode);
+            if( nHTTPResponseCode >= 400 && nHTTPResponseCode < 600 )
+            {
+                if( (nHTTPResponseCode >= 502 && nHTTPResponseCode <= 504) &&
+                    nRetryCount < nMaxRetries )
+                {
+                    CPLError(CE_Warning, CPLE_AppDefined, "JSON HTTP error code: %d - %s. "
+                             "Retrying again in %d secs",
+                             static_cast<int>(nHTTPResponseCode), pszUrl,
+                             nRetryDelaySecs);
+                    CPLSleep(nRetryDelaySecs);
+                    nRetryCount++;
+
+                    bRequestRetry = true;
+                }
+                else
+                {
+                    CPLError(CE_Failure, CPLE_AppDefined, "%s", szCurlErrBuf);
+                }
+            }
+        }
+    }
+    while( bRequestRetry );
+
+    bool bResult = true;
+    if (res != CURLE_OK) {
+        CPLError(CE_Warning, CPLE_AppDefined, "JSON HTTP error: %s",
+               curl_easy_strerror(res));
+        bResult = false;
+    }
+    curl_easy_cleanup( http_handle );
+    curl_slist_free_all(headers);
+
+    enum json_tokener_error jerr;
+    if ((jerr = json_tokener_get_error(ctx.pTokener)) != json_tokener_success) {
+        CPLError(CE_Warning, CPLE_AppDefined, "JSON error: %s\n",
+               json_tokener_error_desc(jerr));
+        bResult = false;
+    }
+    else {
+        m_poRootJsonObject = ctx.pObject;
+    }
+    json_tokener_free(ctx.pTokener);
+
+    return bResult;
+#else
+    return false;
+#endif
 }
 
 //------------------------------------------------------------------------------
@@ -347,7 +671,7 @@ void CPLJSONObject::Delete(const char *pszName)
     }
 }
 
-const char* CPLJSONObject::GetString(const char *pszName, const char* pszDefault) const
+const char *CPLJSONObject::GetString(const char *pszName, const char* pszDefault) const
 {
     if( NULL == pszName )
         return pszDefault;
@@ -449,7 +773,7 @@ bool CPLJSONObject::GetBool(bool bDefault) const
 
 CPLJSONObject CPLJSONObject::GetObjectByPath(const char *pszPath, char *pszName) const
 {
-    json_object* poVal = NULL;
+    json_object *poVal = NULL;
     CPLStringList pathPortions( CSLTokenizeString2( pszPath, JSON_PATH_DELIMITER,
                                                     0 ) );
     int portionsCount = pathPortions.size();

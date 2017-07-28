@@ -29,6 +29,7 @@
 #define CPL_JSON_H_INCLUDED
 
 #include "cpl_string.h"
+#include "cpl_progress.h"
 
 /**
  * \file cpl_json.h
@@ -84,12 +85,12 @@ public:
     void Set(const char *pszName, bool bValue);
 
     // getters
-    const char* GetString(const char *pszDefault, const char *pszName) const;
+    const char *GetString(const char *pszName, const char *pszDefault) const;
     double GetDouble(const char *pszName, double dfDefault) const;
     int GetInteger(const char *pszName, int nDefault) const;
     long GetLong(const char *pszName, long nDdefault) const;
     bool GetBool(const char *pszName, bool bDefault) const;
-    const char* GetString(const char *pszDefault) const;
+    const char *GetString(const char *pszDefault) const;
     double GetDouble(double dfDefault) const;
     int GetInteger(int nDefault) const;
     long GetLong(long nDefault) const;
@@ -100,8 +101,8 @@ public:
     CPLJSONArray GetArray(const char *pszName) const;
     CPLJSONObject GetObject(const char *pszName) const;
     enum Type GetType() const;
-    const char* GetName() const { return m_soKey; }
-    CPLJSONObject** GetChildren() const;
+    const char *GetName() const { return m_soKey; }
+    CPLJSONObject **GetChildren() const;
     bool IsValid() const;
 
     static void DestroyJSONObjectList(CPLJSONObject **papsoList);
@@ -143,13 +144,13 @@ public:
     CPLJSONObject GetRoot();
     bool Load(const char *pszPath);
     bool Load(GByte *pabyData, int nLength = -1);
+    bool LoadChunks(const char *pszPath, size_t nChunkSize = 16384,
+                    GDALProgressFunc pfnProgress = NULL,
+                    void *pProgressArg = NULL);
+    bool LoadUrl(const char *pszUrl, char **papszOptions,
+                 GDALProgressFunc pfnProgress = NULL,
+                 void *pProgressArg = NULL);
 
-    // TODO: add JSONObject reader(stream);
-    // JsonReader reader = new JsonReader(new InputStreamReader(in, "UTF-8"));
-    // reader.beginObject()
-    // while (reader.hasNext())
-    // String name = reader.nextName()
-    // reader.beginArray();
 private:
     JSONObjectH m_poRootJsonObject;
 };

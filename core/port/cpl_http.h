@@ -118,20 +118,20 @@ typedef enum  {
  * @param pszUrl The URL of server which token changed
  * @param eOperation Operation which trigger notification.
  */
-typedef void (*HTTPAuthNotifyFunc)(const char* pszUrl, CPLHTTPAuthChangeCode eOperation);
+typedef void (*HTTPAuthNotifyFunc)(const char *pszUrl, CPLHTTPAuthChangeCode eOperation);
 
-int CPL_DLL CPLHTTPAuthAdd(const char* pszUrl, char** papszOptions,
+int CPL_DLL CPLHTTPAuthAdd(const char *pszUrl, char **papszOptions,
                             HTTPAuthNotifyFunc func);
-void CPL_DLL CPLHTTPAuthDelete(const char* pszUrl);
-char** CPL_DLL CPLHTTPAuthProperties(const char* pszUrl);
+void CPL_DLL CPLHTTPAuthDelete(const char *pszUrl);
+char ** CPL_DLL CPLHTTPAuthProperties(const char *pszUrl);
 
 CPL_C_END
 
 #ifdef __cplusplus
 /*! @cond Doxygen_Suppress */
 // Not sure if this belong here, used in cpl_http.cpp, cpl_vsil_curl.cpp and frmts/wms/gdalhttp.cpp
-void* CPLHTTPSetOptions(void *pcurl, const char * const* papszOptions);
-char** CPLHTTPGetOptionsFromEnv();
+void *CPLHTTPSetOptions(void *pcurl, const char * const *papszOptions);
+char **CPLHTTPGetOptionsFromEnv();
 
 /**
  * @brief The IHTTPAuth class is base class for HTTP Authorization headers
@@ -139,9 +139,9 @@ char** CPLHTTPGetOptionsFromEnv();
 class IHTTPAuth {
 public:
     virtual ~IHTTPAuth() {}
-    virtual const char* GetUrl() const = 0;
-    virtual const char* GetHeader() = 0;
-    virtual char** GetProperties() const = 0;
+    virtual const char *GetUrl() const = 0;
+    virtual const char *GetHeader() = 0;
+    virtual char **GetProperties() const = 0;
 };
 
 /**
@@ -160,9 +160,9 @@ public:
                                const CPLString& soMaxRetry,
                                const CPLString& soRetryDelay);
     virtual ~CPLHTTPAuthBearer() {}
-    virtual const char* GetUrl() const CPL_OVERRIDE { return m_soUrl; }
-    virtual const char* GetHeader() CPL_OVERRIDE;
-    virtual char** GetProperties() const CPL_OVERRIDE;
+    virtual const char *GetUrl() const CPL_OVERRIDE { return m_soUrl; }
+    virtual const char *GetHeader() CPL_OVERRIDE;
+    virtual char **GetProperties() const CPL_OVERRIDE;
 
 private:
     CPLString m_soUrl;
@@ -190,10 +190,10 @@ public:
     static CPLHTTPAuthStore& instance();
 
 public:
-    void Add(IHTTPAuth* poAuth);
-    void Delete(const char* pszUrl);
-    const char* GetAuthHeader(const char* pszUrl);
-    char** GetProperties(const char* pszUrl) const;
+    void Add(IHTTPAuth *poAuth);
+    void Delete(const char *pszUrl);
+    const char* GetAuthHeader(const char *pszUrl);
+    char** GetProperties(const char *pszUrl) const;
 
 private:
     CPLHTTPAuthStore() {}
