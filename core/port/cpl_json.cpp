@@ -87,8 +87,18 @@ bool CPLJSONDocument::Save(const char *pszPath)
 CPLJSONObject CPLJSONDocument::GetRoot()
 {
     if( NULL == m_poRootJsonObject )
+    {
         m_poRootJsonObject = json_object_new_object();
-    return CPLJSONObject( "", m_poRootJsonObject );
+    }
+
+    if( json_object_get_type( TO_JSONOBJ(m_poRootJsonObject) ) == json_type_array )
+    {
+        return CPLJSONArray( "", m_poRootJsonObject );
+    }
+    else
+    {
+        return CPLJSONObject( "", m_poRootJsonObject );
+    }
 }
 
 bool CPLJSONDocument::Load(const char *pszPath)

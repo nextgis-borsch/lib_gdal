@@ -121,6 +121,7 @@ private:
 class CPL_DLL CPLJSONArray : public CPLJSONObject
 {
     friend class CPLJSONObject;
+    friend class CPLJSONDocument;
 public:
     CPLJSONArray(const CPLString& soName);
 private:
