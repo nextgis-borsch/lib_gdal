@@ -84,6 +84,8 @@ public:
     void Set(const char *pszName, long nValue);
     void Set(const char *pszName, bool bValue);
 
+    JSONObjectH GetInternalHandle() const { return m_poJsonObject; }
+
     // getters
     const char *GetString(const char *pszName, const char *pszDefault) const;
     double GetDouble(const char *pszName, double dfDefault) const;
@@ -144,7 +146,7 @@ public:
     bool Save(const char *pszPath);
     CPLJSONObject GetRoot();
     bool Load(const char *pszPath);
-    bool Load(GByte *pabyData, int nLength = -1);
+    bool Load(const GByte *pabyData, int nLength = -1);
     bool LoadChunks(const char *pszPath, size_t nChunkSize = 16384,
                     GDALProgressFunc pfnProgress = NULL,
                     void *pProgressArg = NULL);

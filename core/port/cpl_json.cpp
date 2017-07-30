@@ -116,7 +116,7 @@ bool CPLJSONDocument::Load(const char *pszPath)
     return bResult;
 }
 
-bool CPLJSONDocument::Load(GByte *pabyData, int nLength)
+bool CPLJSONDocument::Load(const GByte* pabyData, int nLength)
 {
     if(NULL == pabyData)
     {
