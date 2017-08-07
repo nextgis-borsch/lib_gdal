@@ -633,7 +633,7 @@ void CPLJSONObject::Set(const char *pszName, bool bValue)
 CPLJSONArray CPLJSONObject::GetArray(const char *pszName) const
 {
     if( NULL == pszName )
-        return CPLJSONArray( NULL );
+        return CPLJSONArray( "", NULL );
     char objectName[JSON_NAME_MAX_SIZE];
     CPLJSONObject object = GetObjectByPath( pszName, &objectName[0] );
     if( object.IsValid() )
@@ -648,13 +648,13 @@ CPLJSONArray CPLJSONObject::GetArray(const char *pszName) const
             }
         }
     }
-    return CPLJSONArray( NULL );
+    return CPLJSONArray( "", NULL );
 }
 
 CPLJSONObject CPLJSONObject::GetObject(const char *pszName) const
 {
     if( NULL == pszName )
-        return CPLJSONArray( NULL );
+        return CPLJSONArray( "", NULL );
     char objectName[JSON_NAME_MAX_SIZE];
     CPLJSONObject object = GetObjectByPath( pszName, &objectName[0] );
     if(object.IsValid())
@@ -788,7 +788,7 @@ CPLJSONObject CPLJSONObject::GetObjectByPath(const char *pszPath, char *pszName)
                                                     0 ) );
     int portionsCount = pathPortions.size();
     if( 0 == portionsCount )
-        return CPLJSONObject( CPLString(""), NULL );
+        return CPLJSONObject( "", NULL );
     CPLJSONObject object = *this;
     for( int i = 0; i < portionsCount - 1; ++i ) {
         // TODO: check array index in path - i.e. settings/catalog/root/id:1/name
