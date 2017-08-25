@@ -61,8 +61,21 @@ CPLJSONDocument::CPLJSONDocument() : m_poRootJsonObject(NULL)
 
 CPLJSONDocument::~CPLJSONDocument()
 {
-    if(m_poRootJsonObject)
+    if( m_poRootJsonObject )
         json_object_put( TO_JSONOBJ(m_poRootJsonObject) );
+}
+
+CPLJSONDocument::CPLJSONDocument(const CPLJSONDocument& other)
+{
+    if( other.m_poRootJsonObject )
+        m_poRootJsonObject = json_object_get( TO_JSONOBJ(other.m_poRootJsonObject) );
+}
+
+CPLJSONDocument& CPLJSONDocument::operator=(const CPLJSONDocument& other)
+{
+    if( other.m_poRootJsonObject )
+        m_poRootJsonObject = json_object_get( TO_JSONOBJ(other.m_poRootJsonObject) );
+    return *this;
 }
 
 bool CPLJSONDocument::Save(const char *pszPath)
@@ -480,16 +493,35 @@ CPLJSONObject::CPLJSONObject()
 CPLJSONObject::CPLJSONObject(const char *pszName, const CPLJSONObject &oParent) :
     m_soKey(pszName)
 {
-    m_poJsonObject = json_object_new_object();
+    m_poJsonObject = json_object_get(json_object_new_object());
     json_object_object_add( TO_JSONOBJ(oParent.m_poJsonObject), pszName,
                             TO_JSONOBJ(m_poJsonObject) );
 }
 
 CPLJSONObject::CPLJSONObject(const CPLString &soName, JSONObjectH poJsonObject) :
-    m_poJsonObject(poJsonObject),
+    m_poJsonObject( json_object_get( TO_JSONOBJ(poJsonObject) ) ),
     m_soKey(soName)
 {
 
+}
+
+CPLJSONObject::~CPLJSONObject()
+{
+    // Should delete m_poJsonObject only if CPLJSONObject has no parent
+    json_object_put( TO_JSONOBJ(m_poJsonObject) );
+}
+
+CPLJSONObject::CPLJSONObject(const CPLJSONObject& other)
+{
+    m_soKey = other.m_soKey;
+    m_poJsonObject = json_object_get( TO_JSONOBJ(other.m_poJsonObject) );
+}
+
+CPLJSONObject& CPLJSONObject::operator=(const CPLJSONObject& other)
+{
+    m_soKey = other.m_soKey;
+    m_poJsonObject = json_object_get( TO_JSONOBJ(other.m_poJsonObject) );
+    return *this;
 }
 
 void CPLJSONObject::Add(const char *pszName, const CPLString soValue)
@@ -569,7 +601,7 @@ void CPLJSONObject::Add(const char *pszName, const CPLJSONArray &oValue)
     if( object.IsValid() )
     {
         json_object_object_add( TO_JSONOBJ(object.m_poJsonObject), objectName,
-                                TO_JSONOBJ(oValue.m_poJsonObject) );
+                                json_object_get( TO_JSONOBJ(oValue.m_poJsonObject) ) );
     }
 }
 
@@ -582,7 +614,7 @@ void CPLJSONObject::Add(const char *pszName, const CPLJSONObject &oValue)
     if( object.IsValid() )
     {
         json_object_object_add( TO_JSONOBJ(object.m_poJsonObject), objectName,
-                                TO_JSONOBJ(oValue.m_poJsonObject) );
+                                json_object_get( TO_JSONOBJ(oValue.m_poJsonObject) ) );
     }
 }
 
@@ -881,7 +913,7 @@ void CPLJSONArray::Add(const CPLJSONObject &oValue)
 {
     if( oValue.m_poJsonObject )
         json_object_array_add( TO_JSONOBJ(m_poJsonObject),
-                               TO_JSONOBJ(oValue.m_poJsonObject) );
+                               json_object_get( TO_JSONOBJ(oValue.m_poJsonObject) ) );
 }
 
 CPLJSONObject CPLJSONArray::operator[](int nKey)

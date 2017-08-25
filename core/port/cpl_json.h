@@ -63,6 +63,9 @@ public:
 public:
     CPLJSONObject();
     explicit CPLJSONObject(const char *pszName, const CPLJSONObject& oParent);
+    ~CPLJSONObject();
+    CPLJSONObject(const CPLJSONObject& other);
+    CPLJSONObject& operator=(const CPLJSONObject& other);
 
 private:
     explicit CPLJSONObject(const CPLString& soName, JSONObjectH poJsonObject);
@@ -143,6 +146,9 @@ class CPL_DLL CPLJSONDocument
 public:
     CPLJSONDocument();
     ~CPLJSONDocument();
+    CPLJSONDocument(const CPLJSONDocument& other);
+    CPLJSONDocument& operator=(const CPLJSONDocument& other);
+
     bool Save(const char *pszPath);
     CPLJSONObject GetRoot();
     bool Load(const char *pszPath);
