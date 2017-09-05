@@ -890,6 +890,11 @@ void CPLJSONObject::DestroyJSONObjectList(CPLJSONObject **papsoList)
 // JSONArray
 //------------------------------------------------------------------------------
 
+CPLJSONArray::CPLJSONArray()
+{
+    m_poJsonObject = json_object_new_array();
+}
+
 CPLJSONArray::CPLJSONArray(const CPLString& soName) :
     CPLJSONObject( soName, json_object_new_array() )
 {
