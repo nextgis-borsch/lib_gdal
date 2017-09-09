@@ -739,8 +739,8 @@ double CPLJSONObject::GetDouble(const char *pszName, double dfDefault) const
 
 double CPLJSONObject::GetDouble(double dfDefault) const
 {
-    if( m_poJsonObject && json_object_get_type( TO_JSONOBJ(m_poJsonObject) ) ==
-            json_type_double )
+    if( m_poJsonObject /*&& json_object_get_type( TO_JSONOBJ(m_poJsonObject) ) ==
+            json_type_double*/ )
         return json_object_get_double( TO_JSONOBJ(m_poJsonObject) );
     return dfDefault;
 }
@@ -755,8 +755,8 @@ int CPLJSONObject::GetInteger(const char *pszName, int nDefault) const
 
 int CPLJSONObject::GetInteger(int nDefault) const
 {
-    if( m_poJsonObject && json_object_get_type( TO_JSONOBJ(m_poJsonObject) ) ==
-            json_type_int )
+    if( m_poJsonObject /*&& json_object_get_type( TO_JSONOBJ(m_poJsonObject) ) ==
+            json_type_int*/ )
         return json_object_get_int( TO_JSONOBJ(m_poJsonObject) );
     return nDefault;
 }
@@ -771,8 +771,8 @@ long CPLJSONObject::GetLong(const char *pszName, long nDdefault) const
 
 long CPLJSONObject::GetLong(long nDefault) const
 {
-    if( m_poJsonObject && json_object_get_type( TO_JSONOBJ(m_poJsonObject) ) ==
-            json_type_int ) // FIXME: How to differ long and int if json_type_int64 or json_type_long not exist?
+    if( m_poJsonObject /*&& json_object_get_type( TO_JSONOBJ(m_poJsonObject) ) ==
+            json_type_int*/ )
         return json_object_get_int64( TO_JSONOBJ(m_poJsonObject) );
     return nDefault;
 }
@@ -807,8 +807,8 @@ CPLJSONObject **CPLJSONObject::GetChildren() const
 
 bool CPLJSONObject::GetBool(bool bDefault) const
 {
-    if( m_poJsonObject && json_object_get_type( TO_JSONOBJ(m_poJsonObject) ) ==
-            json_type_boolean )
+    if( m_poJsonObject /*&& json_object_get_type( TO_JSONOBJ(m_poJsonObject) ) ==
+            json_type_boolean*/ )
         return json_object_get_boolean( TO_JSONOBJ(m_poJsonObject) );
     return bDefault;
 }
