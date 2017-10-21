@@ -72,7 +72,7 @@ private:
 
 public:
     // setters
-    void Add(const char *pszName, const CPLString soValue);
+    void Add(const char *pszName, const CPLString& soValue);
     void Add(const char *pszName, const char *pszValue);
     void Add(const char *pszName, double dfValue);
     void Add(const char *pszName, int nValue);

@@ -1223,6 +1223,16 @@ char** CPLHTTPAuthProperties(const char* pszUrl)
     return CPLHTTPAuthStore::instance().GetProperties(pszUrl);
 }
 
+/**
+ * @brief CPLHTTPAuthHeader Returns authorization header value
+ * @param pszUrl The URL to search authorization header value.
+ * @ return Word "expired" or header valuew in form "Authorization: ..."
+ */
+const char *CPL_DLL CPLHTTPAuthHeader(const char *pszUrl)
+{
+    return CPLHTTPAuthStore::instance().GetAuthHeader(pszUrl);
+}
+
 //------------------------------------------------------------------------------
 // AuthBearer
 //------------------------------------------------------------------------------

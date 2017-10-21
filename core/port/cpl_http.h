@@ -124,6 +124,7 @@ int CPL_DLL CPLHTTPAuthAdd(const char *pszUrl, char **papszOptions,
                             HTTPAuthNotifyFunc func);
 void CPL_DLL CPLHTTPAuthDelete(const char *pszUrl);
 char ** CPL_DLL CPLHTTPAuthProperties(const char *pszUrl);
+const char *CPL_DLL CPLHTTPAuthHeader(const char *pszUrl);
 
 CPL_C_END
 

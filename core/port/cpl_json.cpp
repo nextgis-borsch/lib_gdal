@@ -524,7 +524,7 @@ CPLJSONObject& CPLJSONObject::operator=(const CPLJSONObject& other)
     return *this;
 }
 
-void CPLJSONObject::Add(const char *pszName, const CPLString soValue)
+void CPLJSONObject::Add(const char *pszName, const CPLString& soValue)
 {
     char objectName[JSON_NAME_MAX_SIZE];
     CPLJSONObject object = GetObjectByPath( pszName, &objectName[0] );
