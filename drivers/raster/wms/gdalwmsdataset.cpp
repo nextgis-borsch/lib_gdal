@@ -228,16 +228,30 @@ CPLErr GDALWMSDataset::Initialize(CPLXMLNode *config, char **l_papszOpenOptions)
         }
     }
 
+    CPLXMLNode *service_node = CPLGetXMLNode(config, "Service");
+    if (service_node == NULL) {
+        CPLError(CE_Failure, CPLE_AppDefined,
+            "GDALWMS: No Service specified.");
+        return CE_Failure;
+    }
+
     if (ret == CE_None) {
         CPLXMLNode *cache_node = CPLGetXMLNode(config, "Cache");
         if (cache_node != NULL) {
             m_cache = new GDALWMSCache();
-            if (m_cache->Initialize(cache_node) != CE_None) {
+            if (m_cache->Initialize(CPLGetXMLValue(service_node, "ServerUrl", NULL),
+                                    cache_node) != CE_None) {
                 delete m_cache;
                 m_cache = NULL;
                 CPLError(CE_Failure, CPLE_AppDefined,
                     "GDALWMS: Failed to initialize cache.");
                 ret = CE_Failure;
+            }
+            else {
+                // NOTE: Save cache path to metadata. For example, this is
+                // useful for deleting a cache folder when removing dataset or
+                // to fill the cache for specified area and zoom levels
+                SetMetadataItem("CACHE_PATH", m_cache->CachePath(), NULL);
             }
         }
     }
@@ -255,12 +269,6 @@ CPLErr GDALWMSDataset::Initialize(CPLXMLNode *config, char **l_papszOpenOptions)
     }
 
     // Initialize the minidriver, which can set parameters for the dataset using member functions
-    CPLXMLNode *service_node = CPLGetXMLNode(config, "Service");
-    if (service_node == NULL) {
-        CPLError(CE_Failure, CPLE_AppDefined,
-            "GDALWMS: No Service specified.");
-        return CE_Failure;
-    }
 
     const CPLString service_name = CPLGetXMLValue(service_node, "name", "");
     if (service_name.empty()) {

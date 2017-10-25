@@ -41,7 +41,6 @@ if(ENABLE_WMS)
 
     set(LIB_HHEADERS_PRIV
         gdalhttp.h
-        md5.h
         minidriver_tileservice.h
         minidriver_wms.h
         minidriver_worldwind.h
@@ -61,7 +60,6 @@ if(ENABLE_WMS)
         gdalwmsdataset.cpp
         gdalwmsrasterband.cpp
         gdalhttp.cpp
-        md5.cpp
         minidriver.cpp
         wmsutils.cpp
         wmsdriver.cpp

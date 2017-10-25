@@ -38,6 +38,7 @@
 
 #include "cpl_config.h"
 #include "cpl_conv.h"
+#include "md5.h"
 
 CPL_CVSID("$Id$");
 
@@ -506,4 +507,28 @@ CPLString CPLOvPrintf( CPL_FORMAT_STRING(const char *pszFormat), va_list args )
     CPLString osTarget;
     osTarget.vPrintf( pszFormat, args);
     return osTarget;
+}
+
+/**
+ * @brief CPLMD5String Transform string to MD5 hash
+ * @param pszText Text to transform
+ * @return MD5 hash string
+ */
+CPLString CPL_DLL CPLMD5String(const char *pszText)
+{
+    unsigned char hash[16];
+    char hhash[33];
+    const char *tohex = "0123456789abcdef";
+    struct cvs_MD5Context context;
+    cvs_MD5Init(&context);
+    cvs_MD5Update(&context, reinterpret_cast<unsigned char const *>(pszText),
+                  static_cast<int>(strlen(pszText)));
+    cvs_MD5Final(hash, &context);
+    for (int i = 0; i < 16; ++i)
+    {
+        hhash[i * 2] = tohex[(hash[i] >> 4) & 0xf];
+        hhash[i * 2 + 1] = tohex[hash[i] & 0xf];
+    }
+    hhash[32] = '\0';
+    return CPLString(hhash);
 }

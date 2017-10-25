@@ -66,6 +66,7 @@ set(LIB_HHEADERS
     cpl_cpu_features.h
     cpl_google_cloud.h
     cpl_sha1.h
+    md5.h
 )
 
 set(LIB_HHEADERS_PRIV
@@ -120,6 +121,7 @@ set(LIB_CSOURCES
     cpl_vsil_curl.cpp
     cpl_cpu_features.cpp
     cpl_sha1.cpp
+    md5.cpp
 )
 
 if(WIN32)

@@ -9,6 +9,7 @@
  ******************************************************************************
  * Copyright (c) 2007, Adam Nowacki
  * Copyright (c) 2008-2013, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2017, NextGIS, <info@nextgis.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -32,22 +33,22 @@
 #ifndef WMSDRIVER_H_INCLUDED
 #define WMSDRIVER_H_INCLUDED
 
-#include <cmath>
-#include <vector>
-#include <set>
 #include <algorithm>
+#include <cmath>
 #include <map>
+#include <set>
+#include <vector>
 #include <utility>
+
 #include <curl/curl.h>
 
 #include "cpl_conv.h"
 #include "cpl_http.h"
-#include "gdal_pam.h"
-#include "ogr_spatialref.h"
-#include "gdalwarper.h"
 #include "gdal_alg.h"
+#include "gdal_pam.h"
+#include "gdalwarper.h"
+#include "ogr_spatialref.h"
 
-#include "md5.h"
 #include "gdalhttp.h"
 
 class GDALWMSDataset;
@@ -56,7 +57,6 @@ class GDALWMSRasterBand;
 /* -------------------------------------------------------------------- */
 /*      Helper functions.                                               */
 /* -------------------------------------------------------------------- */
-CPLString MD5String(const char *s);
 CPLString ProjToWKT(const CPLString &proj);
 
 // Decode s from encoding "base64" or "XMLencoded".
@@ -154,8 +154,8 @@ public:
 class WMSMiniDriver {
 friend class GDALWMSDataset;
 public:
-    WMSMiniDriver() : m_parent_dataset(NULL) {};
-    virtual ~WMSMiniDriver() {};
+    WMSMiniDriver() : m_parent_dataset(NULL) {}
+    virtual ~WMSMiniDriver() {}
 
 public:
     // MiniDriver specific initialization from XML, required
@@ -163,7 +163,7 @@ public:
     virtual CPLErr Initialize(CPLXMLNode *config, char **papszOpenOptions) = 0;
 
     // Called once at the end of the dataset initialization
-    virtual CPLErr EndInit() { return CE_None; };
+    virtual CPLErr EndInit() { return CE_None; }
 
     // Error message returned in url, required
     // Set error message in request.Error
@@ -173,24 +173,24 @@ public:
         CPL_UNUSED const GDALWMSTiledImageRequestInfo &tiri) = 0;
 
     // change capabilities to be used by the parent
-    virtual void GetCapabilities(CPL_UNUSED WMSMiniDriverCapabilities *caps) {};
+    virtual void GetCapabilities(CPL_UNUSED WMSMiniDriverCapabilities *caps) {}
 
     // signal by setting the m_has_getinfo in the GetCapabilities call
     virtual void GetTiledImageInfo(CPL_UNUSED CPLString &url,
         CPL_UNUSED const GDALWMSImageRequestInfo &iri,
         CPL_UNUSED const GDALWMSTiledImageRequestInfo &tiri,
         CPL_UNUSED int nXInBlock,
-        CPL_UNUSED int nYInBlock) {};
+        CPL_UNUSED int nYInBlock) {}
 
     virtual const char *GetProjectionInWKT() {
         if (!m_projection_wkt.empty())
             return m_projection_wkt.c_str();
         return NULL;
-    };
+    }
 
     virtual char **GetMetadataDomainList() {
         return NULL;
-    };
+    }
 
 protected:
     CPLString m_base_url;
@@ -200,8 +200,8 @@ protected:
 
 class WMSMiniDriverFactory {
 public:
-    WMSMiniDriverFactory() {};
-    virtual ~WMSMiniDriverFactory() {};
+    WMSMiniDriverFactory() {}
+    virtual ~WMSMiniDriverFactory() {}
 
 public:
     virtual WMSMiniDriver* New() const = 0;
@@ -219,25 +219,51 @@ void WMSDeregister(GDALDriver *);
 /************************************************************************/
 /*                            GDALWMSCache                              */
 /************************************************************************/
+enum GDALWMSCacheItemStatus {
+    CACHE_ITEM_NOT_FOUND,
+    CACHE_ITEM_OK,
+    CACHE_ITEM_EXPIRED
+};
+
+class GDALWMSCacheImpl
+{
+public:
+    GDALWMSCacheImpl(const CPLString& soPath, CPLXMLNode */*pConfig*/) :
+        m_soPath(soPath) {}
+    virtual ~GDALWMSCacheImpl() {}
+    virtual CPLErr Insert(const char *pszKey, const CPLString &osFileName) = 0;
+    virtual enum GDALWMSCacheItemStatus GetItemStatus(const char *pszKey) const = 0;
+    virtual GDALDataset* GetDataset(const char *pszKey,
+                                    char **papszOpenOptions) const = 0;
+    virtual void Clean() = 0;
+protected:
+    CPLString m_soPath;
+};
 
 class GDALWMSCache {
+    friend class GDALWMSDataset;
+
 public:
     GDALWMSCache();
     ~GDALWMSCache();
 
 public:
-    CPLErr Initialize(CPLXMLNode *config);
-    CPLErr Write(const char *key, const CPLString &file_name);
-    // Bad name for this function, it only tests that the file is in cache and returns the real name
-    CPLErr Read(const char *key, CPLString *file_name);
+    CPLErr Initialize(const char *pszUrl, CPLXMLNode *pConfig);
+    CPLErr Insert(const char *pszKey, const CPLString &osFileName);
+    enum GDALWMSCacheItemStatus GetItemStatus(const char *pszKey) const;
+    GDALDataset* GetDataset(const char *pszKey, char **papszOpenOptions) const;
+    void Clean();
 
 protected:
-    CPLString KeyToCacheFile(const char *key);
+//    CPLString KeyToCacheFile(const char *pszKey);
+    CPLString CachePath() const { return m_osCachePath; }
 
 protected:
-    CPLString m_cache_path;
-    CPLString m_postfix;
-    int m_cache_depth;
+    CPLString m_osCachePath;
+    CPLJoinableThread *m_hCleanThread;
+
+private:
+    GDALWMSCacheImpl* m_poCache;
 };
 
 /************************************************************************/
@@ -263,8 +289,8 @@ public:
 
     void SetColorTable(GDALColorTable *pct) { m_poColorTable=pct; }
 
-    void mSetBand(int i, GDALRasterBand *band) { SetBand(i,band); };
-    GDALWMSRasterBand *mGetBand(int i) { return reinterpret_cast<GDALWMSRasterBand *>(GetRasterBand(i)); };
+    void mSetBand(int i, GDALRasterBand *band) { SetBand(i,band); }
+    GDALWMSRasterBand *mGetBand(int i) { return reinterpret_cast<GDALWMSRasterBand *>(GetRasterBand(i)); }
 
     const GDALWMSDataWindow *WMSGetDataWindow() const {
         return &m_data_window;
@@ -463,7 +489,12 @@ protected:
     CPLErr ReadBlocks(int x, int y, void *buffer, int bx0, int by0, int bx1, int by1, int advise_read);
     bool IsBlockInCache(int x, int y);
     CPLErr AskMiniDriverForBlock(WMSHTTPRequest &request, int x, int y);
-    CPLErr ReadBlockFromFile(int x, int y, const char *file_name, int to_buffer_band, void *buffer, int advise_read);
+    CPLErr ReadBlockFromCache(const char* pszKey, int x, int y,
+                              int to_buffer_band, void *buffer, int advise_read);
+    CPLErr ReadBlockFromFile(const CPLString& soFileName, int x, int y,
+                              int to_buffer_band, void *buffer, int advise_read);
+    CPLErr ReadBlockFromDataset(GDALDataset *ds, int x, int y, int to_buffer_band,
+                                                   void *buffer, int advise_read);
     CPLErr ZeroBlock(int x, int y, int to_buffer_band, void *buffer);
     static CPLErr ReportWMSException(const char *file_name);
 

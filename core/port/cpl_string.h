@@ -441,6 +441,9 @@ CPLString CPL_DLL CPLURLGetValue(const char* pszURL, const char* pszKey);
 CPLString CPL_DLL CPLURLAddKVP(const char* pszURL, const char* pszKey,
                                const char* pszValue);
 
+//------------------------------------------------------------------------
+CPLString CPL_DLL CPLMD5String(const char *pszText);
+
 /************************************************************************/
 /*                            CPLStringList                             */
 /************************************************************************/
