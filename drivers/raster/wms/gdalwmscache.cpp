@@ -92,10 +92,7 @@ public:
     {
         // Warns if it fails to write, but returns success
         CPLString soFilePath = GetFilePath( pszKey );
-        if( CPLCopyFile( soFilePath, osFileName ) == CE_None )
-            return CE_None;
-
-        MakeDirs( soFilePath );
+        MakeDirs( CPLGetDirname(soFilePath) );
         if ( CPLCopyFile( soFilePath, osFileName ) == CE_None)
             return CE_None;
         // Warn if it fails after folder creation
@@ -194,12 +191,23 @@ private:
         return soCacheFile;
     }
 
-    static void MakeDirs(const char *pszPath) {
+    static void MakeDirs(const char *pszPath)
+    {
+        if( IsPathExists( pszPath ) )
+        {
+            return;
+        }
         // Recursive makedirs, ignoring errors
-        const char *pszDirName = CPLGetDirname( pszPath );
-        if( CPLStrnlen( pszDirName, 1024 ) >= 2 )
-            MakeDirs( pszDirName );
-        VSIMkdir( pszDirName, 0744 );
+        const char *pszDirPath = CPLGetDirname( pszPath );
+        MakeDirs( pszDirPath );
+
+        VSIMkdir( pszPath, 0744 );
+    }
+
+    static bool IsPathExists(const char *pszPath)
+    {
+        VSIStatBufL sbuf;
+        return VSIStatL( pszPath, &sbuf ) == 0;
     }
 
 private:
