@@ -51,7 +51,7 @@
 #include <emmintrin.h>
 #endif
 
-CPL_CVSID("$Id: gdalwarper.cpp 36857 2016-12-14 20:14:32Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                         GDALReprojectImage()                         */
@@ -1416,7 +1416,8 @@ GDALSerializeWarpOptions( const GDALWarpOptions *psWO )
 
         // EXTRA_ELTS is an internal detail that we will recover
         // no need to serialize it.
-        if( !EQUAL(pszName, "EXTRA_ELTS") )
+        // And CUTLINE is also serialized in a special way
+        if( !EQUAL(pszName, "EXTRA_ELTS") && !EQUAL(pszName, "CUTLINE") )
         {
             CPLXMLNode *psOption =
                 CPLCreateXMLElementAndValue(

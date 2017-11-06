@@ -32,7 +32,7 @@
 #include "gdal_frmts.h"
 #include "gdal_pam.h"
 
-CPL_CVSID("$Id: jaxapalsardataset.cpp 36574 2016-11-30 14:46:26Z goatbar $");
+CPL_CVSID("$Id$");
 
 #if defined(WIN32)
 #define SEP_STRING "\\"

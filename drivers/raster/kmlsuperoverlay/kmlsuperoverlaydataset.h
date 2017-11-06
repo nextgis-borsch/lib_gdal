@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: kmlsuperoverlaydataset.h 37396 2017-02-17 09:49:36Z rouault $
+ * $Id$
  *
  * Project:  KmlSuperOverlay
  * Purpose:  Implements write support for KML superoverlay - KMZ.

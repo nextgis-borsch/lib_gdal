@@ -38,7 +38,7 @@
 #include "ogrsqliteregexp.cpp" /* yes the .cpp file, to make it work on Windows with load_extension('gdalXX.dll') */
 #include "swq.h"
 
-CPL_CVSID("$Id: ogrsqlitesqlfunctions.cpp 37810 2017-03-20 16:23:30Z rouault $");
+CPL_CVSID("$Id$");
 
 #ifndef HAVE_SPATIALITE
 #define MINIMAL_SPATIAL_FUNCTIONS

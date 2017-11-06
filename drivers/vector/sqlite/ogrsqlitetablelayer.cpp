@@ -38,7 +38,7 @@
 static const char UNSUPPORTED_OP_READ_ONLY[] =
   "%s : unsupported operation on a read-only datasource.";
 
-CPL_CVSID("$Id: ogrsqlitetablelayer.cpp 37810 2017-03-20 16:23:30Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                        OGRSQLiteTableLayer()                         */
@@ -3034,9 +3034,9 @@ OGRErr OGRSQLiteTableLayer::RunDeferredCreationIfNecessary()
 
     CPLString osCommand;
 
-    osCommand.Printf( "CREATE TABLE '%s' ( %s INTEGER PRIMARY KEY AUTOINCREMENT",
+    osCommand.Printf( "CREATE TABLE '%s' ( \"%s\" INTEGER PRIMARY KEY AUTOINCREMENT",
                       pszEscapedTableName,
-                      pszFIDColumn );
+                      SQLEscapeName(pszFIDColumn).c_str() );
 
     if ( !poDS->IsSpatialiteDB() )
     {

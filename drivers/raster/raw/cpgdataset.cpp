@@ -32,7 +32,7 @@
 #include "ogr_spatialref.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id: cpgdataset.cpp 36763 2016-12-09 22:10:55Z rouault $");
+CPL_CVSID("$Id$");
 
 enum Interleave { BSQ, BIL, BIP };
 
@@ -1117,9 +1117,9 @@ GDALDataset *CPGDataset::Open( GDALOpenInfo * poOpenInfo )
     else
       poDS = reinterpret_cast<CPGDataset *>(
           InitializeType3Dataset( poOpenInfo->pszFilename ) );
+#endif
     if( poDS == NULL )
         return NULL;
-#endif
 
 /* -------------------------------------------------------------------- */
 /*      Check for overviews.                                            */

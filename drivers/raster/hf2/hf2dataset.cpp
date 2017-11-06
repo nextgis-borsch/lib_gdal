@@ -37,7 +37,7 @@
 #include <algorithm>
 #include <limits>
 
-CPL_CVSID("$Id: hf2dataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -187,9 +187,14 @@ CPLErr HF2RasterBand::IReadBlock( int nBlockXOff, int nLineYOff,
                 GInt32 nVal;
                 VSIFReadL(&nVal, 4, 1, poGDS->fp);
                 CPL_LSBPTR32(&nVal);
-                if( VSIFReadL(pabyData, static_cast<size_t>(nWordSize * (nTileWidth - 1)), 1, poGDS->fp) != 1 )
+                const size_t nToRead = static_cast<size_t>(nWordSize * (nTileWidth - 1));
+                const size_t nRead = VSIFReadL(pabyData, 1, nToRead, poGDS->fp);
+                if( nRead != nToRead )
                 {
-                    CPLError(CE_Failure, CPLE_FileIO, "File too short");
+                    CPLError(CE_Failure, CPLE_FileIO,
+                             "File too short: got %d, expected %d",
+                             static_cast<int>(nRead),
+                             static_cast<int>(nToRead));
                     CPLFree(pabyData);
                     return CE_Failure;
                 }

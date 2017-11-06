@@ -31,7 +31,7 @@
 #include "cpl_multiproc.h"
 #include "gmlreaderp.h"
 
-CPL_CVSID("$Id: ogrgmldriver.cpp 36158 2016-11-08 13:53:11Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                         OGRGMLDriverIdentify()                       */

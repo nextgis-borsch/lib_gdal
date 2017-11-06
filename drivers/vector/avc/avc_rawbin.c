@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: avc_rawbin.c 34524 2016-07-03 02:47:25Z goatbar $
+ * $Id$
  *
  * Name:     avc_rawbin.c
  * Project:  Arc/Info vector coverage (AVC)  BIN->E00 conversion library
@@ -383,7 +383,7 @@ void AVCRawBinFSeek(AVCRawBinFile *psFile, int nOffset, int nFrom)
         psFile->nCurPos = 0;
         psFile->nCurSize = 0;
         psFile->nOffset = psFile->nOffset+nTarget;
-        if( VSIFSeek(psFile->fp, psFile->nOffset+nTarget, SEEK_SET) < 0 )
+        if( VSIFSeek(psFile->fp, psFile->nOffset, SEEK_SET) < 0 )
             return;
     }
 

@@ -32,7 +32,7 @@
 #include "gdal_pam.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: rs2dataset.cpp 36979 2016-12-20 18:40:40Z rouault $");
+CPL_CVSID("$Id$");
 
 typedef enum eCalibration_t {
     Sigma0 = 0,

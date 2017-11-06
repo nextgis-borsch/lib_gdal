@@ -33,7 +33,7 @@
 #include "cpl_error.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: tigerfilebase.cpp 38802 2017-06-02 09:04:34Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                           TigerFileBase()                            */

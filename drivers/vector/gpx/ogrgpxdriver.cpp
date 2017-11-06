@@ -29,7 +29,7 @@
 #include "ogr_gpx.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrgpxdriver.cpp 34819 2016-07-28 22:32:18Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                                Open()                                */

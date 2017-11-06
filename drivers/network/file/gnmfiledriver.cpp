@@ -32,7 +32,7 @@
 #include "gnm_frmts.h"
 #include "gnm_priv.h"
 
-CPL_CVSID("$Id: gnmfiledriver.cpp 36302 2016-11-19 16:54:08Z bishop $");
+CPL_CVSID("$Id$");
 
 static int GNMFileDriverIdentify( GDALOpenInfo* poOpenInfo )
 

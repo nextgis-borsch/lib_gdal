@@ -106,7 +106,7 @@
 #include "xtiffio.h"
 
 
-CPL_CVSID("$Id: geotiff.cpp 39129 2017-06-15 10:32:38Z rouault $");
+CPL_CVSID("$Id$");
 
 #if SIZEOF_VOIDP == 4
 static bool bGlobalStripIntegerOverflow = false;
@@ -778,11 +778,16 @@ CPLErr GTiffJPEGOverviewBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 
     // Compute the source block ID.
     int nBlockId = 0;
-    if( nBlockYSize != 1 )
+    int nParentBlockXSize, nParentBlockYSize;
+    poGDS->poParentDS->GetRasterBand(1)->
+        GetBlockSize(&nParentBlockXSize, &nParentBlockYSize);
+    const bool bIsSingleStripAsSplit = (nParentBlockYSize == 1 &&
+                           poGDS->poParentDS->nBlockYSize != nParentBlockYSize);
+    if( !bIsSingleStripAsSplit )
     {
-        nBlocksPerRow = DIV_ROUND_UP(poGDS->poParentDS->nRasterXSize,
+        int l_nBlocksPerRow = DIV_ROUND_UP(poGDS->poParentDS->nRasterXSize,
                                                poGDS->poParentDS->nBlockXSize);
-        nBlockId = nBlockYOff * nBlocksPerRow + nBlockXOff;
+        nBlockId = nBlockYOff * l_nBlocksPerRow + nBlockXOff;
     }
     if( poGDS->poParentDS->nPlanarConfig == PLANARCONFIG_SEPARATE )
     {
@@ -813,7 +818,7 @@ CPLErr GTiffJPEGOverviewBand::IReadBlock( int nBlockXOff, int nBlockYOff,
         // Special case for last strip that might be smaller than other strips
         // In which case we must invalidate the dataset.
         TIFF* hTIFF = poGDS->poParentDS->hTIFF;
-        if( !TIFFIsTiled( hTIFF ) && poGDS->poParentDS->nBlockYSize > 1 &&
+        if( !TIFFIsTiled( hTIFF ) && !bIsSingleStripAsSplit &&
             (nBlockYOff + 1 ==
                  DIV_ROUND_UP( poGDS->poParentDS->nRasterYSize,
                                poGDS->poParentDS->nBlockYSize ) ||
@@ -972,7 +977,7 @@ CPLErr GTiffJPEGOverviewBand::IReadBlock( int nBlockXOff, int nBlockYOff,
         int nReqYOff = 0;
         int nReqXSize = 0;
         int nReqYSize = 0;
-        if( nBlockYSize == 1 )
+        if( bIsSingleStripAsSplit )
         {
             nReqYOff = nBlockYOff * nScaleFactor;
             nReqXSize = l_poDS->GetRasterXSize();
@@ -980,22 +985,48 @@ CPLErr GTiffJPEGOverviewBand::IReadBlock( int nBlockXOff, int nBlockYOff,
         }
         else
         {
-            nReqXSize = nBlockXSize * nScaleFactor;
+            if( nBlockXSize == poGDS->GetRasterXSize() )
+            {
+                nReqXSize = l_poDS->GetRasterXSize();
+            }
+            else
+            {
+                nReqXSize = nBlockXSize * nScaleFactor;
+            }
             nReqYSize = nBlockYSize * nScaleFactor;
         }
         int nBufXSize = nBlockXSize;
         int nBufYSize = nBlockYSize;
+        if( nBlockXOff == DIV_ROUND_UP(poGDS->poParentDS->nRasterXSize,
+                                       poGDS->poParentDS->nBlockXSize) - 1 )
+        {
+            nReqXSize = poGDS->poParentDS->nRasterXSize -
+                                nBlockXOff * poGDS->poParentDS->nBlockXSize;
+        }
         if( nReqXOff + nReqXSize > l_poDS->GetRasterXSize() )
         {
             nReqXSize = l_poDS->GetRasterXSize() - nReqXOff;
-            nBufXSize = nReqXSize / nScaleFactor;
-            if( nBufXSize == 0 ) nBufXSize = 1;
+        }
+        if( !bIsSingleStripAsSplit &&
+            nBlockYOff == DIV_ROUND_UP(poGDS->poParentDS->nRasterYSize,
+                                       poGDS->poParentDS->nBlockYSize) - 1 )
+        {
+            nReqYSize = poGDS->poParentDS->nRasterYSize -
+                                nBlockYOff * poGDS->poParentDS->nBlockYSize;
         }
         if( nReqYOff + nReqYSize > l_poDS->GetRasterYSize() )
         {
             nReqYSize = l_poDS->GetRasterYSize() - nReqYOff;
-            nBufYSize = nReqYSize / nScaleFactor;
-            if( nBufYSize == 0 ) nBufYSize = 1;
+        }
+        if( nBlockXOff * nBlockXSize > poGDS->GetRasterXSize() - nBufXSize )
+        {
+            memset(pImage, 0, nBlockXSize * nBlockYSize * nDataTypeSize);
+            nBufXSize = poGDS->GetRasterXSize() - nBlockXOff * nBlockXSize;
+        }
+        if( nBlockYOff * nBlockYSize > poGDS->GetRasterYSize() - nBufYSize )
+        {
+            memset(pImage, 0, nBlockXSize * nBlockYSize * nDataTypeSize);
+            nBufYSize = poGDS->GetRasterYSize() - nBlockYOff * nBlockYSize;
         }
 
         const int nSrcBand =
@@ -4016,6 +4047,12 @@ int GTiffRasterBand::IGetDataCoverageStatus( int nXOff, int nYOff,
     if( eAccess == GA_Update )
         poGDS->FlushCache();
 
+    if( !poGDS->SetDirectory() )
+    {
+        return GDAL_DATA_COVERAGE_STATUS_UNIMPLEMENTED |
+               GDAL_DATA_COVERAGE_STATUS_DATA;
+    }
+
     const int iXBlockStart = nXOff / nBlockXSize;
     const int iXBlockEnd = (nXOff + nXSize - 1) / nBlockXSize;
     const int iYBlockStart = nYOff / nBlockYSize;
@@ -5391,6 +5428,11 @@ class GTiffSplitBand CPL_FINAL : public GTiffRasterBand
              GTiffSplitBand( GTiffDataset *, int );
     virtual ~GTiffSplitBand() {};
 
+    virtual int IGetDataCoverageStatus( int nXOff, int nYOff,
+                                        int nXSize, int nYSize,
+                                        int nMaskFlagStop,
+                                        double* pdfDataPct) override;
+
     virtual CPLErr IReadBlock( int, int, void * ) override;
     virtual CPLErr IWriteBlock( int, int, void * ) override;
 };
@@ -5404,6 +5446,19 @@ GTiffSplitBand::GTiffSplitBand( GTiffDataset *poDSIn, int nBandIn ) :
 {
     nBlockXSize = poDS->GetRasterXSize();
     nBlockYSize = 1;
+}
+
+/************************************************************************/
+/*                       IGetDataCoverageStatus()                       */
+/************************************************************************/
+
+int GTiffSplitBand::IGetDataCoverageStatus( int , int ,
+                                             int , int ,
+                                             int ,
+                                             double* )
+{
+     return GDAL_DATA_COVERAGE_STATUS_UNIMPLEMENTED |
+            GDAL_DATA_COVERAGE_STATUS_DATA;
 }
 
 /************************************************************************/
@@ -5521,6 +5576,11 @@ class GTiffRGBABand CPL_FINAL : public GTiffRasterBand
                    GTiffRGBABand( GTiffDataset *, int );
     virtual ~GTiffRGBABand() {}
 
+    virtual int IGetDataCoverageStatus( int nXOff, int nYOff,
+                                        int nXSize, int nYSize,
+                                        int nMaskFlagStop,
+                                        double* pdfDataPct) override;
+
     virtual CPLErr IReadBlock( int, int, void * ) override;
     virtual CPLErr IWriteBlock( int, int, void * ) override;
 
@@ -5535,6 +5595,19 @@ GTiffRGBABand::GTiffRGBABand( GTiffDataset *poDSIn, int nBandIn ) :
     GTiffRasterBand( poDSIn, nBandIn )
 {
     eDataType = GDT_Byte;
+}
+
+/************************************************************************/
+/*                       IGetDataCoverageStatus()                       */
+/************************************************************************/
+
+int GTiffRGBABand::IGetDataCoverageStatus( int , int ,
+                                             int , int ,
+                                             int ,
+                                             double* )
+{
+     return GDAL_DATA_COVERAGE_STATUS_UNIMPLEMENTED |
+            GDAL_DATA_COVERAGE_STATUS_DATA;
 }
 
 /************************************************************************/
@@ -6719,6 +6792,11 @@ class GTiffSplitBitmapBand CPL_FINAL : public GTiffBitmapBand
                    GTiffSplitBitmapBand( GTiffDataset *, int );
     virtual       ~GTiffSplitBitmapBand();
 
+    virtual int IGetDataCoverageStatus( int nXOff, int nYOff,
+                                        int nXSize, int nYSize,
+                                        int nMaskFlagStop,
+                                        double* pdfDataPct) override;
+
     virtual CPLErr IReadBlock( int, int, void * ) override;
     virtual CPLErr IWriteBlock( int, int, void * ) override;
 };
@@ -7195,7 +7273,10 @@ int GTiffDataset::GetJPEGOverviewCount()
         return 0;
 
     if( !SetDirectory() )
+    {
+        nJPEGOverviewCount = 0;
         return 0;
+    }
 
     // Get JPEG tables.
     uint32 nJPEGTableSize = 0;
@@ -7207,6 +7288,7 @@ int GTiffDataset::GetJPEGOverviewCount()
             nJPEGTableSize > INT_MAX ||
             static_cast<GByte*>(pJPEGTable)[nJPEGTableSize-1] != 0xD9 )
         {
+            nJPEGOverviewCount = 0;
             return 0;
         }
         nJPEGTableSize--;  // Remove final 0xD9.
@@ -8965,18 +9047,26 @@ bool GTiffDataset::IsBlockAvailable( int nBlockId,
 #endif  // INTERNAL_LIBTIFF
     toff_t *panByteCounts = NULL;
     toff_t *panOffsets = NULL;
+    const bool bIsTiled = CPL_TO_BOOL( TIFFIsTiled(hTIFF) );
 
-    if( ( TIFFIsTiled( hTIFF )
+    if( ( bIsTiled
           && TIFFGetField( hTIFF, TIFFTAG_TILEBYTECOUNTS, &panByteCounts )
           && (pnOffset == NULL ||
               TIFFGetField( hTIFF, TIFFTAG_TILEOFFSETS, &panOffsets )) )
-        || ( !TIFFIsTiled( hTIFF )
+        || ( !bIsTiled
           && TIFFGetField( hTIFF, TIFFTAG_STRIPBYTECOUNTS, &panByteCounts )
           && (pnOffset == NULL ||
               TIFFGetField( hTIFF, TIFFTAG_STRIPOFFSETS, &panOffsets )) ) )
     {
         if( panByteCounts == NULL || (pnOffset != NULL && panOffsets == NULL) )
             return false;
+
+        const int nBlockCount =
+            bIsTiled ? TIFFNumberOfTiles(hTIFF) : TIFFNumberOfStrips(hTIFF);
+        if( nBlockId >= nBlockCount )
+        {
+            return false;
+        }
 
         if( pnOffset )
             *pnOffset = panOffsets[nBlockId];
@@ -11126,6 +11216,19 @@ int GTiffDataset::Identify( GDALOpenInfo *poOpenInfo )
         return FALSE;
 
     return TRUE;
+}
+
+/************************************************************************/
+/*                       IGetDataCoverageStatus()                       */
+/************************************************************************/
+
+int GTiffSplitBitmapBand::IGetDataCoverageStatus( int , int ,
+                                             int , int ,
+                                             int ,
+                                             double* )
+{
+     return GDAL_DATA_COVERAGE_STATUS_UNIMPLEMENTED |
+            GDAL_DATA_COVERAGE_STATUS_DATA;
 }
 
 /************************************************************************/
@@ -13987,6 +14090,19 @@ void GTiffDataset::ScanDirectories()
         if( TIFFCurrentDirOffset(hTIFF) != nThisDir )
             TIFFSetSubDirectory( hTIFF, nThisDir );
         *ppoActiveDSRef = NULL;
+    }
+
+    // Nasty hack. Probably something that should be fixed in libtiff
+    // In case the last directory cycles to the first directory, we have
+    // TIFFCurrentDirOffset(hTIFF) == nDirOffset, but the TIFFReadDirectory()
+    // hasn't done its job, so SetDirectory() would be confused and think it
+    // has nothing to do. To avoid that reset to a fake offset before calling
+    // SetDirectory()
+    if( TIFFCurrentDirOffset(hTIFF) == nDirOffset )
+    {
+        TIFFSetSubDirectory( hTIFF, 0 );
+        *ppoActiveDSRef = NULL;
+        SetDirectory();
     }
 
     // If we have a mask for the main image, loop over the overviews, and if

@@ -27,7 +27,7 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-// $Id: jp2kakdataset.h 37393 2017-02-16 21:07:25Z rouault $
+// $Id$
 
 #ifdef DEBUG_BOOL
 #define DO_NOT_USE_DEBUG_BOOL

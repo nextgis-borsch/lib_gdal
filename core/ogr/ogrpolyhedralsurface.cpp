@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrpolyhedralsurface.cpp 36963 2016-12-19 15:38:17Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRPolyhedralSurface geometry class.
@@ -34,7 +34,7 @@
 #include "ogr_api.h"
 #include "ogr_libs.h"
 
-CPL_CVSID("$Id: ogrpolyhedralsurface.cpp 36963 2016-12-19 15:38:17Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                         OGRPolyhedralSurface()                       */

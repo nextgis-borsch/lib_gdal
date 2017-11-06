@@ -38,7 +38,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id: ogrgeopackagedatasource.cpp 39212 2017-06-20 19:00:17Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                             Tiling schemes                           */
@@ -600,14 +600,24 @@ int GDALGeoPackageDataset::Open( GDALOpenInfo* poOpenInfo )
     if( STARTS_WITH_CI(poOpenInfo->pszFilename, "GPKG:") )
     {
         char** papszTokens = CSLTokenizeString2(poOpenInfo->pszFilename, ":", 0);
-        if( CSLCount(papszTokens) != 3 )
+        int nCount = CSLCount(papszTokens);
+        if( nCount != 3 && nCount != 4 )
         {
             CSLDestroy(papszTokens);
             return FALSE;
         }
 
-        osFilename = papszTokens[1];
-        osSubdatasetTableName = papszTokens[2];
+        if( nCount == 3 )
+        {
+            osFilename = papszTokens[1];
+        }
+        /* GPKG:C:\BLA.GPKG:foo */
+        else if ( nCount == 4 && strlen(papszTokens[1]) == 1 &&
+                  (papszTokens[2][0] == '/' || papszTokens[2][0] == '\\') )
+        {
+            osFilename = CPLString(papszTokens[1]) + ":" + papszTokens[2];
+        }
+        osSubdatasetTableName = papszTokens[nCount-1];
 
         CSLDestroy(papszTokens);
         VSILFILE *fp = VSIFOpenL(osFilename, "rb");
@@ -994,10 +1004,22 @@ bool GDALGeoPackageDataset::InitRaster( GDALGeoPackageDataset* poParentDS,
     if( pszContentsMinX != NULL && pszContentsMinY != NULL &&
         pszContentsMaxX != NULL && pszContentsMaxY != NULL )
     {
-        dfGDALMinX = CPLAtof(pszContentsMinX);
-        dfGDALMinY = CPLAtof(pszContentsMinY);
-        dfGDALMaxX = CPLAtof(pszContentsMaxX);
-        dfGDALMaxY = CPLAtof(pszContentsMaxY);
+        if( CPLAtof(pszContentsMinX) < CPLAtof(pszContentsMaxX) &&
+            CPLAtof(pszContentsMinY) < CPLAtof(pszContentsMaxY) )
+        {
+            dfGDALMinX = CPLAtof(pszContentsMinX);
+            dfGDALMinY = CPLAtof(pszContentsMinY);
+            dfGDALMaxX = CPLAtof(pszContentsMaxX);
+            dfGDALMaxY = CPLAtof(pszContentsMaxY);
+        }
+        else
+        {
+            CPLError(CE_Warning, CPLE_AppDefined,
+                     "Illegal min_x/min_y/max_x/max_y values for %s in open "
+                     "options and/or gpkg_contents. Using bounds of "
+                     "gpkg_tile_matrix_set instead",
+                     pszTableName);
+        }
     }
     if( dfGDALMinX >= dfGDALMaxX || dfGDALMinY >= dfGDALMaxY )
     {

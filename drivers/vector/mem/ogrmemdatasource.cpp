@@ -30,7 +30,7 @@
 #include "cpl_string.h"
 #include "ogr_mem.h"
 
-CPL_CVSID("$Id: ogrmemdatasource.cpp 35649 2016-10-08 10:16:30Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                          OGRMemDataSource()                          */

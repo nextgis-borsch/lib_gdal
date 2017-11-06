@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: typemaps_java.i 37359 2017-02-12 19:40:53Z rouault $
+ * $Id$
  *
  * Name:     typemaps_java.i
  * Project:  GDAL SWIG Interface

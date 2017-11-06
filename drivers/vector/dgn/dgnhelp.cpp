@@ -28,7 +28,7 @@
 
 #include "dgnlibp.h"
 
-CPL_CVSID("$Id: dgnhelp.cpp 37343 2017-02-11 19:40:13Z rouault $");
+CPL_CVSID("$Id$");
 
 static const unsigned char abyDefaultPCT[256][3] =
 {

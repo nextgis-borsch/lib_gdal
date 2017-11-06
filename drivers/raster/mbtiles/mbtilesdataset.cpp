@@ -39,7 +39,7 @@
 #include <math.h>
 #include <algorithm>
 
-CPL_CVSID("$Id: mbtilesdataset.cpp 38115 2017-04-23 07:24:41Z rouault $");
+CPL_CVSID("$Id$");
 
 static const char * const apszAllowedDrivers[] = {"JPEG", "PNG", NULL};
 
@@ -1188,16 +1188,16 @@ char** MBTilesDataset::GetMetadata( const char * pszDomain )
     {
         if (OGR_F_IsFieldSetAndNotNull(hFeat, 0) && OGR_F_IsFieldSetAndNotNull(hFeat, 1))
         {
-            const char* pszName = OGR_F_GetFieldAsString(hFeat, 0);
-            const char* pszValue = OGR_F_GetFieldAsString(hFeat, 1);
-            if (pszValue[0] != '\0' &&
-                !STARTS_WITH(pszValue, "function(") &&
-                strstr(pszValue, "<img ") == NULL &&
-                strstr(pszValue, "<p>") == NULL &&
-                strstr(pszValue, "</p>") == NULL &&
-                strstr(pszValue, "<div") == NULL)
+            CPLString osName = OGR_F_GetFieldAsString(hFeat, 0);
+            CPLString osValue = OGR_F_GetFieldAsString(hFeat, 1);
+            if (osName[0] != '\0' &&
+                !STARTS_WITH(osValue, "function(") &&
+                strstr(osValue, "<img ") == NULL &&
+                strstr(osValue, "<p>") == NULL &&
+                strstr(osValue, "</p>") == NULL &&
+                strstr(osValue, "<div") == NULL)
             {
-                aosList.AddNameValue(pszName, pszValue);
+                aosList.AddNameValue(osName, osValue);
             }
         }
         OGR_F_Destroy(hFeat);

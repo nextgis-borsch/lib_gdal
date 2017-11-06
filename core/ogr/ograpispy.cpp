@@ -40,7 +40,7 @@
 #include "ogr_spatialref.h"
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id: ograpispy.cpp 37371 2017-02-13 11:41:59Z rouault $");
+CPL_CVSID("$Id$");
 
 #ifdef OGRAPISPY_ENABLED
 
@@ -90,6 +90,7 @@ class FeatureDefnDescription
 }  // namespace
 
 static std::map<OGRDataSourceH, DatasetDescription> oMapDS;
+static std::set<int> oSetDSIndex;
 static std::map<OGRLayerH, CPLString> oGlobalMapLayer;
 static OGRLayerH hLayerGetNextFeature = NULL;
 static OGRLayerH hLayerGetLayerDefn = NULL;
@@ -232,8 +233,11 @@ static CPLString OGRAPISpyGetDSVar( OGRDataSourceH hDS )
 {
     if( hDS && oMapDS.find(hDS) == oMapDS.end() )
     {
-        int i = static_cast<int>(oMapDS.size()) + 1;
+        int i = 1;
+        while( oSetDSIndex.find(i) != oSetDSIndex.end() )
+            i ++;
         oMapDS[hDS] = DatasetDescription(i);
+        oSetDSIndex.insert(i);
     }
     return CPLSPrintf("ds%d", hDS ? oMapDS[hDS].iDS : 0);
 }
@@ -553,6 +557,7 @@ void OGRAPISpyPreClose( OGRDataSourceH hDS )
 {
     OGRAPISpyFlushDefered();
     fprintf(fpSpyFile, "ds%d = None\n", oMapDS[hDS].iDS);
+    oSetDSIndex.erase(oMapDS[hDS].iDS);
     oMapDS.erase(hDS);
     OGRAPISpyFileClose();
 }

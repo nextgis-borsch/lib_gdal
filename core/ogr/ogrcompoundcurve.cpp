@@ -38,7 +38,7 @@
 #include "ogr_p.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: ogrcompoundcurve.cpp 36501 2016-11-25 14:09:24Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                         OGRCompoundCurve()                           */
@@ -590,8 +590,17 @@ OGRErr OGRCompoundCurve::addCurveDirectlyInternal( OGRCurve* poCurve,
             fabs(end.getY() - start.getY()) > dfToleranceEps ||
             fabs(end.getZ() - start.getZ()) > dfToleranceEps )
         {
-            CPLError(CE_Failure, CPLE_AppDefined, "Non contiguous curves");
-            return OGRERR_FAILURE;
+            poCurve->EndPoint(&start);
+            if( fabs(end.getX() - start.getX()) > dfToleranceEps ||
+                fabs(end.getY() - start.getY()) > dfToleranceEps ||
+                fabs(end.getZ() - start.getZ()) > dfToleranceEps )
+            {
+                CPLError(CE_Failure, CPLE_AppDefined, "Non contiguous curves");
+                return OGRERR_FAILURE;
+            }
+
+            CPLDebug("GML", "reversing curve");
+            ((OGRSimpleCurve*)poCurve)->reversePoints();
         }
         // Patch so that it matches exactly.
         ((OGRSimpleCurve*)poCurve)->setPoint(0, &end);

@@ -29,7 +29,7 @@
 #include "ogr_wfs.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrwfsfilter.cpp 36501 2016-11-25 14:09:24Z rouault $");
+CPL_CVSID("$Id$");
 
 typedef struct
 {

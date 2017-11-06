@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_ecw.h 36740 2016-12-07 15:29:01Z rouault $
+ * $Id$
  *
  * Project:  GDAL
  * Purpose:  ECW (ERDAS Wavelet Compression Format) Driver Definitions

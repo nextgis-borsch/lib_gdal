@@ -32,7 +32,7 @@
 #include "ogr_gmlas.h"
 #include "cpl_minixml.h"
 
-CPL_CVSID("$Id: ogrgmlaslayer.cpp 38073 2017-04-20 17:00:47Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                            OGRGMLASLayer()                           */
@@ -340,7 +340,10 @@ void OGRGMLASLayer::ProcessDataRecordCreateFields(
                     CPLXMLNode* psDupTree = CPLCloneXMLTree(psChildNode);
                     CPLXMLNode* psValue = CPLGetXMLNode(psDupTree, "value");
                     if( psValue != NULL )
+                    {
                         CPLRemoveXMLChild(psDupTree, psValue);
+                        CPLDestroyXMLNode(psValue);
+                    }
                     char* pszXML = CPLSerializeXMLTree(psDupTree);
                     CPLDestroyXMLNode(psDupTree);
                     poFieldDescFeature->SetField( szFIELD_DOCUMENTATION, pszXML);
@@ -803,6 +806,9 @@ void OGRGMLASLayer::PostInit( bool bIncludeGeometryXML )
                 break;
             case GMLAS_FT_DATE:
                 eType = OFTDate;
+                break;
+            case GMLAS_FT_GYEAR:
+                eType = OFTInteger;
                 break;
             case GMLAS_FT_TIME:
                 eType = OFTTime;

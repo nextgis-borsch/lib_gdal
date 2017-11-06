@@ -28,7 +28,7 @@
 
 #include "ogr_gtm.h"
 
-CPL_CVSID("$Id: ogrgtmlayer.cpp 35911 2016-10-24 15:03:26Z goatbar $");
+CPL_CVSID("$Id$");
 
 OGRGTMLayer::OGRGTMLayer() :
     poDS(NULL),

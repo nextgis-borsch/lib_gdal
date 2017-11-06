@@ -49,7 +49,7 @@
 #include "ogr_p.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id: ogrspatialreference.cpp 37774 2017-03-18 20:52:44Z rouault $");
+CPL_CVSID("$Id$");
 
 // The current opinion is that WKT longitudes like central meridian
 // should be relative to Greenwich, not the prime meridian in use.
@@ -6644,6 +6644,20 @@ int OGRSpatialReference::IsSame( const OGRSpatialReference * poOtherSRS ) const
 
     if( GetRoot() == NULL || poOtherSRS->GetRoot() == NULL )
         return FALSE;
+
+/* -------------------------------------------------------------------- */
+/*      Compare proj.4 extensions.                                      */
+/* -------------------------------------------------------------------- */
+    const char* pszThisProj4Ext = GetExtension(NULL, "PROJ4", NULL);
+    const char* pszOtherProj4Ext = poOtherSRS->GetExtension(NULL, "PROJ4", NULL);
+    if( (pszThisProj4Ext == NULL && pszOtherProj4Ext != NULL) ||
+        (pszThisProj4Ext != NULL && pszOtherProj4Ext == NULL) ||
+        (pszThisProj4Ext != NULL && pszOtherProj4Ext != NULL &&
+         !EQUAL(CPLString(pszThisProj4Ext).Trim().replaceAll("  "," "),
+                CPLString(pszOtherProj4Ext).Trim().replaceAll("  "," "))) )
+    {
+        return FALSE;
+    }
 
 /* -------------------------------------------------------------------- */
 /*      Compare geographic coordinate system.                           */

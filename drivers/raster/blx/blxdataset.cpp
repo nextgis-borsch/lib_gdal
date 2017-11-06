@@ -37,7 +37,7 @@ CPL_C_START
 #include <blx.h>
 CPL_C_END
 
-CPL_CVSID("$Id: blxdataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
+CPL_CVSID("$Id$");
 
 class BLXDataset : public GDALPamDataset
 {

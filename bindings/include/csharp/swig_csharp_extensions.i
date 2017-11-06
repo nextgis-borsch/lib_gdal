@@ -1,6 +1,6 @@
 
 /******************************************************************************
- * $Id: swig_csharp_extensions.i 34525 2016-07-03 02:53:47Z goatbar $
+ * $Id$
  *
  * Name:     swig_csharp_extensions.i
  * Purpose:  Fix for the SWIG Interface problems (early GC)

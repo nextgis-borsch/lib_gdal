@@ -108,7 +108,7 @@
 #include "cpl_vsi_virtual.h"
 
 
-CPL_CVSID("$Id: cpl_vsil_gzip.cpp 38248 2017-05-13 12:58:34Z rouault $");
+CPL_CVSID("$Id$");
 
 static const int Z_BUFSIZE = 65536;  // Original size is 16384
 static const int gz_magic[2] = {0x1f, 0x8b};  // gzip magic header
@@ -836,7 +836,9 @@ int VSIGZipHandle::gzseek( vsi_l_offset offset, int whence )
     {
         m_uncompressed_size = out;
 
-        if( m_pszBaseFileName )
+        if( m_pszBaseFileName &&
+            !STARTS_WITH_CI(m_pszBaseFileName, "/vsicurl/") &&
+            CPLTestBool(CPLGetConfigOption("CPL_VSIL_GZIP_WRITE_PROPERTIES", "YES")) )
         {
             CPLString osCacheFilename (m_pszBaseFileName);
             osCacheFilename += ".properties";
@@ -1024,10 +1026,6 @@ size_t VSIGZipHandle::Read( void * const buf, size_t const nSize,
                     z_err = Z_ERRNO;
                     break;
                 }
-                // if( ferror (file) ) {
-                //    z_err = Z_ERRNO;
-                //    break;
-                // }
             }
             stream.next_in = inbuf;
         }
@@ -1094,7 +1092,7 @@ size_t VSIGZipHandle::Read( void * const buf, size_t const nSize,
     crc = crc32(crc, pStart, static_cast<uInt>(stream.next_out - pStart));
 
     if( len == stream.avail_out &&
-        (z_err == Z_DATA_ERROR || z_err == Z_ERRNO) )
+        (z_err == Z_DATA_ERROR || z_err == Z_ERRNO || z_err == Z_BUF_ERROR) )
     {
         z_eof = 1;
         in = 0;

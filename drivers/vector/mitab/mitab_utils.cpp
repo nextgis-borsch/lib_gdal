@@ -47,7 +47,7 @@
 #  include <mbctype.h>  // Multibyte chars stuff.
 #endif
 
-CPL_CVSID("$Id: mitab_utils.cpp 37355 2017-02-12 15:52:53Z goatbar $");
+CPL_CVSID("$Id$");
 
 /**********************************************************************
  *                       TABGenerateArc()

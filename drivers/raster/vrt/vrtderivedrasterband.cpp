@@ -49,7 +49,7 @@
 
 /*! @cond Doxygen_Suppress */
 
-CPL_CVSID("$Id: vrtderivedrasterband.cpp 38039 2017-04-16 13:08:39Z rouault $");
+CPL_CVSID("$Id$");
 
 // #define GDAL_VRT_DISABLE_PYTHON
 // #define PYTHONSO_DEFAULT "libpython2.7.so"

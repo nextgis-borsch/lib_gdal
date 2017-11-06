@@ -43,10 +43,14 @@
 #include "cpl_string.h"
 #include "cpl_vsi.h"
 
+#if !defined(va_copy) && defined(__va_copy)
+#define va_copy __va_copy
+#endif
+
 #define TIMESTAMP_DEBUG
 // #define MEMORY_DEBUG
 
-CPL_CVSID("$Id: cpl_error.cpp 38237 2017-05-13 10:04:44Z rouault $");
+CPL_CVSID("$Id$");
 
 static CPLMutex *hErrorMutex = NULL;
 static void *pErrorHandlerUserData = NULL;

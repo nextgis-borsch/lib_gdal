@@ -50,7 +50,7 @@
 // Limit types to practical use cases.
 #define LIMIT_TYPES 1
 
-CPL_CVSID("$Id: gdalpansharpen.cpp 36763 2016-12-09 22:10:55Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                     GDALCreatePansharpenOptions()                    */

@@ -51,7 +51,7 @@
 #include "ogr_srs_api.h"
 #include "vrtdataset.h"
 
-CPL_CVSID("$Id: ecrgtocdataset.cpp 37346 2017-02-11 23:03:44Z goatbar $");
+CPL_CVSID("$Id$");
 
 /** Overview of used classes :
    - ECRGTOCDataset : lists the different subdatasets, listed in the .xml,

@@ -58,7 +58,7 @@
 #include "cpl_vsi.h"
 #include "nitflib.h"
 
-CPL_CVSID("$Id: rpftocfile.cpp 37346 2017-02-11 23:03:44Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                        RPFTOCTrim()                                    */

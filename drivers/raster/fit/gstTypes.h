@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gstTypes.h 35335 2016-09-05 20:18:57Z goatbar $
+ * $Id$
  *
  * Project:  FIT Driver
  * Purpose:  Implement FIT Support - not using the SGI iflFIT library.

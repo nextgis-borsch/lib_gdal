@@ -37,7 +37,7 @@
 #include "cpl_string.h"
 #include "gdal.h"
 
-CPL_CVSID("$Id: gdalmajorobject.cpp 36525 2016-11-27 14:15:26Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                          GDALMajorObject()                           */

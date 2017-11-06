@@ -31,7 +31,7 @@
 #include "ogrmutexeddatasource.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id: ogrmutexeddatasource.cpp 35172 2016-08-21 20:33:08Z goatbar $");
+CPL_CVSID("$Id$");
 
 OGRMutexedDataSource::OGRMutexedDataSource( OGRDataSource* poBaseDataSource,
                                             int bTakeOwnership,

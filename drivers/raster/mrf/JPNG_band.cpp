@@ -21,7 +21,7 @@
 #include "marfa.h"
 #include <cassert>
 
-CPL_CVSID("$Id: JPNG_band.cpp 36455 2016-11-22 23:11:35Z rouault $");
+CPL_CVSID("$Id$");
 
 CPL_C_START
 #include <jpeglib.h>

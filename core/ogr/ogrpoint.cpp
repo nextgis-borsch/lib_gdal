@@ -41,7 +41,7 @@
 #include "ogr_p.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: ogrpoint.cpp 36324 2016-11-20 02:28:41Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                              OGRPoint()                              */

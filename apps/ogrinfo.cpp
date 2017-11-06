@@ -37,7 +37,7 @@
 
 #include <set>
 
-CPL_CVSID("$Id: ogrinfo.cpp 36537 2016-11-27 23:51:56Z goatbar $");
+CPL_CVSID("$Id$");
 
 int     bReadOnly = FALSE;
 int     bVerbose = TRUE;

@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrvfklayer.cpp 35466 2016-09-16 05:03:52Z goatbar $");
+CPL_CVSID("$Id$");
 
 /*!
   \brief OGRVFKLayer constructor

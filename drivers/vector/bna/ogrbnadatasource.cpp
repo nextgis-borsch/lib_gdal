@@ -32,7 +32,7 @@
 #include "cpl_csv.h"
 #include "ogrbnaparser.h"
 
-CPL_CVSID("$Id: ogrbnadatasource.cpp 35903 2016-10-24 12:09:43Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                          OGRBNADataSource()                          */

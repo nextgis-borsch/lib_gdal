@@ -32,7 +32,7 @@
 #include "cpl_sha1.h"
 #include "cpl_time.h"
 
-CPL_CVSID("$Id: cpl_google_cloud.cpp 37645 2017-03-08 00:15:33Z rouault $");
+CPL_CVSID("$Id$");
 
 #ifdef HAVE_CURL
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ceosopen.c 39139 2017-06-16 15:32:12Z rouault $
+ * $Id$
  *
  * Project:  CEOS Translator
  * Purpose:  Implementation of non-GDAL dependent CEOS support.
@@ -30,7 +30,7 @@
 
 #include "ceosopen.h"
 
-CPL_CVSID("$Id: ceosopen.c 39139 2017-06-16 15:32:12Z rouault $");
+CPL_CVSID("$Id$");
 
 CPL_INLINE static void CPL_IGNORE_RET_VAL_INT(CPL_UNUSED int unused) {}
 

@@ -32,7 +32,7 @@
 #ifdef HAVE_AVX_AT_COMPILE_TIME
 #include <immintrin.h>
 
-CPL_CVSID("$Id: gdalgridavx.cpp 34562 2016-07-06 06:09:41Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*         GDALGridInverseDistanceToAPower2NoSmoothingNoSearchAVX()     */

@@ -34,7 +34,9 @@
 #pragma clang diagnostic ignored "-Wdocumentation"
 #endif
 
-#if defined(OPENJPEG_VERSION) && OPENJPEG_VERSION >= 20100
+#if defined(OPENJPEG_VERSION) && OPENJPEG_VERSION >= 20200
+#include <openjpeg-2.2/openjpeg.h>
+#elif defined(OPENJPEG_VERSION) && OPENJPEG_VERSION >= 20100
 #include <openjpeg-2.1/openjpeg.h>
 #else
 #include <stdio.h> /* openjpeg.h needs FILE* */
@@ -57,7 +59,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id: openjpegdataset.cpp 38088 2017-04-21 15:05:04Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                  JP2OpenJPEGDataset_ErrorCallback()                  */
@@ -781,11 +783,23 @@ CPLErr JP2OpenJPEGDataset::ReadBlock( int nBand, VSILFILE* fpIn,
 
     if (bUseSetDecodeArea)
     {
+        /* We need to explicitely set the resolution factor on the image */
+        /* otherwise opj_set_decode_area() will assume we decode at full */
+        /* resolution. */
+        /* If using parameters.cp_reduce instead of opj_set_decoded_resolution_factor() */
+        /* we wouldn't need to do that, as opj_read_header() would automatically */
+        /* assign the comps[].factor to the appropriate value */
+        for(unsigned int iBand = 0; iBand < psImage->numcomps; iBand ++)
+        {
+            psImage->comps[iBand].factor = iLevel;
+        }
+        /* The decode area must be expressed in grid reference, ie at full*/
+        /* scale */
         if (!opj_set_decode_area(pCodec,psImage,
-                                 nBlockXOff*nBlockXSize,
-                                 nBlockYOff*nBlockYSize,
-                                 nBlockXOff*nBlockXSize+nWidthToRead,
-                                 nBlockYOff*nBlockYSize+nHeightToRead))
+                                 (nBlockXOff*nBlockXSize) << iLevel,
+                                 (nBlockYOff*nBlockYSize) << iLevel,
+                                 (nBlockXOff*nBlockXSize+nWidthToRead) << iLevel,
+                                 (nBlockYOff*nBlockYSize+nHeightToRead) << iLevel))
         {
             CPLError(CE_Failure, CPLE_AppDefined, "opj_set_decode_area() failed");
             eErr = CE_Failure;
@@ -1701,28 +1715,37 @@ GDALDataset *JP2OpenJPEGDataset::Open( GDALOpenInfo * poOpenInfo )
     {
         poDS->bUseSetDecodeArea = false;
     }
-    else
+    /* Some Sentinel2 preview datasets are 343x343 large, but with 8x8 blocks */
+    /* Using the tile API for that is super slow, so expose a single block */
+    else if( poDS->nRasterXSize <= 1024 &&  poDS->nRasterYSize <= 1024 &&
+             nTileW < 32 && nTileH < 32 )
     {
-    poDS->bUseSetDecodeArea =
-        (poDS->nRasterXSize == (int)nTileW &&
-         poDS->nRasterYSize == (int)nTileH &&
-         (poDS->nRasterXSize > 1024 ||
-          poDS->nRasterYSize > 1024));
-
-    /* Sentinel2 preview datasets are 343x343 and 60m are 1830x1830, but they */
-    /* are tiled with tile dimensions 2048x2048. It would be a waste of */
-    /* memory to allocate such big blocks */
-    if( poDS->nRasterXSize < (int)nTileW &&
-        poDS->nRasterYSize < (int)nTileH )
-    {
-        poDS->bUseSetDecodeArea = TRUE;
+        poDS->bUseSetDecodeArea = true;
         nTileW = poDS->nRasterXSize;
         nTileH = poDS->nRasterYSize;
-        if (nTileW > 2048) nTileW = 2048;
-        if (nTileH > 2048) nTileH = 2048;
     }
-    else if (poDS->bUseSetDecodeArea)
+    else
     {
+        poDS->bUseSetDecodeArea =
+            (poDS->nRasterXSize == (int)nTileW &&
+            poDS->nRasterYSize == (int)nTileH &&
+            (poDS->nRasterXSize > 1024 ||
+            poDS->nRasterYSize > 1024));
+
+        /* Other Sentinel2 preview datasets are 343x343 and 60m are 1830x1830, but they */
+        /* are tiled with tile dimensions 2048x2048. It would be a waste of */
+        /* memory to allocate such big blocks */
+        if( poDS->nRasterXSize < (int)nTileW &&
+            poDS->nRasterYSize < (int)nTileH )
+        {
+            poDS->bUseSetDecodeArea = TRUE;
+            nTileW = poDS->nRasterXSize;
+            nTileH = poDS->nRasterYSize;
+            if (nTileW > 2048) nTileW = 2048;
+            if (nTileH > 2048) nTileH = 2048;
+        }
+        else if (poDS->bUseSetDecodeArea)
+        {
             // Arbitrary threshold... ~4 million at least needed for the GRIB2
             // images mentioned below.
             if( nTileH == 1 && nTileW < 20 * 1024 * 1024 )
@@ -1732,9 +1755,9 @@ GDALDataset *JP2OpenJPEGDataset::Open( GDALOpenInfo * poOpenInfo )
             }
             else
             {
-        if (nTileW > 1024) nTileW = 1024;
-        if (nTileH > 1024) nTileH = 1024;
-    }
+                if (nTileW > 1024) nTileW = 1024;
+                if (nTileH > 1024) nTileH = 1024;
+            }
         }
     }
 

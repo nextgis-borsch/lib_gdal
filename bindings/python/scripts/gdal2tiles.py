@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # ******************************************************************************
-#  $Id: gdal2tiles.py 37426 2017-02-19 21:47:49Z rouault $
+#  $Id$
 #
 # Project:  Google Summer of Code 2007, 2008 (http://code.google.com/soc/)
 # Support:  BRGM (http://www.brgm.fr)
@@ -52,7 +52,7 @@ except Exception:
     # 'antialias' resampling is not available
     pass
 
-__version__ = "$Id: gdal2tiles.py 37426 2017-02-19 21:47:49Z rouault $"
+__version__ = "$Id$"
 
 resampling_list = ('average', 'near', 'bilinear', 'cubic', 'cubicspline', 'lanczos',  'antialias')
 profile_list = ('mercator', 'geodetic', 'raster')
@@ -1201,6 +1201,7 @@ class GDAL2Tiles(object):
                     f.close()
 
         # Generate tilemapresource.xml.
+        if not self.options.resume or not os.path.exists(os.path.join(self.output, 'tilemapresource.xml')):
             f = open(os.path.join(self.output, 'tilemapresource.xml'), 'wb')
             f.write(self.generate_tilemapresource().encode('utf-8'))
             f.close()

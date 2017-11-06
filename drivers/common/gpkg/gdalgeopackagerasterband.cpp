@@ -33,7 +33,7 @@
 #include <algorithm>
 #include <limits>
 
-CPL_CVSID("$Id: gdalgeopackagerasterband.cpp 37667 2017-03-09 22:57:57Z rouault $");
+CPL_CVSID("$Id$");
 
 #if !defined(DEBUG_VERBOSE) && defined(DEBUG_VERBOSE_GPKG)
 #define DEBUG_VERBOSE
@@ -1432,10 +1432,19 @@ CPLErr GDALGPKGMBTilesLikePseudoDataset::WriteTile()
     if( poMainDS->m_nTileInsertionCount < 0 )
         return CE_Failure;
 
-    CPLAssert(!m_bInWriteTile);
+    if (m_bInWriteTile)
+    {
+        // Shouldn't happen in practice, but #7022 shows that the unexpected
+        // can happen sometimes.
+        CPLError(CE_Failure, CPLE_AppDefined,
+                 "Recursive call to GDALGPKGMBTilesLikePseudoDataset::WriteTile()");
+        return CE_Failure;
+    }
+    GDALRasterBlock::EnterDisableDirtyBlockFlush();
     m_bInWriteTile = true;
     CPLErr eErr = WriteTileInternal();
     m_bInWriteTile = false;
+    GDALRasterBlock::LeaveDisableDirtyBlockFlush();
     return eErr;
 }
 

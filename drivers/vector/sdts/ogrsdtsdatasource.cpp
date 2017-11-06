@@ -30,7 +30,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrsdtsdatasource.cpp 36332 2016-11-20 15:19:39Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                          OGRSDTSDataSource()                          */

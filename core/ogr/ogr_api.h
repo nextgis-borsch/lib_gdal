@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_api.h 37371 2017-02-13 11:41:59Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  C API for OGR Geometry, Feature, Layers, DataSource and drivers.

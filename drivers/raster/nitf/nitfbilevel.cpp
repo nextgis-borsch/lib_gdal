@@ -43,7 +43,7 @@ CPL_C_START
 CPL_C_END
 #include "tifvsi.h"
 
-CPL_CVSID("$Id: nitfbilevel.cpp 37346 2017-02-11 23:03:44Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                       NITFUncompressBILEVEL()                        */

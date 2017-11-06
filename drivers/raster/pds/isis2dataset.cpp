@@ -46,7 +46,7 @@ static const int RECORD_SIZE = 512;
 #include "ogr_spatialref.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id: isis2dataset.cpp 36981 2016-12-20 19:46:41Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /* ==================================================================== */

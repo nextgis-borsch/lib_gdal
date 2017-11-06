@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: fit.h 35885 2016-10-24 06:23:09Z goatbar $
+ * $Id$
  *
  * Project:  FIT Driver
  * Purpose:  Implement FIT Support - not using the SGI iflFIT library.

@@ -31,7 +31,7 @@
 #include "cpl_time.h"
 #include <algorithm>
 
-CPL_CVSID("$Id: filegdbindex.cpp 36501 2016-11-25 14:09:24Z rouault $");
+CPL_CVSID("$Id$");
 
 namespace OpenFileGDB
 {

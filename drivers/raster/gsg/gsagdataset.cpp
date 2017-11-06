@@ -38,7 +38,7 @@
 #include "gdal_frmts.h"
 #include "gdal_pam.h"
 
-CPL_CVSID("$Id: gsagdataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
+CPL_CVSID("$Id$");
 
 #ifndef DBL_MAX
 # ifdef __DBL_MAX__
@@ -355,6 +355,9 @@ CPLErr GSAGRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
     char *szEnd = szStart;
     for( int iCell=0; iCell<nBlockXSize; szStart = szEnd )
     {
+        while( isspace( (unsigned char)*szStart ) )
+            szStart++;
+
         double dfValue = CPLStrtod( szStart, &szEnd );
         if( szStart == szEnd )
         {
@@ -369,8 +372,6 @@ CPLErr GSAGRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
             }
 
             /* Check if this was an expected failure */
-            while( isspace( (unsigned char)*szStart ) )
-                szStart++;
 
             /* Found sign at end of input, seek back to re-read it */
             bool bOnlySign = false;

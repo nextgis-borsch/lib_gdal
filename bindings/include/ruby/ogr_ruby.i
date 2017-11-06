@@ -1,5 +1,5 @@
 /*
- * $Id: ogr_ruby.i 34525 2016-07-03 02:53:47Z goatbar $
+ * $Id$
  *
  * ruby specific code for ogr bindings.
  */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: rdataset.h 37583 2017-03-03 18:35:20Z goatbar $
+ * $Id$
  *
  * Project:  R Format Driver
  * Purpose:  Read/write R stats package object format.

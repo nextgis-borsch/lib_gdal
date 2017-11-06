@@ -40,7 +40,7 @@
 #include "cpl_string.h"
 #include "cpl_vsi.h"
 
-CPL_CVSID("$Id: ogrcurvecollection.cpp 39065 2017-06-11 13:17:51Z rouault $");
+CPL_CVSID("$Id$");
 
 //! @cond Doxygen_Suppress
 

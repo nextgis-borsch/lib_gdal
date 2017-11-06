@@ -2,7 +2,7 @@
   #define MGRS_H
 
 /***************************************************************************
- * $Id: mgrs.h 35897 2016-10-24 11:54:24Z goatbar $
+ * $Id$
  *
  * Project:  MGRS Converter
  * Purpose:  Geotrans declarations for MGRS translation (slightly adapted)

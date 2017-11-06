@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id: ogrshapedriver.cpp 36883 2016-12-15 13:31:12Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                              Identify()                              */
@@ -137,8 +137,8 @@ static GDALDataset *OGRShapeDriverCreate( const char * pszName,
 /* -------------------------------------------------------------------- */
 /*      Is the target a valid existing directory?                       */
 /* -------------------------------------------------------------------- */
-    VSIStatBuf stat;
-    if( CPLStat( pszName, &stat ) == 0 )
+    VSIStatBufL stat;
+    if( VSIStatL( pszName, &stat ) == 0 )
     {
         if( !VSI_ISDIR(stat.st_mode) )
         {

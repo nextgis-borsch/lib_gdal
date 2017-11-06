@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ###############################################################################
-# $Id: rel.py 33320 2016-02-02 09:31:22Z rouault $
+# $Id$
 #
 # Project:  GDAL Python samples
 # Purpose:  Script to produce a shaded relief image from elevation data

@@ -41,7 +41,7 @@
 #include "ogr_spatialref.h"
 #include "osr_cs_wkt.h"
 
-CPL_CVSID("$Id: ogr_srs_validate.cpp 36541 2016-11-28 18:32:25Z goatbar $");
+CPL_CVSID("$Id$");
 
 // Why would fipszone and zone be parameters when they relate to a composite
 // projection which renders down into a non-zoned projection?
@@ -310,7 +310,7 @@ static const char * const papszProjWithParms[] = {
     SRS_PP_LATITUDE_OF_POINT_1,
     SRS_PP_LONGITUDE_OF_POINT_1,
     SRS_PP_LATITUDE_OF_POINT_2,
-    SRS_PP_LONGITUDE_OF_POINT_2
+    SRS_PP_LONGITUDE_OF_POINT_2,
     SRS_PP_SCALE_FACTOR,
     SRS_PP_FALSE_EASTING,
     SRS_PP_FALSE_NORTHING,

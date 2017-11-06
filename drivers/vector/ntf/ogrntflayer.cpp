@@ -29,7 +29,7 @@
 #include "ntf.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrntflayer.cpp 36332 2016-11-20 15:19:39Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                            OGRNTFLayer()                             */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_amigocloud.h 36687 2016-12-04 22:28:14Z rouault $
+ * $Id$
  *
  * Project:  AMIGOCLOUD Translator
  * Purpose:  Definition of classes for OGR AmigoCloud driver.

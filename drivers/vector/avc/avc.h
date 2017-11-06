@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: avc.h 35933 2016-10-25 16:46:26Z goatbar $
+ * $Id$
  *
  * Name:     avc.h
  * Project:  Arc/Info Vector coverage (AVC) BIN<->E00 conversion library

@@ -41,7 +41,7 @@
 #include "cpl_string.h"
 
 
-CPL_CVSID("$Id: ogrfielddefn.cpp 38135 2017-04-25 22:42:55Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                            OGRFieldDefn()                            */

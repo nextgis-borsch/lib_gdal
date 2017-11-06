@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_utils_priv.h 34921 2016-08-04 22:26:31Z rouault $
+ * $Id$
  *
  * Project:  GDAL Utilities
  * Purpose:  GDAL Utilities Private Declarations.

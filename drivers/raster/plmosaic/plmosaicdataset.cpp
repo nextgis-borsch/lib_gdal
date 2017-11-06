@@ -36,7 +36,7 @@
 
 #include "ogrgeojsonreader.h"
 
-CPL_CVSID("$Id: plmosaicdataset.cpp 38115 2017-04-23 07:24:41Z rouault $");
+CPL_CVSID("$Id$");
 
 // g++ -fPIC -g -Wall frmts/plmosaic/*.cpp -shared -o gdal_PLMOSAIC.so -Iport -Igcore -Iogr -Iogr/ogrsf_frmts -Iogr/ogrsf_frmts/geojson/libjson -L. -lgdal
 

@@ -29,7 +29,7 @@
 
 #include "gtm.h"
 
-CPL_CVSID("$Id: gtm.cpp 38444 2017-05-17 08:54:05Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*        Methods for dealing with write on files and buffers           */

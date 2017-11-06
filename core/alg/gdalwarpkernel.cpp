@@ -71,7 +71,7 @@
 
 #endif
 
-CPL_CVSID("$Id: gdalwarpkernel.cpp 38093 2017-04-21 21:02:44Z rouault $");
+CPL_CVSID("$Id$");
 
 static const double BAND_DENSITY_THRESHOLD = 0.0000000001;
 static const float SRC_DENSITY_THRESHOLD =  0.000000001f;
@@ -476,8 +476,21 @@ static CPLErr GWKRun( GDALWarpKernel *poWK,
         return GWKGenericMonoThread(poWK, pfnFunc);
     }
 
-    const int nThreads =
+    int nThreads =
         std::min(psThreadData->poThreadPool->GetThreadCount(), nDstYSize / 2);
+    // Config option mostly useful for tests to be able to test multithreading
+    // with small rasters
+    const int nWarpChunkSize = atoi(
+        CPLGetConfigOption("WARP_THREAD_CHUNK_SIZE", "65536"));
+    if( nWarpChunkSize > 0 )
+    {
+        GIntBig nChunks =
+            static_cast<GIntBig>(nDstYSize) * poWK->nDstXSize / nWarpChunkSize;
+        if( nThreads > nChunks )
+            nThreads = static_cast<int>(nChunks);
+    }
+    if( nThreads <= 0 )
+        nThreads = 1;
 
     CPLDebug("WARP", "Using %d threads", nThreads);
 

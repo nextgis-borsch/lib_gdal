@@ -59,7 +59,11 @@
 #include "cpl_multiproc.h"
 #include "cpl_vsi.h"
 
-CPL_CVSID("$Id: cpl_string.cpp 38379 2017-05-15 11:25:22Z rouault $");
+#if !defined(va_copy) && defined(__va_copy)
+#define va_copy __va_copy
+#endif
+
+CPL_CVSID("$Id$");
 
 /*=====================================================================
                     StringList manipulation functions.

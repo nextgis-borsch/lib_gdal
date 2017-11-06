@@ -32,7 +32,7 @@
 #include "cpl_time.h"
 #include "cpl_vsi_error.h"
 
-CPL_CVSID("$Id: ogrxlsxdatasource.cpp 37472 2017-02-26 02:47:45Z goatbar $");
+CPL_CVSID("$Id$");
 
 namespace OGRXLSX {
 

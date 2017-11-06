@@ -44,7 +44,7 @@
 #include "cpl_string.h"
 #include "cpl_vsi.h"
 
-CPL_CVSID("$Id: gdaljp2box.cpp 36822 2016-12-12 11:18:45Z rouault $");
+CPL_CVSID("$Id$");
 
 /*! @cond Doxygen_Suppress */
 

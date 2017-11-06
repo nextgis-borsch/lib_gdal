@@ -37,7 +37,7 @@
 #include <ogr_api.h>
 #include <ogr_p.h>
 
-CPL_CVSID("$Id: ogrgeojsonwriter.cpp 39217 2017-06-20 20:43:30Z rouault $");
+CPL_CVSID("$Id$");
 
 
 /************************************************************************/

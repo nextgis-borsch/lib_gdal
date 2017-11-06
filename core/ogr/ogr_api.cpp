@@ -36,7 +36,7 @@
 #include "cpl_error.h"
 #include "ogr_geometry.h"
 
-CPL_CVSID("$Id: ogr_api.cpp 36963 2016-12-19 15:38:17Z rouault $");
+CPL_CVSID("$Id$");
 
 static bool bNonLinearGeometriesEnabled = true;
 

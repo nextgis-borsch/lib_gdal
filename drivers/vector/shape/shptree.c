@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: shptree.c 36727 2016-12-06 20:04:22Z rouault $
+ * $Id$
  *
  * Project:  Shapelib
  * Purpose:  Implementation of quadtree building and searching functions.
@@ -46,7 +46,7 @@
 #include "cpl_error.h"
 #endif
 
-SHP_CVSID("$Id: shptree.c 36727 2016-12-06 20:04:22Z rouault $")
+SHP_CVSID("$Id$")
 
 #ifndef TRUE
 #  define TRUE 1

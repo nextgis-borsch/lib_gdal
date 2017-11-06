@@ -35,7 +35,7 @@
 #include "cpl_vsi.h"
 #include "cpl_error.h"
 
-CPL_CVSID("$Id: georaster_rasterband.cpp 38020 2017-04-14 21:40:01Z rouault $");
+CPL_CVSID("$Id$");
 
 //  ---------------------------------------------------------------------------
 //                                                        GeoRasterRasterBand()

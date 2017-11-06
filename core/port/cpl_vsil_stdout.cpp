@@ -44,7 +44,7 @@
 #include <fcntl.h>
 #endif
 
-CPL_CVSID("$Id: cpl_vsil_stdout.cpp 36990 2016-12-21 19:42:05Z goatbar $");
+CPL_CVSID("$Id$");
 
 static VSIWriteFunction pWriteFunction = fwrite;
 static FILE* pWriteStream = stdout;

@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: mitab_priv.h 37762 2017-03-18 15:23:31Z rouault $
+ * $Id$
  *
  * Name:     mitab_priv.h
  * Project:  MapInfo TAB Read/Write library

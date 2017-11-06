@@ -30,7 +30,7 @@
 #include "cpl_string.h"
 #include "ogr_ingres.h"
 
-CPL_CVSID("$Id: ogringrestablelayer.cpp 37371 2017-02-13 11:41:59Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                         OGRIngresTableLayer()                         */

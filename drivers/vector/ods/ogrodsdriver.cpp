@@ -30,7 +30,7 @@
 #include "ogr_ods.h"
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id: ogrodsdriver.cpp 34819 2016-07-28 22:32:18Z goatbar $");
+CPL_CVSID("$Id$");
 
 using namespace OGRODS;
 

@@ -62,7 +62,7 @@
 #include "ogr_core.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id: netcdfdataset.cpp 39160 2017-06-18 10:59:08Z rouault $");
+CPL_CVSID("$Id$");
 
 // Internal function declarations.
 
@@ -3468,11 +3468,29 @@ int netCDFDataset::ProcessCFGeolocation( int nVarId )
             for( int i = 0; i < CSLCount(papszTokens); i++ )
             {
                 if( NCDFIsVarLongitude(cdfid, -1, papszTokens[i]) )
-                    snprintf(szGeolocXName, sizeof(szGeolocXName),
-                             "%s",papszTokens[i]);
+                {
+                    int nOtherVarId = -1;
+                    // Check that the variable actually exists
+                    // Needed on Sentinel-3 products
+                    if( nc_inq_varid(cdfid, papszTokens[i], &nOtherVarId) ==
+                                                                NC_NOERR )
+                    {
+                        snprintf(szGeolocXName, sizeof(szGeolocXName),
+                                 "%s",papszTokens[i]);
+                    }
+                }
                 else if( NCDFIsVarLatitude(cdfid, -1, papszTokens[i]) )
-                    snprintf(szGeolocYName, sizeof(szGeolocYName),
-                             "%s",papszTokens[i]);
+                {
+                    int nOtherVarId = -1;
+                    // Check that the variable actually exists
+                    // Needed on Sentinel-3 products
+                    if( nc_inq_varid(cdfid, papszTokens[i], &nOtherVarId) ==
+                                                                NC_NOERR )
+                    {
+                        snprintf(szGeolocYName, sizeof(szGeolocYName),
+                                 "%s",papszTokens[i]);
+                    }
+                }
             }
             // Add GEOLOCATION metadata.
             if( !EQUAL(szGeolocXName, "") && !EQUAL(szGeolocYName, "") )
@@ -5970,11 +5988,16 @@ GDALDataset *netCDFDataset::Open( GDALOpenInfo *poOpenInfo )
                 {
                     int anDimIds[2] = { -1, -1 };
                     nc_inq_vardimid(poDS->cdfid, j, anDimIds);
+
+                    nc_type vartype = NC_NAT;
+                    nc_inq_vartype(poDS->cdfid, j, &vartype);
+
                     char szDimNameX[NC_MAX_NAME + 1];
                     char szDimNameY[NC_MAX_NAME + 1];
                     szDimNameX[0] = '\0';
                     szDimNameY[0] = '\0';
-                    if( nc_inq_dimname(poDS->cdfid, anDimIds[0], szDimNameY) ==
+                    if( vartype == NC_CHAR &&
+                        nc_inq_dimname(poDS->cdfid, anDimIds[0], szDimNameY) ==
                            NC_NOERR &&
                        nc_inq_dimname(poDS->cdfid, anDimIds[1], szDimNameX) ==
                            NC_NOERR &&
@@ -6257,7 +6280,7 @@ GDALDataset *netCDFDataset::Open( GDALOpenInfo *poOpenInfo )
                 poDS->bSetProjection = false;
                 poDS->bSetGeoTransform = false;
 
-            if( (poOpenInfo->nOpenFlags & GDAL_OF_RASTER) == 0 )
+                if( (poOpenInfo->nOpenFlags & GDAL_OF_RASTER) == 0 )
                 {
                     // Strip out uninteresting metadata.
                     poDS->papszMetadata = CSLSetNameValue(
@@ -6287,10 +6310,6 @@ GDALDataset *netCDFDataset::Open( GDALOpenInfo *poOpenInfo )
                     poLayer->SetGridMapping(osGridMapping);
                 }
                 poLayer->SetProfile(nProfileDimId, nParentIndexVarID);
-                poDS->papoLayers = static_cast<netCDFLayer **>(
-                    CPLRealloc(poDS->papoLayers,
-                               (poDS->nLayers + 1) * sizeof(netCDFLayer *)));
-                poDS->papoLayers[poDS->nLayers++] = poLayer;
 
                 for( size_t j = 0; j < anPotentialVectorVarID.size(); j++ )
                 {
@@ -6310,6 +6329,20 @@ GDALDataset *netCDFDataset::Open( GDALOpenInfo *poOpenInfo )
                         poLayer->AddField(anPotentialVectorVarID[j]);
                     }
                 }
+
+                if( poLayer->GetLayerDefn()->GetFieldCount() != 0 ||
+                    poLayer->GetGeomType() != wkbNone )
+                {
+                    poDS->papoLayers = static_cast<netCDFLayer **>(
+                        CPLRealloc(poDS->papoLayers,
+                                (poDS->nLayers + 1) * sizeof(netCDFLayer *)));
+                    poDS->papoLayers[poDS->nLayers++] = poLayer;
+                }
+                else
+                {
+                    delete poLayer;
+                }
+
             }
         }
 

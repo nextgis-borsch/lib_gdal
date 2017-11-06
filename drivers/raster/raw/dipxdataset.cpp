@@ -37,7 +37,7 @@
 
 using std::fill;
 
-CPL_CVSID("$Id: dipxdataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
+CPL_CVSID("$Id$");
 
 typedef struct {
     GInt32      NBIH;   /* bytes in header, normally 1024 */

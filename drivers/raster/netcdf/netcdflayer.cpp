@@ -29,7 +29,7 @@
 #include "netcdfdataset.h"
 #include "cpl_time.h"
 
-CPL_CVSID("$Id: netcdflayer.cpp 37982 2017-04-13 17:30:17Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                            netCDFLayer()                             */
@@ -1730,8 +1730,15 @@ bool netCDFLayer::AddField(int nVarID)
     int nDimCount = 1;
     nc_inq_varndims(m_nLayerCDFId, nVarID, &nDimCount);
     int anDimIds[2] = { -1, -1 };
-    if( nDimCount <= 2 )
+    if( (vartype == NC_CHAR && nDimCount <= 2) ||
+        (vartype != NC_CHAR && nDimCount == 1) )
+    {
         nc_inq_vardimid(m_nLayerCDFId, nVarID, anDimIds);
+    }
+    else
+    {
+        return false;
+    }
 
     switch( vartype )
     {

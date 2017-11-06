@@ -29,7 +29,7 @@
 #include "ogrwalk.h"
 #include <vector>
 
-CPL_CVSID("$Id: ogrwalkdatasource.cpp 35577 2016-09-30 23:30:37Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                         OGRWalkDataSource()                          */

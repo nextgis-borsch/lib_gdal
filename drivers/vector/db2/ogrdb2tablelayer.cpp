@@ -29,7 +29,7 @@
 #include "cpl_conv.h"
 #include "ogr_db2.h"
 
-CPL_CVSID("$Id: ogrdb2tablelayer.cpp 37371 2017-02-13 11:41:59Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                         OGRDB2AppendEscaped( )                     */

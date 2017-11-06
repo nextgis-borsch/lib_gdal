@@ -44,7 +44,7 @@
 #include "cpl_vsi.h"
 #include "mitab_priv.h"
 
-CPL_CVSID("$Id: mitab_mapindexblock.cpp 37351 2017-02-12 05:22:20Z goatbar $");
+CPL_CVSID("$Id$");
 
 /*=====================================================================
  *                      class TABMAPIndexBlock

@@ -49,7 +49,7 @@
 extern
 int EPSGGetWGS84Transform( int nGeogCS, std::vector<CPLString>& asTransform );
 
-CPL_CVSID("$Id: ogr_srs_proj4.cpp 36850 2016-12-13 23:53:14Z rouault $");
+CPL_CVSID("$Id$");
 
 /* -------------------------------------------------------------------- */
 /*      The following list comes from osrs/proj/src/pj_ellps.c.         */
@@ -921,6 +921,20 @@ OGRErr OGRSpatialReference::importFromProj4( const char * pszProj4 )
                     OSR_GDV( papszNV, "k", 1.0 ),
                     OSR_GDV( papszNV, "x_0", 0.0 ),
                     OSR_GDV( papszNV, "y_0", 0.0 ) );
+        }
+        else if( CSLFetchNameValue(papszNV, "lat_1") &&
+                 CSLFetchNameValue(papszNV, "lon_1") &&
+                 CSLFetchNameValue(papszNV, "lat_2") &&
+                 CSLFetchNameValue(papszNV, "lon_2") )
+        {
+            SetHOM2PNO( OSR_GDV( papszNV, "lat_0", 0.0 ),
+                        OSR_GDV( papszNV, "lat_1", 0.0 ),
+                        OSR_GDV( papszNV, "lon_1", 0.0 ),
+                        OSR_GDV( papszNV, "lat_2", 0.0 ),
+                        OSR_GDV( papszNV, "lon_2", 0.0 ),
+                        OSR_GDV( papszNV, "k", 1.0 ),
+                        OSR_GDV( papszNV, "x_0", 0.0 ),
+                        OSR_GDV( papszNV, "y_0", 0.0 ) );
         }
         else
         {

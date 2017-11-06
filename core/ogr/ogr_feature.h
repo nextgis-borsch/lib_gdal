@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_feature.h 37371 2017-02-13 11:41:59Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Class for representing a whole feature, and layer schemas.

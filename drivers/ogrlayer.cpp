@@ -34,7 +34,7 @@
 #include "swq.h"
 #include "ograpispy.h"
 
-CPL_CVSID("$Id: ogrlayer.cpp 36950 2016-12-18 22:14:23Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                              OGRLayer()                              */

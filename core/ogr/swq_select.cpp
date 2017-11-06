@@ -41,7 +41,7 @@
 #include "ogr_geometry.h"
 #include "swq_parser.hpp"
 
-CPL_CVSID("$Id: swq_select.cpp 37576 2017-03-03 14:29:55Z rouault $");
+CPL_CVSID("$Id$");
 
 //! @cond Doxygen_Suppress
 /************************************************************************/

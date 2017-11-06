@@ -37,7 +37,7 @@
 #include "cpl_error.h"
 
 
-CPL_CVSID("$Id: ogr_expat.cpp 36328 2016-11-20 13:44:29Z goatbar $");
+CPL_CVSID("$Id$");
 
 static const size_t OGR_EXPAT_MAX_ALLOWED_ALLOC = 10000000;
 

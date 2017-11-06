@@ -49,7 +49,7 @@
 #include "gdal_priv.h"
 #include "../raw/rawdataset.h"
 
-CPL_CVSID("$Id: rdataset.cpp 37864 2017-03-30 20:06:47Z goatbar $");
+CPL_CVSID("$Id$");
 
 // static const int R_NILSXP = 0;
 static const int R_LISTSXP = 2;

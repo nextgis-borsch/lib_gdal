@@ -35,7 +35,7 @@
 #include "gdal_frmts.h"
 #include "jpipkakdataset.h"
 
-CPL_CVSID("$Id: jpipkakdataset.cpp 37431 2017-02-20 11:57:16Z rouault $");
+CPL_CVSID("$Id$");
 
 /*
 ** The following are for testing premature stream termination support.

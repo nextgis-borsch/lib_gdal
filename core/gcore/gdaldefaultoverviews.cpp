@@ -45,7 +45,7 @@
 #include "cpl_vsi.h"
 #include "gdal.h"
 
-CPL_CVSID("$Id: gdaldefaultoverviews.cpp 36957 2016-12-19 13:31:09Z rouault $");
+CPL_CVSID("$Id$");
 
 //! @cond Doxygen_Suppress
 /************************************************************************/

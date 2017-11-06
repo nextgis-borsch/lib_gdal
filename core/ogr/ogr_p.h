@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_p.h 37564 2017-03-03 09:09:26Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Some private helper functions and stuff for OGR implementation.

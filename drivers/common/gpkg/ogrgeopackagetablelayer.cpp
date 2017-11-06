@@ -33,7 +33,7 @@
 #include "cpl_time.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrgeopackagetablelayer.cpp 38922 2017-06-06 20:38:20Z rouault $");
+CPL_CVSID("$Id$");
 
 static const char UNSUPPORTED_OP_READ_ONLY[] =
   "%s : unsupported operation on a read-only datasource.";
@@ -696,7 +696,8 @@ OGRErr OGRGeoPackageTableLayer::ReadTableDefinition(bool bIsSpatial, bool bIsGpk
                 oExtent.MinY = CPLAtof(pszMinY);
                 oExtent.MaxX = CPLAtof(pszMaxX);
                 oExtent.MaxY = CPLAtof(pszMaxY);
-                bReadExtent = true;
+                bReadExtent = oExtent.MinX <= oExtent.MaxX &&
+                              oExtent.MinY <= oExtent.MaxY;
             }
 
             /* Done with info from gpkg_contents now */
@@ -1572,9 +1573,13 @@ OGRErr OGRGeoPackageTableLayer::ICreateFeature( OGRFeature *poFeature )
     /* Update the layer extents with this new object */
     if( IsGeomFieldSet(poFeature) )
     {
-        OGREnvelope oEnv;
-        poFeature->GetGeomFieldRef(0)->getEnvelope(&oEnv);
-        UpdateExtent(&oEnv);
+        OGRGeometry* poGeom = poFeature->GetGeomFieldRef(0);
+        if( !poGeom->IsEmpty() )
+        {
+            OGREnvelope oEnv;
+            poGeom->getEnvelope(&oEnv);
+            UpdateExtent(&oEnv);
+        }
     }
 
     /* Read the latest FID value */
@@ -1662,6 +1667,9 @@ OGRErr OGRGeoPackageTableLayer::ISetFeature( OGRFeature *poFeature )
         sqlite3_stmt* hBackupStmt = m_poUpdateStatement;
         m_poUpdateStatement = NULL;
 
+#ifdef ENABLE_GPKG_OGR_CONTENTS
+        GIntBig nTotalFeatureCountBackup = m_nTotalFeatureCount;
+#endif
         OGRErr errOgr = DeleteFeature( poFeature->GetFID() );
 
         m_poUpdateStatement = hBackupStmt;
@@ -1673,6 +1681,9 @@ OGRErr OGRGeoPackageTableLayer::ISetFeature( OGRFeature *poFeature )
         errOgr = FeatureBindInsertParameters(poFeature, m_poUpdateStatement, true, true);
         if ( errOgr != OGRERR_NONE )
             return errOgr;
+#ifdef ENABLE_GPKG_OGR_CONTENTS
+        m_nTotalFeatureCount = nTotalFeatureCountBackup;
+#endif
     }
     else
 #endif
@@ -1728,9 +1739,13 @@ OGRErr OGRGeoPackageTableLayer::ISetFeature( OGRFeature *poFeature )
         /* Update the layer extents with this new object */
         if( IsGeomFieldSet(poFeature) )
         {
-            OGREnvelope oEnv;
-            poFeature->GetGeomFieldRef(0)->getEnvelope(&oEnv);
-            UpdateExtent(&oEnv);
+            OGRGeometry* poGeom = poFeature->GetGeomFieldRef(0);
+            if( !poGeom->IsEmpty() )
+            {
+                OGREnvelope oEnv;
+                poGeom->getEnvelope(&oEnv);
+                UpdateExtent(&oEnv);
+            }
         }
 
         m_bContentChanged = true;

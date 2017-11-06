@@ -24,7 +24,7 @@ Contributors:  Lucian Plesea
 #include <CntZImage.h>
 #include <Lerc2.h>
 
-CPL_CVSID("$Id: LERC_band.cpp 37475 2017-02-26 02:50:00Z goatbar $");
+CPL_CVSID("$Id$");
 
 USING_NAMESPACE_LERC
 

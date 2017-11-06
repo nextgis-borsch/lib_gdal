@@ -32,7 +32,7 @@
 #include "ogr_p.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id: ogrsegylayer.cpp 35911 2016-10-24 15:03:26Z goatbar $");
+CPL_CVSID("$Id$");
 
 // #define SEGY_EXTENSIONS
 

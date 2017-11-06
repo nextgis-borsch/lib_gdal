@@ -33,7 +33,7 @@
 #include "ogr_p.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: testepsg.cpp 36556 2016-11-29 23:39:59Z goatbar $");
+CPL_CVSID("$Id$");
 
 static void Usage()
 

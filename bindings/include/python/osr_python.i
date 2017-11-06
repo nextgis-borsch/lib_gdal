@@ -1,5 +1,5 @@
 /*
- * $Id: osr_python.i 34525 2016-07-03 02:53:47Z goatbar $
+ * $Id$
  *
  * python specific code for ogr bindings.
  */

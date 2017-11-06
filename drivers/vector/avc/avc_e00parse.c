@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: avc_e00parse.c 37451 2017-02-25 15:38:43Z rouault $
+ * $Id$
  *
  * Name:     avc_e00parse.c
  * Project:  Arc/Info vector coverage (AVC)  E00->BIN conversion library

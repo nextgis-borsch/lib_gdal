@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_array.i 37276 2017-02-02 14:56:32Z rouault $
+ * $Id$
  *
  * Name:     gdal_array.i
  * Project:  GDAL Python Interface
@@ -138,7 +138,7 @@ static void GDALRegister_NUMPY(void)
         return;
     if( GDALGetDriverByName( "NUMPY" ) == NULL )
     {
-        poDriver = new GDALDriver();
+        poDriver = static_cast<GDALDriver*>(GDALCreateDriver());
 
         poDriver->SetDescription( "NUMPY" );
         poDriver->SetMetadataItem( GDAL_DMD_LONGNAME,

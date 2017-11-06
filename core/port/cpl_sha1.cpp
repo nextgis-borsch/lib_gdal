@@ -33,7 +33,7 @@
 #include <string.h>
 #include "cpl_sha1.h"
 
-CPL_CVSID("$Id: cpl_sha1.cpp 37641 2017-03-07 15:22:31Z rouault $");
+CPL_CVSID("$Id$");
 
 
 typedef struct {

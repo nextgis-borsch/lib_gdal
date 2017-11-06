@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: osr_cs_wkt.c 35305 2016-09-03 14:40:17Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  CS WKT parser

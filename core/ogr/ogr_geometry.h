@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_geometry.h 37472 2017-02-26 02:47:45Z goatbar $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Classes for manipulating simple features that is not specific

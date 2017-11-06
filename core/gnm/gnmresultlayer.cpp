@@ -30,7 +30,7 @@
 #include "gnm.h"
 #include "gnm_priv.h"
 
-CPL_CVSID("$Id: gnmresultlayer.cpp 34931 2016-08-05 17:13:05Z rouault $");
+CPL_CVSID("$Id$");
 
 /** Constructor */
 OGRGNMWrappedResultLayer::OGRGNMWrappedResultLayer(GDALDataset* poDSIn,

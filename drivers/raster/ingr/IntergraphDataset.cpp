@@ -40,7 +40,7 @@
 #include "IntergraphBand.h"
 #include "IngrTypes.h"
 
-CPL_CVSID("$Id: IntergraphDataset.cpp 35670 2016-10-09 22:58:16Z goatbar $");
+CPL_CVSID("$Id$");
 
 //  ----------------------------------------------------------------------------
 //                                        IntergraphDataset::IntergraphDataset()

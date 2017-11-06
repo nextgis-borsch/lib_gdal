@@ -45,7 +45,7 @@
 #include "gdal.h"
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id: vrtrawrasterband.cpp 37310 2017-02-06 11:42:54Z goatbar $");
+CPL_CVSID("$Id$");
 
 /*! @cond Doxygen_Suppress */
 

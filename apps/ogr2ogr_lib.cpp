@@ -61,7 +61,7 @@
 #include "ogrlayerdecorator.h"
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id: ogr2ogr_lib.cpp 39040 2017-06-09 21:43:58Z rouault $");
+CPL_CVSID("$Id$");
 
 typedef enum
 {
@@ -2142,7 +2142,14 @@ GDALDatasetH GDALVectorTranslate( const char *pszDest, GDALDatasetH hDstDS, int 
     {
         GDALDriverManager *poDM = GetGDALDriverManager();
 
-        poDriver = poDM->GetDriverByName(psOptions->pszFormat);
+        const char* pszOGRCompatFormat = psOptions->pszFormat;
+        // Special processing for non-unified drivers that have the same name
+        // as GDAL and OGR drivers
+        // Other candidates could be VRT, SDTS, OGDI and PDS, but they don't
+        // have write capabilities.
+        if( EQUAL(pszOGRCompatFormat, "GMT") )
+            pszOGRCompatFormat = "OGR_GMT";
+        poDriver = poDM->GetDriverByName(pszOGRCompatFormat);
         if( poDriver == NULL )
         {
             CPLError( CE_Failure, CPLE_AppDefined,
@@ -4254,6 +4261,11 @@ int LayerTranslator::Translate( OGRFeature* poFeatureIn,
     bool bRet = true;
     while( true )
     {
+        if( m_nLimit >= 0 && psInfo->nFeaturesRead >= m_nLimit )
+        {
+            break;
+        }
+
         OGRFeature      *poDstFeature = NULL;
 
         if( poFeatureIn != NULL )
@@ -4262,8 +4274,6 @@ int LayerTranslator::Translate( OGRFeature* poFeatureIn,
             poFeature = poSrcLayer->GetFeature(psOptions->nFIDToFetch);
         else
             poFeature = poSrcLayer->GetNextFeature();
-        if( m_nLimit >= 0 && psInfo->nFeaturesRead >= m_nLimit )
-            break;
 
         if( poFeature == NULL )
             break;

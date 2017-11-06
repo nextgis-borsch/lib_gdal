@@ -40,6 +40,10 @@
 #include "cpl_string.h"
 #include "cpl_vsi.h"
 
+#if !defined(va_copy) && defined(__va_copy)
+#define va_copy __va_copy
+#endif
+
 // TODO(rouault): Why is this here?
 #if !defined(WIN32)
 #include <string.h>
@@ -48,7 +52,7 @@
 #define TIMESTAMP_DEBUG
 // #define MEMORY_DEBUG
 
-CPL_CVSID("$Id: cpl_vsi_error.cpp 37003 2016-12-23 14:54:07Z goatbar $");
+CPL_CVSID("$Id$");
 
 static const int DEFAULT_LAST_ERR_MSG_SIZE =
 #if !defined(HAVE_VSNPRINTF)

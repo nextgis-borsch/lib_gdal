@@ -52,7 +52,7 @@
 #include "ogr_spatialref.h"
 #include "vrtdataset.h"
 
-CPL_CVSID("$Id: gdal_translate_lib.cpp 37719 2017-03-16 14:51:42Z rouault $");
+CPL_CVSID("$Id$");
 
 static int ArgIsNumeric( const char * );
 static void AttachMetadata( GDALDatasetH, char ** );
@@ -1221,16 +1221,20 @@ GDALDatasetH GDALTranslate( const char *pszDest, GDALDatasetH hSrcDataset,
 /* -------------------------------------------------------------------- */
 /*      Select output data type to match source.                        */
 /* -------------------------------------------------------------------- */
+        GDALRasterBand* poRealSrcBand =
+                (nSrcBand < 0) ? poSrcBand->GetMaskBand(): poSrcBand;
         if( psOptions->eOutputType == GDT_Unknown )
-            eBandType = poSrcBand->GetRasterDataType();
+        {
+            eBandType = poRealSrcBand->GetRasterDataType();
+        }
         else
         {
             eBandType = psOptions->eOutputType;
 
             // Check that we can copy existing statistics
-            GDALDataType eSrcBandType = poSrcBand->GetRasterDataType();
-            const char* pszMin = poSrcBand->GetMetadataItem("STATISTICS_MINIMUM");
-            const char* pszMax = poSrcBand->GetMetadataItem("STATISTICS_MAXIMUM");
+            GDALDataType eSrcBandType = poRealSrcBand->GetRasterDataType();
+            const char* pszMin = poRealSrcBand->GetMetadataItem("STATISTICS_MINIMUM");
+            const char* pszMax = poRealSrcBand->GetMetadataItem("STATISTICS_MAXIMUM");
             if( !bFilterOutStatsMetadata && eBandType != eSrcBandType &&
                 pszMin != NULL && pszMax != NULL )
             {

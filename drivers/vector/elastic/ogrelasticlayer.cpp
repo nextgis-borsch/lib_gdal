@@ -42,7 +42,7 @@
 #include <cstdlib>
 #include <set>
 
-CPL_CVSID("$Id: ogrelasticlayer.cpp 37472 2017-02-26 02:47:45Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                           OGRElasticLayer()                          */

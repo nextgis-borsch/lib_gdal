@@ -47,8 +47,9 @@
 #include "gdal_alg_priv.h"
 #include "gdal_priv.h"
 #include "gdalwarper.h"
+#include "ogr_geometry.h"
 
-CPL_CVSID("$Id: vrtwarped.cpp 37723 2017-03-16 17:07:53Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                      GDALAutoCreateWarpedVRT()                       */
@@ -463,6 +464,70 @@ CPLErr VRTWarpedDataset::Initialize( void *psWO )
 }
 
 /************************************************************************/
+/*                        GDALWarpCoordRescaler                         */
+/************************************************************************/
+
+class GDALWarpCoordRescaler: public OGRCoordinateTransformation
+{
+    double m_dfRatioX;
+    double m_dfRatioY;
+
+public:
+    GDALWarpCoordRescaler(double dfRatioX, double dfRatioY) :
+        m_dfRatioX(dfRatioX), m_dfRatioY(dfRatioY) {}
+
+    virtual ~GDALWarpCoordRescaler() {}
+
+    virtual OGRSpatialReference *GetSourceCS() override { return NULL; }
+
+    virtual OGRSpatialReference *GetTargetCS() override { return NULL; }
+
+    virtual int Transform( int nCount, double *x, double *y, double *z )
+                                                                    override
+    {
+        return TransformEx( nCount, x, y, z, NULL );
+    }
+
+    virtual int TransformEx( int nCount, double *x, double *y, double * /*z*/,
+                             int *pabSuccess ) override
+    {
+        for( int i = 0; i < nCount; i++ )
+        {
+            x[i] *= m_dfRatioX;
+            y[i] *= m_dfRatioY;
+            if( pabSuccess )
+                pabSuccess[i] = TRUE;
+        }
+        return TRUE;
+    }
+};
+
+/************************************************************************/
+/*                        RescaleDstGeoTransform()                      */
+/************************************************************************/
+
+static void RescaleDstGeoTransform(double adfDstGeoTransform[6],
+                                   int nRasterXSize, int nDstPixels,
+                                   int nRasterYSize, int nDstLines,
+                                   double dfTargetRatio)
+{
+    if( adfDstGeoTransform[2] == 0.0 && adfDstGeoTransform[4] == 0.0 )
+    {
+        adfDstGeoTransform[1]
+            *= static_cast<double>( nRasterXSize ) / nDstPixels;
+        adfDstGeoTransform[5]
+            *= static_cast<double>( nRasterYSize ) / nDstLines;
+    }
+    else
+    {
+        adfDstGeoTransform[1] *= dfTargetRatio;
+        adfDstGeoTransform[2] *= dfTargetRatio;
+        adfDstGeoTransform[4] *= dfTargetRatio;
+        adfDstGeoTransform[5] *= dfTargetRatio;
+    }
+}
+
+/************************************************************************/
 /*                        CreateImplicitOverviews()                     */
 /*                                                                      */
 /*      For each overview of the source dataset, create an overview     */
@@ -526,20 +591,10 @@ void VRTWarpedDataset::CreateImplicitOverviews()
 
         double adfDstGeoTransform[6] = { 0.0 };
         GetGeoTransform(adfDstGeoTransform);
-        if( adfDstGeoTransform[2] == 0.0 && adfDstGeoTransform[4] == 0.0 )
-        {
-            adfDstGeoTransform[1]
-                *= static_cast<double>( nRasterXSize ) / nDstPixels;
-            adfDstGeoTransform[5]
-                *= static_cast<double>( nRasterYSize ) / nDstLines;
-        }
-        else
-        {
-            adfDstGeoTransform[1] *= dfTargetRatio;
-            adfDstGeoTransform[2] *= dfTargetRatio;
-            adfDstGeoTransform[4] *= dfTargetRatio;
-            adfDstGeoTransform[5] *= dfTargetRatio;
-        }
+        RescaleDstGeoTransform(adfDstGeoTransform,
+                               nRasterXSize, nDstPixels,
+                               nRasterYSize, nDstLines,
+                               dfTargetRatio);
 
         if( nDstPixels < 1 || nDstLines < 1 )
         {
@@ -566,10 +621,25 @@ void VRTWarpedDataset::CreateImplicitOverviews()
         psWOOvr->pTransformerArg = pTransformerArg;
 
 /* -------------------------------------------------------------------- */
-/*      Update the transformer to include an output geotransform        */
-/*      back to pixel/line coordinates.                                 */
-/*                                                                      */
+/*      We need to rescale the potential CUTLINE                        */
 /* -------------------------------------------------------------------- */
+        if( psWOOvr->hCutline )
+        {
+            GDALWarpCoordRescaler oRescaler(1.0 / dfSrcRatioX,
+                                            1.0 / dfSrcRatioY);
+            reinterpret_cast<OGRGeometry*>(psWOOvr->hCutline)->
+                                                    transform(&oRescaler);
+        }
+
+/* -------------------------------------------------------------------- */
+/*      Rescale the output geotransform on the transformer.             */
+/* -------------------------------------------------------------------- */
+        GDALGetTransformerDstGeoTransform(
+            psWOOvr->pTransformerArg, adfDstGeoTransform );
+        RescaleDstGeoTransform(adfDstGeoTransform,
+                               nRasterXSize, nDstPixels,
+                               nRasterYSize, nDstLines,
+                               dfTargetRatio);
         GDALSetTransformerDstGeoTransform(
             psWOOvr->pTransformerArg, adfDstGeoTransform );
 

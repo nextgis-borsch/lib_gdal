@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrbnaparser.cpp 36776 2016-12-10 11:17:47Z rouault $");
+CPL_CVSID("$Id$");
 
 void BNA_FreeRecord(BNARecord* record)
 {

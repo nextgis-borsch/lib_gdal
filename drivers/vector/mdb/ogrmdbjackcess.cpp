@@ -28,7 +28,7 @@
 
 #include "ogr_mdb.h"
 
-CPL_CVSID("$Id: ogrmdbjackcess.cpp 36981 2016-12-20 19:46:41Z rouault $");
+CPL_CVSID("$Id$");
 
 #if JVM_LIB_DLOPEN
 #include <limits.h>

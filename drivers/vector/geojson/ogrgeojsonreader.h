@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgeojsonreader.h 38146 2017-04-26 14:09:40Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Defines GeoJSON reader within OGR OGRGeoJSON Driver.
@@ -143,7 +143,7 @@ class OGRGeoJSONReader
     static bool AddFeature( OGRGeoJSONLayer* poLayer, OGRGeometry* poGeometry );
     static bool AddFeature( OGRGeoJSONLayer* poLayer, OGRFeature* poFeature );
 
-    OGRGeometry* ReadGeometry( json_object* poObj );
+    OGRGeometry* ReadGeometry( json_object* poObj, OGRSpatialReference* poLayerSRS );
     OGRFeature* ReadFeature( OGRGeoJSONLayer* poLayer, json_object* poObj );
     void ReadFeatureCollection( OGRGeoJSONLayer* poLayer, json_object* poObj );
 };

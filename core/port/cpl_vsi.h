@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_vsi.h 39224 2017-06-21 08:50:19Z rouault $
+ * $Id$
  *
  * Project:  CPL - Common Portability Library
  * Author:   Frank Warmerdam, warmerdam@pobox.com

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_nas.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id$
  *
  * Project:  NAS Reader
  * Purpose:  Declarations for OGR wrapper classes for NAS, and NAS<->OGR

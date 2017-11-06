@@ -40,7 +40,7 @@
 
 static const GInt16 SRTMHG_NODATA_VALUE = -32768;
 
-CPL_CVSID("$Id: srtmhgtdataset.cpp 37802 2017-03-19 22:34:53Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -257,7 +257,8 @@ int SRTMHGTDataset::Identify( GDALOpenInfo * poOpenInfo )
     return Identify(&oOpenInfo);
   }
 
-  if( !EQUAL(fileName + strlen(fileName) - strlen(".hgt"), ".hgt") )
+  if( !EQUAL(fileName + strlen(fileName) - strlen(".hgt"), ".hgt") &&
+      !EQUAL(fileName + strlen(fileName) - strlen(".hgt.gz"), ".hgt.gz") )
     return FALSE;
 
 /* -------------------------------------------------------------------- */

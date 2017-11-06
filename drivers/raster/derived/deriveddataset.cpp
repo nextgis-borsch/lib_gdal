@@ -30,7 +30,7 @@
 #include "gdal_proxy.h"
 #include "derivedlist.h"
 
-CPL_CVSID("$Id: deriveddataset.cpp 35885 2016-10-24 06:23:09Z goatbar $");
+CPL_CVSID("$Id$");
 
 class DerivedDataset : public VRTDataset
 {

@@ -50,7 +50,7 @@
 #include "ogr_p.h"
 #include "parsexsd.h"
 
-CPL_CVSID("$Id: ogrgmldatasource.cpp 37914 2017-04-06 17:38:46Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                   ReplaceSpaceByPct20IfNeeded()                      */

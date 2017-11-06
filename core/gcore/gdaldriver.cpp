@@ -45,7 +45,7 @@
 #include "ogr_core.h"
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id: gdaldriver.cpp 37656 2017-03-09 13:19:58Z rouault $");
+CPL_CVSID("$Id$");
 
 CPL_C_START
 // TODO(schwehr): Why is this not in a header?
@@ -80,6 +80,21 @@ GDALDriver::~GDALDriver()
 {
     if( pfnUnloadDriver != NULL )
         pfnUnloadDriver( this );
+}
+
+/************************************************************************/
+/*                         GDALCreateDriver()                           */
+/************************************************************************/
+
+/**
+ * \brief Create a GDALDriver.
+ *
+ * Creates a driver in the GDAL heap.
+ */
+
+GDALDriverH CPL_STDCALL GDALCreateDriver()
+{
+    return new GDALDriver();
 }
 
 /************************************************************************/
@@ -664,7 +679,11 @@ GDALDataset *GDALDriver::DefaultCreateCopy( const char * pszFilename,
     if( eErr != CE_None )
     {
         delete poDstDS;
-        Delete( pszFilename );
+        if( !CPLFetchBool(papszOptions, "APPEND_SUBDATASET", false) )
+        {
+            // Only delete if creating a new file
+            Delete( pszFilename );
+        }
         return NULL;
     }
     else

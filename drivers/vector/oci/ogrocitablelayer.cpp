@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrocitablelayer.cpp 37371 2017-02-13 11:41:59Z rouault $");
+CPL_CVSID("$Id$");
 
 static int nDiscarded = 0;
 static int nHits = 0;
@@ -200,8 +200,8 @@ OGRFeatureDefn *OGROCITableLayer::ReadTableDefinition( const char * pszTable )
 
         nStatus =
             OCIDescribeAny(poSession->hSvcCtx, poSession->hError,
-                           (dvoid *) osQuotedTableName.c_str(),
-                           static_cast<ub4>(osQuotedTableName.length()), OCI_OTYPE_NAME,
+                           (dvoid *) osUnquotedTableName.c_str(),
+                           static_cast<ub4>(osUnquotedTableName.length()), OCI_OTYPE_NAME,
                            OCI_DEFAULT, OCI_PTYPE_VIEW, poSession->hDescribe );
 
         if( poSession->Failed( nStatus, "OCIDescribeAny" ) )

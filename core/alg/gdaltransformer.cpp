@@ -57,7 +57,7 @@
 #include "ogr_srs_api.h"
 
 
-CPL_CVSID("$Id: gdaltransformer.cpp 37723 2017-03-16 17:07:53Z rouault $");
+CPL_CVSID("$Id$");
 
 CPL_C_START
 void *GDALDeserializeGCPTransformer( CPLXMLNode *psTree );
@@ -3656,5 +3656,63 @@ void GDALSetTransformerDstGeoTransform( void *pTransformArg,
     if( EQUAL(psInfo->pszClassName, "GDALGenImgProjTransformer") )
     {
         GDALSetGenImgProjTransformerDstGeoTransform(psInfo, padfGeoTransform);
+    }
+}
+
+/************************************************************************/
+/*                 GDALGetTransformerDstGeoTransform()                  */
+/************************************************************************/
+
+/**
+ * Get ApproxTransformer or GenImgProj output geotransform.
+ *
+ * @param pTransformArg transformer handle.
+ * @param padfGeoTransform (output) the destination geotransform to return (six doubles).
+ */
+
+void GDALGetTransformerDstGeoTransform( void *pTransformArg,
+                                        double *padfGeoTransform )
+{
+    VALIDATE_POINTER0( pTransformArg, "GDALSetTransformerDstGeoTransform" );
+
+    GDALTransformerInfo *psInfo =
+        static_cast<GDALTransformerInfo *>(pTransformArg);
+
+    if( psInfo == NULL ||
+        memcmp(psInfo->abySignature,
+               GDAL_GTI2_SIGNATURE,
+               strlen(GDAL_GTI2_SIGNATURE)) != 0 )
+    {
+        CPLError(CE_Failure, CPLE_AppDefined,
+                 "Attempt to call GDALGetTransformerDstGeoTransform on "
+                 "a non-GTI2 transformer.");
+        return;
+    }
+
+    if( EQUAL(psInfo->pszClassName, "GDALApproxTransformer") )
+    {
+        ApproxTransformInfo *psATInfo =
+            static_cast<ApproxTransformInfo *>(pTransformArg);
+        psInfo = static_cast<GDALTransformerInfo *>(psATInfo->pBaseCBData);
+
+        if( psInfo == NULL ||
+            memcmp(psInfo->abySignature,
+                   GDAL_GTI2_SIGNATURE,
+                   strlen(GDAL_GTI2_SIGNATURE)) != 0 )
+        {
+            CPLError(CE_Failure, CPLE_AppDefined,
+                     "Attempt to call GDALGetTransformerDstGeoTransform on "
+                     "a non-GTI2 transformer.");
+            return;
+        }
+    }
+
+    if( EQUAL(psInfo->pszClassName, "GDALGenImgProjTransformer") )
+    {
+        GDALGenImgProjTransformInfo *psGenImgProjInfo =
+            reinterpret_cast<GDALGenImgProjTransformInfo *>( psInfo );
+
+        memcpy( padfGeoTransform, psGenImgProjInfo->adfDstGeoTransform,
+                sizeof(double) * 6 );
     }
 }

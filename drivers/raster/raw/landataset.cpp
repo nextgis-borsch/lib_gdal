@@ -36,7 +36,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id: landataset.cpp 36979 2016-12-20 18:40:40Z rouault $");
+CPL_CVSID("$Id$");
 
 /**
 

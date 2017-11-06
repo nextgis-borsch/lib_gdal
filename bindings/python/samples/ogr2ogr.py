@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #*****************************************************************************
-# $Id: ogr2ogr.py 31956 2015-12-02 06:34:05Z goatbar $
+# $Id$
 #
 # Project:  OpenGIS Simple Features Reference Implementation
 # Purpose:  Python port of a simple client for translating between formats.

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_utils.h 35884 2016-10-24 05:56:50Z goatbar $
+ * $Id$
  *
  * Project:  GDAL Utilities
  * Purpose:  GDAL Utilities Public Declarations.

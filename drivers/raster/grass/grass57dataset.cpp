@@ -63,7 +63,7 @@ char *GPJ_grass_to_wkt( struct Key_Value *,
 
 #define GRASS_MAX_COLORS 100000  // what is the right value
 
-CPL_CVSID("$Id: grass57dataset.cpp 37964 2017-04-11 18:04:50Z rouault $");
+CPL_CVSID("$Id$");
 
 #if GRASS_VERSION_MAJOR  >= 7
 #define G_get_cellhd             Rast_get_cellhd

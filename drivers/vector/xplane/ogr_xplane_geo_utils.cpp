@@ -29,7 +29,7 @@
 #include "ogr_xplane_geo_utils.h"
 #include "cpl_port.h"
 
-CPL_CVSID("$Id: ogr_xplane_geo_utils.cpp 35634 2016-10-07 15:07:10Z goatbar $");
+CPL_CVSID("$Id$");
 
 static const double RAD2METER = (180.0 / M_PI) * 60.0 * 1852.0;
 static const double METER2RAD = 1.0 / RAD2METER;

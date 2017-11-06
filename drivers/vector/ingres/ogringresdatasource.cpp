@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogringresdatasource.cpp 36456 2016-11-22 23:34:00Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                            SetConnParam()                            */

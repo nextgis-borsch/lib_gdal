@@ -39,7 +39,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id: osm_parser.cpp 37052 2017-01-01 18:36:35Z rouault $");
+CPL_CVSID("$Id$");
 
 // The buffer that are passed to GPB decoding are extended with 0's
 // to be sure that we will be able to read a single 64bit value without
@@ -474,6 +474,7 @@ bool ReadDenseNodes( GByte* pabyData, GByte* pabyDataLimit,
     GByte* pabyDataLon = NULL;
     GByte* apabyData[DENSEINFO_IDX_VISIBLE] = {NULL, NULL, NULL, NULL, NULL, NULL};
     GByte* pabyDataKeyVal = NULL;
+    unsigned int nMaxTags = 0;
 
     /* printf(">ReadDenseNodes\n"); */
     while(pabyData < pabyDataLimit)
@@ -563,12 +564,13 @@ bool ReadDenseNodes( GByte* pabyData, GByte* pabyDataLimit,
             READ_SIZE(pabyData, pabyDataLimit, nSize);
 
             pabyDataKeyVal = pabyData;
+            nMaxTags = nSize / 2;
 
-            if( nSize > psCtxt->nTagsAllocated )
+            if( nMaxTags > psCtxt->nTagsAllocated )
             {
 
                 psCtxt->nTagsAllocated = std::max(
-                    psCtxt->nTagsAllocated * 2, nSize);
+                    psCtxt->nTagsAllocated * 2, nMaxTags);
                 OSMTag* pasTagsNew = (OSMTag*) VSI_REALLOC_VERBOSE(
                     psCtxt->pasTags,
                     psCtxt->nTagsAllocated * sizeof(OSMTag));
@@ -662,7 +664,7 @@ bool ReadDenseNodes( GByte* pabyData, GByte* pabyDataLimit,
 
             if( pabyDataKeyVal != NULL && pasTags != NULL )
             {
-                while( true )
+                while( static_cast<unsigned>(nTags) < nMaxTags )
                 {
                     unsigned int nKey, nVal;
                     READ_VARUINT32(pabyDataKeyVal, pabyDataLimit, nKey);
@@ -2266,7 +2268,7 @@ OSMContext* OSM_Open( const char* pszFilename,
     {
         psCtxt->nBlobSizeAllocated = XML_BUFSIZE;
 
-        psCtxt->nStrAllocated = 65536;
+        psCtxt->nStrAllocated = 1024*1024;
         psCtxt->pszStrBuf = (char*) VSI_MALLOC_VERBOSE(psCtxt->nStrAllocated);
         if( psCtxt->pszStrBuf )
             psCtxt->pszStrBuf[0] = '\0';

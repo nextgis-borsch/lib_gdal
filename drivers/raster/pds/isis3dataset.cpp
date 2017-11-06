@@ -104,7 +104,7 @@ static const char* const pszLABEL_BYTES_PLACEHOLDER = "!*^LABEL_BYTES^*!";
 static const char* const pszHISTORY_STARTBYTE_PLACEHOLDER =
                                                     "!*^HISTORY_STARTBYTE^*!";
 
-CPL_CVSID("$Id: isis3dataset.cpp 37708 2017-03-14 10:56:35Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -759,6 +759,7 @@ class ISIS3WrapperRasterBand : public GDALProxyRasterBand
 
         void    InitFile();
 
+        virtual CPLErr Fill(double dfRealValue, double dfImaginaryValue = 0) override;
         virtual CPLErr          IWriteBlock( int, int, void * ) override;
 
         virtual CPLErr  IRasterIO( GDALRWFlag, int, int, int, int,
@@ -1475,6 +1476,25 @@ void ISIS3WrapperRasterBand::InitFile()
 }
 
 /************************************************************************/
+/*                               Fill()                                 */
+/************************************************************************/
+
+CPLErr ISIS3WrapperRasterBand::Fill(double dfRealValue, double dfImaginaryValue)
+{
+    ISIS3Dataset* poGDS = reinterpret_cast<ISIS3Dataset*>(poDS);
+    if( poGDS->m_bHasSrcNoData && poGDS->m_dfSrcNoData == dfRealValue )
+    {
+        dfRealValue = m_dfNoData;
+    }
+    if( poGDS->m_bGeoTIFFAsRegularExternal && !poGDS->m_bGeoTIFFInitDone )
+    {
+        InitFile();
+    }
+
+    return GDALProxyRasterBand::Fill( dfRealValue, dfImaginaryValue );
+}
+
+/************************************************************************/
 /*                             IWriteBlock()                             */
 /************************************************************************/
 
@@ -1488,7 +1508,7 @@ CPLErr ISIS3WrapperRasterBand::IWriteBlock( int nXBlock, int nYBlock,
         RemapNoData( eDataType, pImage, nBlockXSize * nBlockYSize,
                      poGDS->m_dfSrcNoData, m_dfNoData );
     }
-    if( poGDS->m_bGeoTIFFAsRegularExternal && poGDS->m_bGeoTIFFInitDone )
+    if( poGDS->m_bGeoTIFFAsRegularExternal && !poGDS->m_bGeoTIFFInitDone )
     {
         InitFile();
     }
@@ -3098,20 +3118,27 @@ void ISIS3Dataset::BuildLabel()
     // Deal with History object
     BuildHistory();
 
-    CPLJsonObject& oHistory = oLabel["History"];
-    oHistory.clear();
-    oHistory["_type"] = "object";
-    oHistory["Name"] = "IsisCube";
-    if( m_osExternalFilename.empty() )
-        oHistory["StartByte"] = pszHISTORY_STARTBYTE_PLACEHOLDER;
-    else
-        oHistory["StartByte"] = 1;
-    oHistory["Bytes"] = static_cast<GIntBig>(m_osHistory.size());
-    if( !m_osExternalFilename.empty() )
+    if( !m_osHistory.empty() )
     {
-        CPLString osFilename(CPLGetBasename(GetDescription()));
-        osFilename += ".History.IsisCube";
-        oHistory["^History"] = osFilename;
+        CPLJsonObject& oHistory = oLabel["History"];
+        oHistory.clear();
+        oHistory["_type"] = "object";
+        oHistory["Name"] = "IsisCube";
+        if( m_osExternalFilename.empty() )
+            oHistory["StartByte"] = pszHISTORY_STARTBYTE_PLACEHOLDER;
+        else
+            oHistory["StartByte"] = 1;
+        oHistory["Bytes"] = static_cast<GIntBig>(m_osHistory.size());
+        if( !m_osExternalFilename.empty() )
+        {
+            CPLString osFilename(CPLGetBasename(GetDescription()));
+            osFilename += ".History.IsisCube";
+            oHistory["^History"] = osFilename;
+        }
+    }
+    else
+    {
+        oLabel.del("History");
     }
 
     // Deal with other objects that have StartByte & Bytes
@@ -3453,9 +3480,6 @@ void ISIS3Dataset::BuildHistory()
         osHistory += SerializeAsPDL( poObj );
         json_object_put(poObj);
     }
-
-    if( osHistory.empty() )
-        osHistory = " ";
 
     m_osHistory = osHistory;
 }

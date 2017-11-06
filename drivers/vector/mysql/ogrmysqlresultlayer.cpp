@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "ogr_mysql.h"
 
-CPL_CVSID("$Id: ogrmysqlresultlayer.cpp 36384 2016-11-21 12:13:10Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                        OGRMySQLResultLayer()                         */

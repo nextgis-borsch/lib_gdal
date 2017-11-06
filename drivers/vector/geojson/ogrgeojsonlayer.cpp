@@ -55,7 +55,7 @@
 #  pragma warning(disable:4512)
 #endif
 
-CPL_CVSID("$Id: ogrgeojsonlayer.cpp 35836 2016-10-20 13:57:15Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                       STATIC MEMBERS DEFINITION                      */

@@ -35,7 +35,7 @@
 
 #include <cassert>
 
-CPL_CVSID("$Id: ogrtindex.cpp 37862 2017-03-30 12:17:31Z rouault $");
+CPL_CVSID("$Id$");
 
 static void Usage();
 

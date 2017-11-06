@@ -39,7 +39,7 @@
 #include "cpl_conv.h"
 #include "cpl_error.h"
 
-CPL_CVSID("$Id: cpl_quad_tree.cpp 36978 2016-12-20 17:25:51Z goatbar $");
+CPL_CVSID("$Id$");
 
 static const int MAX_DEFAULT_TREE_DEPTH = 12;
 static const int MAX_SUBNODES = 4;

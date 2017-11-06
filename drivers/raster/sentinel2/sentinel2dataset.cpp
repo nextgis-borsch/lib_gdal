@@ -49,7 +49,7 @@
 #define STARTS_WITH_CI(a,b) EQUALN(a,b,strlen(b))
 #endif
 
-CPL_CVSID("$Id: sentinel2dataset.cpp 37145 2017-01-14 20:02:35Z rouault $");
+CPL_CVSID("$Id$");
 
 CPL_C_START
 // TODO: Leave this declaration while Sentinel2 folks use this as a

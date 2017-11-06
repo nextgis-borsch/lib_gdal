@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #******************************************************************************
-#  $Id: attachpct.py 33791 2016-03-26 12:51:23Z goatbar $
+#  $Id$
 #
 #  Project:  GDAL
 #  Purpose:  Simple command line program for copying the color table of a

@@ -44,7 +44,7 @@
 #include "gmlutils.h"
 #include "ogr_geometry.h"
 
-CPL_CVSID("$Id: gmlreader.cpp 38566 2017-05-21 16:59:47Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                            ~IGMLReader()                             */
@@ -1129,7 +1129,7 @@ void GMLReader::SetFeaturePropertyDirectly( const char *pszElement,
 /* -------------------------------------------------------------------- */
 /*      Do we need to update the property type?                         */
 /* -------------------------------------------------------------------- */
-    if( !poClass->IsSchemaLocked() )
+    if( !poClass->IsSchemaLocked() && !EQUAL(pszValue, OGR_GML_NULL) )
     {
         poClass->GetProperty(iProperty)->AnalysePropertyValue(
             poFeature->GetProperty(iProperty), m_bSetWidthFlag );

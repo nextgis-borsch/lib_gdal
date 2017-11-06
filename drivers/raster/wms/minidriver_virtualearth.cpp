@@ -32,7 +32,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id: minidriver_virtualearth.cpp 36682 2016-12-04 20:34:45Z rouault $");
+CPL_CVSID("$Id$");
 
 // These should be global, they are used all over the place
 const double SPHERICAL_RADIUS = 6378137.0;

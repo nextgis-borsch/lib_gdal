@@ -34,7 +34,7 @@
 
 // #define IMMEDIATE_OPENING 1
 
-CPL_CVSID("$Id: ogrshapedatasource.cpp 37091 2017-01-10 17:25:57Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                          DS_SHPOpen()                                */

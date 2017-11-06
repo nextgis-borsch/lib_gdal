@@ -44,7 +44,7 @@
 #include "cpl_string.h"
 #include "gdal.h"
 
-CPL_CVSID("$Id: nearblack_lib.cpp 36682 2016-12-04 20:34:45Z rouault $");
+CPL_CVSID("$Id$");
 
 typedef std::vector<int> Color;
 typedef std::vector< Color > Colors;

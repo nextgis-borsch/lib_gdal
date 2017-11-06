@@ -34,7 +34,7 @@
 #include "gdal_alg_priv.h"
 #include "gdal_frmts.h"
 
-CPL_CVSID("$Id: vrtdriver.cpp 35585 2016-10-02 08:52:40Z rouault $");
+CPL_CVSID("$Id$");
 
 /*! @cond Doxygen_Suppress */
 

@@ -27,6 +27,11 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#ifndef __STDC_LIMIT_MACROS
+// Needed on RHEL 6 for SIZE_MAX availability, needed by Jasper
+ #define __STDC_LIMIT_MACROS 1
+#endif
+
 #include "cpl_string.h"
 #include "gdal_frmts.h"
 #include "gdaljp2abstractdataset.h"
@@ -39,7 +44,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id: jpeg2000dataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
+CPL_CVSID("$Id$");
 
 // XXX: Part of code below extracted from the JasPer internal headers and
 // must be in sync with JasPer version (this one works with JasPer 1.900.1)

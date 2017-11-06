@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "ogr_nas.h"
 
-CPL_CVSID("$Id: ogrnaslayer.cpp 37141 2017-01-14 13:09:04Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                           OGRNASLayer()                              */

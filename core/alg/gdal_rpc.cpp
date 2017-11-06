@@ -56,7 +56,7 @@
 
 // #define DEBUG_VERBOSE_EXTRACT_DEM
 
-CPL_CVSID("$Id: gdal_rpc.cpp 39050 2017-06-10 20:18:19Z rouault $");
+CPL_CVSID("$Id$");
 
 CPL_C_START
 CPLXMLNode *GDALSerializeRPCTransformer( void *pTransformArg );

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: dgnlibp.h 35374 2016-09-09 13:32:13Z goatbar $
+ * $Id$
  *
  * Project:  Microstation DGN Access Library
  * Purpose:  Internal (privatE) datastructures, and prototypes for DGN Access

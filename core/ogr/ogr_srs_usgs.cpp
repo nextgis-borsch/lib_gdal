@@ -42,7 +42,7 @@
 #include "ogr_p.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: ogr_srs_usgs.cpp 36305 2016-11-19 21:59:12Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*  GCTP projection codes.                                              */

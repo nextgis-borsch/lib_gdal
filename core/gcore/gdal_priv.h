@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_priv.h 37723 2017-03-16 17:07:53Z rouault $
+ * $Id$
  *
  * Name:     gdal_priv.h
  * Project:  GDAL Core
@@ -724,6 +724,9 @@ class CPL_DLL GDALRasterBlock
     static void FlushDirtyBlocks();
     static int  FlushCacheBlock(int bDirtyBlocksOnly = FALSE);
     static void Verify();
+
+    static void EnterDisableDirtyBlockFlush();
+    static void LeaveDisableDirtyBlockFlush();
 
 #ifdef notdef
     static void CheckNonOrphanedBlocks(GDALRasterBand* poBand);

@@ -30,7 +30,7 @@
 #include "ntf.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ntfrecord.cpp 35614 2016-10-05 16:34:38Z goatbar $");
+CPL_CVSID("$Id$");
 
 static int nFieldBufSize = 0;
 static char *pszFieldBuf = NULL;
@@ -222,6 +222,9 @@ const char * NTFRecord::GetField( int nStart, int nEnd )
 
 {
     const int nSize = nEnd - nStart + 1;
+
+    if( pszData == NULL )
+        return "";
 
 /* -------------------------------------------------------------------- */
 /*      Reallocate working buffer larger if needed.                     */

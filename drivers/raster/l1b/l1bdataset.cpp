@@ -40,7 +40,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id: l1bdataset.cpp 36981 2016-12-20 19:46:41Z rouault $");
+CPL_CVSID("$Id$");
 
 typedef enum {                  // File formats
     L1B_NONE,           // Not a L1B format

@@ -39,7 +39,7 @@
 #include "gdal_mdreader.h"
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id: reader_kompsat.cpp 36528 2016-11-27 16:35:01Z goatbar $");
+CPL_CVSID("$Id$");
 
 /**
  * GDALMDReaderKompsat()

@@ -42,7 +42,7 @@
 #include "cpl_string.h"
 #include "cpl_vsi.h"
 
-CPL_CVSID("$Id: cplkeywordparser.cpp 36979 2016-12-20 18:40:40Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -258,7 +258,7 @@ int CPLKeywordParser::ReadWord( CPLString &osWord )
 
     SkipWhite();
 
-    if( *pszHeaderNext == '\0' )
+    if( *pszHeaderNext == '\0' || *pszHeaderNext == '=' )
         return FALSE;
 
     while( *pszHeaderNext != '\0'
@@ -330,6 +330,8 @@ void CPLKeywordParser::SkipWhite()
             {
                 pszHeaderNext++;
             }
+            if( *pszHeaderNext == '\0' )
+                break;
 
             pszHeaderNext += 2;
             continue;

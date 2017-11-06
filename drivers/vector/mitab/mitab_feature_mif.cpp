@@ -49,7 +49,7 @@
 #include "ogr_feature.h"
 #include "ogr_geometry.h"
 
-CPL_CVSID("$Id: mitab_feature_mif.cpp 38426 2017-05-16 19:38:58Z rouault $");
+CPL_CVSID("$Id$");
 
 /*=====================================================================
  *                      class TABFeature
@@ -2211,7 +2211,10 @@ int TABCollection::ReadGeometryFromMIFFile(MIDDATAFile *fp)
             pszLine++;  // skip leading spaces
 
         if (*pszLine == '\0')
+        {
+            pszLine = fp->GetLine();
             continue;  // Skip blank lines
+        }
 
         if (STARTS_WITH_CI(pszLine, "REGION"))
         {

@@ -31,7 +31,7 @@
 #include "gdal_utils_priv.h"
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id: gdal_rasterize_bin.cpp 37460 2017-02-26 02:06:36Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                               Usage()                                */

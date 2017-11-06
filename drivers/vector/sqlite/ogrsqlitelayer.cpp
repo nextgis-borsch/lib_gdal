@@ -42,7 +42,7 @@
 #include "ogrsqliteutility.h"
 #include <cassert>
 
-CPL_CVSID("$Id: ogrsqlitelayer.cpp 37809 2017-03-20 15:28:41Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                           OGRSQLiteLayer()                           */

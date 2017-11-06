@@ -28,7 +28,7 @@
 
 #include "ogr_amigocloud.h"
 
-CPL_CVSID("$Id: ogramigoclouddriver.cpp 35611 2016-10-04 14:58:17Z goatbar $");
+CPL_CVSID("$Id$");
 
 extern "C" void RegisterOGRAmigoCloud();
 

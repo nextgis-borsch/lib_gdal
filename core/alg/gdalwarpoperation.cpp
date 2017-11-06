@@ -49,7 +49,7 @@
 #include "ogr_api.h"
 #include "ogr_core.h"
 
-CPL_CVSID("$Id: gdalwarpoperation.cpp 38093 2017-04-21 21:02:44Z rouault $");
+CPL_CVSID("$Id$");
 
 struct _GDALWarpChunk {
     int dx, dy, dsx, dsy;
@@ -589,7 +589,7 @@ CPLErr GDALWarpOperation::Initialize( const GDALWarpOptions *psNewOptions )
         CSLFetchNameValue( psOptions->papszWarpOptions, "CUTLINE" );
 
     CPLErr eErr = CE_None;
-    if( pszCutlineWKT )
+    if( pszCutlineWKT && psOptions->hCutline == NULL )
     {
         if( OGR_G_CreateFromWkt( (char **) &pszCutlineWKT, NULL,
                                  (OGRGeometryH *) &(psOptions->hCutline) )
@@ -599,14 +599,11 @@ CPLErr GDALWarpOperation::Initialize( const GDALWarpOptions *psNewOptions )
             CPLError( CE_Failure, CPLE_AppDefined,
                       "Failed to parse CUTLINE geometry wkt." );
         }
-        else
-        {
-            const char *pszBD = CSLFetchNameValue( psOptions->papszWarpOptions,
-                                                   "CUTLINE_BLEND_DIST" );
-            if( pszBD )
-                psOptions->dfCutlineBlendDist = CPLAtof(pszBD);
-        }
     }
+    const char *pszBD = CSLFetchNameValue( psOptions->papszWarpOptions,
+                                            "CUTLINE_BLEND_DIST" );
+    if( pszBD )
+        psOptions->dfCutlineBlendDist = CPLAtof(pszBD);
 
 /* -------------------------------------------------------------------- */
 /*      Set SRC_ALPHA_MAX if not provided.                              */
@@ -1959,13 +1956,25 @@ CPLErr GDALWarpOperation::WarpRegionToBuffer(
             oWK.papanBandSrcValid = NULL;
         }
 
+
+/* -------------------------------------------------------------------- */
+/*      If there's just a single band, then transfer                    */
+/*      papanBandSrcValid[0] as panUnifiedSrcValid.                     */
+/* -------------------------------------------------------------------- */
+        if( oWK.papanBandSrcValid != NULL && psOptions->nBandCount == 1 )
+        {
+            oWK.panUnifiedSrcValid = oWK.papanBandSrcValid[0];
+            CPLFree( oWK.papanBandSrcValid );
+            oWK.papanBandSrcValid = NULL;
+        }
+
 /* -------------------------------------------------------------------- */
 /*      If UNIFIED_SRC_NODATA is set, then compute a unified input      */
 /*      pixel mask if and only if all bands nodata is true.  That       */
 /*      is, we only treat a pixel as nodata if all bands match their    */
 /*      respective nodata values.                                       */
 /* -------------------------------------------------------------------- */
-        if( oWK.papanBandSrcValid != NULL &&
+        else if( oWK.papanBandSrcValid != NULL &&
             CPLFetchBool( psOptions->papszWarpOptions, "UNIFIED_SRC_NODATA",
                           false )
             && eErr == CE_None )

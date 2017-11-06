@@ -34,7 +34,7 @@
 */
 
 /******************************************************************************
- * $Id: marfa.h 37669 2017-03-09 23:35:51Z lplesea $
+ * $Id$
  *
  * Project:  Meta Raster Format
  * Purpose:  MRF structures

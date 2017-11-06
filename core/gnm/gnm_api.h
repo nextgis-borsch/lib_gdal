@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gnm_api.h 35902 2016-10-24 12:00:50Z goatbar $
+ * $Id$
  *
  * Project:  GDAL/OGR Geography Network support (Geographic Network Model)
  * Purpose:  GNM C API.

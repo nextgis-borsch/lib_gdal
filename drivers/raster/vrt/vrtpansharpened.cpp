@@ -54,7 +54,7 @@
 #include "ogr_core.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: vrtpansharpened.cpp 37310 2017-02-06 11:42:54Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                    GDALCreatePansharpenedVRT()                       */

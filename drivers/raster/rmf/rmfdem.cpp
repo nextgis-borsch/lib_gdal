@@ -31,7 +31,7 @@
 
 #include "rmfdataset.h"
 
-CPL_CVSID("$Id: rmfdem.cpp 35663 2016-10-09 16:35:15Z goatbar $");
+CPL_CVSID("$Id$");
 
 /*
  * The encoded data stream is a series of records.

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: GDALProximity.java 35222 2016-08-28 06:06:11Z goatbar $
+ * $Id$
  *
  * Project: GDAL
  * Purpose: Compute each pixel's proximity to a set of target pixels.

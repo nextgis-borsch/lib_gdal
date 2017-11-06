@@ -33,7 +33,7 @@
 #include "swq.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrsqliteselectlayer.cpp 37534 2017-03-01 16:50:58Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                   OGRSQLiteSelectLayerCommonBehaviour()              */

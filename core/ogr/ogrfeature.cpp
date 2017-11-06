@@ -54,7 +54,7 @@
 
 #include "ogr_json_header.h"
 
-CPL_CVSID("$Id: ogrfeature.cpp 37471 2017-02-26 02:25:37Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                             OGRFeature()                             */

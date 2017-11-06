@@ -35,7 +35,7 @@
 #include "ogr_p.h"
 #include "cpl_vsi_error.h"
 
-CPL_CVSID("$Id: ogrlibkmldatasource.cpp 37108 2017-01-12 10:16:27Z rouault $");
+CPL_CVSID("$Id$");
 
 using kmlbase::Attributes;
 using kmldom::ContainerPtr;
@@ -66,6 +66,22 @@ static const char OGRLIBKMLSRSWKT[] =
     "       UNIT[\"degree\",0.01745329251994328,"
     "           AUTHORITY[\"EPSG\",\"9122\"]],"
     "           AUTHORITY[\"EPSG\",\"4326\"]]";
+
+/************************************************************************/
+/*                           OGRLIBKMLParse()                           */
+/************************************************************************/
+
+static ElementPtr OGRLIBKMLParse(std::string oKml, std::string *posError)
+{
+    // To allow reading files using an explict namespace prefix like <kml:kml>
+    // we need to use ParseNS (see #6981). But if we use ParseNS, we have
+    // issues reading gx: elements. So use ParseNS only when we have errors
+    // with Parse. This is not completely satisfactory...
+    ElementPtr element = kmldom::Parse(oKml, posError);
+    if( element == NULL )
+        element = kmldom::ParseNS(oKml, posError);
+    return element;
+}
 
 /******************************************************************************
  OGRLIBKMLDataSource Constructor
@@ -904,7 +920,7 @@ int OGRLIBKMLDataSource::ParseIntoStyleTable(
 {
     /***** parse the kml into the dom *****/
     std::string oKmlErrors;
-    ElementPtr poKmlRoot = kmldom::Parse( *poKmlStyleKml, &oKmlErrors );
+    ElementPtr poKmlRoot = OGRLIBKMLParse( *poKmlStyleKml, &oKmlErrors );
 
     if( !poKmlRoot )
     {
@@ -974,7 +990,7 @@ int OGRLIBKMLDataSource::OpenKml( const char *pszFilename, int bUpdateIn )
     /***** parse the kml into the DOM *****/
     std::string oKmlErrors;
 
-    ElementPtr poKmlRoot = kmldom::Parse( oKmlKml, &oKmlErrors );
+    ElementPtr poKmlRoot = OGRLIBKMLParse( oKmlKml, &oKmlErrors );
 
     if( !poKmlRoot )
     {
@@ -1090,7 +1106,7 @@ int OGRLIBKMLDataSource::OpenKmz( const char *pszFilename, int bUpdateIn )
 
     /***** parse the kml into the DOM *****/
     std::string oKmlErrors;
-    ElementPtr poKmlDocKmlRoot = kmldom::Parse( oKmlKml, &oKmlErrors );
+    ElementPtr poKmlDocKmlRoot = OGRLIBKMLParse( oKmlKml, &oKmlErrors );
 
     if( !poKmlDocKmlRoot )
     {
@@ -1158,7 +1174,7 @@ int OGRLIBKMLDataSource::OpenKmz( const char *pszFilename, int bUpdateIn )
             {
                 /***** parse the kml into the DOM *****/
                 oKmlErrors.clear();
-                ElementPtr poKmlLyrRoot = kmldom::Parse( oKml, &oKmlErrors );
+                ElementPtr poKmlLyrRoot = OGRLIBKMLParse( oKml, &oKmlErrors );
 
                 if( !poKmlLyrRoot )
                 {
@@ -1315,7 +1331,7 @@ int OGRLIBKMLDataSource::OpenDir( const char *pszFilename, int bUpdateIn )
 
         /***** parse the kml into the DOM *****/
         std::string oKmlErrors;
-        ElementPtr poKmlRoot = kmldom::Parse( oKmlKml, &oKmlErrors );
+        ElementPtr poKmlRoot = OGRLIBKMLParse( oKmlKml, &oKmlErrors );
 
         if( !poKmlRoot )
         {

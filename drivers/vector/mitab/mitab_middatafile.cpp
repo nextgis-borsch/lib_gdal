@@ -41,7 +41,7 @@
 #include "cpl_vsi.h"
 #include "mitab_priv.h"
 
-CPL_CVSID("$Id: mitab_middatafile.cpp 37363 2017-02-12 22:25:59Z goatbar $");
+CPL_CVSID("$Id$");
 
 /*=====================================================================
  *                      class MIDDATAFile

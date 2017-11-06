@@ -42,7 +42,7 @@
 #include "cpl_vsi_virtual.h"
 #include "cpl_http.h"
 
-CPL_CVSID("$Id: cpl_vsil_curl.cpp 39224 2017-06-21 08:50:19Z rouault $");
+CPL_CVSID("$Id$");
 
 #ifndef HAVE_CURL
 
@@ -4761,6 +4761,7 @@ char** VSIGSFSHandler::GetFileList( const char *pszDirname,
         }
         else
         {
+            CPLFree(sWriteFuncData.pBuffer);
             delete poHandleHelper;
             return NULL;
         }

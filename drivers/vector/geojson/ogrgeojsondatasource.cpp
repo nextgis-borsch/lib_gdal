@@ -57,7 +57,7 @@
 // #include "symbol_renames.h"
 
 
-CPL_CVSID("$Id: ogrgeojsondatasource.cpp 38109 2017-04-22 22:26:06Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                           OGRGeoJSONDataSource()                     */

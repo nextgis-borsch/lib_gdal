@@ -54,7 +54,7 @@
 
 //! @cond Doxygen_Suppress
 
-CPL_CVSID("$Id: cpl_vsi_mem.cpp 36990 2016-12-21 19:42:05Z goatbar $");
+CPL_CVSID("$Id$");
 
 /*
 ** Notes on Multithreading:
@@ -377,14 +377,13 @@ size_t VSIMemHandle::Read( void * pBuffer, size_t nSize, size_t nCount )
     // FIXME: Integer overflow check should be placed here:
     size_t nBytesToRead = nSize * nCount;
 
+    if( poFile->nLength < m_nOffset )
+    {
+        bEOF = true;
+        return 0;
+    }
     if( nBytesToRead + m_nOffset > poFile->nLength )
     {
-        if( poFile->nLength < m_nOffset )
-        {
-            bEOF = true;
-            return 0;
-        }
-
         nBytesToRead = static_cast<size_t>(poFile->nLength - m_nOffset);
         nCount = nBytesToRead / nSize;
         bEOF = true;

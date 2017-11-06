@@ -46,7 +46,7 @@
 #include "gdal_alg_priv.h"
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id: gdal_tps.cpp 36667 2016-12-04 05:25:23Z goatbar $");
+CPL_CVSID("$Id$");
 
 CPL_C_START
 CPLXMLNode *GDALSerializeTPSTransformer( void *pTransformArg );

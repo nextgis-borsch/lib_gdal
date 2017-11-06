@@ -44,7 +44,7 @@
 #include "netcdf.h"
 #include "ogr_core.h"
 
-CPL_CVSID("$Id: gmtdataset.cpp 37956 2017-04-11 13:42:14Z goatbar $");
+CPL_CVSID("$Id$");
 
 extern CPLMutex *hNCMutex; /* shared with netcdf. See netcdfdataset.cpp */
 

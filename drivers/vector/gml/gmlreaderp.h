@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gmlreaderp.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id$
  *
  * Project:  GML Reader
  * Purpose:  Private Declarations for OGR free GML Reader code.

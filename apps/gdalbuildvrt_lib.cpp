@@ -55,7 +55,7 @@
 #include "ogr_srs_api.h"
 #include "vrtdataset.h"
 
-CPL_CVSID("$Id: gdalbuildvrt_lib.cpp 37978 2017-04-13 15:25:54Z rouault $");
+CPL_CVSID("$Id$");
 
 #define GEOTRSFRM_TOPLEFT_X            0
 #define GEOTRSFRM_WE_RES               1

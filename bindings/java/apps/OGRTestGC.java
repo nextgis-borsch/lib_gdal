@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: OGRTestGC.java 35219 2016-08-27 22:39:24Z goatbar $
+ * $Id$
  *
  * Name:     OGRTestGC.java
  * Project:  OGR Java Interface

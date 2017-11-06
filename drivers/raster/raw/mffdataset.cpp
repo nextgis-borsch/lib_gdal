@@ -37,7 +37,7 @@
 #include <cmath>
 #include <algorithm>
 
-CPL_CVSID("$Id: mffdataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
+CPL_CVSID("$Id$");
 
 enum {
   MFFPRJ_NONE,

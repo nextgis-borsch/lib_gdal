@@ -58,7 +58,7 @@
 #include "ogr_srs_api.h"
 #include "vrtdataset.h"
 
-CPL_CVSID("$Id: gdalwarp_lib.cpp 37987 2017-04-14 07:42:50Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                        GDALWarpAppOptions                            */

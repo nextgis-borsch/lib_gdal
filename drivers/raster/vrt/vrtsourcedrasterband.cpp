@@ -49,7 +49,7 @@
 #include "gdal_priv.h"
 #include "ogr_geometry.h"
 
-CPL_CVSID("$Id: vrtsourcedrasterband.cpp 37310 2017-02-06 11:42:54Z goatbar $");
+CPL_CVSID("$Id$");
 
 /*! @cond Doxygen_Suppress */
 
@@ -246,8 +246,7 @@ CPLErr VRTSourcedRasterBand::IRasterIO( GDALRWFlag eRWFlag,
         // Do nothing
     }
     else if( nPixelSpace == GDALGetDataTypeSizeBytes(eBufType) &&
-         (!m_bNoDataValueSet || (!CPLIsNan(m_dfNoDataValue) &&
-                                 m_dfNoDataValue == 0)) )
+         (!m_bNoDataValueSet || m_dfNoDataValue == 0.0) )
     {
         if( nLineSpace == nBufXSize * nPixelSpace )
         {
@@ -264,7 +263,7 @@ CPLErr VRTSourcedRasterBand::IRasterIO( GDALRWFlag eRWFlag,
             }
         }
     }
-    else if( m_bNoDataValueSet )
+    else
     {
         double dfWriteValue = 0.0;
         if( m_bNoDataValueSet )
@@ -359,7 +358,8 @@ int  VRTSourcedRasterBand::IGetDataCoverageStatus( int nXOff,
         if( !papoSources[iSource]->IsSimpleSource() )
         {
             delete poPolyNonCoveredBySources;
-            return GDAL_DATA_COVERAGE_STATUS_UNIMPLEMENTED;
+            return GDAL_DATA_COVERAGE_STATUS_UNIMPLEMENTED |
+                   GDAL_DATA_COVERAGE_STATUS_DATA;
         }
         VRTSimpleSource* poSS = reinterpret_cast<VRTSimpleSource*>(papoSources[iSource]);
         // Check if the AOI is fully inside the source

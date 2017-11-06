@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_alg.h 37723 2017-03-16 17:07:53Z rouault $
+ * $Id$
  *
  * Project:  GDAL Image Processing Algorithms
  * Purpose:  Prototypes, and definitions for various GDAL based algorithms.
@@ -162,6 +162,7 @@ int CPL_DLL GDALGenImgProjTransform(
     double *x, double *y, double *z, int *panSuccess );
 
 void GDALSetTransformerDstGeoTransform( void *, const double * );
+void GDALGetTransformerDstGeoTransform( void*, double* );
 
 /* Geo to geo reprojection transformer. */
 void CPL_DLL *

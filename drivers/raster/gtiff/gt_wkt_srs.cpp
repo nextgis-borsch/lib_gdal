@@ -66,7 +66,7 @@
 #include "tifvsi.h"
 #include "xtiffio.h"
 
-CPL_CVSID("$Id: gt_wkt_srs.cpp 38045 2017-04-17 17:48:25Z rouault $")
+CPL_CVSID("$Id$")
 
 static const geokey_t ProjLinearUnitsInterpCorrectGeoKey =
     static_cast<geokey_t>(3059);
@@ -1142,7 +1142,23 @@ char *GTIFGetOGISDefn( GTIF *hGTIF, GTIFDefn * psDefn )
         OGR_SRSNode *poOldRoot = oSRS.GetRoot()->Clone();
 
         oSRS.Clear();
-        oSRS.SetNode( "COMPD_CS", "unknown" );
+
+/* -------------------------------------------------------------------- */
+/*      Set COMPD_CS name.                                              */
+/* -------------------------------------------------------------------- */
+        char szCTString[512];
+        szCTString[0] = '\0';
+        if( GDALGTIFKeyGetASCII( hGTIF, GTCitationGeoKey, szCTString,
+                                 0, sizeof(szCTString) ) &&
+            strstr( szCTString, " = " ) == NULL )
+        {
+            oSRS.SetNode( "COMPD_CS", szCTString );
+        }
+        else
+        {
+            oSRS.SetNode( "COMPD_CS", "unknown" );
+        }
+
         oSRS.GetRoot()->AddChild( poOldRoot );
 
 /* -------------------------------------------------------------------- */

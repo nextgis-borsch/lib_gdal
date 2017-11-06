@@ -34,7 +34,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id: ograeronavfaalayer.cpp 36981 2016-12-20 19:46:41Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                        OGRAeronavFAALayer()                          */

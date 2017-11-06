@@ -43,7 +43,7 @@
 #include "ogr_p.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: ogr_srs_xml.cpp 36979 2016-12-20 18:40:40Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                              parseURN()                              */

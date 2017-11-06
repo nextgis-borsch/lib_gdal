@@ -40,7 +40,7 @@
 #include "ogr_geometry.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrcircularstring.cpp 36682 2016-12-04 20:34:45Z rouault $");
+CPL_CVSID("$Id$");
 
 static inline double dist(double x0, double y0, double x1, double y1)
 {

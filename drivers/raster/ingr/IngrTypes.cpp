@@ -34,7 +34,7 @@
 #include "stdio.h"
 #endif
 
-CPL_CVSID("$Id: IngrTypes.cpp 36578 2016-11-30 15:05:11Z goatbar $");
+CPL_CVSID("$Id$");
 
 static const INGR_FormatDescription INGR_FormatTable[] = {
     {PackedBinary,            "Packed Binary",               GDT_Byte},

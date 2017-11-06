@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: minidriver_tms.h 37463 2017-02-26 02:16:35Z goatbar $
+ * $Id$
  *
  * Project:  WMS Client Driver
  * Purpose:  Implementation of Dataset and RasterBand classes for WMS

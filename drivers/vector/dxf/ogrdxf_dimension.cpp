@@ -31,7 +31,7 @@
 #include "ogr_dxf.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrdxf_dimension.cpp 37040 2016-12-30 15:31:43Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                         TranslateDIMENSION()                         */
@@ -126,7 +126,12 @@ OGRFeature *OGRDXFLayer::TranslateDIMENSION()
             break;
         }
     }
-
+    if( nCode < 0 )
+    {
+        DXF_LAYER_READER_ERROR();
+        delete poFeature;
+        return NULL;
+    }
     if( nCode == 0 )
         poDS->UnreadValue();
 
@@ -360,7 +365,11 @@ the approach is as above in all these cases.
 void OGRDXFLayer::FormatDimension( CPLString &osText, double dfValue )
 
 {
-    const int nPrecision = atoi(poDS->GetVariable("$LUPREC","4"));
+    int nPrecision = atoi(poDS->GetVariable("$LUPREC","4"));
+    if( nPrecision < 0 )
+        nPrecision = 0;
+    else if( nPrecision > 20 )
+        nPrecision = 20;
 
     // We could do a significantly more precise formatting if we want
     // to spend the effort.  See QCAD's rs_dimlinear.cpp and related files

@@ -29,7 +29,7 @@
 #include "cpl_atomic_ops.h"
 #include "ogr_sqlite.h"
 
-CPL_CVSID("$Id: ogrsqlitevfs.cpp 37594 2017-03-04 15:52:52Z rouault $");
+CPL_CVSID("$Id$");
 
 #ifdef DEBUG_IO
 # define DEBUG_ONLY

@@ -34,7 +34,7 @@
 
 #include <cmath>
 
-CPL_CVSID("$Id: ogrdxflayer.cpp 38666 2017-05-29 10:03:12Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                            OGRDXFLayer()                             */
@@ -200,8 +200,8 @@ void OGRDXFLayer::PrepareLineStyle( OGRFeature *poFeature )
 /* -------------------------------------------------------------------- */
 /*      Is the layer disabled/hidden/frozen/off?                        */
 /* -------------------------------------------------------------------- */
-    int bHidden =
-        EQUAL(poDS->LookupLayerProperty( osLayer, "Hidden" ), "1");
+    const char* pszHidden = poDS->LookupLayerProperty( osLayer, "Hidden" );
+    const bool bHidden = pszHidden && EQUAL(pszHidden, "1");
 
 /* -------------------------------------------------------------------- */
 /*      Work out the color for this feature.                            */
@@ -786,8 +786,8 @@ OGRFeature *OGRDXFLayer::TranslateTEXT()
 /* -------------------------------------------------------------------- */
     CPLString osLayer = poFeature->GetFieldAsString("Layer");
 
-    int bHidden =
-        EQUAL(poDS->LookupLayerProperty( osLayer, "Hidden" ), "1");
+    const char* pszHidden = poDS->LookupLayerProperty( osLayer, "Hidden" );
+    const bool bHidden = pszHidden && EQUAL(pszHidden, "1");
 
 /* -------------------------------------------------------------------- */
 /*      Work out the color for this feature.                            */
@@ -2519,6 +2519,17 @@ OGRFeature *OGRDXFLayer::GetNextUnfilteredFeature()
                 CPLDebug( "DWG", "Ignoring one or more of entity '%s'.",
                           szLineBuf );
             }
+        }
+
+        // If there are no more features, but we do still have pending features
+        // (for example, after an INSERT), return the first pending feature.
+        if ( poFeature == NULL && !apoPendingFeatures.empty() )
+        {
+            poFeature = apoPendingFeatures.front();
+            apoPendingFeatures.pop();
+
+            poFeature->SetFID( iNextFID++ );
+            return poFeature;
         }
     }
 

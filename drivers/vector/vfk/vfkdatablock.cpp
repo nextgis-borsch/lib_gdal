@@ -37,7 +37,7 @@
 #include "cpl_conv.h"
 #include "cpl_error.h"
 
-CPL_CVSID("$Id: vfkdatablock.cpp 38846 2017-06-04 09:00:01Z rouault $");
+CPL_CVSID("$Id$");
 
 /*!
   \brief VFK Data Block constructor

@@ -30,7 +30,7 @@
 #include "cpl_string.h"
 #include "io_selafin.h"
 
-CPL_CVSID("$Id: ogrselafindriver.cpp 35562 2016-09-30 19:16:16Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                     OGRSelafinDriverIdentify()                       */

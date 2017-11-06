@@ -33,7 +33,7 @@
 #include "ogrwarpedlayer.h"
 #include "ogrunionlayer.h"
 
-CPL_CVSID("$Id: ogrvrtdatasource.cpp 36883 2016-12-15 13:31:12Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                       OGRVRTGetGeometryType()                        */
@@ -827,6 +827,8 @@ bool OGRVRTDataSource::Initialize( CPLXMLNode *psTreeIn, const char *pszNewName,
 
 {
     CPLAssert( nLayers == 0 );
+
+    AddForbiddenNames(pszNewName);
 
     psTree = psTreeIn;
 
