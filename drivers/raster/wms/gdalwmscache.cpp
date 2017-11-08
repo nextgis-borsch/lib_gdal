@@ -50,7 +50,7 @@ CPL_CVSID("$Id$");
 //                                  64 Mb (67108864 bytes)
 //</Cache>
 
-static void CleanCahceThread( void *pData )
+static void CleanCacheThread( void *pData )
 {
     GDALWMSCache *pCache = static_cast<GDALWMSCache *>(pData);
     pCache->Clean();
@@ -262,7 +262,7 @@ CPLErr GDALWMSCache::Initialize(const char *pszUrl, CPLXMLNode *pConfig) {
 
 CPLErr GDALWMSCache::Insert(const char *pszKey, const CPLString &soFileName)
 {
-    if( m_poCache != NULL )
+    if( m_poCache != NULL && pszKey != NULL )
     {
         // Add file to cache
         CPLErr result = m_poCache->Insert(pszKey, soFileName);
@@ -271,7 +271,7 @@ CPLErr GDALWMSCache::Insert(const char *pszKey, const CPLString &soFileName)
             // Start clean thread
             if( m_hCleanThread == NULL)
             {
-                m_hCleanThread = CPLCreateJoinableThread(CleanCahceThread, this);
+                m_hCleanThread = CPLCreateJoinableThread(CleanCacheThread, this);
             }
         }
         return result;
