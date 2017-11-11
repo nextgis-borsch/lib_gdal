@@ -93,7 +93,7 @@ with '\*' have high priority to be implemented.
 | fits | no |  |  |
 | georaster | no |  |  |
 | **gff** | **yes** | no | - |
-| gif * | no |  | Russian maps in internet are in gif and OZI |
+| **gif** | **yes** | [GIF](https://github.com/nextgis-borsch/lib_gif) | Russian maps in internet are in gif and OZI |
 | grass * | no |  |  |
 | **grib** | **yes** | Optionally: JASPER | No JASPER support implemented; No additional build targets implemented |
 | **gsg** | **yes** | no | 3 drivers in one (GSAG, GSBG, GS7BG) |
