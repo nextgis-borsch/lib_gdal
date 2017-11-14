@@ -84,6 +84,9 @@ set(LIB_CSOURCES
 )
 
 find_anyproject(QHULL DEFAULT OFF)
+if(QHULL_FOUND)
+    add_definitions(-DEXTERNAL_QHULL)
+endif()
 
 find_anyproject(Armadillo DEFAULT OFF)
 if(ARMADILLO_FOUND)
