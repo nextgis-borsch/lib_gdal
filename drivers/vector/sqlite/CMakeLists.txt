@@ -28,22 +28,14 @@
 if(ENABLE_SQLITE_GPKG)
     set(TARGET_NAME vec_sqlite)
 
-    # TODO: add Spatialite library support.
-    #find_anyproject(... spatialite ...)
-    #if(... spatialite found ...)
-    #   add_definitions(-DHAVE_SPATIALITE)
-    #   include_directories(${... spatialite includes ...})
-    #   if(STREQUAL(HAVE_SPATIALITE,dlopen))
-    #       add_definitions(-DHAVE_SPATIALITE -DSPATIALITE_DLOPEN -DSPATIALITE_412_OR_LATER
-    #           -DSPATIALITE_SONAME=\"$(SPATIALITE_SONAME)\")
-    #   endif()
-    #   if(SPATIALITE_AMALGAMATION)
-    #       add_definitions(-DSPATIALITE_AMALGAMATION)
-    #   endif()
-    #   if(SPATIALITE_412_OR_LATER)
-    #       add_definitions(-DSPATIALITE_412_OR_LATER)
-    #   endif()
-    #endif()
+    find_anyproject(Spatialite DEFAULT ON)
+    if(SPATIALITE_FOUND)
+        add_definitions(-DHAVE_SPATIALITE)
+        # We sure that spatialite is 4.3 or higher
+        add_definitions(-DSPATIALITE_412_OR_LATER)
+
+        include_directories(${SPATIALITE_INCLUDE_DIRS})
+    endif()
 
     # TODO: add PCRE Library support.
     #find_anyproject(... PCRE found ...)
@@ -52,6 +44,9 @@ if(ENABLE_SQLITE_GPKG)
     #endif()
 
     # TODO: Add rasterlite2 support.
+    # ifeq ($(HAVE_RASTERLITE2),yes)
+    # CPPFLAGS +=  -DHAVE_RASTERLITE2 $(RASTERLITE2_CFLAGS)
+    # endif
 
     if(DEFINED SQLITE_HAS_COLUMN_METADATA)
         add_definitions(-DSQLITE_HAS_COLUMN_METADATA)
@@ -89,8 +84,6 @@ if(ENABLE_SQLITE_GPKG)
         ogrsqliteutility.cpp
     )
 
-    # TODO: implement test_load_virtual_ogr target if needed.
-
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
     if(DEPENDENCY_LIB)
         add_dependencies(${TARGET_NAME} ${DEPENDENCY_LIB})
@@ -98,6 +91,11 @@ if(ENABLE_SQLITE_GPKG)
 
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
+    set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
+    set(DEPENDENCY_LIB ${DEPENDENCY_LIB} PARENT_SCOPE)
+    if(NOT SPATIALITE_FOUND)
+        warning_msg("Skip spatialite in sqlite")
+    endif()
 else()
     warning_msg("Skip sqlite")
 endif()
