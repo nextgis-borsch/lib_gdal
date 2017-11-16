@@ -1,6 +1,6 @@
 # GDAL - Geospatial Data Abstraction Library
 
-This is restructured GDAL sources tree fork with CMake build system [code name borsch].
+This is restructured GDAL sources tree fork with CMake build system [codename Borsch].
 
 GDAL is an open source X/MIT licensed translator library for raster and vector
 geospatial data formats. This is a mirror of the GDAL Subversion repository.
