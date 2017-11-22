@@ -161,6 +161,18 @@ if(LIBXML2_FOUND)
     add_definitions(-DHAVE_LIBXML2)
 endif()
 
+# This is here as geos used in core/ogr and apps
+find_anyproject(GEOS DEFAULT ON)
+if(GEOS_FOUND)
+    add_definitions(-DHAVE_GEOS=1)
+    if(GEOS_INCLUDE_DIRS)
+        get_filename_component(GEOS_ROOT ${GEOS_INCLUDE_DIRS} PATH)
+        include_directories(${GEOS_ROOT}/capi)
+    endif()
+else()
+    message(WARNING "No geos support")
+endif()
+
 # TODO: move this to /drivers or /drivers/raster while it's not needed for the core GDAL
 find_anyproject(JPEG DEFAULT ON)
 if(JPEG_FOUND)
