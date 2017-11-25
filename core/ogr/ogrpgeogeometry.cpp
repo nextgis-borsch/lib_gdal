@@ -51,7 +51,7 @@
 #include "ogr_core.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrpgeogeometry.cpp 38691 2017-05-30 14:03:26Z rouault $");
 
 static const int SHPP_TRISTRIP  = 0;
 static const int SHPP_TRIFAN    = 1;

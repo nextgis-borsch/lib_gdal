@@ -31,7 +31,7 @@
 // Must be first for DEBUG_BOOL case
 #include "ogr_gmlas.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgmlasfeatureclass.cpp 39652 2017-07-24 17:32:40Z rouault $");
 
 /************************************************************************/
 /*                              GMLASField()                            */

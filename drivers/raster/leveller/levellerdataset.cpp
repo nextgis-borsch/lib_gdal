@@ -35,7 +35,7 @@
 #include "gdal_pam.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: levellerdataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 static bool str_equal(const char *_s1, const char *_s2) {
     return 0 == strcmp(_s1, _s2);

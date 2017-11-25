@@ -44,7 +44,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: jpeg2000dataset.cpp 39440 2017-07-02 20:57:25Z rouault $");
 
 // XXX: Part of code below extracted from the JasPer internal headers and
 // must be in sync with JasPer version (this one works with JasPer 1.900.1)

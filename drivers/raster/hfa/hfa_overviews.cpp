@@ -40,7 +40,7 @@
 #include "gdal_pam.h"
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: hfa_overviews.cpp 37899 2017-04-05 15:40:03Z goatbar $");
 
 CPLErr HFAAuxBuildOverviews( const char *pszOvrFilename,
                              GDALDataset *poParentDS,

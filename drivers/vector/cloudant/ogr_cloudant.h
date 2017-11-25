@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_cloudant.h 37371 2017-02-13 11:41:59Z rouault $
  *
  * Project:  Cloudant Translator
  * Purpose:  Definition of classes for OGR Cloudant driver.

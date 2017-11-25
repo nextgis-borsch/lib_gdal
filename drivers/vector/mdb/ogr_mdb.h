@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_mdb.h 40686 2017-11-10 22:43:51Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions for MDB driver.
@@ -43,11 +43,16 @@
 
 class OGRMDBJavaEnv
 {
+    GIntBig nLastPID;
+
+        int Init();
+
     public:
         OGRMDBJavaEnv();
         ~OGRMDBJavaEnv();
 
-        int Init();
+    int InitIfNeeded();
+    static void CleanupMutex();
 
     JavaVM *jvm;
     JNIEnv *env;

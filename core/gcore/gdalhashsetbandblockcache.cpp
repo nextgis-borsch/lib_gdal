@@ -39,7 +39,7 @@
 #include "cpl_hash_set.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalhashsetbandblockcache.cpp 36523 2016-11-27 04:13:26Z goatbar $");
 
 //! @cond Doxygen_Suppress
 

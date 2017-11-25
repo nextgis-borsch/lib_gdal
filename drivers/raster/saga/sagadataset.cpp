@@ -37,7 +37,7 @@
 #include "gdal_pam.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: sagadataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 #ifndef INT_MAX
 # define INT_MAX 2147483647

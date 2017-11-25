@@ -30,7 +30,7 @@
 #include "hfa_p.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: hfatest.cpp 35929 2016-10-25 16:09:00Z goatbar $");
 
 /************************************************************************/
 /*                               Usage()                                */

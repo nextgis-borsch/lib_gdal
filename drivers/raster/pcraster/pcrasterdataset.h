@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: pcrasterdataset.h 36501 2016-11-25 14:09:24Z rouault $
  *
  * Project:  PCRaster Integration
  * Purpose:  PCRaster CSF 2.0 raster file driver declarations.

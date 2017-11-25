@@ -1,4 +1,4 @@
-/* $Id$
+/* $Id: avc_binwr.c 36381 2016-11-21 10:29:21Z rouault $
  *
  * Name:     avc_binwr.c
  * Project:  Arc/Info vector coverage (AVC)  E00->BIN conversion library

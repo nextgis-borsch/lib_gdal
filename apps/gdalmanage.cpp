@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalmanage.cpp 34654 2016-07-14 05:53:06Z goatbar $");
 
 /************************************************************************/
 /*                               Usage()                                */

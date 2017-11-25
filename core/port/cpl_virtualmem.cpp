@@ -48,7 +48,7 @@
 #include "cpl_error.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_virtualmem.cpp 36935 2016-12-17 15:12:03Z goatbar $");
 
 #ifdef NDEBUG
 // Non NDEBUG: Ignore the result.

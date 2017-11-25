@@ -47,7 +47,7 @@
 #include "ogreditablelayer.h"
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrcsvdatasource.cpp 37367 2017-02-13 05:32:41Z goatbar $");
 
 /************************************************************************/
 /*                     OGRCSVEditableLayerSynchronizer                  */

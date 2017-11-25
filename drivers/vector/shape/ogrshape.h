@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogrshape.h 36704 2016-12-05 16:33:06Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions within the Shapefile driver to implement

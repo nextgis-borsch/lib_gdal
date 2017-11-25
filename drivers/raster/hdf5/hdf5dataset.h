@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: hdf5dataset.h 37931 2017-04-09 06:26:02Z goatbar $
  *
  * Project:  Hierarchical Data Format Release 5 (HDF5)
  * Purpose:  Header file for HDF5 datasets reader.

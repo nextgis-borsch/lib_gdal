@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_sxf.h 36501 2016-11-25 14:09:24Z rouault $
  *
  * Project:  SXF Translator
  * Purpose:  Include file defining classes for OGR SXF driver, datasource and layers.

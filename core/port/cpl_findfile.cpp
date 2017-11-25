@@ -36,7 +36,7 @@
 #include "cpl_string.h"
 #include "cpl_vsi.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_findfile.cpp 36797 2016-12-11 21:48:20Z goatbar $");
 
 typedef struct
 {

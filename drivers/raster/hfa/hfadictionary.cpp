@@ -40,7 +40,7 @@
 #include "cpl_string.h"
 #include "cpl_vsi.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: hfadictionary.cpp 37904 2017-04-05 17:19:53Z goatbar $");
 
 static const char * const apszDefDefn[] = {
     "Edsc_Table",

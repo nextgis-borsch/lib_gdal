@@ -52,7 +52,7 @@
 #include "ogr_spatialref.h"
 #include "vrtdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdal_translate_lib.cpp 40479 2017-10-17 22:52:41Z rouault $");
 
 static int ArgIsNumeric( const char * );
 static void AttachMetadata( GDALDatasetH, char ** );
@@ -1492,13 +1492,7 @@ GDALDatasetH GDALTranslate( const char *pszDest, GDALDatasetH hSrcDataset,
                 bSignedByte = true;
             int bClamped = FALSE, bRounded = FALSE;
             double dfVal;
-            if( eBandType == GDT_Float32 && CPLIsInf(psOptions->dfNoDataReal) )
-            {
-                dfVal = std::numeric_limits<float>::infinity();
-                if( psOptions->dfNoDataReal < 0 )
-                    dfVal = -dfVal;
-            }
-            else if( bSignedByte )
+            if( bSignedByte )
             {
                 if( psOptions->dfNoDataReal < -128 )
                 {

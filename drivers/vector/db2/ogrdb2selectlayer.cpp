@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "ogr_db2.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrdb2selectlayer.cpp 36342 2016-11-20 18:25:31Z rouault $");
 
 /************************************************************************/
 /*                     OGRDB2SelectLayer()                     */

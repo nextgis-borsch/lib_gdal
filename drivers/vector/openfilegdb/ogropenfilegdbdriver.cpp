@@ -28,7 +28,7 @@
 
 #include "ogr_openfilegdb.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogropenfilegdbdriver.cpp 35911 2016-10-24 15:03:26Z goatbar $");
 
 // g++ -O2 -Wall -Wextra -g -shared -fPIC ogr/ogrsf_frmts/openfilegdb/*.cpp
 // -o ogr_OpenFileGDB.so -Iport -Igcore -Iogr -Iogr/ogrsf_frmts

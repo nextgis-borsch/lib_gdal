@@ -35,7 +35,7 @@
 #include "ogr_p.h"
 #include "cpl_vsi_error.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrlibkmldatasource.cpp 39692 2017-07-30 19:32:43Z rouault $");
 
 using kmlbase::Attributes;
 using kmldom::ContainerPtr;

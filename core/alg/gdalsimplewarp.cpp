@@ -42,7 +42,7 @@
 #include "gdal.h"
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalsimplewarp.cpp 36703 2016-12-05 14:56:04Z goatbar $");
 
 /************************************************************************/
 /*                      GDALSimpleWarpRemapping()                       */

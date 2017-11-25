@@ -44,7 +44,7 @@
 #include <zlib.h>
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: mrf_util.cpp 36776 2016-12-10 11:17:47Z rouault $");
 
 // LERC is not ready for big endian hosts for now
 #if defined(LERC) && defined(WORDS_BIGENDIAN)

@@ -32,7 +32,7 @@
 #include "gdal_priv.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalasyncread.cpp 35931 2016-10-25 16:20:52Z goatbar $");
 
 /* ******************************************************************** */
 /*                               Usage()                                */

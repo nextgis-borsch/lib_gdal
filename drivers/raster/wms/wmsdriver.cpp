@@ -45,7 +45,7 @@
 #include <limits>
 #include <utility>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: wmsdriver.cpp 37949 2017-04-10 20:53:07Z lplesea $");
 
 //
 // A static map holding seen server GetTileService responses, per process

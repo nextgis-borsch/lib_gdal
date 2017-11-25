@@ -28,7 +28,7 @@
 
 #include "ogr_carto.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrcartoresultlayer.cpp 35298 2016-09-02 23:00:49Z goatbar $");
 
 /************************************************************************/
 /*                          OGRCARTOResultLayer()                     */

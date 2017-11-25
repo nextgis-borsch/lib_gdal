@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ###############################################################################
-# $Id$
+# $Id: vec_tr.py 31957 2015-12-02 12:44:54Z goatbar $
 #
 # Project:  OGR Python samples
 # Purpose:  Apply a transformation to all OGR geometries.

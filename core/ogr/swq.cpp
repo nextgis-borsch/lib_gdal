@@ -38,7 +38,7 @@
 #include "cpl_time.h"
 #include "swq_parser.hpp"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: swq.cpp 37581 2017-03-03 16:23:40Z rouault $");
 
 #define YYSTYPE swq_expr_node *
 

@@ -57,7 +57,7 @@
 #include "ogr_srs_api.h"
 #include "ogrsf_frmts/xplane/ogr_xplane_geo_utils.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gml2ogrgeometry.cpp 40428 2017-10-13 21:34:18Z rouault $");
 
 #if HAVE_CXX11
 constexpr double kdfD2R = M_PI / 180.0;
@@ -3631,6 +3631,9 @@ OGRGeometry *GML2OGRGeometry_XMLNode_Internal(
         OGRGeometry *poResult = NULL;
         for( ; psParent != NULL; psParent = psParent->psNext )
         {
+            psChild = GetChildElement(psParent);
+            if( psChild == NULL )
+                continue;
             poPS = new OGRPolyhedralSurface();
             for( ; psChild != NULL; psChild = psChild->psNext )
             {
@@ -3655,6 +3658,12 @@ OGRGeometry *GML2OGRGeometry_XMLNode_Internal(
                              wkbPolygon )
                     {
                         poPS->addGeometryDirectly( poPolygon );
+                    }
+                    else if( wkbFlatten(poPolygon->getGeometryType()) ==
+                             wkbCurvePolygon )
+                    {
+                        poPS->addGeometryDirectly(
+                            OGRGeometryFactory::forceToPolygon(poPolygon) );
                     }
                     else
                     {

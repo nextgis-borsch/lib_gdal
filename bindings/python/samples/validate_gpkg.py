@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 ###############################################################################
-# $Id$
+# $Id: validate_gpkg.py 38922 2017-06-06 20:38:20Z rouault $
 #
 # Project:  GDAL/OGR
 # Purpose:  Test compliance of GeoPackage database w.r.t GeoPackage spec

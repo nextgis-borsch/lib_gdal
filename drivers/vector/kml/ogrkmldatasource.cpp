@@ -36,7 +36,7 @@
 #include "cpl_string.h"
 #include "cpl_vsi_error.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrkmldatasource.cpp 37108 2017-01-12 10:16:27Z rouault $");
 
 /************************************************************************/
 /*                         OGRKMLDataSource()                           */

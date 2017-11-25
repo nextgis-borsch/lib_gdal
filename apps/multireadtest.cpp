@@ -31,7 +31,7 @@
 #include "cpl_multiproc.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: multireadtest.cpp 35884 2016-10-24 05:56:50Z goatbar $");
 
 static int nThreadCount = 4, nIterations = 1, bLockOnOpen = TRUE;
 static int nOpenIterations = 1;

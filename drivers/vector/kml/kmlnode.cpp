@@ -32,7 +32,7 @@
 #include <string>
 #include <vector>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: kmlnode.cpp 38371 2017-05-15 10:59:39Z rouault $");
 
 /************************************************************************/
 /*                           Help functions                             */

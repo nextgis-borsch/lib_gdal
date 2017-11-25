@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: cpl_vsi_error.h 36769 2016-12-10 01:44:43Z goatbar $
  *
  * Project:  VSI Virtual File System
  * Purpose:  Implement an error system for reporting file system errors.

@@ -39,7 +39,7 @@
 #include "cpl_string.h"
 #include "gdal_pam.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalmultidomainmetadata.cpp 36525 2016-11-27 14:15:26Z goatbar $");
 
 //! @cond Doxygen_Suppress
 /************************************************************************/

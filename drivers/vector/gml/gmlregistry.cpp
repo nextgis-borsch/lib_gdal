@@ -33,7 +33,7 @@
 
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gmlregistry.cpp 37914 2017-04-06 17:38:46Z rouault $");
 
 /************************************************************************/
 /*                           Parse()                                    */

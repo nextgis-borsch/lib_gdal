@@ -33,7 +33,7 @@
 #include <sqlncli.h>
 #endif
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrmssqlspatialtablelayer.cpp 40101 2017-09-13 14:25:46Z rouault $");
 
 /************************************************************************/
 /*                         OGRMSSQLAppendEscaped( )                     */

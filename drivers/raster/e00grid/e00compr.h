@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id$
+ * $Id: e00compr.h 35885 2016-10-24 06:23:09Z goatbar $
  *
  * Name:     e00compr.h
  * Project:  Compressed E00 Read/Write library

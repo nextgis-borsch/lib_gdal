@@ -35,7 +35,7 @@
 #include <map>
 #include <vector>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrili1layer.cpp 37472 2017-02-26 02:47:45Z goatbar $");
 
 /************************************************************************/
 /*                           OGRILI1Layer()                              */

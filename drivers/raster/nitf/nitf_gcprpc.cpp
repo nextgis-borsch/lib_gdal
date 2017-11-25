@@ -30,7 +30,7 @@
 #include "nitflib.h"
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: nitf_gcprpc.cpp 37346 2017-02-11 23:03:44Z goatbar $");
 
 /* Unused in normal builds. Caller code in nitfdataset.cpp is protected by #ifdef ESRI_BUILD */
 #ifdef ESRI_BUILD

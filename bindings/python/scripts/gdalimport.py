@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #******************************************************************************
-#  $Id$
+#  $Id: gdalimport.py 33790 2016-03-26 12:42:12Z goatbar $
 #
 #  Name:     gdalimport
 #  Project:  GDAL Python Interface

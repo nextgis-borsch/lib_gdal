@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdal_proxy.h 36501 2016-11-25 14:09:24Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  GDAL Core C++/Private declarations

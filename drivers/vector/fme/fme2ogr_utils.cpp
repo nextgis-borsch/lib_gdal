@@ -30,7 +30,7 @@
 #include "cpl_conv.h"
 #include <stdarg.h>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: fme2ogr_utils.cpp 34819 2016-07-28 22:32:18Z goatbar $");
 
 /************************************************************************/
 /*                            CPLFMEError()                             */

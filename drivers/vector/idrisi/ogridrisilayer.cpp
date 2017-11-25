@@ -32,7 +32,7 @@
 #include "ogr_p.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogridrisilayer.cpp 34996 2016-08-09 02:25:28Z goatbar $");
 
 /************************************************************************/
 /*                         OGRIdrisiLayer()                             */

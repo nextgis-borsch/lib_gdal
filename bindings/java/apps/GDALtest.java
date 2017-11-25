@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: GDALtest.java 35222 2016-08-28 06:06:11Z goatbar $
  *
  * Name:     GDALtest.java
  * Project:  GDAL SWIG Interface

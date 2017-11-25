@@ -34,7 +34,7 @@
 
 #include <cmath>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrdxflayer.cpp 40061 2017-09-10 12:00:28Z rouault $");
 
 /************************************************************************/
 /*                            OGRDXFLayer()                             */

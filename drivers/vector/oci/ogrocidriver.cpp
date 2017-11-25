@@ -28,7 +28,7 @@
 
 #include "ogr_oci.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrocidriver.cpp 35911 2016-10-24 15:03:26Z goatbar $");
 
 /************************************************************************/
 /*                        OGROCIDriverIdentify()                        */

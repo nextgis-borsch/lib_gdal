@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: GDALOverviews.java 35222 2016-08-28 06:06:11Z goatbar $
  *
  * Name:     GDALOverviews.java
  * Project:  GDAL Java Interface

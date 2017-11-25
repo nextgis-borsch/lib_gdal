@@ -28,4 +28,4 @@
 
 #include "ogr_oci.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: oci_utils.cpp 34819 2016-07-28 22:32:18Z goatbar $");

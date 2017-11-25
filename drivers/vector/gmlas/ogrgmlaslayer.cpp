@@ -32,7 +32,7 @@
 #include "ogr_gmlas.h"
 #include "cpl_minixml.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgmlaslayer.cpp 39652 2017-07-24 17:32:40Z rouault $");
 
 /************************************************************************/
 /*                            OGRGMLASLayer()                           */

@@ -40,7 +40,7 @@
 #include "ogr_core.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogr_srs_erm.cpp 36677 2016-12-04 13:42:55Z rouault $");
 
 /************************************************************************/
 /*                         OSRImportFromERM()                           */

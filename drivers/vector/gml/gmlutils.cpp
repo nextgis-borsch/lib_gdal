@@ -43,7 +43,7 @@
 #include "ogr_p.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gmlutils.cpp 40033 2017-09-08 07:33:53Z rouault $");
 
 /************************************************************************/
 /*                GML_ExtractSrsNameFromGeometry()                      */

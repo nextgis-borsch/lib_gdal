@@ -36,7 +36,7 @@ using PCIDSK::PCIDSKInterfaces;
 using PCIDSK::ThrowPCIDSKException;
 using PCIDSK::uint64;
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: vsi_pcidsk_io.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 PCIDSK::EDBFile *GDAL_EDBOpen( const std::string& osFilename, const std::string& osAccess );
 const PCIDSK::PCIDSKInterfaces *PCIDSK2GetInterfaces();

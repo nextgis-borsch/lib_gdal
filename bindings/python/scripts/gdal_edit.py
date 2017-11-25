@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 ###############################################################################
-# $Id$
+# $Id: gdal_edit.py 37709 2017-03-14 14:52:15Z rouault $
 #
 #  Project:  GDAL samples
 #  Purpose:  Edit in place various information of an existing GDAL dataset

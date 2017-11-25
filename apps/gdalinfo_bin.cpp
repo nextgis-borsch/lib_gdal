@@ -33,7 +33,7 @@
 #include "commonutils.h"
 #include "gdal_utils_priv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalinfo_bin.cpp 35931 2016-10-25 16:20:52Z goatbar $");
 
 /************************************************************************/
 /*                               Usage()                                */

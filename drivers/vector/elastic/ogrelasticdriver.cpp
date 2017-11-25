@@ -29,7 +29,7 @@
 #include "ogr_elastic.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrelasticdriver.cpp 37072 2017-01-09 12:54:57Z rouault $");
 
 /************************************************************************/
 /*                   OGRElasticSearchDriverIdentify()                   */

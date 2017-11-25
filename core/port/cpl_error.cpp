@@ -50,7 +50,7 @@
 #define TIMESTAMP_DEBUG
 // #define MEMORY_DEBUG
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_error.cpp 39443 2017-07-02 21:20:37Z rouault $");
 
 static CPLMutex *hErrorMutex = NULL;
 static void *pErrorHandlerUserData = NULL;

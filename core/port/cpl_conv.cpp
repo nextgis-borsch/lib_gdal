@@ -81,7 +81,7 @@
 // Uncomment to get list of options that have been fetched and set.
 // #define DEBUG_CONFIG_OPTIONS
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_conv.cpp 40320 2017-10-03 20:21:00Z rouault $");
 
 static CPLMutex *hConfigMutex = NULL;
 static volatile char **g_papszConfigOptions = NULL;
@@ -2631,21 +2631,21 @@ int CPLCopyTree( const char *pszNewPath, const char *pszOldPath )
 
 {
     VSIStatBufL sStatBuf;
-
-    if( VSIStatL(pszOldPath, &sStatBuf) != 0 )
-    {
-        CPLError(CE_Failure, CPLE_AppDefined,
-                 "It seems no file system object called '%s' exists.",
-                 pszOldPath);
-
-        return -1;
-    }
     if( VSIStatL(pszNewPath, &sStatBuf) == 0 )
     {
         CPLError(
             CE_Failure, CPLE_AppDefined,
             "It seems that a file system object called '%s' already exists.",
             pszNewPath);
+
+        return -1;
+    }
+
+    if( VSIStatL(pszOldPath, &sStatBuf) != 0 )
+    {
+        CPLError(CE_Failure, CPLE_AppDefined,
+                 "It seems no file system object called '%s' exists.",
+                 pszOldPath);
 
         return -1;
     }

@@ -40,7 +40,7 @@
 #include "cpl_error.h"
 #include "ogr_geos.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrlineref.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 #define FIELD_START "beg"
 #define FIELD_FINISH "end"

@@ -29,7 +29,7 @@
 #include "dgnlibp.h"
 #include <cmath>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: dgnstroke.cpp 36889 2016-12-15 20:20:24Z goatbar $");
 
 static const double DEG_TO_RAD = M_PI / 180.0;
 

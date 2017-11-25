@@ -34,7 +34,7 @@
 #include <limits>
 #include <set>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gnmgraph.cpp 36449 2016-11-22 22:28:39Z rouault $");
 
 //! @cond Doxygen_Suppress
 GNMGraph::GNMGraph() {}

@@ -33,7 +33,7 @@
 #include "ogrgeoconceptdatasource.h"
 #include "ogrgeoconceptlayer.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgeoconceptdatasource.cpp 35008 2016-08-09 11:20:52Z goatbar $");
 
 /************************************************************************/
 /*                         OGRGeoconceptDataSource()                    */

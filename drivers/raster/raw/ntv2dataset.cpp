@@ -39,7 +39,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ntv2dataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 /**
  * The header for the file, and each grid consists of 11 16byte records.

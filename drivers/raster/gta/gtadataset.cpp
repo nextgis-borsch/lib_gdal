@@ -91,7 +91,7 @@
 #include "gdal_pam.h"
 #include "gta_headers.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gtadataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 /************************************************************************/
 /* Helper functions                                                     */

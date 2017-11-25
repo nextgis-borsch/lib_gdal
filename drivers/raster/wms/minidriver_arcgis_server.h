@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: minidriver_arcgis_server.h 36611 2016-12-01 23:13:38Z lplesea $
  *
  * Project:  Arc GIS Server Client Driver
  * Purpose:  Implementation of Dataset and RasterBand classes for WMS

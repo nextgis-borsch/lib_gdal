@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gt_jpeg_copy.h 34122 2016-04-26 14:48:21Z goatbar $
  *
  * Project:  GeoTIFF Driver
  * Purpose:  Specialized copy of JPEG content into TIFF.

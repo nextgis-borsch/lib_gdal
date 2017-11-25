@@ -37,7 +37,7 @@
 #include <algorithm>
 #include <limits>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: test_ogrsf.cpp 37495 2017-02-27 18:31:22Z rouault $");
 
 int     bReadOnly = FALSE;
 int     bVerbose = TRUE;

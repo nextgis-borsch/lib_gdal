@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: parsexsd.h 31777 2015-11-26 14:14:41Z rouault $
  *
  * Project:  GML Reader
  * Purpose:  Implementation of GMLParseXSD()

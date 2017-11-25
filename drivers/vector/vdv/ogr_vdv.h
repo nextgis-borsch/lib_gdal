@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_vdv.h 36501 2016-11-25 14:09:24Z rouault $
  *
  * Project:  VDV Translator
  * Purpose:  Implements OGRVDVDriver.

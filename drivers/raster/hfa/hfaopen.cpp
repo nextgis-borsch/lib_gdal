@@ -60,7 +60,7 @@
 #include "cpl_vsi.h"
 #include "hfa.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: hfaopen.cpp 37895 2017-04-04 06:02:17Z goatbar $");
 
 static const char * const apszAuxMetadataItems[] = {
 // node/entry            field_name                  metadata_key       type

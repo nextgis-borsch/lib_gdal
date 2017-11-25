@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gribdataset.h 37828 2017-03-23 06:20:46Z goatbar $
  *
  * Project:  GRIB Driver
  * Purpose:  GDALDataset driver for GRIB translator for read support

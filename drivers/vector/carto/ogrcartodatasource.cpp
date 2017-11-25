@@ -30,7 +30,7 @@
 #include "ogr_pgdump.h"
 #include "ogrgeojsonreader.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrcartodatasource.cpp 38115 2017-04-23 07:24:41Z rouault $");
 
 /************************************************************************/
 /*                        OGRCARTODataSource()                        */

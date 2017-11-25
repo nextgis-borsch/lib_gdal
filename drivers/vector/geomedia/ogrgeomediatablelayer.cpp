@@ -30,7 +30,7 @@
 #include "cpl_conv.h"
 #include "ogr_geomedia.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgeomediatablelayer.cpp 35910 2016-10-24 14:08:24Z goatbar $");
 
 /************************************************************************/
 /*                          OGRGeomediaTableLayer()                     */

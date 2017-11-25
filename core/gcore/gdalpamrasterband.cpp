@@ -49,7 +49,7 @@
 #include "gdal_priv.h"
 #include "gdal_rat.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalpamrasterband.cpp 37690 2017-03-11 20:31:20Z rouault $");
 
 /************************************************************************/
 /*                         GDALPamRasterBand()                          */

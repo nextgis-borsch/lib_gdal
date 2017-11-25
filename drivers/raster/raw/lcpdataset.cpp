@@ -34,7 +34,7 @@
 #include "ogr_spatialref.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: lcpdataset.cpp 36948 2016-12-18 13:32:14Z rouault $");
 
 static const size_t LCP_HEADER_SIZE = 7316;
 static const int LCP_MAX_BANDS = 10;

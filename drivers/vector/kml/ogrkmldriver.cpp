@@ -33,7 +33,7 @@
 #include "cpl_conv.h"
 #include "cpl_error.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrkmldriver.cpp 39692 2017-07-30 19:32:43Z rouault $");
 
 /************************************************************************/
 /*                         OGRKMLDriverIdentify()                       */

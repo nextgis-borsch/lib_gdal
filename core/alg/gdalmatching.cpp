@@ -31,7 +31,7 @@
 #include "gdal_simplesurf.h"
 
 //! @cond Doxygen_Suppress
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalmatching.cpp 36718 2016-12-06 04:46:30Z goatbar $");
 //! @endcond
 
 // TODO(schwehr): What?  This below: "0,001"

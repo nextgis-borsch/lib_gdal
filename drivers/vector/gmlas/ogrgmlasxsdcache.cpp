@@ -33,7 +33,7 @@
 
 #include "cpl_sha256.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgmlasxsdcache.cpp 35911 2016-10-24 15:03:26Z goatbar $");
 
 /************************************************************************/
 /*                         GMLASResourceCache()                         */

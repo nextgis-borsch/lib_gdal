@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #******************************************************************************
-#  $Id$
+#  $Id: gdalcopyproj.py 31957 2015-12-02 12:44:54Z goatbar $
 #
 #  Name:     gdalcopyproj.py
 #  Project:  GDAL Python Interface

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: RasterAttributeTable.i 34525 2016-07-03 02:53:47Z goatbar $
  *
  * Name:     RAT.i
  * Project:  GDAL Python Interface

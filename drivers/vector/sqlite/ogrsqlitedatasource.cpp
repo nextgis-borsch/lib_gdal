@@ -61,7 +61,7 @@
 static int bSpatialiteGlobalLoaded = FALSE;
 #endif
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrsqlitedatasource.cpp 40703 2017-11-13 21:03:14Z rouault $");
 
 /************************************************************************/
 /*                      OGRSQLiteInitOldSpatialite()                    */
@@ -2130,7 +2130,8 @@ OGRLayer * OGRSQLiteDataSource::ExecuteSQL( const char *pszSQLCommand,
     }
     else if( !STARTS_WITH_CI(pszSQLCommand, "SELECT ") && !EQUAL(pszSQLCommand, "BEGIN")
         && !EQUAL(pszSQLCommand, "COMMIT")
-        && !STARTS_WITH_CI(pszSQLCommand, "CREATE TABLE ") )
+        && !STARTS_WITH_CI(pszSQLCommand, "CREATE TABLE ")
+        && !STARTS_WITH_CI(pszSQLCommand, "PRAGMA ") )
     {
         for(int i = 0; i < nLayers; i++)
             papoLayers[i]->InvalidateCachedFeatureCountAndExtent();

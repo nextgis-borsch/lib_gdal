@@ -42,7 +42,7 @@
 #include "cpl_vsi_virtual.h"
 #include "cpl_http.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_vsil_curl.cpp 40695 2017-11-13 12:17:28Z rouault $");
 
 #ifndef HAVE_CURL
 
@@ -310,6 +310,8 @@ public:
         override;
     virtual int      Mkdir( const char *pszDirname, long nMode ) override;
     virtual int      Rmdir( const char *pszDirname ) override;
+    virtual char   **ReadDir( const char *pszDirname ) override
+                      { return ReadDirEx(pszDirname, 0); }
     virtual char   **ReadDirEx( const char *pszDirname, int nMaxFiles )
         override;
             char   **ReadDirInternal( const char *pszDirname, int nMaxFiles,
@@ -722,7 +724,8 @@ static size_t VSICurlHandleWriteFunc( void *buffer, size_t count,
 static bool VSICurlIsS3SignedURL( const char* pszURL )
 {
     return
-        strstr(pszURL, ".s3.amazonaws.com/") != NULL &&
+        (strstr(pszURL, ".s3.amazonaws.com/") != NULL ||
+         strstr(pszURL, ".storage.googleapis.com/") != NULL) &&
         (strstr(pszURL, "&Signature=") != NULL ||
          strstr(pszURL, "?Signature=") != NULL);
 }
@@ -836,19 +839,21 @@ retry:
 
     if( STARTS_WITH(osURL, "ftp") )
     {
-        if( sWriteFuncData.pBuffer != NULL &&
-            STARTS_WITH(sWriteFuncData.pBuffer, "Content-Length: ") )
+        if( sWriteFuncData.pBuffer != NULL )
         {
-            const char* pszBuffer =
-                sWriteFuncData.pBuffer + strlen("Content-Length: ");
-            eExists = EXIST_YES;
-            fileSize = CPLScanUIntBig(
-                pszBuffer,
-                static_cast<int>(sWriteFuncData.nSize -
-                                 strlen("Content-Length: ")));
-            if( ENABLE_DEBUG )
-                CPLDebug("VSICURL", "GetFileSize(%s)=" CPL_FRMT_GUIB,
-                         osURL.c_str(), fileSize);
+            const char* pszContentLength = strstr(
+                const_cast<const char*>(sWriteFuncData.pBuffer), "Content-Length: ");
+            if( pszContentLength )
+            {
+                pszContentLength += strlen("Content-Length: ");
+                eExists = EXIST_YES;
+                fileSize = CPLScanUIntBig(
+                    pszContentLength,
+                    static_cast<int>(strlen(pszContentLength)));
+                if( ENABLE_DEBUG )
+                    CPLDebug("VSICURL", "GetFileSize(%s)=" CPL_FRMT_GUIB,
+                            osURL.c_str(), fileSize);
+            }
         }
     }
 
@@ -2821,7 +2826,7 @@ void VSICurlFilesystemHandler::AnalyseS3FileList(
                 const char* pszKey = CPLGetXMLValue(psIter, "Key", NULL);
                 if( pszKey && strlen(pszKey) > osPrefix.size() )
                 {
-                    CPLString osCachedFilename = osBaseURL + pszKey;
+                    CPLString osCachedFilename = osBaseURL + CPLAWSURLEncode(pszKey, false);
 #if DEBUG_VERBOSE
                     CPLDebug("S3", "Cache %s", osCachedFilename.c_str());
 #endif
@@ -2871,7 +2876,7 @@ void VSICurlFilesystemHandler::AnalyseS3FileList(
                         osKey.resize(osKey.size()-1);
                     if( osKey.size() > osPrefix.size() )
                     {
-                        CPLString osCachedFilename = osBaseURL + osKey;
+                        CPLString osCachedFilename = osBaseURL + CPLAWSURLEncode(osKey, false);
 #if DEBUG_VERBOSE
                         CPLDebug("S3", "Cache %s", osCachedFilename.c_str());
 #endif
@@ -3674,8 +3679,9 @@ VSIS3WriteHandle::~VSIS3WriteHandle()
 
 int VSIS3WriteHandle::Seek( vsi_l_offset nOffset, int nWhence )
 {
-    if( (nWhence == SEEK_SET && nOffset != m_nCurOffset) ||
-        nOffset != 0 )
+    if( !((nWhence == SEEK_SET && nOffset == m_nCurOffset) ||
+          (nWhence == SEEK_CUR && nOffset == 0) ||
+          (nWhence == SEEK_END && nOffset == 0)) )
     {
         CPLError(CE_Failure, CPLE_NotSupported,
                  "Seek not supported on writable /vsis3 files");
@@ -3924,12 +3930,14 @@ VSIS3WriteHandle::Write( const void *pBuffer, size_t nSize, size_t nMemb )
 
     size_t nBytesToWrite = nSize * nMemb;
 
+    const GByte* pabySrcBuffer = reinterpret_cast<const GByte*>(pBuffer);
     while( nBytesToWrite > 0 )
     {
         const int nToWriteInBuffer = static_cast<int>(
             std::min(static_cast<size_t>(m_nBufferSize - m_nBufferOff),
                      nBytesToWrite));
-        memcpy(m_pabyBuffer + m_nBufferOff, pBuffer, nToWriteInBuffer);
+        memcpy(m_pabyBuffer + m_nBufferOff, pabySrcBuffer, nToWriteInBuffer);
+        pabySrcBuffer += nToWriteInBuffer;
         m_nBufferOff += nToWriteInBuffer;
         m_nCurOffset += nToWriteInBuffer;
         nBytesToWrite -= nToWriteInBuffer;

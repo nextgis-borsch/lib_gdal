@@ -33,7 +33,7 @@
 #include "cpl_time.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgeopackagetablelayer.cpp 40670 2017-11-09 15:24:07Z rouault $");
 
 static const char UNSUPPORTED_OP_READ_ONLY[] =
   "%s : unsupported operation on a read-only datasource.";
@@ -2219,15 +2219,18 @@ OGRErr OGRGeoPackageTableLayer::GetExtent(OGREnvelope *psExtent, int bForce)
         }
         else
         {
-            pszSQL = sqlite3_mprintf(
-                "UPDATE gpkg_contents SET "
-                "min_x = NULL, min_y = NULL, "
-                "max_x = NULL, max_y = NULL "
-                "WHERE lower(table_name) = lower('%q') AND "
-                "Lower(data_type) = 'features'",
-                m_pszTableName);
-            SQLCommand( m_poDS->GetDB(), pszSQL);
-            sqlite3_free(pszSQL);
+            if( m_poDS->GetUpdate() )
+            {
+                pszSQL = sqlite3_mprintf(
+                    "UPDATE gpkg_contents SET "
+                    "min_x = NULL, min_y = NULL, "
+                    "max_x = NULL, max_y = NULL "
+                    "WHERE lower(table_name) = lower('%q') AND "
+                    "Lower(data_type) = 'features'",
+                    m_pszTableName);
+                SQLCommand( m_poDS->GetDB(), pszSQL);
+                sqlite3_free(pszSQL);
+            }
             m_bExtentChanged = false;
             err = OGRERR_FAILURE; // we didn't get an extent
         }

@@ -63,7 +63,7 @@
 #define va_copy __va_copy
 #endif
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_string.cpp 39443 2017-07-02 21:20:37Z rouault $");
 
 /*=====================================================================
                     StringList manipulation functions.

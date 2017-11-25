@@ -39,7 +39,7 @@
 #include <map>
 #include <string>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrsxfdatasource.cpp 36457 2016-11-23 00:18:37Z rouault $");
 
 static const long aoVCS[] =
 {

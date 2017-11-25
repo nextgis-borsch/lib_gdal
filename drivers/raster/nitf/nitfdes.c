@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: nitfdes.c 36380 2016-11-21 10:21:20Z rouault $
  *
  * Project:  NITF Read/Write Library
  * Purpose:  Module responsible for implementation of DE segments.
@@ -33,7 +33,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: nitfdes.c 36380 2016-11-21 10:21:20Z rouault $");
 
 CPL_INLINE static void CPL_IGNORE_RET_VAL_INT(CPL_UNUSED int unused) {}
 

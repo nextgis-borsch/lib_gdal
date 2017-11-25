@@ -66,7 +66,7 @@ static const int PIPE_BUFFER_SIZE = 4096;
 static const int IN_FOR_PARENT = 0;
 static const int OUT_FOR_PARENT = 1;
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_spawn.cpp 36989 2016-12-21 19:05:47Z goatbar $");
 
 static void FillFileFromPipe(CPL_FILE_HANDLE pipe_fd, VSILFILE* fout);
 

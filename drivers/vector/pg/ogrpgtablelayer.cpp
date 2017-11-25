@@ -36,7 +36,7 @@
 
 #define PQexec this_is_an_error
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrpgtablelayer.cpp 37371 2017-02-13 11:41:59Z rouault $");
 
 #define USE_COPY_UNSET  -10
 

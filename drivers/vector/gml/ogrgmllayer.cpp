@@ -35,7 +35,7 @@
 #include "ogr_p.h"
 #include "ogr_api.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgmllayer.cpp 37447 2017-02-25 15:06:33Z goatbar $");
 
 /************************************************************************/
 /*                           OGRGMLLayer()                              */

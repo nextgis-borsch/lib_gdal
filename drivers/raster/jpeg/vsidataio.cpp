@@ -32,7 +32,7 @@
 
 #include <cstddef>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: vsidataio.cpp 37478 2017-02-26 03:05:44Z goatbar $");
 
 CPL_C_START
 #include "jerror.h"

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ceos.h 37040 2016-12-30 15:31:43Z rouault $
  *
  * Project:  ASI CEOS Translator
  * Purpose:  CEOS library prototypes

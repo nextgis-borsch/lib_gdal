@@ -67,7 +67,7 @@
 #include "cpl_string.h"
 #include "cpl_hash_set.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: vsipreload.cpp 37003 2016-12-23 14:54:07Z goatbar $");
 
 static int DEBUG_VSIPRELOAD = 0;
 static int DEBUG_VSIPRELOAD_ONLY_VSIL = 1;

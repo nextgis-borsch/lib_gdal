@@ -40,7 +40,7 @@
 #include "cpl_vsi.h"
 #include "gdal.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalnodatavaluesmaskband.cpp 36525 2016-11-27 14:15:26Z goatbar $");
 
 //! @cond Doxygen_Suppress
 /************************************************************************/

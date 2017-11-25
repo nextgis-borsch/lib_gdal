@@ -35,7 +35,7 @@
 
 #include <string>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrili1datasource.cpp 38486 2017-05-19 10:12:42Z rouault $");
 
 /************************************************************************/
 /*                         OGRILI1DataSource()                         */

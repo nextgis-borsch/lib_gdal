@@ -30,7 +30,7 @@
 #include "ogr_ods.h"
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrodsdriver.cpp 40632 2017-11-04 11:29:43Z rouault $");
 
 using namespace OGRODS;
 
@@ -124,8 +124,8 @@ OGRDataSource *OGRODSDriver::Open( const char * pszFilename, int bUpdate )
 
     if (EQUAL(CPLGetExtension(pszFilename), "ODS"))
     {
-        fpSettings =
-            VSIFOpenL(CPLSPrintf("/vsizip/%s/settings.xml", pszFilename), "rb");
+        CPLString osTmpFilename(CPLSPrintf("/vsizip/%s/settings.xml", pszFilename));
+        fpSettings = VSIFOpenL(osTmpFilename, "rb");
     }
 
     OGRODSDataSource *poDS = new OGRODSDataSource();

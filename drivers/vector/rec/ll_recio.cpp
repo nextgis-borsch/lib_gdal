@@ -30,7 +30,7 @@
 #include "cpl_string.h"
 #include "ogr_rec.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ll_recio.cpp 39002 2017-06-09 00:06:16Z rouault $");
 
 static int nNextRecLine = 0;
 

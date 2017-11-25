@@ -40,7 +40,7 @@
 
 void CPL_DLL CPL_STDCALL GDALRegister_RASDAMAN();
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: rasdamandataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 class Subset
 {

@@ -31,7 +31,7 @@
 #include "ogr_sde.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrsdedriver.cpp 36089 2016-11-03 14:22:21Z rouault $");
 
 /************************************************************************/
 /*                            ~OGRSDEDriver()                            */

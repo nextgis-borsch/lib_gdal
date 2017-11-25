@@ -35,7 +35,7 @@
 
 #include <time.h>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgmlasxlinkresolver.cpp 36334 2016-11-20 15:42:08Z rouault $");
 
 /************************************************************************/
 /*                         GMLASXLinkResolver()                         */

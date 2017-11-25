@@ -45,7 +45,7 @@
 #include "ogrgeojsonutils.h"
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgeojsondriver.cpp 40541 2017-10-23 20:46:00Z rouault $");
 
 class OGRESRIFeatureServiceDataset;
 
@@ -483,7 +483,9 @@ static GDALDataset* OGRGeoJSONDriverOpen( GDALOpenInfo* poOpenInfo )
         poDS = NULL;
     }
 
-    if( poDS != NULL && poDS->HasOtherPages() )
+    if( poDS != NULL && poDS->HasOtherPages() &&
+        (STARTS_WITH(poOpenInfo->pszFilename, "http") ||
+         STARTS_WITH(poOpenInfo->pszFilename, "/vsimem/")) )
     {
         const char* pszFSP = CSLFetchNameValue(poOpenInfo->papszOpenOptions,
                                                "FEATURE_SERVER_PAGING");

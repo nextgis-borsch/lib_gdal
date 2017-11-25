@@ -47,7 +47,7 @@
 #include "nitflib.h"
 #include "vrtdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: rpftocdataset.cpp 37346 2017-02-11 23:03:44Z goatbar $");
 
 static const int GEOTRSFRM_TOPLEFT_X = 0;
 static const int GEOTRSFRM_WE_RES = 1;

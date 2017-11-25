@@ -32,7 +32,7 @@
 #include "ogr_spatialref.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpgdataset.cpp 39930 2017-08-24 09:47:34Z rouault $");
 
 enum Interleave { BSQ, BIL, BIP };
 

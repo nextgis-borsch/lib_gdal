@@ -41,7 +41,7 @@
 #include "cpl_conv.h"
 #include "cpl_error.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cplstringlist.cpp 36910 2016-12-16 18:49:46Z goatbar $");
 
 /************************************************************************/
 /*                           CPLStringList()                            */

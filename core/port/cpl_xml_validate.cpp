@@ -30,7 +30,7 @@
 #include "cpl_conv.h"
 #include "cpl_error.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_xml_validate.cpp 36911 2016-12-16 19:42:07Z goatbar $");
 
 #ifdef HAVE_LIBXML2
 #include <libxml/xmlversion.h>

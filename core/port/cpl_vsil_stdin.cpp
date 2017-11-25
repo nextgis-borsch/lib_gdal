@@ -52,7 +52,7 @@
 #include <fcntl.h>
 #endif
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_vsil_stdin.cpp 36988 2016-12-21 18:14:06Z goatbar $");
 
 // We buffer the first 1MB of standard input to enable drivers
 // to autodetect data. In the first MB, backward and forward seeking

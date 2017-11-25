@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gxfopen.h 35335 2016-09-05 20:18:57Z goatbar $
  *
  * Project:  GXF Reader
  * Purpose:  GXF-3 access function declarations.

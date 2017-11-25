@@ -50,7 +50,7 @@
 
 #endif
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_http.cpp 37970 2017-04-12 11:07:46Z rouault $");
 
 // list of named persistent http sessions
 

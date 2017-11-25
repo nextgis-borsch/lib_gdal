@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdal_simplesurf.h 36666 2016-12-04 04:32:31Z goatbar $
  * Project:  GDAL
  * Purpose:  Correlator
  * Author:   Andrew Migal, migal.drew@gmail.com

@@ -38,7 +38,7 @@
 
 //! @cond Doxygen_Suppress
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogr_gensql.cpp 37581 2017-03-03 16:23:40Z rouault $");
 
 class OGRGenSQLGeomFieldDefn: public OGRGeomFieldDefn
 {

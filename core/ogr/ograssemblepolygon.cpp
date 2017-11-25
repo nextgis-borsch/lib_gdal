@@ -39,7 +39,7 @@
 #include "cpl_conv.h"
 #include "cpl_error.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ograssemblepolygon.cpp 36328 2016-11-20 13:44:29Z goatbar $");
 
 /************************************************************************/
 /*                            CheckPoints()                             */

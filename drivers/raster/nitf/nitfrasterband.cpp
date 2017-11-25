@@ -54,7 +54,7 @@
 #include "nitflib.h"
 
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: nitfrasterband.cpp 37346 2017-02-11 23:03:44Z goatbar $");
 
 /************************************************************************/
 /*                       NITFMakeColorTable()                           */

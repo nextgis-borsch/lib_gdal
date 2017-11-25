@@ -7,7 +7,7 @@
  *
  * Author:       David Zwarg, dzwarg@azavea.com
  *
- * Last changes: $Id$
+ * Last changes: $Id: postgisrasterrasterband.cpp 36682 2016-12-04 20:34:45Z rouault $
  *
  ***********************************************************************
  * Copyright (c) 2009 - 2013, Jorge Arevalo, David Zwarg
@@ -35,7 +35,7 @@
  **********************************************************************/
 #include "postgisraster.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: postgisrasterrasterband.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 /**
  * \brief Constructor.

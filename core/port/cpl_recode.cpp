@@ -30,7 +30,7 @@
 
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_recode.cpp 36880 2016-12-15 05:11:47Z goatbar $");
 
 #ifdef CPL_RECODE_ICONV
 extern void CPLClearRecodeIconvWarningFlags();

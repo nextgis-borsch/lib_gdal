@@ -49,7 +49,7 @@
 #include "gdalwarper.h"
 #include "ogr_geometry.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: vrtwarped.cpp 39654 2017-07-24 19:24:32Z rouault $");
 
 /************************************************************************/
 /*                      GDALAutoCreateWarpedVRT()                       */

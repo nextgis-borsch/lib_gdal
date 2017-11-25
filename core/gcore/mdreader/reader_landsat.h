@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: reader_landsat.h 36501 2016-11-25 14:09:24Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Read metadata from Landsat imagery.

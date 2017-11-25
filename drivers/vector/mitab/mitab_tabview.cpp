@@ -50,7 +50,7 @@
 #include "ogr_geometry.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: mitab_tabview.cpp 37351 2017-02-12 05:22:20Z goatbar $");
 
 /*=====================================================================
  *                      class TABView

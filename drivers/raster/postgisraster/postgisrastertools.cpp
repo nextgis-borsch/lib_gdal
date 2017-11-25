@@ -7,7 +7,7 @@
  *
  * Author:       David Zwarg, dzwarg@azavea.com
  *
- * Last changes: $Id$
+ * Last changes: $Id: postgisrastertools.cpp 35929 2016-10-25 16:09:00Z goatbar $
  *
  ***********************************************************************
  * Copyright (c) 2009 - 2013, Jorge Arevalo, David Zwarg
@@ -34,7 +34,7 @@
  **********************************************************************/
  #include "postgisraster.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: postgisrastertools.cpp 35929 2016-10-25 16:09:00Z goatbar $");
 
  /**********************************************************************
  * \brief Replace the quotes by single quotes in the input string

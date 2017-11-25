@@ -32,7 +32,7 @@
 #include "aoutils.h"
 #include <strstream>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: aolayer.cpp 36332 2016-11-20 15:19:39Z rouault $");
 
 /************************************************************************/
 /*                              AOLayer()                               */

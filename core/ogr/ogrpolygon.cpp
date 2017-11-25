@@ -42,7 +42,7 @@
 #include "ogr_sfcgal.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrpolygon.cpp 38291 2017-05-14 00:40:31Z rouault $");
 
 /************************************************************************/
 /*                             OGRPolygon()                             */

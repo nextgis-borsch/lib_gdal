@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: tif_float.h 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  GeoTIFF Driver
  * Purpose:  Floating point conversion functions. Convert 16- and 24-bit

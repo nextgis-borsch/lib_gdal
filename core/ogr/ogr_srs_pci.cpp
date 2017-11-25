@@ -45,7 +45,7 @@
 #include "ogr_p.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogr_srs_pci.cpp 37248 2017-01-31 02:17:16Z goatbar $");
 
 // PCI uses a 16-character string for coordinate system and datum/ellipsoid.
 static const int knProjSize = 16;

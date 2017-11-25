@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: s57.h 36427 2016-11-22 12:56:01Z rouault $
  *
  * Project:  S-57 Translator
  * Purpose:  Declarations for S-57 translator not including the

@@ -50,7 +50,7 @@
 #include "ogr_p.h"
 #include "parsexsd.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgmldatasource.cpp 40503 2017-10-19 21:07:17Z rouault $");
 
 /************************************************************************/
 /*                   ReplaceSpaceByPct20IfNeeded()                      */
@@ -266,6 +266,12 @@ bool OGRGMLDataSource::CheckHeader(const char *pszStr)
 {
     if( strstr(pszStr, "opengis.net/gml") == NULL &&
         strstr(pszStr, "<csw:GetRecordsResponse") == NULL )
+    {
+        return false;
+    }
+
+    // Ignore kml files
+    if( strstr(pszStr, "<kml") != NULL )
     {
         return false;
     }
@@ -2699,8 +2705,9 @@ void OGRGMLDataSource::FindAndParseTopElements(VSILFILE *fp)
         }
     }
 
+    const char *pszFeatureMember = strstr(pszXML, "<gml:featureMember");
     const char *pszDescription = strstr(pszXML, "<gml:description>");
-    if( pszDescription )
+    if( pszDescription && (pszFeatureMember == NULL || pszDescription < pszFeatureMember) )
     {
         pszDescription += strlen("<gml:description>");
         const char *pszEndDescription =
@@ -2719,7 +2726,7 @@ void OGRGMLDataSource::FindAndParseTopElements(VSILFILE *fp)
     const char *l_pszName = strstr(pszXML, "<gml:name");
     if( l_pszName )
         l_pszName = strchr(l_pszName, '>');
-    if( l_pszName )
+    if( l_pszName && (pszFeatureMember == NULL || l_pszName < pszFeatureMember) )
     {
         l_pszName++;
         const char *pszEndName = strstr(l_pszName, "</gml:name>");

@@ -30,7 +30,7 @@
 #include "cpl_minixml.h"
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogropenfilegdblayer.cpp 37643 2017-03-07 22:41:04Z rouault $");
 
 /************************************************************************/
 /*                      OGROpenFileGDBGeomFieldDefn                     */

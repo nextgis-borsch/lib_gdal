@@ -27,7 +27,7 @@
 
 #include "cpl_error.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_time.cpp 39087 2017-06-12 20:17:14Z rouault $");
 
 static const int SECSPERMIN = 60;
 static const int MINSPERHOUR = 60;

@@ -34,7 +34,7 @@
 
 #include "ogr_gpsbabel.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgpsbabelwritedatasource.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 /************************************************************************/
 /*                    OGRGPSBabelWriteDataSource()                      */

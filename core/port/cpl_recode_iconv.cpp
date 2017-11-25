@@ -27,7 +27,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_recode_iconv.cpp 36880 2016-12-15 05:11:47Z goatbar $");
 
 #ifdef CPL_RECODE_ICONV
 

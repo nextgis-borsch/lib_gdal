@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ###############################################################################
-# $Id$
+# $Id: gdal_cp.py 31957 2015-12-02 12:44:54Z goatbar $
 #
 #  Project:  GDAL samples
 #  Purpose:  Copy a virtual file

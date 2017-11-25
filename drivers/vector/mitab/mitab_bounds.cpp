@@ -43,7 +43,7 @@
 #include "cpl_string.h"
 #include "cpl_vsi.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: mitab_bounds.cpp 37427 2017-02-19 23:16:04Z goatbar $");
 
 typedef struct
 {

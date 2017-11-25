@@ -47,7 +47,7 @@
 #   include <errno.h>
 #endif
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_minizip_zip.cpp 36909 2016-12-16 18:47:29Z goatbar $");
 
 #ifndef VERSIONMADEBY
 # define VERSIONMADEBY   (0x0) /* platform dependent */

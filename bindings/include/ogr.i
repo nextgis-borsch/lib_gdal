@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr.i 38101 2017-04-22 16:49:11Z rouault $
  *
  * Project:  OGR Core SWIG Interface declarations.
  * Purpose:  OGR declarations.

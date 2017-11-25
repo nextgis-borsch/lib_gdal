@@ -36,7 +36,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogr2kmlgeometry.cpp 36017 2016-10-29 04:27:08Z goatbar $");
 
 static const double EPSILON = 1e-8;
 

@@ -36,7 +36,7 @@
 #include "cpl_minixml.h"
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_aws.cpp 40695 2017-11-13 12:17:28Z rouault $");
 
 // #define DEBUG_VERBOSE 1
 
@@ -109,7 +109,7 @@ CPLString CPLAWSURLEncode( const CPLString& osURL, bool bEncodeSlash )
         }
         else
         {
-            osRet += CPLSPrintf("%02X", ch);
+            osRet += CPLSPrintf("%%%02X", static_cast<unsigned char>(ch));
         }
     }
     return osRet;
@@ -344,12 +344,12 @@ CPLString VSIS3HandleHelper::BuildURL(const CPLString& osAWSS3Endpoint,
         return CPLSPrintf("%s://%s.%s/%s", (bUseHTTPS) ? "https" : "http",
                                         osBucket.c_str(),
                                         osAWSS3Endpoint.c_str(),
-                                        osObjectKey.c_str());
+                                        CPLAWSURLEncode(osObjectKey, false).c_str());
     else
         return CPLSPrintf("%s://%s/%s/%s", (bUseHTTPS) ? "https" : "http",
                                         osAWSS3Endpoint.c_str(),
                                         osBucket.c_str(),
-                                        osObjectKey.c_str());
+                                        CPLAWSURLEncode(osObjectKey, false).c_str());
 }
 
 /************************************************************************/
@@ -372,7 +372,7 @@ void VSIS3HandleHelper::RebuildURL()
         if( !oIter->second.empty() )
         {
             m_osURL += "=";
-            m_osURL += oIter->second;
+            m_osURL += CPLAWSURLEncode(oIter->second);
         }
     }
 }
@@ -521,8 +521,8 @@ VSIS3HandleHelper::GetCurlHeaders( const CPLString& osVerb,
         osVerb,
         osHost,
         m_bUseVirtualHosting
-        ? ("/" + m_osObjectKey).c_str() :
-        ("/" + m_osBucket + "/" + m_osObjectKey).c_str(),
+        ? CPLAWSURLEncode("/" + m_osObjectKey, false).c_str() :
+        CPLAWSURLEncode("/" + m_osBucket + "/" + m_osObjectKey, false).c_str(),
         osCanonicalQueryString,
         osXAMZContentSHA256,
         osXAMZDate);

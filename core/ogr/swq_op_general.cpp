@@ -44,7 +44,7 @@
 #include "ogr_geometry.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: swq_op_general.cpp 37398 2017-02-17 10:21:00Z rouault $");
 
 /************************************************************************/
 /*                           swq_test_like()                            */

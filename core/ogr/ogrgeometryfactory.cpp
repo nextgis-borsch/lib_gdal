@@ -62,7 +62,7 @@
 #define UNUSED_IF_NO_GEOS
 #endif
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgeometryfactory.cpp 38398 2017-05-16 08:25:00Z rouault $");
 
 /************************************************************************/
 /*                           createFromWkb()                            */

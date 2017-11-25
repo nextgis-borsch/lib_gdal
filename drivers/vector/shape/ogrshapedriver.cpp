@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrshapedriver.cpp 39740 2017-08-03 15:20:08Z rouault $");
 
 /************************************************************************/
 /*                              Identify()                              */

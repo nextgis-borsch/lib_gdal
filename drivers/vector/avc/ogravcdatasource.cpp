@@ -28,7 +28,7 @@
 
 #include "ogr_avc.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogravcdatasource.cpp 34819 2016-07-28 22:32:18Z goatbar $");
 
 /************************************************************************/
 /*                          OGRAVCDataSource()                          */

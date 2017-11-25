@@ -34,7 +34,7 @@
 #include <algorithm>
 #include <vector>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: xyzdataset.cpp 39396 2017-06-30 09:23:09Z rouault $");
 
 static const double RELATIVE_ERROR = 1e-3;
 

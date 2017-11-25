@@ -42,7 +42,7 @@
 #include "gdal.h"
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: vrtfilters.cpp 37310 2017-02-06 11:42:54Z goatbar $");
 
 /*! @cond Doxygen_Suppress */
 

@@ -34,7 +34,7 @@
 #include <algorithm>
 #include <string>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: northwood.cpp 38735 2017-05-31 20:39:50Z dmorissette $");
 
 int nwt_ParseHeader( NWT_GRID * pGrd, char *nwtHeader )
 {

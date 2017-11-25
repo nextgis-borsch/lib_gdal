@@ -49,7 +49,7 @@
 #include "ogr_feature.h"
 #include "ogr_geometry.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: mitab_feature_mif.cpp 39591 2017-07-15 15:08:47Z rouault $");
 
 /*=====================================================================
  *                      class TABFeature

@@ -31,7 +31,7 @@
 #include "gdal_priv.h"
 #include "pcidsk.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdal_edb.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 using PCIDSK::EDBFile;
 using PCIDSK::eChanType;

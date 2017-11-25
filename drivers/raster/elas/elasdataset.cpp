@@ -35,7 +35,7 @@
 
 using std::fill;
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: elasdataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 typedef struct ELASHeader {
     ELASHeader();

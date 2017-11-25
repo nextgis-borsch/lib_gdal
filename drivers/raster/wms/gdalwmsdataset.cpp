@@ -44,7 +44,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalwmsdataset.cpp 37949 2017-04-10 20:53:07Z lplesea $");
 
 /************************************************************************/
 /*                           GDALWMSDataset()                           */

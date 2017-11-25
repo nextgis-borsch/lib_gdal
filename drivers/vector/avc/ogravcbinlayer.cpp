@@ -33,7 +33,7 @@
 
 #include <cstdlib>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogravcbinlayer.cpp 36472 2016-11-23 16:38:20Z rouault $");
 
 /************************************************************************/
 /*                           OGRAVCBinLayer()                           */

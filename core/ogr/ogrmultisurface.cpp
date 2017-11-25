@@ -37,7 +37,7 @@
 #include "ogr_core.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrmultisurface.cpp 38291 2017-05-14 00:40:31Z rouault $");
 
 /************************************************************************/
 /*                          OGRMultiSurface()                           */

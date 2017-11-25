@@ -28,7 +28,7 @@
 
 #include "ogr_geopackage.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgeopackageselectlayer.cpp 37534 2017-03-01 16:50:58Z rouault $");
 
 /************************************************************************/
 /*                        OGRGeoPackageSelectLayer()                    */

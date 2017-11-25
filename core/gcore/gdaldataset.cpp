@@ -71,7 +71,7 @@
 #include "../sqlite/ogrsqliteexecutesql.h"
 #endif
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdaldataset.cpp 38303 2017-05-14 09:16:00Z rouault $");
 
 CPL_C_START
 GDALAsyncReader *

@@ -52,7 +52,7 @@
 #include "cpl_string.h"
 #include "cpl_vsi.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: hfaentry.cpp 37892 2017-04-03 20:05:39Z goatbar $");
 
 /************************************************************************/
 /*                              HFAEntry()                              */

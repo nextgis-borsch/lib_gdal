@@ -5,7 +5,7 @@
  * Author:   Jorge Arevalo, jorge.arevalo@deimos-space.com
  *                          jorgearevalo@libregis.org
  *
- * Last changes: $Id$
+ * Last changes: $Id: postgisrastertiledataset.cpp 35897 2016-10-24 11:54:24Z goatbar $
  *
  ***********************************************************************
  * Copyright (c) 2013, Jorge Arevalo
@@ -33,7 +33,7 @@
  ************************************************************************/
 #include "postgisraster.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: postgisrastertiledataset.cpp 35897 2016-10-24 11:54:24Z goatbar $");
 
 /************************
  * \brief Constructor

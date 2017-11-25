@@ -36,7 +36,7 @@
 #include "ogr_core.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrmultilinestring.cpp 36328 2016-11-20 13:44:29Z goatbar $");
 
 /************************************************************************/
 /*                        OGRMultiLineString()                          */

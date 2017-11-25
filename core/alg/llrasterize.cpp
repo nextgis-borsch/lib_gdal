@@ -39,7 +39,7 @@
 
 #include "gdal_alg.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: llrasterize.cpp 38818 2017-06-02 12:08:07Z rouault $");
 
 static int llCompareInt(const void *a, const void *b)
 {

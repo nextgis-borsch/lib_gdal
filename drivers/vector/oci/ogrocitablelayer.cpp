@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrocitablelayer.cpp 40697 2017-11-13 13:26:12Z rouault $");
 
 static int nDiscarded = 0;
 static int nHits = 0;
@@ -615,6 +615,8 @@ OGRFeature *OGROCITableLayer::GetFeature( GIntBig nFeatureId )
     oCmd.Appendf( static_cast<int>(50+strlen(pszFIDName)),
                   " WHERE \"%s\" = " CPL_FRMT_GIB " ",
                   pszFIDName, nFeatureId );
+
+    CPLFree( pszFields );
 
 /* -------------------------------------------------------------------- */
 /*      Execute the statement.                                          */

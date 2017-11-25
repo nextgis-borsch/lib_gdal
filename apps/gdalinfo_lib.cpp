@@ -60,7 +60,7 @@
 
 using std::vector;
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalinfo_lib.cpp 38115 2017-04-23 07:24:41Z rouault $");
 
 /*! output format */
 typedef enum {

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: dumpgeo.c 34521 2016-07-02 21:26:43Z goatbar $
  *
  * Project:  APP ENVISAT Support
  * Purpose:  Test mainline for dumping ENVISAT format files.

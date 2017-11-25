@@ -35,7 +35,7 @@
 #include <vector>
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: imdreader.cpp 35933 2016-10-25 16:46:26Z goatbar $");
 
 typedef std::map<CPLString,CPLXMLNode*> StrNodeMap;
 typedef std::vector<CPLXMLNode*> NodeVector;

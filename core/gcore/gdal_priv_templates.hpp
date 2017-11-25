@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdal_priv_templates.hpp 36822 2016-12-12 11:18:45Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Inline C++ templates

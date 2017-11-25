@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalconst.i 40765 2017-11-20 10:03:14Z rouault $
  *
  * Name:     gdalconst.i
  * Project:  GDAL Python Interface
@@ -112,6 +112,11 @@
 %constant GRA_Lanczos          = GRA_Lanczos;
 %constant GRA_Average          = GRA_Average;
 %constant GRA_Mode             = GRA_Mode;
+%constant GRA_Max              = GRA_Max;
+%constant GRA_Min              = GRA_Min;
+%constant GRA_Med              = GRA_Med;
+%constant GRA_Q1               = GRA_Q1;
+%constant GRA_Q3               = GRA_Q3;
 
 // GDALPaletteInterp
 %constant GPI_Gray  = GPI_Gray;

@@ -36,7 +36,7 @@
 
 #include "gdal_frmts.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ilwisdataset.cpp 36979 2016-12-20 18:40:40Z rouault $");
 
 namespace GDAL
 {

@@ -34,7 +34,9 @@
 #pragma clang diagnostic ignored "-Wdocumentation"
 #endif
 
-#if defined(OPENJPEG_VERSION) && OPENJPEG_VERSION >= 20200
+#if defined(OPENJPEG_VERSION) && OPENJPEG_VERSION >= 20300
+#include <openjpeg-2.3/openjpeg.h>
+#elif defined(OPENJPEG_VERSION) && OPENJPEG_VERSION >= 20200
 #include <openjpeg-2.2/openjpeg.h>
 #elif defined(OPENJPEG_VERSION) && OPENJPEG_VERSION >= 20100
 #include <openjpeg-2.1/openjpeg.h>
@@ -59,7 +61,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: openjpegdataset.cpp 40330 2017-10-05 12:56:50Z rouault $");
 
 /************************************************************************/
 /*                  JP2OpenJPEGDataset_ErrorCallback()                  */

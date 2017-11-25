@@ -29,7 +29,7 @@
 #include "ogreditablelayer.h"
 #include "../mem/ogr_mem.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogreditablelayer.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 //! @cond Doxygen_Suppress
 

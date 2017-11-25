@@ -32,7 +32,7 @@
 #include "cpl_vsi.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: 8211dump.cpp 35929 2016-10-25 16:09:00Z goatbar $");
 
 int main( int nArgc, char ** papszArgv )
 

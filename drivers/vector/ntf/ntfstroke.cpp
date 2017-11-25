@@ -35,7 +35,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ntfstroke.cpp 36024 2016-10-29 12:53:38Z goatbar $");
 
 /************************************************************************/
 /*                     NTFArcCenterFromEdgePoints()                     */

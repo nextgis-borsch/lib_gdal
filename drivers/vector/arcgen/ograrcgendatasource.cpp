@@ -30,7 +30,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ograrcgendatasource.cpp 35273 2016-09-01 15:39:56Z goatbar $");
 
 /************************************************************************/
 /*                          OGRARCGENDataSource()                          */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_geometry.h 40454 2017-10-16 19:14:13Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Classes for manipulating simple features that is not specific
@@ -765,6 +765,9 @@ class CPL_DLL OGRCircularString : public OGRSimpleCurve
         const CPL_OVERRIDE;
     virtual int    ContainsPoint( const OGRPoint* p ) const CPL_OVERRIDE;
     virtual double get_AreaOfCurveSegments() const CPL_OVERRIDE;
+
+    friend class OGRCurvePolygon;
+    int IntersectsPoint( const OGRPoint* p ) const;
 //! @endcond
 
   public:

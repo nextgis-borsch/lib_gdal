@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: cpl_conv.h 37866 2017-03-30 20:16:05Z rouault $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Convenience functions declarations.

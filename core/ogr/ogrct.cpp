@@ -44,7 +44,7 @@
 #include "proj_api.h"
 #endif
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrct.cpp 37166 2017-01-17 16:38:53Z rouault $");
 
 /* ==================================================================== */
 /*      PROJ.4 interface stuff.                                         */

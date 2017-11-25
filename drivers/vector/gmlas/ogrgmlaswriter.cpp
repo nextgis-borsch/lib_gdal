@@ -36,7 +36,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgmlaswriter.cpp 38073 2017-04-20 17:00:47Z rouault $");
 
 namespace GMLAS
 {

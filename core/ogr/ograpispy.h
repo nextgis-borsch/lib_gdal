@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ograpispy.h 35912 2016-10-24 16:41:45Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  OGR C API "Spy"

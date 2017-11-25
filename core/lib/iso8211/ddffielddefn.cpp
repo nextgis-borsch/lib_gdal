@@ -39,7 +39,7 @@
 #include "cpl_error.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ddffielddefn.cpp 36552 2016-11-29 06:01:45Z goatbar $");
 
 #define CPLE_DiscardedFormat   1301
 

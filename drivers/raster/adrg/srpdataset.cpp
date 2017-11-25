@@ -39,7 +39,7 @@
 // Uncomment to recognize also .gen files in addition to .img files
 // #define OPEN_GEN
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: srpdataset.cpp 39068 2017-06-11 13:30:59Z rouault $");
 
 class SRPDataset : public GDALPamDataset
 {

@@ -77,7 +77,7 @@
 #define CAST_PCT(x) x
 #endif
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdaldither.cpp 36715 2016-12-06 04:34:41Z goatbar $");
 
 static int MAKE_COLOR_CODE( int r, int g, int b )
 {

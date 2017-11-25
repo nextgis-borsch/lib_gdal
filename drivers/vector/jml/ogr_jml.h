@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_jml.h 36501 2016-11-25 14:09:24Z rouault $
  *
  * Project:  JML .jml Translator
  * Purpose:  Definition of classes for OGR JML driver.

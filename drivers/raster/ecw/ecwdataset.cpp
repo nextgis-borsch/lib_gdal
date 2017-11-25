@@ -39,7 +39,7 @@
 
 #include "../mem/memdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ecwdataset.cpp 36740 2016-12-07 15:29:01Z rouault $");
 
 #undef NOISY_DEBUG
 

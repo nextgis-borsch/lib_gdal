@@ -38,7 +38,7 @@
 #include "cpl_error.h"
 #include "gdal.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalcolortable.cpp 37103 2017-01-11 18:53:09Z goatbar $");
 
 /************************************************************************/
 /*                           GDALColorTable()                           */

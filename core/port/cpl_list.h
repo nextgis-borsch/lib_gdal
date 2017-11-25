@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id$
+ * $Id: cpl_list.h 37825 2017-03-21 20:14:08Z rouault $
  *
  * Name:     cpl_list.h
  * Project:  CPL - Common Portability Library

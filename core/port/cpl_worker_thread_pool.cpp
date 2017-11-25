@@ -37,7 +37,7 @@
 #include "cpl_vsi.h"
 
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_worker_thread_pool.cpp 37003 2016-12-23 14:54:07Z goatbar $");
 
 /************************************************************************/
 /*                         CPLWorkerThreadPool()                        */

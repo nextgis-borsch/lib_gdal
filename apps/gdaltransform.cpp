@@ -31,7 +31,7 @@
 #include "cpl_string.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdaltransform.cpp 36537 2016-11-27 23:51:56Z goatbar $");
 
 /************************************************************************/
 /*                               Usage()                                */

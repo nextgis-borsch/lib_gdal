@@ -37,7 +37,7 @@
 #include "ogr_sqlite.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrsqlitedriver.cpp 37599 2017-03-04 18:10:23Z rouault $");
 
 /************************************************************************/
 /*                     OGRSQLiteDriverIdentify()                        */

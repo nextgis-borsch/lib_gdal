@@ -44,7 +44,7 @@
 #include "gdal.h"
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrcsvdriver.cpp 38032 2017-04-16 08:26:01Z rouault $");
 
 static CPLMutex* hMutex = NULL;
 static std::map<CPLString, GDALDataset*> *poMap = NULL;

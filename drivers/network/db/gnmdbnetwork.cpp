@@ -31,7 +31,7 @@
 #include "gnmdb.h"
 #include "gnm_priv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gnmdbnetwork.cpp 35902 2016-10-24 12:00:50Z goatbar $");
 
 GNMDatabaseNetwork::GNMDatabaseNetwork() : GNMGenericNetwork()
 {

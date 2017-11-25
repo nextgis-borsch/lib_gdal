@@ -37,7 +37,7 @@
 #include "cpl_minixml.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gmlfeature.cpp 37155 2017-01-16 00:44:59Z goatbar $");
 
 /************************************************************************/
 /*                             GMLFeature()                             */

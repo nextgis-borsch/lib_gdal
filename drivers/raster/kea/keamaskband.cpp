@@ -29,7 +29,7 @@
 
 #include "keamaskband.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: keamaskband.cpp 34811 2016-07-28 15:15:05Z goatbar $");
 
 // constructor
 KEAMaskBand::KEAMaskBand(GDALRasterBand *pParent,

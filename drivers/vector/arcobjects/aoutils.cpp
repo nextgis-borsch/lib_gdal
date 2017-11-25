@@ -28,7 +28,7 @@
 
 #include "aoutils.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: aoutils.cpp 35933 2016-10-25 16:46:26Z goatbar $");
 
 bool AOErr(HRESULT hr, std::string desc)
 {

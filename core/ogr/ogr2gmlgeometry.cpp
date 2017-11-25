@@ -57,7 +57,7 @@
 #include "ogr_p.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogr2gmlgeometry.cpp 36965 2016-12-19 17:27:33Z rouault $");
 
 static const int SRSDIM_LOC_GEOMETRY = 1 << 0;
 static const int SRSDIM_LOC_POSLIST = 1 << 1;

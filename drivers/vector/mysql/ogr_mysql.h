@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_mysql.h 40363 2017-10-08 17:20:37Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Declarations for MySQL OGR Driver Classes.
@@ -43,7 +43,6 @@
 #pragma warning( disable : 4211 ) /* nonstandard extension used : redefined extern to static */
 #endif
 
-#include <my_global.h>
 #include <mysql.h>
 
 #ifdef _MSC_VER

@@ -43,7 +43,7 @@
 #define va_copy __va_copy
 #endif
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cplstring.cpp 39443 2017-07-02 21:20:37Z rouault $");
 
 /*
  * The CPLString class is derived from std::string, so the vast majority

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: vfkreader.h 37796 2017-03-19 19:18:10Z martinl $
  *
  * Project:  VFK Reader
  * Purpose:  Public Declarations for OGR free VFK Reader code.

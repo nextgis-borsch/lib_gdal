@@ -51,7 +51,7 @@
 #include "cpl_worker_thread_pool.h"
 #include "gdal.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalgrid.cpp 40486 2017-10-18 14:26:45Z rouault $");
 
 static const double TO_RADIANS = M_PI / 180.0;
 
@@ -1456,13 +1456,13 @@ GDALGridLinear( const void *poOptionsIn, GUInt32 nPoints,
         psTriangulation, psExtraParams->nInitialFacetIdx,
         dfXPoint, dfYPoint, &nOutputFacetIdx ) );
 
-    CPLAssert(nOutputFacetIdx >= 0);
-    // Reuse output facet idx as next initial index since we proceed line by
-    // line.
-    psExtraParams->nInitialFacetIdx = nOutputFacetIdx;
-
     if( bRet )
     {
+        CPLAssert(nOutputFacetIdx >= 0);
+        // Reuse output facet idx as next initial index since we proceed line by
+        // line.
+        psExtraParams->nInitialFacetIdx = nOutputFacetIdx;
+
         double lambda1 = 0.0;
         double lambda2 = 0.0;
         double lambda3 = 0.0;

@@ -44,7 +44,7 @@
 #include "gmlutils.h"
 #include "ogr_geometry.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gmlreader.cpp 40124 2017-09-15 15:12:08Z rouault $");
 
 /************************************************************************/
 /*                            ~IGMLReader()                             */
@@ -1333,6 +1333,12 @@ bool GMLReader::PrescanForSchema( bool bGetExtents,
     void* hCacheSRS = GML_BuildOGRGeometryFromList_CreateCache();
 
     std::string osWork;
+
+    for( int i = 0; i < m_nClassCount; i++ )
+    {
+        m_papoClass[i]->SetFeatureCount(-1);
+        m_papoClass[i]->SetSRSName(NULL);
+    }
 
     GMLFeature *poFeature = NULL;
     while( (poFeature = NextFeature()) != NULL )

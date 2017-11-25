@@ -28,7 +28,7 @@
 
 #include "ogrwalk.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrwalktool.cpp 36474 2016-11-24 00:40:09Z rouault $");
 
 /************************************************************************/
 /*                   OGRWalkArcCenterFromEdgePoints()                   */

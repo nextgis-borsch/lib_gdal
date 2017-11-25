@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdal_nrgcrs.c 34519 2016-07-02 21:09:22Z goatbar $
  *
  * Project:  Mapinfo Image Warper
  * Purpose:  Implementation of the GDALTransformer wrapper around CRS.C functions

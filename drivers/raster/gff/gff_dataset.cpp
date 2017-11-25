@@ -36,7 +36,7 @@
 #include "gdal_pam.h"
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gff_dataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 /*******************************************************************
  * Declaration of the GFFDataset class                             *

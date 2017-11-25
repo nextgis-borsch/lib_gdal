@@ -39,7 +39,7 @@
 #include "cpl_string.h"
 #include "gdal_mdreader.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: reader_alos.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 /**
  * GDALMDReaderALOS()

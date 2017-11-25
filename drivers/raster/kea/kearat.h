@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: kearat.h 37966 2017-04-11 19:34:57Z rouault $
  *  kearat.h
  *
  *  Created by Pete Bunting on 01/08/2012.

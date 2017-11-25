@@ -30,7 +30,7 @@
 #include "gdal_pam.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ctgdataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 static const int HEADER_LINE_COUNT = 5;
 

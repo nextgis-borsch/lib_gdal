@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: vfkreaderp.h 36501 2016-11-25 14:09:24Z rouault $
  *
  * Project:  VFK Reader
  * Purpose:  Private Declarations for OGR free VFK Reader code.

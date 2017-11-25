@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ceosopen.h 35885 2016-10-24 06:23:09Z goatbar $
  *
  * Project:  CEOS Translator
  * Purpose:  Public (C callable) interface for CEOS and related formats such

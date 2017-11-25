@@ -41,7 +41,7 @@
 #include "ogr_core.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogr_srs_ozi.cpp 36979 2016-12-20 18:40:40Z rouault $");
 
 /************************************************************************/
 /*                          OSRImportFromOzi()                          */

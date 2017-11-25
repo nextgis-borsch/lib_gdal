@@ -29,7 +29,7 @@
 #include "ogr_oci.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ocitest.cpp 36447 2016-11-22 22:25:08Z rouault $");
 
 /************************************************************************/
 /*                                main()                                */

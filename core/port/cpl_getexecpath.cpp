@@ -37,7 +37,7 @@
 #include "cpl_string.h"
 
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_getexecpath.cpp 36862 2016-12-14 22:16:39Z goatbar $");
 
 #if defined(WIN32)
 

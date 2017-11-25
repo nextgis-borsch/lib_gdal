@@ -46,7 +46,7 @@
 #include "../vrt/gdal_vrt.h"
 #include "../vrt/vrtdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: kmlsuperoverlaydataset.cpp 37461 2017-02-26 02:12:35Z goatbar $");
 
 using namespace std;
 

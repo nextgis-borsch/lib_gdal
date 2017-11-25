@@ -35,7 +35,7 @@
 
 #include <xercesc/sax2/Attributes.hpp>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ili2handler.cpp 35911 2016-10-24 15:03:26Z goatbar $");
 
 //
 // constants

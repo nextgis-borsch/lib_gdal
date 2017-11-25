@@ -34,7 +34,7 @@
 #include "rawdataset.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: sar_ceosdataset.cpp 37040 2016-12-30 15:31:43Z rouault $");
 
 static GInt16 CastToGInt16(float val)
 {

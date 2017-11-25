@@ -33,7 +33,7 @@
 #include "cpl_csv.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogr_srs_panorama.cpp 36238 2016-11-14 20:52:13Z goatbar $");
 
 static const double TO_DEGREES = 57.2957795130823208766;
 static const double TO_RADIANS = 0.017453292519943295769;

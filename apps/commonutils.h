@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: commonutils.h 34815 2016-07-28 20:00:17Z goatbar $
  *
  * Project:  GDAL Utilities
  * Purpose:  Common utility routines

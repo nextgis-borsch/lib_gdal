@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: Operations.i 37723 2017-03-16 17:07:53Z rouault $
  *
  * Name:     Operations.i
  * Project:  GDAL Python Interface

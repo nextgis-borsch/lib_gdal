@@ -34,7 +34,7 @@
 
 #include <cstdlib>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: genbindataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 /* ==================================================================== */
 /*      Table relating USGS and ESRI state plane zones.                 */

@@ -41,7 +41,7 @@
 #include "cpl_error.h"
 #include "cpl_vsi.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ddfrecord.cpp 36552 2016-11-29 06:01:45Z goatbar $");
 
 static const int nLeaderSize = 24;
 

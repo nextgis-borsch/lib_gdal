@@ -33,7 +33,7 @@
 #include "cpl_error.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrlibkmldriver.cpp 37108 2017-01-12 10:16:27Z rouault $");
 
 using kmldom::KmlFactory;
 

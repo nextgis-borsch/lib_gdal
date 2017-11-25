@@ -39,7 +39,7 @@
 #include "gdal.h"
 
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalchecksum.cpp 36591 2016-12-01 04:25:22Z goatbar $");
 
 /************************************************************************/
 /*                         GDALChecksumImage()                          */

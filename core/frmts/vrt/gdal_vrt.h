@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdal_vrt.h 36558 2016-11-30 01:46:53Z goatbar $
  *
  * Project:  Virtual GDAL Datasets
  * Purpose:  C/Public declarations of virtual GDAL dataset objects.

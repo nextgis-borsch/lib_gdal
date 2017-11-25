@@ -37,7 +37,7 @@
 #include "cpl_string.h"
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: reader_rdk1.cpp 36528 2016-11-27 16:35:01Z goatbar $");
 
 /**
  * GDALMDReaderResursDK1()

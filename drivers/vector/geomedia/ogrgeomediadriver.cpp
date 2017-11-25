@@ -30,7 +30,7 @@
 #include "ogr_geomedia.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgeomediadriver.cpp 35137 2016-08-17 17:05:45Z goatbar $");
 
 /************************************************************************/
 /*                          ~OGRODBCDriver()                            */

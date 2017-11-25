@@ -32,7 +32,7 @@
 #include "wmsdriver.h"
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalhttp.cpp 37949 2017-04-10 20:53:07Z lplesea $");
 
 /* CURLINFO_RESPONSE_CODE was known as CURLINFO_HTTP_CODE in libcurl 7.10.7 and earlier */
 #if LIBCURL_VERSION_NUM < 0x070a07

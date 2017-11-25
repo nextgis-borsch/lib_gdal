@@ -45,7 +45,7 @@
 #include "cpl_vsi.h"
 #include "gdal.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: rasterfill.cpp 36726 2016-12-06 19:01:12Z goatbar $");
 
 /************************************************************************/
 /*                           GDALFilterLine()                           */

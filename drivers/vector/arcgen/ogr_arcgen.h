@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_arcgen.h 36501 2016-11-25 14:09:24Z rouault $
  *
  * Project:  Arc/Info Generate Translator
  * Purpose:  Definition of classes for OGR .arcgen driver.

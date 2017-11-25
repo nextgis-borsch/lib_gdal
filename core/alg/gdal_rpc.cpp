@@ -56,7 +56,7 @@
 
 // #define DEBUG_VERBOSE_EXTRACT_DEM
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdal_rpc.cpp 40447 2017-10-16 09:33:31Z rouault $");
 
 CPL_C_START
 CPLXMLNode *GDALSerializeRPCTransformer( void *pTransformArg );
@@ -2019,6 +2019,8 @@ int GDALRPCTransform( void *pTransformArg, int bDstToSrc,
                                             &dfHeight ) )
             {
                 panSuccess[i] = FALSE;
+                padfX[i] = HUGE_VAL;
+                padfY[i] = HUGE_VAL;
                 continue;
             }
 
@@ -2053,6 +2055,8 @@ int GDALRPCTransform( void *pTransformArg, int bDstToSrc,
                     &dfResultX, &dfResultY ) )
         {
             panSuccess[i] = FALSE;
+            padfX[i] = HUGE_VAL;
+            padfY[i] = HUGE_VAL;
             continue;
         }
 

@@ -32,7 +32,7 @@
 #include "gdal_frmts.h"
 #include "gdal_pam.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: rikdataset.cpp 36763 2016-12-09 22:10:55Z rouault $");
 
 #define RIK_HEADER_DEBUG 0
 #define RIK_CLEAR_DEBUG 0

@@ -35,7 +35,7 @@
 #include "ogr_api.h"
 #include "ogrpgeogeometry.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: FGdbUtils.cpp 36883 2016-12-15 13:31:12Z rouault $");
 
 using std::string;
 

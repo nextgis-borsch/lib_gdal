@@ -1,5 +1,5 @@
 /*****************************************************************************
- * $Id$
+ * $Id: GDapi.c 36456 2016-11-22 23:34:00Z rouault $
  *
  * This module has a number of additions and improvements over the original
  * implementation to be suitable for usage in GDAL HDF driver.

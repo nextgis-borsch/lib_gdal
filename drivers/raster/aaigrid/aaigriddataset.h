@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: aaigriddataset.h 37591 2017-03-04 15:02:53Z goatbar $
  *
  * Project:  GDAL
  * Purpose:  Implements Arc/Info ASCII Grid Format.

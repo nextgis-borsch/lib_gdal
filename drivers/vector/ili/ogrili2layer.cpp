@@ -31,7 +31,7 @@
 #include "cpl_string.h"
 #include "ogr_ili2.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrili2layer.cpp 37743 2017-03-17 13:14:00Z rouault $");
 
 /************************************************************************/
 /*                           OGRILI2Layer()                              */

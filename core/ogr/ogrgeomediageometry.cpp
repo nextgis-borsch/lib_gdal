@@ -29,7 +29,7 @@
 #include "ogrgeomediageometry.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgeomediageometry.cpp 36272 2016-11-18 01:20:28Z goatbar $");
 
 static const int GEOMEDIA_POINT          = 0xC0;
 static const int GEOMEDIA_ORIENTED_POINT = 0xC8;

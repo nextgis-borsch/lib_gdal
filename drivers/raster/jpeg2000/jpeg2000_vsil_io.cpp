@@ -81,7 +81,7 @@
 #include "jpeg2000_vsil_io.h"
 #include "cpl_vsi.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: jpeg2000_vsil_io.cpp 39625 2017-07-22 13:39:12Z rouault $");
 
 /*
  * File descriptor file object.

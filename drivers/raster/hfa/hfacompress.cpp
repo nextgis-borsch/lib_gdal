@@ -37,7 +37,7 @@
 #include "cpl_vsi.h"
 #include "hfa.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: hfacompress.cpp 37890 2017-04-03 19:26:01Z goatbar $");
 
 HFACompress::HFACompress( void *pData, GUInt32 nBlockSize, EPTType eDataType ) :
     m_pData(pData),

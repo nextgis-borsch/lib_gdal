@@ -55,7 +55,7 @@
 #include "memdataset.h"
 #include "vrtdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: rasterio.cpp 37528 2017-02-28 23:13:53Z rouault $");
 
 /************************************************************************/
 /*                             IRasterIO()                              */

@@ -34,7 +34,7 @@
 
 #include "wmsdriver.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: minidriver.cpp 36611 2016-12-01 23:13:38Z lplesea $");
 
 class WMSMiniDriverManager {
 public:

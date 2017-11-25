@@ -31,7 +31,7 @@
 #include "cpl_string.h"
 #include "ogr_gpx.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgpxdatasource.cpp 35911 2016-10-24 15:03:26Z goatbar $");
 
 static const int SPACE_FOR_METADATA = 160;
 

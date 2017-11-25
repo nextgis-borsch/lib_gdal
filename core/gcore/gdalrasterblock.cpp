@@ -42,7 +42,7 @@
 #include "cpl_string.h"
 #include "cpl_vsi.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdalrasterblock.cpp 39966 2017-08-30 15:28:52Z rouault $");
 
 static bool bCacheMaxInitialized = false;
 // Will later be overridden by the default 5% if GDAL_CACHEMAX not defined.

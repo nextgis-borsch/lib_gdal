@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: XMLNode.i 34525 2016-07-03 02:53:47Z goatbar $
  *
  * Project:  GDAL SWIG Interface
  * Purpose:  GDAL XML SWIG Interface declarations.

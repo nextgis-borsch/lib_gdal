@@ -35,7 +35,7 @@
 #include "cpl_error.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_google_oauth2.cpp 37452 2017-02-25 15:47:11Z goatbar $");
 
 /* ==================================================================== */
 /*      Values related to OAuth2 authorization to use fusion            */

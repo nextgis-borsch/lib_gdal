@@ -35,7 +35,7 @@
 
 #include <cassert>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrtindex.cpp 40206 2017-09-25 14:34:11Z rouault $");
 
 static void Usage();
 
@@ -309,7 +309,8 @@ int main( int nArgc, char **papszArgv )
                 poDstLayer->CreateField( &oSrcSRSNameField );
             }
 
-            OGRSpatialReference::DestroySpatialReference( poSrcSpatialRef );
+            if( poSrcSpatialRef )
+                poSrcSpatialRef->Release();
         }
     }
 
@@ -738,8 +739,7 @@ int main( int nArgc, char **papszArgv )
     OGRFeatureDefn::DestroyFeatureDefn( poFeatureDefn );
 
     if( alreadyExistingSpatialRef != NULL )
-        OGRSpatialReference::DestroySpatialReference(
-            alreadyExistingSpatialRef );
+        alreadyExistingSpatialRef->Release();
     delete poTargetSRS;
 
     CPLFree(current_path);

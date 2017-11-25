@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #******************************************************************************
-#  $Id$
+#  $Id: gdalident.py 32555 2015-12-30 19:26:44Z goatbar $
 #
 #  Project:  GDAL
 #  Purpose:  Application to identify files by format.

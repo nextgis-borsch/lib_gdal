@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_geopackage.h 40466 2017-10-17 12:22:04Z rouault $
  *
  * Project:  GeoPackage Translator
  * Purpose:  Definition of classes for OGR GeoPackage driver.
@@ -275,6 +275,8 @@ class GDALGeoPackageDataset CPL_FINAL : public OGRSQLiteBaseDataSource, public G
 
 class GDALGeoPackageRasterBand CPL_FINAL: public GDALGPKGMBTilesLikeRasterBand
 {
+        bool                    m_bStatsComputed;
+
     public:
                                 GDALGeoPackageRasterBand(GDALGeoPackageDataset* poDS,
                                                          int nTileWidth, int nTileHeight);

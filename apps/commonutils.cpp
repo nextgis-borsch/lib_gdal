@@ -37,7 +37,7 @@
 #include "cpl_string.h"
 #include "gdal.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: commonutils.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 /* -------------------------------------------------------------------- */
 /*                   DoesDriverHandleExtension()                        */

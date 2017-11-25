@@ -39,7 +39,7 @@
 
 /*! @cond Doxygen_Suppress */
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: vrtdataset.cpp 38964 2017-06-08 08:09:07Z rouault $");
 
 /************************************************************************/
 /*                            VRTDataset()                             */

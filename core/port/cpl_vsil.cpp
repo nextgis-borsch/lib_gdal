@@ -53,7 +53,7 @@
 #include "cpl_vsi_virtual.h"
 
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_vsil.cpp 38421 2017-05-16 17:09:42Z rouault $");
 
 /************************************************************************/
 /*                             VSIReadDir()                             */

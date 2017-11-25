@@ -43,7 +43,7 @@
 #include "cpl_error.h"
 #include "cpl_vsi.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: mitab_mapcoordblock.cpp 38360 2017-05-14 22:20:17Z rouault $");
 
 /*=====================================================================
  *                      class TABMAPCoordBlock

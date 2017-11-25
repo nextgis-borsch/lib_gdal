@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id$
+ * $Id: avc_e00write.c 34524 2016-07-03 02:47:25Z goatbar $
  *
  * Name:     avc_e00write.c
  * Project:  Arc/Info vector coverage (AVC)  E00->BIN conversion library

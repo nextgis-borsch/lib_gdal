@@ -49,7 +49,7 @@
 #include "ogr_core.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdal_rasterize_lib.cpp 39050 2017-06-10 20:18:19Z rouault $");
 
 /************************************************************************/
 /*                            ArgIsNumeric()                            */

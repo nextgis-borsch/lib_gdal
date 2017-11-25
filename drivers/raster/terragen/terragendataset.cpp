@@ -110,7 +110,7 @@
 
 #include <algorithm>
 
-// CPL_CVSID("$Id$");
+// CPL_CVSID("$Id: terragendataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 const double kdEarthCircumPolar = 40007849;
 const double kdEarthCircumEquat = 40075004;

@@ -40,7 +40,7 @@
 #include "cpl_multiproc.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogr_xerces.cpp 36163 2016-11-08 15:46:28Z goatbar $");
 
 #ifdef HAVE_XERCES
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdalpansharpen.h 36427 2016-11-22 12:56:01Z rouault $
  *
  * Project:  GDAL Pansharpening module
  * Purpose:  Prototypes, and definitions for pansharpening related work.

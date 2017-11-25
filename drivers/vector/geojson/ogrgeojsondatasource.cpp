@@ -57,7 +57,7 @@
 // #include "symbol_renames.h"
 
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgeojsondatasource.cpp 40541 2017-10-23 20:46:00Z rouault $");
 
 /************************************************************************/
 /*                           OGRGeoJSONDataSource()                     */
@@ -681,7 +681,8 @@ void OGRGeoJSONDataSource::LoadLayers(char** papszOpenOptionsIn)
 /*      Is it ESRI Feature Service data ?                               */
 /* -------------------------------------------------------------------- */
     if( strstr(pszGeoData_, "esriGeometry") ||
-        strstr(pszGeoData_, "esriFieldType") )
+        strstr(pszGeoData_, "esriFieldType") ||
+        strstr(pszGeoData_, "\"fieldAliases\"") )
     {
         OGRESRIJSONReader reader;
         OGRErr err = reader.Parse( pszGeoData_ );

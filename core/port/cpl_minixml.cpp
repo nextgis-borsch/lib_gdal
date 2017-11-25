@@ -53,7 +53,7 @@
 #include "cpl_string.h"
 #include "cpl_vsi.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_minixml.cpp 38510 2017-05-20 10:10:29Z rouault $");
 
 typedef enum {
     TNone,

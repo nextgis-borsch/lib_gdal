@@ -30,7 +30,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgrassdriver.cpp 36368 2016-11-21 01:47:49Z rouault $");
 
 /************************************************************************/
 /*                          ~OGRGRASSDriver()                           */

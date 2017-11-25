@@ -29,7 +29,7 @@
 
 #include "gtm.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gtm.cpp 40629 2017-11-03 19:50:33Z rouault $");
 
 /************************************************************************/
 /*        Methods for dealing with write on files and buffers           */
@@ -810,8 +810,6 @@ bool GTM::readFile(void* pBuffer, size_t nSize, size_t nCount)
     const size_t nRead = VSIFReadL( pBuffer, nSize, nCount, pGTMFile );
     if (nRead == 0)
     {
-        VSIFCloseL( pGTMFile );
-        pGTMFile = NULL;
         return false;
     }
     return true;

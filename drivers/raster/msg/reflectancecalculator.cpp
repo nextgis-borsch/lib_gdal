@@ -32,7 +32,7 @@
 #include <cmath>
 #include <cstdlib>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: reflectancecalculator.cpp 36427 2016-11-22 12:56:01Z rouault $");
 
 using namespace std;
 

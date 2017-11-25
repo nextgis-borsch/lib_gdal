@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id$
+ * $Id: mitab_ogr_driver.h 37335 2017-02-09 14:29:57Z goatbar $
  *
  * Name:     mitab_ogr_drive.h
  * Project:  Mid/mif tab ogr support

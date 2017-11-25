@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # *****************************************************************************
-#  $Id$
+#  $Id: validate_cloud_optimized_geotiff.py 37254 2017-01-31 12:17:52Z rouault $
 #
 #  Project:  GDAL
 #  Purpose:  Validate Cloud Optimized GeoTIFF file structure

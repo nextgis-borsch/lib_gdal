@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: gdal_csharp_extend.i 39863 2017-08-18 20:27:45Z tamas $
  *
  * Name:     gdal_csharp_extend.i
  * Project:  GDAL CSharp Interface

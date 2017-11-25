@@ -33,7 +33,7 @@
 #include "cpl_string.h"
 #include "cpl_error.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrdb2cli.cpp 36355 2016-11-20 22:54:34Z rouault $");
 
 #ifndef SQLColumns_TABLE_CAT
 #define SQLColumns_TABLE_CAT 1

@@ -30,7 +30,7 @@
 #include "ogr_spatialref.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: iscedataset.cpp 36501 2016-11-25 14:09:24Z rouault $");
 
 static const char * const apszISCE2GDALDatatypes[] = {
     "BYTE:Byte",

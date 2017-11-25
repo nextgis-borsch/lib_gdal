@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: shp_vsi.c 37091 2017-01-10 17:25:57Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  IO Redirection via VSI services for shp/dbf io.
@@ -33,7 +33,7 @@
 #include "cpl_conv.h"
 #include "cpl_vsi_error.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: shp_vsi.c 37091 2017-01-10 17:25:57Z rouault $");
 
 typedef struct
 {

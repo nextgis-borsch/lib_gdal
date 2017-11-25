@@ -37,7 +37,7 @@
 #include "cpl_conv.h"
 #include "cpl_error.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: vfkdatablocksqlite.cpp 37472 2017-02-26 02:47:45Z goatbar $");
 
 /*!
   \brief Load geometry (point layers)

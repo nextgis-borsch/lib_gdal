@@ -30,7 +30,7 @@
 #include "ogr_dods.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrdodsfielddefn.cpp 36182 2016-11-09 12:10:20Z rouault $");
 
 /************************************************************************/
 /*                          OGRDODSFieldDefn()                          */

@@ -33,7 +33,7 @@
 #include "ogr_p.h"
 #include "ogrlibkmlgeometry.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrlibkmlgeometry.cpp 35933 2016-10-25 16:46:26Z goatbar $");
 
 using kmlbase::Vec3;
 using kmldom::CoordinatesPtr;

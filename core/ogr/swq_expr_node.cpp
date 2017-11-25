@@ -45,7 +45,7 @@
 #include "cpl_string.h"
 #include "ogr_geometry.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: swq_expr_node.cpp 37398 2017-02-17 10:21:00Z rouault $");
 
 /************************************************************************/
 /*                           swq_expr_node()                            */

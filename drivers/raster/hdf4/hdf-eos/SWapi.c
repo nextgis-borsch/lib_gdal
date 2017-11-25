@@ -1,5 +1,5 @@
 /*****************************************************************************
- * $Id$
+ * $Id: SWapi.c 36473 2016-11-23 16:43:20Z rouault $
  *
  * This module has a number of additions and improvements over the original
  * implementation to be suitable for usage in GDAL HDF driver.

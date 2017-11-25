@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # ******************************************************************************
-#  $Id$
+#  $Id: gdal2tiles.py 39836 2017-08-16 12:51:57Z rouault $
 #
 # Project:  Google Summer of Code 2007, 2008 (http://code.google.com/soc/)
 # Support:  BRGM (http://www.brgm.fr)
@@ -52,7 +52,7 @@ except Exception:
     # 'antialias' resampling is not available
     pass
 
-__version__ = "$Id$"
+__version__ = "$Id: gdal2tiles.py 39836 2017-08-16 12:51:57Z rouault $"
 
 resampling_list = ('average', 'near', 'bilinear', 'cubic', 'cubicspline', 'lanczos',  'antialias')
 profile_list = ('mercator', 'geodetic', 'raster')

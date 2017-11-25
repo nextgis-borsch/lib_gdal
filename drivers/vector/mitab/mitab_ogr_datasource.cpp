@@ -32,7 +32,7 @@
 
 #include "mitab_ogr_driver.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: mitab_ogr_datasource.cpp 37386 2017-02-15 17:19:05Z goatbar $");
 
 /*=======================================================================
  *                 OGRTABDataSource

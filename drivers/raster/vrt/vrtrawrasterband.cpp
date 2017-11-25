@@ -45,7 +45,7 @@
 #include "gdal.h"
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: vrtrawrasterband.cpp 40225 2017-09-26 21:19:15Z rouault $");
 
 /*! @cond Doxygen_Suppress */
 
@@ -215,6 +215,7 @@ CPLErr VRTRawRasterBand::SetRawLink( const char *pszFilename,
 /* -------------------------------------------------------------------- */
 /*      Try and open the file.  We always use the large file API.       */
 /* -------------------------------------------------------------------- */
+    CPLPushErrorHandler(CPLQuietErrorHandler);
     FILE *fp = CPLOpenShared( pszExpandedFilename, "rb+", TRUE );
 
     if( fp == NULL )
@@ -225,6 +226,8 @@ CPLErr VRTRawRasterBand::SetRawLink( const char *pszFilename,
     {
         fp = CPLOpenShared( pszExpandedFilename, "wb+", TRUE );
     }
+    CPLPopErrorHandler();
+    CPLErrorReset();
 
     if( fp == NULL )
     {

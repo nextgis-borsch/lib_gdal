@@ -28,7 +28,7 @@
 
 #include "wmsdriver.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: wmsutils.cpp 37290 2017-02-03 19:57:05Z lplesea $");
 
 CPLString MD5String(const char *s) {
     unsigned char hash[16];

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 ###############################################################################
-# $Id$
+# $Id: ogrmerge.py 38240 2017-05-13 11:37:40Z rouault $
 #
 # Project:  GDAL/OGR samples
 # Purpose:  Merge the content of several vector datasets into a single one.

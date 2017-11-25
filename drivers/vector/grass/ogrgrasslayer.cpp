@@ -31,7 +31,7 @@
 #include "ogrgrass.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgrasslayer.cpp 36368 2016-11-21 01:47:49Z rouault $");
 
 /************************************************************************/
 /*                           OGRGRASSLayer()                            */

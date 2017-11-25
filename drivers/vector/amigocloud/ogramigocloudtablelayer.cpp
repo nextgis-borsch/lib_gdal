@@ -32,7 +32,7 @@
 #include "ogrgeojsonreader.h"
 #include <sstream>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogramigocloudtablelayer.cpp 40508 2017-10-20 12:55:15Z rouault $")
 
 /************************************************************************/
 /*                    OGRAMIGOCLOUDEscapeIdentifier( )                     */

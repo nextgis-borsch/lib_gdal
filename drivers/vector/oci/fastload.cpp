@@ -29,7 +29,7 @@
 #include <stdio.h>
 #include "ogr_oci.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: fastload.cpp 36456 2016-11-22 23:34:00Z rouault $");
 
 int main()
 

@@ -30,7 +30,7 @@
 
 #include "ogr_db2.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrdb2datasourcemd.cpp 36682 2016-12-04 20:34:45Z rouault $");
 
 /************************************************************************/
 /*                            FlushMetadata()                           */

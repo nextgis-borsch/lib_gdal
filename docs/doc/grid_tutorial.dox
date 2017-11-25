@@ -1,5 +1,5 @@
 #ifndef DOXYGEN_SKIP
-/* $Id$ */
+/* $Id: grid_tutorial.dox 35222 2016-08-28 06:06:11Z goatbar $ */
 #endif /* DOXYGEN_SKIP */
 
 /*!
@@ -182,7 +182,7 @@ be used for computation.
 
 \htmlonly
 <p>
-$Id$
+$Id: grid_tutorial.dox 35222 2016-08-28 06:06:11Z goatbar $
 </p>
 \endhtmlonly
 

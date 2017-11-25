@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ###############################################################################
-# $Id$
+# $Id: val_at_coord.py 31957 2015-12-02 12:44:54Z goatbar $
 #
 # Project:  GDAL Python samples
 # Purpose:  Outputs the value of the raster bands at a given

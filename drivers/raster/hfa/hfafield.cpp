@@ -48,7 +48,7 @@
 #include "cpl_string.h"
 #include "cpl_vsi.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: hfafield.cpp 38009 2017-04-14 15:07:49Z rouault $");
 
 static const int MAX_ENTRY_REPORT = 16;
 

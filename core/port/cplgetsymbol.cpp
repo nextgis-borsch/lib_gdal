@@ -36,7 +36,7 @@
 #include "cpl_error.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cplgetsymbol.cpp 36910 2016-12-16 18:49:46Z goatbar $");
 
 /* ==================================================================== */
 /*                  Unix Implementation                                 */

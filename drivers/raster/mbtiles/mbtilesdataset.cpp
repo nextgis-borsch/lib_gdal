@@ -39,7 +39,7 @@
 #include <math.h>
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: mbtilesdataset.cpp 39303 2017-06-26 08:15:37Z rouault $");
 
 static const char * const apszAllowedDrivers[] = {"JPEG", "PNG", NULL};
 

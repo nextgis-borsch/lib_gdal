@@ -57,7 +57,7 @@
 #include "ogr_core.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdal_misc.cpp 40479 2017-10-17 22:52:41Z rouault $");
 
 /************************************************************************/
 /*                         GDALDataTypeUnion()                          */
@@ -481,6 +481,9 @@ double GDALAdjustValueToDataType(
             break;
         case GDT_Float32:
         {
+            if( !CPLIsFinite(dfValue) )
+                break;
+
             // TODO(schwehr): ::min() versus ::lowest.
             // Use ClampAndRound after it has been fixed.
             if ( dfValue < -std::numeric_limits<float>::max())

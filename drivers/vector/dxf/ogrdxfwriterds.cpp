@@ -33,7 +33,7 @@
 #include "cpl_string.h"
 #include "cpl_vsi_error.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrdxfwriterds.cpp 39877 2017-08-19 18:06:16Z rouault $");
 
 /************************************************************************/
 /*                          OGRDXFWriterDS()                          */

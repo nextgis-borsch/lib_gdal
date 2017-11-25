@@ -34,7 +34,7 @@
 #include "ogrpgeogeometry.h" /* SHPT_ constants and OGRCreateFromMultiPatchPart() */
 #include <limits>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: filegdbtable.cpp 39952 2017-08-28 07:33:52Z rouault $");
 
 #define TEST_BIT(ar, bit)                       (ar[(bit) / 8] & (1 << ((bit) % 8)))
 #define BIT_ARRAY_SIZE_IN_BYTES(bitsize)        (((bitsize)+7)/8)

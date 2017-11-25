@@ -34,7 +34,7 @@
 #include <cstdlib>
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrlinestring.cpp 40622 2017-11-03 10:07:36Z rouault $");
 
 /************************************************************************/
 /*                           OGRSimpleCurve()                           */
@@ -1690,9 +1690,6 @@ OGRErr OGRSimpleCurve::importFromWkt( char ** ppszInput )
     if( bHasM ) flags |= OGR_G_MEASURED;
     if( bIsEmpty )
     {
-        // we should be at the end
-        if( !((*ppszInput[0] == '\000') || (*ppszInput[0] == ',')) )
-            return OGRERR_CORRUPT_DATA;
         return OGRERR_NONE;
     }
 

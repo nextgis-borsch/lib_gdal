@@ -33,7 +33,7 @@
 #include "ogrsqliteutility.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrsqliteexecutesql.cpp 37809 2017-03-20 15:28:41Z rouault $");
 
 /************************************************************************/
 /*                       OGRSQLiteExecuteSQLLayer                       */

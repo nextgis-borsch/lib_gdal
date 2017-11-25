@@ -1,5 +1,5 @@
 /******************************************************************************
-* $Id$
+* $Id: ogr_fgdb.h 36687 2016-12-04 22:28:14Z rouault $
 *
 * Project:  OpenGIS Simple Features Reference Implementation
 * Purpose:  Standard includes and class definitions ArcObjects OGR driver.

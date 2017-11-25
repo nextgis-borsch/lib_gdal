@@ -1,5 +1,5 @@
 #ifndef DOXYGEN_SKIP
-/* $Id$ */
+/* $Id: gdal_utilities.dox 37978 2017-04-13 15:25:54Z rouault $ */
 #endif /* DOXYGEN_SKIP */
 
 /*!
@@ -177,7 +177,7 @@ and exit.
 
 \htmlonly
 <p>
-$Id$
+$Id: gdal_utilities.dox 37978 2017-04-13 15:25:54Z rouault $
 </p>
 \endhtmlonly
 */

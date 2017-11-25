@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "ods_formula.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ods_formula_node.cpp 36979 2016-12-20 18:40:40Z rouault $");
 
 /************************************************************************/
 /*                          ods_formula_node()                          */

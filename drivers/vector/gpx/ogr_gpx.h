@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: ogr_gpx.h 36501 2016-11-25 14:09:24Z rouault $
  *
  * Project:  GPX Translator
  * Purpose:  Definition of classes for OGR .gpx driver.

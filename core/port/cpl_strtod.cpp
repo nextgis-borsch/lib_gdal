@@ -38,7 +38,7 @@
 
 #include "cpl_config.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_strtod.cpp 40017 2017-09-07 10:31:06Z rouault $");
 
 // XXX: with GCC 2.95 strtof() function is only available when in c99 mode.
 // Fix it here not touching the compiler options.

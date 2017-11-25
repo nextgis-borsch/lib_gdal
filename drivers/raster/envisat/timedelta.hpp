@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: timedelta.hpp 36411 2016-11-21 22:03:48Z rouault $
  *
  * Project:  APP ENVISAT Support
  * Purpose:  time difference class for handling of Envisat MJD time

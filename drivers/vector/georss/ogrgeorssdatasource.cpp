@@ -31,7 +31,7 @@
 #include "cpl_string.h"
 #include "cpl_csv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrgeorssdatasource.cpp 35933 2016-10-25 16:46:26Z goatbar $");
 
 /************************************************************************/
 /*                          OGRGeoRSSDataSource()                          */

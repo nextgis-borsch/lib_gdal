@@ -31,7 +31,7 @@
 #include "sdts_al.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: sdtslib.cpp 36461 2016-11-23 12:05:14Z rouault $");
 
 /************************************************************************/
 /*                            SDTSFeature()                             */

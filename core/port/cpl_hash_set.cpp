@@ -35,7 +35,7 @@
 #include "cpl_error.h"
 #include "cpl_list.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cpl_hash_set.cpp 36925 2016-12-17 04:17:39Z goatbar $");
 
 struct _CPLHashSet
 {

@@ -30,7 +30,7 @@
 #include "ogr_openair.h"
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogropenairdriver.cpp 38286 2017-05-14 00:10:56Z rouault $");
 
 /************************************************************************/
 /*                                Open()                                */

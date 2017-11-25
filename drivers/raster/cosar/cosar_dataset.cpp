@@ -29,7 +29,7 @@
 
 #include <string.h>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: cosar_dataset.cpp 38793 2017-06-02 08:21:52Z rouault $");
 
 /* Various offsets, in bytes */
 // Commented out the unused defines.

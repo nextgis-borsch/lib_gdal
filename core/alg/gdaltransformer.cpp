@@ -57,7 +57,7 @@
 #include "ogr_srs_api.h"
 
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: gdaltransformer.cpp 39654 2017-07-24 19:24:32Z rouault $");
 
 CPL_C_START
 void *GDALDeserializeGCPTransformer( CPLXMLNode *psTree );

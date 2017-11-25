@@ -40,7 +40,7 @@
 #include "ogr_geometry.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrcircularstring.cpp 40454 2017-10-16 19:14:13Z rouault $");
 
 static inline double dist(double x0, double y0, double x1, double y1)
 {
@@ -853,8 +853,24 @@ int OGRCircularString::ContainsPoint( const OGRPoint* p ) const
         const double square_dist =
             (p->getX() - cx) * (p->getX() - cx) +
             (p->getY() - cy) * (p->getY() - cy);
+        return square_dist < square_R;
+    }
+    return -1;
+}
+
+int OGRCircularString::IntersectsPoint( const OGRPoint* p ) const
+{
+    double cx = 0.0;
+    double cy = 0.0;
+    double square_R = 0.0;
+    if( IsFullCircle(cx, cy, square_R) )
+    {
+        const double square_dist =
+            (p->getX() - cx) * (p->getX() - cx) +
+            (p->getY() - cy) * (p->getY() - cy);
         return square_dist <= square_R;
     }
     return -1;
 }
+
 //! @endcond

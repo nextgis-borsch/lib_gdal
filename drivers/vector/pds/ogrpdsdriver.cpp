@@ -29,7 +29,7 @@
 #include "cpl_conv.h"
 #include "ogr_pds.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrpdsdriver.cpp 35911 2016-10-24 15:03:26Z goatbar $");
 
 extern "C" void RegisterOGRPDS();
 

@@ -34,7 +34,7 @@
 
 #include "ogrdxf_polyline_smooth.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrdxf_hatch.cpp 35626 2016-10-06 14:02:20Z rouault $");
 
 /************************************************************************/
 /*                           TranslateHATCH()                           */

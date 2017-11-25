@@ -33,7 +33,7 @@
 #include "ogrpgeogeometry.h"
 #include <string>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrvrtlayer.cpp 39817 2017-08-14 15:47:46Z rouault $");
 
 #define UNSUPPORTED_OP_READ_ONLY "%s : unsupported operation on a read-only datasource."
 

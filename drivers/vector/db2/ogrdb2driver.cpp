@@ -29,7 +29,7 @@
 #include "ogr_db2.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogrdb2driver.cpp 35910 2016-10-24 14:08:24Z goatbar $");
 
 /************************************************************************/
 /*                       OGRDB2DriverIdentify()                  */

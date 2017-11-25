@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 ###############################################################################
-# $Id$
+# $Id: ogr2vrt.py 36883 2016-12-15 13:31:12Z rouault $
 #
 # Project:  OGR Python samples
 # Purpose:  Create OGR VRT from source datasource

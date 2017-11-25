@@ -38,7 +38,7 @@
 #include "ogr_core.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: ogr_srs_dict.cpp 36289 2016-11-19 06:41:23Z goatbar $");
 
 /************************************************************************/
 /*                           importFromDict()                           */

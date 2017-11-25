@@ -40,7 +40,7 @@
 #include "ogr_core.h"
 #include "ogr_geometry.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id: swq_parser.y 37361 2017-02-12 20:49:47Z rouault $");
 
 #define YYSTYPE swq_expr_node *
 

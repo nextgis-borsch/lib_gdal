@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id$
+ * $Id: vsil_target.h 37393 2017-02-16 21:07:25Z rouault $
  *
  * Project:  JPEG-2000
  * Purpose:  Implements VSI*L based writer.

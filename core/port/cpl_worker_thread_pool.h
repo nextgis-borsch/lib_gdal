@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id$
+ * $Id: cpl_worker_thread_pool.h 37003 2016-12-23 14:54:07Z goatbar $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  CPL worker thread pool
