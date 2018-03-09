@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: e00read.c 39207 2017-06-20 17:57:08Z rouault $
+ * $Id$
  *
  * Name:     e00read.c
  * Project:  Compressed E00 Read/Write library

@@ -45,7 +45,7 @@
 #include "ogr_core.h"
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id: gdaldriver.cpp 39934 2017-08-24 14:12:19Z rouault $");
+CPL_CVSID("$Id$");
 
 CPL_C_START
 // TODO(schwehr): Why is this not in a header?

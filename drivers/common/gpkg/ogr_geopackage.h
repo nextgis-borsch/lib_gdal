@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_geopackage.h 40466 2017-10-17 12:22:04Z rouault $
+ * $Id$
  *
  * Project:  GeoPackage Translator
  * Purpose:  Definition of classes for OGR GeoPackage driver.

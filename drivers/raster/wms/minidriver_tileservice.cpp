@@ -30,7 +30,7 @@
 #include "wmsdriver.h"
 #include "minidriver_tileservice.h"
 
-CPL_CVSID("$Id: minidriver_tileservice.cpp 36682 2016-12-04 20:34:45Z rouault $");
+CPL_CVSID("$Id$");
 
 WMSMiniDriver_TileService::WMSMiniDriver_TileService() {}
 

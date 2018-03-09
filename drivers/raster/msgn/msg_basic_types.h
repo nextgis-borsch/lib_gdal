@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: msg_basic_types.h 36776 2016-12-10 11:17:47Z rouault $
+ * $Id$
  *
  * Project:  MSG Native Reader
  * Purpose:  Basic types implementation.

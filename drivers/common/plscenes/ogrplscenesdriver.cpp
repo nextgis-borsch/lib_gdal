@@ -28,7 +28,7 @@
 
 #include "ogr_plscenes.h"
 
-CPL_CVSID("$Id: ogrplscenesdriver.cpp 39215 2017-06-20 19:09:46Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                         OGRPLScenesIdentify()                        */

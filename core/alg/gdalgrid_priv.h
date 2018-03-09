@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalgrid_priv.h 35087 2016-08-13 21:20:46Z rouault $
+ * $Id$
  *
  * Project:  GDAL Gridding API.
  * Purpose:  Prototypes, and definitions for of GDAL scattered data gridder.

@@ -55,7 +55,7 @@
 #include "ogr_spatialref.h"
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id: mitab_tabfile.cpp 40513 2017-10-20 16:03:10Z rouault $");
+CPL_CVSID("$Id$");
 
 static const char UNSUPPORTED_OP_READ_ONLY[] =
   "%s : unsupported operation on a read-only datasource.";

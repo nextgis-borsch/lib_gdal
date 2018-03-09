@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_xls.h 40701 2017-11-13 15:58:20Z rouault $
+ * $Id$
  *
  * Project:  XLS Translator
  * Purpose:  Definition of classes for OGR .xls driver.

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: OSRTransform.cs 35222 2016-08-28 06:06:11Z goatbar $
+ * $Id$
  *
  * Name:     OSRTransform.cs
  * Project:  GDAL CSharp Interface

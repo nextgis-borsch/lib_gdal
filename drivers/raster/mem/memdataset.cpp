@@ -46,7 +46,7 @@
 #include "gdal.h"
 #include "gdal_frmts.h"
 
-CPL_CVSID("$Id: memdataset.cpp 37462 2017-02-26 02:13:03Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                        MEMCreateRasterBand()                         */

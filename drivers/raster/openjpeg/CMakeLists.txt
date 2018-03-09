@@ -29,8 +29,8 @@ option(ENABLE_OPENJPEG "Build OPENJPEG (JPEG2000 via OpenJPEG library) format" O
 if(ENABLE_OPENJPEG)
     set(TARGET_NAME ras_openjpeg)
 
-    find_anyproject(OpenJPEG REQUIRED) 
-           
+    find_anyproject(OpenJPEG REQUIRED)
+
     if(NOT OPENJPEG_VERSION_NUM)
         set(MAJOR_VERSION 0)
         set(MINOR_VERSION 0)
@@ -59,7 +59,7 @@ if(ENABLE_OPENJPEG)
         math(EXPR OPENJPEG_VERSION_NUM "${MAJOR_VERSION} * 10000 + ${MINOR_VERSION} * 100 + ${REV_VERSION}")
 
     endif()
-    
+
     if(OPENJPEG_VERSION_NUM LESS 20000)
         warning_msg("Skip openjpeg")
         # message(STATUS "OPENJPEG_VERSION_NUM set to ${OPENJPEG_VERSION_NUM}")
@@ -85,9 +85,6 @@ if(ENABLE_OPENJPEG)
     # TODO: implement plugin target (according so/dll) if needed.
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
-    if(WITH_OPENJPEG_EXTERNAL)
-        add_dependencies(${TARGET_NAME} ${DEPENDENCY_LIB})
-    endif()
 
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)

@@ -51,7 +51,7 @@
 #include <assert.h>
 #include "../zlib/zlib.h"
 
-CPL_CVSID("$Id: mrf_band.cpp 37663 2017-03-09 20:42:19Z lplesea $");
+CPL_CVSID("$Id$");
 
 using std::vector;
 using std::string;

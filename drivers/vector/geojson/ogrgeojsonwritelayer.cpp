@@ -32,7 +32,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id: ogrgeojsonwritelayer.cpp 37472 2017-02-26 02:47:45Z goatbar $");
+CPL_CVSID("$Id$");
 
 // Remove annoying warnings Microsoft Visual C++.
 #if defined(_MSC_VER)

@@ -28,7 +28,7 @@
 
 #include "ogr_gft.h"
 
-CPL_CVSID("$Id: ogrgftresultlayer.cpp 36691 2016-12-04 22:45:59Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                        OGRGFTResultLayer()                           */

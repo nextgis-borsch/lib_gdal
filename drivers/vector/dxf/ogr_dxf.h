@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_dxf.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id$
  *
  * Project:  DXF Translator
  * Purpose:  Definition of classes for OGR .dxf driver.

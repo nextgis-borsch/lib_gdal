@@ -3,8 +3,8 @@
 # Purpose:  CMake build scripts
 # Author:   Dmitry Baryshnikov, polimax@mail.ru
 ################################################################################
-# Copyright (C) 2015, NextGIS <info@nextgis.com>
-# Copyright (C) 2015 Dmitry Baryshnikov
+# Copyright (C) 2015-2018, NextGIS <info@nextgis.com>
+# Copyright (C) 2015-2018 Dmitry Baryshnikov
 #
 # This script is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,10 +20,6 @@
 # along with this script.  If not, see <http://www.gnu.org/licenses/>.
 ################################################################################
 
-set(repo_name lib_opencad)
-set(repo_project opencad)
-set(repo_include "opencad")
-
-if(NOT find_extproject_SHARED)
-    add_definitions(-DOCAD_STATIC)
-endif()
+set(repo nextgis-borsch/lib_opencad)
+set(repo_type github)
+# set(repo_branch master) # No need to set as master is default value

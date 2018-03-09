@@ -40,7 +40,7 @@
 
 #include "georaster_priv.h"
 
-CPL_CVSID("$Id: georaster_dataset.cpp 40616 2017-11-02 12:40:51Z ilucena $")
+CPL_CVSID("$Id$")
 
 //  ---------------------------------------------------------------------------
 //                                                           GeoRasterDataset()

@@ -1,6 +1,6 @@
 
 /******************************************************************************
- * $Id: typemaps_ruby.i 34525 2016-07-03 02:53:47Z goatbar $
+ * $Id$
  *
  * Name:     typemaps_ruby.i
  * Project:  GDAL Ruby Interface

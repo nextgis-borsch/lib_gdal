@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "ogr_db2.h"
 
-CPL_CVSID("$Id: ogrdb2geometryvalidator.cpp 35675 2016-10-10 04:57:58Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                   OGRDB2GeometryValidator()                        */

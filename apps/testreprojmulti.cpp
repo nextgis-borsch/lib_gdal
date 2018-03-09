@@ -33,7 +33,7 @@
 #include "cpl_multiproc.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: testreprojmulti.cpp 34654 2016-07-14 05:53:06Z goatbar $");
+CPL_CVSID("$Id$");
 
 double* padfRefX;
 double* padfRefY;

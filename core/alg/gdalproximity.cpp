@@ -42,7 +42,7 @@
 #include "cpl_vsi.h"
 #include "gdal.h"
 
-CPL_CVSID("$Id: gdalproximity.cpp 40490 2017-10-18 17:08:34Z rouault $");
+CPL_CVSID("$Id$");
 
 static CPLErr
 ProcessProximityLine( GInt32 *panSrcScanline, int *panNearX, int *panNearY,

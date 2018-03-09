@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_segy.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id$
  *
  * Project:  SEG-Y Translator
  * Purpose:  Definition of classes for OGR SEG-Y driver.

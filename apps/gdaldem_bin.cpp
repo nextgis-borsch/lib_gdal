@@ -36,7 +36,7 @@
 #include "gdal_priv.h"
 #include "commonutils.h"
 
-CPL_CVSID("$Id: gdaldem_bin.cpp 35600 2016-10-02 18:21:54Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                               Usage()                                */

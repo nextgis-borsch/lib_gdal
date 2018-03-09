@@ -45,7 +45,7 @@
 
 #include "marfa.h"
 
-CPL_CVSID("$Id: Tif_band.cpp 35250 2016-08-30 04:20:18Z goatbar $");
+CPL_CVSID("$Id$");
 
 NAMESPACE_MRF_START
 

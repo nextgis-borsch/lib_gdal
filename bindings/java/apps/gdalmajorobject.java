@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalmajorobject.java 16510 2009-03-07 21:19:14Z rouault $
+ * $Id$
  *
  * Name:     gdalmajorobject.java
  * Project:  GDAL Java Interface

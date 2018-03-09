@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrogdi.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id$
  *
  * Project:  OGDI Bridge
  * Purpose:  Private definitions within the OGDI driver to implement

@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_string.h 38064 2017-04-19 08:58:09Z rouault $
+ * $Id$
  *
  * Name:     cpl_string.h
  * Project:  CPL - Common Portability Library

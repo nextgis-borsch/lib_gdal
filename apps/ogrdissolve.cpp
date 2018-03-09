@@ -33,7 +33,7 @@
 #include "ogr_api.h"
 #include <map>
 #include <list>
-CPL_CVSID("$Id: ogrdissolve.cpp 35931 2016-10-25 16:20:52Z goatbar $");
+CPL_CVSID("$Id$");
 
 static void Usage();
 

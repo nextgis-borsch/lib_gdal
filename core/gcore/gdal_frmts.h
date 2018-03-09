@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_frmts.h 36731 2016-12-07 11:08:07Z rouault $
+ * $Id$
  *
  * Project:  GDAL
  * Purpose:  Prototypes for all format specific driver initialization.

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ntf.h 39074 2017-06-11 19:04:21Z rouault $
+ * $Id$
  *
  * Project:  NTF Translator
  * Purpose:  Main declarations for NTF translator.

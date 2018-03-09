@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_vfk.h 37757 2017-03-18 14:03:33Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions for OGR/VFK driver.

@@ -39,7 +39,7 @@
 #include "NCSUtil.h"
 #endif
 
-CPL_CVSID("$Id: ecwcreatecopy.cpp 36740 2016-12-07 15:29:01Z rouault $");
+CPL_CVSID("$Id$");
 
 #if defined(FRMT_ecw) && defined(HAVE_COMPRESS)
 

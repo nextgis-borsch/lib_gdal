@@ -36,7 +36,7 @@
 
 using namespace std;
 
-CPL_CVSID("$Id: ogrili2datasource.cpp 38486 2017-05-19 10:12:42Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                         OGRILI2DataSource()                         */

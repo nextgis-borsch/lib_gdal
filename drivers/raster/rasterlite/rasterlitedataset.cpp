@@ -35,7 +35,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id: rasterlitedataset.cpp 37600 2017-03-04 18:11:13Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                        RasterliteOpenSQLiteDB()                      */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: msgdataset.h 36562 2016-11-30 02:12:01Z goatbar $
+ * $Id$
  *
  * Project:  MSG Driver
  * Purpose:  GDALDataset driver for MSG translator for read support.

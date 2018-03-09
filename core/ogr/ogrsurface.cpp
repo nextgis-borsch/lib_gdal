@@ -30,7 +30,7 @@
 #include "ogr_geometry.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrsurface.cpp 36324 2016-11-20 02:28:41Z goatbar $");
+CPL_CVSID("$Id$");
 
 /**
  * \fn double OGRSurface::get_Area() const;

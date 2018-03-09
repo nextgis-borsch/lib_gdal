@@ -57,7 +57,7 @@
 #include "ogr_core.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: gdal_misc.cpp 40479 2017-10-17 22:52:41Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                         GDALDataTypeUnion()                          */

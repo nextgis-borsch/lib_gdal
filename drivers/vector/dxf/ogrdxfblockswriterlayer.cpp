@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "ogr_featurestyle.h"
 
-CPL_CVSID("$Id: ogrdxfblockswriterlayer.cpp 35645 2016-10-08 00:48:42Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                      OGRDXFBlocksWriterLayer()                       */

@@ -3,8 +3,8 @@
 # Purpose:  CMake build scripts
 # Author:   Dmitry Baryshnikov, polimax@mail.ru
 ################################################################################
-# Copyright (C) 2015-2017, NextGIS <info@nextgis.com>
-# Copyright (C) 2012-2014 Dmitry Baryshnikov
+# Copyright (C) 2015-2018, NextGIS <info@nextgis.com>
+# Copyright (C) 2012-2018 Dmitry Baryshnikov
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -44,12 +44,14 @@ if(OSX_FRAMEWORK AND (BUILD_SHARED_LIBS OR BUILD_STATIC_LIBS))
 endif()
 
 if(OSX_FRAMEWORK)
-  set(INSTALL_BIN_DIR "${CMAKE_INSTALL_PREFIX}/bin" CACHE INTERNAL "Installation directory for executables" FORCE)
-  set(INSTALL_LIB_DIR "${CMAKE_INSTALL_PREFIX}/Library/Frameworks" CACHE INTERNAL "Installation directory for libraries" FORCE)
-  set(SKIP_INSTALL_EXECUTABLES OFF)
-  set(SKIP_INSTALL_EXPORT ON)
-  set(SKIP_INSTALL_DOCS ON)
-  set(CMAKE_MACOSX_RPATH ON)
+    set(INSTALL_BIN_DIR "bin" CACHE INTERNAL "Installation directory for executables" FORCE)
+    set(INSTALL_LIB_DIR "Library/Frameworks" CACHE INTERNAL "Installation directory for libraries" FORCE)
+    set(INSTALL_SHORT_INC_DIR "${INSTALL_LIB_DIR}/${PROJECT_NAME}.framework/Headers" CACHE INTERNAL "Installation directory for headers" FORCE)  # For package paths
+    set(INSTALL_CMAKECONF_DIR ${INSTALL_LIB_DIR}/${PROJECT_NAME}.framework/Resources/CMake CACHE INTERNAL "Installation directory for cmake config files" FORCE)
+    set(SKIP_INSTALL_EXECUTABLES OFF)
+    set(SKIP_INSTALL_EXPORT ON)
+    set(SKIP_INSTALL_DOCS ON)
+    set(CMAKE_MACOSX_RPATH ON)
 
   # Use, i.e. don't skip the full RPATH for the build tree
   #set(CMAKE_SKIP_BUILD_RPATH  TRUE)
@@ -66,17 +68,19 @@ if(OSX_FRAMEWORK)
   # which point to directories outside the build tree to the install RPATH
   #set(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
 
-  set(GDAL_BUILD_DOCS OFF CACHE INTERNAL "Don't build docs on Mac OS X" FORCE)
+    set(GDAL_BUILD_DOCS OFF CACHE INTERNAL "Don't build docs on Mac OS X" FORCE)
 else()
     include(GNUInstallDirs)
 
     set(INSTALL_BIN_DIR ${CMAKE_INSTALL_BINDIR} CACHE INTERNAL "Installation directory for executables" FORCE)
     set(INSTALL_LIB_DIR ${CMAKE_INSTALL_LIBDIR} CACHE INTERNAL "Installation directory for libraries" FORCE)
     set(INSTALL_INC_DIR "${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}" CACHE INTERNAL "Installation directory for headers" FORCE)
+    set(INSTALL_SHORT_INC_DIR ${INSTALL_INC_DIR}) # For package paths
     set(INSTALL_SHARE_DIR "${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}" CACHE INTERNAL "Installation directory for share data" FORCE)
     set(INSTALL_PKGCONFIG_DIR "${INSTALL_LIB_DIR}/pkgconfig" CACHE INTERNAL "Installation directory for pkgconfig (.pc) files" FORCE)
     set(INSTALL_MAN_DIR ${CMAKE_INSTALL_MANDIR} CACHE INTERNAL "Installation directory for manual pages" FORCE)
     set(INSTALL_DOC_DIR ${CMAKE_INSTALL_DOCDIR} CACHE INTERNAL "Installation directory for doc pages" FORCE)
+    set(INSTALL_CMAKECONF_DIR ${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}/CMake CACHE INTERNAL "Installation directory for cmake config files" FORCE)
 endif()
 
 # Setup package meta-data
@@ -85,7 +89,7 @@ include(util)
 
 check_version(GDAL_MAJOR_VERSION GDAL_MINOR_VERSION GDAL_REV_VERSION)
 set(VERSION ${GDAL_MAJOR_VERSION}.${GDAL_MINOR_VERSION}.${GDAL_REV_VERSION})
-set(SOVERSION 20)
+set(SOVERSION ${GDAL_MAJOR_VERSION}0)
 
 if(OSX_FRAMEWORK)
     set(FRAMEWORK_VERSION "${GDAL_MAJOR_VERSION}")
@@ -144,7 +148,9 @@ if(EXPAT_FOUND)
     endif()
 endif()
 
-find_anyproject(JSONC REQUIRED)
+find_anyproject(JSONC REQUIRED
+    NAMES json-c jsonc json_c
+)
 
 find_anyproject(CURL DEFAULT ON CMAKE_ARGS
     -DBUILD_CURL_EXE=OFF
@@ -310,31 +316,12 @@ endif()
 
 target_link_extlibraries(${LIB_NAME})
 
-if (REGISTER_PACKAGE)
-    export(TARGETS ${LIB_NAME} FILE ${LIB_NAME}-exports.cmake)
-    set(EXPORT_PACKAGE_NAME GDAL)
-    string(TOUPPER ${EXPORT_PACKAGE_NAME} EXPORT_PACKAGE_NAME_UPPER)
-    set(EXPORT_PACKAGE_LIB_NAME ${LIB_NAME})
-
-    export(PACKAGE ${EXPORT_PACKAGE_NAME})
-
-    include(CMakePackageConfigHelpers)
-    configure_package_config_file(
-        ${CMAKE_SOURCE_DIR}/cmake/PackageConfig.cmake.in
-        ${CMAKE_CURRENT_BINARY_DIR}/${EXPORT_PACKAGE_NAME}Config.cmake
-        INSTALL_DESTINATION ${INSTALL_LIB_DIR}/cmake
-        PATH_VARS INSTALL_INC_DIR )
-    write_basic_package_version_file(
-        ${CMAKE_CURRENT_BINARY_DIR}/${EXPORT_PACKAGE_NAME}ConfigVersion.cmake
-        VERSION ${VERSION}
-        COMPATIBILITY AnyNewerVersion )
-else()
-    export(TARGETS ${LIB_NAME} FILE ${LIB_NAME}-exports.cmake EXPORT_LINK_INTERFACE_LIBRARIES)
-endif()
-
 set(GDAL_BINDINGS)
 add_subdirectory(bindings)
 add_subdirectory(docs)
+
+enable_testing()
+add_subdirectory(tests)
 
 # Install
 include(install)

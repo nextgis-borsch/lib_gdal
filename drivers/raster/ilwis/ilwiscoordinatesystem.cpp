@@ -30,7 +30,7 @@
 
 #include <string>
 
-CPL_CVSID("$Id: ilwiscoordinatesystem.cpp 36923 2016-12-16 23:24:27Z rouault $");
+CPL_CVSID("$Id$");
 
 namespace GDAL {
 

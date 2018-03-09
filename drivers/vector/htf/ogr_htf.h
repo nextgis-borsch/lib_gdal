@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_htf.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id$
  *
  * Project:  HTF Translator
  * Purpose:  Definition of classes for OGR .htf driver.

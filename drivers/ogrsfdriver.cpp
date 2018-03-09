@@ -32,7 +32,7 @@
 #include "ogr_p.h"
 #include "ograpispy.h"
 
-CPL_CVSID("$Id: ogrsfdriver.cpp 34999 2016-08-09 04:12:18Z goatbar $");
+CPL_CVSID("$Id$");
 
 //! @cond Doxygen_Suppress
 

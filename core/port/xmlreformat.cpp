@@ -29,7 +29,7 @@
 #include "cpl_minixml.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: xmlreformat.cpp 36907 2016-12-16 17:16:35Z goatbar $");
+CPL_CVSID("$Id$");
 
 int main( int argc, char **argv )
 

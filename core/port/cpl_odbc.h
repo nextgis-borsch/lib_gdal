@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_odbc.h 36675 2016-12-04 11:10:10Z rouault $
+ * $Id$
  *
  * Project:  OGR ODBC Driver
  * Purpose:  Declarations for ODBC Access Cover API.

@@ -32,7 +32,7 @@
 #include "gnm_priv.h"
 #include "gnmdb.h"
 
-CPL_CVSID("$Id: gnmdbdriver.cpp 35902 2016-10-24 12:00:50Z goatbar $");
+CPL_CVSID("$Id$");
 
 static int GNMDBDriverIdentify( GDALOpenInfo* poOpenInfo )
 

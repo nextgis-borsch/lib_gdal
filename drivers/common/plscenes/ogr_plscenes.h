@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_plscenes.h 39215 2017-06-20 19:09:46Z rouault $
+ * $Id$
  *
  * Project:  PlanetLabs scene driver
  * Purpose:  PLScenes driver interface

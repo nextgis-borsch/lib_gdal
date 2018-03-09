@@ -56,9 +56,6 @@ set(LIB_CSOURCES
 )
 
 add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
-if(DEPENDENCY_LIB)
-    add_dependencies(${TARGET_NAME} ${DEPENDENCY_LIB})
-endif()
 
 # build target
 set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
@@ -83,7 +80,6 @@ if(GDAL_BUILD_APPS)
 
     macro(ADD_EXE target sources)
         add_executable(${target} ${sources})
-        add_dependencies(${target} ${LIB_NAME})
         target_link_libraries(${target} ${LIB_NAME} ${TARGET_LINK_LIB})
         if(OSX_FRAMEWORK)
             set_target_properties(${target} PROPERTIES INSTALL_RPATH "@executable_path/../../Library/Frameworks")

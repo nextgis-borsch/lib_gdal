@@ -33,7 +33,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id: dgnwrite.cpp 36016 2016-10-29 04:12:00Z goatbar $");
+CPL_CVSID("$Id$");
 
 static void DGNPointToInt( DGNInfo *psDGN, DGNPoint *psPoint,
                            unsigned char *pabyTarget );

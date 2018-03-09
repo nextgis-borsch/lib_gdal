@@ -39,7 +39,7 @@
 #pragma clang diagnostic pop
 #endif
 
-CPL_CVSID("$Id: epsilondataset.cpp 36758 2016-12-09 16:14:08Z goatbar $");
+CPL_CVSID("$Id$");
 
 #define RASTERLITE_WAVELET_HEADER "StartWaveletsImage$$"
 #define RASTERLITE_WAVELET_FOOTER "$$EndWaveletsImage"

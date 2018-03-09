@@ -41,7 +41,7 @@
 
 #include "ogr_geometry.h"
 
-CPL_CVSID("$Id: vfkreadersqlite.cpp 37796 2017-03-19 19:18:10Z martinl $");
+CPL_CVSID("$Id$");
 
 /*!
   \brief VFKReaderSQLite constructor

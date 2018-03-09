@@ -53,7 +53,7 @@
 #include "ogr_srs_api.h"
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id: gdal_grid_lib.cpp 37481 2017-02-27 12:42:13Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                          GDALGridOptions                             */

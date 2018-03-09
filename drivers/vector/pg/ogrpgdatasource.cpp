@@ -36,7 +36,7 @@
 
 #define PQexec this_is_an_error
 
-CPL_CVSID("$Id: ogrpgdatasource.cpp 38594 2017-05-22 09:53:07Z rouault $");
+CPL_CVSID("$Id$");
 
 static void OGRPGNoticeProcessor( void *arg, const char * pszMessage );
 

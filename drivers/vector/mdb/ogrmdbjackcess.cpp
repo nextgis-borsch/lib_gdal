@@ -29,7 +29,7 @@
 #include "ogr_mdb.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id: ogrmdbjackcess.cpp 40741 2017-11-18 09:01:58Z rouault $")
+CPL_CVSID("$Id$")
 
 #if JVM_LIB_DLOPEN
 #include <limits.h>

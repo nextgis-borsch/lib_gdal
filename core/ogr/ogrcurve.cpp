@@ -29,7 +29,7 @@
 #include "ogr_geometry.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrcurve.cpp 39950 2017-08-28 07:33:38Z rouault $");
+CPL_CVSID("$Id$");
 
 //! @cond Doxygen_Suppress
 

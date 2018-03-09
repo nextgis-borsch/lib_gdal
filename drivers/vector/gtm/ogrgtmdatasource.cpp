@@ -30,7 +30,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id: ogrgtmdatasource.cpp 36017 2016-10-29 04:27:08Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                         OGRGTMDataSource()                           */

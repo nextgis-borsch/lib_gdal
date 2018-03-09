@@ -35,7 +35,7 @@
 
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: cpl_progress.cpp 36768 2016-12-10 01:32:06Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                         GDALDummyProgress()                          */

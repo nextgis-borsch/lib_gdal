@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_xplane_geo_utils.h 35911 2016-10-24 15:03:26Z goatbar $
+ * $Id$
  *
  * Project:  X-Plane aeronautical data reader
  * Purpose:  Definition of geo-computation functions

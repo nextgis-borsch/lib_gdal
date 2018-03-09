@@ -30,7 +30,7 @@
 #include "gnm.h"
 #include "gnm_priv.h"
 
-CPL_CVSID("$Id: gnmlayer.cpp 36366 2016-11-21 01:21:43Z rouault $");
+CPL_CVSID("$Id$");
 
 /**
  * GNMGenericLayer

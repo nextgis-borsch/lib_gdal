@@ -35,7 +35,7 @@
 #include "cpl_port.h"
 #include "gdal_pam.h"
 
-CPL_CVSID("$Id: nitfwritejpeg.cpp 34811 2016-07-28 15:15:05Z goatbar $");
+CPL_CVSID("$Id$");
 
 CPL_C_START
 #ifdef LIBJPEG_12_PATH

@@ -58,7 +58,7 @@
 #include "gdal_priv.h"
 #
 
-CPL_CVSID("$Id: hdf5dataset.cpp 37930 2017-04-09 06:15:28Z goatbar $");
+CPL_CVSID("$Id$");
 
 static const size_t MAX_METADATA_LEN = 32768;
 

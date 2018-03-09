@@ -33,7 +33,7 @@
 #include "cpl_minixml.h"
 #include <vector>
 
-CPL_CVSID("$Id: gdallocationinfo.cpp 36682 2016-12-04 20:34:45Z rouault $");
+CPL_CVSID("$Id$");
 
 /******************************************************************************/
 /*! \page gdallocationinfo gdallocationinfo

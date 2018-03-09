@@ -39,7 +39,7 @@
 static const char UNSUPPORTED_OP_READ_ONLY[] =
     "%s : unsupported operation on a read-only datasource.";
 
-CPL_CVSID("$Id: ogrshapelayer.cpp 40607 2017-11-01 13:10:02Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                           OGRShapeLayer()                            */

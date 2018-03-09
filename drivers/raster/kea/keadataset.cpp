@@ -31,7 +31,7 @@
 #include "keaband.h"
 #include "keacopy.h"
 
-CPL_CVSID("$Id: keadataset.cpp 36418 2016-11-21 22:58:41Z rouault $");
+CPL_CVSID("$Id$");
 
 // Function for converting a libkea type into a GDAL type
 GDALDataType KEA_to_GDAL_Type( kealib::KEADataType ekeaType )

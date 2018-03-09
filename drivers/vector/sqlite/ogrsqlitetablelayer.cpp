@@ -38,7 +38,7 @@
 static const char UNSUPPORTED_OP_READ_ONLY[] =
   "%s : unsupported operation on a read-only datasource.";
 
-CPL_CVSID("$Id: ogrsqlitetablelayer.cpp 40703 2017-11-13 21:03:14Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                        OGRSQLiteTableLayer()                         */

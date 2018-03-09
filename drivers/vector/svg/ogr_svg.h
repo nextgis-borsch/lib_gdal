@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_svg.h 36569 2016-11-30 13:04:32Z goatbar $
+ * $Id$
  *
  * Project:  SVG Translator
  * Purpose:  Definition of classes for OGR .svg driver.

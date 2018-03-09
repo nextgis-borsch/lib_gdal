@@ -34,7 +34,7 @@
 
 #include "cpl_vsi.h"
 
-CPL_CVSID("$Id: pdfio.cpp 40036 2017-09-08 11:23:21Z rouault $");
+CPL_CVSID("$Id$");
 
 #ifdef POPPLER_BASE_STREAM_HAS_TWO_ARGS
 /* Poppler 0.31.0 is the first one that needs to know the file size */

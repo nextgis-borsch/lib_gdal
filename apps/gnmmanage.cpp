@@ -37,7 +37,7 @@
 //#include "gnm.h"
 //#include "gnm_api.h"
 
-CPL_CVSID("$Id: gnmmanage.cpp 36533 2016-11-27 23:45:39Z goatbar $");
+CPL_CVSID("$Id$");
 
 enum operation
 {

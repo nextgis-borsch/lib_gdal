@@ -33,7 +33,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id: ogrmemlayer.cpp 37988 2017-04-14 07:47:29Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                      IOGRMemLayerFeatureIterator                     */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_aeronavfaa.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id$
  *
  * Project:  AeronavFAA Translator
  * Purpose:  Definition of classes for OGR AeronavFAA driver.

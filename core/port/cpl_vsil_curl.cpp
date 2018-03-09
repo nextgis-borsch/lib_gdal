@@ -42,7 +42,7 @@
 #include "cpl_vsi_virtual.h"
 #include "cpl_http.h"
 
-CPL_CVSID("$Id: cpl_vsil_curl.cpp 40695 2017-11-13 12:17:28Z rouault $");
+CPL_CVSID("$Id$");
 
 #ifndef HAVE_CURL
 

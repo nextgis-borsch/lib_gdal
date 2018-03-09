@@ -61,7 +61,7 @@
 static int bSpatialiteGlobalLoaded = FALSE;
 #endif
 
-CPL_CVSID("$Id: ogrsqlitedatasource.cpp 40703 2017-11-13 21:03:14Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                      OGRSQLiteInitOldSpatialite()                    */

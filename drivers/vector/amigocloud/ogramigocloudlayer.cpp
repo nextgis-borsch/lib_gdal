@@ -30,7 +30,7 @@
 #include "ogr_p.h"
 #include "ogrgeojsonreader.h"
 
-CPL_CVSID("$Id: ogramigocloudlayer.cpp 40508 2017-10-20 12:55:15Z rouault $")
+CPL_CVSID("$Id$")
 
 /************************************************************************/
 /*                         OGRAmigoCloudLayer()                            */

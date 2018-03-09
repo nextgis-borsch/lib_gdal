@@ -61,7 +61,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id: openjpegdataset.cpp 40330 2017-10-05 12:56:50Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                  JP2OpenJPEGDataset_ErrorCallback()                  */

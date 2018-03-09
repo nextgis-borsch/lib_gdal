@@ -51,7 +51,7 @@
 #include <emmintrin.h>
 #endif
 
-CPL_CVSID("$Id: gdalwarper.cpp 39481 2017-07-05 08:26:30Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                         GDALReprojectImage()                         */

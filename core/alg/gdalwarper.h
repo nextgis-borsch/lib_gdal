@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalwarper.h 37035 2016-12-29 16:08:53Z goatbar $
+ * $Id$
  *
  * Project:  GDAL High Performance Warper
  * Purpose:  Prototypes, and definitions for warping related work.

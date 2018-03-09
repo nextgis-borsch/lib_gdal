@@ -33,7 +33,7 @@
 #include "commonutils.h"
 #include "gdal_utils_priv.h"
 
-CPL_CVSID("$Id: gdalwarp_bin.cpp 37723 2017-03-16 17:07:53Z rouault $");
+CPL_CVSID("$Id$");
 
 /******************************************************************************/
 /*! \page gdalwarp gdalwarp

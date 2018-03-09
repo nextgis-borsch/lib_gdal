@@ -66,7 +66,7 @@
 #include "tifvsi.h"
 #include "xtiffio.h"
 
-CPL_CVSID("$Id: gt_wkt_srs.cpp 40684 2017-11-10 21:36:26Z rouault $")
+CPL_CVSID("$Id$")
 
 static const geokey_t ProjLinearUnitsInterpCorrectGeoKey =
     static_cast<geokey_t>(3059);

@@ -44,7 +44,7 @@
 #include "ogr_core.h"
 #include "ogr_geometry.h"
 
-CPL_CVSID("$Id: gmlfeatureclass.cpp 37445 2017-02-25 14:56:07Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                          GMLFeatureClass()                           */

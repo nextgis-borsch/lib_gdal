@@ -60,7 +60,7 @@
 #include "ogr_core.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: aaigriddataset.cpp 37613 2017-03-05 02:51:32Z goatbar $");
+CPL_CVSID("$Id$");
 
 static CPLString OSR_GDS( char **papszNV, const char *pszField,
                           const char *pszDefaultValue );

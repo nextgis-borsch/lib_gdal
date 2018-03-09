@@ -42,7 +42,7 @@
 #include "cpl_string.h"
 #include "ogr_core.h"
 
-CPL_CVSID("$Id: parsexsd.cpp 37446 2017-02-25 14:56:54Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                              StripNS()                               */

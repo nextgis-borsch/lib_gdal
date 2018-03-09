@@ -31,7 +31,7 @@
 #include "ogr_dods.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrdodsgrid.cpp 36663 2016-12-03 21:34:45Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                          OGRDODSGridLayer()                          */

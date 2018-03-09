@@ -45,7 +45,7 @@
 #include "ogrgeojsonutils.h"
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id: ogrgeojsondriver.cpp 40541 2017-10-23 20:46:00Z rouault $");
+CPL_CVSID("$Id$");
 
 class OGRESRIFeatureServiceDataset;
 

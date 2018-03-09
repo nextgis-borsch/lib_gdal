@@ -64,7 +64,7 @@
 #include "gdal_priv.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: gribdataset.cpp 40507 2017-10-20 12:22:11Z rouault $");
+CPL_CVSID("$Id$");
 
 static CPLMutex *hGRIBMutex = NULL;
 

@@ -50,7 +50,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id: hdf5imagedataset.cpp 37929 2017-04-09 05:42:52Z goatbar $");
+CPL_CVSID("$Id$");
 
 // Release 1.6.3 or 1.6.4 changed the type of count in some API functions.
 

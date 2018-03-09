@@ -49,7 +49,7 @@
 #include "gdal_priv.h"
 #include "ogr_geometry.h"
 
-CPL_CVSID("$Id: vrtsourcedrasterband.cpp 39729 2017-08-02 15:48:49Z rouault $");
+CPL_CVSID("$Id$");
 
 /*! @cond Doxygen_Suppress */
 

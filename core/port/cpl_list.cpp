@@ -34,7 +34,7 @@
 
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: cpl_list.cpp 36798 2016-12-11 22:19:57Z goatbar $");
+CPL_CVSID("$Id$");
 
 /*=====================================================================
                     List manipulation functions.

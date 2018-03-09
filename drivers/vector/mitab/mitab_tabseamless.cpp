@@ -47,7 +47,7 @@
 #include "ogr_spatialref.h"
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id: mitab_tabseamless.cpp 37351 2017-02-12 05:22:20Z goatbar $");
+CPL_CVSID("$Id$");
 
 /*=====================================================================
  *                      class TABSeamless

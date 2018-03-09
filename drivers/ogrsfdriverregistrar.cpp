@@ -31,7 +31,7 @@
 #include "ogr_api.h"
 #include "ograpispy.h"
 
-CPL_CVSID("$Id: ogrsfdriverregistrar.cpp 35910 2016-10-24 14:08:24Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                         OGRSFDriverRegistrar                         */

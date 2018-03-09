@@ -35,7 +35,7 @@
 #include <cstdlib>
 #include <algorithm>
 
-CPL_CVSID("$Id: xpmdataset.cpp 36436 2016-11-22 21:41:51Z rouault $");
+CPL_CVSID("$Id$");
 
 static unsigned char *ParseXPM( const char *pszInput,
                                 unsigned int nFileSize,

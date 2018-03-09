@@ -29,7 +29,7 @@
 
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id: ogrregisterall.cpp 37968 2017-04-12 07:16:55Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                           OGRRegisterAll()                           */

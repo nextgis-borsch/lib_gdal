@@ -34,7 +34,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrmysqldatasource.cpp 40363 2017-10-08 17:20:37Z rouault $");
+CPL_CVSID("$Id$");
 /************************************************************************/
 /*                         OGRMySQLDataSource()                         */
 /************************************************************************/

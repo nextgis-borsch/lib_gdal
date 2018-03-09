@@ -40,11 +40,11 @@ set(LIB_HHEADERS
 
 set(LIB_HHEADERS_PRIV
     gtiff.h
-    gt_jpeg_copy.h   
-    gt_overview.h   
-    gt_wkt_srs_for_gdal.h  
-    gt_wkt_srs_priv.h  
-    tif_float.h  
+    gt_jpeg_copy.h
+    gt_overview.h
+    gt_wkt_srs_for_gdal.h
+    gt_wkt_srs_priv.h
+    tif_float.h
     tifvsi.h
     gt_citation.h
     gt_wkt_srs.h
@@ -52,19 +52,15 @@ set(LIB_HHEADERS_PRIV
 
 set(LIB_CSOURCES
     gt_citation.cpp
-    geotiff.cpp         
-    gt_jpeg_copy.cpp  
-    gt_overview.cpp  
-    gt_wkt_srs.cpp             
-    tif_float.c        
-    tifvsi.cpp   
+    geotiff.cpp
+    gt_jpeg_copy.cpp
+    gt_overview.cpp
+    gt_wkt_srs.cpp
+    tif_float.c
+    tifvsi.cpp
 )
 
 add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
 
 # build target
 set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
-
-if(DEPENDENCY_LIB)
-    add_dependencies(${TARGET_NAME} ${DEPENDENCY_LIB})  
-endif() 

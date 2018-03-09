@@ -47,7 +47,7 @@
 #include "hfa.h"
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id: hfaband.cpp 37879 2017-04-01 03:19:26Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                              HFABand()                               */

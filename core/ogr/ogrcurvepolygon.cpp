@@ -39,7 +39,7 @@
 #include "ogr_p.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: ogrcurvepolygon.cpp 40454 2017-10-16 19:14:13Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                            OGRCurvePolygon()                         */

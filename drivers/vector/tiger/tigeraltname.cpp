@@ -29,7 +29,7 @@
 #include "ogr_tiger.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: tigeraltname.cpp 38802 2017-06-02 09:04:34Z rouault $");
+CPL_CVSID("$Id$");
 
 static const char FILE_CODE[] = "4";
 

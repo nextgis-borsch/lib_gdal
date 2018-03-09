@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_xplane_reader.h 35911 2016-10-24 15:03:26Z goatbar $
+ * $Id$
  *
  * Project:  X-Plane aeronautical data reader
  * Purpose:  Definition of classes for OGR X-Plane aeronautical data reader.

@@ -50,7 +50,7 @@
 #include "ogr_spatialref.h"
 
 
-CPL_CVSID("$Id: ogr_fromepsg.cpp 37723 2017-03-16 17:07:53Z rouault $");
+CPL_CVSID("$Id$");
 
 extern void OGRsnPrintDouble( char * pszStrBuf, size_t size, double dfValue );
 

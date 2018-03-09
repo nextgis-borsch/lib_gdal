@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: MajorObject.i 34525 2016-07-03 02:53:47Z goatbar $
+ * $Id$
  *
  * Project:  GDAL SWIG Interfaces.
  * Purpose:  SWIG Definitions for GDALMajorObject.

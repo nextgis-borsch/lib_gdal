@@ -51,7 +51,7 @@
 #include <sqlite3.h>
 #endif
 
-CPL_CVSID("$Id: hugefileresolver.cpp 37240 2017-01-29 21:35:59Z goatbar $");
+CPL_CVSID("$Id$");
 
 /****************************************************/
 /*      SQLite is absolutely required in order to   */

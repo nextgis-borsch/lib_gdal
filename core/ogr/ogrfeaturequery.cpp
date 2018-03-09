@@ -46,7 +46,7 @@
 
 //! @cond Doxygen_Suppress
 
-CPL_CVSID("$Id: ogrfeaturequery.cpp 37501 2017-02-28 06:50:54Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*     Support for special attributes (feature query and selection)     */

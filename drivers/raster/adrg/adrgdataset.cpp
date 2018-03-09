@@ -31,7 +31,7 @@
 #include "iso8211.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: adrgdataset.cpp 37157 2017-01-16 18:04:24Z rouault $");
+CPL_CVSID("$Id$");
 
 #define N_ELEMENTS(x)  (sizeof(x)/sizeof(x[0]))
 

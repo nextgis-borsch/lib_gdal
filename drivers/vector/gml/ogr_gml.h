@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_gml.h 37265 2017-02-01 06:20:23Z goatbar $
+ * $Id$
  *
  * Project:  GML Reader
  * Purpose:  Declarations for OGR wrapper classes for GML, and GML<->OGR

@@ -36,7 +36,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id: gdalenhance.cpp 36025 2016-10-29 13:37:48Z goatbar $");
+CPL_CVSID("$Id$");
 
 static int
 ComputeEqualizationLUTs( GDALDatasetH hDataset,  int nLUTBins,

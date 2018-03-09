@@ -52,7 +52,7 @@
 #  include <wctype.h>      /* iswspace() */
 #endif
 
-CPL_CVSID("$Id: mitab_imapinfofile.cpp 37347 2017-02-12 03:10:54Z goatbar $");
+CPL_CVSID("$Id$");
 
 /**********************************************************************
  *                   IMapInfoFile::IMapInfoFile()

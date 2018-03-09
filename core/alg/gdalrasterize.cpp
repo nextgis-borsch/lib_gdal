@@ -51,7 +51,7 @@
 #include "ogr_spatialref.h"
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id: gdalrasterize.cpp 37849 2017-03-27 06:37:09Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                           gvBurnScanline()                           */

@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "cpl_error.h"
 
-CPL_CVSID("$Id: cpl_odbc.cpp 36945 2016-12-18 06:05:56Z goatbar $");
+CPL_CVSID("$Id$");
 
 #ifndef SQLColumns_TABLE_CAT
 #define SQLColumns_TABLE_CAT 1

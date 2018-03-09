@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "ogr_sxf.h"
 
-CPL_CVSID("$Id: ogrsxfdriver.cpp 35911 2016-10-24 15:03:26Z goatbar $");
+CPL_CVSID("$Id$");
 
 extern "C" void RegisterOGRSXF();
 

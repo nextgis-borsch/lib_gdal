@@ -29,7 +29,7 @@
 #include "ogr_svg.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrsvglayer.cpp 36569 2016-11-30 13:04:32Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                            OGRSVGLayer()                             */

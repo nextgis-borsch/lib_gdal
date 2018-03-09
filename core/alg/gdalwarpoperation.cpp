@@ -49,7 +49,7 @@
 #include "ogr_api.h"
 #include "ogr_core.h"
 
-CPL_CVSID("$Id: gdalwarpoperation.cpp 39828 2017-08-16 08:07:41Z rouault $");
+CPL_CVSID("$Id$");
 
 struct _GDALWarpChunk {
     int dx, dy, dsx, dsy;

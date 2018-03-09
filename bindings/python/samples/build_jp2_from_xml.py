@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #******************************************************************************
-#  $Id: build_jp2_from_xml.py 32002 2015-12-05 06:03:16Z goatbar $
+#  $Id$
 #
 #  Project:  GDAL
 #  Purpose:  Build a JPEG2000 file from the XML structure dumped by dump_jp2.py

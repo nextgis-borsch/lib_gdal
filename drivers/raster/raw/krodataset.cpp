@@ -31,7 +31,7 @@
 #include "gdal_frmts.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id: krodataset.cpp 34642 2016-07-12 13:05:02Z goatbar $");
+CPL_CVSID("$Id$");
 
 // http://www.autopano.net/wiki-en/Format_KRO
 

@@ -44,7 +44,7 @@
 
 using namespace libdap;
 
-CPL_CVSID("$Id: dodsdataset2.cpp 36663 2016-12-03 21:34:45Z rouault $");
+CPL_CVSID("$Id$");
 
 /** Attribute names used to encode geo-referencing information. Note that
     these are not C++ objects to avoid problems with static global

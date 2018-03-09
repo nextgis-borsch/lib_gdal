@@ -35,7 +35,7 @@
 #include "cpl_conv.h"
 #include "cpl_error.h"
 
-CPL_CVSID("$Id: gdalrasterpolygonenumerator.cpp 36698 2016-12-05 04:25:21Z goatbar $");
+CPL_CVSID("$Id$");
 
 /*! @cond Doxygen_Suppress */
 

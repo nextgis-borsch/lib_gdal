@@ -57,7 +57,7 @@
 #include "ogr_srs_api.h"
 #include "ogrsf_frmts/xplane/ogr_xplane_geo_utils.h"
 
-CPL_CVSID("$Id: gml2ogrgeometry.cpp 40428 2017-10-13 21:34:18Z rouault $");
+CPL_CVSID("$Id$");
 
 #if HAVE_CXX11
 constexpr double kdfD2R = M_PI / 180.0;

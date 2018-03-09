@@ -40,7 +40,7 @@
 #include "ogr_spatialref.h"
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id: ograpispy.cpp 39853 2017-08-18 14:37:49Z rouault $");
+CPL_CVSID("$Id$");
 
 #ifdef OGRAPISPY_ENABLED
 

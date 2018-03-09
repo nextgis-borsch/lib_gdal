@@ -52,7 +52,7 @@
 #define TIMESTAMP_DEBUG
 // #define MEMORY_DEBUG
 
-CPL_CVSID("$Id: cpl_vsi_error.cpp 39443 2017-07-02 21:20:37Z rouault $");
+CPL_CVSID("$Id$");
 
 static const int DEFAULT_LAST_ERR_MSG_SIZE =
 #if !defined(HAVE_VSNPRINTF)

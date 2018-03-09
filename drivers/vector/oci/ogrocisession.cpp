@@ -30,7 +30,7 @@
 #include "ogr_oci.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrocisession.cpp 40697 2017-11-13 13:26:12Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                          OGRGetOCISession()                          */

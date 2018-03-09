@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: pcrasterutil.h 35897 2016-10-24 11:54:24Z goatbar $
+ * $Id$
  *
  * Project:  PCRaster Integration
  * Purpose:  PCRaster driver support declarations.

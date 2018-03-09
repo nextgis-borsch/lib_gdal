@@ -35,7 +35,7 @@
 
 #include "ogr_json_header.h"
 
-CPL_CVSID("$Id: ogrgmlasreader.cpp 39652 2017-07-24 17:32:40Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                        GMLASBinInputStream                           */

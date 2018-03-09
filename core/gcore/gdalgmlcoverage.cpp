@@ -41,7 +41,7 @@
 #include "ogr_geometry.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: gdalgmlcoverage.cpp 36523 2016-11-27 04:13:26Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                        ParseGMLCoverageDesc()                        */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: prologue.h 36411 2016-11-21 22:03:48Z rouault $
+ * $Id$
  *
  * Purpose:  Interface of Prologue class. Parse the prologue of one repeat
  *           cycle and keep the interesting info.

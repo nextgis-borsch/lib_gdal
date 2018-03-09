@@ -35,7 +35,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id: ntffilereader.cpp 39006 2017-06-09 07:55:52Z rouault $");
+CPL_CVSID("$Id$");
 
 static int DefaultNTFRecordGrouper( NTFFileReader *, NTFRecord **,
                                     NTFRecord * );

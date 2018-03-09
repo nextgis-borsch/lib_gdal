@@ -61,7 +61,7 @@
 #include "ogr_core.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id: nitfdataset.cpp 38088 2017-04-21 15:05:04Z rouault $");
+CPL_CVSID("$Id$");
 
 static bool NITFPatchImageLength( const char *pszFilename,
                                   GUIntBig nImageOffset,

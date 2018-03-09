@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_geomedia.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions for Geomedia MDB driver.

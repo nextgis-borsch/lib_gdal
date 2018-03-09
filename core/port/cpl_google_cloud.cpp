@@ -33,7 +33,7 @@
 #include "cpl_time.h"
 #include "cpl_aws.h"
 
-CPL_CVSID("$Id: cpl_google_cloud.cpp 40695 2017-11-13 12:17:28Z rouault $");
+CPL_CVSID("$Id$");
 
 #ifdef HAVE_CURL
 

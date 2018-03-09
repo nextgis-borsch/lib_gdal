@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: kmlutility.h 35516 2016-09-25 14:49:04Z goatbar $
+ * $Id$
  *
  * Project:  KML Driver
  * Purpose:  KML driver utilities

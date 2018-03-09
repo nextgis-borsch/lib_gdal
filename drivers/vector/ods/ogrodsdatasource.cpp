@@ -34,7 +34,7 @@
 #include "ods_formula.h"
 #include <set>
 
-CPL_CVSID("$Id: ogrodsdatasource.cpp 40632 2017-11-04 11:29:43Z rouault $");
+CPL_CVSID("$Id$");
 
 namespace OGRODS {
 

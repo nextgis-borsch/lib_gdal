@@ -38,7 +38,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id: ogrgeopackagedatasource.cpp 39963 2017-08-30 09:28:04Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                             Tiling schemes                           */

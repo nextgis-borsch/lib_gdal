@@ -33,7 +33,7 @@
 #include "ogrwarpedlayer.h"
 #include "ogrunionlayer.h"
 
-CPL_CVSID("$Id: ogrvrtdatasource.cpp 39909 2017-08-22 22:14:32Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                       OGRVRTGetGeometryType()                        */

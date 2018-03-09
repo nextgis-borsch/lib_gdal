@@ -30,7 +30,7 @@
 #include "ogr_mem.h"
 #include <map>
 
-CPL_CVSID("$Id: ogropenfilegdbdatasource.cpp 37643 2017-03-07 22:41:04Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                      OGROpenFileGDBDataSource()                      */

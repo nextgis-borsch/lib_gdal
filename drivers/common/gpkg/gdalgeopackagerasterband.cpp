@@ -33,7 +33,7 @@
 #include <algorithm>
 #include <limits>
 
-CPL_CVSID("$Id: gdalgeopackagerasterband.cpp 40466 2017-10-17 12:22:04Z rouault $");
+CPL_CVSID("$Id$");
 
 #if !defined(DEBUG_VERBOSE) && defined(DEBUG_VERBOSE_GPKG)
 #define DEBUG_VERBOSE

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: org_sxf_defs.h 35911 2016-10-24 15:03:26Z goatbar $
+ * $Id$
  *
  * Project:  SXF Translator
  * Purpose:  Include file defining Records Structures for file reading and

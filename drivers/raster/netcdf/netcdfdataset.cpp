@@ -62,7 +62,7 @@
 #include "ogr_core.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id: netcdfdataset.cpp 40424 2017-10-13 14:32:37Z rouault $");
+CPL_CVSID("$Id$");
 
 // Internal function declarations.
 

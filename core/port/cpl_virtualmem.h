@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_virtualmem.h 36485 2016-11-24 07:54:20Z goatbar $
+ * $Id$
  *
  * Name:     cpl_virtualmem.h
  * Project:  CPL - Common Portability Library

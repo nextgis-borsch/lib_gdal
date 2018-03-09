@@ -41,7 +41,7 @@
 #include "ogr_spatialref.h"
 #include "osr_cs_wkt.h"
 
-CPL_CVSID("$Id: ogr_srs_validate.cpp 40079 2017-09-12 13:15:16Z rouault $");
+CPL_CVSID("$Id$");
 
 // Why would fipszone and zone be parameters when they relate to a composite
 // projection which renders down into a non-zoned projection?

@@ -51,7 +51,7 @@
 #include "cpl_string.h"
 #include "cpl_vsi_virtual.h"
 
-CPL_CVSID("$Id: cpl_vsil_sparsefile.cpp 38248 2017-05-13 12:58:34Z rouault $");
+CPL_CVSID("$Id$");
 
 class SFRegion {
 public:

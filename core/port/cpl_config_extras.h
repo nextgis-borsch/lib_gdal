@@ -1,4 +1,4 @@
-/* $Id: cpl_config_extras.h 37003 2016-12-23 14:54:07Z goatbar $ */
+/* $Id$ */
 
 #ifndef INCLUDED_CPL_CONFIG_EXTRAS
 #define INCLUDED_CPL_CONFIG_EXTRAS

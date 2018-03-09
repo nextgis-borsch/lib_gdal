@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_mdb.h 40686 2017-11-10 22:43:51Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions for MDB driver.

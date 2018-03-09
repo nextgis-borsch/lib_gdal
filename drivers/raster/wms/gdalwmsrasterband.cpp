@@ -29,7 +29,7 @@
 
 #include "wmsdriver.h"
 
-CPL_CVSID("$Id: gdalwmsrasterband.cpp 37917 2017-04-07 16:45:48Z rouault $");
+CPL_CVSID("$Id$");
 
 GDALWMSRasterBand::GDALWMSRasterBand(GDALWMSDataset *parent_dataset, int band,
                                         double scale):

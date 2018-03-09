@@ -38,7 +38,7 @@
 #include "gdal_frmts.h"
 #include "gdal_pam.h"
 
-CPL_CVSID("$Id: gsagdataset.cpp 40525 2017-10-22 13:13:59Z rouault $");
+CPL_CVSID("$Id$");
 
 #ifndef DBL_MAX
 # ifdef __DBL_MAX__

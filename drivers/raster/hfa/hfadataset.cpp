@@ -62,7 +62,7 @@
 #include "ogr_spatialref.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id: hfadataset.cpp 38009 2017-04-14 15:07:49Z rouault $");
+CPL_CVSID("$Id$");
 
 static const double R2D = 180.0 / M_PI;
 static const double D2R = M_PI / 180.0;

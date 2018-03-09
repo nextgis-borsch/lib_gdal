@@ -30,7 +30,7 @@
 
 #include "ogrlayerdecorator.h"
 
-CPL_CVSID("$Id: ogrlayerdecorator.cpp 35910 2016-10-24 14:08:24Z goatbar $");
+CPL_CVSID("$Id$");
 
 OGRLayerDecorator::OGRLayerDecorator( OGRLayer* poDecoratedLayer,
                                       int bTakeOwnership ) :

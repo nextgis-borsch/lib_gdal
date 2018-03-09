@@ -45,7 +45,7 @@
 #include "ogr_core.h"
 #include "ogr_feature.h"
 
-CPL_CVSID("$Id: ogrfeaturestyle.cpp 36396 2016-11-21 14:53:59Z rouault $");
+CPL_CVSID("$Id$");
 
 /****************************************************************************/
 /*                Class Parameter (used in the String)                      */

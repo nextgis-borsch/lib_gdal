@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "cpl_csv.h"
 
-CPL_CVSID("$Id: ogrdxf_blockmap.cpp 38342 2017-05-14 18:13:16Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                          ReadBlockSection()                          */

@@ -33,7 +33,7 @@
 #include "cpl_string.h"
 #include "ogr_xerces.h"
 
-CPL_CVSID("$Id: nashandler.cpp 39560 2017-07-12 08:53:28Z rouault $");
+CPL_CVSID("$Id$");
 
 /*
   Update modes:

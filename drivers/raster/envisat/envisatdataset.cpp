@@ -34,7 +34,7 @@
 #include "ogr_srs_api.h"
 #include "timedelta.hpp"
 
-CPL_CVSID("$Id: envisatdataset.cpp 39169 2017-06-18 13:48:09Z rouault $");
+CPL_CVSID("$Id$");
 
 CPL_C_START
 #include "EnvisatFile.h"

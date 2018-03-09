@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_ili2.h 37743 2017-03-17 13:14:00Z rouault $
+ * $Id$
  *
  * Project:  Interlis 2 Translator
  * Purpose:   Definition of classes for OGR Interlis 2 driver.

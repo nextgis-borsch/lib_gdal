@@ -35,7 +35,7 @@
 
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id: ogrnulldriver.cpp 36501 2016-11-25 14:09:24Z rouault $");
+CPL_CVSID("$Id$");
 
 extern "C" void CPL_DLL RegisterOGRNULL();
 

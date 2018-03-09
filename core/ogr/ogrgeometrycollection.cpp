@@ -42,7 +42,7 @@
 #include "ogr_p.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: ogrgeometrycollection.cpp 37821 2017-03-21 13:15:44Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                       OGRGeometryCollection()                        */

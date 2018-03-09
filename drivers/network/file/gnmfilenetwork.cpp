@@ -31,7 +31,7 @@
 #include "gnmfile.h"
 #include "gnm_priv.h"
 
-CPL_CVSID("$Id: gnmfilenetwork.cpp 36741 2016-12-07 16:22:35Z rouault $");
+CPL_CVSID("$Id$");
 
 GNMFileNetwork::GNMFileNetwork() : GNMGenericNetwork()
 {

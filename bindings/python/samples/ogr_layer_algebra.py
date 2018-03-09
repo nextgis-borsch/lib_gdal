@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #******************************************************************************
-#  $Id: ogr_layer_algebra.py 32002 2015-12-05 06:03:16Z goatbar $
+#  $Id$
 #
 #  Project:  GDAL Python Interface
 #  Purpose:  Application for executing OGR layer algebra operations

@@ -32,7 +32,7 @@
 #include <vector>
 #include "ogrgeomediageometry.h"
 
-CPL_CVSID("$Id: ogrmdbdatasource.cpp 40686 2017-11-10 22:43:51Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                         OGRMDBDataSource()                          */

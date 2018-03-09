@@ -33,7 +33,7 @@
 #include "ogr_srs_api.h"
 #include "ogr_xplane_geo_utils.h"
 
-CPL_CVSID("$Id: ogropenairlayer.cpp 36682 2016-12-04 20:34:45Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                         OGROpenAirLayer()                            */

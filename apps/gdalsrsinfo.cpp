@@ -36,7 +36,7 @@
 #include "ogrsf_frmts.h"
 #include "commonutils.h"
 
-CPL_CVSID("$Id: gdalsrsinfo.cpp 36537 2016-11-27 23:51:56Z goatbar $");
+CPL_CVSID("$Id$");
 
 bool FindSRS( const char *pszInput, OGRSpatialReference &oSRS );
 CPLErr PrintSRS( const OGRSpatialReference &oSRS,

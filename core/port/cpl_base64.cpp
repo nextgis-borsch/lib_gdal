@@ -40,7 +40,7 @@
 
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: cpl_base64.cpp 36993 2016-12-22 00:21:24Z goatbar $");
+CPL_CVSID("$Id$");
 
 // Derived from MapServer's mappostgis.c.
 

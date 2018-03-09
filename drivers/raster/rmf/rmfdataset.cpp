@@ -33,7 +33,7 @@
 
 #include "rmfdataset.h"
 
-CPL_CVSID("$Id: rmfdataset.cpp 37464 2017-02-26 02:18:24Z goatbar $");
+CPL_CVSID("$Id$");
 
 static const int RMF_DEFAULT_BLOCKXSIZE = 256;
 static const int RMF_DEFAULT_BLOCKYSIZE = 256;

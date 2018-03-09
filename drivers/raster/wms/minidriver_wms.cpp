@@ -33,7 +33,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id: minidriver_wms.cpp 37463 2017-02-26 02:16:35Z goatbar $");
+CPL_CVSID("$Id$");
 
 WMSMiniDriver_WMS::WMSMiniDriver_WMS() : m_iversion(0) {}
 

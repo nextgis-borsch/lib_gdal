@@ -36,7 +36,7 @@
 #include <algorithm>
 #include <limits>
 
-CPL_CVSID("$Id: shape2ogr.cpp 38412 2017-05-16 10:07:10Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                        RingStartEnd                                  */

@@ -65,9 +65,6 @@ if(ENABLE_HDF4)
     # TODO: implement plugin target if needed.
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_HDFEOS_CSOURCES} ${LIB_CSOURCES})
-    if(WITH_HDF4_EXTERNAL)
-        add_dependencies(${TARGET_NAME} ${DEPENDENCY_LIB})
-    endif()
 
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)

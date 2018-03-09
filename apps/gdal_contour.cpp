@@ -34,7 +34,7 @@
 #include "ogr_api.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id: gdal_contour.cpp 40710 2017-11-14 21:47:33Z rouault $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                            ArgIsNumeric()                            */

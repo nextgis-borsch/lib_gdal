@@ -29,7 +29,7 @@
 #include "ogr_jml.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrjmllayer.cpp 38401 2017-05-16 08:29:26Z rouault $");
+CPL_CVSID("$Id$");
 
 #ifdef HAVE_EXPAT
 

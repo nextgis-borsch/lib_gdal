@@ -40,7 +40,7 @@
 #include "cpl_minixml.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: resolvexlinks.cpp 37144 2017-01-14 16:28:19Z goatbar $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                              GetID()                                 */

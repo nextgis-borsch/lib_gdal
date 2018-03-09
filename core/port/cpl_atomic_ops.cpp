@@ -33,7 +33,7 @@
 
 // TODO: If C++11, use #include <atomic>.
 
-CPL_CVSID("$Id: cpl_atomic_ops.cpp 36840 2016-12-13 05:21:52Z goatbar $");
+CPL_CVSID("$Id$");
 
 #if defined(__MACH__) && defined(__APPLE__)
 

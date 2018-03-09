@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gnmgraph.h 36302 2016-11-19 16:54:08Z bishop $
+ * $Id$
  *
  * Project:  GDAL/OGR Geography Network support (Geographic Network Model)
  * Purpose:  GNM graph implementation.

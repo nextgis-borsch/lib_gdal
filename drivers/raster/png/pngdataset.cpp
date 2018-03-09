@@ -48,7 +48,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id: pngdataset.cpp 37784 2017-03-18 23:29:45Z rouault $");
+CPL_CVSID("$Id$");
 
 // Note: Callers must provide blocks in increasing Y order.
 // Disclaimer (E. Rouault): this code is not production ready at all. A lot of

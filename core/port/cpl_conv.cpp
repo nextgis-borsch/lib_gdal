@@ -81,7 +81,7 @@
 // Uncomment to get list of options that have been fetched and set.
 // #define DEBUG_CONFIG_OPTIONS
 
-CPL_CVSID("$Id: cpl_conv.cpp 40320 2017-10-03 20:21:00Z rouault $");
+CPL_CVSID("$Id$");
 
 static CPLMutex *hConfigMutex = NULL;
 static volatile char **g_papszConfigOptions = NULL;

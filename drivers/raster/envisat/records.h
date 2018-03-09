@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: records.h 35885 2016-10-24 06:23:09Z goatbar $
+ * $Id$
  *
  * Project:  APP ENVISAT Support
  * Purpose:  Low Level Envisat file access (read/write) API.

@@ -27,7 +27,7 @@
 
 #find_anyproject(PostgreSQL) # find libpq
 if(POSTGRESQL_FOUND)
-    option(ENABLE_PG "Build PostgreSQL/PostGIS format" ON)  
+    option(ENABLE_PG "Build PostgreSQL/PostGIS format" ON)
     if(ENABLE_PG)
         set(TARGET_NAME vec_pg)
 
@@ -35,39 +35,36 @@ if(POSTGRESQL_FOUND)
         set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DPG_ENABLED" PARENT_SCOPE)
 
         include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-        #include_directories(${POSTGRESQL_INCLUDE_DIRS})  
+        #include_directories(${POSTGRESQL_INCLUDE_DIRS})
         include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/pgdump)
 
         set(LIB_HHEADERS
         )
 
         set(LIB_HHEADERS_PRIV
-            ogr_pg.h 
+            ogr_pg.h
             ogrpgutility.h
         )
 
         set(LIB_CSOURCES
-            ogrpgdriver.cpp 
-            ogrpgdatasource.cpp 
-            ogrpglayer.cpp 
+            ogrpgdriver.cpp
+            ogrpgdatasource.cpp
+            ogrpglayer.cpp
             ogrpgtablelayer.cpp
-            ogrpgresultlayer.cpp 
+            ogrpgresultlayer.cpp
             ogrpgutility.cpp
         )
-        
+
         # TODO: implement plugin target if needed.
 
         add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
 
         # build target
-        set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)        
-        
-        if(DEPENDENCY_LIB)
-            add_dependencies(${TARGET_NAME} ${DEPENDENCY_LIB})  
-        endif() 
+        set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
+
     else()
-        warning_msg("Skip pg")  
+        warning_msg("Skip pg")
     endif()
 else()
-    warning_msg("Skip pg")  
+    warning_msg("Skip pg")
 endif()

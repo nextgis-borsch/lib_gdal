@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: pcrasterrasterband.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id$
  *
  * Project:  PCRaster Integration
  * Purpose:  PCRaster raster band declaration.

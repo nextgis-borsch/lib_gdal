@@ -55,7 +55,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id: hdf4imagedataset.cpp 36682 2016-12-04 20:34:45Z rouault $");
+CPL_CVSID("$Id$");
 
 static const int HDF4_SDS_MAXNAMELEN = 65;
 

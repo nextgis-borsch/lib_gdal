@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrociwritablelayer.cpp 38061 2017-04-19 05:23:56Z ilucena $");
+CPL_CVSID("$Id$");
 
 /************************************************************************/
 /*                        OGROCIWritableLayer()                         */

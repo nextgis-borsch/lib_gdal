@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal.h 39834 2017-08-16 12:20:23Z rouault $
+ * $Id$
  *
  * Project:  GDAL Core
  * Purpose:  GDAL Core C/Public declarations.

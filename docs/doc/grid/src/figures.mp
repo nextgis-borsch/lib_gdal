@@ -1,5 +1,5 @@
 % ***************************************************************************
-% $Id: figures.mp 14578 2008-05-30 15:39:31Z dron $
+% $Id$
 %
 % Project:  GDAL
 % Purpose:  METAPOST sources for the GDAL Grid Tutorial figures.

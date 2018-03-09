@@ -28,7 +28,7 @@
 
 #include "wmsmetadataset.h"
 
-CPL_CVSID("$Id: wmsmetadataset.cpp 36682 2016-12-04 20:34:45Z rouault $");
+CPL_CVSID("$Id$");
 
 int VersionStringToInt(const char *version);
 

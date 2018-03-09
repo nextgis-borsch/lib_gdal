@@ -1,5 +1,5 @@
 /*
- * $Id: keaoverview.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id$
  *  keaoverview.h
  *
  *  Created by Pete Bunting on 01/08/2012.

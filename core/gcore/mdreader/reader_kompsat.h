@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: reader_kompsat.h 36501 2016-11-25 14:09:24Z rouault $
+ * $Id$
  *
  * Project:  GDAL Core
  * Purpose:  Read metadata from Kompsat imagery.

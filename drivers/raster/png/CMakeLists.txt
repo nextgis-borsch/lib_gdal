@@ -38,18 +38,15 @@ if(ENABLE_PNG)
       -DSKIP_INSTALL_EXPORT=ON)
 
     set(LIB_CSOURCES
-        pngdataset.cpp   
+        pngdataset.cpp
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_CSOURCES})
-    if(WITH_PNG_EXTERNAL)
-        add_dependencies(${TARGET_NAME} PNG_EP)
-    endif()
-    
+
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
     set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
     set(DEPENDENCY_LIB ${DEPENDENCY_LIB} PARENT_SCOPE)
 else()
-    warning_msg("Skip png")  
+    warning_msg("Skip png")
 endif()

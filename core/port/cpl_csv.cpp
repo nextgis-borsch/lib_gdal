@@ -42,7 +42,7 @@
 #include "cpl_multiproc.h"
 #include "gdal_csv.h"
 
-CPL_CVSID("$Id: cpl_csv.cpp 37621 2017-03-06 11:38:25Z rouault $");
+CPL_CVSID("$Id$");
 
 /* ==================================================================== */
 /*      The CSVTable is a persistent set of info about an open CSV      */

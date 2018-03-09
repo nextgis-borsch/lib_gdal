@@ -36,7 +36,7 @@
 #include "cpl_minixml.h"
 #include <algorithm>
 
-CPL_CVSID("$Id: cpl_aws.cpp 40695 2017-11-13 12:17:28Z rouault $");
+CPL_CVSID("$Id$");
 
 // #define DEBUG_VERBOSE 1
 

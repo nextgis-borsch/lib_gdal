@@ -36,29 +36,25 @@ set(LIB_HHEADERS
 )
 
 set(LIB_HHEADERS_PRIV
-    ogr_geojson.h        
+    ogr_geojson.h
     ogrgeojsonwriter.h
-    ogrgeojsonreader.h    
+    ogrgeojsonreader.h
     ogrgeojsonutils.h
 )
 
 set(LIB_CSOURCES
-    ogrgeojsondatasource.cpp  
-    ogrgeojsonreader.cpp  
-    ogrgeojsonutils.cpp  
-    ogrgeojsonwritelayer.cpp  
-    ogresrijsonreader.cpp     
-    ogrgeojsonwriter.cpp      
-    ogrtopojsonreader.cpp    
-    ogrgeojsondriver.cpp      
-    ogrgeojsonlayer.cpp  
+    ogrgeojsondatasource.cpp
+    ogrgeojsonreader.cpp
+    ogrgeojsonutils.cpp
+    ogrgeojsonwritelayer.cpp
+    ogresrijsonreader.cpp
+    ogrgeojsonwriter.cpp
+    ogrtopojsonreader.cpp
+    ogrgeojsondriver.cpp
+    ogrgeojsonlayer.cpp
 )
 
 add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
 
 # build target
 set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
-
-if(DEPENDENCY_LIB)
-    add_dependencies(${TARGET_NAME} ${DEPENDENCY_LIB})   
-endif()  

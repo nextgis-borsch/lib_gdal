@@ -3,8 +3,8 @@
 # Purpose:  CMake build scripts
 # Author:   Dmitry Baryshnikov, polimax@mail.ru
 ################################################################################
-# Copyright (C) 2015, NextGIS <info@nextgis.com>
-# Copyright (C) 2015 Dmitry Baryshnikov
+# Copyright (C) 2015-2018, NextGIS <info@nextgis.com>
+# Copyright (C) 2015-2018 Dmitry Baryshnikov
 #
 # This script is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,12 +20,6 @@
 # along with this script.  If not, see <http://www.gnu.org/licenses/>.
 ################################################################################
 
-set(repo_name lib_jpeg)
-set(repo_project jpeg)
-set(repo_include)
-
-if(find_extproject_SHARED)
-    add_definitions(-DJPEG_DLL_IMPORTS)
-else()
-    add_definitions(-DJPEG_STATIC)
-endif()
+set(repo nextgis-borsch/lib_jpeg)
+set(repo_type github)
+# set(repo_branch master) # No need to set as master is default value

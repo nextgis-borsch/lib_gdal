@@ -34,7 +34,7 @@
 #include <vector>
 #include <algorithm>
 
-CPL_CVSID("$Id: ogr2ogr_bin.cpp 37362 2017-02-12 21:04:36Z rouault $");
+CPL_CVSID("$Id$");
 
 static void Usage(int bShort = TRUE);
 static void Usage(const char* pszAdditionalMsg, int bShort = TRUE);
