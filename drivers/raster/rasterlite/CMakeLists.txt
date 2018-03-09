@@ -36,9 +36,6 @@ if(ENABLE_RASTERLITE)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
     include_directories(${CMAKE_SOURCE_DIR}/core/ogr)
 
-    # TODO: do we need optional spatialite library support as its written in
-    # http://www.gdal.org/frmt_rasterlite.html
-
     set(LIB_HHEADERS
     )
 
@@ -52,7 +49,7 @@ if(ENABLE_RASTERLITE)
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
-    
+
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
 else()

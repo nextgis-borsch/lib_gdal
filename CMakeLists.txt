@@ -204,9 +204,6 @@ if(SQLITE3_FOUND)
     endif()
 endif()
 
-# TODO: move this to the according drivers.
-find_anyproject(PostgreSQL) # find libpq
-
 ## Options goes to config.h and gdal-config ####################################
 option(GDAL_USE_CPL "Set ON to use cpl" ON)
 if(GDAL_USE_CPL)

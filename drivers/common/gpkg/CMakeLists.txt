@@ -28,14 +28,6 @@
 if(ENABLE_SQLITE_GPKG)
     set(TARGET_NAME com_gpkg)
 
-    # TODO: add spatialite support.
-    #find_anyproject(... spatialite ...)
-    #if(... spatialite found ...)
-    #   if(SPATIALITE_412_OR_LATER)
-    #       add_definitions(-DSPATIALITE_412_OR_LATER)
-    #   endif()
-    #endif()
-
     if(DEFINED SQLITE_HAS_COLUMN_METADATA)
         add_definitions(-DSQLITE_HAS_COLUMN_METADATA)
     endif()

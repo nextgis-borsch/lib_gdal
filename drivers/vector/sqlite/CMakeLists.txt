@@ -28,12 +28,7 @@
 if(ENABLE_SQLITE_GPKG)
     set(TARGET_NAME vec_sqlite)
 
-    find_anyproject(Spatialite DEFAULT ON)
     if(SPATIALITE_FOUND)
-        add_definitions(-DHAVE_SPATIALITE)
-        # We sure that spatialite is 4.3 or higher
-        add_definitions(-DSPATIALITE_412_OR_LATER)
-
         include_directories(${SPATIALITE_INCLUDE_DIRS})
     endif()
 

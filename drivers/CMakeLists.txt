@@ -33,6 +33,19 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/vector/vrt)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/vector/mitab)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/vector/xplane)
 
+find_anyproject(PostgreSQL NAMES pq libpq) # find libpq
+
+# TODO: do we need optional spatialite library support as its written in
+# http://www.gdal.org/frmt_rasterlite.html
+find_anyproject(Spatialite DEFAULT ON)
+if(SPATIALITE_FOUND)
+    add_definitions(-DHAVE_SPATIALITE)
+
+    if(SPATIALITE_VERSION VERSION_GREATER "4.1.1")
+        add_definitions(-DSPATIALITE_412_OR_LATER)
+    endif()
+endif()
+
 add_subdirectory(raster)
 add_subdirectory(vector)
 add_subdirectory(common)
