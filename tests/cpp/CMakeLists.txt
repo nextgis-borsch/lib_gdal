@@ -29,6 +29,7 @@
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/tut)
 include_directories(${PROJECT_SOURCE_DIR}/core/ogr/ogrsf_frmts)
+include_directories(${PROJECT_SOURCE_DIR}/core/port)
 
 file(COPY data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
