@@ -27,7 +27,7 @@ if (APPLE)
     set (CMAKE_FIND_FRAMEWORK_save ${CMAKE_FIND_FRAMEWORK} CACHE STRING "" FORCE)
     set (CMAKE_FIND_FRAMEWORK "ONLY" CACHE STRING "" FORCE)
     #FIND_PATH(JSONC_INCLUDE_DIR JSONC/dom.h)
-    find_library(JSON-C_LIBRARIES JSON-C)
+    find_library(JSONC_LIBRARIES JSON-C)
     if (JSONC_LIBRARIES)
       # FIND_PATH doesn't add "Headers" for a framework
       set (JSONC_INCLUDE_DIRS ${JSONC_LIBRARIES}/Headers CACHE PATH "Path to a file.")
@@ -37,23 +37,16 @@ if (APPLE)
 endif ()
 
 find_path(JSONC_INCLUDE_DIRS json.h
-  "$ENV{LIB_DIR}/"
-  "$ENV{LIB_DIR}/include/"
-  "$ENV{JSONC_ROOT}/"
-  /usr/include/json-c
-  /usr/local/include/json-c
-  #mingw
-  c:/msys/local/include/json-c
-  NO_DEFAULT_PATH
-  )
+    PATH_SUFFIXES json-c
+)
 
 if(JSONC_INCLUDE_DIRS)
     set(JSON_C_MAJOR_VERSION 0)
     set(JSON_C_MINOR_VERSION 0)
     set(JSON_C_MICRO_VERSION 0)
 
-    if(EXISTS "${JSONC_INCLUDE_DIR}/json_c_version.h")
-        file(READ ${JSONC_INCLUDE_DIR}/json_c_version.h _VERSION_H_CONTENTS)
+    if(EXISTS "${JSONC_INCLUDE_DIRS}/json_c_version.h")
+        file(READ ${JSONC_INCLUDE_DIRS}/json_c_version.h _VERSION_H_CONTENTS)
 
         string(REGEX MATCH "JSON_C_MAJOR_VERSION[ \t]+([0-9]+)"
           JSON_C_MAJOR_VERSION ${_VERSION_H_CONTENTS})
@@ -74,19 +67,12 @@ if(JSONC_INCLUDE_DIRS)
     set(JSONC_VERSION_STRING "${JSON_C_MAJOR_VERSION}.${JSON_C_MINOR_VERSION}.${JSON_C_MICRO_VERSION}")
 endif()
 
-find_library(JSONC_LIBRARIES NAMES json-c libjson-c libjson PATHS
-  "$ENV{LIB_DIR}/lib"
-  "$ENV{JSONC_ROOT}/lib"
-  /usr/lib
-  /usr/local/lib
-  #mingw
-  c:/msys/local/lib
-)
+find_library(JSONC_LIBRARIES NAMES json-c libjson-c libjson json)
 
 # Handle the QUIETLY and REQUIRED arguments and set GEOS_FOUND to TRUE
 # if all listed variables are TRUE
-INCLUDE(FindPackageHandleStandardArgs)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(JSONC REQUIRED_VARS JSONC_LIBRARIES JSONC_INCLUDE_DIRS
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(JSONC REQUIRED_VARS JSONC_LIBRARIES JSONC_INCLUDE_DIRS
                                         VERSION_VAR JSONC_VERSION_STRING)
 
 if(JSONC_FOUND)
