@@ -65,6 +65,8 @@ try:
 except ImportError:
     pass
 
+include_dirs.append(get_numpy_include())
+
 fixer_names = [
     'lib2to3.fixes.fix_import',
     'lib2to3.fixes.fix_next',
@@ -192,12 +194,12 @@ class gdal_ext(build_ext):
 
         self.include_dirs.append(self.numpy_include_dir)
 
-        if self.get_compiler() == 'msvc':
-            return True
-
-        self.gdaldir = self.get_gdal_config('prefix')
-        self.library_dirs.append(os.path.join(self.gdaldir,'lib'))
-        self.include_dirs.append(os.path.join(self.gdaldir,'include'))
+        # if self.get_compiler() == 'msvc':
+        #     return True
+        #
+        # self.gdaldir = self.get_gdal_config('prefix')
+        # self.library_dirs.append(os.path.join(self.gdaldir,'lib'))
+        # self.include_dirs.append(os.path.join(self.gdaldir,'include'))
 
 
 extra_link_args = []
@@ -207,39 +209,57 @@ if sys.platform == 'darwin':
     if [int(x) for x in os.uname()[2].split('.')] >= [11, 0, 0]:
         # since MacOS X 10.9, clang no longer accepts -mno-fused-madd
         #extra_compile_args.append('-Qunused-arguments')
-        os.environ['ARCHFLAGS'] = '-Wno-error=unused-command-line-argument-hard-error-in-future'
+        os.environ['ARCHFLAGS'] = '-Wno-error=unused-command-line-argument'
     os.environ['LDFLAGS'] = '-framework @SWIG_PYTHON_FRAMEWORK@ -rpath \"@loader_path/../../../../Frameworks/\"'
     extra_link_args.append('-Wl,-F@SWIG_PYTHON_FRAMEWORK_DIRS@')
     #extra_link_args.append('-Wl,-rpath \"@loader_path/../../../../Frameworks/\"')
 
 gdal_module = Extension('osgeo._gdal',
                         sources=['extensions/gdal_wrap.cpp'],
+                        include_dirs = include_dirs,
+                        library_dirs = library_dirs,
+                        libraries = libraries,
                         extra_compile_args = extra_compile_args,
                         extra_link_args = extra_link_args)
 
 gdalconst_module = Extension('osgeo._gdalconst',
                     sources=['extensions/gdalconst_wrap.c'],
+                    include_dirs = include_dirs,
+                    library_dirs = library_dirs,
+                    libraries = libraries,
                     extra_compile_args = extra_compile_args,
                     extra_link_args = extra_link_args)
 
 osr_module = Extension('osgeo._osr',
                     sources=['extensions/osr_wrap.cpp'],
+                    include_dirs = include_dirs,
+                    library_dirs = library_dirs,
+                    libraries = libraries,
                     extra_compile_args = extra_compile_args,
                     extra_link_args = extra_link_args)
 
 ogr_module = Extension('osgeo._ogr',
                     sources=['extensions/ogr_wrap.cpp'],
+                    include_dirs = include_dirs,
+                    library_dirs = library_dirs,
+                    libraries = libraries,
                     extra_compile_args = extra_compile_args,
                     extra_link_args = extra_link_args)
 
 
 array_module = Extension('osgeo._gdal_array',
                     sources=['extensions/gdal_array_wrap.cpp'],
+                    include_dirs = include_dirs,
+                    library_dirs = library_dirs,
+                    libraries = libraries,
                     extra_compile_args = extra_compile_args,
                     extra_link_args = extra_link_args)
 
 gnm_module = Extension('osgeo._gnm',
                     sources=['extensions/gnm_wrap.cpp'],
+                    include_dirs = include_dirs,
+                    library_dirs = library_dirs,
+                    libraries = libraries,
                     extra_compile_args = extra_compile_args,
                     extra_link_args = extra_link_args)
 

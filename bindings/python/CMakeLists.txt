@@ -175,8 +175,8 @@ macro(build_py ver)
 
     add_custom_target(build_py${ver} ALL
         COMMAND ${CMAKE_COMMAND} -E env "${FLAGS}"
-        ${PYTHON${ver}_EXECUTABLE} setup.py build ${BUILD_INCLUDES}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${OUT_DIR_NAME}
+        ${PYTHON${ver}_EXECUTABLE} setup.py build # ${BUILD_INCLUDES}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         DEPENDS copy_files
         VERBATIM
     )
@@ -224,7 +224,7 @@ except ImportError:
         COMMAND ${CMAKE_COMMAND} -E env "${FLAGS}"
         ${PYTHON${ver}_EXECUTABLE} setup.py install ${SETUP_OPTS}
         DEPENDS build_py${ver}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${OUT_DIR_NAME}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         VERBATIM
     )
 endmacro()

@@ -35,6 +35,7 @@ file(COPY data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 find_anyproject(OpenSSL REQUIRED)
 find_anyproject(JBIG REQUIRED)
+find_anyproject(SZIP REQUIRED)
 set(TARGET_LINK_LIB ${TARGET_LINK_LIB} ${LIB_NAME})
 
 macro(add_cpp_test_app name)
