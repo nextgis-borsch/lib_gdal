@@ -33,6 +33,7 @@ BUILD_FOR_CHEESESHOP = False
 include_dirs = [@SWIG_PYTHON_INCLUDE_DIRS@]
 library_dirs = [@SWIG_PYTHON_LIBRARY_DIRS@]
 libraries = [@SWIG_PYTHON_LIBRARIES@]
+numpy_include = "@NUMPY_INCLUDE_DIRS@"
 
 # ---------------------------------------------------------------------------
 # Helper Functions
@@ -40,7 +41,6 @@ libraries = [@SWIG_PYTHON_LIBRARIES@]
 
 # Function to find numpy's include directory
 def get_numpy_include():
-    numpy_include = "@NUMPY_INCLUDE_DIRS@"
     if numpy_include and numpy_include != "":
         return numpy_include
     elif HAVE_NUMPY:
@@ -52,21 +52,24 @@ def get_numpy_include():
 # Imports
 # ---------------------------------------------------------------------------
 
-try:
-    import numpy
-    HAVE_NUMPY = True
-    # check version
-    numpy_major = numpy.__version__.split('.')[0]
-    if int(numpy_major) < 1:
-        print("numpy version must be > 1.0.0")
-        HAVE_NUMPY = False
-    else:
-#        print ('numpy include', get_numpy_include())
-        if get_numpy_include() =='.':
-            print("numpy headers were not found!  Array support will not be enabled")
-            HAVE_NUMPY=False
-except ImportError:
-    pass
+if not numpy_include or numpy_include == "":
+    try:
+        import numpy
+        HAVE_NUMPY = True
+        # check version
+        numpy_major = numpy.__version__.split('.')[0]
+        if int(numpy_major) < 1:
+            print("numpy version must be > 1.0.0")
+            HAVE_NUMPY = False
+        else:
+    #        print ('numpy include', get_numpy_include())
+            if get_numpy_include() =='.':
+                print("numpy headers were not found!  Array support will not be enabled")
+                HAVE_NUMPY=False
+    except ImportError:
+        pass
+else:
+    HAVE_NUMPY = True        
 
 include_dirs.append(get_numpy_include())
 

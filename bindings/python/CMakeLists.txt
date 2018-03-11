@@ -85,8 +85,6 @@ elseif(WIN32)
         # get_filename_component(_COMNTOOLS_PREFIX "${_COMNTOOLS_PREFIX}" PATH)
         set(FLAGS ${FLAGS} "VS90COMNTOOLS=${_COMNTOOLS_PREFIX}")
     endif()
-else()
-    set(FLAGS "NextGIS=TRUE")
 endif()
 
 find_anyproject(NUMPY DEFAULT OFF)
@@ -175,13 +173,22 @@ endif()
 
 macro(build_py ver)
 
-    add_custom_target(build_py${ver} ALL
-        COMMAND ${CMAKE_COMMAND} -E env "${FLAGS}"
-        ${PYTHON${ver}_EXECUTABLE} setup.py build # ${BUILD_INCLUDES}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        DEPENDS copy_files
-        VERBATIM
-    )
+    if(UNIX AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+        add_custom_target(build_py${ver} ALL
+            COMMAND ${PYTHON${ver}_EXECUTABLE} setup.py build # ${BUILD_INCLUDES}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+            DEPENDS copy_files
+            VERBATIM
+        )
+    else()
+        add_custom_target(build_py${ver} ALL
+            COMMAND ${CMAKE_COMMAND} -E env "${FLAGS}"
+            ${PYTHON${ver}_EXECUTABLE} setup.py build # ${BUILD_INCLUDES}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+            DEPENDS copy_files
+            VERBATIM
+        )
+    endif()
 
     add_dependencies(build_py${ver} ${LIB_NAME})
 
@@ -204,12 +211,12 @@ except ImportError:
             set(SETUP_OPTS ${SETUP_OPTS} --no-compile --single-version-externally-managed --record=rekord.txt)
         endif()
 
-        string( LENGTH "$ENV{DESTDIR}" DESTDIRLEN )
-        if ( ${DESTDIRLEN} GREATER 0 )
-            set(SETUP_OPTS ${SETUP_OPTS} --root=$ENV{DESTDIR})
-        elseif(PYTHON_DESTDIR)
-            set(SETUP_OPTS ${SETUP_OPTS} --root=${PYTHON_DESTDIR})
-        endif()
+        # string( LENGTH "$ENV{DESTDIR}" DESTDIRLEN )
+        # if ( ${DESTDIRLEN} GREATER 0 )
+        #     set(SETUP_OPTS ${SETUP_OPTS} --root=$ENV{DESTDIR})
+        # elseif(PYTHON_DESTDIR)
+        #     set(SETUP_OPTS ${SETUP_OPTS} --root=${PYTHON_DESTDIR})
+        # endif()
 
         # check debian
         string(FIND ${PY_SITE_PACKAGES} "dist-packages" PY_DIST_POS)
@@ -222,13 +229,22 @@ except ImportError:
         set(SETUP_OPTS ${SETUP_OPTS} --prefix=${CMAKE_CURRENT_BINARY_DIR}/inst_tmp)
 
     endif()
-    add_custom_target(install_py${ver} ALL
-        COMMAND ${CMAKE_COMMAND} -E env "${FLAGS}"
-        ${PYTHON${ver}_EXECUTABLE} setup.py install ${SETUP_OPTS}
-        DEPENDS build_py${ver}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        VERBATIM
-    )
+    if(UNIX AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+        add_custom_target(install_py${ver} ALL
+            COMMAND ${PYTHON${ver}_EXECUTABLE} setup.py install ${SETUP_OPTS}
+            DEPENDS build_py${ver}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+            VERBATIM
+        )
+    else()
+        add_custom_target(install_py${ver} ALL
+            COMMAND ${CMAKE_COMMAND} -E env "${FLAGS}"
+            ${PYTHON${ver}_EXECUTABLE} setup.py install ${SETUP_OPTS}
+            DEPENDS build_py${ver}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+            VERBATIM
+        )
+    endif()
 endmacro()
 
 if(PYTHON2_EXECUTABLE)
@@ -287,7 +303,7 @@ endif()
 configure_file(${CMAKE_SOURCE_DIR}/cmake/setup.py.cmake ${CMAKE_CURRENT_BINARY_DIR}/setup.py @ONLY)
 
 if(NOT SKIP_INSTALL_LIBRARIES AND NOT SKIP_INSTALL_ALL )
-    install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/inst_tmp/ DESTINATION ${INSTALL_LIB_DIR})
+    install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/inst_tmp/lib/ DESTINATION ${INSTALL_LIB_DIR})
 endif()
 
 if(NOT SKIP_INSTALL_EXECUTABLES AND NOT SKIP_INSTALL_ALL )
