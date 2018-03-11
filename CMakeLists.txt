@@ -151,6 +151,9 @@ endif()
 find_anyproject(JSONC REQUIRED
     NAMES json-c jsonc json_c
 )
+if(JSONC_FOUND)
+    include_directories(${JSONC_INCLUDE_DIRS}/json-c)
+endif()
 
 find_anyproject(CURL DEFAULT ON CMAKE_ARGS
     -DBUILD_CURL_EXE=OFF
