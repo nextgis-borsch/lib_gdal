@@ -40,7 +40,10 @@ libraries = [@SWIG_PYTHON_LIBRARIES@]
 
 # Function to find numpy's include directory
 def get_numpy_include():
-    if HAVE_NUMPY:
+    numpy_include = "@NUMPY_INCLUDE_DIRS@"
+    if numpy_include and numpy_include != "":
+        return numpy_include
+    elif HAVE_NUMPY:
         return numpy.get_include()
     else:
         return '.'

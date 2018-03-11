@@ -86,8 +86,8 @@ if(APPLE)
     set_tests_properties(quick_test
         PROPERTIES ENVIRONMENT "DO_NOT_FAIL_ON_RECODE_ERRORS=TRUE")
 endif()
-add_test(NAME gdal_unit_test COMMAND gdal_unit_test)
 if(APPLE)
+    add_test(NAME gdal_unit_test COMMAND gdal_unit_test)
     set_tests_properties(gdal_unit_test
         PROPERTIES ENVIRONMENT "DO_NOT_FAIL_ON_RECODE_ERRORS=TRUE")
 endif()

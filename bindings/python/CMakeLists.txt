@@ -89,6 +89,8 @@ else()
     set(FLAGS "NextGIS=TRUE")
 endif()
 
+find_anyproject(NUMPY DEFAULT OFF)
+
 set(COPY_IF_DIFFERENT
     extensions/gdal_array_wrap.cpp
     extensions/gdalconst_wrap.c
@@ -199,25 +201,25 @@ except ImportError:
 
         execute_process ( COMMAND ${PYTHON${ver}_EXECUTABLE} -c ${TEST_CMD} OUTPUT_VARIABLE PY_HAVE_SETUPTOOLS OUTPUT_STRIP_TRAILING_WHITESPACE)
         if(PY_HAVE_SETUPTOOLS)
-            set(SETUP_OPTS "${SETUP_OPTS} --no-compile --single-version-externally-managed --record=rekord.txt")
+            set(SETUP_OPTS ${SETUP_OPTS} --no-compile --single-version-externally-managed --record=rekord.txt)
         endif()
 
         string( LENGTH "$ENV{DESTDIR}" DESTDIRLEN )
         if ( ${DESTDIRLEN} GREATER 0 )
-            set(SETUP_OPTS "${SETUP_OPTS} --root=$ENV{DESTDIR}")
+            set(SETUP_OPTS ${SETUP_OPTS} --root=$ENV{DESTDIR})
         elseif(PYTHON_DESTDIR)
-            set(SETUP_OPTS "${SETUP_OPTS} --root=${PYTHON_DESTDIR}")
+            set(SETUP_OPTS ${SETUP_OPTS} --root=${PYTHON_DESTDIR})
         endif()
 
         # check debian
         string(FIND ${PY_SITE_PACKAGES} "dist-packages" PY_DIST_POS)
         if(${PY_DIST_POS} GREATER -1)
-            set(SETUP_OPTS "${SETUP_OPTS} --install-layout=deb")
+            set(SETUP_OPTS ${SETUP_OPTS} --install-layout=deb)
         endif()
 
         # TODO: do we need --install-lib=$(PYTHON_INSTALL_LIB) ?
 
-        set(SETUP_OPTS "${SETUP_OPTS} --prefix=${CMAKE_CURRENT_BINARY_DIR}/inst_tmp")
+        set(SETUP_OPTS ${SETUP_OPTS} --prefix=${CMAKE_CURRENT_BINARY_DIR}/inst_tmp)
 
     endif()
     add_custom_target(install_py${ver} ALL
