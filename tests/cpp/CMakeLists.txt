@@ -43,10 +43,13 @@ macro(add_cpp_test_app name)
     target_link_libraries(${name} ${TARGET_LINK_LIB})
 endmacro()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-unused-function")
-if(HARDEN)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_FORTIFY_SOURCE=2 -fstack-protector-all -Wformat -Werror=format-security -ftrapv -fwrapv")
+if(UNIX)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-unused-function")
+    if(HARDEN)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_FORTIFY_SOURCE=2 -fstack-protector-all -Wformat -Werror=format-security -ftrapv -fwrapv")
+    endif()
 endif()
+
 set(PROGS testperfcopywords testcopywords testclosedondestroydm
     testthreadcond testvirtualmem testblockcache testblockcachewrite
     testblockcachelimits testdestroy testmultithreadedwriting
