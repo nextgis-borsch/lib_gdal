@@ -25,6 +25,13 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
+# Need because INSTALL_LIB_DIR points to /usr/lib/x86_64-linux-gnu/python2.7 and should to /usr/lib/python2.7
+if(OSX_FRAMEWORK)
+    set(INSTALL_PYTHON_DIR "Library" CACHE INTERNAL "Installation directory for python bindings" FORCE)
+else()
+    set(INSTALL_PYTHON_DIR "lib" CACHE INTERNAL "Installation directory for python bindings" FORCE)
+endif()
+
 if(WITH_PYTHON2)
     find_package(PythonInterp 2)
     if(PYTHONINTERP_FOUND)
@@ -303,7 +310,7 @@ endif()
 configure_file(${CMAKE_SOURCE_DIR}/cmake/setup.py.cmake ${CMAKE_CURRENT_BINARY_DIR}/setup.py @ONLY)
 
 if(NOT SKIP_INSTALL_LIBRARIES AND NOT SKIP_INSTALL_ALL )
-    install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/inst_tmp/lib/ DESTINATION ${INSTALL_LIB_DIR})
+    install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/inst_tmp/lib/ DESTINATION ${INSTALL_PYTHON_DIR})
 endif()
 
 if(NOT SKIP_INSTALL_EXECUTABLES AND NOT SKIP_INSTALL_ALL )
