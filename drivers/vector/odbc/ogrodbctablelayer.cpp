@@ -211,6 +211,32 @@ CPLODBCStatement *OGRODBCTableLayer::GetStatement()
 }
 
 /************************************************************************/
+/*                      EscapeAndQuoteIdentifier()                      */
+/************************************************************************/
+
+static CPLString EscapeAndQuoteIdentifier(const CPLString& osStr)
+{
+    CPLString osRet; int num_dots = 0;
+    for( size_t i = 0; i < osStr.size(); i++ )
+    {
+        if( osStr[i] == '"' )
+        {
+            osRet += "\\\"";
+        }
+        else if (osStr[i] == '.' && num_dots == 0){
+            /* It's schema qualified, so first segment we assume is the schema and should be quoted separately */
+            osRet += "\".\"";
+            num_dots += 1;
+        }
+        else
+        {
+            osRet += osStr[i];
+        }
+    }
+    return '"' + osRet + '"';
+}
+
+/************************************************************************/
 /*                           ResetStatement()                           */
 /************************************************************************/
 
@@ -223,7 +249,7 @@ OGRErr OGRODBCTableLayer::ResetStatement()
 
     poStmt = new CPLODBCStatement( poDS->GetSession() );
     poStmt->Append( "SELECT * FROM " );
-    poStmt->Append( poFeatureDefn->GetName() );
+    poStmt->Append( EscapeAndQuoteIdentifier(poFeatureDefn->GetName()) );
 
     /* Append attribute query if we have it */
     if( pszQuery != NULL )
@@ -281,8 +307,10 @@ OGRFeature *OGRODBCTableLayer::GetFeature( GIntBig nFeatureId )
 
     poStmt = new CPLODBCStatement( poDS->GetSession() );
     poStmt->Append( "SELECT * FROM " );
-    poStmt->Append( poFeatureDefn->GetName() );
-    poStmt->Appendf( " WHERE %s = " CPL_FRMT_GIB, pszFIDColumn, nFeatureId );
+    poStmt->Append( EscapeAndQuoteIdentifier(poFeatureDefn->GetName()) );
+    poStmt->Appendf( " WHERE %s = " CPL_FRMT_GIB,
+                     EscapeAndQuoteIdentifier(pszFIDColumn).c_str(),
+                     nFeatureId );
 
     if( !poStmt->ExecuteSQL() )
     {
@@ -348,7 +376,7 @@ GIntBig OGRODBCTableLayer::GetFeatureCount( int bForce )
 
     CPLODBCStatement oStmt( poDS->GetSession() );
     oStmt.Append( "SELECT COUNT(*) FROM " );
-    oStmt.Append( poFeatureDefn->GetName() );
+    oStmt.Append( EscapeAndQuoteIdentifier(poFeatureDefn->GetName()) );
 
     if( pszQuery != NULL )
         oStmt.Appendf( " WHERE %s", pszQuery );

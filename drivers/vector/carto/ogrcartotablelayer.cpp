@@ -88,7 +88,7 @@ OGRCARTOTableLayer::OGRCARTOTableLayer(OGRCARTODataSource* poDSIn,
     bLaunderColumnNames = true;
     bInDeferredInsert = poDS->DoBatchInsert();
     eDeferredInsertState = INSERT_UNINIT;
-    nNextFID = -1;
+    m_nNextFIDWrite = -1;
     bDeferredCreation = false;
     bCartodbfy = false;
     nMaxChunkSize = atoi(CPLGetConfigOption("CARTO_MAX_CHUNK_SIZE",
@@ -311,7 +311,7 @@ OGRFeatureDefn * OGRCARTOTableLayer::GetLayerDefnInternal(CPL_UNUSED json_object
 /*                        FetchNewFeatures()                            */
 /************************************************************************/
 
-json_object* OGRCARTOTableLayer::FetchNewFeatures(GIntBig iNextIn)
+json_object* OGRCARTOTableLayer::FetchNewFeatures()
 {
     if( !osFIDColName.empty() )
     {
@@ -320,13 +320,13 @@ json_object* OGRCARTOTableLayer::FetchNewFeatures(GIntBig iNextIn)
                      osSELECTWithoutWHERE.c_str(),
                      ( osWHERE.size() ) ? CPLSPrintf("%s AND ", osWHERE.c_str()) : "",
                      OGRCARTOEscapeIdentifier(osFIDColName).c_str(),
-                     iNext,
+                     m_nNextFID,
                      OGRCARTOEscapeIdentifier(osFIDColName).c_str(),
                      GetFeaturesToFetch());
         return poDS->RunSQL(osSQL);
     }
     else
-        return OGRCARTOLayer::FetchNewFeatures(iNextIn);
+        return OGRCARTOLayer::FetchNewFeatures();
 }
 
 /************************************************************************/
@@ -454,7 +454,7 @@ OGRErr OGRCARTOTableLayer::FlushDeferredInsert(bool bReset)
     if( bReset )
     {
         bInDeferredInsert = false;
-        nNextFID = -1;
+        m_nNextFIDWrite = -1;
     }
     return eErr;
 }
@@ -591,32 +591,53 @@ OGRErr OGRCARTOTableLayer::ICreateFeature( OGRFeature *poFeature )
     CPLString osSQL;
 
     bool bHasJustGotNextFID = false;
-    if( !bHasUserFieldMatchingFID && bInDeferredInsert && nNextFID < 0 && !osFIDColName.empty() )
+    if( !bHasUserFieldMatchingFID && bInDeferredInsert && m_nNextFIDWrite < 0 && !osFIDColName.empty() )
     {
-        osSQL.Printf("SELECT nextval('%s') AS nextid",
-                     OGRCARTOEscapeLiteral(CPLSPrintf("%s_%s_seq", osName.c_str(), osFIDColName.c_str())).c_str());
-
+        CPLString osSeqName;
+        osSQL.Printf("SELECT pg_catalog.pg_get_serial_sequence('%s', '%s') AS seq_name",
+                     OGRCARTOEscapeLiteral(osName).c_str(),
+                     OGRCARTOEscapeLiteral(osFIDColName).c_str());
         json_object* poObj = poDS->RunSQL(osSQL);
         json_object* poRowObj = OGRCARTOGetSingleRow(poObj);
         if( poRowObj != NULL )
         {
-            json_object* poID = CPL_json_object_object_get(poRowObj, "nextid");
-            if( poID != NULL && json_object_get_type(poID) == json_type_int )
+            json_object* poSeqName = CPL_json_object_object_get(poRowObj, "seq_name");
+            if( poSeqName != NULL && json_object_get_type(poSeqName) == json_type_string )
             {
-                nNextFID = json_object_get_int64(poID);
-                bHasJustGotNextFID = true;
+                osSeqName = json_object_get_string(poSeqName);
             }
         }
 
         if( poObj != NULL )
             json_object_put(poObj);
+
+        if( !osSeqName.empty() )
+        {
+            osSQL.Printf("SELECT nextval('%s') AS nextid",
+                        OGRCARTOEscapeLiteral(osSeqName).c_str());
+
+            poObj = poDS->RunSQL(osSQL);
+            poRowObj = OGRCARTOGetSingleRow(poObj);
+            if( poRowObj != NULL )
+            {
+                json_object* poID = CPL_json_object_object_get(poRowObj, "nextid");
+                if( poID != NULL && json_object_get_type(poID) == json_type_int )
+                {
+                    m_nNextFIDWrite = json_object_get_int64(poID);
+                    bHasJustGotNextFID = true;
+                }
+            }
+
+            if( poObj != NULL )
+                json_object_put(poObj);
+        }
     }
 
     // Check if we can go on with multiple insertion mode
     if( eDeferredInsertState == INSERT_MULTIPLE_FEATURE )
     {
         if( !bHasUserFieldMatchingFID && !osFIDColName.empty() &&
-            (poFeature->GetFID() != OGRNullFID || (nNextFID >= 0 && bHasJustGotNextFID)) )
+            (poFeature->GetFID() != OGRNullFID || (m_nNextFIDWrite >= 0 && bHasJustGotNextFID)) )
         {
             if( FlushDeferredInsert(false) != OGRERR_NONE )
                 return OGRERR_FAILURE;
@@ -632,7 +653,7 @@ OGRErr OGRCARTOTableLayer::ICreateFeature( OGRFeature *poFeature )
             eDeferredInsertState = INSERT_SINGLE_FEATURE;
         }
         else if( !bHasUserFieldMatchingFID && !osFIDColName.empty() &&
-            (poFeature->GetFID() != OGRNullFID || (nNextFID >= 0 && bHasJustGotNextFID)) )
+            (poFeature->GetFID() != OGRNullFID || (m_nNextFIDWrite >= 0 && bHasJustGotNextFID)) )
         {
             eDeferredInsertState = INSERT_SINGLE_FEATURE;
             bResetToUninitInsertStateAfterwards = true;
@@ -687,7 +708,7 @@ OGRErr OGRCARTOTableLayer::ICreateFeature( OGRFeature *poFeature )
         }
 
         if( !bHasUserFieldMatchingFID &&
-            !osFIDColName.empty() && (poFeature->GetFID() != OGRNullFID || (nNextFID >= 0 && bHasJustGotNextFID)) )
+            !osFIDColName.empty() && (poFeature->GetFID() != OGRNullFID || (m_nNextFIDWrite >= 0 && bHasJustGotNextFID)) )
         {
             if( bMustComma )
                 osSQL += ", ";
@@ -801,20 +822,9 @@ OGRErr OGRCARTOTableLayer::ICreateFeature( OGRFeature *poFeature )
             CPLFree(pszEWKB);
         }
 
-        if( !bHasUserFieldMatchingFID )
+        if( bWriteInsertInto && !bHasUserFieldMatchingFID && !osFIDColName.empty() )
         {
-            if( !osFIDColName.empty() && nNextFID >= 0 )
-            {
-                if( bHasJustGotNextFID )
-                {
-                    if( bMustComma )
-                        osSQL += ", ";
-                    // No need to set bMustComma to true in else case.
-                    // Not in a loop.
-                    osSQL += CPLSPrintf(CPL_FRMT_GIB, nNextFID);
-                }
-            }
-            else if( !osFIDColName.empty() && poFeature->GetFID() != OGRNullFID )
+            if( poFeature->GetFID() != OGRNullFID )
             {
                 if( bMustComma )
                     osSQL += ", ";
@@ -823,15 +833,24 @@ OGRErr OGRCARTOTableLayer::ICreateFeature( OGRFeature *poFeature )
 
                 osSQL += CPLSPrintf(CPL_FRMT_GIB, poFeature->GetFID());
             }
+            else if( m_nNextFIDWrite >= 0 && bHasJustGotNextFID )
+            {
+                if( bMustComma )
+                    osSQL += ", ";
+                // No need to set bMustComma to true in else case.
+                // Not in a loop.
+                osSQL += CPLSPrintf(CPL_FRMT_GIB, m_nNextFIDWrite);
+            }
         }
 
         osSQL += ")";
     }
 
-    if( !bHasUserFieldMatchingFID && !osFIDColName.empty() && nNextFID >= 0 )
+    if( !bHasUserFieldMatchingFID && !osFIDColName.empty() && m_nNextFIDWrite >= 0 &&
+        poFeature->GetFID() == OGRNullFID )
     {
-        poFeature->SetFID(nNextFID);
-        nNextFID ++;
+        poFeature->SetFID(m_nNextFIDWrite);
+        m_nNextFIDWrite ++;
     }
 
     if( bInDeferredInsert )
@@ -1384,7 +1403,7 @@ void OGRCARTOTableLayer::SetDeferredCreation( OGRwkbGeometryType eGType,
                                               bool bCartodbfyIn )
 {
     bDeferredCreation = true;
-    nNextFID = 1;
+    m_nNextFIDWrite = 1;
     CPLAssert(poFeatureDefn == NULL);
     bCartodbfy = bCartodbfyIn;
     poFeatureDefn = new OGRFeatureDefn(osName);
