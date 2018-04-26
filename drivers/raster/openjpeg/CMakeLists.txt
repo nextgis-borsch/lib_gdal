@@ -36,8 +36,10 @@ if(ENABLE_OPENJPEG)
         set(MINOR_VERSION 0)
         set(REV_VERSION 0)
 
-        if(EXISTS "${OPENJPEG_INCLUDE_DIRS}/opj_config.h")
-            file(READ "${OPENJPEG_INCLUDE_DIRS}/opj_config.h" VERSION_H_CONTENTS)
+        file(GLOB_RECURSE OPJ_CONFIGS "${OPENJPEG_INCLUDE_DIRS}/opj_config.h")
+        list(GET OPJ_CONFIGS 0 OPJ_CONFIG)
+        if(EXISTS ${OPJ_CONFIG})
+            file(READ ${OPJ_CONFIG} VERSION_H_CONTENTS)
 
             string(REGEX MATCH "OPJ_VERSION_MAJOR[ \t]+([0-9]+)"
               MAJOR_VERSION ${VERSION_H_CONTENTS})
@@ -64,32 +66,32 @@ if(ENABLE_OPENJPEG)
         warning_msg("Skip openjpeg")
         # message(STATUS "OPENJPEG_VERSION_NUM set to ${OPENJPEG_VERSION_NUM}")
     else()
-    add_definitions(-DFRMT_openjpeg -DOPENJPEG_VERSION=${OPENJPEG_VERSION_NUM})
-    set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DFRMT_openjpeg" PARENT_SCOPE)
+        add_definitions(-DFRMT_openjpeg -DOPENJPEG_VERSION=${OPENJPEG_VERSION_NUM})
+        set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DFRMT_openjpeg" PARENT_SCOPE)
 
-    include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-    include_directories(${CMAKE_SOURCE_DIR}/drivers/raster) # for /vrt/vrtdataset.h
+        include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+        include_directories(${CMAKE_SOURCE_DIR}/drivers/raster) # for /vrt/vrtdataset.h
 
-    # TODO: maybe add openjpeg library version to definitions (not required for now).
+        # TODO: maybe add openjpeg library version to definitions (not required for now).
 
-    set(LIB_HHEADERS
-    )
+        set(LIB_HHEADERS
+        )
 
-    set(LIB_HHEADERS_PRIV
-    )
+        set(LIB_HHEADERS_PRIV
+        )
 
-    set(LIB_CSOURCES
-        openjpegdataset.cpp
-    )
+        set(LIB_CSOURCES
+            openjpegdataset.cpp
+        )
 
-    # TODO: implement plugin target (according so/dll) if needed.
+        # TODO: implement plugin target (according so/dll) if needed.
 
-    add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
+        add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
 
-    # build target
-    set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
-    set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
-    set(DEPENDENCY_LIB ${DEPENDENCY_LIB} PARENT_SCOPE)
+        # build target
+        set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
+        set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
+        set(DEPENDENCY_LIB ${DEPENDENCY_LIB} PARENT_SCOPE)
     endif()
 else()
     warning_msg("Skip openjpeg")
