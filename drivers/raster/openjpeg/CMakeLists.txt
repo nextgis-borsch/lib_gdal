@@ -37,7 +37,10 @@ if(ENABLE_OPENJPEG)
         set(REV_VERSION 0)
 
         file(GLOB_RECURSE OPJ_CONFIGS "${OPENJPEG_INCLUDE_DIRS}/opj_config.h")
-        list(GET OPJ_CONFIGS 0 OPJ_CONFIG)
+        set(OPJ_CONFIG)
+        if(OPJ_CONFIGS)
+            list(GET OPJ_CONFIGS 0 OPJ_CONFIG)
+        endif()
         if(EXISTS ${OPJ_CONFIG})
             file(READ ${OPJ_CONFIG} VERSION_H_CONTENTS)
 
