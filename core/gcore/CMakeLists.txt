@@ -116,6 +116,10 @@ if(GDAL_PAM_ENABLED)
     )
 endif(GDAL_PAM_ENABLED)
 
+if(WIN32)
+    set(LIB_CSOURCES ${LIB_CSOURCES} Version.rc)
+endif()
+
 add_subdirectory(mdreader)
 
 add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})

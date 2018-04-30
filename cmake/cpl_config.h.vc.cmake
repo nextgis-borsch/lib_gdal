@@ -8,6 +8,7 @@
 #endif
 
 /* Define if you have the vprintf function.  */
+#cmakedefine HAVE_VPRINTF 1
 #cmakedefine HAVE_VSNPRINTF 1
 #cmakedefine HAVE_SNPRINTF 1
 #if defined(_MSC_VER) && (_MSC_VER < 1500)
@@ -60,11 +61,14 @@
 
 #cmakedefine HAVE_DLFCN_H 1
 #cmakedefine HAVE_DBMALLOC_H 1
-#cmakedefine HAVE_LIBDBMALLOC 1 
-#cmakedefine WORDS_BIGENDIAN 1 
+#cmakedefine HAVE_LIBDBMALLOC 1
+#cmakedefine WORDS_BIGENDIAN 1
 
 /* The size of a `int', as computed by sizeof. */
 #cmakedefine SIZEOF_INT @SIZEOF_INT@
+
+/* The size of a `long', as computed by sizeof. */
+#cmakedefine SIZEOF_LONG @SIZEOF_LONG@
 
 /* The size of a `unsigned long', as computed by sizeof. */
 #cmakedefine SIZEOF_UNSIGNED_LONG @SIZEOF_UNSIGNED_LONG@
@@ -107,5 +111,7 @@
 #if defined(_MSC_VER) && (_MSC_VER <= 1200)
     typedef int intptr_t;
 #endif
+
+#pragma warning(disable: 4786)
 
 /* #define CPL_DISABLE_DLL */

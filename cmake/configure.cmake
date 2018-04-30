@@ -43,11 +43,13 @@ if(CMAKE_GENERATOR_TOOLSET MATCHES "v([0-9]+)_xp")
     add_definitions(-D_WIN32_WINNT=0x0501)
 endif()
 
-check_function_exists(vsnprintf HAVE_VSNPRINTF)
-check_function_exists(snprintf HAVE_SNPRINTF)
+check_symbol_exists(vsnprintf "stdio.h;stdarg.h" HAVE_VSNPRINTF)
+check_symbol_exists(snprintf "stdio.h;stdarg.h" HAVE_SNPRINTF)
+check_symbol_exists(vprintf "stdio.h;stdarg.h" HAVE_VPRINTF)
 check_function_exists(getcwd HAVE_GETCWD)
 check_include_file("ctype.h" HAVE_CTYPE_H)
 check_include_file("stdlib.h" HAVE_STDLIB_H)
+check_include_file("float.h" HAVE_FLOAT_H)
 
 if (HAVE_CTYPE_H AND HAVE_STDLIB_H)
     set(STDC_HEADERS 1)
@@ -72,6 +74,7 @@ else ()
 endif ()
 
 check_type_size ("int" SIZEOF_INT)
+check_type_size ("long" SIZEOF_LONG)
 check_type_size ("unsigned long" SIZEOF_UNSIGNED_LONG)
 check_type_size ("void*" SIZEOF_VOIDP)
 
