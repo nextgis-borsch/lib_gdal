@@ -38,6 +38,8 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 # TODO: remove this when change according include path in gdaldataset.cpp
 include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/sqlite)
 
+configure_file(gdal_version.h.in gdal_version.h COPYONLY)
+
 set(LIB_HHEADERS
     gdalexif.h
     gdal.h

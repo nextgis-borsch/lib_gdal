@@ -115,9 +115,9 @@ class OGRKMLDataSource : public OGRDataSource
     int GetLayerCount() override { return nLayers_; }
     OGRLayer* GetLayer( int nLayer ) override;
     OGRLayer* ICreateLayer( const char* pszName,
-                           OGRSpatialReference* poSRS = NULL,
+                           OGRSpatialReference* poSRS = nullptr,
                            OGRwkbGeometryType eGType = wkbUnknown,
-                           char** papszOptions = NULL ) override;
+                           char** papszOptions = nullptr ) override;
     int TestCapability( const char* pszCap ) override;
 
     //
@@ -130,7 +130,7 @@ class OGRKMLDataSource : public OGRDataSource
     VSILFILE* GetOutputFP() { return fpOutput_; }
     void GrowExtents( OGREnvelope *psGeomBounds );
 #ifdef HAVE_EXPAT
-    KML* GetKMLFile() { return poKMLFile_; };
+    KML* GetKMLFile() { return poKMLFile_; }
 #endif
 
     bool IsFirstCTError() const { return !bIssuedCTError_; }

@@ -35,12 +35,6 @@
 #include <fstream>
 #include <vector>
 
-#if __cplusplus >= 201103L
-#define UNIQUEPTR       std::unique_ptr
-#else
-#define UNIQUEPTR       std::auto_ptr
-#endif
-
 /************************************************************************/
 /*                             OGRWAsPLayer                             */
 /************************************************************************/
@@ -95,9 +89,9 @@ class OGRWAsPLayer : public OGRLayer
     enum OpenMode {READ_ONLY, WRITE_ONLY};
     OpenMode              eMode;
 
-    UNIQUEPTR<double> pdfTolerance;
-    UNIQUEPTR<double> pdfAdjacentPointTolerance;
-    UNIQUEPTR<double> pdfPointToCircleRadius;
+    std::unique_ptr<double> pdfTolerance;
+    std::unique_ptr<double> pdfAdjacentPointTolerance;
+    std::unique_ptr<double> pdfPointToCircleRadius;
 
     OGRErr                WriteRoughness( OGRLineString *,
                                           const double & dfZleft,
@@ -178,7 +172,7 @@ class OGRWAsPDataSource : public OGRDataSource
 {
     CPLString                     sFilename;
     VSILFILE *                    hFile;
-    UNIQUEPTR<OGRWAsPLayer>   oLayer;
+    std::unique_ptr<OGRWAsPLayer>   oLayer;
 
     void               GetOptions(CPLString & sFirstField,
                                   CPLString & sSecondField,
@@ -196,9 +190,9 @@ class OGRWAsPDataSource : public OGRDataSource
     virtual OGRLayer   *GetLayerByName( const char * ) override;
 
     virtual OGRLayer   *ICreateLayer( const char *pszName,
-                                     OGRSpatialReference *poSpatialRef = NULL,
+                                     OGRSpatialReference *poSpatialRef = nullptr,
                                      OGRwkbGeometryType eGType = wkbUnknown,
-                                     char ** papszOptions = NULL ) override;
+                                     char ** papszOptions = nullptr ) override;
 
     virtual int        TestCapability( const char * ) override;
     OGRErr             Load( bool bSilent = false );
@@ -218,7 +212,7 @@ class OGRWAsPDriver : public OGRSFDriver
     virtual OGRDataSource*      Open( const char *, int ) override;
 
     virtual OGRDataSource       *CreateDataSource( const char *pszName,
-                                                   char ** = NULL ) override;
+                                                   char ** = nullptr ) override;
 
     virtual OGRErr              DeleteDataSource (const char *pszName) override;
 

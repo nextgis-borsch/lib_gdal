@@ -30,7 +30,7 @@
 
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 import ogrtest
@@ -38,6 +38,7 @@ from osgeo import ogr
 
 ###############################################################################
 # Basic test
+
 
 def ogr_openair_1():
 
@@ -55,8 +56,8 @@ def ogr_openair_1():
     feat = lyr.GetNextFeature()
     feat = lyr.GetNextFeature()
     geom = feat.GetGeometryRef()
-    if ogrtest.check_feature_geometry(feat,'POLYGON ((49.75 2.75,49.75 3.0,49.5 3.0,49.5 2.75,49.75 2.75))',
-                                      max_error = 0.0000001 ) != 0:
+    if ogrtest.check_feature_geometry(feat, 'POLYGON ((49.75 2.75,49.75 3.0,49.5 3.0,49.5 2.75,49.75 2.75))',
+                                      max_error=0.0000001) != 0:
         print('did not get expected first geom')
         print(geom.ExportToWkt())
         return 'fail'
@@ -72,23 +73,23 @@ def ogr_openair_1():
         return 'fail'
     feat = lyr.GetNextFeature()
     geom = feat.GetGeometryRef()
-    if ogrtest.check_feature_geometry(feat,'POINT (49.2625 2.504166666666667)',
-                                      max_error = 0.0000001 ) != 0:
+    if ogrtest.check_feature_geometry(feat, 'POINT (49.2625 2.504166666666667)',
+                                      max_error=0.0000001) != 0:
         print('did not get expected geom on labels layer')
         print(geom.ExportToWkt())
         return 'fail'
 
     return 'success'
 
+
 gdaltest_list = [
-    ogr_openair_1 ]
+    ogr_openair_1]
 
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'ogr_openair' )
+    gdaltest.setup_run('ogr_openair')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

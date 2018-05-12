@@ -29,7 +29,7 @@
 #include "ogr_tiger.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 static const char FILE_CODE[] = "I";
 
@@ -83,7 +83,7 @@ static const TigerRecordInfo rtI_info =
 
 TigerPolyChainLink::TigerPolyChainLink( OGRTigerDataSource * poDSIn,
                                         CPL_UNUSED const char * pszPrototypeModule ) :
-    TigerFileBase(NULL, FILE_CODE)
+    TigerFileBase(nullptr, FILE_CODE)
 {
     OGRFieldDefn        oField("",OFTInteger);
 

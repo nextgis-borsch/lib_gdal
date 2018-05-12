@@ -27,7 +27,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 #ifdef CPL_RECODE_ICONV
 
@@ -38,7 +38,7 @@ CPL_CVSID("$Id$");
 #define ICONV_CPP_CONST ICONV_CONST
 #endif
 
-static const size_t CPL_RECODE_DSTBUF_SIZE = 32768;
+constexpr size_t CPL_RECODE_DSTBUF_SIZE = 32768;
 
  /* used by cpl_recode.cpp */
 extern void CPLClearRecodeIconvWarningFlags();
@@ -87,7 +87,7 @@ char *CPLRecodeIconv( const char *pszSource,
 
     sConv = iconv_open( pszDstEncoding, pszSrcEncoding );
 
-    if( sConv == (iconv_t)-1 )
+    if( sConv == reinterpret_cast<iconv_t>(-1) )
     {
         CPLError( CE_Warning, CPLE_AppDefined,
                   "Recode from %s to %s failed with the error: \"%s\".",
@@ -102,12 +102,12 @@ char *CPLRecodeIconv( const char *pszSource,
 /*      argument could be declared as char** (as POSIX defines) or      */
 /*      as a const char**. Handle it with the ICONV_CPP_CONST macro here.   */
 /* -------------------------------------------------------------------- */
-    ICONV_CPP_CONST char *pszSrcBuf = (ICONV_CPP_CONST char *)pszSource;
+    ICONV_CPP_CONST char *pszSrcBuf = const_cast<ICONV_CPP_CONST char *>(pszSource);
     size_t nSrcLen = strlen( pszSource );
-    size_t nDstCurLen = std::max(CPL_RECODE_DSTBUF_SIZE, nSrcLen + 1);
+    size_t nDstCurLen = std::max(CPL_RECODE_DSTBUF_SIZE, nSrcLen);
     size_t nDstLen = nDstCurLen;
     char *pszDestination =
-        static_cast<char *>(CPLCalloc(nDstCurLen, sizeof(char)));
+        static_cast<char *>(CPLCalloc(nDstCurLen + 1, sizeof(char)));
     char *pszDstBuf = pszDestination;
 
     while( nSrcLen > 0 )
@@ -141,9 +141,9 @@ char *CPLRecodeIconv( const char *pszSource,
                 size_t nTmp = nDstCurLen;
                 nDstCurLen *= 2;
                 pszDestination =
-                    static_cast<char *>(CPLRealloc(pszDestination, nDstCurLen));
+                    static_cast<char *>(CPLRealloc(pszDestination, nDstCurLen + 1));
                 pszDstBuf = pszDestination + nTmp - nDstLen;
-                nDstLen += nDstCurLen - nTmp;
+                nDstLen += nTmp;
                 continue;
             }
 
@@ -221,10 +221,10 @@ char *CPLRecodeFromWCharIconv( const wchar_t *pwszSource,
         if( nTargetCharWidth == 1 )
             pszIconvSrcBuf[iSrc] = static_cast<GByte>(pwszSource[iSrc]);
         else if( nTargetCharWidth == 2 )
-            ((short *)pszIconvSrcBuf)[iSrc] =
+            (reinterpret_cast<short *>(pszIconvSrcBuf))[iSrc] =
                 static_cast<short>(pwszSource[iSrc]);
         else if( nTargetCharWidth == 4 )
-            ((GInt32 *)pszIconvSrcBuf)[iSrc] = pwszSource[iSrc];
+            (reinterpret_cast<GInt32 *>(pszIconvSrcBuf))[iSrc] = pwszSource[iSrc];
     }
 
 /* -------------------------------------------------------------------- */
@@ -234,7 +234,7 @@ char *CPLRecodeFromWCharIconv( const wchar_t *pwszSource,
 
     sConv = iconv_open( pszDstEncoding, pszSrcEncoding );
 
-    if( sConv == (iconv_t)-1 )
+    if( sConv == reinterpret_cast<iconv_t>(-1) )
     {
         CPLFree( pszIconvSrcBuf );
         CPLError( CE_Warning, CPLE_AppDefined,
@@ -250,7 +250,8 @@ char *CPLRecodeFromWCharIconv( const wchar_t *pwszSource,
 /*      argument could be declared as char** (as POSIX defines) or      */
 /*      as a const char**. Handle it with the ICONV_CPP_CONST macro here.   */
 /* -------------------------------------------------------------------- */
-    ICONV_CPP_CONST char *pszSrcBuf = (ICONV_CPP_CONST char *) pszIconvSrcBuf;
+    ICONV_CPP_CONST char *pszSrcBuf = const_cast<ICONV_CPP_CONST char *>(
+        reinterpret_cast<char*>(pszIconvSrcBuf));
 
     /* iconv expects a number of bytes, not characters */
     nSrcLen *= sizeof(wchar_t);
@@ -343,8 +344,8 @@ wchar_t *CPLRecodeToWCharIconv( const char *pszSource,
                                 const char *pszDstEncoding )
 
 {
-    return (wchar_t *)CPLRecodeIconv( pszSource,
-                                      pszSrcEncoding, pszDstEncoding);
+    return reinterpret_cast<wchar_t *>(CPLRecodeIconv( pszSource,
+                                            pszSrcEncoding, pszDstEncoding));
 }
 
 #endif /* CPL_RECODE_ICONV */

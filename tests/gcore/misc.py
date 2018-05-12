@@ -34,7 +34,7 @@ import sys
 import os
 import shutil
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 
@@ -49,7 +49,7 @@ def misc_1():
     drv = gdal.GetDriverByName('MEM')
     for i in range(len(tab_ds)):
         name = 'mem_%d' % i
-        tab_ds[i] = drv.Create( name, 1, 1, 1 )
+        tab_ds[i] = drv.Create(name, 1, 1, 1)
         if tab_ds[i] is None:
             return 'fail'
 
@@ -62,6 +62,7 @@ def misc_1():
 # Test that OpenShared() works as expected by opening a big number of times
 # the same dataset with it. If it did not work, that would exhaust the system
 # limit of maximum file descriptors opened at the same time
+
 
 def misc_2():
 
@@ -78,6 +79,7 @@ def misc_2():
 
 ###############################################################################
 # Test OpenShared() with a dataset whose filename != description (#2797)
+
 
 def misc_3():
 
@@ -102,6 +104,7 @@ def misc_3():
 ###############################################################################
 # Test Create() with invalid arguments
 
+
 def misc_4():
 
     gdal.PushErrorHandler('CPLQuietErrorHandler')
@@ -123,36 +126,39 @@ def get_filename(drv, dirname):
 
     filename = '%s/foo' % dirname
     if drv.ShortName == 'GTX':
-        filename = filename + '.gtx'
+        filename += '.gtx'
     elif drv.ShortName == 'RST':
-        filename = filename + '.rst'
+        filename += '.rst'
     elif drv.ShortName == 'SAGA':
-        filename = filename + '.sdat'
+        filename += '.sdat'
     elif drv.ShortName == 'ADRG':
         filename = '%s/ABCDEF01.GEN' % dirname
     elif drv.ShortName == 'SRTMHGT':
         filename = '%s/N48E002.HGT' % dirname
     elif drv.ShortName == 'ECW':
-        filename = filename + '.ecw'
+        filename += '.ecw'
     elif drv.ShortName == 'KMLSUPEROVERLAY':
-        filename = filename + '.kmz'
+        filename += '.kmz'
+    elif drv.ShortName == 'RRASTER':
+        filename += '.grd'
 
     return filename
 
 ###############################################################################
 # Test Create() with various band numbers (including 0) and datatype
 
+
 def misc_5_internal(drv, datatype, nBands):
 
     dirname = 'tmp/tmp/tmp_%s_%d_%s' % (drv.ShortName, nBands, gdal.GetDataTypeName(datatype))
-    #print('drv = %s, nBands = %d, datatype = %s' % (drv.ShortName, nBands, gdal.GetDataTypeName(datatype)))
+    # print('drv = %s, nBands = %d, datatype = %s' % (drv.ShortName, nBands, gdal.GetDataTypeName(datatype)))
     try:
         os.mkdir(dirname)
-    except:
+    except OSError:
         try:
             os.stat(dirname)
             # Hum the directory already exists... Not expected, but let's try to go on
-        except:
+        except OSError:
             reason = 'Cannot create %s for drv = %s, nBands = %d, datatype = %s' % (dirname, drv.ShortName, nBands, gdal.GetDataTypeName(datatype))
             gdaltest.post_reason(reason)
             return 0
@@ -160,12 +166,12 @@ def misc_5_internal(drv, datatype, nBands):
     filename = get_filename(drv, dirname)
     ds = drv.Create(filename, 100, 100, nBands, datatype)
     if ds is not None and not (drv.ShortName == 'GPKG' and nBands == 0):
-        set_gt = (2,1.0/10,0,49,0,-1.0/10)
+        set_gt = (2, 1.0 / 10, 0, 49, 0, -1.0 / 10)
         ds.SetGeoTransform(set_gt)
         ds.SetProjection('GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563]],PRIMEM["Greenwich",0],UNIT["degree",0.01745329251994328]]')
 
         # PNM and MFF have no SetGeoTransform() method implemented
-        if drv.ShortName not in ['PNM', 'MFF']:
+        if drv.ShortName not in ['PNM', 'MFF', 'NULL']:
             got_gt = ds.GetGeoTransform()
             for i in range(6):
                 if abs(got_gt[i] - set_gt[i]) > 1e-10:
@@ -173,7 +179,7 @@ def misc_5_internal(drv, datatype, nBands):
                     print(got_gt)
                     return -1
 
-        #if ds.RasterCount > 0:
+        # if ds.RasterCount > 0:
         #    ds.GetRasterBand(1).Fill(255)
     ds = None
     ds = gdal.Open(filename)
@@ -182,19 +188,20 @@ def misc_5_internal(drv, datatype, nBands):
         # gdaltest.post_reason(reason)
         # TODO: Why not return -1?
         pass
-    #else:
+    # else:
     #    if ds.RasterCount > 0:
     #        print ds.GetRasterBand(1).Checksum()
     ds = None
 
     try:
         shutil.rmtree(dirname)
-    except:
+    except OSError:
         reason = 'Cannot remove %s for drv = %s, nBands = %d, datatype = %s' % (dirname, drv.ShortName, nBands, gdal.GetDataTypeName(datatype))
         gdaltest.post_reason(reason)
         return 0
 
     return 1
+
 
 def misc_5():
 
@@ -202,16 +209,16 @@ def misc_5():
 
     try:
         shutil.rmtree('tmp/tmp')
-    except:
+    except OSError:
         pass
 
     try:
         os.mkdir('tmp/tmp')
-    except:
+    except OSError:
         try:
             os.stat('tmp/tmp')
             # Hum the directory already exists... Not expected, but let's try to go on
-        except:
+        except OSError:
             gdaltest.post_reason('Cannot create tmp/tmp')
             return 'fail'
 
@@ -238,17 +245,17 @@ def misc_5():
                 if misc_5_internal(drv, datatype, nBands) < 0:
                     ret = 'fail'
 
-            for nBands in [1,3]:
+            for nBands in [1, 3]:
                 for datatype in (gdal.GDT_UInt16,
-                                gdal.GDT_Int16,
-                                gdal.GDT_UInt32,
-                                gdal.GDT_Int32,
-                                gdal.GDT_Float32,
-                                gdal.GDT_Float64,
-                                gdal.GDT_CInt16,
-                                gdal.GDT_CInt32,
-                                gdal.GDT_CFloat32,
-                                gdal.GDT_CFloat64):
+                                 gdal.GDT_Int16,
+                                 gdal.GDT_UInt32,
+                                 gdal.GDT_Int32,
+                                 gdal.GDT_Float32,
+                                 gdal.GDT_Float64,
+                                 gdal.GDT_CInt16,
+                                 gdal.GDT_CInt32,
+                                 gdal.GDT_CFloat32,
+                                 gdal.GDT_CFloat64):
                     if misc_5_internal(drv, datatype, nBands) < 0:
                         ret = 'fail'
 
@@ -264,19 +271,20 @@ class misc_6_interrupt_callback_class:
 
     def cbk(self, pct, message, user_data):
         if pct > 0.5:
-            return 0 # to stop
+            return 0  # to stop
         else:
-            return 1 # to continue
+            return 1  # to continue
 
 ###############################################################################
 # Test CreateCopy() with a source dataset with various band numbers (including 0) and datatype
+
 
 def misc_6_internal(datatype, nBands, setDriversDone):
 
     ds = gdal.GetDriverByName('MEM').Create('', 10, 10, nBands, datatype)
     if nBands > 0:
         ds.GetRasterBand(1).Fill(255)
-    ds.SetGeoTransform([2,1.0/10,0,49,0,-1.0/10])
+    ds.SetGeoTransform([2, 1.0 / 10, 0, 49, 0, -1.0 / 10])
     ds.SetProjection('GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563]],PRIMEM["Greenwich",0],UNIT["degree",0.01745329251994328]]')
     ds.SetMetadata(['a'])
 
@@ -284,24 +292,24 @@ def misc_6_internal(datatype, nBands, setDriversDone):
         drv = gdal.GetDriver(i)
         md = drv.GetMetadata()
         if ('DCAP_CREATECOPY' in md or 'DCAP_CREATE' in md) and 'DCAP_RASTER' in md:
-            #print ('drv = %s, nBands = %d, datatype = %s' % (drv.ShortName, nBands, gdal.GetDataTypeName(datatype)))
+            # print ('drv = %s, nBands = %d, datatype = %s' % (drv.ShortName, nBands, gdal.GetDataTypeName(datatype)))
 
             skip = False
             # FIXME: A few cases that crashes and should be investigated
             if drv.ShortName == 'JPEG2000':
                 if (nBands == 2 or nBands >= 5) or \
-                    not (datatype == gdal.GDT_Byte or datatype == gdal.GDT_Int16 or datatype == gdal.GDT_UInt16):
-                        skip = True
+                        not (datatype == gdal.GDT_Byte or datatype == gdal.GDT_Int16 or datatype == gdal.GDT_UInt16):
+                    skip = True
 
             if skip is False:
                 dirname = 'tmp/tmp/tmp_%s_%d_%s' % (drv.ShortName, nBands, gdal.GetDataTypeName(datatype))
                 try:
                     os.mkdir(dirname)
-                except:
+                except OSError:
                     try:
                         os.stat(dirname)
                         # Hum the directory already exists... Not expected, but let's try to go on
-                    except:
+                    except OSError:
                         reason = 'Cannot create %s before drv = %s, nBands = %d, datatype = %s' % (dirname, drv.ShortName, nBands, gdal.GetDataTypeName(datatype))
                         gdaltest.post_reason(reason)
                         return 'fail'
@@ -319,24 +327,24 @@ def misc_6_internal(datatype, nBands, setDriversDone):
 
                 try:
                     shutil.rmtree(dirname)
-                except:
+                except OSError:
                     reason = 'Cannot remove %s after drv = %s, nBands = %d, datatype = %s' % (dirname, drv.ShortName, nBands, gdal.GetDataTypeName(datatype))
                     gdaltest.post_reason(reason)
                     return 'fail'
 
-                if has_succeeded and not drv.ShortName in setDriversDone and nBands > 0:
+                if has_succeeded and drv.ShortName not in setDriversDone and nBands > 0:
                     setDriversDone.add(drv.ShortName)
 
                     # The first list of drivers fail to detect short writing
                     # The second one is because they are verbose in stderr
                     if 'DCAP_VIRTUALIO' in md and size != 0 and \
-                        drv.ShortName not in ['JPEG2000', 'KMLSUPEROVERLAY', 'HF2', 'ZMap', 'DDS'] and \
-                        drv.ShortName not in ['GIF', 'JP2ECW', 'JP2Lura']:
+                            drv.ShortName not in ['JPEG2000', 'KMLSUPEROVERLAY', 'HF2', 'ZMap', 'DDS'] and \
+                            drv.ShortName not in ['GIF', 'JP2ECW', 'JP2Lura']:
 
                         for j in range(10):
                             truncated_size = (size * j) / 10
                             vsimem_filename = ('/vsimem/test_truncate/||maxlength=%d||' % truncated_size) + get_filename(drv, '')[1:]
-                            #print('drv = %s, nBands = %d, datatype = %s, truncated_size = %d' % (drv.ShortName, nBands, gdal.GetDataTypeName(datatype), truncated_size))
+                            # print('drv = %s, nBands = %d, datatype = %s, truncated_size = %d' % (drv.ShortName, nBands, gdal.GetDataTypeName(datatype), truncated_size))
                             dst_ds = drv.CreateCopy(vsimem_filename, ds)
                             error_detected = False
                             if dst_ds is None:
@@ -359,15 +367,15 @@ def misc_6_internal(datatype, nBands, setDriversDone):
                                 if fl is not None:
                                     print(fl)
 
-                    if not drv.ShortName in ['ECW', 'JP2ECW', 'VRT', 'XPM', 'JPEG2000', 'FIT', 'RST', 'INGR', 'USGSDEM', 'KMLSUPEROVERLAY', 'GMT']:
-                        dst_ds = drv.CreateCopy(filename, ds, callback = misc_6_interrupt_callback_class().cbk)
+                    if drv.ShortName not in ['ECW', 'JP2ECW', 'VRT', 'XPM', 'JPEG2000', 'FIT', 'RST', 'INGR', 'USGSDEM', 'KMLSUPEROVERLAY', 'GMT']:
+                        dst_ds = drv.CreateCopy(filename, ds, callback=misc_6_interrupt_callback_class().cbk)
                         if dst_ds is not None:
                             gdaltest.post_reason('interruption did not work with drv = %s, nBands = %d, datatype = %s' % (drv.ShortName, nBands, gdal.GetDataTypeName(datatype)))
                             dst_ds = None
 
                             try:
                                 shutil.rmtree(dirname)
-                            except:
+                            except OSError:
                                 pass
 
                             return 'fail'
@@ -376,11 +384,11 @@ def misc_6_internal(datatype, nBands, setDriversDone):
 
                         try:
                             shutil.rmtree(dirname)
-                        except:
+                        except OSError:
                             pass
                         try:
                             os.mkdir(dirname)
-                        except:
+                        except OSError:
                             reason = 'Cannot create %s before drv = %s, nBands = %d, datatype = %s' % (dirname, drv.ShortName, nBands, gdal.GetDataTypeName(datatype))
                             gdaltest.post_reason(reason)
                             return 'fail'
@@ -388,22 +396,23 @@ def misc_6_internal(datatype, nBands, setDriversDone):
 
     return 'success'
 
+
 def misc_6():
 
     gdal.PushErrorHandler('CPLQuietErrorHandler')
 
     try:
         shutil.rmtree('tmp/tmp')
-    except:
+    except OSError:
         pass
 
     try:
         os.mkdir('tmp/tmp')
-    except:
+    except OSError:
         try:
             os.stat('tmp/tmp')
             # Hum the directory already exists... Not expected, but let's try to go on
-        except:
+        except OSError:
             gdaltest.post_reason('Cannot create tmp/tmp')
             return 'fail'
 
@@ -443,6 +452,7 @@ def misc_6():
 ###############################################################################
 # Test gdal.InvGeoTransform()
 
+
 def misc_7():
 
     try:
@@ -463,6 +473,7 @@ def misc_7():
 ###############################################################################
 # Test gdal.ApplyGeoTransform()
 
+
 def misc_8():
 
     try:
@@ -479,6 +490,7 @@ def misc_8():
 
 ###############################################################################
 # Test setting and retrieving > 2 GB values for GDAL max cache (#3689)
+
 
 def misc_9():
 
@@ -502,7 +514,7 @@ def misc_10():
 
     try:
         os.remove('data/byte.tif.gz.properties')
-    except:
+    except OSError:
         pass
 
     f = gdal.VSIFOpenL('/vsigzip/./data/byte.tif.gz', 'rb')
@@ -519,7 +531,7 @@ def misc_10():
 
     try:
         os.remove('data/byte.tif.gz.properties')
-    except:
+    except OSError:
         pass
 
     return 'success'
@@ -536,7 +548,7 @@ def misc_11():
 
     try:
         os.unlink('tmp/symlink.tif')
-    except:
+    except OSError:
         pass
     os.symlink('GTIFF_DIR:1:data/byte.tif', 'tmp/symlink.tif')
 
@@ -559,6 +571,7 @@ def misc_11():
 ###############################################################################
 # Test CreateCopy() with a target filename in a non-existing dir
 
+
 def misc_12():
 
     if int(gdal.VersionInfo('VERSION_NUM')) < 1900:
@@ -580,7 +593,7 @@ def misc_12():
             datatype = gdal.GDT_Byte
             if drv.ShortName == 'BT' or drv.ShortName == 'BLX':
                 datatype = gdal.GDT_Int16
-            elif drv.ShortName == 'GTX' or drv.ShortName == 'NTv2' or drv.ShortName == 'Leveller' :
+            elif drv.ShortName == 'GTX' or drv.ShortName == 'NTv2' or drv.ShortName == 'Leveller':
                 datatype = gdal.GDT_Float32
 
             size = 1201
@@ -588,7 +601,7 @@ def misc_12():
                 size = 128
 
             src_ds = gdal.GetDriverByName('GTiff').Create('/vsimem/misc_12_src.tif', size, size, nbands, datatype)
-            set_gt = (2,1.0/size,0,49,0,-1.0/size)
+            set_gt = (2, 1.0 / size, 0, 49, 0, -1.0 / size)
             src_ds.SetGeoTransform(set_gt)
             src_ds.SetProjection('GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563]],PRIMEM["Greenwich",0],UNIT["degree",0.01745329251994328]]')
 
@@ -605,14 +618,14 @@ def misc_12():
             if gdal_translate_path is not None:
                 # Test to detect memleaks
                 ds = gdal.GetDriverByName('VRT').CreateCopy('tmp/misc_12.vrt', src_ds)
-                (out, err) = gdaltest.runexternal_out_and_err(gdal_translate_path + ' -of ' + drv.ShortName + ' tmp/misc_12.vrt /nonexistingpath/' + get_filename(drv, ''), check_memleak = False)
+                (out, err) = gdaltest.runexternal_out_and_err(gdal_translate_path + ' -of ' + drv.ShortName + ' tmp/misc_12.vrt /nonexistingpath/' + get_filename(drv, ''), check_memleak=False)
                 del ds
                 gdal.Unlink('tmp/misc_12.vrt')
 
                 # If DEBUG_VSIMALLOC_STATS is defined, this is an easy way
                 # to catch some memory leaks
                 if out.find('VSIMalloc + VSICalloc - VSIFree') != -1 and \
-                out.find('VSIMalloc + VSICalloc - VSIFree : 0') == -1:
+                        out.find('VSIMalloc + VSICalloc - VSIFree : 0') == -1:
                     if drv.ShortName == 'Rasterlite' and out.find('VSIMalloc + VSICalloc - VSIFree : 1') != -1:
                         pass
                     else:
@@ -626,6 +639,7 @@ def misc_12():
 
 ###############################################################################
 # Test CreateCopy() with incompatible driver types (#5912)
+
 
 def misc_13():
 
@@ -650,36 +664,39 @@ def misc_13():
     return 'success'
 
 ###############################################################################
+
+
 def misc_cleanup():
 
     try:
         shutil.rmtree('tmp/tmp')
-    except:
+    except OSError:
         pass
 
     return 'success'
 
-gdaltest_list = [ misc_1,
-                  misc_2,
-                  misc_3,
-                  misc_4,
-                  misc_5,
-                  misc_6,
-                  misc_7,
-                  misc_8,
-                  misc_9,
-                  misc_10,
-                  misc_11,
-                  misc_12,
-                  misc_13,
-                  misc_cleanup ]
 
-#gdaltest_list = [ misc_6 ]
+gdaltest_list = [misc_1,
+                 misc_2,
+                 misc_3,
+                 misc_4,
+                 misc_5,
+                 misc_6,
+                 misc_7,
+                 misc_8,
+                 misc_9,
+                 misc_10,
+                 misc_11,
+                 misc_12,
+                 misc_13,
+                 misc_cleanup]
+
+# gdaltest_list = [ misc_6 ]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'misc' )
+    gdaltest.setup_run('misc')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

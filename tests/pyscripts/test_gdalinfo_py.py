@@ -31,13 +31,14 @@
 import sys
 import os
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 import test_py_scripts
 
 ###############################################################################
 # Simple test
+
 
 def test_gdalinfo_py_1():
 
@@ -54,6 +55,7 @@ def test_gdalinfo_py_1():
 ###############################################################################
 # Test -checksum option
 
+
 def test_gdalinfo_py_2():
     script_path = test_py_scripts.get_py_script('gdalinfo')
     if script_path is None:
@@ -67,6 +69,7 @@ def test_gdalinfo_py_2():
 
 ###############################################################################
 # Test -nomd option
+
 
 def test_gdalinfo_py_3():
     script_path = test_py_scripts.get_py_script('gdalinfo')
@@ -86,6 +89,7 @@ def test_gdalinfo_py_3():
 ###############################################################################
 # Test -noct option
 
+
 def test_gdalinfo_py_4():
     script_path = test_py_scripts.get_py_script('gdalinfo')
     if script_path is None:
@@ -104,6 +108,7 @@ def test_gdalinfo_py_4():
 ###############################################################################
 # Test -stats option
 
+
 def test_gdalinfo_py_5():
     script_path = test_py_scripts.get_py_script('gdalinfo')
     if script_path is None:
@@ -111,18 +116,18 @@ def test_gdalinfo_py_5():
 
     try:
         os.remove('../gcore/data/byte.tif.aux.xml')
-    except:
+    except OSError:
         pass
 
     ret = test_py_scripts.run_py_script(script_path, 'gdalinfo', '../gcore/data/byte.tif')
     if ret.find('STATISTICS_MINIMUM=74') != -1:
-        gdaltest.post_reason( 'got wrong minimum.' )
+        gdaltest.post_reason('got wrong minimum.')
         print(ret)
         return 'fail'
 
     ret = test_py_scripts.run_py_script(script_path, 'gdalinfo', '-stats ../gcore/data/byte.tif')
     if ret.find('STATISTICS_MINIMUM=74') == -1:
-        gdaltest.post_reason( 'got wrong minimum (2).' )
+        gdaltest.post_reason('got wrong minimum (2).')
         print(ret)
         return 'fail'
 
@@ -134,6 +139,7 @@ def test_gdalinfo_py_5():
 ###############################################################################
 # Test a dataset with overviews and RAT
 
+
 def test_gdalinfo_py_6():
     script_path = test_py_scripts.get_py_script('gdalinfo')
     if script_path is None:
@@ -142,13 +148,14 @@ def test_gdalinfo_py_6():
     ret = test_py_scripts.run_py_script(script_path, 'gdalinfo', '../gdrivers/data/int.img')
     if ret.find('Overviews') == -1:
         return 'fail'
-    #if ret.find('GDALRasterAttributeTable') == -1:
+    # if ret.find('GDALRasterAttributeTable') == -1:
     #    return 'fail'
 
     return 'success'
 
 ###############################################################################
 # Test a dataset with GCPs
+
 
 def test_gdalinfo_py_7():
     script_path = test_py_scripts.get_py_script('gdalinfo')
@@ -177,6 +184,7 @@ def test_gdalinfo_py_7():
 ###############################################################################
 # Test -hist option
 
+
 def test_gdalinfo_py_8():
     script_path = test_py_scripts.get_py_script('gdalinfo')
     if script_path is None:
@@ -189,13 +197,13 @@ def test_gdalinfo_py_8():
 
     ret = test_py_scripts.run_py_script(script_path, 'gdalinfo', '../gcore/data/byte.tif')
     if ret.find('0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 6 0 0 0 0 0 0 0 0 37 0 0 0 0 0 0 0 57 0 0 0 0 0 0 0 62 0 0 0 0 0 0 0 66 0 0 0 0 0 0 0 0 72 0 0 0 0 0 0 0 31 0 0 0 0 0 0 0 24 0 0 0 0 0 0 0 12 0 0 0 0 0 0 0 0 7 0 0 0 0 0 0 0 12 0 0 0 0 0 0 0 5 0 0 0 0 0 0 0 3 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 1') != -1:
-        gdaltest.post_reason( 'did not expect histogram.' )
+        gdaltest.post_reason('did not expect histogram.')
         print(ret)
         return 'fail'
 
     ret = test_py_scripts.run_py_script(script_path, 'gdalinfo', '-hist ../gcore/data/byte.tif')
     if ret.find('0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 6 0 0 0 0 0 0 0 0 37 0 0 0 0 0 0 0 57 0 0 0 0 0 0 0 62 0 0 0 0 0 0 0 66 0 0 0 0 0 0 0 0 72 0 0 0 0 0 0 0 31 0 0 0 0 0 0 0 24 0 0 0 0 0 0 0 12 0 0 0 0 0 0 0 0 7 0 0 0 0 0 0 0 12 0 0 0 0 0 0 0 5 0 0 0 0 0 0 0 3 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 1') == -1:
-        gdaltest.post_reason( 'did not get expected histogram.' )
+        gdaltest.post_reason('did not get expected histogram.')
         print(ret)
         return 'fail'
 
@@ -207,6 +215,7 @@ def test_gdalinfo_py_8():
 ###############################################################################
 # Test -mdd option
 
+
 def test_gdalinfo_py_9():
     script_path = test_py_scripts.get_py_script('gdalinfo')
     if script_path is None:
@@ -214,13 +223,13 @@ def test_gdalinfo_py_9():
 
     ret = test_py_scripts.run_py_script(script_path, 'gdalinfo', '../gdrivers/data/fake_nsif.ntf')
     if ret.find('BLOCKA=010000001000000000') != -1:
-        gdaltest.post_reason( 'Got unexpected extra MD.' )
+        gdaltest.post_reason('Got unexpected extra MD.')
         print(ret)
         return 'fail'
 
     ret = test_py_scripts.run_py_script(script_path, 'gdalinfo', '-mdd TRE ../gdrivers/data/fake_nsif.ntf')
     if ret.find('BLOCKA=010000001000000000') == -1:
-        gdaltest.post_reason( 'did not get extra MD.' )
+        gdaltest.post_reason('did not get extra MD.')
         print(ret)
         return 'fail'
 
@@ -228,6 +237,7 @@ def test_gdalinfo_py_9():
 
 ###############################################################################
 # Test -mm option
+
 
 def test_gdalinfo_py_10():
     script_path = test_py_scripts.get_py_script('gdalinfo')
@@ -244,6 +254,7 @@ def test_gdalinfo_py_10():
 
     return 'success'
 
+
 gdaltest_list = [
     test_gdalinfo_py_1,
     test_gdalinfo_py_2,
@@ -255,13 +266,13 @@ gdaltest_list = [
     test_gdalinfo_py_8,
     test_gdalinfo_py_9,
     test_gdalinfo_py_10
-    ]
+]
 
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'test_gdalinfo_py' )
+    gdaltest.setup_run('test_gdalinfo_py')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

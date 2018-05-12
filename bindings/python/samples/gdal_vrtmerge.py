@@ -28,7 +28,9 @@ import sys
 from osgeo import gdal
 
 # =============================================================================
-def names_to_fileinfos( names ):
+
+
+def names_to_fileinfos(names):
     """
     Translate a list of GDAL filenames, into file_info objects.
 
@@ -44,11 +46,13 @@ def names_to_fileinfos( names ):
         if fi.init_from_name(name):
             file_infos.append(fi)
         else:
-            print ('Can not open dataset "%s", skipped' % name)
+            print('Can not open dataset "%s", skipped' % name)
 
     return file_infos
 
 # *****************************************************************************
+
+
 class file_info:
     """A class holding information about a GDAL file."""
 
@@ -60,7 +64,7 @@ class file_info:
 
         Returns 1 on success or 0 if the file can't be opened.
         """
-        fh = gdal.Open( filename )
+        fh = gdal.Open(filename)
         if fh is None:
             return False
 
@@ -80,11 +84,11 @@ class file_info:
         self.nodata = [None]
         self.cts = [None]
         self.color_interps = [None]
-        for i in range(1, fh.RasterCount+1):
+        for i in range(1, fh.RasterCount + 1):
             band = fh.GetRasterBand(i)
             self.band_types.append(band.DataType)
             self.block_sizes.append(band.GetBlockSize())
-            if band.GetNoDataValue() != None:
+            if band.GetNoDataValue() is not None:
                 self.nodata.append(band.GetNoDataValue())
             self.color_interps.append(band.GetRasterColorInterpretation())
             ct = band.GetRasterColorTable()
@@ -102,14 +106,14 @@ class file_info:
         t_lry = t_geotransform[3] + ysize * t_geotransform[5]
 
         # figure out intersection region
-        tgw_ulx = max(t_ulx,self.ulx)
-        tgw_lrx = min(t_lrx,self.lrx)
+        tgw_ulx = max(t_ulx, self.ulx)
+        tgw_lrx = min(t_lrx, self.lrx)
         if t_geotransform[5] < 0:
-            tgw_uly = min(t_uly,self.uly)
-            tgw_lry = max(t_lry,self.lry)
+            tgw_uly = min(t_uly, self.uly)
+            tgw_lry = max(t_lry, self.lry)
         else:
-            tgw_uly = max(t_uly,self.uly)
-            tgw_lry = min(t_lry,self.lry)
+            tgw_uly = max(t_uly, self.uly)
+            tgw_lry = min(t_lry, self.lry)
 
         # do they even intersect?
         if tgw_ulx >= tgw_lrx:
@@ -122,10 +126,10 @@ class file_info:
         # compute target window in pixel coordinates.
         tw_xoff = int((tgw_ulx - t_geotransform[0]) / t_geotransform[1] + 0.1)
         tw_yoff = int((tgw_uly - t_geotransform[3]) / t_geotransform[5] + 0.1)
-        tw_xsize = int((tgw_lrx - t_geotransform[0])/t_geotransform[1] + 0.5) \
-                   - tw_xoff
-        tw_ysize = int((tgw_lry - t_geotransform[3])/t_geotransform[5] + 0.5) \
-                   - tw_yoff
+        tw_xsize = int((tgw_lrx - t_geotransform[0]) / t_geotransform[1] + 0.5) \
+            - tw_xoff
+        tw_ysize = int((tgw_lry - t_geotransform[3]) / t_geotransform[5] + 0.5) \
+            - tw_yoff
 
         if tw_xsize < 1 or tw_ysize < 1:
             return 1
@@ -133,39 +137,42 @@ class file_info:
         # Compute source window in pixel coordinates.
         sw_xoff = int((tgw_ulx - self.geotransform[0]) / self.geotransform[1])
         sw_yoff = int((tgw_uly - self.geotransform[3]) / self.geotransform[5])
-        sw_xsize = int((tgw_lrx - self.geotransform[0]) \
-                       / self.geotransform[1] + 0.5) - sw_xoff
-        sw_ysize = int((tgw_lry - self.geotransform[3]) \
-                       / self.geotransform[5] + 0.5) - sw_yoff
+        sw_xsize = int((tgw_lrx - self.geotransform[0]) /
+                       self.geotransform[1] + 0.5) - sw_xoff
+        sw_ysize = int((tgw_lry - self.geotransform[3]) /
+                       self.geotransform[5] + 0.5) - sw_yoff
 
         if sw_xsize < 1 or sw_ysize < 1:
             return 1
 
         t_fh.write('\t\t<SimpleSource>\n')
         t_fh.write(('\t\t\t<SourceFilename relativeToVRT="1">%s' +
-            '</SourceFilename>\n') % self.filename)
+                    '</SourceFilename>\n') % self.filename)
         t_fh.write('\t\t\t<SourceBand>%i</SourceBand>\n' % s_band)
         data_type_name = gdal.GetDataTypeName(self.band_types[s_band])
         block_size_x, block_size_y = self.block_sizes[s_band]
-        t_fh.write('\t\t\t<SourceProperties RasterXSize="%i" RasterYSize="%i"' \
-                    ' DataType="%s" BlockXSize="%i" BlockYSize="%i"/>\n' \
-                    % (self.xsize, self.ysize, data_type_name, block_size_x, block_size_y))
-        t_fh.write('\t\t\t<SrcRect xOff="%i" yOff="%i" xSize="%i" ySize="%i"/>\n' \
-            % (sw_xoff, sw_yoff, sw_xsize, sw_ysize))
-        t_fh.write('\t\t\t<DstRect xOff="%i" yOff="%i" xSize="%i" ySize="%i"/>\n' \
-            % (tw_xoff, tw_yoff, tw_xsize, tw_ysize))
+        t_fh.write('\t\t\t<SourceProperties RasterXSize="%i" RasterYSize="%i"'
+                   ' DataType="%s" BlockXSize="%i" BlockYSize="%i"/>\n'
+                   % (self.xsize, self.ysize, data_type_name, block_size_x, block_size_y))
+        t_fh.write('\t\t\t<SrcRect xOff="%i" yOff="%i" xSize="%i" ySize="%i"/>\n'
+                   % (sw_xoff, sw_yoff, sw_xsize, sw_ysize))
+        t_fh.write('\t\t\t<DstRect xOff="%i" yOff="%i" xSize="%i" ySize="%i"/>\n'
+                   % (tw_xoff, tw_yoff, tw_xsize, tw_ysize))
         t_fh.write('\t\t</SimpleSource>\n')
 
 # =============================================================================
+
+
 def Usage():
-    print ('Usage: gdal_vrtmerge.py [-o out_filename] [-separate] [-pct]')
-    print ('           [-ul_lr ulx uly lrx lry] [-ot datatype] [-i input_file_list')
-    print ('           | input_files]')
+    print('Usage: gdal_vrtmerge.py [-o out_filename] [-separate] [-pct]')
+    print('           [-ul_lr ulx uly lrx lry] [-ot datatype] [-i input_file_list')
+    print('           | input_files]')
 
 # =============================================================================
 #
 # Program mainline.
 #
+
 
 if __name__ == '__main__':
 
@@ -177,9 +184,9 @@ if __name__ == '__main__':
     separate = False
     pre_init = None
 
-    argv = gdal.GeneralCmdLineProcessor( sys.argv )
+    argv = gdal.GeneralCmdLineProcessor(sys.argv)
     if argv is None:
-        sys.exit( 0 )
+        sys.exit(0)
 
     # Parse command line arguments.
     i = 1
@@ -199,31 +206,31 @@ if __name__ == '__main__':
             separate = True
 
         elif arg == '-ul_lr':
-            ulx = float(argv[i+1])
-            uly = float(argv[i+2])
-            lrx = float(argv[i+3])
-            lry = float(argv[i+4])
+            ulx = float(argv[i + 1])
+            uly = float(argv[i + 2])
+            lrx = float(argv[i + 3])
+            lry = float(argv[i + 4])
             i = i + 4
 
         elif arg[:1] == '-':
-            print ('Unrecognized command option: ', arg)
+            print('Unrecognized command option: ', arg)
             Usage()
-            sys.exit( 1 )
+            sys.exit(1)
 
         else:
-            names.append( arg )
+            names.append(arg)
 
         i = i + 1
 
     if len(names) == 0:
-        print ('No input files selected.')
+        print('No input files selected.')
         Usage()
-        sys.exit( 1 )
+        sys.exit(1)
 
     # Collect information on all the source files.
-    file_infos = names_to_fileinfos( names )
+    file_infos = names_to_fileinfos(names)
     if len(file_infos) == 0:
-        print ('Nothing to process, exiting.')
+        print('Nothing to process, exiting.')
         sys.exit(1)
 
     if ulx is None:
@@ -246,17 +253,17 @@ if __name__ == '__main__':
 
     for fi in file_infos:
         if fi.geotransform[1] != psize_x or fi.geotransform[5] != psize_y:
-            print ("All files must have the same scale; %s does not" \
-                % fi.filename)
+            print("All files must have the same scale; %s does not"
+                  % fi.filename)
             sys.exit(1)
 
         if fi.geotransform[2] != 0 or fi.geotransform[4] != 0:
-            print ("No file must be rotated; %s is" % fi.filename)
+            print("No file must be rotated; %s is" % fi.filename)
             sys.exit(1)
 
         if fi.projection != projection:
-            print ("All files must be in the same projection; %s is not" \
-                % fi.filename)
+            print("All files must be in the same projection; %s is not"
+                  % fi.filename)
             sys.exit(1)
 
     geotransform = (ulx, psize_x, 0.0, uly, 0.0, psize_y)
@@ -271,9 +278,9 @@ if __name__ == '__main__':
 
     t_fh = open(out_file, 'w')
     t_fh.write('<VRTDataset rasterXSize="%i" rasterYSize="%i">\n'
-        % (xsize, ysize))
+               % (xsize, ysize))
     t_fh.write('\t<GeoTransform>%24.16f, %24.16f, %24.16f, %24.16f, %24.16f, %24.16f</GeoTransform>\n'
-        % geotransform)
+               % geotransform)
 
     if len(projection) > 0:
         t_fh.write('\t<SRS>%s</SRS>\n' % projection)
@@ -283,36 +290,36 @@ if __name__ == '__main__':
         for fi in file_infos:
             band_n = band_n + 1
             if len(fi.band_types) != 2:
-                print ( 'File %s has %d bands. Only first band will be taken '
-                        'into account' % (fi.filename, len(fi.band_types)-1))
+                print('File %s has %d bands. Only first band will be taken '
+                      'into account' % (fi.filename, len(fi.band_types) - 1))
             dataType = gdal.GetDataTypeName(fi.band_types[1])
 
             t_fh.write('\t<VRTRasterBand dataType="%s" band="%i">\n'
-                % (dataType, band_n))
+                       % (dataType, band_n))
             t_fh.write('\t\t<ColorInterp>%s</ColorInterp>\n' %
-                gdal.GetColorInterpretationName(fi.color_interps[1]))
+                       gdal.GetColorInterpretationName(fi.color_interps[1]))
             fi.write_source(t_fh, geotransform, xsize, ysize, 1)
             t_fh.write('\t</VRTRasterBand>\n')
     else:
-        for band in range(1, bands+1):
+        for band in range(1, bands + 1):
             dataType = gdal.GetDataTypeName(file_infos[0].band_types[band])
 
             t_fh.write('\t<VRTRasterBand dataType="%s" band="%i">\n'
-                % (dataType, band))
+                       % (dataType, band))
             if file_infos[0].nodata != [None]:
                 t_fh.write('\t\t<NoDataValue>%f</NoDataValue>\n' %
-                    file_infos[0].nodata[band])
+                           file_infos[0].nodata[band])
             t_fh.write('\t\t<ColorInterp>%s</ColorInterp>\n' %
-                gdal.GetColorInterpretationName(
-                    file_infos[0].color_interps[band]))
+                       gdal.GetColorInterpretationName(
+                           file_infos[0].color_interps[band]))
 
             ct = file_infos[0].cts[band]
-            if ct != None:
+            if ct is not None:
                 t_fh.write('\t\t<ColorTable>\n')
                 for i in range(ct.GetCount()):
                     t_fh.write(
                         '\t\t\t<Entry c1="%i" c2="%i" c3="%i" c4="%i"/>\n'
-                            % ct.GetColorEntry(i))
+                        % ct.GetColorEntry(i))
                 t_fh.write('\t\t</ColorTable>\n')
 
             for fi in file_infos:

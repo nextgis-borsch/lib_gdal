@@ -50,7 +50,7 @@ class OGRPCIDSKLayer;
 /*                              PCIDSK2Dataset                           */
 /************************************************************************/
 
-class PCIDSK2Dataset : public GDALPamDataset
+class PCIDSK2Dataset final: public GDALPamDataset
 {
     friend class PCIDSK2Band;
 
@@ -73,7 +73,7 @@ class PCIDSK2Dataset : public GDALPamDataset
     static GDALDataset  *Open( GDALOpenInfo * );
     static GDALDataset  *LLOpen( const char *pszFilename, PCIDSK::PCIDSKFile *,
                                  GDALAccess eAccess,
-                                 char** papszSiblingFiles = NULL );
+                                 char** papszSiblingFiles = nullptr );
     static GDALDataset  *Create( const char * pszFilename,
                                  int nXSize, int nYSize, int nBands,
                                  GDALDataType eType,
@@ -109,7 +109,7 @@ class PCIDSK2Dataset : public GDALPamDataset
 /*                             PCIDSK2Band                              */
 /************************************************************************/
 
-class PCIDSK2Band : public GDALPamRasterBand
+class PCIDSK2Band final: public GDALPamRasterBand
 {
     friend class PCIDSK2Dataset;
 
@@ -132,7 +132,8 @@ class PCIDSK2Band : public GDALPamRasterBand
     void        Initialize();
 
   public:
-                PCIDSK2Band( PCIDSK2Dataset *, PCIDSK::PCIDSKFile *, int );
+                PCIDSK2Band( PCIDSK::PCIDSKFile *poFileIn,
+                             PCIDSK::PCIDSKChannel *poChannelIn );
     explicit    PCIDSK2Band( PCIDSK::PCIDSKChannel * );
     virtual ~PCIDSK2Band();
 
@@ -161,7 +162,7 @@ class PCIDSK2Band : public GDALPamRasterBand
 /*                             OGRPCIDSKLayer                              */
 /************************************************************************/
 
-class OGRPCIDSKLayer : public OGRLayer
+class OGRPCIDSKLayer final: public OGRLayer
 {
     PCIDSK::PCIDSKVectorSegment *poVecSeg;
     PCIDSK::PCIDSKSegment       *poSeg;

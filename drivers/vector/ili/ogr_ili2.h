@@ -71,7 +71,7 @@ class OGRILI2Layer : public OGRLayer
 
     OGRFeatureDefn *    GetLayerDefn() override { return poFeatureDefn; }
 
-    CPLString           GetIliGeomType( const char* cFieldName) { return oGeomFieldInfos[cFieldName].iliGeomType; };
+    CPLString           GetIliGeomType( const char* cFieldName) { return oGeomFieldInfos[cFieldName].iliGeomType; }
 
     OGRErr              CreateField( OGRFieldDefn *poField, int bApproxOK = TRUE ) override;
 
@@ -107,9 +107,9 @@ class OGRILI2DataSource : public OGRDataSource
     OGRLayer   *GetLayer( int ) override;
 
     virtual OGRLayer *ICreateLayer( const char *,
-                                      OGRSpatialReference * = NULL,
+                                      OGRSpatialReference * = nullptr,
                                       OGRwkbGeometryType = wkbUnknown,
-                                      char ** = NULL ) override;
+                                      char ** = nullptr ) override;
 
     VSILFILE *  GetOutputFP() { return fpOutput; }
     int         TestCapability( const char * ) override;

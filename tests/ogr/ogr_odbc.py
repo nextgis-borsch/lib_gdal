@@ -33,13 +33,14 @@ import sys
 import shutil
 from osgeo import ogr
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 import ogrtest
 
 ###############################################################################
 # Basic testing
+
 
 def ogr_odbc_1():
 
@@ -147,6 +148,7 @@ def ogr_odbc_1():
 ###############################################################################
 # Run test_ogrsf
 
+
 def ogr_odbc_2():
     if ogrtest.odbc_drv is None:
         return 'skip'
@@ -166,16 +168,18 @@ def ogr_odbc_2():
 ###############################################################################
 # Cleanup
 
+
 def ogr_odbc_cleanup():
     if ogrtest.odbc_drv is None:
         return 'skip'
 
     try:
         os.unlink('tmp/odbc.mdb')
-    except:
+    except OSError:
         pass
 
     return 'success'
+
 
 gdaltest_list = [
     ogr_odbc_1,
@@ -185,8 +189,8 @@ gdaltest_list = [
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'ogr_odbc' )
+    gdaltest.setup_run('ogr_odbc')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

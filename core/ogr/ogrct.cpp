@@ -40,20 +40,42 @@
 #include "ogr_core.h"
 #include "ogr_srs_api.h"
 
-#ifdef PROJ_STATIC
-#include "proj_api.h"
+#ifndef PROJ_VERSION
+#define PROJ_VERSION 4
 #endif
 
-CPL_CVSID("$Id$");
+#ifdef PROJ_STATIC
+#if PROJ_VERSION >= 5
+#include "proj.h"
 
+#if PROJ_VERSION_MAJOR == 5 && PROJ_VERSION_MINOR == 0
+// FIXME: only available in proj 5.1.0, so cheating for now
+extern "C" const char* pj_strerrno(int);
+static const char* proj_errno_string(int err)
+{
+    return pj_strerrno(err);
+}
+#endif
+
+constexpr double RAD_TO_DEG = 57.29577951308232;
+constexpr double DEG_TO_RAD = 0.0174532925199432958;
+
+#else
+#include "proj_api.h"
+#endif
+#endif
+
+CPL_CVSID("$Id$")
+
+#if PROJ_VERSION == 4
 /* ==================================================================== */
 /*      PROJ.4 interface stuff.                                         */
 /* ==================================================================== */
 #ifndef PROJ_STATIC
 #define projPJ void *
 #define projCtx void *
-static const double RAD_TO_DEG = 57.29577951308232;
-static const double DEG_TO_RAD = 0.0174532925199432958;
+constexpr double RAD_TO_DEG = 57.29577951308232;
+constexpr double DEG_TO_RAD = 0.0174532925199432958;
 
 #else
 
@@ -63,22 +85,22 @@ static const double DEG_TO_RAD = 0.0174532925199432958;
 
 #endif
 
-static CPLMutex *hPROJMutex = NULL;
+static CPLMutex *hPROJMutex = nullptr;
 
-static projPJ   (*pfn_pj_init_plus)( const char * ) = NULL;
-static projPJ   (*pfn_pj_init)( int, char** ) = NULL;
-static void     (*pfn_pj_free)( projPJ ) = NULL;
+static projPJ   (*pfn_pj_init_plus)( const char * ) = nullptr;
+static projPJ   (*pfn_pj_init)( int, char** ) = nullptr;
+static void     (*pfn_pj_free)( projPJ ) = nullptr;
 static int      (*pfn_pj_transform)( projPJ, projPJ, long, int,
-                                     double *, double *, double * ) = NULL;
-static int      *(*pfn_pj_get_errno_ref)( void ) = NULL;
-static char     *(*pfn_pj_strerrno)( int ) = NULL;
-static char     *(*pfn_pj_get_def)( projPJ, int ) = NULL;
-static void     (*pfn_pj_dalloc)( void * ) = NULL;
+                                     double *, double *, double * ) = nullptr;
+static int      *(*pfn_pj_get_errno_ref)( void ) = nullptr;
+static char     *(*pfn_pj_strerrno)( int ) = nullptr;
+static char     *(*pfn_pj_get_def)( projPJ, int ) = nullptr;
+static void     (*pfn_pj_dalloc)( void * ) = nullptr;
 
-static projPJ (*pfn_pj_init_plus_ctx)( projCtx, const char * ) = NULL;
-static int (*pfn_pj_ctx_get_errno)( projCtx ) = NULL;
-static projCtx (*pfn_pj_ctx_alloc)() = NULL;
-static void    (*pfn_pj_ctx_free)( projCtx ) = NULL;
+static projPJ (*pfn_pj_init_plus_ctx)( projCtx, const char * ) = nullptr;
+static int (*pfn_pj_ctx_get_errno)( projCtx ) = nullptr;
+static projCtx (*pfn_pj_ctx_alloc)() = nullptr;
+static void    (*pfn_pj_ctx_free)( projCtx ) = nullptr;
 
 // Locale-safe proj starts with 4.10.
 #if defined(PJ_LOCALE_SAFE)
@@ -105,17 +127,21 @@ static bool      bProjLocaleSafe = false;
 #  define LIBNAME "libproj.so"
 #endif
 
+#endif // PROJ_VERSION == 4
+
 /************************************************************************/
 /*                         OCTCleanupProjMutex()                        */
 /************************************************************************/
 
 void OCTCleanupProjMutex()
 {
-    if( hPROJMutex != NULL )
+#if PROJ_VERSION == 4
+    if( hPROJMutex != nullptr )
     {
         CPLDestroyMutex(hPROJMutex);
-        hPROJMutex = NULL;
+        hPROJMutex = nullptr;
     }
+#endif
 }
 
 /************************************************************************/
@@ -124,48 +150,53 @@ void OCTCleanupProjMutex()
 
 class OGRProj4CT : public OGRCoordinateTransformation
 {
-    OGRSpatialReference *poSRSSource;
-    void        *psPJSource;
-    bool        bSourceLatLong;
-    double      dfSourceToRadians;
-    bool        bSourceWrap;
-    double      dfSourceWrapLong;
+    OGRSpatialReference *poSRSSource = nullptr;
+    bool        bSourceLatLong = false;
+    double      dfSourceToRadians = 0.0;
+    bool        bSourceWrap = false;
+    double      dfSourceWrapLong = 0.0;
 
-    OGRSpatialReference *poSRSTarget;
-    void        *psPJTarget;
-    bool        bTargetLatLong;
-    double      dfTargetFromRadians;
-    bool        bTargetWrap;
-    double      dfTargetWrapLong;
+    OGRSpatialReference *poSRSTarget = nullptr;
+    bool        bTargetLatLong = false;
+    double      dfTargetFromRadians = 0.0;
+    bool        bTargetWrap = false;
+    double      dfTargetWrapLong = 0.0;
 
-    bool        bIdentityTransform;
-    bool        bWebMercatorToWGS84;
+    bool        bIdentityTransform = false;
+    bool        bWebMercatorToWGS84 = false;
 
-    int         nErrorCount;
+    int         nErrorCount = 0;
 
-    bool        bCheckWithInvertProj;
-    double      dfThreshold;
+    bool        bCheckWithInvertProj = false;
+    double      dfThreshold = 0.0;
 
-    projCtx     pjctx;
+#if PROJ_VERSION == 4
+    void        *psPJSource = nullptr;
+    void        *psPJTarget = nullptr;
+    projCtx     pjctx = nullptr;
+#else
+    PJ_CONTEXT* m_pjctx = nullptr;
+    PJ*         m_pj = nullptr;
+#endif
 
     int         InitializeNoLock( OGRSpatialReference *poSource,
                                   OGRSpatialReference *poTarget );
 
-    int         nMaxCount;
-    double     *padfOriX;
-    double     *padfOriY;
-    double     *padfOriZ;
-    double     *padfTargetX;
-    double     *padfTargetY;
-    double     *padfTargetZ;
+    int         nMaxCount = 0;
+    double     *padfOriX = nullptr;
+    double     *padfOriY = nullptr;
+    double     *padfOriZ = nullptr;
+    double     *padfTargetX = nullptr;
+    double     *padfTargetY = nullptr;
+    double     *padfTargetZ = nullptr;
 
-    bool        m_bEmitErrors;
+    bool        m_bEmitErrors = true;
 
-    bool        bNoTransform;
+    bool        bNoTransform = false;
 
 public:
-                OGRProj4CT();
-    virtual     ~OGRProj4CT();
+    OGRProj4CT();
+    ~OGRProj4CT() override;
 
     int         Initialize( OGRSpatialReference *poSource,
                             OGRSpatialReference *poTarget );
@@ -173,16 +204,18 @@ public:
     virtual OGRSpatialReference *GetSourceCS() override;
     virtual OGRSpatialReference *GetTargetCS() override;
     virtual int Transform( int nCount,
-                           double *x, double *y, double *z = NULL ) override;
+                           double *x, double *y, double *z = nullptr ) override;
     virtual int TransformEx( int nCount,
-                             double *x, double *y, double *z = NULL,
-                             int *panSuccess = NULL ) override;
+                             double *x, double *y, double *z = nullptr,
+                             int *panSuccess = nullptr ) override;
 
     // TODO(schwehr): Make GetEmitErrors const.
     virtual bool GetEmitErrors() override { return m_bEmitErrors; }
     virtual void SetEmitErrors( bool bEmitErrors ) override
         { m_bEmitErrors = bEmitErrors; }
 };
+
+#if PROJ_VERSION == 4
 
 /************************************************************************/
 /*                        GetProjLibraryName()                          */
@@ -191,8 +224,8 @@ public:
 static const char* GetProjLibraryName()
 {
     const char *pszLibName = LIBNAME;
-    if( CPLGetConfigOption("PROJSO", NULL) != NULL )
-        pszLibName = CPLGetConfigOption("PROJSO", NULL);
+    if( CPLGetConfigOption("PROJSO", nullptr) != nullptr )
+        pszLibName = CPLGetConfigOption("PROJSO", nullptr);
     return pszLibName;
 }
 
@@ -206,7 +239,7 @@ static bool LoadProjLibrary_unlocked()
     static bool bTriedToLoad = false;
 
     if( bTriedToLoad )
-        return pfn_pj_transform != NULL;
+        return pfn_pj_transform != nullptr;
 
     bTriedToLoad = true;
 
@@ -217,7 +250,7 @@ static bool LoadProjLibrary_unlocked()
     pfn_pj_init_plus = pj_init_plus;
     pfn_pj_free = pj_free;
     pfn_pj_transform = pj_transform;
-    pfn_pj_get_errno_ref = (int *(*)(void)) pj_get_errno_ref;
+    pfn_pj_get_errno_ref = reinterpret_cast<int *(*)(void)>(pj_get_errno_ref);
     pfn_pj_strerrno = pj_strerrno;
     pfn_pj_dalloc = pj_dalloc;
 #if PJ_VERSION >= 446
@@ -233,67 +266,67 @@ static bool LoadProjLibrary_unlocked()
     CPLPushErrorHandler( CPLQuietErrorHandler );
 
     // coverity[tainted_string]
-    pfn_pj_init = (projPJ (*)(int, char**)) CPLGetSymbol( pszLibName,
-                                                          "pj_init" );
+    pfn_pj_init = reinterpret_cast<projPJ (*)(int, char**)>(CPLGetSymbol( pszLibName,
+                                                          "pj_init" ));
     CPLPopErrorHandler();
 
-    if( pfn_pj_init == NULL )
+    if( pfn_pj_init == nullptr )
        return false;
 
-    pfn_pj_init_plus = (projPJ (*)(const char *))
-        CPLGetSymbol( pszLibName, "pj_init_plus" );
-    pfn_pj_free = (void (*)(projPJ))
-        CPLGetSymbol( pszLibName, "pj_free" );
-    pfn_pj_transform = (int (*)(projPJ, projPJ, long, int, double *,
-                                double *, double *))
-        CPLGetSymbol( pszLibName, "pj_transform" );
-    pfn_pj_get_errno_ref = (int *(*)(void))
-        CPLGetSymbol( pszLibName, "pj_get_errno_ref" );
-    pfn_pj_strerrno = (char *(*)(int))
-        CPLGetSymbol( pszLibName, "pj_strerrno" );
+    pfn_pj_init_plus = reinterpret_cast<projPJ (*)(const char *)>(
+        CPLGetSymbol( pszLibName, "pj_init_plus" ));
+    pfn_pj_free = reinterpret_cast<void (*)(projPJ)>(
+        CPLGetSymbol( pszLibName, "pj_free" ));
+    pfn_pj_transform = reinterpret_cast<int (*)(projPJ, projPJ, long, int, double *,
+                                double *, double *)>(
+        CPLGetSymbol( pszLibName, "pj_transform" ));
+    pfn_pj_get_errno_ref = reinterpret_cast<int *(*)(void)>(
+        CPLGetSymbol( pszLibName, "pj_get_errno_ref" ));
+    pfn_pj_strerrno = reinterpret_cast<char *(*)(int)>(
+        CPLGetSymbol( pszLibName, "pj_strerrno" ));
 
     CPLPushErrorHandler( CPLQuietErrorHandler );
-    pfn_pj_get_def = (char *(*)(projPJ, int))
-        CPLGetSymbol( pszLibName, "pj_get_def" );
-    pfn_pj_dalloc = (void (*)(void*))
-        CPLGetSymbol( pszLibName, "pj_dalloc" );
+    pfn_pj_get_def = reinterpret_cast<char *(*)(projPJ, int)>(
+        CPLGetSymbol( pszLibName, "pj_get_def" ));
+    pfn_pj_dalloc = reinterpret_cast<void (*)(void*)>(
+        CPLGetSymbol( pszLibName, "pj_dalloc" ));
 
     // PROJ 4.8.0 symbols.
-    pfn_pj_ctx_alloc = (projCtx (*)( void ))
-        CPLGetSymbol( pszLibName, "pj_ctx_alloc" );
-    pfn_pj_ctx_free = (void (*)( projCtx ))
-        CPLGetSymbol( pszLibName, "pj_ctx_free" );
-    pfn_pj_init_plus_ctx = (projPJ (*)( projCtx, const char * ))
-        CPLGetSymbol( pszLibName, "pj_init_plus_ctx" );
-    pfn_pj_ctx_get_errno = (int (*)( projCtx ))
-        CPLGetSymbol( pszLibName, "pj_ctx_get_errno" );
+    pfn_pj_ctx_alloc = reinterpret_cast<projCtx (*)( void )>(
+        CPLGetSymbol( pszLibName, "pj_ctx_alloc" ));
+    pfn_pj_ctx_free = reinterpret_cast<void (*)( projCtx )>(
+        CPLGetSymbol( pszLibName, "pj_ctx_free" ));
+    pfn_pj_init_plus_ctx = reinterpret_cast<projPJ (*)( projCtx, const char * )>(
+        CPLGetSymbol( pszLibName, "pj_init_plus_ctx" ));
+    pfn_pj_ctx_get_errno = reinterpret_cast<int (*)( projCtx )>(
+        CPLGetSymbol( pszLibName, "pj_ctx_get_errno" ));
 
-    bProjLocaleSafe = CPLGetSymbol(pszLibName, "pj_atof") != NULL;
+    bProjLocaleSafe = CPLGetSymbol(pszLibName, "pj_atof") != nullptr;
 
     CPLPopErrorHandler();
     CPLErrorReset();
 #endif
 
-    if( pfn_pj_ctx_alloc != NULL &&
-        pfn_pj_ctx_free != NULL &&
-        pfn_pj_init_plus_ctx != NULL &&
-        pfn_pj_ctx_get_errno != NULL &&
+    if( pfn_pj_ctx_alloc != nullptr &&
+        pfn_pj_ctx_free != nullptr &&
+        pfn_pj_init_plus_ctx != nullptr &&
+        pfn_pj_ctx_get_errno != nullptr &&
         CPLTestBool(CPLGetConfigOption("USE_PROJ_480_FEATURES", "YES")) )
     {
         CPLDebug("OGRCT", "PROJ >= 4.8.0 features enabled");
     }
     else
     {
-        pfn_pj_ctx_alloc = NULL;
-        pfn_pj_ctx_free = NULL;
-        pfn_pj_init_plus_ctx = NULL;
-        pfn_pj_ctx_get_errno = NULL;
+        pfn_pj_ctx_alloc = nullptr;
+        pfn_pj_ctx_free = nullptr;
+        pfn_pj_init_plus_ctx = nullptr;
+        pfn_pj_ctx_get_errno = nullptr;
     }
 
     if( bProjLocaleSafe )
         CPLDebug("OGRCT", "Using locale-safe proj version");
 
-    if( pfn_pj_transform == NULL )
+    if( pfn_pj_transform == nullptr )
     {
         CPLError( CE_Failure, CPLE_AppDefined,
                   "Attempt to load %s, but couldn't find pj_transform.  "
@@ -326,29 +359,33 @@ static char *OCTProj4NormalizeInternal( const char *pszProj4Src )
 {
     projPJ psPJSource = pfn_pj_init_plus( pszProj4Src );
 
-    if( psPJSource == NULL )
+    if( psPJSource == nullptr )
         return CPLStrdup( pszProj4Src );
 
     char *pszNewProj4Def = pfn_pj_get_def( psPJSource, 0 );
 
     pfn_pj_free( psPJSource );
 
-    if( pszNewProj4Def == NULL )
+    if( pszNewProj4Def == nullptr )
         return CPLStrdup( pszProj4Src );
 
     char *pszCopy = CPLStrdup( pszNewProj4Def );
     pfn_pj_dalloc( pszNewProj4Def );
 
     return pszCopy;
+
 }
+
+#endif // PROJ_VERSION == 4
 
 char *OCTProj4Normalize( const char *pszProj4Src )
 
 {
+#if PROJ_VERSION == 4
     CPLMutexHolderD( &hPROJMutex );
 
-    if( !LoadProjLibrary_unlocked() || pfn_pj_dalloc == NULL ||
-        pfn_pj_get_def == NULL )
+    if( !LoadProjLibrary_unlocked() || pfn_pj_dalloc == nullptr ||
+        pfn_pj_get_def == nullptr )
         return CPLStrdup( pszProj4Src );
 
     if( bProjLocaleSafe )
@@ -360,6 +397,29 @@ char *OCTProj4Normalize( const char *pszProj4Src )
         CPLLocaleC oLocaleEnforcer;
         return OCTProj4NormalizeInternal(pszProj4Src);
     }
+#else
+    PJ_CONTEXT* ctxt = proj_context_create ();
+    PJ* pj = proj_create(ctxt, pszProj4Src);
+    if( !pj )
+    {
+        proj_context_destroy (ctxt);
+        return CPLStrdup(pszProj4Src);
+    }
+    CPLString osDef = proj_pj_info(pj).definition;
+    proj_destroy(pj);
+    proj_context_destroy (ctxt);
+    char** papszTokens = CSLTokenizeString2(osDef, " ", 0);
+    CPLString osRet;
+    for( char** papszIter = papszTokens; papszIter && *papszIter; ++papszIter )
+    {
+        if( !osRet.empty() )
+            osRet += " ";
+        osRet += "+";
+        osRet += *papszIter;
+    }
+    CSLDestroy(papszTokens);
+    return CPLStrdup(osRet);
+#endif
 }
 
 /************************************************************************/
@@ -378,7 +438,7 @@ void CPL_STDCALL
 OCTDestroyCoordinateTransformation( OGRCoordinateTransformationH hCT )
 
 {
-    delete (OGRCoordinateTransformation *) hCT;
+    delete OGRCoordinateTransformation::FromHandle(hCT);
 }
 
 /************************************************************************/
@@ -434,21 +494,23 @@ OGRCreateCoordinateTransformation( OGRSpatialReference *poSource,
                                    OGRSpatialReference *poTarget )
 
 {
-    if( pfn_pj_init == NULL && !LoadProjLibrary() )
+#if PROJ_VERSION == 4
+    if( pfn_pj_init == nullptr && !LoadProjLibrary() )
     {
         CPLError( CE_Failure, CPLE_NotSupported,
                   "Unable to load PROJ.4 library (%s), creation of "
                   "OGRCoordinateTransformation failed.",
                   GetProjLibraryName() );
-        return NULL;
+        return nullptr;
     }
+#endif
 
     OGRProj4CT *poCT = new OGRProj4CT();
 
     if( !poCT->Initialize( poSource, poTarget ) )
     {
         delete poCT;
-        return NULL;
+        return nullptr;
     }
 
     return poCT;
@@ -491,37 +553,14 @@ OCTNewCoordinateTransformation(
 /*                             OGRProj4CT()                             */
 /************************************************************************/
 
-OGRProj4CT::OGRProj4CT() :
-    poSRSSource(NULL),
-    psPJSource(NULL),
-    bSourceLatLong(false),
-    dfSourceToRadians(0.0),
-    bSourceWrap(false),
-    dfSourceWrapLong(0.0),
-    poSRSTarget(NULL),
-    psPJTarget(NULL),
-    bTargetLatLong(false),
-    dfTargetFromRadians(0.0),
-    bTargetWrap(false),
-    dfTargetWrapLong(0.0),
-    bIdentityTransform(false),
-    bWebMercatorToWGS84(false),
-    nErrorCount(0),
-    bCheckWithInvertProj(false),
-    dfThreshold(0.0),
-    pjctx(NULL),
-    nMaxCount(0),
-    padfOriX(NULL),
-    padfOriY(NULL),
-    padfOriZ(NULL),
-    padfTargetX(NULL),
-    padfTargetY(NULL),
-    padfTargetZ(NULL),
-    m_bEmitErrors(true),
-    bNoTransform(false)
+OGRProj4CT::OGRProj4CT()
 {
-    if( pfn_pj_ctx_alloc != NULL )
+#if PROJ_VERSION == 4
+    if( pfn_pj_ctx_alloc != nullptr )
         pjctx = pfn_pj_ctx_alloc();
+#else
+    m_pjctx = proj_context_create();
+#endif
 }
 
 /************************************************************************/
@@ -531,24 +570,25 @@ OGRProj4CT::OGRProj4CT() :
 OGRProj4CT::~OGRProj4CT()
 
 {
-    if( poSRSSource != NULL )
+    if( poSRSSource != nullptr )
     {
         if( poSRSSource->Dereference() <= 0 )
             delete poSRSSource;
     }
 
-    if( poSRSTarget != NULL )
+    if( poSRSTarget != nullptr )
     {
         if( poSRSTarget->Dereference() <= 0 )
             delete poSRSTarget;
     }
 
-    if( pjctx != NULL )
+#if PROJ_VERSION == 4
+    if( pjctx != nullptr )
     {
-        if( psPJSource != NULL )
+        if( psPJSource != nullptr )
             pfn_pj_free( psPJSource );
 
-        if( psPJTarget != NULL )
+        if( psPJTarget != nullptr )
             pfn_pj_free( psPJTarget );
 
         pfn_pj_ctx_free(pjctx);
@@ -557,12 +597,17 @@ OGRProj4CT::~OGRProj4CT()
     {
         CPLMutexHolderD( &hPROJMutex );
 
-        if( psPJSource != NULL )
+        if( psPJSource != nullptr )
             pfn_pj_free( psPJSource );
 
-        if( psPJTarget != NULL )
+        if( psPJTarget != nullptr )
             pfn_pj_free( psPJTarget );
     }
+#else
+    if( m_pj )
+        proj_destroy(m_pj);
+    proj_context_destroy(m_pjctx);
+#endif
 
     CPLFree(padfOriX);
     CPLFree(padfOriY);
@@ -580,18 +625,20 @@ int OGRProj4CT::Initialize( OGRSpatialReference * poSourceIn,
                             OGRSpatialReference * poTargetIn )
 
 {
+#if PROJ_VERSION == 4
     if( bProjLocaleSafe )
     {
         return InitializeNoLock(poSourceIn, poTargetIn);
     }
 
     CPLLocaleC oLocaleEnforcer;
-    if( pjctx != NULL )
+    if( pjctx != nullptr )
     {
         return InitializeNoLock(poSourceIn, poTargetIn);
     }
 
     CPLMutexHolderD( &hPROJMutex );
+#endif
     return InitializeNoLock(poSourceIn, poTargetIn);
 }
 
@@ -603,7 +650,7 @@ int OGRProj4CT::InitializeNoLock( OGRSpatialReference * poSourceIn,
                                   OGRSpatialReference * poTargetIn )
 
 {
-    if( poSourceIn == NULL || poTargetIn == NULL )
+    if( poSourceIn == nullptr || poTargetIn == nullptr )
         return FALSE;
 
     poSRSSource = poSourceIn->Clone();
@@ -650,7 +697,7 @@ int OGRProj4CT::InitializeNoLock( OGRSpatialReference * poSourceIn,
 /* -------------------------------------------------------------------- */
 /*      Preliminary logic to setup wrapping.                            */
 /* -------------------------------------------------------------------- */
-    if( CPLGetConfigOption( "CENTER_LONG", NULL ) != NULL )
+    if( CPLGetConfigOption( "CENTER_LONG", nullptr ) != nullptr )
     {
         bSourceWrap = true;
         bTargetWrap = true;
@@ -661,7 +708,7 @@ int OGRProj4CT::InitializeNoLock( OGRSpatialReference * poSourceIn,
 
     const char *pszCENTER_LONG =
         poSRSSource->GetExtension( "GEOGCS", "CENTER_LONG" );
-    if( pszCENTER_LONG != NULL )
+    if( pszCENTER_LONG != nullptr )
     {
         dfSourceWrapLong = CPLAtof(pszCENTER_LONG);
         bSourceWrap = true;
@@ -669,7 +716,7 @@ int OGRProj4CT::InitializeNoLock( OGRSpatialReference * poSourceIn,
     }
 
     pszCENTER_LONG = poSRSTarget->GetExtension( "GEOGCS", "CENTER_LONG" );
-    if( pszCENTER_LONG != NULL )
+    if( pszCENTER_LONG != nullptr )
     {
         dfTargetWrapLong = CPLAtof(pszCENTER_LONG);
         bTargetWrap = true;
@@ -692,7 +739,7 @@ int OGRProj4CT::InitializeNoLock( OGRSpatialReference * poSourceIn,
     // means debug output could be one "increment" late.
     static int nDebugReportCount = 0;
 
-    char *pszSrcProj4Defn = NULL;
+    char *pszSrcProj4Defn = nullptr;
 
     if( poSRSSource->exportToProj4( &pszSrcProj4Defn ) != OGRERR_NONE )
     {
@@ -709,7 +756,7 @@ int OGRProj4CT::InitializeNoLock( OGRSpatialReference * poSourceIn,
         return FALSE;
     }
 
-    char *pszDstProj4Defn = NULL;
+    char *pszDstProj4Defn = nullptr;
 
     if( poSRSTarget->exportToProj4( &pszDstProj4Defn ) != OGRERR_NONE )
     {
@@ -743,14 +790,14 @@ int OGRProj4CT::InitializeNoLock( OGRSpatialReference * poSourceIn,
     if( pszNeedle )
         memmove(pszNeedle, pszNeedle + 1, strlen(pszNeedle + 1)+1);
 
-    if( (strstr(pszSrcProj4Defn, "+datum=WGS84") != NULL ||
+    if( (strstr(pszSrcProj4Defn, "+datum=WGS84") != nullptr ||
          strstr(pszSrcProj4Defn,
-                "+ellps=WGS84 +towgs84=0,0,0,0,0,0,0 ") != NULL) &&
-        strstr(pszDstProj4Defn, "+nadgrids=@null ") != NULL &&
-        strstr(pszDstProj4Defn, "+towgs84") == NULL )
+                "+ellps=WGS84 +towgs84=0,0,0,0,0,0,0 ") != nullptr) &&
+        strstr(pszDstProj4Defn, "+nadgrids=@null ") != nullptr &&
+        strstr(pszDstProj4Defn, "+towgs84") == nullptr )
     {
         char* pszDst = strstr(pszSrcProj4Defn, "+towgs84=0,0,0,0,0,0,0 ");
-        if( pszDst != NULL )
+        if( pszDst != nullptr )
         {
             char *pszSrc = pszDst + strlen("+towgs84=0,0,0,0,0,0,0 ");
             memmove(pszDst, pszSrc, strlen(pszSrc)+1);
@@ -772,14 +819,14 @@ int OGRProj4CT::InitializeNoLock( OGRSpatialReference * poSourceIn,
         }
     }
     else
-    if( (strstr(pszDstProj4Defn, "+datum=WGS84") != NULL ||
+    if( (strstr(pszDstProj4Defn, "+datum=WGS84") != nullptr ||
          strstr(pszDstProj4Defn,
-                "+ellps=WGS84 +towgs84=0,0,0,0,0,0,0 ") != NULL) &&
-        strstr(pszSrcProj4Defn, "+nadgrids=@null ") != NULL &&
-        strstr(pszSrcProj4Defn, "+towgs84") == NULL )
+                "+ellps=WGS84 +towgs84=0,0,0,0,0,0,0 ") != nullptr) &&
+        strstr(pszSrcProj4Defn, "+nadgrids=@null ") != nullptr &&
+        strstr(pszSrcProj4Defn, "+towgs84") == nullptr )
     {
         char* pszDst = strstr(pszDstProj4Defn, "+towgs84=0,0,0,0,0,0,0 ");
-        if( pszDst != NULL)
+        if( pszDst != nullptr)
         {
             char* pszSrc = pszDst + strlen("+towgs84=0,0,0,0,0,0,0 ");
             memmove(pszDst, pszSrc, strlen(pszSrc)+1);
@@ -810,6 +857,7 @@ int OGRProj4CT::InitializeNoLock( OGRSpatialReference * poSourceIn,
 /* -------------------------------------------------------------------- */
 /*      Establish PROJ.4 handle for source if projection.               */
 /* -------------------------------------------------------------------- */
+#if PROJ_VERSION == 4
     if( !bWebMercatorToWGS84 )
     {
         if( pjctx )
@@ -817,9 +865,9 @@ int OGRProj4CT::InitializeNoLock( OGRSpatialReference * poSourceIn,
         else
             psPJSource = pfn_pj_init_plus( pszSrcProj4Defn );
 
-        if( psPJSource == NULL )
+        if( psPJSource == nullptr )
         {
-            if( pjctx != NULL)
+            if( pjctx != nullptr)
             {
                 const int l_pj_errno = pfn_pj_ctx_get_errno(pjctx);
 
@@ -829,8 +877,8 @@ int OGRProj4CT::InitializeNoLock( OGRSpatialReference * poSourceIn,
                           "Failed to initialize PROJ.4 with `%s'.\n%s",
                           pszSrcProj4Defn, pfn_pj_strerrno(l_pj_errno) );
             }
-            else if( pfn_pj_get_errno_ref != NULL
-                && pfn_pj_strerrno != NULL )
+            else if( pfn_pj_get_errno_ref != nullptr
+                && pfn_pj_strerrno != nullptr )
             {
                 const int *p_pj_errno = pfn_pj_get_errno_ref();
 
@@ -846,20 +894,24 @@ int OGRProj4CT::InitializeNoLock( OGRSpatialReference * poSourceIn,
             }
         }
     }
+#endif
 
     if( nDebugReportCount < 10 )
         CPLDebug( "OGRCT", "Source: %s", pszSrcProj4Defn );
 
-    if( !bWebMercatorToWGS84 && psPJSource == NULL )
+#if PROJ_VERSION == 4
+    if( !bWebMercatorToWGS84 && psPJSource == nullptr )
     {
         CPLFree( pszSrcProj4Defn );
         CPLFree( pszDstProj4Defn );
         return FALSE;
     }
+#endif
 
 /* -------------------------------------------------------------------- */
 /*      Establish PROJ.4 handle for target if projection.               */
 /* -------------------------------------------------------------------- */
+#if PROJ_VERSION == 4
     if( !bWebMercatorToWGS84 )
     {
         if( pjctx )
@@ -867,23 +919,51 @@ int OGRProj4CT::InitializeNoLock( OGRSpatialReference * poSourceIn,
         else
             psPJTarget = pfn_pj_init_plus( pszDstProj4Defn );
 
-        if( psPJTarget == NULL )
+        if( psPJTarget == nullptr )
             CPLError( CE_Failure, CPLE_NotSupported,
                       "Failed to initialize PROJ.4 with `%s'.",
                       pszDstProj4Defn );
     }
+#endif
+
     if( nDebugReportCount < 10 )
     {
         CPLDebug( "OGRCT", "Target: %s", pszDstProj4Defn );
         nDebugReportCount++;
     }
 
-    if( !bWebMercatorToWGS84 && psPJTarget == NULL )
+#if PROJ_VERSION >= 5
+    if( !bWebMercatorToWGS84 )
+    {
+        CPLString osPipeline("+proj=pipeline +step ");
+        osPipeline += pszSrcProj4Defn;
+        osPipeline += " +inv +step ";
+        osPipeline += pszDstProj4Defn;
+        m_pj = proj_create(m_pjctx, osPipeline.c_str());
+#ifdef DEBUG_VERBOSE
+        CPLDebug("OGRCT", "%s", osPipeline.c_str());
+#endif
+        if( !m_pj )
+        {
+            CPLError( CE_Failure, CPLE_NotSupported,
+                      "Failed to initialize PROJ pipeline "
+                      "from `%s' to `%s': %s",
+                      pszSrcProj4Defn,
+                      pszDstProj4Defn,
+                      proj_errno_string(proj_context_errno(m_pjctx)) );
+            CPLFree( pszSrcProj4Defn );
+            CPLFree( pszDstProj4Defn );
+            return FALSE;
+        }
+    }
+#else
+    if( !bWebMercatorToWGS84 && psPJTarget == nullptr )
     {
         CPLFree( pszSrcProj4Defn );
         CPLFree( pszDstProj4Defn );
         return FALSE;
     }
+#endif
 
     // Determine if we really have a transformation to do at the proj.4 level
     // (but we may have a unit transformation to do)
@@ -969,7 +1049,7 @@ int CPL_STDCALL OCTTransform( OGRCoordinateTransformationH hTransform,
 {
     VALIDATE_POINTER1( hTransform, "OCTTransform", FALSE );
 
-    return ((OGRCoordinateTransformation*) hTransform)->
+    return OGRCoordinateTransformation::FromHandle(hTransform)->
         Transform( nCount, x, y, z );
 }
 
@@ -1050,7 +1130,7 @@ int OGRProj4CT::TransformEx( int nCount, double *x, double *y, double *z,
     bool bTransformDone = false;
     if( bWebMercatorToWGS84 )
     {
-        static const double REVERSE_SPHERE_RADIUS = 1.0 / 6378137.0;
+        constexpr double REVERSE_SPHERE_RADIUS = 1.0 / 6378137.0;
 
         double y0 = y[0];
         for( int i = 0; i < nCount; i++ )
@@ -1119,12 +1199,14 @@ int OGRProj4CT::TransformEx( int nCount, double *x, double *y, double *z,
 /* -------------------------------------------------------------------- */
 /*      Do the transformation (or not...) using PROJ.4.                 */
 /* -------------------------------------------------------------------- */
-    if( !bTransformDone && pjctx == NULL )
+#if PROJ_VERSION == 4
+    if( !bTransformDone && pjctx == nullptr )
     {
         // The mutex has already been created.
-        CPLAssert(hPROJMutex != NULL);
+        CPLAssert(hPROJMutex != nullptr);
         CPLAcquireMutex(hPROJMutex, 1000.0);
     }
+#endif
 
     int err = 0;
     if( bTransformDone )
@@ -1158,8 +1240,19 @@ int OGRProj4CT::TransformEx( int nCount, double *x, double *y, double *z,
         {
             memcpy(padfOriZ, z, sizeof(double)*nCount);
         }
+
+#if PROJ_VERSION == 5
+        size_t nRet = proj_trans_generic (m_pj, PJ_FWD,
+                                x, sizeof(double), nCount,
+                                y, sizeof(double), nCount,
+                                z, z ? sizeof(double) : 0, z ? nCount : 0,
+                                nullptr, 0, 0);
+        err == ( static_cast<int>(nRet) == nCount ) ?
+                    0 : proj_context_errno(m_pjctx);
+#else
         err = pfn_pj_transform( psPJSource, psPJTarget, nCount, 1, x, y, z );
         if( err == 0 )
+#endif
         {
             memcpy(padfTargetX, x, sizeof(double) * nCount);
             memcpy(padfTargetY, y, sizeof(double) * nCount);
@@ -1168,10 +1261,20 @@ int OGRProj4CT::TransformEx( int nCount, double *x, double *y, double *z,
                 memcpy(padfTargetZ, z, sizeof(double) * nCount);
             }
 
+#if PROJ_VERSION == 5
+            nRet = proj_trans_generic (m_pj, PJ_INV,
+                padfTargetX, sizeof(double), nCount,
+                padfTargetY, sizeof(double), nCount,
+                z ? padfTargetZ : nullptr, z ? sizeof(double) : 0, z ? nCount : 0,
+                nullptr, 0, 0);
+            err == ( static_cast<int>(nRet) == nCount ) ?
+                    0 : proj_context_errno(m_pjctx);
+#else
             err = pfn_pj_transform( psPJTarget, psPJSource , nCount, 1,
                                     padfTargetX, padfTargetY,
-                                    z ? padfTargetZ : NULL);
+                                    z ? padfTargetZ : nullptr);
             if( err == 0 )
+#endif
             {
                 for( int i = 0; i < nCount; i++ )
                 {
@@ -1188,7 +1291,17 @@ int OGRProj4CT::TransformEx( int nCount, double *x, double *y, double *z,
     }
     else
     {
+#if PROJ_VERSION == 5
+        size_t nRet = proj_trans_generic (m_pj, PJ_FWD,
+                                x, sizeof(double), nCount,
+                                y, sizeof(double), nCount,
+                                z, z ? sizeof(double) : 0, z ? nCount : 0,
+                                nullptr, 0, 0);
+        err == ( static_cast<int>(nRet) == nCount ) ?
+                    0 : proj_context_errno(m_pjctx);
+#else
         err = pfn_pj_transform( psPJSource, psPJTarget, nCount, 1, x, y, z );
+#endif
     }
 
 /* -------------------------------------------------------------------- */
@@ -1204,24 +1317,34 @@ int OGRProj4CT::TransformEx( int nCount, double *x, double *y, double *z,
 
         if( m_bEmitErrors && ++nErrorCount < 20 )
         {
-            if( pjctx != NULL )
+#if PROJ_VERSION == 4
+            if( pjctx != nullptr )
                 // pfn_pj_strerrno not yet thread-safe in PROJ 4.8.0.
                 CPLAcquireMutex(hPROJMutex, 1000.0);
 
-            const char *pszError = NULL;
-            if( pfn_pj_strerrno != NULL )
+            const char *pszError = nullptr;
+            if( pfn_pj_strerrno != nullptr )
                 pszError = pfn_pj_strerrno( err );
 
-            if( pszError == NULL )
+            if( pszError == nullptr )
                 CPLError( CE_Failure, CPLE_AppDefined,
                           "Reprojection failed, err = %d",
                           err );
             else
                 CPLError( CE_Failure, CPLE_AppDefined, "%s", pszError );
 
-            if( pjctx != NULL )
+            if( pjctx != nullptr )
                 // pfn_pj_strerrno not yet thread-safe in PROJ 4.8.0.
                 CPLReleaseMutex(hPROJMutex);
+#else
+            const char *pszError = proj_errno_string(err);
+            if( pszError == nullptr )
+                CPLError( CE_Failure, CPLE_AppDefined,
+                          "Reprojection failed, err = %d",
+                          err );
+            else
+                CPLError( CE_Failure, CPLE_AppDefined, "%s", pszError );
+#endif
         }
         else if( nErrorCount == 20 )
         {
@@ -1230,14 +1353,17 @@ int OGRProj4CT::TransformEx( int nCount, double *x, double *y, double *z,
                       "suppressed on the transform object.",
                       err );
         }
-
-        if( pjctx == NULL )
+#if PROJ_VERSION == 4
+        if( pjctx == nullptr )
             CPLReleaseMutex(hPROJMutex);
+#endif
         return FALSE;
     }
 
-    if( !bTransformDone && pjctx == NULL )
+#if PROJ_VERSION == 4
+    if( !bTransformDone && pjctx == nullptr )
         CPLReleaseMutex(hPROJMutex);
+#endif
 
 /* -------------------------------------------------------------------- */
 /*      Potentially transform back to degrees.                          */
@@ -1306,6 +1432,6 @@ int CPL_STDCALL OCTTransformEx( OGRCoordinateTransformationH hTransform,
 {
     VALIDATE_POINTER1( hTransform, "OCTTransformEx", FALSE );
 
-    return ((OGRCoordinateTransformation*) hTransform)->
+    return OGRCoordinateTransformation::FromHandle(hTransform)->
         TransformEx( nCount, x, y, z, pabSuccess );
 }

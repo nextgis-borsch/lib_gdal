@@ -29,7 +29,7 @@
 #include "ogr_tiger.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /************************************************************************/
 /*                             TigerPoint()                             */
@@ -53,21 +53,21 @@ OGRFeature *TigerPoint::GetFeature( int nRecordId,
         CPLError( CE_Failure, CPLE_FileIO,
                   "Request for out-of-range feature %d of %sP",
                   nRecordId, pszModule );
-        return NULL;
+        return nullptr;
     }
 
     /* -------------------------------------------------------------------- */
     /*      Read the raw record data from the file.                         */
     /* -------------------------------------------------------------------- */
 
-    if( fpPrimary == NULL )
-        return NULL;
+    if( fpPrimary == nullptr )
+        return nullptr;
 
     if( VSIFSeekL( fpPrimary, nRecordId * nRecordLength, SEEK_SET ) != 0 ) {
         CPLError( CE_Failure, CPLE_FileIO,
                   "Failed to seek to %d of %sP",
                   nRecordId * nRecordLength, pszModule );
-        return NULL;
+        return nullptr;
     }
 
     // Overflow cannot happen since psRTInfo->nRecordLength is unsigned
@@ -76,7 +76,7 @@ OGRFeature *TigerPoint::GetFeature( int nRecordId,
         CPLError( CE_Failure, CPLE_FileIO,
                   "Failed to read record %d of %sP",
                   nRecordId, pszModule );
-        return NULL;
+        return nullptr;
     }
 
     /* -------------------------------------------------------------------- */
@@ -109,7 +109,7 @@ OGRErr TigerPoint::CreateFeature( OGRFeature *poFeature,
 
 {
     char        szRecord[OGR_TIGER_RECBUF_LEN];
-    OGRPoint    *poPoint = (OGRPoint *) poFeature->GetGeometryRef();
+    OGRPoint    *poPoint = poFeature->GetGeometryRef()->toPoint();
 
     if( !SetWriteModule( m_pszFileCode, psRTInfo->nRecordLength+2, poFeature ) )
         return OGRERR_FAILURE;
@@ -118,7 +118,7 @@ OGRErr TigerPoint::CreateFeature( OGRFeature *poFeature,
 
     WriteFields( psRTInfo, poFeature, szRecord );
 
-    if( poPoint != NULL
+    if( poPoint != nullptr
         && (poPoint->getGeometryType() == wkbPoint
             || poPoint->getGeometryType() == wkbPoint25D) ) {
         WritePoint( szRecord, pointIndex, poPoint->getX(), poPoint->getY() );

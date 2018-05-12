@@ -273,7 +273,7 @@ def DatasetReadAsArray( ds, xoff=0, yoff=0, win_xsize=None, win_ysize=None, buf_
                     buf_type = gdalconst.GDT_Float32
 
         typecode = GDALTypeCodeToNumericTypeCode( buf_type )
-        if typecode == None:
+        if typecode is None:
             buf_type = gdalconst.GDT_Float32
             typecode = numpy.float32
         if buf_type == gdalconst.GDT_Byte and ds.GetRasterBand(1).GetMetadataItem('PIXELTYPE', 'IMAGE_STRUCTURE') == 'SIGNEDBYTE':
@@ -327,7 +327,7 @@ def BandReadAsArray( band, xoff = 0, yoff = 0, win_xsize = None, win_ysize = Non
             buf_type = band.DataType
 
         typecode = GDALTypeCodeToNumericTypeCode( buf_type )
-        if typecode == None:
+        if typecode is None:
             buf_type = gdalconst.GDT_Float32
             typecode = numpy.float32
         else:
@@ -489,7 +489,7 @@ def CopyDatasetInfo( src, dst, xoff=0, yoff=0 ):
             try:
                 dst.SetGCPs( new_gcps , src.GetGCPProjection() )
             except:
-                print ("Failed to set GCPs")
+                print("Failed to set GCPs")
                 return
 
     return

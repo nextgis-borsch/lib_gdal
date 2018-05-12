@@ -31,48 +31,42 @@
 import sys
 from osgeo import gdal
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 
 ###############################################################################
 
+
 def jpegls_1():
 
-    try:
-        if gdal.GetDriverByName('JPEGLS') is None:
-            return 'skip'
-    except:
+    if gdal.GetDriverByName('JPEGLS') is None:
         return 'skip'
 
-
-    tst = gdaltest.GDALTest( 'JPEGLS', 'byte.tif', 1, 4672 )
-    return tst.testCreateCopy( vsimem = 1 )
+    tst = gdaltest.GDALTest('JPEGLS', 'byte.tif', 1, 4672)
+    return tst.testCreateCopy(vsimem=1)
 
 ###############################################################################
 
+
 def jpegls_2():
 
-    try:
-        if gdal.GetDriverByName('JPEGLS') is None:
-            return 'skip'
-    except:
+    if gdal.GetDriverByName('JPEGLS') is None:
         return 'skip'
 
+    tst = gdaltest.GDALTest('JPEGLS', 'int16.tif', 1, 4672)
+    return tst.testCreateCopy(vsimem=1)
 
-    tst = gdaltest.GDALTest( 'JPEGLS', 'int16.tif', 1, 4672 )
-    return tst.testCreateCopy( vsimem = 1 )
 
 gdaltest_list = [
     jpegls_1,
-    jpegls_2 ]
+    jpegls_2]
 
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'JPEGLS' )
+    gdaltest.setup_run('JPEGLS')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

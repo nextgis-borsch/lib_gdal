@@ -1,11 +1,11 @@
 #!/usr/bin/env python
-#******************************************************************************
+# ******************************************************************************
 #
 #  Project:  GDAL
 #  Purpose:  Example doing range based classification
 #  Author:   Frank Warmerdam, warmerdam@pobox.com
 #
-#******************************************************************************
+# ******************************************************************************
 #  Copyright (c) 2008, Frank Warmerdam <warmerdam@pobox.com>
 #
 #  Permission is hereby granted, free of charge, to any person obtaining a
@@ -25,13 +25,13 @@
 #  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 #  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
-#******************************************************************************
+# ******************************************************************************
 
-import gdal
+from osgeo import gdal
 import gdalnumeric
 try:
     import numpy
-except:
+except ImportError:
     import Numeric as numpy
 
 
@@ -43,23 +43,21 @@ src_ds = gdal.Open('utm.tif')
 xsize = src_ds.RasterXSize
 ysize = src_ds.RasterYSize
 
-src_image = gdalnumeric.LoadFile( 'utm.tif' )
+src_image = gdalnumeric.LoadFile('utm.tif')
 
-dst_image = numpy.zeros((ysize,xsize))
+dst_image = numpy.zeros((ysize, xsize))
 
 for class_info in class_defs:
     class_id = class_info[0]
     class_start = class_info[1]
     class_end = class_info[2]
 
-    class_value = numpy.ones((ysize,xsize)) * class_id
+    class_value = numpy.ones((ysize, xsize)) * class_id
 
     mask = numpy.bitwise_and(
-        numpy.greater_equal(src_image,class_start),
-        numpy.less_equal(src_image,class_end))
+        numpy.greater_equal(src_image, class_start),
+        numpy.less_equal(src_image, class_end))
 
-    dst_image = numpy.choose( mask, (dst_image,class_value) )
+    dst_image = numpy.choose(mask, (dst_image, class_value))
 
-gdalnumeric.SaveArray( dst_image, 'classes.tif' )
-
-
+gdalnumeric.SaveArray(dst_image, 'classes.tif')

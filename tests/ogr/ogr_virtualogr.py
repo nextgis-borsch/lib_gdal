@@ -31,7 +31,7 @@
 
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 from osgeo import ogr
 from osgeo import gdal
@@ -39,6 +39,8 @@ import gdaltest
 import ogrtest
 
 ###############################################################################
+
+
 def ogr_virtualogr_run_sql(sql_statement):
 
     ds = ogr.GetDriverByName('SQLite').CreateDataSource(':memory:')
@@ -56,7 +58,7 @@ def ogr_virtualogr_run_sql(sql_statement):
     ds = ogr.GetDriverByName('Memory').CreateDataSource('')
     gdal.ErrorReset()
     gdal.PushErrorHandler('CPLQuietErrorHandler')
-    sql_lyr = ds.ExecuteSQL(sql_statement, dialect = 'SQLITE')
+    sql_lyr = ds.ExecuteSQL(sql_statement, dialect='SQLITE')
     gdal.PopErrorHandler()
     success = gdal.GetLastErrorMsg() == ''
     ds.ReleaseResultSet(sql_lyr)
@@ -66,6 +68,7 @@ def ogr_virtualogr_run_sql(sql_statement):
 
 ###############################################################################
 # Basic tests
+
 
 def ogr_virtualogr_1():
 
@@ -141,6 +144,7 @@ def ogr_virtualogr_1():
 ###############################################################################
 # Test detection of suspicious use of VirtualOGR
 
+
 def ogr_virtualogr_2():
 
     if not ogrtest.has_sqlite_dialect:
@@ -174,9 +178,9 @@ def ogr_virtualogr_2():
     ds = None
 
     # Add suspicious trigger
-    ds = ogr.Open('/vsimem/ogr_virtualogr_2.db', update = 1)
-    ds.ExecuteSQL("CREATE TRIGGER spy_trigger INSERT ON regular_table BEGIN " + \
-                  "INSERT OR REPLACE INTO spy_table (spy_content) " + \
+    ds = ogr.Open('/vsimem/ogr_virtualogr_2.db', update=1)
+    ds.ExecuteSQL("CREATE TRIGGER spy_trigger INSERT ON regular_table BEGIN " +
+                  "INSERT OR REPLACE INTO spy_table (spy_content) " +
                   "SELECT OGR_STYLE FROM foo; END;")
     ds = None
 
@@ -204,10 +208,10 @@ def ogr_virtualogr_2():
     ds = ogr.Open('/vsimem/ogr_virtualogr_2.db')
     gdal.SetConfigOption('OGR_SQLITE_LIST_VIRTUAL_OGR', None)
     gdal.PopErrorHandler()
-    if ds is not None:
+    if gdal.GetLastErrorMsg() == '':
         ds = None
         gdal.Unlink('/vsimem/ogr_virtualogr_2.db')
-        gdaltest.post_reason('expected a failure')
+        gdaltest.post_reason('expected an error message')
         return 'fail'
     did_not_get_error = gdal.GetLastErrorMsg() == ''
     ds = None
@@ -223,6 +227,7 @@ def ogr_virtualogr_2():
 ###############################################################################
 # Test GDAL as a SQLite3 dynamically loaded extension
 
+
 def ogr_virtualogr_3():
 
     if not ogrtest.has_sqlite_dialect:
@@ -232,7 +237,7 @@ def ogr_virtualogr_3():
     libgdal_name = gdaltest.find_lib('gdal')
     if libgdal_name is None:
         return 'skip'
-    print('Found '+ libgdal_name)
+    print('Found ' + libgdal_name)
 
     # Find path of libsqlite3 or libspatialite
     libsqlite_name = gdaltest.find_lib('sqlite3')
@@ -248,7 +253,7 @@ def ogr_virtualogr_3():
         libgdal_name = libgdal_name.replace('\\', '/')
         libsqlite_name = libsqlite_name.replace('\\', '/')
 
-    ret = gdaltest.runexternal(python_exe + ' ogr_as_sqlite_extension.py "%s" "%s"' % (libsqlite_name, libgdal_name), check_memleak = False)
+    ret = gdaltest.runexternal(python_exe + ' ogr_as_sqlite_extension.py "%s" "%s"' % (libsqlite_name, libgdal_name), check_memleak=False)
 
     if ret.find('skip') == 0:
         return 'skip'
@@ -260,6 +265,7 @@ def ogr_virtualogr_3():
 
 ###############################################################################
 # Test ogr_datasource_load_layers()
+
 
 def ogr_virtualogr_4():
 
@@ -329,6 +335,7 @@ def ogr_virtualogr_4():
 ###############################################################################
 # Test failed CREATE VIRTUAL TABLE USING VirtualOGR
 
+
 def ogr_virtualogr_5():
 
     if not ogrtest.has_sqlite_dialect:
@@ -344,7 +351,7 @@ def ogr_virtualogr_5():
 
     ds = ogr.GetDriverByName('Memory').CreateDataSource('')
     gdal.PushErrorHandler('CPLQuietErrorHandler')
-    sql_lyr = ds.ExecuteSQL("CREATE VIRTUAL TABLE lyr2 USING VirtualOGR('/vsimem/ogr_virtualogr_5.csv')", dialect = 'SQLITE')
+    sql_lyr = ds.ExecuteSQL("CREATE VIRTUAL TABLE lyr2 USING VirtualOGR('/vsimem/ogr_virtualogr_5.csv')", dialect='SQLITE')
     gdal.PopErrorHandler()
     if sql_lyr is not None:
         return 'fail'
@@ -353,6 +360,7 @@ def ogr_virtualogr_5():
     gdal.Unlink('/vsimem/ogr_virtualogr_5.csv')
 
     return 'success'
+
 
 gdaltest_list = [
     ogr_virtualogr_1,
@@ -364,9 +372,8 @@ gdaltest_list = [
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'ogr_virtualogr' )
+    gdaltest.setup_run('ogr_virtualogr')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

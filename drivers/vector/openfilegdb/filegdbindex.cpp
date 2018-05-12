@@ -26,12 +26,25 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#include "cpl_port.h"
 #include "filegdbtable_priv.h"
+
+#include <cstddef>
+#include <cstdio>
+#include <cstring>
+#include <ctime>
+#include <algorithm>
+#include <string>
+
+#include "cpl_conv.h"
+#include "cpl_error.h"
 #include "cpl_string.h"
 #include "cpl_time.h"
-#include <algorithm>
+#include "cpl_vsi.h"
+#include "ogr_core.h"
+#include "filegdbtable.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 namespace OpenFileGDB
 {
@@ -65,7 +78,7 @@ static bool FileGDBOGRDateToDoubleDate( const OGRField* psField,
 /*                        FileGDBTrivialIterator                        */
 /************************************************************************/
 
-class FileGDBTrivialIterator CPL_FINAL : public FileGDBIterator
+class FileGDBTrivialIterator final : public FileGDBIterator
 {
         FileGDBIterator            *poParentIter;
         FileGDBTable               *poTable;
@@ -97,7 +110,7 @@ class FileGDBTrivialIterator CPL_FINAL : public FileGDBIterator
 /*                        FileGDBNotIterator                            */
 /************************************************************************/
 
-class FileGDBNotIterator CPL_FINAL : public FileGDBIterator
+class FileGDBNotIterator final : public FileGDBIterator
 {
         FileGDBIterator            *poIterBase;
         FileGDBTable               *poTable;
@@ -119,7 +132,7 @@ class FileGDBNotIterator CPL_FINAL : public FileGDBIterator
 /*                        FileGDBAndIterator                            */
 /************************************************************************/
 
-class FileGDBAndIterator CPL_FINAL : public FileGDBIterator
+class FileGDBAndIterator final : public FileGDBIterator
 {
         FileGDBIterator             *poIter1;
         FileGDBIterator             *poIter2;
@@ -140,7 +153,7 @@ class FileGDBAndIterator CPL_FINAL : public FileGDBIterator
 /*                        FileGDBOrIterator                             */
 /************************************************************************/
 
-class FileGDBOrIterator CPL_FINAL : public FileGDBIterator
+class FileGDBOrIterator final : public FileGDBIterator
 {
         FileGDBIterator             *poIter1;
         FileGDBIterator             *poIter2;
@@ -165,13 +178,13 @@ class FileGDBOrIterator CPL_FINAL : public FileGDBIterator
 /*                        FileGDBIndexIterator                          */
 /************************************************************************/
 
-static const int MAX_DEPTH = 3;
-static const int UUID_LEN_AS_STRING = 38;
-static const int MAX_CAR_COUNT_STR = 80;
-static const int MAX_UTF8_LEN_STR = 4 * MAX_CAR_COUNT_STR;
-static const int FGDB_PAGE_SIZE = 4096;
+constexpr int MAX_DEPTH = 3;
+constexpr int UUID_LEN_AS_STRING = 38;
+constexpr int MAX_CAR_COUNT_STR = 80;
+constexpr int MAX_UTF8_LEN_STR = 4 * MAX_CAR_COUNT_STR;
+constexpr int FGDB_PAGE_SIZE = 4096;
 
-class FileGDBIndexIterator CPL_FINAL : public FileGDBIterator
+class FileGDBIndexIterator final : public FileGDBIterator
 {
         FileGDBTable        *poParent;
         bool                 bAscending;
@@ -184,9 +197,9 @@ class FileGDBIndexIterator CPL_FINAL : public FileGDBIterator
         FileGDBSQLOp         eOp;
         OGRField             sValue;
 
-        int                  iFirstPageIdx[MAX_DEPTH],
-                             iLastPageIdx[MAX_DEPTH],
-                             iCurPageIdx[MAX_DEPTH];
+        int                  iFirstPageIdx[MAX_DEPTH];
+        int                  iLastPageIdx[MAX_DEPTH];
+        int                  iCurPageIdx[MAX_DEPTH];
         GUInt32              nSubPagesCount[MAX_DEPTH];
         GUInt32              nLastPageAccessed[MAX_DEPTH];
 
@@ -260,7 +273,7 @@ const OGRField* FileGDBIterator::GetMinValue(int& eOutType)
 {
     PrintError();
     eOutType = -1;
-    return NULL;
+    return nullptr;
 }
 
 /************************************************************************/
@@ -271,7 +284,7 @@ const OGRField* FileGDBIterator::GetMaxValue(int& eOutType)
 {
     PrintError();
     eOutType = -1;
-    return NULL;
+    return nullptr;
 }
 
 /************************************************************************/
@@ -323,8 +336,8 @@ FileGDBIterator* FileGDBIterator::BuildIsNotNull(FileGDBTable* poParent,
                                                  int bAscending)
 {
     FileGDBIterator* poIter = Build(poParent, nFieldIdx, bAscending,
-                                    FGSO_ISNOTNULL, OFTMaxType, NULL);
-    if( poIter != NULL )
+                                    FGSO_ISNOTNULL, OFTMaxType, nullptr);
+    if( poIter != nullptr )
     {
         /* Optimization */
         if( poIter->GetRowCount() == poParent->GetTotalRecordCount() )
@@ -655,7 +668,7 @@ FileGDBIndexIterator::FileGDBIndexIterator( FileGDBTable* poParentIn,
                                             int bAscendingIn ) :
   poParent(poParentIn),
   bAscending(CPL_TO_BOOL(bAscendingIn)),
-  fpCurIdx(NULL),
+  fpCurIdx(nullptr),
   eFieldType(FGFT_UNDEFINED),
   nMaxPerPages(0),
   nOffsetFirstValInPage(0),
@@ -668,15 +681,23 @@ FileGDBIndexIterator::FileGDBIndexIterator( FileGDBTable* poParentIn,
   bEOF(FALSE),
   iSorted(0),
   nSortedCount(-1),
-  panSortedRows(NULL),
+  panSortedRows(nullptr),
   nStrLen(0)
 {
-    memset(iFirstPageIdx, 0xFF, MAX_DEPTH * sizeof(int));
-    memset(iLastPageIdx, 0xFF, MAX_DEPTH * sizeof(int));
-    memset(iCurPageIdx, 0xFF, MAX_DEPTH * sizeof(int));
-    memset(nSubPagesCount, 0, MAX_DEPTH * sizeof(int));
-    memset(nLastPageAccessed, 0, MAX_DEPTH * sizeof(int));
+    memset(&iFirstPageIdx, 0xFF, sizeof(iFirstPageIdx));
+    memset(&iLastPageIdx, 0xFF, sizeof(iFirstPageIdx));
+    memset(&iCurPageIdx, 0xFF, sizeof(iCurPageIdx));
+    memset(&nSubPagesCount, 0, sizeof(nSubPagesCount));
+    memset(&nLastPageAccessed, 0, sizeof(nLastPageAccessed));
     memset(&sValue, 0, sizeof(sValue));
+    memset(&asUTF16Str, 0, sizeof(asUTF16Str));
+    memset(&szUUID, 0, sizeof(szUUID));
+    memset(&abyPage, 0, sizeof(abyPage));
+    memset(&abyPageFeature, 0, sizeof(abyPageFeature));
+    memset(&sMin, 0, sizeof(sMin));
+    memset(&sMax, 0, sizeof(sMax));
+    memset(&szMin, 0, sizeof(szMin));
+    memset(&szMax, 0, sizeof(szMax));
 }
 
 /************************************************************************/
@@ -687,7 +708,7 @@ FileGDBIndexIterator::~FileGDBIndexIterator()
 {
     if( fpCurIdx )
         VSIFCloseL(fpCurIdx);
-    fpCurIdx = NULL;
+    fpCurIdx = nullptr;
     VSIFree(panSortedRows);
 }
 
@@ -709,7 +730,7 @@ FileGDBIterator* FileGDBIndexIterator::Build( FileGDBTable* poParent,
         return poIndexIterator;
     }
     delete poIndexIterator;
-    return NULL;
+    return nullptr;
 }
 
 /************************************************************************/
@@ -737,7 +758,7 @@ static const char* FileGDBSQLOpToStr(FileGDBSQLOp op)
 static const char* FileGDBValueToStr(OGRFieldType eOGRFieldType,
                                      const OGRField* psValue)
 {
-    if( psValue == NULL )
+    if( psValue == nullptr )
         return "";
 
     switch( eOGRFieldType )
@@ -776,7 +797,7 @@ int FileGDBIndexIterator::SetConstraint(int nFieldIdx,
                                         const OGRField* psValue)
 {
     const int errorRetValue = FALSE;
-    CPLAssert(fpCurIdx == NULL);
+    CPLAssert(fpCurIdx == nullptr);
 
     returnErrorIf(nFieldIdx < 0 || nFieldIdx >= poParent->GetFieldCount() );
     FileGDBField* poField = poParent->GetField(nFieldIdx);
@@ -794,7 +815,7 @@ int FileGDBIndexIterator::SetConstraint(int nFieldIdx,
                     CPLGetBasename(poParent->GetFilename().c_str()), CPLSPrintf("%s.atx",
                     poField->GetIndex()->GetIndexName().c_str()));
     fpCurIdx = VSIFOpenL( pszAtxName, "rb" );
-    returnErrorIf(fpCurIdx == NULL );
+    returnErrorIf(fpCurIdx == nullptr );
 
     VSIFSeekL(fpCurIdx, 0, SEEK_END);
     vsi_l_offset nFileSize = VSIFTellL(fpCurIdx);
@@ -879,7 +900,7 @@ int FileGDBIndexIterator::SetConstraint(int nFieldIdx,
                 wchar_t *pWide = CPLRecodeToWChar( psValue->String,
                                                 CPL_ENC_UTF8,
                                                 CPL_ENC_UCS2 );
-                returnErrorIf(pWide == NULL);
+                returnErrorIf(pWide == nullptr);
                 int nCount = 0;
                 while( pWide[nCount] != 0 )
                 {
@@ -1491,7 +1512,7 @@ int FileGDBIndexIterator::SortRows()
             int nNewSortedAlloc = 4 * nSortedAlloc / 3 + 16;
             int* panNewSortedRows = (int*)VSI_REALLOC_VERBOSE(panSortedRows,
                                             sizeof(int) * nNewSortedAlloc);
-            if( panNewSortedRows == NULL )
+            if( panNewSortedRows == nullptr )
             {
                 nSortedCount = 0;
                 return FALSE;
@@ -1573,10 +1594,10 @@ const OGRField* FileGDBIndexIterator::GetMinMaxValue(OGRField* psField,
                                                      int& eOutType,
                                                      int bIsMin)
 {
-    const OGRField* errorRetValue = NULL;
+    const OGRField* errorRetValue = nullptr;
     eOutType = -1;
     if( nValueCountInIdx == 0 )
-        return NULL;
+        return nullptr;
 
     GByte l_abyPage[FGDB_PAGE_SIZE];
     GUInt32 nPage = 1;
@@ -1660,7 +1681,7 @@ const OGRField* FileGDBIndexIterator::GetMinMaxValue(OGRField* psField,
             }
             awsVal[nStrLen] = 0;
             char* pszOut = CPLRecodeFromWChar(awsVal, CPL_ENC_UCS2, CPL_ENC_UTF8);
-            returnErrorIf(pszOut == NULL );
+            returnErrorIf(pszOut == nullptr );
             returnErrorAndCleanupIf(
                 strlen(pszOut) > static_cast<size_t>(MAX_UTF8_LEN_STR),
                 VSIFree(pszOut) );
@@ -1684,7 +1705,7 @@ const OGRField* FileGDBIndexIterator::GetMinMaxValue(OGRField* psField,
             CPLAssert(false);
             break;
     }
-    return NULL;
+    return nullptr;
 }
 
 /************************************************************************/
@@ -1838,4 +1859,4 @@ int FileGDBIndexIterator::GetMinMaxSumCount(double& dfMin, double& dfMax,
     return TRUE;
 }
 
-}; /* namespace OpenFileGDB */
+} /* namespace OpenFileGDB */

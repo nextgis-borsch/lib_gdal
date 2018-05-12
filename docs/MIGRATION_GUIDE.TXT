@@ -1,3 +1,57 @@
+MIGRATION GUIDE FROM GDAL 2.2 to GDAL 2.3
+-----------------------------------------
+
+1) RFC 70: Guessing output format from output file name extension for utilities
+
+Link: https://trac.osgeo.org/gdal/wiki/rfc70_output_format_guess
+
+Before GDAL 2.3, if not specifying the output format to utilities, GeoTIFF or
+Shapefile were assumed for most utilities. Now, the output format will be
+guessed from the output filename extension. This might break usages where
+non-standard extensions are used for GeoTIFF or Shapefile output when -f/-of is
+not specified (but warnings were already emitted in such situations).
+
+2) RFC 68: C++11 Compilation requirement
+
+Link: https://trac.osgeo.org/gdal/wiki/rfc68_cplusplus11
+
+GDAL now requires a C++11 compatible compiler. External code using GDAL C++ API
+will also need to enable at least C++11 compilation mode, if the compiler
+defaults to C++98/C++03.
+
+3) Stricter const-ness in OGRGeomFieldDefn, OGRFeatureDefn and OGRFeature
+   classes, impacting out-of-tree drivers that subclass them.
+
+   The following methods are now const qualified:
+
+     OGRGeomFieldDefn class:
+        virtual OGRSpatialReference* GetSpatialRef() const
+
+     OGRFeatureDefn class:
+        virtual const char* GetName() const
+        virtual int GetFieldCount() const
+        virtual int GetFieldIndex(const char*) const
+        virtual int GetGeomFieldCount() const
+        virtual int GetGeomFieldIndex(const char*) const
+        virtual OGRwkbGeometryType GetGeomType() const
+        virtual OGRFeatureDefn* Clone() const
+        virtual int IsGeometryIgnored() const
+        virtual int IsSame(const OGRFeatureDefn*) const // argument is const now too
+
+     OGRFeature class:
+        virtual OGRBoolean Equal(const OGRFeature*) const // argument is const now too
+        virtual const char* GetStyleString() const
+        virtual OGRStyleTable* GetStyleTable() const
+
+    The following virtual methods, offering const alternatives to their
+    non-const equivalent methods, should be overloaded if the non-const
+    method is overloaded.
+
+     OGRFeatureDefn class:
+        virtual const OGRFieldDefn* GetFieldDefn(int) const
+        virtual const OGRGeomFieldDefn* GetGeomFieldDefn(int) const
+
+
 MIGRATION GUIDE FROM GDAL 2.1 to GDAL 2.2
 -----------------------------------------
 

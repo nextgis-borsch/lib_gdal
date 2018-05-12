@@ -32,7 +32,7 @@ import os
 import sys
 import shutil
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 from osgeo import gdal
@@ -40,6 +40,7 @@ from osgeo import ogr
 
 ###############################################################################
 # Check
+
 
 def ogr_ods_check(ds):
 
@@ -60,7 +61,7 @@ def ogr_ods_check(ds):
         gdaltest.post_reason('bad layer geometry type')
         return 'fail'
 
-    if lyr.GetSpatialRef() != None:
+    if lyr.GetSpatialRef() is not None:
         gdaltest.post_reason('bad spatial ref')
         return 'fail'
 
@@ -83,18 +84,18 @@ def ogr_ods_check(ds):
         print(lyr.GetLayerDefn().GetFieldCount())
         return 'fail'
 
-    type_array = [ ogr.OFTString,
-                   ogr.OFTInteger,
-                   ogr.OFTReal,
-                   ogr.OFTReal,
-                   ogr.OFTDate,
-                   ogr.OFTDateTime,
-                   ogr.OFTReal,
-                   ogr.OFTTime,
-                   ogr.OFTReal,
-                   ogr.OFTInteger,
-                   ogr.OFTReal,
-                   ogr.OFTDateTime ]
+    type_array = [ogr.OFTString,
+                  ogr.OFTInteger,
+                  ogr.OFTReal,
+                  ogr.OFTReal,
+                  ogr.OFTDate,
+                  ogr.OFTDateTime,
+                  ogr.OFTReal,
+                  ogr.OFTTime,
+                  ogr.OFTReal,
+                  ogr.OFTInteger,
+                  ogr.OFTReal,
+                  ogr.OFTDateTime]
 
     for i in range(len(type_array)):
         if lyr.GetLayerDefn().GetFieldDefn(i).GetType() != type_array[i]:
@@ -125,6 +126,7 @@ def ogr_ods_check(ds):
 ###############################################################################
 # Basic tests
 
+
 def ogr_ods_1():
 
     drv = ogr.GetDriverByName('ODS')
@@ -144,6 +146,7 @@ def ogr_ods_1():
 
 ###############################################################################
 # Basic tests
+
 
 def ogr_ods_kspread_1():
 
@@ -177,7 +180,7 @@ def ogr_ods_kspread_1():
         gdaltest.post_reason('bad layer geometry type')
         return 'fail'
 
-    if lyr.GetSpatialRef() != None:
+    if lyr.GetSpatialRef() is not None:
         gdaltest.post_reason('bad spatial ref')
         return 'fail'
 
@@ -200,18 +203,18 @@ def ogr_ods_kspread_1():
         print(lyr.GetLayerDefn().GetFieldCount())
         return 'fail'
 
-    type_array = [ ogr.OFTString,
-                   ogr.OFTInteger,
-                   ogr.OFTReal,
-                   ogr.OFTReal,
-                   ogr.OFTDate,
-                   ogr.OFTString, #ogr.OFTDateTime,
-                   ogr.OFTReal,
-                   ogr.OFTTime,
-                   ogr.OFTReal,
-                   ogr.OFTInteger,
-                   ogr.OFTReal,
-                   ogr.OFTString, #ogr.OFTDateTime
+    type_array = [ogr.OFTString,
+                  ogr.OFTInteger,
+                  ogr.OFTReal,
+                  ogr.OFTReal,
+                  ogr.OFTDate,
+                  ogr.OFTString,  # ogr.OFTDateTime,
+                  ogr.OFTReal,
+                  ogr.OFTTime,
+                  ogr.OFTReal,
+                  ogr.OFTInteger,
+                  ogr.OFTReal,
+                  ogr.OFTString,  # ogr.OFTDateTime
                   ]
 
     for i in range(len(type_array)):
@@ -226,7 +229,7 @@ def ogr_ods_kspread_1():
        feat.GetFieldAsDouble(2) != 3.45 or \
        feat.GetFieldAsDouble(3) != 0.52 or \
        feat.GetFieldAsString(4) != '2012/01/22' or \
-       feat.GetFieldAsString(5) != '22/01/2012 18:49:00': # 2012/01/22 18:49:00
+       feat.GetFieldAsString(5) != '22/01/2012 18:49:00':  # 2012/01/22 18:49:00
         gdaltest.post_reason('fail')
         feat.DumpReadable()
         return 'fail'
@@ -241,6 +244,7 @@ def ogr_ods_kspread_1():
 
 ###############################################################################
 # Test OGR_ODS_HEADERS = DISABLE
+
 
 def ogr_ods_2():
 
@@ -265,6 +269,7 @@ def ogr_ods_2():
 ###############################################################################
 # Test OGR_ODS_FIELD_TYPES = STRING
 
+
 def ogr_ods_3():
 
     drv = ogr.GetDriverByName('ODS')
@@ -287,6 +292,7 @@ def ogr_ods_3():
 ###############################################################################
 # Run test_ogrsf
 
+
 def ogr_ods_4():
 
     drv = ogr.GetDriverByName('ODS')
@@ -307,6 +313,7 @@ def ogr_ods_4():
 
 ###############################################################################
 # Test write support
+
 
 def ogr_ods_5():
 
@@ -331,6 +338,7 @@ def ogr_ods_5():
 ###############################################################################
 # Test formula evaluation
 
+
 def ogr_ods_6():
 
     drv = ogr.GetDriverByName('ODS')
@@ -340,7 +348,7 @@ def ogr_ods_6():
     src_ds = ogr.Open('ODS:data/content_formulas.xml')
     filepath = '/vsimem/content_formulas.csv'
     with gdaltest.error_handler():
-      out_ds = ogr.GetDriverByName('CSV').CopyDataSource(src_ds, filepath)
+        out_ds = ogr.GetDriverByName('CSV').CopyDataSource(src_ds, filepath)
     if out_ds is None:
         gdaltest.post_reason('Unable to create %s.' % filepath)
         return 'fail'
@@ -348,7 +356,7 @@ def ogr_ods_6():
     src_ds = None
 
     fp = gdal.VSIFOpenL('/vsimem/content_formulas.csv', 'rb')
-    res = gdal.VSIFReadL(1,10000,fp)
+    res = gdal.VSIFReadL(1, 10000, fp)
     gdal.VSIFCloseL(fp)
 
     gdal.Unlink('/vsimem/content_formulas.csv')
@@ -357,15 +365,15 @@ def ogr_ods_6():
 
     expected_res = """Field1,Field2,Field3,Field4,Field5,Field6,Field7,Field8,Field9,Field10,Field11,Field12,Field13,Field14,Field15,Field16,Field17,Field18,Field19,Field20,Field21,Field22,Field23,Field24,Field25,Field26,Field27,Field28,Field29,Field30,Field31,Field32
 of:=[.B1],of:=[.C1],of:=[.A1],,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-1,1,1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"1","1","1",,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ab,ab,ab,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-1,a,,3.5,MIN,1,MIN,3.5,SUM,4.5,AVERAGE,2.25,COUNT,2,COUNTA,3,,,,,,,,,,,,,,,,
-abcdef,6,,a,abcdef,,f,abcdef,"of:=MID([.A5];0;1)",,a,abcdef,,a,ef,ef,,,,,,,,,,,,,,,,
-1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"1",a,,"3.5",MIN,"1",MIN,"3.5",SUM,"4.5",AVERAGE,"2.25",COUNT,"2",COUNTA,"3",,,,,,,,,,,,,,,,
+abcdef,"6",,a,abcdef,,f,abcdef,"of:=MID([.A5];0;1)",,a,abcdef,,a,ef,ef,,,,,,,,,,,,,,,,
+"1",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 AB,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-2,2,0,3,1,0,0,1,1,1,0,0,0,1,1,0,,,,,,,,,,,,,,,,
-1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+"2","2","0","3","1","0","0","1","1","1","0","0","0","1","1","0",,,,,,,,,,,,,,,,
+"1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1"
+"0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0"
 """.split()
 
     if res != expected_res:
@@ -376,6 +384,7 @@ AB,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 ###############################################################################
 # Test update support
+
 
 def ogr_ods_7():
 
@@ -388,7 +397,7 @@ def ogr_ods_7():
         os.unlink(filepath)
     shutil.copy('data/test.ods', filepath)
 
-    ds = ogr.Open(filepath, update = 1)
+    ds = ogr.Open(filepath, update=1)
     lyr = ds.GetLayerByName('Feuille7')
     feat = lyr.GetNextFeature()
     if feat.GetFID() != 2:
@@ -420,6 +429,7 @@ def ogr_ods_7():
 
 ###############################################################################
 # Test Integer64
+
 
 def ogr_ods_8():
 
@@ -460,6 +470,7 @@ def ogr_ods_8():
 
 ###############################################################################
 # Test DateTime with milliseconds
+
 
 def ogr_ods_9():
 
@@ -505,6 +516,54 @@ def ogr_ods_9():
 
     return 'success'
 
+###############################################################################
+# Test Boolean
+
+
+def ogr_ods_boolean():
+
+    drv = ogr.GetDriverByName('ODS')
+    if drv is None:
+        return 'skip'
+
+    out_filename = '/vsimem/ogr_ods_boolean.ods'
+    ds = drv.CreateDataSource(out_filename)
+    lyr = ds.CreateLayer('foo')
+    fld_defn = ogr.FieldDefn('Field1', ogr.OFTInteger)
+    fld_defn.SetSubType(ogr.OFSTBoolean)
+    lyr.CreateField(fld_defn)
+    f = ogr.Feature(lyr.GetLayerDefn())
+    f.SetField(0, True)
+    lyr.CreateFeature(f)
+    f = ogr.Feature(lyr.GetLayerDefn())
+    f.SetField(0, False)
+    lyr.CreateFeature(f)
+    f = None
+    ds = None
+
+    ds = ogr.Open(out_filename)
+    lyr = ds.GetLayer(0)
+    if lyr.GetLayerDefn().GetFieldDefn(0).GetType() != ogr.OFTInteger:
+        gdaltest.post_reason('failure')
+        return 'fail'
+    if lyr.GetLayerDefn().GetFieldDefn(0).GetSubType() != ogr.OFSTBoolean:
+        gdaltest.post_reason('failure')
+        return 'fail'
+    f = lyr.GetNextFeature()
+    if not f.GetField(0):
+        gdaltest.post_reason('failure')
+        return 'fail'
+    f = lyr.GetNextFeature()
+    if f.GetField(0):
+        gdaltest.post_reason('failure')
+        return 'fail'
+    ds = None
+
+    gdal.Unlink(out_filename)
+
+    return 'success'
+
+
 gdaltest_list = [
     ogr_ods_1,
     ogr_ods_kspread_1,
@@ -515,13 +574,14 @@ gdaltest_list = [
     ogr_ods_6,
     ogr_ods_7,
     ogr_ods_8,
-    ogr_ods_9
+    ogr_ods_9,
+    ogr_ods_boolean,
 ]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'ogr_ods' )
+    gdaltest.setup_run('ogr_ods')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

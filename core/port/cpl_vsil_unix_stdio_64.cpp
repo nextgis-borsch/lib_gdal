@@ -48,6 +48,12 @@
 // See this for hardening background info: https://wiki.debian.org/Hardening
 #undef _FORTIFY_SOURCE
 
+// 64 bit IO is only available on 32-bit android since API 24 / Android 7.0
+// See https://android.googlesource.com/platform/bionic/+/master/docs/32-bit-abi.md
+#if defined(__ANDROID_API__) && __ANDROID_API__ >= 24
+#define _FILE_OFFSET_BITS 64
+#endif
+
 #include "cpl_port.h"
 
 #if !defined(WIN32)
@@ -81,7 +87,7 @@
 #include "cpl_string.h"
 #include "cpl_vsi_error.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 #if defined(UNIX_STDIO_64)
 
@@ -133,7 +139,7 @@ CPL_CVSID("$Id$");
 /* ==================================================================== */
 /************************************************************************/
 
-class VSIUnixStdioFilesystemHandler CPL_FINAL : public VSIFilesystemHandler
+class VSIUnixStdioFilesystemHandler final : public VSIFilesystemHandler
 {
 #ifdef VSI_COUNT_BYTES_READ
     vsi_l_offset  nTotalBytesRead;
@@ -141,23 +147,23 @@ class VSIUnixStdioFilesystemHandler CPL_FINAL : public VSIFilesystemHandler
 #endif
 
 public:
-                              VSIUnixStdioFilesystemHandler();
+    VSIUnixStdioFilesystemHandler();
 #ifdef VSI_COUNT_BYTES_READ
-    virtual                  ~VSIUnixStdioFilesystemHandler();
+    ~VSIUnixStdioFilesystemHandler() override;
 #endif
 
-    virtual VSIVirtualHandle *Open( const char *pszFilename,
-                                    const char *pszAccess,
-                                    bool bSetError ) override;
-    virtual int     Stat( const char *pszFilename, VSIStatBufL *pStatBuf,
-                          int nFlags ) override;
-    virtual int     Unlink( const char *pszFilename ) override;
-    virtual int     Rename( const char *oldpath, const char *newpath ) override;
-    virtual int     Mkdir( const char *pszDirname, long nMode ) override;
-    virtual int     Rmdir( const char *pszDirname ) override;
-    virtual char  **ReadDirEx( const char *pszDirname, int nMaxFiles ) override;
-    virtual GIntBig GetDiskFreeSpace( const char* pszDirname ) override;
-    virtual int SupportsSparseFiles( const char* pszPath ) override;
+    VSIVirtualHandle *Open( const char *pszFilename,
+                            const char *pszAccess,
+                            bool bSetError ) override;
+    int Stat( const char *pszFilename, VSIStatBufL *pStatBuf,
+              int nFlags ) override;
+    int Unlink( const char *pszFilename ) override;
+    int Rename( const char *oldpath, const char *newpath ) override;
+    int Mkdir( const char *pszDirname, long nMode ) override;
+    int Rmdir( const char *pszDirname ) override;
+    char **ReadDirEx( const char *pszDirname, int nMaxFiles ) override;
+    GIntBig GetDiskFreeSpace( const char* pszDirname ) override;
+    int SupportsSparseFiles( const char* pszPath ) override;
 
 #ifdef VSI_COUNT_BYTES_READ
     void             AddToTotal(vsi_l_offset nBytes);
@@ -170,7 +176,7 @@ public:
 /* ==================================================================== */
 /************************************************************************/
 
-class VSIUnixStdioHandle CPL_FINAL : public VSIVirtualHandle
+class VSIUnixStdioHandle final : public VSIVirtualHandle
 {
     FILE          *fp;
     vsi_l_offset  m_nOffset;
@@ -188,23 +194,22 @@ class VSIUnixStdioHandle CPL_FINAL : public VSIVirtualHandle
     VSIUnixStdioFilesystemHandler *poFS;
 #endif
   public:
-                   VSIUnixStdioHandle( VSIUnixStdioFilesystemHandler *poFSIn,
-                                       FILE* fpIn, bool bReadOnlyIn,
-                                       bool bModeAppendReadWriteIn );
+    VSIUnixStdioHandle( VSIUnixStdioFilesystemHandler *poFSIn,
+                        FILE* fpIn, bool bReadOnlyIn,
+                        bool bModeAppendReadWriteIn );
 
-    virtual int    Seek( vsi_l_offset nOffsetIn, int nWhence ) override;
-    virtual vsi_l_offset Tell() override;
-    virtual size_t Read( void *pBuffer, size_t nSize, size_t nMemb ) override;
-    virtual size_t Write( const void *pBuffer, size_t nSize,
-                          size_t nMemb ) override;
-    virtual int    Eof() override;
-    virtual int    Flush() override;
-    virtual int    Close() override;
-    virtual int    Truncate( vsi_l_offset nNewSize ) override;
-    virtual void  *GetNativeFileDescriptor() override {
+    int Seek( vsi_l_offset nOffsetIn, int nWhence ) override;
+    vsi_l_offset Tell() override;
+    size_t Read( void *pBuffer, size_t nSize, size_t nMemb ) override;
+    size_t Write( const void *pBuffer, size_t nSize, size_t nMemb ) override;
+    int Eof() override;
+    int Flush() override;
+    int Close() override;
+    int Truncate( vsi_l_offset nNewSize ) override;
+    void *GetNativeFileDescriptor() override {
         return reinterpret_cast<void *>(static_cast<size_t>(fileno(fp))); }
-    virtual VSIRangeStatus GetRangeStatus( vsi_l_offset nOffset,
-                                           vsi_l_offset nLength ) override;
+    VSIRangeStatus GetRangeStatus( vsi_l_offset nOffset,
+                                   vsi_l_offset nLength ) override;
 };
 
 /************************************************************************/
@@ -265,10 +270,12 @@ int VSIUnixStdioHandle::Seek( vsi_l_offset nOffsetIn, int nWhence )
     // if the next position to seek to is within the buffered page.
     if( bReadOnly && nWhence == SEEK_SET )
     {
-        if( nOffsetIn > m_nOffset && nOffsetIn < 4096 + m_nOffset )
+        const int l_PAGE_SIZE = 4096;
+        if( nOffsetIn > m_nOffset && nOffsetIn < l_PAGE_SIZE + m_nOffset )
         {
             const int nDiff = static_cast<int>(nOffsetIn - m_nOffset);
-            GByte abyTemp[4096] = {};
+            // Do not zero-initialize the buffer. We don't read from it
+            GByte abyTemp[l_PAGE_SIZE];
             const int nRead = static_cast<int>(fread(abyTemp, 1, nDiff, fp));
             if( nRead == nDiff )
             {
@@ -324,6 +331,10 @@ int VSIUnixStdioHandle::Seek( vsi_l_offset nOffsetIn, int nWhence )
         }
         else if( nWhence == SEEK_CUR )
         {
+            if( nOffsetIn > INT_MAX )
+            {
+                //printf("likely negative offset intended\n");
+            }
             m_nOffset += nOffsetIn;
         }
     }
@@ -501,10 +512,10 @@ int VSIUnixStdioHandle::Truncate( vsi_l_offset nNewSize )
 /************************************************************************/
 
 #ifdef __linux
-#include <linux/fs.h> /* FS_IOC_FIEMAP */
+#include <linux/fs.h>  // FS_IOC_FIEMAP
 #ifdef FS_IOC_FIEMAP
-#include <linux/types.h> // for types used in linux/fiemap;h
-#include <linux/fiemap.h> /* struct fiemap */
+#include <linux/types.h>   // for types used in linux/fiemap.h
+#include <linux/fiemap.h>  // struct fiemap
 #endif
 #include <sys/ioctl.h>
 #include <errno.h>
@@ -584,7 +595,7 @@ VSIRangeStatus VSIUnixStdioHandle::GetRangeStatus( vsi_l_offset
 VSIUnixStdioFilesystemHandler::VSIUnixStdioFilesystemHandler()
 #ifdef VSI_COUNT_BYTES_READ
      : nTotalBytesRead(0),
-       hMutex(NULL)
+       hMutex(nullptr)
 #endif
 {}
 
@@ -600,9 +611,9 @@ VSIUnixStdioFilesystemHandler::~VSIUnixStdioFilesystemHandler()
               CPL_FRMT_GUIB,
               nTotalBytesRead );
 
-    if( hMutex != NULL )
+    if( hMutex != nullptr )
         CPLDestroyMutex( hMutex );
-    hMutex = NULL;
+    hMutex = nullptr;
 }
 #endif
 
@@ -622,14 +633,14 @@ VSIUnixStdioFilesystemHandler::Open( const char *pszFilename,
     VSIDebug3( "VSIUnixStdioFilesystemHandler::Open(\"%s\",\"%s\") = %p",
                pszFilename, pszAccess, fp );
 
-    if( fp == NULL )
+    if( fp == nullptr )
     {
         if( bSetError )
         {
             VSIError(VSIE_FileError, "%s: %s", pszFilename, strerror(nError));
         }
         errno = nError;
-        return NULL;
+        return nullptr;
     }
 
     const bool bReadOnly =
@@ -639,10 +650,10 @@ VSIUnixStdioFilesystemHandler::Open( const char *pszFilename,
     VSIUnixStdioHandle *poHandle =
         new(std::nothrow) VSIUnixStdioHandle( this, fp, bReadOnly,
                                               bModeAppendReadWrite );
-    if( poHandle == NULL )
+    if( poHandle == nullptr )
     {
         fclose(fp);
-        return NULL;
+        return nullptr;
     }
 
     errno = nError;
@@ -726,13 +737,13 @@ char **VSIUnixStdioFilesystemHandler::ReadDirEx( const char *pszPath,
 
     CPLStringList oDir;
     DIR *hDir = opendir(pszPath);
-    if( hDir != NULL )
+    if( hDir != nullptr )
     {
         // We want to avoid returning NULL for an empty list.
         oDir.Assign(static_cast<char**>(CPLCalloc(2, sizeof(char*))));
 
-        struct dirent *psDirEntry = NULL;
-        while( (psDirEntry = readdir(hDir)) != NULL )
+        struct dirent *psDirEntry = nullptr;
+        while( (psDirEntry = readdir(hDir)) != nullptr )
         {
             oDir.AddString( psDirEntry->d_name );
             if( nMaxFiles > 0 && oDir.Count() > nMaxFiles )
@@ -803,22 +814,22 @@ int VSIUnixStdioFilesystemHandler::SupportsSparseFiles( const char*
     {
         // Add here any missing filesystem supporting sparse files.
         // See http://en.wikipedia.org/wiki/Comparison_of_file_systems
-        switch( sStatFS.f_type )
+        switch( static_cast<unsigned>(sStatFS.f_type) )
         {
             // Codes from http://man7.org/linux/man-pages/man2/statfs.2.html
-            case 0xef53:  // ext2, 3, 4
-            case 0x52654973:  // reiser
-            case 0x58465342:  // xfs
-            case 0x3153464a:  // jfs
-            case 0x5346544e:  // ntfs
-            case 0x9123683e:  // brfs
+            case 0xef53U:  // ext2, 3, 4
+            case 0x52654973U:  // reiser
+            case 0x58465342U:  // xfs
+            case 0x3153464aU:  // jfs
+            case 0x5346544eU:  // ntfs
+            case 0x9123683eU:  // brfs
             // nfs: NFS < 4.2 supports creating sparse files (but reading them
             // not efficiently).
-            case 0x6969:
-            case 0x01021994:  // tmpfs
+            case 0x6969U:
+            case 0x01021994U:  // tmpfs
                 return TRUE;
 
-            case 0x4d44: // msdos
+            case 0x4d44U: // msdos
                 return FALSE;
 
             default:

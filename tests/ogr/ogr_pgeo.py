@@ -33,7 +33,7 @@ import os
 import sys
 from osgeo import ogr
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 import ogrtest
@@ -41,7 +41,8 @@ import ogrtest
 ###############################################################################
 # Basic testing
 
-def ogr_pgeo_1(tested_driver = 'PGeo', other_driver = 'MDB'):
+
+def ogr_pgeo_1(tested_driver='PGeo', other_driver='MDB'):
 
     ogrtest.pgeo_ds = None
 
@@ -76,12 +77,12 @@ def ogr_pgeo_1(tested_driver = 'PGeo', other_driver = 'MDB'):
 
     try:
         os.stat('tmp/cache/Autodesk Test.mdb')
-    except:
+    except OSError:
         try:
-            gdaltest.unzip( 'tmp/cache', 'tmp/cache/PGeoTest.zip')
+            gdaltest.unzip('tmp/cache', 'tmp/cache/PGeoTest.zip')
             try:
                 os.stat('tmp/cache/Autodesk Test.mdb')
-            except:
+            except OSError:
                 return 'skip'
         except:
             return 'skip'
@@ -104,7 +105,7 @@ def ogr_pgeo_1(tested_driver = 'PGeo', other_driver = 'MDB'):
         feat.DumpReadable()
         return 'fail'
 
-    if ogrtest.check_feature_geometry(feat,'LINESTRING (1910941.703951031 445833.57942859828 0,1910947.927691862 445786.43811868131 0)', max_error = 0.0000001) != 0:
+    if ogrtest.check_feature_geometry(feat, 'LINESTRING (1910941.703951031 445833.57942859828 0,1910947.927691862 445786.43811868131 0)', max_error=0.0000001) != 0:
         gdaltest.post_reason('did not get expected geometry')
         feat.DumpReadable()
         return 'fail'
@@ -117,11 +118,13 @@ def ogr_pgeo_1(tested_driver = 'PGeo', other_driver = 'MDB'):
 
     return 'success'
 
+
 def ogr_pgeo_mdb_1():
     return ogr_pgeo_1('MDB', 'PGeo')
 
 ###############################################################################
 # Test spatial filter
+
 
 def ogr_pgeo_2():
     if ogrtest.pgeo_ds is None:
@@ -162,6 +165,7 @@ def ogr_pgeo_2():
 ###############################################################################
 # Test attribute filter
 
+
 def ogr_pgeo_3():
     if ogrtest.pgeo_ds is None:
         return 'skip'
@@ -196,6 +200,7 @@ def ogr_pgeo_3():
 ###############################################################################
 # Test ExecuteSQL()
 
+
 def ogr_pgeo_4():
     if ogrtest.pgeo_ds is None:
         return 'skip'
@@ -223,6 +228,7 @@ def ogr_pgeo_4():
 ###############################################################################
 # Test GetFeature()
 
+
 def ogr_pgeo_5():
     if ogrtest.pgeo_ds is None:
         return 'skip'
@@ -238,6 +244,7 @@ def ogr_pgeo_5():
 
 ###############################################################################
 # Run test_ogrsf
+
 
 def ogr_pgeo_6():
     if ogrtest.pgeo_ds is None:
@@ -258,6 +265,7 @@ def ogr_pgeo_6():
 ###############################################################################
 # Run test_ogrsf with -sql
 
+
 def ogr_pgeo_7():
     if ogrtest.pgeo_ds is None:
         return 'skip'
@@ -276,6 +284,7 @@ def ogr_pgeo_7():
 
 ###############################################################################
 
+
 def ogr_pgeo_cleanup():
 
     if ogrtest.other_driver is not None:
@@ -288,6 +297,7 @@ def ogr_pgeo_cleanup():
     ogrtest.pgeo_ds = None
     return 'success'
 
+
 gdaltest_list_internal = [
     ogr_pgeo_2,
     ogr_pgeo_3,
@@ -295,22 +305,24 @@ gdaltest_list_internal = [
     ogr_pgeo_5,
     ogr_pgeo_6,
     ogr_pgeo_7,
-    ogr_pgeo_cleanup    ]
+    ogr_pgeo_cleanup]
 
 ###############################################################################
 #
 
+
 def ogr_pgeo_main():
 
     # Run with the PGeo driver only (MDB disabled)
-    gdaltest.run_tests( [ ogr_pgeo_1 ] )
-    gdaltest.run_tests( gdaltest_list_internal )
+    gdaltest.run_tests([ogr_pgeo_1])
+    gdaltest.run_tests(gdaltest_list_internal)
 
     # Run with the MDB driver only (PGeo disabled)
-    gdaltest.run_tests( [ ogr_pgeo_mdb_1 ] )
-    gdaltest.run_tests( gdaltest_list_internal )
+    gdaltest.run_tests([ogr_pgeo_mdb_1])
+    gdaltest.run_tests(gdaltest_list_internal)
 
     return 'success'
+
 
 gdaltest_list = [
     ogr_pgeo_main
@@ -318,9 +330,8 @@ gdaltest_list = [
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'ogr_pgeo' )
+    gdaltest.setup_run('ogr_pgeo')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

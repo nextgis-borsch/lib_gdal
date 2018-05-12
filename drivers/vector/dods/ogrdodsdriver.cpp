@@ -29,7 +29,7 @@
 #include "ogr_dods.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /************************************************************************/
 /*                            ~OGRDODSDriver()                            */
@@ -59,14 +59,14 @@ OGRDataSource *OGRDODSDriver::Open( const char * pszFilename,
 
 {
     if( !STARTS_WITH_CI(pszFilename, "DODS:http:") )
-        return NULL;
+        return nullptr;
 
     OGRDODSDataSource *poDS = new OGRDODSDataSource();
 
     if( !poDS->Open( pszFilename ) )
     {
         delete poDS;
-        return NULL;
+        return nullptr;
     }
     else
         return poDS;

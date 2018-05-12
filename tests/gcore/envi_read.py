@@ -29,7 +29,7 @@
 
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 from osgeo import gdal
 import gdaltest
@@ -37,17 +37,18 @@ import gdaltest
 ###############################################################################
 # Test GDAL_READDIR_LIMIT_ON_OPEN
 
+
 def envi_1():
 
     gdal.SetConfigOption('GDAL_READDIR_LIMIT_ON_OPEN', '1')
 
-    ds = gdal.Open( 'data/utmsmall.raw' )
+    ds = gdal.Open('data/utmsmall.raw')
     filelist = ds.GetFileList()
 
     gdal.SetConfigOption('GDAL_READDIR_LIMIT_ON_OPEN', None)
 
     if len(filelist) != 2:
-        gdaltest.post_reason( 'did not get expected file list.' )
+        gdaltest.post_reason('did not get expected file list.')
         return 'fail'
 
     return 'success'
@@ -55,9 +56,10 @@ def envi_1():
 ###############################################################################
 # When imported build a list of units based on the files available.
 
+
 gdaltest_list = []
 
-init_list = [ \
+init_list = [
     ('byte.raw', 1, 4672, None),
     ('int16.raw', 1, 4672, None),
     ('uint16.raw', 1, 4672, None),
@@ -70,19 +72,18 @@ init_list = [ \
 
 
 for item in init_list:
-    ut = gdaltest.GDALTest( 'ENVI', item[0], item[1], item[2] )
+    ut = gdaltest.GDALTest('ENVI', item[0], item[1], item[2])
     if ut is None:
-        print( 'ENVI tests skipped' )
+        print('ENVI tests skipped')
         sys.exit()
-    gdaltest_list.append( (ut.testOpen, item[0]) )
+    gdaltest_list.append((ut.testOpen, item[0]))
 
-gdaltest_list.append( envi_1 )
+gdaltest_list.append(envi_1)
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'envi_read' )
+    gdaltest.setup_run('envi_read')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

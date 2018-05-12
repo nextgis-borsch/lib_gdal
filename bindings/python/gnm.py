@@ -5,11 +5,8 @@
 # the SWIG interface file instead.
 
 
-
-
-
 from sys import version_info
-if version_info >= (2,6,0):
+if version_info >= (2, 6, 0):
     def swig_import_helper():
         from os.path import dirname
         import imp
@@ -33,69 +30,95 @@ del version_info
 try:
     _swig_property = property
 except NameError:
-    pass # Python < 2.2 doesn't have 'property'.
-def _swig_setattr_nondynamic(self,class_type,name,value,static=1):
+    pass  # Python < 2.2 doesn't have 'property'.
+
+
+def _swig_setattr_nondynamic(self, class_type, name, value, static=1):
     if (name == "thisown"): return self.this.own(value)
     if (name == "this"):
         if type(value).__name__ == 'SwigPyObject':
             self.__dict__[name] = value
             return
-    method = class_type.__swig_setmethods__.get(name,None)
-    if method: return method(self,value)
+    method = class_type.__swig_setmethods__.get(name, None)
+    if method: return method(self, value)
     if (not static):
         self.__dict__[name] = value
     else:
         raise AttributeError("You cannot add attributes to %s" % self)
 
-def _swig_setattr(self,class_type,name,value):
-    return _swig_setattr_nondynamic(self,class_type,name,value,0)
 
-def _swig_getattr(self,class_type,name):
+def _swig_setattr(self, class_type, name, value):
+    return _swig_setattr_nondynamic(self, class_type, name, value, 0)
+
+
+def _swig_getattr(self, class_type, name):
     if (name == "thisown"): return self.this.own()
-    method = class_type.__swig_getmethods__.get(name,None)
+    method = class_type.__swig_getmethods__.get(name, None)
     if method: return method(self)
     raise AttributeError(name)
+
 
 def _swig_repr(self):
     try: strthis = "proxy of " + self.this.__repr__()
     except: strthis = ""
     return "<%s.%s; %s >" % (self.__class__.__module__, self.__class__.__name__, strthis,)
 
+
 try:
     _object = object
     _newclass = 1
 except AttributeError:
-    class _object : pass
+    class _object: pass
     _newclass = 0
 
 
-
 def GetUseExceptions(*args):
-  return _gnm.GetUseExceptions(*args)
+    return _gnm.GetUseExceptions(*args)
+
+
 GetUseExceptions = _gnm.GetUseExceptions
 
+
 def UseExceptions(*args):
-  return _gnm.UseExceptions(*args)
+    return _gnm.UseExceptions(*args)
+
+
 UseExceptions = _gnm.UseExceptions
 
+
 def DontUseExceptions(*args):
-  return _gnm.DontUseExceptions(*args)
+    return _gnm.DontUseExceptions(*args)
+
+
 DontUseExceptions = _gnm.DontUseExceptions
+
+
 class MajorObject(_object):
     __swig_setmethods__ = {}
     __setattr__ = lambda self, name, value: _swig_setattr(self, MajorObject, name, value)
     __swig_getmethods__ = {}
     __getattr__ = lambda self, name: _swig_getattr(self, MajorObject, name)
+
     def __init__(self, *args, **kwargs): raise AttributeError("No constructor defined")
     __repr__ = _swig_repr
+
     def GetDescription(self, *args): return _gnm.MajorObject_GetDescription(self, *args)
+
     def SetDescription(self, *args): return _gnm.MajorObject_SetDescription(self, *args)
+
     def GetMetadataDomainList(self, *args): return _gnm.MajorObject_GetMetadataDomainList(self, *args)
+
     def GetMetadata_Dict(self, *args): return _gnm.MajorObject_GetMetadata_Dict(self, *args)
+
     def GetMetadata_List(self, *args): return _gnm.MajorObject_GetMetadata_List(self, *args)
+
     def SetMetadata(self, *args): return _gnm.MajorObject_SetMetadata(self, *args)
+
     def GetMetadataItem(self, *args): return _gnm.MajorObject_GetMetadataItem(self, *args)
+
     def SetMetadataItem(self, *args): return _gnm.MajorObject_SetMetadataItem(self, *args)
+
+
 MajorObject_swigregister = _gnm.MajorObject_swigregister
 MajorObject_swigregister(MajorObject)
 
@@ -106,25 +129,31 @@ GNM_EDGE_DIR_BOTH = _gnm.GNM_EDGE_DIR_BOTH
 GNM_EDGE_DIR_SRCTOTGT = _gnm.GNM_EDGE_DIR_SRCTOTGT
 GNM_EDGE_DIR_TGTTOSRC = _gnm.GNM_EDGE_DIR_TGTTOSRC
 
+
 def CastToNetwork(*args):
-  """CastToNetwork(MajorObject base) -> Network"""
-  return _gnm.CastToNetwork(*args)
+    """CastToNetwork(MajorObject base) -> Network"""
+    return _gnm.CastToNetwork(*args)
+
 
 def CastToGenericNetwork(*args):
-  """CastToGenericNetwork(MajorObject base) -> GenericNetwork"""
-  return _gnm.CastToGenericNetwork(*args)
+    """CastToGenericNetwork(MajorObject base) -> GenericNetwork"""
+    return _gnm.CastToGenericNetwork(*args)
+
+
 class Network(MajorObject):
     """Proxy of C++ GNMNetworkShadow class"""
     __swig_setmethods__ = {}
-    for _s in [MajorObject]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
+    for _s in [MajorObject]: __swig_setmethods__.update(getattr(_s, '__swig_setmethods__', {}))
     __setattr__ = lambda self, name, value: _swig_setattr(self, Network, name, value)
     __swig_getmethods__ = {}
-    for _s in [MajorObject]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
+    for _s in [MajorObject]: __swig_getmethods__.update(getattr(_s, '__swig_getmethods__', {}))
     __getattr__ = lambda self, name: _swig_getattr(self, Network, name)
+
     def __init__(self, *args, **kwargs): raise AttributeError("No constructor defined")
     __repr__ = _swig_repr
     __swig_destroy__ = _gnm.delete_Network
-    __del__ = lambda self : None;
+    __del__ = lambda self: None;
+
     def ReleaseResultSet(self, *args):
         """ReleaseResultSet(Network self, OGRLayerShadow * layer)"""
         return _gnm.Network_ReleaseResultSet(self, *args)
@@ -204,21 +233,25 @@ class Network(MajorObject):
         """RollbackTransaction(Network self) -> OGRErr"""
         return _gnm.Network_RollbackTransaction(self, *args)
 
+
 Network_swigregister = _gnm.Network_swigregister
 Network_swigregister(Network)
+
 
 class GenericNetwork(Network):
     """Proxy of C++ GNMGenericNetworkShadow class"""
     __swig_setmethods__ = {}
-    for _s in [Network]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
+    for _s in [Network]: __swig_setmethods__.update(getattr(_s, '__swig_setmethods__', {}))
     __setattr__ = lambda self, name, value: _swig_setattr(self, GenericNetwork, name, value)
     __swig_getmethods__ = {}
-    for _s in [Network]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
+    for _s in [Network]: __swig_getmethods__.update(getattr(_s, '__swig_getmethods__', {}))
     __getattr__ = lambda self, name: _swig_getattr(self, GenericNetwork, name)
+
     def __init__(self, *args, **kwargs): raise AttributeError("No constructor defined")
     __repr__ = _swig_repr
     __swig_destroy__ = _gnm.delete_GenericNetwork
-    __del__ = lambda self : None;
+    __del__ = lambda self: None;
+
     def ConnectFeatures(self, *args):
         """
         ConnectFeatures(GenericNetwork self, GIntBig nSrcFID, GIntBig nTgtFID, GIntBig nConFID, double dfCost, double dfInvCost,
@@ -269,9 +302,8 @@ class GenericNetwork(Network):
         """ChangeAllBlockState(GenericNetwork self, bool bIsBlock=False) -> CPLErr"""
         return _gnm.GenericNetwork_ChangeAllBlockState(self, *args)
 
+
 GenericNetwork_swigregister = _gnm.GenericNetwork_swigregister
 GenericNetwork_swigregister(GenericNetwork)
 
 # This file is compatible with both classic and new-style classes.
-
-

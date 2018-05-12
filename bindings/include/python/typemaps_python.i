@@ -22,7 +22,25 @@
  */
 %include "typemaps.i"
 
-%apply (int) {VSI_RETVAL};
+%typemap(out) VSI_RETVAL
+{
+  /* %typemap(out) VSI_RETVAL */
+  if ( result != 0 && bUseExceptions) {
+    const char* pszMessage = CPLGetLastErrorMsg();
+    if( pszMessage[0] != '\0' )
+        PyErr_SetString( PyExc_RuntimeError, pszMessage );
+    else
+        PyErr_SetString( PyExc_RuntimeError, "unknown error occurred" );
+    SWIG_fail;
+  }
+}
+
+%typemap(ret) VSI_RETVAL
+{
+  /* %typemap(ret) VSI_RETVAL */
+  resultobj = PyInt_FromLong( $1 );
+}
+
 
 %apply (double *OUTPUT) { double *argout };
 
@@ -853,7 +871,13 @@ CreateTupleFromDoubleArray( int *first, unsigned int size ) {
     /* We need to use the dictionary form. */
     Py_ssize_t size = PyMapping_Length( $input );
     if ( size > 0 && size == (int)size) {
+%#if PY_VERSION_HEX < 0x03000000
+      // PyMapping_Items also work with python 2.x  but throws a warning about
+      // -Wwrite-strings warning
+      PyObject *item_list = PyObject_CallMethod($input,const_cast<char*>("items"),NULL);
+%#else
       PyObject *item_list = PyMapping_Items( $input );
+%#endif
       for( int i=0; i<(int)size; i++ ) {
         PyObject *it = PySequence_GetItem( item_list, i );
 
@@ -923,6 +947,12 @@ CreateTupleFromDoubleArray( int *first, unsigned int size ) {
       char *pszStr;
       Py_ssize_t nLen;
       PyObject* pyUTF8Str = PyUnicode_AsUTF8String(pyObj);
+      if( !pyUTF8Str )
+      {
+        Py_DECREF(pyObj);
+        PyErr_SetString(PyExc_TypeError,"invalid Unicode sequence");
+        SWIG_fail;
+      }
 %#if PY_VERSION_HEX >= 0x03000000
       PyBytes_AsStringAndSize(pyUTF8Str, &pszStr, &nLen);
 %#else
@@ -1564,10 +1594,16 @@ OBJECT_LIST_INPUT(GDALDatasetShadow);
 %typemap(out) (retStringAndCPLFree*)
 {
     /* %typemap(out) (retStringAndCPLFree*) */
+    Py_XDECREF($result);
     if(result)
     {
         $result = GDALPythonObjectFromCStr( (const char *)result);
         CPLFree(result);
+    }
+    else
+    {
+        $result = Py_None;
+        Py_INCREF($result);
     }
 }
 
@@ -1981,4 +2017,32 @@ DecomposeSequenceOfCoordinates( PyObject *seq, int nCount, double *x, double *y,
     $result = SWIG_Python_AppendOutput($result, PyFloat_FromDouble( *$2));
   }
 
+}
+
+
+%typemap(in,numinputs=0) (OSRSpatialReferenceShadow*** matches = NULL, int* nvalues = NULL, int** confidence_values = NULL) ( OGRSpatialReferenceH* pahSRS = NULL, int nvalues = 0, int* confidence_values = NULL )
+{
+  /* %typemap(in) (OSRSpatialReferenceShadow***, int* nvalues, int** confidence_values)  */
+  $1 = &pahSRS;
+  $2 = &nvalues;
+  $3 = &confidence_values;
+}
+
+%typemap(argout) (OSRSpatialReferenceShadow*** matches = NULL, int* nvalues = NULL, int** confidence_values = NULL)
+{
+    /* %typemap(argout) (OOSRSpatialReferenceShadow***, int* nvalues, int** confidence_values)  */
+
+    Py_DECREF($result);
+
+    $result = PyList_New( *($2));
+    for( int i = 0; i < *($2); i++ )
+    {
+        PyObject *tuple = PyTuple_New( 2 );
+        PyTuple_SetItem( tuple, 0,
+            SWIG_NewPointerObj(SWIG_as_voidptr((*($1))[i]), SWIGTYPE_p_OSRSpatialReferenceShadow, 1 ) );
+        PyTuple_SetItem( tuple, 1, PyInt_FromLong((*($3))[i]) );
+        PyList_SetItem( $result, i, tuple );
+    }
+    CPLFree( *($1) );
+    CPLFree( *($3) );
 }

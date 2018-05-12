@@ -32,7 +32,7 @@
 #include "ogr_srs_api.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /**
 
@@ -73,19 +73,19 @@ class GTXDataset : public RawDataset
     double      adfGeoTransform[6];
 
   public:
-                GTXDataset() : fpImage(NULL) {
-                      adfGeoTransform[0] = 0.0;
-                      adfGeoTransform[1] = 1.0;
-                      adfGeoTransform[2] = 0.0;
-                      adfGeoTransform[3] = 0.0;
-                      adfGeoTransform[4] = 0.0;
-                      adfGeoTransform[5] = 1.0;
-                }
-    virtual ~GTXDataset();
+    GTXDataset() : fpImage(nullptr) {
+        adfGeoTransform[0] = 0.0;
+        adfGeoTransform[1] = 1.0;
+        adfGeoTransform[2] = 0.0;
+        adfGeoTransform[3] = 0.0;
+        adfGeoTransform[4] = 0.0;
+        adfGeoTransform[5] = 1.0;
+    }
+    ~GTXDataset() override;
 
-    virtual CPLErr GetGeoTransform( double * padfTransform ) override;
-    virtual CPLErr SetGeoTransform( double * padfTransform ) override;
-    virtual const char *GetProjectionRef() override;
+    CPLErr GetGeoTransform( double * padfTransform ) override;
+    CPLErr SetGeoTransform( double * padfTransform ) override;
+    const char *GetProjectionRef() override;
 
     static GDALDataset *Open( GDALOpenInfo * );
     static int          Identify( GDALOpenInfo * );
@@ -103,15 +103,14 @@ class GTXDataset : public RawDataset
 class GTXRasterBand : public RawRasterBand
 {
   public:
+    GTXRasterBand( GDALDataset *poDS, int nBand, VSILFILE * fpRaw,
+                   vsi_l_offset nImgOffset, int nPixelOffset,
+                   int nLineOffset,
+                   GDALDataType eDataType, int bNativeOrder );
 
-                 GTXRasterBand( GDALDataset *poDS, int nBand, VSILFILE * fpRaw,
-                                 vsi_l_offset nImgOffset, int nPixelOffset,
-                                 int nLineOffset,
-                                 GDALDataType eDataType, int bNativeOrder );
+    ~GTXRasterBand() override;
 
-    virtual ~GTXRasterBand();
-
-    virtual double GetNoDataValue( int *pbSuccess = NULL ) override;
+    double GetNoDataValue( int *pbSuccess = nullptr ) override;
 };
 
 
@@ -169,7 +168,7 @@ GTXDataset::~GTXDataset()
 {
     FlushCache();
 
-    if( fpImage != NULL )
+    if( fpImage != nullptr )
     {
         if( VSIFCloseL( fpImage ) != 0 )
         {
@@ -201,8 +200,8 @@ int GTXDataset::Identify( GDALOpenInfo *poOpenInfo )
 GDALDataset *GTXDataset::Open( GDALOpenInfo * poOpenInfo )
 
 {
-    if( !Identify( poOpenInfo ) )
-        return NULL;
+    if( !Identify( poOpenInfo ) || poOpenInfo->fpL == nullptr )
+        return nullptr;
 
 /* -------------------------------------------------------------------- */
 /*      Create a corresponding GDALDataset.                             */
@@ -210,20 +209,8 @@ GDALDataset *GTXDataset::Open( GDALOpenInfo * poOpenInfo )
     GTXDataset *poDS = new GTXDataset();
 
     poDS->eAccess = poOpenInfo->eAccess;
-
-/* -------------------------------------------------------------------- */
-/*      Open the file.                                                  */
-/* -------------------------------------------------------------------- */
-    if( poOpenInfo->eAccess == GA_ReadOnly )
-        poDS->fpImage = VSIFOpenL( poOpenInfo->pszFilename, "rb" );
-    else
-        poDS->fpImage = VSIFOpenL( poOpenInfo->pszFilename, "rb+" );
-
-    if( poDS->fpImage == NULL )
-    {
-        delete poDS;
-        return NULL;
-    }
+    poDS->fpImage = poOpenInfo->fpL;
+    poOpenInfo->fpL = nullptr;
 
 /* -------------------------------------------------------------------- */
 /*      Read the header.                                                */
@@ -271,7 +258,7 @@ GDALDataset *GTXDataset::Open( GDALOpenInfo * poOpenInfo )
     if (!GDALCheckDatasetDimensions(poDS->nRasterXSize, poDS->nRasterYSize))
     {
         delete poDS;
-        return NULL;
+        return nullptr;
     }
 
 /* -------------------------------------------------------------------- */
@@ -286,13 +273,18 @@ GDALDataset *GTXDataset::Open( GDALOpenInfo * poOpenInfo )
         poDS->nRasterYSize )
         eDT = GDT_Float64;
     const int nDTSize = GDALGetDataTypeSizeBytes(eDT);
+    if( poDS->nRasterXSize > INT_MAX / nDTSize )
+    {
+        delete poDS;
+        return nullptr;
+    }
 
 /* -------------------------------------------------------------------- */
 /*      Create band information object.                                 */
 /* -------------------------------------------------------------------- */
     GTXRasterBand *poBand = new GTXRasterBand(
         poDS, 1, poDS->fpImage,
-        (poDS->nRasterYSize-1) * poDS->nRasterXSize*nDTSize + 40,
+        static_cast<vsi_l_offset>(poDS->nRasterYSize-1) * poDS->nRasterXSize*nDTSize + 40,
         nDTSize, poDS->nRasterXSize * -nDTSize,
         eDT,
         !CPL_IS_LSB );
@@ -395,26 +387,26 @@ GDALDataset *GTXDataset::Create( const char * pszFilename,
         CPLError( CE_Failure, CPLE_AppDefined,
                   "Attempt to create gtx file with unsupported data type '%s'.",
                   GDALGetDataTypeName( eType ) );
-        return NULL;
+        return nullptr;
     }
 
     if( !EQUAL(CPLGetExtension(pszFilename),"gtx") )
     {
         CPLError( CE_Failure, CPLE_AppDefined,
                   "Attempt to create gtx file with extension other than gtx." );
-        return NULL;
+        return nullptr;
     }
 
 /* -------------------------------------------------------------------- */
 /*      Try to create the file.                                         */
 /* -------------------------------------------------------------------- */
     VSILFILE *fp = VSIFOpenL( pszFilename, "wb" );
-    if( fp == NULL )
+    if( fp == nullptr )
     {
         CPLError( CE_Failure, CPLE_OpenFailed,
                   "Attempt to create file `%s' failed.\n",
                   pszFilename );
-        return NULL;
+        return nullptr;
     }
 
 /* -------------------------------------------------------------------- */
@@ -460,7 +452,7 @@ GDALDataset *GTXDataset::Create( const char * pszFilename,
 void GDALRegister_GTX()
 
 {
-    if( GDALGetDriverByName( "GTX" ) != NULL )
+    if( GDALGetDriverByName( "GTX" ) != nullptr )
       return;
 
     GDALDriver *poDriver = new GDALDriver();

@@ -172,7 +172,7 @@ class PostGISRasterTileDataset;
  * PostGISRasterDriver: extends GDALDriver to support PostGIS Raster
  * connect.
  **********************************************************************/
-class PostGISRasterDriver : public GDALDriver {
+class PostGISRasterDriver final: public GDALDriver {
 
 private:
     CPLMutex* hMutex;
@@ -188,7 +188,7 @@ public:
  * PostGISRasterDataset: extends VRTDataset to support PostGIS Raster
  * datasets
  **********************************************************************/
-class PostGISRasterDataset : public VRTDataset {
+class PostGISRasterDataset final: public VRTDataset {
     friend class PostGISRasterRasterBand;
     friend class PostGISRasterTileRasterBand;
 private:
@@ -302,7 +302,7 @@ public:
  **********************************************************************/
 class PostGISRasterTileRasterBand;
 
-class PostGISRasterRasterBand : public VRTSourcedRasterBand {
+class PostGISRasterRasterBand final: public VRTSourcedRasterBand {
     friend class PostGISRasterDataset;
 protected:
     GBool bIsOffline;
@@ -328,7 +328,7 @@ public:
 
     virtual ~PostGISRasterRasterBand();
 
-    virtual double GetNoDataValue(int *pbSuccess = NULL) override;
+    virtual double GetNoDataValue(int *pbSuccess = nullptr) override;
     virtual CPLErr SetNoDataValue(double) override;
     virtual CPLErr IRasterIO(GDALRWFlag, int, int, int, int, void *,
                              int, int, GDALDataType,
@@ -351,7 +351,7 @@ public:
  **********************************************************************/
 class PostGISRasterTileRasterBand;
 
-class PostGISRasterTileDataset : public GDALDataset {
+class PostGISRasterTileDataset final: public GDALDataset {
     friend class PostGISRasterDataset;
     friend class PostGISRasterRasterBand;
     friend class PostGISRasterTileRasterBand;
@@ -366,7 +366,7 @@ public:
                              int nYSize);
     ~PostGISRasterTileDataset();
     CPLErr GetGeoTransform(double *) override;
-    void   GetExtent(double* pdfMinX, double* pdfMinY, double* pdfMaxX, double* pdfMaxY);
+    void   GetExtent(double* pdfMinX, double* pdfMinY, double* pdfMaxX, double* pdfMaxY) const;
     const char* GetPKID() const { return pszPKID; }
 };
 
@@ -374,7 +374,7 @@ public:
  * PostGISRasterTileRasterBand: it holds a raster tile band, that will
  * be used as a source for PostGISRasterRasterBand
  **********************************************************************/
-class PostGISRasterTileRasterBand : public GDALRasterBand {
+class PostGISRasterTileRasterBand final: public GDALRasterBand {
     friend class PostGISRasterRasterBand;
     friend class PostGISRasterDataset;
 private:

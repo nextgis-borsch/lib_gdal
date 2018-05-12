@@ -31,6 +31,7 @@
 #define NTF_H_INCLUDED
 
 #include "cpl_conv.h"
+#include "cpl_vsi.h"
 #include "ogrsf_frmts.h"
 
 /* -------------------------------------------------------------------- */
@@ -118,10 +119,10 @@ class NTFRecord
     int      nLength;
     char    *pszData;
 
-    static int      ReadPhysicalLine( FILE *fp, char *pszLine );
+    static int      ReadPhysicalLine( VSILFILE *fp, char *pszLine );
 
   public:
-    explicit  NTFRecord( FILE * );
+    explicit  NTFRecord( VSILFILE * );
              ~NTFRecord();
 
     int      GetType() { return nType; }
@@ -208,7 +209,7 @@ class NTFFileReader
     char             *pszFilename;
     OGRNTFDataSource *poDS;
 
-    FILE             *fp;
+    VSILFILE         *fp;
 
     // feature class list.
     int               nFCCount;
@@ -236,9 +237,9 @@ class NTFFileReader
     double            dfScale;
     double            dfPaperToGround;
 
-    long              nStartPos;
-    long              nPreSavedPos;
-    long              nPostSavedPos;
+    vsi_l_offset      nStartPos;
+    vsi_l_offset      nPreSavedPos;
+    vsi_l_offset      nPostSavedPos;
     NTFRecord        *poSavedRecord;
 
     long              nSavedFeatureId;
@@ -273,7 +274,7 @@ class NTFFileReader
 
     OGRNTFRasterLayer *poRasterLayer;
 
-    long             *panColumnOffset;
+    vsi_l_offset     *panColumnOffset;
 
     int               bCacheLines;
     int               nLineCacheSize;
@@ -285,16 +286,16 @@ class NTFFileReader
     explicit           NTFFileReader( OGRNTFDataSource * );
                       ~NTFFileReader();
 
-    int               Open( const char * pszFilename = NULL );
+    int               Open( const char * pszFilename = nullptr );
     void              Close();
-    FILE              *GetFP() { return fp; }
-    void              GetFPPos( long *pnPos, long * pnFeatureId);
-    int               SetFPPos( long nPos, long nFeatureId );
+    VSILFILE         *GetFP() { return fp; }
+    void              GetFPPos( vsi_l_offset *pnPos, long * pnFeatureId);
+    int               SetFPPos( vsi_l_offset nPos, long nFeatureId );
     void              Reset();
     void              SetBaseFID( long nFeatureId );
 
-    OGRGeometry      *ProcessGeometry( NTFRecord *, int * = NULL );
-    OGRGeometry      *ProcessGeometry3D( NTFRecord *, int * = NULL );
+    OGRGeometry      *ProcessGeometry( NTFRecord *, int * = nullptr );
+    OGRGeometry      *ProcessGeometry3D( NTFRecord *, int * = nullptr );
     static int               ProcessAttDesc( NTFRecord *, NTFAttDesc * );
     int               ProcessAttRec( NTFRecord *, int *, char ***, char ***);
     int               ProcessAttRecGroup( NTFRecord **, char ***, char ***);
@@ -313,7 +314,7 @@ class NTFFileReader
                                        const char **ppszCodeDesc );
 
     int               TestForLayer( OGRNTFLayer * );
-    OGRFeature       *ReadOGRFeature( OGRNTFLayer * = NULL );
+    OGRFeature       *ReadOGRFeature( OGRNTFLayer * = nullptr );
     NTFRecord       **ReadRecordGroup();
     NTFRecord        *ReadRecord();
     void              SaveRecord( NTFRecord * );
@@ -381,7 +382,7 @@ class OGRNTFLayer : public OGRLayer
     OGRNTFDataSource   *poDS;
 
     int                 iCurrentReader;
-    long                nCurrentPos;
+    vsi_l_offset        nCurrentPos;
     long                nCurrentFID;
 
   public:
@@ -463,7 +464,7 @@ class OGRNTFRasterLayer : public OGRLayer
     GIntBig             iCurrentFC;
 
     int                 nDEMSample;
-    int                 nFeatureCount;
+    GIntBig             nFeatureCount;
 
   public:
                         OGRNTFRasterLayer( OGRNTFDataSource * poDS,
@@ -502,7 +503,7 @@ class OGRNTFDataSource : public OGRDataSource
 
     int                 iCurrentFC;
     int                 iCurrentReader;
-    long                nCurrentPos;
+    vsi_l_offset        nCurrentPos;
     long                nCurrentFID;
 
     int                 nNTFFileCount;
@@ -528,7 +529,7 @@ class OGRNTFDataSource : public OGRDataSource
     const char         *GetOption( const char * );
 
     int                 Open( const char * pszName, int bTestOpen = FALSE,
-                              char ** papszFileList = NULL );
+                              char ** papszFileList = nullptr );
 
     const char          *GetName() override { return pszName; }
     int                 GetLayerCount() override;

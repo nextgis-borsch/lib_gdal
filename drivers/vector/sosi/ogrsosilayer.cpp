@@ -30,7 +30,7 @@
 #include "ogr_sosi.h"
 #include <map>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /************************************************************************/
 /*                           OGRSOSILayer()                             */
@@ -42,7 +42,7 @@ OGRSOSILayer::OGRSOSILayer( OGRSOSIDataSource *poPar, OGRFeatureDefn *poFeatDefn
     poFeatureDefn = poFeatDefn;
     poHeaderDefn  = poHeadDefn;
     nNextFID      = 0;
-    poNextSerial  = NULL;
+    poNextSerial  = nullptr;
 
     SetDescription( poFeatureDefn->GetName() );
     if( poFeatureDefn->GetGeomFieldCount() > 0 )
@@ -148,7 +148,7 @@ OGRFeature *OGRSOSILayer::GetNextFeature() {
             while (pszLine[0] == '.') pszLine++; /* skipping the dots at the beginning of a SOSI line */
             char *pszUTFLine = CPLRecode(pszLine, poParent->pszEncoding, CPL_ENC_UTF8); /* switch to UTF encoding here */
             char *pszPos = strstr(pszUTFLine, " ");
-            if (pszPos != NULL) {
+            if (pszPos != nullptr) {
                 osKey = CPLString(std::string(pszUTFLine,pszPos));
                 osValue = CPLString(pszPos+1);
                 oHeaders.insert(std::pair<CPLString,CPLString>(osKey,osValue));
@@ -157,7 +157,7 @@ OGRFeature *OGRSOSILayer::GetNextFeature() {
         }
 
         /* get Feature from fyba, according to feature definition */
-        OGRGeometry *poGeom = NULL;
+        OGRGeometry *poGeom = nullptr;
         OGRwkbGeometryType oGType = wkbUnknown;
 
         switch (nName) {
@@ -178,7 +178,7 @@ OGRFeature *OGRSOSILayer::GetNextFeature() {
             LC_InitGetRefFlate(&oGrfStat);
             nRefCount = LC_GetRefFlate(&oGrfStat, GRF_YTRE, &nRefNr, &nRefStatus, 1);
             while (nRefCount > 0) {
-                if (poParent->papoBuiltGeometries[nRefNr] == NULL) {
+                if (poParent->papoBuiltGeometries[nRefNr] == nullptr) {
                     // This should not happen under normal operation.
                     CPLError( CE_Warning, CPLE_AppDefined, "Feature %li referenced by %li, but it was not initialized. Geometry may be broken.", nRefNr, oNextSerial.lNr);
                     correct = false;
@@ -187,14 +187,14 @@ OGRFeature *OGRSOSILayer::GetNextFeature() {
                 }
                 OGRGeometry *geom = poParent->papoBuiltGeometries[nRefNr];
                 if (geom->getGeometryType() == wkbLineString) {
-                  OGRLineString *poCurve = (OGRLineString*)geom;
+                  OGRLineString *poCurve = geom->toLineString();
                   if (nRefStatus == LC_MED_DIG) {         /* clockwise */
                     poOuter->addSubLineString(poCurve);
                   } else if (nRefStatus == LC_MOT_DIG) {  /* counter-clockwise */
                       poOuter->addSubLineString(poCurve,poCurve->getNumPoints()-1,0);
                   } else {
                       CPLError( CE_Failure, CPLE_OpenFailed, "Internal error: GRF_*_OY encountered.");
-                      return NULL;
+                      return nullptr;
                   }
                 } else {
                     CPLError( CE_Warning, CPLE_AppDefined, "Element %li composed of non-linestrings (REF %li of type %i). Ignored.", oNextSerial.lNr, nRefNr, geom->getGeometryType());
@@ -207,7 +207,7 @@ OGRFeature *OGRSOSILayer::GetNextFeature() {
               poOuter->closeRings();
               poLy->addRingDirectly(poOuter);
 
-              OGRLinearRing *poInner = 0;
+              OGRLinearRing *poInner = nullptr;
               nRefCount = LC_GetRefFlate(&oGrfStat, GRF_INDRE, &nRefNr, &nRefStatus, 1);
               while (nRefCount > 0) {
                   if (nRefNr == -1) {
@@ -217,20 +217,20 @@ OGRFeature *OGRSOSILayer::GetNextFeature() {
                     }
                     poInner = new OGRLinearRing();  /* Initialize a new closed polygon */
                   } else {
-                    if (poParent->papoBuiltGeometries[nRefNr] == NULL) { /* this shouldn't happen under normal operation */
+                    if (poParent->papoBuiltGeometries[nRefNr] == nullptr) { /* this shouldn't happen under normal operation */
                         CPLError( CE_Fatal, CPLE_AppDefined, "Feature %li referenced by %li, but it was not initialized.", nRefNr, oNextSerial.lNr);
-                        return NULL;
+                        return nullptr;
                     }
                     OGRGeometry *geom = poParent->papoBuiltGeometries[nRefNr];
                     if (geom->getGeometryType() == wkbLineString) {
-                      OGRLineString *poCurve = (OGRLineString*)geom;
+                      OGRLineString *poCurve = geom->toLineString();
                       if (nRefStatus == LC_MED_DIG) {         /* clockwise */
                         poInner->addSubLineString(poCurve);
                       } else if (nRefStatus == LC_MOT_DIG) {  /* counter-clockwise */
                           poInner->addSubLineString(poCurve,poCurve->getNumPoints()-1,0);
                       } else {
                           CPLError( CE_Failure, CPLE_OpenFailed, "Internal error: GRF_*_OY encountered.");
-                          return NULL;
+                          return nullptr;
                       }
                     } else {
                         CPLError( CE_Warning, CPLE_AppDefined, "Element %li composed of non-linestrings (REF %li of type %i). Ignored.", oNextSerial.lNr, nRefNr, geom->getGeometryType());
@@ -247,22 +247,14 @@ OGRFeature *OGRSOSILayer::GetNextFeature() {
         case L_BUEP:  {  /* curve, interpolated from circular arc */
             oGType = wkbLineString;
 
-            OGRLineString *poCurve = (OGRLineString*)(poParent->papoBuiltGeometries[oNextSerial.lNr]);
-            if (poCurve == NULL) {
-                CPLError( CE_Fatal, CPLE_AppDefined, "Curve %li was not initialized.", oNextSerial.lNr);
-                return NULL;
-            }
+            OGRLineString *poCurve = poParent->papoBuiltGeometries[oNextSerial.lNr]->toLineString();
             poGeom = poCurve->clone();
             break;
         }
         case L_TEKST: {  /* text */
             oGType = wkbMultiPoint;
 
-            OGRMultiPoint *poMP = (OGRMultiPoint*)(poParent->papoBuiltGeometries[oNextSerial.lNr]);
-            if (poMP == NULL) {
-                CPLError( CE_Fatal, CPLE_AppDefined, "Tekst %li was not initialized.", oNextSerial.lNr);
-                return NULL;
-            }
+            OGRMultiPoint *poMP = poParent->papoBuiltGeometries[oNextSerial.lNr]->toMultiPoint();
             poGeom = poMP->clone();
             break;
         }
@@ -272,11 +264,7 @@ OGRFeature *OGRSOSILayer::GetNextFeature() {
         }
         case L_PUNKT: {  /* point */
             oGType = wkbPoint;
-            OGRPoint *poPoint = (OGRPoint*)(poParent->papoBuiltGeometries[oNextSerial.lNr]);
-            if (poPoint == NULL) {
-                CPLError( CE_Fatal, CPLE_AppDefined, "Point %li was not initialized.", oNextSerial.lNr);
-                return NULL;
-            }
+            OGRPoint *poPoint = poParent->papoBuiltGeometries[oNextSerial.lNr]->toPoint();
             poGeom = poPoint->clone();
             break;
         }
@@ -290,9 +278,9 @@ OGRFeature *OGRSOSILayer::GetNextFeature() {
         }
         }
 
-        if (poGeom == NULL) continue;                         /* skipping L_HODE and unrecognized groups */
+        if (poGeom == nullptr) continue;                         /* skipping L_HODE and unrecognized groups */
         if (oGType != poFeatureDefn->GetGeomType()) {
-            if (poGeom != NULL) delete poGeom;
+            if (poGeom != nullptr) delete poGeom;
             continue; /* skipping features that are not the correct geometry */
         }
 
@@ -307,7 +295,7 @@ OGRFeature *OGRSOSILayer::GetNextFeature() {
             char** tokens = CSLTokenizeString(iHeaders->second.c_str());
 
             for (int k=0; k<poType->getElementCount(); k++) {
-                if (tokens[k] == 0) break;
+                if (tokens[k] == nullptr) break;
 
                 if (strcmp(poElements[k].GetName(),"")==0) continue;
                 int iHNr = poHeaderDefn->find(poElements[k].GetName())->second;
@@ -357,19 +345,19 @@ OGRFeature *OGRSOSILayer::GetNextFeature() {
           CSLDestroy(tokens);
         }
 
-        if( poGeom != NULL )
+        if( poGeom != nullptr )
             poGeom->assignSpatialReference(poParent->poSRS);
 
         poFeature->SetGeometryDirectly( poGeom );
         poFeature->SetFID( nNextFID++ );
 
         /* Loop until we have a feature that matches the definition */
-        if ( (m_poFilterGeom == NULL || FilterGeometry( poFeature->GetGeometryRef() ) )
-                && (m_poAttrQuery == NULL || m_poAttrQuery->Evaluate( poFeature )) )
+        if ( (m_poFilterGeom == nullptr || FilterGeometry( poFeature->GetGeometryRef() ) )
+                && (m_poAttrQuery == nullptr || m_poAttrQuery->Evaluate( poFeature )) )
             return poFeature;
         delete poFeature;
     }
-    return NULL;
+    return nullptr;
 }
 
 /************************************************************************/

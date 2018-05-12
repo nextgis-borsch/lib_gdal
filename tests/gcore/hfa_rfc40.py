@@ -34,24 +34,26 @@ import sys
 from osgeo import gdal
 import numpy
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 
 INT_DATA = numpy.array([197, 83, 46, 29, 1, 78, 23, 90, 12, 45])
 DOUBLE_DATA = numpy.array([0.1, 43.2, 78.1, 9.9, 23.0, 0.92, 82.5, 0.0, 1.0, 99.0])
 STRING_DATA = numpy.array(["sddf", "wess", "grbgr", "dewd", "ddww", "qwsqw",
-                            "gbfgbf", "wwqw3", "e", ""])
+                           "gbfgbf", "wwqw3", "e", ""])
 STRING_DATA_INTS = numpy.array(["197", "83", "46", "29", "1", "78",
-                            "23", "90", "12", "45"])
+                                "23", "90", "12", "45"])
 STRING_DATA_DOUBLES = numpy.array(["0.1", "43.2", "78.1", "9.9", "23.0", "0.92",
-                            "82.5", "0.0", "1.0", "99.0"])
+                                   "82.5", "0.0", "1.0", "99.0"])
 LONG_STRING_DATA = numpy.array(["sdfsdfsdfs", "sdweddw", "sdewdweee", "3423dedd",
-                            "jkejjjdjd", "edcdcdcdc", "fcdkmk4m534m", "edwededdd",
-                            "dedwedew", "wdedefrfrfrf"])
+                                "jkejjjdjd", "edcdcdcdc", "fcdkmk4m534m", "edwededdd",
+                                "dedwedew", "wdedefrfrfrf"])
+
 
 class HFATestError(Exception):
     pass
+
 
 def CreateAndWriteRAT(fname):
     """
@@ -74,34 +76,33 @@ def CreateAndWriteRAT(fname):
     rat = band.GetDefaultRAT()
 
     # create some columns
-    if rat.CreateColumn("Ints", gdal.GFT_Integer, gdal.GFU_Generic ) != gdal.CE_None:
+    if rat.CreateColumn("Ints", gdal.GFT_Integer, gdal.GFU_Generic) != gdal.CE_None:
         raise HFATestError("Create column failed")
 
-    if rat.CreateColumn("Doubles", gdal.GFT_Real, gdal.GFU_Generic ) != gdal.CE_None:
+    if rat.CreateColumn("Doubles", gdal.GFT_Real, gdal.GFU_Generic) != gdal.CE_None:
         raise HFATestError("Create column failed")
 
-    if rat.CreateColumn("Strings", gdal.GFT_String, gdal.GFU_Generic ) != gdal.CE_None:
+    if rat.CreateColumn("Strings", gdal.GFT_String, gdal.GFU_Generic) != gdal.CE_None:
         raise HFATestError("Create column failed")
 
     # for writing as different type
-    if rat.CreateColumn("IntAsDouble", gdal.GFT_Integer, gdal.GFU_Generic ) != gdal.CE_None:
+    if rat.CreateColumn("IntAsDouble", gdal.GFT_Integer, gdal.GFU_Generic) != gdal.CE_None:
         raise HFATestError("Create column failed")
 
-    if rat.CreateColumn("IntsAsString", gdal.GFT_Integer, gdal.GFU_Generic ) != gdal.CE_None:
+    if rat.CreateColumn("IntsAsString", gdal.GFT_Integer, gdal.GFU_Generic) != gdal.CE_None:
         raise HFATestError("Create column failed")
 
-    if rat.CreateColumn("DoubleAsInt", gdal.GFT_Real, gdal.GFU_Generic ) != gdal.CE_None:
+    if rat.CreateColumn("DoubleAsInt", gdal.GFT_Real, gdal.GFU_Generic) != gdal.CE_None:
         raise HFATestError("Create column failed")
 
-    if rat.CreateColumn("DoubleAsString", gdal.GFT_Real, gdal.GFU_Generic ) != gdal.CE_None:
+    if rat.CreateColumn("DoubleAsString", gdal.GFT_Real, gdal.GFU_Generic) != gdal.CE_None:
         raise HFATestError("Create column failed")
 
-    if rat.CreateColumn("StringAsInt", gdal.GFT_String, gdal.GFU_Generic ) != gdal.CE_None:
+    if rat.CreateColumn("StringAsInt", gdal.GFT_String, gdal.GFU_Generic) != gdal.CE_None:
         raise HFATestError("Create column failed")
 
-    if rat.CreateColumn("StringAsDouble", gdal.GFT_String, gdal.GFU_Generic ) != gdal.CE_None:
+    if rat.CreateColumn("StringAsDouble", gdal.GFT_String, gdal.GFU_Generic) != gdal.CE_None:
         raise HFATestError("Create column failed")
-
 
     rat.SetRowCount(INT_DATA.size)
 
@@ -156,11 +157,12 @@ def CreateAndWriteRAT(fname):
     if rat.WriteArray(DOUBLE_DATA, 8) != gdal.CE_None:
         raise HFATestError("Failed to write doubles to string column")
 
-    #print('Succeeding writing data')
-    #ds.FlushCache()
+    # print('Succeeding writing data')
+    # ds.FlushCache()
     ds = None
 
     return 'success'
+
 
 def ReadAndCheckValues(fname, numrows):
     ds = gdal.Open(fname)
@@ -211,6 +213,7 @@ def ReadAndCheckValues(fname, numrows):
 
     return 'success'
 
+
 def CheckSetGetValues(fname):
     # check the 'legacy' get and set value calls
     ds = gdal.Open(fname, gdal.GA_Update)
@@ -247,11 +250,12 @@ def CheckSetGetValues(fname):
         rat.SetValueAsDouble(i, 1, DOUBLE_DATA[i])
         rat.SetValueAsString(i, 2, STRING_DATA[i])
 
-    #print("Get/SetValue OK")
-    #ds.FlushCache()
+    # print("Get/SetValue OK")
+    # ds.FlushCache()
     ds = None
 
     return 'success'
+
 
 def ExtendAndWrite(fname):
     # write more data to the end of the RAT - will extend it
@@ -273,11 +277,12 @@ def ExtendAndWrite(fname):
     if rat.WriteArray(STRING_DATA, 2, 10) != gdal.CE_None:
         raise HFATestError("Failed to write string column")
 
-    #print('extend ok')
-    #ds.FlushCache()
+    # print('extend ok')
+    # ds.FlushCache()
     ds = None
 
     return 'success'
+
 
 def CheckExtension(fname):
     ds = gdal.Open(fname)
@@ -296,10 +301,11 @@ def CheckExtension(fname):
     if not (data == STRING_DATA.astype(numpy.character)).all():
         raise HFATestError("String column does not match")
 
-    #print('extension data ok')
+    # print('extension data ok')
     ds = None
 
     return 'success'
+
 
 def WriteLongStrings(fname):
     # this will force the string column to be re-written to accommodate
@@ -308,14 +314,15 @@ def WriteLongStrings(fname):
     band = ds.GetRasterBand(1)
     rat = band.GetDefaultRAT()
 
-    if rat.WriteArray(LONG_STRING_DATA, 2, 10)!= gdal.CE_None:
+    if rat.WriteArray(LONG_STRING_DATA, 2, 10) != gdal.CE_None:
         raise HFATestError("Failed to write string column")
 
-    #print("wrote long strings ok")
-    #ds.FlushCache()
+    # print("wrote long strings ok")
+    # ds.FlushCache()
     ds = None
 
     return 'success'
+
 
 def CheckLongStrings(fname):
     ds = gdal.Open(fname)
@@ -326,10 +333,11 @@ def CheckLongStrings(fname):
     if not (data == LONG_STRING_DATA.astype(numpy.character)).all():
         raise HFATestError("String column does not match")
 
-    #print("checked long strings ok")
+    # print("checked long strings ok")
     ds = None
 
     return 'success'
+
 
 def SetLinearBinning(fname):
     ds = gdal.Open(fname, gdal.GA_Update)
@@ -339,11 +347,12 @@ def SetLinearBinning(fname):
     if rat.SetLinearBinning(0, 1) != gdal.CE_None:
         raise HFATestError("Error in SetLinearBinning")
 
-    #print("set linear binning ok")
-    #ds.FlushCache()
+    # print("set linear binning ok")
+    # ds.FlushCache()
     ds = None
 
     return 'success'
+
 
 def CheckLinearBinning(fname):
     ds = gdal.Open(fname)
@@ -360,10 +369,11 @@ def CheckLinearBinning(fname):
     if rat.GetRowOfValue(3) != 3:
         raise HFATestError("GetRowOfValue value wrong")
 
-    #print('linear binning ok')
+    # print('linear binning ok')
     ds = None
 
     return 'success'
+
 
 def CheckClone(fname):
     ds = gdal.Open(fname)
@@ -379,68 +389,95 @@ def CheckClone(fname):
     if cloned.GetValueAsString(1, 2) != "wess":
         raise HFATestError("Cloned info wrong string")
 
-    #print("cloned ok")
+    # print("cloned ok")
     ds = None
 
     return 'success'
 
 # basic tests
+
+
 def hfa_rfc40_1():
     return CreateAndWriteRAT("tmp/test.img")
+
 
 def hfa_rfc40_2():
     return ReadAndCheckValues("tmp/test.img", 10)
 
 # the older interface
+
+
 def hfa_rfc40_3():
     return CheckSetGetValues("tmp/test.img")
 
 # make sure original data not changed
+
+
 def hfa_rfc40_4():
     return ReadAndCheckValues("tmp/test.img", 10)
 
 # make it longer - data will be re-written
+
+
 def hfa_rfc40_5():
     return ExtendAndWrite("tmp/test.img")
 
 # make sure old data not changed
+
+
 def hfa_rfc40_6():
     return ReadAndCheckValues("tmp/test.img", 20)
 
 # new data at the end ok?
+
+
 def hfa_rfc40_7():
     return CheckExtension("tmp/test.img")
 
 # write some longer strings - string column will
 # have to be re-written
+
+
 def hfa_rfc40_8():
     return WriteLongStrings("tmp/test.img")
 
 # make sure old data not changed
+
+
 def hfa_rfc40_9():
     return ReadAndCheckValues("tmp/test.img", 20)
 
 # check new data ok
+
+
 def hfa_rfc40_10():
     return CheckLongStrings("tmp/test.img")
 
 # linear binning
+
+
 def hfa_rfc40_11():
     return SetLinearBinning("tmp/test.img")
 
 # linear binning
+
+
 def hfa_rfc40_12():
     return CheckLinearBinning("tmp/test.img")
 
 # clone
+
+
 def hfa_rfc40_13():
     return CheckClone("tmp/test.img")
 
 # serialize not available from Python...
 
+
 def hfa_rfc40_cleanup():
     gdal.GetDriverByName('HFA').Delete("tmp/test.img")
     return 'success'
+
 
 gdaltest_list = [
     hfa_rfc40_1,
@@ -461,9 +498,8 @@ gdaltest_list = [
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'hfa_rfc40' )
+    gdaltest.setup_run('hfa_rfc40')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

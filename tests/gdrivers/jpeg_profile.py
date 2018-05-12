@@ -34,7 +34,7 @@ import os
 import sys
 import base64
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 from osgeo import gdal
@@ -56,7 +56,7 @@ def jpeg_copy_icc():
     f.close()
 
     # Create dummy file
-    options = [ 'SOURCE_ICC_PROFILE=' + icc ]
+    options = ['SOURCE_ICC_PROFILE=' + icc]
 
     driver = gdal.GetDriverByName('JPEG')
     driver_tiff = gdal.GetDriverByName('GTiff')
@@ -90,6 +90,7 @@ def jpeg_copy_icc():
 ###############################################################################
 # Test writing and reading of ICC profile in CreateCopy() options
 
+
 def jpeg_copy_options_icc():
 
     f = open('data/sRGB.icc', 'rb')
@@ -98,14 +99,14 @@ def jpeg_copy_options_icc():
     f.close()
 
     # Create dummy file
-    options = [ 'SOURCE_ICC_PROFILE=' + icc ]
+    options = ['SOURCE_ICC_PROFILE=' + icc]
 
     driver = gdal.GetDriverByName('JPEG')
     driver_tiff = gdal.GetDriverByName('GTiff')
     ds = driver_tiff.Create('tmp/icc_test.tiff', 64, 64, 3, gdal.GDT_Byte)
 
     # Check with dataset from CreateCopy()
-    ds2 = driver.CreateCopy('tmp/icc_test.jpg', ds, options = options)
+    ds2 = driver.CreateCopy('tmp/icc_test.jpg', ds, options=options)
     md = ds2.GetMetadata("COLOR_PROFILE")
     ds = None
     ds2 = None
@@ -132,6 +133,7 @@ def jpeg_copy_options_icc():
 ###############################################################################
 # Test writing and reading of 64K+ ICC profile in CreateCopy()
 
+
 def jpeg_copy_icc_64K():
 
     # In JPEG, APP2 chunks can only be 64K, so they would be split up.
@@ -146,14 +148,14 @@ def jpeg_copy_icc_64K():
     f.close()
 
     # Create dummy file
-    options = [ 'SOURCE_ICC_PROFILE=' + icc ]
+    options = ['SOURCE_ICC_PROFILE=' + icc]
 
     driver = gdal.GetDriverByName('JPEG')
     driver_tiff = gdal.GetDriverByName('GTiff')
     ds = driver_tiff.Create('tmp/icc_test.tiff', 64, 64, 3, gdal.GDT_Byte, options)
 
     # Check with dataset from CreateCopy()
-    ds2 = driver.CreateCopy('tmp/icc_test.jpg', ds, options = ['COMMENT=foo'])
+    ds2 = driver.CreateCopy('tmp/icc_test.jpg', ds, options=['COMMENT=foo'])
     ds = None
     md = ds2.GetMetadata("COLOR_PROFILE")
     comment = ds2.GetMetadataItem('COMMENT')
@@ -163,7 +165,7 @@ def jpeg_copy_icc_64K():
         os.stat('tmp/icc_test.jpg.aux.xml')
         gdaltest.post_reason('fail')
         return 'fail'
-    except:
+    except OSError:
         pass
 
     if comment != 'foo':
@@ -183,7 +185,7 @@ def jpeg_copy_icc_64K():
         os.stat('tmp/icc_test.jpg.aux.xml')
         gdaltest.post_reason('fail')
         return 'fail'
-    except:
+    except OSError:
         pass
 
     if md['SOURCE_ICC_PROFILE'] != icc:
@@ -213,15 +215,15 @@ def jpeg_copy_icc_64K():
 
 ###############################################################################################
 
-gdaltest_list.append( (jpeg_copy_icc) )
-gdaltest_list.append( (jpeg_copy_options_icc) )
-gdaltest_list.append( (jpeg_copy_icc_64K) )
+
+gdaltest_list.append((jpeg_copy_icc))
+gdaltest_list.append((jpeg_copy_options_icc))
+gdaltest_list.append((jpeg_copy_icc_64K))
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'jpeg_profile' )
+    gdaltest.setup_run('jpeg_profile')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

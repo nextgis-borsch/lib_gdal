@@ -33,28 +33,30 @@
 import os
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
+from osgeo import gdal
 from osgeo import ogr
 
 ###############################################################################
 # Open file, check number of layers, get first layer,
 # check number of fields and features
 
+
 def ogr_vfk_1():
 
     try:
-       gdaltest.vfk_drv = ogr.GetDriverByName('VFK')
+        gdaltest.vfk_drv = ogr.GetDriverByName('VFK')
     except:
-       gdaltest.vfk_drv = None
+        gdaltest.vfk_drv = None
 
     if gdaltest.vfk_drv is None:
-       return 'skip'
+        return 'skip'
 
     try:
         os.remove('data/bylany.vfk.db')
-    except:
+    except OSError:
         pass
 
     gdaltest.vfk_ds = ogr.Open('data/bylany.vfk')
@@ -91,10 +93,11 @@ def ogr_vfk_1():
 ###############################################################################
 # Read the first feature from layer 'PAR', check envelope
 
+
 def ogr_vfk_2():
 
     if gdaltest.vfk_drv is None:
-       return 'skip'
+        return 'skip'
 
     gdaltest.vfk_layer_par.ResetReading()
 
@@ -122,10 +125,11 @@ def ogr_vfk_2():
 ###############################################################################
 # Read features from layer 'SOBR', test attribute query
 
+
 def ogr_vfk_3():
 
     if gdaltest.vfk_drv is None:
-       return 'skip'
+        return 'skip'
 
     gdaltest.vfk_layer_sobr = gdaltest.vfk_ds.GetLayer(43)
 
@@ -152,10 +156,11 @@ def ogr_vfk_3():
 ###############################################################################
 # Read features from layer 'SBP', test random access, check length
 
+
 def ogr_vfk_4():
 
     if gdaltest.vfk_drv is None:
-       return 'skip'
+        return 'skip'
 
     gdaltest.vfk_layer_sbp = gdaltest.vfk_ds.GetLayerByName('SBP')
 
@@ -164,7 +169,7 @@ def ogr_vfk_4():
         return 'fail'
 
     feat = gdaltest.vfk_layer_sbp.GetFeature(5)
-    length = int (feat.geometry().Length())
+    length = int(feat.geometry().Length())
 
     if length != 10:
         gdaltest.post_reason('did not get expected length, got %d' % length)
@@ -175,10 +180,11 @@ def ogr_vfk_4():
 ###############################################################################
 # Read features from layer 'HP', check geometry type
 
+
 def ogr_vfk_5():
 
     if gdaltest.vfk_drv is None:
-       return 'skip'
+        return 'skip'
 
     gdaltest.vfk_layer_hp = gdaltest.vfk_ds.GetLayerByName('HP')
 
@@ -197,10 +203,11 @@ def ogr_vfk_5():
 ###############################################################################
 # Re-Open file (test .db persistence)
 
+
 def ogr_vfk_6():
 
     if gdaltest.vfk_drv is None:
-       return 'skip'
+        return 'skip'
 
     gdaltest.vfk_layer_par = None
     gdaltest.vfk_layer_sobr = None
@@ -239,6 +246,7 @@ def ogr_vfk_6():
 ###############################################################################
 # Read PAR layer, check data types (Integer64 new in GDAL 2.2)
 
+
 def ogr_vfk_7():
 
     if gdaltest.vfk_drv is None:
@@ -260,10 +268,11 @@ def ogr_vfk_7():
 ###############################################################################
 # Open DB file as datasource (new in GDAL 2.2)
 
+
 def ogr_vfk_8():
 
     if gdaltest.vfk_drv is None:
-       return 'skip'
+        return 'skip'
 
     # open by SQLite driver first
     gdaltest.vfk_ds = None
@@ -279,32 +288,62 @@ def ogr_vfk_8():
     if count1 != count2:
         gdaltest.post_reason('layer count differs when opening DB by SQLite and VFK drivers')
         return 'fail'
-    
+
     del os.environ['OGR_VFK_DB_READ']
+
+    return 'success'
+
+###############################################################################
+# Open datasource with SUPPRESS_GEOMETRY open option (new in GDAL 2.3)
+
+
+def ogr_vfk_9():
+
+    if gdaltest.vfk_drv is None:
+        return 'skip'
+
+    # open with suppressing geometry
+    gdaltest.vfk_ds = None
+    gdaltest.vfk_ds = gdal.OpenEx('data/bylany.vfk', open_options=['SUPPRESS_GEOMETRY=YES'])
+
+    gdaltest.vfk_layer_par = gdaltest.vfk_ds.GetLayerByName('PAR')
+
+    if not gdaltest.vfk_layer_par != 'PAR':
+        gdaltest.post_reason('did not get expected layer name "PAR"')
+        return 'fail'
+
+    geom_type = gdaltest.vfk_layer_par.GetGeomType()
+
+    if geom_type != ogr.wkbNone:
+        gdaltest.post_reason('did not get expected geometry type, got %d' % geom_type)
+        return 'fail'
 
     return 'success'
 
 ###############################################################################
 # cleanup
 
+
 def ogr_vfk_cleanup():
 
     if gdaltest.vfk_drv is None:
-       return 'skip'
+        return 'skip'
 
     gdaltest.vfk_layer_par = None
+    gdaltest.vfk_layer_hp = None
     gdaltest.vfk_layer_sobr = None
     gdaltest.vfk_ds = None
 
     try:
         os.remove('data/bylany.db')
-    except:
+    except OSError:
         pass
 
     return 'success'
 
 ###############################################################################
 #
+
 
 gdaltest_list = [
     ogr_vfk_1,
@@ -315,7 +354,8 @@ gdaltest_list = [
     ogr_vfk_6,
     ogr_vfk_7,
     ogr_vfk_8,
-    ogr_vfk_cleanup ]
+    ogr_vfk_9,
+    ogr_vfk_cleanup]
 
 if __name__ == '__main__':
     gdaltest.setup_run('ogr_vfk')

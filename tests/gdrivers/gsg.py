@@ -30,62 +30,71 @@
 
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 
 ###############################################################################
 # Perform simple read tests.
 
+
 def gsg_1():
 
-    tst = gdaltest.GDALTest( 'gsbg', 'gsg_binary.grd', 1, 4672 )
-    return tst.testOpen( check_gt = (440720, 60, 0, 3751320, 0, -60) )
+    tst = gdaltest.GDALTest('gsbg', 'gsg_binary.grd', 1, 4672)
+    return tst.testOpen(check_gt=(440720, 60, 0, 3751320, 0, -60))
+
 
 def gsg_2():
 
-    tst = gdaltest.GDALTest( 'gsag', 'gsg_ascii.grd', 1, 4672 )
-    return tst.testOpen( check_gt = (440720, 60, 0, 3751320, 0, -60) )
+    tst = gdaltest.GDALTest('gsag', 'gsg_ascii.grd', 1, 4672)
+    return tst.testOpen(check_gt=(440720, 60, 0, 3751320, 0, -60))
+
 
 def gsg_3():
 
-    tst = gdaltest.GDALTest( 'gs7bg', 'gsg_7binary.grd', 1, 4672 )
-    return tst.testOpen( check_gt = (440720, 60, 0, 3751320, 0, -60) )
+    tst = gdaltest.GDALTest('gs7bg', 'gsg_7binary.grd', 1, 4672)
+    return tst.testOpen(check_gt=(440720, 60, 0, 3751320, 0, -60))
 
 ###############################################################################
 # Create simple copy and check.
 
+
 def gsg_4():
 
-    tst = gdaltest.GDALTest( 'gsbg', 'gsg_binary.grd', 1, 4672 )
+    tst = gdaltest.GDALTest('gsbg', 'gsg_binary.grd', 1, 4672)
 
-    return tst.testCreateCopy( check_gt = 1 )
+    return tst.testCreateCopy(check_gt=1)
+
 
 def gsg_5():
 
-    tst = gdaltest.GDALTest( 'gsag', 'gsg_ascii.grd', 1, 4672 )
+    tst = gdaltest.GDALTest('gsag', 'gsg_ascii.grd', 1, 4672)
 
-    return tst.testCreateCopy( check_gt = 1 )
+    return tst.testCreateCopy(check_gt=1)
+
 
 def gsg_6():
 
-    tst = gdaltest.GDALTest( 'gsbg', 'gsg_binary.grd', 1, 4672 )
+    tst = gdaltest.GDALTest('gsbg', 'gsg_binary.grd', 1, 4672)
 
-    return tst.testCreate( out_bands = 1 )
+    return tst.testCreate(out_bands=1)
+
 
 def gsg_7():
 
-    tst = gdaltest.GDALTest( 'gs7bg', 'gsg_7binary.grd', 1, 4672 )
+    tst = gdaltest.GDALTest('gs7bg', 'gsg_7binary.grd', 1, 4672)
 
-    return tst.testCreate( out_bands = 1 )
+    return tst.testCreate(out_bands=1)
+
 
 def gsg_8():
 
-    tst = gdaltest.GDALTest( 'gs7bg', 'gsg_7binary.grd', 1, 4672 )
+    tst = gdaltest.GDALTest('gs7bg', 'gsg_7binary.grd', 1, 4672)
 
-    return tst.testCreateCopy( check_gt = 1 )
+    return tst.testCreateCopy(check_gt=1)
 
 ###############################################################################
+
 
 gdaltest_list = [
     gsg_1,
@@ -101,9 +110,8 @@ gdaltest_list = [
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'gsg' )
+    gdaltest.setup_run('gsg')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#******************************************************************************
+# ******************************************************************************
 #
 #  Project:  GDAL
 #  Purpose:  Use HTDP to generate PROJ.4 compatible datum grid shift files.
@@ -8,7 +8,7 @@
 # See also: http://www.ngs.noaa.gov/TOOLS/Htdp/Htdp.shtml
 #           http://trac.osgeo.org/proj/wiki/HTDPGrids
 #
-#******************************************************************************
+# ******************************************************************************
 #  Copyright (c) 2012, Frank Warmerdam <warmerdam@pobox.com>
 #
 #  Permission is hereby granted, free of charge, to any person obtaining a
@@ -28,7 +28,7 @@
 #  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 #  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
-#******************************************************************************
+# ******************************************************************************
 
 import os
 import numpy
@@ -48,6 +48,7 @@ from osgeo import gdal_array
   Z                  4077985.572         4077985.735 m      0.72 mm/yr
 """
 
+
 def next_point(fd):
 
     line = fd.readline().strip()
@@ -63,32 +64,32 @@ def next_point(fd):
     line = fd.readline().strip()
     tokens = line.split()
 
-    lat_src = float(tokens[1]) + float(tokens[2])/60.0 + float(tokens[3])/3600.0
-    lat_dst = float(tokens[5]) + float(tokens[6])/60.0 + float(tokens[7])/3600.0
+    lat_src = float(tokens[1]) + float(tokens[2]) / 60.0 + float(tokens[3]) / 3600.0
+    lat_dst = float(tokens[5]) + float(tokens[6]) / 60.0 + float(tokens[7]) / 3600.0
 
     line = fd.readline().strip()
     tokens = line.split()
 
-    lon_src = float(tokens[1]) + float(tokens[2])/60.0 + float(tokens[3])/3600.0
-    lon_dst = float(tokens[5]) + float(tokens[6])/60.0 + float(tokens[7])/3600.0
+    lon_src = float(tokens[1]) + float(tokens[2]) / 60.0 + float(tokens[3]) / 3600.0
+    lon_dst = float(tokens[5]) + float(tokens[6]) / 60.0 + float(tokens[7]) / 3600.0
 
-    return (int(name_tokens[1]),int(name_tokens[2]),lat_src,lon_src,lat_dst,lon_dst)
+    return (int(name_tokens[1]), int(name_tokens[2]), lat_src, lon_src, lat_dst, lon_dst)
 
 
-def read_grid_crs_to_crs(filename,shape):
+def read_grid_crs_to_crs(filename, shape):
     fd = open(filename)
     grid = numpy.zeros(shape)
 
     # report the file header defining the transformation
     for i in range(5):
-      print(fd.readline().rstrip())
+        print(fd.readline().rstrip())
 
     points_found = 0
 
     ptuple = next_point(fd)
-    while ptuple != None:
-        grid[0,ptuple[1],ptuple[0]] = ptuple[4] - ptuple[2]
-        grid[1,ptuple[1],ptuple[0]] = ptuple[5] - ptuple[3]
+    while ptuple is not None:
+        grid[0, ptuple[1], ptuple[0]] = ptuple[4] - ptuple[2]
+        grid[1, ptuple[1], ptuple[0]] = ptuple[5] - ptuple[3]
         points_found = points_found + 1
         ptuple = next_point(fd)
 
@@ -103,7 +104,9 @@ def read_grid_crs_to_crs(filename,shape):
 # This function creates a regular grid of lat/long values with one
 # "band" for latitude, and one for longitude.
 #
-def new_create_grid( griddef ):
+
+
+def new_create_grid(griddef):
 
     lon_start = -1 * griddef[0]
     lon_end = -1 * griddef[2]
@@ -114,8 +117,8 @@ def new_create_grid( griddef ):
     lon_steps = griddef[4]
     lat_steps = griddef[5]
 
-    lat_axis = numpy.linspace(lat_start,lat_end,lat_steps)
-    lon_axis = numpy.linspace(lon_start,lon_end,lon_steps)
+    lat_axis = numpy.linspace(lat_start, lat_end, lat_steps)
+    lon_axis = numpy.linspace(lon_start, lon_end, lon_steps)
 
     lon_list = []
     for i in range(lat_steps):
@@ -129,36 +132,41 @@ def new_create_grid( griddef ):
 
     lat_band = numpy.column_stack(lat_list)
 
-    return numpy.array([lon_band,lat_band])
+    return numpy.array([lon_band, lat_band])
 
 ##############################################################################
 # This function writes a grid out in form suitable to use as input to the
 # htdp program.
-def write_grid(grid,out_filename):
-    fd_out = open(out_filename,'w')
+
+
+def write_grid(grid, out_filename):
+    fd_out = open(out_filename, 'w')
     for i in range(grid.shape[2]):
         for j in range(grid.shape[1]):
-            fd_out.write('%f %f 0 "PNT_%d_%d"\n' % (grid[1,j,i],grid[0,j,i],i,j))
+            fd_out.write('%f %f 0 "PNT_%d_%d"\n' % (grid[1, j, i], grid[0, j, i], i, j))
     fd_out.close()
 
 ##############################################################################
 # Write the resulting grid out in GeoTIFF format.
-def write_gdal_grid(filename, grid, griddef ):
 
-    ps_x = (griddef[2] - griddef[0]) / (griddef[4]-1)
-    ps_y = (griddef[3] - griddef[1]) / (griddef[5]-1)
-    geotransform = (griddef[0] - ps_x*0.5, ps_x, 0.0,
-                    griddef[1] - ps_y*0.5, 0.0, ps_y)
+
+def write_gdal_grid(filename, grid, griddef):
+
+    ps_x = (griddef[2] - griddef[0]) / (griddef[4] - 1)
+    ps_y = (griddef[3] - griddef[1]) / (griddef[5] - 1)
+    geotransform = (griddef[0] - ps_x * 0.5, ps_x, 0.0,
+                    griddef[1] - ps_y * 0.5, 0.0, ps_y)
 
     grid = grid.astype(numpy.float32)
-    ds = gdal_array.SaveArray( grid, filename, format='CTable2')
-    ds.SetGeoTransform( geotransform )
+    ds = gdal_array.SaveArray(grid, filename, format='CTable2')
+    ds.SetGeoTransform(geotransform)
 
 #############################################################################
 
-def write_control( control_fn, out_grid_fn, in_grid_fn,
-                   src_crs_id, src_crs_date,
-                   dst_crs_id, dst_crs_date ):
+
+def write_control(control_fn, out_grid_fn, in_grid_fn,
+                  src_crs_id, src_crs_date,
+                  dst_crs_id, dst_crs_date):
 
     # start_date, end_date should be something like "2011.0"
 
@@ -177,17 +185,19 @@ def write_control( control_fn, out_grid_fn, in_grid_fn,
 0
 """
 
-    control_filled = control_template % ( out_grid_fn,
-                                          src_crs_id,
-                                          dst_crs_id,
-                                          src_crs_date,
-                                          dst_crs_date,
-                                          in_grid_fn )
+    control_filled = control_template % (out_grid_fn,
+                                         src_crs_id,
+                                         dst_crs_id,
+                                         src_crs_date,
+                                         dst_crs_date,
+                                         in_grid_fn)
 
-    open(control_fn,'w').write(control_filled)
+    open(control_fn, 'w').write(control_filled)
 
 #############################################################################
-def Usage( brief = 1 ):
+
+
+def Usage(brief=1):
     print("""
 crs2crs2grid.py
         <src_crs_id> <src_crs_date> <dst_crs_id> <dst_crs_year>
@@ -241,13 +251,14 @@ CRS Ids
 #############################################################################
 # Main
 
+
 if __name__ == '__main__':
 
     # Default GDAL argument parsing.
 
-    argv = gdal.GeneralCmdLineProcessor( sys.argv )
+    argv = gdal.GeneralCmdLineProcessor(sys.argv)
     if argv is None:
-        sys.exit( 0 )
+        sys.exit(0)
 
     if len(argv) == 1:
         Usage(brief=0)
@@ -259,7 +270,7 @@ if __name__ == '__main__':
     dst_crs_date = None
 
     # Decent representation of continental US
-    griddef = (-127.0, 50.0, -66.0, 25.0, 611, 251 )
+    griddef = (-127.0, 50.0, -66.0, 25.0, 611, 251)
 
     htdp_path = 'htdp'
     wrkdir = '.'
@@ -269,30 +280,30 @@ if __name__ == '__main__':
     # Script argument parsing.
 
     i = 1
-    while  i < len(argv):
+    while i < len(argv):
 
-        if argv[i] == '-griddef' and i < len(argv)-6:
-            griddef = (float(argv[i+1]),
-                       float(argv[i+2]),
-                       float(argv[i+3]),
-                       float(argv[i+4]),
-                       float(argv[i+5]),
-                       float(argv[i+6]))
+        if argv[i] == '-griddef' and i < len(argv) - 6:
+            griddef = (float(argv[i + 1]),
+                       float(argv[i + 2]),
+                       float(argv[i + 3]),
+                       float(argv[i + 4]),
+                       float(argv[i + 5]),
+                       float(argv[i + 6]))
             i = i + 6
 
-        elif argv[i] == '-htdp' and i < len(argv)-1:
-            htdp_path = argv[i+1]
+        elif argv[i] == '-htdp' and i < len(argv) - 1:
+            htdp_path = argv[i + 1]
             i = i + 1
 
         elif argv[i] == '-kwf':
             kwf = 1
 
-        elif argv[i] == '-wrkdir' and i < len(argv)-1:
-            wrkdir = argv[i+1]
+        elif argv[i] == '-wrkdir' and i < len(argv) - 1:
+            wrkdir = argv[i + 1]
             i = i + 1
 
-        elif argv[i] == '-o' and i < len(argv)-1:
-            output_grid_name = argv[i+1]
+        elif argv[i] == '-o' and i < len(argv) - 1:
+            output_grid_name = argv[i + 1]
             i = i + 1
 
         elif argv[i] == '-h' or argv[i] == '--help':
@@ -339,7 +350,7 @@ if __name__ == '__main__':
 
     if float(src_crs_date) < 1700.0 or float(src_crs_date) > 2300.0 \
        or float(dst_crs_date) < 1700.0 or float(dst_crs_date) > 2300.0:
-        print('Source or destination CRS date seems odd %s and %s.' \
+        print('Source or destination CRS date seems odd %s and %s.'
               % (src_crs_date, dst_crs_date))
         Usage(brief=0)
 
@@ -350,38 +361,38 @@ if __name__ == '__main__':
     control_fn = wrkdir + '/crs2crs_control.txt'
 
     # Write out the source grid file.
-    grid = new_create_grid( griddef )
+    grid = new_create_grid(griddef)
 
-    write_grid( grid, in_grid_fn )
-    write_control( control_fn, out_grid_fn, in_grid_fn,
-                   src_crs_id, src_crs_date,
-                   dst_crs_id, dst_crs_date )
+    write_grid(grid, in_grid_fn)
+    write_control(control_fn, out_grid_fn, in_grid_fn,
+                  src_crs_id, src_crs_date,
+                  dst_crs_id, dst_crs_date)
 
     # Run htdp to transform the data.
     try:
-      os.unlink( out_grid_fn )
-    except:
-      pass
+        os.unlink(out_grid_fn)
+    except OSError:
+        pass
 
-    rc = os.system( htdp_path + ' < ' + control_fn )
+    rc = os.system(htdp_path + ' < ' + control_fn)
     if rc != 0:
-      print('htdp run failed!')
-      sys.exit(1)
+        print('htdp run failed!')
+        sys.exit(1)
 
     print('htdp run complete.')
 
-    adjustment = read_grid_crs_to_crs(out_grid_fn,grid.shape)
+    adjustment = read_grid_crs_to_crs(out_grid_fn, grid.shape)
 
     # Convert shifts to radians
     adjustment = adjustment * (3.14159265358979323846 / 180.0)
 
     # write to output output grid file.
-    write_gdal_grid( output_grid_name, adjustment, griddef )
+    write_gdal_grid(output_grid_name, adjustment, griddef)
 
     # cleanup working files unless they have been requested to remain.
     if kwf == 0:
-      os.unlink( in_grid_fn )
-      os.unlink( out_grid_fn )
-      os.unlink( control_fn )
+        os.unlink(in_grid_fn)
+        os.unlink(out_grid_fn)
+        os.unlink(control_fn)
 
     print('Processing complete: see ' + output_grid_name)

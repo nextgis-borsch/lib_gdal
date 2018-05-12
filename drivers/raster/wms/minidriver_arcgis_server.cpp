@@ -32,7 +32,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 WMSMiniDriver_AGS::WMSMiniDriver_AGS() {}
 
@@ -51,7 +51,7 @@ static double GetBBoxCoord(const GDALWMSImageRequestInfo &iri, char what)
 }
 
 char **WMSMiniDriver_AGS::GetMetadataDomainList(void) {
-    return CSLAddString(NULL, "LocationInfo");
+    return CSLAddString(nullptr, "LocationInfo");
 }
 
 CPLErr WMSMiniDriver_AGS::Initialize(CPLXMLNode *config, CPL_UNUSED char **papszOpenOptions)
@@ -77,14 +77,14 @@ CPLErr WMSMiniDriver_AGS::Initialize(CPLXMLNode *config, CPL_UNUSED char **papsz
 
     const char* irs = CPLGetXMLValue(config, "SRS", "102100");
 
-    if (irs != NULL)
+    if (irs != nullptr)
     {
         if (STARTS_WITH_CI(irs, "EPSG:")) //if we have EPSG code just convert it to WKT
         {
             m_projection_wkt = ProjToWKT(irs);
             m_irs = irs + 5;
         }
-        else //if we have AGS code - try if it's EPSG
+        else //if we have AGS code - try if it is EPSG
         {
             m_irs = irs;
             m_projection_wkt = ProjToWKT("EPSG:" + m_irs);

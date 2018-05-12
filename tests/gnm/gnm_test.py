@@ -34,7 +34,7 @@
 import os
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 import shutil
@@ -45,11 +45,12 @@ from osgeo import gnm
 ###############################################################################
 # Create file base network
 
+
 def gnm_filenetwork_create():
 
     try:
         shutil.rmtree('tmp/test_gnm')
-    except:
+    except OSError:
         pass
 
     ogrtest.drv = None
@@ -63,20 +64,20 @@ def gnm_filenetwork_create():
     if ogrtest.drv is None:
         return 'skip'
 
-    ds = ogrtest.drv.Create( 'tmp/', 0, 0, 0, gdal.GDT_Unknown, options = ['net_name=test_gnm', 'net_description=Test file based GNM', 'net_srs=EPSG:4326'] )
+    ds = ogrtest.drv.Create('tmp/', 0, 0, 0, gdal.GDT_Unknown, options=['net_name=test_gnm', 'net_description=Test file based GNM', 'net_srs=EPSG:4326'])
     # cast to GNM
     dn = gnm.CastToNetwork(ds)
     if dn is None:
         gdaltest.post_reason('fail')
         return 'fail'
     if dn.GetVersion() != 100:
-        gdaltest.post_reason( 'GNM: Check GNM version failed')
+        gdaltest.post_reason('GNM: Check GNM version failed')
         return 'fail'
     if dn.GetName() != 'test_gnm':
-        gdaltest.post_reason( 'GNM: Check GNM name failed')
+        gdaltest.post_reason('GNM: Check GNM name failed')
         return 'fail'
     if dn.GetDescription() != 'Test file based GNM':
-        gdaltest.post_reason( 'GNM: Check GNM description failed')
+        gdaltest.post_reason('GNM: Check GNM description failed')
         return 'fail'
 
     dn = None
@@ -86,25 +87,26 @@ def gnm_filenetwork_create():
 ###############################################################################
 # Open file base network
 
+
 def gnm_filenetwork_open():
 
     if not ogrtest.have_gnm:
         return 'skip'
 
-    ds = gdal.OpenEx( 'tmp/test_gnm' )
+    ds = gdal.OpenEx('tmp/test_gnm')
     # cast to GNM
     dn = gnm.CastToNetwork(ds)
     if dn is None:
         gdaltest.post_reason('fail')
         return 'fail'
     if dn.GetVersion() != 100:
-        gdaltest.post_reason( 'GNM: Check GNM version failed')
+        gdaltest.post_reason('GNM: Check GNM version failed')
         return 'fail'
     if dn.GetName() != 'test_gnm':
-        gdaltest.post_reason( 'GNM: Check GNM name failed')
+        gdaltest.post_reason('GNM: Check GNM name failed')
         return 'fail'
     if dn.GetDescription() != 'Test file based GNM':
-        gdaltest.post_reason( 'GNM: Check GNM description failed')
+        gdaltest.post_reason('GNM: Check GNM description failed')
         return 'fail'
 
     dn = None
@@ -113,14 +115,15 @@ def gnm_filenetwork_open():
 ###############################################################################
 # Import layers into file base network
 
+
 def gnm_import():
 
     if not ogrtest.have_gnm:
         return 'skip'
 
-    ds = gdal.OpenEx( 'tmp/test_gnm' )
+    ds = gdal.OpenEx('tmp/test_gnm')
 
-    #pipes
+    # pipes
     dspipes = gdal.OpenEx('data/pipes.shp', gdal.OF_VECTOR)
     lyrpipes = dspipes.GetLayerByIndex(0)
     new_lyr = ds.CopyLayer(lyrpipes, 'pipes')
@@ -130,7 +133,7 @@ def gnm_import():
     dspipes = None
     new_lyr = None
 
-    #wells
+    # wells
     dswells = gdal.OpenEx('data/wells.shp', gdal.OF_VECTOR)
     lyrwells = dswells.GetLayerByIndex(0)
     new_lyr = ds.CopyLayer(lyrwells, 'wells')
@@ -150,12 +153,13 @@ def gnm_import():
 ###############################################################################
 # autoconnect
 
+
 def gnm_autoconnect():
 
     if not ogrtest.have_gnm:
         return 'skip'
 
-    ds = gdal.OpenEx( 'tmp/test_gnm' )
+    ds = gdal.OpenEx('tmp/test_gnm')
     dgn = gnm.CastToGenericNetwork(ds)
     if dgn is None:
         gdaltest.post_reason('cast to GNMGenericNetwork failed')
@@ -172,12 +176,13 @@ def gnm_autoconnect():
 ###############################################################################
 # Dijkstra shortest path
 
+
 def gnm_graph_dijkstra():
 
     if not ogrtest.have_gnm:
         return 'skip'
 
-    ds = gdal.OpenEx( 'tmp/test_gnm' )
+    ds = gdal.OpenEx('tmp/test_gnm')
     dn = gnm.CastToNetwork(ds)
     if dn is None:
         gdaltest.post_reason('cast to GNMNetwork failed')
@@ -196,22 +201,25 @@ def gnm_graph_dijkstra():
     dn.ReleaseResultSet(lyr)
     dn = None
     return 'success'
+
+
 import ogrtest
 ###############################################################################
 # KShortest Paths
+
 
 def gnm_graph_kshortest():
 
     if not ogrtest.have_gnm:
         return 'skip'
 
-    ds = gdal.OpenEx( 'tmp/test_gnm' )
+    ds = gdal.OpenEx('tmp/test_gnm')
     dn = gnm.CastToNetwork(ds)
     if dn is None:
         gdaltest.post_reason('cast to GNMNetwork failed')
         return 'fail'
 
-    lyr = dn.GetPath(61, 50, gnm.GATKShortestPath, options = ['num_paths=3'])
+    lyr = dn.GetPath(61, 50, gnm.GATKShortestPath, options=['num_paths=3'])
     if lyr is None:
         gdaltest.post_reason('failed to get path')
         return 'fail'
@@ -228,12 +236,13 @@ def gnm_graph_kshortest():
 ###############################################################################
 # ConnectedComponents
 
+
 def gnm_graph_connectedcomponents():
 
     if not ogrtest.have_gnm:
         return 'skip'
 
-    ds = gdal.OpenEx( 'tmp/test_gnm' )
+    ds = gdal.OpenEx('tmp/test_gnm')
     dn = gnm.CastToNetwork(ds)
     if dn is None:
         gdaltest.post_reason('cast to GNMNetwork failed')
@@ -256,6 +265,7 @@ def gnm_graph_connectedcomponents():
 ###############################################################################
 # Network deleting
 
+
 def gnm_delete():
 
     if not ogrtest.have_gnm:
@@ -267,7 +277,7 @@ def gnm_delete():
         os.stat('tmp/test_gnm')
         gdaltest.post_reason('Expected delete tmp/test_gnm')
         return 'fail'
-    except:
+    except OSError:
         pass
 
     return 'success'
@@ -282,13 +292,12 @@ gdaltest_list = [
     gnm_graph_kshortest,
     gnm_graph_connectedcomponents,
     gnm_delete
-    ]
+]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'gnm_test' )
+    gdaltest.setup_run('gnm_test')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

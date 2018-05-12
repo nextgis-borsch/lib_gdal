@@ -28,7 +28,7 @@
 
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 from osgeo import ogr
@@ -36,12 +36,13 @@ from osgeo import ogr
 ###############################################################################
 # Open SXF datasource.
 
+
 def ogr_sxf_1():
 
     gdaltest.sxf_ds = None
     with gdaltest.error_handler():
         # Expect Warning 0 and Warning 6.
-        gdaltest.sxf_ds = ogr.Open( 'data/100_test.sxf' )
+        gdaltest.sxf_ds = ogr.Open('data/100_test.sxf')
 
     if gdaltest.sxf_ds is not None:
         return 'success'
@@ -69,6 +70,7 @@ def ogr_sxf_2():
 ###############################################################################
 #
 
+
 def ogr_sxf_cleanup():
 
     if gdaltest.sxf_ds is None:
@@ -78,15 +80,16 @@ def ogr_sxf_cleanup():
 
     return 'success'
 
+
 gdaltest_list = [
     ogr_sxf_1,
     ogr_sxf_2,
-    ogr_sxf_cleanup ]
+    ogr_sxf_cleanup]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'ogr_sxf' )
+    gdaltest.setup_run('ogr_sxf')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

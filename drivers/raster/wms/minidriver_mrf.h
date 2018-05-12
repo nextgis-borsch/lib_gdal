@@ -46,7 +46,7 @@ typedef size_t(*pread_t)(void *user_data, void *buff, size_t count, off_t offset
 class SectorCache {
 public:
     SectorCache(void *user_data,
-                pread_t fn = NULL,
+                pread_t fn = nullptr,
                 unsigned int size = 1024,
                 unsigned int count = 2);
 
@@ -74,14 +74,14 @@ private:
 
 // Size of an image, also used as a tile or pixel location
 struct ILSize {
-    ILSize():  x(0), y(0), z(0), c(0), l(0) {};
+    ILSize():  x(0), y(0), z(0), c(0), l(0) {}
     ILSize(GInt32 _x, GInt32 _y, GInt32 _z = 1, GInt32 _c = 1, GInt32 _l = -1) :
-        x(_x), y(_y), z(_z), c(_c), l(_l) {};
+        x(_x), y(_y), z(_z), c(_c), l(_l) {}
     GInt32 x, y, z, c;
     GIntBig l; // Dual use, sometimes it holds the number of pages
 };
 
-}; // namespace WMSMiniDriver_MRF
+} // namespace WMSMiniDriver_MRF
 
 class WMSMiniDriver_MRF : public WMSMiniDriver {
 public:
@@ -98,7 +98,7 @@ public:
     enum { tMRF, tBundle, tEND };
 
 private:
-    size_t GetIndexAddress(const GDALWMSTiledImageRequestInfo &tiri);
+    size_t GetIndexAddress(const GDALWMSTiledImageRequestInfo &tiri) const;
 
     // The path or URL for index
     CPLString m_idxname;

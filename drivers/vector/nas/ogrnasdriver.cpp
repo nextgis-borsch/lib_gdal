@@ -31,7 +31,7 @@
 #include "nasreaderp.h"
 #include "ogr_nas.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /************************************************************************/
 /*                     OGRNASDriverIdentify()                           */
@@ -40,7 +40,7 @@ CPL_CVSID("$Id$");
 static int OGRNASDriverIdentify( GDALOpenInfo* poOpenInfo )
 
 {
-    if( poOpenInfo->fpL == NULL )
+    if( poOpenInfo->fpL == nullptr )
         return FALSE;
 
 /* -------------------------------------------------------------------- */
@@ -71,20 +71,19 @@ static int OGRNASDriverIdentify( GDALOpenInfo* poOpenInfo )
         return FALSE;
     szPtr = (const char*)poOpenInfo->pabyHeader;
 
-    if( strstr(szPtr,"opengis.net/gml") == NULL )
+    if( strstr(szPtr,"opengis.net/gml") == nullptr )
         return FALSE;
 
     char **papszIndicators = CSLTokenizeStringComplex(
         CPLGetConfigOption(
             "NAS_INDICATOR",
-            "NAS-Operationen.xsd;NAS-Operationen_optional.xsd;"
-            "AAA-Fachschema.xsd" ),
+            "NAS-Operationen;AAA-Fachschema;aaa.xsd;aaa-suite" ),
         ";", 0, 0 );
 
     bool bFound = false;
     for( int i = 0; papszIndicators[i] && !bFound; i++ )
     {
-        bFound = strstr( szPtr, papszIndicators[i] ) != NULL;
+        bFound = strstr( szPtr, papszIndicators[i] ) != nullptr;
     }
 
     CSLDestroy( papszIndicators );
@@ -101,10 +100,10 @@ static GDALDataset *OGRNASDriverOpen( GDALOpenInfo* poOpenInfo )
 {
     if( poOpenInfo->eAccess == GA_Update ||
         !OGRNASDriverIdentify(poOpenInfo) )
-        return NULL;
+        return nullptr;
 
     VSIFCloseL(poOpenInfo->fpL);
-    poOpenInfo->fpL = NULL;
+    poOpenInfo->fpL = nullptr;
 
     OGRNASDataSource *poDS = new OGRNASDataSource();
 
@@ -112,7 +111,7 @@ static GDALDataset *OGRNASDriverOpen( GDALOpenInfo* poOpenInfo )
         || poDS->GetLayerCount() == 0 )
     {
         delete poDS;
-        return NULL;
+        return nullptr;
     }
 
     return poDS;
@@ -125,7 +124,7 @@ static GDALDataset *OGRNASDriverOpen( GDALOpenInfo* poOpenInfo )
 void RegisterOGRNAS()
 
 {
-    if( GDALGetDriverByName( "NAS" ) != NULL )
+    if( GDALGetDriverByName( "NAS" ) != nullptr )
         return;
 
     GDALDriver *poDriver = new GDALDriver();
@@ -135,6 +134,7 @@ void RegisterOGRNAS()
     poDriver->SetMetadataItem( GDAL_DMD_LONGNAME, "NAS - ALKIS" );
     poDriver->SetMetadataItem( GDAL_DMD_EXTENSION, "xml" );
     poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, "drv_nas.html" );
+    poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
 
     poDriver->pfnOpen = OGRNASDriverOpen;
     poDriver->pfnIdentify = OGRNASDriverIdentify;

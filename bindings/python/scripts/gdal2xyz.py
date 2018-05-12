@@ -39,16 +39,19 @@ except ImportError:
     import Numeric
 
 # =============================================================================
+
+
 def Usage():
     print('Usage: gdal2xyz.py [-skip factor] [-srcwin xoff yoff width height]')
     print('                   [-band b] [-csv] srcfile [dstfile]')
     print('')
-    sys.exit( 1 )
+    sys.exit(1)
 
 # =============================================================================
 #
 # Program mainline.
 #
+
 
 if __name__ == '__main__':
 
@@ -60,9 +63,9 @@ if __name__ == '__main__':
     delim = ' '
 
     gdal.AllRegister()
-    argv = gdal.GeneralCmdLineProcessor( sys.argv )
+    argv = gdal.GeneralCmdLineProcessor(sys.argv)
     if argv is None:
-        sys.exit( 0 )
+        sys.exit(0)
 
     # Parse command line arguments.
     i = 1
@@ -70,16 +73,16 @@ if __name__ == '__main__':
         arg = argv[i]
 
         if arg == '-srcwin':
-            srcwin = (int(argv[i+1]),int(argv[i+2]),
-                      int(argv[i+3]),int(argv[i+4]))
+            srcwin = (int(argv[i + 1]), int(argv[i + 2]),
+                      int(argv[i + 3]), int(argv[i + 4]))
             i = i + 4
 
         elif arg == '-skip':
-            skip = int(argv[i+1])
+            skip = int(argv[i + 1])
             i = i + 1
 
         elif arg == '-band':
-            band_nums.append( int(argv[i+1]) )
+            band_nums.append(int(argv[i + 1]))
             i = i + 1
 
         elif arg == '-csv':
@@ -102,30 +105,31 @@ if __name__ == '__main__':
     if srcfile is None:
         Usage()
 
-    if band_nums == []: band_nums = [1]
+    if band_nums == []:
+        band_nums = [1]
     # Open source file.
-    srcds = gdal.Open( srcfile )
+    srcds = gdal.Open(srcfile)
     if srcds is None:
         print('Could not open %s.' % srcfile)
-        sys.exit( 1 )
+        sys.exit(1)
 
     bands = []
     for band_num in band_nums:
         band = srcds.GetRasterBand(band_num)
         if band is None:
             print('Could not get band %d' % band_num)
-            sys.exit( 1 )
+            sys.exit(1)
         bands.append(band)
 
     gt = srcds.GetGeoTransform()
 
     # Collect information on all the source files.
     if srcwin is None:
-        srcwin = (0,0,srcds.RasterXSize,srcds.RasterYSize)
+        srcwin = (0, 0, srcds.RasterXSize, srcds.RasterYSize)
 
     # Open the output file.
     if dstfile is not None:
-        dst_fh = open(dstfile,'wt')
+        dst_fh = open(dstfile, 'wt')
     else:
         dst_fh = sys.stdout
 
@@ -145,21 +149,21 @@ if __name__ == '__main__':
 
     # Loop emitting data.
 
-    for y in range(srcwin[1],srcwin[1]+srcwin[3],skip):
+    for y in range(srcwin[1], srcwin[1] + srcwin[3], skip):
 
         data = []
         for band in bands:
 
-            band_data = band.ReadAsArray( srcwin[0], y, srcwin[2], 1 )
-            band_data = Numeric.reshape( band_data, (srcwin[2],) )
+            band_data = band.ReadAsArray(srcwin[0], y, srcwin[2], 1)
+            band_data = Numeric.reshape(band_data, (srcwin[2],))
             data.append(band_data)
 
-        for x_i in range(0,srcwin[2],skip):
+        for x_i in range(0, srcwin[2], skip):
 
             x = x_i + srcwin[0]
 
-            geo_x = gt[0] + (x+0.5) * gt[1] + (y+0.5) * gt[2]
-            geo_y = gt[3] + (x+0.5) * gt[4] + (y+0.5) * gt[5]
+            geo_x = gt[0] + (x + 0.5) * gt[1] + (y + 0.5) * gt[2]
+            geo_y = gt[3] + (x + 0.5) * gt[4] + (y + 0.5) * gt[5]
 
             x_i_data = []
             for i in range(len(bands)):
@@ -167,6 +171,6 @@ if __name__ == '__main__':
 
             band_str = band_format % tuple(x_i_data)
 
-            line = format % (float(geo_x),float(geo_y), band_str)
+            line = format % (float(geo_x), float(geo_y), band_str)
 
-            dst_fh.write( line )
+            dst_fh.write(line)

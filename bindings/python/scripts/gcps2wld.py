@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#******************************************************************************
+# ******************************************************************************
 #  $Id$
 #
 #  Name:     gcps2wld
@@ -8,7 +8,7 @@
 #            in world file format.
 #  Author:   Frank Warmerdam, warmerdam@pobox.com
 #
-#******************************************************************************
+# ******************************************************************************
 #  Copyright (c) 2002, Frank Warmerdam
 #  Copyright (c) 2009-2010, Even Rouault <even dot rouault at mines-paris dot org>
 #
@@ -29,7 +29,7 @@
 #  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 #  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
-#******************************************************************************
+# ******************************************************************************
 
 import sys
 
@@ -40,7 +40,7 @@ if len(sys.argv) < 2:
     sys.exit(1)
 
 filename = sys.argv[1]
-dataset = gdal.Open( filename )
+dataset = gdal.Open(filename)
 if dataset is None:
     print('Unable to open %s' % filename)
     sys.exit(1)
@@ -51,11 +51,11 @@ if gcps is None or len(gcps) == 0:
     print('No GCPs found on file ' + filename)
     sys.exit(1)
 
-geotransform = gdal.GCPsToGeoTransform( gcps )
+geotransform = gdal.GCPsToGeoTransform(gcps)
 
 if geotransform is None:
     print('Unable to extract a geotransform.')
-    sys.exit( 1 )
+    sys.exit(1)
 
 print(geotransform[1])
 print(geotransform[4])

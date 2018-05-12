@@ -33,7 +33,7 @@ import os
 import sys
 import uuid
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 import ogrtest
@@ -43,6 +43,7 @@ from osgeo import osr
 
 ###############################################################################
 # Test if driver is available
+
 
 def ogr_mongodb_init():
 
@@ -103,6 +104,7 @@ def ogr_mongodb_init():
 ###############################################################################
 # Test various open methods
 
+
 def ogr_mongodb_1():
     if ogrtest.mongodb_drv is None:
         return 'skip'
@@ -118,7 +120,7 @@ def ogr_mongodb_1():
     open_options += ['SSL_ALLOW_INVALID_HOSTNAMES=YES']
     open_options += ['FIPS_MODE=YES']
     gdal.PushErrorHandler()
-    ds = gdal.OpenEx('mongodb:', open_options = open_options)
+    ds = gdal.OpenEx('mongodb:', open_options=open_options)
     gdal.PopErrorHandler()
 
     # Might work or not depending on how the db is set up
@@ -144,7 +146,7 @@ def ogr_mongodb_1():
 
     # Connect to non existent host.
     gdal.PushErrorHandler()
-    ds = gdal.OpenEx('mongodb:', open_options = ['HOST=non_existing'] )
+    ds = gdal.OpenEx('mongodb:', open_options=['HOST=non_existing'])
     gdal.PopErrorHandler()
     if ds is not None:
         gdaltest.post_reason('fail')
@@ -152,79 +154,79 @@ def ogr_mongodb_1():
 
     # All arguments split up
     open_options = []
-    open_options += ['HOST=' + ogrtest.mongodb_test_host ]
-    open_options += ['PORT=' + str(ogrtest.mongodb_test_port) ]
-    open_options += ['DBNAME=' + ogrtest.mongodb_test_dbname ]
+    open_options += ['HOST=' + ogrtest.mongodb_test_host]
+    open_options += ['PORT=' + str(ogrtest.mongodb_test_port)]
+    open_options += ['DBNAME=' + ogrtest.mongodb_test_dbname]
     if ogrtest.mongodb_test_user is not None:
-        open_options += ['USER=' + ogrtest.mongodb_test_user ]
-        open_options += ['PASSWORD=' + ogrtest.mongodb_test_password ]
-    ds = gdal.OpenEx('mongodb:', open_options = open_options)
+        open_options += ['USER=' + ogrtest.mongodb_test_user]
+        open_options += ['PASSWORD=' + ogrtest.mongodb_test_password]
+    ds = gdal.OpenEx('mongodb:', open_options=open_options)
     if ds is None:
         gdaltest.post_reason('fail')
         return 'fail'
 
     # Without DBNAME
     open_options = []
-    open_options += ['HOST=' + ogrtest.mongodb_test_host ]
-    open_options += ['PORT=' + str(ogrtest.mongodb_test_port) ]
+    open_options += ['HOST=' + ogrtest.mongodb_test_host]
+    open_options += ['PORT=' + str(ogrtest.mongodb_test_port)]
     if ogrtest.mongodb_test_user is not None:
-        open_options += ['AUTH_DBNAME=' + ogrtest.mongodb_test_dbname ]
-        open_options += ['USER=' + ogrtest.mongodb_test_user ]
-        open_options += ['PASSWORD=' + ogrtest.mongodb_test_password ]
+        open_options += ['AUTH_DBNAME=' + ogrtest.mongodb_test_dbname]
+        open_options += ['USER=' + ogrtest.mongodb_test_user]
+        open_options += ['PASSWORD=' + ogrtest.mongodb_test_password]
     gdal.PushErrorHandler()
     # Will succeed only against server in single mode
-    ds = gdal.OpenEx('mongodb:', open_options = open_options)
+    ds = gdal.OpenEx('mongodb:', open_options=open_options)
     gdal.PopErrorHandler()
 
     # A few error cases with authentication
     if ogrtest.mongodb_test_user is not None:
         open_options = []
-        open_options += ['HOST=' + ogrtest.mongodb_test_host ]
-        open_options += ['PORT=' + str(ogrtest.mongodb_test_port) ]
-        open_options += ['DBNAME=' + ogrtest.mongodb_test_dbname ]
+        open_options += ['HOST=' + ogrtest.mongodb_test_host]
+        open_options += ['PORT=' + str(ogrtest.mongodb_test_port)]
+        open_options += ['DBNAME=' + ogrtest.mongodb_test_dbname]
         # Missing user and password
         gdal.PushErrorHandler()
-        ds = gdal.OpenEx('mongodb:', open_options = open_options)
+        ds = gdal.OpenEx('mongodb:', open_options=open_options)
         gdal.PopErrorHandler()
         if ds is not None:
             gdaltest.post_reason('fail')
             return 'fail'
 
         open_options = []
-        open_options += ['HOST=' + ogrtest.mongodb_test_host ]
-        open_options += ['PORT=' + str(ogrtest.mongodb_test_port) ]
-        open_options += ['DBNAME=' + ogrtest.mongodb_test_dbname ]
-        open_options += ['USER=' + ogrtest.mongodb_test_user ]
+        open_options += ['HOST=' + ogrtest.mongodb_test_host]
+        open_options += ['PORT=' + str(ogrtest.mongodb_test_port)]
+        open_options += ['DBNAME=' + ogrtest.mongodb_test_dbname]
+        open_options += ['USER=' + ogrtest.mongodb_test_user]
         # Missing password
         gdal.PushErrorHandler()
-        ds = gdal.OpenEx('mongodb:', open_options = open_options)
+        ds = gdal.OpenEx('mongodb:', open_options=open_options)
         gdal.PopErrorHandler()
         if ds is not None:
             gdaltest.post_reason('fail')
             return 'fail'
 
         open_options = []
-        open_options += ['HOST=' + ogrtest.mongodb_test_host ]
-        open_options += ['PORT=' + str(ogrtest.mongodb_test_port) ]
-        open_options += ['USER=' + ogrtest.mongodb_test_user ]
-        open_options += ['PASSWORD=' + ogrtest.mongodb_test_password ]
+        open_options += ['HOST=' + ogrtest.mongodb_test_host]
+        open_options += ['PORT=' + str(ogrtest.mongodb_test_port)]
+        open_options += ['USER=' + ogrtest.mongodb_test_user]
+        open_options += ['PASSWORD=' + ogrtest.mongodb_test_password]
         # Missing DBNAME
         gdal.PushErrorHandler()
-        ds = gdal.OpenEx('mongodb:', open_options = open_options)
+        ds = gdal.OpenEx('mongodb:', open_options=open_options)
         gdal.PopErrorHandler()
         if ds is not None:
             gdaltest.post_reason('fail')
             return 'fail'
 
         open_options = []
-        open_options += ['HOST=' + ogrtest.mongodb_test_host ]
-        open_options += ['PORT=' + str(ogrtest.mongodb_test_port) ]
-        open_options += ['DBNAME=' + ogrtest.mongodb_test_dbname ]
-        open_options += ['USER=' + ogrtest.mongodb_test_user ]
-        open_options += ['PASSWORD=' + ogrtest.mongodb_test_password + '_wrong' ]
+        open_options += ['HOST=' + ogrtest.mongodb_test_host]
+        open_options += ['PORT=' + str(ogrtest.mongodb_test_port)]
+        open_options += ['DBNAME=' + ogrtest.mongodb_test_dbname]
+        open_options += ['USER=' + ogrtest.mongodb_test_user]
+        open_options += ['PASSWORD=' + ogrtest.mongodb_test_password + '_wrong']
         # Wrong password
         gdal.PushErrorHandler()
-        ds = gdal.OpenEx('mongodb:', open_options = open_options)
+        ds = gdal.OpenEx('mongodb:', open_options=open_options)
         gdal.PopErrorHandler()
         if ds is not None:
             gdaltest.post_reason('fail')
@@ -233,11 +235,11 @@ def ogr_mongodb_1():
     # Test AUTH_JSON: invalid JSon
     gdal.PushErrorHandler()
     open_options = []
-    open_options += ['HOST=' + ogrtest.mongodb_test_host ]
-    open_options += ['PORT=' + str(ogrtest.mongodb_test_port) ]
-    open_options += ['DBNAME=' + ogrtest.mongodb_test_dbname ]
+    open_options += ['HOST=' + ogrtest.mongodb_test_host]
+    open_options += ['PORT=' + str(ogrtest.mongodb_test_port)]
+    open_options += ['DBNAME=' + ogrtest.mongodb_test_dbname]
     open_options += ['AUTH_JSON={']
-    ds = gdal.OpenEx('mongodb:', open_options = open_options)
+    ds = gdal.OpenEx('mongodb:', open_options=open_options)
     gdal.PopErrorHandler()
     if ds is not None:
         gdaltest.post_reason('fail')
@@ -246,11 +248,11 @@ def ogr_mongodb_1():
     # Test AUTH_JSON: missing mechanism
     gdal.PushErrorHandler()
     open_options = []
-    open_options += ['HOST=' + ogrtest.mongodb_test_host ]
-    open_options += ['PORT=' + str(ogrtest.mongodb_test_port) ]
-    open_options += ['DBNAME=' + ogrtest.mongodb_test_dbname ]
+    open_options += ['HOST=' + ogrtest.mongodb_test_host]
+    open_options += ['PORT=' + str(ogrtest.mongodb_test_port)]
+    open_options += ['DBNAME=' + ogrtest.mongodb_test_dbname]
     open_options += ['AUTH_JSON={}']
-    ds = gdal.OpenEx('mongodb:', open_options = open_options)
+    ds = gdal.OpenEx('mongodb:', open_options=open_options)
     gdal.PopErrorHandler()
     if ds is not None:
         gdaltest.post_reason('fail')
@@ -259,12 +261,12 @@ def ogr_mongodb_1():
     # Successful AUTH_JSON use
     if ogrtest.mongodb_test_user is not None:
         open_options = []
-        open_options += ['HOST=' + ogrtest.mongodb_test_host ]
-        open_options += ['PORT=' + str(ogrtest.mongodb_test_port) ]
-        open_options += ['DBNAME=' + ogrtest.mongodb_test_dbname ]
-        open_options += ['AUTH_JSON={ "mechanism" : "SCRAM-SHA-1", "db": "%s", "user": "%s", "pwd": "%s" }' % \
-            (ogrtest.mongodb_test_dbname, ogrtest.mongodb_test_user, ogrtest.mongodb_test_password)]
-        ds = gdal.OpenEx('mongodb:', open_options = open_options)
+        open_options += ['HOST=' + ogrtest.mongodb_test_host]
+        open_options += ['PORT=' + str(ogrtest.mongodb_test_port)]
+        open_options += ['DBNAME=' + ogrtest.mongodb_test_dbname]
+        open_options += ['AUTH_JSON={ "mechanism" : "SCRAM-SHA-1", "db": "%s", "user": "%s", "pwd": "%s" }' %
+                         (ogrtest.mongodb_test_dbname, ogrtest.mongodb_test_user, ogrtest.mongodb_test_password)]
+        ds = gdal.OpenEx('mongodb:', open_options=open_options)
         if ds is None:
             gdaltest.post_reason('fail')
             return 'fail'
@@ -274,11 +276,12 @@ def ogr_mongodb_1():
 ###############################################################################
 # Basic tests
 
+
 def ogr_mongodb_2():
     if ogrtest.mongodb_drv is None:
         return 'skip'
 
-    ogrtest.mongodb_ds = ogr.Open(ogrtest.mongodb_test_uri, update = 1)
+    ogrtest.mongodb_ds = ogr.Open(ogrtest.mongodb_test_uri, update=1)
     if ogrtest.mongodb_ds.GetLayerByName('not_existing') is not None:
         gdaltest.post_reason('fail')
         return 'fail'
@@ -299,8 +302,8 @@ def ogr_mongodb_2():
     a_uuid = str(uuid.uuid1()).replace('-', '_')
     ogrtest.mongodb_layer_name = 'test_' + a_uuid
     srs = osr.SpatialReference()
-    srs.ImportFromEPSG(4258) # ETRS 89 will reproject identically to EPSG:4326
-    lyr = ogrtest.mongodb_ds.CreateLayer(ogrtest.mongodb_layer_name, geom_type = ogr.wkbPolygon, srs = srs, options = ['GEOMETRY_NAME=location.mygeom', 'FID='])
+    srs.ImportFromEPSG(4258)  # ETRS 89 will reproject identically to EPSG:4326
+    lyr = ogrtest.mongodb_ds.CreateLayer(ogrtest.mongodb_layer_name, geom_type=ogr.wkbPolygon, srs=srs, options=['GEOMETRY_NAME=location.mygeom', 'FID='])
 
     gdal.PushErrorHandler()
     ret = lyr.CreateGeomField(ogr.GeomFieldDefn('location.mygeom', ogr.wkbPoint))
@@ -346,7 +349,7 @@ def ogr_mongodb_2():
     f['location.name'] = 'Paris'
     f['bool'] = 1
     f['int'] = 1
-    f['int64'] = 1234567890123456 # put a number larger than 1 << 40 so that fromjson() doesn't pick double
+    f['int64'] = 1234567890123456  # put a number larger than 1 << 40 so that fromjson() doesn't pick double
     f['real'] = 1.23
     f['dt'] = '1234/12/31 23:59:59.123+00'
     f.SetFieldBinaryFromHexString('binary', '00FF')
@@ -448,7 +451,7 @@ def ogr_mongodb_2():
 
     # Test geometry filter
     lyr.SetAttributeFilter(None)
-    lyr.SetSpatialFilterRect(2.1,49.1,2.9,49.9)
+    lyr.SetSpatialFilterRect(2.1, 49.1, 2.9, 49.9)
     lyr.ResetReading()
     f = lyr.GetNextFeature()
     if not f.Equal(f_ref):
@@ -456,7 +459,7 @@ def ogr_mongodb_2():
         f.DumpReadable()
         return 'fail'
 
-    lyr.SetSpatialFilterRect(1.1,49.1,1.9,49.9)
+    lyr.SetSpatialFilterRect(1.1, 49.1, 1.9, 49.9)
     lyr.ResetReading()
     f = lyr.GetNextFeature()
     if f is not None:
@@ -497,11 +500,11 @@ def ogr_mongodb_2():
 
     # MongoDB dialect of ExecuteSQL() with invalid JSON
     gdal.PushErrorHandler()
-    sql_lyr = ogrtest.mongodb_ds.ExecuteSQL('{', dialect = 'MongoDB')
+    sql_lyr = ogrtest.mongodb_ds.ExecuteSQL('{', dialect='MongoDB')
     gdal.PopErrorHandler()
 
     # MongoDB dialect of ExecuteSQL() with nonexistent command.
-    sql_lyr = ogrtest.mongodb_ds.ExecuteSQL('{ "foo": 1 }', dialect = 'MongoDB')
+    sql_lyr = ogrtest.mongodb_ds.ExecuteSQL('{ "foo": 1 }', dialect='MongoDB')
     if sql_lyr is None:
         gdaltest.post_reason('fail')
         return 'fail'
@@ -509,7 +512,7 @@ def ogr_mongodb_2():
 
     # MongoDB dialect of ExecuteSQL() with existing commnand
     sql_lyr = ogrtest.mongodb_ds.ExecuteSQL('{ "listCommands" : 1 }',
-                                            dialect = 'MongoDB')
+                                            dialect='MongoDB')
     if sql_lyr is None:
         gdaltest.post_reason('fail')
         return 'fail'
@@ -541,7 +544,7 @@ def ogr_mongodb_2():
         return 'fail'
 
     ogrtest.mongodb_ds = gdal.OpenEx(ogrtest.mongodb_test_uri, gdal.OF_UPDATE,
-        open_options = ['FEATURE_COUNT_TO_ESTABLISH_FEATURE_DEFN=-1', 'BULK_INSERT=NO', 'JSON_FIELD=TRUE'])
+                                     open_options=['FEATURE_COUNT_TO_ESTABLISH_FEATURE_DEFN=-1', 'BULK_INSERT=NO', 'JSON_FIELD=TRUE'])
 
     # Check after reopening
     lyr = ogrtest.mongodb_ds.GetLayerByName(ogrtest.mongodb_layer_name)
@@ -561,14 +564,14 @@ def ogr_mongodb_2():
             return 'fail'
     for i in range(f_ref.GetDefnRef().GetGeomFieldCount()):
         if not f.GetGeomFieldRef(i).Equals(f_ref.GetGeomFieldRef(i)) or \
-               f.GetGeomFieldDefnRef(i).GetName() != f_ref.GetGeomFieldDefnRef(i).GetName() or \
-               f.GetGeomFieldDefnRef(i).GetType() != f_ref.GetGeomFieldDefnRef(i).GetType():
+                f.GetGeomFieldDefnRef(i).GetName() != f_ref.GetGeomFieldDefnRef(i).GetName() or \
+                f.GetGeomFieldDefnRef(i).GetType() != f_ref.GetGeomFieldDefnRef(i).GetType():
             gdaltest.post_reason('fail')
             f.DumpReadable()
             f_ref.DumpReadable()
             return 'fail'
 
-    lyr.SetSpatialFilterRect(2.1,49.1,2.9,49.9)
+    lyr.SetSpatialFilterRect(2.1, 49.1, 2.9, 49.9)
     lyr.ResetReading()
     if f is None:
         gdaltest.post_reason('fail')
@@ -577,7 +580,7 @@ def ogr_mongodb_2():
 
     # Create a feature only from its _json content and do not store any ogr metadata related to the layer
     ogrtest.mongodb_layer_name_no_ogr_metadata = ogrtest.mongodb_layer_name + "_no_ogr_metadata"
-    lyr = ogrtest.mongodb_ds.CreateLayer(ogrtest.mongodb_layer_name_no_ogr_metadata, options = ['GEOMETRY_NAME=location.mygeom', 'FID=', 'WRITE_OGR_METADATA=NO'])
+    lyr = ogrtest.mongodb_ds.CreateLayer(ogrtest.mongodb_layer_name_no_ogr_metadata, options=['GEOMETRY_NAME=location.mygeom', 'FID=', 'WRITE_OGR_METADATA=NO'])
     f = ogr.Feature(lyr.GetLayerDefn())
     f['_json'] = json_field
     if lyr.CreateFeature(f) != 0:
@@ -585,7 +588,7 @@ def ogr_mongodb_2():
         return 'fail'
 
     ogrtest.mongodb_layer_name_guess_types = ogrtest.mongodb_layer_name + "_guess_types"
-    lyr = ogrtest.mongodb_ds.CreateLayer(ogrtest.mongodb_layer_name_guess_types, geom_type = ogr.wkbNone, options = ['FID=', 'WRITE_OGR_METADATA=NO'])
+    lyr = ogrtest.mongodb_ds.CreateLayer(ogrtest.mongodb_layer_name_guess_types, geom_type=ogr.wkbNone, options=['FID=', 'WRITE_OGR_METADATA=NO'])
     f = ogr.Feature(lyr.GetLayerDefn())
     f['_json'] = '{'
     f['_json'] += '"int": 2, '
@@ -682,7 +685,7 @@ def ogr_mongodb_2():
 
     ogrtest.mongodb_layer_name_with_2d_index = ogrtest.mongodb_layer_name + "_with_2d_index"
     gdal.SetConfigOption('OGR_MONGODB_SPAT_INDEX_TYPE', '2d')
-    lyr = ogrtest.mongodb_ds.CreateLayer(ogrtest.mongodb_layer_name_with_2d_index, geom_type = ogr.wkbPoint, options = ['FID=', 'WRITE_OGR_METADATA=NO'])
+    lyr = ogrtest.mongodb_ds.CreateLayer(ogrtest.mongodb_layer_name_with_2d_index, geom_type=ogr.wkbPoint, options=['FID=', 'WRITE_OGR_METADATA=NO'])
     gdal.SetConfigOption('OGR_MONGODB_SPAT_INDEX_TYPE', None)
     f = ogr.Feature(lyr.GetLayerDefn())
     f.SetGeometryDirectly(ogr.CreateGeometryFromWkt('POINT(2 49)'))
@@ -692,7 +695,7 @@ def ogr_mongodb_2():
 
     ogrtest.mongodb_layer_name_no_spatial_index = ogrtest.mongodb_layer_name + "_no_spatial_index"
     for i in range(2):
-        lyr = ogrtest.mongodb_ds.CreateLayer(ogrtest.mongodb_layer_name_no_spatial_index, options = ['SPATIAL_INDEX=NO', 'OVERWRITE=YES'])
+        lyr = ogrtest.mongodb_ds.CreateLayer(ogrtest.mongodb_layer_name_no_spatial_index, options=['SPATIAL_INDEX=NO', 'OVERWRITE=YES'])
         f = ogr.Feature(lyr.GetLayerDefn())
         f.SetGeometryDirectly(ogr.CreateGeometryFromWkt('POINT(2 49)'))
         if lyr.CreateFeature(f) != 0:
@@ -723,7 +726,7 @@ def ogr_mongodb_2():
     ogrtest.mongodb_ds = None
 
     # Reopen in read-only
-    ogrtest.mongodb_ds = gdal.OpenEx(ogrtest.mongodb_test_uri, 0, open_options = ['FEATURE_COUNT_TO_ESTABLISH_FEATURE_DEFN=2', 'JSON_FIELD=TRUE'])
+    ogrtest.mongodb_ds = gdal.OpenEx(ogrtest.mongodb_test_uri, 0, open_options=['FEATURE_COUNT_TO_ESTABLISH_FEATURE_DEFN=2', 'JSON_FIELD=TRUE'])
 
     lyr = ogrtest.mongodb_ds.GetLayerByName(ogrtest.mongodb_layer_name_no_ogr_metadata)
     if lyr.TestCapability(ogr.OLCFastSpatialFilter) != 0:
@@ -738,8 +741,8 @@ def ogr_mongodb_2():
         # Order might be a bit different...
         j = f.GetDefnRef().GetFieldIndex(f_ref.GetFieldDefnRef(i).GetNameRef())
         if f.GetField(j) != f_ref.GetField(i) or \
-        f.GetFieldDefnRef(j).GetType() != f_ref.GetFieldDefnRef(i).GetType() or \
-        f.GetFieldDefnRef(j).GetSubType() != f_ref.GetFieldDefnRef(i).GetSubType():
+            f.GetFieldDefnRef(j).GetType() != f_ref.GetFieldDefnRef(i).GetType() or \
+                f.GetFieldDefnRef(j).GetSubType() != f_ref.GetFieldDefnRef(i).GetSubType():
             gdaltest.post_reason('fail')
             f.DumpReadable()
             f_ref.DumpReadable()
@@ -748,8 +751,8 @@ def ogr_mongodb_2():
         # Order might be a bit different...
         j = f.GetDefnRef().GetGeomFieldIndex(f_ref.GetGeomFieldDefnRef(i).GetNameRef())
         if not f.GetGeomFieldRef(j).Equals(f_ref.GetGeomFieldRef(i)) or \
-            f.GetGeomFieldDefnRef(j).GetName() != f_ref.GetGeomFieldDefnRef(i).GetName() or \
-            f.GetGeomFieldDefnRef(j).GetType() != f_ref.GetGeomFieldDefnRef(i).GetType():
+                f.GetGeomFieldDefnRef(j).GetName() != f_ref.GetGeomFieldDefnRef(i).GetName() or \
+                f.GetGeomFieldDefnRef(j).GetType() != f_ref.GetGeomFieldDefnRef(i).GetType():
             gdaltest.post_reason('fail')
             f.DumpReadable()
             f_ref.DumpReadable()
@@ -757,7 +760,7 @@ def ogr_mongodb_2():
             print(f_ref.GetGeomFieldDefnRef(i).GetType())
             return 'fail'
 
-    lyr.SetSpatialFilterRect(2.1,49.1,2.9,49.9)
+    lyr.SetSpatialFilterRect(2.1, 49.1, 2.9, 49.9)
     lyr.ResetReading()
     if f is None:
         gdaltest.post_reason('fail')
@@ -767,38 +770,38 @@ def ogr_mongodb_2():
     lyr = ogrtest.mongodb_ds.GetLayerByName(ogrtest.mongodb_layer_name_guess_types)
 
     expected_fields = [
-  ("int", ogr.OFTInteger),
-  ("int64", ogr.OFTInteger64),
-  ("real", ogr.OFTReal),
-  ("intlist", ogr.OFTIntegerList),
-  ("reallist", ogr.OFTRealList),
-  ("int64list", ogr.OFTInteger64List),
-  ("int_str", ogr.OFTString),
-  ("str_int", ogr.OFTString),
-  ("int64_str", ogr.OFTString),
-  ("str_int64", ogr.OFTString),
-  ("int_int64", ogr.OFTInteger64),
-  ("int64_int", ogr.OFTInteger64),
-  ("int_real", ogr.OFTReal),
-  ("real_int", ogr.OFTReal),
-  ("int64_real", ogr.OFTReal),
-  ("real_int64", ogr.OFTReal),
-  ("real_str", ogr.OFTString),
-  ("str_real", ogr.OFTString),
-  ("int_bool", ogr.OFTInteger),
-  ("bool_int", ogr.OFTInteger),
-  ("intlist_strlist", ogr.OFTStringList),
-  ("strlist_intlist", ogr.OFTStringList),
-  ("intlist_int64list", ogr.OFTInteger64List),
-  ("int64list_intlist", ogr.OFTInteger64List),
-  ("intlist_reallist", ogr.OFTRealList),
-  ("reallist_intlist", ogr.OFTRealList),
-  ("int64list_reallist", ogr.OFTRealList),
-  ("reallist_int64list", ogr.OFTRealList),
-  ("intlist_boollist", ogr.OFTIntegerList),
-  ("boollist_intlist", ogr.OFTIntegerList),
-  ("mixedlist", ogr.OFTRealList),
-  ("mixedlist2", ogr.OFTStringList) ]
+        ("int", ogr.OFTInteger),
+        ("int64", ogr.OFTInteger64),
+        ("real", ogr.OFTReal),
+        ("intlist", ogr.OFTIntegerList),
+        ("reallist", ogr.OFTRealList),
+        ("int64list", ogr.OFTInteger64List),
+        ("int_str", ogr.OFTString),
+        ("str_int", ogr.OFTString),
+        ("int64_str", ogr.OFTString),
+        ("str_int64", ogr.OFTString),
+        ("int_int64", ogr.OFTInteger64),
+        ("int64_int", ogr.OFTInteger64),
+        ("int_real", ogr.OFTReal),
+        ("real_int", ogr.OFTReal),
+        ("int64_real", ogr.OFTReal),
+        ("real_int64", ogr.OFTReal),
+        ("real_str", ogr.OFTString),
+        ("str_real", ogr.OFTString),
+        ("int_bool", ogr.OFTInteger),
+        ("bool_int", ogr.OFTInteger),
+        ("intlist_strlist", ogr.OFTStringList),
+        ("strlist_intlist", ogr.OFTStringList),
+        ("intlist_int64list", ogr.OFTInteger64List),
+        ("int64list_intlist", ogr.OFTInteger64List),
+        ("intlist_reallist", ogr.OFTRealList),
+        ("reallist_intlist", ogr.OFTRealList),
+        ("int64list_reallist", ogr.OFTRealList),
+        ("reallist_int64list", ogr.OFTRealList),
+        ("intlist_boollist", ogr.OFTIntegerList),
+        ("boollist_intlist", ogr.OFTIntegerList),
+        ("mixedlist", ogr.OFTRealList),
+        ("mixedlist2", ogr.OFTStringList)]
     for (fieldname, fieldtype) in expected_fields:
         fld_defn = lyr.GetLayerDefn().GetFieldDefn(lyr.GetLayerDefn().GetFieldIndex(fieldname))
         if fld_defn.GetType() != fieldtype:
@@ -813,14 +816,14 @@ def ogr_mongodb_2():
     f = lyr.GetNextFeature()
     f = lyr.GetNextFeature()
     f = lyr.GetNextFeature()
-    if f['intlist'] != [1,1,-2147483648,2147483647,-2147483648,2147483647,-2147483648,2147483647,1,1] or \
-       f['int64list'] != [1,1234567890123456,1,-9223372036854775808,9223372036854775807,-9223372036854775808,9223372036854775807,1] or \
+    if f['intlist'] != [1, 1, -2147483648, 2147483647, -2147483648, 2147483647, -2147483648, 2147483647, 1, 1] or \
+       f['int64list'] != [1, 1234567890123456, 1, -9223372036854775808, 9223372036854775807, -9223372036854775808, 9223372036854775807, 1] or \
        f['int'] != -2147483648 or f['int64'] != -9223372036854775808 or f['real'] - 1 != f['real']:
         gdaltest.post_reason('fail')
         f.DumpReadable()
         return 'fail'
     f = lyr.GetNextFeature()
-    if f['int'] != 2147483647 or f['int64'] != 9223372036854775807 or f['real'] +1 != f['real']:
+    if f['int'] != 2147483647 or f['int64'] != 9223372036854775807 or f['real'] + 1 != f['real']:
         gdaltest.post_reason('fail')
         f.DumpReadable()
         return 'fail'
@@ -829,13 +832,13 @@ def ogr_mongodb_2():
     if lyr.TestCapability(ogr.OLCFastSpatialFilter) == 0:
         gdaltest.post_reason('fail')
         return 'fail'
-    lyr.SetSpatialFilterRect(1.9,48.9,2.1,49.1)
+    lyr.SetSpatialFilterRect(1.9, 48.9, 2.1, 49.1)
     lyr.ResetReading()
     f = lyr.GetNextFeature()
     if f is None:
         gdaltest.post_reason('fail')
         return 'fail'
-    lyr.SetSpatialFilterRect(1.9,48.9,1.95,48.95)
+    lyr.SetSpatialFilterRect(1.9, 48.9, 1.95, 48.95)
     lyr.ResetReading()
     f = lyr.GetNextFeature()
     if f is not None:
@@ -847,7 +850,7 @@ def ogr_mongodb_2():
         gdaltest.post_reason('fail')
         print(lyr.TestCapability(ogr.OLCFastSpatialFilter))
         return 'fail'
-    lyr.SetSpatialFilterRect(1.9,48.9,2.1,49.1)
+    lyr.SetSpatialFilterRect(1.9, 48.9, 2.1, 49.1)
     lyr.ResetReading()
     f = lyr.GetNextFeature()
     if f is None:
@@ -920,6 +923,7 @@ def ogr_mongodb_2():
 ###############################################################################
 # test_ogrsf
 
+
 def ogr_mongodb_3():
     if ogrtest.mongodb_drv is None:
         return 'skip'
@@ -938,6 +942,7 @@ def ogr_mongodb_3():
 ###############################################################################
 # Cleanup
 
+
 def ogr_mongodb_cleanup():
     if ogrtest.mongodb_drv is None:
         return 'skip'
@@ -945,7 +950,7 @@ def ogr_mongodb_cleanup():
     ogrtest.mongodb_ds = None
 
     # Reopen in read-write
-    ogrtest.mongodb_ds = ogr.Open(ogrtest.mongodb_test_uri, update = 1)
+    ogrtest.mongodb_ds = ogr.Open(ogrtest.mongodb_test_uri, update=1)
 
     if ogrtest.mongodb_layer_name is not None:
         ogrtest.mongodb_ds.ExecuteSQL('DELLAYER:' + ogrtest.mongodb_layer_name)
@@ -962,21 +967,22 @@ def ogr_mongodb_cleanup():
 
     return 'success'
 
+
 gdaltest_list = [
     ogr_mongodb_init,
     ogr_mongodb_1,
     ogr_mongodb_2,
     ogr_mongodb_3,
     ogr_mongodb_cleanup,
-    ]
+]
 
 if __name__ == '__main__':
 
     import locale
     locale.setlocale(locale.LC_ALL, '')
 
-    gdaltest.setup_run( 'ogr_mongodb' )
+    gdaltest.setup_run('ogr_mongodb')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

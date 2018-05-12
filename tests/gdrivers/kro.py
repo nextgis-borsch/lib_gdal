@@ -32,54 +32,59 @@
 import sys
 from osgeo import gdal
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 
 ###############################################################################
 # Create 3-band byte
 
+
 def kro_1():
 
-    tst = gdaltest.GDALTest( 'KRO', 'rgbsmall.tif', 2, 21053 )
+    tst = gdaltest.GDALTest('KRO', 'rgbsmall.tif', 2, 21053)
 
     return tst.testCreate()
 
 ###############################################################################
 # Create 1-band uint16
 
+
 def kro_2():
 
-    tst = gdaltest.GDALTest( 'KRO', '../../gcore/data/uint16.tif', 1, 4672 )
+    tst = gdaltest.GDALTest('KRO', '../../gcore/data/uint16.tif', 1, 4672)
 
     return tst.testCreate()
 
 ###############################################################################
 # Create 1-band float32
 
+
 def kro_3():
 
-    tst = gdaltest.GDALTest( 'KRO', '../../gcore/data/float32.tif', 1, 4672 )
+    tst = gdaltest.GDALTest('KRO', '../../gcore/data/float32.tif', 1, 4672)
 
     return tst.testCreate()
 
 ###############################################################################
 # Create 4-band rgba uint16
 
+
 def kro_4():
 
-    tst = gdaltest.GDALTest( 'KRO', 'rgba16.png', 1, 1886 )
+    tst = gdaltest.GDALTest('KRO', 'rgba16.png', 1, 1886)
 
     return tst.testCreate()
 
 ###############################################################################
 # Test optimized IO
 
+
 def kro_5():
 
     # Determine if the filesystem supports sparse files (we don't want to create a real 10 GB
     # file !
-    if (gdaltest.filesystem_supports_sparse_files('tmp') == False):
+    if not gdaltest.filesystem_supports_sparse_files('tmp'):
         return 'skip'
 
     ds = gdal.GetDriverByName('KRO').Create('tmp/kro_5.kro', 100000, 10000, 4)
@@ -93,20 +98,20 @@ def kro_5():
 
     return 'success'
 
+
 gdaltest_list = [
     kro_1,
     kro_2,
     kro_3,
     kro_4,
     kro_5,
-    ]
+]
 
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'KRO' )
+    gdaltest.setup_run('KRO')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

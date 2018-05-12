@@ -1,11 +1,11 @@
 #!/usr/bin/env python
-#******************************************************************************
+# ******************************************************************************
 #
 #  Project:  GDAL
 #  Purpose:  Example computing the magnitude and phase from a complex image.
 #  Author:   Frank Warmerdam, warmerdam@pobox.com
 #
-#******************************************************************************
+# ******************************************************************************
 #  Copyright (c) 2008, Frank Warmerdam <warmerdam@pobox.com>
 #
 #  Permission is hereby granted, free of charge, to any person obtaining a
@@ -25,13 +25,13 @@
 #  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 #  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
-#******************************************************************************
+# ******************************************************************************
 
-import gdal
+from osgeo import gdal
 import gdalnumeric
 try:
     import numpy
-except:
+except ImportError:
     import Numeric as numpy
 
 
@@ -40,12 +40,9 @@ xsize = src_ds.RasterXSize
 ysize = src_ds.RasterYSize
 
 src_image = src_ds.GetRasterBand(1).ReadAsArray()
-mag_image = pow(numpy.real(src_image)*numpy.real(src_image) \
-                + numpy.imag(src_image)*numpy.imag(src_image),0.5)
-gdalnumeric.SaveArray( mag_image, 'magnitude.tif' )
+mag_image = pow(numpy.real(src_image) * numpy.real(src_image) +
+                numpy.imag(src_image) * numpy.imag(src_image), 0.5)
+gdalnumeric.SaveArray(mag_image, 'magnitude.tif')
 
 phase_image = numpy.angle(src_image)
-gdalnumeric.SaveArray( phase_image, 'phase.tif' )
-
-
-
+gdalnumeric.SaveArray(phase_image, 'phase.tif')

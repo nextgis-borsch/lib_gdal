@@ -30,14 +30,14 @@
 #include "gdal_pam.h"
 #include "pcrasterdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 void GDALRegister_PCRaster()
 {
     if( !GDAL_CHECK_VERSION( "PCRaster driver" ) )
         return;
 
-    if( GDALGetDriverByName( "PCRaster" ) != NULL )
+    if( GDALGetDriverByName( "PCRaster" ) != nullptr )
         return;
 
     GDALDriver *poDriver = new GDALDriver();

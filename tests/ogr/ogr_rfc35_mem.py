@@ -30,7 +30,7 @@
 
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 from osgeo import ogr
@@ -38,6 +38,7 @@ from osgeo import gdal
 
 ###############################################################################
 # Initiate the test file
+
 
 def ogr_rfc35_mem_1():
 
@@ -85,21 +86,23 @@ def ogr_rfc35_mem_1():
 ###############################################################################
 # Test ReorderField()
 
+
 def Truncate(val, lyr_defn, fieldname):
-    #if val is None:
+    # if val is None:
     #    return val
 
-    #return val[0:lyr_defn.GetFieldDefn(lyr_defn.GetFieldIndex(fieldname)).GetWidth()]
+    # return val[0:lyr_defn.GetFieldDefn(lyr_defn.GetFieldIndex(fieldname)).GetWidth()]
     # Mem driver doesn't actually truncate
     return val
 
-def CheckFeatures(lyr, foo = 'foo5', bar = 'bar10', baz = 'baz15', baw = 'baw20'):
+
+def CheckFeatures(lyr, foo='foo5', bar='bar10', baz='baz15', baw='baw20'):
 
     expected_values = [
-        [ 'foo0', None, None, None ],
-        [ 'foo1', 'bar1', None, None ],
-        [ 'foo2', 'bar2_01234', 'baz2_0123456789', None ],
-        [ 'foo3', 'bar3_01234', 'baz3_0123456789', 'baw3_012345678901234' ]
+        ['foo0', None, None, None],
+        ['foo1', 'bar1', None, None],
+        ['foo2', 'bar2_01234', 'baz2_0123456789', None],
+        ['foo3', 'bar3_01234', 'baz3_0123456789', 'baw3_012345678901234']
     ]
 
     lyr_defn = lyr.GetLayerDefn()
@@ -112,12 +115,13 @@ def CheckFeatures(lyr, foo = 'foo5', bar = 'bar10', baz = 'baz15', baw = 'baw20'
            (bar is not None and feat.GetField(bar) != Truncate(expected_values[i][1], lyr_defn, bar)) or \
            (baz is not None and feat.GetField(baz) != Truncate(expected_values[i][2], lyr_defn, baz)) or \
            (baw is not None and feat.GetField(baw) != Truncate(expected_values[i][3], lyr_defn, baw)):
-               feat.DumpReadable()
-               return 'fail'
+            feat.DumpReadable()
+            return 'fail'
         feat = lyr.GetNextFeature()
         i = i + 1
 
     return 'success'
+
 
 def CheckColumnOrder(lyr, expected_order):
 
@@ -127,6 +131,7 @@ def CheckColumnOrder(lyr, expected_order):
             return 'fail'
 
     return 'success'
+
 
 def Check(lyr, expected_order):
 
@@ -139,6 +144,7 @@ def Check(lyr, expected_order):
         return ret
 
     return 'success'
+
 
 def ogr_rfc35_mem_2():
 
@@ -155,49 +161,49 @@ def ogr_rfc35_mem_2():
     lyr.CreateFeature(feat)
     feat = None
 
-    if lyr.ReorderField(1,3) != 0:
+    if lyr.ReorderField(1, 3) != 0:
         return 'fail'
     ret = Check(lyr, ['foo5', 'baz15', 'baw20', 'bar10'])
     if ret != 'success':
         return ret
 
-    lyr.ReorderField(3,1)
+    lyr.ReorderField(3, 1)
     ret = Check(lyr, ['foo5', 'bar10', 'baz15', 'baw20'])
     if ret != 'success':
         return ret
 
-    lyr.ReorderField(0,2)
+    lyr.ReorderField(0, 2)
     ret = Check(lyr, ['bar10', 'baz15', 'foo5', 'baw20'])
     if ret != 'success':
         return ret
 
-    lyr.ReorderField(2,0)
+    lyr.ReorderField(2, 0)
     ret = Check(lyr, ['foo5', 'bar10', 'baz15', 'baw20'])
     if ret != 'success':
         return ret
 
-    lyr.ReorderField(0,1)
+    lyr.ReorderField(0, 1)
     ret = Check(lyr, ['bar10', 'foo5', 'baz15', 'baw20'])
     if ret != 'success':
         return ret
 
-    lyr.ReorderField(1,0)
+    lyr.ReorderField(1, 0)
     ret = Check(lyr, ['foo5', 'bar10', 'baz15', 'baw20'])
     if ret != 'success':
         return ret
 
-    lyr.ReorderFields([3,2,1,0])
+    lyr.ReorderFields([3, 2, 1, 0])
     ret = Check(lyr, ['baw20', 'baz15', 'bar10', 'foo5'])
     if ret != 'success':
         return ret
 
-    lyr.ReorderFields([3,2,1,0])
+    lyr.ReorderFields([3, 2, 1, 0])
     ret = Check(lyr, ['foo5', 'bar10', 'baz15', 'baw20'])
     if ret != 'success':
         return ret
 
     gdal.PushErrorHandler('CPLQuietErrorHandler')
-    ret = lyr.ReorderFields([0,0,0,0])
+    ret = lyr.ReorderFields([0, 0, 0, 0])
     gdal.PopErrorHandler()
     if ret == 0:
         return 'fail'
@@ -206,6 +212,7 @@ def ogr_rfc35_mem_2():
 
 ###############################################################################
 # Test AlterFieldDefn() for change of name and width
+
 
 def ogr_rfc35_mem_3():
 
@@ -230,7 +237,7 @@ def ogr_rfc35_mem_3():
 
     lyr.AlterFieldDefn(lyr_defn.GetFieldIndex("baz15"), fd, ogr.ALTER_ALL_FLAG)
 
-    ret = CheckFeatures(lyr, baz = 'baz25')
+    ret = CheckFeatures(lyr, baz='baz25')
     if ret != 'success':
         return ret
 
@@ -240,7 +247,7 @@ def ogr_rfc35_mem_3():
     lyr_defn = lyr.GetLayerDefn()
     lyr.AlterFieldDefn(lyr_defn.GetFieldIndex("baz25"), fd, ogr.ALTER_ALL_FLAG)
 
-    ret = CheckFeatures(lyr, baz = 'baz5')
+    ret = CheckFeatures(lyr, baz='baz5')
     if ret != 'success':
         return ret
 
@@ -249,7 +256,7 @@ def ogr_rfc35_mem_3():
     if fld_defn.GetWidth() != 5:
         return 'fail'
 
-    ret = CheckFeatures(lyr, baz = 'baz5')
+    ret = CheckFeatures(lyr, baz='baz5')
     if ret != 'success':
         return ret
 
@@ -257,6 +264,7 @@ def ogr_rfc35_mem_3():
 
 ###############################################################################
 # Test AlterFieldDefn() for change of type
+
 
 def ogr_rfc35_mem_4():
 
@@ -286,7 +294,7 @@ def ogr_rfc35_mem_4():
         return 'fail'
     feat = None
 
-    ret = CheckFeatures(lyr, baz = 'baz5')
+    ret = CheckFeatures(lyr, baz='baz5')
     if ret != 'success':
         return ret
 
@@ -299,7 +307,7 @@ def ogr_rfc35_mem_4():
         return 'fail'
     feat = None
 
-    ret = CheckFeatures(lyr, baz = 'baz5')
+    ret = CheckFeatures(lyr, baz='baz5')
     if ret != 'success':
         return ret
 
@@ -308,12 +316,12 @@ def ogr_rfc35_mem_4():
 
     lyr.ResetReading()
     feat = lyr.GetNextFeature()
-    #if feat.GetField("intfield") != 1234:
+    # if feat.GetField("intfield") != 1234:
     if feat.GetField("intfield") != 12345:
         return 'fail'
     feat = None
 
-    ret = CheckFeatures(lyr, baz = 'baz5')
+    ret = CheckFeatures(lyr, baz='baz5')
     if ret != 'success':
         return ret
 
@@ -323,12 +331,12 @@ def ogr_rfc35_mem_4():
 
     lyr.ResetReading()
     feat = lyr.GetNextFeature()
-    #if feat.GetField("oldintfld") != '1234':
+    # if feat.GetField("oldintfld") != '1234':
     if feat.GetField("oldintfld") != '12345':
         return 'fail'
     feat = None
 
-    ret = CheckFeatures(lyr, baz = 'baz5')
+    ret = CheckFeatures(lyr, baz='baz5')
     if ret != 'success':
         return ret
 
@@ -359,7 +367,7 @@ def ogr_rfc35_mem_4():
         return 'fail'
     feat = None
 
-    ret = CheckFeatures(lyr, baz = 'baz5')
+    ret = CheckFeatures(lyr, baz='baz5')
     if ret != 'success':
         return ret
 
@@ -367,6 +375,7 @@ def ogr_rfc35_mem_4():
 
 ###############################################################################
 # Test DeleteField()
+
 
 def ogr_rfc35_mem_5():
 
@@ -391,21 +400,21 @@ def ogr_rfc35_mem_5():
     if lyr.DeleteField(0) != 0:
         return 'fail'
 
-    ret = CheckFeatures(lyr, baz = 'baz5')
+    ret = CheckFeatures(lyr, baz='baz5')
     if ret != 'success':
         return ret
 
     if lyr.DeleteField(lyr_defn.GetFieldIndex('baw20')) != 0:
         return 'fail'
 
-    ret = CheckFeatures(lyr, baz = 'baz5', baw = None)
+    ret = CheckFeatures(lyr, baz='baz5', baw=None)
     if ret != 'success':
         return ret
 
     if lyr.DeleteField(lyr_defn.GetFieldIndex('baz5')) != 0:
         return 'fail'
 
-    ret = CheckFeatures(lyr, baz = None, baw = None)
+    ret = CheckFeatures(lyr, baz=None, baw=None)
     if ret != 'success':
         return ret
 
@@ -415,7 +424,7 @@ def ogr_rfc35_mem_5():
     if lyr.DeleteField(lyr_defn.GetFieldIndex('bar10')) != 0:
         return 'fail'
 
-    ret = CheckFeatures(lyr, foo = None, bar = None, baz = None, baw = None)
+    ret = CheckFeatures(lyr, foo=None, bar=None, baz=None, baw=None)
     if ret != 'success':
         return ret
 
@@ -424,11 +433,13 @@ def ogr_rfc35_mem_5():
 ###############################################################################
 # Initiate the test file
 
+
 def ogr_rfc35_mem_cleanup():
 
     gdaltest.rfc35_mem_ds = None
 
     return 'success'
+
 
 gdaltest_list = [
     ogr_rfc35_mem_1,
@@ -436,13 +447,13 @@ gdaltest_list = [
     ogr_rfc35_mem_3,
     ogr_rfc35_mem_4,
     ogr_rfc35_mem_5,
-    ogr_rfc35_mem_cleanup ]
+    ogr_rfc35_mem_cleanup]
 
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'ogr_rfc35_mem' )
+    gdaltest.setup_run('ogr_rfc35_mem')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

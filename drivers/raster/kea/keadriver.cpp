@@ -30,7 +30,7 @@
 #include "gdal_frmts.h"
 #include "keadataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 // method to register this driver
 void GDALRegister_KEA()
@@ -38,7 +38,7 @@ void GDALRegister_KEA()
     if( !GDAL_CHECK_VERSION( "KEA" ) )
         return;
 
-    if( GDALGetDriverByName( "KEA" ) != NULL )
+    if( GDALGetDriverByName( "KEA" ) != nullptr )
       return;
 
     GDALDriver *poDriver = new GDALDriver();

@@ -37,6 +37,7 @@ import sys
 ###############################################################
 # Usage()
 
+
 def Usage():
     print('ogr_dispatch.py [-f format] -src name -dst name [-field field]+')
     print('                [-25D_as_2D] [-multi_as_single]')
@@ -74,16 +75,19 @@ def Usage():
 
 ###############################################################################
 
+
 def EQUAL(a, b):
     return a.lower() == b.lower()
 
 ###############################################################
 # wkbFlatten()
 
+
 def wkbFlatten(x):
     return x & (~ogr.wkb25DBit)
 
 ###############################################################
+
 
 class Options:
     def __init__(self):
@@ -101,6 +105,7 @@ class Options:
 
 ###############################################################
 # GeometryTypeToName()
+
 
 def GeometryTypeToName(eGeomType, options):
 
@@ -154,6 +159,7 @@ def GeometryTypeToName(eGeomType, options):
 ###############################################################
 # get_out_lyr_name()
 
+
 def get_out_lyr_name(src_lyr, feat, options):
     if options.bPrefixWithLayerName:
         out_lyr_name = src_lyr.GetName()
@@ -183,6 +189,7 @@ def get_out_lyr_name(src_lyr, feat, options):
 ###############################################################
 # get_layer_and_map()
 
+
 def get_layer_and_map(out_lyr_name, src_lyr, dst_ds, layerMap, geom_type, options):
 
     if out_lyr_name not in layerMap:
@@ -194,12 +201,12 @@ def get_layer_and_map(out_lyr_name, src_lyr, dst_ds, layerMap, geom_type, option
         if out_lyr is None:
             if not options.bQuiet:
                 print('Creating layer %s' % out_lyr_name)
-            out_lyr = dst_ds.CreateLayer(out_lyr_name, srs = srs, \
-                                geom_type = geom_type, options = options.lco)
+            out_lyr = dst_ds.CreateLayer(out_lyr_name, srs=srs,
+                                         geom_type=geom_type, options=options.lco)
             if out_lyr is None:
                 return 1
             src_field_count = src_lyr.GetLayerDefn().GetFieldCount()
-            panMap = [ -1 for i in range(src_field_count) ]
+            panMap = [-1 for i in range(src_field_count)]
             for i in range(src_field_count):
                 field_defn = src_lyr.GetLayerDefn().GetFieldDefn(i)
                 if options.bRemoveDispatchFields:
@@ -229,6 +236,7 @@ def get_layer_and_map(out_lyr_name, src_lyr, dst_ds, layerMap, geom_type, option
 ###############################################################
 # convert_layer()
 
+
 def convert_layer(src_lyr, dst_ds, layerMap, options):
 
     current_out_lyr = None
@@ -244,7 +252,7 @@ def convert_layer(src_lyr, dst_ds, layerMap, options):
         else:
             geom_type = ogr.wkbUnknown
 
-        (out_lyr, panMap) = get_layer_and_map(out_lyr_name, src_lyr, dst_ds, \
+        (out_lyr, panMap) = get_layer_and_map(out_lyr_name, src_lyr, dst_ds,
                                               layerMap, geom_type, options)
 
         if options.nGroupTransactions > 0:
@@ -263,7 +271,7 @@ def convert_layer(src_lyr, dst_ds, layerMap, options):
 
         out_feat = ogr.Feature(out_lyr.GetLayerDefn())
         if panMap is not None:
-            out_feat.SetFromWithMap( feat, 1, panMap )
+            out_feat.SetFromWithMap(feat, 1, panMap)
         else:
             out_feat.SetFrom(feat)
         if options.bStyleAsField:
@@ -282,7 +290,8 @@ def convert_layer(src_lyr, dst_ds, layerMap, options):
 ###############################################################
 # ogr_dispatch()
 
-def ogr_dispatch(argv, progress = None, progress_arg = None):
+
+def ogr_dispatch(argv, progress=None, progress_arg=None):
 
     src_filename = None
     dst_filename = None
@@ -298,17 +307,17 @@ def ogr_dispatch(argv, progress = None, progress_arg = None):
     i = 0
     while i < len(argv):
         arg = argv[i]
-        if EQUAL(arg, '-src') and i+1 < len(argv):
+        if EQUAL(arg, '-src') and i + 1 < len(argv):
             i = i + 1
             src_filename = argv[i]
-        elif EQUAL(arg, '-dst') and i+1 < len(argv):
+        elif EQUAL(arg, '-dst') and i + 1 < len(argv):
             i = i + 1
             dst_filename = argv[i]
-        elif EQUAL(arg, '-f') and i+1 < len(argv):
+        elif EQUAL(arg, '-f') and i + 1 < len(argv):
             i = i + 1
             format = argv[i]
 
-        elif EQUAL(arg,'-a_srs') and i+1 < len(argv):
+        elif EQUAL(arg, '-a_srs') and i + 1 < len(argv):
             i = i + 1
             pszOutputSRSDef = argv[i]
             if EQUAL(pszOutputSRSDef, "NULL") or \
@@ -316,16 +325,16 @@ def ogr_dispatch(argv, progress = None, progress_arg = None):
                 options.bNullifyOutputSRS = True
             else:
                 options.poOutputSRS = osr.SpatialReference()
-                if options.poOutputSRS.SetFromUserInput( pszOutputSRSDef ) != 0:
-                    print( "Failed to process SRS definition: %s" % pszOutputSRSDef )
+                if options.poOutputSRS.SetFromUserInput(pszOutputSRSDef) != 0:
+                    print("Failed to process SRS definition: %s" % pszOutputSRSDef)
                     return 1
-        elif EQUAL(arg, '-dsco') and i+1 < len(argv):
+        elif EQUAL(arg, '-dsco') and i + 1 < len(argv):
             i = i + 1
             dsco.append(argv[i])
-        elif EQUAL(arg, '-lco') and i+1 < len(argv):
+        elif EQUAL(arg, '-lco') and i + 1 < len(argv):
             i = i + 1
             lco.append(argv[i])
-        elif EQUAL(arg, '-field') and i+1 < len(argv):
+        elif EQUAL(arg, '-field') and i + 1 < len(argv):
             i = i + 1
             options.dispatch_fields.append(argv[i])
         elif EQUAL(arg, '-25D_as_2D'):
@@ -338,11 +347,11 @@ def ogr_dispatch(argv, progress = None, progress_arg = None):
             options.bPrefixWithLayerName = True
         elif EQUAL(arg, '-style_as_field'):
             options.bStyleAsField = True
-        elif (EQUAL(arg,"-tg") or \
-                EQUAL(arg,"-gt"))  and i+1 < len(argv):
+        elif (EQUAL(arg, "-tg") or
+                EQUAL(arg, "-gt")) and i + 1 < len(argv):
             i = i + 1
             options.nGroupTransactions = int(argv[i])
-        elif EQUAL(arg,"-where") and i+1 < len(argv):
+        elif EQUAL(arg, "-where") and i + 1 < len(argv):
             i = i + 1
             pszWHERE = argv[i]
         elif EQUAL(arg, '-quiet'):
@@ -369,13 +378,13 @@ def ogr_dispatch(argv, progress = None, progress_arg = None):
         print('Cannot open source datasource %s' % src_filename)
         return 1
 
-    dst_ds = ogr.Open(dst_filename, update = 1)
+    dst_ds = ogr.Open(dst_filename, update=1)
     if dst_ds is not None:
         if len(dsco) != 0:
             print('-dsco should not be specified for an existing datasource')
             return 1
     else:
-        dst_ds = ogr.GetDriverByName(format).CreateDataSource(dst_filename, options = dsco)
+        dst_ds = ogr.GetDriverByName(format).CreateDataSource(dst_filename, options=dsco)
     if dst_ds is None:
         print('Cannot open or create target datasource %s' % dst_filename)
         return 1
@@ -389,12 +398,12 @@ def ogr_dispatch(argv, progress = None, progress_arg = None):
         if ret != 0:
             return ret
 
-
     return 0
 
 ###############################################################
 # Entry point
 
+
 if __name__ == '__main__':
-    argv = ogr.GeneralCmdLineProcessor( sys.argv )
+    argv = ogr.GeneralCmdLineProcessor(sys.argv)
     sys.exit(ogr_dispatch(argv[1:]))

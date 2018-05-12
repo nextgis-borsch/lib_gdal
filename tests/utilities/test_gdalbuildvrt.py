@@ -32,7 +32,7 @@
 import sys
 import os
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 from osgeo import gdal
 from osgeo import ogr
@@ -46,22 +46,22 @@ def test_gdalbuildvrt_check():
 
     ds = gdal.Open('tmp/mosaic.vrt')
     if ds.GetProjectionRef().find('WGS 84') == -1:
-        gdaltest.post_reason('Expected WGS 84\nGot : %s' % (ds.GetProjectionRef()) )
+        gdaltest.post_reason('Expected WGS 84\nGot : %s' % (ds.GetProjectionRef()))
         return 'fail'
 
     gt = ds.GetGeoTransform()
-    expected_gt = [ 2, 0.1, 0, 49, 0, -0.1 ]
+    expected_gt = [2, 0.1, 0, 49, 0, -0.1]
     for i in range(6):
         if abs(gt[i] - expected_gt[i] > 1e-5):
-            gdaltest.post_reason('Expected : %s\nGot : %s' % (expected_gt, gt) )
+            gdaltest.post_reason('Expected : %s\nGot : %s' % (expected_gt, gt))
             return 'fail'
 
     if ds.RasterXSize != 20 or ds.RasterYSize != 20:
-        gdaltest.post_reason('Wrong raster dimensions : %d x %d' % (ds.RasterXSize, ds.RasterYSize) )
+        gdaltest.post_reason('Wrong raster dimensions : %d x %d' % (ds.RasterXSize, ds.RasterYSize))
         return 'fail'
 
     if ds.RasterCount != 1:
-        gdaltest.post_reason('Wrong raster count : %d ' % (ds.RasterCount) )
+        gdaltest.post_reason('Wrong raster count : %d ' % (ds.RasterCount))
         return 'fail'
 
     if ds.GetRasterBand(1).Checksum() != 3508:
@@ -80,35 +80,35 @@ def test_gdalbuildvrt_1():
 
     drv = gdal.GetDriverByName('GTiff')
     srs = osr.SpatialReference()
-    srs.SetWellKnownGeogCS( 'WGS84' )
+    srs.SetWellKnownGeogCS('WGS84')
     wkt = srs.ExportToWkt()
 
     ds = drv.Create('tmp/gdalbuildvrt1.tif', 10, 10, 1)
-    ds.SetProjection( wkt )
-    ds.SetGeoTransform( [ 2, 0.1, 0, 49, 0, -0.1 ] )
+    ds.SetProjection(wkt)
+    ds.SetGeoTransform([2, 0.1, 0, 49, 0, -0.1])
     ds.GetRasterBand(1).Fill(0)
     ds = None
 
     ds = drv.Create('tmp/gdalbuildvrt2.tif', 10, 10, 1)
-    ds.SetProjection( wkt )
-    ds.SetGeoTransform( [ 3, 0.1, 0, 49, 0, -0.1 ] )
+    ds.SetProjection(wkt)
+    ds.SetGeoTransform([3, 0.1, 0, 49, 0, -0.1])
     ds.GetRasterBand(1).Fill(63)
     ds = None
 
     ds = drv.Create('tmp/gdalbuildvrt3.tif', 10, 10, 1)
-    ds.SetProjection( wkt )
-    ds.SetGeoTransform( [ 2, 0.1, 0, 48, 0, -0.1 ] )
+    ds.SetProjection(wkt)
+    ds.SetGeoTransform([2, 0.1, 0, 48, 0, -0.1])
     ds.GetRasterBand(1).Fill(127)
     ds = None
 
     ds = drv.Create('tmp/gdalbuildvrt4.tif', 10, 10, 1)
-    ds.SetProjection( wkt )
-    ds.SetGeoTransform( [ 3, 0.1, 0, 48, 0, -0.1 ] )
+    ds.SetProjection(wkt)
+    ds.SetGeoTransform([3, 0.1, 0, 48, 0, -0.1])
     ds.GetRasterBand(1).Fill(255)
     ds = None
 
     (out, err) = gdaltest.runexternal_out_and_err(test_cli_utilities.get_gdalbuildvrt_path() + ' tmp/mosaic.vrt tmp/gdalbuildvrt1.tif tmp/gdalbuildvrt2.tif tmp/gdalbuildvrt3.tif tmp/gdalbuildvrt4.tif')
-    if not (err is None or err == '') :
+    if not (err is None or err == ''):
         gdaltest.post_reason('got error/warning')
         print(err)
         return 'fail'
@@ -118,6 +118,7 @@ def test_gdalbuildvrt_1():
 ###############################################################################
 # Test with tile index
 
+
 def test_gdalbuildvrt_2():
     if test_cli_utilities.get_gdalbuildvrt_path() is None:
         return 'skip'
@@ -126,19 +127,19 @@ def test_gdalbuildvrt_2():
 
     try:
         os.remove('tmp/tileindex.shp')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/tileindex.dbf')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/tileindex.shx')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/mosaic.vrt')
-    except:
+    except OSError:
         pass
 
     gdaltest.runexternal(test_cli_utilities.get_gdaltindex_path() + ' tmp/tileindex.shp tmp/gdalbuildvrt1.tif tmp/gdalbuildvrt2.tif tmp/gdalbuildvrt3.tif tmp/gdalbuildvrt4.tif')
@@ -149,6 +150,7 @@ def test_gdalbuildvrt_2():
 
 ###############################################################################
 # Test with file list
+
 
 def test_gdalbuildvrt_3():
     if test_cli_utilities.get_gdalbuildvrt_path() is None:
@@ -172,8 +174,8 @@ def test_gdalbuildvrt_4():
     wkt = 'GEOGCS[\"WGS 72\",DATUM[\"WGS_1972\"]]'
 
     ds = drv.Create('tmp/gdalbuildvrt5.tif', 10, 10, 1)
-    ds.SetProjection( wkt )
-    ds.SetGeoTransform( [ 47, 0.1, 0, 2, 0, -0.1 ] )
+    ds.SetProjection(wkt)
+    ds.SetGeoTransform([47, 0.1, 0, 2, 0, -0.1])
     ds = None
 
     gdaltest.runexternal(test_cli_utilities.get_gdalbuildvrt_path() + ' tmp/mosaic.vrt tmp/gdalbuildvrt1.tif tmp/gdalbuildvrt2.tif tmp/gdalbuildvrt3.tif tmp/gdalbuildvrt4.tif tmp/gdalbuildvrt5.tif')
@@ -183,18 +185,19 @@ def test_gdalbuildvrt_4():
 ###############################################################################
 # Try adding a raster with different band count
 
+
 def test_gdalbuildvrt_5():
     if test_cli_utilities.get_gdalbuildvrt_path() is None:
         return 'skip'
 
     drv = gdal.GetDriverByName('GTiff')
     srs = osr.SpatialReference()
-    srs.SetWellKnownGeogCS( 'WGS84' )
+    srs.SetWellKnownGeogCS('WGS84')
     wkt = srs.ExportToWkt()
 
     ds = drv.Create('tmp/gdalbuildvrt5.tif', 10, 10, 2)
-    ds.SetProjection( wkt )
-    ds.SetGeoTransform( [ 47, 0.1, 0, 2, 0, -0.1 ] )
+    ds.SetProjection(wkt)
+    ds.SetGeoTransform([47, 0.1, 0, 2, 0, -0.1])
     ds = None
 
     gdaltest.runexternal(test_cli_utilities.get_gdalbuildvrt_path() + ' tmp/mosaic.vrt tmp/gdalbuildvrt1.tif tmp/gdalbuildvrt2.tif tmp/gdalbuildvrt3.tif tmp/gdalbuildvrt4.tif tmp/gdalbuildvrt5.tif')
@@ -204,6 +207,7 @@ def test_gdalbuildvrt_5():
 ###############################################################################
 # Test -separate option
 
+
 def test_gdalbuildvrt_6():
     if test_cli_utilities.get_gdalbuildvrt_path() is None:
         return 'skip'
@@ -212,22 +216,22 @@ def test_gdalbuildvrt_6():
 
     ds = gdal.Open('tmp/stacked.vrt')
     if ds.GetProjectionRef().find('WGS 84') == -1:
-        gdaltest.post_reason('Expected WGS 84\nGot : %s' % (ds.GetProjectionRef()) )
+        gdaltest.post_reason('Expected WGS 84\nGot : %s' % (ds.GetProjectionRef()))
         return 'fail'
 
     gt = ds.GetGeoTransform()
-    expected_gt = [ 2, 0.1, 0, 49, 0, -0.1 ]
+    expected_gt = [2, 0.1, 0, 49, 0, -0.1]
     for i in range(6):
         if abs(gt[i] - expected_gt[i] > 1e-5):
-            gdaltest.post_reason('Expected : %s\nGot : %s' % (expected_gt, gt) )
+            gdaltest.post_reason('Expected : %s\nGot : %s' % (expected_gt, gt))
             return 'fail'
 
     if ds.RasterXSize != 20 or ds.RasterYSize != 20:
-        gdaltest.post_reason('Wrong raster dimensions : %d x %d' % (ds.RasterXSize, ds.RasterYSize) )
+        gdaltest.post_reason('Wrong raster dimensions : %d x %d' % (ds.RasterXSize, ds.RasterYSize))
         return 'fail'
 
     if ds.RasterCount != 4:
-        gdaltest.post_reason('Wrong raster count : %d ' % (ds.RasterCount) )
+        gdaltest.post_reason('Wrong raster count : %d ' % (ds.RasterCount))
         return 'fail'
 
     if ds.GetRasterBand(1).Checksum() != 0:
@@ -239,12 +243,13 @@ def test_gdalbuildvrt_6():
 ###############################################################################
 # Test source rasters with nodata
 
+
 def test_gdalbuildvrt_7():
     if test_cli_utilities.get_gdalbuildvrt_path() is None:
         return 'skip'
 
     out_ds = gdal.GetDriverByName('GTiff').Create('tmp/vrtnull1.tif', 20, 10, 3, gdal.GDT_UInt16)
-    out_ds.SetGeoTransform([2,0.1,0,49,0,-0.1])
+    out_ds.SetGeoTransform([2, 0.1, 0, 49, 0, -0.1])
     srs = osr.SpatialReference()
     srs.SetFromUserInput('EPSG:4326')
     out_ds.SetProjection(srs.ExportToWkt())
@@ -258,13 +263,13 @@ def test_gdalbuildvrt_7():
     except:
         ff = '\xff'
 
-    out_ds.GetRasterBand(1).WriteRaster( 0, 0, 10, 10, ff, buf_type = gdal.GDT_Byte, buf_xsize = 1, buf_ysize = 1 )
-    out_ds.GetRasterBand(2).WriteRaster( 0, 0, 10, 10, '\x00', buf_type = gdal.GDT_Byte, buf_xsize = 1, buf_ysize = 1 )
-    out_ds.GetRasterBand(3).WriteRaster( 0, 0, 10, 10, '\x00', buf_type = gdal.GDT_Byte, buf_xsize = 1, buf_ysize = 1 )
+    out_ds.GetRasterBand(1).WriteRaster(0, 0, 10, 10, ff, buf_type=gdal.GDT_Byte, buf_xsize=1, buf_ysize=1)
+    out_ds.GetRasterBand(2).WriteRaster(0, 0, 10, 10, '\x00', buf_type=gdal.GDT_Byte, buf_xsize=1, buf_ysize=1)
+    out_ds.GetRasterBand(3).WriteRaster(0, 0, 10, 10, '\x00', buf_type=gdal.GDT_Byte, buf_xsize=1, buf_ysize=1)
     out_ds = None
 
     out_ds = gdal.GetDriverByName('GTiff').Create('tmp/vrtnull2.tif', 20, 10, 3, gdal.GDT_UInt16)
-    out_ds.SetGeoTransform([2,0.1,0,49,0,-0.1])
+    out_ds.SetGeoTransform([2, 0.1, 0, 49, 0, -0.1])
     srs = osr.SpatialReference()
     srs.SetFromUserInput('EPSG:4326')
     out_ds.SetProjection(srs.ExportToWkt())
@@ -273,9 +278,9 @@ def test_gdalbuildvrt_7():
     out_ds.GetRasterBand(3).SetRasterColorInterpretation(gdal.GCI_BlueBand)
     out_ds.GetRasterBand(1).SetNoDataValue(256)
 
-    out_ds.GetRasterBand(1).WriteRaster( 10, 0, 10, 10, '\x00', buf_type = gdal.GDT_Byte, buf_xsize = 1, buf_ysize = 1 )
-    out_ds.GetRasterBand(2).WriteRaster( 10, 0, 10, 10, ff, buf_type = gdal.GDT_Byte, buf_xsize = 1, buf_ysize = 1 )
-    out_ds.GetRasterBand(3).WriteRaster( 10, 0, 10, 10, '\x00', buf_type = gdal.GDT_Byte, buf_xsize = 1, buf_ysize = 1 )
+    out_ds.GetRasterBand(1).WriteRaster(10, 0, 10, 10, '\x00', buf_type=gdal.GDT_Byte, buf_xsize=1, buf_ysize=1)
+    out_ds.GetRasterBand(2).WriteRaster(10, 0, 10, 10, ff, buf_type=gdal.GDT_Byte, buf_xsize=1, buf_ysize=1)
+    out_ds.GetRasterBand(3).WriteRaster(10, 0, 10, 10, '\x00', buf_type=gdal.GDT_Byte, buf_xsize=1, buf_ysize=1)
     out_ds = None
 
     gdaltest.runexternal(test_cli_utilities.get_gdalbuildvrt_path() + ' tmp/gdalbuildvrt7.vrt tmp/vrtnull1.tif tmp/vrtnull2.tif')
@@ -301,6 +306,7 @@ def test_gdalbuildvrt_7():
 ###############################################################################
 # Test -tr option
 
+
 def test_gdalbuildvrt_8():
     if test_cli_utilities.get_gdalbuildvrt_path() is None:
         return 'skip'
@@ -310,14 +316,14 @@ def test_gdalbuildvrt_8():
     ds = gdal.Open('tmp/mosaic2.vrt')
 
     gt = ds.GetGeoTransform()
-    expected_gt = [ 2, 0.05, 0, 49, 0, -0.05 ]
+    expected_gt = [2, 0.05, 0, 49, 0, -0.05]
     for i in range(6):
         if abs(gt[i] - expected_gt[i] > 1e-5):
-            gdaltest.post_reason('Expected : %s\nGot : %s' % (expected_gt, gt) )
+            gdaltest.post_reason('Expected : %s\nGot : %s' % (expected_gt, gt))
             return 'fail'
 
     if ds.RasterXSize != 40 or ds.RasterYSize != 40:
-        gdaltest.post_reason('Wrong raster dimensions : %d x %d' % (ds.RasterXSize, ds.RasterYSize) )
+        gdaltest.post_reason('Wrong raster dimensions : %d x %d' % (ds.RasterXSize, ds.RasterYSize))
         return 'fail'
 
     gdaltest.runexternal(test_cli_utilities.get_gdalbuildvrt_path() + ' -tr 0.1 0.1 tmp/mosaic.vrt tmp/mosaic2.vrt')
@@ -326,6 +332,7 @@ def test_gdalbuildvrt_8():
 
 ###############################################################################
 # Test -te option
+
 
 def test_gdalbuildvrt_9():
     if test_cli_utilities.get_gdalbuildvrt_path() is None:
@@ -336,14 +343,14 @@ def test_gdalbuildvrt_9():
     ds = gdal.Open('tmp/mosaic2.vrt')
 
     gt = ds.GetGeoTransform()
-    expected_gt = [ 1, 0.1, 0, 50, 0, -0.1 ]
+    expected_gt = [1, 0.1, 0, 50, 0, -0.1]
     for i in range(6):
         if abs(gt[i] - expected_gt[i] > 1e-5):
-            gdaltest.post_reason('Expected : %s\nGot : %s' % (expected_gt, gt) )
+            gdaltest.post_reason('Expected : %s\nGot : %s' % (expected_gt, gt))
             return 'fail'
 
     if ds.RasterXSize != 40 or ds.RasterYSize != 40:
-        gdaltest.post_reason('Wrong raster dimensions : %d x %d' % (ds.RasterXSize, ds.RasterYSize) )
+        gdaltest.post_reason('Wrong raster dimensions : %d x %d' % (ds.RasterXSize, ds.RasterYSize))
         return 'fail'
 
     gdaltest.runexternal(test_cli_utilities.get_gdalbuildvrt_path() + ' -te 2 47 4 49 tmp/mosaic.vrt tmp/mosaic2.vrt')
@@ -353,26 +360,27 @@ def test_gdalbuildvrt_9():
 ###############################################################################
 # Test explicit nodata setting (#3254)
 
+
 def test_gdalbuildvrt_10():
     if test_cli_utilities.get_gdalbuildvrt_path() is None:
         return 'skip'
 
-    out_ds = gdal.GetDriverByName('GTiff').Create('tmp/test_gdalbuildvrt_10_1.tif', 10, 10, 1, gdal.GDT_Byte, options = ['NBITS=1', 'PHOTOMETRIC=MINISWHITE'])
-    out_ds.SetGeoTransform([2,0.1,0,49,0,-0.1])
+    out_ds = gdal.GetDriverByName('GTiff').Create('tmp/test_gdalbuildvrt_10_1.tif', 10, 10, 1, gdal.GDT_Byte, options=['NBITS=1', 'PHOTOMETRIC=MINISWHITE'])
+    out_ds.SetGeoTransform([2, 0.1, 0, 49, 0, -0.1])
     srs = osr.SpatialReference()
     srs.SetFromUserInput('EPSG:4326')
     out_ds.SetProjection(srs.ExportToWkt())
 
-    out_ds.GetRasterBand(1).WriteRaster( 1, 1, 3, 3, '\x01', buf_type = gdal.GDT_Byte, buf_xsize = 1, buf_ysize = 1 )
+    out_ds.GetRasterBand(1).WriteRaster(1, 1, 3, 3, '\x01', buf_type=gdal.GDT_Byte, buf_xsize=1, buf_ysize=1)
     out_ds = None
 
-    out_ds = gdal.GetDriverByName('GTiff').Create('tmp/test_gdalbuildvrt_10_2.tif', 10, 10, 1, gdal.GDT_Byte, options = ['NBITS=1', 'PHOTOMETRIC=MINISWHITE'])
-    out_ds.SetGeoTransform([2,0.1,0,49,0,-0.1])
+    out_ds = gdal.GetDriverByName('GTiff').Create('tmp/test_gdalbuildvrt_10_2.tif', 10, 10, 1, gdal.GDT_Byte, options=['NBITS=1', 'PHOTOMETRIC=MINISWHITE'])
+    out_ds.SetGeoTransform([2, 0.1, 0, 49, 0, -0.1])
     srs = osr.SpatialReference()
     srs.SetFromUserInput('EPSG:4326')
     out_ds.SetProjection(srs.ExportToWkt())
 
-    out_ds.GetRasterBand(1).WriteRaster( 6, 6, 3, 3, '\x01', buf_type = gdal.GDT_Byte, buf_xsize = 1, buf_ysize = 1 )
+    out_ds.GetRasterBand(1).WriteRaster(6, 6, 3, 3, '\x01', buf_type=gdal.GDT_Byte, buf_xsize=1, buf_ysize=1)
     out_ds = None
 
     gdaltest.runexternal(test_cli_utilities.get_gdalbuildvrt_path() + ' -srcnodata 0 tmp/gdalbuildvrt10.vrt tmp/test_gdalbuildvrt_10_1.tif tmp/test_gdalbuildvrt_10_2.tif')
@@ -390,6 +398,7 @@ def test_gdalbuildvrt_10():
 
 ###############################################################################
 # Test that we can stack ungeoreference single band images with -separate (#3432)
+
 
 def test_gdalbuildvrt_11():
     if test_cli_utilities.get_gdalbuildvrt_path() is None:
@@ -428,12 +437,13 @@ def test_gdalbuildvrt_11():
 ###############################################################################
 # Test -tap option
 
+
 def test_gdalbuildvrt_12():
     if test_cli_utilities.get_gdalbuildvrt_path() is None:
         return 'skip'
 
     (out, err) = gdaltest.runexternal_out_and_err(test_cli_utilities.get_gdalbuildvrt_path() + ' -tap tmp/gdalbuildvrt12.vrt ../gcore/data/byte.tif',
-                                                  check_memleak = False)
+                                                  check_memleak=False)
     if err.find('-tap option cannot be used without using -tr') == -1:
         gdaltest.post_reason('expected error')
         return 'fail'
@@ -443,20 +453,21 @@ def test_gdalbuildvrt_12():
     ds = gdal.Open('tmp/gdalbuildvrt12.vrt')
 
     gt = ds.GetGeoTransform()
-    expected_gt = [ 440700.0, 100.0, 0.0, 3751350.0, 0.0, -50.0 ]
+    expected_gt = [440700.0, 100.0, 0.0, 3751350.0, 0.0, -50.0]
     for i in range(6):
         if abs(gt[i] - expected_gt[i] > 1e-5):
-            gdaltest.post_reason('Expected : %s\nGot : %s' % (expected_gt, gt) )
+            gdaltest.post_reason('Expected : %s\nGot : %s' % (expected_gt, gt))
             return 'fail'
 
     if ds.RasterXSize != 13 or ds.RasterYSize != 25:
-        gdaltest.post_reason('Wrong raster dimensions : %d x %d' % (ds.RasterXSize, ds.RasterYSize) )
+        gdaltest.post_reason('Wrong raster dimensions : %d x %d' % (ds.RasterXSize, ds.RasterYSize))
         return 'fail'
 
     return 'success'
 
 ###############################################################################
 # Test -a_srs
+
 
 def test_gdalbuildvrt_13():
     if test_cli_utilities.get_gdalbuildvrt_path() is None:
@@ -473,6 +484,7 @@ def test_gdalbuildvrt_13():
 
 ###############################################################################
 # Test -r
+
 
 def test_gdalbuildvrt_14():
     if test_cli_utilities.get_gdalbuildvrt_path() is None:
@@ -502,6 +514,7 @@ def test_gdalbuildvrt_14():
 ###############################################################################
 # Test -b
 
+
 def test_gdalbuildvrt_15():
     if test_cli_utilities.get_gdalbuildvrt_path() is None:
         return 'skip'
@@ -521,6 +534,7 @@ def test_gdalbuildvrt_15():
 
 ###############################################################################
 # Test output to non writable file
+
 
 def test_gdalbuildvrt_16():
     if test_cli_utilities.get_gdalbuildvrt_path() is None:
@@ -546,6 +560,7 @@ def test_gdalbuildvrt_16():
 
 ###############################################################################
 # Cleanup
+
 
 def test_gdalbuildvrt_cleanup():
 
@@ -581,7 +596,7 @@ def test_gdalbuildvrt_cleanup():
     drv.Delete('tmp/test_gdalbuildvrt_11_2.tif')
     try:
         os.remove('tmp/filelist.txt')
-    except:
+    except OSError:
         pass
 
     return 'success'
@@ -592,7 +607,7 @@ gdaltest_list = [
     test_gdalbuildvrt_2,
     test_gdalbuildvrt_3,
     test_gdalbuildvrt_4,
-#    test_gdalbuildvrt_5,
+    #    test_gdalbuildvrt_5,
     test_gdalbuildvrt_6,
     test_gdalbuildvrt_7,
     test_gdalbuildvrt_8,
@@ -605,18 +620,13 @@ gdaltest_list = [
     test_gdalbuildvrt_15,
     test_gdalbuildvrt_16,
     test_gdalbuildvrt_cleanup
-    ]
+]
 
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'test_gdalbuildvrt' )
+    gdaltest.setup_run('test_gdalbuildvrt')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-
-
-
-
-

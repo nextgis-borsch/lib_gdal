@@ -38,7 +38,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 struct ImageRec
 {
@@ -75,14 +75,14 @@ struct ImageRec
               min(0),
               max(0),
               colorMap(0),
-              file(NULL),
+              file(nullptr),
               fileName(""),
               tmpSize(0),
-              tmp(NULL),
+              tmp(nullptr),
               rleEnd(0),
               rleTableDirty(FALSE),
-              rowStart(NULL),
-              rowSize(NULL)
+              rowStart(nullptr),
+              rowSize(nullptr)
         {
             memset(wasteBytes, 0, 4);
             memset(name, 0, 80);
@@ -466,7 +466,7 @@ GDALColorInterp SGIRasterBand::GetColorInterpretation()
 /************************************************************************/
 
 SGIDataset::SGIDataset() :
-    fpImage(NULL),
+    fpImage(nullptr),
     bGeoTransformValid(FALSE)
 {
     adfGeoTransform[0] = 0.0;
@@ -501,7 +501,7 @@ SGIDataset::~SGIDataset()
         image.rleTableDirty = FALSE;
     }
 
-    if(fpImage != NULL)
+    if(fpImage != nullptr)
         VSIFCloseL(fpImage);
 
     CPLFree(image.tmp);
@@ -536,8 +536,8 @@ GDALDataset* SGIDataset::Open(GDALOpenInfo* poOpenInfo)
 /*      First we check to see if the file has the expected header       */
 /*      bytes.                                                          */
 /* -------------------------------------------------------------------- */
-    if(poOpenInfo->nHeaderBytes < 12)
-        return NULL;
+    if(poOpenInfo->nHeaderBytes < 12 || poOpenInfo->fpL == nullptr )
+        return nullptr;
 
     ImageRec tmpImage;
     memcpy(&tmpImage.imagic, poOpenInfo->pabyHeader + 0, 2);
@@ -550,22 +550,22 @@ GDALDataset* SGIDataset::Open(GDALOpenInfo* poOpenInfo)
     tmpImage.Swap();
 
     if(tmpImage.imagic != 474)
-        return NULL;
+        return nullptr;
 
     if (tmpImage.type != 0 && tmpImage.type != 1)
-        return NULL;
+        return nullptr;
 
     if (tmpImage.bpc != 1 && tmpImage.bpc != 2)
-        return NULL;
+        return nullptr;
 
     if (tmpImage.dim != 1 && tmpImage.dim != 2 && tmpImage.dim != 3)
-        return NULL;
+        return nullptr;
 
     if(tmpImage.bpc != 1)
     {
         CPLError(CE_Failure, CPLE_NotSupported,
                  "The SGI driver only supports 1 byte channel values.\n");
-        return NULL;
+        return nullptr;
     }
 
 /* -------------------------------------------------------------------- */
@@ -573,23 +573,8 @@ GDALDataset* SGIDataset::Open(GDALOpenInfo* poOpenInfo)
 /* -------------------------------------------------------------------- */
     SGIDataset* poDS = new SGIDataset();
     poDS->eAccess = poOpenInfo->eAccess;
-
-/* -------------------------------------------------------------------- */
-/*      Open the file using the large file api.                         */
-/* -------------------------------------------------------------------- */
-    if( poDS->eAccess == GA_ReadOnly )
-        poDS->fpImage = VSIFOpenL(poOpenInfo->pszFilename, "rb");
-    else
-        poDS->fpImage = VSIFOpenL(poOpenInfo->pszFilename, "rb+");
-    if(poDS->fpImage == NULL)
-    {
-        CPLError(CE_Failure, CPLE_OpenFailed,
-                 "VSIFOpenL(%s) failed unexpectedly in sgidataset.cpp\n%s",
-                 poOpenInfo->pszFilename,
-                 VSIStrerror( errno ) );
-        delete poDS;
-        return NULL;
-    }
+    poDS->fpImage = poOpenInfo->fpL;
+    poOpenInfo->fpL = nullptr;
 
 /* -------------------------------------------------------------------- */
 /*      Read pre-image data after ensuring the file is rewound.         */
@@ -601,7 +586,7 @@ GDALDataset* SGIDataset::Open(GDALOpenInfo* poOpenInfo)
     {
         CPLError(CE_Failure, CPLE_OpenFailed, "file read error while reading header in sgidataset.cpp");
         delete poDS;
-        return NULL;
+        return nullptr;
     }
     poDS->image.Swap();
     poDS->image.file = poDS->fpImage;
@@ -617,7 +602,7 @@ GDALDataset* SGIDataset::Open(GDALOpenInfo* poOpenInfo)
         CPLError(CE_Failure, CPLE_OpenFailed,
                      "Invalid image dimensions : %d x %d", poDS->nRasterXSize, poDS->nRasterYSize);
         delete poDS;
-        return NULL;
+        return nullptr;
     }
     poDS->nBands = std::max(static_cast<GUInt16>(1), poDS->image.zsize);
     if (poDS->nBands > 256)
@@ -625,7 +610,7 @@ GDALDataset* SGIDataset::Open(GDALOpenInfo* poOpenInfo)
         CPLError(CE_Failure, CPLE_OpenFailed,
                      "Too many bands : %d", poDS->nBands);
         delete poDS;
-        return NULL;
+        return nullptr;
     }
 
     const int numItems
@@ -633,14 +618,14 @@ GDALDataset* SGIDataset::Open(GDALOpenInfo* poOpenInfo)
     if( poDS->image.xsize > INT_MAX / numItems )
     {
         delete poDS;
-        return NULL;
+        return nullptr;
     }
     poDS->image.tmpSize = poDS->image.xsize * numItems;
     poDS->image.tmp = (unsigned char*)VSI_CALLOC_VERBOSE(poDS->image.xsize,numItems);
-    if (poDS->image.tmp == NULL)
+    if (poDS->image.tmp == nullptr)
     {
         delete poDS;
-        return NULL;
+        return nullptr;
     }
 
 /* -------------------------------------------------------------------- */
@@ -653,10 +638,10 @@ GDALDataset* SGIDataset::Open(GDALOpenInfo* poOpenInfo)
             VSI_MALLOC2_VERBOSE(poDS->image.ysize, poDS->nBands * sizeof(GUInt32) ) );
         poDS->image.rowSize = reinterpret_cast<GInt32 *>(
             VSI_MALLOC2_VERBOSE(poDS->image.ysize, poDS->nBands * sizeof(GUInt32) ) );
-        if (poDS->image.rowStart == NULL || poDS->image.rowSize == NULL)
+        if (poDS->image.rowStart == nullptr || poDS->image.rowSize == nullptr)
         {
             delete poDS;
-            return NULL;
+            return nullptr;
         }
         memset(poDS->image.rowStart, 0, x);
         memset(poDS->image.rowSize, 0, x);
@@ -667,14 +652,14 @@ GDALDataset* SGIDataset::Open(GDALOpenInfo* poOpenInfo)
             delete poDS;
             CPLError(CE_Failure, CPLE_OpenFailed,
                      "file read error while reading start positions in sgidataset.cpp");
-            return NULL;
+            return nullptr;
         }
         if( VSIFReadL(poDS->image.rowSize, 1, x, poDS->image.file) != x)
         {
             delete poDS;
             CPLError(CE_Failure, CPLE_OpenFailed,
                      "file read error while reading row lengths in sgidataset.cpp");
-            return NULL;
+            return nullptr;
         }
         ConvertLong(poDS->image.rowStart,
                     static_cast<int>(x / static_cast<int>( sizeof(GUInt32))) );
@@ -683,8 +668,8 @@ GDALDataset* SGIDataset::Open(GDALOpenInfo* poOpenInfo)
     }
     else // uncompressed.
     {
-        poDS->image.rowStart = NULL;
-        poDS->image.rowSize = NULL;
+        poDS->image.rowStart = nullptr;
+        poDS->image.rowSize = nullptr;
     }
 
 /* -------------------------------------------------------------------- */
@@ -732,19 +717,19 @@ GDALDataset *SGIDataset::Create( const char * pszFilename,
               "data type (%s), only Byte supported by the format.\n",
               GDALGetDataTypeName(eType) );
 
-        return NULL;
+        return nullptr;
     }
 
 /* -------------------------------------------------------------------- */
 /*      Open the file for output.                                       */
 /* -------------------------------------------------------------------- */
     VSILFILE *fp = VSIFOpenL( pszFilename, "w" );
-    if( fp == NULL )
+    if( fp == nullptr )
     {
         CPLError( CE_Failure, CPLE_OpenFailed,
                   "Failed to create file '%s': %s",
                   pszFilename, VSIStrerror( errno ) );
-        return NULL;
+        return nullptr;
     }
 
 /* -------------------------------------------------------------------- */
@@ -828,7 +813,9 @@ GDALDataset *SGIDataset::Create( const char * pszFilename,
                   "Failure writing SGI file '%s'.\n%s",
                   pszFilename,
                   VSIStrerror( errno ) );
-        return NULL;
+        VSIFCloseL( fp );
+        CPLFree( pabyRLELine );
+        return nullptr;
     }
 
     VSIFCloseL( fp );
@@ -845,7 +832,7 @@ GDALDataset *SGIDataset::Create( const char * pszFilename,
 void GDALRegister_SGI()
 
 {
-    if( GDALGetDriverByName( "SGI" ) != NULL )
+    if( GDALGetDriverByName( "SGI" ) != nullptr )
         return;
 
     GDALDriver *poDriver = new GDALDriver();
@@ -857,6 +844,7 @@ void GDALRegister_SGI()
     poDriver->SetMetadataItem( GDAL_DMD_MIMETYPE, "image/rgb" );
     poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, "frmt_various.html#SGI" );
     poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES, "Byte" );
+    poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
 
     poDriver->pfnOpen = SGIDataset::Open;
     poDriver->pfnCreate = SGIDataset::Create;

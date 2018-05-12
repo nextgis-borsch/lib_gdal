@@ -32,7 +32,7 @@
 import sys
 import os
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 from osgeo import gdal
 import gdaltest
@@ -41,12 +41,13 @@ import test_cli_utilities
 ###############################################################################
 # Simple test
 
+
 def test_gdal_translate_1():
     if test_cli_utilities.get_gdal_translate_path() is None:
         return 'skip'
 
     (out, err) = gdaltest.runexternal_out_and_err(test_cli_utilities.get_gdal_translate_path() + ' ../gcore/data/byte.tif tmp/test1.tif')
-    if not (err is None or err == '') :
+    if not (err is None or err == ''):
         gdaltest.post_reason('got error/warning')
         print(err)
         return 'fail'
@@ -114,6 +115,7 @@ def test_gdal_translate_3():
 ###############################################################################
 # Test -b option
 
+
 def test_gdal_translate_4():
     if test_cli_utilities.get_gdal_translate_path() is None:
         return 'skip'
@@ -142,6 +144,7 @@ def test_gdal_translate_4():
 
 ###############################################################################
 # Test -expand option
+
 
 def test_gdal_translate_5():
     if test_cli_utilities.get_gdal_translate_path() is None:
@@ -206,6 +209,7 @@ def test_gdal_translate_6():
 ###############################################################################
 # Test -outsize option in percentage mode
 
+
 def test_gdal_translate_7():
     if test_cli_utilities.get_gdal_translate_path() is None:
         return 'skip'
@@ -227,6 +231,7 @@ def test_gdal_translate_7():
 ###############################################################################
 # Test -a_srs and -gcp options
 
+
 def test_gdal_translate_8():
     if test_cli_utilities.get_gdal_translate_path() is None:
         return 'skip'
@@ -243,11 +248,11 @@ def test_gdal_translate_8():
 
     gcps = ds.GetGCPs()
     if len(gcps) != 4:
-        gdaltest.post_reason( 'GCP count wrong.' )
+        gdaltest.post_reason('GCP count wrong.')
         return 'fail'
 
     if ds.GetGCPProjection().find('26711') == -1:
-        gdaltest.post_reason( 'Bad GCP projection.' )
+        gdaltest.post_reason('Bad GCP projection.')
         return 'fail'
 
     ds = None
@@ -301,6 +306,7 @@ def test_gdal_translate_10():
 ###############################################################################
 # Test -projwin option
 
+
 def test_gdal_translate_11():
     if test_cli_utilities.get_gdal_translate_path() is None:
         return 'skip'
@@ -315,7 +321,7 @@ def test_gdal_translate_11():
         gdaltest.post_reason('Bad checksum')
         return 'fail'
 
-    if not gdaltest.geotransform_equals(gdal.Open('../gcore/data/byte.tif').GetGeoTransform(), ds.GetGeoTransform(), 1e-9) :
+    if not gdaltest.geotransform_equals(gdal.Open('../gcore/data/byte.tif').GetGeoTransform(), ds.GetGeoTransform(), 1e-9):
         gdaltest.post_reason('Bad geotransform')
         return 'fail'
 
@@ -325,6 +331,7 @@ def test_gdal_translate_11():
 
 ###############################################################################
 # Test -a_ullr option
+
 
 def test_gdal_translate_12():
     if test_cli_utilities.get_gdal_translate_path() is None:
@@ -340,7 +347,7 @@ def test_gdal_translate_12():
         gdaltest.post_reason('Bad checksum')
         return 'fail'
 
-    if not gdaltest.geotransform_equals(gdal.Open('../gcore/data/byte.tif').GetGeoTransform(), ds.GetGeoTransform(), 1e-9) :
+    if not gdaltest.geotransform_equals(gdal.Open('../gcore/data/byte.tif').GetGeoTransform(), ds.GetGeoTransform(), 1e-9):
         gdaltest.post_reason('Bad geotransform')
         return 'fail'
 
@@ -350,6 +357,7 @@ def test_gdal_translate_12():
 
 ###############################################################################
 # Test -mo option
+
 
 def test_gdal_translate_13():
     if test_cli_utilities.get_gdal_translate_path() is None:
@@ -373,6 +381,7 @@ def test_gdal_translate_13():
 ###############################################################################
 # Test -co option
 
+
 def test_gdal_translate_14():
     if test_cli_utilities.get_gdal_translate_path() is None:
         return 'skip'
@@ -395,6 +404,7 @@ def test_gdal_translate_14():
 ###############################################################################
 # Test -sds option
 
+
 def test_gdal_translate_15():
     if test_cli_utilities.get_gdal_translate_path() is None:
         return 'skip'
@@ -411,6 +421,7 @@ def test_gdal_translate_15():
 
 ###############################################################################
 # Test -of VRT which is a special case
+
 
 def test_gdal_translate_16():
     if test_cli_utilities.get_gdal_translate_path() is None:
@@ -432,6 +443,7 @@ def test_gdal_translate_16():
 
 ###############################################################################
 # Test -expand option to VRT
+
 
 def test_gdal_translate_17():
     if test_cli_utilities.get_gdal_translate_path() is None:
@@ -516,12 +528,12 @@ def test_gdal_translate_19():
     if test_cli_utilities.get_gdal_translate_path() is None:
         return 'skip'
 
-    ds = gdal.GetDriverByName('GTiff').Create('tmp/test_gdal_translate_19_src.tif',1,1,2)
+    ds = gdal.GetDriverByName('GTiff').Create('tmp/test_gdal_translate_19_src.tif', 1, 1, 2)
     ct = gdal.ColorTable()
-    ct.SetColorEntry( 127, (1,2,3,255) )
-    ds.GetRasterBand( 1 ).SetRasterColorTable( ct )
-    ds.GetRasterBand( 1 ).Fill(127)
-    ds.GetRasterBand( 2 ).Fill(250)
+    ct.SetColorEntry(127, (1, 2, 3, 255))
+    ds.GetRasterBand(1).SetRasterColorTable(ct)
+    ds.GetRasterBand(1).Fill(127)
+    ds.GetRasterBand(2).Fill(250)
     ds = None
 
     gdaltest.runexternal(test_cli_utilities.get_gdal_translate_path() + ' -expand rgba tmp/test_gdal_translate_19_src.tif tmp/test_gdal_translate_19_dst.tif')
@@ -550,6 +562,7 @@ def test_gdal_translate_19():
 ###############################################################################
 # Test -a_nodata None
 
+
 def test_gdal_translate_20():
     if test_cli_utilities.get_gdal_translate_path() is None:
         return 'skip'
@@ -562,7 +575,7 @@ def test_gdal_translate_20():
         return 'fail'
 
     nodata = ds.GetRasterBand(1).GetNoDataValue()
-    if nodata != None:
+    if nodata is not None:
         print(nodata)
         return 'fail'
 
@@ -573,6 +586,7 @@ def test_gdal_translate_20():
 ###############################################################################
 # Test that statistics are copied only when appropriate (#3889)
 # in that case, they must be copied
+
 
 def test_gdal_translate_21():
     if test_cli_utilities.get_gdal_translate_path() is None:
@@ -585,12 +599,12 @@ def test_gdal_translate_21():
     ds = None
 
     if md['STATISTICS_MINIMUM'] != '8':
-        gdaltest.post_reason( 'STATISTICS_MINIMUM is wrong.' )
+        gdaltest.post_reason('STATISTICS_MINIMUM is wrong.')
         print(md['STATISTICS_MINIMUM'])
         return 'fail'
 
     if md['STATISTICS_HISTOBINVALUES'] != '0|0|0|0|0|0|0|0|8|0|0|0|0|0|0|0|23|0|0|0|0|0|0|0|0|29|0|0|0|0|0|0|0|46|0|0|0|0|0|0|0|69|0|0|0|0|0|0|0|99|0|0|0|0|0|0|0|0|120|0|0|0|0|0|0|0|178|0|0|0|0|0|0|0|193|0|0|0|0|0|0|0|212|0|0|0|0|0|0|0|281|0|0|0|0|0|0|0|0|365|0|0|0|0|0|0|0|460|0|0|0|0|0|0|0|533|0|0|0|0|0|0|0|544|0|0|0|0|0|0|0|0|626|0|0|0|0|0|0|0|653|0|0|0|0|0|0|0|673|0|0|0|0|0|0|0|629|0|0|0|0|0|0|0|0|586|0|0|0|0|0|0|0|541|0|0|0|0|0|0|0|435|0|0|0|0|0|0|0|348|0|0|0|0|0|0|0|341|0|0|0|0|0|0|0|0|284|0|0|0|0|0|0|0|225|0|0|0|0|0|0|0|237|0|0|0|0|0|0|0|172|0|0|0|0|0|0|0|0|159|0|0|0|0|0|0|0|105|0|0|0|0|0|0|0|824|':
-        gdaltest.post_reason( 'STATISTICS_HISTOBINVALUES is wrong.' )
+        gdaltest.post_reason('STATISTICS_HISTOBINVALUES is wrong.')
         return 'fail'
 
     return 'success'
@@ -598,6 +612,7 @@ def test_gdal_translate_21():
 ###############################################################################
 # Test that statistics are copied only when appropriate (#3889)
 # in that case, they must *NOT* be copied
+
 
 def test_gdal_translate_22():
     if test_cli_utilities.get_gdal_translate_path() is None:
@@ -610,17 +625,18 @@ def test_gdal_translate_22():
     ds = None
 
     if 'STATISTICS_MINIMUM' in md:
-        gdaltest.post_reason( 'did not expected a STATISTICS_MINIMUM value.' )
+        gdaltest.post_reason('did not expected a STATISTICS_MINIMUM value.')
         return 'fail'
 
     if 'STATISTICS_HISTOBINVALUES' in md:
-        gdaltest.post_reason( 'did not expected a STATISTICS_MINIMUM value.' )
+        gdaltest.post_reason('did not expected a STATISTICS_MINIMUM value.')
         return 'fail'
 
     return 'success'
 
 ###############################################################################
 # Test -stats option (#3889)
+
 
 def test_gdal_translate_23():
     if test_cli_utilities.get_gdal_translate_path() is None:
@@ -633,23 +649,24 @@ def test_gdal_translate_23():
     ds = None
 
     if md['STATISTICS_MINIMUM'] != '74':
-        gdaltest.post_reason( 'STATISTICS_MINIMUM is wrong.' )
+        gdaltest.post_reason('STATISTICS_MINIMUM is wrong.')
         print(md['STATISTICS_MINIMUM'])
         return 'fail'
 
     try:
         os.stat('tmp/test_gdal_translate_23.tif.aux.xml')
-        gdaltest.post_reason( 'did not expect .aux.xml file presence' )
+        gdaltest.post_reason('did not expect .aux.xml file presence')
         return 'fail'
-    except:
+    except OSError:
         pass
+
+    gdal.Unlink('../gcore/data/byte.tif.aux.xml')
 
     return 'success'
 
-
-
 ###############################################################################
 # Test -srcwin option when partially outside
+
 
 def test_gdal_translate_24():
     if test_cli_utilities.get_gdal_translate_path() is None:
@@ -674,6 +691,7 @@ def test_gdal_translate_24():
 ###############################################################################
 # Test -norat
 
+
 def test_gdal_translate_25():
     if test_cli_utilities.get_gdal_translate_path() is None:
         return 'skip'
@@ -691,6 +709,7 @@ def test_gdal_translate_25():
 
 ###############################################################################
 # Test -a_nodata and -stats (#5463)
+
 
 def test_gdal_translate_26():
     if test_cli_utilities.get_gdal_translate_path() is None:
@@ -721,6 +740,7 @@ def test_gdal_translate_26():
 
 ###############################################################################
 # Test that we don't preserve statistics when we ought not.
+
 
 def test_gdal_translate_27():
     if test_cli_utilities.get_gdal_translate_path() is None:
@@ -772,6 +792,7 @@ cellsize     60.000000000000
 ###############################################################################
 # Test -oo
 
+
 def test_gdal_translate_28():
     if test_cli_utilities.get_gdal_translate_path() is None:
         return 'skip'
@@ -789,12 +810,13 @@ def test_gdal_translate_28():
 ###############################################################################
 # Test -r
 
+
 def test_gdal_translate_29():
     if test_cli_utilities.get_gdal_translate_path() is None:
         return 'skip'
 
     (out, err) = gdaltest.runexternal_out_and_err(test_cli_utilities.get_gdal_translate_path() + ' ../gcore/data/byte.tif tmp/test_gdal_translate_29.tif -outsize 50% 50% -r cubic')
-    if not (err is None or err == '') :
+    if not (err is None or err == ''):
         gdaltest.post_reason('got error/warning')
         print(err)
         return 'fail'
@@ -812,12 +834,12 @@ def test_gdal_translate_29():
     ds = None
 
     (out, err) = gdaltest.runexternal_out_and_err(test_cli_utilities.get_gdal_translate_path() + ' ../gcore/data/byte.tif tmp/test_gdal_translate_29.vrt -outsize 50% 50% -r cubic -of VRT')
-    if not (err is None or err == '') :
+    if not (err is None or err == ''):
         gdaltest.post_reason('got error/warning')
         print(err)
         return 'fail'
     (out, err) = gdaltest.runexternal_out_and_err(test_cli_utilities.get_gdal_translate_path() + ' tmp/test_gdal_translate_29.vrt tmp/test_gdal_translate_29.tif')
-    if not (err is None or err == '') :
+    if not (err is None or err == ''):
         gdaltest.post_reason('got error/warning')
         print(err)
         return 'fail'
@@ -838,6 +860,7 @@ def test_gdal_translate_29():
 
 ###############################################################################
 # Test -tr option
+
 
 def test_gdal_translate_30():
     if test_cli_utilities.get_gdal_translate_path() is None:
@@ -862,6 +885,7 @@ def test_gdal_translate_30():
 ###############################################################################
 # Test -projwin_srs option
 
+
 def test_gdal_translate_31():
     if test_cli_utilities.get_gdal_translate_path() is None:
         return 'skip'
@@ -876,7 +900,7 @@ def test_gdal_translate_31():
         gdaltest.post_reason('Bad checksum')
         return 'fail'
 
-    if not gdaltest.geotransform_equals(gdal.Open('../gcore/data/byte.tif').GetGeoTransform(), ds.GetGeoTransform(), 1e-6) :
+    if not gdaltest.geotransform_equals(gdal.Open('../gcore/data/byte.tif').GetGeoTransform(), ds.GetGeoTransform(), 1e-6):
         gdaltest.post_reason('Bad geotransform')
         return 'fail'
 
@@ -886,6 +910,7 @@ def test_gdal_translate_31():
 
 ###############################################################################
 # Test subsetting a file with a RPC
+
 
 def test_gdal_translate_32():
     if test_cli_utilities.get_gdal_translate_path() is None:
@@ -898,14 +923,15 @@ def test_gdal_translate_32():
        abs(float(md['LINE_SCALE']) - 47502) > 1e-5 or \
        abs(float(md['SAMP_OFF']) - 19676.6923076923) > 1e-5 or \
        abs(float(md['SAMP_SCALE']) - 19678.1538461538) > 1e-5:
-           gdaltest.post_reason('fail')
-           print(md)
-           return 'fail'
+        gdaltest.post_reason('fail')
+        print(md)
+        return 'fail'
 
     return 'success'
 
 ###############################################################################
 # Test -outsize option in auto mode
+
 
 def test_gdal_translate_33():
     if test_cli_utilities.get_gdal_translate_path() is None:
@@ -941,6 +967,7 @@ def test_gdal_translate_33():
 ###############################################################################
 # Test NBITS is preserved
 
+
 def test_gdal_translate_34():
     if test_cli_utilities.get_gdal_translate_path() is None:
         return 'skip'
@@ -959,6 +986,7 @@ def test_gdal_translate_34():
 
 ###############################################################################
 # Test various errors (missing source or dest...)
+
 
 def test_gdal_translate_35():
     if test_cli_utilities.get_gdal_translate_path() is None:
@@ -993,55 +1021,56 @@ def test_gdal_translate_35():
 ###############################################################################
 # Cleanup
 
+
 def test_gdal_translate_cleanup():
     for i in range(14):
         try:
-            os.remove('tmp/test' + str(i+1) + '.tif')
-        except:
+            os.remove('tmp/test' + str(i + 1) + '.tif')
+        except OSError:
             pass
         try:
-            os.remove('tmp/test' + str(i+1) + '.tif.aux.xml')
-        except:
+            os.remove('tmp/test' + str(i + 1) + '.tif.aux.xml')
+        except OSError:
             pass
     try:
         os.remove('tmp/test15_1.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/test16.vrt')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/test17.vrt')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/test18_1.vrt')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/test18_2.vrt')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/test18_2.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/test_gdal_translate_19_src.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/test_gdal_translate_19_dst.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/test_gdal_translate_20_src.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/test_gdal_translate_20_dst.tif')
-    except:
+    except OSError:
         pass
     try:
         gdal.GetDriverByName('HFA').Delete('tmp/test_gdal_translate_21.img')
@@ -1057,7 +1086,7 @@ def test_gdal_translate_cleanup():
         pass
     try:
         os.remove('tmp/test_gdal_translate_24.tif')
-    except:
+    except OSError:
         pass
     try:
         gdal.GetDriverByName('GTiff').Delete('tmp/test_gdal_translate_25.tif')
@@ -1079,25 +1108,26 @@ def test_gdal_translate_cleanup():
         pass
     try:
         os.remove('tmp/test_gdal_translate_29.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/test_gdal_translate_29.vrt')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/test_gdal_translate_30.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/test_gdal_translate_31.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/test_gdal_translate_32.tif')
-    except:
+    except OSError:
         pass
     return 'success'
+
 
 gdaltest_list = [
     test_gdal_translate_1,
@@ -1136,13 +1166,13 @@ gdaltest_list = [
     test_gdal_translate_34,
     test_gdal_translate_35,
     test_gdal_translate_cleanup
-    ]
+]
 
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'test_gdal_translate' )
+    gdaltest.setup_run('test_gdal_translate')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

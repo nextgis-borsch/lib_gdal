@@ -30,7 +30,7 @@
 
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 import ogrtest
@@ -39,14 +39,15 @@ from osgeo import osr
 from osgeo import gdal
 
 
-wkts = [ ('POINT (0 1 2)', 'points', 0),
-         ('LINESTRING (0 1 2,3 4 5)', 'lines', 0),
-         ('POINT (0 1 2)', 'points2', 4326),
-         ('LINESTRING (0 1 2,3 4 5)', 'lines2', 32631),
+wkts = [('POINT (0 1 2)', 'points', 0),
+        ('LINESTRING (0 1 2,3 4 5)', 'lines', 0),
+        ('POINT (0 1 2)', 'points2', 4326),
+        ('LINESTRING (0 1 2,3 4 5)', 'lines2', 32631),
         ]
 
 ###############################################################################
 # Test creation
+
 
 def ogr_pcidsk_1():
 
@@ -56,7 +57,7 @@ def ogr_pcidsk_1():
 
     ds = ogr_drv.CreateDataSource('tmp/ogr_pcidsk_1.pix')
 
-    lyr = ds.CreateLayer('nothing', geom_type = ogr.wkbNone)
+    lyr = ds.CreateLayer('nothing', geom_type=ogr.wkbNone)
     feat = ogr.Feature(lyr.GetLayerDefn())
     lyr.CreateFeature(feat)
 
@@ -66,7 +67,7 @@ def ogr_pcidsk_1():
         gdaltest.post_reason('failure')
         return 'fail'
 
-    lyr = ds.CreateLayer('fields', geom_type = ogr.wkbNone)
+    lyr = ds.CreateLayer('fields', geom_type=ogr.wkbNone)
     lyr.CreateField(ogr.FieldDefn('strfield', ogr.OFTString))
     lyr.CreateField(ogr.FieldDefn('intfield', ogr.OFTInteger))
     lyr.CreateField(ogr.FieldDefn('realfield', ogr.OFTReal))
@@ -115,7 +116,7 @@ def ogr_pcidsk_1():
             srs.ImportFromEPSG(epsgcode)
         else:
             srs = None
-        lyr = ds.CreateLayer(layername, geom_type = geom.GetGeometryType(), srs = srs)
+        lyr = ds.CreateLayer(layername, geom_type=geom.GetGeometryType(), srs=srs)
         feat = ogr.Feature(lyr.GetLayerDefn())
         feat.SetGeometry(geom)
         lyr.CreateFeature(feat)
@@ -138,6 +139,7 @@ def ogr_pcidsk_1():
 
 ###############################################################################
 # Test reading
+
 
 def ogr_pcidsk_2():
 
@@ -210,6 +212,7 @@ def ogr_pcidsk_2():
 ###############################################################################
 # Check with test_ogrsf
 
+
 def ogr_pcidsk_3():
 
     import test_cli_utilities
@@ -239,6 +242,7 @@ def ogr_pcidsk_3():
 ###############################################################################
 # Test that we cannot open a raster only pcidsk in read-only mode
 
+
 def ogr_pcidsk_4():
 
     if ogr.GetDriverByName('PCIDSK') is None:
@@ -257,6 +261,7 @@ def ogr_pcidsk_4():
 ###############################################################################
 # Test that we can open a raster only pcidsk in update mode
 
+
 def ogr_pcidsk_5():
 
     if ogr.GetDriverByName('PCIDSK') is None:
@@ -265,12 +270,63 @@ def ogr_pcidsk_5():
     if gdal.GetDriverByName('PCIDSK') is None:
         return 'skip'
 
-    ds = ogr.Open('../gdrivers/data/utm.pix', update = 1)
+    ds = ogr.Open('../gdrivers/data/utm.pix', update=1)
     if ds is None:
         return 'fail'
     ds = None
 
     return 'success'
+
+###############################################################################
+
+
+def ogr_pcidsk_add_field_to_non_empty_layer():
+
+    if ogr.GetDriverByName('PCIDSK') is None:
+        return 'skip'
+
+    tmpfile = '/vsimem/tmp.pix'
+    ds = ogr.GetDriverByName('PCIDSK').CreateDataSource(tmpfile)
+    lyr = ds.CreateLayer('foo')
+    lyr.CreateField(ogr.FieldDefn('foo', ogr.OFTString))
+    f = ogr.Feature(lyr.GetLayerDefn())
+    f['foo'] = 'bar'
+    lyr.CreateFeature(f)
+    f = None
+    with gdaltest.error_handler():
+        if lyr.CreateField(ogr.FieldDefn('bar', ogr.OFTString)) == 0:
+            return 'fail'
+    f = ogr.Feature(lyr.GetLayerDefn())
+    f['foo'] = 'bar2'
+    lyr.CreateFeature(f)
+    f = None
+    ds = None
+
+    ogr.GetDriverByName('PCIDSK').DeleteDataSource(tmpfile)
+
+    return 'success'
+
+###############################################################################
+
+
+def ogr_pcidsk_too_many_layers():
+
+    if ogr.GetDriverByName('PCIDSK') is None:
+        return 'skip'
+
+    tmpfile = '/vsimem/tmp.pix'
+    ds = ogr.GetDriverByName('PCIDSK').CreateDataSource(tmpfile)
+    for i in range(1023):
+        ds.CreateLayer('foo%d' % i)
+    with gdaltest.error_handler():
+        if ds.CreateLayer('foo') is not None:
+            return 'fail'
+    ds = None
+
+    ogr.GetDriverByName('PCIDSK').DeleteDataSource(tmpfile)
+
+    return 'success'
+
 
 ###############################################################################
 # Check a polygon layer
@@ -309,6 +365,7 @@ def ogr_pcidsk_online_1():
 ###############################################################################
 # Check a polygon layer
 
+
 def ogr_pcidsk_online_2():
 
     import test_cli_utilities
@@ -332,11 +389,13 @@ def ogr_pcidsk_online_2():
 ###############################################################################
 # Cleanup
 
+
 def ogr_pcidsk_cleanup():
 
     gdal.Unlink('tmp/ogr_pcidsk_1.pix')
 
     return 'success'
+
 
 gdaltest_list = [
     ogr_pcidsk_1,
@@ -344,15 +403,16 @@ gdaltest_list = [
     ogr_pcidsk_3,
     ogr_pcidsk_4,
     ogr_pcidsk_5,
+    ogr_pcidsk_add_field_to_non_empty_layer,
+    ogr_pcidsk_too_many_layers,
     ogr_pcidsk_online_1,
     ogr_pcidsk_online_2,
-    ogr_pcidsk_cleanup ]
+    ogr_pcidsk_cleanup]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'ogr_pcidsk' )
+    gdaltest.setup_run('ogr_pcidsk')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

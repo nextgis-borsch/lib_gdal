@@ -34,7 +34,7 @@ import os
 import sys
 import base64
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 from osgeo import gdal
@@ -56,7 +56,7 @@ def tiff_write_icc():
     f.close()
 
     # Create dummy file
-    options = [ 'SOURCE_ICC_PROFILE=' + icc ]
+    options = ['SOURCE_ICC_PROFILE=' + icc]
 
     driver = gdal.GetDriverByName('GTiff')
     ds = driver.Create('tmp/icc_test.tiff', 64, 64, 3, gdal.GDT_Byte, options)
@@ -69,7 +69,7 @@ def tiff_write_icc():
         os.stat('tmp/icc_test.tiff.aux.xml')
         gdaltest.post_reason('fail')
         return 'fail'
-    except:
+    except OSError:
         pass
 
     if md['SOURCE_ICC_PROFILE'] != icc:
@@ -101,7 +101,7 @@ def tiff_write_icc():
         os.stat('tmp/icc_test.tiff.aux.xml')
         gdaltest.post_reason('fail')
         return 'fail'
-    except:
+    except OSError:
         pass
 
     if source_icc_profile != icc:
@@ -115,6 +115,7 @@ def tiff_write_icc():
 ###############################################################################
 # Test writing and reading of ICC profile in CreateCopy()
 
+
 def tiff_copy_icc():
 
     f = open('data/sRGB.icc', 'rb')
@@ -123,7 +124,7 @@ def tiff_copy_icc():
     f.close()
 
     # Create dummy file
-    options = [ 'SOURCE_ICC_PROFILE=' + icc ]
+    options = ['SOURCE_ICC_PROFILE=' + icc]
 
     driver = gdal.GetDriverByName('GTiff')
     ds = driver.Create('tmp/icc_test.tiff', 64, 64, 3, gdal.GDT_Byte, options)
@@ -156,6 +157,7 @@ def tiff_copy_icc():
 ###############################################################################
 # Test writing and reading of ICC profile in CreateCopy() options
 
+
 def tiff_copy_options_icc():
 
     f = open('data/sRGB.icc', 'rb')
@@ -164,11 +166,11 @@ def tiff_copy_options_icc():
     f.close()
 
     # Create dummy file
-    options = [ 'SOURCE_ICC_PROFILE=' + icc ]
+    options = ['SOURCE_ICC_PROFILE=' + icc]
 
     driver = gdal.GetDriverByName('GTiff')
     ds = driver.Create('tmp/icc_test.tiff', 64, 64, 3, gdal.GDT_Byte)
-    ds2 = driver.CreateCopy('tmp/icc_test2.tiff', ds, options = options)
+    ds2 = driver.CreateCopy('tmp/icc_test2.tiff', ds, options=options)
 
     # Check with dataset from CreateCopy()
     md = ds2.GetMetadata("COLOR_PROFILE")
@@ -194,6 +196,7 @@ def tiff_copy_options_icc():
 
     return 'success'
 
+
 def cvtTuple2String(a):
     s = ''
     for i in range(0, len(a)):
@@ -206,26 +209,27 @@ def cvtTuple2String(a):
 ###############################################################################
 # Test writing and reading of ICC colorimetric data from options
 
+
 def tiff_copy_options_colorimetric_data():
     # sRGB values
     source_primaries = [(0.64, 0.33, 1.0), (0.3, 0.6, 1.0), (0.15, 0.06, 1.0)]
     source_whitepoint = (0.31271, 0.32902, 1.0)
-    tifftag_transferfunction = (list(range(1, 256*4, 4)), list(range(2, 256*4+1, 4)), list(range(3, 256*4+2, 4)))
+    tifftag_transferfunction = (list(range(1, 256 * 4, 4)), list(range(2, 256 * 4 + 1, 4)), list(range(3, 256 * 4 + 2, 4)))
 
-    options = [ 'SOURCE_PRIMARIES_RED=' + cvtTuple2String(source_primaries[0]),
-        'SOURCE_PRIMARIES_GREEN=' + cvtTuple2String(source_primaries[1]),
-        'SOURCE_PRIMARIES_BLUE=' + cvtTuple2String(source_primaries[2]),
-        'SOURCE_WHITEPOINT=' + cvtTuple2String(source_whitepoint),
-        'TIFFTAG_TRANSFERFUNCTION_RED=' + cvtTuple2String(tifftag_transferfunction[0]),
-        'TIFFTAG_TRANSFERFUNCTION_GREEN=' + cvtTuple2String(tifftag_transferfunction[1]),
-        'TIFFTAG_TRANSFERFUNCTION_BLUE=' + cvtTuple2String(tifftag_transferfunction[2])
-        ]
+    options = ['SOURCE_PRIMARIES_RED=' + cvtTuple2String(source_primaries[0]),
+               'SOURCE_PRIMARIES_GREEN=' + cvtTuple2String(source_primaries[1]),
+               'SOURCE_PRIMARIES_BLUE=' + cvtTuple2String(source_primaries[2]),
+               'SOURCE_WHITEPOINT=' + cvtTuple2String(source_whitepoint),
+               'TIFFTAG_TRANSFERFUNCTION_RED=' + cvtTuple2String(tifftag_transferfunction[0]),
+               'TIFFTAG_TRANSFERFUNCTION_GREEN=' + cvtTuple2String(tifftag_transferfunction[1]),
+               'TIFFTAG_TRANSFERFUNCTION_BLUE=' + cvtTuple2String(tifftag_transferfunction[2])
+               ]
 
     driver = gdal.GetDriverByName('GTiff')
     ds = driver.Create('tmp/icc_test.tiff', 64, 64, 3, gdal.GDT_Byte)
 
     # Check with dataset from CreateCopy()
-    ds2 = driver.CreateCopy('tmp/icc_test2.tiff', ds, options = options)
+    ds2 = driver.CreateCopy('tmp/icc_test2.tiff', ds, options=options)
     md = ds2.GetMetadata("COLOR_PROFILE")
     ds = None
     ds2 = None
@@ -239,7 +243,7 @@ def tiff_copy_options_colorimetric_data():
     source_primaries2 = [
         eval('(' + md['SOURCE_PRIMARIES_RED'] + ')'),
         eval('(' + md['SOURCE_PRIMARIES_GREEN'] + ')'),
-        eval('(' + md['SOURCE_PRIMARIES_BLUE'] + ')') ]
+        eval('(' + md['SOURCE_PRIMARIES_BLUE'] + ')')]
 
     for j in range(0, 3):
         for i in range(0, 3):
@@ -250,7 +254,7 @@ def tiff_copy_options_colorimetric_data():
     tifftag_transferfunction2 = (
         eval('[' + md['TIFFTAG_TRANSFERFUNCTION_RED'] + ']'),
         eval('[' + md['TIFFTAG_TRANSFERFUNCTION_GREEN'] + ']'),
-        eval('[' + md['TIFFTAG_TRANSFERFUNCTION_BLUE'] + ']') )
+        eval('[' + md['TIFFTAG_TRANSFERFUNCTION_BLUE'] + ']'))
 
     if tifftag_transferfunction2 != tifftag_transferfunction:
         gdaltest.post_reason('fail')
@@ -272,7 +276,7 @@ def tiff_copy_options_colorimetric_data():
     source_primaries2 = [
         eval('(' + md['SOURCE_PRIMARIES_RED'] + ')'),
         eval('(' + md['SOURCE_PRIMARIES_GREEN'] + ')'),
-        eval('(' + md['SOURCE_PRIMARIES_BLUE'] + ')') ]
+        eval('(' + md['SOURCE_PRIMARIES_BLUE'] + ')')]
 
     for j in range(0, 3):
         for i in range(0, 3):
@@ -283,7 +287,7 @@ def tiff_copy_options_colorimetric_data():
     tifftag_transferfunction2 = (
         eval('[' + md['TIFFTAG_TRANSFERFUNCTION_RED'] + ']'),
         eval('[' + md['TIFFTAG_TRANSFERFUNCTION_GREEN'] + ']'),
-        eval('[' + md['TIFFTAG_TRANSFERFUNCTION_BLUE'] + ']') )
+        eval('[' + md['TIFFTAG_TRANSFERFUNCTION_BLUE'] + ']'))
 
     if tifftag_transferfunction2 != tifftag_transferfunction:
         gdaltest.post_reason('fail')
@@ -297,20 +301,21 @@ def tiff_copy_options_colorimetric_data():
 ###############################################################################
 # Test writing and reading of ICC colorimetric data in the file
 
+
 def tiff_copy_colorimetric_data():
     # sRGB values
     source_primaries = [(0.64, 0.33, 1.0), (0.3, 0.6, 1.0), (0.15, 0.06, 1.0)]
     source_whitepoint = (0.31271, 0.32902, 1.0)
-    tifftag_transferfunction = (list(range(1, 256*4, 4)), list(range(2, 256*4+1, 4)), list(range(3, 256*4+2, 4)))
+    tifftag_transferfunction = (list(range(1, 256 * 4, 4)), list(range(2, 256 * 4 + 1, 4)), list(range(3, 256 * 4 + 2, 4)))
 
-    options = [ 'SOURCE_PRIMARIES_RED=' + cvtTuple2String(source_primaries[0]),
-        'SOURCE_PRIMARIES_GREEN=' + cvtTuple2String(source_primaries[1]),
-        'SOURCE_PRIMARIES_BLUE=' + cvtTuple2String(source_primaries[2]),
-        'SOURCE_WHITEPOINT=' + cvtTuple2String(source_whitepoint),
-        'TIFFTAG_TRANSFERFUNCTION_RED=' + cvtTuple2String(tifftag_transferfunction[0]),
-        'TIFFTAG_TRANSFERFUNCTION_GREEN=' + cvtTuple2String(tifftag_transferfunction[1]),
-        'TIFFTAG_TRANSFERFUNCTION_BLUE=' + cvtTuple2String(tifftag_transferfunction[2])
-        ]
+    options = ['SOURCE_PRIMARIES_RED=' + cvtTuple2String(source_primaries[0]),
+               'SOURCE_PRIMARIES_GREEN=' + cvtTuple2String(source_primaries[1]),
+               'SOURCE_PRIMARIES_BLUE=' + cvtTuple2String(source_primaries[2]),
+               'SOURCE_WHITEPOINT=' + cvtTuple2String(source_whitepoint),
+               'TIFFTAG_TRANSFERFUNCTION_RED=' + cvtTuple2String(tifftag_transferfunction[0]),
+               'TIFFTAG_TRANSFERFUNCTION_GREEN=' + cvtTuple2String(tifftag_transferfunction[1]),
+               'TIFFTAG_TRANSFERFUNCTION_BLUE=' + cvtTuple2String(tifftag_transferfunction[2])
+               ]
 
     driver = gdal.GetDriverByName('GTiff')
     ds = driver.Create('tmp/icc_test.tiff', 64, 64, 3, gdal.GDT_Byte, options)
@@ -333,7 +338,7 @@ def tiff_copy_colorimetric_data():
     source_primaries2 = [
         eval('(' + md['SOURCE_PRIMARIES_RED'] + ')'),
         eval('(' + md['SOURCE_PRIMARIES_GREEN'] + ')'),
-        eval('(' + md['SOURCE_PRIMARIES_BLUE'] + ')') ]
+        eval('(' + md['SOURCE_PRIMARIES_BLUE'] + ')')]
 
     for j in range(0, 3):
         for i in range(0, 3):
@@ -344,7 +349,7 @@ def tiff_copy_colorimetric_data():
     tifftag_transferfunction2 = (
         eval('[' + md['TIFFTAG_TRANSFERFUNCTION_RED'] + ']'),
         eval('[' + md['TIFFTAG_TRANSFERFUNCTION_GREEN'] + ']'),
-        eval('[' + md['TIFFTAG_TRANSFERFUNCTION_BLUE'] + ']') )
+        eval('[' + md['TIFFTAG_TRANSFERFUNCTION_BLUE'] + ']'))
 
     if tifftag_transferfunction2 != tifftag_transferfunction:
         gdaltest.post_reason('fail')
@@ -366,7 +371,7 @@ def tiff_copy_colorimetric_data():
     source_primaries2 = [
         eval('(' + md['SOURCE_PRIMARIES_RED'] + ')'),
         eval('(' + md['SOURCE_PRIMARIES_GREEN'] + ')'),
-        eval('(' + md['SOURCE_PRIMARIES_BLUE'] + ')') ]
+        eval('(' + md['SOURCE_PRIMARIES_BLUE'] + ')')]
 
     for j in range(0, 3):
         for i in range(0, 3):
@@ -377,7 +382,7 @@ def tiff_copy_colorimetric_data():
     tifftag_transferfunction2 = (
         eval('[' + md['TIFFTAG_TRANSFERFUNCTION_RED'] + ']'),
         eval('[' + md['TIFFTAG_TRANSFERFUNCTION_GREEN'] + ']'),
-        eval('[' + md['TIFFTAG_TRANSFERFUNCTION_BLUE'] + ']') )
+        eval('[' + md['TIFFTAG_TRANSFERFUNCTION_BLUE'] + ']'))
 
     if tifftag_transferfunction2 != tifftag_transferfunction:
         gdaltest.post_reason('fail')
@@ -390,6 +395,7 @@ def tiff_copy_colorimetric_data():
 
 ###############################################################################
 # Test updating ICC profile
+
 
 def tiff_update_icc():
 
@@ -405,7 +411,7 @@ def tiff_update_icc():
 
     ds = gdal.Open('tmp/icc_test.tiff', gdal.GA_Update)
 
-    if sys.version_info >= (3,0,0):
+    if sys.version_info >= (3, 0, 0):
         icc = icc.decode('ascii')
     ds.SetMetadataItem('SOURCE_ICC_PROFILE', icc, 'COLOR_PROFILE')
     md = ds.GetMetadata("COLOR_PROFILE")
@@ -431,10 +437,11 @@ def tiff_update_icc():
 ###############################################################################
 # Test updating colorimetric options
 
+
 def tiff_update_colorimetric():
-    source_primaries = [(0.234, 0.555, 1.0), (0.2,0,1), (2,3.5,1)]
+    source_primaries = [(0.234, 0.555, 1.0), (0.2, 0, 1), (2, 3.5, 1)]
     source_whitepoint = (0.31271, 0.32902, 1.0)
-    tifftag_transferfunction = (list(range(1, 256*4, 4)), list(range(2, 256*4+1, 4)), list(range(3, 256*4+2, 4)))
+    tifftag_transferfunction = (list(range(1, 256 * 4, 4)), list(range(2, 256 * 4 + 1, 4)), list(range(3, 256 * 4 + 2, 4)))
 
     # Create dummy file
     driver = gdal.GetDriverByName('GTiff')
@@ -463,7 +470,7 @@ def tiff_update_colorimetric():
     source_primaries2 = [
         eval('(' + md['SOURCE_PRIMARIES_RED'] + ')'),
         eval('(' + md['SOURCE_PRIMARIES_GREEN'] + ')'),
-        eval('(' + md['SOURCE_PRIMARIES_BLUE'] + ')') ]
+        eval('(' + md['SOURCE_PRIMARIES_BLUE'] + ')')]
 
     for j in range(0, 3):
         for i in range(0, 3):
@@ -474,7 +481,7 @@ def tiff_update_colorimetric():
     tifftag_transferfunction2 = (
         eval('[' + md['TIFFTAG_TRANSFERFUNCTION_RED'] + ']'),
         eval('[' + md['TIFFTAG_TRANSFERFUNCTION_GREEN'] + ']'),
-        eval('[' + md['TIFFTAG_TRANSFERFUNCTION_BLUE'] + ']') )
+        eval('[' + md['TIFFTAG_TRANSFERFUNCTION_BLUE'] + ']'))
 
     if tifftag_transferfunction2 != tifftag_transferfunction:
         gdaltest.post_reason('fail')
@@ -495,7 +502,7 @@ def tiff_update_colorimetric():
     source_primaries2 = [
         eval('(' + md['SOURCE_PRIMARIES_RED'] + ')'),
         eval('(' + md['SOURCE_PRIMARIES_GREEN'] + ')'),
-        eval('(' + md['SOURCE_PRIMARIES_BLUE'] + ')') ]
+        eval('(' + md['SOURCE_PRIMARIES_BLUE'] + ')')]
 
     for j in range(0, 3):
         for i in range(0, 3):
@@ -506,7 +513,7 @@ def tiff_update_colorimetric():
     tifftag_transferfunction2 = (
         eval('[' + md['TIFFTAG_TRANSFERFUNCTION_RED'] + ']'),
         eval('[' + md['TIFFTAG_TRANSFERFUNCTION_GREEN'] + ']'),
-        eval('[' + md['TIFFTAG_TRANSFERFUNCTION_BLUE'] + ']') )
+        eval('[' + md['TIFFTAG_TRANSFERFUNCTION_BLUE'] + ']'))
 
     if tifftag_transferfunction2 != tifftag_transferfunction:
         gdaltest.post_reason('fail')
@@ -518,19 +525,19 @@ def tiff_update_colorimetric():
 
 ############################################################################
 
-gdaltest_list.append( (tiff_write_icc) )
-gdaltest_list.append( (tiff_copy_icc) )
-gdaltest_list.append( (tiff_copy_options_icc) )
-gdaltest_list.append( (tiff_copy_options_colorimetric_data) )
-gdaltest_list.append( (tiff_copy_colorimetric_data) )
-gdaltest_list.append( (tiff_update_icc) )
-gdaltest_list.append( (tiff_update_colorimetric) )
+
+gdaltest_list.append((tiff_write_icc))
+gdaltest_list.append((tiff_copy_icc))
+gdaltest_list.append((tiff_copy_options_icc))
+gdaltest_list.append((tiff_copy_options_colorimetric_data))
+gdaltest_list.append((tiff_copy_colorimetric_data))
+gdaltest_list.append((tiff_update_icc))
+gdaltest_list.append((tiff_update_colorimetric))
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'tiff_profile' )
+    gdaltest.setup_run('tiff_profile')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

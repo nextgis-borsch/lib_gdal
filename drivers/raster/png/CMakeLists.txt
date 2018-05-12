@@ -26,16 +26,13 @@
 ################################################################################
 
 option(ENABLE_PNG "Build Portable Network Graphics (.png) format" ON)
-if(ENABLE_PNG)
+if(ENABLE_PNG AND PNG_FOUND)
     set(TARGET_NAME ras_png)
 
     add_definitions(-DFRMT_png)
     set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DFRMT_png" PARENT_SCOPE)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-
-    find_anyproject(PNG REQUIRED CMAKE_ARGS
-      -DSKIP_INSTALL_EXPORT=ON)
 
     set(LIB_CSOURCES
         pngdataset.cpp

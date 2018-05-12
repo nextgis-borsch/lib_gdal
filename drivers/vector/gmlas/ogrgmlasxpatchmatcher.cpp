@@ -31,7 +31,7 @@
 // Must be first for DEBUG_BOOL case
 #include "ogr_gmlas.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /************************************************************************/
 /*                          GMLASXPathMatcher()                         */
@@ -122,15 +122,15 @@ void    GMLASXPathMatcher::SetDocumentMapURIToPrefix(
                 osLocalname.assign(osCurNode, iPosColumn+1,
                                 std::string::npos);
 
-                std::map<CPLString, CPLString>::const_iterator oIter =
+                const auto oIter =
                     m_oMapPrefixToURIReferenceXPaths.find(osPrefix);
                 if( oIter != m_oMapPrefixToURIReferenceXPaths.end() )
                 {
                     const CPLString& osURI( oIter->second );
-                    oIter = oMapURIToPrefix.find( osURI );
-                    if( oIter == oMapURIToPrefix.end() )
+                    const auto oIter2 = oMapURIToPrefix.find( osURI );
+                    if( oIter2 == oMapURIToPrefix.end() )
                         break;
-                    osPrefix.assign(oIter->second);
+                    osPrefix.assign(oIter2->second);
                 }
 
                 osCurNode.clear();

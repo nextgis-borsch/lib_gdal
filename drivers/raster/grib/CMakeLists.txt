@@ -33,8 +33,8 @@ if(ENABLE_GRIB)
     set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DFRMT_grib" PARENT_SCOPE)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/degrib18/degrib)
-    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/degrib18/g2clib-1.0.4)
+    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/degrib/degrib)
+    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/degrib/g2clib)
 
     # TODO: implement JASPER support when it will be available as an external library.
     #if(JASPER_FOUND)
@@ -50,27 +50,60 @@ if(ENABLE_GRIB)
 
     set(LIB_CSOURCES
         gribdataset.cpp
+        gribcreatecopy.cpp
     )
-    file(GLOB CSOURCES ${CMAKE_CURRENT_SOURCE_DIR}/degrib18/degrib/*)
-    foreach(CSOURCE ${CSOURCES})
-        if(EXISTS ${CSOURCE})
-            get_filename_component(CSOURCE_EXT ${CSOURCE} EXT)
-            if((${CSOURCE_EXT} STREQUAL ".c") OR (${CSOURCE_EXT} STREQUAL ".cpp"))
-                set(LIB_CSOURCES ${LIB_CSOURCES} ${CSOURCE})
-            endif()
-        endif()
-    endforeach()
-    file(GLOB CSOURCES ${CMAKE_CURRENT_SOURCE_DIR}/degrib18/g2clib-1.0.4/*)
-    foreach(CSOURCE ${CSOURCES})
-        if(EXISTS ${CSOURCE})
-            get_filename_component(CSOURCE_EXT ${CSOURCE} EXT)
-            if((CSOURCE_EXT STREQUAL ".c") OR (CSOURCE_EXT STREQUAL ".cpp"))
-                set(LIB_CSOURCES ${LIB_CSOURCES} ${CSOURCE})
-            endif()
-        endif()
-    endforeach()
 
-    # TODO: implement plugin gdal_ERS.so/.dll target if needed.
+    set(LIB_CSOURCES ${LIB_CSOURCES}
+        degrib/degrib/clock.c
+        degrib/degrib/degrib1.cpp
+        degrib/degrib/degrib2.cpp
+        degrib/degrib/inventory.cpp
+        degrib/degrib/metaname.cpp
+        degrib/degrib/myerror.c
+        degrib/degrib/filedatasource.cpp
+        degrib/degrib/memorydatasource.cpp
+        degrib/degrib/grib1tab.cpp
+        degrib/degrib/myutil.c
+        degrib/degrib/metaparse.cpp
+        degrib/degrib/weather.c
+        degrib/degrib/metaprint.cpp
+        degrib/degrib/grib2api.c
+        degrib/degrib/myassert.c
+        degrib/degrib/scan.c
+        degrib/degrib/tendian.cpp
+        degrib/degrib/hazard.c
+    )
+
+    set(LIB_CSOURCES ${LIB_CSOURCES}
+        degrib/g2clib/gridtemplates.c
+        degrib/g2clib/drstemplates.c
+        degrib/g2clib/pdstemplates.c
+        degrib/g2clib/gbits.c
+        degrib/g2clib/g2_free.c
+        degrib/g2clib/g2_unpack1.c
+        degrib/g2clib/g2_unpack2.c
+        degrib/g2clib/g2_unpack3.c
+        degrib/g2clib/g2_unpack4.c
+        degrib/g2clib/g2_unpack5.c
+        degrib/g2clib/g2_unpack6.c
+        degrib/g2clib/g2_unpack7.c
+        degrib/g2clib/g2_info.c
+        degrib/g2clib/g2_getfld.c
+        degrib/g2clib/simunpack.c
+        degrib/g2clib/comunpack.c
+        degrib/g2clib/pack_gp.c
+        degrib/g2clib/reduce.c
+        degrib/g2clib/specunpack.c
+        degrib/g2clib/rdieee.c
+        degrib/g2clib/mkieee.c
+        degrib/g2clib/int_power.c
+        degrib/g2clib/simpack.c
+        degrib/g2clib/compack.c
+        degrib/g2clib/cmplxpack.c
+        degrib/g2clib/misspack.c
+        degrib/g2clib/dec_jpeg2000.cpp
+        degrib/g2clib/jpcunpack.c
+    )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
 

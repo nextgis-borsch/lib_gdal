@@ -28,17 +28,17 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#ifndef OGR_GMLAS_CONSTS_INCLUDED_REFEFINABLE
-#define OGR_GMLAS_CONSTS_INCLUDED_REFEFINABLE
+#ifndef OGR_GMLAS_CONSTS_INCLUDED_REDEFINABLE
+#define OGR_GMLAS_CONSTS_INCLUDED_REDEFINABLE
 
 #ifdef CONSTANT_DEFINITION
 #define STRING_CONST(x,y)    const char* const x = y
 #define BOOL_CONST(x,y)      const bool x = y
 #define INT_CONST(x,y)       const int x = y
 #else
-#define STRING_CONST(x,y)    extern const char* const x;
-#define BOOL_CONST(x,y)      extern const bool x;
-#define INT_CONST(x,y)       extern const int x;
+#define STRING_CONST(x,y)    extern const char* const x
+#define BOOL_CONST(x,y)      extern const bool x
+#define INT_CONST(x,y)       extern const int x
 #endif
 
 namespace GMLASConstants
@@ -48,6 +48,7 @@ namespace GMLASConstants
     BOOL_CONST(DEFAULT_RESOLUTION_ENABLED_DEFAULT, false);
     BOOL_CONST(ALLOW_REMOTE_DOWNLOAD_DEFAULT, true);
     BOOL_CONST(CACHE_RESULTS_DEFAULT, false);
+    BOOL_CONST(INTERNAL_XLINK_RESOLUTION_DEFAULT, false);
 
     BOOL_CONST(ALLOW_REMOTE_SCHEMA_DOWNLOAD_DEFAULT, true);
     BOOL_CONST(ALWAYS_GENERATE_OGR_ID_DEFAULT, false);
@@ -291,6 +292,7 @@ namespace GMLASConstants
     STRING_CONST(szXS_DECIMAL, "decimal");
     STRING_CONST(szXS_DATE, "date");
     STRING_CONST(szXS_GYEAR, "gYear");
+    STRING_CONST(szXS_GYEAR_MONTH, "gYearMonth");
     STRING_CONST(szXS_TIME, "time");
     STRING_CONST(szXS_DATETIME, "dateTime");
     STRING_CONST(szXS_ANY_URI, "anyURI");
@@ -306,7 +308,7 @@ namespace GMLASConstants
     STRING_CONST(szAT_ANY_ATTR, "@*");
     STRING_CONST(szMATCH_ALL, "/*");
     STRING_CONST(szEXTRA_SUFFIX, ";extra=");
-};
+}
 
 #undef STRING_CONST
 #undef INT_CONST
@@ -314,4 +316,4 @@ namespace GMLASConstants
 
 using namespace GMLASConstants;
 
-#endif // OGR_GMLAS_CONSTS_INCLUDED_REFEFINABLE
+#endif // OGR_GMLAS_CONSTS_INCLUDED_REDEFINABLE

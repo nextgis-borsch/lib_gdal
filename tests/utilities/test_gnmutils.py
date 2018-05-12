@@ -34,21 +34,22 @@
 import sys
 import os
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 import test_cli_utilities
 
 ###############################################################################
 # Test create
-#gnmmanage create -f GNMFile -t_srs EPSG:4326 -dsco net_name=test_gnm -dsco net_description="Test file based GNM" /home/bishop/tmp/ --config CPL_DEBUG ON
+# gnmmanage create -f GNMFile -t_srs EPSG:4326 -dsco net_name=test_gnm -dsco net_description="Test file based GNM" /home/bishop/tmp/ --config CPL_DEBUG ON
+
 
 def test_gnmmanage_1():
     if test_cli_utilities.get_gnmmanage_path() is None:
         return 'skip'
 
     (ret, err) = gdaltest.runexternal_out_and_err(test_cli_utilities.get_gnmmanage_path() + ' create -f GNMFile -t_srs EPSG:4326 -dsco net_name=test_gnm -dsco net_description="Test file based GNM" tmp')
-    if not (err is None or err == '') :
+    if not (err is None or err == ''):
         gdaltest.post_reason('got error/warning')
         print(err)
         return 'fail'
@@ -56,7 +57,7 @@ def test_gnmmanage_1():
     try:
         os.stat('tmp/test_gnm')
         pass
-    except:
+    except OSError:
         gdaltest.post_reason('Expected create tmp/test_gnm')
         return 'fail'
 
@@ -67,18 +68,19 @@ def test_gnmmanage_1():
 # gnmmanage import /home/bishop/tmp/data/pipes.shp /home/bishop/tmp/test_gnm --config CPL_DEBUG ON
 # gnmmanage import /home/bishop/tmp/data/wells.shp /home/bishop/tmp/test_gnm --config CPL_DEBUG ON
 
+
 def test_gnmmanage_2():
     if test_cli_utilities.get_gnmmanage_path() is None:
         return 'skip'
 
     (ret, err) = gdaltest.runexternal_out_and_err(test_cli_utilities.get_gnmmanage_path() + ' import ../gnm/data/pipes.shp tmp/test_gnm')
-    if not (err is None or err == '') :
+    if not (err is None or err == ''):
         gdaltest.post_reason('got error/warning')
         print(err)
         return 'fail'
 
     (ret, err) = gdaltest.runexternal_out_and_err(test_cli_utilities.get_gnmmanage_path() + ' import ../gnm/data/wells.shp tmp/test_gnm')
-    if not (err is None or err == '') :
+    if not (err is None or err == ''):
         gdaltest.post_reason('got error/warning')
         print(err)
         return 'fail'
@@ -88,6 +90,7 @@ def test_gnmmanage_2():
 ###############################################################################
 # Test info
 # gnmmanage info /home/bishop/tmp/test_gnm
+
 
 def test_gnmmanage_3():
     if test_cli_utilities.get_gnmmanage_path() is None:
@@ -111,6 +114,7 @@ def test_gnmmanage_3():
 # Test autoconect
 # gnmmanage autoconnect 0.000001 /home/bishop/tmp/test_gnm --config CPL_DEBUG ON
 
+
 def test_gnmmanage_4():
     if test_cli_utilities.get_gnmmanage_path() is None:
         return 'skip'
@@ -124,6 +128,7 @@ def test_gnmmanage_4():
 ###############################################################################
 # Test dijkstra
 # gnmanalyse dijkstra 61 50 -alo "fetch_vertex=OFF" -ds /home/bishop/tmp/di.shp -lco "SHPT=ARC" /home/bishop/tmp/test_gnm --config CPL_DEBUG ON
+
 
 def test_gnmanalyse_1():
     if test_cli_utilities.get_gnmmanage_path() is None:
@@ -141,6 +146,7 @@ def test_gnmanalyse_1():
 # Test kpaths
 # gnmanalyse kpaths 61 50 3 -alo "fetch_vertex=OFF" -ds /home/bishop/tmp/kp.shp -lco "SHPT=ARC" /home/bishop/tmp/test_gnm --config CPL_DEBUG ON
 
+
 def test_gnmanalyse_2():
     if test_cli_utilities.get_gnmmanage_path() is None:
         return 'skip'
@@ -156,12 +162,13 @@ def test_gnmanalyse_2():
 ###############################################################################
 # Test cleanup
 
+
 def test_gnm_cleanup():
     if test_cli_utilities.get_gnmmanage_path() is None:
         return 'skip'
 
     (ret, err) = gdaltest.runexternal_out_and_err(test_cli_utilities.get_gnmmanage_path() + ' delete tmp/test_gnm')
-    if not (err is None or err == '') :
+    if not (err is None or err == ''):
         gdaltest.post_reason('got error/warning')
         print(err)
         return 'fail'
@@ -170,11 +177,10 @@ def test_gnm_cleanup():
         os.stat('tmp/test_gnm')
         gdaltest.post_reason('Expected delete tmp/test_gnm')
         return 'fail'
-    except:
+    except OSError:
         pass
 
     return 'success'
-
 
 
 gdaltest_list = [
@@ -185,18 +191,13 @@ gdaltest_list = [
     test_gnmanalyse_1,
     test_gnmanalyse_2,
     test_gnm_cleanup
-    ]
+]
 
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'test_gnmutils' )
+    gdaltest.setup_run('test_gnmutils')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-
-
-
-
-

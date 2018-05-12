@@ -5,7 +5,7 @@
 ################################################################################
 # Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
 # Copyright (C) 2016 Mikhail Gusev
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
 # to deal in the Software without restriction, including without limitation
@@ -37,7 +37,7 @@ if(ENABLE_OSM)
     include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/sqlite)
     include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/generic)
     include_directories(${SQLITE3_INCLUDE_DIRS})
-    
+
     if(EXPAT_FOUND)
         include_directories(${EXPAT_INCLUDE_DIRS})
     endif()
@@ -46,18 +46,19 @@ if(ENABLE_OSM)
     )
 
     set(LIB_HHEADERS_PRIV
-        ogr_osm.h 
-        gpb.h 
+        ogr_osm.h
+        gpb.h
         osm_parser.h
     )
 
     set(LIB_CSOURCES
-        ogrosmdriver.cpp 
-        ogrosmdatasource.cpp 
-        ogrosmlayer.cpp 
-        osm_parser.cpp	
+        ogrosmdriver.cpp
+        ogrosmdatasource.cpp
+        ogrosmlayer.cpp
+        osm_parser.cpp
+        osm2osm.cpp
     )
-    
+
     # TODO: implement osm2osm target if needed.
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
@@ -65,5 +66,5 @@ if(ENABLE_OSM)
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
 else()
-    warning_msg("Skip osm")  
+    warning_msg("Skip osm")
 endif()

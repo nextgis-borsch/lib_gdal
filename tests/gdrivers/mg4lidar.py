@@ -31,7 +31,7 @@
 import os
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 from osgeo import gdal
@@ -39,6 +39,7 @@ from osgeo import gdal
 ###############################################################################
 # Test reading a MG4Lidar file
 #
+
 
 def mg4lidar_1():
 
@@ -55,12 +56,12 @@ def mg4lidar_1():
 
     try:
         os.stat('tmp/cache/GDAL_MG4Lidar_Src')
-    except:
+    except OSError:
         try:
-            gdaltest.unzip( 'tmp/cache', 'tmp/cache/GDAL_MG4Lidar_Src.zip')
+            gdaltest.unzip('tmp/cache', 'tmp/cache/GDAL_MG4Lidar_Src.zip')
             try:
                 os.stat('tmp/cache/GDAL_MG4Lidar_Src')
-            except:
+            except OSError:
                 return 'skip'
         except:
             return 'skip'
@@ -77,9 +78,9 @@ def mg4lidar_1():
         return 'success'
 
     gt = ds.GetGeoTransform()
-    ref_gt = (504489.919999999983702,3.078227571115974,0,4795848.389999999664724,0,-3.078259860787739)
+    ref_gt = (504489.919999999983702, 3.078227571115974, 0, 4795848.389999999664724, 0, -3.078259860787739)
     for i in range(6):
-        if abs(gt[i]-ref_gt[i]) > 1e-6:
+        if abs(gt[i] - ref_gt[i]) > 1e-6:
             gdaltest.post_reason('did not get expected geotransform')
             print(gt)
             return 'fail'
@@ -100,14 +101,14 @@ def mg4lidar_1():
 
     return 'success'
 
+
 gdaltest_list = [
-    mg4lidar_1 ]
+    mg4lidar_1]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'mg4lidar' )
+    gdaltest.setup_run('mg4lidar')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

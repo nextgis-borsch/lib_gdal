@@ -31,7 +31,7 @@
 #include "ogrgrass.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /************************************************************************/
 /*                           OGRGRASSLayer()                            */
@@ -789,11 +789,9 @@ OGRFeature *OGRGRASSLayer::GetFeature( GIntBig nFeatureId )
                nFeatureId );
 
     int cat;
-    OGRFeature *poFeature = NULL;
-
     OGRGeometry *poOGR = GetFeatureGeometry ( nFeatureId, &cat );
 
-    poFeature = new OGRFeature( poFeatureDefn );
+    OGRFeature* poFeature = new OGRFeature( poFeatureDefn );
     poFeature->SetGeometryDirectly( poOGR );
     poFeature->SetFID ( nFeatureId );
 

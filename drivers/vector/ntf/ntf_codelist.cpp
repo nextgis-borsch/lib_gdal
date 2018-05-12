@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /************************************************************************/
 /*                             NTFCodeList                              */
@@ -121,5 +121,5 @@ const char *NTFCodeList::Lookup( const char * pszCode )
             return papszCodeDes[i];
     }
 
-    return NULL;
+    return nullptr;
 }

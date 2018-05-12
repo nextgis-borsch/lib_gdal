@@ -31,13 +31,14 @@
 
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 from osgeo import gdal
 
 ###############################################################################
 # Test writing a ZIP with multiple files and directories
+
 
 def vsizip_1():
 
@@ -128,7 +129,7 @@ def vsizip_1():
 
     # Test alternate uri syntax
     gdal.Rename("/vsimem/test.zip", "/vsimem/test.xxx")
-    f= gdal.VSIFOpenL("/vsizip/{/vsimem/test.xxx}/subdir3/abcd", "rb")
+    f = gdal.VSIFOpenL("/vsizip/{/vsimem/test.xxx}/subdir3/abcd", "rb")
     if f is None:
         gdaltest.post_reason('fail')
         return 'fail'
@@ -141,7 +142,7 @@ def vsizip_1():
         return 'fail'
 
     # With a trailing slash
-    f= gdal.VSIFOpenL("/vsizip/{/vsimem/test.xxx}/subdir3/abcd/", "rb")
+    f = gdal.VSIFOpenL("/vsizip/{/vsimem/test.xxx}/subdir3/abcd/", "rb")
     if f is None:
         gdaltest.post_reason('fail')
         return 'fail'
@@ -166,13 +167,13 @@ def vsizip_1():
         return 'fail'
 
     # Non existing subfile
-    f= gdal.VSIFOpenL("/vsizip/{/vsimem/test.zzz}/bla", "rb")
+    f = gdal.VSIFOpenL("/vsizip/{/vsimem/test.zzz}/bla", "rb")
     if f is not None:
         gdaltest.post_reason('fail')
         return 'fail'
 
     # Wrong syntax
-    f= gdal.VSIFOpenL("/vsizip/{/vsimem/test.xxx}.aux.xml", "rb")
+    f = gdal.VSIFOpenL("/vsizip/{/vsimem/test.xxx}.aux.xml", "rb")
     if f is not None:
         gdaltest.post_reason('fail')
         return 'fail'
@@ -190,7 +191,7 @@ def vsizip_1():
     gdal.VSIFCloseL(f)
     gdal.VSIFCloseL(hZIP)
 
-    f= gdal.VSIFOpenL("/vsizip/{/vsizip/{/vsimem/zipinzip.yyy}/test.xxx}/subdir3/abcd/", "rb")
+    f = gdal.VSIFOpenL("/vsizip/{/vsizip/{/vsimem/zipinzip.yyy}/test.xxx}/subdir3/abcd/", "rb")
     if f is None:
         gdaltest.post_reason('fail')
         return 'fail'
@@ -219,6 +220,7 @@ def vsizip_1():
 
 ###############################################################################
 # Test writing 2 files in the ZIP by closing it completely between the 2
+
 
 def vsizip_2():
 
@@ -250,7 +252,7 @@ def vsizip_2():
         gdaltest.post_reason('expected error')
         print(gdal.GetLastErrorMsg())
         return 'fail'
-    if content != None:
+    if content is not None:
         gdaltest.post_reason('bad content 2')
         print(content)
         return 'fail'
@@ -325,6 +327,7 @@ def vsizip_3():
 ###############################################################################
 # Test ReadRecursive on valid zip
 
+
 def vsizip_4():
 
     # read recursive and validate content
@@ -343,6 +346,7 @@ def vsizip_4():
 
 ###############################################################################
 # Test ReadRecursive on deep zip
+
 
 def vsizip_5():
 
@@ -368,16 +372,19 @@ def vsizip_5():
         gdaltest.post_reason('fail read')
         return 'fail'
     if len(res) != 1001:
-        gdaltest.post_reason('wrong size: '+str(len(res)))
+        gdaltest.post_reason('wrong size: ' + str(len(res)))
         return 'fail'
     if res[10] != 'a/a/a/a/a/a/a/a/a/a/a/':
-        gdaltest.post_reason('bad content: '+res[10])
+        gdaltest.post_reason('bad content: ' + res[10])
         return 'fail'
+
+    gdal.Unlink("/vsimem/bigdepthzip.zip")
 
     return 'success'
 
 ###############################################################################
 # Test writing 2 files with same name in a ZIP (#4785)
+
 
 def vsizip_6():
 
@@ -427,12 +434,13 @@ def vsizip_6():
 ###############################################################################
 # Test that we use the extended field for UTF-8 filenames (#5361).
 
+
 def vsizip_7():
 
     content = gdal.ReadDir("/vsizip/data/cp866_plus_utf8.zip")
     ok = 0
     try:
-        local_vars = { 'content': content, 'ok': ok }
+        local_vars = {'content': content, 'ok': ok}
         exec("if content == [u'\u0430\u0431\u0432\u0433\u0434\u0435', u'\u0436\u0437\u0438\u0439\u043a\u043b']: ok = 1", None, local_vars)
         ok = local_vars['ok']
     except:
@@ -449,6 +457,7 @@ def vsizip_7():
 ###############################################################################
 # Basic test for ZIP64 support (5 GB file that compresses in less than 4 GB)
 
+
 def vsizip_8():
 
     if gdal.VSIStatL('/vsizip/vsizip/data/zero.bin.zip.zip/zero.bin.zip').size != 5000 * 1000 * 1000 + 1:
@@ -458,6 +467,7 @@ def vsizip_8():
 
 ###############################################################################
 # Basic test for ZIP64 support (5 GB file that is stored)
+
 
 def vsizip_9():
 
@@ -490,6 +500,7 @@ def vsizip_9():
 ###############################################################################
 # Test that we recode filenames in ZIP (#5361)
 
+
 def vsizip_10():
 
     gdal.SetConfigOption('CPL_ZIP_ENCODING', 'CP866')
@@ -497,7 +508,7 @@ def vsizip_10():
     gdal.SetConfigOption('CPL_ZIP_ENCODING', None)
     ok = 0
     try:
-        local_vars = { 'content': content, 'ok': ok }
+        local_vars = {'content': content, 'ok': ok}
         exec("if content == [u'\u0430\u0431\u0432\u0433\u0434\u0435', u'\u0436\u0437\u0438\u0439\u043a\u043b']: ok = 1", None, local_vars)
         ok = local_vars['ok']
     except:
@@ -517,12 +528,13 @@ def vsizip_10():
 ###############################################################################
 # Test that we don't do anything with ZIP with filenames in UTF-8 already (#5361)
 
+
 def vsizip_11():
 
     content = gdal.ReadDir("/vsizip/data/utf8.zip")
     ok = 0
     try:
-        local_vars = { 'content': content, 'ok': ok }
+        local_vars = {'content': content, 'ok': ok}
         exec("if content == [u'\u0430\u0431\u0432\u0433\u0434\u0435', u'\u0436\u0437\u0438\u0439\u043a\u043b']: ok = 1", None, local_vars)
         ok = local_vars['ok']
     except:
@@ -538,6 +550,7 @@ def vsizip_11():
 
 ###############################################################################
 # Test changing the content of a zip file (#6005)
+
 
 def vsizip_12():
 
@@ -577,9 +590,9 @@ def vsizip_12():
 
     content = gdal.ReadDir('/vsizip/vsimem/vsizip_12.zip')
 
-    gdal.Unlink('/vsizip/vsimem/vsizip_12_src1.zip')
-    gdal.Unlink('/vsizip/vsimem/vsizip_12_src2.zip')
-    gdal.Unlink('/vsizip/vsimem/vsizip_12.zip')
+    gdal.Unlink('/vsimem/vsizip_12_src1.zip')
+    gdal.Unlink('/vsimem/vsizip_12_src2.zip')
+    gdal.Unlink('/vsimem/vsizip_12.zip')
 
     if content != ['bar.baz']:
         gdaltest.post_reason('fail')
@@ -590,6 +603,7 @@ def vsizip_12():
 
 ###############################################################################
 # Test ReadDir() truncation
+
 
 def vsizip_13():
 
@@ -604,23 +618,24 @@ def vsizip_13():
         gdaltest.post_reason('fail')
         return 'fail'
     # Test truncation
-    lst_truncated = gdal.ReadDir('/vsizip/vsimem/vsizip_13.zip', int(len(lst)/2))
-    if len(lst_truncated) <= int(len(lst)/2):
+    lst_truncated = gdal.ReadDir('/vsizip/vsimem/vsizip_13.zip', int(len(lst) / 2))
+    if len(lst_truncated) <= int(len(lst) / 2):
         gdaltest.post_reason('fail')
         return 'fail'
 
-    gdal.Unlink('/vsizip/vsimem/vsizip_13.zip')
+    gdal.Unlink('/vsimem/vsizip_13.zip')
 
     return 'success'
 
 ###############################################################################
 # Test that we can recode filenames in ZIP when writing (#6631)
 
+
 def vsizip_14():
 
     fmain = gdal.VSIFOpenL('/vsizip//vsimem/vsizip_14.zip', 'wb')
     try:
-        x = [ '' ]
+        x = ['']
         exec("x[0] = u'\u0430\u0431\u0432\u0433\u0434\u0435'")
         cp866_filename = x[0]
     except:
@@ -648,27 +663,27 @@ def vsizip_14():
     return 'success'
 
 
-gdaltest_list = [ vsizip_1,
-                  vsizip_2,
-                  vsizip_3,
-                  vsizip_4,
-                  vsizip_5,
-                  vsizip_6,
-                  vsizip_7,
-                  vsizip_8,
-                  vsizip_9,
-                  vsizip_10,
-                  vsizip_11,
-                  vsizip_12,
-                  vsizip_13,
-                  vsizip_14
-                  ]
+gdaltest_list = [vsizip_1,
+                 vsizip_2,
+                 vsizip_3,
+                 vsizip_4,
+                 vsizip_5,
+                 vsizip_6,
+                 vsizip_7,
+                 vsizip_8,
+                 vsizip_9,
+                 vsizip_10,
+                 vsizip_11,
+                 vsizip_12,
+                 vsizip_13,
+                 vsizip_14
+                 ]
 
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'vsizip' )
+    gdaltest.setup_run('vsizip')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

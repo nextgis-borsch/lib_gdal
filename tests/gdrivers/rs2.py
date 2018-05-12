@@ -30,7 +30,7 @@
 
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 from osgeo import gdal
 import gdaltest
@@ -40,50 +40,54 @@ import gdaltest
 # the code of the driver. It is really not meant as being used by other readers. If RS2 code
 # evolves, this might break the test legitimately !
 
+
 def rs2_1():
-    tst = gdaltest.GDALTest( 'RS2', 'product.xml', 1, 4672 )
+    tst = gdaltest.GDALTest('RS2', 'product.xml', 1, 4672)
     return tst.testOpen()
 
 
 def rs2_2():
-    tst = gdaltest.GDALTest( 'RS2', 'RADARSAT_2_CALIB:BETA0:data/product.xml', 1, 4848, filename_absolute=1 )
+    tst = gdaltest.GDALTest('RS2', 'RADARSAT_2_CALIB:BETA0:data/product.xml', 1, 4848, filename_absolute=1)
     return tst.testOpen()
 
 # Test reading our dummy RPC
+
+
 def rs2_3():
     ds = gdal.Open('data/product.xml')
     got_rpc = ds.GetMetadata('RPC')
-    expected_rpc = {'ERR_BIAS' : 'biasError',
-                    'ERR_RAND' : 'randomError',
-                    'HEIGHT_OFF' : 'heightOffset',
-                    'HEIGHT_SCALE' : 'heightScale',
-                    'LAT_OFF' : 'latitudeOffset',
-                    'LAT_SCALE' : 'latitudeScale',
-                    'LINE_DEN_COEFF' : 'lineDenominatorCoefficients',
-                    'LINE_NUM_COEFF' : 'lineNumeratorCoefficients',
-                    'LINE_OFF' : 'lineOffset',
-                    'LINE_SCALE' : 'lineScale',
-                    'LONG_OFF' : 'longitudeOffset',
-                    'LONG_SCALE' : 'longitudeScale',
-                    'SAMP_DEN_COEFF' : 'pixelDenominatorCoefficients',
-                    'SAMP_NUM_COEFF' : 'pixelNumeratorCoefficients',
-                    'SAMP_OFF' : 'pixelOffset',
-                    'SAMP_SCALE' : 'pixelScale'}
+    expected_rpc = {'ERR_BIAS': 'biasError',
+                    'ERR_RAND': 'randomError',
+                    'HEIGHT_OFF': 'heightOffset',
+                    'HEIGHT_SCALE': 'heightScale',
+                    'LAT_OFF': 'latitudeOffset',
+                    'LAT_SCALE': 'latitudeScale',
+                    'LINE_DEN_COEFF': 'lineDenominatorCoefficients',
+                    'LINE_NUM_COEFF': 'lineNumeratorCoefficients',
+                    'LINE_OFF': 'lineOffset',
+                    'LINE_SCALE': 'lineScale',
+                    'LONG_OFF': 'longitudeOffset',
+                    'LONG_SCALE': 'longitudeScale',
+                    'SAMP_DEN_COEFF': 'pixelDenominatorCoefficients',
+                    'SAMP_NUM_COEFF': 'pixelNumeratorCoefficients',
+                    'SAMP_OFF': 'pixelOffset',
+                    'SAMP_SCALE': 'pixelScale'}
     if got_rpc != expected_rpc:
         gdaltest.post_reason('fail')
         print(got_rpc)
         return 'fail'
     return 'success'
 
+
 gdaltest_list = [
     rs2_1,
     rs2_2,
-    rs2_3 ]
+    rs2_3]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'rs2' )
+    gdaltest.setup_run('rs2')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

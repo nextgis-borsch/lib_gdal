@@ -35,7 +35,7 @@
 #include "gdal.h"
 #include "cpl_error.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 //! @cond Doxygen_Suppress
 /************************************************************************/
@@ -45,7 +45,7 @@ CPL_CVSID("$Id$");
 GDALAllValidMaskBand::GDALAllValidMaskBand( GDALRasterBand *poParent ) :
     GDALRasterBand(FALSE)
 {
-    poDS = NULL;
+    poDS = nullptr;
     nBand = 0;
 
     nRasterXSize = poParent->GetXSize();

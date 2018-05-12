@@ -34,12 +34,11 @@ if(ENABLE_MBTILES)
     set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DFRMT_mbtiles" PARENT_SCOPE)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-    #include_directories(${JSONC_INCLUDE_DIR})
     include_directories(${CMAKE_SOURCE_DIR}/core/ogr)
     include_directories(${CMAKE_SOURCE_DIR}/drivers/common/gpkg)
     include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/sqlite)
     include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/geojson)
-    include_directories(${SQLITE3_INCLUDE_DIRS})
+    include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/mvt)
 
     # TODO: do we need JPEG and PNG drivers as its written in
     # http://www.gdal.org/frmt_mbtiles.html ?

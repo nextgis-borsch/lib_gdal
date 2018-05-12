@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#******************************************************************************
+# ******************************************************************************
 #  $Id$
 #
 #  Project:  GDAL Python Interface
 #  Purpose:  Application for executing OGR layer algebra operations
 #  Author:   Even Rouault, even dot rouault at mines-paris dot org
 #
-#******************************************************************************
+# ******************************************************************************
 #  Copyright (c) 2013, Even Rouault <even dot rouault at mines-paris dot org>
 #
 #  Permission is hereby granted, free of charge, to any person obtaining a
@@ -27,7 +27,7 @@
 #  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 #  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
-#******************************************************************************
+# ******************************************************************************
 
 import os
 import sys
@@ -37,6 +37,7 @@ from osgeo import ogr
 from osgeo import osr
 
 ###############################################################################
+
 
 def Usage():
     print("""
@@ -52,13 +53,15 @@ Usage: ogr_layer_algebra.py Union|Intersection|SymDifference|Identity|Update|Cli
 
 ###############################################################################
 
+
 def EQUAL(a, b):
     return a.lower() == b.lower()
 
 ###############################################################################
 
-def CreateLayer(output_ds, output_lyr_name, srs, geom_type, lco, \
-                input_lyr, input_fields, \
+
+def CreateLayer(output_ds, output_lyr_name, srs, geom_type, lco,
+                input_lyr, input_fields,
                 method_lyr, method_fields, opt):
 
     output_lyr = output_ds.CreateLayer(output_lyr_name, srs, geom_type, lco)
@@ -118,7 +121,8 @@ def CreateLayer(output_ds, output_lyr_name, srs, geom_type, lco, \
 
 ###############################################################################
 
-def main(argv = None):
+
+def main(argv=None):
 
     format = 'ESRI Shapefile'
     quiet_flag = 0
@@ -139,7 +143,7 @@ def main(argv = None):
     srs_name = None
     srs = None
 
-    argv = ogr.GeneralCmdLineProcessor( sys.argv )
+    argv = ogr.GeneralCmdLineProcessor(sys.argv)
     if argv is None:
         return 1
 
@@ -210,39 +214,39 @@ def main(argv = None):
             i = i + 1
             val = argv[i]
 
-            if EQUAL(val,"NONE"):
+            if EQUAL(val, "NONE"):
                 geom_type = ogr.wkbNone
-            elif EQUAL(val,"GEOMETRY"):
+            elif EQUAL(val, "GEOMETRY"):
                 geom_type = ogr.wkbUnknown
-            elif EQUAL(val,"POINT"):
+            elif EQUAL(val, "POINT"):
                 geom_type = ogr.wkbPoint
-            elif EQUAL(val,"LINESTRING"):
+            elif EQUAL(val, "LINESTRING"):
                 geom_type = ogr.wkbLineString
-            elif EQUAL(val,"POLYGON"):
+            elif EQUAL(val, "POLYGON"):
                 geom_type = ogr.wkbPolygon
-            elif EQUAL(val,"GEOMETRYCOLLECTION"):
+            elif EQUAL(val, "GEOMETRYCOLLECTION"):
                 geom_type = ogr.wkbGeometryCollection
-            elif EQUAL(val,"MULTIPOINT"):
+            elif EQUAL(val, "MULTIPOINT"):
                 geom_type = ogr.wkbMultiPoint
-            elif EQUAL(val,"MULTILINESTRING"):
+            elif EQUAL(val, "MULTILINESTRING"):
                 geom_type = ogr.wkbMultiLineString
-            elif EQUAL(val,"MULTIPOLYGON"):
+            elif EQUAL(val, "MULTIPOLYGON"):
                 geom_type = ogr.wkbMultiPolygon
-            elif EQUAL(val,"GEOMETRY25D"):
+            elif EQUAL(val, "GEOMETRY25D"):
                 geom_type = ogr.wkbUnknown | ogr.wkb25DBit
-            elif EQUAL(val,"POINT25D"):
+            elif EQUAL(val, "POINT25D"):
                 geom_type = ogr.wkbPoint25D
-            elif EQUAL(val,"LINESTRING25D"):
+            elif EQUAL(val, "LINESTRING25D"):
                 geom_type = ogr.wkbLineString25D
-            elif EQUAL(val,"POLYGON25D"):
+            elif EQUAL(val, "POLYGON25D"):
                 geom_type = ogr.wkbPolygon25D
-            elif EQUAL(val,"GEOMETRYCOLLECTION25D"):
+            elif EQUAL(val, "GEOMETRYCOLLECTION25D"):
                 geom_type = ogr.wkbGeometryCollection25D
-            elif EQUAL(val,"MULTIPOINT25D"):
+            elif EQUAL(val, "MULTIPOINT25D"):
                 geom_type = ogr.wkbMultiPoint25D
-            elif EQUAL(val,"MULTILINESTRING25D"):
+            elif EQUAL(val, "MULTILINESTRING25D"):
                 geom_type = ogr.wkbMultiLineString25D
-            elif EQUAL(val,"MULTIPOLYGON25D"):
+            elif EQUAL(val, "MULTIPOLYGON25D"):
                 geom_type = ogr.wkbMultiPolygon25D
             else:
                 print("-nlt %s: type not recognised." % val)
@@ -288,10 +292,10 @@ def main(argv = None):
        method_ds_name is None or \
        output_ds_name is None or \
        op_str is None:
-           return Usage()
+        return Usage()
 
     if method_fields is None:
-        if op_str in ( 'Update', 'Clip', 'Erase' ):
+        if op_str in ('Update', 'Clip', 'Erase'):
             method_fields = 'NONE'
         else:
             method_fields = 'ALL'
@@ -339,8 +343,8 @@ def main(argv = None):
     if srs_name is not None:
         if not EQUAL(srs_name, "NULL") and not EQUAL(srs_name, "NONE"):
             srs = osr.SpatialReference()
-            if srs.SetFromUserInput( srs_name ) != 0:
-                print( "Failed to process SRS definition: %s" % srs_name )
+            if srs.SetFromUserInput(srs_name) != 0:
+                print("Failed to process SRS definition: %s" % srs_name)
                 return 1
     else:
         srs = input_lyr.GetSpatialRef()
@@ -353,7 +357,7 @@ def main(argv = None):
             print('Warning: input and method layers have SRS defined, but they are not identical. No on-the-fly reprojection will be done.')
 
     # Result layer
-    output_ds = ogr.Open(output_ds_name, update = 1)
+    output_ds = ogr.Open(output_ds_name, update=1)
     if output_ds is None:
         output_ds = ogr.Open(output_ds_name)
         if output_ds is not None:
@@ -365,7 +369,7 @@ def main(argv = None):
             print('Cannot find driver %s' % format)
             return 1
 
-        output_ds = drv.CreateDataSource(output_ds_name, options = dsco)
+        output_ds = drv.CreateDataSource(output_ds_name, options=dsco)
         if output_ds is None:
             print('Cannot create datasource "%s"' % output_ds_name)
             return 1
@@ -399,8 +403,8 @@ def main(argv = None):
                 if EQUAL(drv.GetName(), "ESRI Shapefile") and \
                    EQUAL(os.path.splitext(output_ds_name)[1], ".SHP") and \
                    not EQUAL(output_lyr_name, os.path.splitext(os.path.basename(output_ds_name))[0]):
-                       print('Cannot create layer "%s" in a shapefile called "%s"' % (output_lyr_name, output_ds_name))
-                       return 1
+                    print('Cannot create layer "%s" in a shapefile called "%s"' % (output_lyr_name, output_ds_name))
+                    return 1
 
                 output_lyr = CreateLayer(output_ds, output_lyr_name, srs, geom_type, lco, input_lyr, input_fields, method_lyr, method_fields, opt)
                 if output_lyr is None:
@@ -411,11 +415,11 @@ def main(argv = None):
             for iLayer in range(cnt):
                 poLayer = output_ds.GetLayer(iLayer)
                 if poLayer is not None \
-                    and poLayer.GetName() == output_lyr_name:
+                        and poLayer.GetName() == output_lyr_name:
                     break
             if iLayer != cnt:
                 if output_ds.DeleteLayer(iLayer) != 0:
-                    print("DeleteLayer() failed when overwrite requested." )
+                    print("DeleteLayer() failed when overwrite requested.")
                     return 1
 
                 output_lyr = CreateLayer(output_ds, output_lyr_name, srs, geom_type, lco, input_lyr, input_fields, method_lyr, method_fields, opt)
@@ -424,9 +428,9 @@ def main(argv = None):
 
     op = getattr(input_lyr, op_str)
     if quiet_flag == 0:
-        ret = op(method_lyr, output_lyr, options = opt, callback = gdal.TermProgress_nocb)
+        ret = op(method_lyr, output_lyr, options=opt, callback=gdal.TermProgress_nocb)
     else:
-        ret = op(method_lyr, output_lyr, options = opt)
+        ret = op(method_lyr, output_lyr, options=opt)
 
     input_ds = None
     method_ds = None
@@ -440,10 +444,11 @@ def main(argv = None):
 
 ###############################################################################
 
+
 if __name__ == '__main__':
     version_num = int(gdal.VersionInfo('VERSION_NUM'))
     if version_num < 1100000:
         print('ERROR: Python bindings of GDAL 1.10 or later required')
         sys.exit(1)
 
-    sys.exit(main( sys.argv ))
+    sys.exit(main(sys.argv))

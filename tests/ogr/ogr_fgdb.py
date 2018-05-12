@@ -33,7 +33,7 @@ import os
 import sys
 import shutil
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 import ogrtest
@@ -43,6 +43,7 @@ from osgeo import osr
 
 ###############################################################################
 # Test if driver is available
+
 
 def ogr_fgdb_init():
 
@@ -65,12 +66,14 @@ def ogr_fgdb_init():
 
     try:
         shutil.rmtree("tmp/test.gdb")
-    except:
+    except OSError:
         pass
 
     return 'success'
 
 ###############################################################################
+
+
 def ogr_fgdb_is_sdk_1_4_or_later():
 
     if ogrtest.fgdb_drv is None:
@@ -83,14 +86,14 @@ def ogr_fgdb_is_sdk_1_4_or_later():
 
     try:
         shutil.rmtree("tmp/ogr_fgdb_is_sdk_1_4_or_later.gdb")
-    except:
+    except OSError:
         pass
 
     ds = ogrtest.fgdb_drv.CreateDataSource("tmp/ogr_fgdb_is_sdk_1_4_or_later.gdb")
     srs = osr.SpatialReference()
     srs.ImportFromProj4('+proj=tmerc +datum=WGS84 +no_defs')
     with gdaltest.error_handler():
-        lyr = ds.CreateLayer('test', srs = srs, geom_type = ogr.wkbPoint)
+        lyr = ds.CreateLayer('test', srs=srs, geom_type=ogr.wkbPoint)
     if lyr is not None:
         ogrtest.fgdb_is_sdk_1_4 = True
     ds = None
@@ -110,34 +113,34 @@ def ogr_fgdb_1():
 
     ds = ogrtest.fgdb_drv.CreateDataSource("tmp/test.gdb")
 
-    datalist = [ [ "none", ogr.wkbNone, None],
-                 [ "point", ogr.wkbPoint, "POINT (1 2)" ],
-                 [ "multipoint", ogr.wkbMultiPoint, "MULTIPOINT (1 2,3 4)" ],
-                 [ "linestring", ogr.wkbLineString, "LINESTRING (1 2,3 4)", "MULTILINESTRING ((1 2,3 4))" ],
-                 [ "multilinestring", ogr.wkbMultiLineString, "MULTILINESTRING ((1 2,3 4),(5 6,7 8))" ],
-                 [ "polygon", ogr.wkbPolygon, "POLYGON ((0 0,0 1,1 1,1 0,0 0))", "MULTIPOLYGON (((0 0,0 1,1 1,1 0,0 0)))" ],
-                 [ "multipolygon", ogr.wkbMultiPolygon, "MULTIPOLYGON (((0 0,0 1,1 1,1 0,0 0),(0.25 0.25,0.75 0.25,0.75 0.75,0.25 0.75,0.25 0.25)),((2 0,2 1,3 1,3 0,2 0)))" ],
-                 [ "point25D", ogr.wkbPoint25D, "POINT (1 2 3)" ],
-                 [ "multipoint25D", ogr.wkbMultiPoint25D, "MULTIPOINT (1 2 -10,3 4 -20)" ],
-                 [ "linestring25D", ogr.wkbLineString25D, "LINESTRING (1 2 -10,3 4 -20)", "MULTILINESTRING ((1 2 -10,3 4 -20))" ],
-                 [ "multilinestring25D", ogr.wkbMultiLineString25D, "MULTILINESTRING ((1 2 -10,3 4 -20))" ],
-                 [ "polygon25D", ogr.wkbPolygon25D, "POLYGON ((0 0 -10,0 1 -10,1 1 -10,1 0 -10,0 0 -10))", "MULTIPOLYGON (((0 0 -10,0 1 -10,1 1 -10,1 0 -10,0 0 -10)))" ],
-                 [ "multipolygon25D", ogr.wkbMultiPolygon25D, "MULTIPOLYGON (((0 0 -10,0 1 -10,1 1 -10,1 0 -10,0 0 -10)))" ],
-                 [ "multipatch", ogr.wkbMultiPolygon25D, "GEOMETRYCOLLECTION Z (TIN Z (((0.0 0.0 0,0.0 1.0 0,1.0 0.0 0,0.0 0.0 0)),((0.0 1.0 0,1.0 0.0 0,1.0 1.0 0,0.0 1.0 0))),TIN Z (((10.0 0.0 0,10.0 1.0 0,11.0 0.0 0,10.0 0.0 0)),((10.0 0.0 0,11.0 0.0 0,10.0 -1.0 0,10.0 0.0 0))),TIN Z (((5.0 0.0 0,5.0 1.0 0,6.0 0.0 0,5.0 0.0 0))),MULTIPOLYGON Z (((100.0 0.0 0,100.0 1.0 0,101.0 1.0 0,101.0 0.0 0,100.0 0.0 0),(100.25 0.25 0,100.75 0.25 0,100.75 0.75 0,100.75 0.25 0,100.25 0.25 0))))" ],
-                 [ "tin", ogr.wkbTINZ, "TIN Z (((0.0 0.0 0,0.0 1.0 0,1.0 0.0 0,0.0 0.0 0)),((0.0 1.0 0,1.0 0.0 0,1.0 1.0 0,0.0 1.0 0)))" ],
-                 [ "null_polygon", ogr.wkbPolygon, None],
-                 [ "empty_polygon", ogr.wkbPolygon, "POLYGON EMPTY", None],
-               ]
+    datalist = [["none", ogr.wkbNone, None],
+                ["point", ogr.wkbPoint, "POINT (1 2)"],
+                ["multipoint", ogr.wkbMultiPoint, "MULTIPOINT (1 2,3 4)"],
+                ["linestring", ogr.wkbLineString, "LINESTRING (1 2,3 4)", "MULTILINESTRING ((1 2,3 4))"],
+                ["multilinestring", ogr.wkbMultiLineString, "MULTILINESTRING ((1 2,3 4),(5 6,7 8))"],
+                ["polygon", ogr.wkbPolygon, "POLYGON ((0 0,0 1,1 1,1 0,0 0))", "MULTIPOLYGON (((0 0,0 1,1 1,1 0,0 0)))"],
+                ["multipolygon", ogr.wkbMultiPolygon, "MULTIPOLYGON (((0 0,0 1,1 1,1 0,0 0),(0.25 0.25,0.75 0.25,0.75 0.75,0.25 0.75,0.25 0.25)),((2 0,2 1,3 1,3 0,2 0)))"],
+                ["point25D", ogr.wkbPoint25D, "POINT (1 2 3)"],
+                ["multipoint25D", ogr.wkbMultiPoint25D, "MULTIPOINT (1 2 -10,3 4 -20)"],
+                ["linestring25D", ogr.wkbLineString25D, "LINESTRING (1 2 -10,3 4 -20)", "MULTILINESTRING ((1 2 -10,3 4 -20))"],
+                ["multilinestring25D", ogr.wkbMultiLineString25D, "MULTILINESTRING ((1 2 -10,3 4 -20))"],
+                ["polygon25D", ogr.wkbPolygon25D, "POLYGON ((0 0 -10,0 1 -10,1 1 -10,1 0 -10,0 0 -10))", "MULTIPOLYGON (((0 0 -10,0 1 -10,1 1 -10,1 0 -10,0 0 -10)))"],
+                ["multipolygon25D", ogr.wkbMultiPolygon25D, "MULTIPOLYGON (((0 0 -10,0 1 -10,1 1 -10,1 0 -10,0 0 -10)))"],
+                ["multipatch", ogr.wkbMultiPolygon25D, "GEOMETRYCOLLECTION Z (TIN Z (((0.0 0.0 0,0.0 1.0 0,1.0 0.0 0,0.0 0.0 0)),((0.0 1.0 0,1.0 0.0 0,1.0 1.0 0,0.0 1.0 0))),TIN Z (((10.0 0.0 0,10.0 1.0 0,11.0 0.0 0,10.0 0.0 0)),((10.0 0.0 0,11.0 0.0 0,10.0 -1.0 0,10.0 0.0 0))),TIN Z (((5.0 0.0 0,5.0 1.0 0,6.0 0.0 0,5.0 0.0 0))),MULTIPOLYGON Z (((100.0 0.0 0,100.0 1.0 0,101.0 1.0 0,101.0 0.0 0,100.0 0.0 0),(100.25 0.25 0,100.75 0.25 0,100.75 0.75 0,100.75 0.25 0,100.25 0.25 0))))"],
+                ["tin", ogr.wkbTINZ, "TIN Z (((0.0 0.0 0,0.0 1.0 0,1.0 0.0 0,0.0 0.0 0)),((0.0 1.0 0,1.0 0.0 0,1.0 1.0 0,0.0 1.0 0)))"],
+                ["null_polygon", ogr.wkbPolygon, None],
+                ["empty_polygon", ogr.wkbPolygon, "POLYGON EMPTY", None],
+                ]
 
     options = ['COLUMN_TYPES=smallint=esriFieldTypeSmallInteger,float=esriFieldTypeSingle,guid=esriFieldTypeGUID,xml=esriFieldTypeXML']
 
     for data in datalist:
         if data[1] == ogr.wkbNone:
-            lyr = ds.CreateLayer(data[0], geom_type=data[1], options = options )
+            lyr = ds.CreateLayer(data[0], geom_type=data[1], options=options)
         elif data[0] == 'multipatch':
-            lyr = ds.CreateLayer(data[0], geom_type=data[1], srs=srs, options = [ 'CREATE_MULTIPATCH=YES', options[0] ] )
+            lyr = ds.CreateLayer(data[0], geom_type=data[1], srs=srs, options=['CREATE_MULTIPATCH=YES', options[0]])
         else:
-            lyr = ds.CreateLayer(data[0], geom_type=data[1], srs=srs, options = options )
+            lyr = ds.CreateLayer(data[0], geom_type=data[1], srs=srs, options=options)
         lyr.CreateField(ogr.FieldDefn("id", ogr.OFTInteger))
         lyr.CreateField(ogr.FieldDefn("str", ogr.OFTString))
         lyr.CreateField(ogr.FieldDefn("smallint", ogr.OFTInteger))
@@ -159,7 +162,7 @@ def ogr_fgdb_1():
         # We need at least 5 features so that test_ogrsf can test SetFeature()
         for i in range(5):
             feat = ogr.Feature(lyr.GetLayerDefn())
-            if data[1] != ogr.wkbNone and data[2] != None:
+            if data[1] != ogr.wkbNone and data[2] is not None:
                 feat.SetGeometry(ogr.CreateGeometryFromWkt(data[2]))
             feat.SetField("id", i + 1)
             feat.SetField("str", "foo_\xc3\xa9")
@@ -259,11 +262,12 @@ def ogr_fgdb_1():
 ###############################################################################
 # Test DeleteField()
 
+
 def ogr_fgdb_DeleteField():
     if ogrtest.fgdb_drv is None:
         return 'skip'
 
-    ds = ogr.Open("tmp/test.gdb", update = 1)
+    ds = ogr.Open("tmp/test.gdb", update=1)
     lyr = ds.GetLayerByIndex(0)
 
     if lyr.GetLayerDefn().GetFieldDefn(lyr.GetLayerDefn().GetFieldIndex('smallint')).GetSubType() != ogr.OFSTInt16:
@@ -291,7 +295,7 @@ def ogr_fgdb_DeleteField():
 
     # Needed since FileGDB v1.4, otherwise crash/error ...
     if True:
-        ds = ogr.Open("tmp/test.gdb", update = 1)
+        ds = ogr.Open("tmp/test.gdb", update=1)
         lyr = ds.GetLayerByIndex(0)
 
     fld_defn = ogr.FieldDefn("str2", ogr.OFTString)
@@ -303,13 +307,13 @@ def ogr_fgdb_DeleteField():
 
     # Test updating non-existing feature
     feat.SetFID(-10)
-    if lyr.SetFeature( feat ) != ogr.OGRERR_NON_EXISTING_FEATURE:
-        gdaltest.post_reason( 'Expected failure of SetFeature().' )
+    if lyr.SetFeature(feat) != ogr.OGRERR_NON_EXISTING_FEATURE:
+        gdaltest.post_reason('Expected failure of SetFeature().')
         return 'fail'
 
     # Test deleting non-existing feature
-    if lyr.DeleteFeature( -10 ) != ogr.OGRERR_NON_EXISTING_FEATURE:
-        gdaltest.post_reason( 'Expected failure of DeleteFeature().' )
+    if lyr.DeleteFeature(-10) != ogr.OGRERR_NON_EXISTING_FEATURE:
+        gdaltest.post_reason('Expected failure of DeleteFeature().')
         return 'fail'
 
     feat = None
@@ -334,6 +338,7 @@ def ogr_fgdb_DeleteField():
 ###############################################################################
 # Run test_ogrsf
 
+
 def ogr_fgdb_2():
     if ogrtest.fgdb_drv is None:
         return 'skip'
@@ -353,6 +358,7 @@ def ogr_fgdb_2():
 ###############################################################################
 # Run ogr2ogr
 
+
 def ogr_fgdb_3():
     if ogrtest.fgdb_drv is None:
         return 'skip'
@@ -363,7 +369,7 @@ def ogr_fgdb_3():
 
     try:
         shutil.rmtree("tmp/poly.gdb")
-    except:
+    except OSError:
         pass
 
     gdaltest.runexternal(test_cli_utilities.get_ogr2ogr_path() + ' -f filegdb tmp/poly.gdb data/poly.shp -nlt MULTIPOLYGON -a_srs None')
@@ -378,7 +384,7 @@ def ogr_fgdb_3():
         return 'skip'
 
     ret = gdaltest.runexternal(test_cli_utilities.get_test_ogrsf_path() + ' tmp/poly.gdb')
-    #print ret
+    # print ret
 
     if ret.find('INFO') == -1 or ret.find('ERROR') != -1:
         print(ret)
@@ -388,6 +394,7 @@ def ogr_fgdb_3():
 
 ###############################################################################
 # Test SQL support
+
 
 def ogr_fgdb_sql():
     if ogrtest.fgdb_drv is None:
@@ -401,7 +408,7 @@ def ogr_fgdb_sql():
 
     ds.ExecuteSQL("CREATE INDEX idx_poly_eas_id ON poly(EAS_ID)")
 
-    sql_lyr = ds.ExecuteSQL("SELECT * FROM POLY WHERE EAS_ID = 170", dialect = 'FileGDB')
+    sql_lyr = ds.ExecuteSQL("SELECT * FROM POLY WHERE EAS_ID = 170", dialect='FileGDB')
     feat = sql_lyr.GetNextFeature()
     if feat is None:
         return 'fail'
@@ -417,6 +424,7 @@ def ogr_fgdb_sql():
 ###############################################################################
 # Test delete layer
 
+
 def ogr_fgdb_4():
     if ogrtest.fgdb_drv is None:
         return 'skip'
@@ -424,10 +432,10 @@ def ogr_fgdb_4():
     for j in range(2):
 
         # Create a layer
-        ds = ogr.Open("tmp/test.gdb", update = 1)
+        ds = ogr.Open("tmp/test.gdb", update=1)
         srs = osr.SpatialReference()
         srs.SetFromUserInput("WGS84")
-        lyr = ds.CreateLayer("layer_to_remove", geom_type = ogr.wkbPoint, srs = srs)
+        lyr = ds.CreateLayer("layer_to_remove", geom_type=ogr.wkbPoint, srs=srs)
         lyr.CreateField(ogr.FieldDefn("str", ogr.OFTString))
         feat = ogr.Feature(lyr.GetLayerDefn())
         feat.SetGeometry(ogr.CreateGeometryFromWkt('POINT(2 49)'))
@@ -437,7 +445,7 @@ def ogr_fgdb_4():
 
         if j == 1:
             ds = None
-            ds = ogr.Open("tmp/test.gdb", update = 1)
+            ds = ogr.Open("tmp/test.gdb", update=1)
 
         # Delete it
         for i in range(ds.GetLayerCount()):
@@ -457,6 +465,7 @@ def ogr_fgdb_4():
 
 ###############################################################################
 # Test DeleteDataSource()
+
 
 def ogr_fgdb_5():
     if ogrtest.fgdb_drv is None:
@@ -478,6 +487,7 @@ def ogr_fgdb_5():
 ###############################################################################
 # Test adding a layer to an existing feature dataset
 
+
 def ogr_fgdb_6():
     if ogrtest.fgdb_drv is None:
         return 'skip'
@@ -486,8 +496,8 @@ def ogr_fgdb_6():
     srs.SetFromUserInput("WGS84")
 
     ds = ogrtest.fgdb_drv.CreateDataSource('tmp/test.gdb')
-    ds.CreateLayer('layer1', srs = srs, geom_type = ogr.wkbPoint, options = ['FEATURE_DATASET=featuredataset'])
-    ds.CreateLayer('layer2', srs = srs, geom_type = ogr.wkbPoint, options = ['FEATURE_DATASET=featuredataset'])
+    ds.CreateLayer('layer1', srs=srs, geom_type=ogr.wkbPoint, options=['FEATURE_DATASET=featuredataset'])
+    ds.CreateLayer('layer2', srs=srs, geom_type=ogr.wkbPoint, options=['FEATURE_DATASET=featuredataset'])
     ds = None
 
     ds = ogr.Open('tmp/test.gdb')
@@ -500,20 +510,21 @@ def ogr_fgdb_6():
 ###############################################################################
 # Test bulk loading (#4420)
 
+
 def ogr_fgdb_7():
     if ogrtest.fgdb_drv is None:
         return 'skip'
 
     try:
         shutil.rmtree("tmp/test.gdb")
-    except:
+    except OSError:
         pass
 
     srs = osr.SpatialReference()
     srs.SetFromUserInput("WGS84")
 
     ds = ogrtest.fgdb_drv.CreateDataSource('tmp/test.gdb')
-    lyr = ds.CreateLayer('test', srs = srs, geom_type = ogr.wkbPoint)
+    lyr = ds.CreateLayer('test', srs=srs, geom_type=ogr.wkbPoint)
     lyr.CreateField(ogr.FieldDefn('id', ogr.OFTInteger))
     gdal.SetConfigOption('FGDB_BULK_LOAD', 'YES')
     for i in range(1000):
@@ -537,34 +548,35 @@ def ogr_fgdb_7():
 ###############################################################################
 # Test field name laundering (#4458)
 
+
 def ogr_fgdb_8():
     if ogrtest.fgdb_drv is None:
         return 'skip'
 
     try:
         shutil.rmtree("tmp/test.gdb")
-    except:
+    except OSError:
         pass
 
     srs = osr.SpatialReference()
     srs.SetFromUserInput("WGS84")
 
     ds = ogrtest.fgdb_drv.CreateDataSource('tmp/test.gdb')
-    lyr = ds.CreateLayer('test', srs = srs, geom_type = ogr.wkbPoint)
+    lyr = ds.CreateLayer('test', srs=srs, geom_type=ogr.wkbPoint)
     gdal.PushErrorHandler('CPLQuietErrorHandler')
-    lyr.CreateField(ogr.FieldDefn('FROM', ogr.OFTInteger)) # reserved keyword
-    lyr.CreateField(ogr.FieldDefn('1NUMBER', ogr.OFTInteger)) # starting with a number
-    lyr.CreateField(ogr.FieldDefn('WITH SPACE AND !$*!- special characters', ogr.OFTInteger)) # unallowed characters
-    lyr.CreateField(ogr.FieldDefn('A123456789012345678901234567890123456789012345678901234567890123', ogr.OFTInteger)) # 64 characters : ok
-    lyr.CreateField(ogr.FieldDefn('A1234567890123456789012345678901234567890123456789012345678901234', ogr.OFTInteger)) # 65 characters : nok
-    lyr.CreateField(ogr.FieldDefn('A12345678901234567890123456789012345678901234567890123456789012345', ogr.OFTInteger)) # 66 characters : nok
+    lyr.CreateField(ogr.FieldDefn('FROM', ogr.OFTInteger))  # reserved keyword
+    lyr.CreateField(ogr.FieldDefn('1NUMBER', ogr.OFTInteger))  # starting with a number
+    lyr.CreateField(ogr.FieldDefn('WITH SPACE AND !$*!- special characters', ogr.OFTInteger))  # unallowed characters
+    lyr.CreateField(ogr.FieldDefn('A123456789012345678901234567890123456789012345678901234567890123', ogr.OFTInteger))  # 64 characters : ok
+    lyr.CreateField(ogr.FieldDefn('A1234567890123456789012345678901234567890123456789012345678901234', ogr.OFTInteger))  # 65 characters : nok
+    lyr.CreateField(ogr.FieldDefn('A12345678901234567890123456789012345678901234567890123456789012345', ogr.OFTInteger))  # 66 characters : nok
     gdal.PopErrorHandler()
 
     lyr_defn = lyr.GetLayerDefn()
-    expected_names = [ 'FROM_', '_1NUMBER', 'WITH_SPACE_AND_______special_characters',
-                       'A123456789012345678901234567890123456789012345678901234567890123',
-                       'A1234567890123456789012345678901234567890123456789012345678901_1',
-                       'A1234567890123456789012345678901234567890123456789012345678901_2']
+    expected_names = ['FROM_', '_1NUMBER', 'WITH_SPACE_AND_______special_characters',
+                      'A123456789012345678901234567890123456789012345678901234567890123',
+                      'A1234567890123456789012345678901234567890123456789012345678901_1',
+                      'A1234567890123456789012345678901234567890123456789012345678901_2']
     for i in range(5):
         if lyr_defn.GetFieldIndex(expected_names[i]) != i:
             gdaltest.post_reason('did not find %s' % expected_names[i])
@@ -575,13 +587,14 @@ def ogr_fgdb_8():
 ###############################################################################
 # Test layer name laundering (#4466)
 
+
 def ogr_fgdb_9():
     if ogrtest.fgdb_drv is None:
         return 'skip'
 
     try:
         shutil.rmtree("tmp/test.gdb")
-    except:
+    except OSError:
         pass
 
     srs = osr.SpatialReference()
@@ -589,29 +602,29 @@ def ogr_fgdb_9():
 
     _160char = ''.join(['A123456789' for i in range(16)])
 
-    in_names = [ 'FROM', # reserved keyword
-                 '1NUMBER', # starting with a number
-                 'WITH SPACE AND !$*!- special characters', # banned characters
-                 'sde_foo', # reserved prefixes
-                 _160char, # OK
-                 _160char + 'A', # too long
-                 _160char + 'B', # still too long
-               ]
+    in_names = ['FROM',  # reserved keyword
+                '1NUMBER',  # starting with a number
+                'WITH SPACE AND !$*!- special characters',  # banned characters
+                'sde_foo',  # reserved prefixes
+                _160char,  # OK
+                _160char + 'A',  # too long
+                _160char + 'B',  # still too long
+                ]
 
     ds = ogrtest.fgdb_drv.CreateDataSource('tmp/test.gdb')
     gdal.PushErrorHandler('CPLQuietErrorHandler')
     for i in range(len(in_names)):
-        lyr = ds.CreateLayer(in_names[i], srs = srs, geom_type = ogr.wkbPoint)
+        lyr = ds.CreateLayer(in_names[i], srs=srs, geom_type=ogr.wkbPoint)
     gdal.PopErrorHandler()
 
     lyr.GetLayerDefn()
-    expected_names = [ 'FROM_',
-                       '_1NUMBER',
-                       'WITH_SPACE_AND_______special_characters',
-                       '_sde_foo',
-                       _160char,
-                       _160char[0:158] + '_1',
-                       _160char[0:158] + '_2' ]
+    expected_names = ['FROM_',
+                      '_1NUMBER',
+                      'WITH_SPACE_AND_______special_characters',
+                      '_sde_foo',
+                      _160char,
+                      _160char[0:158] + '_1',
+                      _160char[0:158] + '_2']
     for i in range(len(expected_names)):
         if ds.GetLayerByIndex(i).GetName() != expected_names[i]:
             gdaltest.post_reason('did not find %s' % expected_names[i])
@@ -622,13 +635,14 @@ def ogr_fgdb_9():
 ###############################################################################
 # Test SRS support
 
+
 def ogr_fgdb_10():
     if ogrtest.fgdb_drv is None:
         return 'skip'
 
     try:
         shutil.rmtree("tmp/test.gdb")
-    except:
+    except OSError:
         pass
 
     srs_exact_4326 = osr.SpatialReference()
@@ -672,26 +686,26 @@ def ogr_fgdb_10():
     srs_exact_4233.ImportFromEPSG(4233)
 
     ds = ogrtest.fgdb_drv.CreateDataSource('tmp/test.gdb')
-    lyr = ds.CreateLayer("srs_exact_4326", srs = srs_exact_4326, geom_type = ogr.wkbPoint)
-    lyr = ds.CreateLayer("srs_approx_4326", srs = srs_approx_4326, geom_type = ogr.wkbPoint)
-    lyr = ds.CreateLayer("srs_exact_2193", srs = srs_exact_2193, geom_type = ogr.wkbPoint)
-    lyr = ds.CreateLayer("srs_approx_2193", srs = srs_approx_2193, geom_type = ogr.wkbPoint)
+    lyr = ds.CreateLayer("srs_exact_4326", srs=srs_exact_4326, geom_type=ogr.wkbPoint)
+    lyr = ds.CreateLayer("srs_approx_4326", srs=srs_approx_4326, geom_type=ogr.wkbPoint)
+    lyr = ds.CreateLayer("srs_exact_2193", srs=srs_exact_2193, geom_type=ogr.wkbPoint)
+    lyr = ds.CreateLayer("srs_approx_2193", srs=srs_approx_2193, geom_type=ogr.wkbPoint)
 
-    lyr = ds.CreateLayer("srs_approx_4230", srs = srs_approx_4230, geom_type = ogr.wkbPoint)
+    lyr = ds.CreateLayer("srs_approx_4230", srs=srs_approx_4230, geom_type=ogr.wkbPoint)
 
     # will fail
     gdal.PushErrorHandler('CPLQuietErrorHandler')
-    lyr = ds.CreateLayer("srs_approx_intl", srs = srs_approx_intl, geom_type = ogr.wkbPoint)
+    lyr = ds.CreateLayer("srs_approx_intl", srs=srs_approx_intl, geom_type=ogr.wkbPoint)
     gdal.PopErrorHandler()
 
     # will fail: 4233 doesn't exist in DB
     gdal.PushErrorHandler('CPLQuietErrorHandler')
-    lyr = ds.CreateLayer("srs_exact_4233", srs = srs_exact_4233, geom_type = ogr.wkbPoint)
+    lyr = ds.CreateLayer("srs_exact_4233", srs=srs_exact_4233, geom_type=ogr.wkbPoint)
     gdal.PopErrorHandler()
 
     # will fail
     gdal.PushErrorHandler('CPLQuietErrorHandler')
-    lyr = ds.CreateLayer("srs_not_in_db", srs = srs_not_in_db, geom_type = ogr.wkbPoint)
+    lyr = ds.CreateLayer("srs_not_in_db", srs=srs_not_in_db, geom_type=ogr.wkbPoint)
     gdal.PopErrorHandler()
 
     ds = None
@@ -724,13 +738,14 @@ def ogr_fgdb_10():
 ###############################################################################
 # Test all data types
 
+
 def ogr_fgdb_11():
     if ogrtest.fgdb_drv is None:
         return 'skip'
 
     try:
         shutil.rmtree("tmp/test.gdb")
-    except:
+    except OSError:
         pass
 
     f = open('data/test_filegdb_field_types.xml', 'rt')
@@ -738,7 +753,7 @@ def ogr_fgdb_11():
     f.close()
 
     ds = ogrtest.fgdb_drv.CreateDataSource('tmp/test.gdb')
-    lyr = ds.CreateLayer("test", geom_type = ogr.wkbNone, options = ['XML_DEFINITION=%s' % xml_def])
+    lyr = ds.CreateLayer("test", geom_type=ogr.wkbNone, options=['XML_DEFINITION=%s' % xml_def])
     feat = ogr.Feature(lyr.GetLayerDefn())
     feat.SetField("esriFieldTypeSmallInteger", 12)
     feat.SetField("esriFieldTypeInteger", 3456)
@@ -746,7 +761,7 @@ def ogr_fgdb_11():
     feat.SetField("esriFieldTypeDouble", 1.23)
     feat.SetField("esriFieldTypeDate", "2012/12/31 12:34:56")
     feat.SetField("esriFieldTypeString", "astr")
-    feat.SetField("esriFieldTypeGlobalID", "{12345678-9ABC-DEF0-1234-567890ABCDEF}") # This is ignored and value is generated by FileGDB SDK itself
+    feat.SetField("esriFieldTypeGlobalID", "{12345678-9ABC-DEF0-1234-567890ABCDEF}")  # This is ignored and value is generated by FileGDB SDK itself
     feat.SetField("esriFieldTypeGUID", "{12345678-9abc-DEF0-1234-567890ABCDEF}")
     lyr.CreateFeature(feat)
     feat = None
@@ -756,7 +771,7 @@ def ogr_fgdb_11():
     feat = None
 
     # Create a esriFieldTypeGlobalID field
-    lyr = ds.CreateLayer('test2', geom_type = ogr.wkbNone, options = ['COLUMN_TYPES=global_id=esriFieldTypeGlobalID'])
+    lyr = ds.CreateLayer('test2', geom_type=ogr.wkbNone, options=['COLUMN_TYPES=global_id=esriFieldTypeGlobalID'])
     lyr.CreateField(ogr.FieldDefn('global_id', ogr.OFTString))
     feat = ogr.Feature(lyr.GetLayerDefn())
     lyr.CreateFeature(feat)
@@ -796,6 +811,7 @@ def ogr_fgdb_11():
 ###############################################################################
 # Test failed Open()
 
+
 def ogr_fgdb_12():
     if ogrtest.fgdb_drv is None:
         return 'skip'
@@ -807,11 +823,11 @@ def ogr_fgdb_12():
 
     try:
         os.unlink('tmp/dummy.gdb')
-    except:
+    except OSError:
         pass
     try:
         shutil.rmtree('tmp/dummy.gdb')
-    except:
+    except OSError:
         pass
 
     f = open('tmp/dummy.gdb', 'wb')
@@ -840,6 +856,7 @@ def ogr_fgdb_12():
 ###############################################################################
 # Test failed CreateDataSource() and DeleteDataSource()
 
+
 def ogr_fgdb_13():
     if ogrtest.fgdb_drv is None:
         return 'skip'
@@ -865,7 +882,7 @@ def ogr_fgdb_13():
 
     try:
         shutil.rmtree("/nonexistingdir")
-    except:
+    except OSError:
         pass
 
     name = '/nonexistingdrive:/nonexistingdir/dummy.gdb'
@@ -889,6 +906,7 @@ def ogr_fgdb_13():
 ###############################################################################
 # Test interleaved opening and closing of databases (#4270)
 
+
 def ogr_fgdb_14():
     if ogrtest.fgdb_drv is None:
         return 'skip'
@@ -910,15 +928,16 @@ def ogr_fgdb_14():
 ###############################################################################
 # Test opening a FGDB with both SRID and LatestSRID set (#5638)
 
+
 def ogr_fgdb_15():
     if ogrtest.fgdb_drv is None:
         return 'skip'
 
     try:
         shutil.rmtree('tmp/test3005.gdb')
-    except:
+    except OSError:
         pass
-    gdaltest.unzip( 'tmp', 'data/test3005.gdb.zip')
+    gdaltest.unzip('tmp', 'data/test3005.gdb.zip')
     ds = ogr.Open('tmp/test3005.gdb')
     lyr = ds.GetLayer(0)
     got_wkt = lyr.GetSpatialRef().ExportToWkt()
@@ -937,17 +956,18 @@ def ogr_fgdb_15():
 ###############################################################################
 # Test fix for #5674
 
+
 def ogr_fgdb_16():
     if ogrtest.fgdb_drv is None or ogrtest.openfilegdb_drv is None:
         return 'skip'
 
     try:
-        gdaltest.unzip( 'tmp/cache', 'data/ESSENCE_NAIPF_ORI_PROV_sub93.gdb.zip')
+        gdaltest.unzip('tmp/cache', 'data/ESSENCE_NAIPF_ORI_PROV_sub93.gdb.zip')
     except:
         pass
     try:
         os.stat('tmp/cache/ESSENCE_NAIPF_ORI_PROV_sub93.gdb')
-    except:
+    except OSError:
         return 'skip'
 
     ogrtest.fgdb_drv.Deregister()
@@ -972,21 +992,21 @@ def ogr_fgdb_16():
 ###############################################################################
 # Test not nullable fields
 
+
 def ogr_fgdb_17():
 
     if ogrtest.fgdb_drv is None:
         return 'skip'
 
-
     try:
         shutil.rmtree("tmp/test.gdb")
-    except:
+    except OSError:
         pass
 
     ds = ogrtest.fgdb_drv.CreateDataSource('tmp/test.gdb')
     sr = osr.SpatialReference()
     sr.ImportFromEPSG(4326)
-    lyr = ds.CreateLayer('test', geom_type = ogr.wkbPoint, srs = sr, options = ['GEOMETRY_NULLABLE=NO'])
+    lyr = ds.CreateLayer('test', geom_type=ogr.wkbPoint, srs=sr, options=['GEOMETRY_NULLABLE=NO'])
     if lyr.GetLayerDefn().GetGeomFieldDefn(0).IsNullable() != 0:
         gdaltest.post_reason('fail')
         return 'fail'
@@ -1048,6 +1068,7 @@ def ogr_fgdb_17():
 ###############################################################################
 # Test default values
 
+
 def ogr_fgdb_18():
 
     if ogrtest.fgdb_drv is None:
@@ -1055,32 +1076,32 @@ def ogr_fgdb_18():
 
     try:
         shutil.rmtree("tmp/test.gdb")
-    except:
+    except OSError:
         pass
 
     ds = ogrtest.fgdb_drv.CreateDataSource('tmp/test.gdb')
-    lyr = ds.CreateLayer('test', geom_type = ogr.wkbNone)
+    lyr = ds.CreateLayer('test', geom_type=ogr.wkbNone)
 
-    field_defn = ogr.FieldDefn( 'field_string', ogr.OFTString )
+    field_defn = ogr.FieldDefn('field_string', ogr.OFTString)
     field_defn.SetDefault("'a''b'")
     lyr.CreateField(field_defn)
 
-    field_defn = ogr.FieldDefn( 'field_int', ogr.OFTInteger )
+    field_defn = ogr.FieldDefn('field_int', ogr.OFTInteger)
     field_defn.SetDefault('123')
     lyr.CreateField(field_defn)
 
-    field_defn = ogr.FieldDefn( 'field_real', ogr.OFTReal )
+    field_defn = ogr.FieldDefn('field_real', ogr.OFTReal)
     field_defn.SetDefault('1.23')
     lyr.CreateField(field_defn)
 
-    field_defn = ogr.FieldDefn( 'field_nodefault', ogr.OFTInteger )
+    field_defn = ogr.FieldDefn('field_nodefault', ogr.OFTInteger)
     lyr.CreateField(field_defn)
 
-    field_defn = ogr.FieldDefn( 'field_datetime', ogr.OFTDateTime )
+    field_defn = ogr.FieldDefn('field_datetime', ogr.OFTDateTime)
     field_defn.SetDefault("CURRENT_TIMESTAMP")
     lyr.CreateField(field_defn)
 
-    field_defn = ogr.FieldDefn( 'field_datetime2', ogr.OFTDateTime )
+    field_defn = ogr.FieldDefn('field_datetime2', ogr.OFTDateTime)
     field_defn.SetDefault("'2015/06/30 12:34:56'")
     lyr.CreateField(field_defn)
 
@@ -1117,17 +1138,17 @@ def ogr_fgdb_18_test_results():
     if lyr.GetLayerDefn().GetFieldDefn(lyr.GetLayerDefn().GetFieldIndex('field_nodefault')).GetDefault() is not None:
         gdaltest.post_reason('fail')
         return 'fail'
-    #if lyr.GetLayerDefn().GetFieldDefn(lyr.GetLayerDefn().GetFieldIndex('field_datetime')).GetDefault() != 'CURRENT_TIMESTAMP':
+    # if lyr.GetLayerDefn().GetFieldDefn(lyr.GetLayerDefn().GetFieldIndex('field_datetime')).GetDefault() != 'CURRENT_TIMESTAMP':
     #    gdaltest.post_reason('fail')
     #    return 'fail'
-    #if lyr.GetLayerDefn().GetFieldDefn(lyr.GetLayerDefn().GetFieldIndex('field_datetime2')).GetDefault() != "'2015/06/30 12:34:56'":
+    # if lyr.GetLayerDefn().GetFieldDefn(lyr.GetLayerDefn().GetFieldIndex('field_datetime2')).GetDefault() != "'2015/06/30 12:34:56'":
     #    gdaltest.post_reason('fail')
     #    print(lyr.GetLayerDefn().GetFieldDefn(lyr.GetLayerDefn().GetFieldIndex('field_datetime2')).GetDefault())
     #    return 'fail'
     f = lyr.GetNextFeature()
     if f.GetField('field_string') != 'a\'b' or f.GetField('field_int') != 123 or \
        f.GetField('field_real') != 1.23 or \
-       not f.IsFieldNull('field_nodefault') or not f.IsFieldSet('field_datetime')  or \
+       not f.IsFieldNull('field_nodefault') or not f.IsFieldSet('field_datetime') or \
        f.GetField('field_datetime2') != '2015/06/30 12:34:56':
         gdaltest.post_reason('fail')
         f.DumpReadable()
@@ -1138,6 +1159,7 @@ def ogr_fgdb_18_test_results():
 
 ###############################################################################
 # Test transaction support
+
 
 def ogr_fgdb_19_open_update(filename):
 
@@ -1150,7 +1172,7 @@ def ogr_fgdb_19_open_update(filename):
             if val == 'TRUE' or val == 'YES' or val == 'ON':
                 bPerLayerCopyingForTransaction = True
 
-    ds = ogr.Open(filename, update = 1)
+    ds = ogr.Open(filename, update=1)
 
     if ogrtest.openfilegdb_drv is not None:
         ogrtest.openfilegdb_drv.Deregister()
@@ -1161,6 +1183,7 @@ def ogr_fgdb_19_open_update(filename):
 
     return (bPerLayerCopyingForTransaction, ds)
 
+
 def ogr_fgdb_19():
 
     if ogrtest.fgdb_drv is None:
@@ -1168,17 +1191,17 @@ def ogr_fgdb_19():
 
     try:
         shutil.rmtree("tmp/test.gdb.ogrtmp")
-    except:
+    except OSError:
         pass
     try:
         shutil.rmtree("tmp/test.gdb.ogredited")
-    except:
+    except OSError:
         pass
 
     # Error case: try in read-only
     ds = ogr.Open('tmp/test.gdb')
     gdal.PushErrorHandler()
-    ret = ds.StartTransaction(force = True)
+    ret = ds.StartTransaction(force=True)
     gdal.PopErrorHandler()
     if ret == 0:
         gdaltest.post_reason('fail')
@@ -1193,7 +1216,7 @@ def ogr_fgdb_19():
 
     # Error case: try in non-forced mode
     gdal.PushErrorHandler()
-    ret = ds.StartTransaction(force = False)
+    ret = ds.StartTransaction(force=False)
     gdal.PopErrorHandler()
     if ret == 0:
         gdaltest.post_reason('fail')
@@ -1202,7 +1225,7 @@ def ogr_fgdb_19():
     # Error case: try StartTransaction() with a ExecuteSQL layer still active
     sql_lyr = ds.ExecuteSQL('SELECT * FROM test')
     gdal.PushErrorHandler()
-    ret = ds.StartTransaction(force = True)
+    ret = ds.StartTransaction(force=True)
     gdal.PopErrorHandler()
     if ret == 0:
         gdaltest.post_reason('fail')
@@ -1228,7 +1251,7 @@ def ogr_fgdb_19():
     # Error case: try StartTransaction() with another active connection
     ds2 = ogr.Open('tmp/test.gdb', update=1)
     gdal.PushErrorHandler()
-    ret = ds2.StartTransaction(force = True)
+    ret = ds2.StartTransaction(force=True)
     gdal.PopErrorHandler()
     if ret == 0:
         gdaltest.post_reason('fail')
@@ -1237,19 +1260,19 @@ def ogr_fgdb_19():
 
     # Successful StartTransaction() finally!
     lyr = ds.GetLayer(0)
-    lyr = ds.GetLayer(0) # again
+    lyr = ds.GetLayer(0)  # again
     old_count = lyr.GetFeatureCount()
     lyr_defn = lyr.GetLayerDefn()
-    layer_created_before_transaction = ds.CreateLayer('layer_created_before_transaction', geom_type = ogr.wkbNone)
+    layer_created_before_transaction = ds.CreateLayer('layer_created_before_transaction', geom_type=ogr.wkbNone)
     layer_created_before_transaction_defn = layer_created_before_transaction.GetLayerDefn()
 
-    if ds.StartTransaction(force = True) != 0:
+    if ds.StartTransaction(force=True) != 0:
         gdaltest.post_reason('fail')
         return 'fail'
 
     try:
         os.stat('tmp/test.gdb.ogredited')
-    except:
+    except OSError:
         gdaltest.post_reason('fail')
         return 'fail'
     try:
@@ -1315,7 +1338,7 @@ def ogr_fgdb_19():
 
     # Error case: call StartTransaction() while there is an active transaction
     gdal.PushErrorHandler()
-    ret = ds.StartTransaction(force = True)
+    ret = ds.StartTransaction(force=True)
     gdal.PopErrorHandler()
     if ret == 0:
         gdaltest.post_reason('fail')
@@ -1387,12 +1410,12 @@ def ogr_fgdb_19():
 
     # Test suppression of layer within transaction
     lyr_count = ds.GetLayerCount()
-    ds.CreateLayer('layer_tmp', geom_type = ogr.wkbNone)
-    ret = ds.StartTransaction(force = True)
+    ds.CreateLayer('layer_tmp', geom_type=ogr.wkbNone)
+    ret = ds.StartTransaction(force=True)
     if ret != 0:
         gdaltest.post_reason('fail')
         return 'fail'
-    ds.DeleteLayer(ds.GetLayerCount()-1)
+    ds.DeleteLayer(ds.GetLayerCount() - 1)
     if ds.CommitTransaction() != 0:
         gdaltest.post_reason('fail')
         return 'fail'
@@ -1403,7 +1426,7 @@ def ogr_fgdb_19():
         return 'fail'
 
     # Test that RollbackTransaction() works
-    ret = ds.StartTransaction(force = True)
+    ret = ds.StartTransaction(force=True)
     if ret != 0:
         gdaltest.post_reason('fail')
         return 'fail'
@@ -1411,7 +1434,7 @@ def ogr_fgdb_19():
     f = ogr.Feature(lyr_defn)
     lyr.CreateFeature(f)
 
-    layer_created_during_transaction = ds.CreateLayer('layer_created_during_transaction', geom_type = ogr.wkbNone)
+    layer_created_during_transaction = ds.CreateLayer('layer_created_during_transaction', geom_type=ogr.wkbNone)
     layer_created_during_transaction.CreateField(ogr.FieldDefn('foo', ogr.OFTString))
 
     if ds.RollbackTransaction() != 0:
@@ -1422,14 +1445,14 @@ def ogr_fgdb_19():
         os.stat('tmp/test.gdb.ogredited')
         gdaltest.post_reason('fail')
         return 'fail'
-    except:
+    except OSError:
         pass
 
     try:
         os.stat('tmp/test.gdb.ogrtmp')
         gdaltest.post_reason('fail')
         return 'fail'
-    except:
+    except OSError:
         pass
 
     if lyr.GetFeatureCount() != old_count:
@@ -1451,7 +1474,7 @@ def ogr_fgdb_19():
     lyr_count = ds.GetLayerCount()
     gdal.SetConfigOption('FGDB_SIMUL_FAIL', 'CASE1')
     gdal.PushErrorHandler()
-    ret = ds.StartTransaction(force = True)
+    ret = ds.StartTransaction(force=True)
     gdal.PopErrorHandler()
     gdal.SetConfigOption('FGDB_SIMUL_FAIL', None)
     if ret == 0:
@@ -1464,11 +1487,10 @@ def ogr_fgdb_19():
         print(ds.GetLayerCount())
         return 'fail'
 
-
     # Simulate an error case where StartTransaction() cannot reopen database
     gdal.SetConfigOption('FGDB_SIMUL_FAIL', 'CASE2')
     gdal.PushErrorHandler()
-    ret = ds.StartTransaction(force = True)
+    ret = ds.StartTransaction(force=True)
     gdal.PopErrorHandler()
     gdal.SetConfigOption('FGDB_SIMUL_FAIL', None)
     if ret == 0:
@@ -1487,10 +1509,10 @@ def ogr_fgdb_19():
     ds.GetLayerByName("test")
     ds.DeleteLayer(0)
     ds.TestCapability('foo')
-    ds.CreateLayer('bar', geom_type = ogr.wkbNone)
+    ds.CreateLayer('bar', geom_type=ogr.wkbNone)
     ds.CopyLayer(lyr, 'baz')
     ds.GetStyleTable()
-    #ds.SetStyleTableDirectly(None)
+    # ds.SetStyleTableDirectly(None)
     ds.SetStyleTable(None)
     sql_lyr = ds.ExecuteSQL('SELECT * FROM test')
     ds.ReleaseResultSet(sql_lyr)
@@ -1502,9 +1524,9 @@ def ogr_fgdb_19():
 
     lyr.GetSpatialFilter()
     lyr.SetSpatialFilter(None)
-    lyr.SetSpatialFilterRect(0,0,0,0)
-    lyr.SetSpatialFilter(0,None)
-    lyr.SetSpatialFilterRect(0,0,0,0,0)
+    lyr.SetSpatialFilterRect(0, 0, 0, 0)
+    lyr.SetSpatialFilter(0, None)
+    lyr.SetSpatialFilterRect(0, 0, 0, 0, 0)
     lyr.SetAttributeFilter(None)
     lyr.ResetReading()
     lyr.GetNextFeature()
@@ -1527,7 +1549,7 @@ def ogr_fgdb_19():
     lyr.AlterFieldDefn(0, ogr.FieldDefn('foo', ogr.OFTString), 0)
     lyr.SyncToDisk()
     lyr.GetStyleTable()
-    #lyr.SetStyleTableDirectly(None)
+    # lyr.SetStyleTableDirectly(None)
     lyr.SetStyleTable(None)
     lyr.StartTransaction()
     lyr.CommitTransaction()
@@ -1546,14 +1568,14 @@ def ogr_fgdb_19():
         # layer destroyed during transaction
         (bPerLayerCopyingForTransaction, ds) = ogr_fgdb_19_open_update('tmp/test.gdb')
 
-        layer_tmp = ds.CreateLayer('layer_tmp', geom_type = ogr.wkbNone)
+        layer_tmp = ds.CreateLayer('layer_tmp', geom_type=ogr.wkbNone)
         layer_tmp.CreateField(ogr.FieldDefn('foo', ogr.OFTString))
 
-        if ds.StartTransaction(force = True) != 0:
+        if ds.StartTransaction(force=True) != 0:
             gdaltest.post_reason('fail')
             return 'fail'
 
-        ds.DeleteLayer(ds.GetLayerCount()-1)
+        ds.DeleteLayer(ds.GetLayerCount() - 1)
 
         gdal.SetConfigOption('FGDB_SIMUL_FAIL', 'CASE1')
         gdal.PushErrorHandler()
@@ -1584,7 +1606,7 @@ def ogr_fgdb_19():
                 ds.DeleteLayer(i)
                 break
 
-        if ds.StartTransaction(force = True) != 0:
+        if ds.StartTransaction(force=True) != 0:
             gdaltest.post_reason('fail')
             return 'fail'
 
@@ -1617,7 +1639,7 @@ def ogr_fgdb_19():
         # a file into original directory
         (bPerLayerCopyingForTransaction, ds) = ogr_fgdb_19_open_update('tmp/test.gdb')
 
-        if ds.StartTransaction(force = True) != 0:
+        if ds.StartTransaction(force=True) != 0:
             gdaltest.post_reason('fail')
             return 'fail'
 
@@ -1649,7 +1671,7 @@ def ogr_fgdb_19():
         for case in ('CASE4', 'CASE5'):
             (bPerLayerCopyingForTransaction, ds) = ogr_fgdb_19_open_update('tmp/test.gdb')
 
-            if ds.StartTransaction(force = True) != 0:
+            if ds.StartTransaction(force=True) != 0:
                 gdaltest.post_reason('fail')
                 return 'fail'
 
@@ -1693,7 +1715,7 @@ def ogr_fgdb_19():
         lyr = ds.GetLayer(0)
         lyr_defn = lyr.GetLayerDefn()
 
-        if ds.StartTransaction(force = True) != 0:
+        if ds.StartTransaction(force=True) != 0:
             gdaltest.post_reason('fail')
             return 'fail'
 
@@ -1713,7 +1735,7 @@ def ogr_fgdb_19():
         lyr = ds.GetLayer(0)
         lyr_defn = lyr.GetLayerDefn()
 
-        if ds.StartTransaction(force = True) != 0:
+        if ds.StartTransaction(force=True) != 0:
             gdaltest.post_reason('fail')
             return 'fail'
 
@@ -1734,7 +1756,7 @@ def ogr_fgdb_19():
         lyr = ds.GetLayer(0)
         lyr_defn = lyr.GetLayerDefn()
 
-        if ds.StartTransaction(force = True) != 0:
+        if ds.StartTransaction(force=True) != 0:
             gdaltest.post_reason('fail')
             return 'fail'
 
@@ -1755,7 +1777,7 @@ def ogr_fgdb_19():
     lyr = ds.GetLayer(0)
     lyr_defn = lyr.GetLayerDefn()
 
-    if ds.StartTransaction(force = True) != 0:
+    if ds.StartTransaction(force=True) != 0:
         gdaltest.post_reason('fail')
         return 'fail'
 
@@ -1779,7 +1801,7 @@ def ogr_fgdb_19():
     lyr = ds.GetLayer(0)
     lyr_defn = lyr.GetLayerDefn()
 
-    if ds.StartTransaction(force = True) != 0:
+    if ds.StartTransaction(force=True) != 0:
         gdaltest.post_reason('fail')
         return 'fail'
 
@@ -1800,7 +1822,7 @@ def ogr_fgdb_19():
     lyr = ds.GetLayer(0)
     lyr_defn = lyr.GetLayerDefn()
 
-    if ds.StartTransaction(force = True) != 0:
+    if ds.StartTransaction(force=True) != 0:
         gdaltest.post_reason('fail')
         return 'fail'
 
@@ -1826,6 +1848,8 @@ def ogr_fgdb_19():
 
 # Same, but retry without per-layer copying optimization (in the case
 # this was what was tested in previous step)
+
+
 def ogr_fgdb_19bis():
 
     if ogrtest.fgdb_drv is None:
@@ -1844,6 +1868,7 @@ def ogr_fgdb_19bis():
 ###############################################################################
 # Test CreateFeature() with user defined FID
 
+
 def ogr_fgdb_20():
 
     if ogrtest.fgdb_drv is None:
@@ -1858,14 +1883,14 @@ def ogr_fgdb_20():
 
     # We need the OpenFileGDB driver for CreateFeature() with user defined FID
     ogrtest.openfilegdb_drv.Register()
-    ds = ogr.Open('tmp/test.gdb', update = 1)
+    ds = ogr.Open('tmp/test.gdb', update=1)
     ogrtest.openfilegdb_drv.Deregister()
     ogrtest.fgdb_drv.Deregister()
     # Force OpenFileGDB first
     ogrtest.openfilegdb_drv.Register()
     ogrtest.fgdb_drv.Register()
 
-    lyr = ds.CreateLayer('ogr_fgdb_20', geom_type = ogr.wkbNone)
+    lyr = ds.CreateLayer('ogr_fgdb_20', geom_type=ogr.wkbNone)
     lyr.CreateField(ogr.FieldDefn('id', ogr.OFTInteger))
     lyr.CreateField(ogr.FieldDefn('str', ogr.OFTString))
 
@@ -1886,7 +1911,7 @@ def ogr_fgdb_20():
         gdaltest.post_reason('fail')
         return 'fail'
 
-    for invalid_fid in [-2,0,9876543210]:
+    for invalid_fid in [-2, 0, 9876543210]:
         f = ogr.Feature(lyr.GetLayerDefn())
         f.SetFID(invalid_fid)
         gdal.PushErrorHandler()
@@ -1901,7 +1926,7 @@ def ogr_fgdb_20():
     f.SetFID(2)
     f.SetField('id', 2)
     ret = lyr.CreateFeature(f)
-    if ret != 0 or f.GetFID() != 2  or lyr.GetMetadataItem('2', 'MAP_OGR_FID_TO_FGDB_FID') is not None:
+    if ret != 0 or f.GetFID() != 2 or lyr.GetMetadataItem('2', 'MAP_OGR_FID_TO_FGDB_FID') is not None:
         gdaltest.post_reason('fail')
         f.DumpReadable()
         return 'fail'
@@ -1912,7 +1937,7 @@ def ogr_fgdb_20():
     f.SetField('id', 4)
 
     # Cannot call CreateFeature() with a set FID when a dataset is opened more than once
-    ds2 = ogr.Open('tmp/test.gdb', update = 1)
+    ds2 = ogr.Open('tmp/test.gdb', update=1)
     gdal.PushErrorHandler()
     ret = lyr.CreateFeature(f)
     gdal.PopErrorHandler()
@@ -1930,7 +1955,7 @@ def ogr_fgdb_20():
 
     #  Cannot open geodatabase at the moment since it is in 'FID hack mode'
     gdal.PushErrorHandler()
-    ds2 = ogr.Open('tmp/test.gdb', update = 1)
+    ds2 = ogr.Open('tmp/test.gdb', update=1)
     gdal.PopErrorHandler()
     if ds2 is not None:
         gdaltest.post_reason('fail')
@@ -1972,7 +1997,7 @@ def ogr_fgdb_20():
         return 'fail'
 
     lyr.ResetReading()
-    expected = [ (1, None), (2, None), (4, 3), (3, 4) ]
+    expected = [(1, None), (2, None), (4, 3), (3, 4)]
     for i in range(2):
         for (fid, fgdb_fid) in expected:
             if i == 0:
@@ -1998,14 +2023,14 @@ def ogr_fgdb_20():
                 print(fgdb_fid)
                 return 'fail'
 
-    for fid in [ -9876543210, 0, 100]:
+    for fid in [-9876543210, 0, 100]:
         f = lyr.GetFeature(fid)
         if f is not None:
             gdaltest.post_reason('fail')
             f.DumpReadable()
             return 'fail'
 
-    for invalid_fid in [-2,0,9876543210]:
+    for invalid_fid in [-2, 0, 9876543210]:
         f = ogr.Feature(lyr.GetLayerDefn())
         f.SetFID(invalid_fid)
         ret = lyr.SetFeature(f)
@@ -2039,8 +2064,7 @@ def ogr_fgdb_20():
         gdaltest.post_reason('fail')
         return 'fail'
 
-
-    for (fid, fgdb_fid) in [ (3, 5), (2049,6), (10,7), (7,8), (9, None), (8, 10), (12, 11) ]:
+    for (fid, fgdb_fid) in [(3, 5), (2049, 6), (10, 7), (7, 8), (9, None), (8, 10), (12, 11)]:
         f = ogr.Feature(lyr.GetLayerDefn())
         f.SetFID(fid)
         f.SetField('id', fid)
@@ -2063,7 +2087,7 @@ def ogr_fgdb_20():
     lyr.SetFeature(f)
 
     lyr.ResetReading()
-    expected = [ (2, None), (4, 3), (3, 5), (2049,6), (10,7), (7,8), (9, None), (8, 10) ]
+    expected = [(2, None), (4, 3), (3, 5), (2049, 6), (10, 7), (7, 8), (9, None), (8, 10)]
     for (fid, fgdb_fid) in expected:
         f = lyr.GetNextFeature()
         if f is None:
@@ -2094,7 +2118,7 @@ def ogr_fgdb_20():
         return 'fail'
 
     # No sparse pages
-    lyr = ds.CreateLayer('ogr_fgdb_20_simple', geom_type = ogr.wkbNone)
+    lyr = ds.CreateLayer('ogr_fgdb_20_simple', geom_type=ogr.wkbNone)
     lyr.CreateField(ogr.FieldDefn('id', ogr.OFTInteger))
 
     f = ogr.Feature(lyr.GetLayerDefn())
@@ -2124,7 +2148,7 @@ def ogr_fgdb_20():
     ds.ReleaseResultSet(sql_lyr)
 
     # Do it in transaction, but this is completely orthogonal
-    ds.StartTransaction(force = True)
+    ds.StartTransaction(force=True)
 
     f = ogr.Feature(lyr.GetLayerDefn())
     f.SetFID(3)
@@ -2138,15 +2162,15 @@ def ogr_fgdb_20():
     srs = osr.SpatialReference()
     srs.ImportFromEPSG(32630)
     gdal.SetConfigOption('FGDB_RESYNC_THRESHOLD', '600')
-    lyr = ds.CreateLayer('ogr_fgdb_20_indexes', geom_type = ogr.wkbPoint, srs = srs)
+    lyr = ds.CreateLayer('ogr_fgdb_20_indexes', geom_type=ogr.wkbPoint, srs=srs)
     gdal.SetConfigOption('FGDB_RESYNC_THRESHOLD', None)
     lyr.CreateField(ogr.FieldDefn('id', ogr.OFTInteger))
     ds.ExecuteSQL('CREATE INDEX ogr_fgdb_20_indexes_id ON ogr_fgdb_20_indexes(id)')
     gdal.SetConfigOption('FGDB_BULK_LOAD', 'YES')
     for i in range(1000):
         f = ogr.Feature(lyr.GetLayerDefn())
-        f.SetFID(i+2)
-        f.SetField('id', i+2)
+        f.SetFID(i + 2)
+        f.SetField('id', i + 2)
         f.SetGeometry(ogr.CreateGeometryFromWkt('POINT (%d 0)' % i))
         lyr.CreateFeature(f)
     gdal.SetConfigOption('FGDB_BULK_LOAD', None)
@@ -2154,15 +2178,15 @@ def ogr_fgdb_20():
 
     # Check consistency after re-opening
     gdal.ErrorReset()
-    for update in [0,1]:
-        ds = ogr.Open('tmp/test.gdb', update = update)
+    for update in [0, 1]:
+        ds = ogr.Open('tmp/test.gdb', update=update)
         lyr = ds.GetLayerByName('ogr_fgdb_20')
         if lyr.GetFeatureCount() != 10:
             gdaltest.post_reason('fail')
             print(lyr.GetFeatureCount())
             return 'fail'
         lyr.ResetReading()
-        expected = [ 2, 3, 4, 7, 8, 9, 10, 12, 13, 2049 ]
+        expected = [2, 3, 4, 7, 8, 9, 10, 12, 13, 2049]
         for fid in expected:
             f = lyr.GetNextFeature()
             if gdal.GetLastErrorType() != 0:
@@ -2226,9 +2250,9 @@ def ogr_fgdb_20():
                     return 'fail'
 
     # Insert new features
-    ds = ogr.Open('tmp/test.gdb', update = 1)
+    ds = ogr.Open('tmp/test.gdb', update=1)
     lyr = ds.GetLayerByName('ogr_fgdb_20')
-    for (fid, fgdb_fid) in [ (10000000, 2050), (10000001,2051), (8191,2052), (16384,2053) ]:
+    for (fid, fgdb_fid) in [(10000000, 2050), (10000001, 2051), (8191, 2052), (16384, 2053)]:
         f = ogr.Feature(lyr.GetLayerDefn())
         f.SetFID(fid)
         f.SetField('id', fid)
@@ -2242,9 +2266,9 @@ def ogr_fgdb_20():
     ds = None
 
     # Insert a new intermediate FIDs
-    for (fid, fgdb_fid) in [ (1000000, 10000002), (1000001,10000002) ]:
+    for (fid, fgdb_fid) in [(1000000, 10000002), (1000001, 10000002)]:
 
-        ds = ogr.Open('tmp/test.gdb', update = 1)
+        ds = ogr.Open('tmp/test.gdb', update=1)
         lyr = ds.GetLayerByName('ogr_fgdb_20')
         f = ogr.Feature(lyr.GetLayerDefn())
         f.SetFID(fid)
@@ -2259,15 +2283,15 @@ def ogr_fgdb_20():
 
     # Check consistency after re-opening
     gdal.ErrorReset()
-    for update in [0,1]:
-        ds = ogr.Open('tmp/test.gdb', update = update)
+    for update in [0, 1]:
+        ds = ogr.Open('tmp/test.gdb', update=update)
         lyr = ds.GetLayerByName('ogr_fgdb_20')
         if lyr.GetFeatureCount() != 16:
             gdaltest.post_reason('fail')
             print(lyr.GetFeatureCount())
             return 'fail'
         lyr.ResetReading()
-        expected = [ 2, 3, 4, 7, 8, 9, 10, 12, 13, 2049, 8191, 16384, 1000000, 1000001, 10000000, 10000001 ]
+        expected = [2, 3, 4, 7, 8, 9, 10, 12, 13, 2049, 8191, 16384, 1000000, 1000001, 10000000, 10000001]
         for fid in expected:
             f = lyr.GetNextFeature()
             if gdal.GetLastErrorType() != 0:
@@ -2283,18 +2307,17 @@ def ogr_fgdb_20():
                 print(fid)
                 return 'fail'
 
-
     # Simulate different errors when database reopening is done
     # to sync ids
     for case in ('CASE1', 'CASE2', 'CASE3'):
         try:
             shutil.rmtree("tmp/test2.gdb")
-        except:
+        except OSError:
             pass
 
         ds = ogrtest.fgdb_drv.CreateDataSource("tmp/test2.gdb")
 
-        lyr = ds.CreateLayer('foo', geom_type = ogr.wkbNone)
+        lyr = ds.CreateLayer('foo', geom_type=ogr.wkbNone)
         lyr.CreateField(ogr.FieldDefn('id', ogr.OFTInteger))
         f = ogr.Feature(lyr.GetLayerDefn())
         f.SetFID(2)
@@ -2336,7 +2359,7 @@ def ogr_fgdb_20():
             gdaltest.post_reason('fail')
             return 'fail'
         if case != 'CASE3':
-            if ds.CreateLayer('bar', geom_type = ogr.wkbNone) is not None:
+            if ds.CreateLayer('bar', geom_type=ogr.wkbNone) is not None:
                 gdaltest.post_reason('fail')
                 return 'fail'
             if ds.DeleteLayer(0) == 0:
@@ -2351,12 +2374,13 @@ def ogr_fgdb_20():
 
         ds = None
 
-    #sys.exit(0)
+    # sys.exit(0)
 
     return 'success'
 
 ###############################################################################
 # Test M support
+
 
 def ogr_fgdb_21():
 
@@ -2369,35 +2393,34 @@ def ogr_fgdb_21():
 
     try:
         shutil.rmtree("tmp/test.gdb")
-    except:
+    except OSError:
         pass
 
     ds = ogrtest.fgdb_drv.CreateDataSource('tmp/test.gdb')
 
-
-    datalist = [ [ "pointm", ogr.wkbPointM, "POINT M (1 2 3)" ],
-                 [ "pointzm", ogr.wkbPointM, "POINT ZM (1 2 3 4)" ],
-                 [ "multipointm", ogr.wkbMultiPointM, "MULTIPOINT M ((1 2 3),(4 5 6))" ],
-                 [ "multipointzm", ogr.wkbMultiPointZM, "MULTIPOINT ZM ((1 2 3 4),(5 6 7 8))" ],
-                 [ "linestringm", ogr.wkbLineStringM, "LINESTRING M (1 2 3,4 5 6)", "MULTILINESTRING M ((1 2 3,4 5 6))" ],
-                 [ "linestringzm", ogr.wkbLineStringZM, "LINESTRING ZM (1 2 3 4,5 6 7 8)", "MULTILINESTRING ZM ((1 2 3 4,5 6 7 8))" ],
-                 [ "multilinestringm", ogr.wkbMultiLineStringM, "MULTILINESTRING M ((1 2 3,4 5 6))" ],
-                 [ "multilinestringzm", ogr.wkbMultiLineStringZM, "MULTILINESTRING ZM ((1 2 3 4,5 6 7 8))" ],
-                 [ "polygonm", ogr.wkbPolygonM, "POLYGON M ((0 0 1,0 1 2,1 1 3,1 0 4,0 0 1))", "MULTIPOLYGON M (((0 0 1,0 1 2,1 1 3,1 0 4,0 0 1)))" ],
-                 [ "polygonzm", ogr.wkbPolygonZM, "POLYGON ZM ((0 0 1 -1,0 1 2 -2,1 1 3 -3,1 0 4 -4,0 0 1 -1))", "MULTIPOLYGON ZM (((0 0 1 -1,0 1 2 -2,1 1 3 -3,1 0 4 -4,0 0 1 -1)))" ],
-                 [ "multipolygonm", ogr.wkbMultiPolygonM, "MULTIPOLYGON M (((0 0 1,0 1 2,1 1 3,1 0 4,0 0 1)))" ],
-                 [ "multipolygonzm", ogr.wkbMultiPolygonZM, "MULTIPOLYGON ZM (((0 0 1 -1,0 1 2 -2,1 1 3 -3,1 0 4 -4,0 0 1 -1)))" ],
-                 [ "empty_polygonm", ogr.wkbPolygonM, 'POLYGON M EMPTY', None],
-               ]
+    datalist = [["pointm", ogr.wkbPointM, "POINT M (1 2 3)"],
+                ["pointzm", ogr.wkbPointM, "POINT ZM (1 2 3 4)"],
+                ["multipointm", ogr.wkbMultiPointM, "MULTIPOINT M ((1 2 3),(4 5 6))"],
+                ["multipointzm", ogr.wkbMultiPointZM, "MULTIPOINT ZM ((1 2 3 4),(5 6 7 8))"],
+                ["linestringm", ogr.wkbLineStringM, "LINESTRING M (1 2 3,4 5 6)", "MULTILINESTRING M ((1 2 3,4 5 6))"],
+                ["linestringzm", ogr.wkbLineStringZM, "LINESTRING ZM (1 2 3 4,5 6 7 8)", "MULTILINESTRING ZM ((1 2 3 4,5 6 7 8))"],
+                ["multilinestringm", ogr.wkbMultiLineStringM, "MULTILINESTRING M ((1 2 3,4 5 6))"],
+                ["multilinestringzm", ogr.wkbMultiLineStringZM, "MULTILINESTRING ZM ((1 2 3 4,5 6 7 8))"],
+                ["polygonm", ogr.wkbPolygonM, "POLYGON M ((0 0 1,0 1 2,1 1 3,1 0 4,0 0 1))", "MULTIPOLYGON M (((0 0 1,0 1 2,1 1 3,1 0 4,0 0 1)))"],
+                ["polygonzm", ogr.wkbPolygonZM, "POLYGON ZM ((0 0 1 -1,0 1 2 -2,1 1 3 -3,1 0 4 -4,0 0 1 -1))", "MULTIPOLYGON ZM (((0 0 1 -1,0 1 2 -2,1 1 3 -3,1 0 4 -4,0 0 1 -1)))"],
+                ["multipolygonm", ogr.wkbMultiPolygonM, "MULTIPOLYGON M (((0 0 1,0 1 2,1 1 3,1 0 4,0 0 1)))"],
+                ["multipolygonzm", ogr.wkbMultiPolygonZM, "MULTIPOLYGON ZM (((0 0 1 -1,0 1 2 -2,1 1 3 -3,1 0 4 -4,0 0 1 -1)))"],
+                ["empty_polygonm", ogr.wkbPolygonM, 'POLYGON M EMPTY', None],
+                ]
 
     srs = osr.SpatialReference()
     srs.SetFromUserInput("WGS84")
 
     for data in datalist:
-        lyr = ds.CreateLayer(data[0], geom_type=data[1], srs=srs, options = [] )
+        lyr = ds.CreateLayer(data[0], geom_type=data[1], srs=srs, options=[])
 
         feat = ogr.Feature(lyr.GetLayerDefn())
-        #print(data[2])
+        # print(data[2])
         feat.SetGeometry(ogr.CreateGeometryFromWkt(data[2]))
         lyr.CreateFeature(feat)
 
@@ -2442,6 +2465,7 @@ def ogr_fgdb_21():
 
 ###############################################################################
 # Read curves
+
 
 def ogr_fgdb_22():
 
@@ -2488,6 +2512,7 @@ def ogr_fgdb_22():
 ###############################################################################
 # Test opening '.'
 
+
 def ogr_fgdb_23():
 
     if ogrtest.fgdb_drv is None:
@@ -2502,7 +2527,73 @@ def ogr_fgdb_23():
     return 'success'
 
 ###############################################################################
+# Read polygons with M component where the M of the closing point is not the
+# one of the starting point (#7017)
+
+
+def ogr_fgdb_24():
+
+    ds = ogr.Open('data/filegdb_polygonzm_m_not_closing_with_curves.gdb')
+    lyr = ds.GetLayer(0)
+    ds_ref = ogr.Open('data/filegdb_polygonzm_m_not_closing_with_curves.gdb.csv')
+    lyr_ref = ds_ref.GetLayer(0)
+    for f in lyr:
+        f_ref = lyr_ref.GetNextFeature()
+        if ogrtest.check_feature_geometry(f, f_ref.GetGeometryRef()) != 0:
+            gdaltest.post_reason('fail')
+            print(f.GetGeometryRef().ExportToIsoWkt())
+            print(f_ref.GetGeometryRef().ExportToIsoWkt())
+            return 'fail'
+
+    ds = ogr.Open('data/filegdb_polygonzm_nan_m_with_curves.gdb')
+    lyr = ds.GetLayer(0)
+    ds_ref = ogr.Open('data/filegdb_polygonzm_nan_m_with_curves.gdb.csv')
+    lyr_ref = ds_ref.GetLayer(0)
+    for f in lyr:
+        f_ref = lyr_ref.GetNextFeature()
+        if ogrtest.check_feature_geometry(f, f_ref.GetGeometryRef()) != 0:
+            gdaltest.post_reason('fail')
+            print(f.GetGeometryRef().ExportToIsoWkt())
+            print(f_ref.GetGeometryRef().ExportToIsoWkt())
+            return 'fail'
+
+    return 'success'
+
+###############################################################################
+# Test selecting FID column with OGRSQL
+
+
+def ogr_fgdb_25():
+
+    ds = ogr.Open('data/curves.gdb')
+    sql_lyr = ds.ExecuteSQL('SELECT OBJECTID FROM polygon WHERE OBJECTID = 2')
+    if sql_lyr is None:
+        gdaltest.post_reason('fail')
+        return 'fail'
+    f = sql_lyr.GetNextFeature()
+    if f.GetFID() != 2:
+        gdaltest.post_reason('fail')
+        f.DumpReadable()
+        return 'fail'
+    f = sql_lyr.GetNextFeature()
+    if f is not None:
+        gdaltest.post_reason('fail')
+        return 'fail'
+    ds.ReleaseResultSet(sql_lyr)
+
+    lyr = ds.GetLayerByName('polygon')
+    lyr.SetAttributeFilter('OBJECTID = 2')
+    f = lyr.GetNextFeature()
+    if f.GetFID() != 2:
+        gdaltest.post_reason('fail')
+        f.DumpReadable()
+        return 'fail'
+
+    return 'success'
+
+###############################################################################
 # Cleanup
+
 
 def ogr_fgdb_cleanup():
     if ogrtest.fgdb_drv is None:
@@ -2510,20 +2601,20 @@ def ogr_fgdb_cleanup():
 
     try:
         shutil.rmtree("tmp/test.gdb")
-    except:
+    except OSError:
         pass
 
     try:
         shutil.rmtree("tmp/test2.gdb")
-    except:
+    except OSError:
         pass
     try:
         shutil.rmtree("tmp/poly.gdb")
-    except:
+    except OSError:
         pass
     try:
         shutil.rmtree('tmp/test3005.gdb')
-    except:
+    except OSError:
         pass
 
     if ogrtest.openfilegdb_drv is not None:
@@ -2533,6 +2624,7 @@ def ogr_fgdb_cleanup():
         ogrtest.fgdb_drv.Register()
 
     return 'success'
+
 
 gdaltest_list = [
     ogr_fgdb_init,
@@ -2562,8 +2654,10 @@ gdaltest_list = [
     ogr_fgdb_21,
     ogr_fgdb_22,
     ogr_fgdb_23,
+    ogr_fgdb_24,
+    ogr_fgdb_25,
     ogr_fgdb_cleanup,
-    ]
+]
 
 disabled_gdaltest_list = [
     ogr_fgdb_init,
@@ -2573,11 +2667,8 @@ disabled_gdaltest_list = [
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'ogr_fgdb' )
+    gdaltest.setup_run('ogr_fgdb')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-
-
-

@@ -29,7 +29,7 @@
 #include "ogr_mdb.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 // g++ -fPIC -g -Wall ogr/ogrsf_frmts/mdb/*.cpp -shared -o ogr_MDB.so -Iport -Igcore -Iogr -Iogr/ogrsf_frmts -Iogr/ogrsf_frmts/mdb -L. -lgdal -I/usr/lib/jvm/java-6-openjdk/include -I/usr/lib/jvm/java-6-openjdk/include/linux  -L/usr/lib/jvm/java-6-openjdk/jre/lib/amd64/server -ljvm
 
@@ -66,23 +66,23 @@ OGRDataSource *OGRMDBDriver::Open( const char * pszFilename,
     OGRMDBDataSource     *poDS;
 
     if( bUpdate )
-        return NULL;
+        return nullptr;
 
     if( STARTS_WITH_CI(pszFilename, "PGEO:") )
-        return NULL;
+        return nullptr;
 
     if( STARTS_WITH_CI(pszFilename, "GEOMEDIA:") )
-        return NULL;
+        return nullptr;
 
     if( STARTS_WITH_CI(pszFilename, "WALK:") )
-        return NULL;
+        return nullptr;
 
     if( !EQUAL(CPLGetExtension(pszFilename),"mdb") )
-        return NULL;
+        return nullptr;
 
     VSIStatBuf sStat;
     if (VSIStat(pszFilename, &sStat) != 0)
-        return NULL;
+        return nullptr;
 
     // Open data source
     poDS = new OGRMDBDataSource();
@@ -90,7 +90,7 @@ OGRDataSource *OGRMDBDriver::Open( const char * pszFilename,
     if( !poDS->Open( pszFilename ) )
     {
         delete poDS;
-        return NULL;
+        return nullptr;
     }
     else
         return poDS;

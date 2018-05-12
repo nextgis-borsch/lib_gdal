@@ -93,13 +93,25 @@ Now we want to start reading features from the layer.  Before we start we
 could assign an attribute or spatial filter to the layer to restrict the set
 of feature we get back, but for now we are interested in getting all features.
 
-While it isn't strictly necessary in this
+With GDAL 2.3 and C++11:
+\code
+    for( auto& poFeature: poLayer )
+    {
+\endcode
+
+With GDAL 2.3 and C:
+\code
+    OGR_FOR_EACH_FEATURE_BEGIN(hFeature, hLayer)
+    {
+\endcode
+
+If using older GDAL versions, while it isn't strictly necessary in this
 circumstance since we are starting fresh with the layer, it is often wise
 to call OGRLayer::ResetReading() to ensure we are starting at the beginning of
 the layer.  We iterate through all the features in the layer using
 OGRLayer::GetNextFeature().  It will return NULL when we run out of features.
 
-In C++ :
+With GDAL &lt; 2.3 and C++ :
 \code
     OGRFeature *poFeature;
 
@@ -108,7 +120,7 @@ In C++ :
     {
 \endcode
 
-In C :
+With GDAL &lt; 2.3 and C :
 \code
     OGRFeatureH hFeature;
 
@@ -122,25 +134,56 @@ to get the OGRFeatureDefn.  This is an object, associated with the layer,
 containing the definitions of all the fields.  We loop over all the fields,
 and fetch and report the attributes based on their type.
 
-In C++ :
+With GDAL 2.3 and C++11:
+\code
+    for( auto&& oField: *poFeature )
+    {
+        switch( oField.GetType() )
+        {
+            case OFTInteger:
+                printf( "%d,", oField.GetInteger() );
+                break;
+            case OFTInteger64:
+                printf( CPL_FRMT_GIB ",", oField.GetInteger64() );
+                break;
+            case OFTReal:
+                printf( "%.3f,", oField.GetDouble() );
+                break;
+            case OFTString:
+                printf( "%s,", oField.GetString() );
+                break;
+            default:
+                printf( "%s,", oField.GetAsString() );
+                break;
+        }
+    }
+\endcode
+
+With GDAL &lt; 2.3 and C++ :
 \code
     OGRFeatureDefn *poFDefn = poLayer->GetLayerDefn();
-    int iField;
-
-    for( iField = 0; iField < poFDefn->GetFieldCount(); iField++ )
+    for( int iField = 0; iField < poFDefn->GetFieldCount(); iField++ )
     {
         OGRFieldDefn *poFieldDefn = poFDefn->GetFieldDefn( iField );
 
-        if( poFieldDefn->GetType() == OFTInteger )
-            printf( "%d,", poFeature->GetFieldAsInteger( iField ) );
-        else if( poFieldDefn->GetType() == OFTInteger64 )
-            printf( CPL_FRMT_GIB ",", poFeature->GetFieldAsInteger64( iField ) );
-        else if( poFieldDefn->GetType() == OFTReal )
-            printf( "%.3f,", poFeature->GetFieldAsDouble(iField) );
-        else if( poFieldDefn->GetType() == OFTString )
-            printf( "%s,", poFeature->GetFieldAsString(iField) );
-        else
-            printf( "%s,", poFeature->GetFieldAsString(iField) );
+        switch( poFieldDefn->GetType() )
+        {
+            case OFTInteger:
+                printf( "%d,", poFeature->GetFieldAsInteger( iField ) );
+                break;
+            case OFTInteger64:
+                printf( CPL_FRMT_GIB ",", poFeature->GetFieldAsInteger64( iField ) );
+                break;
+            case OFTReal:
+                printf( "%.3f,", poFeature->GetFieldAsDouble(iField) );
+                break;
+            case OFTString:
+                printf( "%s,", poFeature->GetFieldAsString(iField) );
+                break;
+            default:
+                printf( "%s,", poFeature->GetFieldAsString(iField) );
+                break;
+        }
     }
 \endcode
 
@@ -153,16 +196,24 @@ In C :
     {
         OGRFieldDefnH hFieldDefn = OGR_FD_GetFieldDefn( hFDefn, iField );
 
-        if( OGR_Fld_GetType(hFieldDefn) == OFTInteger )
-            printf( "%d,", OGR_F_GetFieldAsInteger( hFeature, iField ) );
-        else if( OGR_Fld_GetType(hFieldDefn) == OFTInteger64 )
-            printf( CPL_FRMT_GIB ",", OGR_F_GetFieldAsInteger64( hFeature, iField ) );
-        else if( OGR_Fld_GetType(hFieldDefn) == OFTReal )
-            printf( "%.3f,", OGR_F_GetFieldAsDouble( hFeature, iField) );
-        else if( OGR_Fld_GetType(hFieldDefn) == OFTString )
-            printf( "%s,", OGR_F_GetFieldAsString( hFeature, iField) );
-        else
-            printf( "%s,", OGR_F_GetFieldAsString( hFeature, iField) );
+        switch( OGR_Fld_GetType(hFieldDefn) )
+        {
+            case OFTInteger:
+                printf( "%d,", OGR_F_GetFieldAsInteger( hFeature, iField ) );
+                break;
+            case OFTInteger64:
+                printf( CPL_FRMT_GIB ",", OGR_F_GetFieldAsInteger64( hFeature, iField ) );
+                break;
+            case OFTReal:
+                printf( "%.3f,", OGR_F_GetFieldAsDouble( hFeature, iField) );
+                break;
+            case OFTString:
+                printf( "%s,", OGR_F_GetFieldAsString( hFeature, iField) );
+                break;
+            default:
+                printf( "%s,", OGR_F_GetFieldAsString( hFeature, iField) );
+                break;
+        }
     }
 \endcode
 
@@ -185,7 +236,11 @@ In C++ :
     if( poGeometry != NULL
             && wkbFlatten(poGeometry->getGeometryType()) == wkbPoint )
     {
+#if GDAL_VERSION_NUM >= GDAL_COMPUTE_VERSION(2,3,0)
+        OGRPoint *poPoint = poGeometry->toPoint();
+#else
         OGRPoint *poPoint = (OGRPoint *) poGeometry;
+#endif
 
         printf( "%.3f,%3.f\n", poPoint->getX(), poPoint->getY() );
     }
@@ -234,7 +289,11 @@ In C++ :
         if( poGeometry != NULL
                 && wkbFlatten(poGeometry->getGeometryType()) == wkbPoint )
         {
+#if GDAL_VERSION_NUM >= GDAL_COMPUTE_VERSION(2,3,0)
+            OGRPoint *poPoint = poGeometry->toPoint();
+#else
             OGRPoint *poPoint = (OGRPoint *) poGeometry;
+#endif
 
             printf( "%.3f,%3.f\n", poPoint->getX(), poPoint->getY() );
         }
@@ -282,7 +341,23 @@ In Python:
 Note that OGRFeature::GetGeometryRef() and OGRFeature::GetGeomFieldRef()
 return a pointer to
 the internal geometry owned by the OGRFeature.  There we don't actually
-deleted the return geometry.  However, the OGRLayer::GetNextFeature() method
+deleted the return geometry.
+
+
+With GDAL 2.3 and C++11, the looping over features is simply terminated by
+a closing curly bracket.
+\code
+    }
+\endcode
+
+With GDAL 2.3 and C, the looping over features is simply terminated by
+the following.
+\code
+    }
+    OGR_FOR_EACH_FEATURE_END(hFeature)
+\endcode
+
+For GDAL &lt; 2.3, as the OGRLayer::GetNextFeature() method
 returns a copy of the feature that is now owned by us.  So at the end of
 use we must free the feature.  We could just "delete" it, but this can cause
 problems in windows builds where the GDAL DLL has a different "heap" from the
@@ -315,6 +390,66 @@ In C/C++ :
 
 All together our program looks like this.
 
+With GDAL 2.3 and C++11 :
+\code
+#include "ogrsf_frmts.h"
+
+int main()
+
+{
+    GDALAllRegister();
+
+    GDALDatasetUniquePtr poDS(GDALDataset::Open( "point.shp", GDAL_OF_VECTOR));
+    if( poDS == nullptr )
+    {
+        printf( "Open failed.\n" );
+        exit( 1 );
+    }
+
+    for( const OGRLayer* poLayer: poDS->GetLayers() )
+    {
+        for( const auto& poFeature: *poLayer )
+        {
+            for( const auto& oField: *poFeature )
+            {
+                switch( oField.GetType() )
+                {
+                    case OFTInteger:
+                        printf( "%d,", oField.GetInteger() );
+                        break;
+                    case OFTInteger64:
+                        printf( CPL_FRMT_GIB ",", oField.GetInteger64() );
+                        break;
+                    case OFTReal:
+                        printf( "%.3f,", oField.GetDouble() );
+                        break;
+                    case OFTString:
+                        printf( "%s,", oField.GetString() );
+                        break;
+                    default:
+                        printf( "%s,", oField.GetAsString() );
+                        break;
+                }
+            }
+
+            const OGRGeometry *poGeometry = poFeature->GetGeometryRef();
+            if( poGeometry != nullptr
+                    && wkbFlatten(poGeometry->getGeometryType()) == wkbPoint )
+            {
+                const OGRPoint *poPoint = poGeometry->toPoint();
+
+                printf( "%.3f,%3.f\n", poPoint->getX(), poPoint->getY() );
+            }
+            else
+            {
+                printf( "no point geometry\n" );
+            }
+        }
+    }
+    return 0;
+}
+\endcode
+
 In C++ :
 \code
 #include "ogrsf_frmts.h"
@@ -324,46 +459,46 @@ int main()
 {
     GDALAllRegister();
 
-    GDALDataset       *poDS;
-
-    poDS = (GDALDataset*) GDALOpenEx( "point.shp", GDAL_OF_VECTOR, NULL, NULL, NULL );
+    GDALDataset *poDS = static_cast<GDALDataset*>(
+        GDALOpenEx( "point.shp", GDAL_OF_VECTOR, NULL, NULL, NULL ));
     if( poDS == NULL )
     {
         printf( "Open failed.\n" );
         exit( 1 );
     }
 
-    OGRLayer  *poLayer;
-
-    poLayer = poDS->GetLayerByName( "point" );
-
-    OGRFeature *poFeature;
+    OGRLayer  *poLayer = poDS->GetLayerByName( "point" );
+    OGRFeatureDefn *poFDefn = poLayer->GetLayerDefn();
 
     poLayer->ResetReading();
+    OGRFeature *poFeature;
     while( (poFeature = poLayer->GetNextFeature()) != NULL )
     {
-        OGRFeatureDefn *poFDefn = poLayer->GetLayerDefn();
-        int iField;
-
-        for( iField = 0; iField < poFDefn->GetFieldCount(); iField++ )
+        for( int iField = 0; iField < poFDefn->GetFieldCount(); iField++ )
         {
             OGRFieldDefn *poFieldDefn = poFDefn->GetFieldDefn( iField );
 
-            if( poFieldDefn->GetType() == OFTInteger )
-                printf( "%d,", poFeature->GetFieldAsInteger( iField ) );
-            else if( poFieldDefn->GetType() == OFTInteger64 )
-                printf( CPL_FRMT_GIB ",", poFeature->GetFieldAsInteger64( iField ) );
-            else if( poFieldDefn->GetType() == OFTReal )
-                printf( "%.3f,", poFeature->GetFieldAsDouble(iField) );
-            else if( poFieldDefn->GetType() == OFTString )
-                printf( "%s,", poFeature->GetFieldAsString(iField) );
-            else
-                printf( "%s,", poFeature->GetFieldAsString(iField) );
+            switch( poFieldDefn->GetType() )
+            {
+                case OFTInteger:
+                    printf( "%d,", poFeature->GetFieldAsInteger( iField ) );
+                    break;
+                case OFTInteger64:
+                    printf( CPL_FRMT_GIB ",", poFeature->GetFieldAsInteger64( iField ) );
+                    break;
+                case OFTReal:
+                    printf( "%.3f,", poFeature->GetFieldAsDouble(iField) );
+                    break;
+                case OFTString:
+                    printf( "%s,", poFeature->GetFieldAsString(iField) );
+                    break;
+                default:
+                    printf( "%s,", poFeature->GetFieldAsString(iField) );
+                    break;
+            }
         }
 
-        OGRGeometry *poGeometry;
-
-        poGeometry = poFeature->GetGeometryRef();
+        OGRGeometry *poGeometry = poFeature->GetGeometryRef();
         if( poGeometry != NULL
                 && wkbFlatten(poGeometry->getGeometryType()) == wkbPoint )
         {
@@ -394,6 +529,7 @@ int main()
     GDALDatasetH hDS;
     OGRLayerH hLayer;
     OGRFeatureH hFeature;
+    OGRFeatureDefnH hFDefn;
 
     hDS = GDALOpenEx( "point.shp", GDAL_OF_VECTOR, NULL, NULL, NULL );
     if( hDS == NULL )
@@ -403,30 +539,36 @@ int main()
     }
 
     hLayer = GDALDatasetGetLayerByName( hDS, "point" );
+    hFDefn = OGR_L_GetLayerDefn(hLayer);
 
     OGR_L_ResetReading(hLayer);
     while( (hFeature = OGR_L_GetNextFeature(hLayer)) != NULL )
     {
-        OGRFeatureDefnH hFDefn;
         int iField;
         OGRGeometryH hGeometry;
-
-        hFDefn = OGR_L_GetLayerDefn(hLayer);
 
         for( iField = 0; iField < OGR_FD_GetFieldCount(hFDefn); iField++ )
         {
             OGRFieldDefnH hFieldDefn = OGR_FD_GetFieldDefn( hFDefn, iField );
 
-            if( OGR_Fld_GetType(hFieldDefn) == OFTInteger )
-                printf( "%d,", OGR_F_GetFieldAsInteger( hFeature, iField ) );
-            else if( OGR_Fld_GetType(hFieldDefn) == OFTInteger64 )
-                printf( CPL_FRMT_GIB ",", OGR_F_GetFieldAsInteger64( hFeature, iField ) );
-            else if( OGR_Fld_GetType(hFieldDefn) == OFTReal )
-                printf( "%.3f,", OGR_F_GetFieldAsDouble( hFeature, iField) );
-            else if( OGR_Fld_GetType(hFieldDefn) == OFTString )
-                printf( "%s,", OGR_F_GetFieldAsString( hFeature, iField) );
-            else
-                printf( "%s,", OGR_F_GetFieldAsString( hFeature, iField) );
+            switch( OGR_Fld_GetType(hFieldDefn) )
+            {
+                case OFTInteger:
+                    printf( "%d,", OGR_F_GetFieldAsInteger( hFeature, iField ) );
+                    break;
+                case OFTInteger64:
+                    printf( CPL_FRMT_GIB ",", OGR_F_GetFieldAsInteger64( hFeature, iField ) );
+                    break;
+                case OFTReal:
+                    printf( "%.3f,", OGR_F_GetFieldAsDouble( hFeature, iField) );
+                    break;
+                case OFTString:
+                    printf( "%s,", OGR_F_GetFieldAsString( hFeature, iField) );
+                    break;
+                default:
+                    printf( "%s,", OGR_F_GetFieldAsString( hFeature, iField) );
+                    break;
+            }
         }
 
         hGeometry = OGR_F_GetGeometryRef(hFeature);

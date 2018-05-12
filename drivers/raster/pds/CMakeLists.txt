@@ -53,6 +53,7 @@ if(ENABLE_PDS_ISIS2_ISIS3_VICAR)
         vicardataset.cpp
         nasakeywordhandler.cpp
         vicarkeywordhandler.cpp
+        pds4dataset.cpp
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})

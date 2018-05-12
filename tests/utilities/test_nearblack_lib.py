@@ -31,7 +31,7 @@
 
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 from osgeo import gdal
 import gdaltest
@@ -39,10 +39,11 @@ import gdaltest
 ###############################################################################
 # Basic test
 
+
 def test_nearblack_lib_1():
 
     src_ds = gdal.Open('../gdrivers/data/rgbsmall.tif')
-    ds = gdal.Nearblack('', src_ds, format = 'MEM', maxNonBlack = 0, nearDist = 15)
+    ds = gdal.Nearblack('', src_ds, format='MEM', maxNonBlack=0, nearDist=15)
     if ds is None:
         return 'fail'
 
@@ -81,9 +82,10 @@ def test_nearblack_lib_1():
 ###############################################################################
 # Add alpha band
 
+
 def test_nearblack_lib_2():
 
-    ds = gdal.Nearblack('', '../gdrivers/data/rgbsmall.tif', format = 'MEM', maxNonBlack = 0, setAlpha = True)
+    ds = gdal.Nearblack('', '../gdrivers/data/rgbsmall.tif', format='MEM', maxNonBlack=0, setAlpha=True)
     if ds is None:
         return 'fail'
 
@@ -99,10 +101,11 @@ def test_nearblack_lib_2():
 ###############################################################################
 # Set existing alpha band
 
+
 def test_nearblack_lib_3():
 
-    src_ds = gdal.Nearblack('', '../gdrivers/data/rgbsmall.tif', format = 'MEM', maxNonBlack = 0, setAlpha = True)
-    ds = gdal.Nearblack('', src_ds, format = 'MEM', maxNonBlack = 0, setAlpha = True)
+    src_ds = gdal.Nearblack('', '../gdrivers/data/rgbsmall.tif', format='MEM', maxNonBlack=0, setAlpha=True)
+    ds = gdal.Nearblack('', src_ds, format='MEM', maxNonBlack=0, setAlpha=True)
     if ds is None:
         return 'fail'
 
@@ -118,10 +121,11 @@ def test_nearblack_lib_3():
 ###############################################################################
 # Test -white
 
+
 def test_nearblack_lib_4():
 
-    src_ds = gdal.Warp('', '../gdrivers/data/rgbsmall.tif', format = 'MEM', warpOptions = ["INIT_DEST=255"], srcNodata = 0)
-    ds = gdal.Nearblack('', src_ds, format = 'MEM', white = True, maxNonBlack = 0, setAlpha = True)
+    src_ds = gdal.Warp('', '../gdrivers/data/rgbsmall.tif', format='MEM', warpOptions=["INIT_DEST=255"], srcNodata=0)
+    ds = gdal.Nearblack('', src_ds, format='MEM', white=True, maxNonBlack=0, setAlpha=True)
     if ds is None:
         return 'fail'
 
@@ -137,9 +141,10 @@ def test_nearblack_lib_4():
 ###############################################################################
 # Add mask band
 
+
 def test_nearblack_lib_5():
 
-    ds = gdal.Nearblack('/vsimem/test_nearblack_lib_5.tif', '../gdrivers/data/rgbsmall.tif', format = 'GTiff', maxNonBlack = 0, setMask = True)
+    ds = gdal.Nearblack('/vsimem/test_nearblack_lib_5.tif', '../gdrivers/data/rgbsmall.tif', format='GTiff', maxNonBlack=0, setMask=True)
     if ds is None:
         return 'fail'
 
@@ -158,15 +163,16 @@ def test_nearblack_lib_5():
 ###############################################################################
 # Test -color
 
+
 def test_nearblack_lib_7():
 
-    ds = gdal.Nearblack('', 'data/whiteblackred.tif', format = 'MEM', colors = ((0,0,0),(255,255,255)))
+    ds = gdal.Nearblack('', 'data/whiteblackred.tif', format='MEM', colors=((0, 0, 0), (255, 255, 255)))
     if ds is None:
         return 'fail'
 
     if ds.GetRasterBand(1).Checksum() != 418 or \
        ds.GetRasterBand(2).Checksum() != 0 or \
-       ds.GetRasterBand(3).Checksum() != 0 :
+       ds.GetRasterBand(3).Checksum() != 0:
         print(ds.GetRasterBand(1).Checksum())
         print(ds.GetRasterBand(2).Checksum())
         print(ds.GetRasterBand(3).Checksum())
@@ -180,11 +186,12 @@ def test_nearblack_lib_7():
 ###############################################################################
 # Test in-place update
 
+
 def test_nearblack_lib_8():
 
     src_ds = gdal.Open('../gdrivers/data/rgbsmall.tif')
     ds = gdal.GetDriverByName('MEM').CreateCopy('', src_ds)
-    ret = gdal.Nearblack(ds, ds, maxNonBlack = 0)
+    ret = gdal.Nearblack(ds, ds, maxNonBlack=0)
     if ret != 1:
         gdaltest.post_reason('failure')
         return 'fail'
@@ -206,6 +213,7 @@ def test_nearblack_lib_8():
 
     return 'success'
 
+
 gdaltest_list = [
     test_nearblack_lib_1,
     test_nearblack_lib_2,
@@ -214,13 +222,13 @@ gdaltest_list = [
     test_nearblack_lib_5,
     test_nearblack_lib_7,
     test_nearblack_lib_8,
-    ]
+]
 
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'test_nearblack_lib' )
+    gdaltest.setup_run('test_nearblack_lib')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

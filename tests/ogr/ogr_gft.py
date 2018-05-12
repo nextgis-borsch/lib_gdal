@@ -32,7 +32,7 @@
 import os
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 import ogrtest
@@ -41,6 +41,7 @@ from osgeo import ogr
 
 ###############################################################################
 # Test if driver is available
+
 
 def ogr_gft_init():
 
@@ -66,6 +67,7 @@ def ogr_gft_init():
 ###############################################################################
 # Read test on Wikileaks Afgan War Diary 2004-2010 table.
 
+
 def ogr_gft_read():
     if ogrtest.gft_drv is None:
         return 'skip'
@@ -78,7 +80,7 @@ def ogr_gft_read():
     gdal.SetConfigOption('GFT_AUTH', None)
     gdal.SetConfigOption('GFT_ACCESS_TOKEN', None)
     gdal.SetConfigOption('GFT_REFRESH_TOKEN', None)
-    ds = ogr.Open('GFT:tables='+table_id)
+    ds = ogr.Open('GFT:tables=' + table_id)
     gdal.SetConfigOption('GFT_AUTH', old_auth)
     gdal.SetConfigOption('GFT_ACCESS_TOKEN', old_access)
     gdal.SetConfigOption('GFT_REFRESH_TOKEN', old_refresh)
@@ -89,7 +91,7 @@ def ogr_gft_read():
     if lyr is None:
         return 'fail'
 
-    lyr.SetSpatialFilterRect(67,31.5,67.5,32)
+    lyr.SetSpatialFilterRect(67, 31.5, 67.5, 32)
     lyr.SetAttributeFilter("'Attack on' = 'ENEMY'")
 
     count = lyr.GetFeatureCount()
@@ -101,7 +103,7 @@ def ogr_gft_read():
             return 'skip'
         return 'fail'
 
-    sql_lyr = ds.ExecuteSQL("SELECT Latitude, Longitude FROM "+table_id+" WHERE ST_INTERSECTS('Latitude', RECTANGLE(LATLNG(31.5,67.0), LATLNG(32.0,67.5))) AND 'Attack on' = 'ENEMY'")
+    sql_lyr = ds.ExecuteSQL("SELECT Latitude, Longitude FROM " + table_id + " WHERE ST_INTERSECTS('Latitude', RECTANGLE(LATLNG(31.5,67.0), LATLNG(32.0,67.5))) AND 'Attack on' = 'ENEMY'")
     if sql_lyr is None:
         gdaltest.post_reason('SQL request failed')
         return 'fail'
@@ -117,6 +119,7 @@ def ogr_gft_read():
 ###############################################################################
 # Write test
 
+
 def ogr_gft_write():
     if ogrtest.gft_drv is None:
         return 'skip'
@@ -125,14 +128,14 @@ def ogr_gft_write():
         ogrtest.gft_can_write = False
         return 'skip'
 
-    ds = ogr.Open('GFT:refresh=%s' % ogrtest.gft_refresh, update = 1)
+    ds = ogr.Open('GFT:refresh=%s' % ogrtest.gft_refresh, update=1)
     if ds is None:
         ogrtest.gft_can_write = False
         return 'skip'
     ogrtest.gft_can_write = True
 
     import random
-    ogrtest.gft_rand_val = random.randint(0,2147000000)
+    ogrtest.gft_rand_val = random.randint(0, 2147000000)
     table_name = "test_%d" % ogrtest.gft_rand_val
 
     lyr = ds.CreateLayer(table_name)
@@ -191,6 +194,7 @@ def ogr_gft_write():
 ###############################################################################
 # ogr2ogr test to create a non-spatial GFT table
 
+
 def ogr_gft_ogr2ogr_non_spatial():
     if ogrtest.gft_drv is None:
         return 'skip'
@@ -214,7 +218,7 @@ def ogr_gft_ogr2ogr_non_spatial():
 
     os.unlink('tmp/no_geometry_table.csv')
 
-    ds = ogr.Open('GFT:refresh=%s' % ogrtest.gft_refresh, update = 1)
+    ds = ogr.Open('GFT:refresh=%s' % ogrtest.gft_refresh, update=1)
     lyr = ds.GetLayerByName(layer_name)
     if lyr.GetLayerDefn().GetFieldCount() != 2:
         gdaltest.post_reason('did not get expected field count')
@@ -239,6 +243,7 @@ def ogr_gft_ogr2ogr_non_spatial():
 
 ###############################################################################
 # ogr2ogr test to create a spatial GFT table
+
 
 def ogr_gft_ogr2ogr_spatial():
     if ogrtest.gft_drv is None:
@@ -273,7 +278,7 @@ def ogr_gft_ogr2ogr_spatial():
     os.unlink('tmp/geometry_table.csv')
     os.unlink('tmp/geometry_table.csvt')
 
-    ds = ogr.Open('GFT:refresh=%s' % ogrtest.gft_refresh, update = 1)
+    ds = ogr.Open('GFT:refresh=%s' % ogrtest.gft_refresh, update=1)
 
     for name in [layer_name, copied_layer_name]:
         lyr = ds.GetLayerByName(name)
@@ -322,18 +327,19 @@ def ogr_gft_ogr2ogr_spatial():
 
     return 'success'
 
+
 gdaltest_list = [
     ogr_gft_init,
     ogr_gft_read,
     ogr_gft_write,
     ogr_gft_ogr2ogr_non_spatial,
     ogr_gft_ogr2ogr_spatial,
-    ]
+]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'ogr_gft' )
+    gdaltest.setup_run('ogr_gft')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

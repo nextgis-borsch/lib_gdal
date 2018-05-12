@@ -32,8 +32,9 @@
 import os
 import sys
 import shutil
+from difflib import unified_diff
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 import ogrtest
@@ -43,6 +44,7 @@ from osgeo import gdal
 
 ###############################################################################
 # Basic test without snapshoting
+
 
 def ograpispy_1():
 
@@ -62,13 +64,18 @@ def ograpispy_1():
 
     if ref_data != got_data:
         gdaltest.post_reason('did not get expected script')
-        print(got_data)
+        print()
+        for line in unified_diff(ref_data.splitlines(), got_data.splitlines(),
+                                 fromfile='expected', tofile='got',
+                                 lineterm=""):
+            print(line)
         return 'fail'
 
     return 'success'
 
 ###############################################################################
 # With snapshoting
+
 
 def ograpispy_2():
 
@@ -77,7 +84,7 @@ def ograpispy_2():
 
     try:
         shutil.rmtree('tmp/snapshot_1')
-    except:
+    except OSError:
         pass
 
     ds = ogr.GetDriverByName('ESRI Shapefile').CreateDataSource('tmp/ograpispy_2.shp')
@@ -87,7 +94,7 @@ def ograpispy_2():
 
     gdal.SetConfigOption('OGR_API_SPY_FILE', 'tmp/ograpispy_2.py')
     gdal.SetConfigOption('OGR_API_SPY_SNAPSHOT_PATH', 'tmp')
-    ds = ogr.Open('tmp/ograpispy_2.shp', update = 1)
+    ds = ogr.Open('tmp/ograpispy_2.shp', update=1)
     lyr = ds.GetLayer(0)
     lyr.CreateFeature(ogr.Feature(lyr.GetLayerDefn()))
     ds = None
@@ -101,7 +108,7 @@ def ograpispy_2():
         return 'fail'
     ds = None
 
-    ds = ogr.Open('tmp/snapshot_1/working/ograpispy_2.shp', update = 1)
+    ds = ogr.Open('tmp/snapshot_1/working/ograpispy_2.shp', update=1)
     lyr = ds.GetLayer(0)
     if lyr.GetFeatureCount() != 1:
         gdaltest.post_reason('fail')
@@ -129,30 +136,33 @@ def ograpispy_2():
 ###############################################################################
 #
 
+
 def ograpispy_cleanup():
     try:
         os.unlink('tmp/ograpispy_1.py')
-    except:
+    except OSError:
         pass
     try:
         os.unlink('tmp/ograpispy_2.py')
-    except:
+    except OSError:
         pass
     try:
         os.unlink('tmp/ograpispy_2.pyc')
-    except:
+    except OSError:
         pass
     try:
         shutil.rmtree('tmp/snapshot_1')
-    except:
+    except OSError:
         pass
     try:
         os.stat('tmp/ograpispy_2.shp')
         ogr.GetDriverByName('ESRI Shapefile').DeleteDataSource('tmp/ograpispy_2.shp')
     except:
         pass
+    gdal.Unlink('/vsimem/test2.csv')
 
     return 'success'
+
 
 gdaltest_list = [
     ograpispy_1,
@@ -162,8 +172,8 @@ gdaltest_list = [
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'ograpispy' )
+    gdaltest.setup_run('ograpispy')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

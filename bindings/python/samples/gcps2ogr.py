@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#******************************************************************************
+# ******************************************************************************
 #  $Id$
 #
 #  Project:  GDAL
 #  Purpose:  Outputs GDAL GCPs as OGR points
 #  Author:   Even Rouault, <even dot rouault at spatialys dot com>
 #
-#******************************************************************************
+# ******************************************************************************
 #  Copyright (c) 2015, Even Rouault, <even dot rouault at spatialys dot com>
 #
 #  Permission is hereby granted, free of charge, to any person obtaining a
@@ -27,7 +27,7 @@
 #  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 #  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
-#******************************************************************************
+# ******************************************************************************
 
 import sys
 
@@ -40,13 +40,14 @@ def Usage():
     print('Usage: gcp2ogr.py [-f ogr_drv_name] gdal_in_dataset ogr_out_dataset')
     sys.exit(1)
 
+
 out_format = 'ESRI Shapefile'
 in_dataset = None
 out_dataset = None
 i = 1
 while i < len(sys.argv):
     if sys.argv[i] == '-f':
-        i+=1
+        i += 1
         out_format = sys.argv[i]
     elif sys.argv[i][0] == '-':
         Usage()
@@ -56,7 +57,7 @@ while i < len(sys.argv):
         out_dataset = sys.argv[i]
     else:
         Usage()
-    i+= 1
+    i += 1
 
 if out_dataset is None:
     Usage()
@@ -67,7 +68,7 @@ sr = None
 wkt = ds.GetGCPProjection()
 if wkt != '':
     sr = osr.SpatialReference(wkt)
-out_lyr = out_ds.CreateLayer('gcps', geom_type = ogr.wkbPoint, srs = sr)
+out_lyr = out_ds.CreateLayer('gcps', geom_type=ogr.wkbPoint, srs=sr)
 out_lyr.CreateField(ogr.FieldDefn('Id', ogr.OFTString))
 out_lyr.CreateField(ogr.FieldDefn('Info', ogr.OFTString))
 out_lyr.CreateField(ogr.FieldDefn('X', ogr.OFTReal))
@@ -81,4 +82,3 @@ for i in range(len(gcps)):
     f.SetField('Y', gcps[i].GCPLine)
     f.SetGeometry(ogr.CreateGeometryFromWkt('POINT(%f %f)' % (gcps[i].GCPX, gcps[i].GCPY)))
     out_lyr.CreateFeature(f)
-

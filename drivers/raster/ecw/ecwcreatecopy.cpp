@@ -1,4 +1,4 @@
-/******************************************************************************
+    /******************************************************************************
  *
  * Project:  GDAL ECW Driver
  * Purpose:  ECW CreateCopy method implementation.
@@ -34,12 +34,7 @@
 #include "gdaljp2metadata.h"
 #include "ogr_spatialref.h"
 
-#if ECWSDK_VERSION<50
-/* For NCSStrDup */
-#include "NCSUtil.h"
-#endif
-
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 #if defined(FRMT_ecw) && defined(HAVE_COMPRESS)
 
@@ -63,7 +58,7 @@ CPLString GetCompressionSoftwareName(){
 #else
         char* szLastSlash = strrchr(szProcessName, '/');
 #endif
-        if( szLastSlash != NULL )
+        if( szLastSlash != nullptr )
             memmove(szProcessName, szLastSlash + 1, strlen(szLastSlash + 1) + 1);
     }
     else
@@ -77,7 +72,7 @@ CPLString GetCompressionSoftwareName(){
                  GDAL_VERSION_BUILD,
                  NCS_ECWJP2_FULL_VERSION_STRING_DOT_DEL);
     return osRet;
-};
+}
 #endif
 
 class GDALECWCompressor : public CNCSFile {
@@ -100,13 +95,13 @@ public:
                         const char *pszWKT, double *padfGeoTransform,
                         int nGCPCount, const GDAL_GCP *pasGCPList,
                         int bIsJPEG2000, int bPixelIsPoint, char** papszRPCMD,
-                        GDALDataset* poSrcDS = NULL );
+                        GDALDataset* poSrcDS = nullptr );
     CPLErr  CloseDown();
 
     CPLErr  PrepareCoverageBox( const char *pszWKT, double *padfGeoTransform );
     CPLErr  WriteJP2Box( GDALJP2Box * );
     void    WriteXMLBoxes();
-    CPLErr  ourWriteLineBIL(UINT16 nBands, void **ppOutputLine, UINT32 *pLineSteps = NULL);
+    CPLErr  ourWriteLineBIL(UINT16 nBands, void **ppOutputLine, UINT32 *pLineSteps = nullptr);
 #if ECWSDK_VERSION>=50
     virtual NCSEcwCellType WriteReadLineGetCellType() override {
         return sFileInfo.eCellType;
@@ -150,12 +145,12 @@ private:
 GDALECWCompressor::GDALECWCompressor() :
     eWorkDT(GDT_Unknown)
 {
-    m_poSrcDS = NULL;
+    m_poSrcDS = nullptr;
     m_nPercentComplete = -1;
     m_bCancelled = FALSE;
     pfnProgress = GDALDummyProgress;
-    pProgressData = NULL;
-    papoJP2UserBox = NULL;
+    pProgressData = nullptr;
+    papoJP2UserBox = nullptr;
     nJP2UserBox = 0;
 #if ECWSDK_VERSION>=50
     NCSInitFileInfo(&sFileInfo);
@@ -224,7 +219,7 @@ CNCSError GDALECWCompressor::WriteReadLine( UINT32 nNextLine,
                                 pabyLineBuf, sFileInfo.nSizeX, 1,
                                 eWorkDT,
                                 sFileInfo.nBands, panBandMap,
-                                nWordSize, 0, nWordSize * sFileInfo.nSizeX, NULL );
+                                nWordSize, 0, nWordSize * sFileInfo.nSizeX, nullptr );
 
     for( iBand = 0; iBand < (int) sFileInfo.nBands; iBand++ )
     {
@@ -263,7 +258,7 @@ void GDALECWCompressor::WriteStatus( UINT32 nCurrentLine )
 {
     m_bCancelled =
         !pfnProgress( nCurrentLine / (float) sFileInfo.nSizeY,
-                      NULL, pProgressData );
+                      nullptr, pProgressData );
 }
 #endif
 /************************************************************************/
@@ -298,18 +293,17 @@ CPLErr  GDALECWCompressor::PrepareCoverageBox(
 /*      Try do determine a PCS or GCS code we can use.                  */
 /* -------------------------------------------------------------------- */
     OGRSpatialReference oSRS;
-    char *pszWKTCopy = (char *) pszWKT;
     int nEPSGCode = 0;
     char szSRSName[100];
 
-    if( oSRS.importFromWkt( &pszWKTCopy ) != OGRERR_NONE )
+    if( oSRS.importFromWkt( pszWKT ) != OGRERR_NONE )
         return CE_Failure;
 
     if( oSRS.IsProjected() )
     {
         const char *pszAuthName = oSRS.GetAuthorityName( "PROJCS" );
 
-        if( pszAuthName != NULL && EQUAL(pszAuthName,"epsg") )
+        if( pszAuthName != nullptr && EQUAL(pszAuthName,"epsg") )
         {
             nEPSGCode = atoi(oSRS.GetAuthorityCode( "PROJCS" ));
         }
@@ -318,7 +312,7 @@ CPLErr  GDALECWCompressor::PrepareCoverageBox(
     {
         const char *pszAuthName = oSRS.GetAuthorityName( "GEOGCS" );
 
-        if( pszAuthName != NULL && EQUAL(pszAuthName,"epsg") )
+        if( pszAuthName != nullptr && EQUAL(pszAuthName,"epsg") )
         {
             nEPSGCode = atoi(oSRS.GetAuthorityCode( "GEOGCS" ));
         }
@@ -392,13 +386,13 @@ CPLErr  GDALECWCompressor::PrepareCoverageBox(
 /*      If we need a user defined CRSDictionary entry, prepare it       */
 /*      here.                                                           */
 /* -------------------------------------------------------------------- */
-    char *pszDictBox = NULL;
+    char *pszDictBox = nullptr;
 
     if( nEPSGCode == 0 )
     {
-        char *pszGMLDef = NULL;
+        char *pszGMLDef = nullptr;
 
-        if( oSRS.exportToXML( &pszGMLDef, NULL ) == OGRERR_NONE )
+        if( oSRS.exportToXML( &pszGMLDef, nullptr ) == OGRERR_NONE )
         {
             pszDictBox = (char *) CPLMalloc(strlen(pszGMLDef) + 4000);
 
@@ -446,7 +440,7 @@ CPLErr  GDALECWCompressor::PrepareCoverageBox(
     poAssoc->m_OtherBoxes.push_back( poGMLData );
     poAssoc->m_OwnedBoxes.push_back( poGMLData );
 
-    if( pszDictBox != NULL )
+    if( pszDictBox != nullptr )
     {
         poAssoc = new CNCSJP2File::CNCSJPXAssocBox();
         m_oGMLAssoc.m_OtherBoxes.push_back( poAssoc );
@@ -485,7 +479,7 @@ CPLErr GDALECWCompressor::WriteJP2Box( GDALJP2Box * poBox )
 {
     JP2UserBox  *poECWBox;
 
-    if( poBox == NULL )
+    if( poBox == nullptr )
         return CE_None;
 
     poECWBox = new JP2UserBox();
@@ -559,13 +553,13 @@ CPLErr GDALECWCompressor::Initialize(
 /* -------------------------------------------------------------------- */
 #if ECWSDK_VERSION >= 40
     const char* pszECWKey = CSLFetchNameValue( papszOptions, "ECW_ENCODE_KEY");
-    if( pszECWKey == NULL )
-        pszECWKey = CPLGetConfigOption( "ECW_ENCODE_KEY", NULL );
+    if( pszECWKey == nullptr )
+        pszECWKey = CPLGetConfigOption( "ECW_ENCODE_KEY", nullptr );
 
     const char* pszECWCompany =
         CSLFetchNameValue( papszOptions, "ECW_ENCODE_COMPANY");
-    if( pszECWCompany == NULL )
-        pszECWCompany = CPLGetConfigOption( "ECW_ENCODE_COMPANY", NULL );
+    if( pszECWCompany == nullptr )
+        pszECWCompany = CPLGetConfigOption( "ECW_ENCODE_COMPANY", nullptr );
 
     if( pszECWKey && pszECWCompany)
     {
@@ -606,7 +600,7 @@ CPLErr GDALECWCompressor::Initialize(
     else
         fTargetCompression = 90.0;
 
-    if( CSLFetchNameValue(papszOptions, "TARGET") != NULL )
+    if( CSLFetchNameValue(papszOptions, "TARGET") != nullptr )
     {
         fTargetCompression = (float)
             CPLAtof(CSLFetchNameValue(papszOptions, "TARGET"));
@@ -629,13 +623,13 @@ CPLErr GDALECWCompressor::Initialize(
 /*      Create and initialize compressor.                               */
 /* -------------------------------------------------------------------- */
     NCSFileViewFileInfoEx    *psClient = &(sFileInfo);
-    const char *pszOption = NULL;
+    const char *pszOption = nullptr;
 #if ECWSDK_VERSION >= 50
     if( bIsJPEG2000 == FALSE )
     {
         bool bECWV3 = false;
         pszOption = CSLFetchNameValue(papszOptions, "ECW_FORMAT_VERSION");
-        if( pszOption != NULL )
+        if( pszOption != nullptr )
         {
             bECWV3 = (3 == atoi(pszOption));
         }
@@ -749,7 +743,11 @@ CPLErr GDALECWCompressor::Initialize(
         NCSMalloc( sizeof(NCSFileBandInfo) * nBands, true );
     for( iBand = 0; iBand < nBands; iBand++ )
     {
-        psClient->pBands[iBand].nBits = (UINT8) nBits;
+        const char* pszNBITS = CSLFetchNameValue(papszOptions, "NBITS");
+        if( pszNBITS && atoi(pszNBITS) > 0 )
+            psClient->pBands[iBand].nBits = (UINT8) atoi(pszNBITS);
+        else
+            psClient->pBands[iBand].nBits = (UINT8) nBits;
         psClient->pBands[iBand].bSigned = (BOOLEAN)bSigned;
 #if ECWSDK_VERSION >=50
         psClient->pBands[iBand].szDesc = NCSStrDup(papszBandDescriptions[iBand]);
@@ -765,83 +763,85 @@ CPLErr GDALECWCompressor::Initialize(
     if( bIsJPEG2000 )
     {
         pszOption = CSLFetchNameValue(papszOptions, "PROFILE");
-        if( pszOption != NULL && EQUAL(pszOption,"BASELINE_0") )
+        if( pszOption != nullptr && EQUAL(pszOption,"BASELINE_0") )
             SetParameter(
                 CNCSJP2FileView::JP2_COMPRESS_PROFILE_BASELINE_0 );
-        else if( pszOption != NULL && EQUAL(pszOption,"BASELINE_1") )
+        else if( pszOption != nullptr && EQUAL(pszOption,"BASELINE_1") )
             SetParameter(
                 CNCSJP2FileView::JP2_COMPRESS_PROFILE_BASELINE_1 );
-        else if( pszOption != NULL && EQUAL(pszOption,"BASELINE_2") )
+        else if( pszOption != nullptr && EQUAL(pszOption,"BASELINE_2") )
             SetParameter(
                 CNCSJP2FileView::JP2_COMPRESS_PROFILE_BASELINE_2 );
-        else if( pszOption != NULL && EQUAL(pszOption,"NPJE") )
+        else if( pszOption != nullptr && EQUAL(pszOption,"NPJE") )
             SetParameter(
                 CNCSJP2FileView::JP2_COMPRESS_PROFILE_NITF_BIIF_NPJE );
-        else if( pszOption != NULL && EQUAL(pszOption,"EPJE") )
+        else if( pszOption != nullptr && EQUAL(pszOption,"EPJE") )
             SetParameter(
                 CNCSJP2FileView::JP2_COMPRESS_PROFILE_NITF_BIIF_EPJE );
 
         pszOption = CSLFetchNameValue(papszOptions, "CODESTREAM_ONLY" );
-        if( pszOption != NULL )
+        if( pszOption == nullptr && EQUAL(CPLGetExtension(pszFilename), "j2k") )
+            pszOption = "YES";
+        if( pszOption != nullptr )
             SetParameter(
                 CNCSJP2FileView::JP2_COMPRESS_CODESTREAM_ONLY,
                 CPLTestBool( pszOption ) );
 
         pszOption = CSLFetchNameValue(papszOptions, "LEVELS");
-        if( pszOption != NULL )
+        if( pszOption != nullptr )
             SetParameter( CNCSJP2FileView::JP2_COMPRESS_LEVELS,
                                       (UINT32) atoi(pszOption) );
 
         pszOption = CSLFetchNameValue(papszOptions, "LAYERS");
-        if( pszOption != NULL )
+        if( pszOption != nullptr )
             SetParameter( CNCSJP2FileView::JP2_COMPRESS_LAYERS,
                                       (UINT32) atoi(pszOption) );
 
         pszOption = CSLFetchNameValue(papszOptions, "PRECINCT_WIDTH");
-        if( pszOption != NULL )
+        if( pszOption != nullptr )
             SetParameter( CNCSJP2FileView::JP2_COMPRESS_PRECINCT_WIDTH,
                                       (UINT32) atoi(pszOption) );
 
         pszOption = CSLFetchNameValue(papszOptions, "PRECINCT_HEIGHT");
-        if( pszOption != NULL )
+        if( pszOption != nullptr )
             SetParameter(CNCSJP2FileView::JP2_COMPRESS_PRECINCT_HEIGHT,
                                      (UINT32) atoi(pszOption) );
 
         pszOption = CSLFetchNameValue(papszOptions, "TILE_WIDTH");
-        if( pszOption != NULL )
+        if( pszOption != nullptr )
             SetParameter( CNCSJP2FileView::JP2_COMPRESS_TILE_WIDTH,
                                       (UINT32) atoi(pszOption) );
 
         pszOption = CSLFetchNameValue(papszOptions, "TILE_HEIGHT");
-        if( pszOption != NULL )
+        if( pszOption != nullptr )
             SetParameter( CNCSJP2FileView::JP2_COMPRESS_TILE_HEIGHT,
                                       (UINT32) atoi(pszOption) );
 
         pszOption = CSLFetchNameValue(papszOptions, "INCLUDE_SOP");
-        if( pszOption != NULL )
+        if( pszOption != nullptr )
             SetParameter( CNCSJP2FileView::JP2_COMPRESS_INCLUDE_SOP,
                                       CPLTestBool( pszOption ) );
 
         pszOption = CSLFetchNameValue(papszOptions, "INCLUDE_EPH");
-        if( pszOption != NULL )
+        if( pszOption != nullptr )
             SetParameter( CNCSJP2FileView::JP2_COMPRESS_INCLUDE_EPH,
                                       CPLTestBool( pszOption ) );
 
         pszOption = CSLFetchNameValue(papszOptions, "PROGRESSION");
-        if( pszOption != NULL && EQUAL(pszOption,"LRCP") )
+        if( pszOption != nullptr && EQUAL(pszOption,"LRCP") )
             SetParameter(
                 CNCSJP2FileView::JP2_COMPRESS_PROGRESSION_LRCP );
 
-        else if( pszOption != NULL && EQUAL(pszOption,"RLCP") )
+        else if( pszOption != nullptr && EQUAL(pszOption,"RLCP") )
             SetParameter(
                 CNCSJP2FileView::JP2_COMPRESS_PROGRESSION_RLCP );
 
-        else if( pszOption != NULL && EQUAL(pszOption,"RPCL") )
+        else if( pszOption != nullptr && EQUAL(pszOption,"RPCL") )
             SetParameter(
                 CNCSJP2FileView::JP2_COMPRESS_PROGRESSION_RPCL );
 
         pszOption = CSLFetchNameValue(papszOptions, "GEODATA_USAGE");
-        if( pszOption == NULL )
+        if( pszOption == nullptr )
             // Default to suppressing ECW SDK geodata, just use our own stuff.
             SetGeodataUsage( JP2_GEODATA_USE_NONE );
         else if( EQUAL(pszOption,"NONE") )
@@ -858,14 +858,14 @@ CPLErr GDALECWCompressor::Initialize(
             SetGeodataUsage( JP2_GEODATA_USE_GML_PCS_WLD );
 
         pszOption = CSLFetchNameValue(papszOptions, "DECOMPRESS_LAYERS");
-        if( pszOption != NULL )
+        if( pszOption != nullptr )
             SetParameter(
                 CNCSJP2FileView::JP2_DECOMPRESS_LAYERS,
                 (UINT32) atoi(pszOption) );
 
         pszOption = CSLFetchNameValue(papszOptions,
                                       "DECOMPRESS_RECONSTRUCTION_PARAMETER");
-        if( pszOption != NULL )
+        if( pszOption != nullptr )
             SetParameter(
                 CNCSJP2FileView::JPC_DECOMPRESS_RECONSTRUCTION_PARAMETER,
                 (IEEE4) CPLAtof(pszOption) );
@@ -903,14 +903,14 @@ CPLErr GDALECWCompressor::Initialize(
     strcpy( szProjection, "RAW" );
     strcpy( szDatum, "RAW" );
 
-    if( CSLFetchNameValue(papszOptions, "PROJ") != NULL )
+    if( CSLFetchNameValue(papszOptions, "PROJ") != nullptr )
     {
         strncpy( szProjection,
                 CSLFetchNameValue(papszOptions, "PROJ"), sizeof(szProjection) );
         szProjection[sizeof(szProjection)-1] = 0;
     }
 
-    if( CSLFetchNameValue(papszOptions, "DATUM") != NULL )
+    if( CSLFetchNameValue(papszOptions, "DATUM") != nullptr )
     {
         strncpy( szDatum, CSLFetchNameValue(papszOptions, "DATUM"), sizeof(szDatum) );
         szDatum[sizeof(szDatum)-1] = 0;
@@ -919,12 +919,12 @@ CPLErr GDALECWCompressor::Initialize(
     }
 
     const char* pszUnits = CSLFetchNameValue(papszOptions, "UNITS");
-    if( pszUnits != NULL )
+    if( pszUnits != nullptr )
     {
         psClient->eCellSizeUnits = ECWTranslateToCellSizeUnits(pszUnits);
     }
 
-    if( EQUAL(szProjection,"RAW") && pszWKT != NULL )
+    if( EQUAL(szProjection,"RAW") && pszWKT != nullptr )
     {
         ECWTranslateFromWKT( pszWKT, szProjection, sizeof(szProjection), szDatum, sizeof(szDatum), szUnits );
         psClient->eCellSizeUnits = ECWTranslateToCellSizeUnits(szUnits);
@@ -941,14 +941,14 @@ CPLErr GDALECWCompressor::Initialize(
 /* -------------------------------------------------------------------- */
 /*      Setup GML and GeoTIFF information.                              */
 /* -------------------------------------------------------------------- */
-    if( (pszWKT != NULL && pszWKT[0] != '\0') ||
+    if( (pszWKT != nullptr && pszWKT[0] != '\0') ||
         !(padfGeoTransform[0] == 0.0 &&
           padfGeoTransform[1] == 1.0 &&
           padfGeoTransform[2] == 0.0 &&
           padfGeoTransform[3] == 0.0 &&
           padfGeoTransform[4] == 0.0 &&
           padfGeoTransform[5] == 1.0) ||
-         nGCPCount > 0  || papszRPCMD != NULL )
+         nGCPCount > 0  || papszRPCMD != nullptr )
     {
         GDALJP2Metadata oJP2MD;
 
@@ -974,7 +974,7 @@ CPLErr GDALECWCompressor::Initialize(
             if( CPLFetchBool( papszOptions, "GMLJP2", true ) )
             {
                 const char* pszGMLJP2V2Def = CSLFetchNameValue( papszOptions, "GMLJP2V2_DEF" );
-                if( pszGMLJP2V2Def != NULL )
+                if( pszGMLJP2V2Def != nullptr )
                     WriteJP2Box( oJP2MD.CreateGMLJP2V2(nXSize,nYSize,pszGMLJP2V2Def,poSrcDS) );
                 else
                     WriteJP2Box( oJP2MD.CreateGMLJP2(nXSize,nYSize) );
@@ -992,7 +992,7 @@ CPLErr GDALECWCompressor::Initialize(
 /*      We handle all jpeg2000 files via the VSIIOStream, but ECW       */
 /*      files cannot be done this way for some reason.                  */
 /* -------------------------------------------------------------------- */
-    VSILFILE *fpVSIL = NULL;
+    VSILFILE *fpVSIL = nullptr;
 
     if( bIsJPEG2000 )
     {
@@ -1001,7 +1001,7 @@ CPLErr GDALECWCompressor::Initialize(
             STARTS_WITH(pszFilename, "/vsizip/") ||
             STARTS_WITH(pszFilename, "/vsigzip/") );
         fpVSIL = VSIFOpenL( pszFilename, (bSeekable) ? "wb+": "wb" );
-        if( fpVSIL == NULL )
+        if( fpVSIL == nullptr )
         {
             CPLError( CE_Failure, CPLE_OpenFailed,
                       "Failed to open/create %s.", pszFilename );
@@ -1018,7 +1018,7 @@ CPLErr GDALECWCompressor::Initialize(
             // Try now to create the file to avoid memory leaks if it is
             // the SDK that fails to do it.
             fpVSIL = VSIFOpenL( pszFilename, "wb" );
-            if( fpVSIL == NULL )
+            if( fpVSIL == nullptr )
             {
                 CPLError( CE_Failure, CPLE_OpenFailed,
                         "Failed to open/create %s.", pszFilename );
@@ -1026,7 +1026,7 @@ CPLErr GDALECWCompressor::Initialize(
             }
             VSIFCloseL(fpVSIL);
             VSIUnlink(pszFilename);
-            fpVSIL = NULL;
+            fpVSIL = nullptr;
         }
     }
 
@@ -1039,7 +1039,7 @@ CPLErr GDALECWCompressor::Initialize(
 /* -------------------------------------------------------------------- */
 #if ECWSDK_VERSION < 40
     const char *pszLargeOK = CSLFetchNameValue(papszOptions, "LARGE_OK");
-    if( pszLargeOK == NULL )
+    if( pszLargeOK == nullptr )
         pszLargeOK = "NO";
 
     pszLargeOK = CPLGetConfigOption( "ECW_LARGE_OK", pszLargeOK );
@@ -1055,39 +1055,39 @@ CPLErr GDALECWCompressor::Initialize(
 /* -------------------------------------------------------------------- */
 #if ECWSDK_VERSION>=50
     if (psClient->nFormatVersion>2){
-        if (psClient->pFileMetaData == NULL){
+        if (psClient->pFileMetaData == nullptr){
             NCSEcwInitMetaData(&psClient->pFileMetaData);
         }
-        if (m_poSrcDS && m_poSrcDS->GetMetadataItem("FILE_METADATA_ACQUISITION_DATE")!=NULL){
+        if (m_poSrcDS && m_poSrcDS->GetMetadataItem("FILE_METADATA_ACQUISITION_DATE")!=nullptr){
             psClient->pFileMetaData->sAcquisitionDate = NCSStrDupT(NCS::CString(m_poSrcDS->GetMetadataItem("FILE_METADATA_ACQUISITION_DATE")).c_str());
         }
 
-        if (m_poSrcDS && m_poSrcDS->GetMetadataItem("FILE_METADATA_ACQUISITION_SENSOR_NAME")!=NULL){
+        if (m_poSrcDS && m_poSrcDS->GetMetadataItem("FILE_METADATA_ACQUISITION_SENSOR_NAME")!=nullptr){
             psClient->pFileMetaData->sAcquisitionSensorName =  NCSStrDupT(NCS::CString(m_poSrcDS->GetMetadataItem("FILE_METADATA_ACQUISITION_SENSOR_NAME")).c_str());
         }
-        if (m_poSrcDS && m_poSrcDS->GetMetadataItem("FILE_METADATA_ADDRESS")!=NULL){
+        if (m_poSrcDS && m_poSrcDS->GetMetadataItem("FILE_METADATA_ADDRESS")!=nullptr){
             psClient->pFileMetaData->sAddress =  NCSStrDupT(NCS::CString(m_poSrcDS->GetMetadataItem("FILE_METADATA_ADDRESS")).c_str());
         }
-        if (m_poSrcDS && m_poSrcDS->GetMetadataItem("FILE_METADATA_AUTHOR")!=NULL){
+        if (m_poSrcDS && m_poSrcDS->GetMetadataItem("FILE_METADATA_AUTHOR")!=nullptr){
             psClient->pFileMetaData->sAuthor =  NCSStrDupT(NCS::CString(m_poSrcDS->GetMetadataItem("FILE_METADATA_AUTHOR")).c_str());
         }
-        if (m_poSrcDS && m_poSrcDS->GetMetadataItem("FILE_METADATA_CLASSIFICATION")!=NULL){
+        if (m_poSrcDS && m_poSrcDS->GetMetadataItem("FILE_METADATA_CLASSIFICATION")!=nullptr){
             psClient->pFileMetaData->sClassification =  NCSStrDupT(NCS::CString(m_poSrcDS->GetMetadataItem("FILE_METADATA_CLASSIFICATION")).c_str());
         }
-        if ( pszECWCompany != NULL && CPLTestBool(CPLGetConfigOption("GDAL_ECW_WRITE_COMPANY", "YES"))  ){
+        if ( pszECWCompany != nullptr && CPLTestBool(CPLGetConfigOption("GDAL_ECW_WRITE_COMPANY", "YES"))  ){
             psClient->pFileMetaData->sCompany = NCSStrDupT(NCS::CString(pszECWCompany).c_str());
         }
         CPLString osCompressionSoftware = GetCompressionSoftwareName();
         if ( !osCompressionSoftware.empty() ) {
             psClient->pFileMetaData->sCompressionSoftware = NCSStrDupT(NCS::CString(osCompressionSoftware.c_str()).c_str());
         }
-        if (m_poSrcDS && m_poSrcDS->GetMetadataItem("FILE_METADATA_COPYRIGHT")!=NULL){
+        if (m_poSrcDS && m_poSrcDS->GetMetadataItem("FILE_METADATA_COPYRIGHT")!=nullptr){
             psClient->pFileMetaData->sCopyright =  NCSStrDupT(NCS::CString(m_poSrcDS->GetMetadataItem("FILE_METADATA_COPYRIGHT")).c_str());
         }
-        if (m_poSrcDS && m_poSrcDS->GetMetadataItem("FILE_METADATA_EMAIL")!=NULL){
+        if (m_poSrcDS && m_poSrcDS->GetMetadataItem("FILE_METADATA_EMAIL")!=nullptr){
             psClient->pFileMetaData->sEmail =  NCSStrDupT(NCS::CString(m_poSrcDS->GetMetadataItem("FILE_METADATA_EMAIL")).c_str());
         }
-        if (m_poSrcDS && m_poSrcDS->GetMetadataItem("FILE_METADATA_TELEPHONE")!=NULL){
+        if (m_poSrcDS && m_poSrcDS->GetMetadataItem("FILE_METADATA_TELEPHONE")!=nullptr){
             psClient->pFileMetaData->sTelephone =  NCSStrDupT(NCS::CString(m_poSrcDS->GetMetadataItem("FILE_METADATA_TELEPHONE")).c_str());
         }
     }
@@ -1099,7 +1099,7 @@ CPLErr GDALECWCompressor::Initialize(
 
     if( oError.GetErrorNumber() == NCS_SUCCESS )
     {
-        if( fpVSIL == NULL )
+        if( fpVSIL == nullptr )
         {
 #if ECWSDK_VERSION>=40 && defined(WIN32)
             if( CPLTestBool( CPLGetConfigOption( "GDAL_FILENAME_IS_UTF8", "YES" ) ) )
@@ -1192,7 +1192,7 @@ ECWCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     {
         CPLError( CE_Failure, CPLE_NotSupported,
                   "ECW driver does not support source dataset with zero band.\n");
-        return NULL;
+        return nullptr;
     }
 
     GDALDataType eType = poSrcDS->GetRasterBand(1)->GetRasterDataType();
@@ -1212,7 +1212,7 @@ ECWCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     bool bECWV3 = false;
     if (bIsJPEG2000 == FALSE){
         const char* pszOption = CSLFetchNameValue(papszOptions, "ECW_FORMAT_VERSION");
-        if( pszOption != NULL )
+        if( pszOption != nullptr )
         {
             bECWV3 = (3 == atoi(pszOption));
         }
@@ -1270,8 +1270,8 @@ ECWCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     oCompressor.pProgressData = pProgressData;
     oCompressor.m_poSrcDS = poSrcDS;
 
-    if( !pfnProgress( 0.0, NULL, pProgressData ) )
-        return NULL;
+    if( !pfnProgress( 0.0, nullptr, pProgressData ) )
+        return nullptr;
 
     char** papszBandDescriptions = (char**) CPLMalloc(nBands * sizeof(char*));
     for (int i=0;i<nBands;i++){
@@ -1281,7 +1281,7 @@ ECWCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     }
 
     const char* pszAreaOrPoint = poSrcDS->GetMetadataItem(GDALMD_AREA_OR_POINT);
-    int bPixelIsPoint = pszAreaOrPoint != NULL && EQUAL(pszAreaOrPoint, GDALMD_AOP_POINT);
+    int bPixelIsPoint = pszAreaOrPoint != nullptr && EQUAL(pszAreaOrPoint, GDALMD_AOP_POINT);
 
     if( oCompressor.Initialize( pszFilename, papszOptions,
                                 nXSize, nYSize, nBands, papszBandDescriptions, bRGBColorSpace,
@@ -1296,7 +1296,7 @@ ECWCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
         for (int i=0;i<nBands;i++)
             CPLFree(papszBandDescriptions[i]);
         CPLFree(papszBandDescriptions);
-        return NULL;
+        return nullptr;
     }
 
 /* -------------------------------------------------------------------- */
@@ -1310,7 +1310,7 @@ ECWCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
         for (int i=0;i<nBands;i++)
             CPLFree(papszBandDescriptions[i]);
         CPLFree(papszBandDescriptions);
-        return NULL;
+        return nullptr;
     }
 
 /* -------------------------------------------------------------------- */
@@ -1320,13 +1320,13 @@ ECWCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     for (int i=0;i<nBands;i++)
         CPLFree(papszBandDescriptions[i]);
     CPLFree(papszBandDescriptions);
-    pfnProgress( 1.001, NULL, pProgressData );
+    pfnProgress( 1.001, nullptr, pProgressData );
 
 /* -------------------------------------------------------------------- */
 /*      Re-open dataset, and copy any auxiliary pam information.         */
 /* -------------------------------------------------------------------- */
     GDALOpenInfo oOpenInfo(pszFilename, GA_ReadOnly);
-    GDALPamDataset *poDS = NULL;
+    GDALPamDataset *poDS = nullptr;
 
     if (bIsJPEG2000)
         poDS = (GDALPamDataset*) ECWDatasetOpenJPEG2000(&oOpenInfo);
@@ -1343,8 +1343,8 @@ ECWCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
             }
             double dHistMin, dHistMax;
             int nBuckets;
-            GUIntBig *pHistogram = NULL;
-            if (poSrcDS->GetRasterBand(i)->GetDefaultHistogram(&dHistMin, &dHistMax,&nBuckets,&pHistogram, FALSE, NULL, NULL) == CE_None){
+            GUIntBig *pHistogram = nullptr;
+            if (poSrcDS->GetRasterBand(i)->GetDefaultHistogram(&dHistMin, &dHistMax,&nBuckets,&pHistogram, FALSE, nullptr, nullptr) == CE_None){
                 poDS->GetRasterBand(i)->SetDefaultHistogram(dHistMin, dHistMax, nBuckets, pHistogram);
                 VSIFree(pHistogram);
             }
@@ -1378,7 +1378,7 @@ ECWCreateCopyECW( const char * pszFilename, GDALDataset *poSrcDS,
     {
         CPLError( CE_Failure, CPLE_NotSupported,
                   "ECW driver does not support source dataset with zero band.\n");
-        return NULL;
+        return nullptr;
     }
 
     if( !EQUAL(CPLGetExtension(pszFilename),"ecw") )
@@ -1386,13 +1386,13 @@ ECWCreateCopyECW( const char * pszFilename, GDALDataset *poSrcDS,
         CPLError( CE_Failure, CPLE_AppDefined,
                   "ECW driver does not support creating ECW files\n"
                   "with an extension other than .ecw" );
-        return NULL;
+        return nullptr;
     }
 
 #if ECWSDK_VERSION >= 50
     bool bECWV3 = false;
     const char* pszOption = CSLFetchNameValue(papszOptions, "ECW_FORMAT_VERSION");
-    if( pszOption != NULL )
+    if( pszOption != nullptr )
     {
         bECWV3 = (3 == atoi(pszOption));
     }
@@ -1426,7 +1426,7 @@ ECWCreateCopyECW( const char * pszFilename, GDALDataset *poSrcDS,
                   GDALGetDataTypeName(eDataType) );
         }
 
-        return NULL;
+        return nullptr;
     }
 
     if( poSrcDS->GetRasterXSize() < 128 || poSrcDS->GetRasterYSize() < 128 )
@@ -1437,17 +1437,17 @@ ECWCreateCopyECW( const char * pszFilename, GDALDataset *poSrcDS,
                   poSrcDS->GetRasterXSize(),
                   poSrcDS->GetRasterYSize() );
 
-        return NULL;
+        return nullptr;
     }
 
-    if (poSrcDS->GetRasterBand(1)->GetColorTable() != NULL)
+    if (poSrcDS->GetRasterBand(1)->GetColorTable() != nullptr)
     {
         CPLError( (bStrict) ? CE_Failure : CE_Warning, CPLE_NotSupported,
                   "ECW driver ignores color table. "
                   "The source raster band will be considered as grey level.\n"
                   "Consider using color table expansion (-expand option in gdal_translate)\n");
         if (bStrict)
-            return NULL;
+            return nullptr;
     }
 
     return ECWCreateCopy( pszFilename, poSrcDS, bStrict, papszOptions,
@@ -1469,7 +1469,7 @@ ECWCreateCopyJPEG2000( const char * pszFilename, GDALDataset *poSrcDS,
     {
         CPLError( CE_Failure, CPLE_NotSupported,
                   "JP2ECW driver does not support source dataset with zero band.\n");
-        return NULL;
+        return nullptr;
     }
 
     if( EQUAL(CPLGetExtension(pszFilename),"ecw") )
@@ -1477,7 +1477,7 @@ ECWCreateCopyJPEG2000( const char * pszFilename, GDALDataset *poSrcDS,
         CPLError( CE_Failure, CPLE_AppDefined,
                   "JP2ECW driver does not support creating JPEG2000 files\n"
                   "with a .ecw extension.  Please use anything else." );
-        return NULL;
+        return nullptr;
     }
 
     GDALDataType eDataType = poSrcDS->GetRasterBand(1)->GetRasterDataType();
@@ -1496,17 +1496,17 @@ ECWCreateCopyJPEG2000( const char * pszFilename, GDALDataset *poSrcDS,
                   "JP2ECW driver doesn't support data type %s. ",
                   GDALGetDataTypeName(eDataType) );
 
-        return NULL;
+        return nullptr;
     }
 
-    if (poSrcDS->GetRasterBand(1)->GetColorTable() != NULL)
+    if (poSrcDS->GetRasterBand(1)->GetColorTable() != nullptr)
     {
         CPLError( (bStrict) ? CE_Failure : CE_Warning, CPLE_NotSupported,
                   "JP2ECW driver ignores color table. "
                   "The source raster band will be considered as grey level.\n"
                   "Consider using color table expansion (-expand option in gdal_translate)\n");
         if (bStrict)
-            return NULL;
+            return nullptr;
     }
 
     return ECWCreateCopy( pszFilename, poSrcDS, bStrict, papszOptions,
@@ -1564,7 +1564,7 @@ class IRasterIORequest
                             nYOff(nYOffIn),
                             nXSize(nXSizeIn),
                             nYSize(nYSizeIn),
-                            pabyData(NULL),
+                            pabyData(nullptr),
                             nBufXSize(nBufXSizeIn),
                             nBufYSize(nBufYSizeIn)
         {
@@ -1693,7 +1693,7 @@ ECWWriteDataset::ECWWriteDataset( const char *pszFilenameIn,
 
 {
     bCrystalized = FALSE;
-    pabyBILBuffer = NULL;
+    pabyBILBuffer = nullptr;
     nLoadedLine = -1;
 
     eAccess = GA_Update;
@@ -1705,7 +1705,7 @@ ECWWriteDataset::ECWWriteDataset( const char *pszFilenameIn,
 
     nRasterXSize = nXSize;
     nRasterYSize = nYSize;
-    pszProjection = NULL;
+    pszProjection = nullptr;
 
     adfGeoTransform[0] = 0.0;
     adfGeoTransform[1] = 1.0;
@@ -1833,8 +1833,8 @@ CPLErr ECWWriteDataset::Crystalize()
                                    nRasterXSize, nRasterYSize, nBands,paszBandDescriptions, bRGBColorSpace,
                                    eDataType,
                                    pszProjection, adfGeoTransform,
-                                   0, NULL,
-                                   bIsJPEG2000, FALSE, NULL );
+                                   0, nullptr,
+                                   bIsJPEG2000, FALSE, nullptr );
 
     if( eErr == CE_None )
         bCrystalized = TRUE;
@@ -1909,8 +1909,8 @@ CPLErr ECWWriteDataset::IRasterIO( GDALRWFlag eRWFlag,
                               GSpacing nBandSpace,
                               GDALRasterIOExtraArg* psExtraArg)
 {
-    ECWWriteRasterBand* po4thBand = NULL;
-    IRasterIORequest* poIORequest = NULL;
+    ECWWriteRasterBand* po4thBand = nullptr;
+    IRasterIORequest* poIORequest = nullptr;
 
     if( bOutOfOrderWriteOccurred )
         return CE_Failure;
@@ -1919,7 +1919,7 @@ CPLErr ECWWriteDataset::IRasterIO( GDALRWFlag eRWFlag,
     {
         po4thBand = (ECWWriteRasterBand*)GetRasterBand(4);
         poIORequest = po4thBand->poIORequest;
-        if( poIORequest != NULL )
+        if( poIORequest != nullptr )
         {
             if( nXOff != poIORequest->nXOff ||
                 nYOff != poIORequest->nYOff ||
@@ -1938,7 +1938,7 @@ CPLErr ECWWriteDataset::IRasterIO( GDALRWFlag eRWFlag,
     int nDataTypeSize = GDALGetDataTypeSize(eDataType) / 8;
     if( eRWFlag == GF_Write && nXOff == 0 && nXSize == nRasterXSize &&
         nBufXSize == nXSize && nBufYSize == nYSize && eBufType == eDataType &&
-        (nBandCount == nBands || ( nBandCount == 3 && poIORequest != NULL && nBands == 4) ) &&
+        (nBandCount == nBands || ( nBandCount == 3 && poIORequest != nullptr && nBands == 4) ) &&
         nPixelSpace == nDataTypeSize && nLineSpace == nPixelSpace * nRasterXSize )
     {
         CPLErr eErr = CE_None;
@@ -1951,17 +1951,17 @@ CPLErr ECWWriteDataset::IRasterIO( GDALRWFlag eRWFlag,
                     pabyData + iY * nLineSpace + iBand * nBandSpace);
             }
 
-            if( poIORequest != NULL && eErr == CE_None )
+            if( poIORequest != nullptr && eErr == CE_None )
             {
                 eErr = po4thBand->WriteBlock(0, iY + nYOff,
                     poIORequest->pabyData + iY * nDataTypeSize * nXSize);
             }
         }
 
-        if( poIORequest != NULL )
+        if( poIORequest != nullptr )
         {
             delete poIORequest;
-            po4thBand->poIORequest = NULL;
+            po4thBand->poIORequest = nullptr;
         }
 
         return eErr;
@@ -1998,7 +1998,7 @@ ECWWriteRasterBand::ECWWriteRasterBand( ECWWriteDataset *poDSIn,
     eDataType = poDSIn->eDataType;
     eInterp = GCI_Undefined;
 #ifdef OPTIMIZED_FOR_GDALWARP
-    poIORequest = NULL;
+    poIORequest = nullptr;
 #endif
 }
 
@@ -2049,7 +2049,7 @@ CPLErr ECWWriteRasterBand::IRasterIO( GDALRWFlag eRWFlag,
     {
         /* Triggered when gdalwarp outputs an alpha band */
         /* It is called before GDALDatasetRasterIO() on the 3 first bands */
-        if( poIORequest != NULL )
+        if( poIORequest != nullptr )
             return CE_Failure;
         poIORequest = new IRasterIORequest( this,
                               nXOff, nYOff, nXSize, nYSize,
@@ -2128,7 +2128,7 @@ ECWCreateJPEG2000(const char *pszFilename, int nXSize, int nYSize, int nBands,
     if( nBands == 0 )
     {
         CPLError(CE_Failure, CPLE_NotSupported, "0 band not supported");
-        return NULL;
+        return nullptr;
     }
     ECWInitialize();
 
@@ -2148,7 +2148,7 @@ ECWCreateECW( const char *pszFilename, int nXSize, int nYSize, int nBands,
     if( nBands == 0 )
     {
         CPLError(CE_Failure, CPLE_NotSupported, "0 band not supported");
-        return NULL;
+        return nullptr;
     }
     ECWInitialize();
 

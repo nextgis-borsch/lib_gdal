@@ -27,13 +27,13 @@
 #define WIN32_LEAN_AND_MEAN
 #endif // _MSC_VER
 
-#include <gdal_unit_test.h>
+#include "gdal_unit_test.h"
 
-#include <cpl_conv.h>
-#include <cpl_multiproc.h>
-#include <gdal.h>
-#include <ogr_api.h>
-#include <ogrsf_frmts.h>
+#include "cpl_conv.h"
+#include "cpl_multiproc.h"
+#include "gdal.h"
+#include "ogr_api.h"
+#include "ogrsf_frmts.h"
 
 #include <tut_reporter.hpp>
 
@@ -49,7 +49,7 @@ namespace tut
     std::string const common::data_basedir("data");
     std::string const common::tmp_basedir("tmp");
 
-    void check_test_group(char const* name)
+    static void check_test_group(char const* name)
     {
         std::string grpname(name);
         if (grpname.empty())
@@ -134,7 +134,7 @@ int main(int argc, char* argv[])
     GDALDestroyDriverManager();
     OGRCleanupAll();
 
-    CPLDumpSharedList( NULL );
+    CPLDumpSharedList( nullptr );
     CPLCleanupTLS();
 
     return nRetCode;

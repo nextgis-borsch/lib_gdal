@@ -33,7 +33,7 @@ import os
 import sys
 import uuid
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 import ogrtest
@@ -42,6 +42,7 @@ from osgeo import ogr
 
 ###############################################################################
 # Test if driver is available
+
 
 def ogr_couchdb_init():
 
@@ -71,15 +72,16 @@ def ogr_couchdb_init():
 ###############################################################################
 # Basic test
 
+
 def ogr_couchdb_1():
     if ogrtest.couchdb_drv is None:
         return 'skip'
 
     gdal.VectorTranslate('CouchDB:' + ogrtest.couchdb_test_server, 'data/poly.shp',
-                         format = 'CouchDB',
-                         layerName = ogrtest.couchdb_temp_layer_name,
-                         layerCreationOptions = ['UPDATE_PERMISSIONS=ALL'])
-    ds = ogr.Open('couchdb:%s' % ogrtest.couchdb_test_server, update = 1)
+                         format='CouchDB',
+                         layerName=ogrtest.couchdb_temp_layer_name,
+                         layerCreationOptions=['UPDATE_PERMISSIONS=ALL'])
+    ds = ogr.Open('couchdb:%s' % ogrtest.couchdb_test_server, update=1)
     if ds is None:
         return 'fail'
     lyr = ds.GetLayerByName(ogrtest.couchdb_temp_layer_name)
@@ -95,15 +97,16 @@ def ogr_couchdb_1():
 ###############################################################################
 # Test null / unset
 
+
 def ogr_couchdb_2():
     if ogrtest.couchdb_drv is None:
         return 'skip'
 
-    ds = ogr.Open('couchdb:%s' % ogrtest.couchdb_test_server, update = 1)
+    ds = ogr.Open('couchdb:%s' % ogrtest.couchdb_test_server, update=1)
     if ds is None:
         return 'fail'
-    lyr = ds.CreateLayer(ogrtest.couchdb_temp_layer_name, geom_type = ogr.wkbNone, options = ['UPDATE_PERMISSIONS=ALL'])
-    lyr.CreateField( ogr.FieldDefn('str_field', ogr.OFTString) )
+    lyr = ds.CreateLayer(ogrtest.couchdb_temp_layer_name, geom_type=ogr.wkbNone, options=['UPDATE_PERMISSIONS=ALL'])
+    lyr.CreateField(ogr.FieldDefn('str_field', ogr.OFTString))
 
     f = ogr.Feature(lyr.GetLayerDefn())
     f['str_field'] = 'foo'
@@ -123,7 +126,7 @@ def ogr_couchdb_2():
         return 'fail'
 
     f = lyr.GetNextFeature()
-    if f['str_field'] != None:
+    if f['str_field'] is not None:
         gdaltest.post_reason('fail')
         f.DumpReadable()
         return 'fail'
@@ -144,24 +147,25 @@ def ogr_couchdb_cleanup():
     if ogrtest.couchdb_drv is None:
         return 'skip'
 
-    ds = ogr.Open('couchdb:%s' % ogrtest.couchdb_test_server, update = 1)
+    ds = ogr.Open('couchdb:%s' % ogrtest.couchdb_test_server, update=1)
     if ds is None:
         return 'fail'
     ds.ExecuteSQL('DELLAYER:' + ogrtest.couchdb_temp_layer_name)
 
     return 'success'
 
+
 gdaltest_list = [
     ogr_couchdb_init,
     ogr_couchdb_1,
     ogr_couchdb_2,
     ogr_couchdb_cleanup
-    ]
+]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'ogr_couchdb' )
+    gdaltest.setup_run('ogr_couchdb')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

@@ -62,7 +62,7 @@ void NITFUpdateGCPsWithRPC( NITFRPC00BInfo *psRPCInfo,
 class NITFRasterBand;
 class NITFWrapperRasterBand;
 
-class NITFDataset : public GDALPamDataset
+class NITFDataset final: public GDALPamDataset
 {
     friend class NITFRasterBand;
     friend class NITFWrapperRasterBand;
@@ -182,7 +182,7 @@ class NITFDataset : public GDALPamDataset
 /* ==================================================================== */
 /************************************************************************/
 
-class NITFRasterBand : public GDALPamRasterBand
+class NITFRasterBand final: public GDALPamRasterBand
 {
     friend class NITFDataset;
 
@@ -205,7 +205,7 @@ class NITFRasterBand : public GDALPamRasterBand
     virtual CPLErr SetColorInterpretation( GDALColorInterp ) override;
     virtual GDALColorTable *GetColorTable() override;
     virtual CPLErr SetColorTable( GDALColorTable * ) override;
-    virtual double GetNoDataValue( int *pbSuccess = NULL ) override;
+    virtual double GetNoDataValue( int *pbSuccess = nullptr ) override;
 
     void Unpack(GByte* pData);
 };
@@ -221,7 +221,7 @@ class NITFRasterBand : public GDALPamRasterBand
 /* then to the underlying band if no value exist in PAM. The setters aren't */
 /* overridden, so they go to PAM */
 
-class NITFProxyPamRasterBand : public GDALPamRasterBand
+class NITFProxyPamRasterBand: public GDALPamRasterBand
 {
     private:
         std::map<CPLString, char**> oMDMap;
@@ -250,9 +250,9 @@ class NITFProxyPamRasterBand : public GDALPamRasterBand
                                             const char * pszDomain = "" );*/
         virtual CPLErr FlushCache() override;
         /*virtual char **GetCategoryNames();*/
-        virtual double GetNoDataValue( int *pbSuccess = NULL ) override;
-        virtual double GetMinimum( int *pbSuccess = NULL ) override;
-        virtual double GetMaximum(int *pbSuccess = NULL ) override;
+        virtual double GetNoDataValue( int *pbSuccess = nullptr ) override;
+        virtual double GetMinimum( int *pbSuccess = nullptr ) override;
+        virtual double GetMaximum(int *pbSuccess = nullptr ) override;
         /*virtual double GetOffset( int *pbSuccess = NULL );
         virtual double GetScale( int *pbSuccess = NULL );*/
         /*virtual const char *GetUnitType();*/
@@ -326,7 +326,7 @@ class NITFProxyPamRasterBand : public GDALPamRasterBand
 /* We just override the few specific methods where we want that */
 /* the NITFWrapperRasterBand behaviour differs from the JPEG/JPEG2000 one */
 
-class NITFWrapperRasterBand : public NITFProxyPamRasterBand
+class NITFWrapperRasterBand final: public NITFProxyPamRasterBand
 {
   GDALRasterBand* poBaseBand;
   GDALColorTable* poColorTable;

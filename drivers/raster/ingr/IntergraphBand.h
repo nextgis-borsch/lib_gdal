@@ -68,8 +68,8 @@ public:
         GDALDataType eType = GDT_Unknown);
     virtual ~IntergraphRasterBand();
 
-    virtual double GetMinimum( int *pbSuccess = NULL ) override;
-    virtual double GetMaximum( int *pbSuccess = NULL ) override;
+    virtual double GetMinimum( int *pbSuccess = nullptr ) override;
+    virtual double GetMaximum( int *pbSuccess = nullptr ) override;
     virtual GDALColorTable *GetColorTable() override;
     virtual GDALColorInterp GetColorInterpretation() override;
     virtual CPLErr IReadBlock( int nBlockXOff, int nBlockYOff, void *pImage ) override;
@@ -79,7 +79,7 @@ public:
 
 protected:
     int  HandleUninstantiatedTile( int nBlockXOff, int nBlockYOff, void* pImage);
-    int  LoadBlockBuf( int nBlockXOff, int nBlockYOff, int nBlockBytes, GByte *pabyBlock );
+    int  LoadBlockBuf( int nBlockXOff, int nBlockYOff, int nBlockBytes, GByte *pabyBlock ) const;
     bool ReshapeBlock( int nBlockXOff, int nBlockYOff, int nBlockBytes, GByte *pabyBlock );
     void FlushBandHeader();
     void BlackWhiteCT( bool bReverse = false );

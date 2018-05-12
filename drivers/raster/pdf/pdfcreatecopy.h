@@ -118,7 +118,7 @@ class GDALPDFPageContext
         std::vector<int> anAnnotationsId;
 
         GDALPDFPageContext() :
-            poClippingDS( NULL ),
+            poClippingDS( nullptr ),
             eStreamCompressMethod( COMPRESS_NONE ),
             dfDPI( 0.0 ),
             nPageId( 0 ),
@@ -197,8 +197,8 @@ class GDALPDFWriter
 
        void Close();
 
-       int  GetCatalogNum() { return nCatalogId; }
-       int  GetCatalogGen() { return nCatalogGen; }
+       int  GetCatalogNum() const { return nCatalogId; }
+       int  GetCatalogGen() const { return nCatalogGen; }
 
        int  ParseTrailerAndXRef();
        void UpdateProj(GDALDataset* poSrcDS,

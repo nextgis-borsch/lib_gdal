@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#******************************************************************************
+# ******************************************************************************
 #  $Id$
 #
 #  Project:  CFS OGC MapServer
@@ -8,7 +8,7 @@
 #            codes.
 #  Author:   Frank Warmerdam, warmerdam@pobox.com
 #
-#******************************************************************************
+# ******************************************************************************
 #  Copyright (c) 2001, Frank Warmerdam
 #  Copyright (c) 2009-2010, Even Rouault <even dot rouault at mines-paris dot org>
 #
@@ -29,7 +29,7 @@
 #  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 #  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
-#******************************************************************************
+# ******************************************************************************
 
 import string
 import sys
@@ -38,6 +38,8 @@ from osgeo import osr
 from osgeo import gdal
 
 # =============================================================================
+
+
 def Usage():
 
     print('Usage: epsg_tr.py [-wkt] [-pretty_wkt] [-proj4] [-xml] [-postgis]')
@@ -45,10 +47,12 @@ def Usage():
     sys.exit(1)
 
 # =============================================================================
+
+
 def trHandleCode(code, gen_dict_line, report_error, output_format):
 
     try:
-        err = prj_srs.ImportFromEPSG( code )
+        err = prj_srs.ImportFromEPSG(code)
     except:
         err = 1
 
@@ -117,10 +121,10 @@ def trHandleCode(code, gen_dict_line, report_error, output_format):
             if err:
                 print('-- (unable to translate)')
             else:
-                wkt = gdal.EscapeString(wkt,scheme=gdal.CPLES_SQL)
-                proj4text = gdal.EscapeString(proj4text,scheme=gdal.CPLES_SQL)
-                print('INSERT INTO "spatial_ref_sys" ("srid","auth_name","auth_srid","srtext","proj4text") VALUES (%s,\'EPSG\',%s,\'%s\',\'%s\');' % \
-                      (str(code),str(code),wkt,proj4text))
+                wkt = gdal.EscapeString(wkt, scheme=gdal.CPLES_SQL)
+                proj4text = gdal.EscapeString(proj4text, scheme=gdal.CPLES_SQL)
+                print('INSERT INTO "spatial_ref_sys" ("srid","auth_name","auth_srid","srtext","proj4text") VALUES (%s,\'EPSG\',%s,\'%s\',\'%s\');' %
+                      (str(code), str(code), wkt, proj4text))
 
         # INGRES COPY command input.
         if output_format == '-copy':
@@ -129,13 +133,14 @@ def trHandleCode(code, gen_dict_line, report_error, output_format):
                 wkt = prj_srs.ExportToWkt()
                 proj4text = prj_srs.ExportToProj4()
 
-                print( '%d\t%d%s\t%d\t%d%s\t%d%s\n' \
-                       % (code,4,'EPSG',code,len(wkt),wkt,
-                          len(proj4text),proj4text))
+                print('%d\t%d%s\t%d\t%d%s\t%d%s\n'
+                      % (code, 4, 'EPSG', code, len(wkt), wkt,
+                          len(proj4text), proj4text))
             except:
                 pass
 
 # =============================================================================
+
 
 if __name__ == '__main__':
 
@@ -145,9 +150,9 @@ if __name__ == '__main__':
     output_format = '-pretty_wkt'
     report_error = 1
 
-    argv = gdal.GeneralCmdLineProcessor( sys.argv )
+    argv = gdal.GeneralCmdLineProcessor(sys.argv)
     if argv is None:
-        sys.exit( 0 )
+        sys.exit(0)
 
     # Parse command line arguments.
 
@@ -162,7 +167,7 @@ if __name__ == '__main__':
         elif arg[:5] == '-skip':
             report_error = 0
 
-        elif arg == '-list' and i < len(argv)-1:
+        elif arg == '-list' and i < len(argv) - 1:
             i = i + 1
             list_file = argv[i]
 
@@ -197,14 +202,14 @@ if __name__ == '__main__':
     prj_srs = osr.SpatialReference()
 
     if start_code != -1:
-        for code in range(start_code,end_code+1):
+        for code in range(start_code, end_code + 1):
             trHandleCode(code, gen_dict_line, report_error, output_format)
 
     # loop over codes read from list file.
 
     elif list_file is not None:
 
-        list_fd = open( list_file )
+        list_fd = open(list_file)
         line = list_fd.readline()
         while len(line) > 0:
             try:

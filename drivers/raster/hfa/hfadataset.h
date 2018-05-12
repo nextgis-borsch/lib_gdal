@@ -49,7 +49,7 @@
 
 class HFARasterBand;
 
-class HFADataset CPL_FINAL : public GDALPamDataset
+class HFADataset final : public GDALPamDataset
 {
     friend class HFARasterBand;
 
@@ -132,7 +132,7 @@ class HFADataset CPL_FINAL : public GDALPamDataset
 /* ==================================================================== */
 /************************************************************************/
 
-class HFARasterBand CPL_FINAL : public GDALPamRasterBand
+class HFARasterBand final : public GDALPamRasterBand
 {
     friend class HFADataset;
     friend class HFARasterAttributeTable;
@@ -175,9 +175,9 @@ class HFARasterBand CPL_FINAL : public GDALPamRasterBand
     virtual int    GetOverviewCount() override;
     virtual GDALRasterBand *GetOverview( int ) override;
 
-    virtual double GetMinimum( int *pbSuccess = NULL ) override;
-    virtual double GetMaximum( int *pbSuccess = NULL ) override;
-    virtual double GetNoDataValue( int *pbSuccess = NULL ) override;
+    virtual double GetMinimum( int *pbSuccess = nullptr ) override;
+    virtual double GetMaximum( int *pbSuccess = nullptr ) override;
+    virtual double GetNoDataValue( int *pbSuccess = nullptr ) override;
     virtual CPLErr SetNoDataValue( double dfValue ) override;
 
     virtual CPLErr SetMetadata( char **, const char * = "" ) override;
@@ -209,7 +209,7 @@ class HFAAttributeField
     bool              bConvertColors;  // Map 0-1 floats to 0-255 ints.
 };
 
-class HFARasterAttributeTable CPL_FINAL : public GDALRasterAttributeTable
+class HFARasterAttributeTable final : public GDALRasterAttributeTable
 {
   private:
     HFAHandle   hHFA;

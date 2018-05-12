@@ -32,11 +32,11 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 static int OGRVFKDriverIdentify(GDALOpenInfo* poOpenInfo)
 {
-    if( poOpenInfo->fpL == NULL )
+    if( poOpenInfo->fpL == nullptr )
         return FALSE;
 
     if( poOpenInfo->nHeaderBytes >= 2 &&
@@ -67,7 +67,7 @@ static GDALDataset *OGRVFKDriverOpen(GDALOpenInfo* poOpenInfo)
 {
     if( poOpenInfo->eAccess == GA_Update ||
         !OGRVFKDriverIdentify(poOpenInfo) )
-        return NULL;
+        return nullptr;
 
     OGRVFKDataSource *poDS = new OGRVFKDataSource();
 
@@ -75,7 +75,7 @@ static GDALDataset *OGRVFKDriverOpen(GDALOpenInfo* poOpenInfo)
         poDS->GetLayerCount() == 0 )
     {
         delete poDS;
-        return NULL;
+        return nullptr;
     }
     else
         return poDS;
@@ -89,7 +89,7 @@ void RegisterOGRVFK()
     if( !GDAL_CHECK_VERSION("OGR/VFK driver") )
         return;
 
-    if( GDALGetDriverByName( "VFK" ) != NULL )
+    if( GDALGetDriverByName( "VFK" ) != nullptr )
         return;
 
     GDALDriver *poDriver = new GDALDriver();
@@ -100,6 +100,11 @@ void RegisterOGRVFK()
                                "Czech Cadastral Exchange Data Format" );
     poDriver->SetMetadataItem( GDAL_DMD_EXTENSION, "vfk" );
     poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, "drv_vfk.html" );
+
+    poDriver->SetMetadataItem(GDAL_DMD_OPENOPTIONLIST,
+"<OpenOptionList>"
+"  <Option name='SUPPRESS_GEOMETRY' type='boolean' description='whether to suppress geometry' default='NO'/>"
+"</OpenOptionList>");
 
     poDriver->pfnOpen = OGRVFKDriverOpen;
     poDriver->pfnIdentify = OGRVFKDriverIdentify;

@@ -118,7 +118,7 @@ typedef void (*my_jpeg_write_m_byte)(void *cinfo, int val);
 
 CPLErr JPGAppendMask( const char *pszJPGFilename, GDALRasterBand *poMask,
                       GDALProgressFunc pfnProgress, void *pProgressData );
-void   JPGAddEXIFOverview( GDALDataType eWorkDT,
+void   JPGAddEXIF        ( GDALDataType eWorkDT,
                            GDALDataset *poSrcDS, char** papszOptions,
                            void *cinfo,
                            my_jpeg_write_m_header p_jpeg_write_m_header,
@@ -140,7 +140,7 @@ typedef struct GDALJPEGErrorStruct
     void      (*p_previous_emit_message)(j_common_ptr cinfo, int msg_level);
     GDALJPEGErrorStruct() :
         bNonFatalErrorEncountered(false),
-        p_previous_emit_message(NULL)
+        p_previous_emit_message(nullptr)
     {
         memset(&setjmp_buffer, 0, sizeof(setjmp_buffer));
     }
@@ -269,16 +269,18 @@ class JPGDatasetCommon : public GDALPamDataset
 /* ==================================================================== */
 /************************************************************************/
 
-class JPGDataset : public JPGDatasetCommon
+class JPGDataset final: public JPGDatasetCommon
 {
     GDALJPEGErrorStruct sErrorStruct;
 
     bool ErrorOutOnNonFatalError();
 
     static void EmitMessage(j_common_ptr cinfo, int msg_level);
+    static void ProgressMonitor (j_common_ptr cinfo );
 
     struct jpeg_decompress_struct sDInfo;
     struct jpeg_error_mgr sJErr;
+    struct jpeg_progress_mgr sJProgress;
 
     virtual CPLErr LoadScanline(int) override;
     virtual CPLErr Restart() override;
@@ -319,7 +321,7 @@ class JPGDataset : public JPGDatasetCommon
 /* ==================================================================== */
 /************************************************************************/
 
-class JPGRasterBand : public GDALPamRasterBand
+class JPGRasterBand final: public GDALPamRasterBand
 {
     friend class JPGDatasetCommon;
 
@@ -352,13 +354,13 @@ class JPGRasterBand : public GDALPamRasterBand
 /* ==================================================================== */
 /************************************************************************/
 
-class JPGMaskBand : public GDALRasterBand
+class JPGMaskBand final: public GDALRasterBand
 {
   protected:
     virtual CPLErr IReadBlock( int, int, void * ) override;
 
   public:
-    explicit JPGMaskBand( JPGDataset *poDS );
+    explicit JPGMaskBand( JPGDatasetCommon *poDS );
     virtual ~JPGMaskBand() {}
 };
 
@@ -366,7 +368,7 @@ class JPGMaskBand : public GDALRasterBand
 /*                         GDALRegister_JPEG()                          */
 /************************************************************************/
 
-class GDALJPGDriver: public GDALDriver
+class GDALJPGDriver final: public GDALDriver
 {
   public:
     GDALJPGDriver() {}

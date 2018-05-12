@@ -30,7 +30,7 @@
 
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 
@@ -38,20 +38,21 @@ import gdaltest
 # First 75K of an IRS (Indian Remote Sensing Satellite) LGSOWG scene.  Only
 # contains 3 complete scanlines.  Bizarre little endian CEOS variant. (#1862)
 
+
 def ceos_1():
 
-    tst = gdaltest.GDALTest( 'CEOS', 'IMAGERY-75K.L-3', 4, 9956,
-                             xoff = 0, yoff = 0, xsize = 5932, ysize = 3 )
+    tst = gdaltest.GDALTest('CEOS', 'IMAGERY-75K.L-3', 4, 9956,
+                            xoff=0, yoff=0, xsize=5932, ysize=3)
     return tst.testOpen()
 
+
 gdaltest_list = [
-    ceos_1 ]
+    ceos_1]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'ceos' )
+    gdaltest.setup_run('ceos')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

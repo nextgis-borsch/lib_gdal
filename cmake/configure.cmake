@@ -37,6 +37,24 @@ include (CheckCSourceCompiles)
 include (CheckCXXSourceCompiles)
 # include (CompilerFlags)
 
+
+if(NOT MSVC)
+  include(CheckCXXCompilerFlag)
+  CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
+else()
+    if(MSVC_VERSION LESS 1700)
+        set(COMPILER_SUPPORTS_CXX11 FALSE)
+    else()
+        set(COMPILER_SUPPORTS_CXX11 TRUE)
+    endif()
+endif()
+
+if(NOT COMPILER_SUPPORTS_CXX11)
+    message(FATAL_ERROR "C++11 support required.")
+endif()
+
+set(CMAKE_CXX_STANDARD 11)
+
 set(GDAL_PREFIX ${CMAKE_INSTALL_PREFIX})
 
 if(CMAKE_GENERATOR_TOOLSET MATCHES "v([0-9]+)_xp")

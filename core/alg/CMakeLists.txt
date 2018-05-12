@@ -45,6 +45,7 @@ set(LIB_HHEADERS_PRIV
     gdal_alg_priv.h
     gdalgrid_priv.h
     internal_qhull_headers.h
+    gdallinearsystem.h
 )
 
 set(LIB_CSOURCES
@@ -81,6 +82,7 @@ set(LIB_CSOURCES
     polygonize.cpp
     rasterfill.cpp
     gdalapplyverticalshiftgrid.cpp
+    gdallinearsystem.cpp
 )
 
 find_anyproject(QHULL DEFAULT OFF)

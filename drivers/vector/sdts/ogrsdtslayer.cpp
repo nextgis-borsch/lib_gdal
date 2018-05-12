@@ -30,7 +30,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /************************************************************************/
 /*                            OGRSDTSLayer()                            */
@@ -41,7 +41,7 @@ CPL_CVSID("$Id$");
 
 OGRSDTSLayer::OGRSDTSLayer( SDTSTransfer * poTransferIn, int iLayerIn,
                             OGRSDTSDataSource * poDSIn ) :
-    poFeatureDefn(NULL),
+    poFeatureDefn(nullptr),
     poTransfer(poTransferIn),
     iLayer(iLayerIn),
     poReader(poTransferIn->GetLayerIndexedReader( iLayerIn )),
@@ -87,7 +87,7 @@ OGRSDTSLayer::OGRSDTSLayer( SDTSTransfer * poTransferIn, int iLayerIn,
 /* -------------------------------------------------------------------- */
 /*      Add schema from referenced attribute records.                   */
 /* -------------------------------------------------------------------- */
-    char **papszATIDRefs = NULL;
+    char **papszATIDRefs = nullptr;
 
     if( poTransfer->GetLayerType(iLayer) != SLTAttr )
         papszATIDRefs = poReader->ScanModuleReferences();
@@ -96,7 +96,7 @@ OGRSDTSLayer::OGRSDTSLayer( SDTSTransfer * poTransferIn, int iLayerIn,
                                       poTransfer->GetCATD()->GetEntryModule(iCATDEntry) );
 
     for( int iTable = 0;
-         papszATIDRefs != NULL && papszATIDRefs[iTable] != NULL;
+         papszATIDRefs != nullptr && papszATIDRefs[iTable] != nullptr;
          iTable++ )
     {
 /* -------------------------------------------------------------------- */
@@ -106,17 +106,17 @@ OGRSDTSLayer::OGRSDTSLayer( SDTSTransfer * poTransferIn, int iLayerIn,
         const int nLayerIdx = poTransfer->FindLayer( papszATIDRefs[iTable] );
         if( nLayerIdx < 0 )
             continue;
-        SDTSAttrReader *poAttrReader = (SDTSAttrReader *)
-            poTransfer->GetLayerIndexedReader(nLayerIdx);
+        SDTSAttrReader *poAttrReader = dynamic_cast<SDTSAttrReader *>(
+            poTransfer->GetLayerIndexedReader(nLayerIdx));
 
-        if( poAttrReader == NULL )
+        if( poAttrReader == nullptr )
             continue;
 
         DDFFieldDefn *poFDefn =
             poAttrReader->GetModule()->FindFieldDefn( "ATTP" );
-        if( poFDefn == NULL )
+        if( poFDefn == nullptr )
             poFDefn = poAttrReader->GetModule()->FindFieldDefn( "ATTS" );
-        if( poFDefn == NULL )
+        if( poFDefn == nullptr )
             continue;
 
 /* -------------------------------------------------------------------- */
@@ -188,7 +188,7 @@ OGRSDTSLayer::OGRSDTSLayer( SDTSTransfer * poTransferIn, int iLayerIn,
 OGRSDTSLayer::~OGRSDTSLayer()
 
 {
-    if( m_nFeaturesRead > 0 && poFeatureDefn != NULL )
+    if( m_nFeaturesRead > 0 && poFeatureDefn != nullptr )
     {
         CPLDebug( "SDTS", "%d features read on layer '%s'.",
                   static_cast<int>(m_nFeaturesRead),
@@ -241,7 +241,7 @@ AssignAttrRecordToFeature( OGRFeature * poFeature,
           case DDFString:
           {
             const char  *pszValue =
-                poSFDefn->ExtractStringData(pachData, nMaxBytes, NULL);
+                poSFDefn->ExtractStringData(pachData, nMaxBytes, nullptr);
 
             if( iField != -1 )
                 poFeature->SetField( iField, pszValue );
@@ -250,7 +250,7 @@ AssignAttrRecordToFeature( OGRFeature * poFeature,
           case DDFFloat:
           {
             double dfValue =
-                poSFDefn->ExtractFloatData(pachData, nMaxBytes, NULL);
+                poSFDefn->ExtractFloatData(pachData, nMaxBytes, nullptr);
 
             if( iField != -1 )
                 poFeature->SetField( iField, dfValue );
@@ -258,7 +258,7 @@ AssignAttrRecordToFeature( OGRFeature * poFeature,
           }
           case DDFInt:
           {
-            int nValue = poSFDefn->ExtractIntData(pachData, nMaxBytes, NULL);
+            int nValue = poSFDefn->ExtractIntData(pachData, nMaxBytes, nullptr);
 
             if( iField != -1 )
                 poFeature->SetField( iField, nValue );
@@ -290,9 +290,13 @@ OGRFeature * OGRSDTSLayer::GetNextUnfilteredFeature()
 /*      Fetch the next sdts style feature object from the reader.       */
 /* -------------------------------------------------------------------- */
     SDTSFeature *poSDTSFeature = poReader->GetNextFeature();
+    // Retain now the IsIndexed state to determine if we must delete or
+    // not poSDTSFeature when done with it, because later calls might cause
+    // indexing.
+    const bool bIsIndexed = CPL_TO_BOOL(poReader->IsIndexed());
 
-    if( poSDTSFeature == NULL )
-        return NULL;
+    if( poSDTSFeature == nullptr )
+        return nullptr;
 
 /* -------------------------------------------------------------------- */
 /*      Create the OGR feature.                                         */
@@ -374,7 +378,7 @@ OGRFeature * OGRSDTSLayer::GetNextUnfilteredFeature()
     {
         DDFField *poSR =
             poTransfer->GetAttr( poSDTSFeature->paoATID+iAttrRecord );
-        if( poSR != NULL )
+        if( poSR != nullptr )
             AssignAttrRecordToFeature( poFeature, poTransfer, poSR );
     }
 
@@ -393,11 +397,11 @@ OGRFeature * OGRSDTSLayer::GetNextUnfilteredFeature()
 /* -------------------------------------------------------------------- */
     poFeature->SetFID( poSDTSFeature->oModId.nRecord );
     poFeature->SetField( 0, (int) poSDTSFeature->oModId.nRecord );
-    if( poFeature->GetGeometryRef() != NULL )
+    if( poFeature->GetGeometryRef() != nullptr )
         poFeature->GetGeometryRef()->assignSpatialReference(
             poDS->GetSpatialRef() );
 
-    if( !poReader->IsIndexed() )
+    if( !bIsIndexed )
         delete poSDTSFeature;
 
     return poFeature;
@@ -410,7 +414,7 @@ OGRFeature * OGRSDTSLayer::GetNextUnfilteredFeature()
 OGRFeature *OGRSDTSLayer::GetNextFeature()
 
 {
-    OGRFeature  *poFeature = NULL;
+    OGRFeature  *poFeature = nullptr;
 
 /* -------------------------------------------------------------------- */
 /*      Read features till we find one that satisfies our current       */
@@ -419,12 +423,12 @@ OGRFeature *OGRSDTSLayer::GetNextFeature()
     while( true )
     {
         poFeature = GetNextUnfilteredFeature();
-        if( poFeature == NULL )
+        if( poFeature == nullptr )
             break;
 
-        if( (m_poFilterGeom == NULL
+        if( (m_poFilterGeom == nullptr
              || FilterGeometry( poFeature->GetGeometryRef() ) )
-            && (m_poAttrQuery == NULL
+            && (m_poAttrQuery == nullptr
                 || m_poAttrQuery->Evaluate( poFeature )) )
             break;
 

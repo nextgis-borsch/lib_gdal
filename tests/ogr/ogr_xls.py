@@ -31,7 +31,7 @@
 
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 from osgeo import gdal
@@ -39,6 +39,7 @@ from osgeo import ogr
 
 ###############################################################################
 # Basic tests
+
 
 def ogr_xls_1():
 
@@ -72,7 +73,7 @@ def ogr_xls_1():
         gdaltest.post_reason('bad layer geometry type')
         return 'fail'
 
-    if lyr.GetSpatialRef() != None:
+    if lyr.GetSpatialRef() is not None:
         gdaltest.post_reason('bad spatial ref')
         return 'fail'
 
@@ -120,6 +121,7 @@ def ogr_xls_1():
 ###############################################################################
 # Test OGR_XLS_HEADERS = DISABLE
 
+
 def ogr_xls_2():
 
     drv = ogr.GetDriverByName('XLS')
@@ -143,6 +145,7 @@ def ogr_xls_2():
 ###############################################################################
 # Test OGR_XLS_FIELD_TYPES = STRING
 
+
 def ogr_xls_3():
 
     drv = ogr.GetDriverByName('XLS')
@@ -164,6 +167,7 @@ def ogr_xls_3():
 
 ###############################################################################
 # Run test_ogrsf
+
 
 def ogr_xls_4():
 
@@ -193,9 +197,8 @@ gdaltest_list = [
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'ogr_xls' )
+    gdaltest.setup_run('ogr_xls')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

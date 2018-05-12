@@ -100,7 +100,7 @@ if(GDAL_BUILD_APPS)
     add_exe(nearblack nearblack_bin.cpp)
     add_exe(gdallocationinfo gdallocationinfo.cpp)
     add_exe(gdaltransform gdaltransform.cpp)
-    add_exe(gdalserver gdalserver.c)
+    add_exe(gdalserver gdalserver.cpp)
 
     if(GDAL_ENABLE_GNM)
         include_directories(${CMAKE_SOURCE_DIR}/core/gnm)

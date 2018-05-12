@@ -35,6 +35,8 @@ from osgeo import osr
 import sys
 
 # =============================================================================
+
+
 def Usage():
     print('Usage: val_at_coord.py [-display_xy] [longitude latitude | -coordtype=georef X Y] filename')
     print('')
@@ -42,9 +44,10 @@ def Usage():
     print('in longitude, latitude order. If -coordtype=georef is specified before')
     print('the next 2 values will be interpreted as the X and Y coordinates')
     print('in the dataset spatial reference system.')
-    sys.exit( 1 )
+    sys.exit(1)
 
 # =============================================================================
+
 
 display_xy = False
 coordtype_georef = False
@@ -87,7 +90,7 @@ if filename is None:
     filename()
 
 # Open input dataset
-ds = gdal.Open( filename, gdal.GA_ReadOnly )
+ds = gdal.Open(filename, gdal.GA_ReadOnly)
 if ds is None:
     print('Cannot open %s' % filename)
     sys.exit(1)
@@ -119,7 +122,7 @@ if x < 0 or x >= ds.RasterXSize or y < 0 or y >= ds.RasterYSize:
     print('Passed coordinates are not in dataset extent')
     sys.exit(1)
 
-res = ds.ReadAsArray(x,y,1,1)
+res = ds.ReadAsArray(x, y, 1, 1)
 if len(res.shape) == 2:
     print(res[0][0])
 else:

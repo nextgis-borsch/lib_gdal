@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#******************************************************************************
+# ******************************************************************************
 #  $Id$
 #
 #  Name:     pct2rgb
@@ -7,7 +7,7 @@
 #  Purpose:  Utility to convert paletted images into RGB (or RGBA) images.
 #  Author:   Frank Warmerdam, warmerdam@pobox.com
 #
-#******************************************************************************
+# ******************************************************************************
 #  Copyright (c) 2001, Frank Warmerdam
 #  Copyright (c) 2009-2010, Even Rouault <even dot rouault at mines-paris dot org>
 #
@@ -28,16 +28,14 @@
 #  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 #  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
-#******************************************************************************
+# ******************************************************************************
 
+import os.path
 import sys
 
 from osgeo import gdal
 
-try:
-    progress = gdal.TermProgress_nocb
-except:
-    progress = gdal.TermProgress
+progress = gdal.TermProgress_nocb
 
 try:
     import numpy as Numeric
@@ -50,27 +48,77 @@ def Usage():
     print('Usage: pct2rgb.py [-of format] [-b <band>] [-rgba] source_file dest_file')
     sys.exit(1)
 
+
+def DoesDriverHandleExtension(drv, ext):
+    exts = drv.GetMetadataItem(gdal.DMD_EXTENSIONS)
+    return exts is not None and exts.lower().find(ext.lower()) >= 0
+
+
+def GetExtension(filename):
+    ext = os.path.splitext(filename)[1]
+    if ext.startswith('.'):
+        ext = ext[1:]
+    return ext
+
+
+def GetOutputDriversFor(filename):
+    drv_list = []
+    ext = GetExtension(filename)
+    for i in range(gdal.GetDriverCount()):
+        drv = gdal.GetDriver(i)
+        if (drv.GetMetadataItem(gdal.DCAP_CREATE) is not None or
+            drv.GetMetadataItem(gdal.DCAP_CREATECOPY) is not None) and \
+           drv.GetMetadataItem(gdal.DCAP_RASTER) is not None:
+            if len(ext) > 0 and DoesDriverHandleExtension(drv, ext):
+                drv_list.append(drv.ShortName)
+            else:
+                prefix = drv.GetMetadataItem(gdal.DMD_CONNECTION_PREFIX)
+                if prefix is not None and filename.lower().startswith(prefix.lower()):
+                    drv_list.append(drv.ShortName)
+
+    # GMT is registered before netCDF for opening reasons, but we want
+    # netCDF to be used by default for output.
+    if ext.lower() == 'nc' and len(drv_list) == 0 and \
+       drv_list[0].upper() == 'GMT' and drv_list[1].upper() == 'NETCDF':
+        drv_list = ['NETCDF', 'GMT']
+
+    return drv_list
+
+
+def GetOutputDriverFor(filename):
+    drv_list = GetOutputDriversFor(filename)
+    if len(drv_list) == 0:
+        ext = GetExtension(filename)
+        if len(ext) == 0:
+            return 'GTiff'
+        else:
+            raise Exception("Cannot guess driver for %s" % filename)
+    elif len(drv_list) > 1:
+        print("Several drivers matching %s extension. Using %s" % (ext, drv_list[0]))
+    return drv_list[0]
+
 # =============================================================================
 # 	Mainline
 # =============================================================================
 
-format = 'GTiff'
+
+format = None
 src_filename = None
 dst_filename = None
 out_bands = 3
 band_number = 1
 
 gdal.AllRegister()
-argv = gdal.GeneralCmdLineProcessor( sys.argv )
+argv = gdal.GeneralCmdLineProcessor(sys.argv)
 if argv is None:
-    sys.exit( 0 )
+    sys.exit(0)
 
 # Parse command line arguments.
 i = 1
 while i < len(argv):
     arg = argv[i]
 
-    if arg == '-of':
+    if arg == '-of' or arg == '-f':
         i = i + 1
         format = argv[i]
 
@@ -98,7 +146,7 @@ if dst_filename is None:
 # ----------------------------------------------------------------------------
 # Open source file
 
-src_ds = gdal.Open( src_filename )
+src_ds = gdal.Open(src_filename)
 if src_ds is None:
     print('Unable to open %s ' % src_filename)
     sys.exit(1)
@@ -107,6 +155,9 @@ src_band = src_ds.GetRasterBand(band_number)
 
 # ----------------------------------------------------------------------------
 # Ensure we recognise the driver.
+
+if format is None:
+    format = GetOutputDriverFor(dst_filename)
 
 dst_driver = gdal.GetDriverByName(format)
 if dst_driver is None:
@@ -138,34 +189,34 @@ if format == 'GTiff':
 else:
     tif_filename = 'temp.tif'
 
-gtiff_driver = gdal.GetDriverByName( 'GTiff' )
+gtiff_driver = gdal.GetDriverByName('GTiff')
 
-tif_ds = gtiff_driver.Create( tif_filename,
-                              src_ds.RasterXSize, src_ds.RasterYSize, out_bands )
+tif_ds = gtiff_driver.Create(tif_filename,
+                             src_ds.RasterXSize, src_ds.RasterYSize, out_bands)
 
 
 # ----------------------------------------------------------------------------
 # We should copy projection information and so forth at this point.
 
-tif_ds.SetProjection( src_ds.GetProjection() )
-tif_ds.SetGeoTransform( src_ds.GetGeoTransform() )
+tif_ds.SetProjection(src_ds.GetProjection())
+tif_ds.SetGeoTransform(src_ds.GetGeoTransform())
 if src_ds.GetGCPCount() > 0:
-    tif_ds.SetGCPs( src_ds.GetGCPs(), src_ds.GetGCPProjection() )
+    tif_ds.SetGCPs(src_ds.GetGCPs(), src_ds.GetGCPProjection())
 
 # ----------------------------------------------------------------------------
 # Do the processing one scanline at a time.
 
-progress( 0.0 )
+progress(0.0)
 for iY in range(src_ds.RasterYSize):
-    src_data = src_band.ReadAsArray(0,iY,src_ds.RasterXSize,1)
+    src_data = src_band.ReadAsArray(0, iY, src_ds.RasterXSize, 1)
 
     for iBand in range(out_bands):
         band_lookup = lookup[iBand]
 
-        dst_data = Numeric.take(band_lookup,src_data)
-        tif_ds.GetRasterBand(iBand+1).WriteArray(dst_data,0,iY)
+        dst_data = Numeric.take(band_lookup, src_data)
+        tif_ds.GetRasterBand(iBand + 1).WriteArray(dst_data, 0, iY)
 
-    progress( (iY+1.0) / src_ds.RasterYSize )
+    progress((iY + 1.0) / src_ds.RasterYSize)
 
 
 tif_ds = None
@@ -174,8 +225,8 @@ tif_ds = None
 # Translate intermediate file to output format if desired format is not TIFF.
 
 if tif_filename != dst_filename:
-    tif_ds = gdal.Open( tif_filename )
-    dst_driver.CreateCopy( dst_filename, tif_ds )
+    tif_ds = gdal.Open(tif_filename)
+    dst_driver.CreateCopy(dst_filename, tif_ds)
     tif_ds = None
 
-    gtiff_driver.Delete( tif_filename )
+    gtiff_driver.Delete(tif_filename)

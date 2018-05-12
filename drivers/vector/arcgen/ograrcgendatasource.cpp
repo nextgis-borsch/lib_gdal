@@ -30,15 +30,15 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /************************************************************************/
 /*                          OGRARCGENDataSource()                          */
 /************************************************************************/
 
 OGRARCGENDataSource::OGRARCGENDataSource() :
-    pszName(NULL),
-    papoLayers(NULL),
+    pszName(nullptr),
+    papoLayers(nullptr),
     nLayers(0)
 {}
 
@@ -73,7 +73,7 @@ OGRLayer *OGRARCGENDataSource::GetLayer( int iLayer )
 
 {
     if( iLayer < 0 || iLayer >= nLayers )
-        return NULL;
+        return nullptr;
 
     return papoLayers[iLayer];
 }
@@ -92,12 +92,12 @@ int OGRARCGENDataSource::Open( const char * pszFilename )
 // --------------------------------------------------------------------
 
     VSILFILE* fp = VSIFOpenL(pszFilename, "rb");
-    if (fp == NULL)
+    if (fp == nullptr)
         return FALSE;
 
     /* Go to end of file, and count the number of END keywords */
-    /* If there's 1, it's a point layer */
-    /* If there's 2, it's a linestring or polygon layer */
+    /* If there's 1, it is a point layer */
+    /* If there's 2, it is a linestring or polygon layer */
     VSIFSeekL( fp, 0, SEEK_END );
     vsi_l_offset nSize = VSIFTellL(fp);
     if (nSize < 10)
@@ -114,21 +114,21 @@ int OGRARCGENDataSource::Open( const char * pszFilename )
 
     const char* szPtr = szBuffer;
     const char* szEnd = strstr(szPtr, "END");
-    if (szEnd == NULL) szEnd = strstr(szPtr, "end");
-    if (szEnd == NULL)
+    if (szEnd == nullptr) szEnd = strstr(szPtr, "end");
+    if (szEnd == nullptr)
     {
         VSIFCloseL(fp);
         return FALSE;
     }
     szPtr = szEnd + 3;
     szEnd = strstr(szPtr, "END");
-    if (szEnd == NULL) szEnd = strstr(szPtr, "end");
+    if (szEnd == nullptr) szEnd = strstr(szPtr, "end");
 
     OGRwkbGeometryType eType;
-    if (szEnd == NULL)
+    if (szEnd == nullptr)
     {
-        const char* pszLine = CPLReadLine2L(fp,256,NULL);
-        if (pszLine == NULL)
+        const char* pszLine = CPLReadLine2L(fp,256,nullptr);
+        if (pszLine == nullptr)
         {
             VSIFCloseL(fp);
             return FALSE;
@@ -154,8 +154,8 @@ int OGRARCGENDataSource::Open( const char * pszFilename )
         CPLString osFirstX, osFirstY;
         CPLString osLastX, osLastY;
         bool bIs3D = false;
-        const char* pszLine = NULL;
-        while( (pszLine = CPLReadLine2L(fp,256,NULL)) != NULL )
+        const char* pszLine = nullptr;
+        while( (pszLine = CPLReadLine2L(fp,256,nullptr)) != nullptr )
         {
             nLineNumber ++;
             if (nLineNumber == 2)

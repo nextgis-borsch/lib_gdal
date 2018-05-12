@@ -32,13 +32,14 @@
 import sys
 import os
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 from osgeo import ogr
 
 ###############################################################################
 #
+
 
 def search_all_features(lyr):
 
@@ -74,26 +75,26 @@ def search_all_features(lyr):
     # there is an optimization in the shapefile driver to skip the spatial index in that
     # case.
     eps = 0.0001
-    lyr.SetSpatialFilterRect(extents[0]+eps, extents[2]+eps, extents[1]-eps, extents[3]-eps)
+    lyr.SetSpatialFilterRect(extents[0] + eps, extents[2] + eps, extents[1] - eps, extents[3] - eps)
     lyr.ResetReading()
     fc = lyr.GetFeatureCount()
 
     # For point layers, we need a special case since there may be points on the border
     # of the extent
     if lyr.GetGeomType() == ogr.wkbPoint:
-        lyr.SetSpatialFilterRect(extents[0], extents[2]+eps, extents[0]+eps, extents[3]-eps)
+        lyr.SetSpatialFilterRect(extents[0], extents[2] + eps, extents[0] + eps, extents[3] - eps)
         lyr.ResetReading()
         fc = fc + lyr.GetFeatureCount()
 
-        lyr.SetSpatialFilterRect(extents[1]-eps, extents[2]+eps, extents[1], extents[3]-eps)
+        lyr.SetSpatialFilterRect(extents[1] - eps, extents[2] + eps, extents[1], extents[3] - eps)
         lyr.ResetReading()
         fc = fc + lyr.GetFeatureCount()
 
-        lyr.SetSpatialFilterRect(extents[0], extents[2], extents[1], extents[2]+eps)
+        lyr.SetSpatialFilterRect(extents[0], extents[2], extents[1], extents[2] + eps)
         lyr.ResetReading()
         fc = fc + lyr.GetFeatureCount()
 
-        lyr.SetSpatialFilterRect(extents[0], extents[3]-eps, extents[1], extents[3])
+        lyr.SetSpatialFilterRect(extents[0], extents[3] - eps, extents[1], extents[3])
         lyr.ResetReading()
         fc = fc + lyr.GetFeatureCount()
 
@@ -106,19 +107,20 @@ def search_all_features(lyr):
 ###############################################################################
 # Test
 
+
 def ogr_shape_sbn_1():
 
-    if not gdaltest.download_file('http://pubs.usgs.gov/sim/3194/contents/Cochiti_shapefiles.zip', 'Cochiti_shapefiles.zip' ):
+    if not gdaltest.download_file('http://pubs.usgs.gov/sim/3194/contents/Cochiti_shapefiles.zip', 'Cochiti_shapefiles.zip'):
         return 'skip'
 
     try:
         os.stat('tmp/cache/CochitiDamShapeFiles/CochitiBoundary.shp')
-    except:
+    except OSError:
         try:
-            gdaltest.unzip( 'tmp/cache', 'tmp/cache/Cochiti_shapefiles.zip')
+            gdaltest.unzip('tmp/cache', 'tmp/cache/Cochiti_shapefiles.zip')
             try:
                 os.stat('tmp/cache/CochitiDamShapeFiles/CochitiBoundary.shp')
-            except:
+            except OSError:
                 return 'skip'
         except:
             return 'skip'
@@ -132,15 +134,26 @@ def ogr_shape_sbn_1():
 
     return 'success'
 
+###############################################################################
+# Test
+
+
+def ogr_shape_sbn_2():
+
+    ds = ogr.Open('data/CoHI_GCS12.shp')
+    lyr = ds.GetLayer(0)
+    return search_all_features(lyr)
+
+
 gdaltest_list = [
     ogr_shape_sbn_1,
+    ogr_shape_sbn_2,
 ]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'ogr_shape_sbn' )
+    gdaltest.setup_run('ogr_shape_sbn')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

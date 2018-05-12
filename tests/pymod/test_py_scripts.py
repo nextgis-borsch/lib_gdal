@@ -37,31 +37,36 @@ import sys
 ###############################################################################
 # Return the path in which the Python script is found
 #
+
+
 def get_py_script(script_name):
 
-    for subdir in [ 'scripts', 'samples' ]:
+    for subdir in ['scripts', 'samples']:
         try:
             # Test subversion layout : {root_dir}/gdal, {root_dir}/autotest
             test_path = os.path.join(os.getcwd(), '..', '..', 'gdal', 'swig', 'python', subdir)
             test_file_path = os.path.join(test_path, script_name + '.py')
             os.stat(test_file_path)
             return test_path
-        except:
+        except OSError:
             try:
                 # Test FrankW's directory layout : {root_dir}/gdal, {root_dir}/gdal/autotest
                 test_path = os.path.join(os.getcwd(), '..', '..', 'swig', 'python', subdir)
                 test_file_path = os.path.join(test_path, script_name + '.py')
                 os.stat(test_file_path)
                 return test_path
-            except:
+            except OSError:
                 pass
 
     return None
+
 
 ###############################################################################
 # Utility function of run_py_script_as_py_module()
 #
 has_main = False
+
+
 def find_main_in_module(names):
     global has_main
     has_main = 'main' in names
@@ -83,18 +88,18 @@ def run_py_script(script_path, script_name, concatenated_argv):
 ###############################################################################
 # Runs a Python script in a new process
 #
-def run_py_script_as_external_script(script_path, script_name, concatenated_argv, display_live_on_parent_stdout = False):
+def run_py_script_as_external_script(script_path, script_name, concatenated_argv, display_live_on_parent_stdout=False):
 
     script_file_path = os.path.join(script_path, script_name + '.py')
 
-    #print(script_file_path + ' ' + concatenated_argv)
+    # print(script_file_path + ' ' + concatenated_argv)
 
     python_exe = sys.executable
     if sys.platform == 'win32':
         python_exe = python_exe.replace('\\', '/')
         script_file_path = script_file_path.replace('\\', '/')
 
-    return gdaltest.runexternal(python_exe + ' ' + script_file_path + ' ' + concatenated_argv, display_live_on_parent_stdout = display_live_on_parent_stdout)
+    return gdaltest.runexternal(python_exe + ' ' + script_file_path + ' ' + concatenated_argv, display_live_on_parent_stdout=display_live_on_parent_stdout)
 
 ###############################################################################
 # Runs a Python script as a py module
@@ -103,6 +108,8 @@ def run_py_script_as_external_script(script_path, script_name, concatenated_argv
 # scripts without forking a new process. This way we don't need to know the
 # name and path of the python interpreter.
 #
+
+
 def run_py_script_as_py_module(script_path, script_name, concatenated_argv):
     import sys
 
@@ -115,7 +122,7 @@ def run_py_script_as_py_module(script_path, script_name, concatenated_argv):
     # Replace argv by user provided one
     # Add first a fake first arg that we set to be the script
     # name but which could be any arbitrary name
-    sys.argv = [ script_name + '.py' ]
+    sys.argv = [script_name + '.py']
 
     import shlex
     sys.argv.extend(shlex.split(concatenated_argv))
@@ -161,5 +168,3 @@ def run_py_script_as_py_module(script_path, script_name, concatenated_argv):
         del sys.modules[script_name]
 
     return ret
-
-

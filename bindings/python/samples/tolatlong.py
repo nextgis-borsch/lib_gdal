@@ -4,8 +4,8 @@
 #
 # Project:  GDAL Python samples
 # Purpose:  Script to read coordinate system and geotransformation matrix
-#	    from input file and report latitude/longitude coordinates for the
-#	    specified pixel.
+#           from input file and report latitude/longitude coordinates for the
+#           specified pixel.
 # Author:   Andrey Kiselev, dron@remotesensing.org
 #
 ###############################################################################
@@ -37,6 +37,8 @@ from osgeo import osr
 import sys
 
 # =============================================================================
+
+
 def Usage():
     print('')
     print('Read coordinate system and geotransformation matrix from input')
@@ -45,9 +47,10 @@ def Usage():
     print('')
     print('Usage: tolatlong.py pixel line infile')
     print('')
-    sys.exit( 1 )
+    sys.exit(1)
 
 # =============================================================================
+
 
 infile = None
 pixel = None
@@ -82,7 +85,7 @@ if line is None:
     Usage()
 
 # Open input dataset
-indataset = gdal.Open( infile, gdal.GA_ReadOnly )
+indataset = gdal.Open(infile, gdal.GA_ReadOnly)
 
 # Read geotransform matrix and calculate ground coordinates
 geomatrix = indataset.GetGeoTransform()
@@ -108,4 +111,3 @@ ct = osr.CoordinateTransformation(srs, srsLatLong)
 print('pixel: %g\t\t\tline: %g' % (pixel, line))
 print('latitude: %fd\t\tlongitude: %fd' % (lat, int))
 print('latitude: %s\t\tlongitude: %s' % (gdal.DecToDMS(lat, 'Lat', 2), gdal.DecToDMS(int, 'Long', 2)))
-

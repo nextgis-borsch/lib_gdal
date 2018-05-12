@@ -37,7 +37,7 @@
 /*                           OGRXPlaneAPTLayer                          */
 /************************************************************************/
 
-class OGRXPlaneAPTLayer : public OGRXPlaneLayer
+class OGRXPlaneAPTLayer final: public OGRXPlaneLayer
 {
   public:
                         OGRXPlaneAPTLayer();
@@ -53,7 +53,7 @@ class OGRXPlaneAPTLayer : public OGRXPlaneLayer
                                    double dfLon = 0,
                                    bool bHasTower = false,
                                    double dfHeightTower = 0,
-                                   const char* pszTowerName = NULL);
+                                   const char* pszTowerName = nullptr);
 };
 
 /************************************************************************/
@@ -148,16 +148,16 @@ static const sEnumerationElement runwayVisualApproachPathIndicatorTypeV810[] =
     { 4, "Space Shuttle PAPI" }
 };
 
-DEFINE_XPLANE_ENUMERATION(RunwaySurfaceEnumeration, runwaySurfaceType);
-DEFINE_XPLANE_ENUMERATION(RunwayShoulderEnumeration, runwayShoulderType);
-DEFINE_XPLANE_ENUMERATION(RunwayMarkingEnumeration, runwayMarkingType);
-DEFINE_XPLANE_ENUMERATION(RunwayApproachLightingEnumeration, approachLightingType);
-DEFINE_XPLANE_ENUMERATION(RunwayApproachLightingEnumerationV810, approachLightingTypeV810);
-DEFINE_XPLANE_ENUMERATION(RunwayEdgeLightingEnumeration, runwayEdgeLigthingType);
-DEFINE_XPLANE_ENUMERATION(RunwayREILEnumeration, runwayREILType);
-DEFINE_XPLANE_ENUMERATION(RunwayVisualApproachPathIndicatorEnumerationV810, runwayVisualApproachPathIndicatorTypeV810);
+DEFINE_XPLANE_ENUMERATION(RunwaySurfaceEnumeration, runwaySurfaceType)
+DEFINE_XPLANE_ENUMERATION(RunwayShoulderEnumeration, runwayShoulderType)
+DEFINE_XPLANE_ENUMERATION(RunwayMarkingEnumeration, runwayMarkingType)
+DEFINE_XPLANE_ENUMERATION(RunwayApproachLightingEnumeration, approachLightingType)
+DEFINE_XPLANE_ENUMERATION(RunwayApproachLightingEnumerationV810, approachLightingTypeV810)
+DEFINE_XPLANE_ENUMERATION(RunwayEdgeLightingEnumeration, runwayEdgeLigthingType)
+DEFINE_XPLANE_ENUMERATION(RunwayREILEnumeration, runwayREILType)
+DEFINE_XPLANE_ENUMERATION(RunwayVisualApproachPathIndicatorEnumerationV810, runwayVisualApproachPathIndicatorTypeV810)
 
-class OGRXPlaneRunwayThresholdLayer : public OGRXPlaneLayer
+class OGRXPlaneRunwayThresholdLayer final: public OGRXPlaneLayer
 {
   public:
                         OGRXPlaneRunwayThresholdLayer();
@@ -192,7 +192,7 @@ class OGRXPlaneRunwayThresholdLayer : public OGRXPlaneLayer
 /*                          OGRXPlaneRunwayLayer                        */
 /************************************************************************/
 
-class OGRXPlaneRunwayLayer : public OGRXPlaneLayer
+class OGRXPlaneRunwayLayer final: public OGRXPlaneLayer
 {
   public:
                         OGRXPlaneRunwayLayer();
@@ -217,7 +217,7 @@ class OGRXPlaneRunwayLayer : public OGRXPlaneLayer
 /*                        OGRXPlaneStopwayLayer                         */
 /************************************************************************/
 
-class OGRXPlaneStopwayLayer : public OGRXPlaneLayer
+class OGRXPlaneStopwayLayer final: public OGRXPlaneLayer
 {
   public:
                         OGRXPlaneStopwayLayer();
@@ -235,7 +235,7 @@ class OGRXPlaneStopwayLayer : public OGRXPlaneLayer
 /*                   OGRXPlaneWaterRunwayThresholdLayer                 */
 /************************************************************************/
 
-class OGRXPlaneWaterRunwayThresholdLayer : public OGRXPlaneLayer
+class OGRXPlaneWaterRunwayThresholdLayer final: public OGRXPlaneLayer
 {
   public:
                         OGRXPlaneWaterRunwayThresholdLayer();
@@ -259,7 +259,7 @@ class OGRXPlaneWaterRunwayThresholdLayer : public OGRXPlaneLayer
 
 /* Polygonal object */
 
-class OGRXPlaneWaterRunwayLayer : public OGRXPlaneLayer
+class OGRXPlaneWaterRunwayLayer final: public OGRXPlaneLayer
 {
   public:
                         OGRXPlaneWaterRunwayLayer();
@@ -287,9 +287,9 @@ static const sEnumerationElement helipadEdgeLigthingType[] =
     { 3, "Red" } /* proposed for V90x */
 };
 
-DEFINE_XPLANE_ENUMERATION(HelipadEdgeLightingEnumeration, helipadEdgeLigthingType);
+DEFINE_XPLANE_ENUMERATION(HelipadEdgeLightingEnumeration, helipadEdgeLigthingType)
 
-class OGRXPlaneHelipadLayer : public OGRXPlaneLayer
+class OGRXPlaneHelipadLayer final: public OGRXPlaneLayer
 {
   public:
                         OGRXPlaneHelipadLayer();
@@ -312,7 +312,7 @@ class OGRXPlaneHelipadLayer : public OGRXPlaneLayer
 /*                     OGRXPlaneHelipadPolygonLayer                     */
 /************************************************************************/
 
-class OGRXPlaneHelipadPolygonLayer : public OGRXPlaneLayer
+class OGRXPlaneHelipadPolygonLayer final: public OGRXPlaneLayer
 {
   public:
                         OGRXPlaneHelipadPolygonLayer();
@@ -335,7 +335,7 @@ class OGRXPlaneHelipadPolygonLayer : public OGRXPlaneLayer
 /*                    OGRXPlaneTaxiwayRectangleLayer                    */
 /************************************************************************/
 
-class OGRXPlaneTaxiwayRectangleLayer : public OGRXPlaneLayer
+class OGRXPlaneTaxiwayRectangleLayer final: public OGRXPlaneLayer
 {
   public:
                         OGRXPlaneTaxiwayRectangleLayer();
@@ -355,7 +355,7 @@ class OGRXPlaneTaxiwayRectangleLayer : public OGRXPlaneLayer
 /*                          OGRXPlanePavementLayer                      */
 /************************************************************************/
 
-class OGRXPlanePavementLayer : public OGRXPlaneLayer
+class OGRXPlanePavementLayer final: public OGRXPlaneLayer
 {
   public:
                         OGRXPlanePavementLayer();
@@ -372,7 +372,7 @@ class OGRXPlanePavementLayer : public OGRXPlaneLayer
 /*                       OGRXPlaneAPTBoundaryLayer                      */
 /************************************************************************/
 
-class OGRXPlaneAPTBoundaryLayer : public OGRXPlaneLayer
+class OGRXPlaneAPTBoundaryLayer final: public OGRXPlaneLayer
 {
   public:
                         OGRXPlaneAPTBoundaryLayer();
@@ -386,7 +386,7 @@ class OGRXPlaneAPTBoundaryLayer : public OGRXPlaneLayer
 /*                 OGRXPlaneAPTLinearFeatureLayer                       */
 /************************************************************************/
 
-class OGRXPlaneAPTLinearFeatureLayer : public OGRXPlaneLayer
+class OGRXPlaneAPTLinearFeatureLayer final: public OGRXPlaneLayer
 {
   public:
                         OGRXPlaneAPTLinearFeatureLayer();
@@ -400,7 +400,7 @@ class OGRXPlaneAPTLinearFeatureLayer : public OGRXPlaneLayer
 /*                         OGRXPlaneATCFreqLayer                         */
 /************************************************************************/
 
-class OGRXPlaneATCFreqLayer : public OGRXPlaneLayer
+class OGRXPlaneATCFreqLayer final: public OGRXPlaneLayer
 {
   public:
                         OGRXPlaneATCFreqLayer();
@@ -415,7 +415,7 @@ class OGRXPlaneATCFreqLayer : public OGRXPlaneLayer
 /*                     OGRXPlaneStartupLocationLayer                    */
 /************************************************************************/
 
-class OGRXPlaneStartupLocationLayer : public OGRXPlaneLayer
+class OGRXPlaneStartupLocationLayer final: public OGRXPlaneLayer
 {
   public:
                         OGRXPlaneStartupLocationLayer();
@@ -440,9 +440,9 @@ static const sEnumerationElement APTLightBeaconColorType[] =
     { 4, "White-white-green" }     /* military field */
 };
 
-DEFINE_XPLANE_ENUMERATION(APTLightBeaconColorEnumeration, APTLightBeaconColorType);
+DEFINE_XPLANE_ENUMERATION(APTLightBeaconColorEnumeration, APTLightBeaconColorType)
 
-class OGRXPlaneAPTLightBeaconLayer : public OGRXPlaneLayer
+class OGRXPlaneAPTLightBeaconLayer final: public OGRXPlaneLayer
 {
   public:
                         OGRXPlaneAPTLightBeaconLayer();
@@ -458,7 +458,7 @@ class OGRXPlaneAPTLightBeaconLayer : public OGRXPlaneLayer
 /*                       OGRXPlaneAPTWindsockLayer                      */
 /************************************************************************/
 
-class OGRXPlaneAPTWindsockLayer : public OGRXPlaneLayer
+class OGRXPlaneAPTWindsockLayer final: public OGRXPlaneLayer
 {
   public:
                         OGRXPlaneAPTWindsockLayer();
@@ -474,7 +474,7 @@ class OGRXPlaneAPTWindsockLayer : public OGRXPlaneLayer
 /*                       OGRXPlaneTaxiwaySignLayer                      */
 /************************************************************************/
 
-class OGRXPlaneTaxiwaySignLayer : public OGRXPlaneLayer
+class OGRXPlaneTaxiwaySignLayer final: public OGRXPlaneLayer
 {
   public:
                         OGRXPlaneTaxiwaySignLayer();
@@ -501,9 +501,9 @@ static const sEnumerationElement VASI_PAPI_WIGWAG_Type[] =
     { 6, "Wig-Wag lights" }
 };
 
-DEFINE_XPLANE_ENUMERATION(VASI_PAPI_WIGWAG_Enumeration, VASI_PAPI_WIGWAG_Type);
+DEFINE_XPLANE_ENUMERATION(VASI_PAPI_WIGWAG_Enumeration, VASI_PAPI_WIGWAG_Type)
 
-class OGRXPlane_VASI_PAPI_WIGWAG_Layer : public OGRXPlaneLayer
+class OGRXPlane_VASI_PAPI_WIGWAG_Layer final: public OGRXPlaneLayer
 {
   public:
                         OGRXPlane_VASI_PAPI_WIGWAG_Layer();
@@ -521,7 +521,7 @@ class OGRXPlane_VASI_PAPI_WIGWAG_Layer : public OGRXPlaneLayer
 /*                       OGRXPlaneTaxiLocationLayer                     */
 /************************************************************************/
 
-class OGRXPlaneTaxiLocationLayer : public OGRXPlaneLayer
+class OGRXPlaneTaxiLocationLayer final: public OGRXPlaneLayer
 {
   public:
                         OGRXPlaneTaxiLocationLayer();
@@ -581,7 +581,7 @@ enum
 /*                           OGRXPlaneAptReader                         */
 /************************************************************************/
 
-class OGRXPlaneAptReader : public OGRXPlaneReader
+class OGRXPlaneAptReader final: public OGRXPlaneReader
 {
     private:
         OGRXPlaneDataSource*                poDataSource;

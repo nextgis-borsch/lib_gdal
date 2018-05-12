@@ -1,6 +1,7 @@
-# -*- coding: utf-8 -*-
 #!/usr/bin/env python
-#******************************************************************************
+#
+# -*- coding: utf-8 -*-
+# ******************************************************************************
 #  $Id$
 #
 #  Name:     $Id$
@@ -28,7 +29,7 @@
 #  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 #  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
-#******************************************************************************
+# ******************************************************************************
 
 import sys
 
@@ -43,6 +44,7 @@ def Usage():
     print('that reference other objects in _href fields')
     print('')
     sys.exit(1)
+
 
 def build_junction_table(ds, lyr, ifield, bAppend, bOverwrite):
 
@@ -68,7 +70,7 @@ def build_junction_table(ds, lyr, ifield, bAppend, bOverwrite):
             return False
 
     if junction_lyr is None:
-        junction_lyr = ds.CreateLayer(junction_table_name, geom_type = ogr.wkbNone)
+        junction_lyr = ds.CreateLayer(junction_table_name, geom_type=ogr.wkbNone)
         if junction_lyr is None:
             print('Cannot create layer %s' % junction_table_name)
             return False
@@ -87,8 +89,8 @@ def build_junction_table(ds, lyr, ifield, bAppend, bOverwrite):
         gdal.PushErrorHandler('CPLQuietErrorHandler')
         ds.ExecuteSQL('CREATE INDEX idx_%s_gml_id ON %s(gml_id)' % (first_table, first_table))
         ds.ExecuteSQL('CREATE INDEX idx_%s_gml_id ON %s(gml_id)' % (second_table, second_table))
-        ds.ExecuteSQL('CREATE INDEX idx_%s_gml_id ON %s(%s)' % (junction_table_name+'_'+first_table, junction_table_name,first_table + '_gml_id'))
-        ds.ExecuteSQL('CREATE INDEX idx_%s_gml_id ON %s(%s)' % (junction_table_name+'_'+second_table, junction_table_name,second_table + '_gml_id'))
+        ds.ExecuteSQL('CREATE INDEX idx_%s_gml_id ON %s(%s)' % (junction_table_name + '_' + first_table, junction_table_name, first_table + '_gml_id'))
+        ds.ExecuteSQL('CREATE INDEX idx_%s_gml_id ON %s(%s)' % (junction_table_name + '_' + second_table, junction_table_name, second_table + '_gml_id'))
         gdal.PopErrorHandler()
 
     lyr.ResetReading()
@@ -104,9 +106,9 @@ def build_junction_table(ds, lyr, ifield, bAppend, bOverwrite):
         else:
             href = feat.GetFieldAsString(ifield)
             if href[0] == '(' and href.find(':') > 0 and href[-1] == ')':
-                href_list = href[href.find(':')+1:-1].split(',')
+                href_list = href[href.find(':') + 1:-1].split(',')
             else:
-                href_list = [ href ]
+                href_list = [href]
 
         for href in href_list:
             target_feature = ogr.Feature(junction_lyr.GetLayerDefn())
@@ -145,8 +147,9 @@ def process_layer(ds, lyr_name, bAppend, bOverwrite):
                 ret = False
     return ret
 
+
 argv = sys.argv
-argv = ogr.GeneralCmdLineProcessor( argv )
+argv = ogr.GeneralCmdLineProcessor(argv)
 
 ds_name = None
 lyr_name = None
@@ -181,7 +184,7 @@ if bAppend and bOverwrite:
     print('Only one of -append or -overwrite can be used')
     sys.exit(1)
 
-ds = ogr.Open(ds_name, update = 1)
+ds = ogr.Open(ds_name, update=1)
 if ds is None:
     print('Cannot open %s in update mode' % ds_name)
     sys.exit(1)

@@ -34,30 +34,33 @@ import sys
 from osgeo import gdal
 import shutil
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 
 ###############################################################################
 # Test CreateCopy() to a KMZ file
 
+
 def kmlsuperoverlay_1():
 
-    tst = gdaltest.GDALTest( 'KMLSUPEROVERLAY', 'small_world.tif', 1, 30111, options = [ 'FORMAT=PNG'] )
+    tst = gdaltest.GDALTest('KMLSUPEROVERLAY', 'small_world.tif', 1, 30111, options=['FORMAT=PNG'])
 
-    return tst.testCreateCopy( new_filename = '/vsimem/kmlout.kmz' )
+    return tst.testCreateCopy(new_filename='/vsimem/kmlout.kmz')
 
 ###############################################################################
 # Test CreateCopy() to a KML file
+
 
 def kmlsuperoverlay_2():
 
-    tst = gdaltest.GDALTest( 'KMLSUPEROVERLAY', 'small_world.tif', 1, 30111, options = [ 'FORMAT=PNG'] )
+    tst = gdaltest.GDALTest('KMLSUPEROVERLAY', 'small_world.tif', 1, 30111, options=['FORMAT=PNG'])
 
-    return tst.testCreateCopy( new_filename = '/vsimem/kmlout.kml' )
+    return tst.testCreateCopy(new_filename='/vsimem/kmlout.kml')
 
 ###############################################################################
 # Test CreateCopy() to a KML file
+
 
 def kmlsuperoverlay_3():
 
@@ -66,21 +69,21 @@ def kmlsuperoverlay_3():
     del ds
     src_ds = None
 
-    filelist = [ 'tmp/0/0/0.jpg',
-                 'tmp/0/0/0.kml',
-                 'tmp/1/0/0.jpg',
-                 'tmp/1/0/0.kml',
-                 'tmp/1/0/1.jpg',
-                 'tmp/1/0/1.kml',
-                 'tmp/1/1/0.jpg',
-                 'tmp/1/1/0.kml',
-                 'tmp/1/1/1.jpg',
-                 'tmp/1/1/1.kml',
-                 'tmp/tmp.kml' ]
+    filelist = ['tmp/0/0/0.jpg',
+                'tmp/0/0/0.kml',
+                'tmp/1/0/0.jpg',
+                'tmp/1/0/0.kml',
+                'tmp/1/0/1.jpg',
+                'tmp/1/0/1.kml',
+                'tmp/1/1/0.jpg',
+                'tmp/1/1/0.kml',
+                'tmp/1/1/1.jpg',
+                'tmp/1/1/1.kml',
+                'tmp/tmp.kml']
     for filename in filelist:
         try:
             os.remove(filename)
-        except:
+        except OSError:
             gdaltest.post_reason("Missing file: %s" % filename)
             return 'fail'
 
@@ -91,6 +94,7 @@ def kmlsuperoverlay_3():
 
 ###############################################################################
 # Test overviews
+
 
 def kmlsuperoverlay_4():
 
@@ -141,7 +145,7 @@ def kmlsuperoverlay_4():
     gdal.FileFromMemBuffer("/vsimem/src.vrt", vrt_xml)
 
     src_ds = gdal.Open("/vsimem/src.vrt")
-    ds = gdal.GetDriverByName('KMLSUPEROVERLAY').CreateCopy('/vsimem/kmlsuperoverlay_4.kmz', src_ds, options = ['FORMAT=PNG', 'NAME=myname', 'DESCRIPTION=mydescription', 'ALTITUDE=10', 'ALTITUDEMODE=absolute'])
+    ds = gdal.GetDriverByName('KMLSUPEROVERLAY').CreateCopy('/vsimem/kmlsuperoverlay_4.kmz', src_ds, options=['FORMAT=PNG', 'NAME=myname', 'DESCRIPTION=mydescription', 'ALTITUDE=10', 'ALTITUDEMODE=absolute'])
     if ds.GetMetadataItem('NAME') != 'myname':
         gdaltest.post_reason('fail')
         return 'fail'
@@ -172,8 +176,8 @@ def kmlsuperoverlay_4():
 
     # Test fix for #6311
     vrt_ds = gdal.GetDriverByName('VRT').CreateCopy('', ds)
-    got_data = vrt_ds.ReadRaster(0,0,800,400,200,100)
-    ref_data = ds.ReadRaster(0,0,800,400,200,100)
+    got_data = vrt_ds.ReadRaster(0, 0, 800, 400, 200, 100)
+    ref_data = ds.ReadRaster(0, 0, 800, 400, 200, 100)
     vrt_ds = None
     if got_data != ref_data:
         gdaltest.post_reason('fail')
@@ -194,11 +198,12 @@ def kmlsuperoverlay_4():
 ###############################################################################
 # Test that a raster which crosses the anti-meridian will be able to be displayed correctly (#4528)
 
+
 def kmlsuperoverlay_5():
 
     try:
         from xml.etree import ElementTree
-    except:
+    except ImportError:
         return 'skip'
 
     src_ds = gdal.Open("""<VRTDataset rasterXSize="512" rasterYSize="512">
@@ -262,6 +267,7 @@ def kmlsuperoverlay_5():
 ###############################################################################
 # Test raster KML with alternate structure (such as http://opentopo.sdsc.edu/files/Haiti/NGA_Haiti_LiDAR2.kmz))
 
+
 def kmlsuperoverlay_6():
 
     ds = gdal.Open('data/kmlimage.kmz')
@@ -269,19 +275,19 @@ def kmlsuperoverlay_6():
         gdaltest.post_reason('failure')
         return 'fail'
     got_gt = ds.GetGeoTransform()
-    ref_gt = [ 1.2554125761846773, 1.6640895429971981e-05, 0.0, 43.452120815728101, 0.0, -1.0762348187666334e-05 ]
+    ref_gt = [1.2554125761846773, 1.6640895429971981e-05, 0.0, 43.452120815728101, 0.0, -1.0762348187666334e-05]
     for i in range(6):
         if abs(got_gt[i] - ref_gt[i]) > 1e-6:
             gdaltest.post_reason('failure')
             print(got_gt)
             return 'fail'
     for i in range(4):
-        cs = ds.GetRasterBand(i+1).Checksum()
+        cs = ds.GetRasterBand(i + 1).Checksum()
         if cs != 47673:
             print(cs)
             gdaltest.post_reason('failure')
             return 'fail'
-        if ds.GetRasterBand(i+1).GetRasterColorInterpretation() != gdal.GCI_RedBand + i:
+        if ds.GetRasterBand(i + 1).GetRasterColorInterpretation() != gdal.GCI_RedBand + i:
             gdaltest.post_reason('failure')
             return 'fail'
     if ds.GetRasterBand(1).GetOverviewCount() != 1:
@@ -298,6 +304,7 @@ def kmlsuperoverlay_6():
 ###############################################################################
 # Test raster KML with single Overlay (such as https://trac.osgeo.org/gdal/ticket/6712)
 
+
 def kmlsuperoverlay_7():
 
     ds = gdal.Open('data/small_world.kml')
@@ -305,7 +312,7 @@ def kmlsuperoverlay_7():
         gdaltest.post_reason('failure')
         return 'fail'
     got_gt = ds.GetGeoTransform()
-    ref_gt = [ -180.0, 0.9, 0.0, 90.0, 0.0, -0.9 ]
+    ref_gt = [-180.0, 0.9, 0.0, 90.0, 0.0, -0.9]
     for i in range(6):
         if abs(got_gt[i] - ref_gt[i]) > 1e-6:
             gdaltest.post_reason('failure')
@@ -326,6 +333,7 @@ def kmlsuperoverlay_7():
 ###############################################################################
 # Test that a raster with lots of blank space doesn't have unnecessary child
 # KML/PNG files in transparent areas
+
 
 def kmlsuperoverlay_8():
 
@@ -411,16 +419,16 @@ def kmlsuperoverlay_8():
     src_ds = None
 
     if set(os.listdir('tmp/0/0')) != set(('0.kml', '0.png')):
-      gdaltest.post_reason('failure')
-      return 'fail'
+        gdaltest.post_reason('failure')
+        return 'fail'
     if set(os.listdir('tmp/3/1')) != set(('0.jpg', '0.kml', '1.jpg', '1.kml', '2.jpg', '2.kml', '3.jpg', '3.kml',
-        '4.jpg', '4.kml', '5.jpg', '5.kml', '6.jpg', '6.kml', '7.jpg', '7.kml',)):
-      gdaltest.post_reason('failure')
-      return 'fail'
+                                          '4.jpg', '4.kml', '5.jpg', '5.kml', '6.jpg', '6.kml', '7.jpg', '7.kml',)):
+        gdaltest.post_reason('failure')
+        return 'fail'
     if set(os.listdir('tmp/3/2')) != set():
-      # dir should be empty - 3/2 is entirely transparent so we skip generating files.
-      gdaltest.post_reason('failure')
-      return 'fail'
+        # dir should be empty - 3/2 is entirely transparent so we skip generating files.
+        gdaltest.post_reason('failure')
+        return 'fail'
 
     shutil.rmtree('tmp/0')
     shutil.rmtree('tmp/1')
@@ -433,7 +441,15 @@ def kmlsuperoverlay_8():
 ###############################################################################
 # Cleanup
 
-def  kmlsuperoverlay_cleanup():
+
+def kmlsuperoverlay_cleanup():
+
+    gdal.Unlink('/vsimem/0/0/0.png')
+    gdal.Unlink('/vsimem/0/0/0.kml')
+    gdal.Unlink('/vsimem/0/0')
+    gdal.Unlink('/vsimem/0')
+    gdal.Unlink('/vsimem/kmlout.kml')
+    gdal.Unlink('/vsimem/kmlout.kmz')
 
     return 'success'
 
@@ -447,13 +463,12 @@ gdaltest_list = [
     kmlsuperoverlay_6,
     kmlsuperoverlay_7,
     kmlsuperoverlay_8,
-    kmlsuperoverlay_cleanup ]
+    kmlsuperoverlay_cleanup]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( ' kmlsuperoverlay' )
+    gdaltest.setup_run(' kmlsuperoverlay')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

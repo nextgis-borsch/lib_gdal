@@ -40,7 +40,7 @@
 #include "cpl_error.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /**
  * GDALMDReaderGeoEye()
@@ -71,39 +71,39 @@ GDALMDReaderGeoEye::GDALMDReaderGeoEye(const char *pszPath,
 
     // form metadata file name
     CPLStrlcpy(szMetadataName + i, "_metadata.txt", 14);
-    const char* pszIMDSourceFilename = CPLFormFilename( pszDirName,
-                                                        szMetadataName, NULL );
-    if (CPLCheckForFile((char*)pszIMDSourceFilename, papszSiblingFiles))
+    CPLString osIMDSourceFilename = CPLFormFilename( pszDirName,
+                                                        szMetadataName, nullptr );
+    if (CPLCheckForFile(&osIMDSourceFilename[0], papszSiblingFiles))
     {
-        m_osIMDSourceFilename = pszIMDSourceFilename;
+        m_osIMDSourceFilename = osIMDSourceFilename;
     }
     else
     {
         CPLStrlcpy(szMetadataName + i, "_METADATA.TXT", 14);
-        pszIMDSourceFilename = CPLFormFilename( pszDirName, szMetadataName, NULL );
-        if (CPLCheckForFile((char*)pszIMDSourceFilename, papszSiblingFiles))
+        osIMDSourceFilename = CPLFormFilename( pszDirName, szMetadataName, nullptr );
+        if (CPLCheckForFile(&osIMDSourceFilename[0], papszSiblingFiles))
         {
-            m_osIMDSourceFilename = pszIMDSourceFilename;
+            m_osIMDSourceFilename = osIMDSourceFilename;
         }
     }
 
     // get _rpc.txt file
 
-    const char* pszRPBSourceFilename = CPLFormFilename( pszDirName,
+    CPLString osRPBSourceFilename = CPLFormFilename( pszDirName,
                                                         CPLSPrintf("%s_rpc",
                                                         pszBaseName),
                                                         "txt" );
-    if (CPLCheckForFile((char*)pszRPBSourceFilename, papszSiblingFiles))
+    if (CPLCheckForFile(&osRPBSourceFilename[0], papszSiblingFiles))
     {
-        m_osRPBSourceFilename = pszRPBSourceFilename;
+        m_osRPBSourceFilename = osRPBSourceFilename;
     }
     else
     {
-        pszRPBSourceFilename = CPLFormFilename( pszDirName, CPLSPrintf("%s_RPC",
+        osRPBSourceFilename = CPLFormFilename( pszDirName, CPLSPrintf("%s_RPC",
                                                 pszBaseName), "TXT" );
-        if (CPLCheckForFile((char*)pszRPBSourceFilename, papszSiblingFiles))
+        if (CPLCheckForFile(&osRPBSourceFilename[0], papszSiblingFiles))
         {
-            m_osRPBSourceFilename = pszRPBSourceFilename;
+            m_osRPBSourceFilename = osRPBSourceFilename;
         }
     }
 
@@ -141,7 +141,7 @@ bool GDALMDReaderGeoEye::HasRequiredFiles() const
  */
 char** GDALMDReaderGeoEye::GetMetadataFiles() const
 {
-    char **papszFileList = NULL;
+    char **papszFileList = nullptr;
     if(!m_osIMDSourceFilename.empty())
         papszFileList= CSLAddString( papszFileList, m_osIMDSourceFilename );
     if(!m_osRPBSourceFilename.empty())
@@ -172,7 +172,7 @@ void GDALMDReaderGeoEye::LoadMetadata()
 
     m_bIsMetadataLoad = true;
 
-    if(NULL == m_papszIMDMD)
+    if(nullptr == m_papszIMDMD)
     {
         return;
     }
@@ -180,7 +180,7 @@ void GDALMDReaderGeoEye::LoadMetadata()
     //extract imagery metadata
     const char* pszSatId = CSLFetchNameValue(m_papszIMDMD,
                                              "Source Image Metadata.Sensor");
-    if(NULL != pszSatId)
+    if(nullptr != pszSatId)
     {
         m_papszIMAGERYMD = CSLAddNameValue(m_papszIMAGERYMD,
                                            MD_NAME_SATELLITE,
@@ -189,7 +189,7 @@ void GDALMDReaderGeoEye::LoadMetadata()
 
     const char* pszCloudCover = CSLFetchNameValue(m_papszIMDMD,
                                    "Source Image Metadata.Percent Cloud Cover");
-    if(NULL != pszCloudCover)
+    if(nullptr != pszCloudCover)
     {
         m_papszIMAGERYMD = CSLAddNameValue(m_papszIMAGERYMD,
                                            MD_NAME_CLOUDCOVER, pszCloudCover);
@@ -198,7 +198,7 @@ void GDALMDReaderGeoEye::LoadMetadata()
     const char* pszDateTime = CSLFetchNameValue(m_papszIMDMD,
                                  "Source Image Metadata.Acquisition Date/Time");
 
-    if(NULL != pszDateTime)
+    if(nullptr != pszDateTime)
     {
         char buffer[80];
         time_t timeMid = GetAcquisitionTimeFromString(pszDateTime);
@@ -215,7 +215,7 @@ void GDALMDReaderGeoEye::LoadMetadata()
 time_t GDALMDReaderGeoEye::GetAcquisitionTimeFromString(
         const char* pszDateTime)
 {
-    if(NULL == pszDateTime)
+    if(nullptr == pszDateTime)
         return 0;
 
     int iYear;
@@ -250,7 +250,7 @@ time_t GDALMDReaderGeoEye::GetAcquisitionTimeFromString(
  */
 char** GDALMDReaderGeoEye::LoadIMDWktFile() const
 {
-    char** papszResultList = NULL;
+    char** papszResultList = nullptr;
     char** papszLines = CSLLoad( m_osIMDSourceFilename );
     bool bBeginSection = false;
     CPLString osSection;
@@ -260,10 +260,10 @@ char** GDALMDReaderGeoEye::LoadIMDWktFile() const
     int nLevel = 0;
     int nSpaceCount;
 
-    if( papszLines == NULL )
-        return NULL;
+    if( papszLines == nullptr )
+        return nullptr;
 
-    for( int i = 0; papszLines[i] != NULL; i++ )
+    for( int i = 0; papszLines[i] != nullptr; i++ )
     {
         // skip section (=== or ---) lines
 
@@ -290,10 +290,10 @@ char** GDALMDReaderGeoEye::LoadIMDWktFile() const
         nLevel = nSpaceCount / 3;
 
         const char *pszValue;
-        char *pszKey = NULL;
+        char *pszKey = nullptr;
         pszValue = CPLParseNameValue(papszLines[i], &pszKey);
 
-        if(NULL != pszValue && CPLStrnlen(pszValue, 512) > 0)
+        if(nullptr != pszValue && CPLStrnlen(pszValue, 512) > 0)
         {
 
             CPLString osCurrentKey;
@@ -326,7 +326,7 @@ char** GDALMDReaderGeoEye::LoadIMDWktFile() const
             papszResultList = CSLAddNameValue(papszResultList, osCurrentKey, pszValue);
         }
 
-        if(NULL != pszKey && CPLStrnlen(pszKey, 512) > 0)
+        if(nullptr != pszKey && CPLStrnlen(pszKey, 512) > 0)
         {
             if(bBeginSection)
             {

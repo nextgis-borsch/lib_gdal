@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#******************************************************************************
+# ******************************************************************************
 #  $Id$
 #
 #  Project:  GDAL
 #  Purpose:  Application for Google web service authentication.
 #  Author:   Frank Warmerdam, warmerdam@pobox.com
 #
-#******************************************************************************
+# ******************************************************************************
 #  Copyright (c) 2013, Frank Warmerdam <warmerdam@pobox.com>
 #
 #  Permission is hereby granted, free of charge, to any person obtaining a
@@ -27,7 +27,7 @@
 #  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 #  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
-#******************************************************************************
+# ******************************************************************************
 
 
 import sys
@@ -37,15 +37,19 @@ import webbrowser
 from osgeo import gdal
 
 SCOPES = {
-    'ft' : 'https://www.googleapis.com/auth/fusiontables',
-    }
+    'ft': 'https://www.googleapis.com/auth/fusiontables',
+    'storage': 'https://www.googleapis.com/auth/devstorage.read_only',
+    'storage-rw': 'https://www.googleapis.com/auth/devstorage.read_write'
+}
 
 # =============================================================================
 # 	Usage()
 # =============================================================================
+
+
 def Usage():
     print('')
-    print('Usage: gdal_auth_py [-s scope]' )
+    print('Usage: gdal_auth_py [-s scope]')
     print('       - interactive use.')
     print('')
     print('or:')
@@ -53,7 +57,7 @@ def Usage():
     print('Usage: gdal_auth.py auth2refresh [-s scope] auth_token')
     print('Usage: gdal_auth.py refresh2access [-s scope] refresh_token')
     print('')
-    print('scopes: ft/full_url')
+    print('scopes: ft/storage/storage-rw/full_url')
     print('')
     sys.exit(1)
 
@@ -61,26 +65,27 @@ def Usage():
 # 	Mainline
 # =============================================================================
 
+
 scope = SCOPES['ft']
 token_in = None
 command = None
 
-argv = gdal.GeneralCmdLineProcessor( sys.argv )
+argv = gdal.GeneralCmdLineProcessor(sys.argv)
 if argv is None:
-    sys.exit( 0 )
+    sys.exit(0)
 
 # Parse command line arguments.
 i = 1
 while i < len(argv):
     arg = argv[i]
 
-    if arg == '-s' and i < len(argv)-1:
-        if argv[i+1] in SCOPES:
-            scope = SCOPES[argv[i+1]]
-        elif argv[i+1].startswith('http'):
-            scope = argv[i+1]
+    if arg == '-s' and i < len(argv) - 1:
+        if argv[i + 1] in SCOPES:
+            scope = SCOPES[argv[i + 1]]
+        elif argv[i + 1].startswith('http'):
+            scope = argv[i + 1]
         else:
-            print('Scope %s not recognised.' % argv[i+1])
+            print('Scope %s not recognised.' % argv[i + 1])
             Usage()
             sys.exit(1)
         i = i + 1
@@ -127,7 +132,11 @@ else:
 
     refresh_token = gdal.GOA2GetRefreshToken(auth_token, scope)
 
-    print('Refresh Token:'+refresh_token)
+    print('Refresh Token:' + refresh_token)
     print('')
-    print('Consider setting a configuration option like:')
-    print('GFT_REFRESH_TOKEN='+refresh_token)
+    if scope == SCOPES['ft']:
+        print('Consider setting a configuration option like:')
+        print('GFT_REFRESH_TOKEN=' + refresh_token)
+    elif scope in (SCOPES['storage'], SCOPES['storage-rw']):
+        print('Consider setting a configuration option like:')
+        print('GS_OAUTH2_REFRESH_TOKEN=' + refresh_token)

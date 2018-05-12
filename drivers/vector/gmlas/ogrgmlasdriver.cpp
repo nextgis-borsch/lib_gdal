@@ -33,7 +33,7 @@
 
 // g++ -I/usr/include/json -DxDEBUG_VERBOSE -DDEBUG   -g -DDEBUG -ftrapv  -Wall -Wextra -Winit-self -Wunused-parameter -Wformat -Werror=format-security -Wno-format-nonliteral -Wlogical-op -Wshadow -Werror=vla -Wmissing-declarations -Wnon-virtual-dtor -Woverloaded-virtual -fno-operator-names ogr/ogrsf_frmts/gmlas/*.cpp -fPIC -shared -o ogr_GMLAS.so -Iport -Igcore -Iogr -Iogr/ogrsf_frmts -Iogr/ogrsf_frmts/mem  -L. -lgdal   -I/home/even/spatialys/eea/inspire_gml/install-xerces-c-3.1.3/include
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /************************************************************************/
 /*                        OGRGMLASDriverIdentify()                      */
@@ -55,17 +55,17 @@ static GDALDataset *OGRGMLASDriverOpen( GDALOpenInfo* poOpenInfo )
     OGRGMLASDataSource    *poDS;
 
     if( poOpenInfo->eAccess == GA_Update )
-        return NULL;
+        return nullptr;
 
     if( OGRGMLASDriverIdentify( poOpenInfo ) == FALSE )
-        return NULL;
+        return nullptr;
 
     poDS = new OGRGMLASDataSource();
 
     if( !poDS->Open(  poOpenInfo ) )
     {
         delete poDS;
-        return NULL;
+        return nullptr;
     }
     else
         return poDS;
@@ -78,7 +78,7 @@ static GDALDataset *OGRGMLASDriverOpen( GDALOpenInfo* poOpenInfo )
 void RegisterOGRGMLAS()
 
 {
-    if( GDALGetDriverByName( "GMLAS" ) != NULL )
+    if( GDALGetDriverByName( "GMLAS" ) != nullptr )
         return;
 
     GDALDriver  *poDriver = new GDALDriver();

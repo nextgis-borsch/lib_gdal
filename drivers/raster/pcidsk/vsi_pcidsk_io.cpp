@@ -36,7 +36,7 @@ using PCIDSK::PCIDSKInterfaces;
 using PCIDSK::ThrowPCIDSKException;
 using PCIDSK::uint64;
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 PCIDSK::EDBFile *GDAL_EDBOpen( const std::string& osFilename, const std::string& osAccess );
 const PCIDSK::PCIDSKInterfaces *PCIDSK2GetInterfaces();
@@ -80,7 +80,7 @@ VSI_IOInterface::Open( std::string filename, std::string access ) const
 {
     VSILFILE *fp = VSIFOpenL( filename.c_str(), access.c_str() );
 
-    if( fp == NULL )
+    if( fp == nullptr )
         ThrowPCIDSKException( "Failed to open %s: %s",
                               filename.c_str(), LastError() );
 

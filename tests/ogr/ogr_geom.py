@@ -32,7 +32,7 @@ import pickle
 import random
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 import ogrtest
@@ -44,20 +44,21 @@ from osgeo import gdal
 # Test Area calculation for a MultiPolygon (which exercises lower level
 # get_Area() methods as well).
 
+
 def ogr_geom_area():
 
     geom_wkt = 'MULTIPOLYGON( ((0 0,1 1,1 0,0 0)),((0 0,10 0, 10 10, 0 10),(1 1,1 2,2 2,2 1)) )'
-    geom = ogr.CreateGeometryFromWkt( geom_wkt )
+    geom = ogr.CreateGeometryFromWkt(geom_wkt)
 
     area = geom.GetArea()
-    if abs(area-99.5) > 0.00000000001:
-        gdaltest.post_reason( 'GetArea() result wrong, got %g.' % area )
+    if abs(area - 99.5) > 0.00000000001:
+        gdaltest.post_reason('GetArea() result wrong, got %g.' % area)
         return 'fail'
 
     # OGR >= 1.8.0
     area = geom.Area()
-    if abs(area-99.5) > 0.00000000001:
-        gdaltest.post_reason( 'Area() result wrong, got %g.' % area )
+    if abs(area - 99.5) > 0.00000000001:
+        gdaltest.post_reason('Area() result wrong, got %g.' % area)
         return 'fail'
 
     return 'success'
@@ -66,18 +67,19 @@ def ogr_geom_area():
 # Test Area calculation for a LinearRing (which exercises special case of
 # getGeometryType value).
 
+
 def ogr_geom_area_linearring():
 
-    geom = ogr.Geometry( type = ogr.wkbLinearRing )
-    geom.AddPoint_2D( 0, 0)
-    geom.AddPoint_2D( 10, 0)
-    geom.AddPoint_2D( 10, 10)
-    geom.AddPoint_2D( 0, 10)
-    geom.AddPoint_2D( 0, 0)
+    geom = ogr.Geometry(type=ogr.wkbLinearRing)
+    geom.AddPoint_2D(0, 0)
+    geom.AddPoint_2D(10, 0)
+    geom.AddPoint_2D(10, 10)
+    geom.AddPoint_2D(0, 10)
+    geom.AddPoint_2D(0, 0)
 
     area = geom.GetArea()
     if abs(area - 100.0) > 0.00000000001:
-        gdaltest.post_reason( 'Area result wrong, got %g.' % area )
+        gdaltest.post_reason('Area result wrong, got %g.' % area)
         return 'fail'
 
     return 'success'
@@ -85,15 +87,16 @@ def ogr_geom_area_linearring():
 ###############################################################################
 # Test Area calculation for a GeometryCollection
 
+
 def ogr_geom_area_geometrycollection():
 
     # OGR >= 1.8.0
     geom_wkt = 'GEOMETRYCOLLECTION( POLYGON((0 0,1 1,1 0,0 0)), MULTIPOLYGON(((0 0,1 1,1 0,0 0))), LINESTRING(0 0,1 1), POINT(0 0), GEOMETRYCOLLECTION EMPTY )'
-    geom = ogr.CreateGeometryFromWkt( geom_wkt )
+    geom = ogr.CreateGeometryFromWkt(geom_wkt)
 
     area = geom.Area()
-    if abs(area-1) > 0.00000000001:
-        gdaltest.post_reason( 'Area() result wrong, got %g.' % area )
+    if abs(area - 1) > 0.00000000001:
+        gdaltest.post_reason('Area() result wrong, got %g.' % area)
         return 'fail'
 
     return 'success'
@@ -102,19 +105,20 @@ def ogr_geom_area_geometrycollection():
 # Test Area calculation for a LinearRing whose coordinates are shifted by a
 # huge value With algorithm prior to #3556, this would return 0.
 
+
 def ogr_geom_area_linearring_big_offset():
 
-    geom = ogr.Geometry( type = ogr.wkbLinearRing )
+    geom = ogr.Geometry(type=ogr.wkbLinearRing)
     BIGOFFSET = 1.0e11
-    geom.AddPoint_2D( BIGOFFSET + 0, BIGOFFSET + 0)
-    geom.AddPoint_2D( BIGOFFSET + 10, BIGOFFSET + 0)
-    geom.AddPoint_2D( BIGOFFSET + 10, BIGOFFSET + 10)
-    geom.AddPoint_2D( BIGOFFSET + 0, BIGOFFSET + 10)
-    geom.AddPoint_2D( BIGOFFSET + 0, BIGOFFSET + 0)
+    geom.AddPoint_2D(BIGOFFSET + 0, BIGOFFSET + 0)
+    geom.AddPoint_2D(BIGOFFSET + 10, BIGOFFSET + 0)
+    geom.AddPoint_2D(BIGOFFSET + 10, BIGOFFSET + 10)
+    geom.AddPoint_2D(BIGOFFSET + 0, BIGOFFSET + 10)
+    geom.AddPoint_2D(BIGOFFSET + 0, BIGOFFSET + 0)
 
     area = geom.GetArea()
     if abs(area - 100.0) > 0.00000000001:
-        gdaltest.post_reason( 'Area result wrong, got %g.' % area )
+        gdaltest.post_reason('Area result wrong, got %g.' % area)
         return 'fail'
 
     return 'success'
@@ -122,20 +126,21 @@ def ogr_geom_area_linearring_big_offset():
 ###############################################################################
 # Test Area calculation for a Triangle
 
+
 def ogr_geom_area_triangle():
 
     geom_wkt = 'TRIANGLE((0 0,100 0,0 100,0 0))'
-    geom = ogr.CreateGeometryFromWkt( geom_wkt )
+    geom = ogr.CreateGeometryFromWkt(geom_wkt)
 
     area = geom.GetArea()
-    if abs(area-4999.5) < 0.00000000001:
-        gdaltest.post_reason( 'GetArea() result wrong, got %g.' % area )
+    if abs(area - 4999.5) < 0.00000000001:
+        gdaltest.post_reason('GetArea() result wrong, got %g.' % area)
         return 'fail'
 
     # OGR >= 1.8.0
     area = geom.Area()
-    if abs(area-4999.5) < 0.00000000001:
-        gdaltest.post_reason( 'Area() result wrong, got %g.' % area )
+    if abs(area - 4999.5) < 0.00000000001:
+        gdaltest.post_reason('Area() result wrong, got %g.' % area)
         return 'fail'
 
     return 'success'
@@ -147,48 +152,48 @@ def ogr_geom_is_empty():
     geom = ogr.CreateGeometryFromWkt(geom_wkt)
 
     if not geom.IsEmpty():
-        gdaltest.post_reason ("IsEmpty returning false for an empty geometry")
+        gdaltest.post_reason("IsEmpty returning false for an empty geometry")
         return 'fail'
 
     geom_wkt = 'POINT( 1 2 )'
     geom = ogr.CreateGeometryFromWkt(geom_wkt)
     if not geom:
-        gdaltest.post_reason ("A geometry could not be created from wkt: %s"%geom_wkt)
+        gdaltest.post_reason("A geometry could not be created from wkt: %s" % geom_wkt)
         return 'fail'
 
     if geom.IsEmpty():
-        gdaltest.post_reason ("IsEmpty returning true for a non-empty geometry")
+        gdaltest.post_reason("IsEmpty returning true for a non-empty geometry")
         return 'fail'
     return 'success'
 
 ###############################################################################
 # Test if a Triangle is Empty
 
+
 def ogr_geom_is_empty_triangle():
 
     geom_wkt = 'TRIANGLE EMPTY'
     geom = ogr.CreateGeometryFromWkt(geom_wkt)
 
-    if (geom.IsEmpty() == False):
-        gdaltest.post_reason ("IsEmpty returning false for an empty geometry")
+    if not geom.IsEmpty():
+        gdaltest.post_reason("IsEmpty returning false for an empty geometry")
         return 'fail'
 
-    geom = ogr.CreateGeometryFromWkb( geom.ExportToWkb() )
+    geom = ogr.CreateGeometryFromWkb(geom.ExportToWkb())
 
-    if (geom.IsEmpty() == False):
-        gdaltest.post_reason ("IsEmpty returning false for an empty geometry")
+    if not geom.IsEmpty():
+        gdaltest.post_reason("IsEmpty returning false for an empty geometry")
         return 'fail'
-
 
     geom_wkt = 'TRIANGLE((0 0,100 0,0 100,0 0))'
 
     geom = ogr.CreateGeometryFromWkt(geom_wkt)
     if not geom:
-        gdaltest.post_reason ("A geometry could not be created from wkt: %s"%geom_wkt)
+        gdaltest.post_reason("A geometry could not be created from wkt: %s" % geom_wkt)
         return 'fail'
 
-    if (geom.IsEmpty() == True):
-        gdaltest.post_reason ("IsEmpty returning true for a non-empty geometry")
+    if geom.IsEmpty():
+        gdaltest.post_reason("IsEmpty returning true for a non-empty geometry")
         return 'fail'
     return 'success'
 
@@ -201,13 +206,14 @@ def ogr_geom_pickle():
         g = pickle.loads(p)
 
     if not geom.Equal(g):
-        gdaltest.post_reason ("pickled geometries were not equal")
+        gdaltest.post_reason("pickled geometries were not equal")
         return 'fail'
 
     return 'success'
 
 ###############################################################################
 # Test suite for PolyhedralSurface
+
 
 def ogr_geom_polyhedral_surface():
 
@@ -223,38 +229,38 @@ def ogr_geom_polyhedral_surface():
     geom = ogr.CreateGeometryFromWkb(wkb_string)
     wkt_string = geom.ExportToWkt()
     if wkt_string != wkt_original:
-        gdaltest.post_reason ("Failure in Wkb methods of PolyhedralSurface")
+        gdaltest.post_reason("Failure in Wkb methods of PolyhedralSurface")
         return 'fail'
 
     wkt_string = geom.Clone().ExportToWkt()
     if wkt_string != wkt_original:
-        gdaltest.post_reason ("Failure in Clone()")
+        gdaltest.post_reason("Failure in Clone()")
         return 'fail'
 
     polygon_wkt = ogr.ForceTo(geom.Clone(), ogr.wkbPolygon).ExportToWkt()
     if polygon_wkt != wkt_original:
-        gdaltest.post_reason ("fail")
+        gdaltest.post_reason("fail")
         print(polygon_wkt)
         return 'fail'
 
     polygon_wkt = ogr.ForceTo(geom.Clone(), ogr.wkbMultiPolygon).ExportToWkt()
     if polygon_wkt != 'MULTIPOLYGON (((0 0 0,0 0 1,0 1 1,0 1 0,0 0 0)),((0 0 0,0 1 0,1 1 0,1 0 0,0 0 0)),((0 0 0,1 0 0,1 0 1,0 0 1,0 0 0)),((1 1 0,1 1 1,1 0 1,1 0 0,1 1 0)),((0 1 0,0 1 1,1 1 1,1 1 0,0 1 0)),((0 0 1,1 0 1,1 1 1,0 1 1,0 0 1)))':
-        gdaltest.post_reason ("fail")
+        gdaltest.post_reason("fail")
         print(polygon_wkt)
         return 'fail'
 
     if ogrtest.have_sfcgal():
         area = ps.Area()
         if area != 6.0:
-            gdaltest.post_reason ("Wrong area of PolyhedralSurface")
+            gdaltest.post_reason("Wrong area of PolyhedralSurface")
             return 'fail'
 
     size = ps.WkbSize()
     if size != 807:
-        gdaltest.post_reason ("Wrong WkbSize() of PolyhedralSurface")
+        gdaltest.post_reason("Wrong WkbSize() of PolyhedralSurface")
         return 'fail'
 
-    #if ogrtest.have_sfcgal():
+    # if ogrtest.have_sfcgal():
     #    geom = ps.DelaunayTriangulation(0.0,True)
     #    wkt_geom_dt = 'MULTILINESTRING ((0 1 0,1 1 0),(0 0 0,0 1 0),(0 0 0,1 0 0),(1 0 0,1 1 0),(0 1 0,1 0 0))'
     #    wkt_geom = geom.ExportToWkt()
@@ -265,60 +271,60 @@ def ogr_geom_polyhedral_surface():
 
     if ogrtest.have_geos() or ogrtest.have_sfcgal():
         geom = ogr.CreateGeometryFromWkb(wkb_string)
-        if ps.Contains(geom) != True:
-            gdaltest.post_reason ("Failure in Contains() of PolyhedralSurface")
+        if not ps.Contains(geom):
+            gdaltest.post_reason("Failure in Contains() of PolyhedralSurface")
             return 'fail'
 
-    if ps.IsEmpty() == True:
-        gdaltest.post_reason ("Failure in IsEmpty() of PolyhedralSurface")
+    if ps.IsEmpty():
+        gdaltest.post_reason("Failure in IsEmpty() of PolyhedralSurface")
         return 'fail'
 
     ps.Empty()
     wkt_string = ps.ExportToWkt()
     if wkt_string != 'POLYHEDRALSURFACE Z EMPTY':
-        gdaltest.post_reason ("Failure in Empty() of PolyhedralSurface")
+        gdaltest.post_reason("Failure in Empty() of PolyhedralSurface")
         return 'fail'
 
     g = ogr.CreateGeometryFromWkt('POLYHEDRALSURFACE (((0 0 0,0 0 1,0 1 1,0 1 0,0 0 0)))')
     if g.Equals(g) == 0:
-        gdaltest.post_reason ("fail")
+        gdaltest.post_reason("fail")
         return 'fail'
 
-    for wkt in [ 'MULTIPOLYGON (((0 0 0,0 0 1,0 1 1,0 1 0,0 0 0)))',
-                 'POLYHEDRALSURFACE (((0 0 0,0 0 1,0 1 1,0 0 0)))',
-                 'POLYHEDRALSURFACE (((0 0 0,0 0 1,0 1 1,0 0 0)),((0 0 0,0 0 1,0 1 1,0 0 0)))',
-                 'POLYHEDRALSURFACE EMPTY' ]:
+    for wkt in ['MULTIPOLYGON (((0 0 0,0 0 1,0 1 1,0 1 0,0 0 0)))',
+                'POLYHEDRALSURFACE (((0 0 0,0 0 1,0 1 1,0 0 0)))',
+                'POLYHEDRALSURFACE (((0 0 0,0 0 1,0 1 1,0 0 0)),((0 0 0,0 0 1,0 1 1,0 0 0)))',
+                'POLYHEDRALSURFACE EMPTY']:
         g2 = ogr.CreateGeometryFromWkt(wkt)
         if g.Equals(g2):
-            gdaltest.post_reason ("Unexpected true Equals() return")
+            gdaltest.post_reason("Unexpected true Equals() return")
             print(wkt)
             return 'fail'
 
     # Error
-    if g.AddGeometry( ogr.CreateGeometryFromWkt('POINT (0 0)') ) == 0:
-        gdaltest.post_reason ("fail")
+    if g.AddGeometry(ogr.CreateGeometryFromWkt('POINT (0 0)')) == 0:
+        gdaltest.post_reason("fail")
         return 'fail'
 
     # Error
-    if g.AddGeometryDirectly( ogr.CreateGeometryFromWkt('POINT (0 0)') ) == 0:
-        gdaltest.post_reason ("fail")
+    if g.AddGeometryDirectly(ogr.CreateGeometryFromWkt('POINT (0 0)')) == 0:
+        gdaltest.post_reason("fail")
         return 'fail'
 
     # Test dimension promotion
     g = ogr.CreateGeometryFromWkt('POLYHEDRALSURFACE EMPTY')
-    g.AddGeometryDirectly( ogr.CreateGeometryFromWkt('POLYGON ZM ((0 0 1 2,0 1 1 2,1 1 1 2,0 0 1 2))') )
-    g.AddGeometryDirectly( ogr.CreateGeometryFromWkt('POLYGON ((10 10,10 11,11 11,10 10))') )
+    g.AddGeometryDirectly(ogr.CreateGeometryFromWkt('POLYGON ZM ((0 0 1 2,0 1 1 2,1 1 1 2,0 0 1 2))'))
+    g.AddGeometryDirectly(ogr.CreateGeometryFromWkt('POLYGON ((10 10,10 11,11 11,10 10))'))
     wkt = g.ExportToIsoWkt()
     if wkt != 'POLYHEDRALSURFACE ZM (((0 0 1 2,0 1 1 2,1 1 1 2,0 0 1 2)),((10 10 0 0,10 11 0 0,11 11 0 0,10 10 0 0)))':
-        gdaltest.post_reason ("fail")
+        gdaltest.post_reason("fail")
         print(wkt)
         return 'fail'
-
 
     return 'success'
 
 ###############################################################################
 # Test suite for TIN
+
 
 def ogr_geom_tin():
     poly1 = ogr.CreateGeometryFromWkt("TRIANGLE ((0 0 0,0 0 1,0 1 0,0 0 0))")
@@ -331,7 +337,7 @@ def ogr_geom_tin():
         geom = tin.GetGeometryRef(i)
         wkt_geom = geom.ExportToWkt()
         if polygon_wkt[i] != wkt_geom:
-            gdaltest.post_reason ("Failure in getting geometries of TIN")
+            gdaltest.post_reason("Failure in getting geometries of TIN")
             return 'fail'
 
     wkt_original = 'TIN Z (((0 0 0,0 0 1,0 1 0,0 0 0)),((0 0 0,0 1 0,1 1 0,0 0 0)))'
@@ -341,46 +347,46 @@ def ogr_geom_tin():
     geom = ogr.CreateGeometryFromWkb(wkb_string)
     wkt_string = geom.ExportToWkt()
     if wkt_string != wkt_original:
-        gdaltest.post_reason ("Failure in Wkb methods of TIN")
+        gdaltest.post_reason("Failure in Wkb methods of TIN")
         return 'fail'
 
     wkt_string = geom.Clone().ExportToWkt()
     if wkt_string != wkt_original:
-        gdaltest.post_reason ("Failure in Clone()")
+        gdaltest.post_reason("Failure in Clone()")
         return 'fail'
 
     if ogrtest.have_sfcgal():
-        area = 12.3*tin.Area()
+        area = 12.3 * tin.Area()
         if area != 12.3:
-            gdaltest.post_reason ("Wrong area of TIN")
+            gdaltest.post_reason("Wrong area of TIN")
             return 'fail'
 
     size = tin.WkbSize()
     if size != 227:
-        gdaltest.post_reason ("Wrong WkbSize() of TIN")
+        gdaltest.post_reason("Wrong WkbSize() of TIN")
         return 'fail'
 
-    #geom = tin.DelaunayTriangulation(0.0,True)
-    #wkt_geom_dt = 'MULTILINESTRING ((0 1 0,1 1 0),(0 0 0,0 1 0),(0 0 0,1 1 0))'
-    #wkt_geom = geom.ExportToWkt()
-    #if wkt_geom != wkt_geom_dt:
+    # geom = tin.DelaunayTriangulation(0.0,True)
+    # wkt_geom_dt = 'MULTILINESTRING ((0 1 0,1 1 0),(0 0 0,0 1 0),(0 0 0,1 1 0))'
+    # wkt_geom = geom.ExportToWkt()
+    # if wkt_geom != wkt_geom_dt:
     #    gdaltest.post_reason ("Failure in DelaunayTriangulation() of TIN")
     #    print(wkt_geom)
     #    return 'fail'
 
-    #geom = ogr.CreateGeometryFromWkb(wkb_string)
-    #if tin.Contains(geom) != True:
+    # geom = ogr.CreateGeometryFromWkb(wkb_string)
+    # if tin.Contains(geom) != True:
     #    gdaltest.post_reason ("Failure in Contains() of TIN")
     #    return 'fail'
 
-    if tin.IsEmpty() == True:
-        gdaltest.post_reason ("Failure in IsEmpty() of TIN")
+    if tin.IsEmpty():
+        gdaltest.post_reason("Failure in IsEmpty() of TIN")
         return 'fail'
 
     tin.Empty()
     wkt_string = tin.ExportToWkt()
     if wkt_string != 'TIN Z EMPTY':
-        gdaltest.post_reason ("Failure in Empty() of TIN")
+        gdaltest.post_reason("Failure in Empty() of TIN")
         return 'fail'
 
     wrong_polygon = ogr.CreateGeometryFromWkt('POLYGON ((0 0 0,0 1 0,1 1 0,0 0 1))')
@@ -389,7 +395,7 @@ def ogr_geom_tin():
     x = tin.AddGeometry(wrong_polygon)
     gdal.PopErrorHandler()
     if tin.GetGeometryCount() != geom_count:
-        gdaltest.post_reason ("Added wrong geometry in TIN, error has code " + str(x))
+        gdaltest.post_reason("Added wrong geometry in TIN, error has code " + str(x))
         return 'fail'
 
     if ogrtest.have_geos() or ogrtest.have_sfcgal():
@@ -397,22 +403,22 @@ def ogr_geom_tin():
         point_wkt = point.ExportToWkt()
         point_correct_wkt = 'POINT EMPTY'
         if point_wkt != point_correct_wkt:
-            gdaltest.post_reason ("Wrong Point Obtained for PointOnSurface() in TIN")
+            gdaltest.post_reason("Wrong Point Obtained for PointOnSurface() in TIN")
             print(point_wkt)
             return 'fail'
 
     tin = ogr.CreateGeometryFromWkt(wkt_original)
-    #point = tin.PointOnSurface()
-    #point_wkt = point.ExportToWkt()
-    #point_correct_wkt = 'POINT (0.25 0.5)'
-    #if point_wkt != point_correct_wkt:
+    # point = tin.PointOnSurface()
+    # point_wkt = point.ExportToWkt()
+    # point_correct_wkt = 'POINT (0.25 0.5)'
+    # if point_wkt != point_correct_wkt:
     #    gdaltest.post_reason ("Wrong Point Obtained for PointOnSurface() in TIN")
     #    print(point_wkt)
     #    return 'fail'
 
     tin.FlattenTo2D()
-    if tin.IsValid() == True:
-        gdaltest.post_reason ("Problem with IsValid() in TIN")
+    if tin.IsValid():
+        gdaltest.post_reason("Problem with IsValid() in TIN")
         return 'fail'
 
     # 4 points
@@ -452,6 +458,7 @@ def ogr_geom_tin():
 ###############################################################################
 # Test OGRGeometry::getBoundary() result for point.
 
+
 def ogr_geom_boundary_point():
 
     if not ogrtest.have_geos():
@@ -462,18 +469,19 @@ def ogr_geom_boundary_point():
 
     bnd = geom.GetBoundary()
     if bnd.GetGeometryType() != ogr.wkbGeometryCollection:
-        gdaltest.post_reason( 'GetBoundary not reported as GEOMETRYCOLLECTION EMPTY' )
+        gdaltest.post_reason('GetBoundary not reported as GEOMETRYCOLLECTION EMPTY')
         return 'fail'
 
     bnd = geom.Boundary()
     if bnd.GetGeometryType() != ogr.wkbGeometryCollection:
-        gdaltest.post_reason( 'Boundary not reported as GEOMETRYCOLLECTION EMPTY' )
+        gdaltest.post_reason('Boundary not reported as GEOMETRYCOLLECTION EMPTY')
         return 'fail'
 
     return 'success'
 
 ###############################################################################
 # Test OGRGeometry::getBoundary() result for multipoint.
+
 
 def ogr_geom_boundary_multipoint():
 
@@ -485,13 +493,14 @@ def ogr_geom_boundary_multipoint():
 
     bnd = geom.GetBoundary()
     if bnd.GetGeometryType() != ogr.wkbGeometryCollection:
-        gdaltest.post_reason( 'Boundary not reported as GEOMETRYCOLLECTION EMPTY' )
+        gdaltest.post_reason('Boundary not reported as GEOMETRYCOLLECTION EMPTY')
         return 'fail'
 
     return 'success'
 
 ###############################################################################
 # Test OGRGeometry::getBoundary() result for linestring.
+
 
 def ogr_geom_boundary_linestring():
 
@@ -503,12 +512,12 @@ def ogr_geom_boundary_linestring():
 
     bnd = geom.GetBoundary()
     if bnd.GetGeometryType() != ogr.wkbMultiPoint:
-        gdaltest.post_reason( 'Boundary not reported as MULTIPOINT' )
+        gdaltest.post_reason('Boundary not reported as MULTIPOINT')
         print(bnd)
         return 'fail'
 
     if bnd.GetGeometryCount() != 2:
-        gdaltest.post_reason( 'Boundary not reported as MULTIPOINT consisting of 2 points' )
+        gdaltest.post_reason('Boundary not reported as MULTIPOINT consisting of 2 points')
         return 'fail'
 
     geom_wkt = 'LINESTRING(0 0, 1 0, 1 1, 0 1, 0 0)'
@@ -516,17 +525,18 @@ def ogr_geom_boundary_linestring():
 
     bnd = geom.GetBoundary()
     if bnd.GetGeometryType() != ogr.wkbMultiPoint:
-        gdaltest.post_reason( 'Boundary not reported as MULTIPOINT' )
+        gdaltest.post_reason('Boundary not reported as MULTIPOINT')
         return 'fail'
 
     if bnd.GetGeometryCount() != 0:
-        gdaltest.post_reason( 'Boundary not reported as MULTIPOINT EMPTY' )
+        gdaltest.post_reason('Boundary not reported as MULTIPOINT EMPTY')
         return 'fail'
 
     return 'success'
 
 ###############################################################################
 # Test OGRGeometry::getBoundary() result for polygon.
+
 
 def ogr_geom_boundary_polygon():
 
@@ -538,7 +548,7 @@ def ogr_geom_boundary_polygon():
 
     bnd = geom.GetBoundary()
     if bnd.GetGeometryType() != ogr.wkbLineString:
-        gdaltest.post_reason( 'Boundary not reported as non-empty LINESTRING' )
+        gdaltest.post_reason('Boundary not reported as non-empty LINESTRING')
         print(bnd)
         return 'fail'
 
@@ -547,28 +557,29 @@ def ogr_geom_boundary_polygon():
 ###############################################################################
 # Test OGRBuildPolygonFromEdges() on a geometry collection of line strings
 
+
 def ogr_geom_build_from_edges_1():
 
     if not ogrtest.have_geos():
         return 'skip'
 
-    link_coll = ogr.Geometry( type = ogr.wkbGeometryCollection )
+    link_coll = ogr.Geometry(type=ogr.wkbGeometryCollection)
 
     wkt_array = [
-      'LINESTRING (-87.601595 30.999522,-87.599623 31.000059,-87.599219 31.00017)',
-      'LINESTRING (-87.601595 30.999522,-87.604349 30.999493,-87.606935 30.99952)',
-      'LINESTRING (-87.59966 31.000756,-87.599851 31.000805,-87.599992 31.000805,-87.600215 31.000761,-87.600279 31.000723,-87.600586 31.000624,-87.601256 31.000508,-87.602501 31.000447,-87.602801 31.000469,-87.603108 31.000579,-87.603331 31.000716,-87.603523 31.000909,-87.603766 31.001233,-87.603913 31.00136)',
-      'LINESTRING (-87.606134 31.000182,-87.605885 31.000325,-87.605343 31.000716,-87.60466 31.001117,-87.604468 31.0012,-87.603913 31.00136)',
-      'LINESTRING (-87.599219 31.00017,-87.599289 31.0003,-87.599398 31.000426,-87.599564 31.000547,-87.599609 31.000701,-87.59966 31.000756)',
-      'LINESTRING (-87.606935 30.99952,-87.606713 30.999799,-87.6064 30.999981,-87.606134 31.000182)' ]
+        'LINESTRING (-87.601595 30.999522,-87.599623 31.000059,-87.599219 31.00017)',
+        'LINESTRING (-87.601595 30.999522,-87.604349 30.999493,-87.606935 30.99952)',
+        'LINESTRING (-87.59966 31.000756,-87.599851 31.000805,-87.599992 31.000805,-87.600215 31.000761,-87.600279 31.000723,-87.600586 31.000624,-87.601256 31.000508,-87.602501 31.000447,-87.602801 31.000469,-87.603108 31.000579,-87.603331 31.000716,-87.603523 31.000909,-87.603766 31.001233,-87.603913 31.00136)',
+        'LINESTRING (-87.606134 31.000182,-87.605885 31.000325,-87.605343 31.000716,-87.60466 31.001117,-87.604468 31.0012,-87.603913 31.00136)',
+        'LINESTRING (-87.599219 31.00017,-87.599289 31.0003,-87.599398 31.000426,-87.599564 31.000547,-87.599609 31.000701,-87.59966 31.000756)',
+        'LINESTRING (-87.606935 30.99952,-87.606713 30.999799,-87.6064 30.999981,-87.606134 31.000182)']
 
     for wkt in wkt_array:
-        geom = ogr.CreateGeometryFromWkt( wkt )
-        #print "geom is",geom
-        link_coll.AddGeometry( geom )
+        geom = ogr.CreateGeometryFromWkt(wkt)
+        # print "geom is",geom
+        link_coll.AddGeometry(geom)
 
     try:
-        poly = ogr.BuildPolygonFromEdges( link_coll )
+        poly = ogr.BuildPolygonFromEdges(link_coll)
         if poly is None:
             return 'fail'
     except:
@@ -579,27 +590,28 @@ def ogr_geom_build_from_edges_1():
 ###############################################################################
 # Test OGRBuildPolygonFromEdges() on a multilinestring
 
+
 def ogr_geom_build_from_edges_2():
 
     if not ogrtest.have_geos():
         return 'skip'
 
-    link_coll = ogr.Geometry( type = ogr.wkbMultiLineString )
+    link_coll = ogr.Geometry(type=ogr.wkbMultiLineString)
 
     wkt_array = [
-      'LINESTRING (-87.601595 30.999522,-87.599623 31.000059,-87.599219 31.00017)',
-      'LINESTRING (-87.601595 30.999522,-87.604349 30.999493,-87.606935 30.99952)',
-      'LINESTRING (-87.59966 31.000756,-87.599851 31.000805,-87.599992 31.000805,-87.600215 31.000761,-87.600279 31.000723,-87.600586 31.000624,-87.601256 31.000508,-87.602501 31.000447,-87.602801 31.000469,-87.603108 31.000579,-87.603331 31.000716,-87.603523 31.000909,-87.603766 31.001233,-87.603913 31.00136)',
-      'LINESTRING (-87.606134 31.000182,-87.605885 31.000325,-87.605343 31.000716,-87.60466 31.001117,-87.604468 31.0012,-87.603913 31.00136)',
-      'LINESTRING (-87.599219 31.00017,-87.599289 31.0003,-87.599398 31.000426,-87.599564 31.000547,-87.599609 31.000701,-87.59966 31.000756)',
-      'LINESTRING (-87.606935 30.99952,-87.606713 30.999799,-87.6064 30.999981,-87.606134 31.000182)' ]
+        'LINESTRING (-87.601595 30.999522,-87.599623 31.000059,-87.599219 31.00017)',
+        'LINESTRING (-87.601595 30.999522,-87.604349 30.999493,-87.606935 30.99952)',
+        'LINESTRING (-87.59966 31.000756,-87.599851 31.000805,-87.599992 31.000805,-87.600215 31.000761,-87.600279 31.000723,-87.600586 31.000624,-87.601256 31.000508,-87.602501 31.000447,-87.602801 31.000469,-87.603108 31.000579,-87.603331 31.000716,-87.603523 31.000909,-87.603766 31.001233,-87.603913 31.00136)',
+        'LINESTRING (-87.606134 31.000182,-87.605885 31.000325,-87.605343 31.000716,-87.60466 31.001117,-87.604468 31.0012,-87.603913 31.00136)',
+        'LINESTRING (-87.599219 31.00017,-87.599289 31.0003,-87.599398 31.000426,-87.599564 31.000547,-87.599609 31.000701,-87.59966 31.000756)',
+        'LINESTRING (-87.606935 30.99952,-87.606713 30.999799,-87.6064 30.999981,-87.606134 31.000182)']
 
     for wkt in wkt_array:
-        geom = ogr.CreateGeometryFromWkt( wkt )
-        link_coll.AddGeometry( geom )
+        geom = ogr.CreateGeometryFromWkt(wkt)
+        link_coll.AddGeometry(geom)
 
     try:
-        poly = ogr.BuildPolygonFromEdges( link_coll )
+        poly = ogr.BuildPolygonFromEdges(link_coll)
         if poly is None:
             return 'fail'
     except:
@@ -610,6 +622,7 @@ def ogr_geom_build_from_edges_2():
 ###############################################################################
 # Test OGRBuildPolygonFromEdges() on invalid geometries
 
+
 def ogr_geom_build_from_edges_3():
 
     if not ogrtest.have_geos():
@@ -618,7 +631,7 @@ def ogr_geom_build_from_edges_3():
     src_geom = ogr.CreateGeometryFromWkt('POINT (0 1)')
     try:
         gdal.PushErrorHandler('CPLQuietErrorHandler')
-        poly = ogr.BuildPolygonFromEdges( src_geom )
+        poly = ogr.BuildPolygonFromEdges(src_geom)
         gdal.PopErrorHandler()
         if poly is not None:
             return 'fail'
@@ -628,7 +641,7 @@ def ogr_geom_build_from_edges_3():
     src_geom = ogr.CreateGeometryFromWkt('GEOMETRYCOLLECTION (LINESTRING(0 1,2 3),POINT(0 1),LINESTRING(0 1,-2 3),LINESTRING(-2 3,2 3))')
     try:
         gdal.PushErrorHandler('CPLQuietErrorHandler')
-        poly = ogr.BuildPolygonFromEdges( src_geom )
+        poly = ogr.BuildPolygonFromEdges(src_geom)
         gdal.PopErrorHandler()
         if poly is not None:
             return 'fail'
@@ -640,6 +653,7 @@ def ogr_geom_build_from_edges_3():
 ###############################################################################
 # Test OGRBuildPolygonFromEdges() and identify exterior ring (#3610)
 
+
 def ogr_geom_build_from_edges_4():
 
     if int(gdal.VersionInfo('VERSION_NUM')) < 1900:
@@ -649,28 +663,28 @@ def ogr_geom_build_from_edges_4():
     if not ogrtest.have_geos():
         return 'skip'
 
-    link_coll = ogr.Geometry( type = ogr.wkbGeometryCollection )
+    link_coll = ogr.Geometry(type=ogr.wkbGeometryCollection)
 
     wkt_array = [
-      'LINESTRING EMPTY',
-      'LINESTRING (1 1,1 2)',
-      'LINESTRING EMPTY',
-      'LINESTRING (1 2,2 2)',
-      'LINESTRING (2 2,2 1)',
-      'LINESTRING (2 1,1 1)',
-      'LINESTRING (0 0,0 10)',
-      'LINESTRING (0 10,10 10)',
-      'LINESTRING (10 10,10 0)',
-      'LINESTRING (10 0,0 0)'
+        'LINESTRING EMPTY',
+        'LINESTRING (1 1,1 2)',
+        'LINESTRING EMPTY',
+        'LINESTRING (1 2,2 2)',
+        'LINESTRING (2 2,2 1)',
+        'LINESTRING (2 1,1 1)',
+        'LINESTRING (0 0,0 10)',
+        'LINESTRING (0 10,10 10)',
+        'LINESTRING (10 10,10 0)',
+        'LINESTRING (10 0,0 0)'
     ]
 
     for wkt in wkt_array:
-        geom = ogr.CreateGeometryFromWkt( wkt )
-        #print "geom is",geom
-        link_coll.AddGeometry( geom )
+        geom = ogr.CreateGeometryFromWkt(wkt)
+        # print "geom is",geom
+        link_coll.AddGeometry(geom)
 
     try:
-        poly = ogr.BuildPolygonFromEdges( link_coll )
+        poly = ogr.BuildPolygonFromEdges(link_coll)
         if poly is None:
             return 'fail'
         wkt = poly.ExportToWkt()
@@ -685,9 +699,10 @@ def ogr_geom_build_from_edges_4():
 ###############################################################################
 # Test GetArea() on empty linear ring (#2792)
 
+
 def ogr_geom_area_empty_linearring():
 
-    geom = ogr.Geometry( type = ogr.wkbLinearRing )
+    geom = ogr.Geometry(type=ogr.wkbLinearRing)
 
     area = geom.GetArea()
     if area != 0:
@@ -698,10 +713,11 @@ def ogr_geom_area_empty_linearring():
 ###############################################################################
 # Test TransformTo()
 
+
 def ogr_geom_transform_to():
 
     # Somewhere in Paris suburbs...
-    geom = ogr.CreateGeometryFromWkt( 'POINT(2 49)')
+    geom = ogr.CreateGeometryFromWkt('POINT(2 49)')
 
     # Input SRS is EPSG:4326
     sr = osr.SpatialReference()
@@ -711,10 +727,20 @@ def ogr_geom_transform_to():
     # Output SRS is EPSG:32631
     sr2 = osr.SpatialReference()
     sr2.ImportFromEPSG(32631)
-    geom.TransformTo(sr2)
+    ret = geom.TransformTo(sr2)
 
-    if abs(geom.GetX() - 426857) > 1 or abs(geom.GetY() - 5427937) > 1:
+    if ret != 0 or abs(geom.GetX() - 426857) > 1 or abs(geom.GetY() - 5427937) > 1:
+        gdaltest.post_reason('failure')
         print(geom.ExportToWkt())
+        return 'fail'
+
+    # Geometry without SRS
+    geom = ogr.CreateGeometryFromWkt('POINT(2 49)')
+    gdal.ErrorReset()
+    with gdaltest.error_handler():
+        ret = geom.TransformTo(sr2)
+    if ret == 0 or gdal.GetLastErrorMsg() == '':
+        gdaltest.post_reason('failure')
         return 'fail'
 
     return 'success'
@@ -722,10 +748,11 @@ def ogr_geom_transform_to():
 ###############################################################################
 # Test Transform()
 
+
 def ogr_geom_transform():
 
     # Somewhere in Paris suburbs...
-    geom = ogr.CreateGeometryFromWkt( 'POINT(2 49)')
+    geom = ogr.CreateGeometryFromWkt('POINT(2 49)')
 
     # Input SRS is EPSG:4326
     sr = osr.SpatialReference()
@@ -748,9 +775,10 @@ def ogr_geom_transform():
 ###############################################################################
 # Test CloseRings()
 
+
 def ogr_geom_closerings():
 
-    geom = ogr.CreateGeometryFromWkt( 'POLYGON((0 0,0 1,1 1,1 0))' )
+    geom = ogr.CreateGeometryFromWkt('POLYGON((0 0,0 1,1 1,1 0))')
     geom.CloseRings()
 
     if geom.ExportToWkt() != 'POLYGON ((0 0,0 1,1 1,1 0,0 0))':
@@ -767,16 +795,17 @@ def ogr_geom_closerings():
 ###############################################################################
 # Test Segmentize()
 
+
 def ogr_geom_segmentize():
 
-    geom = ogr.CreateGeometryFromWkt( 'LINESTRING(0 0,0 10)' )
+    geom = ogr.CreateGeometryFromWkt('LINESTRING(0 0,0 10)')
     geom.Segmentize(1.00001)
 
     if geom.ExportToWkt() != 'LINESTRING (0 0,0 1,0 2,0 3,0 4,0 5,0 6,0 7,0 8,0 9,0 10)':
         print(geom.ExportToWkt())
         return 'fail'
 
-    geom = ogr.CreateGeometryFromWkt( 'LINESTRING(0 0 1,0 10 1)' )
+    geom = ogr.CreateGeometryFromWkt('LINESTRING(0 0 1,0 10 1)')
     geom.Segmentize(1.00001)
 
     if geom.ExportToWkt() != 'LINESTRING (0 0 1,0 1 1,0 2 1,0 3 1,0 4 1,0 5 1,0 6 1,0 7 1,0 8 1,0 9 1,0 10 1)':
@@ -791,11 +820,11 @@ def ogr_geom_segmentize():
     g2 = ogr.CreateGeometryFromWkt(in_wkt)
     g2.Segmentize(0.25)
     for i in range(g1.GetPointCount()):
-        if g1.GetPoint(i) != g2.GetPoint(g1.GetPointCount()-1-i):
+        if g1.GetPoint(i) != g2.GetPoint(g1.GetPointCount() - 1 - i):
             gdaltest.post_reason('fail')
             print(i)
-            print('%.18g' % (g1.GetPoint(i)[0] - g2.GetPoint(g1.GetPointCount()-1-i)[0]))
-            print('%.18g' % (g1.GetPoint(i)[1] - g2.GetPoint(g1.GetPointCount()-1-i)[1]))
+            print('%.18g' % (g1.GetPoint(i)[0] - g2.GetPoint(g1.GetPointCount() - 1 - i)[0]))
+            print('%.18g' % (g1.GetPoint(i)[1] - g2.GetPoint(g1.GetPointCount() - 1 - i)[1]))
             print(g1)
             print(g2)
             return 'fail'
@@ -805,9 +834,10 @@ def ogr_geom_segmentize():
 ###############################################################################
 # Test Value()
 
+
 def ogr_geom_value():
 
-    geom = ogr.CreateGeometryFromWkt( 'LINESTRING(2 3,5 3,5 0)' )
+    geom = ogr.CreateGeometryFromWkt('LINESTRING(2 3,5 3,5 0)')
 
     p = geom.Value(-1e-3)
     expected_p = ogr.CreateGeometryFromWkt('POINT (2 3)')
@@ -849,9 +879,10 @@ def ogr_geom_value():
 ###############################################################################
 # Test FlattenTo2D(), GetDimension() and GetCoordinateDimension()
 
+
 def ogr_geom_flattenTo2D():
 
-    geom = ogr.CreateGeometryFromWkt( 'POINT (1 2 3)' )
+    geom = ogr.CreateGeometryFromWkt('POINT (1 2 3)')
 
     # Point is 0 dimension, LineString 1, ...
     if geom.GetDimension() != 0:
@@ -880,9 +911,10 @@ def ogr_geom_flattenTo2D():
 ###############################################################################
 # Test FlattenTo2D(), GetDimension() and GetCoordinateDimension() for Triangle
 
+
 def ogr_geom_flattenTo2D_triangle():
 
-    geom = ogr.CreateGeometryFromWkt( 'TRIANGLE ((0 0 0,100 0 100,0 100 100,0 0 0))' )
+    geom = ogr.CreateGeometryFromWkt('TRIANGLE ((0 0 0,100 0 100,0 100 100,0 0 0))')
 
     # Point is 0 dimension, LineString 1, ...
     if geom.GetDimension() != 2:
@@ -909,6 +941,8 @@ def ogr_geom_flattenTo2D_triangle():
     return 'success'
 
 ###############################################################################
+
+
 def ogr_geom_linestring_limits():
 
     geom = ogr.CreateGeometryFromWkt('LINESTRING EMPTY')
@@ -945,14 +979,14 @@ def ogr_geom_linestring_limits():
 
     gdal.ErrorReset()
     gdal.PushErrorHandler('CPLQuietErrorHandler')
-    geom.SetPoint(-1, 5,6,7)
+    geom.SetPoint(-1, 5, 6, 7)
     gdal.PopErrorHandler()
     if gdal.GetLastErrorType() == 0:
         return 'fail'
 
     gdal.ErrorReset()
     gdal.PushErrorHandler('CPLQuietErrorHandler')
-    geom.SetPoint_2D(-1, 5,6)
+    geom.SetPoint_2D(-1, 5, 6)
     gdal.PopErrorHandler()
     if gdal.GetLastErrorType() == 0:
         return 'fail'
@@ -960,14 +994,14 @@ def ogr_geom_linestring_limits():
     if False:
         gdal.ErrorReset()
         gdal.PushErrorHandler('CPLQuietErrorHandler')
-        geom.SetPoint(2147000000, 5,6,7)
+        geom.SetPoint(2147000000, 5, 6, 7)
         gdal.PopErrorHandler()
         if gdal.GetLastErrorType() == 0:
             return 'fail'
 
         gdal.ErrorReset()
         gdal.PushErrorHandler('CPLQuietErrorHandler')
-        geom.SetPoint_2D(2147000000, 5,6)
+        geom.SetPoint_2D(2147000000, 5, 6)
         gdal.PopErrorHandler()
         if gdal.GetLastErrorType() == 0:
             return 'fail'
@@ -982,6 +1016,8 @@ def ogr_geom_linestring_limits():
     return 'success'
 
 ###############################################################################
+
+
 def ogr_geom_coord_round():
 
     geom = ogr.CreateGeometryFromWkt('POINT(370441.860 5591000.590)')
@@ -994,6 +1030,8 @@ def ogr_geom_coord_round():
     return 'success'
 
 ###############################################################################
+
+
 def ogr_geom_coord_round_2():
 
     geom = ogr.CreateGeometryFromWkt('POINT(1.0 169.600374)')
@@ -1008,15 +1046,16 @@ def ogr_geom_coord_round_2():
 ###############################################################################
 # Test Area calculation for a Point
 
+
 def ogr_geom_area_point():
 
     geom_wkt = 'POINT(0 0)'
-    geom = ogr.CreateGeometryFromWkt( geom_wkt )
+    geom = ogr.CreateGeometryFromWkt(geom_wkt)
 
     with gdaltest.error_handler():
         area = geom.Area()
     if area != 0:
-        gdaltest.post_reason( 'Area() result wrong, got %g.' % area )
+        gdaltest.post_reason('Area() result wrong, got %g.' % area)
         return 'fail'
 
     return 'success'
@@ -1024,16 +1063,17 @@ def ogr_geom_area_point():
 ###############################################################################
 # Test Length calculation for a Point
 
+
 def ogr_geom_length_point():
 
     # OGR >= 1.8.0
     geom_wkt = 'POINT(0 0)'
-    geom = ogr.CreateGeometryFromWkt( geom_wkt )
+    geom = ogr.CreateGeometryFromWkt(geom_wkt)
 
     with gdaltest.error_handler():
         length = geom.Length()
     if length != 0:
-        gdaltest.post_reason( 'Length() result wrong, got %g.' % length )
+        gdaltest.post_reason('Length() result wrong, got %g.' % length)
         return 'fail'
 
     return 'success'
@@ -1041,15 +1081,16 @@ def ogr_geom_length_point():
 ###############################################################################
 # Test Length calculation for a MultiLineString
 
+
 def ogr_geom_length_multilinestring():
 
     # OGR >= 1.8.0
     geom_wkt = 'MULTILINESTRING((0 0,0 1),(0 0,0 1))'
-    geom = ogr.CreateGeometryFromWkt( geom_wkt )
+    geom = ogr.CreateGeometryFromWkt(geom_wkt)
 
     length = geom.Length()
-    if abs(length-2) > 0.00000000001:
-        gdaltest.post_reason( 'Length() result wrong, got %g.' % length )
+    if abs(length - 2) > 0.00000000001:
+        gdaltest.post_reason('Length() result wrong, got %g.' % length)
         return 'fail'
 
     return 'success'
@@ -1057,21 +1098,23 @@ def ogr_geom_length_multilinestring():
 ###############################################################################
 # Test Length calculation for a GeometryCollection
 
+
 def ogr_geom_length_geometrycollection():
 
     # OGR >= 1.8.0
     geom_wkt = 'GEOMETRYCOLLECTION( POLYGON((0 0,0 1,1 1,1 0,0 0)), MULTILINESTRING((0 0,0 1),(0 0,0 1)), LINESTRING(0 0,0 1), LINESTRING(0 0,0 1), POINT(0 0), GEOMETRYCOLLECTION EMPTY )'
-    geom = ogr.CreateGeometryFromWkt( geom_wkt )
+    geom = ogr.CreateGeometryFromWkt(geom_wkt)
 
     length = geom.Length()
-    if abs(length-4) > 0.00000000001:
-        gdaltest.post_reason( 'Length() result wrong, got %g.' % length )
+    if abs(length - 4) > 0.00000000001:
+        gdaltest.post_reason('Length() result wrong, got %g.' % length)
         return 'fail'
 
     return 'success'
 
 ###############################################################################
 # Test Geometry.GetPoints() (#4016)
+
 
 def ogr_geom_getpoints():
 
@@ -1081,7 +1124,7 @@ def ogr_geom_getpoints():
         gdaltest.post_reason('did not get expected points (1)')
         print(points)
         return 'fail'
-    points = geom.GetPoints(nCoordDimension = 3)
+    points = geom.GetPoints(nCoordDimension=3)
     if points != [(0.0, 1.0, 0.0), (2.0, 3.0, 0.0)]:
         gdaltest.post_reason('did not get expected points (2)')
         print(points)
@@ -1093,12 +1136,11 @@ def ogr_geom_getpoints():
         gdaltest.post_reason('did not get expected points (3)')
         print(points)
         return 'fail'
-    points = geom.GetPoints(nCoordDimension = 2)
+    points = geom.GetPoints(nCoordDimension=2)
     if points != [(0.0, 1.0), (3.0, 4.0)]:
         gdaltest.post_reason('did not get expected points (4)')
         print(points)
         return 'fail'
-
 
     geom = ogr.CreateGeometryFromWkt('POINT(0 1)')
     points = geom.GetPoints()
@@ -1106,7 +1148,7 @@ def ogr_geom_getpoints():
         gdaltest.post_reason('did not get expected points (5)')
         print(points)
         return 'fail'
-    points = geom.GetPoints(nCoordDimension = 3)
+    points = geom.GetPoints(nCoordDimension=3)
     if points != [(0.0, 1.0, 0.0)]:
         gdaltest.post_reason('did not get expected points (6)')
         print(points)
@@ -1118,7 +1160,7 @@ def ogr_geom_getpoints():
         gdaltest.post_reason('did not get expected points (7)')
         print(points)
         return 'fail'
-    points = geom.GetPoints(nCoordDimension = 2)
+    points = geom.GetPoints(nCoordDimension=2)
     if points != [(0.0, 1.0)]:
         gdaltest.post_reason('did not get expected points (8)')
         print(points)
@@ -1129,9 +1171,10 @@ def ogr_geom_getpoints():
 ###############################################################################
 # Test OGRGeometry::empty()
 
+
 def ogr_geom_empty():
 
-    g1 = ogr.CreateGeometryFromWkt( 'POLYGON((0 0,1 1,1 2,1 1,0 0))' )
+    g1 = ogr.CreateGeometryFromWkt('POLYGON((0 0,1 1,1 2,1 1,0 0))')
     g1.Empty()
     wkt = g1.ExportToWkt()
 
@@ -1143,9 +1186,10 @@ def ogr_geom_empty():
 ###############################################################################
 # Test OGRGeometry::empty() for Triangle
 
+
 def ogr_geom_empty_triangle():
 
-    g1 = ogr.CreateGeometryFromWkt( 'TRIANGLE ((0 0,100 0,0 100,0 0))' )
+    g1 = ogr.CreateGeometryFromWkt('TRIANGLE ((0 0,100 0,0 100,0 0))')
     g1.Empty()
     wkt = g1.ExportToWkt()
 
@@ -1156,6 +1200,7 @@ def ogr_geom_empty_triangle():
 
 ###############################################################################
 # Test parsing WKT made of 2D and 3D parts
+
 
 def ogr_geom_mixed_coordinate_dimension():
 
@@ -1182,11 +1227,12 @@ def ogr_geom_mixed_coordinate_dimension():
 ###############################################################################
 # Test GetEnvelope3D()
 
+
 def ogr_geom_getenvelope3d():
 
     g = ogr.CreateGeometryFromWkt('POINT EMPTY')
     envelope = g.GetEnvelope3D()
-    expected_envelope = ( 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 )
+    expected_envelope = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
     if envelope != expected_envelope:
         gdaltest.post_reason('did not get expected envelope (1)')
         print(envelope)
@@ -1195,7 +1241,7 @@ def ogr_geom_getenvelope3d():
 
     g = ogr.CreateGeometryFromWkt('POINT(1 2)')
     envelope = g.GetEnvelope3D()
-    expected_envelope = ( 1.0, 1.0, 2.0, 2.0, 0.0, 0.0 )
+    expected_envelope = (1.0, 1.0, 2.0, 2.0, 0.0, 0.0)
     if envelope != expected_envelope:
         gdaltest.post_reason('did not get expected envelope (2)')
         print(envelope)
@@ -1204,7 +1250,7 @@ def ogr_geom_getenvelope3d():
 
     g = ogr.CreateGeometryFromWkt('POINT(1 2 3)')
     envelope = g.GetEnvelope3D()
-    expected_envelope = ( 1.0, 1.0, 2.0, 2.0, 3.0, 3.0 )
+    expected_envelope = (1.0, 1.0, 2.0, 2.0, 3.0, 3.0)
     if envelope != expected_envelope:
         gdaltest.post_reason('did not get expected envelope (3)')
         print(envelope)
@@ -1213,7 +1259,7 @@ def ogr_geom_getenvelope3d():
 
     g = ogr.CreateGeometryFromWkt('POLYGON EMPTY')
     envelope = g.GetEnvelope3D()
-    expected_envelope = ( 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 )
+    expected_envelope = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
     if envelope != expected_envelope:
         gdaltest.post_reason('did not get expected envelope (4)')
         print(envelope)
@@ -1222,7 +1268,7 @@ def ogr_geom_getenvelope3d():
 
     g = ogr.CreateGeometryFromWkt('LINESTRING(1 2,3 4)')
     envelope = g.GetEnvelope3D()
-    expected_envelope = ( 1, 3, 2, 4, 0, 0 )
+    expected_envelope = (1, 3, 2, 4, 0, 0)
     if envelope != expected_envelope:
         gdaltest.post_reason('did not get expected envelope (5)')
         print(envelope)
@@ -1231,7 +1277,7 @@ def ogr_geom_getenvelope3d():
 
     g = ogr.CreateGeometryFromWkt('MULTIPOLYGON(((1 2 3,-1 2 3,-1 -2 3,-1 2 3,1 2 3),(0.1 0.2 0.3,-0.1 0.2 0.3,-0.1 -0.2 0.3,-0.1 0.2 0.3,0.1 0.2 0.3)),((10 20 -30,-10 20 -30,-10 -20 -30,-10 20 -30,10 20 -30)))')
     envelope = g.GetEnvelope3D()
-    expected_envelope = ( -10, 10, -20, 20, -30, 3.0 )
+    expected_envelope = (-10, 10, -20, 20, -30, 3.0)
     if envelope != expected_envelope:
         gdaltest.post_reason('did not get expected envelope (6)')
         print(envelope)
@@ -1240,7 +1286,7 @@ def ogr_geom_getenvelope3d():
 
     g = ogr.CreateGeometryFromWkt('MULTIPOLYGON EMPTY')
     envelope = g.GetEnvelope3D()
-    expected_envelope = ( 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 )
+    expected_envelope = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
     if envelope != expected_envelope:
         gdaltest.post_reason('did not get expected envelope (7)')
         print(envelope)
@@ -1261,11 +1307,12 @@ def ogr_geom_getenvelope3d():
 ###############################################################################
 # Test importing/exporting XXX Z EMPTY
 
+
 def ogr_geom_z_empty():
 
-    for geom in [ 'POINT', 'LINESTRING', 'POLYGON', 'MULTIPOINT', 'MULTILINESTRING', \
-                  'MULTIPOLYGON', 'GEOMETRYCOLLECTION', 'CIRCULARSTRING', 'COMPOUNDCURVE', \
-                  'CURVEPOLYGON', 'MULTICURVE', 'MULTISURFACE' ]:
+    for geom in ['POINT', 'LINESTRING', 'POLYGON', 'MULTIPOINT', 'MULTILINESTRING',
+                 'MULTIPOLYGON', 'GEOMETRYCOLLECTION', 'CIRCULARSTRING', 'COMPOUNDCURVE',
+                 'CURVEPOLYGON', 'MULTICURVE', 'MULTISURFACE']:
         in_wkt = geom + ' Z EMPTY'
         g1 = ogr.CreateGeometryFromWkt(in_wkt)
         out_wkt = g1.ExportToIsoWkt()
@@ -1286,15 +1333,16 @@ def ogr_geom_z_empty():
 ###############################################################################
 # Test HasCurveGeometry and GetLinearGeometry
 
+
 def ogr_geom_getlineargeometry():
 
-    for geom in [ 'POINT', 'LINESTRING', 'POLYGON', 'MULTIPOINT', 'MULTILINESTRING',
-                  'MULTIPOLYGON', 'GEOMETRYCOLLECTION',
-                  ('CIRCULARSTRING', 'LINESTRING'),
-                  ('COMPOUNDCURVE', 'LINESTRING'),
-                  ('CURVEPOLYGON', 'POLYGON'),
-                  ('MULTICURVE', 'MULTILINESTRING'),
-                  ('MULTISURFACE', 'MULTIPOLYGON') ]:
+    for geom in ['POINT', 'LINESTRING', 'POLYGON', 'MULTIPOINT', 'MULTILINESTRING',
+                 'MULTIPOLYGON', 'GEOMETRYCOLLECTION',
+                 ('CIRCULARSTRING', 'LINESTRING'),
+                 ('COMPOUNDCURVE', 'LINESTRING'),
+                 ('CURVEPOLYGON', 'POLYGON'),
+                 ('MULTICURVE', 'MULTILINESTRING'),
+                 ('MULTISURFACE', 'MULTIPOLYGON')]:
         try:
             (geom_in, geom_out) = geom
         except:
@@ -1333,22 +1381,23 @@ def ogr_geom_getlineargeometry():
 ###############################################################################
 # Test GetDimension()
 
+
 def ogr_geom_getdimension():
-    for (geom, dim) in [ ('POINT EMPTY', 0),
-                  ('LINESTRING EMPTY', 1),
-                  ('POLYGON EMPTY', 2),
-                  ('MULTIPOINT EMPTY', 0),
-                  ('MULTILINESTRING EMPTY', 1),
-                  ('MULTIPOLYGON EMPTY', 2),
-                  ('GEOMETRYCOLLECTION EMPTY', 0),
-                  ('CIRCULARSTRING EMPTY', 1),
-                  ('COMPOUNDCURVE EMPTY', 1),
-                  ('CURVEPOLYGON EMPTY', 2),
-                  ('MULTICURVE EMPTY', 1),
-                  ('TRIANGLE EMPTY', 2),
-                  ('MULTISURFACE EMPTY', 2),
-                  ('POLYHEDRALSURFACE EMPTY', 2),
-                  ('TIN EMPTY', 2) ]:
+    for (geom, dim) in [('POINT EMPTY', 0),
+                        ('LINESTRING EMPTY', 1),
+                        ('POLYGON EMPTY', 2),
+                        ('MULTIPOINT EMPTY', 0),
+                        ('MULTILINESTRING EMPTY', 1),
+                        ('MULTIPOLYGON EMPTY', 2),
+                        ('GEOMETRYCOLLECTION EMPTY', 0),
+                        ('CIRCULARSTRING EMPTY', 1),
+                        ('COMPOUNDCURVE EMPTY', 1),
+                        ('CURVEPOLYGON EMPTY', 2),
+                        ('MULTICURVE EMPTY', 1),
+                        ('TRIANGLE EMPTY', 2),
+                        ('MULTISURFACE EMPTY', 2),
+                        ('POLYHEDRALSURFACE EMPTY', 2),
+                        ('TIN EMPTY', 2)]:
         g = ogr.CreateGeometryFromWkt(geom)
         if g.GetDimension() != dim:
             gdaltest.post_reason('fail')
@@ -1371,6 +1420,7 @@ def ogr_geom_getdimension():
 ###############################################################################
 # Test triangle
 
+
 def ogr_geom_triangle():
 
     wkt_original = 'TRIANGLE ((0 0,0 1,1 1,0 0))'
@@ -1380,23 +1430,23 @@ def ogr_geom_triangle():
     geom = ogr.CreateGeometryFromWkb(wkb_string)
     wkt_string = geom.ExportToWkt()
     if wkt_string != wkt_original:
-        gdaltest.post_reason ("Failure in Wkb methods of Triangle")
+        gdaltest.post_reason("Failure in Wkb methods of Triangle")
         return 'fail'
 
     wkt_string = geom.Clone().ExportToWkt()
     if wkt_string != wkt_original:
-        gdaltest.post_reason ("Failure in Clone()")
+        gdaltest.post_reason("Failure in Clone()")
         return 'fail'
 
     polygon_wkt = ogr.ForceTo(geom.Clone(), ogr.wkbPolygon).ExportToWkt()
     if polygon_wkt != 'POLYGON ((0 0,0 1,1 1,0 0))':
-        gdaltest.post_reason ("fail")
+        gdaltest.post_reason("fail")
         print(polygon_wkt)
         return 'fail'
 
     polygon_wkt = ogr.ForceTo(geom.Clone(), ogr.wkbMultiPolygon).ExportToWkt()
     if polygon_wkt != 'MULTIPOLYGON (((0 0,0 1,1 1,0 0)))':
-        gdaltest.post_reason ("fail")
+        gdaltest.post_reason("fail")
         print(polygon_wkt)
         return 'fail'
 
@@ -1404,6 +1454,7 @@ def ogr_geom_triangle():
 
 ###############################################################################
 # Test importing invalid triangle WKT
+
 
 def ogr_geom_triangle_invalid_wkt():
 
@@ -1451,22 +1502,23 @@ def ogr_geom_triangle_invalid_wkt():
 ###############################################################################
 # Test OGRTriangle. Tests if the GEOS/SFCGAL methods are working
 
+
 def ogr_geom_triangle_sfcgal():
 
     if not ogrtest.have_sfcgal():
         return 'skip'
 
-    g1 = ogr.CreateGeometryFromWkt( 'TRIANGLE ((0 0,100 0 100,0 100 100,0 0))' )
-    g2 = ogr.CreateGeometryFromWkt( 'TRIANGLE ((-1 -1,100 0 100,0 100 100,-1 -1))' )
-    if g2.Intersects(g1) != True:
+    g1 = ogr.CreateGeometryFromWkt('TRIANGLE ((0 0,100 0 100,0 100 100,0 0))')
+    g2 = ogr.CreateGeometryFromWkt('TRIANGLE ((-1 -1,100 0 100,0 100 100,-1 -1))')
+    if not g2.Intersects(g1):
         gdaltest.post_reason('fail')
         return 'fail'
 
-    g1 = ogr.CreateGeometryFromWkt( 'TRIANGLE ((0 0,1 0,0 1,0 0))' )
-    g2 = ogr.CreateGeometryFromWkt( 'TRIANGLE ((0 0,1 0,1 1,0 0))' )
+    g1 = ogr.CreateGeometryFromWkt('TRIANGLE ((0 0,1 0,0 1,0 0))')
+    g2 = ogr.CreateGeometryFromWkt('TRIANGLE ((0 0,1 0,1 1,0 0))')
     g3 = g1.Intersection(g2)
     g4 = ogr.CreateGeometryFromWkt('TRIANGLE ((0.5 0.5 0,0 0 0,1 0 0,0.5 0.5 0))')
-    if g4.Equals(g3) == False:
+    if not g4.Equals(g3):
         gdaltest.post_reason('fail')
         return 'fail'
 
@@ -1474,6 +1526,7 @@ def ogr_geom_triangle_sfcgal():
 
 ###############################################################################
 # Test OGRCircularString
+
 
 def ogr_geom_circularstring():
 
@@ -1506,7 +1559,7 @@ def ogr_geom_circularstring():
 
     # Test Length()
     length = g1.Length()
-    expected_length =  1.5 * math.pi
+    expected_length = 1.5 * math.pi
     if abs(length - expected_length) > 1e-8:
         gdaltest.post_reason('fail')
         print(length)
@@ -1614,7 +1667,6 @@ def ogr_geom_circularstring():
         print(g1)
         return 'fail'
 
-
     in_wkt = 'CIRCULARSTRING (0 0,1 1,1 -1)'
     g1 = ogr.CreateGeometryFromWkt(in_wkt)
     in_wkb = g1.ExportToWkb()
@@ -1715,7 +1767,7 @@ def ogr_geom_circularstring():
         return 'fail'
 
     length = g1.Length()
-    expected_length =  2 * math.pi * 0.5
+    expected_length = 2 * math.pi * 0.5
     if abs(length - expected_length) > 1e-8:
         gdaltest.post_reason('fail')
         print(length)
@@ -1732,7 +1784,7 @@ def ogr_geom_circularstring():
         return 'fail'
 
     length = g1.Length()
-    expected_length =  2 * math.pi * 0.5
+    expected_length = 2 * math.pi * 0.5
     if abs(length - expected_length) > 1e-8:
         gdaltest.post_reason('fail')
         print(length)
@@ -1748,7 +1800,7 @@ def ogr_geom_circularstring():
 
     # Sanity check: the length must remain the same
     length = g1.Length()
-    expected_length =  2 * math.pi * 0.5
+    expected_length = 2 * math.pi * 0.5
     if abs(length - expected_length) > 1e-8:
         gdaltest.post_reason('fail')
         print(length)
@@ -1762,11 +1814,11 @@ def ogr_geom_circularstring():
     g2 = ogr.CreateGeometryFromWkt(in_wkt)
     g2.Segmentize(0.25)
     for i in range(g1.GetPointCount()):
-        if g1.GetPoint(i) != g2.GetPoint(g1.GetPointCount()-1-i):
+        if g1.GetPoint(i) != g2.GetPoint(g1.GetPointCount() - 1 - i):
             gdaltest.post_reason('fail')
             print(i)
-            print('%.18g' % (g1.GetPoint(i)[0] - g2.GetPoint(g1.GetPointCount()-1-i)[0]))
-            print('%.18g' % (g1.GetPoint(i)[1] - g2.GetPoint(g1.GetPointCount()-1-i)[1]))
+            print('%.18g' % (g1.GetPoint(i)[0] - g2.GetPoint(g1.GetPointCount() - 1 - i)[0]))
+            print('%.18g' % (g1.GetPoint(i)[1] - g2.GetPoint(g1.GetPointCount() - 1 - i)[1]))
             print(g1)
             print(g2)
             return 'fail'
@@ -1800,7 +1852,7 @@ def ogr_geom_circularstring():
         return 'fail'
 
     length = g1.Length()
-    expected_length =  2 * math.pi * 0.5
+    expected_length = 2 * math.pi * 0.5
     if abs(length - expected_length) > 1e-8:
         gdaltest.post_reason('fail')
         print(length)
@@ -1817,7 +1869,7 @@ def ogr_geom_circularstring():
         return 'fail'
 
     length = g1.Length()
-    expected_length =  2 * math.sqrt(2)
+    expected_length = 2 * math.sqrt(2)
     if abs(length - expected_length) > 1e-8:
         gdaltest.post_reason('fail')
         print(length)
@@ -1847,7 +1899,7 @@ def ogr_geom_circularstring():
 
     # Sanity check: the length must remain the same
     length = g1.Length()
-    expected_length =  2 * math.sqrt(2)
+    expected_length = 2 * math.sqrt(2)
     if abs(length - expected_length) > 1e-8:
         gdaltest.post_reason('fail')
         print(length)
@@ -1895,10 +1947,10 @@ def ogr_geom_circularstring():
     a0 = math.pi / 3
     a1 = math.pi / 4
     a2 = math.pi / 6
-    in_wkt = 'CIRCULARSTRING(%.16g %.16g,%.16g %.16g,%.16g %.16g)' % ( \
-            cx + r * math.cos(a0), cy + r * math.sin(a0), \
-            cx + r * math.cos(a1), cy + r * math.sin(a1), \
-            cx + r * math.cos(a2), cy + r * math.sin(a2))
+    in_wkt = 'CIRCULARSTRING(%.16g %.16g,%.16g %.16g,%.16g %.16g)' % (
+        cx + r * math.cos(a0), cy + r * math.sin(a0),
+        cx + r * math.cos(a1), cy + r * math.sin(a1),
+        cx + r * math.cos(a2), cy + r * math.sin(a2))
     g1 = ogr.CreateGeometryFromWkt(in_wkt)
     env = g1.GetEnvelope()
     expected_env = (cx + r * math.cos(a0), cx + r * math.cos(a2), cy + r * math.sin(a2), cy + r * math.sin(a0))
@@ -1912,10 +1964,10 @@ def ogr_geom_circularstring():
     a0 = math.pi / 3
     a1 = math.pi / 6
     a2 = -math.pi / 6
-    in_wkt = 'CIRCULARSTRING(%.16g %.16g,%.16g %.16g,%.16g %.16g)' % ( \
-            cx + r * math.cos(a0), cy + r * math.sin(a0), \
-            cx + r * math.cos(a1), cy + r * math.sin(a1), \
-            cx + r * math.cos(a2), cy + r * math.sin(a2))
+    in_wkt = 'CIRCULARSTRING(%.16g %.16g,%.16g %.16g,%.16g %.16g)' % (
+        cx + r * math.cos(a0), cy + r * math.sin(a0),
+        cx + r * math.cos(a1), cy + r * math.sin(a1),
+        cx + r * math.cos(a2), cy + r * math.sin(a2))
     g1 = ogr.CreateGeometryFromWkt(in_wkt)
     env = g1.GetEnvelope()
     expected_env = (cx + r * math.cos(a0), cx + r, cy + r * math.sin(a2), cy + r * math.sin(a0))
@@ -1929,10 +1981,10 @@ def ogr_geom_circularstring():
     a0 = math.pi / 3
     a1 = math.pi - math.pi / 3
     a2 = -math.pi / 6
-    in_wkt = 'CIRCULARSTRING(%.16g %.16g,%.16g %.16g,%.16g %.16g)' % ( \
-            cx + r * math.cos(a0), cy + r * math.sin(a0), \
-            cx + r * math.cos(a1), cy + r * math.sin(a1), \
-            cx + r * math.cos(a2), cy + r * math.sin(a2))
+    in_wkt = 'CIRCULARSTRING(%.16g %.16g,%.16g %.16g,%.16g %.16g)' % (
+        cx + r * math.cos(a0), cy + r * math.sin(a0),
+        cx + r * math.cos(a1), cy + r * math.sin(a1),
+        cx + r * math.cos(a2), cy + r * math.sin(a2))
     g1 = ogr.CreateGeometryFromWkt(in_wkt)
     env = g1.GetEnvelope()
     expected_env = (cx - r, cx + r * math.cos(a2), cy - r, cy + r)
@@ -1946,10 +1998,10 @@ def ogr_geom_circularstring():
     a0 = math.pi / 3
     a1 = math.pi - math.pi / 3
     a2 = math.pi / 6
-    in_wkt = 'CIRCULARSTRING(%.16g %.16g,%.16g %.16g,%.16g %.16g)' % ( \
-            cx + r * math.cos(a0), cy + r * math.sin(a0), \
-            cx + r * math.cos(a1), cy + r * math.sin(a1), \
-            cx + r * math.cos(a2), cy + r * math.sin(a2))
+    in_wkt = 'CIRCULARSTRING(%.16g %.16g,%.16g %.16g,%.16g %.16g)' % (
+        cx + r * math.cos(a0), cy + r * math.sin(a0),
+        cx + r * math.cos(a1), cy + r * math.sin(a1),
+        cx + r * math.cos(a2), cy + r * math.sin(a2))
     g1 = ogr.CreateGeometryFromWkt(in_wkt)
     env = g1.GetEnvelope()
     expected_env = (cx - r, cx + r, cy - r, cy + r)
@@ -1963,10 +2015,10 @@ def ogr_geom_circularstring():
     a0 = math.pi / 3
     a1 = math.pi + math.pi / 3
     a2 = math.pi / 3
-    in_wkt = 'CIRCULARSTRING(%.16g %.16g,%.16g %.16g,%.16g %.16g)' % ( \
-            cx + r * math.cos(a0), cy + r * math.sin(a0), \
-            cx + r * math.cos(a1), cy + r * math.sin(a1), \
-            cx + r * math.cos(a2), cy + r * math.sin(a2))
+    in_wkt = 'CIRCULARSTRING(%.16g %.16g,%.16g %.16g,%.16g %.16g)' % (
+        cx + r * math.cos(a0), cy + r * math.sin(a0),
+        cx + r * math.cos(a1), cy + r * math.sin(a1),
+        cx + r * math.cos(a2), cy + r * math.sin(a2))
     g1 = ogr.CreateGeometryFromWkt(in_wkt)
     env = g1.GetEnvelope()
     expected_env = (cx - r, cx + r, cy - r, cy + r)
@@ -1986,7 +2038,7 @@ def ogr_geom_circularstring():
         return 'fail'
 
     # EMPTY
-    for in_wkt in [ 'CIRCULARSTRING EMPTY', 'CIRCULARSTRING Z EMPTY' ]:
+    for in_wkt in ['CIRCULARSTRING EMPTY', 'CIRCULARSTRING Z EMPTY']:
         g1 = ogr.CreateGeometryFromWkt(in_wkt)
         out_wkt = g1.ExportToWkt()
         if in_wkt != out_wkt:
@@ -2011,6 +2063,7 @@ def ogr_geom_circularstring():
 
 ###############################################################################
 # Test OGRCompoundCurve
+
 
 def ogr_geom_compoundcurve():
 
@@ -2041,7 +2094,7 @@ def ogr_geom_compoundcurve():
             return 'fail'
 
     length = g1.Length()
-    expected_length =  1.5 * math.pi
+    expected_length = 1.5 * math.pi
     if abs(length - expected_length) > 1e-8:
         gdaltest.post_reason('fail')
         print(length)
@@ -2122,14 +2175,14 @@ def ogr_geom_compoundcurve():
         print(p)
         return 'fail'
 
-    p = g1.Value(math.pi+1)
+    p = g1.Value(math.pi + 1)
     expected_p = ogr.CreateGeometryFromWkt('POINT (1 0 20)')
     if ogrtest.check_feature_geometry(p, expected_p) != 0:
         gdaltest.post_reason('fail')
         print(p)
         return 'fail'
 
-    p = g1.Value(math.pi+2+1e-3)
+    p = g1.Value(math.pi + 2 + 1e-3)
     expected_p = ogr.CreateGeometryFromWkt('POINT (0 0 10)')
     if ogrtest.check_feature_geometry(p, expected_p) != 0:
         gdaltest.post_reason('fail')
@@ -2181,7 +2234,7 @@ def ogr_geom_compoundcurve():
         return 'fail'
 
     length = g1.Length()
-    expected_length =  1.5 * math.pi + math.sqrt(2)
+    expected_length = 1.5 * math.pi + math.sqrt(2)
     if abs(length - expected_length) > 1e-8:
         gdaltest.post_reason('fail')
         print(length)
@@ -2317,28 +2370,28 @@ def ogr_geom_compoundcurve():
     g = ogr.Geometry(ogr.wkbCompoundCurve)
     g.AddGeometry(ogr.CreateGeometryFromWkt('LINESTRING(0 0,1 1)'))
     if g.ExportToWkt() != 'COMPOUNDCURVE ((0 0,1 1))':
-            gdaltest.post_reason('fail')
-            return 'fail'
+        gdaltest.post_reason('fail')
+        return 'fail'
 
     gdal.PushErrorHandler('CPLQuietErrorHandler')
     g.AddGeometry(ogr.CreateGeometryFromWkt('LINESTRING(0 0,1 1)'))
     gdal.PopErrorHandler()
     if g.ExportToWkt() != 'COMPOUNDCURVE ((0 0,1 1),(1 1,0 0))':
-            gdaltest.post_reason('fail')
-            return 'fail'
+        gdaltest.post_reason('fail')
+        return 'fail'
 
     g = ogr.Geometry(ogr.wkbCompoundCurve)
     g.AddGeometryDirectly(ogr.CreateGeometryFromWkt('LINESTRING(0 0,1 1)'))
     if g.ExportToWkt() != 'COMPOUNDCURVE ((0 0,1 1))':
-            gdaltest.post_reason('fail')
-            return 'fail'
+        gdaltest.post_reason('fail')
+        return 'fail'
 
     gdal.PushErrorHandler('CPLQuietErrorHandler')
     g.AddGeometryDirectly(ogr.CreateGeometryFromWkt('LINESTRING(0 0,1 1)'))
     gdal.PopErrorHandler()
     if g.ExportToWkt() != 'COMPOUNDCURVE ((0 0,1 1),(1 1,0 0))':
-            gdaltest.post_reason('fail')
-            return 'fail'
+        gdaltest.post_reason('fail')
+        return 'fail'
 
     # Cannot add compoundcurve in compoundcurve
     g = ogr.Geometry(ogr.wkbCompoundCurve)
@@ -2346,8 +2399,8 @@ def ogr_geom_compoundcurve():
     g.AddGeometryDirectly(ogr.CreateGeometryFromWkt('COMPOUNDCURVE((1 1,2 2))'))
     gdal.PopErrorHandler()
     if g.ExportToWkt() != 'COMPOUNDCURVE EMPTY':
-            gdaltest.post_reason('fail')
-            return 'fail'
+        gdaltest.post_reason('fail')
+        return 'fail'
 
     # Check that discretization is not sensitive to winding order
     g1 = ogr.CreateGeometryFromWkt('COMPOUNDCURVE((-1 0,0 1),CIRCULARSTRING (0 1,0.25 0,0.1 -0.5),(0.1 -0.5,-1 0))')
@@ -2360,13 +2413,13 @@ def ogr_geom_compoundcurve():
         # The curves must be exactly the same, despite our stealth mode
         if g2.GetX(i) != g3.GetX(p_count - 1 - i) or \
            g2.GetY(i) != g3.GetY(p_count - 1 - i):
-                gdaltest.post_reason('fail')
-                print(g2)
-                print(g3)
-                print(i)
-                print(abs(g2.GetX(i) - g3.GetX(p_count - 1 - i)))
-                print(abs(g2.GetY(i) - g3.GetY(p_count - 1 - i)))
-                return 'fail'
+            gdaltest.post_reason('fail')
+            print(g2)
+            print(g3)
+            print(i)
+            print(abs(g2.GetX(i) - g3.GetX(p_count - 1 - i)))
+            print(abs(g2.GetY(i) - g3.GetY(p_count - 1 - i)))
+            return 'fail'
 
     # Test Transform
     sr = osr.SpatialReference()
@@ -2375,14 +2428,14 @@ def ogr_geom_compoundcurve():
     g.TransformTo(sr)
 
     # Invalid wkb
-    wkb_list = [ '\x01\x09\x00\x00\x00\x01\x00\x00\x00', # subgeometry declared but not present
-                 '\x01\x09\x00\x00\x00\xff\xff\xff\x7f', # 2 billion subgeometries declared !
-                 '\x01\x09\x00\x00\x00\x01\x00\x00\x00\x01\xff\x00\x00\x00\x00\x00\x00\x00', # subgeometry invalid: unknown type
-                 '\x01\x09\x00\x00\x00\x01\x00\x00\x00\x01\x02\x00\x00\x00\x01\x00\x00\x00', # subgeometry invalid: linestring truncated
-                 '\x01\x09\x00\x00\x00\x01\x00\x00\x00\x01\x02\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00', # subgeometry invalid: linestring with one point
-                 '\x01\x09\x00\x00\x00\x01\x00\x00\x00\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00', # subgeometry invalid: point
-                 '\x01\x09\x00\x00\x00\x01\x00\x00\x00\x01\x09\x00\x00\x00\x00\x00\x00\x00', # subgeometry invalid: compoundcurve
-               ]
+    wkb_list = ['\x01\x09\x00\x00\x00\x01\x00\x00\x00',  # subgeometry declared but not present
+                '\x01\x09\x00\x00\x00\xff\xff\xff\x7f',  # 2 billion subgeometries declared !
+                '\x01\x09\x00\x00\x00\x01\x00\x00\x00\x01\xff\x00\x00\x00\x00\x00\x00\x00',  # subgeometry invalid: unknown type
+                '\x01\x09\x00\x00\x00\x01\x00\x00\x00\x01\x02\x00\x00\x00\x01\x00\x00\x00',  # subgeometry invalid: linestring truncated
+                '\x01\x09\x00\x00\x00\x01\x00\x00\x00\x01\x02\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',  # subgeometry invalid: linestring with one point
+                '\x01\x09\x00\x00\x00\x01\x00\x00\x00\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',  # subgeometry invalid: point
+                '\x01\x09\x00\x00\x00\x01\x00\x00\x00\x01\x09\x00\x00\x00\x00\x00\x00\x00',  # subgeometry invalid: compoundcurve
+                ]
     for wkb in wkb_list:
         gdal.PushErrorHandler('CPLQuietErrorHandler')
         g = ogr.CreateGeometryFromWkb(wkb)
@@ -2393,7 +2446,7 @@ def ogr_geom_compoundcurve():
             return 'fail'
 
     # EMPTY
-    for in_wkt in [ 'COMPOUNDCURVE EMPTY', 'COMPOUNDCURVE Z EMPTY' ]:
+    for in_wkt in ['COMPOUNDCURVE EMPTY', 'COMPOUNDCURVE Z EMPTY']:
         g1 = ogr.CreateGeometryFromWkt(in_wkt)
         out_wkt = g1.ExportToWkt()
         if in_wkt != out_wkt:
@@ -2419,6 +2472,7 @@ def ogr_geom_compoundcurve():
 ###############################################################################
 # Test OGRCurvePolygon
 
+
 def ogr_geom_curvepolygon():
 
     in_wkt = 'CURVEPOLYGON (CIRCULARSTRING (0 0,1 0,0 0))'
@@ -2434,7 +2488,7 @@ def ogr_geom_curvepolygon():
 
     if ogrtest.have_geos():
         p1 = g1.PointOnSurface()
-        if (p1.GetX()-0.5)*(p1.GetX()-0.5)+p1.GetY()*p1.GetY() > 0.5 * 0.5:
+        if (p1.GetX() - 0.5) * (p1.GetX() - 0.5) + p1.GetY() * p1.GetY() > 0.5 * 0.5:
             gdaltest.post_reason('fail')
             print(p1)
             return 'fail'
@@ -2509,7 +2563,6 @@ def ogr_geom_curvepolygon():
         gdaltest.post_reason('fail')
         print(g1)
         return 'fail'
-
 
     in_wkt = 'CURVEPOLYGON (CIRCULARSTRING (0 0,1 0,0 0))'
     g1 = ogr.CreateGeometryFromWkt(in_wkt)
@@ -2689,7 +2742,7 @@ def ogr_geom_curvepolygon():
     # Intersects optimizations on a circle
     g1 = ogr.CreateGeometryFromWkt('CURVEPOLYGON (CIRCULARSTRING (0 0,2 0,0 0))')
     # Point slightly within circle
-    p1 = ogr.CreateGeometryFromWkt('POINT (%.16g %.16g)' % (1 + math.cos(math.pi/6)-1e-4,math.sin(math.pi/6)))
+    p1 = ogr.CreateGeometryFromWkt('POINT (%.16g %.16g)' % (1 + math.cos(math.pi / 6) - 1e-4, math.sin(math.pi / 6)))
     # To prove that we don't use discretization
     gdal.SetConfigOption('OGR_ARC_STEPSIZE', '45')
     res = g1.Intersects(p1)
@@ -2702,7 +2755,7 @@ def ogr_geom_curvepolygon():
         return 'fail'
 
     # Test point slightly outside circle
-    p2 = ogr.CreateGeometryFromWkt('POINT (%.16g %.16g)' % (1 + math.cos(math.pi/6)+1e-4,math.sin(math.pi/6)))
+    p2 = ogr.CreateGeometryFromWkt('POINT (%.16g %.16g)' % (1 + math.cos(math.pi / 6) + 1e-4, math.sin(math.pi / 6)))
     if p2.Within(g1):
         gdaltest.post_reason('fail')
         return 'fail'
@@ -2720,7 +2773,7 @@ def ogr_geom_curvepolygon():
         return 'fail'
 
     # This is not a circle
-    p2 = ogr.CreateGeometryFromWkt('POINT (%.16g %.16g)' % (1 + math.cos(math.pi/6)-1e-2,math.sin(math.pi/6)))
+    p2 = ogr.CreateGeometryFromWkt('POINT (%.16g %.16g)' % (1 + math.cos(math.pi / 6) - 1e-2, math.sin(math.pi / 6)))
     g1 = ogr.CreateGeometryFromWkt('CURVEPOLYGON (CIRCULARSTRING (0 0,1 1,2 0,1 1,0 0))')
     if p2.Within(g1):
         gdaltest.post_reason('fail')
@@ -2767,7 +2820,7 @@ def ogr_geom_curvepolygon():
         return 'fail'
 
     # EMPTY
-    for in_wkt in [ 'CURVEPOLYGON EMPTY', 'CURVEPOLYGON Z EMPTY' ]:
+    for in_wkt in ['CURVEPOLYGON EMPTY', 'CURVEPOLYGON Z EMPTY']:
         g1 = ogr.CreateGeometryFromWkt(in_wkt)
         out_wkt = g1.ExportToWkt()
         if in_wkt != out_wkt:
@@ -2808,6 +2861,7 @@ def ogr_geom_curvepolygon():
 ###############################################################################
 # Test OGRMultiCurve
 
+
 def ogr_geom_multicurve():
 
     # Simple test
@@ -2835,7 +2889,7 @@ def ogr_geom_multicurve():
             return 'fail'
 
     length = g1.Length()
-    expected_length =  2 * math.pi * 0.5
+    expected_length = 2 * math.pi * 0.5
     if abs(length - expected_length) > 1e-8:
         gdaltest.post_reason('fail')
         print(length)
@@ -2931,6 +2985,7 @@ def ogr_geom_multicurve():
 ###############################################################################
 # Test OGRMultiSurface
 
+
 def ogr_geom_multisurface():
 
     # Simple test
@@ -2958,7 +3013,7 @@ def ogr_geom_multisurface():
             return 'fail'
 
     area = g1.Area()
-    expected_area =  math.pi * 0.5 * 0.5
+    expected_area = math.pi * 0.5 * 0.5
     if abs(area - expected_area) > 1e-8:
         gdaltest.post_reason('fail')
         print(area)
@@ -3070,15 +3125,16 @@ def ogr_geom_multisurface():
 ###############################################################################
 # Test GetCurveGeometry
 
+
 def ogr_geom_getcurvegeometry():
 
-    for geom in [ 'POINT', 'LINESTRING', 'POLYGON', 'MULTIPOINT', 'MULTILINESTRING',
-                  'MULTIPOLYGON', 'GEOMETRYCOLLECTION',
-                  'CIRCULARSTRING',
-                  'COMPOUNDCURVE',
-                  'CURVEPOLYGON',
-                  'MULTICURVE',
-                  'MULTISURFACE' ]:
+    for geom in ['POINT', 'LINESTRING', 'POLYGON', 'MULTIPOINT', 'MULTILINESTRING',
+                 'MULTIPOLYGON', 'GEOMETRYCOLLECTION',
+                 'CIRCULARSTRING',
+                 'COMPOUNDCURVE',
+                 'CURVEPOLYGON',
+                 'MULTICURVE',
+                 'MULTISURFACE']:
         in_wkt = geom + ' EMPTY'
         g = ogr.CreateGeometryFromWkt(in_wkt)
         g2 = g.GetCurveGeometry()
@@ -3118,7 +3174,7 @@ def ogr_geom_getcurvegeometry():
     g3 = g2.GetCurveGeometry()
     if g3.GetGeometryType() != ogr.wkbCircularString or \
        g1.GetPoint(0) != g3.GetPoint(0) or g1.GetPoint(2) != g3.GetPoint(2) or \
-       abs((g3.GetX(1) - 1)*(g3.GetX(1) - 1)+g3.GetY(1)*g3.GetY(1) - 1) > 1e-8:
+       abs((g3.GetX(1) - 1) * (g3.GetX(1) - 1) + g3.GetY(1) * g3.GetY(1) - 1) > 1e-8:
         gdaltest.post_reason('fail')
         print(g3)
         return 'fail'
@@ -3142,19 +3198,19 @@ def ogr_geom_getcurvegeometry():
         return 'fail'
 
     # "Random" arcs
-    for wkt in [ 'CIRCULARSTRING (1 2,3 1,5 6)',
-                 'CIRCULARSTRING (1 -2,3 -1,5 -6)',
-                 'CIRCULARSTRING (-1 2,-3 1,-5 6)',
-                 'CIRCULARSTRING (5 6,3 1,1 2)',
-                 'CIRCULARSTRING (-5 6,-3 1,-1 2)',
-                 'CIRCULARSTRING (5 -6,3 -1,1 -2)',
-                 'CIRCULARSTRING (215725 -977513,872751 872597,560240 -7500)',
-                 'CIRCULARSTRING (-492367 816163,537838 -421954,745494 -65479)',
-                 'CIRCULARSTRING (543208 -865295,582257 635396,563925 -68156)',
-                 'CIRCULARSTRING (-481 -193,1 329,-692 -421)',
-                 'CIRCULARSTRING (525407 781005,710737 463833,-674365 340022)',
-                 'CIRCULARSTRING (743949 709309,743952 709307,743964 709298)',
-                 'CIRCULARSTRING (283167 -48388,536492 -197399,-449301 382451)']:
+    for wkt in ['CIRCULARSTRING (1 2,3 1,5 6)',
+                'CIRCULARSTRING (1 -2,3 -1,5 -6)',
+                'CIRCULARSTRING (-1 2,-3 1,-5 6)',
+                'CIRCULARSTRING (5 6,3 1,1 2)',
+                'CIRCULARSTRING (-5 6,-3 1,-1 2)',
+                'CIRCULARSTRING (5 -6,3 -1,1 -2)',
+                'CIRCULARSTRING (215725 -977513,872751 872597,560240 -7500)',
+                'CIRCULARSTRING (-492367 816163,537838 -421954,745494 -65479)',
+                'CIRCULARSTRING (543208 -865295,582257 635396,563925 -68156)',
+                'CIRCULARSTRING (-481 -193,1 329,-692 -421)',
+                'CIRCULARSTRING (525407 781005,710737 463833,-674365 340022)',
+                'CIRCULARSTRING (743949 709309,743952 709307,743964 709298)',
+                'CIRCULARSTRING (283167 -48388,536492 -197399,-449301 382451)']:
         g1 = ogr.CreateGeometryFromWkt(wkt)
         g2 = g1.GetLinearGeometry()
         g3 = g2.GetCurveGeometry()
@@ -3166,9 +3222,9 @@ def ogr_geom_getcurvegeometry():
 
     # Really random arcs with coordinates in the [-1000,1000] range
     for i in range(1000):
-        v = [ random.randint(-1000,1000) for i in range(6) ]
+        v = [random.randint(-1000, 1000) for i in range(6)]
         if v[0] != v[4] or v[1] != v[5]:
-            wkt = 'CIRCULARSTRING (%d %d,%d %d,%d %d)' % (v[0],v[1],v[2],v[3],v[4],v[5])
+            wkt = 'CIRCULARSTRING (%d %d,%d %d,%d %d)' % (v[0], v[1], v[2], v[3], v[4], v[5])
             g1 = ogr.CreateGeometryFromWkt(wkt)
             g2 = g1.GetLinearGeometry()
             if g2.GetPointCount() != 3:
@@ -3176,19 +3232,19 @@ def ogr_geom_getcurvegeometry():
                 if not g3.Equals(g1):
                     # FIXME sometime... but avoid failing. for now. This randomly fails, but this is not
                     # the end of the world...
-                    #gdaltest.post_reason('fail')
+                    # gdaltest.post_reason('fail')
                     print('Difference found :')
                     print(g1)
                     print(g3)
-                    #return 'fail'
+                    # return 'fail'
 
     # Really random arcs in random displacements, but with small radius
     for i in range(1000):
-        x = random.randint(-1000000,1000000)
-        y = random.randint(-1000000,1000000)
-        v = [ random.randint(-10,10) for i in range(6) ]
+        x = random.randint(-1000000, 1000000)
+        y = random.randint(-1000000, 1000000)
+        v = [random.randint(-10, 10) for i in range(6)]
         if v[0] != v[4] or v[1] != v[5]:
-            wkt = 'CIRCULARSTRING (%d %d,%d %d,%d %d)' % (x+v[0],y+v[1],x+v[2],y+v[3],x+v[4],y+v[5])
+            wkt = 'CIRCULARSTRING (%d %d,%d %d,%d %d)' % (x + v[0], y + v[1], x + v[2], y + v[3], x + v[4], y + v[5])
             g1 = ogr.CreateGeometryFromWkt(wkt)
             g2 = g1.GetLinearGeometry()
             if g2.GetPointCount() != 3:
@@ -3196,17 +3252,17 @@ def ogr_geom_getcurvegeometry():
                 if not g3.Equals(g1):
                     # FIXME sometime... but avoid failing. for now. This randomly fails, but this is not
                     # the end of the world...
-                    #gdaltest.post_reason('fail')
+                    # gdaltest.post_reason('fail')
                     print('Difference found :')
                     print(g1)
                     print(g3)
-                    #return 'fail'
+                    # return 'fail'
 
     # Really random arcs with coordinates in the [-1000000,1000000] range
     for i in range(1000):
-        v = [ random.randint(-1000000,1000000) for i in range(6) ]
+        v = [random.randint(-1000000, 1000000) for i in range(6)]
         if v[0] != v[4] or v[1] != v[5]:
-            wkt = 'CIRCULARSTRING (%d %d,%d %d,%d %d)' % (v[0],v[1],v[2],v[3],v[4],v[5])
+            wkt = 'CIRCULARSTRING (%d %d,%d %d,%d %d)' % (v[0], v[1], v[2], v[3], v[4], v[5])
             g1 = ogr.CreateGeometryFromWkt(wkt)
             g2 = g1.GetLinearGeometry()
             if g2.GetPointCount() != 3:
@@ -3214,11 +3270,11 @@ def ogr_geom_getcurvegeometry():
                 if not g3.Equals(g1):
                     # FIXME sometime... but avoid failing. for now. This randomly fails, but this is not
                     # the end of the world...
-                    #gdaltest.post_reason('fail')
+                    # gdaltest.post_reason('fail')
                     print('Difference found :')
                     print(g1)
                     print(g3)
-                    #return 'fail'
+                    # return 'fail'
 
     # 5 points full circle
     g1 = ogr.CreateGeometryFromWkt('CIRCULARSTRING (0 0,0.5 -0.5,1 0,0.5 0.5,0 0)')
@@ -3237,19 +3293,19 @@ def ogr_geom_getcurvegeometry():
        g1.GetPoint(0) != g3.GetPoint(0) or \
        g1.GetPoint(1) != g3.GetPoint(2) or \
        g1.GetPoint(2) != g3.GetPoint(4) or \
-       abs((g3.GetX(1) - 0.5)*(g3.GetX(1) - 0.5)+g3.GetY(1)*g3.GetY(1) - 0.5*0.5) > 1e-12 or \
-       abs((g3.GetX(3) - 0.5)*(g3.GetX(3) - 0.5)+g3.GetY(3)*g3.GetY(3) - 0.5*0.5) > 1e-12 :
+       abs((g3.GetX(1) - 0.5) * (g3.GetX(1) - 0.5) + g3.GetY(1) * g3.GetY(1) - 0.5 * 0.5) > 1e-12 or \
+       abs((g3.GetX(3) - 0.5) * (g3.GetX(3) - 0.5) + g3.GetY(3) * g3.GetY(3) - 0.5 * 0.5) > 1e-12:
         gdaltest.post_reason('fail')
         print(g3)
-        #print(abs((g3.GetX(1) - 0.5)*(g3.GetX(1) - 0.5)+g3.GetY(1)*g3.GetY(1) - 0.5*0.5))
-        #print(abs((g3.GetX(3) - 0.5)*(g3.GetX(3) - 0.5)+g3.GetY(3)*g3.GetY(3) - 0.5*0.5))
+        # print(abs((g3.GetX(1) - 0.5)*(g3.GetX(1) - 0.5)+g3.GetY(1)*g3.GetY(1) - 0.5*0.5))
+        # print(abs((g3.GetX(3) - 0.5)*(g3.GetX(3) - 0.5)+g3.GetY(3)*g3.GetY(3) - 0.5*0.5))
         return 'fail'
 
     # 3 points full circle in a CurvePolygon
-    for wkt in [ 'CURVEPOLYGON( CIRCULARSTRING (0 0,1 0,0 0))',
-                 'CURVEPOLYGON( CIRCULARSTRING (0 0,0 1,0 0))',
-                 'CURVEPOLYGON( CIRCULARSTRING (0 0,-1 0,0 0))',
-                 'CURVEPOLYGON( CIRCULARSTRING (0 0,0 -1,0 0))']:
+    for wkt in ['CURVEPOLYGON( CIRCULARSTRING (0 0,1 0,0 0))',
+                'CURVEPOLYGON( CIRCULARSTRING (0 0,0 1,0 0))',
+                'CURVEPOLYGON( CIRCULARSTRING (0 0,-1 0,0 0))',
+                'CURVEPOLYGON( CIRCULARSTRING (0 0,0 -1,0 0))']:
         g1 = ogr.CreateGeometryFromWkt(wkt)
         g2 = g1.GetLinearGeometry()
         g3 = g2.GetCurveGeometry()
@@ -3351,7 +3407,7 @@ def ogr_geom_getcurvegeometry():
 
     # Test option ADD_INTERMEDIATE_POINT=STEALTH
     g1 = ogr.CreateGeometryFromWkt('CIRCULARSTRING (0 0,1.2 1.0,2 0)')
-    g2 = g1.GetLinearGeometry(options = ['ADD_INTERMEDIATE_POINT=STEALTH'])
+    g2 = g1.GetLinearGeometry(options=['ADD_INTERMEDIATE_POINT=STEALTH'])
     g3 = g2.GetCurveGeometry()
     if not g3.Equals(g1):
         gdaltest.post_reason('fail')
@@ -3360,7 +3416,7 @@ def ogr_geom_getcurvegeometry():
 
     # Test option ADD_INTERMEDIATE_POINT=YES
     g1 = ogr.CreateGeometryFromWkt('CIRCULARSTRING (0 0,1.2 1.0,2 0)')
-    g2 = g1.GetLinearGeometry(options = ['ADD_INTERMEDIATE_POINT=YES'])
+    g2 = g1.GetLinearGeometry(options=['ADD_INTERMEDIATE_POINT=YES'])
     g3 = g2.GetCurveGeometry()
     if not g3.Equals(g1):
         gdaltest.post_reason('fail')
@@ -3387,7 +3443,7 @@ def ogr_geom_getcurvegeometry():
 
     # Test option ADD_INTERMEDIATE_POINT=FALSE
     g1 = ogr.CreateGeometryFromWkt('CIRCULARSTRING (0 0,1.2 1.0,2 0)')
-    g2 = g1.GetLinearGeometry(options = ['ADD_INTERMEDIATE_POINT=FALSE'])
+    g2 = g1.GetLinearGeometry(options=['ADD_INTERMEDIATE_POINT=FALSE'])
     g3 = g2.GetCurveGeometry()
     g1_expected = ogr.CreateGeometryFromWkt('CIRCULARSTRING (0 0,1.0 1.020199980003999,2 0)')
     if ogrtest.check_feature_geometry(g3, g1_expected) != 0:
@@ -3397,7 +3453,7 @@ def ogr_geom_getcurvegeometry():
 
     # Test with unrecognized options
     gdal.PushErrorHandler('CPLQuietErrorHandler')
-    g2_new = g1.GetLinearGeometry(options = ['bla', 'ADD_INTERMEDIATE_POINT=FALSE', 'foo=bar'])
+    g2_new = g1.GetLinearGeometry(options=['bla', 'ADD_INTERMEDIATE_POINT=FALSE', 'foo=bar'])
     gdal.PopErrorHandler()
     if not g2_new.Equals(g2):
         gdaltest.post_reason('fail')
@@ -3406,7 +3462,7 @@ def ogr_geom_getcurvegeometry():
 
     # Add repeated point at end of line
     g2 = g1.GetLinearGeometry()
-    g2.AddPoint_2D(2-1e-9,0)
+    g2.AddPoint_2D(2 - 1e-9, 0)
     g3 = g2.GetCurveGeometry()
     if not g3.Equals(g1):
         gdaltest.post_reason('fail')
@@ -3416,7 +3472,7 @@ def ogr_geom_getcurvegeometry():
     # Add repeated point at end of line
     g2 = g1.GetLinearGeometry()
     g2_new = ogr.Geometry(ogr.wkbLineString)
-    g2_new.AddPoint_2D(0,1e-9)
+    g2_new.AddPoint_2D(0, 1e-9)
     for i in range(g2.GetPointCount()):
         g2_new.AddPoint_2D(g2.GetX(i), g2.GetY(i))
     g3 = g2_new.GetCurveGeometry()
@@ -3426,26 +3482,26 @@ def ogr_geom_getcurvegeometry():
         return 'fail'
 
     # Test various configurations
-    for (wkt,eps) in [  ('CIRCULARSTRING (0 0,0.5 0.5,0 1,-0.5 0.5,0 0)', 0),
-                        ('CIRCULARSTRING (0 0,-0.5 0.5,0 1,0.5 0.5,0 0)', 0),
-                        ('CIRCULARSTRING (0 0,0.5 -0.5,0 -1,-0.5 -0.5,0 0)', 0),
-                        ('CIRCULARSTRING (0 0,-0.5 -0.5,0 -1,0.5 -0.5,0 0)', 0),
-                        ('CIRCULARSTRING (-1 -1,-1 1,1 1,1 -1,-1 -1)', 0),
-                        ('CIRCULARSTRING (-1 -1,1 -1,1 1,-1 1,-1 -1)', 0),
-                        ('CIRCULARSTRING (0 1,1 0,0 -1,-1 0,0 1)', 0),
-                        ('CIRCULARSTRING (0 0.01,0.01 0,0 -0.01,-0.01 0,0 0.01)', 0),
-                        ('CIRCULARSTRING (0 0.0001,0.0001 0,0 -0.0001,-0.0001 0,0 0.0001)', 0),
-                        ('CIRCULARSTRING (0 1000000,1000000 0,0 -1000000,-1000000 0,0 1000000)', 0),
-                        ('CIRCULARSTRING (1234567 8901234,5678901 23456789,0123456 78901234)', 0),
-                        ('CIRCULARSTRING (1234567.12 8901234.34,5678901.56 23456789.01,0123456.78 78901234.56)', 1e-1),
-                        ('CIRCULARSTRING (1234567 -8901234,-5678901 23456789,0123456 -78901234)', 0),
-                        ('CIRCULARSTRING (0 0.000001,0.000001 0,0 -0.000001,-0.000001 0,0 0.000001)', 1e-12),
-                        ('CIRCULARSTRING (0 0.00000001,0.00000001 0,0 -0.00000001,-0.00000001 0,0 0.00000001)', 1e-12),
-                        ('CIRCULARSTRING (1 0.00000001,1.00000001 0,1 -0.00000001,0.99999999 0,1 0.00000001)', 1e-12),
-                        ('CIRCULARSTRING (100000000 1,100000001 0,100000000 -1,99999999 0,100000000 1)', 0),
-                        ('CIRCULARSTRING (-100000000 1,-100000001 0,-100000000 -1,-99999999 0,-100000000 1)', 0),
-                        ('CIRCULARSTRING (100000000 100000001,100000001 100000000,100000000 99999999,99999999 100000000,100000000 100000001)', 0),
-                        ('CIRCULARSTRING (760112.098000001162291 207740.096999999135733,760116.642489952617325 207741.101843414857285,760120.967999998480082 207742.820000000298023,760123.571822694852017 207744.275888498465065,760126.011999998241663 207745.991999998688698,760127.330062366439961 207747.037052432337077,760128.585999999195337 207748.155999999493361)',1e-5)]:
+    for (wkt, eps) in [('CIRCULARSTRING (0 0,0.5 0.5,0 1,-0.5 0.5,0 0)', 0),
+                       ('CIRCULARSTRING (0 0,-0.5 0.5,0 1,0.5 0.5,0 0)', 0),
+                       ('CIRCULARSTRING (0 0,0.5 -0.5,0 -1,-0.5 -0.5,0 0)', 0),
+                       ('CIRCULARSTRING (0 0,-0.5 -0.5,0 -1,0.5 -0.5,0 0)', 0),
+                       ('CIRCULARSTRING (-1 -1,-1 1,1 1,1 -1,-1 -1)', 0),
+                       ('CIRCULARSTRING (-1 -1,1 -1,1 1,-1 1,-1 -1)', 0),
+                       ('CIRCULARSTRING (0 1,1 0,0 -1,-1 0,0 1)', 0),
+                       ('CIRCULARSTRING (0 0.01,0.01 0,0 -0.01,-0.01 0,0 0.01)', 0),
+                       ('CIRCULARSTRING (0 0.0001,0.0001 0,0 -0.0001,-0.0001 0,0 0.0001)', 0),
+                       ('CIRCULARSTRING (0 1000000,1000000 0,0 -1000000,-1000000 0,0 1000000)', 0),
+                       ('CIRCULARSTRING (1234567 8901234,5678901 23456789,0123456 78901234)', 0),
+                       ('CIRCULARSTRING (1234567.12 8901234.34,5678901.56 23456789.01,0123456.78 78901234.56)', 1e-1),
+                       ('CIRCULARSTRING (1234567 -8901234,-5678901 23456789,0123456 -78901234)', 0),
+                       ('CIRCULARSTRING (0 0.000001,0.000001 0,0 -0.000001,-0.000001 0,0 0.000001)', 1e-12),
+                       ('CIRCULARSTRING (0 0.00000001,0.00000001 0,0 -0.00000001,-0.00000001 0,0 0.00000001)', 1e-12),
+                       ('CIRCULARSTRING (1 0.00000001,1.00000001 0,1 -0.00000001,0.99999999 0,1 0.00000001)', 1e-12),
+                       ('CIRCULARSTRING (100000000 1,100000001 0,100000000 -1,99999999 0,100000000 1)', 0),
+                       ('CIRCULARSTRING (-100000000 1,-100000001 0,-100000000 -1,-99999999 0,-100000000 1)', 0),
+                       ('CIRCULARSTRING (100000000 100000001,100000001 100000000,100000000 99999999,99999999 100000000,100000000 100000001)', 0),
+                       ('CIRCULARSTRING (760112.098000001162291 207740.096999999135733,760116.642489952617325 207741.101843414857285,760120.967999998480082 207742.820000000298023,760123.571822694852017 207744.275888498465065,760126.011999998241663 207745.991999998688698,760127.330062366439961 207747.037052432337077,760128.585999999195337 207748.155999999493361)', 1e-5)]:
         g1 = ogr.CreateGeometryFromWkt(wkt)
         g2 = g1.GetLinearGeometry()
         g3 = g2.GetCurveGeometry()
@@ -3456,7 +3512,6 @@ def ogr_geom_getcurvegeometry():
             print(g3)
             print(ogrtest.check_feature_geometry(g3, g1, 1e-6))
             return 'fail'
-
 
     # Test with GEOMETRYCOLLECTION container
     g1 = ogr.CreateGeometryFromWkt('GEOMETRYCOLLECTION(CIRCULARSTRING (0 0,0.5 0.5,0 1,-0.5 0.5,0 0))')
@@ -3531,17 +3586,18 @@ def ogr_geom_getcurvegeometry():
 ###############################################################################
 # Test OGR_GT_ functions
 
+
 def ogr_geom_gt_functions():
 
     # GT_HasZ
-    tuples = [ (ogr.wkbPoint, 0),
-               (ogr.wkbPoint25D, 1),
-               (ogr.wkbPointM, 0),
-               (ogr.wkbPointZM, 1),
-               (ogr.wkbCircularString, 0),
-               (ogr.wkbCircularStringZ, 1),
-               (ogr.wkbCircularStringM, 0),
-               (ogr.wkbCircularStringZM, 1) ]
+    tuples = [(ogr.wkbPoint, 0),
+              (ogr.wkbPoint25D, 1),
+              (ogr.wkbPointM, 0),
+              (ogr.wkbPointZM, 1),
+              (ogr.wkbCircularString, 0),
+              (ogr.wkbCircularStringZ, 1),
+              (ogr.wkbCircularStringM, 0),
+              (ogr.wkbCircularStringZM, 1)]
     for (gt, res) in tuples:
         if ogr.GT_HasZ(gt) != res:
             gdaltest.post_reason('fail')
@@ -3549,14 +3605,14 @@ def ogr_geom_gt_functions():
             return 'fail'
 
     # GT_SetZ
-    tuples = [ (ogr.wkbPoint, ogr.wkbPoint25D),
-               (ogr.wkbPoint25D, ogr.wkbPoint25D),
-               (ogr.wkbPointM, ogr.wkbPointZM),
-               (ogr.wkbPointZM, ogr.wkbPointZM),
-               (ogr.wkbCircularString, ogr.wkbCircularStringZ),
-               (ogr.wkbCircularStringZ, ogr.wkbCircularStringZ),
-               (ogr.wkbCircularStringM, ogr.wkbCircularStringZM),
-               (ogr.wkbCircularStringZM, ogr.wkbCircularStringZM)]
+    tuples = [(ogr.wkbPoint, ogr.wkbPoint25D),
+              (ogr.wkbPoint25D, ogr.wkbPoint25D),
+              (ogr.wkbPointM, ogr.wkbPointZM),
+              (ogr.wkbPointZM, ogr.wkbPointZM),
+              (ogr.wkbCircularString, ogr.wkbCircularStringZ),
+              (ogr.wkbCircularStringZ, ogr.wkbCircularStringZ),
+              (ogr.wkbCircularStringM, ogr.wkbCircularStringZM),
+              (ogr.wkbCircularStringZM, ogr.wkbCircularStringZM)]
     for (gt, res) in tuples:
         if ogr.GT_SetZ(gt) != res:
             gdaltest.post_reason('fail')
@@ -3564,14 +3620,14 @@ def ogr_geom_gt_functions():
             return 'fail'
 
     # GT_HasM
-    tuples = [ (ogr.wkbPoint, 0),
-               (ogr.wkbPoint25D, 0),
-               (ogr.wkbPointM, 1),
-               (ogr.wkbPointZM, 1),
-               (ogr.wkbCircularString, 0),
-               (ogr.wkbCircularStringZ, 0),
-               (ogr.wkbCircularStringM, 1),
-               (ogr.wkbCircularStringZM, 1) ]
+    tuples = [(ogr.wkbPoint, 0),
+              (ogr.wkbPoint25D, 0),
+              (ogr.wkbPointM, 1),
+              (ogr.wkbPointZM, 1),
+              (ogr.wkbCircularString, 0),
+              (ogr.wkbCircularStringZ, 0),
+              (ogr.wkbCircularStringM, 1),
+              (ogr.wkbCircularStringZM, 1)]
     for (gt, res) in tuples:
         if ogr.GT_HasM(gt) != res:
             gdaltest.post_reason('fail')
@@ -3579,14 +3635,14 @@ def ogr_geom_gt_functions():
             return 'fail'
 
     # GT_SetM
-    tuples = [ (ogr.wkbPoint, ogr.wkbPointM),
-               (ogr.wkbPoint25D, ogr.wkbPointZM),
-               (ogr.wkbPointM, ogr.wkbPointM),
-               (ogr.wkbPointZM, ogr.wkbPointZM),
-               (ogr.wkbCircularString, ogr.wkbCircularStringM),
-               (ogr.wkbCircularStringZ, ogr.wkbCircularStringZM),
-               (ogr.wkbCircularStringM, ogr.wkbCircularStringM),
-               (ogr.wkbCircularStringZM, ogr.wkbCircularStringZM)]
+    tuples = [(ogr.wkbPoint, ogr.wkbPointM),
+              (ogr.wkbPoint25D, ogr.wkbPointZM),
+              (ogr.wkbPointM, ogr.wkbPointM),
+              (ogr.wkbPointZM, ogr.wkbPointZM),
+              (ogr.wkbCircularString, ogr.wkbCircularStringM),
+              (ogr.wkbCircularStringZ, ogr.wkbCircularStringZM),
+              (ogr.wkbCircularStringM, ogr.wkbCircularStringM),
+              (ogr.wkbCircularStringZM, ogr.wkbCircularStringZM)]
     for (gt, res) in tuples:
         if ogr.GT_SetM(gt) != res:
             gdaltest.post_reason('fail')
@@ -3594,24 +3650,24 @@ def ogr_geom_gt_functions():
             return 'fail'
 
     # OGR_GT_SetModifier
-    tuples = [ (ogr.wkbPoint, 0, 0, ogr.wkbPoint),
-               (ogr.wkbPoint, 1, 0, ogr.wkbPoint25D),
-               (ogr.wkbPoint, 0, 1, ogr.wkbPointM),
-               (ogr.wkbPoint, 1, 1, ogr.wkbPointZM),
-               (ogr.wkbPoint25D, 0, 0, ogr.wkbPoint),
-               (ogr.wkbPoint25D, 1, 0, ogr.wkbPoint25D),
-               (ogr.wkbPoint25D, 0, 1, ogr.wkbPointM),
-               (ogr.wkbPoint25D, 1, 1, ogr.wkbPointZM),
-               (ogr.wkbPointM, 0, 0, ogr.wkbPoint),
-               (ogr.wkbPointM, 1, 0, ogr.wkbPoint25D),
-               (ogr.wkbPointM, 0, 1, ogr.wkbPointM),
-               (ogr.wkbPointM, 1, 1, ogr.wkbPointZM),
-               (ogr.wkbCircularString, 1, 0, ogr.wkbCircularStringZ),
-               (ogr.wkbCircularStringZ, 1, 0, ogr.wkbCircularStringZ),
-               (ogr.wkbPoint, 0, 0, ogr.wkbPoint),
-               (ogr.wkbPoint25D, 0, 0, ogr.wkbPoint),
-               (ogr.wkbCircularString, 0, 0, ogr.wkbCircularString),
-               (ogr.wkbCircularStringZ, 0, 0, ogr.wkbCircularString)]
+    tuples = [(ogr.wkbPoint, 0, 0, ogr.wkbPoint),
+              (ogr.wkbPoint, 1, 0, ogr.wkbPoint25D),
+              (ogr.wkbPoint, 0, 1, ogr.wkbPointM),
+              (ogr.wkbPoint, 1, 1, ogr.wkbPointZM),
+              (ogr.wkbPoint25D, 0, 0, ogr.wkbPoint),
+              (ogr.wkbPoint25D, 1, 0, ogr.wkbPoint25D),
+              (ogr.wkbPoint25D, 0, 1, ogr.wkbPointM),
+              (ogr.wkbPoint25D, 1, 1, ogr.wkbPointZM),
+              (ogr.wkbPointM, 0, 0, ogr.wkbPoint),
+              (ogr.wkbPointM, 1, 0, ogr.wkbPoint25D),
+              (ogr.wkbPointM, 0, 1, ogr.wkbPointM),
+              (ogr.wkbPointM, 1, 1, ogr.wkbPointZM),
+              (ogr.wkbCircularString, 1, 0, ogr.wkbCircularStringZ),
+              (ogr.wkbCircularStringZ, 1, 0, ogr.wkbCircularStringZ),
+              (ogr.wkbPoint, 0, 0, ogr.wkbPoint),
+              (ogr.wkbPoint25D, 0, 0, ogr.wkbPoint),
+              (ogr.wkbCircularString, 0, 0, ogr.wkbCircularString),
+              (ogr.wkbCircularStringZ, 0, 0, ogr.wkbCircularString)]
     for (gt, modZ, modM, res) in tuples:
         if ogr.GT_SetModifier(gt, modZ, modM) != res:
             gdaltest.post_reason('fail')
@@ -3619,15 +3675,15 @@ def ogr_geom_gt_functions():
             return 'fail'
 
     # GT_Flatten
-    tuples = [ (ogr.wkbPoint, ogr.wkbPoint),
-               (ogr.wkbPoint25D, ogr.wkbPoint),
-               (ogr.wkbPointM, ogr.wkbPoint),
-               (ogr.wkbPointZM, ogr.wkbPoint),
-               (ogr.wkbCircularString, ogr.wkbCircularString),
-               (ogr.wkbTriangleZ, ogr.wkbTriangle),
-               (ogr.wkbCircularStringZ, ogr.wkbCircularString),
-               (ogr.wkbCircularStringM, ogr.wkbCircularString),
-               (ogr.wkbCircularStringZM, ogr.wkbCircularString)]
+    tuples = [(ogr.wkbPoint, ogr.wkbPoint),
+              (ogr.wkbPoint25D, ogr.wkbPoint),
+              (ogr.wkbPointM, ogr.wkbPoint),
+              (ogr.wkbPointZM, ogr.wkbPoint),
+              (ogr.wkbCircularString, ogr.wkbCircularString),
+              (ogr.wkbTriangleZ, ogr.wkbTriangle),
+              (ogr.wkbCircularStringZ, ogr.wkbCircularString),
+              (ogr.wkbCircularStringM, ogr.wkbCircularString),
+              (ogr.wkbCircularStringZM, ogr.wkbCircularString)]
     for (gt, res) in tuples:
         if ogr.GT_Flatten(gt) != res:
             gdaltest.post_reason('fail')
@@ -3635,21 +3691,21 @@ def ogr_geom_gt_functions():
             return 'fail'
 
     # GT_IsSubClassOf
-    tuples = [ (ogr.wkbPoint, ogr.wkbPoint, 1),
-               (ogr.wkbPoint25D, ogr.wkbPoint, 1),
-               (ogr.wkbPoint, ogr.wkbUnknown, 1),
-               (ogr.wkbPoint, ogr.wkbLineString, 0),
-               (ogr.wkbPolygon, ogr.wkbCurvePolygon, 1),
-               (ogr.wkbTriangle, ogr.wkbCurvePolygon, 1),
-               (ogr.wkbTriangle, ogr.wkbPolygon, 1),
-               (ogr.wkbMultiSurface, ogr.wkbGeometryCollection, 1),
-               (ogr.wkbMultiPolygon, ogr.wkbMultiSurface, 1),
-               (ogr.wkbMultiLineString, ogr.wkbMultiCurve, 1),
-               (ogr.wkbUnknown, ogr.wkbUnknown, 1),
-               (ogr.wkbUnknown, ogr.wkbPoint, 0),
-               (ogr.wkbTIN, ogr.wkbPolyhedralSurface,1),
-               (ogr.wkbPolyhedralSurface, ogr.wkbTIN,0),
-               ]
+    tuples = [(ogr.wkbPoint, ogr.wkbPoint, 1),
+              (ogr.wkbPoint25D, ogr.wkbPoint, 1),
+              (ogr.wkbPoint, ogr.wkbUnknown, 1),
+              (ogr.wkbPoint, ogr.wkbLineString, 0),
+              (ogr.wkbPolygon, ogr.wkbCurvePolygon, 1),
+              (ogr.wkbTriangle, ogr.wkbCurvePolygon, 1),
+              (ogr.wkbTriangle, ogr.wkbPolygon, 1),
+              (ogr.wkbMultiSurface, ogr.wkbGeometryCollection, 1),
+              (ogr.wkbMultiPolygon, ogr.wkbMultiSurface, 1),
+              (ogr.wkbMultiLineString, ogr.wkbMultiCurve, 1),
+              (ogr.wkbUnknown, ogr.wkbUnknown, 1),
+              (ogr.wkbUnknown, ogr.wkbPoint, 0),
+              (ogr.wkbTIN, ogr.wkbPolyhedralSurface, 1),
+              (ogr.wkbPolyhedralSurface, ogr.wkbTIN, 0),
+              ]
     for (gt, gt2, res) in tuples:
         if ogr.GT_IsSubClassOf(gt, gt2) != res:
             gdaltest.post_reason('fail')
@@ -3658,21 +3714,21 @@ def ogr_geom_gt_functions():
             return 'fail'
 
     # GT_IsCurve
-    tuples = [ (ogr.wkbPoint, 0),
-               (ogr.wkbPoint25D, 0),
-               (ogr.wkbPointM, 0),
-               (ogr.wkbPointZM, 0),
-               (ogr.wkbCircularString, 1),
-               (ogr.wkbCircularStringZ, 1),
-               (ogr.wkbLineString, 1),
-               (ogr.wkbCompoundCurve, 1),
-               (ogr.wkbCompoundCurveZ, 1),
-               (ogr.wkbCompoundCurveM, 1),
-               (ogr.wkbCompoundCurveZM, 1),
-               (ogr.wkbCurvePolygon, 0),
-               (ogr.wkbTriangle, 0),
-               (ogr.wkbPolyhedralSurface, 0),
-               (ogr.wkbTIN, 0) ]
+    tuples = [(ogr.wkbPoint, 0),
+              (ogr.wkbPoint25D, 0),
+              (ogr.wkbPointM, 0),
+              (ogr.wkbPointZM, 0),
+              (ogr.wkbCircularString, 1),
+              (ogr.wkbCircularStringZ, 1),
+              (ogr.wkbLineString, 1),
+              (ogr.wkbCompoundCurve, 1),
+              (ogr.wkbCompoundCurveZ, 1),
+              (ogr.wkbCompoundCurveM, 1),
+              (ogr.wkbCompoundCurveZM, 1),
+              (ogr.wkbCurvePolygon, 0),
+              (ogr.wkbTriangle, 0),
+              (ogr.wkbPolyhedralSurface, 0),
+              (ogr.wkbTIN, 0)]
     for (gt, res) in tuples:
         if ogr.GT_IsCurve(gt) != res:
             gdaltest.post_reason('fail')
@@ -3680,19 +3736,19 @@ def ogr_geom_gt_functions():
             return 'fail'
 
     # GT_IsSurface
-    tuples = [ (ogr.wkbPoint, 0),
-               (ogr.wkbPoint25D, 0),
-               (ogr.wkbPointM, 0),
-               (ogr.wkbPointZM, 0),
-               (ogr.wkbCircularString, 0),
-               (ogr.wkbCurvePolygon, 1),
-               (ogr.wkbCurvePolygonZ, 1),
-               (ogr.wkbCurvePolygonM, 1),
-               (ogr.wkbCurvePolygonZM, 1),
-               (ogr.wkbPolygon, 1),
-               (ogr.wkbTriangle, 1),
-               (ogr.wkbPolyhedralSurface, 1),
-               (ogr.wkbTIN, 1) ]
+    tuples = [(ogr.wkbPoint, 0),
+              (ogr.wkbPoint25D, 0),
+              (ogr.wkbPointM, 0),
+              (ogr.wkbPointZM, 0),
+              (ogr.wkbCircularString, 0),
+              (ogr.wkbCurvePolygon, 1),
+              (ogr.wkbCurvePolygonZ, 1),
+              (ogr.wkbCurvePolygonM, 1),
+              (ogr.wkbCurvePolygonZM, 1),
+              (ogr.wkbPolygon, 1),
+              (ogr.wkbTriangle, 1),
+              (ogr.wkbPolyhedralSurface, 1),
+              (ogr.wkbTIN, 1)]
     for (gt, res) in tuples:
         if ogr.GT_IsSurface(gt) != res:
             gdaltest.post_reason('fail')
@@ -3700,15 +3756,15 @@ def ogr_geom_gt_functions():
             return 'fail'
 
     # GT_GetCollection
-    tuples = [ (ogr.wkbPoint, ogr.wkbMultiPoint),
-               (ogr.wkbPoint25D, ogr.wkbMultiPoint25D),
-               (ogr.wkbPointM, ogr.wkbMultiPointM),
-               (ogr.wkbPointZM, ogr.wkbMultiPointZM),
-               (ogr.wkbCircularString, ogr.wkbMultiCurve),
-               (ogr.wkbCompoundCurve, ogr.wkbMultiCurve),
-               (ogr.wkbCurvePolygon, ogr.wkbMultiSurface),
-               (ogr.wkbLineString, ogr.wkbMultiLineString),
-               (ogr.wkbPolygon, ogr.wkbMultiPolygon) ]
+    tuples = [(ogr.wkbPoint, ogr.wkbMultiPoint),
+              (ogr.wkbPoint25D, ogr.wkbMultiPoint25D),
+              (ogr.wkbPointM, ogr.wkbMultiPointM),
+              (ogr.wkbPointZM, ogr.wkbMultiPointZM),
+              (ogr.wkbCircularString, ogr.wkbMultiCurve),
+              (ogr.wkbCompoundCurve, ogr.wkbMultiCurve),
+              (ogr.wkbCurvePolygon, ogr.wkbMultiSurface),
+              (ogr.wkbLineString, ogr.wkbMultiLineString),
+              (ogr.wkbPolygon, ogr.wkbMultiPolygon)]
     for (gt, res) in tuples:
         if ogr.GT_GetCollection(gt) != res:
             gdaltest.post_reason('fail')
@@ -3716,21 +3772,21 @@ def ogr_geom_gt_functions():
             return 'fail'
 
     # GT_IsNonLinear
-    tuples = [ (ogr.wkbPoint, 0),
-               (ogr.wkbPoint25D, 0),
-               (ogr.wkbPointM, 0),
-               (ogr.wkbPointZM, 0),
-               (ogr.wkbCircularString, 1),
-               (ogr.wkbCircularStringM, 1),
-               (ogr.wkbCircularStringZ, 1),
-               (ogr.wkbCircularStringZM, 1),
-               (ogr.wkbCompoundCurve, 1),
-               (ogr.wkbCurvePolygon, 1),
-               (ogr.wkbMultiCurve, 1),
-               (ogr.wkbMultiSurface, 1),
-               (ogr.wkbLineString, 0),
-               (ogr.wkbPolygon, 0),
-               (ogr.wkbTriangle, 0) ]
+    tuples = [(ogr.wkbPoint, 0),
+              (ogr.wkbPoint25D, 0),
+              (ogr.wkbPointM, 0),
+              (ogr.wkbPointZM, 0),
+              (ogr.wkbCircularString, 1),
+              (ogr.wkbCircularStringM, 1),
+              (ogr.wkbCircularStringZ, 1),
+              (ogr.wkbCircularStringZM, 1),
+              (ogr.wkbCompoundCurve, 1),
+              (ogr.wkbCurvePolygon, 1),
+              (ogr.wkbMultiCurve, 1),
+              (ogr.wkbMultiSurface, 1),
+              (ogr.wkbLineString, 0),
+              (ogr.wkbPolygon, 0),
+              (ogr.wkbTriangle, 0)]
     for (gt, res) in tuples:
         if ogr.GT_IsNonLinear(gt) != res:
             gdaltest.post_reason('fail')
@@ -3738,22 +3794,22 @@ def ogr_geom_gt_functions():
             return 'fail'
 
     # GT_GetCurve
-    tuples = [ (ogr.wkbPoint, ogr.wkbPoint),
-               (ogr.wkbPoint25D, ogr.wkbPoint25D),
-               (ogr.wkbPointM, ogr.wkbPointM),
-               (ogr.wkbPointZM, ogr.wkbPointZM),
-               (ogr.wkbCircularString, ogr.wkbCircularString),
-               (ogr.wkbCircularStringZ, ogr.wkbCircularStringZ),
-               (ogr.wkbCircularStringM, ogr.wkbCircularStringM),
-               (ogr.wkbCircularStringZM, ogr.wkbCircularStringZM),
-               (ogr.wkbCompoundCurve, ogr.wkbCompoundCurve),
-               (ogr.wkbCurvePolygon, ogr.wkbCurvePolygon),
-               (ogr.wkbLineString, ogr.wkbCompoundCurve),
-               (ogr.wkbPolygon, ogr.wkbCurvePolygon),
-               (ogr.wkbMultiLineString, ogr.wkbMultiCurve),
-               (ogr.wkbMultiPolygon, ogr.wkbMultiSurface),
-               (ogr.wkbMultiCurve, ogr.wkbMultiCurve),
-               (ogr.wkbMultiSurface, ogr.wkbMultiSurface) ]
+    tuples = [(ogr.wkbPoint, ogr.wkbPoint),
+              (ogr.wkbPoint25D, ogr.wkbPoint25D),
+              (ogr.wkbPointM, ogr.wkbPointM),
+              (ogr.wkbPointZM, ogr.wkbPointZM),
+              (ogr.wkbCircularString, ogr.wkbCircularString),
+              (ogr.wkbCircularStringZ, ogr.wkbCircularStringZ),
+              (ogr.wkbCircularStringM, ogr.wkbCircularStringM),
+              (ogr.wkbCircularStringZM, ogr.wkbCircularStringZM),
+              (ogr.wkbCompoundCurve, ogr.wkbCompoundCurve),
+              (ogr.wkbCurvePolygon, ogr.wkbCurvePolygon),
+              (ogr.wkbLineString, ogr.wkbCompoundCurve),
+              (ogr.wkbPolygon, ogr.wkbCurvePolygon),
+              (ogr.wkbMultiLineString, ogr.wkbMultiCurve),
+              (ogr.wkbMultiPolygon, ogr.wkbMultiSurface),
+              (ogr.wkbMultiCurve, ogr.wkbMultiCurve),
+              (ogr.wkbMultiSurface, ogr.wkbMultiSurface)]
     for (gt, res) in tuples:
         if ogr.GT_GetCurve(gt) != res:
             gdaltest.post_reason('fail')
@@ -3761,22 +3817,22 @@ def ogr_geom_gt_functions():
             return 'fail'
 
     # GT_GetLinear
-    tuples = [ (ogr.wkbPoint, ogr.wkbPoint),
-               (ogr.wkbPoint25D, ogr.wkbPoint25D),
-               (ogr.wkbPointM, ogr.wkbPointM),
-               (ogr.wkbPointZM, ogr.wkbPointZM),
-               (ogr.wkbCircularString, ogr.wkbLineString),
-               (ogr.wkbCircularStringM, ogr.wkbLineStringM),
-               (ogr.wkbCircularStringZ, ogr.wkbLineString25D),
-               (ogr.wkbCircularStringZM, ogr.wkbLineStringZM),
-               (ogr.wkbCompoundCurve, ogr.wkbLineString),
-               (ogr.wkbCurvePolygon, ogr.wkbPolygon),
-               (ogr.wkbLineString, ogr.wkbLineString),
-               (ogr.wkbPolygon, ogr.wkbPolygon),
-               (ogr.wkbMultiLineString, ogr.wkbMultiLineString),
-               (ogr.wkbMultiPolygon, ogr.wkbMultiPolygon),
-               (ogr.wkbMultiCurve, ogr.wkbMultiLineString),
-               (ogr.wkbMultiSurface, ogr.wkbMultiPolygon) ]
+    tuples = [(ogr.wkbPoint, ogr.wkbPoint),
+              (ogr.wkbPoint25D, ogr.wkbPoint25D),
+              (ogr.wkbPointM, ogr.wkbPointM),
+              (ogr.wkbPointZM, ogr.wkbPointZM),
+              (ogr.wkbCircularString, ogr.wkbLineString),
+              (ogr.wkbCircularStringM, ogr.wkbLineStringM),
+              (ogr.wkbCircularStringZ, ogr.wkbLineString25D),
+              (ogr.wkbCircularStringZM, ogr.wkbLineStringZM),
+              (ogr.wkbCompoundCurve, ogr.wkbLineString),
+              (ogr.wkbCurvePolygon, ogr.wkbPolygon),
+              (ogr.wkbLineString, ogr.wkbLineString),
+              (ogr.wkbPolygon, ogr.wkbPolygon),
+              (ogr.wkbMultiLineString, ogr.wkbMultiLineString),
+              (ogr.wkbMultiPolygon, ogr.wkbMultiPolygon),
+              (ogr.wkbMultiCurve, ogr.wkbMultiLineString),
+              (ogr.wkbMultiSurface, ogr.wkbMultiPolygon)]
     for (gt, res) in tuples:
         if ogr.GT_GetLinear(gt) != res:
             gdaltest.post_reason('fail')
@@ -3788,10 +3844,11 @@ def ogr_geom_gt_functions():
 ###############################################################################
 # Limit cases
 
+
 def ogr_geom_api_limit_tests():
 
     p = ogr.Geometry(ogr.wkbPoint)
-    l = ogr.Geometry(ogr.wkbLineString)
+    lyr = ogr.Geometry(ogr.wkbLineString)
     poly = ogr.Geometry(ogr.wkbPolygon)
 
     with gdaltest.error_handler():
@@ -3799,9 +3856,9 @@ def ogr_geom_api_limit_tests():
         p.GetY(1)
         p.GetZ(1)
 
-        l.GetX(1)
-        l.GetY(1)
-        l.GetZ(1)
+        lyr.GetX(1)
+        lyr.GetY(1)
+        lyr.GetZ(1)
 
         poly.GetX()
         poly.GetY()
@@ -3810,15 +3867,15 @@ def ogr_geom_api_limit_tests():
         poly.GetPoints()
 
         p.GetPoint(1)
-        l.GetPoint(1)
+        lyr.GetPoint(1)
         poly.GetPoint(1)
 
         p.SetPoint(1, 0, 0)
-        l.SetPoint(-1, 0, 0)
+        lyr.SetPoint(-1, 0, 0)
         poly.SetPoint(0, 0, 0)
 
         p.SetPoint_2D(1, 0, 0)
-        l.SetPoint_2D(-1, 0, 0)
+        lyr.SetPoint_2D(-1, 0, 0)
         poly.SetPoint_2D(0, 0, 0)
 
         poly.AddPoint(0, 0)
@@ -3835,6 +3892,7 @@ def ogr_geom_api_limit_tests():
 
 ###############################################################################
 # Test Equals
+
 
 def ogr_geom_equals():
 
@@ -3906,37 +3964,38 @@ def ogr_geom_equals():
 ###############################################################################
 # Test FlattenTo2D(), SetCoordinateDimension(2) and SetCoordinateDimension(3) with Measured geometries
 
+
 def ogr_geom_measured_geometries_to_2D_or_3D():
 
-    list_wkt = [ [ 'POINT M (1 2 3)', 'POINT (1 2)', 'POINT Z (1 2 0)' ],
-                 [ 'POINT ZM (1 2 3 4)', 'POINT (1 2)', 'POINT Z (1 2 3)' ],
-                 [ 'LINESTRING M (1 2 3)', 'LINESTRING (1 2)', 'LINESTRING Z (1 2 0)' ],
-                 [ 'LINESTRING ZM (1 2 3 4)', 'LINESTRING (1 2)', 'LINESTRING Z (1 2 3)' ],
-                 [ 'POLYGON M ((1 2 3))', 'POLYGON ((1 2))', 'POLYGON Z ((1 2 0))' ],
-                 [ 'POLYGON ZM ((1 2 3 4))', 'POLYGON ((1 2))', 'POLYGON Z ((1 2 3))' ],
-                 [ 'CIRCULARSTRING M (1 2 3,4 5 6,7 8 9)', 'CIRCULARSTRING (1 2,4 5,7 8)', 'CIRCULARSTRING Z (1 2 0,4 5 0,7 8 0)' ],
-                 [ 'CIRCULARSTRING ZM (1 2 3 0,4 5 6 0,7 8 9 0)', 'CIRCULARSTRING (1 2,4 5,7 8)', 'CIRCULARSTRING Z (1 2 3,4 5 6,7 8 9)' ],
-                 [ 'COMPOUNDCURVE M ((1 2 3,4 5 6))', 'COMPOUNDCURVE ((1 2,4 5))', 'COMPOUNDCURVE Z ((1 2 0,4 5 0))' ],
-                 [ 'COMPOUNDCURVE ZM ((1 2 3 4,5 6 7 8))', 'COMPOUNDCURVE ((1 2,5 6))', 'COMPOUNDCURVE Z ((1 2 3,5 6 7))' ],
-                 [ 'MULTIPOINT M ((1 2 3))', 'MULTIPOINT ((1 2))', 'MULTIPOINT Z ((1 2 0))' ],
-                 [ 'MULTIPOINT ZM ((1 2 3 4))', 'MULTIPOINT ((1 2))', 'MULTIPOINT Z ((1 2 3))' ],
-                 [ 'MULTILINESTRING M ((1 2 3))', 'MULTILINESTRING ((1 2))', 'MULTILINESTRING Z ((1 2 0))' ],
-                 [ 'MULTILINESTRING ZM ((1 2 3 4))', 'MULTILINESTRING ((1 2))', 'MULTILINESTRING Z ((1 2 3))' ],
-                 [ 'MULTICURVE M ((1 2 3))', 'MULTICURVE ((1 2))', 'MULTICURVE Z ((1 2 0))' ],
-                 [ 'MULTICURVE ZM ((1 2 3 4))', 'MULTICURVE ((1 2))', 'MULTICURVE Z ((1 2 3))' ],
-                 [ 'MULTIPOLYGON M (((1 2 3)))', 'MULTIPOLYGON (((1 2)))', 'MULTIPOLYGON Z (((1 2 0)))' ],
-                 [ 'MULTIPOLYGON ZM (((1 2 3 4)))', 'MULTIPOLYGON (((1 2)))', 'MULTIPOLYGON Z (((1 2 3)))' ],
-                 [ 'MULTISURFACE M (((1 2 3)))', 'MULTISURFACE (((1 2)))', 'MULTISURFACE Z (((1 2 0)))' ],
-                 [ 'MULTISURFACE ZM (((1 2 3 4)))', 'MULTISURFACE (((1 2)))', 'MULTISURFACE Z (((1 2 3)))' ],
-                 [ 'GEOMETRYCOLLECTION M (POINT M (1 2 3))', 'GEOMETRYCOLLECTION (POINT (1 2))', 'GEOMETRYCOLLECTION Z (POINT Z (1 2 0))' ],
-                 [ 'GEOMETRYCOLLECTION ZM (POINT ZM (1 2 3 4))', 'GEOMETRYCOLLECTION (POINT (1 2))', 'GEOMETRYCOLLECTION Z (POINT Z (1 2 3))' ],
-                 [ 'TRIANGLE M ((0 0 3,0 1 3,1 1 3,0 0 3))', 'TRIANGLE ((0 0,0 1,1 1,0 0))', 'TRIANGLE Z ((0 0 0,0 1 0,1 1 0,0 0 0))' ],
-                 [ 'TRIANGLE ZM ((0 0 3 4,0 1 3 4,1 1 3 4,0 0 3 4))', 'TRIANGLE ((0 0,0 1,1 1,0 0))', 'TRIANGLE Z ((0 0 3,0 1 3,1 1 3,0 0 3))' ],
-                 [ 'POLYHEDRALSURFACE M (((0 0 3,0 1 3,1 1 3,0 0 3)))', 'POLYHEDRALSURFACE (((0 0,0 1,1 1,0 0)))', 'POLYHEDRALSURFACE Z (((0 0 0,0 1 0,1 1 0,0 0 0)))' ],
-                 [ 'POLYHEDRALSURFACE ZM (((0 0 3 4,0 1 3 4,1 1 3 4,0 0 3 4)))', 'POLYHEDRALSURFACE (((0 0,0 1,1 1,0 0)))', 'POLYHEDRALSURFACE Z (((0 0 3,0 1 3,1 1 3,0 0 3)))' ],
-                 [ 'TIN M (((0 0 3,0 1 3,1 1 3,0 0 3)))', 'TIN (((0 0,0 1,1 1,0 0)))', 'TIN Z (((0 0 0,0 1 0,1 1 0,0 0 0)))' ],
-                 [ 'TIN ZM (((0 0 3 4,0 1 3 4,1 1 3 4,0 0 3 4)))', 'TIN (((0 0,0 1,1 1,0 0)))', 'TIN Z (((0 0 3,0 1 3,1 1 3,0 0 3)))' ],
-               ]
+    list_wkt = [['POINT M (1 2 3)', 'POINT (1 2)', 'POINT Z (1 2 0)'],
+                ['POINT ZM (1 2 3 4)', 'POINT (1 2)', 'POINT Z (1 2 3)'],
+                ['LINESTRING M (1 2 3)', 'LINESTRING (1 2)', 'LINESTRING Z (1 2 0)'],
+                ['LINESTRING ZM (1 2 3 4)', 'LINESTRING (1 2)', 'LINESTRING Z (1 2 3)'],
+                ['POLYGON M ((1 2 3))', 'POLYGON ((1 2))', 'POLYGON Z ((1 2 0))'],
+                ['POLYGON ZM ((1 2 3 4))', 'POLYGON ((1 2))', 'POLYGON Z ((1 2 3))'],
+                ['CIRCULARSTRING M (1 2 3,4 5 6,7 8 9)', 'CIRCULARSTRING (1 2,4 5,7 8)', 'CIRCULARSTRING Z (1 2 0,4 5 0,7 8 0)'],
+                ['CIRCULARSTRING ZM (1 2 3 0,4 5 6 0,7 8 9 0)', 'CIRCULARSTRING (1 2,4 5,7 8)', 'CIRCULARSTRING Z (1 2 3,4 5 6,7 8 9)'],
+                ['COMPOUNDCURVE M ((1 2 3,4 5 6))', 'COMPOUNDCURVE ((1 2,4 5))', 'COMPOUNDCURVE Z ((1 2 0,4 5 0))'],
+                ['COMPOUNDCURVE ZM ((1 2 3 4,5 6 7 8))', 'COMPOUNDCURVE ((1 2,5 6))', 'COMPOUNDCURVE Z ((1 2 3,5 6 7))'],
+                ['MULTIPOINT M ((1 2 3))', 'MULTIPOINT ((1 2))', 'MULTIPOINT Z ((1 2 0))'],
+                ['MULTIPOINT ZM ((1 2 3 4))', 'MULTIPOINT ((1 2))', 'MULTIPOINT Z ((1 2 3))'],
+                ['MULTILINESTRING M ((1 2 3))', 'MULTILINESTRING ((1 2))', 'MULTILINESTRING Z ((1 2 0))'],
+                ['MULTILINESTRING ZM ((1 2 3 4))', 'MULTILINESTRING ((1 2))', 'MULTILINESTRING Z ((1 2 3))'],
+                ['MULTICURVE M ((1 2 3))', 'MULTICURVE ((1 2))', 'MULTICURVE Z ((1 2 0))'],
+                ['MULTICURVE ZM ((1 2 3 4))', 'MULTICURVE ((1 2))', 'MULTICURVE Z ((1 2 3))'],
+                ['MULTIPOLYGON M (((1 2 3)))', 'MULTIPOLYGON (((1 2)))', 'MULTIPOLYGON Z (((1 2 0)))'],
+                ['MULTIPOLYGON ZM (((1 2 3 4)))', 'MULTIPOLYGON (((1 2)))', 'MULTIPOLYGON Z (((1 2 3)))'],
+                ['MULTISURFACE M (((1 2 3)))', 'MULTISURFACE (((1 2)))', 'MULTISURFACE Z (((1 2 0)))'],
+                ['MULTISURFACE ZM (((1 2 3 4)))', 'MULTISURFACE (((1 2)))', 'MULTISURFACE Z (((1 2 3)))'],
+                ['GEOMETRYCOLLECTION M (POINT M (1 2 3))', 'GEOMETRYCOLLECTION (POINT (1 2))', 'GEOMETRYCOLLECTION Z (POINT Z (1 2 0))'],
+                ['GEOMETRYCOLLECTION ZM (POINT ZM (1 2 3 4))', 'GEOMETRYCOLLECTION (POINT (1 2))', 'GEOMETRYCOLLECTION Z (POINT Z (1 2 3))'],
+                ['TRIANGLE M ((0 0 3,0 1 3,1 1 3,0 0 3))', 'TRIANGLE ((0 0,0 1,1 1,0 0))', 'TRIANGLE Z ((0 0 0,0 1 0,1 1 0,0 0 0))'],
+                ['TRIANGLE ZM ((0 0 3 4,0 1 3 4,1 1 3 4,0 0 3 4))', 'TRIANGLE ((0 0,0 1,1 1,0 0))', 'TRIANGLE Z ((0 0 3,0 1 3,1 1 3,0 0 3))'],
+                ['POLYHEDRALSURFACE M (((0 0 3,0 1 3,1 1 3,0 0 3)))', 'POLYHEDRALSURFACE (((0 0,0 1,1 1,0 0)))', 'POLYHEDRALSURFACE Z (((0 0 0,0 1 0,1 1 0,0 0 0)))'],
+                ['POLYHEDRALSURFACE ZM (((0 0 3 4,0 1 3 4,1 1 3 4,0 0 3 4)))', 'POLYHEDRALSURFACE (((0 0,0 1,1 1,0 0)))', 'POLYHEDRALSURFACE Z (((0 0 3,0 1 3,1 1 3,0 0 3)))'],
+                ['TIN M (((0 0 3,0 1 3,1 1 3,0 0 3)))', 'TIN (((0 0,0 1,1 1,0 0)))', 'TIN Z (((0 0 0,0 1 0,1 1 0,0 0 0)))'],
+                ['TIN ZM (((0 0 3 4,0 1 3 4,1 1 3 4,0 0 3 4)))', 'TIN (((0 0,0 1,1 1,0 0)))', 'TIN Z (((0 0 3,0 1 3,1 1 3,0 0 3)))'],
+                ]
     for (before, after_2D, after_3D) in list_wkt:
 
         geom = ogr.CreateGeometryFromWkt(before)
@@ -3984,19 +4043,19 @@ def ogr_geom_measured_geometries_to_2D_or_3D():
             print(geom.ExportToIsoWkt())
             return 'fail'
 
-    if ogr.CreateGeometryFromWkt('POINT (1 2)').CoordinateDimension() != 2 :
+    if ogr.CreateGeometryFromWkt('POINT (1 2)').CoordinateDimension() != 2:
         gdaltest.post_reason('fail')
         return 'fail'
 
-    if ogr.CreateGeometryFromWkt('POINT M (1 2 3)').CoordinateDimension() != 3 :
+    if ogr.CreateGeometryFromWkt('POINT M (1 2 3)').CoordinateDimension() != 3:
         gdaltest.post_reason('fail')
         return 'fail'
 
-    if ogr.CreateGeometryFromWkt('POINT Z (1 2 3)').CoordinateDimension() != 3 :
+    if ogr.CreateGeometryFromWkt('POINT Z (1 2 3)').CoordinateDimension() != 3:
         gdaltest.post_reason('fail')
         return 'fail'
 
-    if ogr.CreateGeometryFromWkt('POINT ZM (1 2 3 4)').CoordinateDimension() != 4 :
+    if ogr.CreateGeometryFromWkt('POINT ZM (1 2 3 4)').CoordinateDimension() != 4:
         gdaltest.post_reason('fail')
         return 'fail'
 
@@ -4012,11 +4071,12 @@ def ogr_geom_measured_geometries_to_2D_or_3D():
 ###############################################################################
 # Test PostGIS EWKT with XYM
 
+
 def ogr_geom_postgis_ewkt_xym():
 
-    list_wkt = [ [ 'POINTM(1 2 3)', 'POINT M (1 2 3)' ],
-                 [ 'GEOMETRYCOLLECTIONM(POINTM(1 2 3))', 'GEOMETRYCOLLECTION M (POINT M (1 2 3))' ],
-               ]
+    list_wkt = [['POINTM(1 2 3)', 'POINT M (1 2 3)'],
+                ['GEOMETRYCOLLECTIONM(POINTM(1 2 3))', 'GEOMETRYCOLLECTION M (POINT M (1 2 3))'],
+                ]
     for (before, after) in list_wkt:
         geom = ogr.CreateGeometryFromWkt(before)
         if geom.ExportToIsoWkt() != after:
@@ -4031,16 +4091,17 @@ def ogr_geom_postgis_ewkt_xym():
 ###############################################################################
 # Test ogr.wkbCurve / ogr.wkbSurface
 
+
 def ogr_geom_curve_surface():
 
-    tests = [ [ ogr.wkbCurve, "Curve" ],
-              [ ogr.wkbCurveZ, "3D Curve" ],
-              [ ogr.wkbCurveM, "Measured Curve" ],
-              [ ogr.wkbCurveZM, "3D Measured Curve" ],
-              [ ogr.wkbSurface, "Surface" ],
-              [ ogr.wkbSurfaceZ, "3D Surface" ],
-              [ ogr.wkbSurfaceM, "Measured Surface" ],
-              [ ogr.wkbSurfaceZM, "3D Measured Surface" ] ]
+    tests = [[ogr.wkbCurve, "Curve"],
+             [ogr.wkbCurveZ, "3D Curve"],
+             [ogr.wkbCurveM, "Measured Curve"],
+             [ogr.wkbCurveZM, "3D Measured Curve"],
+             [ogr.wkbSurface, "Surface"],
+             [ogr.wkbSurfaceZ, "3D Surface"],
+             [ogr.wkbSurfaceM, "Measured Surface"],
+             [ogr.wkbSurfaceZM, "3D Measured Surface"]]
 
     for (wkb_type, name) in tests:
         if ogr.GeometryTypeToName(wkb_type) != name:
@@ -4055,23 +4116,24 @@ def ogr_geom_curve_surface():
 ###############################################################################
 # Test importing corrupted WKB
 
+
 def ogr_geom_import_corrupted_wkb():
 
-    list_wkt = [ 'POINT ZM (1 2 3 4)'
-                 'LINESTRING ZM (1 2 3 4)'
-                 'POLYGON ZM ((1 2 3 4))'
-                 'CIRCULARSTRING ZM (1 2 3 0,4 5 6 0,7 8 9 0)',
-                 'COMPOUNDCURVE ZM ((1 2 3 4,5 6 7 8))',
-                 'MULTIPOINT ZM ((1 2 3 4))',
-                 'MULTILINESTRING ZM ((1 2 3 4))',
-                 'MULTICURVE ZM ((1 2 3 4))',
-                 'MULTIPOLYGON ZM (((1 2 3 4)))',
-                 'MULTISURFACE ZM (((1 2 3 4)))',
-                 'GEOMETRYCOLLECTION ZM (POINT ZM (1 2 3 4))',
-                 'TRIANGLE ZM ((0 0 3 4,0 1 3 4,1 1 3 4,0 0 3 4))',
-                 'POLYHEDRALSURFACE ZM (((0 0 3 4,0 1 3 4,1 1 3 4,0 0 3 4)),((0 0 3 4,0 1 3 4,1 1 3 4,0 0 3 4)))',
-                 'TIN ZM (((0 0 3 4,0 1 3 4,1 1 3 4,0 0 3 4)),((0 0 3 4,0 1 3 4,1 1 3 4,0 0 3 4)))',
-               ]
+    list_wkt = ['POINT ZM (1 2 3 4)'
+                'LINESTRING ZM (1 2 3 4)'
+                'POLYGON ZM ((1 2 3 4))'
+                'CIRCULARSTRING ZM (1 2 3 0,4 5 6 0,7 8 9 0)',
+                'COMPOUNDCURVE ZM ((1 2 3 4,5 6 7 8))',
+                'MULTIPOINT ZM ((1 2 3 4))',
+                'MULTILINESTRING ZM ((1 2 3 4))',
+                'MULTICURVE ZM ((1 2 3 4))',
+                'MULTIPOLYGON ZM (((1 2 3 4)))',
+                'MULTISURFACE ZM (((1 2 3 4)))',
+                'GEOMETRYCOLLECTION ZM (POINT ZM (1 2 3 4))',
+                'TRIANGLE ZM ((0 0 3 4,0 1 3 4,1 1 3 4,0 0 3 4))',
+                'POLYHEDRALSURFACE ZM (((0 0 3 4,0 1 3 4,1 1 3 4,0 0 3 4)),((0 0 3 4,0 1 3 4,1 1 3 4,0 0 3 4)))',
+                'TIN ZM (((0 0 3 4,0 1 3 4,1 1 3 4,0 0 3 4)),((0 0 3 4,0 1 3 4,1 1 3 4,0 0 3 4)))',
+                ]
 
     for wkt in list_wkt:
         g = ogr.CreateGeometryFromWkt(wkt)
@@ -4090,7 +4152,7 @@ def ogr_geom_import_corrupted_wkb():
                 else:
                     wkb[i] = 255 - wkb[i]
                 with gdaltest.error_handler():
-                    if sys.version_info >= (3,0,0):
+                    if sys.version_info >= (3, 0, 0):
                         g = ogr.CreateGeometryFromWkb(bytes(wkb))
                     else:
                         g = ogr.CreateGeometryFromWkb(str(wkb))
@@ -4105,7 +4167,7 @@ def ogr_geom_import_corrupted_wkb():
         # Test truncation of the WKB
         for i in range(len(wkb)):
             with gdaltest.error_handler():
-                if sys.version_info >= (3,0,0):
+                if sys.version_info >= (3, 0, 0):
                     g = ogr.CreateGeometryFromWkb(bytes(wkb[0:i]))
                 else:
                     g = ogr.CreateGeometryFromWkb(str(wkb[0:i]))
@@ -4119,24 +4181,25 @@ def ogr_geom_import_corrupted_wkb():
 ###############################################################################
 # Test conversions from/into triangle, TIN, PS
 
+
 def ogr_geom_triangle_ps_tin_conversion():
 
-    wkts = [ "TRIANGLE ((0 0,0 1,1 1,0 0))",
-             "POLYGON ((0 0,0 1,1 1,0 0))",
-             "CURVEPOLYGON ((0 0,0 1,1 1,0 0))",
-             "MULTIPOLYGON (((0 0,0 1,1 1,0 0)))",
-             "MULTISURFACE (((0 0,0 1,1 1,0 0)))",
-             "TIN (((0 0,0 1,1 1,0 0)))",
-             "POLYHEDRALSURFACE (((0 0,0 1,1 1,0 0)))" ]
+    wkts = ["TRIANGLE ((0 0,0 1,1 1,0 0))",
+            "POLYGON ((0 0,0 1,1 1,0 0))",
+            "CURVEPOLYGON ((0 0,0 1,1 1,0 0))",
+            "MULTIPOLYGON (((0 0,0 1,1 1,0 0)))",
+            "MULTISURFACE (((0 0,0 1,1 1,0 0)))",
+            "TIN (((0 0,0 1,1 1,0 0)))",
+            "POLYHEDRALSURFACE (((0 0,0 1,1 1,0 0)))"]
 
     for wkt in wkts:
         for wkt_target in wkts:
-            #print(wkt, wkt_target)
+            # print(wkt, wkt_target)
             g = ogr.CreateGeometryFromWkt(wkt)
             g2 = ogr.CreateGeometryFromWkt(wkt_target)
             got_wkt = ogr.ForceTo(g, g2.GetGeometryType()).ExportToWkt()
-            if not ( g.GetGeometryType() in [ ogr.wkbTriangle, ogr.wkbTIN, ogr.wkbPolyhedralSurface ] or \
-                     g2.GetGeometryType() in [ ogr.wkbTriangle, ogr.wkbTIN, ogr.wkbPolyhedralSurface ] ):
+            if not (g.GetGeometryType() in [ogr.wkbTriangle, ogr.wkbTIN, ogr.wkbPolyhedralSurface] or
+                    g2.GetGeometryType() in [ogr.wkbTriangle, ogr.wkbTIN, ogr.wkbPolyhedralSurface]):
                 continue
             wkt_expected = wkt_target
             if (g.GetGeometryType() == ogr.wkbTIN or g.GetGeometryType() == ogr.wkbPolyhedralSurface) and g2.GetGeometryType() == ogr.wkbCurvePolygon:
@@ -4146,49 +4209,49 @@ def ogr_geom_triangle_ps_tin_conversion():
                 print(wkt, wkt_target, got_wkt, wkt_expected)
                 return 'fail'
 
-    g = ogr.ForceTo( ogr.CreateGeometryFromWkt('POLYGON ((0 0,0 1,1 1,1 0,0 0))'), ogr.wkbTriangle )
+    g = ogr.ForceTo(ogr.CreateGeometryFromWkt('POLYGON ((0 0,0 1,1 1,1 0,0 0))'), ogr.wkbTriangle)
     if g.GetGeometryType() != ogr.wkbPolygon:
         gdaltest.post_reason('fail')
         print(g.ExportToWkt())
         return 'fail'
 
-    g = ogr.ForceTo( ogr.CreateGeometryFromWkt('POLYHEDRALSURFACE (((0 0,0 1,1 1,1 0,0 0)))'), ogr.wkbTIN )
+    g = ogr.ForceTo(ogr.CreateGeometryFromWkt('POLYHEDRALSURFACE (((0 0,0 1,1 1,1 0,0 0)))'), ogr.wkbTIN)
     if g.GetGeometryType() != ogr.wkbPolyhedralSurface:
         gdaltest.post_reason('fail')
         print(g.ExportToWkt())
         return 'fail'
 
-    g = ogr.ForceTo( ogr.CreateGeometryFromWkt('GEOMETRYCOLLECTION (POLYHEDRALSURFACE (((0 0,0 1,1 1,1 0,0 0))))'), ogr.wkbMultiPolygon )
+    g = ogr.ForceTo(ogr.CreateGeometryFromWkt('GEOMETRYCOLLECTION (POLYHEDRALSURFACE (((0 0,0 1,1 1,1 0,0 0))))'), ogr.wkbMultiPolygon)
     if g.ExportToWkt() != 'MULTIPOLYGON (((0 0,0 1,1 1,1 0,0 0)))':
         gdaltest.post_reason('fail')
         print(g.ExportToWkt())
         return 'fail'
 
-    g = ogr.ForceTo( ogr.CreateGeometryFromWkt('GEOMETRYCOLLECTION (TRIANGLE ((0 0,0 1,1 1,0 0)))'), ogr.wkbMultiPolygon )
+    g = ogr.ForceTo(ogr.CreateGeometryFromWkt('GEOMETRYCOLLECTION (TRIANGLE ((0 0,0 1,1 1,0 0)))'), ogr.wkbMultiPolygon)
     if g.ExportToWkt() != 'MULTIPOLYGON (((0 0,0 1,1 1,0 0)))':
         gdaltest.post_reason('fail')
         print(g.ExportToWkt())
         return 'fail'
 
-    g = ogr.ForceTo( ogr.CreateGeometryFromWkt('MULTIPOLYGON (((0 0,0 1,1 1,0 0)))'), ogr.wkbGeometryCollection )
+    g = ogr.ForceTo(ogr.CreateGeometryFromWkt('MULTIPOLYGON (((0 0,0 1,1 1,0 0)))'), ogr.wkbGeometryCollection)
     if g.ExportToWkt() != 'GEOMETRYCOLLECTION (POLYGON ((0 0,0 1,1 1,0 0)))':
         gdaltest.post_reason('fail')
         print(g.ExportToWkt())
         return 'fail'
 
-    g = ogr.ForceTo( ogr.CreateGeometryFromWkt('TRIANGLE ((0 0,0 1,1 1,0 0))'), ogr.wkbGeometryCollection )
+    g = ogr.ForceTo(ogr.CreateGeometryFromWkt('TRIANGLE ((0 0,0 1,1 1,0 0))'), ogr.wkbGeometryCollection)
     if g.ExportToWkt() != 'GEOMETRYCOLLECTION (TRIANGLE ((0 0,0 1,1 1,0 0)))':
         gdaltest.post_reason('fail')
         print(g.ExportToWkt())
         return 'fail'
 
-    g = ogr.ForceTo( ogr.CreateGeometryFromWkt('TIN (((0 0,0 1,1 1,0 0)))'), ogr.wkbGeometryCollection )
+    g = ogr.ForceTo(ogr.CreateGeometryFromWkt('TIN (((0 0,0 1,1 1,0 0)))'), ogr.wkbGeometryCollection)
     if g.ExportToWkt() != 'GEOMETRYCOLLECTION (POLYGON ((0 0,0 1,1 1,0 0)))':
         gdaltest.post_reason('fail')
         print(g.ExportToWkt())
         return 'fail'
 
-    g = ogr.ForceTo( ogr.CreateGeometryFromWkt('POLYHEDRALSURFACE (((0 0,0 1,1 1,0 0)))'), ogr.wkbGeometryCollection )
+    g = ogr.ForceTo(ogr.CreateGeometryFromWkt('POLYHEDRALSURFACE (((0 0,0 1,1 1,0 0)))'), ogr.wkbGeometryCollection)
     if g.ExportToWkt() != 'GEOMETRYCOLLECTION (POLYGON ((0 0,0 1,1 1,0 0)))':
         gdaltest.post_reason('fail')
         print(g.ExportToWkt())
@@ -4197,6 +4260,8 @@ def ogr_geom_triangle_ps_tin_conversion():
     return 'success'
 
 ###############################################################################
+
+
 def ogr_geom_multipoint_envelope_bug():
 
     g = ogr.CreateGeometryFromWkt('MULTIPOINT(0 0,1 1)')
@@ -4215,19 +4280,21 @@ def ogr_geom_multipoint_envelope_bug():
 
     return 'success'
 
-
 ###############################################################################
+
+
 def ogr_geom_polygon_empty_ring():
 
-    g = ogr.Geometry( ogr.wkbPolygon )
-    g2 = ogr.Geometry( ogr.wkbLinearRing )
-    g.AddGeometryDirectly( g2 )
+    g = ogr.Geometry(ogr.wkbPolygon)
+    g2 = ogr.Geometry(ogr.wkbLinearRing)
+    g.AddGeometryDirectly(g2)
     if not g.IsEmpty():
         return 'fail'
 
     return 'success'
 
 ###############################################################################
+
 
 def ogr_geom_polygon_intersects_point():
 
@@ -4248,6 +4315,7 @@ def ogr_geom_polygon_intersects_point():
 
 ###############################################################################
 # Test fix for #7128
+
 
 def ogr_geom_geometrycollection():
 
@@ -4275,10 +4343,196 @@ def ogr_geom_geometrycollection():
     return 'success'
 
 ###############################################################################
+# Test fix for #7126
+
+
+def ogr_geom_assignspatialref():
+
+    g = ogr.CreateGeometryFromWkt('GEOMETRYCOLLECTION(POLYGON((0 0,0 1,1 1,0 0)),COMPOUNDCURVE(CIRCULARSTRING(0 0,1 1,2 0)),POLYHEDRALSURFACE(((0 0,0 1,1 1,0 0))))')
+    sr = osr.SpatialReference()
+    sr.ImportFromEPSG(4326)
+    g.AssignSpatialReference(sr)
+    if g.GetGeometryRef(0).GetSpatialReference().ExportToWkt() != sr.ExportToWkt():
+        return 'fail'
+    if g.GetGeometryRef(0).GetGeometryRef(0).GetSpatialReference().ExportToWkt() != sr.ExportToWkt():
+        return 'fail'
+    if g.GetGeometryRef(1).GetSpatialReference().ExportToWkt() != sr.ExportToWkt():
+        return 'fail'
+    if g.GetGeometryRef(1).GetGeometryRef(0).GetSpatialReference().ExportToWkt() != sr.ExportToWkt():
+        return 'fail'
+    if g.GetGeometryRef(2).GetSpatialReference().ExportToWkt() != sr.ExportToWkt():
+        return 'fail'
+    if g.GetGeometryRef(2).GetGeometryRef(0).GetSpatialReference().ExportToWkt() != sr.ExportToWkt():
+        return 'fail'
+
+    return 'success'
+
+###############################################################################
+
+
+def ogr_geom_swapxy():
+
+    g = ogr.CreateGeometryFromWkt('GEOMETRYCOLLECTION(POINT(1 2),LINESTRING(1 2,2 3),POLYGON((0 0,0 1,1 1,0 0)),COMPOUNDCURVE(CIRCULARSTRING(0 0,1 1,2 0)),POLYHEDRALSURFACE(((0 0,0 1,1 1,0 0))))')
+    g.SwapXY()
+    if g.ExportToWkt() != 'GEOMETRYCOLLECTION (POINT (2 1),LINESTRING (2 1,3 2),POLYGON ((0 0,1 0,1 1,0 0)),COMPOUNDCURVE (CIRCULARSTRING (0 0,1 1,0 2)),POLYHEDRALSURFACE (((0 0,1 0,1 1,0 0))))':
+        print(g)
+        return 'fail'
+
+    return 'success'
+
+###############################################################################
+
+
+def ogr_geom_remove_geometry():
+
+    # With GEOMETRYCOLLECTION
+    g = ogr.CreateGeometryFromWkt('GEOMETRYCOLLECTION (POINT (1 2),LINESTRING (1 2,2 3),POINT (3 4))')
+    if g.RemoveGeometry(3) == 0 or g.RemoveGeometry(-2) == 0:
+        gdaltest.post_reason('fail')
+        return 'fail'
+
+    if g.RemoveGeometry(1) != 0:
+        gdaltest.post_reason('fail')
+        return 'fail'
+    if g.ExportToWkt() != 'GEOMETRYCOLLECTION (POINT (1 2),POINT (3 4))':
+        gdaltest.post_reason('fail')
+        print(g)
+        return 'fail'
+
+    if g.RemoveGeometry(1) != 0:
+        gdaltest.post_reason('fail')
+        return 'fail'
+    if g.ExportToWkt() != 'GEOMETRYCOLLECTION (POINT (1 2))':
+        gdaltest.post_reason('fail')
+        print(g)
+        return 'fail'
+
+    if g.RemoveGeometry(0) != 0:
+        gdaltest.post_reason('fail')
+        return 'fail'
+    if g.ExportToWkt() != 'GEOMETRYCOLLECTION EMPTY':
+        gdaltest.post_reason('fail')
+        print(g)
+        return 'fail'
+
+    g = ogr.CreateGeometryFromWkt('GEOMETRYCOLLECTION (POINT (1 2),LINESTRING (1 2,2 3),POINT (3 4))')
+    if g.RemoveGeometry(-1) != 0:
+        gdaltest.post_reason('fail')
+        return 'fail'
+    if g.ExportToWkt() != 'GEOMETRYCOLLECTION EMPTY':
+        gdaltest.post_reason('fail')
+        print(g)
+        return 'fail'
+
+    # With POLYHEDRALSURFACE/TIN
+    g = ogr.CreateGeometryFromWkt('TIN (((0 0,0 1,1 1,0 0)),((0 0,1 0,1 1,0 0)))')
+    if g.RemoveGeometry(2) == 0 or g.RemoveGeometry(-2) == 0:
+        gdaltest.post_reason('fail')
+        return 'fail'
+
+    if g.RemoveGeometry(1) != 0:
+        gdaltest.post_reason('fail')
+        return 'fail'
+    if g.ExportToWkt() != 'TIN (((0 0,0 1,1 1,0 0)))':
+        gdaltest.post_reason('fail')
+        print(g)
+        return 'fail'
+
+    if g.RemoveGeometry(0) != 0:
+        gdaltest.post_reason('fail')
+        return 'fail'
+    if g.ExportToWkt() != 'TIN EMPTY':
+        gdaltest.post_reason('fail')
+        print(g)
+        return 'fail'
+
+    g = ogr.CreateGeometryFromWkt('TIN (((0 0,0 1,1 1,0 0)),((0 0,1 0,1 1,0 0)))')
+    if g.RemoveGeometry(-1) != 0:
+        gdaltest.post_reason('fail')
+        return 'fail'
+    if g.ExportToWkt() != 'TIN EMPTY':
+        gdaltest.post_reason('fail')
+        print(g)
+        return 'fail'
+
+    # With POLYGON
+    g = ogr.CreateGeometryFromWkt('POLYGON ((0 0,0 10,10 10,10 0,0 0),(1 1,1 9,9 9,1 1))')
+    if g.RemoveGeometry(2) == 0 or g.RemoveGeometry(-2) == 0:
+        gdaltest.post_reason('fail')
+        return 'fail'
+
+    if g.RemoveGeometry(1) != 0:
+        gdaltest.post_reason('fail')
+        return 'fail'
+    if g.ExportToWkt() != 'POLYGON ((0 0,0 10,10 10,10 0,0 0))':
+        gdaltest.post_reason('fail')
+        print(g)
+        return 'fail'
+
+    if g.RemoveGeometry(0) != 0:
+        gdaltest.post_reason('fail')
+        return 'fail'
+    if g.ExportToWkt() != 'POLYGON EMPTY':
+        gdaltest.post_reason('fail')
+        print(g)
+        return 'fail'
+
+    g = ogr.CreateGeometryFromWkt('POLYGON ((0 0,0 10,10 10,10 0,0 0),(1 1,1 9,9 9,1 1))')
+    if g.RemoveGeometry(-1) != 0:
+        gdaltest.post_reason('fail')
+        return 'fail'
+    if g.ExportToWkt() != 'POLYGON EMPTY':
+        gdaltest.post_reason('fail')
+        print(g)
+        return 'fail'
+
+    # Unsupported type
+    g = ogr.CreateGeometryFromWkt('POINT (0 0)')
+    if g.RemoveGeometry(0) == 0:
+        gdaltest.post_reason('fail')
+        return 'fail'
+
+    return 'success'
+
+###############################################################################
+
+
+def ogr_geom_sfcgal():
+
+    if not ogrtest.have_sfcgal():
+        return 'skip'
+
+    g1 = ogr.CreateGeometryFromWkt('TIN EMPTY')
+
+    g2_poly = ogr.CreateGeometryFromWkt('POLYGON((0 0,0 1,1 1,0 0))')
+    g2 = g2_poly.GetGeometryRef(0)
+    g1.Distance(g2)
+
+    g2 = ogr.CreateGeometryFromWkt('CIRCULARSTRING EMPTY')
+    g1.Distance(g2)
+
+    g2 = ogr.CreateGeometryFromWkt('CURVEPOLYGON EMPTY')
+    g1.Distance(g2)
+
+    return 'success'
+
+###############################################################################
+
+
+def ogr_geom_cannot_add_triangle_to_multisurface():
+
+    g = ogr.Geometry(ogr.wkbMultiSurface)
+    if g.AddGeometry(ogr.Geometry(ogr.wkbTriangle)) == 0:
+        return 'fail'
+    return 'success'
+
+###############################################################################
 # cleanup
+
 
 def ogr_geom_cleanup():
     return 'success'
+
 
 gdaltest_list = [
     ogr_geom_area,
@@ -4343,14 +4597,19 @@ gdaltest_list = [
     ogr_geom_polygon_empty_ring,
     ogr_geom_polygon_intersects_point,
     ogr_geom_geometrycollection,
-    ogr_geom_cleanup ]
+    ogr_geom_assignspatialref,
+    ogr_geom_swapxy,
+    ogr_geom_remove_geometry,
+    ogr_geom_sfcgal,
+    ogr_geom_cannot_add_triangle_to_multisurface,
+    ogr_geom_cleanup]
 
 # gdaltest_list = [ ogr_geom_triangle_ps_tin_conversion ]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'ogr_geom' )
+    gdaltest.setup_run('ogr_geom')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#******************************************************************************
+# ******************************************************************************
 #  $Id$
 #
 #  Project:  GDAL
@@ -8,7 +8,7 @@
 #            Mostly useful to build non-conformant files
 #  Author:   Even Rouault, <even dot rouault at spatialys dot com>
 #
-#******************************************************************************
+# ******************************************************************************
 #  Copyright (c) 2015, European Union (European Environment Agency)
 #
 #  Permission is hereby granted, free of charge, to any person obtaining a
@@ -28,7 +28,7 @@
 #  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 #  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
-#******************************************************************************
+# ******************************************************************************
 
 import os
 import struct
@@ -40,12 +40,14 @@ XML_TYPE_IDX = 0
 XML_VALUE_IDX = 1
 XML_FIRST_CHILD_IDX = 2
 
+
 def Usage():
     print('Usage: build_jp2_from_xml in.xml out.jp2')
     return 1
 
-def find_xml_node(ar, element_name, immediate_child = False, only_attributes = False):
-    #type = ar[XML_TYPE_IDX]
+
+def find_xml_node(ar, element_name, immediate_child=False, only_attributes=False):
+    # type = ar[XML_TYPE_IDX]
     value = ar[XML_VALUE_IDX]
     if not immediate_child and value == element_name:
         return ar
@@ -62,14 +64,16 @@ def find_xml_node(ar, element_name, immediate_child = False, only_attributes = F
                 return found
     return None
 
+
 def get_attribute_val(ar, attr_name):
     node = find_xml_node(ar, attr_name, True)
     if node is None or node[XML_TYPE_IDX] != gdal.CXT_Attribute:
         return None
     if len(ar) > XML_FIRST_CHILD_IDX and \
-        node[XML_FIRST_CHILD_IDX][XML_TYPE_IDX] == gdal.CXT_Text:
+            node[XML_FIRST_CHILD_IDX][XML_TYPE_IDX] == gdal.CXT_Text:
         return node[XML_FIRST_CHILD_IDX][XML_VALUE_IDX]
     return None
+
 
 def get_node_content(node):
     if node is None:
@@ -79,6 +83,7 @@ def get_node_content(node):
         if child[XML_TYPE_IDX] == gdal.CXT_Text:
             return child[XML_VALUE_IDX]
     return None
+
 
 def hex_letter_to_number(ch):
     val = 0
@@ -90,14 +95,16 @@ def hex_letter_to_number(ch):
         val = (ord(ch) - ord('A')) + 10
     return val
 
+
 def write_hexstring_as_binary(hex_binary_content, out_f):
-    for i in range(int(len(hex_binary_content)/2)):
-        val = hex_letter_to_number(hex_binary_content[2*i]) * 16 + \
-              hex_letter_to_number(hex_binary_content[2*i+1])
-        if sys.version_info >= (3,0,0):
+    for i in range(int(len(hex_binary_content) / 2)):
+        val = hex_letter_to_number(hex_binary_content[2 * i]) * 16 + \
+            hex_letter_to_number(hex_binary_content[2 * i + 1])
+        if sys.version_info >= (3, 0, 0):
             out_f.write(chr(val).encode('latin1'))
         else:
             out_f.write(chr(val))
+
 
 def parse_field(xml_tree, out_f, src_jp2file):
     if not(xml_tree[XML_TYPE_IDX] == gdal.CXT_Element and xml_tree[XML_VALUE_IDX] == 'Field'):
@@ -106,7 +113,7 @@ def parse_field(xml_tree, out_f, src_jp2file):
     field_name = get_attribute_val(xml_tree, 'name')
     if field_name is None:
         print('Cannot find Field.name attribute')
-        #return False
+        # return False
     field_type = get_attribute_val(xml_tree, 'type')
     if field_type is None:
         print('Cannot find Field.type attribute')
@@ -136,6 +143,7 @@ def parse_field(xml_tree, out_f, src_jp2file):
         return False
     return True
 
+
 marker_map = {
     "SOC": 0xFF4F,
     "EOC": 0xFFD9,
@@ -156,6 +164,7 @@ marker_map = {
     "COM": 0xFF64,
 }
 
+
 def parse_jpc_marker(xml_tree, out_f, src_jp2file):
     if not(xml_tree[XML_TYPE_IDX] == gdal.CXT_Element and xml_tree[XML_VALUE_IDX] == 'Marker'):
         print('Not a Marker element')
@@ -164,7 +173,7 @@ def parse_jpc_marker(xml_tree, out_f, src_jp2file):
     if marker_name is None:
         print('Cannot find Marker.name attribute')
         return False
-    if find_xml_node(xml_tree, 'Field', immediate_child = True):
+    if find_xml_node(xml_tree, 'Field', immediate_child=True):
         if marker_name not in marker_map:
             print('Cannot find marker signature for %s' % marker_name)
             return False
@@ -207,10 +216,10 @@ def parse_jpc_marker(xml_tree, out_f, src_jp2file):
 
         out_f.write(data)
 
-
     return True
 
-def parse_jp2codestream(inpath, xml_tree, out_f, src_jp2file = None):
+
+def parse_jp2codestream(inpath, xml_tree, out_f, src_jp2file=None):
 
     if src_jp2file is None:
         src_jp2filename = get_attribute_val(xml_tree, 'filename')
@@ -230,6 +239,7 @@ def parse_jp2codestream(inpath, xml_tree, out_f, src_jp2file = None):
             return False
     return True
 
+
 def parse_jp2_box(xml_tree, out_f, src_jp2file):
     if not(xml_tree[XML_TYPE_IDX] == gdal.CXT_Element and xml_tree[XML_VALUE_IDX] == 'JP2Box'):
         print('Not a JP2Box element')
@@ -241,25 +251,25 @@ def parse_jp2_box(xml_tree, out_f, src_jp2file):
     if len(jp2box_name) != 4:
         print('Invalid JP2Box.name : %s' % jp2box_name)
         return False
-    hex_binary_content = get_node_content(find_xml_node(xml_tree, 'BinaryContent', immediate_child = True))
-    decoded_content = find_xml_node(xml_tree, 'DecodedContent', immediate_child = True)
-    decoded_geotiff = find_xml_node(xml_tree, 'DecodedGeoTIFF', immediate_child = True)
-    text_content = get_node_content(find_xml_node(xml_tree, 'TextContent', immediate_child = True))
-    xml_content = find_xml_node(xml_tree, 'XMLContent', immediate_child = True)
-    jp2box = find_xml_node(xml_tree, 'JP2Box', immediate_child = True)
-    jp2codestream = find_xml_node(xml_tree, 'JP2KCodeStream', immediate_child = True)
+    hex_binary_content = get_node_content(find_xml_node(xml_tree, 'BinaryContent', immediate_child=True))
+    decoded_content = find_xml_node(xml_tree, 'DecodedContent', immediate_child=True)
+    decoded_geotiff = find_xml_node(xml_tree, 'DecodedGeoTIFF', immediate_child=True)
+    text_content = get_node_content(find_xml_node(xml_tree, 'TextContent', immediate_child=True))
+    xml_content = find_xml_node(xml_tree, 'XMLContent', immediate_child=True)
+    jp2box = find_xml_node(xml_tree, 'JP2Box', immediate_child=True)
+    jp2codestream = find_xml_node(xml_tree, 'JP2KCodeStream', immediate_child=True)
 
     if hex_binary_content:
         if decoded_content or decoded_geotiff or text_content or xml_content or jp2box:
             print('BinaryContent found, and one of DecodedContent/DecodedGeoTIFF/TextContent/XMLContent/JP2Box. The latter will be ignored')
         if jp2box_name == 'uuid':
-            uuid = get_node_content(find_xml_node(xml_tree, 'UUID', immediate_child = True))
+            uuid = get_node_content(find_xml_node(xml_tree, 'UUID', immediate_child=True))
             if uuid is None:
                 print('Cannot find JP2Box.UUID element')
                 return False
         else:
             uuid = ''
-        out_f.write(struct.pack('>I' * 1, 8 + int(len(hex_binary_content)/2) + int(len(uuid)/2)))
+        out_f.write(struct.pack('>I' * 1, 8 + int(len(hex_binary_content) / 2) + int(len(uuid) / 2)))
         out_f.write(jp2box_name.encode('ascii'))
         write_hexstring_as_binary(uuid, out_f)
         write_hexstring_as_binary(hex_binary_content, out_f)
@@ -319,16 +329,18 @@ def parse_jp2_box(xml_tree, out_f, src_jp2file):
             print('Cannot decode VRTDataset. Outputting empty content')
             binary_content = ''
         else:
-            gdal.GetDriverByName('GTiff').CreateCopy('/vsimem/out.tif', vrt_ds)
-            tif_f = gdal.VSIFOpenL('/vsimem/out.tif', 'rb')
+            tmpfilename = '/vsimem/build_jp2_from_xml_tmp.tif'
+            gdal.GetDriverByName('GTiff').CreateCopy(tmpfilename, vrt_ds)
+            tif_f = gdal.VSIFOpenL(tmpfilename, 'rb')
             binary_content = gdal.VSIFReadL(1, 10000, tif_f)
             gdal.VSIFCloseL(tif_f)
+            gdal.Unlink(tmpfilename)
 
-        uuid = get_node_content(find_xml_node(xml_tree, 'UUID', immediate_child = True))
+        uuid = get_node_content(find_xml_node(xml_tree, 'UUID', immediate_child=True))
         if uuid is None:
             uuid = 'B14BF8BD083D4B43A5AE8CD7D5A6CE03'
 
-        out_f.write(struct.pack('>I' * 1, 8 + len(binary_content) + int(len(uuid)/2)))
+        out_f.write(struct.pack('>I' * 1, 8 + len(binary_content) + int(len(uuid) / 2)))
         out_f.write(jp2box_name.encode('ascii'))
         write_hexstring_as_binary(uuid, out_f)
         out_f.write(binary_content)
@@ -366,6 +378,7 @@ def parse_jp2_box(xml_tree, out_f, src_jp2file):
 
     return True
 
+
 def parse_jp2file(inpath, xml_tree, out_f):
     src_jp2filename = get_attribute_val(xml_tree, 'filename')
     if src_jp2filename is None:
@@ -384,6 +397,8 @@ def parse_jp2file(inpath, xml_tree, out_f):
     return True
 
 # Wrapper class for GDAL VSI*L API with class Python file interface
+
+
 class VSILFile:
     def __init__(self, filename, access):
         self.f = gdal.VSIFOpenL(filename, access)
@@ -401,6 +416,7 @@ class VSILFile:
         gdal.VSIFCloseL(self.f)
         self.f = None
 
+
 def build_file(inname, outname):
 
     inpath = os.path.dirname(inname)
@@ -409,7 +425,7 @@ def build_file(inname, outname):
         print('Cannot parse %s' % inname)
         return False
 
-    #out_f = open(outname, 'wb+')
+    # out_f = open(outname, 'wb+')
     out_f = VSILFile(outname, 'wb+')
     if xml_tree[XML_TYPE_IDX] == gdal.CXT_Element and xml_tree[XML_VALUE_IDX] == 'JP2File':
         ret = parse_jp2file(inpath, xml_tree, out_f)
@@ -421,6 +437,7 @@ def build_file(inname, outname):
     out_f.close()
 
     return ret
+
 
 def main():
     i = 1
@@ -444,6 +461,7 @@ def main():
     if build_file(inname, outname):
         return 0
     return 1
+
 
 if __name__ == '__main__':
     sys.exit(main())

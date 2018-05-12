@@ -29,7 +29,7 @@
 #include "ogr_tiger.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 static const char FILE_CODE[] = "R";
 
@@ -78,7 +78,7 @@ static const TigerRecordInfo rtR_info =
 
 TigerTLIDRange::TigerTLIDRange( OGRTigerDataSource * poDSIn,
                                 CPL_UNUSED const char * pszPrototypeModule ) :
-    TigerFileBase(NULL, FILE_CODE)
+    TigerFileBase(nullptr, FILE_CODE)
 {
     poDS = poDSIn;
     poFeatureDefn = new OGRFeatureDefn( "TLIDRange" );

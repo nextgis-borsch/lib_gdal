@@ -44,26 +44,26 @@ if(ENABLE_AVC)
     )
 
     set(LIB_OGRSOURCES
-        ogravcbindriver.cpp 
-        ogravcbindatasource.cpp 
+        ogravcbindriver.cpp
+        ogravcbindatasource.cpp
         ogravcbinlayer.cpp
-		ogravclayer.cpp 
+		ogravclayer.cpp
         ogravcdatasource.cpp
 		ogravce00layer.cpp
-        ogravce00datasource.cpp 
+        ogravce00datasource.cpp
         ogravce00driver.cpp
     )
-    
+
     set(LIB_AVCSOURCES
-        avc_bin.c 
-        avc_binwr.c 
-        avc_e00gen.c 
-        avc_e00parse.c
-		avc_e00write.c 
-        avc_e00read.c 
-        avc_mbyte.c 
-        avc_misc.c
-		avc_rawbin.c 
+        avc_bin.cpp
+        avc_binwr.cpp
+        avc_e00gen.cpp
+        avc_e00parse.cpp
+		avc_e00write.cpp
+        avc_e00read.cpp
+        avc_mbyte.cpp
+        avc_misc.cpp
+		avc_rawbin.cpp 
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_AVCSOURCES} ${LIB_OGRSOURCES})
@@ -71,5 +71,5 @@ if(ENABLE_AVC)
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
 else()
-    warning_msg("Skip avc")  
+    warning_msg("Skip avc")
 endif()

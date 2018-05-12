@@ -31,7 +31,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 static void DGNDumpRawElement( DGNHandle hDGN, DGNElemCore *psCore,
                                FILE *fpOut );
@@ -68,7 +68,7 @@ int main( int argc, char ** argv )
     double dfSFXMax = 0.0;
     double dfSFYMin = 0.0;
     double dfSFYMax = 0.0;
-    const char *pszFilename = NULL;
+    const char *pszFilename = nullptr;
 
     for( int iArg = 1; iArg < argc; iArg++ )
     {
@@ -76,7 +76,7 @@ int main( int argc, char ** argv )
         {
             bSummary = true;
         }
-        else if( strcmp(argv[iArg],"-e") == 0 && iArg < argc-4 )
+        else if( iArg < argc-4 && strcmp(argv[iArg],"-e") == 0 )
         {
             dfSFXMin = CPLAtof(argv[iArg+1]);
             dfSFYMin = CPLAtof(argv[iArg+2]);
@@ -84,7 +84,7 @@ int main( int argc, char ** argv )
             dfSFYMax = CPLAtof(argv[iArg+4]);
             iArg += 4;
         }
-        else if( strcmp(argv[iArg],"-r") == 0 && iArg < argc-1 )
+        else if( iArg < argc-1 && strcmp(argv[iArg],"-r") == 0 )
         {
             achRaw[std::max(0, std::min(127, atoi(argv[iArg+1])))] = 1;
             bRaw = true;
@@ -94,17 +94,17 @@ int main( int argc, char ** argv )
         {
             bReportExtents = true;
         }
-        else if( argv[iArg][0] == '-' || pszFilename != NULL )
+        else if( argv[iArg][0] == '-' || pszFilename != nullptr )
             Usage();
         else
             pszFilename = argv[iArg];
     }
 
-    if( pszFilename == NULL )
+    if( pszFilename == nullptr )
         Usage();
 
     DGNHandle hDGN = DGNOpen( pszFilename, FALSE );
-    if( hDGN == NULL )
+    if( hDGN == nullptr )
         exit( 1 );
 
     if( bRaw )
@@ -114,8 +114,8 @@ int main( int argc, char ** argv )
 
     if( !bSummary )
     {
-        DGNElemCore *psElement = NULL;
-        while( (psElement=DGNReadElement(hDGN)) != NULL )
+        DGNElemCore *psElement = nullptr;
+        while( (psElement=DGNReadElement(hDGN)) != nullptr )
         {
             DGNDumpElement( hDGN, psElement, stdout );
 

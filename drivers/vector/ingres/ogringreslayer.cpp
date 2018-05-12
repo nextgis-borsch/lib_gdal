@@ -30,7 +30,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /************************************************************************/
 /*                           OGRIngresLayer()                            */
@@ -66,7 +66,7 @@ OGRIngresLayer::~OGRIngresLayer()
                   poFeatureDefn->GetName() );
     }
 
-    ResetReading();
+    OGRIngresLayer::ResetReading();
 
     if( poSRS != NULL )
         poSRS->Release();

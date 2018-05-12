@@ -31,17 +31,18 @@
 import sys
 from osgeo import gdal
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 
 ###############################################################################
 # Test a fake E00GRID dataset
 
+
 def e00grid_1():
 
-    tst = gdaltest.GDALTest( 'E00GRID', 'fake_e00grid.e00', 1, 65359 )
-    expected_gt = [ 500000.0, 1000.0, 0.0, 4000000.0, 0.0, -1000.0 ]
+    tst = gdaltest.GDALTest('E00GRID', 'fake_e00grid.e00', 1, 65359)
+    expected_gt = [500000.0, 1000.0, 0.0, 4000000.0, 0.0, -1000.0]
     expected_srs = """PROJCS["UTM Zone 15, Northern Hemisphere",
     GEOGCS["NAD83",
         DATUM["North_American_Datum_1983",
@@ -61,7 +62,7 @@ def e00grid_1():
     PARAMETER["false_easting",500000],
     PARAMETER["false_northing",0],
     UNIT["METERS",1]]"""
-    ret = tst.testOpen(check_gt = expected_gt, check_prj = expected_srs)
+    ret = tst.testOpen(check_gt=expected_gt, check_prj=expected_srs)
 
     if ret == 'success':
         ds = gdal.Open('data/fake_e00grid.e00')
@@ -77,10 +78,11 @@ def e00grid_1():
 ###############################################################################
 # Test a fake E00GRID dataset, compressed and with statistics
 
+
 def e00grid_2():
 
-    tst = gdaltest.GDALTest( 'E00GRID', 'fake_e00grid_compressed.e00', 1, 65347 )
-    expected_gt = [ 500000.0, 1000.0, 0.0, 4000000.0, 0.0, -1000.0 ]
+    tst = gdaltest.GDALTest('E00GRID', 'fake_e00grid_compressed.e00', 1, 65347)
+    expected_gt = [500000.0, 1000.0, 0.0, 4000000.0, 0.0, -1000.0]
     expected_srs = """PROJCS["UTM Zone 15, Northern Hemisphere",
     GEOGCS["NAD83",
         DATUM["North_American_Datum_1983",
@@ -100,18 +102,18 @@ def e00grid_2():
     PARAMETER["false_easting",500000],
     PARAMETER["false_northing",0],
     UNIT["METERS",1]]"""
-    ret = tst.testOpen(check_gt = expected_gt, check_prj = expected_srs)
+    ret = tst.testOpen(check_gt=expected_gt, check_prj=expected_srs)
 
     if ret == 'success':
         ds = gdal.Open('data/fake_e00grid_compressed.e00')
-        line0 = ds.ReadRaster(0,0,5,1)
-        ds.ReadRaster(0,1,5,1)
-        line2 = ds.ReadRaster(0,2,5,1)
+        line0 = ds.ReadRaster(0, 0, 5, 1)
+        ds.ReadRaster(0, 1, 5, 1)
+        line2 = ds.ReadRaster(0, 2, 5, 1)
         if line0 == line2:
             gdaltest.post_reason('should not have gotten the same values')
             return 'fail'
-        ds.ReadRaster(0,0,5,1)
-        line2_bis = ds.ReadRaster(0,2,5,1)
+        ds.ReadRaster(0, 0, 5, 1)
+        line2_bis = ds.ReadRaster(0, 2, 5, 1)
         if line2 != line2_bis:
             gdaltest.post_reason('did not get the same values for the same line')
             return 'fail'
@@ -132,15 +134,15 @@ def e00grid_2():
 
     return ret
 
+
 gdaltest_list = [
     e00grid_1,
-    e00grid_2 ]
+    e00grid_2]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'e00grid' )
+    gdaltest.setup_run('e00grid')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

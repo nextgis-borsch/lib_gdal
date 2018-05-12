@@ -31,11 +31,12 @@
 #define OGR_ELASTIC_H_INCLUDED
 
 #include "ogrsf_frmts.h"
-#include "ogr_p.h"
-#include "cpl_hash_set.h"
-#include <vector>
 
-#include "ogr_json_header.h"
+#include "cpl_json_header.h"
+#include "cpl_hash_set.h"
+#include "ogr_p.h"
+
+#include <vector>
 
 typedef enum
 {
@@ -46,7 +47,7 @@ typedef enum
 
 class OGRElasticDataSource;
 
-
+// cppcheck-suppress copyCtorAndEqOperator
 class OGRESSortDesc
 {
     public:
@@ -65,7 +66,7 @@ class OGRESSortDesc
 /*                          OGRElasticLayer                             */
 /************************************************************************/
 
-class OGRElasticLayer : public OGRLayer {
+class OGRElasticLayer final: public OGRLayer {
     OGRElasticDataSource                *m_poDS;
 
     CPLString                            m_osIndexName;
@@ -161,7 +162,7 @@ public:
                                          const char* pszMappingName,
                                          OGRElasticDataSource* poDS,
                                          char** papszOptions,
-                                         const char* pszESSearch = NULL);
+                                         const char* pszESSearch = nullptr);
                         virtual ~OGRElasticLayer();
 
     virtual void        ResetReading() override;
@@ -212,7 +213,7 @@ public:
 /*                         OGRElasticDataSource                         */
 /************************************************************************/
 
-class OGRElasticDataSource : public GDALDataset {
+class OGRElasticDataSource final: public GDALDataset {
     char               *m_pszName;
     CPLString           m_osURL;
     CPLString           m_osFID;
@@ -266,7 +267,7 @@ public:
     static bool         UploadFile(const CPLString &url, const CPLString &data);
     static void         Delete(const CPLString &url);
 
-    json_object*        RunRequest(const char* pszURL, const char* pszPostContent = NULL);
+    json_object*        RunRequest(const char* pszURL, const char* pszPostContent = nullptr);
     const CPLString&    GetFID() const { return m_osFID; }
 };
 

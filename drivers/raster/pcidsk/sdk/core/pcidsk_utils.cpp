@@ -45,10 +45,6 @@
 
 using namespace PCIDSK;
 
-#if defined(_MSC_VER) && (_MSC_VER < 1500)
-#  define vsnprintf _vsnprintf
-#endif
-
 /************************************************************************/
 /*                         GetCurrentDateTime()                         */
 /************************************************************************/
@@ -573,7 +569,7 @@ void PCIDSK::DefaultDebug( const char * message )
 
     if( !initialized )
     {
-        if( getenv( "PCIDSK_DEBUG" ) != NULL )
+        if( getenv( "PCIDSK_DEBUG" ) != nullptr )
             enabled = true;
 
         initialized = true;
@@ -651,7 +647,7 @@ static void vDebug( void (*pfnDebug)(const char *),
 #else
             wrk_args = args;
 #endif
-            if( pszWorkBufferNew == NULL )
+            if( pszWorkBufferNew == nullptr )
             {
                 strcpy( pszWorkBuffer, "(message too large)" );
                 break;
@@ -685,7 +681,7 @@ static void vDebug( void (*pfnDebug)(const char *),
 void PCIDSK::Debug( void (*pfnDebug)(const char *), const char *fmt, ... )
 
 {
-    if( pfnDebug == NULL )
+    if( pfnDebug == nullptr )
         return;
 
     std::va_list args;

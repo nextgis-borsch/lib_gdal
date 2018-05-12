@@ -69,7 +69,7 @@ if not numpy_include or numpy_include == "":
     except ImportError:
         pass
 else:
-    HAVE_NUMPY = True        
+    HAVE_NUMPY = True
 
 include_dirs.append(get_numpy_include())
 
@@ -184,6 +184,20 @@ class gdal_ext(build_ext):
             if not self.already_raised_no_config_error:
                 self.already_raised_no_config_error = True
                 return fetch_config(option)
+
+    def build_extensions(self):
+
+        # Add a -std=c++11 or similar flag if needed
+        ct = self.compiler.compiler_type
+        if ct == 'unix':
+            cxx11_flag = '-std=c++11'
+
+            for ext in self.extensions:
+                # gdalconst builds as a .c file
+                if ext.name != 'osgeo._gdalconst':
+                    ext.extra_compile_args += [cxx11_flag]
+
+        build_ext.build_extensions(self)
 
     def finalize_options(self):
         if self.include_dirs is None:

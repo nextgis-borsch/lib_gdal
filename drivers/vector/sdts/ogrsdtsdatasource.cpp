@@ -30,18 +30,18 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /************************************************************************/
 /*                          OGRSDTSDataSource()                          */
 /************************************************************************/
 
 OGRSDTSDataSource::OGRSDTSDataSource() :
-    poTransfer(NULL),
-    pszName(NULL),
+    poTransfer(nullptr),
+    pszName(nullptr),
     nLayers(0),
-    papoLayers(NULL),
-    poSRS(NULL)
+    papoLayers(nullptr),
+    poSRS(nullptr)
 {}
 
 /************************************************************************/
@@ -83,7 +83,7 @@ OGRLayer *OGRSDTSDataSource::GetLayer( int iLayer )
 
 {
     if( iLayer < 0 || iLayer >= nLayers )
-        return NULL;
+        return nullptr;
     else
         return papoLayers[iLayer];
 }
@@ -110,22 +110,22 @@ int OGRSDTSDataSource::Open( const char * pszFilename, int bTestOpen )
 /* -------------------------------------------------------------------- */
     if( bTestOpen )
     {
-        FILE *fp = VSIFOpen( pszFilename, "rb" );
-        if( fp == NULL )
+        VSILFILE *fp = VSIFOpenL( pszFilename, "rb" );
+        if( fp == nullptr )
             return FALSE;
 
         char pachLeader[10] = {};
-        if( VSIFRead( pachLeader, 1, 10, fp ) != 10
+        if( VSIFReadL( pachLeader, 1, 10, fp ) != 10
             || (pachLeader[5] != '1' && pachLeader[5] != '2'
                 && pachLeader[5] != '3' )
             || pachLeader[6] != 'L'
             || (pachLeader[8] != '1' && pachLeader[8] != ' ') )
         {
-            VSIFClose( fp );
+            VSIFCloseL( fp );
             return FALSE;
         }
 
-        VSIFClose( fp );
+        VSIFCloseL( fp );
     }
 
 /* -------------------------------------------------------------------- */
@@ -136,7 +136,7 @@ int OGRSDTSDataSource::Open( const char * pszFilename, int bTestOpen )
     if( !poTransfer->Open( pszFilename ) )
     {
         delete poTransfer;
-        poTransfer = NULL;
+        poTransfer = nullptr;
 
         return FALSE;
     }
@@ -180,7 +180,7 @@ int OGRSDTSDataSource::Open( const char * pszFilename, int bTestOpen )
 
         SDTSIndexedReader *poReader =
             poTransfer->GetLayerIndexedReader( iLayer );
-        if( poReader == NULL )
+        if( poReader == nullptr )
             continue;
 
         papoLayers = (OGRSDTSLayer **)

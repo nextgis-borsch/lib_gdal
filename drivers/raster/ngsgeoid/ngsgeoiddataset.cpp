@@ -32,7 +32,7 @@
 #include "gdal_pam.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 #define HEADER_SIZE (4 * 8 + 3 * 4)
 
@@ -144,7 +144,7 @@ CPLErr NGSGEOIDRasterBand::IReadBlock( CPL_UNUSED int nBlockXOff,
 /************************************************************************/
 
 NGSGEOIDDataset::NGSGEOIDDataset() :
-    fp(NULL),
+    fp(nullptr),
     bIsLittleEndian(TRUE)
 {
     adfGeoTransform[0] = 0;
@@ -324,28 +324,25 @@ int NGSGEOIDDataset::Identify( GDALOpenInfo * poOpenInfo )
 GDALDataset *NGSGEOIDDataset::Open( GDALOpenInfo * poOpenInfo )
 
 {
-    if (!Identify(poOpenInfo))
-        return NULL;
+    if (!Identify(poOpenInfo) || poOpenInfo->fpL == nullptr)
+        return nullptr;
 
     if (poOpenInfo->eAccess == GA_Update)
     {
         CPLError( CE_Failure, CPLE_NotSupported,
                   "The NGSGEOID driver does not support update access to existing"
                   " datasets.\n" );
-        return NULL;
+        return nullptr;
     }
-
-    VSILFILE* fp = VSIFOpenL( poOpenInfo->pszFilename, "rb" );
-    if (fp == NULL)
-        return NULL;
 
 /* -------------------------------------------------------------------- */
 /*      Create a corresponding GDALDataset.                             */
 /* -------------------------------------------------------------------- */
     NGSGEOIDDataset *poDS = new NGSGEOIDDataset();
-    poDS->fp = fp;
+    poDS->fp = poOpenInfo->fpL;
+    poOpenInfo->fpL = nullptr;
 
-    int nRows, nCols;
+    int nRows = 0, nCols = 0;
     GetHeaderInfo( poOpenInfo->pabyHeader,
                    poDS->adfGeoTransform,
                    &nRows,
@@ -401,7 +398,7 @@ const char* NGSGEOIDDataset::GetProjectionRef()
 void GDALRegister_NGSGEOID()
 
 {
-    if( GDALGetDriverByName( "NGSGEOID" ) != NULL )
+    if( GDALGetDriverByName( "NGSGEOID" ) != nullptr )
         return;
 
     GDALDriver *poDriver = new GDALDriver();

@@ -30,7 +30,7 @@
 
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 import ogrtest
@@ -38,6 +38,7 @@ from osgeo import ogr
 
 ###############################################################################
 # Basic test
+
 
 def ogr_pds_1():
 
@@ -61,8 +62,8 @@ def ogr_pds_1():
         feat.DumpReadable()
         return 'fail'
     geom = feat.GetGeometryRef()
-    if ogrtest.check_feature_geometry(feat,'POINT (146.1325 -55.648)',
-                                      max_error = 0.000000001 ) != 0:
+    if ogrtest.check_feature_geometry(feat, 'POINT (146.1325 -55.648)',
+                                      max_error=0.000000001) != 0:
         print('did not get expected geom')
         print(geom.ExportToWkt())
         return 'fail'
@@ -75,14 +76,30 @@ def ogr_pds_1():
 
     return 'success'
 
-gdaltest_list = [
-    ogr_pds_1 ]
+###############################################################################
+# Read IEEE_FLOAT columns (see https://github.com/OSGeo/gdal/issues/570)
 
+
+def ogr_pds_2():
+
+    ds = ogr.Open('data/virsvd_orb_11187_050618.lbl')
+    lyr = ds.GetLayer(0)
+    f = lyr.GetNextFeature()
+    if abs(f['INCIDENCE_ANGLE'] - 3.56775538) > 1e-7 or abs(f['TEMP_2'] - 28.1240005493164) > 1e-7:
+        f.DumpReadable()
+        return 'fail'
+
+    return 'success'
+
+gdaltest_list = [
+    ogr_pds_1,
+    ogr_pds_2,
+]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'ogr_pds' )
+    gdaltest.setup_run('ogr_pds')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

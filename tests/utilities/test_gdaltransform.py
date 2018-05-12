@@ -30,13 +30,14 @@
 
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 import test_cli_utilities
 
 ###############################################################################
 # Test -s_srs and -t_srs
+
 
 def test_gdaltransform_1():
     if test_cli_utilities.get_gdaltransform_path() is None:
@@ -56,6 +57,7 @@ def test_gdaltransform_1():
 
 ###############################################################################
 # Test -gcp
+
 
 def test_gdaltransform_2():
     if test_cli_utilities.get_gdaltransform_path() is None:
@@ -82,6 +84,7 @@ def test_gdaltransform_2():
 ###############################################################################
 # Test -gcp -tps
 
+
 def test_gdaltransform_3():
     if test_cli_utilities.get_gdaltransform_path() is None:
         return 'skip'
@@ -106,6 +109,7 @@ def test_gdaltransform_3():
 
 ###############################################################################
 # Test -gcp -order 1
+
 
 def test_gdaltransform_4():
     if test_cli_utilities.get_gdaltransform_path() is None:
@@ -132,6 +136,7 @@ def test_gdaltransform_4():
 ###############################################################################
 # Test with input file and -t_srs
 
+
 def test_gdaltransform_5():
     if test_cli_utilities.get_gdaltransform_path() is None:
         return 'skip'
@@ -143,7 +148,7 @@ def test_gdaltransform_5():
     x = float(text_split[0])
     y = float(text_split[1])
 
-    if abs(x-440720) > 1e-4 or abs(y-3751320) > 1e-4:
+    if abs(x - 440720) > 1e-4 or abs(y - 3751320) > 1e-4:
         print(ret)
         return 'fail'
 
@@ -151,6 +156,7 @@ def test_gdaltransform_5():
 
 ###############################################################################
 # Test with input file and output file
+
 
 def test_gdaltransform_6():
     if test_cli_utilities.get_gdaltransform_path() is None:
@@ -163,7 +169,7 @@ def test_gdaltransform_6():
     x = float(text_split[0])
     y = float(text_split[1])
 
-    if abs(x-440720) > 1e-4 or abs(y-3751320) > 1e-4:
+    if abs(x - 440720) > 1e-4 or abs(y - 3751320) > 1e-4:
         print(ret)
         return 'fail'
 
@@ -184,7 +190,7 @@ def test_gdaltransform_7():
     x = float(text_split[0])
     y = float(text_split[1])
 
-    if abs(x-0) > 1e-4 or abs(y-0) > 1e-4:
+    if abs(x - 0) > 1e-4 or abs(y - 0) > 1e-4:
         print(ret)
         return 'fail'
 
@@ -192,6 +198,7 @@ def test_gdaltransform_7():
 
 ###############################################################################
 # Test -to
+
 
 def test_gdaltransform_8():
     if test_cli_utilities.get_gdaltransform_path() is None:
@@ -209,6 +216,7 @@ def test_gdaltransform_8():
 ###############################################################################
 # Test -output_xy
 
+
 def test_gdaltransform_9():
     if test_cli_utilities.get_gdaltransform_path() is None:
         return 'skip'
@@ -223,6 +231,7 @@ def test_gdaltransform_9():
 
     return 'success'
 
+
 gdaltest_list = [
     test_gdaltransform_1,
     test_gdaltransform_2,
@@ -233,18 +242,13 @@ gdaltest_list = [
     test_gdaltransform_7,
     test_gdaltransform_8,
     test_gdaltransform_9
-    ]
+]
 
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'test_gdaltransform' )
+    gdaltest.setup_run('test_gdaltransform')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-
-
-
-
-

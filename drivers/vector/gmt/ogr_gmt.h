@@ -114,27 +114,9 @@ class OGRGmtDataSource : public OGRDataSource
     OGRLayer            *GetLayer( int ) override;
 
     virtual OGRLayer    *ICreateLayer( const char *,
-                                      OGRSpatialReference * = NULL,
+                                      OGRSpatialReference * = nullptr,
                                       OGRwkbGeometryType = wkbUnknown,
-                                      char ** = NULL ) override;
-    int                 TestCapability( const char * ) override;
-};
-
-/************************************************************************/
-/*                             OGRGmtDriver                             */
-/************************************************************************/
-
-class OGRGmtDriver : public OGRSFDriver
-{
-  public:
-                virtual ~OGRGmtDriver();
-
-    const char *GetName() override;
-    OGRDataSource *Open( const char *, int ) override;
-
-    virtual OGRDataSource *CreateDataSource( const char *pszName,
-                                             char ** = NULL ) override;
-
+                                      char ** = nullptr ) override;
     int                 TestCapability( const char * ) override;
 };
 

@@ -51,7 +51,7 @@ private:
     bool           m_bLatin2;
 
     VSILFILE      *m_poFD;
-    char          *ReadLine( bool = false );
+    char          *ReadLine();
 
     void          AddInfo(const char *) override;
 
@@ -77,8 +77,8 @@ public:
     bool           IsSpatial() const override { return false; }
     bool           IsPreProcessed() const override { return false; }
     bool           IsValid() const override { return true; }
-    int            ReadDataBlocks() override;
-    int            ReadDataRecords(IVFKDataBlock * = NULL) override;
+    int            ReadDataBlocks(bool = false) override;
+    int            ReadDataRecords(IVFKDataBlock * = nullptr) override;
     int            LoadGeometry() override;
 
     int            GetDataBlockCount() const override { return m_nDataBlockCount; }
@@ -116,13 +116,13 @@ public:
 
     bool          IsSpatial() const override { return m_bSpatial; }
     bool          IsPreProcessed() const override { return !m_bNewDb; }
-    bool          IsValid() const override { return m_poDB != NULL; }
-    int           ReadDataBlocks() override;
-    int           ReadDataRecords(IVFKDataBlock * = NULL) override;
+    bool          IsValid() const override { return m_poDB != nullptr; }
+    int           ReadDataBlocks(bool = false) override;
+    int           ReadDataRecords(IVFKDataBlock * = nullptr) override;
 
     sqlite3_stmt *PrepareStatement(const char *);
-    OGRErr        ExecuteSQL( const char *, bool = false );
-    OGRErr        ExecuteSQL(sqlite3_stmt *);
+    OGRErr        ExecuteSQL(const char *, CPLErr = CE_Failure);
+    OGRErr        ExecuteSQL(sqlite3_stmt *&);
 };
 
 #endif // GDAL_OGR_VFK_VFKREADERP_H_INCLUDED

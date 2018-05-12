@@ -67,7 +67,8 @@ private:
                    PCRasterRasterBand  (const PCRasterRasterBand&);
 
 protected:
-  double           GetNoDataValue      (int* success=NULL) override;
+  // cppcheck-suppress functionConst
+  double           GetNoDataValue      (int* success=nullptr) override;
   double           GetMinimum          (int* success) override;
   double           GetMaximum          (int* success) override;
 

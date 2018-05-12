@@ -32,13 +32,15 @@
 import sys
 import threading
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 from osgeo import gdal
 
+
 def my_error_handler(err_type, err_no, err_msg):
     pass
+
 
 def thread_test_1_worker(args_dict):
     for i in range(1000):
@@ -53,19 +55,20 @@ def thread_test_1_worker(args_dict):
         ds = gdal.Open('i_dont_exist')
         gdal.PopErrorHandler()
 
+
 def thread_test_1():
 
     try:
         from osgeo import gdalnumeric
         gdalnumeric.zeros
-    except:
+    except (ImportError, AttributeError):
         return 'skip'
 
     threads = []
     args_array = []
     for i in range(4):
-        args_dict = { 'ret': True }
-        t = threading.Thread(target=thread_test_1_worker, args = (args_dict,))
+        args_dict = {'ret': True}
+        t = threading.Thread(target=thread_test_1_worker, args=(args_dict,))
         args_array.append(args_dict)
         threads.append(t)
         t.start()
@@ -78,13 +81,14 @@ def thread_test_1():
 
     return ret
 
-gdaltest_list = [ thread_test_1 ]
+
+gdaltest_list = [thread_test_1]
 
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'thread_test' )
+    gdaltest.setup_run('thread_test')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

@@ -29,20 +29,20 @@ NAMESPACE_LERC_START
 
 // -------------------------------------------------------------------------- ;
 
-BitMask2::BitMask2() : m_pBits(NULL), m_nCols(0), m_nRows(0)
+BitMask2::BitMask2() : m_pBits(nullptr), m_nCols(0), m_nRows(0)
 {
 }
 
 // -------------------------------------------------------------------------- ;
 
-BitMask2::BitMask2(int nCols, int nRows) : m_pBits(NULL), m_nCols(0), m_nRows(0)
+BitMask2::BitMask2(int nCols, int nRows) : m_pBits(nullptr), m_nCols(0), m_nRows(0)
 {
   SetSize(nCols, nRows);
 }
 
 // -------------------------------------------------------------------------- ;
 
-BitMask2::BitMask2(const BitMask2& src) : m_pBits(NULL), m_nCols(0), m_nRows(0)
+BitMask2::BitMask2(const BitMask2& src) : m_pBits(nullptr), m_nCols(0), m_nRows(0)
 {
   SetSize(src.m_nCols, src.m_nRows);
   if (m_pBits && src.m_pBits)
@@ -73,7 +73,7 @@ bool BitMask2::SetSize(int nCols, int nRows)
     m_nRows = nRows;
     m_pBits = new Byte[Size()];
   }
-  return m_pBits != NULL;
+  return m_pBits != nullptr;
 }
 
 // -------------------------------------------------------------------------- ;
@@ -83,6 +83,7 @@ bool BitMask2::SetSize(int nCols, int nRows)
 // the last multiplication adds the four results together in the top nibble
 // This is potentially slower for input data
 //
+LERC_NOSANITIZE_UNSIGNED_INT_OVERFLOW
 static inline int csb(unsigned int v) {
     return ((((v - ((v >> 1) & 0x55)) * 0x1010101) & 0x30c00c03) * 0x10040041) >> 0x1c;
 }
@@ -115,7 +116,7 @@ int BitMask2::CountValidBits() const
 void BitMask2::Clear()
 {
   delete[] m_pBits;
-  m_pBits = NULL;
+  m_pBits = nullptr;
   m_nCols = 0;
   m_nRows = 0;
 }

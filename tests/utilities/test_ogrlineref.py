@@ -31,8 +31,8 @@
 import sys
 import os
 
-sys.path.append( '../pymod' )
-sys.path.append( '../ogr' )
+sys.path.append('../pymod')
+sys.path.append('../ogr')
 
 from osgeo import ogr
 import gdaltest
@@ -41,6 +41,7 @@ import test_cli_utilities
 
 ###############################################################################
 # create test
+
 
 def test_ogrlineref_1():
     if not ogrtest.have_geos() or test_cli_utilities.get_ogrlineref_path() is None:
@@ -63,6 +64,7 @@ def test_ogrlineref_1():
 ###############################################################################
 # get_pos test
 
+
 def test_ogrlineref_2():
     if not ogrtest.have_geos() or test_cli_utilities.get_ogrlineref_path() is None:
         return 'skip'
@@ -80,6 +82,7 @@ def test_ogrlineref_2():
 ###############################################################################
 # get_coord test
 
+
 def test_ogrlineref_3():
     if not ogrtest.have_geos() or test_cli_utilities.get_ogrlineref_path() is None:
         return 'skip'
@@ -95,6 +98,7 @@ def test_ogrlineref_3():
 
 ###############################################################################
 # get_subline test
+
 
 def test_ogrlineref_4():
     if not ogrtest.have_geos() or test_cli_utilities.get_ogrlineref_path() is None:
@@ -122,6 +126,8 @@ def test_ogrlineref_4():
 
 ###############################################################################
 # test kml
+
+
 def test_ogrlineref_5():
     if not ogrtest.have_geos() or test_cli_utilities.get_ogrlineref_path() is None:
         return 'skip'
@@ -147,6 +153,7 @@ def test_ogrlineref_cleanup():
 
     return 'success'
 
+
 gdaltest_list = [
     test_ogrlineref_1,
     test_ogrlineref_2,
@@ -154,12 +161,12 @@ gdaltest_list = [
     test_ogrlineref_4,
     test_ogrlineref_5,
     test_ogrlineref_cleanup
-    ]
+]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'test_ogrlineref' )
+    gdaltest.setup_run('test_ogrlineref')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

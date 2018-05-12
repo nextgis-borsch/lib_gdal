@@ -29,7 +29,7 @@
 #include "ogr_xplane.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /************************************************************************/
 /*                              GetName()                               */
@@ -50,11 +50,11 @@ OGRDataSource *OGRXPlaneDriver::Open( const char * pszFilename, int bUpdate )
 {
     if( bUpdate )
     {
-        return NULL;
+        return nullptr;
     }
 
     if( !EQUAL(CPLGetExtension(pszFilename), "dat") )
-        return NULL;
+        return nullptr;
 
     OGRXPlaneDataSource *poDS = new OGRXPlaneDataSource();
 
@@ -64,7 +64,7 @@ OGRDataSource *OGRXPlaneDriver::Open( const char * pszFilename, int bUpdate )
     if( !poDS->Open( pszFilename, bReadWholeFile ) )
     {
         delete poDS;
-        poDS = NULL;
+        poDS = nullptr;
     }
 
     return poDS;

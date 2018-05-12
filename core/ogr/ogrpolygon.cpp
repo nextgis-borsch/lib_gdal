@@ -42,7 +42,7 @@
 #include "ogr_sfcgal.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /************************************************************************/
 /*                             OGRPolygon()                             */
@@ -148,9 +148,9 @@ OGRLinearRing *OGRPolygon::getExteriorRing()
 
 {
     if( oCC.nCurveCount > 0 )
-        return (OGRLinearRing*) oCC.papoCurves[0];
+        return oCC.papoCurves[0]->toLinearRing();
 
-    return NULL;
+    return nullptr;
 }
 
 /**
@@ -171,9 +171,9 @@ const OGRLinearRing *OGRPolygon::getExteriorRing() const
 
 {
     if( oCC.nCurveCount > 0 )
-        return (OGRLinearRing*) oCC.papoCurves[0];
+        return oCC.papoCurves[0]->toLinearRing();
 
-    return NULL;
+    return nullptr;
 }
 
 /************************************************************************/
@@ -191,7 +191,7 @@ const OGRLinearRing *OGRPolygon::getExteriorRing() const
 
 OGRLinearRing *OGRPolygon::stealExteriorRing()
 {
-    return (OGRLinearRing*)stealExteriorRingCurve();
+    return stealExteriorRingCurve()->toLinearRing();
 }
 
 /************************************************************************/
@@ -218,9 +218,9 @@ OGRLinearRing *OGRPolygon::getInteriorRing( int iRing )
 
 {
     if( iRing < 0 || iRing >= oCC.nCurveCount-1 )
-        return NULL;
+        return nullptr;
 
-    return (OGRLinearRing*) oCC.papoCurves[iRing+1];
+    return oCC.papoCurves[iRing+1]->toLinearRing();
 }
 
 /**
@@ -243,9 +243,9 @@ const OGRLinearRing *OGRPolygon::getInteriorRing( int iRing ) const
 
 {
     if( iRing < 0 || iRing >= oCC.nCurveCount-1 )
-        return NULL;
+        return nullptr;
 
-    return (OGRLinearRing*) oCC.papoCurves[iRing+1];
+    return oCC.papoCurves[iRing+1]->toLinearRing();
 }
 
 /************************************************************************/
@@ -265,9 +265,9 @@ const OGRLinearRing *OGRPolygon::getInteriorRing( int iRing ) const
 OGRLinearRing *OGRPolygon::stealInteriorRing( int iRing )
 {
     if( iRing < 0 || iRing >= oCC.nCurveCount-1 )
-        return NULL;
-    OGRLinearRing *poRet = (OGRLinearRing*) oCC.papoCurves[iRing+1];
-    oCC.papoCurves[iRing+1] = NULL;
+        return nullptr;
+    OGRLinearRing *poRet = oCC.papoCurves[iRing+1]->toLinearRing();
+    oCC.papoCurves[iRing+1] = nullptr;
     return poRet;
 }
 
@@ -278,7 +278,8 @@ OGRLinearRing *OGRPolygon::stealInteriorRing( int iRing )
 
 int OGRPolygon::checkRing( OGRCurve * poNewRing ) const
 {
-    if( !(EQUAL(poNewRing->getGeometryName(), "LINEARRING")) )
+    if( poNewRing == nullptr ||
+        !(EQUAL(poNewRing->getGeometryName(), "LINEARRING")) )
     {
         CPLError(CE_Failure, CPLE_AppDefined,
                  "Wrong curve type. Expected LINEARRING.");
@@ -301,9 +302,9 @@ int OGRPolygon::WkbSize() const
 {
     int nSize = 9;
 
-    for( int i = 0; i < oCC.nCurveCount; i++ )
+    for( auto&& poRing: *this )
     {
-        nSize += ((OGRLinearRing*)oCC.papoCurves[i])->_WkbSize( flags );
+        nSize += poRing->_WkbSize( flags );
     }
 
     return nSize;
@@ -316,15 +317,17 @@ int OGRPolygon::WkbSize() const
 /*      format.                                                         */
 /************************************************************************/
 
-OGRErr OGRPolygon::importFromWkb( unsigned char * pabyData,
+OGRErr OGRPolygon::importFromWkb( const unsigned char * pabyData,
                                   int nSize,
-                                  OGRwkbVariant eWkbVariant )
+                                  OGRwkbVariant eWkbVariant,
+                                  int& nBytesConsumedOut )
 
 {
+    nBytesConsumedOut = -1;
     OGRwkbByteOrder eByteOrder = wkbNDR;
     int nDataOffset = 0;
     // coverity[tainted_data]
-    OGRErr eErr = oCC.importPreambuleFromWkb(this, pabyData, nSize, nDataOffset,
+    OGRErr eErr = oCC.importPreambleFromWkb(this, pabyData, nSize, nDataOffset,
                                              eByteOrder, 4, eWkbVariant);
     if( eErr != OGRERR_NONE )
         return eErr;
@@ -336,9 +339,11 @@ OGRErr OGRPolygon::importFromWkb( unsigned char * pabyData,
     {
         OGRLinearRing* poLR = new OGRLinearRing();
         oCC.papoCurves[iRing] = poLR;
+        int nBytesConsumedRing = -1;
         eErr = poLR->_importFromWkb( eByteOrder, flags,
-                                                 pabyData + nDataOffset,
-                                                 nSize );
+                                     pabyData + nDataOffset,
+                                     nSize,
+                                     nBytesConsumedRing );
         if( eErr != OGRERR_NONE )
         {
             delete oCC.papoCurves[iRing];
@@ -346,11 +351,16 @@ OGRErr OGRPolygon::importFromWkb( unsigned char * pabyData,
             return eErr;
         }
 
+        CPLAssert( nBytesConsumedRing > 0 );
         if( nSize != -1 )
-            nSize -= poLR->_WkbSize( flags );
+        {
+            CPLAssert( nSize >= nBytesConsumedRing );
+            nSize -= nBytesConsumedRing;
+        }
 
-        nDataOffset += poLR->_WkbSize( flags );
+        nDataOffset += nBytesConsumedRing;
     }
+    nBytesConsumedOut = nDataOffset;
 
     return OGRERR_NONE;
 }
@@ -416,13 +426,12 @@ OGRErr OGRPolygon::exportToWkb( OGRwkbByteOrder eByteOrder,
 /* ==================================================================== */
     int nOffset = 9;
 
-    for( int iRing = 0; iRing < oCC.nCurveCount; iRing++ )
+    for( auto&& poRing: *this )
     {
-        OGRLinearRing* poLR = (OGRLinearRing*) oCC.papoCurves[iRing];
-        poLR->_exportToWkb( eByteOrder, flags,
+        poRing->_exportToWkb( eByteOrder, flags,
                             pabyData + nOffset );
 
-        nOffset += poLR->_WkbSize( flags );
+        nOffset += poRing->_WkbSize( flags );
     }
 
     return OGRERR_NONE;
@@ -435,13 +444,13 @@ OGRErr OGRPolygon::exportToWkb( OGRwkbByteOrder eByteOrder,
 /*      `POLYGON ((x y, x y, ...),(x y, ...),...)'.                     */
 /************************************************************************/
 
-OGRErr OGRPolygon::importFromWkt( char ** ppszInput )
+OGRErr OGRPolygon::importFromWkt( const char ** ppszInput )
 
 {
     int bHasZ = FALSE;
     int bHasM = FALSE;
     bool bIsEmpty = false;
-    OGRErr eErr = importPreambuleFromWkt(ppszInput, &bHasZ, &bHasM, &bIsEmpty);
+    OGRErr eErr = importPreambleFromWkt(ppszInput, &bHasZ, &bHasM, &bIsEmpty);
     flags = 0;
     if( eErr != OGRERR_NONE )
         return eErr;
@@ -450,9 +459,9 @@ OGRErr OGRPolygon::importFromWkt( char ** ppszInput )
     if( bIsEmpty )
         return OGRERR_NONE;
 
-    OGRRawPoint *paoPoints = NULL;
+    OGRRawPoint *paoPoints = nullptr;
     int nMaxPoints = 0;
-    double *padfZ = NULL;
+    double *padfZ = nullptr;
 
     eErr = importFromWKTListOnly( ppszInput, bHasZ, bHasM,
                                   paoPoints, nMaxPoints, padfZ );
@@ -470,7 +479,7 @@ OGRErr OGRPolygon::importFromWkt( char ** ppszInput )
 /*      Instantiate from "((x y, x y, ...),(x y, ...),...)"             */
 /************************************************************************/
 
-OGRErr OGRPolygon::importFromWKTListOnly( char ** ppszInput,
+OGRErr OGRPolygon::importFromWKTListOnly( const char ** ppszInput,
                                           int bHasZ, int bHasM,
                                           OGRRawPoint*& paoPoints,
                                           int& nMaxPoints,
@@ -484,7 +493,7 @@ OGRErr OGRPolygon::importFromWKTListOnly( char ** ppszInput,
     pszInput = OGRWktReadToken( pszInput, szToken );
     if( EQUAL(szToken, "EMPTY") )
     {
-        *ppszInput = (char*) pszInput;
+        *ppszInput = pszInput;
         return OGRERR_NONE;
     }
     if( !EQUAL(szToken, "(") )
@@ -496,7 +505,7 @@ OGRErr OGRPolygon::importFromWKTListOnly( char ** ppszInput,
 /*      allocate/deallocate overhead.                                   */
 /* ==================================================================== */
     int nMaxRings = 0;
-    double *padfM = NULL;
+    double *padfM = nullptr;
 
     do
     {
@@ -540,7 +549,7 @@ OGRErr OGRPolygon::importFromWKTListOnly( char ** ppszInput,
         pszInput = OGRWktReadPointsM( pszInput, &paoPoints, &padfZ, &padfM,
                                       &flagsFromInput,
                                       &nMaxPoints, &nPoints );
-        if( pszInput == NULL || nPoints == 0 )
+        if( pszInput == nullptr || nPoints == 0 )
         {
             CPLFree(padfM);
             return OGRERR_CORRUPT_DATA;
@@ -599,7 +608,7 @@ OGRErr OGRPolygon::importFromWKTListOnly( char ** ppszInput,
     if( szToken[0] != ')' )
         return OGRERR_CORRUPT_DATA;
 
-    *ppszInput = const_cast<char *>(pszInput);
+    *ppszInput = pszInput;
     return OGRERR_NONE;
 }
 /*! @endcond */
@@ -607,7 +616,7 @@ OGRErr OGRPolygon::importFromWKTListOnly( char ** ppszInput,
 /************************************************************************/
 /*                            exportToWkt()                             */
 /*                                                                      */
-/*      Translate this structure into it's well known text format       */
+/*      Translate this structure into its well known text format        */
 /*      equivalent.  This could be made a lot more CPU efficient.       */
 /************************************************************************/
 
@@ -620,7 +629,7 @@ OGRErr OGRPolygon::exportToWkt( char ** ppszDstText,
 /* -------------------------------------------------------------------- */
 /*      If we have no valid exterior ring, return POLYGON EMPTY.        */
 /* -------------------------------------------------------------------- */
-    if( getExteriorRing() == NULL ||
+    if( getExteriorRing() == nullptr ||
         getExteriorRing()->IsEmpty() )
     {
         if( eWkbVariant == wkbVariantIso )
@@ -652,13 +661,13 @@ OGRErr OGRPolygon::exportToWkt( char ** ppszDstText,
     OGRErr eErr;
     for( int iRing = 0; iRing < oCC.nCurveCount; iRing++ )
     {
-        OGRLinearRing* poLR = (OGRLinearRing*) oCC.papoCurves[iRing];
+        OGRLinearRing* poLR = oCC.papoCurves[iRing]->toLinearRing();
         //poLR->setFlags( getFlags() );
         poLR->set3D(Is3D());
         poLR->setMeasured(IsMeasured());
         if( poLR->getNumPoints() == 0 )
         {
-            papszRings[iRing] = NULL;
+            papszRings[iRing] = nullptr;
             continue;
         }
 
@@ -688,10 +697,10 @@ OGRErr OGRPolygon::exportToWkt( char ** ppszDstText,
 /*      Allocate exactly the right amount of space for the              */
 /*      aggregated string.                                              */
 /* -------------------------------------------------------------------- */
-    *ppszDstText = (char *) VSI_MALLOC_VERBOSE(
-        nCumulativeLength + nNonEmptyRings + strlen(getGeometryName()) + strlen(" ZM ()") + 1);
+    *ppszDstText = static_cast<char*>(VSI_MALLOC_VERBOSE(
+        nCumulativeLength + nNonEmptyRings + strlen(getGeometryName()) + strlen(" ZM ()") + 1));
 
-    if( *ppszDstText == NULL )
+    if( *ppszDstText == nullptr )
     {
         eErr = OGRERR_NOT_ENOUGH_MEMORY;
         goto error;
@@ -717,7 +726,7 @@ OGRErr OGRPolygon::exportToWkt( char ** ppszDstText,
 
     for( int iRing = 0; iRing < oCC.nCurveCount; iRing++ )
     {
-        if( papszRings[iRing] == NULL )
+        if( papszRings[iRing] == nullptr )
         {
             CPLDebug( "OGR",
                       "OGRPolygon::exportToWkt() - skipping empty ring.");
@@ -748,17 +757,8 @@ error:
     for( int iRing = 0; iRing < oCC.nCurveCount; iRing++ )
         CPLFree(papszRings[iRing]);
     CPLFree(papszRings);
+    CPLFree( pnRingBeginning );
     return eErr;
-}
-
-/************************************************************************/
-/*                           PointOnSurface()                           */
-/************************************************************************/
-
-OGRErr OGRPolygon::PointOnSurface( OGRPoint *poPoint ) const
-
-{
-    return PointOnSurfaceInternal(poPoint);
 }
 
 /************************************************************************/
@@ -770,18 +770,36 @@ OGRErr OGRPolygon::PointOnSurface( OGRPoint *poPoint ) const
  */
 OGRBoolean OGRPolygon::IsPointOnSurface( const OGRPoint * pt ) const
 {
-    if( NULL == pt)
+    if( nullptr == pt)
         return FALSE;
 
-    for( int iRing = 0; iRing < oCC.nCurveCount; iRing++ )
+    bool bOnSurface = false;
+    // The point must be in the outer ring, but not in the inner rings
+    int iRing = 0;
+    for( auto&& poRing: *this )
     {
-        if( ((OGRLinearRing*)oCC.papoCurves[iRing])->isPointInRing(pt) )
+        if( poRing->isPointInRing(pt) )
         {
-            return TRUE;
+            if( iRing == 0 )
+            {
+                bOnSurface = true;
+            }
+            else
+            {
+                return false;
+            }
         }
+        else
+        {
+            if( iRing == 0 )
+            {
+                return false;
+            }
+        }
+        iRing ++;
     }
 
-    return FALSE;
+    return bOnSurface;
 }
 
 /************************************************************************/
@@ -791,8 +809,8 @@ OGRBoolean OGRPolygon::IsPointOnSurface( const OGRPoint * pt ) const
 void OGRPolygon::closeRings()
 
 {
-    for( int iRing = 0; iRing < oCC.nCurveCount; iRing++ )
-        oCC.papoCurves[iRing]->closeRings();
+    for( auto&& poRing: *this )
+        poRing->closeRings();
 }
 
 /************************************************************************/
@@ -803,7 +821,7 @@ OGRPolygon* OGRPolygon::CurvePolyToPoly(
     CPL_UNUSED double dfMaxAngleStepSizeDegrees,
     CPL_UNUSED const char* const* papszOptions ) const
 {
-    return (OGRPolygon*) clone();
+    return clone()->toPolygon();
 }
 
 /************************************************************************/
@@ -837,13 +855,13 @@ OGRPolygon::getCurveGeometry( const char* const* papszOptions ) const
     OGRCurvePolygon* poCC = new OGRCurvePolygon();
     poCC->assignSpatialReference( getSpatialReference() );
     bool bHasCurveGeometry = false;
-    for( int iRing = 0; iRing < oCC.nCurveCount; iRing++ )
+    for( auto&& poRing: *this )
     {
-        OGRCurve* poSubGeom =
-            (OGRCurve* )oCC.papoCurves[iRing]->getCurveGeometry(papszOptions);
+        auto poSubGeom =
+            poRing->getCurveGeometry(papszOptions);
         if( wkbFlatten(poSubGeom->getGeometryType()) != wkbLineString )
             bHasCurveGeometry = true;
-        poCC->addRingDirectly( poSubGeom );
+        poCC->addRingDirectly( poSubGeom->toCurve() );
     }
     if( !bHasCurveGeometry )
     {
@@ -876,13 +894,11 @@ OGRCurvePolygon* OGRPolygon::CastToCurvePolygon( OGRPolygon* poPoly )
     poCP->oCC.nCurveCount = poPoly->oCC.nCurveCount;
     poCP->oCC.papoCurves = poPoly->oCC.papoCurves;
     poPoly->oCC.nCurveCount = 0;
-    poPoly->oCC.papoCurves = NULL;
+    poPoly->oCC.papoCurves = nullptr;
 
-    for( int iRing = 0; iRing < poCP->oCC.nCurveCount; iRing++ )
+    for( auto&& poRing: *poCP )
     {
-        poCP->oCC.papoCurves[iRing] =
-            OGRLinearRing::CastToLineString(
-                (OGRLinearRing*)poCP->oCC.papoCurves[iRing] );
+        poRing = OGRLinearRing::CastToLineString(poRing->toLinearRing());
     }
 
     delete poPoly;
@@ -893,17 +909,27 @@ OGRCurvePolygon* OGRPolygon::CastToCurvePolygon( OGRPolygon* poPoly )
 /*                      GetCasterToPolygon()                            */
 /************************************************************************/
 
+static OGRPolygon* CasterToPolygon(OGRSurface* poSurface)
+{
+    return poSurface->toPolygon();
+}
+
 OGRSurfaceCasterToPolygon OGRPolygon::GetCasterToPolygon() const
 {
-    return (OGRSurfaceCasterToPolygon) OGRGeometry::CastToIdentity;
+    return ::CasterToPolygon;
 }
 
 /************************************************************************/
 /*                      OGRSurfaceCasterToCurvePolygon()                */
 /************************************************************************/
 
+OGRCurvePolygon* OGRPolygon::CasterToCurvePolygon(OGRSurface* poSurface)
+{
+    return OGRPolygon::CastToCurvePolygon(poSurface->toPolygon());
+}
+
 OGRSurfaceCasterToCurvePolygon OGRPolygon::GetCasterToCurvePolygon() const
 {
-    return (OGRSurfaceCasterToCurvePolygon) OGRPolygon::CastToCurvePolygon;
+    return OGRPolygon::CasterToCurvePolygon;
 }
 /*! @endcond */

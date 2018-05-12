@@ -47,7 +47,7 @@
 #  include <mbctype.h>  // Multibyte chars stuff.
 #endif
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /**********************************************************************
  *                       TABGenerateArc()
@@ -146,7 +146,7 @@ static bool TABAdjustCaseSensitiveFilename(char *pszFname)
     char *pszTmpPath = CPLStrdup(pszFname);
     const int nTotalLen = static_cast<int>(strlen(pszTmpPath));
     int iTmpPtr = nTotalLen;
-    GBool bValidPath = false;
+    bool bValidPath = false;
 
     while(iTmpPtr > 0 && !bValidPath)
     {
@@ -319,7 +319,7 @@ char *TABGetBasename(const char *pszFname)
  **********************************************************************/
 char **TAB_CSLLoad(const char *pszFname)
 {
-    char **papszStrList = NULL;
+    char **papszStrList = nullptr;
 
     VSILFILE *fp = VSIFOpenL(pszFname, "rt");
 
@@ -327,8 +327,8 @@ char **TAB_CSLLoad(const char *pszFname)
     {
         while(!VSIFEofL(fp))
         {
-            const char *pszLine = NULL;
-            if ( (pszLine = CPLReadLineL(fp)) != NULL )
+            const char *pszLine = nullptr;
+            if ( (pszLine = CPLReadLineL(fp)) != nullptr )
             {
                 papszStrList = CSLAddString(papszStrList, pszLine);
             }
@@ -356,7 +356,7 @@ char **TAB_CSLLoad(const char *pszFname)
 char *TABUnEscapeString(char *pszString, GBool bSrcIsConst)
 {
     // First check if we need to do any replacement.
-    if (pszString == NULL || strstr(pszString, "\\n") == NULL)
+    if (pszString == nullptr || strstr(pszString, "\\n") == nullptr)
     {
         return pszString;
     }
@@ -368,7 +368,7 @@ char *TABUnEscapeString(char *pszString, GBool bSrcIsConst)
     // return a copy.  It is up to the caller to decide if the source needs
     // to be freed based on context and by comparing pszString with
     // the returned pointer (pszWorkString) to see if they are identical.
-    char *pszWorkString = NULL;
+    char *pszWorkString = nullptr;
     if (bSrcIsConst)
     {
         // We have to create a copy to work on.
@@ -424,7 +424,7 @@ char *TABUnEscapeString(char *pszString, GBool bSrcIsConst)
 char *TABEscapeString(char *pszString)
 {
     // First check if we need to do any replacement
-    if (pszString == NULL || strchr(pszString, '\n') == NULL)
+    if (pszString == nullptr || strchr(pszString, '\n') == nullptr)
     {
         return pszString;
     }
@@ -472,7 +472,6 @@ char *TABEscapeString(char *pszString)
 char *TABCleanFieldName(const char *pszSrcName)
 {
     char *pszNewName = CPLStrdup(pszSrcName);
-
     if (strlen(pszNewName) > 31)
     {
         pszNewName[31] = '\0';
@@ -555,12 +554,12 @@ static const MapInfoUnitsInfo gasUnitsList[] =
     {7, "m"},
     {8, "survey ft"},
     {8, "survey foot"}, // alternate
-    {13, NULL},
+    {13, nullptr},
     {9, "nmi"},
     {30, "li"},
     {31, "ch"},
     {32, "rd"},
-    {-1, NULL}
+    {-1, nullptr}
 };
 
 /**********************************************************************
@@ -594,14 +593,14 @@ const char *TABUnitIdToString(int nId)
  **********************************************************************/
 int TABUnitIdFromString(const char *pszName)
 {
-    if( pszName == NULL )
+    if( pszName == nullptr )
         return 13;
 
     const MapInfoUnitsInfo *psList = gasUnitsList;
 
     while(psList->nUnitId != -1)
     {
-        if (psList->pszAbbrev != NULL &&
+        if (psList->pszAbbrev != nullptr &&
             EQUAL(psList->pszAbbrev, pszName))
             return psList->nUnitId;
         psList++;
@@ -627,4 +626,19 @@ void TABSaturatedAdd(GInt32& nVal, GInt32 nAdd)
         nVal = int_min;
     else
         nVal += nAdd;
+}
+
+/**********************************************************************
+ *                           TABInt16Diff()
+ **********************************************************************/
+
+GInt16 TABInt16Diff(int a, int b)
+{
+    GIntBig nDiff = static_cast<GIntBig>(a) - b;
+    // Maybe we should error out instead of saturating ???
+    if( nDiff < -32768 )
+        return -32768;
+    if( nDiff > 32767 )
+        return 32767;
+    return static_cast<GInt16>(nDiff);
 }

@@ -33,7 +33,7 @@
  ************************************************************************/
 #include "postgisraster.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /************************
  * \brief Constructor
@@ -42,7 +42,7 @@ PostGISRasterTileDataset::PostGISRasterTileDataset( PostGISRasterDataset* poRDSI
                                                     int nXSize,
                                                     int nYSize ) :
     poRDS(poRDSIn),
-    pszPKID(NULL)
+    pszPKID(nullptr)
 {
     nRasterXSize = nXSize;
     nRasterYSize = nYSize;
@@ -62,7 +62,7 @@ PostGISRasterTileDataset::~PostGISRasterTileDataset()
 {
     if (pszPKID) {
         CPLFree(pszPKID);
-        pszPKID = NULL;
+        pszPKID = nullptr;
     }
 }
 
@@ -85,7 +85,7 @@ CPLErr PostGISRasterTileDataset::GetGeoTransform(double * padfTransform) {
  * \brief Return spatial extent of tile
  ********************************************************/
 void PostGISRasterTileDataset::GetExtent(double* pdfMinX, double* pdfMinY,
-                                         double* pdfMaxX, double* pdfMaxY)
+                                         double* pdfMaxX, double* pdfMaxY) const
 {
     // FIXME; incorrect in case of non 0 rotation terms
 

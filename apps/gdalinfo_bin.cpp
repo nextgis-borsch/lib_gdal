@@ -27,19 +27,20 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#include "gdal_version.h"
 #include "gdal.h"
 #include "cpl_string.h"
 #include "cpl_multiproc.h"
 #include "commonutils.h"
 #include "gdal_utils_priv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /************************************************************************/
 /*                               Usage()                                */
 /************************************************************************/
 
-static void Usage(const char* pszErrorMsg = NULL)
+static void Usage(const char* pszErrorMsg = nullptr)
 
 {
     printf( "Usage: gdalinfo [--help-general] [-json] [-mm] [-stats] [-hist] [-nogcp] [-nomd]\n"
@@ -47,7 +48,7 @@ static void Usage(const char* pszErrorMsg = NULL)
             "                [-listmdd] [-mdd domain|`all`]*\n"
             "                [-sd subdataset] [-oo NAME=VALUE]* datasetname\n" );
 
-    if( pszErrorMsg != NULL )
+    if( pszErrorMsg != nullptr )
         fprintf(stderr, "\nFAILURE: %s\n", pszErrorMsg);
 
     exit( 1 );
@@ -59,7 +60,8 @@ static void Usage(const char* pszErrorMsg = NULL)
 
 static GDALInfoOptionsForBinary *GDALInfoOptionsForBinaryNew(void)
 {
-    return (GDALInfoOptionsForBinary*) CPLCalloc(  1, sizeof(GDALInfoOptionsForBinary) );
+    return static_cast<GDALInfoOptionsForBinary *>(
+        CPLCalloc(1, sizeof(GDALInfoOptionsForBinary)));
 }
 
 /************************************************************************/
@@ -80,7 +82,7 @@ static void GDALInfoOptionsForBinaryFree( GDALInfoOptionsForBinary* psOptionsFor
 /*                                main()                                */
 /************************************************************************/
 
-int main( int argc, char ** argv )
+MAIN_START(argc, argv)
 
 {
     EarlySetConfigOptions(argc, argv);
@@ -91,7 +93,7 @@ int main( int argc, char ** argv )
     if( argc < 1 )
         exit( -argc );
 
-    for( int i = 0; argv != NULL && argv[i] != NULL; i++ )
+    for( int i = 0; argv != nullptr && argv[i] != nullptr; i++ )
     {
         if( EQUAL(argv[i], "--utility_version") )
         {
@@ -111,10 +113,10 @@ int main( int argc, char ** argv )
 
     GDALInfoOptions *psOptions
         = GDALInfoOptionsNew(argv + 1, psOptionsForBinary);
-    if( psOptions == NULL )
+    if( psOptions == nullptr )
         Usage();
 
-    if( psOptionsForBinary->pszFilename == NULL )
+    if( psOptionsForBinary->pszFilename == nullptr )
         Usage("No datasource specified.");
 
 /* -------------------------------------------------------------------- */
@@ -127,10 +129,10 @@ int main( int argc, char ** argv )
 #endif
 
     GDALDatasetH hDataset
-        = GDALOpenEx( psOptionsForBinary->pszFilename, GDAL_OF_READONLY | GDAL_OF_RASTER | GDAL_OF_VERBOSE_ERROR, NULL,
-                      (const char* const* )psOptionsForBinary->papszOpenOptions, NULL );
+        = GDALOpenEx( psOptionsForBinary->pszFilename, GDAL_OF_READONLY | GDAL_OF_RASTER | GDAL_OF_VERBOSE_ERROR, nullptr,
+                      psOptionsForBinary->papszOpenOptions, nullptr );
 
-    if( hDataset == NULL )
+    if( hDataset == nullptr )
     {
 #ifdef __AFL_HAVE_MANUAL_CONTROL
         continue;
@@ -171,7 +173,7 @@ int main( int argc, char ** argv )
 
         GDALDestroyDriverManager();
 
-        CPLDumpSharedList( NULL );
+        CPLDumpSharedList( nullptr );
 
         exit( 1 );
 #endif
@@ -230,8 +232,9 @@ int main( int argc, char ** argv )
 
     GDALDestroyDriverManager();
 
-    CPLDumpSharedList( NULL );
+    CPLDumpSharedList( nullptr );
     CPLCleanupTLS();
 
     exit( 0 );
 }
+MAIN_END

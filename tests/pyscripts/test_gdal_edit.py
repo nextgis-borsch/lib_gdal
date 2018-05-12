@@ -33,13 +33,13 @@ import sys
 import os
 import shutil
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 from osgeo import gdal
 import gdaltest
 import test_py_scripts
 
-#Usage: gdal_edit [--help-general] [-a_srs srs_def] [-a_ullr ulx uly lrx lry]
+# Usage: gdal_edit [--help-general] [-a_srs srs_def] [-a_ullr ulx uly lrx lry]
 #                 [-tr xres yres] [-a_nodata value]
 #                 [-unsetgt] [-stats] [-approx_stats]
 #                 [-gcp pixel line easting northing [elevation]]*
@@ -61,12 +61,12 @@ def test_gdal_edit_py_1():
         # Passing utf-8 characters doesn't at least please Wine...
         val = 'fake-utf8'
         val_encoded = val
-    elif sys.version_info >= (3,0,0):
+    elif sys.version_info >= (3, 0, 0):
         val = '\u00e9ven'
         val_encoded = val
     else:
         exec("val = u'\\u00e9ven'")
-        val_encoded = val.encode( 'utf-8' )
+        val_encoded = val.encode('utf-8')
 
     test_py_scripts.run_py_script(script_path, 'gdal_edit', 'tmp/test_gdal_edit_py.tif -a_srs EPSG:4326 -a_ullr 2 50 3 49 -a_nodata 123 -mo FOO=BAR -mo UTF8=' + val_encoded + ' -mo ' + val_encoded + '=UTF8')
 
@@ -114,6 +114,7 @@ def test_gdal_edit_py_1():
 ###############################################################################
 # Test -unsetgt
 
+
 def test_gdal_edit_py_2():
 
     script_path = test_py_scripts.get_py_script('gdal_edit')
@@ -126,10 +127,10 @@ def test_gdal_edit_py_2():
 
     ds = gdal.Open('tmp/test_gdal_edit_py.tif')
     wkt = ds.GetProjectionRef()
-    gt = ds.GetGeoTransform()
+    gt = ds.GetGeoTransform(can_return_null=True)
     ds = None
 
-    if gt != (0.0, 1.0, 0.0, 0.0, 0.0, 1.0):
+    if gt is not None:
         gdaltest.post_reason('fail')
         print(gt)
         return 'fail'
@@ -143,6 +144,7 @@ def test_gdal_edit_py_2():
 
 ###############################################################################
 # Test -a_srs ''
+
 
 def test_gdal_edit_py_3():
 
@@ -174,6 +176,7 @@ def test_gdal_edit_py_3():
 ###############################################################################
 # Test -unsetstats
 
+
 def test_gdal_edit_py_4():
 
     script_path = test_py_scripts.get_py_script('gdal_edit')
@@ -181,7 +184,7 @@ def test_gdal_edit_py_4():
         return 'skip'
 
     shutil.copy('../gcore/data/byte.tif', 'tmp/test_gdal_edit_py.tif')
-    ds = gdal.Open( 'tmp/test_gdal_edit_py.tif', gdal.GA_Update )
+    ds = gdal.Open('tmp/test_gdal_edit_py.tif', gdal.GA_Update)
     band = ds.GetRasterBand(1)
     band.ComputeStatistics(False)
     band.SetMetadataItem('FOO', 'BAR')
@@ -189,8 +192,8 @@ def test_gdal_edit_py_4():
 
     ds = gdal.Open('tmp/test_gdal_edit_py.tif')
     band = ds.GetRasterBand(1)
-    if (band.GetMetadataItem('STATISTICS_MINIMUM') is None
-            or band.GetMetadataItem('FOO') is None):
+    if (band.GetMetadataItem('STATISTICS_MINIMUM') is None or
+            band.GetMetadataItem('FOO') is None):
         gdaltest.post_reason('fail')
         return 'fail'
     ds = band = None
@@ -199,8 +202,8 @@ def test_gdal_edit_py_4():
 
     ds = gdal.Open('tmp/test_gdal_edit_py.tif')
     band = ds.GetRasterBand(1)
-    if (band.GetMetadataItem('STATISTICS_MINIMUM') is not None
-            or band.GetMetadataItem('FOO') is None):
+    if (band.GetMetadataItem('STATISTICS_MINIMUM') is not None or
+            band.GetMetadataItem('FOO') is None):
         gdaltest.post_reason('fail')
         return 'fail'
     ds = band = None
@@ -217,6 +220,7 @@ def test_gdal_edit_py_4():
 ###############################################################################
 # Test -stats
 
+
 def test_gdal_edit_py_5():
 
     script_path = test_py_scripts.get_py_script('gdal_edit')
@@ -230,7 +234,7 @@ def test_gdal_edit_py_5():
         return 'skip'
 
     shutil.copy('../gcore/data/byte.tif', 'tmp/test_gdal_edit_py.tif')
-    ds = gdal.Open( 'tmp/test_gdal_edit_py.tif', gdal.GA_Update )
+    ds = gdal.Open('tmp/test_gdal_edit_py.tif', gdal.GA_Update)
     band = ds.GetRasterBand(1)
     array = band.ReadAsArray()
     # original minimum is 74; modify a pixel value from 99 to 22
@@ -253,7 +257,7 @@ def test_gdal_edit_py_5():
         return 'fail'
     ds = None
 
-    ds = gdal.Open( 'tmp/test_gdal_edit_py.tif', gdal.GA_Update )
+    ds = gdal.Open('tmp/test_gdal_edit_py.tif', gdal.GA_Update)
     band = ds.GetRasterBand(1)
     array = band.ReadAsArray()
     array[15, 12] = 26
@@ -280,6 +284,7 @@ def test_gdal_edit_py_5():
 ###############################################################################
 # Test -scale and -offset
 
+
 def test_gdal_edit_py_6():
 
     script_path = test_py_scripts.get_py_script('gdal_edit')
@@ -301,16 +306,48 @@ def test_gdal_edit_py_6():
     return 'success'
 
 ###############################################################################
+# Test -colorinterp_X
+
+
+def test_gdal_edit_py_7():
+
+    script_path = test_py_scripts.get_py_script('gdal_edit')
+    if script_path is None:
+        return 'skip'
+
+    gdal.Translate('tmp/test_gdal_edit_py.tif',
+                   '../gcore/data/byte.tif',
+                   options='-b 1 -b 1 -b 1 -b 1 -co PHOTOMETRIC=RGB -co ALPHA=NO')
+
+    test_py_scripts.run_py_script(script_path, 'gdal_edit', "tmp/test_gdal_edit_py.tif -colorinterp_4 alpha")
+
+    ds = gdal.Open('tmp/test_gdal_edit_py.tif')
+    if ds.GetRasterBand(4).GetColorInterpretation() != gdal.GCI_AlphaBand:
+        gdaltest.post_reason('fail')
+        return 'fail'
+
+    test_py_scripts.run_py_script(script_path, 'gdal_edit', "tmp/test_gdal_edit_py.tif -colorinterp_4 undefined")
+
+    ds = gdal.Open('tmp/test_gdal_edit_py.tif')
+    if ds.GetRasterBand(4).GetColorInterpretation() != gdal.GCI_Undefined:
+        gdaltest.post_reason('fail')
+        return 'fail'
+
+    return 'success'
+
+###############################################################################
 # Cleanup
+
 
 def test_gdal_edit_py_cleanup():
 
     try:
         os.unlink('tmp/test_gdal_edit_py.tif')
-    except:
+    except OSError:
         pass
 
     return 'success'
+
 
 gdaltest_list = [
     test_gdal_edit_py_1,
@@ -319,14 +356,15 @@ gdaltest_list = [
     test_gdal_edit_py_4,
     test_gdal_edit_py_5,
     test_gdal_edit_py_6,
+    test_gdal_edit_py_7,
     test_gdal_edit_py_cleanup,
-    ]
+]
 
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'test_gdal_edit_py' )
+    gdaltest.setup_run('test_gdal_edit_py')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

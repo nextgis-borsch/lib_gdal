@@ -29,7 +29,7 @@
 #include "ogr_pg.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /************************************************************************/
 /*                         OGRPG_PQexec()                               */
@@ -40,7 +40,7 @@ PGresult *OGRPG_PQexec(PGconn *conn, const char *query, int bMultipleCommandAllo
 {
     PGresult* hResult = bMultipleCommandAllowed
         ? PQexec(conn, query)
-        : PQexecParams(conn, query, 0, NULL, NULL, NULL, NULL, 0);
+        : PQexecParams(conn, query, 0, nullptr, nullptr, nullptr, nullptr, 0);
 
 #ifdef DEBUG
     const char* pszRetCode = "UNKNOWN";

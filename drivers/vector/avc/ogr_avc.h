@@ -66,8 +66,6 @@ class OGRAVCLayer : public OGRLayer
 
     OGRFeatureDefn *    GetLayerDefn() override { return poFeatureDefn; }
 
-    virtual OGRSpatialReference *GetSpatialRef() override;
-
     virtual int         TestCapability( const char * ) override;
 };
 
@@ -78,6 +76,7 @@ class OGRAVCLayer : public OGRLayer
 class OGRAVCDataSource : public OGRDataSource
 {
   protected:
+    bool                 m_bSRSFetched = false;
     OGRSpatialReference *poSRS;
     char                *pszCoverageName;
 

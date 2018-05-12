@@ -32,7 +32,7 @@
 import sys
 import os
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 from osgeo import gdal
 import gdaltest
@@ -40,6 +40,7 @@ import test_py_scripts
 
 ###############################################################################
 # Dummy test : there is no nodata value in the source dataset !
+
 
 def test_gdal_fillnodata_1():
 
@@ -59,6 +60,7 @@ def test_gdal_fillnodata_1():
 ###############################################################################
 # Make sure we copy the no data value to the dst when created
 # No data value for nodata_byte.tif is 0.
+
 
 def test_gdal_fillnodata_2():
 
@@ -82,26 +84,27 @@ def test_gdal_fillnodata_2():
 
 def test_gdal_fillnodata_cleanup():
 
-    lst = [ 'tmp/test_gdal_fillnodata_1.tif', 'tmp/test_gdal_fillnodata_2.tif' ]
+    lst = ['tmp/test_gdal_fillnodata_1.tif', 'tmp/test_gdal_fillnodata_2.tif']
     for filename in lst:
         try:
             os.remove(filename)
-        except:
+        except OSError:
             pass
 
     return 'success'
+
 
 gdaltest_list = [
     test_gdal_fillnodata_1,
     test_gdal_fillnodata_2,
     test_gdal_fillnodata_cleanup
-    ]
+]
 
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'test_gdal_fillnodata' )
+    gdaltest.setup_run('test_gdal_fillnodata')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

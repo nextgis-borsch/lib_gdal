@@ -41,18 +41,19 @@ if(ENABLE_SHAPE)
         ogrshape.h
         shapefil.h
         shp_vsi.h
+        gdal_shapelib_symbol_rename.h
     )
 
     set(LIB_CSOURCES
-        dbfopen.c	
-        shpopen.c	
-        shptree.c	
-        shp_vsi.c	
-        ogrshapedatasource.cpp	
-        ogrshapedriver.cpp	
-        ogrshapelayer.cpp	
-        shape2ogr.cpp		
-        sbnsearch.c
+        dbfopen_wrapper.c
+        shpopen_wrapper.c
+        shptree_wrapper.c	
+        shp_vsi.c
+        ogrshapedatasource.cpp
+        ogrshapedriver.cpp
+        ogrshapelayer.cpp
+        shape2ogr.cpp
+        sbnsearch_wrapper.c
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
@@ -60,5 +61,5 @@ if(ENABLE_SHAPE)
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
 else()
-    warning_msg("Skip shp")  
+    warning_msg("Skip shp")
 endif()

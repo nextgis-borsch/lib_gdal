@@ -14,6 +14,10 @@ typedef struct {
 /*                          PyProgressProxy()                           */
 /************************************************************************/
 
+
+static int CPL_STDCALL
+PyProgressProxy( double dfComplete, const char *pszMessage, void *pData ) CPL_UNUSED;
+
 static int CPL_STDCALL
 PyProgressProxy( double dfComplete, const char *pszMessage, void *pData )
 
@@ -46,6 +50,7 @@ PyProgressProxy( double dfComplete, const char *pszMessage, void *pData )
 
     if( PyErr_Occurred() != NULL )
     {
+        PyErr_Print();
         PyErr_Clear();
         SWIG_PYTHON_THREAD_END_BLOCK;
         return FALSE;

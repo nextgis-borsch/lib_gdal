@@ -32,16 +32,17 @@ import sys
 import time
 from osgeo import gdal
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 
 ###############################################################################
 #
 
+
 def vsicurl_streaming_1():
     try:
-        drv = gdal.GetDriverByName( 'HTTP' )
+        drv = gdal.GetDriverByName('HTTP')
     except:
         drv = None
 
@@ -52,7 +53,7 @@ def vsicurl_streaming_1():
     fp = gdal.VSIFOpenL('/vsicurl_streaming/http://download.osgeo.org/gdal/data/usgsdem/cded/114p01_0100_deme.dem', 'rb')
     gdal.SetConfigOption('GDAL_HTTP_CONNECTTIMEOUT', None)
     if fp is None:
-        if gdaltest.gdalurlopen('http://download.osgeo.org/gdal/data/usgsdem/cded/114p01_0100_deme.dem', timeout = 4) is None:
+        if gdaltest.gdalurlopen('http://download.osgeo.org/gdal/data/usgsdem/cded/114p01_0100_deme.dem', timeout=4) is None:
             print('cannot open URL')
             return 'skip'
         gdaltest.post_reason('fail')
@@ -96,7 +97,7 @@ def vsicurl_streaming_1():
         gdaltest.post_reason('fail')
         gdal.VSIFCloseL(fp)
         return 'fail'
-    if gdal.VSIFTellL(fp) != 2001+20:
+    if gdal.VSIFTellL(fp) != 2001 + 20:
         gdaltest.post_reason('fail')
         gdal.VSIFCloseL(fp)
         return 'fail'
@@ -115,7 +116,7 @@ def vsicurl_streaming_1():
 
     gdal.VSIFSeekL(fp, 2001, 0)
     data_2001_2 = gdal.VSIFReadL(1, 20, fp)
-    if gdal.VSIFTellL(fp) != 2001+20:
+    if gdal.VSIFTellL(fp) != 2001 + 20:
         gdaltest.post_reason('fail')
         gdal.VSIFCloseL(fp)
         return 'fail'
@@ -132,7 +133,7 @@ def vsicurl_streaming_1():
         gdaltest.post_reason('fail')
         gdal.VSIFCloseL(fp)
         return 'fail'
-    if gdal.VSIFTellL(fp) != 1024 * 1024 + 100+ 20:
+    if gdal.VSIFTellL(fp) != 1024 * 1024 + 100 + 20:
         gdaltest.post_reason('fail')
         gdal.VSIFCloseL(fp)
         return 'fail'
@@ -141,15 +142,15 @@ def vsicurl_streaming_1():
 
     return 'success'
 
-gdaltest_list = [ vsicurl_streaming_1 ]
+
+gdaltest_list = [vsicurl_streaming_1]
 
 if __name__ == '__main__':
 
     gdal.SetConfigOption('GDAL_RUN_SLOW_TESTS', 'YES')
 
-    gdaltest.setup_run( 'vsicurl_streaming' )
+    gdaltest.setup_run('vsicurl_streaming')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

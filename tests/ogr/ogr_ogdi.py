@@ -32,21 +32,23 @@ import os
 import sys
 from osgeo import ogr
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 import ogrtest
 
 ###############################################################################
+
+
 def ogr_ogdi_1():
 
     ogrtest.ogdi_ds = None
 
     # Skip tests when -fsanitize is used because of memleaks in libogdi
     if gdaltest.is_travis_branch('sanitize'):
-       print('Skipping because of memory leaks in OGDI')
-       ogrtest.ogdi_drv = None
-       return 'skip'
+        print('Skipping because of memory leaks in OGDI')
+        ogrtest.ogdi_drv = None
+        return 'skip'
 
     try:
         ogrtest.ogdi_drv = ogr.GetDriverByName('OGDI')
@@ -61,17 +63,17 @@ def ogr_ogdi_1():
 
     try:
         os.stat('tmp/cache/ogdits-3.1')
-    except:
+    except OSError:
         try:
-            gdaltest.unzip( 'tmp/cache', 'tmp/cache/ogdits-3.1.0.zip')
+            gdaltest.unzip('tmp/cache', 'tmp/cache/ogdits-3.1.0.zip')
             try:
                 os.stat('tmp/cache/ogdits-3.1')
-            except:
+            except OSError:
                 return 'skip'
         except:
             return 'skip'
 
-    url_name ='gltp:/vrf/' + os.getcwd()+ '/tmp/cache/ogdits-3.1/data/vpf/vm2alv2/texash'
+    url_name = 'gltp:/vrf/' + os.getcwd() + '/tmp/cache/ogdits-3.1/data/vpf/vm2alv2/texash'
 
     ds = ogr.Open(url_name)
     ogrtest.ogdi_ds = ds
@@ -83,10 +85,10 @@ def ogr_ogdi_1():
         gdaltest.post_reason('did not get expected layer count')
         return 'fail'
 
-    layers = [ ('libref@libref(*)_line', ogr.wkbLineString, 15),
-               ('libreft@libref(*)_text', ogr.wkbPoint, 4),
-               ('markersp@bnd(*)_point', ogr.wkbPoint, 40),
-               ('polbnda@bnd(*)_area', ogr.wkbPolygon, 6)]
+    layers = [('libref@libref(*)_line', ogr.wkbLineString, 15),
+              ('libreft@libref(*)_text', ogr.wkbPoint, 4),
+              ('markersp@bnd(*)_point', ogr.wkbPoint, 40),
+              ('polbnda@bnd(*)_area', ogr.wkbPolygon, 6)]
 
     for l in layers:
         lyr = ds.GetLayerByName(l[0])
@@ -95,7 +97,7 @@ def ogr_ogdi_1():
         if lyr.GetFeatureCount() != l[2]:
             print(lyr.GetFeatureCount())
             return 'fail'
-        #if l[1] != ogr.wkbNone:
+        # if l[1] != ogr.wkbNone:
         #    if lyr.GetSpatialRef().ExportToWkt().find('WGS 84') == -1:
         #        return 'fail'
 
@@ -114,6 +116,7 @@ def ogr_ogdi_1():
 ###############################################################################
 # Run test_ogrsf
 
+
 def ogr_ogdi_2():
 
     if ogrtest.ogdi_ds is None:
@@ -123,7 +126,7 @@ def ogr_ogdi_2():
     if test_cli_utilities.get_test_ogrsf_path() is None:
         return 'skip'
 
-    url_name ='gltp:/vrf/' + os.getcwd()+ '/tmp/cache/ogdits-3.1/data/vpf/vm2alv2/texash'
+    url_name = 'gltp:/vrf/' + os.getcwd() + '/tmp/cache/ogdits-3.1/data/vpf/vm2alv2/texash'
 
     ret = gdaltest.runexternal(test_cli_utilities.get_test_ogrsf_path() + ' --config OGR_OGDI_LAUNDER_LAYER_NAMES YES -ro "' + url_name + '" markersp_bnd contourl_elev polbnda_bnd extractp_ind')
 
@@ -135,6 +138,7 @@ def ogr_ogdi_2():
 
 ###############################################################################
 # Test GetFeature()
+
 
 def ogr_ogdi_3():
 
@@ -183,12 +187,13 @@ def ogr_ogdi_3():
 ###############################################################################
 # Extract of full dataset
 
+
 def ogr_ogdi_4():
 
     if ogrtest.ogdi_drv is None:
         return 'skip'
 
-    url_name ='gltp:/vrf/' + os.getcwd()+ '/data/vm2alv2_texash/texash'
+    url_name = 'gltp:/vrf/' + os.getcwd() + '/data/vm2alv2_texash/texash'
     ds = ogr.Open(url_name)
     if ds is None:
         gdaltest.post_reason('cannot open dataset')
@@ -199,7 +204,7 @@ def ogr_ogdi_4():
         gdaltest.post_reason('did not get expected layer count')
         return 'fail'
 
-    layers = [ ('polbnda@bnd(*)_area', ogr.wkbPolygon, 6)]
+    layers = [('polbnda@bnd(*)_area', ogr.wkbPolygon, 6)]
 
     for l in layers:
         lyr = ds.GetLayerByName(l[0])
@@ -227,7 +232,7 @@ def ogr_ogdi_4():
     ds = None
 
     # Test opening one single layer
-    ds = ogr.Open(url_name +':polbnda@bnd(*):area')
+    ds = ogr.Open(url_name + ':polbnda@bnd(*):area')
     if ds is None:
         gdaltest.post_reason('cannot open dataset')
         return 'fail'
@@ -241,6 +246,7 @@ def ogr_ogdi_4():
 ###############################################################################
 # Run test_ogrsf
 
+
 def ogr_ogdi_5():
 
     if ogrtest.ogdi_drv is None:
@@ -250,7 +256,7 @@ def ogr_ogdi_5():
     if test_cli_utilities.get_test_ogrsf_path() is None:
         return 'skip'
 
-    url_name ='gltp:/vrf/' + os.getcwd()+ '/data/vm2alv2_texash/texash'
+    url_name = 'gltp:/vrf/' + os.getcwd() + '/data/vm2alv2_texash/texash'
 
     ret = gdaltest.runexternal(test_cli_utilities.get_test_ogrsf_path() + ' --config OGR_OGDI_LAUNDER_LAYER_NAMES YES -ro "' + url_name + '"')
 
@@ -261,6 +267,7 @@ def ogr_ogdi_5():
     return 'success'
 
 ###############################################################################
+
 
 def ogr_ogdi_cleanup():
 
@@ -281,9 +288,8 @@ gdaltest_list = [
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'ogr_ogdi' )
+    gdaltest.setup_run('ogr_ogdi')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

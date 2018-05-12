@@ -32,7 +32,7 @@ import os
 import shutil
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 import ogrtest
@@ -41,6 +41,7 @@ from osgeo import ogr
 
 ###############################################################################
 # Basic test of .idf file
+
 
 def ogr_idf_1():
 
@@ -78,6 +79,7 @@ def ogr_idf_1():
 ###############################################################################
 # Run test_ogrsf on .idf
 
+
 def ogr_idf_2():
 
     import test_cli_utilities
@@ -95,11 +97,12 @@ def ogr_idf_2():
 ###############################################################################
 # Create a VDV file
 
-def ogr_vdv_1(filename = 'tmp/test.x10', dsco = [], lco = []):
 
-    ds = ogr.GetDriverByName('VDV').CreateDataSource(filename, options = dsco)
-    ds.CreateLayer('empty', options = lco)
-    lyr = ds.CreateLayer('lyr_1', options = lco)
+def ogr_vdv_1(filename='tmp/test.x10', dsco=[], lco=[]):
+
+    ds = ogr.GetDriverByName('VDV').CreateDataSource(filename, options=dsco)
+    ds.CreateLayer('empty', options=lco)
+    lyr = ds.CreateLayer('lyr_1', options=lco)
     lyr.CreateField(ogr.FieldDefn('str_field', ogr.OFTString))
     lyr.CreateField(ogr.FieldDefn('int_field', ogr.OFTInteger))
     lyr.CreateField(ogr.FieldDefn('int64_field', ogr.OFTInteger64))
@@ -125,7 +128,7 @@ def ogr_vdv_1(filename = 'tmp/test.x10', dsco = [], lco = []):
     f = ogr.Feature(lyr.GetLayerDefn())
     lyr.CreateFeature(f)
 
-    lyr = ds.CreateLayer('another_layer', options = lco)
+    lyr = ds.CreateLayer('another_layer', options=lco)
     lyr.CreateField(ogr.FieldDefn('str_field', ogr.OFTString))
     for i in range(5):
         f = ogr.Feature(lyr.GetLayerDefn())
@@ -139,7 +142,7 @@ def ogr_vdv_1(filename = 'tmp/test.x10', dsco = [], lco = []):
     ds = None
 
     ds = ogr.Open(filename, update=1)
-    ds.CreateLayer('empty2', options = lco)
+    ds.CreateLayer('empty2', options=lco)
     ds = None
 
     return 'success'
@@ -147,19 +150,20 @@ def ogr_vdv_1(filename = 'tmp/test.x10', dsco = [], lco = []):
 ###############################################################################
 # Read it
 
-def ogr_vdv_2(src_filename = 'tmp/test.x10'):
+
+def ogr_vdv_2(src_filename='tmp/test.x10'):
 
     out_filename = '/vsimem/vdv/ogr_vdv_2.x10'
     gdal.Unlink(out_filename)
 
     src_ds = ogr.Open(src_filename)
     out_ds = ogr.GetDriverByName('VDV').CreateDataSource(out_filename)
-    layer_names = [ src_ds.GetLayer(idx).GetName() for idx in range(src_ds.GetLayerCount()) ]
+    layer_names = [src_ds.GetLayer(idx).GetName() for idx in range(src_ds.GetLayerCount())]
     layer_names.sort()
     for layer_name in layer_names:
         src_lyr = src_ds.GetLayer(layer_name)
-        options = [ 'HEADER_SRC_DATE=01.01.1970', 'HEADER_SRC_TIME=00.00.00', 'HEADER_foo=bar' ]
-        dst_lyr = out_ds.CreateLayer(src_lyr.GetName(), options = options)
+        options = ['HEADER_SRC_DATE=01.01.1970', 'HEADER_SRC_TIME=00.00.00', 'HEADER_foo=bar']
+        dst_lyr = out_ds.CreateLayer(src_lyr.GetName(), options=options)
         for field_idx in range(src_lyr.GetLayerDefn().GetFieldCount()):
             dst_lyr.CreateField(src_lyr.GetLayerDefn().GetFieldDefn(field_idx))
         for src_f in src_lyr:
@@ -218,6 +222,7 @@ eof; 4
 ###############################################################################
 # Run test_ogrsf on it
 
+
 def ogr_vdv_3():
 
     import test_cli_utilities
@@ -235,17 +240,20 @@ def ogr_vdv_3():
 ###############################################################################
 # Create a VDV directory
 
+
 def ogr_vdv_4():
-    return ogr_vdv_1(filename = 'tmp/test_x10', dsco = ['SINGLE_FILE=NO'], lco = ['EXTENSION=txt'])
+    return ogr_vdv_1(filename='tmp/test_x10', dsco=['SINGLE_FILE=NO'], lco=['EXTENSION=txt'])
 
 ###############################################################################
 # Read it
 
+
 def ogr_vdv_5():
-    return ogr_vdv_2(src_filename = 'tmp/test_x10')
+    return ogr_vdv_2(src_filename='tmp/test_x10')
 
 ###############################################################################
 # Run test_ogrsf on it
+
 
 def ogr_vdv_6():
 
@@ -264,22 +272,23 @@ def ogr_vdv_6():
 ###############################################################################
 # Run VDV452
 
+
 def ogr_vdv_7():
 
-    tests = [ ('VDV-452','STOP','POINT_LONGITUDE','POINT_LATITUDE'),
-              ('VDV-452-ENGLISH','STOP','POINT_LONGITUDE','POINT_LATITUDE'),
-              ('VDV-452','REC_ORT','ORT_POS_LAENGE','ORT_POS_BREITE'),
-              ('VDV-452-GERMAN','REC_ORT','ORT_POS_LAENGE','ORT_POS_BREITE') ]
+    tests = [('VDV-452', 'STOP', 'POINT_LONGITUDE', 'POINT_LATITUDE'),
+             ('VDV-452-ENGLISH', 'STOP', 'POINT_LONGITUDE', 'POINT_LATITUDE'),
+             ('VDV-452', 'REC_ORT', 'ORT_POS_LAENGE', 'ORT_POS_BREITE'),
+             ('VDV-452-GERMAN', 'REC_ORT', 'ORT_POS_LAENGE', 'ORT_POS_BREITE')]
 
     out_filename = '/vsimem/vdv/ogr_vdv_7.x10'
 
-    for (profile,lyrname,longname,latname) in tests:
+    for (profile, lyrname, longname, latname) in tests:
 
         ds = ogr.GetDriverByName('VDV').CreateDataSource(out_filename)
-        lyr = ds.CreateLayer(lyrname, geom_type = ogr.wkbPoint, options = ['PROFILE=' + profile])
+        lyr = ds.CreateLayer(lyrname, geom_type=ogr.wkbPoint, options=['PROFILE=' + profile])
         f = ogr.Feature(lyr.GetLayerDefn())
         lng = - (123 + 45. / 60 + 56.789 / 3600)
-        lat = - ( 23 + 45. / 60 + 56.789 / 3600)
+        lat = - (23 + 45. / 60 + 56.789 / 3600)
         f.SetGeometry(ogr.CreateGeometryFromWkt('POINT(%.10f %.10f)' % (lng, lat)))
         lyr.CreateFeature(f)
         ds = None
@@ -297,15 +306,14 @@ def ogr_vdv_7():
 
         gdal.Unlink('/vsimem/vdv/ogr_vdv_7.x10')
 
-
-    tests = [ ('VDV-452', True), ('VDV-452-ENGLISH', False), ('VDV-452-GERMAN', False) ]
+    tests = [('VDV-452', True), ('VDV-452-ENGLISH', False), ('VDV-452-GERMAN', False)]
 
     for (profile, strict) in tests:
 
         ds = ogr.GetDriverByName('VDV').CreateDataSource(out_filename)
         gdal.ErrorReset()
         gdal.PushErrorHandler()
-        lyr = ds.CreateLayer('UNKNOWN', options = ['PROFILE=' + profile, 'PROFILE_STRICT=' + str(strict)])
+        lyr = ds.CreateLayer('UNKNOWN', options=['PROFILE=' + profile, 'PROFILE_STRICT=' + str(strict)])
         gdal.PopErrorHandler()
         if gdal.GetLastErrorMsg() == '':
             gdaltest.post_reason('fail')
@@ -321,7 +329,7 @@ def ogr_vdv_7():
             lyr_name = 'REC_ORT'
         else:
             lyr_name = 'STOP'
-        lyr = ds.CreateLayer(lyr_name, options = ['PROFILE=' + profile, 'PROFILE_STRICT=' + str(strict)])
+        lyr = ds.CreateLayer(lyr_name, options=['PROFILE=' + profile, 'PROFILE_STRICT=' + str(strict)])
         gdal.ErrorReset()
         gdal.PushErrorHandler()
         ret = lyr.CreateField(ogr.FieldDefn('UNKNOWN'))
@@ -345,6 +353,7 @@ def ogr_vdv_7():
 ###############################################################################
 # Test a few error cases
 
+
 def ogr_vdv_8():
 
     gdal.PushErrorHandler()
@@ -355,7 +364,7 @@ def ogr_vdv_8():
         return 'fail'
 
     gdal.PushErrorHandler()
-    ds = ogr.GetDriverByName('VDV').CreateDataSource('/does/not_exist', options = ['SINGLE_FILE=FALSE'])
+    ds = ogr.GetDriverByName('VDV').CreateDataSource('/does/not_exist', options=['SINGLE_FILE=FALSE'])
     gdal.PopErrorHandler()
     if ds is not None:
         gdaltest.post_reason('fail')
@@ -368,13 +377,13 @@ def ogr_vdv_8():
         # 0555 = 365
         os.chmod('tmp/ogr_vdv_8', 365)
         try:
-            open('tmp/ogr_vdv_8/another_file','wb').close()
+            open('tmp/ogr_vdv_8/another_file', 'wb').close()
             shutil.rmtree('tmp/ogr_vdv_8')
             do_test = False
         except:
             do_test = True
         if do_test:
-            ds = ogr.Open('tmp/ogr_vdv_8', update = 1)
+            ds = ogr.Open('tmp/ogr_vdv_8', update=1)
             gdal.PushErrorHandler()
             lyr = ds.CreateLayer('another_layer')
             gdal.PopErrorHandler()
@@ -527,6 +536,7 @@ eof; 2
 ###############################################################################
 # Cleanup
 
+
 def ogr_vdv_cleanup():
 
     gdal.Unlink('tmp/test.x10')
@@ -541,6 +551,7 @@ def ogr_vdv_cleanup():
 
     return 'success'
 
+
 gdaltest_list = [
     ogr_idf_1,
     ogr_idf_2,
@@ -552,13 +563,13 @@ gdaltest_list = [
     ogr_vdv_6,
     ogr_vdv_7,
     ogr_vdv_8,
-    ogr_vdv_cleanup ]
+    ogr_vdv_cleanup]
 
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'ogr_vdv' )
+    gdaltest.setup_run('ogr_vdv')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

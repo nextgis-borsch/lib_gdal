@@ -41,7 +41,7 @@
 import os
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 import ogrtest
@@ -49,6 +49,7 @@ from osgeo import ogr
 
 ###############################################################################
 # Test if driver is available
+
 
 def ogr_db2_check_driver():
 
@@ -67,6 +68,7 @@ def ogr_db2_check_driver():
 ###############################################################################
 # Test if environment variable for DB2 connection is set and we can connect
 
+
 def ogr_db2_init():
 
     if ogrtest.db2_drv is None:
@@ -82,6 +84,7 @@ def ogr_db2_init():
     return 'success'
 ###############################################################################
 # Test GetFeatureCount()
+
 
 def ogr_db2_GetFeatureCount():
 
@@ -107,6 +110,8 @@ def ogr_db2_GetFeatureCount():
 
 ###############################################################################
 # Test GetSpatialRef()
+
+
 def ogr_db2_GetSpatialRef():
 
     if ogrtest.db2_drv is None:
@@ -169,6 +174,8 @@ def ogr_db2_GetExtent():
 
 ###############################################################################
 # Test GetFeature()
+
+
 def ogr_db2_GetFeature():
 
     if ogrtest.db2_drv is None:
@@ -198,6 +205,8 @@ def ogr_db2_GetFeature():
 
 ###############################################################################
 # Test SetSpatialFilter()
+
+
 def ogr_db2_SetSpatialFilter():
 
     if ogrtest.db2_drv is None:
@@ -214,7 +223,7 @@ def ogr_db2_SetSpatialFilter():
         return 'fail'
 
 # set a query envelope so we only get one feature
-    lyr.SetSpatialFilterRect( -122.02, 37.42, -122.01, 37.43 )
+    lyr.SetSpatialFilterRect(-122.02, 37.42, -122.01, 37.43)
 
     count = lyr.GetFeatureCount()
 
@@ -235,7 +244,7 @@ def ogr_db2_SetSpatialFilter():
 
 # start over with a larger envelope to get 3 out of 5 of the points
     lyr.ResetReading()
-    lyr.SetSpatialFilterRect( -122.04, 37.30, -121.80, 37.43 )
+    lyr.SetSpatialFilterRect(-122.04, 37.30, -121.80, 37.43)
 
     count = lyr.GetFeatureCount()
 
@@ -261,6 +270,8 @@ def ogr_db2_SetSpatialFilter():
 #
 # test what capabilities the DB2 driver provides
 #
+
+
 def ogr_db2_capabilities():
 
     if ogrtest.db2_drv is None:
@@ -295,6 +306,7 @@ def ogr_db2_capabilities():
         print("  %s = %s" % (cap, layer.TestCapability(cap)))
     return 'success'
 
+
 def ogr_db2_listdrivers():
     cnt = ogr.GetDriverCount()
     formatsList = []  # Empty List
@@ -306,12 +318,13 @@ def ogr_db2_listdrivers():
         if driverName not in formatsList:
             formatsList.append(driverName)
 
-    formatsList.sort() # Sorting the messy list of ogr drivers
+    formatsList.sort()  # Sorting the messy list of ogr drivers
 
     for i in formatsList:
         print(i)
 
     return 'success'
+
 
 gdaltest_list = [
     ogr_db2_check_driver,
@@ -323,13 +336,13 @@ gdaltest_list = [
     ogr_db2_SetSpatialFilter,
     ogr_db2_capabilities,
     ogr_db2_GetFeatureCount
-    ]
+]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'ogr_db2' )
+    gdaltest.setup_run('ogr_db2')
     if os.name == 'nt':
-        gdaltest.run_tests( gdaltest_list )
+        gdaltest.run_tests(gdaltest_list)
     else:
         print("These tests only run on Windows")
     gdaltest.summarize()

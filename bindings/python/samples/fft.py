@@ -36,14 +36,18 @@ import FFT
 from osgeo import gdal
 
 # =============================================================================
+
+
 def Usage():
     print('Usage: fft.py [-inv] [-of out_format] [-ot out_type] infile outfile')
     print('')
-    sys.exit( 1 )
+    sys.exit(1)
 
 # =============================================================================
 
 # =============================================================================
+
+
 def ParseType(type):
     if type == 'Byte':
         return gdal.GDT_Byte
@@ -71,6 +75,7 @@ def ParseType(type):
         return gdal.GDT_Byte
 # =============================================================================
 
+
 infile = None
 outfile = None
 format = 'GTiff'
@@ -84,7 +89,7 @@ while i < len(sys.argv):
 
     if arg == '-inv':
         transformation = 'inverse'
-        if type == None:
+        if type is None:
             type = gdal.GDT_Float32
 
     elif arg == '-of':
@@ -109,13 +114,13 @@ while i < len(sys.argv):
 
 if infile is None:
     Usage()
-if  outfile is None:
+if outfile is None:
     Usage()
 
-if type == None:
+if type is None:
     type = gdal.GDT_CFloat32
 
-indataset = gdal.Open( infile, gdal.GA_ReadOnly )
+indataset = gdal.Open(infile, gdal.GA_ReadOnly)
 
 out_driver = gdal.GetDriverByName(format)
 outdataset = out_driver.Create(outfile, indataset.RasterXSize, indataset.RasterYSize, indataset.RasterCount, type)
@@ -130,4 +135,3 @@ for iBand in range(1, indataset.RasterCount + 1):
     else:
         data_tr = FFT.inverse_fft2d(data)
     outband.WriteArray(data_tr)
-

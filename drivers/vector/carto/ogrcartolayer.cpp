@@ -30,7 +30,7 @@
 #include "ogr_p.h"
 #include "ogrgeojsonreader.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /************************************************************************/
 /*                         OGRCARTOLayer()                            */
@@ -38,10 +38,14 @@ CPL_CVSID("$Id$");
 
 OGRCARTOLayer::OGRCARTOLayer(OGRCARTODataSource* poDSIn) :
     poDS(poDSIn),
-    poFeatureDefn(NULL),
-    poCachedObj(NULL)
+    poFeatureDefn(nullptr),
+    bEOF(false),
+    nFetchedObjects(-1),
+    iNextInFetchedObjects(0),
+    m_nNextFID(0),
+    m_nNextOffset(0),
+    poCachedObj(nullptr)
 {
-    ResetReading();
 }
 
 /************************************************************************/
@@ -51,10 +55,10 @@ OGRCARTOLayer::OGRCARTOLayer(OGRCARTODataSource* poDSIn) :
 OGRCARTOLayer::~OGRCARTOLayer()
 
 {
-    if( poCachedObj != NULL )
+    if( poCachedObj != nullptr )
         json_object_put(poCachedObj);
 
-    if( poFeatureDefn != NULL )
+    if( poFeatureDefn != nullptr )
         poFeatureDefn->Release();
 }
 
@@ -65,9 +69,9 @@ OGRCARTOLayer::~OGRCARTOLayer()
 void OGRCARTOLayer::ResetReading()
 
 {
-    if( poCachedObj != NULL )
+    if( poCachedObj != nullptr )
         json_object_put(poCachedObj);
-    poCachedObj = NULL;
+    poCachedObj = nullptr;
     bEOF = false;
     nFetchedObjects = -1;
     iNextInFetchedObjects = 0;
@@ -81,7 +85,7 @@ void OGRCARTOLayer::ResetReading()
 
 OGRFeatureDefn * OGRCARTOLayer::GetLayerDefn()
 {
-    return GetLayerDefnInternal(NULL);
+    return GetLayerDefnInternal(nullptr);
 }
 
 /************************************************************************/
@@ -90,8 +94,8 @@ OGRFeatureDefn * OGRCARTOLayer::GetLayerDefn()
 
 OGRFeature *OGRCARTOLayer::BuildFeature(json_object* poRowObj)
 {
-    OGRFeature* poFeature = NULL;
-    if( poRowObj != NULL &&
+    OGRFeature* poFeature = nullptr;
+    if( poRowObj != nullptr &&
         json_object_get_type(poRowObj) == json_type_object )
     {
         //CPLDebug("Carto", "Row: %s", json_object_to_json_string(poRowObj));
@@ -100,7 +104,7 @@ OGRFeature *OGRCARTOLayer::BuildFeature(json_object* poRowObj)
         if( !osFIDColName.empty() )
         {
             json_object* poVal = CPL_json_object_object_get(poRowObj, osFIDColName);
-            if( poVal != NULL &&
+            if( poVal != nullptr &&
                 json_object_get_type(poVal) == json_type_int )
             {
                 poFeature->SetFID(json_object_get_int64(poVal));
@@ -115,7 +119,7 @@ OGRFeature *OGRCARTOLayer::BuildFeature(json_object* poRowObj)
         {
             json_object* poVal = CPL_json_object_object_get(poRowObj,
                             poFeatureDefn->GetFieldDefn(i)->GetNameRef());
-            if( poVal == NULL )
+            if( poVal == nullptr )
             {
                 poFeature->SetFieldNull(i);
             }
@@ -151,12 +155,12 @@ OGRFeature *OGRCARTOLayer::BuildFeature(json_object* poRowObj)
             OGRGeomFieldDefn* poGeomFldDefn = poFeatureDefn->GetGeomFieldDefn(i);
             json_object* poVal = CPL_json_object_object_get(poRowObj,
                             poGeomFldDefn->GetNameRef());
-            if( poVal != NULL &&
+            if( poVal != nullptr &&
                 json_object_get_type(poVal) == json_type_string )
             {
                 OGRGeometry* poGeom = OGRGeometryFromHexEWKB(
-                    json_object_get_string(poVal), NULL, FALSE);
-                if( poGeom != NULL )
+                    json_object_get_string(poVal), nullptr, FALSE);
+                if( poGeom != nullptr )
                     poGeom->assignSpatialReference(poGeomFldDefn->GetSpatialRef());
                 poFeature->SetGeomFieldDirectly(i, poGeom);
             }
@@ -190,44 +194,44 @@ json_object* OGRCARTOLayer::FetchNewFeatures()
 OGRFeature *OGRCARTOLayer::GetNextRawFeature()
 {
     if( bEOF )
-        return NULL;
+        return nullptr;
 
     if( iNextInFetchedObjects >= nFetchedObjects )
     {
         if( nFetchedObjects > 0 && nFetchedObjects < GetFeaturesToFetch() )
         {
             bEOF = true;
-            return NULL;
+            return nullptr;
         }
 
-        if( poFeatureDefn == NULL && osBaseSQL.empty() )
+        if( poFeatureDefn == nullptr && osBaseSQL.empty() )
         {
             GetLayerDefn();
         }
 
         json_object* poObj = FetchNewFeatures();
-        if( poObj == NULL )
+        if( poObj == nullptr )
         {
             bEOF = true;
-            return NULL;
+            return nullptr;
         }
 
-        if( poFeatureDefn == NULL )
+        if( poFeatureDefn == nullptr )
         {
             GetLayerDefnInternal(poObj);
         }
 
         json_object* poRows = CPL_json_object_object_get(poObj, "rows");
-        if( poRows == NULL ||
+        if( poRows == nullptr ||
             json_object_get_type(poRows) != json_type_array ||
             json_object_array_length(poRows) == 0 )
         {
             json_object_put(poObj);
             bEOF = true;
-            return NULL;
+            return nullptr;
         }
 
-        if( poCachedObj != NULL )
+        if( poCachedObj != nullptr )
             json_object_put(poCachedObj);
         poCachedObj = poObj;
 
@@ -258,12 +262,12 @@ OGRFeature *OGRCARTOLayer::GetNextFeature()
     while( true )
     {
         poFeature = GetNextRawFeature();
-        if (poFeature == NULL)
-            return NULL;
+        if (poFeature == nullptr)
+            return nullptr;
 
-        if((m_poFilterGeom == NULL
+        if((m_poFilterGeom == nullptr
             || FilterGeometry( poFeature->GetGeometryRef() ) )
-        && (m_poAttrQuery == NULL
+        && (m_poAttrQuery == nullptr
             || m_poAttrQuery->Evaluate( poFeature )) )
         {
             return poFeature;
@@ -312,36 +316,36 @@ void OGRCARTOLayer::EstablishLayerDefn(const char* pszLayerName,
     else
         osSQL.Printf("%s LIMIT 0", osBaseSQL.c_str());
     json_object* poObj;
-    if( poObjIn != NULL )
+    if( poObjIn != nullptr )
         poObj = poObjIn;
     else
     {
         poObj = poDS->RunSQL(osSQL);
-        if( poObj == NULL )
+        if( poObj == nullptr )
         {
             return;
         }
     }
 
     json_object* poFields = CPL_json_object_object_get(poObj, "fields");
-    if( poFields == NULL || json_object_get_type(poFields) != json_type_object)
+    if( poFields == nullptr || json_object_get_type(poFields) != json_type_object)
     {
-        if( poObjIn == NULL )
+        if( poObjIn == nullptr )
             json_object_put(poObj);
         return;
     }
 
     json_object_iter it;
-    it.key = NULL;
-    it.val = NULL;
-    it.entry = NULL;
+    it.key = nullptr;
+    it.val = nullptr;
+    it.entry = nullptr;
     json_object_object_foreachC( poFields, it )
     {
         const char* pszColName = it.key;
-        if( it.val != NULL && json_object_get_type(it.val) == json_type_object)
+        if( it.val != nullptr && json_object_get_type(it.val) == json_type_object)
         {
             json_object* poType = CPL_json_object_object_get(it.val, "type");
-            if( poType != NULL && json_object_get_type(poType) == json_type_string )
+            if( poType != nullptr && json_object_get_type(poType) == json_type_string )
             {
                 const char* pszType = json_object_get_string(poType);
                 CPLDebug("CARTO", "%s : %s", pszColName, pszType);
@@ -378,7 +382,7 @@ void OGRCARTOLayer::EstablishLayerDefn(const char* pszLayerName,
                             new OGRCartoGeomFieldDefn(pszColName, wkbUnknown);
                         poFeatureDefn->AddGeomFieldDefn(poFieldDefn, FALSE);
                         OGRSpatialReference* l_poSRS = GetSRS(pszColName, &poFieldDefn->nSRID);
-                        if( l_poSRS != NULL )
+                        if( l_poSRS != nullptr )
                         {
                             poFeatureDefn->GetGeomFieldDefn(
                                 poFeatureDefn->GetGeomFieldCount() - 1)->SetSpatialRef(l_poSRS);
@@ -399,14 +403,14 @@ void OGRCARTOLayer::EstablishLayerDefn(const char* pszLayerName,
                     poFeatureDefn->AddFieldDefn(&oFieldDefn);
                 }
             }
-            else if( poType != NULL && json_object_get_type(poType) == json_type_int )
+            else if( poType != nullptr && json_object_get_type(poType) == json_type_int )
             {
                 /* FIXME? manual creations of geometry columns return integer types */
                 OGRCartoGeomFieldDefn *poFieldDefn =
                     new OGRCartoGeomFieldDefn(pszColName, wkbUnknown);
                 poFeatureDefn->AddGeomFieldDefn(poFieldDefn, FALSE);
                 OGRSpatialReference* l_poSRS = GetSRS(pszColName, &poFieldDefn->nSRID);
-                if( l_poSRS != NULL )
+                if( l_poSRS != nullptr )
                 {
                     poFeatureDefn->GetGeomFieldDefn(
                         poFeatureDefn->GetGeomFieldCount() - 1)->SetSpatialRef(l_poSRS);
@@ -415,7 +419,7 @@ void OGRCARTOLayer::EstablishLayerDefn(const char* pszLayerName,
             }
         }
     }
-    if( poObjIn == NULL )
+    if( poObjIn == nullptr )
         json_object_put(poObj);
 }
 
@@ -428,30 +432,29 @@ OGRSpatialReference* OGRCARTOLayer::GetSRS(const char* pszGeomCol,
 {
     json_object* poObj = poDS->RunSQL(GetSRS_SQL(pszGeomCol));
     json_object* poRowObj = OGRCARTOGetSingleRow(poObj);
-    if( poRowObj == NULL )
+    if( poRowObj == nullptr )
     {
-        if( poObj != NULL )
+        if( poObj != nullptr )
             json_object_put(poObj);
-        return NULL;
+        return nullptr;
     }
 
     json_object* poSRID = CPL_json_object_object_get(poRowObj, "srid");
-    if( poSRID != NULL && json_object_get_type(poSRID) == json_type_int )
+    if( poSRID != nullptr && json_object_get_type(poSRID) == json_type_int )
     {
         *pnSRID = json_object_get_int(poSRID);
     }
 
     json_object* poSRTEXT = CPL_json_object_object_get(poRowObj, "srtext");
-    OGRSpatialReference* l_poSRS = NULL;
-    if( poSRTEXT != NULL && json_object_get_type(poSRTEXT) == json_type_string )
+    OGRSpatialReference* l_poSRS = nullptr;
+    if( poSRTEXT != nullptr && json_object_get_type(poSRTEXT) == json_type_string )
     {
         const char* pszSRTEXT = json_object_get_string(poSRTEXT);
         l_poSRS = new OGRSpatialReference();
-        char* pszTmp = (char* )pszSRTEXT;
-        if( l_poSRS->importFromWkt(&pszTmp) != OGRERR_NONE )
+        if( l_poSRS->importFromWkt(pszSRTEXT) != OGRERR_NONE )
         {
             delete l_poSRS;
-            l_poSRS = NULL;
+            l_poSRS = nullptr;
         }
     }
     json_object_put(poObj);

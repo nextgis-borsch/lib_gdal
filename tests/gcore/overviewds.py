@@ -33,7 +33,7 @@ import os
 import sys
 import shutil
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 from osgeo import gdal
@@ -41,11 +41,12 @@ from osgeo import gdal
 ###############################################################################
 # Error cases
 
+
 def overviewds_1():
-    ds = gdal.OpenEx('data/byte.tif', open_options = ['OVERVIEW_LEVEL=-1'])
+    ds = gdal.OpenEx('data/byte.tif', open_options=['OVERVIEW_LEVEL=-1'])
     if ds is not None:
         return 'fail'
-    ds = gdal.OpenEx('data/byte.tif', open_options = ['OVERVIEW_LEVEL=0'])
+    ds = gdal.OpenEx('data/byte.tif', open_options=['OVERVIEW_LEVEL=0'])
     if ds is not None:
         return 'fail'
 
@@ -54,21 +55,22 @@ def overviewds_1():
 ###############################################################################
 # Nominal cases
 
+
 def overviewds_2():
 
     shutil.copy('data/byte.tif', 'tmp')
     ds = gdal.Open('tmp/byte.tif')
-    ds.BuildOverviews( 'NEAR', overviewlist = [2, 4] )
+    ds.BuildOverviews('NEAR', overviewlist=[2, 4])
     ds = None
 
-    ds = gdal.OpenEx('tmp/byte.tif', open_options = ['OVERVIEW_LEVEL=0only'])
+    ds = gdal.OpenEx('tmp/byte.tif', open_options=['OVERVIEW_LEVEL=0only'])
     if ds.GetRasterBand(1).GetOverviewCount() != 0:
         gdaltest.post_reason('fail')
         return 'fail'
     ds = None
 
     src_ds = gdal.Open('tmp/byte.tif')
-    ds = gdal.OpenEx('tmp/byte.tif', open_options = ['OVERVIEW_LEVEL=0'])
+    ds = gdal.OpenEx('tmp/byte.tif', open_options=['OVERVIEW_LEVEL=0'])
     if ds is None:
         return 'fail'
     if ds.RasterXSize != 10 or ds.RasterYSize != 10 or ds.RasterCount != 1:
@@ -78,7 +80,7 @@ def overviewds_2():
         gdaltest.post_reason('fail')
         return 'fail'
     src_gt = src_ds.GetGeoTransform()
-    expected_gt = ( src_gt[0], src_gt[1] * 2, src_gt[2], src_gt[3], src_gt[4], src_gt[5] * 2 )
+    expected_gt = (src_gt[0], src_gt[1] * 2, src_gt[2], src_gt[3], src_gt[4], src_gt[5] * 2)
     gt = ds.GetGeoTransform()
     for i in range(6):
         if abs(expected_gt[i] - gt[i]) > 1e-5:
@@ -89,20 +91,20 @@ def overviewds_2():
     if ds.GetGCPCount() != 0 or ds.GetGCPProjection() != src_ds.GetGCPProjection() or len(ds.GetGCPs()) != 0:
         gdaltest.post_reason('fail')
         return 'fail'
-    expected_data = src_ds.ReadRaster(0,0,20,20,10,10)
-    got_data = ds.ReadRaster(0,0,10,10)
+    expected_data = src_ds.ReadRaster(0, 0, 20, 20, 10, 10)
+    got_data = ds.ReadRaster(0, 0, 10, 10)
     if expected_data != got_data:
         gdaltest.post_reason('fail')
         return 'fail'
-    got_data = ds.GetRasterBand(1).ReadRaster(0,0,10,10)
+    got_data = ds.GetRasterBand(1).ReadRaster(0, 0, 10, 10)
     if expected_data != got_data:
         gdaltest.post_reason('fail')
         return 'fail'
     if ds.GetRasterBand(1).GetOverviewCount() != 1:
         gdaltest.post_reason('fail')
         return 'fail'
-    expected_data = src_ds.ReadRaster(0,0,20,20,5,5)
-    got_data = ds.GetRasterBand(1).GetOverview(0).ReadRaster(0,0,5,5)
+    expected_data = src_ds.ReadRaster(0, 0, 20, 20, 5, 5)
+    got_data = ds.GetRasterBand(1).GetOverview(0).ReadRaster(0, 0, 5, 5)
     if expected_data != got_data:
         gdaltest.post_reason('fail')
         return 'fail'
@@ -118,7 +120,7 @@ def overviewds_2():
     if len(ds.GetMetadata('GEOLOCATION')) != 0:
         gdaltest.post_reason('fail')
         return 'fail'
-    if ds.GetMetadataItem('RPC', 'FOO') != None:
+    if ds.GetMetadataItem('RPC', 'FOO') is not None:
         gdaltest.post_reason('fail')
         return 'fail'
     ds = None
@@ -128,11 +130,12 @@ def overviewds_2():
 ###############################################################################
 # Test GCP
 
+
 def overviewds_3():
 
     src_ds = gdal.Open('data/byte.tif')
     ds = gdal.GetDriverByName('GTiff').CreateCopy('tmp/byte.tif', src_ds)
-    ds.SetGeoTransform([0,1,0,0,0,1]) # cancel geotransform
+    ds.SetGeoTransform([0, 1, 0, 0, 0, 1])  # cancel geotransform
     gcp1 = gdal.GCP()
     gcp1.GCPPixel = 0
     gcp1.GCPLine = 0
@@ -151,13 +154,13 @@ def overviewds_3():
     src_gcps = (gcp1, gcp2, gcp3)
     ds.SetGCPs(src_gcps, src_ds.GetProjectionRef())
 
-    tr = gdal.Transformer( ds, None, [ 'METHOD=GCP_POLYNOMIAL' ] )
-    (ref_success,ref_pnt) = tr.TransformPoint( 0, 20, 10 )
+    tr = gdal.Transformer(ds, None, ['METHOD=GCP_POLYNOMIAL'])
+    (ref_success, ref_pnt) = tr.TransformPoint(0, 20, 10)
 
-    ds.BuildOverviews( 'NEAR', overviewlist = [2, 4] )
+    ds.BuildOverviews('NEAR', overviewlist=[2, 4])
     ds = None
 
-    ds = gdal.OpenEx('tmp/byte.tif', open_options = ['OVERVIEW_LEVEL=0'])
+    ds = gdal.OpenEx('tmp/byte.tif', open_options=['OVERVIEW_LEVEL=0'])
     gcps = ds.GetGCPs()
     for i in range(3):
         if gcps[i].GCPPixel != src_gcps[i].GCPPixel / 2 or gcps[i].GCPLine != src_gcps[i].GCPLine / 2 or \
@@ -166,8 +169,8 @@ def overviewds_3():
             return 'fail'
 
     # Really check that the transformer works
-    tr = gdal.Transformer( ds, None, [ 'METHOD=GCP_POLYNOMIAL' ] )
-    (success,pnt) = tr.TransformPoint( 0, 20 / 2.0, 10 / 2.0 )
+    tr = gdal.Transformer(ds, None, ['METHOD=GCP_POLYNOMIAL'])
+    (success, pnt) = tr.TransformPoint(0, 20 / 2.0, 10 / 2.0)
 
     for i in range(3):
         if abs(ref_pnt[i] - pnt[i]) > 1e-5:
@@ -182,11 +185,13 @@ def overviewds_3():
 ###############################################################################
 # Test RPC
 
+
 def myfloat(s):
     p = s.rfind(' ')
     if p >= 0:
         s = s[0:p]
     return float(s)
+
 
 def overviewds_4():
 
@@ -195,13 +200,13 @@ def overviewds_4():
     ds = gdal.Open('tmp/byte.tif')
     rpc_md = ds.GetMetadata('RPC')
 
-    tr = gdal.Transformer( ds, None, [ 'METHOD=RPC' ] )
-    (ref_success,ref_pnt) = tr.TransformPoint( 0, 20, 10 )
+    tr = gdal.Transformer(ds, None, ['METHOD=RPC'])
+    (ref_success, ref_pnt) = tr.TransformPoint(0, 20, 10)
 
-    ds.BuildOverviews( 'NEAR', overviewlist = [2, 4] )
+    ds.BuildOverviews('NEAR', overviewlist=[2, 4])
     ds = None
 
-    ds = gdal.OpenEx('tmp/byte.tif', open_options = ['OVERVIEW_LEVEL=0'])
+    ds = gdal.OpenEx('tmp/byte.tif', open_options=['OVERVIEW_LEVEL=0'])
     got_md = ds.GetMetadata('RPC')
 
     for key in rpc_md:
@@ -223,8 +228,8 @@ def overviewds_4():
             return 'fail'
 
     # Really check that the transformer works
-    tr = gdal.Transformer( ds, None, [ 'METHOD=RPC' ] )
-    (success,pnt) = tr.TransformPoint( 0, 20 / 2.0, 10 / 2.0 )
+    tr = gdal.Transformer(ds, None, ['METHOD=RPC'])
+    (success, pnt) = tr.TransformPoint(0, 20 / 2.0, 10 / 2.0)
 
     for i in range(3):
         if abs(ref_pnt[i] - pnt[i]) > 1e-5:
@@ -237,13 +242,14 @@ def overviewds_4():
 
     try:
         os.remove('tmp/byte_rpc.txt')
-    except:
+    except OSError:
         pass
 
     return 'success'
 
 ###############################################################################
 # Test GEOLOCATION
+
 
 def overviewds_5():
 
@@ -253,13 +259,13 @@ def overviewds_5():
     ds = gdal.Open('tmp/sstgeo.vrt')
     geoloc_md = ds.GetMetadata('GEOLOCATION')
 
-    tr = gdal.Transformer( ds, None, [ 'METHOD=GEOLOC_ARRAY' ] )
-    (ref_success,ref_pnt) = tr.TransformPoint( 0, 20, 10 )
+    tr = gdal.Transformer(ds, None, ['METHOD=GEOLOC_ARRAY'])
+    (ref_success, ref_pnt) = tr.TransformPoint(0, 20, 10)
 
-    ds.BuildOverviews( 'NEAR', overviewlist = [2, 4] )
+    ds.BuildOverviews('NEAR', overviewlist=[2, 4])
     ds = None
 
-    ds = gdal.OpenEx('tmp/sstgeo.vrt', open_options = ['OVERVIEW_LEVEL=0'])
+    ds = gdal.OpenEx('tmp/sstgeo.vrt', open_options=['OVERVIEW_LEVEL=0'])
     got_md = ds.GetMetadata('GEOLOCATION')
 
     for key in geoloc_md:
@@ -288,9 +294,9 @@ def overviewds_5():
             return 'fail'
 
     # Really check that the transformer works
-    tr = gdal.Transformer( ds, None, [ 'METHOD=GEOLOC_ARRAY' ] )
-    expected_xyz = ( 20.0 / 2, 10.0 / 2, 0 )
-    (success,pnt) = tr.TransformPoint( 1, ref_pnt[0], ref_pnt[1] )
+    tr = gdal.Transformer(ds, None, ['METHOD=GEOLOC_ARRAY'])
+    expected_xyz = (20.0 / 2, 10.0 / 2, 0)
+    (success, pnt) = tr.TransformPoint(1, ref_pnt[0], ref_pnt[1])
 
     for i in range(3):
         if abs(pnt[i] - expected_xyz[i]) > 0.5:
@@ -305,14 +311,15 @@ def overviewds_5():
 ###############################################################################
 # Test VRT
 
+
 def overviewds_6():
 
     shutil.copy('data/byte.tif', 'tmp')
     ds = gdal.Open('tmp/byte.tif')
-    ds.BuildOverviews( 'NEAR', overviewlist = [2, 4] )
+    ds.BuildOverviews('NEAR', overviewlist=[2, 4])
     ds = None
 
-    src_ds = gdal.OpenEx('tmp/byte.tif', open_options = ['OVERVIEW_LEVEL=0'])
+    src_ds = gdal.OpenEx('tmp/byte.tif', open_options=['OVERVIEW_LEVEL=0'])
     expected_cs = src_ds.GetRasterBand(1).Checksum()
     ds = gdal.GetDriverByName('VRT').CreateCopy('tmp/byte.vrt', src_ds)
     ds = None
@@ -333,40 +340,40 @@ def overviewds_6():
 ###############################################################################
 # Cleanup
 
+
 def overviewds_cleanup():
 
     gdal.GetDriverByName('GTiff').Delete('tmp/byte.tif')
     try:
         os.remove('tmp/byte_rpc.txt')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/sstgeo.tif')
         os.remove('tmp/sstgeo.vrt')
         os.remove('tmp/sstgeo.vrt.ovr')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/byte.vrt')
-    except:
+    except OSError:
         pass
 
     return 'success'
 
 
-gdaltest_list = [ overviewds_1,
-                  overviewds_2,
-                  overviewds_3,
-                  overviewds_4,
-                  overviewds_5,
-                  overviewds_6,
-                  overviewds_cleanup ]
+gdaltest_list = [overviewds_1,
+                 overviewds_2,
+                 overviewds_3,
+                 overviewds_4,
+                 overviewds_5,
+                 overviewds_6,
+                 overviewds_cleanup]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'overviewds' )
+    gdaltest.setup_run('overviewds')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

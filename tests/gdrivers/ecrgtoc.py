@@ -32,7 +32,7 @@ import os
 import sys
 from osgeo import gdal
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 
@@ -103,15 +103,15 @@ def ecrgtoc_1():
         print(filelist)
         return 'fail'
 
-    ds2 = gdal.GetDriverByName('NITF').Create('/vsimem/clfc/2/000000009s0013.lf2', 2304, 2304, 3, \
-        options = ['ICORDS=G', 'TRE=GEOLOB=000605184000800256-85.43147208122+33.16698656430'])
+    ds2 = gdal.GetDriverByName('NITF').Create('/vsimem/clfc/2/000000009s0013.lf2', 2304, 2304, 3,
+                                              options=['ICORDS=G', 'TRE=GEOLOB=000605184000800256-85.43147208122+33.16698656430'])
     ds2.SetGeoTransform([-85.43147208122, 0.00059486040609137061, 0.0, 33.16698656430, 0.0, -0.00044985604606525913])
     ds2.SetProjection(wkt)
     ds2.GetRasterBand(1).Fill(255)
     ds2 = None
 
-    ds2 = gdal.GetDriverByName('NITF').Create('/vsimem/clfc/2/000000009t0013.lf2', 2304, 2304, 3, \
-        options = ['ICORDS=G', 'TRE=GEOLOB=000605184000800256-84.06091370558+33.16698656430'])
+    ds2 = gdal.GetDriverByName('NITF').Create('/vsimem/clfc/2/000000009t0013.lf2', 2304, 2304, 3,
+                                              options=['ICORDS=G', 'TRE=GEOLOB=000605184000800256-84.06091370558+33.16698656430'])
     ds2.SetGeoTransform([-84.06091370558, 0.00059486040609137061, 0.0, 33.16698656430, 0.0, -0.00044985604606525913])
     ds2.SetProjection(wkt)
     ds2 = None
@@ -129,6 +129,7 @@ def ecrgtoc_1():
 
 ###############################################################################
 # Test overviews
+
 
 def ecrgtoc_2():
 
@@ -151,20 +152,21 @@ def ecrgtoc_2():
 ###############################################################################
 # Test opening subdataset
 
+
 def ecrgtoc_3():
 
     # Try different errors
-    for name in [ 'ECRG_TOC_ENTRY:',
-                  'ECRG_TOC_ENTRY:ProductTitle',
-                  'ECRG_TOC_ENTRY:ProductTitle:DiscId',
-                  'ECRG_TOC_ENTRY:ProductTitle:DiscId:not_existing',
-                  'ECRG_TOC_ENTRY:ProductTitle:DiscId:c:/not_existing',
-                  'ECRG_TOC_ENTRY:ProductTitle:DiscId:1_500_K:not_existing',
-                  'ECRG_TOC_ENTRY:ProductTitle:DiscId:1_500_K:c:/not_existing',
-                  'ECRG_TOC_ENTRY:ProductTitle:DiscId:1_500_K:c:/not_existing:extra',
-                  'ECRG_TOC_ENTRY:ProductTitle:DiscId:inexisting_scale:/vsimem/TOC.xml',
-                  'ECRG_TOC_ENTRY:ProductTitle:DiscId2:/vsimem/TOC.xml',
-                  'ECRG_TOC_ENTRY:ProductTitle2:DiscId:/vsimem/TOC.xml']:
+    for name in ['ECRG_TOC_ENTRY:',
+                 'ECRG_TOC_ENTRY:ProductTitle',
+                 'ECRG_TOC_ENTRY:ProductTitle:DiscId',
+                 'ECRG_TOC_ENTRY:ProductTitle:DiscId:not_existing',
+                 'ECRG_TOC_ENTRY:ProductTitle:DiscId:c:/not_existing',
+                 'ECRG_TOC_ENTRY:ProductTitle:DiscId:1_500_K:not_existing',
+                 'ECRG_TOC_ENTRY:ProductTitle:DiscId:1_500_K:c:/not_existing',
+                 'ECRG_TOC_ENTRY:ProductTitle:DiscId:1_500_K:c:/not_existing:extra',
+                 'ECRG_TOC_ENTRY:ProductTitle:DiscId:inexisting_scale:/vsimem/TOC.xml',
+                 'ECRG_TOC_ENTRY:ProductTitle:DiscId2:/vsimem/TOC.xml',
+                 'ECRG_TOC_ENTRY:ProductTitle2:DiscId:/vsimem/TOC.xml']:
 
         gdal.PushErrorHandler()
         ds = gdal.Open(name)
@@ -196,6 +198,7 @@ def ecrgtoc_3():
 
 ###############################################################################
 # Test dataset with 3 subdatasets
+
 
 def ecrgtoc_4():
 
@@ -316,6 +319,8 @@ def ecrgtoc_4():
     return 'success'
 
 ###############################################################################
+
+
 def ecrgtoc_online_1():
 
     if not gdaltest.download_file('http://www.falconview.org/trac/FalconView/downloads/17', 'ECRG_Sample.zip'):
@@ -323,7 +328,7 @@ def ecrgtoc_online_1():
 
     try:
         os.stat('tmp/cache/ECRG_Sample.zip')
-    except:
+    except OSError:
         return 'skip'
 
     ds = gdal.Open('/vsizip/tmp/cache/ECRG_Sample.zip/ECRG_Sample/EPF/TOC.xml')
@@ -351,18 +356,18 @@ def ecrgtoc_online_1():
 
     return 'success'
 
+
 gdaltest_list = [
     ecrgtoc_1,
     ecrgtoc_2,
     ecrgtoc_3,
     ecrgtoc_4,
-    ecrgtoc_online_1 ]
+    ecrgtoc_online_1]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'ecrgtoc' )
+    gdaltest.setup_run('ecrgtoc')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

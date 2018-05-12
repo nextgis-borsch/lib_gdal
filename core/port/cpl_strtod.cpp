@@ -38,7 +38,7 @@
 
 #include "cpl_config.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 // XXX: with GCC 2.95 strtof() function is only available when in c99 mode.
 // Fix it here not touching the compiler options.
@@ -72,7 +72,7 @@ extern float strtof(const char *nptr, char **endptr);
  */
 double CPLAtofDelim(const char *nptr, char point)
 {
-    return CPLStrtodDelim(nptr, NULL, point);
+    return CPLStrtodDelim(nptr, nullptr, point);
 }
 
 /************************************************************************/
@@ -116,7 +116,7 @@ double CPLAtofDelim(const char *nptr, char point)
  */
 double CPLAtof(const char *nptr)
 {
-    return CPLStrtod(nptr, NULL);
+    return CPLStrtod(nptr, nullptr);
 }
 
 /************************************************************************/
@@ -147,12 +147,12 @@ double CPLAtofM( const char *nptr )
     for( int i = 0; i < nMaxSearch; i++ )
     {
         if( nptr[i] == ',' )
-            return CPLStrtodDelim( nptr, NULL, ',' );
+            return CPLStrtodDelim( nptr, nullptr, ',' );
         if( nptr[i] == '.' || nptr[i] == '\0' )
-            return CPLStrtodDelim( nptr, NULL, '.' );
+            return CPLStrtodDelim( nptr, nullptr, '.' );
     }
 
-    return CPLStrtodDelim( nptr, NULL, '.' );
+    return CPLStrtodDelim( nptr, nullptr, '.' );
 }
 
 /************************************************************************/

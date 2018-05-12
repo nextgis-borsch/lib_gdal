@@ -31,18 +31,19 @@
 import sys
 from osgeo import gdal
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 
 gdaltest.buggy_jasper = None
+
 
 def is_buggy_jasper():
     if gdaltest.buggy_jasper is not None:
         return gdaltest.buggy_jasper
 
     gdaltest.buggy_jasper = False
-    if gdal.GetDriverByName( 'JPEG2000' ) is None:
+    if gdal.GetDriverByName('JPEG2000') is None:
         return False
 
     # This test will cause a crash with an unpatched version of Jasper, such as the one of Ubuntu 8.04 LTS
@@ -62,13 +63,10 @@ def is_buggy_jasper():
 ###############################################################################
 # Verify we have the driver.
 
+
 def jpeg2000_1():
 
-    try:
-        gdaltest.jpeg2000_drv = gdal.GetDriverByName( 'JPEG2000' )
-    except:
-        gdaltest.jpeg2000_drv = None
-        return 'skip'
+    gdaltest.jpeg2000_drv = gdal.GetDriverByName('JPEG2000')
 
     gdaltest.deregister_all_jpeg2000_drivers_but('JPEG2000')
 
@@ -76,6 +74,7 @@ def jpeg2000_1():
 
 ###############################################################################
 # Open byte.jp2
+
 
 def jpeg2000_2():
 
@@ -103,19 +102,20 @@ def jpeg2000_2():
 """
     gt = (440720.0, 60.0, 0.0, 3751320.0, 0.0, -60.0)
 
-    tst = gdaltest.GDALTest( 'JPEG2000', 'byte.jp2', 1, 50054 )
-    return tst.testOpen( check_prj = srs, check_gt = gt )
+    tst = gdaltest.GDALTest('JPEG2000', 'byte.jp2', 1, 50054)
+    return tst.testOpen(check_prj=srs, check_gt=gt)
 
 ###############################################################################
 # Open int16.jp2
+
 
 def jpeg2000_3():
 
     if gdaltest.jpeg2000_drv is None:
         return 'skip'
 
-    ds = gdal.Open( 'data/int16.jp2' )
-    ds_ref = gdal.Open( 'data/int16.tif' )
+    ds = gdal.Open('data/int16.jp2')
+    ds_ref = gdal.Open('data/int16.tif')
 
     maxdiff = gdaltest.compare_ds(ds, ds_ref)
     print(ds.GetRasterBand(1).Checksum())
@@ -134,17 +134,18 @@ def jpeg2000_3():
 ###############################################################################
 # Test copying byte.jp2
 
+
 def jpeg2000_4():
 
     if gdaltest.jpeg2000_drv is None:
         return 'skip'
 
-    tst = gdaltest.GDALTest( 'JPEG2000', 'byte.jp2', 1, 50054 )
+    tst = gdaltest.GDALTest('JPEG2000', 'byte.jp2', 1, 50054)
     if tst.testCreateCopy() != 'success':
         return 'fail'
 
     # This may fail for a good reason
-    if tst.testCreateCopy( check_gt = 1, check_srs = 1) != 'success':
+    if tst.testCreateCopy(check_gt=1, check_srs=1) != 'success':
         gdaltest.post_reason('This is an expected failure if Jasper has not the jp2_encode_uuid function')
         return 'expected_fail'
 
@@ -153,23 +154,25 @@ def jpeg2000_4():
 ###############################################################################
 # Test copying int16.jp2
 
+
 def jpeg2000_5():
 
     if gdaltest.jpeg2000_drv is None:
         return 'skip'
 
-    tst = gdaltest.GDALTest( 'JPEG2000', 'int16.jp2', 1, None )
+    tst = gdaltest.GDALTest('JPEG2000', 'int16.jp2', 1, None)
     return tst.testCreateCopy()
 
 ###############################################################################
 # Test reading ll.jp2
+
 
 def jpeg2000_6():
 
     if gdaltest.jpeg2000_drv is None:
         return 'skip'
 
-    tst = gdaltest.GDALTest( 'JPEG2000', 'll.jp2', 1, None )
+    tst = gdaltest.GDALTest('JPEG2000', 'll.jp2', 1, None)
 
     if tst.testOpen() != 'success':
         return 'fail'
@@ -183,16 +186,18 @@ def jpeg2000_6():
 ###############################################################################
 # Open byte.jp2.gz (test use of the VSIL API)
 
+
 def jpeg2000_7():
 
     if gdaltest.jpeg2000_drv is None:
         return 'skip'
 
-    tst = gdaltest.GDALTest( 'JPEG2000', '/vsigzip/data/byte.jp2.gz', 1, 50054, filename_absolute = 1 )
+    tst = gdaltest.GDALTest('JPEG2000', '/vsigzip/data/byte.jp2.gz', 1, 50054, filename_absolute=1)
     return tst.testOpen()
 
 ###############################################################################
 # Test a JPEG2000 with the 3 bands having 13bit depth and the 4th one 1 bit
+
 
 def jpeg2000_8():
 
@@ -201,11 +206,11 @@ def jpeg2000_8():
 
     ds = gdal.Open('data/3_13bit_and_1bit.jp2')
 
-    expected_checksums = [ 64570, 57277, 56048, 61292]
+    expected_checksums = [64570, 57277, 56048, 61292]
 
     for i in range(4):
-        if ds.GetRasterBand(i+1).Checksum() != expected_checksums[i]:
-            gdaltest.post_reason('unexpected checksum (%d) for band %d' % (expected_checksums[i], i+1))
+        if ds.GetRasterBand(i + 1).Checksum() != expected_checksums[i]:
+            gdaltest.post_reason('unexpected checksum (%d) for band %d' % (expected_checksums[i], i + 1))
             return 'fail'
 
     if ds.GetRasterBand(1).DataType != gdal.GDT_UInt16:
@@ -217,22 +222,23 @@ def jpeg2000_8():
 ###############################################################################
 # Check that we can use .j2w world files (#4651)
 
+
 def jpeg2000_9():
 
     if gdaltest.jpeg2000_drv is None:
         return 'skip'
 
-    ds = gdal.Open( 'data/byte_without_geotransform.jp2' )
+    ds = gdal.Open('data/byte_without_geotransform.jp2')
 
     geotransform = ds.GetGeoTransform()
-    if abs(geotransform[0]-440720) > 0.1 \
-        or abs(geotransform[1]-60) > 0.001 \
-        or abs(geotransform[2]-0) > 0.001 \
-        or abs(geotransform[3]-3751320) > 0.1 \
-        or abs(geotransform[4]-0) > 0.001 \
-        or abs(geotransform[5]- -60) > 0.001:
+    if abs(geotransform[0] - 440720) > 0.1 \
+            or abs(geotransform[1] - 60) > 0.001 \
+            or abs(geotransform[2] - 0) > 0.001 \
+            or abs(geotransform[3] - 3751320) > 0.1 \
+            or abs(geotransform[4] - 0) > 0.001 \
+            or abs(geotransform[5] - -60) > 0.001:
         print(geotransform)
-        gdaltest.post_reason( 'geotransform differs from expected' )
+        gdaltest.post_reason('geotransform differs from expected')
         return 'fail'
 
     ds = None
@@ -242,6 +248,7 @@ def jpeg2000_9():
 ###############################################################################
 # Check writing a file with more than 4 bands (#4686)
 
+
 def jpeg2000_10():
 
     if gdaltest.jpeg2000_drv is None:
@@ -249,19 +256,19 @@ def jpeg2000_10():
 
     src_ds = gdal.GetDriverByName('GTiff').Create('/vsimem/jpeg2000_10_src.tif', 128, 128, 5)
     for i in range(src_ds.RasterCount):
-        src_ds.GetRasterBand(i+1).Fill(10*i+1)
+        src_ds.GetRasterBand(i + 1).Fill(10 * i + 1)
 
     ds = gdaltest.jpeg2000_drv.CreateCopy('/vsimem/jpeg2000_10_dst.tif', src_ds)
     ds = None
 
-    ds = gdal.Open( '/vsimem/jpeg2000_10_dst.tif' )
+    ds = gdal.Open('/vsimem/jpeg2000_10_dst.tif')
     if ds is None:
         return 'fail'
     for i in range(src_ds.RasterCount):
-        if ds.GetRasterBand(i+1).Checksum() != src_ds.GetRasterBand(i+1).Checksum():
-            gdaltest.post_reason('bad checksum for band %d' % (i+1))
-            print(ds.GetRasterBand(i+1).Checksum())
-            print(src_ds.GetRasterBand(i+1).Checksum())
+        if ds.GetRasterBand(i + 1).Checksum() != src_ds.GetRasterBand(i + 1).Checksum():
+            gdaltest.post_reason('bad checksum for band %d' % (i + 1))
+            print(ds.GetRasterBand(i + 1).Checksum())
+            print(src_ds.GetRasterBand(i + 1).Checksum())
             return 'fail'
     ds = None
     src_ds = None
@@ -273,6 +280,7 @@ def jpeg2000_10():
 
 ###############################################################################
 # Test auto-promotion of 1bit alpha band to 8bit
+
 
 def jpeg2000_11():
 
@@ -288,16 +296,16 @@ def jpeg2000_11():
         gdaltest.post_reason('fail')
         print(got_cs)
         return 'fail'
-    jp2_bands_data = ds.ReadRaster(0,0,ds.RasterXSize,ds.RasterYSize)
-    jp2_fourth_band_data = fourth_band.ReadRaster(0,0,ds.RasterXSize,ds.RasterYSize)
-    fourth_band.ReadRaster(0,0,ds.RasterXSize,ds.RasterYSize,int(ds.RasterXSize/16),int(ds.RasterYSize/16))
+    jp2_bands_data = ds.ReadRaster(0, 0, ds.RasterXSize, ds.RasterYSize)
+    jp2_fourth_band_data = fourth_band.ReadRaster(0, 0, ds.RasterXSize, ds.RasterYSize)
+    fourth_band.ReadRaster(0, 0, ds.RasterXSize, ds.RasterYSize, int(ds.RasterXSize / 16), int(ds.RasterYSize / 16))
 
     tmp_ds = gdal.GetDriverByName('GTiff').CreateCopy('/vsimem/jpeg2000_11.tif', ds)
     fourth_band = tmp_ds.GetRasterBand(4)
     got_cs = fourth_band.Checksum()
-    gtiff_bands_data = tmp_ds.ReadRaster(0,0,ds.RasterXSize,ds.RasterYSize)
-    gtiff_fourth_band_data = fourth_band.ReadRaster(0,0,ds.RasterXSize,ds.RasterYSize)
-    #gtiff_fourth_band_subsampled_data = fourth_band.ReadRaster(0,0,ds.RasterXSize,ds.RasterYSize,ds.RasterXSize/16,ds.RasterYSize/16)
+    gtiff_bands_data = tmp_ds.ReadRaster(0, 0, ds.RasterXSize, ds.RasterYSize)
+    gtiff_fourth_band_data = fourth_band.ReadRaster(0, 0, ds.RasterXSize, ds.RasterYSize)
+    # gtiff_fourth_band_subsampled_data = fourth_band.ReadRaster(0,0,ds.RasterXSize,ds.RasterYSize,ds.RasterXSize/16,ds.RasterYSize/16)
     tmp_ds = None
     gdal.GetDriverByName('GTiff').Delete('/vsimem/jpeg2000_11.tif')
     if got_cs != 8527:
@@ -313,7 +321,7 @@ def jpeg2000_11():
         gdaltest.post_reason('fail')
         return 'fail'
 
-    ds = gdal.OpenEx('data/stefan_full_rgba_alpha_1bit.jp2', open_options = ['1BIT_ALPHA_PROMOTION=NO'])
+    ds = gdal.OpenEx('data/stefan_full_rgba_alpha_1bit.jp2', open_options=['1BIT_ALPHA_PROMOTION=NO'])
     fourth_band = ds.GetRasterBand(4)
     if fourth_band.GetMetadataItem('NBITS', 'IMAGE_STRUCTURE') != '1':
         gdaltest.post_reason('fail')
@@ -322,6 +330,8 @@ def jpeg2000_11():
     return 'success'
 
 ###############################################################################
+
+
 def jpeg2000_online_1():
 
     if gdaltest.jpeg2000_drv is None:
@@ -331,7 +341,7 @@ def jpeg2000_online_1():
         return 'skip'
 
     # Checksum = 32669 on my PC
-    tst = gdaltest.GDALTest( 'JPEG2000', 'tmp/cache/7sisters200.j2k', 1, None, filename_absolute = 1 )
+    tst = gdaltest.GDALTest('JPEG2000', 'tmp/cache/7sisters200.j2k', 1, None, filename_absolute=1)
 
     if tst.testOpen() != 'success':
         return 'fail'
@@ -343,6 +353,8 @@ def jpeg2000_online_1():
     return 'success'
 
 ###############################################################################
+
+
 def jpeg2000_online_2():
 
     if gdaltest.jpeg2000_drv is None:
@@ -352,7 +364,7 @@ def jpeg2000_online_2():
         return 'skip'
 
     # Checksum = 15621 on my PC
-    tst = gdaltest.GDALTest( 'JPEG2000', 'tmp/cache/gcp.jp2', 1, None, filename_absolute = 1 )
+    tst = gdaltest.GDALTest('JPEG2000', 'tmp/cache/gcp.jp2', 1, None, filename_absolute=1)
 
     if tst.testOpen() != 'success':
         return 'fail'
@@ -373,6 +385,8 @@ def jpeg2000_online_2():
     return 'success'
 
 ###############################################################################
+
+
 def jpeg2000_online_3():
 
     if gdaltest.jpeg2000_drv is None:
@@ -384,7 +398,7 @@ def jpeg2000_online_3():
         return 'skip'
 
     # Checksum = 14443 on my PC
-    tst = gdaltest.GDALTest( 'JPEG2000', 'tmp/cache/Bretagne1.j2k', 1, None, filename_absolute = 1 )
+    tst = gdaltest.GDALTest('JPEG2000', 'tmp/cache/Bretagne1.j2k', 1, None, filename_absolute=1)
 
     if tst.testOpen() != 'success':
         return 'fail'
@@ -406,6 +420,8 @@ def jpeg2000_online_3():
     return 'success'
 
 ###############################################################################
+
+
 def jpeg2000_online_4():
 
     if gdaltest.jpeg2000_drv is None:
@@ -416,7 +432,7 @@ def jpeg2000_online_4():
     if not gdaltest.download_file('http://www.openjpeg.org/samples/Bretagne2.bmp', 'Bretagne2.bmp'):
         return 'skip'
 
-    tst = gdaltest.GDALTest( 'JPEG2000', 'tmp/cache/Bretagne2.j2k', 1, None, filename_absolute = 1 )
+    tst = gdaltest.GDALTest('JPEG2000', 'tmp/cache/Bretagne2.j2k', 1, None, filename_absolute=1)
 
     # Jasper cannot handle this image
     # Actually, a patched Jasper can ;-)
@@ -443,6 +459,7 @@ def jpeg2000_online_4():
 ###############################################################################
 # Try reading JPEG2000 with color table
 
+
 def jpeg2000_online_5():
 
     if gdaltest.jpeg2000_drv is None:
@@ -467,6 +484,7 @@ def jpeg2000_online_5():
 ###############################################################################
 # Try reading YCbCr JPEG2000 as RGB
 
+
 def jpeg2000_online_6():
 
     if gdaltest.jpeg2000_drv is None:
@@ -489,11 +507,14 @@ def jpeg2000_online_6():
     return 'success'
 
 ###############################################################################
+
+
 def jpeg2000_cleanup():
 
     gdaltest.reregister_all_jpeg2000_drivers()
 
     return 'success'
+
 
 gdaltest_list = [
     jpeg2000_1,
@@ -513,12 +534,12 @@ gdaltest_list = [
     jpeg2000_online_4,
     jpeg2000_online_5,
     jpeg2000_online_6,
-    jpeg2000_cleanup ]
+    jpeg2000_cleanup]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'jpeg2000' )
+    gdaltest.setup_run('jpeg2000')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

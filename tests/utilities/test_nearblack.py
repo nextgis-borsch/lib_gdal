@@ -33,7 +33,7 @@ import sys
 import os
 import shutil
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 from osgeo import gdal
 import gdaltest
@@ -42,12 +42,13 @@ import test_cli_utilities
 ###############################################################################
 # Basic test
 
+
 def test_nearblack_1():
     if test_cli_utilities.get_nearblack_path() is None:
         return 'skip'
 
     (ret, err) = gdaltest.runexternal_out_and_err(test_cli_utilities.get_nearblack_path() + ' ../gdrivers/data/rgbsmall.tif -nb 0 -of GTiff -o tmp/nearblack1.tif')
-    if not (err is None or err == '') :
+    if not (err is None or err == ''):
         gdaltest.post_reason('got error/warning')
         print(err)
         return 'fail'
@@ -92,6 +93,7 @@ def test_nearblack_1():
 ###############################################################################
 # Add alpha band
 
+
 def test_nearblack_2():
     if test_cli_utilities.get_nearblack_path() is None:
         return 'skip'
@@ -114,11 +116,12 @@ def test_nearblack_2():
 ###############################################################################
 # Set existing alpha band
 
+
 def test_nearblack_3():
     if test_cli_utilities.get_nearblack_path() is None:
         return 'skip'
 
-    shutil.copy('tmp/nearblack2.tif','tmp/nearblack3.tif')
+    shutil.copy('tmp/nearblack2.tif', 'tmp/nearblack3.tif')
     gdaltest.runexternal(test_cli_utilities.get_nearblack_path() + ' -setalpha -nb 0 -of GTiff tmp/nearblack3.tif')
 
     ds = gdal.Open('tmp/nearblack3.tif')
@@ -136,6 +139,7 @@ def test_nearblack_3():
 
 ###############################################################################
 # Test -white
+
 
 def test_nearblack_4():
     if test_cli_utilities.get_nearblack_path() is None:
@@ -162,6 +166,7 @@ def test_nearblack_4():
 ###############################################################################
 # Add mask band
 
+
 def test_nearblack_5():
     if test_cli_utilities.get_nearblack_path() is None:
         return 'skip'
@@ -184,12 +189,13 @@ def test_nearblack_5():
 ###############################################################################
 # Set existing mask band
 
+
 def test_nearblack_6():
     if test_cli_utilities.get_nearblack_path() is None:
         return 'skip'
 
-    shutil.copy('tmp/nearblack5.tif','tmp/nearblack6.tif')
-    shutil.copy('tmp/nearblack5.tif.msk','tmp/nearblack6.tif.msk')
+    shutil.copy('tmp/nearblack5.tif', 'tmp/nearblack6.tif')
+    shutil.copy('tmp/nearblack5.tif.msk', 'tmp/nearblack6.tif.msk')
 
     gdaltest.runexternal(test_cli_utilities.get_nearblack_path() + ' -setmask -nb 0 -of GTiff tmp/nearblack6.tif')
 
@@ -209,6 +215,7 @@ def test_nearblack_6():
 ###############################################################################
 # Test -color
 
+
 def test_nearblack_7():
     if test_cli_utilities.get_nearblack_path() is None:
         return 'skip'
@@ -221,7 +228,7 @@ def test_nearblack_7():
 
     if ds.GetRasterBand(1).Checksum() != 418 or \
        ds.GetRasterBand(2).Checksum() != 0 or \
-       ds.GetRasterBand(3).Checksum() != 0 :
+       ds.GetRasterBand(3).Checksum() != 0:
         print(ds.GetRasterBand(1).Checksum())
         print(ds.GetRasterBand(2).Checksum())
         print(ds.GetRasterBand(3).Checksum())
@@ -235,6 +242,7 @@ def test_nearblack_7():
 ###############################################################################
 # Test in-place update
 
+
 def test_nearblack_8():
     if test_cli_utilities.get_nearblack_path() is None:
         return 'skip'
@@ -244,7 +252,7 @@ def test_nearblack_8():
     src_ds = None
 
     (ret, err) = gdaltest.runexternal_out_and_err(test_cli_utilities.get_nearblack_path() + ' tmp/nearblack8.tif -nb 0')
-    if not (err is None or err == '') :
+    if not (err is None or err == ''):
         gdaltest.post_reason('got error/warning')
         print(err)
         return 'fail'
@@ -273,52 +281,54 @@ def test_nearblack_8():
 ###############################################################################
 # Cleanup
 
+
 def test_nearblack_cleanup():
     try:
         os.remove('tmp/nearblack1.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/nearblack2.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/nearblack3.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/nearblack4_src.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/nearblack4.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/nearblack5.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/nearblack5.tif.msk')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/nearblack6.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/nearblack6.tif.msk')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/nearblack7.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/nearblack8.tif')
-    except:
+    except OSError:
         pass
     return 'success'
+
 
 gdaltest_list = [
     test_nearblack_1,
@@ -330,13 +340,13 @@ gdaltest_list = [
     test_nearblack_7,
     test_nearblack_8,
     test_nearblack_cleanup
-    ]
+]
 
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'test_nearblack' )
+    gdaltest.setup_run('test_nearblack')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

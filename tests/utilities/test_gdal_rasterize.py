@@ -33,8 +33,8 @@
 import sys
 import os
 
-sys.path.append( '../pymod' )
-sys.path.append( '../gcore' )
+sys.path.append('../pymod')
+sys.path.append('../gcore')
 
 from osgeo import gdal
 import gdaltest
@@ -45,24 +45,25 @@ import test_cli_utilities
 ###############################################################################
 # Simple polygon rasterization (adapted from alg/rasterize.py).
 
+
 def test_gdal_rasterize_1():
 
     if test_cli_utilities.get_gdal_rasterize_path() is None:
         return 'skip'
 
     # Setup working spatial reference
-    #sr_wkt = 'LOCAL_CS["arbitrary"]'
-    #sr = osr.SpatialReference( sr_wkt )
+    # sr_wkt = 'LOCAL_CS["arbitrary"]'
+    # sr = osr.SpatialReference( sr_wkt )
     sr = osr.SpatialReference()
     sr.ImportFromEPSG(32631)
     sr_wkt = sr.ExportToWkt()
 
     # Create a raster to rasterize into.
 
-    target_ds = gdal.GetDriverByName('GTiff').Create( 'tmp/rast1.tif', 100, 100, 3,
-                                                    gdal.GDT_Byte )
-    target_ds.SetGeoTransform( (1000,1,0,1100,0,-1) )
-    target_ds.SetProjection( sr_wkt )
+    target_ds = gdal.GetDriverByName('GTiff').Create('tmp/rast1.tif', 100, 100, 3,
+                                                     gdal.GDT_Byte)
+    target_ds.SetGeoTransform((1000, 1, 0, 1100, 0, -1))
+    target_ds.SetProjection(sr_wkt)
 
     # Close TIF file
     target_ds = None
@@ -70,8 +71,8 @@ def test_gdal_rasterize_1():
     # Create a layer to rasterize from.
 
     rast_ogr_ds = \
-              ogr.GetDriverByName('MapInfo File').CreateDataSource( 'tmp/rast1.tab' )
-    rast_lyr = rast_ogr_ds.CreateLayer( 'rast1', srs=sr )
+        ogr.GetDriverByName('MapInfo File').CreateDataSource('tmp/rast1.tab')
+    rast_lyr = rast_ogr_ds.CreateLayer('rast1', srs=sr)
 
     rast_lyr.GetLayerDefn()
     field_defn = ogr.FieldDefn('foo')
@@ -81,31 +82,30 @@ def test_gdal_rasterize_1():
 
     wkt_geom = 'POLYGON((1020 1030,1020 1045,1050 1045,1050 1030,1020 1030))'
 
-    feat = ogr.Feature( rast_lyr.GetLayerDefn() )
-    feat.SetGeometryDirectly( ogr.Geometry(wkt = wkt_geom) )
+    feat = ogr.Feature(rast_lyr.GetLayerDefn())
+    feat.SetGeometryDirectly(ogr.Geometry(wkt=wkt_geom))
 
-    rast_lyr.CreateFeature( feat )
+    rast_lyr.CreateFeature(feat)
 
     # Add feature without geometry to test fix for #3310
-    feat = ogr.Feature( rast_lyr.GetLayerDefn() )
-    rast_lyr.CreateFeature( feat )
+    feat = ogr.Feature(rast_lyr.GetLayerDefn())
+    rast_lyr.CreateFeature(feat)
 
     # Add a linestring.
 
     wkt_geom = 'LINESTRING(1000 1000, 1100 1050)'
 
-    feat = ogr.Feature( rast_lyr.GetLayerDefn() )
-    feat.SetGeometryDirectly( ogr.Geometry(wkt = wkt_geom) )
+    feat = ogr.Feature(rast_lyr.GetLayerDefn())
+    feat.SetGeometryDirectly(ogr.Geometry(wkt=wkt_geom))
 
-    rast_lyr.CreateFeature( feat )
+    rast_lyr.CreateFeature(feat)
 
     # Close file
     rast_ogr_ds.Destroy()
 
-
     # Run the algorithm.
     (out, err) = gdaltest.runexternal_out_and_err(test_cli_utilities.get_gdal_rasterize_path() + ' -b 3 -b 2 -b 1 -burn 200 -burn 220 -burn 240 -l rast1 tmp/rast1.tab tmp/rast1.tif')
-    if not (err is None or err == '') :
+    if not (err is None or err == ''):
         gdaltest.post_reason('got error/warning')
         print(err)
         return 'fail'
@@ -117,7 +117,7 @@ def test_gdal_rasterize_1():
     checksum = target_ds.GetRasterBand(2).Checksum()
     if checksum != expected:
         print(checksum)
-        gdaltest.post_reason( 'Did not get expected image checksum' )
+        gdaltest.post_reason('Did not get expected image checksum')
 
         return 'fail'
 
@@ -128,6 +128,7 @@ def test_gdal_rasterize_1():
 ###############################################################################
 # Test rasterization with ALL_TOUCHED (adapted from alg/rasterize.py).
 
+
 def test_gdal_rasterize_2():
 
     if test_cli_utilities.get_gdal_rasterize_path() is None:
@@ -135,9 +136,9 @@ def test_gdal_rasterize_2():
 
     # Create a raster to rasterize into.
 
-    target_ds = gdal.GetDriverByName('GTiff').Create( 'tmp/rast2.tif', 12, 12, 3,
-                                                    gdal.GDT_Byte )
-    target_ds.SetGeoTransform( (0,1,0,12,0,-1) )
+    target_ds = gdal.GetDriverByName('GTiff').Create('tmp/rast2.tif', 12, 12, 3,
+                                                     gdal.GDT_Byte)
+    target_ds.SetGeoTransform((0, 1, 0, 12, 0, -1))
 
     # Close TIF file
     target_ds = None
@@ -152,7 +153,7 @@ def test_gdal_rasterize_2():
     checksum = target_ds.GetRasterBand(2).Checksum()
     if checksum != expected:
         print(checksum)
-        gdaltest.post_reason( 'Did not get expected image checksum' )
+        gdaltest.post_reason('Did not get expected image checksum')
 
         return 'fail'
 
@@ -162,6 +163,7 @@ def test_gdal_rasterize_2():
 
 ###############################################################################
 # Test creating an output file
+
 
 def test_gdal_rasterize_3():
 
@@ -189,7 +191,7 @@ def test_gdal_rasterize_3():
     gt_ref = ds_ref.GetGeoTransform()
     gt = ds.GetGeoTransform()
     for i in range(6):
-        if (abs(gt[i]-gt_ref[i])>1e-6):
+        if (abs(gt[i] - gt_ref[i]) > 1e-6):
             gdaltest.post_reason('did not get expected geotransform')
             print(gt)
             print(gt_ref)
@@ -206,6 +208,7 @@ def test_gdal_rasterize_3():
 ###############################################################################
 # Same but with -tr argument
 
+
 def test_gdal_rasterize_4():
 
     if test_cli_utilities.get_gdal_contour_path() is None:
@@ -214,7 +217,7 @@ def test_gdal_rasterize_4():
     if test_cli_utilities.get_gdal_rasterize_path() is None:
         return 'skip'
 
-    gdal.GetDriverByName('GTiff').Delete( 'tmp/n43dt0.tif' )
+    gdal.GetDriverByName('GTiff').Delete('tmp/n43dt0.tif')
 
     gdaltest.runexternal(test_cli_utilities.get_gdal_rasterize_path() + ' -3d tmp/n43dt0.shp tmp/n43dt0.tif -l n43dt0 -tr 0.008333333333333  0.008333333333333 -a_nodata 0 -a_srs EPSG:4326')
 
@@ -240,7 +243,7 @@ def test_gdal_rasterize_4():
 
     # Allow output to grow by 1/2 cell, as per #6058
     if abs(gt[0] + (gt[1] / 2) - gt_ref[0]) > 1e-6 or \
-       abs(gt[3] + (gt[5] / 2) - gt_ref[3]) > 1e-6 :
+       abs(gt[3] + (gt[5] / 2) - gt_ref[3]) > 1e-6:
         gdaltest.post_reason('did not get expected geotransform')
         print(gt)
         print(gt_ref)
@@ -256,6 +259,7 @@ def test_gdal_rasterize_4():
 
 ###############################################################################
 # Test point rasterization (#3774)
+
 
 def test_gdal_rasterize_5():
 
@@ -291,10 +295,10 @@ def test_gdal_rasterize_5():
         print(ds.RasterYSize)
         return 'fail'
 
-    gt_ref = [0,1,0,3,0,-1]
+    gt_ref = [0, 1, 0, 3, 0, -1]
     gt = ds.GetGeoTransform()
     for i in range(6):
-        if (abs(gt[i]-gt_ref[i])>1e-6):
+        if (abs(gt[i] - gt_ref[i]) > 1e-6):
             gdaltest.post_reason('did not get expected geotransform')
             print(gt)
             print(gt_ref)
@@ -312,6 +316,7 @@ def test_gdal_rasterize_5():
 ###############################################################################
 # Test on the fly reprojection of input data
 
+
 def test_gdal_rasterize_6():
 
     if test_cli_utilities.get_gdal_rasterize_path() is None:
@@ -328,7 +333,7 @@ def test_gdal_rasterize_6():
     f.close()
 
     ds = gdal.GetDriverByName('GTiff').Create('tmp/test_gdal_rasterize_6.tif', 100, 100)
-    ds.SetGeoTransform([200000,(400000-200000)/100,0,6500000,0,-(6500000-6200000)/100])
+    ds.SetGeoTransform([200000, (400000 - 200000) / 100, 0, 6500000, 0, -(6500000 - 6200000) / 100])
     sr = osr.SpatialReference()
     sr.ImportFromEPSG(3857)
     ds.SetProjection(sr.ExportToWkt())
@@ -349,6 +354,7 @@ def test_gdal_rasterize_6():
 ###############################################################################
 # Test SQLITE dialect in SQL
 
+
 def test_gdal_rasterize_7():
 
     try:
@@ -364,7 +370,7 @@ def test_gdal_rasterize_7():
     if drv is None:
         return 'skip'
     gdal.PushErrorHandler('CPLQuietErrorHandler')
-    ds = drv.CreateDataSource('/vsimem/foo.db', options = ['SPATIALITE=YES'])
+    ds = drv.CreateDataSource('/vsimem/foo.db', options=['SPATIALITE=YES'])
     if ds is None:
         return 'skip'
     ds = None
@@ -403,6 +409,7 @@ def test_gdal_rasterize_7():
 # Make sure we create output that encompasses all the input points on a point
 # layer, #6058.
 
+
 def test_gdal_rasterize_8():
 
     if test_cli_utilities.get_gdal_rasterize_path() is None:
@@ -435,31 +442,32 @@ def test_gdal_rasterize_cleanup():
     if test_cli_utilities.get_gdal_rasterize_path() is None:
         return 'skip'
 
-    gdal.GetDriverByName('GTiff').Delete( 'tmp/rast1.tif' )
-    ogr.GetDriverByName('MapInfo File').DeleteDataSource( 'tmp/rast1.tab' )
+    gdal.GetDriverByName('GTiff').Delete('tmp/rast1.tif')
+    ogr.GetDriverByName('MapInfo File').DeleteDataSource('tmp/rast1.tab')
 
-    gdal.GetDriverByName('GTiff').Delete( 'tmp/rast2.tif' )
+    gdal.GetDriverByName('GTiff').Delete('tmp/rast2.tif')
 
-    ogr.GetDriverByName('ESRI Shapefile').DeleteDataSource( 'tmp/n43dt0.shp' )
-    gdal.GetDriverByName('GTiff').Delete( 'tmp/n43dt0.tif' )
+    ogr.GetDriverByName('ESRI Shapefile').DeleteDataSource('tmp/n43dt0.shp')
+    gdal.GetDriverByName('GTiff').Delete('tmp/n43dt0.tif')
 
-    gdal.GetDriverByName('GTiff').Delete( 'tmp/test_gdal_rasterize_5.tif' )
+    gdal.GetDriverByName('GTiff').Delete('tmp/test_gdal_rasterize_5.tif')
     os.unlink('tmp/test_gdal_rasterize_5.csv')
     os.unlink('tmp/test_gdal_rasterize_5.vrt')
 
-    gdal.GetDriverByName('GTiff').Delete( 'tmp/test_gdal_rasterize_6.tif' )
+    gdal.GetDriverByName('GTiff').Delete('tmp/test_gdal_rasterize_6.tif')
     os.unlink('tmp/test_gdal_rasterize_6.csv')
     os.unlink('tmp/test_gdal_rasterize_6.prj')
 
     if os.path.exists('tmp/test_gdal_rasterize_7.tif'):
-        gdal.GetDriverByName('GTiff').Delete( 'tmp/test_gdal_rasterize_7.tif' )
+        gdal.GetDriverByName('GTiff').Delete('tmp/test_gdal_rasterize_7.tif')
     if os.path.exists('tmp/test_gdal_rasterize_7.csv'):
         os.unlink('tmp/test_gdal_rasterize_7.csv')
 
-    gdal.GetDriverByName('GTiff').Delete( 'tmp/test_gdal_rasterize_8.tif' )
+    gdal.GetDriverByName('GTiff').Delete('tmp/test_gdal_rasterize_8.tif')
     os.unlink('tmp/test_gdal_rasterize_8.csv')
 
     return 'success'
+
 
 gdaltest_list = [
     test_gdal_rasterize_1,
@@ -471,17 +479,12 @@ gdaltest_list = [
     test_gdal_rasterize_7,
     test_gdal_rasterize_8,
     test_gdal_rasterize_cleanup
-    ]
+]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'test_gdal_rasterize' )
+    gdaltest.setup_run('test_gdal_rasterize')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-
-
-
-
-

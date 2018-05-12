@@ -31,13 +31,14 @@
 
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 from osgeo import osr
 
 ###############################################################################
 # No root pointer
+
 
 def osr_validate_1():
 
@@ -50,6 +51,7 @@ def osr_validate_1():
 ###############################################################################
 # Unrecognized root node
 
+
 def osr_validate_2():
 
     srs = osr.SpatialReference()
@@ -61,6 +63,7 @@ def osr_validate_2():
 
 ###############################################################################
 # COMPD_CS errors
+
 
 def osr_validate_3():
 
@@ -92,6 +95,7 @@ def osr_validate_3():
 
 ###############################################################################
 # VERT_CS errors
+
 
 def osr_validate_4():
 
@@ -148,9 +152,10 @@ def osr_validate_4():
 ###############################################################################
 # GEOCCS errors
 
+
 def osr_validate_5():
 
-    #srs.ImportFromWkt('GEOCCS["My Geocentric",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["meter",1]]')
+    # srs.ImportFromWkt('GEOCCS["My Geocentric",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["meter",1]]')
 
     # PRIMEM has wrong number of children (1),not 2 or 3 as expected
     srs = osr.SpatialReference()
@@ -211,9 +216,10 @@ def osr_validate_5():
 ###############################################################################
 # PROJCS errors
 
+
 def osr_validate_6():
 
-    #srs.ImportFromWkt('PROJCS["WGS 84 / UTM zone 31N",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Transverse_Mercator"],PARAMETER["latitude_of_origin",0],PARAMETER["central_meridian",3],PARAMETER["scale_factor",0.9996],PARAMETER["false_easting",500000],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["Easting",EAST],AXIS["Northing",NORTH],AUTHORITY["EPSG","32631"]]')
+    # srs.ImportFromWkt('PROJCS["WGS 84 / UTM zone 31N",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Transverse_Mercator"],PARAMETER["latitude_of_origin",0],PARAMETER["central_meridian",3],PARAMETER["scale_factor",0.9996],PARAMETER["false_easting",500000],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["Easting",EAST],AXIS["Northing",NORTH],AUTHORITY["EPSG","32631"]]')
 
     # UNIT has wrong number of children (1), not 2
     srs = osr.SpatialReference()
@@ -291,18 +297,19 @@ def osr_validate_6():
 
 ###############################################################################
 
+
 gdaltest_list = [
     osr_validate_1,
     osr_validate_2,
     osr_validate_3,
     osr_validate_4,
     osr_validate_5,
-    osr_validate_6 ]
+    osr_validate_6]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'osr_validate' )
+    gdaltest.setup_run('osr_validate')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

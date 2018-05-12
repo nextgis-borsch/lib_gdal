@@ -34,10 +34,22 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#include "cpl_port.h"
 #include "ogr_sqlite.h"
-#include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+#include <cstring>
+#include <string>
+
+#include "cpl_conv.h"
+#include "cpl_error.h"
+#include "cpl_string.h"
+#include "cpl_vsi.h"
+#include "gdal.h"
+#include "gdal_priv.h"
+#include "ogr_core.h"
+#include "sqlite3.h"
+
+CPL_CVSID("$Id$")
 
 /************************************************************************/
 /*                     OGRSQLiteDriverIdentify()                        */
@@ -46,8 +58,17 @@ CPL_CVSID("$Id$");
 static int OGRSQLiteDriverIdentify( GDALOpenInfo* poOpenInfo )
 
 {
+    if (STARTS_WITH_CI(poOpenInfo->pszFilename, "SQLITE:") )
+    {
+        return TRUE;
+    }
+
     CPLString osExt(CPLGetExtension(poOpenInfo->pszFilename));
-    if( EQUAL(osExt, "gpkg") && GDALGetDriverByName("GPKG") != NULL )
+    if( EQUAL(osExt, "gpkg") && GDALGetDriverByName("GPKG") != nullptr )
+    {
+        return FALSE;
+    }
+    if( EQUAL(osExt, "mbtiles") && GDALGetDriverByName("MBTILES") != nullptr )
     {
         return FALSE;
     }
@@ -78,7 +99,7 @@ static int OGRSQLiteDriverIdentify( GDALOpenInfo* poOpenInfo )
         char * queryparams = strchr(poOpenInfo->pszFilename, '?');
         if( queryparams )
         {
-            if( strstr(queryparams, "mode=memory") != NULL )
+            if( strstr(queryparams, "mode=memory") != nullptr )
                 return TRUE;
         }
     }
@@ -91,6 +112,25 @@ static int OGRSQLiteDriverIdentify( GDALOpenInfo* poOpenInfo )
     if( poOpenInfo->nHeaderBytes < 100 )
         return FALSE;
 
+#ifdef ENABLE_SQL_SQLITE_FORMAT
+    if( STARTS_WITH((const char*)poOpenInfo->pabyHeader, "-- SQL SQLITE") )
+    {
+        return TRUE;
+    }
+    if( STARTS_WITH((const char*)poOpenInfo->pabyHeader, "-- SQL RASTERLITE") )
+    {
+        return -1;
+    }
+    if( STARTS_WITH((const char*)poOpenInfo->pabyHeader, "-- SQL MBTILES") )
+    {
+        if( GDALGetDriverByName("MBTILES") != nullptr )
+            return FALSE;
+        if( poOpenInfo->eAccess == GA_Update )
+            return FALSE;
+        return -1;
+    }
+#endif
+
     if( !STARTS_WITH((const char*)poOpenInfo->pabyHeader, "SQLite format 3") )
         return FALSE;
 
@@ -98,12 +138,12 @@ static int OGRSQLiteDriverIdentify( GDALOpenInfo* poOpenInfo )
     if( (memcmp(poOpenInfo->pabyHeader + 68, "GP10", 4) == 0 ||
          memcmp(poOpenInfo->pabyHeader + 68, "GP11", 4) == 0 ||
          memcmp(poOpenInfo->pabyHeader + 68, "GPKG", 4) == 0) &&
-        GDALGetDriverByName("GPKG") != NULL )
+        GDALGetDriverByName("GPKG") != nullptr )
     {
         return FALSE;
     }
 
-    // Could be a Rasterlite file as well
+    // Could be a Rasterlite or MBTiles file as well
     return -1;
 }
 
@@ -115,7 +155,7 @@ static GDALDataset *OGRSQLiteDriverOpen( GDALOpenInfo* poOpenInfo )
 
 {
     if( OGRSQLiteDriverIdentify(poOpenInfo) == FALSE )
-        return NULL;
+        return nullptr;
 
 /* -------------------------------------------------------------------- */
 /*      Check VirtualShape:xxx.shp syntax                               */
@@ -126,24 +166,24 @@ static GDALDataset *OGRSQLiteDriverOpen( GDALOpenInfo* poOpenInfo )
     {
         OGRSQLiteDataSource *poDS = new OGRSQLiteDataSource();
 
-        char** papszOptions = CSLAddString(NULL, "SPATIALITE=YES");
+        char** papszOptions = CSLAddString(nullptr, "SPATIALITE=YES");
         int nRet = poDS->Create( ":memory:", papszOptions );
         poDS->SetDescription(poOpenInfo->pszFilename);
         CSLDestroy(papszOptions);
         if (!nRet)
         {
             delete poDS;
-            return NULL;
+            return nullptr;
         }
 
         char* pszSQLiteFilename = CPLStrdup(poOpenInfo->pszFilename + strlen( "VirtualShape:" ));
         GDALDataset* poSQLiteDS = (GDALDataset*) GDALOpenEx(pszSQLiteFilename,
-                                            GDAL_OF_VECTOR, NULL, NULL, NULL);
-        if (poSQLiteDS == NULL)
+                                            GDAL_OF_VECTOR, nullptr, nullptr, nullptr);
+        if (poSQLiteDS == nullptr)
         {
             CPLFree(pszSQLiteFilename);
             delete poDS;
-            return NULL;
+            return nullptr;
         }
         delete poSQLiteDS;
 
@@ -155,7 +195,7 @@ static GDALDataset *OGRSQLiteDriverOpen( GDALOpenInfo* poOpenInfo )
 
         char* pszSQL = CPLStrdup(CPLSPrintf("CREATE VIRTUAL TABLE %s USING VirtualShape(%s, CP1252, -1)",
                                             pszTableName, pszSQLiteFilename));
-        poDS->ExecuteSQL(pszSQL, NULL, NULL);
+        poDS->ExecuteSQL(pszSQL, nullptr, nullptr);
         CPLFree(pszSQL);
         CPLFree(pszSQLiteFilename);
         poDS->SetUpdate(FALSE);
@@ -168,11 +208,10 @@ static GDALDataset *OGRSQLiteDriverOpen( GDALOpenInfo* poOpenInfo )
 /* -------------------------------------------------------------------- */
     OGRSQLiteDataSource *poDS = new OGRSQLiteDataSource();
 
-    if( !poDS->Open( poOpenInfo->pszFilename, poOpenInfo->eAccess == GA_Update,
-                     poOpenInfo->papszOpenOptions, poOpenInfo->nOpenFlags ) )
+    if( !poDS->Open( poOpenInfo ) )
     {
         delete poDS;
-        return NULL;
+        return nullptr;
     }
     else
         return poDS;
@@ -200,7 +239,7 @@ static GDALDataset *OGRSQLiteDriverCreate( const char * pszName,
                   "It seems a file system object called '%s' already exists.",
                   pszName );
 
-        return NULL;
+        return nullptr;
     }
 
 /* -------------------------------------------------------------------- */
@@ -211,7 +250,7 @@ static GDALDataset *OGRSQLiteDriverCreate( const char * pszName,
     if( !poDS->Create( pszName, papszOptions ) )
     {
         delete poDS;
-        return NULL;
+        return nullptr;
     }
 
     return poDS;
@@ -239,7 +278,7 @@ void RegisterOGRSQLite()
     if( !GDAL_CHECK_VERSION("SQLite driver") )
         return;
 
-    if( GDALGetDriverByName( "SQLite" ) != NULL )
+    if( GDALGetDriverByName( "SQLite" ) != nullptr )
         return;
 
     GDALDriver *poDriver = new GDALDriver();
@@ -341,6 +380,8 @@ void RegisterOGRSQLite()
                                "Integer Integer64 Real String Date DateTime "
                                "Time Binary IntegerList Integer64List "
                                "RealList StringList" );
+    poDriver->SetMetadataItem( GDAL_DMD_CREATIONFIELDDATASUBTYPES, "Boolean Int16 Float32" );
+
 #ifdef HAVE_RASTERLITE2
     poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES,
                                "Byte UInt16 Int16 UInt32 Int32 Float32 "
@@ -350,6 +391,13 @@ void RegisterOGRSQLite()
     poDriver->SetMetadataItem( GDAL_DCAP_DEFAULT_FIELDS, "YES" );
     poDriver->SetMetadataItem( GDAL_DCAP_NOTNULL_GEOMFIELDS, "YES" );
     poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
+
+#ifdef ENABLE_SQL_SQLITE_FORMAT
+    poDriver->SetMetadataItem("ENABLE_SQL_SQLITE_FORMAT", "YES");
+#endif
+#ifdef SQLITE_HAS_COLUMN_METADATA
+    poDriver->SetMetadataItem("SQLITE_HAS_COLUMN_METADATA", "YES");
+#endif
 
     poDriver->pfnOpen = OGRSQLiteDriverOpen;
     poDriver->pfnIdentify = OGRSQLiteDriverIdentify;

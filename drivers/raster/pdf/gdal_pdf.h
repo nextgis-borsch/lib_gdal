@@ -37,6 +37,19 @@
 #ifndef GDAL_PDF_H_INCLUDED
 #define GDAL_PDF_H_INCLUDED
 
+/* hack for PDF driver and poppler >= 0.15.0 that defines incompatible "typedef bool GBool" */
+/* in include/poppler/goo/gtypes.h with the one defined in cpl_port.h */
+#define CPL_GBOOL_DEFINED
+#define OGR_FEATURESTYLE_INCLUDE
+#include "cpl_port.h"
+
+#include <map>
+#include <set>
+#include <stack>
+#include <utility>
+#include <bitset>   // For detecting usage of PDF library
+#include <algorithm>
+
 #include "pdfsdk_headers.h"
 
 #include "gdal_pam.h"
@@ -44,10 +57,6 @@
 
 #include "ogr_mem.h"
 #include "pdfobject.h"
-
-#include <map>
-#include <stack>
-#include <bitset>   // For detecting usage of PDF library
 
 #define     PDFLIB_POPPLER    0
 #define     PDFLIB_PODOFO     1
@@ -62,7 +71,7 @@
 
 class PDFDataset;
 
-class OGRPDFLayer : public OGRMemLayer
+class OGRPDFLayer final: public OGRMemLayer
 {
     PDFDataset       *poDS;
     int               bGeomTypeSet;
@@ -87,7 +96,7 @@ public:
 
 class PDFWritableVectorDataset;
 
-class OGRPDFWritableLayer : public OGRMemLayer
+class OGRPDFWritableLayer final: public OGRMemLayer
 {
     PDFWritableVectorDataset       *poDS;
 
@@ -171,7 +180,7 @@ class ObjectAutoFree;
 
 #if defined(HAVE_POPPLER) || defined(HAVE_PODOFO) || defined(HAVE_PDFIUM)
 
-class PDFDataset : public GDALPamDataset
+class PDFDataset final: public GDALPamDataset
 {
     friend class PDFRasterBand;
     friend class PDFImageRasterBand;
@@ -216,7 +225,7 @@ class PDFDataset : public GDALPamDataset
 
     double       dfMaxArea;
     int          ParseLGIDictObject(GDALPDFObject* poLGIDict);
-    int          ParseLGIDictDictFirstPass(GDALPDFDictionary* poLGIDict, int* pbIsBestCandidate = NULL);
+    int          ParseLGIDictDictFirstPass(GDALPDFDictionary* poLGIDict, int* pbIsBestCandidate = nullptr);
     int          ParseLGIDictDictSecondPass(GDALPDFDictionary* poLGIDict);
     int          ParseProjDict(GDALPDFDictionary* poProjDict);
     int          ParseVP(GDALPDFObject* poVP, double dfMediaBoxWidth, double dfMediaBoxHeight);
@@ -311,12 +320,15 @@ private:
 
     int                 bSetStyle;
 
-    void                ExploreTree(GDALPDFObject* poObj, int nRecLevel);
+    void                ExploreTree(GDALPDFObject* poObj,
+                                    std::set< std::pair<int,int> > aoSetAlreadyVisited,
+                                    int nRecLevel);
     void                ExploreContents(GDALPDFObject* poObj, GDALPDFObject* poResources);
 
     void                ExploreContentsNonStructuredInternal(GDALPDFObject* poContents,
                                                              GDALPDFObject* poResources,
-                                                             std::map<CPLString, OGRPDFLayer*>& oMapPropertyToLayer);
+                                                             std::map<CPLString, OGRPDFLayer*>& oMapPropertyToLayer,
+                                                             OGRPDFLayer* poSingleLayer);
     void                ExploreContentsNonStructured(GDALPDFObject* poObj, GDALPDFObject* poResources);
 
     int                 UnstackTokens(const char* pszToken,
@@ -341,7 +353,7 @@ private:
 #endif  // ~ HAVE_PDFIUM
 
   public:
-                 PDFDataset(PDFDataset* poParentDS = NULL, int nXSize = 0, int nYSize = 0);
+                 PDFDataset(PDFDataset* poParentDS = nullptr, int nXSize = 0, int nYSize = 0);
     virtual     ~PDFDataset();
 
     virtual const char* GetProjectionRef() override;
@@ -404,7 +416,7 @@ private:
 /* ==================================================================== */
 /************************************************************************/
 
-class PDFRasterBand : public GDALPamRasterBand
+class PDFRasterBand: public GDALPamRasterBand
 {
     friend class PDFDataset;
 
@@ -439,7 +451,7 @@ class PDFRasterBand : public GDALPamRasterBand
 /*                          PDFWritableDataset                          */
 /************************************************************************/
 
-class PDFWritableVectorDataset : public GDALDataset
+class PDFWritableVectorDataset final: public GDALDataset
 {
         char**              papszOptions;
 

@@ -33,12 +33,13 @@ import os
 import sys
 from osgeo import gdal
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 
 ###############################################################################
 # Test with a global dataset mask band
+
 
 def vrtmask_1():
 
@@ -131,6 +132,7 @@ def vrtmask_2():
 ###############################################################################
 # Translate a RGB dataset with a mask into a VRT
 
+
 def vrtmask_3():
 
     gtiff_drv = gdal.GetDriverByName('GTiff')
@@ -165,6 +167,7 @@ def vrtmask_3():
 ###############################################################################
 # Same with gdalbuildvrt
 
+
 def vrtmask_4():
     import test_cli_utilities
     if test_cli_utilities.get_gdalbuildvrt_path() is None:
@@ -198,6 +201,7 @@ def vrtmask_4():
 ###############################################################################
 # Same with gdal_translate
 
+
 def vrtmask_5():
 
     gtiff_drv = gdal.GetDriverByName('GTiff')
@@ -205,7 +209,7 @@ def vrtmask_5():
     if md['DMD_CREATIONOPTIONLIST'].find('JPEG') == -1:
         return 'skip'
 
-    gdal.Translate('tmp/vrtmask_5.vrt', '../gcore/data/ycbcr_with_mask.tif', options = '-of VRT -outsize 100% 100%')
+    gdal.Translate('tmp/vrtmask_5.vrt', '../gcore/data/ycbcr_with_mask.tif', options='-of VRT -outsize 100% 100%')
 
     src_ds = gdal.Open('../gcore/data/ycbcr_with_mask.tif')
     expected_msk_cs = src_ds.GetRasterBand(1).GetMaskBand().Checksum()
@@ -228,6 +232,7 @@ def vrtmask_5():
 ###############################################################################
 # Same with gdal_translate with explicit -b and -mask arguments
 
+
 def vrtmask_6():
 
     gtiff_drv = gdal.GetDriverByName('GTiff')
@@ -236,7 +241,7 @@ def vrtmask_6():
         return 'skip'
 
     gdal.Translate('tmp/vrtmask_6.vrt', '../gcore/data/ycbcr_with_mask.tif',
-                   options = '-of VRT -b 1 -b 2 -b 3 -mask mask,1')
+                   options='-of VRT -b 1 -b 2 -b 3 -mask mask,1')
 
     src_ds = gdal.Open('../gcore/data/ycbcr_with_mask.tif')
     expected_msk_cs = src_ds.GetRasterBand(1).GetMaskBand().Checksum()
@@ -259,6 +264,7 @@ def vrtmask_6():
 ###############################################################################
 # gdal_translate with RGBmask -> RGBA and then RGBA->RGBmask
 
+
 def vrtmask_7():
 
     gtiff_drv = gdal.GetDriverByName('GTiff')
@@ -267,12 +273,12 @@ def vrtmask_7():
         return 'skip'
     try:
         os.remove('tmp/vrtmask_7_rgba.tif.msk')
-    except:
+    except OSError:
         pass
 
     gdal.Translate('tmp/vrtmask_7_rgba.tif',
                    '../gcore/data/ycbcr_with_mask.tif',
-                   options = '-b 1 -b 2 -b 3 -b mask')
+                   options='-b 1 -b 2 -b 3 -b mask')
 
     src_ds = gdal.Open('../gcore/data/ycbcr_with_mask.tif')
     expected_msk_cs = src_ds.GetRasterBand(1).GetMaskBand().Checksum()
@@ -283,7 +289,7 @@ def vrtmask_7():
     ds = None
 
     gdal.Translate('tmp/vrtmask_7_rgbmask.vrt', 'tmp/vrtmask_7_rgba.tif',
-                   options = '-of VRT -b 1 -b 2 -b 3 -mask 4')
+                   options='-of VRT -b 1 -b 2 -b 3 -mask 4')
 
     ds = gdal.Open('tmp/vrtmask_7_rgbmask.vrt')
     msk_cs = ds.GetRasterBand(1).GetMaskBand().Checksum()
@@ -294,7 +300,7 @@ def vrtmask_7():
         os.remove('tmp/vrtmask_7_rgba.tif.msk')
         gdaltest.post_reason('did not expect tmp/vrtmask_7_rgba.tif.msk')
         return 'fail'
-    except:
+    except OSError:
         pass
     os.remove('tmp/vrtmask_7_rgbmask.vrt')
 
@@ -304,7 +310,7 @@ def vrtmask_7():
         print(expected_msk_cs)
         return 'fail'
 
-    if msk_cs!= expected_msk_cs:
+    if msk_cs != expected_msk_cs:
         gdaltest.post_reason('did not get expected mask band checksum')
         print(msk_cs)
         print(expected_msk_cs)
@@ -315,6 +321,7 @@ def vrtmask_7():
 ###############################################################################
 # gdal_translate with RGBmask -> RGB
 
+
 def vrtmask_8():
 
     gtiff_drv = gdal.GetDriverByName('GTiff')
@@ -323,7 +330,7 @@ def vrtmask_8():
         return 'skip'
 
     gdal.Translate('tmp/vrtmask_8.vrt', '../gcore/data/ycbcr_with_mask.tif',
-                   options = '-of VRT -mask none')
+                   options='-of VRT -mask none')
 
     ds = gdal.Open('tmp/vrtmask_8.vrt')
     flags = ds.GetRasterBand(1).GetMaskFlags()
@@ -339,6 +346,7 @@ def vrtmask_8():
 
 ###############################################################################
 # gdal_translate with RGBA -> RGB
+
 
 def vrtmask_9():
     import test_cli_utilities
@@ -370,12 +378,13 @@ def vrtmask_9():
 ###############################################################################
 # Test fix for #5120 (VRTSourcedRasterBand::AddMaskBandSource() ignores specified window)
 
+
 def vrtmask_10():
 
-    gdal.Translate('tmp/vrtmask_10_ref.tif', '../gcore/data/stefan_full_rgba.tif', options = '-srcwin 40 40 100 100')
-    gdal.Translate('tmp/vrtmask_10.vrt', '../gcore/data/stefan_full_rgba.tif', options = '-of VRT -b 1 -b 2 -b 3 -mask 4 -srcwin 30 30 120 120')
-    gdal.Translate('tmp/vrtmask_10_2.vrt', 'tmp/vrtmask_10.vrt', options = '-of VRT -srcwin 5 5 110 110')
-    gdal.Translate('tmp/vrtmask_10_3.tif', 'tmp/vrtmask_10_2.vrt', options = '-b 1 -b 2 -b 3 -b mask -srcwin 5 5 100 100')
+    gdal.Translate('tmp/vrtmask_10_ref.tif', '../gcore/data/stefan_full_rgba.tif', options='-srcwin 40 40 100 100')
+    gdal.Translate('tmp/vrtmask_10.vrt', '../gcore/data/stefan_full_rgba.tif', options='-of VRT -b 1 -b 2 -b 3 -mask 4 -srcwin 30 30 120 120')
+    gdal.Translate('tmp/vrtmask_10_2.vrt', 'tmp/vrtmask_10.vrt', options='-of VRT -srcwin 5 5 110 110')
+    gdal.Translate('tmp/vrtmask_10_3.tif', 'tmp/vrtmask_10_2.vrt', options='-b 1 -b 2 -b 3 -b mask -srcwin 5 5 100 100')
 
     ds = gdal.Open('tmp/vrtmask_10_ref.tif')
     cs_ref = ds.GetRasterBand(4).Checksum()
@@ -395,10 +404,52 @@ def vrtmask_10():
     return 'success'
 
 ###############################################################################
+
+
+def vrtmask_11():
+
+    # Cannot create mask band at raster band level when a dataset mask band already exists
+    ds = gdal.Translate('', 'data/byte.tif', format='VRT')
+    ds.CreateMaskBand(gdal.GMF_PER_DATASET)
+    with gdaltest.error_handler():
+        ret = ds.GetRasterBand(1).CreateMaskBand(0)
+    if ret == 0:
+        gdaltest.post_reason('expected an error, but got success')
+        return 'fail'
+
+    # This VRT dataset has already a mask band
+    ds = gdal.Translate('', 'data/byte.tif', format='VRT')
+    ds.CreateMaskBand(gdal.GMF_PER_DATASET)
+    with gdaltest.error_handler():
+        ret = ds.CreateMaskBand(gdal.GMF_PER_DATASET)
+    if ret == 0:
+        gdaltest.post_reason('expected an error, but got success')
+        return 'fail'
+
+    # This VRT band has already a mask band
+    ds = gdal.Translate('', 'data/byte.tif', format='VRT')
+    ds.GetRasterBand(1).CreateMaskBand(0)
+    with gdaltest.error_handler():
+        ret = ds.GetRasterBand(1).CreateMaskBand(0)
+    if ret == 0:
+        gdaltest.post_reason('expected an error, but got success')
+        return 'fail'
+
+    ds = gdal.Translate('', 'data/byte.tif', format='VRT')
+    ret = ds.GetRasterBand(1).CreateMaskBand(gdal.GMF_PER_DATASET)
+    if ret != 0:
+        gdaltest.post_reason('fail')
+        return 'fail'
+
+    return 'success'
+
+###############################################################################
 # Cleanup.
+
 
 def vrtmask_cleanup():
     return 'success'
+
 
 gdaltest_list = [
     vrtmask_1,
@@ -411,12 +462,13 @@ gdaltest_list = [
     vrtmask_8,
     vrtmask_9,
     vrtmask_10,
-    vrtmask_cleanup ]
+    vrtmask_11,
+    vrtmask_cleanup]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'vrtmask' )
+    gdaltest.setup_run('vrtmask')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

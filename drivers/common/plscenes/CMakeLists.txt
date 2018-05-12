@@ -34,7 +34,6 @@ if(ENABLE_PLSCENES)
 	set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DPLSCENES_ENABLED" PARENT_SCOPE)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-    #include_directories(${JSONC_INCLUDE_DIRS})
     include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/geojson)
 
     set(LIB_HHEADERS
@@ -48,8 +47,6 @@ if(ENABLE_PLSCENES)
 
     set(LIB_CSOURCES
         ogrplscenesdriver.cpp
-        ogrplscenesv1dataset.cpp
-        ogrplscenesv1layer.cpp
         ogrplscenesdatav1dataset.cpp
         ogrplscenesdatav1layer.cpp
     )

@@ -26,23 +26,9 @@
 ################################################################################
 
 option(ENABLE_CAD "Build CAD (.dwg) format" ON)
-include(CheckCXXCompilerFlag)
-
-if(NOT MSVC)
-  include(CheckCXXCompilerFlag)
-  CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
-endif()
-if(MSVC AND MSVC_VERSION LESS 1700)
-  message(FATAL_ERROR "C++11 support required. The compiled version is less than VC 2012.")
-  set(COMPILER_SUPPORTS_CXX11 FALSE)
-else()
-    set(COMPILER_SUPPORTS_CXX11 TRUE)
-endif()
-
-if(ENABLE_CAD AND COMPILER_SUPPORTS_CXX11)
+if(ENABLE_CAD)
     set(TARGET_NAME com_cad)
 
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
     add_definitions(-DCAD_ENABLED)
     set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DCAD_ENABLED" PARENT_SCOPE)
 
@@ -63,15 +49,11 @@ if(ENABLE_CAD AND COMPILER_SUPPORTS_CXX11)
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_CSOURCES})
-    
+
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
     set(TARGET_LINK_LIB ${TARGET_LINK_LIB} PARENT_SCOPE)
     set(DEPENDENCY_LIB ${DEPENDENCY_LIB} PARENT_SCOPE)
 else()
-    if(COMPILER_SUPPORTS_CXX11)
-        warning_msg("Skip cad")
-    else()
-        warning_msg("Skip cad. Compile C++11 feature not supported")
-    endif()
+    warning_msg("Skip cad")
 endif()

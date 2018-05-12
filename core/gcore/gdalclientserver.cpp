@@ -213,7 +213,7 @@ typedef struct
 
 typedef struct
 {
-    int    bUpdated;
+    bool   bUpdated;
     double dfComplete;
     char  *pszProgressMsg;
     int    bRet;
@@ -392,12 +392,12 @@ static const char* const apszInstr[] =
 };
 #endif
 
-static const GByte abyEndOfJunkMarker[] = { 0xDE, 0xAD, 0xBE, 0xEF };
+constexpr GByte abyEndOfJunkMarker[] = { 0xDE, 0xAD, 0xBE, 0xEF };
 
 /* Recycling of connections to child processes */
-#define MAX_RECYCLED        128
-#define DEFAULT_RECYCLED    4
-static int bRecycleChild = FALSE;
+constexpr int MAX_RECYCLED = 128;
+constexpr int DEFAULT_RECYCLED = 4;
+static bool bRecycleChild = false;
 static int nMaxRecycled = 0;
 static GDALServerSpawnedProcess* aspRecycled[MAX_RECYCLED];
 
@@ -408,17 +408,17 @@ static GDALServerSpawnedProcess* aspRecycled[MAX_RECYCLED];
 #ifdef DEBUG_VERBOSE
 class EnterObject
 {
-    const char* pszFunction;
+    const char* m_pszFunction;
 
     public:
-        EnterObject(const char* pszFunction) : pszFunction(pszFunction)
+        EnterObject(const char* pszFunction) : m_pszFunction(pszFunction)
         {
-            CPLDebug("GDAL", "Enter %s", pszFunction);
+            CPLDebug("GDAL", "Enter %s", m_pszFunction);
         }
 
         ~EnterObject()
         {
-            CPLDebug("GDAL", "Leave %s", pszFunction);
+            CPLDebug("GDAL", "Leave %s", m_pszFunction);
         }
 };
 
@@ -462,13 +462,13 @@ static void MyChdirRootDirectory()
 /*                       GDALClientDataset                              */
 /************************************************************************/
 
-class GDALClientDataset: public GDALPamDataset
+class GDALClientDataset final: public GDALPamDataset
 {
     GDALServerSpawnedProcess                         *ssp;
     GDALPipe                                         *p;
     CPLString                                         osProjection;
     CPLString                                         osGCPProjection;
-    int                                               bFreeDriver;
+    bool                                              bFreeDriver;
     int                                               nGCPCount;
     GDAL_GCP                                         *pasGCPs;
     std::map<CPLString, char**>                       aoMapMetadata;
@@ -500,9 +500,9 @@ class GDALClientDataset: public GDALPamDataset
                                int nBandCount, int *panBandMap,
                                GSpacing nPixelSpace, GSpacing nLineSpace, GSpacing nBandSpace,
                                GDALRasterIOExtraArg* psExtraArg) override;
-    public:
-                   explicit GDALClientDataset(GDALPipe* p);
-                   virtual ~GDALClientDataset();
+  public:
+    explicit GDALClientDataset(GDALPipe* p);
+    ~GDALClientDataset() override;
 
         int                 Init(const char* pszFilename, GDALAccess eAccess,
                                  char** papszOpenOptions);
@@ -511,43 +511,43 @@ class GDALClientDataset: public GDALPamDataset
         int                 ProcessAsyncProgress();
         int                 SupportsInstr(InstrEnum instr) const { return abyCaps[instr / 8] & (1 << (instr % 8)); }
 
-        virtual void        FlushCache() override;
+        void FlushCache() override;
 
-        virtual CPLErr        AddBand( GDALDataType eType,
-                                   char **papszOptions=NULL ) override;
+        CPLErr AddBand( GDALDataType eType,
+                        char **papszOptions=nullptr ) override;
 
         //virtual void        SetDescription( const char * );
 
-        virtual const char* GetMetadataItem( const char * pszName,
-                                             const char * pszDomain = ""  ) override;
-        virtual char      **GetMetadata( const char * pszDomain = "" ) override;
-        virtual CPLErr      SetMetadata( char ** papszMetadata,
-                                         const char * pszDomain = "" ) override;
-        virtual CPLErr      SetMetadataItem( const char * pszName,
-                                             const char * pszValue,
-                                             const char * pszDomain = "" ) override;
+        const char* GetMetadataItem( const char * pszName,
+                                     const char * pszDomain = ""  ) override;
+        char **GetMetadata( const char * pszDomain = "" ) override;
+        CPLErr SetMetadata( char ** papszMetadata,
+                            const char * pszDomain = "" ) override;
+        CPLErr SetMetadataItem( const char * pszName,
+                                const char * pszValue,
+                                const char * pszDomain = "" ) override;
 
-        virtual const char* GetProjectionRef() override;
-        virtual CPLErr SetProjection( const char * ) override;
+        const char* GetProjectionRef() override;
+        CPLErr SetProjection( const char * ) override;
 
-        virtual CPLErr GetGeoTransform( double * ) override;
-        virtual CPLErr SetGeoTransform( double * ) override;
+        CPLErr GetGeoTransform( double * ) override;
+        CPLErr SetGeoTransform( double * ) override;
 
-        virtual int    GetGCPCount() override;
-        virtual const char *GetGCPProjection() override;
-        virtual const GDAL_GCP *GetGCPs() override;
-        virtual CPLErr SetGCPs( int nGCPCount, const GDAL_GCP *pasGCPList,
-                                const char *pszGCPProjection ) override;
+        int GetGCPCount() override;
+        const char *GetGCPProjection() override;
+        const GDAL_GCP *GetGCPs() override;
+        CPLErr SetGCPs( int nGCPCount, const GDAL_GCP *pasGCPList,
+                        const char *pszGCPProjection ) override;
 
-        virtual char      **GetFileList(void) override;
+        char **GetFileList() override;
 
-        virtual CPLErr AdviseRead( int nXOff, int nYOff, int nXSize, int nYSize,
-                                int nBufXSize, int nBufYSize,
-                                GDALDataType eDT,
-                                int nBandCount, int *panBandList,
-                                char **papszOptions ) override;
+        CPLErr AdviseRead( int nXOff, int nYOff, int nXSize, int nYSize,
+                        int nBufXSize, int nBufYSize,
+                        GDALDataType eDT,
+                        int nBandCount, int *panBandList,
+                        char **papszOptions ) override;
 
-        virtual CPLErr          CreateMaskBand( int nFlags ) override;
+        CPLErr CreateMaskBand( int nFlags ) override;
 
         static GDALDataset *Open( GDALOpenInfo * );
         static int          Identify( GDALOpenInfo * );
@@ -565,7 +565,7 @@ class GDALClientDataset: public GDALPamDataset
 /*                       GDALClientRasterBand                           */
 /************************************************************************/
 
-class GDALClientRasterBand : public GDALPamRasterBand
+class GDALClientRasterBand final: public GDALPamRasterBand
 {
     friend class GDALClientDataset;
 
@@ -605,111 +605,109 @@ class GDALClientRasterBand : public GDALPamRasterBand
                                 void * pData, int nBufXSize, int nBufYSize,
                                 GDALDataType eBufType,
                                 GSpacing nPixelSpace, GSpacing nLineSpace );
-    protected:
+  protected:
 
-        virtual CPLErr IReadBlock(int nBlockXOff, int nBlockYOff, void* pImage) override;
-        virtual CPLErr IWriteBlock(int nBlockXOff, int nBlockYOff, void* pImage) override;
-        virtual CPLErr IRasterIO( GDALRWFlag eRWFlag,
-                                  int nXOff, int nYOff, int nXSize, int nYSize,
-                                  void * pData, int nBufXSize, int nBufYSize,
-                                  GDALDataType eBufType,
-                                  GSpacing nPixelSpace, GSpacing nLineSpace,
-                                  GDALRasterIOExtraArg* psExtraArg) override;
+    CPLErr IReadBlock(int nBlockXOff, int nBlockYOff, void* pImage) override;
+    CPLErr IWriteBlock(int nBlockXOff, int nBlockYOff, void* pImage) override;
+    CPLErr IRasterIO( GDALRWFlag eRWFlag,
+                      int nXOff, int nYOff, int nXSize, int nYSize,
+                      void * pData, int nBufXSize, int nBufYSize,
+                      GDALDataType eBufType,
+                      GSpacing nPixelSpace, GSpacing nLineSpace,
+                      GDALRasterIOExtraArg* psExtraArg) override;
 
-    public:
-        GDALClientRasterBand(GDALPipe* p, int iSrvBand,
-                             GDALClientDataset* poDS, int nBand, GDALAccess eAccess,
-                             int nRasterXSize, int nRasterYSize,
-                             GDALDataType eDataType, int nBlockXSize, int nBlockYSize,
-                             GByte abyCaps[16]);
-        virtual ~GDALClientRasterBand();
+  public:
+    GDALClientRasterBand(GDALPipe* p, int iSrvBand,
+                         GDALClientDataset* poDS, int nBand, GDALAccess eAccess,
+                         int nRasterXSize, int nRasterYSize,
+                         GDALDataType eDataType, int nBlockXSize, int nBlockYSize,
+                         GByte abyCaps[16]);
+    ~GDALClientRasterBand() override;
 
-        int GetSrvBand() const { return iSrvBand; }
-        int SupportsInstr(InstrEnum instr) const { return abyCaps[instr / 8] & (1 << (instr % 8)); }
+    int GetSrvBand() const { return iSrvBand; }
+    int SupportsInstr(InstrEnum instr) const { return abyCaps[instr / 8] & (1 << (instr % 8)); }
 
-        void ClearOverviewCache() { aMapOvrBandsCurrent.clear(); }
+    void ClearOverviewCache() { aMapOvrBandsCurrent.clear(); }
 
-        virtual CPLErr FlushCache() override;
+    CPLErr FlushCache() override;
 
-        virtual void        SetDescription( const char * ) override;
+    void SetDescription( const char * ) override;
 
-        virtual const char* GetMetadataItem( const char * pszName,
-                                             const char * pszDomain = ""  ) override;
-        virtual char      **GetMetadata( const char * pszDomain = "" ) override;
-        virtual CPLErr      SetMetadata( char ** papszMetadata,
-                                         const char * pszDomain = "" ) override;
-        virtual CPLErr      SetMetadataItem( const char * pszName,
-                                             const char * pszValue,
-                                             const char * pszDomain = "" ) override;
+    const char* GetMetadataItem( const char * pszName,
+                                 const char * pszDomain = ""  ) override;
+    char **GetMetadata( const char * pszDomain = "" ) override;
+    CPLErr SetMetadata( char ** papszMetadata,
+                        const char * pszDomain = "" ) override;
+    CPLErr SetMetadataItem( const char * pszName,
+                            const char * pszValue,
+                            const char * pszDomain = "" ) override;
 
-        virtual GDALColorInterp GetColorInterpretation() override;
-        virtual CPLErr SetColorInterpretation( GDALColorInterp ) override;
+    GDALColorInterp GetColorInterpretation() override;
+    CPLErr SetColorInterpretation( GDALColorInterp ) override;
 
-        virtual char **GetCategoryNames() override;
-        virtual double GetNoDataValue( int *pbSuccess = NULL ) override;
-        virtual double GetMinimum( int *pbSuccess = NULL ) override;
-        virtual double GetMaximum(int *pbSuccess = NULL ) override;
-        virtual double GetOffset( int *pbSuccess = NULL ) override;
-        virtual double GetScale( int *pbSuccess = NULL ) override;
+    char **GetCategoryNames() override;
+    double GetNoDataValue( int *pbSuccess = nullptr ) override;
+    double GetMinimum( int *pbSuccess = nullptr ) override;
+    double GetMaximum(int *pbSuccess = nullptr ) override;
+    double GetOffset( int *pbSuccess = nullptr ) override;
+    double GetScale( int *pbSuccess = nullptr ) override;
 
-        virtual GDALColorTable *GetColorTable() override;
-        virtual CPLErr SetColorTable( GDALColorTable * ) override;
+    GDALColorTable *GetColorTable() override;
+    CPLErr SetColorTable( GDALColorTable * ) override;
 
-        virtual const char *GetUnitType() override;
-        virtual CPLErr SetUnitType( const char * ) override;
+    const char *GetUnitType() override;
+    CPLErr SetUnitType( const char * ) override;
 
-        virtual CPLErr Fill(double dfRealValue, double dfImaginaryValue = 0) override;
+    CPLErr Fill(double dfRealValue, double dfImaginaryValue = 0) override;
 
-        virtual CPLErr SetCategoryNames( char ** ) override;
-        virtual CPLErr SetNoDataValue( double ) override;
-        virtual CPLErr DeleteNoDataValue() override;
-        virtual CPLErr SetOffset( double ) override;
-        virtual CPLErr SetScale( double ) override;
+    CPLErr SetCategoryNames( char ** ) override;
+    CPLErr SetNoDataValue( double ) override;
+    CPLErr DeleteNoDataValue() override;
+    CPLErr SetOffset( double ) override;
+    CPLErr SetScale( double ) override;
 
-        virtual CPLErr GetStatistics( int bApproxOK, int bForce,
-                                    double *pdfMin, double *pdfMax,
-                                    double *pdfMean, double *padfStdDev ) override;
-        virtual CPLErr ComputeStatistics( int bApproxOK,
-                                        double *pdfMin, double *pdfMax,
-                                        double *pdfMean, double *pdfStdDev,
-                                        GDALProgressFunc, void *pProgressData ) override;
-        virtual CPLErr SetStatistics( double dfMin, double dfMax,
-                                      double dfMean, double dfStdDev ) override;
-        virtual CPLErr ComputeRasterMinMax( int, double* ) override;
+    CPLErr GetStatistics( int bApproxOK, int bForce,
+                          double *pdfMin, double *pdfMax,
+                          double *pdfMean, double *padfStdDev ) override;
+    CPLErr ComputeStatistics( int bApproxOK,
+                              double *pdfMin, double *pdfMax,
+                              double *pdfMean, double *pdfStdDev,
+                              GDALProgressFunc, void *pProgressData ) override;
+    CPLErr SetStatistics( double dfMin, double dfMax,
+                          double dfMean, double dfStdDev ) override;
+    CPLErr ComputeRasterMinMax( int, double* ) override;
 
-        virtual CPLErr GetHistogram( double dfMin, double dfMax,
-                                     int nBuckets, GUIntBig *panHistogram,
-                                     int bIncludeOutOfRange, int bApproxOK,
-                                     GDALProgressFunc pfnProgress,
-                                     void *pProgressData ) override;
+    CPLErr GetHistogram( double dfMin, double dfMax,
+                         int nBuckets, GUIntBig *panHistogram,
+                         int bIncludeOutOfRange, int bApproxOK,
+                         GDALProgressFunc pfnProgress,
+                         void *pProgressData ) override;
 
-        virtual CPLErr GetDefaultHistogram( double *pdfMin, double *pdfMax,
-                                            int *pnBuckets, GUIntBig ** ppanHistogram,
-                                            int bForce,
-                                            GDALProgressFunc, void *pProgressData) override;
-        virtual CPLErr SetDefaultHistogram( double dfMin, double dfMax,
-                                            int nBuckets, GUIntBig *panHistogram ) override;
+    CPLErr GetDefaultHistogram( double *pdfMin, double *pdfMax,
+                                int *pnBuckets, GUIntBig ** ppanHistogram,
+                                int bForce,
+                                GDALProgressFunc, void *pProgressData) override;
+    CPLErr SetDefaultHistogram( double dfMin, double dfMax,
+                                int nBuckets, GUIntBig *panHistogram ) override;
 
-        virtual int HasArbitraryOverviews() override;
-        virtual int GetOverviewCount() override;
-        virtual GDALRasterBand *GetOverview(int) override;
+    int HasArbitraryOverviews() override;
+    int GetOverviewCount() override;
+    GDALRasterBand *GetOverview(int) override;
 
-        virtual GDALRasterBand *GetMaskBand() override;
-        virtual int             GetMaskFlags() override;
-        virtual CPLErr          CreateMaskBand( int nFlags ) override;
+    GDALRasterBand *GetMaskBand() override;
+    int GetMaskFlags() override;
+    CPLErr CreateMaskBand( int nFlags ) override;
 
-        virtual CPLErr BuildOverviews( const char *, int, int *,
-                                       GDALProgressFunc, void * ) override;
+    CPLErr BuildOverviews( const char *, int, int *,
+                           GDALProgressFunc, void * ) override;
 
-        virtual GDALRasterAttributeTable *GetDefaultRAT() override;
-        virtual CPLErr SetDefaultRAT( const GDALRasterAttributeTable * ) override;
+    GDALRasterAttributeTable *GetDefaultRAT() override;
+    CPLErr SetDefaultRAT( const GDALRasterAttributeTable * ) override;
 
-        virtual CPLErr AdviseRead( int nXOff, int nYOff, int nXSize, int nYSize,
-                                int nBufXSize, int nBufYSize,
-                                GDALDataType eDT, char **papszOptions ) override;
-        /*
-        virtual GDALRasterBand *GetRasterSampleOverview( GUIntBig ) override;
-        */
+    CPLErr AdviseRead( int nXOff, int nYOff, int nXSize, int nYSize,
+                    int nBufXSize, int nBufYSize,
+                    GDALDataType eDT, char **papszOptions ) override;
+    // virtual GDALRasterBand *GetRasterSampleOverview( GUIntBig ) override;
 };
 
 /************************************************************************/
@@ -718,7 +716,7 @@ class GDALClientRasterBand : public GDALPamRasterBand
 
 static GDALPipe* GDALPipeBuild(CPLSpawnedProcess* sp)
 {
-    GDALPipe* p = (GDALPipe*)CPLMalloc(sizeof(GDALPipe));
+    GDALPipe* p = static_cast<GDALPipe*>(CPLMalloc(sizeof(GDALPipe)));
     p->bOK = TRUE;
     p->fin = CPLSpawnAsyncGetInputFileHandle(sp);
     p->fout = CPLSpawnAsyncGetOutputFileHandle(sp);
@@ -732,7 +730,7 @@ static GDALPipe* GDALPipeBuild(CPLSpawnedProcess* sp)
 
 static GDALPipe* GDALPipeBuild(CPL_SOCKET nSocket)
 {
-    GDALPipe* p = (GDALPipe*)CPLMalloc(sizeof(GDALPipe));
+    GDALPipe* p = static_cast<GDALPipe*>(CPLMalloc(sizeof(GDALPipe)));
     p->bOK = TRUE;
     p->fin = CPL_FILE_INVALID_HANDLE;
     p->fout = CPL_FILE_INVALID_HANDLE;
@@ -746,7 +744,7 @@ static GDALPipe* GDALPipeBuild(CPL_SOCKET nSocket)
 
 static GDALPipe* GDALPipeBuild(CPL_FILE_HANDLE fin, CPL_FILE_HANDLE fout)
 {
-    GDALPipe* p = (GDALPipe*)CPLMalloc(sizeof(GDALPipe));
+    GDALPipe* p = static_cast<GDALPipe*>(CPLMalloc(sizeof(GDALPipe)));
     p->bOK = TRUE;
     p->fin = fin;
     p->fout = fout;
@@ -778,7 +776,7 @@ static int GDALPipeWrite_internal(GDALPipe* p, const void* data, int length)
     }
     else
     {
-        const char* pabyData = (const char*) data;
+        const char* pabyData = static_cast<const char*>(data);
         int nRemain = length;
         while( nRemain > 0 )
         {
@@ -833,7 +831,7 @@ static void GDALPipeFree(GDALPipe * p)
 
 static int GDALPipeReadSocketInternal(GDALPipe* p, void* data, int length)
 {
-    char* pabyData = (char*) data;
+    char* pabyData = static_cast<char*>(data);
     int nRemain = length;
     while( nRemain > 0 )
     {
@@ -916,7 +914,7 @@ static int GDALPipeWrite(GDALPipe* p, const void* data,
                                  int length)
 {
     //return GDALPipeWrite_internal(p, data, length);
-    GByte* pCur = (GByte*) data;
+    const GByte* pCur = static_cast<const GByte*>(data);
     int nRemain = length;
     while( nRemain > 0 )
     {
@@ -992,21 +990,21 @@ static int GDALPipeRead(GDALPipe* p, char** ppszStr)
     int nLength = 0;
     if( !GDALPipeRead(p, &nLength) || nLength < 0 )
     {
-        *ppszStr = NULL;
+        *ppszStr = nullptr;
         return FALSE;
     }
     if( nLength == 0 )
     {
-        *ppszStr = NULL;
+        *ppszStr = nullptr;
         return TRUE;
     }
-    *ppszStr = (nLength < INT_MAX-1) ? (char*) VSIMalloc(nLength + 1) : NULL;
-    if( *ppszStr == NULL )
+    *ppszStr = (nLength < INT_MAX-1) ? static_cast<char*>(VSIMalloc(nLength + 1)) : nullptr;
+    if( *ppszStr == nullptr )
         return FALSE;
     if( nLength > 0 && !GDALPipeRead_nolength(p, nLength, *ppszStr) )
     {
         CPLFree(*ppszStr);
-        *ppszStr = NULL;
+        *ppszStr = nullptr;
         return FALSE;
     }
     (*ppszStr)[nLength] = 0;
@@ -1020,36 +1018,36 @@ static int GDALPipeRead(GDALPipe* p, char*** ppapszStr)
         return FALSE;
     if( nStrCount < 0 )
     {
-        *ppapszStr = NULL;
+        *ppapszStr = nullptr;
         return TRUE;
     }
 
-    *ppapszStr = (char**) VSIMalloc2(sizeof(char*), (nStrCount + 1));
-    if( *ppapszStr == NULL )
+    *ppapszStr = static_cast<char**>(VSIMalloc2(sizeof(char*), (nStrCount + 1)));
+    if( *ppapszStr == nullptr )
         return FALSE;
     for(int i=0;i<nStrCount;i++)
     {
         if( !GDALPipeRead(p, (*ppapszStr) + i) )
         {
             CSLDestroy(*ppapszStr);
-            *ppapszStr = NULL;
+            *ppapszStr = nullptr;
             return FALSE;
         }
     }
-    (*ppapszStr)[nStrCount] = NULL;
+    (*ppapszStr)[nStrCount] = nullptr;
     return TRUE;
 }
 
 static int GDALPipeRead(GDALPipe* p, int nItems, int** ppanInt)
 {
     int nSize = 0;
-    *ppanInt = NULL;
+    *ppanInt = nullptr;
     if( !GDALPipeRead(p, &nSize) )
         return FALSE;
-    if( nSize != nItems * (int)sizeof(int) )
+    if( nSize != nItems * static_cast<int>(sizeof(int)) )
         return FALSE;
-    *ppanInt = (int*) VSIMalloc(nSize);
-    if( *ppanInt == NULL )
+    *ppanInt = static_cast<int*>(VSIMalloc(nSize));
+    if( *ppanInt == nullptr )
         return FALSE;
     if( !GDALPipeRead_nolength(p, nSize, *ppanInt) )
         return FALSE;
@@ -1059,13 +1057,13 @@ static int GDALPipeRead(GDALPipe* p, int nItems, int** ppanInt)
 static int GDALPipeRead(GDALPipe* p, int nItems, GUIntBig** ppanInt)
 {
     int nSize = 0;
-    *ppanInt = NULL;
+    *ppanInt = nullptr;
     if( !GDALPipeRead(p, &nSize) )
         return FALSE;
-    if( nSize != nItems * (int)sizeof(GUIntBig) )
+    if( nSize != nItems * static_cast<int>(sizeof(GUIntBig)) )
         return FALSE;
-    *ppanInt = (GUIntBig*) VSIMalloc(nSize);
-    if( *ppanInt == NULL )
+    *ppanInt = static_cast<GUIntBig*>(VSIMalloc(nSize));
+    if( *ppanInt == nullptr )
         return FALSE;
     if( !GDALPipeRead_nolength(p, nSize, *ppanInt) )
         return FALSE;
@@ -1075,19 +1073,19 @@ static int GDALPipeRead(GDALPipe* p, int nItems, GUIntBig** ppanInt)
 static int GDALPipeRead(GDALPipe* p, GDALColorTable** ppoColorTable)
 {
     int nPaletteInterp, nCount;
-    *ppoColorTable = NULL;
+    *ppoColorTable = nullptr;
     if( !GDALPipeRead(p, &nPaletteInterp) )
         return FALSE;
     GDALColorTable* poColorTable;
     if( nPaletteInterp < 0 )
     {
-        poColorTable = NULL;
+        poColorTable = nullptr;
     }
     else
     {
         if( !GDALPipeRead(p, &nCount) )
             return FALSE;
-        poColorTable = new GDALColorTable((GDALPaletteInterp)nPaletteInterp);
+        poColorTable = new GDALColorTable(static_cast<GDALPaletteInterp>(nPaletteInterp));
         for(int i=0; i<nCount; i++)
         {
             int c1, c2, c3, c4;
@@ -1100,10 +1098,10 @@ static int GDALPipeRead(GDALPipe* p, GDALColorTable** ppoColorTable)
                 return FALSE;
             }
             GDALColorEntry eEntry;
-            eEntry.c1 = (short)c1;
-            eEntry.c2 = (short)c2;
-            eEntry.c3 = (short)c3;
-            eEntry.c4 = (short)c4;
+            eEntry.c1 = static_cast<short>(c1);
+            eEntry.c2 = static_cast<short>(c2);
+            eEntry.c3 = static_cast<short>(c3);
+            eEntry.c4 = static_cast<short>(c4);
             poColorTable->SetColorEntry(i, &eEntry);
         }
     }
@@ -1113,24 +1111,24 @@ static int GDALPipeRead(GDALPipe* p, GDALColorTable** ppoColorTable)
 
 static int GDALPipeRead(GDALPipe* p, GDALRasterAttributeTable** ppoRAT)
 {
-    *ppoRAT = NULL;
-    char* pszRAT = NULL;
+    *ppoRAT = nullptr;
+    char* pszRAT = nullptr;
     if( !GDALPipeRead(p, &pszRAT))
         return FALSE;
-    if( pszRAT == NULL )
+    if( pszRAT == nullptr )
         return TRUE;
 
     CPLXMLNode* poNode = CPLParseXMLString( pszRAT );
     CPLFree(pszRAT);
-    if( poNode == NULL )
+    if( poNode == nullptr )
         return FALSE;
 
     *ppoRAT = new GDALDefaultRasterAttributeTable();
-    if( (*ppoRAT)->XMLInit(poNode, NULL) != CE_None )
+    if( (*ppoRAT)->XMLInit(poNode, nullptr) != CE_None )
     {
         CPLDestroyXMLNode(poNode);
         delete *ppoRAT;
-        *ppoRAT = NULL;
+        *ppoRAT = nullptr;
         return FALSE;
     }
     CPLDestroyXMLNode(poNode);
@@ -1140,11 +1138,11 @@ static int GDALPipeRead(GDALPipe* p, GDALRasterAttributeTable** ppoRAT)
 static int GDALPipeRead(GDALPipe* p, int* pnGCPCount, GDAL_GCP** ppasGCPs)
 {
     *pnGCPCount = 0;
-    *ppasGCPs = NULL;
+    *ppasGCPs = nullptr;
     int nGCPCount = 0;
     if( !GDALPipeRead(p, &nGCPCount) )
         return FALSE;
-    GDAL_GCP* pasGCPs = (GDAL_GCP* )CPLCalloc(nGCPCount, sizeof(GDAL_GCP));
+    GDAL_GCP* pasGCPs = static_cast<GDAL_GCP*>(CPLCalloc(nGCPCount, sizeof(GDAL_GCP)));
     for(int i=0;i<nGCPCount;i++)
     {
         if( !GDALPipeRead(p, &pasGCPs[i].pszId) ||
@@ -1169,7 +1167,7 @@ static int GDALPipeRead(GDALPipe* p, GDALClientDataset* poDS,
                         GDALRasterBand** ppoBand, GByte abyCaps[16])
 {
     int iSrvBand = 0;
-    *ppoBand = NULL;
+    *ppoBand = nullptr;
     if( !GDALPipeRead(p, &iSrvBand) )
         return FALSE;
     if( iSrvBand < 0 )
@@ -1187,16 +1185,17 @@ static int GDALPipeRead(GDALPipe* p, GDALClientDataset* poDS,
         return FALSE;
     }
 
-    char* pszDescription = NULL;
+    char* pszDescription = nullptr;
     if( !GDALPipeRead(p, &pszDescription) )
         return FALSE;
 
     GDALClientRasterBand* poBand = new GDALClientRasterBand(p, iSrvBand,
-                                                  poDS, iBand, (GDALAccess)nBandAccess,
+                                                  poDS, iBand,
+                                                  static_cast<GDALAccess>(nBandAccess),
                                                   nXSize, nYSize,
-                                                  (GDALDataType)nDataType,
+                                                  static_cast<GDALDataType>(nDataType),
                                                   nBlockXSize, nBlockYSize, abyCaps);
-    if( pszDescription != NULL )
+    if( pszDescription != nullptr )
         poBand->GDALMajorObject::SetDescription(pszDescription);
     CPLFree(pszDescription);
 
@@ -1215,7 +1214,7 @@ static int GDALSkipUntilEndOfJunkMarker(GDALPipe* p)
     size_t nIter = 0;
     int nStep = 0;
     CPLString osJunk;
-    int nMarkerSize = (int)sizeof(abyEndOfJunkMarker);
+    const int nMarkerSize = static_cast<int>(sizeof(abyEndOfJunkMarker));
     GByte abyBuffer[sizeof(abyEndOfJunkMarker)];
     if( !GDALPipeRead_nolength(p, sizeof(abyBuffer), abyBuffer ) )
         return FALSE;
@@ -1283,14 +1282,14 @@ static int GDALPipeWrite(GDALPipe* p, int nLength, const void* pabyData)
 
 static int GDALPipeWrite(GDALPipe* p, const char* pszStr)
 {
-    if( pszStr == NULL )
+    if( pszStr == nullptr )
         return GDALPipeWrite(p, 0);
-    return GDALPipeWrite(p, (int)strlen(pszStr) + 1, pszStr);
+    return GDALPipeWrite(p, static_cast<int>(strlen(pszStr)) + 1, pszStr);
 }
 
 static int GDALPipeWrite(GDALPipe* p, char** papszStr)
 {
-    if( papszStr == NULL )
+    if( papszStr == nullptr )
         return GDALPipeWrite(p, -1);
 
     int nCount = CSLCount(papszStr);
@@ -1308,11 +1307,11 @@ static int GDALPipeWrite(GDALPipe* p,
                          std::vector<GDALRasterBand*>& aBands,
                          GDALRasterBand* poBand)
 {
-    if( poBand == NULL )
+    if( poBand == nullptr )
         GDALPipeWrite(p, -1);
     else
     {
-        GDALPipeWrite(p, (int)aBands.size());
+        GDALPipeWrite(p, static_cast<int>(aBands.size()));
         aBands.push_back(poBand);
         GDALPipeWrite(p, poBand->GetBand());
         GDALPipeWrite(p, poBand->GetAccess());
@@ -1330,7 +1329,7 @@ static int GDALPipeWrite(GDALPipe* p,
 
 static int GDALPipeWrite(GDALPipe* p, GDALColorTable* poColorTable)
 {
-    if( poColorTable == NULL )
+    if( poColorTable == nullptr )
     {
         if( !GDALPipeWrite(p, -1) )
             return FALSE;
@@ -1359,12 +1358,14 @@ static int GDALPipeWrite(GDALPipe* p, const GDALRasterAttributeTable* poRAT)
 {
     // TODO(schwehr): Refactor and simplify.
     int bRet = FALSE;
-    if( poRAT == NULL )
-        bRet = GDALPipeWrite(p, (const char*)NULL);
+    if( poRAT == nullptr )
+    {
+        bRet = GDALPipeWrite(p, static_cast<const char*>(nullptr));
+    }
     else
     {
         CPLXMLNode* poNode = poRAT->Serialize();
-        if( poNode != NULL )
+        if( poNode != nullptr )
         {
             char* pszRAT = CPLSerializeXMLTree(poNode);
             bRet = GDALPipeWrite(p, pszRAT);
@@ -1372,7 +1373,9 @@ static int GDALPipeWrite(GDALPipe* p, const GDALRasterAttributeTable* poRAT)
             CPLDestroyXMLNode(poNode);
         }
         else
-            bRet = GDALPipeWrite(p, (const char*)NULL);
+        {
+            bRet = GDALPipeWrite(p, static_cast<const char*>(nullptr));
+        }
     }
     return bRet;
 }
@@ -1402,8 +1405,8 @@ static int GDALPipeWrite(GDALPipe* p, int nGCPCount, const GDAL_GCP* pasGCPs)
 static int GDALPipeWriteConfigOption(GDALPipe* p, const char* pszKey,
                                      int bWriteIfNonNull = TRUE)
 {
-    const char* pszVal = CPLGetConfigOption(pszKey, NULL);
-    if( pszVal == NULL && !bWriteIfNonNull )
+    const char* pszVal = CPLGetConfigOption(pszKey, nullptr);
+    if( pszVal == nullptr && !bWriteIfNonNull )
         return TRUE;
     return GDALPipeWrite(p, INSTR_SetConfigOption) &&
            GDALPipeWrite(p, pszKey) &&
@@ -1427,7 +1430,7 @@ static int GDALEmitEndOfJunkMarker(GDALPipe* p)
 {
     return GDALPipeWrite_nolength(p, sizeof(abyEndOfJunkMarker),
                                   abyEndOfJunkMarker) ==
-                                        (int)sizeof(abyEndOfJunkMarker);
+                                static_cast<int>(sizeof(abyEndOfJunkMarker));
 }
 
 /************************************************************************/
@@ -1443,12 +1446,14 @@ static void GDALConsumeErrors(GDALPipe* p)
     {
         int       eErr = 0;
         int       nErrNo = 0;
-        char     *pszErrorMsg = NULL;
+        char     *pszErrorMsg = nullptr;
         if( !GDALPipeRead(p, &eErr) ||
             !GDALPipeRead(p, &nErrNo) ||
             !GDALPipeRead(p, &pszErrorMsg) )
             return;
-        CPLError((CPLErr)eErr, (CPLErrorNum)nErrNo, "%s", pszErrorMsg ? pszErrorMsg : "unknown");
+        CPLError(static_cast<CPLErr>(eErr),
+                 static_cast<CPLErrorNum>(nErrNo), "%s",
+                 pszErrorMsg ? pszErrorMsg : "unknown");
         CPLFree(pszErrorMsg);
     }
 }
@@ -1495,7 +1500,7 @@ static int GDALServerSpawnAsyncFinish(GDALServerSpawnedProcess* ssp)
         CPLMutexHolderD(GDALGetphDMMutex());
         for(int i = 0; i < nMaxRecycled; i ++)
         {
-            if( aspRecycled[i] == NULL )
+            if( aspRecycled[i] == nullptr )
             {
                 if( !GDALEmitReset(ssp->p) )
                     break;
@@ -1527,14 +1532,14 @@ static int GDALCheckServerVersion(GDALPipe* p)
     GDALPipeWrite(p, INSTR_GetGDALVersion);
     char bIsLSB = CPL_IS_LSB;
     GDALPipeWrite_nolength(p, 1, &bIsLSB);
-    GDALPipeWrite(p, GDAL_RELEASE_NAME);
+    GDALPipeWrite(p, GDALVersionInfo("RELEASE_NAME"));
     GDALPipeWrite(p, GDAL_VERSION_MAJOR);
     GDALPipeWrite(p, GDAL_VERSION_MINOR);
     GDALPipeWrite(p, GDAL_CLIENT_SERVER_PROTOCOL_MAJOR);
     GDALPipeWrite(p, GDAL_CLIENT_SERVER_PROTOCOL_MINOR);
     GDALPipeWrite(p, 0); /* extra bytes */
 
-    char* pszVersion = NULL;
+    char* pszVersion = nullptr;
     int nMajor, nMinor, nProtocolMajor, nProtocolMinor, nExtraBytes;
     if( !GDALPipeRead(p, &pszVersion) ||
         !GDALPipeRead(p, &nMajor) ||
@@ -1573,7 +1578,7 @@ static int GDALCheckServerVersion(GDALPipe* p)
     CPLDebug("GDAL",
              "Client version : %s (%d.%d), "
              "Client protocol version = %d.%d",
-             GDAL_RELEASE_NAME, GDAL_VERSION_MAJOR, GDAL_VERSION_MINOR,
+             GDALVersionInfo("RELEASE_NAME"), GDAL_VERSION_MAJOR, GDAL_VERSION_MINOR,
              GDAL_CLIENT_SERVER_PROTOCOL_MAJOR,
              GDAL_CLIENT_SERVER_PROTOCOL_MINOR);
     if( nProtocolMajor != GDAL_CLIENT_SERVER_PROTOCOL_MAJOR )
@@ -1583,7 +1588,7 @@ static int GDALCheckServerVersion(GDALPipe* p)
                  "incompatible with GDAL client (GDAL version=%s, protocol version=%d.%d)",
                  pszVersion,
                  nProtocolMajor, nProtocolMinor,
-                 GDAL_RELEASE_NAME,
+                 GDALVersionInfo("RELEASE_NAME"),
                  GDAL_CLIENT_SERVER_PROTOCOL_MAJOR,
                  GDAL_CLIENT_SERVER_PROTOCOL_MINOR);
         CPLFree(pszVersion);
@@ -1633,10 +1638,10 @@ static GDALServerSpawnedProcess* GDALServerSpawnAsync()
         CPLMutexHolderD(GDALGetphDMMutex());
         for(int i = 0; i < nMaxRecycled; i ++)
         {
-            if( aspRecycled[i] != NULL )
+            if( aspRecycled[i] != nullptr )
             {
                 GDALServerSpawnedProcess* ssp = aspRecycled[i];
-                aspRecycled[i] = NULL;
+                aspRecycled[i] = nullptr;
                 return ssp;
             }
         }
@@ -1649,7 +1654,7 @@ static GDALServerSpawnedProcess* GDALServerSpawnAsync()
 #endif
 
     const char* pszColon = strchr(pszSpawnServer, ':');
-    if( pszColon != NULL &&
+    if( pszColon != nullptr &&
         pszColon != pszSpawnServer + 1 /* do not confuse with c:/some_path/gdalserver.exe */ )
     {
         CPLString osHost(pszSpawnServer);
@@ -1664,13 +1669,13 @@ static GDALServerSpawnedProcess* GDALServerSpawnAsync()
         {
             CPLError(CE_Failure, CPLE_AppDefined,
                      "WSAStartup() failed with error: %d\n", nRet1);
-            return NULL;
+            return nullptr;
         }
 #endif
 
 #ifdef HAVE_GETADDRINFO
         struct addrinfo sHints;
-        struct addrinfo* psResults = NULL, *psResultsIter;
+        struct addrinfo* psResults = nullptr;
         memset(&sHints, 0, sizeof(struct addrinfo));
         sHints.ai_family = AF_UNSPEC;
         sHints.ai_socktype = SOCK_STREAM;
@@ -1683,12 +1688,12 @@ static GDALServerSpawnedProcess* GDALServerSpawnAsync()
             CPLError(CE_Failure, CPLE_AppDefined,
                      "getaddrinfo(): %s", gai_strerror(nRet2));
             WSACleanup();
-            return NULL;
+            return nullptr;
         }
 
-        for( psResultsIter = psResults;
-             psResultsIter != NULL;
-             psResultsIter = psResultsIter->ai_next)
+        // Used after for.
+        struct addrinfo *psResultsIter = psResults;
+        for( ; psResultsIter != nullptr; psResultsIter = psResultsIter->ai_next )
         {
             nConnSocket = socket(psResultsIter->ai_family,
                                  psResultsIter->ai_socktype,
@@ -1705,11 +1710,11 @@ static GDALServerSpawnedProcess* GDALServerSpawnAsync()
 
         freeaddrinfo(psResults);
 
-        if (psResultsIter == NULL)
+        if (psResultsIter == nullptr)
         {
             CPLError(CE_Failure, CPLE_AppDefined, "Could not connect");
             WSACleanup();
-            return NULL;
+            return nullptr;
         }
 #else
         struct sockaddr_in sockAddrIn;
@@ -1720,12 +1725,12 @@ static GDALServerSpawnedProcess* GDALServerSpawnAsync()
         {
             struct hostent *hp;
             hp = gethostbyname(osHost);
-            if (hp == NULL)
+            if (hp == nullptr)
             {
                 CPLError(CE_Failure, CPLE_AppDefined,
                          "Unknown host : %s", osHost.c_str());
                 WSACleanup();
-                return NULL;
+                return nullptr;
             }
             else
             {
@@ -1741,7 +1746,7 @@ static GDALServerSpawnedProcess* GDALServerSpawnAsync()
             CPLError(CE_Failure, CPLE_AppDefined,
                      "socket() failed with error: %d", WSAGetLastError());
             WSACleanup();
-            return NULL;
+            return nullptr;
         }
 
         if (connect(nConnSocket, (const SOCKADDR *)&sockAddrIn, sizeof (sockAddrIn)) == SOCKET_ERROR )
@@ -1750,20 +1755,20 @@ static GDALServerSpawnedProcess* GDALServerSpawnAsync()
                      "connect() function failed with error: %d", WSAGetLastError());
             closesocket(nConnSocket);
             WSACleanup();
-            return NULL;
+            return nullptr;
         }
 #endif
 
-        GDALServerSpawnedProcess* ssp =
-                (GDALServerSpawnedProcess*)CPLMalloc(sizeof(GDALServerSpawnedProcess));
-        ssp->sp = NULL;
+        GDALServerSpawnedProcess* ssp = static_cast<GDALServerSpawnedProcess*>(
+            CPLMalloc(sizeof(GDALServerSpawnedProcess)));
+        ssp->sp = nullptr;
         ssp->p = GDALPipeBuild(nConnSocket);
 
         CPLDebug("GDAL", "Create spawned process %p", ssp);
         if( !GDALCheckServerVersion(ssp->p) )
         {
             GDALServerSpawnAsyncFinish(ssp);
-            return NULL;
+            return nullptr;
         }
         return ssp;
     }
@@ -1779,18 +1784,19 @@ static GDALServerSpawnedProcess* GDALServerSpawnAsync()
             sockAddrUnix.sun_family = AF_UNIX;
             CPLStrlcpy(sockAddrUnix.sun_path, pszSpawnServer, sizeof(sockAddrUnix.sun_path));
 
-            if (connect(nConnSocket, (const SOCKADDR *)&sockAddrUnix, sizeof (sockAddrUnix)) >= 0 )
+            if (connect(nConnSocket, reinterpret_cast<const SOCKADDR *>(&sockAddrUnix), sizeof (sockAddrUnix)) >= 0 )
             {
                 GDALServerSpawnedProcess* ssp =
-                    (GDALServerSpawnedProcess*)CPLMalloc(sizeof(GDALServerSpawnedProcess));
-                ssp->sp = NULL;
+                    static_cast<GDALServerSpawnedProcess *>(
+                        CPLMalloc(sizeof(GDALServerSpawnedProcess)));
+                ssp->sp = nullptr;
                 ssp->p = GDALPipeBuild(nConnSocket);
 
                 CPLDebug("GDAL", "Create spawned process %p", ssp);
                 if( !GDALCheckServerVersion(ssp->p) )
                 {
                     GDALServerSpawnAsyncFinish(ssp);
-                    return NULL;
+                    return nullptr;
                 }
                 return ssp;
             }
@@ -1804,31 +1810,31 @@ static GDALServerSpawnedProcess* GDALServerSpawnAsync()
         EQUAL(pszSpawnServer, "TRUE")  || EQUAL(pszSpawnServer, "1") )
         pszSpawnServer = "gdalserver";
 #ifdef WIN32
-    const char* apszGDALServer[] = { pszSpawnServer, "-stdinout", NULL };
+    const char* apszGDALServer[] = { pszSpawnServer, "-stdinout", nullptr };
 #else
-    const char* apszGDALServer[] = { pszSpawnServer, "-pipe_in", "{pipe_in}", "-pipe_out", "{pipe_out}", NULL };
-    if( strstr(pszSpawnServer, "gdalserver") == NULL )
-        apszGDALServer[1] = NULL;
+    const char* apszGDALServer[] = { pszSpawnServer, "-pipe_in", "{pipe_in}", "-pipe_out", "{pipe_out}", nullptr };
+    if( strstr(pszSpawnServer, "gdalserver") == nullptr )
+        apszGDALServer[1] = nullptr;
 #endif
     bool bCheckVersions = true;
 
-    CPLSpawnedProcess* sp;
+    CPLSpawnedProcess* sp = nullptr;
 #ifndef WIN32
     if( EQUAL(pszSpawnServer, "NO") || EQUAL(pszSpawnServer, "OFF") ||
         EQUAL(pszSpawnServer, "FALSE")  || EQUAL(pszSpawnServer, "0") )
     {
-        sp = CPLSpawnAsync(GDALServerLoopForked, NULL, TRUE, TRUE, FALSE, NULL);
+        sp = CPLSpawnAsync(GDALServerLoopForked, nullptr, TRUE, TRUE, FALSE, nullptr);
         bCheckVersions = false;
     }
     else
 #endif
-        sp = CPLSpawnAsync(NULL, apszGDALServer, TRUE, TRUE, FALSE, NULL);
+        sp = CPLSpawnAsync(nullptr, apszGDALServer, TRUE, TRUE, FALSE, nullptr);
 
-    if( sp == NULL )
-        return NULL;
+    if( sp == nullptr )
+        return nullptr;
 
     GDALServerSpawnedProcess* ssp =
-        (GDALServerSpawnedProcess*)CPLMalloc(sizeof(GDALServerSpawnedProcess));
+        static_cast<GDALServerSpawnedProcess*>(CPLMalloc(sizeof(GDALServerSpawnedProcess)));
     ssp->sp = sp;
     ssp->p = GDALPipeBuild(sp);
 
@@ -1836,7 +1842,7 @@ static GDALServerSpawnedProcess* GDALServerSpawnAsync()
     if( bCheckVersions && !GDALCheckServerVersion(ssp->p) )
     {
         GDALServerSpawnAsyncFinish(ssp);
-        return NULL;
+        return nullptr;
     }
     return ssp;
 }
@@ -1879,7 +1885,7 @@ static void CPL_STDCALL RunErrorHandler(CPLErr eErr, CPLErrorNum nErrNo,
 {
     GDALServerErrorDesc oDesc(eErr, nErrNo, pszErrorMsg);
     std::vector<GDALServerErrorDesc>* paoErrors =
-        (std::vector<GDALServerErrorDesc>*) CPLGetErrorHandlerUserData();
+        static_cast<std::vector<GDALServerErrorDesc>*>(CPLGetErrorHandlerUserData());
     if( paoErrors )
         paoErrors->push_back(oDesc);
 }
@@ -1897,12 +1903,12 @@ static int CPL_STDCALL RunAsyncProgress(double dfComplete,
     /* on the source dataset. So we could end up sending mixed content on the pipe */
     /* to the client. The best is to transmit the progress in a regularly called method */
     /* of the dataset, such as IReadBlock() / IRasterIO() */
-    GDALServerAsyncProgress* asyncp = (GDALServerAsyncProgress*)pProgressArg;
+    GDALServerAsyncProgress* asyncp = static_cast<GDALServerAsyncProgress*>(pProgressArg);
     CPLMutexHolderD(&(asyncp->hMutex));
-    asyncp->bUpdated = TRUE;
+    asyncp->bUpdated = true;
     asyncp->dfComplete = dfComplete;
     CPLFree(asyncp->pszProgressMsg);
-    asyncp->pszProgressMsg = (pszMessage) ? CPLStrdup(pszMessage) : NULL;
+    asyncp->pszProgressMsg = (pszMessage) ? CPLStrdup(pszMessage) : nullptr;
     return asyncp->bRet;
 }
 
@@ -1914,7 +1920,7 @@ static int CPL_STDCALL RunSyncProgress(double dfComplete,
                                        const char *pszMessage,
                                        void *pProgressArg)
 {
-    GDALPipe* p = (GDALPipe*)pProgressArg;
+    GDALPipe* p = static_cast<GDALPipe *>(pProgressArg);
     if( !GDALPipeWrite(p, INSTR_Progress) ||
         !GDALPipeWrite(p, dfComplete) ||
         !GDALPipeWrite(p, pszMessage) )
@@ -1946,7 +1952,7 @@ public:
 };
 
 GDALServerInstance::GDALServerInstance(GDALPipe* pIn) :
-        p(pIn), poDS(NULL), pBuffer(NULL), nBufferSize(0)
+        p(pIn), poDS(nullptr), pBuffer(nullptr), nBufferSize(0)
 {
 }
 
@@ -1954,10 +1960,10 @@ GDALServerInstance::~GDALServerInstance()
 {
     CPLFree(pBuffer);
 
-    if( poDS != NULL )
+    if( poDS != nullptr )
     {
-        GDALClose((GDALDatasetH)poDS);
-        poDS = NULL;
+        delete poDS;
+        poDS = nullptr;
     }
 }
 
@@ -1988,8 +1994,8 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
 
 int    GDALServerLoopInstanceRunIteration(void* pInstance)
 {
-    GDALServerInstance* poSrvInstance = (GDALServerInstance*)pInstance;
-    int nRet = GDALServerLoopInternal(poSrvInstance, NULL, NULL, NULL, FALSE);
+    GDALServerInstance* poSrvInstance = static_cast<GDALServerInstance*>(pInstance);
+    int nRet = GDALServerLoopInternal(poSrvInstance, nullptr, nullptr, nullptr, FALSE);
     if( !poSrvInstance->p->bOK )
         nRet = FALSE;
     return nRet;
@@ -2001,7 +2007,7 @@ int    GDALServerLoopInstanceRunIteration(void* pInstance)
 
 void   GDALServerLoopInstanceDestroy(void* pInstance)
 {
-    GDALServerInstance* poSrvInstance = (GDALServerInstance*)pInstance;
+    GDALServerInstance* poSrvInstance = static_cast<GDALServerInstance*>(pInstance);
     GDALPipeFree(poSrvInstance->p);
     delete poSrvInstance;
 }
@@ -2039,11 +2045,11 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
     void* pBuffer = poSrvInstance->pBuffer;
     int nBufferSize = poSrvInstance->nBufferSize;
 
-    const char* pszOldVal = CPLGetConfigOption("GDAL_API_PROXY", NULL);
-    char* pszOldValDup = (pszOldVal) ? CPLStrdup(pszOldVal) : NULL;
+    const char* pszOldVal = CPLGetConfigOption("GDAL_API_PROXY", nullptr);
+    char* pszOldValDup = (pszOldVal) ? CPLStrdup(pszOldVal) : nullptr;
     CPLSetThreadLocalConfigOption("GDAL_API_PROXY", "OFF");
 
-    if( poSrcDS == NULL )
+    if( poSrcDS == nullptr )
         CPLPushErrorHandlerEx(RunErrorHandler, &aoErrors);
 
     GDALPipe* p = poSrvInstance->p;
@@ -2070,14 +2076,14 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         fprintf(stderr, "[%d] %s\n", (int)getpid(), (instr >= 0 && instr < INSTR_END) ? apszInstr[instr] : "unknown");/*ok*/
 #endif
 
-        GDALRasterBand* poBand = NULL;
+        GDALRasterBand* poBand = nullptr;
 
         if( instr == INSTR_EXIT )
         {
-            if( poSrcDS == NULL && poDS != NULL )
+            if( poSrcDS == nullptr && poDS != nullptr )
             {
-                GDALClose((GDALDatasetH)poDS);
-                poDS = NULL;
+                delete poDS;
+                poDS = nullptr;
                 //fprintf(stderr, "INSTR_EXIT: poDS = %p\n", poDS);
                 poSrvInstance->aBands.resize(0);
             }
@@ -2097,7 +2103,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         {
             /* Do not change this protocol ! */
             char bClientIsLSB = '\0';  // TODO(schwehr): bool char?
-            char* pszClientVersion = NULL;
+            char* pszClientVersion = nullptr;
             int nClientMajor, nClientMinor,
                 nClientProtocolMajor, nClientProtocolMinor,
                 nExtraBytes;
@@ -2139,7 +2145,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
 
             CPLFree(pszClientVersion);
 
-            GDALPipeWrite(p, GDAL_RELEASE_NAME);
+            GDALPipeWrite(p, GDALVersionInfo("RELEASE_NAME"));
             GDALPipeWrite(p, GDAL_VERSION_MAJOR);
             GDALPipeWrite(p, GDAL_VERSION_MINOR);
             GDALPipeWrite(p, GDAL_CLIENT_SERVER_PROTOCOL_MAJOR);
@@ -2149,8 +2155,8 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         }
         else if( instr == INSTR_SetConfigOption )
         {
-            char *pszKey = NULL;
-            char *pszValue = NULL;
+            char *pszKey = nullptr;
+            char *pszValue = nullptr;
             if( !GDALPipeRead(p, &pszKey) ||
                 !GDALPipeRead(p, &pszValue) )
             {
@@ -2165,7 +2171,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         else if( instr == INSTR_Progress )
         {
             double dfProgress = 0.0;
-            char* pszProgressMsg = NULL;
+            char* pszProgressMsg = nullptr;
             if( !GDALPipeRead(p, &dfProgress) ||
                 !GDALPipeRead(p, &pszProgressMsg) )
                 break;
@@ -2178,10 +2184,10 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         }
         else if( instr == INSTR_Reset )
         {
-            if( poSrcDS == NULL && poDS != NULL )
+            if( poSrcDS == nullptr && poDS != nullptr )
             {
-                GDALClose((GDALDatasetH)poDS);
-                poDS = NULL;
+                delete poDS;
+                poDS = nullptr;
                 //fprintf(stderr, "INSTR_Reset: poDS = %p\n", poDS);
                 MyChdirRootDirectory();
                 poSrvInstance->aBands.resize(0);
@@ -2192,9 +2198,9 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         else if( instr == INSTR_Open )
         {
             int nAccess;
-            char* pszFilename = NULL;
-            char* pszCWD = NULL;
-            char** papszOpenOptions = NULL;
+            char* pszFilename = nullptr;
+            char* pszCWD = nullptr;
+            char** papszOpenOptions = nullptr;
             if( !GDALPipeRead(p, &nAccess) ||
                 !GDALPipeRead(p, &pszFilename) ||
                 !GDALPipeRead(p, &pszCWD) ||
@@ -2207,7 +2213,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
             }
 
             // This should not happen for clients that respect the (implied) protocol...
-            if( poSrcDS == NULL && poDS != NULL && pszFilename != NULL )
+            if( poSrcDS == nullptr && poDS != nullptr && pszFilename != nullptr )
             {
                 CPLFree(pszFilename);
                 CPLFree(pszCWD);
@@ -2223,7 +2229,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
                 continue;
             }
 
-            if( pszCWD != NULL )
+            if( pszCWD != nullptr )
             {
                 if( pszFilename )
                 {
@@ -2232,20 +2238,20 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
                 }
                 CPLFree(pszCWD);
             }
-            if( poSrcDS != NULL )
+            if( poSrcDS != nullptr )
                 poDS = poSrcDS;
-            else if( poDS == NULL && pszFilename != NULL )
-                poDS = (GDALDataset*) GDALOpenEx(pszFilename,
+            else if( poDS == nullptr && pszFilename != nullptr )
+                poDS = GDALDataset::Open(pszFilename,
                                                  ((nAccess == GA_Update) ? GDAL_OF_UPDATE : 0) | GDAL_OF_SHARED,
-                                                 NULL,
+                                                 nullptr,
                                                  papszOpenOptions,
-                                                 NULL);
+                                                 nullptr);
             //fprintf(stderr, "INSTR_Open: poDS = %p\n", poDS);
             CPLFree(pszFilename);
             CSLDestroy(papszOpenOptions);
             GDALEmitEndOfJunkMarker(p);
-            GDALPipeWrite(p, poDS != NULL);
-            if( poDS != NULL )
+            GDALPipeWrite(p, poDS != nullptr);
+            if( poDS != nullptr )
             {
                 // cppcheck-suppress knownConditionTrueFalse
                 CPLAssert(INSTR_END < 128);
@@ -2260,32 +2266,32 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
                 GDALPipeWrite(p, sizeof(abyCaps), abyCaps);
                 GDALPipeWrite(p, poDS->GetDescription() );
                 GDALDriver* poDriver = poDS->GetDriver();
-                if( poDriver != NULL )
+                if( poDriver != nullptr )
                 {
                     GDALPipeWrite(p, poDriver->GetDescription() );
                     char** papszItems = poDriver->GetMetadata();
-                    for(int i = 0; papszItems[i] != NULL; i++ )
+                    for(int i = 0; papszItems[i] != nullptr; i++ )
                     {
-                        char* pszKey = NULL;
+                        char* pszKey = nullptr;
                         const char* pszVal = CPLParseNameValue(papszItems[i], &pszKey );
-                        if( pszKey != NULL )
+                        if( pszKey != nullptr )
                         {
                             GDALPipeWrite(p, pszKey );
                             GDALPipeWrite(p, pszVal );
                             CPLFree(pszKey);
                         }
                     }
-                    GDALPipeWrite(p, (const char*)NULL);
+                    GDALPipeWrite(p, static_cast<const char*>(nullptr));
                 }
                 else
-                    GDALPipeWrite(p, (const char*)NULL);
+                    GDALPipeWrite(p, static_cast<const char*>(nullptr));
 
                 GDALPipeWrite(p, poDS->GetRasterXSize());
                 GDALPipeWrite(p, poDS->GetRasterYSize());
                 int nBands = poDS->GetRasterCount();
                 GDALPipeWrite(p, nBands);
                 int bAllSame = TRUE;
-                GDALRasterBand* poFirstBand = NULL;
+                GDALRasterBand* poFirstBand = nullptr;
                 int nFBBlockXSize = 0;
                 int nFBBlockYSize = 0;
 
@@ -2333,10 +2339,10 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         }
         else if( instr == INSTR_Identify )
         {
-            char* pszFilename = NULL;
-            char* pszCWD = NULL;
+            char* pszFilename = nullptr;
+            char* pszCWD = nullptr;
             if( !GDALPipeRead(p, &pszFilename) ||
-                pszFilename == NULL ||
+                pszFilename == nullptr ||
                 !GDALPipeRead(p, &pszCWD) )
             {
                 CPLFree(pszFilename);
@@ -2344,7 +2350,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
                 break;
             }
 
-            if( pszCWD != NULL )
+            if( pszCWD != nullptr )
             {
                 if( pszFilename )
                 {
@@ -2354,7 +2360,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
                 CPLFree(pszCWD);
             }
 
-            int bRet = GDALIdentifyDriver(pszFilename, NULL) != NULL;
+            int bRet = GDALIdentifyDriver(pszFilename, nullptr) != nullptr;
             CPLFree(pszFilename);
             GDALEmitEndOfJunkMarker(p);
             GDALPipeWrite(p, bRet);
@@ -2362,13 +2368,13 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         }
         else if( instr == INSTR_Create )
         {
-            char* pszFilename = NULL;
-            char* pszCWD = NULL;
+            char* pszFilename = nullptr;
+            char* pszCWD = nullptr;
             int nXSize, nYSize, nBands, nDataType;
-            char** papszOptions = NULL;
-            GDALDriver* poDriver = NULL;
+            char** papszOptions = nullptr;
+            GDALDriver* poDriver = nullptr;
             if( !GDALPipeRead(p, &pszFilename) ||
-                pszFilename == NULL ||
+                pszFilename == nullptr ||
                 !GDALPipeRead(p, &pszCWD) ||
                 !GDALPipeRead(p, &nXSize) ||
                 !GDALPipeRead(p, &nYSize) ||
@@ -2381,7 +2387,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
                 break;
             }
 
-            if( pszCWD != NULL )
+            if( pszCWD != nullptr )
             {
                 if( pszFilename )
                 {
@@ -2393,17 +2399,17 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
 
             const char* pszDriver = CSLFetchNameValue(papszOptions, "SERVER_DRIVER");
             CPLString osDriver;
-            if( pszDriver != NULL )
+            if( pszDriver != nullptr )
             {
                 osDriver = pszDriver;
                 pszDriver = osDriver.c_str();
-                poDriver = (GDALDriver* )GDALGetDriverByName(pszDriver);
+                poDriver = static_cast<GDALDriver*>(GDALGetDriverByName(pszDriver));
             }
-            papszOptions = CSLSetNameValue(papszOptions, "SERVER_DRIVER", NULL);
-            if( poDriver != NULL )
+            papszOptions = CSLSetNameValue(papszOptions, "SERVER_DRIVER", nullptr);
+            if( poDriver != nullptr )
             {
                 poDS = poDriver->Create(pszFilename, nXSize, nYSize, nBands,
-                                        (GDALDataType)nDataType,
+                                        static_cast<GDALDataType>(nDataType),
                                         papszOptions);
                 //fprintf(stderr, "INSTR_Create: poDS = %p\n", poDS);
             }
@@ -2412,21 +2418,21 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
                          (pszDriver) ? pszDriver : "(unknown)");
 
             GDALEmitEndOfJunkMarker(p);
-            GDALPipeWrite(p, poDS != NULL);
+            GDALPipeWrite(p, poDS != nullptr);
             CPLFree(pszFilename);
             CSLDestroy(papszOptions);
         }
         else if( instr == INSTR_CreateCopy )
         {
-            char* pszFilename = NULL;
-            char* pszSrcDescription = NULL;
-            char* pszCWD = NULL;
-            char** papszCreateOptions = NULL;
-            GDALDriver* poDriver = NULL;
+            char* pszFilename = nullptr;
+            char* pszSrcDescription = nullptr;
+            char* pszCWD = nullptr;
+            char** papszCreateOptions = nullptr;
+            GDALDriver* poDriver = nullptr;
             int bStrict = FALSE;
 
             if( !GDALPipeRead(p, &pszFilename) ||
-                pszFilename == NULL ||
+                pszFilename == nullptr ||
                 !GDALPipeRead(p, &pszSrcDescription) ||
                 !GDALPipeRead(p, &pszCWD) ||
                 !GDALPipeRead(p, &bStrict) ||
@@ -2456,7 +2462,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
                 continue;
             }
 
-            if( pszCWD != NULL )
+            if( pszCWD != nullptr )
             {
                 if( pszFilename )
                 {
@@ -2468,18 +2474,18 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
 
             const char* pszDriver = CSLFetchNameValue(papszCreateOptions, "SERVER_DRIVER");
             CPLString osDriver;
-            if( pszDriver != NULL )
+            if( pszDriver != nullptr )
             {
                 osDriver = pszDriver;
                 pszDriver = osDriver.c_str();
-                poDriver = (GDALDriver* )GDALGetDriverByName(pszDriver);
+                poDriver = static_cast<GDALDriver*>(GDALGetDriverByName(pszDriver));
             }
-            papszCreateOptions = CSLSetNameValue(papszCreateOptions, "SERVER_DRIVER", NULL);
-            GDALPipeWrite(p, poDriver != NULL);
-            if( poDriver != NULL )
+            papszCreateOptions = CSLSetNameValue(papszCreateOptions, "SERVER_DRIVER", nullptr);
+            GDALPipeWrite(p, poDriver != nullptr);
+            if( poDriver != nullptr )
             {
                 GDALClientDataset* l_poSrcDS = new GDALClientDataset(p);
-                if( !l_poSrcDS->Init(NULL, GA_ReadOnly, NULL) )
+                if( !l_poSrcDS->Init(nullptr, GA_ReadOnly, nullptr) )
                 {
                     delete l_poSrcDS;
                     CPLFree(pszFilename);
@@ -2494,15 +2500,15 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
                 //fprintf(stderr, "INSTR_CreateCopy: poDS = %p\n", poDS);
 
                 int bProgressRet = l_poSrcDS->ProcessAsyncProgress();
-                GDALClose((GDALDatasetH)l_poSrcDS);
+                delete l_poSrcDS;
 
-                if( !bProgressRet && poDS != NULL )
+                if( !bProgressRet && poDS != nullptr )
                 {
-                    GDALClose((GDALDatasetH)poDS);
-                    poDS = NULL;
+                    delete poDS;
+                    poDS = nullptr;
                 }
 
-                if( !GDALEmitEXIT(p, (poDS != NULL) ? INSTR_EXIT : INSTR_EXIT_FAIL) )
+                if( !GDALEmitEXIT(p, (poDS != nullptr) ? INSTR_EXIT : INSTR_EXIT_FAIL) )
                     break;
             }
             else
@@ -2514,11 +2520,11 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         }
         else if( instr == INSTR_QuietDelete )
         {
-            char* pszFilename = NULL;
-            char* pszCWD = NULL;
+            char* pszFilename = nullptr;
+            char* pszCWD = nullptr;
 
             if( !GDALPipeRead(p, &pszFilename) ||
-                pszFilename == NULL ||
+                pszFilename == nullptr ||
                 !GDALPipeRead(p, &pszCWD) )
             {
                 CPLFree(pszFilename);
@@ -2526,7 +2532,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
                 break;
             }
 
-            if( pszCWD != NULL )
+            if( pszCWD != nullptr )
             {
                 if( pszFilename )
                 {
@@ -2543,14 +2549,14 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         }
         else if( instr == INSTR_AddBand )
         {
-            if( poDS == NULL )
+            if( poDS == nullptr )
                 break;
             int nType;
-            char** papszOptions = NULL;
+            char** papszOptions = nullptr;
             if( !GDALPipeRead(p, &nType) ||
                 !GDALPipeRead(p, &papszOptions) )
                 break;
-            CPLErr eErr = poDS->AddBand((GDALDataType)nType, papszOptions);
+            CPLErr eErr = poDS->AddBand(static_cast<GDALDataType>(nType), papszOptions);
             GDALEmitEndOfJunkMarker(p);
             GDALPipeWrite(p, eErr);
             if( eErr == CE_None )
@@ -2562,7 +2568,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         }
         else if( instr == INSTR_GetGeoTransform )
         {
-            if( poDS == NULL )
+            if( poDS == nullptr )
                 break;
             double adfGeoTransform[6];
             CPLErr eErr = poDS->GetGeoTransform(adfGeoTransform);
@@ -2575,7 +2581,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         }
         else if( instr == INSTR_SetGeoTransform )
         {
-            if( poDS == NULL )
+            if( poDS == nullptr )
                 break;
             double adfGeoTransform[6];
             if( !GDALPipeRead(p, 6 * sizeof(double), adfGeoTransform) )
@@ -2586,7 +2592,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         }
         else if( instr == INSTR_GetProjectionRef )
         {
-            if( poDS == NULL )
+            if( poDS == nullptr )
                 break;
             const char* pszVal = poDS->GetProjectionRef();
             //GDALPipeWrite(p, strlen("some_junk\xDE"), "some_junk\xDE");
@@ -2595,9 +2601,9 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         }
         else if( instr == INSTR_SetProjection )
         {
-            if( poDS == NULL )
+            if( poDS == nullptr )
                 break;
-            char* pszProjection = NULL;
+            char* pszProjection = nullptr;
             if( !GDALPipeRead(p, &pszProjection) )
                 break;
             CPLErr eErr = poDS->SetProjection(pszProjection);
@@ -2607,7 +2613,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         }
         else if( instr == INSTR_GetGCPCount )
         {
-            if( poDS == NULL )
+            if( poDS == nullptr )
                 break;
             int nGCPCount = poDS->GetGCPCount();
             GDALEmitEndOfJunkMarker(p);
@@ -2615,7 +2621,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         }
         else if( instr == INSTR_GetGCPProjection )
         {
-            if( poDS == NULL )
+            if( poDS == nullptr )
                 break;
             const char* pszVal = poDS->GetGCPProjection();
             GDALEmitEndOfJunkMarker(p);
@@ -2623,7 +2629,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         }
         else if( instr == INSTR_GetGCPs )
         {
-            if( poDS == NULL )
+            if( poDS == nullptr )
                 break;
             int nGCPCount = poDS->GetGCPCount();
             const GDAL_GCP* pasGCPs = poDS->GetGCPs();
@@ -2632,13 +2638,13 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         }
         else if( instr == INSTR_SetGCPs )
         {
-            if( poDS == NULL )
+            if( poDS == nullptr )
                 break;
             int nGCPCount;
-            GDAL_GCP* pasGCPs = NULL;
+            GDAL_GCP* pasGCPs = nullptr;
             if( !GDALPipeRead(p, &nGCPCount, &pasGCPs) )
                 break;
-            char* pszGCPProjection = NULL;
+            char* pszGCPProjection = nullptr;
             if( !GDALPipeRead(p, &pszGCPProjection) )
             {
                 GDALDeinitGCPs(nGCPCount, pasGCPs);
@@ -2655,7 +2661,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         }
         else if( instr == INSTR_GetFileList )
         {
-            if( poDS == NULL )
+            if( poDS == nullptr )
                 break;
             char** papszFileList = poDS->GetFileList();
             GDALEmitEndOfJunkMarker(p);
@@ -2670,9 +2676,9 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         }
         /*else if( instr == INSTR_SetDescription )
         {
-            if( poDS == NULL )
+            if( poDS == nullptr )
                 break;
-            char* pszDescription = NULL;
+            char* pszDescription = nullptr;
             if( !GDALPipeRead(p, &pszDescription) )
                 break;
             poDS->SetDescription(pszDescription);
@@ -2681,9 +2687,9 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         }*/
         else if( instr == INSTR_GetMetadata )
         {
-            if( poDS == NULL )
+            if( poDS == nullptr )
                 break;
-            char* pszDomain = NULL;
+            char* pszDomain = nullptr;
             if( !GDALPipeRead(p, &pszDomain) )
                 break;
             char** papszMD = poDS->GetMetadata(pszDomain);
@@ -2693,10 +2699,10 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         }
         else if( instr == INSTR_GetMetadataItem )
         {
-            if( poDS == NULL )
+            if( poDS == nullptr )
                 break;
-            char* pszName = NULL;
-            char* pszDomain = NULL;
+            char* pszName = nullptr;
+            char* pszDomain = nullptr;
             if( !GDALPipeRead(p, &pszName) ||
                 !GDALPipeRead(p, &pszDomain) )
             {
@@ -2712,10 +2718,10 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         }
         else if( instr == INSTR_SetMetadata )
         {
-            if( poDS == NULL )
+            if( poDS == nullptr )
                 break;
-            char** papszMetadata = NULL;
-            char* pszDomain = NULL;
+            char** papszMetadata = nullptr;
+            char* pszDomain = nullptr;
             if( !GDALPipeRead(p, &papszMetadata) ||
                 !GDALPipeRead(p, &pszDomain) )
             {
@@ -2731,11 +2737,11 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         }
         else if( instr == INSTR_SetMetadataItem )
         {
-            if( poDS == NULL )
+            if( poDS == nullptr )
                 break;
-            char* pszName = NULL;
-            char* pszValue = NULL;
-            char* pszDomain = NULL;
+            char* pszName = nullptr;
+            char* pszValue = nullptr;
+            char* pszDomain = nullptr;
             if( !GDALPipeRead(p, &pszName) ||
                 !GDALPipeRead(p, &pszValue) ||
                 !GDALPipeRead(p, &pszDomain) )
@@ -2754,13 +2760,13 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         }
         else if( instr == INSTR_IBuildOverviews )
         {
-            if( poDS == NULL )
+            if( poDS == nullptr )
                 break;
-            char* pszResampling = NULL;
+            char* pszResampling = nullptr;
             int nOverviews;
-            int* panOverviewList = NULL;
+            int* panOverviewList = nullptr;
             int nListBands;
-            int* panBandList = NULL;
+            int* panBandList = nullptr;
             if( !GDALPipeRead(p, &pszResampling) ||
                 !GDALPipeRead(p, &nOverviews) ||
                 !GDALPipeRead(p, nOverviews, &panOverviewList) ||
@@ -2787,13 +2793,13 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         }
         else if( instr == INSTR_AdviseRead )
         {
-            if( poDS == NULL )
+            if( poDS == nullptr )
                 break;
             int nXOff, nYOff, nXSize, nYSize, nBufXSize, nBufYSize;
             int nDT;
             int nBandCount;
-            int *panBandList = NULL;
-            char** papszOptions = NULL;
+            int *panBandList = nullptr;
+            char** papszOptions = nullptr;
             int nLength = 0;
             if( !GDALPipeRead(p, &nXOff) ||
                 !GDALPipeRead(p, &nYOff) ||
@@ -2812,16 +2818,16 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
             /* to check if we have band numbers to actually read */
             if( nLength != 0 )
             {
-                if( nLength != (int)sizeof(int) * nBandCount )
+                if( nLength != static_cast<int>(sizeof(int)) * nBandCount )
                 {
                     break;
                 }
 
-                panBandList = (int*) VSIMalloc(nLength);
-                if( panBandList == NULL )
+                panBandList = static_cast<int*>(VSIMalloc(nLength));
+                if( panBandList == nullptr )
                     break;
 
-                if( !GDALPipeRead_nolength(p, nLength, (void*)panBandList) )
+                if( !GDALPipeRead_nolength(p, nLength, static_cast<void*>(panBandList)) )
                 {
                     VSIFree(panBandList);
                     break;
@@ -2836,7 +2842,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
             }
 
             CPLErr eErr = poDS->AdviseRead(nXOff, nYOff, nXSize, nYSize, nBufXSize, nBufYSize,
-                                           (GDALDataType)nDT,
+                                           static_cast<GDALDataType>(nDT),
                                            nBandCount, panBandList,
                                            papszOptions);
             GDALEmitEndOfJunkMarker(p);
@@ -2846,7 +2852,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         }
         else if( instr == INSTR_IRasterIO_Read )
         {
-            if( poDS == NULL )
+            if( poDS == nullptr )
                 break;
             int nXOff, nYOff, nXSize, nYSize;
             int nBufXSize, nBufYSize;
@@ -2854,7 +2860,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
             int nBufType;
             int nBandCount;
             GSpacing nPixelSpace, nLineSpace, nBandSpace;
-            int* panBandMap = NULL;
+            int* panBandMap = nullptr;
             if( !GDALPipeRead(p, &nXOff) ||
                 !GDALPipeRead(p, &nYOff) ||
                 !GDALPipeRead(p, &nXSize) ||
@@ -2875,7 +2881,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
                nBandSpace that lead to compatible band-interleaved or pixel-
                interleaved buffers are valid. Other combinations will lead
                to segfaults. */
-            eBufType = (GDALDataType)nBufType;
+            eBufType = static_cast<GDALDataType>(nBufType);
             const int nSize = nBufXSize * nBufYSize * nBandCount *
                 GDALGetDataTypeSizeBytes(eBufType);
             if( nSize > nBufferSize )
@@ -2890,7 +2896,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
                                          eBufType,
                                          nBandCount, panBandMap,
                                          nPixelSpace, nLineSpace, nBandSpace,
-                                         NULL);
+                                         nullptr);
             CPLFree(panBandMap);
             GDALEmitEndOfJunkMarker(p);
             GDALPipeWrite(p, eErr);
@@ -2899,7 +2905,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         }
         else if( instr == INSTR_IRasterIO_Write )
         {
-            if( poDS == NULL )
+            if( poDS == nullptr )
                 break;
             int nXOff, nYOff, nXSize, nYSize;
             int nBufXSize, nBufYSize;
@@ -2907,7 +2913,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
             int nBufType;
             int nBandCount;
             GSpacing nPixelSpace, nLineSpace, nBandSpace;
-            int* panBandMap = NULL;
+            int* panBandMap = nullptr;
             if( !GDALPipeRead(p, &nXOff) ||
                 !GDALPipeRead(p, &nYOff) ||
                 !GDALPipeRead(p, &nXSize) ||
@@ -2928,7 +2934,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
                nBandSpace that lead to compatible band-interleaved or pixel-
                interleaved buffers are valid. Other combinations will lead
                to segfaults. */
-            eBufType = (GDALDataType)nBufType;
+            eBufType = static_cast<GDALDataType>(nBufType);
             const int nExpectedSize = nBufXSize * nBufYSize * nBandCount *
                 GDALGetDataTypeSizeBytes(eBufType);
             int nSize;
@@ -2954,14 +2960,14 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
                                          eBufType,
                                          nBandCount, panBandMap,
                                          nPixelSpace, nLineSpace, nBandSpace,
-                                         NULL);
+                                         nullptr);
             CPLFree(panBandMap);
             GDALEmitEndOfJunkMarker(p);
             GDALPipeWrite(p, eErr);
         }
         else if( instr == INSTR_CreateMaskBand )
         {
-            if( poDS == NULL )
+            if( poDS == nullptr )
                 break;
             int nFlags;
             if( !GDALPipeRead(p, &nFlags) )
@@ -2975,7 +2981,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
             int iBand;
             if( !GDALPipeRead(p, &iBand) )
                 break;
-            if( iBand < 0 || iBand >= (int)poSrvInstance->aBands.size() )
+            if( iBand < 0 || iBand >= static_cast<int>(poSrvInstance->aBands.size()) )
                 break;
             poBand = poSrvInstance->aBands[iBand];
         }
@@ -2996,7 +3002,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         }
         else if( instr == INSTR_Band_SetCategoryNames )
         {
-            char** papszCategoryNames = NULL;
+            char** papszCategoryNames = nullptr;
             if( !GDALPipeRead(p, &papszCategoryNames) )
                 break;
             CPLErr eErr = poBand->SetCategoryNames(papszCategoryNames);
@@ -3006,7 +3012,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         }
         else if( instr == INSTR_Band_SetDescription )
         {
-            char* pszDescription = NULL;
+            char* pszDescription = nullptr;
             if( !GDALPipeRead(p, &pszDescription) )
                 break;
             poBand->SetDescription(pszDescription);
@@ -3015,7 +3021,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         }
         else if( instr == INSTR_Band_GetMetadata )
         {
-            char* pszDomain = NULL;
+            char* pszDomain = nullptr;
             if( !GDALPipeRead(p, &pszDomain) )
                 break;
             char** papszMD = poBand->GetMetadata(pszDomain);
@@ -3025,8 +3031,8 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         }
         else if( instr == INSTR_Band_GetMetadataItem )
         {
-            char* pszName = NULL;
-            char* pszDomain = NULL;
+            char* pszName = nullptr;
+            char* pszDomain = nullptr;
             if( !GDALPipeRead(p, &pszName) ||
                 !GDALPipeRead(p, &pszDomain) )
             {
@@ -3042,8 +3048,8 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         }
         else if( instr == INSTR_Band_SetMetadata )
         {
-            char** papszMetadata = NULL;
-            char* pszDomain = NULL;
+            char** papszMetadata = nullptr;
+            char* pszDomain = nullptr;
             if( !GDALPipeRead(p, &papszMetadata) ||
                 !GDALPipeRead(p, &pszDomain) )
             {
@@ -3059,9 +3065,9 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         }
         else if( instr == INSTR_Band_SetMetadataItem )
         {
-            char* pszName = NULL;
-            char* pszValue = NULL;
-            char* pszDomain = NULL;
+            char* pszName = nullptr;
+            char* pszValue = nullptr;
+            char* pszDomain = nullptr;
             if( !GDALPipeRead(p, &pszName) ||
                 !GDALPipeRead(p, &pszValue) ||
                 !GDALPipeRead(p, &pszDomain) )
@@ -3089,7 +3095,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
             int nVal;
             if( !GDALPipeRead(p, &nVal ) )
                 break;
-            CPLErr eErr = poBand->SetColorInterpretation((GDALColorInterp)nVal);
+            CPLErr eErr = poBand->SetColorInterpretation(static_cast<GDALColorInterp>(nVal));
             GDALEmitEndOfJunkMarker(p);
             GDALPipeWrite(p, eErr);
         }
@@ -3225,7 +3231,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
                 !GDALPipeRead(p, &nBufYSize) ||
                 !GDALPipeRead(p, &nBufType) )
                 break;
-            eBufType = (GDALDataType)nBufType;
+            eBufType = static_cast<GDALDataType>(nBufType);
             const int nSize = nBufXSize * nBufYSize *
                 GDALGetDataTypeSizeBytes(eBufType);
             if( nSize > nBufferSize )
@@ -3237,7 +3243,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
             CPLErr eErr = poBand->RasterIO(GF_Read,
                                            nXOff, nYOff, nXSize, nYSize,
                                            pBuffer, nBufXSize, nBufYSize,
-                                           eBufType, 0, 0, NULL);
+                                           eBufType, 0, 0, nullptr);
             GDALEmitEndOfJunkMarker(p);
             GDALPipeWrite(p, eErr);
             GDALPipeWrite(p, nSize, pBuffer);
@@ -3256,7 +3262,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
                 !GDALPipeRead(p, &nBufYSize) ||
                 !GDALPipeRead(p, &nBufType) )
                 break;
-            eBufType = (GDALDataType)nBufType;
+            eBufType = static_cast<GDALDataType>(nBufType);
             const int nExpectedSize = nBufXSize * nBufYSize *
                 GDALGetDataTypeSizeBytes(eBufType);
             int nSize;
@@ -3275,7 +3281,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
             CPLErr eErr = poBand->RasterIO(GF_Write,
                                            nXOff, nYOff, nXSize, nYSize,
                                            pBuffer, nBufXSize, nBufYSize,
-                                           eBufType, 0, 0, NULL);
+                                           eBufType, 0, 0, nullptr);
             GDALEmitEndOfJunkMarker(p);
             GDALPipeWrite(p, eErr);
         }
@@ -3312,7 +3318,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
             double dfStdDev = 0.0;
             CPLErr eErr = poBand->ComputeStatistics(bApproxOK,
                                                     &dfMin, &dfMax, &dfMean, &dfStdDev,
-                                                    NULL, NULL);
+                                                    nullptr, nullptr);
             GDALEmitEndOfJunkMarker(p);
             GDALPipeWrite(p, eErr);
             if( eErr != CE_Failure )
@@ -3360,17 +3366,18 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
                 !GDALPipeRead(p, &bIncludeOutOfRange) ||
                 !GDALPipeRead(p, &bApproxOK) )
                 break;
-            GUIntBig* panHistogram = (GUIntBig*) VSIMalloc2(sizeof(GUIntBig), nBuckets);
-            if( panHistogram == NULL )
+            GUIntBig* panHistogram = static_cast<GUIntBig*>(
+                VSIMalloc2(sizeof(GUIntBig), nBuckets));
+            if( panHistogram == nullptr )
                 break;
             CPLErr eErr = poBand->GetHistogram(dfMin, dfMax,
                                      nBuckets, panHistogram,
-                                     bIncludeOutOfRange, bApproxOK, NULL, NULL);
+                                     bIncludeOutOfRange, bApproxOK, nullptr, nullptr);
             GDALEmitEndOfJunkMarker(p);
             GDALPipeWrite(p, eErr);
             if( eErr != CE_Failure )
             {
-                GDALPipeWrite(p, nBuckets * (int)sizeof(GUIntBig), panHistogram);
+                GDALPipeWrite(p, nBuckets * static_cast<int>(sizeof(GUIntBig)), panHistogram);
             }
             CPLFree(panHistogram);
         }
@@ -3381,10 +3388,10 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
             int bForce;
             if( !GDALPipeRead(p, &bForce) )
                 break;
-            GUIntBig* panHistogram = NULL;
+            GUIntBig* panHistogram = nullptr;
             CPLErr eErr = poBand->GetDefaultHistogram(&dfMin, &dfMax,
                                                       &nBuckets, &panHistogram,
-                                                      bForce, NULL, NULL);
+                                                      bForce, nullptr, nullptr);
             GDALEmitEndOfJunkMarker(p);
             GDALPipeWrite(p, eErr);
             if( eErr != CE_Failure )
@@ -3392,7 +3399,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
                 GDALPipeWrite(p, dfMin);
                 GDALPipeWrite(p, dfMax);
                 GDALPipeWrite(p, nBuckets);
-                GDALPipeWrite(p, nBuckets * (int)sizeof(GUIntBig) , panHistogram);
+                GDALPipeWrite(p, nBuckets * static_cast<int>(sizeof(GUIntBig)) , panHistogram);
             }
             CPLFree(panHistogram);
         }
@@ -3400,7 +3407,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         {
             double dfMin, dfMax;
             int nBuckets;
-            GUIntBig* panHistogram = NULL;
+            GUIntBig* panHistogram = nullptr;
             if( !GDALPipeRead(p, &dfMin) ||
                 !GDALPipeRead(p, &dfMax) ||
                 !GDALPipeRead(p, &nBuckets) ||
@@ -3475,7 +3482,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         }
         else if( instr == INSTR_Band_SetColorTable )
         {
-            GDALColorTable* poColorTable = NULL;
+            GDALColorTable* poColorTable = nullptr;
             if( !GDALPipeRead(p, &poColorTable) )
                 break;
             CPLErr eErr = poBand->SetColorTable(poColorTable);
@@ -3491,7 +3498,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         }
         else if( instr == INSTR_Band_SetUnitType )
         {
-            char* pszUnitType = NULL;
+            char* pszUnitType = nullptr;
             if( !GDALPipeRead(p, &pszUnitType) )
                 break;
             CPLErr eErr = poBand->SetUnitType(pszUnitType);
@@ -3501,9 +3508,9 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         }
         else if( instr == INSTR_Band_BuildOverviews )
         {
-            char* pszResampling = NULL;
+            char* pszResampling = nullptr;
             int nOverviews;
-            int* panOverviewList = NULL;
+            int* panOverviewList = nullptr;
             if( !GDALPipeRead(p, &pszResampling) ||
                 !GDALPipeRead(p, &nOverviews) ||
                 !GDALPipeRead(p, nOverviews, &panOverviewList) )
@@ -3513,7 +3520,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
                 break;
             }
             CPLErr eErr = poBand->BuildOverviews(pszResampling, nOverviews,
-                                                 panOverviewList, NULL, NULL);
+                                                 panOverviewList, nullptr, nullptr);
             GDALEmitEndOfJunkMarker(p);
             GDALPipeWrite(p, eErr);
             CPLFree(pszResampling);
@@ -3527,7 +3534,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         }
         else if( instr == INSTR_Band_SetDefaultRAT )
         {
-            GDALRasterAttributeTable* poRAT = NULL;
+            GDALRasterAttributeTable* poRAT = nullptr;
             if( !GDALPipeRead(p, &poRAT) )
                 break;
             CPLErr eErr = poBand->SetDefaultRAT(poRAT);
@@ -3540,7 +3547,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
         {
             int nXOff, nYOff, nXSize, nYSize, nBufXSize, nBufYSize;
             int nDT;
-            char** papszOptions = NULL;
+            char** papszOptions = nullptr;
             if( !GDALPipeRead(p, &nXOff) ||
                 !GDALPipeRead(p, &nYOff) ||
                 !GDALPipeRead(p, &nXSize) ||
@@ -3551,16 +3558,16 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
                 !GDALPipeRead(p, &papszOptions) )
                 break;
             CPLErr eErr = poBand->AdviseRead(nXOff, nYOff, nXSize, nYSize, nBufXSize, nBufYSize,
-                                             (GDALDataType)nDT, papszOptions);
+                                             static_cast<GDALDataType>(nDT), papszOptions);
             GDALEmitEndOfJunkMarker(p);
             GDALPipeWrite(p, eErr);
             CSLDestroy(papszOptions);
         }
 
-        if( poSrcDS == NULL )
+        if( poSrcDS == nullptr )
         {
-            GDALPipeWrite(p, (int)aoErrors.size());
-            for(int i=0;i<(int)aoErrors.size();i++)
+            GDALPipeWrite(p, static_cast<int>(aoErrors.size()));
+            for(size_t i=0;i<aoErrors.size();i++)
             {
                 GDALPipeWrite(p, aoErrors[i].eErr);
                 GDALPipeWrite(p, aoErrors[i].nErrNo);
@@ -3575,7 +3582,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
     if( !bIterateForever )
         GDALPipeFlushBuffer(p);
 
-    if( poSrcDS == NULL )
+    if( poSrcDS == nullptr )
         CPLPopErrorHandler();
 
     CPLSetThreadLocalConfigOption("GDAL_API_PROXY", pszOldValDup);
@@ -3584,7 +3591,7 @@ static int GDALServerLoopInternal(GDALServerInstance* poSrvInstance,
     // fprintf(stderr, "[%d] finished = %d\n", (int)getpid(), nRet);
     //fprintf(stderr, "End of loop: poSrcDS = %p, poDS = %p\n", poSrcDS, poDS);
 
-    if( poSrcDS == NULL )
+    if( poSrcDS == nullptr )
         poSrvInstance->poDS = poDS;
     else
         poSrvInstance->aBands.resize(0);
@@ -3611,7 +3618,7 @@ int GDALServerLoop(CPL_FILE_HANDLE fin, CPL_FILE_HANDLE fout)
 
     GDALPipe* p = GDALPipeBuild(fin, fout);
 
-    int nRet = GDALServerLoop(p, NULL, NULL, NULL);
+    int nRet = GDALServerLoop(p, nullptr, nullptr, nullptr);
 
     GDALPipeFree(p);
 
@@ -3631,7 +3638,7 @@ int GDALServerLoopSocket(CPL_SOCKET nSocket)
 
     GDALPipe* p = GDALPipeBuild(nSocket);
 
-    int nRet = GDALServerLoop(p, NULL, NULL, NULL);
+    int nRet = GDALServerLoop(p, nullptr, nullptr, nullptr);
 
     GDALPipeFree(p);
 
@@ -3646,10 +3653,10 @@ GDALClientDataset::GDALClientDataset(GDALServerSpawnedProcess* sspIn)
 {
     ssp = sspIn;
     p = ssp->p;
-    bFreeDriver = FALSE;
+    bFreeDriver = false;
     nGCPCount = 0;
-    pasGCPs = NULL;
-    async = NULL;
+    pasGCPs = nullptr;
+    async = nullptr;
     memset(abyCaps, 0, sizeof(abyCaps));
 }
 
@@ -3659,12 +3666,12 @@ GDALClientDataset::GDALClientDataset(GDALServerSpawnedProcess* sspIn)
 
 GDALClientDataset::GDALClientDataset(GDALPipe* pIn)
 {
-    ssp = NULL;
+    ssp = nullptr;
     p = pIn;
-    bFreeDriver = FALSE;
+    bFreeDriver = false;
     nGCPCount = 0;
-    pasGCPs = NULL;
-    async = NULL;
+    pasGCPs = nullptr;
+    async = nullptr;
     memset(abyCaps, 0, sizeof(abyCaps));
 }
 /************************************************************************/
@@ -3692,7 +3699,7 @@ GDALClientDataset::~GDALClientDataset()
         CPLFree(pasGCPs);
     }
 
-    if( ssp != NULL )
+    if( ssp != nullptr )
         GDALServerSpawnAsyncFinish(ssp);
     if( bFreeDriver )
         delete poDriver;
@@ -3707,7 +3714,7 @@ int GDALClientDataset::ProcessAsyncProgress()
     if( !async ) return TRUE;
     CPLMutexHolderD(&(async->hMutex));
     if( !async->bUpdated ) return async->bRet;
-    async->bUpdated = FALSE;
+    async->bUpdated = false;
     if( !GDALPipeWrite(p, INSTR_Progress) ||
         !GDALPipeWrite(p, async->dfComplete) ||
         !GDALPipeWrite(p, async->pszProgressMsg) )
@@ -3756,12 +3763,12 @@ CPLErr GDALClientDataset::IBuildOverviews( const char *pszResampling,
     if( !GDALPipeWrite(p, INSTR_IBuildOverviews) ||
         !GDALPipeWrite(p, pszResampling) ||
         !GDALPipeWrite(p, nOverviews) ||
-        !GDALPipeWrite(p, nOverviews * (int)sizeof(int), panOverviewList) ||
+        !GDALPipeWrite(p, nOverviews * static_cast<int>(sizeof(int)), panOverviewList) ||
         !GDALPipeWrite(p, nListBands) ||
-        !GDALPipeWrite(p, nListBands * (int)sizeof(int), panBandList) )
+        !GDALPipeWrite(p, nListBands * static_cast<int>(sizeof(int)), panBandList) )
         return CE_Failure;
 
-    if( GDALServerLoop(p, NULL, pfnProgress, pProgressData) != 0 )
+    if( GDALServerLoop(p, nullptr, pfnProgress, pProgressData) != 0 )
     {
         GDALConsumeErrors(p);
         return CE_Failure;
@@ -3770,7 +3777,7 @@ CPLErr GDALClientDataset::IBuildOverviews( const char *pszResampling,
     GDALConsumeErrors(p);
 
     for(int i=0; i<nBands;i++)
-        ((GDALClientRasterBand*)papoBands[i])->ClearOverviewCache();
+        (cpl::down_cast<GDALClientRasterBand*>(papoBands[i]))->ClearOverviewCache();
 
     return CE_None;
 }
@@ -3823,7 +3830,7 @@ CPLErr GDALClientDataset::IRasterIO( GDALRWFlag eRWFlag,
     if( eRWFlag == GF_Write )
     {
         for(int i=0;i<nBands;i++)
-            ((GDALClientRasterBand*)GetRasterBand(i+1))->InvalidateCachedLines();
+            cpl::down_cast<GDALClientRasterBand*>(GetRasterBand(i+1))->InvalidateCachedLines();
     }
 
     if( !GDALPipeWrite(p, ( eRWFlag == GF_Read ) ? INSTR_IRasterIO_Read : INSTR_IRasterIO_Write ) ||
@@ -3835,7 +3842,7 @@ CPLErr GDALClientDataset::IRasterIO( GDALRWFlag eRWFlag,
         !GDALPipeWrite(p, nBufYSize) ||
         !GDALPipeWrite(p, eBufType) ||
         !GDALPipeWrite(p, nBandCount) ||
-        !GDALPipeWrite(p, nBandCount * (int)sizeof(int), panBandMap) )
+        !GDALPipeWrite(p, nBandCount * static_cast<int>(sizeof(int)), panBandMap) )
         return CE_Failure;
 
     if( bDirectCopy )
@@ -3865,7 +3872,7 @@ CPLErr GDALClientDataset::IRasterIO( GDALRWFlag eRWFlag,
             int nSize;
             if( !GDALPipeRead(p, &nSize) )
                 return CE_Failure;
-            GIntBig nExpectedSize = (GIntBig)nBufXSize * nBufYSize * nBandCount * nDataTypeSize;
+            GIntBig nExpectedSize = static_cast<GIntBig>(nBufXSize) * nBufYSize * nBandCount * nDataTypeSize;
             if( nSize != nExpectedSize )
                 return CE_Failure;
             if( bDirectCopy )
@@ -3875,8 +3882,8 @@ CPLErr GDALClientDataset::IRasterIO( GDALRWFlag eRWFlag,
             }
             else
             {
-                GByte* pBuf = (GByte*)VSIMalloc(nSize);
-                if( pBuf == NULL )
+                GByte* pBuf = static_cast<GByte*>(VSIMalloc(nSize));
+                if( pBuf == nullptr )
                     return CE_Failure;
                 if( !GDALPipeRead_nolength(p, nSize, pBuf) )
                 {
@@ -3889,7 +3896,7 @@ CPLErr GDALClientDataset::IRasterIO( GDALRWFlag eRWFlag,
                     {
                         GDALCopyWords( pBuf + (iBand * nBufYSize + j) * nBufXSize * nDataTypeSize,
                                        eBufType, nDataTypeSize,
-                                       (GByte*)pData + iBand * nBandSpace + j * nLineSpace,
+                                       static_cast<GByte*>(pData) + iBand * nBandSpace + j * nLineSpace,
                                        eBufType, static_cast<int>(nPixelSpace),
                                        nBufXSize);
                     }
@@ -3900,10 +3907,10 @@ CPLErr GDALClientDataset::IRasterIO( GDALRWFlag eRWFlag,
     }
     else
     {
-        GIntBig nSizeBig = (GIntBig)nBufXSize * nBufYSize * nBandCount * nDataTypeSize;
-        int nSize = (int)nSizeBig;
-        if( nSizeBig != nSize )
+        GIntBig nSizeBig = static_cast<GIntBig>(nBufXSize) * nBufYSize * nBandCount * nDataTypeSize;
+        if( !CPL_INT64_FITS_ON_INT32(nSizeBig) )
             return CE_Failure;
+        int nSize = static_cast<int>(nSizeBig);
         if( bDirectCopy  )
         {
             if( !GDALPipeWrite(p, nSize, pData) )
@@ -3911,14 +3918,14 @@ CPLErr GDALClientDataset::IRasterIO( GDALRWFlag eRWFlag,
         }
         else
         {
-            GByte* pBuf = (GByte*)VSIMalloc(nSize);
-            if( pBuf == NULL )
+            GByte* pBuf = static_cast<GByte*>(VSIMalloc(nSize));
+            if( pBuf == nullptr )
                 return CE_Failure;
             for(int iBand=0;iBand<nBandCount;iBand++)
             {
                 for(int j=0;j<nBufYSize;j++)
                 {
-                    GDALCopyWords( (GByte*)pData + iBand * nBandSpace + j * nLineSpace,
+                    GDALCopyWords( static_cast<const GByte*>(pData) + iBand * nBandSpace + j * nLineSpace,
                                    eBufType, static_cast<int>(nPixelSpace),
                                    pBuf + (iBand * nBufYSize + j) * nBufXSize * nDataTypeSize,
                                    eBufType, nDataTypeSize,
@@ -4001,12 +4008,12 @@ const char* GDALClientDataset::GetProjectionRef()
     if( !GDALSkipUntilEndOfJunkMarker(p) )
         return osProjection;
 
-    char* pszStr = NULL;
+    char* pszStr = nullptr;
     if( !GDALPipeRead(p, &pszStr) )
         return osProjection;
     GDALConsumeErrors(p);
-    if( pszStr == NULL )
-        return NULL;
+    if( pszStr == nullptr )
+        return nullptr;
     osProjection = pszStr;
     CPLFree(pszStr);
     return osProjection;
@@ -4065,12 +4072,12 @@ const char * GDALClientDataset::GetGCPProjection()
     if( !GDALSkipUntilEndOfJunkMarker(p) )
         return osGCPProjection;
 
-    char* pszStr = NULL;
+    char* pszStr = nullptr;
     if( !GDALPipeRead(p, &pszStr) )
         return osGCPProjection;
     GDALConsumeErrors(p);
-    if( pszStr == NULL )
-        return NULL;
+    if( pszStr == nullptr )
+        return nullptr;
     osGCPProjection = pszStr;
     CPLFree(pszStr);
     return osGCPProjection;
@@ -4087,20 +4094,20 @@ const GDAL_GCP * GDALClientDataset::GetGCPs()
 
     CLIENT_ENTER();
     if( !GDALPipeWrite(p, INSTR_GetGCPs) )
-        return NULL;
+        return nullptr;
     if( !GDALSkipUntilEndOfJunkMarker(p) )
-        return NULL;
+        return nullptr;
 
     if( nGCPCount > 0 )
     {
         GDALDeinitGCPs(nGCPCount, pasGCPs);
         CPLFree(pasGCPs);
-        pasGCPs = NULL;
+        pasGCPs = nullptr;
     }
     nGCPCount = 0;
 
     if( !GDALPipeRead(p, &nGCPCount, &pasGCPs) )
-        return NULL;
+        return nullptr;
 
     GDALConsumeErrors(p);
     return pasGCPs;
@@ -4135,24 +4142,24 @@ char** GDALClientDataset::GetFileList()
 
     CLIENT_ENTER();
     if( !GDALPipeWrite(p, INSTR_GetFileList) )
-        return NULL;
+        return nullptr;
     if( !GDALSkipUntilEndOfJunkMarker(p) )
-        return NULL;
+        return nullptr;
 
-    char** papszFileList = NULL;
+    char** papszFileList = nullptr;
     if( !GDALPipeRead(p, &papszFileList) )
-        return NULL;
+        return nullptr;
     GDALConsumeErrors(p);
 
     /* If server is Windows and client is Unix, then replace backslashes */
     /* by slashes */
 #ifndef WIN32
     char** papszIter = papszFileList;
-    while( papszIter != NULL && *papszIter != NULL )
+    while( papszIter != nullptr && *papszIter != nullptr )
     {
         char* pszIter = *papszIter;
         char* pszBackSlash;
-        while( (pszBackSlash = strchr(pszIter, '\\')) != NULL )
+        while( (pszBackSlash = strchr(pszIter, '\\')) != nullptr )
         {
             *pszBackSlash = '/';
             pszIter = pszBackSlash + 1;
@@ -4174,7 +4181,7 @@ char** GDALClientDataset::GetMetadata( const char * pszDomain )
         return GDALPamDataset::GetMetadata(pszDomain);
 
     CLIENT_ENTER();
-    if( pszDomain == NULL )
+    if( pszDomain == nullptr )
         pszDomain = "";
     std::map<CPLString, char**>::iterator oIter = aoMapMetadata.find(CPLString(pszDomain));
     if( oIter != aoMapMetadata.end() )
@@ -4184,13 +4191,13 @@ char** GDALClientDataset::GetMetadata( const char * pszDomain )
     }
     if( !GDALPipeWrite(p, INSTR_GetMetadata) ||
         !GDALPipeWrite(p, pszDomain) )
-        return NULL;
+        return nullptr;
     if( !GDALSkipUntilEndOfJunkMarker(p) )
-        return NULL;
+        return nullptr;
 
-    char** papszMD = NULL;
+    char** papszMD = nullptr;
     if( !GDALPipeRead(p, &papszMD) )
-        return NULL;
+        return nullptr;
     aoMapMetadata[pszDomain] = papszMD;
     GDALConsumeErrors(p);
     return papszMD;
@@ -4221,7 +4228,7 @@ const char* GDALClientDataset::GetMetadataItem( const char * pszName,
         return GDALPamDataset::GetMetadataItem(pszName, pszDomain);
 
     CLIENT_ENTER();
-    if( pszDomain == NULL )
+    if( pszDomain == nullptr )
         pszDomain = "";
     std::pair<CPLString,CPLString> oPair =
         std::pair<CPLString,CPLString> (CPLString(pszDomain), CPLString(pszName));
@@ -4235,13 +4242,13 @@ const char* GDALClientDataset::GetMetadataItem( const char * pszName,
     if( !GDALPipeWrite(p, INSTR_GetMetadataItem) ||
         !GDALPipeWrite(p, pszName) ||
         !GDALPipeWrite(p, pszDomain) )
-        return NULL;
+        return nullptr;
     if( !GDALSkipUntilEndOfJunkMarker(p) )
-        return NULL;
+        return nullptr;
 
-    char* pszItem = NULL;
+    char* pszItem = nullptr;
     if( !GDALPipeRead(p, &pszItem) )
-        return NULL;
+        return nullptr;
     aoMapMetadataItem[oPair] = pszItem;
     GDALConsumeErrors(p);
     return pszItem;
@@ -4298,7 +4305,7 @@ void GDALClientDataset::FlushCache()
     }
 
     for(int i=0;i<nBands;i++)
-        ((GDALClientRasterBand*)GetRasterBand(i+1))->InvalidateCachedLines();
+        cpl::down_cast<GDALClientRasterBand*>(GetRasterBand(i+1))->InvalidateCachedLines();
 
     CLIENT_ENTER();
     SetPamFlags(0);
@@ -4331,7 +4338,7 @@ CPLErr GDALClientDataset::AddBand( GDALDataType eType,
         return eRet;
     if( eRet == CE_None )
     {
-        GDALRasterBand* poBand = NULL;
+        GDALRasterBand* poBand = nullptr;
         if( !GDALPipeRead(p, this, &poBand, abyCaps) )
             return CE_Failure;
         SetBand(GetRasterCount() + 1, poBand);
@@ -4365,7 +4372,7 @@ CPLErr GDALClientDataset::AdviseRead( int nXOff, int nYOff, int nXSize, int nYSi
         !GDALPipeWrite(p, nBufYSize) ||
         !GDALPipeWrite(p, eDT) ||
         !GDALPipeWrite(p, nBandCount) ||
-        !GDALPipeWrite(p, panBandList ? nBandCount * (int)sizeof(int) : 0, panBandList) ||
+        !GDALPipeWrite(p, panBandList ? nBandCount * static_cast<int>(sizeof(int)) : 0, panBandList) ||
         !GDALPipeWrite(p, papszOptions) )
         return CE_Failure;
     return CPLErrOnlyRet(p);
@@ -4411,18 +4418,18 @@ GDALClientRasterBand::GDALClientRasterBand(GDALPipe* pIn, int iSrvBandIn,
     eDataType = eDataTypeIn;
     nBlockXSize = nBlockXSizeIn;
     nBlockYSize = nBlockYSizeIn;
-    papszCategoryNames = NULL;
-    poColorTable = NULL;
-    pszUnitType = NULL;
-    poMaskBand = NULL;
-    poRAT = NULL;
+    papszCategoryNames = nullptr;
+    poColorTable = nullptr;
+    pszUnitType = nullptr;
+    poMaskBand = nullptr;
+    poRAT = nullptr;
     memcpy(abyCaps, abyCapsIn, sizeof(abyCaps));
     bEnableLineCaching = CPLTestBool(CPLGetConfigOption(
         "GDAL_API_PROXY_LINE_CACHING", "YES"));
     nSuccessiveLinesRead = 0;
     eLastBufType = GDT_Unknown;
     nLastYOff = -1;
-    pabyCachedLines = NULL;
+    pabyCachedLines = nullptr;
     eCachedBufType = GDT_Unknown;
     nCachedYStart = -1;
     nCachedLines = 0;
@@ -4454,7 +4461,7 @@ GDALClientRasterBand::~GDALClientRasterBand()
     for( ; oIterMD != aoMapMetadata.end(); ++oIterMD )
         CSLDestroy(oIterMD->second);
 
-    for(int i=0; i < (int)apoOldMaskBands.size(); i++)
+    for(size_t i=0; i < apoOldMaskBands.size(); i++)
         delete apoOldMaskBands[i];
 }
 
@@ -4464,7 +4471,7 @@ GDALClientRasterBand::~GDALClientRasterBand()
 
 GDALRasterBand* GDALClientRasterBand::CreateFakeMaskBand()
 {
-    if( poMaskBand == NULL )
+    if( poMaskBand == nullptr )
         poMaskBand = new GDALAllValidMaskBand(this);
     return poMaskBand;
 }
@@ -4511,14 +4518,14 @@ char ** GDALClientRasterBand::GetCategoryNames()
 
     CLIENT_ENTER();
     if( !WriteInstr(INSTR_Band_GetCategoryNames) )
-        return NULL;
+        return nullptr;
     if( !GDALSkipUntilEndOfJunkMarker(p) )
-        return NULL;
+        return nullptr;
 
     CSLDestroy(papszCategoryNames);
-    papszCategoryNames = NULL;
+    papszCategoryNames = nullptr;
     if( !GDALPipeRead(p, &papszCategoryNames) )
-        return NULL;
+        return nullptr;
     GDALConsumeErrors(p);
     return papszCategoryNames;
 }
@@ -4570,7 +4577,7 @@ char** GDALClientRasterBand::GetMetadata( const char * pszDomain )
         return GDALPamRasterBand::GetMetadata(pszDomain);
 
     CLIENT_ENTER();
-    if( pszDomain == NULL )
+    if( pszDomain == nullptr )
         pszDomain = "";
     std::map<CPLString, char**>::iterator oIter = aoMapMetadata.find(CPLString(pszDomain));
     if( oIter != aoMapMetadata.end() )
@@ -4580,13 +4587,13 @@ char** GDALClientRasterBand::GetMetadata( const char * pszDomain )
     }
     if( !WriteInstr(INSTR_Band_GetMetadata) ||
         !GDALPipeWrite(p, pszDomain) )
-        return NULL;
+        return nullptr;
     if( !GDALSkipUntilEndOfJunkMarker(p) )
-        return NULL;
+        return nullptr;
 
-    char** papszMD = NULL;
+    char** papszMD = nullptr;
     if( !GDALPipeRead(p, &papszMD) )
-        return NULL;
+        return nullptr;
     aoMapMetadata[pszDomain] = papszMD;
     GDALConsumeErrors(p);
     return papszMD;
@@ -4603,7 +4610,7 @@ const char* GDALClientRasterBand::GetMetadataItem( const char * pszName,
         return GDALPamRasterBand::GetMetadataItem(pszName, pszDomain);
 
     CLIENT_ENTER();
-    if( pszDomain == NULL )
+    if( pszDomain == nullptr )
         pszDomain = "";
     std::pair<CPLString,CPLString> oPair =
         std::pair<CPLString,CPLString> (CPLString(pszDomain), CPLString(pszName));
@@ -4617,13 +4624,13 @@ const char* GDALClientRasterBand::GetMetadataItem( const char * pszName,
     if( !WriteInstr(INSTR_Band_GetMetadataItem) ||
         !GDALPipeWrite(p, pszName) ||
         !GDALPipeWrite(p, pszDomain) )
-        return NULL;
+        return nullptr;
     if( !GDALSkipUntilEndOfJunkMarker(p) )
-        return NULL;
+        return nullptr;
 
-    char* pszItem = NULL;
+    char* pszItem = nullptr;
     if( !GDALPipeRead(p, &pszItem) )
-        return NULL;
+        return nullptr;
     aoMapMetadataItem[oPair] = pszItem;
     GDALConsumeErrors(p);
     return pszItem;
@@ -4686,7 +4693,7 @@ GDALColorInterp GDALClientRasterBand::GetColorInterpretation()
     if( !GDALPipeRead(p, &nInt) )
         return GCI_Undefined;
     GDALConsumeErrors(p);
-    return (GDALColorInterp)nInt;
+    return static_cast<GDALColorInterp>(nInt);
 }
 
 /************************************************************************/
@@ -4896,7 +4903,7 @@ CPLErr GDALClientRasterBand::GetHistogram( double dfMin, double dfMax,
     {
         int nSize;
         if( !GDALPipeRead(p, &nSize) ||
-            nSize != nBuckets * (int)sizeof(GUIntBig) ||
+            nSize != nBuckets * static_cast<int>(sizeof(GUIntBig)) ||
             !GDALPipeRead_nolength(p, nSize, panHistogram) )
             return eDefaultRet;
     }
@@ -4940,23 +4947,23 @@ CPLErr GDALClientRasterBand::GetDefaultHistogram( double *pdfMin,
             !GDALPipeRead(p, &nBuckets) ||
             !GDALPipeRead(p, &nSize) )
             return CE_Failure;
-        if( nSize != nBuckets * (int)sizeof(GUIntBig) )
+        if( nSize != nBuckets * static_cast<int>(sizeof(GUIntBig)) )
             return CE_Failure;
         if( pdfMin ) *pdfMin = dfMin;
         if( pdfMax ) *pdfMax = dfMax;
         if( pnBuckets ) *pnBuckets = nBuckets;
         if( ppanHistogram )
         {
-            *ppanHistogram = (GUIntBig*)VSIMalloc(nSize);
-            if( *ppanHistogram == NULL )
+            *ppanHistogram = static_cast<GUIntBig*>(VSIMalloc(nSize));
+            if( *ppanHistogram == nullptr )
                 return CE_Failure;
             if( !GDALPipeRead_nolength(p, nSize, *ppanHistogram) )
                 return CE_Failure;
         }
         else
         {
-            GUIntBig *panHistogram = (GUIntBig*)VSIMalloc(nSize);
-            if( panHistogram == NULL )
+            GUIntBig *panHistogram = static_cast<GUIntBig*>(VSIMalloc(nSize));
+            if( panHistogram == nullptr )
                 return CE_Failure;
             if( !GDALPipeRead_nolength(p, nSize, panHistogram) )
             {
@@ -4985,7 +4992,7 @@ CPLErr GDALClientRasterBand::SetDefaultHistogram( double dfMin, double dfMax,
         !GDALPipeWrite(p, dfMin) ||
         !GDALPipeWrite(p, dfMax) ||
         !GDALPipeWrite(p, nBuckets) ||
-        !GDALPipeWrite(p, nBuckets * (int)sizeof(GUIntBig), panHistogram) )
+        !GDALPipeWrite(p, nBuckets * static_cast<int>(sizeof(GUIntBig)), panHistogram) )
         return CE_Failure;
     return CPLErrOnlyRet(p);
 }
@@ -5000,8 +5007,8 @@ CPLErr GDALClientRasterBand::IReadBlock(int nBlockXOff, int nBlockYOff, void* pI
         return CE_Failure;
 
     CLIENT_ENTER();
-    if( poDS != NULL )
-        ((GDALClientDataset*)poDS)->ProcessAsyncProgress();
+    if( poDS != nullptr )
+        cpl::down_cast<GDALClientDataset*>(poDS)->ProcessAsyncProgress();
 
     if( !WriteInstr(INSTR_Band_IReadBlock) ||
         !GDALPipeWrite(p, nBlockXOff) ||
@@ -5076,7 +5083,7 @@ CPLErr GDALClientRasterBand::IRasterIO_read_internal(
     if( !GDALPipeRead(p, &nSize) )
         return CE_Failure;
     const int nDataTypeSize = GDALGetDataTypeSizeBytes(eBufType);
-    GIntBig nExpectedSize = (GIntBig)nBufXSize * nBufYSize * nDataTypeSize;
+    GIntBig nExpectedSize = static_cast<GIntBig>(nBufXSize) * nBufYSize * nDataTypeSize;
     if( nSize != nExpectedSize )
         return CE_Failure;
     if( nPixelSpace == nDataTypeSize &&
@@ -5087,8 +5094,8 @@ CPLErr GDALClientRasterBand::IRasterIO_read_internal(
     }
     else
     {
-        GByte* pBuf = (GByte*)VSIMalloc(nSize);
-        if( pBuf == NULL )
+        GByte* pBuf = static_cast<GByte*>(VSIMalloc(nSize));
+        if( pBuf == nullptr )
             return CE_Failure;
         if( !GDALPipeRead_nolength(p, nSize, pBuf) )
         {
@@ -5099,7 +5106,7 @@ CPLErr GDALClientRasterBand::IRasterIO_read_internal(
         {
             GDALCopyWords( pBuf + j * nBufXSize * nDataTypeSize,
                             eBufType, nDataTypeSize,
-                            (GByte*)pData + j * nLineSpace,
+                            static_cast<GByte*>(pData) + j * nLineSpace,
                             eBufType, static_cast<int>(nPixelSpace),
                             nBufXSize );
         }
@@ -5141,8 +5148,8 @@ CPLErr GDALClientRasterBand::IRasterIO( GDALRWFlag eRWFlag,
     CLIENT_ENTER();
     CPLErr eRet = CE_Failure;
 
-    if( poDS != NULL )
-        ((GDALClientDataset*)poDS)->ProcessAsyncProgress();
+    if( poDS != nullptr )
+        cpl::down_cast<GDALClientDataset*>(poDS)->ProcessAsyncProgress();
 
     if( eRWFlag == GF_Read )
     {
@@ -5181,14 +5188,14 @@ CPLErr GDALClientRasterBand::IRasterIO( GDALRWFlag eRWFlag,
                 nSuccessiveLinesRead ++;
                 if( nSuccessiveLinesRead >= 2 )
                 {
-                    if( pabyCachedLines == NULL )
+                    if( pabyCachedLines == nullptr )
                     {
                         nCachedLines = 10 * 1024 * 1024 / (nXSize * nBufTypeSize);
                         if( nCachedLines > 1 )
-                            pabyCachedLines = (GByte*) VSIMalloc(
-                                nCachedLines * nXSize * nBufTypeSize);
+                            pabyCachedLines = static_cast<GByte*>(VSIMalloc(
+                                nCachedLines * nXSize * nBufTypeSize));
                     }
-                    if( pabyCachedLines != NULL )
+                    if( pabyCachedLines != nullptr )
                     {
                         int nLinesToRead = nCachedLines;
                         if( nYOff + nLinesToRead > nRasterYSize )
@@ -5248,8 +5255,8 @@ CPLErr GDALClientRasterBand::IRasterIO( GDALRWFlag eRWFlag,
             return CE_Failure;
 
         const int nDataTypeSize = GDALGetDataTypeSizeBytes(eBufType);
-        GIntBig nSizeBig = (GIntBig)nBufXSize * nBufYSize * nDataTypeSize;
-        int nSize = (int)nSizeBig;
+        GIntBig nSizeBig = static_cast<GIntBig>(nBufXSize) * nBufYSize * nDataTypeSize;
+        int nSize = static_cast<int>(nSizeBig);
         if( nSizeBig != nSize )
             return CE_Failure;
         if( nPixelSpace == nDataTypeSize &&
@@ -5260,12 +5267,12 @@ CPLErr GDALClientRasterBand::IRasterIO( GDALRWFlag eRWFlag,
         }
         else
         {
-            GByte* pBuf = (GByte*)VSIMalloc(nSize);
-            if( pBuf == NULL )
+            GByte* pBuf = static_cast<GByte*>(VSIMalloc(nSize));
+            if( pBuf == nullptr )
                 return CE_Failure;
             for(int j=0;j<nBufYSize;j++)
             {
-                GDALCopyWords( (GByte*)pData + j * nLineSpace,
+                GDALCopyWords( static_cast<const GByte*>(pData) + j * nLineSpace,
                                eBufType, static_cast<int>(nPixelSpace),
                                pBuf + j * nBufXSize * nDataTypeSize,
                                eBufType, nDataTypeSize,
@@ -5432,27 +5439,27 @@ GDALColorTable *GDALClientRasterBand::GetColorTable()
 
     CLIENT_ENTER();
     if( !WriteInstr(INSTR_Band_GetColorTable) )
-        return NULL;
+        return nullptr;
     if( !GDALSkipUntilEndOfJunkMarker(p) )
-        return NULL;
+        return nullptr;
 
-    GDALColorTable* poNewColorTable = NULL;
+    GDALColorTable* poNewColorTable = nullptr;
     if( !GDALPipeRead(p, &poNewColorTable) )
-        return NULL;
+        return nullptr;
 
-    if( poNewColorTable != NULL && poColorTable != NULL )
+    if( poNewColorTable != nullptr && poColorTable != nullptr )
     {
         *poColorTable = *poNewColorTable;
         delete poNewColorTable;
     }
-    else if( poNewColorTable != NULL && poColorTable == NULL )
+    else if( poNewColorTable != nullptr && poColorTable == nullptr )
     {
         poColorTable = poNewColorTable;
     }
-    else if( poColorTable != NULL )
+    else if( poColorTable != nullptr )
     {
         delete poColorTable;
-        poColorTable = NULL;
+        poColorTable = nullptr;
     }
 
     GDALConsumeErrors(p);
@@ -5475,7 +5482,7 @@ const char *GDALClientRasterBand::GetUnitType()
         return "";
 
     CPLFree(pszUnitType);
-    pszUnitType = NULL;
+    pszUnitType = nullptr;
     if( !GDALPipeRead(p, &pszUnitType) )
         return "";
     GDALConsumeErrors(p);
@@ -5597,14 +5604,14 @@ GDALRasterBand *GDALClientRasterBand::GetOverview(int iOverview)
 
     if( !WriteInstr(INSTR_Band_GetOverview) ||
         !GDALPipeWrite(p, iOverview) )
-        return NULL;
+        return nullptr;
 
     if( !GDALSkipUntilEndOfJunkMarker(p) )
-        return NULL;
+        return nullptr;
 
-    GDALRasterBand* poBand = NULL;
-    if( !GDALPipeRead(p, (GDALClientDataset*) NULL, &poBand, abyCaps) )
-        return NULL;
+    GDALRasterBand* poBand = nullptr;
+    if( !GDALPipeRead(p, static_cast<GDALClientDataset*>(nullptr), &poBand, abyCaps) )
+        return nullptr;
 
     GDALConsumeErrors(p);
 
@@ -5632,8 +5639,8 @@ GDALRasterBand *GDALClientRasterBand::GetMaskBand()
     if( !GDALSkipUntilEndOfJunkMarker(p) )
         return CreateFakeMaskBand();
 
-    GDALRasterBand* poBand = NULL;
-    if( !GDALPipeRead(p, (GDALClientDataset*) NULL, &poBand, abyCaps) )
+    GDALRasterBand* poBand = nullptr;
+    if( !GDALPipeRead(p, static_cast<GDALClientDataset*>(nullptr), &poBand, abyCaps) )
         return CreateFakeMaskBand();
 
     GDALConsumeErrors(p);
@@ -5679,10 +5686,10 @@ CPLErr GDALClientRasterBand::CreateMaskBand( int nFlagsIn )
         !GDALPipeWrite(p, nFlagsIn) )
         return CE_Failure;
     CPLErr eErr = CPLErrOnlyRet(p);
-    if( eErr == CE_None && poMaskBand != NULL )
+    if( eErr == CE_None && poMaskBand != nullptr )
     {
         apoOldMaskBands.push_back(poMaskBand);
-        poMaskBand = NULL;
+        poMaskBand = nullptr;
     }
     return eErr;
 }
@@ -5726,7 +5733,7 @@ CPLErr GDALClientRasterBand::BuildOverviews( const char * pszResampling,
     if( !WriteInstr(INSTR_Band_BuildOverviews) ||
         !GDALPipeWrite(p, pszResampling) ||
         !GDALPipeWrite(p, nOverviews) ||
-        !GDALPipeWrite(p, nOverviews * (int)sizeof(int), panOverviewList) )
+        !GDALPipeWrite(p, nOverviews * static_cast<int>(sizeof(int)), panOverviewList) )
         return CE_Failure;
     return CPLErrOnlyRet(p);
 }
@@ -5742,27 +5749,27 @@ GDALRasterAttributeTable *GDALClientRasterBand::GetDefaultRAT()
 
     CLIENT_ENTER();
     if( !WriteInstr(INSTR_Band_GetDefaultRAT) )
-        return NULL;
+        return nullptr;
     if( !GDALSkipUntilEndOfJunkMarker(p) )
-        return NULL;
+        return nullptr;
 
-    GDALRasterAttributeTable* poNewRAT = NULL;
+    GDALRasterAttributeTable* poNewRAT = nullptr;
     if( !GDALPipeRead(p, &poNewRAT) )
-        return NULL;
+        return nullptr;
 
-    if( poNewRAT != NULL && poRAT != NULL )
+    if( poNewRAT != nullptr && poRAT != nullptr )
     {
         *poRAT = *poNewRAT;
         delete poNewRAT;
     }
-    else if( poNewRAT != NULL && poRAT == NULL )
+    else if( poNewRAT != nullptr && poRAT == nullptr )
     {
         poRAT = poNewRAT;
     }
-    else if( poRAT != NULL )
+    else if( poRAT != nullptr )
     {
         delete poRAT;
-        poRAT = NULL;
+        poRAT = nullptr;
     }
 
     GDALConsumeErrors(p);
@@ -5819,8 +5826,8 @@ CPLErr GDALClientRasterBand::AdviseRead( int nXOff, int nYOff, int nXSize, int n
 GDALClientDataset* GDALClientDataset::CreateAndConnect()
 {
     GDALServerSpawnedProcess* l_ssp = GDALServerSpawnAsync();
-    if( l_ssp == NULL )
-        return NULL;
+    if( l_ssp == nullptr )
+        return nullptr;
     return new GDALClientDataset(l_ssp);
 }
 
@@ -5876,32 +5883,32 @@ int GDALClientDataset::Init(const char* pszFilename, GDALAccess eAccessIn,
 
     eAccess = eAccessIn;
 
-    char* pszDescription = NULL;
+    char* pszDescription = nullptr;
     if( !GDALPipeRead(p, &pszDescription) )
         return FALSE;
-    if( pszDescription != NULL )
+    if( pszDescription != nullptr )
         SetDescription(pszDescription);
     CPLFree(pszDescription);
 
-    char* pszDriverName = NULL;
+    char* pszDriverName = nullptr;
     if( !GDALPipeRead(p, &pszDriverName) )
         return FALSE;
 
-    if( pszDriverName != NULL )
+    if( pszDriverName != nullptr )
     {
-        bFreeDriver = TRUE;
+        bFreeDriver = true;
         poDriver = new GDALDriver();
         poDriver->SetDescription(pszDriverName);
         CPLFree(pszDriverName);
-        pszDriverName = NULL;
+        pszDriverName = nullptr;
 
         while(true)
         {
-            char *pszKey = NULL;
-            char *pszVal = NULL;
+            char *pszKey = nullptr;
+            char *pszVal = nullptr;
             if( !GDALPipeRead(p, &pszKey) )
                 return FALSE;
-            if( pszKey == NULL )
+            if( pszKey == nullptr )
                 break;
             if( !GDALPipeRead(p, &pszVal) )
             {
@@ -5925,10 +5932,10 @@ int GDALClientDataset::Init(const char* pszFilename, GDALAccess eAccessIn,
 
     for(int i=0;i<nBands;i++)
     {
-        GDALRasterBand* poBand = NULL;
+        GDALRasterBand* poBand = nullptr;
         if( i > 0 && bAllSame )
         {
-            GDALClientRasterBand* poFirstBand = (GDALClientRasterBand*) GetRasterBand(1);
+            GDALClientRasterBand* poFirstBand = cpl::down_cast<GDALClientRasterBand*>(GetRasterBand(1));
             int nBlockXSize, nBlockYSize;
             poFirstBand->GetBlockSize(&nBlockXSize, &nBlockYSize);
             poBand = new GDALClientRasterBand(p, poFirstBand->GetSrvBand() + i,
@@ -5943,7 +5950,7 @@ int GDALClientDataset::Init(const char* pszFilename, GDALAccess eAccessIn,
         {
             if( !GDALPipeRead(p, this, &poBand, abyCaps) )
                 return FALSE;
-            if( poBand == NULL )
+            if( poBand == nullptr )
                 return FALSE;
         }
 
@@ -5987,7 +5994,7 @@ const char* GDALClientDatasetGetFilename(const char* pszFilename)
         if( EQUAL(pszSpawn, "NO") || EQUAL(pszSpawn, "OFF") ||
             EQUAL(pszSpawn, "FALSE") || EQUAL(pszSpawn, "0") )
         {
-            return NULL;
+            return nullptr;
         }
     }
 
@@ -5996,12 +6003,12 @@ const char* GDALClientDatasetGetFilename(const char* pszFilename)
      /* since the forked process will inherit the same descriptors as the parent */
 
     if( STARTS_WITH_CI(pszFilename, "MEM:::") ||
-        strstr(pszFilename, "/vsimem/") != NULL ||
-        strstr(pszFilename, "/vsimem\\") != NULL ||
-        (strstr(pszFilename, "/vsistdout/") != NULL && IsSeparateExecutable()) ||
-        (strstr(pszFilename, "/vsistdin/") != NULL && IsSeparateExecutable()) ||
+        strstr(pszFilename, "/vsimem/") != nullptr ||
+        strstr(pszFilename, "/vsimem\\") != nullptr ||
+        (strstr(pszFilename, "/vsistdout/") != nullptr && IsSeparateExecutable()) ||
+        (strstr(pszFilename, "/vsistdin/") != nullptr && IsSeparateExecutable()) ||
         STARTS_WITH_CI(pszFilename, "NUMPY:::") )
-        return NULL;
+        return nullptr;
 
     if( !(EQUAL(pszSpawn, "YES") || EQUAL(pszSpawn, "ON") ||
           EQUAL(pszSpawn, "TRUE") || EQUAL(pszSpawn, "1")) )
@@ -6021,14 +6028,14 @@ const char* GDALClientDatasetGetFilename(const char* pszFilename)
         /* and check if the file extension matches the extension declared by the */
         /* driver */
         char** papszIter = papszTokens;
-        while( *papszIter != NULL )
+        while( *papszIter != nullptr )
         {
             GDALDriverH hDriver = GDALGetDriverByName(*papszIter);
-            if( hDriver != NULL )
+            if( hDriver != nullptr )
             {
                 const char* pszDriverExt =
-                    GDALGetMetadataItem(hDriver, GDAL_DMD_EXTENSION, NULL);
-                if( pszDriverExt != NULL && EQUAL(pszDriverExt, osExt) )
+                    GDALGetMetadataItem(hDriver, GDAL_DMD_EXTENSION, nullptr);
+                if( pszDriverExt != nullptr && EQUAL(pszDriverExt, osExt) )
                 {
                     CSLDestroy(papszTokens);
                     return pszFilename;
@@ -6037,7 +6044,7 @@ const char* GDALClientDatasetGetFilename(const char* pszFilename)
             papszIter++;
         }
         CSLDestroy(papszTokens);
-        return NULL;
+        return nullptr;
     }
 
     return pszFilename;
@@ -6051,14 +6058,14 @@ GDALDataset *GDALClientDataset::Open( GDALOpenInfo * poOpenInfo )
 {
     const char* pszFilename =
         GDALClientDatasetGetFilename(poOpenInfo->pszFilename);
-    if( pszFilename == NULL )
-        return NULL;
+    if( pszFilename == nullptr )
+        return nullptr;
 
     CLIENT_ENTER();
 
     GDALClientDataset* poDS = CreateAndConnect();
-    if( poDS == NULL )
-        return NULL;
+    if( poDS == nullptr )
+        return nullptr;
 
     CPLErrorReset();
     if( !poDS->Init(pszFilename, poOpenInfo->eAccess,
@@ -6070,9 +6077,9 @@ GDALDataset *GDALClientDataset::Open( GDALOpenInfo * poOpenInfo )
                     pszFilename);
         }
         delete poDS;
-        return NULL;
+        return nullptr;
     }
-    if( poDS != NULL )
+    if( poDS != nullptr )
         CPLErrorReset();
 
     return poDS;
@@ -6086,13 +6093,13 @@ int GDALClientDataset::Identify( GDALOpenInfo * poOpenInfo )
 {
     const char* pszFilename =
         GDALClientDatasetGetFilename(poOpenInfo->pszFilename);
-    if( pszFilename == NULL )
+    if( pszFilename == nullptr )
         return FALSE;
 
     CLIENT_ENTER();
 
     GDALServerSpawnedProcess* l_ssp = GDALServerSpawnAsync();
-    if( l_ssp == NULL )
+    if( l_ssp == nullptr )
         return FALSE;
 
     char* pszCWD = CPLGetCurrentDir();
@@ -6160,7 +6167,7 @@ int GDALClientDataset::mCreateCopy( const char* pszFilename,
 
     const char* pszServerDriver =
         CSLFetchNameValue(papszOptions, "SERVER_DRIVER");
-    if( pszServerDriver == NULL )
+    if( pszServerDriver == nullptr )
     {
         CPLError(CE_Failure, CPLE_AppDefined,
                  "Creation options should contain a SERVER_DRIVER item");
@@ -6215,7 +6222,7 @@ int GDALClientDataset::mCreateCopy( const char* pszFilename,
 
     GDALConsumeErrors(p);
 
-    return Init(NULL, GA_Update, NULL);
+    return Init(nullptr, GA_Update, nullptr);
 }
 
 /************************************************************************/
@@ -6231,12 +6238,12 @@ GDALDataset *GDALClientDataset::CreateCopy( const char * pszFilename,
     CLIENT_ENTER();
 
     GDALClientDataset* poDS = CreateAndConnect();
-    if( poDS !=NULL && !poDS->mCreateCopy(pszFilename, poSrcDS, bStrict,
+    if( poDS !=nullptr && !poDS->mCreateCopy(pszFilename, poSrcDS, bStrict,
                                           papszOptions,
                                           pfnProgress, pProgressData) )
     {
         delete poDS;
-        return NULL;
+        return nullptr;
     }
 
     return poDS;
@@ -6259,7 +6266,7 @@ int GDALClientDataset::mCreate( const char * pszFilename,
 
     const char* pszServerDriver =
         CSLFetchNameValue(papszOptions, "SERVER_DRIVER");
-    if( pszServerDriver == NULL )
+    if( pszServerDriver == nullptr )
     {
         CPLError(CE_Failure, CPLE_AppDefined,
                  "Creation options should contain a SERVER_DRIVER item");
@@ -6306,7 +6313,7 @@ int GDALClientDataset::mCreate( const char * pszFilename,
 
     GDALConsumeErrors(p);
 
-    return Init(NULL, GA_Update, NULL);
+    return Init(nullptr, GA_Update, nullptr);
 }
 
 /************************************************************************/
@@ -6321,11 +6328,11 @@ GDALDataset* GDALClientDataset::Create( const char * pszName,
     CLIENT_ENTER();
 
     GDALClientDataset* poDS = CreateAndConnect();
-    if( poDS != NULL && !poDS->mCreate(pszName, nXSize, nYSize, nBandsIn,
+    if( poDS != nullptr && !poDS->mCreate(pszName, nXSize, nYSize, nBandsIn,
                                        eType, papszOptions) )
     {
         delete poDS;
-        return NULL;
+        return nullptr;
     }
 
     return poDS;
@@ -6339,13 +6346,13 @@ CPLErr GDALClientDataset::Delete( const char * pszFilename )
 {
     pszFilename =
         GDALClientDatasetGetFilename(pszFilename);
-    if( pszFilename == NULL )
+    if( pszFilename == nullptr )
         return CE_Failure;
 
     CLIENT_ENTER();
 
     GDALServerSpawnedProcess* l_ssp = GDALServerSpawnAsync();
-    if( l_ssp == NULL )
+    if( l_ssp == nullptr )
         return CE_Failure;
 
     GDALPipe* l_p = l_ssp->p;
@@ -6362,24 +6369,24 @@ CPLErr GDALClientDataset::Delete( const char * pszFilename )
 /************************************************************************/
 /*                      GDALUnloadAPIPROXYDriver()                      */
 /************************************************************************/
-static GDALDriver* poAPIPROXYDriver = NULL;
+static GDALDriver* poAPIPROXYDriver = nullptr;
 
 static void GDALUnloadAPIPROXYDriver( GDALDriver* /* poDriver */ )
 {
     if( bRecycleChild )
     {
         /* Kill all unused descriptors */
-        bRecycleChild = FALSE;
+        bRecycleChild = false;
         for(int i=0;i<nMaxRecycled;i++)
         {
-            if( aspRecycled[i] != NULL )
+            if( aspRecycled[i] != nullptr )
             {
                 GDALServerSpawnAsyncFinish(aspRecycled[i]);
-                aspRecycled[i] = NULL;
+                aspRecycled[i] = nullptr;
             }
         }
     }
-    poAPIPROXYDriver = NULL;
+    poAPIPROXYDriver = nullptr;
 }
 
 /************************************************************************/
@@ -6388,42 +6395,49 @@ static void GDALUnloadAPIPROXYDriver( GDALDriver* /* poDriver */ )
 
 GDALDriver* GDALGetAPIPROXYDriver()
 {
+    // Call CPLGetConfigOption before holding DM mutex to avoid confusing
+    // deadlock detectors that keep track of the order of lock acquisitions
+    // and error out if the order is inverted.
+    const char* pszConnPool =
+        CPLGetConfigOption("GDAL_API_PROXY_CONN_POOL", "YES");
+
     CPLMutexHolderD(GDALGetphDMMutex());
-    if( poAPIPROXYDriver == NULL )
-    {
+    if( poAPIPROXYDriver != nullptr )
+        return poAPIPROXYDriver;
+
 #ifdef DEBUG_VERBOSE
-        CPL_STATIC_ASSERT(INSTR_END + 1 == sizeof(apszInstr) / sizeof(apszInstr[0]));
+    CPL_STATIC_ASSERT(
+        INSTR_END + 1 == sizeof(apszInstr) / sizeof(apszInstr[0]));
 #endif
-        /* If asserted, change GDAL_CLIENT_SERVER_PROTOCOL_MAJOR / GDAL_CLIENT_SERVER_PROTOCOL_MINOR */
-        // cppcheck-suppress duplicateExpression
-        CPL_STATIC_ASSERT(INSTR_END + 1 == 81);
+    // If asserted, change
+    // GDAL_CLIENT_SERVER_PROTOCOL_MAJOR / GDAL_CLIENT_SERVER_PROTOCOL_MINOR
+    // cppcheck-suppress duplicateExpression
+    CPL_STATIC_ASSERT(INSTR_END + 1 == 81);
 
-        const char* pszConnPool = CPLGetConfigOption("GDAL_API_PROXY_CONN_POOL", "YES");
-        if( atoi(pszConnPool) > 0 )
-        {
-            bRecycleChild = TRUE;
-            nMaxRecycled = std::min(atoi(pszConnPool), MAX_RECYCLED);
-        }
-        else if( CPLTestBool(pszConnPool) )
-        {
-            bRecycleChild = TRUE;
-            nMaxRecycled = DEFAULT_RECYCLED;
-        }
-        memset(aspRecycled, 0, sizeof(aspRecycled));
-
-        poAPIPROXYDriver = new GDALDriver();
-
-        poAPIPROXYDriver->SetDescription( "API_PROXY" );
-        poAPIPROXYDriver->SetMetadataItem( GDAL_DCAP_RASTER, "YES" );
-        poAPIPROXYDriver->SetMetadataItem( GDAL_DMD_LONGNAME,
-                                   "API_PROXY" );
-
-        poAPIPROXYDriver->pfnOpen = GDALClientDataset::Open;
-        poAPIPROXYDriver->pfnIdentify = GDALClientDataset::Identify;
-        poAPIPROXYDriver->pfnCreateCopy = GDALClientDataset::CreateCopy;
-        poAPIPROXYDriver->pfnCreate = GDALClientDataset::Create;
-        poAPIPROXYDriver->pfnDelete = GDALClientDataset::Delete;
-        poAPIPROXYDriver->pfnUnloadDriver = GDALUnloadAPIPROXYDriver;
+    if( atoi(pszConnPool) > 0 )
+    {
+        bRecycleChild = true;
+        nMaxRecycled = std::min(atoi(pszConnPool), MAX_RECYCLED);
     }
+    else if( CPLTestBool(pszConnPool) )
+    {
+        bRecycleChild = true;
+        nMaxRecycled = DEFAULT_RECYCLED;
+    }
+    memset(aspRecycled, 0, sizeof(aspRecycled));
+
+    poAPIPROXYDriver = new GDALDriver();
+
+    poAPIPROXYDriver->SetDescription("API_PROXY");
+    poAPIPROXYDriver->SetMetadataItem(GDAL_DCAP_RASTER, "YES");
+    poAPIPROXYDriver->SetMetadataItem(GDAL_DMD_LONGNAME, "API_PROXY");
+
+    poAPIPROXYDriver->pfnOpen = GDALClientDataset::Open;
+    poAPIPROXYDriver->pfnIdentify = GDALClientDataset::Identify;
+    poAPIPROXYDriver->pfnCreateCopy = GDALClientDataset::CreateCopy;
+    poAPIPROXYDriver->pfnCreate = GDALClientDataset::Create;
+    poAPIPROXYDriver->pfnDelete = GDALClientDataset::Delete;
+    poAPIPROXYDriver->pfnUnloadDriver = GDALUnloadAPIPROXYDriver;
+
     return poAPIPROXYDriver;
 }

@@ -28,7 +28,7 @@
 
 #include "ogr_geopackage.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 // g++ -g -Wall -fPIC -shared -o ogr_geopackage.so -Iport -Igcore -Iogr -Iogr/ogrsf_frmts -Iogr/ogrsf_frmts/gpkg ogr/ogrsf_frmts/gpkg/*.c* -L. -lgdal
 
@@ -42,11 +42,20 @@ static int OGRGeoPackageDriverIdentify( GDALOpenInfo* poOpenInfo, bool bEmitWarn
         return TRUE;
 
     /* Check that the filename exists and is a file */
-    if( poOpenInfo->fpL == NULL)
+    if( poOpenInfo->fpL == nullptr)
         return FALSE;
 
+#ifdef ENABLE_SQL_GPKG_FORMAT
+    if( poOpenInfo->pabyHeader &&
+        STARTS_WITH((const char*)poOpenInfo->pabyHeader, "-- SQL GPKG") )
+    {
+        return TRUE;
+    }
+#endif
+
     if ( poOpenInfo->nHeaderBytes < 100 ||
-        !STARTS_WITH((const char*)poOpenInfo->pabyHeader, "SQLite format 3") )
+         poOpenInfo->pabyHeader == nullptr ||
+         !STARTS_WITH((const char*)poOpenInfo->pabyHeader, "SQLite format 3") )
     {
         return FALSE;
     }
@@ -218,14 +227,14 @@ static int OGRGeoPackageDriverIdentify( GDALOpenInfo* poOpenInfo )
 static GDALDataset *OGRGeoPackageDriverOpen( GDALOpenInfo* poOpenInfo )
 {
     if( !OGRGeoPackageDriverIdentify(poOpenInfo, true) )
-        return NULL;
+        return nullptr;
 
     GDALGeoPackageDataset   *poDS = new GDALGeoPackageDataset();
 
     if( !poDS->Open( poOpenInfo ) )
     {
         delete poDS;
-        poDS = NULL;
+        poDS = nullptr;
     }
 
     return poDS;
@@ -247,8 +256,8 @@ static GDALDataset* OGRGeoPackageDriverCreate( const char * pszFilename,
     if( !bIsRecognizedExtension )
     {
         CPLError(CE_Warning, CPLE_AppDefined,
-                 "The '%s' extension is not allowed by the GPKG specification, "
-                 "which may cause compatibility problems",
+                 "The filename extension should be 'gpkg' instead of '%s' "
+                 "to conform to the GPKG specification.",
                  pszExt);
     }
 
@@ -258,7 +267,7 @@ static GDALDataset* OGRGeoPackageDriverCreate( const char * pszFilename,
                        nBands, eDT, papszOptions ) )
     {
         delete poDS;
-        poDS = NULL;
+        poDS = nullptr;
     }
 
     return poDS;
@@ -283,7 +292,7 @@ static CPLErr OGRGeoPackageDriverDelete( const char *pszFilename )
 
 void RegisterOGRGeoPackage()
 {
-    if( GDALGetDriverByName( "GPKG" ) != NULL )
+    if( GDALGetDriverByName( "GPKG" ) != nullptr )
         return;
 
     GDALDriver *poDriver = new GDALDriver();
@@ -361,7 +370,15 @@ COMPRESSION_OPTIONS
 "    <Value>MODE</Value>"
 "    <Value>AVERAGE</Value>"
 "  </Option>"
-"  <Option name='PRECISION' type='float' description='Smallest significant value. Only used for tiled gridded elevation datasets' default='1'/>"
+"  <Option name='PRECISION' type='float' scope='raster' description='Smallest significant value. Only used for tiled gridded coverage datasets' default='1'/>"
+"  <Option name='UOM' type='string' scope='raster' description='Unit of Measurement. Only used for tiled gridded coverage datasets' />"
+"  <Option name='FIELD_NAME' type='string' scope='raster' description='Field name. Only used for tiled gridded coverage datasets' default='Height'/>"
+"  <Option name='QUANTITY_DEFINITION' type='string' scope='raster' description='Description of the field. Only used for tiled gridded coverage datasets' default='Height'/>"
+"  <Option name='GRID_CELL_ENCODING' type='string-select' scope='raster' description='Grid cell encoding. Only used for tiled gridded coverage datasets' default='grid-value-is-center'>"
+"     <Value>grid-value-is-center</Value>"
+"     <Value>grid-value-is-area</Value>"
+"     <Value>grid-value-is-corner</Value>"
+"  </Option>"
 "  <Option name='VERSION' type='string-select' description='Set GeoPackage version (for application_id and user_version fields)' default='AUTO'>"
 "     <Value>AUTO</Value>"
 "     <Value>1.0</Value>"
@@ -394,9 +411,17 @@ COMPRESSION_OPTIONS
     poDriver->SetMetadataItem( GDAL_DMD_CREATIONFIELDDATATYPES,
                                "Integer Integer64 Real String Date DateTime "
                                "Binary" );
+    poDriver->SetMetadataItem( GDAL_DMD_CREATIONFIELDDATASUBTYPES, "Boolean Int16 Float32" );
     poDriver->SetMetadataItem( GDAL_DCAP_NOTNULL_FIELDS, "YES" );
     poDriver->SetMetadataItem( GDAL_DCAP_DEFAULT_FIELDS, "YES" );
     poDriver->SetMetadataItem( GDAL_DCAP_NOTNULL_GEOMFIELDS, "YES" );
+
+#ifdef ENABLE_SQL_GPKG_FORMAT
+    poDriver->SetMetadataItem("ENABLE_SQL_GPKG_FORMAT", "YES");
+#endif
+#ifdef SQLITE_HAS_COLUMN_METADATA
+    poDriver->SetMetadataItem("SQLITE_HAS_COLUMN_METADATA", "YES");
+#endif
 
     poDriver->pfnOpen = OGRGeoPackageDriverOpen;
     poDriver->pfnIdentify = OGRGeoPackageDriverIdentify;

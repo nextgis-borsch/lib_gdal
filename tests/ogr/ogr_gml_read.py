@@ -33,7 +33,7 @@
 import os
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 import ogrtest
@@ -46,12 +46,13 @@ import shutil
 # Test reading geometry and attribute from ionic wfs gml file.
 #
 
+
 def ogr_gml_1():
 
     gdaltest.have_gml_reader = 0
 
     try:
-        gml_ds = ogr.Open( 'data/ionic_wfs.gml' )
+        gml_ds = ogr.Open('data/ionic_wfs.gml')
     except:
         gml_ds = None
 
@@ -59,30 +60,30 @@ def ogr_gml_1():
         if gdal.GetLastErrorMsg().find('Xerces') != -1:
             return 'skip'
         else:
-            gdaltest.post_reason( 'failed to open test file.' )
+            gdaltest.post_reason('failed to open test file.')
             return 'fail'
 
     gdaltest.have_gml_reader = 1
 
     if gml_ds.GetLayerCount() != 1:
-        gdaltest.post_reason( 'wrong number of layers' )
+        gdaltest.post_reason('wrong number of layers')
         return 'fail'
 
     lyr = gml_ds.GetLayerByName('GEM')
     feat = lyr.GetNextFeature()
 
     if feat.GetField('Name') != 'Aartselaar':
-        gdaltest.post_reason( 'Wrong name field value' )
+        gdaltest.post_reason('Wrong name field value')
         return 'fail'
 
     wkt = 'POLYGON ((44038 511549,44015 511548,43994 511522,43941 511539,43844 511514,43754 511479,43685 511521,43594 511505,43619 511452,43645 511417,4363 511387,437 511346,43749 511298,43808 511229,43819 511205,4379 511185,43728 511167,43617 511175,43604 511151,43655 511125,43746 511143,43886 511154,43885 511178,43928 511186,43977 511217,4404 511223,44008 511229,44099 51131,44095 511335,44106 51135,44127 511379,44124 511435,44137 511455,44105 511467,44098 511484,44086 511499,4407 511506,44067 511535,44038 511549))'
 
-    if ogrtest.check_feature_geometry( feat, wkt):
+    if ogrtest.check_feature_geometry(feat, wkt):
         return 'fail'
 
     feat = lyr.GetNextFeature()
     if feat is not None:
-        gdaltest.post_reason( 'got unexpected feature.' )
+        gdaltest.post_reason('got unexpected feature.')
         return 'fail'
 
     return 'success'
@@ -90,34 +91,35 @@ def ogr_gml_1():
 ###############################################################################
 # Do the same test somewhere without a .gfs file.
 
+
 def ogr_gml_2():
     if not gdaltest.have_gml_reader:
         return 'skip'
 
     # copy gml file (but not .gfs file)
-    open('tmp/ionic_wfs.gml','w').write(open('data/ionic_wfs.gml').read())
+    open('tmp/ionic_wfs.gml', 'w').write(open('data/ionic_wfs.gml').read())
 
-    gml_ds = ogr.Open( 'tmp/ionic_wfs.gml' )
+    gml_ds = ogr.Open('tmp/ionic_wfs.gml')
 
     if gml_ds.GetLayerCount() != 1:
-        gdaltest.post_reason( 'wrong number of layers' )
+        gdaltest.post_reason('wrong number of layers')
         return 'fail'
 
     lyr = gml_ds.GetLayerByName('GEM')
     feat = lyr.GetNextFeature()
 
     if feat.GetField('Name') != 'Aartselaar':
-        gdaltest.post_reason( 'Wrong name field value' )
+        gdaltest.post_reason('Wrong name field value')
         return 'fail'
 
     wkt = 'POLYGON ((44038 511549,44015 511548,43994 511522,43941 511539,43844 511514,43754 511479,43685 511521,43594 511505,43619 511452,43645 511417,4363 511387,437 511346,43749 511298,43808 511229,43819 511205,4379 511185,43728 511167,43617 511175,43604 511151,43655 511125,43746 511143,43886 511154,43885 511178,43928 511186,43977 511217,4404 511223,44008 511229,44099 51131,44095 511335,44106 51135,44127 511379,44124 511435,44137 511455,44105 511467,44098 511484,44086 511499,4407 511506,44067 511535,44038 511549))'
 
-    if ogrtest.check_feature_geometry( feat, wkt):
+    if ogrtest.check_feature_geometry(feat, wkt):
         return 'fail'
 
     feat = lyr.GetNextFeature()
     if feat is not None:
-        gdaltest.post_reason( 'got unexpected feature.' )
+        gdaltest.post_reason('got unexpected feature.')
         return 'fail'
 
     return 'success'
@@ -125,35 +127,36 @@ def ogr_gml_2():
 ###############################################################################
 # Similar test for RNF style line data.
 
+
 def ogr_gml_3():
     if not gdaltest.have_gml_reader:
         return 'skip'
 
-    gml_ds = ogr.Open( 'data/rnf_eg.gml' )
+    gml_ds = ogr.Open('data/rnf_eg.gml')
 
     if gml_ds.GetLayerCount() != 1:
-        gdaltest.post_reason( 'wrong number of layers' )
+        gdaltest.post_reason('wrong number of layers')
         return 'fail'
 
     lyr = gml_ds.GetLayerByName('RoadSegment')
     feat = lyr.GetNextFeature()
 
     if feat.GetField('ngd_id') != 817792:
-        gdaltest.post_reason( 'Wrong ngd_id field value' )
+        gdaltest.post_reason('Wrong ngd_id field value')
         return 'fail'
 
     if feat.GetField('type') != 'HWY':
-        gdaltest.post_reason( 'Wrong type field value' )
+        gdaltest.post_reason('Wrong type field value')
         return 'fail'
 
     wkt = 'LINESTRING (-63.500411040289066 46.240122507771368,-63.501009714909742 46.240344881690326,-63.502170462373471 46.241041855639622,-63.505862621395394 46.24195250605576,-63.506719184531178 46.242002742901576,-63.507197272602212 46.241931577811606,-63.508403092799554 46.241752283460158,-63.509946573455622 46.241745397977233)'
 
-    if ogrtest.check_feature_geometry( feat, wkt):
+    if ogrtest.check_feature_geometry(feat, wkt):
         return 'fail'
 
     feat = lyr.GetNextFeature()
     if feat is not None:
-        gdaltest.post_reason( 'got unexpected feature.' )
+        gdaltest.post_reason('got unexpected feature.')
         return 'fail'
 
     return 'success'
@@ -162,48 +165,49 @@ def ogr_gml_3():
 # Test of read GML file with UTF-8 BOM indicator.
 # Test also support for nested GML elements (#3680)
 
+
 def ogr_gml_4():
     if not gdaltest.have_gml_reader:
         return 'skip'
 
-    gml_ds = ogr.Open( 'data/bom.gml' )
+    gml_ds = ogr.Open('data/bom.gml')
 
     if gml_ds.GetLayerCount() != 1:
-        gdaltest.post_reason( 'wrong number of layers' )
+        gdaltest.post_reason('wrong number of layers')
         return 'fail'
 
     lyr = gml_ds.GetLayerByName('CartographicText')
 
     if lyr.GetFeatureCount() != 3:
-        gdaltest.post_reason( 'wrong number of features' )
+        gdaltest.post_reason('wrong number of features')
         return 'fail'
 
     # Test 1st feature
     feat = lyr.GetNextFeature()
 
     if feat.GetField('featureCode') != 10198:
-        gdaltest.post_reason( 'Wrong featureCode field value' )
+        gdaltest.post_reason('Wrong featureCode field value')
         return 'fail'
 
     if feat.GetField('anchorPosition') != 8:
-        gdaltest.post_reason( 'Wrong anchorPosition field value' )
+        gdaltest.post_reason('Wrong anchorPosition field value')
         return 'fail'
 
     wkt = 'POINT (347243.85 461299.5)'
 
-    if ogrtest.check_feature_geometry( feat, wkt):
+    if ogrtest.check_feature_geometry(feat, wkt):
         return 'fail'
 
     # Test 2nd feature
     feat = lyr.GetNextFeature()
 
     if feat.GetField('featureCode') != 10069:
-        gdaltest.post_reason( 'Wrong featureCode field value' )
+        gdaltest.post_reason('Wrong featureCode field value')
         return 'fail'
 
     wkt = 'POINT (347251.45 461250.85)'
 
-    if ogrtest.check_feature_geometry( feat, wkt):
+    if ogrtest.check_feature_geometry(feat, wkt):
         return 'fail'
 
     return 'success'
@@ -217,11 +221,11 @@ def ogr_gml_5():
     if not gdaltest.have_gml_reader:
         return 'skip'
 
-    gml_ds = ogr.Open( 'data/ticket_2349_test_1.gml' )
+    gml_ds = ogr.Open('data/ticket_2349_test_1.gml')
 
     lyr = gml_ds.GetLayerByName('MyPolyline')
 
-    lyr.SetAttributeFilter( 'height > 300' )
+    lyr.SetAttributeFilter('height > 300')
 
     lyr.GetNextFeature()
 
@@ -229,6 +233,8 @@ def ogr_gml_5():
 
 ###############################################################################
 # Test of various FIDs (various prefixes and lengths) (Ticket#1017)
+
+
 def ogr_gml_6():
 
     if not gdaltest.have_gml_reader:
@@ -239,24 +245,25 @@ def ogr_gml_6():
 
     for filename in files:
         fids[:] = []
-        gml_ds = ogr.Open( 'data' + os.sep + filename + '.gml' )
+        gml_ds = ogr.Open('data' + os.sep + filename + '.gml')
         lyr = gml_ds.GetLayer()
         feat = lyr.GetNextFeature()
         while feat is not None:
-            if ( feat.GetFID() < 0 ) or ( feat.GetFID() in fids ):
+            if (feat.GetFID() < 0) or (feat.GetFID() in fids):
                 gml_ds = None
-                os.remove( 'data' + os.sep + filename + '.gfs' )
-                gdaltest.post_reason( 'Wrong FID value' )
+                os.remove('data' + os.sep + filename + '.gfs')
+                gdaltest.post_reason('Wrong FID value')
                 return 'fail'
             fids.append(feat.GetFID())
             feat = lyr.GetNextFeature()
         gml_ds = None
-        os.remove( 'data' + os.sep + filename + '.gfs' )
+        os.remove('data' + os.sep + filename + '.gfs')
 
     return 'success'
 
 ###############################################################################
 # Test of colon terminated prefixes for attribute values (Ticket#2493)
+
 
 def ogr_gml_7():
 
@@ -264,14 +271,14 @@ def ogr_gml_7():
         return 'skip'
 
     gdal.SetConfigOption('GML_EXPOSE_FID', 'FALSE')
-    gml_ds = ogr.Open( 'data/test_point.gml' )
+    gml_ds = ogr.Open('data/test_point.gml')
     gdal.SetConfigOption('GML_EXPOSE_FID', None)
     lyr = gml_ds.GetLayer()
     ldefn = lyr.GetLayerDefn()
 
     # Test fix for #2969
     if lyr.GetFeatureCount() != 5:
-        gdaltest.post_reason( 'Bad feature count' )
+        gdaltest.post_reason('Bad feature count')
         return 'fail'
 
     try:
@@ -294,15 +301,16 @@ def ogr_gml_7():
 ###############################################################################
 # Test a GML file with some non-ASCII UTF-8 content that triggered a bug (Ticket#2948)
 
+
 def ogr_gml_8():
 
     if not gdaltest.have_gml_reader:
         return 'skip'
 
-    gml_ds = ogr.Open( 'data/utf8.gml' )
+    gml_ds = ogr.Open('data/utf8.gml')
     lyr = gml_ds.GetLayer()
     feat = lyr.GetNextFeature()
-    if sys.version_info >= (3,0,0):
+    if sys.version_info >= (3, 0, 0):
         if feat.GetFieldAsString('name') != '\xc4\x80liamanu'.encode('latin1').decode('utf-8'):
             print(feat.GetFieldAsString('name'))
             return 'fail'
@@ -316,6 +324,7 @@ def ogr_gml_8():
 ###############################################################################
 # Test writing invalid UTF-8 content in a GML file (ticket #2971)
 
+
 def ogr_gml_9():
 
     if not gdaltest.have_gml_reader:
@@ -326,12 +335,12 @@ def ogr_gml_9():
     lyr = ds.CreateLayer('test')
     lyr.CreateField(ogr.FieldDefn('test', ogr.OFTString))
 
-    dst_feat = ogr.Feature( lyr.GetLayerDefn() )
-    dst_feat.SetFieldBinaryFromHexString('test', '80626164') # \x80bad'
+    dst_feat = ogr.Feature(lyr.GetLayerDefn())
+    dst_feat.SetFieldBinaryFromHexString('test', '80626164')  # \x80bad'
 
     # Avoid the warning
     gdal.PushErrorHandler('CPLQuietErrorHandler')
-    ret = lyr.CreateFeature( dst_feat )
+    ret = lyr.CreateFeature(dst_feat)
     gdal.PopErrorHandler()
 
     if ret != 0:
@@ -358,6 +367,7 @@ def ogr_gml_9():
 # Test writing different data types in a GML file (ticket #2857)
 # TODO: Add test for other data types as they are added to the driver.
 
+
 def ogr_gml_10():
 
     if not gdaltest.have_gml_reader:
@@ -379,14 +389,14 @@ def ogr_gml_10():
     field_defn.SetWidth(5)
     lyr.CreateField(field_defn)
 
-    dst_feat = ogr.Feature( lyr.GetLayerDefn() )
+    dst_feat = ogr.Feature(lyr.GetLayerDefn())
     dst_feat.SetField('string', 'test string of length 24')
     dst_feat.SetField('date', '2003/04/22')
     dst_feat.SetField('real', 12.34)
     dst_feat.SetField('float', 1234.5678)
     dst_feat.SetField('integer', '1234')
 
-    ret = lyr.CreateFeature( dst_feat )
+    ret = lyr.CreateFeature(dst_feat)
 
     if ret != 0:
         gdaltest.post_reason('CreateFeature failed.')
@@ -415,10 +425,10 @@ def ogr_gml_10():
         return 'fail'
 
     if feat.GetField('string') != 'test string of length 24':
-        gdaltest.post_reason('Unexpected string content.' + feat.GetField('string') )
+        gdaltest.post_reason('Unexpected string content.' + feat.GetField('string'))
         return 'fail'
     if feat.GetField('date') != '2003/04/22':
-        gdaltest.post_reason('Unexpected string content.' + feat.GetField('date') )
+        gdaltest.post_reason('Unexpected string content.' + feat.GetField('date'))
         return 'fail'
     if feat.GetFieldAsDouble('real') != 12.34:
         gdaltest.post_reason('Unexpected real content.')
@@ -451,6 +461,7 @@ def ogr_gml_10():
 
 ###############################################################################
 # Test reading a geometry element specified with <GeometryElementPath>
+
 
 def ogr_gml_11():
 
@@ -495,6 +506,7 @@ def ogr_gml_11():
 ###############################################################################
 # Test reading a virtual GML file
 
+
 def ogr_gml_12():
 
     if not gdaltest.have_gml_reader:
@@ -523,31 +535,36 @@ def ogr_gml_12():
 ###############################################################################
 # Test reading GML with StringList, IntegerList and RealList fields
 
+
 def ogr_gml_13():
 
     if not gdaltest.have_gml_reader:
         return 'skip'
 
-    ds = ogr.Open('data/testlistfields.gml')
-    lyr = ds.GetLayer(0)
-    feat = lyr.GetNextFeature()
-    if feat.GetFieldAsStringList(feat.GetFieldIndex('attrib1')) != ['value1','value2']:
-        gdaltest.post_reason('did not get expected value for attrib1')
-        return 'fail'
-    if feat.GetField(feat.GetFieldIndex('attrib2')) != 'value3':
-        gdaltest.post_reason('did not get expected value for attrib2')
-        return 'fail'
-    if feat.GetFieldAsIntegerList(feat.GetFieldIndex('attrib3')) != [4,5]:
-        gdaltest.post_reason('did not get expected value for attrib3')
-        return 'fail'
-    if feat.GetFieldAsDoubleList(feat.GetFieldIndex('attrib4')) != [6.1,7.1]:
-        gdaltest.post_reason('did not get expected value for attrib4')
-        return 'fail'
-    ds = None
+    for i in range(2):
+        ds = ogr.Open('data/testlistfields.gml')
+        lyr = ds.GetLayer(0)
+        feat = lyr.GetNextFeature()
+        if feat.GetFieldAsStringList(feat.GetFieldIndex('attrib1')) != ['value1', 'value2']:
+            gdaltest.post_reason('did not get expected value for attrib1')
+            return 'fail'
+        if feat.GetField(feat.GetFieldIndex('attrib2')) != 'value3':
+            gdaltest.post_reason('did not get expected value for attrib2')
+            return 'fail'
+        if feat.GetFieldAsIntegerList(feat.GetFieldIndex('attrib3')) != [4, 5]:
+            gdaltest.post_reason('did not get expected value for attrib3')
+            return 'fail'
+        if feat.GetFieldAsDoubleList(feat.GetFieldIndex('attrib4')) != [6.1, 7.1]:
+            gdaltest.post_reason('did not get expected value for attrib4')
+            return 'fail'
+        ds = None
+    gdal.Unlink('data/testlistfields.gfs')
+
     return 'success'
 
 ###############################################################################
 # Test xlink resolution
+
 
 def ogr_gml_14():
 
@@ -557,7 +574,7 @@ def ogr_gml_14():
     # We need CURL for xlink resolution, and a sign that Curl is available
     # is the availability of the WMS driver
     try:
-        gdaltest.wms_drv = gdal.GetDriverByName( 'WMS' )
+        gdaltest.wms_drv = gdal.GetDriverByName('WMS')
     except:
         gdaltest.wms_drv = None
     if gdaltest.wms_drv is None:
@@ -567,29 +584,29 @@ def ogr_gml_14():
         print('cannot open URL')
         return 'skip'
 
-    files = [ 'xlink1.gml', 'xlink2.gml', 'expected1.gml', 'expected2.gml' ]
+    files = ['xlink1.gml', 'xlink2.gml', 'expected1.gml', 'expected2.gml']
     for file in files:
-        if not gdaltest.download_file('http://download.osgeo.org/gdal/data/gml/' + file, file ):
+        if not gdaltest.download_file('http://download.osgeo.org/gdal/data/gml/' + file, file):
             return 'skip'
 
-    gdal.SetConfigOption( 'GML_SKIP_RESOLVE_ELEMS', 'NONE' )
-    gdal.SetConfigOption( 'GML_SAVE_RESOLVED_TO', 'tmp/cache/xlink1resolved.gml' )
+    gdal.SetConfigOption('GML_SKIP_RESOLVE_ELEMS', 'NONE')
+    gdal.SetConfigOption('GML_SAVE_RESOLVED_TO', 'tmp/cache/xlink1resolved.gml')
     with gdaltest.error_handler():
-        gml_ds = ogr.Open( 'tmp/cache/xlink1.gml' )
+        gml_ds = ogr.Open('tmp/cache/xlink1.gml')
     gml_ds = None
-    gdal.SetConfigOption( 'GML_SKIP_RESOLVE_ELEMS', 'gml:directedNode' )
-    gdal.SetConfigOption( 'GML_SAVE_RESOLVED_TO', 'tmp/cache/xlink2resolved.gml' )
-    gml_ds = ogr.Open( 'tmp/cache/xlink1.gml' )
+    gdal.SetConfigOption('GML_SKIP_RESOLVE_ELEMS', 'gml:directedNode')
+    gdal.SetConfigOption('GML_SAVE_RESOLVED_TO', 'tmp/cache/xlink2resolved.gml')
+    gml_ds = ogr.Open('tmp/cache/xlink1.gml')
     del gml_ds
-    gdal.SetConfigOption( 'GML_SKIP_RESOLVE_ELEMS', None )
-    gdal.SetConfigOption( 'GML_SAVE_RESOLVED_TO', None )
+    gdal.SetConfigOption('GML_SKIP_RESOLVE_ELEMS', None)
+    gdal.SetConfigOption('GML_SAVE_RESOLVED_TO', None)
 
     try:
-        fp = open( 'tmp/cache/xlink1resolved.gml', 'r' )
+        fp = open('tmp/cache/xlink1resolved.gml', 'r')
         text = fp.read()
         fp.close()
-        os.remove( 'tmp/cache/xlink1resolved.gml' )
-        fp = open( 'tmp/cache/expected1.gml', 'r' )
+        os.remove('tmp/cache/xlink1resolved.gml')
+        fp = open('tmp/cache/expected1.gml', 'r')
         expectedtext = fp.read()
         fp.close()
     except:
@@ -600,11 +617,11 @@ def ogr_gml_14():
         return 'fail'
 
     try:
-        fp = open( 'tmp/cache/xlink2resolved.gml', 'r' )
+        fp = open('tmp/cache/xlink2resolved.gml', 'r')
         text = fp.read()
         fp.close()
-        os.remove( 'tmp/cache/xlink2resolved.gml' )
-        fp = open( 'tmp/cache/expected2.gml', 'r' )
+        os.remove('tmp/cache/xlink2resolved.gml')
+        fp = open('tmp/cache/expected2.gml', 'r')
         expectedtext = fp.read()
         fp.close()
     except:
@@ -618,6 +635,7 @@ def ogr_gml_14():
 
 ###############################################################################
 # Run test_ogrsf
+
 
 def ogr_gml_15():
 
@@ -639,6 +657,7 @@ def ogr_gml_15():
 ###############################################################################
 # Read CityGML generic attributes
 
+
 def ogr_gml_16():
 
     if not gdaltest.have_gml_reader:
@@ -659,6 +678,7 @@ def ogr_gml_16():
 
 ###############################################################################
 # Read layer SRS for WFS 1.0.0 return
+
 
 def ogr_gml_17():
 
@@ -686,6 +706,7 @@ def ogr_gml_17():
 
 ###############################################################################
 # Read layer SRS for WFS 1.1.0 return
+
 
 def ogr_gml_18():
 
@@ -715,14 +736,15 @@ def ogr_gml_18():
 # Read layer SRS for WFS 1.1.0 return, but without trying to restore
 # (long, lat) order. So we should get EPSGA:4326 and (lat, long) order
 
+
 def ogr_gml_19():
 
     if not gdaltest.have_gml_reader:
         return 'skip'
 
     try:
-        os.remove( 'data/gnis_pop_110.gfs' )
-    except:
+        os.remove('data/gnis_pop_110.gfs')
+    except OSError:
         pass
 
     gdal.SetConfigOption('GML_INVERT_AXIS_ORDER_IF_LAT_LONG', 'NO')
@@ -751,14 +773,15 @@ def ogr_gml_19():
 ###############################################################################
 # Test parsing a .xsd where the type definition is before its reference
 
+
 def ogr_gml_20():
 
     if not gdaltest.have_gml_reader:
         return 'skip'
 
     try:
-        os.remove( 'data/archsites.gfs' )
-    except:
+        os.remove('data/archsites.gfs')
+    except OSError:
         pass
 
     ds = ogr.Open('data/archsites.gml')
@@ -806,7 +829,8 @@ def ogr_gml_20():
 ###############################################################################
 # Test writing GML3
 
-def ogr_gml_21(format = 'GML3'):
+
+def ogr_gml_21(format='GML3'):
 
     if not gdaltest.have_gml_reader:
         return 'skip'
@@ -818,11 +842,11 @@ def ogr_gml_21(format = 'GML3'):
     for filename in ['tmp/gml_21.gml', 'tmp/gml_21.xsd', 'tmp/gml_21.gfs']:
         try:
             os.remove(filename)
-        except:
+        except OSError:
             pass
 
-    ds = ogr.GetDriverByName('GML').CreateDataSource('tmp/gml_21.gml', options = ['FORMAT=' + format] )
-    lyr = ds.CreateLayer('firstlayer', srs = sr)
+    ds = ogr.GetDriverByName('GML').CreateDataSource('tmp/gml_21.gml', options=['FORMAT=' + format])
+    lyr = ds.CreateLayer('firstlayer', srs=sr)
     lyr.CreateField(ogr.FieldDefn('string_field', ogr.OFTString))
 
     feat = ogr.Feature(lyr.GetLayerDefn())
@@ -890,14 +914,17 @@ def ogr_gml_21(format = 'GML3'):
 
     return 'success'
 
+
 def ogr_gml_21_deegree3():
     return ogr_gml_21('GML3Deegree')
+
 
 def ogr_gml_21_gml32():
     return ogr_gml_21('GML3.2')
 
 ###############################################################################
 # Read a OpenLS DetermineRouteResponse document
+
 
 def ogr_gml_22():
 
@@ -926,14 +953,15 @@ def ogr_gml_22():
 # Test that use SRS defined in global gml:Envelope if no SRS is set for any
 # feature geometry
 
+
 def ogr_gml_23():
 
     if not gdaltest.have_gml_reader:
         return 'skip'
 
     try:
-        os.remove( 'tmp/global_geometry.gfs' )
-    except:
+        os.remove('tmp/global_geometry.gfs')
+    except OSError:
         pass
 
     shutil.copy('data/global_geometry.xml', 'tmp/global_geometry.xml')
@@ -970,14 +998,15 @@ def ogr_gml_23():
 # Test that use SRS defined in global gml:Envelope if no SRS is set for any
 # feature geometry
 
+
 def ogr_gml_24():
 
     if not gdaltest.have_gml_reader:
         return 'skip'
 
     try:
-        os.remove( 'data/global_geometry.gfs' )
-    except:
+        os.remove('data/global_geometry.gfs')
+    except OSError:
         pass
 
     # Here we use only the .xml file and the .xsd file
@@ -987,9 +1016,9 @@ def ogr_gml_24():
 
     # Because we read the .xsd, we (currently) don't find the SRS
 
-    #sr = lyr.GetSpatialRef()
-    #got_wkt = sr.ExportToWkt()
-    #if got_wkt.find('GEOGCS["WGS 84"') == -1 or \
+    # sr = lyr.GetSpatialRef()
+    # got_wkt = sr.ExportToWkt()
+    # if got_wkt.find('GEOGCS["WGS 84"') == -1 or \
     #   got_wkt.find('AXIS["Latitude",NORTH],AXIS["Longitude",EAST]') != -1:
     #    gdaltest.post_reason('did not get expected SRS')
     #    print(got_wkt)
@@ -1014,6 +1043,7 @@ def ogr_gml_24():
 ###############################################################################
 # Test fixes for #3934 and #3935
 
+
 def ogr_gml_25():
 
     if not gdaltest.have_gml_reader:
@@ -1024,8 +1054,8 @@ def ogr_gml_25():
         return 'skip'
 
     try:
-        os.remove( 'data/curveProperty.gfs' )
-    except:
+        os.remove('data/curveProperty.gfs')
+    except OSError:
         pass
 
     gdal.SetConfigOption('GML_FACE_HOLE_NEGATIVE', 'YES')
@@ -1046,6 +1076,7 @@ def ogr_gml_25():
 
 ###############################################################################
 # Test writing and reading 3D geoms (GML2)
+
 
 def ogr_gml_26():
 
@@ -1077,6 +1108,7 @@ def ogr_gml_26():
 
 ###############################################################################
 # Test writing and reading 3D geoms (GML3)
+
 
 def ogr_gml_27():
 
@@ -1110,6 +1142,7 @@ def ogr_gml_27():
 
 ###############################################################################
 # Test writing and reading layers of type wkbNone (#4154)
+
 
 def ogr_gml_28():
 
@@ -1152,6 +1185,7 @@ def ogr_gml_28():
 ###############################################################################
 # Test reading FME GMLs
 
+
 def ogr_gml_29():
 
     if not gdaltest.have_gml_reader:
@@ -1159,10 +1193,10 @@ def ogr_gml_29():
 
     ds = ogr.Open('data/testfmegml.gml')
 
-    expected_results = [ [ ogr.wkbMultiPoint, 'MULTIPOINT (2 49)' ],
-                         [ ogr.wkbMultiPolygon, 'MULTIPOLYGON (((2 49,3 49,3 50,2 50,2 49)))'],
-                         [ ogr.wkbMultiLineString, 'MULTILINESTRING ((2 49,3 50))'],
-                       ]
+    expected_results = [[ogr.wkbMultiPoint, 'MULTIPOINT (2 49)'],
+                        [ogr.wkbMultiPolygon, 'MULTIPOLYGON (((2 49,3 49,3 50,2 50,2 49)))'],
+                        [ogr.wkbMultiLineString, 'MULTILINESTRING ((2 49,3 50))'],
+                        ]
 
     for j in range(len(expected_results)):
         lyr = ds.GetLayer(j)
@@ -1184,6 +1218,7 @@ def ogr_gml_29():
 
 ###############################################################################
 # Test reading a big field and a big geometry
+
 
 def ogr_gml_30():
 
@@ -1238,6 +1273,7 @@ def ogr_gml_30():
 ###############################################################################
 # Test SEQUENTIAL_LAYERS
 
+
 def ogr_gml_31():
 
     if not gdaltest.have_gml_reader:
@@ -1273,6 +1309,7 @@ def ogr_gml_31():
 
 ###############################################################################
 # Test SEQUENTIAL_LAYERS without a .gfs
+
 
 def ogr_gml_32():
 
@@ -1312,11 +1349,11 @@ def ogr_gml_32():
     gdal.Unlink("/vsimem/ogr_gml_31.gml")
     gdal.Unlink("/vsimem/ogr_gml_31.gfs")
 
-
     return 'success'
 
 ###############################################################################
 # Test INTERLEAVED_LAYERS
+
 
 def ogr_gml_33():
 
@@ -1328,19 +1365,19 @@ def ogr_gml_33():
     ds = ogr.Open('data/testfmegml_interleaved.gml')
     gdal.SetConfigOption('GML_READ_MODE', None)
 
-    read_sequence = [ [0,1],
-                      [0,None],
-                      [1,3],
-                      [2,5],
-                      [2,None],
-                      [0,2],
-                      [1,4],
-                      [1,None],
-                      [2,6],
-                      [2,None],
-                      [0,None],
-                      [1,None],
-                      [2,None] ]
+    read_sequence = [[0, 1],
+                     [0, None],
+                     [1, 3],
+                     [2, 5],
+                     [2, None],
+                     [0, 2],
+                     [1, 4],
+                     [1, None],
+                     [2, 6],
+                     [2, None],
+                     [0, None],
+                     [1, None],
+                     [2, None]]
 
     for i in range(len(read_sequence)):
         lyr = ds.GetLayer(read_sequence[i][0])
@@ -1359,22 +1396,23 @@ def ogr_gml_33():
 ###############################################################################
 # Test writing non-ASCII UTF-8 content (#4117, #4299)
 
+
 def ogr_gml_34():
 
     if not gdaltest.have_gml_reader:
         return 'skip'
 
     drv = ogr.GetDriverByName('GML')
-    ds = drv.CreateDataSource( '/vsimem/ogr_gml_34.gml' )
+    ds = drv.CreateDataSource('/vsimem/ogr_gml_34.gml')
     lyr = ds.CreateLayer('test')
     lyr.CreateField(ogr.FieldDefn("name", ogr.OFTString))
     feat = ogr.Feature(lyr.GetLayerDefn())
-    feat.SetField(0,  '\xc4\x80liamanu<&')
+    feat.SetField(0, '\xc4\x80liamanu<&')
     lyr.CreateFeature(feat)
     feat = None
     ds = None
 
-    ds = ogr.Open( '/vsimem/ogr_gml_34.gml' )
+    ds = ogr.Open('/vsimem/ogr_gml_34.gml')
     lyr = ds.GetLayer(0)
     feat = lyr.GetNextFeature()
     if feat.GetFieldAsString('name') != '\xc4\x80liamanu<&':
@@ -1382,13 +1420,14 @@ def ogr_gml_34():
         return 'fail'
     ds = None
 
-    gdal.Unlink( '/vsimem/ogr_gml_34.gml' )
-    gdal.Unlink( '/vsimem/ogr_gml_34.xsd' )
+    gdal.Unlink('/vsimem/ogr_gml_34.gml')
+    gdal.Unlink('/vsimem/ogr_gml_34.xsd')
 
     return 'success'
 
 ###############################################################################
 # Test GML_SKIP_RESOLVE_ELEMS=HUGE (#4380)
+
 
 def ogr_gml_35():
 
@@ -1402,16 +1441,16 @@ def ogr_gml_35():
         return 'skip'
 
     try:
-        os.remove( 'tmp/GmlTopo-sample.sqlite' )
-    except:
+        os.remove('tmp/GmlTopo-sample.sqlite')
+    except OSError:
         pass
     try:
-        os.remove( 'tmp/GmlTopo-sample.gfs' )
-    except:
+        os.remove('tmp/GmlTopo-sample.gfs')
+    except OSError:
         pass
     try:
-        os.remove( 'tmp/GmlTopo-sample.resolved.gml' )
-    except:
+        os.remove('tmp/GmlTopo-sample.resolved.gml')
+    except OSError:
         pass
 
     shutil.copy('data/GmlTopo-sample.xml', 'tmp/GmlTopo-sample.xml')
@@ -1438,7 +1477,7 @@ def ogr_gml_35():
     lyr = ds.GetLayerByName('Suolo')
     feat = lyr.GetNextFeature()
     wkt = 'MULTIPOLYGON (((-0.1 0.6,-0.0 0.7,0.2 0.7,0.3 0.6,0.5 0.6,0.5 0.8,0.7 0.8,0.8 0.6,0.9 0.6,0.9 0.4,0.7 0.3,0.7 0.2,0.9 0.1,0.9 -0.1,0.6 -0.2,0.3 -0.2,0.2 -0.2,-0.1 0.0,-0.1 0.1,-0.1 0.2,0.1 0.3,0.1 0.4,-0.0 0.4,-0.1 0.5,-0.1 0.6)))'
-    if ogrtest.check_feature_geometry( feat, wkt):
+    if ogrtest.check_feature_geometry(feat, wkt):
         print(feat.GetGeometryRef())
         return 'fail'
 
@@ -1447,7 +1486,7 @@ def ogr_gml_35():
     ds = ogr.Open('tmp/GmlTopo-sample.xml')
     lyr = ds.GetLayerByName('Suolo')
     feat = lyr.GetNextFeature()
-    if ogrtest.check_feature_geometry( feat, wkt):
+    if ogrtest.check_feature_geometry(feat, wkt):
         print(feat.GetGeometryRef())
         return 'fail'
 
@@ -1458,7 +1497,8 @@ def ogr_gml_35():
 ###############################################################################
 # Test GML_SKIP_RESOLVE_ELEMS=NONE (and new GMLTopoSurface interpretation)
 
-def ogr_gml_36(GML_FACE_HOLE_NEGATIVE = 'NO'):
+
+def ogr_gml_36(GML_FACE_HOLE_NEGATIVE='NO'):
 
     if not gdaltest.have_gml_reader:
         return 'skip'
@@ -1468,12 +1508,12 @@ def ogr_gml_36(GML_FACE_HOLE_NEGATIVE = 'NO'):
             return 'skip'
 
     try:
-        os.remove( 'tmp/GmlTopo-sample.gfs' )
-    except:
+        os.remove('tmp/GmlTopo-sample.gfs')
+    except OSError:
         pass
     try:
-        os.remove( 'tmp/GmlTopo-sample.resolved.gml' )
-    except:
+        os.remove('tmp/GmlTopo-sample.resolved.gml')
+    except OSError:
         pass
 
     shutil.copy('data/GmlTopo-sample.xml', 'tmp/GmlTopo-sample.xml')
@@ -1493,7 +1533,7 @@ def ogr_gml_36(GML_FACE_HOLE_NEGATIVE = 'NO'):
         wkt = 'MULTIPOLYGON (((-0.1 0.6,-0.0 0.7,0.2 0.7,0.3 0.6,0.5 0.6,0.5 0.8,0.7 0.8,0.8 0.6,0.9 0.6,0.9 0.4,0.7 0.3,0.7 0.2,0.9 0.1,0.9 -0.1,0.6 -0.2,0.3 -0.2,0.2 -0.2,-0.1 0.0,-0.1 0.1,-0.1 0.2,0.1 0.3,0.1 0.4,-0.0 0.4,-0.1 0.5,-0.1 0.6)))'
     else:
         wkt = 'POLYGON ((-0.1 0.6,-0.0 0.7,0.2 0.7,0.3 0.6,0.5 0.6,0.5 0.8,0.7 0.8,0.8 0.6,0.9 0.6,0.9 0.4,0.7 0.3,0.7 0.2,0.9 0.1,0.9 -0.1,0.6 -0.2,0.3 -0.2,0.2 -0.2,-0.1 0.0,-0.1 0.1,-0.1 0.2,0.1 0.3,0.1 0.4,-0.0 0.4,-0.1 0.5,-0.1 0.6),(0.2 0.2,0.2 0.4,0.4 0.4,0.5 0.2,0.5 0.1,0.5 0.0,0.2 0.0,0.2 0.2),(0.6 0.1,0.8 0.1,0.8 -0.1,0.6 -0.1,0.6 0.1))'
-    if ogrtest.check_feature_geometry( feat, wkt):
+    if ogrtest.check_feature_geometry(feat, wkt):
         print(feat.GetGeometryRef())
         return 'fail'
 
@@ -1504,7 +1544,7 @@ def ogr_gml_36(GML_FACE_HOLE_NEGATIVE = 'NO'):
     gdal.SetConfigOption('GML_FACE_HOLE_NEGATIVE', None)
     lyr = ds.GetLayerByName('Suolo')
     feat = lyr.GetNextFeature()
-    if ogrtest.check_feature_geometry( feat, wkt):
+    if ogrtest.check_feature_geometry(feat, wkt):
         print(feat.GetGeometryRef())
         return 'fail'
 
@@ -1515,13 +1555,15 @@ def ogr_gml_36(GML_FACE_HOLE_NEGATIVE = 'NO'):
 ###############################################################################
 # Test GML_SKIP_RESOLVE_ELEMS=NONE with old GMLTopoSurface interpretation
 
+
 def ogr_gml_37():
     return ogr_gml_36('YES')
 
 ###############################################################################
 # Test new GMLTopoSurface interpretation (#3934) with HUGE xlink resolver
 
-def ogr_gml_38(resolver = 'HUGE'):
+
+def ogr_gml_38(resolver='HUGE'):
 
     if not gdaltest.have_gml_reader:
         return 'skip'
@@ -1534,16 +1576,16 @@ def ogr_gml_38(resolver = 'HUGE'):
         return 'skip'
 
     try:
-        os.remove( 'tmp/sample_gml_face_hole_negative_no.sqlite' )
-    except:
+        os.remove('tmp/sample_gml_face_hole_negative_no.sqlite')
+    except OSError:
         pass
     try:
-        os.remove( 'tmp/sample_gml_face_hole_negative_no.gfs' )
-    except:
+        os.remove('tmp/sample_gml_face_hole_negative_no.gfs')
+    except OSError:
         pass
     try:
-        os.remove( 'tmp/sample_gml_face_hole_negative_no.resolved.gml' )
-    except:
+        os.remove('tmp/sample_gml_face_hole_negative_no.resolved.gml')
+    except OSError:
         pass
 
     shutil.copy('data/sample_gml_face_hole_negative_no.xml', 'tmp/sample_gml_face_hole_negative_no.xml')
@@ -1558,7 +1600,7 @@ def ogr_gml_38(resolver = 'HUGE'):
             os.stat('tmp/sample_gml_face_hole_negative_no.sqlite')
             gdaltest.post_reason('did not expect tmp/sample_gml_face_hole_negative_no.sqlite')
             return 'fail'
-        except:
+        except OSError:
             pass
 
     if gdal.GetLastErrorMsg() != '':
@@ -1568,7 +1610,7 @@ def ogr_gml_38(resolver = 'HUGE'):
     lyr = ds.GetLayerByName('Suolo')
     feat = lyr.GetNextFeature()
     wkt = 'MULTIPOLYGON (((0.9 0.6,0.9 0.4,0.7 0.3,0.7 0.2,0.9 0.1,0.9 -0.1,0.6 -0.2,0.3 -0.2,0.2 -0.2,-0.1 0.0,-0.1 0.1,-0.1 0.2,0.1 0.3,0.1 0.4,-0.0 0.4,-0.1 0.5,-0.1 0.6,-0.0 0.7,0.2 0.7,0.3 0.6,0.5 0.6,0.5 0.8,0.7 0.8,0.8 0.6,0.9 0.6),(0.6 0.1,0.6 -0.1,0.8 -0.1,0.8 0.1,0.6 0.1),(0.2 0.4,0.2 0.2,0.2 0.0,0.5 0.0,0.5 0.1,0.5 0.2,0.4 0.4,0.2 0.4)))'
-    if ogrtest.check_feature_geometry( feat, wkt):
+    if ogrtest.check_feature_geometry(feat, wkt):
         print(feat.GetGeometryRef())
         return 'fail'
 
@@ -1579,11 +1621,13 @@ def ogr_gml_38(resolver = 'HUGE'):
 ###############################################################################
 # Test new GMLTopoSurface interpretation (#3934) with standard xlink resolver
 
+
 def ogr_gml_39():
     return ogr_gml_38('NONE')
 
 ###############################################################################
 # Test parsing XSD where simpleTypes not inlined, but defined elsewhere in the .xsd (#4328)
+
 
 def ogr_gml_40():
 
@@ -1601,6 +1645,7 @@ def ogr_gml_40():
 ###############################################################################
 # Test validating against .xsd
 
+
 def ogr_gml_41():
 
     gdaltest.have_gml_validation = False
@@ -1608,7 +1653,7 @@ def ogr_gml_41():
     if not gdaltest.have_gml_reader:
         return 'skip'
 
-    if not gdaltest.download_file('http://schemas.opengis.net/SCHEMAS_OPENGIS_NET.zip', 'SCHEMAS_OPENGIS_NET.zip' ):
+    if not gdaltest.download_file('http://schemas.opengis.net/SCHEMAS_OPENGIS_NET.zip', 'SCHEMAS_OPENGIS_NET.zip'):
         return 'skip'
 
     ds = ogr.Open('data/expected_gml_21.gml')
@@ -1635,6 +1680,7 @@ def ogr_gml_41():
 ###############################################################################
 # Test validating against .xsd
 
+
 def ogr_gml_42():
 
     if not gdaltest.have_gml_validation:
@@ -1642,13 +1688,13 @@ def ogr_gml_42():
 
     try:
         os.mkdir('tmp/cache/SCHEMAS_OPENGIS_NET')
-    except:
+    except OSError:
         pass
 
     try:
         os.stat('tmp/cache/SCHEMAS_OPENGIS_NET/gml')
-    except:
-        gdaltest.unzip( 'tmp/cache/SCHEMAS_OPENGIS_NET', 'tmp/cache/SCHEMAS_OPENGIS_NET.zip')
+    except OSError:
+        gdaltest.unzip('tmp/cache/SCHEMAS_OPENGIS_NET', 'tmp/cache/SCHEMAS_OPENGIS_NET.zip')
 
     ds = ogr.Open('data/expected_gml_gml32.gml')
 
@@ -1670,6 +1716,7 @@ def ogr_gml_42():
 ###############################################################################
 # Test automated downloading of WFS schema
 
+
 def ogr_gml_43():
 
     # The service times out
@@ -1686,7 +1733,7 @@ def ogr_gml_43():
     try:
         os.stat('data/wfs_typefeature.gfs')
         gfs_found = True
-    except:
+    except OSError:
         gfs_found = False
 
     if gfs_found:
@@ -1703,6 +1750,7 @@ def ogr_gml_43():
 
 ###############################################################################
 # Test providing a custom XSD filename
+
 
 def ogr_gml_44():
 
@@ -1758,24 +1806,25 @@ def ogr_gml_44():
 ###############################################################################
 # Test PREFIX and TARGET_NAMESPACE creation options
 
+
 def ogr_gml_45():
 
     if not gdaltest.have_gml_reader:
         return 'skip'
 
     drv = ogr.GetDriverByName('GML')
-    ds = drv.CreateDataSource('/vsimem/ogr_gml_45.gml', options = ['PREFIX=foo', 'TARGET_NAMESPACE=http://bar/'])
+    ds = drv.CreateDataSource('/vsimem/ogr_gml_45.gml', options=['PREFIX=foo', 'TARGET_NAMESPACE=http://bar/'])
     lyr = ds.CreateLayer('test')
     lyr.CreateField(ogr.FieldDefn('str', ogr.OFTString))
     lyr.CreateField(ogr.FieldDefn('int', ogr.OFTInteger))
     lyr.CreateField(ogr.FieldDefn('dbl', ogr.OFTReal))
 
-    dst_feat = ogr.Feature( lyr.GetLayerDefn() )
+    dst_feat = ogr.Feature(lyr.GetLayerDefn())
     dst_feat.SetField('str', 'str')
     dst_feat.SetField('int', 1)
     dst_feat.SetField('dbl', 2.34)
 
-    lyr.CreateFeature( dst_feat )
+    lyr.CreateFeature(dst_feat)
 
     dst_feat = None
     ds = None
@@ -1817,29 +1866,29 @@ def ogr_gml_46():
     if not gdaltest.have_gml_validation:
         return 'skip'
 
-    wkt_list = [ '',
-                 'POINT (0 1)',
-                 # 'POINT (0 1 2)',
-                 'LINESTRING (0 1,2 3)',
-                 # 'LINESTRING (0 1 2,3 4 5)',
-                 'POLYGON ((0 0,0 1,1 1,1 0,0 0))',
-                 # 'POLYGON ((0 0 10,0 1 10,1 1 10,1 0 10,0 0 10))',
-                 'MULTIPOINT (0 1)',
-                 # 'MULTIPOINT (0 1 2)',
-                 'MULTILINESTRING ((0 1,2 3))',
-                 # 'MULTILINESTRING ((0 1 2,3 4 5))',
-                 'MULTIPOLYGON (((0 0,0 1,1 1,1 0,0 0)))',
-                 # 'MULTIPOLYGON (((0 0 10,0 1 10,1 1 10,1 0 10,0 0 10)))',
-                 'GEOMETRYCOLLECTION (POINT (0 1))',
-                 # 'GEOMETRYCOLLECTION (POINT (0 1 2))'
+    wkt_list = ['',
+                'POINT (0 1)',
+                # 'POINT (0 1 2)',
+                'LINESTRING (0 1,2 3)',
+                # 'LINESTRING (0 1 2,3 4 5)',
+                'POLYGON ((0 0,0 1,1 1,1 0,0 0))',
+                # 'POLYGON ((0 0 10,0 1 10,1 1 10,1 0 10,0 0 10))',
+                'MULTIPOINT (0 1)',
+                # 'MULTIPOINT (0 1 2)',
+                'MULTILINESTRING ((0 1,2 3))',
+                # 'MULTILINESTRING ((0 1 2,3 4 5))',
+                'MULTIPOLYGON (((0 0,0 1,1 1,1 0,0 0)))',
+                # 'MULTIPOLYGON (((0 0 10,0 1 10,1 1 10,1 0 10,0 0 10)))',
+                'GEOMETRYCOLLECTION (POINT (0 1))',
+                # 'GEOMETRYCOLLECTION (POINT (0 1 2))'
                 ]
 
-    format_list = [ 'GML2', 'GML3', 'GML3Deegree', 'GML3.2' ]
+    format_list = ['GML2', 'GML3', 'GML3Deegree', 'GML3.2']
 
     for wkt in wkt_list:
         for format in format_list:
             drv = ogr.GetDriverByName('GML')
-            ds = drv.CreateDataSource('/vsimem/ogr_gml_46.gml', options = ['FORMAT=%s' % format])
+            ds = drv.CreateDataSource('/vsimem/ogr_gml_46.gml', options=['FORMAT=%s' % format])
             if wkt != '':
                 geom = ogr.CreateGeometryFromWkt(wkt)
                 geom_type = geom.GetGeometryType()
@@ -1850,19 +1899,19 @@ def ogr_gml_46():
                 geom_type = ogr.wkbNone
                 srs = None
 
-            lyr = ds.CreateLayer('test', geom_type = geom_type, srs = srs)
+            lyr = ds.CreateLayer('test', geom_type=geom_type, srs=srs)
 
             lyr.CreateField(ogr.FieldDefn('str', ogr.OFTString))
             lyr.CreateField(ogr.FieldDefn('int', ogr.OFTInteger))
             lyr.CreateField(ogr.FieldDefn('dbl', ogr.OFTReal))
 
-            dst_feat = ogr.Feature( lyr.GetLayerDefn() )
+            dst_feat = ogr.Feature(lyr.GetLayerDefn())
             dst_feat.SetField('str', 'str')
             dst_feat.SetField('int', 1)
             dst_feat.SetField('dbl', 2.34)
             dst_feat.SetGeometry(geom)
 
-            lyr.CreateFeature( dst_feat )
+            lyr.CreateFeature(dst_feat)
 
             dst_feat = None
             ds = None
@@ -1925,12 +1974,13 @@ def ogr_gml_46():
 ###############################################################################
 # Test validation of WFS GML documents
 
+
 def ogr_gml_47():
 
     if not gdaltest.have_gml_validation:
         return 'skip'
 
-    filenames = [ 'data/wfs10.xml', 'data/wfs11.xml', 'data/wfs20.xml' ]
+    filenames = ['data/wfs10.xml', 'data/wfs11.xml', 'data/wfs20.xml']
 
     for filename in filenames:
 
@@ -1966,6 +2016,7 @@ def ogr_gml_47():
 #    </xsd:complexType>
 #    </xsd:element>
 
+
 def ogr_gml_48():
 
     if not gdaltest.have_gml_reader:
@@ -1973,7 +2024,7 @@ def ogr_gml_48():
 
     try:
         os.unlink('data/schema_with_geom_in_complextype.gfs')
-    except:
+    except OSError:
         pass
 
     ds = ogr.Open('data/schema_with_geom_in_complextype.xml')
@@ -1993,6 +2044,7 @@ def ogr_gml_48():
 
 ###############################################################################
 # Test a pseudo Inspire GML file
+
 
 def ogr_gml_49():
 
@@ -2036,6 +2088,7 @@ def ogr_gml_49():
 ###############################################################################
 # Test support for StringList, IntegerList, RealList
 
+
 def ogr_gml_50():
 
     if not gdaltest.have_gml_reader:
@@ -2043,14 +2096,14 @@ def ogr_gml_50():
 
     drv = ogr.GetDriverByName('GML')
     ds = drv.CreateDataSource('/vsimem/ogr_gml_50.gml')
-    lyr = ds.CreateLayer( 'listlayer' )
-    field_defn = ogr.FieldDefn( 'stringlist', ogr.OFTStringList )
-    lyr.CreateField( field_defn )
-    field_defn = ogr.FieldDefn( 'intlist', ogr.OFTIntegerList )
-    lyr.CreateField( field_defn )
-    field_defn = ogr.FieldDefn( 'reallist', ogr.OFTRealList )
-    lyr.CreateField( field_defn )
-    feat = ogr.Feature( feature_def = lyr.GetLayerDefn() )
+    lyr = ds.CreateLayer('listlayer')
+    field_defn = ogr.FieldDefn('stringlist', ogr.OFTStringList)
+    lyr.CreateField(field_defn)
+    field_defn = ogr.FieldDefn('intlist', ogr.OFTIntegerList)
+    lyr.CreateField(field_defn)
+    field_defn = ogr.FieldDefn('reallist', ogr.OFTRealList)
+    lyr.CreateField(field_defn)
+    feat = ogr.Feature(feature_def=lyr.GetLayerDefn())
     feat.SetFieldStringList(0, ['a', 'b'])
     feat.SetFieldIntegerList(1, [2, 3])
     feat.SetFieldDoubleList(2, [4.56, 5.67])
@@ -2081,6 +2134,7 @@ def ogr_gml_50():
 
 ###############################################################################
 # Test -dsco WRITE_FEATURE_BOUNDED_BY=no -dsco STRIP_PREFIX=YES
+
 
 def ogr_gml_51():
 
@@ -2133,14 +2187,15 @@ def ogr_gml_51():
 ###############################################################################
 # Test reading MTKGML files
 
+
 def ogr_gml_52():
 
     if not gdaltest.have_gml_reader:
         return 'skip'
 
     try:
-        os.remove( 'data/fake_mtkgml.gfs' )
-    except:
+        os.remove('data/fake_mtkgml.gfs')
+    except OSError:
         pass
 
     for i in range(2):
@@ -2163,11 +2218,11 @@ def ogr_gml_52():
 
         feat = lyr.GetNextFeature()
         if feat.GetField('gid') != '1' or \
-        feat.GetField('regular_attribute') != 5 or \
-        feat.GetField('foo_href') != 'some_ref' or \
-        feat.GetField('teksti') != 'En francais !' or \
-        feat.GetField('teksti_kieli') != 'fr' or \
-        ogrtest.check_feature_geometry( feat, 'POINT (280000 7000000 0)') != 0:
+                feat.GetField('regular_attribute') != 5 or \
+                feat.GetField('foo_href') != 'some_ref' or \
+                feat.GetField('teksti') != 'En francais !' or \
+                feat.GetField('teksti_kieli') != 'fr' or \
+                ogrtest.check_feature_geometry(feat, 'POINT (280000 7000000 0)') != 0:
             gdaltest.post_reason('fail')
             feat.DumpReadable()
             return 'fail'
@@ -2181,7 +2236,7 @@ def ogr_gml_52():
             gdaltest.post_reason('fail')
             return 'fail'
         feat = lyr.GetNextFeature()
-        if ogrtest.check_feature_geometry( feat, 'POLYGON ((280000 7000000 0,281000 7000000 0,281000 7001000 0,280000 7001000 0,280000 7000000 0))') != 0:
+        if ogrtest.check_feature_geometry(feat, 'POLYGON ((280000 7000000 0,281000 7000000 0,281000 7001000 0,280000 7001000 0,280000 7000000 0))') != 0:
             gdaltest.post_reason('fail')
             feat.DumpReadable()
             return 'fail'
@@ -2191,19 +2246,20 @@ def ogr_gml_52():
             gdaltest.post_reason('fail')
             return 'fail'
         feat = lyr.GetNextFeature()
-        if ogrtest.check_feature_geometry( feat, 'LINESTRING (280000 7000000 0,281000 7000000 0,281000 7001000 0,280000 7001000 0,280000 7000000 0)') != 0:
+        if ogrtest.check_feature_geometry(feat, 'LINESTRING (280000 7000000 0,281000 7000000 0,281000 7001000 0,280000 7001000 0,280000 7000000 0)') != 0:
             gdaltest.post_reason('fail')
             feat.DumpReadable()
             return 'fail'
 
         ds = None
 
-    os.remove( 'data/fake_mtkgml.gfs' )
+    os.remove('data/fake_mtkgml.gfs')
 
     return 'success'
 
 ###############################################################################
 # Test that we don't recognize .xsd files themselves
+
 
 def ogr_gml_53():
 
@@ -2214,12 +2270,13 @@ def ogr_gml_53():
     if ds is not None:
         gdaltest.post_reason('fail')
         return 'fail'
-    ds =  None
+    ds = None
 
     return 'success'
 
 ###############################################################################
 # Test that we can open an empty GML datasource (#249, #5205)
+
 
 def ogr_gml_54():
 
@@ -2228,25 +2285,25 @@ def ogr_gml_54():
 
     try:
         os.unlink('data/empty.gfs')
-    except:
+    except OSError:
         pass
 
     ds = ogr.Open('data/empty.gml')
     if ds is None:
         gdaltest.post_reason('fail')
         return 'fail'
-    ds =  None
+    ds = None
 
     # with .gfs now
     ds = ogr.Open('data/empty.gml')
     if ds is None:
         gdaltest.post_reason('fail')
         return 'fail'
-    ds =  None
+    ds = None
 
     try:
         os.unlink('data/empty.gfs')
-    except:
+    except OSError:
         pass
 
     return 'success'
@@ -2254,6 +2311,7 @@ def ogr_gml_54():
 ###############################################################################
 # Test support for <xs:include> in schemas
 # Necessary for Finnish NLS data
+
 
 def ogr_gml_55():
 
@@ -2269,7 +2327,7 @@ def ogr_gml_55():
     try:
         os.unlink('data/ogr_gml_55.gfs')
         return 'fail'
-    except:
+    except OSError:
         pass
 
     return 'success'
@@ -2278,6 +2336,7 @@ def ogr_gml_55():
 # Test support for gml:FeaturePropertyType and multiple geometry field
 # Necessary for Finnish NLS data
 
+
 def ogr_gml_56():
 
     if not gdaltest.have_gml_reader:
@@ -2285,7 +2344,7 @@ def ogr_gml_56():
 
     try:
         os.unlink('data/ogr_gml_56.gfs')
-    except:
+    except OSError:
         pass
 
     gdal.SetConfigOption('GML_REGISTRY', 'data/ogr_gml_56_registry.xml')
@@ -2299,7 +2358,7 @@ def ogr_gml_56():
     if feat.GetFieldAsString(feat.GetFieldIndex('subFeatureProperty_href')) != '#subFeature.0':
         gdaltest.post_reason('fail')
         return 'fail'
-    if feat.GetFieldAsStringList(feat.GetFieldIndex('subFeatureRepeatedProperty_href')) != ['#subFeatureRepeated.0','#subFeatureRepeated.1']:
+    if feat.GetFieldAsStringList(feat.GetFieldIndex('subFeatureRepeatedProperty_href')) != ['#subFeatureRepeated.0', '#subFeatureRepeated.1']:
         gdaltest.post_reason('fail')
         return 'fail'
     if feat.GetGeomFieldRef(0).ExportToWkt() != 'POLYGON ((0 0,0 1,1 1,1 0,0 0))':
@@ -2342,13 +2401,14 @@ def ogr_gml_56():
     try:
         os.unlink('data/ogr_gml_56.gfs')
         return 'fail'
-    except:
+    except OSError:
         pass
 
     return 'success'
 
 ###############################################################################
 # Test write support for multiple geometry field
+
 
 def ogr_gml_57():
 
@@ -2358,12 +2418,12 @@ def ogr_gml_57():
     for i in range(4):
         options = []
         if i == 3:
-            options = [ 'FORMAT=GML3.2' ]
-        ds = ogr.GetDriverByName('GML').CreateDataSource('/vsimem/ogr_gml_57.gml', options = options)
+            options = ['FORMAT=GML3.2']
+        ds = ogr.GetDriverByName('GML').CreateDataSource('/vsimem/ogr_gml_57.gml', options=options)
         if ds.TestCapability(ogr.ODsCCreateGeomFieldAfterCreateLayer) != 1:
             gdaltest.post_reason('fail')
             return 'fail'
-        lyr = ds.CreateLayer('myLayer', geom_type = ogr.wkbNone)
+        lyr = ds.CreateLayer('myLayer', geom_type=ogr.wkbNone)
         if lyr.TestCapability(ogr.OLCCreateGeomField) != 1:
             gdaltest.post_reason('fail')
             return 'fail'
@@ -2423,6 +2483,7 @@ def ogr_gml_57():
 ###############################################################################
 # Test support for Inspire Cadastral schemas
 
+
 def ogr_gml_58():
 
     if not gdaltest.have_gml_reader:
@@ -2430,7 +2491,7 @@ def ogr_gml_58():
 
     try:
         os.unlink('data/inspire_cadastralparcel.gfs')
-    except:
+    except OSError:
         pass
 
     ds = ogr.Open('data/inspire_cadastralparcel.xml')
@@ -2453,21 +2514,21 @@ def ogr_gml_58():
         return 'fail'
 
     feat = lyr.GetNextFeature()
-    expected = [ ('gml_id', 'CadastralParcel-01'),
-                 ('areaValue', 10.0),
-                 ('areaValue_uom', 'm2'),
-                 ('beginLifespanVersion', '2000-01-01T00:00:00.0Z'),
-                 ('endLifespanVersion', '2001-01-01T00:00:00.0Z'),
-                 ('inspireId_localId', 'CadastralParcel-01-localId'),
-                 ('inspireId_namespace', 'namespace'),
-                 ('label', 'label'),
-                 ('nationalCadastralReference', 'nationalCadastralReference'),
-                 ('validFrom', '2002-01-01T00:00:00.0Z'),
-                 ('validTo', '2003-01-01T00:00:00.0Z'),
-                 ('basicPropertyUnit_href', ['#BPU.1','#BPU.2'] ),
-                 ('administrativeUnit_href', '#AU.1'),
-                 ('zoning_href', '#CZ.1') ]
-    for (key,val) in expected:
+    expected = [('gml_id', 'CadastralParcel-01'),
+                ('areaValue', 10.0),
+                ('areaValue_uom', 'm2'),
+                ('beginLifespanVersion', '2000-01-01T00:00:00.0Z'),
+                ('endLifespanVersion', '2001-01-01T00:00:00.0Z'),
+                ('inspireId_localId', 'CadastralParcel-01-localId'),
+                ('inspireId_namespace', 'namespace'),
+                ('label', 'label'),
+                ('nationalCadastralReference', 'nationalCadastralReference'),
+                ('validFrom', '2002-01-01T00:00:00.0Z'),
+                ('validTo', '2003-01-01T00:00:00.0Z'),
+                ('basicPropertyUnit_href', ['#BPU.1', '#BPU.2']),
+                ('administrativeUnit_href', '#AU.1'),
+                ('zoning_href', '#CZ.1')]
+    for (key, val) in expected:
         if feat.GetField(key) != val:
             print(key)
             print(val)
@@ -2482,21 +2543,21 @@ def ogr_gml_58():
         return 'fail'
 
     feat = lyr.GetNextFeature()
-    expected = [ ('gml_id', 'CadastralParcel-02'),
-                 ('areaValue', None),
-                 ('areaValue_uom', None),
-                 ('beginLifespanVersion', '2000-01-01T00:00:00.0Z'),
-                 ('endLifespanVersion', None),
-                 ('inspireId_localId', 'CadastralParcel-02-localId'),
-                 ('inspireId_namespace', 'namespace'),
-                 ('label', 'label'),
-                 ('nationalCadastralReference', 'nationalCadastralReference'),
-                 ('validFrom', None),
-                 ('validTo', None),
-                 ('basicPropertyUnit_href', None ),
-                 ('administrativeUnit_href', None),
-                 ('zoning_href', None) ]
-    for (key,val) in expected:
+    expected = [('gml_id', 'CadastralParcel-02'),
+                ('areaValue', None),
+                ('areaValue_uom', None),
+                ('beginLifespanVersion', '2000-01-01T00:00:00.0Z'),
+                ('endLifespanVersion', None),
+                ('inspireId_localId', 'CadastralParcel-02-localId'),
+                ('inspireId_namespace', 'namespace'),
+                ('label', 'label'),
+                ('nationalCadastralReference', 'nationalCadastralReference'),
+                ('validFrom', None),
+                ('validTo', None),
+                ('basicPropertyUnit_href', None),
+                ('administrativeUnit_href', None),
+                ('zoning_href', None)]
+    for (key, val) in expected:
         if feat.GetField(key) != val:
             print(key)
             print(val)
@@ -2513,7 +2574,6 @@ def ogr_gml_58():
     lyr = None
     ds = None
 
-
     ds = ogr.Open('data/inspire_basicpropertyunit.xml')
     lyr = ds.GetLayer(0)
     lyr_defn = lyr.GetLayerDefn()
@@ -2522,18 +2582,18 @@ def ogr_gml_58():
         return 'fail'
 
     feat = lyr.GetNextFeature()
-    expected = [ ('gml_id', 'BasicPropertyUnit-01'),
-                 ('inspireId_localId', 'BasicPropertyUnit-01-localId'),
-                 ('inspireId_namespace', 'namespace'),
-                 ('nationalCadastralReference', 'nationalCadastralReference'),
-                 ('areaValue', 10.0),
-                 ('areaValue_uom', 'm2'),
-                 ('validFrom', '2000-01-01T00:00:00.0Z'),
-                 ('validTo', '2001-01-01T00:00:00.0Z'),
-                 ('beginLifespanVersion', '2002-01-01T00:00:00.0Z'),
-                 ('endLifespanVersion', '2003-01-01T00:00:00.0Z'),
-                 ('administrativeUnit_href', '#AU.1') ]
-    for (key,val) in expected:
+    expected = [('gml_id', 'BasicPropertyUnit-01'),
+                ('inspireId_localId', 'BasicPropertyUnit-01-localId'),
+                ('inspireId_namespace', 'namespace'),
+                ('nationalCadastralReference', 'nationalCadastralReference'),
+                ('areaValue', 10.0),
+                ('areaValue_uom', 'm2'),
+                ('validFrom', '2000-01-01T00:00:00.0Z'),
+                ('validTo', '2001-01-01T00:00:00.0Z'),
+                ('beginLifespanVersion', '2002-01-01T00:00:00.0Z'),
+                ('endLifespanVersion', '2003-01-01T00:00:00.0Z'),
+                ('administrativeUnit_href', '#AU.1')]
+    for (key, val) in expected:
         if feat.GetField(key) != val:
             print(key)
             print(val)
@@ -2542,18 +2602,18 @@ def ogr_gml_58():
             return 'fail'
 
     feat = lyr.GetNextFeature()
-    expected = [ ('gml_id', 'BasicPropertyUnit-02'),
-                 ('inspireId_localId', 'BasicPropertyUnit-02-localId'),
-                 ('inspireId_namespace', 'namespace'),
-                 ('nationalCadastralReference', 'nationalCadastralReference'),
-                 ('areaValue', None),
-                 ('areaValue_uom', None),
-                 ('validFrom', '2000-01-01T00:00:00.0Z'),
-                 ('validTo', None),
-                 ('beginLifespanVersion', '2002-01-01T00:00:00.0Z'),
-                 ('endLifespanVersion', None),
-                 ('administrativeUnit_href', None) ]
-    for (key,val) in expected:
+    expected = [('gml_id', 'BasicPropertyUnit-02'),
+                ('inspireId_localId', 'BasicPropertyUnit-02-localId'),
+                ('inspireId_namespace', 'namespace'),
+                ('nationalCadastralReference', 'nationalCadastralReference'),
+                ('areaValue', None),
+                ('areaValue_uom', None),
+                ('validFrom', '2000-01-01T00:00:00.0Z'),
+                ('validTo', None),
+                ('beginLifespanVersion', '2002-01-01T00:00:00.0Z'),
+                ('endLifespanVersion', None),
+                ('administrativeUnit_href', None)]
+    for (key, val) in expected:
         if feat.GetField(key) != val:
             print(key)
             print(val)
@@ -2578,17 +2638,17 @@ def ogr_gml_58():
         return 'fail'
 
     feat = lyr.GetNextFeature()
-    expected = [ ('gml_id', 'CadastralBoundary-01'),
-                 ('beginLifespanVersion', '2000-01-01T00:00:00.0Z'),
-                 ('endLifespanVersion', '2001-01-01T00:00:00.0Z'),
-                 ('estimatedAccuracy', 1.0),
-                 ('estimatedAccuracy_uom', 'm'),
-                 ('inspireId_localId', 'CadastralBoundary-01-localId'),
-                 ('inspireId_namespace', 'namespace'),
-                 ('validFrom', '2002-01-01T00:00:00.0Z'),
-                 ('validTo', '2003-01-01T00:00:00.0Z'),
-                 ('parcel_href', ['#Parcel.1','#Parcel.2'] ) ]
-    for (key,val) in expected:
+    expected = [('gml_id', 'CadastralBoundary-01'),
+                ('beginLifespanVersion', '2000-01-01T00:00:00.0Z'),
+                ('endLifespanVersion', '2001-01-01T00:00:00.0Z'),
+                ('estimatedAccuracy', 1.0),
+                ('estimatedAccuracy_uom', 'm'),
+                ('inspireId_localId', 'CadastralBoundary-01-localId'),
+                ('inspireId_namespace', 'namespace'),
+                ('validFrom', '2002-01-01T00:00:00.0Z'),
+                ('validTo', '2003-01-01T00:00:00.0Z'),
+                ('parcel_href', ['#Parcel.1', '#Parcel.2'])]
+    for (key, val) in expected:
         if feat.GetField(key) != val:
             print(key)
             print(val)
@@ -2600,17 +2660,17 @@ def ogr_gml_58():
         return 'fail'
 
     feat = lyr.GetNextFeature()
-    expected = [ ('gml_id', 'CadastralBoundary-02'),
-                 ('beginLifespanVersion', '2000-01-01T00:00:00.0Z'),
-                 ('endLifespanVersion', None),
-                 ('estimatedAccuracy', None),
-                 ('estimatedAccuracy_uom', None),
-                 ('inspireId_localId', 'CadastralBoundary-02-localId'),
-                 ('inspireId_namespace', 'namespace'),
-                 ('validFrom', None),
-                 ('validTo', None),
-                 ('parcel_href', None ) ]
-    for (key,val) in expected:
+    expected = [('gml_id', 'CadastralBoundary-02'),
+                ('beginLifespanVersion', '2000-01-01T00:00:00.0Z'),
+                ('endLifespanVersion', None),
+                ('estimatedAccuracy', None),
+                ('estimatedAccuracy_uom', None),
+                ('inspireId_localId', 'CadastralBoundary-02-localId'),
+                ('inspireId_namespace', 'namespace'),
+                ('validFrom', None),
+                ('validTo', None),
+                ('parcel_href', None)]
+    for (key, val) in expected:
         if feat.GetField(key) != val:
             print(key)
             print(val)
@@ -2644,28 +2704,28 @@ def ogr_gml_58():
         return 'fail'
 
     feat = lyr.GetNextFeature()
-    expected = [ ('gml_id', 'CadastralZoning-01'),
-                 ('beginLifespanVersion', '2000-01-01T00:00:00.0Z'),
-                 ('endLifespanVersion', '2001-01-01T00:00:00.0Z'),
-                 ('estimatedAccuracy', 1.0),
-                 ('estimatedAccuracy_uom', 'm'),
-                 ('inspireId_localId', 'CadastralZoning-01-localId'),
-                 ('inspireId_namespace', 'namespace'),
-                 ('label', 'label'),
-                 ('level', '3'),
-                 ('levelName', ['English', 'Francais', 'Deutsch']),
-                 ('levelName_locale', ['en', 'fr', 'de']),
-                 ('name_language', ['language']),
-                 ('name_nativeness', ['nativeness']),
-                 ('name_nameStatus', ['nameStatus']),
-                 ('name_pronunciation', None),
-                 ('name_spelling_text', ['text']),
-                 ('name_spelling_script', ['script']),
-                 ('nationalCadastalZoningReference', 'nationalCadastalZoningReference'),
-                 ('validFrom', '2002-01-01T00:00:00.0Z'),
-                 ('validTo', '2003-01-01T00:00:00.0Z'),
-                 ('upperLevelUnit_href', '#ulu.1') ]
-    for (key,val) in expected:
+    expected = [('gml_id', 'CadastralZoning-01'),
+                ('beginLifespanVersion', '2000-01-01T00:00:00.0Z'),
+                ('endLifespanVersion', '2001-01-01T00:00:00.0Z'),
+                ('estimatedAccuracy', 1.0),
+                ('estimatedAccuracy_uom', 'm'),
+                ('inspireId_localId', 'CadastralZoning-01-localId'),
+                ('inspireId_namespace', 'namespace'),
+                ('label', 'label'),
+                ('level', '3'),
+                ('levelName', ['English', 'Francais', 'Deutsch']),
+                ('levelName_locale', ['en', 'fr', 'de']),
+                ('name_language', ['language']),
+                ('name_nativeness', ['nativeness']),
+                ('name_nameStatus', ['nameStatus']),
+                ('name_pronunciation', None),
+                ('name_spelling_text', ['text']),
+                ('name_spelling_script', ['script']),
+                ('nationalCadastalZoningReference', 'nationalCadastalZoningReference'),
+                ('validFrom', '2002-01-01T00:00:00.0Z'),
+                ('validTo', '2003-01-01T00:00:00.0Z'),
+                ('upperLevelUnit_href', '#ulu.1')]
+    for (key, val) in expected:
         if feat.GetField(key) != val:
             print(key)
             print(val)
@@ -2680,28 +2740,28 @@ def ogr_gml_58():
         return 'fail'
 
     feat = lyr.GetNextFeature()
-    expected = [ ('gml_id', 'CadastralZoning-02'),
-                 ('beginLifespanVersion', '2000-01-01T00:00:00.0Z'),
-                 ('endLifespanVersion', None),
-                 ('estimatedAccuracy', None),
-                 ('estimatedAccuracy_uom', None),
-                 ('inspireId_localId', None),
-                 ('inspireId_namespace', None),
-                 ('label', 'label'),
-                 ('level', '3'),
-                 ('levelName', ['English']),
-                 ('levelName_locale', ['en']),
-                 ('name_language', None),
-                 ('name_nativeness', None),
-                 ('name_nameStatus', None),
-                 ('name_pronunciation', None),
-                 ('name_spelling_text', None),
-                 ('name_spelling_script', None),
-                 ('nationalCadastalZoningReference', 'nationalCadastalZoningReference'),
-                 ('validFrom', None),
-                 ('validTo', None),
-                 ('upperLevelUnit_href', None) ]
-    for (key,val) in expected:
+    expected = [('gml_id', 'CadastralZoning-02'),
+                ('beginLifespanVersion', '2000-01-01T00:00:00.0Z'),
+                ('endLifespanVersion', None),
+                ('estimatedAccuracy', None),
+                ('estimatedAccuracy_uom', None),
+                ('inspireId_localId', None),
+                ('inspireId_namespace', None),
+                ('label', 'label'),
+                ('level', '3'),
+                ('levelName', ['English']),
+                ('levelName_locale', ['en']),
+                ('name_language', None),
+                ('name_nativeness', None),
+                ('name_nameStatus', None),
+                ('name_pronunciation', None),
+                ('name_spelling_text', None),
+                ('name_spelling_script', None),
+                ('nationalCadastalZoningReference', 'nationalCadastalZoningReference'),
+                ('validFrom', None),
+                ('validTo', None),
+                ('upperLevelUnit_href', None)]
+    for (key, val) in expected:
         if feat.GetField(key) != val:
             print(key)
             print(val)
@@ -2722,6 +2782,7 @@ def ogr_gml_58():
 
 ###############################################################################
 # Test GFS conditions
+
 
 def ogr_gml_59():
 
@@ -2746,11 +2807,11 @@ def ogr_gml_59():
     ds = ogr.Open('data/testcondition.gml')
     lyr = ds.GetLayer(0)
     feat = lyr.GetNextFeature()
-    expected = [ ('name_en', 'English name'),
-                 ('name_fr', 'Nom francais'),
-                 ('name_others_lang', ['de']),
-                 ('name_others', ['Deutsche name']) ]
-    for (key,val) in expected:
+    expected = [('name_en', 'English name'),
+                ('name_fr', 'Nom francais'),
+                ('name_others_lang', ['de']),
+                ('name_others', ['Deutsche name'])]
+    for (key, val) in expected:
         if feat.GetField(key) != val:
             print(key)
             print(val)
@@ -2767,6 +2828,7 @@ def ogr_gml_59():
 # Test reading WFS 2.0 GetFeature documents with wfs:FeatureCollection
 # as a wfs:member of the top wfs:FeatureCollection
 
+
 def ogr_gml_60():
 
     if not gdaltest.have_gml_reader:
@@ -2775,7 +2837,7 @@ def ogr_gml_60():
     # Make sure the .gfs file is more recent that the .gml one
     try:
         os.unlink('data/wfs_200_multiplelayers.gfs')
-    except:
+    except OSError:
         pass
 
     for i in range(2):
@@ -2800,13 +2862,14 @@ def ogr_gml_60():
 
     try:
         os.unlink('data/wfs_200_multiplelayers.gfs')
-    except:
+    except OSError:
         pass
 
     return 'success'
 
 ###############################################################################
 # Test reading a element specified with a full path in <ElementPath>
+
 
 def ogr_gml_61():
 
@@ -2862,6 +2925,7 @@ def ogr_gml_61():
 ###############################################################################
 # Test GML_ATTRIBUTES_TO_OGR_FIELDS option
 
+
 def ogr_gml_62():
 
     if not gdaltest.have_gml_reader:
@@ -2869,7 +2933,7 @@ def ogr_gml_62():
 
     try:
         os.unlink('tmp/gmlattributes.gfs')
-    except:
+    except OSError:
         pass
 
     shutil.copy('data/gmlattributes.gml', 'tmp/gmlattributes.gml')
@@ -2885,7 +2949,7 @@ def ogr_gml_62():
     # Test GML_ATTRIBUTES_TO_OGR_FIELDS=YES
     try:
         os.unlink('tmp/gmlattributes.gfs')
-    except:
+    except OSError:
         pass
 
     # Without and then with .gfs
@@ -2902,27 +2966,27 @@ def ogr_gml_62():
             return 'fail'
         feat = lyr.GetNextFeature()
         if feat.GetField('element_attr1') != '1' or \
-        feat.GetField('element2_attr1') != 'a' or \
-        feat.GetField('element2') != 'foo' or \
-        feat.IsFieldSet('element3_attr1') :
+                feat.GetField('element2_attr1') != 'a' or \
+                feat.GetField('element2') != 'foo' or \
+                feat.IsFieldSet('element3_attr1'):
             gdaltest.post_reason('fail')
             feat.DumpReadable()
             print(i)
             return 'fail'
         feat = lyr.GetNextFeature()
         if feat.IsFieldSet('element_attr1') or \
-        feat.IsFieldSet('element2_attr1') or \
-        feat.IsFieldSet('element2') or \
-        feat.GetField('element3_attr1') != 1:
+                feat.IsFieldSet('element2_attr1') or \
+                feat.IsFieldSet('element2') or \
+                feat.GetField('element3_attr1') != 1:
             gdaltest.post_reason('fail')
             feat.DumpReadable()
             print(i)
             return 'fail'
         feat = lyr.GetNextFeature()
         if feat.GetField('element_attr1') != 'a' or \
-        feat.IsFieldSet('element2_attr1') or \
-        feat.IsFieldSet('element2') or \
-        feat.IsFieldSet('element3_attr1') :
+                feat.IsFieldSet('element2_attr1') or \
+                feat.IsFieldSet('element2') or \
+                feat.IsFieldSet('element3_attr1'):
             gdaltest.post_reason('fail')
             feat.DumpReadable()
             print(i)
@@ -2935,12 +2999,13 @@ def ogr_gml_62():
 ###############################################################################
 # Test reading RUIAN VFR files
 
+
 def ogr_gml_63():
 
     if not gdaltest.have_gml_reader:
         return 'skip'
 
-    ### test ST file type
+    # test ST file type
     ds = ogr.Open('data/ruian_st_v1.xml.gz')
 
     # check number of layers
@@ -2959,7 +3024,7 @@ def ogr_gml_63():
 
     ds = None
 
-    ### test OB file type
+    # test OB file type
     ds = ogr.Open('data/ruian_ob_v1.xml.gz')
 
     # check number of layers
@@ -2980,6 +3045,7 @@ def ogr_gml_63():
 ###############################################################################
 # Test multiple instances of parsers (#5571)
 
+
 def ogr_gml_64():
 
     if not gdaltest.have_gml_reader:
@@ -2988,7 +3054,7 @@ def ogr_gml_64():
     for parser in ['XERCES', 'EXPAT']:
         for i in range(2):
             gdal.SetConfigOption('GML_PARSER', parser)
-            ds = ogr.Open( 'data/rnf_eg.gml' )
+            ds = ogr.Open('data/rnf_eg.gml')
             gdal.SetConfigOption('GML_PARSER', None)
             lyr = ds.GetLayer(0)
             feat = lyr.GetNextFeature()
@@ -3001,19 +3067,20 @@ def ogr_gml_64():
 ###############################################################################
 # Test SRSDIMENSION_LOC=GEOMETRY option (#5606)
 
+
 def ogr_gml_65():
 
     if not gdaltest.have_gml_reader:
         return 'skip'
 
-    option_expected_list = [ ['SRSDIMENSION_LOC=GEOMETRY', '<ogr:geometryProperty><gml:MultiSurface srsDimension="3"><gml:surfaceMember><gml:Polygon><gml:exterior><gml:LinearRing><gml:posList>0 1 2 3 4 5 6 7 8 0 1 2</gml:posList></gml:LinearRing></gml:exterior></gml:Polygon></gml:surfaceMember></gml:MultiSurface></ogr:geometryProperty>'],
-                             ['SRSDIMENSION_LOC=POSLIST', '<ogr:geometryProperty><gml:MultiSurface><gml:surfaceMember><gml:Polygon><gml:exterior><gml:LinearRing><gml:posList srsDimension="3">0 1 2 3 4 5 6 7 8 0 1 2</gml:posList></gml:LinearRing></gml:exterior></gml:Polygon></gml:surfaceMember></gml:MultiSurface></ogr:geometryProperty>'],
-                             ['SRSDIMENSION_LOC=GEOMETRY,POSLIST', '<ogr:geometryProperty><gml:MultiSurface srsDimension="3"><gml:surfaceMember><gml:Polygon><gml:exterior><gml:LinearRing><gml:posList srsDimension="3">0 1 2 3 4 5 6 7 8 0 1 2</gml:posList></gml:LinearRing></gml:exterior></gml:Polygon></gml:surfaceMember></gml:MultiSurface></ogr:geometryProperty>'],
-                           ]
+    option_expected_list = [['SRSDIMENSION_LOC=GEOMETRY', '<ogr:geometryProperty><gml:MultiSurface srsDimension="3"><gml:surfaceMember><gml:Polygon><gml:exterior><gml:LinearRing><gml:posList>0 1 2 3 4 5 6 7 8 0 1 2</gml:posList></gml:LinearRing></gml:exterior></gml:Polygon></gml:surfaceMember></gml:MultiSurface></ogr:geometryProperty>'],
+                            ['SRSDIMENSION_LOC=POSLIST', '<ogr:geometryProperty><gml:MultiSurface><gml:surfaceMember><gml:Polygon><gml:exterior><gml:LinearRing><gml:posList srsDimension="3">0 1 2 3 4 5 6 7 8 0 1 2</gml:posList></gml:LinearRing></gml:exterior></gml:Polygon></gml:surfaceMember></gml:MultiSurface></ogr:geometryProperty>'],
+                            ['SRSDIMENSION_LOC=GEOMETRY,POSLIST', '<ogr:geometryProperty><gml:MultiSurface srsDimension="3"><gml:surfaceMember><gml:Polygon><gml:exterior><gml:LinearRing><gml:posList srsDimension="3">0 1 2 3 4 5 6 7 8 0 1 2</gml:posList></gml:LinearRing></gml:exterior></gml:Polygon></gml:surfaceMember></gml:MultiSurface></ogr:geometryProperty>'],
+                            ]
     for (option, expected) in option_expected_list:
         filename = '/vsimem/ogr_gml_65.gml'
-        #filename = 'ogr_gml_65.gml'
-        ds = ogr.GetDriverByName('GML').CreateDataSource(filename, options = ['FORMAT=GML3',option])
+        # filename = 'ogr_gml_65.gml'
+        ds = ogr.GetDriverByName('GML').CreateDataSource(filename, options=['FORMAT=GML3', option])
         lyr = ds.CreateLayer('lyr')
         feat = ogr.Feature(lyr.GetLayerDefn())
         feat.SetGeometry(ogr.CreateGeometryFromWkt("MULTIPOLYGON (((0 1 2,3 4 5,6 7 8,0 1 2)))"))
@@ -3038,12 +3105,13 @@ def ogr_gml_65():
         ds = None
 
         gdal.Unlink(filename)
-        gdal.Unlink(filename[0:-3]+"xsd")
+        gdal.Unlink(filename[0:-3] + "xsd")
 
     return 'success'
 
 ###############################################################################
 # Test curve geometries
+
 
 def ogr_gml_66():
 
@@ -3051,9 +3119,9 @@ def ogr_gml_66():
         return 'skip'
 
     filename = '/vsimem/ogr_gml_66.gml'
-    #filename = 'ogr_gml_66.gml'
-    ds = ogr.GetDriverByName('GML').CreateDataSource(filename, options = ['FORMAT=GML3'])
-    lyr = ds.CreateLayer('compoundcurve', geom_type = ogr.wkbCompoundCurve)
+    # filename = 'ogr_gml_66.gml'
+    ds = ogr.GetDriverByName('GML').CreateDataSource(filename, options=['FORMAT=GML3'])
+    lyr = ds.CreateLayer('compoundcurve', geom_type=ogr.wkbCompoundCurve)
     f = ogr.Feature(lyr.GetLayerDefn())
     f.SetGeometry(ogr.CreateGeometryFromWkt('COMPOUNDCURVE (CIRCULARSTRING (0 0,1 1,2 0))'))
     lyr.CreateFeature(f)
@@ -3067,7 +3135,7 @@ def ogr_gml_66():
     lyr.CreateFeature(f)
     f = None
 
-    lyr = ds.CreateLayer('curvepolygon', geom_type = ogr.wkbCurvePolygon)
+    lyr = ds.CreateLayer('curvepolygon', geom_type=ogr.wkbCurvePolygon)
     f = ogr.Feature(lyr.GetLayerDefn())
     f.SetGeometry(ogr.CreateGeometryFromWkt('CURVEPOLYGON ( CIRCULARSTRING(0 0,1 0,0 0))'))
     lyr.CreateFeature(f)
@@ -3077,7 +3145,7 @@ def ogr_gml_66():
     lyr.CreateFeature(f)
     f = None
 
-    lyr = ds.CreateLayer('multisurface', geom_type = ogr.wkbMultiSurface)
+    lyr = ds.CreateLayer('multisurface', geom_type=ogr.wkbMultiSurface)
     f = ogr.Feature(lyr.GetLayerDefn())
     f.SetGeometry(ogr.CreateGeometryFromWkt('MULTISURFACE (CURVEPOLYGON ( CIRCULARSTRING(0 0,1 0,0 0)))'))
     lyr.CreateFeature(f)
@@ -3087,7 +3155,7 @@ def ogr_gml_66():
     lyr.CreateFeature(f)
     f = None
 
-    lyr = ds.CreateLayer('multicurve', geom_type = ogr.wkbMultiCurve)
+    lyr = ds.CreateLayer('multicurve', geom_type=ogr.wkbMultiCurve)
     f = ogr.Feature(lyr.GetLayerDefn())
     f.SetGeometry(ogr.CreateGeometryFromWkt('MULTICURVE ( CIRCULARSTRING(0 0,1 0,0 0))'))
     lyr.CreateFeature(f)
@@ -3097,25 +3165,25 @@ def ogr_gml_66():
     lyr.CreateFeature(f)
     f = None
 
-    lyr = ds.CreateLayer('polygon', geom_type = ogr.wkbPolygon)
+    lyr = ds.CreateLayer('polygon', geom_type=ogr.wkbPolygon)
     f = ogr.Feature(lyr.GetLayerDefn())
     f.SetGeometry(ogr.CreateGeometryFromWkt('POLYGON ((0 0,0 1,1 1,0 0))'))
     lyr.CreateFeature(f)
     f = None
 
-    lyr = ds.CreateLayer('linestring', geom_type = ogr.wkbLineString)
+    lyr = ds.CreateLayer('linestring', geom_type=ogr.wkbLineString)
     f = ogr.Feature(lyr.GetLayerDefn())
     f.SetGeometry(ogr.CreateGeometryFromWkt('LINESTRING (0 0,0 1,1 1,0 0)'))
     lyr.CreateFeature(f)
     f = None
 
-    lyr = ds.CreateLayer('multipolygon', geom_type = ogr.wkbMultiPolygon)
+    lyr = ds.CreateLayer('multipolygon', geom_type=ogr.wkbMultiPolygon)
     f = ogr.Feature(lyr.GetLayerDefn())
     f.SetGeometry(ogr.CreateGeometryFromWkt('MULTIPOLYGON (((0 0,0 1,1 1,0 0)))'))
     lyr.CreateFeature(f)
     f = None
 
-    lyr = ds.CreateLayer('multilinestring', geom_type = ogr.wkbMultiLineString)
+    lyr = ds.CreateLayer('multilinestring', geom_type=ogr.wkbMultiLineString)
     f = ogr.Feature(lyr.GetLayerDefn())
     f.SetGeometry(ogr.CreateGeometryFromWkt('MULTILINESTRING ((0 0,0 1,1 1,0 0))'))
     lyr.CreateFeature(f)
@@ -3176,7 +3244,6 @@ def ogr_gml_66():
     f.SetGeometry(ogr.CreateGeometryFromWkt('MULTILINESTRING ((0 0,0 1,1 1,0 0))'))
     lyr.CreateFeature(f)
     f = None
-
 
     ds = None
 
@@ -3382,15 +3449,16 @@ def ogr_gml_66():
 
         ds = None
 
-        gdal.Unlink(filename[0:-3]+"xsd")
+        gdal.Unlink(filename[0:-3] + "xsd")
 
     gdal.Unlink(filename)
-    gdal.Unlink(filename[0:-3]+"gfs")
+    gdal.Unlink(filename[0:-3] + "gfs")
 
     return 'success'
 
 ###############################################################################
 # Test boolean, int16, integer64 type
+
 
 def ogr_gml_67():
 
@@ -3422,7 +3490,7 @@ def ogr_gml_67():
     f = ogr.Feature(lyr.GetLayerDefn())
     f.SetField(0, 1)
     f.SetField(1, 0)
-    f.SetFieldIntegerList(2, [1,0])
+    f.SetFieldIntegerList(2, [1, 0])
     f.SetField(3, -32768)
     f.SetField(4, 1.23)
     f.SetField(5, 1)
@@ -3455,13 +3523,13 @@ def ogr_gml_67():
             return 'fail'
         if i == 0:
             if lyr.GetLayerDefn().GetFieldDefn(lyr.GetLayerDefn().GetFieldIndex('short')).GetType() != ogr.OFTInteger or \
-            lyr.GetLayerDefn().GetFieldDefn(lyr.GetLayerDefn().GetFieldIndex('short')).GetSubType() != ogr.OFSTInt16:
+                    lyr.GetLayerDefn().GetFieldDefn(lyr.GetLayerDefn().GetFieldIndex('short')).GetSubType() != ogr.OFSTInt16:
                 print(i)
                 gdaltest.post_reason('fail')
                 return 'fail'
         if i == 0:
             if lyr.GetLayerDefn().GetFieldDefn(lyr.GetLayerDefn().GetFieldIndex('float')).GetType() != ogr.OFTReal or \
-            lyr.GetLayerDefn().GetFieldDefn(lyr.GetLayerDefn().GetFieldIndex('float')).GetSubType() != ogr.OFSTFloat32:
+                    lyr.GetLayerDefn().GetFieldDefn(lyr.GetLayerDefn().GetFieldIndex('float')).GetSubType() != ogr.OFSTFloat32:
                 print(i)
                 gdaltest.post_reason('fail')
                 return 'fail'
@@ -3487,15 +3555,16 @@ def ogr_gml_67():
             return 'fail'
         ds = None
 
-        gdal.Unlink(filename[0:-3]+"xsd")
+        gdal.Unlink(filename[0:-3] + "xsd")
 
     gdal.Unlink(filename)
-    gdal.Unlink(filename[0:-3]+"gfs")
+    gdal.Unlink(filename[0:-3] + "gfs")
 
     return 'success'
 
 ###############################################################################
 # Test reading GML with xsd with a choice of geometry properites
+
 
 def ogr_gml_68():
 
@@ -3504,19 +3573,19 @@ def ogr_gml_68():
 
     ds = ogr.Open('data/choicepolygonmultipolygon.gml')
 
-    expected_results = [ 'MULTIPOLYGON (((0 0,0 1,1 1,1 0,0 0)))',
-                         'MULTIPOLYGON (((0 0,0 1,1 1,1 0,0 0)),((10 0,10 1,11 1,11 0,10 0)))' ]
+    expected_results = ['MULTIPOLYGON (((0 0,0 1,1 1,1 0,0 0)))',
+                        'MULTIPOLYGON (((0 0,0 1,1 1,1 0,0 0)),((10 0,10 1,11 1,11 0,10 0)))']
 
     lyr = ds.GetLayer(0)
     if lyr.GetGeomType() != ogr.wkbMultiPolygon:
-        gdaltest.post_reason(' did not get expected layer geometry type' )
+        gdaltest.post_reason(' did not get expected layer geometry type')
         return 'fail'
     for i in range(2):
         feat = lyr.GetNextFeature()
         geom = feat.GetGeometryRef()
         got_wkt = geom.ExportToWkt()
         if got_wkt != expected_results[i]:
-            gdaltest.post_reason('did not get expected geometry' )
+            gdaltest.post_reason('did not get expected geometry')
             print(got_wkt)
             return 'fail'
 
@@ -3527,13 +3596,14 @@ def ogr_gml_68():
 ###############################################################################
 # Test not nullable fields
 
+
 def ogr_gml_69():
 
     if not gdaltest.have_gml_reader:
         return 'skip'
 
     ds = ogr.GetDriverByName('GML').CreateDataSource('/vsimem/ogr_gml_69.gml')
-    lyr = ds.CreateLayer('test', geom_type = ogr.wkbNone)
+    lyr = ds.CreateLayer('test', geom_type=ogr.wkbNone)
     field_defn = ogr.FieldDefn('field_not_nullable', ogr.OFTString)
     field_defn.SetNullable(0)
     lyr.CreateField(field_defn)
@@ -3574,7 +3644,7 @@ def ogr_gml_69():
 
     ds = None
 
-    ds = gdal.OpenEx('/vsimem/ogr_gml_69.gml', open_options = ['EMPTY_AS_NULL=NO'])
+    ds = gdal.OpenEx('/vsimem/ogr_gml_69.gml', open_options=['EMPTY_AS_NULL=NO'])
     lyr = ds.GetLayerByName('test')
     if lyr.GetLayerDefn().GetFieldDefn(lyr.GetLayerDefn().GetFieldIndex('field_not_nullable')).IsNullable() != 0:
         gdaltest.post_reason('fail')
@@ -3599,15 +3669,16 @@ def ogr_gml_69():
 # Test default fields (not really supported, but we must do something as we
 # support not nullable fields)
 
+
 def ogr_gml_70():
 
     if not gdaltest.have_gml_reader:
         return 'skip'
 
     ds = ogr.GetDriverByName('GML').CreateDataSource('/vsimem/ogr_gml_70.gml')
-    lyr = ds.CreateLayer('test', geom_type = ogr.wkbNone)
+    lyr = ds.CreateLayer('test', geom_type=ogr.wkbNone)
 
-    field_defn = ogr.FieldDefn( 'field_string', ogr.OFTString )
+    field_defn = ogr.FieldDefn('field_string', ogr.OFTString)
     field_defn.SetDefault("'a'")
     field_defn.SetNullable(0)
     lyr.CreateField(field_defn)
@@ -3635,6 +3706,7 @@ def ogr_gml_70():
 ###############################################################################
 # Test reading WFS 2.0 layer resulting from a join operation
 
+
 def ogr_gml_71_helper(ds):
 
     if ds.GetLayerCount() != 1:
@@ -3646,12 +3718,12 @@ def ogr_gml_71_helper(ds):
         gdaltest.post_reason('fail')
         print(lyr.GetName())
         return 'fail'
-    fields = [ ('table1.gml_id', ogr.OFTString),
-               ('table1.foo', ogr.OFTInteger),
-               ('table1.bar', ogr.OFTInteger),
-               ('table2.gml_id', ogr.OFTString),
-               ('table2.bar', ogr.OFTInteger),
-               ('table2.baz', ogr.OFTString) ]
+    fields = [('table1.gml_id', ogr.OFTString),
+              ('table1.foo', ogr.OFTInteger),
+              ('table1.bar', ogr.OFTInteger),
+              ('table2.gml_id', ogr.OFTString),
+              ('table2.bar', ogr.OFTInteger),
+              ('table2.baz', ogr.OFTString)]
     layer_defn = lyr.GetLayerDefn()
     if layer_defn.GetFieldCount() != len(fields):
         gdaltest.post_reason('fail')
@@ -3690,9 +3762,9 @@ def ogr_gml_71_helper(ds):
        f.GetField('table2.baz') != 'foo' or \
        f.GetGeomFieldRef(0) is not None or \
        f.GetGeomFieldRef(1).ExportToWkt() != 'POINT (2 49)':
-            gdaltest.post_reason('fail')
-            f.DumpReadable()
-            return 'fail'
+        gdaltest.post_reason('fail')
+        f.DumpReadable()
+        return 'fail'
     f = lyr.GetNextFeature()
     if f.GetField('table1.gml_id') != 'table1-2' or \
        f.IsFieldSet('table1.foo') or \
@@ -3702,11 +3774,12 @@ def ogr_gml_71_helper(ds):
        f.GetField('table2.baz') != 'bar' or \
        f.GetGeomFieldRef(0).ExportToWkt() != 'POINT (3 50)' or \
        f.GetGeomFieldRef(1).ExportToWkt() != 'POINT (2 50)':
-            gdaltest.post_reason('fail')
-            f.DumpReadable()
-            return 'fail'
+        gdaltest.post_reason('fail')
+        f.DumpReadable()
+        return 'fail'
 
     return 'success'
+
 
 def ogr_gml_71():
 
@@ -3716,7 +3789,7 @@ def ogr_gml_71():
     # With .xsd
     try:
         os.unlink('data/wfsjointlayer.gfs')
-    except:
+    except OSError:
         pass
     ds = ogr.Open('data/wfsjointlayer.gml')
     if ogr_gml_71_helper(ds) != 'success':
@@ -3728,11 +3801,11 @@ def ogr_gml_71():
         os.unlink('data/wfsjointlayer.gfs')
         gdaltest.post_reason('fail')
         return 'fail'
-    except:
+    except OSError:
         pass
 
     # With .xsd but that is only partially understood
-    ds = gdal.OpenEx('data/wfsjointlayer.gml', open_options = ['XSD=data/wfsjointlayer_not_understood.xsd'])
+    ds = gdal.OpenEx('data/wfsjointlayer.gml', open_options=['XSD=data/wfsjointlayer_not_understood.xsd'])
     if ogr_gml_71_helper(ds) != 'success':
         gdaltest.post_reason('fail')
         return 'fail'
@@ -3740,7 +3813,7 @@ def ogr_gml_71():
 
     try:
         os.unlink('data/wfsjointlayer.gfs')
-    except:
+    except OSError:
         gdaltest.post_reason('fail')
         return 'fail'
 
@@ -3748,7 +3821,7 @@ def ogr_gml_71():
     shutil.copy('data/wfsjointlayer.gml', 'tmp/wfsjointlayer.gml')
     try:
         os.unlink('tmp/wfsjointlayer.gfs')
-    except:
+    except OSError:
         pass
     ds = ogr.Open('tmp/wfsjointlayer.gml')
     if ogr_gml_71_helper(ds) != 'success':
@@ -3758,7 +3831,7 @@ def ogr_gml_71():
 
     try:
         os.stat('tmp/wfsjointlayer.gfs')
-    except:
+    except OSError:
         gdaltest.post_reason('fail')
         return 'fail'
 
@@ -3774,17 +3847,18 @@ def ogr_gml_71():
 ###############################################################################
 # Test name and description
 
+
 def ogr_gml_72():
 
     if not gdaltest.have_gml_reader:
         return 'skip'
 
-    ds = ogr.GetDriverByName('GML').CreateDataSource('/vsimem/ogr_gml_72.gml', options = ['NAME=name', 'DESCRIPTION=description'])
-    ds.SetMetadata({ 'NAME': 'ignored', 'DESCRIPTION': 'ignored' })
+    ds = ogr.GetDriverByName('GML').CreateDataSource('/vsimem/ogr_gml_72.gml', options=['NAME=name', 'DESCRIPTION=description'])
+    ds.SetMetadata({'NAME': 'ignored', 'DESCRIPTION': 'ignored'})
     ds = None
 
     ds = ogr.Open('/vsimem/ogr_gml_72.gml')
-    if ds.GetMetadata() != { 'NAME': 'name', 'DESCRIPTION': 'description' }:
+    if ds.GetMetadata() != {'NAME': 'name', 'DESCRIPTION': 'description'}:
         gdaltest.post_reason('fail')
         print(ds.GetMetadata())
         return 'fail'
@@ -3795,11 +3869,11 @@ def ogr_gml_72():
     gdal.Unlink("/vsimem/ogr_gml_72.gfs")
 
     ds = ogr.GetDriverByName('GML').CreateDataSource('/vsimem/ogr_gml_72.gml')
-    ds.SetMetadata({'NAME': 'name', 'DESCRIPTION': 'description' })
+    ds.SetMetadata({'NAME': 'name', 'DESCRIPTION': 'description'})
     ds = None
 
     ds = ogr.Open('/vsimem/ogr_gml_72.gml')
-    if ds.GetMetadata() != { 'NAME': 'name', 'DESCRIPTION': 'description' }:
+    if ds.GetMetadata() != {'NAME': 'name', 'DESCRIPTION': 'description'}:
         gdaltest.post_reason('fail')
         print(ds.GetMetadata())
         return 'fail'
@@ -3814,14 +3888,15 @@ def ogr_gml_72():
 ###############################################################################
 # Read a CSW GetRecordsResponse document
 
+
 def ogr_gml_73():
 
     if not gdaltest.have_gml_reader:
         return 'skip'
 
     try:
-        os.remove( 'data/cswresults.gfs' )
-    except:
+        os.remove('data/cswresults.gfs')
+    except OSError:
         pass
 
     ds = ogr.Open('data/cswresults.xml')
@@ -3845,8 +3920,8 @@ def ogr_gml_73():
     ds = None
 
     try:
-        os.remove( 'data/cswresults.gfs' )
-    except:
+        os.remove('data/cswresults.gfs')
+    except OSError:
         pass
 
     return 'success'
@@ -3854,13 +3929,14 @@ def ogr_gml_73():
 ###############################################################################
 # Test FORCE_SRS_DETECTION open option
 
+
 def ogr_gml_74():
 
     if not gdaltest.have_gml_reader:
         return 'skip'
 
     # With .xsd
-    ds = gdal.OpenEx('data/expected_gml_gml32.gml', open_options = ['FORCE_SRS_DETECTION=YES'] )
+    ds = gdal.OpenEx('data/expected_gml_gml32.gml', open_options=['FORCE_SRS_DETECTION=YES'])
     lyr = ds.GetLayer(0)
     if lyr.GetSpatialRef() is None:
         gdaltest.post_reason('did not get expected SRS')
@@ -3875,7 +3951,7 @@ def ogr_gml_74():
         os.unlink('tmp/ogr_gml_74.gfs')
 
     # Without .xsd or .gfs
-    ds = gdal.OpenEx('tmp/ogr_gml_74.gml', open_options = ['FORCE_SRS_DETECTION=YES'] )
+    ds = gdal.OpenEx('tmp/ogr_gml_74.gml', open_options=['FORCE_SRS_DETECTION=YES'])
     lyr = ds.GetLayer(0)
     if lyr.GetSpatialRef() is None:
         gdaltest.post_reason('did not get expected SRS')
@@ -3886,7 +3962,7 @@ def ogr_gml_74():
         return 'fail'
 
     # With .gfs
-    ds = gdal.OpenEx('tmp/ogr_gml_74.gml', open_options = ['FORCE_SRS_DETECTION=YES'] )
+    ds = gdal.OpenEx('tmp/ogr_gml_74.gml', open_options=['FORCE_SRS_DETECTION=YES'])
     lyr = ds.GetLayer(0)
     if lyr.GetSpatialRef() is None:
         gdaltest.post_reason('did not get expected SRS')
@@ -3905,13 +3981,14 @@ def ogr_gml_74():
 ###############################################################################
 # Test we don't open a WMTS Capabilities doc
 
+
 def ogr_gml_75():
 
     if not gdaltest.have_gml_reader:
         return 'skip'
 
     gdal.FileFromMemBuffer("/vsimem/ogr_gml_75.xml",
-    """<?xml version="1.0" encoding="UTF-8"?>
+                           """<?xml version="1.0" encoding="UTF-8"?>
 <Capabilities xmlns="http://www.opengis.net/wmts/1.0"
 xmlns:ows="http://www.opengis.net/ows/1.1"
 xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -3948,6 +4025,7 @@ version="1.0.0">
 ###############################################################################
 # Test we are robust to content of XML elements bigger than 2 GB
 
+
 def ogr_gml_76():
 
     if not gdaltest.have_gml_reader:
@@ -3972,13 +4050,14 @@ def ogr_gml_76():
 ###############################################################################
 # Test interpretation of http://www.opengis.net/def/crs/EPSG/0/ URLs (#6678)
 
+
 def ogr_gml_77():
 
     if not gdaltest.have_gml_reader:
         return 'skip'
 
     gdal.FileFromMemBuffer("/vsimem/ogr_gml_77.xml",
-    """<?xml version="1.0" encoding="utf-8" ?>
+                           """<?xml version="1.0" encoding="utf-8" ?>
 <ogr:FeatureCollection
      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
      xmlns:ogr="http://ogr.maptools.org/"
@@ -4003,7 +4082,7 @@ def ogr_gml_77():
         return 'fail'
     ds = None
 
-    ds = gdal.OpenEx('/vsimem/ogr_gml_77.xml', open_options = ['SWAP_COORDINATES=YES'] )
+    ds = gdal.OpenEx('/vsimem/ogr_gml_77.xml', open_options=['SWAP_COORDINATES=YES'])
     lyr = ds.GetLayer(0)
     f = lyr.GetNextFeature()
     if f.GetGeometryRef().ExportToWkt() != 'POINT (2 49)':
@@ -4011,7 +4090,7 @@ def ogr_gml_77():
         return 'fail'
     ds = None
 
-    ds = gdal.OpenEx('/vsimem/ogr_gml_77.xml', open_options = ['SWAP_COORDINATES=NO'] )
+    ds = gdal.OpenEx('/vsimem/ogr_gml_77.xml', open_options=['SWAP_COORDINATES=NO'])
     lyr = ds.GetLayer(0)
     f = lyr.GetNextFeature()
     if f.GetGeometryRef().ExportToWkt() != 'POINT (49 2)':
@@ -4027,13 +4106,14 @@ def ogr_gml_77():
 ###############################################################################
 # Test effect of SWAP_COORDINATES (#6678)
 
+
 def ogr_gml_78():
 
     if not gdaltest.have_gml_reader:
         return 'skip'
 
     gdal.FileFromMemBuffer("/vsimem/ogr_gml_78.xml",
-    """<?xml version="1.0" encoding="utf-8" ?>
+                           """<?xml version="1.0" encoding="utf-8" ?>
 <ogr:FeatureCollection
      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
      xmlns:ogr="http://ogr.maptools.org/"
@@ -4058,7 +4138,7 @@ def ogr_gml_78():
         return 'fail'
     ds = None
 
-    ds = gdal.OpenEx('/vsimem/ogr_gml_78.xml', open_options = ['SWAP_COORDINATES=YES'] )
+    ds = gdal.OpenEx('/vsimem/ogr_gml_78.xml', open_options=['SWAP_COORDINATES=YES'])
     lyr = ds.GetLayer(0)
     f = lyr.GetNextFeature()
     if f.GetGeometryRef().ExportToWkt() != 'POINT (49 2)':
@@ -4066,7 +4146,7 @@ def ogr_gml_78():
         return 'fail'
     ds = None
 
-    ds = gdal.OpenEx('/vsimem/ogr_gml_78.xml', open_options = ['SWAP_COORDINATES=NO'] )
+    ds = gdal.OpenEx('/vsimem/ogr_gml_78.xml', open_options=['SWAP_COORDINATES=NO'])
     lyr = ds.GetLayer(0)
     f = lyr.GetNextFeature()
     if f.GetGeometryRef().ExportToWkt() != 'POINT (2 49)':
@@ -4082,20 +4162,21 @@ def ogr_gml_78():
 ###############################################################################
 # Test SRSNAME_FORMAT
 
+
 def ogr_gml_79():
 
     sr = osr.SpatialReference()
     sr.ImportFromEPSG(4326)
 
-    tests = [ [ 'SHORT', 'EPSG:4326', '2 49' ],
-              [ 'OGC_URN', 'urn:ogc:def:crs:EPSG::4326', '49 2'],
-              [ 'OGC_URL', 'http://www.opengis.net/def/crs/EPSG/0/4326', '49 2']
-            ]
+    tests = [['SHORT', 'EPSG:4326', '2 49'],
+             ['OGC_URN', 'urn:ogc:def:crs:EPSG::4326', '49 2'],
+             ['OGC_URL', 'http://www.opengis.net/def/crs/EPSG/0/4326', '49 2']
+             ]
     for (srsname_format, expected_srsname, expected_coords) in tests:
 
-        ds = ogr.GetDriverByName('GML').CreateDataSource('/vsimem/ogr_gml_79.xml', \
-                options = ['FORMAT=GML3', 'SRSNAME_FORMAT='+srsname_format] )
-        lyr = ds.CreateLayer('firstlayer', srs = sr)
+        ds = ogr.GetDriverByName('GML').CreateDataSource('/vsimem/ogr_gml_79.xml',
+                                                         options=['FORMAT=GML3', 'SRSNAME_FORMAT=' + srsname_format])
+        lyr = ds.CreateLayer('firstlayer', srs=sr)
         feat = ogr.Feature(lyr.GetLayerDefn())
         geom = ogr.CreateGeometryFromWkt('POINT (2 49)')
         feat.SetGeometry(geom)
@@ -4121,14 +4202,15 @@ def ogr_gml_79():
 ###############################################################################
 # Test null / unset
 
+
 def ogr_gml_80():
 
     if not gdaltest.have_gml_reader:
         return 'skip'
 
     ds = ogr.GetDriverByName('GML').CreateDataSource('/vsimem/ogr_gml_80.xml')
-    lyr = ds.CreateLayer('test', geom_type = ogr.wkbNone)
-    lyr.CreateField( ogr.FieldDefn('int_field', ogr.OFTInteger) )
+    lyr = ds.CreateLayer('test', geom_type=ogr.wkbNone)
+    lyr.CreateField(ogr.FieldDefn('int_field', ogr.OFTInteger))
 
     f = ogr.Feature(lyr.GetLayerDefn())
     f['int_field'] = 4
@@ -4152,7 +4234,7 @@ def ogr_gml_80():
         return 'fail'
 
     f = lyr.GetNextFeature()
-    if f['int_field'] != None:
+    if f['int_field'] is not None:
         gdaltest.post_reason('fail')
         f.DumpReadable()
         return 'fail'
@@ -4193,14 +4275,81 @@ def ogr_gml_81():
     return 'success'
 
 ###############################################################################
+# Test GML_FEATURE_COLLECTION=YES
+
+
+def ogr_gml_82():
+
+    if not gdaltest.have_gml_reader:
+        return 'skip'
+
+    gdal.VectorTranslate('/vsimem/ogr_gml_82.gml', 'data/poly.shp',
+                         format='GML',
+                         datasetCreationOptions=['FORMAT=GML3',
+                                                 'GML_FEATURE_COLLECTION=YES'])
+
+    ds = ogr.Open('/vsimem/ogr_gml_82.gml')
+    lyr = ds.GetLayer(0)
+    if lyr.GetFeatureCount() != 10:
+        gdaltest.post_reason('fail')
+        return 'fail'
+    ds = None
+
+    f = gdal.VSIFOpenL("/vsimem/ogr_gml_82.gml", "rb")
+    if f is not None:
+        data = gdal.VSIFReadL(1, 10000, f).decode('utf-8')
+        gdal.VSIFCloseL(f)
+    if data.find('gml:FeatureCollection') < 0:
+        gdaltest.post_reason('fail')
+        print(data)
+        return 'fail'
+
+    f = gdal.VSIFOpenL("/vsimem/ogr_gml_82.xsd", "rb")
+    if f is not None:
+        data = gdal.VSIFReadL(1, 10000, f).decode('utf-8')
+        gdal.VSIFCloseL(f)
+    if data.find('name = "FeatureCollection"') >= 0:
+        gdaltest.post_reason('fail')
+        print(data)
+        return 'fail'
+    if data.find('gmlsf') >= 0:
+        gdaltest.post_reason('fail')
+        print(data)
+        return 'fail'
+
+    gdal.Unlink('/vsimem/ogr_gml_82.gml')
+    gdal.Unlink('/vsimem/ogr_gml_82.xsd')
+
+    return 'success'
+
+###############################################################################
+
+
+def ogr_gml_gml2_write_geometry_error():
+
+    ds = ogr.GetDriverByName('GML').CreateDataSource('/vsimem/ogr_gml_83.gml')
+    lyr = ds.CreateLayer('test')
+    f = ogr.Feature(lyr.GetLayerDefn())
+    f.SetGeometry(ogr.CreateGeometryFromWkt('GEOMETRYCOLLECTION(POINT(0 0), TIN EMPTY)'))
+    with gdaltest.error_handler():
+        lyr.CreateFeature(f)
+    ds = None
+
+    gdal.Unlink('/vsimem/ogr_gml_83.gml')
+    gdal.Unlink('/vsimem/ogr_gml_83.xsd')
+
+    return 'success'
+
+###############################################################################
 #  Cleanup
+
 
 def ogr_gml_cleanup():
     if not gdaltest.have_gml_reader:
         return 'skip'
 
-    gdal.SetConfigOption( 'GML_SKIP_RESOLVE_ELEMS', None )
-    gdal.SetConfigOption( 'GML_SAVE_RESOLVED_TO', None )
+    gdal.SetConfigOption('GML_SKIP_RESOLVE_ELEMS', None)
+    gdal.SetConfigOption('GML_SAVE_RESOLVED_TO', None)
 
     gdaltest.clean_tmp()
 
@@ -4213,109 +4362,109 @@ def ogr_gml_cleanup():
 
 def ogr_gml_clean_files():
     try:
-        os.remove( 'data/bom.gfs' )
-    except:
+        os.remove('data/bom.gfs')
+    except OSError:
         pass
     try:
-        os.remove( 'data/utf8.gfs' )
-    except:
+        os.remove('data/utf8.gfs')
+    except OSError:
         pass
     try:
-        os.remove( 'data/ticket_2349_test_1.gfs' )
-    except:
+        os.remove('data/ticket_2349_test_1.gfs')
+    except OSError:
         pass
     try:
-        os.remove( 'data/citygml.gfs' )
-    except:
+        os.remove('data/citygml.gfs')
+    except OSError:
         pass
     try:
-        os.remove( 'data/gnis_pop_100.gfs' )
-    except:
+        os.remove('data/gnis_pop_100.gfs')
+    except OSError:
         pass
     try:
-        os.remove( 'data/gnis_pop_110.gfs' )
-    except:
+        os.remove('data/gnis_pop_110.gfs')
+    except OSError:
         pass
     try:
-        os.remove( 'data/paris_typical_strike_demonstration.gfs' )
-    except:
+        os.remove('data/paris_typical_strike_demonstration.gfs')
+    except OSError:
         pass
     try:
-        os.remove( 'data/global_geometry.gfs' )
-    except:
+        os.remove('data/global_geometry.gfs')
+    except OSError:
         pass
     try:
-        os.remove( 'tmp/global_geometry.gfs' )
-    except:
+        os.remove('tmp/global_geometry.gfs')
+    except OSError:
         pass
     try:
-        os.remove( 'tmp/global_geometry.xml' )
-    except:
+        os.remove('tmp/global_geometry.xml')
+    except OSError:
         pass
     try:
-        os.remove( 'data/curveProperty.gfs' )
-    except:
+        os.remove('data/curveProperty.gfs')
+    except OSError:
         pass
     try:
-        os.remove( 'tmp/ogr_gml_26.gml' )
-        os.remove( 'tmp/ogr_gml_26.xsd' )
-    except:
+        os.remove('tmp/ogr_gml_26.gml')
+        os.remove('tmp/ogr_gml_26.xsd')
+    except OSError:
         pass
     try:
-        os.remove( 'tmp/ogr_gml_27.gml' )
-        os.remove( 'tmp/ogr_gml_27.xsd' )
-    except:
+        os.remove('tmp/ogr_gml_27.gml')
+        os.remove('tmp/ogr_gml_27.xsd')
+    except OSError:
         pass
     try:
-        os.remove( 'tmp/ogr_gml_28.gml' )
-        os.remove( 'tmp/ogr_gml_28.gfs' )
-    except:
+        os.remove('tmp/ogr_gml_28.gml')
+        os.remove('tmp/ogr_gml_28.gfs')
+    except OSError:
         pass
     try:
-        os.remove( 'tmp/GmlTopo-sample.sqlite' )
-    except:
+        os.remove('tmp/GmlTopo-sample.sqlite')
+    except OSError:
         pass
     try:
-        os.remove( 'tmp/GmlTopo-sample.gfs' )
-    except:
+        os.remove('tmp/GmlTopo-sample.gfs')
+    except OSError:
         pass
     try:
-        os.remove( 'tmp/GmlTopo-sample.resolved.gml' )
-    except:
+        os.remove('tmp/GmlTopo-sample.resolved.gml')
+    except OSError:
         pass
     try:
-        os.remove( 'tmp/GmlTopo-sample.xml' )
-    except:
+        os.remove('tmp/GmlTopo-sample.xml')
+    except OSError:
         pass
     try:
-        os.remove( 'tmp/sample_gml_face_hole_negative_no.sqlite' )
-    except:
+        os.remove('tmp/sample_gml_face_hole_negative_no.sqlite')
+    except OSError:
         pass
     try:
-        os.remove( 'tmp/sample_gml_face_hole_negative_no.gfs' )
-    except:
+        os.remove('tmp/sample_gml_face_hole_negative_no.gfs')
+    except OSError:
         pass
     try:
-        os.remove( 'tmp/sample_gml_face_hole_negative_no.resolved.gml' )
-    except:
+        os.remove('tmp/sample_gml_face_hole_negative_no.resolved.gml')
+    except OSError:
         pass
     try:
-        os.remove( 'tmp/sample_gml_face_hole_negative_no.xml' )
-    except:
+        os.remove('tmp/sample_gml_face_hole_negative_no.xml')
+    except OSError:
         pass
     try:
-        os.remove( 'data/wfs_typefeature.gfs' )
-    except:
+        os.remove('data/wfs_typefeature.gfs')
+    except OSError:
         pass
     try:
-        os.remove( 'tmp/ogr_gml_51.gml' )
-        os.remove( 'tmp/ogr_gml_51.xsd' )
-    except:
+        os.remove('tmp/ogr_gml_51.gml')
+        os.remove('tmp/ogr_gml_51.xsd')
+    except OSError:
         pass
     try:
-        os.remove( 'tmp/gmlattributes.gml' )
-        os.remove( 'tmp/gmlattributes.gfs' )
-    except:
+        os.remove('tmp/gmlattributes.gml')
+        os.remove('tmp/gmlattributes.gfs')
+    except OSError:
         pass
     files = os.listdir('data')
     for filename in files:
@@ -4324,6 +4473,7 @@ def ogr_gml_clean_files():
     gdal.Unlink('data/test_xsi_nil_gfs.gfs')
 
     return 'success'
+
 
 gdaltest_list = [
     ogr_gml_clean_files,
@@ -4410,18 +4560,20 @@ gdaltest_list = [
     ogr_gml_79,
     ogr_gml_80,
     ogr_gml_81,
-    ogr_gml_cleanup ]
+    ogr_gml_82,
+    ogr_gml_gml2_write_geometry_error,
+    ogr_gml_cleanup]
 
 disabled_gdaltest_list = [
     ogr_gml_clean_files,
     ogr_gml_1,
-    ogr_gml_79,
-    ogr_gml_cleanup ]
+    ogr_gml_82,
+    ogr_gml_cleanup]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'ogr_gml_read' )
+    gdaltest.setup_run('ogr_gml_read')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

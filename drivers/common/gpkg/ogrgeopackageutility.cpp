@@ -29,7 +29,7 @@
 #include "ogrgeopackageutility.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /* Requirement 20: A GeoPackage SHALL store feature table geometries */
 /* with the basic simple feature geometry types (Geometry, Point, */
@@ -77,7 +77,15 @@ OGRFieldType GPkgFieldToOGR(const char *pszGpkgType, OGRFieldSubType& eSubType,
 
     /* Integer types */
     if ( STRNCASECMP("INT", pszGpkgType, 3) == 0 )
+    {
+        if( !EQUAL("INT", pszGpkgType) && !EQUAL("INTEGER", pszGpkgType) )
+        {
+            CPLError(CE_Warning, CPLE_AppDefined,
+                     "Field format '%s' not supported. "
+                     "Interpreted as INT", pszGpkgType);
+        }
         return OFTInteger64;
+    }
     else if ( EQUAL("MEDIUMINT", pszGpkgType) )
         return OFTInteger;
     else if ( EQUAL("SMALLINT", pszGpkgType) )
@@ -109,11 +117,25 @@ OGRFieldType GPkgFieldToOGR(const char *pszGpkgType, OGRFieldSubType& eSubType,
     {
         if( pszGpkgType[4] == '(' )
             nMaxWidth = atoi(pszGpkgType+5);
+        else if( pszGpkgType[4] != '\0' )
+        {
+            CPLError(CE_Warning, CPLE_AppDefined,
+                     "Field format '%s' not supported. "
+                     "Interpreted as TEXT", pszGpkgType);
+        }
         return OFTString;
     }
 
     else if ( STRNCASECMP("BLOB", pszGpkgType, 4) == 0 )
+    {
+        if( pszGpkgType[4] != '(' && pszGpkgType[4] != '\0' )
+        {
+            CPLError(CE_Warning, CPLE_AppDefined,
+                     "Field format '%s' not supported. "
+                     "Interpreted as BLOB", pszGpkgType);
+        }
         return OFTBinary;
+    }
 
     /* Date types */
     else if ( EQUAL("DATE", pszGpkgType) )
@@ -123,7 +145,14 @@ OGRFieldType GPkgFieldToOGR(const char *pszGpkgType, OGRFieldSubType& eSubType,
 
     /* Illegal! */
     else
+    {
+        if( GPkgGeometryTypeToWKB(pszGpkgType, false, false) == wkbNone )
+        {
+            CPLError(CE_Warning, CPLE_AppDefined,
+                    "Field format '%s' not supported", pszGpkgType);
+        }
         return (OGRFieldType)(OFTMaxType + 1);
+    }
 }
 
 /* Requirement 5: The columns of tables in a GeoPackage SHALL only be */
@@ -204,7 +233,7 @@ const char* GPkgFieldFromOGR(OGRFieldType eType, OGRFieldSubType eSubType,
 GByte* GPkgGeometryFromOGR(const OGRGeometry *poGeometry, int iSrsId,
                            size_t *pnWkbLen)
 {
-    CPLAssert( poGeometry != NULL );
+    CPLAssert( poGeometry != nullptr );
 
     GByte byFlags = 0;
     GByte byEnv = 1;
@@ -305,7 +334,7 @@ GByte* GPkgGeometryFromOGR(const OGRGeometry *poGeometry, int iSrsId,
     if ( err != OGRERR_NONE )
     {
         CPLFree(pabyWkb);
-        return NULL;
+        return nullptr;
     }
 
     return pabyWkb;
@@ -313,8 +342,8 @@ GByte* GPkgGeometryFromOGR(const OGRGeometry *poGeometry, int iSrsId,
 
 OGRErr GPkgHeaderFromWKB(const GByte *pabyGpkg, size_t nGpkgLen, GPkgHeader *poHeader)
 {
-    CPLAssert( pabyGpkg != NULL );
-    CPLAssert( poHeader != NULL );
+    CPLAssert( pabyGpkg != nullptr );
+    CPLAssert( poHeader != nullptr );
 
     /* Magic (match required) */
     if ( nGpkgLen < 8 ||
@@ -435,25 +464,25 @@ OGRErr GPkgHeaderFromWKB(const GByte *pabyGpkg, size_t nGpkgLen, GPkgHeader *poH
 
 OGRGeometry* GPkgGeometryToOGR(const GByte *pabyGpkg, size_t nGpkgLen, OGRSpatialReference *poSrs)
 {
-    CPLAssert( pabyGpkg != NULL );
+    CPLAssert( pabyGpkg != nullptr );
 
     GPkgHeader oHeader;
 
     /* Read header */
     OGRErr err = GPkgHeaderFromWKB(pabyGpkg, nGpkgLen, &oHeader);
     if ( err != OGRERR_NONE )
-        return NULL;
+        return nullptr;
 
     /* WKB pointer */
     const GByte *pabyWkb = pabyGpkg + oHeader.nHeaderLen;
     size_t nWkbLen = nGpkgLen - oHeader.nHeaderLen;
 
     /* Parse WKB */
-    OGRGeometry *poGeom = NULL;
-    err = OGRGeometryFactory::createFromWkb((GByte*)pabyWkb, poSrs, &poGeom,
+    OGRGeometry *poGeom = nullptr;
+    err = OGRGeometryFactory::createFromWkb(pabyWkb, poSrs, &poGeom,
                                             static_cast<int>(nWkbLen));
     if ( err != OGRERR_NONE )
-        return NULL;
+        return nullptr;
 
     return poGeom;
 }

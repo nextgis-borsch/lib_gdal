@@ -30,7 +30,7 @@
 
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 import ogrtest
@@ -39,6 +39,7 @@ from osgeo import gdal
 
 ###############################################################################
 # Check that dependencies are met
+
 
 def ogr_gpsbabel_init():
 
@@ -54,7 +55,7 @@ def ogr_gpsbabel_init():
         return 'skip'
 
     try:
-        ds = ogr.Open( 'data/test.gpx' )
+        ds = ogr.Open('data/test.gpx')
     except:
         ds = None
 
@@ -69,6 +70,7 @@ def ogr_gpsbabel_init():
 
 ###############################################################################
 # Test reading with explicit subdriver
+
 
 def ogr_gpsbabel_1():
 
@@ -87,6 +89,7 @@ def ogr_gpsbabel_1():
 ###############################################################################
 # Test reading with implicit subdriver
 
+
 def ogr_gpsbabel_2():
 
     if not ogrtest.have_read_gpsbabel:
@@ -104,13 +107,14 @@ def ogr_gpsbabel_2():
 ###############################################################################
 # Test writing
 
+
 def ogr_gpsbabel_3():
 
     if not ogrtest.have_gpsbabel:
         return 'skip'
 
     ds = ogr.GetDriverByName('GPSBabel').CreateDataSource('GPSBabel:nmea:tmp/nmea.txt')
-    lyr = ds.CreateLayer('track_points', geom_type = ogr.wkbPoint)
+    lyr = ds.CreateLayer('track_points', geom_type=ogr.wkbPoint)
 
     feat = ogr.Feature(lyr.GetLayerDefn())
     feat.SetField('track_fid', 0)
@@ -146,18 +150,18 @@ def ogr_gpsbabel_3():
 
     return 'success'
 
+
 gdaltest_list = [
     ogr_gpsbabel_init,
     ogr_gpsbabel_1,
     ogr_gpsbabel_2,
-    ogr_gpsbabel_3 ]
+    ogr_gpsbabel_3]
 
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'ogr_gpsbabel' )
+    gdaltest.setup_run('ogr_gpsbabel')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

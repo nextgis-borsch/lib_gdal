@@ -31,7 +31,7 @@
 import sys
 from osgeo import gdal
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 
@@ -42,7 +42,7 @@ import gdaltest
 def grass_1():
 
     try:
-        gdaltest.grass_drv = gdal.GetDriverByName( 'GRASS' )
+        gdaltest.grass_drv = gdal.GetDriverByName('GRASS')
     except:
         gdaltest.grass_drv = None
         return 'skip'
@@ -52,12 +52,13 @@ def grass_1():
 ###############################################################################
 # Read existing simple 1 band GRASS dataset.
 
+
 def grass_2():
 
     if gdaltest.grass_drv is None:
         return 'skip'
 
-    tst = gdaltest.GDALTest( 'GRASS', 'small_grass_dataset/demomapset/cellhd/elevation', 1, 41487 )
+    tst = gdaltest.GDALTest('GRASS', 'small_grass_dataset/demomapset/cellhd/elevation', 1, 41487)
 
     srs = """PROJCS["UTM Zone 18, Northern Hemisphere",
     GEOGCS["grs80",
@@ -74,23 +75,22 @@ def grass_2():
     PARAMETER["false_northing",0],
     UNIT["meter",1]]"""
 
-    ret = tst.testOpen( check_prj = srs)
+    ret = tst.testOpen(check_prj=srs)
     if ret != 'success':
-       gdaltest.post_reason('If that test fails, checks that the GISBASE environment variable point to the root of your GRASS install. For example GIS_BASE=/usr/local/grass-6.4.svn')
+        gdaltest.post_reason('If that test fails, checks that the GISBASE environment variable point to the root of your GRASS install. For example GIS_BASE=/usr/local/grass-6.4.svn')
     return ret
 
 
 gdaltest_list = [
     grass_1,
     grass_2
-    ]
+]
 
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'GRASS' )
+    gdaltest.setup_run('GRASS')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

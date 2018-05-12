@@ -30,7 +30,7 @@
 
 #include "aigrid.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 CPL_INLINE static void CPL_IGNORE_RET_VAL_INT(CPL_UNUSED int unused) {}
 
@@ -110,6 +110,7 @@ CPLErr AIGProcessIntConstBlock( GByte *pabyCur, int nDataSize, int nMin,
 /*                         AIGRolloverSignedAdd()                       */
 /************************************************************************/
 
+CPL_NOSANITIZE_UNSIGNED_INT_OVERFLOW
 static GInt32 AIGRolloverSignedAdd(GInt32 a, GInt32 b)
 {
     // Not really portable as assumes complement to 2 representation
@@ -177,7 +178,7 @@ CPLErr AIGProcessRaw16BitBlock( GByte *pabyCur, int nDataSize, int nMin,
 /* -------------------------------------------------------------------- */
     for( i = 0; i < nBlockXSize * nBlockYSize; i++ )
     {
-        panData[i] = pabyCur[0] * 256 + pabyCur[1] + nMin;
+        panData[i] = AIGRolloverSignedAdd(pabyCur[0] * 256 + pabyCur[1], nMin);
         pabyCur += 2;
     }
 
@@ -210,9 +211,9 @@ CPLErr AIGProcessRaw4BitBlock( GByte *pabyCur, int nDataSize, int nMin,
     for( i = 0; i < nBlockXSize * nBlockYSize; i++ )
     {
         if( i % 2 == 0 )
-            panData[i] = ((*(pabyCur) & 0xf0) >> 4) + nMin;
+            panData[i] = AIGRolloverSignedAdd((*(pabyCur) & 0xf0) >> 4, nMin);
         else
-            panData[i] = (*(pabyCur++) & 0xf) + nMin;
+            panData[i] = AIGRolloverSignedAdd(*(pabyCur++) & 0xf, nMin);
     }
 
     return( CE_None );
@@ -244,7 +245,7 @@ CPLErr AIGProcessRaw1BitBlock( GByte *pabyCur, int nDataSize, int nMin,
     for( i = 0; i < nBlockXSize * nBlockYSize; i++ )
     {
         if( pabyCur[i>>3] & (0x80 >> (i&0x7)) )
-            panData[i] = 1 + nMin;
+            panData[i] = AIGRolloverSignedAdd(1, nMin);
         else
             panData[i] = 0 + nMin;
     }
@@ -276,7 +277,7 @@ CPLErr AIGProcessRawBlock( GByte *pabyCur, int nDataSize, int nMin,
 /* -------------------------------------------------------------------- */
     for( i = 0; i < nBlockXSize * nBlockYSize; i++ )
     {
-        panData[i] = *(pabyCur++) + nMin;
+        panData[i] = AIGRolloverSignedAdd(*(pabyCur++), nMin);
     }
 
     return( CE_None );
@@ -323,7 +324,7 @@ CPLErr AIGProcessFFBlock( GByte *pabyCur, int nDataSize, int nMin,
     for( i = 0; i < nBlockXSize * nBlockYSize; i++ )
     {
         if( pabyIntermediate[i>>3] & (0x80 >> (i&0x7)) )
-            panData[i] = nMin+1;
+            panData[i] = AIGRolloverSignedAdd(nMin, 1);
         else
             panData[i] = nMin;
     }
@@ -482,7 +483,7 @@ CPLErr AIGProcessBlock( GByte *pabyCur, int nDataSize, int nMin, int nMagic,
 
             while( nMarker > 0 && nDataSize > 0 )
             {
-                panData[nPixels++] = *(pabyCur++) + nMin;
+                panData[nPixels++] = AIGRolloverSignedAdd(*(pabyCur++), nMin);
                 nMarker--;
                 nDataSize--;
             }
@@ -505,7 +506,7 @@ CPLErr AIGProcessBlock( GByte *pabyCur, int nDataSize, int nMin, int nMagic,
 
             while( nMarker > 0 && nDataSize >= 2 )
             {
-                nValue = pabyCur[0] * 256 + pabyCur[1] + nMin;
+                nValue = AIGRolloverSignedAdd(pabyCur[0] * 256 + pabyCur[1], nMin);
                 panData[nPixels++] = nValue;
                 pabyCur += 2;
 
@@ -968,6 +969,19 @@ CPLErr AIGReadBlockIndex( AIGInfo_t * psInfo, AIGTileInfo *psTInfo,
 /*      into the buffer.                                                */
 /* -------------------------------------------------------------------- */
     psTInfo->nBlocks = (nLength-100) / 8;
+    if( psTInfo->nBlocks >= 1000000 )
+    {
+        // Avoid excessive memory consumption.
+        vsi_l_offset nFileSize;
+        VSIFSeekL(fp, 0, SEEK_END);
+        nFileSize = VSIFTellL(fp);
+        if( nFileSize < 100 ||
+            (vsi_l_offset)psTInfo->nBlocks > (nFileSize - 100) / 8 )
+        {
+            CPL_IGNORE_RET_VAL_INT(VSIFCloseL( fp ));
+            return CE_Failure;
+        }
+    }
     panIndex = (GUInt32 *) VSI_MALLOC2_VERBOSE(psTInfo->nBlocks, 8);
     if (panIndex == NULL)
     {

@@ -33,7 +33,7 @@ import os
 import sys
 import shutil
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 import ogrtest
@@ -41,42 +41,42 @@ from osgeo import gdal
 from osgeo import ogr
 from osgeo import osr
 
-ogrtest.openfilegdb_datalist = [ [ "none", ogr.wkbNone, None],
-                [ "point", ogr.wkbPoint, "POINT (1 2)" ],
-                [ "multipoint", ogr.wkbMultiPoint, "MULTIPOINT (1 2,3 4)" ],
-                [ "linestring", ogr.wkbLineString, "LINESTRING (1 2,3 4)", "MULTILINESTRING ((1 2,3 4))" ],
-                [ "multilinestring", ogr.wkbMultiLineString, "MULTILINESTRING ((1 2,3 4))" ],
-                [ "multilinestring_multipart", ogr.wkbMultiLineString, "MULTILINESTRING ((1 2,3 4),(5 6,7 8))" ],
-                [ "polygon", ogr.wkbPolygon, "POLYGON ((0 0,0 1,1 1,1 0,0 0))", "MULTIPOLYGON (((0 0,0 1,1 1,1 0,0 0)))" ],
-                [ "multipolygon", ogr.wkbMultiPolygon, "MULTIPOLYGON (((0 0,0 1,1 1,1 0,0 0),(0.25 0.25,0.75 0.25,0.75 0.75,0.25 0.75,0.25 0.25)),((2 0,2 1,3 1,3 0,2 0)))" ],
-                [ "point25D", ogr.wkbPoint25D, "POINT (1 2 3)" ],
-                [ "multipoint25D", ogr.wkbMultiPoint25D, "MULTIPOINT (1 2 -10,3 4 -20)" ],
-                [ "linestring25D", ogr.wkbLineString25D, "LINESTRING (1 2 -10,3 4 -20)", "MULTILINESTRING ((1 2 -10,3 4 -20))" ],
-                [ "multilinestring25D", ogr.wkbMultiLineString25D, "MULTILINESTRING ((1 2 -10,3 4 -20))" ],
-                [ "multilinestring25D_multipart", ogr.wkbMultiLineString25D, "MULTILINESTRING ((1 2 -10,3 4 -20),(5 6 -30,7 8 -40))" ],
-                [ "polygon25D", ogr.wkbPolygon25D, "POLYGON ((0 0 -10,0 1 -10,1 1 -10,1 0 -10,0 0 -10))", "MULTIPOLYGON (((0 0 -10,0 1 -10,1 1 -10,1 0 -10,0 0 -10)))" ],
-                [ "multipolygon25D", ogr.wkbMultiPolygon25D, "MULTIPOLYGON (((0 0 -10,0 1 -10,1 1 -10,1 0 -10,0 0 -10)))" ],
-                [ "multipatch", ogr.wkbGeometryCollection25D, "GEOMETRYCOLLECTION Z (TIN Z (((0.0 0.0 0,0.0 1.0 0,1.0 0.0 0,0.0 0.0 0)),((0.0 1.0 0,1.0 0.0 0,1.0 1.0 0,0.0 1.0 0))),TIN Z (((10.0 0.0 0,10.0 1.0 0,11.0 0.0 0,10.0 0.0 0)),((10.0 0.0 0,11.0 0.0 0,10.0 -1.0 0,10.0 0.0 0))),TIN Z (((5.0 0.0 0,5.0 1.0 0,6.0 0.0 0,5.0 0.0 0))),MULTIPOLYGON Z (((100.0 0.0 0,100.0 1.0 0,101.0 1.0 0,101.0 0.0 0,100.0 0.0 0),(100.25 0.25 0,100.75 0.25 0,100.75 0.75 0,100.75 0.25 0,100.25 0.25 0))))" ],
-                [ "null_polygon", ogr.wkbPolygon, None],
-                [ "empty_polygon", ogr.wkbPolygon, "POLYGON EMPTY", None],
-                [ "empty_multipoint", ogr.wkbMultiPoint, "MULTIPOINT EMPTY", None],
-            ]
+ogrtest.openfilegdb_datalist = [["none", ogr.wkbNone, None],
+                                ["point", ogr.wkbPoint, "POINT (1 2)"],
+                                ["multipoint", ogr.wkbMultiPoint, "MULTIPOINT (1 2,3 4)"],
+                                ["linestring", ogr.wkbLineString, "LINESTRING (1 2,3 4)", "MULTILINESTRING ((1 2,3 4))"],
+                                ["multilinestring", ogr.wkbMultiLineString, "MULTILINESTRING ((1 2,3 4))"],
+                                ["multilinestring_multipart", ogr.wkbMultiLineString, "MULTILINESTRING ((1 2,3 4),(5 6,7 8))"],
+                                ["polygon", ogr.wkbPolygon, "POLYGON ((0 0,0 1,1 1,1 0,0 0))", "MULTIPOLYGON (((0 0,0 1,1 1,1 0,0 0)))"],
+                                ["multipolygon", ogr.wkbMultiPolygon, "MULTIPOLYGON (((0 0,0 1,1 1,1 0,0 0),(0.25 0.25,0.75 0.25,0.75 0.75,0.25 0.75,0.25 0.25)),((2 0,2 1,3 1,3 0,2 0)))"],
+                                ["point25D", ogr.wkbPoint25D, "POINT (1 2 3)"],
+                                ["multipoint25D", ogr.wkbMultiPoint25D, "MULTIPOINT (1 2 -10,3 4 -20)"],
+                                ["linestring25D", ogr.wkbLineString25D, "LINESTRING (1 2 -10,3 4 -20)", "MULTILINESTRING ((1 2 -10,3 4 -20))"],
+                                ["multilinestring25D", ogr.wkbMultiLineString25D, "MULTILINESTRING ((1 2 -10,3 4 -20))"],
+                                ["multilinestring25D_multipart", ogr.wkbMultiLineString25D, "MULTILINESTRING ((1 2 -10,3 4 -20),(5 6 -30,7 8 -40))"],
+                                ["polygon25D", ogr.wkbPolygon25D, "POLYGON ((0 0 -10,0 1 -10,1 1 -10,1 0 -10,0 0 -10))", "MULTIPOLYGON (((0 0 -10,0 1 -10,1 1 -10,1 0 -10,0 0 -10)))"],
+                                ["multipolygon25D", ogr.wkbMultiPolygon25D, "MULTIPOLYGON (((0 0 -10,0 1 -10,1 1 -10,1 0 -10,0 0 -10)))"],
+                                ["multipatch", ogr.wkbGeometryCollection25D, "GEOMETRYCOLLECTION Z (TIN Z (((0.0 0.0 0,0.0 1.0 0,1.0 0.0 0,0.0 0.0 0)),((0.0 1.0 0,1.0 0.0 0,1.0 1.0 0,0.0 1.0 0))),TIN Z (((10.0 0.0 0,10.0 1.0 0,11.0 0.0 0,10.0 0.0 0)),((10.0 0.0 0,11.0 0.0 0,10.0 -1.0 0,10.0 0.0 0))),TIN Z (((5.0 0.0 0,5.0 1.0 0,6.0 0.0 0,5.0 0.0 0))),MULTIPOLYGON Z (((100.0 0.0 0,100.0 1.0 0,101.0 1.0 0,101.0 0.0 0,100.0 0.0 0),(100.25 0.25 0,100.75 0.25 0,100.75 0.75 0,100.75 0.25 0,100.25 0.25 0))))"],
+                                ["null_polygon", ogr.wkbPolygon, None],
+                                ["empty_polygon", ogr.wkbPolygon, "POLYGON EMPTY", None],
+                                ["empty_multipoint", ogr.wkbMultiPoint, "MULTIPOINT EMPTY", None],
+                                ]
 
 
-ogrtest.openfilegdb_datalist_m = [ [ "pointm", ogr.wkbPointM, "POINT M (1 2 3)" ],
-                 [ "pointzm", ogr.wkbPointM, "POINT ZM (1 2 3 4)" ],
-                 [ "multipointm", ogr.wkbMultiPointM, "MULTIPOINT M ((1 2 3),(4 5 6))" ],
-                 [ "multipointzm", ogr.wkbMultiPointZM, "MULTIPOINT ZM ((1 2 3 4),(5 6 7 8))" ],
-                 [ "linestringm", ogr.wkbLineStringM, "LINESTRING M (1 2 3,4 5 6)", "MULTILINESTRING M ((1 2 3,4 5 6))" ],
-                 [ "linestringzm", ogr.wkbLineStringZM, "LINESTRING ZM (1 2 3 4,5 6 7 8)", "MULTILINESTRING ZM ((1 2 3 4,5 6 7 8))" ],
-                 [ "multilinestringm", ogr.wkbMultiLineStringM, "MULTILINESTRING M ((1 2 3,4 5 6))" ],
-                 [ "multilinestringzm", ogr.wkbMultiLineStringZM, "MULTILINESTRING ZM ((1 2 3 4,5 6 7 8))" ],
-                 [ "polygonm", ogr.wkbPolygonM, "POLYGON M ((0 0 1,0 1 2,1 1 3,1 0 4,0 0 1))", "MULTIPOLYGON M (((0 0 1,0 1 2,1 1 3,1 0 4,0 0 1)))" ],
-                 [ "polygonzm", ogr.wkbPolygonZM, "POLYGON ZM ((0 0 1 -1,0 1 2 -2,1 1 3 -3,1 0 4 -4,0 0 1 -1))", "MULTIPOLYGON ZM (((0 0 1 -1,0 1 2 -2,1 1 3 -3,1 0 4 -4,0 0 1 -1)))" ],
-                 [ "multipolygonm", ogr.wkbMultiPolygonM, "MULTIPOLYGON M (((0 0 1,0 1 2,1 1 3,1 0 4,0 0 1)))" ],
-                 [ "multipolygonzm", ogr.wkbMultiPolygonZM, "MULTIPOLYGON ZM (((0 0 1 -1,0 1 2 -2,1 1 3 -3,1 0 4 -4,0 0 1 -1)))" ],
-                 [ "empty_polygonm", ogr.wkbPolygonM, 'POLYGON M EMPTY', None],
-               ]
+ogrtest.openfilegdb_datalist_m = [["pointm", ogr.wkbPointM, "POINT M (1 2 3)"],
+                                  ["pointzm", ogr.wkbPointM, "POINT ZM (1 2 3 4)"],
+                                  ["multipointm", ogr.wkbMultiPointM, "MULTIPOINT M ((1 2 3),(4 5 6))"],
+                                  ["multipointzm", ogr.wkbMultiPointZM, "MULTIPOINT ZM ((1 2 3 4),(5 6 7 8))"],
+                                  ["linestringm", ogr.wkbLineStringM, "LINESTRING M (1 2 3,4 5 6)", "MULTILINESTRING M ((1 2 3,4 5 6))"],
+                                  ["linestringzm", ogr.wkbLineStringZM, "LINESTRING ZM (1 2 3 4,5 6 7 8)", "MULTILINESTRING ZM ((1 2 3 4,5 6 7 8))"],
+                                  ["multilinestringm", ogr.wkbMultiLineStringM, "MULTILINESTRING M ((1 2 3,4 5 6))"],
+                                  ["multilinestringzm", ogr.wkbMultiLineStringZM, "MULTILINESTRING ZM ((1 2 3 4,5 6 7 8))"],
+                                  ["polygonm", ogr.wkbPolygonM, "POLYGON M ((0 0 1,0 1 2,1 1 3,1 0 4,0 0 1))", "MULTIPOLYGON M (((0 0 1,0 1 2,1 1 3,1 0 4,0 0 1)))"],
+                                  ["polygonzm", ogr.wkbPolygonZM, "POLYGON ZM ((0 0 1 -1,0 1 2 -2,1 1 3 -3,1 0 4 -4,0 0 1 -1))", "MULTIPOLYGON ZM (((0 0 1 -1,0 1 2 -2,1 1 3 -3,1 0 4 -4,0 0 1 -1)))"],
+                                  ["multipolygonm", ogr.wkbMultiPolygonM, "MULTIPOLYGON M (((0 0 1,0 1 2,1 1 3,1 0 4,0 0 1)))"],
+                                  ["multipolygonzm", ogr.wkbMultiPolygonZM, "MULTIPOLYGON ZM (((0 0 1 -1,0 1 2 -2,1 1 3 -3,1 0 4 -4,0 0 1 -1)))"],
+                                  ["empty_polygonm", ogr.wkbPolygonM, 'POLYGON M EMPTY', None],
+                                  ]
 
 
 ###############################################################################
@@ -93,11 +93,12 @@ def ogr_openfilegdb_init():
 ###############################################################################
 # Make test data
 
+
 def ogr_openfilegdb_make_test_data():
 
     try:
         shutil.rmtree("data/testopenfilegdb.gdb")
-    except:
+    except OSError:
         pass
     ds = ogrtest.fgdb_drv.CreateDataSource('data/testopenfilegdb.gdb')
 
@@ -108,11 +109,11 @@ def ogr_openfilegdb_make_test_data():
 
     for data in ogrtest.openfilegdb_datalist:
         if data[1] == ogr.wkbNone:
-            lyr = ds.CreateLayer(data[0], geom_type=data[1], options = options )
+            lyr = ds.CreateLayer(data[0], geom_type=data[1], options=options)
         elif data[0] == 'multipatch':
-            lyr = ds.CreateLayer(data[0], geom_type=data[1], srs=srs, options = [ 'CREATE_MULTIPATCH=YES', options[0] ] )
+            lyr = ds.CreateLayer(data[0], geom_type=data[1], srs=srs, options=['CREATE_MULTIPATCH=YES', options[0]])
         else:
-            lyr = ds.CreateLayer(data[0], geom_type=data[1], srs=srs, options = options )
+            lyr = ds.CreateLayer(data[0], geom_type=data[1], srs=srs, options=options)
         lyr.CreateField(ogr.FieldDefn("id", ogr.OFTInteger))
         lyr.CreateField(ogr.FieldDefn("str", ogr.OFTString))
         lyr.CreateField(ogr.FieldDefn("smallint", ogr.OFTInteger))
@@ -129,7 +130,7 @@ def ogr_openfilegdb_make_test_data():
         # We need at least 5 features so that test_ogrsf can test SetFeature()
         for i in range(5):
             feat = ogr.Feature(lyr.GetLayerDefn())
-            if data[1] != ogr.wkbNone and data[2] != None:
+            if data[1] != ogr.wkbNone and data[2] is not None:
                 feat.SetGeometry(ogr.CreateGeometryFromWkt(data[2]))
             feat.SetField("id", i + 1)
             feat.SetField("str", "foo_\xc3\xa9")
@@ -150,7 +151,7 @@ def ogr_openfilegdb_make_test_data():
             lyr.CreateFeature(feat)
 
     if False:
-        lyr = ds.CreateLayer('sparse_layer', geom_type = ogr.wkbPoint )
+        lyr = ds.CreateLayer('sparse_layer', geom_type=ogr.wkbPoint)
         for i in range(4096):
             feat = ogr.Feature(lyr.GetLayerDefn())
             lyr.CreateFeature(feat)
@@ -159,18 +160,18 @@ def ogr_openfilegdb_make_test_data():
         lyr.CreateFeature(feat)
 
     if True:
-        lyr = ds.CreateLayer('big_layer', geom_type = ogr.wkbNone )
+        lyr = ds.CreateLayer('big_layer', geom_type=ogr.wkbNone)
         lyr.CreateField(ogr.FieldDefn("real", ogr.OFTReal))
         gdal.SetConfigOption('FGDB_BULK_LOAD', 'YES')
-        #for i in range(340*341+1):
-        for i in range(340+1):
+        # for i in range(340*341+1):
+        for i in range(340 + 1):
             feat = ogr.Feature(lyr.GetLayerDefn())
             feat.SetField(0, i % 4)
             lyr.CreateFeature(feat)
         gdal.SetConfigOption('FGDB_BULK_LOAD', None)
 
     if True:
-        lyr = ds.CreateLayer('hole', geom_type = ogr.wkbPoint, srs = None)
+        lyr = ds.CreateLayer('hole', geom_type=ogr.wkbPoint, srs=None)
         lyr.CreateField(ogr.FieldDefn('str', ogr.OFTString))
         feat = ogr.Feature(lyr.GetLayerDefn())
         feat.SetField('str', 'f1')
@@ -190,14 +191,14 @@ def ogr_openfilegdb_make_test_data():
 
         for i in range(8):
             feat = ogr.Feature(lyr.GetLayerDefn())
-            feat.SetField('str', 'fid%d' % (4+i))
-            feat.SetField('int0', 4+i)
+            feat.SetField('str', 'fid%d' % (4 + i))
+            feat.SetField('int0', 4 + i)
             feat.SetField('str2', '                                            ')
             lyr.CreateFeature(feat)
         feat = None
 
         for i in range(8):
-            lyr.CreateField(ogr.FieldDefn('int%d' % (i+1), ogr.OFTInteger))
+            lyr.CreateField(ogr.FieldDefn('int%d' % (i + 1), ogr.OFTInteger))
 
         lyr.DeleteFeature(1)
 
@@ -211,14 +212,14 @@ def ogr_openfilegdb_make_test_data():
         feat = None
 
     if True:
-        lyr = ds.CreateLayer('no_field', geom_type = ogr.wkbNone, srs = None)
+        lyr = ds.CreateLayer('no_field', geom_type=ogr.wkbNone, srs=None)
         for i in range(5):
             feat = ogr.Feature(lyr.GetLayerDefn())
             lyr.CreateFeature(feat)
             feat = None
 
     if True:
-        lyr = ds.CreateLayer('several_polygons', geom_type = ogr.wkbPolygon, srs = None)
+        lyr = ds.CreateLayer('several_polygons', geom_type=ogr.wkbPolygon, srs=None)
         for i in range(3):
             for j in range(3):
                 feat = ogr.Feature(lyr.GetLayerDefn())
@@ -226,13 +227,13 @@ def ogr_openfilegdb_make_test_data():
                 x2 = 2 * i + 1
                 y1 = 2 * j
                 y2 = 2 * j + 1
-                geom = ogr.CreateGeometryFromWkt('POLYGON((%d %d,%d %d,%d %d,%d %d,%d %d))' % (x1,y1,x1,y2,x2,y2,x2,y1,x1,y1))
+                geom = ogr.CreateGeometryFromWkt('POLYGON((%d %d,%d %d,%d %d,%d %d,%d %d))' % (x1, y1, x1, y2, x2, y2, x2, y1, x1, y1))
                 feat.SetGeometry(geom)
                 lyr.CreateFeature(feat)
                 feat = None
 
     if True:
-        lyr = ds.CreateLayer('testnotnullable', geom_type = ogr.wkbPoint, srs = None, options = ['GEOMETRY_NULLABLE=NO'])
+        lyr = ds.CreateLayer('testnotnullable', geom_type=ogr.wkbPoint, srs=None, options=['GEOMETRY_NULLABLE=NO'])
         field_defn = ogr.FieldDefn('field_not_nullable', ogr.OFTString)
         field_defn.SetNullable(0)
         lyr.CreateField(field_defn)
@@ -245,13 +246,13 @@ def ogr_openfilegdb_make_test_data():
         f = None
 
     for data in ogrtest.openfilegdb_datalist_m:
-        lyr = ds.CreateLayer(data[0], geom_type=data[1], srs=srs, options = [] )
+        lyr = ds.CreateLayer(data[0], geom_type=data[1], srs=srs, options=[])
 
         feat = ogr.Feature(lyr.GetLayerDefn())
         feat.SetGeometry(ogr.CreateGeometryFromWkt(data[2]))
         lyr.CreateFeature(feat)
 
-    for fld_name in [ 'id', 'str', 'smallint', 'int', 'float', 'real', 'adate', 'guid', 'nullint' ]:
+    for fld_name in ['id', 'str', 'smallint', 'int', 'float', 'real', 'adate', 'guid', 'nullint']:
         ds.ExecuteSQL('CREATE INDEX idx_%s ON point(%s)' % (fld_name, fld_name))
     ds.ExecuteSQL('CREATE INDEX idx_id ON none(id)')
     ds.ExecuteSQL('CREATE INDEX idx_real ON big_layer(real)')
@@ -259,7 +260,7 @@ def ogr_openfilegdb_make_test_data():
 
     try:
         os.unlink('data/testopenfilegdb.gdb.zip')
-    except:
+    except OSError:
         pass
     os.chdir('data')
     os.system('zip -r -9 testopenfilegdb.gdb.zip testopenfilegdb.gdb')
@@ -270,7 +271,9 @@ def ogr_openfilegdb_make_test_data():
 
 ###############################################################################
 # Basic tests
-def ogr_openfilegdb_1(filename = 'data/testopenfilegdb.gdb.zip', version10 = True):
+
+
+def ogr_openfilegdb_1(filename='data/testopenfilegdb.gdb.zip', version10=True):
 
     srs = osr.SpatialReference()
     srs.SetFromUserInput("WGS84")
@@ -421,16 +424,19 @@ def ogr_openfilegdb_1(filename = 'data/testopenfilegdb.gdb.zip', version10 = Tru
 
     return 'success'
 
+
 def ogr_openfilegdb_1_92():
-    return ogr_openfilegdb_1(filename = 'data/testopenfilegdb92.gdb.zip', version10 = False)
+    return ogr_openfilegdb_1(filename='data/testopenfilegdb92.gdb.zip', version10=False)
+
 
 def ogr_openfilegdb_1_93():
-    return ogr_openfilegdb_1(filename = 'data/testopenfilegdb93.gdb.zip', version10 = False)
+    return ogr_openfilegdb_1(filename='data/testopenfilegdb93.gdb.zip', version10=False)
 
 ###############################################################################
 # Run test_ogrsf
 
-def ogr_openfilegdb_2(filename = 'data/testopenfilegdb.gdb.zip'):
+
+def ogr_openfilegdb_2(filename='data/testopenfilegdb.gdb.zip'):
 
     import test_cli_utilities
     if test_cli_utilities.get_test_ogrsf_path() is None:
@@ -444,14 +450,17 @@ def ogr_openfilegdb_2(filename = 'data/testopenfilegdb.gdb.zip'):
 
     return 'success'
 
+
 def ogr_openfilegdb_2_92():
-    return ogr_openfilegdb_2(filename = 'data/testopenfilegdb92.gdb.zip')
+    return ogr_openfilegdb_2(filename='data/testopenfilegdb92.gdb.zip')
+
 
 def ogr_openfilegdb_2_93():
-    return ogr_openfilegdb_2(filename = 'data/testopenfilegdb93.gdb.zip')
+    return ogr_openfilegdb_2(filename='data/testopenfilegdb93.gdb.zip')
 
 ###############################################################################
 # Open a .gdbtable directly
+
 
 def ogr_openfilegdb_3():
 
@@ -485,113 +494,114 @@ def ogr_openfilegdb_3():
 ###############################################################################
 # Test use of attribute indexes
 
+
 def ogr_openfilegdb_4():
 
     ds = ogr.Open('/vsizip/data/testopenfilegdb.gdb.zip/testopenfilegdb.gdb')
 
     lyr = ds.GetLayerByName('point')
-    tests = [ ('id = 1', [1]),
-              ('1 = id', [1]),
-              ('id = 5', [5]),
-              ('id = 0', []),
-              ('id = 6', []),
-              ('id <= 1', [1]),
-              ('1 >= id', [1]),
-              ('id >= 5', [5]),
-              ('5 <= id', [5]),
-              ('id < 1', []),
-              ('1 > id', []),
-              ('id >= 1', [1,2,3,4,5]),
-              ('id > 0', [1,2,3,4,5]),
-              ('0 < id', [1,2,3,4,5]),
-              ('id <= 5', [1,2,3,4,5]),
-              ('id < 6', [1,2,3,4,5]),
-              ('id <> 0', [1,2,3,4,5]),
-              ('id IS NOT NULL', [1,2,3,4,5]),
-              ('id IS NULL', []),
-              ('nullint IS NOT NULL', []),
-              ('nullint IS NULL', [1,2,3,4,5]),
-              ("str = 'foo_e'", []),
-              ("str = 'foo_é'", [1,2,3,4,5]),
-              ("str <= 'foo_é'", [1,2,3,4,5]),
-              ("str >= 'foo_é'", [1,2,3,4,5]),
-              ("str <> 'foo_é'", []),
-              ("str < 'foo_é'", []),
-              ("str > 'foo_é'", []),
-              ('smallint = -13', [1,2,3,4,5]),
-              ('smallint <= -13', [1,2,3,4,5]),
-              ('smallint >= -13', [1,2,3,4,5]),
-              ('smallint < -13', []),
-              ('smallint > -13', []),
-              ('int = 123', [1,2,3,4,5]),
-              ('int <= 123', [1,2,3,4,5]),
-              ('int >= 123', [1,2,3,4,5]),
-              ('int < 123', []),
-              ('int > 123', []),
-              ('float = 1.5', [1,2,3,4,5]),
-              ('float <= 1.5', [1,2,3,4,5]),
-              ('float >= 1.5', [1,2,3,4,5]),
-              ('float < 1.5', []),
-              ('float > 1.5', []),
-              ('real = 4.56', [1,2,3,4,5]),
-              ('real <= 4.56', [1,2,3,4,5]),
-              ('real >= 4.56', [1,2,3,4,5]),
-              ('real < 4.56', []),
-              ('real > 4.56', []),
-              ("adate = '2013/12/26 12:34:56'", [1,2,3,4,5]),
-              ("adate <= '2013/12/26 12:34:56'", [1,2,3,4,5]),
-              ("adate >= '2013/12/26 12:34:56'", [1,2,3,4,5]),
-              ("adate < '2013/12/26 12:34:56'", []),
-              ("adate > '2013/12/26 12:34:56'", []),
-              ("guid = '{12345678-9ABC-DEF0-1234-567890ABCDEF}'", [1,2,3,4,5]),
-              ("guid <= '{12345678-9ABC-DEF0-1234-567890ABCDEF}'", [1,2,3,4,5]),
-              ("guid >= '{12345678-9ABC-DEF0-1234-567890ABCDEF}'", [1,2,3,4,5]),
-              ("guid < '{12345678-9ABC-DEF0-1234-567890ABCDEF}'", []),
-              ("guid > '{12345678-9ABC-DEF0-1234-567890ABCDEF}'", []),
-              ("guid = '{'", []),
-              ("guid > '{'", [1,2,3,4,5]),
-              ("NOT(id = 1)", [2,3,4,5]),
-              ("id = 1 OR id = -1", [1]),
-              ("id = -1 OR id = 1", [1]),
-              ("id = 1 OR id = 1", [1]),
-              ("id = 1 OR id = 2", [1,2]), # exclusive branches
-              ("id < 3 OR id > 3", [1,2,4,5]), # exclusive branches
-              ("id > 3 OR id < 3", [1,2,4,5]), # exclusive branches
-              ("id <= 3 OR id >= 4", [1,2,3,4,5]), # exclusive branches
-              ("id >= 4 OR id <= 3", [1,2,3,4,5]), # exclusive branches
-              ("id < 3 OR id >= 3", [1,2,3,4,5]),
-              ("id <= 3 OR id >= 3", [1,2,3,4,5]),
-              ("id <= 5 OR id >= 1", [1,2,3,4,5]),
-              ("id <= 1.5 OR id >= 2", [1,2,3,4,5]),
-              ('id IS NULL OR id IS NOT NULL', [1,2,3,4,5]),
-              ('float < 1.5 OR float > 1.5', []),
-              ('float <= 1.5 OR float >= 1.5', [1,2,3,4,5]),
-              ('float < 1.5 OR float > 2', []),
-              ('float < 1 OR float > 2.5', []),
-              ("str < 'foo_é' OR str > 'z'", []),
-              ("adate < '2013/12/26 12:34:56' OR adate > '2014/01/01'", []),
-              ("id = 1 AND id = -1", []),
-              ("id = -1 AND id = 1", []),
-              ("id = 1 AND id = 1", [1]),
-              ("id = 1 AND id = 2", []),
-              ("id <= 5 AND id >= 1", [1,2,3,4,5]),
-              ("id <= 3 AND id >= 3", [3]),
-              ("id = 1 AND float = 1.5", [1]),
-              ("id BETWEEN 1 AND 5", [1,2,3,4,5]),
-              ("id IN (1)", [1]),
-              ("id IN (5,4,3,2,1)", [1,2,3,4,5]),
-              ('fid = 1', [1], 0), # no index used
-              ('fid BETWEEN 1 AND 1', [1], 0), # no index used
-              ('fid IN (1)', [1], 0), # no index used
-              ('fid IS NULL', [], 0), # no index used
-              ('fid IS NOT NULL', [1,2,3,4,5], 0), # no index used
-              ("xml <> ''", [1,2,3,4,5], 0), # no index used
-              ("id = 1 AND xml <> ''", [1], 1), # index partially used
-              ("xml <> '' AND id = 1", [1], 1), # index partially used
-              ("NOT(id = 1 AND xml <> '')", [2,3,4,5], 0), # no index used
-              ("id = 1 OR xml <> ''", [1,2,3,4,5], 0), # no index used
-              ('id = id', [1,2,3,4,5], 0), # no index used
-              ('id = 1 + 0', [1], 0), # no index used (currently...)
+    tests = [('id = 1', [1]),
+             ('1 = id', [1]),
+             ('id = 5', [5]),
+             ('id = 0', []),
+             ('id = 6', []),
+             ('id <= 1', [1]),
+             ('1 >= id', [1]),
+             ('id >= 5', [5]),
+             ('5 <= id', [5]),
+             ('id < 1', []),
+             ('1 > id', []),
+             ('id >= 1', [1, 2, 3, 4, 5]),
+             ('id > 0', [1, 2, 3, 4, 5]),
+             ('0 < id', [1, 2, 3, 4, 5]),
+             ('id <= 5', [1, 2, 3, 4, 5]),
+             ('id < 6', [1, 2, 3, 4, 5]),
+             ('id <> 0', [1, 2, 3, 4, 5]),
+             ('id IS NOT NULL', [1, 2, 3, 4, 5]),
+             ('id IS NULL', []),
+             ('nullint IS NOT NULL', []),
+             ('nullint IS NULL', [1, 2, 3, 4, 5]),
+             ("str = 'foo_e'", []),
+             ("str = 'foo_é'", [1, 2, 3, 4, 5]),
+             ("str <= 'foo_é'", [1, 2, 3, 4, 5]),
+             ("str >= 'foo_é'", [1, 2, 3, 4, 5]),
+             ("str <> 'foo_é'", []),
+             ("str < 'foo_é'", []),
+             ("str > 'foo_é'", []),
+             ('smallint = -13', [1, 2, 3, 4, 5]),
+             ('smallint <= -13', [1, 2, 3, 4, 5]),
+             ('smallint >= -13', [1, 2, 3, 4, 5]),
+             ('smallint < -13', []),
+             ('smallint > -13', []),
+             ('int = 123', [1, 2, 3, 4, 5]),
+             ('int <= 123', [1, 2, 3, 4, 5]),
+             ('int >= 123', [1, 2, 3, 4, 5]),
+             ('int < 123', []),
+             ('int > 123', []),
+             ('float = 1.5', [1, 2, 3, 4, 5]),
+             ('float <= 1.5', [1, 2, 3, 4, 5]),
+             ('float >= 1.5', [1, 2, 3, 4, 5]),
+             ('float < 1.5', []),
+             ('float > 1.5', []),
+             ('real = 4.56', [1, 2, 3, 4, 5]),
+             ('real <= 4.56', [1, 2, 3, 4, 5]),
+             ('real >= 4.56', [1, 2, 3, 4, 5]),
+             ('real < 4.56', []),
+             ('real > 4.56', []),
+             ("adate = '2013/12/26 12:34:56'", [1, 2, 3, 4, 5]),
+             ("adate <= '2013/12/26 12:34:56'", [1, 2, 3, 4, 5]),
+             ("adate >= '2013/12/26 12:34:56'", [1, 2, 3, 4, 5]),
+             ("adate < '2013/12/26 12:34:56'", []),
+             ("adate > '2013/12/26 12:34:56'", []),
+             ("guid = '{12345678-9ABC-DEF0-1234-567890ABCDEF}'", [1, 2, 3, 4, 5]),
+             ("guid <= '{12345678-9ABC-DEF0-1234-567890ABCDEF}'", [1, 2, 3, 4, 5]),
+             ("guid >= '{12345678-9ABC-DEF0-1234-567890ABCDEF}'", [1, 2, 3, 4, 5]),
+             ("guid < '{12345678-9ABC-DEF0-1234-567890ABCDEF}'", []),
+             ("guid > '{12345678-9ABC-DEF0-1234-567890ABCDEF}'", []),
+             ("guid = '{'", []),
+             ("guid > '{'", [1, 2, 3, 4, 5]),
+             ("NOT(id = 1)", [2, 3, 4, 5]),
+             ("id = 1 OR id = -1", [1]),
+             ("id = -1 OR id = 1", [1]),
+             ("id = 1 OR id = 1", [1]),
+             ("id = 1 OR id = 2", [1, 2]),  # exclusive branches
+             ("id < 3 OR id > 3", [1, 2, 4, 5]),  # exclusive branches
+             ("id > 3 OR id < 3", [1, 2, 4, 5]),  # exclusive branches
+             ("id <= 3 OR id >= 4", [1, 2, 3, 4, 5]),  # exclusive branches
+             ("id >= 4 OR id <= 3", [1, 2, 3, 4, 5]),  # exclusive branches
+             ("id < 3 OR id >= 3", [1, 2, 3, 4, 5]),
+             ("id <= 3 OR id >= 3", [1, 2, 3, 4, 5]),
+             ("id <= 5 OR id >= 1", [1, 2, 3, 4, 5]),
+             ("id <= 1.5 OR id >= 2", [1, 2, 3, 4, 5]),
+             ('id IS NULL OR id IS NOT NULL', [1, 2, 3, 4, 5]),
+             ('float < 1.5 OR float > 1.5', []),
+             ('float <= 1.5 OR float >= 1.5', [1, 2, 3, 4, 5]),
+             ('float < 1.5 OR float > 2', []),
+             ('float < 1 OR float > 2.5', []),
+             ("str < 'foo_é' OR str > 'z'", []),
+             ("adate < '2013/12/26 12:34:56' OR adate > '2014/01/01'", []),
+             ("id = 1 AND id = -1", []),
+             ("id = -1 AND id = 1", []),
+             ("id = 1 AND id = 1", [1]),
+             ("id = 1 AND id = 2", []),
+             ("id <= 5 AND id >= 1", [1, 2, 3, 4, 5]),
+             ("id <= 3 AND id >= 3", [3]),
+             ("id = 1 AND float = 1.5", [1]),
+             ("id BETWEEN 1 AND 5", [1, 2, 3, 4, 5]),
+             ("id IN (1)", [1]),
+             ("id IN (5,4,3,2,1)", [1, 2, 3, 4, 5]),
+             ('fid = 1', [1], 0),  # no index used
+             ('fid BETWEEN 1 AND 1', [1], 0),  # no index used
+             ('fid IN (1)', [1], 0),  # no index used
+             ('fid IS NULL', [], 0),  # no index used
+             ('fid IS NOT NULL', [1, 2, 3, 4, 5], 0),  # no index used
+             ("xml <> ''", [1, 2, 3, 4, 5], 0),  # no index used
+             ("id = 1 AND xml <> ''", [1], 1),  # index partially used
+             ("xml <> '' AND id = 1", [1], 1),  # index partially used
+             ("NOT(id = 1 AND xml <> '')", [2, 3, 4, 5], 0),  # no index used
+             ("id = 1 OR xml <> ''", [1, 2, 3, 4, 5], 0),  # no index used
+             ('id = id', [1, 2, 3, 4, 5], 0),  # no index used
+             ('id = 1 + 0', [1], 0),  # no index used (currently...)
              ]
     for test in tests:
 
@@ -627,15 +637,14 @@ def ogr_openfilegdb_4():
             gdaltest.post_reason('fail')
             return 'fail'
 
-
     lyr = ds.GetLayerByName('none')
-    tests = [ ('id = 1', [1]),
-              ('id IS NULL', [6]),
-              ('id IS NOT NULL', [1,2,3,4,5]),
-              ('id IS NULL OR id IS NOT NULL', [1,2,3,4,5,6]),
-              ('id = 1 OR id IS NULL', [1, 6]),
-              ('id IS NULL OR id = 1', [1, 6]),
-            ]
+    tests = [('id = 1', [1]),
+             ('id IS NULL', [6]),
+             ('id IS NOT NULL', [1, 2, 3, 4, 5]),
+             ('id IS NULL OR id IS NOT NULL', [1, 2, 3, 4, 5, 6]),
+             ('id = 1 OR id IS NULL', [1, 6]),
+             ('id IS NULL OR id = 1', [1, 6]),
+             ]
     for test in tests:
 
         if len(test) == 2:
@@ -671,15 +680,15 @@ def ogr_openfilegdb_4():
             return 'fail'
 
     lyr = ds.GetLayerByName('big_layer')
-    tests = [ ('real = 0', 86, 1),
-              ('real = 1', 85, 2),
-              ('real = 2', 85, 3),
-              ('real = 3', 85, 4),
-              ('real >= 0', 86 + 3 * 85, None),
-              ('real < 4', 86 + 3 * 85, None),
-              ('real > 1 AND real < 2', 0, None),
-              ('real < 0', 0, None),
-            ]
+    tests = [('real = 0', 86, 1),
+             ('real = 1', 85, 2),
+             ('real = 2', 85, 3),
+             ('real = 3', 85, 4),
+             ('real >= 0', 86 + 3 * 85, None),
+             ('real < 4', 86 + 3 * 85, None),
+             ('real > 1 AND real < 2', 0, None),
+             ('real < 0', 0, None),
+             ]
     for (where_clause, count, start) in tests:
 
         lyr.SetAttributeFilter(where_clause)
@@ -691,8 +700,8 @@ def ogr_openfilegdb_4():
         for i in range(count):
             feat = lyr.GetNextFeature()
             if feat is None or \
-               (start is not None and \
-                feat.GetFID() != i * 4 + start):
+               (start is not None and
+                    feat.GetFID() != i * 4 + start):
                 print(where_clause, count)
                 gdaltest.post_reason('fail')
                 return 'fail'
@@ -708,19 +717,20 @@ def ogr_openfilegdb_4():
 ###############################################################################
 # Test opening an unzipped dataset
 
+
 def ogr_openfilegdb_5():
 
     try:
         shutil.rmtree('tmp/testopenfilegdb.gdb')
-    except:
+    except OSError:
         pass
     try:
-        gdaltest.unzip( 'tmp/', 'data/testopenfilegdb.gdb.zip')
+        gdaltest.unzip('tmp/', 'data/testopenfilegdb.gdb.zip')
     except:
         return 'skip'
     try:
         os.stat('tmp/testopenfilegdb.gdb')
-    except:
+    except OSError:
         return 'skip'
 
     ds = ogr.Open('tmp/testopenfilegdb.gdb')
@@ -733,12 +743,13 @@ def ogr_openfilegdb_5():
 ###############################################################################
 # Test special SQL processing for min/max/count/sum/avg values
 
+
 def ogr_openfilegdb_6():
 
     ds = ogr.Open('data/testopenfilegdb.gdb.zip')
 
     # With indices
-    sql_lyr = ds.ExecuteSQL("select min(id), max(id), count(id), sum(id), avg(id), min(str), min(smallint), " \
+    sql_lyr = ds.ExecuteSQL("select min(id), max(id), count(id), sum(id), avg(id), min(str), min(smallint), "
                             "avg(smallint), min(float), avg(float), min(real), avg(real), min(adate), avg(adate), min(guid), min(nullint), avg(nullint) from point")
     if sql_lyr is None:
         return 'fail'
@@ -780,32 +791,33 @@ def ogr_openfilegdb_6():
 ###############################################################################
 # Test special SQL processing for ORDER BY
 
+
 def ogr_openfilegdb_7():
 
     ds = ogr.Open('data/testopenfilegdb.gdb.zip')
 
-    tests = [ # Optimized:
-              ( "select * from point order by id", 5, 1, 1),
-              ( "select id, str from point order by id desc", 5, 5, 1),
-              ( "select * from point where id = 1 order by id", 1, 1, 1),
-              ( "select * from big_layer order by real", 86 + 3 * 85, 1, 1),
-              ( "select * from big_layer order by real desc", 86 + 3 * 85, 4 * 85, 1),
-              # Invalid :
-              ( "select foo from", None, None, None),
-              ( "select foo from bar", None, None, None),
-              ( "select * from point order by foo", None, None, None),
-              # Non-optimized :
-              ( "select * from point order by xml", None, None, 0),
-              ( "select fid from point order by id", None, None, 0),
-              ( "select cast(id as float) from point order by id", None, None, 0),
-              ( "select distinct id from point order by id", None, None, 0),
-              ( "select 1 from point order by id", None, None, 0),
-              ( "select count(*) from point order by id", None, None, 0),
-              ( "select * from point order by nullint", None, None, 0),
-              ( "select * from point where id = 1 or id = 2 order by id", None, None, 0),
-              ( "select * from point where id = 1 order by id, float", None, None, 0),
-              ( "select * from point where float > 0 order by id", None, None, 0),
-            ]
+    tests = [  # Optimized:
+        ("select * from point order by id", 5, 1, 1),
+        ("select id, str from point order by id desc", 5, 5, 1),
+        ("select * from point where id = 1 order by id", 1, 1, 1),
+        ("select * from big_layer order by real", 86 + 3 * 85, 1, 1),
+        ("select * from big_layer order by real desc", 86 + 3 * 85, 4 * 85, 1),
+        # Invalid :
+        ("select foo from", None, None, None),
+        ("select foo from bar", None, None, None),
+        ("select * from point order by foo", None, None, None),
+        # Non-optimized :
+        ("select * from point order by xml", None, None, 0),
+        ("select fid from point order by id", None, None, 0),
+        ("select cast(id as float) from point order by id", None, None, 0),
+        ("select distinct id from point order by id", None, None, 0),
+        ("select 1 from point order by id", None, None, 0),
+        ("select count(*) from point order by id", None, None, 0),
+        ("select * from point order by nullint", None, None, 0),
+        ("select * from point where id = 1 or id = 2 order by id", None, None, 0),
+        ("select * from point where id = 1 order by id, float", None, None, 0),
+        ("select * from point where float > 0 order by id", None, None, 0),
+    ]
 
     for (sql, feat_count, first_fid, expected_optimized) in tests:
         if expected_optimized is None:
@@ -862,6 +874,7 @@ def ogr_openfilegdb_7():
 ###############################################################################
 # Test reading a .gdbtable without .gdbtablx
 
+
 def ogr_openfilegdb_8():
 
     ds = ogr.Open('data/testopenfilegdb.gdb.zip')
@@ -887,7 +900,7 @@ def ogr_openfilegdb_8():
     lyr = ds.GetLayerByName('hole')
     # Not exactly in the order that one might expect, but logical when
     # looking at the structure of the .gdbtable
-    expected_str = [ 'fid13', 'fid2', 'fid3', 'fid4', 'fid5', 'fid6', 'fid7', 'fid8', 'fid9', 'fid10', 'fid11', None ]
+    expected_str = ['fid13', 'fid2', 'fid3', 'fid4', 'fid5', 'fid6', 'fid7', 'fid8', 'fid9', 'fid10', 'fid11', None]
     i = 0
     feat = lyr.GetNextFeature()
     while feat is not None:
@@ -902,11 +915,12 @@ def ogr_openfilegdb_8():
 ###############################################################################
 # Test reading a .gdbtable outside a .gdb
 
+
 def ogr_openfilegdb_9():
 
     try:
         os.stat('tmp/testopenfilegdb.gdb')
-    except:
+    except OSError:
         return 'skip'
 
     shutil.copy('tmp/testopenfilegdb.gdb/a00000009.gdbtable', 'tmp/a00000009.gdbtable')
@@ -924,51 +938,54 @@ def ogr_openfilegdb_9():
 ###############################################################################
 # Test various error conditions
 
+
 def fuzz(filename, offset):
     f = open(filename, "rb+")
     f.seek(offset, 0)
     v = ord(f.read(1))
     f.seek(offset, 0)
     import sys
-    if sys.version_info >= (3,0,0):
+    if sys.version_info >= (3, 0, 0):
         f.write(('%c' % (255 - v)).encode('ISO-8859-1'))
     else:
         f.write('%c' % (255 - v))
     f.close()
     return (filename, offset, v)
 
+
 def unfuzz(backup):
     (filename, offset, v) = backup
     f = open(filename, "rb+")
     f.seek(offset, 0)
     import sys
-    if sys.version_info >= (3,0,0):
+    if sys.version_info >= (3, 0, 0):
         f.write(('%c' % (v)).encode('ISO-8859-1'))
     else:
         f.write('%c' % (v))
     f.close()
 
+
 def ogr_openfilegdb_10():
 
     try:
         os.stat('tmp/testopenfilegdb.gdb')
-    except:
+    except OSError:
         return 'skip'
 
     shutil.copytree('tmp/testopenfilegdb.gdb', 'tmp/testopenfilegdb_fuzzed.gdb')
 
     if False:
         for filename in ['tmp/testopenfilegdb_fuzzed.gdb/a00000001.gdbtable',
-                        'tmp/testopenfilegdb_fuzzed.gdb/a00000001.gdbtablx']:
+                         'tmp/testopenfilegdb_fuzzed.gdb/a00000001.gdbtablx']:
             errors = set()
             offsets = []
             last_error_msg = ''
             last_offset = -1
             for offset in range(os.stat(filename).st_size):
-                #print(offset)
+                # print(offset)
                 backup = fuzz(filename, offset)
                 gdal.ErrorReset()
-                #print(offset)
+                # print(offset)
                 ds = ogr.Open('tmp/testopenfilegdb_fuzzed.gdb')
                 error_msg = gdal.GetLastErrorMsg()
                 feat = None
@@ -984,7 +1001,7 @@ def ogr_openfilegdb_10():
                             error_msg = gdal.GetLastErrorMsg()
                 if feat is None or error_msg != '':
                     if offset - last_offset >= 4 or last_error_msg != error_msg:
-                        if error_msg != '' and not error_msg in errors:
+                        if error_msg != '' and error_msg not in errors:
                             errors.add(error_msg)
                             offsets.append(offset)
                         else:
@@ -1002,10 +1019,10 @@ def ogr_openfilegdb_10():
             last_error_msg = ''
             last_offset = -1
             for offset in range(os.stat(filename).st_size):
-                #print(offset)
+                # print(offset)
                 backup = fuzz(filename, offset)
                 gdal.ErrorReset()
-                #print(offset)
+                # print(offset)
                 ds = ogr.Open('tmp/testopenfilegdb_fuzzed.gdb')
                 error_msg = gdal.GetLastErrorMsg()
                 feat = None
@@ -1022,7 +1039,7 @@ def ogr_openfilegdb_10():
                             error_msg = gdal.GetLastErrorMsg()
                 if feat is None or error_msg != '':
                     if offset - last_offset >= 4 or last_error_msg != error_msg:
-                        if error_msg != '' and not error_msg in errors:
+                        if error_msg != '' and error_msg not in errors:
                             errors.add(error_msg)
                             offsets.append(offset)
                         else:
@@ -1035,8 +1052,8 @@ def ogr_openfilegdb_10():
 
     else:
 
-        for (filename, offsets) in [ ('tmp/testopenfilegdb_fuzzed.gdb/a00000001.gdbtable', [4, 5, 6, 7, 32, 33, 41, 42, 52, 59, 60, 63, 64, 72, 73, 77, 78, 79, 80, 81, 101, 102, 104, 105, 111, 180]),
-                          ('tmp/testopenfilegdb_fuzzed.gdb/a00000001.gdbtablx', [4, 7, 11, 12, 16, 31, 5136, 5140, 5142, 5144])]:
+        for (filename, offsets) in [('tmp/testopenfilegdb_fuzzed.gdb/a00000001.gdbtable', [4, 5, 6, 7, 32, 33, 41, 42, 52, 59, 60, 63, 64, 72, 73, 77, 78, 79, 80, 81, 101, 102, 104, 105, 111, 180]),
+                                    ('tmp/testopenfilegdb_fuzzed.gdb/a00000001.gdbtablx', [4, 7, 11, 12, 16, 31, 5136, 5140, 5142, 5144])]:
             for offset in offsets:
                 backup = fuzz(filename, offset)
                 gdal.PushErrorHandler('CPLQuietErrorHandler')
@@ -1060,10 +1077,10 @@ def ogr_openfilegdb_10():
                 gdal.PopErrorHandler()
                 unfuzz(backup)
 
-        for (filename, offsets) in [ ('tmp/testopenfilegdb_fuzzed.gdb/a00000004.gdbindexes', [0, 4, 5, 44, 45, 66, 67, 100, 101, 116, 117, 148, 149, 162, 163, 206, 207, 220, 221, 224, 280, 281]),
-                          ('tmp/testopenfilegdb_fuzzed.gdb/a00000004.CatItemsByPhysicalName.atx', [4, 12, 8196, 8300, 8460, 8620, 8780, 8940, 9100, 12290, 12294, 12298]) ]:
+        for (filename, offsets) in [('tmp/testopenfilegdb_fuzzed.gdb/a00000004.gdbindexes', [0, 4, 5, 44, 45, 66, 67, 100, 101, 116, 117, 148, 149, 162, 163, 206, 207, 220, 221, 224, 280, 281]),
+                                    ('tmp/testopenfilegdb_fuzzed.gdb/a00000004.CatItemsByPhysicalName.atx', [4, 12, 8196, 8300, 8460, 8620, 8780, 8940, 9100, 12290, 12294, 12298])]:
             for offset in offsets:
-                #print(offset)
+                # print(offset)
                 backup = fuzz(filename, offset)
                 gdal.PushErrorHandler('CPLQuietErrorHandler')
                 gdal.ErrorReset()
@@ -1092,15 +1109,18 @@ def ogr_openfilegdb_10():
 ###############################################################################
 # Test spatial filtering
 
+
 SPI_IN_BUILDING = 0
 SPI_COMPLETED = 1
 SPI_INVALID = 2
+
 
 def get_spi_state(ds, lyr):
     sql_lyr = ds.ExecuteSQL('GetLayerSpatialIndexState %s' % lyr.GetName())
     value = int(sql_lyr.GetNextFeature().GetField(0))
     ds.ReleaseResultSet(sql_lyr)
     return value
+
 
 def ogr_openfilegdb_11():
 
@@ -1117,7 +1137,7 @@ def ogr_openfilegdb_11():
     if lyr.TestCapability(ogr.OLCFastFeatureCount) != 1:
         gdaltest.post_reason('failure')
         return 'fail'
-    lyr.SetSpatialFilterRect(0.25,0.25,0.5,0.5)
+    lyr.SetSpatialFilterRect(0.25, 0.25, 0.5, 0.5)
     if lyr.GetFeatureCount() != 1:
         gdaltest.post_reason('failure')
         return 'fail'
@@ -1144,7 +1164,7 @@ def ogr_openfilegdb_11():
     # Test iterating without spatial index already built
     ds = ogr.Open('data/testopenfilegdb.gdb.zip')
     lyr = ds.GetLayerByName('several_polygons')
-    lyr.SetSpatialFilterRect(0.25,0.25,0.5,0.5)
+    lyr.SetSpatialFilterRect(0.25, 0.25, 0.5, 0.5)
     c = 0
     feat = lyr.GetNextFeature()
     if get_spi_state(ds, lyr) != SPI_IN_BUILDING:
@@ -1172,7 +1192,7 @@ def ogr_openfilegdb_11():
 
     ds = ogr.Open('data/testopenfilegdb.gdb.zip')
     lyr = ds.GetLayerByName('multipolygon')
-    lyr.SetSpatialFilterRect(1.4,0.4,1.6,0.6)
+    lyr.SetSpatialFilterRect(1.4, 0.4, 1.6, 0.6)
     if lyr.GetFeatureCount() != expected_count:
         gdaltest.post_reason('failure')
         return 'fail'
@@ -1183,7 +1203,7 @@ def ogr_openfilegdb_11():
     # when GEOS is available
     ds = ogr.Open('data/testopenfilegdb.gdb.zip')
     lyr = ds.GetLayerByName('multipolygon')
-    lyr.SetSpatialFilterRect(1.4,0.4,1.6,0.6)
+    lyr.SetSpatialFilterRect(1.4, 0.4, 1.6, 0.6)
     c = 0
     feat = lyr.GetNextFeature()
     while feat is not None:
@@ -1202,7 +1222,7 @@ def ogr_openfilegdb_11():
     # GetFeature() should not impact spatial index building
     ds = ogr.Open('data/testopenfilegdb.gdb.zip')
     lyr = ds.GetLayerByName('several_polygons')
-    lyr.SetSpatialFilterRect(0.25,0.25,0.5,0.5)
+    lyr.SetSpatialFilterRect(0.25, 0.25, 0.5, 0.5)
     feat = lyr.GetFeature(1)
     feat = lyr.GetFeature(1)
     if get_spi_state(ds, lyr) != SPI_IN_BUILDING:
@@ -1228,7 +1248,7 @@ def ogr_openfilegdb_11():
         return 'fail'
 
     # This will create an array of filtered features
-    lyr.SetSpatialFilterRect(0.25,0.25,0.5,0.5)
+    lyr.SetSpatialFilterRect(0.25, 0.25, 0.5, 0.5)
     if lyr.TestCapability(ogr.OLCFastSetNextByIndex) != 1:
         gdaltest.post_reason('failure')
         return 'fail'
@@ -1292,6 +1312,7 @@ def ogr_openfilegdb_11():
 ###############################################################################
 # Test opening a FGDB with both SRID and LatestSRID set (#5638)
 
+
 def ogr_openfilegdb_12():
 
     ds = ogr.Open('/vsizip/data/test3005.gdb.zip')
@@ -1311,6 +1332,7 @@ def ogr_openfilegdb_12():
 
 ###############################################################################
 # Test opening a FGDB v9 with a non spatial table (#5673)
+
 
 def ogr_openfilegdb_13():
 
@@ -1337,6 +1359,7 @@ def ogr_openfilegdb_13():
 ###############################################################################
 # Test not nullable fields
 
+
 def ogr_openfilegdb_14():
 
     ds = ogr.Open('data/testopenfilegdb.gdb.zip')
@@ -1356,6 +1379,7 @@ def ogr_openfilegdb_14():
 
 ###############################################################################
 # Test default values
+
 
 def ogr_openfilegdb_15():
 
@@ -1392,7 +1416,7 @@ def ogr_openfilegdb_16():
 
     ds = ogr.Open('data/sparse.gdb.zip')
     lyr = ds.GetLayer(0)
-    for fid in [2,3,4,7,8,9,10,2049,8191,16384,10000000,10000001]:
+    for fid in [2, 3, 4, 7, 8, 9, 10, 2049, 8191, 16384, 10000000, 10000001]:
         f = lyr.GetNextFeature()
         if f.GetFID() != fid:
             gdaltest.post_reason('fail')
@@ -1405,7 +1429,7 @@ def ogr_openfilegdb_16():
         gdaltest.post_reason('fail')
         return 'fail'
 
-    f = lyr.GetFeature(10000000-1)
+    f = lyr.GetFeature(10000000 - 1)
     if f is not None:
         gdaltest.post_reason('fail')
         return 'fail'
@@ -1424,6 +1448,7 @@ def ogr_openfilegdb_16():
 ###############################################################################
 # Read a MULTILINESTRING ZM with a dummy M array (#6528)
 
+
 def ogr_openfilegdb_17():
 
     ds = ogr.Open('data/multilinestringzm_with_dummy_m_array.gdb.zip')
@@ -1437,6 +1462,7 @@ def ogr_openfilegdb_17():
 
 ###############################################################################
 # Read curves
+
 
 def ogr_openfilegdb_18():
 
@@ -1480,6 +1506,7 @@ def ogr_openfilegdb_18():
 ###############################################################################
 # Test opening '.'
 
+
 def ogr_openfilegdb_19():
 
     os.chdir('data/curves.gdb')
@@ -1491,7 +1518,73 @@ def ogr_openfilegdb_19():
     return 'success'
 
 ###############################################################################
+# Read polygons with M component where the M of the closing point is not the
+# one of the starting point (#7017)
+
+
+def ogr_openfilegdb_20():
+
+    ds = ogr.Open('data/filegdb_polygonzm_m_not_closing_with_curves.gdb')
+    lyr = ds.GetLayer(0)
+    ds_ref = ogr.Open('data/filegdb_polygonzm_m_not_closing_with_curves.gdb.csv')
+    lyr_ref = ds_ref.GetLayer(0)
+    for f in lyr:
+        f_ref = lyr_ref.GetNextFeature()
+        if ogrtest.check_feature_geometry(f, f_ref.GetGeometryRef()) != 0:
+            gdaltest.post_reason('fail')
+            print(f.GetGeometryRef().ExportToIsoWkt())
+            print(f_ref.GetGeometryRef().ExportToIsoWkt())
+            return 'fail'
+
+    ds = ogr.Open('data/filegdb_polygonzm_nan_m_with_curves.gdb')
+    lyr = ds.GetLayer(0)
+    ds_ref = ogr.Open('data/filegdb_polygonzm_nan_m_with_curves.gdb.csv')
+    lyr_ref = ds_ref.GetLayer(0)
+    for f in lyr:
+        f_ref = lyr_ref.GetNextFeature()
+        if ogrtest.check_feature_geometry(f, f_ref.GetGeometryRef()) != 0:
+            gdaltest.post_reason('fail')
+            print(f.GetGeometryRef().ExportToIsoWkt())
+            print(f_ref.GetGeometryRef().ExportToIsoWkt())
+            return 'fail'
+
+    return 'success'
+
+###############################################################################
+# Test selecting FID column with OGRSQL
+
+
+def ogr_openfilegdb_21():
+
+    ds = ogr.Open('data/curves.gdb')
+    sql_lyr = ds.ExecuteSQL('SELECT OBJECTID FROM polygon WHERE OBJECTID = 2')
+    if sql_lyr is None:
+        gdaltest.post_reason('fail')
+        return 'fail'
+    f = sql_lyr.GetNextFeature()
+    if f.GetFID() != 2:
+        gdaltest.post_reason('fail')
+        f.DumpReadable()
+        return 'fail'
+    f = sql_lyr.GetNextFeature()
+    if f is not None:
+        gdaltest.post_reason('fail')
+        return 'fail'
+    ds.ReleaseResultSet(sql_lyr)
+
+    lyr = ds.GetLayerByName('polygon')
+    lyr.SetAttributeFilter('OBJECTID = 2')
+    f = lyr.GetNextFeature()
+    if f.GetFID() != 2:
+        gdaltest.post_reason('fail')
+        f.DumpReadable()
+        return 'fail'
+
+    return 'success'
+
+###############################################################################
 # Cleanup
+
 
 def ogr_openfilegdb_cleanup():
 
@@ -1500,23 +1593,24 @@ def ogr_openfilegdb_cleanup():
 
     try:
         shutil.rmtree('tmp/testopenfilegdb.gdb')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/a00000009.gdbtable')
         os.remove('tmp/a00000009.gdbtablx')
-    except:
+    except OSError:
         pass
     try:
         shutil.rmtree('tmp/testopenfilegdb_fuzzed.gdb')
-    except:
+    except OSError:
         pass
 
     return 'success'
 
+
 gdaltest_list = [
     ogr_openfilegdb_init,
-    #ogr_openfilegdb_make_test_data,
+    # ogr_openfilegdb_make_test_data,
     ogr_openfilegdb_1,
     ogr_openfilegdb_1_92,
     ogr_openfilegdb_1_93,
@@ -1540,14 +1634,15 @@ gdaltest_list = [
     ogr_openfilegdb_17,
     ogr_openfilegdb_18,
     ogr_openfilegdb_19,
+    ogr_openfilegdb_20,
+    ogr_openfilegdb_21,
     ogr_openfilegdb_cleanup,
-    ]
+]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'ogr_openfilegdb' )
+    gdaltest.setup_run('ogr_openfilegdb')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

@@ -30,7 +30,7 @@
 
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 import ogrtest
@@ -50,12 +50,13 @@ sde_password = 'sde'
 
 gdaltest.sde_dr = None
 try:
-    gdaltest.sde_dr = ogr.GetDriverByName( 'SDE' )
+    gdaltest.sde_dr = ogr.GetDriverByName('SDE')
 except:
     pass
+
+
 def ogr_sde_1():
     "Test basic opening of a database"
-
 
     if gdaltest.sde_dr is None:
         return 'skip'
@@ -73,40 +74,41 @@ def ogr_sde_1():
 
     return 'success'
 
+
 def ogr_sde_2():
     "Test creation of a layer"
     if gdaltest.sde_dr is None:
         return 'skip'
     base = 'SDE:%s,%s,%s,%s,%s' % (sde_server, sde_port, sde_db, sde_user, sde_password)
 
-    shp_ds = ogr.Open( 'data/poly.shp' )
+    shp_ds = ogr.Open('data/poly.shp')
     gdaltest.shp_ds = shp_ds
     shp_lyr = shp_ds.GetLayer(0)
 
     ds = ogr.Open(base, update=1)
-    lyr = ds.CreateLayer( 'SDE.TPOLY' ,geom_type=ogr.wkbPolygon, srs=shp_lyr.GetSpatialRef(),options = [ 'OVERWRITE=YES' ] )
+    lyr = ds.CreateLayer('SDE.TPOLY', geom_type=ogr.wkbPolygon, srs=shp_lyr.GetSpatialRef(), options=['OVERWRITE=YES'])
 #    lyr = ds.CreateLayer( 'SDE.TPOLY' ,geom_type=ogr.wkbPolygon)
 
-    ogrtest.quick_create_layer_def( lyr,
-                                    [ ('AREA', ogr.OFTReal),
-                                      ('EAS_ID', ogr.OFTInteger),
-                                      ('PRFEDEA', ogr.OFTString),
-                                      ('WHEN', ogr.OFTDateTime) ] )
+    ogrtest.quick_create_layer_def(lyr,
+                                   [('AREA', ogr.OFTReal),
+                                    ('EAS_ID', ogr.OFTInteger),
+                                    ('PRFEDEA', ogr.OFTString),
+                                    ('WHEN', ogr.OFTDateTime)])
 
     #######################################################
     # Copy in poly.shp
 
-    dst_feat = ogr.Feature( feature_def = lyr.GetLayerDefn() )
+    dst_feat = ogr.Feature(feature_def=lyr.GetLayerDefn())
 
     feat = shp_lyr.GetNextFeature()
     gdaltest.poly_feat = []
 
     while feat is not None:
 
-        gdaltest.poly_feat.append( feat )
+        gdaltest.poly_feat.append(feat)
 
-        dst_feat.SetFrom( feat )
-        lyr.CreateFeature( dst_feat )
+        dst_feat.SetFrom(feat)
+        lyr.CreateFeature(dst_feat)
 
         feat = shp_lyr.GetNextFeature()
 
@@ -135,24 +137,23 @@ def ogr_sde_3():
 def ogr_sde_4():
     "Test basic version creation"
 
-
     if gdaltest.sde_dr is None:
         return 'skip'
     version_name = 'TESTING'
-    gdal.SetConfigOption( 'SDE_VERSIONOVERWRITE', 'TRUE' )
+    gdal.SetConfigOption('SDE_VERSIONOVERWRITE', 'TRUE')
 
     base = 'SDE:%s,%s,%s,%s,%s,SDE.TPOLY,SDE.DEFAULT,%s' % (sde_server, sde_port, sde_db, sde_user, sde_password, version_name)
     ds = ogr.Open(base, update=1)
     ds.Destroy()
 
-    gdal.SetConfigOption( 'SDE_VERSIONOVERWRITE', 'FALSE' )
+    gdal.SetConfigOption('SDE_VERSIONOVERWRITE', 'FALSE')
 
     base = 'SDE:%s,%s,%s,%s,%s,SDE.TPOLY,SDE.DEFAULT,%s' % (sde_server, sde_port, sde_db, sde_user, sde_password, version_name)
     ds = ogr.Open(base, update=1)
     ds.Destroy()
-
 
     return 'success'
+
 
 def ogr_sde_5():
     "Test versioned editing"
@@ -160,7 +161,7 @@ def ogr_sde_5():
     if gdaltest.sde_dr is None:
         return 'skip'
     version_name = 'TESTING'
-    gdal.SetConfigOption( 'SDE_VERSIONOVERWRITE', 'TRUE' )
+    gdal.SetConfigOption('SDE_VERSIONOVERWRITE', 'TRUE')
 
     base = 'SDE:%s,%s,%s,%s,%s,SDE.TPOLY,SDE.DEFAULT,%s' % (sde_server, sde_port, sde_db, sde_user, sde_password, version_name)
     ds = ogr.Open(base, update=1)
@@ -168,14 +169,14 @@ def ogr_sde_5():
     l1 = ds.GetLayerByName('SDE.TPOLY')
 
     f1 = l1.GetFeature(1)
-    f1.SetField("PRFEDEA",'SDE.TESTING')
+    f1.SetField("PRFEDEA", 'SDE.TESTING')
     l1.SetFeature(f1)
 
     ds.Destroy()
     del ds
 
     default = 'DEFAULT'
-    gdal.SetConfigOption( 'SDE_VERSIONOVERWRITE', 'FALSE' )
+    gdal.SetConfigOption('SDE_VERSIONOVERWRITE', 'FALSE')
 
     default = 'SDE:%s,%s,%s,%s,%s,SDE.TPOLY,SDE.DEFAULT,%s' % (sde_server, sde_port, sde_db, sde_user, sde_password, default)
 #    print default
@@ -185,7 +186,7 @@ def ogr_sde_5():
 
     f2 = l2.GetFeature(1)
 
-    f2.SetField("PRFEDEA",'SDE.DEFAULT')
+    f2.SetField("PRFEDEA", 'SDE.DEFAULT')
     f2.SetField("WHEN", 2008, 3, 19, 16, 15, 00, 0)
 
     l2.SetFeature(f2)
@@ -199,7 +200,6 @@ def ogr_sde_5():
         gdaltest.post_reason('versioned editing failed for child version SDE.TESTING')
         return 'fail'
 
-
     ds3.Destroy()
     del ds3
 
@@ -210,14 +210,14 @@ def ogr_sde_5():
         gdaltest.post_reason('versioned editing failed for parent version SDE.DEFAULT')
         return 'fail'
 
-
     idx = f4.GetFieldIndex('WHEN')
     df = f4.GetField(idx)
     if df != '2008/03/19 16:15:00':
-        gdaltest.post_reason("datetime handling did not work -- expected '2008/03/19 16:15:00' got '%s' "% df)
+        gdaltest.post_reason("datetime handling did not work -- expected '2008/03/19 16:15:00' got '%s' " % df)
     ds4.Destroy()
     del ds4
     return 'success'
+
 
 def ogr_sde_6():
     "Extent fetching"
@@ -235,9 +235,10 @@ def ogr_sde_6():
         gdaltest.post_reason("unforced extent did not equal expected value")
 
     extent = l1.GetExtent(force=1)
-    if extent !=     (478316.0, 481645.0, 4762881.0, 4765611.0):
+    if extent != (478316.0, 481645.0, 4762881.0, 4765611.0):
         gdaltest.post_reason("forced extent did not equal expected value")
     return 'success'
+
 
 def ogr_sde_7():
     "Bad layer test"
@@ -256,7 +257,7 @@ def ogr_sde_7():
     ds.Destroy()
 
     default = 'DEFAULT'
-    gdal.SetConfigOption( 'SDE_VERSIONOVERWRITE', 'FALSE' )
+    gdal.SetConfigOption('SDE_VERSIONOVERWRITE', 'FALSE')
 
     default = 'SDE:%s,%s,%s,%s,%s,SDE.TPOLY,SDE.DEFAULT,%s' % (
         sde_server, sde_port, sde_db, sde_user, sde_password, default)
@@ -268,7 +269,7 @@ def ogr_sde_7():
     ds.Destroy()
 
     default = 'DEFAULT'
-    gdal.SetConfigOption( 'SDE_VERSIONOVERWRITE', 'FALSE' )
+    gdal.SetConfigOption('SDE_VERSIONOVERWRITE', 'FALSE')
 
     default = 'SDE:%s,%s,%s,%s,%s' % (
         sde_server, sde_port, sde_db, sde_user, sde_password)
@@ -279,8 +280,8 @@ def ogr_sde_7():
         gdaltest.post_reason("we got a layer when we should not have")
     ds.Destroy()
 
-
     return 'success'
+
 
 def ogr_sde_8():
     "Test spatial references"
@@ -288,7 +289,7 @@ def ogr_sde_8():
         return 'skip'
     base = 'SDE:%s,%s,%s,%s,%s' % (sde_server, sde_port, sde_db, sde_user, sde_password)
 
-    shp_ds = ogr.Open( 'data/poly.shp' )
+    shp_ds = ogr.Open('data/poly.shp')
     gdaltest.shp_ds = shp_ds
     shp_lyr = shp_ds.GetLayer(0)
 
@@ -296,47 +297,46 @@ def ogr_sde_8():
     ref.ImportFromWkt('LOCAL_CS["IMAGE"]')
 
     ds = ogr.Open(base, update=1)
-    lyr = ds.CreateLayer( 'SDE.TPOLY' ,geom_type=ogr.wkbPolygon, srs=ref,options = [ 'OVERWRITE=YES' ] )
+    lyr = ds.CreateLayer('SDE.TPOLY', geom_type=ogr.wkbPolygon, srs=ref, options=['OVERWRITE=YES'])
     ref.ImportFromEPSG(4326)
-    lyr = ds.CreateLayer( 'SDE.TPOLY' ,geom_type=ogr.wkbPolygon, srs=ref,options = [ 'OVERWRITE=YES' ] )
-    ogrtest.quick_create_layer_def( lyr,
-                                    [ ('AREA', ogr.OFTReal),
-                                      ('EAS_ID', ogr.OFTInteger),
-                                      ('PRFEDEA', ogr.OFTString),
-                                      ('WHEN', ogr.OFTDateTime) ] )
+    lyr = ds.CreateLayer('SDE.TPOLY', geom_type=ogr.wkbPolygon, srs=ref, options=['OVERWRITE=YES'])
+    ogrtest.quick_create_layer_def(lyr,
+                                   [('AREA', ogr.OFTReal),
+                                    ('EAS_ID', ogr.OFTInteger),
+                                    ('PRFEDEA', ogr.OFTString),
+                                    ('WHEN', ogr.OFTDateTime)])
 
     #######################################################
     # Copy in poly.shp
 
-    dst_feat = ogr.Feature( feature_def = lyr.GetLayerDefn() )
-
-
+    dst_feat = ogr.Feature(feature_def=lyr.GetLayerDefn())
 
     feat = shp_lyr.GetNextFeature()
     gdaltest.poly_feat = []
 
     while feat is not None:
 
-        gdaltest.poly_feat.append( feat )
+        gdaltest.poly_feat.append(feat)
 
-        dst_feat.SetFrom( feat )
-        lyr.CreateFeature( dst_feat )
+        dst_feat.SetFrom(feat)
+        lyr.CreateFeature(dst_feat)
 
         feat = shp_lyr.GetNextFeature()
 
     dst_feat.Destroy()
     return 'success'
 
+
 def ogr_sde_cleanup():
     if gdaltest.sde_dr is None:
         return 'skip'
     base = 'SDE:%s,%s,%s,%s,%s' % (sde_server, sde_port, sde_db, sde_user, sde_password)
     ds = ogr.Open(base, update=1)
-    ds.DeleteLayer('%s.%s'%(sde_user.upper(),'TPOLY'))
+    ds.DeleteLayer('%s.%s' % (sde_user.upper(), 'TPOLY'))
     ds.Destroy()
 
-
     return 'success'
+
 
 gdaltest_list = [
     ogr_sde_1,
@@ -353,9 +353,8 @@ gdaltest_list = [
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'ogr_sde' )
+    gdaltest.setup_run('ogr_sde')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

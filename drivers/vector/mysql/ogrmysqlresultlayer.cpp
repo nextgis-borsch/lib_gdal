@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "ogr_mysql.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /************************************************************************/
 /*                        OGRMySQLResultLayer()                         */
@@ -184,7 +184,7 @@ OGRFeatureDefn *OGRMySQLResultLayer::ReadResultDefinition()
           }
           case FIELD_TYPE_GEOMETRY:
           {
-            if (pszGeomColumn == NULL)
+            if (pszGeomColumn == nullptr)
             {
                 pszGeomColumnTable = CPLStrdup( psMSField->table);
                 pszGeomColumn = CPLStrdup( psMSField->name);
@@ -227,29 +227,30 @@ OGRFeatureDefn *OGRMySQLResultLayer::ReadResultDefinition()
 
     if (pszGeomColumn)
     {
-        char*        pszType=NULL;
+        char*        pszType=nullptr;
         CPLString    osCommand;
         char           **papszRow;
 
         // set to unknown first
         poDefn->SetGeomType( wkbUnknown );
+        poDefn->GetGeomFieldDefn(0)->SetName( pszGeomColumn );
 
         osCommand.Printf(
                 "SELECT type FROM geometry_columns WHERE f_table_name='%s'",
                 pszGeomColumnTable );
 
-        if( hResultSet != NULL )
+        if( hResultSet != nullptr )
             mysql_free_result( hResultSet );
-        hResultSet = NULL;
+        hResultSet = nullptr;
 
         if( !mysql_query( poDS->GetConn(), osCommand ) )
             hResultSet = mysql_store_result( poDS->GetConn() );
 
-        papszRow = NULL;
-        if( hResultSet != NULL )
+        papszRow = nullptr;
+        if( hResultSet != nullptr )
             papszRow = mysql_fetch_row( hResultSet );
 
-        if( papszRow != NULL && papszRow[0] != NULL )
+        if( papszRow != nullptr && papszRow[0] != nullptr )
         {
             pszType = papszRow[0];
 
@@ -271,10 +272,10 @@ OGRFeatureDefn *OGRMySQLResultLayer::ReadResultDefinition()
 void OGRMySQLResultLayer::BuildFullQueryStatement()
 
 {
-    if( pszQueryStatement != NULL )
+    if( pszQueryStatement != nullptr )
     {
         CPLFree( pszQueryStatement );
-        pszQueryStatement = NULL;
+        pszQueryStatement = nullptr;
     }
 
     pszQueryStatement = CPLStrdup(pszRawStatement);

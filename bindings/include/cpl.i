@@ -156,6 +156,7 @@ void CPL_STDCALL PyCPLErrorHandler(CPLErr eErrClass, int err_no, const char* psz
 %rename (get_last_error_no) CPLGetLastErrorNo;
 %rename (get_last_error_type) CPLGetLastErrorType;
 %rename (get_last_error_msg) CPLGetLastErrorMsg;
+%rename (get_error_counter) CPLGetErrorCounter;
 %rename (push_finder_location) CPLPushFinderLocation;
 %rename (pop_finder_location) CPLPopFinderLocation;
 %rename (finder_clean) CPLFinderClean;
@@ -163,8 +164,14 @@ void CPL_STDCALL PyCPLErrorHandler(CPLErr eErrClass, int err_no, const char* psz
 %rename (read_dir) wrapper_VSIReadDirEx;
 %rename (read_dir_recursive) VSIReadDirRecursive;
 %rename (mkdir) VSIMkdir;
+%rename (mkdir_recursive) VSIMkdirRecursive;
 %rename (rmdir) VSIRmdir;
+%rename (rmdir_recursive) VSIRmdirRecursive;
 %rename (rename) VSIRename;
+%rename (get_actual_url) VSIGetActualURL;
+%rename (get_signed_url) wrapper_VSIGetSignedURL;
+%rename (get_filesystems_prefixes) VSIGetFileSystemsPrefixes;
+%rename (get_filesystem_options) VSIGetFileSystemOptions;
 %rename (set_config_option) CPLSetConfigOption;
 %rename (get_config_option) wrapper_CPLGetConfigOption;
 %rename (binary_to_hex) CPLBinaryToHex;
@@ -179,6 +186,7 @@ void CPL_STDCALL PyCPLErrorHandler(CPLErr eErrClass, int err_no, const char* psz
 %rename (GetLastErrorNo) CPLGetLastErrorNo;
 %rename (GetLastErrorType) CPLGetLastErrorType;
 %rename (GetLastErrorMsg) CPLGetLastErrorMsg;
+%rename (GetErrorCounter) CPLGetErrorCounter;
 %rename (PushFinderLocation) CPLPushFinderLocation;
 %rename (PopFinderLocation) CPLPopFinderLocation;
 %rename (FinderClean) CPLFinderClean;
@@ -186,8 +194,14 @@ void CPL_STDCALL PyCPLErrorHandler(CPLErr eErrClass, int err_no, const char* psz
 %rename (ReadDir) wrapper_VSIReadDirEx;
 %rename (ReadDirRecursive) VSIReadDirRecursive;
 %rename (Mkdir) VSIMkdir;
+%rename (MkdirRecursive) VSIMkdirRecursive;
 %rename (Rmdir) VSIRmdir;
+%rename (RmdirRecursive) VSIRmdirRecursive;
 %rename (Rename) VSIRename;
+%rename (GetActualURL) VSIGetActualURL;
+%rename (GetSignedURL) wrapper_VSIGetSignedURL;
+%rename (GetFileSystemsPrefixes) VSIGetFileSystemsPrefixes;
+%rename (GetFileSystemOptions) VSIGetFileSystemOptions;
 %rename (SetConfigOption) CPLSetConfigOption;
 %rename (GetConfigOption) wrapper_CPLGetConfigOption;
 %rename (CPLBinaryToHex) CPLBinaryToHex;
@@ -307,6 +321,23 @@ CPLErr CPLGetLastErrorType();
 #endif
 const char *CPLGetLastErrorMsg();
 
+
+#if defined(SWIGPYTHON) || defined(SWIGCSHARP)
+/* We don't want errors to be cleared or thrown by this */
+/* call */
+%exception CPLGetErrorCounter
+{
+#ifdef SWIGPYTHON
+%#ifdef SED_HACKS
+    if( bUseExceptions ) bLocalUseExceptionsCode = FALSE;
+%#endif
+#endif
+    result = CPLGetErrorCounter();
+}
+#endif
+unsigned int CPLGetErrorCounter();
+
+
 int VSIGetLastErrorNo();
 const char *VSIGetLastErrorMsg();
 
@@ -424,11 +455,31 @@ int wrapper_HasThreadSupport()
 VSI_RETVAL VSIMkdir(const char *utf8_path, int mode );
 VSI_RETVAL VSIRmdir(const char *utf8_path );
 
+/* Added for GDAL 2.3 */
+VSI_RETVAL VSIMkdirRecursive(const char *utf8_path, int mode );
+VSI_RETVAL VSIRmdirRecursive(const char *utf8_path );
+
 %apply (const char* utf8_path) {(const char* pszOld)};
 %apply (const char* utf8_path) {(const char* pszNew)};
 VSI_RETVAL VSIRename(const char * pszOld, const char *pszNew );
 %clear (const char* pszOld);
 %clear (const char* pszNew);
+
+const char* VSIGetActualURL(const char * utf8_path);
+
+%inline {
+retStringAndCPLFree* wrapper_VSIGetSignedURL(const char * utf8_path, char** options = NULL )
+{
+    return VSIGetSignedURL( utf8_path, options );
+}
+}
+
+%apply (char **CSL) {char **};
+char** VSIGetFileSystemsPrefixes();
+%clear char **;
+
+const char* VSIGetFileSystemOptions(const char * utf8_path);
+
 
 /* Added for GDAL 1.8
 
@@ -528,6 +579,8 @@ VSILFILE   *wrapper_VSIFOpenExL( const char *utf8_path, const char *pszMode, int
     return VSIFOpenExL( utf8_path, pszMode, bSetError );
 }
 %}
+
+int VSIFEofL( VSILFILE* fp );
 
 VSI_RETVAL VSIFCloseL( VSILFILE* fp );
 

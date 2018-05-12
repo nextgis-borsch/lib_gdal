@@ -30,50 +30,56 @@
 # DEALINGS IN THE SOFTWARE.
 ###############################################################################
 
+import os.path
 import sys
 
 from osgeo import ogr, gdal
 
 #############################################################################
 
-def GeomType2Name( type ):
+
+def GeomType2Name(type):
     flat_type = ogr.GT_Flatten(type)
-    dic = { ogr.wkbUnknown : ('wkbUnknown', '25D'),
-            ogr.wkbPoint : ('wkbPoint', '25D'),
-            ogr.wkbLineString : ('wkbLineString', '25D'),
-            ogr.wkbPolygon : ('wkbPolygon', '25D'),
-            ogr.wkbMultiPoint : ('wkbMultiPoint', '25D'),
-            ogr.wkbMultiLineString : ('wkbMultiLineString', '25D'),
-            ogr.wkbMultiPolygon : ('wkbMultiPolygon', '25D'),
-            ogr.wkbGeometryCollection : ('wkbGeometryCollection', '25D'),
-            ogr.wkbNone : ('wkbNone', ''),
-            ogr.wkbLinearRing : ('wkbLinearRing', ''),
-            ogr.wkbCircularString : ('wkbCircularString', 'Z'),
-            ogr.wkbCompoundCurve : ('wkbCompoundCurve', 'Z'),
-            ogr.wkbCurvePolygon : ('wkbCurvePolygon', 'Z'),
-            ogr.wkbMultiCurve : ('wkbMultiCurve', 'Z'),
-            ogr.wkbMultiSurface : ('wkbMultiSurface', 'Z'),
-            ogr.wkbCurve : ('wkbCurve', 'Z'),
-            ogr.wkbSurface : ('wkbSurface', 'Z'),
-            ogr.wkbPolyhedralSurface : ('wkbPolyhedralSurface', 'Z'),
-            ogr.wkbTIN : ('wkbTIN', 'Z'),
-            ogr.wkbTriangle : ('wkbTriangle', 'Z') }
+    dic = {ogr.wkbUnknown: ('wkbUnknown', '25D'),
+           ogr.wkbPoint: ('wkbPoint', '25D'),
+           ogr.wkbLineString: ('wkbLineString', '25D'),
+           ogr.wkbPolygon: ('wkbPolygon', '25D'),
+           ogr.wkbMultiPoint: ('wkbMultiPoint', '25D'),
+           ogr.wkbMultiLineString: ('wkbMultiLineString', '25D'),
+           ogr.wkbMultiPolygon: ('wkbMultiPolygon', '25D'),
+           ogr.wkbGeometryCollection: ('wkbGeometryCollection', '25D'),
+           ogr.wkbNone: ('wkbNone', ''),
+           ogr.wkbLinearRing: ('wkbLinearRing', ''),
+           ogr.wkbCircularString: ('wkbCircularString', 'Z'),
+           ogr.wkbCompoundCurve: ('wkbCompoundCurve', 'Z'),
+           ogr.wkbCurvePolygon: ('wkbCurvePolygon', 'Z'),
+           ogr.wkbMultiCurve: ('wkbMultiCurve', 'Z'),
+           ogr.wkbMultiSurface: ('wkbMultiSurface', 'Z'),
+           ogr.wkbCurve: ('wkbCurve', 'Z'),
+           ogr.wkbSurface: ('wkbSurface', 'Z'),
+           ogr.wkbPolyhedralSurface: ('wkbPolyhedralSurface', 'Z'),
+           ogr.wkbTIN: ('wkbTIN', 'Z'),
+           ogr.wkbTriangle: ('wkbTriangle', 'Z')}
     ret = dic[flat_type][0]
     if flat_type != type:
         if ogr.GT_HasM(type):
-          if ogr.GT_HasZ(type):
-            ret += "ZM"
-          else:
-            ret += "M"
+            if ogr.GT_HasZ(type):
+                ret += "ZM"
+            else:
+                ret += "M"
         else:
-          ret += dic[flat_type][1]
+            ret += dic[flat_type][1]
     return ret
 
 #############################################################################
+
+
 def Esc(x):
-    return gdal.EscapeString( x, gdal.CPLES_XML )
+    return gdal.EscapeString(x, gdal.CPLES_XML)
 
 #############################################################################
+
+
 def Usage():
     print('Usage: ogr2vrt.py [-relative] [-schema] [-feature_count] [-extent]')
     print('                  in_datasource out_vrtfile [layers]')
@@ -83,18 +89,19 @@ def Usage():
 #############################################################################
 # Argument processing.
 
+
 infile = None
 outfile = None
 layer_list = []
 relative = "0"
-schema=0
-feature_count=0
-extent=0
+schema = 0
+feature_count = 0
+extent = 0
 openoptions = []
 
-argv = gdal.GeneralCmdLineProcessor( sys.argv )
+argv = gdal.GeneralCmdLineProcessor(sys.argv)
 if argv is None:
-    sys.exit( 0 )
+    sys.exit(0)
 
 i = 1
 while i < len(argv):
@@ -126,7 +133,7 @@ while i < len(argv):
         outfile = arg
 
     else:
-        layer_list.append( arg )
+        layer_list.append(arg)
 
     i = i + 1
 
@@ -144,14 +151,14 @@ if schema and extent:
 #############################################################################
 # Open the datasource to read.
 
-src_ds = gdal.OpenEx( infile, gdal.OF_VECTOR, open_options = openoptions )
+src_ds = gdal.OpenEx(infile, gdal.OF_VECTOR, open_options=openoptions)
 
 if schema:
     infile = '@dummy@'
 
 if len(layer_list) == 0:
     for lyr_idx in range(src_ds.GetLayerCount()):
-        layer_list.append( src_ds.GetLayer(lyr_idx).GetLayerDefn().GetName() )
+        layer_list.append(src_ds.GetLayer(lyr_idx).GetLayerDefn().GetName())
 
 #############################################################################
 # Start the VRT file.
@@ -181,7 +188,7 @@ if mdd_list is not None:
 
 
 #############################################################################
-#	Process each source layer.
+# Process each source layer.
 
 for name in layer_list:
     layer = src_ds.GetLayerByName(name)
@@ -206,15 +213,18 @@ for name in layer_list:
                     vrt += '      <MDI key="%s">%s</MDI>\n' % (Esc(key), Esc(md[key]))
             vrt += '    </Metadata>\n'
 
+    if not os.path.isabs(outfile) and not os.path.isabs(infile) and \
+       os.path.dirname(outfile) == '' and os.path.dirname(infile) == '':
+        relative = 1
 
     vrt += '    <SrcDataSource relativeToVRT="%s" shared="%d">%s</SrcDataSource>\n' \
-           % (relative,not schema,Esc(infile))
+           % (relative, not schema, Esc(infile))
 
     if len(openoptions) > 0:
         vrt += '    <OpenOptions>\n'
         for option in openoptions:
             (key, value) = option.split('=')
-            vrt += '        <OOI key="%s">%s</OOI>\n'  % (Esc(key), Esc(value))
+            vrt += '        <OOI key="%s">%s</OOI>\n' % (Esc(key), Esc(value))
         vrt += '    </OpenOptions>\n'
 
     if schema:
@@ -226,7 +236,7 @@ for name in layer_list:
     if layerdef.GetGeomFieldCount() == 0:
         vrt += '    <GeometryType>wkbNone</GeometryType>\n'
     elif layerdef.GetGeomFieldCount() == 1 and \
-         layerdef.GetGeomFieldDefn(0).IsNullable():
+            layerdef.GetGeomFieldDefn(0).IsNullable():
         vrt += '    <GeometryType>%s</GeometryType>\n' \
             % GeomType2Name(layerdef.GetGeomType())
         srs = layer.GetSpatialRef()
@@ -243,19 +253,19 @@ for name in layer_list:
     # New format for multi-geometry field support
     else:
         for fld_index in range(layerdef.GetGeomFieldCount()):
-            src_fd = layerdef.GetGeomFieldDefn( fld_index )
+            src_fd = layerdef.GetGeomFieldDefn(fld_index)
             vrt += '    <GeometryField name="%s"' % src_fd.GetName()
             if src_fd.IsNullable() == 0:
                 vrt += ' nullable="false"'
             vrt += '>\n'
             vrt += '      <GeometryType>%s</GeometryType>\n' \
-                    % GeomType2Name(src_fd.GetType())
+                % GeomType2Name(src_fd.GetType())
             srs = src_fd.GetSpatialRef()
             if srs is not None:
                 vrt += '      <SRS>%s</SRS>\n' \
-                        % (Esc(srs.ExportToWkt()))
+                    % (Esc(srs.ExportToWkt()))
             if extent:
-                (xmin, xmax, ymin, ymax) = layer.GetExtent(geom_field = fld_index)
+                (xmin, xmax, ymin, ymax) = layer.GetExtent(geom_field=fld_index)
                 vrt += '      <ExtentXMin>%.15g</ExtentXMin>\n' % xmin
                 vrt += '      <ExtentYMin>%.15g</ExtentYMin>\n' % ymin
                 vrt += '      <ExtentXMax>%.15g</ExtentXMax>\n' % xmax
@@ -264,7 +274,7 @@ for name in layer_list:
 
     # Process all the fields.
     for fld_index in range(layerdef.GetFieldCount()):
-        src_fd = layerdef.GetFieldDefn( fld_index )
+        src_fd = layerdef.GetFieldDefn(fld_index)
         if src_fd.GetType() == ogr.OFTInteger:
             type = 'Integer'
         elif src_fd.GetType() == ogr.OFTInteger64:
@@ -316,4 +326,4 @@ vrt += '</OGRVRTDataSource>\n'
 #############################################################################
 # Write vrt
 
-open(outfile,'w').write(vrt)
+open(outfile, 'w').write(vrt)

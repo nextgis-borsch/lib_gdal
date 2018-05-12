@@ -111,10 +111,10 @@ typedef struct TigerRecordInfo {
 } TigerRecordInfo;
 
 // OGR_TIGER_RECBUF_LEN should be a number that is larger than the
-// longest possible record length for any record type; it's used to
+// longest possible record length for any record type; it is used to
 // create arrays to hold the records.  At the time of this writing the
 // longest record (RT1) has length 228, but I'm choosing 500 because
-// it's a good round number and will allow for growth without having
+// it is a good round number and will allow for growth without having
 // to modify this file.  The code never holds more than a few records
 // in memory at a time, so having OGR_TIGER_RECBUF_LEN be much larger
 // than is really necessary won't affect the amount of memory required
@@ -153,8 +153,8 @@ protected:
   TigerVersion        nVersion;
 
 public:
-                      TigerFileBase( const TigerRecordInfo *psRTInfoIn = NULL,
-                                     const char            *m_pszFileCodeIn = NULL );
+                      TigerFileBase( const TigerRecordInfo *psRTInfoIn = nullptr,
+                                     const char            *m_pszFileCodeIn = nullptr );
   virtual            ~TigerFileBase();
 
   TigerVersion        GetVersion() { return nVersion; }
@@ -175,7 +175,7 @@ public:
   static bool                WriteField( OGRFeature *, const char *, char *,
                                   int, int, char, char );
   bool                WriteRecord( char *pachRecord, int nRecLen,
-                                   const char *pszType, VSILFILE *fp = NULL );
+                                   const char *pszType, VSILFILE *fp = nullptr );
   static bool                WritePoint( char *pachRecord, int nStart,
                                   double dfX, double dfY );
 
@@ -289,8 +289,8 @@ class TigerPoint : public TigerFileBase
 {
  protected:
                       TigerPoint(int bRequireGeom,
-                                 const TigerRecordInfo *psRTInfoIn = NULL,
-                                 const char            *m_pszFileCodeIn = NULL);
+                                 const TigerRecordInfo *psRTInfoIn = nullptr,
+                                 const char            *m_pszFileCodeIn = nullptr);
 
                       // The boolean bRequireGeom indicates whether
                       // the layer requires each feature to actual
@@ -567,7 +567,7 @@ class OGRTigerDataSource : public OGRDataSource
     const char         *GetOption( const char * );
 
     int                 Open( const char * pszName, int bTestOpen = FALSE,
-                              char ** papszFileList = NULL );
+                              char ** papszFileList = nullptr );
 
     int                 Create( const char *pszName, char **papszOptions );
 
@@ -593,9 +593,9 @@ class OGRTigerDataSource : public OGRDataSource
     void                DeleteModuleFiles( const char *pszModule );
 
     virtual OGRLayer    *ICreateLayer( const char *,
-                                       OGRSpatialReference * = NULL,
+                                       OGRSpatialReference * = nullptr,
                                        OGRwkbGeometryType = wkbUnknown,
-                                       char ** = NULL ) override;
+                                       char ** = nullptr ) override;
 };
 
 #endif /* ndef OGR_TIGER_H_INCLUDED */

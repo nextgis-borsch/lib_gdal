@@ -40,8 +40,8 @@
 #define FIELD_NAME_EXT_DATA "extentity_data"
 #define FIELD_NAME_TEXT "text"
 
-static const double DEG2RAD = M_PI / 180.0;
-// UNUSED static const double RAD2DEG = 1.0 / DEG2RAD;
+constexpr double DEG2RAD = M_PI / 180.0;
+// UNUSED constexpr double RAD2DEG = 1.0 / DEG2RAD;
 
 OGRCADLayer::OGRCADLayer( CADLayer &poCADLayer_, OGRSpatialReference *poSR,
                           int nEncoding) :
@@ -162,7 +162,7 @@ OGRCADLayer::OGRCADLayer( CADLayer &poCADLayer_, OGRSpatialReference *poSR,
 
 GIntBig OGRCADLayer::GetFeatureCount( int bForce )
 {
-    if( m_poFilterGeom != NULL || m_poAttrQuery != NULL )
+    if( m_poFilterGeom != nullptr || m_poAttrQuery != nullptr )
         return OGRLayer::GetFeatureCount( bForce );
 
     return poCADLayer.getGeometryCount();
@@ -185,16 +185,16 @@ OGRFeature *OGRCADLayer::GetNextFeature()
     OGRFeature *poFeature = GetFeature( nNextFID );
     ++nNextFID;
 
-    if( poFeature == NULL )
-        return NULL;
+    if( poFeature == nullptr )
+        return nullptr;
 
-    if( ( m_poFilterGeom == NULL ||  FilterGeometry( poFeature->GetGeometryRef() ) )
-        && ( m_poAttrQuery == NULL || m_poAttrQuery->Evaluate( poFeature ) ) )
+    if( ( m_poFilterGeom == nullptr ||  FilterGeometry( poFeature->GetGeometryRef() ) )
+        && ( m_poAttrQuery == nullptr || m_poAttrQuery->Evaluate( poFeature ) ) )
     {
         return poFeature;
     }
 
-    return NULL;
+    return nullptr;
 }
 
 OGRFeature *OGRCADLayer::GetFeature( GIntBig nFID )
@@ -202,18 +202,18 @@ OGRFeature *OGRCADLayer::GetFeature( GIntBig nFID )
     if( poCADLayer.getGeometryCount() <= static_cast<size_t>(nFID)
         || nFID < 0 )
     {
-        return NULL;
+        return nullptr;
     }
 
-    OGRFeature  *poFeature = NULL;
-    CADGeometry *poCADGeometry = poCADLayer.getGeometry( nFID );
+    OGRFeature  *poFeature = nullptr;
+    CADGeometry *poCADGeometry = poCADLayer.getGeometry( static_cast<size_t>(nFID) );
 
-    if( NULL == poCADGeometry || GetLastErrorCode() != CADErrorCodes::SUCCESS )
+    if( nullptr == poCADGeometry || GetLastErrorCode() != CADErrorCodes::SUCCESS )
     {
         CPLError( CE_Failure, CPLE_NotSupported,
                  "Failed to get geometry with ID = " CPL_FRMT_GIB " from layer \"%s\". Libopencad errorcode: %d",
                  nFID, poCADLayer.getName().c_str(), GetLastErrorCode() );
-        return NULL;
+        return nullptr;
     }
 
     poFeature = new OGRFeature( poFeatureDefn );
@@ -470,11 +470,10 @@ OGRFeature *OGRCADLayer::GetFeature( GIntBig nFID )
              * Last case - if polyline has mixed arcs and lines.
              */
             bool   bLineStringStarted = false;
-            size_t iCurrentVertex = 0,
-                   iLastVertex = poCADLWPolyline->getVertexCount() - 1;
             std::vector< double > adfBulges = poCADLWPolyline->getBulges();
+            const size_t nCount = std::min(adfBulges.size(), poCADLWPolyline->getVertexCount());
 
-            while( iCurrentVertex != iLastVertex )
+            for( size_t iCurrentVertex = 0; iCurrentVertex + 1 < nCount; iCurrentVertex++ )
             {
                 CADVector stCurrentVertex = poCADLWPolyline->getVertex( iCurrentVertex );
                 CADVector stNextVertex = poCADLWPolyline->getVertex( iCurrentVertex + 1 );
@@ -505,6 +504,8 @@ OGRFeature *OGRCADLayer::GetFeature( GIntBig nFID )
                 {
                     double dfSegmentBulge = adfBulges[iCurrentVertex];
                     double dfH = ( dfSegmentBulge * dfLength ) / 2;
+                    if( dfH == 0.0 )
+                        dfH = 1.0; // just to avoid a division by zero
                     double dfRadius = ( dfH / 2 ) + ( dfLength * dfLength / ( 8 * dfH ) );
                     double dfOgrArcRotation = 0, dfOgrArcRadius = fabs( dfRadius );
 
@@ -599,8 +600,6 @@ OGRFeature *OGRCADLayer::GetFeature( GIntBig nFID )
 
                     delete( poArcpoLS );
                 }
-
-                ++iCurrentVertex;
             }
 
             if( poCADLWPolyline->isClosed() )
@@ -700,6 +699,8 @@ OGRFeature *OGRCADLayer::GetFeature( GIntBig nFID )
             double dfEndAngle = -1 * poCADEllipse->getStartingAngle() * DEG2RAD;
             double dfAxisRatio = poCADEllipse->getAxisRatio();
 
+            dfStartAngle = fmod(dfStartAngle, 360.0);
+            dfEndAngle = fmod(dfEndAngle, 360.0);
             if( dfStartAngle > dfEndAngle )
                 dfEndAngle += 360.0;
 

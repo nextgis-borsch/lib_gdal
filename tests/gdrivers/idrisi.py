@@ -32,47 +32,52 @@
 import os
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 
 ###############################################################################
 # Read test of byte file.
 
+
 def idrisi_1():
 
-    tst = gdaltest.GDALTest( 'RST', 'byte.rst', 1, 5044 )
+    tst = gdaltest.GDALTest('RST', 'byte.rst', 1, 5044)
     return tst.testOpen()
 
 ###############################################################################
 # Read test of byte file.
 
+
 def idrisi_2():
 
-    tst = gdaltest.GDALTest( 'RST', 'real.rst', 1, 5275 )
+    tst = gdaltest.GDALTest('RST', 'real.rst', 1, 5275)
     return tst.testOpen()
 
 ###############################################################################
 #
 
+
 def idrisi_3():
 
-    tst = gdaltest.GDALTest( 'RST', 'float32.bil', 1, 27 )
+    tst = gdaltest.GDALTest('RST', 'float32.bil', 1, 27)
 
-    return tst.testCreate( new_filename = 'tmp/float32.rst', out_bands=1, vsimem = 1 )
+    return tst.testCreate(new_filename='tmp/float32.rst', out_bands=1, vsimem=1)
 
 ###############################################################################
 #
 
+
 def idrisi_4():
 
-    tst = gdaltest.GDALTest( 'RST', 'rgbsmall.tif', 2, 21053 )
+    tst = gdaltest.GDALTest('RST', 'rgbsmall.tif', 2, 21053)
 
-    return tst.testCreateCopy( check_gt = 1, check_srs = 1,
-                               new_filename = 'tmp/rgbsmall_cc.rst', vsimem = 1 )
+    return tst.testCreateCopy(check_gt=1, check_srs=1,
+                              new_filename='tmp/rgbsmall_cc.rst', vsimem=1)
 
 ###############################################################################
 # Cleanup.
+
 
 def idrisi_cleanup():
     gdaltest.clean_tmp()
@@ -82,22 +87,22 @@ def idrisi_cleanup():
         os.unlink('data/frmt09.cot.aux.xml')
         os.unlink('data/byte.rst.aux.xml')
         print('FIXME?: data/rgbsmall.tif.aux.xml is produced by those tests')
-    except:
+    except OSError:
         pass
     return 'success'
+
 
 gdaltest_list = [
     idrisi_1,
     idrisi_2,
     idrisi_3,
     idrisi_4,
-    idrisi_cleanup ]
+    idrisi_cleanup]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'idrisi' )
+    gdaltest.setup_run('idrisi')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

@@ -37,6 +37,7 @@ from sys import version_info
 from Queue import Queue
 from threading import Thread
 
+
 def run_func(func):
     try:
         result = func()
@@ -55,16 +56,18 @@ def run_func(func):
         traceback.print_exc()
         return result
 
+
 def urlescape(url):
     # Escape any non-ASCII characters
     try:
         import urllib
         url = urllib.quote(url)
-    except:
+    except ImportError:
         pass
     return url
 
-def gdalurlopen(url, timeout = 10):
+
+def gdalurlopen(url, timeout=10):
     old_timeout = socket.getdefaulttimeout()
     socket.setdefaulttimeout(timeout)
 
@@ -73,12 +76,12 @@ def gdalurlopen(url, timeout = 10):
 
         if 'GDAL_HTTP_PROXYUSERPWD' in os.environ:
             proxyuserpwd = os.environ['GDAL_HTTP_PROXYUSERPWD']
-            proxyHandler = urllib2.ProxyHandler({"http" : \
-                "http://%s@%s" % (proxyuserpwd, proxy)})
+            proxyHandler = urllib2.ProxyHandler({"http":
+                                                 "http://%s@%s" % (proxyuserpwd, proxy)})
         else:
             proxyuserpwd = None
-            proxyHandler = urllib2.ProxyHandler({"http" : \
-                "http://%s" % (proxy)})
+            proxyHandler = urllib2.ProxyHandler({"http":
+                                                 "http://%s" % (proxy)})
 
         opener = urllib2.build_opener(proxyHandler, urllib2.HTTPHandler)
 
@@ -97,9 +100,10 @@ def gdalurlopen(url, timeout = 10):
         socket.setdefaulttimeout(old_timeout)
         return None
     except:
-        print('HTTP service for %s is down.' %(url))
+        print('HTTP service for %s is down.' % (url))
         socket.setdefaulttimeout(old_timeout)
         return None
+
 
 def warn_if_memleak(cmd, out_str):
 
@@ -111,6 +115,7 @@ def warn_if_memleak(cmd, out_str):
         print('memory leak detected')
         print(out_str)
 
+
 def spawn_async26(cmd):
     import shlex
     import subprocess
@@ -121,8 +126,9 @@ def spawn_async26(cmd):
     except:
         return (None, None)
 
+
 def spawn_async(cmd):
-    if version_info >= (2,6,0):
+    if version_info >= (2, 6, 0):
         return spawn_async26(cmd)
 
     import popen2
@@ -135,15 +141,18 @@ def spawn_async(cmd):
     process.tochild.close()
     return (process, process.fromchild)
 
+
 def wait_process(process):
     process.wait()
 
 # Compatible with Python 2.6 or above
-def _runexternal_subprocess(cmd, strin = None, check_memleak = True, display_live_on_parent_stdout = False):
+
+
+def _runexternal_subprocess(cmd, strin=None, check_memleak=True, display_live_on_parent_stdout=False, encoding=None):
     import subprocess
     import shlex
     command = shlex.split(cmd)
-    command = [ elt.replace('\x00', '') for elt in command ]
+    command = [elt.replace('\x00', '') for elt in command]
     if strin is None:
         p = subprocess.Popen(command, stdout=subprocess.PIPE)
     else:
@@ -171,9 +180,12 @@ def _runexternal_subprocess(cmd, strin = None, check_memleak = True, display_liv
     if waitcode != 0:
         ret = ret + '\nERROR ret code = %d' % waitcode
 
+    if encoding is not None:
+        ret = ret.decode(encoding)
     return ret
 
-def runexternal(cmd, strin = None, check_memleak = True, display_live_on_parent_stdout = False):
+
+def runexternal(cmd, strin=None, check_memleak=True, display_live_on_parent_stdout=False, encoding=None):
     from gdaltest import is_travis_branch
     if not is_travis_branch('mingw'):
         has_subprocess = False
@@ -183,10 +195,14 @@ def runexternal(cmd, strin = None, check_memleak = True, display_live_on_parent_
             subprocess.Popen
             shlex.split
             has_subprocess = True
-        except:
+        except (ImportError, AttributeError):
             pass
         if has_subprocess:
-            return _runexternal_subprocess(cmd, strin=strin, check_memleak=check_memleak, display_live_on_parent_stdout=display_live_on_parent_stdout)
+            return _runexternal_subprocess(cmd,
+                                           strin=strin,
+                                           check_memleak=check_memleak,
+                                           display_live_on_parent_stdout=display_live_on_parent_stdout,
+                                           encoding=encoding)
 
     if strin is None:
         ret_stdout = os.popen(cmd)
@@ -211,18 +227,23 @@ def runexternal(cmd, strin = None, check_memleak = True, display_live_on_parent_
     if check_memleak:
         warn_if_memleak(cmd, out_str)
 
+    if encoding is not None:
+        out_str = out_str.decode(encoding)
     return out_str
+
 
 def read_in_thread(f, q):
     q.put(f.read())
     f.close()
 
 # Compatible with Python 2.6 or above
-def _runexternal_out_and_err_subprocess(cmd, check_memleak = True):
+
+
+def _runexternal_out_and_err_subprocess(cmd, check_memleak=True):
     import subprocess
     import shlex
     command = shlex.split(cmd)
-    command = [ elt.replace('\x00', '') for elt in command ]
+    command = [elt.replace('\x00', '') for elt in command]
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     if p.stdout is not None:
@@ -252,7 +273,8 @@ def _runexternal_out_and_err_subprocess(cmd, check_memleak = True):
 
     return (ret_stdout, ret_stderr)
 
-def runexternal_out_and_err(cmd, check_memleak = True):
+
+def runexternal_out_and_err(cmd, check_memleak=True):
     from gdaltest import is_travis_branch
     if not is_travis_branch('mingw'):
         has_subprocess = False
@@ -262,7 +284,7 @@ def runexternal_out_and_err(cmd, check_memleak = True):
             subprocess.Popen
             shlex.split
             has_subprocess = True
-        except:
+        except (ImportError, AttributeError):
             pass
         if has_subprocess:
             return _runexternal_out_and_err_subprocess(cmd, check_memleak=check_memleak)

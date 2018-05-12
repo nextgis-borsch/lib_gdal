@@ -32,7 +32,7 @@ import shutil
 import sys
 import os
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 from osgeo import gdal
 from osgeo import osr
@@ -42,6 +42,7 @@ import test_py_scripts
 ###############################################################################
 # Test gdal_retile.py
 
+
 def test_gdal_retile_1():
 
     script_path = test_py_scripts.get_py_script('gdal_retile')
@@ -50,10 +51,10 @@ def test_gdal_retile_1():
 
     try:
         os.mkdir('tmp/outretile')
-    except:
+    except OSError:
         pass
 
-    test_py_scripts.run_py_script(script_path, 'gdal_retile', '-v -levels 2 -r bilinear -targetDir tmp/outretile ../gcore/data/byte.tif' )
+    test_py_scripts.run_py_script(script_path, 'gdal_retile', '-v -levels 2 -r bilinear -targetDir tmp/outretile ../gcore/data/byte.tif')
 
     ds = gdal.Open('tmp/outretile/byte_1_1.tif')
     if ds.GetRasterBand(1).Checksum() != 4672:
@@ -65,7 +66,7 @@ def test_gdal_retile_1():
     if ds.RasterXSize != 10:
         print(ds.RasterXSize)
         return 'fail'
-    #if ds.GetRasterBand(1).Checksum() != 1152:
+    # if ds.GetRasterBand(1).Checksum() != 1152:
     #    print(ds.GetRasterBand(1).Checksum())
     #    return 'fail'
     ds = None
@@ -74,7 +75,7 @@ def test_gdal_retile_1():
     if ds.RasterXSize != 5:
         print(ds.RasterXSize)
         return 'fail'
-    #if ds.GetRasterBand(1).Checksum() != 215:
+    # if ds.GetRasterBand(1).Checksum() != 215:
     #    print(ds.GetRasterBand(1).Checksum())
     #    return 'fail'
     ds = None
@@ -84,6 +85,7 @@ def test_gdal_retile_1():
 ###############################################################################
 # Test gdal_retile.py with RGBA dataset
 
+
 def test_gdal_retile_2():
 
     script_path = test_py_scripts.get_py_script('gdal_retile')
@@ -92,10 +94,10 @@ def test_gdal_retile_2():
 
     try:
         os.mkdir('tmp/outretile2')
-    except:
+    except OSError:
         pass
 
-    test_py_scripts.run_py_script(script_path, 'gdal_retile', '-v -levels 2 -r bilinear -targetDir tmp/outretile2 ../gcore/data/rgba.tif' )
+    test_py_scripts.run_py_script(script_path, 'gdal_retile', '-v -levels 2 -r bilinear -targetDir tmp/outretile2 ../gcore/data/rgba.tif')
 
     ds = gdal.Open('tmp/outretile2/2/rgba_1_1.tif')
     if ds.GetRasterBand(1).Checksum() != 35:
@@ -113,6 +115,7 @@ def test_gdal_retile_2():
 ###############################################################################
 # Test gdal_retile.py with input images of different pixel sizes
 
+
 def test_gdal_retile_3():
 
     script_path = test_py_scripts.get_py_script('gdal_retile')
@@ -121,7 +124,7 @@ def test_gdal_retile_3():
 
     drv = gdal.GetDriverByName('GTiff')
     srs = osr.SpatialReference()
-    srs.SetWellKnownGeogCS( 'WGS84' )
+    srs.SetWellKnownGeogCS('WGS84')
     wkt = srs.ExportToWkt()
 
     # Create two images to tile together. The images will cover the geographic
@@ -146,44 +149,44 @@ def test_gdal_retile_3():
     ds = drv.Create('tmp/in1.tif', 100, 100, 1)
     px1_x = 30.0 / ds.RasterXSize
     px1_y = 30.0 / ds.RasterYSize
-    ds.SetProjection( wkt )
-    ds.SetGeoTransform( [ 0, px1_x, 0, 30, 0, -px1_y ] )
+    ds.SetProjection(wkt)
+    ds.SetGeoTransform([0, px1_x, 0, 30, 0, -px1_y])
     ds.GetRasterBand(1).Fill(0)
     ds = None
 
     ds = drv.Create('tmp/in2.tif', 50, 50, 1)
     px2_x = 30.0 / ds.RasterXSize
     px2_y = 30.0 / ds.RasterYSize
-    ds.SetProjection( wkt )
-    ds.SetGeoTransform( [ 0, px2_x, 0, 60, 0, -px2_y ] )
+    ds.SetProjection(wkt)
+    ds.SetGeoTransform([0, px2_x, 0, 60, 0, -px2_y])
     ds.GetRasterBand(1).Fill(42)
     ds = None
 
     try:
         os.mkdir('tmp/outretile3')
-    except:
+    except OSError:
         pass
 
-    test_py_scripts.run_py_script(script_path, 'gdal_retile', '-v -levels 2 -r bilinear -targetDir tmp/outretile3 tmp/in1.tif tmp/in2.tif' )
+    test_py_scripts.run_py_script(script_path, 'gdal_retile', '-v -levels 2 -r bilinear -targetDir tmp/outretile3 tmp/in1.tif tmp/in2.tif')
 
     ds = gdal.Open('tmp/outretile3/in1_1_1.tif')
     if ds.GetProjectionRef().find('WGS 84') == -1:
-        gdaltest.post_reason('Expected WGS 84\nGot : %s' % (ds.GetProjectionRef()) )
+        gdaltest.post_reason('Expected WGS 84\nGot : %s' % (ds.GetProjectionRef()))
         return 'fail'
 
     gt = ds.GetGeoTransform()
-    expected_gt = [ 0, px1_x, 0, 60, 0, -px1_y ]
+    expected_gt = [0, px1_x, 0, 60, 0, -px1_y]
     for i in range(6):
         if abs(gt[i] - expected_gt[i] > 1e-5):
-            gdaltest.post_reason('Expected : %s\nGot : %s' % (expected_gt, gt) )
+            gdaltest.post_reason('Expected : %s\nGot : %s' % (expected_gt, gt))
             return 'fail'
 
     if ds.RasterXSize != 100 or ds.RasterYSize != 200:
-        gdaltest.post_reason('Wrong raster dimensions : %d x %d' % (ds.RasterXSize, ds.RasterYSize) )
+        gdaltest.post_reason('Wrong raster dimensions : %d x %d' % (ds.RasterXSize, ds.RasterYSize))
         return 'fail'
 
     if ds.RasterCount != 1:
-        gdaltest.post_reason('Wrong raster count : %d ' % (ds.RasterCount) )
+        gdaltest.post_reason('Wrong raster count : %d ' % (ds.RasterCount))
         return 'fail'
 
     if ds.GetRasterBand(1).Checksum() != 38999:
@@ -204,31 +207,31 @@ def test_gdal_retile_4():
 
     try:
         os.mkdir('tmp/outretile4')
-    except:
+    except OSError:
         pass
 
-    test_py_scripts.run_py_script(script_path, 'gdal_retile', '-v -ps 8 7 -overlap 3 -targetDir tmp/outretile4 ../gcore/data/byte.tif' )
+    test_py_scripts.run_py_script(script_path, 'gdal_retile', '-v -ps 8 7 -overlap 3 -targetDir tmp/outretile4 ../gcore/data/byte.tif')
 
-    expected_results = [ ['tmp/outretile4/byte_1_1.tif', 8, 7],
-                         ['tmp/outretile4/byte_1_2.tif', 8, 7],
-                         ['tmp/outretile4/byte_1_3.tif', 8, 7],
-                         ['tmp/outretile4/byte_1_4.tif', 5, 7],
-                         ['tmp/outretile4/byte_2_1.tif', 8, 7],
-                         ['tmp/outretile4/byte_2_2.tif', 8, 7],
-                         ['tmp/outretile4/byte_2_3.tif', 8, 7],
-                         ['tmp/outretile4/byte_2_4.tif', 5, 7],
-                         ['tmp/outretile4/byte_3_1.tif', 8, 7],
-                         ['tmp/outretile4/byte_3_2.tif', 8, 7],
-                         ['tmp/outretile4/byte_3_3.tif', 8, 7],
-                         ['tmp/outretile4/byte_3_4.tif', 5, 7],
-                         ['tmp/outretile4/byte_4_1.tif', 8, 7],
-                         ['tmp/outretile4/byte_4_2.tif', 8, 7],
-                         ['tmp/outretile4/byte_4_3.tif', 8, 7],
-                         ['tmp/outretile4/byte_4_4.tif', 5, 7],
-                         ['tmp/outretile4/byte_5_1.tif', 8, 4],
-                         ['tmp/outretile4/byte_5_2.tif', 8, 4],
-                         ['tmp/outretile4/byte_5_3.tif', 8, 4],
-                         ['tmp/outretile4/byte_5_4.tif', 5, 4]]
+    expected_results = [['tmp/outretile4/byte_1_1.tif', 8, 7],
+                        ['tmp/outretile4/byte_1_2.tif', 8, 7],
+                        ['tmp/outretile4/byte_1_3.tif', 8, 7],
+                        ['tmp/outretile4/byte_1_4.tif', 5, 7],
+                        ['tmp/outretile4/byte_2_1.tif', 8, 7],
+                        ['tmp/outretile4/byte_2_2.tif', 8, 7],
+                        ['tmp/outretile4/byte_2_3.tif', 8, 7],
+                        ['tmp/outretile4/byte_2_4.tif', 5, 7],
+                        ['tmp/outretile4/byte_3_1.tif', 8, 7],
+                        ['tmp/outretile4/byte_3_2.tif', 8, 7],
+                        ['tmp/outretile4/byte_3_3.tif', 8, 7],
+                        ['tmp/outretile4/byte_3_4.tif', 5, 7],
+                        ['tmp/outretile4/byte_4_1.tif', 8, 7],
+                        ['tmp/outretile4/byte_4_2.tif', 8, 7],
+                        ['tmp/outretile4/byte_4_3.tif', 8, 7],
+                        ['tmp/outretile4/byte_4_4.tif', 5, 7],
+                        ['tmp/outretile4/byte_5_1.tif', 8, 4],
+                        ['tmp/outretile4/byte_5_2.tif', 8, 4],
+                        ['tmp/outretile4/byte_5_3.tif', 8, 4],
+                        ['tmp/outretile4/byte_5_4.tif', 5, 4]]
 
     for (filename, width, height) in expected_results:
         ds = gdal.Open(filename)
@@ -246,28 +249,28 @@ def test_gdal_retile_4():
             return 'fail'
         ds = None
 
-    test_py_scripts.run_py_script(script_path, 'gdal_retile', '-v -levels 1 -ps 8 8 -overlap 4 -targetDir tmp/outretile4 ../gcore/data/byte.tif' )
+    test_py_scripts.run_py_script(script_path, 'gdal_retile', '-v -levels 1 -ps 8 8 -overlap 4 -targetDir tmp/outretile4 ../gcore/data/byte.tif')
 
-    expected_results = [ ['tmp/outretile4/byte_1_1.tif', 8, 8],
-                         ['tmp/outretile4/byte_1_2.tif', 8, 8],
-                         ['tmp/outretile4/byte_1_3.tif', 8, 8],
-                         ['tmp/outretile4/byte_1_4.tif', 8, 8],
-                         ['tmp/outretile4/byte_2_1.tif', 8, 8],
-                         ['tmp/outretile4/byte_2_2.tif', 8, 8],
-                         ['tmp/outretile4/byte_2_3.tif', 8, 8],
-                         ['tmp/outretile4/byte_2_4.tif', 8, 8],
-                         ['tmp/outretile4/byte_3_1.tif', 8, 8],
-                         ['tmp/outretile4/byte_3_2.tif', 8, 8],
-                         ['tmp/outretile4/byte_3_3.tif', 8, 8],
-                         ['tmp/outretile4/byte_3_4.tif', 8, 8],
-                         ['tmp/outretile4/byte_4_1.tif', 8, 8],
-                         ['tmp/outretile4/byte_4_2.tif', 8, 8],
-                         ['tmp/outretile4/byte_4_3.tif', 8, 8],
-                         ['tmp/outretile4/byte_4_4.tif', 8, 8],
-                         ['tmp/outretile4/1/byte_1_1.tif', 8, 8],
-                         ['tmp/outretile4/1/byte_1_2.tif', 6, 8],
-                         ['tmp/outretile4/1/byte_2_1.tif', 8, 6],
-                         ['tmp/outretile4/1/byte_2_2.tif', 6, 6]]
+    expected_results = [['tmp/outretile4/byte_1_1.tif', 8, 8],
+                        ['tmp/outretile4/byte_1_2.tif', 8, 8],
+                        ['tmp/outretile4/byte_1_3.tif', 8, 8],
+                        ['tmp/outretile4/byte_1_4.tif', 8, 8],
+                        ['tmp/outretile4/byte_2_1.tif', 8, 8],
+                        ['tmp/outretile4/byte_2_2.tif', 8, 8],
+                        ['tmp/outretile4/byte_2_3.tif', 8, 8],
+                        ['tmp/outretile4/byte_2_4.tif', 8, 8],
+                        ['tmp/outretile4/byte_3_1.tif', 8, 8],
+                        ['tmp/outretile4/byte_3_2.tif', 8, 8],
+                        ['tmp/outretile4/byte_3_3.tif', 8, 8],
+                        ['tmp/outretile4/byte_3_4.tif', 8, 8],
+                        ['tmp/outretile4/byte_4_1.tif', 8, 8],
+                        ['tmp/outretile4/byte_4_2.tif', 8, 8],
+                        ['tmp/outretile4/byte_4_3.tif', 8, 8],
+                        ['tmp/outretile4/byte_4_4.tif', 8, 8],
+                        ['tmp/outretile4/1/byte_1_1.tif', 8, 8],
+                        ['tmp/outretile4/1/byte_1_2.tif', 6, 8],
+                        ['tmp/outretile4/1/byte_2_1.tif', 8, 6],
+                        ['tmp/outretile4/1/byte_2_2.tif', 6, 6]]
 
     for (filename, width, height) in expected_results:
         ds = gdal.Open(filename)
@@ -290,40 +293,42 @@ def test_gdal_retile_4():
 ###############################################################################
 # Cleanup
 
+
 def test_gdal_retile_cleanup():
 
-    lst = [ 'tmp/outretile/1/byte_1_1.tif',
-            'tmp/outretile/2/byte_1_1.tif',
-            'tmp/outretile/byte_1_1.tif',
-            'tmp/outretile/1',
-            'tmp/outretile/2',
-            'tmp/outretile',
-            'tmp/outretile2/1/rgba_1_1.tif',
-            'tmp/outretile2/2/rgba_1_1.tif',
-            'tmp/outretile2/1',
-            'tmp/outretile2/2',
-            'tmp/outretile2/rgba_1_1.tif',
-            'tmp/outretile2',
-            'tmp/in1.tif',
-            'tmp/in2.tif',
-            'tmp/outretile3/1/in1_1_1.tif',
-            'tmp/outretile3/2/in1_1_1.tif',
-            'tmp/outretile3/1',
-            'tmp/outretile3/2',
-            'tmp/outretile3/in1_1_1.tif',
-            'tmp/outretile3' ]
+    lst = ['tmp/outretile/1/byte_1_1.tif',
+           'tmp/outretile/2/byte_1_1.tif',
+           'tmp/outretile/byte_1_1.tif',
+           'tmp/outretile/1',
+           'tmp/outretile/2',
+           'tmp/outretile',
+           'tmp/outretile2/1/rgba_1_1.tif',
+           'tmp/outretile2/2/rgba_1_1.tif',
+           'tmp/outretile2/1',
+           'tmp/outretile2/2',
+           'tmp/outretile2/rgba_1_1.tif',
+           'tmp/outretile2',
+           'tmp/in1.tif',
+           'tmp/in2.tif',
+           'tmp/outretile3/1/in1_1_1.tif',
+           'tmp/outretile3/2/in1_1_1.tif',
+           'tmp/outretile3/1',
+           'tmp/outretile3/2',
+           'tmp/outretile3/in1_1_1.tif',
+           'tmp/outretile3']
     for filename in lst:
         try:
             os.remove(filename)
-        except:
+        except OSError:
             try:
                 os.rmdir(filename)
-            except:
+            except OSError:
                 pass
 
     shutil.rmtree('tmp/outretile4')
 
     return 'success'
+
 
 gdaltest_list = [
     test_gdal_retile_1,
@@ -331,13 +336,13 @@ gdaltest_list = [
     test_gdal_retile_3,
     test_gdal_retile_4,
     test_gdal_retile_cleanup
-    ]
+]
 
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'gdal_retile' )
+    gdaltest.setup_run('gdal_retile')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

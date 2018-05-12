@@ -53,7 +53,7 @@ class LinkedDataset
         CPLString      osSubFilename;
 };
 
-class KmlSuperOverlayReadDataset : public GDALDataset
+class KmlSuperOverlayReadDataset final: public GDALDataset
 {
     friend class        KmlSuperOverlayRasterBand;
 
@@ -82,7 +82,7 @@ class KmlSuperOverlayReadDataset : public GDALDataset
     virtual      ~KmlSuperOverlayReadDataset();
 
     static int          Identify(GDALOpenInfo *);
-    static GDALDataset *Open(const char* pszFilename, KmlSuperOverlayReadDataset* poParent = NULL, int nRec = 0);
+    static GDALDataset *Open(const char* pszFilename, KmlSuperOverlayReadDataset* poParent = nullptr, int nRec = 0);
     static GDALDataset *Open(GDALOpenInfo *);
  
     static const int KMLSO_ContainsOpaquePixels = 0x1;
@@ -108,7 +108,7 @@ class KmlSuperOverlayReadDataset : public GDALDataset
 /*                     KmlSuperOverlayRasterBand                        */
 /************************************************************************/
 
-class KmlSuperOverlayRasterBand: public GDALRasterBand
+class KmlSuperOverlayRasterBand final: public GDALRasterBand
 {
     public:
                     KmlSuperOverlayRasterBand( KmlSuperOverlayReadDataset* poDS,

@@ -32,7 +32,7 @@
 #include "ogr_idb.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /************************************************************************/
 /*                            OGRIDBLayer()                            */
@@ -310,7 +310,7 @@ OGRFeature *OGRIDBLayer::GetNextRawFeature()
                 const char *pszGeomText = v->Printable();
                 if ( pszGeomText != NULL )
                 eErr =
-                    OGRGeometryFactory::createFromWkt((char **) &pszGeomText,
+                    OGRGeometryFactory::createFromWkt(pszGeomText,
                                                     poSRS, &poGeom);
             }
             else if( ! v->IsNull() && bGeomColumnWKB )

@@ -34,7 +34,7 @@
 #include "ogr_core.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /************************************************************************/
 /*                          OGRMultiPolygon()                           */
@@ -150,15 +150,6 @@ OGRMultiPolygon::hasCurveGeometry( int /* bLookForNonLinear */ ) const
 }
 
 /************************************************************************/
-/*                            PointOnSurface()                          */
-/************************************************************************/
-
-OGRErr OGRMultiPolygon::PointOnSurface( OGRPoint * poPoint ) const
-{
-    return PointOnSurfaceInternal(poPoint);
-}
-
-/************************************************************************/
 /*                          CastToMultiSurface()                        */
 /************************************************************************/
 
@@ -173,17 +164,9 @@ OGRErr OGRMultiPolygon::PointOnSurface( OGRPoint * poPoint ) const
 
 OGRMultiSurface* OGRMultiPolygon::CastToMultiSurface( OGRMultiPolygon* poMP )
 {
-    OGRGeometryCollection *poGC =
-        TransferMembersAndDestroy(poMP, new OGRMultiSurface());
-
-    OGRMultiSurface* poMultiSurface = dynamic_cast<OGRMultiSurface *>(poGC);
-    if( poMultiSurface == NULL )
-    {
-        CPLError(CE_Fatal, CPLE_AppDefined,
-                 "dynamic_cast failed.  Expected OGRMultiSurface.");
-    }
-
-    return poMultiSurface;
+    OGRMultiSurface* poMS = new OGRMultiSurface();
+    TransferMembersAndDestroy(poMP, poMS);
+    return poMS;
 }
 
 
@@ -202,7 +185,7 @@ OGRErr OGRMultiPolygon::_addGeometryWithExpectedSubGeometryType(
     OGRGeometry *poClone = poNewGeom->clone();
     OGRErr      eErr;
 
-    if( poClone == NULL )
+    if( poClone == nullptr )
         return OGRERR_FAILURE;
     eErr = _addGeometryDirectlyWithExpectedSubGeometryType( poClone, eSubGeometryType );
     if( eErr != OGRERR_NONE )
@@ -226,21 +209,11 @@ OGRErr OGRMultiPolygon::_addGeometryDirectlyWithExpectedSubGeometryType(
     if ( wkbFlatten(poNewGeom->getGeometryType()) != eSubGeometryType)
         return OGRERR_UNSUPPORTED_GEOMETRY_TYPE;
 
-    if( poNewGeom->Is3D() && !Is3D() )
-        set3D(TRUE);
+    HomogenizeDimensionalityWith(poNewGeom);
 
-    if( poNewGeom->IsMeasured() && !IsMeasured() )
-        setMeasured(TRUE);
-
-    if( !poNewGeom->Is3D() && Is3D() )
-        poNewGeom->set3D(TRUE);
-
-    if( !poNewGeom->IsMeasured() && IsMeasured() )
-        poNewGeom->setMeasured(TRUE);
-
-    OGRGeometry** papoNewGeoms = (OGRGeometry **) VSI_REALLOC_VERBOSE( papoGeoms,
-                                             sizeof(void*) * (nGeomCount+1) );
-    if( papoNewGeoms == NULL )
+    OGRGeometry** papoNewGeoms = static_cast<OGRGeometry **>(
+        VSI_REALLOC_VERBOSE( papoGeoms, sizeof(void*) * (nGeomCount+1) ));
+    if( papoNewGeoms == nullptr )
         return OGRERR_FAILURE;
 
     papoGeoms = papoNewGeoms;

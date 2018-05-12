@@ -33,12 +33,14 @@ import os
 import sys
 from osgeo import ogr
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 import ogrtest
 
 ###############################################################################
+
+
 def ogr_edigeo_1():
 
     filelist = ['E000AB01.THF',
@@ -51,7 +53,7 @@ def ogr_edigeo_1():
                 'EDAB01T1.VEC',
                 'EDAB01T2.VEC',
                 'EDAB01T3.VEC']
-    #base_url = 'http://svn.geotools.org/trunk/modules/unsupported/edigeo/src/test/resources/org/geotools/data/edigeo/test-data/'
+    # base_url = 'http://svn.geotools.org/trunk/modules/unsupported/edigeo/src/test/resources/org/geotools/data/edigeo/test-data/'
     base_url = 'https://raw.githubusercontent.com/geotools/geotools/master/modules/unsupported/edigeo/src/test/resources/org/geotools/data/edigeo/test-data/'
 
     for filename in filelist:
@@ -61,7 +63,7 @@ def ogr_edigeo_1():
     try:
         for filename in filelist:
             os.stat('tmp/cache/' + filename)
-    except:
+    except OSError:
         return 'skip'
 
     ds = ogr.Open('tmp/cache/E000AB01.THF')
@@ -69,24 +71,24 @@ def ogr_edigeo_1():
         print(ds.GetLayerCount())
         return 'fail'
 
-    layers = [ ('BATIMENT_id', ogr.wkbPolygon, 107),
-               ('BORNE_id', ogr.wkbPoint, 5),
-               ('COMMUNE_id', ogr.wkbPolygon, 1),
-               ('LIEUDIT_id', ogr.wkbPolygon, 3),
-               ('NUMVOIE_id', ogr.wkbPoint, 43),
-               ('PARCELLE_id', ogr.wkbPolygon, 155),
-               ('SECTION_id', ogr.wkbPolygon, 1),
-               ('SUBDFISC_id', ogr.wkbPolygon, 1),
-               ('SUBDSECT_id', ogr.wkbPolygon, 1),
-               ('SYMBLIM_id', ogr.wkbPoint, 29),
-               ('TLINE_id', ogr.wkbLineString, 134),
-               ('TPOINT_id', ogr.wkbPoint, 1),
-               ('TRONFLUV_id', ogr.wkbPolygon, 3),
-               ('TRONROUTE_id', ogr.wkbPolygon, 1),
-               ('TSURF_id', ogr.wkbPolygon, 3),
-               ('ZONCOMMUNI_id', ogr.wkbLineString, 15),
-               ('ID_S_OBJ_Z_1_2_2', ogr.wkbPoint, 248),
-               ]
+    layers = [('BATIMENT_id', ogr.wkbPolygon, 107),
+              ('BORNE_id', ogr.wkbPoint, 5),
+              ('COMMUNE_id', ogr.wkbPolygon, 1),
+              ('LIEUDIT_id', ogr.wkbPolygon, 3),
+              ('NUMVOIE_id', ogr.wkbPoint, 43),
+              ('PARCELLE_id', ogr.wkbPolygon, 155),
+              ('SECTION_id', ogr.wkbPolygon, 1),
+              ('SUBDFISC_id', ogr.wkbPolygon, 1),
+              ('SUBDSECT_id', ogr.wkbPolygon, 1),
+              ('SYMBLIM_id', ogr.wkbPoint, 29),
+              ('TLINE_id', ogr.wkbLineString, 134),
+              ('TPOINT_id', ogr.wkbPoint, 1),
+              ('TRONFLUV_id', ogr.wkbPolygon, 3),
+              ('TRONROUTE_id', ogr.wkbPolygon, 1),
+              ('TSURF_id', ogr.wkbPolygon, 3),
+              ('ZONCOMMUNI_id', ogr.wkbLineString, 15),
+              ('ID_S_OBJ_Z_1_2_2', ogr.wkbPoint, 248),
+              ]
 
     for l in layers:
         lyr = ds.GetLayerByName(l[0])
@@ -124,13 +126,12 @@ def ogr_edigeo_1():
 
 
 gdaltest_list = [
-    ogr_edigeo_1 ]
+    ogr_edigeo_1]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'ogr_edigeo' )
+    gdaltest.setup_run('ogr_edigeo')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

@@ -32,20 +32,22 @@
 import sys
 from osgeo import gdal
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 
 ###############################################################################
 # Verify simple 3x3 averaging filter.
 
+
 def vrtfilt_1():
 
-    tst = gdaltest.GDALTest( 'VRT', 'avfilt.vrt', 1, 21890 )
+    tst = gdaltest.GDALTest('VRT', 'avfilt.vrt', 1, 21890)
     return tst.testOpen()
 
 ###############################################################################
 # Verify simple 3x3 averaging filter (normalized) on a dataset with nodata
+
 
 def vrtfilt_2():
 
@@ -55,12 +57,13 @@ def vrtfilt_2():
 
     # This is a black&white checkboard, where black = nodata
     # Thus averaging it and taking nodata into account will not change it
-    tst = gdaltest.GDALTest( 'VRT', 'avfilt_nodata.vrt', 1, checksum )
+    tst = gdaltest.GDALTest('VRT', 'avfilt_nodata.vrt', 1, checksum)
     return tst.testOpen()
 
 ###############################################################################
 # Try SetMetadataItem('source_0', xml, 'vrt_sources') (fix for #3052).
 # Same result expected as for vrtfilt_1
+
 
 def vrtfilt_3():
 
@@ -93,6 +96,7 @@ def vrtfilt_3():
 ###############################################################################
 # Variant for SetMetadataItem('source_0', xml, 'vrt_sources')
 
+
 def vrtfilt_4():
 
     vrt_ds = gdal.GetDriverByName('VRT').Create('', 50, 50, 1)
@@ -122,6 +126,7 @@ def vrtfilt_4():
 ###############################################################################
 # Variant for SetMetadata(md, 'vrt_sources')
 
+
 def vrtfilt_5():
 
     vrt_ds = gdal.GetDriverByName('VRT').Create('', 50, 50, 1)
@@ -147,10 +152,21 @@ def vrtfilt_5():
     return 'success'
 
 ###############################################################################
+# Verify separable Gaussian blur filter.
+
+
+def vrtfilt_6():
+
+    tst = gdaltest.GDALTest('VRT', 'avfilt_1d.vrt', 1, 22377)
+    return tst.testOpen()
+
+###############################################################################
 # Cleanup.
+
 
 def vrtfilt_cleanup():
     return 'success'
+
 
 gdaltest_list = [
     vrtfilt_1,
@@ -158,12 +174,13 @@ gdaltest_list = [
     vrtfilt_3,
     vrtfilt_4,
     vrtfilt_5,
-    vrtfilt_cleanup ]
+    vrtfilt_6,
+    vrtfilt_cleanup]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'vrtfilt' )
+    gdaltest.setup_run('vrtfilt')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

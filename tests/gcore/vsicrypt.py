@@ -33,12 +33,13 @@ from osgeo import gdal
 import struct
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 
 ###############################################################################
 # Use common test for /vsicrypt
+
 
 def vsicrypt_1():
 
@@ -55,6 +56,7 @@ def vsicrypt_1():
 
 ###############################################################################
 # Test various error cases
+
 
 def vsicrypt_2():
 
@@ -150,7 +152,7 @@ def vsicrypt_2():
                 new_byte = chr(val).encode('latin1')
             except:
                 new_byte = chr(val)
-            header_new = header[0:i] + new_byte + header[i+1:]
+            header_new = header[0:i] + new_byte + header[i + 1:]
             gdal.VSIFWriteL(header_new, 1, 46, fp)
             gdal.VSIFCloseL(fp)
 
@@ -159,7 +161,6 @@ def vsicrypt_2():
                                     '/vsimem/file.bin', 'rb')
             if fp is not None:
                 gdal.VSIFCloseL(fp)
-
 
     gdal.SetConfigOption('VSICRYPT_IV', 'TOO_SHORT')
     with gdaltest.error_handler():
@@ -171,20 +172,20 @@ def vsicrypt_2():
 
     # Inconsistent initial vector.
     header = struct.pack('B' * 38,
-                       86, 83, 73, 67, 82, 89, 80, 84, # signature
-                       38, 0, # header size
-                       1, # major
-                       0, # minor
-                       0, 2, # sector size
-                       0, # alg
-                       0, # mode
-                       8, #size of IV (should be 16)
-                       32, 13, 169, 71, 154, 208, 22, 32, #IV
-                       0, 0, # size of free text
-                       0, # size of key check
-                       0, 0, 0, 0, 0, 0, 0, 0, # size of unencrypted file
-                       0, 0 # size of extra content
-                       )
+                         86, 83, 73, 67, 82, 89, 80, 84,  # signature
+                         38, 0,  # header size
+                         1,  # major
+                         0,  # minor
+                         0, 2,  # sector size
+                         0,  # alg
+                         0,  # mode
+                         8,  # size of IV (should be 16)
+                         32, 13, 169, 71, 154, 208, 22, 32,  # IV
+                         0, 0,  # size of free text
+                         0,  # size of key check
+                         0, 0, 0, 0, 0, 0, 0, 0,  # size of unencrypted file
+                         0, 0  # size of extra content
+                         )
     fp = gdal.VSIFOpenL('/vsimem/file.bin', 'wb')
     gdal.VSIFWriteL(header, 1, len(header), fp)
     gdal.VSIFCloseL(fp)
@@ -198,21 +199,21 @@ def vsicrypt_2():
 
     # Inconsistent initial vector with key check.
     header = struct.pack('B' * 39,
-                       86, 83, 73, 67, 82, 89, 80, 84, # signature
-                       39, 0, # header size
-                       1, # major
-                       0, # minor
-                       0, 2, # sector size
-                       0, # alg
-                       0, # mode
-                       8, #size of IV (should be 16)
-                       32, 13, 169, 71, 154, 208, 22, 32, #IV
-                       0, 0, # size of free text
-                       1, # size of key check
-                       0, # key check
-                       0, 0, 0, 0, 0, 0, 0, 0, # size of unencrypted file
-                       0, 0 # size of extra content
-                       )
+                         86, 83, 73, 67, 82, 89, 80, 84,  # signature
+                         39, 0,  # header size
+                         1,  # major
+                         0,  # minor
+                         0, 2,  # sector size
+                         0,  # alg
+                         0,  # mode
+                         8,  # size of IV (should be 16)
+                         32, 13, 169, 71, 154, 208, 22, 32,  # IV
+                         0, 0,  # size of free text
+                         1,  # size of key check
+                         0,  # key check
+                         0, 0, 0, 0, 0, 0, 0, 0,  # size of unencrypted file
+                         0, 0  # size of extra content
+                         )
     fp = gdal.VSIFOpenL('/vsimem/file.bin', 'wb')
     gdal.VSIFWriteL(header, 1, len(header), fp)
     gdal.VSIFCloseL(fp)
@@ -275,15 +276,15 @@ def vsicrypt_2():
     with gdaltest.error_handler():
         fp = gdal.VSIFOpenL('/vsicrypt/key=DONT_USE_IN_PROD,sector_size=1,file=/vsimem/file.bin', 'wb')
     if fp is not None:
-            gdaltest.post_reason('fail')
-            return 'fail'
+        gdaltest.post_reason('fail')
+        return 'fail'
 
     # Sector size (16) should be at least twice larger than the block size (16) in CBC_CTS
     with gdaltest.error_handler():
         fp = gdal.VSIFOpenL('/vsicrypt/key=DONT_USE_IN_PROD,sector_size=16,mode=CBC_CTS,file=/vsimem/file.bin', 'wb')
     if fp is not None:
-            gdaltest.post_reason('fail')
-            return 'fail'
+        gdaltest.post_reason('fail')
+        return 'fail'
 
     gdal.Unlink('/vsimem/file.bin')
 
@@ -291,6 +292,7 @@ def vsicrypt_2():
 
 ###############################################################################
 # Test various options
+
 
 def vsicrypt_3():
 
@@ -300,7 +302,7 @@ def vsicrypt_3():
     for options in ['sector_size=16', 'alg=AES', 'alg=DES_EDE2', 'alg=DES_EDE3', 'alg=SKIPJACK', 'alg=invalid',
                     'mode=CBC', 'mode=CFB', 'mode=OFB', 'mode=CTR', 'mode=CBC_CTS', 'mode=invalid',
                     'freetext=my_free_text',
-                    'add_key_check=yes' ]:
+                    'add_key_check=yes']:
 
         gdal.Unlink('/vsimem/file.bin')
 
@@ -387,13 +389,13 @@ def vsicrypt_3():
         gdaltest.post_reason('fail')
         return 'fail'
 
-    ret = gdal.Rename('/vsicrypt//vsimem/file.bin' , '/vsicrypt//vsimem/subdir_crypt/file.bin')
+    ret = gdal.Rename('/vsicrypt//vsimem/file.bin', '/vsicrypt//vsimem/subdir_crypt/file.bin')
     if ret != 0:
         gdaltest.post_reason('fail')
         print(ret)
         return 'fail'
 
-    ret = gdal.Rename('/vsicrypt//vsimem/subdir_crypt/file.bin' , '/vsimem/subdir_crypt/file2.bin')
+    ret = gdal.Rename('/vsicrypt//vsimem/subdir_crypt/file.bin', '/vsimem/subdir_crypt/file2.bin')
     if ret != 0:
         gdaltest.post_reason('fail')
         print(ret)
@@ -411,6 +413,7 @@ def vsicrypt_3():
 
 ###############################################################################
 # Test "random" operations against reference filesystem
+
 
 def vsicrypt_4():
 
@@ -432,21 +435,21 @@ def vsicrypt_4():
         random.seed(seed)
 
         for i in range(20):
-            random_offset = random.randint(0,1000)
+            random_offset = random.randint(0, 1000)
             gdal.VSIFSeekL(test_f, random_offset, 0)
             gdal.VSIFSeekL(ref_f, random_offset, 0)
 
-            random_size = random.randint(1,80)
-            random_content = ''.join([ chr(40 + int(10 * random.random()) ) for i in range(random_size) ])
+            random_size = random.randint(1, 80)
+            random_content = ''.join([chr(40 + int(10 * random.random())) for i in range(random_size)])
             gdal.VSIFWriteL(random_content, 1, random_size, test_f)
             gdal.VSIFWriteL(random_content, 1, random_size, ref_f)
 
-            if random.randint(0,1) == 0:
-                random_offset = random.randint(0,1500)
+            if random.randint(0, 1) == 0:
+                random_offset = random.randint(0, 1500)
                 gdal.VSIFSeekL(test_f, random_offset, 0)
                 gdal.VSIFSeekL(ref_f, random_offset, 0)
 
-                random_size = random.randint(1,80)
+                random_size = random.randint(1, 80)
                 test_content = gdal.VSIFReadL(1, random_size, test_f)
                 ref_content = gdal.VSIFReadL(1, random_size, ref_f)
                 if test_content != ref_content:
@@ -480,6 +483,7 @@ def vsicrypt_4():
 ###############################################################################
 # Test random filling of last sector
 
+
 def vsicrypt_5():
 
     if not gdaltest.has_vsicrypt:
@@ -492,7 +496,7 @@ def vsicrypt_5():
     gdal.VSIFCloseL(f)
 
     f = gdal.VSIFOpenL(test_file, 'rb+')
-    gdal.VSIFSeekL(f, 3,0)
+    gdal.VSIFSeekL(f, 3, 0)
     gdal.VSIFWriteL('d', 1, 1, f)
     gdal.VSIFCloseL(f)
 
@@ -506,8 +510,8 @@ def vsicrypt_5():
         return 'fail'
 
     f = gdal.VSIFOpenL(test_file, 'rb+')
-    gdal.VSIFReadL(1,1,f)
-    gdal.VSIFSeekL(f, 5,0)
+    gdal.VSIFReadL(1, 1, f)
+    gdal.VSIFSeekL(f, 5, 0)
     gdal.VSIFWriteL('f', 1, 1, f)
     gdal.VSIFCloseL(f)
 
@@ -521,10 +525,10 @@ def vsicrypt_5():
         return 'fail'
 
     f = gdal.VSIFOpenL(test_file, 'rb+')
-    gdal.VSIFReadL(1,1,f)
-    gdal.VSIFSeekL(f, 512,0)
+    gdal.VSIFReadL(1, 1, f)
+    gdal.VSIFSeekL(f, 512, 0)
     gdal.VSIFWriteL('Z', 1, 1, f)
-    gdal.VSIFSeekL(f, 7,0)
+    gdal.VSIFSeekL(f, 7, 0)
     gdal.VSIFWriteL('h', 1, 1, f)
     gdal.VSIFCloseL(f)
 
@@ -544,11 +548,12 @@ def vsicrypt_5():
 ###############################################################################
 # Test VSISetCryptKey
 
+
 def vsicrypt_6():
 
     try:
         import ctypes
-    except:
+    except ImportError:
         return 'skip'
     import testnonboundtoswig
 
@@ -557,7 +562,7 @@ def vsicrypt_6():
     if testnonboundtoswig.gdal_handle is None:
         return 'skip'
 
-    testnonboundtoswig.gdal_handle.VSISetCryptKey.argtypes = [ ctypes.c_char_p, ctypes.c_int]
+    testnonboundtoswig.gdal_handle.VSISetCryptKey.argtypes = [ctypes.c_char_p, ctypes.c_int]
     testnonboundtoswig.gdal_handle.VSISetCryptKey.restype = None
 
     # Set a valid key
@@ -622,17 +627,18 @@ def vsicrypt_6():
 
     return 'success'
 
-gdaltest_list = [ vsicrypt_1,
-                  vsicrypt_2,
-                  vsicrypt_3,
-                  vsicrypt_4,
-                  vsicrypt_5,
-                  vsicrypt_6 ]
+
+gdaltest_list = [vsicrypt_1,
+                 vsicrypt_2,
+                 vsicrypt_3,
+                 vsicrypt_4,
+                 vsicrypt_5,
+                 vsicrypt_6]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'vsicrypt' )
+    gdaltest.setup_run('vsicrypt')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

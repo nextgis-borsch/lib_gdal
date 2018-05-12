@@ -32,7 +32,7 @@
 import sys
 import math
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 import ogrtest
@@ -43,13 +43,13 @@ from osgeo import osr
 ###############################################################################
 # Create wasp datasource
 
+
 def ogr_wasp_create_ds():
 
     wasp_drv = ogr.GetDriverByName('WAsP')
-    wasp_drv.DeleteDataSource( 'tmp.map' )
+    wasp_drv.DeleteDataSource('tmp.map')
 
-    gdaltest.wasp_ds = wasp_drv.CreateDataSource( 'tmp.map' )
-
+    gdaltest.wasp_ds = wasp_drv.CreateDataSource('tmp.map')
 
     if gdaltest.wasp_ds is not None:
         return 'success'
@@ -59,57 +59,60 @@ def ogr_wasp_create_ds():
 ###############################################################################
 # Create elevation .map from linestrings z
 
+
 def ogr_wasp_elevation_from_linestring_z():
 
-    if ogr_wasp_create_ds() != 'success': return 'skip'
+    if ogr_wasp_create_ds() != 'success':
+        return 'skip'
 
     ref = osr.SpatialReference()
     ref.ImportFromProj4('+proj=lcc +lat_1=46.8 +lat_0=46.8 +lon_0=0 +k_0=0.99987742 +x_0=600000 +y_0=2200000 +a=6378249.2 +b=6356514.999978254 +pm=2.337229167 +units=m +no_defs')
 
     layer = gdaltest.wasp_ds.CreateLayer('mylayer',
-                                          ref,
-                                          geom_type=ogr.wkbLineString25D )
+                                         ref,
+                                         geom_type=ogr.wkbLineString25D)
 
-    if layer == None:
-        gdaltest.post_reason( 'unable to create layer')
+    if layer is None:
+        gdaltest.post_reason('unable to create layer')
         return 'fail'
 
     dfn = ogr.FeatureDefn()
 
     for i in range(10):
-        feat = ogr.Feature( dfn )
-        line = ogr.Geometry( type = ogr.wkbLineString25D )
-        line.AddPoint( i, 0, i )
-        line.AddPoint( i, 0.5, i )
-        line.AddPoint( i, 1, i )
-        feat.SetGeometry( line )
-        if layer.CreateFeature( feat ) != 0:
-            gdaltest.post_reason( 'unable to create feature')
+        feat = ogr.Feature(dfn)
+        line = ogr.Geometry(type=ogr.wkbLineString25D)
+        line.AddPoint(i, 0, i)
+        line.AddPoint(i, 0.5, i)
+        line.AddPoint(i, 1, i)
+        feat.SetGeometry(line)
+        if layer.CreateFeature(feat) != 0:
+            gdaltest.post_reason('unable to create feature')
             return 'fail'
 
     del gdaltest.wasp_ds
     del layer
 
     f = open('tmp.map')
-    for i in range(4): f.readline()
+    for i in range(4):
+        f.readline()
     i = 0
     j = 0
     for line in f:
-        if not i%2:
-            [h,n] = line.split()
+        if not i % 2:
+            [h, n] = line.split()
             if int(n) != 3:
-                gdaltest.post_reason( 'number of points should be 3 and is %s' % n )
+                gdaltest.post_reason('number of points should be 3 and is %s' % n)
                 return 'fail'
 
             if float(h) != j:
-                gdaltest.post_reason( 'altitude should be %d and is %s' %(j,h) )
+                gdaltest.post_reason('altitude should be %d and is %s' % (j, h))
                 return 'fail'
 
-            j+=1
-        i+=1
+            j += 1
+        i += 1
 
     if j != 10:
-        gdaltest.post_reason( 'nb of feature should be 10 and is %d' % j )
+        gdaltest.post_reason('nb of feature should be 10 and is %d' % j)
         return 'fail'
 
     return 'success'
@@ -117,64 +120,69 @@ def ogr_wasp_elevation_from_linestring_z():
 ###############################################################################
 # Create elevation .map from linestrings z with simplification
 
+
 def ogr_wasp_elevation_from_linestring_z_toler():
 
-    if ogr_wasp_create_ds() != 'success': return 'skip'
+    if ogr_wasp_create_ds() != 'success':
+        return 'skip'
 
     ref = osr.SpatialReference()
     ref.ImportFromProj4('+proj=lcc +lat_1=46.8 +lat_0=46.8 +lon_0=0 +k_0=0.99987742 +x_0=600000 +y_0=2200000 +a=6378249.2 +b=6356514.999978254 +pm=2.337229167 +units=m +no_defs')
 
-    if not ogrtest.have_geos() : gdal.PushErrorHandler('CPLQuietErrorHandler')
+    if not ogrtest.have_geos():
+        gdal.PushErrorHandler('CPLQuietErrorHandler')
     layer = gdaltest.wasp_ds.CreateLayer('mylayer',
-                                          ref,
-                                          options = ['WASP_TOLERANCE=.1'],
-                                          geom_type=ogr.wkbLineString25D )
-    if not ogrtest.have_geos() : gdal.PopErrorHandler()
+                                         ref,
+                                         options=['WASP_TOLERANCE=.1'],
+                                         geom_type=ogr.wkbLineString25D)
+    if not ogrtest.have_geos():
+        gdal.PopErrorHandler()
 
-    if layer == None:
-        gdaltest.post_reason( 'unable to create layer')
+    if layer is None:
+        gdaltest.post_reason('unable to create layer')
         return 'fail'
 
     dfn = ogr.FeatureDefn()
 
     for i in range(10):
-        feat = ogr.Feature( dfn )
-        line = ogr.Geometry( type = ogr.wkbLineString25D )
-        line.AddPoint( i, 0, i )
-        line.AddPoint( i, 0.5, i )
-        line.AddPoint( i, 1, i )
-        feat.SetGeometry( line )
-        if layer.CreateFeature( feat ) != 0:
-            gdaltest.post_reason( 'unable to create feature')
+        feat = ogr.Feature(dfn)
+        line = ogr.Geometry(type=ogr.wkbLineString25D)
+        line.AddPoint(i, 0, i)
+        line.AddPoint(i, 0.5, i)
+        line.AddPoint(i, 1, i)
+        feat.SetGeometry(line)
+        if layer.CreateFeature(feat) != 0:
+            gdaltest.post_reason('unable to create feature')
             return 'fail'
 
     del gdaltest.wasp_ds
     del layer
 
     f = open('tmp.map')
-    for i in range(4): f.readline()
+    for i in range(4):
+        f.readline()
     i = 0
     j = 0
     for line in f:
-        if not i%2:
-            [h,n] = line.split()
+        if not i % 2:
+            [h, n] = line.split()
             if int(n) != 2:
                 if ogrtest.have_geos():
-                    gdaltest.post_reason( 'number of points should be 2 and is %s' % n )
+                    gdaltest.post_reason('number of points should be 2 and is %s' % n)
                     return 'fail'
                 elif int(n) != 3:
-                    gdaltest.post_reason( 'number of points should be 3 and is %s' % n )
+                    gdaltest.post_reason('number of points should be 3 and is %s' % n)
                     return 'fail'
 
             if float(h) != j:
-                gdaltest.post_reason( 'altitude should be %d and is %s' %(j,h) )
+                gdaltest.post_reason('altitude should be %d and is %s' % (j, h))
                 return 'fail'
 
-            j+=1
-        i+=1
+            j += 1
+        i += 1
 
     if j != 10:
-        gdaltest.post_reason( 'nb of feature should be 10 and is %d' % j )
+        gdaltest.post_reason('nb of feature should be 10 and is %d' % j)
         return 'fail'
 
     return 'success'
@@ -185,109 +193,114 @@ def ogr_wasp_elevation_from_linestring_z_toler():
 
 def ogr_wasp_elevation_from_linestring_field():
 
-    if ogr_wasp_create_ds() != 'success': return 'skip'
+    if ogr_wasp_create_ds() != 'success':
+        return 'skip'
 
     layer = gdaltest.wasp_ds.CreateLayer('mylayer',
-                                          options = ['WASP_FIELDS=elevation'],
-                                          geom_type=ogr.wkbLineString )
+                                         options=['WASP_FIELDS=elevation'],
+                                         geom_type=ogr.wkbLineString)
 
-    if layer == None:
-        gdaltest.post_reason( 'unable to create layer')
+    if layer is None:
+        gdaltest.post_reason('unable to create layer')
         return 'fail'
 
-    layer.CreateField( ogr.FieldDefn( 'elevation', ogr.OFTReal ) )
+    layer.CreateField(ogr.FieldDefn('elevation', ogr.OFTReal))
 
     for i in range(10):
-        feat = ogr.Feature( layer.GetLayerDefn() )
-        feat.SetField(0, float(i) )
-        line = ogr.Geometry( type = ogr.wkbLineString )
-        line.AddPoint( i, 0 )
-        line.AddPoint( i, 0.5 )
-        line.AddPoint( i, 1 )
-        feat.SetGeometry( line )
-        if layer.CreateFeature( feat ) != 0:
-            gdaltest.post_reason( 'unable to create feature')
+        feat = ogr.Feature(layer.GetLayerDefn())
+        feat.SetField(0, float(i))
+        line = ogr.Geometry(type=ogr.wkbLineString)
+        line.AddPoint(i, 0)
+        line.AddPoint(i, 0.5)
+        line.AddPoint(i, 1)
+        feat.SetGeometry(line)
+        if layer.CreateFeature(feat) != 0:
+            gdaltest.post_reason('unable to create feature')
             return 'fail'
 
     del gdaltest.wasp_ds
     del layer
 
     f = open('tmp.map')
-    for i in range(4): f.readline()
+    for i in range(4):
+        f.readline()
     i = 0
     j = 0
     for line in f:
-        if not i%2:
-            [h,n] = line.split()
+        if not i % 2:
+            [h, n] = line.split()
             if int(n) != 3:
-                gdaltest.post_reason( 'number of points should be 3 and is %s' % n )
+                gdaltest.post_reason('number of points should be 3 and is %s' % n)
                 return 'fail'
 
             if float(h) != j:
-                gdaltest.post_reason( 'altitude should be %d and is %s' %(j,h) )
+                gdaltest.post_reason('altitude should be %d and is %s' % (j, h))
                 return 'fail'
 
-            j+=1
-        i+=1
+            j += 1
+        i += 1
 
     return 'success'
 
 ###############################################################################
 # Create roughness .map from linestrings fields
 
+
 def ogr_wasp_roughness_from_linestring_fields():
 
-    if ogr_wasp_create_ds() != 'success': return 'skip'
+    if ogr_wasp_create_ds() != 'success':
+        return 'skip'
 
     layer = gdaltest.wasp_ds.CreateLayer('mylayer',
-                                          options = ['WASP_FIELDS=z_left,z_right'],
-                                          geom_type=ogr.wkbLineString )
+                                         options=['WASP_FIELDS=z_left,z_right'],
+                                         geom_type=ogr.wkbLineString)
 
-    if layer == None:
-        gdaltest.post_reason( 'unable to create layer')
+    if layer is None:
+        gdaltest.post_reason('unable to create layer')
         return 'fail'
 
-    layer.CreateField( ogr.FieldDefn( 'dummy', ogr.OFTString ) )
-    layer.CreateField( ogr.FieldDefn( 'z_left', ogr.OFTReal ) )
-    layer.CreateField( ogr.FieldDefn( 'z_right', ogr.OFTReal ) )
+    layer.CreateField(ogr.FieldDefn('dummy', ogr.OFTString))
+    layer.CreateField(ogr.FieldDefn('z_left', ogr.OFTReal))
+    layer.CreateField(ogr.FieldDefn('z_right', ogr.OFTReal))
 
     for i in range(10):
-        feat = ogr.Feature( layer.GetLayerDefn() )
-        feat.SetField(0, 'dummy_'+str(i) )
-        feat.SetField(1, float(i)-1 )
-        feat.SetField(2, float(i) )
-        line = ogr.Geometry( type = ogr.wkbLineString )
-        line.AddPoint( i, 0 )
-        line.AddPoint( i, 0.5 )
-        line.AddPoint( i, 1 )
-        feat.SetGeometry( line )
-        if layer.CreateFeature( feat ) != 0:
-            gdaltest.post_reason( 'unable to create feature %d'%i)
+        feat = ogr.Feature(layer.GetLayerDefn())
+        feat.SetField(0, 'dummy_' + str(i))
+        feat.SetField(1, float(i) - 1)
+        feat.SetField(2, float(i))
+        line = ogr.Geometry(type=ogr.wkbLineString)
+        line.AddPoint(i, 0)
+        line.AddPoint(i, 0.5)
+        line.AddPoint(i, 1)
+        feat.SetGeometry(line)
+        if layer.CreateFeature(feat) != 0:
+            gdaltest.post_reason('unable to create feature %d' % i)
             return 'fail'
 
     del gdaltest.wasp_ds
     del layer
 
     f = open('tmp.map')
-    for i in range(4): f.readline()
+    for i in range(4):
+        f.readline()
     i = 0
     j = 0
     for line in f:
-        if not i%2:
-            [l,r,n] = line.split()
+        if not i % 2:
+            [l, r, n] = line.split()
             if int(n) != 3:
-                gdaltest.post_reason( 'number of points should be 3 and is %s' % n )
+                gdaltest.post_reason('number of points should be 3 and is %s' % n)
                 return 'fail'
 
-            if float(r) != j or float(l) != j-1:
-                gdaltest.post_reason( 'roughness should be %d and %d and is %s and %s' %(j-1,j,l,r) )
+            if float(r) != j or float(l) != j - 1:
+                gdaltest.post_reason('roughness should be %d and %d and is %s and %s' % (j - 1, j, l, r))
                 return 'fail'
 
-            j+=1
-        i+=1
+            j += 1
+        i += 1
 
     if j != 10:
-        gdaltest.post_reason( 'nb of feature should be 10 and is %d' % j )
+        gdaltest.post_reason('nb of feature should be 10 and is %d' % j)
         return 'fail'
 
     return 'success'
@@ -295,18 +308,22 @@ def ogr_wasp_roughness_from_linestring_fields():
 ###############################################################################
 # Create .map from polygons z
 
+
 def ogr_wasp_roughness_from_polygon_z():
 
-    if ogr_wasp_create_ds() != 'success': return 'skip'
+    if ogr_wasp_create_ds() != 'success':
+        return 'skip'
 
-    if not ogrtest.have_geos() : gdal.PushErrorHandler('CPLQuietErrorHandler')
+    if not ogrtest.have_geos():
+        gdal.PushErrorHandler('CPLQuietErrorHandler')
     layer = gdaltest.wasp_ds.CreateLayer('mylayer',
-                                          geom_type=ogr.wkbPolygon25D )
-    if not ogrtest.have_geos() : gdal.PopErrorHandler()
+                                         geom_type=ogr.wkbPolygon25D)
+    if not ogrtest.have_geos():
+        gdal.PopErrorHandler()
 
-    if layer == None:
+    if layer is None:
         if ogrtest.have_geos():
-            gdaltest.post_reason( 'unable to create layer')
+            gdaltest.post_reason('unable to create layer')
             return 'fail'
         else:
             return 'success'
@@ -314,112 +331,122 @@ def ogr_wasp_roughness_from_polygon_z():
     dfn = ogr.FeatureDefn()
 
     for i in range(6):
-        feat = ogr.Feature( dfn )
-        ring = ogr.Geometry( type = ogr.wkbLinearRing )
-        ring.AddPoint( 0, 0, i )
-        ring.AddPoint( round(math.cos(i*math.pi/3),6),  round(math.sin(i*math.pi/3),6), i )
-        ring.AddPoint( round(math.cos((i+1)*math.pi/3),6),  round(math.sin((i+1)*math.pi/3),6), i )
-        ring.AddPoint( 0, 0, i )
-        poly = ogr.Geometry( type = ogr.wkbPolygon25D )
+        feat = ogr.Feature(dfn)
+        ring = ogr.Geometry(type=ogr.wkbLinearRing)
+        ring.AddPoint(0, 0, i)
+        ring.AddPoint(round(math.cos(i * math.pi / 3), 6), round(math.sin(i * math.pi / 3), 6), i)
+        ring.AddPoint(round(math.cos((i + 1) * math.pi / 3), 6), round(math.sin((i + 1) * math.pi / 3), 6), i)
+        ring.AddPoint(0, 0, i)
+        poly = ogr.Geometry(type=ogr.wkbPolygon25D)
         poly.AddGeometry(ring)
-        feat.SetGeometry( poly )
-        if layer.CreateFeature( feat ) != 0:
-            gdaltest.post_reason( 'unable to create feature')
+        feat.SetGeometry(poly)
+        if layer.CreateFeature(feat) != 0:
+            gdaltest.post_reason('unable to create feature')
             return 'fail'
 
     del gdaltest.wasp_ds
     del layer
 
     f = open('tmp.map')
-    for i in range(4): f.readline()
+    for i in range(4):
+        f.readline()
     i = 0
     j = 0
     res = set()
     for line in f:
-        if not i%2:
-            [l,r,n] = [v for v in line.split()]
+        if not i % 2:
+            [l, r, n] = [v for v in line.split()]
             if int(n) != 2:
-                gdaltest.post_reason( 'number of points should be 2 and is %d' % int(n) )
+                gdaltest.post_reason('number of points should be 2 and is %d' % int(n))
                 return 'fail'
-            if float(r) > float(l) : res.add((float(l), float(r)))
-            else   : res.add((float(r), float(l)))
-            j+=1
-        i+=1
+            if float(r) > float(l):
+                res.add((float(l), float(r)))
+            else:
+                res.add((float(r), float(l)))
+            j += 1
+        i += 1
 
     if j != 6:
-        gdaltest.post_reason( 'there should be 6 boundaries and there are %d' %j )
+        gdaltest.post_reason('there should be 6 boundaries and there are %d' % j)
         return 'fail'
 
-    if res != set([(0,1),(0,5),(1,2),(2,3),(3,4),(4,5)]):
+    if res != set([(0, 1), (0, 5), (1, 2), (2, 3), (3, 4), (4, 5)]):
         print(res)
-        gdaltest.post_reason( 'wrong values f=in boundaries' )
+        gdaltest.post_reason('wrong values f=in boundaries')
         return 'fail'
     return 'success'
 
 ###############################################################################
 # Create .map from polygons field
 
+
 def ogr_wasp_roughness_from_polygon_field():
 
-    if ogr_wasp_create_ds() != 'success': return 'skip'
+    if ogr_wasp_create_ds() != 'success':
+        return 'skip'
 
-    if not ogrtest.have_geos() : gdal.PushErrorHandler('CPLQuietErrorHandler')
+    if not ogrtest.have_geos():
+        gdal.PushErrorHandler('CPLQuietErrorHandler')
     layer = gdaltest.wasp_ds.CreateLayer('mylayer',
-                                          options = ['WASP_FIELDS=roughness'],
-                                          geom_type=ogr.wkbPolygon )
-    if not ogrtest.have_geos() : gdal.PopErrorHandler()
+                                         options=['WASP_FIELDS=roughness'],
+                                         geom_type=ogr.wkbPolygon)
+    if not ogrtest.have_geos():
+        gdal.PopErrorHandler()
 
-    if layer == None:
+    if layer is None:
         if ogrtest.have_geos():
-            gdaltest.post_reason( 'unable to create layer')
+            gdaltest.post_reason('unable to create layer')
             return 'fail'
         else:
             return 'success'
 
-    layer.CreateField( ogr.FieldDefn( 'roughness', ogr.OFTReal ) )
-    layer.CreateField( ogr.FieldDefn( 'dummy', ogr.OFTString ) )
+    layer.CreateField(ogr.FieldDefn('roughness', ogr.OFTReal))
+    layer.CreateField(ogr.FieldDefn('dummy', ogr.OFTString))
 
     for i in range(6):
-        feat = ogr.Feature( layer.GetLayerDefn() )
-        feat.SetField( 0, float(i) )
-        ring = ogr.Geometry( type = ogr.wkbLinearRing )
-        ring.AddPoint( 0, 0 )
-        ring.AddPoint( round(math.cos(i*math.pi/3),6),  round(math.sin(i*math.pi/3),6) )
-        ring.AddPoint( round(math.cos((i+1)*math.pi/3),6),  round(math.sin((i+1)*math.pi/3),6) )
-        ring.AddPoint( 0, 0 )
-        poly = ogr.Geometry( type = ogr.wkbPolygon )
+        feat = ogr.Feature(layer.GetLayerDefn())
+        feat.SetField(0, float(i))
+        ring = ogr.Geometry(type=ogr.wkbLinearRing)
+        ring.AddPoint(0, 0)
+        ring.AddPoint(round(math.cos(i * math.pi / 3), 6), round(math.sin(i * math.pi / 3), 6))
+        ring.AddPoint(round(math.cos((i + 1) * math.pi / 3), 6), round(math.sin((i + 1) * math.pi / 3), 6))
+        ring.AddPoint(0, 0)
+        poly = ogr.Geometry(type=ogr.wkbPolygon)
         poly.AddGeometry(ring)
-        feat.SetGeometry( poly )
-        if layer.CreateFeature( feat ) != 0:
-            gdaltest.post_reason( 'unable to create feature')
+        feat.SetGeometry(poly)
+        if layer.CreateFeature(feat) != 0:
+            gdaltest.post_reason('unable to create feature')
             return 'fail'
 
     del gdaltest.wasp_ds
     del layer
 
     f = open('tmp.map')
-    for i in range(4): f.readline()
+    for i in range(4):
+        f.readline()
     i = 0
     j = 0
     res = set()
     for line in f:
-        if not i%2:
-            [l,r,n] = [v for v in line.split()]
+        if not i % 2:
+            [l, r, n] = [v for v in line.split()]
             if int(n) != 2:
-                gdaltest.post_reason( 'number of points should be 2 and is %d' % int(n) )
+                gdaltest.post_reason('number of points should be 2 and is %d' % int(n))
                 return 'fail'
-            if float(r) > float(l) : res.add((float(l), float(r)))
-            else   : res.add((float(r), float(l)))
-            j+=1
-        i+=1
+            if float(r) > float(l):
+                res.add((float(l), float(r)))
+            else:
+                res.add((float(r), float(l)))
+            j += 1
+        i += 1
 
     if j != 6:
-        gdaltest.post_reason( 'there should be 6 boundaries and there are %d' %j )
+        gdaltest.post_reason('there should be 6 boundaries and there are %d' % j)
         return 'fail'
 
-    if res != set([(0,1),(0,5),(1,2),(2,3),(3,4),(4,5)]):
+    if res != set([(0, 1), (0, 5), (1, 2), (2, 3), (3, 4), (4, 5)]):
         print(res)
-        gdaltest.post_reason( 'wrong values f=in boundaries' )
+        gdaltest.post_reason('wrong values f=in boundaries')
         return 'fail'
     return 'success'
 
@@ -428,18 +455,22 @@ def ogr_wasp_roughness_from_polygon_field():
 # especially the unwanted merging of a corner point that could be merged with
 # a continuing line (pichart map)
 
+
 def ogr_wasp_merge():
 
-    if ogr_wasp_create_ds() != 'success': return 'skip'
+    if ogr_wasp_create_ds() != 'success':
+        return 'skip'
 
-    if not ogrtest.have_geos() : gdal.PushErrorHandler('CPLQuietErrorHandler')
+    if not ogrtest.have_geos():
+        gdal.PushErrorHandler('CPLQuietErrorHandler')
     layer = gdaltest.wasp_ds.CreateLayer('mylayer',
-                                          geom_type=ogr.wkbPolygon25D )
-    if not ogrtest.have_geos() : gdal.PopErrorHandler()
+                                         geom_type=ogr.wkbPolygon25D)
+    if not ogrtest.have_geos():
+        gdal.PopErrorHandler()
 
-    if layer == None:
+    if layer is None:
         if ogrtest.have_geos():
-            gdaltest.post_reason( 'unable to create layer')
+            gdaltest.post_reason('unable to create layer')
             return 'fail'
         else:
             return 'success'
@@ -447,59 +478,64 @@ def ogr_wasp_merge():
     dfn = ogr.FeatureDefn()
 
     for i in range(6):
-        feat = ogr.Feature( dfn )
-        ring = ogr.Geometry( type = ogr.wkbLinearRing )
-        h = i%2
-        ring.AddPoint( 0, 0, h )
-        ring.AddPoint( round(math.cos(i*math.pi/3),6),  round(math.sin(i*math.pi/3),6), h )
-        ring.AddPoint( round(math.cos((i+1)*math.pi/3),6),  round(math.sin((i+1)*math.pi/3),6), h )
-        ring.AddPoint( 0, 0, h )
-        poly = ogr.Geometry( type = ogr.wkbPolygon25D )
+        feat = ogr.Feature(dfn)
+        ring = ogr.Geometry(type=ogr.wkbLinearRing)
+        h = i % 2
+        ring.AddPoint(0, 0, h)
+        ring.AddPoint(round(math.cos(i * math.pi / 3), 6), round(math.sin(i * math.pi / 3), 6), h)
+        ring.AddPoint(round(math.cos((i + 1) * math.pi / 3), 6), round(math.sin((i + 1) * math.pi / 3), 6), h)
+        ring.AddPoint(0, 0, h)
+        poly = ogr.Geometry(type=ogr.wkbPolygon25D)
         poly.AddGeometry(ring)
-        feat.SetGeometry( poly )
-        if layer.CreateFeature( feat ) != 0:
-            gdaltest.post_reason( 'unable to create feature')
+        feat.SetGeometry(poly)
+        if layer.CreateFeature(feat) != 0:
+            gdaltest.post_reason('unable to create feature')
             return 'fail'
 
     del gdaltest.wasp_ds
     del layer
 
     f = open('tmp.map')
-    for i in range(4): f.readline()
+    for i in range(4):
+        f.readline()
     i = 0
     j = 0
     res = []
     for line in f:
-        if not i%2:
-            [l,r,n] = [v for v in line.split()]
+        if not i % 2:
+            [l, r, n] = [v for v in line.split()]
             if int(n) != 2:
-                gdaltest.post_reason( 'number of points should be 2 and is %d (unwanted merge ?)' % int(n) )
+                gdaltest.post_reason('number of points should be 2 and is %d (unwanted merge ?)' % int(n))
                 return 'fail'
-            if float(r) > float(l) : res.append((float(l), float(r)))
-            else   : res.append((float(r), float(l)))
-            j+=1
-        i+=1
+            if float(r) > float(l):
+                res.append((float(l), float(r)))
+            else:
+                res.append((float(r), float(l)))
+            j += 1
+        i += 1
 
     if j != 6:
-        gdaltest.post_reason( 'there should be 6 boundaries and there are %d' %j )
+        gdaltest.post_reason('there should be 6 boundaries and there are %d' % j)
         return 'fail'
 
-    if res != [(0,1) for k in range(6)]:
+    if res != [(0, 1) for k in range(6)]:
         print(res)
-        gdaltest.post_reason( 'wrong values f=in boundaries' )
+        gdaltest.post_reason('wrong values f=in boundaries')
         return 'fail'
     return 'success'
 ###############################################################################
 # Read map file
 
+
 def ogr_wasp_reading():
-    if ogr_wasp_elevation_from_linestring_z() != 'success': return 'skip'
+    if ogr_wasp_elevation_from_linestring_z() != 'success':
+        return 'skip'
 
     gdaltest.wasp_ds = None
 
-    ds = ogr.Open( 'tmp.map' )
+    ds = ogr.Open('tmp.map')
 
-    if ds == None or  ds.GetLayerCount() != 1:
+    if ds is None or ds.GetLayerCount() != 1:
         return 'fail'
 
     layer = ds.GetLayer(0)
@@ -508,7 +544,7 @@ def ogr_wasp_reading():
     i = 0
     while feat:
         feat = layer.GetNextFeature()
-        i+=1
+        i += 1
 
     if i != 10:
         return 'fail'
@@ -516,11 +552,13 @@ def ogr_wasp_reading():
 ###############################################################################
 # Cleanup
 
+
 def ogr_wasp_cleanup():
 
     wasp_drv = ogr.GetDriverByName('WAsP')
-    wasp_drv.DeleteDataSource( 'tmp.map' )
+    wasp_drv.DeleteDataSource('tmp.map')
     return 'success'
+
 
 gdaltest_list = [
     ogr_wasp_create_ds,
@@ -533,15 +571,15 @@ gdaltest_list = [
     ogr_wasp_merge,
     ogr_wasp_reading,
     ogr_wasp_cleanup
-    ]
+]
 
 if __name__ == '__main__':
     gdal.PushErrorHandler('CPLQuietErrorHandler')
     ogrtest.have_geos()
     gdal.PopErrorHandler()
 
-    gdaltest.setup_run( 'ogr_wasp' )
+    gdaltest.setup_run('ogr_wasp')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

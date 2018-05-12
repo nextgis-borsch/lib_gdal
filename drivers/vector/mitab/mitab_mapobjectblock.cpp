@@ -43,13 +43,13 @@
 #include "mitab_priv.h"
 #include "mitab_utils.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /*=====================================================================
  *                      class TABMAPObjectBlock
  *====================================================================*/
 
-static const int MAP_OBJECT_HEADER_SIZE = 20;
+constexpr int MAP_OBJECT_HEADER_SIZE = 20;
 
 /**********************************************************************
  *                   TABMAPObjectBlock::TABMAPObjectBlock()
@@ -122,7 +122,7 @@ int     TABMAPObjectBlock::InitBlockFromData(GByte *pabyBuf,
                  "InitBlockFromData(): Invalid Block Type: got %d expected %d",
                  m_nBlockType, TABMAP_OBJECT_BLOCK);
         CPLFree(m_pabyBuf);
-        m_pabyBuf = NULL;
+        m_pabyBuf = nullptr;
         return -1;
     }
 
@@ -137,7 +137,7 @@ int     TABMAPObjectBlock::InitBlockFromData(GByte *pabyBuf,
                  "TABMAPObjectBlock::InitBlockFromData(): m_numDataBytes=%d incompatible with block size %d",
                  m_numDataBytes, nBlockSize);
         CPLFree(m_pabyBuf);
-        m_pabyBuf = NULL;
+        m_pabyBuf = nullptr;
         return -1;
     }
 
@@ -284,7 +284,7 @@ int     TABMAPObjectBlock::CommitToFile()
 {
     int nStatus = 0;
 
-    if ( m_pabyBuf == NULL )
+    if ( m_pabyBuf == nullptr )
     {
         CPLError(CE_Failure, CPLE_AssertionFailed,
      "TABMAPObjectBlock::CommitToFile(): Block has not been initialized yet!");
@@ -516,8 +516,10 @@ int     TABMAPObjectBlock::UpdateMBR(GInt32 nX, GInt32 nY)
 
     if( !m_bLockCenter )
     {
-        m_nCenterX = (m_nMinX + m_nMaxX) /2;
-        m_nCenterY = (m_nMinY + m_nMaxY) /2;
+        m_nCenterX = static_cast<int>(
+            (static_cast<GIntBig>(m_nMinX) + m_nMaxX) /2);
+        m_nCenterY = static_cast<int>(
+            (static_cast<GIntBig>(m_nMinY) + m_nMaxY) /2);
     }
 
     return 0;
@@ -558,8 +560,10 @@ void TABMAPObjectBlock::SetMBR(GInt32 nXMin, GInt32 nYMin,
 
     if( !m_bLockCenter )
     {
-        m_nCenterX = (m_nMinX + m_nMaxX) /2;
-        m_nCenterY = (m_nMinY + m_nMaxY) /2;
+        m_nCenterX = static_cast<int>(
+            (static_cast<GIntBig>(m_nMinX) + m_nMaxX) /2);
+        m_nCenterY = static_cast<int>(
+            (static_cast<GIntBig>(m_nMinY) + m_nMaxY) /2);
     }
 }
 
@@ -666,11 +670,11 @@ void TABMAPObjectBlock::Dump(FILE *fpOut, GBool bDetails)
 {
     CPLErrorReset();
 
-    if (fpOut == NULL)
+    if (fpOut == nullptr)
         fpOut = stdout;
 
     fprintf(fpOut, "----- TABMAPObjectBlock::Dump() -----\n");
-    if (m_pabyBuf == NULL)
+    if (m_pabyBuf == nullptr)
     {
         fprintf(fpOut, "Block has not been initialized yet.");
     }
@@ -690,7 +694,7 @@ void TABMAPObjectBlock::Dump(FILE *fpOut, GBool bDetails)
         /* We need the mapfile's header block */
         TABRawBinBlock *poBlock =
             TABCreateMAPBlockFromFile(m_fp, 0, m_nBlockSize);
-        if (poBlock==NULL || poBlock->GetBlockClass() != TABMAP_HEADER_BLOCK)
+        if (poBlock==nullptr || poBlock->GetBlockClass() != TABMAP_HEADER_BLOCK)
         {
             CPLError(CE_Failure, CPLE_AssertionFailed,
                      "Failed reading header block.");
@@ -699,8 +703,8 @@ void TABMAPObjectBlock::Dump(FILE *fpOut, GBool bDetails)
         TABMAPHeaderBlock *poHeader = (TABMAPHeaderBlock *)poBlock;
 
         Rewind();
-        TABMAPObjHdr *poObjHdr = NULL;
-        while((poObjHdr = TABMAPObjHdr::ReadNextObj(this, poHeader)) != NULL)
+        TABMAPObjHdr *poObjHdr = nullptr;
+        while((poObjHdr = TABMAPObjHdr::ReadNextObj(this, poHeader)) != nullptr)
         {
             fprintf(fpOut,
                     "   object id=%d, type=%d, offset=%d (%d), size=%d\n"
@@ -741,7 +745,7 @@ void TABMAPObjectBlock::Dump(FILE *fpOut, GBool bDetails)
  **********************************************************************/
 TABMAPObjHdr *TABMAPObjHdr::NewObj(TABGeomType nNewObjType, GInt32 nId /*=0*/)
 {
-    TABMAPObjHdr *poObj = NULL;
+    TABMAPObjHdr *poObj = nullptr;
 
     switch(nNewObjType)
     {
@@ -834,7 +838,7 @@ TABMAPObjHdr *TABMAPObjHdr::NewObj(TABGeomType nNewObjType, GInt32 nId /*=0*/)
 TABMAPObjHdr *TABMAPObjHdr::ReadNextObj(TABMAPObjectBlock *poObjBlock,
                                         TABMAPHeaderBlock *poHeader)
 {
-    TABMAPObjHdr *poObjHdr = NULL;
+    TABMAPObjHdr *poObjHdr = nullptr;
 
     if (poObjBlock->AdvanceToNextObject(poHeader) != -1)
     {
@@ -845,7 +849,7 @@ TABMAPObjHdr *TABMAPObjHdr::ReadNextObj(TABMAPObjectBlock *poObjBlock,
         {
             // Failed reading object in block... an error was already produced
             delete poObjHdr;
-            return NULL;
+            return nullptr;
         }
     }
 
@@ -1026,7 +1030,7 @@ int TABMAPObjPLine::ReadObj(TABMAPObjectBlock *poObjBlock)
     if (IsCompressedType())
     {
         // Region center/label point, relative to compr. coord. origin
-        // No it's not relative to the Object block center
+        // No it is not relative to the Object block center
         m_nLabelX = poObjBlock->ReadInt16();
         m_nLabelY = poObjBlock->ReadInt16();
 
@@ -1049,7 +1053,7 @@ int TABMAPObjPLine::ReadObj(TABMAPObjectBlock *poObjBlock)
     else
     {
         // Region center/label point, relative to compr. coord. origin
-        // No it's not relative to the Object block center
+        // No it is not relative to the Object block center
         m_nLabelX = poObjBlock->ReadInt32();
         m_nLabelY = poObjBlock->ReadInt32();
 
@@ -1129,9 +1133,9 @@ int TABMAPObjPLine::WriteObj(TABMAPObjectBlock *poObjBlock)
     if (IsCompressedType())
     {
         // Region center/label point, relative to compr. coord. origin
-        // No it's not relative to the Object block center
-        poObjBlock->WriteInt16((GInt16)(m_nLabelX - m_nComprOrgX));
-        poObjBlock->WriteInt16((GInt16)(m_nLabelY - m_nComprOrgY));
+        // No it is not relative to the Object block center
+        poObjBlock->WriteInt16(TABInt16Diff(m_nLabelX, m_nComprOrgX));
+        poObjBlock->WriteInt16(TABInt16Diff(m_nLabelY, m_nComprOrgY));
 
         // Compressed coordinate origin (present only in compressed case!)
         poObjBlock->WriteInt32(m_nComprOrgX);
@@ -1148,10 +1152,10 @@ int TABMAPObjPLine::WriteObj(TABMAPObjectBlock *poObjBlock)
     if (IsCompressedType())
     {
         // MBR relative to PLINE origin (and not object block center)
-        poObjBlock->WriteInt16((GInt16)(m_nMinX - m_nComprOrgX));
-        poObjBlock->WriteInt16((GInt16)(m_nMinY - m_nComprOrgY));
-        poObjBlock->WriteInt16((GInt16)(m_nMaxX - m_nComprOrgX));
-        poObjBlock->WriteInt16((GInt16)(m_nMaxY - m_nComprOrgY));
+        poObjBlock->WriteInt16(TABInt16Diff(m_nMinX, m_nComprOrgX));
+        poObjBlock->WriteInt16(TABInt16Diff(m_nMinY, m_nComprOrgY));
+        poObjBlock->WriteInt16(TABInt16Diff(m_nMaxX, m_nComprOrgX));
+        poObjBlock->WriteInt16(TABInt16Diff(m_nMaxY, m_nComprOrgY));
     }
     else
     {
@@ -1670,7 +1674,7 @@ int TABMAPObjMultiPoint::ReadObj(TABMAPObjectBlock *poObjBlock)
     if (IsCompressedType())
     {
         // Region center/label point, relative to compr. coord. origin
-        // No it's not relative to the Object block center
+        // No it is not relative to the Object block center
         m_nLabelX = poObjBlock->ReadInt16();
         m_nLabelY = poObjBlock->ReadInt16();
 
@@ -1749,18 +1753,18 @@ int TABMAPObjMultiPoint::WriteObj(TABMAPObjectBlock *poObjBlock)
     if (IsCompressedType())
     {
         // Region center/label point, relative to compr. coord. origin
-        // No it's not relative to the Object block center
-        poObjBlock->WriteInt16((GInt16)(m_nLabelX - m_nComprOrgX));
-        poObjBlock->WriteInt16((GInt16)(m_nLabelY - m_nComprOrgY));
+        // No it is not relative to the Object block center
+        poObjBlock->WriteInt16(TABInt16Diff(m_nLabelX, m_nComprOrgX));
+        poObjBlock->WriteInt16(TABInt16Diff(m_nLabelY, m_nComprOrgY));
 
         poObjBlock->WriteInt32(m_nComprOrgX);
         poObjBlock->WriteInt32(m_nComprOrgY);
 
         // MBR relative to object origin (and not object block center)
-        poObjBlock->WriteInt16((GInt16)(m_nMinX - m_nComprOrgX));
-        poObjBlock->WriteInt16((GInt16)(m_nMinY - m_nComprOrgY));
-        poObjBlock->WriteInt16((GInt16)(m_nMaxX - m_nComprOrgX));
-        poObjBlock->WriteInt16((GInt16)(m_nMaxY - m_nComprOrgY));
+        poObjBlock->WriteInt16(TABInt16Diff(m_nMinX, m_nComprOrgX));
+        poObjBlock->WriteInt16(TABInt16Diff(m_nMinY, m_nComprOrgY));
+        poObjBlock->WriteInt16(TABInt16Diff(m_nMaxX, m_nComprOrgX));
+        poObjBlock->WriteInt16(TABInt16Diff(m_nMaxY, m_nComprOrgY));
     }
     else
     {
@@ -2085,10 +2089,10 @@ int TABMAPObjCollection::WriteObj(TABMAPObjectBlock *poObjBlock)
         poObjBlock->WriteInt32(m_nComprOrgX);
         poObjBlock->WriteInt32(m_nComprOrgY);
 
-        poObjBlock->WriteInt16((GInt16)(m_nMinX - m_nComprOrgX));  // MBR
-        poObjBlock->WriteInt16((GInt16)(m_nMinY - m_nComprOrgY));
-        poObjBlock->WriteInt16((GInt16)(m_nMaxX - m_nComprOrgX));
-        poObjBlock->WriteInt16((GInt16)(m_nMaxY - m_nComprOrgY));
+        poObjBlock->WriteInt16(TABInt16Diff(m_nMinX, m_nComprOrgX));  // MBR
+        poObjBlock->WriteInt16(TABInt16Diff(m_nMinY, m_nComprOrgY));
+        poObjBlock->WriteInt16(TABInt16Diff(m_nMaxX, m_nComprOrgX));
+        poObjBlock->WriteInt16(TABInt16Diff(m_nMaxY, m_nComprOrgY));
     }
     else
     {

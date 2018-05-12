@@ -30,25 +30,27 @@
 
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 
 ###############################################################################
 # Test a fake - and certainly incorrect - FUJIBAS dataset
 
+
 def fujibas_1():
 
-    tst = gdaltest.GDALTest( 'FujiBAS', 'fakefujibas.pcb', 1, 1 )
+    tst = gdaltest.GDALTest('FujiBAS', 'fakefujibas.pcb', 1, 1)
     return tst.testOpen()
 
+
 gdaltest_list = [
-    fujibas_1 ]
+    fujibas_1]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'fujibas' )
+    gdaltest.setup_run('fujibas')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

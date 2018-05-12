@@ -30,7 +30,7 @@
 
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 from osgeo import osr
@@ -40,6 +40,7 @@ import re
 ###############################################################################
 # Test the osr.SpatialReference.ImportFromXML() function.
 #
+
 
 def osr_xml_1():
 
@@ -190,6 +191,7 @@ def osr_xml_1():
 # Test the osr.SpatialReference.ExportToXML() function.
 #
 
+
 def osr_xml_2():
 
     srs = osr.SpatialReference()
@@ -200,8 +202,8 @@ def osr_xml_2():
     got = srs.ExportToXML()
 
     # Strip the gml:id tags
-    got = re.sub(r' gml:id="[^"]*"', '', got, 0 )
-    expected = re.sub(r' gml:id="[^"]*"', '', expected, 0 )
+    got = re.sub(r' gml:id="[^"]*"', '', got, 0)
+    expected = re.sub(r' gml:id="[^"]*"', '', expected, 0)
 
     if got != expected:
         print(got)
@@ -209,15 +211,15 @@ def osr_xml_2():
 
     return 'success'
 
+
 gdaltest_list = [
     osr_xml_1,
-    osr_xml_2 ]
+    osr_xml_2]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'osr_xml' )
+    gdaltest.setup_run('osr_xml')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

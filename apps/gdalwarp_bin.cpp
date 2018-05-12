@@ -30,10 +30,13 @@
 
 #include "cpl_string.h"
 #include "cpl_error.h"
+#include "gdal_version.h"
 #include "commonutils.h"
 #include "gdal_utils_priv.h"
 
-CPL_CVSID("$Id$");
+#include <vector>
+
+CPL_CVSID("$Id$")
 
 /******************************************************************************/
 /*! \page gdalwarp gdalwarp
@@ -48,7 +51,7 @@ Usage:
 
 \verbatim
 gdalwarp [--help-general] [--formats]
-    [-s_srs srs_def] [-t_srs srs_def] [-to "NAME=VALUE"] [-novshiftgrid]
+    [-s_srs srs_def] [-t_srs srs_def] [-to "NAME=VALUE"]* [-novshiftgrid]
     [-order n | -tps | -rpc | -geoloc] [-et err_threshold]
     [-refine_gcps tolerance [minimum_gcps]]
     [-te xmin ymin xmax ymax] [-te_srs srs_def]
@@ -186,8 +189,10 @@ nodata (unset/transparent) pixels. </dd>
 <dt> <b>-wm</b> <em>memory_in_mb</em>:</dt><dd> Set the amount of memory (in
 megabytes) that the warp API is allowed to use for caching.</dd>
 <dt> <b>-multi</b>:</dt><dd> Use multithreaded warping implementation.
-Multiple threads will be used to process chunks of image and perform
-input/output operation simultaneously.</dd>
+Two threads will be used to process chunks of image and perform
+input/output operation simultaneously. Note that computation is not
+multithreaded itself. To do that, you can use the -wo NUM_THREADS=val/ALL_CPUS
+option, which can be combined with -multi</dd>
 <dt> <b>-q</b>:</dt><dd> Be quiet.</dd>
 <dt> <b>-of</b> <em>format</em>:</dt><dd> Select the output format. The default is GeoTIFF (GTiff). Use the short format name. </dd>
 <dt> <b>-co</b> <em>"NAME=VALUE"</em>:</dt><dd> passes a creation option to
@@ -268,7 +273,7 @@ id,WKT
 - (GDAL &gt;= 2.2) To transform a DEM from geoid elevations (using EGM96) to WGS84 ellipsoidal heights:<p>
 
 \verbatim
-gdalwarp -override in_dem.tif out_dem.tif -s_srs EPSG:4326+5773 -t_srs EPSG:4979
+gdalwarp -overwrite in_dem.tif out_dem.tif -s_srs EPSG:4326+5773 -t_srs EPSG:4979
 \endverbatim
 
 <p>
@@ -299,11 +304,11 @@ Frank Warmerdam <warmerdam@pobox.com>, Silke Reimer <silke@intevation.de>
 
 static int GDALExit( int nCode )
 {
-  const char  *pszDebug = CPLGetConfigOption("CPL_DEBUG",NULL);
+  const char  *pszDebug = CPLGetConfigOption("CPL_DEBUG",nullptr);
   if( pszDebug && (EQUAL(pszDebug,"ON") || EQUAL(pszDebug,"") ) )
   {
     GDALDumpOpenDatasets( stderr );
-    CPLDumpSharedList( NULL );
+    CPLDumpSharedList( nullptr );
   }
 
   GDALDestroyDriverManager();
@@ -317,12 +322,12 @@ static int GDALExit( int nCode )
 /*                               Usage()                                */
 /************************************************************************/
 
-static void Usage(const char* pszErrorMsg = NULL)
+static void Usage(const char* pszErrorMsg = nullptr)
 
 {
     printf(
         "Usage: gdalwarp [--help-general] [--formats]\n"
-        "    [-s_srs srs_def] [-t_srs srs_def] [-to \"NAME=VALUE\"] [-novshiftgrid]\n"
+        "    [-s_srs srs_def] [-t_srs srs_def] [-to \"NAME=VALUE\"]* [-novshiftgrid]\n"
         "    [-order n | -tps | -rpc | -geoloc] [-et err_threshold]\n"
         "    [-refine_gcps tolerance [minimum_gcps]]\n"
         "    [-te xmin ymin xmax ymax] [-tr xres yres] [-tap] [-ts width height]\n"
@@ -339,7 +344,7 @@ static void Usage(const char* pszErrorMsg = NULL)
         "Available resampling methods:\n"
         "    near (default), bilinear, cubic, cubicspline, lanczos, average, mode,  max, min, med, Q1, Q3.\n" );
 
-    if( pszErrorMsg != NULL )
+    if( pszErrorMsg != nullptr )
         fprintf(stderr, "\nFAILURE: %s\n", pszErrorMsg);
 
     GDALExit( 1 );
@@ -351,7 +356,7 @@ static void Usage(const char* pszErrorMsg = NULL)
 
 static GDALWarpAppOptionsForBinary *GDALWarpAppOptionsForBinaryNew(void)
 {
-    return (GDALWarpAppOptionsForBinary*) CPLCalloc(  1, sizeof(GDALWarpAppOptionsForBinary) );
+    return static_cast<GDALWarpAppOptionsForBinary*>(CPLCalloc(  1, sizeof(GDALWarpAppOptionsForBinary) ));
 }
 
 /************************************************************************/
@@ -366,19 +371,64 @@ static void GDALWarpAppOptionsForBinaryFree( GDALWarpAppOptionsForBinary* psOpti
         CPLFree(psOptionsForBinary->pszDstFilename);
         CSLDestroy(psOptionsForBinary->papszOpenOptions);
         CSLDestroy(psOptionsForBinary->papszDestOpenOptions);
-        CPLFree(psOptionsForBinary->pszFormat);
         CPLFree(psOptionsForBinary);
     }
+}
+
+/************************************************************************/
+/*                          WarpTermProgress()                          */
+/************************************************************************/
+
+static int gnSrcCount = 0;
+
+static int CPL_STDCALL WarpTermProgress( double dfProgress,
+                                         const char * pszMessage,
+                                         void*)
+{
+    static CPLString osLastMsg;
+    static int iSrc = -1;
+    if( pszMessage != osLastMsg )
+    {
+        printf("%s : ", pszMessage);
+        osLastMsg = pszMessage;
+        iSrc ++;
+    }
+    return GDALTermProgress(dfProgress * gnSrcCount - iSrc, nullptr, nullptr);
+}
+
+/************************************************************************/
+/*                      ErrorHandlerAccumulator()                       */
+/************************************************************************/
+
+class ErrorStruct
+{
+  public:
+    CPLErr type;
+    CPLErrorNum no;
+    CPLString msg;
+
+    ErrorStruct() : type(CE_None), no(CPLE_None) {}
+    ErrorStruct(CPLErr eErrIn, CPLErrorNum noIn, const char* msgIn) :
+        type(eErrIn), no(noIn), msg(msgIn) {}
+};
+
+static void CPL_STDCALL ErrorHandlerAccumulator( CPLErr eErr, CPLErrorNum no,
+                                                 const char* msg )
+{
+    std::vector<ErrorStruct>* paoErrors =
+        static_cast<std::vector<ErrorStruct> *>(
+            CPLGetErrorHandlerUserData());
+    paoErrors->push_back(ErrorStruct(eErr, no, msg));
 }
 
 /************************************************************************/
 /*                                main()                                */
 /************************************************************************/
 
-int main( int argc, char ** argv )
+MAIN_START(argc, argv)
 
 {
-    GDALDatasetH *pahSrcDS = NULL;
+    GDALDatasetH *pahSrcDS = nullptr;
     int nSrcCount = 0;
 
     EarlySetConfigOptions(argc, argv);
@@ -392,7 +442,7 @@ int main( int argc, char ** argv )
     if( argc < 1 )
         GDALExit( -argc );
 
-    for( int i = 0; argv != NULL && argv[i] != NULL; i++ )
+    for( int i = 0; argv != nullptr && argv[i] != nullptr; i++ )
     {
         if( EQUAL(argv[i], "--utility_version") )
         {
@@ -403,7 +453,7 @@ int main( int argc, char ** argv )
         }
         else if( EQUAL(argv[i],"--help") )
         {
-            Usage(NULL);
+            Usage(nullptr);
         }
     }
 
@@ -415,7 +465,7 @@ int main( int argc, char ** argv )
 /*      And some datasets may need 2 file descriptors, so divide by 2   */
 /*      for security.                                                   */
 /* -------------------------------------------------------------------- */
-    if( CPLGetConfigOption("GDAL_MAX_DATASET_POOL_SIZE", NULL) == NULL )
+    if( CPLGetConfigOption("GDAL_MAX_DATASET_POOL_SIZE", nullptr) == nullptr )
     {
 #if defined(__MACH__) && defined(__APPLE__)
         // On Mach, the default limit is 256 files per process
@@ -431,12 +481,12 @@ int main( int argc, char ** argv )
     GDALWarpAppOptions *psOptions = GDALWarpAppOptionsNew(argv + 1, psOptionsForBinary);
     CSLDestroy( argv );
 
-    if( psOptions == NULL )
+    if( psOptions == nullptr )
     {
-        Usage(NULL);
+        Usage(nullptr);
     }
 
-    if( psOptionsForBinary->pszDstFilename == NULL )
+    if( psOptionsForBinary->pszDstFilename == nullptr )
     {
         Usage("No target filename specified.");
     }
@@ -452,14 +502,14 @@ int main( int argc, char ** argv )
 /* -------------------------------------------------------------------- */
 /*      Open Source files.                                              */
 /* -------------------------------------------------------------------- */
-    for(int i = 0; psOptionsForBinary->papszSrcFiles[i] != NULL; i++)
+    for(int i = 0; psOptionsForBinary->papszSrcFiles[i] != nullptr; i++)
     {
         nSrcCount++;
-        pahSrcDS = (GDALDatasetH *) CPLRealloc(pahSrcDS, sizeof(GDALDatasetH) * nSrcCount);
-        pahSrcDS[nSrcCount-1] = GDALOpenEx( psOptionsForBinary->papszSrcFiles[i], GDAL_OF_RASTER | GDAL_OF_VERBOSE_ERROR, NULL,
-                                            (const char* const* )psOptionsForBinary->papszOpenOptions, NULL );
+        pahSrcDS = static_cast<GDALDatasetH *>(CPLRealloc(pahSrcDS, sizeof(GDALDatasetH) * nSrcCount));
+        pahSrcDS[nSrcCount-1] = GDALOpenEx( psOptionsForBinary->papszSrcFiles[i], GDAL_OF_RASTER | GDAL_OF_VERBOSE_ERROR, nullptr,
+                                            psOptionsForBinary->papszOpenOptions, nullptr );
 
-        if( pahSrcDS[nSrcCount-1] == NULL )
+        if( pahSrcDS[nSrcCount-1] == nullptr )
             GDALExit(2);
     }
 
@@ -489,26 +539,35 @@ int main( int argc, char ** argv )
     }
 #endif
 
-    GDALDatasetH hDstDS = NULL;
+    GDALDatasetH hDstDS = nullptr;
     if( bOutStreaming )
     {
         GDALWarpAppOptionsSetWarpOption(psOptions, "STREAMABLE_OUTPUT", "YES");
     }
     else
     {
-        CPLPushErrorHandler( CPLQuietErrorHandler );
+        std::vector<ErrorStruct> aoErrors;
+        CPLPushErrorHandlerEx( ErrorHandlerAccumulator, &aoErrors );
         hDstDS = GDALOpenEx( psOptionsForBinary->pszDstFilename, GDAL_OF_RASTER | GDAL_OF_VERBOSE_ERROR | GDAL_OF_UPDATE,
-                             NULL, psOptionsForBinary->papszDestOpenOptions, NULL );
+                             nullptr, psOptionsForBinary->papszDestOpenOptions, nullptr );
         CPLPopErrorHandler();
+        if( hDstDS != nullptr )
+        {
+            for( size_t i = 0; i < aoErrors.size(); i++ )
+            {
+                CPLError( aoErrors[i].type, aoErrors[i].no, "%s",
+                          aoErrors[i].msg.c_str());
+            }
+        }
     }
 
-    if( hDstDS != NULL && psOptionsForBinary->bOverwrite )
+    if( hDstDS != nullptr && psOptionsForBinary->bOverwrite )
     {
         GDALClose(hDstDS);
-        hDstDS = NULL;
+        hDstDS = nullptr;
     }
 
-    if( hDstDS != NULL && psOptionsForBinary->bCreateOutput )
+    if( hDstDS != nullptr && psOptionsForBinary->bCreateOutput )
     {
         CPLError( CE_Failure, CPLE_AppDefined,
                  "Output dataset %s exists,\n"
@@ -520,7 +579,7 @@ int main( int argc, char ** argv )
 
     /* Avoid overwriting an existing destination file that cannot be opened in */
     /* update mode with a new GTiff file */
-    if ( !bOutStreaming && hDstDS == NULL && !psOptionsForBinary->bOverwrite )
+    if ( !bOutStreaming && hDstDS == nullptr && !psOptionsForBinary->bOverwrite )
     {
         CPLPushErrorHandler( CPLQuietErrorHandler );
         hDstDS = GDALOpen( psOptionsForBinary->pszDstFilename, GA_ReadOnly );
@@ -538,11 +597,10 @@ int main( int argc, char ** argv )
 
     if( !(psOptionsForBinary->bQuiet) )
     {
-        GDALWarpAppOptionsSetProgress(psOptions, GDALTermProgress, NULL);
+        gnSrcCount = nSrcCount;
+        GDALWarpAppOptionsSetProgress(psOptions, WarpTermProgress, nullptr);
+        GDALWarpAppOptionsSetQuiet(psOptions, false);
     }
-
-    if (hDstDS == NULL && !psOptionsForBinary->bQuiet && !psOptionsForBinary->bFormatExplicitlySet)
-        CheckExtensionConsistency(psOptionsForBinary->pszDstFilename, psOptionsForBinary->pszFormat);
 
     int bUsageError = FALSE;
     GDALDatasetH hOutDS = GDALWarp(psOptionsForBinary->pszDstFilename, hDstDS,
@@ -570,3 +628,4 @@ int main( int argc, char ** argv )
 
     return nRetCode;
 }
+MAIN_END

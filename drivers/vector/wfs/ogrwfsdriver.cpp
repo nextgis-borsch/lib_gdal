@@ -31,7 +31,7 @@
 
 // g++ -fPIC -g -Wall ogr/ogrsf_frmts/wfs/*.cpp -shared -o ogr_WFS.so -Iport -Igcore -Iogr -Iogr/ogrsf_frmts -Iogr/ogrsf_frmts/gml -Iogr/ogrsf_frmts/wfs -L. -lgdal
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 extern "C" void RegisterOGRWFS();
 
@@ -44,11 +44,11 @@ static int OGRWFSDriverIdentify( GDALOpenInfo* poOpenInfo )
 {
     if( !STARTS_WITH_CI(poOpenInfo->pszFilename, "WFS:") )
     {
-        if( poOpenInfo->fpL == NULL )
+        if( poOpenInfo->fpL == nullptr )
             return FALSE;
         if( !STARTS_WITH_CI((const char*)poOpenInfo->pabyHeader, "<OGRWFSDataSource>") &&
-            strstr((const char*)poOpenInfo->pabyHeader,"<WFS_Capabilities") == NULL &&
-            strstr((const char*)poOpenInfo->pabyHeader,"<wfs:WFS_Capabilities") == NULL)
+            strstr((const char*)poOpenInfo->pabyHeader,"<WFS_Capabilities") == nullptr &&
+            strstr((const char*)poOpenInfo->pabyHeader,"<wfs:WFS_Capabilities") == nullptr)
         {
             return FALSE;
         }
@@ -64,7 +64,7 @@ static GDALDataset *OGRWFSDriverOpen( GDALOpenInfo* poOpenInfo )
 
 {
     if( !OGRWFSDriverIdentify(poOpenInfo) )
-        return NULL;
+        return nullptr;
 
     OGRWFSDataSource   *poDS = new OGRWFSDataSource();
 
@@ -73,7 +73,7 @@ static GDALDataset *OGRWFSDriverOpen( GDALOpenInfo* poOpenInfo )
                      poOpenInfo->papszOpenOptions ) )
     {
         delete poDS;
-        poDS = NULL;
+        poDS = nullptr;
     }
 
     return poDS;
@@ -86,7 +86,7 @@ static GDALDataset *OGRWFSDriverOpen( GDALOpenInfo* poOpenInfo )
 void RegisterOGRWFS()
 
 {
-    if( GDALGetDriverByName( "WFS" ) != NULL )
+    if( GDALGetDriverByName( "WFS" ) != nullptr )
         return;
 
     GDALDriver *poDriver = new GDALDriver();

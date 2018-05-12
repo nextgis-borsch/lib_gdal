@@ -39,7 +39,7 @@ from osgeo import gdal
 from osgeo import ogr
 from osgeo import osr
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 
@@ -52,6 +52,7 @@ import test_cli_utilities
 ###############################################################################
 # Get netcdf version and test for supported files
 
+
 def netcdf_setup():
 
     gdaltest.netcdf_drv_version = 'unknown'
@@ -60,23 +61,23 @@ def netcdf_setup():
     gdaltest.netcdf_drv_has_hdf4 = False
     gdaltest.netcdf_drv_silent = False
 
-    gdaltest.netcdf_drv = gdal.GetDriverByName( 'NETCDF' )
+    gdaltest.netcdf_drv = gdal.GetDriverByName('NETCDF')
 
     if gdaltest.netcdf_drv is None:
         print('NOTICE: netcdf not supported, skipping checks')
         return 'skip'
 
-    #get capabilities from driver
+    # get capabilities from driver
     metadata = gdaltest.netcdf_drv.GetMetadata()
     if metadata is None:
         print('NOTICE: netcdf metadata not found, skipping checks')
         return 'skip'
 
-    #netcdf library version "3.6.3" of Dec 22 2009 06:10:17 $
-    #netcdf library version 4.1.1 of Mar  4 2011 12:52:19 $
+    # netcdf library version "3.6.3" of Dec 22 2009 06:10:17 $
+    # netcdf library version 4.1.1 of Mar  4 2011 12:52:19 $
     if 'NETCDF_VERSION' in metadata:
         v = metadata['NETCDF_VERSION']
-        v = v[ 0 : v.find(' ') ].strip('"')
+        v = v[0: v.find(' ')].strip('"')
         gdaltest.netcdf_drv_version = v
 
     if 'NETCDF_HAS_NC2' in metadata \
@@ -91,62 +92,68 @@ def netcdf_setup():
        and metadata['NETCDF_HAS_HDF4'] == 'YES':
         gdaltest.netcdf_drv_has_hdf4 = True
 
-    print( 'NOTICE: using netcdf version ' + gdaltest.netcdf_drv_version + \
-               '  has_nc2: '+str(gdaltest.netcdf_drv_has_nc2)+'  has_nc4: ' + \
-               str(gdaltest.netcdf_drv_has_nc4) )
+    print('NOTICE: using netcdf version ' + gdaltest.netcdf_drv_version +
+          '  has_nc2: ' + str(gdaltest.netcdf_drv_has_nc2) + '  has_nc4: ' +
+          str(gdaltest.netcdf_drv_has_nc4))
 
     return 'success'
 
 ###############################################################################
 # test file copy
 # helper function needed so we can call Process() on it from netcdf_test_copy_timeout()
-def netcdf_test_copy( ifile, band, checksum, ofile, opts=[], driver='NETCDF' ):
-    test = gdaltest.GDALTest( 'NETCDF', '../'+ifile, band, checksum, options=opts )
-    return test.testCreateCopy(check_gt=0, check_srs=0, new_filename=ofile, delete_copy = 0, check_minmax = 0)
+
+
+def netcdf_test_copy(ifile, band, checksum, ofile, opts=[], driver='NETCDF'):
+    test = gdaltest.GDALTest('NETCDF', '../' + ifile, band, checksum, options=opts)
+    return test.testCreateCopy(check_gt=0, check_srs=0, new_filename=ofile, delete_copy=0, check_minmax=0)
 
 ###############################################################################
-#test file copy, optional timeout arg
-def netcdf_test_copy_timeout( ifile, band, checksum, ofile, opts=[], driver='NETCDF', timeout=None ):
+# test file copy, optional timeout arg
+
+
+def netcdf_test_copy_timeout(ifile, band, checksum, ofile, opts=[], driver='NETCDF', timeout=None):
 
     from multiprocessing import Process
 
     result = 'success'
 
-    drv = gdal.GetDriverByName( driver )
+    drv = gdal.GetDriverByName(driver)
 
-    if os.path.exists( ofile ):
-        drv.Delete( ofile )
+    if os.path.exists(ofile):
+        drv.Delete(ofile)
 
     if timeout is None:
-        result = netcdf_test_copy( ifile, band, checksum, ofile, opts, driver )
+        result = netcdf_test_copy(ifile, band, checksum, ofile, opts, driver)
 
     else:
         sys.stdout.write('.')
         sys.stdout.flush()
 
-        proc = Process( target=netcdf_test_copy, args=(ifile, band, checksum, ofile, opts ) )
+        proc = Process(target=netcdf_test_copy, args=(ifile, band, checksum, ofile, opts))
         proc.start()
-        proc.join( timeout )
+        proc.join(timeout)
 
         # if proc is alive after timeout we must terminate it, and return fail
         # valgrind detects memory leaks when this occurs (although it should never happen)
         if proc.is_alive():
             proc.terminate()
-            if os.path.exists( ofile ):
-                drv.Delete( ofile )
-            print('testCreateCopy() for file %s has reached timeout limit of %d seconds' % (ofile, timeout) )
+            if os.path.exists(ofile):
+                drv.Delete(ofile)
+            print('testCreateCopy() for file %s has reached timeout limit of %d seconds' % (ofile, timeout))
             result = 'fail'
 
     return result
 
 ###############################################################################
-#check support for DEFLATE compression, requires HDF5 and zlib
-def netcdf_test_deflate( ifile, checksum, zlevel=1, timeout=None ):
+# check support for DEFLATE compression, requires HDF5 and zlib
+
+
+def netcdf_test_deflate(ifile, checksum, zlevel=1, timeout=None):
 
     try:
         from multiprocessing import Process
         Process.is_alive
-    except:
+    except (ImportError, AttributeError):
         print('from multiprocessing import Process failed')
         return 'skip'
 
@@ -157,74 +164,75 @@ def netcdf_test_deflate( ifile, checksum, zlevel=1, timeout=None ):
         return 'skip'
 
     ofile1 = 'tmp/' + os.path.basename(ifile) + '-1.nc'
-    ofile1_opts = [ 'FORMAT=NC4C', 'COMPRESS=NONE']
+    ofile1_opts = ['FORMAT=NC4C', 'COMPRESS=NONE']
     ofile2 = 'tmp/' + os.path.basename(ifile) + '-2.nc'
-    ofile2_opts = [ 'FORMAT=NC4C', 'COMPRESS=DEFLATE', 'ZLEVEL='+str(zlevel) ]
+    ofile2_opts = ['FORMAT=NC4C', 'COMPRESS=DEFLATE', 'ZLEVEL=' + str(zlevel)]
 
-    if not os.path.exists( ifile ):
-        gdaltest.post_reason( 'ifile %s does not exist' % ifile )
+    if not os.path.exists(ifile):
+        gdaltest.post_reason('ifile %s does not exist' % ifile)
         return 'fail'
 
-    result1 = netcdf_test_copy_timeout( ifile, 1, checksum, ofile1, ofile1_opts, 'NETCDF', timeout )
+    result1 = netcdf_test_copy_timeout(ifile, 1, checksum, ofile1, ofile1_opts, 'NETCDF', timeout)
 
-    result2 = netcdf_test_copy_timeout( ifile, 1, checksum, ofile2, ofile2_opts, 'NETCDF', timeout )
+    result2 = netcdf_test_copy_timeout(ifile, 1, checksum, ofile2, ofile2_opts, 'NETCDF', timeout)
 
     if result1 == 'fail' or result2 == 'fail':
         return 'fail'
 
     # make sure compressed file is smaller than uncompressed files
     try:
-        size1 = os.path.getsize( ofile1 )
-        size2 = os.path.getsize( ofile2 )
-    except:
-        gdaltest.post_reason( 'Error getting file sizes.' )
+        size1 = os.path.getsize(ofile1)
+        size2 = os.path.getsize(ofile2)
+    except OSError:
+        gdaltest.post_reason('Error getting file sizes.')
         return 'fail'
 
-    if  size2 >= size1:
-        gdaltest.post_reason( 'Compressed file is not smaller than reference, check your netcdf-4, HDF5 and zlib installation' )
+    if size2 >= size1:
+        gdaltest.post_reason('Compressed file is not smaller than reference, check your netcdf-4, HDF5 and zlib installation')
         return 'fail'
 
     return 'success'
 
 ###############################################################################
 # check support for reading attributes (single values and array values)
-def netcdf_check_vars( ifile, vals_global=None, vals_band=None ):
 
-    src_ds = gdal.Open( ifile )
+
+def netcdf_check_vars(ifile, vals_global=None, vals_band=None):
+
+    src_ds = gdal.Open(ifile)
 
     if src_ds is None:
-        gdaltest.post_reason( 'could not open dataset ' + ifile )
+        gdaltest.post_reason('could not open dataset ' + ifile)
         return 'fail'
 
     metadata_global = src_ds.GetMetadata()
     if metadata_global is None:
-        gdaltest.post_reason( 'could not get global metadata from ' + ifile )
+        gdaltest.post_reason('could not get global metadata from ' + ifile)
         return 'fail'
 
     missval = src_ds.GetRasterBand(1).GetNoDataValue()
     if missval != 1:
-        gdaltest.post_reason( 'got invalid nodata value %s for Band' % str(missval) )
+        gdaltest.post_reason('got invalid nodata value %s for Band' % str(missval))
         return 'fail'
 
     metadata_band = src_ds.GetRasterBand(1).GetMetadata()
     if metadata_band is None:
-        gdaltest.post_reason( 'could not get Band metadata' )
+        gdaltest.post_reason('could not get Band metadata')
         return 'fail'
-
 
     metadata = metadata_global
     vals = vals_global
     if vals is None:
         vals = dict()
     for k, v in vals.items():
-        if not k in metadata:
+        if k not in metadata:
             gdaltest.post_reason("missing metadata [%s]" % (str(k)))
             return 'fail'
         # strip { and } as new driver uses these for array values
         mk = metadata[k].lstrip('{ ').rstrip('} ')
         if mk != v:
-            gdaltest.post_reason("invalid value [%s] for metadata [%s]=[%s]" \
-                                     % (str(mk),str(k),str(v)))
+            gdaltest.post_reason("invalid value [%s] for metadata [%s]=[%s]"
+                                 % (str(mk), str(k), str(v)))
             return 'fail'
 
     metadata = metadata_band
@@ -232,14 +240,14 @@ def netcdf_check_vars( ifile, vals_global=None, vals_band=None ):
     if vals is None:
         vals = dict()
     for k, v in vals.items():
-        if not k in metadata:
+        if k not in metadata:
             gdaltest.post_reason("missing metadata [%s]" % (str(k)))
             return 'fail'
         # strip { and } as new driver uses these for array values
         mk = metadata[k].lstrip('{ ').rstrip('} ')
         if mk != v:
-            gdaltest.post_reason("invalid value [%s] for metadata [%s]=[%s]" \
-                                     % (str(mk),str(k),str(v)))
+            gdaltest.post_reason("invalid value [%s] for metadata [%s]=[%s]"
+                                 % (str(mk), str(k), str(v)))
             return 'fail'
 
     return 'success'
@@ -254,18 +262,18 @@ def netcdf_check_vars( ifile, vals_global=None, vals_band=None ):
 
 def netcdf_1():
 
-    #setup netcdf environment
+    # setup netcdf environment
     netcdf_setup()
 
     if gdaltest.netcdf_drv is None:
         return 'skip'
 
-    tst = gdaltest.GDALTest( 'NetCDF', 'NETCDF:"data/bug636.nc":tas', 1, 31621,
-                             filename_absolute = 1 )
+    tst = gdaltest.GDALTest('NetCDF', 'NETCDF:"data/bug636.nc":tas', 1, 31621,
+                            filename_absolute=1)
 
     # We don't want to gum up the test stream output with the
     # 'Warning 1: No UNIDATA NC_GLOBAL:Conventions attribute' message.
-    gdal.PushErrorHandler( 'CPLQuietErrorHandler' )
+    gdal.PushErrorHandler('CPLQuietErrorHandler')
     result = tst.testOpen()
     gdal.PopErrorHandler()
 
@@ -275,18 +283,19 @@ def netcdf_1():
 # Verify a simple createcopy operation.  We can't do the trivial gdaltest
 # operation because the new file will only be accessible via subdatasets.
 
+
 def netcdf_2():
 
     if gdaltest.netcdf_drv is None:
         return 'skip'
 
-    src_ds = gdal.Open( 'data/byte.tif' )
+    src_ds = gdal.Open('data/byte.tif')
 
-    gdaltest.netcdf_drv.CreateCopy( 'tmp/netcdf2.nc', src_ds)
+    gdaltest.netcdf_drv.CreateCopy('tmp/netcdf2.nc', src_ds)
 
-    tst = gdaltest.GDALTest( 'NetCDF', 'tmp/netcdf2.nc',
-                             1, 4672,
-                             filename_absolute = 1 )
+    tst = gdaltest.GDALTest('NetCDF', 'tmp/netcdf2.nc',
+                            1, 4672,
+                            filename_absolute=1)
 
     wkt = """PROJCS["NAD27 / UTM zone 11N",
     GEOGCS["NAD27",
@@ -307,14 +316,14 @@ def netcdf_2():
         AUTHORITY["EPSG","9001"]],
     AUTHORITY["EPSG","26711"]]"""
 
-    result = tst.testOpen( check_prj = wkt )
+    result = tst.testOpen(check_prj=wkt)
 
     if result != 'success':
         return result
 
     # Test that in raster-only mode, update isn't supported (not sure what would be missing for that...)
     with gdaltest.error_handler():
-        ds = gdal.Open( 'tmp/netcdf2.nc', gdal.GA_Update )
+        ds = gdal.Open('tmp/netcdf2.nc', gdal.GA_Update)
     if ds is not None:
         gdaltest.post_reason('fail')
         return 'fail'
@@ -325,17 +334,18 @@ def netcdf_2():
 
 ###############################################################################
 
+
 def netcdf_3():
 
     if gdaltest.netcdf_drv is None:
         return 'skip'
 
-    ds = gdal.Open( 'data/sombrero.grd' )
+    ds = gdal.Open('data/sombrero.grd')
     bnd = ds.GetRasterBand(1)
     minmax = bnd.ComputeRasterMinMax()
 
     if abs(minmax[0] - (-0.675758)) > 0.000001 or abs(minmax[1] - 1.0) > 0.000001:
-        gdaltest.post_reason( 'Wrong min or max.' )
+        gdaltest.post_reason('Wrong min or max.')
         return 'fail'
 
     bnd = None
@@ -346,20 +356,21 @@ def netcdf_3():
 ###############################################################################
 # In #2582 5dimensional files were causing problems.  Verify use ok.
 
+
 def netcdf_4():
 
     if gdaltest.netcdf_drv is None:
         return 'skip'
 
-    tst = gdaltest.GDALTest( 'NetCDF',
-                             'NETCDF:data/foo_5dimensional.nc:temperature',
-                             3, 1218, filename_absolute = 1 )
+    tst = gdaltest.GDALTest('NetCDF',
+                            'NETCDF:data/foo_5dimensional.nc:temperature',
+                            3, 1218, filename_absolute=1)
 
     # We don't want to gum up the test stream output with the
     # 'Warning 1: No UNIDATA NC_GLOBAL:Conventions attribute' message.
-    gdal.PushErrorHandler( 'CPLQuietErrorHandler' )
-    #don't test for checksum (see bug #4284)
-    result = tst.testOpen(skip_checksum = True)
+    gdal.PushErrorHandler('CPLQuietErrorHandler')
+    # don't test for checksum (see bug #4284)
+    result = tst.testOpen(skip_checksum=True)
     gdal.PopErrorHandler()
 
     return result
@@ -368,42 +379,45 @@ def netcdf_4():
 # In #2583 5dimensional files were having problems unrolling the highest
 # dimension - check handling now on band 7.
 
+
 def netcdf_5():
 
     if gdaltest.netcdf_drv is None:
         return 'skip'
 
-    tst = gdaltest.GDALTest( 'NetCDF',
-                             'NETCDF:data/foo_5dimensional.nc:temperature',
-                             7, 1227, filename_absolute = 1 )
+    tst = gdaltest.GDALTest('NetCDF',
+                            'NETCDF:data/foo_5dimensional.nc:temperature',
+                            7, 1227, filename_absolute=1)
 
     # We don't want to gum up the test stream output with the
     # 'Warning 1: No UNIDATA NC_GLOBAL:Conventions attribute' message.
-    gdal.PushErrorHandler( 'CPLQuietErrorHandler' )
-    #don't test for checksum (see bug #4284)
-    result = tst.testOpen(skip_checksum = True)
+    gdal.PushErrorHandler('CPLQuietErrorHandler')
+    # don't test for checksum (see bug #4284)
+    result = tst.testOpen(skip_checksum=True)
     gdal.PopErrorHandler()
 
     return result
 
 ###############################################################################
-#ticket #3324 check spatial reference reading for cf-1.4 lambert conformal
-#1 standard parallel.
+# ticket #3324 check spatial reference reading for cf-1.4 lambert conformal
+# 1 standard parallel.
+
+
 def netcdf_6():
 
     if gdaltest.netcdf_drv is None:
         return 'skip'
 
-    ds = gdal.Open( 'data/cf_lcc1sp.nc' )
-    prj = ds.GetProjection( )
+    ds = gdal.Open('data/cf_lcc1sp.nc')
+    prj = ds.GetProjection()
 
-    sr = osr.SpatialReference( )
-    sr.ImportFromWkt( prj )
-    lat_origin = sr.GetProjParm( 'latitude_of_origin' )
+    sr = osr.SpatialReference()
+    sr.ImportFromWkt(prj)
+    lat_origin = sr.GetProjParm('latitude_of_origin')
 
     if lat_origin != 25:
-        gdaltest.post_reason( 'Latitude of origin does not match expected:\n%f'
-                              % lat_origin )
+        gdaltest.post_reason('Latitude of origin does not match expected:\n%f'
+                             % lat_origin)
         return 'fail'
 
     ds = None
@@ -411,24 +425,26 @@ def netcdf_6():
     return 'success'
 
 ###############################################################################
-#ticket #3324 check spatial reference reading for cf-1.4 lambert conformal
-#2 standard parallels.
+# ticket #3324 check spatial reference reading for cf-1.4 lambert conformal
+# 2 standard parallels.
+
+
 def netcdf_7():
 
     if gdaltest.netcdf_drv is None:
         return 'skip'
 
-    ds = gdal.Open( 'data/cf_lcc2sp.nc' )
-    prj = ds.GetProjection( )
+    ds = gdal.Open('data/cf_lcc2sp.nc')
+    prj = ds.GetProjection()
 
-    sr = osr.SpatialReference( )
-    sr.ImportFromWkt( prj )
-    std_p1 = sr.GetProjParm( 'standard_parallel_1' )
-    std_p2 = sr.GetProjParm( 'standard_parallel_2' )
+    sr = osr.SpatialReference()
+    sr.ImportFromWkt(prj)
+    std_p1 = sr.GetProjParm('standard_parallel_1')
+    std_p2 = sr.GetProjParm('standard_parallel_2')
 
     if std_p1 != 33.0 or std_p2 != 45.0:
-        gdaltest.post_reason( 'Standard Parallels do not match expected:\n%f,%f'
-                              % ( std_p1, std_p2 ) )
+        gdaltest.post_reason('Standard Parallels do not match expected:\n%f,%f'
+                             % (std_p1, std_p2))
         return 'fail'
 
     ds = None
@@ -437,32 +453,34 @@ def netcdf_7():
     return 'success'
 
 ###############################################################################
-#check for cf convention read of albers equal area
+# check for cf convention read of albers equal area
 # Previous version compared entire wkt, which varies slightly among driver versions
 # now just look for PROJECTION=Albers_Conic_Equal_Area and some parameters
+
+
 def netcdf_8():
 
     if gdaltest.netcdf_drv is None:
         return 'skip'
 
-    ds = gdal.Open( 'data/cf_aea2sp_invf.nc' )
+    ds = gdal.Open('data/cf_aea2sp_invf.nc')
 
-    srs = osr.SpatialReference( )
-    srs.ImportFromWkt( ds.GetProjection( ) )
+    srs = osr.SpatialReference()
+    srs.ImportFromWkt(ds.GetProjection())
 
-    proj = srs.GetAttrValue( 'PROJECTION' )
-    if  proj != 'Albers_Conic_Equal_Area':
-        gdaltest.post_reason( 'Projection does not match expected : ' + proj )
+    proj = srs.GetAttrValue('PROJECTION')
+    if proj != 'Albers_Conic_Equal_Area':
+        gdaltest.post_reason('Projection does not match expected : ' + proj)
         return 'fail'
 
     param = srs.GetProjParm('latitude_of_center')
     if param != 37.5:
-        gdaltest.post_reason( 'Got wrong parameter value (%g)' % param )
+        gdaltest.post_reason('Got wrong parameter value (%g)' % param)
         return 'fail'
 
     param = srs.GetProjParm('longitude_of_center')
     if param != -96:
-        gdaltest.post_reason( 'Got wrong parameter value (%g)' % param )
+        gdaltest.post_reason('Got wrong parameter value (%g)' % param)
         return 'fail'
 
     ds = None
@@ -470,23 +488,25 @@ def netcdf_8():
     return 'success'
 
 ###############################################################################
-#check to see if projected systems default to wgs84 if no spheroid def
+# check to see if projected systems default to wgs84 if no spheroid def
+
+
 def netcdf_9():
 
     if gdaltest.netcdf_drv is None:
         return 'skip'
 
-    ds = gdal.Open( 'data/cf_no_sphere.nc' )
+    ds = gdal.Open('data/cf_no_sphere.nc')
 
-    prj = ds.GetProjection( )
+    prj = ds.GetProjection()
 
-    sr = osr.SpatialReference( )
-    sr.ImportFromWkt( prj )
-    spheroid = sr.GetAttrValue( 'SPHEROID' )
+    sr = osr.SpatialReference()
+    sr.ImportFromWkt(prj)
+    spheroid = sr.GetAttrValue('SPHEROID')
 
     if spheroid != 'WGS 84':
-        gdaltest.post_reason( 'Incorrect spheroid read from file\n%s'
-                              % ( spheroid ) )
+        gdaltest.post_reason('Incorrect spheroid read from file\n%s'
+                             % (spheroid))
         return 'fail'
 
     ds = None
@@ -495,31 +515,33 @@ def netcdf_9():
     return 'success'
 
 ###############################################################################
-#check if km pixel size makes it through to gt
+# check if km pixel size makes it through to gt
+
+
 def netcdf_10():
 
     if gdaltest.netcdf_drv is None:
         return 'skip'
 
-    ds = gdal.Open( 'data/cf_no_sphere.nc' )
+    ds = gdal.Open('data/cf_no_sphere.nc')
 
-    prj = ds.GetProjection( )
+    prj = ds.GetProjection()
 
-    gt = ds.GetGeoTransform( )
+    gt = ds.GetGeoTransform()
 
-    gt1 = ( -1897186.0290038721, 5079.3608398440065,
-            0.0,2674684.0244560046,
-            0.0,-5079.4721679684635 )
-    gt2 = ( -1897.186029003872, 5.079360839844003,
-             0.0, 2674.6840244560044,
-             0.0,-5.079472167968456 )
+    gt1 = (-1897186.0290038721, 5079.3608398440065,
+           0.0, 2674684.0244560046,
+           0.0, -5079.4721679684635)
+    gt2 = (-1897.186029003872, 5.079360839844003,
+           0.0, 2674.6840244560044,
+           0.0, -5.079472167968456)
 
     if gt != gt1:
         sr = osr.SpatialReference()
-        sr.ImportFromWkt( prj )
-        #new driver uses UNIT vattribute instead of scaling values
-        if not (sr.GetAttrValue("PROJCS|UNIT",1)=="1000" and gt == gt2) :
-            gdaltest.post_reason( 'Incorrect geotransform, got '+str(gt) )
+        sr.ImportFromWkt(prj)
+        # new driver uses UNIT vattribute instead of scaling values
+        if not (sr.GetAttrValue("PROJCS|UNIT", 1) == "1000" and gt == gt2):
+            gdaltest.post_reason('Incorrect geotransform, got ' + str(gt))
             return 'fail'
 
     ds = None
@@ -527,19 +549,21 @@ def netcdf_10():
     return 'success'
 
 ###############################################################################
-#check if ll gets caught in km pixel size check
+# check if ll gets caught in km pixel size check
+
+
 def netcdf_11():
 
     if gdaltest.netcdf_drv is None:
         return 'skip'
 
-    ds = gdal.Open( 'data/cf_geog.nc' )
+    ds = gdal.Open('data/cf_geog.nc')
 
-    gt = ds.GetGeoTransform( )
+    gt = ds.GetGeoTransform()
 
     if gt != (-0.5, 1.0, 0.0, 10.5, 0.0, -1.0):
 
-        gdaltest.post_reason( 'Incorrect geotransform' )
+        gdaltest.post_reason('Incorrect geotransform')
         return 'fail'
 
     ds = None
@@ -547,19 +571,21 @@ def netcdf_11():
     return 'success'
 
 ###############################################################################
-#check for scale/offset set/get.
+# check for scale/offset set/get.
+
+
 def netcdf_12():
 
     if gdaltest.netcdf_drv is None:
         return 'skip'
 
-    ds = gdal.Open( 'data/scale_offset.nc' )
+    ds = gdal.Open('data/scale_offset.nc')
 
-    scale = ds.GetRasterBand( 1 ).GetScale()
-    offset = ds.GetRasterBand( 1 ).GetOffset()
+    scale = ds.GetRasterBand(1).GetScale()
+    offset = ds.GetRasterBand(1).GetOffset()
 
     if scale != 0.01 or offset != 1.5:
-        gdaltest.post_reason( 'Incorrect scale(%f) or offset(%f)' % ( scale, offset ) )
+        gdaltest.post_reason('Incorrect scale(%f) or offset(%f)' % (scale, offset))
         return 'fail'
 
     ds = None
@@ -567,19 +593,21 @@ def netcdf_12():
     return 'success'
 
 ###############################################################################
-#check for scale/offset = None if no scale or offset is available
+# check for scale/offset = None if no scale or offset is available
+
+
 def netcdf_13():
 
     if gdaltest.netcdf_drv is None:
         return 'skip'
 
-    ds = gdal.Open( 'data/no_scale_offset.nc' )
+    ds = gdal.Open('data/no_scale_offset.nc')
 
-    scale = ds.GetRasterBand( 1 ).GetScale()
-    offset = ds.GetRasterBand( 1 ).GetOffset()
+    scale = ds.GetRasterBand(1).GetScale()
+    offset = ds.GetRasterBand(1).GetOffset()
 
-    if scale != None or offset != None:
-        gdaltest.post_reason( 'Incorrect scale or offset' )
+    if scale is not None or offset is not None:
+        gdaltest.post_reason('Incorrect scale or offset')
         return 'fail'
 
     ds = None
@@ -587,47 +615,51 @@ def netcdf_13():
     return 'success'
 
 ###############################################################################
-#check for scale/offset for two variables
+# check for scale/offset for two variables
+
+
 def netcdf_14():
 
     if gdaltest.netcdf_drv is None:
         return 'skip'
 
-    ds = gdal.Open( 'NETCDF:data/two_vars_scale_offset.nc:z' )
+    ds = gdal.Open('NETCDF:data/two_vars_scale_offset.nc:z')
 
-    scale = ds.GetRasterBand( 1 ).GetScale()
-    offset = ds.GetRasterBand( 1 ).GetOffset()
+    scale = ds.GetRasterBand(1).GetScale()
+    offset = ds.GetRasterBand(1).GetOffset()
 
     if scale != 0.01 or offset != 1.5:
-        gdaltest.post_reason( 'Incorrect scale(%f) or offset(%f)' % ( scale, offset ) )
+        gdaltest.post_reason('Incorrect scale(%f) or offset(%f)' % (scale, offset))
         return 'fail'
 
     ds = None
 
-    ds = gdal.Open( 'NETCDF:data/two_vars_scale_offset.nc:q' )
+    ds = gdal.Open('NETCDF:data/two_vars_scale_offset.nc:q')
 
-    scale = ds.GetRasterBand( 1 ).GetScale()
-    offset = ds.GetRasterBand( 1 ).GetOffset()
+    scale = ds.GetRasterBand(1).GetScale()
+    offset = ds.GetRasterBand(1).GetOffset()
 
-    scale = ds.GetRasterBand( 1 ).GetScale()
-    offset = ds.GetRasterBand( 1 ).GetOffset()
+    scale = ds.GetRasterBand(1).GetScale()
+    offset = ds.GetRasterBand(1).GetOffset()
 
     if scale != 0.1 or offset != 2.5:
-        gdaltest.post_reason( 'Incorrect scale(%f) or offset(%f)' % ( scale, offset ) )
+        gdaltest.post_reason('Incorrect scale(%f) or offset(%f)' % (scale, offset))
         return 'fail'
 
     return 'success'
 
 ###############################################################################
-#check support for netcdf-2 (64 bit)
+# check support for netcdf-2 (64 bit)
 # This test fails in 1.8.1, because the driver does not support NC2 (bug #3890)
+
+
 def netcdf_15():
 
     if gdaltest.netcdf_drv is None:
         return 'skip'
 
     if gdaltest.netcdf_drv_has_nc2:
-        ds = gdal.Open( 'data/trmm-nc2.nc' )
+        ds = gdal.Open('data/trmm-nc2.nc')
         if ds is None:
             return 'fail'
         else:
@@ -639,7 +671,9 @@ def netcdf_15():
     return 'success'
 
 ###############################################################################
-#check support for netcdf-4
+# check support for netcdf-4
+
+
 def netcdf_16():
 
     if gdaltest.netcdf_drv is None:
@@ -650,20 +684,20 @@ def netcdf_16():
     if gdaltest.netcdf_drv_has_nc4:
 
         # test with Open()
-        ds = gdal.Open( ifile )
+        ds = gdal.Open(ifile)
         if ds is None:
             gdaltest.post_reason('GDAL did not open file')
             return 'fail'
         else:
             name = ds.GetDriver().GetDescription()
             ds = None
-            #return fail if did not open with the netCDF driver (i.e. HDF5Image)
+            # return fail if did not open with the netCDF driver (i.e. HDF5Image)
             if name != 'netCDF':
                 gdaltest.post_reason('netcdf driver did not open file')
                 return 'fail'
 
         # test with Identify()
-        name = gdal.IdentifyDriver( ifile ).GetDescription()
+        name = gdal.IdentifyDriver(ifile).GetDescription()
         if name != 'netCDF':
             gdaltest.post_reason('netcdf driver did not identify file')
             return 'fail'
@@ -674,7 +708,9 @@ def netcdf_16():
     return 'success'
 
 ###############################################################################
-#check support for netcdf-4 - make sure hdf5 is not read by netcdf driver
+# check support for netcdf-4 - make sure hdf5 is not read by netcdf driver
+
+
 def netcdf_17():
 
     if gdaltest.netcdf_drv is None:
@@ -682,28 +718,28 @@ def netcdf_17():
 
     ifile = 'data/groups.h5'
 
-    #skip test if Hdf5 is not enabled
-    if gdal.GetDriverByName( 'HDF5' ) is None and \
-            gdal.GetDriverByName( 'HDF5Image' ) is None:
+    # skip test if Hdf5 is not enabled
+    if gdal.GetDriverByName('HDF5') is None and \
+            gdal.GetDriverByName('HDF5Image') is None:
         return 'skip'
 
     if gdaltest.netcdf_drv_has_nc4:
 
-        #test with Open()
-        ds = gdal.Open( ifile )
+        # test with Open()
+        ds = gdal.Open(ifile)
         if ds is None:
             gdaltest.post_reason('GDAL did not open hdf5 file')
             return 'fail'
         else:
             name = ds.GetDriver().GetDescription()
             ds = None
-                #return fail if opened with the netCDF driver
+            # return fail if opened with the netCDF driver
             if name == 'netCDF':
                 gdaltest.post_reason('netcdf driver opened hdf5 file')
                 return 'fail'
 
         # test with Identify()
-        name = gdal.IdentifyDriver( ifile ).GetDescription()
+        name = gdal.IdentifyDriver(ifile).GetDescription()
         if name == 'netCDF':
             gdaltest.post_reason('netcdf driver was identified for hdf5 file')
             return 'fail'
@@ -714,7 +750,9 @@ def netcdf_17():
     return 'success'
 
 ###############################################################################
-#check support for netcdf-4 classic (NC4C)
+# check support for netcdf-4 classic (NC4C)
+
+
 def netcdf_18():
 
     if gdaltest.netcdf_drv is None:
@@ -725,18 +763,18 @@ def netcdf_18():
     if gdaltest.netcdf_drv_has_nc4:
 
         # test with Open()
-        ds = gdal.Open( ifile )
+        ds = gdal.Open(ifile)
         if ds is None:
             return 'fail'
         else:
             name = ds.GetDriver().GetDescription()
             ds = None
-            #return fail if did not open with the netCDF driver (i.e. HDF5Image)
+            # return fail if did not open with the netCDF driver (i.e. HDF5Image)
             if name != 'netCDF':
                 return 'fail'
 
         # test with Identify()
-        name = gdal.IdentifyDriver( ifile ).GetDescription()
+        name = gdal.IdentifyDriver(ifile).GetDescription()
         if name != 'netCDF':
             return 'fail'
 
@@ -746,7 +784,9 @@ def netcdf_18():
     return 'success'
 
 ###############################################################################
-#check support for reading with DEFLATE compression, requires NC4
+# check support for reading with DEFLATE compression, requires NC4
+
+
 def netcdf_19():
 
     if gdaltest.netcdf_drv is None:
@@ -755,15 +795,17 @@ def netcdf_19():
     if not gdaltest.netcdf_drv_has_nc4:
         return 'skip'
 
-    tst =  gdaltest.GDALTest( 'NetCDF', 'data/trmm-nc4z.nc', 1, 50235,
-                              filename_absolute = 1 )
+    tst = gdaltest.GDALTest('NetCDF', 'data/trmm-nc4z.nc', 1, 50235,
+                            filename_absolute=1)
 
-    result = tst.testOpen(skip_checksum = True)
+    result = tst.testOpen(skip_checksum=True)
 
     return result
 
 ###############################################################################
-#check support for writing with DEFLATE compression, requires NC4
+# check support for writing with DEFLATE compression, requires NC4
+
+
 def netcdf_20():
 
     if gdaltest.netcdf_drv is None:
@@ -772,13 +814,13 @@ def netcdf_20():
     if not gdaltest.netcdf_drv_has_nc4:
         return 'skip'
 
-    #simple test with tiny file
-    return netcdf_test_deflate( 'data/utm.tif', 50235 )
+    # simple test with tiny file
+    return netcdf_test_deflate('data/utm.tif', 50235)
 
 
 ###############################################################################
-#check support for writing large file with DEFLATE compression
-#if chunking is not defined properly within the netcdf driver, this test can take 1h
+# check support for writing large file with DEFLATE compression
+# if chunking is not defined properly within the netcdf driver, this test can take 1h
 def netcdf_21():
 
     if gdaltest.netcdf_drv is None:
@@ -795,14 +837,14 @@ def netcdf_21():
     sys.stdout.write('.')
     sys.stdout.flush()
 
-    #create cache dir if absent
-    if not os.path.exists( 'tmp/cache' ):
-        os.mkdir( 'tmp/cache' )
+    # create cache dir if absent
+    if not os.path.exists('tmp/cache'):
+        os.mkdir('tmp/cache')
 
-    #look for large gtiff in cache
-    if not os.path.exists( bigfile ):
+    # look for large gtiff in cache
+    if not os.path.exists(bigfile):
 
-        #create large gtiff
+        # create large gtiff
         if test_cli_utilities.get_gdalwarp_path() is None:
             gdaltest.post_reason('gdalwarp not found')
             return 'skip'
@@ -812,21 +854,21 @@ def netcdf_21():
             'data/utm.tif ' + bigfile
 
         try:
-            (ret, err) = gdaltest.runexternal_out_and_err( warp_cmd )
+            (ret, err) = gdaltest.runexternal_out_and_err(warp_cmd)
         except:
             gdaltest.post_reason('gdalwarp execution failed')
             return 'fail'
 
-        if ( err != '' or ret != '' ):
-            gdaltest.post_reason('gdalwarp returned error\n'+str(ret)+' '+str(err))
+        if (err != '' or ret != ''):
+            gdaltest.post_reason('gdalwarp returned error\n' + str(ret) + ' ' + str(err))
             return 'fail'
 
     # test compression of the file, with a conservative timeout of 60 seconds
-    return netcdf_test_deflate( bigfile, 26695, 6, 60 )
+    return netcdf_test_deflate(bigfile, 26695, 6, 60)
 
 
 ###############################################################################
-#check support for hdf4
+# check support for hdf4
 def netcdf_22():
 
     if gdaltest.netcdf_drv is None:
@@ -837,9 +879,9 @@ def netcdf_22():
 
     ifile = 'data/hdifftst2.hdf'
 
-    #suppress warning
-    gdal.PushErrorHandler( 'CPLQuietErrorHandler' )
-    ds = gdal.Open( 'NETCDF:' + ifile )
+    # suppress warning
+    gdal.PushErrorHandler('CPLQuietErrorHandler')
+    ds = gdal.Open('NETCDF:' + ifile)
     gdal.PopErrorHandler()
 
     if ds is None:
@@ -851,37 +893,39 @@ def netcdf_22():
     return 'success'
 
 ###############################################################################
-#check support for hdf4 - make sure  hdf4 file is not read by netcdf driver
+# check support for hdf4 - make sure  hdf4 file is not read by netcdf driver
+
+
 def netcdf_23():
 
-    #don't skip if netcdf is not enabled in GDAL
-    #if gdaltest.netcdf_drv is None:
+    # don't skip if netcdf is not enabled in GDAL
+    # if gdaltest.netcdf_drv is None:
     #    return 'skip'
-    #if not gdaltest.netcdf_drv_has_hdf4:
+    # if not gdaltest.netcdf_drv_has_hdf4:
     #    return 'skip'
 
-    #skip test if Hdf4 is not enabled in GDAL
-    if gdal.GetDriverByName( 'HDF4' ) is None and \
-            gdal.GetDriverByName( 'HDF4Image' ) is None:
+    # skip test if Hdf4 is not enabled in GDAL
+    if gdal.GetDriverByName('HDF4') is None and \
+            gdal.GetDriverByName('HDF4Image') is None:
         return 'skip'
 
     ifile = 'data/hdifftst2.hdf'
 
-    #test with Open()
-    ds = gdal.Open( ifile )
+    # test with Open()
+    ds = gdal.Open(ifile)
     if ds is None:
         gdaltest.post_reason('GDAL did not open hdf4 file')
         return 'fail'
     else:
         name = ds.GetDriver().GetDescription()
         ds = None
-        #return fail if opened with the netCDF driver
+        # return fail if opened with the netCDF driver
         if name == 'netCDF':
             gdaltest.post_reason('netcdf driver opened hdf4 file')
             return 'fail'
 
     # test with Identify()
-    name = gdal.IdentifyDriver( ifile ).GetDescription()
+    name = gdal.IdentifyDriver(ifile).GetDescription()
     if name == 'netCDF':
         gdaltest.post_reason('netcdf driver was identified for hdf4 file')
         return 'fail'
@@ -890,6 +934,8 @@ def netcdf_23():
 
 ###############################################################################
 # check support for reading attributes (single values and array values)
+
+
 def netcdf_24():
 
     if gdaltest.netcdf_drv is None:
@@ -906,10 +952,12 @@ def netcdf_24():
                  'valid_range_f': '0.1111111,255.5556',
                  'valid_range_s': '0,255'}
 
-    return netcdf_check_vars( 'data/nc_vars.nc', vals_global, vals_band )
+    return netcdf_check_vars('data/nc_vars.nc', vals_global, vals_band)
 
 ###############################################################################
 # check support for NC4 reading attributes (single values and array values)
+
+
 def netcdf_24_nc4():
 
     if gdaltest.netcdf_drv is None:
@@ -940,16 +988,18 @@ def netcdf_24_nc4():
                  'valid_range_f': '0.1111111,255.5556',
                  'valid_range_s': '0,255'}
 
-    return netcdf_check_vars( 'data/nc4_vars.nc', vals_global, vals_band )
+    return netcdf_check_vars('data/nc4_vars.nc', vals_global, vals_band)
 
 ###############################################################################
 # check support for writing attributes (single values and array values)
+
+
 def netcdf_25():
 
     if gdaltest.netcdf_drv is None:
         return 'skip'
 
-    result = netcdf_test_copy( 'data/nc_vars.nc', 1, None, 'tmp/netcdf_25.nc' )
+    result = netcdf_test_copy('data/nc_vars.nc', 1, None, 'tmp/netcdf_25.nc')
     if result != 'success':
         return result
 
@@ -964,10 +1014,12 @@ def netcdf_25():
                  'valid_range_f': '0.1111111,255.5556',
                  'valid_range_s': '0,255'}
 
-    return netcdf_check_vars( 'tmp/netcdf_25.nc', vals_global, vals_band )
+    return netcdf_check_vars('tmp/netcdf_25.nc', vals_global, vals_band)
 
 ###############################################################################
 # check support for NC4 writing attributes (single values and array values)
+
+
 def netcdf_25_nc4():
 
     if gdaltest.netcdf_drv is None:
@@ -976,7 +1028,7 @@ def netcdf_25_nc4():
     if not gdaltest.netcdf_drv_has_nc4:
         return 'skip'
 
-    result = netcdf_test_copy( 'data/nc4_vars.nc', 1, None, 'tmp/netcdf_25_nc4.nc', [ 'FORMAT=NC4' ] )
+    result = netcdf_test_copy('data/nc4_vars.nc', 1, None, 'tmp/netcdf_25_nc4.nc', ['FORMAT=NC4'])
     if result != 'success':
         return result
 
@@ -1002,31 +1054,33 @@ def netcdf_25_nc4():
                  'valid_range_f': '0.1111111,255.5556',
                  'valid_range_s': '0,255'}
 
-    return netcdf_check_vars( 'tmp/netcdf_25_nc4.nc', vals_global, vals_band )
+    return netcdf_check_vars('tmp/netcdf_25_nc4.nc', vals_global, vals_band)
 
 ###############################################################################
 # check support for WRITE_BOTTOMUP file creation option
 # use a dummy file with no lon/lat info to force a different checksum
 # depending on y-axis order
+
+
 def netcdf_26():
 
     if gdaltest.netcdf_drv is None:
         return 'skip'
 
-    #test default config
-    test = gdaltest.GDALTest( 'NETCDF', '../data/int16-nogeo.nc', 1, 4672 )
-    gdal.PushErrorHandler( 'CPLQuietErrorHandler' )
-    result = test.testCreateCopy(check_gt=0, check_srs=0, check_minmax = 0)
+    # test default config
+    test = gdaltest.GDALTest('NETCDF', '../data/int16-nogeo.nc', 1, 4672)
+    gdal.PushErrorHandler('CPLQuietErrorHandler')
+    result = test.testCreateCopy(check_gt=0, check_srs=0, check_minmax=0)
     gdal.PopErrorHandler()
 
     if result != 'success':
         print('failed create copy without WRITE_BOTTOMUP')
         return result
 
-    #test WRITE_BOTTOMUP=NO
-    test = gdaltest.GDALTest( 'NETCDF', '../data/int16-nogeo.nc', 1, 4855,
-                              options=['WRITE_BOTTOMUP=NO'] )
-    result = test.testCreateCopy(check_gt=0, check_srs=0, check_minmax = 0)
+    # test WRITE_BOTTOMUP=NO
+    test = gdaltest.GDALTest('NETCDF', '../data/int16-nogeo.nc', 1, 4855,
+                             options=['WRITE_BOTTOMUP=NO'])
+    result = test.testCreateCopy(check_gt=0, check_srs=0, check_minmax=0)
 
     if result != 'success':
         print('failed create copy with WRITE_BOTTOMUP=NO')
@@ -1036,28 +1090,30 @@ def netcdf_26():
 
 ###############################################################################
 # check support for GDAL_NETCDF_BOTTOMUP configuration option
+
+
 def netcdf_27():
 
     if gdaltest.netcdf_drv is None:
         return 'skip'
 
-    #test default config
-    test = gdaltest.GDALTest( 'NETCDF', '../data/int16-nogeo.nc', 1, 4672 )
-    config_bak = gdal.GetConfigOption( 'GDAL_NETCDF_BOTTOMUP' )
-    gdal.SetConfigOption( 'GDAL_NETCDF_BOTTOMUP', None )
+    # test default config
+    test = gdaltest.GDALTest('NETCDF', '../data/int16-nogeo.nc', 1, 4672)
+    config_bak = gdal.GetConfigOption('GDAL_NETCDF_BOTTOMUP')
+    gdal.SetConfigOption('GDAL_NETCDF_BOTTOMUP', None)
     result = test.testOpen()
-    gdal.SetConfigOption( 'GDAL_NETCDF_BOTTOMUP', config_bak )
+    gdal.SetConfigOption('GDAL_NETCDF_BOTTOMUP', config_bak)
 
     if result != 'success':
         print('failed open without GDAL_NETCDF_BOTTOMUP')
         return result
 
-    #test GDAL_NETCDF_BOTTOMUP=NO
-    test = gdaltest.GDALTest( 'NETCDF', '../data/int16-nogeo.nc', 1, 4855 )
-    config_bak = gdal.GetConfigOption( 'GDAL_NETCDF_BOTTOMUP' )
-    gdal.SetConfigOption( 'GDAL_NETCDF_BOTTOMUP', 'NO' )
+    # test GDAL_NETCDF_BOTTOMUP=NO
+    test = gdaltest.GDALTest('NETCDF', '../data/int16-nogeo.nc', 1, 4855)
+    config_bak = gdal.GetConfigOption('GDAL_NETCDF_BOTTOMUP')
+    gdal.SetConfigOption('GDAL_NETCDF_BOTTOMUP', 'NO')
     result = test.testOpen()
-    gdal.SetConfigOption( 'GDAL_NETCDF_BOTTOMUP', config_bak )
+    gdal.SetConfigOption('GDAL_NETCDF_BOTTOMUP', config_bak)
 
     if result != 'success':
         print('failed open with GDAL_NETCDF_BOTTOMUP')
@@ -1067,20 +1123,22 @@ def netcdf_27():
 
 ###############################################################################
 # check support for writing multi-dimensional files (helper function)
-def netcdf_test_4dfile( ofile ):
+
+
+def netcdf_test_4dfile(ofile):
 
     # test result file has 8 bands and 0 subdasets (instead of 0 bands and 8 subdatasets)
-    ds = gdal.Open( ofile )
+    ds = gdal.Open(ofile)
     if ds is None:
-        gdaltest.post_reason( 'open of copy failed' )
+        gdaltest.post_reason('open of copy failed')
         return 'fail'
-    md = ds.GetMetadata( 'SUBDATASETS' )
+    md = ds.GetMetadata('SUBDATASETS')
     subds_count = 0
-    if not md is None:
+    if md is not None:
         subds_count = len(md) / 2
     if ds.RasterCount != 8 or subds_count != 0:
-        gdaltest.post_reason( 'copy has %d bands (expected 8) and has %d subdatasets'\
-                                  ' (expected 0)' % (ds.RasterCount, subds_count ) )
+        gdaltest.post_reason('copy has %d bands (expected 8) and has %d subdatasets'
+                             ' (expected 0)' % (ds.RasterCount, subds_count))
         return 'fail'
     ds is None
 
@@ -1090,37 +1148,39 @@ def netcdf_test_4dfile( ofile ):
     except:
         print('NOTICE: ncdump not found')
         return 'success'
-    if err == None or not 'netcdf library version' in err:
+    if err is None or 'netcdf library version' not in err:
         print('NOTICE: ncdump not found')
         return 'success'
-    (ret, err) = gdaltest.runexternal_out_and_err( 'ncdump -h '+ ofile )
+    (ret, err) = gdaltest.runexternal_out_and_err('ncdump -h ' + ofile)
     if ret == '' or err != '':
-        gdaltest.post_reason( 'ncdump failed' )
+        gdaltest.post_reason('ncdump failed')
         return 'fail'
 
     # simple dimension tests using ncdump output
     err = ""
-    if not 'int t(time, levelist, lat, lon) ;' in ret:
+    if 'int t(time, levelist, lat, lon) ;' not in ret:
         err = err + 'variable (t) has wrong dimensions or is missing\n'
-    if not 'levelist = 2 ;' in ret:
+    if 'levelist = 2 ;' not in ret:
         err = err + 'levelist dimension is missing or incorrect\n'
-    if not 'int levelist(levelist) ;' in ret:
+    if 'int levelist(levelist) ;' not in ret:
         err = err + 'levelist variable is missing or incorrect\n'
-    if not 'time = 4 ;' in ret:
+    if 'time = 4 ;' not in ret:
         err = err + 'time dimension is missing or incorrect\n'
-    if not 'double time(time) ;' in ret:
+    if 'double time(time) ;' not in ret:
         err = err + 'time variable is missing or incorrect\n'
     # uncomment this to get full header in output
-    #if err != '':
+    # if err != '':
     #    err = err + ret
     if err != '':
-        gdaltest.post_reason( err )
+        gdaltest.post_reason(err)
         return 'fail'
 
     return 'success'
 
 ###############################################################################
 # check support for writing multi-dimensional files using CreateCopy()
+
+
 def netcdf_28():
 
     if gdaltest.netcdf_drv is None:
@@ -1130,12 +1190,12 @@ def netcdf_28():
     ofile = 'tmp/netcdf_28.nc'
 
     # copy file
-    result = netcdf_test_copy( ifile, 0, None, ofile )
+    result = netcdf_test_copy(ifile, 0, None, ofile)
     if result != 'success':
         return 'fail'
 
     # test file
-    return netcdf_test_4dfile( ofile )
+    return netcdf_test_4dfile(ofile)
 
 ###############################################################################
 # Check support for writing multi-dimensional files using gdalwarp.
@@ -1145,6 +1205,8 @@ def netcdf_28():
 # in netCDFDataset::CreateCopy() and necessary dimension metadata
 # is not saved to netcdf when using gdalwarp (as the driver does not write
 # metadata to netcdf file with SetMetadata() and SetMetadataItem()).
+
+
 def netcdf_29():
 
     if gdaltest.netcdf_drv is None:
@@ -1160,24 +1222,24 @@ def netcdf_29():
     ofile = 'tmp/netcdf_29.nc'
 
     warp_cmd = '%s -q -overwrite -of vrt %s %s' %\
-        ( test_cli_utilities.get_gdalwarp_path(), ifile, ofile1 )
+        (test_cli_utilities.get_gdalwarp_path(), ifile, ofile1)
     try:
-        (ret, err) = gdaltest.runexternal_out_and_err( warp_cmd )
+        (ret, err) = gdaltest.runexternal_out_and_err(warp_cmd)
     except:
         gdaltest.post_reason('gdalwarp execution failed')
         return 'fail'
 
-    if ( err != '' or ret != '' ):
-        gdaltest.post_reason('gdalwarp returned error\n'+str(ret)+' '+str(err))
+    if (err != '' or ret != ''):
+        gdaltest.post_reason('gdalwarp returned error\n' + str(ret) + ' ' + str(err))
         return 'fail'
 
     # copy vrt to netcdf, with proper dimension rolling
-    result = netcdf_test_copy( ofile1, 0, None, ofile )
+    result = netcdf_test_copy(ofile1, 0, None, ofile)
     if result != 'success':
         return 'fail'
 
     # test file
-    result = netcdf_test_4dfile( ofile )
+    result = netcdf_test_4dfile(ofile)
     if result == 'fail':
         print('test failed - does gdalwarp support metadata copying?')
 
@@ -1185,39 +1247,43 @@ def netcdf_29():
 
 ###############################################################################
 # check support for file with nan values (bug #4705)
+
+
 def netcdf_30():
 
     if gdaltest.netcdf_drv is None:
         return 'skip'
 
-    tst = gdaltest.GDALTest( 'NetCDF', 'trmm-nan.nc', 1, 62519 )
+    tst = gdaltest.GDALTest('NetCDF', 'trmm-nan.nc', 1, 62519)
 
     # We don't want to gum up the test stream output with the
     # 'Warning 1: No UNIDATA NC_GLOBAL:Conventions attribute' message.
-    gdal.PushErrorHandler( 'CPLQuietErrorHandler' )
+    gdal.PushErrorHandler('CPLQuietErrorHandler')
     result = tst.testOpen()
     gdal.PopErrorHandler()
 
     return result
 
 ###############################################################################
-#check if 2x2 file has proper geotransform
-#1 pixel (in width or height) still unsupported because we can't get the pixel dimensions
+# check if 2x2 file has proper geotransform
+# 1 pixel (in width or height) still unsupported because we can't get the pixel dimensions
+
+
 def netcdf_31():
 
     if gdaltest.netcdf_drv is None:
         return 'skip'
 
-    ds = gdal.Open( 'data/trmm-2x2.nc' )
+    ds = gdal.Open('data/trmm-2x2.nc')
 
-    ds.GetProjection( )
+    ds.GetProjection()
 
-    gt = ds.GetGeoTransform( )
+    gt = ds.GetGeoTransform()
 
-    gt1 = ( -80.0, 0.25, 0.0, -19.5, 0.0, -0.25 )
+    gt1 = (-80.0, 0.25, 0.0, -19.5, 0.0, -0.25)
 
     if gt != gt1:
-        gdaltest.post_reason( 'Incorrect geotransform, got '+str(gt) )
+        gdaltest.post_reason('Incorrect geotransform, got ' + str(gt))
         return 'fail'
 
     ds = None
@@ -1226,6 +1292,7 @@ def netcdf_31():
 
 ###############################################################################
 # Test NC_UBYTE write/read - netcdf-4 (FORMAT=NC4) only (#5053)
+
 
 def netcdf_32():
 
@@ -1238,13 +1305,13 @@ def netcdf_32():
     ifile = 'data/byte.tif'
     ofile = 'tmp/netcdf_32.nc'
 
-    #gdal.SetConfigOption('CPL_DEBUG', 'ON')
+    # gdal.SetConfigOption('CPL_DEBUG', 'ON')
 
     # test basic read/write
-    result = netcdf_test_copy( ifile, 1, 4672, ofile, [ 'FORMAT=NC4' ] )
+    result = netcdf_test_copy(ifile, 1, 4672, ofile, ['FORMAT=NC4'])
     if result != 'success':
         return 'fail'
-    result = netcdf_test_copy( ifile, 1, 4672, ofile, [ 'FORMAT=NC4C' ] )
+    result = netcdf_test_copy(ifile, 1, 4672, ofile, ['FORMAT=NC4C'])
     if result != 'success':
         return 'fail'
 
@@ -1252,6 +1319,8 @@ def netcdf_32():
 
 ###############################################################################
 # TEST NC_UBYTE metadata read - netcdf-4 (FORMAT=NC4) only (#5053)
+
+
 def netcdf_33():
 
     if gdaltest.netcdf_drv is None:
@@ -1260,15 +1329,17 @@ def netcdf_33():
     ifile = 'data/nc_vars.nc'
     ofile = 'tmp/netcdf_33.nc'
 
-    result = netcdf_test_copy( ifile, 1, None, ofile, [ 'FORMAT=NC4' ] )
+    result = netcdf_test_copy(ifile, 1, None, ofile, ['FORMAT=NC4'])
     if result != 'success':
         return result
 
-    return netcdf_check_vars( 'tmp/netcdf_33.nc' )
+    return netcdf_check_vars('tmp/netcdf_33.nc')
 
 ###############################################################################
 # check support for reading large file with chunking and DEFLATE compression
 # if chunking is not supported within the netcdf driver, this test can take very long
+
+
 def netcdf_34():
 
     filename = 'utm-big-chunks.nc'
@@ -1286,36 +1357,38 @@ def netcdf_34():
 
     try:
         from multiprocessing import Process
-    except:
+    except ImportError:
         print('from multiprocessing import Process failed')
         return 'skip'
 
-    if not gdaltest.download_file('http://download.osgeo.org/gdal/data/netcdf/'+filename,filename):
+    if not gdaltest.download_file('http://download.osgeo.org/gdal/data/netcdf/' + filename, filename):
         return 'skip'
 
     sys.stdout.write('.')
     sys.stdout.flush()
 
-    tst = gdaltest.GDALTest( 'NetCDF', '../tmp/cache/'+filename, 1, 31621 )
-    #tst.testOpen()
+    tst = gdaltest.GDALTest('NetCDF', '../tmp/cache/' + filename, 1, 31621)
+    # tst.testOpen()
 
-    gdal.PushErrorHandler( 'CPLQuietErrorHandler' )
-    proc = Process( target=tst.testOpen )
+    gdal.PushErrorHandler('CPLQuietErrorHandler')
+    proc = Process(target=tst.testOpen)
     proc.start()
-    proc.join( timeout )
+    proc.join(timeout)
     gdal.PopErrorHandler()
 
     # if proc is alive after timeout we must terminate it, and return fail
     # valgrind detects memory leaks when this occurs (although it should never happen)
     if proc.is_alive():
         proc.terminate()
-        print('testOpen() for file %s has reached timeout limit of %d seconds' % (filename, timeout) )
+        print('testOpen() for file %s has reached timeout limit of %d seconds' % (filename, timeout))
         return 'fail'
 
     return 'success'
 
 ###############################################################################
 # test writing a long metadata > 8196 chars (bug #5113)
+
+
 def netcdf_35():
 
     if gdaltest.netcdf_drv is None:
@@ -1325,31 +1398,33 @@ def netcdf_35():
     ofile = 'tmp/netcdf_35.nc'
 
     # copy file
-    result = netcdf_test_copy( ifile, 0, None, ofile )
+    result = netcdf_test_copy(ifile, 0, None, ofile)
     if result != 'success':
         return 'fail'
 
     # test long metadata is copied correctly
-    ds = gdal.Open( ofile )
+    ds = gdal.Open(ofile)
     if ds is None:
-        gdaltest.post_reason( 'open of copy failed' )
+        gdaltest.post_reason('open of copy failed')
         return 'fail'
-    md = ds.GetMetadata( '' )
-    if not 'U#bla' in md:
-        gdaltest.post_reason( 'U#bla metadata absent' )
+    md = ds.GetMetadata('')
+    if 'U#bla' not in md:
+        gdaltest.post_reason('U#bla metadata absent')
         return 'fail'
     bla = md['U#bla']
     if not len(bla) == 9591:
-        gdaltest.post_reason( 'U#bla metadata is of length %d, expecting %d' % (len(bla),9591) )
+        gdaltest.post_reason('U#bla metadata is of length %d, expecting %d' % (len(bla), 9591))
         return 'fail'
     if not bla[-4:] == '_bla':
-        gdaltest.post_reason( 'U#bla metadata ends with [%s], expecting [%s]' % (bla[-4:], '_bla') )
+        gdaltest.post_reason('U#bla metadata ends with [%s], expecting [%s]' % (bla[-4:], '_bla'))
         return 'fail'
 
     return 'success'
 
 ###############################################################################
 # test for correct geotransform (bug #5114)
+
+
 def netcdf_36():
 
     if gdaltest.netcdf_drv is None:
@@ -1357,24 +1432,26 @@ def netcdf_36():
 
     ifile = 'data/netcdf_fixes.nc'
 
-    ds = gdal.Open( ifile )
+    ds = gdal.Open(ifile)
     if ds is None:
-        gdaltest.post_reason( 'open failed' )
+        gdaltest.post_reason('open failed')
         return 'fail'
 
-    gt = ds.GetGeoTransform( )
+    gt = ds.GetGeoTransform()
     if gt is None:
-        gdaltest.post_reason( 'got no GeoTransform' )
+        gdaltest.post_reason('got no GeoTransform')
         return 'fail'
     gt_expected = (-3.498749944898817, 0.0025000042385525173, 0.0, 46.61749818589952, 0.0, -0.001666598849826389)
     if gt != gt_expected:
-        gdaltest.post_reason( 'got GeoTransform %s, expected %s' % (str(gt), str(gt_expected)) )
+        gdaltest.post_reason('got GeoTransform %s, expected %s' % (str(gt), str(gt_expected)))
         return 'fail'
 
     return 'success'
 
 ###############################################################################
 # test for reading gaussian grid (bugs #4513 and #5118)
+
+
 def netcdf_37():
 
     if gdaltest.netcdf_drv is None:
@@ -1382,36 +1459,38 @@ def netcdf_37():
 
     ifile = 'data/reduce-cgcms.nc'
 
-    gdal.PushErrorHandler( 'CPLQuietErrorHandler' )
-    ds = gdal.Open( ifile )
+    gdal.PushErrorHandler('CPLQuietErrorHandler')
+    ds = gdal.Open(ifile)
     gdal.PopErrorHandler()
     if ds is None:
-        gdaltest.post_reason( 'open failed' )
+        gdaltest.post_reason('open failed')
         return 'fail'
 
-    gt = ds.GetGeoTransform( )
+    gt = ds.GetGeoTransform()
     if gt is None:
-        gdaltest.post_reason( 'got no GeoTransform' )
+        gdaltest.post_reason('got no GeoTransform')
         return 'fail'
     gt_expected = (-1.875, 3.75, 0.0, 89.01354337620016, 0.0, -3.7088976406750063)
     if gt != gt_expected:
-        gdaltest.post_reason( 'got GeoTransform %s, expected %s' % (str(gt), str(gt_expected)) )
+        gdaltest.post_reason('got GeoTransform %s, expected %s' % (str(gt), str(gt_expected)))
         return 'fail'
 
-    md = ds.GetMetadata( 'GEOLOCATION2' )
-    if not md or not 'Y_VALUES' in md:
-        gdaltest.post_reason( 'did not get 1D geolocation' )
+    md = ds.GetMetadata('GEOLOCATION2')
+    if not md or 'Y_VALUES' not in md:
+        gdaltest.post_reason('did not get 1D geolocation')
         return 'fail'
     y_vals = md['Y_VALUES']
     if not y_vals.startswith('{-87.15909455586265,-83.47893666931698,') \
-            or not  y_vals.endswith(',83.47893666931698,87.15909455586265}'):
-        gdaltest.post_reason( 'got incorrect values in 1D geolocation' )
+            or not y_vals.endswith(',83.47893666931698,87.15909455586265}'):
+        gdaltest.post_reason('got incorrect values in 1D geolocation')
         return 'fail'
 
     return 'success'
 
 ###############################################################################
 # test for correct geotransform of projected data in km units (bug #5118)
+
+
 def netcdf_38():
 
     if gdaltest.netcdf_drv is None:
@@ -1419,26 +1498,27 @@ def netcdf_38():
 
     ifile = 'data/bug5118.nc'
 
-    gdal.PushErrorHandler( 'CPLQuietErrorHandler' )
-    ds = gdal.Open( ifile )
+    gdal.PushErrorHandler('CPLQuietErrorHandler')
+    ds = gdal.Open(ifile)
     gdal.PopErrorHandler()
     if ds is None:
-        gdaltest.post_reason( 'open failed' )
+        gdaltest.post_reason('open failed')
         return 'fail'
 
-    gt = ds.GetGeoTransform( )
+    gt = ds.GetGeoTransform()
     if gt is None:
-        gdaltest.post_reason( 'got no GeoTransform' )
+        gdaltest.post_reason('got no GeoTransform')
         return 'fail'
     gt_expected = (-1659.3478178136488, 13.545000861672793, 0.0, 2330.054725283668, 0.0, -13.54499744233631)
     if gt != gt_expected:
-        gdaltest.post_reason( 'got GeoTransform %s, expected %s' % (str(gt), str(gt_expected)) )
+        gdaltest.post_reason('got GeoTransform %s, expected %s' % (str(gt), str(gt_expected)))
         return 'fail'
 
     return 'success'
 
 ###############################################################################
 # Test VRT and NETCDF:
+
 
 def netcdf_39():
 
@@ -1516,15 +1596,17 @@ def netcdf_39():
 ###############################################################################
 # Check support of reading of chunked bottom-up files.
 
+
 def netcdf_40():
 
     if gdaltest.netcdf_drv is None or not gdaltest.netcdf_drv_has_nc4:
         return 'skip'
 
-    return netcdf_test_copy( 'data/bug5291.nc', 0, None, 'tmp/netcdf_40.nc' )
+    return netcdf_test_copy('data/bug5291.nc', 0, None, 'tmp/netcdf_40.nc')
 
 ###############################################################################
 # Test support for georeferenced file without CF convention
+
 
 def netcdf_41():
 
@@ -1547,22 +1629,23 @@ def netcdf_41():
 ###############################################################################
 # Test writing & reading GEOLOCATION array
 
+
 def netcdf_42():
 
     if gdaltest.netcdf_drv is None:
         return 'skip'
 
     src_ds = gdal.GetDriverByName('MEM').Create('', 60, 39, 1)
-    src_ds.SetMetadata( [
-  'LINE_OFFSET=0',
-  'LINE_STEP=1',
-  'PIXEL_OFFSET=0',
-  'PIXEL_STEP=1',
-  'SRS=GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9108"]],AXIS["Lat",NORTH],AXIS["Long",EAST],AUTHORITY["EPSG","4326"]]',
-  'X_BAND=1',
-  'X_DATASET=../gcore/data/sstgeo.tif',
-  'Y_BAND=2',
-  'Y_DATASET=../gcore/data/sstgeo.tif'], 'GEOLOCATION' )
+    src_ds.SetMetadata([
+        'LINE_OFFSET=0',
+        'LINE_STEP=1',
+        'PIXEL_OFFSET=0',
+        'PIXEL_STEP=1',
+        'SRS=GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9108"]],AXIS["Lat",NORTH],AXIS["Long",EAST],AUTHORITY["EPSG","4326"]]',
+        'X_BAND=1',
+        'X_DATASET=../gcore/data/sstgeo.tif',
+        'Y_BAND=2',
+        'Y_DATASET=../gcore/data/sstgeo.tif'], 'GEOLOCATION')
     sr = osr.SpatialReference()
     sr.ImportFromEPSG(32631)
     src_ds.SetProjection(sr.ExportToWkt())
@@ -1579,7 +1662,7 @@ def netcdf_42():
         'X_BAND': '1',
         'LINE_STEP': '1',
         'Y_DATASET': 'NETCDF:"tmp/netcdf_42.nc":lat',
-        'Y_BAND': '1'}:
+            'Y_BAND': '1'}:
         gdaltest.post_reason('failure')
         print(ds.GetMetadata('GEOLOCATION'))
         return 'fail'
@@ -1601,13 +1684,14 @@ def netcdf_42():
 ###############################################################################
 # Test reading GEOLOCATION array from geotransform (non default)
 
+
 def netcdf_43():
 
     if gdaltest.netcdf_drv is None:
         return 'skip'
 
     src_ds = gdal.Open('data/byte.tif')
-    gdaltest.netcdf_drv.CreateCopy('tmp/netcdf_43.nc', src_ds, options = ['WRITE_LONLAT=YES'] )
+    gdaltest.netcdf_drv.CreateCopy('tmp/netcdf_43.nc', src_ds, options=['WRITE_LONLAT=YES'])
 
     ds = gdal.Open('tmp/netcdf_43.nc')
     if ds.GetMetadata('GEOLOCATION') != {
@@ -1619,7 +1703,7 @@ def netcdf_43():
         'X_BAND': '1',
         'LINE_STEP': '1',
         'Y_DATASET': 'NETCDF:"tmp/netcdf_43.nc":lat',
-        'Y_BAND': '1'}:
+            'Y_BAND': '1'}:
         gdaltest.post_reason('failure')
         print(ds.GetMetadata('GEOLOCATION'))
         return 'fail'
@@ -1628,6 +1712,7 @@ def netcdf_43():
 
 ###############################################################################
 # Test NC_USHORT/UINT read/write - netcdf-4 only (#6337)
+
 
 def netcdf_44():
 
@@ -1638,8 +1723,8 @@ def netcdf_44():
         return 'skip'
 
     for f, md5 in ('data/ushort.nc', 18), ('data/uint.nc', 10):
-        if (netcdf_test_copy( f, 1, md5, 'tmp/netcdf_44.nc', [ 'FORMAT=NC4' ] )
-            != 'success'):
+        if (netcdf_test_copy(f, 1, md5, 'tmp/netcdf_44.nc', ['FORMAT=NC4']) !=
+                'success'):
             return 'fail'
 
     return 'success'
@@ -1647,31 +1732,32 @@ def netcdf_44():
 ###############################################################################
 # Test reading a vector NetCDF 3 file
 
+
 def netcdf_45():
 
     if gdaltest.netcdf_drv is None:
         return 'skip'
 
     # Test that a vector cannot be opened in raster-only mode
-    ds = gdal.OpenEx( 'data/test_ogr_nc3.nc', gdal.OF_RASTER )
+    ds = gdal.OpenEx('data/test_ogr_nc3.nc', gdal.OF_RASTER)
     if ds is not None:
         gdaltest.post_reason('fail')
         return 'fail'
 
     # Test that a raster cannot be opened in vector-only mode
-    ds = gdal.OpenEx( 'data/cf-bug636.nc', gdal.OF_VECTOR )
+    ds = gdal.OpenEx('data/cf-bug636.nc', gdal.OF_VECTOR)
     if ds is not None:
         gdaltest.post_reason('fail')
         return 'fail'
 
-    ds = gdal.OpenEx( 'data/test_ogr_nc3.nc', gdal.OF_VECTOR )
+    ds = gdal.OpenEx('data/test_ogr_nc3.nc', gdal.OF_VECTOR)
 
     with gdaltest.error_handler():
-        gdal.VectorTranslate( '/vsimem/netcdf_45.csv', ds, format = 'CSV', layerCreationOptions = ['LINEFORMAT=LF', 'CREATE_CSVT=YES', 'GEOMETRY=AS_WKT'] )
+        gdal.VectorTranslate('/vsimem/netcdf_45.csv', ds, format='CSV', layerCreationOptions=['LINEFORMAT=LF', 'CREATE_CSVT=YES', 'GEOMETRY=AS_WKT', 'STRING_QUOTING=IF_NEEDED'])
 
-    fp = gdal.VSIFOpenL( '/vsimem/netcdf_45.csv', 'rb' )
+    fp = gdal.VSIFOpenL('/vsimem/netcdf_45.csv', 'rb')
     if fp is not None:
-        content = gdal.VSIFReadL( 1, 10000, fp ).decode('ascii')
+        content = gdal.VSIFReadL(1, 10000, fp).decode('ascii')
         gdal.VSIFCloseL(fp)
     expected_content = """WKT,int32,int32_explicit_fillValue,float64,float64_explicit_fillValue,string1char,string3chars,twodimstringchar,date,datetime_explicit_fillValue,datetime,int64var,int64var_explicit_fillValue,boolean,boolean_explicit_fillValue,float32,float32_explicit_fillValue,int16,int16_explicit_fillValue,x,byte_field
 "POINT Z (1 2 3)",1,1,1.23456789012,1.23456789012,x,STR,STR,1970/01/02,2016/02/06 12:34:56.789,2016/02/06 12:34:56.789,1234567890123,1234567890123,1,1,1.2,1.2,123,12,5,-125
@@ -1683,9 +1769,9 @@ def netcdf_45():
         print(content)
         return 'fail'
 
-    fp = gdal.VSIFOpenL( '/vsimem/netcdf_45.csvt', 'rb' )
+    fp = gdal.VSIFOpenL('/vsimem/netcdf_45.csvt', 'rb')
     if fp is not None:
-        content = gdal.VSIFReadL( 1, 10000, fp ).decode('ascii')
+        content = gdal.VSIFReadL(1, 10000, fp).decode('ascii')
         gdal.VSIFCloseL(fp)
     expected_content = """WKT,Integer,Integer,Real,Real,String(1),String(3),String,Date,DateTime,DateTime,Integer64,Integer64,Integer(Boolean),Integer(Boolean),Real(Float32),Real(Float32),Integer(Int16),Integer(Int16),Real,Integer
 """
@@ -1695,11 +1781,13 @@ def netcdf_45():
         return 'fail'
     gdal.Unlink('/vsimem/netcdf_45.csv')
     gdal.Unlink('/vsimem/netcdf_45.csvt')
+    gdal.Unlink('/vsimem/netcdf_45.prj')
 
     return 'success'
 
 ###############################################################################
 # Test reading a vector NetCDF 3 file
+
 
 def netcdf_46():
 
@@ -1720,6 +1808,7 @@ def netcdf_46():
 ###############################################################################
 # Test reading a vector NetCDF 4 file
 
+
 def netcdf_47():
 
     if gdaltest.netcdf_drv is None:
@@ -1730,19 +1819,19 @@ def netcdf_47():
 
     # Test that a vector cannot be opened in raster-only mode
     with gdaltest.error_handler():
-        ds = gdal.OpenEx( 'data/test_ogr_nc4.nc', gdal.OF_RASTER )
+        ds = gdal.OpenEx('data/test_ogr_nc4.nc', gdal.OF_RASTER)
     if ds is not None:
         gdaltest.post_reason('fail')
         return 'fail'
 
-    ds = gdal.OpenEx( 'data/test_ogr_nc4.nc', gdal.OF_VECTOR )
+    ds = gdal.OpenEx('data/test_ogr_nc4.nc', gdal.OF_VECTOR)
 
     with gdaltest.error_handler():
-        gdal.VectorTranslate( '/vsimem/netcdf_47.csv', ds, format = 'CSV', layerCreationOptions = ['LINEFORMAT=LF', 'CREATE_CSVT=YES', 'GEOMETRY=AS_WKT'] )
+        gdal.VectorTranslate('/vsimem/netcdf_47.csv', ds, format='CSV', layerCreationOptions=['LINEFORMAT=LF', 'CREATE_CSVT=YES', 'GEOMETRY=AS_WKT', 'STRING_QUOTING=IF_NEEDED'])
 
-    fp = gdal.VSIFOpenL( '/vsimem/netcdf_47.csv', 'rb' )
+    fp = gdal.VSIFOpenL('/vsimem/netcdf_47.csv', 'rb')
     if fp is not None:
-        content = gdal.VSIFReadL( 1, 10000, fp ).decode('ascii')
+        content = gdal.VSIFReadL(1, 10000, fp).decode('ascii')
         gdal.VSIFCloseL(fp)
     expected_content = """WKT,int32,int32_explicit_fillValue,float64,float64_explicit_fillValue,string3chars,twodimstringchar,date,datetime,datetime_explicit_fillValue,int64,int64var_explicit_fillValue,boolean,boolean_explicit_fillValue,float32,float32_explicit_fillValue,int16,int16_explicit_fillValue,x,byte_field,ubyte_field,ubyte_field_explicit_fillValue,ushort_field,ushort_field_explicit_fillValue,uint_field,uint_field_explicit_fillValue,uint64_field,uint64_field_explicit_fillValue
 "POINT Z (1 2 3)",1,1,1.23456789012,1.23456789012,STR,STR,1970/01/02,2016/02/06 12:34:56.789,2016/02/06 12:34:56.789,1234567890123,,1,1,1.2,1.2,123,12,5,-125,254,255,65534,65535,4000000000,4294967295,1234567890123,
@@ -1754,9 +1843,9 @@ def netcdf_47():
         print(content)
         return 'fail'
 
-    fp = gdal.VSIFOpenL( '/vsimem/netcdf_47.csvt', 'rb' )
+    fp = gdal.VSIFOpenL('/vsimem/netcdf_47.csvt', 'rb')
     if fp is not None:
-        content = gdal.VSIFReadL( 1, 10000, fp ).decode('ascii')
+        content = gdal.VSIFReadL(1, 10000, fp).decode('ascii')
         gdal.VSIFCloseL(fp)
     expected_content = """WKT,Integer,Integer,Real,Real,String(3),String,Date,DateTime,DateTime,Integer64,Integer64,Integer(Boolean),Integer(Boolean),Real(Float32),Real(Float32),Integer(Int16),Integer(Int16),Real,Integer,Integer,Integer,Integer,Integer,Integer64,Integer64,Real,Real
 """
@@ -1766,11 +1855,13 @@ def netcdf_47():
         return 'fail'
     gdal.Unlink('/vsimem/netcdf_47.csv')
     gdal.Unlink('/vsimem/netcdf_47.csvt')
+    gdal.Unlink('/vsimem/netcdf_47.prj')
 
     return 'success'
 
 ###############################################################################
 # Test reading a vector NetCDF 3 file without any geometry
+
 
 def netcdf_48():
 
@@ -1778,7 +1869,7 @@ def netcdf_48():
         return 'skip'
 
     with gdaltest.error_handler():
-        ds = gdal.OpenEx( 'data/test_ogr_no_xyz_var.nc', gdal.OF_VECTOR )
+        ds = gdal.OpenEx('data/test_ogr_no_xyz_var.nc', gdal.OF_VECTOR)
     lyr = ds.GetLayer(0)
     if lyr.GetGeomType() != ogr.wkbNone:
         gdaltest.post_reason('failure')
@@ -1793,18 +1884,19 @@ def netcdf_48():
 ###############################################################################
 # Test reading a vector NetCDF 3 file with X,Y,Z vars as float
 
+
 def netcdf_49():
 
     if gdaltest.netcdf_drv is None:
         return 'skip'
 
     with gdaltest.error_handler():
-        ds = gdal.OpenEx( 'data/test_ogr_xyz_float.nc', gdal.OF_VECTOR )
-        gdal.VectorTranslate( '/vsimem/netcdf_49.csv', ds, format = 'CSV', layerCreationOptions = ['LINEFORMAT=LF', 'GEOMETRY=AS_WKT'] )
+        ds = gdal.OpenEx('data/test_ogr_xyz_float.nc', gdal.OF_VECTOR)
+        gdal.VectorTranslate('/vsimem/netcdf_49.csv', ds, format='CSV', layerCreationOptions=['LINEFORMAT=LF', 'GEOMETRY=AS_WKT', 'STRING_QUOTING=IF_NEEDED'])
 
-    fp = gdal.VSIFOpenL( '/vsimem/netcdf_49.csv', 'rb' )
+    fp = gdal.VSIFOpenL('/vsimem/netcdf_49.csv', 'rb')
     if fp is not None:
-        content = gdal.VSIFReadL( 1, 10000, fp ).decode('ascii')
+        content = gdal.VSIFReadL(1, 10000, fp).decode('ascii')
         gdal.VSIFCloseL(fp)
     expected_content = """WKT,int32
 "POINT Z (1 2 3)",1
@@ -1823,13 +1915,14 @@ def netcdf_49():
 ###############################################################################
 # Test creating a vector NetCDF 3 file with WKT geometry field
 
+
 def netcdf_50():
 
     if gdaltest.netcdf_drv is None:
         return 'skip'
 
-    ds = gdal.OpenEx( '../ogr/data/poly.shp', gdal.OF_VECTOR )
-    out_ds = gdal.VectorTranslate( 'tmp/netcdf_50.nc', ds, format = 'netCDF', layerCreationOptions = [ 'WKT_DEFAULT_WIDTH=1'] )
+    ds = gdal.OpenEx('../ogr/data/poly.shp', gdal.OF_VECTOR)
+    out_ds = gdal.VectorTranslate('tmp/netcdf_50.nc', ds, format='netCDF', layerCreationOptions=['WKT_DEFAULT_WIDTH=1'])
     src_lyr = ds.GetLayer(0)
     src_lyr.ResetReading()
     out_lyr = out_ds.GetLayer(0)
@@ -1847,7 +1940,7 @@ def netcdf_50():
         return 'fail'
     out_ds = None
 
-    out_ds = gdal.OpenEx( 'tmp/netcdf_50.nc', gdal.OF_VECTOR )
+    out_ds = gdal.OpenEx('tmp/netcdf_50.nc', gdal.OF_VECTOR)
     out_lyr = out_ds.GetLayer(0)
     srs = out_lyr.GetSpatialRef().ExportToWkt()
     if srs.find('PROJCS["OSGB 1936') < 0:
@@ -1871,23 +1964,24 @@ def netcdf_50():
 ###############################################################################
 # Test creating a vector NetCDF 3 file with X,Y,Z fields
 
+
 def netcdf_51():
 
     if gdaltest.netcdf_drv is None:
         return 'skip'
 
-    ds = gdal.OpenEx( 'data/test_ogr_nc3.nc', gdal.OF_VECTOR )
+    ds = gdal.OpenEx('data/test_ogr_nc3.nc', gdal.OF_VECTOR)
     # Test autogrow of string fields
-    gdal.VectorTranslate( 'tmp/netcdf_51.nc', ds, format = 'netCDF', layerCreationOptions = [ 'STRING_DEFAULT_WIDTH=1'] )
+    gdal.VectorTranslate('tmp/netcdf_51.nc', ds, format='netCDF', layerCreationOptions=['STRING_DEFAULT_WIDTH=1'])
 
     with gdaltest.error_handler():
-        ds = gdal.OpenEx( 'tmp/netcdf_51.nc', gdal.OF_VECTOR )
-        gdal.VectorTranslate( '/vsimem/netcdf_51.csv', ds, format = 'CSV', layerCreationOptions = ['LINEFORMAT=LF', 'CREATE_CSVT=YES', 'GEOMETRY=AS_WKT'] )
+        ds = gdal.OpenEx('tmp/netcdf_51.nc', gdal.OF_VECTOR)
+        gdal.VectorTranslate('/vsimem/netcdf_51.csv', ds, format='CSV', layerCreationOptions=['LINEFORMAT=LF', 'CREATE_CSVT=YES', 'GEOMETRY=AS_WKT', 'STRING_QUOTING=IF_NEEDED'])
         ds = None
 
-    fp = gdal.VSIFOpenL( '/vsimem/netcdf_51.csv', 'rb' )
+    fp = gdal.VSIFOpenL('/vsimem/netcdf_51.csv', 'rb')
     if fp is not None:
-        content = gdal.VSIFReadL( 1, 10000, fp ).decode('ascii')
+        content = gdal.VSIFReadL(1, 10000, fp).decode('ascii')
         gdal.VSIFCloseL(fp)
     expected_content = """WKT,int32,int32_explicit_fillValue,float64,float64_explicit_fillValue,string1char,string3chars,twodimstringchar,date,datetime_explicit_fillValue,datetime,int64var,int64var_explicit_fillValue,boolean,boolean_explicit_fillValue,float32,float32_explicit_fillValue,int16,int16_explicit_fillValue,x,byte_field
 "POINT Z (1 2 3)",1,1,1.23456789012,1.23456789012,x,STR,STR,1970/01/02,2016/02/06 12:34:56.789,2016/02/06 12:34:56.789,1234567890123,1234567890123,1,1,1.2,1.2,123,12,5,-125
@@ -1899,9 +1993,9 @@ def netcdf_51():
         print(content)
         return 'fail'
 
-    fp = gdal.VSIFOpenL( '/vsimem/netcdf_51.csvt', 'rb' )
+    fp = gdal.VSIFOpenL('/vsimem/netcdf_51.csvt', 'rb')
     if fp is not None:
-        content = gdal.VSIFReadL( 1, 10000, fp ).decode('ascii')
+        content = gdal.VSIFReadL(1, 10000, fp).decode('ascii')
         gdal.VSIFCloseL(fp)
     expected_content = """WKT,Integer,Integer,Real,Real,String(1),String(3),String,Date,DateTime,DateTime,Integer64,Integer64,Integer(Boolean),Integer(Boolean),Real(Float32),Real(Float32),Integer(Int16),Integer(Int16),Real,Integer
 """
@@ -1910,10 +2004,10 @@ def netcdf_51():
         print(content)
         return 'fail'
 
-    ds = gdal.OpenEx( 'tmp/netcdf_51.nc', gdal.OF_VECTOR | gdal.OF_UPDATE )
+    ds = gdal.OpenEx('tmp/netcdf_51.nc', gdal.OF_VECTOR | gdal.OF_UPDATE)
     lyr = ds.GetLayer(0)
-    lyr.CreateField( ogr.FieldDefn('extra', ogr.OFTInteger) )
-    lyr.CreateField( ogr.FieldDefn('extra_str', ogr.OFTString) )
+    lyr.CreateField(ogr.FieldDefn('extra', ogr.OFTInteger))
+    lyr.CreateField(ogr.FieldDefn('extra_str', ogr.OFTString))
     f = lyr.GetNextFeature()
     if f is None:
         gdaltest.post_reason('failure')
@@ -1925,7 +2019,7 @@ def netcdf_51():
         return 'fail'
     ds = None
 
-    ds = gdal.OpenEx( 'tmp/netcdf_51.nc', gdal.OF_VECTOR )
+    ds = gdal.OpenEx('tmp/netcdf_51.nc', gdal.OF_VECTOR)
     lyr = ds.GetLayer(0)
     f = lyr.GetFeature(lyr.GetFeatureCount())
     if f['int32'] != 1 or f['extra'] != 5 or f['extra_str'] != 'foobar':
@@ -1937,7 +2031,7 @@ def netcdf_51():
     import netcdf_cf
     if netcdf_cf.netcdf_cf_setup() == 'success' and \
        gdaltest.netcdf_cf_method is not None:
-        result_cf = netcdf_cf.netcdf_cf_check_file( 'tmp/netcdf_51.nc','auto',False )
+        result_cf = netcdf_cf.netcdf_cf_check_file('tmp/netcdf_51.nc', 'auto', False)
         if result_cf != 'success':
             gdaltest.post_reason('failure')
             return 'fail'
@@ -1945,28 +2039,32 @@ def netcdf_51():
     gdal.Unlink('tmp/netcdf_51.nc')
     gdal.Unlink('tmp/netcdf_51.csv')
     gdal.Unlink('tmp/netcdf_51.csvt')
+    gdal.Unlink('/vsimem/netcdf_51.csv')
+    gdal.Unlink('/vsimem/netcdf_51.csvt')
+    gdal.Unlink('/vsimem/netcdf_51.prj')
 
     return 'success'
 
 ###############################################################################
 # Test creating a vector NetCDF 3 file with X,Y,Z fields with WRITE_GDAL_TAGS=NO
 
+
 def netcdf_51_no_gdal_tags():
 
     if gdaltest.netcdf_drv is None:
         return 'skip'
 
-    ds = gdal.OpenEx( 'data/test_ogr_nc3.nc', gdal.OF_VECTOR )
-    gdal.VectorTranslate( 'tmp/netcdf_51_no_gdal_tags.nc', ds, format = 'netCDF', datasetCreationOptions = [ 'WRITE_GDAL_TAGS=NO'] )
+    ds = gdal.OpenEx('data/test_ogr_nc3.nc', gdal.OF_VECTOR)
+    gdal.VectorTranslate('tmp/netcdf_51_no_gdal_tags.nc', ds, format='netCDF', datasetCreationOptions=['WRITE_GDAL_TAGS=NO'])
 
     with gdaltest.error_handler():
-        ds = gdal.OpenEx( 'tmp/netcdf_51_no_gdal_tags.nc', gdal.OF_VECTOR )
-        gdal.VectorTranslate( '/vsimem/netcdf_51_no_gdal_tags.csv', ds, format = 'CSV', layerCreationOptions = ['LINEFORMAT=LF', 'CREATE_CSVT=YES', 'GEOMETRY=AS_WKT'] )
+        ds = gdal.OpenEx('tmp/netcdf_51_no_gdal_tags.nc', gdal.OF_VECTOR)
+        gdal.VectorTranslate('/vsimem/netcdf_51_no_gdal_tags.csv', ds, format='CSV', layerCreationOptions=['LINEFORMAT=LF', 'CREATE_CSVT=YES', 'GEOMETRY=AS_WKT', 'STRING_QUOTING=IF_NEEDED'])
         ds = None
 
-    fp = gdal.VSIFOpenL( '/vsimem/netcdf_51_no_gdal_tags.csv', 'rb' )
+    fp = gdal.VSIFOpenL('/vsimem/netcdf_51_no_gdal_tags.csv', 'rb')
     if fp is not None:
-        content = gdal.VSIFReadL( 1, 10000, fp ).decode('ascii')
+        content = gdal.VSIFReadL(1, 10000, fp).decode('ascii')
         gdal.VSIFCloseL(fp)
     expected_content = """WKT,int32,int32_explicit_fillValue,float64,float64_explicit_fillValue,string1char,string3chars,twodimstringchar,date,datetime_explicit_fillValue,datetime,int64var,int64var_explicit_fillValue,boolean,boolean_explicit_fillValue,float32,float32_explicit_fillValue,int16,int16_explicit_fillValue,x1,byte_field
 "POINT Z (1 2 3)",1,1,1.23456789012,1.23456789012,x,STR,STR,1970/01/02,2016/02/06 12:34:56.789,2016/02/06 12:34:56.789,1234567890123,1234567890123,1,1,1.2,1.2,123,12,5,-125
@@ -1978,9 +2076,9 @@ def netcdf_51_no_gdal_tags():
         print(content)
         return 'fail'
 
-    fp = gdal.VSIFOpenL( '/vsimem/netcdf_51_no_gdal_tags.csvt', 'rb' )
+    fp = gdal.VSIFOpenL('/vsimem/netcdf_51_no_gdal_tags.csvt', 'rb')
     if fp is not None:
-        content = gdal.VSIFReadL( 1, 10000, fp ).decode('ascii')
+        content = gdal.VSIFReadL(1, 10000, fp).decode('ascii')
         gdal.VSIFCloseL(fp)
     expected_content = """WKT,Integer,Integer,Real,Real,String(1),String(3),String(10),Date,DateTime,DateTime,Real,Real,Integer,Integer,Real(Float32),Real(Float32),Integer(Int16),Integer(Int16),Real,Integer
 """
@@ -1992,11 +2090,15 @@ def netcdf_51_no_gdal_tags():
     gdal.Unlink('tmp/netcdf_51_no_gdal_tags.nc')
     gdal.Unlink('tmp/netcdf_51_no_gdal_tags.csv')
     gdal.Unlink('tmp/netcdf_51_no_gdal_tags.csvt')
+    gdal.Unlink('/vsimem/netcdf_51_no_gdal_tags.csv')
+    gdal.Unlink('/vsimem/netcdf_51_no_gdal_tags.csvt')
+    gdal.Unlink('/vsimem/netcdf_51_no_gdal_tags.prj')
 
     return 'success'
 
 ###############################################################################
 # Test creating a vector NetCDF 4 file with X,Y,Z fields
+
 
 def netcdf_52():
 
@@ -2006,17 +2108,17 @@ def netcdf_52():
     if not gdaltest.netcdf_drv_has_nc4:
         return 'skip'
 
-    ds = gdal.OpenEx( 'data/test_ogr_nc4.nc', gdal.OF_VECTOR )
-    gdal.VectorTranslate( 'tmp/netcdf_52.nc', ds, format = 'netCDF', datasetCreationOptions = ['FORMAT=NC4'] )
+    ds = gdal.OpenEx('data/test_ogr_nc4.nc', gdal.OF_VECTOR)
+    gdal.VectorTranslate('tmp/netcdf_52.nc', ds, format='netCDF', datasetCreationOptions=['FORMAT=NC4'])
 
     with gdaltest.error_handler():
-        ds = gdal.OpenEx( 'tmp/netcdf_52.nc', gdal.OF_VECTOR )
-        gdal.VectorTranslate( '/vsimem/netcdf_52.csv', ds, format = 'CSV', layerCreationOptions = ['LINEFORMAT=LF', 'CREATE_CSVT=YES', 'GEOMETRY=AS_WKT'] )
+        ds = gdal.OpenEx('tmp/netcdf_52.nc', gdal.OF_VECTOR)
+        gdal.VectorTranslate('/vsimem/netcdf_52.csv', ds, format='CSV', layerCreationOptions=['LINEFORMAT=LF', 'CREATE_CSVT=YES', 'GEOMETRY=AS_WKT', 'STRING_QUOTING=IF_NEEDED'])
         ds = None
 
-    fp = gdal.VSIFOpenL( '/vsimem/netcdf_52.csv', 'rb' )
+    fp = gdal.VSIFOpenL('/vsimem/netcdf_52.csv', 'rb')
     if fp is not None:
-        content = gdal.VSIFReadL( 1, 10000, fp ).decode('ascii')
+        content = gdal.VSIFReadL(1, 10000, fp).decode('ascii')
         gdal.VSIFCloseL(fp)
     expected_content = """WKT,int32,int32_explicit_fillValue,float64,float64_explicit_fillValue,string3chars,twodimstringchar,date,datetime,datetime_explicit_fillValue,int64,int64var_explicit_fillValue,boolean,boolean_explicit_fillValue,float32,float32_explicit_fillValue,int16,int16_explicit_fillValue,x,byte_field,ubyte_field,ubyte_field_explicit_fillValue,ushort_field,ushort_field_explicit_fillValue,uint_field,uint_field_explicit_fillValue,uint64_field,uint64_field_explicit_fillValue
 "POINT Z (1 2 3)",1,1,1.23456789012,1.23456789012,STR,STR,1970/01/02,2016/02/06 12:34:56.789,2016/02/06 12:34:56.789,1234567890123,,1,1,1.2,1.2,123,12,5,-125,254,255,65534,65535,4000000000,4294967295,1234567890123,
@@ -2028,9 +2130,9 @@ def netcdf_52():
         print(content)
         return 'fail'
 
-    fp = gdal.VSIFOpenL( '/vsimem/netcdf_52.csvt', 'rb' )
+    fp = gdal.VSIFOpenL('/vsimem/netcdf_52.csvt', 'rb')
     if fp is not None:
-        content = gdal.VSIFReadL( 1, 10000, fp ).decode('ascii')
+        content = gdal.VSIFReadL(1, 10000, fp).decode('ascii')
         gdal.VSIFCloseL(fp)
     expected_content = """WKT,Integer,Integer,Real,Real,String(3),String,Date,DateTime,DateTime,Integer64,Integer64,Integer(Boolean),Integer(Boolean),Real(Float32),Real(Float32),Integer(Int16),Integer(Int16),Real,Integer,Integer,Integer,Integer,Integer,Integer64,Integer64,Real,Real
 """
@@ -2039,9 +2141,9 @@ def netcdf_52():
         print(content)
         return 'fail'
 
-    ds = gdal.OpenEx( 'tmp/netcdf_52.nc', gdal.OF_VECTOR | gdal.OF_UPDATE )
+    ds = gdal.OpenEx('tmp/netcdf_52.nc', gdal.OF_VECTOR | gdal.OF_UPDATE)
     lyr = ds.GetLayer(0)
-    lyr.CreateField( ogr.FieldDefn('extra', ogr.OFTInteger) )
+    lyr.CreateField(ogr.FieldDefn('extra', ogr.OFTInteger))
     f = lyr.GetNextFeature()
     if f is None:
         gdaltest.post_reason('failure')
@@ -2052,7 +2154,7 @@ def netcdf_52():
         return 'fail'
     ds = None
 
-    ds = gdal.OpenEx( 'tmp/netcdf_52.nc', gdal.OF_VECTOR )
+    ds = gdal.OpenEx('tmp/netcdf_52.nc', gdal.OF_VECTOR)
     lyr = ds.GetLayer(0)
     f = lyr.GetFeature(lyr.GetFeatureCount())
     if f['int32'] != 1 or f['extra'] != 5:
@@ -2064,7 +2166,7 @@ def netcdf_52():
     import netcdf_cf
     if netcdf_cf.netcdf_cf_setup() == 'success' and \
        gdaltest.netcdf_cf_method is not None:
-        result_cf = netcdf_cf.netcdf_cf_check_file( 'tmp/netcdf_52.nc','auto',False )
+        result_cf = netcdf_cf.netcdf_cf_check_file('tmp/netcdf_52.nc', 'auto', False)
         if result_cf != 'success':
             gdaltest.post_reason('failure')
             return 'fail'
@@ -2072,11 +2174,15 @@ def netcdf_52():
     gdal.Unlink('tmp/netcdf_52.nc')
     gdal.Unlink('tmp/netcdf_52.csv')
     gdal.Unlink('tmp/netcdf_52.csvt')
+    gdal.Unlink('/vsimem/netcdf_52.csv')
+    gdal.Unlink('/vsimem/netcdf_52.csvt')
+    gdal.Unlink('/vsimem/netcdf_52.prj')
 
     return 'success'
 
 ###############################################################################
 # Test creating a vector NetCDF 4 file with WKT geometry field
+
 
 def netcdf_53():
 
@@ -2086,8 +2192,8 @@ def netcdf_53():
     if not gdaltest.netcdf_drv_has_nc4:
         return 'skip'
 
-    ds = gdal.OpenEx( '../ogr/data/poly.shp', gdal.OF_VECTOR )
-    out_ds = gdal.VectorTranslate( 'tmp/netcdf_53.nc', ds, format = 'netCDF', datasetCreationOptions = ['FORMAT=NC4'] )
+    ds = gdal.OpenEx('../ogr/data/poly.shp', gdal.OF_VECTOR)
+    out_ds = gdal.VectorTranslate('tmp/netcdf_53.nc', ds, format='netCDF', datasetCreationOptions=['FORMAT=NC4'])
     src_lyr = ds.GetLayer(0)
     src_lyr.ResetReading()
     out_lyr = out_ds.GetLayer(0)
@@ -2105,7 +2211,7 @@ def netcdf_53():
         return 'fail'
     out_ds = None
 
-    out_ds = gdal.OpenEx( 'tmp/netcdf_53.nc', gdal.OF_VECTOR )
+    out_ds = gdal.OpenEx('tmp/netcdf_53.nc', gdal.OF_VECTOR)
     out_lyr = out_ds.GetLayer(0)
     srs = out_lyr.GetSpatialRef().ExportToWkt()
     if srs.find('PROJCS["OSGB 1936') < 0:
@@ -2129,6 +2235,7 @@ def netcdf_53():
 ###############################################################################
 # Test appending to a vector NetCDF 4 file with unusual types (ubyte, ushort...)
 
+
 def netcdf_54():
 
     if gdaltest.netcdf_drv is None:
@@ -2137,9 +2244,9 @@ def netcdf_54():
     if not gdaltest.netcdf_drv_has_nc4:
         return 'skip'
 
-    shutil.copy( 'data/test_ogr_nc4.nc', 'tmp/netcdf_54.nc')
+    shutil.copy('data/test_ogr_nc4.nc', 'tmp/netcdf_54.nc')
 
-    ds = gdal.OpenEx( 'tmp/netcdf_54.nc', gdal.OF_VECTOR | gdal.OF_UPDATE )
+    ds = gdal.OpenEx('tmp/netcdf_54.nc', gdal.OF_VECTOR | gdal.OF_UPDATE)
     lyr = ds.GetLayer(0)
     f = lyr.GetNextFeature()
     if f is None:
@@ -2154,7 +2261,7 @@ def netcdf_54():
         return 'fail'
     ds = None
 
-    ds = gdal.OpenEx( 'tmp/netcdf_54.nc', gdal.OF_VECTOR )
+    ds = gdal.OpenEx('tmp/netcdf_54.nc', gdal.OF_VECTOR)
     lyr = ds.GetLayer(0)
     f = lyr.GetFeature(lyr.GetFeatureCount())
     f.SetFID(-1)
@@ -2175,6 +2282,7 @@ def netcdf_54():
 ###############################################################################
 # Test auto-grow of bidimensional char variables in a vector NetCDF 4 file
 
+
 def netcdf_55():
 
     if gdaltest.netcdf_drv is None:
@@ -2183,9 +2291,9 @@ def netcdf_55():
     if not gdaltest.netcdf_drv_has_nc4:
         return 'skip'
 
-    shutil.copy( 'data/test_ogr_nc4.nc', 'tmp/netcdf_55.nc')
+    shutil.copy('data/test_ogr_nc4.nc', 'tmp/netcdf_55.nc')
 
-    ds = gdal.OpenEx( 'tmp/netcdf_55.nc', gdal.OF_VECTOR | gdal.OF_UPDATE )
+    ds = gdal.OpenEx('tmp/netcdf_55.nc', gdal.OF_VECTOR | gdal.OF_UPDATE)
     lyr = ds.GetLayer(0)
     f = lyr.GetNextFeature()
     if f is None:
@@ -2200,7 +2308,7 @@ def netcdf_55():
         return 'fail'
     ds = None
 
-    ds = gdal.OpenEx( 'tmp/netcdf_55.nc', gdal.OF_VECTOR )
+    ds = gdal.OpenEx('tmp/netcdf_55.nc', gdal.OF_VECTOR)
     lyr = ds.GetLayer(0)
     f = lyr.GetFeature(lyr.GetFeatureCount())
     f.SetFID(-1)
@@ -2221,6 +2329,7 @@ def netcdf_55():
 ###############################################################################
 # Test truncation of bidimensional char variables and WKT in a vector NetCDF 3 file
 
+
 def netcdf_56():
 
     if gdaltest.netcdf_drv is None:
@@ -2228,7 +2337,7 @@ def netcdf_56():
 
     ds = ogr.GetDriverByName('netCDF').CreateDataSource('tmp/netcdf_56.nc')
     # Test auto-grow of WKT field
-    lyr = ds.CreateLayer('netcdf_56', options = [ 'AUTOGROW_STRINGS=NO', 'STRING_DEFAULT_WIDTH=5', 'WKT_DEFAULT_WIDTH=5' ] )
+    lyr = ds.CreateLayer('netcdf_56', options=['AUTOGROW_STRINGS=NO', 'STRING_DEFAULT_WIDTH=5', 'WKT_DEFAULT_WIDTH=5'])
     lyr.CreateField(ogr.FieldDefn('txt'))
     f = ogr.Feature(lyr.GetLayerDefn())
     f['txt'] = '0123456789'
@@ -2240,7 +2349,7 @@ def netcdf_56():
         return 'fail'
     ds = None
 
-    ds = gdal.OpenEx( 'tmp/netcdf_56.nc', gdal.OF_VECTOR )
+    ds = gdal.OpenEx('tmp/netcdf_56.nc', gdal.OF_VECTOR)
     lyr = ds.GetLayer(0)
     f = lyr.GetFeature(lyr.GetFeatureCount())
     if f['txt'] != '01234' or f.GetGeometryRef() is not None:
@@ -2256,6 +2365,7 @@ def netcdf_56():
 ###############################################################################
 # Test one layer per file creation
 
+
 def netcdf_57():
 
     if gdaltest.netcdf_drv is None:
@@ -2263,11 +2373,11 @@ def netcdf_57():
 
     try:
         shutil.rmtree('tmp/netcdf_57')
-    except:
+    except OSError:
         pass
 
     with gdaltest.error_handler():
-        ds = ogr.GetDriverByName('netCDF').CreateDataSource('/not_existing_dir/invalid_subdir', options = ['MULTIPLE_LAYERS=SEPARATE_FILES'])
+        ds = ogr.GetDriverByName('netCDF').CreateDataSource('/not_existing_dir/invalid_subdir', options=['MULTIPLE_LAYERS=SEPARATE_FILES'])
     if ds is not None:
         gdaltest.post_reason('failure')
         return 'fail'
@@ -2275,14 +2385,14 @@ def netcdf_57():
     open('tmp/netcdf_57', 'wb').close()
 
     with gdaltest.error_handler():
-        ds = ogr.GetDriverByName('netCDF').CreateDataSource('/not_existing_dir/invalid_subdir', options = ['MULTIPLE_LAYERS=SEPARATE_FILES'])
+        ds = ogr.GetDriverByName('netCDF').CreateDataSource('/not_existing_dir/invalid_subdir', options=['MULTIPLE_LAYERS=SEPARATE_FILES'])
     if ds is not None:
         gdaltest.post_reason('failure')
         return 'fail'
 
     os.unlink('tmp/netcdf_57')
 
-    ds = ogr.GetDriverByName('netCDF').CreateDataSource('tmp/netcdf_57', options = ['MULTIPLE_LAYERS=SEPARATE_FILES'])
+    ds = ogr.GetDriverByName('netCDF').CreateDataSource('tmp/netcdf_57', options=['MULTIPLE_LAYERS=SEPARATE_FILES'])
     for ilayer in range(2):
         lyr = ds.CreateLayer('lyr%d' % ilayer)
         lyr.CreateField(ogr.FieldDefn('lyr_id', ogr.OFTInteger))
@@ -2307,6 +2417,7 @@ def netcdf_57():
 ###############################################################################
 # Test one layer per group (NC4)
 
+
 def netcdf_58():
 
     if gdaltest.netcdf_drv is None:
@@ -2315,10 +2426,10 @@ def netcdf_58():
     if not gdaltest.netcdf_drv_has_nc4:
         return 'skip'
 
-    ds = ogr.GetDriverByName('netCDF').CreateDataSource('tmp/netcdf_58.nc', options = ['FORMAT=NC4', 'MULTIPLE_LAYERS=SEPARATE_GROUPS'])
+    ds = ogr.GetDriverByName('netCDF').CreateDataSource('tmp/netcdf_58.nc', options=['FORMAT=NC4', 'MULTIPLE_LAYERS=SEPARATE_GROUPS'])
     for ilayer in range(2):
         # Make sure auto-grow will happen to test this works well with multiple groups
-        lyr = ds.CreateLayer('lyr%d' % ilayer, geom_type = ogr.wkbNone, options = ['USE_STRING_IN_NC4=NO', 'STRING_DEFAULT_WIDTH=1' ])
+        lyr = ds.CreateLayer('lyr%d' % ilayer, geom_type=ogr.wkbNone, options=['USE_STRING_IN_NC4=NO', 'STRING_DEFAULT_WIDTH=1'])
         lyr.CreateField(ogr.FieldDefn('lyr_id', ogr.OFTString))
         f = ogr.Feature(lyr.GetLayerDefn())
         f['lyr_id'] = 'lyr_%d' % ilayer
@@ -2339,25 +2450,27 @@ def netcdf_58():
     return 'success'
 
 ###############################################################################
-#check for UnitType set/get.
+# check for UnitType set/get.
+
+
 def netcdf_59():
 
     if gdaltest.netcdf_drv is None:
         return 'skip'
 
     # get
-    ds = gdal.Open( 'data/unittype.nc' )
+    ds = gdal.Open('data/unittype.nc')
 
-    unit = ds.GetRasterBand( 1 ).GetUnitType()
+    unit = ds.GetRasterBand(1).GetUnitType()
 
     if unit != 'm/s':
-        gdaltest.post_reason( 'Incorrect unit(%s)' % unit )
+        gdaltest.post_reason('Incorrect unit(%s)' % unit)
         return 'fail'
 
     ds = None
 
     # set
-    tst = gdaltest.GDALTest( 'NetCDF', 'unittype.nc', 1, 4672 )
+    tst = gdaltest.GDALTest('NetCDF', 'unittype.nc', 1, 4672)
 
     return tst.testSetUnitType()
 
@@ -2365,28 +2478,29 @@ def netcdf_59():
 # Test reading a "Indexed ragged array representation of profiles" v1.6.0 H3.5
 # http://cfconventions.org/cf-conventions/v1.6.0/cf-conventions.html#_indexed_ragged_array_representation_of_profiles
 
+
 def netcdf_60():
 
     if gdaltest.netcdf_drv is None:
         return 'skip'
 
     # Test that a vector cannot be opened in raster-only mode
-    ds = gdal.OpenEx( 'data/profile.nc', gdal.OF_RASTER )
+    ds = gdal.OpenEx('data/profile.nc', gdal.OF_RASTER)
     if ds is not None:
         gdaltest.post_reason('fail')
         return 'fail'
 
-    ds = gdal.OpenEx( 'data/profile.nc', gdal.OF_VECTOR)
+    ds = gdal.OpenEx('data/profile.nc', gdal.OF_VECTOR)
     if ds is None:
         gdaltest.post_reason('fail')
         return 'fail'
 
     with gdaltest.error_handler():
-        gdal.VectorTranslate( '/vsimem/netcdf_60.csv', ds, format = 'CSV', layerCreationOptions = ['LINEFORMAT=LF', 'GEOMETRY=AS_WKT'] )
+        gdal.VectorTranslate('/vsimem/netcdf_60.csv', ds, format='CSV', layerCreationOptions=['LINEFORMAT=LF', 'GEOMETRY=AS_WKT', 'STRING_QUOTING=IF_NEEDED'])
 
-    fp = gdal.VSIFOpenL( '/vsimem/netcdf_60.csv', 'rb' )
+    fp = gdal.VSIFOpenL('/vsimem/netcdf_60.csv', 'rb')
     if fp is not None:
-        content = gdal.VSIFReadL( 1, 10000, fp ).decode('ascii')
+        content = gdal.VSIFReadL(1, 10000, fp).decode('ascii')
         gdal.VSIFCloseL(fp)
     expected_content = """WKT,profile,id,station,foo
 "POINT Z (2 49 100)",1,1,Palo Alto,bar
@@ -2406,18 +2520,19 @@ def netcdf_60():
 ###############################################################################
 # Test appending to a "Indexed ragged array representation of profiles" v1.6.0 H3.5
 
+
 def netcdf_61():
 
     if gdaltest.netcdf_drv is None:
         return 'skip'
 
     shutil.copy('data/profile.nc', 'tmp/netcdf_61.nc')
-    ds = gdal.VectorTranslate( 'tmp/netcdf_61.nc', 'data/profile.nc', accessMode = 'append' )
-    gdal.VectorTranslate( '/vsimem/netcdf_61.csv', ds, format = 'CSV', layerCreationOptions = ['LINEFORMAT=LF', 'GEOMETRY=AS_WKT'] )
+    ds = gdal.VectorTranslate('tmp/netcdf_61.nc', 'data/profile.nc', accessMode='append')
+    gdal.VectorTranslate('/vsimem/netcdf_61.csv', ds, format='CSV', layerCreationOptions=['LINEFORMAT=LF', 'GEOMETRY=AS_WKT', 'STRING_QUOTING=IF_NEEDED'])
 
-    fp = gdal.VSIFOpenL( '/vsimem/netcdf_61.csv', 'rb' )
+    fp = gdal.VSIFOpenL('/vsimem/netcdf_61.csv', 'rb')
     if fp is not None:
-        content = gdal.VSIFReadL( 1, 10000, fp ).decode('ascii')
+        content = gdal.VSIFReadL(1, 10000, fp).decode('ascii')
         gdal.VSIFCloseL(fp)
     expected_content = """WKT,profile,id,station,foo
 "POINT Z (2 49 100)",1,1,Palo Alto,bar
@@ -2442,17 +2557,18 @@ def netcdf_61():
 ###############################################################################
 # Test creating a "Indexed ragged array representation of profiles" v1.6.0 H3.5
 
+
 def netcdf_62():
 
     if gdaltest.netcdf_drv is None:
         return 'skip'
 
-    ds = gdal.VectorTranslate( 'tmp/netcdf_62.nc', 'data/profile.nc', format = 'netCDF', layerCreationOptions = ['FEATURE_TYPE=PROFILE', 'PROFILE_DIM_INIT_SIZE=1', 'PROFILE_VARIABLES=station'] )
-    gdal.VectorTranslate( '/vsimem/netcdf_62.csv', ds, format = 'CSV', layerCreationOptions = ['LINEFORMAT=LF', 'GEOMETRY=AS_WKT'] )
+    ds = gdal.VectorTranslate('tmp/netcdf_62.nc', 'data/profile.nc', format='netCDF', layerCreationOptions=['FEATURE_TYPE=PROFILE', 'PROFILE_DIM_INIT_SIZE=1', 'PROFILE_VARIABLES=station'])
+    gdal.VectorTranslate('/vsimem/netcdf_62.csv', ds, format='CSV', layerCreationOptions=['LINEFORMAT=LF', 'GEOMETRY=AS_WKT', 'STRING_QUOTING=IF_NEEDED'])
 
-    fp = gdal.VSIFOpenL( '/vsimem/netcdf_62.csv', 'rb' )
+    fp = gdal.VSIFOpenL('/vsimem/netcdf_62.csv', 'rb')
     if fp is not None:
-        content = gdal.VSIFReadL( 1, 10000, fp ).decode('ascii')
+        content = gdal.VSIFReadL(1, 10000, fp).decode('ascii')
         gdal.VSIFCloseL(fp)
 
     expected_content = """WKT,profile,id,station,foo
@@ -2470,6 +2586,7 @@ def netcdf_62():
 
     return 'success'
 
+
 def netcdf_62_ncdump_check():
 
     if gdaltest.netcdf_drv is None:
@@ -2481,7 +2598,7 @@ def netcdf_62_ncdump_check():
     except:
         err = None
     if err is not None and 'netcdf library version' in err:
-        (ret, err) = gdaltest.runexternal_out_and_err( 'ncdump -h tmp/netcdf_62.nc' )
+        (ret, err) = gdaltest.runexternal_out_and_err('ncdump -h tmp/netcdf_62.nc')
         if ret.find('profile = 2') < 0 or \
            ret.find('record = UNLIMITED') < 0 or \
            ret.find('profile:cf_role = "profile_id"') < 0 or \
@@ -2497,6 +2614,7 @@ def netcdf_62_ncdump_check():
 
     return 'success'
 
+
 def netcdf_62_cf_check():
 
     if gdaltest.netcdf_drv is None:
@@ -2505,7 +2623,7 @@ def netcdf_62_cf_check():
     import netcdf_cf
     if netcdf_cf.netcdf_cf_setup() == 'success' and \
        gdaltest.netcdf_cf_method is not None:
-        result_cf = netcdf_cf.netcdf_cf_check_file( 'tmp/netcdf_62.nc','auto',False )
+        result_cf = netcdf_cf.netcdf_cf_check_file('tmp/netcdf_62.nc', 'auto', False)
         if result_cf != 'success':
             gdaltest.post_reason('failure')
             return 'fail'
@@ -2517,6 +2635,7 @@ def netcdf_62_cf_check():
 ###############################################################################
 # Test creating a NC4 "Indexed ragged array representation of profiles" v1.6.0 H3.5
 
+
 def netcdf_63():
 
     if gdaltest.netcdf_drv is None:
@@ -2526,12 +2645,12 @@ def netcdf_63():
         return 'skip'
 
     shutil.copy('data/profile.nc', 'tmp/netcdf_63.nc')
-    ds = gdal.VectorTranslate( 'tmp/netcdf_63.nc', 'data/profile.nc', format = 'netCDF', datasetCreationOptions = ['FORMAT=NC4'], layerCreationOptions = ['FEATURE_TYPE=PROFILE', 'USE_STRING_IN_NC4=NO', 'STRING_DEFAULT_WIDTH=1' ] )
-    gdal.VectorTranslate( '/vsimem/netcdf_63.csv', ds, format = 'CSV', layerCreationOptions = ['LINEFORMAT=LF', 'GEOMETRY=AS_WKT'] )
+    ds = gdal.VectorTranslate('tmp/netcdf_63.nc', 'data/profile.nc', format='netCDF', datasetCreationOptions=['FORMAT=NC4'], layerCreationOptions=['FEATURE_TYPE=PROFILE', 'USE_STRING_IN_NC4=NO', 'STRING_DEFAULT_WIDTH=1'])
+    gdal.VectorTranslate('/vsimem/netcdf_63.csv', ds, format='CSV', layerCreationOptions=['LINEFORMAT=LF', 'GEOMETRY=AS_WKT', 'STRING_QUOTING=IF_NEEDED'])
 
-    fp = gdal.VSIFOpenL( '/vsimem/netcdf_63.csv', 'rb' )
+    fp = gdal.VSIFOpenL('/vsimem/netcdf_63.csv', 'rb')
     if fp is not None:
-        content = gdal.VSIFReadL( 1, 10000, fp ).decode('ascii')
+        content = gdal.VSIFReadL(1, 10000, fp).decode('ascii')
         gdal.VSIFCloseL(fp)
 
     expected_content = """WKT,profile,id,station,foo
@@ -2549,6 +2668,7 @@ def netcdf_63():
 
     return 'success'
 
+
 def netcdf_63_ncdump_check():
 
     if gdaltest.netcdf_drv is None:
@@ -2563,7 +2683,7 @@ def netcdf_63_ncdump_check():
     except:
         err = None
     if err is not None and 'netcdf library version' in err:
-        (ret, err) = gdaltest.runexternal_out_and_err( 'ncdump -h tmp/netcdf_63.nc' )
+        (ret, err) = gdaltest.runexternal_out_and_err('ncdump -h tmp/netcdf_63.nc')
         if ret.find('profile = UNLIMITED') < 0 or \
            ret.find('record = UNLIMITED') < 0 or \
            ret.find('profile:cf_role = "profile_id"') < 0 or \
@@ -2585,17 +2705,18 @@ def netcdf_63_ncdump_check():
 # Test creating a "Indexed ragged array representation of profiles" v1.6.0 H3.5
 # but without a profile field.
 
+
 def netcdf_64():
 
     if gdaltest.netcdf_drv is None:
         return 'skip'
 
-    gdal.VectorTranslate( 'tmp/netcdf_64.nc', 'data/profile.nc', format = 'netCDF', selectFields = ['id,station,foo'], layerCreationOptions = ['FEATURE_TYPE=PROFILE', 'PROFILE_DIM_NAME=profile_dim', 'PROFILE_DIM_INIT_SIZE=1'] )
-    gdal.VectorTranslate( '/vsimem/netcdf_64.csv', 'tmp/netcdf_64.nc', format = 'CSV', layerCreationOptions = ['LINEFORMAT=LF', 'GEOMETRY=AS_WKT'] )
+    gdal.VectorTranslate('tmp/netcdf_64.nc', 'data/profile.nc', format='netCDF', selectFields=['id,station,foo'], layerCreationOptions=['FEATURE_TYPE=PROFILE', 'PROFILE_DIM_NAME=profile_dim', 'PROFILE_DIM_INIT_SIZE=1'])
+    gdal.VectorTranslate('/vsimem/netcdf_64.csv', 'tmp/netcdf_64.nc', format='CSV', layerCreationOptions=['LINEFORMAT=LF', 'GEOMETRY=AS_WKT', 'STRING_QUOTING=IF_NEEDED'])
 
-    fp = gdal.VSIFOpenL( '/vsimem/netcdf_64.csv', 'rb' )
+    fp = gdal.VSIFOpenL('/vsimem/netcdf_64.csv', 'rb')
     if fp is not None:
-        content = gdal.VSIFReadL( 1, 10000, fp ).decode('ascii')
+        content = gdal.VSIFReadL(1, 10000, fp).decode('ascii')
         gdal.VSIFCloseL(fp)
 
     expected_content = """WKT,profile_dim,id,station,foo
@@ -2618,6 +2739,7 @@ def netcdf_64():
 # Test creating a NC4 file with empty string fields / WKT fields
 # (they must be filled as empty strings to avoid crashes in netcdf lib)
 
+
 def netcdf_65():
 
     if gdaltest.netcdf_drv is None:
@@ -2626,7 +2748,7 @@ def netcdf_65():
     if not gdaltest.netcdf_drv_has_nc4:
         return 'skip'
 
-    ds = ogr.GetDriverByName('netCDF').CreateDataSource('tmp/netcdf_65.nc', options = ['FORMAT=NC4'])
+    ds = ogr.GetDriverByName('netCDF').CreateDataSource('tmp/netcdf_65.nc', options=['FORMAT=NC4'])
     lyr = ds.CreateLayer('test')
     lyr.CreateField(ogr.FieldDefn('str', ogr.OFTString))
     f = ogr.Feature(lyr.GetLayerDefn())
@@ -2650,6 +2772,7 @@ def netcdf_65():
 # Test creating a "Indexed ragged array representation of profiles" v1.6.0 H3.5
 # from a config file
 
+
 def netcdf_66():
 
     if gdaltest.netcdf_drv is None:
@@ -2658,13 +2781,13 @@ def netcdf_66():
     # First trying with no so good configs
 
     with gdaltest.error_handler():
-        gdal.VectorTranslate( 'tmp/netcdf_66.nc', 'data/profile.nc', format = 'netCDF', datasetCreationOptions = ['CONFIG_FILE=not_existing'] )
+        gdal.VectorTranslate('tmp/netcdf_66.nc', 'data/profile.nc', format='netCDF', datasetCreationOptions=['CONFIG_FILE=not_existing'])
 
     with gdaltest.error_handler():
-        gdal.VectorTranslate( 'tmp/netcdf_66.nc', 'data/profile.nc', format = 'netCDF', datasetCreationOptions = ['CONFIG_FILE=<Configuration>'] )
+        gdal.VectorTranslate('tmp/netcdf_66.nc', 'data/profile.nc', format='netCDF', datasetCreationOptions=['CONFIG_FILE=<Configuration>'])
 
     myconfig = \
-"""<Configuration>
+        """<Configuration>
     <!-- comment -->
     <unrecognized_elt/>
     <DatasetCreationOption/>
@@ -2700,11 +2823,11 @@ def netcdf_66():
 """
 
     with gdaltest.error_handler():
-        gdal.VectorTranslate( 'tmp/netcdf_66.nc', 'data/profile.nc', format = 'netCDF', datasetCreationOptions = ['CONFIG_FILE=' + myconfig] )
+        gdal.VectorTranslate('tmp/netcdf_66.nc', 'data/profile.nc', format='netCDF', datasetCreationOptions=['CONFIG_FILE=' + myconfig])
 
     # Now with a correct configuration
     myconfig = \
-"""<Configuration>
+        """<Configuration>
     <DatasetCreationOption name="WRITE_GDAL_TAGS" value="NO"/>
     <LayerCreationOption name="STRING_DEFAULT_WIDTH" value="1"/>
     <Attribute name="foo" value="bar"/>
@@ -2729,12 +2852,12 @@ def netcdf_66():
 </Configuration>
 """
 
-    gdal.VectorTranslate( 'tmp/netcdf_66.nc', 'data/profile.nc', format = 'netCDF', datasetCreationOptions = ['CONFIG_FILE=' + myconfig] )
-    gdal.VectorTranslate( '/vsimem/netcdf_66.csv', 'tmp/netcdf_66.nc', format = 'CSV', layerCreationOptions = ['LINEFORMAT=LF', 'GEOMETRY=AS_WKT'] )
+    gdal.VectorTranslate('tmp/netcdf_66.nc', 'data/profile.nc', format='netCDF', datasetCreationOptions=['CONFIG_FILE=' + myconfig])
+    gdal.VectorTranslate('/vsimem/netcdf_66.csv', 'tmp/netcdf_66.nc', format='CSV', layerCreationOptions=['LINEFORMAT=LF', 'GEOMETRY=AS_WKT', 'STRING_QUOTING=IF_NEEDED'])
 
-    fp = gdal.VSIFOpenL( '/vsimem/netcdf_66.csv', 'rb' )
+    fp = gdal.VSIFOpenL('/vsimem/netcdf_66.csv', 'rb')
     if fp is not None:
-        content = gdal.VSIFReadL( 1, 10000, fp ).decode('ascii')
+        content = gdal.VSIFReadL(1, 10000, fp).decode('ascii')
         gdal.VSIFCloseL(fp)
 
     expected_content = """WKT,profile,id,my_station,foo
@@ -2752,6 +2875,7 @@ def netcdf_66():
 
     return 'success'
 
+
 def netcdf_66_ncdump_check():
 
     if gdaltest.netcdf_drv is None:
@@ -2763,7 +2887,7 @@ def netcdf_66_ncdump_check():
     except:
         err = None
     if err is not None and 'netcdf library version' in err:
-        (ret, err) = gdaltest.runexternal_out_and_err( 'ncdump -h tmp/netcdf_66.nc' )
+        (ret, err) = gdaltest.runexternal_out_and_err('ncdump -h tmp/netcdf_66.nc')
         if ret.find('char my_station(obs, my_station_max_width)') < 0 or \
            ret.find('my_station:long_name = "my station attribute"') < 0 or \
            ret.find('lon:my_extra_lon_attribute = "foo"') < 0 or \
@@ -2786,6 +2910,8 @@ def netcdf_66_ncdump_check():
 ###############################################################################
 # ticket #5950: optimize IReadBlock() and CheckData() handling of partial
 # blocks in the x axischeck for partial block reading.
+
+
 def netcdf_67():
 
     if gdaltest.netcdf_drv is None:
@@ -2796,24 +2922,24 @@ def netcdf_67():
 
     try:
         import numpy
-    except:
+    except ImportError:
         return 'skip'
 
     # disable bottom-up mode to use the real file's blocks size
-    gdal.SetConfigOption( 'GDAL_NETCDF_BOTTOMUP', 'NO' )
+    gdal.SetConfigOption('GDAL_NETCDF_BOTTOMUP', 'NO')
     # for the moment the next test using check_stat does not work, seems like
     # the last pixel (9) of the image is not handled by stats...
 #    tst = gdaltest.GDALTest( 'NetCDF', 'partial_block_ticket5950.nc', 1, 45 )
 #    result = tst.testOpen( check_stat=(1, 9, 5, 2.582) )
     # so for the moment compare the full image
-    ds = gdal.Open( 'data/partial_block_ticket5950.nc', gdal.GA_ReadOnly )
+    ds = gdal.Open('data/partial_block_ticket5950.nc', gdal.GA_ReadOnly)
     ref = numpy.arange(1, 10).reshape((3, 3))
     if numpy.array_equal(ds.GetRasterBand(1).ReadAsArray(), ref):
         result = 'success'
     else:
         result = 'fail'
     ds = None
-    gdal.SetConfigOption( 'GDAL_NETCDF_BOTTOMUP', None )
+    gdal.SetConfigOption('GDAL_NETCDF_BOTTOMUP', None)
 
     return result
 
@@ -2838,6 +2964,7 @@ def netcdf_68():
 ###############################################################################
 # Test opening a dataset with a 1D variable with 0 record (#6645)
 
+
 def netcdf_69():
 
     if gdaltest.netcdf_drv is None:
@@ -2851,6 +2978,7 @@ def netcdf_69():
 
 ###############################################################################
 # Test that we don't erroneously identify non-longitude axis as longitude (#6759)
+
 
 def netcdf_70():
 
@@ -2870,6 +2998,7 @@ def netcdf_70():
 # Test that we take into account x and y offset and scaling
 # (https://github.com/OSGeo/gdal/pull/200)
 
+
 def netcdf_71():
 
     if gdaltest.netcdf_drv is None:
@@ -2887,6 +3016,7 @@ def netcdf_71():
 ###############################################################################
 # test int64 attributes / dim
 
+
 def netcdf_72():
 
     if gdaltest.netcdf_drv is None:
@@ -2902,6 +3032,123 @@ def netcdf_72():
         return 'fail'
 
     return 'success'
+
+###############################################################################
+# test geostationary with radian units (https://github.com/OSGeo/gdal/pull/220)
+
+
+def netcdf_73():
+
+    if gdaltest.netcdf_drv is None:
+        return 'skip'
+
+    ds = gdal.Open('data/geos_rad.nc')
+    gt = ds.GetGeoTransform()
+    expected_gt = (-5979486.362104082, 1087179.4077774752, 0.0, -5979487.123448145, 0.0, 1087179.4077774752)
+    if max([abs(gt[i] - expected_gt[i]) for i in range(6)]) > 1:
+        print(gt)
+        return 'fail'
+
+    return 'success'
+
+###############################################################################
+# test geostationary with microradian units (https://github.com/OSGeo/gdal/pull/220)
+
+
+def netcdf_74():
+
+    if gdaltest.netcdf_drv is None:
+        return 'skip'
+
+    ds = gdal.Open('data/geos_microradian.nc')
+    gt = ds.GetGeoTransform()
+    expected_gt = (-5739675.119757546, 615630.8078590936, 0.0, -1032263.7666924844, 0.0, 615630.8078590936)
+    if max([abs(gt[i] - expected_gt[i]) for i in range(6)]) > 1:
+        print(gt)
+        return 'fail'
+
+    return 'success'
+
+###############################################################################
+# test opening a ncdump file
+
+
+def netcdf_75():
+
+    if gdaltest.netcdf_drv is None:
+        return 'skip'
+
+    if gdaltest.netcdf_drv.GetMetadataItem("ENABLE_NCDUMP") != 'YES':
+        return 'skip'
+
+    tst = gdaltest.GDALTest('NetCDF', 'byte.nc.txt',
+                            1, 4672)
+
+    wkt = """PROJCS["NAD27 / UTM zone 11N",
+    GEOGCS["NAD27",
+        DATUM["North_American_Datum_1927",
+            SPHEROID["Clarke 1866",6378206.4,294.9786982139006,
+                AUTHORITY["EPSG","7008"]],
+            AUTHORITY["EPSG","6267"]],
+        PRIMEM["Greenwich",0],
+        UNIT["degree",0.0174532925199433],
+        AUTHORITY["EPSG","4267"]],
+    PROJECTION["Transverse_Mercator"],
+    PARAMETER["latitude_of_origin",0],
+    PARAMETER["central_meridian",-117],
+    PARAMETER["scale_factor",0.9996],
+    PARAMETER["false_easting",500000],
+    PARAMETER["false_northing",0],
+    UNIT["metre",1,
+        AUTHORITY["EPSG","9001"]],
+    AUTHORITY["EPSG","26711"]]"""
+
+    return tst.testOpen(check_prj=wkt)
+
+###############################################################################
+# test opening a vector ncdump file
+
+
+def netcdf_76():
+
+    if gdaltest.netcdf_drv is None:
+        return 'skip'
+
+    if gdaltest.netcdf_drv.GetMetadataItem("ENABLE_NCDUMP") != 'YES':
+        return 'skip'
+
+    ds = ogr.Open('data/poly.nc.txt')
+    lyr = ds.GetLayer(0)
+    f = lyr.GetNextFeature()
+    if f is None or f.GetGeometryRef() is None:
+        f.DumpReadable()
+        return 'fail'
+
+    return 'success'
+
+###############################################################################
+# test opening a raster file that used to be confused with a vector file (#6974)
+
+
+def netcdf_77():
+
+    if gdaltest.netcdf_drv is None:
+        return 'skip'
+
+    ds = gdal.Open('data/fake_Oa01_radiance.nc')
+    subdatasets = ds.GetMetadata('SUBDATASETS')
+    if len(subdatasets) != 2 * 2:
+        gdaltest.post_reason('fail')
+        print(subdatasets)
+        return 'fail'
+
+    ds = gdal.Open('NETCDF:"data/fake_Oa01_radiance.nc":Oa01_radiance')
+    if len(ds.GetMetadata('GEOLOCATION')) != 0:
+        gdaltest.post_reason('fail')
+        return 'fail'
+
+    return 'success'
+
 
 ###############################################################################
 # test we handle correctly valid_range={0,255} for a byte dataset with
@@ -2926,9 +3173,78 @@ def netcdf_78():
     return 'success'
 
 ###############################################################################
+# test we handle correctly _Unsigned="true" for a byte dataset with
+# negative nodata value
+
+
+def netcdf_79():
+
+    if gdaltest.netcdf_drv is None:
+        return 'skip'
+
+    ds = gdal.Open('data/byte_with_neg_fillvalue_and_unsigned_hint.nc')
+    if ds.GetRasterBand(1).GetNoDataValue() != 240:
+        gdaltest.post_reason('fail')
+        return 'fail'
+    data = ds.GetRasterBand(1).ReadRaster()
+    data = struct.unpack('B' * 4, data)
+    if data != (128, 129, 126, 127):
+        gdaltest.post_reason('fail')
+        print(data)
+        return 'fail'
+
+    return 'success'
+
+###############################################################################
+# Test creating and opening with accent
+
+
+def netcdf_80():
+
+    if gdaltest.netcdf_drv is None:
+        return 'skip'
+
+    test = gdaltest.GDALTest('NETCDF', '../data/byte.tif', 1, 4672)
+    return test.testCreateCopy(new_filename='test\xc3\xa9.nc', check_gt=0, check_srs=0, check_minmax=0)
+
+###############################################################################
+# netCDF file in rotated_pole projection
+
+
+def netcdf_81():
+
+    if gdaltest.netcdf_drv is None:
+        return 'skip'
+
+    ds = gdal.Open('data/rotated_pole.nc')
+
+    if ds.RasterXSize != 137 or ds.RasterYSize != 108:
+        gdaltest.post_reason('Did not get expected dimensions')
+        print(ds.RasterXSize)
+        print(ds.RasterYSize)
+        return 'fail'
+
+    projection = ds.GetProjectionRef()
+    expected_projection = """PROJCS["unnamed",GEOGCS["unknown",DATUM["unknown",SPHEROID["Spheroid",6367470,594.3130483479559]],PRIMEM["Greenwich",0],UNIT["degree",0.0174532925199433]],PROJECTION["Rotated_pole"],EXTENSION["PROJ4","+proj=ob_tran +o_proj=longlat +lon_0=18 +o_lon_p=0 +o_lat_p=39.25 +a=6367470 +b=6367470 +to_meter=0.0174532925199 +wktext"]]"""
+    if projection != expected_projection:
+        gdaltest.post_reason('Did not get expected projection')
+        print(projection)
+        return 'fail'
+
+    gt = ds.GetGeoTransform()
+    expected_gt = (-35.47, 0.44, 0.0, 23.65, 0.0, -0.44)
+    if max([abs(gt[i] - expected_gt[i]) for i in range(6)]) > 1e-3:
+        gdaltest.post_reason('Did not get expected geotransform')
+        print(gt)
+        return 'fail'
+
+    return 'success'
+
+###############################################################################
 # netCDF file with extra dimensions that are oddly indexed (1D variable
 # corresponding to the dimension but with a differentn ame, no corresponding
 # 1D variable, several corresponding variables)
+
 
 def netcdf_82():
 
@@ -2969,6 +3285,7 @@ def netcdf_82():
 
 ###############################################################################
 # main tests list
+
 
 gdaltest_list = [
     netcdf_1,
@@ -3048,14 +3365,22 @@ gdaltest_list = [
     netcdf_70,
     netcdf_71,
     netcdf_72,
+    netcdf_73,
+    netcdf_74,
+    netcdf_75,
+    netcdf_76,
+    netcdf_77,
     netcdf_78,
+    netcdf_79,
+    netcdf_80,
+    netcdf_81,
     netcdf_82
 ]
 
 ###############################################################################
 #  basic file creation tests
 
-init_list = [ \
+init_list = [
     ('byte.tif', 1, 4672, None, []),
     ('byte_signed.tif', 1, 4672, None, ['PIXELTYPE=SIGNEDBYTE']),
     ('int16.tif', 1, 4672, None, []),
@@ -3066,25 +3391,25 @@ init_list = [ \
 
 # Some tests we don't need to do for each type.
 item = init_list[0]
-ut = gdaltest.GDALTest( 'netcdf', item[0], item[1], item[2], options=item[4] )
+ut = gdaltest.GDALTest('netcdf', item[0], item[1], item[2], options=item[4])
 
-#test geotransform and projection
-gdaltest_list.append( (ut.testSetGeoTransform, item[0]) )
-gdaltest_list.append( (ut.testSetProjection, item[0]) )
+# test geotransform and projection
+gdaltest_list.append((ut.testSetGeoTransform, item[0]))
+gdaltest_list.append((ut.testSetProjection, item[0]))
 
-#SetMetadata() not supported
-#gdaltest_list.append( (ut.testSetMetadata, item[0]) )
+# SetMetadata() not supported
+# gdaltest_list.append( (ut.testSetMetadata, item[0]) )
 
 # gdaltest_list = [ netcdf_1, netcdf_82 ]
 
 # Others we do for each pixel type.
 for item in init_list:
-    ut = gdaltest.GDALTest( 'netcdf', item[0], item[1], item[2], options=item[4] )
+    ut = gdaltest.GDALTest('netcdf', item[0], item[1], item[2], options=item[4])
     if ut is None:
-        print( 'GTiff tests skipped' )
-    gdaltest_list.append( (ut.testCreateCopy, item[0]) )
-    gdaltest_list.append( (ut.testCreate, item[0]) )
-    gdaltest_list.append( (ut.testSetNoDataValue, item[0]) )
+        print('GTiff tests skipped')
+    gdaltest_list.append((ut.testCreateCopy, item[0]))
+    gdaltest_list.append((ut.testCreate, item[0]))
+    gdaltest_list.append((ut.testSetNoDataValue, item[0]))
 
 
 ###############################################################################
@@ -3092,12 +3417,11 @@ for item in init_list:
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'netcdf' )
+    gdaltest.setup_run('netcdf')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
-    #make sure we cleanup
+    # make sure we cleanup
     gdaltest.clean_tmp()
 
     gdaltest.summarize()
-

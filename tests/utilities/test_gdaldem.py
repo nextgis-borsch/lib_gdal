@@ -32,7 +32,7 @@
 import sys
 import os
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 from osgeo import gdal
 from osgeo import osr
@@ -42,12 +42,13 @@ import test_cli_utilities
 ###############################################################################
 # Test gdaldem hillshade
 
+
 def test_gdaldem_hillshade():
     if test_cli_utilities.get_gdaldem_path() is None:
         return 'skip'
 
     (out, err) = gdaltest.runexternal_out_and_err(test_cli_utilities.get_gdaldem_path() + ' hillshade -s 111120 -z 30 ../gdrivers/data/n43.dt0 tmp/n43_hillshade.tif')
-    if not (err is None or err == '') :
+    if not (err is None or err == ''):
         gdaltest.post_reason('got error/warning')
         print(err)
         return 'fail'
@@ -87,12 +88,13 @@ def test_gdaldem_hillshade():
 ###############################################################################
 # Test gdaldem hillshade
 
+
 def test_gdaldem_hillshade_compressed_tiled_output():
     if test_cli_utilities.get_gdaldem_path() is None:
         return 'skip'
 
     (out, err) = gdaltest.runexternal_out_and_err(test_cli_utilities.get_gdaldem_path() + ' hillshade -s 111120 -z 30 ../gdrivers/data/n43.dt0 tmp/n43_hillshade_compressed_tiled.tif -co TILED=YES -co COMPRESS=DEFLATE --config GDAL_CACHEMAX 0')
-    if not (err is None or err == '') :
+    if not (err is None or err == ''):
         gdaltest.post_reason('got error/warning')
         print(err)
         return 'fail'
@@ -119,6 +121,7 @@ def test_gdaldem_hillshade_compressed_tiled_output():
 
 ###############################################################################
 # Test gdaldem hillshade -combined
+
 
 def test_gdaldem_hillshade_combined():
     if test_cli_utilities.get_gdaldem_path() is None:
@@ -161,6 +164,7 @@ def test_gdaldem_hillshade_combined():
 ###############################################################################
 # Test gdaldem hillshade with -compute_edges
 
+
 def test_gdaldem_hillshade_compute_edges():
     if test_cli_utilities.get_gdaldem_path() is None:
         return 'skip'
@@ -184,24 +188,25 @@ def test_gdaldem_hillshade_compute_edges():
 ###############################################################################
 # Test gdaldem hillshade with -az parameter
 
+
 def test_gdaldem_hillshade_azimuth():
     if test_cli_utilities.get_gdaldem_path() is None:
         return 'skip'
 
     from sys import version_info
     ds = gdal.GetDriverByName('GTiff').Create('tmp/pyramid.tif', 100, 100, 1)
-    ds.SetGeoTransform([2,0.01,0,49,0,-0.01])
+    ds.SetGeoTransform([2, 0.01, 0, 49, 0, -0.01])
     sr = osr.SpatialReference()
     sr.ImportFromEPSG(4326)
     ds.SetProjection(sr.ExportToWkt())
     for j in range(100):
         data = ''
         for i in range(100):
-            val = 255 - 5 * max(abs(50-i),abs(50-j))
+            val = 255 - 5 * max(abs(50 - i), abs(50 - j))
             data = data + ('%c' % (val))
-        if version_info >= (3,0,0):
+        if version_info >= (3, 0, 0):
             data = bytes(data, 'ISO-8859-1')
-        ds.GetRasterBand(1).WriteRaster(0,j,100,1,data)
+        ds.GetRasterBand(1).WriteRaster(0, j, 100, 1, data)
 
     ds = None
 
@@ -210,7 +215,7 @@ def test_gdaldem_hillshade_azimuth():
 
     ds_ref = gdal.Open('data/pyramid_shaded_ref.tif')
     ds = gdal.Open('tmp/pyramid_shaded.tif')
-    if gdaltest.compare_ds(ds, ds_ref, verbose = 1) > 1:
+    if gdaltest.compare_ds(ds, ds_ref, verbose=1) > 1:
         gdaltest.post_reason('Bad checksum')
         return 'fail'
     ds = None
@@ -220,6 +225,7 @@ def test_gdaldem_hillshade_azimuth():
 
 ###############################################################################
 # Test gdaldem hillshade to PNG
+
 
 def test_gdaldem_hillshade_png():
     if test_cli_utilities.get_gdaldem_path() is None:
@@ -244,6 +250,7 @@ def test_gdaldem_hillshade_png():
 ###############################################################################
 # Test gdaldem hillshade to PNG with -compute_edges
 
+
 def test_gdaldem_hillshade_png_compute_edges():
     if test_cli_utilities.get_gdaldem_path() is None:
         return 'skip'
@@ -266,6 +273,7 @@ def test_gdaldem_hillshade_png_compute_edges():
 
 ###############################################################################
 # Test gdaldem slope
+
 
 def test_gdaldem_slope():
     if test_cli_utilities.get_gdaldem_path() is None:
@@ -306,6 +314,7 @@ def test_gdaldem_slope():
 ###############################################################################
 # Test gdaldem aspect
 
+
 def test_gdaldem_aspect():
     if test_cli_utilities.get_gdaldem_path() is None:
         return 'skip'
@@ -344,6 +353,7 @@ def test_gdaldem_aspect():
 
 ###############################################################################
 # Test gdaldem color relief
+
 
 def test_gdaldem_color_relief():
     if test_cli_utilities.get_gdaldem_path() is None:
@@ -436,6 +446,7 @@ def test_gdaldem_color_relief_cpt():
 ###############################################################################
 # Test gdaldem color relief to VRT
 
+
 def test_gdaldem_color_relief_vrt():
     if test_cli_utilities.get_gdaldem_path() is None:
         return 'skip'
@@ -447,7 +458,7 @@ def test_gdaldem_color_relief_vrt():
         return 'fail'
 
     ds_ref = gdal.Open('tmp/n43_colorrelief.tif')
-    if gdaltest.compare_ds(ds, ds_ref, verbose = 0) > 1:
+    if gdaltest.compare_ds(ds, ds_ref, verbose=0) > 1:
         gdaltest.post_reason('Bad checksum')
         return 'fail'
     ds_ref = None
@@ -471,6 +482,7 @@ def test_gdaldem_color_relief_vrt():
 
 ###############################################################################
 # Test gdaldem color relief from a Float32 dataset
+
 
 def test_gdaldem_color_relief_from_float32():
     if test_cli_utilities.get_gdaldem_path() is None:
@@ -506,6 +518,7 @@ def test_gdaldem_color_relief_from_float32():
 ###############################################################################
 # Test gdaldem color relief to PNG
 
+
 def test_gdaldem_color_relief_png():
     if test_cli_utilities.get_gdaldem_path() is None:
         return 'skip'
@@ -536,6 +549,7 @@ def test_gdaldem_color_relief_png():
 
 ###############################################################################
 # Test gdaldem color relief from a Float32 to PNG
+
 
 def test_gdaldem_color_relief_from_float32_to_png():
     if test_cli_utilities.get_gdaldem_path() is None:
@@ -570,6 +584,7 @@ def test_gdaldem_color_relief_from_float32_to_png():
 ###############################################################################
 # Test gdaldem color relief with -nearest_color_entry
 
+
 def test_gdaldem_color_relief_nearest_color_entry():
     if test_cli_utilities.get_gdaldem_path() is None:
         return 'skip'
@@ -600,6 +615,7 @@ def test_gdaldem_color_relief_nearest_color_entry():
 
 ###############################################################################
 # Test gdaldem color relief with -nearest_color_entry and -of VRT
+
 
 def test_gdaldem_color_relief_nearest_color_entry_vrt():
     if test_cli_utilities.get_gdaldem_path() is None:
@@ -632,6 +648,7 @@ def test_gdaldem_color_relief_nearest_color_entry_vrt():
 ###############################################################################
 # Test gdaldem color relief with a nan nodata
 
+
 def test_gdaldem_color_relief_nodata_nan():
     if test_cli_utilities.get_gdaldem_path() is None:
         return 'skip'
@@ -660,7 +677,7 @@ NODATA_value nan
 
     import struct
     val = struct.unpack('B' * 4, val)
-    if val != (0,0,0,1):
+    if val != (0, 0, 0, 1):
         gdaltest.post_reason('fail')
         print(val)
         return 'fail'
@@ -673,6 +690,7 @@ NODATA_value nan
 
 ###############################################################################
 # Test gdaldem color relief with entries with repeated DEM values in the color table (#6422)
+
 
 def test_gdaldem_color_relief_repeated_entry():
     if test_cli_utilities.get_gdaldem_path() is None:
@@ -706,7 +724,7 @@ NODATA_value 5
 
     import struct
     val = struct.unpack('B' * 6, val)
-    if val != (1,1,5,10,10,25):
+    if val != (1, 1, 5, 10, 10, 25):
         gdaltest.post_reason('fail')
         print(val)
         return 'fail'
@@ -719,7 +737,7 @@ NODATA_value 5
 
     import struct
     val = struct.unpack('B' * 6, val)
-    if val != (1,1,5,10,10,25):
+    if val != (1, 1, 5, 10, 10, 25):
         gdaltest.post_reason('fail')
         print(val)
         return 'fail'
@@ -734,82 +752,84 @@ NODATA_value 5
 ###############################################################################
 # Cleanup
 
+
 def test_gdaldem_cleanup():
     try:
         os.remove('tmp/n43_hillshade.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/n43_hillshade_compressed_tiled.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/n43_hillshade_combined.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/n43_hillshade_compute_edges.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/pyramid.tif')
         os.remove('tmp/pyramid_shaded.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/n43_hillshade.png')
         os.remove('tmp/n43_hillshade.png.aux.xml')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/n43_hillshade_compute_edges.png')
         os.remove('tmp/n43_hillshade_compute_edges.png.aux.xml')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/n43_slope.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/n43_aspect.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/n43_colorrelief.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/n43_colorrelief_cpt.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/n43_colorrelief.vrt')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/n43_float32.tif')
         os.remove('tmp/n43_colorrelief_from_float32.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/n43_colorrelief.png')
         os.remove('tmp/n43_colorrelief.png.aux.xml')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/n43_colorrelief_from_float32.png')
         os.remove('tmp/n43_colorrelief_from_float32.png.aux.xml')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/n43_colorrelief_nearest.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/n43_colorrelief_nearest.vrt')
-    except:
+    except OSError:
         pass
     return 'success'
+
 
 gdaltest_list = [
     test_gdaldem_hillshade,
@@ -832,13 +852,13 @@ gdaltest_list = [
     test_gdaldem_color_relief_nodata_nan,
     test_gdaldem_color_relief_repeated_entry,
     test_gdaldem_cleanup
-    ]
+]
 
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'test_gdaldem' )
+    gdaltest.setup_run('test_gdaldem')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

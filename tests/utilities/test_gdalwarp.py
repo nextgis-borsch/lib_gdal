@@ -33,7 +33,7 @@ import sys
 import os
 import stat
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 from osgeo import gdal
 import gdaltest
@@ -42,12 +42,13 @@ import test_cli_utilities
 ###############################################################################
 # Simple test
 
+
 def test_gdalwarp_1():
     if test_cli_utilities.get_gdalwarp_path() is None:
         return 'skip'
 
     (ret, err) = gdaltest.runexternal_out_and_err(test_cli_utilities.get_gdalwarp_path() + ' ../gcore/data/byte.tif tmp/testgdalwarp1.tif')
-    if not (err is None or err == '') :
+    if not (err is None or err == ''):
         gdaltest.post_reason('got error/warning')
         print(err)
         return 'fail'
@@ -115,6 +116,7 @@ def test_gdalwarp_3():
 ###############################################################################
 # Test -t_srs option
 
+
 def test_gdalwarp_4():
     if test_cli_utilities.get_gdalwarp_path() is None:
         return 'skip'
@@ -136,6 +138,7 @@ def test_gdalwarp_4():
 ###############################################################################
 # Test warping from GCPs without any explicit option
 
+
 def test_gdalwarp_5():
     if test_cli_utilities.get_gdalwarp_path() is None:
         return 'skip'
@@ -155,7 +158,7 @@ def test_gdalwarp_5():
         gdaltest.post_reason('Bad checksum')
         return 'fail'
 
-    if not gdaltest.geotransform_equals(gdal.Open('../gcore/data/byte.tif').GetGeoTransform(), ds.GetGeoTransform(), 1e-9) :
+    if not gdaltest.geotransform_equals(gdal.Open('../gcore/data/byte.tif').GetGeoTransform(), ds.GetGeoTransform(), 1e-9):
         gdaltest.post_reason('Bad geotransform')
         return 'fail'
 
@@ -181,7 +184,7 @@ def test_gdalwarp_6():
         gdaltest.post_reason('Bad checksum')
         return 'fail'
 
-    if not gdaltest.geotransform_equals(gdal.Open('../gcore/data/byte.tif').GetGeoTransform(), ds.GetGeoTransform(), 1e-9) :
+    if not gdaltest.geotransform_equals(gdal.Open('../gcore/data/byte.tif').GetGeoTransform(), ds.GetGeoTransform(), 1e-9):
         gdaltest.post_reason('Bad geotransform')
         return 'fail'
 
@@ -204,7 +207,7 @@ def test_gdalwarp_7():
         return 'fail'
 
     expected_gt = (440720.0, 120.0, 0.0, 3751320.0, 0.0, -120.0)
-    if not gdaltest.geotransform_equals(expected_gt, ds.GetGeoTransform(), 1e-9) :
+    if not gdaltest.geotransform_equals(expected_gt, ds.GetGeoTransform(), 1e-9):
         gdaltest.post_reason('Bad geotransform')
         return 'fail'
 
@@ -214,6 +217,7 @@ def test_gdalwarp_7():
 
 ###############################################################################
 # Test -ts
+
 
 def test_gdalwarp_8():
     if test_cli_utilities.get_gdalwarp_path() is None:
@@ -226,7 +230,7 @@ def test_gdalwarp_8():
         return 'fail'
 
     expected_gt = (440720.0, 120.0, 0.0, 3751320.0, 0.0, -120.0)
-    if not gdaltest.geotransform_equals(expected_gt, ds.GetGeoTransform(), 1e-9) :
+    if not gdaltest.geotransform_equals(expected_gt, ds.GetGeoTransform(), 1e-9):
         gdaltest.post_reason('Bad geotransform')
         return 'fail'
 
@@ -236,6 +240,7 @@ def test_gdalwarp_8():
 
 ###############################################################################
 # Test -te
+
 
 def test_gdalwarp_9():
     if test_cli_utilities.get_gdalwarp_path() is None:
@@ -247,7 +252,7 @@ def test_gdalwarp_9():
     if ds is None:
         return 'fail'
 
-    if not gdaltest.geotransform_equals(gdal.Open('../gcore/data/byte.tif').GetGeoTransform(), ds.GetGeoTransform(), 1e-9) :
+    if not gdaltest.geotransform_equals(gdal.Open('../gcore/data/byte.tif').GetGeoTransform(), ds.GetGeoTransform(), 1e-9):
         gdaltest.post_reason('Bad geotransform')
         return 'fail'
 
@@ -257,6 +262,7 @@ def test_gdalwarp_9():
 
 ###############################################################################
 # Test -rn
+
 
 def test_gdalwarp_10():
     if test_cli_utilities.get_gdalwarp_path() is None:
@@ -279,6 +285,7 @@ def test_gdalwarp_10():
 
 ###############################################################################
 # Test -rb
+
 
 def test_gdalwarp_11():
     if test_cli_utilities.get_gdalwarp_path() is None:
@@ -386,6 +393,7 @@ def test_gdalwarp_14():
 ###############################################################################
 # Test -dstnodata
 
+
 def test_gdalwarp_15():
     if test_cli_utilities.get_gdalwarp_path() is None:
         return 'skip'
@@ -413,6 +421,7 @@ def test_gdalwarp_15():
 ###############################################################################
 # Test -of VRT which is a special case
 
+
 def test_gdalwarp_16():
     if test_cli_utilities.get_gdalwarp_path() is None:
         return 'skip'
@@ -435,6 +444,7 @@ def test_gdalwarp_16():
 ###############################################################################
 # Test -dstalpha
 
+
 def test_gdalwarp_17():
     if test_cli_utilities.get_gdalwarp_path() is None:
         return 'skip'
@@ -455,6 +465,7 @@ def test_gdalwarp_17():
 
 ###############################################################################
 # Test -wm -multi
+
 
 def test_gdalwarp_18():
     if test_cli_utilities.get_gdalwarp_path() is None:
@@ -482,6 +493,7 @@ def test_gdalwarp_18():
 ###############################################################################
 # Test -et 0 which is a special case
 
+
 def test_gdalwarp_19():
     if test_cli_utilities.get_gdalwarp_path() is None:
         return 'skip'
@@ -503,6 +515,7 @@ def test_gdalwarp_19():
 
 ###############################################################################
 # Test -of VRT -et 0 which is a special case
+
 
 def test_gdalwarp_20():
     if test_cli_utilities.get_gdalwarp_path() is None:
@@ -595,6 +608,7 @@ def test_gdalwarp_23():
 ###############################################################################
 # Test warping an image crossing the 180E/180W longitude (#3206)
 
+
 def test_gdalwarp_24():
     if test_cli_utilities.get_gdalwarp_path() is None:
         return 'skip'
@@ -622,6 +636,7 @@ def test_gdalwarp_24():
 
 ###############################################################################
 # Test warping a full EPSG:4326 extent to +proj=sinu (#2305)
+
 
 def test_gdalwarp_25():
     if test_cli_utilities.get_gdalwarp_path() is None:
@@ -654,6 +669,7 @@ def test_gdalwarp_25():
 ###############################################################################
 # Test warping a full EPSG:4326 extent to +proj=eck4 (#2305)
 
+
 def test_gdalwarp_26():
     if test_cli_utilities.get_gdalwarp_path() is None:
         return 'skip'
@@ -685,6 +701,7 @@ def test_gdalwarp_26():
 ###############################################################################
 # Test warping a full EPSG:4326 extent to +proj=vandg (#2305)
 
+
 def test_gdalwarp_27():
     if test_cli_utilities.get_gdalwarp_path() is None:
         return 'skip'
@@ -715,6 +732,7 @@ def test_gdalwarp_27():
 
 ###############################################################################
 # Test warping a full EPSG:4326 extent to +proj=aeqd +lat_0=45 +lon_0=90 (#2305)
+
 
 def test_gdalwarp_28():
     if test_cli_utilities.get_gdalwarp_path() is None:
@@ -754,6 +772,7 @@ def test_gdalwarp_28():
 ###############################################################################
 # Test warping a full EPSG:4326 extent to EPSG:3785 (#2305)
 
+
 def test_gdalwarp_29():
     if test_cli_utilities.get_gdalwarp_path() is None:
         return 'skip'
@@ -771,7 +790,7 @@ def test_gdalwarp_29():
         return 'fail'
 
     gt = ds.GetGeoTransform()
-    expected_gt = [ -20037508.342789248, 90054.726863985939, 0.0, 16213801.067583967, 0.0, -90056.750611190684 ]
+    expected_gt = [-20037508.342789248, 90054.726863985939, 0.0, 16213801.067583967, 0.0, -90056.750611190684]
     for i in range(6):
         if abs(gt[i] - expected_gt[i]) > 1:
             print(gt)
@@ -784,6 +803,7 @@ def test_gdalwarp_29():
 
 ###############################################################################
 # Test the effect of the -wo OPTIMIZE_SIZE=TRUE and -wo STREAMABLE_OUTPUT=TRUE options (#3459, #1866)
+
 
 def test_gdalwarp_30():
     if test_cli_utilities.get_gdalwarp_path() is None:
@@ -855,6 +875,7 @@ def test_gdalwarp_30():
 ###############################################################################
 # Test -overwrite (#3759)
 
+
 def test_gdalwarp_31():
     if test_cli_utilities.get_gdalwarp_path() is None:
         return 'skip'
@@ -878,7 +899,7 @@ def test_gdalwarp_31():
     ds = None
 
     if cs1 != 4672 or cs2 != 4672 or cs3 != 4727 or err == '' or err2 != '':
-        print(cs1,cs2,cs3)
+        print(cs1, cs2, cs3)
         print(err)
         print(err2)
         return 'fail'
@@ -888,12 +909,13 @@ def test_gdalwarp_31():
 ###############################################################################
 # Test -tap
 
+
 def test_gdalwarp_32():
     if test_cli_utilities.get_gdalwarp_path() is None:
         return 'skip'
 
     (out, err) = gdaltest.runexternal_out_and_err(test_cli_utilities.get_gdalwarp_path() + ' -tap ../gcore/data/byte.tif tmp/testgdalwarp32.tif',
-                                                  check_memleak = False)
+                                                  check_memleak=False)
     if err.find('-tap option cannot be used without using -tr') == -1:
         gdaltest.post_reason('expected error')
         return 'fail'
@@ -906,13 +928,13 @@ def test_gdalwarp_32():
 
     expected_gt = (440700.0, 100.0, 0.0, 3751350.0, 0.0, -50.0)
     got_gt = ds.GetGeoTransform()
-    if not gdaltest.geotransform_equals(expected_gt, got_gt, 1e-9) :
+    if not gdaltest.geotransform_equals(expected_gt, got_gt, 1e-9):
         gdaltest.post_reason('Bad geotransform')
         print(got_gt)
         return 'fail'
 
     if ds.RasterXSize != 13 or ds.RasterYSize != 25:
-        gdaltest.post_reason('Wrong raster dimensions : %d x %d' % (ds.RasterXSize, ds.RasterYSize) )
+        gdaltest.post_reason('Wrong raster dimensions : %d x %d' % (ds.RasterXSize, ds.RasterYSize))
         return 'fail'
 
     ds = None
@@ -921,6 +943,7 @@ def test_gdalwarp_32():
 
 ###############################################################################
 # Test warping a JPEG compressed image with a mask into a RGBA image
+
 
 def test_gdalwarp_33():
     if test_cli_utilities.get_gdalwarp_path() is None:
@@ -964,6 +987,7 @@ def test_gdalwarp_33():
 ###############################################################################
 # Test warping multiple sources
 
+
 def test_gdalwarp_34():
     if test_cli_utilities.get_gdalwarp_path() is None:
         return 'skip'
@@ -972,7 +996,7 @@ def test_gdalwarp_34():
 
     try:
         os.remove('tmp/testgdalwarp34.tif')
-    except:
+    except OSError:
         pass
 
     gdaltest.runexternal(test_cli_utilities.get_gdal_translate_path() + ' ../gcore/data/byte.tif tmp/testgdalwarp34src_1.tif -srcwin 0 0 10 20')
@@ -1013,6 +1037,7 @@ def test_gdalwarp_34():
 ###############################################################################
 # Test -ts and -te optimization (doesn't need calling GDALSuggestedWarpOutput2, #4804)
 
+
 def test_gdalwarp_35():
     if test_cli_utilities.get_gdalwarp_path() is None:
         return 'skip'
@@ -1023,7 +1048,7 @@ def test_gdalwarp_35():
     if ds is None:
         return 'fail'
 
-    if not gdaltest.geotransform_equals(gdal.Open('../gcore/data/byte.tif').GetGeoTransform(), ds.GetGeoTransform(), 1e-9) :
+    if not gdaltest.geotransform_equals(gdal.Open('../gcore/data/byte.tif').GetGeoTransform(), ds.GetGeoTransform(), 1e-9):
         gdaltest.post_reason('Bad geotransform')
         return 'fail'
 
@@ -1033,6 +1058,7 @@ def test_gdalwarp_35():
 
 ###############################################################################
 # Test -tr and -te optimization (doesn't need calling GDALSuggestedWarpOutput2, #4804)
+
 
 def test_gdalwarp_36():
     if test_cli_utilities.get_gdalwarp_path() is None:
@@ -1044,7 +1070,7 @@ def test_gdalwarp_36():
     if ds is None:
         return 'fail'
 
-    if not gdaltest.geotransform_equals(gdal.Open('../gcore/data/byte.tif').GetGeoTransform(), ds.GetGeoTransform(), 1e-9) :
+    if not gdaltest.geotransform_equals(gdal.Open('../gcore/data/byte.tif').GetGeoTransform(), ds.GetGeoTransform(), 1e-9):
         gdaltest.post_reason('Bad geotransform')
         return 'fail'
 
@@ -1054,6 +1080,7 @@ def test_gdalwarp_36():
 
 ###############################################################################
 # Test metadata copying - stats should not be copied (#5319)
+
 
 def test_gdalwarp_37():
     if test_cli_utilities.get_gdalwarp_path() is None:
@@ -1073,7 +1100,7 @@ def test_gdalwarp_37():
         return 'fail'
 
     # make sure stats not copied
-    if 'STATISTICS_MEAN' in md :
+    if 'STATISTICS_MEAN' in md:
         gdaltest.post_reason('Output file contains statistics metadata')
         return 'fail'
 
@@ -1088,6 +1115,7 @@ def test_gdalwarp_37():
 
 ###############################################################################
 # Test implicit nodata setting (#5675)
+
 
 def test_gdalwarp_38():
     if test_cli_utilities.get_gdalwarp_path() is None:
@@ -1109,6 +1137,7 @@ def test_gdalwarp_38():
 ###############################################################################
 # Test -oo
 
+
 def test_gdalwarp_39():
     if test_cli_utilities.get_gdalwarp_path() is None:
         return 'skip'
@@ -1126,6 +1155,7 @@ def test_gdalwarp_39():
 ###############################################################################
 # Test -ovr
 
+
 def test_gdalwarp_40():
     if test_cli_utilities.get_gdalwarp_path() is None:
         return 'skip'
@@ -1133,7 +1163,7 @@ def test_gdalwarp_40():
     src_ds = gdal.Open('../gcore/data/byte.tif')
     out_ds = gdal.GetDriverByName('GTiff').CreateCopy('tmp/test_gdalwarp_40_src.tif', src_ds)
     cs_main = out_ds.GetRasterBand(1).Checksum()
-    out_ds.BuildOverviews( 'NONE', overviewlist = [2, 4] )
+    out_ds.BuildOverviews('NONE', overviewlist=[2, 4])
     out_ds.GetRasterBand(1).GetOverview(0).Fill(127)
     cs_ov0 = out_ds.GetRasterBand(1).GetOverview(0).Checksum()
     out_ds.GetRasterBand(1).GetOverview(1).Fill(255)
@@ -1274,12 +1304,13 @@ def test_gdalwarp_40():
 ###############################################################################
 # Test source fill ratio heuristics (#3120)
 
+
 def test_gdalwarp_41():
     if test_cli_utilities.get_gdalwarp_path() is None:
         return 'skip'
 
-    src_ds = gdal.GetDriverByName('GTiff').Create('tmp/test_gdalwarp_41_src.tif',666,666)
-    src_ds.SetGeoTransform([-3333500,10010.510510510510358,0,3333500.000000000000000,0,-10010.510510510510358])
+    src_ds = gdal.GetDriverByName('GTiff').Create('tmp/test_gdalwarp_41_src.tif', 666, 666)
+    src_ds.SetGeoTransform([-3333500, 10010.510510510510358, 0, 3333500.000000000000000, 0, -10010.510510510510358])
     src_ds.SetProjection("""PROJCS["WGS_1984_Stereographic_South_Pole",
     GEOGCS["WGS 84",
         DATUM["WGS_1984",
@@ -1325,6 +1356,7 @@ def test_gdalwarp_41():
 ###############################################################################
 # Test warping multiple source images, in one step or several, with INIT_DEST/nodata (#5909, #5387)
 
+
 def test_gdalwarp_42():
     if test_cli_utilities.get_gdalwarp_path() is None:
         return 'skip'
@@ -1334,14 +1366,12 @@ def test_gdalwarp_42():
     gdaltest.runexternal(test_cli_utilities.get_gdal_translate_path() + ' ../gdrivers/data/small_world.tif tmp/small_world_left.tif -srcwin 0 0 200 200 -a_nodata 255')
     gdaltest.runexternal(test_cli_utilities.get_gdal_translate_path() + ' ../gdrivers/data/small_world.tif tmp/small_world_right.tif -srcwin 200 0 200 200  -a_nodata 255')
 
-    # NOTE: Current behaviour of gdalwarp is to set a destnodata, but the user specified -dstalpha, so it is a bit suspicious
-    # Adding "-dstnodata none" would avoid that target nodata setting.
-    gdaltest.runexternal(test_cli_utilities.get_gdalwarp_path() + ' tmp/small_world_left.tif tmp/test_gdalwarp_42.tif -overwrite -te -180 -90 180 90 -dstalpha')
-    gdaltest.runexternal(test_cli_utilities.get_gdalwarp_path() + ' tmp/small_world_right.tif tmp/test_gdalwarp_42.tif')
+    gdaltest.runexternal(test_cli_utilities.get_gdalwarp_path() + ' tmp/small_world_left.tif tmp/test_gdalwarp_42.tif -overwrite -te -180 -90 180 90 -dstalpha -wo UNIFIED_SRC_NODATA=YES')
+    gdaltest.runexternal(test_cli_utilities.get_gdalwarp_path() + ' tmp/small_world_right.tif tmp/test_gdalwarp_42.tif -wo UNIFIED_SRC_NODATA=YES')
 
     ds = gdal.Open('tmp/test_gdalwarp_42.tif')
-    got_cs = [ ds.GetRasterBand(i+1).Checksum() for i in range(4) ]
-    expected_cs = [ 30111, 32302, 40026, 64269 ]
+    got_cs = [ds.GetRasterBand(i + 1).Checksum() for i in range(4)]
+    expected_cs = [25382, 27573, 35297, 59540]
     if got_cs != expected_cs:
         gdaltest.post_reason('failure')
         print(got_cs)
@@ -1349,11 +1379,11 @@ def test_gdalwarp_42():
     ds = None
 
     # In one step
-    gdaltest.runexternal(test_cli_utilities.get_gdalwarp_path() + ' tmp/small_world_left.tif tmp/small_world_right.tif tmp/test_gdalwarp_42.tif -overwrite -te -180 -90 180 90 -dstalpha')
+    gdaltest.runexternal(test_cli_utilities.get_gdalwarp_path() + ' tmp/small_world_left.tif tmp/small_world_right.tif tmp/test_gdalwarp_42.tif -overwrite -te -180 -90 180 90 -dstalpha -wo UNIFIED_SRC_NODATA=YES')
 
     ds = gdal.Open('tmp/test_gdalwarp_42.tif')
-    got_cs = [ ds.GetRasterBand(i+1).Checksum() for i in range(4) ]
-    expected_cs = [ 30111, 32302, 40026, 64269 ]
+    got_cs = [ds.GetRasterBand(i + 1).Checksum() for i in range(4)]
+    expected_cs = [25382, 27573, 35297, 59540]
     if got_cs != expected_cs:
         gdaltest.post_reason('failure')
         print(got_cs)
@@ -1361,11 +1391,11 @@ def test_gdalwarp_42():
     ds = None
 
     # In one step with -wo INIT_DEST=255,255,255,0
-    gdaltest.runexternal(test_cli_utilities.get_gdalwarp_path() + ' tmp/small_world_left.tif tmp/small_world_right.tif tmp/test_gdalwarp_42.tif -wo INIT_DEST=255,255,255,0 -overwrite -te -180 -90 180 90 -dstalpha')
+    gdaltest.runexternal(test_cli_utilities.get_gdalwarp_path() + ' tmp/small_world_left.tif tmp/small_world_right.tif tmp/test_gdalwarp_42.tif -wo INIT_DEST=255,255,255,0 -overwrite -te -180 -90 180 90 -dstalpha -wo UNIFIED_SRC_NODATA=YES')
 
     ds = gdal.Open('tmp/test_gdalwarp_42.tif')
-    got_cs = [ ds.GetRasterBand(i+1).Checksum() for i in range(4) ]
-    expected_cs = [ 30111, 32302, 40026, 64269 ]
+    got_cs = [ds.GetRasterBand(i + 1).Checksum() for i in range(4)]
+    expected_cs = [30111, 32302, 40026, 59540]
     if got_cs != expected_cs:
         gdaltest.post_reason('failure')
         print(got_cs)
@@ -1374,11 +1404,11 @@ def test_gdalwarp_42():
 
     # In one step with -wo INIT_DEST=0,0,0,0
     # Different checksum since there are source pixels at 255, so they get remap to 0
-    gdaltest.runexternal(test_cli_utilities.get_gdalwarp_path() + ' tmp/small_world_left.tif tmp/small_world_right.tif tmp/test_gdalwarp_42.tif -wo INIT_DEST=0,0,0,0 -overwrite -te -180 -90 180 90 -dstalpha')
+    gdaltest.runexternal(test_cli_utilities.get_gdalwarp_path() + ' tmp/small_world_left.tif tmp/small_world_right.tif tmp/test_gdalwarp_42.tif -wo INIT_DEST=0,0,0,0 -overwrite -te -180 -90 180 90 -dstalpha -wo UNIFIED_SRC_NODATA=YES')
 
     ds = gdal.Open('tmp/test_gdalwarp_42.tif')
-    got_cs = [ ds.GetRasterBand(i+1).Checksum() for i in range(4) ]
-    expected_cs = [ 19168, 26069, 34630, 64269 ]
+    got_cs = [ds.GetRasterBand(i + 1).Checksum() for i in range(4)]
+    expected_cs = [25382, 27573, 35297, 59540]
     if got_cs != expected_cs:
         gdaltest.post_reason('failure')
         print(got_cs)
@@ -1389,6 +1419,7 @@ def test_gdalwarp_42():
 
 ###############################################################################
 # Test that NODATA_VALUES is honoured, but not transferred when adding an alpha channel.
+
 
 def test_gdalwarp_43():
     if test_cli_utilities.get_gdalwarp_path() is None:
@@ -1407,8 +1438,8 @@ def test_gdalwarp_43():
     if ds.GetMetadataItem('FOO') != 'BAR':
         gdaltest.post_reason('failure')
         return 'fail'
-    got_cs = [ ds.GetRasterBand(i+1).Checksum() for i in range(4) ]
-    expected_cs = [ 30106, 32285, 40022, 64261 ]
+    got_cs = [ds.GetRasterBand(i + 1).Checksum() for i in range(4)]
+    expected_cs = [30106, 32285, 40022, 64261]
     if got_cs != expected_cs:
         gdaltest.post_reason('failure')
         print(got_cs)
@@ -1418,6 +1449,7 @@ def test_gdalwarp_43():
 
 ###############################################################################
 # Test effect of -wo SRC_COORD_PRECISION
+
 
 def test_gdalwarp_44():
     if test_cli_utilities.get_gdalwarp_path() is None:
@@ -1456,6 +1488,7 @@ def test_gdalwarp_44():
 
 ###############################################################################
 # Test -te_srs
+
 
 def test_gdalwarp_45():
     if test_cli_utilities.get_gdalwarp_path() is None:
@@ -1544,105 +1577,106 @@ def test_gdalwarp_46():
 def test_gdalwarp_cleanup():
 
     # We don't clean up when run in debug mode.
-    if gdal.GetConfigOption( 'CPL_DEBUG', 'OFF' ) == 'ON':
+    if gdal.GetConfigOption('CPL_DEBUG', 'OFF') == 'ON':
         return 'success'
 
     for i in range(37):
         try:
-            os.remove('tmp/testgdalwarp' + str(i+1) + '.tif')
-        except:
+            os.remove('tmp/testgdalwarp' + str(i + 1) + '.tif')
+        except OSError:
             pass
         try:
-            os.remove('tmp/testgdalwarp' + str(i+1) + '.vrt')
-        except:
+            os.remove('tmp/testgdalwarp' + str(i + 1) + '.vrt')
+        except OSError:
             pass
         try:
-            os.remove('tmp/testgdalwarp' + str(i+1) + '.tif.aux.xml')
-        except:
+            os.remove('tmp/testgdalwarp' + str(i + 1) + '.tif.aux.xml')
+        except OSError:
             pass
     try:
         os.remove('tmp/testgdalwarp_gcp.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/testgdalwarp24src.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/testgdalwarp24dst.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/testgdalwarp30_1.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/testgdalwarp30_2.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/testgdalwarp30_3.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/testgdalwarp33_mask.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/testgdalwarp37.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/testgdalwarp38.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/test_gdalwarp_39.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/test_gdalwarp_40_src.tif')
         os.remove('tmp/test_gdalwarp_40.tif')
         os.remove('tmp/test_gdalwarp_40.vrt')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/test_gdalwarp_41_src.tif')
         os.remove('tmp/test_gdalwarp_41.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/small_world_left.tif')
         os.remove('tmp/small_world_right.tif')
         os.remove('tmp/test_gdalwarp_42.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/small_world.tif')
         os.remove('tmp/test_gdalwarp_43.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/test_gdalwarp_44.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/test_gdalwarp_45.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/test_gdalwarp_46.tif')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/cutline_4326.shp')
         os.remove('tmp/cutline_4326.shx')
         os.remove('tmp/cutline_4326.dbf')
         os.remove('tmp/cutline_4326.prj')
-    except:
+    except OSError:
         pass
 
     return 'success'
+
 
 gdaltest_list = [
     test_gdalwarp_cleanup,
@@ -1693,17 +1727,17 @@ gdaltest_list = [
     test_gdalwarp_45,
     test_gdalwarp_46,
     test_gdalwarp_cleanup
-    ]
+]
 
 disabled_gdaltest_list = [
     test_gdalwarp_cleanup,
     test_gdalwarp_46,
-    test_gdalwarp_cleanup ]
+    test_gdalwarp_cleanup]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'test_gdalwarp' )
+    gdaltest.setup_run('test_gdalwarp')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

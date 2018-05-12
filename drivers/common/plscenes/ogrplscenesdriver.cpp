@@ -28,7 +28,7 @@
 
 #include "ogr_plscenes.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /************************************************************************/
 /*                         OGRPLScenesIdentify()                        */
@@ -46,27 +46,31 @@ static int OGRPLScenesIdentify(GDALOpenInfo* poOpenInfo)
 static GDALDataset* OGRPLScenesOpen(GDALOpenInfo* poOpenInfo)
 {
     if( !OGRPLScenesIdentify(poOpenInfo) || poOpenInfo->eAccess == GA_Update )
-        return NULL;
+        return nullptr;
 
     char** papszOptions = CSLTokenizeStringComplex(
             poOpenInfo->pszFilename+strlen("PLScenes:"), ",", TRUE, FALSE );
     CPLString osVersion = CSLFetchNameValueDef(papszOptions, "version",
                 CSLFetchNameValueDef(poOpenInfo->papszOpenOptions, "VERSION", ""));
     CSLDestroy(papszOptions);
-    if( EQUAL(osVersion, "v0"))
+
+    if( EQUAL(osVersion, "v0") || EQUAL(osVersion, "v1") )
     {
         CPLError(CE_Failure, CPLE_AppDefined,
-                 "This API version has been removed. "
+                 "This API version has been removed or deprecated. "
                  "Please use DATA_V1 API instead");
-        return NULL;
+        return nullptr;
     }
-    if( EQUAL(osVersion, "v1") )
-        return OGRPLScenesV1Dataset::Open(poOpenInfo);
-    if( EQUAL(osVersion, "data_v1") || EQUAL(osVersion, "")  )
+    else if( EQUAL(osVersion, "data_v1") || EQUAL(osVersion, "")  )
+    {
         return OGRPLScenesDataV1Dataset::Open(poOpenInfo);
-    CPLError(CE_Failure, CPLE_AppDefined,
-             "Unhandled API version: %s", osVersion.c_str());
-    return NULL;
+    }
+    else
+    {
+        CPLError(CE_Failure, CPLE_AppDefined,
+                "Unhandled API version: %s", osVersion.c_str());
+        return nullptr;
+    }
 }
 
 /************************************************************************/
@@ -76,7 +80,7 @@ static GDALDataset* OGRPLScenesOpen(GDALOpenInfo* poOpenInfo)
 void RegisterOGRPLSCENES()
 
 {
-    if( GDALGetDriverByName( "PLSCENES" ) != NULL )
+    if( GDALGetDriverByName( "PLSCENES" ) != nullptr )
         return;
 
     GDALDriver *poDriver = new GDALDriver();
@@ -90,18 +94,17 @@ void RegisterOGRPLSCENES()
     poDriver->SetMetadataItem( GDAL_DMD_OPENOPTIONLIST,
 "<OpenOptionList>"
 "  <Option name='VERSION' type='string-select' description='API version' default='DATA_V1'>"
-"    <Value>V1</Value>"
 "    <Value>DATA_V1</Value>"
 "  </Option>"
 "  <Option name='API_KEY' type='string' description='Account API key' required='true'/>"
-"  <Option name='FOLLOW_LINKS' type='boolean' description='Whether assets links should be followed for each scene (API v1 / data v1 only)' default='NO'/>"
+"  <Option name='FOLLOW_LINKS' type='boolean' description='Whether assets links should be followed for each scene' default='NO'/>"
 "  <Option name='SCENE' type='string' description='Scene id (for raster fetching)'/>"
-"  <Option name='ITEMTYPES' alias='CATALOG' type='string' description='Catalog id (API v1 / data v1 only, mandatory for raster fetching)'/>"
-"  <Option name='ASSET' alias='PRODUCT_TYPE' type='string' description='Asset category/Product type.' default='visual'/>"
+"  <Option name='ITEMTYPES' alias='CATALOG' type='string' description='Catalog id (mandatory for raster fetching)'/>"
+"  <Option name='ASSET' type='string' description='Asset category' default='visual'/>"
 "  <Option name='RANDOM_ACCESS' type='boolean' description='Whether raster should be accessed in random access mode (but with potentially not optimal throughput). If no, in-memory ingestion is done' default='YES'/>"
-"  <Option name='ACTIVATION_TIMEOUT' type='int' description='Number of seconds during which to wait for asset activation (API v1 / data v1 only, raster)' default='3600'/>"
-"  <Option name='FILTER' type='string' description='Custom filter (API v1 / data v1 only)'/>"
-"  <Option name='METADATA' type='boolean' description='(Raster only, API Data V1) Whether scene metadata should be fetched from the API and attached to the raster dataset' default='YES'/>"
+"  <Option name='ACTIVATION_TIMEOUT' type='int' description='Number of seconds during which to wait for asset activation (raster)' default='3600'/>"
+"  <Option name='FILTER' type='string' description='Custom filter'/>"
+"  <Option name='METADATA' type='boolean' description='(Raster only) Whether scene metadata should be fetched from the API and attached to the raster dataset' default='YES'/>"
 "</OpenOptionList>");
 
     poDriver->pfnOpen = OGRPLScenesOpen;

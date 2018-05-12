@@ -74,6 +74,7 @@ if(ENABLE_OPENJPEG)
 
         include_directories(${CMAKE_CURRENT_SOURCE_DIR})
         include_directories(${CMAKE_SOURCE_DIR}/drivers/raster) # for /vrt/vrtdataset.h
+        include_directories(${OPENJPEG_INCLUDE_DIRS}/openjpeg-${MAJOR_VERSION}.${MINOR_VERSION})
 
         # TODO: maybe add openjpeg library version to definitions (not required for now).
 
@@ -86,8 +87,6 @@ if(ENABLE_OPENJPEG)
         set(LIB_CSOURCES
             openjpegdataset.cpp
         )
-
-        # TODO: implement plugin target (according so/dll) if needed.
 
         add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
 

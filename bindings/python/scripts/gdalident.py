@@ -1,12 +1,12 @@
 #!/usr/bin/env python
-#******************************************************************************
+# ******************************************************************************
 #  $Id$
 #
 #  Project:  GDAL
 #  Purpose:  Application to identify files by format.
 #  Author:   Frank Warmerdam, warmerdam@pobox.com
 #
-#******************************************************************************
+# ******************************************************************************
 #  Copyright (c) 2007, Frank Warmerdam <warmerdam@pobox.com>
 #
 #  Permission is hereby granted, free of charge, to any person obtaining a
@@ -26,7 +26,7 @@
 #  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 #  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
-#******************************************************************************
+# ******************************************************************************
 #
 
 import os
@@ -47,12 +47,13 @@ def Usage():
 # 	ProcessTarget()
 # =============================================================================
 
-def ProcessTarget( target, recursive, report_failure, filelist = None ):
+
+def ProcessTarget(target, recursive, report_failure, filelist=None):
 
     if filelist is not None:
-        driver = gdal.IdentifyDriver( target, filelist )
+        driver = gdal.IdentifyDriver(target, filelist)
     else:
-        driver = gdal.IdentifyDriver( target )
+        driver = gdal.IdentifyDriver(target)
 
     if driver is not None:
         print('%s: %s' % (target, driver.ShortName))
@@ -62,27 +63,28 @@ def ProcessTarget( target, recursive, report_failure, filelist = None ):
     if recursive and driver is None:
         try:
             mode = os.stat(target)[stat.ST_MODE]
-        except:
+        except OSError:
             mode = 0
 
         if stat.S_ISDIR(mode):
             subfilelist = os.listdir(target)
             for item in subfilelist:
-                subtarget = os.path.join(target,item)
-                ProcessTarget( subtarget, 1, report_failure, subfilelist )
+                subtarget = os.path.join(target, item)
+                ProcessTarget(subtarget, 1, report_failure, subfilelist)
 
 # =============================================================================
 # 	Mainline
 # =============================================================================
+
 
 recursive = 0
 report_failure = 0
 files = []
 
 gdal.AllRegister()
-argv = gdal.GeneralCmdLineProcessor( sys.argv )
+argv = gdal.GeneralCmdLineProcessor(sys.argv)
 if argv is None:
-    sys.exit( 0 )
+    sys.exit(0)
 
 # Parse command line arguments.
 i = 1
@@ -104,4 +106,4 @@ if len(files) == 0:
     Usage()
 
 for file in files:
-    ProcessTarget( file, recursive, report_failure )
+    ProcessTarget(file, recursive, report_failure)

@@ -31,8 +31,8 @@
 
 import sys
 
-sys.path.append( '../pymod' )
-sys.path.append( '../gcore' )
+sys.path.append('../pymod')
+sys.path.append('../gcore')
 
 from osgeo import gdal
 import gdaltest
@@ -41,12 +41,13 @@ import test_cli_utilities
 ###############################################################################
 # Test basic usage
 
+
 def test_gdallocationinfo_1():
     if test_cli_utilities.get_gdallocationinfo_path() is None:
         return 'skip'
 
     (ret, err) = gdaltest.runexternal_out_and_err(test_cli_utilities.get_gdallocationinfo_path() + ' ../gcore/data/byte.tif 0 0')
-    if not (err is None or err == '') :
+    if not (err is None or err == ''):
         gdaltest.post_reason('got error/warning')
         print(err)
         return 'fail'
@@ -64,6 +65,7 @@ def test_gdallocationinfo_1():
 
 ###############################################################################
 # Test -xml
+
 
 def test_gdallocationinfo_2():
     if test_cli_utilities.get_gdallocationinfo_path() is None:
@@ -85,6 +87,7 @@ def test_gdallocationinfo_2():
 ###############################################################################
 # Test -valonly
 
+
 def test_gdallocationinfo_3():
     if test_cli_utilities.get_gdallocationinfo_path() is None:
         return 'skip'
@@ -99,6 +102,7 @@ def test_gdallocationinfo_3():
 
 ###############################################################################
 # Test -geoloc
+
 
 def test_gdallocationinfo_4():
     if test_cli_utilities.get_gdallocationinfo_path() is None:
@@ -119,6 +123,7 @@ def test_gdallocationinfo_4():
 ###############################################################################
 # Test -lifonly
 
+
 def test_gdallocationinfo_5():
     if test_cli_utilities.get_gdallocationinfo_path() is None:
         return 'skip'
@@ -135,13 +140,14 @@ def test_gdallocationinfo_5():
 ###############################################################################
 # Test -overview
 
+
 def test_gdallocationinfo_6():
     if test_cli_utilities.get_gdallocationinfo_path() is None:
         return 'skip'
 
     src_ds = gdal.Open('../gcore/data/byte.tif')
     ds = gdal.GetDriverByName('GTiff').CreateCopy('tmp/test_gdallocationinfo_6.tif', src_ds)
-    ds.BuildOverviews('AVERAGE', overviewlist = [2])
+    ds.BuildOverviews('AVERAGE', overviewlist=[2])
     ds = None
     src_ds = None
 
@@ -155,6 +161,7 @@ def test_gdallocationinfo_6():
 
     return 'success'
 
+
 gdaltest_list = [
     test_gdallocationinfo_1,
     test_gdallocationinfo_2,
@@ -162,18 +169,13 @@ gdaltest_list = [
     test_gdallocationinfo_4,
     test_gdallocationinfo_5,
     test_gdallocationinfo_6,
-    ]
+]
 
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'test_gdallocationinfo' )
+    gdaltest.setup_run('test_gdallocationinfo')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-
-
-
-
-

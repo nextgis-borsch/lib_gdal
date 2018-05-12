@@ -31,7 +31,7 @@
 #include "ogr_srs_api.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /************************************************************************/
 /* ==================================================================== */
@@ -56,13 +56,13 @@ class SNODASDataset : public RawDataset
     friend class SNODASRasterBand;
 
   public:
-                    SNODASDataset();
-    virtual ~SNODASDataset();
+    SNODASDataset();
+    ~SNODASDataset() override;
 
-    virtual CPLErr GetGeoTransform( double * padfTransform ) override;
-    virtual const char *GetProjectionRef(void) override;
+    CPLErr GetGeoTransform( double * padfTransform ) override;
+    const char *GetProjectionRef() override;
 
-    virtual char **GetFileList() override;
+    char **GetFileList() override;
 
     static GDALDataset *Open( GDALOpenInfo * );
     static int Identify( GDALOpenInfo * );
@@ -77,12 +77,12 @@ class SNODASDataset : public RawDataset
 class SNODASRasterBand : public RawRasterBand
 {
   public:
-            SNODASRasterBand( VSILFILE* fpRaw, int nXSize, int nYSize );
-    virtual ~SNODASRasterBand() {}
+    SNODASRasterBand( VSILFILE* fpRaw, int nXSize, int nYSize );
+    ~SNODASRasterBand() override {}
 
-    virtual double GetNoDataValue( int *pbSuccess = NULL ) override;
-    virtual double GetMinimum( int *pbSuccess = NULL ) override;
-    virtual double GetMaximum(int *pbSuccess = NULL ) override;
+    double GetNoDataValue( int *pbSuccess = nullptr ) override;
+    double GetMinimum( int *pbSuccess = nullptr ) override;
+    double GetMaximum( int *pbSuccess = nullptr ) override;
 };
 
 /************************************************************************/
@@ -241,13 +241,18 @@ int SNODASDataset::Identify( GDALOpenInfo * poOpenInfo )
 GDALDataset *SNODASDataset::Open( GDALOpenInfo * poOpenInfo )
 
 {
-    if( !Identify(poOpenInfo) )
-        return NULL;
+    if( !Identify(poOpenInfo)|| poOpenInfo->fpL == nullptr )
+        return nullptr;
 
-    VSILFILE *fp = VSIFOpenL( poOpenInfo->pszFilename, "r" );
-    if( fp == NULL )
+/* -------------------------------------------------------------------- */
+/*      Confirm the requested access is supported.                      */
+/* -------------------------------------------------------------------- */
+    if( poOpenInfo->eAccess == GA_Update )
     {
-        return NULL;
+        CPLError( CE_Failure, CPLE_NotSupported,
+                  "The SNODAS driver does not support update access to existing"
+                  " datasets." );
+        return nullptr;
     }
 
     int nRows = -1;
@@ -286,8 +291,8 @@ GDALDataset *SNODASDataset::Open( GDALOpenInfo * poOpenInfo )
     int nStopMinute = -1;
     int nStopSecond = -1;
 
-    const char *pszLine = NULL;
-    while( (pszLine = CPLReadLine2L( fp, 256, NULL )) != NULL )
+    const char *pszLine = nullptr;
+    while( (pszLine = CPLReadLine2L( poOpenInfo->fpL, 1024, nullptr )) != nullptr )
     {
         char** papszTokens =
             CSLTokenizeStringComplex( pszLine, ":", TRUE, FALSE );
@@ -402,7 +407,8 @@ GDALDataset *SNODASDataset::Open( GDALOpenInfo * poOpenInfo )
         CSLDestroy( papszTokens );
     }
 
-    CPL_IGNORE_RET_VAL(VSIFCloseL( fp ));
+    CPL_IGNORE_RET_VAL(VSIFCloseL( poOpenInfo->fpL ));
+    poOpenInfo->fpL = nullptr;
 
 /* -------------------------------------------------------------------- */
 /*      Did we get the required keywords?  If not we return with        */
@@ -410,27 +416,27 @@ GDALDataset *SNODASDataset::Open( GDALOpenInfo * poOpenInfo )
 /*      an error!                                                       */
 /* -------------------------------------------------------------------- */
     if( nRows == -1 || nCols == -1 || !bIsInteger || !bIs2Bytes )
-        return NULL;
+        return nullptr;
 
     if( !bNotProjected || !bIsWGS84 )
-        return NULL;
+        return nullptr;
 
     if( osDataFilename.empty() )
-        return NULL;
+        return nullptr;
 
     if( !GDALCheckDatasetDimensions(nCols, nRows) )
-        return NULL;
+        return nullptr;
 
 /* -------------------------------------------------------------------- */
 /*      Open target binary file.                                        */
 /* -------------------------------------------------------------------- */
     const char* pszPath = CPLGetPath(poOpenInfo->pszFilename);
-    osDataFilename = CPLFormFilename(pszPath, osDataFilename, NULL);
+    osDataFilename = CPLFormFilename(pszPath, osDataFilename, nullptr);
 
     VSILFILE* fpRaw = VSIFOpenL( osDataFilename, "rb" );
 
-    if( fpRaw == NULL )
-        return NULL;
+    if( fpRaw == nullptr )
+        return nullptr;
 
 /* -------------------------------------------------------------------- */
 /*      Create a corresponding GDALDataset.                             */
@@ -500,7 +506,7 @@ GDALDataset *SNODASDataset::Open( GDALOpenInfo * poOpenInfo )
 void GDALRegister_SNODAS()
 
 {
-    if( GDALGetDriverByName( "SNODAS" ) != NULL )
+    if( GDALGetDriverByName( "SNODAS" ) != nullptr )
         return;
 
     GDALDriver *poDriver = new GDALDriver();

@@ -68,6 +68,7 @@ set(LIB_HHEADERS_PRIV
     swq.h
     ogr_json_header.h
     ogr_libs.h
+    ogr_geo_utils.h
 )
 
 set(LIB_CSOURCES
@@ -129,6 +130,7 @@ set(LIB_CSOURCES
     ogrpolyhedralsurface.cpp
     ogrtriangle.cpp
     ogrtriangulatedsurface.cpp
+    ogr_geo_utils.cpp
 )
 
 

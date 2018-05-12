@@ -35,7 +35,7 @@ import sys
 import shutil
 import os
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 import ogrtest
@@ -45,6 +45,7 @@ from osgeo import osr
 
 ###############################################################################
 # Test if driver is available
+
 
 def ogr_fgdb_stress_test_init():
 
@@ -77,18 +78,19 @@ def ogr_fgdb_stress_test_init():
 
     try:
         shutil.rmtree("tmp/test.gdb")
-    except:
+    except OSError:
         pass
 
     try:
         os.unlink("tmp/test." + ogrtest.reference_ext)
-    except:
+    except OSError:
         pass
 
     return 'success'
 
 ###############################################################################
 # Generate databases from random operations
+
 
 def ogr_fgdb_stress_test_1():
     if ogrtest.fgdb_drv is None:
@@ -100,8 +102,8 @@ def ogr_fgdb_stress_test_1():
     ds_ref = ogrtest.reference_drv.CreateDataSource('tmp/test.' + ogrtest.reference_ext)
     sr = osr.SpatialReference()
     sr.ImportFromEPSG(4326)
-    lyr_test = ds_test.CreateLayer("test", geom_type = ogr.wkbPoint, srs = sr)
-    lyr_ref = ds_ref.CreateLayer("test", geom_type = ogr.wkbPoint, srs = sr)
+    lyr_test = ds_test.CreateLayer("test", geom_type=ogr.wkbPoint, srs=sr)
+    lyr_ref = ds_ref.CreateLayer("test", geom_type=ogr.wkbPoint, srs=sr)
     for lyr in [lyr_test, lyr_ref]:
         lyr.CreateField(ogr.FieldDefn('str', ogr.OFTString))
     ds_test.ExecuteSQL("CREATE INDEX idx_test_str ON test(str)")
@@ -110,24 +112,27 @@ def ogr_fgdb_stress_test_1():
     in_transaction = False
     nfeatures_created = 0
     for i in range(100000):
-        #print(i)
-        function = random.randrange(0,500)
+        # print(i)
+        function = random.randrange(0, 500)
         if function == 0:
             if not in_transaction:
-                if verbose: print('StartTransaction')
-                ds_test.StartTransaction(force = 1)
+                if verbose:
+                    print('StartTransaction')
+                ds_test.StartTransaction(force=1)
             else:
-                if verbose: print('CommitTransaction')
+                if verbose:
+                    print('CommitTransaction')
                 ds_test.CommitTransaction()
             in_transaction = not in_transaction
         elif function < 500 / 3:
             ret = []
             fid = -1
-            if random.randrange(0,2) == 0:
-                fid = 1+random.randrange(0,1000)
-            str = '%d' % random.randrange(0,1000)
-            wkt = 'POINT (%d %d)' % (random.randrange(0,100),random.randrange(0,100))
-            if verbose: print('Create(%d)' % fid)
+            if random.randrange(0, 2) == 0:
+                fid = 1 + random.randrange(0, 1000)
+            str = '%d' % random.randrange(0, 1000)
+            wkt = 'POINT (%d %d)' % (random.randrange(0, 100), random.randrange(0, 100))
+            if verbose:
+                print('Create(%d)' % fid)
             for lyr in [lyr_test, lyr_ref]:
                 f = ogr.Feature(lyr.GetLayerDefn())
                 f.SetFID(fid)
@@ -138,7 +143,7 @@ def ogr_fgdb_stress_test_1():
                 gdal.PopErrorHandler()
                 # So to ensure lyr_ref will use the same FID as the tested layer
                 fid = f.GetFID()
-                #print("created %d" % fid)
+                # print("created %d" % fid)
             if ret[0] != ret[1]:
                 gdaltest.post_reason('fail')
                 print(ret)
@@ -149,18 +154,19 @@ def ogr_fgdb_stress_test_1():
         # a SetFeature() before having creating at least 2 features !
         elif function < 500 * 2 / 3 and nfeatures_created >= 2:
             ret = []
-            fid = 1+random.randrange(0,1000)
-            if verbose: print('Update(%d)' % fid)
-            str = '%d' % random.randrange(0,1000)
-            wkt = 'POINT (%d %d)' % (random.randrange(0,100),random.randrange(0,100))
+            fid = 1 + random.randrange(0, 1000)
+            if verbose:
+                print('Update(%d)' % fid)
+            str = '%d' % random.randrange(0, 1000)
+            wkt = 'POINT (%d %d)' % (random.randrange(0, 100), random.randrange(0, 100))
             for lyr in [lyr_test, lyr_ref]:
                 f = ogr.Feature(lyr.GetLayerDefn())
                 f.SetFID(fid)
                 f.SetField(0, str)
                 f.SetGeometry(ogr.CreateGeometryFromWkt(wkt))
-                #gdal.PushErrorHandler()
+                # gdal.PushErrorHandler()
                 ret.append(lyr.SetFeature(f))
-                #gdal.PopErrorHandler()
+                # gdal.PopErrorHandler()
             if ret[0] != ret[1]:
                 gdaltest.post_reason('fail')
                 print(ret)
@@ -168,12 +174,13 @@ def ogr_fgdb_stress_test_1():
         # Same for DeleteFeature()
         elif nfeatures_created >= 2:
             ret = []
-            fid = 1+random.randrange(0,1000)
-            if verbose: print('Delete(%d)' % fid)
+            fid = 1 + random.randrange(0, 1000)
+            if verbose:
+                print('Delete(%d)' % fid)
             for lyr in [lyr_test, lyr_ref]:
-                #gdal.PushErrorHandler()
+                # gdal.PushErrorHandler()
                 ret.append(lyr.DeleteFeature(fid))
-                #gdal.PopErrorHandler()
+                # gdal.PopErrorHandler()
             if ret[0] != ret[1]:
                 gdaltest.post_reason('fail')
                 print(ret)
@@ -186,6 +193,7 @@ def ogr_fgdb_stress_test_1():
 
 ###############################################################################
 # Compare databases
+
 
 def ogr_fgdb_stress_test_2():
     if ogrtest.fgdb_drv is None:
@@ -223,7 +231,7 @@ def ogr_fgdb_stress_test_2():
             print(lyr_ref.GetFeatureCount())
             return 'fail'
 
-    #sys.exit(0)
+    # sys.exit(0)
 
     return 'success'
 
@@ -237,12 +245,12 @@ def ogr_fgdb_stress_test_cleanup():
 
     try:
         shutil.rmtree("tmp/test.gdb")
-    except:
+    except OSError:
         pass
 
     try:
         os.unlink("tmp/test." + ogrtest.reference_ext)
-    except:
+    except OSError:
         pass
 
     return 'success'
@@ -251,18 +259,15 @@ def ogr_fgdb_stress_test_cleanup():
 # Do nothing in whole run of the suite
 gdaltest_list = []
 
-explicit_gdaltest_list = [ ogr_fgdb_stress_test_init,
-                           ogr_fgdb_stress_test_1,
-                           ogr_fgdb_stress_test_2,
-                           ogr_fgdb_stress_test_cleanup ]
+explicit_gdaltest_list = [ogr_fgdb_stress_test_init,
+                          ogr_fgdb_stress_test_1,
+                          ogr_fgdb_stress_test_2,
+                          ogr_fgdb_stress_test_cleanup]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'ogr_fgdb_stress_test' )
+    gdaltest.setup_run('ogr_fgdb_stress_test')
 
-    gdaltest.run_tests( explicit_gdaltest_list )
+    gdaltest.run_tests(explicit_gdaltest_list)
 
     gdaltest.summarize()
-
-
-

@@ -30,7 +30,7 @@
 
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 import ogrtest
@@ -38,6 +38,7 @@ from osgeo import ogr
 
 ###############################################################################
 # Read SEG-Y
+
 
 def ogr_segy_1():
 
@@ -59,7 +60,7 @@ def ogr_segy_1():
         gdaltest.post_reason('bad layer geometry type')
         return 'fail'
 
-    if lyr.GetSpatialRef() != None:
+    if lyr.GetSpatialRef() is not None:
         gdaltest.post_reason('bad spatial ref')
         return 'fail'
 
@@ -73,8 +74,8 @@ def ogr_segy_1():
         return 'fail'
 
     feat = lyr.GetNextFeature()
-    if ogrtest.check_feature_geometry(feat,'POINT (500000 4500000)',
-                                      max_error = 0.0000001 ) != 0:
+    if ogrtest.check_feature_geometry(feat, 'POINT (500000 4500000)',
+                                      max_error=0.0000001) != 0:
         print('did not get expected first geom')
         feat.DumpReadable()
         return 'fail'
@@ -89,7 +90,7 @@ def ogr_segy_1():
         gdaltest.post_reason('bad layer geometry type')
         return 'fail'
 
-    if lyr.GetSpatialRef() != None:
+    if lyr.GetSpatialRef() is not None:
         gdaltest.post_reason('bad spatial ref')
         return 'fail'
 
@@ -116,6 +117,7 @@ def ogr_segy_1():
 
 ###############################################################################
 # Read ASCII header SEG-Y
+
 
 def ogr_segy_2():
     ds = ogr.Open('data/segy/ascii-header-with-nuls.sgy')
@@ -145,9 +147,8 @@ gdaltest_list = [
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'ogr_segy' )
+    gdaltest.setup_run('ogr_segy')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

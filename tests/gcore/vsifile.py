@@ -33,12 +33,13 @@ from osgeo import gdal
 import sys
 import time
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 
 ###############################################################################
 # Generic test
+
 
 def vsifile_generic(filename):
 
@@ -145,11 +146,13 @@ def vsifile_generic(filename):
 ###############################################################################
 # Test /vsimem
 
+
 def vsifile_1():
     return vsifile_generic('/vsimem/vsifile_1.bin')
 
 ###############################################################################
 # Test regular file system
+
 
 def vsifile_2():
 
@@ -164,9 +167,10 @@ def vsifile_2():
 ###############################################################################
 # Test ftruncate >= 32 bit
 
+
 def vsifile_3():
 
-    if (gdaltest.filesystem_supports_sparse_files('tmp') == False):
+    if not gdaltest.filesystem_supports_sparse_files('tmp'):
         return 'skip'
 
     filename = 'tmp/vsifile_3'
@@ -206,11 +210,12 @@ def vsifile_3():
 ###############################################################################
 # Test fix for #4583 (short reads)
 
+
 def vsifile_4():
 
     fp = gdal.VSIFOpenL('vsifile.py', 'rb')
     data = gdal.VSIFReadL(1000000, 1, fp)
-    #print(len(data))
+    # print(len(data))
     gdal.VSIFSeekL(fp, 0, 0)
     data = gdal.VSIFReadL(1, 1000000, fp)
     if len(data) == 0:
@@ -222,10 +227,11 @@ def vsifile_4():
 ###############################################################################
 # Test vsicache
 
+
 def vsifile_5():
 
     fp = gdal.VSIFOpenL('tmp/vsifile_5.bin', 'wb')
-    ref_data = ''.join(['%08X' % i for i in range(5*32768)])
+    ref_data = ''.join(['%08X' % i for i in range(5 * 32768)])
     gdal.VSIFWriteL(ref_data, 1, len(ref_data), fp)
     gdal.VSIFCloseL(fp)
 
@@ -256,7 +262,7 @@ def vsifile_5():
             return 'fail'
 
         gdal.VSIFSeekL(fp, 0, 2)
-        if gdal.VSIFTellL(fp) != 5*32768*8:
+        if gdal.VSIFTellL(fp) != 5 * 32768 * 8:
             gdaltest.post_reason('fail')
             gdal.SetConfigOption('VSI_CACHE_SIZE', None)
             gdal.SetConfigOption('VSI_CACHE', None)
@@ -264,23 +270,23 @@ def vsifile_5():
         gdal.VSIFReadL(1, 1, fp)
 
         gdal.VSIFSeekL(fp, 0, 0)
-        data = gdal.VSIFReadL(1,3*32768,fp)
-        if data.decode('ascii') != ref_data[0:3*32768]:
+        data = gdal.VSIFReadL(1, 3 * 32768, fp)
+        if data.decode('ascii') != ref_data[0:3 * 32768]:
             gdaltest.post_reason('fail')
             gdal.SetConfigOption('VSI_CACHE_SIZE', None)
             gdal.SetConfigOption('VSI_CACHE', None)
             return 'fail'
 
         gdal.VSIFSeekL(fp, 16384, 0)
-        data = gdal.VSIFReadL(1,5*32768,fp)
-        if data.decode('ascii') != ref_data[16384:16384+5*32768]:
+        data = gdal.VSIFReadL(1, 5 * 32768, fp)
+        if data.decode('ascii') != ref_data[16384:16384 + 5 * 32768]:
             gdaltest.post_reason('fail')
             gdal.SetConfigOption('VSI_CACHE_SIZE', None)
             gdal.SetConfigOption('VSI_CACHE', None)
             return 'fail'
 
-        data = gdal.VSIFReadL(1,50*32768,fp)
-        if data[0:1130496].decode('ascii') != ref_data[16384+5*32768:]:
+        data = gdal.VSIFReadL(1, 50 * 32768, fp)
+        if data[0:1130496].decode('ascii') != ref_data[16384 + 5 * 32768:]:
             gdaltest.post_reason('fail')
             gdal.SetConfigOption('VSI_CACHE_SIZE', None)
             gdal.SetConfigOption('VSI_CACHE', None)
@@ -297,9 +303,10 @@ def vsifile_5():
 ###############################################################################
 # Test vsicache above 2 GB
 
+
 def vsifile_6():
 
-    if (gdaltest.filesystem_supports_sparse_files('tmp') == False):
+    if not gdaltest.filesystem_supports_sparse_files('tmp'):
         return 'skip'
 
     offset = 4 * 1024 * 1024 * 1024
@@ -339,6 +346,7 @@ def vsifile_6():
 ###############################################################################
 # Test limit cases on /vsimem
 
+
 def vsifile_7():
 
     if gdal.GetConfigOption('SKIP_MEM_INTENSIVE_TEST') is not None:
@@ -365,19 +373,30 @@ def vsifile_7():
 
     # Test seeking  beyond file size in read-only mode
     fp = gdal.VSIFOpenL('/vsimem/vsifile_7.bin', 'rb')
-    if gdal.VSIFSeekL(fp, 0x7FFFFFFFFFFFFFFF, 0) == 0:
+    if gdal.VSIFSeekL(fp, 0x7FFFFFFFFFFFFFFF, 0) != 0:
         gdaltest.post_reason('fail')
         return 'fail'
-    if gdal.VSIFTellL(fp) != 0:
+    if gdal.VSIFEofL(fp) != 0:
+        gdaltest.post_reason('fail')
+        return 'fail'
+    if gdal.VSIFTellL(fp) != 0x7FFFFFFFFFFFFFFF:
+        gdaltest.post_reason('fail')
+        return 'fail'
+    if len(gdal.VSIFReadL(1, 1, fp)) != 0:
+        gdaltest.post_reason('fail')
+        return 'fail'
+    if gdal.VSIFEofL(fp) != 1:
         gdaltest.post_reason('fail')
         return 'fail'
     gdal.VSIFCloseL(fp)
-    gdal.Unlink('tmp/vsifile_7.bin')
+
+    gdal.Unlink('/vsimem/vsifile_7.bin')
 
     return 'success'
 
 ###############################################################################
 # Test renaming directory in /vsimem
+
 
 def vsifile_8():
 
@@ -400,6 +419,7 @@ def vsifile_8():
 ###############################################################################
 # Test ReadDir()
 
+
 def vsifile_9():
 
     lst = gdal.ReadDir('.')
@@ -407,8 +427,8 @@ def vsifile_9():
         gdaltest.post_reason('fail')
         return 'fail'
     # Test truncation
-    lst_truncated = gdal.ReadDir('.', int(len(lst)/2))
-    if len(lst_truncated) <= int(len(lst)/2):
+    lst_truncated = gdal.ReadDir('.', int(len(lst) / 2))
+    if len(lst_truncated) <= int(len(lst) / 2):
         gdaltest.post_reason('fail')
         return 'fail'
 
@@ -422,24 +442,25 @@ def vsifile_9():
         gdaltest.post_reason('fail')
         return 'fail'
     # Test truncation
-    lst_truncated = gdal.ReadDir('/vsimem/mydir', int(len(lst)/2))
-    if len(lst_truncated) <= int(len(lst)/2):
+    lst_truncated = gdal.ReadDir('/vsimem/mydir', int(len(lst) / 2))
+    if len(lst_truncated) <= int(len(lst) / 2):
         gdaltest.post_reason('fail')
         return 'fail'
 
     for i in range(10):
         gdal.Unlink('/vsimem/mydir/%d' % i)
-    gdal.Rmdir('/vsimem/newdir')
+    gdal.Rmdir('/vsimem/mydir')
 
     return 'success'
 
 ###############################################################################
 # Test fuzzer friendly archive
 
+
 def vsifile_10():
 
     gdal.FileFromMemBuffer('/vsimem/vsifile_10.tar',
-"""FUZZER_FRIENDLY_ARCHIVE
+                           """FUZZER_FRIENDLY_ARCHIVE
 ***NEWFILE***:test.txt
 abc***NEWFILE***:huge.txt
 01234567890123456789012345678901234567890123456789012345678901234567890123456789
@@ -513,9 +534,8 @@ a""")
         print(gdal.VSIStatL('/vsitar//vsimem/vsifile_10.tar/small.txt').size)
         return 'fail'
 
-
     gdal.FileFromMemBuffer('/vsimem/vsifile_10.tar',
-"""FUZZER_FRIENDLY_ARCHIVE
+                           """FUZZER_FRIENDLY_ARCHIVE
 ***NEWFILE***:x
 abc""")
     contents = gdal.ReadDir('/vsitar//vsimem/vsifile_10.tar')
@@ -524,9 +544,8 @@ abc""")
         print(contents)
         return 'fail'
 
-
     gdal.FileFromMemBuffer('/vsimem/vsifile_10.tar',
-"""FUZZER_FRIENDLY_ARCHIVE
+                           """FUZZER_FRIENDLY_ARCHIVE
 ***NEWFILE***:x
 abc***NEWFILE***:""")
     contents = gdal.ReadDir('/vsitar//vsimem/vsifile_10.tar')
@@ -542,13 +561,14 @@ abc***NEWFILE***:""")
 ###############################################################################
 # Test generic Truncate implementation for file extension
 
+
 def vsifile_11():
     f = gdal.VSIFOpenL('/vsimem/vsifile_11', 'wb')
     gdal.VSIFCloseL(f)
 
     f = gdal.VSIFOpenL('/vsisubfile/0_,/vsimem/vsifile_11', 'wb')
     gdal.VSIFWriteL('0123456789', 1, 10, f)
-    if gdal.VSIFTruncateL(f, 10+4096+2) != 0:
+    if gdal.VSIFTruncateL(f, 10 + 4096 + 2) != 0:
         gdaltest.post_reason('fail')
         return 'fail'
     if gdal.VSIFTellL(f) != 10:
@@ -560,11 +580,11 @@ def vsifile_11():
     gdal.VSIFCloseL(f)
 
     f = gdal.VSIFOpenL('/vsimem/vsifile_11', 'rb')
-    data = gdal.VSIFReadL(1, 10+4096+2, f)
+    data = gdal.VSIFReadL(1, 10 + 4096 + 2, f)
     gdal.VSIFCloseL(f)
     import struct
     data = struct.unpack('B' * len(data), data)
-    if data[0] != 48 or data[9] != 57 or data[10] != 0 or data[10+4096+2-1] != 0:
+    if data[0] != 48 or data[9] != 57 or data[10] != 0 or data[10 + 4096 + 2 - 1] != 0:
         gdaltest.post_reason('fail')
         print(data)
         return 'fail'
@@ -576,6 +596,7 @@ def vsifile_11():
 ###############################################################################
 # Test regular file system sparse file support
 
+
 def vsifile_12():
 
     target_dir = 'tmp'
@@ -585,9 +606,9 @@ def vsifile_12():
 
     # Minimum value to make it work on NTFS
     block_size = 65536
-    f = gdal.VSIFOpenL(target_dir+'/vsifile_12', 'wb')
+    f = gdal.VSIFOpenL(target_dir + '/vsifile_12', 'wb')
     gdal.VSIFWriteL('a', 1, 1, f)
-    if gdal.VSIFTruncateL(f, block_size*2) != 0:
+    if gdal.VSIFTruncateL(f, block_size * 2) != 0:
         gdaltest.post_reason('fail')
         return 'fail'
     ret = gdal.VSIFGetRangeStatusL(f, 0, 1)
@@ -599,34 +620,169 @@ def vsifile_12():
             gdaltest.post_reason('fail')
             print(ret)
             return 'fail'
-        ret = gdal.VSIFGetRangeStatusL(f, block_size*2-1,1)
+        ret = gdal.VSIFGetRangeStatusL(f, block_size * 2 - 1, 1)
         if ret != gdal.VSI_RANGE_STATUS_HOLE:
             gdaltest.post_reason('fail')
             print(ret)
             return 'fail'
     gdal.VSIFCloseL(f)
 
-    gdal.Unlink(target_dir+'/vsifile_12')
+    gdal.Unlink(target_dir + '/vsifile_12')
 
     return 'success'
 
-gdaltest_list = [ vsifile_1,
-                  vsifile_2,
-                  vsifile_3,
-                  vsifile_4,
-                  vsifile_5,
-                  vsifile_6,
-                  vsifile_7,
-                  vsifile_8,
-                  vsifile_9,
-                  vsifile_10,
-                  vsifile_11,
-                  vsifile_12 ]
+###############################################################################
+# Test reading filename with prefixes without terminating slash
+
+
+def vsifile_13():
+
+    gdal.VSIFOpenL('/vsigzip', 'rb')
+    gdal.VSIFOpenL('/vsizip', 'rb')
+    gdal.VSIFOpenL('/vsitar', 'rb')
+    gdal.VSIFOpenL('/vsimem', 'rb')
+    gdal.VSIFOpenL('/vsisparse', 'rb')
+    gdal.VSIFOpenL('/vsisubfile', 'rb')
+    gdal.VSIFOpenL('/vsicurl', 'rb')
+    gdal.VSIFOpenL('/vsis3', 'rb')
+    gdal.VSIFOpenL('/vsicurl_streaming', 'rb')
+    gdal.VSIFOpenL('/vsis3_streaming', 'rb')
+    gdal.VSIFOpenL('/vsistdin', 'rb')
+
+    fp = gdal.VSIFOpenL('/vsistdout', 'wb')
+    if fp is not None:
+        gdal.VSIFCloseL(fp)
+
+    gdal.VSIStatL('/vsigzip')
+    gdal.VSIStatL('/vsizip')
+    gdal.VSIStatL('/vsitar')
+    gdal.VSIStatL('/vsimem')
+    gdal.VSIStatL('/vsisparse')
+    gdal.VSIStatL('/vsisubfile')
+    gdal.VSIStatL('/vsicurl')
+    gdal.VSIStatL('/vsis3')
+    gdal.VSIStatL('/vsicurl_streaming')
+    gdal.VSIStatL('/vsis3_streaming')
+    gdal.VSIStatL('/vsistdin')
+    gdal.VSIStatL('/vsistdout')
+
+    return 'success'
+
+###############################################################################
+# Check performance issue (https://bugs.chromium.org/p/oss-fuzz/issues/detail?id=1673)
+
+
+def vsifile_14():
+
+    with gdaltest.error_handler():
+        gdal.VSIFOpenL('/vsitar//vsitar//vsitar//vsitar//vsitar//vsitar//vsitar//vsitar/a.tgzb.tgzc.tgzd.tgze.tgzf.tgz.h.tgz.i.tgz', 'rb')
+    return 'success'
+
+###############################################################################
+# Test issue with Eof() not detecting end of corrupted gzip stream (#6944)
+
+
+def vsifile_15():
+
+    fp = gdal.VSIFOpenL('/vsigzip/data/corrupted_z_buf_error.gz', 'rb')
+    if fp is None:
+        return 'fail'
+    while not gdal.VSIFEofL(fp):
+        with gdaltest.error_handler():
+            gdal.VSIFReadL(1, 4, fp)
+    gdal.VSIFCloseL(fp)
+
+    return 'success'
+
+###############################################################################
+# Test failed gdal.Rename() with exceptions enabled
+
+
+def vsifile_16():
+
+    old_val = gdal.GetUseExceptions()
+    gdal.UseExceptions()
+    try:
+        gdal.Rename('/tmp/i_dont_exist_vsifile_16.tif', '/tmp/me_neither.tif')
+        ret = 'fail'
+    except:
+        ret = 'success'
+    if not old_val:
+        gdal.DontUseExceptions()
+    return ret
+
+###############################################################################
+# Test gdal.GetActualURL() on a non-network based filesystem
+
+
+def vsifile_17():
+
+    if gdal.GetActualURL('foo') is not None:
+        gdaltest.post_reason('fail')
+        return 'fail'
+
+    if gdal.GetSignedURL('foo') is not None:
+        gdaltest.post_reason('fail')
+        return 'fail'
+
+    return 'success'
+
+###############################################################################
+# Test gdal.GetFileSystemsPrefixes()
+
+
+def vsifile_18():
+
+    prefixes = gdal.GetFileSystemsPrefixes()
+    if '/vsimem/' not in prefixes:
+        print(prefixes)
+        return 'fail'
+
+    return 'success'
+
+###############################################################################
+# Test gdal.GetFileSystemOptions()
+
+
+def vsifile_19():
+
+    for prefix in gdal.GetFileSystemsPrefixes():
+        options = gdal.GetFileSystemOptions(prefix)
+        # Check that the options is XML correct
+        if options is not None:
+            ret = gdal.ParseXMLString(options)
+            if ret is None:
+                gdaltest.post_reason('fail')
+                print(prefix, options)
+                return 'fail'
+
+    return 'success'
+
+
+gdaltest_list = [vsifile_1,
+                 vsifile_2,
+                 vsifile_3,
+                 vsifile_4,
+                 vsifile_5,
+                 vsifile_6,
+                 vsifile_7,
+                 vsifile_8,
+                 vsifile_9,
+                 vsifile_10,
+                 vsifile_11,
+                 vsifile_12,
+                 vsifile_13,
+                 vsifile_14,
+                 vsifile_15,
+                 vsifile_16,
+                 vsifile_17,
+                 vsifile_18,
+                 vsifile_19]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'vsifile' )
+    gdaltest.setup_run('vsifile')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

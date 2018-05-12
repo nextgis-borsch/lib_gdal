@@ -32,13 +32,14 @@ import os
 import sys
 from osgeo import gdal
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 
 ###############################################################################
 # Test a RIK map
 # Data downloaded from : http://www.lantmateriet.se/upload/filer/kartor/programvaror/sverige500_swe99.zip
+
 
 def rik_online_1():
 
@@ -54,7 +55,7 @@ def rik_online_1():
     try:
         os.stat('tmp/cache/sverige500_swe99.rik')
         file_to_test = 'tmp/cache/sverige500_swe99.rik'
-    except:
+    except OSError:
         try:
             print('Uncompressing ZIP file...')
             import zipfile
@@ -66,11 +67,12 @@ def rik_online_1():
         except:
             return 'skip'
 
-    tst = gdaltest.GDALTest('RIK', file_to_test, 1, 17162, filename_absolute = 1 )
+    tst = gdaltest.GDALTest('RIK', file_to_test, 1, 17162, filename_absolute=1)
     return tst.testOpen()
 
 ###############################################################################
 # Test a LZW compressed RIK dataset
+
 
 def rik_online_2():
 
@@ -83,20 +85,20 @@ def rik_online_2():
     if not gdaltest.download_file('http://trac.osgeo.org/gdal/raw-attachment/ticket/3674/ab-del.rik', 'ab-del.rik'):
         return 'skip'
 
-    tst = gdaltest.GDALTest('RIK', 'tmp/cache/ab-del.rik', 1, 44974, filename_absolute = 1 )
+    tst = gdaltest.GDALTest('RIK', 'tmp/cache/ab-del.rik', 1, 44974, filename_absolute=1)
     return tst.testOpen()
+
 
 gdaltest_list = [
     rik_online_1,
     rik_online_2
-    ]
+]
 
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'RIK' )
+    gdaltest.setup_run('RIK')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

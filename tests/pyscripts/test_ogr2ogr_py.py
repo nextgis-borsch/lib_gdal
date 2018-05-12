@@ -33,8 +33,8 @@ import sys
 import os
 import shutil
 
-sys.path.append( '../pymod' )
-sys.path.append( '../ogr' )
+sys.path.append('../pymod')
+sys.path.append('../ogr')
 
 from osgeo import ogr
 from osgeo import osr
@@ -45,6 +45,7 @@ import test_py_scripts
 
 ###############################################################################
 # Simple test
+
 
 def test_ogr2ogr_py_1():
     script_path = test_py_scripts.get_py_script('ogr2ogr')
@@ -81,6 +82,7 @@ def test_ogr2ogr_py_1():
 ###############################################################################
 # Test -sql
 
+
 def test_ogr2ogr_py_2():
     script_path = test_py_scripts.get_py_script('ogr2ogr')
     if script_path is None:
@@ -105,6 +107,7 @@ def test_ogr2ogr_py_2():
 
 ###############################################################################
 # Test -spat
+
 
 def test_ogr2ogr_py_3():
     script_path = test_py_scripts.get_py_script('ogr2ogr')
@@ -135,6 +138,7 @@ def test_ogr2ogr_py_3():
 ###############################################################################
 # Test -where
 
+
 def test_ogr2ogr_py_4():
     script_path = test_py_scripts.get_py_script('ogr2ogr')
     if script_path is None:
@@ -159,6 +163,7 @@ def test_ogr2ogr_py_4():
 
 ###############################################################################
 # Test -append
+
 
 def test_ogr2ogr_py_5():
     script_path = test_py_scripts.get_py_script('ogr2ogr')
@@ -197,6 +202,7 @@ def test_ogr2ogr_py_5():
 ###############################################################################
 # Test -overwrite
 
+
 def test_ogr2ogr_py_6():
 
     import ogr_pg
@@ -229,6 +235,7 @@ def test_ogr2ogr_py_6():
 ###############################################################################
 # Test -gt
 
+
 def test_ogr2ogr_py_7():
 
     import ogr_pg
@@ -260,6 +267,7 @@ def test_ogr2ogr_py_7():
 ###############################################################################
 # Test -t_srs
 
+
 def test_ogr2ogr_py_8():
     script_path = test_py_scripts.get_py_script('ogr2ogr')
     if script_path is None:
@@ -285,6 +293,7 @@ def test_ogr2ogr_py_8():
 ###############################################################################
 # Test -a_srs
 
+
 def test_ogr2ogr_py_9():
     script_path = test_py_scripts.get_py_script('ogr2ogr')
     if script_path is None:
@@ -309,6 +318,7 @@ def test_ogr2ogr_py_9():
 
 ###############################################################################
 # Test -select
+
 
 def test_ogr2ogr_py_10():
     script_path = test_py_scripts.get_py_script('ogr2ogr')
@@ -348,6 +358,7 @@ def test_ogr2ogr_py_10():
 ###############################################################################
 # Test -lco
 
+
 def test_ogr2ogr_py_11():
 
     script_path = test_py_scripts.get_py_script('ogr2ogr')
@@ -373,6 +384,7 @@ def test_ogr2ogr_py_11():
 
 ###############################################################################
 # Test -nlt
+
 
 def test_ogr2ogr_py_12():
 
@@ -400,6 +412,7 @@ def test_ogr2ogr_py_12():
 ###############################################################################
 # Add explicit source layer name
 
+
 def test_ogr2ogr_py_13():
     script_path = test_py_scripts.get_py_script('ogr2ogr')
     if script_path is None:
@@ -424,6 +437,7 @@ def test_ogr2ogr_py_13():
 
 ###############################################################################
 # Test -segmentize
+
 
 def test_ogr2ogr_py_14():
     script_path = test_py_scripts.get_py_script('ogr2ogr')
@@ -452,6 +466,7 @@ def test_ogr2ogr_py_14():
 
 ###############################################################################
 # Test -overwrite with a shapefile
+
 
 def test_ogr2ogr_py_15():
 
@@ -486,6 +501,7 @@ def test_ogr2ogr_py_15():
 ###############################################################################
 # Test -fid
 
+
 def test_ogr2ogr_py_16():
     script_path = test_py_scripts.get_py_script('ogr2ogr')
     if script_path is None:
@@ -516,6 +532,7 @@ def test_ogr2ogr_py_16():
 ###############################################################################
 # Test -progress
 
+
 def test_ogr2ogr_py_17():
     script_path = test_py_scripts.get_py_script('ogr2ogr')
     if script_path is None:
@@ -543,6 +560,7 @@ def test_ogr2ogr_py_17():
 ###############################################################################
 # Test -wrapdateline
 
+
 def test_ogr2ogr_py_18():
     script_path = test_py_scripts.get_py_script('ogr2ogr')
     if script_path is None:
@@ -566,7 +584,7 @@ def test_ogr2ogr_py_18():
     ds = ogr.GetDriverByName('ESRI Shapefile').CreateDataSource('tmp/wrapdateline_src.shp')
     srs = osr.SpatialReference()
     srs.ImportFromEPSG(32660)
-    lyr = ds.CreateLayer('wrapdateline_src', srs = srs)
+    lyr = ds.CreateLayer('wrapdateline_src', srs=srs)
     feat = ogr.Feature(lyr.GetLayerDefn())
     geom = ogr.CreateGeometryFromWkt('POLYGON((700000 4000000,800000 4000000,800000 3000000,700000 3000000,700000 4000000))')
     feat.SetGeometryDirectly(geom)
@@ -596,6 +614,7 @@ def test_ogr2ogr_py_18():
 
 ###############################################################################
 # Test -clipsrc
+
 
 def test_ogr2ogr_py_19():
     script_path = test_py_scripts.get_py_script('ogr2ogr')
@@ -633,6 +652,7 @@ def test_ogr2ogr_py_19():
 # Test that the data is going into the right field
 # FIXME: Any field is skipped if a subsequent field with same name is found.
 
+
 def test_ogr2ogr_py_20():
     script_path = test_py_scripts.get_py_script('ogr2ogr')
     if script_path is None:
@@ -640,39 +660,39 @@ def test_ogr2ogr_py_20():
 
     try:
         os.remove('tmp/Fields.dbf')
-    except:
+    except OSError:
         pass
 
-    expected_fields = [ 'a',
-                        'A_1',
-                        'a_1_2',
-                        'aaaaaAAAAA',
-                        'aAaaaAAA_1',
-                        'aaaaaAAAAB',
-                        'aaaaaAAA_2',
-                        'aaaaaAAA_3',
-                        'aaaaaAAA_4',
-                        'aaaaaAAA_5',
-                        'aaaaaAAA_6',
-                        'aaaaaAAA_7',
-                        'aaaaaAAA_8',
-                        'aaaaaAAA_9',
-                        'aaaaaAAA10' ]
-    expected_data = [ '1',
-                      '2',
-                      '3',
-                      '4',
-                      '5',
-                      '6',
-                      '7',
-                      '8',
-                      '9',
-                      '10',
-                      '11',
-                      '12',
-                      '13',
-                      '14',
-                      '15' ]
+    expected_fields = ['a',
+                       'A_1',
+                       'a_1_2',
+                       'aaaaaAAAAA',
+                       'aAaaaAAA_1',
+                       'aaaaaAAAAB',
+                       'aaaaaAAA_2',
+                       'aaaaaAAA_3',
+                       'aaaaaAAA_4',
+                       'aaaaaAAA_5',
+                       'aaaaaAAA_6',
+                       'aaaaaAAA_7',
+                       'aaaaaAAA_8',
+                       'aaaaaAAA_9',
+                       'aaaaaAAA10']
+    expected_data = ['1',
+                     '2',
+                     '3',
+                     '4',
+                     '5',
+                     '6',
+                     '7',
+                     '8',
+                     '9',
+                     '10',
+                     '11',
+                     '12',
+                     '13',
+                     '14',
+                     '15']
 
     test_py_scripts.run_py_script(script_path, 'ogr2ogr', 'tmp ../utilities/data/Fields.csv')
 
@@ -682,19 +702,19 @@ def test_ogr2ogr_py_20():
         return 'fail'
     layer_defn = ds.GetLayer(0).GetLayerDefn()
     if layer_defn.GetFieldCount() != 15:
-        gdaltest.post_reason('Unexpected field count: ' + str(ds.GetLayer(0).GetLayerDefn().GetFieldCount()) )
+        gdaltest.post_reason('Unexpected field count: ' + str(ds.GetLayer(0).GetLayerDefn().GetFieldCount()))
         ds.Destroy()
         ogr.GetDriverByName('ESRI Shapefile').DeleteDataSource('tmp/Fields.dbf')
         return 'fail'
 
     error_occurred = False
     feat = ds.GetLayer(0).GetNextFeature()
-    for i in range( layer_defn.GetFieldCount() ):
-        if layer_defn.GetFieldDefn( i ).GetNameRef() != expected_fields[i]:
-            print('Expected ', expected_fields[i],',but got',layer_defn.GetFieldDefn( i ).GetNameRef())
+    for i in range(layer_defn.GetFieldCount()):
+        if layer_defn.GetFieldDefn(i).GetNameRef() != expected_fields[i]:
+            print('Expected ', expected_fields[i], ',but got', layer_defn.GetFieldDefn(i).GetNameRef())
             error_occurred = True
         if feat.GetFieldAsString(i) != expected_data[i]:
-            print('Expected the value ', expected_data[i],',but got',feat.GetFieldAsString(i))
+            print('Expected the value ', expected_data[i], ',but got', feat.GetFieldAsString(i))
             error_occurred = True
 
     ds.Destroy()
@@ -709,6 +729,7 @@ def test_ogr2ogr_py_20():
 # Test ogr2ogr when the output driver has already created the fields
 # at dataset creation (#3247)
 
+
 def test_ogr2ogr_py_21():
     script_path = test_py_scripts.get_py_script('ogr2ogr')
     if script_path is None:
@@ -716,12 +737,12 @@ def test_ogr2ogr_py_21():
 
     try:
         os.remove('tmp/testogr2ogr21.gtm')
-    except:
+    except OSError:
         pass
 
-    test_py_scripts.run_py_script(script_path, 'ogr2ogr', \
-        '-f GPSTrackMaker tmp/testogr2ogr21.gtm ../utilities/data/dataforogr2ogr21.csv ' +
-        '-sql "SELECT comment, name FROM dataforogr2ogr21" -nlt POINT')
+    test_py_scripts.run_py_script(script_path, 'ogr2ogr',
+                                  '-f GPSTrackMaker tmp/testogr2ogr21.gtm ../utilities/data/dataforogr2ogr21.csv ' +
+                                  '-sql "SELECT comment, name FROM dataforogr2ogr21" -nlt POINT')
     ds = ogr.Open('tmp/testogr2ogr21.gtm')
 
     if ds is None:
@@ -751,9 +772,9 @@ def test_ogr2ogr_py_22():
     if script_path is None:
         return 'skip'
 
-    test_py_scripts.run_py_script(script_path, 'ogr2ogr', \
-        '-f "MapInfo File" tmp/testogr2ogr22.mif ../utilities/data/dataforogr2ogr21.csv ' +
-        '-sql "SELECT comment, name FROM dataforogr2ogr21" -nlt POINT')
+    test_py_scripts.run_py_script(script_path, 'ogr2ogr',
+                                  '-f "MapInfo File" tmp/testogr2ogr22.mif ../utilities/data/dataforogr2ogr21.csv ' +
+                                  '-sql "SELECT comment, name FROM dataforogr2ogr21" -nlt POINT')
     ds = ogr.Open('tmp/testogr2ogr22.mif')
 
     if ds is None:
@@ -777,6 +798,7 @@ def test_ogr2ogr_py_22():
 ###############################################################################
 # Same as previous but with -select
 
+
 def test_ogr2ogr_py_23():
     script_path = test_py_scripts.get_py_script('ogr2ogr')
     if script_path is None:
@@ -785,8 +807,8 @@ def test_ogr2ogr_py_23():
         return 'skip'
 
     gdaltest.runexternal(test_cli_utilities.get_ogr2ogr_path() +
-        ' -f "MapInfo File" tmp/testogr2ogr23.mif ../utilities/data/dataforogr2ogr21.csv ' +
-        '-sql "SELECT comment, name FROM dataforogr2ogr21" -select comment,name -nlt POINT')
+                         ' -f "MapInfo File" tmp/testogr2ogr23.mif ../utilities/data/dataforogr2ogr21.csv ' +
+                         '-sql "SELECT comment, name FROM dataforogr2ogr21" -select comment,name -nlt POINT')
     ds = ogr.Open('tmp/testogr2ogr23.mif')
 
     if ds is None:
@@ -809,6 +831,7 @@ def test_ogr2ogr_py_23():
 
 ###############################################################################
 # Test -clipsrc with WKT geometry (#3530)
+
 
 def test_ogr2ogr_py_24():
     script_path = test_py_scripts.get_py_script('ogr2ogr')
@@ -843,6 +866,7 @@ def test_ogr2ogr_py_24():
 
 ###############################################################################
 # Test -clipsrc with clip from external datasource
+
 
 def test_ogr2ogr_py_25():
     script_path = test_py_scripts.get_py_script('ogr2ogr')
@@ -884,6 +908,7 @@ def test_ogr2ogr_py_25():
 ###############################################################################
 # Test -clipdst with WKT geometry (#3530)
 
+
 def test_ogr2ogr_py_26():
     script_path = test_py_scripts.get_py_script('ogr2ogr')
     if script_path is None:
@@ -917,6 +942,7 @@ def test_ogr2ogr_py_26():
 
 ###############################################################################
 # Test -clipdst with clip from external datasource
+
 
 def test_ogr2ogr_py_27():
     script_path = test_py_scripts.get_py_script('ogr2ogr')
@@ -958,6 +984,7 @@ def test_ogr2ogr_py_27():
 ###############################################################################
 # Test that -overwrite work if the output file doesn't yet exist (#3825)
 
+
 def test_ogr2ogr_py_31():
 
     script_path = test_py_scripts.get_py_script('ogr2ogr')
@@ -982,6 +1009,7 @@ def test_ogr2ogr_py_31():
 
 ###############################################################################
 # Test that -append/-overwrite to a single-file shapefile work without specifying -nln
+
 
 def test_ogr2ogr_py_32():
 
@@ -1017,6 +1045,7 @@ def test_ogr2ogr_py_32():
 
 ###############################################################################
 # Test -explodecollections
+
 
 def test_ogr2ogr_py_33():
 
@@ -1086,6 +1115,7 @@ def test_ogr2ogr_py_33():
 # This should result in creating a someDirThatDoesNotExist directory with
 # someDirThatDoesNotExist.shp/dbf/shx inside this directory
 
+
 def test_ogr2ogr_py_34():
 
     script_path = test_py_scripts.get_py_script('ogr2ogr')
@@ -1127,6 +1157,7 @@ def test_ogr2ogr_py_34():
 
 ###############################################################################
 # Test 'ogr2ogr someDirThatDoesNotExist src.shp'
+
 
 def test_ogr2ogr_py_35():
 
@@ -1170,6 +1201,7 @@ def test_ogr2ogr_py_35():
 ###############################################################################
 # Test ogr2ogr -zfield
 
+
 def test_ogr2ogr_py_36():
 
     script_path = test_py_scripts.get_py_script('ogr2ogr')
@@ -1198,6 +1230,7 @@ def test_ogr2ogr_py_36():
 
 ###############################################################################
 # Test 'ogr2ogr someDirThatDoesNotExist.shp dataSourceWithMultipleLayer'
+
 
 def test_ogr2ogr_py_37():
 
@@ -1238,6 +1271,7 @@ def test_ogr2ogr_py_37():
 # Test that we take into account the fields by the where clause when combining
 # -select and -where (#4015)
 
+
 def test_ogr2ogr_py_38():
 
     script_path = test_py_scripts.get_py_script('ogr2ogr')
@@ -1266,6 +1300,7 @@ def test_ogr2ogr_py_38():
 ###############################################################################
 # Test 'ogr2ogr someDirThatDoesNotExist.shp dataSourceWithMultipleLayer -sql "select * from alayer"' (#4268)
 
+
 def test_ogr2ogr_py_39():
 
     script_path = test_py_scripts.get_py_script('ogr2ogr')
@@ -1280,7 +1315,7 @@ def test_ogr2ogr_py_39():
 
     try:
         os.mkdir('tmp/test_ogr2ogr_39_src')
-    except:
+    except OSError:
         pass
     shutil.copy('../ogr/data/poly.shp', 'tmp/test_ogr2ogr_39_src')
     shutil.copy('../ogr/data/poly.shx', 'tmp/test_ogr2ogr_39_src')
@@ -1303,6 +1338,7 @@ def test_ogr2ogr_py_39():
 
 ###############################################################################
 # Test -dim 3 and -dim 2
+
 
 def test_ogr2ogr_py_43():
 
@@ -1346,6 +1382,7 @@ def test_ogr2ogr_py_43():
 ###############################################################################
 # Test -nlt PROMOTE_TO_MULTI for polygon/multipolygon
 
+
 def test_ogr2ogr_py_44():
 
     script_path = test_py_scripts.get_py_script('ogr2ogr')
@@ -1361,11 +1398,11 @@ def test_ogr2ogr_py_44():
     try:
         os.unlink('tmp/test_ogr2ogr_44.gml')
         os.unlink('tmp/test_ogr2ogr_44.xsd')
-    except:
+    except OSError:
         pass
 
     ds = ogr.GetDriverByName('ESRI Shapefile').CreateDataSource('tmp/test_ogr2ogr_44_src.shp')
-    lyr = ds.CreateLayer('test_ogr2ogr_44_src', geom_type = ogr.wkbPolygon)
+    lyr = ds.CreateLayer('test_ogr2ogr_44_src', geom_type=ogr.wkbPolygon)
     feat = ogr.Feature(lyr.GetLayerDefn())
     feat.SetGeometry(ogr.CreateGeometryFromWkt('POLYGON((0 0,0 1,1 1,0 0))'))
     lyr.CreateFeature(feat)
@@ -1403,6 +1440,7 @@ def test_ogr2ogr_py_44():
 ###############################################################################
 # Test -nlt PROMOTE_TO_MULTI for polygon/multipolygon
 
+
 def test_ogr2ogr_py_45():
 
     script_path = test_py_scripts.get_py_script('ogr2ogr')
@@ -1418,11 +1456,11 @@ def test_ogr2ogr_py_45():
     try:
         os.unlink('tmp/test_ogr2ogr_44.gml')
         os.unlink('tmp/test_ogr2ogr_44.xsd')
-    except:
+    except OSError:
         pass
 
     ds = ogr.GetDriverByName('ESRI Shapefile').CreateDataSource('tmp/test_ogr2ogr_44_src.shp')
-    lyr = ds.CreateLayer('test_ogr2ogr_44_src', geom_type = ogr.wkbPolygon)
+    lyr = ds.CreateLayer('test_ogr2ogr_44_src', geom_type=ogr.wkbPolygon)
     feat = ogr.Feature(lyr.GetLayerDefn())
     feat.SetGeometry(ogr.CreateGeometryFromWkt('POLYGON((0 0,0 1,1 1,0 0))'))
     lyr.CreateFeature(feat)
@@ -1460,6 +1498,7 @@ def test_ogr2ogr_py_45():
 ###############################################################################
 # Test -nlt PROMOTE_TO_MULTI for linestring/multilinestring
 
+
 def test_ogr2ogr_py_46():
 
     script_path = test_py_scripts.get_py_script('ogr2ogr')
@@ -1475,11 +1514,11 @@ def test_ogr2ogr_py_46():
     try:
         os.unlink('tmp/test_ogr2ogr_45.gml')
         os.unlink('tmp/test_ogr2ogr_45.xsd')
-    except:
+    except OSError:
         pass
 
     ds = ogr.GetDriverByName('ESRI Shapefile').CreateDataSource('tmp/test_ogr2ogr_45_src.shp')
-    lyr = ds.CreateLayer('test_ogr2ogr_45_src', geom_type = ogr.wkbLineString)
+    lyr = ds.CreateLayer('test_ogr2ogr_45_src', geom_type=ogr.wkbLineString)
     feat = ogr.Feature(lyr.GetLayerDefn())
     feat.SetGeometry(ogr.CreateGeometryFromWkt('LINESTRING(0 0,0 1,1 1,0 0)'))
     lyr.CreateFeature(feat)
@@ -1514,6 +1553,7 @@ def test_ogr2ogr_py_46():
 
     return 'success'
 
+
 gdaltest_list = [
     test_ogr2ogr_py_1,
     test_ogr2ogr_py_2,
@@ -1528,11 +1568,11 @@ gdaltest_list = [
     test_ogr2ogr_py_11,
     test_ogr2ogr_py_12,
     test_ogr2ogr_py_13,
-    #test_ogr2ogr_py_14,
+    # test_ogr2ogr_py_14,
     test_ogr2ogr_py_15,
     test_ogr2ogr_py_16,
     test_ogr2ogr_py_17,
-    #test_ogr2ogr_py_18,
+    # test_ogr2ogr_py_18,
     test_ogr2ogr_py_19,
     test_ogr2ogr_py_20,
     test_ogr2ogr_py_21,
@@ -1558,8 +1598,8 @@ gdaltest_list = [
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'test_ogr2ogr_py' )
+    gdaltest.setup_run('test_ogr2ogr_py')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

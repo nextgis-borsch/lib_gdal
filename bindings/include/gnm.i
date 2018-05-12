@@ -58,9 +58,10 @@
 #include <iostream>
 using namespace std;
 
+#define CPL_SUPRESS_CPLUSPLUS
+
 #include "gdal.h"
 #include "ogr_api.h"
-#include "ogr_p.h"
 #include "ogr_core.h"
 #include "cpl_port.h"
 #include "cpl_string.h"
@@ -102,9 +103,7 @@ typedef struct OGRGeomFieldDefnHS OGRGeomFieldDefnShadow;
 %}
 
 #if defined(SWIGPYTHON)
-%include python_exceptions.i
-%include python_strings.i
-%include typemaps_python.i
+%include gnm_python.i
 #elif defined(SWIGRUBY)
 //%include typemaps_ruby.i
 #elif defined(SWIGPHP4)
@@ -162,13 +161,13 @@ typedef enum
 #ifndef SWIGJAVA
 %inline %{
   GNMNetworkShadow* CastToNetwork(GDALMajorObjectShadow* base) {
-      return (GNMNetworkShadow*)dynamic_cast<GNMNetwork*>((GDALMajorObject*)base);
+      return (GNMNetworkShadow*)GNMCastToNetwork((GDALMajorObjectH)base);
   }
 %}
 
 %inline %{
   GNMGenericNetworkShadow* CastToGenericNetwork(GDALMajorObjectShadow* base) {
-      return (GNMGenericNetworkShadow*)dynamic_cast<GNMGenericNetwork*>((GDALMajorObject*)base);
+      return (GNMGenericNetworkShadow*)GNMCastToGenericNetwork((GDALMajorObjectH)base);
   }
 %}
 #endif

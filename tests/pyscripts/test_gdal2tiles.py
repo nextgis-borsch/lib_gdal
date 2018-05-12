@@ -54,15 +54,15 @@ def test_gdal2tiles_py_simple():
 
     expected_cs = [25314, 28114, 6148, 59026]
     for i in range(4):
-        if ds.GetRasterBand(i+1).Checksum() != expected_cs[i]:
-            gdaltest.post_reason('wrong checksum for band %d' % (i+1))
+        if ds.GetRasterBand(i + 1).Checksum() != expected_cs[i]:
+            gdaltest.post_reason('wrong checksum for band %d' % (i + 1))
             for j in range(4):
-                print(ds.GetRasterBand(j+1).Checksum())
+                print(ds.GetRasterBand(j + 1).Checksum())
             return 'fail'
 
     ds = None
 
-    for filename in ['googlemaps.html', 'leaflet.html', 'openlayers.html', 'tilemapresource.xml'] :
+    for filename in ['googlemaps.html', 'leaflet.html', 'openlayers.html', 'tilemapresource.xml']:
         if not os.path.exists('tmp/out_gdal2tiles_smallworld/' + filename):
             gdaltest.post_reason('%s missing' % filename)
             return 'fail'
@@ -76,36 +76,31 @@ def test_gdal2tiles_py_zoom_option():
     if script_path is None:
         return 'skip'
 
-    shutil.rmtree('tmp/out_gdal2tiles_smallworld')
+    # Issue with multiprocessing in the chroot
+    if os.environ.get('BUILD_NAME', '') == 'trusty_32bit':
+        return 'skip'
 
-    test_py_scripts.run_py_script(
+    shutil.rmtree('tmp/out_gdal2tiles_smallworld', ignore_errors=True)
+
+    # Because of multiprocessing, run as external process, to avoid issues with
+    # Ubuntu 12.04 and socket.setdefaulttimeout()
+    # as well as on Windows that doesn't manage to fork
+    test_py_scripts.run_py_script_as_external_script(
         script_path,
         'gdal2tiles',
-        '-q -z 0-1 ../gdrivers/data/small_world.tif tmp/out_gdal2tiles_smallworld')
+        '-q --processes=2 -z 0-1 ../gdrivers/data/small_world.tif tmp/out_gdal2tiles_smallworld')
 
     ds = gdal.Open('tmp/out_gdal2tiles_smallworld/1/0/0.png')
 
     expected_cs = [8130, 10496, 65274, 63715]
     for i in range(4):
-        if ds.GetRasterBand(i+1).Checksum() != expected_cs[i]:
-            gdaltest.post_reason('wrong checksum for band %d' % (i+1))
+        if ds.GetRasterBand(i + 1).Checksum() != expected_cs[i]:
+            gdaltest.post_reason('wrong checksum for band %d' % (i + 1))
             for j in range(4):
-                print(ds.GetRasterBand(j+1).Checksum())
+                print(ds.GetRasterBand(j + 1).Checksum())
             return 'fail'
 
     ds = None
-
-    return 'success'
-
-
-def test_gdal2tiles_py_cleanup():
-
-    lst = ['tmp/out_gdal2tiles_smallworld', 'tmp/out_gdal2tiles_bounds_approx']
-    for filename in lst:
-        try:
-            shutil.rmtree(filename)
-        except Exception:
-            pass
 
     return 'success'
 
@@ -152,7 +147,7 @@ def test_does_not_error_when_nothing_to_put_in_the_low_zoom_tile():
     out_folder = 'tmp/out_gdal2tiles_bounds_approx'
     try:
         shutil.rmtree(out_folder)
-    except:
+    except OSError:
         pass
 
     script_path = test_py_scripts.get_py_script('gdal2tiles')
@@ -245,7 +240,7 @@ def _test_utf8(should_raise_unicode=False,
 
     try:
         shutil.rmtree(out_folder)
-    except:
+    except OSError:
         pass
 
     args = '-z 21 %s %s' % (input_file, out_folder)
@@ -254,6 +249,7 @@ def _test_utf8(should_raise_unicode=False,
 
     try:
         ret = test_py_scripts.run_py_script(script_path, 'gdal2tiles', args)
+        print(ret)
     except UnicodeEncodeError:
         if should_raise_unicode:
             return 'success'
@@ -281,6 +277,18 @@ def _test_utf8(should_raise_unicode=False,
     return 'success'
 
 
+def test_gdal2tiles_py_cleanup():
+
+    lst = ['tmp/out_gdal2tiles_smallworld', 'tmp/out_gdal2tiles_bounds_approx']
+    for filename in lst:
+        try:
+            shutil.rmtree(filename)
+        except Exception:
+            pass
+
+    return 'success'
+
+
 gdaltest_list = [
     test_gdal2tiles_py_simple,
     test_gdal2tiles_py_zoom_option,
@@ -292,7 +300,7 @@ gdaltest_list = [
     test_python2_does_not_give_warning_if_bad_lc_ctype_and_all_ascii_chars,
     test_python2_does_not_give_warning_if_bad_lc_ctype_and_non_ascii_chars_in_folder,
     test_gdal2tiles_py_cleanup,
-    ]
+]
 
 
 if __name__ == '__main__':

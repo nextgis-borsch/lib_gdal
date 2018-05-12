@@ -29,7 +29,9 @@
 # DEALINGS IN THE SOFTWARE.
 ###############################################################################
 
-import urllib.request, urllib.error, urllib.parse
+import urllib.request
+import urllib.error
+import urllib.parse
 import socket
 import subprocess
 import shlex
@@ -37,6 +39,7 @@ import os
 import sys
 from queue import Queue
 from threading import Thread
+
 
 def run_func(func):
     try:
@@ -48,13 +51,14 @@ def run_func(func):
         traceback.print_exc()
 
         raise x
-    except:
+    except Exception:
         result = 'fail (blowup)'
         print(result)
 
         import traceback
         traceback.print_exc()
         return result
+
 
 def urlescape(url):
     # Escape any non-ASCII characters
@@ -65,7 +69,8 @@ def urlescape(url):
         pass
     return url
 
-def gdalurlopen(url, timeout = 10):
+
+def gdalurlopen(url, timeout=10):
     old_timeout = socket.getdefaulttimeout()
     socket.setdefaulttimeout(timeout)
 
@@ -74,12 +79,12 @@ def gdalurlopen(url, timeout = 10):
 
         if 'GDAL_HTTP_PROXYUSERPWD' in os.environ:
             proxyuserpwd = os.environ['GDAL_HTTP_PROXYUSERPWD']
-            proxyHandler = urllib.request.ProxyHandler({"http" : \
-                "http://%s@%s" % (proxyuserpwd, proxy)})
+            proxyHandler = urllib.request.ProxyHandler({"http":
+                                                        "http://%s@%s" % (proxyuserpwd, proxy)})
         else:
             proxyuserpwd = None
-            proxyHandler = urllib.request.ProxyHandler({"http" : \
-                "http://%s" % (proxy)})
+            proxyHandler = urllib.request.ProxyHandler({"http":
+                                                        "http://%s" % (proxy)})
 
         opener = urllib.request.build_opener(proxyHandler, urllib.request.HTTPHandler)
 
@@ -97,23 +102,26 @@ def gdalurlopen(url, timeout = 10):
         print('HTTP service for %s is down (URL Error: %s)' % (url, e.reason))
         socket.setdefaulttimeout(old_timeout)
         return None
-    except:
-        print('HTTP service for %s is down.' %(url))
+    except urllib.error.ContentTooShort:
+        print('HTTP content too short for %s.' % url)
         socket.setdefaulttimeout(old_timeout)
         return None
+
 
 def spawn_async(cmd):
     command = shlex.split(cmd)
     try:
         process = subprocess.Popen(command, stdout=subprocess.PIPE)
         return (process, process.stdout)
-    except:
+    except OSError:
         return (None, None)
+
 
 def wait_process(process):
     process.wait()
 
-def runexternal(cmd, strin = None, check_memleak = True, display_live_on_parent_stdout = False):
+
+def runexternal(cmd, strin=None, check_memleak=True, display_live_on_parent_stdout=False, encoding='latin1'):
     command = shlex.split(cmd)
     if strin is None:
         p = subprocess.Popen(command, stdout=subprocess.PIPE)
@@ -127,13 +135,13 @@ def runexternal(cmd, strin = None, check_memleak = True, display_live_on_parent_
             ret = ''
             ret_stdout = p.stdout
             while True:
-                c = ret_stdout.read(1).decode('latin1')
+                c = ret_stdout.read(1).decode(encoding)
                 if c == '':
                     break
                 ret = ret + c
                 sys.stdout.write(c)
         else:
-            ret = p.stdout.read().decode('latin1')
+            ret = p.stdout.read().decode(encoding)
         p.stdout.close()
     else:
         ret = ''
@@ -144,11 +152,13 @@ def runexternal(cmd, strin = None, check_memleak = True, display_live_on_parent_
 
     return ret
 
+
 def read_in_thread(f, q):
     q.put(f.read())
     f.close()
 
-def runexternal_out_and_err(cmd, check_memleak = True):
+
+def runexternal_out_and_err(cmd, check_memleak=True):
     command = shlex.split(cmd)
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 

@@ -29,16 +29,16 @@
 #include "ogrgeomediageometry.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
-static const int GEOMEDIA_POINT          = 0xC0;
-static const int GEOMEDIA_ORIENTED_POINT = 0xC8;
-static const int GEOMEDIA_POLYLINE       = 0xC2;
-static const int GEOMEDIA_POLYGON        = 0xC3;
-static const int GEOMEDIA_BOUNDARY       = 0xC5;
-static const int GEOMEDIA_COLLECTION     = 0xC6;
-static const int GEOMEDIA_MULTILINE      = 0xCB;
-static const int GEOMEDIA_MULTIPOLYGON   = 0xCC;
+constexpr int GEOMEDIA_POINT          = 0xC0;
+constexpr int GEOMEDIA_ORIENTED_POINT = 0xC8;
+constexpr int GEOMEDIA_POLYLINE       = 0xC2;
+constexpr int GEOMEDIA_POLYGON        = 0xC3;
+constexpr int GEOMEDIA_BOUNDARY       = 0xC5;
+constexpr int GEOMEDIA_COLLECTION     = 0xC6;
+constexpr int GEOMEDIA_MULTILINE      = 0xCB;
+constexpr int GEOMEDIA_MULTIPOLYGON   = 0xCC;
 
 /************************************************************************/
 /*                       OGRCreateFromGeomedia()                        */
@@ -49,7 +49,7 @@ OGRErr OGRCreateFromGeomedia( GByte *pabyGeom,
                               int nBytes )
 
 {
-    *ppoGeom = NULL;
+    *ppoGeom = nullptr;
 
     if( nBytes < 16 )
         return OGRERR_FAILURE;
@@ -172,7 +172,7 @@ OGRErr OGRCreateFromGeomedia( GByte *pabyGeom,
         if( nBytes < nExteriorSize )
             return OGRERR_FAILURE;
 
-        OGRGeometry* poExteriorGeom = NULL;
+        OGRGeometry* poExteriorGeom = nullptr;
         if( OGRCreateFromGeomedia( pabyGeom, &poExteriorGeom,
                                    nExteriorSize ) != OGRERR_NONE )
             return OGRERR_FAILURE;
@@ -205,7 +205,7 @@ OGRErr OGRCreateFromGeomedia( GByte *pabyGeom,
             return OGRERR_FAILURE;
         }
 
-        OGRGeometry* poInteriorGeom = NULL;
+        OGRGeometry* poInteriorGeom = nullptr;
         if( OGRCreateFromGeomedia( pabyGeom, &poInteriorGeom,
                                    nInteriorSize ) != OGRERR_NONE )
         {
@@ -217,17 +217,14 @@ OGRErr OGRCreateFromGeomedia( GByte *pabyGeom,
             wkbFlatten( poInteriorGeom->getGeometryType() );
         if( interiorGeomType == wkbPolygon )
         {
-            ((OGRPolygon*)poExteriorGeom)->
-                addRing(((OGRPolygon*)poInteriorGeom)->getExteriorRing());
+            poExteriorGeom->toPolygon()->
+                addRing(poInteriorGeom->toPolygon()->getExteriorRing());
         }
         else if( interiorGeomType == wkbMultiPolygon )
         {
-            const int numGeom = ((OGRMultiPolygon*)poInteriorGeom)->getNumGeometries();
-            for( int i = 0; i < numGeom; ++i )
+            for( auto&& poInteriorPolygon: poInteriorGeom->toMultiPolygon() )
             {
-                OGRPolygon* poInteriorPolygon =
-                    (OGRPolygon*)((OGRMultiPolygon*)poInteriorGeom)->getGeometryRef(i);
-                ((OGRPolygon*)poExteriorGeom)->addRing( poInteriorPolygon->getExteriorRing() );
+                poExteriorGeom->toPolygon()->addRing( poInteriorPolygon->getExteriorRing() );
             }
         }
         else
@@ -347,7 +344,7 @@ OGRErr OGRCreateFromGeomedia( GByte *pabyGeom,
                 return OGRERR_FAILURE;
             }
 
-            OGRGeometry* poSubGeom = NULL;
+            OGRGeometry* poSubGeom = nullptr;
             if( OGRCreateFromGeomedia( pabyGeom, &poSubGeom,
                                        nSubBytes ) == OGRERR_NONE )
             {
@@ -356,7 +353,7 @@ OGRErr OGRCreateFromGeomedia( GByte *pabyGeom,
                 {
                     OGRPolygon* poPoly = new OGRPolygon();
                     OGRLinearRing* poRing = new OGRLinearRing();
-                    poRing->addSubLineString((OGRLineString*)poSubGeom);
+                    poRing->addSubLineString(poSubGeom->toLineString());
                     poPoly->addRingDirectly(poRing);
                     delete poSubGeom;
                     poSubGeom = poPoly;
@@ -390,18 +387,18 @@ OGRErr OGRCreateFromGeomedia( GByte *pabyGeom,
 
 OGRSpatialReference* OGRGetGeomediaSRS(OGRFeature* poFeature)
 {
-    if( poFeature == NULL )
-        return NULL;
+    if( poFeature == nullptr )
+        return nullptr;
 
     const int nGeodeticDatum = poFeature->GetFieldAsInteger("GeodeticDatum");
     const int nEllipsoid = poFeature->GetFieldAsInteger("Ellipsoid");
     const int nProjAlgorithm = poFeature->GetFieldAsInteger("ProjAlgorithm");
 
     if( !(nGeodeticDatum == 17 && nEllipsoid == 22) )
-        return NULL;
+        return nullptr;
 
     if( nProjAlgorithm != 12 )
-        return NULL;
+        return nullptr;
 
     OGRSpatialReference* poSRS = new OGRSpatialReference();
 

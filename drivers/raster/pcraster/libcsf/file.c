@@ -7,7 +7,7 @@ int csf_fseek(
     CSF_FADDR offset,
     int origin)
 {
-#if defined(_WIN32) && !defined(__MINGW32__)
+#ifdef _WIN32
     return _fseeki64(file, offset, origin);
 #else
     return fseek(file, offset, origin);
@@ -18,7 +18,7 @@ int csf_fseek(
 CSF_FADDR csf_ftell(
     FILE* file)
 {
-#if defined(_WIN32) && !defined(__MINGW32__)
+#ifdef _WIN32
     return _ftelli64(file);
 #else
     return ftell(file);

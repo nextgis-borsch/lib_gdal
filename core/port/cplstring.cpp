@@ -43,7 +43,7 @@
 #define va_copy __va_copy
 #endif
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /*
  * The CPLString class is derived from std::string, so the vast majority
@@ -51,11 +51,19 @@ CPL_CVSID("$Id$");
  * we add.
  */
 
+// wk 2017-04-20: see comments in cpl_string.h above definition of CPLStringT / CPLString
+#ifdef _MSC_VER
+#  define CPL_STRING_TEMPLATE template<>
+#else
+#  define CPL_STRING_TEMPLATE
+#endif
+
 /************************************************************************/
 /*                               Printf()                               */
 /************************************************************************/
 
 /** Assign the content of the string using sprintf() */
+CPL_STRING_TEMPLATE
 CPLString &CPLString::Printf( CPL_FORMAT_STRING(const char *pszFormat), ... )
 
 {
@@ -73,6 +81,7 @@ CPLString &CPLString::Printf( CPL_FORMAT_STRING(const char *pszFormat), ... )
 /************************************************************************/
 
 /** Assign the content of the string using vsprintf() */
+CPL_STRING_TEMPLATE
 CPLString &CPLString::vPrintf( CPL_FORMAT_STRING(const char *pszFormat),
                                va_list args )
 
@@ -109,7 +118,7 @@ CPLString &CPLString::vPrintf( CPL_FORMAT_STRING(const char *pszFormat),
     szModestBuffer[0] = '\0';
     int nPR = CPLvsnprintf( szModestBuffer, sizeof(szModestBuffer), pszFormat,
                              wrk_args );
-    if( nPR == -1 || nPR >= (int) sizeof(szModestBuffer)-1 )
+    if( nPR == -1 || nPR >= static_cast<int>(sizeof(szModestBuffer))-1 )
     {
         int nWorkBufferSize = 2000;
         char *pszWorkBuffer = static_cast<char *>(
@@ -170,10 +179,11 @@ CPLString &CPLString::vPrintf( CPL_FORMAT_STRING(const char *pszFormat),
  * @return a reference to the CPLString.
  */
 
+CPL_STRING_TEMPLATE
 CPLString &CPLString::FormatC( double dfValue, const char *pszFormat )
 
 {
-    if( pszFormat == NULL )
+    if( pszFormat == nullptr )
         pszFormat = "%g";
 
     // presumably long enough for any number.
@@ -200,10 +210,11 @@ CPLString &CPLString::FormatC( double dfValue, const char *pszFormat )
  * @return a reference to the CPLString.
  */
 
+CPL_STRING_TEMPLATE
 CPLString &CPLString::Trim()
 
 {
-    static const char szWhitespace[] = " \t\r\n";
+    constexpr char szWhitespace[] = " \t\r\n";
 
     const size_t iLeft = find_first_not_of( szWhitespace );
     const size_t iRight = find_last_not_of( szWhitespace );
@@ -224,13 +235,14 @@ CPLString &CPLString::Trim()
 /************************************************************************/
 
 /** Recode the string */
+CPL_STRING_TEMPLATE
 CPLString &CPLString::Recode( const char *pszSrcEncoding,
                               const char *pszDstEncoding )
 
 {
-    if( pszSrcEncoding == NULL )
+    if( pszSrcEncoding == nullptr )
         pszSrcEncoding = CPL_ENC_UTF8;
-    if( pszDstEncoding == NULL )
+    if( pszDstEncoding == nullptr )
         pszDstEncoding = CPL_ENC_UTF8;
 
     if( strcmp(pszSrcEncoding, pszDstEncoding) == 0 )
@@ -240,7 +252,7 @@ CPLString &CPLString::Recode( const char *pszSrcEncoding,
                                   pszSrcEncoding,
                                   pszDstEncoding );
 
-    if( pszRecoded == NULL )
+    if( pszRecoded == nullptr )
         return *this;
 
     assign( pszRecoded );
@@ -262,6 +274,7 @@ CPLString &CPLString::Recode( const char *pszSrcEncoding,
  * @since GDAL 1.9.0
  */
 
+CPL_STRING_TEMPLATE
 size_t CPLString::ifind( const std::string & str, size_t pos ) const
 
 {
@@ -278,6 +291,7 @@ size_t CPLString::ifind( const std::string & str, size_t pos ) const
  * @since GDAL 1.9.0
  */
 
+CPL_STRING_TEMPLATE
 size_t CPLString::ifind( const char *s, size_t nPos ) const
 
 {
@@ -313,6 +327,7 @@ size_t CPLString::ifind( const char *s, size_t nPos ) const
  * Convert to upper case in place.
  */
 
+CPL_STRING_TEMPLATE
 CPLString &CPLString::toupper()
 
 {
@@ -330,6 +345,7 @@ CPLString &CPLString::toupper()
  * Convert to lower case in place.
  */
 
+CPL_STRING_TEMPLATE
 CPLString &CPLString::tolower()
 
 {
@@ -346,6 +362,7 @@ CPLString &CPLString::tolower()
 /**
  * Replace all occurrences of osBefore with osAfter.
  */
+CPL_STRING_TEMPLATE
 CPLString &CPLString::replaceAll( const std::string &osBefore,
                                   const std::string &osAfter )
 {
@@ -366,6 +383,7 @@ CPLString &CPLString::replaceAll( const std::string &osBefore,
 /**
  * Replace all occurrences of chBefore with osAfter.
  */
+CPL_STRING_TEMPLATE
 CPLString &CPLString::replaceAll( char chBefore,
                                   const std::string &osAfter )
 {
@@ -375,6 +393,7 @@ CPLString &CPLString::replaceAll( char chBefore,
 /**
  * Replace all occurrences of osBefore with chAfter.
  */
+CPL_STRING_TEMPLATE
 CPLString &CPLString::replaceAll( const std::string &osBefore,
                                   char chAfter )
 {
@@ -384,10 +403,29 @@ CPLString &CPLString::replaceAll( const std::string &osBefore,
 /**
  * Replace all occurrences of chBefore with chAfter.
  */
+CPL_STRING_TEMPLATE
 CPLString &CPLString::replaceAll( char chBefore,
                                   char chAfter )
 {
     return replaceAll(std::string(&chBefore, 1), std::string(&chAfter, 1));
+}
+
+
+/************************************************************************/
+/*                             endsWith()                              */
+/************************************************************************/
+
+/**
+ * Returns whether the string ends with another string
+ * @param osStr other string.
+ * @return true if the string ends wit osStr.
+ */
+CPL_STRING_TEMPLATE
+bool CPLString::endsWith( const std::string& osStr ) const
+{
+    if( size() < osStr.size() )
+        return false;
+    return substr(size() - osStr.size()) == osStr;
 }
 
 /************************************************************************/
@@ -439,7 +477,7 @@ CPLString CPLURLAddKVP(const char* pszURL, const char* pszKey,
                        const char* pszValue)
 {
     CPLString osURL(pszURL);
-    if( strchr(osURL, '?') == NULL )
+    if( strchr(osURL, '?') == nullptr )
         osURL += "?";
     pszURL = osURL.c_str();
 

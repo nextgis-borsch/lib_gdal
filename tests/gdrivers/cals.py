@@ -30,7 +30,7 @@
 
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 from osgeo import gdal
 import gdaltest
@@ -38,24 +38,27 @@ import gdaltest
 ###############################################################################
 # Source has no color table
 
+
 def cals_1():
 
-    tst = gdaltest.GDALTest( 'CALS', 'small1bit.img', 1, 9907 )
+    tst = gdaltest.GDALTest('CALS', 'small1bit.img', 1, 9907)
 
     return tst.testCreateCopy()
 
 ###############################################################################
 # Source has a color table (0,0,0),(255,255,255)
 
+
 def cals_2():
 
     # Has no color table
-    tst = gdaltest.GDALTest( 'CALS', '../../gcore/data/oddsize1bit.tif', 1, 3883 )
+    tst = gdaltest.GDALTest('CALS', '../../gcore/data/oddsize1bit.tif', 1, 3883)
 
     return tst.testCreateCopy()
 
 ###############################################################################
 # Source has a color table (255,255,255),(0,0,0)
+
 
 def cals_3():
 
@@ -82,6 +85,7 @@ def cals_3():
     tmp_ds = None
     out_ds = None
     gdal.Unlink('/vsimem/cals_2_tmp.cal')
+    gdal.Unlink('/vsimem/cals_2_tmp.cal.aux.xml')
     gdal.Unlink('/vsimem/cals_2.cal')
 
     return 'success'
@@ -89,10 +93,11 @@ def cals_3():
 ###############################################################################
 # Test CreateCopy() error conditions
 
+
 def cals_4():
 
     # 0 band
-    src_ds = gdal.GetDriverByName('MEM').Create('',1,1,0)
+    src_ds = gdal.GetDriverByName('MEM').Create('', 1, 1, 0)
     gdal.PushErrorHandler()
     out_ds = gdal.GetDriverByName('CALS').CreateCopy('/vsimem/cals_4.cal', src_ds)
     gdal.PopErrorHandler()
@@ -101,35 +106,35 @@ def cals_4():
         return 'fail'
 
     # 2 bands
-    src_ds = gdal.GetDriverByName('MEM').Create('',1,1,2)
+    src_ds = gdal.GetDriverByName('MEM').Create('', 1, 1, 2)
     gdal.PushErrorHandler()
-    out_ds = gdal.GetDriverByName('CALS').CreateCopy('/vsimem/cals_4.cal', src_ds, strict = True)
+    out_ds = gdal.GetDriverByName('CALS').CreateCopy('/vsimem/cals_4.cal', src_ds, strict=True)
     gdal.PopErrorHandler()
     if out_ds is not None:
         gdaltest.post_reason('fail')
         return 'fail'
 
     # 1 band but not 1-bit
-    src_ds = gdal.GetDriverByName('MEM').Create('',1,1,1)
+    src_ds = gdal.GetDriverByName('MEM').Create('', 1, 1, 1)
     gdal.PushErrorHandler()
-    out_ds = gdal.GetDriverByName('CALS').CreateCopy('/vsimem/cals_4.cal', src_ds, strict = True)
+    out_ds = gdal.GetDriverByName('CALS').CreateCopy('/vsimem/cals_4.cal', src_ds, strict=True)
     gdal.PopErrorHandler()
     if out_ds is not None:
         gdaltest.post_reason('fail')
         return 'fail'
 
     # Dimension > 999999
-    src_ds = gdal.GetDriverByName('MEM').Create('',1000000,1,1)
+    src_ds = gdal.GetDriverByName('MEM').Create('', 1000000, 1, 1)
     src_ds.GetRasterBand(1).SetMetadataItem('NBITS', '1', 'IMAGE_STRUCTURE')
     gdal.PushErrorHandler()
-    out_ds = gdal.GetDriverByName('CALS').CreateCopy('/vsimem/cals_4.cal', src_ds, strict = True)
+    out_ds = gdal.GetDriverByName('CALS').CreateCopy('/vsimem/cals_4.cal', src_ds, strict=True)
     gdal.PopErrorHandler()
     if out_ds is not None:
         gdaltest.post_reason('fail')
         return 'fail'
 
     # Invalid output filename
-    src_ds = gdal.GetDriverByName('MEM').Create('',1,1,1)
+    src_ds = gdal.GetDriverByName('MEM').Create('', 1, 1, 1)
     src_ds.GetRasterBand(1).SetMetadataItem('NBITS', '1', 'IMAGE_STRUCTURE')
     gdal.PushErrorHandler()
     out_ds = gdal.GetDriverByName('CALS').CreateCopy('/not_existing_dir/cals_4.cal', src_ds)
@@ -143,9 +148,10 @@ def cals_4():
 ###############################################################################
 # Test PIXEL_PATH & LINE_PROGRESSION metadata item
 
+
 def cals_5():
 
-    src_ds = gdal.GetDriverByName('MEM').Create('',1,1,1)
+    src_ds = gdal.GetDriverByName('MEM').Create('', 1, 1, 1)
     src_ds.GetRasterBand(1).SetMetadataItem('NBITS', '1', 'IMAGE_STRUCTURE')
     src_ds.SetMetadataItem('PIXEL_PATH', '90')
     src_ds.SetMetadataItem('LINE_PROGRESSION', '270')
@@ -166,6 +172,7 @@ def cals_5():
 
 ###############################################################################
 
+
 gdaltest_list = [
     cals_1,
     cals_2,
@@ -177,9 +184,8 @@ gdaltest_list = [
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'cals' )
+    gdaltest.setup_run('cals')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

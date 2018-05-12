@@ -66,7 +66,7 @@ protected:
 
     GUInt32 TranslateXYH(const SXFRecordDescription& certifInfo,
                          const char *psBuff, GUInt32 nBufLen,
-                         double *dfX, double *dfY, double *dfH = NULL);
+                         double *dfX, double *dfY, double *dfH = nullptr);
 
     OGRFeature *TranslatePoint(const SXFRecordDescription& certifInfo, const char * psRecordBuf, GUInt32 nBufLen);
     OGRFeature *TranslateText(const SXFRecordDescription& certifInfo, const char * psBuff, GUInt32 nBufLen);
@@ -92,8 +92,8 @@ public:
     virtual OGRSpatialReference *GetSpatialRef() override;
     virtual const char* GetFIDColumn() override;
 
-    virtual GByte GetId() const { return nLayerID; };
-    virtual void AddClassifyCode(unsigned nClassCode, const char *szName = NULL);
+    virtual GByte GetId() const { return nLayerID; }
+    virtual void AddClassifyCode(unsigned nClassCode, const char *szName = nullptr);
     virtual bool AddRecord( long nFID, unsigned nClassCode,
                             vsi_l_offset nOffset, bool bHasSemantic,
                             size_t nSemanticsSize );

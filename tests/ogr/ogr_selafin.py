@@ -32,7 +32,7 @@ import os
 import sys
 import math
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 import ogrtest
@@ -43,17 +43,17 @@ from osgeo import osr
 ###############################################################################
 # Create wasp datasource
 
+
 def ogr_selafin_create_ds():
 
     gdaltest.selafin_ds = None
     try:
-        os.remove( 'tmp/tmp.slf' )
-    except:
+        os.remove('tmp/tmp.slf')
+    except OSError:
         pass
     selafin_drv = ogr.GetDriverByName('Selafin')
 
-    gdaltest.selafin_ds = selafin_drv.CreateDataSource( 'tmp/tmp.slf' )
-
+    gdaltest.selafin_ds = selafin_drv.CreateDataSource('tmp/tmp.slf')
 
     if gdaltest.selafin_ds is not None:
         return 'success'
@@ -63,28 +63,30 @@ def ogr_selafin_create_ds():
 ###############################################################################
 # Add a few points to the datasource
 
+
 def ogr_selafin_create_nodes():
-    if ogr_selafin_create_ds() != 'success': return 'skip'
-    ref=osr.SpatialReference()
+    if ogr_selafin_create_ds() != 'success':
+        return 'skip'
+    ref = osr.SpatialReference()
     ref.ImportFromEPSG(4326)
-    layer=gdaltest.selafin_ds.CreateLayer('name',ref,geom_type=ogr.wkbPoint)
-    if layer == None:
-        gdaltest.post_reason( 'unable to create layer')
+    layer = gdaltest.selafin_ds.CreateLayer('name', ref, geom_type=ogr.wkbPoint)
+    if layer is None:
+        gdaltest.post_reason('unable to create layer')
         return 'fail'
-    layer.CreateField(ogr.FieldDefn('value',ogr.OFTReal))
-    dfn=layer.GetLayerDefn()
+    layer.CreateField(ogr.FieldDefn('value', ogr.OFTReal))
+    dfn = layer.GetLayerDefn()
     for i in range(5):
         for j in range(5):
-            pt=ogr.Geometry(type=ogr.wkbPoint)
-            pt.AddPoint_2D(float(i),float(j))
-            feat=ogr.Feature(dfn)
+            pt = ogr.Geometry(type=ogr.wkbPoint)
+            pt.AddPoint_2D(float(i), float(j))
+            feat = ogr.Feature(dfn)
             feat.SetGeometry(pt)
-            feat.SetField(0,(float)(i*5+j))
-            if layer.CreateFeature(feat)!=0:
-                gdaltest.post_reason( 'unable to create node feature')
+            feat.SetField(0, (float)(i * 5 + j))
+            if layer.CreateFeature(feat) != 0:
+                gdaltest.post_reason('unable to create node feature')
                 return 'fail'
     # do some checks
-    if layer.GetFeatureCount()!=25:
+    if layer.GetFeatureCount() != 25:
         gdaltest.post_reason('wrong number of features after point layer creation')
         return 'fail'
     # return
@@ -95,59 +97,60 @@ def ogr_selafin_create_nodes():
 ###############################################################################
 # Add a set of elements to the datasource
 
+
 def ogr_selafin_create_elements():
 
-    gdaltest.selafin_ds = ogr.Open( 'tmp/tmp.slf',1 )
+    gdaltest.selafin_ds = ogr.Open('tmp/tmp.slf', 1)
     if gdaltest.selafin_ds is None:
         return 'skip'
-    layerCount=gdaltest.selafin_ds.GetLayerCount()
-    if layerCount<2:
+    layerCount = gdaltest.selafin_ds.GetLayerCount()
+    if layerCount < 2:
         gdaltest.post_reason('elements layer not created with nodes layer')
         return 'fail'
     for i in range(layerCount):
-        name=gdaltest.selafin_ds.GetLayer(i).GetName()
+        name = gdaltest.selafin_ds.GetLayer(i).GetName()
         if '_e' in name:
-            j=i
+            j = i
         if '_p' in name:
-            k=i
-    layere=gdaltest.selafin_ds.GetLayer(j)
-    dfn=layere.GetLayerDefn()
+            k = i
+    layere = gdaltest.selafin_ds.GetLayer(j)
+    dfn = layere.GetLayerDefn()
     for i in range(4):
         for j in range(4):
-            pol=ogr.Geometry(type=ogr.wkbPolygon)
-            poll=ogr.Geometry(type=ogr.wkbLinearRing)
-            poll.AddPoint_2D(float(i),float(j))
-            poll.AddPoint_2D(float(i),float(j+1))
-            poll.AddPoint_2D(float(i+1),float(j+1))
-            poll.AddPoint_2D(float(i+1),float(j))
-            poll.AddPoint_2D(float(i),float(j))
+            pol = ogr.Geometry(type=ogr.wkbPolygon)
+            poll = ogr.Geometry(type=ogr.wkbLinearRing)
+            poll.AddPoint_2D(float(i), float(j))
+            poll.AddPoint_2D(float(i), float(j + 1))
+            poll.AddPoint_2D(float(i + 1), float(j + 1))
+            poll.AddPoint_2D(float(i + 1), float(j))
+            poll.AddPoint_2D(float(i), float(j))
             pol.AddGeometry(poll)
-            feat=ogr.Feature(dfn)
+            feat = ogr.Feature(dfn)
             feat.SetGeometry(pol)
-            if layere.CreateFeature(feat)!=0:
-                gdaltest.post_reason( 'unable to create element feature')
+            if layere.CreateFeature(feat) != 0:
+                gdaltest.post_reason('unable to create element feature')
                 return 'fail'
-    pol=ogr.Geometry(type=ogr.wkbPolygon)
-    poll=ogr.Geometry(type=ogr.wkbLinearRing)
-    poll.AddPoint_2D(4.0,4.0)
-    poll.AddPoint_2D(4.0,5.0)
-    poll.AddPoint_2D(5.0,5.0)
-    poll.AddPoint_2D(5.0,4.0)
-    poll.AddPoint_2D(4.0,4.0)
+    pol = ogr.Geometry(type=ogr.wkbPolygon)
+    poll = ogr.Geometry(type=ogr.wkbLinearRing)
+    poll.AddPoint_2D(4.0, 4.0)
+    poll.AddPoint_2D(4.0, 5.0)
+    poll.AddPoint_2D(5.0, 5.0)
+    poll.AddPoint_2D(5.0, 4.0)
+    poll.AddPoint_2D(4.0, 4.0)
     pol.AddGeometry(poll)
-    feat=ogr.Feature(dfn)
+    feat = ogr.Feature(dfn)
     feat.SetGeometry(pol)
-    if layere.CreateFeature(feat)!=0:
-        gdaltest.post_reason( 'unable to create element feature')
+    if layere.CreateFeature(feat) != 0:
+        gdaltest.post_reason('unable to create element feature')
         return 'fail'
     # do some checks
-    if gdaltest.selafin_ds.GetLayer(k).GetFeatureCount()!=28:
+    if gdaltest.selafin_ds.GetLayer(k).GetFeatureCount() != 28:
         gdaltest.post_reason('wrong number of point features after elements layer creation')
         return 'fail'
-    if math.fabs(layere.GetFeature(5).GetFieldAsDouble(0)-9)>0.01:
+    if math.fabs(layere.GetFeature(5).GetFieldAsDouble(0) - 9) > 0.01:
         gdaltest.post_reason('wrong value of attribute in element layer')
         return 'fail'
-    if math.fabs(layere.GetFeature(10).GetFieldAsDouble(0)-15)>0.01:
+    if math.fabs(layere.GetFeature(10).GetFieldAsDouble(0) - 15) > 0.01:
         gdaltest.post_reason('wrong value of attribute in element layer')
         return 'fail'
     # return
@@ -156,34 +159,36 @@ def ogr_selafin_create_elements():
 
 ###############################################################################
 # Add a field and set its values for point features
+
+
 def ogr_selafin_set_field():
 
-    gdaltest.selafin_ds = ogr.Open( 'tmp/tmp.slf',1 )
+    gdaltest.selafin_ds = ogr.Open('tmp/tmp.slf', 1)
     if gdaltest.selafin_ds is None:
         return 'skip'
-    layerCount=gdaltest.selafin_ds.GetLayerCount()
-    if layerCount<2:
+    layerCount = gdaltest.selafin_ds.GetLayerCount()
+    if layerCount < 2:
         gdaltest.post_reason('elements layer not created with nodes layer')
         return 'fail'
     for i in range(layerCount):
-        name=gdaltest.selafin_ds.GetLayer(i).GetName()
+        name = gdaltest.selafin_ds.GetLayer(i).GetName()
         if '_e' in name:
-            j=i
+            j = i
         if '_p' in name:
-            k=i
-    layern=gdaltest.selafin_ds.GetLayer(k)
+            k = i
+    layern = gdaltest.selafin_ds.GetLayer(k)
     gdaltest.selafin_ds.GetLayer(j)
-    layern.CreateField(ogr.FieldDefn('reverse',ogr.OFTReal))
-    layern.AlterFieldDefn(0,ogr.FieldDefn('new',ogr.OFTReal),ogr.ALTER_NAME_FLAG)
-    layern.ReorderFields([1,0])
+    layern.CreateField(ogr.FieldDefn('reverse', ogr.OFTReal))
+    layern.AlterFieldDefn(0, ogr.FieldDefn('new', ogr.OFTReal), ogr.ALTER_NAME_FLAG)
+    layern.ReorderFields([1, 0])
     layern.GetLayerDefn()
     for i in range(28):
-        feat=layern.GetFeature(i)
-        val=feat.GetFieldAsDouble(1)
-        feat.SetField(0,(float)(val*10))
+        feat = layern.GetFeature(i)
+        val = feat.GetFieldAsDouble(1)
+        feat.SetField(0, (float)(val * 10))
         layern.SetFeature(feat)
     # do some checks
-    if math.fabs(layern.GetFeature(11).GetFieldAsDouble(0)-110)>0.01:
+    if math.fabs(layern.GetFeature(11).GetFieldAsDouble(0) - 110) > 0.01:
         gdaltest.post_reason('wrong value of attribute in point layer')
         return 'fail'
     # return
@@ -197,8 +202,9 @@ def ogr_selafin_set_field():
 def ogr_selafin_cleanup():
 
     selafin_drv = ogr.GetDriverByName('Selafin')
-    selafin_drv.DeleteDataSource( 'tmp/tmp.slf' )
+    selafin_drv.DeleteDataSource('tmp/tmp.slf')
     return 'success'
+
 
 gdaltest_list = [
     ogr_selafin_create_ds,
@@ -206,15 +212,15 @@ gdaltest_list = [
     ogr_selafin_create_elements,
     ogr_selafin_set_field,
     ogr_selafin_cleanup
-    ]
+]
 
 if __name__ == '__main__':
     gdal.PushErrorHandler('CPLQuietErrorHandler')
     ogrtest.have_geos()
     gdal.PopErrorHandler()
 
-    gdaltest.setup_run( 'ogr_selafin' )
+    gdaltest.setup_run('ogr_selafin')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

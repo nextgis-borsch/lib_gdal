@@ -32,7 +32,7 @@
 import sys
 import os
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 from osgeo import gdal
 import gdaltest
@@ -42,12 +42,13 @@ import test_cli_utilities
 ###############################################################################
 # Simple test
 
+
 def test_ogrinfo_1():
     if test_cli_utilities.get_ogrinfo_path() is None:
         return 'skip'
 
     (ret, err) = gdaltest.runexternal_out_and_err(test_cli_utilities.get_ogrinfo_path() + ' ../ogr/data/poly.shp')
-    if not (err is None or err == '') :
+    if not (err is None or err == ''):
         gdaltest.post_reason('got error/warning')
         print(err)
         return 'fail'
@@ -58,6 +59,7 @@ def test_ogrinfo_1():
 
 ###############################################################################
 # Test -ro option
+
 
 def test_ogrinfo_2():
     if test_cli_utilities.get_ogrinfo_path() is None:
@@ -71,6 +73,7 @@ def test_ogrinfo_2():
 
 ###############################################################################
 # Test -al option
+
 
 def test_ogrinfo_3():
     if test_cli_utilities.get_ogrinfo_path() is None:
@@ -101,6 +104,7 @@ def test_ogrinfo_3():
 ###############################################################################
 # Test layer name
 
+
 def test_ogrinfo_4():
     if test_cli_utilities.get_ogrinfo_path() is None:
         return 'skip'
@@ -114,6 +118,7 @@ def test_ogrinfo_4():
 ###############################################################################
 # Test -sql option
 
+
 def test_ogrinfo_5():
     if test_cli_utilities.get_ogrinfo_path() is None:
         return 'skip'
@@ -126,6 +131,7 @@ def test_ogrinfo_5():
 
 ###############################################################################
 # Test -geom=NO option
+
 
 def test_ogrinfo_6():
     if test_cli_utilities.get_ogrinfo_path() is None:
@@ -141,6 +147,7 @@ def test_ogrinfo_6():
 
 ###############################################################################
 # Test -geom=SUMMARY option
+
 
 def test_ogrinfo_7():
     if test_cli_utilities.get_ogrinfo_path() is None:
@@ -159,6 +166,7 @@ def test_ogrinfo_7():
 ###############################################################################
 # Test -spat option
 
+
 def test_ogrinfo_8():
     if test_cli_utilities.get_ogrinfo_path() is None:
         return 'skip'
@@ -176,6 +184,7 @@ def test_ogrinfo_8():
 ###############################################################################
 # Test -where option
 
+
 def test_ogrinfo_9():
     if test_cli_utilities.get_ogrinfo_path() is None:
         return 'skip'
@@ -191,6 +200,7 @@ def test_ogrinfo_9():
 ###############################################################################
 # Test -fid option
 
+
 def test_ogrinfo_10():
     if test_cli_utilities.get_ogrinfo_path() is None:
         return 'skip'
@@ -203,6 +213,7 @@ def test_ogrinfo_10():
 
 ###############################################################################
 # Test -fields=no option
+
 
 def test_ogrinfo_11():
     if test_cli_utilities.get_ogrinfo_path() is None:
@@ -219,11 +230,12 @@ def test_ogrinfo_11():
 ###############################################################################
 # Test ogrinfo --version
 
+
 def test_ogrinfo_12():
     if test_cli_utilities.get_ogrinfo_path() is None:
         return 'skip'
 
-    ret = gdaltest.runexternal(test_cli_utilities.get_ogrinfo_path() + ' --version', check_memleak = False )
+    ret = gdaltest.runexternal(test_cli_utilities.get_ogrinfo_path() + ' --version', check_memleak=False)
     if ret.find(gdal.VersionInfo('--version')) != 0:
         print(ret)
         return 'fail'
@@ -233,11 +245,12 @@ def test_ogrinfo_12():
 ###############################################################################
 # Test erroneous use of --config
 
+
 def test_ogrinfo_13():
     if test_cli_utilities.get_ogrinfo_path() is None:
         return 'skip'
 
-    (out, err) = gdaltest.runexternal_out_and_err(test_cli_utilities.get_ogrinfo_path() + ' --config', check_memleak = False )
+    (out, err) = gdaltest.runexternal_out_and_err(test_cli_utilities.get_ogrinfo_path() + ' --config', check_memleak=False)
     if err.find('--config option given without a key and value argument') < 0:
         print(err)
         return 'fail'
@@ -247,11 +260,12 @@ def test_ogrinfo_13():
 ###############################################################################
 # Test erroneous use of --mempreload.
 
+
 def test_ogrinfo_14():
     if test_cli_utilities.get_ogrinfo_path() is None:
         return 'skip'
 
-    (out, err) = gdaltest.runexternal_out_and_err(test_cli_utilities.get_ogrinfo_path() + ' --mempreload', check_memleak = False )
+    (out, err) = gdaltest.runexternal_out_and_err(test_cli_utilities.get_ogrinfo_path() + ' --mempreload', check_memleak=False)
     if err.find('--mempreload option given without directory path') < 0:
         print(err)
         return 'fail'
@@ -261,11 +275,12 @@ def test_ogrinfo_14():
 ###############################################################################
 # Test --mempreload
 
+
 def test_ogrinfo_15():
     if test_cli_utilities.get_ogrinfo_path() is None:
         return 'skip'
 
-    (ret, err) = gdaltest.runexternal_out_and_err(test_cli_utilities.get_ogrinfo_path() + ' --debug on --mempreload ../ogr/data /vsimem/poly.shp', check_memleak = False )
+    (ret, err) = gdaltest.runexternal_out_and_err(test_cli_utilities.get_ogrinfo_path() + ' --debug on --mempreload ../ogr/data /vsimem/poly.shp', check_memleak=False)
     if ret.find("ESRI Shapefile") < 0:
         print(ret)
         return 'fail'
@@ -275,11 +290,12 @@ def test_ogrinfo_15():
 ###############################################################################
 # Test erroneous use of --debug.
 
+
 def test_ogrinfo_16():
     if test_cli_utilities.get_ogrinfo_path() is None:
         return 'skip'
 
-    (out, err) = gdaltest.runexternal_out_and_err(test_cli_utilities.get_ogrinfo_path() + ' --debug', check_memleak = False )
+    (out, err) = gdaltest.runexternal_out_and_err(test_cli_utilities.get_ogrinfo_path() + ' --debug', check_memleak=False)
     if err.find('--debug option given without debug level') < 0:
         print(err)
         return 'fail'
@@ -289,18 +305,29 @@ def test_ogrinfo_16():
 ###############################################################################
 # Test erroneous use of --optfile.
 
+
 def test_ogrinfo_17():
     if test_cli_utilities.get_ogrinfo_path() is None:
         return 'skip'
 
-    (out, err) = gdaltest.runexternal_out_and_err(test_cli_utilities.get_ogrinfo_path() + ' --optfile', check_memleak = False )
+    (out, err) = gdaltest.runexternal_out_and_err(test_cli_utilities.get_ogrinfo_path() + ' --optfile', check_memleak=False)
     if err.find('--optfile option given without filename') < 0:
         gdaltest.post_reason('fail')
         print(err)
         return 'fail'
 
-    (out, err) = gdaltest.runexternal_out_and_err(test_cli_utilities.get_ogrinfo_path() + ' --optfile /foo/bar', check_memleak = False )
+    (out, err) = gdaltest.runexternal_out_and_err(test_cli_utilities.get_ogrinfo_path() + ' --optfile /foo/bar', check_memleak=False)
     if err.find('Unable to open optfile') < 0:
+        gdaltest.post_reason('fail')
+        print(err)
+        return 'fail'
+
+    f = open('tmp/optfile.txt', 'wt')
+    f.write('--config foo\n')
+    f.close()
+    (out, err) = gdaltest.runexternal_out_and_err(test_cli_utilities.get_ogrinfo_path() + ' --optfile tmp/optfile.txt', check_memleak=False)
+    os.unlink('tmp/optfile.txt')
+    if err.find('--config option given without a key and value argument') < 0:
         gdaltest.post_reason('fail')
         print(err)
         return 'fail'
@@ -310,6 +337,7 @@ def test_ogrinfo_17():
 ###############################################################################
 # Test --optfile
 
+
 def test_ogrinfo_18():
     if test_cli_utilities.get_ogrinfo_path() is None:
         return 'skip'
@@ -318,7 +346,7 @@ def test_ogrinfo_18():
     f.write('# comment\n')
     f.write('../ogr/data/poly.shp\n')
     f.close()
-    ret = gdaltest.runexternal(test_cli_utilities.get_ogrinfo_path() + ' --optfile tmp/optfile.txt', check_memleak = False )
+    ret = gdaltest.runexternal(test_cli_utilities.get_ogrinfo_path() + ' --optfile tmp/optfile.txt', check_memleak=False)
     os.unlink('tmp/optfile.txt')
     if ret.find("ESRI Shapefile") < 0:
         print(ret)
@@ -329,11 +357,12 @@ def test_ogrinfo_18():
 ###############################################################################
 # Test --formats
 
+
 def test_ogrinfo_19():
     if test_cli_utilities.get_ogrinfo_path() is None:
         return 'skip'
 
-    ret = gdaltest.runexternal(test_cli_utilities.get_ogrinfo_path() + ' --formats', check_memleak = False )
+    ret = gdaltest.runexternal(test_cli_utilities.get_ogrinfo_path() + ' --formats', check_memleak=False)
     if ret.find('ESRI Shapefile -vector- (rw+v): ESRI Shapefile') < 0:
         print(ret)
         return 'fail'
@@ -343,11 +372,12 @@ def test_ogrinfo_19():
 ###############################################################################
 # Test --help-general
 
+
 def test_ogrinfo_20():
     if test_cli_utilities.get_ogrinfo_path() is None:
         return 'skip'
 
-    ret = gdaltest.runexternal(test_cli_utilities.get_ogrinfo_path() + ' --help-general', check_memleak = False )
+    ret = gdaltest.runexternal(test_cli_utilities.get_ogrinfo_path() + ' --help-general', check_memleak=False)
     if ret.find('Generic GDAL utility command options') < 0:
         print(ret)
         return 'fail'
@@ -357,11 +387,12 @@ def test_ogrinfo_20():
 ###############################################################################
 # Test --locale
 
+
 def test_ogrinfo_21():
     if test_cli_utilities.get_ogrinfo_path() is None:
         return 'skip'
 
-    ret = gdaltest.runexternal(test_cli_utilities.get_ogrinfo_path() + ' --locale C ../ogr/data/poly.shp', check_memleak = False )
+    ret = gdaltest.runexternal(test_cli_utilities.get_ogrinfo_path() + ' --locale C ../ogr/data/poly.shp', check_memleak=False)
     if ret.find("ESRI Shapefile") < 0:
         print(ret)
         return 'fail'
@@ -370,6 +401,7 @@ def test_ogrinfo_21():
 
 ###############################################################################
 # Test RFC 41 support
+
 
 def test_ogrinfo_22():
     if test_cli_utilities.get_ogrinfo_path() is None:
@@ -380,12 +412,12 @@ def test_ogrinfo_22():
     f.write('"POINT(1 2)","POINT(3 4)"\n')
     f.close()
 
-    ret = gdaltest.runexternal(test_cli_utilities.get_ogrinfo_path() + ' tmp/test_ogrinfo_22.csv', check_memleak = False )
+    ret = gdaltest.runexternal(test_cli_utilities.get_ogrinfo_path() + ' tmp/test_ogrinfo_22.csv', check_memleak=False)
     if ret.find('1: test_ogrinfo_22 (Unknown (any), Unknown (any))') < 0:
         print(ret)
         return 'fail'
 
-    ret = gdaltest.runexternal(test_cli_utilities.get_ogrinfo_path() + ' -al tmp/test_ogrinfo_22.csv', check_memleak = False )
+    ret = gdaltest.runexternal(test_cli_utilities.get_ogrinfo_path() + ' -al tmp/test_ogrinfo_22.csv', check_memleak=False)
     expected_ret = """INFO: Open of `tmp/test_ogrinfo_22.csv'
       using driver `CSV' successful.
 
@@ -453,6 +485,7 @@ OGRFeature(test_ogrinfo_22):1
 ###############################################################################
 # Test -geomfield (RFC 41) support
 
+
 def test_ogrinfo_23():
     if test_cli_utilities.get_ogrinfo_path() is None:
         return 'skip'
@@ -463,7 +496,7 @@ def test_ogrinfo_23():
     f.write('"POINT(3 4)","POINT(1 2)"\n')
     f.close()
 
-    ret = gdaltest.runexternal(test_cli_utilities.get_ogrinfo_path() + ' -al tmp/test_ogrinfo_23.csv -spat 1 2 1 2 -geomfield geom__WKTgeom2_EPSG_32631', check_memleak = False )
+    ret = gdaltest.runexternal(test_cli_utilities.get_ogrinfo_path() + ' -al tmp/test_ogrinfo_23.csv -spat 1 2 1 2 -geomfield geom__WKTgeom2_EPSG_32631', check_memleak=False)
     expected_ret = """INFO: Open of `tmp/test_ogrinfo_23.csv'
       using driver `CSV' successful.
 
@@ -531,12 +564,13 @@ OGRFeature(test_ogrinfo_23):2
 ###############################################################################
 # Test metadata
 
+
 def test_ogrinfo_24():
     if test_cli_utilities.get_ogrinfo_path() is None:
         return 'skip'
 
     f = open('tmp/test_ogrinfo_24.vrt', 'wt')
-    f.write( """<OGRVRTDataSource>
+    f.write("""<OGRVRTDataSource>
     <Metadata>
         <MDI key="foo">bar</MDI>
     </Metadata>
@@ -550,10 +584,10 @@ def test_ogrinfo_24():
         <SrcDataSource relativeToVRT="1" shared="1">../../ogr/data/poly.shp</SrcDataSource>
         <SrcLayer>poly</SrcLayer>
   </OGRVRTLayer>
-</OGRVRTDataSource>""" )
+</OGRVRTDataSource>""")
     f.close()
 
-    ret = gdaltest.runexternal(test_cli_utilities.get_ogrinfo_path() + ' -ro -al tmp/test_ogrinfo_24.vrt -so', check_memleak = False )
+    ret = gdaltest.runexternal(test_cli_utilities.get_ogrinfo_path() + ' -ro -al tmp/test_ogrinfo_24.vrt -so', check_memleak=False)
     expected_ret = """INFO: Open of `tmp/test_ogrinfo_24.vrt'
       using driver `OGR_VRT' successful.
 Metadata:
@@ -569,27 +603,36 @@ Layer SRS WKT:
 PROJCS["OSGB 1936 / British National Grid",
     GEOGCS["OSGB 1936",
         DATUM["OSGB_1936",
-            SPHEROID["Airy_1830",6377563.396,299.3249646]],
-        PRIMEM["Greenwich",0],
-        UNIT["Degree",0.017453292519943295]],
+            SPHEROID["Airy 1830",6377563.396,299.3249646,
+                AUTHORITY["EPSG","7001"]],
+            TOWGS84[446.448,-125.157,542.06,0.15,0.247,0.842,-20.489],
+            AUTHORITY["EPSG","6277"]],
+        PRIMEM["Greenwich",0,
+            AUTHORITY["EPSG","8901"]],
+        UNIT["degree",0.0174532925199433,
+            AUTHORITY["EPSG","9122"]],
+        AUTHORITY["EPSG","4277"]],
     PROJECTION["Transverse_Mercator"],
     PARAMETER["latitude_of_origin",49],
     PARAMETER["central_meridian",-2],
     PARAMETER["scale_factor",0.9996012717],
     PARAMETER["false_easting",400000],
     PARAMETER["false_northing",-100000],
-    UNIT["Meter",1]]
-AREA: Real (12.3)
-EAS_ID: Integer64 (11.0)
-PRFEDEA: String (16.0)
+    UNIT["metre",1,
+        AUTHORITY["EPSG","9001"]],
+    AXIS["Easting",EAST],
+    AXIS["Northing",NORTH],
+    AUTHORITY["EPSG","27700"]]
 """
     expected_lines = expected_ret.splitlines()
     lines = ret.splitlines()
     for i in range(len(expected_lines)):
         if expected_lines[i] != lines[i]:
             print(ret)
+            if gdaltest.is_travis_branch('mingw'):
+                return 'expected_fail'
             return 'fail'
-    ret = gdaltest.runexternal(test_cli_utilities.get_ogrinfo_path() + ' -ro -al tmp/test_ogrinfo_24.vrt -so -mdd all', check_memleak = False )
+    ret = gdaltest.runexternal(test_cli_utilities.get_ogrinfo_path() + ' -ro -al tmp/test_ogrinfo_24.vrt -so -mdd all', check_memleak=False)
     expected_ret = """INFO: Open of `tmp/test_ogrinfo_24.vrt'
       using driver `OGR_VRT' successful.
 Metadata:
@@ -607,16 +650,26 @@ Layer SRS WKT:
 PROJCS["OSGB 1936 / British National Grid",
     GEOGCS["OSGB 1936",
         DATUM["OSGB_1936",
-            SPHEROID["Airy_1830",6377563.396,299.3249646]],
-        PRIMEM["Greenwich",0],
-        UNIT["Degree",0.017453292519943295]],
+            SPHEROID["Airy 1830",6377563.396,299.3249646,
+                AUTHORITY["EPSG","7001"]],
+            TOWGS84[446.448,-125.157,542.06,0.15,0.247,0.842,-20.489],
+            AUTHORITY["EPSG","6277"]],
+        PRIMEM["Greenwich",0,
+            AUTHORITY["EPSG","8901"]],
+        UNIT["degree",0.0174532925199433,
+            AUTHORITY["EPSG","9122"]],
+        AUTHORITY["EPSG","4277"]],
     PROJECTION["Transverse_Mercator"],
     PARAMETER["latitude_of_origin",49],
     PARAMETER["central_meridian",-2],
     PARAMETER["scale_factor",0.9996012717],
     PARAMETER["false_easting",400000],
     PARAMETER["false_northing",-100000],
-    UNIT["Meter",1]]
+    UNIT["metre",1,
+        AUTHORITY["EPSG","9001"]],
+    AXIS["Easting",EAST],
+    AXIS["Northing",NORTH],
+    AUTHORITY["EPSG","27700"]]
 AREA: Real (12.3)
 EAS_ID: Integer64 (11.0)
 PRFEDEA: String (16.0)
@@ -626,9 +679,11 @@ PRFEDEA: String (16.0)
     for i in range(len(expected_lines)):
         if expected_lines[i] != lines[i]:
             print(ret)
+            if gdaltest.is_travis_branch('mingw'):
+                return 'expected_fail'
             return 'fail'
 
-    ret = gdaltest.runexternal(test_cli_utilities.get_ogrinfo_path() + ' -ro -al tmp/test_ogrinfo_24.vrt -so -nomd', check_memleak = False )
+    ret = gdaltest.runexternal(test_cli_utilities.get_ogrinfo_path() + ' -ro -al tmp/test_ogrinfo_24.vrt -so -nomd', check_memleak=False)
     expected_ret = """INFO: Open of `tmp/test_ogrinfo_24.vrt'
       using driver `OGR_VRT' successful.
 
@@ -640,16 +695,26 @@ Layer SRS WKT:
 PROJCS["OSGB 1936 / British National Grid",
     GEOGCS["OSGB 1936",
         DATUM["OSGB_1936",
-            SPHEROID["Airy_1830",6377563.396,299.3249646]],
-        PRIMEM["Greenwich",0],
-        UNIT["Degree",0.017453292519943295]],
+            SPHEROID["Airy 1830",6377563.396,299.3249646,
+                AUTHORITY["EPSG","7001"]],
+            TOWGS84[446.448,-125.157,542.06,0.15,0.247,0.842,-20.489],
+            AUTHORITY["EPSG","6277"]],
+        PRIMEM["Greenwich",0,
+            AUTHORITY["EPSG","8901"]],
+        UNIT["degree",0.0174532925199433,
+            AUTHORITY["EPSG","9122"]],
+        AUTHORITY["EPSG","4277"]],
     PROJECTION["Transverse_Mercator"],
     PARAMETER["latitude_of_origin",49],
     PARAMETER["central_meridian",-2],
     PARAMETER["scale_factor",0.9996012717],
     PARAMETER["false_easting",400000],
     PARAMETER["false_northing",-100000],
-    UNIT["Meter",1]]
+    UNIT["metre",1,
+        AUTHORITY["EPSG","9001"]],
+    AXIS["Easting",EAST],
+    AXIS["Northing",NORTH],
+    AUTHORITY["EPSG","27700"]]
 AREA: Real (12.3)
 EAS_ID: Integer64 (11.0)
 PRFEDEA: String (16.0)
@@ -659,6 +724,8 @@ PRFEDEA: String (16.0)
     for i in range(len(expected_lines)):
         if expected_lines[i] != lines[i]:
             print(ret)
+            if gdaltest.is_travis_branch('mingw'):
+                return 'expected_fail'
             return 'fail'
 
     os.unlink('tmp/test_ogrinfo_24.vrt')
@@ -668,12 +735,13 @@ PRFEDEA: String (16.0)
 ###############################################################################
 # Test -rl
 
+
 def test_ogrinfo_25():
     if test_cli_utilities.get_ogrinfo_path() is None:
         return 'skip'
 
     (ret, err) = gdaltest.runexternal_out_and_err(test_cli_utilities.get_ogrinfo_path() + ' -rl -q ../ogr/data/poly.shp')
-    if not (err is None or err == '') :
+    if not (err is None or err == ''):
         gdaltest.post_reason('got error/warning')
         print(err)
         return 'fail'
@@ -683,6 +751,30 @@ def test_ogrinfo_25():
         return 'fail'
 
     return 'success'
+
+
+###############################################################################
+# Test SQLStatement with -sql @filename syntax
+
+
+def test_ogrinfo_sql_filename():
+    if test_cli_utilities.get_ogrinfo_path() is None:
+        return 'skip'
+
+    open('tmp/my.sql', 'wt').write('-- initial comment\nselect * from poly\n-- trailing comment')
+    (ret, err) = gdaltest.runexternal_out_and_err(test_cli_utilities.get_ogrinfo_path() + ' -q ../ogr/data/poly.shp -sql @tmp/my.sql')
+    os.unlink('tmp/my.sql')
+    if not (err is None or err == ''):
+        gdaltest.post_reason('got error/warning')
+        print(err)
+        return 'fail'
+    if ret.find('OGRFeature(poly):0') < 0 or ret.find('OGRFeature(poly):9') < 0:
+        gdaltest.post_reason('wrong output')
+        print(ret)
+        return 'fail'
+
+    return 'success'
+
 
 gdaltest_list = [
     test_ogrinfo_1,
@@ -710,18 +802,14 @@ gdaltest_list = [
     test_ogrinfo_23,
     test_ogrinfo_24,
     test_ogrinfo_25,
-    ]
+    test_ogrinfo_sql_filename,
+]
 
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'test_ogrinfo' )
+    gdaltest.setup_run('test_ogrinfo')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-
-
-
-
-

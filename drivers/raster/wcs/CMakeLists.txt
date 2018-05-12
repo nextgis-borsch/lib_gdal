@@ -5,7 +5,7 @@
 ################################################################################
 # Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
 # Copyright (C) 2016 Mikhail Gusev
-#  
+#
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
 # to deal in the Software without restriction, including without limitation
@@ -34,6 +34,7 @@ if(ENABLE_WCS)
     set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DFRMT_wcs" PARENT_SCOPE)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+    include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/gml)
 
     set(LIB_HHEADERS
     )
@@ -42,8 +43,14 @@ if(ENABLE_WCS)
     )
 
     set(LIB_CSOURCES
-        wcsdataset.cpp 
+        gmlcoverage.cpp
+        wcsdataset.cpp
         httpdriver.cpp
+        wcsdataset100.cpp
+        wcsdataset110.cpp
+        wcsdataset201.cpp
+        wcsrasterband.cpp
+        wcsutils.cpp
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
@@ -51,5 +58,5 @@ if(ENABLE_WCS)
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
 else()
-    warning_msg("Skip wcs")  
+    warning_msg("Skip wcs")
 endif()

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#******************************************************************************
+# ******************************************************************************
 #  $Id: pct2rgb.py 13087 2007-11-26 20:56:29Z hobu $
 #
 #  Name:     gdal_lut
@@ -7,7 +7,7 @@
 #  Purpose:  Utility to apply a lookup table provided in a text file.
 #  Author:   Frank Warmerdam, warmerdam@pobox.com
 #
-#******************************************************************************
+# ******************************************************************************
 #  Copyright (c) 2008, Frank Warmerdam
 #
 #  Permission is hereby granted, free of charge, to any person obtaining a
@@ -27,7 +27,7 @@
 #  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 #  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
-#******************************************************************************
+# ******************************************************************************
 
 import sys
 
@@ -36,17 +36,18 @@ gdal.TermProgress = gdal.TermProgress_nocb
 
 try:
     import numpy
-except:
+except ImportError:
     import Numeric as numpy
     numpy.arange = numpy.arrayrange
 
 # =============================================================================
-#		read_lut()
+# read_lut()
 #
-#	Read and parse the LUT file.
+# Read and parse the LUT file.
 # =============================================================================
 
-def read_lut( filename ):
+
+def read_lut(filename):
 
     lines = open(filename).readlines()
 
@@ -57,8 +58,9 @@ def read_lut( filename ):
     return lut
 
 # =============================================================================
-#		Usage()
+# Usage()
 # =============================================================================
+
 
 def Usage():
     print("""
@@ -87,6 +89,7 @@ supported as well as luts of more than 256 input values.
 # 	Mainline
 # =============================================================================
 
+
 format = 'GTiff'
 src_filename = None
 dst_filename = None
@@ -96,9 +99,9 @@ lut_filename = None
 create_options = []
 
 gdal.AllRegister()
-argv = gdal.GeneralCmdLineProcessor( sys.argv )
+argv = gdal.GeneralCmdLineProcessor(sys.argv)
 if argv is None:
-    sys.exit( 0 )
+    sys.exit(0)
 
 # Parse command line arguments.
 i = 1
@@ -142,7 +145,7 @@ if src_filename is None or lut_filename is None:
 # ----------------------------------------------------------------------------
 # Load the LUT file.
 
-lut = read_lut( lut_filename )
+lut = read_lut(lut_filename)
 
 max_val = 0
 for entry in lut:
@@ -161,11 +164,11 @@ else:
 
 if len(lut) <= 256:
     lookup = numpy.arange(256)
-    for i in range(min(256,len(lut))):
+    for i in range(min(256, len(lut))):
         lookup[i] = lut[i]
 else:
     lookup = numpy.arange(65536)
-    for i in range(min(65536,len(lut))):
+    for i in range(min(65536, len(lut))):
         lookup[i] = lut[i]
 
 lookup = lookup.astype(tc)
@@ -174,10 +177,10 @@ lookup = lookup.astype(tc)
 # Open source file
 
 if dst_filename is None:
-    src_ds = gdal.Open( src_filename, gdal.GA_Update )
+    src_ds = gdal.Open(src_filename, gdal.GA_Update)
     dst_ds = src_ds
 else:
-    src_ds = gdal.Open( src_filename )
+    src_ds = gdal.Open(src_filename)
     dst_ds = None
 
 if src_ds is None:
@@ -196,7 +199,7 @@ if dst_driver is None:
 
 if dst_ds is None:
     try:
-        dst_ds = gdal.Open( dst_filename, gdal.GA_Update )
+        dst_ds = gdal.Open(dst_filename, gdal.GA_Update)
     except:
         dst_ds = None
 
@@ -204,9 +207,9 @@ if dst_ds is None:
         dst_ds = dst_driver.Create(dst_filename,
                                    src_ds.RasterXSize,
                                    src_ds.RasterYSize,
-                                   1, gc, options = create_options )
-        dst_ds.SetProjection( src_ds.GetProjection() )
-        dst_ds.SetGeoTransform( src_ds.GetGeoTransform() )
+                                   1, gc, options=create_options)
+        dst_ds.SetProjection(src_ds.GetProjection())
+        dst_ds.SetGeoTransform(src_ds.GetGeoTransform())
 
 
 dst_band = dst_ds.GetRasterBand(dst_band_n)
@@ -214,19 +217,14 @@ dst_band = dst_ds.GetRasterBand(dst_band_n)
 # ----------------------------------------------------------------------------
 # Do the processing one scanline at a time.
 
-gdal.TermProgress( 0.0 )
+gdal.TermProgress(0.0)
 for iY in range(src_ds.RasterYSize):
-    src_data = src_band.ReadAsArray(0,iY,src_ds.RasterXSize,1)
+    src_data = src_band.ReadAsArray(0, iY, src_ds.RasterXSize, 1)
 
-    dst_data = numpy.take(lookup,src_data)
-    dst_band.WriteArray(dst_data,0,iY)
+    dst_data = numpy.take(lookup, src_data)
+    dst_band.WriteArray(dst_data, 0, iY)
 
-    gdal.TermProgress( (iY+1.0) / src_ds.RasterYSize )
+    gdal.TermProgress((iY + 1.0) / src_ds.RasterYSize)
 
 src_ds = None
 dst_ds = None
-
-
-
-
-

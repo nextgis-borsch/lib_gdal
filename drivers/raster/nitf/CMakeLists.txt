@@ -25,48 +25,37 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-CMAKE_DEPENDENT_OPTION(ENABLE_NITF_RPFTOC_ECRGTOC "Build NITF (.ntf, .nsf, ...) & GRaster Product Format/RPF (CADRG, CIB) & ECRG Table Of Contents (TOC.xml) formats" ON 
+CMAKE_DEPENDENT_OPTION(ENABLE_NITF_RPFTOC_ECRGTOC "Build NITF (.ntf, .nsf, ...) & GRaster Product Format/RPF (CADRG, CIB) & ECRG Table Of Contents (TOC.xml) formats" ON
     "ENABLE_JPEG" OFF)
 if(ENABLE_NITF_RPFTOC_ECRGTOC)
     set(TARGET_NAME ras_nitf)
 
     add_definitions(-DFRMT_nitf)
     set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DFRMT_nitf" PARENT_SCOPE)
-    
+
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
     include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/vrt)
     include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/gtiff)
-    
-    # TODO: implement jpeg12 support when change according paths to headers in sources.
-    # If do this don't forget to add to the end of file: set(TARGET_LINK_LIB ...) and  
-    # set(DEPENDENCY_LIB ...), or move this find_anyproject() to the upper CMakeLists.txt
-    #find_anyproject(JPEG12)
-    #if(JPEG12_FOUND) 
-    #    add_definitions(-DJPEG_DUAL_MODE_8_12)
-    #endif()
-    
-    # NOTE: Use of internal libjpeg and libtiff (and that's why -DRENAME_INTERNAL_LIBTIFF_SYMBOLS) 
-    # had been removed.
 
     set(LIB_HHEADERS
     )
 
     set(LIB_HHEADERS_PRIV
-        ${CMAKE_SOURCE_DIR}/core/gcore/gdal_proxy.h 
-        ${CMAKE_SOURCE_DIR}/drivers/raster/vrt/vrtdataset.h 
+        ${CMAKE_SOURCE_DIR}/core/gcore/gdal_proxy.h
+        ${CMAKE_SOURCE_DIR}/drivers/raster/vrt/vrtdataset.h
         nitflib.h
         #nitfwritejpeg.cpp
     )
 
     set(LIB_GDALSOURCES
-        nitfdataset.cpp 
-        rpftocdataset.cpp 
+        nitfdataset.cpp
+        rpftocdataset.cpp
         nitfwritejpeg.cpp
-		nitfwritejpeg_12.cpp 
-        nitfrasterband.cpp 
+		nitfwritejpeg_12.cpp
+        nitfrasterband.cpp
         ecrgtocdataset.cpp
     )
-    
+
     set(LIB_NITFSOURCES
         nitffile.c
         nitfimage.c
@@ -79,11 +68,11 @@ if(ENABLE_NITF_RPFTOC_ECRGTOC)
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_GDALSOURCES} ${LIB_NITFSOURCES})
-    
+
     # TODO: implement nitfdump target if needed.
 
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
 else()
-    warning_msg("Skip nitf")  
+    warning_msg("Skip nitf")
 endif()

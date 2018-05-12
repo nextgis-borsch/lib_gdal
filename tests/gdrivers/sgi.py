@@ -30,48 +30,52 @@
 
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 
 ###############################################################################
 # Read existing simple 1 band SGI file.
 
+
 def sgi_1():
 
-    tst = gdaltest.GDALTest( 'SGI', 'byte.sgi', 1, 4672 )
+    tst = gdaltest.GDALTest('SGI', 'byte.sgi', 1, 4672)
 
     return tst.testOpen()
 
 ###############################################################################
 # Write Test grayscale
 
+
 def sgi_2():
 
-    tst = gdaltest.GDALTest( 'SGI', 'byte.tif', 1, 4672 )
+    tst = gdaltest.GDALTest('SGI', 'byte.tif', 1, 4672)
 
     return tst.testCreate()
 
 ###############################################################################
 # Write Test rgb
 
+
 def sgi_3():
 
-    tst = gdaltest.GDALTest( 'SGI', 'rgbsmall.tif', 2, 21053 )
+    tst = gdaltest.GDALTest('SGI', 'rgbsmall.tif', 2, 21053)
 
     return tst.testCreate()
+
 
 gdaltest_list = [
     sgi_1,
     sgi_2,
     sgi_3,
-    ]
+]
 
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'SGI' )
+    gdaltest.setup_run('SGI')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

@@ -32,17 +32,18 @@
 import sys
 from osgeo import gdal
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 
 ###############################################################################
 # Test if WEBP driver is present
 
+
 def webp_1():
 
     try:
-        gdaltest.webp_drv = gdal.GetDriverByName( 'WEBP' )
+        gdaltest.webp_drv = gdal.GetDriverByName('WEBP')
     except:
         gdaltest.webp_drv = None
         return 'skip'
@@ -51,6 +52,7 @@ def webp_1():
 
 ###############################################################################
 # Open() test
+
 
 def webp_2():
 
@@ -69,17 +71,19 @@ def webp_2():
 ###############################################################################
 # CreateCopy() test
 
+
 def webp_3():
 
     if gdaltest.webp_drv is None:
         return 'skip'
 
     src_ds = gdal.Open('data/rgbsmall.tif')
-    out_ds = gdaltest.webp_drv.CreateCopy('/vsimem/webp_3.webp', src_ds, options = ['QUALITY=80'])
+    out_ds = gdaltest.webp_drv.CreateCopy('/vsimem/webp_3.webp', src_ds, options=['QUALITY=80'])
     src_ds = None
     cs1 = out_ds.GetRasterBand(1).Checksum()
     out_ds = None
     gdal.Unlink('/vsimem/webp_3.webp')
+    gdal.Unlink('/vsimem/webp_3.webp.aux.xml')
 
     # 21502 is for libwebp 0.3.0
     if cs1 != 21464 and cs1 != 21502 and cs1 != 21695 and cs1 != 21700:
@@ -91,6 +95,7 @@ def webp_3():
 
 ###############################################################################
 # CreateCopy() on RGBA
+
 
 def webp_4():
 
@@ -115,7 +120,7 @@ def webp_4():
         print(cs1)
         return 'fail'
 
-    if cs4 != 10807: # lossless alpha
+    if cs4 != 10807:  # lossless alpha
         gdaltest.post_reason('did not get expected checksum on band 4')
         print(cs4)
         return 'fail'
@@ -124,6 +129,7 @@ def webp_4():
 
 ###############################################################################
 # CreateCopy() on RGBA with lossless compression
+
 
 def webp_5():
 
@@ -135,7 +141,7 @@ def webp_5():
         return 'skip'
 
     src_ds = gdal.Open('../gcore/data/stefan_full_rgba.tif')
-    out_ds = gdaltest.webp_drv.CreateCopy('/vsimem/webp_5.webp', src_ds, options = ['LOSSLESS=YES'])
+    out_ds = gdaltest.webp_drv.CreateCopy('/vsimem/webp_5.webp', src_ds, options=['LOSSLESS=YES'])
     src_ds = None
     cs1 = out_ds.GetRasterBand(1).Checksum()
     cs4 = out_ds.GetRasterBand(4).Checksum()
@@ -154,17 +160,18 @@ def webp_5():
 
     return 'success'
 
+
 gdaltest_list = [
     webp_1,
     webp_2,
     webp_3,
     webp_4,
-    webp_5 ]
+    webp_5]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'webp' )
+    gdaltest.setup_run('webp')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

@@ -31,7 +31,7 @@
 import os
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 from osgeo import gdal
@@ -39,6 +39,7 @@ import test_cli_utilities
 
 ###############################################################################
 # Test on a small file
+
 
 def vsistdin_1():
     if test_cli_utilities.get_gdal_translate_path() is None:
@@ -55,7 +56,7 @@ def vsistdin_1():
 
     try:
         os.unlink("tmp/vsistdin_1_src.tif")
-    except:
+    except OSError:
         pass
 
     ds = gdal.Open("tmp/vsistdin_1_out.tif")
@@ -68,13 +69,14 @@ def vsistdin_1():
 
     try:
         os.unlink("tmp/vsistdin_1_out.tif")
-    except:
+    except OSError:
         pass
 
     return 'success'
 
 ###############################################################################
 # Test on a bigger file (> 1 MB)
+
 
 def vsistdin_2():
     if test_cli_utilities.get_gdal_translate_path() is None:
@@ -88,7 +90,7 @@ def vsistdin_2():
 
     try:
         os.unlink("tmp/vsistdin_2_src.tif")
-    except:
+    except OSError:
         pass
 
     ds = gdal.Open("tmp/vsistdin_2_out.tif")
@@ -98,13 +100,14 @@ def vsistdin_2():
 
     try:
         os.unlink("tmp/vsistdin_2_out.tif")
-    except:
+    except OSError:
         pass
 
     return 'success'
 
 ###############################################################################
 # Test opening /vsistdin/ in write mode (failure expected)
+
 
 def vsistdin_3():
 
@@ -118,6 +121,7 @@ def vsistdin_3():
 
 ###############################################################################
 # Test fix for #6061
+
 
 def vsistdin_4():
     if test_cli_utilities.get_gdal_translate_path() is None:
@@ -135,7 +139,7 @@ def vsistdin_4():
       <SourceBand>1</SourceBand>
     </SimpleSource>
   </VRTRasterBand>
-</VRTDataset>""" % (' '.join([' ' for i in range(1024*1024)])) )
+</VRTDataset>""" % (' '.join([' ' for i in range(1024 * 1024)])))
     f.close()
 
     # Should work on both Unix and Windows
@@ -143,7 +147,7 @@ def vsistdin_4():
 
     try:
         os.unlink("tmp/vsistdin_4_src.vrt")
-    except:
+    except OSError:
         pass
 
     ds = gdal.Open("tmp/vsistdin_4_out.tif")
@@ -153,22 +157,23 @@ def vsistdin_4():
 
     try:
         os.unlink("tmp/vsistdin_4_out.tif")
-    except:
+    except OSError:
         pass
 
     return 'success'
 
-gdaltest_list = [ vsistdin_1,
-                  vsistdin_2,
-                  vsistdin_3,
-                  vsistdin_4
-                ]
+
+gdaltest_list = [vsistdin_1,
+                 vsistdin_2,
+                 vsistdin_3,
+                 vsistdin_4
+                 ]
 
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'vsistdin' )
+    gdaltest.setup_run('vsistdin')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

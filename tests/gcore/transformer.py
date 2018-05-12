@@ -32,7 +32,7 @@
 
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 from osgeo import gdal
@@ -41,29 +41,30 @@ from osgeo import osr
 ###############################################################################
 # Test simple Geotransform based transformer.
 
+
 def transformer_1():
 
     ds = gdal.Open('data/byte.tif')
-    tr = gdal.Transformer( ds, None, [] )
+    tr = gdal.Transformer(ds, None, [])
 
-    (success,pnt) = tr.TransformPoint( 0, 20, 10 )
+    (success, pnt) = tr.TransformPoint(0, 20, 10)
 
     if not success \
-       or abs(pnt[0]- 441920) > 0.00000001 \
-       or abs(pnt[1]-3750720) > 0.00000001 \
+       or abs(pnt[0] - 441920) > 0.00000001 \
+       or abs(pnt[1] - 3750720) > 0.00000001 \
        or pnt[2] != 0.0:
         print(success, pnt)
-        gdaltest.post_reason( 'got wrong forward transform result.' )
+        gdaltest.post_reason('got wrong forward transform result.')
         return 'fail'
 
-    (success,pnt) = tr.TransformPoint( 1, pnt[0], pnt[1], pnt[2] )
+    (success, pnt) = tr.TransformPoint(1, pnt[0], pnt[1], pnt[2])
 
     if not success \
-       or abs(pnt[0]-20) > 0.00000001 \
-       or abs(pnt[1]-10) > 0.00000001 \
+       or abs(pnt[0] - 20) > 0.00000001 \
+       or abs(pnt[1] - 10) > 0.00000001 \
        or pnt[2] != 0.0:
         print(success, pnt)
-        gdaltest.post_reason( 'got wrong reverse transform result.' )
+        gdaltest.post_reason('got wrong reverse transform result.')
         return 'fail'
 
     return 'success'
@@ -71,29 +72,30 @@ def transformer_1():
 ###############################################################################
 # Test GCP based transformer with polynomials.
 
+
 def transformer_2():
 
     ds = gdal.Open('data/gcps.vrt')
-    tr = gdal.Transformer( ds, None, [ 'METHOD=GCP_POLYNOMIAL' ] )
+    tr = gdal.Transformer(ds, None, ['METHOD=GCP_POLYNOMIAL'])
 
-    (success,pnt) = tr.TransformPoint( 0, 20, 10 )
+    (success, pnt) = tr.TransformPoint(0, 20, 10)
 
     if not success \
-       or abs(pnt[0]-441920) > 0.001 \
-       or abs(pnt[1]-3750720) > 0.001 \
+       or abs(pnt[0] - 441920) > 0.001 \
+       or abs(pnt[1] - 3750720) > 0.001 \
        or pnt[2] != 0:
         print(success, pnt)
-        gdaltest.post_reason( 'got wrong forward transform result.' )
+        gdaltest.post_reason('got wrong forward transform result.')
         return 'fail'
 
-    (success,pnt) = tr.TransformPoint( 1, pnt[0], pnt[1], pnt[2] )
+    (success, pnt) = tr.TransformPoint(1, pnt[0], pnt[1], pnt[2])
 
     if not success \
-       or abs(pnt[0]-20) > 0.001 \
-       or abs(pnt[1]-10) > 0.001 \
+       or abs(pnt[0] - 20) > 0.001 \
+       or abs(pnt[1] - 10) > 0.001 \
        or pnt[2] != 0:
         print(success, pnt)
-        gdaltest.post_reason( 'got wrong reverse transform result.' )
+        gdaltest.post_reason('got wrong reverse transform result.')
         return 'fail'
 
     return 'success'
@@ -101,29 +103,30 @@ def transformer_2():
 ###############################################################################
 # Test GCP based transformer with thin plate splines.
 
+
 def transformer_3():
 
     ds = gdal.Open('data/gcps.vrt')
-    tr = gdal.Transformer( ds, None, [ 'METHOD=GCP_TPS' ] )
+    tr = gdal.Transformer(ds, None, ['METHOD=GCP_TPS'])
 
-    (success,pnt) = tr.TransformPoint( 0, 20, 10 )
+    (success, pnt) = tr.TransformPoint(0, 20, 10)
 
     if not success \
-       or abs(pnt[0]-441920) > 0.001 \
-       or abs(pnt[1]-3750720) > 0.001 \
+       or abs(pnt[0] - 441920) > 0.001 \
+       or abs(pnt[1] - 3750720) > 0.001 \
        or pnt[2] != 0:
         print(success, pnt)
-        gdaltest.post_reason( 'got wrong forward transform result.' )
+        gdaltest.post_reason('got wrong forward transform result.')
         return 'fail'
 
-    (success,pnt) = tr.TransformPoint( 1, pnt[0], pnt[1], pnt[2] )
+    (success, pnt) = tr.TransformPoint(1, pnt[0], pnt[1], pnt[2])
 
     if not success \
-       or abs(pnt[0]-20) > 0.001 \
-       or abs(pnt[1]-10) > 0.001 \
+       or abs(pnt[0] - 20) > 0.001 \
+       or abs(pnt[1] - 10) > 0.001 \
        or pnt[2] != 0:
         print(success, pnt)
-        gdaltest.post_reason( 'got wrong reverse transform result.' )
+        gdaltest.post_reason('got wrong reverse transform result.')
         return 'fail'
 
     return 'success'
@@ -131,29 +134,30 @@ def transformer_3():
 ###############################################################################
 # Test geolocation based transformer.
 
+
 def transformer_4():
 
     ds = gdal.Open('data/sstgeo.vrt')
-    tr = gdal.Transformer( ds, None, [ 'METHOD=GEOLOC_ARRAY' ] )
+    tr = gdal.Transformer(ds, None, ['METHOD=GEOLOC_ARRAY'])
 
-    (success,pnt) = tr.TransformPoint( 0, 20, 10 )
+    (success, pnt) = tr.TransformPoint(0, 20, 10)
 
     if not success \
-       or abs(pnt[0]+81.961341857910156) > 0.000001 \
-       or abs(pnt[1]-29.612689971923828) > 0.000001 \
+       or abs(pnt[0] + 81.961341857910156) > 0.000001 \
+       or abs(pnt[1] - 29.612689971923828) > 0.000001 \
        or pnt[2] != 0:
         print(success, pnt)
-        gdaltest.post_reason( 'got wrong forward transform result.' )
+        gdaltest.post_reason('got wrong forward transform result.')
         return 'fail'
 
-    (success,pnt) = tr.TransformPoint( 1, pnt[0], pnt[1], pnt[2] )
+    (success, pnt) = tr.TransformPoint(1, pnt[0], pnt[1], pnt[2])
 
     if not success \
-       or abs(pnt[0]-19.554539744554866) > 0.001 \
-       or abs(pnt[1]-9.1910760024906537) > 0.001 \
+       or abs(pnt[0] - 20.436627518907024) > 0.001 \
+       or abs(pnt[1] - 10.484599774610549) > 0.001 \
        or pnt[2] != 0:
         print(success, pnt)
-        gdaltest.post_reason( 'got wrong reverse transform result.' )
+        gdaltest.post_reason('got wrong reverse transform result.')
         return 'fail'
 
     return 'success'
@@ -161,70 +165,71 @@ def transformer_4():
 ###############################################################################
 # Test RPC based transformer.
 
+
 def transformer_5():
 
     ds = gdal.Open('data/rpc.vrt')
-    tr = gdal.Transformer( ds, None, [ 'METHOD=RPC', 'RPC_PIXEL_ERROR_THRESHOLD=0.05' ] )
+    tr = gdal.Transformer(ds, None, ['METHOD=RPC', 'RPC_PIXEL_ERROR_THRESHOLD=0.05'])
 
-    (success,pnt) = tr.TransformPoint( 0, 20.5, 10.5 )
+    (success, pnt) = tr.TransformPoint(0, 20.5, 10.5)
     if not success \
-       or abs(pnt[0]-125.64830100509131) > 0.000001 \
-       or abs(pnt[1]-39.869433991997553) > 0.000001 \
+       or abs(pnt[0] - 125.64830100509131) > 0.000001 \
+       or abs(pnt[1] - 39.869433991997553) > 0.000001 \
        or pnt[2] != 0:
         print(success, pnt)
-        gdaltest.post_reason( 'got wrong forward transform result.' )
+        gdaltest.post_reason('got wrong forward transform result.')
         return 'fail'
 
-    (success,pnt) = tr.TransformPoint( 1, pnt[0], pnt[1], pnt[2] )
+    (success, pnt) = tr.TransformPoint(1, pnt[0], pnt[1], pnt[2])
     if not success \
-       or abs(pnt[0]-20.5) > 0.05 \
-       or abs(pnt[1]-10.5) > 0.05 \
+       or abs(pnt[0] - 20.5) > 0.05 \
+       or abs(pnt[1] - 10.5) > 0.05 \
        or pnt[2] != 0:
         print(success, pnt)
-        gdaltest.post_reason( 'got wrong reverse transform result.' )
+        gdaltest.post_reason('got wrong reverse transform result.')
         return 'fail'
 
     # Try with a different height.
 
-    (success,pnt) = tr.TransformPoint( 0, 20.5, 10.5, 30 )
+    (success, pnt) = tr.TransformPoint(0, 20.5, 10.5, 30)
 
     if not success \
-       or abs(pnt[0]-125.64828521533849) > 0.000001 \
-       or abs(pnt[1]-39.869345204440144) > 0.000001 \
+       or abs(pnt[0] - 125.64828521533849) > 0.000001 \
+       or abs(pnt[1] - 39.869345204440144) > 0.000001 \
        or pnt[2] != 30:
         print(success, pnt)
-        gdaltest.post_reason( 'got wrong forward transform result.(2)' )
+        gdaltest.post_reason('got wrong forward transform result.(2)')
         return 'fail'
 
-    (success,pnt) = tr.TransformPoint( 1, pnt[0], pnt[1], pnt[2] )
+    (success, pnt) = tr.TransformPoint(1, pnt[0], pnt[1], pnt[2])
 
     if not success \
-       or abs(pnt[0]-20.5) > 0.05 \
-       or abs(pnt[1]-10.5) > 0.05 \
+       or abs(pnt[0] - 20.5) > 0.05 \
+       or abs(pnt[1] - 10.5) > 0.05 \
        or pnt[2] != 30:
         print(success, pnt)
-        gdaltest.post_reason( 'got wrong reverse transform result.(2)' )
+        gdaltest.post_reason('got wrong reverse transform result.(2)')
         return 'fail'
 
     # Test RPC_HEIGHT option
-    tr = gdal.Transformer( ds, None, [ 'METHOD=RPC', 'RPC_HEIGHT=30' ] )
+    tr = gdal.Transformer(ds, None, ['METHOD=RPC', 'RPC_HEIGHT=30'])
 
-    (success,pnt) = tr.TransformPoint( 0, 20.5, 10.5 )
+    (success, pnt) = tr.TransformPoint(0, 20.5, 10.5)
 
     if not success \
-       or abs(pnt[0]-125.64828521533849) > 0.000001 \
-       or abs(pnt[1]-39.869345204440144) > 0.000001 :
+       or abs(pnt[0] - 125.64828521533849) > 0.000001 \
+       or abs(pnt[1] - 39.869345204440144) > 0.000001:
         print(success, pnt)
-        gdaltest.post_reason( 'got wrong forward transform result.(3)' )
+        gdaltest.post_reason('got wrong forward transform result.(3)')
         return 'fail'
 
-    (success,pnt) = tr.TransformPoint( 1, pnt[0], pnt[1], pnt[2] )
+    (success, pnt) = tr.TransformPoint(1, pnt[0], pnt[1], pnt[2])
 
     if not success \
-       or abs(pnt[0]-20.5) > 0.1 \
-       or abs(pnt[1]-10.5) > 0.1 :
+       or abs(pnt[0] - 20.5) > 0.1 \
+       or abs(pnt[1] - 10.5) > 0.1:
         print(success, pnt)
-        gdaltest.post_reason( 'got wrong reverse transform result.(3)' )
+        gdaltest.post_reason('got wrong reverse transform result.(3)')
         return 'fail'
 
     # Test RPC_DEM and RPC_HEIGHT_SCALE options
@@ -234,91 +239,91 @@ def transformer_5():
     sr = osr.SpatialReference()
     sr.ImportFromEPSG(32652)
     ds_dem.SetProjection(sr.ExportToWkt())
-    ds_dem.SetGeoTransform([213300,200,0,4418700,0,-200])
+    ds_dem.SetGeoTransform([213300, 200, 0, 4418700, 0, -200])
     ds_dem.GetRasterBand(1).Fill(15)
     ds_dem = None
 
-    tr = gdal.Transformer( ds, None, [ 'METHOD=RPC', 'RPC_HEIGHT_SCALE=2', 'RPC_DEM=/vsimem/dem.tif' ] )
+    tr = gdal.Transformer(ds, None, ['METHOD=RPC', 'RPC_HEIGHT_SCALE=2', 'RPC_DEM=/vsimem/dem.tif'])
 
-    (success,pnt) = tr.TransformPoint( 0, 20.5, 10.5, 0 )
+    (success, pnt) = tr.TransformPoint(0, 20.5, 10.5, 0)
 
     if not success \
-       or abs(pnt[0]-125.64828521533849) > 0.000001 \
-       or abs(pnt[1]-39.869345204440144) > 0.000001 :
+       or abs(pnt[0] - 125.64828521533849) > 0.000001 \
+       or abs(pnt[1] - 39.869345204440144) > 0.000001:
         print(success, pnt)
-        gdaltest.post_reason( 'got wrong forward transform result.(4)' )
+        gdaltest.post_reason('got wrong forward transform result.(4)')
         return 'fail'
 
-    (success,pnt) = tr.TransformPoint( 1, pnt[0], pnt[1], pnt[2] )
+    (success, pnt) = tr.TransformPoint(1, pnt[0], pnt[1], pnt[2])
 
     if not success \
-       or abs(pnt[0]-20.5) > 0.05 \
-       or abs(pnt[1]-10.5) > 0.05 :
+       or abs(pnt[0] - 20.5) > 0.05 \
+       or abs(pnt[1] - 10.5) > 0.05:
         print(success, pnt)
-        gdaltest.post_reason( 'got wrong reverse transform result.(4)' )
+        gdaltest.post_reason('got wrong reverse transform result.(4)')
         return 'fail'
 
     tr = None
 
     # Test RPC_DEMINTERPOLATION=cubic
 
-    tr = gdal.Transformer( ds, None, [ 'METHOD=RPC', 'RPC_HEIGHT_SCALE=2', 'RPC_DEM=/vsimem/dem.tif', 'RPC_DEMINTERPOLATION=cubic' ] )
+    tr = gdal.Transformer(ds, None, ['METHOD=RPC', 'RPC_HEIGHT_SCALE=2', 'RPC_DEM=/vsimem/dem.tif', 'RPC_DEMINTERPOLATION=cubic'])
 
-    (success,pnt) = tr.TransformPoint( 0, 20.5, 10.5, 0 )
+    (success, pnt) = tr.TransformPoint(0, 20.5, 10.5, 0)
 
     if not success \
-       or abs(pnt[0]-125.64828521533849) > 0.000001 \
-       or abs(pnt[1]-39.869345204440144) > 0.000001 :
+       or abs(pnt[0] - 125.64828521533849) > 0.000001 \
+       or abs(pnt[1] - 39.869345204440144) > 0.000001:
         print(success, pnt)
-        gdaltest.post_reason( 'got wrong forward transform result.(5)' )
+        gdaltest.post_reason('got wrong forward transform result.(5)')
         return 'fail'
 
-    (success,pnt) = tr.TransformPoint( 1, pnt[0], pnt[1], pnt[2] )
+    (success, pnt) = tr.TransformPoint(1, pnt[0], pnt[1], pnt[2])
 
     if not success \
-       or abs(pnt[0]-20.5) > 0.05 \
-       or abs(pnt[1]-10.5) > 0.05 :
+       or abs(pnt[0] - 20.5) > 0.05 \
+       or abs(pnt[1] - 10.5) > 0.05:
         print(success, pnt)
-        gdaltest.post_reason( 'got wrong reverse transform result.(5)' )
+        gdaltest.post_reason('got wrong reverse transform result.(5)')
         return 'fail'
 
     tr = None
 
     # Test RPC_DEMINTERPOLATION=near
 
-    tr = gdal.Transformer( ds, None, [ 'METHOD=RPC', 'RPC_HEIGHT_SCALE=2', 'RPC_DEM=/vsimem/dem.tif', 'RPC_DEMINTERPOLATION=near' ] )
+    tr = gdal.Transformer(ds, None, ['METHOD=RPC', 'RPC_HEIGHT_SCALE=2', 'RPC_DEM=/vsimem/dem.tif', 'RPC_DEMINTERPOLATION=near'])
 
-    (success,pnt) = tr.TransformPoint( 0, 20.5, 10.5, 0 )
+    (success, pnt) = tr.TransformPoint(0, 20.5, 10.5, 0)
 
     if not success \
-       or abs(pnt[0]-125.64828521503811) > 0.000001 \
-       or abs(pnt[1]-39.869345204874911) > 0.000001 :
+       or abs(pnt[0] - 125.64828521503811) > 0.000001 \
+       or abs(pnt[1] - 39.869345204874911) > 0.000001:
         print(success, pnt)
-        gdaltest.post_reason( 'got wrong forward transform result.(6)' )
+        gdaltest.post_reason('got wrong forward transform result.(6)')
         return 'fail'
 
-    (success,pnt) = tr.TransformPoint( 1, pnt[0], pnt[1], pnt[2] )
+    (success, pnt) = tr.TransformPoint(1, pnt[0], pnt[1], pnt[2])
 
     if not success \
-       or abs(pnt[0]-20.5) > 0.05 \
-       or abs(pnt[1]-10.5) > 0.05 :
+       or abs(pnt[0] - 20.5) > 0.05 \
+       or abs(pnt[1] - 10.5) > 0.05:
         print(success, pnt)
-        gdaltest.post_reason( 'got wrong reverse transform result.(6)' )
+        gdaltest.post_reason('got wrong reverse transform result.(6)')
         return 'fail'
 
     tr = None
 
     # Test outside DEM extent : default behaviour --> error
-    tr = gdal.Transformer( ds, None, [ 'METHOD=RPC', 'RPC_HEIGHT_SCALE=2', 'RPC_DEM=/vsimem/dem.tif' ] )
+    tr = gdal.Transformer(ds, None, ['METHOD=RPC', 'RPC_HEIGHT_SCALE=2', 'RPC_DEM=/vsimem/dem.tif'])
 
-    (success,pnt) = tr.TransformPoint( 0, 40000, 0, 0 )
+    (success, pnt) = tr.TransformPoint(0, 40000, 0, 0)
     if success != 0:
-        gdaltest.post_reason( 'fail' )
+        gdaltest.post_reason('fail')
         return 'fail'
 
-    (success,pnt) = tr.TransformPoint( 1, 125, 40, 0 )
+    (success, pnt) = tr.TransformPoint(1, 125, 40, 0)
     if success != 0:
-        gdaltest.post_reason( 'fail' )
+        gdaltest.post_reason('fail')
         return 'fail'
 
     tr = None
@@ -328,25 +333,25 @@ def transformer_5():
     sr = osr.SpatialReference()
     sr.ImportFromEPSG(32652)
     ds_dem.SetProjection(sr.ExportToWkt())
-    ds_dem.SetGeoTransform([213300,1,0,4418700,0,-1])
+    ds_dem.SetGeoTransform([213300, 1, 0, 4418700, 0, -1])
     ds_dem.GetRasterBand(1).Fill(15)
     ds_dem = None
-    tr = gdal.Transformer( ds, None, [ 'METHOD=RPC', 'RPC_HEIGHT_SCALE=2', 'RPC_DEM=/vsimem/dem.tif', 'RPC_DEM_MISSING_VALUE=0' ] )
+    tr = gdal.Transformer(ds, None, ['METHOD=RPC', 'RPC_HEIGHT_SCALE=2', 'RPC_DEM=/vsimem/dem.tif', 'RPC_DEM_MISSING_VALUE=0'])
 
-    (success,pnt) = tr.TransformPoint( 0, -99.5, 0.5, 0 )
+    (success, pnt) = tr.TransformPoint(0, -99.5, 0.5, 0)
     if not success \
-       or abs(pnt[0]-125.64746155942839) > 0.000001 \
-       or abs(pnt[1]-39.869506789921168) > 0.000001 :
+       or abs(pnt[0] - 125.64746155942839) > 0.000001 \
+       or abs(pnt[1] - 39.869506789921168) > 0.000001:
         print(success, pnt)
-        gdaltest.post_reason( 'got wrong forward transform result.' )
+        gdaltest.post_reason('got wrong forward transform result.')
         return 'fail'
 
-    (success,pnt) = tr.TransformPoint( 1, pnt[0], pnt[1], pnt[2] )
+    (success, pnt) = tr.TransformPoint(1, pnt[0], pnt[1], pnt[2])
     if not success \
-       or abs(pnt[0]--99.5) > 0.05 \
-       or abs(pnt[1]-0.5) > 0.05 :
+       or abs(pnt[0] - -99.5) > 0.05 \
+       or abs(pnt[1] - 0.5) > 0.05:
         print(success, pnt)
-        gdaltest.post_reason( 'got wrong reverse transform result.' )
+        gdaltest.post_reason('got wrong reverse transform result.')
         return 'fail'
 
     tr = None
@@ -362,16 +367,16 @@ def transformer_5():
 def transformer_6():
 
     ds = gdal.Open('data/rpc_5395.vrt')
-    tr = gdal.Transformer( ds, None, [ 'METHOD=RPC' ] )
+    tr = gdal.Transformer(ds, None, ['METHOD=RPC'])
 
-    (success,pnt) = tr.TransformPoint( 0, 0.5, 0.5 )
+    (success, pnt) = tr.TransformPoint(0, 0.5, 0.5)
 
     if not success \
-       or abs(pnt[0]-28.26163232) > 0.0001 \
-       or abs(pnt[1]--27.79853245) > 0.0001 \
+       or abs(pnt[0] - 28.26163232) > 0.0001 \
+       or abs(pnt[1] - -27.79853245) > 0.0001 \
        or pnt[2] != 0:
         print(success, pnt)
-        gdaltest.post_reason( 'got wrong forward transform result.' )
+        gdaltest.post_reason('got wrong forward transform result.')
         return 'fail'
 
     return 'success'
@@ -379,25 +384,27 @@ def transformer_6():
 ###############################################################################
 # Test Transformer.TransformPoints
 
+
 def transformer_7():
 
     ds = gdal.Open('data/byte.tif')
-    tr = gdal.Transformer( ds, None, [] )
+    tr = gdal.Transformer(ds, None, [])
 
-    (pnt, success) = tr.TransformPoints( 0, [(20, 10)] )
+    (pnt, success) = tr.TransformPoints(0, [(20, 10)])
 
     if success[0] == 0 \
-       or abs(pnt[0][0]- 441920) > 0.00000001 \
-       or abs(pnt[0][1]-3750720) > 0.00000001 \
+       or abs(pnt[0][0] - 441920) > 0.00000001 \
+       or abs(pnt[0][1] - 3750720) > 0.00000001 \
        or pnt[0][2] != 0.0:
         print(success, pnt)
-        gdaltest.post_reason( 'got wrong forward transform result.' )
+        gdaltest.post_reason('got wrong forward transform result.')
         return 'fail'
 
     return 'success'
 
 ###############################################################################
 # Test handling of nodata in RPC DEM (#5680)
+
 
 def transformer_8():
 
@@ -408,28 +415,27 @@ def transformer_8():
     sr = osr.SpatialReference()
     sr.ImportFromEPSG(32652)
     ds_dem.SetProjection(sr.ExportToWkt())
-    ds_dem.SetGeoTransform([213300,1,0,4418700,0,-1])
+    ds_dem.SetGeoTransform([213300, 1, 0, 4418700, 0, -1])
     ds_dem.GetRasterBand(1).SetNoDataValue(-32768)
     ds_dem.GetRasterBand(1).Fill(-32768)
     ds_dem = None
 
-    for method in [ 'near', 'bilinear', 'cubic' ]:
-        tr = gdal.Transformer( ds, None, [ 'METHOD=RPC', 'RPC_DEM=/vsimem/dem.tif', 'RPC_DEMINTERPOLATION=%s' % method ] )
+    for method in ['near', 'bilinear', 'cubic']:
+        tr = gdal.Transformer(ds, None, ['METHOD=RPC', 'RPC_DEM=/vsimem/dem.tif', 'RPC_DEMINTERPOLATION=%s' % method])
 
-        (success,pnt) = tr.TransformPoint( 0, 20, 10, 0 )
-
-        if success:
-            print(success, pnt)
-            gdaltest.post_reason( 'got wrong forward transform result.' )
-            return 'fail'
-
-        (success,pnt) = tr.TransformPoint( 1, 125.64828521533849, 39.869345204440144, 0 )
+        (success, pnt) = tr.TransformPoint(0, 20, 10, 0)
 
         if success:
             print(success, pnt)
-            gdaltest.post_reason( 'got wrong reverse transform result.' )
+            gdaltest.post_reason('got wrong forward transform result.')
             return 'fail'
 
+        (success, pnt) = tr.TransformPoint(1, 125.64828521533849, 39.869345204440144, 0)
+
+        if success:
+            print(success, pnt)
+            gdaltest.post_reason('got wrong reverse transform result.')
+            return 'fail'
 
     gdal.Unlink('/vsimem/dem.tif')
 
@@ -437,6 +443,7 @@ def transformer_8():
 
 ###############################################################################
 # Test RPC DEM line optimization
+
 
 def transformer_9():
 
@@ -447,39 +454,38 @@ def transformer_9():
     sr = osr.SpatialReference()
     sr.ImportFromEPSG(4326)
     ds_dem.SetProjection(sr.ExportToWkt())
-    ds_dem.SetGeoTransform([125.647968621436,1.2111052640051412e-05,0,39.869926216038,0,-8.6569068979969188e-06])
+    ds_dem.SetGeoTransform([125.647968621436, 1.2111052640051412e-05, 0, 39.869926216038, 0, -8.6569068979969188e-06])
     import random
     random.seed(0)
-    data = ''.join([ chr(40 + int(10 * random.random()) ) for i in range(100*100) ])
+    data = ''.join([chr(40 + int(10 * random.random())) for i in range(100 * 100)])
     ds_dem.GetRasterBand(1).WriteRaster(0, 0, 100, 100, data)
     ds_dem = None
 
-    for method in [ 'near', 'bilinear', 'cubic' ]:
-        tr = gdal.Transformer( ds, None, [ 'METHOD=RPC', 'RPC_DEM=/vsimem/dem.tif', 'RPC_DEMINTERPOLATION=%s' % method ] )
+    for method in ['near', 'bilinear', 'cubic']:
+        tr = gdal.Transformer(ds, None, ['METHOD=RPC', 'RPC_DEM=/vsimem/dem.tif', 'RPC_DEMINTERPOLATION=%s' % method])
 
         points = []
         for i in range(10):
             points.append((125.64828521533849, 39.869345204440144))
-        (pnt, success) = tr.TransformPoints( 1, points )
+        (pnt, success) = tr.TransformPoints(1, points)
         if not success[0]:
-            gdaltest.post_reason( 'failure' )
+            gdaltest.post_reason('failure')
             print(method)
             return 'fail'
         pnt_optimized = pnt[0]
 
-        (success,pnt) = tr.TransformPoint( 1, 125.64828521533849, 39.869345204440144, 0 )
+        (success, pnt) = tr.TransformPoint(1, 125.64828521533849, 39.869345204440144, 0)
         if not success:
-            gdaltest.post_reason( 'failure' )
+            gdaltest.post_reason('failure')
             print(method)
             return 'fail'
 
         if pnt != pnt_optimized:
-            gdaltest.post_reason( 'failure' )
+            gdaltest.post_reason('failure')
             print(method)
             print(pnt)
             print(pnt_optimized)
             return 'fail'
-
 
     gdal.Unlink('/vsimem/dem.tif')
 
@@ -488,33 +494,35 @@ def transformer_9():
 ###############################################################################
 # Test RPC DEM transform from geoid height to ellipsoidal height
 
+
 def transformer_10():
+
+    # Create fake vertical shift grid
+    out_ds = gdal.GetDriverByName('GTX').Create('tmp/fake.gtx', 10, 10, 1, gdal.GDT_Float32)
+    out_ds.SetGeoTransform([-180, 36, 0, 90, 0, -18])
+    sr = osr.SpatialReference()
+    sr.SetWellKnownGeogCS('WGS84')
+    out_ds.SetProjection(sr.ExportToWkt())
+    out_ds.GetRasterBand(1).Fill(100)
+    out_ds = None
 
     sr = osr.SpatialReference()
     sr.ImportFromProj4('+proj=longlat +datum=WGS84 +geoidgrids=./tmp/fake.gtx +vunits=m +foo=bar +no_defs')
     if sr.ExportToProj4().find('foo=bar') >= 0:
         print('Missing proj.4')
+        gdal.GetDriverByName('GTX').Delete('tmp/fake.gtx')
         return 'skip'
     if sr.ExportToProj4().find('geoidgrids') < 0:
         print('Missing geoidgrids in %s. Outdated proj.4 version' % sr.ExportToProj4())
+        gdal.GetDriverByName('GTX').Delete('tmp/fake.gtx')
         return 'skip'
-
-    # Create fake vertical shift grid
-    out_ds = gdal.GetDriverByName('GTX').Create('tmp/fake.gtx',10,10,1,gdal.GDT_Float32)
-    out_ds.SetGeoTransform([-180,36,0,90,0,-18])
-    sr = osr.SpatialReference()
-    sr.SetWellKnownGeogCS('WGS84')
-    out_ds.SetProjection( sr.ExportToWkt() )
-    out_ds.GetRasterBand(1).Fill(100)
-    out_ds = None
-
 
     # Create a fake DEM
     ds_dem = gdal.GetDriverByName('GTiff').Create('/vsimem/dem.tif', 100, 100, 1, gdal.GDT_Byte)
-    ds_dem.SetGeoTransform([125.647968621436,1.2111052640051412e-05,0,39.869926216038,0,-8.6569068979969188e-06])
+    ds_dem.SetGeoTransform([125.647968621436, 1.2111052640051412e-05, 0, 39.869926216038, 0, -8.6569068979969188e-06])
     import random
     random.seed(0)
-    data = ''.join([ chr(40 + int(10 * random.random()) ) for i in range(100*100) ])
+    data = ''.join([chr(40 + int(10 * random.random())) for i in range(100 * 100)])
     ds_dem.GetRasterBand(1).WriteRaster(0, 0, 100, 100, data)
     ds_dem = None
 
@@ -543,34 +551,37 @@ def transformer_10():
 
     ds = gdal.Open('data/rpc.vrt')
 
-    tr = gdal.Transformer( ds, None, [ 'METHOD=RPC', 'RPC_DEM=/vsimem/dem.vrt' ] )
-    (success,pnt) = tr.TransformPoint( 1, 125.64828521533849, 39.869345204440144, 0 )
+    tr = gdal.Transformer(ds, None, ['METHOD=RPC', 'RPC_DEM=/vsimem/dem.vrt'])
+    (success, pnt) = tr.TransformPoint(1, 125.64828521533849, 39.869345204440144, 0)
 
     if not success \
-       or abs(pnt[0]-27.31476045569616) > 1e-5 \
-       or abs(pnt[1]--53.328814757762302) > 1e-5 \
+       or abs(pnt[0] - 27.31476045569616) > 1e-5 \
+       or abs(pnt[1] - -53.328814757762302) > 1e-5 \
        or pnt[2] != 0:
         print(success, pnt)
-        gdaltest.post_reason( 'got wrong result.' )
+        gdaltest.post_reason('got wrong result.')
         return 'fail'
 
-    tr = gdal.Transformer( ds, None, [ 'METHOD=RPC', 'RPC_DEM=/vsimem/dem.vrt', 'RPC_DEM_APPLY_VDATUM_SHIFT=FALSE' ] )
-    (success,pnt) = tr.TransformPoint( 1, 125.64828521533849, 39.869345204440144, 0 )
+    tr = gdal.Transformer(ds, None, ['METHOD=RPC', 'RPC_DEM=/vsimem/dem.vrt', 'RPC_DEM_APPLY_VDATUM_SHIFT=FALSE'])
+    (success, pnt) = tr.TransformPoint(1, 125.64828521533849, 39.869345204440144, 0)
 
     if not success \
-       or abs(pnt[0]-21.445626206892484) > 1e-5 \
-       or abs(pnt[1]-1.6460100520871492) > 1e-5 \
+       or abs(pnt[0] - 21.445626206892484) > 1e-5 \
+       or abs(pnt[1] - 1.6460100520871492) > 1e-5 \
        or pnt[2] != 0:
         print(success, pnt)
-        gdaltest.post_reason( 'got wrong result.' )
+        gdaltest.post_reason('got wrong result.')
         return 'fail'
 
     gdal.GetDriverByName('GTX').Delete('tmp/fake.gtx')
+    gdal.Unlink('/vsimem/dem.tif')
+    gdal.Unlink('/vsimem/dem.vrt')
 
     return 'success'
 
 ###############################################################################
 # Test failed inverse RPC transform (#6162)
+
 
 def transformer_11():
 
@@ -593,15 +604,15 @@ def transformer_11():
     ]
     ds.SetMetadata(rpc, 'RPC')
 
-    tr = gdal.Transformer( ds, None, [ 'METHOD=RPC', 'RPC_HEIGHT=4000' ] )
-    (success,pnt) = tr.TransformPoint( 0, 0, 0, 0 )
+    tr = gdal.Transformer(ds, None, ['METHOD=RPC', 'RPC_HEIGHT=4000'])
+    (success, pnt) = tr.TransformPoint(0, 0, 0, 0)
     if success:
         print(pnt)
         return 'fail'
 
     # But this one should succeed
-    tr = gdal.Transformer( ds, None, [ 'METHOD=RPC', 'RPC_HEIGHT=1150' ] )
-    (success,pnt) = tr.TransformPoint( 0, 0, 0, 0 )
+    tr = gdal.Transformer(ds, None, ['METHOD=RPC', 'RPC_HEIGHT=1150'])
+    (success, pnt) = tr.TransformPoint(0, 0, 0, 0)
     if not success or abs(pnt[0] - 77.350939956024618) > 1e-7 or abs(pnt[1] - 38.739703990877814) > 1e-7:
         print(pnt)
         return 'fail'
@@ -610,6 +621,7 @@ def transformer_11():
 
 ###############################################################################
 # Test degenerate cases of TPS transformer
+
 
 def transformer_12():
 
@@ -630,7 +642,7 @@ def transformer_12():
   </VRTRasterBand>
 </VRTDataset>""")
 
-    tr = gdal.Transformer( ds, None, [ 'METHOD=GCP_TPS' ] )
+    tr = gdal.Transformer(ds, None, ['METHOD=GCP_TPS'])
     if tr is None:
         gdaltest.post_reason('fail')
         return 'fail'
@@ -654,7 +666,7 @@ def transformer_12():
 
     gdal.ErrorReset()
     with gdaltest.error_handler():
-        tr = gdal.Transformer( ds, None, [ 'METHOD=GCP_TPS' ] )
+        tr = gdal.Transformer(ds, None, ['METHOD=GCP_TPS'])
     if gdal.GetLastErrorMsg() == '':
         gdaltest.post_reason('fail')
         return 'fail'
@@ -678,7 +690,7 @@ def transformer_12():
 
     gdal.ErrorReset()
     with gdaltest.error_handler():
-        tr = gdal.Transformer( ds, None, [ 'METHOD=GCP_TPS' ] )
+        tr = gdal.Transformer(ds, None, ['METHOD=GCP_TPS'])
     if gdal.GetLastErrorMsg() == '':
         gdaltest.post_reason('fail')
         return 'fail'
@@ -687,6 +699,7 @@ def transformer_12():
 
 ###############################################################################
 # Test inverse RPC transform at DEM edge (#6377)
+
 
 def transformer_13():
 
@@ -709,50 +722,50 @@ def transformer_13():
     ]
     ds.SetMetadata(rpc, 'RPC')
 
-    tr = gdal.Transformer( ds, None, [ 'METHOD=RPC', 'RPC_DEM=data/transformer_13_dem.tif' ] )
-    (success,pnt) = tr.TransformPoint( 0, 6600, 24 )
+    tr = gdal.Transformer(ds, None, ['METHOD=RPC', 'RPC_DEM=data/transformer_13_dem.tif'])
+    (success, pnt) = tr.TransformPoint(0, 6600, 24)
     if not success or abs(pnt[0] - -108.00066000065341) > 1e-7 or abs(pnt[1] - 39.157694013439489) > 1e-7:
         print(pnt)
         return 'fail'
-
 
     return 'success'
 
 ###############################################################################
 # Test inverse RPC transform when iterations do oscillations (#6377)
 
+
 def transformer_14():
     ds = gdal.GetDriverByName('MEM').Create('', 4032, 2688)
-    rpc = [ "MIN_LAT=0",
-            "MAX_LAT=0",
-            "MIN_LONG=0",
-            "MAX_LONG=0",
-            "HEIGHT_OFF=244.72924043124081",
-            "HEIGHT_SCALE=391.44066987292678",
-            "LAT_OFF=0.095493639758799986",
-            "LAT_SCALE=-0.0977494003085103",
-            "LINE_DEN_COEFF=1 1.73399671259238e-05 -6.18169396309642e-06 -3.11498839490863e-05 -1.18048814815295e-05 -5.46123898974842e-05 -2.51203895820587e-05 -5.77299008756702e-05 -1.37836923606953e-05 -3.24029327866125e-06 2.06307542696228e-07 -5.16777154466466e-08 2.98762926005741e-07 3.17761145061869e-08 1.48077371641094e-07 -7.69738626480047e-08 2.94990048269861e-08 -3.37468052222007e-08 -3.67859879729462e-08 8.79847359414426e-10 ",
-            "LINE_NUM_COEFF=0.000721904493927027 1.02330510505135 -1.27742813759689 -0.0973049949136407 -0.014260789316429 0.00229308399354221 -0.0016640916975237 0.0124508639909873 0.00336835383694126 1.1987123734283e-05 -1.85240614830659e-05 4.40716454954686e-05 2.3198555492418e-05 -8.31659287301587e-08 -5.10329082923063e-05 2.56477008932482e-05 1.01465909326012e-05 1.04407036240869e-05 4.27413648628578e-05 2.91696764503125e-07 ",
-            "LINE_OFF=1343.99369782095",
-            "LINE_SCALE=1343.96638400536",
-            "LONG_OFF=-0.034423410000698595",
-            "LONG_SCALE=0.143444599019706",
-            "SAMP_DEN_COEFF=1 1.83636704399141e-05 3.55794197969218e-06 -1.33255440425932e-05 -4.25424777986987e-06 -3.95287146748821e-05 1.35786181318561e-05 -3.86131208639696e-05 -1.10085128708761e-05 -1.26863939055319e-05 -2.88045902675552e-07 -1.58732907217101e-07 4.08999884183478e-07 6.6854211618061e-08 -1.46399266323942e-07 -4.69718293745237e-08 -4.14626818788491e-08 -3.00588241056424e-07 4.54784506604435e-08 3.24214474149225e-08 ",
-            "SAMP_NUM_COEFF=-0.0112062780844554 -1.05096833835297 -0.704023055461029 0.0384547265206585 -0.00987134340336078 -0.00310989611092616 -0.00116937850565916 -0.0102714370609919 0.000930565787504389 7.03834691339565e-05 -3.83216250787844e-05 -3.67841179314918e-05 2.45498653278515e-05 1.06302833544472e-05 -6.26921822677631e-05 1.29769009118128e-05 1.1336284460811e-05 -3.01250967502161e-05 -7.60511798099513e-06 -4.45260900205512e-07 ",
-            "SAMP_OFF=2015.99417232167",
-            "SAMP_SCALE=2015.9777295656"
-    ]
+    rpc = ["MIN_LAT=0",
+           "MAX_LAT=0",
+           "MIN_LONG=0",
+           "MAX_LONG=0",
+           "HEIGHT_OFF=244.72924043124081",
+           "HEIGHT_SCALE=391.44066987292678",
+           "LAT_OFF=0.095493639758799986",
+           "LAT_SCALE=-0.0977494003085103",
+           "LINE_DEN_COEFF=1 1.73399671259238e-05 -6.18169396309642e-06 -3.11498839490863e-05 -1.18048814815295e-05 -5.46123898974842e-05 -2.51203895820587e-05 -5.77299008756702e-05 -1.37836923606953e-05 -3.24029327866125e-06 2.06307542696228e-07 -5.16777154466466e-08 2.98762926005741e-07 3.17761145061869e-08 1.48077371641094e-07 -7.69738626480047e-08 2.94990048269861e-08 -3.37468052222007e-08 -3.67859879729462e-08 8.79847359414426e-10 ",
+           "LINE_NUM_COEFF=0.000721904493927027 1.02330510505135 -1.27742813759689 -0.0973049949136407 -0.014260789316429 0.00229308399354221 -0.0016640916975237 0.0124508639909873 0.00336835383694126 1.1987123734283e-05 -1.85240614830659e-05 4.40716454954686e-05 2.3198555492418e-05 -8.31659287301587e-08 -5.10329082923063e-05 2.56477008932482e-05 1.01465909326012e-05 1.04407036240869e-05 4.27413648628578e-05 2.91696764503125e-07 ",
+           "LINE_OFF=1343.99369782095",
+           "LINE_SCALE=1343.96638400536",
+           "LONG_OFF=-0.034423410000698595",
+           "LONG_SCALE=0.143444599019706",
+           "SAMP_DEN_COEFF=1 1.83636704399141e-05 3.55794197969218e-06 -1.33255440425932e-05 -4.25424777986987e-06 -3.95287146748821e-05 1.35786181318561e-05 -3.86131208639696e-05 -1.10085128708761e-05 -1.26863939055319e-05 -2.88045902675552e-07 -1.58732907217101e-07 4.08999884183478e-07 6.6854211618061e-08 -1.46399266323942e-07 -4.69718293745237e-08 -4.14626818788491e-08 -3.00588241056424e-07 4.54784506604435e-08 3.24214474149225e-08 ",
+           "SAMP_NUM_COEFF=-0.0112062780844554 -1.05096833835297 -0.704023055461029 0.0384547265206585 -0.00987134340336078 -0.00310989611092616 -0.00116937850565916 -0.0102714370609919 0.000930565787504389 7.03834691339565e-05 -3.83216250787844e-05 -3.67841179314918e-05 2.45498653278515e-05 1.06302833544472e-05 -6.26921822677631e-05 1.29769009118128e-05 1.1336284460811e-05 -3.01250967502161e-05 -7.60511798099513e-06 -4.45260900205512e-07 ",
+           "SAMP_OFF=2015.99417232167",
+           "SAMP_SCALE=2015.9777295656"
+           ]
     ds.SetMetadata(rpc, 'RPC')
 
     old_rpc_inverse_verbose = gdal.GetConfigOption('RPC_INVERSE_VERBOSE')
     gdal.SetConfigOption('RPC_INVERSE_VERBOSE', 'YES')
     old_rpc_inverse_log = gdal.GetConfigOption('RPC_INVERSE_LOG')
     gdal.SetConfigOption('RPC_INVERSE_LOG', '/vsimem/transformer_14.csv')
-    tr = gdal.Transformer( ds, None, [ 'METHOD=RPC', 'RPC_DEM=data/transformer_14_dem.tif' ] )
+    tr = gdal.Transformer(ds, None, ['METHOD=RPC', 'RPC_DEM=data/transformer_14_dem.tif'])
     gdal.SetConfigOption('RPC_INVERSE_VERBOSE', old_rpc_inverse_verbose)
     gdal.SetConfigOption('RPC_INVERSE_LOG', old_rpc_inverse_log)
-    (success,pnt) = tr.TransformPoint( 0, 0, 0 )
-    if not success or abs(pnt[0] - 1.9391846640653961e-05) > 1e-7 or abs(pnt[1] -  -0.0038824752244123275) > 1e-7:
+    (success, pnt) = tr.TransformPoint(0, 0, 0)
+    if not success or abs(pnt[0] - 1.9391846640653961e-05) > 1e-7 or abs(pnt[1] - -0.0038824752244123275) > 1e-7:
         gdaltest.post_reason('fail')
         print(pnt)
         return 'fail'
@@ -785,94 +798,96 @@ def transformer_14():
 # Test inverse RPC transform with DEM in [-180,180] but guessed longitude going
 # beyond
 
+
 def transformer_15():
 
     ds = gdal.GetDriverByName('MEM').Create('', 6600, 4400)
     rpc = [
-      "HEIGHT_OFF=50",
-      "HEIGHT_SCALE=10",
-      "LAT_OFF=0",
-      "LAT_SCALE=-0.105215174097221",
-      "LINE_DEN_COEFF=1 0.000113241782375585 -7.43522609681362e-05 3.71535308900828e-08 0.000338102551252493 4.57912749279076e-07 -7.00823537484445e-08 9.01275640119332e-05 -0.000209723741981335 4.74972505083506e-09 7.2855438070338e-10 -3.16688523275456e-05 -4.49211037453489e-05 8.29706981496464e-12 7.58128162744879e-06 6.82536481272507e-07 2.58661007069147e-11 -3.9697791887986e-08 -5.06502821928986e-08 4.66978771069271e-11 ",
-      "LINE_NUM_COEFF=0.00673418095252569 -1.38985626744028 -0.645141238074041 1.4661564574111e-05 0.00022202101663831 -4.32910472926433e-06 -1.90048143949724e-06 -0.00374486341484218 -0.00041396053769863 1.14148334846788e-09 -1.20458144309064e-07 -0.00618122456017927 -0.00783023711720404 1.32704635552568e-09 -0.0032532225011433 -0.00355239507036451 6.20315160857432e-10 -4.75170167074672e-07 1.37652348819162e-07 9.53393990126859e-12 ",
-      "LINE_OFF=2191.17012189569",
-      "LINE_SCALE=2197.23749680132",
-      "LONG_OFF=179.9",
-      "LONG_SCALE=0.124705315627701",
-      "SAMP_DEN_COEFF=1 2.1759243891474e-05 -5.96367842636917e-06 6.03714873685079e-09 -0.000109764869260479 4.67786228725161e-07 -4.22013004308237e-07 0.000110379633112327 -0.00011679427405351 9.30515192365439e-09 1.09243100743555e-09 -3.29956656106618e-05 -4.1918167733603e-05 2.78076356769406e-11 -4.57011012884097e-06 -1.01453844685279e-05 2.60244039950836e-11 -3.52960090220746e-08 -4.49975439524006e-08 1.80641651820794e-11 ",
-      "SAMP_NUM_COEFF=-0.000776008179693209 -0.380692820465227 1.0647540743599 1.72660888229082e-06 0.0028311896140173 -1.0466632896253e-06 3.17728359468736e-06 -0.000150466834838251 0.000566231304705376 -7.34786296240808e-11 5.90340934437437e-07 -0.00169917056998316 -0.00231193494979752 -2.71280972480264e-09 0.00482224415396017 0.00596164573794891 7.58464598771136e-09 -1.46075167736497e-07 -4.64652272450397e-07 -5.59268858101854e-13 ",
-      "SAMP_OFF=3300.0420831968",
-      "SAMP_SCALE=3295.90302088781",
-      ]
+        "HEIGHT_OFF=50",
+        "HEIGHT_SCALE=10",
+        "LAT_OFF=0",
+        "LAT_SCALE=-0.105215174097221",
+        "LINE_DEN_COEFF=1 0.000113241782375585 -7.43522609681362e-05 3.71535308900828e-08 0.000338102551252493 4.57912749279076e-07 -7.00823537484445e-08 9.01275640119332e-05 -0.000209723741981335 4.74972505083506e-09 7.2855438070338e-10 -3.16688523275456e-05 -4.49211037453489e-05 8.29706981496464e-12 7.58128162744879e-06 6.82536481272507e-07 2.58661007069147e-11 -3.9697791887986e-08 -5.06502821928986e-08 4.66978771069271e-11 ",
+        "LINE_NUM_COEFF=0.00673418095252569 -1.38985626744028 -0.645141238074041 1.4661564574111e-05 0.00022202101663831 -4.32910472926433e-06 -1.90048143949724e-06 -0.00374486341484218 -0.00041396053769863 1.14148334846788e-09 -1.20458144309064e-07 -0.00618122456017927 -0.00783023711720404 1.32704635552568e-09 -0.0032532225011433 -0.00355239507036451 6.20315160857432e-10 -4.75170167074672e-07 1.37652348819162e-07 9.53393990126859e-12 ",
+        "LINE_OFF=2191.17012189569",
+        "LINE_SCALE=2197.23749680132",
+        "LONG_OFF=179.9",
+        "LONG_SCALE=0.124705315627701",
+        "SAMP_DEN_COEFF=1 2.1759243891474e-05 -5.96367842636917e-06 6.03714873685079e-09 -0.000109764869260479 4.67786228725161e-07 -4.22013004308237e-07 0.000110379633112327 -0.00011679427405351 9.30515192365439e-09 1.09243100743555e-09 -3.29956656106618e-05 -4.1918167733603e-05 2.78076356769406e-11 -4.57011012884097e-06 -1.01453844685279e-05 2.60244039950836e-11 -3.52960090220746e-08 -4.49975439524006e-08 1.80641651820794e-11 ",
+        "SAMP_NUM_COEFF=-0.000776008179693209 -0.380692820465227 1.0647540743599 1.72660888229082e-06 0.0028311896140173 -1.0466632896253e-06 3.17728359468736e-06 -0.000150466834838251 0.000566231304705376 -7.34786296240808e-11 5.90340934437437e-07 -0.00169917056998316 -0.00231193494979752 -2.71280972480264e-09 0.00482224415396017 0.00596164573794891 7.58464598771136e-09 -1.46075167736497e-07 -4.64652272450397e-07 -5.59268858101854e-13 ",
+        "SAMP_OFF=3300.0420831968",
+        "SAMP_SCALE=3295.90302088781",
+    ]
     ds.SetMetadata(rpc, 'RPC')
 
     sr = osr.SpatialReference()
     sr.SetWellKnownGeogCS('WGS84')
     demE179 = gdal.GetDriverByName('GTiff').Create('/vsimem/demE179.tif', 10, 10)
     demE179.SetProjection(sr.ExportToWkt())
-    demE179.SetGeoTransform([179,0.1,0,0.5,0,-0.1])
+    demE179.SetGeoTransform([179, 0.1, 0, 0.5, 0, -0.1])
     demE179.GetRasterBand(1).Fill(50)
     demW180 = gdal.GetDriverByName('GTiff').Create('/vsimem/demW180.tif', 10, 10)
     demW180.SetProjection(sr.ExportToWkt())
-    demW180.SetGeoTransform([-180,0.1,0,0.5,0,-0.1])
+    demW180.SetGeoTransform([-180, 0.1, 0, 0.5, 0, -0.1])
     demW180.GetRasterBand(1).Fill(50)
     gdal.BuildVRT('/vsimem/transformer_15_dem.vrt', [demE179, demW180])
     demE179 = None
     demW180 = None
 
-    tr = gdal.Transformer( ds, None, [ 'METHOD=RPC', 'RPC_DEM=/vsimem/transformer_15_dem.vrt' ] )
-    (success,pnt) = tr.TransformPoint( 0, 0, 0 )
+    tr = gdal.Transformer(ds, None, ['METHOD=RPC', 'RPC_DEM=/vsimem/transformer_15_dem.vrt'])
+    (success, pnt) = tr.TransformPoint(0, 0, 0)
     if not success or abs(pnt[0] - 180.02280735469199) > 1e-7 or abs(pnt[1] - 0.061069145746997976) > 1e-7:
         print(pnt)
         return 'fail'
 
-    (success,pnt_forward) = tr.TransformPoint( 1, pnt[0], pnt[1], 0 )
+    (success, pnt_forward) = tr.TransformPoint(1, pnt[0], pnt[1], 0)
     if not success \
-       or abs(pnt_forward[0]-0) > 0.1 \
-       or abs(pnt_forward[1]-0) > 0.1:
+       or abs(pnt_forward[0] - 0) > 0.1 \
+       or abs(pnt_forward[1] - 0) > 0.1:
         print(success, pnt_forward)
-        gdaltest.post_reason( 'got wrong reverse transform result.' )
+        gdaltest.post_reason('got wrong reverse transform result.')
         return 'fail'
 
-    (success,pnt_forward) = tr.TransformPoint( 1, pnt[0] - 360, pnt[1], 0 )
+    (success, pnt_forward) = tr.TransformPoint(1, pnt[0] - 360, pnt[1], 0)
     if not success \
-       or abs(pnt_forward[0]-0) > 0.1 \
-       or abs(pnt_forward[1]-0) > 0.1:
+       or abs(pnt_forward[0] - 0) > 0.1 \
+       or abs(pnt_forward[1] - 0) > 0.1:
         print(success, pnt_forward)
-        gdaltest.post_reason( 'got wrong reverse transform result.' )
+        gdaltest.post_reason('got wrong reverse transform result.')
         return 'fail'
 
     # Now test around -180
     ds = gdal.GetDriverByName('MEM').Create('', 6600, 4400)
     rpc.remove('LONG_OFF=179.9')
-    rpc += [ 'LONG_OFF=-179.9' ]
+    rpc += ['LONG_OFF=-179.9']
     ds.SetMetadata(rpc, 'RPC')
 
-    tr = gdal.Transformer( ds, None, [ 'METHOD=RPC', 'RPC_DEM=/vsimem/transformer_15_dem.vrt' ] )
-    (success,pnt) = tr.TransformPoint( 0, 6600, 4400 )
+    tr = gdal.Transformer(ds, None, ['METHOD=RPC', 'RPC_DEM=/vsimem/transformer_15_dem.vrt'])
+    (success, pnt) = tr.TransformPoint(0, 6600, 4400)
     if not success or abs(pnt[0] - -180.02313813793387) > 1e-7 or abs(pnt[1] - -0.061398913932229765) > 1e-7:
         print(pnt)
         return 'fail'
 
-    (success,pnt_forward) = tr.TransformPoint( 1, pnt[0], pnt[1], 0 )
+    (success, pnt_forward) = tr.TransformPoint(1, pnt[0], pnt[1], 0)
     if not success \
-       or abs(pnt_forward[0]-6600) > 0.1 \
-       or abs(pnt_forward[1]-4400) > 0.1:
+       or abs(pnt_forward[0] - 6600) > 0.1 \
+       or abs(pnt_forward[1] - 4400) > 0.1:
         print(success, pnt_forward)
-        gdaltest.post_reason( 'got wrong reverse transform result.' )
+        gdaltest.post_reason('got wrong reverse transform result.')
         return 'fail'
 
-    (success,pnt_forward) = tr.TransformPoint( 1, pnt[0] + 360, pnt[1], 0 )
+    (success, pnt_forward) = tr.TransformPoint(1, pnt[0] + 360, pnt[1], 0)
     if not success \
-       or abs(pnt_forward[0]-6600) > 0.1 \
-       or abs(pnt_forward[1]-4400) > 0.1:
+       or abs(pnt_forward[0] - 6600) > 0.1 \
+       or abs(pnt_forward[1] - 4400) > 0.1:
         print(success, pnt_forward)
-        gdaltest.post_reason( 'got wrong reverse transform result.' )
+        gdaltest.post_reason('got wrong reverse transform result.')
         return 'fail'
 
     gdal.Unlink('/vsimem/demE179.tif')
     gdal.Unlink('/vsimem/demW180.tif')
     gdal.Unlink('/vsimem/transformer_15_dem.tif')
+    gdal.Unlink('/vsimem/transformer_15_dem.vrt')
 
     return 'success'
 
@@ -880,10 +895,11 @@ def transformer_15():
 # Test approximate sub-transformers in GenImgProjTransformer
 # (we mostly test that the parameters are well recognized and serialized)
 
+
 def transformer_16():
 
-    gdal.Translate('/vsimem/transformer_16.tif', 'data/byte.tif', options = "-gcp 0 0 440720.000 3751320.000 -gcp 0 20 440720.000 3750120.000 -gcp 20 0 441920.000 3751320.000 -gcp 20 20 441920.000 3750120.000 -a_srs EPSG:26711")
-    gdal.Warp('/vsimem/transformer_16.vrt', '/vsimem/transformer_16.tif', options = '-of VRT -t_srs EPSG:4326 -et 0 -to SRC_APPROX_ERROR_IN_SRS_UNIT=6.05 -to SRC_APPROX_ERROR_IN_PIXEL=0.1 -to REPROJECTION_APPROX_ERROR_IN_SRC_SRS_UNIT=6.1 -to REPROJECTION_APPROX_ERROR_IN_DST_SRS_UNIT=0.0001')
+    gdal.Translate('/vsimem/transformer_16.tif', 'data/byte.tif', options="-gcp 0 0 440720.000 3751320.000 -gcp 0 20 440720.000 3750120.000 -gcp 20 0 441920.000 3751320.000 -gcp 20 20 441920.000 3750120.000 -a_srs EPSG:26711")
+    gdal.Warp('/vsimem/transformer_16.vrt', '/vsimem/transformer_16.tif', options='-of VRT -t_srs EPSG:4326 -et 0 -to SRC_APPROX_ERROR_IN_SRS_UNIT=6.05 -to SRC_APPROX_ERROR_IN_PIXEL=0.1 -to REPROJECTION_APPROX_ERROR_IN_SRC_SRS_UNIT=6.1 -to REPROJECTION_APPROX_ERROR_IN_DST_SRS_UNIT=0.0001')
     f = gdal.VSIFOpenL('/vsimem/transformer_16.vrt', 'rb')
     if f is not None:
         content = gdal.VSIFReadL(1, 10000, f).decode('ASCII')
@@ -892,12 +908,12 @@ def transformer_16():
        content.find('<MaxErrorReverse>0.1</MaxErrorReverse>') < 0 or \
        content.find('<MaxErrorForward>0.0001</MaxErrorForward>') < 0 or \
        content.find('<MaxErrorReverse>6.1</MaxErrorReverse>') < 0:
-           gdaltest.post_reason('fail')
-           print(content)
-           return 'fail'
-    ds = gdal.Translate('', '/vsimem/transformer_16.vrt', format = 'MEM')
+        gdaltest.post_reason('fail')
+        print(content)
+        return 'fail'
+    ds = gdal.Translate('', '/vsimem/transformer_16.vrt', format='MEM')
     if ds.GetRasterBand(1).Checksum() != 4727:
-        gdaltest.post_reason( 'failure' )
+        gdaltest.post_reason('failure')
         print(ds.GetRasterBand(1).Checksum())
         return 'fail'
     ds = None
@@ -905,6 +921,20 @@ def transformer_16():
     gdal.Unlink('/vsimem/transformer_16.vrt')
 
     return 'success'
+
+
+###############################################################################
+# Test RPC DEM with unexisting RPC DEM file
+
+def transformer_17():
+
+    ds = gdal.Open('data/rpc.vrt')
+    with gdaltest.error_handler():
+        tr = gdal.Transformer(ds, None, ['METHOD=RPC', 'RPC_DEM=/vsimem/i/donot/exist/dem.tif'])
+    if tr is not None:
+        return 'fail'
+    return 'success'
+
 
 gdaltest_list = [
     transformer_1,
@@ -922,19 +952,19 @@ gdaltest_list = [
     transformer_13,
     transformer_14,
     transformer_15,
-    transformer_16
-    ]
+    transformer_16,
+    transformer_17
+]
 
 disabled_gdaltest_list = [
-    transformer_9
+    transformer_11
 ]
 
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'transformer' )
+    gdaltest.setup_run('transformer')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

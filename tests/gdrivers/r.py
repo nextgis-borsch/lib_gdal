@@ -30,57 +30,61 @@
 
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 
 ###############################################################################
 # Perform simple read test on an ascii file.
 
+
 def r_1():
 
-    tst = gdaltest.GDALTest( 'R', 'r_test.asc', 2, 202 )
+    tst = gdaltest.GDALTest('R', 'r_test.asc', 2, 202)
 
     return tst.testOpen()
 
 ###############################################################################
 # Perform a simple read test on a binary (uncompressed) file.
 
+
 def r_2():
 
-    tst = gdaltest.GDALTest( 'R', 'r_test.rdb', 1, 202 )
+    tst = gdaltest.GDALTest('R', 'r_test.rdb', 1, 202)
     return tst.testOpen()
 
 ###############################################################################
 # Verify a simple createcopy operation with 16bit data.
 
+
 def r_3():
 
-    tst = gdaltest.GDALTest( 'R', 'byte.tif', 1, 4672,
-                             options = ['ASCII=YES'] )
+    tst = gdaltest.GDALTest('R', 'byte.tif', 1, 4672,
+                            options=['ASCII=YES'])
     return tst.testCreateCopy()
 
 ###############################################################################
 # Test creating a compressed binary stream and reading it back.
 
+
 def r_4():
 
-    tst = gdaltest.GDALTest( 'R', 'byte.tif', 1, 4672 )
-    return tst.testCreateCopy( new_filename = 'tmp/r_4.rda' )
+    tst = gdaltest.GDALTest('R', 'byte.tif', 1, 4672)
+    return tst.testCreateCopy(new_filename='tmp/r_4.rda')
 
 ###############################################################################
+
 
 gdaltest_list = [
     r_1,
     r_2,
     r_3,
-    r_4 ]
+    r_4]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'r' )
+    gdaltest.setup_run('r')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

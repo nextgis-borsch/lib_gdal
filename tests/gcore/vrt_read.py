@@ -33,8 +33,9 @@
 import os
 import sys
 import shutil
+import struct
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 from osgeo import gdal
@@ -45,7 +46,7 @@ import test_cli_utilities
 
 gdaltest_list = []
 
-init_list = [ \
+init_list = [
     ('byte.vrt', 1, 4672, None),
     ('int16.vrt', 1, 4672, None),
     ('uint16.vrt', 1, 4672, None),
@@ -67,6 +68,7 @@ init_list = [ \
 ###############################################################################
 # The VRT references a non existing TIF file
 
+
 def vrt_read_1():
 
     gdal.PushErrorHandler('CPLQuietErrorHandler')
@@ -80,6 +82,7 @@ def vrt_read_1():
 
 ###############################################################################
 # The VRT references a non existing TIF file, but using the proxy pool dataset API (#2837)
+
 
 def vrt_read_2():
 
@@ -104,26 +107,26 @@ def vrt_read_2():
 ###############################################################################
 # Test init of band data in case of cascaded VRT (ticket #2867)
 
+
 def vrt_read_3():
 
     driver_tif = gdal.GetDriverByName("GTIFF")
 
-    output_dst = driver_tif.Create( 'tmp/test_mosaic1.tif', 100, 100, 3, gdal.GDT_Byte)
+    output_dst = driver_tif.Create('tmp/test_mosaic1.tif', 100, 100, 3, gdal.GDT_Byte)
     output_dst.GetRasterBand(1).Fill(255)
     output_dst = None
 
-    output_dst = driver_tif.Create( 'tmp/test_mosaic2.tif', 100, 100, 3, gdal.GDT_Byte)
+    output_dst = driver_tif.Create('tmp/test_mosaic2.tif', 100, 100, 3, gdal.GDT_Byte)
     output_dst.GetRasterBand(1).Fill(127)
     output_dst = None
 
     ds = gdal.Open('data/test_mosaic.vrt')
     # A simple Checksum() cannot detect if the fix works or not as
     # Checksum() reads line per line, and we must use IRasterIO() on multi-line request
-    data = ds.GetRasterBand(1).ReadRaster(90,0,20,100)
-    import struct
-    got = struct.unpack('B' * 20*100, data)
+    data = ds.GetRasterBand(1).ReadRaster(90, 0, 20, 100)
+    got = struct.unpack('B' * 20 * 100, data)
     for i in range(100):
-        if got[i*20 + 9 ] != 255:
+        if got[i * 20 + 9] != 255:
             gdaltest.post_reason('at line %d, did not find 255' % i)
             return 'fail'
     ds = None
@@ -141,7 +144,7 @@ def vrt_read_4():
 
     try:
         import numpy as np
-    except:
+    except ImportError:
         return 'skip'
 
     data = np.zeros((1, 1), np.complex64)
@@ -180,6 +183,7 @@ def vrt_read_4():
 ###############################################################################
 # Test serializing and deserializing of various band metadata
 
+
 def vrt_read_5():
 
     src_ds = gdal.Open('data/testserialization.asc')
@@ -188,6 +192,16 @@ def vrt_read_5():
     ds = None
 
     ds = gdal.Open('/vsimem/vrt_read_5.vrt')
+
+    gcps = ds.GetGCPs()
+    if len(gcps) != 2 or ds.GetGCPCount() != 2:
+        return 'fail'
+
+    if ds.GetGCPProjection().find("WGS 84") == -1:
+        print(ds.GetGCPProjection())
+        return 'fail'
+
+    ds.SetGCPs(ds.GetGCPs(), ds.GetGCPProjection())
 
     gcps = ds.GetGCPs()
     if len(gcps) != 2 or ds.GetGCPCount() != 2:
@@ -223,10 +237,10 @@ def vrt_read_5():
         return 'fail'
 
     ct = band.GetColorTable()
-    if ct.GetColorEntry(0) != (0,0,0,255):
+    if ct.GetColorEntry(0) != (0, 0, 0, 255):
         print(ct.GetColorEntry(0))
         return 'fail'
-    if ct.GetColorEntry(1) != (1,1,1,255):
+    if ct.GetColorEntry(1) != (1, 1, 1, 255):
         print(ct.GetColorEntry(1))
         return 'fail'
 
@@ -251,12 +265,13 @@ def vrt_read_5():
 ###############################################################################
 # Test GetMinimum() and GetMaximum()
 
+
 def vrt_read_6():
 
     try:
         os.unlink('data/byte.tif.aux.xml')
         print('Removed data/byte.tif.aux.xml. Was not supposed to exist...')
-    except:
+    except OSError:
         pass
 
     src_ds = gdal.Open('data/byte.tif')
@@ -295,6 +310,7 @@ def vrt_read_6():
 ###############################################################################
 # Test GDALOpen() anti-recursion mechanism
 
+
 def vrt_read_7():
 
     filename = "/vsimem/vrt_read_7.vrt"
@@ -328,6 +344,7 @@ def vrt_read_7():
 ###############################################################################
 # Test ComputeRasterMinMax()
 
+
 def vrt_read_8():
 
     src_ds = gdal.Open('data/byte.tif')
@@ -353,6 +370,7 @@ def vrt_read_8():
 ###############################################################################
 # Test ComputeStatistics()
 
+
 def vrt_read_9():
 
     src_ds = gdal.Open('data/byte.tif')
@@ -377,6 +395,7 @@ def vrt_read_9():
 
 ###############################################################################
 # Test GetHistogram() & GetDefaultHistogram()
+
 
 def vrt_read_10():
 
@@ -408,7 +427,7 @@ def vrt_read_10():
     # Single source optimization
     for i in range(2):
         gdal.FileFromMemBuffer('/vsimem/vrt_read_10.vrt',
-    """<VRTDataset rasterXSize="20" rasterYSize="20">
+                               """<VRTDataset rasterXSize="20" rasterYSize="20">
     <VRTRasterBand dataType="Byte" band="1">
         <SimpleSource>
         <SourceFilename relativeToVRT="1">vrt_read_10.tif</SourceFilename>
@@ -435,7 +454,7 @@ def vrt_read_10():
     # Two sources general case
     for i in range(2):
         gdal.FileFromMemBuffer('/vsimem/vrt_read_10.vrt',
-    """<VRTDataset rasterXSize="20" rasterYSize="20">
+                               """<VRTDataset rasterXSize="20" rasterYSize="20">
     <VRTRasterBand dataType="Byte" band="1">
         <SimpleSource>
         <SourceFilename relativeToVRT="1">vrt_read_10.tif</SourceFilename>
@@ -470,6 +489,7 @@ def vrt_read_10():
 ###############################################################################
 # Test resolving files from a symlinked vrt using relativeToVRT with an absolute symlink
 
+
 def vrt_read_11():
 
     if not gdaltest.support_symlink():
@@ -478,7 +498,7 @@ def vrt_read_11():
     try:
         os.remove('tmp/byte.vrt')
         print('Removed tmp/byte.vrt. Was not supposed to exist...')
-    except:
+    except OSError:
         pass
 
     os.symlink(os.path.join(os.getcwd(), 'data/byte.vrt'), 'tmp/byte.vrt')
@@ -496,6 +516,7 @@ def vrt_read_11():
 # Test resolving files from a symlinked vrt using relativeToVRT
 # with a relative symlink pointing to a relative symlink
 
+
 def vrt_read_12():
 
     if not gdaltest.support_symlink():
@@ -504,7 +525,7 @@ def vrt_read_12():
     try:
         os.remove('tmp/byte.vrt')
         print('Removed tmp/byte.vrt. Was not supposed to exist...')
-    except:
+    except OSError:
         pass
 
     os.symlink('../data/byte.vrt', 'tmp/byte.vrt')
@@ -521,6 +542,7 @@ def vrt_read_12():
 ###############################################################################
 # Test resolving files from a symlinked vrt using relativeToVRT with a relative symlink
 
+
 def vrt_read_13():
 
     if not gdaltest.support_symlink():
@@ -529,12 +551,12 @@ def vrt_read_13():
     try:
         os.remove('tmp/byte.vrt')
         print('Removed tmp/byte.vrt. Was not supposed to exist...')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/other_byte.vrt')
         print('Removed tmp/other_byte.vrt. Was not supposed to exist...')
-    except:
+    except OSError:
         pass
 
     os.symlink('../data/byte.vrt', 'tmp/byte.vrt')
@@ -553,11 +575,12 @@ def vrt_read_13():
 ###############################################################################
 # Test ComputeStatistics() when the VRT is a subwindow of the source dataset (#5468)
 
+
 def vrt_read_14():
 
     src_ds = gdal.Open('data/byte.tif')
     mem_ds = gdal.GetDriverByName('GTiff').CreateCopy('/vsimem/vrt_read_14.tif', src_ds)
-    mem_ds.FlushCache() # hum this should not be necessary ideally
+    mem_ds.FlushCache()  # hum this should not be necessary ideally
     vrt_ds = gdal.Open("""<VRTDataset rasterXSize="4" rasterYSize="4">
   <VRTRasterBand dataType="Byte" band="1">
     <SimpleSource>
@@ -586,6 +609,7 @@ def vrt_read_14():
 
 ###############################################################################
 # Test RasterIO() with resampling on SimpleSource
+
 
 def vrt_read_15():
 
@@ -618,6 +642,7 @@ def vrt_read_15():
 ###############################################################################
 # Test RasterIO() with resampling on ComplexSource
 
+
 def vrt_read_16():
 
     vrt_ds = gdal.Open("""<VRTDataset rasterXSize="9" rasterYSize="9">
@@ -649,6 +674,7 @@ def vrt_read_16():
 ###############################################################################
 # Test RasterIO() with resampling on AveragedSource
 
+
 def vrt_read_17():
 
     vrt_ds = gdal.Open("""<VRTDataset rasterXSize="9" rasterYSize="9">
@@ -675,6 +701,7 @@ def vrt_read_17():
 ###############################################################################
 # Test that relative path is correctly VRT-in-VRT
 
+
 def vrt_read_18():
 
     vrt_ds = gdal.Open('data/vrtinvrt.vrt')
@@ -687,6 +714,7 @@ def vrt_read_18():
 
 ###############################################################################
 # Test shared="0"
+
 
 def vrt_read_19():
 
@@ -732,7 +760,7 @@ def vrt_read_20():
 
     shutil.copy('data/byte.tif', 'tmp')
     for i in range(3):
-        open('tmp/byte1_%d.vrt' % (i+1), 'wt').write("""<VRTDataset rasterXSize="20" rasterYSize="20">
+        open('tmp/byte1_%d.vrt' % (i + 1), 'wt').write("""<VRTDataset rasterXSize="20" rasterYSize="20">
     <VRTRasterBand dataType="Byte" band="1">
         <SimpleSource>
         <SourceFilename relativeToVRT="1">byte.tif</SourceFilename>
@@ -785,13 +813,14 @@ def vrt_read_20():
 ###############################################################################
 # Test implicit virtual overviews
 
+
 def vrt_read_21():
 
     ds = gdal.Open('data/byte.tif')
-    data = ds.ReadRaster(0,0,20,20,400,400)
+    data = ds.ReadRaster(0, 0, 20, 20, 400, 400)
     ds = None
-    ds = gdal.GetDriverByName('GTiff').Create('/vsimem/byte.tif',400,400)
-    ds.WriteRaster(0,0,400,400,data)
+    ds = gdal.GetDriverByName('GTiff').Create('/vsimem/byte.tif', 400, 400)
+    ds.WriteRaster(0, 0, 400, 400, data)
     ds.BuildOverviews('NEAR', [2])
     ds = None
 
@@ -811,7 +840,7 @@ def vrt_read_21():
         gdaltest.post_reason('failure')
         print(ds.GetRasterBand(1).GetOverviewCount())
         return 'fail'
-    data_ds_one_band = ds.ReadRaster(0,0,800,800,400,400)
+    data_ds_one_band = ds.ReadRaster(0, 0, 800, 800, 400, 400)
     ds = None
 
     gdal.FileFromMemBuffer('/vsimem/vrt_read_21.vrt', """<VRTDataset rasterXSize="800" rasterYSize="800">
@@ -857,14 +886,14 @@ def vrt_read_21():
     cs = ovr_band.Checksum()
     cs2 = ds.GetRasterBand(2).GetOverview(0).Checksum()
 
-    data = ds.ReadRaster(0,0,800,800,400,400)
+    data = ds.ReadRaster(0, 0, 800, 800, 400, 400)
 
-    if data != data_ds_one_band + ds.GetRasterBand(2).ReadRaster(0,0,800,800,400,400):
+    if data != data_ds_one_band + ds.GetRasterBand(2).ReadRaster(0, 0, 800, 800, 400, 400):
         gdaltest.post_reason('failure')
         return 'fail'
 
-    mem_ds = gdal.GetDriverByName('MEM').Create('',400,400,2)
-    mem_ds.WriteRaster(0,0,400,400,data)
+    mem_ds = gdal.GetDriverByName('MEM').Create('', 400, 400, 2)
+    mem_ds.WriteRaster(0, 0, 400, 400, data)
     ref_cs = mem_ds.GetRasterBand(1).Checksum()
     ref_cs2 = mem_ds.GetRasterBand(2).Checksum()
     mem_ds = None
@@ -904,13 +933,14 @@ def vrt_read_21():
 ###############################################################################
 # Test that we honour NBITS with SimpleSource and ComplexSource
 
+
 def vrt_read_22():
 
     ds = gdal.Open('data/byte.tif')
     data = ds.ReadRaster()
     ds = None
-    ds = gdal.GetDriverByName('GTiff').Create('/vsimem/byte.tif',20,20)
-    ds.WriteRaster(0,0,20,20,data)
+    ds = gdal.GetDriverByName('GTiff').Create('/vsimem/byte.tif', 20, 20)
+    ds.WriteRaster(0, 0, 20, 20, data)
     ds.GetRasterBand(1).ComputeStatistics(False)
     ds = None
 
@@ -940,6 +970,12 @@ def vrt_read_22():
     if ds.GetRasterBand(1).ComputeStatistics(False) != [63.0, 63.0, 63.0, 0.0]:
         gdaltest.post_reason('failure')
         print(ds.GetRasterBand(1).ComputeStatistics(False))
+        return 'fail'
+
+    data = ds.ReadRaster()
+    got = struct.unpack('B' * 20 * 20, data)
+    if got[0] != 63:
+        gdaltest.post_reason('failure')
         return 'fail'
 
     ds = gdal.Open("""<VRTDataset rasterXSize="20" rasterYSize="20">
@@ -1009,17 +1045,18 @@ def vrt_read_22():
 # Test non-nearest resampling on a VRT exposing a nodata value but with
 # an underlying dataset without nodata
 
+
 def vrt_read_23():
 
     try:
         from osgeo import gdalnumeric
         gdalnumeric.zeros
         import numpy
-    except:
+    except (ImportError, AttributeError):
         return 'skip'
 
     mem_ds = gdal.GetDriverByName('GTiff').Create('/vsimem/vrt_read_23.tif', 2, 1)
-    mem_ds.GetRasterBand(1).WriteArray(numpy.array([[0,10]]))
+    mem_ds.GetRasterBand(1).WriteArray(numpy.array([[0, 10]]))
     mem_ds = None
     ds = gdal.Open("""<VRTDataset rasterXSize="2" rasterYSize="1">
   <VRTRasterBand dataType="Byte" band="1">
@@ -1029,12 +1066,12 @@ def vrt_read_23():
     </SimpleSource>
   </VRTRasterBand>
 </VRTDataset>""")
-    got_ar = ds.GetRasterBand(1).ReadAsArray(0,0,2,1,4,1, resample_alg = gdal.GRIORA_Bilinear)
-    if list(got_ar[0]) != [0,10,10,10]:
+    got_ar = ds.GetRasterBand(1).ReadAsArray(0, 0, 2, 1, 4, 1, resample_alg=gdal.GRIORA_Bilinear)
+    if list(got_ar[0]) != [0, 10, 10, 10]:
         gdaltest.post_reason('failure')
         print(list(got_ar[0]))
         return 'fail'
-    if ds.ReadRaster(0,0,2,1,4,1, resample_alg = gdal.GRIORA_Bilinear) != ds.GetRasterBand(1).ReadRaster(0,0,2,1,4,1, resample_alg = gdal.GRIORA_Bilinear):
+    if ds.ReadRaster(0, 0, 2, 1, 4, 1, resample_alg=gdal.GRIORA_Bilinear) != ds.GetRasterBand(1).ReadRaster(0, 0, 2, 1, 4, 1, resample_alg=gdal.GRIORA_Bilinear):
         gdaltest.post_reason('failure')
         return 'fail'
     ds = None
@@ -1044,7 +1081,7 @@ def vrt_read_23():
     # Same but with nodata set on source band too
     mem_ds = gdal.GetDriverByName('GTiff').Create('/vsimem/vrt_read_23.tif', 2, 1)
     mem_ds.GetRasterBand(1).SetNoDataValue(0)
-    mem_ds.GetRasterBand(1).WriteArray(numpy.array([[0,10]]))
+    mem_ds.GetRasterBand(1).WriteArray(numpy.array([[0, 10]]))
     mem_ds = None
     ds = gdal.Open("""<VRTDataset rasterXSize="2" rasterYSize="1">
   <VRTRasterBand dataType="Byte" band="1">
@@ -1054,32 +1091,32 @@ def vrt_read_23():
     </SimpleSource>
   </VRTRasterBand>
 </VRTDataset>""")
-    got_ar = ds.GetRasterBand(1).ReadAsArray(0,0,2,1,4,1, resample_alg = gdal.GRIORA_Bilinear)
-    if list(got_ar[0]) != [0,10,10,10]:
+    got_ar = ds.GetRasterBand(1).ReadAsArray(0, 0, 2, 1, 4, 1, resample_alg=gdal.GRIORA_Bilinear)
+    if list(got_ar[0]) != [0, 10, 10, 10]:
         gdaltest.post_reason('failure')
         print(list(got_ar[0]))
         return 'fail'
-    if ds.ReadRaster(0,0,2,1,4,1, resample_alg = gdal.GRIORA_Bilinear) != ds.GetRasterBand(1).ReadRaster(0,0,2,1,4,1, resample_alg = gdal.GRIORA_Bilinear):
+    if ds.ReadRaster(0, 0, 2, 1, 4, 1, resample_alg=gdal.GRIORA_Bilinear) != ds.GetRasterBand(1).ReadRaster(0, 0, 2, 1, 4, 1, resample_alg=gdal.GRIORA_Bilinear):
         gdaltest.post_reason('failure')
         return 'fail'
     ds = None
 
     gdal.Unlink('/vsimem/vrt_read_23.tif')
 
-
     return 'success'
 
 ###############################################################################
 # Test floating point rounding issues when the VRT does a zoom-in
 
+
 def vrt_read_24():
 
     ds = gdal.Open('data/zoom_in.vrt')
-    data = ds.ReadRaster(34,5,66,87)
+    data = ds.ReadRaster(34, 5, 66, 87)
     ds = None
 
     ds = gdal.GetDriverByName('MEM').Create('', 66, 87)
-    ds.WriteRaster(0,0,66,87,data)
+    ds.WriteRaster(0, 0, 66, 87, data)
     cs = ds.GetRasterBand(1).Checksum()
     ds = None
 
@@ -1095,6 +1132,7 @@ def vrt_read_24():
 
 ###############################################################################
 # Test GetDataCoverageStatus()
+
 
 def vrt_read_25():
 
@@ -1125,28 +1163,28 @@ def vrt_read_25():
   </VRTRasterBand>
 </VRTDataset>""")
 
-    (flags, pct) = ds.GetRasterBand(1).GetDataCoverageStatus(0,0,20,20)
+    (flags, pct) = ds.GetRasterBand(1).GetDataCoverageStatus(0, 0, 20, 20)
     if flags != gdal.GDAL_DATA_COVERAGE_STATUS_DATA or pct != 100.0:
         gdaltest.post_reason('failure')
         print(flags)
         print(pct)
         return 'fail'
 
-    (flags, pct) = ds.GetRasterBand(1).GetDataCoverageStatus(1005,35,10,10)
+    (flags, pct) = ds.GetRasterBand(1).GetDataCoverageStatus(1005, 35, 10, 10)
     if flags != gdal.GDAL_DATA_COVERAGE_STATUS_DATA or pct != 100.0:
         gdaltest.post_reason('failure')
         print(flags)
         print(pct)
         return 'fail'
 
-    (flags, pct) = ds.GetRasterBand(1).GetDataCoverageStatus(100,100,20,20)
+    (flags, pct) = ds.GetRasterBand(1).GetDataCoverageStatus(100, 100, 20, 20)
     if flags != gdal.GDAL_DATA_COVERAGE_STATUS_EMPTY or pct != 0.0:
         gdaltest.post_reason('failure')
         print(flags)
         print(pct)
         return 'fail'
 
-    (flags, pct) = ds.GetRasterBand(1).GetDataCoverageStatus(10,10,20,20)
+    (flags, pct) = ds.GetRasterBand(1).GetDataCoverageStatus(10, 10, 20, 20)
     if flags != gdal.GDAL_DATA_COVERAGE_STATUS_DATA | gdal.GDAL_DATA_COVERAGE_STATUS_EMPTY or pct != 25.0:
         gdaltest.post_reason('failure')
         print(flags)
@@ -1174,11 +1212,10 @@ def vrt_read_26():
   </VRTRasterBand>
 </VRTDataset>""")
 
-    import struct
-    full_data = vrt_ds.GetRasterBand(1).ReadRaster(0,0,22,22)
+    full_data = vrt_ds.GetRasterBand(1).ReadRaster(0, 0, 22, 22)
     full_data = struct.unpack('B' * 22 * 22, full_data)
 
-    partial_data = vrt_ds.GetRasterBand(1).ReadRaster(1,1,1,1)
+    partial_data = vrt_ds.GetRasterBand(1).ReadRaster(1, 1, 1, 1)
     partial_data = struct.unpack('B' * 1 * 1, partial_data)
 
     if partial_data[0] != full_data[22 + 1]:
@@ -1190,46 +1227,213 @@ def vrt_read_26():
 
     return 'success'
 
+###############################################################################
+# Test fix for https://bugs.chromium.org/p/oss-fuzz/issues/detail?id=1553
+
+
+def vrt_read_27():
+
+    gdal.Open('data/empty_gcplist.vrt')
+
+    return 'success'
+
+###############################################################################
+# Test fix for https://bugs.chromium.org/p/oss-fuzz/issues/detail?id=1551
+
+
+def vrt_read_28():
+
+    with gdaltest.error_handler():
+        ds = gdal.Open('<VRTDataset rasterXSize="1 "rasterYSize="1"><VRTRasterBand band="-2147483648"><SimpleSource></SimpleSource></VRTRasterBand></VRTDataset>')
+    if ds is not None:
+        return 'fail'
+
+    return 'success'
+
+
+###############################################################################
+# Check VRT source sharing and non-sharing situations (#6949)
+
+def vrt_read_29():
+
+    f = open('data/byte.tif')
+    lst_before = gdaltest.get_opened_files()
+    if len(lst_before) == 0:
+        return 'skip'
+    f.close()
+    lst_before = gdaltest.get_opened_files()
+
+    gdal.Translate('tmp/vrt_read_29.tif', 'data/byte.tif')
+
+    vrt_text = """<VRTDataset rasterXSize="20" rasterYSize="20">
+    <VRTRasterBand dataType="Byte" band="1">
+        <SimpleSource>
+        <SourceFilename>tmp/vrt_read_29.tif</SourceFilename>
+        <SourceBand>1</SourceBand>
+        <SourceProperties RasterXSize="20" RasterYSize="20" DataType="Byte" BlockXSize="20" BlockYSize="20" />
+        <SrcRect xOff="0" yOff="0" xSize="20" ySize="20" />
+        <DstRect xOff="0" yOff="0" xSize="20" ySize="20" />
+        </SimpleSource>
+    </VRTRasterBand>
+    <VRTRasterBand dataType="Byte" band="2">
+        <SimpleSource>
+        <SourceFilename>tmp/vrt_read_29.tif</SourceFilename>
+        <SourceBand>1</SourceBand>
+        <SourceProperties RasterXSize="20" RasterYSize="20" DataType="Byte" BlockXSize="20" BlockYSize="20" />
+        <SrcRect xOff="0" yOff="0" xSize="20" ySize="20" />
+        <DstRect xOff="0" yOff="0" xSize="20" ySize="20" />
+        </SimpleSource>
+    </VRTRasterBand>
+    </VRTDataset>"""
+
+    ds = gdal.Open(vrt_text)
+    # Just after opening, we shouldn't have read the source
+    lst = gdaltest.get_opened_files()
+    if lst.sort() != lst_before.sort():
+        gdaltest.post_reason('fail')
+        print(lst)
+        print(lst_before)
+        return 'fail'
+
+    # Check that the 2 bands share the same source handle
+    ds.GetRasterBand(1).Checksum()
+    lst = gdaltest.get_opened_files()
+    if len(lst) != len(lst_before) + 1:
+        gdaltest.post_reason('fail')
+        print(lst)
+        print(lst_before)
+        return 'fail'
+    ds.GetRasterBand(2).Checksum()
+    lst = gdaltest.get_opened_files()
+    if len(lst) != len(lst_before) + 1:
+        gdaltest.post_reason('fail')
+        print(lst)
+        print(lst_before)
+        return 'fail'
+
+    # Open a second VRT dataset handle
+    ds2 = gdal.Open(vrt_text)
+
+    # Check that it consumes an extra handle
+    ds2.GetRasterBand(1).Checksum()
+    lst = gdaltest.get_opened_files()
+    if len(lst) != len(lst_before) + 2:
+        gdaltest.post_reason('fail')
+        print(lst)
+        print(lst_before)
+        return 'fail'
+
+    gdal.Unlink('tmp/vrt_read_29.tif')
+
+    return 'success'
+
+###############################################################################
+# Check VRT reading with DatasetRasterIO
+
+
+def vrt_read_30():
+
+    ds = gdal.Open("""<VRTDataset rasterXSize="2" rasterYSize="2">
+  <VRTRasterBand dataType="Byte" band="1">
+  </VRTRasterBand>
+  <VRTRasterBand dataType="Byte" band="2">
+  </VRTRasterBand>
+  <VRTRasterBand dataType="Byte" band="3">
+  </VRTRasterBand>
+</VRTDataset>""")
+
+    data = ds.ReadRaster(0, 0, 2, 2, 2, 2, buf_pixel_space=3, buf_line_space=2 * 3, buf_band_space=1)
+    got = struct.unpack('B' * 2 * 2 * 3, data)
+    for i in range(2 * 2 * 3):
+        if got[i] != 0:
+            print(got)
+            return 'fail'
+    ds = None
+
+    return 'success'
+
+###############################################################################
+# Check that we take into account intermediate data type demotion
+
+
+def vrt_read_31():
+
+    gdal.FileFromMemBuffer('/vsimem/in.asc',
+                           """ncols        2
+nrows        2
+xllcorner    0
+yllcorner    0
+dx           1
+dy           1
+-255         1
+254          256""")
+
+    ds = gdal.Translate('', '/vsimem/in.asc', outputType=gdal.GDT_Byte, format='VRT')
+
+    data = ds.GetRasterBand(1).ReadRaster(0, 0, 2, 2, buf_type=gdal.GDT_Float32)
+    got = struct.unpack('f' * 2 * 2, data)
+    if got != (0, 1, 254, 255):
+        gdaltest.post_reason('fail')
+        print(got)
+        return 'fail'
+
+    data = ds.ReadRaster(0, 0, 2, 2, buf_type=gdal.GDT_Float32)
+    got = struct.unpack('f' * 2 * 2, data)
+    if got != (0, 1, 254, 255):
+        gdaltest.post_reason('fail')
+        print(got)
+        return 'fail'
+
+    ds = None
+
+    gdal.Unlink('/vsimem/in.asc')
+
+    return 'success'
+
 
 for item in init_list:
-    ut = gdaltest.GDALTest( 'VRT', item[0], item[1], item[2] )
+    ut = gdaltest.GDALTest('VRT', item[0], item[1], item[2])
     if ut is None:
-        print( 'VRT tests skipped' )
+        print('VRT tests skipped')
         sys.exit()
-    gdaltest_list.append( (ut.testOpen, item[0]) )
+    gdaltest_list.append((ut.testOpen, item[0]))
 
-gdaltest_list.append( vrt_read_1 )
-gdaltest_list.append( vrt_read_2 )
-gdaltest_list.append( vrt_read_3 )
-gdaltest_list.append( vrt_read_4 )
-gdaltest_list.append( vrt_read_5 )
-gdaltest_list.append( vrt_read_6 )
-gdaltest_list.append( vrt_read_7 )
-gdaltest_list.append( vrt_read_8 )
-gdaltest_list.append( vrt_read_9 )
-gdaltest_list.append( vrt_read_10 )
-gdaltest_list.append( vrt_read_11 )
-gdaltest_list.append( vrt_read_12 )
-gdaltest_list.append( vrt_read_13 )
-gdaltest_list.append( vrt_read_14 )
-gdaltest_list.append( vrt_read_15 )
-gdaltest_list.append( vrt_read_16 )
-gdaltest_list.append( vrt_read_17 )
-gdaltest_list.append( vrt_read_18 )
-gdaltest_list.append( vrt_read_19 )
-gdaltest_list.append( vrt_read_20 )
-gdaltest_list.append( vrt_read_21 )
-gdaltest_list.append( vrt_read_22 )
-gdaltest_list.append( vrt_read_23 )
-gdaltest_list.append( vrt_read_24 )
-gdaltest_list.append( vrt_read_25 )
-gdaltest_list.append( vrt_read_26 )
+gdaltest_list.append(vrt_read_1)
+gdaltest_list.append(vrt_read_2)
+gdaltest_list.append(vrt_read_3)
+gdaltest_list.append(vrt_read_4)
+gdaltest_list.append(vrt_read_5)
+gdaltest_list.append(vrt_read_6)
+gdaltest_list.append(vrt_read_7)
+gdaltest_list.append(vrt_read_8)
+gdaltest_list.append(vrt_read_9)
+gdaltest_list.append(vrt_read_10)
+gdaltest_list.append(vrt_read_11)
+gdaltest_list.append(vrt_read_12)
+gdaltest_list.append(vrt_read_13)
+gdaltest_list.append(vrt_read_14)
+gdaltest_list.append(vrt_read_15)
+gdaltest_list.append(vrt_read_16)
+gdaltest_list.append(vrt_read_17)
+gdaltest_list.append(vrt_read_18)
+gdaltest_list.append(vrt_read_19)
+gdaltest_list.append(vrt_read_20)
+gdaltest_list.append(vrt_read_21)
+gdaltest_list.append(vrt_read_22)
+gdaltest_list.append(vrt_read_23)
+gdaltest_list.append(vrt_read_24)
+gdaltest_list.append(vrt_read_25)
+gdaltest_list.append(vrt_read_26)
+gdaltest_list.append(vrt_read_27)
+gdaltest_list.append(vrt_read_28)
+gdaltest_list.append(vrt_read_29)
+gdaltest_list.append(vrt_read_30)
+gdaltest_list.append(vrt_read_31)
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'vrt_read' )
+    gdaltest.setup_run('vrt_read')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

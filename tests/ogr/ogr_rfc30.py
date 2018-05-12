@@ -32,12 +32,13 @@ from osgeo import ogr
 import sys
 from sys import version_info
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 
 ###############################################################################
-## Try ogr.Open(), Driver.CreateDataSource(), Driver.DeleteDataSource()
+# Try ogr.Open(), Driver.CreateDataSource(), Driver.DeleteDataSource()
+
 
 def ogr_rfc30_1_internal(filename, layer_name):
 
@@ -59,40 +60,42 @@ def ogr_rfc30_1_internal(filename, layer_name):
 
     return 'success'
 
+
 def ogr_rfc30_1():
 
-    if version_info >= (3,0,0):
-        filename =  '/vsimem/\u00e9.shp'
+    if version_info >= (3, 0, 0):
+        filename = '/vsimem/\u00e9.shp'
         layer_name = '\u00e9'
     else:
         # First try with Unicode string
         exec("filename =  u'/vsimem/\u00e9.shp'")
-        exec("layer_name = u'\u00e9'.encode( 'utf-8' )") # FIXME? we should perhaps accept Unicode strings for layernames as well
+        exec("layer_name = u'\u00e9'.encode( 'utf-8' )")  # FIXME? we should perhaps accept Unicode strings for layernames as well
 
     return ogr_rfc30_1_internal(filename, layer_name)
 
+
 def ogr_rfc30_1_bis():
 
-    if version_info >= (3,0,0):
+    if version_info >= (3, 0, 0):
         return 'skip'
 
     filename = None
     layer_name = None
     # Test that it also works with a regular string (non Unicode) with utf8 content on python 2.X
     exec("filename =  u'/vsimem/\u00e9.shp'.encode( 'utf-8' )")
-    exec("layer_name = u'\u00e9'.encode( 'utf-8' )") # FIXME? we should perhaps accept Unicode strings for layernames as well
+    exec("layer_name = u'\u00e9'.encode( 'utf-8' )")  # FIXME? we should perhaps accept Unicode strings for layernames as well
 
     return ogr_rfc30_1_internal(filename, layer_name)
 
-gdaltest_list = [ ogr_rfc30_1,
-                  ogr_rfc30_1_bis
-                  ]
+
+gdaltest_list = [ogr_rfc30_1,
+                 ogr_rfc30_1_bis
+                 ]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'ogr_rfc30' )
+    gdaltest.setup_run('ogr_rfc30')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

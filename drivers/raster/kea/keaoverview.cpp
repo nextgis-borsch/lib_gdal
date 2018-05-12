@@ -29,7 +29,7 @@
 
 #include "keaoverview.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 // constructor
 KEAOverview::KEAOverview(KEADataset *pDataset, int nSrcBand, GDALAccess eAccessIn,
@@ -119,7 +119,7 @@ CPLErr KEAOverview::IWriteBlock( int nBlockXOff, int nBlockYOff, void * pImage )
 GDALRasterAttributeTable *KEAOverview::GetDefaultRAT()
 {
     // KEARasterBand implements this, but we don't want to
-    return NULL;
+    return nullptr;
 }
 
 CPLErr KEAOverview::SetDefaultRAT(CPL_UNUSED const GDALRasterAttributeTable *poRAT)

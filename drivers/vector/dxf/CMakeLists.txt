@@ -42,20 +42,23 @@ if(ENABLE_DXF)
     )
 
     set(LIB_CSOURCES
-        ogrdxfdriver.cpp 
-        ogrdxfdatasource.cpp 
-        ogrdxflayer.cpp 
-		ogrdxfreader.cpp 
-        ogrdxf_blockmap.cpp 
-        ogrdxf_dimension.cpp 
-		ogrdxfwriterds.cpp 
-        ogrdxfwriterlayer.cpp 
-        intronurbs.cpp 
-		ogrdxf_polyline_smooth.cpp 
+        ogrdxfdriver.cpp
+        ogrdxfdatasource.cpp
+        ogrdxflayer.cpp
+		ogrdxfreader.cpp
+        ogrdxf_blockmap.cpp
+        ogrdxf_dimension.cpp
+		ogrdxfwriterds.cpp
+        ogrdxfwriterlayer.cpp
+        intronurbs.cpp
+		ogrdxf_polyline_smooth.cpp
         ogrdxfblockslayer.cpp
-		ogrdxfblockswriterlayer.cpp 
-        ogrdxf_hatch.cpp 
+		ogrdxfblockswriterlayer.cpp
+        ogrdxf_hatch.cpp
 		ogr_autocad_services.cpp
+        ogrdxf_feature.cpp
+        ogrdxf_leader.cpp
+        ogrdxf_ocstransformer.cpp
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
@@ -63,5 +66,5 @@ if(ENABLE_DXF)
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
 else()
-    warning_msg("Skip dxf")  
+    warning_msg("Skip dxf")
 endif()

@@ -34,7 +34,7 @@ import sys
 import os
 import shutil
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 from osgeo import gdal
 import gdaltest
@@ -48,7 +48,7 @@ try:
 except:
     gdalnumeric_not_available = True
 
-#Usage: gdal_calc.py [-A <filename>] [--A_band] [-B...-Z filename] [other_options]
+# Usage: gdal_calc.py [-A <filename>] [--A_band] [-B...-Z filename] [other_options]
 
 
 ###############################################################################
@@ -102,6 +102,7 @@ def test_gdal_calc_py_1():
 
 ###############################################################################
 # test simple formulas
+
 
 def test_gdal_calc_py_2():
 
@@ -184,6 +185,7 @@ def test_gdal_calc_py_3():
 ###############################################################################
 # test --allBands option (simple calc)
 
+
 def test_gdal_calc_py_4():
 
     if gdalnumeric_not_available:
@@ -238,6 +240,7 @@ def test_gdal_calc_py_4():
 
 ###############################################################################
 # test python interface, basic copy
+
 
 def test_gdal_calc_py_5():
 
@@ -294,6 +297,7 @@ def test_gdal_calc_py_5():
 ###############################################################################
 # test nodata
 
+
 def test_gdal_calc_py_6():
 
     if gdalnumeric_not_available:
@@ -308,9 +312,9 @@ def test_gdal_calc_py_6():
     sys.path.insert(0, script_path)
     import gdal_calc
 
-    gdal.Translate('tmp/test_gdal_calc_py.tif', '../gcore/data/byte.tif', options = '-a_nodata 74')
+    gdal.Translate('tmp/test_gdal_calc_py.tif', '../gcore/data/byte.tif', options='-a_nodata 74')
 
-    gdal_calc.Calc('A', A='tmp/test_gdal_calc_py.tif', overwrite=True, quiet=True, outfile='tmp/test_gdal_calc_py_6.tif', NoDataValue = 1)
+    gdal_calc.Calc('A', A='tmp/test_gdal_calc_py.tif', overwrite=True, quiet=True, outfile='tmp/test_gdal_calc_py_6.tif', NoDataValue=1)
 
     sys.path = backup_sys_path
 
@@ -332,29 +336,30 @@ def test_gdal_calc_py_6():
 
 def test_gdal_calc_py_cleanup():
 
-    lst = [ 'tmp/test_gdal_calc_py.tif',
-            'tmp/test_gdal_calc_py_1_1.tif',
-            'tmp/test_gdal_calc_py_1_2.tif',
-            'tmp/test_gdal_calc_py_1_3.tif',
-            'tmp/test_gdal_calc_py_2_1.tif',
-            'tmp/test_gdal_calc_py_2_2.tif',
-            'tmp/test_gdal_calc_py_2_3.tif',
-            'tmp/test_gdal_calc_py_3.tif',
-            'tmp/test_gdal_calc_py_4_1.tif',
-            'tmp/test_gdal_calc_py_4_2.tif',
-            'tmp/test_gdal_calc_py_4_3.tif',
-            'tmp/test_gdal_calc_py_5_1.tif',
-            'tmp/test_gdal_calc_py_5_2.tif',
-            'tmp/test_gdal_calc_py_5_3.tif',
-            'tmp/test_gdal_calc_py_6.tif',
-            ]
+    lst = ['tmp/test_gdal_calc_py.tif',
+           'tmp/test_gdal_calc_py_1_1.tif',
+           'tmp/test_gdal_calc_py_1_2.tif',
+           'tmp/test_gdal_calc_py_1_3.tif',
+           'tmp/test_gdal_calc_py_2_1.tif',
+           'tmp/test_gdal_calc_py_2_2.tif',
+           'tmp/test_gdal_calc_py_2_3.tif',
+           'tmp/test_gdal_calc_py_3.tif',
+           'tmp/test_gdal_calc_py_4_1.tif',
+           'tmp/test_gdal_calc_py_4_2.tif',
+           'tmp/test_gdal_calc_py_4_3.tif',
+           'tmp/test_gdal_calc_py_5_1.tif',
+           'tmp/test_gdal_calc_py_5_2.tif',
+           'tmp/test_gdal_calc_py_5_3.tif',
+           'tmp/test_gdal_calc_py_6.tif',
+           ]
     for filename in lst:
         try:
             os.remove(filename)
-        except:
+        except OSError:
             pass
 
     return 'success'
+
 
 gdaltest_list = [
     test_gdal_calc_py_1,
@@ -364,13 +369,13 @@ gdaltest_list = [
     test_gdal_calc_py_5,
     test_gdal_calc_py_6,
     test_gdal_calc_py_cleanup
-    ]
+]
 
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'test_gdal_calc_py' )
+    gdaltest.setup_run('test_gdal_calc_py')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

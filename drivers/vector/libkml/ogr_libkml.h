@@ -34,6 +34,8 @@
 
 #include "libkml_headers.h"
 
+#include <map>
+
 class OGRLIBKMLDataSource;
 
 CPLString OGRLIBKMLGetSanitizedNCName(const char* pszName);
@@ -82,7 +84,6 @@ class OGRLIBKMLLayer:public OGRLayer
 
   public:
     OGRLIBKMLLayer            ( const char *pszLayerName,
-                                OGRSpatialReference * poSpatialRef,
                                 OGRwkbGeometryType eGType,
                                 OGRLIBKMLDataSource *poOgrDS,
                                 kmldom::ElementPtr poKmlRoot,
@@ -93,10 +94,10 @@ class OGRLIBKMLLayer:public OGRLayer
                                 int bUpdate );
     virtual ~OGRLIBKMLLayer();
 
-    void                      ResetReading() override { iFeature = 0; nFID = 1; };
+    void                      ResetReading() override { iFeature = 0; nFID = 1; }
     OGRFeature               *GetNextFeature() override;
     OGRFeature               *GetNextRawFeature();
-    OGRFeatureDefn           *GetLayerDefn() override { return m_poOgrFeatureDefn; };
+    OGRFeatureDefn           *GetLayerDefn() override { return m_poOgrFeatureDefn; }
     // OGRErr                    SetAttributeFilter(const char * );
     OGRErr                    ICreateFeature( OGRFeature * poOgrFeat ) override;
     OGRErr                    ISetFeature( OGRFeature * poOgrFeat ) override;
@@ -118,12 +119,12 @@ class OGRLIBKMLLayer:public OGRLayer
     OGRStyleTable            *GetStyleTable() override;
     void                  SetStyleTableDirectly( OGRStyleTable * poStyleTable ) override;
     void                      SetStyleTable( OGRStyleTable * poStyleTable ) override;
-    const char               *GetName() override { return m_pszName; };
+    const char               *GetName() override { return m_pszName; }
     int                       TestCapability( const char * ) override;
-    kmldom::ContainerPtr      GetKmlLayer() { return m_poKmlLayer; };
-    kmldom::ElementPtr        GetKmlLayerRoot() { return m_poKmlLayerRoot; };
-    kmldom::SchemaPtr         GetKmlSchema() { return m_poKmlSchema; };
-    const char               *GetFileName() { return m_pszFileName; };
+    kmldom::ContainerPtr      GetKmlLayer() { return m_poKmlLayer; }
+    kmldom::ElementPtr        GetKmlLayerRoot() { return m_poKmlLayerRoot; }
+    kmldom::SchemaPtr         GetKmlSchema() { return m_poKmlSchema; }
+    const char               *GetFileName() { return m_pszFileName; }
 
     void                      SetLookAt( const char* pszLookatLongitude,
                                          const char* pszLookatLatitude,
@@ -179,12 +180,13 @@ class OGRLIBKMLLayer:public OGRLayer
 
 class OGRLIBKMLDataSource:public OGRDataSource
 {
-    char                     *pszName;
+    char                     *m_pszName;
 
     /***** layers *****/
     OGRLIBKMLLayer          **papoLayers;
     int                       nLayers;
     int                       nAlloced;
+    std::map<CPLString, OGRLIBKMLLayer*> m_oMapLayers;
 
     bool                      bUpdate;
     bool                      bUpdated;
@@ -224,7 +226,7 @@ class OGRLIBKMLDataSource:public OGRDataSource
     explicit OGRLIBKMLDataSource       ( kmldom::KmlFactory *poKmlFactory );
     ~OGRLIBKMLDataSource      ();
 
-    const char               *GetName() override { return pszName; };
+    const char               *GetName() override { return m_pszName; }
 
     int                       GetLayerCount() override { return nLayers; }
     OGRLayer                 *GetLayer( int ) override;
@@ -232,9 +234,9 @@ class OGRLIBKMLDataSource:public OGRDataSource
     OGRErr                    DeleteLayer( int ) override;
 
     OGRLayer                 *ICreateLayer( const char *pszName,
-                                            OGRSpatialReference * poSpatialRef = NULL,
+                                            OGRSpatialReference * poSpatialRef = nullptr,
                                             OGRwkbGeometryType eGType = wkbUnknown,
-                                            char **papszOptions = NULL ) override;
+                                            char **papszOptions = nullptr ) override;
 
     OGRStyleTable            *GetStyleTable() override;
     void                      SetStyleTableDirectly( OGRStyleTable * poStyleTable ) override;
@@ -248,22 +250,23 @@ class OGRLIBKMLDataSource:public OGRDataSource
     void                      FlushCache() override;
     int                       TestCapability(const char * ) override;
 
-    kmldom::KmlFactory       *GetKmlFactory() { return m_poKmlFactory; };
+    kmldom::KmlFactory       *GetKmlFactory() { return m_poKmlFactory; }
 
-    const char               *GetStylePath() { return pszStylePath; };
+    const char               *GetStylePath() { return pszStylePath; }
     int                       ParseIntoStyleTable( std::string * oKmlStyleKml,
                                                    const char *pszStylePath );
 
-    // KmzFile                  *GetKmz() { return m_poKmlKmzfile; };
+    // KmzFile                  *GetKmz() { return m_poKmlKmzfile; }
 
-    int                       IsKml() const { return m_isKml; };
-    int                       IsKmz() const { return m_isKmz; };
-    int                       IsDir() const { return m_isDir; };
+    int                       IsKml() const { return m_isKml; }
+    int                       IsKmz() const { return m_isKmz; }
+    int                       IsDir() const { return m_isDir; }
 
-    void                      Updated() { bUpdated = true; };
+    void                      Updated() { bUpdated = true; }
 
     int                       ParseLayers( kmldom::ContainerPtr poKmlContainer,
-                                           OGRSpatialReference *poOgrSRS );
+                                           OGRSpatialReference *poOgrSRS,
+                                           bool bRecurse );
     kmldom::SchemaPtr         FindSchema( const char *pszSchemaUrl);
 
   private:
@@ -307,7 +310,6 @@ class OGRLIBKMLDataSource:public OGRDataSource
     void                      SetStyleTable2Kmz( OGRStyleTable * poStyleTable );
 
     OGRLIBKMLLayer           *AddLayer( const char *pszLayerName,
-                                        OGRSpatialReference * poSpatialRef,
                                         OGRwkbGeometryType eGType,
                                         OGRLIBKMLDataSource * poOgrDS,
                                         kmldom::ElementPtr poKmlRoot,

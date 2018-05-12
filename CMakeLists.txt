@@ -178,22 +178,7 @@ else()
     message(WARNING "No geos support")
 endif()
 
-# TODO: move this to /drivers or /drivers/raster while it's not needed for the core GDAL
-find_anyproject(JPEG DEFAULT ON)
-if(JPEG_FOUND)
-    add_definitions(-DJPEG_SUPPORTED)
-    add_definitions(-DHAVE_LIBJPEG) # Added only after 2.1 release (especially for geotiff.cpp where incorrect #ifdef is used)
-endif()
-
-find_anyproject(JPEG12)
-if(JPEG12_FOUND)
-    add_definitions(-DJPEG12_SUPPORTED)
-endif()
-
 find_anyproject(LibLZMA)
-
-find_anyproject(TIFF REQUIRED CMAKE_ARGS -DSKIP_BUILD_DOCS=ON)
-find_anyproject(GeoTIFF VERSION 1.2.1 REQUIRED)
 
 find_anyproject(SQLite3 CMAKE_ARGS -DENABLE_COLUMN_METADATA=ON)
 if(SQLITE3_FOUND)
@@ -222,8 +207,10 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/core/port)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/core/gcore)
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/core/gcore)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/core/ogr)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/core/alg)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/core)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/apps)
 
 # Main directories
@@ -307,7 +294,7 @@ if(UNIX)
         set_target_properties(${LIB_NAME} PROPERTIES LINK_FLAGS "-Wl,--version-script,\"${_version_script}\"")
     endif()
 elseif(BUILD_SHARED_LIBS AND WIN32)
-    set_target_properties(${LIB_NAME} PROPERTIES SUFFIX "${GDAL_MAJOR_VERSION}${GDAL_MINOR_VERSION}.dll")
+    set_target_properties(${LIB_NAME} PROPERTIES SUFFIX "${LIB_VERSION}.dll")
 endif()
 
 target_link_extlibraries(${LIB_NAME})

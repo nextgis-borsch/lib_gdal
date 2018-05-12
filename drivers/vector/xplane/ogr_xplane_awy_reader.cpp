@@ -28,7 +28,7 @@
 
 #include "ogr_xplane_awy_reader.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /************************************************************************/
 /*                   OGRXPlaneCreateAwyFileReader                       */
@@ -44,8 +44,8 @@ OGRXPlaneReader* OGRXPlaneCreateAwyFileReader( OGRXPlaneDataSource* poDataSource
 /*                         OGRXPlaneAwyReader()                         */
 /************************************************************************/
 OGRXPlaneAwyReader::OGRXPlaneAwyReader() :
-    poAirwaySegmentLayer(NULL),
-    poAirwayIntersectionLayer(NULL)
+    poAirwaySegmentLayer(nullptr),
+    poAirwayIntersectionLayer(nullptr)
 {}
 
 /************************************************************************/
@@ -97,8 +97,8 @@ int OGRXPlaneAwyReader::IsRecognizedVersion( const char* pszVersionString)
 
 void OGRXPlaneAwyReader::Read()
 {
-    const char* pszLine = NULL;
-    while((pszLine = CPLReadLineL(fp)) != NULL)
+    const char* pszLine = nullptr;
+    while((pszLine = CPLReadLineL(fp)) != nullptr)
     {
         papszTokens = CSLTokenizeString(pszLine);
         nTokens = CSLCount(papszTokens);
@@ -108,27 +108,27 @@ void OGRXPlaneAwyReader::Read()
         if (nTokens == 1 && strcmp(papszTokens[0], "99") == 0)
         {
             CSLDestroy(papszTokens);
-            papszTokens = NULL;
+            papszTokens = nullptr;
             bEOF = true;
             return;
         }
         else if( nTokens == 0 || !assertMinCol(10) )
         {
             CSLDestroy(papszTokens);
-            papszTokens = NULL;
+            papszTokens = nullptr;
             continue;
         }
 
         ParseRecord();
 
         CSLDestroy(papszTokens);
-        papszTokens = NULL;
+        papszTokens = nullptr;
 
         if( poInterestLayer && !poInterestLayer->IsEmpty() )
             return;
     }
 
-    papszTokens = NULL;
+    papszTokens = nullptr;
     bEOF = true;
 }
 
@@ -306,8 +306,8 @@ static int EqualAirwayIntersectionFeatureFunc(
     if (strcmp(feature1->GetFieldAsString(0),
                feature2->GetFieldAsString(0)) == 0)
     {
-        OGRPoint* point1 = (OGRPoint*) feature1->GetGeometryRef();
-        OGRPoint* point2 = (OGRPoint*) feature2->GetGeometryRef();
+        OGRPoint* point1 = feature1->GetGeometryRef()->toPoint();
+        OGRPoint* point2 = feature2->GetGeometryRef()->toPoint();
         return
             point1->getX() == point2->getX() &&
             point1->getY() == point2->getY();
@@ -338,7 +338,7 @@ static unsigned long HashAirwayIntersectionFeatureFunc(const void* _feature)
 {
     OGRFeature* feature = reinterpret_cast<OGRFeature *>(
         const_cast<void *>(_feature));
-    OGRPoint* point = reinterpret_cast<OGRPoint *>( feature->GetGeometryRef() );
+    OGRPoint* point = feature->GetGeometryRef()->toPoint();
     unsigned long hash = CPLHashSetHashStr(
         reinterpret_cast<unsigned char*>(const_cast<char *>(
             feature->GetFieldAsString(0))));
@@ -394,7 +394,7 @@ OGRFeature*
     poFeature->SetGeometryDirectly( new OGRPoint( dfLon, dfLat ) );
     poFeature->SetField( 0, pszIntersectionName );
 
-    if (CPLHashSetLookup(poSet, poFeature) == NULL)
+    if (CPLHashSetLookup(poSet, poFeature) == nullptr)
     {
         CPLHashSetInsert(poSet, poFeature->Clone());
         RegisterFeature(poFeature);
@@ -404,7 +404,7 @@ OGRFeature*
     else
     {
         delete poFeature;
-        return NULL;
+        return nullptr;
     }
 }
 

@@ -143,8 +143,8 @@ use Geo::GDAL::Const;
 # Note that the 1/100000 digits may be used to create more than one
 # CPAN release from one GDAL release.
 
-our $VERSION = '2.0204';
-our $GDAL_VERSION = '2.2.4';
+our $VERSION = '2.0300';
+our $GDAL_VERSION = '2.3.0';
 
 =pod
 
@@ -283,12 +283,13 @@ sub error {
             $error = shift;
         }
         push @error, $error;
-        confess($error);
+        $error = join("\n", reverse @error);
+        confess($error."\n");
     }
     my @stack = @error;
     chomp(@stack);
     @error = ();
-    return wantarray ? @stack : join("\n", @stack);
+    return wantarray ? @stack : join("\n", reverse @stack);
 }
 
 sub last_error {
@@ -516,7 +517,7 @@ sub Driver {
     return 'Geo::GDAL::Driver' unless @_;
     my $name = shift;
     my $driver = GetDriver($name);
-    error("Driver \"$name\" not found. Is it built in? Check with Geo::GDAL::Drivers or Geo::OGR::Drivers.") 
+    error("Driver \"$name\" not found. Is it built in? Check with Geo::GDAL::Drivers or Geo::OGR::Drivers.")
         unless $driver;
     return $driver;
 }
@@ -807,7 +808,7 @@ use Exporter 'import';
 Geo::GDAL->import(qw(:INTERNAL));
 
 use vars qw/@EXPORT @DOMAINS @CAPABILITIES %CAPABILITIES/;
- 
+
 @EXPORT = qw/BuildVRT/;
 @DOMAINS = qw/IMAGE_STRUCTURE SUBDATASETS GEOLOCATION/;
 
@@ -1696,7 +1697,7 @@ sub Piddle {
     my $t = $self->{DataType};
     unless (defined wantarray) {
         my $pdl = shift;
-        error("The datatype of the Piddle and the band do not match.") 
+        error("The datatype of the Piddle and the band do not match.")
           unless $PDL2DATATYPE{$pdl->get_datatype} == $t;
         my ($xoff, $yoff, $xsize, $ysize) = @_;
         $xoff //= 0;
@@ -2043,7 +2044,7 @@ sub Write {
 }
 
 sub Close {
-    my ($self, $data) = @_;
+    my ($self) = @_;
     Geo::GDAL::VSIFCloseL($self);
 }
 

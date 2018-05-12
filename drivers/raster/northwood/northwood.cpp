@@ -34,7 +34,7 @@
 #include <algorithm>
 #include <string>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 int nwt_ParseHeader( NWT_GRID * pGrd, char *nwtHeader )
 {
@@ -45,7 +45,7 @@ int nwt_ParseHeader( NWT_GRID * pGrd, char *nwtHeader )
     else if( nwtHeader[4] == '8' )
         pGrd->cFormat = 0x80;        //  grc classified type
 
-    pGrd->stClassDict = NULL;
+    pGrd->stClassDict = nullptr;
 
     memcpy( reinterpret_cast<void *>( &pGrd->fVersion ),
             reinterpret_cast<void *>( &nwtHeader[5] ),
@@ -65,6 +65,8 @@ int nwt_ParseHeader( NWT_GRID * pGrd, char *nwtHeader )
                 sizeof(pGrd->nXSide) );
         CPL_LSBPTR32(&pGrd->nXSide);
     }
+    if( pGrd->nXSide <= 1 )
+        return FALSE;
 
     memcpy( reinterpret_cast<void *>( &usTmp ),
             reinterpret_cast<void *>( &nwtHeader[11] ),
@@ -204,7 +206,7 @@ int nwt_ParseHeader( NWT_GRID * pGrd, char *nwtHeader )
     if( pGrd->cFormat & 0x80 )        // if is GRC load the Dictionary
     {
         VSIFSeekL( pGrd->fp,
-                   1024 + (pGrd->nXSide * pGrd->nYSide) * (pGrd->nBitsPerPixel/8),
+                   1024 + (static_cast<vsi_l_offset>(pGrd->nXSide) * pGrd->nYSide) * (pGrd->nBitsPerPixel/8),
                    SEEK_SET );
 
         if( !VSIFReadL( &usTmp, 2, 1, pGrd->fp) )
@@ -296,7 +298,7 @@ int nwt_LoadColors( NWT_RGB * pMap, int mapSize, NWT_GRID * pGrd )
                      pGrd->stInflection[0].b, pMap, &nWarkerMark );
     }
     // find what inflections zmin is between
-    for( i = 0; i < pGrd->iNumColorInflections; i++ )
+    for( i = 1; i < pGrd->iNumColorInflections; i++ )
     {
         if( pGrd->fZMin < pGrd->stInflection[i].zVal )
         {
@@ -448,20 +450,20 @@ NWT_GRID *nwtOpenGrid( char *filename )
     char nwtHeader[1024];
     VSILFILE *fp = VSIFOpenL( filename, "rb" );
 
-    if( fp == NULL )
+    if( fp == nullptr )
     {
         CPLError(CE_Failure, CPLE_OpenFailed, "Can't open %s", filename );
-        return NULL;
+        return nullptr;
     }
 
     if( !VSIFReadL( nwtHeader, 1024, 1, fp ) )
-        return NULL;
+        return nullptr;
 
     if( nwtHeader[0] != 'H' ||
         nwtHeader[1] != 'G' ||
         nwtHeader[2] != 'P' ||
         nwtHeader[3] != 'C' )
-          return NULL;
+          return nullptr;
 
     NWT_GRID *pGrd = reinterpret_cast<NWT_GRID *>(
         calloc( sizeof(NWT_GRID), 1 ) );
@@ -477,7 +479,7 @@ NWT_GRID *nwtOpenGrid( char *filename )
                  nwtHeader[4] );
         if( pGrd )
             free( pGrd );
-        return NULL;
+        return nullptr;
     }
 
     strncpy( pGrd->szFileName, filename, sizeof(pGrd->szFileName) );

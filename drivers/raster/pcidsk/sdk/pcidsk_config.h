@@ -111,8 +111,12 @@ extern "C" int CPLsnprintf(char *str, size_t size, const char* fmt, ...) PCIDSK_
 #endif
 #endif
 
-#if defined(_MSC_VER) && (_MSC_VER < 1900)
-#  define snprintf _snprintf
+#if defined(__MSVCRT__) || defined(_MSC_VER)
+  #define PCIDSK_FRMT_INT64     "%I64d"
+  #define PCIDSK_FRMT_UINT64    "%I64u"
+#else
+  #define PCIDSK_FRMT_INT64     "%lld"
+  #define PCIDSK_FRMT_UINT64    "%llu"
 #endif
 
 #endif // PCIDSK_CONFIG_H_INCLUDED

@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /************************************************************************/
 /*                            OGRFMELayer()                             */
@@ -89,9 +89,7 @@ int OGRFMELayer::Initialize( IFMEFeature * poSchemaFeature,
                              OGRSpatialReference *poSRS )
 
 {
-    IFMEString  *poFMEString = NULL;
-
-    poFMEString = poDS->GetFMESession()->createString();
+    IFMEString* poFMEString = poDS->GetFMESession()->createString();
     poFMEFeature = poDS->GetFMESession()->createFeature();
 
     if( poSRS != NULL )

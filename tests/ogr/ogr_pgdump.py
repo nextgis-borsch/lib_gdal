@@ -31,7 +31,7 @@
 import os
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 import ogrtest
@@ -42,43 +42,44 @@ from osgeo import gdal
 ###############################################################################
 # Create table from data/poly.shp
 
+
 def ogr_pgdump_1():
 
     try:
         os.remove('tmp/tpoly.sql')
-    except:
+    except OSError:
         pass
 
     ds = ogr.GetDriverByName('PGDump').CreateDataSource('tmp/tpoly.sql')
 
     ######################################################
     # Create Layer
-    lyr = ds.CreateLayer( 'tpoly', options = [ 'DIM=3' ] )
+    lyr = ds.CreateLayer('tpoly', options=['DIM=3'])
 
     ######################################################
     # Setup Schema
-    ogrtest.quick_create_layer_def( lyr,
-                                    [ ('AREA', ogr.OFTReal),
-                                      ('EAS_ID', ogr.OFTInteger),
-                                      ('PRFEDEA', ogr.OFTString),
-                                      ('SHORTNAME', ogr.OFTString, 8) ] )
+    ogrtest.quick_create_layer_def(lyr,
+                                   [('AREA', ogr.OFTReal),
+                                    ('EAS_ID', ogr.OFTInteger),
+                                    ('PRFEDEA', ogr.OFTString),
+                                    ('SHORTNAME', ogr.OFTString, 8)])
 
     ######################################################
     # Copy in poly.shp
 
-    dst_feat = ogr.Feature( feature_def = lyr.GetLayerDefn() )
+    dst_feat = ogr.Feature(feature_def=lyr.GetLayerDefn())
 
-    shp_ds = ogr.Open( 'data/poly.shp' )
+    shp_ds = ogr.Open('data/poly.shp')
     shp_lyr = shp_ds.GetLayer(0)
     feat = shp_lyr.GetNextFeature()
     gdaltest.poly_feat = []
 
     while feat is not None:
 
-        gdaltest.poly_feat.append( feat )
+        gdaltest.poly_feat.append(feat)
 
-        dst_feat.SetFrom( feat )
-        lyr.CreateFeature( dst_feat )
+        dst_feat.SetFrom(feat)
+        lyr.CreateFeature(dst_feat)
 
         feat = shp_lyr.GetNextFeature()
 
@@ -100,7 +101,7 @@ def ogr_pgdump_1():
        sql.find("""ALTER TABLE "public"."tpoly" ADD COLUMN "prfedea" VARCHAR;""") == -1 or \
        sql.find("""ALTER TABLE "public"."tpoly" ADD COLUMN "shortname" VARCHAR(8);""") == -1 or \
        sql.find("""INSERT INTO "public"."tpoly" ("wkb_geometry" , "area", "eas_id", "prfedea") VALUES ('01030000800100000005000000000000C01A481D4100000080072D5241000000000000000000000060AA461D4100000080FF2C524100000000000000000000006060461D41000000400C2D52410000000000000000000000A0DF471D4100000000142D52410000000000000000000000C01A481D4100000080072D52410000000000000000', 5268.813, 170, '35043413');""") == -1 or \
-       sql.find("""COMMIT;""") == -1 :
+       sql.find("""COMMIT;""") == -1:
         print(sql)
         return 'fail'
 
@@ -109,52 +110,53 @@ def ogr_pgdump_1():
 ###############################################################################
 # Create table from data/poly.shp with PG_USE_COPY=YES
 
+
 def ogr_pgdump_2():
 
     try:
         os.remove('tmp/tpoly.sql')
-    except:
+    except OSError:
         pass
 
-    gdal.SetConfigOption( 'PG_USE_COPY', 'YES' )
+    gdal.SetConfigOption('PG_USE_COPY', 'YES')
 
-    ds = ogr.GetDriverByName('PGDump').CreateDataSource('tmp/tpoly.sql', options = [ 'LINEFORMAT=CRLF' ] )
+    ds = ogr.GetDriverByName('PGDump').CreateDataSource('tmp/tpoly.sql', options=['LINEFORMAT=CRLF'])
 
     ######################################################
     # Create Layer
-    lyr = ds.CreateLayer( 'tpoly', geom_type = ogr.wkbPolygon, options = [ 'SCHEMA=another_schema', 'SRID=4326', 'GEOMETRY_NAME=the_geom' ] )
+    lyr = ds.CreateLayer('tpoly', geom_type=ogr.wkbPolygon, options=['SCHEMA=another_schema', 'SRID=4326', 'GEOMETRY_NAME=the_geom'])
 
     ######################################################
     # Setup Schema
-    ogrtest.quick_create_layer_def( lyr,
-                                    [ ('AREA', ogr.OFTReal),
-                                      ('EAS_ID', ogr.OFTInteger),
-                                      ('PRFEDEA', ogr.OFTString),
-                                      ('SHORTNAME', ogr.OFTString, 8) ] )
+    ogrtest.quick_create_layer_def(lyr,
+                                   [('AREA', ogr.OFTReal),
+                                    ('EAS_ID', ogr.OFTInteger),
+                                    ('PRFEDEA', ogr.OFTString),
+                                    ('SHORTNAME', ogr.OFTString, 8)])
 
     ######################################################
     # Copy in poly.shp
 
-    dst_feat = ogr.Feature( feature_def = lyr.GetLayerDefn() )
+    dst_feat = ogr.Feature(feature_def=lyr.GetLayerDefn())
 
-    shp_ds = ogr.Open( 'data/poly.shp' )
+    shp_ds = ogr.Open('data/poly.shp')
     shp_lyr = shp_ds.GetLayer(0)
     feat = shp_lyr.GetNextFeature()
     gdaltest.poly_feat = []
 
     while feat is not None:
 
-        gdaltest.poly_feat.append( feat )
+        gdaltest.poly_feat.append(feat)
 
-        dst_feat.SetFrom( feat )
-        lyr.CreateFeature( dst_feat )
+        dst_feat.SetFrom(feat)
+        lyr.CreateFeature(dst_feat)
 
         feat = shp_lyr.GetNextFeature()
 
     dst_feat.Destroy()
     ds.Destroy()
 
-    gdal.SetConfigOption( 'PG_USE_COPY', 'NO' )
+    gdal.SetConfigOption('PG_USE_COPY', 'NO')
 
     f = open('tmp/tpoly.sql')
     sql = f.read()
@@ -173,7 +175,7 @@ def ogr_pgdump_2():
        sql.find("""COPY "another_schema"."tpoly" ("the_geom", "area", "eas_id", "prfedea", "shortname") FROM STDIN;""") == -1 or \
        sql.find("0103000020E61000000100000005000000000000C01A481D4100000080072D524100000060AA461D4100000080FF2C52410000006060461D41000000400C2D5241000000A0DF471D4100000000142D5241000000C01A481D4100000080072D5241	5268.813	170	35043413	\\N") == -1 or \
        sql.find("""\.""") == -1 or \
-       sql.find("""COMMIT;""") == -1 :
+       sql.find("""COMMIT;""") == -1:
         print(sql)
         return 'fail'
 
@@ -187,32 +189,32 @@ def ogr_pgdump_3():
 
     try:
         os.remove('tmp/tpoly.sql')
-    except:
+    except OSError:
         pass
 
-    gdal.SetConfigOption( 'PG_USE_COPY', 'YES' )
+    gdal.SetConfigOption('PG_USE_COPY', 'YES')
 
-    ds = ogr.GetDriverByName('PGDump').CreateDataSource('tmp/tpoly.sql', options = [ 'LINEFORMAT=LF' ] )
+    ds = ogr.GetDriverByName('PGDump').CreateDataSource('tmp/tpoly.sql', options=['LINEFORMAT=LF'])
 
     ######################################################
     # Create Layer
-    lyr = ds.CreateLayer( 'tpoly', geom_type = ogr.wkbNone, options = [ 'SCHEMA=another_schema' ] )
+    lyr = ds.CreateLayer('tpoly', geom_type=ogr.wkbNone, options=['SCHEMA=another_schema'])
 
     ######################################################
     # Setup Schema
-    ogrtest.quick_create_layer_def( lyr,
-                                    [ ('EMPTYCHAR', ogr.OFTString),
-                                      ('AREA', ogr.OFTReal),
-                                      ('EAS_ID', ogr.OFTInteger),
-                                      ('PRFEDEA', ogr.OFTString),
-                                      ('SHORTNAME', ogr.OFTString, 8) ] )
+    ogrtest.quick_create_layer_def(lyr,
+                                   [('EMPTYCHAR', ogr.OFTString),
+                                    ('AREA', ogr.OFTReal),
+                                    ('EAS_ID', ogr.OFTInteger),
+                                    ('PRFEDEA', ogr.OFTString),
+                                    ('SHORTNAME', ogr.OFTString, 8)])
 
     ######################################################
     # Copy in poly.shp
 
-    dst_feat = ogr.Feature( feature_def = lyr.GetLayerDefn() )
+    dst_feat = ogr.Feature(feature_def=lyr.GetLayerDefn())
 
-    shp_ds = ogr.Open( 'data/poly.shp' )
+    shp_ds = ogr.Open('data/poly.shp')
     shp_lyr = shp_ds.GetLayer(0)
     feat = shp_lyr.GetNextFeature()
     gdaltest.poly_feat = []
@@ -221,9 +223,9 @@ def ogr_pgdump_3():
 
     while feat is not None:
 
-        gdaltest.poly_feat.append( feat )
+        gdaltest.poly_feat.append(feat)
 
-        dst_feat.SetFrom( feat )
+        dst_feat.SetFrom(feat)
         if i == 0:
             # Be perverse and test the case where a feature has a geometry
             # even if it's a wkbNone layer ! (#4040)
@@ -232,14 +234,14 @@ def ogr_pgdump_3():
             # Field with 0 character (not empty!) (#4040)
             dst_feat.SetField(0, '')
         i = i + 1
-        lyr.CreateFeature( dst_feat )
+        lyr.CreateFeature(dst_feat)
 
         feat = shp_lyr.GetNextFeature()
 
     dst_feat.Destroy()
     ds.Destroy()
 
-    gdal.SetConfigOption( 'PG_USE_COPY', 'NO' )
+    gdal.SetConfigOption('PG_USE_COPY', 'NO')
 
     f = open('tmp/tpoly.sql')
     sql = f.read()
@@ -259,7 +261,7 @@ def ogr_pgdump_3():
        sql.find("""\\N	215229.266	168	35043411	\\N""") == -1 or \
        sql.find("""	5268.813	170	35043413	\\N""") == -1 or \
        sql.find("""\\.""") == -1 or \
-       sql.find("""COMMIT;""") == -1 :
+       sql.find("""COMMIT;""") == -1:
         print(sql)
         return 'fail'
 
@@ -268,16 +270,17 @@ def ogr_pgdump_3():
 ###############################################################################
 # Test multi-geometry support
 
+
 def ogr_pgdump_4():
 
-    ds = ogr.GetDriverByName('PGDump').CreateDataSource('tmp/ogr_pgdump_4.sql', options = [ 'LINEFORMAT=LF' ] )
+    ds = ogr.GetDriverByName('PGDump').CreateDataSource('tmp/ogr_pgdump_4.sql', options=['LINEFORMAT=LF'])
     if ds.TestCapability(ogr.ODsCCreateGeomFieldAfterCreateLayer) == 0:
         gdaltest.post_reason('fail')
         return 'fail'
 
     ######################################################
     # Create Layer
-    lyr = ds.CreateLayer( 'test', geom_type = ogr.wkbNone, options = [ 'WRITE_EWKT_GEOM=YES' ] )
+    lyr = ds.CreateLayer('test', geom_type=ogr.wkbNone, options=['WRITE_EWKT_GEOM=YES'])
     if lyr.TestCapability(ogr.OLCCreateGeomField) == 0:
         gdaltest.post_reason('fail')
         return 'fail'
@@ -311,7 +314,7 @@ def ogr_pgdump_4():
        sql.find("""SELECT AddGeometryColumn('public','test','poly',4326,'POLYGON',3)""") == -1 or \
        sql.find("""CREATE INDEX "test_poly_geom_idx" ON "public"."test" USING GIST ("poly")""") == -1 or \
        sql.find("""INSERT INTO "public"."test" DEFAULT VALUES""") == -1 or \
-       sql.find("""INSERT INTO "public"."test" ("point_nosrs" , "poly" ) VALUES (GeomFromEWKT('SRID=-1;POINT (1 2)'::TEXT) , GeomFromEWKT('SRID=4326;POLYGON ((0 0 0,0 1 0,1 1 0,1 0 0,0 0 0))'::TEXT) )""") == -1 :
+       sql.find("""INSERT INTO "public"."test" ("point_nosrs" , "poly" ) VALUES (GeomFromEWKT('SRID=-1;POINT (1 2)'::TEXT) , GeomFromEWKT('SRID=4326;POLYGON ((0 0 0,0 1 0,1 1 0,1 0 0,0 0 0))'::TEXT) )""") == -1:
         print(sql)
         return 'fail'
 
@@ -320,10 +323,11 @@ def ogr_pgdump_4():
 ###############################################################################
 # Test non nullable field support
 
+
 def ogr_pgdump_5():
 
-    ds = ogr.GetDriverByName('PGDump').CreateDataSource('/vsimem/ogr_pgdump_5.sql', options = [ 'LINEFORMAT=LF' ] )
-    lyr = ds.CreateLayer('test', geom_type = ogr.wkbNone)
+    ds = ogr.GetDriverByName('PGDump').CreateDataSource('/vsimem/ogr_pgdump_5.sql', options=['LINEFORMAT=LF'])
+    lyr = ds.CreateLayer('test', geom_type=ogr.wkbNone)
     field_defn = ogr.FieldDefn('field_not_nullable', ogr.OFTString)
     field_defn.SetNullable(0)
     lyr.CreateField(field_defn)
@@ -381,43 +385,44 @@ def ogr_pgdump_5():
 ###############################################################################
 # Test default values
 
+
 def ogr_pgdump_6():
 
-    ds = ogr.GetDriverByName('PGDump').CreateDataSource('/vsimem/ogr_pgdump_6.sql', options = [ 'LINEFORMAT=LF' ] )
-    lyr = ds.CreateLayer('test', geom_type = ogr.wkbNone)
+    ds = ogr.GetDriverByName('PGDump').CreateDataSource('/vsimem/ogr_pgdump_6.sql', options=['LINEFORMAT=LF'])
+    lyr = ds.CreateLayer('test', geom_type=ogr.wkbNone)
 
-    field_defn = ogr.FieldDefn( 'field_string', ogr.OFTString )
+    field_defn = ogr.FieldDefn('field_string', ogr.OFTString)
     field_defn.SetDefault("'a''b'")
     lyr.CreateField(field_defn)
 
-    field_defn = ogr.FieldDefn( 'field_int', ogr.OFTInteger )
+    field_defn = ogr.FieldDefn('field_int', ogr.OFTInteger)
     field_defn.SetDefault('123')
     lyr.CreateField(field_defn)
 
-    field_defn = ogr.FieldDefn( 'field_real', ogr.OFTReal )
+    field_defn = ogr.FieldDefn('field_real', ogr.OFTReal)
     field_defn.SetDefault('1.23')
     lyr.CreateField(field_defn)
 
-    field_defn = ogr.FieldDefn( 'field_nodefault', ogr.OFTInteger )
+    field_defn = ogr.FieldDefn('field_nodefault', ogr.OFTInteger)
     lyr.CreateField(field_defn)
 
-    field_defn = ogr.FieldDefn( 'field_datetime', ogr.OFTDateTime )
+    field_defn = ogr.FieldDefn('field_datetime', ogr.OFTDateTime)
     field_defn.SetDefault("CURRENT_TIMESTAMP")
     lyr.CreateField(field_defn)
 
-    field_defn = ogr.FieldDefn( 'field_datetime2', ogr.OFTDateTime )
+    field_defn = ogr.FieldDefn('field_datetime2', ogr.OFTDateTime)
     field_defn.SetDefault("'2015/06/30 12:34:56'")
     lyr.CreateField(field_defn)
 
-    field_defn = ogr.FieldDefn( 'field_date', ogr.OFTDate )
+    field_defn = ogr.FieldDefn('field_date', ogr.OFTDate)
     field_defn.SetDefault("CURRENT_DATE")
     lyr.CreateField(field_defn)
 
-    field_defn = ogr.FieldDefn( 'field_time', ogr.OFTTime )
+    field_defn = ogr.FieldDefn('field_time', ogr.OFTTime)
     field_defn.SetDefault("CURRENT_TIME")
     lyr.CreateField(field_defn)
 
-    gdal.SetConfigOption( 'PG_USE_COPY', 'YES' )
+    gdal.SetConfigOption('PG_USE_COPY', 'YES')
 
     f = ogr.Feature(lyr.GetLayerDefn())
     f.SetField('field_string', 'a')
@@ -447,7 +452,7 @@ def ogr_pgdump_6():
     lyr.CreateFeature(f)
     f = None
 
-    gdal.SetConfigOption( 'PG_USE_COPY', None )
+    gdal.SetConfigOption('PG_USE_COPY', None)
 
     ds = None
 
@@ -474,10 +479,11 @@ def ogr_pgdump_6():
 ###############################################################################
 # Test creating a field with the fid name (PG_USE_COPY=NO)
 
+
 def ogr_pgdump_7():
 
-    ds = ogr.GetDriverByName('PGDump').CreateDataSource('/vsimem/ogr_pgdump_7.sql', options = [ 'LINEFORMAT=LF' ] )
-    lyr = ds.CreateLayer('test', geom_type = ogr.wkbNone, options = ['FID=myfid'])
+    ds = ogr.GetDriverByName('PGDump').CreateDataSource('/vsimem/ogr_pgdump_7.sql', options=['LINEFORMAT=LF'])
+    lyr = ds.CreateLayer('test', geom_type=ogr.wkbNone, options=['FID=myfid'])
 
     lyr.CreateField(ogr.FieldDefn('str', ogr.OFTString))
     gdal.PushErrorHandler()
@@ -520,9 +526,9 @@ def ogr_pgdump_7():
         feat.DumpReadable()
         return 'fail'
 
-    #feat.SetField('str', 'foo')
-    #ret = lyr.SetFeature(feat)
-    #if ret != 0:
+    # feat.SetField('str', 'foo')
+    # ret = lyr.SetFeature(feat)
+    # if ret != 0:
     #    gdaltest.post_reason('fail')
     #    return 'fail'
 
@@ -536,18 +542,18 @@ def ogr_pgdump_7():
         gdaltest.post_reason('fail')
         return 'fail'
 
-    #gdal.PushErrorHandler()
-    #ret = lyr.SetFeature(feat)
-    #gdal.PopErrorHandler()
-    #if ret == 0:
+    # gdal.PushErrorHandler()
+    # ret = lyr.SetFeature(feat)
+    # gdal.PopErrorHandler()
+    # if ret == 0:
     #    gdaltest.post_reason('fail')
     #    return 'fail'
 
-    #feat.UnsetField('myfid')
-    #gdal.PushErrorHandler()
-    #ret = lyr.SetFeature(feat)
-    #gdal.PopErrorHandler()
-    #if ret == 0:
+    # feat.UnsetField('myfid')
+    # gdal.PushErrorHandler()
+    # ret = lyr.SetFeature(feat)
+    # gdal.PopErrorHandler()
+    # if ret == 0:
     #    gdaltest.post_reason('fail')
     #    return 'fail'
 
@@ -584,10 +590,11 @@ def ogr_pgdump_7():
 ###############################################################################
 # Test creating a field with the fid name (PG_USE_COPY=NO)
 
+
 def ogr_pgdump_8():
 
-    ds = ogr.GetDriverByName('PGDump').CreateDataSource('/vsimem/ogr_pgdump_8.sql', options = [ 'LINEFORMAT=LF' ] )
-    lyr = ds.CreateLayer('test', geom_type = ogr.wkbNone, options = ['FID=myfid'])
+    ds = ogr.GetDriverByName('PGDump').CreateDataSource('/vsimem/ogr_pgdump_8.sql', options=['LINEFORMAT=LF'])
+    lyr = ds.CreateLayer('test', geom_type=ogr.wkbNone, options=['FID=myfid'])
 
     lyr.CreateField(ogr.FieldDefn('str', ogr.OFTString))
     gdal.PushErrorHandler()
@@ -607,9 +614,9 @@ def ogr_pgdump_8():
     feat.SetField('str', 'first string')
     feat.SetField('myfid', 10)
     feat.SetField('str2', 'second string')
-    gdal.SetConfigOption( 'PG_USE_COPY', 'YES' )
+    gdal.SetConfigOption('PG_USE_COPY', 'YES')
     ret = lyr.CreateFeature(feat)
-    gdal.SetConfigOption( 'PG_USE_COPY', None )
+    gdal.SetConfigOption('PG_USE_COPY', None)
     if ret != 0:
         gdaltest.post_reason('fail')
         return 'fail'
@@ -619,9 +626,9 @@ def ogr_pgdump_8():
 
     feat = ogr.Feature(lyr.GetLayerDefn())
     feat.SetField('str2', 'second string')
-    gdal.SetConfigOption( 'PG_USE_COPY', 'YES' )
+    gdal.SetConfigOption('PG_USE_COPY', 'YES')
     ret = lyr.CreateFeature(feat)
-    gdal.SetConfigOption( 'PG_USE_COPY', None )
+    gdal.SetConfigOption('PG_USE_COPY', None)
     if ret != 0:
         gdaltest.post_reason('fail')
         return 'fail'
@@ -634,9 +641,9 @@ def ogr_pgdump_8():
         feat.DumpReadable()
         return 'fail'
 
-    #feat.SetField('str', 'foo')
-    #ret = lyr.SetFeature(feat)
-    #if ret != 0:
+    # feat.SetField('str', 'foo')
+    # ret = lyr.SetFeature(feat)
+    # if ret != 0:
     #    gdaltest.post_reason('fail')
     #    return 'fail'
 
@@ -644,26 +651,26 @@ def ogr_pgdump_8():
     feat.SetFID(1)
     feat.SetField('myfid', 10)
     gdal.PushErrorHandler()
-    gdal.SetConfigOption( 'PG_USE_COPY', 'YES' )
+    gdal.SetConfigOption('PG_USE_COPY', 'YES')
     ret = lyr.CreateFeature(feat)
-    gdal.SetConfigOption( 'PG_USE_COPY', None )
+    gdal.SetConfigOption('PG_USE_COPY', None)
     gdal.PopErrorHandler()
     if ret == 0:
         gdaltest.post_reason('fail')
         return 'fail'
 
-    #gdal.PushErrorHandler()
-    #ret = lyr.SetFeature(feat)
-    #gdal.PopErrorHandler()
-    #if ret == 0:
+    # gdal.PushErrorHandler()
+    # ret = lyr.SetFeature(feat)
+    # gdal.PopErrorHandler()
+    # if ret == 0:
     #    gdaltest.post_reason('fail')
     #    return 'fail'
 
-    #feat.UnsetField('myfid')
-    #gdal.PushErrorHandler()
-    #ret = lyr.SetFeature(feat)
-    #gdal.PopErrorHandler()
-    #if ret == 0:
+    # feat.UnsetField('myfid')
+    # gdal.PushErrorHandler()
+    # ret = lyr.SetFeature(feat)
+    # gdal.PopErrorHandler()
+    # if ret == 0:
     #    gdaltest.post_reason('fail')
     #    return 'fail'
 
@@ -671,9 +678,9 @@ def ogr_pgdump_8():
     feat.SetField('str', 'first string')
     feat.SetField('myfid', 12)
     feat.SetField('str2', 'second string')
-    gdal.SetConfigOption( 'PG_USE_COPY', 'YES' )
+    gdal.SetConfigOption('PG_USE_COPY', 'YES')
     ret = lyr.CreateFeature(feat)
-    gdal.SetConfigOption( 'PG_USE_COPY', None )
+    gdal.SetConfigOption('PG_USE_COPY', None)
     if ret != 0:
         gdaltest.post_reason('fail')
         return 'fail'
@@ -702,12 +709,13 @@ def ogr_pgdump_8():
 ###############################################################################
 # Test creating a field with the fid name (PG_USE_COPY=NO)
 
-def ogr_pgdump_9(pg_use_copy = 'YES'):
 
-    gdal.SetConfigOption( 'PG_USE_COPY', pg_use_copy )
+def ogr_pgdump_9(pg_use_copy='YES'):
 
-    ds = ogr.GetDriverByName('PGDump').CreateDataSource('/vsimem/ogr_pgdump_9.sql', options = [ 'LINEFORMAT=LF' ] )
-    lyr = ds.CreateLayer('test', geom_type = ogr.wkbNone)
+    gdal.SetConfigOption('PG_USE_COPY', pg_use_copy)
+
+    ds = ogr.GetDriverByName('PGDump').CreateDataSource('/vsimem/ogr_pgdump_9.sql', options=['LINEFORMAT=LF'])
+    lyr = ds.CreateLayer('test', geom_type=ogr.wkbNone)
 
     fld = ogr.FieldDefn('str', ogr.OFTString)
     fld.SetWidth(5)
@@ -723,7 +731,7 @@ def ogr_pgdump_9(pg_use_copy = 'YES'):
     feat.SetField('str', 'ABCDEF')
     lyr.CreateFeature(feat)
 
-    if sys.version_info >= (3,0,0):
+    if sys.version_info >= (3, 0, 0):
         val4 = '\u00e9\u00e9\u00e9\u00e9'
         val5 = val4 + '\u00e9'
         val6 = val5 + '\u00e9'
@@ -740,7 +748,7 @@ def ogr_pgdump_9(pg_use_copy = 'YES'):
     feat.SetField('str', 'a' + val5)
     lyr.CreateFeature(feat)
 
-    gdal.SetConfigOption( 'PG_USE_COPY', None )
+    gdal.SetConfigOption('PG_USE_COPY', None)
 
     ds = None
 
@@ -757,11 +765,12 @@ def ogr_pgdump_9(pg_use_copy = 'YES'):
     if sql.find("""01234%s""" % eofield) < 0 or \
        sql.find("""ABCDE%s""" % eofield) < 0 or \
        sql.find("""%s%s""" % (val5, eofield)) < 0 or \
-       sql.find("""%s%s""" % ('a'+val4, eofield)) < 0:
+       sql.find("""%s%s""" % ('a' + val4, eofield)) < 0:
         print(sql)
         return 'fail'
 
     return 'success'
+
 
 def ogr_pgdump_10():
     return ogr_pgdump_9('NO')
@@ -769,10 +778,11 @@ def ogr_pgdump_10():
 ###############################################################################
 # Export POINT EMPTY for PostGIS 2.2
 
+
 def ogr_pgdump_11():
 
-    ds = ogr.GetDriverByName('PGDump').CreateDataSource('/vsimem/ogr_pgdump_11.sql', options = [ 'LINEFORMAT=LF' ] )
-    lyr = ds.CreateLayer('test', geom_type = ogr.wkbPoint, options = [ 'POSTGIS_VERSION=2.2' ])
+    ds = ogr.GetDriverByName('PGDump').CreateDataSource('/vsimem/ogr_pgdump_11.sql', options=['LINEFORMAT=LF'])
+    lyr = ds.CreateLayer('test', geom_type=ogr.wkbPoint, options=['POSTGIS_VERSION=2.2'])
     f = ogr.Feature(lyr.GetLayerDefn())
     f.SetGeometryDirectly(ogr.CreateGeometryFromWkt('POINT EMPTY'))
     lyr.CreateFeature(f)
@@ -799,10 +809,11 @@ def ogr_pgdump_11():
 # This is important for the ogr2ogr use case when the source geometry column
 # is not-nullable, and hence the CreateGeomField() interface is used.
 
+
 def ogr_pgdump_12():
 
-    ds = ogr.GetDriverByName('PGDump').CreateDataSource('/vsimem/ogr_pgdump_12.sql', options = [ 'LINEFORMAT=LF' ] )
-    lyr = ds.CreateLayer('test', geom_type = ogr.wkbNone, options = [ 'GEOMETRY_NAME=another_name' ])
+    ds = ogr.GetDriverByName('PGDump').CreateDataSource('/vsimem/ogr_pgdump_12.sql', options=['LINEFORMAT=LF'])
+    lyr = ds.CreateLayer('test', geom_type=ogr.wkbNone, options=['GEOMETRY_NAME=another_name'])
     lyr.CreateGeomField(ogr.GeomFieldDefn('my_geom', ogr.wkbPoint))
     ds = None
 
@@ -821,30 +832,31 @@ def ogr_pgdump_12():
 ###############################################################################
 # Test ZM support
 
+
 def ogr_pgdump_13():
 
-    tests = [ [ ogr.wkbUnknown, [], 'POINT ZM (1 2 3 4)', [ "'GEOMETRY',2)", "0101000000000000000000F03F0000000000000040" ] ],
-              [ ogr.wkbUnknown, [ 'GEOM_TYPE=geography'], 'POINT ZM (1 2 3 4)', [ "geography(GEOMETRY", "0101000000000000000000F03F0000000000000040" ] ],
-              [ ogr.wkbUnknown, [ 'DIM=XYZ' ], 'POINT ZM (1 2 3 4)', [ "'GEOMETRY',3)", "0101000080000000000000F03F00000000000000400000000000000840" ] ],
-              [ ogr.wkbUnknown, [ 'DIM=XYZ', 'GEOM_TYPE=geography' ], 'POINT ZM (1 2 3 4)', [ "geography(GEOMETRYZ,", "0101000080000000000000F03F00000000000000400000000000000840" ] ],
-              [ ogr.wkbPoint, [ 'DIM=XYZ' ], 'POINT ZM (1 2 3 4)', [ "'POINT',3)", "0101000080000000000000F03F00000000000000400000000000000840" ] ],
-              [ ogr.wkbPoint25D, [], 'POINT ZM (1 2 3 4)', [ "'POINT',3)", "0101000080000000000000F03F00000000000000400000000000000840" ] ],
-              [ ogr.wkbPoint, [ 'DIM=XYZ', 'GEOM_TYPE=geography' ], 'POINT ZM (1 2 3 4)', [ "geography(POINTZ,", "0101000080000000000000F03F00000000000000400000000000000840" ] ],
-              [ ogr.wkbUnknown, [ 'DIM=XYM' ], 'POINT ZM (1 2 3 4)', [ "'GEOMETRY',3)", "0101000040000000000000F03F00000000000000400000000000001040" ] ],
-              [ ogr.wkbUnknown, [ 'DIM=XYM', 'GEOM_TYPE=geography' ], 'POINT ZM (1 2 3 4)', [ "geography(GEOMETRYM,", "0101000040000000000000F03F00000000000000400000000000001040" ] ],
-              [ ogr.wkbPoint, [ 'DIM=XYM' ], 'POINT ZM (1 2 3 4)', [ "'POINTM',3)", "0101000040000000000000F03F00000000000000400000000000001040" ] ],
-              [ ogr.wkbPointM, [], 'POINT ZM (1 2 3 4)', [ "'POINTM',3)", "0101000040000000000000F03F00000000000000400000000000001040" ] ],
-              [ ogr.wkbPoint, [ 'DIM=XYM', 'GEOM_TYPE=geography' ], 'POINT ZM (1 2 3 4)', [ "geography(POINTM,", "0101000040000000000000F03F00000000000000400000000000001040" ] ],
-              [ ogr.wkbUnknown, [ 'DIM=XYZM' ], 'POINT ZM (1 2 3 4)', [ "'GEOMETRY',4)", "01010000C0000000000000F03F000000000000004000000000000008400000000000001040" ] ],
-              [ ogr.wkbUnknown, [ 'DIM=XYZM', 'GEOM_TYPE=geography' ], 'POINT ZM (1 2 3 4)', [ "geography(GEOMETRYZM,", "01010000C0000000000000F03F000000000000004000000000000008400000000000001040" ] ],
-              [ ogr.wkbPoint, [ 'DIM=XYZM' ], 'POINT ZM (1 2 3 4)', [ "'POINT',4)", "01010000C0000000000000F03F000000000000004000000000000008400000000000001040" ] ],
-              [ ogr.wkbPointZM, [], 'POINT ZM (1 2 3 4)', [ "'POINT',4)", "01010000C0000000000000F03F000000000000004000000000000008400000000000001040" ] ],
-              [ ogr.wkbPoint, [ 'DIM=XYZM', 'GEOM_TYPE=geography' ], 'POINT ZM (1 2 3 4)', [ "geography(POINTZM,", "01010000C0000000000000F03F000000000000004000000000000008400000000000001040" ] ],
-            ]
+    tests = [[ogr.wkbUnknown, [], 'POINT ZM (1 2 3 4)', ["'GEOMETRY',2)", "0101000000000000000000F03F0000000000000040"]],
+             [ogr.wkbUnknown, ['GEOM_TYPE=geography'], 'POINT ZM (1 2 3 4)', ["geography(GEOMETRY", "0101000000000000000000F03F0000000000000040"]],
+             [ogr.wkbUnknown, ['DIM=XYZ'], 'POINT ZM (1 2 3 4)', ["'GEOMETRY',3)", "0101000080000000000000F03F00000000000000400000000000000840"]],
+             [ogr.wkbUnknown, ['DIM=XYZ', 'GEOM_TYPE=geography'], 'POINT ZM (1 2 3 4)', ["geography(GEOMETRYZ,", "0101000080000000000000F03F00000000000000400000000000000840"]],
+             [ogr.wkbPoint, ['DIM=XYZ'], 'POINT ZM (1 2 3 4)', ["'POINT',3)", "0101000080000000000000F03F00000000000000400000000000000840"]],
+             [ogr.wkbPoint25D, [], 'POINT ZM (1 2 3 4)', ["'POINT',3)", "0101000080000000000000F03F00000000000000400000000000000840"]],
+             [ogr.wkbPoint, ['DIM=XYZ', 'GEOM_TYPE=geography'], 'POINT ZM (1 2 3 4)', ["geography(POINTZ,", "0101000080000000000000F03F00000000000000400000000000000840"]],
+             [ogr.wkbUnknown, ['DIM=XYM'], 'POINT ZM (1 2 3 4)', ["'GEOMETRY',3)", "0101000040000000000000F03F00000000000000400000000000001040"]],
+             [ogr.wkbUnknown, ['DIM=XYM', 'GEOM_TYPE=geography'], 'POINT ZM (1 2 3 4)', ["geography(GEOMETRYM,", "0101000040000000000000F03F00000000000000400000000000001040"]],
+             [ogr.wkbPoint, ['DIM=XYM'], 'POINT ZM (1 2 3 4)', ["'POINTM',3)", "0101000040000000000000F03F00000000000000400000000000001040"]],
+             [ogr.wkbPointM, [], 'POINT ZM (1 2 3 4)', ["'POINTM',3)", "0101000040000000000000F03F00000000000000400000000000001040"]],
+             [ogr.wkbPoint, ['DIM=XYM', 'GEOM_TYPE=geography'], 'POINT ZM (1 2 3 4)', ["geography(POINTM,", "0101000040000000000000F03F00000000000000400000000000001040"]],
+             [ogr.wkbUnknown, ['DIM=XYZM'], 'POINT ZM (1 2 3 4)', ["'GEOMETRY',4)", "01010000C0000000000000F03F000000000000004000000000000008400000000000001040"]],
+             [ogr.wkbUnknown, ['DIM=XYZM', 'GEOM_TYPE=geography'], 'POINT ZM (1 2 3 4)', ["geography(GEOMETRYZM,", "01010000C0000000000000F03F000000000000004000000000000008400000000000001040"]],
+             [ogr.wkbPoint, ['DIM=XYZM'], 'POINT ZM (1 2 3 4)', ["'POINT',4)", "01010000C0000000000000F03F000000000000004000000000000008400000000000001040"]],
+             [ogr.wkbPointZM, [], 'POINT ZM (1 2 3 4)', ["'POINT',4)", "01010000C0000000000000F03F000000000000004000000000000008400000000000001040"]],
+             [ogr.wkbPoint, ['DIM=XYZM', 'GEOM_TYPE=geography'], 'POINT ZM (1 2 3 4)', ["geography(POINTZM,", "01010000C0000000000000F03F000000000000004000000000000008400000000000001040"]],
+             ]
 
     for (geom_type, options, wkt, expected_strings) in tests:
-        ds = ogr.GetDriverByName('PGDump').CreateDataSource('/vsimem/ogr_pgdump_13.sql', options = [ 'LINEFORMAT=LF' ] )
-        lyr = ds.CreateLayer('test', geom_type = geom_type, options = options )
+        ds = ogr.GetDriverByName('PGDump').CreateDataSource('/vsimem/ogr_pgdump_13.sql', options=['LINEFORMAT=LF'])
+        lyr = ds.CreateLayer('test', geom_type=geom_type, options=options)
         f = ogr.Feature(lyr.GetLayerDefn())
         f.SetGeometryDirectly(ogr.CreateGeometryFromWkt(wkt))
         lyr.CreateFeature(f)
@@ -867,9 +879,9 @@ def ogr_pgdump_13():
         if 'GEOM_TYPE=geography' in options:
             continue
 
-        ds = ogr.GetDriverByName('PGDump').CreateDataSource('/vsimem/ogr_pgdump_13.sql', options = [ 'LINEFORMAT=LF' ] )
-        lyr = ds.CreateLayer('test', geom_type = ogr.wkbNone, options = options )
-        lyr.CreateGeomField( ogr.GeomFieldDefn("my_geom", geom_type) )
+        ds = ogr.GetDriverByName('PGDump').CreateDataSource('/vsimem/ogr_pgdump_13.sql', options=['LINEFORMAT=LF'])
+        lyr = ds.CreateLayer('test', geom_type=ogr.wkbNone, options=options)
+        lyr.CreateGeomField(ogr.GeomFieldDefn("my_geom", geom_type))
         f = ogr.Feature(lyr.GetLayerDefn())
         f.SetGeometryDirectly(ogr.CreateGeometryFromWkt(wkt))
         lyr.CreateFeature(f)
@@ -894,14 +906,15 @@ def ogr_pgdump_13():
 ###############################################################################
 # Test description
 
+
 def ogr_pgdump_14():
 
     # Set with DESCRIPTION layer creation option
-    ds = ogr.GetDriverByName('PGDump').CreateDataSource('/vsimem/ogr_pgdump_14.sql', options = [ 'LINEFORMAT=LF' ] )
-    lyr = ds.CreateLayer('ogr_pgdump_14', geom_type = ogr.wkbPoint, options = [ 'DESCRIPTION=foo' ] )
+    ds = ogr.GetDriverByName('PGDump').CreateDataSource('/vsimem/ogr_pgdump_14.sql', options=['LINEFORMAT=LF'])
+    lyr = ds.CreateLayer('ogr_pgdump_14', geom_type=ogr.wkbPoint, options=['DESCRIPTION=foo'])
     # Test that SetMetadata() and SetMetadataItem() are without effect
-    lyr.SetMetadata( { 'DESCRIPTION' : 'bar' } )
-    lyr.SetMetadataItem( 'DESCRIPTION', 'baz' )
+    lyr.SetMetadata({'DESCRIPTION': 'bar'})
+    lyr.SetMetadataItem('DESCRIPTION', 'baz')
     ds = None
 
     f = gdal.VSIFOpenL('/vsimem/ogr_pgdump_14.sql', 'rb')
@@ -916,9 +929,9 @@ def ogr_pgdump_14():
         return 'fail'
 
     # Set with SetMetadataItem()
-    ds = ogr.GetDriverByName('PGDump').CreateDataSource('/vsimem/ogr_pgdump_14.sql', options = [ 'LINEFORMAT=LF' ] )
-    lyr = ds.CreateLayer('ogr_pgdump_14', geom_type = ogr.wkbPoint )
-    lyr.SetMetadataItem( 'DESCRIPTION', 'bar' )
+    ds = ogr.GetDriverByName('PGDump').CreateDataSource('/vsimem/ogr_pgdump_14.sql', options=['LINEFORMAT=LF'])
+    lyr = ds.CreateLayer('ogr_pgdump_14', geom_type=ogr.wkbPoint)
+    lyr.SetMetadataItem('DESCRIPTION', 'bar')
     ds = None
 
     f = gdal.VSIFOpenL('/vsimem/ogr_pgdump_14.sql', 'rb')
@@ -932,9 +945,9 @@ def ogr_pgdump_14():
         return 'fail'
 
     # Set with SetMetadata()
-    ds = ogr.GetDriverByName('PGDump').CreateDataSource('/vsimem/ogr_pgdump_14.sql', options = [ 'LINEFORMAT=LF' ] )
-    lyr = ds.CreateLayer('ogr_pgdump_14', geom_type = ogr.wkbPoint )
-    lyr.SetMetadata( { 'DESCRIPTION': 'baz' } )
+    ds = ogr.GetDriverByName('PGDump').CreateDataSource('/vsimem/ogr_pgdump_14.sql', options=['LINEFORMAT=LF'])
+    lyr = ds.CreateLayer('ogr_pgdump_14', geom_type=ogr.wkbPoint)
+    lyr.SetMetadata({'DESCRIPTION': 'baz'})
     ds = None
 
     f = gdal.VSIFOpenL('/vsimem/ogr_pgdump_14.sql', 'rb')
@@ -952,10 +965,11 @@ def ogr_pgdump_14():
 ###############################################################################
 # NULL vs unset
 
+
 def ogr_pgdump_15():
 
-    ds = ogr.GetDriverByName('PGDump').CreateDataSource('/vsimem/ogr_pgdump_15.sql', options = [ 'LINEFORMAT=LF' ] )
-    lyr = ds.CreateLayer('test', geom_type = ogr.wkbNone)
+    ds = ogr.GetDriverByName('PGDump').CreateDataSource('/vsimem/ogr_pgdump_15.sql', options=['LINEFORMAT=LF'])
+    lyr = ds.CreateLayer('test', geom_type=ogr.wkbNone)
     lyr.CreateField(ogr.FieldDefn('str', ogr.OFTString))
     f = ogr.Feature(lyr.GetLayerDefn())
     f.SetFieldNull(0)
@@ -979,19 +993,53 @@ def ogr_pgdump_15():
     return 'success'
 
 ###############################################################################
+# Test sequence updating
+
+
+def ogr_pgdump_16():
+
+    for pg_use_copy in ('YES', 'NO'):
+
+        gdal.SetConfigOption('PG_USE_COPY', pg_use_copy)
+        ds = ogr.GetDriverByName('PGDump').CreateDataSource('/vsimem/ogr_pgdump_16.sql', options=['LINEFORMAT=LF'])
+        lyr = ds.CreateLayer('test', geom_type=ogr.wkbNone)
+        lyr.CreateField(ogr.FieldDefn('str', ogr.OFTString))
+        f = ogr.Feature(lyr.GetLayerDefn())
+        f.SetFID(1)
+        lyr.CreateFeature(f)
+        f = None
+        ds = None
+
+        f = gdal.VSIFOpenL('/vsimem/ogr_pgdump_16.sql', 'rb')
+        sql = gdal.VSIFReadL(1, 10000, f).decode('utf8')
+        gdal.VSIFCloseL(f)
+
+        gdal.Unlink('/vsimem/ogr_pgdump_16.sql')
+
+        if sql.find("""SELECT setval(pg_get_serial_sequence('"public"."test"', 'ogc_fid'), MAX("ogc_fid")) FROM "public"."test";""") < 0:
+            print(sql)
+            return 'fail'
+
+    gdal.SetConfigOption('PG_USE_COPY', None)
+
+    return 'success'
+
+###############################################################################
 # Cleanup
+
 
 def ogr_pgdump_cleanup():
 
     try:
         os.remove('tmp/tpoly.sql')
-    except:
+    except OSError:
         pass
     try:
         os.remove('tmp/ogr_pgdump_4.sql')
-    except:
+    except OSError:
         pass
     return 'success'
+
 
 gdaltest_list = [
     ogr_pgdump_1,
@@ -1009,14 +1057,14 @@ gdaltest_list = [
     ogr_pgdump_13,
     ogr_pgdump_14,
     ogr_pgdump_15,
-    ogr_pgdump_cleanup ]
+    ogr_pgdump_16,
+    ogr_pgdump_cleanup]
 
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'ogr_pgdump' )
+    gdaltest.setup_run('ogr_pgdump')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

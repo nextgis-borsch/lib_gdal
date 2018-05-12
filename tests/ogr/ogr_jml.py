@@ -31,16 +31,18 @@
 
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 from osgeo import ogr
+from osgeo import osr
 from osgeo import gdal
+
 
 def ogr_jml_init():
 
     try:
-        ds = ogr.Open( 'data/test.jml' )
+        ds = ogr.Open('data/test.jml')
     except:
         ds = None
 
@@ -55,12 +57,13 @@ def ogr_jml_init():
 ###############################################################################
 # Test reading
 
+
 def ogr_jml_1():
 
     if not gdaltest.jml_read_support:
         return 'skip'
 
-    ds = ogr.Open( 'data/test.jml' )
+    ds = ogr.Open('data/test.jml')
     if ds.GetLayerCount() != 1:
         gdaltest.post_reason('fail')
         return 'fail'
@@ -74,17 +77,17 @@ def ogr_jml_1():
         gdaltest.post_reason('fail')
         return 'fail'
     lyr = ds.GetLayer(0)
-    fields = [ ('first_property', ogr.OFTString),
-               ('another_property', ogr.OFTString),
-               ('objectAttr', ogr.OFTString),
-               ('attr2', ogr.OFTString),
-               ('attr3', ogr.OFTString),
-               ('int', ogr.OFTInteger),
-               ('double', ogr.OFTReal),
-               ('date', ogr.OFTDateTime),
-               ('datetime', ogr.OFTDateTime),
-               ('R_G_B', ogr.OFTString),
-               ('not_ignored', ogr.OFTString) ]
+    fields = [('first_property', ogr.OFTString),
+              ('another_property', ogr.OFTString),
+              ('objectAttr', ogr.OFTString),
+              ('attr2', ogr.OFTString),
+              ('attr3', ogr.OFTString),
+              ('int', ogr.OFTInteger),
+              ('double', ogr.OFTReal),
+              ('date', ogr.OFTDateTime),
+              ('datetime', ogr.OFTDateTime),
+              ('R_G_B', ogr.OFTString),
+              ('not_ignored', ogr.OFTString)]
     if lyr.GetLayerDefn().GetFieldCount() != len(fields):
         gdaltest.post_reason('fail')
         return 'fail'
@@ -108,29 +111,30 @@ def ogr_jml_1():
        not feat.IsFieldNull('not_ignored') or \
        feat.GetStyleString() != 'BRUSH(fc:#0000FF)' or \
        feat.GetGeometryRef().ExportToWkt() != 'POLYGON ((0 0,0 10,10 10,10 0,0 0))':
-            feat.DumpReadable()
-            gdaltest.post_reason('fail')
-            return 'fail'
+        feat.DumpReadable()
+        gdaltest.post_reason('fail')
+        return 'fail'
 
     feat = lyr.GetNextFeature()
     if feat.GetFieldAsString('datetime') != '2014/10/18 21:36:45+02' or \
        feat.GetField('R_G_B') != 'FF00FF' or \
        feat.GetStyleString() != 'PEN(c:#FF00FF)' or \
        feat.GetGeometryRef().ExportToWkt() != 'POINT (-1 -1)':
-            feat.DumpReadable()
-            gdaltest.post_reason('fail')
-            return 'fail'
+        feat.DumpReadable()
+        gdaltest.post_reason('fail')
+        return 'fail'
 
     feat = lyr.GetNextFeature()
     if feat.GetGeometryRef() is not None:
-            feat.DumpReadable()
-            gdaltest.post_reason('fail')
-            return 'fail'
+        feat.DumpReadable()
+        gdaltest.post_reason('fail')
+        return 'fail'
 
     return 'success'
 
 ###############################################################################
 # Test creating a file
+
 
 def ogr_jml_2():
 
@@ -157,10 +161,16 @@ def ogr_jml_2():
 <CollectionElement>featureCollection</CollectionElement>
 <FeatureElement>feature</FeatureElement>
 <GeometryElement>geometry</GeometryElement>
+<CRSElement>boundedBy</CRSElement>
 <ColumnDefinitions>
 </ColumnDefinitions>
 </JCSGMLInputTemplate>
 <featureCollection>
+  <gml:boundedBy>
+    <gml:Box>
+      <gml:coordinates decimal="." cs="," ts=" ">0.00,0.00 -1.00,-1.00</gml:coordinates>
+    </gml:Box>
+  </gml:boundedBy>
 </featureCollection>
 </JCSDataFile>
 """:
@@ -172,7 +182,9 @@ def ogr_jml_2():
 
     # Test all data types
     ds = ogr.GetDriverByName('JML').CreateDataSource('/vsimem/ogr_jml.jml')
-    lyr = ds.CreateLayer('foo')
+    srs = osr.SpatialReference()
+    srs.ImportFromEPSG(32632)
+    lyr = ds.CreateLayer('foo', srs=srs)
     lyr.CreateField(ogr.FieldDefn('str', ogr.OFTString))
     lyr.CreateField(ogr.FieldDefn('int', ogr.OFTInteger))
     lyr.CreateField(ogr.FieldDefn('double', ogr.OFTReal))
@@ -236,6 +248,7 @@ def ogr_jml_2():
 <CollectionElement>featureCollection</CollectionElement>
 <FeatureElement>feature</FeatureElement>
 <GeometryElement>geometry</GeometryElement>
+<CRSElement>boundedBy</CRSElement>
 <ColumnDefinitions>
      <column>
           <name>str</name>
@@ -288,6 +301,11 @@ def ogr_jml_2():
 </ColumnDefinitions>
 </JCSGMLInputTemplate>
 <featureCollection>
+  <gml:boundedBy>
+    <gml:Box srsName="http://www.opengis.net/gml/srs/epsg.xml#32632">
+      <gml:coordinates decimal="." cs="," ts=" ">0.0000000000,0.0000000000 10.0000000000,10.0000000000                                               </gml:coordinates>
+    </gml:Box>
+  </gml:boundedBy>
      <feature>
           <geometry>
                 <gml:MultiGeometry></gml:MultiGeometry>
@@ -366,7 +384,7 @@ def ogr_jml_2():
 
     # Test CREATE_R_G_B_FIELD=NO
     ds = ogr.GetDriverByName('JML').CreateDataSource('/vsimem/ogr_jml.jml')
-    lyr = ds.CreateLayer('foo', options = ['CREATE_R_G_B_FIELD=NO'] )
+    lyr = ds.CreateLayer('foo', options=['CREATE_R_G_B_FIELD=NO'])
     lyr.CreateField(ogr.FieldDefn('str', ogr.OFTString))
     f = ogr.Feature(lyr.GetLayerDefn())
     lyr.CreateFeature(f)
@@ -385,7 +403,7 @@ def ogr_jml_2():
 
     # Test CREATE_OGR_STYLE_FIELD=YES
     ds = ogr.GetDriverByName('JML').CreateDataSource('/vsimem/ogr_jml.jml')
-    lyr = ds.CreateLayer('foo', options = ['CREATE_OGR_STYLE_FIELD=YES'] )
+    lyr = ds.CreateLayer('foo', options=['CREATE_OGR_STYLE_FIELD=YES'])
     lyr.CreateField(ogr.FieldDefn('str', ogr.OFTString))
     f = ogr.Feature(lyr.GetLayerDefn())
     f.SetStyleString('PEN(c:#445566)')
@@ -405,7 +423,7 @@ def ogr_jml_2():
 
     # Test CREATE_OGR_STYLE_FIELD=YES with a R_G_B field
     ds = ogr.GetDriverByName('JML').CreateDataSource('/vsimem/ogr_jml.jml')
-    lyr = ds.CreateLayer('foo', options = ['CREATE_OGR_STYLE_FIELD=YES'] )
+    lyr = ds.CreateLayer('foo', options=['CREATE_OGR_STYLE_FIELD=YES'])
     lyr.CreateField(ogr.FieldDefn('R_G_B', ogr.OFTString))
     f = ogr.Feature(lyr.GetLayerDefn())
     f.SetField('R_G_B', '112233')
@@ -430,6 +448,7 @@ def ogr_jml_2():
 ###############################################################################
 # Run test_ogrsf
 
+
 def ogr_jml_3():
 
     if not gdaltest.jml_read_support:
@@ -450,13 +469,14 @@ def ogr_jml_3():
 ###############################################################################
 # Test a few error cases
 
+
 def ogr_jml_4():
 
     if not gdaltest.jml_read_support:
         return 'skip'
 
     # Missing CollectionElement, FeatureElement or GeometryElement
-    gdal.FileFromMemBuffer('/vsimem/ogr_jml.jml',"""<?xml version='1.0' encoding='UTF-8'?>
+    gdal.FileFromMemBuffer('/vsimem/ogr_jml.jml', """<?xml version='1.0' encoding='UTF-8'?>
 <JCSDataFile xmlns:gml="http://www.opengis.net/gml" xmlns:xsi="http://www.w3.org/2000/10/XMLSchema-instance" >
 <JCSGMLInputTemplate>
 <MISSING_CollectionElement>featureCollection</MISSING_CollectionElement>
@@ -480,7 +500,7 @@ def ogr_jml_4():
     ds = None
 
     # XML malformed in JCSGMLInputTemplate
-    gdal.FileFromMemBuffer('/vsimem/ogr_jml.jml',"""<?xml version='1.0' encoding='UTF-8'?>
+    gdal.FileFromMemBuffer('/vsimem/ogr_jml.jml', """<?xml version='1.0' encoding='UTF-8'?>
 <JCSDataFile xmlns:gml="http://www.opengis.net/gml" xmlns:xsi="http://www.w3.org/2000/10/XMLSchema-instance" >
 <JCSGMLInputTemplate>
 <CollectionElement>featureCollection</CollectionElement>
@@ -504,7 +524,7 @@ def ogr_jml_4():
     ds = None
 
     # XML malformed in featureCollection
-    gdal.FileFromMemBuffer('/vsimem/ogr_jml.jml',"""<?xml version='1.0' encoding='UTF-8'?>
+    gdal.FileFromMemBuffer('/vsimem/ogr_jml.jml', """<?xml version='1.0' encoding='UTF-8'?>
 <JCSDataFile xmlns:gml="http://www.opengis.net/gml" xmlns:xsi="http://www.w3.org/2000/10/XMLSchema-instance" >
 <JCSGMLInputTemplate>
 <CollectionElement>featureCollection</CollectionElement>
@@ -534,7 +554,7 @@ def ogr_jml_4():
     ds = None
 
     # XML malformed in featureCollection
-    gdal.FileFromMemBuffer('/vsimem/ogr_jml.jml',"""<?xml version='1.0' encoding='UTF-8'?>
+    gdal.FileFromMemBuffer('/vsimem/ogr_jml.jml', """<?xml version='1.0' encoding='UTF-8'?>
 <JCSDataFile xmlns:gml="http://www.opengis.net/gml" xmlns:xsi="http://www.w3.org/2000/10/XMLSchema-instance" >
 <JCSGMLInputTemplate>
 <CollectionElement>featureCollection</CollectionElement>
@@ -565,7 +585,7 @@ def ogr_jml_4():
     del ds
 
     # Invalid column definitions
-    gdal.FileFromMemBuffer('/vsimem/ogr_jml.jml',"""<?xml version='1.0' encoding='UTF-8'?>
+    gdal.FileFromMemBuffer('/vsimem/ogr_jml.jml', """<?xml version='1.0' encoding='UTF-8'?>
 <JCSDataFile xmlns:gml="http://www.opengis.net/gml" xmlns:xsi="http://www.w3.org/2000/10/XMLSchema-instance" >
 <JCSGMLInputTemplate>
 <CollectionElement>featureCollection</CollectionElement>
@@ -636,8 +656,31 @@ def ogr_jml_4():
     ds = None
 
     return 'success'
+
+###############################################################################
+# Test reading SRS
+
+
+def ogr_jml_read_srs():
+
+    if not gdaltest.jml_read_support:
+        return 'skip'
+
+    ds = ogr.Open('data/one_point_srid_4326.jml')
+    lyr = ds.GetLayer(0)
+    if lyr.GetSpatialRef().ExportToWkt().find('4326') < 0:
+        gdaltest.post_reason('fail')
+        return 'fail'
+    f = lyr.GetNextFeature()
+    if f.GetGeometryRef() is None:
+        gdaltest.post_reason('fail')
+        return 'fail'
+
+    return 'success'
+
 ###############################################################################
 #
+
 
 def ogr_jml_cleanup():
 
@@ -645,18 +688,20 @@ def ogr_jml_cleanup():
 
     return 'success'
 
+
 gdaltest_list = [
     ogr_jml_init,
     ogr_jml_1,
     ogr_jml_2,
     ogr_jml_3,
     ogr_jml_4,
-    ogr_jml_cleanup ]
+    ogr_jml_read_srs,
+    ogr_jml_cleanup]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'ogr_jml' )
+    gdaltest.setup_run('ogr_jml')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

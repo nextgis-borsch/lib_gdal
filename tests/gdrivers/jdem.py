@@ -30,26 +30,27 @@
 
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 
 ###############################################################################
 # Test reading a - fake - JDEM dataset
 
+
 def jdem_1():
 
-    tst = gdaltest.GDALTest( 'JDEM', 'fakejdem.mem', 1, 15 )
+    tst = gdaltest.GDALTest('JDEM', 'fakejdem.mem', 1, 15)
     return tst.testOpen()
 
+
 gdaltest_list = [
-    jdem_1 ]
+    jdem_1]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'jdem' )
+    gdaltest.setup_run('jdem')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

@@ -31,12 +31,13 @@
 import sys
 from osgeo import gdal
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 
 ###############################################################################
 # Simple test
+
 
 def vrtovr_1():
 
@@ -51,7 +52,7 @@ def vrtovr_1():
       <DstRect xOff="0" yOff="0" xSize="20" ySize="20" />
     </SimpleSource>
     <Overview>
-      <SourceFilename relativeToVRT="0">data/byte.tif</SourceFilename>
+      <SourceFilename relativeToVRT="0">data/int16.tif</SourceFilename>
       <SourceBand>1</SourceBand>
     </Overview>
   </VRTRasterBand>
@@ -69,12 +70,19 @@ def vrtovr_1():
         print(cs)
         return 'fail'
 
+    fl = ds.GetFileList()
+    if fl != ['data/byte.tif', 'data/int16.tif']:
+        gdaltest.post_reason('did not get expected file list')
+        print(fl)
+        return 'fail'
+
     ds = None
 
     return 'success'
 
 ###############################################################################
 # Test serialization
+
 
 def vrtovr_2():
 
@@ -121,6 +129,81 @@ def vrtovr_2():
 
     return 'success'
 
+###############################################################################
+#
+
+
+def vrtovr_none():
+
+    vrt_string = """<VRTDataset rasterXSize="20" rasterYSize="20">
+  <VRTRasterBand dataType="Byte" band="1">
+    <ColorInterp>Gray</ColorInterp>
+    <SimpleSource>
+      <SourceFilename relativeToVRT="0">data/byte.tif</SourceFilename>
+      <SourceBand>1</SourceBand>
+      <SourceProperties RasterXSize="20" RasterYSize="20" DataType="Byte" BlockXSize="20" BlockYSize="20" />
+      <SrcRect xOff="0" yOff="0" xSize="20" ySize="20" />
+      <DstRect xOff="0" yOff="0" xSize="20" ySize="20" />
+    </SimpleSource>
+  </VRTRasterBand>
+</VRTDataset>"""
+
+    ds = gdal.Open(vrt_string)
+    if ds.GetRasterBand(1).GetOverviewCount() != 0:
+        gdaltest.post_reason('did not get expected overview count')
+        print(ds.GetRasterBand(1).GetOverviewCount())
+        return 'fail'
+
+    if ds.GetRasterBand(1).GetOverview(0):
+        gdaltest.post_reason('fail')
+        return 'fail'
+
+    return 'success'
+
+###############################################################################
+#
+
+
+def vrtovr_errors():
+
+    vrt_string = """<VRTDataset rasterXSize="20" rasterYSize="20">
+  <VRTRasterBand dataType="Byte" band="1">
+    <ColorInterp>Gray</ColorInterp>
+    <SimpleSource>
+      <SourceFilename relativeToVRT="0">data/byte.tif</SourceFilename>
+      <SourceBand>1</SourceBand>
+      <SourceProperties RasterXSize="20" RasterYSize="20" DataType="Byte" BlockXSize="20" BlockYSize="20" />
+      <SrcRect xOff="0" yOff="0" xSize="20" ySize="20" />
+      <DstRect xOff="0" yOff="0" xSize="20" ySize="20" />
+    </SimpleSource>
+    <Overview>
+      <SourceFilename relativeToVRT="0">data/int16.tif</SourceFilename>
+      <SourceBand>123456</SourceBand>
+    </Overview>
+  </VRTRasterBand>
+</VRTDataset>"""
+
+    ds = gdal.Open(vrt_string)
+    if ds.GetRasterBand(1).GetOverviewCount() != 1:
+        gdaltest.post_reason('did not get expected overview count')
+        print(ds.GetRasterBand(1).GetOverviewCount())
+        return 'fail'
+
+    if ds.GetRasterBand(1).GetOverview(-1):
+        gdaltest.post_reason('fail')
+        return 'fail'
+
+    if ds.GetRasterBand(1).GetOverview(1):
+        gdaltest.post_reason('fail')
+        return 'fail'
+
+    with gdaltest.error_handler():
+        if ds.GetRasterBand(1).GetOverview(0):
+            gdaltest.post_reason('fail')
+            return 'fail'
+
+    return 'success'
+
 
 ###############################################################################
 # Cleanup.
@@ -128,15 +211,18 @@ def vrtovr_2():
 def vrtovr_cleanup():
     return 'success'
 
+
 gdaltest_list = [
     vrtovr_1,
     vrtovr_2,
-    vrtovr_cleanup ]
+    vrtovr_none,
+    vrtovr_errors,
+    vrtovr_cleanup]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'vrtovr' )
+    gdaltest.setup_run('vrtovr')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

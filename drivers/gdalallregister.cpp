@@ -35,7 +35,7 @@
    #include "gnm_frmts.h"
 #endif
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 #ifdef notdef
 // we may have a use for this some day
@@ -116,10 +116,6 @@ void CPL_STDCALL GDALAllRegister()
 
 #ifdef FRMT_sdts
     GDALRegister_SDTS();
-#endif
-
-#ifdef FRMT_ogdi
-    GDALRegister_OGDI();
 #endif
 
 #ifdef FRMT_dted
@@ -237,6 +233,7 @@ void CPL_STDCALL GDALAllRegister()
     GDALRegister_ISIS3();
     GDALRegister_ISIS2();
     GDALRegister_PDS();
+    GDALRegister_PDS4();
     GDALRegister_VICAR();
 #endif
 
@@ -413,7 +410,6 @@ void CPL_STDCALL GDALAllRegister()
     GDALRegister_PNM();
     GDALRegister_DOQ1();
     GDALRegister_DOQ2();
-    GDALRegister_GenBin();
     GDALRegister_PAux();
     GDALRegister_MFF();
     GDALRegister_HKV();
@@ -437,11 +433,6 @@ void CPL_STDCALL GDALAllRegister()
     GDALRegister_KRO();
     GDALRegister_ROIPAC();
     GDALRegister_RRASTER();
-
-    // Those ones need to look for side car files so put them at end
-    GDALRegister_ENVI();
-    GDALRegister_EHdr();
-    GDALRegister_ISCE();
 #endif
 
 #ifdef FRMT_arg
@@ -554,11 +545,27 @@ void CPL_STDCALL GDALAllRegister()
     GDALRegister_PRF();
 #endif
 
+#ifdef FRMT_rda
+    GDALRegister_RDA();
+#endif
+
+#ifdef FRMT_null
+    GDALRegister_NULL();
+#endif
+
 #ifdef GNM_ENABLED
     GNMRegisterAllInternal();
 #endif
 
     OGRRegisterAllInternal();
+
+#ifdef FRMT_raw
+    // Those ones need to look for side car files so put them at end
+    GDALRegister_GenBin();
+    GDALRegister_ENVI();
+    GDALRegister_EHdr();
+    GDALRegister_ISCE();
+#endif
 
 #ifdef FRMT_wcs
     GDALRegister_HTTP();

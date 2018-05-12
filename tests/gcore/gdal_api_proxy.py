@@ -33,12 +33,14 @@ import os
 import sys
 from osgeo import gdal
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 
 ###############################################################################
 # Test forked gdalserver
+
+
 def gdal_api_proxy_1():
 
     import test_py_scripts
@@ -47,7 +49,7 @@ def gdal_api_proxy_1():
     if gdaltest.gdalserver_path is None:
         gdaltest.gdalserver_path = 'gdalserver'
 
-    ret = test_py_scripts.run_py_script_as_external_script('.', 'gdal_api_proxy', ' \"%s\" -1' % gdaltest.gdalserver_path, display_live_on_parent_stdout = True)
+    ret = test_py_scripts.run_py_script_as_external_script('.', 'gdal_api_proxy', ' \"%s\" -1' % gdaltest.gdalserver_path, display_live_on_parent_stdout=True)
 
     if ret.find('Failed:    0') == -1:
         return 'fail'
@@ -56,13 +58,15 @@ def gdal_api_proxy_1():
 
 ###############################################################################
 # Test connection to TCP server
+
+
 def gdal_api_proxy_2():
 
-    if sys.version_info < (2,6,0):
+    if sys.version_info < (2, 6, 0):
         return 'skip'
 
     import test_py_scripts
-    ret = test_py_scripts.run_py_script_as_external_script('.', 'gdal_api_proxy', ' \"%s\" -2' % gdaltest.gdalserver_path, display_live_on_parent_stdout = True)
+    ret = test_py_scripts.run_py_script_as_external_script('.', 'gdal_api_proxy', ' \"%s\" -2' % gdaltest.gdalserver_path, display_live_on_parent_stdout=True)
 
     if ret.find('Failed:    0') == -1:
         return 'fail'
@@ -71,9 +75,11 @@ def gdal_api_proxy_2():
 
 ###############################################################################
 # Test connection to Unix socket server
+
+
 def gdal_api_proxy_3():
 
-    if sys.version_info < (2,6,0):
+    if sys.version_info < (2, 6, 0):
         return 'skip'
 
     if sys.platform == 'win32':
@@ -84,7 +90,7 @@ def gdal_api_proxy_3():
         return 'skip'
 
     import test_py_scripts
-    ret = test_py_scripts.run_py_script_as_external_script('.', 'gdal_api_proxy', ' \"%s\" -3' % gdaltest.gdalserver_path, display_live_on_parent_stdout = True)
+    ret = test_py_scripts.run_py_script_as_external_script('.', 'gdal_api_proxy', ' \"%s\" -3' % gdaltest.gdalserver_path, display_live_on_parent_stdout=True)
 
     if ret.find('Failed:    0') == -1:
         return 'fail'
@@ -94,9 +100,10 @@ def gdal_api_proxy_3():
 ###############################################################################
 # Test -nofork mode
 
+
 def gdal_api_proxy_4():
 
-    if sys.version_info < (2,6,0):
+    if sys.version_info < (2, 6, 0):
         return 'skip'
 
     if sys.platform == 'win32':
@@ -107,7 +114,7 @@ def gdal_api_proxy_4():
         return 'skip'
 
     import test_py_scripts
-    ret = test_py_scripts.run_py_script_as_external_script('.', 'gdal_api_proxy', ' \"%s\" -4' % gdaltest.gdalserver_path, display_live_on_parent_stdout = True)
+    ret = test_py_scripts.run_py_script_as_external_script('.', 'gdal_api_proxy', ' \"%s\" -4' % gdaltest.gdalserver_path, display_live_on_parent_stdout=True)
 
     if ret.find('Failed:    0') == -1:
         return 'fail'
@@ -116,6 +123,8 @@ def gdal_api_proxy_4():
 
 ###############################################################################
 #
+
+
 def gdal_api_proxy_sub():
 
     src_ds = gdal.Open('data/byte.tif')
@@ -135,7 +144,7 @@ def gdal_api_proxy_sub():
     ds = None
 
     src_ds = gdal.Open('data/byte.tif')
-    ds = gdal.GetDriverByName('GTiff').CreateCopy('tmp/byte.tif', src_ds, options = ['TILED=YES'])
+    ds = gdal.GetDriverByName('GTiff').CreateCopy('tmp/byte.tif', src_ds, options=['TILED=YES'])
     got_cs = ds.GetRasterBand(1).Checksum()
     if src_cs != got_cs:
         gdaltest.post_reason('fail')
@@ -144,7 +153,7 @@ def gdal_api_proxy_sub():
 
     ds = gdal.Open('tmp/byte.tif', gdal.GA_Update)
 
-    ds.SetGeoTransform([1,2,3,4,5,6])
+    ds.SetGeoTransform([1, 2, 3, 4, 5, 6])
     got_gt = ds.GetGeoTransform()
     if src_gt == got_gt:
         gdaltest.post_reason('fail')
@@ -169,7 +178,7 @@ def gdal_api_proxy_sub():
         gdaltest.post_reason('fail')
         return 'fail'
 
-    gcps = [ gdal.GCP(0,1,2,3,4) ]
+    gcps = [gdal.GCP(0, 1, 2, 3, 4)]
     ds.SetGCPs(gcps, "foo")
 
     got_gcps = ds.GetGCPs()
@@ -246,23 +255,23 @@ def gdal_api_proxy_sub():
         gdaltest.post_reason('fail')
         return 'fail'
 
-    got_data_weird_spacing = ds.ReadRaster(0, 0, 20, 20, buf_pixel_space = 1, buf_line_space = 32)
+    got_data_weird_spacing = ds.ReadRaster(0, 0, 20, 20, buf_pixel_space=1, buf_line_space=32)
     if len(got_data_weird_spacing) != 32 * (20 - 1) + 20:
         gdaltest.post_reason('fail')
         print(len(got_data_weird_spacing))
         return 'fail'
 
-    if got_data[20:20+20] != got_data_weird_spacing[32:32+20]:
+    if got_data[20:20 + 20] != got_data_weird_spacing[32:32 + 20]:
         gdaltest.post_reason('fail')
         return 'fail'
 
-    got_data_weird_spacing = ds.GetRasterBand(1).ReadRaster(0, 0, 20, 20, buf_pixel_space = 1, buf_line_space = 32)
+    got_data_weird_spacing = ds.GetRasterBand(1).ReadRaster(0, 0, 20, 20, buf_pixel_space=1, buf_line_space=32)
     if len(got_data_weird_spacing) != 32 * (20 - 1) + 20:
         gdaltest.post_reason('fail')
         print(len(got_data_weird_spacing))
         return 'fail'
 
-    if got_data[20:20+20] != got_data_weird_spacing[32:32+20]:
+    if got_data[20:20 + 20] != got_data_weird_spacing[32:32 + 20]:
         gdaltest.post_reason('fail')
         return 'fail'
 
@@ -271,7 +280,7 @@ def gdal_api_proxy_sub():
         gdaltest.post_reason('fail')
         return 'fail'
 
-    if got_data[20:20+20] != got_block[256:256+20]:
+    if got_data[20:20 + 20] != got_block[256:256 + 20]:
         gdaltest.post_reason('fail')
         return 'fail'
 
@@ -311,12 +320,12 @@ def gdal_api_proxy_sub():
         gdaltest.post_reason('fail')
         return 'fail'
 
-    ds.SetMetadata({'foo' : 'baz'}, 'OTHER')
+    ds.SetMetadata({'foo': 'baz'}, 'OTHER')
     if ds.GetMetadataItem('foo', 'OTHER') != 'baz':
         gdaltest.post_reason('fail')
         return 'fail'
 
-    ds.GetRasterBand(1).SetMetadata({'foo' : 'baw'}, 'OTHER')
+    ds.GetRasterBand(1).SetMetadata({'foo': 'baw'}, 'OTHER')
     if ds.GetRasterBand(1).GetMetadataItem('foo', 'OTHER') != 'baw':
         gdaltest.post_reason('fail')
         return 'fail'
@@ -339,7 +348,7 @@ def gdal_api_proxy_sub():
         gdaltest.post_reason('fail')
         return 'fail'
 
-    ds.GetRasterBand(1).SetMetadata({'foo' : 'baw'})
+    ds.GetRasterBand(1).SetMetadata({'foo': 'baw'})
     if ds.GetRasterBand(1).GetMetadataItem('foo') != 'baw':
         gdaltest.post_reason('fail')
         return 'fail'
@@ -348,7 +357,7 @@ def gdal_api_proxy_sub():
         gdaltest.post_reason('fail')
         return 'fail'
 
-    ds.GetRasterBand(1).SetColorInterpretation( gdal.GCI_Undefined )
+    ds.GetRasterBand(1).SetColorInterpretation(gdal.GCI_Undefined)
 
     ct = ds.GetRasterBand(1).GetColorTable()
     if ct is not None:
@@ -356,7 +365,7 @@ def gdal_api_proxy_sub():
         return 'fail'
 
     ct = gdal.ColorTable()
-    ct.SetColorEntry( 0, (1, 2, 3) )
+    ct.SetColorEntry(0, (1, 2, 3))
     if ds.GetRasterBand(1).SetColorTable(ct) != 0:
         gdaltest.post_reason('fail')
         return 'fail'
@@ -415,12 +424,12 @@ def gdal_api_proxy_sub():
         gdaltest.post_reason('fail')
         return 'fail'
 
-    got_stats = ds.GetRasterBand(1).GetStatistics(0,0)
+    got_stats = ds.GetRasterBand(1).GetStatistics(0, 0)
     if got_stats[3] >= 0.0:
         gdaltest.post_reason('fail')
         return 'fail'
 
-    got_stats = ds.GetRasterBand(1).GetStatistics(1,1)
+    got_stats = ds.GetRasterBand(1).GetStatistics(1, 1)
     if got_stats[0] != 74.0:
         gdaltest.post_reason('fail')
         return 'fail'
@@ -433,15 +442,15 @@ def gdal_api_proxy_sub():
         gdaltest.post_reason('fail')
         return 'fail'
 
-    ds.GetRasterBand(1).SetStatistics(1,2,3,4)
-    got_stats = ds.GetRasterBand(1).GetStatistics(1,1)
-    if got_stats != [1,2,3,4]:
+    ds.GetRasterBand(1).SetStatistics(1, 2, 3, 4)
+    got_stats = ds.GetRasterBand(1).GetStatistics(1, 1)
+    if got_stats != [1, 2, 3, 4]:
         print(got_stats)
         gdaltest.post_reason('fail')
         return 'fail'
 
     ds.GetRasterBand(1).ComputeStatistics(0)
-    got_stats = ds.GetRasterBand(1).GetStatistics(1,1)
+    got_stats = ds.GetRasterBand(1).GetStatistics(1, 1)
     if got_stats[0] != 74.0:
         gdaltest.post_reason('fail')
         return 'fail'
@@ -506,7 +515,7 @@ def gdal_api_proxy_sub():
         gdaltest.post_reason('fail')
         return 'fail'
 
-    ds.GetRasterBand(1).SetDefaultHistogram(1,2,[3])
+    ds.GetRasterBand(1).SetDefaultHistogram(1, 2, [3])
     (minval, maxval, nitems, got_hist3) = ds.GetRasterBand(1).GetDefaultHistogram()
     if minval != 1:
         gdaltest.post_reason('fail')
@@ -590,6 +599,8 @@ def gdal_api_proxy_sub():
 
 ###############################################################################
 #
+
+
 def gdal_api_proxy_sub_clean():
     if gdaltest.api_proxy_server_p is not None:
         try:
@@ -599,15 +610,16 @@ def gdal_api_proxy_sub_clean():
         gdaltest.api_proxy_server_p.wait()
     try:
         os.unlink('tmp/gdalapiproxysocket')
-    except:
+    except OSError:
         pass
 
     return 'success'
 
-gdaltest_list = [ gdal_api_proxy_1,
-                  gdal_api_proxy_2,
-                  gdal_api_proxy_3,
-                  gdal_api_proxy_4 ]
+
+gdaltest_list = [gdal_api_proxy_1,
+                 gdal_api_proxy_2,
+                 gdal_api_proxy_3,
+                 gdal_api_proxy_4]
 
 if __name__ == '__main__':
 
@@ -619,7 +631,7 @@ if __name__ == '__main__':
             gdal.SetConfigOption('GDAL_API_PROXY_SERVER', gdalserver_path)
 
         gdaltest.api_proxy_server_p = None
-        gdaltest_list = [ gdal_api_proxy_sub ]
+        gdaltest_list = [gdal_api_proxy_sub]
 
     elif len(sys.argv) >= 3 and sys.argv[2] == '-2':
 
@@ -629,7 +641,7 @@ if __name__ == '__main__':
         import time
 
         p = None
-        for port in [8080,8081,8082]:
+        for port in [8080, 8081, 8082]:
             p = subprocess.Popen([gdalserver_path, '-tcpserver', '%d' % port])
             time.sleep(1)
             if p.poll() is None:
@@ -646,7 +658,7 @@ if __name__ == '__main__':
             gdal.SetConfigOption('GDAL_API_PROXY_SERVER', 'localhost:%d' % port)
             print('port = %d' % port)
             gdaltest.api_proxy_server_p = p
-            gdaltest_list = [ gdal_api_proxy_sub, gdal_api_proxy_sub_clean ]
+            gdaltest_list = [gdal_api_proxy_sub, gdal_api_proxy_sub_clean]
         else:
             gdaltest_list = []
 
@@ -663,7 +675,7 @@ if __name__ == '__main__':
             gdal.SetConfigOption('GDAL_API_PROXY', 'YES')
             gdal.SetConfigOption('GDAL_API_PROXY_SERVER', 'tmp/gdalapiproxysocket')
             gdaltest.api_proxy_server_p = p
-            gdaltest_list = [ gdal_api_proxy_sub, gdal_api_proxy_sub_clean ]
+            gdaltest_list = [gdal_api_proxy_sub, gdal_api_proxy_sub_clean]
         else:
             try:
                 p.terminate()
@@ -685,7 +697,7 @@ if __name__ == '__main__':
             gdal.SetConfigOption('GDAL_API_PROXY', 'YES')
             gdal.SetConfigOption('GDAL_API_PROXY_SERVER', 'tmp/gdalapiproxysocket')
             gdaltest.api_proxy_server_p = p
-            gdaltest_list = [ gdal_api_proxy_sub, gdal_api_proxy_sub_clean ]
+            gdaltest_list = [gdal_api_proxy_sub, gdal_api_proxy_sub_clean]
         else:
             try:
                 p.terminate()
@@ -694,9 +706,8 @@ if __name__ == '__main__':
             p.wait()
             gdaltest_list = []
 
-    gdaltest.setup_run( 'gdal_api_proxy' )
+    gdaltest.setup_run('gdal_api_proxy')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

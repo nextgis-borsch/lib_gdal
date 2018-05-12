@@ -32,6 +32,10 @@
 #ifndef OGRSHAPE_H_INCLUDED
 #define OGRSHAPE_H_INCLUDED
 
+#ifdef RENAME_INTERNAL_SHAPELIB_SYMBOLS
+#include "gdal_shapelib_symbol_rename.h"
+#endif
+
 #include "ogrsf_frmts.h"
 #include "shapefil.h"
 #include "shp_vsi.h"
@@ -65,11 +69,11 @@ OGRErr SHPWriteOGRFeature( SHPHandle hSHP, DBFHandle hDBF,
 /*                         OGRShapeGeomFieldDefn                        */
 /************************************************************************/
 
-class OGRShapeGeomFieldDefn CPL_FINAL: public OGRGeomFieldDefn
+class OGRShapeGeomFieldDefn final: public OGRGeomFieldDefn
 {
     char* pszFullName;
-    bool  bSRSSet;
-    CPLString osPrjFile;
+    mutable bool  bSRSSet;
+    mutable CPLString osPrjFile;
 
     public:
         OGRShapeGeomFieldDefn( const char* pszFullNameIn,
@@ -84,7 +88,7 @@ class OGRShapeGeomFieldDefn CPL_FINAL: public OGRGeomFieldDefn
 
         virtual ~OGRShapeGeomFieldDefn() { CPLFree(pszFullName); }
 
-        virtual OGRSpatialReference* GetSpatialRef() override;
+        virtual OGRSpatialReference* GetSpatialRef() const override;
 
         const CPLString& GetPrjFilename() const { return osPrjFile; }
 };
@@ -95,7 +99,7 @@ class OGRShapeGeomFieldDefn CPL_FINAL: public OGRGeomFieldDefn
 
 class OGRShapeDataSource;
 
-class OGRShapeLayer CPL_FINAL: public OGRAbstractProxiedLayer
+class OGRShapeLayer final: public OGRAbstractProxiedLayer
 {
     OGRShapeDataSource  *poDS;
 
@@ -202,7 +206,7 @@ class OGRShapeLayer CPL_FINAL: public OGRAbstractProxiedLayer
                                        OGRSpatialReference *poSRS, bool bSRSSet,
                                        bool bUpdate,
                                        OGRwkbGeometryType eReqType,
-                                       char ** papszCreateOptions = NULL);
+                                       char ** papszCreateOptions = nullptr);
     virtual            ~OGRShapeLayer();
 
     void                ResetReading() override;
@@ -250,7 +254,7 @@ class OGRShapeLayer CPL_FINAL: public OGRAbstractProxiedLayer
 /*                          OGRShapeDataSource                          */
 /************************************************************************/
 
-class OGRShapeDataSource CPL_FINAL: public OGRDataSource
+class OGRShapeDataSource final: public OGRDataSource
 {
     OGRShapeLayer     **papoLayers;
     int                 nLayers;
@@ -283,9 +287,9 @@ class OGRShapeDataSource CPL_FINAL: public OGRDataSource
     virtual OGRLayer    *GetLayerByName( const char * ) override;
 
     virtual OGRLayer    *ICreateLayer( const char *,
-                                       OGRSpatialReference * = NULL,
+                                       OGRSpatialReference * = nullptr,
                                        OGRwkbGeometryType = wkbUnknown,
-                                       char ** = NULL ) override;
+                                       char ** = nullptr ) override;
 
     virtual OGRLayer    *ExecuteSQL( const char *pszStatement,
                                      OGRGeometry *poSpatialFilter,

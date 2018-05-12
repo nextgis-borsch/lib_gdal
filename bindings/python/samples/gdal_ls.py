@@ -34,40 +34,49 @@ import sys
 
 from osgeo import gdal
 
+
 def needsVSICurl(filename):
     return filename.startswith('http://') or filename.startswith('https://') or filename.startswith('ftp://')
+
 
 def iszip(filename):
     return filename.endswith('.zip') or filename.endswith('.ZIP')
 
+
 def istgz(filename):
     return filename.endswith('.tgz') or filename.endswith('.TGZ') or \
-           filename.endswith('.tar.gz') or filename.endswith('.TAR.GZ')
+        filename.endswith('.tar.gz') or filename.endswith('.TAR.GZ')
 
-def display_file(fout, dirname, prefix, filename, longformat, check_open = False):
+
+def display_file(fout, dirname, prefix, filename, longformat, check_open=False):
 
     statBuf = None
     filename_displayed = prefix + filename
 
+    if dirname.endswith('/'):
+        dirname_with_slash = dirname
+    else:
+        dirname_with_slash = dirname + '/'
+
     version_num = int(gdal.VersionInfo('VERSION_NUM'))
     if longformat:
         if version_num >= 1900:
-            statBuf = gdal.VSIStatL(dirname + '/' + filename, gdal.VSI_STAT_EXISTS_FLAG | gdal.VSI_STAT_NATURE_FLAG | gdal.VSI_STAT_SIZE_FLAG)
+            statBuf = gdal.VSIStatL(dirname_with_slash + filename, gdal.VSI_STAT_EXISTS_FLAG | gdal.VSI_STAT_NATURE_FLAG | gdal.VSI_STAT_SIZE_FLAG)
     else:
         if version_num >= 1900:
-            statBuf = gdal.VSIStatL(dirname + '/' + filename, gdal.VSI_STAT_EXISTS_FLAG | gdal.VSI_STAT_NATURE_FLAG)
+            statBuf = gdal.VSIStatL(dirname_with_slash + filename, gdal.VSI_STAT_EXISTS_FLAG | gdal.VSI_STAT_NATURE_FLAG)
 
     if statBuf is None and check_open:
         if version_num >= 1900:
             f = None
         else:
-            f = gdal.VSIFOpenL(dirname + '/' + filename, "rb")
+            f = gdal.VSIFOpenL(dirname_with_slash + filename, "rb")
         if f is None:
-            sys.stderr.write('Cannot open %s\n' % (dirname + '/' + filename))
+            sys.stderr.write('Cannot open %s\n' % (dirname_with_slash + filename))
             return
         gdal.VSIFCloseL(f)
 
-    if statBuf is not None and statBuf.IsDirectory():
+    if statBuf is not None and statBuf.IsDirectory() and not filename_displayed.endswith('/'):
         filename_displayed = filename_displayed + "/"
 
     if longformat and statBuf is not None:
@@ -84,10 +93,11 @@ def display_file(fout, dirname, prefix, filename, longformat, check_open = False
 
     try:
         fout.write(line.encode('utf-8'))
-    except:
+    except (TypeError, UnicodeEncodeError):
         fout.write(line)
 
-def readDir(fout, dirname, prefix, longformat, recurse, depth, recurseInZip, recurseInTGZ, first = False):
+
+def readDir(fout, dirname, prefix, longformat, recurse, depth, recurseInZip, recurseInTGZ, first=False):
 
     if depth <= 0:
         return
@@ -126,23 +136,28 @@ def readDir(fout, dirname, prefix, longformat, recurse, depth, recurseInZip, rec
             display_file(fout, dirname, prefix, filename, longformat)
 
             if recurse:
-                readDir(fout, dirname + '/' + filename, prefix + filename + '/', \
+                new_prefix = prefix + filename
+                if not new_prefix.endswith('/'):
+                    new_prefix += '/'
+                readDir(fout, dirname + '/' + filename, new_prefix,
                         longformat, recurse, depth - 1, recurseInZip, recurseInTGZ)
 
+
 def Usage():
-    print('Usage: gdal_ls [-l] [-R] [-depth d] [-Rzip] [-Rtgz] name_of_virtual_directory')
+    print('Usage: gdal_ls [-l] [-r] [-depth d] [-Rzip] [-Rtgz] name_of_virtual_directory')
     print('')
     print('Display the list of files in a virtual directory, like /vsicurl or /vsizip')
     print('')
     print('Options :')
     print(' -l : use a long listing format (same as ls -l)')
-    print(' -R : list subdirectories recursively')
+    print(' -r : list subdirectories recursively')
     print(' -depth d : recurse until depth d')
     print(' -Rzip : list content of .zip archives')
     print(' -Rtgz : list content of .tar.gz/.tgz archives (potentially slow on /vsicurl/)')
     return -1
 
-def gdal_ls(argv, fout = sys.stdout):
+
+def gdal_ls(argv, fout=sys.stdout):
     longformat = False
     recurse = False
     recurseInZip = False
@@ -151,7 +166,7 @@ def gdal_ls(argv, fout = sys.stdout):
     dirname = None
     depth = 1024
 
-    argv = gdal.GeneralCmdLineProcessor( argv )
+    argv = gdal.GeneralCmdLineProcessor(argv)
     if argv is None:
         return -1
 
@@ -160,7 +175,10 @@ def gdal_ls(argv, fout = sys.stdout):
     while i < argc:
         if argv[i] == '-l':
             longformat = True
-        elif argv[i] == '-R':
+        elif argv[i] == '-lr':
+            longformat = True
+            recurse = True
+        elif argv[i] == '-R' or argv[i] == '-r':
             recurse = True
         elif argv[i] == '-Rzip':
             recurseInZip = True
@@ -168,8 +186,8 @@ def gdal_ls(argv, fout = sys.stdout):
             recurseInTGZ = True
         elif argv[i] == '-noprefix':
             display_prefix = False
-        elif argv[i] == '-depth' and i < len(argv)-1:
-            depth = int(argv[i+1])
+        elif argv[i] == '-depth' and i < len(argv) - 1:
+            depth = int(argv[i + 1])
             i = i + 1
         elif argv[i][0] == '-':
             sys.stderr.write('Unrecognized option : %s\n' % argv[i])
@@ -187,15 +205,15 @@ def gdal_ls(argv, fout = sys.stdout):
 
     # Remove trailing
     if dirname[-1] == '/':
-        dirname = dirname[0:len(dirname)-1]
+        dirname = dirname[0:len(dirname) - 1]
 
     if needsVSICurl(dirname):
         dirname = '/vsicurl/' + dirname
 
-    #if iszip(dirname) and not dirname.startswith('/vsizip'):
+    # if iszip(dirname) and not dirname.startswith('/vsizip'):
     #    dirname = '/vsizip/' + dirname
 
-    #if istgz(dirname) and not dirname.startswith('/vsitar'):
+    # if istgz(dirname) and not dirname.startswith('/vsitar'):
     #    dirname = '/vsitar/' + dirname
 
     prefix = ''
@@ -203,6 +221,7 @@ def gdal_ls(argv, fout = sys.stdout):
         prefix = dirname + '/'
     readDir(fout, dirname, prefix, longformat, recurse, depth, recurseInZip, recurseInTGZ, True)
     return 0
+
 
 if __name__ == '__main__':
     version_num = int(gdal.VersionInfo('VERSION_NUM'))

@@ -25,6 +25,20 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
+find_anyproject(TIFF REQUIRED CMAKE_ARGS -DSKIP_BUILD_DOCS=ON)
+find_anyproject(GeoTIFF VERSION 1.2.1 REQUIRED)
+find_anyproject(JPEG DEFAULT ON)
+if(JPEG_FOUND)
+    add_definitions(-DJPEG_SUPPORTED)
+    add_definitions(-DHAVE_LIBJPEG) # Added only after 2.1 release (especially for geotiff.cpp where incorrect #ifdef is used)
+endif()
+
+find_anyproject(JPEG12 DEFAULT ON)
+if(JPEG12_FOUND)
+    add_definitions(-DJPEG12_SUPPORTED)
+endif()
+find_anyproject(PNG DEFAULT ON)
+
 file(GLOB FORMATS ${CMAKE_CURRENT_SOURCE_DIR}/*)
 foreach(FORMAT ${FORMATS})
     if(EXISTS ${FORMAT}/CMakeLists.txt)

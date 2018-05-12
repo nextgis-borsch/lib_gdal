@@ -31,19 +31,20 @@
 import sys
 from osgeo import gdal
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 
 ###############################################################################
 # Test an extract from a real dataset
 
+
 def gff_1():
     # 12088 = 2048 + 8 * 1255
     if not gdaltest.download_file('http://sandia.gov/RADAR/complex_data/MiniSAR20050519p0001image008.gff', 'MiniSAR20050519p0001image008.gff', 12088):
         return 'skip'
 
-    tst = gdaltest.GDALTest( 'GFF', 'tmp/cache/MiniSAR20050519p0001image008.gff', 1, 29757, filename_absolute = 1 )
+    tst = gdaltest.GDALTest('GFF', 'tmp/cache/MiniSAR20050519p0001image008.gff', 1, 29757, filename_absolute=1)
     gdal.PushErrorHandler('CPLQuietErrorHandler')
     ret = tst.testOpen()
     gdal.PopErrorHandler()
@@ -51,13 +52,12 @@ def gff_1():
 
 
 gdaltest_list = [
-    gff_1 ]
+    gff_1]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'gff' )
+    gdaltest.setup_run('gff')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

@@ -31,7 +31,7 @@
 
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 from osgeo import osr
@@ -41,7 +41,7 @@ expected_wkt = 'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.2
 
 
 def osr_url_test(url, expected_wkt):
-    timeout =  10
+    timeout = 10
     socket.setdefaulttimeout(timeout)
     if gdaltest.gdalurlopen(url) is None:
         return 'skip'
@@ -49,10 +49,10 @@ def osr_url_test(url, expected_wkt):
     """Depend on the Accepts headers that ImportFromUrl sets to request SRS from sr.org"""
     srs = osr.SpatialReference()
     from osgeo import gdal
-    gdal.PushErrorHandler( 'CPLQuietErrorHandler' )
+    gdal.PushErrorHandler('CPLQuietErrorHandler')
     try:
-        srs.ImportFromUrl( url )
-    except AttributeError: # old-gen bindings don't have this method yet
+        srs.ImportFromUrl(url)
+    except AttributeError:  # old-gen bindings don't have this method yet
         return 'skip'
     except Exception:
         gdal.PopErrorHandler()
@@ -60,7 +60,7 @@ def osr_url_test(url, expected_wkt):
            gdal.GetLastErrorMsg().find("timed out") != -1:
             return 'skip'
         else:
-            gdaltest.post_reason( 'exception: ' + gdal.GetLastErrorMsg() )
+            gdaltest.post_reason('exception: ' + gdal.GetLastErrorMsg())
             return 'fail'
 
     gdal.PopErrorHandler()
@@ -68,8 +68,8 @@ def osr_url_test(url, expected_wkt):
        gdal.GetLastErrorMsg().find("timed out") != -1:
         return 'skip'
 
-    if not gdaltest.equal_srs_from_wkt( expected_wkt,
-                                        srs.ExportToWkt() ):
+    if not gdaltest.equal_srs_from_wkt(expected_wkt,
+                                       srs.ExportToWkt()):
         return 'fail'
 
     return 'success'
@@ -78,6 +78,7 @@ def osr_url_test(url, expected_wkt):
 def osr_url_1():
     return osr_url_test('http://spatialreference.org/ref/epsg/4326/', expected_wkt)
 
+
 def osr_url_2():
     return osr_url_test('http://spatialreference.org/ref/epsg/4326/ogcwkt/', expected_wkt)
 
@@ -85,13 +86,12 @@ def osr_url_2():
 gdaltest_list = [
     osr_url_1,
     osr_url_2,
-    None ]
+    None]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'osr_url' )
+    gdaltest.setup_run('osr_url')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

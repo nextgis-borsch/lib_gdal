@@ -30,7 +30,7 @@
 #include "ogr_geomedia.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /************************************************************************/
 /*                          ~OGRODBCDriver()                            */
@@ -60,14 +60,14 @@ OGRDataSource *OGRGeomediaDriver::Open( const char * pszFilename,
 
 {
     if( STARTS_WITH_CI(pszFilename, "WALK:") )
-        return NULL;
+        return nullptr;
 
     if( STARTS_WITH_CI(pszFilename, "PGEO:") )
-        return NULL;
+        return nullptr;
 
     if( !STARTS_WITH_CI(pszFilename, "GEOMEDIA:")
         && !EQUAL(CPLGetExtension(pszFilename),"mdb") )
-        return NULL;
+        return nullptr;
 
     /* Disabling the attempt to guess if a MDB file is a Geomedia database */
     /* or not. See similar fix in PGeo driver for rationale. */
@@ -128,7 +128,7 @@ OGRDataSource *OGRGeomediaDriver::Open( const char * pszFilename,
     if( !poDS->Open( pszFilename, bUpdate, TRUE ) )
     {
         delete poDS;
-        return NULL;
+        return nullptr;
     }
     else
         return poDS;

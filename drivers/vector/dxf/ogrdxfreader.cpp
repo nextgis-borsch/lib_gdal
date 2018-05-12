@@ -32,20 +32,18 @@
 #include "cpl_string.h"
 #include "cpl_csv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /************************************************************************/
 /*                            OGRDXFReader()                            */
 /************************************************************************/
 
 OGRDXFReader::OGRDXFReader() :
-    fp(NULL),
+    fp(nullptr),
     iSrcBufferOffset(0),
     nSrcBufferBytes(0),
     iSrcBufferFileOffset(0),
-#if HAVE_CXX11
     achSrcBuffer{},
-#endif
     nLastValueSize(0),
     nLineNumber(0)
 {}

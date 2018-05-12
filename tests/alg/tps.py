@@ -31,7 +31,7 @@
 
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 from osgeo import gdal, osr
@@ -39,25 +39,26 @@ from osgeo import gdal, osr
 ###############################################################################
 # Test error case (#5586)
 
+
 def tps_1():
 
     drv = gdal.GetDriverByName('MEM')
-    ds = drv.Create('foo',2,2)
+    ds = drv.Create('foo', 2, 2)
     gcp_list = [
-        gdal.GCP(0, 0, 0,  0,  0),
-        gdal.GCP(0, 50, 0,  0, 50),
-        gdal.GCP(50, 0, 0, 50,  0),
+        gdal.GCP(0, 0, 0, 0, 0),
+        gdal.GCP(0, 50, 0, 0, 50),
+        gdal.GCP(50, 0, 0, 50, 0),
         gdal.GCP(50, 50, 0, 50, 50),
-        gdal.GCP(0*25, 0*25, 0, 25, 25),
-        ]
+        gdal.GCP(0 * 25, 0 * 25, 0, 25, 25),
+    ]
     ds.SetGCPs(gcp_list, osr.GetUserInputAsWKT('WGS84'))
     utm_wkt = osr.GetUserInputAsWKT('+proj=utm +zone=11 +datum=WGS84')
 
     with gdaltest.error_handler():
         transformer = gdal.Transformer(ds, None,
-                                       ['DST_SRS='+utm_wkt,
-                                        'METHOD=GCP_TPS'] )
-    if transformer is None or gdal.GetLastErrorType() == 0:
+                                       ['DST_SRS=' + utm_wkt,
+                                        'METHOD=GCP_TPS'])
+    if transformer is not None:
         return 'fail'
 
     return 'success'
@@ -65,12 +66,12 @@ def tps_1():
 
 gdaltest_list = [
     tps_1,
-    ]
+]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'tps' )
+    gdaltest.setup_run('tps')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

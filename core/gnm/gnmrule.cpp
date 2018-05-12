@@ -30,7 +30,7 @@
 #include "gnm.h"
 #include "gnm_priv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /*! @cond Doxygen_Suppress */
 GNMRule::GNMRule()
@@ -43,13 +43,13 @@ GNMRule::GNMRule()
 GNMRule::GNMRule(const std::string &oRule) :
     m_soRuleString( oRule )
 {
-    m_bValid = ParseRuleString();
+    m_bValid = GNMRule::ParseRuleString();
 }
 
 GNMRule::GNMRule(const char *pszRule) :
     m_soRuleString( pszRule )
 {
-    m_bValid = ParseRuleString();
+    m_bValid = GNMRule::ParseRuleString();
 }
 
 GNMRule::GNMRule(const GNMRule &oRule) :

@@ -34,7 +34,7 @@ import os
 import sys
 import base64
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 from osgeo import gdal
@@ -56,7 +56,7 @@ def png_copy_icc():
     f.close()
 
     # Create dummy file
-    options = [ 'SOURCE_ICC_PROFILE=' + icc ]
+    options = ['SOURCE_ICC_PROFILE=' + icc]
 
     driver = gdal.GetDriverByName('PNG')
     driver_tiff = gdal.GetDriverByName('GTiff')
@@ -76,7 +76,7 @@ def png_copy_icc():
         os.stat('tmp/icc_test.png.aux.xml')
         gdaltest.post_reason('fail')
         return 'fail'
-    except:
+    except OSError:
         pass
 
     # Check again with dataset from Open()
@@ -88,7 +88,7 @@ def png_copy_icc():
         os.stat('tmp/icc_test.png.aux.xml')
         gdaltest.post_reason('fail')
         return 'fail'
-    except:
+    except OSError:
         pass
 
     if md['SOURCE_ICC_PROFILE'] != icc:
@@ -104,7 +104,7 @@ def png_copy_icc():
         os.stat('tmp/icc_test.png.aux.xml')
         gdaltest.post_reason('fail')
         return 'fail'
-    except:
+    except OSError:
         pass
 
     if source_icc_profile != icc:
@@ -115,6 +115,7 @@ def png_copy_icc():
     driver.Delete('tmp/icc_test.png')
 
     return 'success'
+
 
 def cvtTuple2String(a):
     s = ''
@@ -128,6 +129,7 @@ def cvtTuple2String(a):
 ###############################################################################
 # Test writing and reading of ICC profile in CreateCopy() options
 
+
 def png_copy_options_icc():
 
     f = open('data/sRGB.icc', 'rb')
@@ -136,14 +138,14 @@ def png_copy_options_icc():
     f.close()
 
     # Create dummy file
-    options = [ 'SOURCE_ICC_PROFILE=' + icc ]
+    options = ['SOURCE_ICC_PROFILE=' + icc]
 
     driver = gdal.GetDriverByName('PNG')
     driver_tiff = gdal.GetDriverByName('GTiff')
     ds = driver_tiff.Create('tmp/icc_test.tiff', 64, 64, 3, gdal.GDT_Byte)
 
     # Check with dataset from CreateCopy()
-    ds2 = driver.CreateCopy('tmp/icc_test.png', ds, options = options)
+    ds2 = driver.CreateCopy('tmp/icc_test.png', ds, options=options)
     md = ds2.GetMetadata("COLOR_PROFILE")
     ds = None
     ds2 = None
@@ -170,23 +172,24 @@ def png_copy_options_icc():
 ###############################################################################
 # Test writing and reading of ICC colorimetric data from options
 
+
 def png_copy_options_colorimetric_data():
     # sRGB values
     source_primaries = [(0.64, 0.33, 1.0), (0.3, 0.6, 1.0), (0.15, 0.06, 1.0)]
     source_whitepoint = (0.31271, 0.32902, 1.0)
 
-    options = [ 'SOURCE_PRIMARIES_RED=' + cvtTuple2String(source_primaries[0]),
-        'SOURCE_PRIMARIES_GREEN=' + cvtTuple2String(source_primaries[1]),
-        'SOURCE_PRIMARIES_BLUE=' + cvtTuple2String(source_primaries[2]),
-        'SOURCE_WHITEPOINT=' + cvtTuple2String(source_whitepoint),
-        'PNG_GAMMA=1.5' ]
+    options = ['SOURCE_PRIMARIES_RED=' + cvtTuple2String(source_primaries[0]),
+               'SOURCE_PRIMARIES_GREEN=' + cvtTuple2String(source_primaries[1]),
+               'SOURCE_PRIMARIES_BLUE=' + cvtTuple2String(source_primaries[2]),
+               'SOURCE_WHITEPOINT=' + cvtTuple2String(source_whitepoint),
+               'PNG_GAMMA=1.5']
 
     driver = gdal.GetDriverByName('PNG')
     driver_tiff = gdal.GetDriverByName('GTiff')
     ds = driver_tiff.Create('tmp/icc_test.tiff', 64, 64, 3, gdal.GDT_Byte)
 
     # Check with dataset from CreateCopy()
-    ds2 = driver.CreateCopy('tmp/icc_test.png', ds, options = options)
+    ds2 = driver.CreateCopy('tmp/icc_test.png', ds, options=options)
     md = ds2.GetMetadata("COLOR_PROFILE")
     ds = None
     ds2 = None
@@ -201,7 +204,7 @@ def png_copy_options_colorimetric_data():
     source_primaries2 = [
         eval('(' + md['SOURCE_PRIMARIES_RED'] + ')'),
         eval('(' + md['SOURCE_PRIMARIES_GREEN'] + ')'),
-        eval('(' + md['SOURCE_PRIMARIES_BLUE'] + ')') ]
+        eval('(' + md['SOURCE_PRIMARIES_BLUE'] + ')')]
 
     for j in range(0, 3):
         for i in range(0, 3):
@@ -229,7 +232,7 @@ def png_copy_options_colorimetric_data():
     source_primaries2 = [
         eval('(' + md['SOURCE_PRIMARIES_RED'] + ')'),
         eval('(' + md['SOURCE_PRIMARIES_GREEN'] + ')'),
-        eval('(' + md['SOURCE_PRIMARIES_BLUE'] + ')') ]
+        eval('(' + md['SOURCE_PRIMARIES_BLUE'] + ')')]
 
     for j in range(0, 3):
         for i in range(0, 3):
@@ -249,17 +252,18 @@ def png_copy_options_colorimetric_data():
 ###############################################################################
 # Test writing and reading of ICC colorimetric data in the file
 
+
 def png_copy_colorimetric_data():
     # sRGB values
     source_primaries = [(0.64, 0.33, 1.0), (0.3, 0.6, 1.0), (0.15, 0.06, 1.0)]
     source_whitepoint = (0.31271, 0.32902, 1.0)
 
-    options = [ 'SOURCE_PRIMARIES_RED=' + cvtTuple2String(source_primaries[0]),
-        'SOURCE_PRIMARIES_GREEN=' + cvtTuple2String(source_primaries[1]),
-        'SOURCE_PRIMARIES_BLUE=' + cvtTuple2String(source_primaries[2]),
-        'SOURCE_WHITEPOINT=' + cvtTuple2String(source_whitepoint) ]
+    options = ['SOURCE_PRIMARIES_RED=' + cvtTuple2String(source_primaries[0]),
+               'SOURCE_PRIMARIES_GREEN=' + cvtTuple2String(source_primaries[1]),
+               'SOURCE_PRIMARIES_BLUE=' + cvtTuple2String(source_primaries[2]),
+               'SOURCE_WHITEPOINT=' + cvtTuple2String(source_whitepoint)]
 
-    options2 = [ 'PNG_GAMMA=1.5' ]
+    options2 = ['PNG_GAMMA=1.5']
 
     driver = gdal.GetDriverByName('PNG')
     driver_tiff = gdal.GetDriverByName('GTiff')
@@ -268,7 +272,7 @@ def png_copy_colorimetric_data():
     ds = gdal.Open('tmp/icc_test.tiff')
 
     # Check with dataset from CreateCopy()
-    ds2 = driver.CreateCopy('tmp/icc_test.png', ds, options = options2)
+    ds2 = driver.CreateCopy('tmp/icc_test.png', ds, options=options2)
     md = ds2.GetMetadata("COLOR_PROFILE")
     ds = None
     ds2 = None
@@ -283,7 +287,7 @@ def png_copy_colorimetric_data():
     source_primaries2 = [
         eval('(' + md['SOURCE_PRIMARIES_RED'] + ')'),
         eval('(' + md['SOURCE_PRIMARIES_GREEN'] + ')'),
-        eval('(' + md['SOURCE_PRIMARIES_BLUE'] + ')') ]
+        eval('(' + md['SOURCE_PRIMARIES_BLUE'] + ')')]
 
     for j in range(0, 3):
         for i in range(0, 3):
@@ -311,7 +315,7 @@ def png_copy_colorimetric_data():
     source_primaries2 = [
         eval('(' + md['SOURCE_PRIMARIES_RED'] + ')'),
         eval('(' + md['SOURCE_PRIMARIES_GREEN'] + ')'),
-        eval('(' + md['SOURCE_PRIMARIES_BLUE'] + ')') ]
+        eval('(' + md['SOURCE_PRIMARIES_BLUE'] + ')')]
 
     for j in range(0, 3):
         for i in range(0, 3):
@@ -331,16 +335,17 @@ def png_copy_colorimetric_data():
 ###############################################################################
 # Test sRGB
 
+
 def png_sRGB():
     # Create dummy file
-    options = [ 'SOURCE_ICC_PROFILE_NAME=sRGB' ]
+    options = ['SOURCE_ICC_PROFILE_NAME=sRGB']
 
     driver = gdal.GetDriverByName('PNG')
     driver_tiff = gdal.GetDriverByName('GTiff')
     ds = driver_tiff.Create('tmp/icc_test.tiff', 64, 64, 3, gdal.GDT_Byte)
 
     # Check with dataset from CreateCopy()
-    ds2 = driver.CreateCopy('tmp/icc_test.png', ds, options = options)
+    ds2 = driver.CreateCopy('tmp/icc_test.png', ds, options=options)
     md = ds2.GetMetadata("COLOR_PROFILE")
     ds = None
     ds2 = None
@@ -366,17 +371,17 @@ def png_sRGB():
 
 ############################################################################
 
-gdaltest_list.append( (png_copy_icc) )
-gdaltest_list.append( (png_copy_options_icc) )
-gdaltest_list.append( (png_copy_options_colorimetric_data) )
-gdaltest_list.append( (png_copy_colorimetric_data) )
-gdaltest_list.append( (png_sRGB) )
+
+gdaltest_list.append((png_copy_icc))
+gdaltest_list.append((png_copy_options_icc))
+gdaltest_list.append((png_copy_options_colorimetric_data))
+gdaltest_list.append((png_copy_colorimetric_data))
+gdaltest_list.append((png_sRGB))
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'png_profile' )
+    gdaltest.setup_run('png_profile')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

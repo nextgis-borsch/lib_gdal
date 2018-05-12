@@ -30,7 +30,7 @@
 
 #include "prologue.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 static
 int size_SatelliteStatus()
@@ -212,8 +212,8 @@ RadiometricProcessingRecord::RadiometricProcessingRecord(std::ifstream & ifile)
 //////////////////////////////////////////////////////////////////////
 
 Prologue::Prologue() :
-    m_idr(0),
-    m_rpr(0)
+    m_idr(nullptr),
+    m_rpr(nullptr)
 {}
 
 Prologue::~Prologue()
@@ -230,11 +230,7 @@ void Prologue::read(std::ifstream & ifile)
 
   int iSkipHeadersSize = size_SatelliteStatus() + size_ImageAcquisition() + size_CelestialEvents() + size_Correction();
 
-#if _MSC_VER > 1000 && _MSC_VER < 1300
-  ifile.seekg(iSkipHeadersSize, std::ios_base::seekdir::cur);
-#else
   ifile.seekg(iSkipHeadersSize, std::ios_base::cur);
-#endif
 
   m_idr = new ImageDescriptionRecord(ifile);
 

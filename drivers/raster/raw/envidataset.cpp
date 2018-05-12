@@ -1,4 +1,4 @@
-/******************************************************************************
+    /******************************************************************************
  *
  * Project:  ENVI .hdr Driver
  * Purpose:  Implementation of ENVI .hdr labelled raw raster support.
@@ -55,13 +55,13 @@
 #include "ogr_spatialref.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 // TODO(schwehr): This really should be defined in port/somewhere.h.
-static const double kdfDegToRad = M_PI / 180.0;
-static const double kdfRadToDeg = 180.0 / M_PI;
+constexpr double kdfDegToRad = M_PI / 180.0;
+constexpr double kdfRadToDeg = 180.0 / M_PI;
 
-static const int anUsgsEsriZones[] =
+constexpr int anUsgsEsriZones[] =
 {
   101, 3101,
   102, 3126,
@@ -244,14 +244,13 @@ static int ITTVISToUSGSZone( int nITTVISZone )
 /************************************************************************/
 
 ENVIDataset::ENVIDataset() :
-    fpImage(NULL),
-    fp(NULL),
-    pszHDRFilename(NULL),
+    fpImage(nullptr),
+    fp(nullptr),
+    pszHDRFilename(nullptr),
     bFoundMapinfo(false),
     bHeaderDirty(false),
     bFillFile(false),
     pszProjection(CPLStrdup("")),
-    papszHeader(NULL),
     interleave(BSQ)
 {
     adfGeoTransform[0] = 0.0;
@@ -307,7 +306,6 @@ ENVIDataset::~ENVIDataset()
         }
     }
     CPLFree(pszProjection);
-    CSLDestroy(papszHeader);
     CPLFree(pszHDRFilename);
 }
 
@@ -320,9 +318,9 @@ void ENVIDataset::FlushCache()
 {
     RawDataset::FlushCache();
 
-    GDALRasterBand *band = GetRasterCount() > 0 ? GetRasterBand(1) : NULL;
+    GDALRasterBand *band = GetRasterCount() > 0 ? GetRasterBand(1) : nullptr;
 
-    if ( band == NULL || !bHeaderDirty )
+    if ( band == nullptr || !bHeaderDirty )
         return;
 
     // If opening an existing file in Update mode (i.e. "r+") we need to make
@@ -351,14 +349,14 @@ void ENVIDataset::FlushCache()
     char **catNames = band->GetCategoryNames();
 
     bOK &= VSIFPrintfL(fp, "header offset = 0\n") >= 0;
-    if (NULL == catNames)
+    if (nullptr == catNames)
         bOK &= VSIFPrintfL(fp, "file type = ENVI Standard\n") >= 0;
     else
         bOK &= VSIFPrintfL(fp, "file type = ENVI Classification\n") >= 0;
 
     const int iENVIType = GetEnviType(band->GetRasterDataType());
     bOK &= VSIFPrintfL(fp, "data type = %d\n", iENVIType) >= 0;
-    const char *pszInterleaving = NULL;
+    const char *pszInterleaving = nullptr;
     switch( interleave )
     {
     case BIP:
@@ -379,7 +377,7 @@ void ENVIDataset::FlushCache()
 
     // Write class and color information.
     catNames = band->GetCategoryNames();
-    if (NULL != catNames)
+    if (nullptr != catNames)
     {
         int nrClasses = 0;
         while (*catNames++)
@@ -390,7 +388,7 @@ void ENVIDataset::FlushCache()
             bOK &= VSIFPrintfL(fp, "classes = %d\n", nrClasses) >= 0;
 
             GDALColorTable *colorTable = band->GetColorTable();
-            if (NULL != colorTable)
+            if (nullptr != colorTable)
             {
                 const int nrColors =
                     std::min(nrClasses, colorTable->GetColorEntryCount());
@@ -411,7 +409,7 @@ void ENVIDataset::FlushCache()
             }
 
             catNames = band->GetCategoryNames();
-            if (NULL != *catNames)
+            if (nullptr != *catNames)
             {
                 bOK &= VSIFPrintfL(fp, "class names = {\n%s", *catNames) >= 0;
                 catNames++;
@@ -546,7 +544,7 @@ static int ENVIGetEPSGGeogCS( OGRSpatialReference *poThis )
     const char *pszAuthName = poThis->GetAuthorityName("GEOGCS");
 
     // Do we already have it?
-    if( pszAuthName != NULL && EQUAL(pszAuthName, "epsg") )
+    if( pszAuthName != nullptr && EQUAL(pszAuthName, "epsg") )
         return atoi(poThis->GetAuthorityCode("GEOGCS"));
 
     // Get the datum and geogcs names.
@@ -554,7 +552,7 @@ static int ENVIGetEPSGGeogCS( OGRSpatialReference *poThis )
     const char *pszDatum = poThis->GetAttrValue("DATUM");
 
     // We can only operate on coordinate systems with a geogcs.
-    if( pszGEOGCS == NULL || pszDatum == NULL )
+    if( pszGEOGCS == nullptr || pszDatum == nullptr )
         return -1;
 
     // Is this a "well known" geographic coordinate system?
@@ -587,7 +585,7 @@ static int ENVIGetEPSGGeogCS( OGRSpatialReference *poThis )
     // If we know the datum, associate the most likely GCS with it.
     pszAuthName = poThis->GetAuthorityName("GEOGCS|DATUM");
 
-    if( pszAuthName != NULL && EQUAL(pszAuthName, "epsg") &&
+    if( pszAuthName != nullptr && EQUAL(pszAuthName, "epsg") &&
         poThis->GetPrimeMeridian() == 0.0 )
     {
         const int nDatum = atoi(poThis->GetAuthorityCode("GEOGCS|DATUM"));
@@ -646,7 +644,7 @@ void ENVIDataset::WriteProjectionInfo()
     // Minimal case - write out simple geotransform if we have a
     // non-default geotransform.
     const std::string osLocalCs = "LOCAL_CS";
-    if( pszProjection == NULL || strlen(pszProjection) == 0  ||
+    if( pszProjection == nullptr || strlen(pszProjection) == 0  ||
         (strlen(pszProjection) >= osLocalCs.size() &&
          STARTS_WITH(pszProjection, osLocalCs.c_str())) )
     {
@@ -663,10 +661,7 @@ void ENVIDataset::WriteProjectionInfo()
 
     // Ingest WKT.
     OGRSpatialReference oSRS;
-
-    char *pszProj = pszProjection;
-
-    if( oSRS.importFromWkt(&pszProj) != OGRERR_NONE )
+    if( oSRS.importFromWkt(pszProjection) != OGRERR_NONE )
         return;
 
     // Try to translate the datum and get major/minor ellipsoid values.
@@ -724,7 +719,7 @@ void ENVIDataset::WriteProjectionInfo()
                            osLocation.c_str(), osCommaDatum.c_str(),
                            osRotation.c_str()) >= 0;
     }
-    else if( pszProjName == NULL )
+    else if( pszProjName == nullptr )
     {
         // What to do?
     }
@@ -957,7 +952,7 @@ void ENVIDataset::WriteProjectionInfo()
     // write out coordinate system string
     if ( oSRS.morphToESRI() == OGRERR_NONE )
     {
-        char *pszProjESRI = NULL;
+        char *pszProjESRI = nullptr;
         if ( oSRS.exportToWkt(&pszProjESRI) == OGRERR_NONE )
         {
             if ( strlen(pszProjESRI) )
@@ -965,7 +960,7 @@ void ENVIDataset::WriteProjectionInfo()
                                    pszProjESRI) >= 0;
         }
         CPLFree(pszProjESRI);
-        pszProjESRI = NULL;
+        pszProjESRI = nullptr;
     }
 
     if( !bOK )
@@ -991,7 +986,7 @@ bool ENVIDataset::ParseRpcCoeffsMetaDataString(
         return false;
 
     int x = 0;
-    while ( (x < 20) && (papszArr[x] != NULL) )
+    while ( (x < 20) && (papszArr[x] != nullptr) )
     {
         papszVal[idx++] = CPLStrdup(papszArr[x]);
         x++;
@@ -1005,7 +1000,7 @@ bool ENVIDataset::ParseRpcCoeffsMetaDataString(
 static char *CPLStrdupIfNotNull( const char *pszString )
 {
   if (!pszString )
-      return NULL;
+      return nullptr;
 
   return CPLStrdup(pszString);
 }
@@ -1021,7 +1016,7 @@ bool ENVIDataset::WriteRpcInfo()
     // values returns 0 if the coeffs are not present or not valid.
     int idx = 0;
     // TODO(schwehr): Make 93 a constant.
-    char *papszVal[93] = { NULL };
+    char *papszVal[93] = { nullptr };
 
     papszVal[idx++] = CPLStrdupIfNotNull(GetMetadataItem("LINE_OFF", "RPC"));
     papszVal[idx++] = CPLStrdupIfNotNull(GetMetadataItem("SAMP_OFF", "RPC"));
@@ -1256,11 +1251,11 @@ char **ENVIDataset::SplitList( const char *pszCleanInput )
     if( pszInput[0] != '{' )
     {
         CPLFree(pszInput);
-        return NULL;
+        return nullptr;
     }
 
     int iChar = 1;
-    char **papszReturn = NULL;
+    CPLStringList aosList;
     while( pszInput[iChar] != '}' && pszInput[iChar] != '\0' )
     {
         // Find start of token.
@@ -1284,12 +1279,12 @@ char **ENVIDataset::SplitList( const char *pszCleanInput )
             iFEnd--;
 
         pszInput[iFEnd + 1] = '\0';
-        papszReturn = CSLAddString(papszReturn, pszInput + iFStart);
+        aosList.AddString(pszInput + iFStart);
     }
 
     CPLFree(pszInput);
 
-    return papszReturn;
+    return aosList.StealList();
 }
 
 /************************************************************************/
@@ -1373,7 +1368,7 @@ bool ENVIDataset::ProcessMapinfo( const char *pszMapinfo )
 
 {
     char **papszFields = SplitList(pszMapinfo);
-    const char *pszUnits = NULL;
+    const char *pszUnits = nullptr;
     double dfRotation = 0.0;
     const int nCount = CSLCount(papszFields);
 
@@ -1399,20 +1394,21 @@ bool ENVIDataset::ProcessMapinfo( const char *pszMapinfo )
     }
 
     // Check if we have coordinate system string, and if so parse it.
-    char **papszCSS = NULL;
-    if( CSLFetchNameValue(papszHeader, "coordinate_system_string") != NULL )
+    char **papszCSS = nullptr;
+    const char * pszCSS = m_aosHeader["coordinate_system_string"];
+    if( pszCSS != nullptr )
     {
-        papszCSS = CSLTokenizeString2(
-            CSLFetchNameValue(papszHeader, "coordinate_system_string"),
+        papszCSS = CSLTokenizeString2(pszCSS,
             "{}", CSLT_PRESERVEQUOTES);
     }
 
     // Check if we have projection info, and if so parse it.
-    char **papszPI = NULL;
+    char **papszPI = nullptr;
     int nPICount = 0;
-    if( CSLFetchNameValue(papszHeader, "projection_info") != NULL )
+    const char * pszPI = m_aosHeader["projection_info"];
+    if( pszPI != nullptr )
     {
-        papszPI = SplitList(CSLFetchNameValue(papszHeader, "projection_info"));
+        papszPI = SplitList(pszPI);
         nPICount = CSLCount(papszPI);
     }
 
@@ -1441,25 +1437,25 @@ bool ENVIDataset::ProcessMapinfo( const char *pszMapinfo )
         if( STARTS_WITH_CI(papszFields[0], "UTM") && nCount >= 9 )
         {
             oSRS.SetUTM(atoi(papszFields[7]), !EQUAL(papszFields[8], "South"));
-            if( nCount >= 10 && strstr(papszFields[9], "=") == NULL )
+            if( nCount >= 10 && strstr(papszFields[9], "=") == nullptr )
                 SetENVIDatum(&oSRS, papszFields[9]);
             else
                 oSRS.SetWellKnownGeogCS("NAD27");
         }
         else if( STARTS_WITH_CI(papszFields[0], "State Plane (NAD 27)") &&
-                 nCount >= 7 )
+                 nCount > 7 )
         {
             oSRS.SetStatePlane(ITTVISToUSGSZone(atoi(papszFields[7])), FALSE);
         }
         else if( STARTS_WITH_CI(papszFields[0], "State Plane (NAD 83)") &&
-                 nCount >= 7 )
+                 nCount > 7 )
         {
             oSRS.SetStatePlane(ITTVISToUSGSZone(atoi(papszFields[7])), TRUE);
         }
         else if( STARTS_WITH_CI(papszFields[0], "Geographic Lat") &&
-                 nCount >= 8 )
+                 nCount > 7 )
         {
-            if( nCount >= 8 && strstr(papszFields[7], "=") == NULL )
+            if( strstr(papszFields[7], "=") == nullptr )
                 SetENVIDatum(&oSRS, papszFields[7]);
             else
                 oSRS.SetWellKnownGeogCS("WGS84");
@@ -1533,19 +1529,19 @@ bool ENVIDataset::ProcessMapinfo( const char *pszMapinfo )
     // Still lots more that could be added for someone with the patience.
 
     // Fallback to localcs if we don't recognise things.
-    if( oSRS.GetRoot() == NULL )
+    if( oSRS.GetRoot() == nullptr )
         oSRS.SetLocalCS(papszFields[0]);
 
     // Try to set datum from projection info line if we have a
     // projected coordinate system without a GEOGCS.
-    if( oSRS.IsProjected() && oSRS.GetAttrNode("GEOGCS") == NULL
+    if( oSRS.IsProjected() && oSRS.GetAttrNode("GEOGCS") == nullptr
         && nPICount > 3 )
     {
         // Do we have a datum on the projection info line?
         int iDatum = nPICount - 1;
 
         // Ignore units= items.
-        if( strstr(papszPI[iDatum], "=") != NULL )
+        if( strstr(papszPI[iDatum], "=") != nullptr )
             iDatum--;
 
         // Skip past the name.
@@ -1565,7 +1561,7 @@ bool ENVIDataset::ProcessMapinfo( const char *pszMapinfo )
     }
 
     // Try to process specialized units.
-    if( pszUnits != NULL )
+    if( pszUnits != nullptr )
     {
         // Handle linear units first.
         if( EQUAL(pszUnits, "Feet") )
@@ -1613,13 +1609,13 @@ bool ENVIDataset::ProcessMapinfo( const char *pszMapinfo )
     }
 
     // Turn back into WKT.
-    if( oSRS.GetRoot() != NULL )
+    if( oSRS.GetRoot() != nullptr )
     {
         oSRS.Fixup();
         if ( pszProjection )
         {
             CPLFree(pszProjection);
-            pszProjection = NULL;
+            pszProjection = nullptr;
         }
         oSRS.exportToWkt(&pszProjection);
     }
@@ -1786,9 +1782,9 @@ void ENVIDataset::ProcessStatsFile()
 
     // TODO(schwehr): What are 1, 4, 8, and 40?
     int lOffset = 0;
-    if( VSIFSeekL(fpStaFile, 40 + (nb + 1) * 4, SEEK_SET) == 0 &&
+    if( VSIFSeekL(fpStaFile, 40 + static_cast<vsi_l_offset>(nb + 1) * 4, SEEK_SET) == 0 &&
         VSIFReadL(&lOffset, sizeof(int), 1, fpStaFile) == 1 &&
-        VSIFSeekL(fpStaFile, 40 + (nb + 1) * 8 + byteSwapInt(lOffset) + nb,
+        VSIFSeekL(fpStaFile, 40 + static_cast<vsi_l_offset>(nb + 1) * 8 + byteSwapInt(lOffset) + nb,
                   SEEK_SET) == 0)
     {
         // This should be the beginning of the statistics.
@@ -1858,67 +1854,63 @@ double ENVIDataset::byteSwapDouble(double swapMe)
 bool ENVIDataset::ReadHeader( VSILFILE *fpHdr )
 
 {
-    CPLReadLineL(fpHdr);
+    CPLReadLine2L(fpHdr, 10000, nullptr);
 
     // Start forming sets of name/value pairs.
     while( true )
     {
-        const char *pszNewLine = CPLReadLineL(fpHdr);
-        if( pszNewLine == NULL )
+        const char *pszNewLine = CPLReadLine2L(fpHdr, 10000, nullptr);
+        if( pszNewLine == nullptr )
             break;
 
-        if( strstr(pszNewLine, "=") == NULL )
+        if( strstr(pszNewLine, "=") == nullptr )
             continue;
 
-        char *pszWorkingLine = CPLStrdup(pszNewLine);
+        CPLString osWorkingLine(pszNewLine);
 
         // Collect additional lines if we have open sqiggly bracket.
-        if( strstr(pszWorkingLine, "{") != NULL &&
-            strstr(pszWorkingLine, "}") == NULL )
+        if( osWorkingLine.find("{") != std::string::npos &&
+            osWorkingLine.find("}") == std::string::npos )
         {
             do {
-                pszNewLine = CPLReadLineL(fpHdr);
+                pszNewLine = CPLReadLine2L(fpHdr, 10000, nullptr);
                 if( pszNewLine )
                 {
-                    pszWorkingLine = static_cast<char *>(
-                        CPLRealloc(pszWorkingLine, strlen(pszWorkingLine) +
-                                                       strlen(pszNewLine) + 1));
-                    strcat(pszWorkingLine, pszNewLine);
+                    osWorkingLine += pszNewLine;
                 }
-            } while( pszNewLine != NULL && strstr(pszNewLine, "}") == NULL );
+                if( osWorkingLine.size() > 10 * 1024 * 1024 )
+                    return false;
+            } while( pszNewLine != nullptr && strstr(pszNewLine, "}") == nullptr );
         }
 
         // Try to break input into name and value portions.  Trim whitespace.
-        int iEqual = 0;
+        size_t iEqual = osWorkingLine.find("=");
 
-        for( ;
-             pszWorkingLine[iEqual] != '\0' && pszWorkingLine[iEqual] != '=';
-             iEqual++ ) {}
-
-        if( pszWorkingLine[iEqual] == '=' )
+        if( iEqual != std::string::npos && iEqual > 0 )
         {
-            const char *pszValue = pszWorkingLine + iEqual + 1;
+            const char *pszValue = osWorkingLine + iEqual + 1;
             while( *pszValue == ' ' || *pszValue == '\t' )
                 pszValue++;
 
-            pszWorkingLine[iEqual--] = '\0';
+            osWorkingLine.resize(iEqual);
+            iEqual --;
             while( iEqual > 0
-                   && (pszWorkingLine[iEqual] == ' ' ||
-                       pszWorkingLine[iEqual] == '\t') )
-                pszWorkingLine[iEqual--] = '\0';
-
-            // Convert spaces in the name to underscores.
-            for( int i = 0; pszWorkingLine[i] != '\0'; i++ )
+                   && (osWorkingLine[iEqual] == ' ' ||
+                       osWorkingLine[iEqual] == '\t') )
             {
-                if( pszWorkingLine[i] == ' ' )
-                    pszWorkingLine[i] = '_';
+                osWorkingLine.resize(iEqual);
+                iEqual --;
             }
 
-            papszHeader =
-                CSLSetNameValue(papszHeader, pszWorkingLine, pszValue);
-        }
+            // Convert spaces in the name to underscores.
+            for( int i = 0; osWorkingLine[i] != '\0'; i++ )
+            {
+                if( osWorkingLine[i] == ' ' )
+                    osWorkingLine[i] = '_';
+            }
 
-        CPLFree(pszWorkingLine);
+            m_aosHeader.SetNameValue(osWorkingLine, pszValue);
+        }
     }
 
     return true;
@@ -1933,43 +1925,43 @@ GDALDataset *ENVIDataset::Open( GDALOpenInfo *poOpenInfo )
 {
     // Assume the caller is pointing to the binary (i.e. .bil) file.
     if( poOpenInfo->nHeaderBytes < 2 )
-        return NULL;
+        return nullptr;
 
     // Do we have a .hdr file?  Try upper and lower case, and
     // replacing the extension as well as appending the extension
     // to whatever we currently have.
 
-    const char *pszMode = NULL;
+    const char *pszMode = nullptr;
     if( poOpenInfo->eAccess == GA_Update )
         pszMode = "r+";
     else
         pszMode = "r";
 
     CPLString osHdrFilename;
-    VSILFILE *fpHeader = NULL;
+    VSILFILE *fpHeader = nullptr;
     char **papszSiblingFiles = poOpenInfo->GetSiblingFiles();
-    if (papszSiblingFiles == NULL)
+    if (papszSiblingFiles == nullptr)
     {
         osHdrFilename = CPLResetExtension(poOpenInfo->pszFilename, "hdr");
         fpHeader = VSIFOpenL(osHdrFilename, pszMode);
 
-        if( fpHeader == NULL && VSIIsCaseSensitiveFS(osHdrFilename) )
+        if( fpHeader == nullptr && VSIIsCaseSensitiveFS(osHdrFilename) )
         {
             osHdrFilename = CPLResetExtension(poOpenInfo->pszFilename, "HDR");
             fpHeader = VSIFOpenL(osHdrFilename, pszMode);
         }
 
-        if( fpHeader == NULL )
+        if( fpHeader == nullptr )
         {
             osHdrFilename =
-                CPLFormFilename(NULL, poOpenInfo->pszFilename, "hdr");
+                CPLFormFilename(nullptr, poOpenInfo->pszFilename, "hdr");
             fpHeader = VSIFOpenL(osHdrFilename, pszMode);
         }
 
-        if( fpHeader == NULL && VSIIsCaseSensitiveFS(osHdrFilename) )
+        if( fpHeader == nullptr && VSIIsCaseSensitiveFS(osHdrFilename) )
         {
             osHdrFilename =
-                CPLFormFilename(NULL, poOpenInfo->pszFilename, "HDR");
+                CPLFormFilename(nullptr, poOpenInfo->pszFilename, "HDR");
             fpHeader = VSIFOpenL(osHdrFilename, pszMode);
         }
     }
@@ -1984,24 +1976,24 @@ GDALDataset *ENVIDataset::Open( GDALOpenInfo *poOpenInfo )
         if( iFile >= 0 )
         {
             osHdrFilename =
-                CPLFormFilename(osPath, papszSiblingFiles[iFile], NULL);
+                CPLFormFilename(osPath, papszSiblingFiles[iFile], nullptr);
             fpHeader = VSIFOpenL(osHdrFilename, pszMode);
         }
         else
         {
             iFile = CSLFindString(papszSiblingFiles,
-                                  CPLFormFilename(NULL, osName, "hdr"));
+                                  CPLFormFilename(nullptr, osName, "hdr"));
             if( iFile >= 0 )
             {
                 osHdrFilename =
-                    CPLFormFilename(osPath, papszSiblingFiles[iFile], NULL);
+                    CPLFormFilename(osPath, papszSiblingFiles[iFile], nullptr);
                 fpHeader = VSIFOpenL(osHdrFilename, pszMode);
             }
         }
     }
 
-    if( fpHeader == NULL )
-        return NULL;
+    if( fpHeader == nullptr )
+        return nullptr;
 
     // Check that the first line says "ENVI".
     char szTestHdr[4] = { '\0' };
@@ -2009,12 +2001,12 @@ GDALDataset *ENVIDataset::Open( GDALOpenInfo *poOpenInfo )
     if( VSIFReadL(szTestHdr, 4, 1, fpHeader) != 1 )
     {
         CPL_IGNORE_RET_VAL(VSIFCloseL(fpHeader));
-        return NULL;
+        return nullptr;
     }
     if( !STARTS_WITH(szTestHdr, "ENVI") )
     {
         CPL_IGNORE_RET_VAL(VSIFCloseL(fpHeader));
-        return NULL;
+        return nullptr;
     }
 
     // Create a corresponding GDALDataset.
@@ -2026,7 +2018,7 @@ GDALDataset *ENVIDataset::Open( GDALOpenInfo *poOpenInfo )
     if( !poDS->ReadHeader(fpHeader) )
     {
         delete poDS;
-        return NULL;
+        return nullptr;
     }
 
     // Has the user selected the .hdr file to open?
@@ -2040,7 +2032,7 @@ GDALDataset *ENVIDataset::Open( GDALOpenInfo *poOpenInfo )
                  "the data file corresponding to the header file:  "
                  "%s",
                  poOpenInfo->pszFilename);
-        return NULL;
+        return nullptr;
     }
 
     // Has the user selected the .sta (stats) file to open?
@@ -2054,41 +2046,31 @@ GDALDataset *ENVIDataset::Open( GDALOpenInfo *poOpenInfo )
                  "the data file corresponding to the statistics file:  "
                  "%s",
                  poOpenInfo->pszFilename);
-        return NULL;
+        return nullptr;
     }
 
     // Extract required values from the .hdr.
-    int nLines = 0;
-    if( CSLFetchNameValue(poDS->papszHeader, "lines") )
-        nLines = atoi(CSLFetchNameValue(poDS->papszHeader, "lines"));
+    int nLines = atoi(poDS->m_aosHeader.FetchNameValueDef("lines", "0"));
 
-    int nSamples = 0;
-    if( CSLFetchNameValue(poDS->papszHeader, "samples") )
-        nSamples = atoi(CSLFetchNameValue(poDS->papszHeader, "samples"));
+    int nSamples =
+        atoi(poDS->m_aosHeader.FetchNameValueDef("samples", "0"));
 
-    int nBands = 0;
-    if( CSLFetchNameValue(poDS->papszHeader, "bands") )
-        nBands = atoi(CSLFetchNameValue(poDS->papszHeader, "bands"));
-
-    const char *pszInterleave =
-        CSLFetchNameValue(poDS->papszHeader, "interleave");
+    int nBands = atoi(poDS->m_aosHeader.FetchNameValueDef("bands", "0"));
 
     // In case, there is no interleave keyword, we try to derive it from the
     // file extension.
-    if( pszInterleave == NULL )
-    {
-        const char *pszExtension = CPLGetExtension(poOpenInfo->pszFilename);
-        pszInterleave = pszExtension;
-    }
+    CPLString osInterleave =
+        poDS->m_aosHeader.FetchNameValueDef("interleave",
+                             CPLGetExtension(poOpenInfo->pszFilename));
 
-    if ( !STARTS_WITH_CI(pszInterleave, "BSQ") &&
-         !STARTS_WITH_CI(pszInterleave, "BIP") &&
-         !STARTS_WITH_CI(pszInterleave, "BIL") )
+    if ( !STARTS_WITH_CI(osInterleave, "BSQ") &&
+         !STARTS_WITH_CI(osInterleave, "BIP") &&
+         !STARTS_WITH_CI(osInterleave, "BIL") )
     {
         CPLDebug("ENVI",
                  "Unset or unknown value for 'interleave' keyword --> "
                  "assuming BSQ interleaving");
-        pszInterleave = "bsq";
+        osInterleave = "bsq";
     }
 
     if( !GDALCheckDatasetDimensions(nSamples, nLines) ||
@@ -2099,20 +2081,19 @@ GDALDataset *ENVIDataset::Open( GDALOpenInfo *poOpenInfo )
                  "The file appears to have an associated ENVI header, but "
                  "one or more of the samples, lines and bands "
                  "keywords appears to be missing or invalid.");
-        return NULL;
+        return nullptr;
     }
 
-    int nHeaderSize = 0;
-    if( CSLFetchNameValue(poDS->papszHeader, "header_offset") )
-        nHeaderSize =
-            atoi(CSLFetchNameValue(poDS->papszHeader, "header_offset"));
+    int nHeaderSize =
+        atoi(poDS->m_aosHeader.FetchNameValueDef("header_offset", "0"));
 
     // Translate the datatype.
     GDALDataType eType = GDT_Byte;
 
-    if( CSLFetchNameValue(poDS->papszHeader, "data_type") != NULL )
+    const char* pszDataType = poDS->m_aosHeader["data_type"];
+    if( pszDataType != nullptr )
     {
-        switch( atoi(CSLFetchNameValue(poDS->papszHeader, "data_type")) )
+        switch( atoi(pszDataType) )
         {
           case 1:
             eType = GDT_Byte;
@@ -2157,26 +2138,26 @@ GDALDataset *ENVIDataset::Open( GDALOpenInfo *poOpenInfo )
             CPLError(CE_Failure, CPLE_AppDefined,
                      "The file does not have a value for the data_type "
                      "that is recognised by the GDAL ENVI driver.");
-            return NULL;
+            return nullptr;
         }
     }
 
     // Translate the byte order.
     bool bNativeOrder = true;
 
-    if( CSLFetchNameValue(poDS->papszHeader, "byte_order") != NULL )
+    const char* pszByteOrder = poDS->m_aosHeader["byte_order"];
+    if( pszByteOrder != nullptr )
     {
 #ifdef CPL_LSB
-        bNativeOrder =
-            atoi(CSLFetchNameValue(poDS->papszHeader, "byte_order")) == 0;
+        bNativeOrder = atoi(pszByteOrder) == 0;
 #else
-        bNativeOrder =
-            atoi(CSLFetchNameValue(poDS->papszHeader, "byte_order")) != 0;
+        bNativeOrder = atoi(pszByteOrder) != 0;
 #endif
     }
 
     // Warn about unsupported file types virtual mosaic and meta file.
-    if( CSLFetchNameValue(poDS->papszHeader, "file_type" ) != NULL )
+    const char *pszEnviFileType = poDS->m_aosHeader["file_type"];
+    if( pszEnviFileType != nullptr )
     {
         // When the file type is one of these we return an invalid file type err
         // 'envi meta file'
@@ -2191,8 +2172,6 @@ GDALDataset *ENVIDataset::Open( GDALOpenInfo *poOpenInfo )
         // When the file type is anything else we attempt to open it as a
         // raster.
 
-        const char *pszEnviFileType =
-            CSLFetchNameValue(poDS->papszHeader, "file_type");
 
         // envi gdal does not support any of these
         // all others we will attempt to open
@@ -2205,20 +2184,13 @@ GDALDataset *ENVIDataset::Open( GDALOpenInfo *poOpenInfo )
                      "GDAL does not support '%s' type files.",
                      poOpenInfo->pszFilename, pszEnviFileType);
             delete poDS;
-            return NULL;
+            return nullptr;
         }
     }
 
     // Detect (gzipped) compressed datasets.
-    bool bIsCompressed = false;
-    if( CSLFetchNameValue(poDS->papszHeader, "file_compression") != NULL )
-    {
-        if( atoi(CSLFetchNameValue(poDS->papszHeader, "file_compression"))
-            != 0 )
-        {
-            bIsCompressed = true;
-        }
-    }
+    const bool bIsCompressed = atoi(
+        poDS->m_aosHeader.FetchNameValueDef("file_compression", "0")) != 0;
 
     // Capture some information from the file that is of interest.
     poDS->nRasterXSize = nSamples;
@@ -2236,7 +2208,7 @@ GDALDataset *ENVIDataset::Open( GDALOpenInfo *poOpenInfo )
             delete poDS;
             CPLError(CE_Failure, CPLE_OpenFailed,
                      "Cannot open compressed file in update mode.");
-            return NULL;
+            return nullptr;
         }
         poDS->fpImage = VSIFOpenL(osImageFilename, "rb+");
     }
@@ -2245,13 +2217,13 @@ GDALDataset *ENVIDataset::Open( GDALOpenInfo *poOpenInfo )
         poDS->fpImage = VSIFOpenL(osImageFilename, "rb");
     }
 
-    if( poDS->fpImage == NULL )
+    if( poDS->fpImage == nullptr )
     {
         delete poDS;
         CPLError(CE_Failure, CPLE_OpenFailed,
                  "Failed to re-open %s within ENVI driver.",
                  poOpenInfo->pszFilename);
-        return NULL;
+        return nullptr;
     }
 
     // Compute the line offset.
@@ -2262,7 +2234,7 @@ GDALDataset *ENVIDataset::Open( GDALOpenInfo *poOpenInfo )
     CPLAssert(nDataSize != 0);
     CPLAssert(nBands != 0);
 
-    if( STARTS_WITH_CI(pszInterleave, "bil") )
+    if( STARTS_WITH_CI(osInterleave, "bil") )
     {
         poDS->interleave = BIL;
         poDS->SetMetadataItem("INTERLEAVE", "LINE", "IMAGE_STRUCTURE");
@@ -2270,13 +2242,13 @@ GDALDataset *ENVIDataset::Open( GDALOpenInfo *poOpenInfo )
         {
             delete poDS;
             CPLError(CE_Failure, CPLE_AppDefined, "Int overflow occurred.");
-            return NULL;
+            return nullptr;
         }
         nLineOffset = nDataSize * nSamples * nBands;
         nPixelOffset = nDataSize;
         nBandOffset = static_cast<vsi_l_offset>(nDataSize) * nSamples;
     }
-    else if( STARTS_WITH_CI(pszInterleave, "bip") )
+    else if( STARTS_WITH_CI(osInterleave, "bip") )
     {
         poDS->interleave = BIP;
         poDS->SetMetadataItem("INTERLEAVE", "PIXEL", "IMAGE_STRUCTURE");
@@ -2284,7 +2256,7 @@ GDALDataset *ENVIDataset::Open( GDALOpenInfo *poOpenInfo )
         {
             delete poDS;
             CPLError(CE_Failure, CPLE_AppDefined, "Int overflow occurred.");
-            return NULL;
+            return nullptr;
         }
         nLineOffset = nDataSize * nSamples * nBands;
         nPixelOffset = nDataSize * nBands;
@@ -2298,17 +2270,55 @@ GDALDataset *ENVIDataset::Open( GDALOpenInfo *poOpenInfo )
         {
             delete poDS;
             CPLError(CE_Failure, CPLE_AppDefined, "Int overflow occurred.");
-            return NULL;
+            return nullptr;
         }
         nLineOffset = nDataSize * nSamples;
         nPixelOffset = nDataSize;
         nBandOffset = (vsi_l_offset)nLineOffset * nLines;
     }
 
+    const char* pszMajorFrameOffset = poDS->m_aosHeader["major_frame_offsets"];
+    if (pszMajorFrameOffset != nullptr)
+    {
+        char **papszMajorFrameOffsets = poDS->SplitList(pszMajorFrameOffset);
+
+        const int nTempCount = CSLCount(papszMajorFrameOffsets);
+        if (nTempCount == 2)
+        {
+            int nOffset1 = atoi(papszMajorFrameOffsets[0]);
+            int nOffset2 = atoi(papszMajorFrameOffsets[1]);
+            if( nOffset1 >= 0 && nOffset2 >= 0 &&
+                nHeaderSize < INT_MAX - nOffset1 &&
+                nOffset1 < INT_MAX - nOffset2 &&
+                nOffset1 + nOffset2 < INT_MAX - nLineOffset )
+            {
+                nHeaderSize += nOffset1;
+                nLineOffset += nOffset1 + nOffset2;
+            }
+        }
+        CSLDestroy(papszMajorFrameOffsets);
+    }
+
+    // Currently each ENVIRasterBand allocates nPixelOffset * nRasterXSize bytes
+    // so for a pixel interleaved scheme, this will allocate lots of memory!
+    // Actually this is quadratic in the number of bands!
+    // Do a few sanity checks to avoid excessive memory allocation on
+    // small files.
+    // But ultimately we should fix RawRasterBand to have a shared buffer
+    // among bands.
+    if( !RAWDatasetCheckMemoryUsage(
+                        poDS->nRasterXSize, poDS->nRasterYSize, nBands,
+                        nDataSize,
+                        nPixelOffset, nLineOffset, nHeaderSize, nBandOffset,
+                        poDS->fpImage) )
+    {
+        delete poDS;
+        return nullptr;
+    }
+
     // Create band information objects.
-    poDS->nBands = nBands;
     CPLErrorReset();
-    for( int i = 0; i < poDS->nBands; i++ )
+    for( int i = 0; i < nBands; i++ )
     {
         poDS->SetBand(i + 1,
                       new ENVIRasterBand(poDS, i + 1, poDS->fpImage,
@@ -2317,34 +2327,33 @@ GDALDataset *ENVIDataset::Open( GDALOpenInfo *poOpenInfo )
                                          bNativeOrder, TRUE));
         if( CPLGetLastErrorType() != CE_None )
         {
-            poDS->nBands = i + 1;
             delete poDS;
-            return NULL;
+            return nullptr;
         }
     }
 
     // Apply band names if we have them.
     // Use wavelength for more descriptive information if possible.
-    if( CSLFetchNameValue(poDS->papszHeader, "band_names") != NULL ||
-        CSLFetchNameValue(poDS->papszHeader, "wavelength") != NULL)
+    const char* pszBandNames = poDS->m_aosHeader["band_names"];
+    const char* pszWaveLength = poDS->m_aosHeader["wavelength"];
+    if( pszBandNames != nullptr || pszWaveLength != nullptr)
     {
         char **papszBandNames =
-            poDS->SplitList(CSLFetchNameValue(poDS->papszHeader, "band_names"));
+            poDS->SplitList(pszBandNames);
         char **papszWL =
-            poDS->SplitList(CSLFetchNameValue(poDS->papszHeader, "wavelength"));
+            poDS->SplitList(pszWaveLength);
 
-        const char *pszWLUnits = NULL;
+        const char *pszWLUnits = nullptr;
         const int nWLCount = CSLCount(papszWL);
         if (papszWL)
         {
             // If WL information is present, process wavelength units.
-            pszWLUnits =
-                CSLFetchNameValue(poDS->papszHeader, "wavelength_units");
+            pszWLUnits = poDS->m_aosHeader["wavelength_units"];
             if (pszWLUnits)
             {
                 // Don't show unknown or index units.
                 if( EQUAL(pszWLUnits, "Unknown") || EQUAL(pszWLUnits, "Index") )
-                    pszWLUnits = NULL;
+                    pszWLUnits = nullptr;
             }
             if( pszWLUnits )
             {
@@ -2410,20 +2419,20 @@ GDALDataset *ENVIDataset::Open( GDALOpenInfo *poOpenInfo )
     }
 
     // Apply class names if we have them.
-    if( CSLFetchNameValue(poDS->papszHeader, "class_names") != NULL )
+    const char* pszClassNames = poDS->m_aosHeader["class_names"];
+    if( pszClassNames != nullptr )
     {
-        char **papszClassNames = poDS->SplitList(
-            CSLFetchNameValue(poDS->papszHeader, "class_names"));
+        char **papszClassNames = poDS->SplitList(pszClassNames);
 
         poDS->GetRasterBand(1)->SetCategoryNames(papszClassNames);
         CSLDestroy(papszClassNames);
     }
 
     // Apply colormap if we have one.
-    if( CSLFetchNameValue(poDS->papszHeader, "class_lookup") != NULL )
+    const char* pszClassLookup = poDS->m_aosHeader["class_lookup"];
+    if( pszClassLookup != nullptr )
     {
-        char **papszClassColors = poDS->SplitList(
-            CSLFetchNameValue(poDS->papszHeader, "class_lookup"));
+        char **papszClassColors = poDS->SplitList(pszClassLookup);
         const int nColorValueCount = CSLCount(papszClassColors);
         GDALColorTable oCT;
 
@@ -2445,22 +2454,22 @@ GDALDataset *ENVIDataset::Open( GDALOpenInfo *poOpenInfo )
     }
 
     // Set the nodata value if it is present.
-    if( CSLFetchNameValue(poDS->papszHeader, "data_ignore_value" ) != NULL )
+    const char* pszDataIgnoreValue = poDS->m_aosHeader["data_ignore_value"];
+    if( pszDataIgnoreValue != nullptr )
     {
         for( int i = 0; i < poDS->nBands; i++ )
             reinterpret_cast<RawRasterBand *>(poDS->GetRasterBand(i + 1))
-                ->SetNoDataValue(CPLAtof(
-                    CSLFetchNameValue(poDS->papszHeader, "data_ignore_value")));
+                ->SetNoDataValue(CPLAtof(pszDataIgnoreValue));
     }
 
     // Set all the header metadata into the ENVI domain.
     {
-        char **pTmp = poDS->papszHeader;
-        while( *pTmp != NULL )
+        char **pTmp = poDS->m_aosHeader.List();
+        while( *pTmp != nullptr )
         {
             char **pTokens = CSLTokenizeString2(
                 *pTmp, "=", CSLT_STRIPLEADSPACES | CSLT_STRIPENDSPACES);
-            if (pTokens[0] != NULL && pTokens[1] != NULL && pTokens[2] == NULL)
+            if (pTokens[0] != nullptr && pTokens[1] != nullptr && pTokens[2] == nullptr)
             {
                 poDS->SetMetadataItem(pTokens[0], pTokens[1], "ENVI");
             }
@@ -2473,17 +2482,18 @@ GDALDataset *ENVIDataset::Open( GDALOpenInfo *poOpenInfo )
     poDS->ProcessStatsFile();
 
     // Look for mapinfo.
-    if( CSLFetchNameValue(poDS->papszHeader, "map_info") != NULL )
+    const char* pszMapInfo = poDS->m_aosHeader["map_info"];
+    if( pszMapInfo != nullptr )
     {
         poDS->bFoundMapinfo = CPL_TO_BOOL(poDS->ProcessMapinfo(
-            CSLFetchNameValue(poDS->papszHeader, "map_info")));
+            pszMapInfo));
     }
 
     // Look for RPC mapinfo.
-    if( !poDS->bFoundMapinfo &&
-        CSLFetchNameValue(poDS->papszHeader, "rpc_info") != NULL )
+    const char* pszRPCInfo = poDS->m_aosHeader["rpc_info"];
+    if( !poDS->bFoundMapinfo && pszRPCInfo != nullptr )
     {
-        poDS->ProcessRPCinfo(CSLFetchNameValue(poDS->papszHeader, "rpc_info"),
+        poDS->ProcessRPCinfo(pszRPCInfo,
                              poDS->nRasterXSize, poDS->nRasterYSize);
     }
 
@@ -2559,16 +2569,16 @@ GDALDataset *ENVIDataset::Create( const char *pszFilename,
     // Verify input options.
     int iENVIType = GetEnviType(eType);
     if( 0 == iENVIType )
-        return NULL;
+        return nullptr;
 
     // Try to create the file.
     VSILFILE *fp = VSIFOpenL(pszFilename, "wb");
 
-    if( fp == NULL )
+    if( fp == nullptr )
     {
         CPLError(CE_Failure, CPLE_OpenFailed,
                  "Attempt to create file `%s' failed.", pszFilename);
-        return NULL;
+        return nullptr;
     }
 
     // Just write out a couple of bytes to establish the binary
@@ -2577,25 +2587,25 @@ GDALDataset *ENVIDataset::Create( const char *pszFilename,
         const bool bRet = VSIFWriteL(
             static_cast<void *>(const_cast<char *>("\0\0")), 2, 1, fp) == 1;
         if( VSIFCloseL(fp) != 0 || !bRet )
-            return NULL;
+            return nullptr;
     }
 
     // Create the .hdr filename.
-    const char *pszHDRFilename = NULL;
+    const char *pszHDRFilename = nullptr;
     const char *pszSuffix = CSLFetchNameValue(papszOptions, "SUFFIX");
     if ( pszSuffix && STARTS_WITH_CI(pszSuffix, "ADD"))
-        pszHDRFilename = CPLFormFilename(NULL, pszFilename, "hdr");
+        pszHDRFilename = CPLFormFilename(nullptr, pszFilename, "hdr");
     else
         pszHDRFilename = CPLResetExtension(pszFilename, "hdr");
 
     // Open the file.
     fp = VSIFOpenL(pszHDRFilename, "wt");
-    if( fp == NULL )
+    if( fp == nullptr )
     {
         CPLError(CE_Failure, CPLE_OpenFailed,
                  "Attempt to create file `%s' failed.",
                  pszHDRFilename);
-        return NULL;
+        return nullptr;
     }
 
     // Write out the header.
@@ -2629,7 +2639,7 @@ GDALDataset *ENVIDataset::Create( const char *pszFilename,
     bRet &= VSIFPrintfL(fp, "byte order = %d\n", iBigEndian) > 0;
 
     if( VSIFCloseL(fp) != 0 || !bRet )
-        return NULL;
+        return nullptr;
 
     GDALOpenInfo oOpenInfo(pszFilename, GA_Update);
     ENVIDataset *poDS = reinterpret_cast<ENVIDataset *>(Open(&oOpenInfo));
@@ -2681,7 +2691,7 @@ CPLErr ENVIRasterBand::SetCategoryNames( char **papszCategoryNamesIn )
 
 void GDALRegister_ENVI()
 {
-    if( GDALGetDriverByName("ENVI") != NULL )
+    if( GDALGetDriverByName("ENVI") != nullptr )
         return;
 
     GDALDriver *poDriver = new GDALDriver();

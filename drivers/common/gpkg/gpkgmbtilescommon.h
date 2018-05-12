@@ -129,10 +129,10 @@ class GDALGPKGMBTilesLikePseudoDataset
                                          GByte* pabyTileData,
                                          double dfTileOffset,
                                          double dfTileScale,
-                                         bool* pbIsLossyFormat = NULL);
+                                         bool* pbIsLossyFormat = nullptr);
         GByte*                  ReadTile(int nRow, int nCol);
         GByte*                  ReadTile(int nRow, int nCol, GByte* pabyData,
-                                         bool* pbIsLossyFormat = NULL);
+                                         bool* pbIsLossyFormat = nullptr);
 
         CPLErr                  WriteTile();
 
@@ -162,6 +162,7 @@ class GDALGPKGMBTilesLikeRasterBand: public GDALPamRasterBand
         int                               m_nDTSize;
         bool                              m_bHasNoData;
         double                            m_dfNoDataValue;
+        CPLString                         m_osUom;
 
     public:
                                 GDALGPKGMBTilesLikeRasterBand(GDALGPKGMBTilesLikePseudoDataset* poTPD,
@@ -179,8 +180,12 @@ class GDALGPKGMBTilesLikeRasterBand: public GDALPamRasterBand
         virtual GDALColorInterp GetColorInterpretation() override;
         virtual CPLErr          SetColorInterpretation( GDALColorInterp ) override;
 
-        virtual double          GetNoDataValue( int* pbSuccess = NULL ) override;
+        virtual double          GetNoDataValue( int* pbSuccess = nullptr ) override;
+        virtual const char*     GetUnitType() override { return m_osUom.c_str(); }
+
         void                    SetNoDataValueInternal( double dfNoDataValue );
+        void                    SetUnitTypeInternal(const CPLString& osUom)
+                                                        { m_osUom = osUom; }
 
     protected:
         friend class GDALGPKGMBTilesLikePseudoDataset;

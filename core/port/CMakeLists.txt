@@ -66,10 +66,19 @@ set(LIB_HHEADERS
     cpl_cpu_features.h
     cpl_google_cloud.h
     cpl_sha1.h
+    cpl_json.h
+    cpl_mem_cache.h
 )
 
 set(LIB_HHEADERS_PRIV
     cpl_config_extras.h
+    cpl_alibaba_oss.h
+    cpl_azure.h
+    cpl_json_header.h
+    cpl_json_streaming_parser.h
+    cpl_md5.h
+    cpl_swift.h
+    cpl_safemaths.hpp
 )
 
 set(LIB_CSOURCES
@@ -122,6 +131,12 @@ set(LIB_CSOURCES
     cpl_cpu_features.cpp
     cpl_google_cloud.cpp
     cpl_sha1.cpp
+    cpl_alibaba_oss.cpp
+    cpl_azure.cpp
+    cpl_json_streaming_parser.cpp
+    cpl_json.cpp
+    cpl_md5.cpp
+    cpl_swift.cpp
 )
 
 if(WIN32)

@@ -1,13 +1,13 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-#*****************************************************************************
+# *****************************************************************************
 # $Id$
 #
 # Project:  GDAL
 # Purpose:  GDAL API_PROXY server written in Python
 # Author:   Even Rouault, <even dot rouault at mines-paris dot org>
 #
-#*****************************************************************************
+# *****************************************************************************
 # Copyright (c) 2013, Even Rouault <even dot rouault at mines-paris dot org>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -27,7 +27,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
-#***************************************************************************/
+# ***************************************************************************/
 
 # WARNING: only Python 2 compatible for now
 
@@ -36,6 +36,7 @@ import struct
 import sys
 
 from osgeo import gdal
+
 
 class GDALPythonServerRasterBand:
 
@@ -105,7 +106,7 @@ class GDALPythonServerRasterBand:
         return self.gdal_band.ReadBlock(nXBlockOff, nYBlockOff)
 
     def IRasterIO_Read(self, nXOff, nYOff, nXSize, nYSize, nBufXSize, nBufYSize, nBufType):
-        return self.gdal_band.ReadRaster(nXOff, nYOff, nXSize, nYSize, buf_xsize = nBufXSize, buf_ysize = nBufYSize, buf_type = nBufType)
+        return self.gdal_band.ReadRaster(nXOff, nYOff, nXSize, nYSize, buf_xsize=nBufXSize, buf_ysize=nBufYSize, buf_type=nBufType)
 
     def GetUnitType(self):
         return self.gdal_band.GetUnitType()
@@ -120,17 +121,18 @@ class GDALPythonServerRasterBand:
         return self.gdal_band.GetColorTable()
 
     def GetHistogram(self, dfMin, dfMax, nBuckets, bIncludeOutOfRange, bApproxOK):
-        return self.gdal_band.GetHistogram(dfMin, dfMax, nBuckets, include_out_of_range = bIncludeOutOfRange, approx_ok = bApproxOK)
+        return self.gdal_band.GetHistogram(dfMin, dfMax, nBuckets, include_out_of_range=bIncludeOutOfRange, approx_ok=bApproxOK)
+
 
 class GDALPythonServerDataset:
 
-    def __init__(self, filename, access = gdal.GA_ReadOnly, open_options = None):
+    def __init__(self, filename, access=gdal.GA_ReadOnly, open_options=None):
         nFlags = 0
         if access == gdal.GA_Update:
             nFlags |= gdal.OF_UPDATE
         if open_options is None:
             open_options = []
-        self.gdal_ds = gdal.OpenEx(filename, nFlags, open_options = open_options)
+        self.gdal_ds = gdal.OpenEx(filename, nFlags, open_options=open_options)
         if self.gdal_ds is None:
             raise Exception(gdal.GetLastErrorMsg())
         self.RasterXSize = self.gdal_ds.RasterXSize
@@ -138,7 +140,7 @@ class GDALPythonServerDataset:
         self.RasterCount = self.gdal_ds.RasterCount
         self.bands = []
         for i in range(self.RasterCount):
-            gdal_band = self.gdal_ds.GetRasterBand(i+1)
+            gdal_band = self.gdal_ds.GetRasterBand(i + 1)
             self.bands.append(GDALPythonServerRasterBand(gdal_band))
 
     def __del__(self):
@@ -148,7 +150,7 @@ class GDALPythonServerDataset:
         return self.gdal_ds.GetDriver()
 
     def GetRasterBand(self, i):
-        return self.bands[i-1]
+        return self.bands[i - 1]
 
     def GetDescription(self):
         return self.gdal_ds.GetDescription()
@@ -175,174 +177,175 @@ class GDALPythonServerDataset:
         self.gdal_ds.FlushCache()
         return
 
-    def IRasterIO_Read(self, nXOff, nYOff, nXSize, nYSize, nBufXSize, nBufYSize, \
+    def IRasterIO_Read(self, nXOff, nYOff, nXSize, nYSize, nBufXSize, nBufYSize,
                        nBufType, panBandMap, nPixelSpace, nLineSpace, nBandSpace):
-        return self.gdal_ds.ReadRaster(nXOff, nYOff, nXSize, nYSize, \
-                                       buf_xsize = nBufXSize, buf_ysize = nBufYSize, \
-                                       buf_type = nBufType, band_list = panBandMap, \
-                                       buf_pixel_space = nPixelSpace, buf_line_space = nLineSpace, buf_band_space = nBandSpace)
+        return self.gdal_ds.ReadRaster(nXOff, nYOff, nXSize, nYSize,
+                                       buf_xsize=nBufXSize, buf_ysize=nBufYSize,
+                                       buf_type=nBufType, band_list=panBandMap,
+                                       buf_pixel_space=nPixelSpace, buf_line_space=nLineSpace, buf_band_space=nBandSpace)
+
 
 INSTR_GetGDALVersion = 1
 INSTR_EXIT = 2
 INSTR_EXIT_FAIL = 3
 INSTR_SetConfigOption = 4
-#INSTR_Progress = 5
+# INSTR_Progress = 5
 INSTR_Reset = 6
 INSTR_Open = 7
 INSTR_Identify = 8
 INSTR_Create = 9
 INSTR_CreateCopy = 10
 INSTR_QuietDelete = 11
-#INSTR_AddBand = 12
+# INSTR_AddBand = 12
 INSTR_GetGeoTransform = 13
-#INSTR_SetGeoTransform = 14
+# INSTR_SetGeoTransform = 14
 INSTR_GetProjectionRef = 15
-#INSTR_SetProjection = 16
+# INSTR_SetProjection = 16
 INSTR_GetGCPCount = 17
-#INSTR_GetGCPProjection = 18
-#INSTR_GetGCPs = 19
-#INSTR_SetGCPs = 20
+# INSTR_GetGCPProjection = 18
+# INSTR_GetGCPs = 19
+# INSTR_SetGCPs = 20
 INSTR_GetFileList = 21
 INSTR_FlushCache = 22
-#INSTR_SetDescription = 23
+# INSTR_SetDescription = 23
 INSTR_GetMetadata = 24
 INSTR_GetMetadataItem = 25
-#INSTR_SetMetadata = 26
-#INSTR_SetMetadataItem = 27
+# INSTR_SetMetadata = 26
+# INSTR_SetMetadataItem = 27
 INSTR_IRasterIO_Read = 28
-#INSTR_IRasterIO_Write = 29
-#INSTR_IBuildOverviews = 30
-#INSTR_AdviseRead = 31
-#INSTR_CreateMaskBand = 32
+# INSTR_IRasterIO_Write = 29
+# INSTR_IBuildOverviews = 30
+# INSTR_AdviseRead = 31
+# INSTR_CreateMaskBand = 32
 INSTR_Band_First = 33
 INSTR_Band_FlushCache = 34
 INSTR_Band_GetCategoryNames = 35
-#INSTR_Band_SetCategoryNames = 36
-#INSTR_Band_SetDescription = 37
+# INSTR_Band_SetCategoryNames = 36
+# INSTR_Band_SetDescription = 37
 INSTR_Band_GetMetadata = 38
 INSTR_Band_GetMetadataItem = 39
 INSTR_Band_SetMetadata = 40
 INSTR_Band_SetMetadataItem = 41
 INSTR_Band_GetColorInterpretation = 42
-#INSTR_Band_SetColorInterpretation = 43
+# INSTR_Band_SetColorInterpretation = 43
 INSTR_Band_GetNoDataValue = 44
 INSTR_Band_GetMinimum = 45
 INSTR_Band_GetMaximum = 46
 INSTR_Band_GetOffset = 47
 INSTR_Band_GetScale = 48
-#INSTR_Band_SetNoDataValue = 49
-#INSTR_Band_SetOffset = 50
-#INSTR_Band_SetScale = 51
+# INSTR_Band_SetNoDataValue = 49
+# INSTR_Band_SetOffset = 50
+# INSTR_Band_SetScale = 51
 INSTR_Band_IReadBlock = 52
-#INSTR_Band_IWriteBlock = 53
+# INSTR_Band_IWriteBlock = 53
 INSTR_Band_IRasterIO_Read = 54
-#INSTR_Band_IRasterIO_Write = 55
+# INSTR_Band_IRasterIO_Write = 55
 INSTR_Band_GetStatistics = 56
-#INSTR_Band_ComputeStatistics = 57
-#INSTR_Band_SetStatistics = 58
+# INSTR_Band_ComputeStatistics = 57
+# INSTR_Band_SetStatistics = 58
 INSTR_Band_ComputeRasterMinMax = 59
 INSTR_Band_GetHistogram = 60
 INSTR_Band_GetDefaultHistogram = 61
-#INSTR_Band_SetDefaultHistogram = 62
+# INSTR_Band_SetDefaultHistogram = 62
 INSTR_Band_HasArbitraryOverviews = 63
 INSTR_Band_GetOverviewCount = 64
 INSTR_Band_GetOverview = 65
 INSTR_Band_GetMaskBand = 66
 INSTR_Band_GetMaskFlags = 67
-#INSTR_Band_CreateMaskBand = 68
-#INSTR_Band_Fill = 69
+# INSTR_Band_CreateMaskBand = 68
+# INSTR_Band_Fill = 69
 INSTR_Band_GetColorTable = 70
-#INSTR_Band_SetColorTable = 71
+# INSTR_Band_SetColorTable = 71
 INSTR_Band_GetUnitType = 72
-#INSTR_Band_SetUnitType = 73
-#INSTR_Band_BuildOverviews = 74
+# INSTR_Band_SetUnitType = 73
+# INSTR_Band_BuildOverviews = 74
 INSTR_Band_GetDefaultRAT = 75
-#INSTR_Band_SetDefaultRAT = 76
-#INSTR_Band_AdviseRead = 77
-#INSTR_Band_DeleteNoDataValue=78
+# INSTR_Band_SetDefaultRAT = 76
+# INSTR_Band_AdviseRead = 77
+# INSTR_Band_DeleteNoDataValue=78
 INSTR_Band_End = 79
-#INSTR_END = 80
+# INSTR_END = 80
 
 caps_list = [
     INSTR_GetGDALVersion,
     INSTR_EXIT,
     INSTR_EXIT_FAIL,
     INSTR_SetConfigOption,
-    #INSTR_Progress,
+    # INSTR_Progress,
     INSTR_Reset,
     INSTR_Open,
     INSTR_Identify,
     INSTR_Create,
     INSTR_CreateCopy,
     INSTR_QuietDelete,
-    #INSTR_AddBand,
+    # INSTR_AddBand,
     INSTR_GetGeoTransform,
-    #INSTR_SetGeoTransform,
+    # INSTR_SetGeoTransform,
     INSTR_GetProjectionRef,
-    #INSTR_SetProjection,
+    # INSTR_SetProjection,
     INSTR_GetGCPCount,
-    #INSTR_GetGCPProjection,
-    #INSTR_GetGCPs,
-    #INSTR_SetGCPs,
+    # INSTR_GetGCPProjection,
+    # INSTR_GetGCPs,
+    # INSTR_SetGCPs,
     INSTR_GetFileList,
     INSTR_FlushCache,
-    #INSTR_SetDescription,
+    # INSTR_SetDescription,
     INSTR_GetMetadata,
     INSTR_GetMetadataItem,
-    #INSTR_SetMetadata,
-    #INSTR_SetMetadataItem,
+    # INSTR_SetMetadata,
+    # INSTR_SetMetadataItem,
     INSTR_IRasterIO_Read,
-    #INSTR_IRasterIO_Write,
-    #INSTR_IBuildOverviews,
-    #INSTR_AdviseRead,
-    #INSTR_CreateMaskBand,
-    #INSTR_Band_First,
+    # INSTR_IRasterIO_Write,
+    # INSTR_IBuildOverviews,
+    # INSTR_AdviseRead,
+    # INSTR_CreateMaskBand,
+    # INSTR_Band_First,
     INSTR_Band_FlushCache,
     INSTR_Band_GetCategoryNames,
-    #INSTR_Band_SetCategoryNames,
-    #INSTR_Band_SetDescription,
+    # INSTR_Band_SetCategoryNames,
+    # INSTR_Band_SetDescription,
     INSTR_Band_GetMetadata,
     INSTR_Band_GetMetadataItem,
     INSTR_Band_SetMetadata,
     INSTR_Band_SetMetadataItem,
     INSTR_Band_GetColorInterpretation,
-    #INSTR_Band_SetColorInterpretation,
+    # INSTR_Band_SetColorInterpretation,
     INSTR_Band_GetNoDataValue,
     INSTR_Band_GetMinimum,
     INSTR_Band_GetMaximum,
     INSTR_Band_GetOffset,
     INSTR_Band_GetScale,
-    #INSTR_Band_SetNoDataValue,
-    #INSTR_Band_SetOffset,
-    #INSTR_Band_SetScale,
+    # INSTR_Band_SetNoDataValue,
+    # INSTR_Band_SetOffset,
+    # INSTR_Band_SetScale,
     INSTR_Band_IReadBlock,
-    #INSTR_Band_IWriteBlock,
+    # INSTR_Band_IWriteBlock,
     INSTR_Band_IRasterIO_Read,
-    #INSTR_Band_IRasterIO_Write,
+    # INSTR_Band_IRasterIO_Write,
     INSTR_Band_GetStatistics,
-    #INSTR_Band_ComputeStatistics,
-    #INSTR_Band_SetStatistics,
+    # INSTR_Band_ComputeStatistics,
+    # INSTR_Band_SetStatistics,
     INSTR_Band_ComputeRasterMinMax,
     INSTR_Band_GetHistogram,
-    #INSTR_Band_GetDefaultHistogram,
-    #INSTR_Band_SetDefaultHistogram,
+    # INSTR_Band_GetDefaultHistogram,
+    # INSTR_Band_SetDefaultHistogram,
     INSTR_Band_HasArbitraryOverviews,
     INSTR_Band_GetOverviewCount,
     INSTR_Band_GetOverview,
     INSTR_Band_GetMaskBand,
     INSTR_Band_GetMaskFlags,
-    #INSTR_Band_CreateMaskBand,
-    #INSTR_Band_Fill,
+    # INSTR_Band_CreateMaskBand,
+    # INSTR_Band_Fill,
     INSTR_Band_GetColorTable,
-    #INSTR_Band_SetColorTable,
+    # INSTR_Band_SetColorTable,
     INSTR_Band_GetUnitType,
-    #INSTR_Band_SetUnitType,
-    #INSTR_Band_BuildOverviews,
-    #INSTR_Band_GetDefaultRAT,
-    #INSTR_Band_SetDefaultRAT,
-    #INSTR_Band_AdviseRead ,
-    #INSTR_Band_End,
-    #INSTR_END = 80
+    # INSTR_Band_SetUnitType,
+    # INSTR_Band_BuildOverviews,
+    # INSTR_Band_GetDefaultRAT,
+    # INSTR_Band_SetDefaultRAT,
+    # INSTR_Band_AdviseRead ,
+    # INSTR_Band_End,
+    # INSTR_END = 80
 ]
 
 CE_None = 0
@@ -350,32 +353,37 @@ CE_Failure = 3
 
 VERBOSE = 0
 
+
 def read_int():
-    if sys.version_info >= (3,0,0):
+    if sys.version_info >= (3, 0, 0):
         return struct.unpack('i', sys.stdin.read(4).encode('latin1'))[0]
     else:
         return struct.unpack('i', sys.stdin.read(4))[0]
 
+
 def read_bigint():
-    if sys.version_info >= (3,0,0):
+    if sys.version_info >= (3, 0, 0):
         return struct.unpack('q', sys.stdin.read(8).encode('latin1'))[0]
     else:
         return struct.unpack('q', sys.stdin.read(8))[0]
 
+
 def read_double():
-    if sys.version_info >= (3,0,0):
+    if sys.version_info >= (3, 0, 0):
         return struct.unpack('d', sys.stdin.read(8).encode('latin1'))[0]
     else:
         return struct.unpack('d', sys.stdin.read(8))[0]
+
 
 def read_str():
     length = read_int()
     if length <= 0:
         return None
     str = sys.stdin.read(length)
-    if len(str) > 0 and str[len(str)-1] == '\0':
-        str =  str[0:len(str)-1]
+    if len(str) > 0 and str[len(str) - 1] == '\0':
+        str = str[0:len(str) - 1]
     return str
+
 
 def read_strlist():
     count = read_int()
@@ -384,6 +392,7 @@ def read_strlist():
         strlist.append(read_str())
     return strlist
 
+
 def write_int(i):
     if i is True:
         v = struct.pack('i', 1)
@@ -391,46 +400,50 @@ def write_int(i):
         v = struct.pack('i', 0)
     else:
         v = struct.pack('i', i)
-    if sys.version_info >= (3,0,0):
+    if sys.version_info >= (3, 0, 0):
         sys.stdout.write(v.decode('latin1'))
     else:
         sys.stdout.write(v)
+
 
 def write_uint64(i):
     v = struct.pack('Q', i)
-    if sys.version_info >= (3,0,0):
+    if sys.version_info >= (3, 0, 0):
         sys.stdout.write(v.decode('latin1'))
     else:
         sys.stdout.write(v)
 
+
 def write_double(d):
-    if sys.version_info >= (3,0,0):
+    if sys.version_info >= (3, 0, 0):
         sys.stdout.write(struct.pack('d', d).decode('latin1'))
     else:
         sys.stdout.write(struct.pack('d', d))
+
 
 def write_str(s):
     if s is None:
         write_int(0)
     else:
-        l = len(s)
-        write_int(l+1)
+        write_int(len(s) + 1)
         sys.stdout.write(s)
         sys.stdout.write('\x00')
 
+
 def write_band(band, isrv_num):
     if band is not None:
-        write_int(isrv_num) # srv band count
-        write_int(band.Band) # band number
-        write_int(0) # access
-        write_int(band.XSize) # X
-        write_int(band.YSize) # Y
-        write_int(band.DataType) # data type
-        write_int(band.BlockXSize) # block x size
-        write_int(band.BlockYSize) # block y size
-        write_str('') # band description
+        write_int(isrv_num)  # srv band count
+        write_int(band.Band)  # band number
+        write_int(0)  # access
+        write_int(band.XSize)  # X
+        write_int(band.YSize)  # Y
+        write_int(band.DataType)  # data type
+        write_int(band.BlockXSize)  # block x size
+        write_int(band.BlockYSize)  # block y size
+        write_str('')  # band description
     else:
         write_int(-1)
+
 
 def write_ct(ct):
     if ct is None:
@@ -446,11 +459,14 @@ def write_ct(ct):
             write_int(entry[2])
             write_int(entry[3])
 
+
 def write_marker():
     sys.stdout.write('\xDE\xAD\xBE\xEF')
 
+
 def write_zero_error():
     write_int(0)
+
 
 def main_loop():
 
@@ -471,7 +487,7 @@ def main_loop():
             band = server_bands[srv_band]
 
         if instr == INSTR_GetGDALVersion:
-            if sys.version_info >= (3,0,0):
+            if sys.version_info >= (3, 0, 0):
                 lsb = struct.unpack('B', sys.stdin.read(1).encode('latin1'))[0]
             else:
                 lsb = struct.unpack('B', sys.stdin.read(1))[0]
@@ -491,11 +507,11 @@ def main_loop():
                 sys.stderr.write('extra_bytes=%d\n' % extra_bytes)
 
             write_str('2.1dev')
-            write_int(2) # vmajor
-            write_int(1) # vminor
-            write_int(3) # protovmajor
-            write_int(0) # protovminor
-            write_int(0) # extra bytes
+            write_int(2)  # vmajor
+            write_int(1)  # vminor
+            write_int(3)  # protovmajor
+            write_int(0)  # protovminor
+            write_int(0)  # extra bytes
             continue
         elif instr == INSTR_EXIT:
             server_ds = None
@@ -518,7 +534,7 @@ def main_loop():
                 sys.stderr.write('val=%s\n' % val)
             continue
         elif instr == INSTR_Reset:
-            #if server_ds is not None:
+            # if server_ds is not None:
             #    sys.stderr.write('Reset(%s)\n' % server_ds.GetDescription())
             server_ds = None
             server_bands = []
@@ -536,7 +552,7 @@ def main_loop():
                 sys.stderr.write('filename=%s\n' % filename)
                 sys.stderr.write('cwd=%s\n' % cwd)
                 sys.stderr.write('open_options=%s\n' % str(open_options))
-            #sys.stderr.write('Open(%s)\n' % filename)
+            # sys.stderr.write('Open(%s)\n' % filename)
             try:
                 server_ds = GDALPythonServerDataset(filename, access, open_options)
             except:
@@ -544,26 +560,26 @@ def main_loop():
 
             write_marker()
             if server_ds is None:
-                write_int(0) # Failure
+                write_int(0)  # Failure
             else:
-                write_int(1) # Success
-                write_int(16) # caps length
-                caps = [ 0 for i in range(16)]
+                write_int(1)  # Success
+                write_int(16)  # caps length
+                caps = [0 for i in range(16)]
                 for cap in caps_list:
                     caps[int(cap / 8)] = caps[int(cap / 8)] | (1 << (cap % 8))
                 for i in range(16):
-                    sys.stdout.write(struct.pack('B', caps[i])) # caps
+                    sys.stdout.write(struct.pack('B', caps[i]))  # caps
                 write_str(server_ds.GetDescription())
                 drv = server_ds.GetDriver()
                 if drv is not None:
                     write_str(drv.GetDescription())
-                    write_int(0) # End of driver metadata
+                    write_int(0)  # End of driver metadata
                 else:
                     write_str(None)
-                write_int(server_ds.RasterXSize) # X
-                write_int(server_ds.RasterYSize) # Y
-                write_int(server_ds.RasterCount) # Band count
-                write_int(1) # All bands are identical
+                write_int(server_ds.RasterXSize)  # X
+                write_int(server_ds.RasterYSize)  # Y
+                write_int(server_ds.RasterCount)  # Band count
+                write_int(1)  # All bands are identical
 
                 if server_ds.RasterCount > 0:
                     write_band(server_ds.GetRasterBand(1), len(server_bands))
@@ -581,20 +597,20 @@ def main_loop():
         elif instr == INSTR_Create:
             filename = read_str()
             cwd = read_str()
-            read_int() # xsize =
-            read_int() # ysize =
-            read_int() # bands =
-            read_int() # datatype =
-            read_strlist() #options =
+            read_int()  # xsize =
+            read_int()  # ysize =
+            read_int()  # bands =
+            read_int()  # datatype =
+            read_strlist()  # options =
             write_marker()
             # FIXME
             write_int(0)
         elif instr == INSTR_CreateCopy:
             filename = read_str()
-            read_str() # src_description =
+            read_str()  # src_description =
             cwd = read_str()
-            read_int() # strict =
-            read_strlist() # options =
+            read_int()  # strict =
+            read_strlist()  # options =
             # FIXME
             write_int(0)
         elif instr == INSTR_QuietDelete:
@@ -647,7 +663,7 @@ def main_loop():
             nBufType = read_int()
             nBandCount = read_int()
             panBandMap = []
-            read_int() # size =
+            read_int()  # size =
             for i in range(nBandCount):
                 panBandMap.append(read_int())
             nPixelSpace = read_bigint()
@@ -732,7 +748,7 @@ def main_loop():
             write_marker()
             if val is None:
                 write_int(0)
-                write_double(1) #default value is 1
+                write_double(1)  # default value is 1
             else:
                 write_int(1)
                 write_double(val)
@@ -743,9 +759,9 @@ def main_loop():
             write_marker()
             if val is None:
                 write_int(CE_Failure)
-                l = band.BlockXSize * band.BlockYSize * (gdal.GetDataTypeSize(band.DataType) / 8)
-                write_int(l)
-                sys.stdout.write(''.join('\0' for i in range(l)))
+                length = band.BlockXSize * band.BlockYSize * (gdal.GetDataTypeSize(band.DataType) / 8)
+                write_int(length)
+                sys.stdout.write(''.join('\0' for i in range(length)))
             else:
                 write_int(CE_None)
                 write_int(len(val))
@@ -805,7 +821,7 @@ def main_loop():
                 write_int(len(val) * 8)
                 for i in range(len(val)):
                     write_uint64(val[i])
-        #elif instr == INSTR_Band_GetDefaultHistogram:
+        # elif instr == INSTR_Band_GetDefaultHistogram:
         #    bForce = read_int()
         #    write_marker()
         #    write_int(CE_Failure)
@@ -842,7 +858,7 @@ def main_loop():
             val = band.GetUnitType()
             write_marker()
             write_str(val)
-        #elif instr == INSTR_Band_GetDefaultRAT:
+        # elif instr == INSTR_Band_GetDefaultRAT:
         #    write_marker()
         #    # FIXME
         #    write_int(0)
@@ -850,5 +866,6 @@ def main_loop():
             break
 
         write_zero_error()
+
 
 main_loop()

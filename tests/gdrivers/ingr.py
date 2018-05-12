@@ -34,40 +34,43 @@ import os
 import sys
 from osgeo import gdal
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 
 ###############################################################################
 # Read test of byte file.
 
+
 def ingr_1():
 
-    tst = gdaltest.GDALTest( 'INGR', '8bit_rgb.cot', 2, 4855 )
+    tst = gdaltest.GDALTest('INGR', '8bit_rgb.cot', 2, 4855)
     return tst.testOpen()
 
 ###############################################################################
 # Read uint32 file.
 
+
 def ingr_2():
 
-    tst = gdaltest.GDALTest( 'INGR', 'uint32.cot', 1, 4672 )
+    tst = gdaltest.GDALTest('INGR', 'uint32.cot', 1, 4672)
     return tst.testOpen()
 
 ###############################################################################
 # Test paletted file, including checking the palette (format 02 I think).
 
+
 def ingr_3():
 
-    tst = gdaltest.GDALTest( 'INGR', '8bit_pal.cot', 1, 4855 )
+    tst = gdaltest.GDALTest('INGR', '8bit_pal.cot', 1, 4855)
     result = tst.testOpen()
     if result != 'success':
         return result
 
-    ds = gdal.Open( 'data/8bit_pal.cot' )
+    ds = gdal.Open('data/8bit_pal.cot')
     ct = ds.GetRasterBand(1).GetRasterColorTable()
-    if ct.GetCount() != 256 or ct.GetColorEntry(8) != (8,8,8,255):
-        gdaltest.post_reason( 'Wrong color table entry.' )
+    if ct.GetCount() != 256 or ct.GetColorEntry(8) != (8, 8, 8, 255):
+        gdaltest.post_reason('Wrong color table entry.')
         return 'fail'
 
     return 'success'
@@ -75,85 +78,96 @@ def ingr_3():
 ###############################################################################
 # frmt02 is a plain byte format
 
+
 def ingr_4():
 
-    tst = gdaltest.GDALTest( 'INGR', 'frmt02.cot', 1, 26968 )
+    tst = gdaltest.GDALTest('INGR', 'frmt02.cot', 1, 26968)
     return tst.testOpen()
 
 ###############################################################################
 # Test creation.
 
+
 def ingr_5():
 
-    tst = gdaltest.GDALTest( 'INGR', 'frmt02.cot', 1, 26968 )
+    tst = gdaltest.GDALTest('INGR', 'frmt02.cot', 1, 26968)
     return tst.testCreate()
 
 ###############################################################################
 # Test createcopy.
 
+
 def ingr_6():
 
-    tst = gdaltest.GDALTest( 'INGR', 'frmt02.cot', 1, 26968 )
+    tst = gdaltest.GDALTest('INGR', 'frmt02.cot', 1, 26968)
     return tst.testCreate()
 
 ###############################################################################
 # JPEG 8bit
 
+
 def ingr_7():
 
-    tst = gdaltest.GDALTest( 'INGR', 'frmt30.cot', 1, 29718 )
+    tst = gdaltest.GDALTest('INGR', 'frmt30.cot', 1, 29718)
     return tst.testOpen()
 
 ###############################################################################
 # Read simple RLE
 
+
 def ingr_8():
 
-    tst = gdaltest.GDALTest( 'INGR', 'frmt09.cot', 1, 23035 )
+    tst = gdaltest.GDALTest('INGR', 'frmt09.cot', 1, 23035)
     return tst.testOpen()
 
 ###############################################################################
 # Read Simple RLE Variable
 
+
 def ingr_9():
 
-    tst = gdaltest.GDALTest( 'INGR', 'frmt10.cot', 1, 47031 )
+    tst = gdaltest.GDALTest('INGR', 'frmt10.cot', 1, 47031)
     return tst.testOpen()
 
 ###############################################################################
 # CCITT bitonal
 
+
 def ingr_10():
 
-    tst = gdaltest.GDALTest( 'INGR', 'frmt24.cit', 1, 23035 )
+    tst = gdaltest.GDALTest('INGR', 'frmt24.cit', 1, 23035)
     return tst.testOpen()
 
 ###############################################################################
 # Adaptive RLE - 24 bit.
 
+
 def ingr_11():
 
-    tst = gdaltest.GDALTest( 'INGR', 'frmt27.cot', 2, 45616 )
+    tst = gdaltest.GDALTest('INGR', 'frmt27.cot', 2, 45616)
     return tst.testOpen()
 
 ###############################################################################
 # Uncompressed RGB
 
+
 def ingr_12():
 
-    tst = gdaltest.GDALTest( 'INGR', 'frmt28.cot', 2, 45616 )
+    tst = gdaltest.GDALTest('INGR', 'frmt28.cot', 2, 45616)
     return tst.testOpen()
 
 ###############################################################################
 # Adaptive RLE 8bit.
 
+
 def ingr_13():
 
-    tst = gdaltest.GDALTest( 'INGR', 'frmt29.cot', 1, 26968 )
+    tst = gdaltest.GDALTest('INGR', 'frmt29.cot', 1, 26968)
     return tst.testOpen()
 
 ###############################################################################
 # JPEG RGB
+
 
 def ingr_14():
 
@@ -170,14 +184,15 @@ def ingr_14():
 ###############################################################################
 # Same, but through vsimem all in memory.
 
+
 def ingr_15():
 
-    tst = gdaltest.GDALTest( 'INGR', 'frmt02.cot', 1, 26968 )
-    result = tst.testCreateCopy( vsimem = 1 )
+    tst = gdaltest.GDALTest('INGR', 'frmt02.cot', 1, 26968)
+    result = tst.testCreateCopy(vsimem=1)
 
     try:
-        os.remove( 'data/frmt02.cot.aux.xml' )
-    except:
+        os.remove('data/frmt02.cot.aux.xml')
+    except OSError:
         pass
 
     return result
@@ -185,13 +200,15 @@ def ingr_15():
 ###############################################################################
 # Read simple RLE tiled
 
+
 def ingr_16():
 
-    tst = gdaltest.GDALTest( 'INGR', 'frmt09t.cot', 1, 3178 )
+    tst = gdaltest.GDALTest('INGR', 'frmt09t.cot', 1, 3178)
     return tst.testOpen()
 
 ###############################################################################
 # Test writing 9 RLE bitonal compression (#5030)
+
 
 def ingr_17():
 
@@ -217,6 +234,7 @@ def ingr_17():
 
 ###############################################################################
 # Test 'random access' in simple RLE
+
 
 def ingr_18():
 
@@ -245,6 +263,13 @@ def ingr_18():
 
     return 'success'
 
+
+def ingr_cleanup():
+
+    gdal.Unlink('data/frmt09.cot.aux.xml')
+    return 'success'
+
+
 gdaltest_list = [
     ingr_1,
     ingr_2,
@@ -263,13 +288,13 @@ gdaltest_list = [
     ingr_15,
     ingr_16,
     ingr_17,
-    ingr_18 ]
+    ingr_18,
+    ingr_cleanup]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'ingr' )
+    gdaltest.setup_run('ingr')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

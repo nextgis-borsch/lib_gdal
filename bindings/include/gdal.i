@@ -54,6 +54,7 @@
 #include <iostream>
 using namespace std;
 
+#define CPL_SUPRESS_CPLUSPLUS
 #include "cpl_port.h"
 #include "cpl_string.h"
 #include "cpl_multiproc.h"
@@ -61,7 +62,6 @@ using namespace std;
 #include "cpl_vsi_error.h"
 
 #include "gdal.h"
-#include "gdal_priv.h"
 #include "gdal_alg.h"
 #include "gdalwarper.h"
 
@@ -798,12 +798,14 @@ GDALDatasetShadow* Open( char const* name ) {
 GDALDatasetShadow* Open( char const* utf8_path, GDALAccess eAccess = GA_ReadOnly ) {
   CPLErrorReset();
   GDALDatasetShadow *ds = GDALOpen( utf8_path, eAccess );
+#ifndef SWIGPYTHON
   if( ds != NULL && CPLGetLastErrorType() == CE_Failure )
   {
       if ( GDALDereferenceDataset( ds ) <= 0 )
           GDALClose(ds);
       ds = NULL;
   }
+#endif
   return (GDALDatasetShadow*) ds;
 }
 %}
@@ -828,12 +830,14 @@ GDALDatasetShadow* OpenEx( char const* utf8_path, unsigned int nOpenFlags = 0,
 #endif
   GDALDatasetShadow *ds = GDALOpenEx( utf8_path, nOpenFlags, allowed_drivers,
                                       open_options, sibling_files );
+#ifndef SWIGPYTHON
   if( ds != NULL && CPLGetLastErrorType() == CE_Failure )
   {
       if ( GDALDereferenceDataset( ds ) <= 0 )
           GDALClose(ds);
       ds = NULL;
   }
+#endif
   return (GDALDatasetShadow*) ds;
 }
 %}
@@ -846,12 +850,14 @@ GDALDatasetShadow* OpenEx( char const* utf8_path, unsigned int nOpenFlags = 0,
 GDALDatasetShadow* OpenShared( char const* utf8_path, GDALAccess eAccess = GA_ReadOnly ) {
   CPLErrorReset();
   GDALDatasetShadow *ds = GDALOpenShared( utf8_path, eAccess );
+#ifndef SWIGPYTHON
   if( ds != NULL && CPLGetLastErrorType() == CE_Failure )
   {
       if ( GDALDereferenceDataset( ds ) <= 0 )
           GDALClose(ds);
       ds = NULL;
   }
+#endif
   return (GDALDatasetShadow*) ds;
 }
 %}

@@ -28,7 +28,7 @@
 
 #include "gh5_convenience.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /************************************************************************/
 /*                    GH5_FetchAttribute(CPLString)                     */
@@ -109,7 +109,7 @@ bool GH5_FetchAttribute( hid_t loc_id, const char *pszAttrName,
     // Confirm that we have a single element value.
     hid_t hAttrSpace = H5Aget_space(hAttr);
     hsize_t anSize[64] = {};
-    int nAttrDims = H5Sget_simple_extent_dims(hAttrSpace, anSize, NULL);
+    int nAttrDims = H5Sget_simple_extent_dims(hAttrSpace, anSize, nullptr);
 
     int i, nAttrElements = 1;
 
@@ -192,28 +192,30 @@ GDALDataType GH5_GetDataType(hid_t TypeID)
         return GDT_UInt32;
     else if( H5Tequal(H5T_NATIVE_LONG,   TypeID) )
     {
-        if( sizeof(long) == 4 )
-            return GDT_Int32;
-        else
-            return GDT_Unknown;
+#if SIZEOF_UNSIGNED_LONG == 4
+        return GDT_Int32;
+#else
+        return GDT_Unknown;
+#endif
     }
     else if( H5Tequal(H5T_NATIVE_ULONG,  TypeID) )
     {
-        if( sizeof(unsigned long) == 4 )
-            return GDT_UInt32;
-        else
-            return GDT_Unknown;
+#if SIZEOF_UNSIGNED_LONG == 4
+        return GDT_UInt32;
+#else
+        return GDT_Unknown;
+#endif
     }
     else if( H5Tequal(H5T_NATIVE_FLOAT,  TypeID) )
         return GDT_Float32;
     else if( H5Tequal(H5T_NATIVE_DOUBLE, TypeID) )
         return GDT_Float64;
+#ifdef notdef
     else if( H5Tequal(H5T_NATIVE_LLONG,  TypeID) )
         return GDT_Unknown;
     else if( H5Tequal(H5T_NATIVE_ULLONG, TypeID) )
         return GDT_Unknown;
-    else if( H5Tequal(H5T_NATIVE_DOUBLE, TypeID) )
-        return GDT_Unknown;
+#endif
 
     return GDT_Unknown;
 }

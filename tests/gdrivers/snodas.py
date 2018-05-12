@@ -31,17 +31,18 @@
 import sys
 from osgeo import gdal
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 
 ###############################################################################
 # Test a fake SNODAS dataset
 
+
 def snodas_1():
 
-    tst = gdaltest.GDALTest( 'SNODAS', 'fake_snodas.hdr', 1, 0 )
-    expected_gt = [ -124.733749999995, 0.0083333333333330643, 0.0, 52.874583333331302, 0.0, -0.0083333333333330054 ]
+    tst = gdaltest.GDALTest('SNODAS', 'fake_snodas.hdr', 1, 0)
+    expected_gt = [-124.733749999995, 0.0083333333333330643, 0.0, 52.874583333331302, 0.0, -0.0083333333333330054]
     expected_srs = """GEOGCS["WGS 84",
     DATUM["WGS_1984",
         SPHEROID["WGS 84",6378137,298.257223563,
@@ -53,7 +54,7 @@ def snodas_1():
     UNIT["degree",0.0174532925199433,
         AUTHORITY["EPSG","9108"]],
     AUTHORITY["EPSG","4326"]]"""
-    ret = tst.testOpen(check_gt = expected_gt, check_prj = expected_srs, skip_checksum = True)
+    ret = tst.testOpen(check_gt=expected_gt, check_prj=expected_srs, skip_checksum=True)
 
     if ret is 'success':
         ds = gdal.Open('data/fake_snodas.hdr')
@@ -70,14 +71,14 @@ def snodas_1():
 
     return ret
 
+
 gdaltest_list = [
-    snodas_1 ]
+    snodas_1]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'snodas' )
+    gdaltest.setup_run('snodas')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

@@ -41,7 +41,7 @@
 #include "ogr_core.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /************************************************************************/
 /*                          OSRImportFromOzi()                          */
@@ -71,7 +71,7 @@ OGRErr OSRImportFromOzi( OGRSpatialReferenceH hSRS,
 {
     VALIDATE_POINTER1( hSRS, "OSRImportFromOzi", OGRERR_FAILURE );
 
-    return ((OGRSpatialReference *) hSRS)->importFromOzi( papszLines );
+    return OGRSpatialReference::FromHandle(hSRS)->importFromOzi( papszLines );
 }
 
 /************************************************************************/
@@ -95,12 +95,12 @@ OGRErr OSRImportFromOzi( OGRSpatialReferenceH hSRS,
 OGRErr OGRSpatialReference::importFromOzi( const char * const* papszLines )
 {
     const char *pszDatum;
-    const char *pszProj = NULL;
-    const char *pszProjParms = NULL;
+    const char *pszProj = nullptr;
+    const char *pszProjParms = nullptr;
 
     Clear();
 
-    const int nLines = CSLCount((char**)papszLines);
+    const int nLines = CSLCount(papszLines);
     if( nLines < 5 )
         return OGRERR_NOT_ENOUGH_DATA;
 
@@ -127,7 +127,7 @@ OGRErr OGRSpatialReference::importFromOzi( const char * const* papszLines )
     char **papszProj = CSLTokenizeStringComplex( pszProj, ",", TRUE, TRUE );
     char **papszProjParms = CSLTokenizeStringComplex( pszProjParms, ",",
                                                       TRUE, TRUE );
-    char **papszDatum = NULL;
+    char **papszDatum = nullptr;
 
     if( CSLCount(papszProj) < 2 )
     {
@@ -370,7 +370,7 @@ OGRErr OGRSpatialReference::importFromOzi( const char * const* papszLines )
                                      CSLT_ALLOWEMPTYTOKENS
                                      | CSLT_STRIPLEADSPACES
                                      | CSLT_STRIPENDSPACES );
-    if( papszDatum == NULL )
+    if( papszDatum == nullptr )
         goto not_enough_data;
 
     if( !IsLocal() )
@@ -380,7 +380,7 @@ OGRErr OGRSpatialReference::importFromOzi( const char * const* papszLines )
 /* -------------------------------------------------------------------- */
         if( CSVScanFileByName( CSVFilename( "ozi_datum.csv" ),
                                "EPSG_DATUM_CODE",
-                               "4326", CC_Integer ) == NULL )
+                               "4326", CC_Integer ) == nullptr )
         {
             CPLError(CE_Failure, CPLE_OpenFailed,
                      "Unable to open OZI support file %s.  "
@@ -434,7 +434,7 @@ OGRErr OGRSpatialReference::importFromOzi( const char * const* papszLines )
     /* -------------------------------------------------------------------- */
             if( CSVScanFileByName( CSVFilename( "ozi_ellips.csv" ),
                                    "ELLIPSOID_CODE",
-                                   "20", CC_Integer ) == NULL )
+                                   "20", CC_Integer ) == nullptr )
             {
                 CPLError(
                     CE_Failure, CPLE_OpenFailed,

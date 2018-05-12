@@ -31,7 +31,7 @@
 #include "ogr_idrisi.h"
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 // g++ ogr/ogrsf_frmts/idrisi/*.cpp -Wall -g -fPIC -shared -o ogr_Idrisi.so -Iport -Igcore -Iogr -Iogr/ogrsf_frmts/idrisi -Iogr/ogrsf_frmts -Ifrmts/idrisi
 
@@ -60,21 +60,21 @@ OGRDataSource *OGRIdrisiDriver::Open( const char * pszFilename, int bUpdate )
 {
     if (bUpdate)
     {
-        return NULL;
+        return nullptr;
     }
 
 // --------------------------------------------------------------------
 //      Does this appear to be a .vct file?
 // --------------------------------------------------------------------
     if ( !EQUAL(CPLGetExtension(pszFilename), "vct") )
-        return NULL;
+        return nullptr;
 
     OGRIdrisiDataSource *poDS = new OGRIdrisiDataSource();
 
     if( !poDS->Open( pszFilename ) )
     {
         delete poDS;
-        poDS = NULL;
+        poDS = nullptr;
     }
 
     return poDS;
@@ -96,7 +96,7 @@ int OGRIdrisiDriver::TestCapability( const char * /* pszCap */ )
 void RegisterOGRIdrisi()
 
 {
-    if( GDALGetDriverByName( "Idrisi" ) != NULL )
+    if( GDALGetDriverByName( "Idrisi" ) != nullptr )
         return;
 
     OGRSFDriver* poDriver = new OGRIdrisiDriver;

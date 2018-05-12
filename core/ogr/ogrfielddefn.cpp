@@ -41,7 +41,7 @@
 #include "cpl_string.h"
 
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /************************************************************************/
 /*                            OGRFieldDefn()                            */
@@ -63,7 +63,7 @@ OGRFieldDefn::OGRFieldDefn( const char * pszNameIn, OGRFieldType eTypeIn ) :
     // Should nWidth & nPrecision be defined in some particular way for numbers?
     nWidth(0),
     nPrecision(0),
-    pszDefault(NULL),
+    pszDefault(nullptr),
     bIgnore(FALSE),
     eSubType(OFSTNone),
     bNullable(TRUE)
@@ -81,13 +81,13 @@ OGRFieldDefn::OGRFieldDefn( const char * pszNameIn, OGRFieldType eTypeIn ) :
  * @param poPrototype the field definition to clone.
  */
 
-OGRFieldDefn::OGRFieldDefn( OGRFieldDefn *poPrototype ) :
+OGRFieldDefn::OGRFieldDefn( const OGRFieldDefn *poPrototype ) :
     pszName(CPLStrdup(poPrototype->GetNameRef())),
     eType(poPrototype->GetType()),
     eJustify(poPrototype->GetJustify()),
     nWidth(poPrototype->GetWidth()),
     nPrecision(poPrototype->GetPrecision()),
-    pszDefault(NULL),
+    pszDefault(nullptr),
     bIgnore(FALSE),  // TODO(schwehr): Can we use IsIgnored()?
     eSubType(poPrototype->GetSubType()),
     bNullable(poPrototype->IsNullable())
@@ -113,7 +113,7 @@ OGRFieldDefn::OGRFieldDefn( OGRFieldDefn *poPrototype ) :
 OGRFieldDefnH OGR_Fld_Create( const char *pszName, OGRFieldType eType )
 
 {
-    return reinterpret_cast<OGRFieldDefnH>(new OGRFieldDefn(pszName, eType));
+    return OGRFieldDefn::ToHandle(new OGRFieldDefn(pszName, eType));
 }
 
 /************************************************************************/
@@ -139,7 +139,7 @@ OGRFieldDefn::~OGRFieldDefn()
 void OGR_Fld_Destroy( OGRFieldDefnH hDefn )
 
 {
-    delete reinterpret_cast<OGRFieldDefn *>(hDefn);
+    delete OGRFieldDefn::FromHandle(hDefn);
 }
 
 /************************************************************************/
@@ -179,7 +179,7 @@ void OGRFieldDefn::SetName( const char * pszNameIn )
 void OGR_Fld_SetName( OGRFieldDefnH hDefn, const char *pszName )
 
 {
-    reinterpret_cast<OGRFieldDefn *>(hDefn)->SetName(pszName);
+    OGRFieldDefn::FromHandle(hDefn)->SetName(pszName);
 }
 
 /************************************************************************/
@@ -219,7 +219,7 @@ const char *OGR_Fld_GetNameRef( OGRFieldDefnH hDefn )
         OGRAPISpy_Fld_GetXXXX(hDefn, "GetNameRef");
 #endif
 
-    return reinterpret_cast<OGRFieldDefn *>(hDefn)->GetNameRef();
+    return OGRFieldDefn::FromHandle(hDefn)->GetNameRef();
 }
 
 /************************************************************************/
@@ -257,7 +257,7 @@ OGRFieldType OGR_Fld_GetType( OGRFieldDefnH hDefn )
         OGRAPISpy_Fld_GetXXXX(hDefn, "GetType");
 #endif
 
-    return reinterpret_cast<OGRFieldDefn *>(hDefn)->GetType();
+    return OGRFieldDefn::FromHandle(hDefn)->GetType();
 }
 
 /************************************************************************/
@@ -303,7 +303,7 @@ void OGRFieldDefn::SetType( OGRFieldType eTypeIn )
 void OGR_Fld_SetType( OGRFieldDefnH hDefn, OGRFieldType eType )
 
 {
-    reinterpret_cast<OGRFieldDefn *>(hDefn)->SetType(eType);
+    OGRFieldDefn::FromHandle(hDefn)->SetType(eType);
 }
 
 /************************************************************************/
@@ -343,7 +343,7 @@ OGRFieldSubType OGR_Fld_GetSubType( OGRFieldDefnH hDefn )
         OGRAPISpy_Fld_GetXXXX(hDefn, "GetSubType");
 #endif
 
-    return reinterpret_cast<OGRFieldDefn *>(hDefn)->GetSubType();
+    return OGRFieldDefn::FromHandle(hDefn)->GetSubType();
 }
 
 /************************************************************************/
@@ -393,7 +393,7 @@ void OGRFieldDefn::SetSubType( OGRFieldSubType eSubTypeIn )
 void OGR_Fld_SetSubType( OGRFieldDefnH hDefn, OGRFieldSubType eSubType )
 
 {
-    reinterpret_cast<OGRFieldDefn *>(hDefn)->SetSubType(eSubType);
+    OGRFieldDefn::FromHandle(hDefn)->SetSubType(eSubType);
 }
 
 /************************************************************************/
@@ -432,7 +432,7 @@ void OGRFieldDefn::SetDefault( const char* pszDefaultIn )
 
 {
     CPLFree(pszDefault);
-    pszDefault = NULL;
+    pszDefault = nullptr;
 
     if( pszDefaultIn && pszDefaultIn[0] == '\''  &&
         pszDefaultIn[strlen(pszDefaultIn)-1] == '\'' )
@@ -461,7 +461,7 @@ void OGRFieldDefn::SetDefault( const char* pszDefaultIn )
         }
     }
 
-    pszDefault = pszDefaultIn ? CPLStrdup(pszDefaultIn) : NULL;
+    pszDefault = pszDefaultIn ? CPLStrdup(pszDefaultIn) : nullptr;
 }
 
 /************************************************************************/
@@ -499,7 +499,7 @@ void OGRFieldDefn::SetDefault( const char* pszDefaultIn )
 
 void CPL_DLL OGR_Fld_SetDefault( OGRFieldDefnH hDefn, const char* pszDefault )
 {
-    reinterpret_cast<OGRFieldDefn *>(hDefn)->SetDefault(pszDefault);
+    OGRFieldDefn::FromHandle(hDefn)->SetDefault(pszDefault);
 }
 
 /************************************************************************/
@@ -537,7 +537,7 @@ const char* OGRFieldDefn::GetDefault() const
 
 const char *OGR_Fld_GetDefault( OGRFieldDefnH hDefn )
 {
-    return reinterpret_cast<OGRFieldDefn *>(hDefn)->GetDefault();
+    return OGRFieldDefn::FromHandle(hDefn)->GetDefault();
 }
 
 /************************************************************************/
@@ -561,7 +561,7 @@ const char *OGR_Fld_GetDefault( OGRFieldDefnH hDefn )
 
 int OGRFieldDefn::IsDefaultDriverSpecific() const
 {
-    if( pszDefault == NULL )
+    if( pszDefault == nullptr )
         return FALSE;
 
     if( EQUAL(pszDefault, "NULL") ||
@@ -573,7 +573,7 @@ int OGRFieldDefn::IsDefaultDriverSpecific() const
     if( pszDefault[0] == '\'' && pszDefault[strlen(pszDefault)-1] == '\'' )
         return FALSE;
 
-    char* pszEnd = NULL;
+    char* pszEnd = nullptr;
     CPLStrtod(pszDefault, &pszEnd);
     if( *pszEnd == '\0' )
         return FALSE;
@@ -603,7 +603,7 @@ int OGRFieldDefn::IsDefaultDriverSpecific() const
 
 int OGR_Fld_IsDefaultDriverSpecific( OGRFieldDefnH hDefn )
 {
-    return reinterpret_cast<OGRFieldDefn *>(hDefn)->IsDefaultDriverSpecific();
+    return OGRFieldDefn::FromHandle(hDefn)->IsDefaultDriverSpecific();
 }
 
 /************************************************************************/
@@ -803,7 +803,7 @@ int OGR_AreTypeSubTypeCompatible( OGRFieldType eType, OGRFieldSubType eSubType )
 OGRJustification OGR_Fld_GetJustify( OGRFieldDefnH hDefn )
 
 {
-    return reinterpret_cast<OGRFieldDefn *>(hDefn)->GetJustify();
+    return OGRFieldDefn::FromHandle(hDefn)->GetJustify();
 }
 
 /************************************************************************/
@@ -839,7 +839,7 @@ OGRJustification OGR_Fld_GetJustify( OGRFieldDefnH hDefn )
 void OGR_Fld_SetJustify( OGRFieldDefnH hDefn, OGRJustification eJustify )
 
 {
-    reinterpret_cast<OGRFieldDefn *>(hDefn)->SetJustify(eJustify);
+    OGRFieldDefn::FromHandle(hDefn)->SetJustify(eJustify);
 }
 
 /************************************************************************/
@@ -871,7 +871,7 @@ void OGR_Fld_SetJustify( OGRFieldDefnH hDefn, OGRJustification eJustify )
 int OGR_Fld_GetWidth( OGRFieldDefnH hDefn )
 
 {
-    return reinterpret_cast<OGRFieldDefn *>(hDefn)->GetWidth();
+    return OGRFieldDefn::FromHandle(hDefn)->GetWidth();
 }
 
 /************************************************************************/
@@ -903,7 +903,7 @@ int OGR_Fld_GetWidth( OGRFieldDefnH hDefn )
 void OGR_Fld_SetWidth( OGRFieldDefnH hDefn, int nNewWidth )
 
 {
-    reinterpret_cast<OGRFieldDefn *>(hDefn)->SetWidth(nNewWidth);
+    OGRFieldDefn::FromHandle(hDefn)->SetWidth(nNewWidth);
 }
 
 /************************************************************************/
@@ -939,7 +939,7 @@ void OGR_Fld_SetWidth( OGRFieldDefnH hDefn, int nNewWidth )
 int OGR_Fld_GetPrecision( OGRFieldDefnH hDefn )
 
 {
-    return reinterpret_cast<OGRFieldDefn *>(hDefn)->GetPrecision();
+    return OGRFieldDefn::FromHandle(hDefn)->GetPrecision();
 }
 
 /************************************************************************/
@@ -975,7 +975,7 @@ int OGR_Fld_GetPrecision( OGRFieldDefnH hDefn )
 void OGR_Fld_SetPrecision( OGRFieldDefnH hDefn, int nPrecision )
 
 {
-    reinterpret_cast<OGRFieldDefn *>(hDefn)->SetPrecision( nPrecision );
+    OGRFieldDefn::FromHandle(hDefn)->SetPrecision( nPrecision );
 }
 
 /************************************************************************/
@@ -1034,7 +1034,7 @@ void OGR_Fld_Set( OGRFieldDefnH hDefn, const char *pszNameIn,
                   OGRJustification eJustifyIn )
 
 {
-    reinterpret_cast<OGRFieldDefn *>(hDefn)->
+    OGRFieldDefn::FromHandle(hDefn)->
         Set(pszNameIn, eTypeIn, nWidthIn, nPrecisionIn, eJustifyIn);
 }
 
@@ -1067,7 +1067,7 @@ void OGR_Fld_Set( OGRFieldDefnH hDefn, const char *pszNameIn,
 
 int OGR_Fld_IsIgnored( OGRFieldDefnH hDefn )
 {
-    return reinterpret_cast<OGRFieldDefn *>(hDefn)->IsIgnored();
+    return OGRFieldDefn::FromHandle(hDefn)->IsIgnored();
 }
 
 /************************************************************************/
@@ -1099,7 +1099,7 @@ int OGR_Fld_IsIgnored( OGRFieldDefnH hDefn )
 
 void OGR_Fld_SetIgnored( OGRFieldDefnH hDefn, int ignore )
 {
-    reinterpret_cast<OGRFieldDefn *>(hDefn)->SetIgnored(ignore);
+    OGRFieldDefn::FromHandle(hDefn)->SetIgnored(ignore);
 }
 
 /************************************************************************/
@@ -1169,7 +1169,7 @@ int OGRFieldDefn::IsSame( const OGRFieldDefn * poOtherFieldDefn ) const
 
 int OGR_Fld_IsNullable( OGRFieldDefnH hDefn )
 {
-    return reinterpret_cast<OGRFieldDefn *>(hDefn)->IsNullable();
+    return OGRFieldDefn::FromHandle(hDefn)->IsNullable();
 }
 
 /************************************************************************/
@@ -1215,7 +1215,7 @@ int OGR_Fld_IsNullable( OGRFieldDefnH hDefn )
 
 void OGR_Fld_SetNullable( OGRFieldDefnH hDefn, int bNullableIn )
 {
-    reinterpret_cast<OGRFieldDefn *>(hDefn)->SetNullable(bNullableIn);
+    OGRFieldDefn::FromHandle(hDefn)->SetNullable(bNullableIn);
 }
 
 /************************************************************************/

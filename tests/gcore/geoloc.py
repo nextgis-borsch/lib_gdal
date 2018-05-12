@@ -31,27 +31,27 @@
 
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 
 ###############################################################################
 # Verify warped result.
 
+
 def geoloc_1():
 
-    tst = gdaltest.GDALTest( 'VRT', 'warpsst.vrt', 1, 62319 )
-    return tst.testOpen( check_filelist = False )
+    tst = gdaltest.GDALTest('VRT', 'warpsst.vrt', 1, 61818)
+    return tst.testOpen(check_filelist=False)
 
 
 gdaltest_list = [
-    geoloc_1 ]
+    geoloc_1]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'geoloc' )
+    gdaltest.setup_run('geoloc')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

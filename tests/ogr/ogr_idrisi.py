@@ -31,13 +31,14 @@
 import sys
 from osgeo import ogr
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 import ogrtest
 
 ###############################################################################
 # Test point layer
+
 
 def ogr_idrisi_1():
 
@@ -119,7 +120,7 @@ def ogr_idrisi_1():
         feat.DumpReadable()
         return 'fail'
 
-    lyr.SetSpatialFilterRect(600000-1,4000000-1,600000+1,4000000+1)
+    lyr.SetSpatialFilterRect(600000 - 1, 4000000 - 1, 600000 + 1, 4000000 + 1)
     lyr.ResetReading()
     feat = lyr.GetNextFeature()
     if feat.GetFieldAsDouble(0) != 2.0:
@@ -127,7 +128,7 @@ def ogr_idrisi_1():
         feat.DumpReadable()
         return 'fail'
 
-    lyr.SetSpatialFilterRect(0,0,1,1)
+    lyr.SetSpatialFilterRect(0, 0, 1, 1)
     lyr.ResetReading()
     feat = lyr.GetNextFeature()
     if feat is not None:
@@ -140,6 +141,7 @@ def ogr_idrisi_1():
 
 ###############################################################################
 # Test linestring layer
+
 
 def ogr_idrisi_2():
 
@@ -192,7 +194,7 @@ def ogr_idrisi_2():
         feat.DumpReadable()
         return 'fail'
 
-    lyr.SetSpatialFilterRect(0,0,1,1)
+    lyr.SetSpatialFilterRect(0, 0, 1, 1)
     lyr.ResetReading()
     feat = lyr.GetNextFeature()
     if feat is not None:
@@ -205,6 +207,7 @@ def ogr_idrisi_2():
 
 ###############################################################################
 # Test polygon layer
+
 
 def ogr_idrisi_3():
 
@@ -257,7 +260,7 @@ def ogr_idrisi_3():
         feat.DumpReadable()
         return 'fail'
 
-    lyr.SetSpatialFilterRect(0,0,1,1)
+    lyr.SetSpatialFilterRect(0, 0, 1, 1)
     lyr.ResetReading()
     feat = lyr.GetNextFeature()
     if feat is not None:
@@ -268,17 +271,17 @@ def ogr_idrisi_3():
 
     return 'success'
 
+
 gdaltest_list = [
     ogr_idrisi_1,
     ogr_idrisi_2,
     ogr_idrisi_3,
-    ]
+]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'ogr_idrisi' )
+    gdaltest.setup_run('ogr_idrisi')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

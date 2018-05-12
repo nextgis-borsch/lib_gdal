@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /************************************************************************/
 /*                            SetConnParam()                            */
@@ -526,7 +526,7 @@ OGRSpatialReference *OGRIngresDataSource::FetchSRS( int nId )
     }
 
      poSRS = new OGRSpatialReference();
-     if( pszWKT == NULL || poSRS->importFromWkt( &pszWKT ) != OGRERR_NONE )
+     if( pszWKT == NULL || poSRS->importFromWkt( pszWKT ) != OGRERR_NONE )
      {
          delete poSRS;
          poSRS = NULL;
@@ -746,9 +746,8 @@ OGRLayer * OGRIngresDataSource::ExecuteSQL( const char *pszSQLCommand,
 /*      layer for it.                                                   */
 /* -------------------------------------------------------------------- */
 
-    OGRIngresResultLayer *poLayer = NULL;
-
-    poLayer = new OGRIngresResultLayer( this, pszSQLCommand, poStatement );
+    OGRIngresResultLayer* poLayer =
+        new OGRIngresResultLayer( this, pszSQLCommand, poStatement );
     EstablishActiveLayer( poLayer );
 
     return poLayer;

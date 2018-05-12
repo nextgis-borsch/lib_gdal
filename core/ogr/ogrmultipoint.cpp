@@ -40,7 +40,7 @@
 #include "ogr_core.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /************************************************************************/
 /*                           OGRMultiPoint()                            */
@@ -147,7 +147,7 @@ OGRMultiPoint::isCompatibleSubType( OGRwkbGeometryType eGeomType ) const
 /************************************************************************/
 /*                            exportToWkt()                             */
 /*                                                                      */
-/*      Translate this structure into it's well known text format       */
+/*      Translate this structure into its well known text format       */
 /*      equivalent.  This could be made a lot more CPU efficient.       */
 /************************************************************************/
 
@@ -180,7 +180,7 @@ OGRErr OGRMultiPoint::exportToWkt( char ** ppszDstText,
     }
 
     *ppszDstText = static_cast<char *>(VSI_MALLOC_VERBOSE( nMaxString ));
-    if( *ppszDstText == NULL )
+    if( *ppszDstText == nullptr )
         return OGRERR_NOT_ENOUGH_MEMORY;
 
     if( eWkbVariant == wkbVariantIso )
@@ -198,10 +198,8 @@ OGRErr OGRMultiPoint::exportToWkt( char ** ppszDstText,
         snprintf( *ppszDstText, nMaxString, "%s (", getGeometryName() );
 
     bool bMustWriteComma = false;
-    for( int i = 0; i < getNumGeometries(); i++ )
+    for( auto&& poPoint: this )
     {
-        OGRPoint *poPoint = (OGRPoint *) getGeometryRef( i );
-
         if( poPoint->IsEmpty() )
         {
             CPLDebug("OGR",
@@ -253,14 +251,14 @@ OGRErr OGRMultiPoint::exportToWkt( char ** ppszDstText,
 /*                           importFromWkt()                            */
 /************************************************************************/
 
-OGRErr OGRMultiPoint::importFromWkt( char ** ppszInput )
+OGRErr OGRMultiPoint::importFromWkt( const char ** ppszInput )
 
 {
     const char *pszInputBefore = *ppszInput;
     int bHasZ = FALSE;
     int bHasM = FALSE;
     bool bIsEmpty = false;
-    OGRErr eErr = importPreambuleFromWkt(ppszInput, &bHasZ, &bHasM, &bIsEmpty);
+    OGRErr eErr = importPreambleFromWkt(ppszInput, &bHasZ, &bHasM, &bIsEmpty);
     flags = 0;
     if( eErr != OGRERR_NONE )
         return eErr;
@@ -279,7 +277,7 @@ OGRErr OGRMultiPoint::importFromWkt( char ** ppszInput )
     // Do we have an inner bracket?
     if( EQUAL(szToken,"(") || EQUAL(szToken, "EMPTY") )
     {
-        *ppszInput = const_cast<char *>(pszInputBefore);
+        *ppszInput = pszInputBefore;
         return importFromWkt_Bracketed( ppszInput, bHasM, bHasZ );
     }
 
@@ -291,9 +289,9 @@ OGRErr OGRMultiPoint::importFromWkt( char ** ppszInput )
 /* -------------------------------------------------------------------- */
 /*      Read the point list which should consist of exactly one point.  */
 /* -------------------------------------------------------------------- */
-    OGRRawPoint *paoPoints = NULL;
-    double *padfZ = NULL;
-    double *padfM = NULL;
+    OGRRawPoint *paoPoints = nullptr;
+    double *padfZ = nullptr;
+    double *padfM = nullptr;
     int flagsFromInput = flags;
     int nMaxPoint = 0;
     int nPointCount = 0;
@@ -301,7 +299,7 @@ OGRErr OGRMultiPoint::importFromWkt( char ** ppszInput )
     pszInput = OGRWktReadPointsM( pszInput, &paoPoints, &padfZ, &padfM,
                                   &flagsFromInput,
                                   &nMaxPoint, &nPointCount );
-    if( pszInput == NULL )
+    if( pszInput == nullptr )
     {
         CPLFree( paoPoints );
         CPLFree( padfZ );
@@ -328,14 +326,14 @@ OGRErr OGRMultiPoint::importFromWkt( char ** ppszInput )
             new OGRPoint(paoPoints[iGeom].x, paoPoints[iGeom].y);
         if( bHasM )
         {
-            if( padfM != NULL )
+            if( padfM != nullptr )
                 poPoint->setM(padfM[iGeom]);
             else
                 poPoint->setM(0.0);
         }
         if( bHasZ )
         {
-            if( padfZ != NULL )
+            if( padfZ != nullptr )
                 poPoint->setZ(padfZ[iGeom]);
             else
                 poPoint->setZ(0.0);
@@ -359,7 +357,7 @@ OGRErr OGRMultiPoint::importFromWkt( char ** ppszInput )
     if( eErr != OGRERR_NONE )
         return eErr;
 
-    *ppszInput = const_cast<char *>(pszInput);
+    *ppszInput = pszInput;
 
     return OGRERR_NONE;
 }
@@ -373,7 +371,7 @@ OGRErr OGRMultiPoint::importFromWkt( char ** ppszInput )
 /*      importFromWkt().                                                */
 /************************************************************************/
 
-OGRErr OGRMultiPoint::importFromWkt_Bracketed( char ** ppszInput,
+OGRErr OGRMultiPoint::importFromWkt_Bracketed( const char ** ppszInput,
                                                int bHasM, int bHasZ )
 
 {
@@ -394,11 +392,11 @@ OGRErr OGRMultiPoint::importFromWkt_Bracketed( char ** ppszInput,
 /*      Read points till we get to the closing bracket.                 */
 /* -------------------------------------------------------------------- */
 
-    OGRRawPoint *paoPoints = NULL;
-    double *padfZ = NULL;
-    double *padfM = NULL;
+    OGRRawPoint *paoPoints = nullptr;
+    double *padfZ = nullptr;
+    double *padfM = nullptr;
 
-    while( (pszInput = OGRWktReadToken( pszInput, szToken )) != NULL
+    while( (pszInput = OGRWktReadToken( pszInput, szToken )) != nullptr
            && (EQUAL(szToken, "(") || EQUAL(szToken, ",")) )
     {
         const char* pszNext = OGRWktReadToken( pszInput, szToken );
@@ -426,7 +424,7 @@ OGRErr OGRMultiPoint::importFromWkt_Bracketed( char ** ppszInput,
                                       &flagsFromInput,
                                       &nMaxPoint, &nPointCount );
 
-        if( pszInput == NULL || nPointCount != 1 )
+        if( pszInput == nullptr || nPointCount != 1 )
         {
             CPLFree( paoPoints );
             CPLFree( padfZ );
@@ -447,14 +445,14 @@ OGRErr OGRMultiPoint::importFromWkt_Bracketed( char ** ppszInput,
         OGRPoint *poPoint = new OGRPoint(paoPoints[0].x, paoPoints[0].y);
         if( bHasM )
         {
-            if( padfM != NULL )
+            if( padfM != nullptr )
                 poPoint->setM(padfM[0]);
             else
                 poPoint->setM(0.0);
         }
         if( bHasZ )
         {
-            if( padfZ != NULL )
+            if( padfZ != nullptr )
                 poPoint->setZ(padfZ[0]);
             else
                 poPoint->setZ(0.0);
@@ -481,7 +479,7 @@ OGRErr OGRMultiPoint::importFromWkt_Bracketed( char ** ppszInput,
     if( !EQUAL(szToken, ")") )
         return OGRERR_CORRUPT_DATA;
 
-    *ppszInput = const_cast<char *>(pszInput);
+    *ppszInput = pszInput;
 
     return OGRERR_NONE;
 }

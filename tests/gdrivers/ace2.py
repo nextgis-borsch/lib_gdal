@@ -31,22 +31,23 @@
 import sys
 from osgeo import gdal
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 
 ###############################################################################
 # Test a fake ACE2 dataset
 
+
 def ace2_1():
 
     f = gdal.VSIFOpenL('/vsimem/45N015E_5M.ACE2', 'wb')
-    gdal.VSIFSeekL(f, 180*180*4-1, 0)
+    gdal.VSIFSeekL(f, 180 * 180 * 4 - 1, 0)
     gdal.VSIFWriteL('\0', 1, 1, f)
     gdal.VSIFCloseL(f)
 
-    tst = gdaltest.GDALTest( 'ACE2', '/vsimem/45N015E_5M.ACE2', 1, 0, filename_absolute = 1 )
-    expected_gt = [ 15.0, 0.08333333333333333, 0.0, 60.0, 0.0, -0.08333333333333333 ]
+    tst = gdaltest.GDALTest('ACE2', '/vsimem/45N015E_5M.ACE2', 1, 0, filename_absolute=1)
+    expected_gt = [15.0, 0.08333333333333333, 0.0, 60.0, 0.0, -0.08333333333333333]
     expected_srs = """GEOGCS["WGS 84",
     DATUM["WGS_1984",
         SPHEROID["WGS 84",6378137,298.257223563,
@@ -58,20 +59,20 @@ def ace2_1():
     UNIT["degree",0.0174532925199433,
         AUTHORITY["EPSG","9108"]],
     AUTHORITY["EPSG","4326"]]"""
-    ret = tst.testOpen(check_gt = expected_gt, check_prj = expected_srs)
+    ret = tst.testOpen(check_gt=expected_gt, check_prj=expected_srs)
 
     gdal.Unlink('/vsimem/45N015E_5M.ACE2')
 
     return ret
 
+
 gdaltest_list = [
-    ace2_1 ]
+    ace2_1]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'ace2' )
+    gdaltest.setup_run('ace2')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

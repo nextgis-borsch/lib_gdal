@@ -47,6 +47,8 @@ except ImportError:
     import gdalnumeric
 
 # =============================================================================
+
+
 def Usage():
     print('Usage: rel.py -lsrcaz azimuth -lsrcel elevation [-elstep step]')
     print('       [-dx xsize] [-dy ysize] [-b band] [-ot type] infile outfile')
@@ -71,6 +73,8 @@ def Usage():
 # =============================================================================
 
 # =============================================================================
+
+
 def ParseType(type):
     if type == 'Byte':
         return gdal.GDT_Byte
@@ -97,6 +101,7 @@ def ParseType(type):
     else:
         return gdal.GDT_Byte
 # =============================================================================
+
 
 infile = None
 outfile = None
@@ -173,12 +178,12 @@ lsrcaz = lsrcaz / 180.0 * math.pi
 lsrcel = lsrcel / 180.0 * math.pi
 
 lx = -math.sin(lsrcaz) * math.cos(lsrcel)
-ly =  math.cos(lsrcaz) * math.cos(lsrcel)
-lz =  math.sin(lsrcel)
+ly = math.cos(lsrcaz) * math.cos(lsrcel)
+lz = math.sin(lsrcel)
 lxyz = math.sqrt(lx**2 + ly**2 + lz**2)
 
 indataset = gdal.Open(infile, gdal.GA_ReadOnly)
-if indataset == None:
+if indataset is None:
     print('Cannot open', infile)
     sys.exit(2)
 
@@ -199,7 +204,7 @@ if ysize is None:
     ysize = abs(geotransform[5])
 
 inband = indataset.GetRasterBand(iBand)
-if inband == None:
+if inband is None:
     print('Cannot load band', iBand, 'from the', infile)
     sys.exit(2)
 
@@ -224,9 +229,9 @@ for i in range(1, inband.YSize - 1):
     nx = -dy * dzx
     ny = dx * dzy
     nz = dx * dy
-    nxyz = nx*nx + ny*ny + nz*nz
-    nlxyz = nx*lx + ny*ly + nz*lz
-    cosine = dyn_range * ( nlxyz / (lxyz * Numeric.sqrt(nxyz)))
+    nxyz = nx * nx + ny * ny + nz * nz
+    nlxyz = nx * lx + ny * ly + nz * lz
+    cosine = dyn_range * (nlxyz / (lxyz * Numeric.sqrt(nxyz)))
     cosine = Numeric.clip(cosine, 0.0, dyn_range)
     outline[0, 1:-1] = cosine.astype(numtype)
     outband.WriteArray(outline, 0, i)
@@ -239,4 +244,3 @@ for i in range(1, inband.YSize - 1):
 
 outdataset.SetGeoTransform(geotransform)
 outdataset.SetProjection(projection)
-

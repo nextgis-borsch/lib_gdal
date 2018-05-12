@@ -32,7 +32,7 @@ import sys
 import struct
 import shutil
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 from osgeo import gdal
@@ -40,9 +40,10 @@ from osgeo import gdal
 ###############################################################################
 # Test handling NaN with GDT_Float32 data
 
+
 def stats_nan_1():
 
-    gdaltest.gtiff_drv = gdal.GetDriverByName( 'GTiff' )
+    gdaltest.gtiff_drv = gdal.GetDriverByName('GTiff')
     if gdaltest.gtiff_drv is None:
         return 'skip'
 
@@ -50,8 +51,8 @@ def stats_nan_1():
 
     shutil.copyfile('data/nan32.tif', 'tmp/nan32.tif')
 
-    t = gdaltest.GDALTest( 'GTiff', 'tmp/nan32.tif', 1, 874, filename_absolute = 1 )
-    ret = t.testOpen( check_approx_stat = stats, check_stat = stats )
+    t = gdaltest.GDALTest('GTiff', 'tmp/nan32.tif', 1, 874, filename_absolute=1)
+    ret = t.testOpen(check_approx_stat=stats, check_stat=stats)
 
     gdal.GetDriverByName('GTiff').Delete('tmp/nan32.tif')
 
@@ -59,6 +60,7 @@ def stats_nan_1():
 
 ###############################################################################
 # Test handling NaN with GDT_Float64 data
+
 
 def stats_nan_2():
 
@@ -69,8 +71,8 @@ def stats_nan_2():
 
     shutil.copyfile('data/nan64.tif', 'tmp/nan64.tif')
 
-    t = gdaltest.GDALTest( 'GTiff', 'tmp/nan64.tif', 1, 4414, filename_absolute = 1 )
-    ret = t.testOpen( check_approx_stat = stats, check_stat = stats )
+    t = gdaltest.GDALTest('GTiff', 'tmp/nan64.tif', 1, 4414, filename_absolute=1)
+    ret = t.testOpen(check_approx_stat=stats, check_stat=stats)
 
     gdal.GetDriverByName('GTiff').Delete('tmp/nan64.tif')
 
@@ -78,6 +80,7 @@ def stats_nan_2():
 
 ###############################################################################
 # Test stats on signed byte (#3151)
+
 
 def stats_signedbyte():
 
@@ -88,8 +91,8 @@ def stats_signedbyte():
 
     shutil.copyfile('data/stats_signed_byte.img', 'tmp/stats_signed_byte.img')
 
-    t = gdaltest.GDALTest( 'HFA', 'tmp/stats_signed_byte.img', 1, 11, filename_absolute = 1 )
-    ret = t.testOpen( check_approx_stat = stats, check_stat = stats, skip_checksum = 1 )
+    t = gdaltest.GDALTest('HFA', 'tmp/stats_signed_byte.img', 1, 11, filename_absolute=1)
+    ret = t.testOpen(check_approx_stat=stats, check_stat=stats, skip_checksum=1)
 
     gdal.GetDriverByName('HFA').Delete('tmp/stats_signed_byte.img')
 
@@ -104,7 +107,7 @@ def stats_dont_force():
 
     try:
         os.unlink('data/byte.tif.aux.xml')
-    except:
+    except OSError:
         pass
     ds = gdal.Open('data/byte.tif')
     stats = ds.GetRasterBand(1).GetStatistics(0, 0)
@@ -125,7 +128,7 @@ def stats_approx_nodata():
     shutil.copyfile('data/minfloat.tif', 'tmp/minfloat.tif')
     try:
         os.remove('tmp/minfloat.tif.aux.xml')
-    except:
+    except OSError:
         pass
 
     ds = gdal.Open('tmp/minfloat.tif')
@@ -177,7 +180,7 @@ def stats_nan_3():
 
     try:
         os.remove('tmp/nan32_nodata.tif.aux.xml')
-    except:
+    except OSError:
         pass
 
     ds = gdal.Open('tmp/nan32_nodata.tif')
@@ -194,6 +197,7 @@ def stats_nan_3():
 ###############################################################################
 # Test reading a VRT with a complex source that define nan as band nodata
 # and complex source nodata (#3576)
+
 
 def stats_nan_4():
 
@@ -216,6 +220,7 @@ def stats_nan_4():
 ###############################################################################
 # Test reading a VRT with a complex source that define 0 as band nodata
 # and complex source nodata (nan must be translated to 0 then) (#3576)
+
 
 def stats_nan_5():
 
@@ -260,6 +265,7 @@ def stats_nan_6():
 ###############################################################################
 # Test reading a warped VRT with nan as src nodata and 0 as dest nodata (#3576)
 
+
 def stats_nan_7():
 
     ds = gdal.Open('data/nan32_nodata_warp_nan_to_zero.vrt')
@@ -303,19 +309,21 @@ def stats_nan_8():
 ###############################################################################
 # Test statistics computation when nodata = +/- inf
 
+
 def stats_nodata_inf_progress_cbk(value, string, extra):
     extra[0] = value
 
+
 def stats_nodata_inf():
 
-    ds = gdal.GetDriverByName('HFA').Create('/vsimem/stats_nodata_inf.img', 3, 1,1, gdal.GDT_Float32)
+    ds = gdal.GetDriverByName('HFA').Create('/vsimem/stats_nodata_inf.img', 3, 1, 1, gdal.GDT_Float32)
     ds.GetRasterBand(1).SetNoDataValue(gdaltest.neginf())
-    ds.GetRasterBand(1).WriteRaster(0, 0, 1, 1, struct.pack('f', gdaltest.neginf()), buf_type = gdal.GDT_Float32 )
-    ds.GetRasterBand(1).WriteRaster(1, 0, 1, 1, struct.pack('f', 1), buf_type = gdal.GDT_Float32 )
-    ds.GetRasterBand(1).WriteRaster(2, 0, 1, 1, struct.pack('f', -2), buf_type = gdal.GDT_Float32 )
+    ds.GetRasterBand(1).WriteRaster(0, 0, 1, 1, struct.pack('f', gdaltest.neginf()), buf_type=gdal.GDT_Float32)
+    ds.GetRasterBand(1).WriteRaster(1, 0, 1, 1, struct.pack('f', 1), buf_type=gdal.GDT_Float32)
+    ds.GetRasterBand(1).WriteRaster(2, 0, 1, 1, struct.pack('f', -2), buf_type=gdal.GDT_Float32)
 
     ds.GetRasterBand(1).Checksum()
-    user_data = [ 0 ]
+    user_data = [0]
     stats = ds.GetRasterBand(1).ComputeStatistics(False, stats_nodata_inf_progress_cbk, user_data)
     if user_data[0] != 1.0:
         gdaltest.post_reason('did not get expected pct')
@@ -348,14 +356,18 @@ def stats_nodata_check(filename, expected_nodata):
 
     return 'success'
 
+
 def stats_nodata_neginf_linux():
     return stats_nodata_check('data/stats_nodata_neginf.tif', gdaltest.neginf())
+
 
 def stats_nodata_neginf_msvc():
     return stats_nodata_check('data/stats_nodata_neginf_msvc.tif', gdaltest.neginf())
 
+
 def stats_nodata_posinf_linux():
     return stats_nodata_check('data/stats_nodata_posinf.tif', gdaltest.posinf())
+
 
 def stats_nodata_posinf_msvc():
     return stats_nodata_check('data/stats_nodata_posinf_msvc.tif', gdaltest.posinf())
@@ -363,10 +375,11 @@ def stats_nodata_posinf_msvc():
 ###############################################################################
 # Test standard deviation computation on huge values
 
+
 def stats_stddev_huge_values():
 
     gdal.FileFromMemBuffer('/vsimem/stats_stddev_huge_values.asc',
-"""ncols        4
+                           """ncols        4
 nrows        4
 xllcorner    0
 yllcorner    0
@@ -390,13 +403,14 @@ cellsize     1
 # Test approximate statistics computation on a square shaped raster whose first column
 # of blocks is nodata only
 
+
 def stats_square_shape():
 
-    ds = gdal.GetDriverByName('GTiff').Create('/vsimem/stats_square_shape.tif', 32, 32, options = ['TILED=YES', 'BLOCKXSIZE=16', 'BLOCKYSIZE=16'])
+    ds = gdal.GetDriverByName('GTiff').Create('/vsimem/stats_square_shape.tif', 32, 32, options=['TILED=YES', 'BLOCKXSIZE=16', 'BLOCKYSIZE=16'])
     ds.GetRasterBand(1).SetNoDataValue(0)
-    ds.GetRasterBand(1).WriteRaster(16, 0, 16, 32, struct.pack('B' * 1, 255), buf_xsize = 1, buf_ysize = 1 )
+    ds.GetRasterBand(1).WriteRaster(16, 0, 16, 32, struct.pack('B' * 1, 255), buf_xsize=1, buf_ysize=1)
     stats = ds.GetRasterBand(1).ComputeStatistics(True)
-    hist = ds.GetRasterBand(1).GetHistogram(approx_ok = 1)
+    hist = ds.GetRasterBand(1).GetHistogram(approx_ok=1)
     minmax = ds.GetRasterBand(1).ComputeRasterMinMax(1)
     ds = None
 
@@ -420,12 +434,13 @@ def stats_square_shape():
 ###############################################################################
 # Test when nodata = FLT_MIN (#6578)
 
+
 def stats_flt_min():
 
     shutil.copyfile('data/flt_min.tif', 'tmp/flt_min.tif')
     try:
         os.remove('tmp/flt_min.tif.aux.xml')
-    except:
+    except OSError:
         pass
 
     ds = gdal.Open('tmp/flt_min.tif')
@@ -447,7 +462,7 @@ def stats_flt_min():
         return 'fail'
 
     if stats != [0.0, 1.0, 0.33333333333333337, 0.47140452079103168] and \
-       stats != [0.0, 1.0, 0.33333333333333331, 0.47140452079103168]: # 32 bit
+       stats != [0.0, 1.0, 0.33333333333333331, 0.47140452079103168]:  # 32 bit
         gdaltest.post_reason('did not get expected stats')
         print(stats)
         return 'fail'
@@ -462,12 +477,13 @@ def stats_flt_min():
 ###############################################################################
 # Test when nodata = DBL_MIN (#6578)
 
+
 def stats_dbl_min():
 
     shutil.copyfile('data/dbl_min.tif', 'tmp/dbl_min.tif')
     try:
         os.remove('tmp/dbl_min.tif.aux.xml')
-    except:
+    except OSError:
         pass
 
     ds = gdal.Open('tmp/dbl_min.tif')
@@ -489,7 +505,7 @@ def stats_dbl_min():
         return 'fail'
 
     if stats != [0.0, 1.0, 0.33333333333333337, 0.47140452079103168] and \
-       stats != [0.0, 1.0, 0.33333333333333331, 0.47140452079103168]: # 32 bit
+       stats != [0.0, 1.0, 0.33333333333333331, 0.47140452079103168]:  # 32 bit
         gdaltest.post_reason('did not get expected stats')
         print(stats)
         return 'fail'
@@ -504,10 +520,11 @@ def stats_dbl_min():
 ###############################################################################
 # Test stats on a tiled Byte with partial tiles
 
+
 def stats_byte_partial_tiles():
 
     ds = gdal.Translate('/vsimem/stats_byte_tiled.tif', '../gdrivers/data/small_world.tif',
-                        creationOptions = ['TILED=YES', 'BLOCKXSIZE=64', 'BLOCKYSIZE=64'])
+                        creationOptions=['TILED=YES', 'BLOCKXSIZE=64', 'BLOCKYSIZE=64'])
     stats = ds.GetRasterBand(1).GetStatistics(0, 1)
     ds = None
 
@@ -522,14 +539,14 @@ def stats_byte_partial_tiles():
 
     # Same but with nodata set
     ds = gdal.Translate('/vsimem/stats_byte_tiled.tif', '../gdrivers/data/small_world.tif',
-                        creationOptions = ['TILED=YES', 'BLOCKXSIZE=64', 'BLOCKYSIZE=64'])
+                        creationOptions=['TILED=YES', 'BLOCKXSIZE=64', 'BLOCKYSIZE=64'])
     ds.GetRasterBand(1).SetNoDataValue(0)
     stats = ds.GetRasterBand(1).GetStatistics(0, 1)
     ds = None
 
     gdal.GetDriverByName('GTiff').Delete('/vsimem/stats_byte_tiled.tif')
 
-    expected_stats       = [1.0, 255.0, 50.311081057390084, 67.14541389488096]
+    expected_stats = [1.0, 255.0, 50.311081057390084, 67.14541389488096]
     expected_stats_32bit = [1.0, 255.0, 50.311081057390084, 67.145413894880946]
     if stats != expected_stats and stats != expected_stats_32bit:
         gdaltest.post_reason('did not get expected stats')
@@ -539,7 +556,7 @@ def stats_byte_partial_tiles():
 
     # Same but with nodata set but untiled and with non power of 16 block size
     ds = gdal.Translate('/vsimem/stats_byte_untiled.tif', '../gdrivers/data/small_world.tif',
-                        options = '-srcwin 0 0 399 200' )
+                        options='-srcwin 0 0 399 200')
     ds.GetRasterBand(1).SetNoDataValue(0)
     stats = ds.GetRasterBand(1).GetStatistics(0, 1)
     ds = None
@@ -554,7 +571,7 @@ def stats_byte_partial_tiles():
         return 'fail'
 
     ds = gdal.GetDriverByName('GTiff').Create('/vsimem/stats_byte_tiled.tif', 1000, 512,
-                                              options = ['TILED=YES', 'BLOCKXSIZE=512', 'BLOCKYSIZE=512'])
+                                              options=['TILED=YES', 'BLOCKXSIZE=512', 'BLOCKYSIZE=512'])
     ds.GetRasterBand(1).Fill(255)
     stats = ds.GetRasterBand(1).GetStatistics(0, 1)
     ds = None
@@ -569,7 +586,7 @@ def stats_byte_partial_tiles():
 
     # Non optimized code path
     ds = gdal.GetDriverByName('MEM').Create('', 1, 1)
-    ds.GetRasterBand(1).WriteRaster(0,0,1,1,struct.pack('B' * 1, 1))
+    ds.GetRasterBand(1).WriteRaster(0, 0, 1, 1, struct.pack('B' * 1, 1))
     stats = ds.GetRasterBand(1).GetStatistics(0, 1)
     ds = None
 
@@ -581,11 +598,11 @@ def stats_byte_partial_tiles():
         return 'fail'
 
     ds = gdal.GetDriverByName('MEM').Create('', 3, 5)
-    ds.GetRasterBand(1).WriteRaster(0,0,3,1,struct.pack('B' * 3, 20, 30, 50))
-    ds.GetRasterBand(1).WriteRaster(0,1,3,1,struct.pack('B' * 3, 60, 10, 5))
-    ds.GetRasterBand(1).WriteRaster(0,2,3,1,struct.pack('B' * 3, 10, 20, 0))
-    ds.GetRasterBand(1).WriteRaster(0,3,3,1,struct.pack('B' * 3, 10, 20, 255))
-    ds.GetRasterBand(1).WriteRaster(0,4,3,1,struct.pack('B' * 3, 10, 20, 10))
+    ds.GetRasterBand(1).WriteRaster(0, 0, 3, 1, struct.pack('B' * 3, 20, 30, 50))
+    ds.GetRasterBand(1).WriteRaster(0, 1, 3, 1, struct.pack('B' * 3, 60, 10, 5))
+    ds.GetRasterBand(1).WriteRaster(0, 2, 3, 1, struct.pack('B' * 3, 10, 20, 0))
+    ds.GetRasterBand(1).WriteRaster(0, 3, 3, 1, struct.pack('B' * 3, 10, 20, 255))
+    ds.GetRasterBand(1).WriteRaster(0, 4, 3, 1, struct.pack('B' * 3, 10, 20, 10))
     stats = ds.GetRasterBand(1).GetStatistics(0, 1)
     ds = None
 
@@ -596,9 +613,9 @@ def stats_byte_partial_tiles():
         print(expected_stats)
         return 'fail'
 
-    ds = gdal.GetDriverByName('MEM').Create('', 32+2, 2)
+    ds = gdal.GetDriverByName('MEM').Create('', 32 + 2, 2)
     ds.GetRasterBand(1).Fill(1)
-    ds.GetRasterBand(1).WriteRaster(32,1,2,1,struct.pack('B' * 2, 0, 255))
+    ds.GetRasterBand(1).WriteRaster(32, 1, 2, 1, struct.pack('B' * 2, 0, 255))
     stats = ds.GetRasterBand(1).GetStatistics(0, 1)
     ds = None
 
@@ -609,10 +626,10 @@ def stats_byte_partial_tiles():
         print(expected_stats)
         return 'fail'
 
-    ds = gdal.GetDriverByName('MEM').Create('', 32+2, 2)
+    ds = gdal.GetDriverByName('MEM').Create('', 32 + 2, 2)
     ds.GetRasterBand(1).Fill(1)
     ds.GetRasterBand(1).SetNoDataValue(2)
-    ds.GetRasterBand(1).WriteRaster(32,1,2,1,struct.pack('B' * 2, 0, 255))
+    ds.GetRasterBand(1).WriteRaster(32, 1, 2, 1, struct.pack('B' * 2, 0, 255))
     stats = ds.GetRasterBand(1).GetStatistics(0, 1)
     ds = None
 
@@ -628,12 +645,13 @@ def stats_byte_partial_tiles():
 ###############################################################################
 # Test stats on uint16
 
+
 def stats_uint16():
 
     ds = gdal.Translate('/vsimem/stats_uint16_tiled.tif', '../gdrivers/data/small_world.tif',
-                        outputType = gdal.GDT_UInt16,
-                        scaleParams = [[0, 255, 0, 65535]],
-                        creationOptions = ['TILED=YES', 'BLOCKXSIZE=64', 'BLOCKYSIZE=64'])
+                        outputType=gdal.GDT_UInt16,
+                        scaleParams=[[0, 255, 0, 65535]],
+                        creationOptions=['TILED=YES', 'BLOCKXSIZE=64', 'BLOCKYSIZE=64'])
     stats = ds.GetRasterBand(1).GetStatistics(0, 1)
     ds = None
 
@@ -647,7 +665,7 @@ def stats_uint16():
         return 'fail'
 
     ds = gdal.Translate('/vsimem/stats_uint16_untiled.tif', '../gdrivers/data/small_world.tif',
-                        options = '-srcwin 0 0 399 200 -scale 0 255 0 65535 -ot UInt16' )
+                        options='-srcwin 0 0 399 200 -scale 0 255 0 65535 -ot UInt16')
     stats = ds.GetRasterBand(1).GetStatistics(0, 1)
     ds = None
 
@@ -662,7 +680,7 @@ def stats_uint16():
 
     # Same but with nodata set but untiled and with non power of 16 block size
     ds = gdal.Translate('/vsimem/stats_uint16_untiled.tif', '../gdrivers/data/small_world.tif',
-                        options = '-srcwin 0 0 399 200 -scale 0 255 0 65535 -ot UInt16' )
+                        options='-srcwin 0 0 399 200 -scale 0 255 0 65535 -ot UInt16')
     ds.GetRasterBand(1).SetNoDataValue(0)
     stats = ds.GetRasterBand(1).GetStatistics(0, 1)
     ds = None
@@ -676,9 +694,9 @@ def stats_uint16():
         print(expected_stats)
         return 'fail'
 
-    for fill_val in [ 0, 1, 32767, 32768, 65535 ]:
+    for fill_val in [0, 1, 32767, 32768, 65535]:
         ds = gdal.GetDriverByName('GTiff').Create('/vsimem/stats_uint16_tiled.tif', 1000, 512, 1, gdal.GDT_UInt16,
-                                                options = ['TILED=YES', 'BLOCKXSIZE=512', 'BLOCKYSIZE=512'])
+                                                  options=['TILED=YES', 'BLOCKXSIZE=512', 'BLOCKYSIZE=512'])
         ds.GetRasterBand(1).Fill(fill_val)
         stats = ds.GetRasterBand(1).GetStatistics(0, 1)
         ds = None
@@ -693,9 +711,9 @@ def stats_uint16():
             return 'fail'
 
     # Test remaining pixels after multiple of 32
-    ds = gdal.GetDriverByName('MEM').Create('', 32+2, 1, 1, gdal.GDT_UInt16)
+    ds = gdal.GetDriverByName('MEM').Create('', 32 + 2, 1, 1, gdal.GDT_UInt16)
     ds.GetRasterBand(1).Fill(1)
-    ds.GetRasterBand(1).WriteRaster(32,0,2,1,struct.pack('H' * 2, 0, 65535))
+    ds.GetRasterBand(1).WriteRaster(32, 0, 2, 1, struct.pack('H' * 2, 0, 65535))
     stats = ds.GetRasterBand(1).GetStatistics(0, 1)
     ds = None
 
@@ -707,9 +725,9 @@ def stats_uint16():
         return 'fail'
 
     # Non optimized code path
-    for fill_val in [ 0, 1, 32767, 32768, 65535 ]:
+    for fill_val in [0, 1, 32767, 32768, 65535]:
         ds = gdal.GetDriverByName('MEM').Create('', 1, 1, 1, gdal.GDT_UInt16)
-        ds.GetRasterBand(1).WriteRaster(0,0,1,1,struct.pack('H' * 1, fill_val))
+        ds.GetRasterBand(1).WriteRaster(0, 0, 1, 1, struct.pack('H' * 1, fill_val))
         stats = ds.GetRasterBand(1).GetStatistics(0, 1)
         ds = None
 
@@ -722,11 +740,11 @@ def stats_uint16():
             return 'fail'
 
     ds = gdal.GetDriverByName('MEM').Create('', 3, 5, 1, gdal.GDT_UInt16)
-    ds.GetRasterBand(1).WriteRaster(0,0,3,1,struct.pack('H' * 3, 20, 30, 50))
-    ds.GetRasterBand(1).WriteRaster(0,1,3,1,struct.pack('H' * 3, 60, 10, 5))
-    ds.GetRasterBand(1).WriteRaster(0,2,3,1,struct.pack('H' * 3, 10, 20, 0))
-    ds.GetRasterBand(1).WriteRaster(0,3,3,1,struct.pack('H' * 3, 10, 20, 65535))
-    ds.GetRasterBand(1).WriteRaster(0,4,3,1,struct.pack('H' * 3, 10, 20, 10))
+    ds.GetRasterBand(1).WriteRaster(0, 0, 3, 1, struct.pack('H' * 3, 20, 30, 50))
+    ds.GetRasterBand(1).WriteRaster(0, 1, 3, 1, struct.pack('H' * 3, 60, 10, 5))
+    ds.GetRasterBand(1).WriteRaster(0, 2, 3, 1, struct.pack('H' * 3, 10, 20, 0))
+    ds.GetRasterBand(1).WriteRaster(0, 3, 3, 1, struct.pack('H' * 3, 10, 20, 65535))
+    ds.GetRasterBand(1).WriteRaster(0, 4, 3, 1, struct.pack('H' * 3, 10, 20, 10))
     stats = ds.GetRasterBand(1).GetStatistics(0, 1)
     ds = None
 
@@ -738,8 +756,8 @@ def stats_uint16():
         return 'fail'
 
     ds = gdal.GetDriverByName('MEM').Create('', 2, 2, 1, gdal.GDT_UInt16)
-    ds.GetRasterBand(1).WriteRaster(0,0,2,1,struct.pack('H' * 2, 0, 65535))
-    ds.GetRasterBand(1).WriteRaster(0,1,2,1,struct.pack('H' * 2, 1, 65534))
+    ds.GetRasterBand(1).WriteRaster(0, 0, 2, 1, struct.pack('H' * 2, 0, 65535))
+    ds.GetRasterBand(1).WriteRaster(0, 1, 2, 1, struct.pack('H' * 2, 1, 65534))
     stats = ds.GetRasterBand(1).GetStatistics(0, 1)
     ds = None
 
@@ -754,23 +772,24 @@ def stats_uint16():
 ###############################################################################
 # Test a case where the nodata value is almost the maximum value of float32
 
+
 def stats_nodata_almost_max_float32():
 
     gdal.FileFromMemBuffer('/vsimem/float32_almost_nodata_max_float32.tif',
-                           open('data/float32_almost_nodata_max_float32.tif', 'rb').read() )
+                           open('data/float32_almost_nodata_max_float32.tif', 'rb').read())
 
     ds = gdal.Open('/vsimem/float32_almost_nodata_max_float32.tif')
     minmax = ds.GetRasterBand(1).ComputeRasterMinMax()
-    if minmax != (0,0):
+    if minmax != (0, 0):
         gdaltest.post_reason('did not get expected minmax')
         print(minmax)
         return 'fail'
     stats = ds.GetRasterBand(1).ComputeStatistics(False)
-    if stats != [0,0,0,0]:
+    if stats != [0, 0, 0, 0]:
         gdaltest.post_reason('did not get expected stats')
         print(stats)
         return 'fail'
-    hist = ds.GetRasterBand(1).GetHistogram(approx_ok = 0)
+    hist = ds.GetRasterBand(1).GetHistogram(approx_ok=0)
     if hist[0] != 3:
         gdaltest.post_reason('did not get expected hist')
         print(hist)
@@ -781,8 +800,59 @@ def stats_nodata_almost_max_float32():
 
     return 'success'
 
+
+###############################################################################
+# Test STATISTICS_APPROXIMATE
+
+
+def stats_approx_stats_flag(dt=gdal.GDT_Byte, struct_frmt='B'):
+
+    ds = gdal.GetDriverByName('MEM').Create('', 2000, 2000, 1, dt)
+    ds.GetRasterBand(1).WriteRaster(1000, 1000, 1, 1, struct.pack(struct_frmt * 1, 20))
+
+    approx_ok = 1
+    force = 1
+    stats = ds.GetRasterBand(1).GetStatistics(approx_ok, force)
+    if stats != [0.0, 0.0, 0.0, 0.0]:
+        gdaltest.post_reason('did not get expected stats')
+        print(stats)
+        return 'fail'
+    md = ds.GetRasterBand(1).GetMetadata()
+    if md != {'STATISTICS_MEAN': '0', 'STATISTICS_MAXIMUM': '0', 'STATISTICS_MINIMUM': '0', 'STATISTICS_APPROXIMATE': 'YES', 'STATISTICS_STDDEV': '0'}:
+        gdaltest.post_reason('did not get expected metadata')
+        print(md)
+        return 'fail'
+
+    approx_ok = 0
+    force = 0
+    stats = ds.GetRasterBand(1).GetStatistics(approx_ok, force)
+    if stats != [0.0, 0.0, 0.0, -1.0]:
+        gdaltest.post_reason('did not get expected stats')
+        print(stats)
+        return 'fail'
+
+    approx_ok = 0
+    force = 1
+    stats = ds.GetRasterBand(1).GetStatistics(approx_ok, force)
+    if stats[1] != 20.0:
+        gdaltest.post_reason('did not get expected stats')
+        print(stats)
+        return 'fail'
+    md = ds.GetRasterBand(1).GetMetadata()
+    if 'STATISTICS_APPROXIMATE' in md:
+        gdaltest.post_reason('did not get expected metadata')
+        print(md)
+        return 'fail'
+
+    return 'success'
+
+
+def stats_approx_stats_flag_float():
+    return stats_approx_stats_flag(dt=gdal.GDT_Float32, struct_frmt='f')
+
 ###############################################################################
 # Run tests
+
 
 gdaltest_list = [
     stats_nan_1,
@@ -808,13 +878,14 @@ gdaltest_list = [
     stats_byte_partial_tiles,
     stats_uint16,
     stats_nodata_almost_max_float32,
-    ]
+    stats_approx_stats_flag,
+    stats_approx_stats_flag_float,
+]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'gdal_stats' )
+    gdaltest.setup_run('gdal_stats')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

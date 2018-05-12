@@ -30,7 +30,7 @@ NAMESPACE_LERC_START
 class BitMask
 {
 public:
-  BitMask(int nCols, int nRows) : m_pBits(NULL), m_nRows(nRows), m_nCols(nCols)
+  BitMask(int nCols, int nRows) : m_pBits(nullptr), m_nRows(nRows), m_nCols(nCols)
   {
       m_pBits = new Byte[Size()];
       if (!m_pBits)
@@ -52,7 +52,7 @@ public:
   int RLEsize() const;
   // Decompress a RLE bitmask, bitmask size should be already set
   // Returns false if input seems wrong
-  bool RLEdecompress(const Byte* src);
+  bool RLEdecompress(const Byte* src, size_t nRemainingBytes) const;
 
 private:
   Byte*  m_pBits;

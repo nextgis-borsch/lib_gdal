@@ -34,7 +34,7 @@
 
 #include <algorithm>
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /************************************************************************/
 /*                       OGRCloudantTableLayer()                         */
@@ -44,8 +44,8 @@ OGRCloudantTableLayer::OGRCloudantTableLayer( OGRCloudantDataSource* poDSIn,
                                               const char* pszName) :
     OGRCouchDBTableLayer((OGRCouchDBDataSource*) poDSIn, pszName),
     bHasStandardSpatial(-1),
-    pszSpatialView(NULL),
-    pszSpatialDDoc(NULL)
+    pszSpatialView(nullptr),
+    pszSpatialDDoc(nullptr)
 {}
 
 /************************************************************************/
@@ -57,7 +57,8 @@ OGRCloudantTableLayer::~OGRCloudantTableLayer()
 {
     if( bMustWriteMetadata )
     {
-        WriteMetadata();
+        OGRCloudantTableLayer::GetLayerDefn();
+        OGRCloudantTableLayer::WriteMetadata();
         bMustWriteMetadata = false;
     }
 
@@ -80,7 +81,7 @@ bool OGRCloudantTableLayer::RunSpatialFilterQueryIfNecessary()
 
     aosIdsToFetch.resize(0);
 
-    if (pszSpatialView == NULL)
+    if (pszSpatialView == nullptr)
         GetSpatialView();
 
     OGREnvelope sEnvelope;
@@ -96,7 +97,7 @@ bool OGRCloudantTableLayer::RunSpatialFilterQueryIfNecessary()
                         sEnvelope.MaxX, sEnvelope.MaxY);
 
     json_object* poAnswerObj = poDS->GET(osURI);
-    if (poAnswerObj == NULL)
+    if (poAnswerObj == nullptr)
     {
         CPLDebug("Cloudant",
                     "Cloudant geo not working --> client-side spatial filtering");
@@ -142,7 +143,7 @@ bool OGRCloudantTableLayer::RunSpatialFilterQueryIfNecessary()
     }
 
     json_object* poRows = CPL_json_object_object_get(poAnswerObj, "rows");
-    if (poRows == NULL ||
+    if (poRows == nullptr ||
         !json_object_is_type(poRows, json_type_array))
     {
         CPLDebug("Cloudant",
@@ -158,7 +159,7 @@ bool OGRCloudantTableLayer::RunSpatialFilterQueryIfNecessary()
     for(int i=0;i<nRows;i++)
     {
         json_object* poRow = json_object_array_get_idx(poRows, i);
-        if ( poRow == NULL ||
+        if ( poRow == nullptr ||
             !json_object_is_type(poRow, json_type_object) )
         {
             CPLError(CE_Failure, CPLE_AppDefined,
@@ -169,7 +170,7 @@ bool OGRCloudantTableLayer::RunSpatialFilterQueryIfNecessary()
 
         json_object* poId = CPL_json_object_object_get(poRow, "id");
         const char* pszId = json_object_get_string(poId);
-        if (pszId != NULL)
+        if (pszId != nullptr)
         {
             aosIdsToFetch.push_back(pszId);
         }
@@ -188,11 +189,11 @@ bool OGRCloudantTableLayer::RunSpatialFilterQueryIfNecessary()
 
 void OGRCloudantTableLayer::GetSpatialView()
 {
-    if (pszSpatialView == NULL)
+    if (pszSpatialView == nullptr)
     {
         if (bHasStandardSpatial < 0 || bHasStandardSpatial == FALSE)
         {
-            pszSpatialView = CPLGetConfigOption("CLOUDANT_SPATIAL_FILTER" , NULL);
+            pszSpatialView = CPLGetConfigOption("CLOUDANT_SPATIAL_FILTER" , nullptr);
             if (pszSpatialView)
                 bHasStandardSpatial = FALSE;
         }
@@ -205,9 +206,9 @@ void OGRCloudantTableLayer::GetSpatialView()
             osURI += "/_design/SpatialView";
 
             json_object* poAnswerObj = poDS->GET(osURI);
-            bHasStandardSpatial = (poAnswerObj != NULL &&
+            bHasStandardSpatial = (poAnswerObj != nullptr &&
                 json_object_is_type(poAnswerObj, json_type_object) &&
-                CPL_json_object_object_get(poAnswerObj, "st_indexes") != NULL);
+                CPL_json_object_object_get(poAnswerObj, "st_indexes") != nullptr);
             json_object_put(poAnswerObj);
         }
 
@@ -217,7 +218,7 @@ void OGRCloudantTableLayer::GetSpatialView()
         char **papszTokens =
             CSLTokenizeString2( pszSpatialView, "/", 0);
 
-        if ((papszTokens[0] == NULL) || (papszTokens[1] == NULL))
+        if ((papszTokens[0] == nullptr) || (papszTokens[1] == nullptr))
         {
             CPLError(CE_Failure, CPLE_AppDefined, "GetSpatialView() failed, invalid spatial design doc.");
             CSLDestroy(papszTokens);
@@ -239,11 +240,9 @@ void OGRCloudantTableLayer::GetSpatialView()
 
 void OGRCloudantTableLayer::WriteMetadata()
 {
-    GetLayerDefn();
-
-    if (pszSpatialDDoc == NULL)
-        GetSpatialView();
-    if( pszSpatialDDoc == NULL )
+    if (pszSpatialDDoc == nullptr)
+        OGRCloudantTableLayer::GetSpatialView();
+    if( pszSpatialDDoc == nullptr )
         return;
 
     CPLString osURI;
@@ -253,7 +252,7 @@ void OGRCloudantTableLayer::WriteMetadata()
     osURI += pszSpatialDDoc;
 
    json_object* poDDocObj = poDS->GET(osURI);
-    if (poDDocObj == NULL)
+    if (poDDocObj == nullptr)
         return;
 
     if ( !json_object_is_type(poDDocObj, json_type_object) )
@@ -280,24 +279,24 @@ void OGRCloudantTableLayer::WriteMetadata()
     if (poSRS)
     {
         // epsg codes are supported in Cloudant
-        const char * pszEpsg = NULL;
-        const char * pszAuthName = NULL;
+        const char * pszEpsg = nullptr;
+        const char * pszAuthName = nullptr;
         char szSrid[100];
 
         if (poSRS->IsProjected())
         {
             pszAuthName = poSRS->GetAuthorityName("PROJCS");
-            if ((pszAuthName != NULL) && (STARTS_WITH(pszAuthName, "EPSG")))
+            if ((pszAuthName != nullptr) && (STARTS_WITH(pszAuthName, "EPSG")))
                 pszEpsg = poSRS->GetAuthorityCode("PROJCS");
         }
         else
         {
             pszAuthName = poSRS->GetAuthorityName("GEOGCS");
-            if ((pszAuthName != NULL) && (STARTS_WITH(pszAuthName, "EPSG")))
+            if ((pszAuthName != nullptr) && (STARTS_WITH(pszAuthName, "EPSG")))
                 pszEpsg = poSRS->GetAuthorityCode("GEOGCS");
         }
 
-        if (pszEpsg != NULL)
+        if (pszEpsg != nullptr)
         {
             const char * pszUrn = "urn:ogc:def:crs:epsg::";
             CPLStrlcpy(szSrid, pszUrn, sizeof(szSrid));
@@ -339,7 +338,7 @@ void OGRCloudantTableLayer::WriteMetadata()
         json_object_object_add(poField, "name",
             json_object_new_string(poFeatureDefn->GetFieldDefn(i)->GetNameRef()));
 
-        const char* pszType = NULL;
+        const char* pszType = nullptr;
         switch (poFeatureDefn->GetFieldDefn(i)->GetType())
         {
             case OFTInteger: pszType = "integer"; break;
@@ -383,9 +382,9 @@ void OGRCloudantTableLayer::LoadMetadata()
 
     bHasLoadedMetadata = true;
 
-    if (pszSpatialDDoc == NULL)
+    if (pszSpatialDDoc == nullptr)
         GetSpatialView();
-    if( pszSpatialDDoc == NULL )
+    if( pszSpatialDDoc == nullptr )
         return;
 
     CPLString osURI("/");
@@ -394,7 +393,7 @@ void OGRCloudantTableLayer::LoadMetadata()
     osURI += pszSpatialDDoc;
 
     json_object* poAnswerObj = poDS->GET(osURI);
-    if (poAnswerObj == NULL)
+    if (poAnswerObj == nullptr)
         return;
 
     if ( !json_object_is_type(poAnswerObj, json_type_object) )
@@ -425,13 +424,13 @@ void OGRCloudantTableLayer::LoadMetadata()
 
     json_object* poJsonSRS = CPL_json_object_object_get(poAnswerObj, "srsid");
     const char* pszSRS = json_object_get_string(poJsonSRS);
-    if (pszSRS != NULL)
+    if (pszSRS != nullptr)
     {
         poSRS = new OGRSpatialReference();
         if (poSRS->importFromURN(pszSRS) != OGRERR_NONE)
         {
             delete poSRS;
-            poSRS = NULL;
+            poSRS = nullptr;
         }
     }
 

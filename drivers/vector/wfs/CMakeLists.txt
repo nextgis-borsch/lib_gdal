@@ -54,10 +54,11 @@ if(ENABLE_WFS)
         ogrwfslayer.cpp
         ogrwfsfilter.cpp
         ogrwfsjoinlayer.cpp
+        ogrwfs3driver.cpp
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
-    
+
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
 else()

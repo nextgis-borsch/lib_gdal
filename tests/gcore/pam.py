@@ -35,7 +35,7 @@ import sys
 import shutil
 import stat
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 from osgeo import gdal
@@ -43,27 +43,28 @@ from osgeo import gdal
 ###############################################################################
 # Check that we can read PAM metadata for existing PNM file.
 
+
 def pam_1():
 
-    gdaltest.pam_setting = gdal.GetConfigOption( 'GDAL_PAM_ENABLED', "NULL" )
-    gdal.SetConfigOption( 'GDAL_PAM_ENABLED', 'YES' )
+    gdaltest.pam_setting = gdal.GetConfigOption('GDAL_PAM_ENABLED', "NULL")
+    gdal.SetConfigOption('GDAL_PAM_ENABLED', 'YES')
 
-    ds = gdal.Open( "data/byte.pnm" )
+    ds = gdal.Open("data/byte.pnm")
 
     base_md = ds.GetMetadata()
     if len(base_md) != 2 or base_md['other'] != 'red' \
        or base_md['key'] != 'value':
-        gdaltest.post_reason( 'Default domain metadata missing' )
+        gdaltest.post_reason('Default domain metadata missing')
         return 'fail'
 
-    xml_md = ds.GetMetadata( 'xml:test' )
+    xml_md = ds.GetMetadata('xml:test')
 
     if len(xml_md) != 1:
-        gdaltest.post_reason( 'xml:test metadata missing' )
+        gdaltest.post_reason('xml:test metadata missing')
         return 'fail'
 
-    if type(xml_md) != type(['abc']):
-        gdaltest.post_reason( 'xml:test metadata not returned as list.' )
+    if not isinstance(xml_md, list):
+        gdaltest.post_reason('xml:test metadata not returned as list.')
         return 'fail'
 
     expected_xml = """<?xml version="2.0"?>
@@ -71,7 +72,7 @@ def pam_1():
 """
 
     if xml_md[0] != expected_xml:
-        gdaltest.post_reason( 'xml does not match' )
+        gdaltest.post_reason('xml does not match')
         print(xml_md)
         return 'fail'
 
@@ -80,21 +81,22 @@ def pam_1():
 ###############################################################################
 # Verify that we can write XML to a new file.
 
+
 def pam_2():
 
-    driver = gdal.GetDriverByName( 'PNM' )
-    ds = driver.Create( 'tmp/pam.pnm', 10, 10 )
-    band = ds.GetRasterBand( 1 )
+    driver = gdal.GetDriverByName('PNM')
+    ds = driver.Create('tmp/pam.pnm', 10, 10)
+    band = ds.GetRasterBand(1)
 
-    band.SetMetadata( { 'other' : 'red', 'key' : 'value' } )
+    band.SetMetadata({'other': 'red', 'key': 'value'})
 
     expected_xml = """<?xml version="2.0"?>
 <TestXML>Value</TestXML>
 """
 
-    band.SetMetadata( [ expected_xml ], 'xml:test' )
+    band.SetMetadata([expected_xml], 'xml:test')
 
-    band.SetNoDataValue( 100 )
+    band.SetNoDataValue(100)
 
     ds = None
 
@@ -103,25 +105,26 @@ def pam_2():
 ###############################################################################
 # Check that we can read PAM metadata for existing PNM file.
 
+
 def pam_3():
 
-    ds = gdal.Open( "tmp/pam.pnm" )
+    ds = gdal.Open("tmp/pam.pnm")
 
     band = ds.GetRasterBand(1)
     base_md = band.GetMetadata()
     if len(base_md) != 2 or base_md['other'] != 'red' \
        or base_md['key'] != 'value':
-        gdaltest.post_reason( 'Default domain metadata missing' )
+        gdaltest.post_reason('Default domain metadata missing')
         return 'fail'
 
-    xml_md = band.GetMetadata( 'xml:test' )
+    xml_md = band.GetMetadata('xml:test')
 
     if len(xml_md) != 1:
-        gdaltest.post_reason( 'xml:test metadata missing' )
+        gdaltest.post_reason('xml:test metadata missing')
         return 'fail'
 
-    if type(xml_md) != type(['abc']):
-        gdaltest.post_reason( 'xml:test metadata not returned as list.' )
+    if not isinstance(xml_md, list):
+        gdaltest.post_reason('xml:test metadata not returned as list.')
         return 'fail'
 
     expected_xml = """<?xml version="2.0"?>
@@ -129,12 +132,12 @@ def pam_3():
 """
 
     if xml_md[0] != expected_xml:
-        gdaltest.post_reason( 'xml does not match' )
+        gdaltest.post_reason('xml does not match')
         print(xml_md)
         return 'fail'
 
     if band.GetNoDataValue() != 100:
-        gdaltest.post_reason( 'nodata not saved via pam' )
+        gdaltest.post_reason('nodata not saved via pam')
         return 'fail'
 
     ds = None
@@ -154,19 +157,21 @@ def pam_3():
 ###############################################################################
 # Check that PAM binary encoded nodata values work properly.
 #
+
+
 def pam_4():
 
     # Copy test dataset to tmp directory so that the .aux.xml file
     # won't be rewritten with the statistics in the master dataset.
-    shutil.copyfile( 'data/mfftest.hdr.aux.xml', 'tmp/mfftest.hdr.aux.xml' )
-    shutil.copyfile( 'data/mfftest.hdr', 'tmp/mfftest.hdr' )
-    shutil.copyfile( 'data/mfftest.r00', 'tmp/mfftest.r00' )
+    shutil.copyfile('data/mfftest.hdr.aux.xml', 'tmp/mfftest.hdr.aux.xml')
+    shutil.copyfile('data/mfftest.hdr', 'tmp/mfftest.hdr')
+    shutil.copyfile('data/mfftest.r00', 'tmp/mfftest.r00')
 
-    ds = gdal.Open( 'tmp/mfftest.hdr' )
-    stats = ds.GetRasterBand(1).GetStatistics(0,1)
+    ds = gdal.Open('tmp/mfftest.hdr')
+    stats = ds.GetRasterBand(1).GetStatistics(0, 1)
 
     if stats[0] != 0 or stats[1] != 4:
-        gdaltest.post_reason( 'Got wrong min/max, likely nodata not working?' )
+        gdaltest.post_reason('Got wrong min/max, likely nodata not working?')
         print(stats)
         return 'fail'
 
@@ -176,16 +181,18 @@ def pam_4():
 # Verify that .aux files that don't match the configuration of the
 # dependent file are not utilized. (#2471)
 #
+
+
 def pam_5():
 
-    ds = gdal.Open( 'data/sasha.tif' )
+    ds = gdal.Open('data/sasha.tif')
     filelist = ds.GetFileList()
     ds = None
 
     if len(filelist) != 1:
         print(filelist)
 
-        gdaltest.post_reason( 'did not get expected file list.' )
+        gdaltest.post_reason('did not get expected file list.')
         return 'fail'
 
     return 'success'
@@ -193,16 +200,18 @@ def pam_5():
 ###############################################################################
 # Verify we can read nodata values from .aux files (#2505)
 #
+
+
 def pam_6():
 
-    ds = gdal.Open( 'data/f2r23.tif' )
+    ds = gdal.Open('data/f2r23.tif')
     if ds.GetRasterBand(1).GetNoDataValue() != 0:
-        gdaltest.post_reason( 'did not get expected .aux sourced nodata.' )
+        gdaltest.post_reason('did not get expected .aux sourced nodata.')
         return 'fail'
     ds = None
 
     if os.path.exists('data/f2r23.tif.aux.xml'):
-        gdaltest.post_reason( 'did not expect .aux.xml to be created.' )
+        gdaltest.post_reason('did not expect .aux.xml to be created.')
         return 'fail'
 
     return 'success'
@@ -210,11 +219,13 @@ def pam_6():
 ###############################################################################
 # Verify we can create overviews on PNG with PAM disabled (#3693)
 #
+
+
 def pam_7():
 
-    gdal.SetConfigOption( 'GDAL_PAM_ENABLED', 'NO' )
+    gdal.SetConfigOption('GDAL_PAM_ENABLED', 'NO')
 
-    shutil.copyfile( 'data/stefan_full_rgba.png', 'tmp/stefan_full_rgba.png' )
+    shutil.copyfile('data/stefan_full_rgba.png', 'tmp/stefan_full_rgba.png')
     ds = gdal.Open('tmp/stefan_full_rgba.png')
     ds.BuildOverviews('NEAR', [2])
     ds = None
@@ -223,8 +234,8 @@ def pam_7():
     ovr_count = ds.GetRasterBand(1).GetOverviewCount()
     ds = None
 
-    os.remove( 'tmp/stefan_full_rgba.png' )
-    os.remove( 'tmp/stefan_full_rgba.png.ovr' )
+    os.remove('tmp/stefan_full_rgba.png')
+    os.remove('tmp/stefan_full_rgba.png.ovr')
 
     if ovr_count != 1:
         return 'fail'
@@ -234,9 +245,11 @@ def pam_7():
 ###############################################################################
 # Test that Band.SetDescription() goes through PAM (#3780)
 #
+
+
 def pam_8():
 
-    gdal.SetConfigOption( 'GDAL_PAM_ENABLED', 'YES' )
+    gdal.SetConfigOption('GDAL_PAM_ENABLED', 'YES')
 
     ds = gdal.GetDriverByName('GTiff').Create('/vsimem/pam_8.tif', 1, 1, 1)
     ds.GetRasterBand(1).SetDescription('foo')
@@ -257,6 +270,8 @@ def pam_8():
 ###############################################################################
 # Test that we can retrieve projection from xml:ESRI domain
 #
+
+
 def pam_9():
 
     ds = gdal.GetDriverByName('GTiff').Create('/vsimem/pam_9.tif', 1, 1, 1)
@@ -292,6 +307,7 @@ def pam_9():
 
 ###############################################################################
 # Test serializing and deserializing of various band metadata
+
 
 def pam_10():
 
@@ -346,10 +362,10 @@ def pam_10():
         return 'fail'
 
     ct = band.GetColorTable()
-    if ct.GetColorEntry(0) != (0,0,0,255):
+    if ct.GetColorEntry(0) != (0, 0, 0, 255):
         print(ct.GetColorEntry(0))
         return 'fail'
-    if ct.GetColorEntry(1) != (1,1,1,255):
+    if ct.GetColorEntry(1) != (1, 1, 1, 255):
         print(ct.GetColorEntry(1))
         return 'fail'
 
@@ -375,13 +391,14 @@ def pam_10():
 ###############################################################################
 # Test PamProxyDb mechanism
 
+
 def pam_11():
 
     # Create a read-only directory
     try:
         os.chmod('tmpdirreadonly', stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
         shutil.rmtree('tmpdirreadonly')
-    except:
+    except OSError:
         pass
     os.mkdir('tmpdirreadonly')
     shutil.copy('data/byte.tif', 'tmpdirreadonly/byte.tif')
@@ -396,7 +413,7 @@ def pam_11():
         if f is not None:
             f.close()
             return 'skip'
-    except:
+    except IOError:
         pass
 
     # Compute statistics --> the saving as .aux.xml should fail
@@ -439,6 +456,7 @@ def pam_11():
 ###############################################################################
 # Test histogram with 64bit counts
 
+
 def pam_12():
 
     shutil.copy('data/byte.tif', 'tmp')
@@ -459,7 +477,7 @@ def pam_12():
 
     ds = gdal.Open('tmp/byte.tif')
     (min, max, _, hist1) = ds.GetRasterBand(1).GetDefaultHistogram()
-    hist2 = ds.GetRasterBand(1).GetHistogram(include_out_of_range = 1, approx_ok = 0)
+    hist2 = ds.GetRasterBand(1).GetHistogram(include_out_of_range=1, approx_ok=0)
     ds.SetMetadataItem('FOO', 'BAR')
     ds.GetRasterBand(1).SetDefaultHistogram(min, max, hist1)
     ds = None
@@ -486,12 +504,14 @@ def pam_12():
 ###############################################################################
 # Test various stuff with PAM disabled
 #
+
+
 def pam_13():
 
-    gdal.SetConfigOption( 'GDAL_PAM_ENABLED', 'NO' )
+    gdal.SetConfigOption('GDAL_PAM_ENABLED', 'NO')
 
     ds = gdal.GetDriverByName('PNM').Create('/vsimem/tmp.pnm', 1, 1)
-    #if ds.GetRasterBand(1).SetColorTable(None) == 0:
+    # if ds.GetRasterBand(1).SetColorTable(None) == 0:
     #    gdaltest.post_reason('fail')
     #    return 'fail'
     gdal.PushErrorHandler()
@@ -516,7 +536,7 @@ def pam_13():
 
     gdal.Unlink('/vsimem/tmp.pnm')
 
-    gdal.SetConfigOption( 'GDAL_PAM_ENABLED', 'YES' )
+    gdal.SetConfigOption('GDAL_PAM_ENABLED', 'YES')
 
     return 'success'
 
@@ -527,21 +547,22 @@ def pam_13():
 def pam_cleanup():
     gdaltest.clean_tmp()
     if gdaltest.pam_setting != 'NULL':
-        gdal.SetConfigOption( 'GDAL_PAM_ENABLED', gdaltest.pam_setting )
+        gdal.SetConfigOption('GDAL_PAM_ENABLED', gdaltest.pam_setting)
     else:
-        gdal.SetConfigOption( 'GDAL_PAM_ENABLED', None )
+        gdal.SetConfigOption('GDAL_PAM_ENABLED', None)
 
     try:
         os.chmod('tmpdirreadonly', stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
         shutil.rmtree('tmpdirreadonly')
-    except:
+    except OSError:
         pass
     try:
         shutil.rmtree('tmppamproxydir')
-    except:
+    except OSError:
         pass
 
     return 'success'
+
 
 gdaltest_list = [
     pam_1,
@@ -557,12 +578,12 @@ gdaltest_list = [
     pam_11,
     pam_12,
     pam_13,
-    pam_cleanup ]
+    pam_cleanup]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'pam' )
+    gdaltest.setup_run('pam')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

@@ -30,17 +30,18 @@
 
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 
 ###############################################################################
 # Perform simple read test.
 
+
 def genbin_1():
 
-    tst = gdaltest.GDALTest( 'GenBin', 'tm4628_96.bil', 1, 5738,
-                             0, 0, 500, 1 )
+    tst = gdaltest.GDALTest('GenBin', 'tm4628_96.bil', 1, 5738,
+                            0, 0, 500, 1)
 
     prj = """PROJCS["NAD27 / Washington South",
     GEOGCS["NAD27",
@@ -67,20 +68,20 @@ def genbin_1():
     AXIS["Y",NORTH]]"""
 
     gt = (1181700.9894981384, 82.021003723042099, 0.0,
-          596254.01050186157, 0.0, -82.021003723045894 )
+          596254.01050186157, 0.0, -82.021003723045894)
 
-    return tst.testOpen( check_prj = prj, check_gt = gt )
+    return tst.testOpen(check_prj=prj, check_gt=gt)
+
 
 gdaltest_list = [
     genbin_1
-    ]
+]
 
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'genbin' )
+    gdaltest.setup_run('genbin')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

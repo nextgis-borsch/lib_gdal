@@ -25,12 +25,15 @@
 
 #include "gdal_unit_test.h"
 
-#include <gdal_priv.h>
-#include <gdal_utils.h>
-#include <gdal.h>
+#include "gdal_priv.h"
+#include "gdal_utils.h"
+#include "gdal_priv_templates.hpp"
+#include "gdal.h"
 
 #include <limits>
 #include <string>
+
+#include "test_data.h"
 
 namespace tut
 {
@@ -66,9 +69,9 @@ namespace tut
     template<>
     void object::test<1>()
     {
-        GDALDriverManager* drv_mgr = NULL;
+        GDALDriverManager* drv_mgr = nullptr;
         drv_mgr = GetGDALDriverManager();
-        ensure("GetGDALDriverManager() is NULL", NULL != drv_mgr);
+        ensure("GetGDALDriverManager() is NULL", nullptr != drv_mgr);
     }
 
     // Test number of registered GDAL drivers
@@ -127,6 +130,9 @@ namespace tut
 #endif
     }
 
+#define ENSURE(cond) ensure(#cond, (cond))
+#define ENSURE_EQUALS(a, b) ensure_equals(#a " == " #b, (a), (b))
+    
     // Test GDALDataTypeUnion()
     template<> template<> void object::test<6>()
     {
@@ -137,21 +143,51 @@ namespace tut
                 GDALDataType eDT1 = static_cast<GDALDataType>(i);
                 GDALDataType eDT2 = static_cast<GDALDataType>(j);
                 GDALDataType eDT = GDALDataTypeUnion(eDT1,eDT2 );
-                ensure( eDT == GDALDataTypeUnion(eDT2,eDT1) );
-                ensure( GDALGetDataTypeSize(eDT) >= GDALGetDataTypeSize(eDT1) );
-                ensure( GDALGetDataTypeSize(eDT) >= GDALGetDataTypeSize(eDT2) );
-                ensure( (GDALDataTypeIsComplex(eDT) && (GDALDataTypeIsComplex(eDT1) || GDALDataTypeIsComplex(eDT2))) ||
-                        (!(GDALDataTypeIsComplex(eDT) && !GDALDataTypeIsComplex(eDT1) && !GDALDataTypeIsComplex(eDT2))) );
+                ENSURE( eDT == GDALDataTypeUnion(eDT2,eDT1) );
+                ENSURE( GDALGetDataTypeSize(eDT) >= GDALGetDataTypeSize(eDT1) );
+                ENSURE( GDALGetDataTypeSize(eDT) >= GDALGetDataTypeSize(eDT2) );
+                ENSURE( (GDALDataTypeIsComplex(eDT) && (GDALDataTypeIsComplex(eDT1) || GDALDataTypeIsComplex(eDT2))) ||
+                        (!GDALDataTypeIsComplex(eDT) && !GDALDataTypeIsComplex(eDT1) && !GDALDataTypeIsComplex(eDT2)) );
+                
+                ENSURE( !(GDALDataTypeIsFloating(eDT1) || GDALDataTypeIsFloating(eDT2)) || GDALDataTypeIsFloating(eDT));
+                ENSURE( !(GDALDataTypeIsSigned(eDT1) || GDALDataTypeIsSigned(eDT2)) || GDALDataTypeIsSigned(eDT));
             }
         }
+
+        ENSURE_EQUALS(GDALDataTypeUnion(GDT_Int16, GDT_UInt16), GDT_Int32);
+        ENSURE_EQUALS(GDALDataTypeUnion(GDT_Int16, GDT_UInt32), GDT_Float64);
+        ENSURE_EQUALS(GDALDataTypeUnion(GDT_UInt32, GDT_Int16), GDT_Float64);
+        ENSURE_EQUALS(GDALDataTypeUnion(GDT_UInt32, GDT_CInt16), GDT_CFloat64);
+        ENSURE_EQUALS(GDALDataTypeUnion(GDT_Float32, GDT_CInt32), GDT_CFloat64);
+        ENSURE_EQUALS(GDALDataTypeUnion(GDT_CInt16, GDT_UInt32), GDT_CFloat64);
+        ENSURE_EQUALS(GDALDataTypeUnion(GDT_CInt16, GDT_CFloat32), GDT_CFloat32);
+        ENSURE_EQUALS(GDALDataTypeUnion(GDT_CInt32, GDT_Byte), GDT_CInt32);
+        ENSURE_EQUALS(GDALDataTypeUnion(GDT_CInt32, GDT_UInt16), GDT_CInt32);
+        ENSURE_EQUALS(GDALDataTypeUnion(GDT_CInt32, GDT_Int16), GDT_CInt32);
+        ENSURE_EQUALS(GDALDataTypeUnion(GDT_CInt32, GDT_UInt32), GDT_CFloat64);
+        ENSURE_EQUALS(GDALDataTypeUnion(GDT_CInt32, GDT_Int32), GDT_CInt32);
+        ENSURE_EQUALS(GDALDataTypeUnion(GDT_CInt32, GDT_Float32), GDT_CFloat64);
+        ENSURE_EQUALS(GDALDataTypeUnion(GDT_CInt32, GDT_CInt16), GDT_CInt32);
+        ENSURE_EQUALS(GDALDataTypeUnion(GDT_CInt32, GDT_CFloat32), GDT_CFloat64);
+        ENSURE_EQUALS(GDALDataTypeUnion(GDT_CFloat32, GDT_Byte), GDT_CFloat32);
+        ENSURE_EQUALS(GDALDataTypeUnion(GDT_CFloat32, GDT_UInt16), GDT_CFloat32);
+        ENSURE_EQUALS(GDALDataTypeUnion(GDT_CFloat32, GDT_Int16), GDT_CFloat32);
+        ENSURE_EQUALS(GDALDataTypeUnion(GDT_CFloat32, GDT_UInt32), GDT_CFloat64);
+        ENSURE_EQUALS(GDALDataTypeUnion(GDT_CFloat32, GDT_Int32), GDT_CFloat64);
+        ENSURE_EQUALS(GDALDataTypeUnion(GDT_CFloat32, GDT_Float32), GDT_CFloat32);
+        ENSURE_EQUALS(GDALDataTypeUnion(GDT_CFloat32, GDT_CInt16), GDT_CFloat32);
+        ENSURE_EQUALS(GDALDataTypeUnion(GDT_CFloat32, GDT_CInt32), GDT_CFloat64);
     }
+
+#undef ENSURE
+#undef ENSURE_EQUALS
 
     // Test GDALAdjustValueToDataType()
     template<> template<> void object::test<7>()
     {
         int bClamped, bRounded;
 
-        ensure( GDALAdjustValueToDataType(GDT_Byte,255.0,NULL,NULL) == 255.0);
+        ensure( GDALAdjustValueToDataType(GDT_Byte,255.0,nullptr,nullptr) == 255.0);
         ensure( GDALAdjustValueToDataType(GDT_Byte,255.0,&bClamped,&bRounded) == 255.0 && !bClamped && !bRounded);
         ensure( GDALAdjustValueToDataType(GDT_Byte,254.4,&bClamped,&bRounded) == 254.0 && !bClamped && bRounded);
         ensure( GDALAdjustValueToDataType(GDT_Byte,-1,&bClamped,&bRounded) == 0.0 && bClamped && !bRounded);
@@ -205,8 +241,8 @@ namespace tut
     class FakeBand: public GDALRasterBand
     {
         protected:
-            virtual CPLErr IReadBlock(int, int, void*) { return CE_None; }
-            virtual CPLErr IWriteBlock( int, int, void * ) { return CE_None; }
+            virtual CPLErr IReadBlock(int, int, void*) CPL_OVERRIDE { return CE_None; }
+            virtual CPLErr IWriteBlock( int, int, void * ) CPL_OVERRIDE { return CE_None; }
 
         public:
                     FakeBand(int nXSize, int nYSize) { nBlockXSize = nXSize;
@@ -219,15 +255,15 @@ namespace tut
         public:
             DatasetWithErrorInFlushCache() : bHasFlushCache(false) { }
            ~DatasetWithErrorInFlushCache() { FlushCache(); }
-            virtual void FlushCache(void)
+            virtual void FlushCache(void) CPL_OVERRIDE
             {
                 if( !bHasFlushCache)
                     CPLError(CE_Failure, CPLE_AppDefined, "some error");
                 GDALDataset::FlushCache();
                 bHasFlushCache = true;
             }
-            virtual CPLErr SetProjection(const char*) { return CE_None; }
-            virtual CPLErr SetGeoTransform(double*) { return CE_None; }
+            virtual CPLErr SetProjection(const char*) CPL_OVERRIDE { return CE_None; }
+            virtual CPLErr SetGeoTransform(double*) CPL_OVERRIDE { return CE_None; }
 
             static GDALDataset* CreateCopy(const char*, GDALDataset*,
                                     int, char **,
@@ -255,16 +291,16 @@ namespace tut
         poDriver->SetDescription("DatasetWithErrorInFlushCache");
         poDriver->pfnCreateCopy = DatasetWithErrorInFlushCache::CreateCopy;
         GetGDALDriverManager()->RegisterDriver( poDriver );
-        const char* args[] = { "-of", "DatasetWithErrorInFlushCache", NULL };
-        GDALTranslateOptions* psOptions = GDALTranslateOptionsNew((char**)args, NULL);
-        GDALDatasetH hSrcDS = GDALOpen("../gcore/data/byte.tif", GA_ReadOnly);
+        const char* args[] = { "-of", "DatasetWithErrorInFlushCache", nullptr };
+        GDALTranslateOptions* psOptions = GDALTranslateOptionsNew((char**)args, nullptr);
+        GDALDatasetH hSrcDS = GDALOpen(GCORE_DATA_DIR "byte.tif", GA_ReadOnly);
         CPLErrorReset();
         CPLPushErrorHandler(CPLQuietErrorHandler);
-        GDALDatasetH hOutDS = GDALTranslate("", hSrcDS, psOptions, NULL);
+        GDALDatasetH hOutDS = GDALTranslate("", hSrcDS, psOptions, nullptr);
         CPLPopErrorHandler();
         GDALClose(hSrcDS);
         GDALTranslateOptionsFree(psOptions);
-        ensure(hOutDS == NULL);
+        ensure(hOutDS == nullptr);
         ensure(CPLGetLastErrorType() != CE_None);
         GetGDALDriverManager()->DeregisterDriver( poDriver );
         delete poDriver;
@@ -277,16 +313,16 @@ namespace tut
         poDriver->SetDescription("DatasetWithErrorInFlushCache");
         poDriver->pfnCreate = DatasetWithErrorInFlushCache::Create;
         GetGDALDriverManager()->RegisterDriver( poDriver );
-        const char* args[] = { "-of", "DatasetWithErrorInFlushCache", NULL };
-        GDALWarpAppOptions* psOptions = GDALWarpAppOptionsNew((char**)args, NULL);
-        GDALDatasetH hSrcDS = GDALOpen("../gcore/data/byte.tif", GA_ReadOnly);
+        const char* args[] = { "-of", "DatasetWithErrorInFlushCache", nullptr };
+        GDALWarpAppOptions* psOptions = GDALWarpAppOptionsNew((char**)args, nullptr);
+        GDALDatasetH hSrcDS = GDALOpen(GCORE_DATA_DIR "byte.tif", GA_ReadOnly);
         CPLErrorReset();
         CPLPushErrorHandler(CPLQuietErrorHandler);
-        GDALDatasetH hOutDS = GDALWarp("/", NULL, 1, &hSrcDS, psOptions, NULL);
+        GDALDatasetH hOutDS = GDALWarp("/", nullptr, 1, &hSrcDS, psOptions, nullptr);
         CPLPopErrorHandler();
         GDALClose(hSrcDS);
         GDALWarpAppOptionsFree(psOptions);
-        ensure(hOutDS == NULL);
+        ensure(hOutDS == nullptr);
         ensure(CPLGetLastErrorType() != CE_None);
         GetGDALDriverManager()->DeregisterDriver( poDriver );
         delete poDriver;
@@ -327,6 +363,262 @@ namespace tut
         ensure( abyBuffer[15] == 6 );
         ensure( abyBuffer[16] == 7 );
         GDALSwapWords(abyBuffer, 4, 2, 9 );
+
+    }
+
+    // Test ARE_REAL_EQUAL()
+    template<> template<> void object::test<11>()
+    {
+        ensure( ARE_REAL_EQUAL(0.0, 0.0) );
+        ensure( !ARE_REAL_EQUAL(0.0, 0.1) );
+        ensure( !ARE_REAL_EQUAL(0.1, 0.0) );
+        ensure( ARE_REAL_EQUAL(1.0, 1.0) );
+        ensure( !ARE_REAL_EQUAL(1.0, 0.99) );
+        ensure( ARE_REAL_EQUAL(-std::numeric_limits<double>::min(), -std::numeric_limits<double>::min()) );
+        ensure( ARE_REAL_EQUAL(std::numeric_limits<double>::min(), std::numeric_limits<double>::min()) );
+        ensure( !ARE_REAL_EQUAL(std::numeric_limits<double>::min(), 0.0) );
+        ensure( ARE_REAL_EQUAL(-std::numeric_limits<double>::max(), -std::numeric_limits<double>::max()) );
+        ensure( ARE_REAL_EQUAL(std::numeric_limits<double>::max(), std::numeric_limits<double>::max()) );
+        ensure( ARE_REAL_EQUAL(-std::numeric_limits<double>::infinity(), -std::numeric_limits<double>::infinity()) );
+        ensure( ARE_REAL_EQUAL(std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity()) );
+        ensure( !ARE_REAL_EQUAL(std::numeric_limits<double>::infinity(), std::numeric_limits<double>::max()) );
+        ensure( ARE_REAL_EQUAL(-std::numeric_limits<double>::min(), -std::numeric_limits<double>::min()) );
+
+        ensure( ARE_REAL_EQUAL(0.0f, 0.0f) );
+        ensure( !ARE_REAL_EQUAL(0.0f, 0.1f) );
+        ensure( !ARE_REAL_EQUAL(0.1f, 0.0f) );
+        ensure( ARE_REAL_EQUAL(1.0f, 1.0f) );
+        ensure( !ARE_REAL_EQUAL(1.0f, 0.99f) );
+        ensure( ARE_REAL_EQUAL(-std::numeric_limits<float>::min(), -std::numeric_limits<float>::min()) );
+        ensure( ARE_REAL_EQUAL(std::numeric_limits<float>::min(), std::numeric_limits<float>::min()) );
+        ensure( !ARE_REAL_EQUAL(std::numeric_limits<float>::min(), 0.0f) );
+        ensure( ARE_REAL_EQUAL(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max()) );
+        ensure( ARE_REAL_EQUAL(std::numeric_limits<float>::max(), std::numeric_limits<float>::max()) );
+        ensure( ARE_REAL_EQUAL(-std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity()) );
+        ensure( ARE_REAL_EQUAL(std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity()) );
+        ensure( !ARE_REAL_EQUAL(std::numeric_limits<float>::infinity(), std::numeric_limits<float>::max()) );
+    }
+
+    // Test GDALIsValueInRange()
+    template<> template<> void object::test<12>()
+    {
+        ensure( GDALIsValueInRange<GByte>(0) );
+        ensure( GDALIsValueInRange<GByte>(255) );
+        ensure( !GDALIsValueInRange<GByte>(-1) );
+        ensure( !GDALIsValueInRange<GByte>(256) );
+        ensure( GDALIsValueInRange<float>(std::numeric_limits<float>::max()) );
+        ensure( GDALIsValueInRange<float>(std::numeric_limits<float>::infinity()) );
+        ensure( !GDALIsValueInRange<float>(std::numeric_limits<double>::max()) );
+        ensure( GDALIsValueInRange<double>(std::numeric_limits<double>::infinity()) );
+        ensure( !GDALIsValueInRange<double>(CPLAtof("nan")) );
+        ensure( !GDALIsValueInRange<float>(CPLAtof("nan")) );
+        ensure( !GDALIsValueInRange<GByte>(CPLAtof("nan")) );
+    }
+
+    // Test GDALDataTypeIsInteger()
+    template<> template<> void object::test<13>()
+    {
+        ensure( !GDALDataTypeIsInteger(GDT_Unknown) );
+        ensure_equals( GDALDataTypeIsInteger(GDT_Byte), TRUE );
+        ensure_equals( GDALDataTypeIsInteger(GDT_UInt16), TRUE );
+        ensure_equals( GDALDataTypeIsInteger(GDT_Int16), TRUE );
+        ensure_equals( GDALDataTypeIsInteger(GDT_UInt32), TRUE );
+        ensure_equals( GDALDataTypeIsInteger(GDT_Int32), TRUE );
+        ensure( !GDALDataTypeIsInteger(GDT_Float32) );
+        ensure( !GDALDataTypeIsInteger(GDT_Float64) );
+        ensure_equals( GDALDataTypeIsInteger(GDT_CInt16), TRUE );
+        ensure_equals( GDALDataTypeIsInteger(GDT_CInt32), TRUE );
+        ensure( !GDALDataTypeIsInteger(GDT_CFloat32) );
+        ensure( !GDALDataTypeIsInteger(GDT_CFloat64) );
+    }
+
+    // Test GDALDataTypeIsFloating()
+    template<> template<> void object::test<14>()
+    {
+        ensure( !GDALDataTypeIsFloating(GDT_Unknown) );
+        ensure( !GDALDataTypeIsFloating(GDT_Byte) );
+        ensure( !GDALDataTypeIsFloating(GDT_UInt16) );
+        ensure( !GDALDataTypeIsFloating(GDT_Int16) );
+        ensure( !GDALDataTypeIsFloating(GDT_UInt32) );
+        ensure( !GDALDataTypeIsFloating(GDT_Int32) );
+        ensure_equals( GDALDataTypeIsFloating(GDT_Float32), TRUE );
+        ensure_equals( GDALDataTypeIsFloating(GDT_Float64), TRUE );
+        ensure( !GDALDataTypeIsFloating(GDT_CInt16) );
+        ensure( !GDALDataTypeIsFloating(GDT_CInt32) );
+        ensure_equals( GDALDataTypeIsFloating(GDT_CFloat32), TRUE );
+        ensure_equals( GDALDataTypeIsFloating(GDT_CFloat64), TRUE );
+    }
+
+    // Test GDALDataTypeIsComplex()
+    template<> template<> void object::test<15>()
+    {
+        ensure( !GDALDataTypeIsComplex(GDT_Unknown) );
+        ensure( !GDALDataTypeIsComplex(GDT_Byte) );
+        ensure( !GDALDataTypeIsComplex(GDT_UInt16) );
+        ensure( !GDALDataTypeIsComplex(GDT_Int16) );
+        ensure( !GDALDataTypeIsComplex(GDT_UInt32) );
+        ensure( !GDALDataTypeIsComplex(GDT_Int32) );
+        ensure( !GDALDataTypeIsComplex(GDT_Float32) );
+        ensure( !GDALDataTypeIsComplex(GDT_Float64) );
+        ensure_equals( GDALDataTypeIsComplex(GDT_CInt16), TRUE );
+        ensure_equals( GDALDataTypeIsComplex(GDT_CInt32), TRUE );
+        ensure_equals( GDALDataTypeIsComplex(GDT_CFloat32), TRUE );
+        ensure_equals( GDALDataTypeIsComplex(GDT_CFloat64), TRUE );
+    }
+
+    // Test GDALDataTypeIsConversionLossy()
+    template<> template<> void object::test<16>()
+    {
+        ensure( !GDALDataTypeIsConversionLossy(GDT_Byte, GDT_Byte) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_Byte, GDT_UInt16) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_Byte, GDT_Int16) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_Byte, GDT_UInt32) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_Byte, GDT_Int32) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_Byte, GDT_Float32) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_Byte, GDT_Float64) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_Byte, GDT_CInt16) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_Byte, GDT_CInt32) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_Byte, GDT_CFloat32) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_Byte, GDT_CFloat64) );
+
+        ensure( GDALDataTypeIsConversionLossy(GDT_UInt16, GDT_Byte) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_UInt16, GDT_UInt16) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_UInt16, GDT_Int16) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_UInt16, GDT_UInt32) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_UInt16, GDT_Int32) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_UInt16, GDT_Float32) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_UInt16, GDT_Float64) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_UInt16, GDT_CInt16) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_UInt16, GDT_CInt32) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_UInt16, GDT_CFloat32) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_UInt16, GDT_CFloat64) );
+
+        ensure( GDALDataTypeIsConversionLossy(GDT_Int16, GDT_Byte) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_Int16, GDT_UInt16) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_Int16, GDT_Int16) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_Int16, GDT_UInt32) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_Int16, GDT_Int32) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_Int16, GDT_Float32) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_Int16, GDT_Float64) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_Int16, GDT_CInt16) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_Int16, GDT_CInt32) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_Int16, GDT_CFloat32) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_Int16, GDT_CFloat64) );
+
+        ensure( GDALDataTypeIsConversionLossy(GDT_UInt32, GDT_Byte) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_UInt32, GDT_UInt16) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_UInt32, GDT_Int16) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_UInt32, GDT_UInt32) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_UInt32, GDT_Int32) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_UInt32, GDT_Float32) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_UInt32, GDT_Float64) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_UInt32, GDT_CInt16) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_UInt32, GDT_CInt32) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_UInt32, GDT_CFloat32) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_UInt32, GDT_CFloat64) );
+
+        ensure( GDALDataTypeIsConversionLossy(GDT_Int32, GDT_Byte) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_Int32, GDT_UInt16) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_Int32, GDT_Int16) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_Int32, GDT_UInt32) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_Int32, GDT_Int32) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_Int32, GDT_Float32) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_Int32, GDT_Float64) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_Int32, GDT_CInt16) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_Int32, GDT_CInt32) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_Int32, GDT_CFloat32) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_Int32, GDT_CFloat64) );
+
+        ensure( GDALDataTypeIsConversionLossy(GDT_Float32, GDT_Byte) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_Float32, GDT_UInt16) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_Float32, GDT_Int16) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_Float32, GDT_UInt32) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_Float32, GDT_Int32) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_Float32, GDT_Float32) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_Float32, GDT_Float64) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_Float32, GDT_CInt16) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_Float32, GDT_CInt32) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_Float32, GDT_CFloat32) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_Float32, GDT_CFloat64) );
+
+        ensure( GDALDataTypeIsConversionLossy(GDT_Float64, GDT_Byte) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_Float64, GDT_UInt16) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_Float64, GDT_Int16) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_Float64, GDT_UInt32) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_Float64, GDT_Int32) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_Float64, GDT_Float32) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_Float64, GDT_Float64) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_Float64, GDT_CInt16) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_Float64, GDT_CInt32) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_Float64, GDT_CFloat32) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_Float64, GDT_CFloat64) );
+
+        ensure( GDALDataTypeIsConversionLossy(GDT_CInt16, GDT_Byte) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_CInt16, GDT_UInt16) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_CInt16, GDT_Int16) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_CInt16, GDT_UInt32) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_CInt16, GDT_Int32) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_CInt16, GDT_Float32) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_CInt16, GDT_Float64) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_CInt16, GDT_CInt16) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_CInt16, GDT_CInt32) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_CInt16, GDT_CFloat32) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_CInt16, GDT_CFloat64) );
+
+        ensure( GDALDataTypeIsConversionLossy(GDT_CInt32, GDT_Byte) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_CInt32, GDT_UInt16) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_CInt32, GDT_Int16) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_CInt32, GDT_UInt32) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_CInt32, GDT_Int32) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_CInt32, GDT_Float32) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_CInt32, GDT_Float64) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_CInt32, GDT_CInt16) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_CInt32, GDT_CInt32) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_CInt32, GDT_CFloat32) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_CInt32, GDT_CFloat64) );
+
+        ensure( GDALDataTypeIsConversionLossy(GDT_CFloat32, GDT_Byte) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_CFloat32, GDT_UInt16) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_CFloat32, GDT_Int16) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_CFloat32, GDT_UInt32) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_CFloat32, GDT_Int32) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_CFloat32, GDT_Float32) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_CFloat32, GDT_Float64) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_CFloat32, GDT_CInt16) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_CFloat32, GDT_CInt32) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_CFloat32, GDT_CFloat32) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_CFloat32, GDT_CFloat64) );
+
+        ensure( GDALDataTypeIsConversionLossy(GDT_CFloat64, GDT_Byte) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_CFloat64, GDT_UInt16) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_CFloat64, GDT_Int16) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_CFloat64, GDT_UInt32) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_CFloat64, GDT_Int32) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_CFloat64, GDT_Float32) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_CFloat64, GDT_Float64) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_CFloat64, GDT_CInt16) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_CFloat64, GDT_CInt32) );
+        ensure( GDALDataTypeIsConversionLossy(GDT_CFloat64, GDT_CFloat32) );
+        ensure( !GDALDataTypeIsConversionLossy(GDT_CFloat64, GDT_CFloat64) );
+    }
+
+    // Test GDALDataset::GetBands()
+    template<> template<> void object::test<17>()
+    {
+        GDALDatasetUniquePtr poDS(
+            GDALDriver::FromHandle(
+                GDALGetDriverByName("MEM"))->Create("", 1, 1, 3, GDT_Byte, nullptr));
+        int nExpectedNumber = 1;
+        for( auto&& poBand: poDS->GetBands() )
+        {
+            ensure_equals( poBand->GetBand(), nExpectedNumber );
+            nExpectedNumber ++;
+        }
+        ensure_equals( nExpectedNumber, 3 + 1 );
+
+        ensure_equals( poDS->GetBands().size(), 3U );
+        ensure_equals( poDS->GetBands()[0], poDS->GetRasterBand(1) );
+        ensure_equals( poDS->GetBands()[static_cast<size_t>(0)], poDS->GetRasterBand(1) );
 
     }
 

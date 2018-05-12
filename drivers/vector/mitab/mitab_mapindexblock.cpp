@@ -44,7 +44,7 @@
 #include "cpl_vsi.h"
 #include "mitab_priv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /*=====================================================================
  *                      class TABMAPIndexBlock
@@ -62,10 +62,10 @@ TABMAPIndexBlock::TABMAPIndexBlock( TABAccess eAccessMode /*= TABRead*/ ) :
     m_nMinY(1000000000),
     m_nMaxX(-1000000000),
     m_nMaxY(-1000000000),
-    m_poBlockManagerRef(NULL),
-    m_poCurChild(NULL),
+    m_poBlockManagerRef(nullptr),
+    m_poCurChild(nullptr),
     m_nCurChildIndex(-1),
-    m_poParentRef(NULL)
+    m_poParentRef(nullptr)
 {
     memset(m_asEntries, 0, sizeof(m_asEntries));
 }
@@ -91,7 +91,7 @@ void TABMAPIndexBlock::UnsetCurChild()
         if (m_eAccess == TABWrite || m_eAccess == TABReadWrite)
             m_poCurChild->CommitToFile();
         delete m_poCurChild;
-        m_poCurChild = NULL;
+        m_poCurChild = nullptr;
     }
     m_nCurChildIndex = -1;
 }
@@ -131,7 +131,7 @@ int     TABMAPIndexBlock::InitBlockFromData(GByte *pabyBuf,
                  "InitBlockFromData(): Invalid Block Type: got %d expected %d",
                  m_nBlockType, TABMAP_INDEX_BLOCK);
         CPLFree(m_pabyBuf);
-        m_pabyBuf = NULL;
+        m_pabyBuf = nullptr;
         return -1;
     }
 
@@ -164,7 +164,7 @@ int     TABMAPIndexBlock::CommitToFile()
 {
     int nStatus = 0;
 
-    if ( m_pabyBuf == NULL )
+    if ( m_pabyBuf == nullptr )
     {
         CPLError(CE_Failure, CPLE_AssertionFailed,
                  "CommitToFile(): Block has not been initialized yet!");
@@ -203,8 +203,7 @@ int     TABMAPIndexBlock::CommitToFile()
      *----------------------------------------------------------------*/
     for(int i=0; nStatus == 0 && i<m_numEntries; i++)
     {
-        if (nStatus == 0)
-            nStatus = WriteNextEntry(&(m_asEntries[i]));
+        nStatus = WriteNextEntry(&(m_asEntries[i]));
     }
 
     /*-----------------------------------------------------------------
@@ -375,7 +374,7 @@ int     TABMAPIndexBlock::GetNumFreeEntries()
 TABMAPIndexEntry *TABMAPIndexBlock::GetEntry( int iIndex )
 {
     if( iIndex < 0 || iIndex >= m_numEntries )
-        return NULL;
+        return nullptr;
 
     return m_asEntries + iIndex;
 }
@@ -574,13 +573,13 @@ GInt32  TABMAPIndexBlock::ChooseLeafForInsert(GInt32 nXMin, GInt32 nYMin,
      *----------------------------------------------------------------*/
 
     // Make sure blocks currently in memory are written to disk.
-    // TODO: Could we avoid deleting m_poCurChild if it's already
+    // TODO: Could we avoid deleting m_poCurChild if it is already
     //       the best candidate for insert?
     if (m_poCurChild)
     {
         m_poCurChild->CommitToFile();
         delete m_poCurChild;
-        m_poCurChild = NULL;
+        m_poCurChild = nullptr;
         m_nCurChildIndex = -1;
     }
 
@@ -593,18 +592,17 @@ GInt32  TABMAPIndexBlock::ChooseLeafForInsert(GInt32 nXMin, GInt32 nYMin,
     // Try to load corresponding child... if it fails then we are
     // likely in a leaf node, so we'll add the new entry in the current
     // node.
-    TABRawBinBlock *poBlock = NULL;
 
     // Prevent error message if referred block not committed yet.
     CPLPushErrorHandler(CPLQuietErrorHandler);
 
-    poBlock = TABCreateMAPBlockFromFile(m_fp,
+    TABRawBinBlock* poBlock = TABCreateMAPBlockFromFile(m_fp,
                                     m_asEntries[nBestCandidate].nBlockPtr,
                                     m_nBlockSize, TRUE, TABReadWrite);
-    if (poBlock != NULL && poBlock->GetBlockClass() == TABMAP_INDEX_BLOCK)
+    if (poBlock != nullptr && poBlock->GetBlockClass() == TABMAP_INDEX_BLOCK)
     {
         m_poCurChild = (TABMAPIndexBlock*)poBlock;
-        poBlock = NULL;
+        poBlock = nullptr;
         m_nCurChildIndex = nBestCandidate;
         m_poCurChild->SetParentRef(this);
         m_poCurChild->SetMAPBlockManagerRef(m_poBlockManagerRef);
@@ -782,7 +780,7 @@ int     TABMAPIndexBlock::AddEntry(GInt32 nXMin, GInt32 nYMin,
         {
             m_poCurChild->CommitToFile();
             delete m_poCurChild;
-            m_poCurChild = NULL;
+            m_poCurChild = nullptr;
             m_nCurChildIndex = -1;
         }
 
@@ -795,18 +793,17 @@ int     TABMAPIndexBlock::AddEntry(GInt32 nXMin, GInt32 nYMin,
             // Try to load corresponding child... if it fails then we are
             // likely in a leaf node, so we'll add the new entry in the current
             // node.
-            TABRawBinBlock *poBlock = NULL;
 
             // Prevent error message if referred block not committed yet.
             CPLPushErrorHandler(CPLQuietErrorHandler);
 
-            poBlock = TABCreateMAPBlockFromFile(m_fp,
+            TABRawBinBlock* poBlock = TABCreateMAPBlockFromFile(m_fp,
                                        m_asEntries[nBestCandidate].nBlockPtr,
                                        m_nBlockSize, TRUE, TABReadWrite);
-            if (poBlock != NULL && poBlock->GetBlockClass() == TABMAP_INDEX_BLOCK)
+            if (poBlock != nullptr && poBlock->GetBlockClass() == TABMAP_INDEX_BLOCK)
             {
                 m_poCurChild = (TABMAPIndexBlock*)poBlock;
-                poBlock = NULL;
+                poBlock = nullptr;
                 m_nCurChildIndex = nBestCandidate;
                 m_poCurChild->SetParentRef(this);
                 m_poCurChild->SetMAPBlockManagerRef(m_poBlockManagerRef);
@@ -842,7 +839,7 @@ int     TABMAPIndexBlock::AddEntry(GInt32 nXMin, GInt32 nYMin,
          *------------------------------------------------------------*/
         if (GetNumFreeEntries() < 1)
         {
-            if (m_poParentRef == NULL)
+            if (m_poParentRef == nullptr)
             {
                 /*-----------------------------------------------------
                  * Splitting the root node adds one level to the tree, so
@@ -1026,17 +1023,17 @@ int TABMAPIndexBlock::PickSeedsForSplit( TABMAPIndexEntry *pasEntries,
         }
     }
 
-    const int nSrcWidth = std::abs(nSrcMaxX - nSrcMinX);
-    const int nSrcHeight = std::abs(nSrcMaxY - nSrcMinY);
+    const double dfSrcWidth = std::abs(static_cast<double>(nSrcMaxX) - nSrcMinX);
+    const double dfSrcHeight = std::abs(static_cast<double>(nSrcMaxY) - nSrcMinY);
 
     // Calculate the separation for each pair (note that it may be negative
     // in case of overlap)
     // Normalize the separation by dividing by the extents of the
     // corresponding dimension
     const double dX =
-        nSrcWidth == 0 ? 0 : (double)(nHighestMinX - nLowestMaxX) / nSrcWidth;
+        dfSrcWidth == 0.0 ? 0.0 : (static_cast<double>(nHighestMinX) - nLowestMaxX) / dfSrcWidth;
     const double dY =
-        nSrcHeight == 0 ? 0 : (double)(nHighestMinY - nLowestMaxY) / nSrcHeight;
+        dfSrcHeight == 0.0 ? 0.0 : (static_cast<double>(nHighestMinY) - nLowestMaxY) / dfSrcHeight;
 
     // Choose the pair with the greatest normalized separation along
     // any dimension
@@ -1298,7 +1295,7 @@ int TABMAPIndexBlock::SplitRootNode(GInt32 nNewEntryXMin, GInt32 nNewEntryYMin,
                                     GInt32 nNewEntryXMax, GInt32 nNewEntryYMax)
 {
     CPLAssert(m_poBlockManagerRef);
-    CPLAssert(m_poParentRef == NULL);
+    CPLAssert(m_poParentRef == nullptr);
 
     /*-----------------------------------------------------------------
      * Since a root note cannot be split, we add a level of nodes
@@ -1332,7 +1329,7 @@ int TABMAPIndexBlock::SplitRootNode(GInt32 nNewEntryXMin, GInt32 nNewEntryYMin,
     {
         poNewNode->SetCurChildRef(m_poCurChild, m_nCurChildIndex);
         m_poCurChild->SetParentRef(poNewNode);
-        m_poCurChild = NULL;
+        m_poCurChild = nullptr;
         m_nCurChildIndex = -1;
     }
 
@@ -1466,7 +1463,7 @@ void TABMAPIndexBlock::UpdateCurChildMBR(GInt32 nXMin, GInt32 nYMin,
 void TABMAPIndexBlock::SetMAPBlockManagerRef(TABBinBlockManager *poBlockMgr)
 {
     m_poBlockManagerRef = poBlockMgr;
-};
+}
 
 /**********************************************************************
  *                   TABMAPIndexBlock::SetParentRef()
@@ -1499,11 +1496,11 @@ void    TABMAPIndexBlock::SetCurChildRef(TABMAPIndexBlock *poChild,
 
 void TABMAPIndexBlock::Dump(FILE *fpOut /*=NULL*/)
 {
-    if (fpOut == NULL)
+    if (fpOut == nullptr)
         fpOut = stdout;
 
     fprintf(fpOut, "----- TABMAPIndexBlock::Dump() -----\n");
-    if (m_pabyBuf == NULL)
+    if (m_pabyBuf == nullptr)
     {
         fprintf(fpOut, "Block has not been initialized yet.");
     }

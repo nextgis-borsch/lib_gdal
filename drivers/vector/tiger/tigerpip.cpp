@@ -29,7 +29,7 @@
 #include "ogr_tiger.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 static const char FILE_CODE[] = "P";
 
@@ -72,7 +72,7 @@ static const TigerRecordInfo rtP_info =
 
 TigerPIP::TigerPIP( OGRTigerDataSource * poDSIn,
                     CPL_UNUSED const char * pszPrototypeModule )
-  : TigerPoint(TRUE, NULL, FILE_CODE)
+  : TigerPoint(TRUE, nullptr, FILE_CODE)
 {
     poDS = poDSIn;
     poFeatureDefn = new OGRFeatureDefn( "PIP" );

@@ -32,17 +32,18 @@
 import os
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 from osgeo import ogr
 from osgeo import osr
 from osgeo import gdal
 
+
 def ogr_georss_init():
 
     try:
-        ds = ogr.Open( 'data/atom_rfc_sample.xml' )
+        ds = ogr.Open('data/atom_rfc_sample.xml')
     except:
         ds = None
 
@@ -54,37 +55,38 @@ def ogr_georss_init():
 
     gdaltest.have_gml_reader = 0
     try:
-        ds = ogr.Open( 'data/ionic_wfs.gml' )
+        ds = ogr.Open('data/ionic_wfs.gml')
         if ds is not None:
             gdaltest.have_gml_reader = 1
             ds = None
     except:
         pass
 
-    gdaltest.atom_field_values = [ ('title', 'Atom draft-07 snapshot', ogr.OFTString),
-                                    ('link_rel', 'alternate', ogr.OFTString),
-                                    ('link_type', 'text/html', ogr.OFTString),
-                                    ('link_href', 'http://example.org/2005/04/02/atom', ogr.OFTString),
-                                    ('link2_rel', 'enclosure', ogr.OFTString),
-                                    ('link2_type', 'audio/mpeg', ogr.OFTString),
-                                    ('link2_length', '1337', ogr.OFTInteger),
-                                    ('link2_href', 'http://example.org/audio/ph34r_my_podcast.mp3', ogr.OFTString),
-                                    ('id', 'tag:example.org,2003:3.2397', ogr.OFTString),
-                                    ('updated', '2005/07/31 12:29:29+00', ogr.OFTDateTime),
-                                    ('published', '2003/12/13 08:29:29-04', ogr.OFTDateTime),
-                                    ('author_name', 'Mark Pilgrim', ogr.OFTString),
-                                    ('author_uri', 'http://example.org/', ogr.OFTString),
-                                    ('author_email', 'f8dy@example.com', ogr.OFTString),
-                                    ('contributor_name', 'Sam Ruby', ogr.OFTString),
-                                    ('contributor2_name', 'Joe Gregorio', ogr.OFTString),
-                                    ('content_type', 'xhtml', ogr.OFTString),
-                                    ('content_xml_lang', 'en', ogr.OFTString),
-                                    ('content_xml_base', 'http://diveintomark.org/', ogr.OFTString)]
+    gdaltest.atom_field_values = [('title', 'Atom draft-07 snapshot', ogr.OFTString),
+                                  ('link_rel', 'alternate', ogr.OFTString),
+                                  ('link_type', 'text/html', ogr.OFTString),
+                                  ('link_href', 'http://example.org/2005/04/02/atom', ogr.OFTString),
+                                  ('link2_rel', 'enclosure', ogr.OFTString),
+                                  ('link2_type', 'audio/mpeg', ogr.OFTString),
+                                  ('link2_length', '1337', ogr.OFTInteger),
+                                  ('link2_href', 'http://example.org/audio/ph34r_my_podcast.mp3', ogr.OFTString),
+                                  ('id', 'tag:example.org,2003:3.2397', ogr.OFTString),
+                                  ('updated', '2005/07/31 12:29:29+00', ogr.OFTDateTime),
+                                  ('published', '2003/12/13 08:29:29-04', ogr.OFTDateTime),
+                                  ('author_name', 'Mark Pilgrim', ogr.OFTString),
+                                  ('author_uri', 'http://example.org/', ogr.OFTString),
+                                  ('author_email', 'f8dy@example.com', ogr.OFTString),
+                                  ('contributor_name', 'Sam Ruby', ogr.OFTString),
+                                  ('contributor2_name', 'Joe Gregorio', ogr.OFTString),
+                                  ('content_type', 'xhtml', ogr.OFTString),
+                                  ('content_xml_lang', 'en', ogr.OFTString),
+                                  ('content_xml_base', 'http://diveintomark.org/', ogr.OFTString)]
 
     return 'success'
 
 ###############################################################################
 # Used by ogr_georss_1 and ogr_georss_1ter
+
 
 def ogr_georss_test_atom(filename):
 
@@ -92,7 +94,7 @@ def ogr_georss_test_atom(filename):
         return 'skip'
 
     ds = ogr.Open(filename)
-    lyr = ds.GetLayerByName( 'georss' )
+    lyr = ds.GetLayerByName('georss')
 
     if lyr.GetSpatialRef() is not None:
         gdaltest.post_reason('No spatial ref expected')
@@ -114,12 +116,14 @@ def ogr_georss_test_atom(filename):
 ###############################################################################
 # Test reading an ATOM document without any geometry
 
+
 def ogr_georss_1():
 
     return ogr_georss_test_atom('data/atom_rfc_sample.xml')
 
 ###############################################################################
 # Test reading an ATOM document with atom: prefiw
+
 
 def ogr_georss_1_atom_ns():
 
@@ -128,26 +132,27 @@ def ogr_georss_1_atom_ns():
 ###############################################################################
 # Test writing a Atom 1.0 document (doesn't need read support)
 
+
 def ogr_georss_1bis():
 
     try:
-        os.remove ('tmp/test_atom.xml')
-    except:
+        os.remove('tmp/test_atom.xml')
+    except OSError:
         pass
 
-    ds = ogr.GetDriverByName('GeoRSS').CreateDataSource('tmp/test_atom.xml', options = ['FORMAT=ATOM'] )
+    ds = ogr.GetDriverByName('GeoRSS').CreateDataSource('tmp/test_atom.xml', options=['FORMAT=ATOM'])
     lyr = ds.CreateLayer('georss')
 
     for field_value in gdaltest.atom_field_values:
-        lyr.CreateField( ogr.FieldDefn(field_value[0], field_value[2]) )
-    lyr.CreateField( ogr.FieldDefn('content', ogr.OFTString) )
+        lyr.CreateField(ogr.FieldDefn(field_value[0], field_value[2]))
+    lyr.CreateField(ogr.FieldDefn('content', ogr.OFTString))
 
-    dst_feat = ogr.Feature( feature_def = lyr.GetLayerDefn() )
+    dst_feat = ogr.Feature(feature_def=lyr.GetLayerDefn())
     for field_value in gdaltest.atom_field_values:
-        dst_feat.SetField( field_value[0], field_value[1] )
-    dst_feat.SetField( 'content', '<div xmlns="http://www.w3.org/1999/xhtml"><p><i>[Update: The Atom draft is finished.]</i></p></div>' )
+        dst_feat.SetField(field_value[0], field_value[1])
+    dst_feat.SetField('content', '<div xmlns="http://www.w3.org/1999/xhtml"><p><i>[Update: The Atom draft is finished.]</i></p></div>')
 
-    if lyr.CreateFeature( dst_feat ) != 0:
+    if lyr.CreateFeature(dst_feat) != 0:
         gdaltest.post_reason('CreateFeature failed.')
         return 'fail'
 
@@ -172,7 +177,7 @@ def ogr_georss_test_rss(filename, only_first_feature):
     if not gdaltest.georss_read_support:
         return 'skip'
 
-    ds = ogr.Open( filename )
+    ds = ogr.Open(filename)
     if ds is None:
         return 'fail'
 
@@ -241,12 +246,14 @@ def ogr_georss_test_rss(filename, only_first_feature):
 ###############################################################################
 # Test reading a RSS 2.0 document with GeoRSS simple geometries
 
+
 def ogr_georss_2():
 
     return ogr_georss_test_rss('data/test_georss_simple.xml', False)
 
 ###############################################################################
 # Test reading a RSS 2.0 document with GeoRSS GML geometries
+
 
 def ogr_georss_3():
 
@@ -258,26 +265,27 @@ def ogr_georss_3():
 ###############################################################################
 # Test writing a RSS 2.0 document (doesn't need read support)
 
+
 def ogr_georss_create(filename, options):
 
     try:
-        os.remove (filename)
-    except:
+        os.remove(filename)
+    except OSError:
         pass
-    ds = ogr.GetDriverByName('GeoRSS').CreateDataSource(filename, options = options )
+    ds = ogr.GetDriverByName('GeoRSS').CreateDataSource(filename, options=options)
     lyr = ds.CreateLayer('georss')
 
-    lyr.CreateField( ogr.FieldDefn('title', ogr.OFTString) )
-    lyr.CreateField( ogr.FieldDefn('author', ogr.OFTString) )
-    lyr.CreateField( ogr.FieldDefn('link', ogr.OFTString) )
-    lyr.CreateField( ogr.FieldDefn('pubDate', ogr.OFTDateTime) )
-    lyr.CreateField( ogr.FieldDefn('description', ogr.OFTString) )
-    lyr.CreateField( ogr.FieldDefn('category', ogr.OFTString) )
-    lyr.CreateField( ogr.FieldDefn('category_domain', ogr.OFTString) )
-    lyr.CreateField( ogr.FieldDefn('category2', ogr.OFTString) )
-    lyr.CreateField( ogr.FieldDefn('category2_domain', ogr.OFTString) )
+    lyr.CreateField(ogr.FieldDefn('title', ogr.OFTString))
+    lyr.CreateField(ogr.FieldDefn('author', ogr.OFTString))
+    lyr.CreateField(ogr.FieldDefn('link', ogr.OFTString))
+    lyr.CreateField(ogr.FieldDefn('pubDate', ogr.OFTDateTime))
+    lyr.CreateField(ogr.FieldDefn('description', ogr.OFTString))
+    lyr.CreateField(ogr.FieldDefn('category', ogr.OFTString))
+    lyr.CreateField(ogr.FieldDefn('category_domain', ogr.OFTString))
+    lyr.CreateField(ogr.FieldDefn('category2', ogr.OFTString))
+    lyr.CreateField(ogr.FieldDefn('category2_domain', ogr.OFTString))
 
-    dst_feat = ogr.Feature( feature_def = lyr.GetLayerDefn() )
+    dst_feat = ogr.Feature(feature_def=lyr.GetLayerDefn())
     dst_feat.SetField('title', 'A point')
     dst_feat.SetField('author', 'Author')
     dst_feat.SetField('link', 'http://gdal.org')
@@ -288,40 +296,40 @@ def ogr_georss_create(filename, options):
     dst_feat.SetField('category2_domain', 'second_domain')
     dst_feat.SetGeometry(ogr.CreateGeometryFromWkt('POINT (2 49)'))
 
-    if lyr.CreateFeature( dst_feat ) != 0:
+    if lyr.CreateFeature(dst_feat) != 0:
         gdaltest.post_reason('CreateFeature failed.')
         return 'fail'
 
-    dst_feat = ogr.Feature( feature_def = lyr.GetLayerDefn() )
+    dst_feat = ogr.Feature(feature_def=lyr.GetLayerDefn())
     dst_feat.SetField('title', 'A line')
     dst_feat.SetField('author', 'Author')
     dst_feat.SetField('link', 'http://gdal.org')
     dst_feat.SetField('pubDate', '2008/12/07 20:13:00+02')
     dst_feat.SetGeometry(ogr.CreateGeometryFromWkt('LINESTRING (2 48,2.1 48.1,2.2 48.0)'))
 
-    if lyr.CreateFeature( dst_feat ) != 0:
+    if lyr.CreateFeature(dst_feat) != 0:
         gdaltest.post_reason('CreateFeature failed.')
         return 'fail'
 
-    dst_feat = ogr.Feature( feature_def = lyr.GetLayerDefn() )
+    dst_feat = ogr.Feature(feature_def=lyr.GetLayerDefn())
     dst_feat.SetField('title', 'A polygon')
     dst_feat.SetField('author', 'Author')
     dst_feat.SetField('link', 'http://gdal.org')
     dst_feat.SetField('pubDate', '2008/12/07 20:13:00+02')
     dst_feat.SetGeometry(ogr.CreateGeometryFromWkt('POLYGON ((2 50,2.1 50.1,2.2 48.1,2.1 46.1,2 50))'))
 
-    if lyr.CreateFeature( dst_feat ) != 0:
+    if lyr.CreateFeature(dst_feat) != 0:
         gdaltest.post_reason('CreateFeature failed.')
         return 'fail'
 
-    dst_feat = ogr.Feature( feature_def = lyr.GetLayerDefn() )
+    dst_feat = ogr.Feature(feature_def=lyr.GetLayerDefn())
     dst_feat.SetField('title', 'A box')
     dst_feat.SetField('author', 'Author')
     dst_feat.SetField('link', 'http://gdal.org')
     dst_feat.SetField('pubDate', '2008/12/07 20:13:00+02')
     dst_feat.SetGeometry(ogr.CreateGeometryFromWkt('POLYGON ((2 49,2.0 49.5,2.2 49.5,2.2 49.0,2 49))'))
 
-    if lyr.CreateFeature( dst_feat ) != 0:
+    if lyr.CreateFeature(dst_feat) != 0:
         gdaltest.post_reason('CreateFeature failed.')
         return 'fail'
 
@@ -331,6 +339,7 @@ def ogr_georss_create(filename, options):
 
 ###############################################################################
 # Test writing a RSS 2.0 document in Simple dialect (doesn't need read support)
+
 
 def ogr_georss_4():
 
@@ -347,12 +356,14 @@ def ogr_georss_4():
 ###############################################################################
 # Test reading document created at previous step
 
+
 def ogr_georss_5():
 
     return ogr_georss_test_rss('tmp/test_rss2.xml', False)
 
 ###############################################################################
 # Test writing a RSS 2.0 document in GML dialect (doesn't need read support)
+
 
 def ogr_georss_6():
 
@@ -369,6 +380,7 @@ def ogr_georss_6():
 ###############################################################################
 # Test reading document created at previous step
 
+
 def ogr_georss_7():
     if not gdaltest.have_gml_reader:
         return 'skip'
@@ -377,6 +389,7 @@ def ogr_georss_7():
 
 ###############################################################################
 # Test writing a RSS 2.0 document in W3C Geo dialect (doesn't need read support)
+
 
 def ogr_georss_8():
 
@@ -393,6 +406,7 @@ def ogr_georss_8():
 ###############################################################################
 # Test reading document created at previous step
 
+
 def ogr_georss_9():
 
     return ogr_georss_test_rss('tmp/test_rss2.xml', True)
@@ -400,19 +414,20 @@ def ogr_georss_9():
 ###############################################################################
 # Test writing a RSS 2.0 document in GML dialect with EPSG:32631
 
+
 def ogr_georss_10():
     try:
-        os.remove ('tmp/test32631.rss')
-    except:
+        os.remove('tmp/test32631.rss')
+    except OSError:
         pass
 
     srs = osr.SpatialReference()
     srs.ImportFromEPSG(32631)
 
     ds = ogr.GetDriverByName('GeoRSS').CreateDataSource('tmp/test32631.rss')
-    gdal.PushErrorHandler( 'CPLQuietErrorHandler' )
+    gdal.PushErrorHandler('CPLQuietErrorHandler')
     try:
-        lyr = ds.CreateLayer('georss', srs = srs)
+        lyr = ds.CreateLayer('georss', srs=srs)
     except:
         lyr = None
     gdal.PopErrorHandler()
@@ -423,17 +438,17 @@ def ogr_georss_10():
     ds = None
 
     try:
-        os.remove ('tmp/test32631.rss')
-    except:
+        os.remove('tmp/test32631.rss')
+    except OSError:
         pass
 
-    ds = ogr.GetDriverByName('GeoRSS').CreateDataSource('tmp/test32631.rss', options = [ 'GEOM_DIALECT=GML' ])
-    lyr = ds.CreateLayer('georss', srs = srs)
+    ds = ogr.GetDriverByName('GeoRSS').CreateDataSource('tmp/test32631.rss', options=['GEOM_DIALECT=GML'])
+    lyr = ds.CreateLayer('georss', srs=srs)
 
-    dst_feat = ogr.Feature( feature_def = lyr.GetLayerDefn() )
+    dst_feat = ogr.Feature(feature_def=lyr.GetLayerDefn())
     dst_feat.SetGeometry(ogr.CreateGeometryFromWkt('POINT (500000 4000000)'))
 
-    if lyr.CreateFeature( dst_feat ) != 0:
+    if lyr.CreateFeature(dst_feat) != 0:
         gdaltest.post_reason('CreateFeature failed.')
         return 'fail'
 
@@ -448,6 +463,7 @@ def ogr_georss_10():
 
 ###############################################################################
 # Test reading document created at previous step
+
 
 def ogr_georss_11():
 
@@ -482,13 +498,14 @@ def ogr_georss_11():
 ###############################################################################
 # Test various broken documents
 
+
 def ogr_georss_12():
 
     if not gdaltest.georss_read_support:
         return 'skip'
 
     open('tmp/broken.rss', 'wt').write('<?xml version="1.0"?><rss><item><a></item></rss>')
-    gdal.PushErrorHandler( 'CPLQuietErrorHandler' )
+    gdal.PushErrorHandler('CPLQuietErrorHandler')
     try:
         ds = ogr.Open('tmp/broken.rss')
     except:
@@ -499,7 +516,7 @@ def ogr_georss_12():
 
     open('tmp/broken.rss', 'wt').write('<?xml version="1.0"?><rss><channel><item><georss:box>49 2 49.5</georss:box></item></channel></rss>')
     ds = ogr.Open('tmp/broken.rss')
-    gdal.PushErrorHandler( 'CPLQuietErrorHandler' )
+    gdal.PushErrorHandler('CPLQuietErrorHandler')
     feat = ds.GetLayer(0).GetNextFeature()
     gdal.PopErrorHandler()
     if feat.GetGeometryRef() is not None:
@@ -507,7 +524,7 @@ def ogr_georss_12():
 
     open('tmp/broken.rss', 'wt').write('<?xml version="1.0"?><rss><channel><item><georss:where><gml:LineString><gml:posList>48 2 48.1 2.1 48</gml:posList></gml:LineString></georss:where></item></channel></rss>')
     ds = ogr.Open('tmp/broken.rss')
-    gdal.PushErrorHandler( 'CPLQuietErrorHandler' )
+    gdal.PushErrorHandler('CPLQuietErrorHandler')
     feat = ds.GetLayer(0).GetNextFeature()
     gdal.PopErrorHandler()
     if feat.GetGeometryRef() is not None:
@@ -518,24 +535,25 @@ def ogr_georss_12():
 ###############################################################################
 # Test writing non standard fields
 
+
 def ogr_georss_13():
     try:
-        os.remove ('tmp/nonstandard.rss')
-    except:
+        os.remove('tmp/nonstandard.rss')
+    except OSError:
         pass
-    ds = ogr.GetDriverByName('GeoRSS').CreateDataSource('tmp/nonstandard.rss', options = [ 'USE_EXTENSIONS=YES'] )
+    ds = ogr.GetDriverByName('GeoRSS').CreateDataSource('tmp/nonstandard.rss', options=['USE_EXTENSIONS=YES'])
     lyr = ds.CreateLayer('georss')
 
-    lyr.CreateField( ogr.FieldDefn('myns_field', ogr.OFTString) )
-    lyr.CreateField( ogr.FieldDefn('field2', ogr.OFTString) )
-    lyr.CreateField( ogr.FieldDefn('ogr_field3', ogr.OFTString) )
+    lyr.CreateField(ogr.FieldDefn('myns_field', ogr.OFTString))
+    lyr.CreateField(ogr.FieldDefn('field2', ogr.OFTString))
+    lyr.CreateField(ogr.FieldDefn('ogr_field3', ogr.OFTString))
 
-    dst_feat = ogr.Feature( feature_def = lyr.GetLayerDefn() )
+    dst_feat = ogr.Feature(feature_def=lyr.GetLayerDefn())
     dst_feat.SetField('myns_field', 'val')
     dst_feat.SetField('field2', 'val2')
     dst_feat.SetField('ogr_field3', 'val3')
 
-    if lyr.CreateFeature( dst_feat ) != 0:
+    if lyr.CreateFeature(dst_feat) != 0:
         gdaltest.post_reason('CreateFeature failed.')
         return 'fail'
 
@@ -556,6 +574,7 @@ def ogr_georss_13():
 
 ###############################################################################
 # Test reading document created at previous step
+
 
 def ogr_georss_14():
 
@@ -581,6 +600,7 @@ def ogr_georss_14():
 
 ###############################################################################
 # Test reading an in memory file (#2931)
+
 
 def ogr_georss_15():
 
@@ -626,13 +646,14 @@ def ogr_georss_15():
 ###############################################################################
 #
 
+
 def ogr_georss_cleanup():
 
-    list_files = [ 'tmp/test_rss2.xml', 'tmp/test_atom.xml', 'tmp/test32631.rss', 'tmp/broken.rss', 'tmp/nonstandard.rss' ]
+    list_files = ['tmp/test_rss2.xml', 'tmp/test_atom.xml', 'tmp/test32631.rss', 'tmp/broken.rss', 'tmp/nonstandard.rss']
     for filename in list_files:
         try:
-            os.remove (filename)
-        except:
+            os.remove(filename)
+        except OSError:
             pass
 
     files = os.listdir('data')
@@ -641,6 +662,7 @@ def ogr_georss_cleanup():
             os.unlink('data/' + filename)
 
     return 'success'
+
 
 gdaltest_list = [
     ogr_georss_init,
@@ -662,12 +684,12 @@ gdaltest_list = [
     ogr_georss_13,
     ogr_georss_14,
     ogr_georss_15,
-    ogr_georss_cleanup ]
+    ogr_georss_cleanup]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'ogr_georss' )
+    gdaltest.setup_run('ogr_georss')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()

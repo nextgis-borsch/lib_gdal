@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 /************************************************************************/
 /*                        OGROCIWritableLayer()                         */
@@ -46,18 +46,19 @@ OGROCIWritableLayer::OGROCIWritableLayer()
 
     nOrdinalCount = 0;
     nOrdinalMax = 0;
-    padfOrdinals = NULL;
+    padfOrdinals = nullptr;
 
     nElemInfoCount = 0;
     nElemInfoMax = 0;
-    panElemInfo = NULL;
+    panElemInfo = nullptr;
 
     bLaunderColumnNames = TRUE;
     bPreservePrecision = FALSE;
+    nDefaultStringSize = DEFAULT_STRING_SIZE;
     bTruncationReported = FALSE;
-    poSRS = NULL;
+    poSRS = nullptr;
 
-    papszOptions = NULL;
+    papszOptions = nullptr;
 }
 
 /************************************************************************/
@@ -123,7 +124,7 @@ OGROCIWritableLayer::TranslateElementGroup( OGRGeometry *poGeometry )
     {
       case wkbPoint:
       {
-          OGRPoint *poPoint = (OGRPoint *) poGeometry;
+          OGRPoint *poPoint = poGeometry->toPoint();
 
           PushElemInfo( nOrdinalCount+1, 1, 1 );
 
@@ -137,7 +138,7 @@ OGROCIWritableLayer::TranslateElementGroup( OGRGeometry *poGeometry )
 
       case wkbLineString:
       {
-          OGRLineString *poLine = (OGRLineString *) poGeometry;
+          OGRLineString *poLine = poGeometry->toLineString();
           int  iVert;
 
           PushElemInfo( nOrdinalCount+1, 2, 1 );
@@ -154,7 +155,7 @@ OGROCIWritableLayer::TranslateElementGroup( OGRGeometry *poGeometry )
 
       case wkbPolygon:
       {
-          OGRPolygon *poPoly = (OGRPolygon *) poGeometry;
+          OGRPolygon *poPoly = poGeometry->toPolygon();
           int iRing;
 
           for( iRing = -1; iRing < poPoly->getNumInteriorRings(); iRing++ )
@@ -290,7 +291,7 @@ OGRErr OGROCIWritableLayer::CreateField( OGRFieldDefn *poFieldIn, int bApproxOK 
     else if( oField.GetType() == OFTString )
     {
         if( oField.GetWidth() == 0 || !bPreservePrecision )
-            strcpy( szFieldType, "VARCHAR2(2047)" );
+            snprintf( szFieldType, sizeof(szFieldType), "VARCHAR2(%d)", nDefaultStringSize );
         else
             snprintf( szFieldType, sizeof(szFieldType), "VARCHAR2(%d)", oField.GetWidth() );
     }
@@ -304,12 +305,12 @@ OGRErr OGROCIWritableLayer::CreateField( OGRFieldDefn *poFieldIn, int bApproxOK 
     }
     else if( bApproxOK )
     {
-        oField.SetDefault(NULL);
+        oField.SetDefault(nullptr);
         CPLError( CE_Warning, CPLE_NotSupported,
                   "Can't create field %s with type %s on Oracle layers.  Creating as VARCHAR.",
                   oField.GetNameRef(),
                   OGRFieldDefn::GetFieldTypeName(oField.GetType()) );
-        strcpy( szFieldType, "VARCHAR2(2047)" );
+        snprintf( szFieldType, sizeof(szFieldType), "VARCHAR2(%d)", nDefaultStringSize );
     }
     else
     {
@@ -345,7 +346,7 @@ OGRErr OGROCIWritableLayer::CreateField( OGRFieldDefn *poFieldIn, int bApproxOK 
     }
     snprintf( oCommand.GetString(), nCommandSize, "ALTER TABLE %s ADD \"%s\" %s",
              poFeatureDefn->GetName(), szFieldName, szFieldType);
-    if( oField.GetDefault() != NULL && !oField.IsDefaultDriverSpecific() )
+    if( oField.GetDefault() != nullptr && !oField.IsDefaultDriverSpecific() )
     {
         snprintf( oCommand.GetString() + strlen(oCommand.GetString()),
                   nCommandSize - strlen(oCommand.GetString()),
@@ -386,7 +387,7 @@ void OGROCIWritableLayer::ParseDIMINFO( const char *pszOptionName,
     char **papszTokens;
 
     pszUserDIMINFO = CSLFetchNameValue( papszOptions, pszOptionName );
-    if( pszUserDIMINFO == NULL )
+    if( pszUserDIMINFO == nullptr )
         return;
 
     papszTokens =
@@ -418,7 +419,7 @@ OGRErr OGROCIWritableLayer::TranslateToSDOGeometry( OGRGeometry * poGeometry,
     nOrdinalCount = 0;
     nElemInfoCount = 0;
 
-    if( poGeometry == NULL )
+    if( poGeometry == nullptr )
         return OGRERR_FAILURE;
 
 /* ==================================================================== */
@@ -428,7 +429,7 @@ OGRErr OGROCIWritableLayer::TranslateToSDOGeometry( OGRGeometry * poGeometry,
     {
 #ifdef notdef
         char szResult[1024];
-        OGRPoint *poPoint = (OGRPoint *) poGeometry;
+        OGRPoint *poPoint = poGeometry->toPoint();
 
         if( nDimension == 2 )
             CPLsprintf( szResult,
@@ -470,16 +471,13 @@ OGRErr OGROCIWritableLayer::TranslateToSDOGeometry( OGRGeometry * poGeometry,
 /* ==================================================================== */
     else if( wkbFlatten(poGeometry->getGeometryType()) == wkbMultiPoint )
     {
-        OGRMultiPoint *poMP = (OGRMultiPoint *) poGeometry;
-        int  iVert;
+        OGRMultiPoint *poMP = poGeometry->toMultiPoint();
 
         *pnGType = nDimension*1000 + 5;
         PushElemInfo( 1, 1, poMP->getNumGeometries() );
 
-        for( iVert = 0; iVert < poMP->getNumGeometries(); iVert++ )
+        for( auto&& poPoint: *poMP )
         {
-            OGRPoint *poPoint = (OGRPoint *)poMP->getGeometryRef( iVert );
-
             PushOrdinal( poPoint->getX() );
             PushOrdinal( poPoint->getY() );
             if( nDimension == 3 )
@@ -517,11 +515,9 @@ OGRErr OGROCIWritableLayer::TranslateToSDOGeometry( OGRGeometry * poGeometry,
 /* -------------------------------------------------------------------- */
 /*      Translate each child in turn.                                   */
 /* -------------------------------------------------------------------- */
-        OGRGeometryCollection *poGC = (OGRGeometryCollection *) poGeometry;
-        int  iChild;
-
-        for( iChild = 0; iChild < poGC->getNumGeometries(); iChild++ )
-            TranslateElementGroup( poGC->getGeometryRef(iChild) );
+        OGRGeometryCollection *poGC = poGeometry->toGeometryCollection();
+        for( auto&& poMember: *poGC )
+            TranslateElementGroup( poMember );
 
         return OGRERR_NONE;
     }

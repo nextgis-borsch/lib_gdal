@@ -33,25 +33,27 @@ import sys
 import struct
 from osgeo import gdal
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 
 ###############################################################################
 # Test CreateCopy() of byte.tif
 
+
 def xyz_1():
 
-    tst = gdaltest.GDALTest( 'XYZ', 'byte.tif', 1, 4672 )
-    return tst.testCreateCopy( vsimem = 1, check_gt = ( -67.00041667, 0.00083333, 0.0, 50.000416667, 0.0, -0.00083333 ) )
+    tst = gdaltest.GDALTest('XYZ', 'byte.tif', 1, 4672)
+    return tst.testCreateCopy(vsimem=1, check_gt=(-67.00041667, 0.00083333, 0.0, 50.000416667, 0.0, -0.00083333))
 
 ###############################################################################
 # Test CreateCopy() of float.img
 
+
 def xyz_2():
 
     src_ds = gdal.Open('data/float.img')
-    ds = gdal.GetDriverByName('XYZ').CreateCopy('tmp/float.xyz', src_ds, options = ['COLUMN_SEPARATOR=,', 'ADD_HEADER_LINE=YES'] )
+    ds = gdal.GetDriverByName('XYZ').CreateCopy('tmp/float.xyz', src_ds, options=['COLUMN_SEPARATOR=,', 'ADD_HEADER_LINE=YES'])
     got_cs = ds.GetRasterBand(1).Checksum()
     expected_cs = src_ds.GetRasterBand(1).Checksum()
     ds = None
@@ -63,6 +65,7 @@ def xyz_2():
 
 ###############################################################################
 # Test random access to lines of imagery
+
 
 def xyz_3():
 
@@ -82,22 +85,22 @@ def xyz_3():
 """
     gdal.FileFromMemBuffer('/vsimem/grid.xyz', content)
     ds = gdal.Open('/vsimem/grid.xyz')
-    buf = ds.ReadRaster(0,2,2,1)
+    buf = ds.ReadRaster(0, 2, 2, 1)
     bytes = struct.unpack('B' * 2, buf)
     if bytes != (69, 70):
         print(buf)
         return 'fail'
-    buf = ds.ReadRaster(0,1,2,1)
+    buf = ds.ReadRaster(0, 1, 2, 1)
     bytes = struct.unpack('B' * 2, buf)
     if bytes != (67, 68):
         print(buf)
         return 'fail'
-    buf = ds.ReadRaster(0,0,2,1)
+    buf = ds.ReadRaster(0, 0, 2, 1)
     bytes = struct.unpack('B' * 2, buf)
     if bytes != (65, 66):
         print(buf)
         return 'fail'
-    buf = ds.ReadRaster(0,2,2,1)
+    buf = ds.ReadRaster(0, 2, 2, 1)
     bytes = struct.unpack('B' * 2, buf)
     if bytes != (69, 70):
         print(buf)
@@ -112,11 +115,12 @@ def xyz_3():
 # and missing value in the middle. And a not so exact spacing
 
 def xyz_4_checkline(ds, i, expected_bytes):
-    buf = ds.ReadRaster(0,i,ds.RasterXSize,1)
+    buf = ds.ReadRaster(0, i, ds.RasterXSize, 1)
     bytes = struct.unpack('B' * ds.RasterXSize, buf)
     if bytes != expected_bytes:
         return False
     return True
+
 
 def xyz_4():
 
@@ -130,14 +134,14 @@ def xyz_4():
 
 440810 3751050 7"""
     gdal.FileFromMemBuffer('/vsimem/grid.xyz', content)
-    expected = [ ( 0, 1, 2, 0 ), ( 3, 4, 0, 6 ), (0, 0, 7, 0) ]
+    expected = [(0, 1, 2, 0), (3, 4, 0, 6), (0, 0, 7, 0)]
 
     ds = gdal.Open('/vsimem/grid.xyz')
 
     got_gt = ds.GetGeoTransform()
     expected_gt = (440660.0, 60.0, 0.0, 3751350.0, 0.0, -120.0)
     for i in range(6):
-        if abs(got_gt[i]-expected_gt[i]) > 1e-5:
+        if abs(got_gt[i] - expected_gt[i]) > 1e-5:
             gdaltest.post_reason('fail')
             print(got_gt)
             print(expected_gt)
@@ -152,7 +156,7 @@ def xyz_4():
     if ds.GetRasterBand(1).GetNoDataValue() != 0:
         gdaltest.post_reason('fail')
         return 'fail'
-    for i in [0,1,2,1,0,2,0,2,0,1,2]:
+    for i in [0, 1, 2, 1, 0, 2, 0, 2, 0, 1, 2]:
         if not xyz_4_checkline(ds, i, expected[i]):
             gdaltest.post_reason('fail')
             return 'fail'
@@ -185,7 +189,7 @@ def xyz_5():
     gdal.Unlink('/vsimem/grid.xyz')
 
     for i in range(6):
-        if abs(got_gt[i]-expected_gt[i]) > 1e-5:
+        if abs(got_gt[i] - expected_gt[i]) > 1e-5:
             gdaltest.post_reason('fail')
             print(got_gt)
             print(expected_gt)
@@ -218,7 +222,7 @@ def xyz_6():
     gdal.Unlink('/vsimem/grid.xyz')
 
     for i in range(6):
-        if abs(got_gt[i]-expected_gt[i]) > 1e-5:
+        if abs(got_gt[i] - expected_gt[i]) > 1e-5:
             gdaltest.post_reason('fail')
             print(got_gt)
             print(expected_gt)
@@ -262,7 +266,7 @@ def xyz_7():
     gdal.Unlink('/vsimem/grid.xyz')
 
     for i in range(6):
-        if abs(got_gt[i]-expected_gt[i]) > 1e-8:
+        if abs(got_gt[i] - expected_gt[i]) > 1e-8:
             gdaltest.post_reason('fail')
             print(got_gt)
             print(expected_gt)
@@ -277,6 +281,7 @@ def xyz_7():
 
 ###############################################################################
 # Test particular case of XYZ file with missed samples (#6934)
+
 
 def xyz_8():
 
@@ -304,7 +309,6 @@ def xyz_8():
     return 'success'
 
 
-
 ###############################################################################
 # Cleanup
 
@@ -322,13 +326,12 @@ gdaltest_list = [
     xyz_6,
     xyz_7,
     xyz_8,
-    xyz_cleanup ]
+    xyz_cleanup]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'xyz' )
+    gdaltest.setup_run('xyz')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

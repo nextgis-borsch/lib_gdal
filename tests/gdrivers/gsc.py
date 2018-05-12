@@ -30,26 +30,27 @@
 
 import sys
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 
 ###############################################################################
 # Test a fake - and certainly incorrect - GSC dataset
 
+
 def gsc_1():
 
-    tst = gdaltest.GDALTest( 'GSC', 'fakegsc.gsc', 1, 0 )
+    tst = gdaltest.GDALTest('GSC', 'fakegsc.gsc', 1, 0)
     return tst.testOpen()
 
+
 gdaltest_list = [
-    gsc_1 ]
+    gsc_1]
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'gsc' )
+    gdaltest.setup_run('gsc')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

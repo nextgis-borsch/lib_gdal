@@ -31,45 +31,47 @@
 import sys
 from osgeo import gdal
 
-sys.path.append( '../pymod' )
+sys.path.append('../pymod')
 
 import gdaltest
 
 ###############################################################################
 # Perform simple read test.
 
+
 def ida_1():
 
-    tst = gdaltest.GDALTest( 'ida', 'DWI01012.AFC', 1, 4026 )
+    tst = gdaltest.GDALTest('ida', 'DWI01012.AFC', 1, 4026)
     return tst.testOpen()
 
 ###############################################################################
 # Verify some auxiliary data.
 
+
 def ida_2():
 
-    ds = gdal.Open( 'data/DWI01012.AFC' )
+    ds = gdal.Open('data/DWI01012.AFC')
 
     gt = ds.GetGeoTransform()
 
     if gt[0] != -17.875 or gt[1] != 0.25 or gt[2] != 0 \
        or gt[3] != 37.875 or gt[4] != 0 or gt[5] != -0.25:
         print('got: ', gt)
-        gdaltest.post_reason( 'Aaigrid geotransform wrong.' )
+        gdaltest.post_reason('Aaigrid geotransform wrong.')
         return 'fail'
 
     prj = ds.GetProjection()
     if prj != 'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]':
-        gdaltest.post_reason( 'Projection does not match expected:\n%s' % prj )
+        gdaltest.post_reason('Projection does not match expected:\n%s' % prj)
         return 'fail'
 
     band1 = ds.GetRasterBand(1)
     if band1.GetNoDataValue() != 255:
-        gdaltest.post_reason( 'Grid NODATA value wrong or missing.' )
+        gdaltest.post_reason('Grid NODATA value wrong or missing.')
         return 'fail'
 
     if band1.DataType != gdal.GDT_Byte:
-        gdaltest.post_reason( 'Data type is not byte.' )
+        gdaltest.post_reason('Data type is not byte.')
         return 'fail'
 
     return 'success'
@@ -77,20 +79,22 @@ def ida_2():
 ###############################################################################
 # Create simple copy and check.
 
+
 def ida_3():
 
-    tst = gdaltest.GDALTest( 'ida', 'DWI01012.AFC', 1, 4026 )
+    tst = gdaltest.GDALTest('ida', 'DWI01012.AFC', 1, 4026)
 
     prj = 'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9108"]],AXIS["Lat",NORTH],AXIS["Long",EAST],AUTHORITY["EPSG","4326"]]'
 
-    return tst.testCreateCopy( check_gt=0, check_srs=prj, check_minmax=1 )
+    return tst.testCreateCopy(check_gt=0, check_srs=prj, check_minmax=1)
 
 ###############################################################################
 # Test ACEA Projection.
 
+
 def ida_4():
 
-    gdaltest.ida_tst = gdaltest.GDALTest( 'ida', 'DWI01012.AFC', 1, 4026 )
+    gdaltest.ida_tst = gdaltest.GDALTest('ida', 'DWI01012.AFC', 1, 4026)
 
     prj = """PROJCS["unnamed",
     GEOGCS["Clarke 1866",
@@ -106,14 +110,15 @@ def ida_4():
     PARAMETER["false_easting",0],
     PARAMETER["false_northing",0]]"""
 
-    return gdaltest.ida_tst.testSetProjection( prj = prj )
+    return gdaltest.ida_tst.testSetProjection(prj=prj)
 
 ###############################################################################
 # Test Goodes Projection.
 
+
 def ida_5():
 
-    gdaltest.ida_tst = gdaltest.GDALTest( 'ida', 'DWI01012.AFC', 1, 4026 )
+    gdaltest.ida_tst = gdaltest.GDALTest('ida', 'DWI01012.AFC', 1, 4026)
 
     prj = """PROJCS["unnamed",
     GEOGCS["Sphere",
@@ -126,14 +131,15 @@ def ida_5():
     PARAMETER["false_easting",0],
     PARAMETER["false_northing",0]]"""
 
-    return gdaltest.ida_tst.testSetProjection( prj = prj )
+    return gdaltest.ida_tst.testSetProjection(prj=prj)
 
 ###############################################################################
 # Test LCC Projection.
 
+
 def ida_6():
 
-    gdaltest.ida_tst = gdaltest.GDALTest( 'ida', 'DWI01012.AFC', 1, 4026 )
+    gdaltest.ida_tst = gdaltest.GDALTest('ida', 'DWI01012.AFC', 1, 4026)
 
     prj = """PROJCS["unnamed",
     GEOGCS["Clarke 1866",
@@ -149,14 +155,15 @@ def ida_6():
     PARAMETER["false_easting",0],
     PARAMETER["false_northing",0]]"""
 
-    return gdaltest.ida_tst.testSetProjection( prj = prj )
+    return gdaltest.ida_tst.testSetProjection(prj=prj)
 
 ###############################################################################
 # Test LAEA Projection.
 
+
 def ida_7():
 
-    gdaltest.ida_tst = gdaltest.GDALTest( 'ida', 'DWI01012.AFC', 1, 4026 )
+    gdaltest.ida_tst = gdaltest.GDALTest('ida', 'DWI01012.AFC', 1, 4026)
 
     prj = """PROJCS["unnamed",
     GEOGCS["Sphere",
@@ -170,7 +177,8 @@ def ida_7():
     PARAMETER["false_easting",0],
     PARAMETER["false_northing",0]]"""
 
-    return gdaltest.ida_tst.testSetProjection( prj = prj )
+    return gdaltest.ida_tst.testSetProjection(prj=prj)
+
 
 gdaltest_list = [
     ida_1,
@@ -180,15 +188,13 @@ gdaltest_list = [
     ida_5,
     ida_6,
     ida_7
-    ]
-
+]
 
 
 if __name__ == '__main__':
 
-    gdaltest.setup_run( 'ida' )
+    gdaltest.setup_run('ida')
 
-    gdaltest.run_tests( gdaltest_list )
+    gdaltest.run_tests(gdaltest_list)
 
     gdaltest.summarize()
-

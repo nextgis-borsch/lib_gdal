@@ -45,17 +45,17 @@
 #include "ogr_api.h"
 #include "ogr_core.h"
 
-CPL_CVSID("$Id$");
+CPL_CVSID("$Id$")
 
 // The amount of a contour interval that pixels should be fudged by if they
 // match a contour level exactly.
 
-static const double FUDGE_EXACT = 0.001;
+constexpr double FUDGE_EXACT = 0.001;
 
 // The amount of a pixel that line ends need to be within to be considered to
 // match for joining purposes.
 
-static const double JOIN_DIST = 0.0001;
+constexpr double JOIN_DIST = 0.0001;
 
 /************************************************************************/
 /*                           GDALContourItem                            */
@@ -201,13 +201,13 @@ GDAL_CG_Create( int nWidth, int nHeight, int bNoDataSet, double dfNoDataValue,
     if( !poCG->Init() )
     {
         delete poCG;
-        return NULL;
+        return nullptr;
     }
     if( bNoDataSet )
         poCG->SetNoData( dfNoDataValue );
 
     poCG->SetContourLevels( dfContourInterval, dfContourBase );
-    return (GDALContourGeneratorH) poCG;
+    return reinterpret_cast<GDALContourGeneratorH>(poCG);
 }
 
 /************************************************************************/
@@ -250,11 +250,11 @@ GDALContourGenerator::GDALContourGenerator( int nWidthIn, int nHeightIn,
     nWidth(nWidthIn),
     nHeight(nHeightIn),
     iLine(-1),
-    padfLastLine(NULL),
-    padfThisLine(NULL),
+    padfLastLine(nullptr),
+    padfThisLine(nullptr),
     nLevelMax(0),
     nLevelCount(0),
-    papoLevels(NULL),
+    papoLevels(nullptr),
     bNoDataActive(false),
     dfNoDataValue(-1000000.0),
     bFixedLevels(false),
@@ -289,7 +289,7 @@ bool GDALContourGenerator::Init()
         static_cast<double *>(VSI_CALLOC_VERBOSE(sizeof(double), nWidth));
     padfThisLine =
         static_cast<double *>(VSI_CALLOC_VERBOSE(sizeof(double), nWidth));
-    return padfLastLine != NULL && padfThisLine != NULL;
+    return padfLastLine != nullptr && padfThisLine != nullptr;
 }
 
 /************************************************************************/
@@ -715,7 +715,7 @@ CPLErr GDALContourGenerator::AddSegment( double dfLevel,
 
 {
     GDALContourLevel *poLevel = FindLevel( dfLevel );
-    GDALContourItem *poTarget = NULL;
+    GDALContourItem *poTarget = nullptr;
 
 /* -------------------------------------------------------------------- */
 /*      Check all active contours for any that this might attach        */
@@ -770,7 +770,7 @@ CPLErr GDALContourGenerator::FeedLine( double *padfScanline )
 /*      If this is the end of the lines (NULL passed in), copy the      */
 /*      last line.                                                      */
 /* -------------------------------------------------------------------- */
-    if( padfScanline == NULL )
+    if( padfScanline == nullptr )
     {
         memcpy( padfThisLine, padfLastLine, sizeof(double) * nWidth );
     }
@@ -837,12 +837,12 @@ CPLErr GDALContourGenerator::FeedLine( double *padfScanline )
 /* -------------------------------------------------------------------- */
 /*      eject any pending contours.                                     */
 /* -------------------------------------------------------------------- */
-    CPLErr eErr = EjectContours( padfScanline != NULL );
+    CPLErr eErr = EjectContours( padfScanline != nullptr );
 
     iLine++;
 
     if( iLine == nHeight && eErr == CE_None )
-        return FeedLine( NULL );
+        return FeedLine( nullptr );
 
     return eErr;
 }
@@ -891,7 +891,7 @@ CPLErr GDALContourGenerator::EjectContours( int bOnlyUnused )
             // If we didn't merge it, then eject (write) it out.
             if( iC2 == poLevel->GetContourCount() )
             {
-                if( pfnWriter != NULL )
+                if( pfnWriter != nullptr )
                 {
                     // If direction is wrong, then reverse before ejecting.
                     poTarget->PrepareEjection();
@@ -972,7 +972,7 @@ GDALContourLevel::GDALContourLevel( double dfLevelIn ) :
     dfLevel(dfLevelIn),
     nEntryMax(0),
     nEntryCount(0),
-    papoEntries(NULL)
+    papoEntries(nullptr)
 {}
 
 /************************************************************************/
@@ -1147,8 +1147,8 @@ GDALContourItem::GDALContourItem( double dfLevelIn ) :
     dfLevel(dfLevelIn),
     nPoints(0),
     nMaxPoints(0),
-    padfX(NULL),
-    padfY(NULL),
+    padfX(nullptr),
+    padfY(nullptr),
     bLeftIsHigh(false),
     dfTailX(0.0)
 {}
@@ -1460,9 +1460,10 @@ CPLErr OGRContourWriter( double dfLevel,
 {
     OGRContourWriterInfo *poInfo = static_cast<OGRContourWriterInfo *>(pInfo);
 
-    OGRFeatureH hFeat =
-        OGR_F_Create(
-            OGR_L_GetLayerDefn( static_cast<OGRLayerH>(poInfo->hLayer) ));
+    OGRFeatureDefnH hFDefn =
+        OGR_L_GetLayerDefn( static_cast<OGRLayerH>(poInfo->hLayer) );
+
+    OGRFeatureH hFeat = OGR_F_Create( hFDefn );
 
     if( poInfo->nIDField != -1 )
         OGR_F_SetFieldInteger( hFeat, poInfo->nIDField, poInfo->nNextID++ );
@@ -1470,18 +1471,22 @@ CPLErr OGRContourWriter( double dfLevel,
     if( poInfo->nElevField != -1 )
         OGR_F_SetFieldDouble( hFeat, poInfo->nElevField, dfLevel );
 
-    OGRGeometryH hGeom = OGR_G_CreateGeometry( wkbLineString );
+    const bool bHasZ = wkbHasZ(OGR_FD_GetGeomType(hFDefn));
+    OGRGeometryH hGeom = OGR_G_CreateGeometry(
+        bHasZ ? wkbLineString25D : wkbLineString );
 
     for( int iPoint = nPoints - 1; iPoint >= 0; iPoint-- )
     {
-        OGR_G_SetPoint( hGeom, iPoint,
-                        poInfo->adfGeoTransform[0]
+        const double dfX = poInfo->adfGeoTransform[0]
                         + poInfo->adfGeoTransform[1] * padfX[iPoint]
-                        + poInfo->adfGeoTransform[2] * padfY[iPoint],
-                        poInfo->adfGeoTransform[3]
+                        + poInfo->adfGeoTransform[2] * padfY[iPoint];
+        const double dfY = poInfo->adfGeoTransform[3]
                         + poInfo->adfGeoTransform[4] * padfX[iPoint]
-                        + poInfo->adfGeoTransform[5] * padfY[iPoint],
-                        dfLevel );
+                        + poInfo->adfGeoTransform[5] * padfY[iPoint];
+        if( bHasZ )
+            OGR_G_SetPoint( hGeom, iPoint, dfX, dfY, dfLevel );
+        else
+            OGR_G_SetPoint_2D( hGeom, iPoint, dfX, dfY );
     }
 
     OGR_F_SetGeometryDirectly( hFeat, hGeom );
@@ -1642,7 +1647,7 @@ CPLErr GDALContourGenerate( GDALRasterBandH hBand,
 
     OGRContourWriterInfo oCWI;
 
-    if( pfnProgress == NULL )
+    if( pfnProgress == nullptr )
         pfnProgress = GDALDummyProgress;
 
     if( !pfnProgress( 0.0, "", pProgressArg ) )
@@ -1666,7 +1671,7 @@ CPLErr GDALContourGenerate( GDALRasterBandH hBand,
     oCWI.adfGeoTransform[4] = 0.0;
     oCWI.adfGeoTransform[5] = 1.0;
     GDALDatasetH hSrcDS = GDALGetBandDataset( hBand );
-    if( hSrcDS != NULL )
+    if( hSrcDS != nullptr )
         GDALGetGeoTransform( hSrcDS, oCWI.adfGeoTransform );
     oCWI.nNextID = 0;
 
@@ -1695,7 +1700,7 @@ CPLErr GDALContourGenerate( GDALRasterBandH hBand,
 /* -------------------------------------------------------------------- */
     double *padfScanline =
         static_cast<double *>(VSI_MALLOC2_VERBOSE(sizeof(double), nXSize));
-    if( padfScanline == NULL )
+    if( padfScanline == nullptr )
     {
         return CE_Failure;
     }

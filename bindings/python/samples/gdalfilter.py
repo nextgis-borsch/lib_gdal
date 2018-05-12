@@ -34,14 +34,16 @@ gdal.TermProgress = gdal.TermProgress_nocb
 import sys
 import string
 
+
 def Usage():
-    print('Usage: gdalfilter.py [-n] [-size n] [-coefs ...] [-f format] [-co NAME=VALUE]\n' \
+    print('Usage: gdalfilter.py [-n] [-size n] [-coefs ...] [-f format] [-co NAME=VALUE]\n'
           '                     in_file out_file')
     sys.exit(1)
 
 # =============================================================================
 # 	Mainline
 # =============================================================================
+
 
 srcwin = None
 bands = []
@@ -61,30 +63,30 @@ while i < len(sys.argv):
     arg = sys.argv[i]
 
     if arg == '-size':
-        size = int(sys.argv[i+1])
+        size = int(sys.argv[i + 1])
         i = i + 1
 
     elif arg == '-n':
         normalized = 1
 
     elif arg == '-f':
-        out_format = int(sys.argv[i+1])
+        out_format = int(sys.argv[i + 1])
         i = i + 1
 
     elif arg == '-co':
-        create_options.append(sys.argv[i+1])
+        create_options.append(sys.argv[i + 1])
         i = i + 1
 
     elif arg == '-coefs':
         coefs = []
-        for iCoef in range(size*size):
+        for iCoef in range(size * size):
             try:
-                coefs.append( float(sys.argv[iCoef+i+1]) )
+                coefs.append(float(sys.argv[iCoef + i + 1]))
             except:
-                print("Didn't find enough valid kernel coefficients, need ", \
-                      size*size)
+                print("Didn't find enough valid kernel coefficients, need ",
+                      size * size)
                 sys.exit(1)
-        i = i + size*size
+        i = i + size * size
 
     elif srcfile is None:
         srcfile = sys.argv[i]
@@ -109,15 +111,15 @@ else:
 #   Open input file.
 # =============================================================================
 
-src_ds = gdal.Open( srcfile )
+src_ds = gdal.Open(srcfile)
 
 # =============================================================================
 #   Create a virtual file in memory only which matches the configuration of
 #   the input file.
 # =============================================================================
 
-vrt_driver = gdal.GetDriverByName( 'VRT' )
-vrt_ds = vrt_driver.CreateCopy( '', src_ds )
+vrt_driver = gdal.GetDriverByName('VRT')
+vrt_ds = vrt_driver.CreateCopy('', src_ds)
 
 # =============================================================================
 #   Prepare coefficient list.
@@ -127,7 +129,7 @@ coef_list_size = size * size
 if coefs is None:
     coefs = []
     for i in range(coef_list_size):
-        coefs.append( 1.0 / coef_list_size )
+        coefs.append(1.0 / coef_list_size)
 
 coefs_string = ''
 for i in range(coef_list_size):
@@ -138,7 +140,7 @@ for i in range(coef_list_size):
 # =============================================================================
 
 filt_template = \
-'''<KernelFilteredSource>
+    '''<KernelFilteredSource>
   <SourceFilename>%s</SourceFilename>
   <SourceBand>%%d</SourceBand>
   <Kernel normalized="%d">
@@ -148,37 +150,31 @@ filt_template = \
 </KernelFilteredSource>''' % (srcfile, normalized, size, coefs_string)
 
 # =============================================================================
-#	Go through all the bands replacing the SimpleSource with a filtered
+# Go through all the bands replacing the SimpleSource with a filtered
 #       source.
 # =============================================================================
 
 for iBand in range(vrt_ds.RasterCount):
-    band = vrt_ds.GetRasterBand(iBand+1)
+    band = vrt_ds.GetRasterBand(iBand + 1)
 
-    src_xml = filt_template % (iBand+1)
+    src_xml = filt_template % (iBand + 1)
 
-    band.SetMetadata( { 'source_0' : src_xml }, 'vrt_sources' )
+    band.SetMetadata({'source_0': src_xml}, 'vrt_sources')
 
 # =============================================================================
-#	copy the results to a new file.
+# copy the results to a new file.
 # =============================================================================
 
 if out_format == 'VRT':
-    vrt_ds.SetDescription( dstfile )
+    vrt_ds.SetDescription(dstfile)
     vrt_ds = None
     sys.exit(0)
 
-out_driver = gdal.GetDriverByName( out_format )
+out_driver = gdal.GetDriverByName(out_format)
 if out_driver is None:
     print('Output driver %s does not appear to exist.' % out_format)
     sys.exit(1)
 
-out_ds = out_driver.CreateCopy( dstfile, vrt_ds, options = create_options,
-                                callback = gdal.TermProgress )
+out_ds = out_driver.CreateCopy(dstfile, vrt_ds, options=create_options,
+                               callback=gdal.TermProgress)
 out_ds = None
-
-
-
-
-
-
