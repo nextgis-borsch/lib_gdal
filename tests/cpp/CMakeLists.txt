@@ -56,6 +56,12 @@ set(PROGS testperfcopywords testcopywords testclosedondestroydm
     test_c_include_from_cpp_file testsse
 )
 
+if(CMAKE_CL_64 OR UNIX)
+    set(PROGS ${PROGS}
+        testsse
+    )
+endif()
+
 foreach(PROG ${PROGS})
     add_cpp_test_app(${PROG})
 endforeach()
@@ -85,8 +91,6 @@ add_test(NAME quick_test COMMAND testperfcopywords)
 if(APPLE)
     set_tests_properties(quick_test
         PROPERTIES ENVIRONMENT "DO_NOT_FAIL_ON_RECODE_ERRORS=TRUE")
-endif()
-if(APPLE)
     add_test(NAME gdal_unit_test COMMAND gdal_unit_test)
     set_tests_properties(gdal_unit_test
         PROPERTIES ENVIRONMENT "DO_NOT_FAIL_ON_RECODE_ERRORS=TRUE")
