@@ -53,7 +53,7 @@ endif()
 set(PROGS testperfcopywords testcopywords testclosedondestroydm
     testthreadcond testvirtualmem testblockcache testblockcachewrite
     testblockcachelimits testdestroy testmultithreadedwriting
-    test_c_include_from_cpp_file testsse
+    test_c_include_from_cpp_file
 )
 
 if(CMAKE_CL_64 OR UNIX)
