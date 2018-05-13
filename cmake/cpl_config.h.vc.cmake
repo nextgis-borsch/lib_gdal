@@ -114,4 +114,7 @@
 
 #pragma warning(disable: 4786)
 
+/* Define to 1, if your compiler supports long long data type */
+#define HAVE_LONG_LONG 1
+
 /* #define CPL_DISABLE_DLL */
