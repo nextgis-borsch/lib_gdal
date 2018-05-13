@@ -24,8 +24,9 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-CMAKE_DEPENDENT_OPTION(ENABLE_RDA "Build DigitalGlobe Raster Data Access format" ON
-                       "CURL_FOUND" OFF)
+option(ENABLE_RDA "Build DigitalGlobe Raster Data Access format" OFF)
+# CMAKE_DEPENDENT_OPTION(ENABLE_RDA "Build DigitalGlobe Raster Data Access format" ON
+#                        "CURL_FOUND" OFF)
 
 if(ENABLE_RDA)
     set(TARGET_NAME ras_rda)
