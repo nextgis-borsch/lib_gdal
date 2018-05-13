@@ -232,7 +232,7 @@ add_subdirectory(apps)
 if(OSX_FRAMEWORK)
     set(INST_HEADER
         ${CMAKE_CURRENT_SOURCE_DIR}/core/gcore/gdal.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/core/gcore/gdal_version.h
+        ${CMAKE_CURRENT_BINARY_DIR}/core/gcore/gdal_version.h
     )
     add_library(${LIB_NAME} SHARED ${TARGET_OBJECTS} ${INST_HEADER})
     set_target_properties(${LIB_NAME} PROPERTIES

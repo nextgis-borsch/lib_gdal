@@ -38,7 +38,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 # TODO: remove this when change according include path in gdaldataset.cpp
 include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/sqlite)
 
-configure_file(gdal_version.h.in gdal_version.h COPYONLY)
+configure_file(gdal_version.h.in ${CMAKE_CURRENT_BINARY_DIR}/gdal_version.h COPYONLY)
 
 set(LIB_HHEADERS
     gdalexif.h
@@ -46,7 +46,7 @@ set(LIB_HHEADERS
     gdal_mdreader.h
     gdal_proxy.h
     gdal_rat.h
-    gdal_version.h
+    ${CMAKE_CURRENT_BINARY_DIR}/gdal_version.h
     gdal_frmts.h
     gdal_priv.h
     gdaljp2metadata.h
