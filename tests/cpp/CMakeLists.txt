@@ -110,3 +110,6 @@ add_test(NAME testblockcache8 COMMAND testblockcache --config GDAL_BAND_BLOCK_CA
 add_test(NAME testblockcachelimits COMMAND testblockcachelimits --debug ON)
 add_test(NAME testmultithreadedwriting COMMAND testmultithreadedwriting)
 add_test(NAME testdestroy COMMAND testdestroy)
+if(CMAKE_CL_64 OR UNIX)
+    add_test(NAME testsse COMMAND testsse)
+endif()
