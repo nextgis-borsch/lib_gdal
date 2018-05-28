@@ -34,15 +34,15 @@ Go to borsch repository (opt folder) and execute
 
  $ python tools.py organize --src /path_to_gdal_sources/ --dst_name lib_gdal
 
-<!---
 # Build status
 
 | OS | Status  |
 |---|:-:|
-| Windows | ![build status](http://176.9.38.120/buildbot/png?builder=gdal_win) |
-| Ubuntu (packaging) | ![build status](http://176.9.38.120/buildbot/png?builder=gdal_deb) |
-| Ubuntu (packaging dev) | ![build status](http://176.9.38.120/buildbot/png?builder=gdal_debdev) |
--->
+| GDAL Windows 32 | ![build status](https://buildbot.nextgis.com/badges/lib_gdal_win64.svg)
+| GDAL Windows 64 | ![build status](https://buildbot.nextgis.com/badges/lib_gdal_win32.svg)
+| GDAL Mac OS X | ![build status](https://buildbot.nextgis.com/badges/lib_gdal_mac.svg)
+| Ubuntu (packaging) | ![build status](https://buildbot.nextgis.com/badges/lib_gdal_deb.svg) |
+| Ubuntu (packaging dev) | ![build status](https://buildbot.nextgis.com/badges/lib_gdal_debdev.svg) |
 
 # Ubuntu PPA
 
