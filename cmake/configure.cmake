@@ -176,20 +176,6 @@ if(HAVE_SSE_AT_COMPILE_TIME)
     add_definitions(-DHAVE_SSE_AT_COMPILE_TIME)
 endif()
 
-if(WITH_TIFF_EXTERNAL OR BIGTIFF_SUPPORTED)
-    #TODO: check cases then HAVE_BIGTIFF False
-    set(HAVE_BIGTIFF TRUE)
-    # add_definitions(-DTIFFLIB_VERSION_STR=${TIFF_VERSION})
-else()
-    set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${TIFF_INCLUDE_DIR})
-    set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${TIFF_LIBRARIES})
-    check_function_exists(TIFFScanlineSize64 HAVE_BIGTIFF)
-endif()
-
-if(HAVE_BIGTIFF)
-    add_definitions(-DBIGTIFF_SUPPORT)
-endif()
-
 if(WIN32)
 # windows
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -W4 -wd4127 -wd4251 -wd4275 -wd4786 -wd4100 -wd4245 -wd4206 -wd4018 -wd4389")

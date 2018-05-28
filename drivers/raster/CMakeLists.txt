@@ -26,6 +26,22 @@
 ################################################################################
 
 find_anyproject(TIFF REQUIRED CMAKE_ARGS -DSKIP_BUILD_DOCS=ON)
+if(WITH_TIFF_EXTERNAL OR BIGTIFF_SUPPORTED)
+    #TODO: check cases then HAVE_BIGTIFF False
+    set(HAVE_BIGTIFF TRUE)
+    # add_definitions(-DTIFFLIB_VERSION_STR=${TIFF_VERSION})
+else()
+    set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${TIFF_INCLUDE_DIR})
+    set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${TIFF_LIBRARIES})
+    check_function_exists(TIFFScanlineSize64 HAVE_BIGTIFF)
+endif()
+
+if(HAVE_BIGTIFF)
+    add_definitions(-DBIGTIFF_SUPPORT)
+else()
+    warning_msg("BigTIFF is not supported")
+endif()
+
 find_anyproject(GeoTIFF VERSION 1.2.1 REQUIRED)
 find_anyproject(JPEG DEFAULT ON)
 if(JPEG_FOUND)
