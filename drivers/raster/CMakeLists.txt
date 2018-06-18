@@ -25,7 +25,7 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-find_anyproject(TIFF REQUIRED CMAKE_ARGS -DSKIP_BUILD_DOCS=ON)
+find_anyproject(TIFF REQUIRED CMAKE_ARGS -DSKIP_BUILD_DOCS=ON -DSKIP_TOOLS=ON)
 if(WITH_TIFF_EXTERNAL OR BIGTIFF_SUPPORTED)
     #TODO: check cases then HAVE_BIGTIFF False
     set(HAVE_BIGTIFF TRUE)
