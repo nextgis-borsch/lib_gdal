@@ -144,7 +144,7 @@ function(find_extproject name)
             if(TARGET ${TARGETG})
                 set_target_properties(${TARGETG} PROPERTIES IMPORTED_GLOBAL TRUE)
             endif()
-        endforeach() 
+        endforeach()
         return()
     endif()
 
@@ -437,9 +437,9 @@ function(find_extproject name)
 
     # On static build we need all targets in TARGET_LINK_LIB
     if(ALT_UPPER_NAME)
-        set(EXPORTS_PATHS "${EXPORTS_PATHS} ${EXT_BINARY_DIR}/${ALT_UPPER_NAME}Targets.cmake" PARENT_SCOPE)
+        set(EXPORTS_PATHS ${EXPORTS_PATHS} ${EXT_BINARY_DIR}/${ALT_UPPER_NAME}Targets.cmake PARENT_SCOPE)
     else()
-        set(EXPORTS_PATHS "${EXPORTS_PATHS} ${EXT_BINARY_DIR}/${UPPER_NAME}Targets.cmake" PARENT_SCOPE)
+        set(EXPORTS_PATHS ${EXPORTS_PATHS} ${EXT_BINARY_DIR}/${UPPER_NAME}Targets.cmake PARENT_SCOPE)
     endif()
 
     # For static builds we need all libraries list in main project.

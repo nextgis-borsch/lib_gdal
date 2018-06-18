@@ -159,7 +159,6 @@ function(find_anyproject name)
             set(Qt5_LUPDATE_EXECUTABLE Qt5::lupdate PARENT_SCOPE)
             set(Qt5Widgets_UIC_EXECUTABLE Qt5::uic PARENT_SCOPE)
             set(Qt5Core_RCC_EXECUTABLE Qt5::rcc PARENT_SCOPE)
-            set(Qt5Core_MOC_EXECUTABLE Qt5::moc PARENT_SCOPE)
 
             if(${UPPER_NAME}_LIBRARIES)
                 set(${UPPER_NAME}_LIBRARIES ${${UPPER_NAME}_LIBRARIES} CACHE INTERNAL "library ${name}")
