@@ -25,7 +25,10 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-find_anyproject(TIFF REQUIRED CMAKE_ARGS -DSKIP_BUILD_DOCS=ON -DSKIP_TOOLS=ON)
+find_anyproject(TIFF REQUIRED CMAKE_ARGS
+    -DSKIP_BUILD_DOCS=ON
+    -DSKIP_TOOLS=ON
+)
 if(WITH_TIFF_EXTERNAL OR BIGTIFF_SUPPORTED)
     #TODO: check cases then HAVE_BIGTIFF False
     set(HAVE_BIGTIFF TRUE)
@@ -42,7 +45,10 @@ else()
     warning_msg("BigTIFF is not supported")
 endif()
 
-find_anyproject(GeoTIFF VERSION 1.2.1 REQUIRED)
+find_anyproject(GeoTIFF VERSION 1.2.1 REQUIRED CMAKE_ARGS
+    -DBUILD_TESTING=OFF
+    -DWITH_UTILITIES=OFF
+)
 find_anyproject(JPEG DEFAULT ON)
 if(JPEG_FOUND)
     add_definitions(-DJPEG_SUPPORTED)
