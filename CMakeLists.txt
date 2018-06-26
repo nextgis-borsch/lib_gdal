@@ -262,14 +262,15 @@ set_target_properties(${LIB_NAME} PROPERTIES CLEAN_DIRECT_OUTPUT 1)
 
 set(INSTALL_TARGETS ${INSTALL_TARGETS} ${LIB_NAME})
 
-set(_symbols "GDAL_1.8 { global: *; };")
-set(_version_script "${CMAKE_CURRENT_BINARY_DIR}/version.script")
-file(WRITE ${_version_script} "${_symbols}\n")
-
-if (CMAKE_CXX_COMPILER_ID STREQUAL GNU)
-	# Create a version script for the GNU ld.
-	set(LINK_FLAGS "${LINK_FLAGS} -Wl,-Bsymbolic -Wl,--version-script,\"${_version_script}\"")
-endif ()
+# Test for ligio_gdal in saga
+# set(_symbols "GDAL_1.8 { global: *; };")
+# set(_version_script "${CMAKE_CURRENT_BINARY_DIR}/version.script")
+# file(WRITE ${_version_script} "${_symbols}\n")
+#
+# if (CMAKE_CXX_COMPILER_ID STREQUAL GNU)
+# 	# Create a version script for the GNU ld.
+# 	set(LINK_FLAGS "${LINK_FLAGS} -Wl,-Bsymbolic -Wl,--version-script,\"${_version_script}\"")
+# endif ()
 
 if(BUILD_SHARED_LIBS OR OSX_FRAMEWORK)
     if(WIN32)
