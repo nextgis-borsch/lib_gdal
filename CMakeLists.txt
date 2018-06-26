@@ -291,9 +291,9 @@ if(UNIX)
         LINK_FLAGS "${LINK_FLAGS}"
         OUTPUT_NAME ${PROJECT_NAME})
     # Add Apple staff
-    if(NOT APPLE AND BUILD_SHARED_LIBS)
-        set_target_properties(${LIB_NAME} PROPERTIES LINK_FLAGS "-Wl,--version-script,\"${_version_script}\"")
-    endif()
+    # if(NOT APPLE AND BUILD_SHARED_LIBS)
+    #     set_target_properties(${LIB_NAME} PROPERTIES LINK_FLAGS "-Wl,--version-script,\"${_version_script}\"")
+    # endif()
 elseif(BUILD_SHARED_LIBS AND WIN32)
     set_target_properties(${LIB_NAME} PROPERTIES SUFFIX "${LIB_VERSION}.dll")
 endif()
