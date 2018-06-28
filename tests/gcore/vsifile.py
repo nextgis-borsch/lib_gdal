@@ -758,6 +758,30 @@ def vsifile_19():
 
     return 'success'
 
+###############################################################################
+# Test gdal.VSIFReadL with None fp
+
+
+def vsifile_20():
+
+    try:
+        gdal.VSIFReadL(1, 1, None)
+    except ValueError:
+        return 'success'
+
+    return 'fail'
+
+###############################################################################
+# Test bugfix for https://github.com/OSGeo/gdal/issues/675
+
+
+def vsitar_bug_675():
+
+    content = gdal.ReadDir('/vsitar/data/tar_with_star_base256_fields.tar')
+    if len(content) != 1:
+        print(content)
+        return 'fail'
+    return 'success'
 
 gdaltest_list = [vsifile_1,
                  vsifile_2,
@@ -777,7 +801,9 @@ gdaltest_list = [vsifile_1,
                  vsifile_16,
                  vsifile_17,
                  vsifile_18,
-                 vsifile_19]
+                 vsifile_19,
+                 vsifile_20,
+                 vsitar_bug_675]
 
 if __name__ == '__main__':
 

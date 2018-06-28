@@ -1519,18 +1519,9 @@ OGRErr OGRGeoPackageTableLayer::CreateGeomField( OGRGeomFieldDefn *poGeomFieldIn
 /*                      DisableFeatureCount()                           */
 /************************************************************************/
 
-void OGRGeoPackageTableLayer::DisableFeatureCount(bool bInMemoryOnly)
+void OGRGeoPackageTableLayer::DisableFeatureCount()
 {
     m_nTotalFeatureCount = -1;
-    if( !bInMemoryOnly && m_poDS->m_bHasGPKGOGRContents )
-    {
-        char* pszSQL = sqlite3_mprintf(
-            "UPDATE gpkg_ogr_contents SET feature_count = NULL WHERE "
-            "lower(table_name )= lower('%q')",
-            m_pszTableName);
-        SQLCommand(m_poDS->GetDB(), pszSQL);
-        sqlite3_free(pszSQL);
-    }
 }
 
 /************************************************************************/
@@ -1862,7 +1853,7 @@ OGRErr OGRGeoPackageTableLayer::ISetFeature( OGRFeature *poFeature )
             CPLString osCommand = FeatureGenerateInsertSQL(poFeature, true, true);
 
             /* Prepare the SQL into a statement */
-            int err = sqlite3_prepare_v2(m_poDS->GetDB(), osCommand, -1, &m_poUpdateStatement, NULL);
+            int err = sqlite3_prepare_v2(m_poDS->GetDB(), osCommand, -1, &m_poUpdateStatement, nullptr);
             if ( err != SQLITE_OK )
             {
                 CPLError( CE_Failure, CPLE_AppDefined,

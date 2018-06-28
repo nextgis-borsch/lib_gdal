@@ -29,7 +29,7 @@
 
 #include "ogr_dxf.h"
 #include "cpl_conv.h"
-#include "gdallinearsystem.h"
+#include "alg/gdallinearsystem.h"
 #include <stdexcept>
 #include <algorithm>
 
@@ -263,7 +263,7 @@ OGRDXFFeature *OGRDXFLayer::TranslateLEADER()
 /*      additional vertex, so we need to create it ourselves.           */
 /* -------------------------------------------------------------------- */
 
-    if( bWantExtension && bHasTextAnnotation && nNumVertices >= 2 )
+    if( bWantExtension && bHasTextAnnotation && poLine->getNumPoints() >= 2 )
     {
         OGRPoint oLastVertex;
         poLine->getPoint( poLine->getNumPoints() - 1, &oLastVertex );

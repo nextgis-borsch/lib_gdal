@@ -112,6 +112,20 @@ OGRFeature* OGRXLSXLayer::GetNextFeature()
     return poFeature;
 }
 
+OGRErr OGRXLSXLayer::CreateField( OGRFieldDefn *poField, int bApproxOK )
+{
+    Init();
+    // BuildColString() takes a 4 character string + nul byte
+    if( GetLayerDefn()->GetFieldCount() >= 2000 )
+    {
+        CPLError(CE_Failure, CPLE_AppDefined,
+                 "Maximum number of fields supported is 2000");
+        return OGRERR_FAILURE;
+    }
+    SetUpdated();
+    return OGRMemLayer::CreateField(poField, bApproxOK);
+}
+
 /************************************************************************/
 /*                           GetFeature()                               */
 /************************************************************************/
@@ -701,7 +715,10 @@ void OGRXLSXDataSource::endElementTable(CPL_UNUSED const char *pszNameIn)
                                                      eSubType);
                 OGRFieldDefn oFieldDefn(pszFieldName, eType);
                 oFieldDefn.SetSubType(eSubType);
-                poCurLayer->CreateField(&oFieldDefn);
+                if( poCurLayer->CreateField(&oFieldDefn) != OGRERR_NONE )
+                {
+                    return;
+                }
             }
 
             OGRFeature* poFeature = new OGRFeature(poCurLayer->GetLayerDefn());
@@ -869,7 +886,10 @@ void OGRXLSXDataSource::endElementRow(CPL_UNUSED const char *pszNameIn)
                     }
                     OGRFieldDefn oFieldDefn(pszFieldName, eType);
                     oFieldDefn.SetSubType(eSubType);
-                    poCurLayer->CreateField(&oFieldDefn);
+                    if( poCurLayer->CreateField(&oFieldDefn) != OGRERR_NONE )
+                    {
+                        return;
+                    }
                 }
             }
             else
@@ -885,7 +905,10 @@ void OGRXLSXDataSource::endElementRow(CPL_UNUSED const char *pszNameIn)
                                             eSubType);
                     OGRFieldDefn oFieldDefn(pszFieldName, eType);
                     oFieldDefn.SetSubType(eSubType);
-                    poCurLayer->CreateField(&oFieldDefn);
+                    if( poCurLayer->CreateField(&oFieldDefn) != OGRERR_NONE )
+                    {
+                        return;
+                    }
                 }
 
                 OGRFeature* poFeature = new OGRFeature(poCurLayer->GetLayerDefn());
@@ -929,7 +952,10 @@ void OGRXLSXDataSource::endElementRow(CPL_UNUSED const char *pszNameIn)
                                                 eSubType);
                     OGRFieldDefn oFieldDefn(pszFieldName, eType);
                     oFieldDefn.SetSubType(eSubType);
-                    poCurLayer->CreateField(&oFieldDefn);
+                    if( poCurLayer->CreateField(&oFieldDefn) != OGRERR_NONE )
+                    {
+                        return;
+                    }
                 }
             }
 
@@ -1419,7 +1445,10 @@ void OGRXLSXDataSource::startElementWBCbk(const char *pszNameIn,
                 return;
             if( oMapRelsIdToTarget[pszId][0] == '/' )
             {
-                if( oMapRelsIdToTarget[pszId][1] == '\0' )
+                int nIdx = 1;
+                while( oMapRelsIdToTarget[pszId][nIdx] == '/' )
+                    nIdx ++;
+                if( oMapRelsIdToTarget[pszId][nIdx] == '\0' )
                     return;
                 // Is it an "absolute" path ?
                 osFilename = osPrefixedFilename +
