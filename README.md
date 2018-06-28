@@ -146,7 +146,7 @@ with '\*' have high priority to be implemented.
 | rasdaman | no |  |  |
 | **rasterlite** | **yes** | Optionally: [SPATIALITE](https://github.com/nextgis-borsch/lib_spatialite)? | Requires built sqlite driver |
 | **raw** | **yes** | no | Obligatory for building GDAL |
-| **rda** | **yes** | no | - |
+| **rda** | **yes** | [CURL](https://github.com/nextgis-borsch/lib_curl) | - |
 | **rik** | **yes** | no | - |
 | **rmf** | **yes** | no | - |
 | **rs2** | **yes** | no | - |
@@ -175,7 +175,7 @@ Available vector drivers for now (by all driver directories in sources). Drivers
 | Driver | CMaked | External dependencies | Notes |
 |---|:-:|---|---|
 | **aeronavfaa** | **yes** | no | - |
-| amigocloud | no |  |  |
+| amigocloud | no | [CURL](https://github.com/nextgis-borsch/lib_curl) |  |
 | **arcgen** | **yes** | no | - |
 | arcobjects | no |  |  |
 | **avc** | **yes** | no | 2 drivers in one (AVCBin, AVCE00) |
