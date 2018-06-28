@@ -123,6 +123,7 @@ with '\*' have high priority to be implemented.
 | **map** | **yes** | no | - |
 | **mbtiles** | **yes** | Optionally: [ZLIB](https://github.com/nextgis-borsch/lib_z)? | Requires built sqlite driver; Requires some other drivers? |
 | **mem** | **yes** | no | Obligatory for building GDAL |
+| **mrf** | **yes** | [JPEG, JPEG12](https://github.com/nextgis-borsch/lib_jpeg), [TIFF](https://github.com/nextgis-borsch/lib_tiff), [PNG](https://github.com/nextgis-borsch/lib_png) | |
 | **mrsid** | **yes** |  | Only Windows yet (need library repository update) |
 | mrsid_lidar * | no |  |  |
 | msg | no |  |  |
@@ -220,9 +221,10 @@ Available vector drivers for now (by all driver directories in sources). Drivers
 | mongodb * | no |  |  |
 | mssqlspatial * | no |  |  |
 | mysql * | no |  |  |
+| **mvt** | **yes** | [SQLITE3](https://github.com/nextgis-borsch/lib_sqlite) |  |
 | nas | no |  |  |
 | **ntf** | **yes** | no | No additional build targets implemented |
-| null | no |  |  |
+| **null** | **yes** |  |  |
 | oci | no |  |  |
 | odbc | no |  |  |
 | **ods** | **yes** | [EXPAT](https://github.com/nextgis-borsch/lib_expat) | No additional build targets implemented - workaround of gcc bug |

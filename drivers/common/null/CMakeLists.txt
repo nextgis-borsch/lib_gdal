@@ -26,7 +26,7 @@
 ################################################################################
 
 option(ENABLE_NULL "Build null driver format" ON)
-if(ENABLE_CAD)
+if(ENABLE_NULL)
     set(TARGET_NAME com_null)
 
     add_definitions(-DFRMT_null)
