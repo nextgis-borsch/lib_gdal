@@ -146,6 +146,7 @@ with '\*' have high priority to be implemented.
 | rasdaman | no |  |  |
 | **rasterlite** | **yes** | Optionally: [SPATIALITE](https://github.com/nextgis-borsch/lib_spatialite)? | Requires built sqlite driver |
 | **raw** | **yes** | no | Obligatory for building GDAL |
+| **rda** | **yes** | no | - |
 | **rik** | **yes** | no | - |
 | **rmf** | **yes** | no | - |
 | **rs2** | **yes** | no | - |
@@ -174,6 +175,7 @@ Available vector drivers for now (by all driver directories in sources). Drivers
 | Driver | CMaked | External dependencies | Notes |
 |---|:-:|---|---|
 | **aeronavfaa** | **yes** | no | - |
+| amigocloud | no |  |  |
 | **arcgen** | **yes** | no | - |
 | arcobjects | no |  |  |
 | **avc** | **yes** | no | 2 drivers in one (AVCBin, AVCE00) |
@@ -279,4 +281,4 @@ Available network (GNM) drivers for now (by all driver directories in sources):
 
 Fresh GDAL build are available in Ubuntu Launchpad - https://launchpad.net/~nextgis/+archive/ubuntu/ppa/+packages
 
-Version 2.3.0
+Version 2.3.1
