@@ -36,11 +36,19 @@ function(get_binary_package repo repo_type exact_version download_url name)
 
     if(repo_type STREQUAL "github") # TODO: Add gitlab here.
         if(NOT EXISTS ${CMAKE_BINARY_DIR}/${repo}_latest.json)
-            file(DOWNLOAD
-                https://api.github.com/repos/${repo}/releases/latest
-                ${CMAKE_BINARY_DIR}/${repo}_latest.json
-                TLS_VERIFY OFF
-            )
+            if(exact_version)
+                file(DOWNLOAD
+                    https://api.github.com/repos/${repo}/releases/tags/v${exact_version}
+                    ${CMAKE_BINARY_DIR}/${repo}_latest.json
+                    TLS_VERIFY OFF
+                )
+            else()
+                file(DOWNLOAD
+                    https://api.github.com/repos/${repo}/releases/latest
+                    ${CMAKE_BINARY_DIR}/${repo}_latest.json
+                    TLS_VERIFY OFF
+                )
+            endif()
         endif()
         # Get assets files.
         file(READ ${CMAKE_BINARY_DIR}/${repo}_latest.json _JSON_CONTENTS)
@@ -55,7 +63,7 @@ function(get_binary_package repo repo_type exact_version download_url name)
             if(exact_version)
                 string(FIND ${api_request.assets_${asset_id}.browser_download_url} "${STATIC_PREFIX}${exact_version}-${COMPILER}.zip" IS_FOUND)
             else()
-                string(FIND ${api_request.assets_${asset_id}.browser_download_url} "${STATIC_PREFIX}${COMPILER}.zip" IS_FOUND)
+                string(FIND ${api_request.assets_${asset_id}.browser_download_url} "${COMPILER}.zip" IS_FOUND)
             endif()
             if(IS_FOUND GREATER 0)
                 color_message("Found binary package ${api_request.assets_${asset_id}.browser_download_url}")

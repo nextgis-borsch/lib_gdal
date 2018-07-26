@@ -182,6 +182,7 @@ find_anyproject(LibLZMA)
 
 find_anyproject(SQLite3 CMAKE_ARGS -DENABLE_COLUMN_METADATA=ON)
 if(SQLITE3_FOUND)
+    add_definitions(-DHAVE_SQLITE=1)
     option(ENABLE_SQLITE_GPKG "Build SQLite & GeoPackage (raster + vector) formats" ON)
     if(ENABLE_SQLITE_GPKG)
         add_definitions(-DSQLITE_ENABLED)
