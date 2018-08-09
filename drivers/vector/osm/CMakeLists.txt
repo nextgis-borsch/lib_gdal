@@ -56,10 +56,10 @@ if(ENABLE_OSM)
         ogrosmdatasource.cpp
         ogrosmlayer.cpp
         osm_parser.cpp
-        osm2osm.cpp
     )
 
     # TODO: implement osm2osm target if needed.
+    # osm2osm.cpp
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
 
