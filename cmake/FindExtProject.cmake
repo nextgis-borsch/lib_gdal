@@ -130,7 +130,6 @@ function(find_extproject name)
         else()
             set(CMAKE_PREFIX_PATH ${EXT_INSTALL_DIR}/${BINARY_NAME})
         endif()
-        message("CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
 
         if(find_extproject_COMPONENTS)
             set(FIND_PROJECT_ARG ${FIND_PROJECT_ARG} COMPONENTS ${find_extproject_COMPONENTS})
