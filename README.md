@@ -225,7 +225,7 @@ Available vector drivers for now (by all driver directories in sources). Drivers
 | nas | no |  |  |
 | **ntf** | **yes** | no | No additional build targets implemented |
 | **null** | **yes** |  |  |
-| oci | no |  |  |
+| **oci** | **yes** | [OCI](https://github.com/nextgis-borsch/lib_oci) | - |
 | odbc | no |  |  |
 | **ods** | **yes** | [EXPAT](https://github.com/nextgis-borsch/lib_expat) | No additional build targets implemented - workaround of gcc bug |
 | ogdi | no |  |  |
