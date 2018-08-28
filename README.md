@@ -91,7 +91,7 @@ with '\*' have high priority to be implemented.
 | **ers** | **yes** | no | No additional build targets implemented |
 | **fit** | **yes** | no | - |
 | fits | no |  |  |
-| georaster | no |  |  |
+| **georaster** | **yes** | [OCI](https://github.com/nextgis-borsch/lib_oci) | - |
 | **gff** | **yes** | no | - |
 | **gif** | **yes** | [GIF](https://github.com/nextgis-borsch/lib_gif) | Russian maps in internet are in gif and OZI |
 | grass * | no |  |  |
