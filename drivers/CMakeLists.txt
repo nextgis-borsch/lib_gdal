@@ -46,6 +46,8 @@ if(SPATIALITE_FOUND)
     endif()
 endif()
 
+find_anyproject(OCI DEFAULT ON)
+
 add_subdirectory(raster)
 add_subdirectory(vector)
 add_subdirectory(common)

@@ -26,10 +26,8 @@
 ################################################################################
 
 option(ENABLE_OCI "Build Oracle spatial format" OFF)
-if(ENABLE_OCI)
+if(ENABLE_OCI AND OCI_FOUND)
     set(TARGET_NAME vec_oci)
-
-    find_anyproject(OCI REQUIRED)
 
     add_definitions(-DOCI_ENABLED)
     set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DOCI_ENABLED" PARENT_SCOPE)
