@@ -29,7 +29,7 @@ option(ENABLE_SHAPE "Build ESRI Shapefile Format" ON)
 if(ENABLE_SHAPE)
     set(TARGET_NAME vec_shape)
 
-    add_definitions(-DSHAPE_ENABLED)
+    add_definitions(-DSHAPE_ENABLED -DSAOffset=vsi_l_offset -DUSE_CPL)
 	set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DSHAPE_ENABLED" PARENT_SCOPE)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
@@ -47,7 +47,7 @@ if(ENABLE_SHAPE)
     set(LIB_CSOURCES
         dbfopen_wrapper.c
         shpopen_wrapper.c
-        shptree_wrapper.c	
+        shptree_wrapper.c
         shp_vsi.c
         ogrshapedatasource.cpp
         ogrshapedriver.cpp
