@@ -29,6 +29,7 @@
 
 #include "cpl_conv.h"
 #include "ogr_mssqlspatial.h"
+#include "ogr_p.h"
 #ifdef SQLNCLI_VERSION
 #include <sqlncli.h>
 #endif
@@ -1034,7 +1035,7 @@ OGRErr OGRMSSQLSpatialTableLayer::ISetFeature( OGRFeature *poFeature )
             int nWKBLen = poGeom->WkbSize();
             GByte *pabyWKB = (GByte *) CPLMalloc(nWKBLen + 1);
 
-            if( poGeom->exportToWkb( wkbNDR, pabyWKB ) == OGRERR_NONE && (nGeomColumnType == MSSQLCOLTYPE_GEOMETRY
+            if( poGeom->exportToWkb( wkbNDR, pabyWKB, wkbVariantIso ) == OGRERR_NONE && (nGeomColumnType == MSSQLCOLTYPE_GEOMETRY
                 || nGeomColumnType == MSSQLCOLTYPE_GEOGRAPHY))
             {
                 nWKBLenBindParameter = nWKBLen;
@@ -2111,7 +2112,7 @@ OGRErr OGRMSSQLSpatialTableLayer::ICreateFeature( OGRFeature *poFeature )
                 int nWKBLen = poGeom->WkbSize();
                 GByte *pabyWKB = (GByte *) CPLMalloc(nWKBLen + 1);
 
-                if( poGeom->exportToWkb( wkbNDR, pabyWKB ) == OGRERR_NONE && (nGeomColumnType == MSSQLCOLTYPE_GEOMETRY
+                if( poGeom->exportToWkb( wkbNDR, pabyWKB, wkbVariantIso ) == OGRERR_NONE && (nGeomColumnType == MSSQLCOLTYPE_GEOMETRY
                     || nGeomColumnType == MSSQLCOLTYPE_GEOGRAPHY))
                 {
                     nWKBLenBindParameter = nWKBLen;
@@ -2301,6 +2302,33 @@ void OGRMSSQLSpatialTableLayer::AppendFieldValue(CPLODBCStatement *poStatement,
         return;
     }
 
+    // Datetime values need special handling as SQL Server's datetime type
+    // accepts values only in ISO 8601 format and only without time zone
+    // information
+    else if( nOGRFieldType == OFTDateTime )
+    {
+        char *pszStrValue = OGRGetXMLDateTime( (*poFeature)[i].GetRawValue() );
+
+        int nRetCode = SQLBindParameter( poStatement->GetStatement(),
+            (SQLUSMALLINT)((*bind_num) + 1), SQL_PARAM_INPUT, SQL_C_CHAR,
+            SQL_VARCHAR, strlen(pszStrValue) + 1, 0, (SQLPOINTER)pszStrValue,
+            0, nullptr );
+        if( nRetCode == SQL_SUCCESS || nRetCode == SQL_SUCCESS_WITH_INFO )
+        {
+            bind_buffer[*bind_num] = pszStrValue;
+            ++(*bind_num);
+            poStatement->Append(
+                "CAST(CAST(? AS datetimeoffset) AS datetime)" );
+        }
+        else {
+            poStatement->Append(
+                CPLSPrintf( "CAST(CAST('%s' AS datetimeoffset) AS datetime)",
+                    pszStrValue ) );
+            CPLFree( pszStrValue );
+        }
+        return;
+    }
+
     // Flag indicating NULL or not-a-date date value
     // e.g. 0000-00-00 - there is no year 0
     OGRBoolean bIsDateNull = FALSE;
@@ -2344,6 +2372,13 @@ void OGRMSSQLSpatialTableLayer::AppendFieldValue(CPLODBCStatement *poStatement,
                           "String data truncation applied on field: %s. Use a more recent ODBC driver that supports handling large string values.", poFeatureDefn->GetFieldDefn(i)->GetNameRef() );
 #endif
             }
+#if WCHAR_MAX > 0xFFFFu
+            // Shorten each character to a two-byte value, as expected by
+            // the ODBC driver
+            GUInt16 *panBuffer = reinterpret_cast<GUInt16 *>(buffer);
+            for( unsigned int nIndex = 1; nIndex < nLen; nIndex += 1 )
+                panBuffer[nIndex] = static_cast<GUInt16>(buffer[nIndex]);
+#endif
             int nRetCode = SQLBindParameter(poStatement->GetStatement(), (SQLUSMALLINT)((*bind_num) + 1),
                 SQL_PARAM_INPUT, SQL_C_WCHAR, SQL_WVARCHAR, nLen, 0, (SQLPOINTER)buffer, 0, nullptr);
             if ( nRetCode == SQL_SUCCESS || nRetCode == SQL_SUCCESS_WITH_INFO )

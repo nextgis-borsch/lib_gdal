@@ -35,6 +35,7 @@ if(ENABLE_SQLITE_GPKG)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
     include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/sqlite)
     include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/mem)
+    include_directories(${CMAKE_SOURCE_DIR}/drivers/raster)
     include_directories(${SQLITE3_INCLUDE_DIRS})
 
     set(LIB_HHEADERS

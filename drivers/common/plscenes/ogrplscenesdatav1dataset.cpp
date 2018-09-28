@@ -552,7 +552,7 @@ retry:
         CPLString osActivate = json_object_get_string(poActivate);
         poLocation = nullptr;
         json_object_put(poObj);
-        poObj = RunRequest( osActivate, FALSE, "POST", false );
+        poObj = RunRequest( osActivate, FALSE, "GET", false );
         if( poObj != nullptr )
             json_object_put(poObj);
         poObj = nullptr;
@@ -577,7 +577,10 @@ retry:
         CPLFetchBool(poOpenInfo->papszOpenOptions, "RANDOM_ACCESS", true);
     if( bUseVSICURL && !(STARTS_WITH(m_osBaseURL, "/vsimem/")) )
     {
-        CPLString osTmpURL("/vsicurl/use_head=no,max_retry=3,empty_dir=yes,url=" + osRasterURL);
+        char* pszEscapedURL = CPLEscapeString(osRasterURL, -1, CPLES_URL);
+        CPLString osTmpURL("/vsicurl?use_head=no&max_retry=3&empty_dir=yes&url=");
+        osTmpURL += pszEscapedURL;
+        CPLFree(pszEscapedURL);
         CPLDebug("PLSCENES", "URL = %s", osTmpURL.c_str());
 
         VSIStatBufL sStat;

@@ -923,7 +923,7 @@ GDALDatasetH GDALTranslate( const char *pszDest, GDALDatasetH hSrcDataset,
         && bSpatialArrangementPreserved
         && psOptions->nGCPCount == 0 && !bGotBounds
         && psOptions->pszOutputSRS == nullptr && !psOptions->bSetNoData && !psOptions->bUnsetNoData
-        && psOptions->nRGBExpand == 0 && !psOptions->bStats && !psOptions->bNoRAT
+        && psOptions->nRGBExpand == 0 && !psOptions->bNoRAT
         && psOptions->panColorInterp == nullptr )
     {
 
@@ -950,6 +950,21 @@ GDALDatasetH GDALTranslate( const char *pszDest, GDALDatasetH hSrcDataset,
             }
         }
 
+/* -------------------------------------------------------------------- */
+/*      Compute stats if required.                                      */
+/* -------------------------------------------------------------------- */
+        if (psOptions->bStats)
+        {
+            GDALDataset* poSrcDS = GDALDataset::FromHandle(hSrcDataset);
+            for( int i = 0; i < poSrcDS->GetRasterCount(); i++ )
+            {
+                double dfMin, dfMax, dfMean, dfStdDev;
+                poSrcDS->GetRasterBand(i+1)->ComputeStatistics(
+                    psOptions->bApproxStats,
+                    &dfMin, &dfMax, &dfMean, &dfStdDev,
+                    GDALDummyProgress, nullptr );
+            }
+        }
 
         hOutDS = GDALCreateCopy( hDriver, pszDest, hSrcDataset,
                                  psOptions->bStrict, psOptions->papszCreateOptions,
@@ -958,6 +973,13 @@ GDALDatasetH GDALTranslate( const char *pszDest, GDALDatasetH hSrcDataset,
 
         GDALTranslateOptionsFree(psOptions);
         return hOutDS;
+    }
+
+    if( CSLFetchNameValue(psOptions->papszCreateOptions, "COPY_SRC_OVERVIEWS") )
+    {
+        CPLError(CE_Warning, CPLE_AppDefined,
+                 "General options of gdal_translate make the "
+                 "COPY_SRC_OVERVIEWS creation option ineffective");
     }
 
 /* -------------------------------------------------------------------- */
@@ -1216,6 +1238,10 @@ GDALDatasetH GDALTranslate( const char *pszDest, GDALDatasetH hSrcDataset,
     double adfDstWin[4] =
         {0.0, 0.0, static_cast<double>(nOXSize), static_cast<double>(nOYSize)};
 
+    double adfSrcWinOri[4];
+    static_assert(sizeof(adfSrcWinOri) == sizeof(psOptions->adfSrcWin),
+                  "inconsistent adfSrcWin size");
+    memcpy(adfSrcWinOri, psOptions->adfSrcWin, sizeof(psOptions->adfSrcWin));
     FixSrcDstWindow( psOptions->adfSrcWin, adfDstWin,
                      GDALGetRasterXSize(hSrcDataset),
                      GDALGetRasterYSize(hSrcDataset) );
@@ -1223,7 +1249,7 @@ GDALDatasetH GDALTranslate( const char *pszDest, GDALDatasetH hSrcDataset,
 /* -------------------------------------------------------------------- */
 /*      Transfer generally applicable metadata.                         */
 /* -------------------------------------------------------------------- */
-    GDALDataset* poSrcDS = reinterpret_cast<GDALDataset*>(hSrcDataset);
+    GDALDataset* poSrcDS = GDALDataset::FromHandle(hSrcDataset);
     char** papszMetadata = CSLDuplicate(poSrcDS->GetMetadata());
     if ( psOptions->nScaleRepeat > 0 || psOptions->bUnscale || psOptions->eOutputType != GDT_Unknown )
     {
@@ -1310,11 +1336,11 @@ GDALDatasetH GDALTranslate( const char *pszDest, GDALDatasetH hSrcDataset,
             double dfSAMP_SCALE = CPLAtof(CSLFetchNameValueDef(papszMD, "SAMP_SCALE", "1"));
             double dfLINE_SCALE = CPLAtof(CSLFetchNameValueDef(papszMD, "LINE_SCALE", "1"));
 
-            dfSAMP_OFF -= psOptions->adfSrcWin[0];
-            dfLINE_OFF -= psOptions->adfSrcWin[1];
+            dfSAMP_OFF -= adfSrcWinOri[0];
+            dfLINE_OFF -= adfSrcWinOri[1];
 
-            const double df2 = static_cast<double>(psOptions->adfSrcWin[2]);
-            const double df3 = static_cast<double>(psOptions->adfSrcWin[3]);
+            const double df2 = adfSrcWinOri[2];
+            const double df3 = adfSrcWinOri[3];
             dfSAMP_OFF *= nOXSize / df2;
             dfLINE_OFF *= nOYSize / df3;
             dfSAMP_SCALE *= nOXSize / df2;

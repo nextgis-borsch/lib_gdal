@@ -33,6 +33,7 @@
 #include "gdalwarper.h"
 #include "ogrgeopackageutility.h"
 #include "ogrsqliteutility.h"
+#include "vrt/vrtdataset.h"
 
 #include <cstdlib>
 
@@ -501,7 +502,6 @@ GDALGeoPackageDataset::GDALGeoPackageDataset() :
     m_nUserVersion(GPKG_1_2_VERSION),
     m_papoLayers(nullptr),
     m_nLayers(0),
-    m_bUtf8(false),
 #ifdef ENABLE_GPKG_OGR_CONTENTS
     m_bHasGPKGOGRContents(false),
 #endif
@@ -989,9 +989,6 @@ int GDALGeoPackageDataset::Open( GDALOpenInfo* poOpenInfo )
                   m_pszFilename);
         return FALSE;
     }
-
-    /* OGR UTF-8 capability, we'll advertise UTF-8 support if we have it */
-    m_bUtf8 = ( OGRERR_NONE == PragmaCheck("encoding", "UTF-8", 1) );
 
     /* Check for requirement metadata tables */
     /* Requirement 10: gpkg_spatial_ref_sys must exist */
@@ -3117,7 +3114,7 @@ bool GDALGeoPackageDataset::CreateMetadataTables()
         "violates constraint: column name must be NULL when reference_scope "
         "is \"geopackage\", \"table\" or \"row\"') "
         "WHERE (NEW.reference_scope IN ('geopackage','table','row') "
-        "AND NEW.column_nameIS NOT NULL); "
+        "AND NEW.column_name IS NOT NULL); "
         "SELECT RAISE(ABORT, 'update on table gpkg_metadata_reference "
         "violates constraint: column name must be defined for the specified "
         "table when reference_scope is \"column\" or \"row/col\"') "
@@ -4277,6 +4274,24 @@ bool GDALGeoPackageDataset::CreateTileGriddedTable(char** papszOptions)
 }
 
 /************************************************************************/
+/*                      GetUnderlyingDataset()                          */
+/************************************************************************/
+
+static GDALDataset* GetUnderlyingDataset( GDALDataset* poSrcDS )
+{
+    if( EQUAL(poSrcDS->GetDescription(), "") &&
+        poSrcDS->GetDriver() != nullptr &&
+        poSrcDS->GetDriver() == GDALGetDriverByName("VRT") )
+    {
+        VRTDataset* poVRTDS = cpl::down_cast<VRTDataset*>(poSrcDS);
+        auto poTmpDS = poVRTDS->GetSingleSimpleSource();
+        if( poTmpDS )
+            return poTmpDS;
+    }
+
+    return poSrcDS;
+}
+/************************************************************************/
 /*                            CreateCopy()                              */
 /************************************************************************/
 
@@ -4311,7 +4326,7 @@ GDALDataset* GDALGeoPackageDataset::CreateCopy( const char *pszFilename,
     if( CPLTestBool(CSLFetchNameValueDef(papszOptions, "APPEND_SUBDATASET", "NO")) &&
         CSLFetchNameValue(papszOptions, "RASTER_TABLE") == nullptr )
     {
-        CPLString osBasename(CPLGetBasename(poSrcDS->GetDescription()));
+        CPLString osBasename(CPLGetBasename(GetUnderlyingDataset(poSrcDS)->GetDescription()));
         apszUpdatedOptions.SetNameValue("RASTER_TABLE", osBasename);
     }
 
@@ -4581,6 +4596,8 @@ GDALDataset* GDALGeoPackageDataset::CreateCopy( const char *pszFilename,
         delete poDS;
         return nullptr;
     }
+
+    poDS->SetMetadata( poSrcDS->GetMetadata() );
 
 /* -------------------------------------------------------------------- */
 /*      Warp the transformer with a linear approximator                 */

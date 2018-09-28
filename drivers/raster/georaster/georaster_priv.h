@@ -226,7 +226,7 @@ public:
         { return CE_None; }
     OGRErr CommitTransaction() override { return CE_None; }
     OGRErr RollbackTransaction() override { return CE_None; }
-
+    
     char** GetFileList() override;
 
     void                AssignGeoRaster( GeoRasterWrapper* poGRW );

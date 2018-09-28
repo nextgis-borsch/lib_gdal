@@ -40,6 +40,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <algorithm>
+#include <utility>
 
 #include "cpl_conv.h"
 #include "cpl_error.h"
@@ -699,6 +700,16 @@ int TABFeature::UpdateMBR(TABMAPFile *poMapFile /*=NULL*/)
         {
             poMapFile->Coordsys2Int(oEnv.MinX, oEnv.MinY, m_nXMin, m_nYMin);
             poMapFile->Coordsys2Int(oEnv.MaxX, oEnv.MaxY, m_nXMax, m_nYMax);
+            // Coordsy2Int can transform a min value to a max one and vice
+            // versa.
+            if( m_nXMin > m_nXMax )
+            {
+                std::swap(m_nXMin, m_nXMax);
+            }
+            if( m_nYMin > m_nYMax )
+            {
+                std::swap(m_nYMin, m_nYMax);
+            }
         }
 
         return 0;
@@ -1080,7 +1091,7 @@ int TABPoint::WriteGeometryToMAPFile(TABMAPFile *poMapFile,
     m_nSymbolDefIndex = poMapFile->WriteSymbolDef(&m_sSymbolDef);
     poPointHdr->m_nSymbolId = (GByte)m_nSymbolDefIndex;  // Symbol index
 
-    if (CPLGetLastErrorNo() != 0)
+    if (CPLGetLastErrorType() == CE_Failure)
         return -1;
 
     return 0;
@@ -1429,7 +1440,7 @@ int TABFontPoint::WriteGeometryToMAPFile(TABMAPFile *poMapFile,
     m_nFontDefIndex = poMapFile->WriteFontDef(&m_sFontDef);
     poPointHdr->m_nFontId = (GByte)m_nFontDefIndex;  // Font name index
 
-    if (CPLGetLastErrorNo() != 0)
+    if (CPLGetLastErrorType() == CE_Failure)
         return -1;
 
     return 0;
@@ -1717,7 +1728,7 @@ int TABCustomPoint::WriteGeometryToMAPFile(TABMAPFile *poMapFile,
     m_nFontDefIndex = poMapFile->WriteFontDef(&m_sFontDef);
     poPointHdr->m_nFontId = (GByte)m_nFontDefIndex;  // Font index
 
-    if (CPLGetLastErrorNo() != 0)
+    if (CPLGetLastErrorType() == CE_Failure)
         return -1;
 
     return 0;
@@ -3357,7 +3368,7 @@ int TABRegion::WriteGeometryToMAPFile(TABMAPFile *poMapFile,
         return -1;
     }
 
-    if (CPLGetLastErrorNo() != 0)
+    if (CPLGetLastErrorType() == CE_Failure)
         return -1;
 
     /* Return a ref to coord block so that caller can continue writing
@@ -4159,7 +4170,7 @@ int TABRectangle::WriteGeometryToMAPFile(TABMAPFile *poMapFile,
     m_nBrushDefIndex = poMapFile->WriteBrushDef(&m_sBrushDef);
     poRectHdr->m_nBrushId = (GByte)m_nBrushDefIndex;      // Brush index
 
-    if (CPLGetLastErrorNo() != 0)
+    if (CPLGetLastErrorType() == CE_Failure)
         return -1;
 
     return 0;
@@ -4571,7 +4582,7 @@ int TABEllipse::WriteGeometryToMAPFile(TABMAPFile *poMapFile,
     m_nBrushDefIndex = poMapFile->WriteBrushDef(&m_sBrushDef);
     poRectHdr->m_nBrushId = (GByte)m_nBrushDefIndex;      // Brush index
 
-    if (CPLGetLastErrorNo() != 0)
+    if (CPLGetLastErrorType() == CE_Failure)
         return -1;
 
     return 0;
@@ -5092,7 +5103,7 @@ int TABArc::WriteGeometryToMAPFile(TABMAPFile *poMapFile,
     m_nPenDefIndex = poMapFile->WritePenDef(&m_sPenDef);
     poArcHdr->m_nPenId = (GByte)m_nPenDefIndex;      // Pen index
 
-    if (CPLGetLastErrorNo() != 0)
+    if (CPLGetLastErrorType() == CE_Failure)
         return -1;
 
     return 0;
@@ -5657,7 +5668,7 @@ int TABText::WriteGeometryToMAPFile(TABMAPFile *poMapFile,
         poTextHdr->m_nPenId = (GByte)m_nPenDefIndex;      // Pen index for line/arrow
     }
 
-    if (CPLGetLastErrorNo() != 0)
+    if (CPLGetLastErrorType() == CE_Failure)
         return -1;
 
     /* Return a ref to coord block so that caller can continue writing
@@ -6622,7 +6633,7 @@ int TABMultiPoint::WriteGeometryToMAPFile(TABMAPFile *poMapFile,
         poMPointHdr->m_nSymbolId = (GByte)m_nSymbolDefIndex;      // Symbol index
     }
 
-    if (CPLGetLastErrorNo() != 0)
+    if (CPLGetLastErrorType() == CE_Failure)
         return -1;
 
     /* Return a ref to coord block so that caller can continue writing
@@ -7724,7 +7735,7 @@ int TABCollection::WriteGeometryToMAPFile(TABMAPFile *poMapFile,
 
     poCollHdr->SetMBR(m_nXMin, m_nYMin, m_nXMax, m_nYMax);
 
-    if (CPLGetLastErrorNo() != 0)
+    if (CPLGetLastErrorType() == CE_Failure)
         return -1;
 
     /* Return a ref to coord block so that caller can continue writing
