@@ -283,4 +283,4 @@ Available network (GNM) drivers for now (by all driver directories in sources):
 
 Fresh GDAL build are available in Ubuntu Launchpad - https://launchpad.net/~nextgis/+archive/ubuntu/ppa/+packages
 
-Version 2.3.1
+Version 2.3.2
