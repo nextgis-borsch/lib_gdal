@@ -214,7 +214,7 @@ Available vector drivers for now (by all driver directories in sources). Drivers
 | ingres | no |  |  |
 | **jml** | **yes** | Optionally: [EXPAT](https://github.com/nextgis-borsch/lib_expat) | - |
 | **kml** | **yes** | ... | ... |
-| libkml * | no | Google LibKML |  |
+| **libkml** | **yes** | [Google LibKML](https://github.com/nextgis-borsch/lib_kml), [Boost](https://github.com/nextgis-borsch/lib_boost) |  |
 | mdb | no |  |  |
 | **mem** | **yes** | no | Obligatory for building GDAL |
 | **mitab** | **yes** | no | Obligatory for building GDAL; Depends on temporary /core/ogr directory |
