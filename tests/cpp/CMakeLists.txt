@@ -36,11 +36,12 @@ file(COPY data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 find_anyproject(OpenSSL REQUIRED)
 find_anyproject(JBIG REQUIRED)
 find_anyproject(SZIP REQUIRED)
+find_anyproject(UriParser REQUIRED CMAKE_ARGS -DSKIP_BUILD_APPS=ON)
 set(TARGET_LINK_LIB ${TARGET_LINK_LIB} ${LIB_NAME})
 
 macro(add_cpp_test_app name)
     add_executable(${name} ${name}.cpp)
-    target_link_libraries(${name} ${TARGET_LINK_LIB})
+    target_link_libraries(${name} PRIVATE ${TARGET_LINK_LIB})
 endmacro()
 
 if(UNIX)
@@ -67,14 +68,14 @@ foreach(PROG ${PROGS})
 endforeach()
 
 add_executable(test_include_from_c_file test_include_from_c_file.c)
-target_link_libraries(test_include_from_c_file ${TARGET_LINK_LIB})
+target_link_libraries(test_include_from_c_file PRIVATE ${TARGET_LINK_LIB})
 
 add_executable(gdal_unit_test gdal_unit_test.cpp
     test_alg.cpp test_cpl.cpp test_gdal.cpp test_gdal_aaigrid.cpp
     test_gdal_dted.cpp test_gdal_gtiff.cpp test_triangulation.cpp
     test_ogr.cpp test_ogr_geos.cpp test_ogr_shape.cpp test_osr.cpp
 test_osr_ct.cpp test_osr_pci.cpp test_osr_proj4.cpp tut/tut_gdal.cpp)
-target_link_libraries(gdal_unit_test ${TARGET_LINK_LIB})
+target_link_libraries(gdal_unit_test PRIVATE ${TARGET_LINK_LIB})
 
 if(WIN32)
     file(GLOB_RECURSE IMPORTED_WIN_DLLS ${CMAKE_BINARY_DIR}/third-party/*.dll)
