@@ -24,13 +24,14 @@
 
 
 find_path(KML_INCLUDE_DIRS version.h
-  PATHS
-  /usr/include
-  /usr/local/include
   PATH_SUFFIXES
-  kml
   kml/base
 )
+
+if(KML_INCLUDE_DIRS)
+    get_filename_component(KML_INCLUDE_DIRS "${KML_INCLUDE_DIRS}" PATH)
+    get_filename_component(KML_INCLUDE_DIRS "${KML_INCLUDE_DIRS}" PATH)
+endif()
 
 set(LIB_NAMES
     kml
@@ -42,7 +43,6 @@ set(LIB_NAMES
     kmlxsd
 )
 
-set(KML_LIBRARIES)
 foreach(LIB_NAME ${LIB_NAMES})
 
     find_library(KML_LIBRARIES_TMP NAMES lib${LIB_NAME} ${LIB_NAME}
@@ -53,7 +53,9 @@ foreach(LIB_NAME ${LIB_NAMES})
       /usr/local/lib64
     )
 
-    set(KML_LIBRARIES ${KML_LIBRARIES} ${KML_LIBRARIES_TMP})
+    if(KML_LIBRARIES_TMP)
+        set(KML_LIBRARIES ${KML_LIBRARIES} ${KML_LIBRARIES_TMP})
+    endif()
 endforeach()
 
 if(KML_INCLUDE_DIRS)
