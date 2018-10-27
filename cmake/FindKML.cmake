@@ -41,20 +41,18 @@ set(LIB_NAMES
     kmlengine
     kmlregionator
     kmlxsd
+    minizip
 )
 
 foreach(LIB_NAME ${LIB_NAMES})
 
-    find_library(KML_LIBRARIES_TMP NAMES lib${LIB_NAME} ${LIB_NAME}
-      PATHS
-      /usr/lib
-      /usr/local/lib
-      /usr/lib64
-      /usr/local/lib64
+    unset(${LIB_NAME}_LIBRARY)
+    find_library(${LIB_NAME}_LIBRARY
+        NAMES lib${LIB_NAME} ${LIB_NAME}
     )
 
-    if(KML_LIBRARIES_TMP)
-        set(KML_LIBRARIES ${KML_LIBRARIES} ${KML_LIBRARIES_TMP})
+    if(${LIB_NAME}_LIBRARY)
+        set(KML_LIBRARIES ${KML_LIBRARIES} ${${LIB_NAME}_LIBRARY})
     endif()
 endforeach()
 
