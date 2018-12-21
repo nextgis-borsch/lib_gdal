@@ -327,7 +327,7 @@ int  GDALTriangulationComputeBarycentricCoefficients(GDALTriangulation* psDT,
         double dfY3 = padfY[psFacet->anVertexIdx[2]];
         /* See https://en.wikipedia.org/wiki/Barycentric_coordinate_system */
         double dfDenom = (dfY2 - dfY3) * (dfX1 - dfX3) + (dfX3 - dfX2) * (dfY1 - dfY3);
-        if( dfDenom == 0.0 )
+        if( fabs(dfDenom) < 1e-5 )
         {
             // Degenerate triangle
             psCoeffs->dfMul1X = 0.0;
@@ -441,7 +441,8 @@ int GDALTriangulationFindFacetBruteForce(const GDALTriangulation* psDT,
         double l1, l2, l3;
         const GDALTriBarycentricCoefficients* psCoeffs =
                                     &(psDT->pasFacetCoefficients[nFacetIdx]);
-        if( psCoeffs->dfMul1X == 0.0 )
+        if( psCoeffs->dfMul1X == 0.0 && psCoeffs->dfMul2X == 0.0 &&
+            psCoeffs->dfMul1Y == 0.0 && psCoeffs->dfMul2Y == 0.0 )
         {
             // Degenerate triangle
             continue;
@@ -523,6 +524,9 @@ int GDALTriangulationFindFacetDirected(const GDALTriangulation* psDT,
                                        double dfY,
                                        int* panOutputFacetIdx)
 {
+#ifdef DEBUG_VERBOSE
+    const int nFacetIdxInitial = nFacetIdx;
+#endif
     int k, nIterMax;
     *panOutputFacetIdx = -1;
     if( psDT->pasFacetCoefficients == NULL )
@@ -541,7 +545,8 @@ int GDALTriangulationFindFacetDirected(const GDALTriangulation* psDT,
         const GDALTriFacet* psFacet = &(psDT->pasFacets[nFacetIdx]);
         const GDALTriBarycentricCoefficients* psCoeffs =
                                 &(psDT->pasFacetCoefficients[nFacetIdx]);
-        if( psCoeffs->dfMul1X == 0.0 )
+        if( psCoeffs->dfMul1X == 0.0 && psCoeffs->dfMul2X == 0.0 &&
+            psCoeffs->dfMul1Y == 0.0 && psCoeffs->dfMul2Y == 0.0 )
         {
             // Degenerate triangle
             break;
@@ -552,6 +557,10 @@ int GDALTriangulationFindFacetDirected(const GDALTriangulation* psDT,
             int neighbor = psFacet->anNeighborIdx[0];
             if( neighbor < 0 )
             {
+#ifdef DEBUG_VERBOSE
+                CPLDebug("GDAL", "Outside %d in %d iters (initial = %d)",
+                         nFacetIdx, k, nFacetIdxInitial);
+#endif
                 *panOutputFacetIdx = nFacetIdx;
                 return FALSE;
             }
@@ -567,6 +576,10 @@ int GDALTriangulationFindFacetDirected(const GDALTriangulation* psDT,
             int neighbor = psFacet->anNeighborIdx[1];
             if( neighbor < 0 )
             {
+#ifdef DEBUG_VERBOSE
+                CPLDebug("GDAL", "Outside %d in %d iters (initial = %d)",
+                         nFacetIdx, k, nFacetIdxInitial);
+#endif
                 *panOutputFacetIdx = nFacetIdx;
                 return FALSE;
             }
@@ -582,6 +595,10 @@ int GDALTriangulationFindFacetDirected(const GDALTriangulation* psDT,
             int neighbor = psFacet->anNeighborIdx[2];
             if( neighbor < 0 )
             {
+#ifdef DEBUG_VERBOSE
+                CPLDebug("GDAL", "Outside %d in %d iters (initial = %d)",
+                         nFacetIdx, k, nFacetIdxInitial);
+#endif
                 *panOutputFacetIdx = nFacetIdx;
                 return FALSE;
             }
@@ -593,6 +610,10 @@ int GDALTriangulationFindFacetDirected(const GDALTriangulation* psDT,
 
         if( bMatch )
         {
+#ifdef DEBUG_VERBOSE
+            CPLDebug("GDAL", "Inside %d in %d iters (initial = %d)",
+                     nFacetIdx, k, nFacetIdxInitial);
+#endif
             *panOutputFacetIdx = nFacetIdx;
             return TRUE;
         }

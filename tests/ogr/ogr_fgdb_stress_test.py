@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env pytest
 # -*- coding: utf-8 -*-
 ###############################################################################
 # $Id$
@@ -31,70 +31,52 @@
 
 
 import random
-import sys
 import shutil
-import os
 
-sys.path.append('../pymod')
 
-import gdaltest
 import ogrtest
 from osgeo import gdal
 from osgeo import ogr
 from osgeo import osr
+import pytest
 
 ###############################################################################
 # Test if driver is available
 
 
-def ogr_fgdb_stress_test_init():
+@pytest.mark.skip()
+def test_ogr_fgdb_stress_init():
 
     ogrtest.fgdb_drv = None
     ogrtest.openfilegdb_drv = None
 
-    try:
-        ogrtest.fgdb_drv = ogr.GetDriverByName('FileGDB')
-    except:
-        pass
-
-    try:
-        ogrtest.reference_drv = ogr.GetDriverByName('GPKG')
-    except:
-        ogrtest.reference_drv = None
-
+    ogrtest.fgdb_drv = ogr.GetDriverByName('FileGDB')
+    ogrtest.reference_drv = ogr.GetDriverByName('GPKG')
     ogrtest.reference_ext = 'gpkg'
-
-    try:
-        ogrtest.openfilegdb_drv = ogr.GetDriverByName('OpenFileGDB')
-    except:
-        pass
+    ogrtest.openfilegdb_drv = ogr.GetDriverByName('OpenFileGDB')
 
     if ogrtest.fgdb_drv is None:
-        return 'skip'
+        pytest.skip()
     if ogrtest.reference_drv is None:
-        return 'skip'
+        pytest.skip()
     if ogrtest.openfilegdb_drv is None:
-        return 'skip'
+        pytest.skip()
 
     try:
         shutil.rmtree("tmp/test.gdb")
     except OSError:
         pass
 
-    try:
-        os.unlink("tmp/test." + ogrtest.reference_ext)
-    except OSError:
-        pass
-
-    return 'success'
+    gdal.Unlink("tmp/test." + ogrtest.reference_ext)
 
 ###############################################################################
 # Generate databases from random operations
 
 
-def ogr_fgdb_stress_test_1():
+@pytest.mark.skip()
+def test_ogr_fgdb_stress_1():
     if ogrtest.fgdb_drv is None:
-        return 'skip'
+        pytest.skip()
 
     verbose = False
 
@@ -111,8 +93,7 @@ def ogr_fgdb_stress_test_1():
     random.seed(0)
     in_transaction = False
     nfeatures_created = 0
-    for i in range(100000):
-        # print(i)
+    for _ in range(100000):
         function = random.randrange(0, 500)
         if function == 0:
             if not in_transaction:
@@ -129,14 +110,13 @@ def ogr_fgdb_stress_test_1():
             fid = -1
             if random.randrange(0, 2) == 0:
                 fid = 1 + random.randrange(0, 1000)
-            str = '%d' % random.randrange(0, 1000)
             wkt = 'POINT (%d %d)' % (random.randrange(0, 100), random.randrange(0, 100))
             if verbose:
                 print('Create(%d)' % fid)
             for lyr in [lyr_test, lyr_ref]:
                 f = ogr.Feature(lyr.GetLayerDefn())
                 f.SetFID(fid)
-                f.SetField(0, str)
+                f.SetField(0, '%d' % random.randrange(0, 1000))
                 f.SetGeometry(ogr.CreateGeometryFromWkt(wkt))
                 gdal.PushErrorHandler()
                 ret.append(lyr.CreateFeature(f))
@@ -144,10 +124,7 @@ def ogr_fgdb_stress_test_1():
                 # So to ensure lyr_ref will use the same FID as the tested layer
                 fid = f.GetFID()
                 # print("created %d" % fid)
-            if ret[0] != ret[1]:
-                gdaltest.post_reason('fail')
-                print(ret)
-                return 'fail'
+            assert ret[0] == ret[1]
             if ret[0] == 0:
                 nfeatures_created += 1
         # For some odd reason, the .spx file is no longer updated when doing
@@ -157,20 +134,16 @@ def ogr_fgdb_stress_test_1():
             fid = 1 + random.randrange(0, 1000)
             if verbose:
                 print('Update(%d)' % fid)
-            str = '%d' % random.randrange(0, 1000)
             wkt = 'POINT (%d %d)' % (random.randrange(0, 100), random.randrange(0, 100))
             for lyr in [lyr_test, lyr_ref]:
                 f = ogr.Feature(lyr.GetLayerDefn())
                 f.SetFID(fid)
-                f.SetField(0, str)
+                f.SetField(0, '%d' % random.randrange(0, 1000))
                 f.SetGeometry(ogr.CreateGeometryFromWkt(wkt))
                 # gdal.PushErrorHandler()
                 ret.append(lyr.SetFeature(f))
                 # gdal.PopErrorHandler()
-            if ret[0] != ret[1]:
-                gdaltest.post_reason('fail')
-                print(ret)
-                return 'fail'
+            assert ret[0] == ret[1]
         # Same for DeleteFeature()
         elif nfeatures_created >= 2:
             ret = []
@@ -181,23 +154,20 @@ def ogr_fgdb_stress_test_1():
                 # gdal.PushErrorHandler()
                 ret.append(lyr.DeleteFeature(fid))
                 # gdal.PopErrorHandler()
-            if ret[0] != ret[1]:
-                gdaltest.post_reason('fail')
-                print(ret)
-                return 'fail'
+            assert ret[0] == ret[1]
 
     if in_transaction:
         ds_test.CommitTransaction()
 
-    return 'success'
-
+    
 ###############################################################################
 # Compare databases
 
 
-def ogr_fgdb_stress_test_2():
+@pytest.mark.skip()
+def test_ogr_fgdb_stress_2():
     if ogrtest.fgdb_drv is None:
-        return 'skip'
+        pytest.skip()
 
     ds_test = ogr.Open('tmp/test.gdb')
     ds_ref = ogr.Open('tmp/test.' + ogrtest.reference_ext)
@@ -208,66 +178,36 @@ def ogr_fgdb_stress_test_2():
     while True:
         f_test = lyr_test.GetNextFeature()
         f_ref = lyr_ref.GetNextFeature()
-        if (f_test is None and f_ref is not None) or (f_test is not None and f_ref is None):
-            gdaltest.post_reason('fail')
-            return 'fail'
+        assert not (f_test is None and f_ref is not None) or (f_test is not None and f_ref is None)
         if f_test is None:
             break
         if f_test.GetFID() != f_ref.GetFID() or \
            f_test['str'] != f_ref['str'] or \
            ogrtest.check_feature_geometry(f_test, f_ref.GetGeometryRef()) != 0:
-            gdaltest.post_reason('fail')
             f_test.DumpReadable()
             f_ref.DumpReadable()
-            return 'fail'
+            pytest.fail()
 
     for val in range(1000):
         lyr_test.SetAttributeFilter("str = '%d'" % val)
         lyr_ref.SetAttributeFilter("str = '%d'" % val)
-        if lyr_test.GetFeatureCount() != lyr_ref.GetFeatureCount():
-            gdaltest.post_reason('fail')
-            print(val)
-            print(lyr_test.GetFeatureCount())
-            print(lyr_ref.GetFeatureCount())
-            return 'fail'
+        assert lyr_test.GetFeatureCount() == lyr_ref.GetFeatureCount(), val
 
     # sys.exit(0)
 
-    return 'success'
-
+    
 
 ###############################################################################
 # Cleanup
 
-def ogr_fgdb_stress_test_cleanup():
+@pytest.mark.skip()
+def test_ogr_fgdb_stress_cleanup():
     if ogrtest.fgdb_drv is None:
-        return 'skip'
+        pytest.skip()
 
     try:
         shutil.rmtree("tmp/test.gdb")
     except OSError:
         pass
 
-    try:
-        os.unlink("tmp/test." + ogrtest.reference_ext)
-    except OSError:
-        pass
-
-    return 'success'
-
-
-# Do nothing in whole run of the suite
-gdaltest_list = []
-
-explicit_gdaltest_list = [ogr_fgdb_stress_test_init,
-                          ogr_fgdb_stress_test_1,
-                          ogr_fgdb_stress_test_2,
-                          ogr_fgdb_stress_test_cleanup]
-
-if __name__ == '__main__':
-
-    gdaltest.setup_run('ogr_fgdb_stress_test')
-
-    gdaltest.run_tests(explicit_gdaltest_list)
-
-    gdaltest.summarize()
+    gdal.Unlink("tmp/test." + ogrtest.reference_ext)

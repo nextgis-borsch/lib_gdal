@@ -43,17 +43,7 @@
 /*                       CPLJSonStreamingParser()                       */
 /************************************************************************/
 
-CPLJSonStreamingParser::CPLJSonStreamingParser() :
-    m_bExceptionOccurred(false),
-    m_bElementFound(false),
-    m_nLastChar(0),
-    m_nLineCounter(1),
-    m_nCharCounter(1),
-    m_bInStringEscape(false),
-    m_bInUnicode(false),
-    m_nMaxDepth(1024),
-    m_nMaxStringSize(10000000)
-
+CPLJSonStreamingParser::CPLJSonStreamingParser()
 {
     m_aState.push_back(INIT);
 }
@@ -97,7 +87,7 @@ void CPLJSonStreamingParser::Reset()
     m_aState.clear();
     m_aState.push_back(INIT);
     m_osToken.clear();
-    m_abFirstElement.clear();
+    m_abArrayState.clear();
     m_aeObjectState.clear();
     m_bInStringEscape = false;
     m_bInUnicode = false;
@@ -158,11 +148,20 @@ bool CPLJSonStreamingParser::EmitException(const char* pszMessage)
 /*                          EmitUnexpectedChar()                        */
 /************************************************************************/
 
-bool CPLJSonStreamingParser::EmitUnexpectedChar(char ch)
+bool CPLJSonStreamingParser::EmitUnexpectedChar(char ch,
+                                                const char* pszExpecting)
 {
     char szMessage[64];
-    snprintf(szMessage, sizeof(szMessage),
-             "Unexpected character (%c)", ch);
+    if( pszExpecting )
+    {
+        snprintf(szMessage, sizeof(szMessage),
+             "Unexpected character (%c). Expecting %s", ch, pszExpecting);
+    }
+    else
+    {
+        snprintf(szMessage, sizeof(szMessage),
+                "Unexpected character (%c)", ch);
+    }
     return EmitException(szMessage);
 }
 
@@ -173,7 +172,8 @@ bool CPLJSonStreamingParser::EmitUnexpectedChar(char ch)
 static bool IsValidNewToken(char ch)
 {
     return ch == '[' || ch == '{' || ch == '"' || ch == '-' ||
-           ch == '.' || isdigit(ch) || ch == 't' || ch == 'f' || ch == 'n';
+           ch == '.' || isdigit(ch) || ch == 't' || ch == 'f' || ch == 'n' ||
+           ch == 'i' || ch == 'I' || ch == 'N';
 }
 
 /************************************************************************/
@@ -206,11 +206,12 @@ bool CPLJSonStreamingParser::StartNewToken(const char*& pStr, size_t& nLength)
             return EmitException("Too many nested objects and/or arrays");
         }
         StartArray();
-        m_abFirstElement.push_back(true);
+        m_abArrayState.push_back(ArrayState::INIT);
         m_aState.push_back(ARRAY);
         AdvanceChar(pStr, nLength);
     }
-    else if( ch == '-' || ch == '.' || isdigit(ch) )
+    else if( ch == '-' || ch == '.' || isdigit(ch) ||
+             ch == 'i' || ch == 'I' || ch == 'N' )
     {
         m_aState.push_back(NUMBER);
     }
@@ -224,7 +225,7 @@ bool CPLJSonStreamingParser::StartNewToken(const char*& pStr, size_t& nLength)
     }
     else if( ch == 'n' )
     {
-        m_aState.push_back(STATE_NULL);
+        m_aState.push_back(STATE_NULL); /* might be nan */
     }
     else
     {
@@ -289,7 +290,7 @@ bool CPLJSonStreamingParser::CheckStackEmpty()
     {
         return EmitException("Unterminated object");
     }
-    else if( !m_abFirstElement.empty() )
+    else if( !m_abArrayState.empty() )
     {
         return EmitException("Unterminated array");
     }
@@ -476,25 +477,68 @@ bool CPLJSonStreamingParser::Parse(const char* pStr, size_t nLength,
                 }
                 else
                 {
-                    return EmitUnexpectedChar(ch);
+                    CPLString extendedToken(m_osToken + ch);
+                    if( (STARTS_WITH_CI("Infinity", extendedToken) &&
+                          m_osToken.size() + 1 <= strlen("Infinity")) ||
+                         (STARTS_WITH_CI("-Infinity", extendedToken) &&
+                          m_osToken.size() + 1 <= strlen("-Infinity")) ||
+                         (STARTS_WITH_CI("NaN", extendedToken) &&
+                          m_osToken.size() + 1 <= strlen("NaN")) )
+                    {
+                        m_osToken += ch;
+                    }
+                    else
+                    {
+                        return EmitUnexpectedChar(ch);
+                    }
                 }
                 AdvanceChar(pStr, nLength);
             }
+
+            if( nLength != 0 || bFinished )
+            {
+                const char firstCh = m_osToken[0];
+                if( firstCh == 'i' || firstCh == 'I' )
+                {
+                    if( !EQUAL(m_osToken.c_str(), "Infinity") )
+                    {
+                        return EmitException("Invalid number");
+                    }
+                }
+                else if( firstCh == '-' )
+                {
+                    if( m_osToken[1] == 'i' || m_osToken[1] == 'I' )
+                    {
+                        if( !EQUAL(m_osToken.c_str(), "-Infinity") )
+                        {
+                            return EmitException("Invalid number");
+                        }
+                    }
+                }
+                else if( firstCh == 'n' || firstCh == 'N' )
+                {
+                    if( m_osToken[1] == 'a' || m_osToken[1] == 'A' )
+                    {
+                        if( !EQUAL(m_osToken.c_str(), "NaN") )
+                        {
+                            return EmitException("Invalid number");
+                        }
+                    }
+                }
+
+                Number(m_osToken.c_str(), m_osToken.size());
+                m_osToken.clear();
+                m_aState.pop_back();
+            }
+
             if( nLength == 0 )
             {
                 if( bFinished )
                 {
-                    Number(m_osToken.c_str(), m_osToken.size());
-                    m_osToken.clear();
-                    m_aState.pop_back();
                     return CheckStackEmpty();
                 }
                 return true;
             }
-
-            Number(m_osToken.c_str(), m_osToken.size());
-            m_osToken.clear();
-            m_aState.pop_back();
         }
         else if( eCurState == STRING )
         {
@@ -670,22 +714,33 @@ bool CPLJSonStreamingParser::Parse(const char* pStr, size_t nLength,
             char ch = *pStr;
             if( ch == ',' )
             {
-                if( m_abFirstElement.back() )
+                if( m_abArrayState.back() != ArrayState::AFTER_VALUE )
                 {
-                    return EmitUnexpectedChar(ch);
+                    return EmitUnexpectedChar(ch, "','");
                 }
+                m_abArrayState.back() = ArrayState::AFTER_COMMA;
                 AdvanceChar(pStr, nLength);
             }
             else if( ch == ']' )
             {
+                if( m_abArrayState.back() == ArrayState::AFTER_COMMA)
+                {
+                    return EmitException("Missing value");
+                }
+
                 EndArray();
                 AdvanceChar(pStr, nLength);
-                m_abFirstElement.pop_back();
+                m_abArrayState.pop_back();
                 m_aState.pop_back();
             }
             else if( IsValidNewToken(ch) )
             {
-                m_abFirstElement.back() = false;
+                if( m_abArrayState.back() == ArrayState::AFTER_VALUE )
+                {
+                    return EmitException("Unexpected state: ',' or ']' expected");
+                }
+                m_abArrayState.back() = ArrayState::AFTER_VALUE;
+
                 StartArrayMember();
                 if( !StartNewToken(pStr, nLength) )
                 {
@@ -714,7 +769,7 @@ bool CPLJSonStreamingParser::Parse(const char* pStr, size_t nLength,
             {
                 if( m_aeObjectState.back() != IN_VALUE )
                 {
-                    return EmitUnexpectedChar(ch);
+                    return EmitUnexpectedChar(ch, "','");
                 }
 
                 m_aeObjectState.back() = WAITING_KEY;
@@ -724,7 +779,7 @@ bool CPLJSonStreamingParser::Parse(const char* pStr, size_t nLength,
             {
                 if( m_aeObjectState.back() != IN_KEY )
                 {
-                    return EmitUnexpectedChar(ch);
+                    return EmitUnexpectedChar(ch, "':'");
                 }
                 m_aeObjectState.back() = KEY_FINISHED;
                 AdvanceChar(pStr, nLength);
@@ -752,7 +807,7 @@ bool CPLJSonStreamingParser::Parse(const char* pStr, size_t nLength,
                 {
                     if( ch != '"' )
                     {
-                        return EmitUnexpectedChar(ch);
+                        return EmitUnexpectedChar(ch, "'\"'");
                     }
                      m_aeObjectState.back() = IN_KEY;
                 }
@@ -780,6 +835,12 @@ bool CPLJSonStreamingParser::Parse(const char* pStr, size_t nLength,
             while(nLength)
             {
                 char ch = *pStr;
+                if( eCurState == STATE_NULL && (ch == 'a' || ch == 'A') &&
+                    m_osToken.size() == 1 )
+                {
+                    m_aState.back() = NUMBER;
+                    break;
+                }
                 if( isalpha(ch) )
                 {
                     m_osToken += ch;
@@ -815,6 +876,10 @@ bool CPLJSonStreamingParser::Parse(const char* pStr, size_t nLength,
                     return EmitUnexpectedChar(ch);
                 }
                 AdvanceChar(pStr, nLength);
+            }
+            if( m_aState.back() == NUMBER )
+            {
+                continue;
             }
             if( nLength == 0 )
             {

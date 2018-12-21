@@ -31,7 +31,6 @@
 #  DEALINGS IN THE SOFTWARE.
 # ******************************************************************************
 
-import string
 import sys
 
 from osgeo import osr
@@ -211,13 +210,13 @@ if __name__ == '__main__':
 
         list_fd = open(list_file)
         line = list_fd.readline()
-        while len(line) > 0:
+        while line:
             try:
                 c_offset = line.find(',')
                 if c_offset > 0:
                     line = line[:c_offset]
 
-                code = string.atoi(line)
+                code = int(line)
             except:
                 code = -1
 

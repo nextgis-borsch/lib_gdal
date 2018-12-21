@@ -39,6 +39,7 @@
 #include <algorithm>
 #include <map>
 #include <new>
+#include <set>
 #include <string>
 #include <utility>
 
@@ -86,47 +87,39 @@ GDALGetDefaultAsyncReader( GDALDataset *poDS,
                            int nBandSpace, char **papszOptions );
 CPL_C_END
 
-typedef enum
+enum class GDALAllowReadWriteMutexState
 {
     RW_MUTEX_STATE_UNKNOWN,
     RW_MUTEX_STATE_ALLOWED,
     RW_MUTEX_STATE_DISABLED
-} GDALAllowReadWriteMutexState;
+};
 
 const GIntBig TOTAL_FEATURES_NOT_INIT = -2;
 const GIntBig TOTAL_FEATURES_UNKNOWN = -1;
 
 class GDALDataset::Private
 {
-  public:
-    CPLMutex *hMutex;
-    std::map<GIntBig, int> oMapThreadToMutexTakenCount;
-#ifdef DEBUG_EXTRA
-    std::map<GIntBig, int> oMapThreadToMutexTakenCountSaved;
-#endif
-    GDALAllowReadWriteMutexState eStateReadWriteMutex;
-    int nCurrentLayerIdx;
-    int nLayerCount;
-    GIntBig nFeatureReadInLayer;
-    GIntBig nFeatureReadInDataset;
-    GIntBig nTotalFeaturesInLayer;
-    GIntBig nTotalFeatures;
-    OGRLayer *poCurrentLayer;
+    CPL_DISALLOW_COPY_ASSIGN(Private)
 
-    Private() :
-        hMutex(nullptr),
-        eStateReadWriteMutex(RW_MUTEX_STATE_UNKNOWN),
-        nCurrentLayerIdx(0),
-        nLayerCount(-1),
-        nFeatureReadInLayer(0),
-        nFeatureReadInDataset(0),
-        nTotalFeaturesInLayer(TOTAL_FEATURES_NOT_INIT),
-        nTotalFeatures(TOTAL_FEATURES_NOT_INIT),
-        poCurrentLayer(nullptr)
-        {}
+  public:
+    CPLMutex *hMutex = nullptr;
+    std::map<GIntBig, int> oMapThreadToMutexTakenCount{};
+#ifdef DEBUG_EXTRA
+    std::map<GIntBig, int> oMapThreadToMutexTakenCountSaved{};
+#endif
+    GDALAllowReadWriteMutexState eStateReadWriteMutex = GDALAllowReadWriteMutexState::RW_MUTEX_STATE_UNKNOWN;
+    int nCurrentLayerIdx = 0;
+    int nLayerCount = -1;
+    GIntBig nFeatureReadInLayer = 0;
+    GIntBig nFeatureReadInDataset = 0;
+    GIntBig nTotalFeaturesInLayer = TOTAL_FEATURES_NOT_INIT;
+    GIntBig nTotalFeatures = TOTAL_FEATURES_NOT_INIT;
+    OGRLayer *poCurrentLayer = nullptr;
+
+    Private() = default;
 };
 
-typedef struct
+struct SharedDatasetCtxt
 {
     // PID of the thread that mark the dataset as shared
     // This may not be the actual PID, but the responsiblePID.
@@ -135,7 +128,7 @@ typedef struct
     GDALAccess eAccess;
 
     GDALDataset *poDS;
-} SharedDatasetCtxt;
+};
 
 // Set of datasets opened as shared datasets (with GDALOpenShared)
 // The values in the set are of type SharedDatasetCtxt.
@@ -236,40 +229,15 @@ GIntBig GDALGetResponsiblePIDForCurrentThread()
 /************************************************************************/
 
 //! @cond Doxygen_Suppress
-GDALDataset::GDALDataset()
-
+GDALDataset::GDALDataset():
+    GDALDataset(CPLTestBool(CPLGetConfigOption("GDAL_FORCE_CACHING", "NO")))
 {
-    Init(CPLTestBool(CPLGetConfigOption("GDAL_FORCE_CACHING", "NO")));
 }
 
-GDALDataset::GDALDataset(int bForceCachedIOIn)
-
+GDALDataset::GDALDataset(int bForceCachedIOIn):
+    bForceCachedIO(CPL_TO_BOOL(bForceCachedIOIn)),
+    m_poPrivate(new(std::nothrow) GDALDataset::Private)
 {
-    Init(CPL_TO_BOOL(bForceCachedIOIn));
-}
-
-void GDALDataset::Init(bool bForceCachedIOIn)
-{
-    poDriver = nullptr;
-    eAccess = GA_ReadOnly;
-    nRasterXSize = 512;
-    nRasterYSize = 512;
-    nBands = 0;
-    papoBands = nullptr;
-    nRefCount = 1;
-    nOpenFlags = 0;
-    bShared = false;
-    bIsInternal = true;
-    bSuppressOnClose = false;
-    papszOpenOptions = nullptr;
-
-/* -------------------------------------------------------------------- */
-/*      Set forced caching flag.                                        */
-/* -------------------------------------------------------------------- */
-    bForceCachedIO = bForceCachedIOIn;
-
-    m_poStyleTable = nullptr;
-    m_poPrivate = new(std::nothrow) Private;
 }
 //! @endcond
 
@@ -1461,8 +1429,9 @@ CPLErr CPL_STDCALL GDALSetGCPs( GDALDatasetH hDS, int nGCPCount,
  *
  * This method is the same as the C function GDALBuildOverviews().
  *
- * @param pszResampling one of "NEAREST", "GAUSS", "CUBIC", "AVERAGE", "MODE",
- * "AVERAGE_MAGPHASE" or "NONE" controlling the downsampling method applied.
+ * @param pszResampling one of "AVERAGE", "AVERAGE_MAGPHASE", "BILINEAR",
+ * "CUBIC", "CUBICSPLINE", "GAUSS", "LANCZOS", "MODE", "NEAREST", or "NONE"
+ * controlling the downsampling method applied.
  * @param nOverviews number of overviews to build, or 0 to clean overviews.
  * @param panOverviewList the list of overview decimation factors to build, or
  *                        NULL if nOverviews == 0.
@@ -1619,6 +1588,8 @@ CPLErr GDALDataset::IRasterIO( GDALRWFlag eRWFlag,
         int nFirstMaskFlags = 0;
         GDALRasterBand *poFirstMaskBand = nullptr;
         int nOKBands = 0;
+
+        // Check if bands share the same mask band
         for( int i = 0; i < nBandCount; ++i )
         {
             GDALRasterBand *poBand = GetRasterBand(panBandMap[i]);
@@ -1641,6 +1612,12 @@ CPLErr GDALDataset::IRasterIO( GDALRWFlag eRWFlag,
             {
                 eFirstBandDT = eDT;
                 nFirstMaskFlags = poBand->GetMaskFlags();
+                if( nFirstMaskFlags == GMF_NODATA)
+                {
+                    // The dataset-level resampling code is not ready for nodata
+                    // Fallback to band-level resampling
+                    break;
+                }
                 poFirstMaskBand = poBand->GetMaskBand();
             }
             else
@@ -1650,6 +1627,12 @@ CPLErr GDALDataset::IRasterIO( GDALRWFlag eRWFlag,
                     break;
                 }
                 int nMaskFlags = poBand->GetMaskFlags();
+                if( nMaskFlags == GMF_NODATA)
+                {
+                    // The dataset-level resampling code is not ready for nodata
+                    // Fallback to band-level resampling
+                    break;
+                }
                 GDALRasterBand *poMaskBand = poBand->GetMaskBand();
                 if( nFirstMaskFlags == GMF_ALL_VALID &&
                     nMaskFlags == GMF_ALL_VALID )
@@ -2624,7 +2607,8 @@ GDALOpen( const char * pszFilename, GDALAccess eAccess )
  * through logical or operator.
  * <ul>
  * <li>Driver kind: GDAL_OF_RASTER for raster drivers, GDAL_OF_VECTOR for vector
- *     drivers.  If none of the value is specified, both kinds are implied.</li>
+ *     drivers, GDAL_OF_GNM for Geographic Network Model drivers.
+ *     If none of the value is specified, all kinds are implied.</li>
  * <li>Access mode: GDAL_OF_READONLY (exclusive)or GDAL_OF_UPDATE.</li>
  * <li>Shared mode: GDAL_OF_SHARED. If set, it allows the sharing of GDALDataset
  * handles for a dataset with other callers that have set GDAL_OF_SHARED.
@@ -2728,22 +2712,51 @@ GDALDatasetH CPL_STDCALL GDALOpenEx( const char *pszFilename,
     oOpenInfo.papszAllowedDrivers = papszAllowedDrivers;
 
     // Prevent infinite recursion.
+    struct AntiRecursionStruct
     {
-        int *pnRecCount =
-            static_cast<int *>(CPLGetTLS(CTLS_GDALDATASET_REC_PROTECT_MAP));
-        if( pnRecCount == nullptr )
+        struct DatasetContext
         {
-            pnRecCount = static_cast<int *>(CPLMalloc(sizeof(int)));
-            *pnRecCount = 0;
-            CPLSetTLS(CTLS_GDALDATASET_REC_PROTECT_MAP, pnRecCount, TRUE);
-        }
-        if( *pnRecCount == 100 )
-        {
-            CPLError(CE_Failure, CPLE_AppDefined,
-                     "GDALOpen() called with too many recursion levels");
-            return nullptr;
-        }
-        (*pnRecCount)++;
+            std::string osFilename;
+            int         nOpenFlags;
+            int         nSizeAllowedDrivers;
+
+            DatasetContext(const std::string& osFilenameIn,
+                           int nOpenFlagsIn,
+                           int nSizeAllowedDriversIn) :
+                osFilename(osFilenameIn),
+                nOpenFlags(nOpenFlagsIn),
+                nSizeAllowedDrivers(nSizeAllowedDriversIn) {}
+        };
+
+        struct DatasetContextCompare {
+            bool operator() (const DatasetContext& lhs, const DatasetContext& rhs) const {
+                return lhs.osFilename < rhs.osFilename ||
+                       (lhs.osFilename == rhs.osFilename &&
+                        (lhs.nOpenFlags < rhs.nOpenFlags ||
+                         (lhs.nOpenFlags == rhs.nOpenFlags &&
+                          lhs.nSizeAllowedDrivers < rhs.nSizeAllowedDrivers)));
+            }
+        };
+
+        std::set<DatasetContext, DatasetContextCompare> aosDatasetNamesWithFlags{};
+        int nRecLevel = 0;
+    };
+    static thread_local AntiRecursionStruct sAntiRecursion;
+    if( sAntiRecursion.nRecLevel == 100 )
+    {
+        CPLError(CE_Failure, CPLE_AppDefined,
+                    "GDALOpen() called with too many recursion levels");
+        return nullptr;
+    }
+
+    auto dsCtxt = AntiRecursionStruct::DatasetContext(
+        std::string(pszFilename), nOpenFlags, CSLCount(papszAllowedDrivers));
+    if( sAntiRecursion.aosDatasetNamesWithFlags.find(dsCtxt) !=
+                sAntiRecursion.aosDatasetNamesWithFlags.end() )
+    {
+        CPLError(CE_Failure, CPLE_AppDefined,
+                    "GDALOpen() called on %s recursively", pszFilename);
+        return nullptr;
     }
 
     // Remove leading @ if present.
@@ -2784,6 +2797,11 @@ GDALDatasetH CPL_STDCALL GDALOpenEx( const char *pszFilename,
             (nOpenFlags & GDAL_OF_RASTER) == 0 &&
             poDriver->GetMetadataItem(GDAL_DCAP_VECTOR) == nullptr )
             continue;
+        if( poDriver->pfnOpen == nullptr &&
+            poDriver->pfnOpenWithDriverArg == nullptr )
+        {
+            continue;
+        }
 
         // Remove general OVERVIEW_LEVEL open options from list before passing
         // it to the driver, if it isn't a driver specific option already.
@@ -2819,6 +2837,9 @@ GDALDatasetH CPL_STDCALL GDALOpenEx( const char *pszFilename,
         CPLErrorReset();
 #endif
 
+        sAntiRecursion.nRecLevel ++;
+        sAntiRecursion.aosDatasetNamesWithFlags.insert(dsCtxt);
+
         GDALDataset *poDS = nullptr;
         if ( poDriver->pfnOpen != nullptr )
         {
@@ -2832,13 +2853,9 @@ GDALDatasetH CPL_STDCALL GDALOpenEx( const char *pszFilename,
         {
             poDS = poDriver->pfnOpenWithDriverArg(poDriver, &oOpenInfo);
         }
-        else
-        {
-            CSLDestroy(papszTmpOpenOptions);
-            CSLDestroy(papszTmpOpenOptionsToValidate);
-            oOpenInfo.papszOpenOptions = papszOpenOptionsCleaned;
-            continue;
-        }
+
+        sAntiRecursion.nRecLevel --;
+        sAntiRecursion.aosDatasetNamesWithFlags.erase(dsCtxt);
 
         CSLDestroy(papszTmpOpenOptions);
         CSLDestroy(papszTmpOpenOptionsToValidate);
@@ -2876,11 +2893,6 @@ GDALDatasetH CPL_STDCALL GDALOpenEx( const char *pszFilename,
 
                 poDS->AddToDatasetOpenList();
             }
-
-            int *pnRecCount =
-                static_cast<int *>(CPLGetTLS(CTLS_GDALDATASET_REC_PROTECT_MAP));
-            if( pnRecCount )
-                (*pnRecCount)--;
 
             if( nOpenFlags & GDAL_OF_SHARED )
             {
@@ -2942,11 +2954,6 @@ GDALDatasetH CPL_STDCALL GDALOpenEx( const char *pszFilename,
 #else
         if( CPLGetLastErrorNo() != 0 && CPLGetLastErrorType() > CE_Warning)
         {
-            int *pnRecCount =
-                static_cast<int *>(CPLGetTLS(CTLS_GDALDATASET_REC_PROTECT_MAP));
-            if( pnRecCount )
-                (*pnRecCount)--;
-
             CSLDestroy(papszOpenOptionsCleaned);
             return nullptr;
         }
@@ -2978,11 +2985,6 @@ GDALDatasetH CPL_STDCALL GDALOpenEx( const char *pszFilename,
             }
         }
     }
-
-    int *pnRecCount =
-        static_cast<int *>(CPLGetTLS(CTLS_GDALDATASET_REC_PROTECT_MAP));
-    if( pnRecCount )
-        (*pnRecCount)--;
 
     return nullptr;
 }
@@ -3153,11 +3155,9 @@ int CPL_STDCALL GDALDumpOpenDatasets( FILE *fp )
 
     CPL_IGNORE_RET_VAL(VSIFPrintf(fp, "Open GDAL Datasets:\n"));
 
-    for( std::map<GDALDataset *, GIntBig>::iterator oIter =
-             poAllDatasetMap->begin();
-         oIter != poAllDatasetMap->end(); ++oIter )
+    for( auto oIter: *poAllDatasetMap )
     {
-        GDALDumpOpenDatasetsForeach(oIter->first, fp);
+        GDALDumpOpenDatasetsForeach(oIter.first, fp);
     }
 
     if (phSharedDatasetSet != nullptr)
@@ -4215,10 +4215,10 @@ int GDALDataset::GetSummaryRefCount() const
  @since GDAL 2.0
 */
 
-OGRLayer *GDALDataset::ICreateLayer( const char * /* pszName */,
-                                     OGRSpatialReference * /* poSpatialRef */,
-                                     OGRwkbGeometryType /* eGType */,
-                                     char ** /* papszOptions */ )
+OGRLayer *GDALDataset::ICreateLayer( CPL_UNUSED const char * pszName,
+                                     CPL_UNUSED OGRSpatialReference * poSpatialRef,
+                                     CPL_UNUSED OGRwkbGeometryType eGType,
+                                     CPL_UNUSED char ** papszOptions )
 
 {
     CPLError(CE_Failure, CPLE_NotSupported,
@@ -6694,7 +6694,7 @@ int GDALDataset::EnterReadWrite(GDALRWFlag eRWFlag)
 {
     if( m_poPrivate != nullptr && eAccess == GA_Update )
     {
-        if( m_poPrivate->eStateReadWriteMutex == RW_MUTEX_STATE_UNKNOWN )
+        if( m_poPrivate->eStateReadWriteMutex == GDALAllowReadWriteMutexState::RW_MUTEX_STATE_UNKNOWN )
         {
             // In case dead-lock would occur, which is not impossible,
             // this can be used to prevent it, but at the risk of other
@@ -6702,14 +6702,14 @@ int GDALDataset::EnterReadWrite(GDALRWFlag eRWFlag)
             if(CPLTestBool(
                    CPLGetConfigOption("GDAL_ENABLE_READ_WRITE_MUTEX", "YES")))
             {
-                m_poPrivate->eStateReadWriteMutex = RW_MUTEX_STATE_ALLOWED;
+                m_poPrivate->eStateReadWriteMutex = GDALAllowReadWriteMutexState::RW_MUTEX_STATE_ALLOWED;
             }
             else
             {
-                m_poPrivate->eStateReadWriteMutex = RW_MUTEX_STATE_DISABLED;
+                m_poPrivate->eStateReadWriteMutex = GDALAllowReadWriteMutexState::RW_MUTEX_STATE_DISABLED;
             }
         }
-        if( m_poPrivate->eStateReadWriteMutex == RW_MUTEX_STATE_ALLOWED &&
+        if( m_poPrivate->eStateReadWriteMutex == GDALAllowReadWriteMutexState::RW_MUTEX_STATE_ALLOWED &&
             (eRWFlag == GF_Write || m_poPrivate->hMutex != nullptr) )
         {
             // There should be no race related to creating this mutex since
@@ -6754,7 +6754,7 @@ void GDALDataset::InitRWLock()
 {
     if( m_poPrivate )
     {
-        if( m_poPrivate->eStateReadWriteMutex == RW_MUTEX_STATE_UNKNOWN )
+        if( m_poPrivate->eStateReadWriteMutex == GDALAllowReadWriteMutexState::RW_MUTEX_STATE_UNKNOWN )
         {
             if( EnterReadWrite(GF_Write) )
                 LeaveReadWrite();
@@ -6774,7 +6774,7 @@ void GDALDataset::DisableReadWriteMutex()
 {
     if( m_poPrivate )
     {
-        m_poPrivate->eStateReadWriteMutex = RW_MUTEX_STATE_DISABLED;
+        m_poPrivate->eStateReadWriteMutex = GDALAllowReadWriteMutexState::RW_MUTEX_STATE_DISABLED;
     }
 }
 
@@ -6860,7 +6860,7 @@ void GDALDataset::ReleaseMutex()
 
 struct GDALDataset::Features::Iterator::Private
 {
-    GDALDataset::FeatureLayerPair m_oPair;
+    GDALDataset::FeatureLayerPair m_oPair{};
     GDALDataset* m_poDS = nullptr;
     bool m_bEOF = true;
 };
@@ -6879,9 +6879,7 @@ GDALDataset::Features::Iterator::Iterator(GDALDataset* poDS, bool bStart):
     }
 }
 
-GDALDataset::Features::Iterator::~Iterator()
-{
-}
+GDALDataset::Features::Iterator::~Iterator() = default;
 
 const GDALDataset::FeatureLayerPair&
                 GDALDataset::Features::Iterator::operator*() const
@@ -6989,7 +6987,7 @@ GDALDataset::Layers::Iterator::Iterator(const Iterator& oOther):
 {
 }
 
-GDALDataset::Layers::Iterator::Iterator(Iterator&& oOther):
+GDALDataset::Layers::Iterator::Iterator(Iterator&& oOther) noexcept:
     m_poPrivate(std::move(oOther.m_poPrivate))
 {
 }
@@ -7010,9 +7008,7 @@ GDALDataset::Layers::Iterator::Iterator(GDALDataset* poDS, bool bStart):
     }
 }
 
-GDALDataset::Layers::Iterator::~Iterator()
-{
-}
+GDALDataset::Layers::Iterator::~Iterator() = default;
 
 // False positive of cppcheck 1.72
 // cppcheck-suppress operatorEqVarError
@@ -7024,7 +7020,7 @@ GDALDataset::Layers::Iterator& GDALDataset::Layers::Iterator::operator=(
 }
 
 GDALDataset::Layers::Iterator& GDALDataset::Layers::Iterator::operator=(
-                                GDALDataset::Layers::Iterator&& oOther)
+                                GDALDataset::Layers::Iterator&& oOther) noexcept
 {
     m_poPrivate = std::move(oOther.m_poPrivate);
     return *this;
@@ -7225,9 +7221,7 @@ GDALDataset::Bands::Iterator::Iterator(GDALDataset* poDS, bool bStart):
     }
 }
 
-GDALDataset::Bands::Iterator::~Iterator()
-{
-}
+GDALDataset::Bands::Iterator::~Iterator() = default;
 
 GDALRasterBand* GDALDataset::Bands::Iterator::operator*()
 {

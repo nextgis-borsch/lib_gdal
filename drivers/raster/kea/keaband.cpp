@@ -42,11 +42,11 @@
 CPL_CVSID("$Id$")
 
 // constructor
-KEARasterBand::KEARasterBand( KEADataset *pDataset, int nSrcBand, GDALAccess eAccessIn, kealib::KEAImageIO *pImageIO, int *pRefCount )
+KEARasterBand::KEARasterBand( KEADataset *pDataset, int nSrcBand, GDALAccess eAccessIn, kealib::KEAImageIO *pImageIO, int *pRefCount ):
+    m_eKEADataType(pImageIO->getImageBandDataType(nSrcBand)) // get the data type as KEA enum
 {
     this->poDS = pDataset; // our pointer onto the dataset
     this->nBand = nSrcBand; // this is the band we are
-    this->m_eKEADataType = pImageIO->getImageBandDataType(nSrcBand); // get the data type as KEA enum
     this->eDataType = KEA_to_GDAL_Type( m_eKEADataType );       // convert to GDAL enum
     this->nBlockXSize = pImageIO->getImageBlockSize(nSrcBand);  // get the native blocksize
     this->nBlockYSize = pImageIO->getImageBlockSize(nSrcBand);
@@ -101,7 +101,7 @@ KEARasterBand::~KEARasterBand()
     CSLDestroy(this->m_papszMetadataList);
     if( this->m_pszHistoBinValues != nullptr )
     {
-        // histgram bin values as a string
+        // histogram bin values as a string
         CPLFree(this->m_pszHistoBinValues);
     }
     // delete any overview bands
@@ -156,7 +156,7 @@ void KEARasterBand::UpdateMetadataList()
     }
 
     // STATISTICS_HISTONUMBINS
-    const GDALRasterAttributeTable *pTable = this->GetDefaultRAT();
+    const GDALRasterAttributeTable *pTable = KEARasterBand::GetDefaultRAT();
     CPLString osWorkingResult;
     osWorkingResult.Printf( "%lu", (unsigned long)pTable->GetRowCount());
     m_papszMetadataList = CSLSetNameValue(m_papszMetadataList, "STATISTICS_HISTONUMBINS", osWorkingResult);
@@ -1212,3 +1212,13 @@ int KEARasterBand::GetMaskFlags()
     // none of the other flags seem to make sense...
     return 0;
 }
+
+kealib::KEALayerType KEARasterBand::getLayerType() const
+{
+    return m_pImageIO->getImageBandLayerType(nBand);
+}
+void KEARasterBand::setLayerType(kealib::KEALayerType eLayerType) 
+{
+    m_pImageIO->setImageBandLayerType(nBand, eLayerType);
+}
+

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env pytest
 ###############################################################################
 # $Id$
 #
@@ -29,21 +29,19 @@
 ###############################################################################
 
 import os
-import sys
 
-sys.path.append('../pymod')
 
-import gdaltest
 from osgeo import gdal
 import test_cli_utilities
+import pytest
 
 ###############################################################################
 # Test on a small file
 
 
-def vsistdin_1():
+def test_vsistdin_1():
     if test_cli_utilities.get_gdal_translate_path() is None:
-        return 'skip'
+        pytest.skip()
 
     src_ds = gdal.Open('data/byte.tif')
     ds = gdal.GetDriverByName('GTiff').CreateCopy('tmp/vsistdin_1_src.tif', src_ds)
@@ -54,33 +52,21 @@ def vsistdin_1():
     # Should work on both Unix and Windows
     os.system(test_cli_utilities.get_gdal_translate_path() + " /vsistdin/ tmp/vsistdin_1_out.tif -q < tmp/vsistdin_1_src.tif")
 
-    try:
-        os.unlink("tmp/vsistdin_1_src.tif")
-    except OSError:
-        pass
+    gdal.Unlink("tmp/vsistdin_1_src.tif")
 
     ds = gdal.Open("tmp/vsistdin_1_out.tif")
-    if ds is None:
-        gdaltest.post_reason('fail')
-        return 'fail'
-    if ds.GetRasterBand(1).Checksum() != cs:
-        gdaltest.post_reason('fail')
-        return 'fail'
+    assert ds is not None
+    assert ds.GetRasterBand(1).Checksum() == cs
 
-    try:
-        os.unlink("tmp/vsistdin_1_out.tif")
-    except OSError:
-        pass
-
-    return 'success'
+    gdal.Unlink("tmp/vsistdin_1_out.tif")
 
 ###############################################################################
 # Test on a bigger file (> 1 MB)
 
 
-def vsistdin_2():
+def test_vsistdin_2():
     if test_cli_utilities.get_gdal_translate_path() is None:
-        return 'skip'
+        pytest.skip()
 
     ds = gdal.GetDriverByName('GTiff').Create('tmp/vsistdin_2_src.tif', 2048, 2048)
     ds = None
@@ -88,44 +74,32 @@ def vsistdin_2():
     # Should work on both Unix and Windows
     os.system(test_cli_utilities.get_gdal_translate_path() + " /vsistdin/ tmp/vsistdin_2_out.tif -q < tmp/vsistdin_2_src.tif")
 
-    try:
-        os.unlink("tmp/vsistdin_2_src.tif")
-    except OSError:
-        pass
+    gdal.Unlink("tmp/vsistdin_2_src.tif")
 
     ds = gdal.Open("tmp/vsistdin_2_out.tif")
-    if ds is None:
-        return 'fail'
+    assert ds is not None
     ds = None
 
-    try:
-        os.unlink("tmp/vsistdin_2_out.tif")
-    except OSError:
-        pass
-
-    return 'success'
+    gdal.Unlink("tmp/vsistdin_2_out.tif")
 
 ###############################################################################
 # Test opening /vsistdin/ in write mode (failure expected)
 
 
-def vsistdin_3():
+def test_vsistdin_3():
 
     gdal.PushErrorHandler('CPLQuietErrorHandler')
     f = gdal.VSIFOpenL('/vsistdin/', 'wb')
     gdal.PopErrorHandler()
-    if f is not None:
-        return 'fail'
-
-    return 'success'
+    assert f is None
 
 ###############################################################################
 # Test fix for #6061
 
 
-def vsistdin_4():
+def test_vsistdin_4():
     if test_cli_utilities.get_gdal_translate_path() is None:
-        return 'skip'
+        pytest.skip()
 
     f = open('tmp/vsistdin_4_src.vrt', 'wt')
     f.write("""<VRTDataset rasterXSize="20" rasterYSize="20">
@@ -139,41 +113,20 @@ def vsistdin_4():
       <SourceBand>1</SourceBand>
     </SimpleSource>
   </VRTRasterBand>
-</VRTDataset>""" % (' '.join([' ' for i in range(1024 * 1024)])))
+</VRTDataset>""" % (' ' * (2 * 1024 * 1024)))
     f.close()
 
     # Should work on both Unix and Windows
     os.system(test_cli_utilities.get_gdal_translate_path() + " /vsistdin/ tmp/vsistdin_4_out.tif -q < tmp/vsistdin_4_src.vrt")
 
-    try:
-        os.unlink("tmp/vsistdin_4_src.vrt")
-    except OSError:
-        pass
+    gdal.Unlink("tmp/vsistdin_4_src.vrt")
 
     ds = gdal.Open("tmp/vsistdin_4_out.tif")
-    if ds is None:
-        return 'fail'
+    assert ds is not None
     ds = None
 
-    try:
-        os.unlink("tmp/vsistdin_4_out.tif")
-    except OSError:
-        pass
-
-    return 'success'
+    gdal.Unlink("tmp/vsistdin_4_out.tif")
 
 
-gdaltest_list = [vsistdin_1,
-                 vsistdin_2,
-                 vsistdin_3,
-                 vsistdin_4
-                 ]
 
 
-if __name__ == '__main__':
-
-    gdaltest.setup_run('vsistdin')
-
-    gdaltest.run_tests(gdaltest_list)
-
-    gdaltest.summarize()

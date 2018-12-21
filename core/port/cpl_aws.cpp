@@ -600,35 +600,63 @@ static bool Iso8601ToUnixTime(const char* pszDT, GIntBig* pnUnixTime)
 static bool IsMachinePotentiallyEC2Instance()
 {
 #ifdef __linux
-    // Small optimization on Linux. If the kernel is recent
-    // enough, a /sys/hypervisor/uuid file should exist on EC2 instances
-    // and contain a string beginning with ec2.
+    // Optimization on Linux to avoid the network request
     // See http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/identify_ec2_instances.html
-    // If /sys/hypervisor exists, but /sys/hypervisor/uuid does not
-    // exist or doesn't start with ec2, then do not attempt any network
-    // access
-    bool bAttemptNetworkAccess = true;
-    if( CPLTestBool(CPLGetConfigOption(
-                        "CPL_AWS_CHECK_HYPERVISOR_UUID", "YES")) )
+    // Skip if either:
+    // - CPL_AWS_AUTODETECT_EC2=NO
+    // - CPL_AWS_CHECK_HYPERVISOR_UUID=NO (deprecated)
+
+    // On the newer Nitro Hypervisor (C5, M5, H1, T3), use 
+    // /sys/devices/virtual/dmi/id/sys_vendor = 'Amazon EC2' instead.
+
+    // On older Xen hypervisor EC2 instances, a /sys/hypervisor/uuid file will
+    // exist with a string beginning with 'ec2'.
+
+    // If the files exist but don't contain the correct content, then we're not EC2 and
+    // do not attempt any network access
+
+    if( ! CPLTestBool(CPLGetConfigOption("CPL_AWS_AUTODETECT_EC2", "YES")) )
     {
-        VSIStatBufL sStat;
-        if( VSIStatL("/sys/hypervisor", &sStat) == 0 )
+        return true;
+    }
+    else
+    {
+        CPLString opt = CPLGetConfigOption("CPL_AWS_CHECK_HYPERVISOR_UUID", "");
+        if ( ! opt.empty() )
         {
-            char uuid[36+1] = { 0 };
-            VSILFILE* fp = VSIFOpenL("/sys/hypervisor/uuid", "rb");
-            if( fp != nullptr )
+            CPLDebug("AWS", "CPL_AWS_CHECK_HYPERVISOR_UUID is deprecated. Use CPL_AWS_AUTODETECT_EC2 instead");
+            if ( ! CPLTestBool(opt) )
             {
-                VSIFReadL( uuid, 1, sizeof(uuid)-1, fp );
-                bAttemptNetworkAccess = EQUALN( uuid, "ec2", 3 );
-                VSIFCloseL(fp);
-            }
-            else
-            {
-                bAttemptNetworkAccess = false;
+                return true;
             }
         }
     }
-    return bAttemptNetworkAccess;
+
+    // Check for Xen Hypervisor instances
+    // This file doesn't exist on Nitro instances
+    VSILFILE* fp = VSIFOpenL("/sys/hypervisor/uuid", "rb");
+    if( fp != nullptr )
+    {
+        char uuid[36+1] = { 0 };
+        VSIFReadL( uuid, 1, sizeof(uuid)-1, fp );
+        VSIFCloseL(fp);
+        return EQUALN( uuid, "ec2", 3 );
+    }
+
+    // Check for Nitro Hypervisor instances
+    // This file may exist on Xen instances with a value of 'Xen'
+    // (but that doesn't mean we're on EC2)
+    fp = VSIFOpenL("/sys/devices/virtual/dmi/id/sys_vendor", "rb");
+    if( fp != nullptr )
+    {
+        char buf[10+1] = { 0 };
+        VSIFReadL( buf, 1, sizeof(buf)-1, fp );
+        VSIFCloseL(fp);
+        return EQUALN( buf, "Amazon EC2", 10 );
+    }
+
+    // Fallback: Check via the network
+    return true;
 #elif defined(WIN32)
     // We might add later a way of detecting if we run on EC2 using WMI
     // See http://docs.aws.amazon.com/AWSEC2/latest/WindowsGuide/identify_ec2_instances.html
@@ -661,37 +689,51 @@ bool VSIS3HandleHelper::GetConfigurationFromEC2(CPLString& osSecretAccessKey,
         return true;
     }
 
-    const CPLString osEC2CredentialsURL(
-        CPLGetConfigOption("CPL_AWS_EC2_CREDENTIALS_URL",
-            "http://169.254.169.254/latest/meta-data/iam/security-credentials/"));
-    if( osIAMRole.empty() && !osEC2CredentialsURL.empty() )
+    CPLString osURLRefreshCredentials;
+    CPLString osCPL_AWS_EC2_CREDENTIALS_URL(
+        CPLGetConfigOption("CPL_AWS_EC2_CREDENTIALS_URL", ""));
+    const CPLString osECSRelativeURI(
+        CPLGetConfigOption("AWS_CONTAINER_CREDENTIALS_RELATIVE_URI", ""));
+    if( osCPL_AWS_EC2_CREDENTIALS_URL.empty() && !osECSRelativeURI.empty() )
     {
-        // If we don't know yet the IAM role, fetch it
-        if( IsMachinePotentiallyEC2Instance() )
+        // See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html
+        osURLRefreshCredentials = "http://169.254.170.2" + osECSRelativeURI;
+    }
+    else
+    {
+        const CPLString osDefaultURL(
+            "http://169.254.169.254/latest/meta-data/iam/security-credentials/");
+        const CPLString osEC2CredentialsURL =
+            osCPL_AWS_EC2_CREDENTIALS_URL.empty() ? osDefaultURL : osCPL_AWS_EC2_CREDENTIALS_URL;
+        if( osIAMRole.empty() && !osEC2CredentialsURL.empty() )
         {
-            char** papszOptions = CSLSetNameValue(nullptr, "TIMEOUT", "1");
-            CPLPushErrorHandler(CPLQuietErrorHandler);
-            CPLHTTPResult* psResult =
-                        CPLHTTPFetch( osEC2CredentialsURL, papszOptions );
-            CPLPopErrorHandler();
-            CSLDestroy(papszOptions);
-            if( psResult )
+            // If we don't know yet the IAM role, fetch it
+            if( IsMachinePotentiallyEC2Instance() )
             {
-                if( psResult->nStatus == 0 && psResult->pabyData != nullptr )
+                char** papszOptions = CSLSetNameValue(nullptr, "TIMEOUT", "1");
+                CPLPushErrorHandler(CPLQuietErrorHandler);
+                CPLHTTPResult* psResult =
+                            CPLHTTPFetch( osEC2CredentialsURL, papszOptions );
+                CPLPopErrorHandler();
+                CSLDestroy(papszOptions);
+                if( psResult )
                 {
-                    osIAMRole = reinterpret_cast<char*>(psResult->pabyData);
+                    if( psResult->nStatus == 0 && psResult->pabyData != nullptr )
+                    {
+                        osIAMRole = reinterpret_cast<char*>(psResult->pabyData);
+                    }
+                    CPLHTTPDestroyResult(psResult);
                 }
-                CPLHTTPDestroyResult(psResult);
             }
         }
+        if( osIAMRole.empty() )
+            return false;
+        osURLRefreshCredentials = osEC2CredentialsURL + osIAMRole;
     }
-    if( osIAMRole.empty() )
-        return false;
 
     // Now fetch the refreshed credentials
     CPLStringList oResponse;
-    CPLHTTPResult* psResult = CPLHTTPFetch(
-        (osEC2CredentialsURL + osIAMRole).c_str(), nullptr );
+    CPLHTTPResult* psResult = CPLHTTPFetch(osURLRefreshCredentials.c_str(), nullptr );
     if( psResult )
     {
         if( psResult->nStatus == 0 && psResult->pabyData != nullptr )

@@ -621,6 +621,8 @@ class OGRSQLiteSelectLayer : public OGRSQLiteLayer, public IOGRSQLiteSelectLayer
 
     virtual OGRErr      ResetStatement() override;
 
+    CPL_DISALLOW_COPY_ASSIGN(OGRSQLiteSelectLayer)
+
   public:
                         OGRSQLiteSelectLayer( OGRSQLiteDataSource *,
                                               CPLString osSQL,
@@ -947,9 +949,6 @@ class RL2RasterBand final: public GDALPamRasterBand
 
 CPLString OGRSQLiteFieldDefnToSQliteFieldDefn( OGRFieldDefn* poFieldDefn,
                                                int bSQLiteDialectInternalUse );
-
-int OGRSQLITEStringToDateTimeField( OGRFeature* poFeature, int iField,
-                                    const char* pszValue );
 
 typedef void (*pfnNotifyFileOpenedType)(void* pfnUserData, const char* pszFilename, VSILFILE* fp);
 sqlite3_vfs* OGRSQLiteCreateVFS(pfnNotifyFileOpenedType pfn, void* pfnUserData);

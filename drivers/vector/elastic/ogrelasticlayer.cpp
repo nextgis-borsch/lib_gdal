@@ -880,7 +880,7 @@ void OGRElasticLayer::ResetReading()
     if( !m_osScrollID.empty() )
     {
         char** papszOptions = CSLAddNameValue(nullptr, "CUSTOMREQUEST", "DELETE");
-        CPLHTTPResult* psResult = CPLHTTPFetch((m_poDS->GetURL() + CPLString("/_search/scroll?scroll_id=") + m_osScrollID).c_str(), papszOptions);
+        CPLHTTPResult* psResult = m_poDS->HTTPFetch((m_poDS->GetURL() + CPLString("/_search/scroll?scroll_id=") + m_osScrollID).c_str(), papszOptions);
         CSLDestroy(papszOptions);
         CPLHTTPDestroyResult(psResult);
 
@@ -1529,7 +1529,8 @@ CPLString OGRElasticLayer::BuildMap() {
 
     if( m_osMappingName == "FeatureCollection" )
     {
-        json_object_object_add(poMappingProperties, "type", AddPropertyMap("string"));
+        json_object_object_add(poMappingProperties, "type", AddPropertyMap(
+            m_poDS->m_nMajorVersion >= 5 ? "text" : "string"));
 
         std::vector<CPLString> aosPath;
         aosPath.push_back("properties");
@@ -2444,14 +2445,6 @@ OGRErr OGRElasticLayer::CreateGeomField( OGRGeomFieldDefn *poFieldIn,
         return OGRERR_FAILURE;
     }
 
-    if( m_eGeomTypeMapping == ES_GEOMTYPE_GEO_POINT &&
-        m_poFeatureDefn->GetGeomFieldCount() > 0 )
-    {
-        CPLError(CE_Failure, CPLE_NotSupported,
-                 "ES_GEOM_TYPE=GEO_POINT only supported for single geometry field");
-        return OGRERR_FAILURE;
-    }
-
     OGRGeomFieldDefn oFieldDefn(poFieldIn);
     if( EQUAL(oFieldDefn.GetNameRef(), "") )
         oFieldDefn.SetName("geometry");
@@ -2469,8 +2462,7 @@ OGRErr OGRElasticLayer::CreateGeomField( OGRGeomFieldDefn *poFieldIn,
 
     if( m_eGeomTypeMapping == ES_GEOMTYPE_GEO_SHAPE ||
         (m_eGeomTypeMapping == ES_GEOMTYPE_AUTO &&
-         poFieldIn->GetType() != wkbPoint) ||
-        m_poFeatureDefn->GetGeomFieldCount() > 0 )
+         poFieldIn->GetType() != wkbPoint))
     {
         m_abIsGeoPoint.push_back(FALSE);
     }

@@ -39,10 +39,12 @@ from osgeo import osr
 progress = gdal.TermProgress_nocb
 
 
-class AffineTransformDecorator:
+class AffineTransformDecorator(object):
     """ A class providing some useful methods for affine Transformations """
 
     def __init__(self, transform):
+        self.lrx = None
+        self.lry = None
         self.geotransform = transform
         self.scaleX = self.geotransform[1]
         self.scaleY = self.geotransform[5]
@@ -68,7 +70,7 @@ class AffineTransformDecorator:
         return [xlist, ylist]
 
 
-class DataSetCache:
+class DataSetCache(object):
     """ A class for caching source tiles """
 
     def __init__(self):
@@ -92,13 +94,13 @@ class DataSetCache:
         return result
 
     def __del__(self):
-        for name, dataset in self.dict.items():
+        for dataset in self.dict.values():
             del dataset
         del self.queue
         del self.dict
 
 
-class tile_info:
+class tile_info(object):
     """ A class holding info how to tile """
 
     def __init__(self, xsize, ysize, tileWidth, tileHeight, overlap):
@@ -122,7 +124,7 @@ class tile_info:
         print('overlap:     %d' % self.overlap)
 
 
-class mosaic_info:
+class mosaic_info(object):
     """A class holding information about a GDAL file or a GDAL fileset"""
 
     def __init__(self, filename, inputDS):
@@ -308,8 +310,7 @@ def getTileIndexFromFiles(inputTiles, driverTyp):
 def getTargetDir(level=-1):
     if level == -1:
         return TargetDir
-    else:
-        return TargetDir + str(level) + os.sep
+    return TargetDir + str(level) + os.sep
 
 
 def tileImage(minfo, ti):
@@ -404,9 +405,9 @@ def copyTileIndexToCSV(OGRDS, fileName):
         geom = feature.GetGeometryRef()
         coords = geom.GetEnvelope()
 
-        for i in range(len(coords)):
+        for coord in coords:
             csvfile.write(CsvDelimiter)
-            csvfile.write("%f" % coords[i])
+            csvfile.write("%f" % coord)
         csvfile.write("\n")
 
     csvfile.close()
@@ -585,7 +586,7 @@ def addFeature(OGRDataSource, location, xlist, ylist):
     wkt = 'POLYGON ((%f %f,%f %f,%f %f,%f %f,%f %f ))' % (xlist[0], ylist[0],
                                                           xlist[1], ylist[1], xlist[2], ylist[2], xlist[3], ylist[3], xlist[0], ylist[0])
     OGRGeometry = ogr.CreateGeometryFromWkt(wkt, OGRLayer.GetSpatialRef())
-    if (OGRGeometry is None):
+    if OGRGeometry is None:
         print('Could not create Geometry')
         sys.exit(1)
 
@@ -648,10 +649,10 @@ def getTileName(minfo, ti, xIndex, yIndex, level=-1):
     """
     global LastRowIndx
 
-    max = ti.countTilesX
-    if (ti.countTilesY > max):
-        max = ti.countTilesY
-    countDigits = len(str(max))
+    maxim = ti.countTilesX
+    if ti.countTilesY > maxim:
+        maxim = ti.countTilesY
+    countDigits = len(str(maxim))
     parts = os.path.splitext(os.path.basename(minfo.filename))
     if parts[0][0] == "@":  # remove possible leading "@"
         parts = (parts[0][1:len(parts[0])], parts[1])
@@ -660,20 +661,20 @@ def getTileName(minfo, ti, xIndex, yIndex, level=-1):
     xIndex_str = ("%0" + str(countDigits) + "i") % (xIndex,)
 
     if UseDirForEachRow:
-        format = getTargetDir(level) + str(yIndex) + os.sep + parts[0] + "_" + yIndex_str + "_" + xIndex_str
+        frmt = getTargetDir(level) + str(yIndex) + os.sep + parts[0] + "_" + yIndex_str + "_" + xIndex_str
         # See if there was a switch in the row, if so then create new dir for row.
         if LastRowIndx < yIndex:
             LastRowIndx = yIndex
             if not os.path.exists(getTargetDir(level) + str(yIndex)):
                 os.mkdir(getTargetDir(level) + str(yIndex))
     else:
-        format = getTargetDir(level) + parts[0] + "_" + yIndex_str + "_" + xIndex_str
+        frmt = getTargetDir(level) + parts[0] + "_" + yIndex_str + "_" + xIndex_str
     # Check for the extension that should be used.
     if Extension is None:
-        format = format + parts[1]
+        frmt += parts[1]
     else:
-        format = format + "." + Extension
-    return format
+        frmt += "." + Extension
+    return frmt
 
 
 def UsageFormat():
@@ -821,7 +822,7 @@ def main(args=None):
             i += 1
             TileIndexName = argv[i]
             parts = os.path.splitext(TileIndexName)
-            if len(parts[1]) == 0:
+            if not parts[1]:
                 TileIndexName += ".shp"
 
         elif arg == '-tileIndexField':
@@ -831,7 +832,7 @@ def main(args=None):
             i += 1
             CsvFileName = argv[i]
             parts = os.path.splitext(CsvFileName)
-            if len(parts[1]) == 0:
+            if not parts[1]:
                 CsvFileName += ".csv"
         elif arg == '-csvDelim':
             i += 1
@@ -847,7 +848,7 @@ def main(args=None):
             Names.append(arg)
         i += 1
 
-    if len(Names) == 0:
+    if not Names:
         print('No input files selected.')
         Usage()
         return 1
@@ -859,7 +860,7 @@ def main(args=None):
         print("Overlap too big w.r.t tile height/width")
         return 1
 
-    if (TargetDir is None):
+    if TargetDir is None:
         print("Missing Directory for Tiles -targetDir")
         Usage()
         return 1
@@ -874,7 +875,7 @@ def main(args=None):
         startIndx = 1
         for levelIndx in range(startIndx, Levels + 1):
             leveldir = TargetDir + str(levelIndx) + os.sep
-            if (os.path.exists(leveldir)):
+            if os.path.exists(leveldir):
                 continue
             os.mkdir(leveldir)
             if not os.path.exists(leveldir):
@@ -901,7 +902,7 @@ def main(args=None):
     minfo = mosaic_info(Names[0], tileIndexDS)
     ti = tile_info(minfo.xsize, minfo.ysize, TileWidth, TileHeight, Overlap)
 
-    if Source_SRS is None and len(minfo.projection) > 0:
+    if Source_SRS is None and minfo.projection:
         Source_SRS = osr.SpatialReference()
         if Source_SRS.SetFromUserInput(minfo.projection) != 0:
             print('invalid projection  ' + minfo.projection)

@@ -63,6 +63,11 @@ class Translator(object):
         self.opts = options
         self.construct_parser()
         self.options, self.args = self.parser.parse_args(args=arguments)
+        self.in_srs = None
+        self.out_srs = None
+        self.in_ds = None
+        self.out_ds = None
+        self.out_drv = None
 
     def process(self):
         self.open()
@@ -96,14 +101,14 @@ class Translator(object):
             self.input.SetAttributeFilter(self.options.where)
 
         if not self.out_drv:
-            raise Exception("The '%s' driver was not found, did you misspell it or is it not available in this GDAL build?", self.options.driver)
+            raise Exception("The '%s' driver was not found, did you misspell it or is it not available in this GDAL build?" % self.options.driver)
         if not self.out_drv.TestCapability('CreateDataSource'):
-            raise Exception("The '%s' driver does not support creating layers, you will have to choose another output driver", self.options.driver)
+            raise Exception("The '%s' driver does not support creating layers, you will have to choose another output driver" % self.options.driver)
         if not self.options.output:
             raise Exception("No output layer was specified")
         if self.options.driver == 'ESRI Shapefile':
             path, filename = os.path.split(os.path.abspath(self.options.output))
-            name, ext = os.path.splitext(filename)
+            name, _ = os.path.splitext(filename)
             if self.options.overwrite:
                 # special case the Shapefile driver, which behaves specially.
                 if os.path.exists(os.path.join(path, name,) + '.shp'):
@@ -146,6 +151,7 @@ class Translator(object):
                 self.output.CreateField(fld)
 
     def translate(self, geometry_callback=None, attribute_callback=None):
+        # pylint: disable=unused-argument
         f = self.input.GetNextFeature()
         trans = None
         if self.options.t_srs:
@@ -241,7 +247,7 @@ class Densify(Translator):
                 else:
                     # duplicate point... throw it out
                     continue
-            if (d > threshold):
+            if d > threshold:
                 if self.options.remainder.upper() == "UNIFORM":
                     segcount = int(math.ceil(d / threshold))
 
@@ -250,7 +256,7 @@ class Densify(Translator):
 
                     x = x0
                     y = y0
-                    for p in range(1, segcount):
+                    for _ in range(1, segcount):
                         x = x + dx
                         y = y + dy
                         g.AddPoint(x, y)
@@ -259,7 +265,7 @@ class Densify(Translator):
                     segcount = int(math.floor(d / threshold))
                     xa = None
                     ya = None
-                    for p in range(1, segcount):
+                    for _ in range(1, segcount):
                         if not xa:
                             xn, yn = self.calcpoint(x0, x1, y0, y1, threshold)
                             d = self.distance(x0, xn, y0, yn)
@@ -282,7 +288,7 @@ class Densify(Translator):
                     # xb = x0
                     # yb = y0
                     remainder = d % threshold
-                    for p in range(segcount):
+                    for _ in range(segcount):
                         if not xa:
                             xn, yn = self.calcpoint(x0, x1, y0, y1, remainder)
 
@@ -312,7 +318,6 @@ def GetLength(geometry):
 
     def get_distance(x1, y1, x2, y2):
         """Return the euclidean distance between this point and another."""
-        import math
         deltax = x1 - x2
         deltay = y1 - y2
         d2 = (deltax**2) + (deltay**2)

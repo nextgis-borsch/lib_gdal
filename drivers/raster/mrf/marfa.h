@@ -173,7 +173,7 @@ typedef struct ILImage {
     GDALColorInterp ci;
 } ILImage;
 
-// Delarations of utility functions
+// Declarations of utility functions
 
 /**
  *
@@ -514,6 +514,9 @@ public:
     virtual ~GDALMRFRasterBand();
     virtual CPLErr IReadBlock(int xblk, int yblk, void *buffer) override;
     virtual CPLErr IWriteBlock(int xblk, int yblk, void *buffer) override;
+
+    // Check that the respective block has data, without reading it
+    virtual bool TestBlock(int xblk, int yblk);
 
     virtual GDALColorTable *GetColorTable() override { return poDS->poColorTable; }
 

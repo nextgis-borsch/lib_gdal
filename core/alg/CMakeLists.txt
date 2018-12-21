@@ -3,7 +3,7 @@
 # Purpose:  CMake build scripts
 # Author:   Dmitry Baryshnikov, polimax@mail.ru
 ################################################################################
-# Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
+# Copyright (C) 2015-2018, NextGIS <info@nextgis.com>
 # Copyright (C) 2012,2013,2014 Dmitry Baryshnikov
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -28,6 +28,7 @@
 set(TARGET_NAME alg)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/marching_squares)
 include_directories(${CMAKE_SOURCE_DIR}/core/ogr/ogrsf_frmts)
 include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/vrt)
 
@@ -87,7 +88,7 @@ set(LIB_CSOURCES
 
 find_anyproject(QHULL DEFAULT OFF)
 if(QHULL_FOUND)
-    add_definitions(-DEXTERNAL_QHULL -DQHULL_INCLUDE_SUBDIR_IS_LIBQHULL)
+    add_definitions(-DEXTERNAL_QHULL -DQHULL_INCLUDE_SUBDIR_IS_LIBQHULL=1 -DHAVE_QHULL_LIBQHULL_H=1)
 endif()
 
 find_anyproject(Armadillo DEFAULT OFF)

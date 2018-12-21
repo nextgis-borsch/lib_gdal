@@ -47,7 +47,7 @@ def ingest_file_and_strip_mime(filename):
             continue
         if line == '\n':
             continue
-        if line.find('Content-Type') >= 0:
+        if 'Content-Type' in line:
             continue
         data = data + line
     f.close()
@@ -83,7 +83,7 @@ def validate(xml_filename_or_content, xsd_filename=None,
              inspire_schemas_location=None):
 
     try:
-        if xml_filename_or_content.find('<') == 0:
+        if xml_filename_or_content.startswith('<'):
             doc = etree.XML(xml_filename_or_content)
         else:
             doc = etree.XML(ingest_file_and_strip_mime(xml_filename_or_content))
@@ -202,27 +202,23 @@ def validate(xml_filename_or_content, xsd_filename=None,
 
 
 def transform_abs_links_to_ref_links(path, level=0):
-    for file in os.listdir(path):
-        filename = path + '/' + file
-        if os.path.isdir(filename) and filename.find('examples') < 0:
+    for filename in os.listdir(path):
+        filename = os.path.join(path, filename)
+        if os.path.isdir(filename) and 'examples' not in filename:
             transform_abs_links_to_ref_links(filename, level + 1)
         elif filename.endswith('.xsd'):
-            # print(level)
-            # print(filename)
             f = open(filename, 'rt')
             lines = f.readlines()
             f.close()
             rewrite = False
-            for i in range(len(lines)):
-                ln = lines[i]
+            for i, ln in enumerate(lines):
                 if ln[-1] == '\n':
                     ln = ln[0:-1]
                 pos = ln.find('http://schemas.opengis.net/')
                 if pos >= 0:
                     rewrite = True
                     s = ln[0:pos]
-                    for j in range(level):
-                        s = s + "../"
+                    s += "../" * level
                     s = s + ln[pos + len('http://schemas.opengis.net/'):]
                     ln = s
                     lines[i] = ln
@@ -231,8 +227,7 @@ def transform_abs_links_to_ref_links(path, level=0):
                 if pos >= 0:
                     rewrite = True
                     s = ln[0:pos]
-                    for j in range(level):
-                        s = s + "../"
+                    s += "../" * level
                     s = s + ln[pos + len('http://www.w3.org/1999/'):]
                     ln = s
                     lines[i] = ln
@@ -241,9 +236,8 @@ def transform_abs_links_to_ref_links(path, level=0):
                 if pos >= 0:
                     rewrite = True
                     s = ln[0:pos]
-                    for j in range(level):
-                        s = s + "../"
-                    s = s + ln[pos + len('http://www.w3.org/2001/'):]
+                    s += "../" * level
+                    s += ln[pos + len('http://www.w3.org/2001/'):]
                     ln = s
                     lines[i] = ln
 
@@ -257,18 +251,16 @@ def transform_abs_links_to_ref_links(path, level=0):
 
 
 def transform_inspire_abs_links_to_ref_links(path, level=0):
-    for file in os.listdir(path):
-        filename = path + '/' + file
-        if os.path.isdir(filename) and filename.find('examples') < 0:
+    for filename in os.listdir(path):
+        filename = os.path.join(path, filename)
+        if os.path.isdir(filename) and 'examples' not in filename:
             transform_inspire_abs_links_to_ref_links(filename, level + 1)
         elif filename.endswith('.xsd'):
-            # print(level)
-            # print(filename)
             f = open(filename, 'rt')
             lines = f.readlines()
             f.close()
             rewrite = False
-            for i in range(len(lines)):
+            for i, ln in enumerate(lines):
                 ln = lines[i]
                 if ln[-1] == '\n':
                     ln = ln[0:-1]
@@ -277,10 +269,8 @@ def transform_inspire_abs_links_to_ref_links(path, level=0):
                 if pos >= 0:
                     pos += len('schemaLocation="')
                     rewrite = True
-                    s = ln[0:pos]
-                    for j in range(level):
-                        s = s + "../"
-                    s = s + ln[pos + len('http://inspire.ec.europa.eu/schemas/'):]
+                    s = ln[0:pos] + "../" * level
+                    s += ln[pos + len('http://inspire.ec.europa.eu/schemas/'):]
                     ln = s
                     lines[i] = ln
 
@@ -296,9 +286,7 @@ def transform_inspire_abs_links_to_ref_links(path, level=0):
                 if pos >= 0:
                     rewrite = True
                     s = ln[0:pos]
-                    for j in range(level):
-                        s = s + "../"
-                    s = s + "../SCHEMAS_OPENGIS_NET/"
+                    s += "../" * level + "../SCHEMAS_OPENGIS_NET/"
                     s = s + ln[pos + len('http://schemas.opengis.net/'):]
                     ln = s
                     lines[i] = ln
@@ -449,27 +437,8 @@ def has_local_ogc_schemas(path):
         os.stat(path + '/wfs')
         os.stat(path + '/xlink.xsd')
         os.stat(path + '/xml.xsd')
-
-        if False:
-            try:
-                os.stat(path + '/ogc_catalog.xml')
-            except OSError:
-                f = open(path + '/ogc_catalog.xml', 'wb')
-                f.write("""<?xml version="1.0"?>
-    <!DOCTYPE catalog PUBLIC "-//OASIS//DTD Entity Resolution XML Catalog V1.0//EN" "http://www.oasis-open.org/committees/entity/release/1.0/catalog.dtd">
-    <catalog xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">
-    <rewriteSystem systemIdStartString="http://schemas.opengis.net/" rewritePrefix="./"/>
-    <rewriteURI uriStartString="http://schemas.opengis.net/" rewritePrefix="./"/>
-
-    <rewriteURI uriStartString="http://www.w3.org/1999/xlink.xsd" rewritePrefix="./xlink.xsd"/>
-
-    <rewriteURI uriStartString="http://www.w3.org/2001/xml.xsd" rewritePrefix="./xml.xsd"/>
-    </catalog>
-    """)
-                f.close()
-            os.environ['XML_CATALOG_FILES'] = path + '/ogc_catalog.xml'
         return True
-    except:
+    except OSError:
         return False
 
 ###############################################################################
@@ -504,70 +473,3 @@ def Usage():
 # Main
 
 
-if __name__ == '__main__':
-    argv = sys.argv[1:]
-    i = 0
-    filename = None
-    xsd_filename = None
-    ogc_schemas_location = None
-    inspire_schemas_location = None
-    application_schema_ns = 'http://mapserver.gis.umn.edu/mapserver'
-
-    if has_local_ogc_schemas('SCHEMAS_OPENGIS_NET'):
-        ogc_schemas_location = 'SCHEMAS_OPENGIS_NET'
-
-    if has_local_inspire_schemas('inspire_schemas'):
-        inspire_schemas_location = 'inspire_schemas'
-        # transform_inspire_abs_links_to_ref_links('inspire_schemas')
-
-    target_dir = '.'
-
-    while i < len(argv):
-        if argv[i] == "-target_dir":
-            i = i + 1
-            target_dir = argv[i]
-        elif argv[i] == "-download_ogc_schemas":
-            ret = download_ogc_schemas(target_dir=target_dir, force_download=True)
-            if i == len(argv) - 1:
-                if ret:
-                    sys.exit(0)
-                else:
-                    sys.exit(1)
-        elif argv[i] == "-download_inspire_schemas":
-            ret = download_inspire_schemas(target_dir=target_dir, force_download=True)
-            if i == len(argv) - 1:
-                if ret:
-                    sys.exit(0)
-                else:
-                    sys.exit(1)
-        elif argv[i] == "-schema":
-            i = i + 1
-            xsd_filename = argv[i]
-        elif argv[i] == "-ogc_schemas_location":
-            i = i + 1
-            ogc_schemas_location = argv[i]
-        elif argv[i] == "-inspire_schemas_location":
-            i = i + 1
-            inspire_schemas_location = argv[i]
-        elif argv[i] == "-app_schema_ns":
-            i = i + 1
-            application_schema_ns = argv[i]
-        elif argv[i][0] == '-':
-            print('Unhandled option : %s' % argv[i])
-            print('')
-            Usage()
-        else:
-            filename = argv[i]
-
-        i = i + 1
-
-    if filename is None:
-        Usage()
-
-    if validate(filename, xsd_filename=xsd_filename,
-                application_schema_ns=application_schema_ns,
-                ogc_schemas_location=ogc_schemas_location,
-                inspire_schemas_location=inspire_schemas_location):
-        sys.exit(0)
-    else:
-        sys.exit(1)

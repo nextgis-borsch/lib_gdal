@@ -150,6 +150,8 @@ void OCTCleanupProjMutex()
 
 class OGRProj4CT : public OGRCoordinateTransformation
 {
+    CPL_DISALLOW_COPY_ASSIGN(OGRProj4CT)
+
     OGRSpatialReference *poSRSSource = nullptr;
     bool        bSourceLatLong = false;
     double      dfSourceToRadians = 0.0;
@@ -201,17 +203,17 @@ public:
     int         Initialize( OGRSpatialReference *poSource,
                             OGRSpatialReference *poTarget );
 
-    virtual OGRSpatialReference *GetSourceCS() override;
-    virtual OGRSpatialReference *GetTargetCS() override;
-    virtual int Transform( int nCount,
+    OGRSpatialReference *GetSourceCS() override;
+    OGRSpatialReference *GetTargetCS() override;
+    int Transform( int nCount,
                            double *x, double *y, double *z = nullptr ) override;
-    virtual int TransformEx( int nCount,
+    int TransformEx( int nCount,
                              double *x, double *y, double *z = nullptr,
                              int *panSuccess = nullptr ) override;
 
     // TODO(schwehr): Make GetEmitErrors const.
-    virtual bool GetEmitErrors() override { return m_bEmitErrors; }
-    virtual void SetEmitErrors( bool bEmitErrors ) override
+    bool GetEmitErrors() override { return m_bEmitErrors; }
+    void SetEmitErrors( bool bEmitErrors ) override
         { m_bEmitErrors = bEmitErrors; }
 };
 
@@ -852,6 +854,51 @@ int OGRProj4CT::InitializeNoLock( OGRSpatialReference * poSourceIn,
             strcmp(pszSrcProj4Defn,
                    "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 "
                    "+x_0=0.0 +y_0=0 +k=1.0 +units=m +no_defs") == 0;
+    }
+
+    // Remove towgs84/nadgrids if it is present only on one side.
+    // Only really needed for PROJ 5, but doesn't hurt for PROJ 4
+    {
+        const bool bSrcHasToWGS84Transform =
+            strstr(pszSrcProj4Defn, "+towgs84") != nullptr ||
+            strstr(pszSrcProj4Defn, "+nadgrids") != nullptr;
+        const bool bSrcHasDatum = strstr(pszSrcProj4Defn, "+datum") != nullptr;
+        const bool bDstHasToWGS84Transform =
+            strstr(pszDstProj4Defn, "+towgs84") != nullptr ||
+            strstr(pszDstProj4Defn, "+nadgrids") != nullptr;
+        const bool bDstHasDatum = strstr(pszDstProj4Defn, "+datum") != nullptr;
+
+        const auto removeToken = [](const CPLString& osStr, const char* token) {
+            CPLString osRet(osStr);
+            auto pos = osStr.find(token);
+            if( pos == std::string::npos )
+                return osRet;
+            auto posNextOpt = osStr.find(" +", pos);
+            if( posNextOpt == std::string::npos )
+            {
+                osRet.resize(pos);
+                return osRet;
+            }
+            osRet = osRet.substr(0, pos) + osRet.substr(posNextOpt + 1);
+            return osRet;
+        };
+
+        if( bSrcHasToWGS84Transform && !(bDstHasToWGS84Transform || bDstHasDatum) )
+        {
+            CPLString osSrcProj4Defn(pszSrcProj4Defn);
+            osSrcProj4Defn = removeToken(osSrcProj4Defn, "+towgs84");
+            osSrcProj4Defn = removeToken(osSrcProj4Defn, "+nadgrids");
+            CPLFree(pszSrcProj4Defn);
+            pszSrcProj4Defn = CPLStrdup(osSrcProj4Defn);
+        }
+        else if( bDstHasToWGS84Transform && !(bSrcHasToWGS84Transform || bSrcHasDatum) )
+        {
+            CPLString osDstProj4Defn(pszDstProj4Defn);
+            osDstProj4Defn = removeToken(osDstProj4Defn, "+towgs84");
+            osDstProj4Defn = removeToken(osDstProj4Defn, "+nadgrids");
+            CPLFree(pszDstProj4Defn);
+            pszDstProj4Defn = CPLStrdup(osDstProj4Defn);
+        }
     }
 
 /* -------------------------------------------------------------------- */

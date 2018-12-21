@@ -46,7 +46,7 @@ CPL_CVSID("$Id$")
 
 class ERSRasterBand;
 
-class ERSDataset : public RawDataset
+class ERSDataset final: public RawDataset
 {
     friend class ERSRasterBand;
 
@@ -146,14 +146,14 @@ ERSDataset::ERSDataset() :
 ERSDataset::~ERSDataset()
 
 {
-    FlushCache();
+    ERSDataset::FlushCache();
 
     if( fpImage != nullptr )
     {
         VSIFCloseL( fpImage );
     }
 
-    CloseDependentDatasets();
+    ERSDataset::CloseDependentDatasets();
 
     CPLFree( pszProjection );
 
@@ -734,11 +734,10 @@ void ERSDataset::ReadGCPs()
 class ERSRasterBand : public RawRasterBand
 {
   public:
-    ERSRasterBand( GDALDataset *poDS, int nBand, void * fpRaw,
+    ERSRasterBand( GDALDataset *poDS, int nBand, VSILFILE * fpRaw,
                    vsi_l_offset nImgOffset, int nPixelOffset,
                    int nLineOffset,
-                   GDALDataType eDataType, int bNativeOrder,
-                   int bIsVSIL = FALSE, int bOwnsFP = FALSE );
+                   GDALDataType eDataType, int bNativeOrder );
 
     double GetNoDataValue( int *pbSuccess = nullptr ) override;
     CPLErr SetNoDataValue( double ) override;
@@ -748,14 +747,13 @@ class ERSRasterBand : public RawRasterBand
 /*                           ERSRasterBand()                            */
 /************************************************************************/
 
-ERSRasterBand::ERSRasterBand( GDALDataset *poDSIn, int nBandIn, void * fpRawIn,
+ERSRasterBand::ERSRasterBand( GDALDataset *poDSIn, int nBandIn, VSILFILE * fpRawIn,
                               vsi_l_offset nImgOffsetIn, int nPixelOffsetIn,
                               int nLineOffsetIn,
-                              GDALDataType eDataTypeIn, int bNativeOrderIn,
-                              int bIsVSILIn, int bOwnsFPIn ) :
+                              GDALDataType eDataTypeIn, int bNativeOrderIn ) :
     RawRasterBand(poDSIn, nBandIn, fpRawIn, nImgOffsetIn, nPixelOffsetIn,
-                  nLineOffsetIn, eDataTypeIn, bNativeOrderIn, bIsVSILIn,
-                  bOwnsFPIn)
+                  nLineOffsetIn, eDataTypeIn, bNativeOrderIn,
+                  RawRasterBand::OwnFP::NO)
 {}
 
 /************************************************************************/
@@ -1034,6 +1032,20 @@ GDALDataset *ERSDataset::Open( GDALOpenInfo * poOpenInfo )
                 return nullptr;
             }
 
+            if( !RAWDatasetCheckMemoryUsage(poDS->nRasterXSize,
+                                            poDS->nRasterYSize,
+                                            nBands,
+                                            iWordSize,
+                                            iWordSize,
+                                            iWordSize * nBands * poDS->nRasterXSize,
+                                            nHeaderOffset,
+                                            iWordSize * poDS->nRasterXSize,
+                                            poDS->fpImage) )
+            {
+                delete poDS;
+                return nullptr;
+            }
+
             for( int iBand = 0; iBand < nBands; iBand++ )
             {
                 // Assume pixel interleaved.
@@ -1044,7 +1056,7 @@ GDALDataset *ERSDataset::Open( GDALOpenInfo * poOpenInfo )
                                        + iWordSize * iBand * poDS->nRasterXSize,
                                        iWordSize,
                                        iWordSize * nBands * poDS->nRasterXSize,
-                                       eType, bNative, TRUE ));
+                                       eType, bNative ));
                 if( EQUAL(osCellType,"Signed8BitInteger") )
                     poDS->GetRasterBand(iBand+1)->
                         SetMetadataItem( "PIXELTYPE", "SIGNEDBYTE",

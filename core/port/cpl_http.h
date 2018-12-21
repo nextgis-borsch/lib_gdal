@@ -136,9 +136,9 @@ CPL_C_END
 #if defined(__cplusplus) && !defined(CPL_SUPRESS_CPLUSPLUS)
 /*! @cond Doxygen_Suppress */
 // Not sure if this belong here, used in cpl_http.cpp, cpl_vsil_curl.cpp and frmts/wms/gdalhttp.cpp
-void* CPLHTTPSetOptions(void *pcurl, const char * const* papszOptions);
+void* CPLHTTPSetOptions(void *pcurl, const char *pszURL, const char * const* papszOptions);
 char** CPLHTTPGetOptionsFromEnv();
-double CPLHTTPGetNewRetryDelay(int response_code, double dfOldDelay);
+double CPLHTTPGetNewRetryDelay(int response_code, double dfOldDelay, const char* pszErrBuf);
 void* CPLHTTPIgnoreSigPipe();
 void CPLHTTPRestoreSigPipeHandler(void* old_handler);
 bool CPLMultiPerformWait(void* hCurlMultiHandle, int& repeats);
@@ -193,22 +193,22 @@ class GOA2Manager
 
     private:
 
-        mutable CPLString       m_osCurrentBearer;
-        mutable time_t          m_nExpirationTime;
-        AuthMethod      m_eMethod;
+        mutable CPLString       m_osCurrentBearer{};
+        mutable time_t          m_nExpirationTime = 0;
+        AuthMethod      m_eMethod = NONE;
 
         // for ACCESS_TOKEN_FROM_REFRESH
-        CPLString       m_osClientId;
-        CPLString       m_osClientSecret;
-        CPLString       m_osRefreshToken;
+        CPLString       m_osClientId{};
+        CPLString       m_osClientSecret{};
+        CPLString       m_osRefreshToken{};
 
         // for SERVICE_ACCOUNT
-        CPLString       m_osPrivateKey;
-        CPLString       m_osClientEmail;
-        CPLString       m_osScope;
-        CPLStringList   m_aosAdditionalClaims;
+        CPLString       m_osPrivateKey{};
+        CPLString       m_osClientEmail{};
+        CPLString       m_osScope{};
+        CPLStringList   m_aosAdditionalClaims{};
 
-        CPLStringList   m_aosOptions;
+        CPLStringList   m_aosOptions{};
 };
 
 

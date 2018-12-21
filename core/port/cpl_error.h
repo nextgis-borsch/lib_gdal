@@ -130,7 +130,9 @@ typedef int CPLErrorNum;
 /** AWSInvalidCredentials */
 #define CPLE_AWSInvalidCredentials      15
 /** AWSSignatureDoesNotMatch */
-#define CPLE_AWSSignatureDoesNotMatch    16
+#define CPLE_AWSSignatureDoesNotMatch   16
+/** VSIE_AWSError */
+#define CPLE_AWSError                   17
 
 /* 100 - 299 reserved for GDAL */
 
@@ -177,9 +179,18 @@ void CPL_DLL CPL_STDCALL _CPLAssert( const char *, const char *, int ) CPL_NO_RE
 #ifdef DEBUG
 /** Assert on an expression. Only enabled in DEBUG mode */
 #  define CPLAssert(expr)  ((expr) ? (void)(0) : _CPLAssert(#expr,__FILE__,__LINE__))
+/** Assert on an expression in DEBUG mode. Evaluate it also in non-DEBUG mode (useful to 'consume' a error return variable) */
+#  define CPLAssertAlwaysEval(expr) CPLAssert(expr)
 #else
 /** Assert on an expression. Only enabled in DEBUG mode */
 #  define CPLAssert(expr)
+#ifdef __cplusplus
+/** Assert on an expression in DEBUG mode. Evaluate it also in non-DEBUG mode (useful to 'consume' a error return variable) */
+#  define CPLAssertAlwaysEval(expr) CPL_IGNORE_RET_VAL(expr)
+#else
+/** Assert on an expression in DEBUG mode. Evaluate it also in non-DEBUG mode (useful to 'consume' a error return variable) */
+#  define CPLAssertAlwaysEval(expr) (void)(expr)
+#endif
 #endif
 
 CPL_C_END

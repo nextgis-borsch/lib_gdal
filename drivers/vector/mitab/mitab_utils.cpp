@@ -167,7 +167,7 @@ static bool TABAdjustCaseSensitiveFilename(char *pszFname)
     // by scanning all the sub-directories.
     // If we get to a point where a path component does not exist then
     // we simply return the rest of the path as is.
-    while(bValidPath && (int)strlen(pszTmpPath) < nTotalLen)
+    while(bValidPath && static_cast<int>(strlen(pszTmpPath)) < nTotalLen)
     {
         int iLastPartStart = iTmpPtr;
         char **papszDir = VSIReadDir(pszTmpPath);
@@ -342,7 +342,7 @@ char **TAB_CSLLoad(const char *pszFname)
  * Convert a string that can possibly contain escaped "\n" chars in
  * into into a new one with binary newlines in it.
  *
- * Tries to work on hte original buffer unless bSrcIsConst=TRUE, in
+ * Tries to work on the original buffer unless bSrcIsConst=TRUE, in
  * which case the original is always untouched and a copy is allocated
  * ONLY IF NECESSARY.  This means that the caller should compare the
  * return value and the source (pszString) to see if a copy was returned,

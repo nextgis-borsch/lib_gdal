@@ -3265,10 +3265,10 @@ PythonBindingErrorHandler(CPLErr eclass, int code, const char *msg )
   }
 
   /*
-  ** We do not want to interfere with warnings or debug messages since
+  ** We do not want to interfere with non-failure messages since
   ** they won't be translated into exceptions.
   */
-  else if (eclass == CE_Warning || eclass == CE_Debug ) {
+  else if (eclass != CE_Failure ) {
     pfnPreviousHandler(eclass, code, msg );
   }
   else {
@@ -3296,8 +3296,9 @@ void UseExceptions() {
                    CPLGetConfigOption("__chain_python_error_handlers", "")));
     CPLSetConfigOption("__chain_python_error_handlers", pszNewValue);
     CPLFree(pszNewValue);
+    // if the previous logger was custom, we need the user data available
     pfnPreviousHandler =
-        CPLSetErrorHandler( (CPLErrorHandler) PythonBindingErrorHandler );
+        CPLSetErrorHandlerEx( (CPLErrorHandler) PythonBindingErrorHandler, CPLGetErrorHandlerUserData() );
   }
 }
 
@@ -3321,7 +3322,8 @@ void DontUseExceptions() {
     CPLSetConfigOption("__chain_python_error_handlers", pszNewValue);
     CPLFree(pszNewValue);
     bUseExceptions = 0;
-    CPLSetErrorHandler( pfnPreviousHandler );
+    // if the previous logger was custom, we need the user data available. Preserve it.
+    CPLSetErrorHandlerEx( pfnPreviousHandler, CPLGetErrorHandlerUserData());
   }
 }
 
@@ -4758,6 +4760,7 @@ SWIGINTERN int OGRFeatureDefnShadow_IsSame(OGRFeatureDefnShadow *self,OGRFeature
             case OFSTBoolean:
             case OFSTInt16:
             case OFSTFloat32:
+            case OFSTJSON:
                 return TRUE;
             default:
                 CPLError(CE_Failure, CPLE_IllegalArg, "Illegal field subtype value");
@@ -5429,8 +5432,16 @@ OGRDriverShadow* GetDriver(int driver_number) {
     if( papszArgv == NULL )
         return NULL;
 
+    bool bReloadDrivers = ( CSLFindString(papszArgv, "GDAL_SKIP") >= 0 ||
+                            CSLFindString(papszArgv, "OGR_SKIP") >= 0 );
+
     nResArgCount =
       GDALGeneralCmdLineProcessor( CSLCount(papszArgv), &papszArgv, GDAL_OF_VECTOR | nOptions );
+
+    if( bReloadDrivers )
+    {
+        GDALAllRegister();
+    }
 
     if( nResArgCount <= 0 )
         return NULL;
@@ -6444,6 +6455,17 @@ SWIGINTERN PyObject *OFSTFloat32_swigconstant(PyObject *SWIGUNUSEDPARM(self), Py
   d = PyModule_GetDict(module);
   if (!d) return NULL;
   SWIG_Python_SetConstant(d, "OFSTFloat32",SWIG_From_int(static_cast< int >(3)));
+  return SWIG_Py_Void();
+}
+
+
+SWIGINTERN PyObject *OFSTJSON_swigconstant(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *module;
+  PyObject *d;
+  if (!PyArg_ParseTuple(args,(char*)"O:swigconstant", &module)) return NULL;
+  d = PyModule_GetDict(module);
+  if (!d) return NULL;
+  SWIG_Python_SetConstant(d, "OFSTJSON",SWIG_From_int(static_cast< int >(4)));
   return SWIG_Py_Void();
 }
 
@@ -23162,6 +23184,21 @@ SWIGINTERN PyObject *_wrap_CreateGeometryFromWkb(PyObject *SWIGUNUSEDPARM(self),
   if (!PyArg_ParseTupleAndKeywords(args,kwargs,(char *)"O|O:CreateGeometryFromWkb",kwnames,&obj0,&obj1)) SWIG_fail;
   {
     /* %typemap(in,numinputs=1) (int nLen, char *pBuf ) */
+    {
+      Py_ssize_t safeLen = 0;
+      const void *safeBuf = 0;
+      int res = PyObject_AsReadBuffer(obj0, &safeBuf, &safeLen);
+      if (res == 0) {
+        if( safeLen > INT_MAX ) {
+          SWIG_exception( SWIG_RuntimeError, "too large buffer (>2GB)" );
+        }
+        arg1 = (int) safeLen;
+        arg2 = (char *) safeBuf;
+        goto ok;
+      } else {
+        PyErr_Clear();
+      }
+    }
 #if PY_VERSION_HEX>=0x03000000
     if (PyUnicode_Check(obj0))
     {
@@ -23207,6 +23244,7 @@ SWIGINTERN PyObject *_wrap_CreateGeometryFromWkb(PyObject *SWIGUNUSEDPARM(self),
       SWIG_fail;
     }
 #endif
+    ok: ;
   }
   if (obj1) {
     res3 = SWIG_ConvertPtr(obj1, &argp3,SWIGTYPE_p_OSRSpatialReferenceShadow, 0 |  0 );
@@ -23983,6 +24021,21 @@ SWIGINTERN PyObject *_wrap_new_Geometry(PyObject *SWIGUNUSEDPARM(self), PyObject
   if (obj2) {
     {
       /* %typemap(in,numinputs=1) (int nLen, char *pBuf ) */
+      {
+        Py_ssize_t safeLen = 0;
+        const void *safeBuf = 0;
+        int res = PyObject_AsReadBuffer(obj2, &safeBuf, &safeLen);
+        if (res == 0) {
+          if( safeLen > INT_MAX ) {
+            SWIG_exception( SWIG_RuntimeError, "too large buffer (>2GB)" );
+          }
+          arg3 = (int) safeLen;
+          arg4 = (char *) safeBuf;
+          goto ok;
+        } else {
+          PyErr_Clear();
+        }
+      }
 #if PY_VERSION_HEX>=0x03000000
       if (PyUnicode_Check(obj2))
       {
@@ -24028,6 +24081,7 @@ SWIGINTERN PyObject *_wrap_new_Geometry(PyObject *SWIGUNUSEDPARM(self), PyObject
         SWIG_fail;
       }
 #endif
+      ok: ;
     }
   }
   if (obj3) {
@@ -30690,6 +30744,7 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"OFSTBoolean_swigconstant", OFSTBoolean_swigconstant, METH_VARARGS, NULL},
 	 { (char *)"OFSTInt16_swigconstant", OFSTInt16_swigconstant, METH_VARARGS, NULL},
 	 { (char *)"OFSTFloat32_swigconstant", OFSTFloat32_swigconstant, METH_VARARGS, NULL},
+	 { (char *)"OFSTJSON_swigconstant", OFSTJSON_swigconstant, METH_VARARGS, NULL},
 	 { (char *)"OJUndefined_swigconstant", OJUndefined_swigconstant, METH_VARARGS, NULL},
 	 { (char *)"OJLeft_swigconstant", OJLeft_swigconstant, METH_VARARGS, NULL},
 	 { (char *)"OJRight_swigconstant", OJRight_swigconstant, METH_VARARGS, NULL},
@@ -32899,7 +32954,7 @@ static PyMethodDef SwigMethods[] = {
 		"\n"
 		"Duplicate feature.\n"
 		"\n"
-		"The newly created feature is owned by the caller, and will have it's\n"
+		"The newly created feature is owned by the caller, and will have its\n"
 		"own reference to the OGRFeatureDefn.\n"
 		"\n"
 		"This function is the same as the C++ method OGRFeature::Clone().\n"
@@ -33567,7 +33622,7 @@ static PyMethodDef SwigMethods[] = {
 		"\n"
 		"void\n"
 		"OGR_F_SetFieldIntegerList(OGRFeatureH hFeat, int iField, int nCount,\n"
-		"int *panValues)\n"
+		"const int *panValues)\n"
 		"\n"
 		"Set field to list of integers value.\n"
 		"\n"
@@ -33631,7 +33686,7 @@ static PyMethodDef SwigMethods[] = {
 		"\n"
 		"void\n"
 		"OGR_F_SetFieldDoubleList(OGRFeatureH hFeat, int iField, int nCount,\n"
-		"double *padfValues)\n"
+		"const double *padfValues)\n"
 		"\n"
 		"Set field to list of doubles value.\n"
 		"\n"
@@ -33661,8 +33716,8 @@ static PyMethodDef SwigMethods[] = {
 		"Feature_SetFieldStringList(Feature self, int id, char ** pList)\n"
 		"\n"
 		"void\n"
-		"OGR_F_SetFieldStringList(OGRFeatureH hFeat, int iField, char\n"
-		"**papszValues)\n"
+		"OGR_F_SetFieldStringList(OGRFeatureH hFeat, int iField, CSLConstList\n"
+		"papszValues)\n"
 		"\n"
 		"Set field to list of strings value.\n"
 		"\n"
@@ -33724,7 +33779,7 @@ static PyMethodDef SwigMethods[] = {
 		"\n"
 		"OGRErr\n"
 		"OGR_F_SetFromWithMap(OGRFeatureH hFeat, OGRFeatureH hOtherFeat, int\n"
-		"bForgiving, int *panMap)\n"
+		"bForgiving, const int *panMap)\n"
 		"\n"
 		"Set one feature from another.\n"
 		"\n"
@@ -34075,9 +34130,6 @@ static PyMethodDef SwigMethods[] = {
 		"\n"
 		"This function is the same as the C++ method\n"
 		"OGRFeatureDefn::GetFieldDefn().\n"
-		"\n"
-		"Starting with GDAL 1.7.0, this method will also issue an error if the\n"
-		"index is not valid.\n"
 		"\n"
 		"Parameters:\n"
 		"-----------\n"
@@ -35536,7 +35588,7 @@ static PyMethodDef SwigMethods[] = {
 		"\n"
 		"Clear geometry information.\n"
 		"\n"
-		"This restores the geometry to it's initial state after construction,\n"
+		"This restores the geometry to its initial state after construction,\n"
 		"and before assignment of actual geometry.\n"
 		"\n"
 		"This function relates to the SFCOM IGeometry::Empty() method.\n"

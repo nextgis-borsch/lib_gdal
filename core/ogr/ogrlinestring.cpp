@@ -1256,13 +1256,13 @@ void OGRSimpleCurve::getPoints( OGRRawPoint * paoPointsOut,
  *
  * There is no SFCOM analog to this method.
  *
- * @param pabyX a buffer of at least (sizeof(double) * nXStride * nPointCount)
+ * @param pabyX a buffer of at least (nXStride * nPointCount)
  * bytes, may be NULL.
  * @param nXStride the number of bytes between 2 elements of pabyX.
- * @param pabyY a buffer of at least (sizeof(double) * nYStride * nPointCount)
+ * @param pabyY a buffer of at least (nYStride * nPointCount)
  * bytes, may be NULL.
  * @param nYStride the number of bytes between 2 elements of pabyY.
- * @param pabyZ a buffer of at last size (sizeof(double) * nZStride *
+ * @param pabyZ a buffer of at last size (nZStride *
  * nPointCount) bytes, may be NULL.
  * @param nZStride the number of bytes between 2 elements of pabyZ.
  *
@@ -1317,13 +1317,13 @@ void OGRSimpleCurve::getPoints( void* pabyX, int nXStride,
  *
  * There is no SFCOM analog to this method.
  *
- * @param pabyX a buffer of at least (sizeof(double) * nXStride * nPointCount) bytes, may be NULL.
+ * @param pabyX a buffer of at least (nXStride * nPointCount) bytes, may be NULL.
  * @param nXStride the number of bytes between 2 elements of pabyX.
- * @param pabyY a buffer of at least (sizeof(double) * nYStride * nPointCount) bytes, may be NULL.
+ * @param pabyY a buffer of at least (nYStride * nPointCount) bytes, may be NULL.
  * @param nYStride the number of bytes between 2 elements of pabyY.
- * @param pabyZ a buffer of at last size (sizeof(double) * nZStride * nPointCount) bytes, may be NULL.
+ * @param pabyZ a buffer of at last size (nZStride * nPointCount) bytes, may be NULL.
  * @param nZStride the number of bytes between 2 elements of pabyZ.
- * @param pabyM a buffer of at last size (sizeof(double) * nMStride * nPointCount) bytes, may be NULL.
+ * @param pabyM a buffer of at last size (nMStride * nPointCount) bytes, may be NULL.
  * @param nMStride the number of bytes between 2 elements of pabyM.
  *
  * @since OGR 2.1.0
@@ -2630,15 +2630,16 @@ void OGRSimpleCurve::swapXY()
 
 class OGRSimpleCurvePointIterator final: public OGRPointIterator
 {
-        const OGRSimpleCurve* poSC;
-        int                   iCurPoint;
+        CPL_DISALLOW_COPY_ASSIGN(OGRSimpleCurvePointIterator)
+
+        const OGRSimpleCurve* poSC = nullptr;
+        int                   iCurPoint = 0;
 
     public:
         explicit OGRSimpleCurvePointIterator(const OGRSimpleCurve* poSCIn) :
-            poSC(poSCIn),
-            iCurPoint(0) {}
+            poSC(poSCIn) {}
 
-        virtual OGRBoolean getNextPoint( OGRPoint* p ) override;
+        OGRBoolean getNextPoint( OGRPoint* p ) override;
 };
 
 /************************************************************************/
@@ -2671,7 +2672,7 @@ OGRPointIterator* OGRSimpleCurve::getPointIterator() const
  * \brief Create an empty line string.
  */
 
-OGRLineString::OGRLineString() {}
+OGRLineString::OGRLineString() = default;
 
 /************************************************************************/
 /*                  OGRLineString( const OGRLineString& )               */
@@ -2686,15 +2687,13 @@ OGRLineString::OGRLineString() {}
  * @since GDAL 2.1
  */
 
-OGRLineString::OGRLineString( const OGRLineString& other ) :
-    OGRSimpleCurve( other )
-{}
+OGRLineString::OGRLineString( const OGRLineString& ) = default;
 
 /************************************************************************/
 /*                          ~OGRLineString()                            */
 /************************************************************************/
 
-OGRLineString::~OGRLineString() {}
+OGRLineString::~OGRLineString() = default;
 
 /************************************************************************/
 /*                    operator=( const OGRLineString& )                 */

@@ -46,8 +46,8 @@ CPL_CVSID("$Id$")
 /*!
   \brief VFKReaderSQLite constructor
 */
-VFKReaderSQLite::VFKReaderSQLite( const char *pszFileName ) :
-    VFKReader(pszFileName),
+VFKReaderSQLite::VFKReaderSQLite( const GDALOpenInfo* poOpenInfo ) :
+    VFKReader( poOpenInfo ),
     m_pszDBname(nullptr),
     m_poDB(nullptr),
     // True - build geometry from DB
@@ -58,12 +58,9 @@ VFKReaderSQLite::VFKReaderSQLite( const char *pszFileName ) :
 {
     size_t nLen = 0;
     VSIStatBufL sStatBufDb;
-    {
-        GDALOpenInfo *poOpenInfo = new GDALOpenInfo(pszFileName, GA_ReadOnly);
-        m_bDbSource = poOpenInfo->nHeaderBytes >= 16 &&
-            STARTS_WITH((const char*)poOpenInfo->pabyHeader, "SQLite format 3");
-        delete poOpenInfo;
-    }
+
+    m_bDbSource = poOpenInfo->nHeaderBytes >= 16 &&
+        STARTS_WITH((const char*)poOpenInfo->pabyHeader, "SQLite format 3");
 
     const char *pszDbNameConf = CPLGetConfigOption("OGR_VFK_DB_NAME", nullptr);
     CPLString osDbName;
@@ -90,8 +87,8 @@ VFKReaderSQLite::VFKReaderSQLite( const char *pszFileName ) :
     else
     {
         // m_bNewDb = false;
-        nLen = strlen(pszFileName);
-        osDbName = pszFileName;
+        nLen = strlen(m_pszFilename);
+        osDbName = m_pszFilename;
     }
 
     m_pszDBname = new char [nLen+1];
@@ -261,7 +258,11 @@ VFKReaderSQLite::VFKReaderSQLite( const char *pszFileName ) :
 */
 VFKReaderSQLite::~VFKReaderSQLite()
 {
-    // Close tmp SQLite DB.
+    /* clean loaded properties */
+    for (int i = 0; i < m_nDataBlockCount; i++)
+        m_papoDataBlock[i]->CleanProperties();
+
+    /* close backend SQLite DB */
     if( SQLITE_OK != sqlite3_close(m_poDB) )
     {
         CPLError(CE_Failure, CPLE_AppDefined,
@@ -270,7 +271,7 @@ VFKReaderSQLite::~VFKReaderSQLite()
     }
     CPLDebug("OGR-VFK", "Internal DB (%s) closed", m_pszDBname);
 
-    /* delete tmp SQLite DB if requested */
+    /* delete backend SQLite DB if requested */
     if( CPLTestBool(CPLGetConfigOption("OGR_VFK_DB_DELETE", "NO")) )
     {
         CPLDebug("OGR-VFK", "Internal DB (%s) deleted", m_pszDBname);
@@ -454,6 +455,7 @@ int VFKReaderSQLite::ReadDataRecords(IVFKDataBlock *poDataBlock)
             if (poDataBlock && poDataBlock != poDataBlockCurrent)
                 continue;
 
+            /* update number of records in metadata table */
             osSQL.Printf("UPDATE %s SET num_records = %d WHERE "
                          "table_name = '%s'",
                          VFK_DB_TABLE, poDataBlockCurrent->GetRecordCount(),
@@ -826,8 +828,8 @@ OGRErr VFKReaderSQLite::AddFeature( IVFKDataBlock *poDataBlock,
     if (poDataBlock->GetGeometryType() != wkbNone) {
         osValue += ",NULL";
     }
-    osValue += ")";
     osCommand += osValue;
+    osCommand += ")";
 
     if( ExecuteSQL(osCommand.c_str(), CE_Warning) != OGRERR_NONE )
         return OGRERR_FAILURE;

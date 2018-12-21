@@ -398,8 +398,8 @@ else()
         endif()
     endif()
 
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -fno-strict-aliasing -Wall -Wdeclaration-after-statement")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -fno-strict-aliasing -Wall")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIE -fstack-protector-all -fno-strict-aliasing -Wall -Wdeclaration-after-statement")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIE -fstack-protector-all -fno-strict-aliasing -Wall")
 
     configure_file(${CMAKE_SOURCE_DIR}/cmake/cpl_config.h.cmake ${CMAKE_BINARY_DIR}/cpl_config.h @ONLY)
 

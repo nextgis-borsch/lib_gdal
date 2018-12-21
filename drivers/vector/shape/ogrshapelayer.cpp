@@ -75,6 +75,7 @@ OGRShapeLayer::OGRShapeLayer( OGRShapeDataSource* poDSIn,
                               char ** papszCreateOptions ) :
     OGRAbstractProxiedLayer(poDSIn->GetPool()),
     poDS(poDSIn),
+    poFeatureDefn(nullptr),
     iNextShapeId(0),
     nTotalShapeCount(0),
     pszFullName(CPLStrdup(pszFullNameIn)),
@@ -444,6 +445,8 @@ CPLString OGRShapeLayer::ConvertCodePage( const char *pszCodePage )
     }
     if( STARTS_WITH_CI(pszCodePage, "UTF-8") )
         return CPL_ENC_UTF8;
+    if( STARTS_WITH_CI(pszCodePage, "ANSI 1251") )
+        return "CP1251";
 
     // Try just using the CPG value directly.  Works for stuff like Big5.
     return pszCodePage;
@@ -2216,7 +2219,7 @@ int OGRShapeLayer::ResetGeomType( int nNewGeomType )
         || hSHP->sHooks.FRead( abyHeader, 100, 1, hSHP->fpSHP ) != 1 )
         return FALSE;
 
-    *((GInt32 *) (abyHeader + 32)) = CPL_LSBWORD32( nNewGeomType );
+    *(reinterpret_cast<GInt32 *>(abyHeader + 32)) = CPL_LSBWORD32( nNewGeomType );
 
     if( hSHP->sHooks.FSeek( hSHP->fpSHP, 0, SEEK_SET ) != 0
         || hSHP->sHooks.FWrite( abyHeader, 100, 1, hSHP->fpSHP ) != 1 )
@@ -2234,7 +2237,7 @@ int OGRShapeLayer::ResetGeomType( int nNewGeomType )
         || hSHP->sHooks.FRead( abyHeader, 100, 1, hSHP->fpSHX ) != 1 )
         return FALSE;
 
-    *((GInt32 *) (abyHeader + 32)) = CPL_LSBWORD32( nNewGeomType );
+    *(reinterpret_cast<GInt32 *>(abyHeader + 32)) = CPL_LSBWORD32( nNewGeomType );
 
     if( hSHP->sHooks.FSeek( hSHP->fpSHX, 0, SEEK_SET ) != 0
         || hSHP->sHooks.FWrite( abyHeader, 100, 1, hSHP->fpSHX ) != 1 )
@@ -3461,7 +3464,7 @@ void OGRShapeLayer::AddToFileList( CPLStringList& oFileList )
         if( GetSpatialRef() != nullptr )
         {
             OGRShapeGeomFieldDefn* poGeomFieldDefn =
-                (OGRShapeGeomFieldDefn*)GetLayerDefn()->GetGeomFieldDefn(0);
+                cpl::down_cast<OGRShapeGeomFieldDefn*>(GetLayerDefn()->GetGeomFieldDefn(0));
             oFileList.AddString(poGeomFieldDefn->GetPrjFilename());
         }
         if( CheckForQIX() )

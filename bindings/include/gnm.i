@@ -38,6 +38,8 @@
 %module "Geo::GNM"
 #elif defined(SWIGCSHARP)
 %module Gnm
+#elif defined(SWIGPYTHON)
+%module (package="osgeo") gnm
 #else
 %module gnm
 #endif
@@ -104,10 +106,6 @@ typedef struct OGRGeomFieldDefnHS OGRGeomFieldDefnShadow;
 
 #if defined(SWIGPYTHON)
 %include gnm_python.i
-#elif defined(SWIGRUBY)
-//%include typemaps_ruby.i
-#elif defined(SWIGPHP4)
-//%include typemaps_php.i
 #elif defined(SWIGCSHARP)
 //%include gnm_csharp.i
 #elif defined(SWIGJAVA)

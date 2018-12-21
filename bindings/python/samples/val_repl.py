@@ -33,6 +33,8 @@
 ###############################################################################
 
 
+import sys
+
 from osgeo import gdal
 gdal.TermProgress = gdal.TermProgress_nocb
 
@@ -41,8 +43,6 @@ try:
 except ImportError:
     import Numeric as numpy
 
-
-import sys
 
 # =============================================================================
 
@@ -58,8 +58,8 @@ def Usage():
 # =============================================================================
 
 
-def ParseType(type):
-    gdal_dt = gdal.GetDataTypeByName(type)
+def ParseType(typ):
+    gdal_dt = gdal.GetDataTypeByName(typ)
     if gdal_dt is gdal.GDT_Unknown:
         gdal_dt = gdal.GDT_Byte
     return gdal_dt
@@ -71,8 +71,8 @@ inNoData = None
 outNoData = None
 infile = None
 outfile = None
-format = 'GTiff'
-type = gdal.GDT_Byte
+frmt = 'GTiff'
+typ = gdal.GDT_Byte
 
 # Parse command line arguments.
 i = 1
@@ -89,11 +89,11 @@ while i < len(sys.argv):
 
     elif arg == '-of':
         i = i + 1
-        format = sys.argv[i]
+        frmt = sys.argv[i]
 
     elif arg == '-ot':
         i = i + 1
-        type = ParseType(sys.argv[i])
+        typ = ParseType(sys.argv[i])
 
     elif infile is None:
         infile = arg
@@ -117,15 +117,15 @@ if outNoData is None:
 
 indataset = gdal.Open(infile, gdal.GA_ReadOnly)
 
-out_driver = gdal.GetDriverByName(format)
-outdataset = out_driver.Create(outfile, indataset.RasterXSize, indataset.RasterYSize, indataset.RasterCount, type)
+out_driver = gdal.GetDriverByName(frmt)
+outdataset = out_driver.Create(outfile, indataset.RasterXSize, indataset.RasterYSize, indataset.RasterCount, typ)
 
 gt = indataset.GetGeoTransform()
 if gt is not None and gt != (0.0, 1.0, 0.0, 0.0, 0.0, 1.0):
     outdataset.SetGeoTransform(gt)
 
 prj = indataset.GetProjectionRef()
-if prj is not None and len(prj) > 0:
+if prj:
     outdataset.SetProjection(prj)
 
 for iBand in range(1, indataset.RasterCount + 1):

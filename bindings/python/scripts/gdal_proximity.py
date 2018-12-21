@@ -67,7 +67,7 @@ def GetOutputDriversFor(filename):
         if (drv.GetMetadataItem(gdal.DCAP_CREATE) is not None or
             drv.GetMetadataItem(gdal.DCAP_CREATECOPY) is not None) and \
            drv.GetMetadataItem(gdal.DCAP_RASTER) is not None:
-            if len(ext) > 0 and DoesDriverHandleExtension(drv, ext):
+            if ext and DoesDriverHandleExtension(drv, ext):
                 drv_list.append(drv.ShortName)
             else:
                 prefix = drv.GetMetadataItem(gdal.DMD_CONNECTION_PREFIX)
@@ -76,7 +76,7 @@ def GetOutputDriversFor(filename):
 
     # GMT is registered before netCDF for opening reasons, but we want
     # netCDF to be used by default for output.
-    if ext.lower() == 'nc' and len(drv_list) == 0 and \
+    if ext.lower() == 'nc' and not drv_list and \
        drv_list[0].upper() == 'GMT' and drv_list[1].upper() == 'NETCDF':
         drv_list = ['NETCDF', 'GMT']
 
@@ -85,9 +85,9 @@ def GetOutputDriversFor(filename):
 
 def GetOutputDriverFor(filename):
     drv_list = GetOutputDriversFor(filename)
-    if len(drv_list) == 0:
+    if not drv_list:
         ext = GetExtension(filename)
-        if len(ext) == 0:
+        if not ext:
             return 'GTiff'
         else:
             raise Exception("Cannot guess driver for %s" % filename)
@@ -100,7 +100,7 @@ def GetOutputDriverFor(filename):
 # =============================================================================
 
 
-format = None
+frmt = None
 creation_options = []
 options = []
 src_filename = None
@@ -122,7 +122,7 @@ while i < len(argv):
 
     if arg == '-of' or arg == '-f':
         i = i + 1
-        format = argv[i]
+        frmt = argv[i]
 
     elif arg == '-co':
         i = i + 1
@@ -211,10 +211,10 @@ except:
 #     Create output file.
 # =============================================================================
 if dst_ds is None:
-    if format is None:
-        format = GetOutputDriverFor(dst_filename)
+    if frmt is None:
+        frmt = GetOutputDriverFor(dst_filename)
 
-    drv = gdal.GetDriverByName(format)
+    drv = gdal.GetDriverByName(frmt)
     dst_ds = drv.Create(dst_filename,
                         src_ds.RasterXSize, src_ds.RasterYSize, 1,
                         gdal.GetDataTypeByName(creation_type), creation_options)

@@ -197,6 +197,12 @@ void GDALDefaultOverviews::OverviewScan()
 
     bCheckedForOverviews = true;
 
+    static thread_local int nAntiRecursionCounter = 0;
+    // arbitrary number. 32 should be enough to handle a .ovr.ovr.ovr...
+    if( nAntiRecursionCounter == 64 )
+        return;
+    ++nAntiRecursionCounter;
+
     CPLDebug( "GDAL", "GDALDefaultOverviews::OverviewScan()" );
 
 /* -------------------------------------------------------------------- */
@@ -352,6 +358,8 @@ void GDALDefaultOverviews::OverviewScan()
             }
         }
     }
+
+    --nAntiRecursionCounter;
 }
 
 /************************************************************************/
@@ -642,16 +650,11 @@ GDALDefaultOverviews::BuildOverviews(
         CPLCalloc(sizeof(int), nOverviews) );
     double dfAreaNewOverviews = 0;
     double dfAreaRefreshedOverviews = 0;
-    std::vector<bool> abValidLevel;
-    abValidLevel.resize(nOverviews);
-    std::vector<bool> abRequireRefresh;
-    abRequireRefresh.resize(nOverviews);
+    std::vector<bool> abValidLevel(nOverviews, true);
+    std::vector<bool> abRequireRefresh(nOverviews, false);
     bool bFoundSinglePixelOverview = false;
     for( int i = 0; i < nOverviews && poBand != nullptr; i++ )
     {
-        abValidLevel[i] = true;
-        abRequireRefresh[i] = false;
-
         // If we already have a 1x1 overview and this new one would result
         // in it too, then don't create it.
         if( bFoundSinglePixelOverview &&
@@ -810,8 +813,8 @@ GDALDefaultOverviews::BuildOverviews(
         }
 
         nNewOverviews = 0;
-        std::vector<bool> abAlreadyUsedOverviewBand;
-        abAlreadyUsedOverviewBand.resize(poBand->GetOverviewCount());
+        std::vector<bool> abAlreadyUsedOverviewBand(
+            poBand->GetOverviewCount(), false);
 
         for( int i = 0; i < nOverviews; i++ )
         {

@@ -44,10 +44,10 @@ CPLString OGRLIBKMLGetSanitizedNCName(const char* pszName);
   layer class
 ******************************************************************************/
 
-class OGRLIBKMLLayer:public OGRLayer
+class OGRLIBKMLLayer final: public OGRLayer
 {
     int                       bUpdate;
-    bool                      bUpdated;
+
     int                       nFeatures;
     int                       iFeature;
     long                      nFID;
@@ -178,7 +178,7 @@ class OGRLIBKMLLayer:public OGRLayer
   datasource class
 ******************************************************************************/
 
-class OGRLIBKMLDataSource:public OGRDataSource
+class OGRLIBKMLDataSource final: public OGRDataSource
 {
     char                     *m_pszName;
 

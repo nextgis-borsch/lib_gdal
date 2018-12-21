@@ -53,8 +53,26 @@ def names_to_fileinfos(names):
 # *****************************************************************************
 
 
-class file_info:
+class file_info(object):
     """A class holding information about a GDAL file."""
+
+    def __init__(self):
+        self.band_types = [None]
+        self.block_sizes = [None]
+        self.nodata = [None]
+        self.cts = [None]
+        self.color_interps = [None]
+
+        self.filename = None
+        self.bands = None
+        self.xsize = None
+        self.ysize = None
+        self.projection = None
+        self.geotransform = None
+        self.ulx = None
+        self.uly = None
+        self.lrx = None
+        self.lry = None
 
     def init_from_name(self, filename):
         """
@@ -222,14 +240,14 @@ if __name__ == '__main__':
 
         i = i + 1
 
-    if len(names) == 0:
+    if not names:
         print('No input files selected.')
         Usage()
         sys.exit(1)
 
     # Collect information on all the source files.
     file_infos = names_to_fileinfos(names)
-    if len(file_infos) == 0:
+    if not file_infos:
         print('Nothing to process, exiting.')
         sys.exit(1)
 
@@ -282,7 +300,7 @@ if __name__ == '__main__':
     t_fh.write('\t<GeoTransform>%24.16f, %24.16f, %24.16f, %24.16f, %24.16f, %24.16f</GeoTransform>\n'
                % geotransform)
 
-    if len(projection) > 0:
+    if projection:
         t_fh.write('\t<SRS>%s</SRS>\n' % projection)
 
     if separate:

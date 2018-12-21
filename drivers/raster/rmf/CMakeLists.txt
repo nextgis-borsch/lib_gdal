@@ -5,7 +5,7 @@
 ################################################################################
 # Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
 # Copyright (C) 2016 Mikhail Gusev
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
 # to deal in the Software without restriction, including without limitation
@@ -41,15 +41,20 @@ if(ENABLE_RMF)
     )
 
     set(LIB_CSOURCES
-        rmfdataset.cpp 
-        rmflzw.cpp 
+        rmfdataset.cpp
+        rmflzw.cpp
         rmfdem.cpp
     )
+
+    if(JPEG_FOUND)
+        set(LIB_CSOURCES ${LIB_CSOURCES} rmfjpeg.cpp)
+        add_definitions(-DHAVE_LIBJPEG)
+    endif()
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
 
     # build target
     set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
 else()
-    warning_msg("Skip rmf")  
+    warning_msg("Skip rmf")
 endif()

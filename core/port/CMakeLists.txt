@@ -3,7 +3,7 @@
 # Purpose:  CMake build scripts
 # Author:   Dmitry Baryshnikov, polimax@mail.ru
 ################################################################################
-# Copyright (C) 2015, NextGIS <info@nextgis.com>
+# Copyright (C) 2015-2018, NextGIS <info@nextgis.com>
 # Copyright (C) 2012,2013,2014 Dmitry Baryshnikov
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -68,6 +68,9 @@ set(LIB_HHEADERS
     cpl_sha1.h
     cpl_json.h
     cpl_mem_cache.h
+    cpl_vsil_curl_class.h
+    cpl_userfaultfd.h
+    cpl_auto_close.h
 )
 
 set(LIB_HHEADERS_PRIV
@@ -137,6 +140,14 @@ set(LIB_CSOURCES
     cpl_json.cpp
     cpl_md5.cpp
     cpl_swift.cpp
+    cpl_vsil_s3.cpp
+    cpl_vsil_gs.cpp
+    cpl_vsil_az.cpp
+    cpl_vsil_oss.cpp
+    cpl_vsil_swift.cpp
+    cpl_vsil_webhdfs.cpp
+    cpl_vsil_hdfs.cpp
+    cpl_userfaultfd.cpp
 )
 
 if(WIN32)
@@ -151,9 +162,9 @@ if(WITH_ODBC)
     list(APPEND LIB_CSOURCES cpl_odbc.cpp)
 endif()
 
-if(WITH_XMLREFORMAT)
-    list(APPEND LIB_CSOURCES xmlreformat.cpp)
-endif()
+# if(WITH_XMLREFORMAT)
+#     list(APPEND LIB_CSOURCES xmlreformat.cpp)
+# endif()
 
 if(WITH_ONLY_CRYPTODLL_ALG)
     # TODO: Check cryptopp func

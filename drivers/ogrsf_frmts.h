@@ -81,7 +81,7 @@ class CPL_DLL OGRLayer : public GDALMajorObject
             std::unique_ptr<Private> m_poPrivate;
         public:
             FeatureIterator(OGRLayer* poLayer, bool bStart);
-            FeatureIterator(FeatureIterator&& oOther); // declared but not defined. Needed for gcc 5.4 at least
+            FeatureIterator(FeatureIterator&& oOther) noexcept; // declared but not defined. Needed for gcc 5.4 at least
             ~FeatureIterator();
             OGRFeatureUniquePtr& operator*();
             FeatureIterator& operator++();
@@ -90,6 +90,8 @@ class CPL_DLL OGRLayer : public GDALMajorObject
 
     friend inline FeatureIterator begin(OGRLayer* poLayer);
     friend inline FeatureIterator end(OGRLayer* poLayer);
+
+    CPL_DISALLOW_COPY_ASSIGN(OGRLayer)
 
   protected:
 //! @cond Doxygen_Suppress
@@ -445,6 +447,7 @@ void CPL_DLL RegisterOGRGML();
 void CPL_DLL RegisterOGRLIBKML();
 void CPL_DLL RegisterOGRKML();
 void CPL_DLL RegisterOGRGeoJSON();
+void CPL_DLL RegisterOGRGeoJSONSeq();
 void CPL_DLL RegisterOGRESRIJSON();
 void CPL_DLL RegisterOGRTopoJSON();
 void CPL_DLL RegisterOGRAVCBin();
@@ -515,6 +518,7 @@ void CPL_DLL RegisterOGRMongoDB();
 void CPL_DLL RegisterOGRVDV();
 void CPL_DLL RegisterOGRGMLAS();
 void CPL_DLL RegisterOGRMVT();
+void CPL_DLL RegisterOGRNGW();
 // @endcond
 
 CPL_C_END

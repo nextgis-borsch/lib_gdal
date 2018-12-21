@@ -82,7 +82,7 @@ def dump_crsdictionary(filename, out_crsdictionary):
     for domain in mdd_list:
         if domain.startswith('xml:'):
             mdd_item = ds.GetMetadata(domain)[0]
-            if mdd_item.find('<Dictionary') >= 0 or mdd_item.find('<gml:Dictionary') >= 0:
+            if '<Dictionary' in mdd_item or '<gml:Dictionary' in mdd_item:
                 if out_crsdictionary == '-':
                     print(mdd_item)
                 else:
@@ -136,7 +136,7 @@ def extract_all_xml_boxes(filename, prefix):
                     end_gmljp2_link = end_gmljp2_link_double_quote
                 if end_gmljp2_link >= 0:
                     referenced_box = mdd_item[new_pos + len('gmljp2://xml/'):end_gmljp2_link]
-                    if not (('xml:' + referenced_box) in mdd_list):
+                    if ('xml:' + referenced_box) not in mdd_list:
                         print('Warning: box %s reference box %s, but the latter is not found' % (boxname, referenced_box))
 
                 out_content += mdd_item[pos:new_pos]
@@ -148,7 +148,7 @@ def extract_all_xml_boxes(filename, prefix):
             f.close()
             print('INFO: %s written' % out_filename)
 
-    if len(mdd_list) == 0:
+    if not mdd_list:
         print('No XML box found')
         return 1
     return 0

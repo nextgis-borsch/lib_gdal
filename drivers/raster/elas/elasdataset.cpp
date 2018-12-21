@@ -113,7 +113,7 @@ ELASHeader::ELASHeader() :
 
 class ELASRasterBand;
 
-class ELASDataset : public GDALPamDataset
+class ELASDataset final: public GDALPamDataset
 {
     friend class ELASRasterBand;
 
@@ -151,7 +151,7 @@ class ELASDataset : public GDALPamDataset
 /* ==================================================================== */
 /************************************************************************/
 
-class ELASRasterBand : public GDALPamRasterBand
+class ELASRasterBand final: public GDALPamRasterBand
 {
     friend class ELASDataset;
 
@@ -274,7 +274,7 @@ ELASDataset::ELASDataset() :
 ELASDataset::~ELASDataset()
 
 {
-    FlushCache();
+    ELASDataset::FlushCache();
 
     if( fp != nullptr )
     {
@@ -592,7 +592,7 @@ GDALDataset *ELASDataset::Create( const char * pszFilename,
 
 /* -------------------------------------------------------------------- */
 /*      Now write out zero data for all the imagery.  This is           */
-/*      inefficient, but simplies the IReadBlock() / IWriteBlock() logic.*/
+/*      inefficient, but simplifies IReadBlock() / IWriteBlock() logic. */
 /* -------------------------------------------------------------------- */
     GByte *pabyLine = (GByte *) CPLCalloc(nBandOffset,nBands);
     for( int iLine = 0; iLine < nYSize; iLine++ )

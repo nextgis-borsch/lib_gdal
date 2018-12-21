@@ -85,6 +85,7 @@ with '\*' have high priority to be implemented.
 | **dted** | **yes** | no | No additional build targets implemented |
 | **e00grid** | **yes** | no | - |
 | **ecw** | **yes** |  | Only Windows yet (need library repository update) |
+| **eeda** | **yes** | no | No additional build targets implemented |
 | **elas** | **yes** | no | - |
 | **envisat** | **yes** | no | No additional build targets implemented |
 | epsilon | no |  |  |
@@ -105,6 +106,7 @@ with '\*' have high priority to be implemented.
 | **hf2** | **yes** | no | - |
 | **hfa** | **yes** | no | Obligatory for building GDAL |
 | **idrisi** | **yes** | no | Has the same dir name in /vector |
+| **ignfheightasciigrid** | **yes** | no | - |
 | **ilwis** | **yes** | no | - |
 | **ingr** | **yes** | [TIFF](https://github.com/nextgis-borsch/lib_tiff)? | - |
 | **iris** | **yes** | no | - |
@@ -135,7 +137,7 @@ with '\*' have high priority to be implemented.
 | ogdi | no |  |  |
 | **openjpeg** | **yes** | [OPENJPEG](https://github.com/nextgis-borsch/lib_openjpeg) | This is JPEG2000 implementation; No additional build targets implemented (plugin so/dll) |
 | **ozi** | **yes** | [ZLIB](https://github.com/nextgis-borsch/lib_z)?, GIF? | - |
-| pcidsk | no |  |  |
+| **pcidsk** | **yes** | no | - |
 | pcraster | no |  |  |
 | pdf * | no |  |  |
 | **pds** | **yes** | no | 4 drivers in one (PDS, ISIS2, ISIS3, VICAR); Has the same dir name in /vector |
@@ -269,6 +271,7 @@ Available raster+vector drivers for now (by all driver dirs in sources):
 | **gpkg** | **yes** | [SQLITE3](https://github.com/nextgis-borsch/lib_sqlite); Optionally: SPATIALITE | Requires [PNG](https://github.com/nextgis-borsch/lib_png)?, [JPEG](https://github.com/nextgis-borsch/lib_jpeg)?, WEBP? drivers; No Spatialite support implemented; Former OGR format |
 | **plscenes** | **yes** | [CURL](https://github.com/nextgis-borsch/lib_curl) | Former OGR format |
 | **cad** | **yes** | [OpenCAD](https://github.com/nextgis-borsch/lib_opencad) | GSoC 2016 |
+| **ngw** | **yes** | [CURL](https://github.com/nextgis-borsch/lib_curl) |  |
 
 # Network drivers
 
@@ -283,4 +286,4 @@ Available network (GNM) drivers for now (by all driver directories in sources):
 
 Fresh GDAL build are available in Ubuntu Launchpad - https://launchpad.net/~nextgis/+archive/ubuntu/ppa/+packages
 
-Version 2.3.2
+Version 2.4.0

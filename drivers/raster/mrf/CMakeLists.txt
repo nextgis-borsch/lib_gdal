@@ -25,7 +25,7 @@
 ################################################################################
 
 option(ENABLE_MRF "Build Meta Raster Format" ON)
-if(ENABLE_MRF AND JPEG_FOUND AND JPEG12_FOUND AND PNG_FOUND AND TIFF_FOUND)
+if(ENABLE_MRF AND JPEG_FOUND AND PNG_FOUND AND TIFF_FOUND)
     set(TARGET_NAME ras_mrf)
 
     add_definitions(-DFRMT_mrf)
@@ -33,15 +33,20 @@ if(ENABLE_MRF AND JPEG_FOUND AND JPEG12_FOUND AND PNG_FOUND AND TIFF_FOUND)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
+if(WITH_LERC)
+    add_definitions(-DLERC)
+    include_directories(${CMAKE_SOURCE_DIR}/core/lib/LercLib)
+
+
     set(LIB_LERC_HHEADERS
-        libLERC/BitMask.h libLERC/Huffman.h libLERC/BitStuffer.h libLERC/CntZImage.h libLERC/Defines.h libLERC/Image.h
-    	libLERC/TImage.hpp libLERC/Lerc2.h libLERC/BitStuffer2.h libLERC/BitMask2.h libLERC/RLE.h
+        libLERC/BitMaskV1.h libLERC/BitStufferV1.h libLERC/CntZImage.h
     )
 
     set(LIB_LERC_CSOURCES
-        libLERC/BitMask.cpp libLERC/BitMask2.cpp libLERC/BitStuffer.cpp libLERC/BitStuffer2.cpp
-    	libLERC/CntZImage.cpp libLERC/Huffman.cpp libLERC/Lerc2.cpp libLERC/RLE.cpp
+        libLERC/BitMaskV1.cpp libLERC/BitStufferV1.cpp libLERC/CntZImage.cpp
+        LERC_band.cpp
     )
+endif()
 
     set(LIB_HHEADERS
     )
@@ -65,7 +70,7 @@ if(ENABLE_MRF AND JPEG_FOUND AND JPEG12_FOUND AND PNG_FOUND AND TIFF_FOUND)
     )
 
     if(JPEG12_FOUND)
-        add_definitions(-DLIBJPEG_12_H="${JPEG12_INCLUDE_DIRS}/jpeglib.h")
+        add_definitions(-DJPEG12_SUPPORTED -DLIBJPEG_12_H="${JPEG12_INCLUDE_DIRS}/jpeglib.h")
         set(LIB_CSOURCES ${LIB_CSOURCES}
             JPEG12_band.cpp
         )

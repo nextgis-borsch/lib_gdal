@@ -43,10 +43,11 @@
 # gdal_calc.py -A input.tif --outfile=result.tif --calc="A*(A>0)" --NoDataValue=0
 ################################################################
 
-from optparse import OptionParser, Values
+from optparse import OptionParser, OptionConflictError, Values
 import os
 import os.path
 import sys
+import shlex
 
 import numpy
 
@@ -55,8 +56,8 @@ from osgeo import gdalnumeric
 
 
 # create alphabetic list for storing input layers
-AlphaList = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
-             "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
+AlphaList =  ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
+              "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
 
 # set up some default nodatavalues for each datatype
 DefaultNDVLookup = {'Byte': 255, 'UInt16': 65535, 'Int16': -32767, 'UInt32': 4294967293, 'Int32': -2147483647, 'Float32': 3.402823466E+38, 'Float64': 1.7976931348623158E+308}
@@ -82,7 +83,7 @@ def GetOutputDriversFor(filename):
         if (drv.GetMetadataItem(gdal.DCAP_CREATE) is not None or
             drv.GetMetadataItem(gdal.DCAP_CREATECOPY) is not None) and \
            drv.GetMetadataItem(gdal.DCAP_RASTER) is not None:
-            if len(ext) > 0 and DoesDriverHandleExtension(drv, ext):
+            if ext and DoesDriverHandleExtension(drv, ext):
                 drv_list.append(drv.ShortName)
             else:
                 prefix = drv.GetMetadataItem(gdal.DMD_CONNECTION_PREFIX)
@@ -91,7 +92,7 @@ def GetOutputDriversFor(filename):
 
     # GMT is registered before netCDF for opening reasons, but we want
     # netCDF to be used by default for output.
-    if ext.lower() == 'nc' and len(drv_list) == 0 and \
+    if ext.lower() == 'nc' and not drv_list and \
        drv_list[0].upper() == 'GMT' and drv_list[1].upper() == 'NETCDF':
         drv_list = ['NETCDF', 'GMT']
 
@@ -100,9 +101,9 @@ def GetOutputDriversFor(filename):
 
 def GetOutputDriverFor(filename):
     drv_list = GetOutputDriversFor(filename)
-    if len(drv_list) == 0:
+    if not drv_list:
         ext = GetExtension(filename)
-        if len(ext) == 0:
+        if not ext:
             return 'GTiff'
         else:
             raise Exception("Cannot guess driver for %s" % filename)
@@ -114,6 +115,7 @@ def GetOutputDriverFor(filename):
 
 
 def doit(opts, args):
+    # pylint: disable=unused-argument
 
     if opts.debug:
         print("gdal_calc.py starting calculation %s" % (opts.calc))
@@ -357,14 +359,11 @@ def doit(opts, args):
 
     if not opts.quiet:
         print("100 - Done")
-    # print("Finished - Results written to %s" %opts.outF)
-
-    return
 
 ################################################################
 
 
-def Calc(calc, outfile, NoDataValue=None, type=None, format=None, creation_options=[], allBands='', overwrite=False, debug=False, quiet=False, **input_files):
+def Calc(calc, outfile, NoDataValue=None, type=None, format=None, creation_options=None, allBands='', overwrite=False, debug=False, quiet=False, **input_files):
     """ Perform raster calculations with numpy syntax.
     Use any basic arithmetic supported by numpy arrays such as +-*\ along with logical
     operators such as >. Note that all files must have the same dimensions, but no projection checking is performed.
@@ -390,7 +389,7 @@ def Calc(calc, outfile, NoDataValue=None, type=None, format=None, creation_optio
     opts.NoDataValue = NoDataValue
     opts.type = type
     opts.format = format
-    opts.creation_options = creation_options
+    opts.creation_options = [] if creation_options is None else creation_options
     opts.allBands = allBands
     opts.overwrite = overwrite
     opts.debug = debug
@@ -400,9 +399,21 @@ def Calc(calc, outfile, NoDataValue=None, type=None, format=None, creation_optio
 
 
 def store_input_file(option, opt_str, value, parser):
+    # pylint: disable=unused-argument
     if not hasattr(parser.values, 'input_files'):
         parser.values.input_files = {}
     parser.values.input_files[opt_str.lstrip('-')] = value
+
+
+def add_alpha_args(parser, argv):
+    # limit the input file options to the ones in the argument list
+    given_args = set([a[1] for a in argv if a[1:2] in AlphaList] + ['A'])
+    for myAlpha in given_args:
+        try:
+            parser.add_option("-%s" % myAlpha, action="callback", callback=store_input_file, type=str, help="input gdal raster file, you can use any letter (A-Z)", metavar='filename')
+            parser.add_option("--%s_band" % myAlpha, action="callback", callback=store_input_file, type=int, help="number of raster band for file %s (default 1)" % myAlpha, metavar='n')
+        except OptionConflictError:
+            pass
 
 
 def main():
@@ -412,11 +423,7 @@ def main():
 
     # define options
     parser.add_option("--calc", dest="calc", help="calculation in gdalnumeric syntax using +-/* or any numpy array functions (i.e. log10())", metavar="expression")
-    # limit the input file options to the ones in the argument list
-    given_args = set([a[1] for a in sys.argv if a[1:2] in AlphaList] + ['A'])
-    for myAlpha in given_args:
-        parser.add_option("-%s" % myAlpha, action="callback", callback=store_input_file, type=str, help="input gdal raster file, you can use any letter (A-Z)", metavar='filename')
-        parser.add_option("--%s_band" % myAlpha, action="callback", callback=store_input_file, type=int, help="number of raster band for file %s (default 1)" % myAlpha, metavar='n')
+    add_alpha_args(parser, sys.argv)
 
     parser.add_option("--outfile", dest="outF", help="output file to generate or fill", metavar="filename")
     parser.add_option("--NoDataValue", dest="NoDataValue", type=float, help="output nodata value (default datatype specific value)", metavar="value")
@@ -431,10 +438,27 @@ def main():
     parser.add_option("--overwrite", dest="overwrite", action="store_true", help="overwrite output file if it already exists")
     parser.add_option("--debug", dest="debug", action="store_true", help="print debugging information")
     parser.add_option("--quiet", dest="quiet", action="store_true", help="suppress progress messages")
+    parser.add_option("--optfile", dest="optfile", metavar="optfile", help="Read the named file and substitute the contents into the command line options list.")
 
     (opts, args) = parser.parse_args()
+
     if not hasattr(opts, "input_files"):
         opts.input_files = {}
+
+    if opts.optfile:
+        with open(opts.optfile, 'r') as f:
+            ofargv = [x for line in f for x in shlex.split(line, comments=True)]
+        # Avoid potential recursion.
+        parser.remove_option('--optfile')
+        add_alpha_args(parser, ofargv)
+        ofopts, ofargs = parser.parse_args(ofargv)
+        # Let options given directly override the optfile.
+        input_files = getattr(ofopts, 'input_files', {})
+        input_files.update(opts.input_files)
+        ofopts.__dict__.update({k: v for k, v in vars(opts).items() if v})
+        opts = ofopts
+        opts.input_files = input_files
+        args = args + ofargs
 
     if len(sys.argv) == 1:
         parser.print_help()

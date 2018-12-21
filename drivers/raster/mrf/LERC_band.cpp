@@ -21,7 +21,7 @@ Contributors:  Lucian Plesea
 
 #include "marfa.h"
 #include <algorithm>
-#include <CntZImage.h>
+#include "libLERC/CntZImage.h"
 #include <Lerc2.h>
 
 CPL_CVSID("$Id$")
@@ -29,6 +29,14 @@ CPL_CVSID("$Id$")
 USING_NAMESPACE_LERC
 
 NAMESPACE_MRF_START
+
+// Read an unaligned 4 byte little endian int from location p, advances pointer
+static void READ_GINT32(int& X, const char*& p)
+{
+    memcpy(&X, p, sizeof(GInt32));
+    SWAP_4(X);
+    p+= sizeof(GInt32);
+}
 
 //
 // Check that a buffer contains a supported Lerc1 blob, the type supported by MRF
@@ -42,12 +50,6 @@ NAMESPACE_MRF_START
 static int checkV1(const char *s, size_t sz)
 {
     GInt32 nBytesMask, nBytesData;
-
-// Read an unaligned 4 byte little endian int from location p, advances pointer
-#define READ_GINT32(X, p) \
-            memcpy(&X, p, sizeof(GInt32));\
-            SWAP_4(X); \
-            p+= sizeof(GInt32)
 
     // Header is 34 bytes
     // band header is 16, first mask band then data band
@@ -119,8 +121,6 @@ static int checkV1(const char *s, size_t sz)
 
     READ_GINT32(nBytesData, s);
     if (nBytesData < 0) return 0;
-
-#undef READ_GINT32
 
     // Actual LERC blob size
     if( 66 + nBytesMask > INT_MAX - nBytesData )
@@ -262,7 +262,7 @@ static CPLErr DecompressLERC(buf_mgr &dst, buf_mgr &src, const ILImage &img)
 
 // Populate a bitmask based on comparison with the image no data value
 // Returns the number of NoData values found
-template <typename T> static int MaskFill(BitMask2 &bitMask, T *src, const ILImage &img)
+template <typename T> static int MaskFill(BitMask &bitMask, T *src, const ILImage &img)
 {
     int w = img.pagesize.x;
     int h = img.pagesize.y;
@@ -290,7 +290,7 @@ static CPLErr CompressLERC2(buf_mgr &dst, buf_mgr &src, const ILImage &img, doub
     int w = img.pagesize.x;
     int h = img.pagesize.y;
     // So we build a bitmask to pass a pointer to bytes, which gets converted to a bitmask?
-    BitMask2 bitMask;
+    BitMask bitMask;
     int ndv_count = 0;
     if (img.hasNoData) { // Only build a bitmask if no data value is defined
         switch (img.dt) {
@@ -310,7 +310,9 @@ static CPLErr CompressLERC2(buf_mgr &dst, buf_mgr &src, const ILImage &img, doub
         }
     }
     // Set bitmask if it has some ndvs
-    Lerc2 lerc2(w, h, (ndv_count == 0) ? nullptr : bitMask.Bits());
+    Lerc2 lerc2(1, w, h, (ndv_count == 0) ? nullptr : bitMask.Bits());
+    // Default to LERC2 V2
+    lerc2.SetEncoderToOldVersion(2);
     bool success = false;
     Byte *ptr = (Byte *)dst.buffer;
 
@@ -345,7 +347,7 @@ static CPLErr CompressLERC2(buf_mgr &dst, buf_mgr &src, const ILImage &img, doub
 }
 
 // Populate a bitmask based on comparison with the image no data value
-template <typename T> static void UnMask(BitMask2 &bitMask, T *arr, const ILImage &img)
+template <typename T> static void UnMask(BitMask &bitMask, T *arr, const ILImage &img)
 {
     int w = img.pagesize.x;
     int h = img.pagesize.y;
@@ -366,10 +368,6 @@ CPLErr LERC_Band::Decompress(buf_mgr &dst, buf_mgr &src)
     const Byte *ptr = reinterpret_cast<Byte *>(src.buffer);
     Lerc2::HeaderInfo hdInfo;
     Lerc2 lerc2;
-    if (src.size < Lerc2::ComputeNumBytesHeader()) {
-        CPLError(CE_Failure, CPLE_AppDefined, "MRF: Invalid LERC");
-        return CE_Failure;
-    }
 
     // If not Lerc2 switch to Lerc
     if (!lerc2.GetHeaderInfo(ptr, src.size, hdInfo))
@@ -384,8 +382,9 @@ CPLErr LERC_Band::Decompress(buf_mgr &dst, buf_mgr &src)
     if (img.pagesize.x != hdInfo.nCols
         || img.pagesize.y != hdInfo.nRows
         || img.dt != GetL2DataType(hdInfo.dt)
+        || hdInfo.nDim != 1
         || dst.size < static_cast<size_t>(hdInfo.nCols * hdInfo.nRows * GDALGetDataTypeSizeBytes(img.dt))) {
-        CPLError(CE_Failure, CPLE_AppDefined, "MRF: Lerc2 format");
+        CPLError(CE_Failure, CPLE_AppDefined, "MRF: Lerc2 format error");
         return CE_Failure;
     }
 
@@ -393,7 +392,7 @@ CPLErr LERC_Band::Decompress(buf_mgr &dst, buf_mgr &src)
     // we need to add the padding bytes so that out-of-buffer-access checksum
     // don't false-positively trigger.
     size_t nRemainingBytes = src.size + PADDING_BYTES;
-    BitMask2 bitMask(img.pagesize.x, img.pagesize.y);
+    BitMask bitMask(img.pagesize.x, img.pagesize.y);
     switch (img.dt) {
 #define DECODE(T) success = lerc2.Decode(&ptr, nRemainingBytes, reinterpret_cast<T *>(dst.buffer), bitMask.Bits())
     case GDT_Byte:      DECODE(GByte);      break;
@@ -439,17 +438,12 @@ CPLErr LERC_Band::Compress(buf_mgr &dst, buf_mgr &src)
 
 CPLXMLNode *LERC_Band::GetMRFConfig(GDALOpenInfo *poOpenInfo)
 {
-    // Should have enough data pre-read
-    if(poOpenInfo->nHeaderBytes <
-        static_cast<int>(CntZImage::computeNumBytesNeededToWriteVoidImage()))
-    {
-        return nullptr;
-    }
-
     if (poOpenInfo->eAccess != GA_ReadOnly
         || poOpenInfo->pszFilename == nullptr
         || poOpenInfo->pabyHeader == nullptr
         || strlen(poOpenInfo->pszFilename) < 2)
+        // Header of Lerc2 takes 58 bytes, an empty area 62.  Lerc 1 empty file is 67.
+        // || poOpenInfo->nHeaderBytes < static_cast<int>(Lerc2::ComputeNumBytesHeader()))
         return nullptr;
 
     // Check the header too
@@ -459,18 +453,13 @@ CPLXMLNode *LERC_Band::GetMRFConfig(GDALOpenInfo *poOpenInfo)
     if (!IsLerc(sHeader))
         return nullptr;
 
-    // Get the desired type
-    const char *pszDataType = CSLFetchNameValue(poOpenInfo->papszOpenOptions, "DATATYPE");
     GDALDataType dt = GDT_Unknown; // Use this as a validity flag
-    if (pszDataType)
-        dt = GDALGetDataTypeByName(pszDataType);
-
 
     // Use this structure to fetch width and height
     ILSize size(-1, -1, 1, 1, 1);
 
     // Try lerc2
-    if (sHeader.size() >= Lerc2::ComputeNumBytesHeader()) {
+    {
         Lerc2 l2;
         Lerc2::HeaderInfo hinfo;
         hinfo.RawInit();
@@ -491,9 +480,11 @@ CPLXMLNode *LERC_Band::GetMRFConfig(GDALOpenInfo *poOpenInfo)
         {
             size.x = zImg.getWidth();
             size.y = zImg.getHeight();
+
             // Read as byte by default, otherwise LERC can be read as anything
-            if (dt == GDT_Unknown)
-                dt = GDT_Byte;
+            // Get the desired type
+            const char *pszDataType = CSLFetchNameValue(poOpenInfo->papszOpenOptions, "DATATYPE");
+            dt = pszDataType ? GDALGetDataTypeByName(pszDataType) : GDT_Byte;
         }
     }
 

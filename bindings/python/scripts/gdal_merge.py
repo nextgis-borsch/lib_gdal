@@ -64,7 +64,7 @@ def GetOutputDriversFor(filename):
         if (drv.GetMetadataItem(gdal.DCAP_CREATE) is not None or
             drv.GetMetadataItem(gdal.DCAP_CREATECOPY) is not None) and \
            drv.GetMetadataItem(gdal.DCAP_RASTER) is not None:
-            if len(ext) > 0 and DoesDriverHandleExtension(drv, ext):
+            if ext and DoesDriverHandleExtension(drv, ext):
                 drv_list.append(drv.ShortName)
             else:
                 prefix = drv.GetMetadataItem(gdal.DMD_CONNECTION_PREFIX)
@@ -73,7 +73,7 @@ def GetOutputDriversFor(filename):
 
     # GMT is registered before netCDF for opening reasons, but we want
     # netCDF to be used by default for output.
-    if ext.lower() == 'nc' and len(drv_list) == 0 and \
+    if ext.lower() == 'nc' and not drv_list and \
        drv_list[0].upper() == 'GMT' and drv_list[1].upper() == 'NETCDF':
         drv_list = ['NETCDF', 'GMT']
 
@@ -82,9 +82,9 @@ def GetOutputDriversFor(filename):
 
 def GetOutputDriverFor(filename):
     drv_list = GetOutputDriversFor(filename)
-    if len(drv_list) == 0:
+    if not drv_list:
         ext = GetExtension(filename)
-        if len(ext) == 0:
+        if not ext:
             return 'GTiff'
         else:
             raise Exception("Cannot guess driver for %s" % filename)
@@ -213,8 +213,22 @@ def names_to_fileinfos(names):
 # *****************************************************************************
 
 
-class file_info:
+class file_info(object):
     """A class holding information about a GDAL file."""
+
+    def __init__(self):
+        self.band_type = None
+        self.bands = None
+        self.ct = None
+        self.filename = None
+        self.geotransform = None
+        self.lrx = None
+        self.lry = None
+        self.projection = None
+        self.ulx = None
+        self.uly = None
+        self.xsize = None
+        self.ysize = None
 
     def init_from_name(self, filename):
         """
@@ -351,7 +365,7 @@ def main(argv=None):
     verbose = 0
     quiet = 0
     names = []
-    format = None
+    frmt = None
     out_file = 'out.tif'
 
     ulx = None
@@ -424,7 +438,7 @@ def main(argv=None):
 
         elif arg == '-f' or arg == '-of':
             i = i + 1
-            format = argv[i]
+            frmt = argv[i]
 
         elif arg == '-co':
             i = i + 1
@@ -455,22 +469,22 @@ def main(argv=None):
 
         i = i + 1
 
-    if len(names) == 0:
+    if not names:
         print('No input files selected.')
         Usage()
         sys.exit(1)
 
-    if format is None:
-        format = GetOutputDriverFor(out_file)
+    if frmt is None:
+        frmt = GetOutputDriverFor(out_file)
 
-    Driver = gdal.GetDriverByName(format)
+    Driver = gdal.GetDriverByName(frmt)
     if Driver is None:
-        print('Format driver %s not found, pick a supported driver.' % format)
+        print('Format driver %s not found, pick a supported driver.' % frmt)
         sys.exit(1)
 
     DriverMD = Driver.GetMetadata()
     if 'DCAP_CREATE' not in DriverMD:
-        print('Format driver %s does not support creation and piecewise writing.\nPlease select a format that does, such as GTiff (the default) or HFA (Erdas Imagine).' % format)
+        print('Format driver %s does not support creation and piecewise writing.\nPlease select a format that does, such as GTiff (the default) or HFA (Erdas Imagine).' % frmt)
         sys.exit(1)
 
     # Collect information on all the source files.

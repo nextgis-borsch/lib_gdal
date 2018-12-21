@@ -37,6 +37,8 @@
 %module "Geo::OSR"
 #elif defined(SWIGCSHARP)
 %module Osr
+#elif defined(SWIGPYTHON)
+%module (package="osgeo") osr
 #else
 %module osr
 #endif
@@ -123,10 +125,6 @@ typedef int OGRErr;
 
 #if defined(SWIGPYTHON)
 %include osr_python.i
-#elif defined(SWIGRUBY)
-%include typemaps_ruby.i
-#elif defined(SWIGPHP4)
-%include typemaps_php.i
 #elif defined(SWIGCSHARP)
 %include osr_csharp.i
 #elif defined(SWIGJAVA)

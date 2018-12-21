@@ -974,6 +974,8 @@ GUIntBig CPLScanUIntBig( const char *pszString, int nMaxLength )
 /* -------------------------------------------------------------------- */
 #if defined(__MSVCRT__) || (defined(WIN32) && defined(_MSC_VER))
     return static_cast<GUIntBig>(_atoi64(osValue.c_str()));
+#elif HAVE_STRTOULL
+    return strtoull(osValue.c_str(), nullptr, 10);
 #elif HAVE_ATOLL
     return atoll(osValue.c_str());
 #else
@@ -2859,15 +2861,18 @@ class CPLThreadLocaleCPrivate
 {
         locale_t nNewLocale;
         locale_t nOldLocale;
+
+        CPL_DISALLOW_COPY_ASSIGN(CPLThreadLocaleCPrivate)
+
     public:
         CPLThreadLocaleCPrivate();
        ~CPLThreadLocaleCPrivate();
 };
 
-CPLThreadLocaleCPrivate::CPLThreadLocaleCPrivate()
+CPLThreadLocaleCPrivate::CPLThreadLocaleCPrivate():
+    nNewLocale(newlocale(LC_NUMERIC_MASK, "C", nullptr)),
+    nOldLocale(uselocale(nNewLocale))
 {
-    nNewLocale = newlocale(LC_NUMERIC_MASK, "C", nullptr);
-    nOldLocale = uselocale(nNewLocale);
 }
 
 CPLThreadLocaleCPrivate::~CPLThreadLocaleCPrivate()
@@ -2882,6 +2887,9 @@ class CPLThreadLocaleCPrivate
 {
         int   nOldValConfigThreadLocale;
         char *pszOldLocale;
+
+        CPL_DISALLOW_COPY_ASSIGN(CPLThreadLocaleCPrivate)
+
     public:
         CPLThreadLocaleCPrivate();
        ~CPLThreadLocaleCPrivate();
@@ -2910,14 +2918,17 @@ CPLThreadLocaleCPrivate::~CPLThreadLocaleCPrivate()
 class CPLThreadLocaleCPrivate
 {
         char *pszOldLocale;
+
+        CPL_DISALLOW_COPY_ASSIGN(CPLThreadLocaleCPrivate)
+
     public:
         CPLThreadLocaleCPrivate();
        ~CPLThreadLocaleCPrivate();
 };
 
-CPLThreadLocaleCPrivate::CPLThreadLocaleCPrivate()
+CPLThreadLocaleCPrivate::CPLThreadLocaleCPrivate():
+    pszOldLocale(CPLStrdup(CPLsetlocale(LC_NUMERIC, nullptr)))
 {
-    pszOldLocale = CPLStrdup(CPLsetlocale(LC_NUMERIC, nullptr));
     if( EQUAL(pszOldLocale, "C")
         || EQUAL(pszOldLocale, "POSIX")
         || CPLsetlocale(LC_NUMERIC, "C") == nullptr )
@@ -2943,10 +2954,9 @@ CPLThreadLocaleCPrivate::~CPLThreadLocaleCPrivate()
 /*                        CPLThreadLocaleC()                            */
 /************************************************************************/
 
-CPLThreadLocaleC::CPLThreadLocaleC()
-
+CPLThreadLocaleC::CPLThreadLocaleC():
+    m_private(new CPLThreadLocaleCPrivate)
 {
-    m_private = new CPLThreadLocaleCPrivate;
 }
 
 /************************************************************************/

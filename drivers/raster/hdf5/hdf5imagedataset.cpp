@@ -27,19 +27,7 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#define H5_USE_16_API
-
-#ifdef _MSC_VER
-#pragma warning(push)
-// warning C4005: '_HDF5USEDLL_' : macro redefinition.
-#pragma warning(disable : 4005)
-#endif
-
-#include "hdf5.h"
-
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
+#include "hdf5_api.h"
 
 #include "cpl_string.h"
 #include "gdal_frmts.h"
@@ -475,7 +463,8 @@ GDALDataset *HDF5ImageDataset::Open( GDALOpenInfo *poOpenInfo )
 
     CPLString osFilename(papszName[1]);
 
-    if( strlen(papszName[1]) == 1 && papszName[3] != nullptr )
+    if( (strlen(papszName[1]) == 1 && papszName[3] != nullptr) ||
+        (STARTS_WITH(papszName[1], "/vsicurl/http") && papszName[3] != nullptr) )
     {
         osFilename += ":";
         osFilename += papszName[2];
@@ -491,16 +480,13 @@ GDALDataset *HDF5ImageDataset::Open( GDALOpenInfo *poOpenInfo )
     CSLDestroy(papszName);
     papszName = nullptr;
 
-    if( !H5Fis_hdf5(osFilename) )
-    {
-        delete poDS;
-        return nullptr;
-    }
-
     poDS->SetPhysicalFilename(osFilename);
 
     // Try opening the dataset.
-    poDS->hHDF5 = H5Fopen(osFilename, H5F_ACC_RDONLY, H5P_DEFAULT);
+    hid_t fapl = H5Pcreate(H5P_FILE_ACCESS);
+    H5Pset_driver(fapl, HDF5GetFileDriver(), nullptr);
+    poDS->hHDF5 = H5Fopen(osFilename, H5F_ACC_RDONLY, fapl);
+    H5Pclose(fapl);
 
     if( poDS->hHDF5 < 0 )
     {
@@ -596,6 +582,15 @@ GDALDataset *HDF5ImageDataset::Open( GDALOpenInfo *poOpenInfo )
 }
 
 /************************************************************************/
+/*                   HDF5ImageDatasetDriverUnload()                     */
+/************************************************************************/
+
+static void HDF5ImageDatasetDriverUnload(GDALDriver*)
+{
+    HDF5UnloadFileDriver();
+}
+
+/************************************************************************/
 /*                        GDALRegister_HDF5Image()                      */
 /************************************************************************/
 void GDALRegister_HDF5Image()
@@ -613,9 +608,11 @@ void GDALRegister_HDF5Image()
     poDriver->SetMetadataItem(GDAL_DCAP_RASTER, "YES");
     poDriver->SetMetadataItem(GDAL_DMD_LONGNAME, "HDF5 Dataset");
     poDriver->SetMetadataItem(GDAL_DMD_HELPTOPIC, "frmt_hdf5.html");
+    poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
 
     poDriver->pfnOpen = HDF5ImageDataset::Open;
     poDriver->pfnIdentify = HDF5ImageDataset::Identify;
+    poDriver->pfnUnloadDriver = HDF5ImageDatasetDriverUnload;
 
     GetGDALDriverManager()->RegisterDriver(poDriver);
 }

@@ -29,7 +29,6 @@
 #  DEALINGS IN THE SOFTWARE.
 # ******************************************************************************
 
-import string
 import sys
 
 from osgeo import osr
@@ -43,8 +42,8 @@ prj_fd = open(sys.argv[1])
 prj_lines = prj_fd.readlines()
 prj_fd.close()
 
-for i in range(len(prj_lines)):
-    prj_lines[i] = string.rstrip(prj_lines[i])
+for i, prj_line in enumerate(prj_lines):
+    prj_lines[i] = prj_line.rstrip()
 
 prj_srs = osr.SpatialReference()
 err = prj_srs.ImportFromESRI(prj_lines)

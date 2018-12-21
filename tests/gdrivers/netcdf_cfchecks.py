@@ -48,27 +48,26 @@ Options:
 
 '''
 
-import cdms2 as cdms
 import re
-import string
-import numpy
 import sys
+import ctypes
+from xml.sax import ContentHandler
+from xml.sax import make_parser
+from xml.sax.handler import feature_namespaces
+import numpy
+import cdms2 as cdms
 
 from cdms2.axis import FileAxis
 from cdms2.auxcoord import FileAuxAxis1D
 
 # Use ctypes to interface to the UDUNITS-2 shared library
 # The udunits2 library needs to be in a standard path o/w export LD_LIBRARY_PATH
-import ctypes
 udunits = ctypes.CDLL("libudunits2.so")
 
 STANDARDNAME = 'http://cfconventions.org/Data/cf-standard-names/current/src/cf-standard-name-table.xml'
 AREATYPES = 'http://cfconventions.org/Data/area-type-table/current/src/area-type-table.xml'
 
 # -----------------------------------------------------------
-from xml.sax import ContentHandler
-from xml.sax import make_parser
-from xml.sax.handler import feature_namespaces
 
 
 def normalize_whitespace(text):
@@ -94,13 +93,10 @@ class CFVersion(object):
             self.tuple = value
 
     def __nonzero__(self):
-        if self.tuple:
-            return True
-        else:
-            return False
+        return bool(self.tuple)
 
     def __str__(self):
-        return "CF-%s" % string.join(map(str, self.tuple), ".")
+        return "CF-%s" % '.'.join(map(str, self.tuple))
 
     def __cmp__(self, other):
         # maybe overkill but allow for different lengths in future e.g. 3.2 and 3.2.1
@@ -118,8 +114,8 @@ class CFVersion(object):
             else:
                 if in_o:  # and not in_s
                     return -1  # e.g. 3.2 < 3.2.1
-                else:  # not in_s and not in_o
-                    return 0  # e.g. 3.2 == 3.2
+                # not in_s and not in_o
+                return 0  # e.g. 3.2 == 3.2
             pos += 1
 
 
@@ -149,8 +145,7 @@ class ConstructDict(ContentHandler):
     def startElement(self, name, attrs):
         # If it's an entry element, save the id
         if name == 'entry':
-            id = normalize_whitespace(attrs.get('id', ""))
-            self.this_id = id
+            self.this_id = normalize_whitespace(attrs.get('id', ""))
 
         # If it's the start of a canonical_units element
         elif name == 'canonical_units':
@@ -158,8 +153,7 @@ class ConstructDict(ContentHandler):
             self.units = ""
 
         elif name == 'alias':
-            id = normalize_whitespace(attrs.get('id', ""))
-            self.this_id = id
+            self.this_id = normalize_whitespace(attrs.get('id', ""))
 
         elif name == 'entry_id':
             self.inEntryIdContent = 1
@@ -229,8 +223,7 @@ class ConstructList(ContentHandler):
     def startElement(self, name, attrs):
         # If it's an entry element, save the id
         if name == 'entry':
-            id = normalize_whitespace(attrs.get('id', ""))
-            self.list.append(id)
+            self.list.append(normalize_whitespace(attrs.get('id', "")))
 
         elif name == 'version_number':
             self.inVersionNoContent = 1
@@ -301,7 +294,7 @@ def chkDerivedName(name):
 # ======================
 # Checking class
 # ======================
-class CFChecker:
+class CFChecker(object):
 
     def __init__(self, uploader=None, useFileName="yes", badc=None, coards=None, cfStandardNamesXML=None, cfAreaTypesXML=None, udunitsDat=None, version=newest_version):
         self.uploader = uploader
@@ -318,22 +311,22 @@ class CFChecker:
         self.cf_roleCount = 0          # Number of occurrences of the cf_role attribute in the file
         self.raggedArrayFlag = 0       # Flag to indicate if file contains any ragged array representations
 
-    def checker(self, file):
+    def checker(self, filename):
 
         fileSuffix = re.compile('^\S+\.nc$')
 
         print("")
         if self.uploader:
-            realfile = string.split(file, ".nc")[0] + ".nc"
+            realfile = filename.split(".nc")[0] + ".nc"
             print("CHECKING NetCDF FILE:", realfile)
         elif self.useFileName == "no":
             print("CHECKING NetCDF FILE")
         else:
-            print("CHECKING NetCDF FILE:", file)
+            print("CHECKING NetCDF FILE:", filename)
         print("=====================")
 
         # Check for valid filename
-        if not fileSuffix.match(file):
+        if not fileSuffix.match(filename):
             print("ERROR (2.1): Filename must have .nc suffix")
             exit(1)
 
@@ -360,7 +353,7 @@ class CFChecker:
 
         # Read in netCDF file
         try:
-            self.f = cdms.open(file, "r")
+            self.f = cdms.open(filename, "r")
 
         except AttributeError:
             print("NetCDF Attribute Error:")
@@ -369,7 +362,6 @@ class CFChecker:
             print("\nCould not open file, please check that NetCDF is formatted correctly.\n".upper())
             print("ERRORS detected:", 1)
             raise
-            exit(1)
 
         # if 'auto' version, check the CF version in the file
         # if none found, use the default
@@ -411,7 +403,7 @@ class CFChecker:
 
         # Read in netCDF file
         try:
-            self.f = cdms.open(file, "r")
+            self.f = cdms.open(filename, "r")
 
         except AttributeError:
             print("NetCDF Attribute Error:")
@@ -544,7 +536,7 @@ class CFChecker:
                 # I.e. Multi-dimensional coordinate var with a dimension of the same name
                 # or an axis that hasn't been identified through the coordinates attribute
                 # CRM035 (17.04.07)
-                if not (isinstance(self.f[var], FileAxis) or isinstance(self.f[var], FileAuxAxis1D)):
+                if not isinstance(self.f[var], (FileAxis, FileAuxAxis1D)):
                     print("WARNING (5): Possible incorrect declaration of a coordinate variable.")
                     self.warn = self.warn + 1
                 else:
@@ -588,12 +580,11 @@ class CFChecker:
         if self.err:
             # Return number of errors found
             return self.err
-        elif self.warn:
+        if self.warn:
             # No errors, but some warnings found
             return -(self.warn)
-        else:
-            # No errors or warnings - return success!
-            return 0
+        # No errors or warnings - return success!
+        return 0
 
         # -----------------------------
     def setUpAttributeList(self):
@@ -648,16 +639,14 @@ class CFChecker:
             self.AttrList['instance_dimension'] = ['S', 'D']
             self.AttrList['sample_dimension'] = ['S', 'D']
 
-        return
-
         # ---------------------------
-    def uniqueList(self, list):
+    def uniqueList(self, lst):
         # ---------------------------
         """Determine if list has any repeated elements."""
         # Rewrite to allow list to be either a list or a Numeric array
         seen = []
 
-        for x in list:
+        for x in lst:
             if x in seen:
                 return 0
             else:
@@ -682,11 +671,10 @@ class CFChecker:
         attDict = var.attributes
         if attName not in attDict.keys():
             return None
-        bits = string.split(attDict[attName])
+        bits = attDict[attName].split()
         if bits:
             return bits[0]
-        else:
-            return ""
+        return ""
 
         # -------------------------
     def getStdName(self, var):
@@ -698,18 +686,17 @@ class CFChecker:
         if attName not in attDict.keys():
             return None
 
-        bits = string.split(attDict[attName])
+        bits = attDict[attName].split()
 
         if len(bits) == 1:
             # Only standard_name part present
             return (bits[0], "")
-        elif len(bits) == 0:
+        if not bits:
             # Standard Name is blank
             return ("", "")
-        else:
-            # At least 2 elements so return the first 2.
-            # If there are more than 2, which is invalid syntax, this will have been picked up by chkDescription()
-            return (bits[0], bits[1])
+        # At least 2 elements so return the first 2.
+        # If there are more than 2, which is invalid syntax, this will have been picked up by chkDescription()
+        return (bits[0], bits[1])
 
         # --------------------------------------------------
     def getInterpretation(self, units, positive=None):
@@ -800,7 +787,7 @@ class CFChecker:
                     print("ERROR (5): Invalid syntax for 'coordinates' attribute in", var)
                     self.err = self.err + 1
                 else:
-                    coordinates = string.split(self.f[var].attributes['coordinates'])
+                    coordinates = self.f[var].attributes['coordinates'].split()
                     for dataVar in coordinates:
                         if dataVar in variables:
 
@@ -1018,7 +1005,7 @@ class CFChecker:
             self.err = self.err + 1
             rc = 0
 
-        if len(var.getAxisIds()) != 0:
+        if var.getAxisIds():
             print("WARNING (5.6): A grid mapping variable should have 0 dimensions")
             self.warn = self.warn + 1
 
@@ -1057,33 +1044,30 @@ class CFChecker:
         self.formulas['ocean_double_sigma_coordinate'] = ['z(k,j,i)=sigma(k)*f(j,i)', 'z(k,j,i)=f(j,i)+(sigma(k)-1)*(depth(j,i)-f(j,i))', 'f(j,i)=0.5*(z1+z2)+0.5*(z1-z2)*tanh(2*a/(z1-z2)*(depth(j,i)-href))']
 
         # ----------------------------------------
-    def parseBlankSeparatedList(self, list):
+    def parseBlankSeparatedList(self, lst):
         # ----------------------------------------
         """Parse blank separated list"""
-        if re.match("^[a-zA-Z0-9_ ]*$", list):
+        if re.match("^[a-zA-Z0-9_ ]*$", lst):
             return 1
-        else:
-            return 0
+        return 0
 
         # -------------------------------------------
-    def extendedBlankSeparatedList(self, list):
+    def extendedBlankSeparatedList(self, lst):
         # -------------------------------------------
         """Check list is a blank separated list of words containing alphanumeric characters
         plus underscore '_', period '.', plus '+', hyphen '-', or "at" sign '@'."""
-        if re.match("^[a-zA-Z0-9_ @\-\+\.]*$", list):
+        if re.match("^[a-zA-Z0-9_ @\-\+\.]*$", lst):
             return 1
-        else:
-            return 0
+        return 0
 
         # -------------------------------------------
-    def commaOrBlankSeparatedList(self, list):
+    def commaOrBlankSeparatedList(self, lst):
         # -------------------------------------------
         """Check list is a blank or comma separated list of words containing alphanumeric
         characters plus underscore '_', period '.', plus '+', hyphen '-', or "at" sign '@'."""
-        if re.match("^[a-zA-Z0-9_ @\-\+\.,]*$", list):
+        if re.match("^[a-zA-Z0-9_ @\-\+\.,]*$", lst):
             return 1
-        else:
-            return 0
+        return 0
 
         # ------------------------------
     def chkGlobalAttributes(self):
@@ -1102,9 +1086,9 @@ class CFChecker:
                 # Split string up into component parts
                 # If a comma is present we assume a comma separated list as names cannot contain commas
                 if re.match("^.*,.*$", conventions):
-                    conventionList = string.split(conventions, ",")
+                    conventionList = conventions.split(",")
                 else:
-                    conventionList = string.split(conventions)
+                    conventionList = conventions.split()
 
                 found = 0
                 for convention in conventionList:
@@ -1154,9 +1138,9 @@ class CFChecker:
             # Split string up into component parts
             # If a comma is present we assume a comma separated list as names cannot contain commas
             if re.match("^.*,.*$", conventions):
-                conventionList = string.split(conventions, ",")
+                conventionList = conventions.split(",")
             else:
-                conventionList = string.split(conventions)
+                conventionList = conventions.split()
 
             found = 0
             coards = 0
@@ -1336,7 +1320,7 @@ class CFChecker:
 
             if isinstance(value, str):
                 attrType = 'S'
-            elif isinstance(value, int) or isinstance(value, float):
+            elif isinstance(value, (int, float)):
                 attrType = 'N'
             elif isinstance(value, numpy.ndarray):
                 attrType = 'N'
@@ -1549,7 +1533,7 @@ class CFChecker:
         return rc
 
         # ---------------------------------------------------
-    def isValidCellMethodTypeValue(self, type, value):
+    def isValidCellMethodTypeValue(self, typ, value):
         # ---------------------------------------------------
         """ Is <type1> or <type2> in the cell_methods attribute a valid value"""
         rc = 1
@@ -1557,7 +1541,7 @@ class CFChecker:
         if value in self.auxCoordVars:
             if self.getTypeCode(self.f[value]) != 'c':
                 rc = 0
-            elif type == "type2":
+            elif typ == "type2":
                 # <type2> has the additional requirement that it is not allowed a leading dimension of more than one
                 leadingDim = self.f[value].getAxisIds()[0]
                 # Must not be a value of more than one
@@ -1715,7 +1699,7 @@ class CFChecker:
                 rc = 0
             else:
                 # Need to validate the measure + name
-                split = string.split(cellMeasures)
+                split = cellMeasures.split()
                 splitIter = iter(split)
                 try:
                     while 1:
@@ -1806,7 +1790,7 @@ class CFChecker:
                 rc = 0
             else:
                 # Need to validate the term & var
-                split = string.split(formulaTerms)
+                split = formulaTerms.split()
                 for x in split[:]:
                     if not re.search("^[a-zA-Z0-9_]+:$", x):
                         # Variable - should be declared in netCDF file
@@ -1946,7 +1930,7 @@ class CFChecker:
 
                 dimensions = self.f[var.id].getAxisIds()
 
-                if not hasattr(var, 'flag_values') and len(dimensions) != 0 and self.f[var.id].typecode() != 'c':
+                if not hasattr(var, 'flag_values') and dimensions and self.f[var.id].typecode() != 'c':
                     # Variable is not a flag variable or a scalar or a label
 
                     print("INFO (3.1): No units attribute set.  Please consider adding a units attribute for completeness.")
@@ -1965,7 +1949,7 @@ class CFChecker:
 
         # units must be recognizable by the BADC units file
         for line in units_lines:
-            if hasattr(var, 'units') and var.attributes['units'] in string.split(line):
+            if hasattr(var, 'units') and var.attributes['units'] in line.split():
                 print("Valid units in BADC list:", var.attributes['units'])
                 rc = 1
                 break
@@ -2085,7 +2069,6 @@ class CFChecker:
                 print("ValueError:", sys.exc_info()[1])
                 print("INFO: Could not complete tests on missing_value attribute")
                 raise
-                rc = 0
 
         return rc
 
@@ -2231,7 +2214,7 @@ class CFChecker:
 
             # standard_name attribute can comprise a standard_name only or a standard_name
             # followed by a modifier (E.g. atmosphere_cloud_liquid_water_content status_flag)
-            std_name_el = string.split(std_name)
+            std_name_el = std_name.split()
             if not std_name_el:
                 print("ERROR (3.3): Empty string for 'standard_name' attribute")
                 self.err = self.err + 1
@@ -2277,7 +2260,7 @@ class CFChecker:
                 self.err = self.err + 1
                 rc = 0
             else:
-                dimensions = string.split(compress)
+                dimensions = compress.split()
                 dimProduct = 1
                 for x in dimensions:
                     found = 'false'
@@ -2317,9 +2300,9 @@ class CFChecker:
                 return 0
 
         if 'scale_factor' in var.attributes:
-            type = var.attributes['scale_factor'].dtype.char
+            typ = var.attributes['scale_factor'].dtype.char
         elif 'add_offset' in var.attributes:
-            type = var.attributes['add_offset'].dtype.char
+            typ = var.attributes['add_offset'].dtype.char
         else:
             # No packed Data attributes present
             return 1
@@ -2327,8 +2310,8 @@ class CFChecker:
         varType = self.getTypeCode(var)
 
         # One or other attributes present; run remaining checks
-        if varType != type:
-            if type != 'f' and type != 'd':
+        if varType != typ:
+            if typ != 'f' and typ != 'd':
                 print("ERROR (8.1): scale_factor and add_offset must be of type float or double")
                 self.err = self.err + 1
                 rc = 0
@@ -2338,7 +2321,7 @@ class CFChecker:
                 self.err = self.err + 1
                 rc = 0
 
-            if type == 'f' and varType == 'i':
+            if typ == 'f' and varType == 'i':
                 print("WARNING (8.1): scale_factor/add_offset are type float, therefore", var.id, "should not be of type int")
                 self.warn = self.warn + 1
 
@@ -2386,7 +2369,7 @@ class CFChecker:
                     rc = 0
 
                 # flag_values values must be mutually exclusive
-                if type(values) == str:
+                if isinstance(values, str):
                     values = values.split()
 
                 if not self.uniqueList(values):
@@ -2448,15 +2431,14 @@ class CFChecker:
         if isinstance(arg, numpy.ndarray):
             return "array"
 
-        elif type(arg) == str:
+        if isinstance(arg, str):
             return "str"
 
-        elif type(arg) == list:
+        if isinstance(arg, list):
             return "list"
 
-        else:
-            print("<cfchecker> ERROR: Unknown Type in getType(" + arg + ")")
-            return 0
+        print("<cfchecker> ERROR: Unknown Type in getType(" + arg + ")")
+        return 0
 
         # ----------------------------------------
     def equalNumOfValues(self, arg1, arg2):
@@ -2521,10 +2503,10 @@ class CFChecker:
                 i = i + 1
                 if val < lastVal:
                     # Decreasing sequence
-                    type = 'decr'
+                    typ = 'decr'
                 elif val > lastVal:
                     # Increasing sequence
-                    type = 'incr'
+                    typ = 'incr'
                 else:
                     # Same value - ERROR
                     print("ERROR (5): co-ordinate variable '" + var.id + "' not monotonic")
@@ -2534,12 +2516,12 @@ class CFChecker:
                 lastVal = val
             else:
                 i = i + 1
-                if val < lastVal and type != 'decr':
+                if val < lastVal and typ != 'decr':
                     # ERROR - should be increasing value
                     print("ERROR (5): co-ordinate variable '" + var.id + "' not monotonic")
                     self.err = self.err + 1
                     return 1
-                elif val > lastVal and type != 'incr':
+                elif val > lastVal and typ != 'incr':
                     # ERROR - should be decreasing value
                     print("ERROR (5): co-ordinate variable '" + var.id + "' not monotonic")
                     self.err = self.err + 1
@@ -2553,7 +2535,7 @@ def getargs(arglist):
 
     from getopt import getopt, GetoptError
     from os import environ
-    from sys import stderr, exit
+    from sys import stderr
 
     udunitskey = 'UDUNITS'
     standardnamekey = 'CF_STANDARD_NAMES'
@@ -2580,7 +2562,7 @@ def getargs(arglist):
         (opts, args) = getopt(arglist[1:], 'a:bchlnu:s:v:', ['area_types=', 'badc', 'coards', 'help', 'uploader', 'noname', 'udunits=', 'cf_standard_names=', 'version='])
     except GetoptError:
         stderr.write('%s\n' % __doc__)
-        exit(1)
+        sys.exit(1)
 
     for a, v in opts:
         if a in ('-a', '--area_types'):
@@ -2594,7 +2576,7 @@ def getargs(arglist):
             continue
         if a in ('-h', '--help'):
             print(__doc__)
-            exit(0)
+            sys.exit(0)
         if a in ('-l', '--uploader'):
             uploader = "yes"
             continue
@@ -2622,9 +2604,9 @@ def getargs(arglist):
                     version = newest_version
             continue
 
-    if len(args) == 0:
+    if not args:
         stderr.write('ERROR in command line\n\nusage:\n%s\n' % __doc__)
-        exit(1)
+        sys.exit(1)
 
     return (badc, coards, uploader, useFileName, standardname, areatypes, udunits, version, args)
 
@@ -2635,11 +2617,9 @@ def getargs(arglist):
 
 if __name__ == '__main__':
 
-    from sys import argv, exit
-
-    (badc, coards, uploader, useFileName, standardName, areaTypes, udunitsDat, version, files) = getargs(argv)
+    (badc, coards, uploader, useFileName, standardName, areaTypes, udunitsDat, version, files) = getargs(sys.argv)
 
     inst = CFChecker(uploader=uploader, useFileName=useFileName, badc=badc, coards=coards, cfStandardNamesXML=standardName, cfAreaTypesXML=areaTypes, udunitsDat=udunitsDat, version=version)
-    for file in files:
-        rc = inst.checker(file)
-        exit(rc)
+    for f in files:
+        rc = inst.checker(f)
+        sys.exit(rc)

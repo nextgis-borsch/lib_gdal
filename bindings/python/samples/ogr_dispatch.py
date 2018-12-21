@@ -30,9 +30,9 @@
 # DEALINGS IN THE SOFTWARE.
 ###############################################################################
 
+import sys
 from osgeo import ogr
 from osgeo import osr
-import sys
 
 ###############################################################
 # Usage()
@@ -89,7 +89,7 @@ def wkbFlatten(x):
 ###############################################################
 
 
-class Options:
+class Options(object):
     def __init__(self):
         self.lco = []
         self.dispatch_fields = []
@@ -114,47 +114,34 @@ def GeometryTypeToName(eGeomType, options):
 
     if eGeomType == ogr.wkbPoint:
         return 'POINT'
-    elif eGeomType == ogr.wkbLineString:
+    if eGeomType == ogr.wkbLineString:
         return 'LINESTRING'
-    elif eGeomType == ogr.wkbPolygon:
+    if eGeomType == ogr.wkbPolygon:
         return 'POLYGON'
-    elif eGeomType == ogr.wkbMultiPoint:
+    if eGeomType == ogr.wkbMultiPoint:
         return 'MULTIPOINT'
-    elif eGeomType == ogr.wkbMultiLineString:
-        if options.bMultiAsSingle:
-            return 'LINESTRING'
-        else:
-            return 'MULTILINESTRING'
-    elif eGeomType == ogr.wkbMultiPolygon:
-        if options.bMultiAsSingle:
-            return 'POLYGON'
-        else:
-            return 'MULTIPOLYGON'
-    elif eGeomType == ogr.wkbGeometryCollection:
+    if eGeomType == ogr.wkbMultiLineString:
+        return 'LINESTRING' if options.bMultiAsSingle else 'MULTILINESTRING'
+    if eGeomType == ogr.wkbMultiPolygon:
+        return 'POLYGON' if options.bMultiAsSingle else 'MULTIPOLYGON'
+    if eGeomType == ogr.wkbGeometryCollection:
         return 'GEOMETRYCOLLECTION'
-    elif eGeomType == ogr.wkbPoint25D:
+    if eGeomType == ogr.wkbPoint25D:
         return 'POINT25D'
-    elif eGeomType == ogr.wkbLineString25D:
+    if eGeomType == ogr.wkbLineString25D:
         return 'LINESTRING25D'
-    elif eGeomType == ogr.wkbPolygon25D:
+    if eGeomType == ogr.wkbPolygon25D:
         return 'POLYGON25D'
-    elif eGeomType == ogr.wkbMultiPoint25D:
+    if eGeomType == ogr.wkbMultiPoint25D:
         return 'MULTIPOINT25D'
-    elif eGeomType == ogr.wkbMultiLineString25D:
-        if options.bMultiAsSingle:
-            return 'LINESTRING25D'
-        else:
-            return 'MULTILINESTRING25D'
-    elif eGeomType == ogr.wkbMultiPolygon25D:
-        if options.bMultiAsSingle:
-            return 'POLYGON25D'
-        else:
-            return 'MULTIPOLYGON25D'
-    elif eGeomType == ogr.wkbGeometryCollection25D:
+    if eGeomType == ogr.wkbMultiLineString25D:
+        return 'LINESTRING25D' if options.bMultiAsSingle else 'MULTILINESTRING25D'
+    if eGeomType == ogr.wkbMultiPolygon25D:
+        return 'POLYGON25D' if options.bMultiAsSingle else 'MULTIPOLYGON25D'
+    if eGeomType == ogr.wkbGeometryCollection25D:
         return 'GEOMETRYCOLLECTION25D'
-    else:
-        # Shouldn't happen
-        return 'UNKNOWN'
+    # Shouldn't happen
+    return 'UNKNOWN'
 
 ###############################################################
 # get_out_lyr_name()
@@ -292,16 +279,16 @@ def convert_layer(src_lyr, dst_ds, layerMap, options):
 
 
 def ogr_dispatch(argv, progress=None, progress_arg=None):
-
+    # pylint: disable=unused-argument
     src_filename = None
     dst_filename = None
-    format = "ESRI Shapefile"
+    frmt = "ESRI Shapefile"
     options = Options()
     lco = []
     dsco = []
     pszWHERE = None
 
-    if len(argv) == 0:
+    if not argv:
         return Usage()
 
     i = 0
@@ -315,7 +302,7 @@ def ogr_dispatch(argv, progress=None, progress_arg=None):
             dst_filename = argv[i]
         elif EQUAL(arg, '-f') and i + 1 < len(argv):
             i = i + 1
-            format = argv[i]
+            frmt = argv[i]
 
         elif EQUAL(arg, '-a_srs') and i + 1 < len(argv):
             i = i + 1
@@ -369,7 +356,7 @@ def ogr_dispatch(argv, progress=None, progress_arg=None):
         print('Missing -dst')
         return 1
 
-    if len(options.dispatch_fields) == 0:
+    if not options.dispatch_fields:
         print('Missing -dispatch_field')
         return 1
 
@@ -380,11 +367,11 @@ def ogr_dispatch(argv, progress=None, progress_arg=None):
 
     dst_ds = ogr.Open(dst_filename, update=1)
     if dst_ds is not None:
-        if len(dsco) != 0:
+        if dsco:
             print('-dsco should not be specified for an existing datasource')
             return 1
     else:
-        dst_ds = ogr.GetDriverByName(format).CreateDataSource(dst_filename, options=dsco)
+        dst_ds = ogr.GetDriverByName(frmt).CreateDataSource(dst_filename, options=dsco)
     if dst_ds is None:
         print('Cannot open or create target datasource %s' % dst_filename)
         return 1

@@ -110,7 +110,7 @@ OGRPGLayer::~OGRPGLayer()
                   poFeatureDefn->GetName() );
     }
 
-    OGRPGLayer::ResetReading();
+    CloseCursor();
 
     CPLFree( pszFIDColumn );
     CPLFree( pszQueryStatement );
@@ -123,8 +123,6 @@ OGRPGLayer::~OGRPGLayer()
         poFeatureDefn->UnsetLayer();
         poFeatureDefn->Release();
     }
-
-    CloseCursor();
 }
 
 /************************************************************************/
@@ -796,8 +794,8 @@ OGRFeature *OGRPGLayer::RecordToFeature( PGresult* hResult,
                     poGeometry = OGRGeometryFromEWKB(pabyData, nLength, NULL,
                                                      poDS->sPostGISVersion.nMajor < 2 );
                 }
-#endif
                 if (poGeometry == nullptr)
+#endif
                 {
                     poGeometry = BYTEAToGeometry( (const char*)pabyData,
                                                   (poDS->sPostGISVersion.nMajor < 2) );
@@ -2188,6 +2186,11 @@ int OGRPGLayer::ReadResultDefinition(PGresult *hInitialResultIn)
 #endif
 
             oField.SetType( OFTDateTime );
+        }
+        else if ( nTypeOID == JSONOID || nTypeOID == JSONBOID )
+        {
+            oField.SetType( OFTString );
+            oField.SetSubType( OFSTJSON );
         }
         else /* unknown type */
         {

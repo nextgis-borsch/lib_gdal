@@ -1303,21 +1303,22 @@ OGRGeometryH OGR_G_ForceToMultiLineString( OGRGeometryH hGeom )
 /*                          organizePolygons()                          */
 /************************************************************************/
 
-typedef struct _sPolyExtended sPolyExtended;
-
-struct _sPolyExtended
+struct sPolyExtended
 {
-    OGRGeometry* poGeometry;
-    OGRCurvePolygon* poPolygon;
-    OGREnvelope     sEnvelope;
-    OGRCurve*  poExteriorRing;
-    OGRPoint        poAPoint;
-    int             nInitialIndex;
-    OGRCurvePolygon*     poEnclosingPolygon;
-    double          dfArea;
-    bool            bIsTopLevel;
-    bool            bIsCW;
-    bool            bIsPolygon;
+    CPL_DISALLOW_COPY_ASSIGN(sPolyExtended)
+    sPolyExtended() = default;
+
+    OGRGeometry* poGeometry = nullptr;
+    OGRCurvePolygon* poPolygon = nullptr;
+    OGREnvelope     sEnvelope{};
+    OGRCurve*  poExteriorRing = nullptr;
+    OGRPoint        poAPoint{};
+    int             nInitialIndex = 0;
+    OGRCurvePolygon*     poEnclosingPolygon = nullptr;
+    double          dfArea = 0.0;
+    bool            bIsTopLevel = false;
+    bool            bIsCW = false;
+    bool            bIsPolygon = false;
 };
 
 static int OGRGeometryFactoryCompareArea(const void* p1, const void* p2)
@@ -1346,13 +1347,13 @@ static int OGRGeometryFactoryCompareByIndex(const void* p1, const void* p2)
 
 constexpr int N_CRITICAL_PART_NUMBER = 100;
 
-typedef enum
+enum OrganizePolygonMethod
 {
    METHOD_NORMAL,
    METHOD_SKIP,
    METHOD_ONLY_CCW,
    METHOD_CCW_INNER_JUST_AFTER_CW_OUTER
-} OrganizePolygonMethod;
+};
 
 /**
  * \brief Organize polygons based on geometries.
@@ -1780,10 +1781,16 @@ OGRGeometry* OGRGeometryFactory::organizePolygons( OGRGeometry **papoPolygons,
                         // iterate over the other points of i.
                         const int nPoints = poLR_i->getNumPoints();
                         int k = 1;  // Used after for.
+                        OGRPoint previousPoint = asPolyEx[i].poAPoint;
                         for( ; k < nPoints; k++ )
                         {
                             OGRPoint point;
                             poLR_i->getPoint(k, &point);
+                            if( point.getX() == previousPoint.getX() &&
+                                point.getY() == previousPoint.getY() )
+                            {
+                                continue;
+                            }
                             if( poLR_j->isPointOnRingBoundary(&point, FALSE) )
                             {
                                 // If it is on the boundary of j, iterate again.
@@ -1800,23 +1807,28 @@ OGRGeometry* OGRGeometryFactory::organizePolygons( OGRGeometry **papoPolygons,
                                 // If it is outside, then i cannot be inside j.
                                 break;
                             }
+                            previousPoint = point;
                         }
                         if( !b_i_inside_j && k == nPoints && nPoints > 2 )
                         {
                             // All points of i are on the boundary of j.
                             // Take a point in the middle of a segment of i and
                             // test it against j.
-                            for( k = 0; k < nPoints - 1; k++ )
+                            poLR_i->getPoint(0, &previousPoint);
+                            for( k = 1; k < nPoints; k++ )
                             {
-                                OGRPoint point1;
-                                OGRPoint point2;
+                                OGRPoint point;
+                                poLR_i->getPoint(k, &point);
+                                if( point.getX() == previousPoint.getX() &&
+                                    point.getY() == previousPoint.getY() )
+                                {
+                                    continue;
+                                }
                                 OGRPoint pointMiddle;
-                                poLR_i->getPoint(k, &point1);
-                                poLR_i->getPoint(k+1, &point2);
-                                pointMiddle.setX((point1.getX() +
-                                                  point2.getX()) / 2);
-                                pointMiddle.setY((point1.getY() +
-                                                  point2.getY()) / 2);
+                                pointMiddle.setX((point.getX() +
+                                                  previousPoint.getX()) / 2);
+                                pointMiddle.setY((point.getY() +
+                                                  previousPoint.getY()) / 2);
                                 if( poLR_j->isPointOnRingBoundary(&pointMiddle,
                                                                   FALSE) )
                                 {
@@ -1837,6 +1849,7 @@ OGRGeometry* OGRGeometryFactory::organizePolygons( OGRGeometry **papoPolygons,
                                     // j.
                                     break;
                                 }
+                                previousPoint = point;
                             }
                         }
                     }
@@ -2788,8 +2801,10 @@ static void CutGeometryOnDateLineAndAddToMulti( OGRGeometryCollection* poMulti,
             const double dfDiffSpace = 360 - dfDateLineOffset;
 
             const double dfXOffset = (bAroundMinus180) ? 360.0 : 0.0;
-            if( oEnvelope.MinX + dfXOffset > dfLeftBorderX &&
-                oEnvelope.MaxX + dfXOffset > 180 )
+            if( oEnvelope.MinX < -180 ||
+                oEnvelope.MaxX > 180 ||
+                (oEnvelope.MinX + dfXOffset > dfLeftBorderX &&
+                 oEnvelope.MaxX + dfXOffset > 180) )
             {
 #ifndef HAVE_GEOS
                 CPLError( CE_Failure, CPLE_NotSupported,
@@ -2856,8 +2871,8 @@ static void CutGeometryOnDateLineAndAddToMulti( OGRGeometryCollection* poMulti,
                 OGRGeometry* poRectangle1 = nullptr;
                 OGRGeometry* poRectangle2 = nullptr;
                 const char* pszWKT1 = !bAroundMinus180 ?
-                    "POLYGON((0 90,180 90,180 -90,0 -90,0 90))" :
-                    "POLYGON((0 90,-180 90,-180 -90,0 -90,0 90))";
+                    "POLYGON((-180 90,180 90,180 -90,-180 -90,-180 90))" :
+                    "POLYGON((180 90,-180 90,-180 -90,180 -90,180 90))";
                 const char* pszWKT2 = !bAroundMinus180 ?
                     "POLYGON((180 90,360 90,360 -90,180 -90,180 90))" :
                     "POLYGON((-180 90,-360 90,-360 -90,-180 -90,-180 90))";
@@ -3498,10 +3513,10 @@ static OGRGeometry* TransformBeforeAntimeridianToWGS84(
         poRevCT->Transform(1, &x, &y);
         poLR1->addPoint( x, y );
     }
-    for( size_t i = 0; i < aoPoints.size(); ++i )
+    for( const auto& oPoint: aoPoints )
     {
         double x = 180.0 - EPS;
-        double y = aoPoints[i].y;
+        double y = oPoint.y;
         poRevCT->Transform(1, &x, &y);
         poLR1->addPoint( x, y );
     }
@@ -3527,10 +3542,10 @@ static OGRGeometry* TransformBeforeAntimeridianToWGS84(
         poRevCT->Transform(1, &x, &y);
         poLR2->addPoint( x, y );
     }
-    for( size_t i = 0; i < aoPoints.size(); ++i )
+    for( const auto& oPoint: aoPoints )
     {
         double x = -180.0 + EPS;
-        double y = aoPoints[i].y;
+        double y = oPoint.y;
         poRevCT->Transform(1, &x, &y);
         poLR2->addPoint( x, y );
     }
@@ -4154,7 +4169,7 @@ OGRGeometryH OGR_G_ForceToLineString( OGRGeometryH hGeom )
  * (see OGR_GT_GetCollection()) or the reverse. non-linear geometry type to
  * their corresponding linear geometry type (see OGR_GT_GetLinear()), by
  * possibly approximating circular arcs they may contain.  Regarding conversion
- * from linear geometry types to curve geometry types, only "wraping" will be
+ * from linear geometry types to curve geometry types, only "wrapping" will be
  * done. No attempt to retrieve potential circular arcs by de-approximating
  * stroking will be done. For that, OGRGeometry::getCurveGeometry() can be used.
  *

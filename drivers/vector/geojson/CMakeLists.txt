@@ -54,6 +54,7 @@ set(LIB_CSOURCES
     ogrgeojsonlayer.cpp
     ogresrijsondriver.cpp
     ogrtopojsondriver.cpp
+    ogrgeojsonseqdriver.cpp
 )
 
 add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})

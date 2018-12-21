@@ -1,9 +1,9 @@
 ################################################################################
 # Project:  CMake4GDAL
 # Purpose:  CMake build scripts
-# Authors:   Dmitry Baryshnikov (polimax@mail.ru), Mikhail Gusev (gusevmihs@gmail.com)
+# Authors:  Dmitry Baryshnikov (polimax@mail.ru), Mikhail Gusev (gusevmihs@gmail.com)
 ################################################################################
-# Copyright (C) 2015, NextGIS <info@nextgis.com>
+# Copyright (C) 2015-2018, NextGIS <info@nextgis.com>
 # Copyright (C) 2012,2013,2014 Dmitry Baryshnikov
 # Copyright (C) 2016 Mikhail Gusev
 #
@@ -74,7 +74,10 @@ add_executable(gdal_unit_test gdal_unit_test.cpp
     test_alg.cpp test_cpl.cpp test_gdal.cpp test_gdal_aaigrid.cpp
     test_gdal_dted.cpp test_gdal_gtiff.cpp test_triangulation.cpp
     test_ogr.cpp test_ogr_geos.cpp test_ogr_shape.cpp test_osr.cpp
-test_osr_ct.cpp test_osr_pci.cpp test_osr_proj4.cpp tut/tut_gdal.cpp)
+    test_osr_ct.cpp test_osr_pci.cpp test_osr_proj4.cpp
+    test_marching_squares_square.cpp test_marching_squares_tile.cpp
+    test_marching_squares_contour.cpp test_marching_squares_polygon.cpp
+    tut/tut_gdal.cpp)
 target_link_libraries(gdal_unit_test PRIVATE ${TARGET_LINK_LIB})
 
 if(WIN32)

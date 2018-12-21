@@ -5,7 +5,7 @@
  * Author:   Martin Landa, landa.martin gmail.com
  *
  ******************************************************************************
- * Copyright (c) 2009-2010, Martin Landa <landa.martin gmail.com>
+ * Copyright (c) 2009-2018, Martin Landa <landa.martin gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -48,8 +48,12 @@ static int OGRVFKDriverIdentify(GDALOpenInfo* poOpenInfo)
     if ( poOpenInfo->nHeaderBytes >= 100 &&
          STARTS_WITH((const char*)poOpenInfo->pabyHeader, "SQLite format 3") )
     {
-        VSIStatBuf sStat;
-        if (CPLStat(poOpenInfo->pszFilename, &sStat) == 0 &&
+        // The driver is not ready for virtual file systems
+        if( STARTS_WITH(poOpenInfo->pszFilename, "/vsi") )
+            return FALSE;
+
+        VSIStatBufL sStat;
+        if (VSIStatL(poOpenInfo->pszFilename, &sStat) == 0 &&
             VSI_ISREG(sStat.st_mode))
         {
             return GDAL_IDENTIFY_UNKNOWN;
@@ -104,6 +108,7 @@ void RegisterOGRVFK()
     poDriver->SetMetadataItem(GDAL_DMD_OPENOPTIONLIST,
 "<OpenOptionList>"
 "  <Option name='SUPPRESS_GEOMETRY' type='boolean' description='whether to suppress geometry' default='NO'/>"
+"  <Option name='FILE_FIELD' type='boolean' description='whether to include VFK filename field' default='NO'/>"
 "</OpenOptionList>");
 
     poDriver->pfnOpen = OGRVFKDriverOpen;

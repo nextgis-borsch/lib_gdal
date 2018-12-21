@@ -59,7 +59,7 @@ GDALAllValidMaskBand::GDALAllValidMaskBand( GDALRasterBand *poParent ) :
 /*                       ~GDALAllValidMaskBand()                        */
 /************************************************************************/
 
-GDALAllValidMaskBand::~GDALAllValidMaskBand() {}
+GDALAllValidMaskBand::~GDALAllValidMaskBand() = default;
 
 /************************************************************************/
 /*                             IReadBlock()                             */
@@ -93,4 +93,25 @@ int GDALAllValidMaskBand::GetMaskFlags()
 {
     return GMF_ALL_VALID;
 }
+
+/************************************************************************/
+/*                           ComputeStatistics()                        */
+/************************************************************************/
+
+CPLErr GDALAllValidMaskBand::ComputeStatistics( int /* bApproxOK */,
+                            double *pdfMin, double *pdfMax,
+                            double *pdfMean, double *pdfStdDev,
+                            GDALProgressFunc, void * /*pProgressData*/ )
+{
+    if( pdfMin )
+        *pdfMin = 255.0;
+    if( pdfMax )
+        *pdfMax = 255.0;
+    if( pdfMean )
+        *pdfMean = 255.0;
+    if( pdfStdDev )
+        *pdfStdDev = 0.0;
+    return CE_None;
+}
+
 //! @endcond

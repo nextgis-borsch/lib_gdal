@@ -7,13 +7,16 @@
 # Howard Butler hobu.inc@gmail.com
 
 
-gdal_version = '2.3.2'
+gdal_version = '2.4.0'
 
 import sys
 import os
 
 from glob import glob
 from distutils.sysconfig import get_config_vars
+from distutils.command.build_ext import build_ext
+from distutils.ccompiler import get_default_compiler
+from distutils.errors import CompileError
 
 # Strip -Wstrict-prototypes from compiler options, if present. This is
 # not required when compiling a C++ extension.
@@ -70,8 +73,7 @@ libraries = ['gdal']
 def get_numpy_include():
     if HAVE_NUMPY:
         return numpy.get_include()
-    else:
-        return '.'
+    return '.'
 
 
 # ---------------------------------------------------------------------------
@@ -89,9 +91,10 @@ try:
     else:
         #  print ('numpy include', get_numpy_include())
         if get_numpy_include() == '.':
-            print("numpy headers were not found!  Array support will not be enabled")
+            print("WARNING: numpy headers were not found!  Array support will not be enabled")
             HAVE_NUMPY = False
 except ImportError:
+    print('WARNING: numpy not available!  Array support will not be enabled')
     pass
 
 fixer_names = [
@@ -135,11 +138,6 @@ class gdal_config_error(Exception):
     pass
 
 
-from distutils.command.build_ext import build_ext
-from distutils.ccompiler import get_default_compiler
-from distutils.errors import CompileError
-
-
 def fetch_config(option, gdal_config='gdal-config'):
 
     command = gdal_config + " --%s" % option
@@ -152,7 +150,6 @@ def fetch_config(option, gdal_config='gdal-config'):
             try:
                 p = subprocess.Popen([command, args], stdout=subprocess.PIPE)
             except OSError:
-                import sys
                 e = sys.exc_info()[1]
                 raise gdal_config_error(e)
             r = p.stdout.readline().decode('ascii').strip()
@@ -360,8 +357,6 @@ if os.path.exists('setup_vars.ini'):
 
 if GNM_ENABLED:
     ext_modules.append(gnm_module)
-    py_modules.append('gnm')
-
 
 if HAVE_NUMPY:
     ext_modules.append(array_module)
@@ -378,7 +373,7 @@ author_email = "warmerdam@pobox.com"
 maintainer = "Howard Butler"
 maintainer_email = "hobu.inc@gmail.com"
 description = "GDAL: Geospatial Data Abstraction Library"
-license = "MIT"
+license_type = "MIT"
 url = "http://www.gdal.org"
 
 classifiers = [
@@ -414,7 +409,7 @@ setup_kwargs = dict(
     maintainer_email=maintainer_email,
     long_description=readme,
     description=description,
-    license=license,
+    license=license_type,
     classifiers=classifiers,
     py_modules=py_modules,
     packages=packages,

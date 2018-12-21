@@ -1038,7 +1038,17 @@ int OGR2SQLITE_Filter(sqlite3_vtab_cursor* pCursor,
         }
         else
         {
-            osAttributeFilter += "FID";
+            const char* pszSrcFIDColumn = pMyCursor->poLayer->GetFIDColumn();
+            if( pszSrcFIDColumn && *pszSrcFIDColumn != '\0' )
+            {
+                osAttributeFilter += '"';
+                osAttributeFilter += SQLEscapeName(pszSrcFIDColumn);
+                osAttributeFilter += '"';
+            }
+            else
+            {
+                osAttributeFilter += "FID";
+            }
         }
 
         bool bExpectRightOperator = true;
@@ -1544,11 +1554,9 @@ static OGRFeature* OGR2SQLITE_FeatureFromArgs(OGRLayer* poLayer,
                     case OFTDate:
                     case OFTTime:
                     case OFTDateTime:
-                    {
-                        if( !OGRSQLITEStringToDateTimeField( poFeature, i, pszValue ) )
+                        if( !OGRParseDate( pszValue, poFeature->GetRawFieldRef(i), 0 ) )
                             poFeature->SetField(i, pszValue);
                         break;
-                    }
 
                     default:
                         poFeature->SetField(i, pszValue);

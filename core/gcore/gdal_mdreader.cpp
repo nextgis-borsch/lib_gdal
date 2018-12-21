@@ -94,9 +94,7 @@ static const char * const apszRPCTXT20ValItems[] =
 /**
  * GDALMDReaderManager()
  */
-GDALMDReaderManager::GDALMDReaderManager() :
-    m_pReader(nullptr)
-{}
+GDALMDReaderManager::GDALMDReaderManager() = default;
 
 /**
  * ~GDALMDReaderManager()
@@ -190,12 +188,7 @@ GDALMDReaderBase* GDALMDReaderManager::GetReader(const char *pszPath,
  * GDALMDReaderBase()
  */
 GDALMDReaderBase::GDALMDReaderBase( const char * /* pszPath */,
-                                    char ** /* papszSiblingFiles */ ) :
-    m_papszIMDMD(nullptr),
-    m_papszRPCMD(nullptr),
-    m_papszIMAGERYMD(nullptr),
-    m_papszDEFAULTMD(nullptr),
-    m_bIsMetadataLoad(false)
+                                    char ** /* papszSiblingFiles */ )
 {}
 
 /**
@@ -666,6 +659,11 @@ CPLErr GDALWriteRPCTXTFile( const char *pszFilename, char **papszMD )
     if (found == CPLString::npos)
         return CE_Failure;
     osRPCFilename.replace (found, osRPCFilename.size() - found, "_RPC.TXT");
+    if( papszMD == nullptr )
+    {
+        VSIUnlink(osRPCFilename);
+        return CE_None;
+    }
 
 /* -------------------------------------------------------------------- */
 /*      Read file and parse.                                            */
@@ -750,6 +748,11 @@ CPLErr GDALWriteRPBFile( const char *pszFilename, char **papszMD )
 
 {
     CPLString osRPBFilename = CPLResetExtension( pszFilename, "RPB" );
+    if( papszMD == nullptr )
+    {
+        VSIUnlink(osRPBFilename);
+        return CE_None;
+    }
 
 /* -------------------------------------------------------------------- */
 /*      Read file and parse.                                            */

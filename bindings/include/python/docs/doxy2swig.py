@@ -26,25 +26,22 @@ from xml.dom import minidom
 import re
 import textwrap
 import sys
-import types
 import os.path
 
 
 def my_open_read(source):
     if hasattr(source, "read"):
         return source
-    else:
-        return open(source)
+    return open(source)
 
 
 def my_open_write(dest):
     if hasattr(dest, "write"):
         return dest
-    else:
-        return open(dest, 'w')
+    return open(dest, 'w')
 
 
-class Doxy2SWIG:
+class Doxy2SWIG(object):
     """Converts Doxygen generated XML files into a file containing
     docstrings that can be used by SWIG-1.3.x that have support for
     feature("docstring").  Once the data is parsed it is stored in
@@ -127,7 +124,7 @@ class Doxy2SWIG:
 
     def add_text(self, value):
         """Adds text corresponding to `value` into `self.pieces`."""
-        if type(value) in (types.ListType, types.TupleType):
+        if isinstance(value, (list, tuple)):
             self.pieces.extend(value)
         else:
             self.pieces.append(value)
@@ -358,10 +355,10 @@ class Doxy2SWIG:
         return ret
 
 
-def main(input, output):
-    p = Doxy2SWIG(input)
+def main(inp, outp):
+    p = Doxy2SWIG(inp)
     p.generate()
-    p.write(output)
+    p.write(outp)
 
 
 if __name__ == '__main__':

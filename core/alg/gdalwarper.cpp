@@ -462,7 +462,6 @@ GDALWarpNoDataMasker( void *pMaskFuncArg, int nBandCount, GDALDataType eType,
           const int nWordSize = GDALGetDataTypeSizeBytes(eType);
 
           const bool bIsNoDataRealNan = CPL_TO_BOOL(CPLIsNan(padfNoData[0]));
-          const bool bIsNoDataImagNan = CPL_TO_BOOL(CPLIsNan(padfNoData[1]));
 
           double *padfWrk = static_cast<double *>(
               CPLMalloc(nXSize * sizeof(double) * 2));
@@ -477,11 +476,7 @@ GDALWarpNoDataMasker( void *pMaskFuncArg, int nBandCount, GDALDataType eType,
               {
                   if( ((bIsNoDataRealNan && CPLIsNan(padfWrk[iPixel*2])) ||
                        (!bIsNoDataRealNan &&
-                         ARE_REAL_EQUAL(padfWrk[iPixel*2], padfNoData[0])))
-                      && ((bIsNoDataImagNan && CPLIsNan(padfWrk[iPixel*2+1])) ||
-                          (!bIsNoDataImagNan &&
-                           ARE_REAL_EQUAL(padfWrk[iPixel*2+1],
-                                          padfNoData[1]))) )
+                         ARE_REAL_EQUAL(padfWrk[iPixel*2], padfNoData[0]))))
                   {
                       size_t iOffset =
                           iPixel + static_cast<size_t>(iLine) * nXSize;
@@ -1104,7 +1099,8 @@ GDALWarpDstAlphaMasker( void *pMaskFuncArg, int nBandCount,
  * is no corresponding input data.  This will disable initializing the
  * destination (INIT_DEST) and all other processing, and so should be used
  * carefully.  Mostly useful to short circuit a lot of extra work in mosaicing
- * situations.</li>
+ * situations. Starting with GDAL 2.4, gdalwarp will automatically enable this
+ * option when it is assumed to be safe to do so.</li>
  *
  * <li>UNIFIED_SRC_NODATA=YES/NO: By default nodata masking values considered
  * independently for each band.  However, sometimes it is desired to treat all

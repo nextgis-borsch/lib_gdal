@@ -381,22 +381,19 @@ CPLErr GDALWMSDataset::Initialize(CPLXMLNode *config, char **l_papszOpenOptions)
                     CPLGetXMLValue(data_window_node, "TileCountY", osDefaultTileCountY);
                 const char *y_origin = CPLGetXMLValue(data_window_node, "YOrigin", "default");
 
-                if (ret == CE_None)
+                if ((ulx[0] != '\0') && (uly[0] != '\0') && (lrx[0] != '\0') && (lry[0] != '\0'))
                 {
-                    if ((ulx[0] != '\0') && (uly[0] != '\0') && (lrx[0] != '\0') && (lry[0] != '\0'))
-                    {
-                        m_data_window.m_x0 = CPLAtof(ulx);
-                        m_data_window.m_y0 = CPLAtof(uly);
-                        m_data_window.m_x1 = CPLAtof(lrx);
-                        m_data_window.m_y1 = CPLAtof(lry);
-                    }
-                    else
-                    {
-                        CPLError(CE_Failure, CPLE_AppDefined,
-                                 "GDALWMS: Mandatory elements of DataWindow missing: "
-                                 "UpperLeftX, UpperLeftY, LowerRightX, LowerRightY.");
-                        ret = CE_Failure;
-                    }
+                    m_data_window.m_x0 = CPLAtof(ulx);
+                    m_data_window.m_y0 = CPLAtof(uly);
+                    m_data_window.m_x1 = CPLAtof(lrx);
+                    m_data_window.m_y1 = CPLAtof(lry);
+                }
+                else
+                {
+                    CPLError(CE_Failure, CPLE_AppDefined,
+                                "GDALWMS: Mandatory elements of DataWindow missing: "
+                                "UpperLeftX, UpperLeftY, LowerRightX, LowerRightY.");
+                    ret = CE_Failure;
                 }
 
                 m_data_window.m_tlevel = atoi(tlevel);
@@ -560,7 +557,6 @@ CPLErr GDALWMSDataset::Initialize(CPLXMLNode *config, char **l_papszOpenOptions)
     // If they are set as null strings, they clear the server declared values
     if (ret == CE_None) {
         // Data values are attributes, they include NoData Min and Max
-        // TODO: document those options
         if (nullptr!=CPLGetXMLNode(config,"DataValues")) {
             const char *nodata=CPLGetXMLValue(config,"DataValues.NoData",nullptr);
             if (nodata!=nullptr) WMSSetNoDataValue(nodata);

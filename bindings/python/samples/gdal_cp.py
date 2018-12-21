@@ -45,12 +45,13 @@ def Usage():
     return -1
 
 
-class TermProgress:
+class TermProgress(object):
     def __init__(self):
         self.nLastTick = -1
+        self.nThisTick = 0
 
     def Progress(self, dfComplete, message):
-
+        # pylint: disable=unused-argument
         self.nThisTick = int(dfComplete * 40.0)
         if self.nThisTick > 40:
             self.nThisTick = 40
@@ -78,7 +79,7 @@ class TermProgress:
         return True
 
 
-class ScaledProgress:
+class ScaledProgress(object):
     def __init__(self, dfMin, dfMax, UnderlyingProgress):
         self.dfMin = dfMin
         self.dfMax = dfMax
@@ -97,7 +98,7 @@ def gdal_cp_single(srcfile, targetfile, progress):
 
     if (stat_res is None and targetfile.endswith('/')) or \
        (stat_res is not None and stat.S_ISDIR(stat_res.mode)):
-        (head, tail) = os.path.split(srcfile)
+        (_, tail) = os.path.split(srcfile)
         if targetfile.endswith('/'):
             targetfile = targetfile + tail
         else:
@@ -121,7 +122,7 @@ def gdal_cp_single(srcfile, targetfile, progress):
         total_size = gdal.VSIFTellL(fin)
         gdal.VSIFSeekL(fin, 0, 0)
 
-    buffer_max_size = 4096
+    buf_max_size = 4096
     copied = 0
     ret = 0
     # print('Copying %s...' % srcfile)
@@ -131,28 +132,28 @@ def gdal_cp_single(srcfile, targetfile, progress):
             ret = -2
 
     while ret == 0:
-        if total_size != 0 and copied + buffer_max_size > total_size:
+        if total_size != 0 and copied + buf_max_size > total_size:
             to_read = total_size - copied
         else:
-            to_read = buffer_max_size
-        buffer = gdal.VSIFReadL(1, to_read, fin)
-        if buffer is None:
+            to_read = buf_max_size
+        buf = gdal.VSIFReadL(1, to_read, fin)
+        if buf is None:
             if copied == 0:
                 print('Cannot read %d bytes in %s' % (to_read, srcfile))
                 ret = -1
             break
-        buffer_size = len(buffer)
-        if gdal.VSIFWriteL(buffer, 1, buffer_size, fout) != buffer_size:
-            print('Error writing %d bytes' % buffer_size)
+        buf_size = len(buf)
+        if gdal.VSIFWriteL(buf, 1, buf_size, fout) != buf_size:
+            print('Error writing %d bytes' % buf_size)
             ret = -1
             break
-        copied += buffer_size
+        copied += buf_size
         if progress is not None and total_size != 0:
             if not progress.Progress(copied * 1.0 / total_size, 'Copying %s' % srcfile):
                 print('Copy stopped by user')
                 ret = -2
                 break
-        if to_read < buffer_max_size or buffer_size != buffer_max_size:
+        if to_read < buf_max_size or buf_size != buf_max_size:
             break
 
     gdal.VSIFCloseL(fin)
@@ -312,8 +313,7 @@ def gdal_cp(argv, progress=None):
     (srcdir, pattern) = os.path.split(srcfile)
     if pattern.find('*') != -1 or pattern.find('?') != -1:
         return gdal_cp_pattern_match(srcdir, pattern, targetfile, progress, skip_failure)
-    else:
-        return gdal_cp_single(srcfile, targetfile, progress)
+    return gdal_cp_single(srcfile, targetfile, progress)
 
 
 if __name__ == '__main__':

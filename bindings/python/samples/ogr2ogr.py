@@ -46,10 +46,10 @@ from osgeo import osr
 ###############################################################################
 
 
-class ScaledProgressObject:
-    def __init__(self, min, max, cbk, cbk_data=None):
-        self.min = min
-        self.max = max
+class ScaledProgressObject(object):
+    def __init__(self, mini, maxi, cbk, cbk_data=None):
+        self.min = mini
+        self.max = maxi
         self.cbk = cbk
         self.cbk_data = cbk_data
 
@@ -76,6 +76,7 @@ nLastTick = -1
 
 
 def TermProgress(dfComplete, pszMessage, pProgressArg):
+    # pylint: disable=unused-argument
 
     global nLastTick
     nThisTick = int(dfComplete * 40.0)
@@ -107,7 +108,7 @@ def TermProgress(dfComplete, pszMessage, pProgressArg):
     return True
 
 
-class TargetLayerInfo:
+class TargetLayerInfo(object):
     def __init__(self):
         self.poDstLayer = None
         self.poCT = None
@@ -116,7 +117,7 @@ class TargetLayerInfo:
         self.iSrcZField = None
 
 
-class AssociatedLayers:
+class AssociatedLayers(object):
     def __init__(self):
         self.poSrcLayer = None
         self.psInfo = None
@@ -577,7 +578,7 @@ def main(args=None, progress_func=TermProgress, progress_data=None):
                       "Unable to open existing output datasource `%s'." % pszDestDataSource)
                 return False
 
-        elif len(papszDSCO) > 0:
+        elif papszDSCO:
             print("WARNING: Datasource creation options ignored since an existing datasource\n" +
                   "         being updated.")
 
@@ -613,7 +614,7 @@ def main(args=None, progress_func=TermProgress, progress_data=None):
         if EQUAL(poDriver.GetName(), "ESRI Shapefile") and \
            pszSQLStatement is None and \
            (len(papszLayers) > 1 or
-                (len(papszLayers) == 0 and poDS.GetLayerCount() > 1)) and \
+                (not papszLayers and poDS.GetLayerCount() > 1)) and \
                 pszNewLayerName is None and \
                 EQUAL(os.path.splitext(pszDestDataSource)[1], ".SHP"):
 
@@ -672,7 +673,7 @@ def main(args=None, progress_func=TermProgress, progress_data=None):
     if pszSQLStatement is not None:
         if pszWHERE is not None:
             print("-where clause ignored in combination with -sql.")
-        if len(papszLayers) > 0:
+        if papszLayers:
             print("layer names ignored in combination with -sql.")
 
         poResultSet = poDS.ExecuteSQL(pszSQLStatement, poSpatialFilter,
@@ -759,7 +760,7 @@ def main(args=None, progress_func=TermProgress, progress_data=None):
         # }
 
         nSrcLayerCount = poDS.GetLayerCount()
-        pasAssocLayers = [AssociatedLayers() for i in range(nSrcLayerCount)]
+        pasAssocLayers = [AssociatedLayers() for _ in range(nSrcLayerCount)]
 
 # --------------------------------------------------------------------
 #      Special case to improve user experience when translating into
@@ -783,8 +784,8 @@ def main(args=None, progress_func=TermProgress, progress_data=None):
 # --------------------------------------------------------------------
 #      If no target layer specified, use all source layers.
 # --------------------------------------------------------------------
-        if len(papszLayers) == 0:
-            papszLayers = [None for i in range(nSrcLayerCount)]
+        if not papszLayers:
+            papszLayers = [None] * nSrcLayerCount
             for iLayer in range(nSrcLayerCount):
                 poLayer = poDS.GetLayer(iLayer)
                 if poLayer is None:
@@ -795,10 +796,10 @@ def main(args=None, progress_func=TermProgress, progress_data=None):
         else:
             if bSrcIsOSM:
                 osInterestLayers = "SET interest_layers ="
-                for iLayer in range(len(papszLayers)):
+                for iLayer, papszLayer in enumerate(papszLayers):
                     if iLayer != 0:
                         osInterestLayers = osInterestLayers + ","
-                    osInterestLayers = osInterestLayers + papszLayers[iLayer]
+                    osInterestLayers = osInterestLayers + papszLayer
 
                 poDS.ExecuteSQL(osInterestLayers, None, None)
 
@@ -895,9 +896,9 @@ def main(args=None, progress_func=TermProgress, progress_data=None):
 # --------------------------------------------------------------------
 #      Process each data source layer.
 # --------------------------------------------------------------------
-        if len(papszLayers) == 0:
+        if not papszLayers:
             nLayerCount = poDS.GetLayerCount()
-            papoLayers = [None for i in range(nLayerCount)]
+            papoLayers = [None] * nLayerCount
             iLayer = 0
 
             for iLayer in range(nLayerCount):
@@ -915,7 +916,7 @@ def main(args=None, progress_func=TermProgress, progress_data=None):
 # --------------------------------------------------------------------
         else:
             nLayerCount = len(papszLayers)
-            papoLayers = [None for i in range(nLayerCount)]
+            papoLayers = [None] * nLayerCount
             iLayer = 0
 
             for layername in papszLayers:
@@ -928,7 +929,7 @@ def main(args=None, progress_func=TermProgress, progress_data=None):
                 papoLayers[iLayer] = poLayer
                 iLayer = iLayer + 1
 
-        panLayerCountFeatures = [0 for i in range(nLayerCount)]
+        panLayerCountFeatures = [0] * nLayerCount
         nCountLayersFeatures = 0
         nAccCountFeatures = 0
 
@@ -1205,7 +1206,7 @@ def SetupTargetLayer(poSrcDS, poSrcLayer, poDstDS, papszLCO, pszNewLayerName,
                      bAppend, eGType, bPromoteToMulti, nCoordDim, bOverwrite,
                      papszFieldTypesToString, bWrapDateline,
                      bExplodeCollections, pszZField, pszWHERE):
-
+    # pylint: disable=unused-argument
     if pszNewLayerName is None:
         pszNewLayerName = poSrcLayer.GetLayerDefn().GetName()
 
@@ -1274,7 +1275,7 @@ def SetupTargetLayer(poSrcDS, poSrcLayer, poDstDS, papszLCO, pszNewLayerName,
                     and poLayer.GetName() == poDstLayer.GetName():
                 break
 
-        if (iLayer == nLayerCount):
+        if iLayer == nLayerCount:
             # Shouldn't happen with an ideal driver
             poDstLayer = None
 
@@ -1344,7 +1345,7 @@ def SetupTargetLayer(poSrcDS, poSrcLayer, poDstDS, papszLCO, pszNewLayerName,
               "        Consider using -append, or -overwrite.")
         return None
     else:
-        if len(papszLCO) > 0:
+        if papszLCO:
             print("WARNING: Layer creation options ignored since an existing layer is\n" +
                   "         being appended to.")
 
@@ -1357,7 +1358,7 @@ def SetupTargetLayer(poSrcDS, poSrcLayer, poDstDS, papszLCO, pszNewLayerName,
 
     # Initialize the index-to-index map to -1's
     nSrcFieldCount = poSrcFDefn.GetFieldCount()
-    panMap = [-1 for i in range(nSrcFieldCount)]
+    panMap = [-1] * nSrcFieldCount
 
     poDstFDefn = poDstLayer.GetLayerDefn()
 
@@ -1367,9 +1368,9 @@ def SetupTargetLayer(poSrcDS, poSrcLayer, poDstDS, papszLCO, pszNewLayerName,
         if poDstFDefn is not None:
             nDstFieldCount = poDstFDefn.GetFieldCount()
 
-        for iField in range(len(papszSelFields)):
+        for papszSelField in papszSelFields:
 
-            iSrcField = poSrcFDefn.GetFieldIndex(papszSelFields[iField])
+            iSrcField = poSrcFDefn.GetFieldIndex(papszSelField)
             if iSrcField >= 0:
                 poSrcFieldDefn = poSrcFDefn.GetFieldDefn(iSrcField)
                 oFieldDefn = ogr.FieldDefn(poSrcFieldDefn.GetNameRef(),
@@ -1404,7 +1405,7 @@ def SetupTargetLayer(poSrcDS, poSrcLayer, poDstDS, papszLCO, pszNewLayerName,
                         nDstFieldCount = nDstFieldCount + 1
 
             else:
-                print("Field '" + papszSelFields[iField] + "' not found in source layer.")
+                print("Field '" + papszSelField + "' not found in source layer.")
                 if not bSkipFailures:
                     return None
 
@@ -1420,8 +1421,8 @@ def SetupTargetLayer(poSrcDS, poSrcLayer, poDstDS, papszLCO, pszNewLayerName,
             for iSrcField in range(nSrcFieldCount):
                 pszFieldName = poSrcFDefn.GetFieldDefn(iSrcField).GetNameRef()
                 bFieldRequested = False
-                for iField in range(len(papszSelFields)):
-                    if EQUAL(pszFieldName, papszSelFields[iField]):
+                for papszSelField in papszSelFields:
+                    if EQUAL(pszFieldName, papszSelField):
                         bFieldRequested = True
                         break
 
@@ -1511,7 +1512,7 @@ def TranslateLayer(psInfo, poSrcDS, poSrcLayer, poDstDS,
                    nCountLayerFeatures,
                    poClipSrc, poClipDst, bExplodeCollections, nSrcFileSize,
                    pnReadFeatureCount, pfnProgress, pProgressArg):
-
+    # pylint: disable=unused-argument
     bForceToPolygon = False
     bForceToMultiPolygon = False
     bForceToMultiLineString = False

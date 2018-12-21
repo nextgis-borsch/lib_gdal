@@ -30,6 +30,8 @@ if(GDAL_PAM_ENABLED)
     add_definitions(-DPAM_ENABLED)
 endif(GDAL_PAM_ENABLED)
 
+option(WITH_LERC "Set ON to build with LibLerc" ON)
+
 add_subdirectory(port)
 add_subdirectory(gcore)
 add_subdirectory(alg)

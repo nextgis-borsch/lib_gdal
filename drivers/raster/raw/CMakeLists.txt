@@ -41,6 +41,7 @@ set(LIB_HHEADERS_PRIV
     atlsci_spheroid.h
     ehdrdataset.h
     envidataset.h
+    byndataset.h
 )
 
 set(LIB_CSOURCES
@@ -76,6 +77,8 @@ set(LIB_CSOURCES
     lcpdataset.cpp
     ntv2dataset.cpp
     rrasterdataset.cpp
+    byndataset.cpp
+    ntv1dataset.cpp
 )
 
 add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})

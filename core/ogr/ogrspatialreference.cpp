@@ -273,7 +273,7 @@ void OGRSpatialReference::Clear()
 /************************************************************************/
 
 /** Assignment operator.
- * @param oSource SRS to assing to *this
+ * @param oSource SRS to assign to *this
  * @return *this
  */
 OGRSpatialReference &
@@ -1942,7 +1942,7 @@ OGRErr OSRSetGeogCS( OGRSpatialReferenceH hSRS,
  * <li> "WGS72": same as "EPSG:4322" but has no dependence on EPSG data files.
  * <li> "NAD27": same as "EPSG:4267" but has no dependence on EPSG data files.
  * <li> "NAD83": same as "EPSG:4269" but has no dependence on EPSG data files.
- * <li> "EPSG:n": same as doing an ImportFromEPSG(n).
+ * <li> "EPSG:n": where n is the code a Geographic coordinate reference system.
  * </ul>
  *
  * @param pszName name of well known geographic coordinate system.
@@ -3997,7 +3997,8 @@ OGRErr OGRSpatialReference::SetNormProjParm( const char * pszName,
 {
     GetNormInfo();
 
-    if( (dfToDegrees != 1.0 || dfFromGreenwich != 0.0)
+    if( dfToDegrees != 0.0 &&
+        (dfToDegrees != 1.0 || dfFromGreenwich != 0.0)
         && IsAngularParameter(pszName) )
     {
 #ifdef WKT_LONGITUDE_RELATIVE_TO_PM
@@ -4007,7 +4008,8 @@ OGRErr OGRSpatialReference::SetNormProjParm( const char * pszName,
 
         dfValue /= dfToDegrees;
     }
-    else if( dfToMeter != 1.0 && IsLinearParameter( pszName ) )
+    else if( dfToMeter != 1.0 && dfToMeter != 0.0 &&
+             IsLinearParameter( pszName ) )
         dfValue /= dfToMeter;
 
     return SetProjParm( pszName, dfValue );
@@ -7922,7 +7924,7 @@ int OGRSpatialReference::IsLinearParameter( const char *pszParameterName )
 /**
  * \brief Set the internal information for normalizing linear, and angular values.
  */
-void OGRSpatialReference::GetNormInfo(void) const
+void OGRSpatialReference::GetNormInfo() const
 
 {
     if( bNormInfoSet )

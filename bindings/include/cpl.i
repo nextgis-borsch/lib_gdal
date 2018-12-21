@@ -50,20 +50,14 @@ typedef char retStringAndCPLFree;
     CPLDebug( msg_class, "%s", message );
   }
 
-  CPLErr SetErrorHandler( char const * pszCallbackName = NULL )
+  CPLErr SetErrorHandler( CPLErrorHandler pfnErrorHandler = NULL, void* user_data = NULL )
   {
-    CPLErrorHandler pfnHandler = NULL;
-    if( pszCallbackName == NULL || EQUAL(pszCallbackName,"CPLQuietErrorHandler") )
-      pfnHandler = CPLQuietErrorHandler;
-    else if( EQUAL(pszCallbackName,"CPLDefaultErrorHandler") )
-      pfnHandler = CPLDefaultErrorHandler;
-    else if( EQUAL(pszCallbackName,"CPLLoggingErrorHandler") )
-      pfnHandler = CPLLoggingErrorHandler;
+    if( pfnErrorHandler == NULL )
+    {
+        pfnErrorHandler = CPLDefaultErrorHandler;
+    }
 
-    if ( pfnHandler == NULL )
-      return CE_Fatal;
-
-    CPLSetErrorHandler( pfnHandler );
+    CPLSetErrorHandlerEx( pfnErrorHandler, user_data );
 
     return CE_None;
   }
@@ -74,8 +68,17 @@ typedef char retStringAndCPLFree;
 %nothread;
 
 %{
+extern "C" int CPL_DLL GDALIsInGlobalDestructor();
+
 void CPL_STDCALL PyCPLErrorHandler(CPLErr eErrClass, int err_no, const char* pszErrorMsg)
 {
+    if( GDALIsInGlobalDestructor() )
+    {
+        // this is typically during Python interpreter shutdown, and ends up in a crash
+        // because error handling tries to do thread initialisation.
+        return;
+    }
+
     void* user_data = CPLGetErrorHandlerUserData();
     PyObject *psArgs;
 
@@ -149,37 +152,6 @@ void CPL_STDCALL PyCPLErrorHandler(CPLErr eErrClass, int err_no, const char* psz
 %}
 #endif
 
-#ifdef SWIGRUBY
-%rename (push_error_handler) CPLPushErrorHandler;
-%rename (pop_error_handler) CPLPopErrorHandler;
-%rename (error_reset) CPLErrorReset;
-%rename (get_last_error_no) CPLGetLastErrorNo;
-%rename (get_last_error_type) CPLGetLastErrorType;
-%rename (get_last_error_msg) CPLGetLastErrorMsg;
-%rename (get_error_counter) CPLGetErrorCounter;
-%rename (push_finder_location) CPLPushFinderLocation;
-%rename (pop_finder_location) CPLPopFinderLocation;
-%rename (finder_clean) CPLFinderClean;
-%rename (find_file) CPLFindFile;
-%rename (read_dir) wrapper_VSIReadDirEx;
-%rename (read_dir_recursive) VSIReadDirRecursive;
-%rename (mkdir) VSIMkdir;
-%rename (mkdir_recursive) VSIMkdirRecursive;
-%rename (rmdir) VSIRmdir;
-%rename (rmdir_recursive) VSIRmdirRecursive;
-%rename (rename) VSIRename;
-%rename (get_actual_url) VSIGetActualURL;
-%rename (get_signed_url) wrapper_VSIGetSignedURL;
-%rename (get_filesystems_prefixes) VSIGetFileSystemsPrefixes;
-%rename (get_filesystem_options) VSIGetFileSystemOptions;
-%rename (set_config_option) CPLSetConfigOption;
-%rename (get_config_option) wrapper_CPLGetConfigOption;
-%rename (binary_to_hex) CPLBinaryToHex;
-%rename (hex_to_binary) CPLHexToBinary;
-%rename (file_from_mem_buffer) wrapper_VSIFileFromMemBuffer;
-%rename (unlink) VSIUnlink;
-%rename (has_thread_support) wrapper_HasThreadSupport;
-#else
 %rename (PushErrorHandler) CPLPushErrorHandler;
 %rename (PopErrorHandler) CPLPopErrorHandler;
 %rename (ErrorReset) CPLErrorReset;
@@ -209,7 +181,6 @@ void CPL_STDCALL PyCPLErrorHandler(CPLErr eErrClass, int err_no, const char* psz
 %rename (FileFromMemBuffer) wrapper_VSIFileFromMemBuffer;
 %rename (Unlink) VSIUnlink;
 %rename (HasThreadSupport) wrapper_HasThreadSupport;
-#endif
 
 retStringAndCPLFree*
 GOA2GetAuthorizationURL( const char *pszScope );
@@ -340,6 +311,7 @@ unsigned int CPLGetErrorCounter();
 
 int VSIGetLastErrorNo();
 const char *VSIGetLastErrorMsg();
+void VSIErrorReset();
 
 void CPLPushFinderLocation( const char * utf8_path );
 
@@ -361,6 +333,104 @@ char **wrapper_VSIReadDirEx( const char * utf8_path, int nMaxFiles = 0 )
 %apply (char **CSL) {char **};
 char **VSIReadDirRecursive( const char * utf8_path );
 %clear char **;
+
+#ifdef SWIGPYTHON
+%rename (OpenDir) wrapper_VSIOpenDir;
+%inline {
+VSIDIR* wrapper_VSIOpenDir( const char * utf8_path,
+                            int nRecurseDepth = -1,
+                            char** options = NULL )
+{
+    return VSIOpenDir(utf8_path, nRecurseDepth, options);
+}
+}
+
+%{
+typedef struct
+{
+    char*        name;
+    int          mode;
+    GIntBig      size;
+    GIntBig      mtime;
+    bool         modeKnown;
+    bool         sizeKnown;
+    bool         mtimeKnown;
+    char**       extra;
+} DirEntry;
+%}
+
+struct DirEntry
+{
+%immutable;
+    char*        name;
+    int          mode;
+    GIntBig      size;
+    GIntBig      mtime;
+    bool         modeKnown;
+    bool         sizeKnown;
+    bool         mtimeKnown;
+
+%apply (char **dict) {char **};
+    char**       extra;
+%clear char **;
+%mutable;
+
+%extend {
+  DirEntry( const DirEntry *entryIn ) {
+    DirEntry *self = (DirEntry*) CPLMalloc( sizeof( DirEntry ) );
+    self->name = CPLStrdup(entryIn->name);
+    self->mode = entryIn->mode;
+    self->size = entryIn->size;
+    self->mtime = entryIn->mtime;
+    self->modeKnown = entryIn->modeKnown;
+    self->sizeKnown = entryIn->sizeKnown;
+    self->mtimeKnown = entryIn->mtimeKnown;
+    self->extra = CSLDuplicate(entryIn->extra);
+    return self;
+  }
+
+  ~DirEntry() {
+    CPLFree(self->name);
+    CSLDestroy(self->extra);
+    CPLFree(self);
+  }
+
+  bool IsDirectory()
+  {
+     return (self->mode & S_IFDIR) != 0;
+  }
+
+} /* extend */
+} /* DirEntry */ ;
+
+%rename (GetNextDirEntry) wrapper_VSIGetNextDirEntry;
+%newobject wrapper_VSIGetNextDirEntry;
+%apply Pointer NONNULL {VSIDIR* dir};
+%inline {
+DirEntry* wrapper_VSIGetNextDirEntry(VSIDIR* dir)
+{
+    const VSIDIREntry* vsiEntry = VSIGetNextDirEntry(dir);
+    if( vsiEntry == nullptr )
+    {
+        return nullptr;
+    }
+    DirEntry* entry = (DirEntry*) CPLMalloc( sizeof( DirEntry ) );
+    entry->name = CPLStrdup(vsiEntry->pszName);
+    entry->mode = vsiEntry->nMode;
+    entry->size = vsiEntry->nSize;
+    entry->mtime = vsiEntry->nMTime;
+    entry->modeKnown = vsiEntry->bModeKnown == TRUE;
+    entry->sizeKnown = vsiEntry->bSizeKnown == TRUE;
+    entry->mtimeKnown = vsiEntry->bMTimeKnown == TRUE;
+    entry->extra = CSLDuplicate(vsiEntry->papszExtra);
+    return entry;
+}
+}
+
+%rename (CloseDir) VSICloseDir;
+void VSICloseDir(VSIDIR* dir);
+
+#endif
 
 %apply Pointer NONNULL {const char * pszKey};
 void CPLSetConfigOption( const char * pszKey, const char * pszValue );
@@ -396,9 +466,6 @@ GByte *CPLHexToBinary( const char *pszHex, int *pnBytes );
 #ifdef SWIGJAVA
 %clear GByte*;
 #endif
-
-/* Inappropriate typemap for Ruby bindings */
-#ifndef SWIGRUBY
 
 %apply Pointer NONNULL {const char * pszFilename};
 /* Added in GDAL 1.7.0 */
@@ -465,6 +532,29 @@ VSI_RETVAL VSIRename(const char * pszOld, const char *pszNew );
 %clear (const char* pszOld);
 %clear (const char* pszNew);
 
+#if defined(SWIGPYTHON)
+%rename (Sync) wrapper_VSISync;
+
+%apply (const char* utf8_path) {(const char* pszSource)};
+%apply (const char* utf8_path) {(const char* pszTarget)};
+%feature( "kwargs" ) wrapper_VSISync;
+
+%inline {
+bool wrapper_VSISync(const char* pszSource,
+                     const char* pszTarget,
+                     char** options = NULL,
+                     GDALProgressFunc callback=NULL,
+                     void* callback_data=NULL)
+{
+    return VSISync( pszSource, pszTarget, options, callback, callback_data, nullptr );
+}
+}
+
+%clear (const char* pszSource);
+%clear (const char* pszTarget);
+
+#endif
+
 const char* VSIGetActualURL(const char * utf8_path);
 
 %inline {
@@ -491,7 +581,12 @@ const char* VSIGetFileSystemOptions(const char * utf8_path);
 #if !defined(SWIGJAVA)
 
 #if !defined(SWIGCSHARP)
-typedef void VSILFILE;
+class VSILFILE
+{
+    private:
+        VSILFILE();
+        ~VSILFILE();
+};
 #endif
 
 #if defined(SWIGPERL)
@@ -581,6 +676,7 @@ VSILFILE   *wrapper_VSIFOpenExL( const char *utf8_path, const char *pszMode, int
 %}
 
 int VSIFEofL( VSILFILE* fp );
+int VSIFFlushL( VSILFILE* fp );
 
 VSI_RETVAL VSIFCloseL( VSILFILE* fp );
 
@@ -637,6 +733,7 @@ void VSIStdoutUnsetRedirection()
 #endif
 
 void VSICurlClearCache();
+void VSICurlPartialClearCache( const char* utf8_path );
 
 #endif /* !defined(SWIGJAVA) */
 
@@ -644,5 +741,3 @@ void VSICurlClearCache();
 %rename (ParseCommandLine) CSLParseCommandLine;
 char **CSLParseCommandLine( const char * utf8_path );
 %clear char **;
-
-#endif /* #ifndef SWIGRUBY */

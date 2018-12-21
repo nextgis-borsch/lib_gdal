@@ -80,7 +80,9 @@ toff_t GTIFFWriteDirectory( TIFF *hTIFF, int nSubfileType,
                             const char *pszMetadata,
                             const char* pszJPEGQuality,
                             const char* pszJPEGTablesMode,
-                            const char* pszNoData )
+                            const char* pszNoData,
+                            CPL_UNUSED const uint32* panLercAddCompressionAndVersion
+                           )
 
 {
     const toff_t nBaseDirOffset = TIFFCurrentDirOffset( hTIFF );
@@ -130,7 +132,8 @@ toff_t GTIFFWriteDirectory( TIFF *hTIFF, int nSubfileType,
     }
 
     if( nCompressFlag == COMPRESSION_LZW ||
-        nCompressFlag == COMPRESSION_ADOBE_DEFLATE )
+        nCompressFlag == COMPRESSION_ADOBE_DEFLATE ||
+        nCompressFlag == COMPRESSION_ZSTD )
         TIFFSetField( hTIFF, TIFFTAG_PREDICTOR, nPredictor );
 
 /* -------------------------------------------------------------------- */
@@ -167,6 +170,14 @@ toff_t GTIFFWriteDirectory( TIFF *hTIFF, int nSubfileType,
             TIFFSetField( hTIFF, TIFFTAG_YCBCRSUBSAMPLING, 2, 2 );
         }
     }
+
+#ifdef HAVE_LERC
+    if( nCompressFlag == COMPRESSION_LERC && panLercAddCompressionAndVersion )
+    {
+        TIFFSetField(hTIFF, TIFFTAG_LERC_PARAMETERS, 2,
+                     panLercAddCompressionAndVersion);
+    }
+#endif
 
 /* -------------------------------------------------------------------- */
 /*      Write no data value if we have one.                             */
@@ -451,6 +462,33 @@ GTIFFBuildOverviews( const char * pszFilename,
         nPlanarConfig = PLANARCONFIG_CONTIG;
     else
         nPlanarConfig = PLANARCONFIG_SEPARATE;
+
+    bool bSourceIsPixelInterleaved = false;
+    bool bSourceIsJPEG2000 = false;
+    if( nBands > 1 )
+    {
+        GDALDataset* poSrcDS = papoBandList[0]->GetDataset();
+        if( poSrcDS )
+        {
+            const char* pszSrcInterleave = poSrcDS->GetMetadataItem("INTERLEAVE",
+                                                                "IMAGE_STRUCTURE");
+            if( pszSrcInterleave && EQUAL(pszSrcInterleave, "PIXEL") )
+            {
+                bSourceIsPixelInterleaved = true;
+            }
+        }
+
+        const char* pszSrcCompression = papoBandList[0]->GetMetadataItem("COMPRESSION",
+                                                                "IMAGE_STRUCTURE");
+        if( pszSrcCompression )
+        {
+            bSourceIsJPEG2000 = EQUAL(pszSrcCompression, "JPEG2000");
+        }
+        if( bSourceIsPixelInterleaved && bSourceIsJPEG2000 )
+        {
+            nPlanarConfig = PLANARCONFIG_CONTIG;
+        }
+    }
 
     const char* pszInterleave =
         CPLGetConfigOption( "INTERLEAVE_OVERVIEW", nullptr );
@@ -818,7 +856,8 @@ GTIFFBuildOverviews( const char * pszFilename,
                              osMetadata,
                              CPLGetConfigOption( "JPEG_QUALITY_OVERVIEW", nullptr ),
                              CPLGetConfigOption( "JPEG_TABLESMODE_OVERVIEW", nullptr ),
-                             pszNoData
+                             pszNoData,
+                             nullptr
                            );
     }
 
@@ -841,8 +880,8 @@ GTIFFBuildOverviews( const char * pszFilename,
 /*      Open the overview dataset so that we can get at the overview    */
 /*      bands.                                                          */
 /* -------------------------------------------------------------------- */
-    GDALDataset *hODS =
-        static_cast<GDALDataset *>( GDALOpen( pszFilename, GA_Update ) );
+    GDALDataset *hODS = GDALDataset::Open( pszFilename,
+                                           GDAL_OF_RASTER | GDAL_OF_UPDATE );
     if( hODS == nullptr )
         return CE_Failure;
 
@@ -858,7 +897,7 @@ GTIFFBuildOverviews( const char * pszFilename,
             atoi(CPLGetConfigOption("JPEG_QUALITY_OVERVIEW","75"));
         TIFFSetField( hTIFF, TIFFTAG_JPEGQUALITY,
                       nJpegQuality );
-        GTIFFSetJpegQuality((GDALDatasetH)hODS, nJpegQuality);
+        GTIFFSetJpegQuality(GDALDataset::ToHandle(hODS), nJpegQuality);
     }
 
     if( nCompression == COMPRESSION_JPEG
@@ -869,7 +908,7 @@ GTIFFBuildOverviews( const char * pszFilename,
                             CPLSPrintf("%d", knGTIFFJpegTablesModeDefault)));
         TIFFSetField( hTIFF, TIFFTAG_JPEGTABLESMODE,
                       nJpegTablesMode );
-        GTIFFSetJpegTablesMode((GDALDatasetH)hODS, nJpegTablesMode);
+        GTIFFSetJpegTablesMode(GDALDataset::ToHandle(hODS), nJpegTablesMode);
     }
 
 /* -------------------------------------------------------------------- */
@@ -885,17 +924,18 @@ GTIFFBuildOverviews( const char * pszFilename,
 
     CPLErr eErr = CE_None;
 
-    if( nCompression != COMPRESSION_NONE &&
-        nPlanarConfig == PLANARCONFIG_CONTIG &&
-        !GDALDataTypeIsComplex(papoBandList[0]->GetRasterDataType()) &&
-        papoBandList[0]->GetColorTable() == nullptr &&
-        (STARTS_WITH_CI(pszResampling, "NEAR") ||
-         EQUAL(pszResampling, "AVERAGE") ||
-         EQUAL(pszResampling, "GAUSS") ||
-         EQUAL(pszResampling, "CUBIC") ||
-         EQUAL(pszResampling, "CUBICSPLINE") ||
-         EQUAL(pszResampling, "LANCZOS") ||
-         EQUAL(pszResampling, "BILINEAR")))
+    if(  ((bSourceIsPixelInterleaved && bSourceIsJPEG2000) ||
+          (nCompression != COMPRESSION_NONE)) &&
+         nPlanarConfig == PLANARCONFIG_CONTIG &&
+         !GDALDataTypeIsComplex(papoBandList[0]->GetRasterDataType()) &&
+         papoBandList[0]->GetColorTable() == nullptr &&
+         (STARTS_WITH_CI(pszResampling, "NEAR") ||
+          EQUAL(pszResampling, "AVERAGE") ||
+          EQUAL(pszResampling, "GAUSS") ||
+          EQUAL(pszResampling, "CUBIC") ||
+          EQUAL(pszResampling, "CUBICSPLINE") ||
+          EQUAL(pszResampling, "LANCZOS") ||
+          EQUAL(pszResampling, "BILINEAR")) )
     {
         // In the case of pixel interleaved compressed overviews, we want to
         // generate the overviews for all the bands block by block, and not

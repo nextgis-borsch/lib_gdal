@@ -60,6 +60,27 @@ void OGRGeoJSONWriteOptions::SetRFC7946Settings()
     bCanPatchCoordinatesWithNativeData = false;
     bHonourReservedRFC7946Members = true;
 }
+
+void OGRGeoJSONWriteOptions::SetIDOptions(CSLConstList papszOptions)
+{
+
+    osIDField = CSLFetchNameValueDef(papszOptions, "ID_FIELD", "");
+    const char* pszIDFieldType = CSLFetchNameValue(papszOptions, "ID_TYPE");
+    if( pszIDFieldType )
+    {
+        if( EQUAL(pszIDFieldType, "String") )
+        {
+            bForceIDFieldType = true;
+            eForcedIDFieldType = OFTString;
+        }
+        else if( EQUAL(pszIDFieldType, "Integer") )
+        {
+            bForceIDFieldType = true;
+            eForcedIDFieldType = OFTInteger64;
+        }
+    }
+}
+
 /*! @endcond */
 
 /************************************************************************/
@@ -615,7 +636,7 @@ json_object* OGRGeoJSONWriteFeature( OGRFeature* poFeature,
 
                     if( it.val != nullptr )
                     {
-                        int nIdx = poFeature->GetFieldIndex("id");
+                        int nIdx = poFeature->GetDefnRef()->GetFieldIndexCaseSensitive("id");
                         if( eType == json_type_string &&
                             nIdx >= 0 &&
                             poFeature->GetFieldDefnRef(nIdx)->GetType() == OFTString &&
@@ -657,7 +678,7 @@ json_object* OGRGeoJSONWriteFeature( OGRFeature* poFeature,
 /* -------------------------------------------------------------------- */
     if( !oOptions.osIDField.empty() )
     {
-        int nIdx = poFeature->GetFieldIndex(oOptions.osIDField);
+        int nIdx = poFeature->GetDefnRef()->GetFieldIndexCaseSensitive(oOptions.osIDField);
         if( nIdx >= 0 )
         {
             if( (oOptions.bForceIDFieldType &&
@@ -776,7 +797,7 @@ json_object* OGRGeoJSONWriteAttributes( OGRFeature* poFeature,
     OGRFeatureDefn* poDefn = poFeature->GetDefnRef();
 
     const int nIDField = !oOptions.osIDField.empty() ?
-        poFeature->GetFieldIndex(oOptions.osIDField) : -1;
+        poDefn->GetFieldIndexCaseSensitive(oOptions.osIDField) : -1;
 
     const int nFieldCount = poDefn->GetFieldCount();
     for( int nField = 0; nField < nFieldCount; ++nField )
@@ -823,8 +844,23 @@ json_object* OGRGeoJSONWriteAttributes( OGRFeature* poFeature,
         }
         else if( OFTReal == eType )
         {
+            const double val = poFeature->GetFieldAsDouble(nField);
+            if( !CPLIsFinite(val) )
+            {
+                if( !oOptions.bAllowNonFiniteValues )
+                {
+                    static bool bHasWarned = false;
+                    if( !bHasWarned )
+                    {
+                        bHasWarned = true;
+                        CPLError(CE_Warning, CPLE_AppDefined,
+                                 "NaN of Infinity value found. Skipped");
+                    }
+                    continue;
+                }
+            }
             poObjProp = json_object_new_double_with_significant_figures(
-                poFeature->GetFieldAsDouble(nField),
+                val,
                 oOptions.nSignificantFigures );
         }
         else if( OFTString == eType )
@@ -942,7 +978,7 @@ json_object* OGRGeoJSONWriteGeometry( const OGRGeometry* poGeometry,
 
     OGRwkbGeometryType eFType = wkbFlatten(poGeometry->getGeometryType());
     // For point empty, return a null geometry. For other empty geometry types,
-    // we will generate an empty coordinate array, which is propably also
+    // we will generate an empty coordinate array, which is probably also
     // borderline.
     if( eFType == wkbPoint && poGeometry->IsEmpty() )
     {

@@ -63,7 +63,7 @@ def GetOutputDriversFor(filename):
         if (drv.GetMetadataItem(gdal.DCAP_CREATE) is not None or
             drv.GetMetadataItem(gdal.DCAP_CREATECOPY) is not None) and \
            drv.GetMetadataItem(gdal.DCAP_RASTER) is not None:
-            if len(ext) > 0 and DoesDriverHandleExtension(drv, ext):
+            if ext and DoesDriverHandleExtension(drv, ext):
                 drv_list.append(drv.ShortName)
             else:
                 prefix = drv.GetMetadataItem(gdal.DMD_CONNECTION_PREFIX)
@@ -72,7 +72,7 @@ def GetOutputDriversFor(filename):
 
     # GMT is registered before netCDF for opening reasons, but we want
     # netCDF to be used by default for output.
-    if ext.lower() == 'nc' and len(drv_list) == 0 and \
+    if ext.lower() == 'nc' and not drv_list and \
        drv_list[0].upper() == 'GMT' and drv_list[1].upper() == 'NETCDF':
         drv_list = ['NETCDF', 'GMT']
 
@@ -81,9 +81,9 @@ def GetOutputDriversFor(filename):
 
 def GetOutputDriverFor(filename):
     drv_list = GetOutputDriversFor(filename)
-    if len(drv_list) == 0:
+    if not drv_list:
         ext = GetExtension(filename)
-        if len(ext) == 0:
+        if not ext:
             return 'GTiff'
         else:
             raise Exception("Cannot guess driver for %s" % filename)
@@ -103,7 +103,7 @@ quiet_flag = 0
 src_filename = None
 
 dst_filename = None
-format = None
+frmt = None
 
 mask = 'default'
 
@@ -119,7 +119,7 @@ while i < len(argv):
 
     if arg == '-of' or arg == '-f':
         i = i + 1
-        format = argv[i]
+        frmt = argv[i]
 
     elif arg == '-4':
         connectedness = 4
@@ -167,7 +167,7 @@ if src_filename is None:
 # =============================================================================
 try:
     gdal.SieveFilter
-except:
+except AttributeError:
     print('')
     print('gdal.SieveFilter() not available.  You are likely using "old gen"')
     print('bindings or an older version of the next gen bindings.')
@@ -189,9 +189,9 @@ if src_ds is None:
 
 srcband = src_ds.GetRasterBand(1)
 
-if mask is 'default':
+if mask == 'default':
     maskband = srcband.GetMaskBand()
-elif mask is 'none':
+elif mask == 'none':
     maskband = None
 else:
     mask_ds = gdal.Open(mask)
@@ -202,10 +202,10 @@ else:
 # =============================================================================
 
 if dst_filename is not None:
-    if format is None:
-        format = GetOutputDriverFor(dst_filename)
+    if frmt is None:
+        frmt = GetOutputDriverFor(dst_filename)
 
-    drv = gdal.GetDriverByName(format)
+    drv = gdal.GetDriverByName(frmt)
     dst_ds = drv.Create(dst_filename, src_ds.RasterXSize, src_ds.RasterYSize, 1,
                         srcband.DataType)
     wkt = src_ds.GetProjection()

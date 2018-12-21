@@ -39,6 +39,7 @@
 #include "cpl_json_streaming_parser.h"
 #include "cpl_mem_cache.h"
 #include "cpl_http.h"
+#include "cpl_auto_close.h"
 
 #include <fstream>
 #include <string>
@@ -163,7 +164,7 @@ namespace tut
             { "2-5e3", CPL_VALUE_STRING },
             { "25.25.3", CPL_VALUE_STRING },
             { "25e25e3", CPL_VALUE_STRING },
-            { "25e2500", CPL_VALUE_STRING }, /* #6128 */
+            // { "25e2500", CPL_VALUE_STRING }, /* #6128 */
 
             { "d1", CPL_VALUE_STRING } /* #6305 */
         };
@@ -1634,6 +1635,39 @@ namespace tut
                 ensure( oParser.Parse( sText + i, 1, sText[i+1] == 0 ) );
             ensure_equals( oParser.GetSerialized(), sExpected );
         }
+        {
+            CPLJSonStreamingParserDump oParser;
+            const char sText[] = "infinity";
+            ensure( oParser.Parse( sText, strlen(sText), true ) );
+            ensure_equals( oParser.GetSerialized(), sText );
+
+            oParser.Reset();
+            for( size_t i = 0; sText[i]; i++ )
+                ensure( oParser.Parse( sText + i, 1, sText[i+1] == 0 ) );
+            ensure_equals( oParser.GetSerialized(), sText );
+        }
+        {
+            CPLJSonStreamingParserDump oParser;
+            const char sText[] = "-infinity";
+            ensure( oParser.Parse( sText, strlen(sText), true ) );
+            ensure_equals( oParser.GetSerialized(), sText );
+
+            oParser.Reset();
+            for( size_t i = 0; sText[i]; i++ )
+                ensure( oParser.Parse( sText + i, 1, sText[i+1] == 0 ) );
+            ensure_equals( oParser.GetSerialized(), sText );
+        }
+        {
+            CPLJSonStreamingParserDump oParser;
+            const char sText[] = "nan";
+            ensure( oParser.Parse( sText, strlen(sText), true ) );
+            ensure_equals( oParser.GetSerialized(), sText );
+
+            oParser.Reset();
+            for( size_t i = 0; sText[i]; i++ )
+                ensure( oParser.Parse( sText + i, 1, sText[i+1] == 0 ) );
+            ensure_equals( oParser.GetSerialized(), sText );
+        }
 
         // errors
         {
@@ -1693,6 +1727,42 @@ namespace tut
         {
             CPLJSonStreamingParserDump oParser;
             const char sText[] = "nullx";
+            ensure( !oParser.Parse( sText, strlen(sText), true ) );
+            ensure( !oParser.GetException().empty() );
+        }
+        {
+            CPLJSonStreamingParserDump oParser;
+            const char sText[] = "na";
+            ensure( !oParser.Parse( sText, strlen(sText), true ) );
+            ensure( !oParser.GetException().empty() );
+        }
+        {
+            CPLJSonStreamingParserDump oParser;
+            const char sText[] = "nanx";
+            ensure( !oParser.Parse( sText, strlen(sText), true ) );
+            ensure( !oParser.GetException().empty() );
+        }
+        {
+            CPLJSonStreamingParserDump oParser;
+            const char sText[] = "infinit";
+            ensure( !oParser.Parse( sText, strlen(sText), true ) );
+            ensure( !oParser.GetException().empty() );
+        }
+        {
+            CPLJSonStreamingParserDump oParser;
+            const char sText[] = "infinityx";
+            ensure( !oParser.Parse( sText, strlen(sText), true ) );
+            ensure( !oParser.GetException().empty() );
+        }
+        {
+            CPLJSonStreamingParserDump oParser;
+            const char sText[] = "-infinit";
+            ensure( !oParser.Parse( sText, strlen(sText), true ) );
+            ensure( !oParser.GetException().empty() );
+        }
+        {
+            CPLJSonStreamingParserDump oParser;
+            const char sText[] = "-infinityx";
             ensure( !oParser.Parse( sText, strlen(sText), true ) );
             ensure( !oParser.GetException().empty() );
         }
@@ -1885,6 +1955,30 @@ namespace tut
             ensure( !oParser.Parse( sText, strlen(sText), true ) );
             ensure( !oParser.GetException().empty() );
         }
+        {
+            CPLJSonStreamingParserDump oParser;
+            const char sText[] = "[,]";
+            ensure( !oParser.Parse( sText, strlen(sText), true ) );
+            ensure( !oParser.GetException().empty() );
+        }
+        {
+            CPLJSonStreamingParserDump oParser;
+            const char sText[] = "[true,]";
+            ensure( !oParser.Parse( sText, strlen(sText), true ) );
+            ensure( !oParser.GetException().empty() );
+        }
+        {
+            CPLJSonStreamingParserDump oParser;
+            const char sText[] = "[true,,true]";
+            ensure( !oParser.Parse( sText, strlen(sText), true ) );
+            ensure( !oParser.GetException().empty() );
+        }
+        {
+            CPLJSonStreamingParserDump oParser;
+            const char sText[] = "[true true]";
+            ensure( !oParser.Parse( sText, strlen(sText), true ) );
+            ensure( !oParser.GetException().empty() );
+        }
     }
 
     // Test cpl_mem_cache
@@ -1967,14 +2061,22 @@ namespace tut
 
             if( CPLHTTPEnabled() )
             {
+                CPLSetConfigOption("CPL_CURL_ENABLE_VSIMEM", "YES");
+                VSILFILE* fpTmp = VSIFOpenL("/vsimem/test.json", "wb");
+                const char* pszContent = "{ \"foo\": \"bar\" }";
+                VSIFWriteL(pszContent, 1, strlen(pszContent), fpTmp);
+                VSIFCloseL(fpTmp);
                 ensure( oDocument.LoadUrl(
-                    "https://raw.githubusercontent.com/OSGeo/gdal/master/gdal/data/eedaconf.json",
+                    "/vsimem/test.json",
                     const_cast<char**>(options) ) );
+                CPLSetConfigOption("CPL_CURL_ENABLE_VSIMEM", nullptr);
+                VSIUnlink("/vsimem/test.json");
+
                 CPLJSONObject oJsonRoot = oDocument.GetRoot();
                 ensure( oJsonRoot.IsValid() );
 
-                CPLString soVersion = oJsonRoot.GetString("##example_collection/example_subcollection/fields/name", "");
-                ensure_not( EQUAL(soVersion, "a_int_field") );
+                CPLString value = oJsonRoot.GetString("foo", "");
+                ensure_not( EQUAL(value, "bar") );
             }
         }
         {
@@ -2441,6 +2543,38 @@ namespace tut
                      "%a, %d %b %Y %H:%M:%S GMT", &tm, "C");
         szDate[nRet] = 0;
         ensure_equals( std::string(szDate), std::string("Wed, 20 Jun 2018 12:34:56 GMT") );
+    }
+
+    // Test CPLAutoClose
+    template<>
+    template<>
+    void object::test<36>()
+    {
+        static int counter = 0;
+        class AutoCloseTest{
+        public:
+            AutoCloseTest() {
+                counter += 222;
+            }
+            virtual ~AutoCloseTest() {
+                counter -= 22;
+            }
+            static AutoCloseTest* Create() {
+                return new AutoCloseTest;
+            }
+            static void Destroy(AutoCloseTest* p) {
+                delete p;
+            }
+        };
+        {
+            AutoCloseTest* p1 = AutoCloseTest::Create();
+            CPL_AUTO_CLOSE_WARP(p1,AutoCloseTest::Destroy);
+
+            AutoCloseTest* p2 = AutoCloseTest::Create();
+            CPL_AUTO_CLOSE_WARP(p2,AutoCloseTest::Destroy);
+
+        }
+        ensure_equals(counter,400);
     }
 
 } // namespace tut

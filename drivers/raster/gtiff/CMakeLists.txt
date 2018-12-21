@@ -34,7 +34,6 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_SOURCE_DIR}/drivers/raster)
 include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/jpeg)
 
-
 set(LIB_HHEADERS
 )
 
@@ -59,6 +58,14 @@ set(LIB_CSOURCES
     tif_float.c
     tifvsi.cpp
 )
+
+# TODO: Only support internal libtiff now
+# if(WITH_LERC)
+#     set(LIB_HHEADERS_PRIV ${LIB_HHEADERS_PRIV} tif_lerc.h)
+#     set(LIB_CSOURCES ${LIB_CSOURCES} tif_lerc.c)
+#     add_definitions(-DHAVE_LERC)
+#     include_directories(${CMAKE_SOURCE_DIR}/core/lib/LercLib)
+# endif()
 
 add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
 
