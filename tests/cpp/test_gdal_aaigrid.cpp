@@ -245,7 +245,7 @@ namespace tut
         //
         // GDALDatasetH dsDst = nullptr;
         // dsDst = GDALCreateCopy(drv_, dst.c_str(), dsSrc, FALSE, nullptr, nullptr, nullptr);
-        // GDALClose(dsSrc);
+        GDALClose(dsSrc);
         // ensure("Can't copy dataset", nullptr != dsDst);
         //
         // std::string proj(GDALGetProjectionRef(dsDst));
@@ -271,7 +271,7 @@ namespace tut
         // os << "Checksums for '" << dst << "' not equal";
         // ensure_equals(os.str().c_str(), checksum, rasters_.at(fileIdx).checksum_);
 
-        GDALClose(dsDst);
+        // GDALClose(dsDst);
 
     }
 
