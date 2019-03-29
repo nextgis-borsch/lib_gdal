@@ -133,6 +133,10 @@ CPLErr WMSMiniDriver_AGS::TiledImageRequest(WMSHTTPRequest &request,
     else
         url += "&time=";
 
+    char* pszEscapedValue = CPLEscapeString(url, -1, CPLES_URL);
+    url = pszEscapedValue;
+    CPLFree(pszEscapedValue);
+
     return CE_None;
 }
 
@@ -181,4 +185,8 @@ void WMSMiniDriver_AGS::GetTiledImageInfo(CPLString &url,
         GetBBoxCoord(iri, m_bbox_order[0]), GetBBoxCoord(iri, m_bbox_order[1]),
         GetBBoxCoord(iri, m_bbox_order[2]), GetBBoxCoord(iri, m_bbox_order[3]))
         + CPLOPrintf("&imageDisplay=%d,%d,96", iri.m_sx, iri.m_sy);
+
+    char* pszEscapedValue = CPLEscapeString(url, -1, CPLES_URL);
+    url = pszEscapedValue;
+    CPLFree(pszEscapedValue);
 }
