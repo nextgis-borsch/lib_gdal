@@ -114,14 +114,16 @@ CPLErr WMSMiniDriver_AGS::TiledImageRequest(WMSHTTPRequest &request,
 
     URLPrepare(url);
     url += "f=image&dpi=&layerdefs=&layerTimeOptions=&dynamicLayers=";
-    url += CPLOPrintf("&bbox=%.8f,%.8f,%.8f,%.8f",
+    char* pszEscapedValue = CPLEscapeString(m_layers, -1, CPLES_URL);
+    url += CPLOPrintf("&bbox=%.8f%%2C%.8f%%2C%.8f%%2C%.8f",
                 GetBBoxCoord(iri, m_bbox_order[0]), GetBBoxCoord(iri, m_bbox_order[1]),
                 GetBBoxCoord(iri, m_bbox_order[2]), GetBBoxCoord(iri, m_bbox_order[3]))
-        + CPLOPrintf("&size=%d,%d", iri.m_sx, iri.m_sy)
+        + CPLOPrintf("&size=%d%%2C%d", iri.m_sx, iri.m_sy)
         + CPLOPrintf("&imageSR=%s", m_irs.c_str())
         + CPLOPrintf("&bboxSR=%s", m_irs.c_str())
         + CPLOPrintf("&format=%s", m_image_format.c_str())
-        + CPLOPrintf("&layers=%s", m_layers.c_str());
+        + CPLOPrintf("&layers=%s", pszEscapedValue);
+    CPLFree(pszEscapedValue);
 
     if (!m_transparent.empty() )
         url +=  CPLOPrintf("&transparent=%s", m_transparent.c_str());
@@ -129,13 +131,15 @@ CPLErr WMSMiniDriver_AGS::TiledImageRequest(WMSHTTPRequest &request,
         url += "&transparent=false";
 
     if (!m_time_range.empty() )
-        url += CPLOPrintf("&time=%s", m_time_range.c_str());
+    {
+        pszEscapedValue = CPLEscapeString(m_time_range, -1, CPLES_URL);
+        url += CPLOPrintf("&time=%s", pszEscapedValue);
+        CPLFree(pszEscapedValue);
+    }
     else
+    {
         url += "&time=";
-
-    char* pszEscapedValue = CPLEscapeString(url, -1, CPLES_URL);
-    url = pszEscapedValue;
-    CPLFree(pszEscapedValue);
+    }
 
     return CE_None;
 }
@@ -161,7 +165,7 @@ void WMSMiniDriver_AGS::GetTiledImageInfo(CPLString &url,
     double fY = GetBBoxCoord(iri, 'y') + (iri.m_sy - nYInBlock) * (GetBBoxCoord(iri, 'Y') -
                 GetBBoxCoord(iri, 'y')) / iri.m_sy;
 
-    url += CPLOPrintf("&geometry=%8f,%8f", fX, fY)
+    url += CPLOPrintf("&geometry=%8f%%2C%8f", fX, fY)
         +  CPLOPrintf("&sr=%s", m_irs.c_str());
 
     CPLString layers("visible");
@@ -181,12 +185,8 @@ void WMSMiniDriver_AGS::GetTiledImageInfo(CPLString &url,
     url += layers;
     url += "&tolerance=";
     url += m_identification_tolerance;
-    url += CPLOPrintf("&mapExtent=%.8f,%.8f,%.8f,%.8f",
+    url += CPLOPrintf("&mapExtent=%.8f%%2C%.8f%%2C%.8f%%2C%.8f",
         GetBBoxCoord(iri, m_bbox_order[0]), GetBBoxCoord(iri, m_bbox_order[1]),
         GetBBoxCoord(iri, m_bbox_order[2]), GetBBoxCoord(iri, m_bbox_order[3]))
-        + CPLOPrintf("&imageDisplay=%d,%d,96", iri.m_sx, iri.m_sy);
-
-    char* pszEscapedValue = CPLEscapeString(url, -1, CPLES_URL);
-    url = pszEscapedValue;
-    CPLFree(pszEscapedValue);
+        + CPLOPrintf("&imageDisplay=%d%%2C%d%%2C96", iri.m_sx, iri.m_sy);
 }
