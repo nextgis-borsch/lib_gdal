@@ -25,7 +25,7 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-option(ENABLE_WEBP "Build WebP format" ON)
+option(ENABLE_WEBP "Build WebP format" OFF)
 if(ENABLE_WEBP)
     set(TARGET_NAME ras_webp)
 
