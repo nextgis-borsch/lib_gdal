@@ -164,7 +164,7 @@ with '\*' have high priority to be implemented.
 | **usgsdem** | **yes** | no | - |
 | **vrt** | **yes** | no | Obligatory for building GDAL |
 | **wcs** | **yes** | [CURL](https://github.com/nextgis-borsch/lib_curl) | Adds some "HTTP Fetching Wrapper" (raster/vector driver?) |
-| webp * | no |  | Need for mobile and server |
+| **webp** | **yes** | [WebP](https://github.com/nextgis-borsch/lib_webp) | - |
 | **wms** | **yes** | [CURL](https://github.com/nextgis-borsch/lib_curl) | - |
 | **wmts** | **yes** | [CURL](https://github.com/nextgis-borsch/lib_curl) | - |
 | **xpm** | **yes** | no | - |

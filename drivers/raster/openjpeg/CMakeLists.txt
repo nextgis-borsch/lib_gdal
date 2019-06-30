@@ -74,7 +74,7 @@ if(ENABLE_OPENJPEG)
 
         include_directories(${CMAKE_CURRENT_SOURCE_DIR})
         include_directories(${CMAKE_SOURCE_DIR}/drivers/raster) # for /vrt/vrtdataset.h
-        include_directories(${OPENJPEG_INCLUDE_DIRS}/openjpeg-${MAJOR_VERSION}.${MINOR_VERSION})
+        include_directories(${OPENJPEG_INCLUDE_DIRS})
 
         # TODO: maybe add openjpeg library version to definitions (not required for now).
 
