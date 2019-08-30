@@ -1338,7 +1338,7 @@ OGRErr OGRPGTableLayer::ISetFeature( OGRFeature *poFeature )
                 char    *pszWKT = nullptr;
 
                 if (poGeom != nullptr)
-                    poGeom->exportToWkt( &pszWKT );
+                    poGeom->exportToWkt( &pszWKT, wkbVariantIso );
 
                 int nSRSId = poGeomFieldDefn->nSRSId;
                 if( pszWKT != nullptr )
@@ -1776,7 +1776,7 @@ OGRErr OGRPGTableLayer::CreateFeatureViaInsert( OGRFeature *poFeature )
             else
             {
                 char    *pszWKT = nullptr;
-                poGeom->exportToWkt( &pszWKT );
+                poGeom->exportToWkt( &pszWKT, wkbVariantIso );
 
                 if( pszWKT != nullptr )
                 {
@@ -2323,8 +2323,14 @@ OGRErr OGRPGTableLayer::CreateGeomField( OGRGeomFieldDefn *poGeomFieldIn,
             poGeomField->SetName(
                 CPLSPrintf("wkb_geometry%d", poFeatureDefn->GetGeomFieldCount()+1) );
     }
-    poGeomField->SetSpatialRef(poGeomFieldIn->GetSpatialRef());
-
+    auto l_poSRS = poGeomFieldIn->GetSpatialRef();
+    if( l_poSRS )
+    {
+        l_poSRS = l_poSRS->Clone();
+        l_poSRS->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
+        poGeomField->SetSpatialRef(l_poSRS);
+        l_poSRS->Release();
+    }
 /* -------------------------------------------------------------------- */
 /*      Do we want to "launder" the column names into Postgres          */
 /*      friendly format?                                                */

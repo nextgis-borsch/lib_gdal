@@ -60,8 +60,6 @@ if(ENABLE_GRIB)
         degrib/degrib/inventory.cpp
         degrib/degrib/metaname.cpp
         degrib/degrib/myerror.c
-        degrib/degrib/filedatasource.cpp
-        degrib/degrib/memorydatasource.cpp
         degrib/degrib/grib1tab.cpp
         degrib/degrib/myutil.c
         degrib/degrib/metaparse.cpp

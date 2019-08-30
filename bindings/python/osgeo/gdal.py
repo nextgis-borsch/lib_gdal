@@ -203,7 +203,7 @@ def InfoOptions(options=None, format='text', deserialize=True,
          stats=False, approxStats=False, computeChecksum=False,
          showGCPs=True, showMetadata=True, showRAT=True, showColorTable=True,
          listMDD=False, showFileList=True, allMetadata=False,
-         extraMDDomains=None):
+         extraMDDomains=None, wktFormat=None):
     """ Create a InfoOptions() object that can be passed to gdal.Info()
         options can be be an array of strings, a string or let empty and filled from other keywords."""
 
@@ -244,6 +244,8 @@ def InfoOptions(options=None, format='text', deserialize=True,
             new_options += ['-nofl']
         if allMetadata:
             new_options += ['-mdd', 'all']
+        if wktFormat:
+            new_options += ['-wkt_format', wktFormat]
         if extraMDDomains is not None:
             for mdd in extraMDDomains:
                 new_options += ['-mdd', mdd]
@@ -280,7 +282,7 @@ def TranslateOptions(options=None, format=None,
               creationOptions=None, srcWin=None, projWin=None, projWinSRS=None, strict = False,
               unscale = False, scaleParams=None, exponents=None,
               outputBounds=None, metadataOptions=None,
-              outputSRS=None, GCPs=None,
+              outputSRS=None, nogcp=False, GCPs=None,
               noData=None, rgbExpand=None,
               stats = False, rat = True, resampleAlg=None,
               callback=None, callback_data=None):
@@ -308,6 +310,7 @@ def TranslateOptions(options=None, format=None,
           outputBounds --- assigned output bounds: [ulx, uly, lrx, lry]
           metadataOptions --- list of metadata options
           outputSRS --- assigned output SRS
+          nogcp --- ignore GCP in the raster
           GCPs --- list of GCPs
           noData --- nodata value (or "none" to unset it)
           rgbExpand --- Color palette expansion mode: "gray", "rgb", "rgba"
@@ -360,6 +363,8 @@ def TranslateOptions(options=None, format=None,
                 new_options += ['-mo', opt]
         if outputSRS is not None:
             new_options += ['-a_srs', str(outputSRS)]
+        if nogcp:
+            new_options += ['-nogcp']
         if GCPs is not None:
             for gcp in GCPs:
                 new_options += ['-gcp', _strHighPrec(gcp.GCPPixel), _strHighPrec(gcp.GCPLine), _strHighPrec(gcp.GCPX), str(gcp.GCPY), _strHighPrec(gcp.GCPZ)]
@@ -422,6 +427,7 @@ def WarpOptions(options=None, format=None,
          xRes=None, yRes=None, targetAlignedPixels = False,
          width = 0, height = 0,
          srcSRS=None, dstSRS=None,
+         coordinateOperation=None,
          srcAlpha = False, dstAlpha = False,
          warpOptions=None, errorThreshold=None,
          warpMemoryLimit=None, creationOptions=None, outputType = gdalconst.GDT_Unknown,
@@ -432,6 +438,7 @@ def WarpOptions(options=None, format=None,
          cutlineLayer=None, cutlineWhere=None, cutlineSQL=None, cutlineBlend=None, cropToCutline = False,
          copyMetadata = True, metadataConflictValue=None,
          setColorInterpretation = False,
+         overviewLevel = 'AUTO',
          callback=None, callback_data=None):
     """ Create a WarpOptions() object that can be passed to gdal.Warp()
         Keyword arguments are :
@@ -445,6 +452,7 @@ def WarpOptions(options=None, format=None,
           height --- height of the output raster in pixel
           srcSRS --- source SRS
           dstSRS --- output SRS
+          coordinateOperation -- coordinate operation as a PROJ string or WKT string
           srcAlpha --- whether to force the last band of the input dataset to be considered as an alpha band
           dstAlpha --- whether to force the creation of an output alpha band
           outputType --- output type (gdalconst.GDT_Byte, etc...)
@@ -471,6 +479,7 @@ def WarpOptions(options=None, format=None,
           copyMetadata --- whether to copy source metadata
           metadataConflictValue --- metadata data conflict value
           setColorInterpretation --- whether to force color interpretation of input bands to output bands
+          overviewLevel --- To specify which overview level of source files must be used
           callback --- callback method
           callback_data --- user data for callback
     """
@@ -498,6 +507,8 @@ def WarpOptions(options=None, format=None,
             new_options += ['-s_srs', str(srcSRS)]
         if dstSRS is not None:
             new_options += ['-t_srs', str(dstSRS)]
+        if coordinateOperation is not None:
+            new_options += ['-ct', coordinateOperation]
         if targetAlignedPixels:
             new_options += ['-tap']
         if srcAlpha:
@@ -569,6 +580,19 @@ def WarpOptions(options=None, format=None,
         if setColorInterpretation:
             new_options += ['-setci']
 
+        if overviewLevel is None or _is_str_or_unicode(overviewLevel):
+            pass
+        elif isinstance(overviewLevel, int):
+            if overviewLevel < 0:
+                overviewLevel = 'AUTO' + str(overviewLevel)
+            else:
+                overviewLevel = str(overviewLevel)
+        else:
+            overviewLevel = None
+
+        if overviewLevel:
+            new_options += ['-ovr', overviewLevel]
+
     return (GDALWarpAppOptions(new_options), callback, callback_data)
 
 def Warp(destNameOrDestDS, srcDSOrSrcDSTab, **kwargs):
@@ -606,6 +630,7 @@ def Warp(destNameOrDestDS, srcDSOrSrcDSTab, **kwargs):
 def VectorTranslateOptions(options=None, format=None,
          accessMode=None,
          srcSRS=None, dstSRS=None, reproject=True,
+         coordinateOperation=None,
          SQLStatement=None, SQLDialect=None, where=None, selectFields=None,
          addFields=False,
          forceNullable=False,
@@ -628,6 +653,7 @@ def VectorTranslateOptions(options=None, format=None,
           accessMode --- None for creation, 'update', 'append', 'overwrite'
           srcSRS --- source SRS
           dstSRS --- output SRS (with reprojection if reproject = True)
+          coordinateOperation -- coordinate operation as a PROJ string or WKT string
           reproject --- whether to do reprojection
           SQLStatement --- SQL statement to apply to the source dataset
           SQLDialect --- SQL dialect ('OGRSQL', 'SQLITE', ...)
@@ -665,6 +691,8 @@ def VectorTranslateOptions(options=None, format=None,
                 new_options += ['-t_srs', str(dstSRS)]
             else:
                 new_options += ['-a_srs', str(dstSRS)]
+        if coordinateOperation is not None:
+            new_options += ['-ct', coordinateOperation]
         if SQLStatement is not None:
             new_options += ['-sql', str(SQLStatement)]
         if SQLDialect is not None:
@@ -751,7 +779,7 @@ def VectorTranslate(destNameOrDestDS, srcDS, **kwargs):
 def DEMProcessingOptions(options=None, colorFilename=None, format=None,
               creationOptions=None, computeEdges=False, alg='Horn', band=1,
               zFactor=None, scale=None, azimuth=None, altitude=None,
-              combined=False, multiDirectional=False,
+              combined=False, multiDirectional=False, igor=False,
               slopeFormat=None, trigonometric=False, zeroForFlat=False,
               addAlpha=None,
               callback=None, callback_data=None):
@@ -768,8 +796,9 @@ def DEMProcessingOptions(options=None, colorFilename=None, format=None,
           scale --- ratio of vertical units to horizontal.
           azimuth --- (hillshade only) azimuth of the light, in degrees. 0 if it comes from the top of the raster, 90 from the east, ... The default value, 315, should rarely be changed as it is the value generally used to generate shaded maps.
           altitude ---(hillshade only) altitude of the light, in degrees. 90 if the light comes from above the DEM, 0 if it is raking light.
-          combined --- (hillshade only) whether to compute combined shading, a combination of slope and oblique shading.
-          multiDirectional --- (hillshade only) whether to compute multi-directional shading
+          combined --- (hillshade only) whether to compute combined shading, a combination of slope and oblique shading. Only one of combined, multiDirectional and igor can be specified.
+          multiDirectional --- (hillshade only) whether to compute multi-directional shading. Only one of combined, multiDirectional and igor can be specified.
+          igor --- (hillshade only) whether to use Igor's hillshading from Maperitive.  Only one of combined, multiDirectional and igor can be specified.
           slopeformat --- (slope only) "degree" or "percent".
           trigonometric --- (aspect only) whether to return trigonometric angle instead of azimuth. Thus 0deg means East, 90deg North, 180deg West, 270deg South.
           zeroForFlat --- (aspect only) whether to return 0 for flat areas with slope=0, instead of -9999.
@@ -805,6 +834,8 @@ def DEMProcessingOptions(options=None, colorFilename=None, format=None,
             new_options += ['-combined']
         if multiDirectional:
             new_options += ['-multidirectional']
+        if igor:
+            new_options += ['-igor']
         if slopeFormat == 'percent':
             new_options += ['-p']
         if trigonometric:
@@ -2048,9 +2079,19 @@ class Dataset(MajorObject):
         return _gdal.Dataset_GetProjectionRef(self, *args)
 
 
+    def GetSpatialRef(self, *args):
+        """GetSpatialRef(Dataset self) -> SpatialReference"""
+        return _gdal.Dataset_GetSpatialRef(self, *args)
+
+
     def SetProjection(self, *args):
         """SetProjection(Dataset self, char const * prj) -> CPLErr"""
         return _gdal.Dataset_SetProjection(self, *args)
+
+
+    def SetSpatialRef(self, *args):
+        """SetSpatialRef(Dataset self, SpatialReference srs)"""
+        return _gdal.Dataset_SetSpatialRef(self, *args)
 
 
     def GetGeoTransform(self, *args, **kwargs):
@@ -2078,14 +2119,24 @@ class Dataset(MajorObject):
         return _gdal.Dataset_GetGCPProjection(self, *args)
 
 
+    def GetGCPSpatialRef(self, *args):
+        """GetGCPSpatialRef(Dataset self) -> SpatialReference"""
+        return _gdal.Dataset_GetGCPSpatialRef(self, *args)
+
+
     def GetGCPs(self, *args):
         """GetGCPs(Dataset self)"""
         return _gdal.Dataset_GetGCPs(self, *args)
 
 
-    def SetGCPs(self, *args):
-        """SetGCPs(Dataset self, int nGCPs, char const * pszGCPProjection) -> CPLErr"""
-        return _gdal.Dataset_SetGCPs(self, *args)
+    def _SetGCPs(self, *args):
+        """_SetGCPs(Dataset self, int nGCPs, char const * pszGCPProjection) -> CPLErr"""
+        return _gdal.Dataset__SetGCPs(self, *args)
+
+
+    def _SetGCPs2(self, *args):
+        """_SetGCPs2(Dataset self, int nGCPs, SpatialReference hSRS) -> CPLErr"""
+        return _gdal.Dataset__SetGCPs2(self, *args)
 
 
     def FlushCache(self, *args):
@@ -2414,6 +2465,12 @@ class Dataset(MajorObject):
             return _gdal.Dataset_DeleteLayer(self, value)
         else:
             raise TypeError("Input %s is not of String or Int type" % type(value))
+
+    def SetGCPs(self, gcps, wkt_or_spatial_ref):
+        if isinstance(wkt_or_spatial_ref, str):
+            return self._SetGCPs(gcps, wkt_or_spatial_ref)
+        else:
+            return self._SetGCPs2(gcps, wkt_or_spatial_ref)
 
 Dataset_swigregister = _gdal.Dataset_swigregister
 Dataset_swigregister(Dataset)

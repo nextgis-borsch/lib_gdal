@@ -698,6 +698,7 @@ void PostGISRasterDataset::BuildOverviews()
         for(iOV = 0; iOV < nOV; iOV++)
         {
             PostGISRasterDataset* poOvrDS = new PostGISRasterDataset();
+            poOvrDS->ShareLockWithParentDataset(this);
             poOvrDS->nOverviewFactor = poOV[iOV].nFactor;
             poOvrDS->poConn = poConn;
             poOvrDS->eAccess = eAccess;
@@ -1760,6 +1761,7 @@ PostGISRasterTileDataset* PostGISRasterDataset::BuildRasterTileDataset(const cha
 
     PostGISRasterTileDataset* poRTDS =
         new PostGISRasterTileDataset(this, l_nTileWidth, l_nTileHeight);
+    poRTDS->ShareLockWithParentDataset(this);
 
     if (GetPrimaryKeyRef() != nullptr)
     {
@@ -3225,7 +3227,7 @@ char **PostGISRasterDataset::GetMetadataDomainList()
 {
     return BuildMetadataDomainList(GDALDataset::GetMetadataDomainList(),
                                    TRUE,
-                                   "SUBDATASETS", NULL);
+                                   "SUBDATASETS", nullptr);
 }
 
 /*****************************************
@@ -3246,7 +3248,7 @@ char** PostGISRasterDataset::GetMetadata(const char *pszDomain) {
  * be suitable for use with the OGRSpatialReference
  * class.
  *****************************************************/
-const char* PostGISRasterDataset::GetProjectionRef() {
+const char* PostGISRasterDataset::_GetProjectionRef() {
     CPLString osCommand;
 
     if (nSrid == -1)
@@ -3276,7 +3278,7 @@ const char* PostGISRasterDataset::GetProjectionRef() {
  * \brief Set projection definition. The input string must
  * be in OGC WKT or PROJ.4 format
  **********************************************************/
-CPLErr PostGISRasterDataset::SetProjection(const char * pszProjectionRef) {
+CPLErr PostGISRasterDataset::_SetProjection(const char * pszProjectionRef) {
     VALIDATE_POINTER1(pszProjectionRef, "SetProjection", CE_Failure);
 
     CPLString osCommand;

@@ -2096,15 +2096,19 @@ void GMLASReader::ProcessXLinkHref( int nAttrIdx,
                     const int nLinkFieldOGRId =
                         m_oCurCtxt.m_poLayer->GetOGRFieldIndexFromXPath(
                             osLinkFieldXPath);
-                    const auto oIter2 = m_oMapElementIdToPKID.find(osId);
-                    if( oIter2 != m_oMapElementIdToPKID.end() )
+                    if( nLinkFieldOGRId >= 0 )
                     {
-                        m_oCurCtxt.m_poFeature->SetField(nLinkFieldOGRId,
-                                                         oIter2->second);
-                    }
-                    else
-                    {
-                        m_oCurCtxt.m_poFeature->SetField(nLinkFieldOGRId, osId);
+                        const auto oIter2 = m_oMapElementIdToPKID.find(osId);
+                        if( oIter2 != m_oMapElementIdToPKID.end() )
+                        {
+                            m_oCurCtxt.m_poFeature->SetField(nLinkFieldOGRId,
+                                                             oIter2->second);
+                        }
+                        else
+                        {
+                            m_oCurCtxt.m_poFeature->SetField(nLinkFieldOGRId,
+                                                             osId);
+                        }
                     }
                 }
             }
@@ -2860,19 +2864,10 @@ void GMLASReader::ProcessGeometry(CPLXMLNode* psRoot)
             {
                 OGRSpatialReference* poSRS =
                                 new OGRSpatialReference();
+                poSRS->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
+
                 if( poSRS->SetFromUserInput( pszSRSName ) == OGRERR_NONE )
                 {
-                    OGR_SRSNode *poGEOGCS = poSRS->GetAttrNode( "GEOGCS" );
-                    if( poGEOGCS != nullptr )
-                        poGEOGCS->StripNodes( "AXIS" );
-
-                    OGR_SRSNode *poPROJCS = poSRS->GetAttrNode( "PROJCS" );
-                    if (poPROJCS != nullptr &&
-                        poSRS->EPSGTreatsAsNorthingEasting())
-                    {
-                        poPROJCS->StripNodes( "AXIS" );
-                    }
-
                     m_oMapGeomFieldDefnToSRSName[poGeomFieldDefn] = pszSRSName;
                     poGeomFieldDefn->SetSpatialRef(poSRS);
                 }
@@ -2907,8 +2902,9 @@ void GMLASReader::ProcessGeometry(CPLXMLNode* psRoot)
             {
                 OGRSpatialReference oSRS;
                 oSRS.SetFromUserInput( pszSRSName );
-                bSwapXY = CPL_TO_BOOL(oSRS.EPSGTreatsAsLatLong()) ||
-                            CPL_TO_BOOL(oSRS.EPSGTreatsAsNorthingEasting());
+                bSwapXY = !STARTS_WITH_CI(pszSRSName, "EPSG:") &&
+                    (CPL_TO_BOOL(oSRS.EPSGTreatsAsLatLong()) ||
+                     CPL_TO_BOOL(oSRS.EPSGTreatsAsNorthingEasting()));
                 m_oMapSRSNameToInvertedAxis[ pszSRSName ] = bSwapXY;
             }
             else

@@ -3,8 +3,8 @@
 # Purpose:  CMake build scripts
 # Authors:   Dmitry Baryshnikov (polimax@mail.ru), Mikhail Gusev (gusevmihs@gmail.com)
 ################################################################################
-# Copyright (C) 2015, NextGIS <info@nextgis.com>
-# Copyright (C) 2012,2013,2014 Dmitry Baryshnikov
+# Copyright (C) 2015-2019, NextGIS <info@nextgis.com>
+# Copyright (C) 2012-2019 Dmitry Baryshnikov
 # Copyright (C) 2016 Mikhail Gusev
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -30,12 +30,12 @@ option(BUILD_TESTING "Build GDAL Unit Testing" OFF)
 if(BUILD_TESTING)
 
     file(COPY gcore/data DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/gcore)
-    file(COPY alg/data DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/alg)
-    file(COPY gdrivers/data DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/gdrivers)
+    # file(COPY alg/data DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/alg)
+    # file(COPY gdrivers/data DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/gdrivers)
     file(COPY ogr/data DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/ogr)
-    file(COPY osr/data DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/osr)
-    file(COPY utilities/data DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/utilities)
-    file(COPY utilities/ref_data DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/utilities)
+    # file(COPY osr/data DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/osr)
+    # file(COPY utilities/data DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/utilities)
+    # file(COPY utilities/ref_data DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/utilities)
 
     list (FIND GDAL_BINDINGS "python" _index)
     if (${_index} GREATER -1 AND NOT SKIP_PYTHON_TESTS)

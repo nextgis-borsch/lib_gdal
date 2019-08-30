@@ -40,6 +40,8 @@
 
 #include "georaster_priv.h"
 
+#include <memory>
+
 CPL_CVSID("$Id$")
 
 //  ---------------------------------------------------------------------------
@@ -772,7 +774,9 @@ boolean GeoRasterDataset::JPEG_CopyDirect( const char* pszJPGFilename,
         VSIFCloseL( fpInput );
 
         CPLFree( pBuffer );
-        
+
+        delete poStmt;
+
         return true;
     }            
 
@@ -780,12 +784,9 @@ boolean GeoRasterDataset::JPEG_CopyDirect( const char* pszJPGFilename,
     {
         OWStatement::Free( &poLocator, 1 );
     }
-    
-    if( poStmt )
-    {
-        delete poStmt;
-    }    
-        
+
+    delete poStmt;
+
     return false;
 }
 
@@ -884,8 +885,8 @@ GDALDataset *GeoRasterDataset::Create( const char *pszFilename,
     //  -------------------------------------------------------------------
 
     const char* pszFetched  = "";
-    char* pszDescription    = nullptr;
-    char* pszInsert         = nullptr;
+    CPLCharUniquePtr pszDescription;
+    CPLCharUniquePtr pszInsert;
     int   nQuality          = -1;
 
     if( ! poGRW->sTable.empty() )
@@ -894,7 +895,7 @@ GDALDataset *GeoRasterDataset::Create( const char *pszFilename,
 
         if( pszFetched )
         {
-            pszDescription  = CPLStrdup( pszFetched );
+            pszDescription.reset(CPLStrdup( pszFetched ));
         }
     }
 
@@ -913,7 +914,7 @@ GDALDataset *GeoRasterDataset::Create( const char *pszFilename,
 
     if( pszFetched )
     {
-        pszInsert = CPLStrdup( pszFetched );
+        pszInsert.reset(CPLStrdup( pszFetched ));
     }
 
     pszFetched = CSLFetchNameValue( papszOptions, "BLOCKXSIZE" );
@@ -1046,7 +1047,7 @@ GDALDataset *GeoRasterDataset::Create( const char *pszFilename,
     //  Validate options
     //  -------------------------------------------------------------------
 
-    if( pszDescription && poGRW->bUniqueFound )
+    if( pszDescription.get() && poGRW->bUniqueFound )
     {
         CPLError( CE_Failure, CPLE_IllegalArg,
             "Option (DESCRIPTION) cannot be used on a existing GeoRaster." );
@@ -1170,10 +1171,7 @@ GDALDataset *GeoRasterDataset::Create( const char *pszFilename,
     //  Create a SDO_GEORASTER object on the server
     //  -------------------------------------------------------------------
 
-    const bool bSuccess = poGRW->Create( pszDescription, pszInsert, poGRW->bUniqueFound );
-
-    CPLFree( pszInsert );
-    CPLFree( pszDescription );
+    const bool bSuccess = poGRW->Create( pszDescription.get(), pszInsert.get(), poGRW->bUniqueFound );
 
     if( ! bSuccess )
     {
@@ -1187,12 +1185,12 @@ GDALDataset *GeoRasterDataset::Create( const char *pszFilename,
 
     char szStringId[OWTEXT];
 
-    strcpy( szStringId, CPLSPrintf( "georaster:%s,%s,%s,%s,%lld",
+    snprintf( szStringId, sizeof(szStringId), "georaster:%s,%s,%s,%s,%lld",
         poGRW->poConnection->GetUser(),
         poGRW->poConnection->GetPassword(),
         poGRW->poConnection->GetServer(),
         poGRW->sDataTable.c_str(),
-        poGRW->nRasterId ) );
+        poGRW->nRasterId );
 
     delete poGRD;
 
@@ -1349,7 +1347,7 @@ GDALDataset *GeoRasterDataset::CreateCopy( const char* pszFilename,
 
             if( ! poDstDS->bForcedSRID ) /* forced by create option SRID */
             {
-                poDstDS->SetProjection( poSrcDS->GetProjectionRef() );
+                poDstDS->SetSpatialRef( poSrcDS->GetSpatialRef() );
             }
         }
     }
@@ -1362,7 +1360,7 @@ GDALDataset *GeoRasterDataset::CreateCopy( const char* pszFilename,
     {
         poDstDS->SetGCPs( poSrcDS->GetGCPCount(), 
                           poSrcDS->GetGCPs(), 
-                          poSrcDS->GetGCPProjection() );
+                          poSrcDS->GetGCPSpatialRef() );
     }
 
     // --------------------------------------------------------------------
@@ -1373,8 +1371,9 @@ GDALDataset *GeoRasterDataset::CreateCopy( const char* pszFilename,
 
     if ( papszRPCMetadata != nullptr )
     {
-        poDstDS->poGeoRaster->phRPC = (GDALRPCInfo*) VSIMalloc( sizeof(GDALRPCInfo) );
-        GDALExtractRPCInfo( papszRPCMetadata, poDstDS->poGeoRaster->phRPC );
+        poDstDS->poGeoRaster->phRPC = (GDALRPCInfo*) VSICalloc( 1, sizeof(GDALRPCInfo) );
+        CPL_IGNORE_RET_VAL(
+            GDALExtractRPCInfo( papszRPCMetadata, poDstDS->poGeoRaster->phRPC ));
     }
 
     // --------------------------------------------------------------------
@@ -1837,7 +1836,7 @@ CPLErr GeoRasterDataset::GetGeoTransform( double *padfTransform )
 //                                                           GetProjectionRef()
 //  ---------------------------------------------------------------------------
 
-const char* GeoRasterDataset::GetProjectionRef( void )
+const char* GeoRasterDataset::_GetProjectionRef( void )
 {
     if( poGeoRaster->phRPC )
     {
@@ -2041,7 +2040,7 @@ CPLErr GeoRasterDataset::SetGeoTransform( double *padfTransform )
 //                                                              SetProjection()
 //  ---------------------------------------------------------------------------
 
-CPLErr GeoRasterDataset::SetProjection( const char *pszProjString )
+CPLErr GeoRasterDataset::_SetProjection( const char *pszProjString )
 {
     OGRSpatialReference oSRS;
 
@@ -2086,9 +2085,7 @@ CPLErr GeoRasterDataset::SetProjection( const char *pszProjString )
     // Convert SRS into old style format (SF-SQL 1.0)
     // ----------------------------------------------------------------
 
-    OGRSpatialReference *poSRS2 = oSRS.Clone();
-    
-    poSRS2->StripCTParms();
+    std::unique_ptr<OGRSpatialReference> poSRS2(oSRS.Clone());
 
     double dfAngularUnits = poSRS2->GetAngularUnits( nullptr );
     
@@ -2101,9 +2098,10 @@ CPLErr GeoRasterDataset::SetProjection( const char *pszProjString )
 
     char* pszCloneWKT = nullptr;
 
-    if( poSRS2->exportToWkt( &pszCloneWKT ) != OGRERR_NONE )
+    const char* const apszOptions[] = { "FORMAT=SFSQL", nullptr };
+    if( poSRS2->exportToWkt( &pszCloneWKT, apszOptions ) != OGRERR_NONE )
     {
-        delete poSRS2;
+        CPLFree(pszCloneWKT);
         return CE_Failure;
     }
     
@@ -2188,10 +2186,11 @@ CPLErr GeoRasterDataset::SetProjection( const char *pszProjString )
         char* pszStart = nullptr;
 
         CPLFree( pszCloneWKT );
+        pszCloneWKT = nullptr;
 
         if( poSRS2->exportToWkt( &pszCloneWKT ) != OGRERR_NONE )
         {
-            delete poSRS2;
+            CPLFree(pszCloneWKT);
             return CE_Failure;
         }
 
@@ -2316,9 +2315,11 @@ CPLErr GeoRasterDataset::SetProjection( const char *pszProjString )
         {
             poGeoRaster->SetGeoReference( nNewSRID );
             CPLFree( pszCloneWKT );
+            delete poStmt;
             return CE_None;
         }
     }
+    delete poStmt;
 
     // --------------------------------------------------------------------
     // Search by simplified WKT or insert it as a user defined SRS
@@ -2335,6 +2336,8 @@ CPLErr GeoRasterDataset::SetProjection( const char *pszProjString )
 
     if( poStmt->Execute() && nCounter > 0 )
     {
+        delete poStmt;
+
         poStmt = poConnection->CreateStatement( CPLSPrintf(
             "SELECT SRID FROM MDSYS.CS_SRS WHERE WKTEXT = '%s'", pszCloneWKT));
 
@@ -2346,12 +2349,15 @@ CPLErr GeoRasterDataset::SetProjection( const char *pszProjString )
             
             poGeoRaster->SetGeoReference( nNewSRID );
             CPLFree( pszCloneWKT );
+            delete poStmt;
             return CE_None;
         }
     }
 
     CPLPopErrorHandler();
-    
+
+    delete poStmt;
+
     poStmt = poConnection->CreateStatement( CPLSPrintf(
         "DECLARE\n"
         "  MAX_SRID NUMBER := 0;\n"
@@ -2391,7 +2397,9 @@ CPLErr GeoRasterDataset::SetProjection( const char *pszProjString )
     }
 
     CPLFree( pszCloneWKT );
-    
+
+    delete poStmt;
+
     return eError;
 }
 
@@ -2403,7 +2411,7 @@ char **GeoRasterDataset::GetMetadataDomainList()
 {
     return BuildMetadataDomainList(GDALDataset::GetMetadataDomainList(),
                                    TRUE,
-                                   "SUBDATASETS", NULL);
+                                   "SUBDATASETS", nullptr);
 }
 
 //  ---------------------------------------------------------------------------
@@ -2450,7 +2458,6 @@ CPLErr GeoRasterDataset::Delete( const char* pszFilename )
 void GeoRasterDataset::SetSubdatasets( GeoRasterWrapper* poGRW )
 {
     OWConnection* poConnection  = poGRW->poConnection;
-    OWStatement* poStmt = nullptr;
 
     //  -----------------------------------------------------------
     //  List all the GeoRaster Tables of that User/Database
@@ -2459,7 +2466,7 @@ void GeoRasterDataset::SetSubdatasets( GeoRasterWrapper* poGRW )
     if( poGRW->sTable.empty() &&
         poGRW->sColumn.empty() )
     {
-        poStmt = poConnection->CreateStatement(
+        OWStatement* poStmt = poConnection->CreateStatement(
             "SELECT   DISTINCT TABLE_NAME, OWNER FROM ALL_SDO_GEOR_SYSDATA\n"
             "  ORDER  BY TABLE_NAME ASC" );
         
@@ -2490,6 +2497,8 @@ void GeoRasterDataset::SetSubdatasets( GeoRasterWrapper* poGRW )
             while( poStmt->Fetch() );
         }
 
+        delete poStmt;
+
         return;
     }
 
@@ -2500,7 +2509,7 @@ void GeoRasterDataset::SetSubdatasets( GeoRasterWrapper* poGRW )
     if( ! poGRW->sTable.empty() &&
           poGRW->sColumn.empty() )
     {
-        poStmt = poConnection->CreateStatement( CPLSPrintf(
+        OWStatement* poStmt = poConnection->CreateStatement( CPLSPrintf(
             "SELECT   DISTINCT COLUMN_NAME, OWNER FROM ALL_SDO_GEOR_SYSDATA\n"
             "  WHERE  TABLE_NAME = UPPER('%s')\n"
             "  ORDER  BY COLUMN_NAME ASC",
@@ -2534,7 +2543,9 @@ void GeoRasterDataset::SetSubdatasets( GeoRasterWrapper* poGRW )
             }
             while( poStmt->Fetch() );
         }
-        
+
+        delete poStmt;
+
         return;
     }
 
@@ -2549,7 +2560,7 @@ void GeoRasterDataset::SetSubdatasets( GeoRasterWrapper* poGRW )
         osAndWhere = CPLSPrintf( "AND %s", poGRW->sWhere.c_str() );
     }
 
-    poStmt = poConnection->CreateStatement( CPLSPrintf(
+    OWStatement* poStmt = poConnection->CreateStatement( CPLSPrintf(
         "SELECT T.%s.RASTERDATATABLE, T.%s.RASTERID, \n"
         "  extractValue(t.%s.metadata, "
 "'/georasterMetadata/rasterInfo/dimensionSize[@type=\"ROW\"]/size','%s'),\n"
@@ -2620,6 +2631,7 @@ void GeoRasterDataset::SetSubdatasets( GeoRasterWrapper* poGRW )
         }
         while( poStmt->Fetch() );
     }
+    delete poStmt;
 }
 
 int GeoRasterDataset::GetGCPCount()
@@ -2636,7 +2648,7 @@ int GeoRasterDataset::GetGCPCount()
 //                                                                    SetGCPs()
 //  ---------------------------------------------------------------------------
 
-CPLErr GeoRasterDataset::SetGCPs( int nGCPCountIn, const GDAL_GCP *pasGCPListIn,
+CPLErr GeoRasterDataset::_SetGCPs( int nGCPCountIn, const GDAL_GCP *pasGCPListIn,
                                   const char *pszGCPProjection )
 {
     if( GetAccess() == GA_Update )
@@ -2668,7 +2680,7 @@ const GDAL_GCP* GeoRasterDataset::GetGCPs()
 //                                                           GetGCPProjection()
 //  ---------------------------------------------------------------------------
 
-const char* GeoRasterDataset::GetGCPProjection()
+const char* GeoRasterDataset::_GetGCPProjection()
 {
     if( poGeoRaster && poGeoRaster->nGCPCount > 0 )
         return pszProjection;

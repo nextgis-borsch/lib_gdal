@@ -57,7 +57,7 @@ CPL_CVSID("$Id$")
  *
  * Constructor.
  **********************************************************************/
-TABMAPFile::TABMAPFile() :
+TABMAPFile::TABMAPFile(const char* pszEncoding) :
     m_nMinTABVersion(300),
     m_pszFname(nullptr),
     m_fp(nullptr),
@@ -82,7 +82,8 @@ TABMAPFile::TABMAPFile() :
     m_bUpdated(FALSE),
     m_bLastOpWasRead(FALSE),
     m_bLastOpWasWrite(FALSE),
-    m_poSpIndexLeaf(nullptr)
+    m_poSpIndexLeaf(nullptr),
+    m_osEncoding(pszEncoding)
 {
     m_sMinFilter.x = 0;
     m_sMinFilter.y = 0;
@@ -1148,22 +1149,26 @@ int TABMAPFile::MoveToObjId(int nObjId)
  **********************************************************************/
 int TABMAPFile::MarkAsDeleted()
 {
-    if (m_eAccessMode == TABRead || m_poCurObjBlock == nullptr)
+    if (m_eAccessMode == TABRead)
         return -1;
 
     if ( m_nCurObjPtr <= 0 )
         return 0;
 
-    /* Goto offset for object id */
-    if ( m_poCurObjBlock->GotoByteInFile(m_nCurObjPtr + 1, TRUE) != 0)
-        return -1;
-
-    /* Mark object as deleted */
-    m_poCurObjBlock->WriteInt32(m_nCurObjId | 0x40000000);
-
     int ret = 0;
-    if( m_poCurObjBlock->CommitToFile() != 0 )
-        ret = -1;
+    if( m_nCurObjType != TAB_GEOM_NONE  )
+    {
+        /* Goto offset for object id */
+        if ( m_poCurObjBlock == nullptr ||
+            m_poCurObjBlock->GotoByteInFile(m_nCurObjPtr + 1, TRUE) != 0)
+            return -1;
+
+        /* Mark object as deleted */
+        m_poCurObjBlock->WriteInt32(m_nCurObjId | 0x40000000);
+
+        if( m_poCurObjBlock->CommitToFile() != 0 )
+            ret = -1;
+    }
 
     /* Update index entry to reflect delete state as well */
     if( m_poIdIndex->SetObjPtr(m_nCurObjId, 0) != 0 )
@@ -3046,6 +3051,16 @@ int   TABMAPFile::GetMinTABFileVersion()
         nToolVersion = m_poToolDefTable->GetMinVersionNumber();
 
     return std::max(nToolVersion, m_nMinTABVersion);
+}
+
+const CPLString& TABMAPFile::GetEncoding() const
+{
+    return m_osEncoding;
+}
+
+void TABMAPFile::SetEncoding( const CPLString& osEncoding )
+{
+    m_osEncoding = osEncoding;
 }
 
 /**********************************************************************

@@ -78,7 +78,7 @@ char **VRTDriver::GetMetadataDomainList()
 {
     return BuildMetadataDomainList( GDALDriver::GetMetadataDomainList(),
                                     TRUE,
-                                    "SourceParsers", NULL );
+                                    "SourceParsers", nullptr );
 }
 
 /************************************************************************/
@@ -137,7 +137,8 @@ void VRTDriver::AddSourceParser( const char *pszElementName,
 /************************************************************************/
 
 VRTSource *VRTDriver::ParseSource( CPLXMLNode *psSrc, const char *pszVRTPath,
-                                   void* pUniqueHandle )
+                                   void* pUniqueHandle,
+                                   std::map<CPLString, GDALDataset*>& oMapSharedSources )
 
 {
 
@@ -162,7 +163,7 @@ VRTSource *VRTDriver::ParseSource( CPLXMLNode *psSrc, const char *pszVRTPath,
     if( pfnParser == nullptr )
         return nullptr;
 
-    return pfnParser( psSrc, pszVRTPath, pUniqueHandle );
+    return pfnParser( psSrc, pszVRTPath, pUniqueHandle, oMapSharedSources );
 }
 
 /************************************************************************/
@@ -263,7 +264,7 @@ VRTCreateCopy( const char * pszFilename,
 /* -------------------------------------------------------------------- */
 /*      Copy projection                                                 */
 /* -------------------------------------------------------------------- */
-    poVRTDS->SetProjection( poSrcDS->GetProjectionRef() );
+    poVRTDS->SetSpatialRef( poSrcDS->GetSpatialRef() );
 
 /* -------------------------------------------------------------------- */
 /*      Emit dataset level metadata.                                    */
@@ -292,7 +293,7 @@ VRTCreateCopy( const char * pszFilename,
     {
         poVRTDS->SetGCPs( poSrcDS->GetGCPCount(),
                           poSrcDS->GetGCPs(),
-                          poSrcDS->GetGCPProjection() );
+                          poSrcDS->GetGCPSpatialRef() );
     }
 
 /* -------------------------------------------------------------------- */

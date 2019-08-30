@@ -66,6 +66,27 @@ typedef int GDALRIOResampleAlg;
 %include "python_strings.i"
 
 %{
+#include "cpl_conv.h"
+%}
+
+%inline %{
+// Note: copied&pasted from python_exceptions.i
+static void _StoreLastException()
+{
+    const char* pszLastErrorMessage =
+        CPLGetThreadLocalConfigOption("__last_error_message", NULL);
+    const char* pszLastErrorCode =
+        CPLGetThreadLocalConfigOption("__last_error_code", NULL);
+    if( pszLastErrorMessage != NULL && pszLastErrorCode != NULL )
+    {
+        CPLErrorSetState( CE_Failure,
+            static_cast<CPLErrorNum>(atoi(pszLastErrorCode)),
+            pszLastErrorMessage);
+    }
+}
+%}
+
+%{
 #include "gdal_priv.h"
 #ifdef _DEBUG
 #undef _DEBUG
@@ -111,16 +132,31 @@ class NUMPYDataset : public GDALDataset
                  NUMPYDataset();
                  ~NUMPYDataset();
 
-    virtual const char *GetProjectionRef(void) override;
-    virtual CPLErr SetProjection( const char * ) override;
+    virtual const char *_GetProjectionRef(void) override;
+    const OGRSpatialReference* GetSpatialRef() const override {
+        return GetSpatialRefFromOldGetProjectionRef();
+    }
+    virtual CPLErr _SetProjection( const char * ) override;
+    CPLErr SetSpatialRef(const OGRSpatialReference* poSRS) override {
+        return OldSetProjectionFromSetSpatialRef(poSRS);
+    }
+
     virtual CPLErr GetGeoTransform( double * ) override;
     virtual CPLErr SetGeoTransform( double * ) override;
 
     virtual int    GetGCPCount() override;
-    virtual const char *GetGCPProjection() override;
+    virtual const char *_GetGCPProjection() override;
+    const OGRSpatialReference* GetGCPSpatialRef() const override {
+        return GetGCPSpatialRefFromOldGetGCPProjection();
+    }
     virtual const GDAL_GCP *GetGCPs() override;
-    virtual CPLErr SetGCPs( int nGCPCount, const GDAL_GCP *pasGCPList,
+    virtual CPLErr _SetGCPs( int nGCPCount, const GDAL_GCP *pasGCPList,
                             const char *pszGCPProjection ) override;
+    using GDALDataset::SetGCPs;
+    CPLErr SetGCPs( int nGCPCount, const GDAL_GCP *pasGCPList,
+                    const OGRSpatialReference* poSRS ) override {
+        return OldSetGCPsFromNew(nGCPCount, pasGCPList, poSRS);
+    }
 
     static GDALDataset *Open( PyArrayObject *psArray, bool binterleave = true );
     static GDALDataset *Open( GDALOpenInfo * );
@@ -205,7 +241,7 @@ NUMPYDataset::~NUMPYDataset()
 /*                          GetProjectionRef()                          */
 /************************************************************************/
 
-const char *NUMPYDataset::GetProjectionRef()
+const char *NUMPYDataset::_GetProjectionRef()
 
 {
     return( pszProjection );
@@ -215,7 +251,7 @@ const char *NUMPYDataset::GetProjectionRef()
 /*                           SetProjection()                            */
 /************************************************************************/
 
-CPLErr NUMPYDataset::SetProjection( const char * pszNewProjection )
+CPLErr NUMPYDataset::_SetProjection( const char * pszNewProjection )
 
 {
     CPLFree( pszProjection );
@@ -264,7 +300,7 @@ int NUMPYDataset::GetGCPCount()
 /*                          GetGCPProjection()                          */
 /************************************************************************/
 
-const char *NUMPYDataset::GetGCPProjection()
+const char *NUMPYDataset::_GetGCPProjection()
 
 {
     return pszGCPProjection;
@@ -284,7 +320,7 @@ const GDAL_GCP *NUMPYDataset::GetGCPs()
 /*                              SetGCPs()                               */
 /************************************************************************/
 
-CPLErr NUMPYDataset::SetGCPs( int nGCPCount, const GDAL_GCP *pasGCPList,
+CPLErr NUMPYDataset::_SetGCPs( int nGCPCount, const GDAL_GCP *pasGCPList,
                               const char *pszGCPProjection )
 
 {
@@ -1142,6 +1178,11 @@ def NumericTypeCodeToGDALTypeCode(numeric_type):
 def GDALTypeCodeToNumericTypeCode(gdal_code):
     return flip_code(gdal_code)
 
+def _RaiseException():
+    if gdal.GetUseExceptions():
+        _StoreLastException()
+        raise RuntimeError(gdal.GetLastErrorMsg())
+
 def LoadFile(filename, xoff=0, yoff=0, xsize=None, ysize=None,
              buf_xsize=None, buf_ysize=None, buf_type=None,
              resample_alg=gdal.GRIORA_NearestNeighbour,
@@ -1213,6 +1254,9 @@ def DatasetReadAsArray(ds, xoff=0, yoff=0, win_xsize=None, win_ysize=None, buf_o
         if typecode is None:
             buf_type = gdalconst.GDT_Float32
             typecode = numpy.float32
+        else:
+            buf_type = NumericTypeCodeToGDALTypeCode(typecode)
+
         if buf_type == gdalconst.GDT_Byte and ds.GetRasterBand(1).GetMetadataItem('PIXELTYPE', 'IMAGE_STRUCTURE') == 'SIGNEDBYTE':
             typecode = numpy.int8
         buf_shape = (ds.RasterCount, buf_ysize, buf_xsize) if interleave else (buf_ysize, buf_xsize, ds.RasterCount)
@@ -1240,6 +1284,7 @@ def DatasetReadAsArray(ds, xoff=0, yoff=0, win_xsize=None, win_ysize=None, buf_o
 
     if DatasetIONumPy(ds, 0, xoff, yoff, win_xsize, win_ysize,
                       buf_obj, buf_type, resample_alg, callback, callback_data, interleave) != 0:
+        _RaiseException()
         return None
 
     return buf_obj
@@ -1296,6 +1341,7 @@ def BandReadAsArray(band, xoff=0, yoff=0, win_xsize=None, win_ysize=None,
 
     if BandRasterIONumPy(band, 0, xoff, yoff, win_xsize, win_ysize,
                          buf_obj, buf_type, resample_alg, callback, callback_data) != 0:
+        _RaiseException()
         return None
 
     return buf_obj
@@ -1327,8 +1373,11 @@ def BandWriteArray(band, array, xoff=0, yoff=0,
     if not datatype:
         raise ValueError("array does not have corresponding GDAL data type")
 
-    return BandRasterIONumPy(band, 1, xoff, yoff, xsize, ysize,
+    ret = BandRasterIONumPy(band, 1, xoff, yoff, xsize, ysize,
                              array, datatype, resample_alg, callback, callback_data)
+    if ret != 0:
+        _RaiseException()
+    return ret
 
 def RATWriteArray(rat, array, field, start=0):
     """
@@ -1363,7 +1412,10 @@ def RATWriteArray(rat, array, field, start=0):
     else:
         raise ValueError("Array not of a supported type (integer, double or string)")
 
-    return RATValuesIONumPyWrite(rat, field, start, array)
+    ret = RATValuesIONumPyWrite(rat, field, start, array)
+    if ret != 0:
+        _RaiseException()
+    return ret
 
 def RATReadArray(rat, field, start=0, length=None):
     """
@@ -1373,7 +1425,10 @@ def RATReadArray(rat, field, start=0, length=None):
     if length is None:
         length = rat.GetRowCount() - start
 
-    return RATValuesIONumPyRead(rat, field, start, length)
+    ret = RATValuesIONumPyRead(rat, field, start, length)
+    if ret is None:
+        _RaiseException()
+    return ret
 
 def CopyDatasetInfo(src, dst, xoff=0, yoff=0):
     """

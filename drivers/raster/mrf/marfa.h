@@ -53,6 +53,7 @@
 #include <ogr_srs_api.h>
 #include <ogr_spatialref.h>
 
+#include <limits>
 // For printing values
 #include <ostream>
 #include <iostream>
@@ -273,13 +274,25 @@ static inline int pcount(const int n, const int sz) {
 }
 
 // Returns a pagecount per dimension, .l will have the total number
+// or -1 in case of error
 static inline const ILSize pcount(const ILSize &size, const ILSize &psz) {
     ILSize pcnt;
     pcnt.x = pcount(size.x, psz.x);
     pcnt.y = pcount(size.y, psz.y);
     pcnt.z = pcount(size.z, psz.z);
     pcnt.c = pcount(size.c, psz.c);
-    pcnt.l = static_cast<GIntBig>(pcnt.x) * pcnt.y * pcnt.z * pcnt.c;
+    auto xy = static_cast<GIntBig>(pcnt.x) * pcnt.y;
+    auto zc = static_cast<GIntBig>(pcnt.z) * pcnt.c;
+    if( zc != 0 && xy > std::numeric_limits<GIntBig>::max() / zc )
+    {
+        CPLError(CE_Failure, CPLE_AppDefined,
+                 "Integer overflow in page count computation");
+        pcnt.l = -1;
+    }
+    else
+    {
+        pcnt.l = xy * zc;
+    }
     return pcnt;
 }
 
@@ -321,10 +334,16 @@ public:
         return CE_None;
     }
 
-    virtual const char *GetProjectionRef() override { return projection; }
-    virtual CPLErr SetProjection(const char *proj) override {
+    virtual const char *_GetProjectionRef() override { return projection; }
+    virtual CPLErr _SetProjection(const char *proj) override {
         projection = proj;
         return CE_None;
+    }
+    const OGRSpatialReference* GetSpatialRef() const override {
+        return GetSpatialRefFromOldGetProjectionRef();
+    }
+    CPLErr SetSpatialRef(const OGRSpatialReference* poSRS) override {
+        return OldSetProjectionFromSetSpatialRef(poSRS);
     }
 
     virtual CPLString const &GetPhotometricInterpretation() { return photometric; }
@@ -648,6 +667,7 @@ public:
     CPLErr DecompressJPEG(buf_mgr &dst, buf_mgr &src);
 
 #if defined(JPEG12_SUPPORTED) // Internal only
+#define LIBJPEG_12_H "jpeglib.h"
     CPLErr CompressJPEG12(buf_mgr &dst, buf_mgr &src);
     CPLErr DecompressJPEG12(buf_mgr &dst, buf_mgr &src);
 #endif

@@ -84,10 +84,16 @@ class RS2Dataset final: public GDALPamDataset
     virtual ~RS2Dataset();
 
     virtual int    GetGCPCount() override;
-    virtual const char *GetGCPProjection() override;
+    virtual const char *_GetGCPProjection() override;
+    const OGRSpatialReference* GetGCPSpatialRef() const override {
+        return GetGCPSpatialRefFromOldGetGCPProjection();
+    }
     virtual const GDAL_GCP *GetGCPs() override;
 
-    virtual const char *GetProjectionRef(void) override;
+    virtual const char *_GetProjectionRef(void) override;
+    const OGRSpatialReference* GetSpatialRef() const override {
+        return GetSpatialRefFromOldGetProjectionRef();
+    }
     virtual CPLErr GetGeoTransform( double * ) override;
 
     virtual char      **GetMetadataDomainList() override;
@@ -1200,9 +1206,9 @@ GDALDataset *RS2Dataset::Open( GDALOpenInfo * poOpenInfo )
                     psUtmParams, "hemisphere", "" );
 #if 0
                 origEasting = CPLStrtod(CPLGetXMLValue(
-                    psUtmParams, "mapOriginFalseEasting", "0.0" ), NULL);
+                    psUtmParams, "mapOriginFalseEasting", "0.0" ), nullptr);
                 origNorthing = CPLStrtod(CPLGetXMLValue(
-                    psUtmParams, "mapOriginFalseNorthing", "0.0" ), NULL);
+                    psUtmParams, "mapOriginFalseNorthing", "0.0" ), nullptr);
 #endif
                 if ( STARTS_WITH_CI(pszHemisphere, "southern") )
                     bNorth = FALSE;
@@ -1307,9 +1313,9 @@ GDALDataset *RS2Dataset::Open( GDALOpenInfo * poOpenInfo )
             psGCP->pszId = CPLStrdup( szID );
             psGCP->pszInfo = CPLStrdup("");
             psGCP->dfGCPPixel =
-                CPLAtof(CPLGetXMLValue(psNode,"imageCoordinate.pixel","0"));
+                CPLAtof(CPLGetXMLValue(psNode,"imageCoordinate.pixel","0")) + 0.5;
             psGCP->dfGCPLine =
-                CPLAtof(CPLGetXMLValue(psNode,"imageCoordinate.line","0"));
+                CPLAtof(CPLGetXMLValue(psNode,"imageCoordinate.line","0")) + 0.5;
             psGCP->dfGCPX =
                 CPLAtof(CPLGetXMLValue(psNode,"geodeticCoordinate.longitude",""));
             psGCP->dfGCPY =
@@ -1422,7 +1428,7 @@ int RS2Dataset::GetGCPCount()
 /*                          GetGCPProjection()                          */
 /************************************************************************/
 
-const char *RS2Dataset::GetGCPProjection()
+const char *RS2Dataset::_GetGCPProjection()
 
 {
     return pszGCPProjection;
@@ -1442,7 +1448,7 @@ const GDAL_GCP *RS2Dataset::GetGCPs()
 /*                          GetProjectionRef()                          */
 /************************************************************************/
 
-const char *RS2Dataset::GetProjectionRef()
+const char *RS2Dataset::_GetProjectionRef()
 
 {
     return pszProjection;
@@ -1471,7 +1477,7 @@ char **RS2Dataset::GetMetadataDomainList()
 {
     return BuildMetadataDomainList(GDALDataset::GetMetadataDomainList(),
                                    TRUE,
-                                   "SUBDATASETS", NULL);
+                                   "SUBDATASETS", nullptr);
 }
 
 /************************************************************************/

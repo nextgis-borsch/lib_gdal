@@ -83,8 +83,11 @@ class GDALEEDAIDataset: public GDALEEDABaseDataset
                 GDALEEDAIDataset();
                 virtual ~GDALEEDAIDataset();
 
-                virtual const char* GetProjectionRef() CPL_OVERRIDE;
-                virtual CPLErr GetGeoTransform( double* ) CPL_OVERRIDE;
+                virtual const char* _GetProjectionRef() override;
+                const OGRSpatialReference* GetSpatialRef() const override {
+                    return GetSpatialRefFromOldGetProjectionRef();
+                }
+                virtual CPLErr GetGeoTransform( double* ) override;
 
                 virtual CPLErr IRasterIO( GDALRWFlag eRWFlag,
                                  int nXOff, int nYOff, int nXSize, int nYSize,
@@ -93,7 +96,7 @@ class GDALEEDAIDataset: public GDALEEDABaseDataset
                                  int nBandCount, int *panBandMap,
                                  GSpacing nPixelSpace, GSpacing nLineSpace,
                                  GSpacing nBandSpace,
-                                 GDALRasterIOExtraArg* psExtraArg ) CPL_OVERRIDE;
+                                 GDALRasterIOExtraArg* psExtraArg ) override;
 
                 bool ComputeQueryStrategy();
 
@@ -1188,7 +1191,7 @@ bool GDALEEDAIDataset::ComputeQueryStrategy()
 
     if( EQUAL(m_osPixelEncoding, "PNG") ||
         EQUAL(m_osPixelEncoding, "JPEG") ||
-        EQUAL(m_osPixelEncoding, "AUTO_PNG_JPEG") )
+        EQUAL(m_osPixelEncoding, "AUTO_JPEG_PNG") )
     {
         if( nBands != 1 && nBands != 3 )
         {
@@ -1228,7 +1231,7 @@ bool GDALEEDAIDataset::ComputeQueryStrategy()
 /*                          GetProjectionRef()                          */
 /************************************************************************/
 
-const char* GDALEEDAIDataset::GetProjectionRef()
+const char* GDALEEDAIDataset::_GetProjectionRef()
 {
     return m_osWKT.c_str();
 }
@@ -1250,7 +1253,7 @@ CPLErr GDALEEDAIDataset::GetGeoTransform( double* adfGeoTransform )
 bool GDALEEDAIDataset::Open(GDALOpenInfo* poOpenInfo)
 {
     m_osBaseURL = CPLGetConfigOption("EEDA_URL",
-                            "https://earthengine.googleapis.com/v1/");
+                            "https://earthengine.googleapis.com/v1alpha/");
 
     m_osAsset =
             CSLFetchNameValueDef(poOpenInfo->papszOpenOptions, "ASSET", "");
@@ -1655,7 +1658,7 @@ void GDALRegister_EEDAI()
 "       <Value>PNG</Value>"
 "       <Value>JPEG</Value>"
 "       <Value>GEO_TIFF</Value>"
-"       <Value>AUTO_PNG_JPEG</Value>"
+"       <Value>AUTO_JPEG_PNG</Value>"
 "       <Value>NPY</Value>"
 "   </Option>"
 "  <Option name='BLOCK_SIZE' type='integer' "

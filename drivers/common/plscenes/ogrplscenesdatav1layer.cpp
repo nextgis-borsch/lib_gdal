@@ -51,7 +51,7 @@ OGRPLScenesDataV1Layer::OGRPLScenesDataV1Layer( OGRPLScenesDataV1Dataset* poDS,
                                                 const char* pszName ) :
     m_poDS(poDS),
     m_bFeatureDefnEstablished(false),
-    m_poSRS(new OGRSpatialReference(SRS_WKT_WGS84)),
+    m_poSRS(new OGRSpatialReference(SRS_WKT_WGS84_LAT_LONG)),
     m_nTotalFeatures(-1),
     m_nNextFID(1),
     m_bEOF(false),
@@ -64,6 +64,8 @@ OGRPLScenesDataV1Layer::OGRPLScenesDataV1Layer( OGRPLScenesDataV1Dataset* poDS,
     m_poAttributeFilter(nullptr),
     m_bFilterMustBeClientSideEvaluated(false)
 {
+    m_poSRS->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
+
     // Cannot be moved to initializer list because of use of this, which MSVC 2008 doesn't like
     m_poFeatureDefn = new OGRPLScenesDataV1FeatureDefn(this, pszName);
 
@@ -183,8 +185,8 @@ void OGRPLScenesDataV1Layer::EstablishLayerDefn()
         OGRFieldDefn oFieldDefn("id", OFTString);
         RegisterField(&oFieldDefn, "id", "id");
     }
-    const int nFields = json_object_array_length(poFields);
-    for( int i=0; i<nFields; i++ )
+    const auto nFields = json_object_array_length(poFields);
+    for( auto i=decltype(nFields){0}; i<nFields; i++ )
     {
         json_object* poField = json_object_array_get_idx(poFields, i);
         if( poField && json_object_get_type(poField) == json_type_object )
@@ -253,8 +255,8 @@ void OGRPLScenesDataV1Layer::EstablishLayerDefn()
             return;
         }
 
-        const int nAssets = json_object_array_length(poAssets);
-        for( int i=0; i<nAssets; i++ )
+        const auto nAssets = json_object_array_length(poAssets);
+        for( auto i=decltype(nAssets){0}; i<nAssets; i++ )
         {
             json_object* poAsset = json_object_array_get_idx(poAssets, i);
             if( poAsset && json_object_get_type(poAsset) == json_type_string )
@@ -1003,10 +1005,11 @@ OGRFeature* OGRPLScenesDataV1Layer::GetNextRawFeature()
         if( oIter != m_oMapPrefixedJSonFieldNameToFieldIdx.end() )
         {
             const int iField = oIter->second;
-            const int nStrings = json_object_array_length(poPermissions);
+            const auto nStrings = json_object_array_length(poPermissions);
             char** papszPermissions =
                 static_cast<char**>(CPLCalloc(nStrings+1, sizeof(char*)));
-            for(int i=0, j=0;i<nStrings;i++)
+            for(auto i=decltype(nStrings){0}, j=decltype(nStrings){0};
+                i<nStrings;i++)
             {
                 json_object* poPerm = json_object_array_get_idx(poPermissions,i);
                 if( poPerm && json_object_get_type(poPerm) == json_type_string )
@@ -1262,8 +1265,8 @@ GIntBig OGRPLScenesDataV1Layer::GetFeatureCount(int bForce)
                                                             json_type_array )
             {
                 GIntBig nRes = 0;
-                const int nBuckets = json_object_array_length(poBuckets);
-                for( int i=0; i<nBuckets;i++ )
+                const auto nBuckets = json_object_array_length(poBuckets);
+                for( auto i=decltype(nBuckets){0}; i<nBuckets;i++ )
                 {
                     json_object* poBucket =
                                 json_object_array_get_idx(poBuckets, i);

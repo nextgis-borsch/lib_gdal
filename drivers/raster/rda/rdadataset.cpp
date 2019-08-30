@@ -173,7 +173,10 @@ class GDALRDADataset: public GDALDataset
         static GDALDataset* OpenStatic( GDALOpenInfo* poOpenInfo );
 
         CPLErr          GetGeoTransform(double *padfTransform) override;
-        const char*     GetProjectionRef() override;
+        const char*     _GetProjectionRef() override;
+        const OGRSpatialReference* GetSpatialRef() const override {
+            return GetSpatialRefFromOldGetProjectionRef();
+        }
         CPLErr          IRasterIO(GDALRWFlag eRWFlag,
                                       int nXOff, int nYOff,
                                       int nXSize, int nYSize,
@@ -717,8 +720,8 @@ bool GDALRDADataset::ParseConnectionString( GDALOpenInfo* poOpenInfo )
 
         if(poParams != nullptr &&
            json_object_get_type(poParams) == json_type_array ) {
-            const int nSize = json_object_array_length(poParams);
-            for (int i = 0; i < nSize; ++i) {
+            const auto nSize = json_object_array_length(poParams);
+            for (auto i = decltype(nSize){0}; i < nSize; ++i) {
                 json_object *ds = json_object_array_get_idx(poParams, i);
                 if (ds != nullptr) {
                     json_object_iter it;
@@ -1534,7 +1537,7 @@ CPLErr GDALRDADataset::GetGeoTransform(double *padfTransform)
 /*                        GetProjectionRef()                            */
 /************************************************************************/
 
-const char* GDALRDADataset::GetProjectionRef()
+const char* GDALRDADataset::_GetProjectionRef()
 {
     if( !m_bTriedReadGeoreferencing )
         ReadGeoreferencing();

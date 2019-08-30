@@ -346,7 +346,7 @@ class CPL_DLL GDALDataset : public GDALMajorObject
     friend class GDALProxyDataset;
     friend class GDALDriverManager;
 
-    void AddToDatasetOpenList();
+    CPL_INTERNAL void AddToDatasetOpenList();
 
   protected:
 //! @cond Doxygen_Suppress
@@ -424,6 +424,8 @@ class CPL_DLL GDALDataset : public GDALMajorObject
                                 GDALRasterIOExtraArg* psExtraArg,
                                 int* pbTried);
 
+    void  ShareLockWithParentDataset(GDALDataset* poParentDataset);
+
 //! @endcond
     virtual int         CloseDependentDatasets();
 //! @cond Doxygen_Suppress
@@ -463,7 +465,7 @@ class CPL_DLL GDALDataset : public GDALMajorObject
 
         friend class GDALDataset;
         GDALDataset* m_poSelf;
-        explicit Bands(GDALDataset* poSelf): m_poSelf(poSelf) {}
+        CPL_INTERNAL explicit Bands(GDALDataset* poSelf): m_poSelf(poSelf) {}
 
         class CPL_DLL Iterator
         {
@@ -495,8 +497,12 @@ class CPL_DLL GDALDataset : public GDALMajorObject
 
     virtual void FlushCache(void);
 
-    virtual const char *GetProjectionRef(void);
-    virtual CPLErr SetProjection( const char * pszProjection );
+    virtual const OGRSpatialReference* GetSpatialRef() const;
+    virtual CPLErr SetSpatialRef(const OGRSpatialReference* poSRS);
+
+    // Compatibility layer
+    const char *GetProjectionRef(void) const;
+    CPLErr SetProjection( const char * pszProjection );
 
     virtual CPLErr GetGeoTransform( double * padfTransform );
     virtual CPLErr SetGeoTransform( double * padfTransform );
@@ -510,11 +516,16 @@ class CPL_DLL GDALDataset : public GDALMajorObject
 
     virtual     const char* GetDriverName();
 
+    virtual const OGRSpatialReference* GetGCPSpatialRef() const;
     virtual int    GetGCPCount();
-    virtual const char *GetGCPProjection();
     virtual const GDAL_GCP *GetGCPs();
     virtual CPLErr SetGCPs( int nGCPCount, const GDAL_GCP *pasGCPList,
-                            const char *pszGCPProjection );
+                            const OGRSpatialReference * poGCP_SRS );
+
+    // Compatibility layer
+    const char *GetGCPProjection();
+    CPLErr SetGCPs( int nGCPCount, const GDAL_GCP *pasGCPList,
+                    const char *pszGCPProjection );
 
     virtual CPLErr AdviseRead( int nXOff, int nYOff, int nXSize, int nYSize,
                                int nBufXSize, int nBufYSize,
@@ -625,7 +636,7 @@ private:
     class Private;
     Private *m_poPrivate;
 
-    OGRLayer*       BuildLayerFromSelectInfo(swq_select* psSelectInfo,
+    CPL_INTERNAL OGRLayer*       BuildLayerFromSelectInfo(swq_select* psSelectInfo,
                                              OGRGeometry *poSpatialFilter,
                                              const char *pszDialect,
                                              swq_select_parse_options* poSelectParseOptions);
@@ -645,7 +656,7 @@ private:
 
         friend class GDALDataset;
         GDALDataset* m_poSelf;
-        explicit Layers(GDALDataset* poSelf): m_poSelf(poSelf) {}
+        CPL_INTERNAL explicit Layers(GDALDataset* poSelf): m_poSelf(poSelf) {}
 
       public:
 
@@ -708,7 +719,7 @@ private:
 
         friend class GDALDataset;
         GDALDataset* m_poSelf;
-        explicit Features(GDALDataset* poSelf): m_poSelf(poSelf) {}
+        CPL_INTERNAL explicit Features(GDALDataset* poSelf): m_poSelf(poSelf) {}
 
         class CPL_DLL Iterator
         {
@@ -790,6 +801,22 @@ private:
     OGRErr              ProcessSQLAlterTableRenameColumn( const char * );
 
     OGRStyleTable      *m_poStyleTable = nullptr;
+
+    // Compatibility layers
+    const OGRSpatialReference* GetSpatialRefFromOldGetProjectionRef() const;
+    CPLErr OldSetProjectionFromSetSpatialRef(const OGRSpatialReference* poSRS);
+    const OGRSpatialReference* GetGCPSpatialRefFromOldGetGCPProjection() const;
+    CPLErr OldSetGCPsFromNew( int nGCPCount, const GDAL_GCP *pasGCPList,
+                              const OGRSpatialReference * poGCP_SRS );
+
+    friend class GDALProxyPoolDataset;
+    virtual const char *_GetProjectionRef();
+    const char *GetProjectionRefFromSpatialRef(const OGRSpatialReference*) const;
+    virtual const char *_GetGCPProjection();
+    const char *GetGCPProjectionFromSpatialRef(const OGRSpatialReference* poSRS) const;
+    virtual CPLErr _SetProjection( const char * pszProjection );
+    virtual CPLErr _SetGCPs( int nGCPCount, const GDAL_GCP *pasGCPList,
+                    const char *pszGCPProjection );
 //! @endcond
 
   private:
@@ -843,10 +870,10 @@ class CPL_DLL GDALRasterBlock
 
     bool                 bMustDetach;
 
-    void        Detach_unlocked( void );
-    void        Touch_unlocked( void );
+    CPL_INTERNAL void        Detach_unlocked( void );
+    CPL_INTERNAL void        Touch_unlocked( void );
 
-    void        RecycleFor( int nXOffIn, int nYOffIn );
+    CPL_INTERNAL void        RecycleFor( int nXOffIn, int nYOffIn );
 
   public:
                 GDALRasterBlock( GDALRasterBand *, int, int );
@@ -896,8 +923,8 @@ class CPL_DLL GDALRasterBlock
     /** Return the block size in bytes
      * @return block size.
      */
-    int          GetBlockSize() const {
-        return nXSize * nYSize * GDALGetDataTypeSizeBytes(eType); }
+    GPtrDiff_t   GetBlockSize() const {
+        return static_cast<GPtrDiff_t>(nXSize) * nYSize * GDALGetDataTypeSizeBytes(eType); }
 
     int          TakeLock();
     int          DropLockForRemovalFromStorage();
@@ -921,7 +948,7 @@ class CPL_DLL GDALRasterBlock
 
     /* Should only be called by GDALDestroyDriverManager() */
 //! @cond Doxygen_Suppress
-    static void DestroyRBMutex();
+    CPL_INTERNAL static void DestroyRBMutex();
 //! @endcond
 
   private:
@@ -977,10 +1004,9 @@ public:
  //! @cond Doxygen_Suppress
 
 //! This manages how a raster band store its cached block.
-// CPL_DLL is just technical here. This is really a private concept
 // only used by GDALRasterBand implementation.
 
-class CPL_DLL GDALAbstractBandBlockCache
+class GDALAbstractBandBlockCache
 {
         // List of blocks that can be freed or recycled, and its lock
         CPLLock          *hSpinLock = nullptr;
@@ -991,14 +1017,23 @@ class CPL_DLL GDALAbstractBandBlockCache
         CPLMutex         *hCondMutex = nullptr;
         volatile int      nKeepAliveCounter = 0;
 
+        volatile int      m_nDirtyBlocks = 0;
+
         CPL_DISALLOW_COPY_ASSIGN(GDALAbstractBandBlockCache)
 
     protected:
         GDALRasterBand   *poBand;
 
+        int               m_nInitialDirtyBlocksInFlushCache = 0;
+        int               m_nLastTick = -1;
+
         void              FreeDanglingBlocks();
         void              UnreferenceBlockBase();
         void              WaitKeepAliveCounter();
+
+        void              StartDirtyBlockFlushingLog();
+        void              UpdateDirtyBlockFlushingLog();
+        void              EndDirtyBlockFlushingLog();
 
     public:
             explicit GDALAbstractBandBlockCache(GDALRasterBand* poBand);
@@ -1006,6 +1041,7 @@ class CPL_DLL GDALAbstractBandBlockCache
 
             GDALRasterBlock* CreateBlock(int nXBlockOff, int nYBlockOff);
             void             AddBlockToFreeList( GDALRasterBlock * );
+            void             IncDirtyBlocks(int nInc);
 
             virtual bool             Init() = 0;
             virtual bool             IsInitOK() = 0;
@@ -1039,9 +1075,10 @@ class CPL_DLL GDALRasterBand : public GDALMajorObject
     CPLErr eFlushBlockErr = CE_None;
     GDALAbstractBandBlockCache* poBandBlockCache = nullptr;
 
-    void           SetFlushBlockErr( CPLErr eErr );
-    CPLErr         UnreferenceBlock( GDALRasterBlock* poBlock );
-    void           SetValidPercent( GUIntBig nSampleCount, GUIntBig nValidCount );
+    CPL_INTERNAL void           SetFlushBlockErr( CPLErr eErr );
+    CPL_INTERNAL CPLErr         UnreferenceBlock( GDALRasterBlock* poBlock );
+    CPL_INTERNAL void           SetValidPercent( GUIntBig nSampleCount, GUIntBig nValidCount );
+    CPL_INTERNAL void           IncDirtyBlocks(int nInc);
 
   protected:
 //! @cond Doxygen_Suppress
@@ -1827,18 +1864,14 @@ double GDALAdjustNoDataCloseToFloatMax(double dfVal);
 // (minimum value, maximum value, etc.)
 #define GDALSTAT_APPROX_NUMSAMPLES 2500
 
-CPL_C_START
-/* Caution: for technical reason this declaration is duplicated in gdal_crs.c */
-/* so any signature change should be reflected there too */
 void GDALSerializeGCPListToXML( CPLXMLNode* psParentNode,
                                 GDAL_GCP* pasGCPList,
                                 int nGCPCount,
-                                const char* pszGCPProjection );
+                                const OGRSpatialReference* poGCP_SRS );
 void GDALDeserializeGCPListFromXML( CPLXMLNode* psGCPList,
                                     GDAL_GCP** ppasGCPList,
                                     int* pnGCPCount,
-                                    char** ppszGCPProjection );
-CPL_C_END
+                                    OGRSpatialReference** ppoGCP_SRS );
 
 void GDALSerializeOpenOptionsToXML( CPLXMLNode* psParentNode, char** papszOpenOptions);
 char** GDALDeserializeOpenOptionsFromXML( CPLXMLNode* psParentNode );

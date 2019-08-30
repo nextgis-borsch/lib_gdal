@@ -3,8 +3,8 @@
 # Purpose:  CMake build scripts
 # Author:   Dmitry Baryshnikov, polimax@mail.ru
 ################################################################################
-# Copyright (C) 2015-2017, NextGIS <info@nextgis.com>
-# Copyright (C) 2012,2013,2014 Dmitry Baryshnikov
+# Copyright (C) 2015-2017,2019 NextGIS <info@nextgis.com>
+# Copyright (C) 2012-2019 Dmitry Baryshnikov
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -25,68 +25,71 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-set(TARGET_NAME ras_raw)
+option(ENABLE_RAW "Build raw formats" ON)
+if(ENABLE_RAW)
 
-add_definitions(-DFRMT_raw)
-set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DFRMT_raw" PARENT_SCOPE)
+    set(TARGET_NAME ras_raw)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+    add_definitions(-DFRMT_raw)
+    set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DFRMT_raw" PARENT_SCOPE)
 
+    include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-set(LIB_HHEADERS
-    rawdataset.h
-)
+    set(LIB_HHEADERS
+    )
 
-set(LIB_HHEADERS_PRIV
-    atlsci_spheroid.h
-    ehdrdataset.h
-    envidataset.h
-    byndataset.h
-)
+    set(LIB_HHEADERS_PRIV
+        atlsci_spheroid.h
+        ehdrdataset.h
+        envidataset.h
+        byndataset.h
+    )
 
-set(LIB_CSOURCES
-    rawdataset.cpp
-    ace2dataset.cpp
-    doq1dataset.cpp
-    envidataset.cpp
-    gscdataset.cpp
-    iscedataset.cpp
-    loslasdataset.cpp
-    pauxdataset.cpp
-    roipacdataset.cpp
-    atlsci_spheroid.cpp
-    cpgdataset.cpp
-    doq2dataset.cpp
-    fastdataset.cpp
-    gtxdataset.cpp
-    krodataset.cpp
-    mffdataset.cpp
-    pnmdataset.cpp
-    snodasdataset.cpp
-    ctable2dataset.cpp
-    ehdrdataset.cpp
-    fujibasdataset.cpp
-    hkvdataset.cpp
-    landataset.cpp
-    ndfdataset.cpp
-    btdataset.cpp
-    dipxdataset.cpp
-    eirdataset.cpp
-    genbindataset.cpp
-    idadataset.cpp
-    lcpdataset.cpp
-    ntv2dataset.cpp
-    rrasterdataset.cpp
-    byndataset.cpp
-    ntv1dataset.cpp
-)
+    set(LIB_CSOURCES
+        ace2dataset.cpp
+        doq1dataset.cpp
+        envidataset.cpp
+        gscdataset.cpp
+        iscedataset.cpp
+        loslasdataset.cpp
+        pauxdataset.cpp
+        roipacdataset.cpp
+        atlsci_spheroid.cpp
+        cpgdataset.cpp
+        doq2dataset.cpp
+        fastdataset.cpp
+        gtxdataset.cpp
+        krodataset.cpp
+        mffdataset.cpp
+        pnmdataset.cpp
+        snodasdataset.cpp
+        ctable2dataset.cpp
+        ehdrdataset.cpp
+        fujibasdataset.cpp
+        hkvdataset.cpp
+        landataset.cpp
+        ndfdataset.cpp
+        btdataset.cpp
+        dipxdataset.cpp
+        eirdataset.cpp
+        genbindataset.cpp
+        idadataset.cpp
+        lcpdataset.cpp
+        ntv2dataset.cpp
+        rrasterdataset.cpp
+        byndataset.cpp
+        ntv1dataset.cpp
+    )
 
-add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
+    add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
 
-# build target
-set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
+    # build target
+    set(TARGET_OBJECTS ${TARGET_OBJECTS} $<TARGET_OBJECTS:${TARGET_NAME}> PARENT_SCOPE)
 
-# install headers
-if(NOT SKIP_INSTALL_HEADERS AND NOT SKIP_INSTALL_ALL )
-    install(FILES ${LIB_HHEADERS} DESTINATION ${INSTALL_INC_DIR} COMPONENT headers)
+    # install headers
+    if(NOT SKIP_INSTALL_HEADERS AND NOT SKIP_INSTALL_ALL )
+        install(FILES ${LIB_HHEADERS} DESTINATION ${INSTALL_INC_DIR} COMPONENT headers)
+    endif()
+else()
+    warning_msg("Skip raw")
 endif()

@@ -221,7 +221,8 @@ void OGRElasticLayer::AddGeomFieldDefn( const char* pszName,
     m_abIsGeoPoint.push_back(bIsGeoPoint);
 
     OGRSpatialReference* poSRS_WGS84 = new OGRSpatialReference();
-    poSRS_WGS84->SetFromUserInput(SRS_WKT_WGS84);
+    poSRS_WGS84->SetFromUserInput(SRS_WKT_WGS84_LAT_LONG);
+    poSRS_WGS84->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
     oFieldDefn.SetSpatialRef(poSRS_WGS84);
     poSRS_WGS84->Dereference();
 
@@ -561,14 +562,14 @@ void OGRElasticLayer::FinalizeFeatureDefn(bool bReadFeatures)
                 json_object_put(poResponse);
                 break;
             }
-            int nHits = json_object_array_length(poHits);
+            const auto nHits = json_object_array_length(poHits);
             if( nHits == 0 )
             {
                 m_osScrollID = "";
                 json_object_put(poResponse);
                 break;
             }
-            for(int i=0;i<nHits;i++)
+            for(auto i=decltype(nHits){0};i<nHits;i++)
             {
                 json_object* poHit = json_object_array_get_idx(poHits, i);
                 if( poHit == nullptr || json_object_get_type(poHit) != json_type_object )
@@ -1081,7 +1082,7 @@ OGRFeature *OGRElasticLayer::GetNextRawFeature()
         json_object_put(poResponse);
         return nullptr;
     }
-    int nHits = json_object_array_length(poHits);
+    const auto nHits = json_object_array_length(poHits);
     if( nHits == 0 )
     {
         m_osScrollID = "";
@@ -1089,7 +1090,7 @@ OGRFeature *OGRElasticLayer::GetNextRawFeature()
         json_object_put(poResponse);
         return nullptr;
     }
-    for(int i=0;i<nHits;i++)
+    for(auto i=decltype(nHits){0};i<nHits;i++)
     {
         json_object* poHit = json_object_array_get_idx(poHits, i);
         if( poHit == nullptr || json_object_get_type(poHit) != json_type_object )
@@ -1234,47 +1235,53 @@ void OGRElasticLayer::BuildFeature(OGRFeature* poFeature, json_object* poSource,
                     if( m_poFeatureDefn->GetFieldDefn(oIter->second)->GetType() == OFTIntegerList )
                     {
                         std::vector<int> anValues;
-                        int nLength = json_object_array_length(it.val);
-                        for(int i=0;i<nLength;i++)
+                        const auto nLength = json_object_array_length(it.val);
+                        for(auto i=decltype(nLength){0};i<nLength;i++)
                         {
                             anValues.push_back( json_object_get_int( json_object_array_get_idx( it.val, i ) ) );
                         }
                         if( nLength )
-                            poFeature->SetField( oIter->second, nLength, &anValues[0] );
+                            poFeature->SetField( oIter->second,
+                                                 static_cast<int>(nLength),
+                                                 &anValues[0] );
                     }
                     else if( m_poFeatureDefn->GetFieldDefn(oIter->second)->GetType() == OFTInteger64List )
                     {
                         std::vector<GIntBig> anValues;
-                        int nLength = json_object_array_length(it.val);
-                        for(int i=0;i<nLength;i++)
+                        const auto nLength = json_object_array_length(it.val);
+                        for(auto i=decltype(nLength){0};i<nLength;i++)
                         {
                             anValues.push_back( json_object_get_int64( json_object_array_get_idx( it.val, i ) ) );
                         }
                         if( nLength )
-                            poFeature->SetField( oIter->second, nLength, &anValues[0] );
+                            poFeature->SetField( oIter->second,
+                                                 static_cast<int>(nLength),
+                                                 &anValues[0] );
                     }
                     else if( m_poFeatureDefn->GetFieldDefn(oIter->second)->GetType() == OFTRealList )
                     {
                         std::vector<double> adfValues;
-                        int nLength = json_object_array_length(it.val);
-                        for(int i=0;i<nLength;i++)
+                        const auto nLength = json_object_array_length(it.val);
+                        for(auto i=decltype(nLength){0};i<nLength;i++)
                         {
                             adfValues.push_back( json_object_get_double( json_object_array_get_idx( it.val, i ) ) );
                         }
                         if( nLength )
-                            poFeature->SetField( oIter->second, nLength, &adfValues[0] );
+                            poFeature->SetField( oIter->second,
+                                                 static_cast<int>(nLength),
+                                                 &adfValues[0] );
                     }
                     else if( m_poFeatureDefn->GetFieldDefn(oIter->second)->GetType() == OFTStringList )
                     {
                         std::vector<char*> apszValues;
-                        int nLength = json_object_array_length(it.val);
-                        for(int i=0;i<nLength;i++)
+                        const auto nLength = json_object_array_length(it.val);
+                        for(auto i=decltype(nLength){0};i<nLength;i++)
                         {
                             apszValues.push_back( CPLStrdup(json_object_get_string( json_object_array_get_idx( it.val, i ) )) );
                         }
                         apszValues.push_back( nullptr);
                         poFeature->SetField( oIter->second, &apszValues[0] );
-                        for(int i=0;i<nLength;i++)
+                        for(auto i=decltype(nLength){0};i<nLength;i++)
                         {
                             CPLFree(apszValues[i]);
                         }
@@ -1667,7 +1674,8 @@ CPLString OGRElasticLayer::BuildMap() {
             if( bAddGeoJSONType )
             {
                 json_object *geometry = AppendGroup(poContainer, pszLastComponent);
-                json_object_object_add(geometry, "type", AddPropertyMap("string"));
+                json_object_object_add(geometry, "type", AddPropertyMap(
+                   m_poDS->m_nMajorVersion >= 5 ? "text" : "string"));
                 json_object_object_add(geometry, "coordinates", geo_point);
             }
             else
@@ -1944,7 +1952,7 @@ OGRErr OGRElasticLayer::WriteMapIfNecessary()
     if( m_osWriteMapFilename.empty() && m_bSerializeMapping )
     {
         m_bSerializeMapping = false;
-        if( !m_poDS->UploadFile(CPLSPrintf("%s/%s/%s/_mapping", m_poDS->GetURL(), m_osIndexName.c_str(), m_osMappingName.c_str()), BuildMap()) )
+        if( !m_poDS->UploadFile(CPLSPrintf("%s/%s/_mapping/%s", m_poDS->GetURL(), m_osIndexName.c_str(), m_osMappingName.c_str()), BuildMap()) )
         {
             return OGRERR_FAILURE;
         }
@@ -2446,6 +2454,10 @@ OGRErr OGRElasticLayer::CreateGeomField( OGRGeomFieldDefn *poFieldIn,
     }
 
     OGRGeomFieldDefn oFieldDefn(poFieldIn);
+    if( oFieldDefn.GetSpatialRef() )
+    {
+        oFieldDefn.GetSpatialRef()->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
+    }
     if( EQUAL(oFieldDefn.GetNameRef(), "") )
         oFieldDefn.SetName("geometry");
 
@@ -2482,7 +2494,8 @@ OGRErr OGRElasticLayer::CreateGeomField( OGRGeomFieldDefn *poFieldIn,
     if( oFieldDefn.GetSpatialRef() != nullptr )
     {
         OGRSpatialReference oSRS_WGS84;
-        oSRS_WGS84.SetFromUserInput(SRS_WKT_WGS84);
+        oSRS_WGS84.SetFromUserInput(SRS_WKT_WGS84_LAT_LONG);
+        oSRS_WGS84.SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
         if( !oSRS_WGS84.IsSame(oFieldDefn.GetSpatialRef()) )
         {
             poCT = OGRCreateCoordinateTransformation( oFieldDefn.GetSpatialRef(), &oSRS_WGS84 );

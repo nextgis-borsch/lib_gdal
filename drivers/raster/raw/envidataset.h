@@ -80,9 +80,12 @@ class ENVIDataset final: public RawDataset
 
     CPLString   osStaFilename{};
 
+    std::vector<GDAL_GCP> m_asGCPs{};
+
     bool        ReadHeader( VSILFILE * );
     bool        ProcessMapinfo( const char * );
     void        ProcessRPCinfo( const char *, int, int);
+    void        ProcessGeoPoints( const char* );
     void        ProcessStatsFile();
     static int         byteSwapInt(int);
     static float       byteSwapFloat(float);
@@ -111,8 +114,14 @@ class ENVIDataset final: public RawDataset
     void    FlushCache() override;
     CPLErr  GetGeoTransform( double *padfTransform ) override;
     CPLErr  SetGeoTransform( double * ) override;
-    const char *GetProjectionRef() override;
-    CPLErr  SetProjection( const char * ) override;
+    const char *_GetProjectionRef() override;
+    CPLErr  _SetProjection( const char * ) override;
+    const OGRSpatialReference* GetSpatialRef() const override {
+        return GetSpatialRefFromOldGetProjectionRef();
+    }
+    CPLErr SetSpatialRef(const OGRSpatialReference* poSRS) override {
+        return OldSetProjectionFromSetSpatialRef(poSRS);
+    }
     char  **GetFileList() override;
 
     void SetDescription( const char * ) override;
@@ -123,7 +132,9 @@ class ENVIDataset final: public RawDataset
                             const char *pszValue,
                             const char *pszDomain = "" ) override;
     CPLErr SetGCPs( int nGCPCount, const GDAL_GCP *pasGCPList,
-                    const char *pszGCPProjection ) override;
+                    const OGRSpatialReference* poSRS ) override;
+    int    GetGCPCount() override;
+    const GDAL_GCP *GetGCPs() override;
 
     static GDALDataset *Open( GDALOpenInfo * );
     static GDALDataset *Open( GDALOpenInfo *, bool bFileSizeCheck );

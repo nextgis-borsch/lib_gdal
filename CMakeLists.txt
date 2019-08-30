@@ -3,8 +3,8 @@
 # Purpose:  CMake build scripts
 # Author:   Dmitry Baryshnikov, polimax@mail.ru
 ################################################################################
-# Copyright (C) 2015-2018, NextGIS <info@nextgis.com>
-# Copyright (C) 2012-2018 Dmitry Baryshnikov
+# Copyright (C) 2015-2019, NextGIS <info@nextgis.com>
+# Copyright (C) 2012-2019 Dmitry Baryshnikov
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -179,6 +179,9 @@ else()
 endif()
 
 find_anyproject(LibLZMA)
+if(LIBLZMA_FOUND)
+    add_definitions(-DHAVE_LZMA_H=1)
+endif()
 
 find_anyproject(SQLite3 CMAKE_ARGS -DENABLE_COLUMN_METADATA=ON)
 if(SQLITE3_FOUND)
@@ -187,6 +190,14 @@ if(SQLITE3_FOUND)
     if(ENABLE_SQLITE_GPKG)
         add_definitions(-DSQLITE_ENABLED)
     endif()
+endif()
+
+find_anyproject(PROJ REGUIRED)
+if(PROJ_FOUND)
+    add_definitions(-DHAVE_PROJ_H=1)
+    # if(NOT BUILD_STATIC_LIBS)
+    #     add_definitions(-DPROJ_RENAME_SYMBOLS)
+    # endif()    
 endif()
 
 ## Options goes to config.h and gdal-config ####################################

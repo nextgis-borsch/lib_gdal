@@ -175,13 +175,21 @@ if dst_filename is not None:
     wkt = src_ds.GetProjection()
     if wkt != '':
         dst_ds.SetProjection(wkt)
-    dst_ds.SetGeoTransform(src_ds.GetGeoTransform())
+    gt = src_ds.GetGeoTransform(can_return_null=True)
+    if gt:
+        dst_ds.SetGeoTransform(gt)
 
     dstband = dst_ds.GetRasterBand(1)
     CopyBand(srcband, dstband)
     ndv = srcband.GetNoDataValue()
     if ndv is not None:
         dstband.SetNoDataValue(ndv)
+
+    color_interp = srcband.GetColorInterpretation()
+    dstband.SetColorInterpretation(color_interp)
+    if color_interp == gdal.GCI_PaletteIndex:
+        color_table = srcband.GetColorTable()
+        dstband.SetColorTable(color_table)
 
 else:
     dstband = srcband

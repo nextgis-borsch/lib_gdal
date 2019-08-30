@@ -27,7 +27,7 @@
 
 #include "ogr_p.h"
 #include "ogrsf_frmts.h"
-#include "osm/gpb.h"
+#include "drivers/vector/osm/gpb.h"
 
 #include <string>
 
@@ -650,7 +650,7 @@ namespace tut
 
         ensure_equals( GetVarSIntSize(0), 1 );
         ensure_equals( GetVarSIntSize(63), 1 );
-        ensure_equals( GetVarSIntSize(64), 2 );
+        ensure_equals( GetVarSIntSize(64), 2 ); 
         ensure_equals( GetVarSIntSize(-1), 1 );
         ensure_equals( GetVarSIntSize(-64), 1 );
         ensure_equals( GetVarSIntSize(-65), 2 );

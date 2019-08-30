@@ -346,6 +346,9 @@ typedef GIntBig GSpacing;
  */
 #define GDAL_DCAP_CREATECOPY "DCAP_CREATECOPY"
 
+/** Capability set by a driver that can copy over subdatasets. */
+#define GDAL_DCAP_SUBCREATECOPY "DCAP_SUBCREATECOPY"
+
 /** Capability set by a driver that can read/create datasets through the VSI*L API. */
 #define GDAL_DCAP_VIRTUALIO  "DCAP_VIRTUALIO"
 
@@ -359,7 +362,7 @@ typedef GIntBig GSpacing;
  */
 #define GDAL_DCAP_VECTOR     "DCAP_VECTOR"
 
-/** Capability set by a driver having vector capability.
+/** Capability set by a driver having geographical network model capability.
  * @since GDAL 2.1
  */
 #define GDAL_DCAP_GNM         "DCAP_GNM"
@@ -662,15 +665,20 @@ CPLErr CPL_DLL CPL_STDCALL GDALDatasetAdviseRead( GDALDatasetH hDS,
     int nBandCount, int *panBandCount, CSLConstList papszOptions );
 
 const char CPL_DLL * CPL_STDCALL GDALGetProjectionRef( GDALDatasetH );
+OGRSpatialReferenceH CPL_DLL GDALGetSpatialRef( GDALDatasetH );
 CPLErr CPL_DLL CPL_STDCALL GDALSetProjection( GDALDatasetH, const char * );
+CPLErr CPL_DLL GDALSetSpatialRef( GDALDatasetH, OGRSpatialReferenceH );
 CPLErr CPL_DLL CPL_STDCALL GDALGetGeoTransform( GDALDatasetH, double * );
 CPLErr CPL_DLL CPL_STDCALL GDALSetGeoTransform( GDALDatasetH, double * );
 
 int CPL_DLL CPL_STDCALL  GDALGetGCPCount( GDALDatasetH );
 const char CPL_DLL * CPL_STDCALL GDALGetGCPProjection( GDALDatasetH );
+OGRSpatialReferenceH CPL_DLL GDALGetGCPSpatialRef( GDALDatasetH );
 const GDAL_GCP CPL_DLL * CPL_STDCALL GDALGetGCPs( GDALDatasetH );
 CPLErr CPL_DLL CPL_STDCALL GDALSetGCPs( GDALDatasetH, int, const GDAL_GCP *,
                                         const char * );
+CPLErr CPL_DLL GDALSetGCPs2( GDALDatasetH, int, const GDAL_GCP *,
+                                         OGRSpatialReferenceH );
 
 void CPL_DLL * CPL_STDCALL GDALGetInternalHandle( GDALDatasetH, const char * );
 int CPL_DLL CPL_STDCALL GDALReferenceDataset( GDALDatasetH );
@@ -961,6 +969,13 @@ void CPL_DLL CPL_STDCALL
                    void * CPL_RESTRICT pDstData,
                    GDALDataType eDstType, int nDstPixelOffset,
                    int nWordCount );
+
+void CPL_DLL CPL_STDCALL
+    GDALCopyWords64( const void * CPL_RESTRICT pSrcData,
+                     GDALDataType eSrcType, int nSrcPixelOffset,
+                     void * CPL_RESTRICT pDstData,
+                     GDALDataType eDstType, int nDstPixelOffset,
+                     GPtrDiff_t nWordCount );
 
 void CPL_DLL
 GDALCopyBits( const GByte *pabySrcData, int nSrcOffset, int nSrcStep,

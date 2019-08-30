@@ -3,8 +3,8 @@
 # Purpose:  CMake build scripts
 # Author:   Dmitry Baryshnikov, polimax@mail.ru
 ################################################################################
-# Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
-# Copyright (C) 2012,2013,2014 Dmitry Baryshnikov
+# Copyright (C) 2015-2016,2019 NextGIS <info@nextgis.com>
+# Copyright (C) 2012-2019 Dmitry Baryshnikov
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -36,8 +36,7 @@ set(LIB_HHEADERS
 )
 
 set(LIB_HHEADERS_PRIV
-    ogr_xplane_awy_reader.h    
-    ogr_xplane_geo_utils.h    
+    ogr_xplane_awy_reader.h
     ogr_xplane_reader.h
     ogr_xplane_apt_reader.h    
     ogr_xplane_fix_reader.h    
@@ -47,15 +46,13 @@ set(LIB_HHEADERS_PRIV
 
 set(LIB_CSOURCES
     ogr_xplane_awy_reader.cpp  
-    ogrxplanedriver.cpp        
-    ogr_xplane_geo_utils.cpp  
+    ogrxplanedriver.cpp
     ogrxplanelayer.cpp         
     ogr_xplane_reader.cpp
     ogr_xplane_apt_reader.cpp  
     ogr_xplane_fix_reader.cpp  
     ogr_xplane_nav_reader.cpp  
-    ogrxplanedatasource.cpp    
-#    test_geo_utils.cpp
+    ogrxplanedatasource.cpp
 )
 
 add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})

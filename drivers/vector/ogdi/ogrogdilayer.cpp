@@ -47,7 +47,7 @@ OGROGDILayer::OGROGDILayer( OGROGDIDataSource *poODS,
     m_eFamily(eFamily),
     m_poFeatureDefn(nullptr),
     // Keep a reference on the SpatialRef (owned by the dataset).
-    m_poSpatialRef(m_poODS->GetSpatialRef()),
+    m_poSpatialRef(m_poODS->DSGetSpatialRef()),
     m_sFilterBounds(*(m_poODS->GetGlobalBounds())),
     m_iNextShapeId(0),
     m_nTotalShapeCount(-1),
@@ -143,8 +143,8 @@ void OGROGDILayer::ResetReading()
 
         m_sFilterBounds.north = oEnv.MaxY;
         m_sFilterBounds.south = oEnv.MinY;
-        m_sFilterBounds.east  = oEnv.MinX;
-        m_sFilterBounds.west  = oEnv.MaxX;
+        m_sFilterBounds.west  = oEnv.MinX;
+        m_sFilterBounds.east  = oEnv.MaxX;
 
         psResult = cln_SelectRegion( m_nClientID, &m_sFilterBounds);
         if( ECSERROR(psResult) )

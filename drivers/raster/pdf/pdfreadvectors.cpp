@@ -33,7 +33,7 @@
 
 CPL_CVSID("$Id$")
 
-#if defined(HAVE_POPPLER) || defined(HAVE_PODOFO) || defined(HAVE_PDFIUM)
+#ifdef HAVE_PDF_READ_SUPPORT
 
 /************************************************************************/
 /*                        OpenVectorLayers()                            */
@@ -245,7 +245,7 @@ void PDFDataset::ExploreTree(GDALPDFObject* poObj,
     if (nRecLevel == 16)
         return;
 
-    std::pair<int,int> oObjPair( poObj->GetRefNum(), poObj->GetRefGen() );
+    std::pair<int,int> oObjPair( poObj->GetRefNum().toInt(), poObj->GetRefGen() );
     if( aoSetAlreadyVisited.find( oObjPair ) != aoSetAlreadyVisited.end() )
         return;
     aoSetAlreadyVisited.insert( oObjPair );
@@ -292,17 +292,12 @@ void PDFDataset::ExploreTree(GDALPDFObject* poObj,
                     osLayerName = CPLSPrintf("Layer%d", nLayers + 1);
             }
 
-            const char* l_pszWKT = GetProjectionRef();
-            OGRSpatialReference* poSRS = nullptr;
-            if (l_pszWKT && l_pszWKT[0] != '\0')
-            {
-                poSRS = new OGRSpatialReference();
-                poSRS->importFromWkt(l_pszWKT);
-            }
-
+            auto poSRSOri = GetSpatialRef();
+            OGRSpatialReference* poSRS = poSRSOri ? poSRSOri->Clone() : nullptr;
             OGRPDFLayer* poLayer =
                 new OGRPDFLayer(this, osLayerName.c_str(), poSRS, wkbUnknown);
-            delete poSRS;
+            if( poSRS )
+                poSRS->Release();
 
             poLayer->Fill(poArray);
 
@@ -1628,17 +1623,12 @@ void PDFDataset::ExploreContentsNonStructured(GDALPDFObject* poContents,
                 OGRPDFLayer* poLayer = (OGRPDFLayer*) GetLayerByName(osSanitizedName.c_str());
                 if (poLayer == nullptr)
                 {
-                    const char* l_pszWKT = GetProjectionRef();
-                    OGRSpatialReference* poSRS = nullptr;
-                    if (l_pszWKT && l_pszWKT[0] != '\0')
-                    {
-                        poSRS = new OGRSpatialReference();
-                        poSRS->importFromWkt(l_pszWKT);
-                    }
-
+                    auto poSRSOri = GetSpatialRef();
+                    OGRSpatialReference* poSRS = poSRSOri ? poSRSOri->Clone() : nullptr;
                     poLayer =
                         new OGRPDFLayer(this, osSanitizedName.c_str(), poSRS, wkbUnknown);
-                    delete poSRS;
+                    if( poSRS )
+                        poSRS->Release();
 
                     papoLayers = (OGRLayer**)
                         CPLRealloc(papoLayers, (nLayers + 1) * sizeof(OGRLayer*));
@@ -1661,11 +1651,11 @@ void PDFDataset::ExploreContentsNonStructured(GDALPDFObject* poContents,
             {
                 const char* pszKey = oIter->first.c_str();
                 GDALPDFObject* poObj = oIter->second;
-                if( poObj->GetRefNum() != 0 )
+                if( poObj->GetRefNum().toBool() )
                 {
                     std::map< std::pair<int, int>, OGRPDFLayer *>::iterator
                         oIterNumGenToLayer = oMapNumGenToLayer.find(
-                            std::pair<int,int>(poObj->GetRefNum(), poObj->GetRefGen()) );
+                            std::pair<int,int>(poObj->GetRefNum().toInt(), poObj->GetRefGen()) );
                     if( oIterNumGenToLayer != oMapNumGenToLayer.end() )
                     {
                         oMapPropertyToLayer[pszKey] = oIterNumGenToLayer->second;
@@ -1718,4 +1708,4 @@ void PDFDataset::ExploreContentsNonStructured(GDALPDFObject* poContents,
     }
 }
 
-#endif /* defined(HAVE_POPPLER) || defined(HAVE_PODOFO) || defined(HAVE_PDFIUM) */
+#endif /* HAVE_PDF_READ_SUPPORT */

@@ -3,8 +3,8 @@
 # Purpose:  CMake build scripts
 # Author:   Dmitry Baryshnikov, polimax@mail.ru
 ################################################################################
-# Copyright (C) 2015, NextGIS <info@nextgis.com>
-# Copyright (C) 2012,2013,2014 Dmitry Baryshnikov
+# Copyright (C) 2015,2019 NextGIS <info@nextgis.com>
+# Copyright (C) 2012-2014,2015-2019 Dmitry Baryshnikov
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -41,25 +41,22 @@ include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/sqlite)
 configure_file(gdal_version.h.in ${CMAKE_CURRENT_BINARY_DIR}/gdal_version.h COPYONLY)
 
 set(LIB_HHEADERS
-    gdalexif.h
+    gdal_frmts.h
+    gdalgeorefpamdataset.h
     gdal.h
+    gdaljp2abstractdataset.h
+    gdaljp2metadata.h
     gdal_mdreader.h
+    gdal_pam.h
+    gdal_priv.h
     gdal_proxy.h
     gdal_rat.h
+    rawdataset.h
     ${CMAKE_CURRENT_BINARY_DIR}/gdal_version.h
-    gdal_frmts.h
-    gdal_priv.h
-    gdaljp2metadata.h
-    gdalgeorefpamdataset.h
-    gdaljp2abstractdataset.h
-    gdaljp2metadatagenerator.h
-
 )
 
 set(LIB_HHEADERS_PRIV
 # TODO: more elegant format's register  gdal_frmts.h
-    gdalgeorefpamdataset.h
-    gdaljp2abstractdataset.h
     gdaljp2metadatagenerator.h
     gdalsse_priv.h
     gdal_avx2_emulation.hpp
@@ -80,14 +77,12 @@ set(LIB_CSOURCES
     gdaldrivermanager.cpp
     gdalexif.cpp
     gdalgeorefpamdataset.cpp
-    gdalgmlcoverage.cpp
     gdalhashsetbandblockcache.cpp
     gdaljp2abstractdataset.cpp
     gdaljp2box.cpp
     gdaljp2metadata.cpp
     gdaljp2metadatagenerator.cpp
     gdaljp2structure.cpp
-    gdalmajorobject.cpp
     gdal_mdreader.cpp
     gdal_misc.cpp
     gdalmultidomainmetadata.cpp
@@ -105,6 +100,7 @@ set(LIB_CSOURCES
     overview.cpp
     rasterio.cpp
     rasterio_ssse3.cpp
+    rawdataset.cpp
 )
 
 if(GDAL_PAM_ENABLED)

@@ -63,11 +63,15 @@
 #define     PDFLIB_PDFIUM     2
 #define     PDFLIB_COUNT      3
 
+#if defined(HAVE_POPPLER) || defined(HAVE_PODOFO) || defined(HAVE_PDFIUM)
+#define HAVE_PDF_READ_SUPPORT
+#endif
+
 /************************************************************************/
 /*                             OGRPDFLayer                              */
 /************************************************************************/
 
-#if defined(HAVE_POPPLER) || defined(HAVE_PODOFO) || defined(HAVE_PDFIUM)
+#ifdef HAVE_PDF_READ_SUPPORT
 
 class PDFDataset;
 
@@ -178,7 +182,7 @@ class ObjectAutoFree;
 #define MAX_TOKEN_SIZE 256
 #define TOKEN_STACK_SIZE 8
 
-#if defined(HAVE_POPPLER) || defined(HAVE_PODOFO) || defined(HAVE_PDFIUM)
+#ifdef HAVE_PDF_READ_SUPPORT
 
 class PDFDataset final: public GDALPamDataset
 {
@@ -264,7 +268,7 @@ class PDFDataset final: public GDALPamDataset
     void         ExploreLayersPoppler(GDALPDFArray* poArray, int nRecLevel, CPLString osTopLayer = "");
     void         FindLayersPoppler();
     void         TurnLayersOnOffPoppler();
-    std::map<CPLString, OptionalContentGroup*> oLayerOCGMapPoppler;
+    std::vector<std::pair<CPLString, OptionalContentGroup*> > oLayerOCGListPoppler;
 #endif
 
 #ifdef HAVE_PDFIUM
@@ -356,11 +360,18 @@ private:
                  PDFDataset(PDFDataset* poParentDS = nullptr, int nXSize = 0, int nYSize = 0);
     virtual     ~PDFDataset();
 
-    virtual const char* GetProjectionRef() override;
+    virtual const char* _GetProjectionRef() override;
     virtual CPLErr GetGeoTransform( double * ) override;
 
-    virtual CPLErr      SetProjection(const char* pszWKTIn) override;
+    virtual CPLErr      _SetProjection(const char* pszWKTIn) override;
     virtual CPLErr      SetGeoTransform(double* padfGeoTransform) override;
+
+    const OGRSpatialReference* GetSpatialRef() const override {
+        return GetSpatialRefFromOldGetProjectionRef();
+    }
+    CPLErr SetSpatialRef(const OGRSpatialReference* poSRS) override {
+        return OldSetProjectionFromSetSpatialRef(poSRS);
+    }
 
     virtual char      **GetMetadataDomainList() override;
     virtual char      **GetMetadata( const char * pszDomain = "" ) override;
@@ -380,10 +391,18 @@ private:
                               GDALRasterIOExtraArg* psExtraArg) override;
 
     virtual int    GetGCPCount() override;
-    virtual const char *GetGCPProjection() override;
+    virtual const char *_GetGCPProjection() override;
+    const OGRSpatialReference* GetGCPSpatialRef() const override {
+        return GetGCPSpatialRefFromOldGetGCPProjection();
+    }
     virtual const GDAL_GCP *GetGCPs() override;
-    virtual CPLErr SetGCPs( int nGCPCount, const GDAL_GCP *pasGCPList,
+    virtual CPLErr _SetGCPs( int nGCPCount, const GDAL_GCP *pasGCPList,
                             const char *pszGCPProjection ) override;
+    using GDALPamDataset::SetGCPs;
+    CPLErr SetGCPs( int nGCPCountIn, const GDAL_GCP *pasGCPListIn,
+                    const OGRSpatialReference* poSRS ) override {
+        return OldSetGCPsFromNew(nGCPCountIn, pasGCPListIn, poSRS);
+    }
 
     CPLErr ReadPixels( int nReqXOff, int nReqYOff,
                        int nReqXSize, int nReqYSize,
@@ -399,7 +418,12 @@ private:
 
     OGRGeometry        *GetGeometryFromMCID(int nMCID);
 
-    static GDALDataset *Open( GDALOpenInfo * );
+    GDALPDFObject*      GetPageObj() { return poPageObj; }
+    double              GetPageWidth() const { return dfPageWidth; }
+    double              GetPageHeight() const { return dfPageHeight; }
+
+    static PDFDataset  *Open( GDALOpenInfo * );
+    static GDALDataset *OpenWrapper( GDALOpenInfo * poOpenInfo ) { return Open(poOpenInfo); }
     static int          Identify( GDALOpenInfo * );
 
 #ifdef HAVE_PDFIUM
@@ -445,7 +469,7 @@ class PDFRasterBand: public GDALPamRasterBand
 #endif
 };
 
-#endif /*  defined(HAVE_POPPLER) || defined(HAVE_PODOFO)|| defined(HAVE_PDFIUM) */
+#endif /* HAVE_PDF_READ_SUPPORT */
 
 /************************************************************************/
 /*                          PDFWritableDataset                          */

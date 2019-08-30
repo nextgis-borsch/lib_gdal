@@ -234,7 +234,7 @@ OGRFeature *OGRAmigoCloudLayer::GetNextRawFeature()
             json_object_put(poCachedObj);
         poCachedObj = poObj;
 
-        nFetchedObjects = json_object_array_length(poRows);
+        nFetchedObjects = static_cast<decltype(nFetchedObjects)>(json_object_array_length(poRows));
         iNextInFetchedObjects = 0;
     }
 
@@ -334,9 +334,9 @@ void OGRAmigoCloudLayer::EstablishLayerDefn(const char* pszLayerName,
         return;
     }
 
-    int size = json_object_array_length(poFields);
+    auto size = json_object_array_length(poFields);
 
-    for(int i=0; i< size; i++)
+    for(auto i=decltype(size){0}; i< size; i++)
     {
         json_object *obj = json_object_array_get_idx(poFields, i);
 
@@ -460,6 +460,7 @@ OGRSpatialReference* OGRAmigoCloudLayer::GetSRS(const char* pszGeomCol,
     {
         const char* pszSRTEXT = json_object_get_string(poSRTEXT);
         poSRS = new OGRSpatialReference();
+        poSRS->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
         if( poSRS->importFromWkt(pszSRTEXT) != OGRERR_NONE )
         {
             delete poSRS;

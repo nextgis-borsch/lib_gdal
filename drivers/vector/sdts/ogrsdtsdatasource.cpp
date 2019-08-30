@@ -133,7 +133,9 @@ int OGRSDTSDataSource::Open( const char * pszFilename, int bTestOpen )
 /* -------------------------------------------------------------------- */
     poTransfer = new SDTSTransfer();
 
-    if( !poTransfer->Open( pszFilename ) )
+    GUInt32 nInitialErrorCounter = CPLGetErrorCounter();
+    if( !poTransfer->Open( pszFilename ) ||
+        CPLGetErrorCounter() > nInitialErrorCounter + 100 )
     {
         delete poTransfer;
         poTransfer = nullptr;
@@ -147,6 +149,7 @@ int OGRSDTSDataSource::Open( const char * pszFilename, int bTestOpen )
     SDTS_XREF   *poXREF = poTransfer->GetXREF();
 
     poSRS = new OGRSpatialReference();
+    poSRS->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
 
     if( EQUAL(poXREF->pszSystemName,"UTM") )
     {
@@ -168,11 +171,10 @@ int OGRSDTSDataSource::Open( const char * pszFilename, int bTestOpen )
         poSRS->SetGeogCS("WGS 84", "WGS_1984",
                          "WGS 84", 6378137, 298.257223563 );
 
-    poSRS->Fixup();
-
 /* -------------------------------------------------------------------- */
 /*      Initialize a layer for each source dataset layer.               */
 /* -------------------------------------------------------------------- */
+
     for( int iLayer = 0; iLayer < poTransfer->GetLayerCount(); iLayer++ )
     {
         if( poTransfer->GetLayerType( iLayer ) == SLTRaster )
@@ -182,6 +184,8 @@ int OGRSDTSDataSource::Open( const char * pszFilename, int bTestOpen )
             poTransfer->GetLayerIndexedReader( iLayer );
         if( poReader == nullptr )
             continue;
+        if( CPLGetErrorCounter() > nInitialErrorCounter + 100 )
+            return FALSE;
 
         papoLayers = (OGRSDTSLayer **)
             CPLRealloc( papoLayers, sizeof(void*) * ++nLayers );

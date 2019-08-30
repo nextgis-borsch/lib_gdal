@@ -166,8 +166,8 @@ bool OGRAmigoCloudDataSource::ListDatasets()
                 CPLprintf("List of available datasets for project id: %s\n", GetProjectId());
                 CPLprintf("| id \t | name\n");
                 CPLprintf("|--------|-------------------\n");
-                const int nSize = json_object_array_length(poResults);
-                for(int i = 0; i < nSize; ++i) {
+                const auto nSize = json_object_array_length(poResults);
+                for(auto i = decltype(nSize){0}; i < nSize; ++i) {
                     json_object *ds = json_object_array_get_idx(poResults, i);
                     if(ds!=nullptr) {
                         const char *name = nullptr;
@@ -366,7 +366,15 @@ OGRLayer   *OGRAmigoCloudDataSource::ICreateLayer( const char *pszNameIn,
     OGRAmigoCloudTableLayer* poLayer = new OGRAmigoCloudTableLayer(this, osName);
     const bool bGeomNullable =
         CPLFetchBool(papszOptions, "GEOMETRY_NULLABLE", true);
-    poLayer->SetDeferredCreation(eGType, poSpatialRef, bGeomNullable);
+    OGRSpatialReference* poSRSClone = poSpatialRef;
+    if( poSRSClone )
+    {
+        poSRSClone = poSRSClone->Clone();
+        poSRSClone->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
+    }
+    poLayer->SetDeferredCreation(eGType, poSRSClone, bGeomNullable);
+    if( poSRSClone )
+        poSRSClone->Release();
     papoLayers = (OGRAmigoCloudTableLayer**) CPLRealloc(
                     papoLayers, (nLayers + 1) * sizeof(OGRAmigoCloudTableLayer*));
     papoLayers[nLayers ++] = poLayer;

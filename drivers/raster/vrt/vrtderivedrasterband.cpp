@@ -301,15 +301,32 @@ static bool LoadPythonAPI()
     }
 #endif
 
+#if defined(__MACH__) && defined(__APPLE__)
+#define SO_EXT "dylib"
+#else
+#define IS_SO_EXT
+#define SO_EXT "so"
+#endif
+
+    const auto tryDlopen = [](CPLString osPythonSO)
+    {
+        CPLDebug("VRT", "Trying %s", osPythonSO.c_str());
+        auto l_libHandle = dlopen(osPythonSO.c_str(), RTLD_NOW | RTLD_GLOBAL);
+#ifdef IS_SO_EXT
+        if( l_libHandle == nullptr )
+        {
+            osPythonSO += ".1.0";
+            CPLDebug("VRT", "Trying %s", osPythonSO.c_str());
+            l_libHandle = dlopen(osPythonSO.c_str(), RTLD_NOW | RTLD_GLOBAL);
+        }
+#endif
+        return l_libHandle;
+    };
+
     // Then try to find the libpython that corresponds to the python binary
     // in the PATH
     if( libHandle == nullptr )
     {
-#if defined(__MACH__) && defined(__APPLE__)
-#define SO_EXT "dylib"
-#else
-#define SO_EXT "so"
-#endif
         CPLString osVersion;
         char* pszPath = getenv("PATH");
         if( pszPath != nullptr
@@ -417,19 +434,14 @@ static bool LoadPythonAPI()
 
         if( !osVersion.empty() )
         {
-            CPLString osPythonSO("libpython");
-            osPythonSO += osVersion + "." SO_EXT;
-            CPLDebug("VRT", "Trying %s", osPythonSO.c_str());
-            libHandle = dlopen(osPythonSO, RTLD_NOW | RTLD_GLOBAL);
+            libHandle = tryDlopen("libpython" + osVersion + "." SO_EXT);
             if( libHandle != nullptr )
             {
                 CPLDebug("VRT", "... success");
             }
             else if( osVersion[0] == '3' )
             {
-                osPythonSO = "libpython" + osVersion + "m." SO_EXT;
-                CPLDebug("VRT", "Trying %s", osPythonSO.c_str());
-                libHandle = dlopen(osPythonSO, RTLD_NOW | RTLD_GLOBAL);
+                libHandle = tryDlopen("libpython" + osVersion + "m." SO_EXT);
                 if( libHandle != nullptr )
                 {
                     CPLDebug("VRT", "... success");
@@ -439,7 +451,7 @@ static bool LoadPythonAPI()
     }
 
     // Otherwise probe a few known objects.
-    // Note: update vrt_tutorial.dox if change
+    // Note: update doc/source/drivers/raster/vrt.rst if change
     if( libHandle == nullptr )
     {
         const char* const apszPythonSO[] = { "libpython2.7." SO_EXT,
@@ -447,13 +459,13 @@ static bool LoadPythonAPI()
                                                 "libpython3.4m." SO_EXT,
                                                 "libpython3.5m." SO_EXT,
                                                 "libpython3.6m." SO_EXT,
+                                                "libpython3.7m." SO_EXT,
                                                 "libpython3.3." SO_EXT,
                                                 "libpython3.2." SO_EXT };
         for( size_t i = 0; libHandle == nullptr &&
                             i < CPL_ARRAYSIZE(apszPythonSO); ++i )
         {
-            CPLDebug("VRT", "Trying %s", apszPythonSO[i]);
-            libHandle = dlopen(apszPythonSO[i], RTLD_NOW | RTLD_GLOBAL);
+            libHandle = tryDlopen(apszPythonSO[i]);
             if( libHandle != nullptr )
                 CPLDebug("VRT", "... success");
         }
@@ -645,6 +657,7 @@ static bool LoadPythonAPI()
                                             "python34.dll",
                                             "python35.dll",
                                             "python36.dll",
+                                            "python37.dll",
                                             "python33.dll",
                                             "python32.dll" };
         UINT        uOldErrorMode;
@@ -737,7 +750,7 @@ static bool LoadPythonAPI()
 #endif // LOAD_NOCHECK_WITH_NAME
 
     bInit = true;
-    return bInit;
+    return true;
 }
 
 /************************************************************************/
@@ -1433,8 +1446,17 @@ bool VRTDerivedRasterBand::InitializePython()
         PyObject* poUserModule = PyImport_ImportModule(osPythonModule);
         if (poUserModule == nullptr || PyErr_Occurred())
         {
+            CPLString osException = GetPyExceptionString();
+            if( !osException.empty() && osException.back() == '\n' )
+            {
+                osException.resize( osException.size() - 1 );
+            }
+            if( osException.find("ModuleNotFoundError") == 0 )
+            {
+                osException += ". You may need to define PYTHONPATH";
+            }
             CPLError(CE_Failure, CPLE_AppDefined,
-                 "%s", GetPyExceptionString().c_str());
+                 "%s", osException.c_str());
             Py_DecRef(poModule);
             return false;
         }
@@ -1979,11 +2001,13 @@ int  VRTDerivedRasterBand::IGetDataCoverageStatus( int /* nXOff */,
 
 CPLErr VRTDerivedRasterBand::XMLInit( CPLXMLNode *psTree,
                                       const char *pszVRTPath,
-                                      void* pUniqueHandle )
+                                      void* pUniqueHandle,
+                                      std::map<CPLString, GDALDataset*>& oMapSharedSources )
 
 {
     const CPLErr eErr = VRTSourcedRasterBand::XMLInit( psTree, pszVRTPath,
-                                                       pUniqueHandle );
+                                                       pUniqueHandle,
+                                                       oMapSharedSources );
     if( eErr != CE_None )
         return eErr;
 

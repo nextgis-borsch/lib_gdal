@@ -860,7 +860,7 @@ CPLErr GDALMRFRasterBand::IWriteBlock(int xblk, int yblk, void *buffer)
     ILSize req(xblk, yblk, 0, (nBand-1)/cstride, m_l);
     GUIntBig infooffset = IdxOffset(req, img);
 
-    CPLDebug("MRF_IB", "IWriteBlock %d,%d,0,%d, level  %d, stride %d\n", xblk, yblk,
+    CPLDebug("MRF_IB", "IWriteBlock %d,%d,0,%d, level %d, stride %d\n", xblk, yblk,
         nBand, m_l, cstride);
 
     // Finish the Create call
@@ -1043,11 +1043,15 @@ bool GDALMRFRasterBand::TestBlock(int xblk, int yblk)
     if (poDS->bypass_cache && !poDS->source.empty())
         return true;
 
+    // Blocks outside of image have no data by default
+    if (xblk < 0 || yblk < 0 || xblk >= img.pagecount.x || yblk >= img.pagecount.y)
+        return false;
+
     ILIdx tinfo;
     GInt32 cstride = img.pagesize.c;
     ILSize req(xblk, yblk, 0, (nBand - 1) / cstride, m_l);
 
-
+    
     if (CE_None != poDS->ReadTileIdx(tinfo, req, img))
         // Got an error reading the tile index
         return !poDS->no_errors;
@@ -1080,3 +1084,4 @@ GDALRasterBand* GDALMRFRasterBand::GetOverview(int n)
 }
 
 NAMESPACE_MRF_END
+

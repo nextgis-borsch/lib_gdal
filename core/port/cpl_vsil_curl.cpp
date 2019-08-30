@@ -485,6 +485,10 @@ void VSICURLInitWriteFuncStruct( WriteFuncStruct   *psStruct,
     psStruct->pfnReadCbk = pfnReadCbk;
     psStruct->pReadCbkUserData = pReadCbkUserData;
     psStruct->bInterrupted = false;
+
+#if LIBCURL_VERSION_NUM < 0x073600
+    psStruct->bIsProxyConnectHeader = false;
+#endif
 }
 
 /************************************************************************/
@@ -509,10 +513,31 @@ size_t VSICurlHandleWriteFunc( void *buffer, size_t count,
             char* pszLine = psStruct->pBuffer + psStruct->nSize;
             if( STARTS_WITH_CI(pszLine, "HTTP/") )
             {
-                const char* pszSpace = strchr(
-                    const_cast<const char*>(pszLine), ' ');
+                char* pszSpace = strchr(pszLine, ' ');
                 if( pszSpace )
+                {
                     psStruct->nHTTPCode = atoi(pszSpace + 1);
+
+#if LIBCURL_VERSION_NUM < 0x073600
+                    // Workaround to ignore extra HTTP response headers from
+                    // proxies in older versions of curl.
+                    // CURLOPT_SUPPRESS_CONNECT_HEADERS fixes this
+                    if( psStruct->nHTTPCode >= 200 &&
+                        psStruct->nHTTPCode < 300 )
+                    {
+                        pszSpace = strchr(pszSpace + 1, ' ');
+                        if( pszSpace &&
+                            // This could be any string really, but we don't
+                            // have an easy way to distinguish between proxies
+                            // and upstream responses...
+                            STARTS_WITH_CI( pszSpace + 1,
+                                            "Connection established") )
+                        {
+                            psStruct->bIsProxyConnectHeader = true;
+                        }
+                    }
+#endif
+                }
             }
             else if( STARTS_WITH_CI(pszLine, "Content-Length: ") )
             {
@@ -563,6 +588,12 @@ size_t VSICurlHandleWriteFunc( void *buffer, size_t count,
                           psStruct->nHTTPCode == 302) )
                         return 0;
                 }
+#if LIBCURL_VERSION_NUM < 0x073600
+                else if( psStruct->bIsProxyConnectHeader )
+                {
+                    psStruct->bIsProxyConnectHeader = false;
+                }
+#endif
                 else
                 {
                     psStruct->bIsInHeader = false;
@@ -614,9 +645,13 @@ static bool VSICurlIsS3LikeSignedURL( const char* pszURL )
 {
     return
         (strstr(pszURL, ".s3.amazonaws.com/") != nullptr ||
-         strstr(pszURL, ".storage.googleapis.com/") != nullptr) &&
+         strstr(pszURL, ".s3.amazonaws.com:") != nullptr ||
+         strstr(pszURL, ".storage.googleapis.com/") != nullptr ||
+         strstr(pszURL, ".storage.googleapis.com:") != nullptr) &&
         (strstr(pszURL, "&Signature=") != nullptr ||
-         strstr(pszURL, "?Signature=") != nullptr);
+         strstr(pszURL, "?Signature=") != nullptr ||
+         strstr(pszURL, "&X-Amz-Signature=") != nullptr ||
+         strstr(pszURL, "?X-Amz-Signature=") != nullptr);
 }
 
 /************************************************************************/
@@ -628,9 +663,16 @@ static GIntBig VSICurlGetExpiresFromS3LikeSignedURL( const char* pszURL )
     const char* pszExpires = strstr(pszURL, "&Expires=");
     if( pszExpires == nullptr )
         pszExpires = strstr(pszURL, "?Expires=");
+    if( pszExpires != nullptr )
+        return CPLAtoGIntBig(pszExpires + strlen("&Expires="));
+
+    pszExpires = strstr(pszURL, "?X-Amz-Expires=");
     if( pszExpires == nullptr )
-        return 0;
-    return CPLAtoGIntBig(pszExpires + strlen("&Expires="));
+        pszExpires = strstr(pszURL, "?X-Amz-Expires=");
+    if( pszExpires != nullptr )
+        return CPLAtoGIntBig(pszExpires + strlen("&X-Amz-Expires="));
+
+    return 0;
 }
 
 /************************************************************************/
@@ -820,6 +862,14 @@ retry:
         }
     }
 
+    if( ENABLE_DEBUG && szCurlErrBuf[0] != '\0' &&
+        sWriteFuncHeaderData.bDownloadHeaderOnly &&
+        EQUAL(szCurlErrBuf, "Failed writing header") )
+    {
+        // Not really an error since we voluntarily interrupted the download !
+        szCurlErrBuf[0] = 0;
+    }
+
     double dfSize = 0;
     if( oFileProp.eExists != EXIST_YES )
     {
@@ -903,7 +953,18 @@ retry:
         {
             oFileProp.eExists = EXIST_YES;
             if( dfSize < 0 )
+            {
+                if( osVerb == "HEAD" && !bRetryWithGet )
+                {
+                    CPLDebug("VSICURL", "HEAD did not provide file size. Retrying with GET");
+                    bRetryWithGet = true;
+                    CPLFree(sWriteFuncData.pBuffer);
+                    CPLFree(sWriteFuncHeaderData.pBuffer);
+                    curl_easy_cleanup(hCurlHandle);
+                    goto retry;
+                }
                 oFileProp.fileSize = 0;
+            }
             else
                 oFileProp.fileSize = static_cast<GUIntBig>(dfSize);
         }
@@ -984,11 +1045,10 @@ retry:
         }
         else if( response_code != 200 )
         {
-            // If HTTP 429, 500, 502, 503, 504 error retry after a
-            // pause.
+            // Look if we should attempt a retry
             const double dfNewRetryDelay = CPLHTTPGetNewRetryDelay(
                 static_cast<int>(response_code), dfRetryDelay,
-                sWriteFuncHeaderData.pBuffer);
+                sWriteFuncHeaderData.pBuffer, szCurlErrBuf);
             if( dfNewRetryDelay > 0 &&
                 nRetryCount < m_nMaxRetry )
             {
@@ -1340,11 +1400,10 @@ retry:
             return DownloadRegion(startOffset, nBlocks);
         }
 
-        // If HTTP 429, 500, 502, 503, 504 error retry after a
-        // pause.
+        // Look if we should attempt a retry
         const double dfNewRetryDelay = CPLHTTPGetNewRetryDelay(
             static_cast<int>(response_code), dfRetryDelay,
-            sWriteFuncHeaderData.pBuffer);
+            sWriteFuncHeaderData.pBuffer, szCurlErrBuf);
         if( dfNewRetryDelay > 0 &&
             nRetryCount < m_nMaxRetry )
         {
@@ -1647,7 +1706,7 @@ int VSICurlHandle::ReadMultiRange( int const nRanges, void ** const ppData,
         // dubious now. We could probably remove it
         return ReadMultiRangeSingleGet(nRanges, ppData, panOffsets, panSizes);
     }
-    else if( EQUAL(pszMultiRangeStrategy, "SERIAL") )
+    else if( nRanges == 1 || EQUAL(pszMultiRangeStrategy, "SERIAL") )
     {
         return VSIVirtualHandle::ReadMultiRange(
                                     nRanges, ppData, panOffsets, panSizes);
@@ -2735,6 +2794,14 @@ bool VSICurlFilesystemHandler::IsAllowedFilename( const char* pszFilename )
     {
         char** papszExtensions =
             CSLTokenizeString2( pszAllowedExtensions, ", ", 0 );
+        const char *queryStart = strchr(pszFilename, '?');
+        char *pszFilenameWithoutQuery = nullptr;
+        if (queryStart != nullptr)
+        {
+            pszFilenameWithoutQuery = CPLStrdup(pszFilename);
+            pszFilenameWithoutQuery[queryStart - pszFilename]='\0';
+            pszFilename = pszFilenameWithoutQuery;
+        }
         const size_t nURLLen = strlen(pszFilename);
         bool bFound = false;
         for( int i = 0; papszExtensions[i] != nullptr; i++ )
@@ -2759,6 +2826,9 @@ bool VSICurlFilesystemHandler::IsAllowedFilename( const char* pszFilename )
         }
 
         CSLDestroy(papszExtensions);
+        if( pszFilenameWithoutQuery ) {
+            CPLFree(pszFilenameWithoutQuery);
+        }
 
         return bFound;
     }

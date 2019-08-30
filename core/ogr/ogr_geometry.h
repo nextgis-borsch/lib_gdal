@@ -357,6 +357,7 @@ class CPL_DLL OGRGeometry
     int CoordinateDimension() const;
     virtual OGRBoolean  IsEmpty() const = 0;
     virtual OGRBoolean  IsValid() const;
+    virtual OGRGeometry* MakeValid() const;
     virtual OGRBoolean  IsSimple() const;
     /*! Returns whether the geometry has a Z component. */
     OGRBoolean  Is3D() const { return flags & OGR_G_3D; }
@@ -2874,9 +2875,22 @@ class CPL_DLL OGRGeometryFactory
                                            const char **papszOptions = nullptr);
     static bool haveGEOS();
 
+    /** Opaque class used as argument to transformWithOptions() */
+    class CPL_DLL TransformWithOptionsCache
+    {
+        friend class OGRGeometryFactory;
+        struct Private;
+        std::unique_ptr<Private> d;
+
+    public:
+        TransformWithOptionsCache();
+        ~TransformWithOptionsCache();
+    };
+
     static OGRGeometry* transformWithOptions( const OGRGeometry* poSrcGeom,
                                               OGRCoordinateTransformation *poCT,
-                                              char** papszOptions );
+                                              char** papszOptions,
+                                              const TransformWithOptionsCache& cache = TransformWithOptionsCache() );
 
     static OGRGeometry*
         approximateArcAngles( double dfX, double dfY, double dfZ,

@@ -55,8 +55,8 @@ OGRErr OGRGeoPackageTableLayer::SaveExtent()
 
     char *pszSQL = sqlite3_mprintf(
                 "UPDATE gpkg_contents SET "
-                "min_x = %g, min_y = %g, "
-                "max_x = %g, max_y = %g "
+                "min_x = %.18g, min_y = %.18g, "
+                "max_x = %.18g, max_y = %.18g "
                 "WHERE lower(table_name) = lower('%q') AND "
                 "Lower(data_type) = 'features'",
                 m_poExtent->MinX, m_poExtent->MinY,
@@ -1045,8 +1045,8 @@ OGRErr OGRGeoPackageTableLayer::ReadTableDefinition()
                     }
                 }
             }
-            SQLResultFree(&oResultTable);
         }
+        SQLResultFree(&oResultTable);
     }
 
     /* Update the columns string */
@@ -1490,6 +1490,10 @@ OGRErr OGRGeoPackageTableLayer::CreateGeomField( OGRGeomFieldDefn *poGeomFieldIn
     }
 
     OGRGeomFieldDefn oGeomField(poGeomFieldIn);
+    if( oGeomField.GetSpatialRef() )
+    {
+        oGeomField.GetSpatialRef()->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
+    }
     if( EQUAL(oGeomField.GetNameRef(), "") )
     {
         oGeomField.SetName( "geom" );

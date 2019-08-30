@@ -26,6 +26,8 @@
 // Boston, MA 02111-1307, USA.
 ///////////////////////////////////////////////////////////////////////////////
 
+#define GDAL_COMPILATION
+
 #include "gdal_unit_test.h"
 
 #include "cpl_error.h"
@@ -40,6 +42,7 @@
 #include "cpl_mem_cache.h"
 #include "cpl_http.h"
 #include "cpl_auto_close.h"
+#include "cpl_minixml.h"
 
 #include <fstream>
 #include <string>
@@ -164,7 +167,7 @@ namespace tut
             { "2-5e3", CPL_VALUE_STRING },
             { "25.25.3", CPL_VALUE_STRING },
             { "25e25e3", CPL_VALUE_STRING },
-            // { "25e2500", CPL_VALUE_STRING }, /* #6128 */
+            { "25e2500", CPL_VALUE_STRING }, /* #6128 */
 
             { "d1", CPL_VALUE_STRING } /* #6305 */
         };
@@ -2556,7 +2559,7 @@ namespace tut
             AutoCloseTest() {
                 counter += 222;
             }
-            virtual ~AutoCloseTest() {
+            virtual ~AutoCloseTest() { 
                 counter -= 22;
             }
             static AutoCloseTest* Create() {
@@ -2577,4 +2580,29 @@ namespace tut
         ensure_equals(counter,400);
     }
 
+    // Test cpl_minixml
+    template<>
+    template<>
+    void object::test<37>()
+    {
+        CPLXMLNode* psRoot = CPLCreateXMLNode(nullptr, CXT_Element, "Root");
+        CPLXMLNode* psElt = CPLCreateXMLElementAndValue(psRoot, "Elt", "value");
+        CPLAddXMLAttributeAndValue(psElt, "attr1", "val1");
+        CPLAddXMLAttributeAndValue(psElt, "attr2", "val2");
+        char* str = CPLSerializeXMLTree(psRoot);
+        CPLDestroyXMLNode(psRoot);
+        ensure_equals( std::string(str), std::string("<Root>\n  <Elt attr1=\"val1\" attr2=\"val2\">value</Elt>\n</Root>\n") );
+        CPLFree(str);
+    }
+
+    // Test CPLCharUniquePtr
+    template<>
+    template<>
+    void object::test<38>()
+    {
+        CPLCharUniquePtr x;
+        ensure( x.get() == nullptr );
+        x.reset(CPLStrdup("foo"));
+        ensure_equals( std::string(x.get()), "foo");
+    }
 } // namespace tut

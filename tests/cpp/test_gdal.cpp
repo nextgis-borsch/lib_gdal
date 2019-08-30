@@ -132,7 +132,7 @@ namespace tut
 
 #define ENSURE(cond) ensure(#cond, (cond))
 #define ENSURE_EQUALS(a, b) ensure_equals(#a " == " #b, (a), (b))
-
+    
     // Test GDALDataTypeUnion()
     template<> template<> void object::test<6>()
     {
@@ -148,7 +148,7 @@ namespace tut
                 ENSURE( GDALGetDataTypeSize(eDT) >= GDALGetDataTypeSize(eDT2) );
                 ENSURE( (GDALDataTypeIsComplex(eDT) && (GDALDataTypeIsComplex(eDT1) || GDALDataTypeIsComplex(eDT2))) ||
                         (!GDALDataTypeIsComplex(eDT) && !GDALDataTypeIsComplex(eDT1) && !GDALDataTypeIsComplex(eDT2)) );
-
+                
                 ENSURE( !(GDALDataTypeIsFloating(eDT1) || GDALDataTypeIsFloating(eDT2)) || GDALDataTypeIsFloating(eDT));
                 ENSURE( !(GDALDataTypeIsSigned(eDT1) || GDALDataTypeIsSigned(eDT2)) || GDALDataTypeIsSigned(eDT));
             }
@@ -217,8 +217,8 @@ namespace tut
         ensure( GDALAdjustValueToDataType(GDT_Float32, 1.23,&bClamped,&bRounded) == static_cast<double>(1.23f) && !bClamped && !bRounded);
         ensure( GDALAdjustValueToDataType(GDT_Float32, -1e300,&bClamped,&bRounded) == -std::numeric_limits<float>::max() && bClamped && !bRounded);
         ensure( GDALAdjustValueToDataType(GDT_Float32, 1e300,&bClamped,&bRounded) == std::numeric_limits<float>::max() && bClamped && !bRounded);
-        // ensure( GDALAdjustValueToDataType(GDT_Float32, std::numeric_limits<float>::infinity(),&bClamped,&bRounded) == std::numeric_limits<float>::infinity() && !bClamped && !bRounded);
-        // ensure( GDALAdjustValueToDataType(GDT_Float32, -std::numeric_limits<float>::infinity(),&bClamped,&bRounded) == -std::numeric_limits<float>::infinity() && !bClamped && !bRounded);
+        ensure( GDALAdjustValueToDataType(GDT_Float32, std::numeric_limits<float>::infinity(),&bClamped,&bRounded) == std::numeric_limits<float>::infinity() && !bClamped && !bRounded);
+        ensure( GDALAdjustValueToDataType(GDT_Float32, -std::numeric_limits<float>::infinity(),&bClamped,&bRounded) == -std::numeric_limits<float>::infinity() && !bClamped && !bRounded);
         {
             double dfNan = std::numeric_limits<double>::quiet_NaN();
             double dfGot = GDALAdjustValueToDataType(GDT_Float32, dfNan,&bClamped,&bRounded);
@@ -229,8 +229,8 @@ namespace tut
         ensure( GDALAdjustValueToDataType(GDT_Float64, 1e-50,&bClamped,&bRounded) == 1e-50 && !bClamped && !bRounded);
         ensure( GDALAdjustValueToDataType(GDT_Float64, -1e40,&bClamped,&bRounded) == -1e40 && !bClamped && !bRounded);
         ensure( GDALAdjustValueToDataType(GDT_Float64, 1e40,&bClamped,&bRounded) == 1e40 && !bClamped && !bRounded);
-        // ensure( GDALAdjustValueToDataType(GDT_Float64, std::numeric_limits<float>::infinity(),&bClamped,&bRounded) == std::numeric_limits<float>::infinity() && !bClamped && !bRounded);
-        // ensure( GDALAdjustValueToDataType(GDT_Float64, -std::numeric_limits<float>::infinity(),&bClamped,&bRounded) == -std::numeric_limits<float>::infinity() && !bClamped && !bRounded);
+        ensure( GDALAdjustValueToDataType(GDT_Float64, std::numeric_limits<float>::infinity(),&bClamped,&bRounded) == std::numeric_limits<float>::infinity() && !bClamped && !bRounded);
+        ensure( GDALAdjustValueToDataType(GDT_Float64, -std::numeric_limits<float>::infinity(),&bClamped,&bRounded) == -std::numeric_limits<float>::infinity() && !bClamped && !bRounded);
         {
             double dfNan = std::numeric_limits<double>::quiet_NaN();
             double dfGot = GDALAdjustValueToDataType(GDT_Float64, dfNan,&bClamped,&bRounded);
@@ -241,8 +241,8 @@ namespace tut
     class FakeBand: public GDALRasterBand
     {
         protected:
-            virtual CPLErr IReadBlock(int, int, void*) CPL_OVERRIDE { return CE_None; }
-            virtual CPLErr IWriteBlock( int, int, void * ) CPL_OVERRIDE { return CE_None; }
+            virtual CPLErr IReadBlock(int, int, void*) override { return CE_None; }
+            virtual CPLErr IWriteBlock( int, int, void * ) override { return CE_None; }
 
         public:
                     FakeBand(int nXSize, int nYSize) { nBlockXSize = nXSize;
@@ -255,15 +255,18 @@ namespace tut
         public:
             DatasetWithErrorInFlushCache() : bHasFlushCache(false) { }
            ~DatasetWithErrorInFlushCache() { FlushCache(); }
-            virtual void FlushCache(void) CPL_OVERRIDE
+            virtual void FlushCache(void) override
             {
                 if( !bHasFlushCache)
                     CPLError(CE_Failure, CPLE_AppDefined, "some error");
                 GDALDataset::FlushCache();
                 bHasFlushCache = true;
             }
-            virtual CPLErr SetProjection(const char*) CPL_OVERRIDE { return CE_None; }
-            virtual CPLErr SetGeoTransform(double*) CPL_OVERRIDE { return CE_None; }
+            virtual CPLErr _SetProjection(const char*) override { return CE_None; }
+            CPLErr SetSpatialRef(const OGRSpatialReference* poSRS) override {
+                return OldSetProjectionFromSetSpatialRef(poSRS);
+            }
+            virtual CPLErr SetGeoTransform(double*) override { return CE_None; }
 
             static GDALDataset* CreateCopy(const char*, GDALDataset*,
                                     int, char **,
@@ -407,9 +410,9 @@ namespace tut
         ensure( !GDALIsValueInRange<GByte>(-1) );
         ensure( !GDALIsValueInRange<GByte>(256) );
         ensure( GDALIsValueInRange<float>(std::numeric_limits<float>::max()) );
-        // ensure( GDALIsValueInRange<float>(std::numeric_limits<float>::infinity()) );
+        ensure( GDALIsValueInRange<float>(std::numeric_limits<float>::infinity()) );
         ensure( !GDALIsValueInRange<float>(std::numeric_limits<double>::max()) );
-        // ensure( GDALIsValueInRange<double>(std::numeric_limits<double>::infinity()) );
+        ensure( GDALIsValueInRange<double>(std::numeric_limits<double>::infinity()) );
         ensure( !GDALIsValueInRange<double>(CPLAtof("nan")) );
         ensure( !GDALIsValueInRange<float>(CPLAtof("nan")) );
         ensure( !GDALIsValueInRange<GByte>(CPLAtof("nan")) );

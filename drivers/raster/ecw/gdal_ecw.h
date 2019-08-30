@@ -398,12 +398,12 @@ class ECWDataset;
 class ECWAsyncReader : public GDALAsyncReader
 {
 private:
-    CNCSJP2FileView *poFileView;
-    CPLMutex        *hMutex;
-    int              bUsingCustomStream;
+    CNCSJP2FileView *poFileView = nullptr;
+    CPLMutex        *hMutex = nullptr;
+    int              bUsingCustomStream = false;
 
-    int              bUpdateReady;
-    int              bComplete;
+    int              bUpdateReady = false;
+    int              bComplete = false;
 
     static NCSEcwReadStatus RefreshCB( NCSFileView * );
     NCSEcwReadStatus ReadToBuffer();
@@ -567,7 +567,11 @@ class CPL_DLL ECWDataset : public GDALJP2AbstractDataset
     virtual char      **GetMetadata( const char * pszDomain = "" ) override;
 
     virtual CPLErr SetGeoTransform( double * padfGeoTransform ) override;
-    virtual CPLErr SetProjection( const char* pszProjection ) override;
+    virtual CPLErr _SetProjection( const char* pszProjection ) override;
+    CPLErr SetSpatialRef(const OGRSpatialReference* poSRS) override {
+        return OldSetProjectionFromSetSpatialRef(poSRS);
+    }
+
     virtual CPLErr SetMetadataItem( const char * pszName,
                                  const char * pszValue,
                                  const char * pszDomain = "" ) override;
@@ -622,8 +626,8 @@ class ECWRasterBand : public GDALPamRasterBand
 
 #if ECWSDK_VERSION>=50
 
-    int nStatsBandIndex;
-    int nStatsBandCount;
+    int nStatsBandIndex = 0;
+    int nStatsBandCount = 0;
 
 #endif
 

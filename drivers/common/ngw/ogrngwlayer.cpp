@@ -483,6 +483,7 @@ OGRNGWLayer::OGRNGWLayer( OGRNGWDataset *poDSIn,
         oResourceJsonObject.GetString("vector_layer/geometry_type")) );
 
     OGRSpatialReference *poSRS = new OGRSpatialReference;
+    poSRS->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
     int nEPSG = oResourceJsonObject.GetInteger("vector_layer/srs/id", 3857); // Default NGW SRS is Web mercator EPSG:3857.
     if( poSRS->importFromEPSG( nEPSG ) == OGRERR_NONE )
     {
@@ -1289,10 +1290,10 @@ OGRErr OGRNGWLayer::SyncFeatures()
         auto osIDs = NGWAPI::PatchFeatures( poDS->GetUrl(), osResourceId,
             oFeatureJsonArray.Format(CPLJSONObject::Plain), poDS->GetHeaders() );
         if( !osIDs.empty() )
-    {
-        bNeedSyncData = false;
-        nFeatureCount += GetNewFeaturesCount();
-        soChangedIds.clear();
+        {
+            bNeedSyncData = false;
+            nFeatureCount += GetNewFeaturesCount();
+            soChangedIds.clear();
             if( osIDs.size() != aoPatchedFIDs.size() ) // Expected equal identifier count.
             {
                 CPLDebug("ngw", "Patched feature count is not equal. Reload features from server.");
@@ -1310,14 +1311,14 @@ OGRErr OGRNGWLayer::SyncFeatures()
                     moFeatures[nNewFID] = poFeature;
                 }
             }
-    }
-    else
-    {
-        // Error message should set in NGWAPI::PatchFeatures function.
+        }
+        else
+        {
+            // Error message should set in NGWAPI::PatchFeatures function.
             if( CPLGetLastErrorNo() != 0 )
             {
-        return OGRERR_FAILURE;
-    }
+                return OGRERR_FAILURE;
+            }
         }
     }
     return OGRERR_NONE;

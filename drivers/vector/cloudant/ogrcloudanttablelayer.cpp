@@ -155,8 +155,8 @@ bool OGRCloudantTableLayer::RunSpatialFilterQueryIfNecessary()
         return false;
     }
 
-    int nRows = json_object_array_length(poRows);
-    for(int i=0;i<nRows;i++)
+    auto nRows = json_object_array_length(poRows);
+    for(auto i=decltype(nRows){0};i<nRows;i++)
     {
         json_object* poRow = json_object_array_get_idx(poRows, i);
         if ( poRow == nullptr ||
@@ -427,6 +427,7 @@ void OGRCloudantTableLayer::LoadMetadata()
     if (pszSRS != nullptr)
     {
         poSRS = new OGRSpatialReference();
+        poSRS->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
         if (poSRS->importFromURN(pszSRS) != OGRERR_NONE)
         {
             delete poSRS;
@@ -495,8 +496,8 @@ void OGRCloudantTableLayer::LoadMetadata()
         OGRFieldDefn oFieldRev("_rev", OFTString);
         poFeatureDefn->AddFieldDefn(&oFieldRev);
 
-        int nFields = json_object_array_length(poFields);
-        for(int i=0;i<nFields;i++)
+        auto nFields = json_object_array_length(poFields);
+        for(auto i=decltype(nFields){0};i<nFields;i++)
         {
             json_object* poField = json_object_array_get_idx(poFields, i);
             if (poField && json_object_is_type(poField, json_type_object))

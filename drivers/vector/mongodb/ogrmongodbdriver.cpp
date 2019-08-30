@@ -63,6 +63,7 @@ static int bStaticFIPSMode = FALSE;
 
 class OGRMongoDBDataSource;
 
+namespace {
 typedef struct _IntOrMap IntOrMap;
 
 struct _IntOrMap
@@ -74,6 +75,7 @@ struct _IntOrMap
         std::map< CPLString, IntOrMap*>* poMap;
     } u;
 };
+} // namespace
 
 class OGRMongoDBLayer final: public OGRLayer
 {
@@ -480,7 +482,8 @@ void OGRMongoDBLayer::AddOrUpdateField(const char* pszAttrName,
                 {
                     OGRGeomFieldDefn fldDefn( pszAttrName, eGeomType );
                     OGRSpatialReference* poSRS = new OGRSpatialReference();
-                    poSRS->SetFromUserInput(SRS_WKT_WGS84);
+                    poSRS->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
+                    poSRS->SetFromUserInput(SRS_WKT_WGS84_LAT_LONG);
                     fldDefn.SetSpatialRef(poSRS);
                     poSRS->Release();
                     m_poFeatureDefn->AddGeomFieldDefn( &fldDefn );
@@ -531,7 +534,8 @@ void OGRMongoDBLayer::AddOrUpdateField(const char* pszAttrName,
         {
             OGRGeomFieldDefn fldDefn( pszAttrName, wkbPoint );
             OGRSpatialReference* poSRS = new OGRSpatialReference();
-            poSRS->SetFromUserInput(SRS_WKT_WGS84);
+            poSRS->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
+            poSRS->SetFromUserInput(SRS_WKT_WGS84_LAT_LONG);
             fldDefn.SetSpatialRef(poSRS);
             poSRS->Release();
             m_poFeatureDefn->AddGeomFieldDefn( &fldDefn );
@@ -698,7 +702,8 @@ int OGRMongoDBLayer::ReadOGRMetadata(std::map< CPLString, CPLString>& oMapIndice
                             OGRwkbGeometryType eType(OGRFromOGCGeomType(type.String().c_str()));
                             OGRGeomFieldDefn oFieldDefn(name.String().c_str(), eType);
                             OGRSpatialReference* poSRS = new OGRSpatialReference();
-                            poSRS->SetFromUserInput(SRS_WKT_WGS84);
+                            poSRS->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
+                            poSRS->SetFromUserInput(SRS_WKT_WGS84_LAT_LONG);
                             oFieldDefn.SetSpatialRef(poSRS);
                             poSRS->Release();
                             m_poFeatureDefn->AddGeomFieldDefn(&oFieldDefn);
@@ -1093,7 +1098,7 @@ static void OGRMongoDBReaderSetField( OGRLayer* poLayer,
                     else if( dfVal > static_cast<double>(std::numeric_limits<GIntBig>::max()) )
                         panValues[i] = std::numeric_limits<GIntBig>::max();
                     else
-                        panValues[i] = (int)dfVal;
+                        panValues[i] = static_cast<GIntBig>(dfVal);
                 }
                 else if( eBSONType == MinKey )
                     panValues[i] = std::numeric_limits<GIntBig>::min();
@@ -1234,7 +1239,10 @@ OGRFeature* OGRMongoDBLayer::GetFeature(GIntBig nFID)
 
     if( m_osFID.empty() )
     {
-        BSONObj oQueryAttrBak(m_oQueryAttr), oQuerySpatBak(m_oQuerySpat);
+        BSONObj oQueryAttrBak(m_oQueryAttr);
+        BSONObj oQuerySpatBak(m_oQuerySpat);
+        m_oQueryAttr = BSONObj();
+        m_oQuerySpat = BSONObj();
         OGRFeature* poFeature = OGRLayer::GetFeature(nFID);
         m_oQueryAttr = oQueryAttrBak;
         m_oQuerySpat = oQuerySpatBak;
@@ -1365,6 +1373,10 @@ OGRErr OGRMongoDBLayer::CreateGeomField( OGRGeomFieldDefn *poFieldIn, CPL_UNUSED
     }
 
     OGRGeomFieldDefn oFieldDefn(poFieldIn);
+    if( oFieldDefn.GetSpatialRef() )
+    {
+        oFieldDefn.GetSpatialRef()->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
+    }
     if( EQUAL(oFieldDefn.GetNameRef(), "") )
         oFieldDefn.SetName("geometry");
 
@@ -1387,7 +1399,8 @@ OGRErr OGRMongoDBLayer::CreateGeomField( OGRGeomFieldDefn *poFieldIn, CPL_UNUSED
     if( oFieldDefn.GetSpatialRef() != nullptr )
     {
         OGRSpatialReference oSRS_WGS84;
-        oSRS_WGS84.SetFromUserInput(SRS_WKT_WGS84);
+        oSRS_WGS84.SetFromUserInput(SRS_WKT_WGS84_LAT_LONG);
+        oSRS_WGS84.SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
         if( !oSRS_WGS84.IsSame(oFieldDefn.GetSpatialRef()) )
         {
             poCT = OGRCreateCoordinateTransformation( oFieldDefn.GetSpatialRef(), &oSRS_WGS84 );
@@ -1815,10 +1828,12 @@ OGRErr OGRMongoDBLayer::ISetFeature( OGRFeature *poFeature )
     try
     {
         BSONObj obj( BuildBSONObjFromFeature(poFeature, TRUE) );
+        auto query = !m_osFID.empty() ?
+            MONGO_QUERY("_id" << obj.getField("_id") << m_osFID << poFeature->GetFID()) :
+            MONGO_QUERY("_id" << obj.getField("_id"));
         // TODO? we should theoretically detect if the provided _id doesn't exist
         m_poDS->GetConn()->update( m_osQualifiedCollection,
-                                 MONGO_QUERY("_id" << obj.getField("_id")),
-                                 obj, false, false );
+                                   query, obj, false, false );
         return OGRERR_NONE;
     }
     catch( const DBException &e )
@@ -2499,7 +2514,13 @@ OGRLayer* OGRMongoDBDataSource::ICreateLayer( const char *pszName,
     {
         const char* pszGeometryName = CSLFetchNameValueDef(papszOptions, "GEOMETRY_NAME", "geometry");
         OGRGeomFieldDefn oFieldDefn(pszGeometryName, eGType);
-        oFieldDefn.SetSpatialRef(poSpatialRef);
+        if( poSpatialRef )
+        {
+            auto poSpatialRefClone = poSpatialRef->Clone();
+            poSpatialRefClone->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
+            oFieldDefn.SetSpatialRef(poSpatialRefClone);
+            poSpatialRefClone->Release();
+        }
         poLayer->CreateGeomField(&oFieldDefn, FALSE);
     }
 

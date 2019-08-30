@@ -41,6 +41,9 @@
 
 CPL_CVSID("$Id$")
 
+// Format documentation: https://github.com/Esri/ntv2-file-routines
+// Original archived specification: https://web.archive.org/web/20091227232322/http://www.mgs.gov.on.ca/stdprodconsume/groups/content/@mgs/@iandit/documents/resourcelist/stel02_047447.pdf
+
 /**
  * The header for the file, and each grid consists of 11 16byte records.
  * The first half is an ASCII label, and the second half is the value
@@ -109,7 +112,11 @@ class NTv2Dataset final: public RawDataset
 
     CPLErr SetGeoTransform( double * padfTransform ) override;
     CPLErr GetGeoTransform( double * padfTransform ) override;
-    const char *GetProjectionRef() override;
+    const char *_GetProjectionRef() override;
+    const OGRSpatialReference* GetSpatialRef() const override {
+        return GetSpatialRefFromOldGetProjectionRef();
+    }
+
     void FlushCache(void) override;
 
     static GDALDataset *Open( GDALOpenInfo * );
@@ -743,10 +750,10 @@ CPLErr NTv2Dataset::SetGeoTransform( double * padfTransform )
 /*                          GetProjectionRef()                          */
 /************************************************************************/
 
-const char *NTv2Dataset::GetProjectionRef()
+const char *NTv2Dataset::_GetProjectionRef()
 
 {
-    return SRS_WKT_WGS84;
+    return SRS_WKT_WGS84_LAT_LONG;
 }
 
 /************************************************************************/

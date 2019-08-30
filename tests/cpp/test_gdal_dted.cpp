@@ -186,7 +186,7 @@ namespace tut
         std::string proj(GDALGetProjectionRef(ds));
         ensure_equals("Projection definition is not available", proj.empty(), false);
 
-        std::string expect("GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]]");
+        std::string expect("GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AXIS[\"Latitude\",NORTH],AXIS[\"Longitude\",EAST],AUTHORITY[\"EPSG\",\"4326\"]]");
         ensure_equals("Projection does not match expected", proj, expect);
 
         GDALClose(ds);
@@ -231,32 +231,32 @@ namespace tut
         GDALDatasetH dsSrc = GDALOpen(src.c_str(), GA_ReadOnly);
         ensure("Can't open source dataset: " + src, nullptr != dsSrc);
 
-        // std::string dst(data_tmp_ + SEP);
-        // dst += rasters_.at(fileIdx).file_;
-        //
-        // GDALDatasetH dsDst = nullptr;
-        // dsDst = GDALCreateCopy(drv_, dst.c_str(), dsSrc, FALSE, nullptr, nullptr, nullptr);
-        GDALClose(dsSrc);
-        // ensure("Can't copy dataset", nullptr != dsDst);
-        //
-        // std::string proj(GDALGetProjectionRef(dsDst));
-        // ensure_equals("Projection definition is not available", proj.empty(), false);
-        //
-        // std::string expect("GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]]");
-        // ensure_equals("Projection does not match expected", proj, expect);
-        //
-        // GDALRasterBandH band = GDALGetRasterBand(dsDst, rasters_.at(fileIdx).band_);
-        // ensure("Can't get raster band", nullptr != band);
-        //
-        // const int xsize = GDALGetRasterXSize(dsDst);
-        // const int ysize = GDALGetRasterYSize(dsDst);
-        // const int checksum = GDALChecksumImage(band, 0, 0, xsize, ysize);
-        //
-        // std::stringstream os;
-        // os << "Checksums for '" << dst << "' not equal";
-        // ensure_equals(os.str().c_str(), checksum, rasters_.at(fileIdx).checksum_);
+        std::string dst(data_tmp_ + SEP);
+        dst += rasters_.at(fileIdx).file_;
 
-        // GDALClose(dsDst);
+        GDALDatasetH dsDst = nullptr;
+        dsDst = GDALCreateCopy(drv_, dst.c_str(), dsSrc, FALSE, nullptr, nullptr, nullptr);
+        GDALClose(dsSrc);
+        ensure("Can't copy dataset", nullptr != dsDst);
+
+        std::string proj(GDALGetProjectionRef(dsDst));
+        ensure_equals("Projection definition is not available", proj.empty(), false);
+
+        std::string expect("GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AXIS[\"Latitude\",NORTH],AXIS[\"Longitude\",EAST],AUTHORITY[\"EPSG\",\"4326\"]]");
+        ensure_equals("Projection does not match expected", proj, expect);
+
+        GDALRasterBandH band = GDALGetRasterBand(dsDst, rasters_.at(fileIdx).band_);
+        ensure("Can't get raster band", nullptr != band);
+
+        const int xsize = GDALGetRasterXSize(dsDst);
+        const int ysize = GDALGetRasterYSize(dsDst);
+        const int checksum = GDALChecksumImage(band, 0, 0, xsize, ysize);
+
+        std::stringstream os;
+        os << "Checksums for '" << dst << "' not equal";
+        ensure_equals(os.str().c_str(), checksum, rasters_.at(fileIdx).checksum_);
+
+        GDALClose(dsDst);
     }
 
     // Test subwindow read and the tail recursion problem.

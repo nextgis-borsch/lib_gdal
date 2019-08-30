@@ -132,7 +132,10 @@ class PLMosaicDataset final: public GDALPamDataset
 
     virtual void FlushCache(void) override;
 
-    virtual const char *GetProjectionRef() override;
+    virtual const char *_GetProjectionRef() override;
+    const OGRSpatialReference* GetSpatialRef() const override {
+        return GetSpatialRefFromOldGetProjectionRef();
+    }
     virtual CPLErr      GetGeoTransform(double* padfGeoTransform) override;
 
     GDALDataset        *GetMetaTile(int tile_x, int tile_y);
@@ -1108,8 +1111,8 @@ std::vector<CPLString> PLMosaicDataset::ListSubdatasets()
             return aosNameList;
         }
 
-        const int nMosaics = json_object_array_length(poMosaics);
-        for(int i=0;i< nMosaics;i++)
+        const auto nMosaics = json_object_array_length(poMosaics);
+        for(auto i=decltype(nMosaics){0};i< nMosaics;i++)
         {
             const char* pszName = nullptr;
             const char* pszCoordinateSystem = nullptr;
@@ -1161,7 +1164,7 @@ std::vector<CPLString> PLMosaicDataset::ListSubdatasets()
 /*                            GetProjectionRef()                       */
 /************************************************************************/
 
-const char* PLMosaicDataset::GetProjectionRef()
+const char* PLMosaicDataset::_GetProjectionRef()
 {
     return (pszWKT) ? pszWKT : "";
 }
@@ -1416,7 +1419,8 @@ const char* PLMosaicDataset::GetLocationInfo(int nPixel, int nLine)
         {
             CPLXMLNode* psScenes =
                 CPLCreateXMLNode(psRoot, CXT_Element, "Scenes");
-            for(int i = 0; i < json_object_array_length(poItems); i++ )
+            const auto nItemsLength = json_object_array_length(poItems);
+            for(auto i = decltype(nItemsLength){0}; i < nItemsLength; i++ )
             {
                 json_object* poObj = json_object_array_get_idx(poItems, i);
                 if ( poObj && json_object_get_type(poObj) == json_type_object )

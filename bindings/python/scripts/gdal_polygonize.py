@@ -35,7 +35,6 @@ import sys
 
 from osgeo import gdal
 from osgeo import ogr
-from osgeo import osr
 
 
 def Usage():
@@ -78,14 +77,14 @@ def GetOutputDriversFor(filename):
 
 def GetOutputDriverFor(filename):
     drv_list = GetOutputDriversFor(filename)
+    ext = GetExtension(filename)
     if not drv_list:
-        ext = GetExtension(filename)
         if not ext:
             return 'ESRI Shapefile'
         else:
             raise Exception("Cannot guess driver for %s" % filename)
     elif len(drv_list) > 1:
-        print("Several drivers matching %s extension. Using %s" % (ext, drv_list[0]))
+        print("Several drivers matching %s extension. Using %s" % (ext if ext else '', drv_list[0]))
     return drv_list[0]
 
 # =============================================================================
@@ -237,11 +236,7 @@ except:
 
 if dst_layer is None:
 
-    srs = None
-    if src_ds.GetProjectionRef() != '':
-        srs = osr.SpatialReference()
-        srs.ImportFromWkt(src_ds.GetProjectionRef())
-
+    srs = src_ds.GetSpatialRef()
     dst_layer = dst_ds.CreateLayer(dst_layername, geom_type=ogr.wkbPolygon, srs=srs)
 
     if dst_fieldname is None:

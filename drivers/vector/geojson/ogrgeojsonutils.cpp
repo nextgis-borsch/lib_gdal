@@ -172,10 +172,18 @@ static bool IsGeoJSONLikeObject( const char* pszText, bool* pbMightBeSequence )
         return true;
     }
 
-    CPLString osWithoutSpace = GetCompactJSon(pszText,
-                                            strlen(szESRIJSonPotentialStart1));
+    CPLString osWithoutSpace = GetCompactJSon(pszText, strlen(pszText));
     if( osWithoutSpace.find("{\"features\":[") == 0 &&
         osWithoutSpace.find(szESRIJSonPotentialStart1) != 0 )
+    {
+        if( pbMightBeSequence )
+            *pbMightBeSequence = false;
+        return true;
+    }
+
+    // See https://raw.githubusercontent.com/icepack/icepack-data/master/meshes/larsen/larsen_inflow.geojson
+    if( osWithoutSpace.find("{\"crs\":{") == 0 &&
+        osWithoutSpace.find(",\"features\":[") != std::string::npos )
     {
         if( pbMightBeSequence )
             *pbMightBeSequence = false;
@@ -710,13 +718,13 @@ OGRFieldType GeoJSONPropertyToFieldType( json_object* poObject,
     {
         if( bArrayAsString )
             return OFTString;
-        const int nSize = json_object_array_length(poObject);
+        const auto nSize = json_object_array_length(poObject);
         if( nSize == 0 )
             // We don't know, so let's assume it is a string list.
             return OFTStringList;
         OGRFieldType eType = OFTIntegerList;
         bool bOnlyBoolean = true;
-        for( int i = 0; i < nSize; i++ )
+        for( auto i = decltype(nSize){0}; i < nSize; i++ )
         {
             json_object* poRow = json_object_array_get_idx(poObject, i);
             if( poRow != nullptr )

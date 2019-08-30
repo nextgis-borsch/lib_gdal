@@ -148,6 +148,7 @@ CPLErr GNMDatabaseNetwork::Create( const char* pszFilename, char** papszOptions 
         {
             CPLError( CE_Failure, CPLE_IllegalArg,
                       "The network spatial reference should be present" );
+            CPLFree(wktSrs);
             return CE_Failure;
         }
         m_soSRS = wktSrs;
@@ -413,7 +414,7 @@ OGRErr GNMDatabaseNetwork::DeleteLayer(int nIndex)
 }
 
 OGRLayer *GNMDatabaseNetwork::ICreateLayer(const char *pszName,
-                                CPL_UNUSED OGRSpatialReference *poSpatialRef,
+                                OGRSpatialReference * /*poSpatialRef*/,
                                 OGRwkbGeometryType eGType, char **papszOptions)
 {
     //check if layer with such name exist

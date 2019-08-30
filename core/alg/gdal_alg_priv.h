@@ -35,6 +35,7 @@
 #ifndef DOXYGEN_SKIP
 
 #include "gdal_alg.h"
+#include "ogr_spatialref.h"
 
 CPL_C_START
 
@@ -56,6 +57,9 @@ typedef struct {
     int nYSize;
     int nBands;
     GDALDataType eType;
+    int nPixelSpace;
+    GSpacing nLineSpace;
+    GSpacing nBandSpace;
     double *padfBurnValue;
     GDALBurnValueSrc eBurnValueSource;
     GDALRasterMergeAlg eMergeAlg;
@@ -89,7 +93,8 @@ void GDALdllImageLineAllTouched( int nRasterXSize, int nRasterYSize,
                                  int nPartCount, int *panPartSize,
                                  double *padfX, double *padfY,
                                  double *padfVariant,
-                                 llPointFunc pfnPointFunc, void *pCBData );
+                                 llPointFunc pfnPointFunc, void *pCBData,
+                                 int bAvoidBurningSamePoints );
 
 void GDALdllImageFilledPolygon( int nRasterXSize, int nRasterYSize,
                                 int nPartCount, int *panPartSize,
@@ -216,6 +221,26 @@ struct FloatEqualityTest
 {
     bool operator()(float a, float b) { return GDALFloatEquals(a,b) == TRUE; }
 };
+
+bool GDALComputeAreaOfInterest(OGRSpatialReference* poSRS,
+                               double adfGT[6],
+                               int nXSize,
+                               int nYSize,
+                               double& dfWestLongitudeDeg,
+                               double& dfSouthLatitudeDeg,
+                               double& dfEastLongitudeDeg,
+                               double& dfNorthLatitudeDeg );
+
+bool GDALComputeAreaOfInterest(OGRSpatialReference* poSRS,
+                               double dfX1,
+                               double dfY1,
+                               double dfX2,
+                               double dfY2,
+                               double& dfWestLongitudeDeg,
+                               double& dfSouthLatitudeDeg,
+                               double& dfEastLongitudeDeg,
+                               double& dfNorthLatitudeDeg );
+
 
 #endif /* #ifndef DOXYGEN_SKIP */
 

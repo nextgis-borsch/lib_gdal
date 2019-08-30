@@ -112,47 +112,47 @@ namespace tut
         ensure("SRS handle is NULL", nullptr != srs_);
 
         // California III NAD83
-        // OSRSetStatePlane(srs_, 403, 1);
-        //
-        // double val = 0;
-        //
-        // val = OSRGetProjParm(srs_, SRS_PP_STANDARD_PARALLEL_1, -1111, &err_);
-        // ensure_approx_equals(val, 38.43333333333333);
-        //
-        // val = OSRGetProjParm(srs_, SRS_PP_STANDARD_PARALLEL_2, -1111, &err_);
-        // ensure_approx_equals(val, 37.06666666666667);
-        //
-        // val = OSRGetProjParm(srs_, SRS_PP_LATITUDE_OF_ORIGIN, -1111, &err_);
-        // ensure_approx_equals(val, 36.5);
-        //
-        // val = OSRGetProjParm(srs_, SRS_PP_CENTRAL_MERIDIAN, -1111, &err_);
-        // ensure_approx_equals(val, -120.5);
-        //
-        // val = OSRGetProjParm(srs_, SRS_PP_FALSE_EASTING, -1111, &err_);
-        // ensure_approx_equals(val, 2000000.0);
-        //
-        // val = OSRGetProjParm(srs_, SRS_PP_FALSE_NORTHING, -1111, &err_);
-        // ensure_approx_equals(val, 500000.0);
-        //
-        // ensure_equals("Invalid authority name",
-        //     std::string(OSRGetAuthorityName(srs_, "GEOGCS")), std::string("EPSG"));
-        // ensure_equals("Invalid authority code",
-        //     std::string(OSRGetAuthorityCode(srs_, "GEOGCS")), std::string("4269"));
-        //
-        // ensure_equals("Invalid authority name",
-        //     std::string(OSRGetAuthorityName(srs_, "DATUM")), std::string("EPSG"));
-        // ensure_equals("Invalid authority code",
-        //     std::string(OSRGetAuthorityCode(srs_, "DATUM")), std::string("6269"));
-        //
-        // ensure_equals("Invalid authority name",
-        //     std::string(OSRGetAuthorityName(srs_, "PROJCS")), std::string("EPSG"));
-        // ensure_equals("Invalid authority code",
-        //     std::string(OSRGetAuthorityCode(srs_, "PROJCS")), std::string("26943"));
-        //
-        // ensure_equals("Invalid authority name",
-        //     std::string(OSRGetAuthorityName(srs_, "PROJCS|UNIT")), std::string("EPSG"));
-        // ensure_equals("Invalid authority code",
-        //     std::string(OSRGetAuthorityCode(srs_, "PROJCS|UNIT")), std::string("9001"));
+        OSRSetStatePlane(srs_, 403, 1);
+
+        double val = 0;
+
+        val = OSRGetProjParm(srs_, SRS_PP_STANDARD_PARALLEL_1, -1111, &err_);
+        ensure_approx_equals(val, 38.43333333333333);
+
+        val = OSRGetProjParm(srs_, SRS_PP_STANDARD_PARALLEL_2, -1111, &err_);
+        ensure_approx_equals(val, 37.06666666666667);
+
+        val = OSRGetProjParm(srs_, SRS_PP_LATITUDE_OF_ORIGIN, -1111, &err_);
+        ensure_approx_equals(val, 36.5);
+
+        val = OSRGetProjParm(srs_, SRS_PP_CENTRAL_MERIDIAN, -1111, &err_);
+        ensure_approx_equals(val, -120.5);
+
+        val = OSRGetProjParm(srs_, SRS_PP_FALSE_EASTING, -1111, &err_);
+        ensure_approx_equals(val, 2000000.0);
+
+        val = OSRGetProjParm(srs_, SRS_PP_FALSE_NORTHING, -1111, &err_);
+        ensure_approx_equals(val, 500000.0);
+
+        ensure_equals("Invalid authority name",
+            std::string(OSRGetAuthorityName(srs_, "GEOGCS")), std::string("EPSG"));
+        ensure_equals("Invalid authority code",
+            std::string(OSRGetAuthorityCode(srs_, "GEOGCS")), std::string("4269"));
+
+        ensure_equals("Invalid authority name",
+            std::string(OSRGetAuthorityName(srs_, "DATUM")), std::string("EPSG"));
+        ensure_equals("Invalid authority code",
+            std::string(OSRGetAuthorityCode(srs_, "DATUM")), std::string("6269"));
+
+        ensure_equals("Invalid authority name",
+            std::string(OSRGetAuthorityName(srs_, "PROJCS")), std::string("EPSG"));
+        ensure_equals("Invalid authority code",
+            std::string(OSRGetAuthorityCode(srs_, "PROJCS")), std::string("26943"));
+
+        ensure_equals("Invalid authority name",
+            std::string(OSRGetAuthorityName(srs_, "PROJCS|UNIT")), std::string("EPSG"));
+        ensure_equals("Invalid authority code",
+            std::string(OSRGetAuthorityCode(srs_, "PROJCS|UNIT")), std::string("9001"));
     }
 
     // NAD83 State Plane zone, but overridden to be in Feet
@@ -163,49 +163,49 @@ namespace tut
         ensure("SRS handle is NULL", nullptr != srs_);
 
         // California III NAD83 (feet)
-        // OSRSetStatePlaneWithUnits(srs_, 403, 1, "Foot", 0.3048006096012192);
-        //
-        // double val = 0;
-        //
-        // val = OSRGetProjParm(srs_, SRS_PP_STANDARD_PARALLEL_1, -1111, &err_);
-        // ensure_approx_equals(val, 38.43333333333333);
-        //
-        // val = OSRGetProjParm(srs_, SRS_PP_STANDARD_PARALLEL_2, -1111, &err_);
-        // ensure_approx_equals(val, 37.06666666666667);
-        //
-        // val = OSRGetProjParm(srs_, SRS_PP_LATITUDE_OF_ORIGIN, -1111, &err_);
-        // ensure_approx_equals(val, 36.5);
-        //
-        // val = OSRGetProjParm(srs_, SRS_PP_CENTRAL_MERIDIAN, -1111, &err_);
-        // ensure_approx_equals(val, -120.5);
-        //
-        // val = OSRGetProjParm(srs_, SRS_PP_FALSE_EASTING, -1111, &err_);
-        // ensure_approx_equals(val, 6561666.666666667);
-        //
-        // val = OSRGetProjParm(srs_, SRS_PP_FALSE_NORTHING, -1111, &err_);
-        // ensure_approx_equals(val, 1640416.666666667);
-        //
-        // ensure_equals("Invalid authority name",
-        //     std::string(OSRGetAuthorityName(srs_, "GEOGCS")), std::string("EPSG"));
-        // ensure_equals("Invalid authority code",
-        //     std::string(OSRGetAuthorityCode(srs_, "GEOGCS")), std::string("4269"));
-        //
-        // ensure_equals("Invalid authority name",
-        //     std::string(OSRGetAuthorityName(srs_, "DATUM")), std::string("EPSG"));
-        // ensure_equals("Invalid authority code",
-        //     std::string(OSRGetAuthorityCode(srs_, "DATUM")), std::string("6269"));
-        //
-        // ensure("Got a PROJCS Authority but we should not",
-        //     nullptr == OSRGetAuthorityName(srs_, "PROJCS"));
-        //
-        // ensure("Got METER authority code on linear units",
-        //     nullptr == OSRGetAuthorityCode(srs_, "PROJCS|UNIT"));
-        //
-        // char* unitsName = nullptr;
-        // val = OSRGetLinearUnits(srs_, &unitsName);
-        // ensure("Units name is NULL", nullptr != unitsName);
-        // ensure( "Did not get Foot linear units",
-        //         std::string("Foot") == unitsName);
+        OSRSetStatePlaneWithUnits(srs_, 403, 1, "Foot", 0.3048006096012192);
+
+        double val = 0;
+
+        val = OSRGetProjParm(srs_, SRS_PP_STANDARD_PARALLEL_1, -1111, &err_);
+        ensure_approx_equals(val, 38.43333333333333);
+
+        val = OSRGetProjParm(srs_, SRS_PP_STANDARD_PARALLEL_2, -1111, &err_);
+        ensure_approx_equals(val, 37.06666666666667);
+
+        val = OSRGetProjParm(srs_, SRS_PP_LATITUDE_OF_ORIGIN, -1111, &err_);
+        ensure_approx_equals(val, 36.5);
+
+        val = OSRGetProjParm(srs_, SRS_PP_CENTRAL_MERIDIAN, -1111, &err_);
+        ensure_approx_equals(val, -120.5);
+
+        val = OSRGetProjParm(srs_, SRS_PP_FALSE_EASTING, -1111, &err_);
+        ensure_approx_equals(val, 6561666.666666667);
+
+        val = OSRGetProjParm(srs_, SRS_PP_FALSE_NORTHING, -1111, &err_);
+        ensure_approx_equals(val, 1640416.666666667);
+
+        ensure_equals("Invalid authority name",
+            std::string(OSRGetAuthorityName(srs_, "GEOGCS")), std::string("EPSG"));
+        ensure_equals("Invalid authority code",
+            std::string(OSRGetAuthorityCode(srs_, "GEOGCS")), std::string("4269"));
+
+        ensure_equals("Invalid authority name",
+            std::string(OSRGetAuthorityName(srs_, "DATUM")), std::string("EPSG"));
+        ensure_equals("Invalid authority code",
+            std::string(OSRGetAuthorityCode(srs_, "DATUM")), std::string("6269"));
+
+        ensure("Got a PROJCS Authority but we should not",
+            nullptr == OSRGetAuthorityName(srs_, "PROJCS"));
+
+        ensure("Got METER authority code on linear units",
+            nullptr == OSRGetAuthorityCode(srs_, "PROJCS|UNIT"));
+
+        char* unitsName = nullptr;
+        val = OSRGetLinearUnits(srs_, &unitsName);
+        ensure("Units name is NULL", nullptr != unitsName);
+        ensure( "Did not get Foot linear units",
+                std::string("Foot") == unitsName);
     }
 
     // Translate a coordinate system with NAD shift into to PROJ.4 and back.
@@ -235,6 +235,7 @@ namespace tut
         ensure_equals("OSRSetTOWGS84 failed", err_, OGRERR_NONE);
         ensure("GetTOWGS84 result is wrong",
             std::equal(coeff, coeff + coeffSize, expect));
+        OSRSetLinearUnits(srs_, "Metre", 1);
 
         char* proj4 = nullptr;
         err_ = OSRExportToProj4(srs_, &proj4);
@@ -270,18 +271,7 @@ namespace tut
         ensure_equals("OSRExportToWkt failed", err_, OGRERR_NONE);
         ensure("OSRExportToWkt returned NULL", nullptr != wkt1);
 
-        err_ = OSRSetFromUserInput(srs_, "WGS84");
-        ensure_equals("OSRSetFromUserInput failed", err_, OGRERR_NONE);
-
-        char* wkt2 = nullptr;
-        err_ = OSRExportToWkt(srs_, &wkt2);
-        ensure_equals("OSRExportToWkt failed", err_, OGRERR_NONE);
-        ensure("OSRExportToWkt returned NULL", nullptr != wkt2);
-
-        ensure_equals("CRS84 lookup not as expected",
-            std::string(wkt1), std::string(wkt2));
         CPLFree(wkt1);
-        CPLFree(wkt2);
     }
 
     // Test URN support for EPSG
@@ -291,26 +281,26 @@ namespace tut
     {
         ensure("SRS handle is NULL", nullptr != srs_);
 
-        // err_ = OSRSetFromUserInput(srs_, "urn:ogc:def:crs:EPSG::4326");
-        // ensure_equals("OSRSetFromUserInput failed", err_, OGRERR_NONE);
-        //
-        // char* wkt1 = nullptr;
-        // err_ = OSRExportToWkt(srs_, &wkt1);
-        // ensure_equals("OSRExportToWkt failed", err_, OGRERR_NONE);
-        // ensure("OSRExportToWkt returned NULL", nullptr != wkt1);
-        //
-        // err_ = OSRSetFromUserInput(srs_, "EPSGA:4326");
-        // ensure_equals("OSRSetFromUserInput failed", err_, OGRERR_NONE);
-        //
-        // char* wkt2 = nullptr;
-        // err_ = OSRExportToWkt(srs_, &wkt2);
-        // ensure_equals("OSRExportToWkt failed", err_, OGRERR_NONE);
-        // ensure("OSRExportToWkt returned NULL", nullptr != wkt2);
-        //
-        // ensure_equals("EPSG:4326 urn lookup not as expected",
-        //     std::string(wkt1), std::string(wkt2));
-        // CPLFree(wkt1);
-        // CPLFree(wkt2);
+        err_ = OSRSetFromUserInput(srs_, "urn:ogc:def:crs:EPSG::4326");
+        ensure_equals("OSRSetFromUserInput failed", err_, OGRERR_NONE);
+
+        char* wkt1 = nullptr;
+        err_ = OSRExportToWkt(srs_, &wkt1);
+        ensure_equals("OSRExportToWkt failed", err_, OGRERR_NONE);
+        ensure("OSRExportToWkt returned NULL", nullptr != wkt1);
+
+        err_ = OSRSetFromUserInput(srs_, "EPSGA:4326");
+        ensure_equals("OSRSetFromUserInput failed", err_, OGRERR_NONE);
+
+        char* wkt2 = nullptr;
+        err_ = OSRExportToWkt(srs_, &wkt2);
+        ensure_equals("OSRExportToWkt failed", err_, OGRERR_NONE);
+        ensure("OSRExportToWkt returned NULL", nullptr != wkt2);
+
+        ensure_equals("EPSG:4326 urn lookup not as expected",
+            std::string(wkt1), std::string(wkt2));
+        CPLFree(wkt1);
+        CPLFree(wkt2);
     }
 
     // Test URN support for auto projection
@@ -328,12 +318,14 @@ namespace tut
         ensure_equals("OSRExportToWkt failed", err_, OGRERR_NONE);
         ensure("OSRExportToWkt returned NULL", nullptr != wkt1);
 
-        std::string expect("PROJCS[\"UTM Zone 11, Northern Hemisphere\","
-                           "GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\","
-                           "SPHEROID[\"WGS 84\",6378137,298.257223563,"
+        std::string expect("PROJCS[\"unnamed\",GEOGCS[\"WGS 84\","
+                           "DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\","
+                           "6378137,298.257223563,"
                            "AUTHORITY[\"EPSG\",\"7030\"]],"
-                           "AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,"
-                           "AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,"
+                           "AUTHORITY[\"EPSG\",\"6326\"]],"
+                           "PRIMEM[\"Greenwich\",0,"
+                           "AUTHORITY[\"EPSG\",\"8901\"]],"
+                           "UNIT[\"degree\",0.0174532925199433,"
                            "AUTHORITY[\"EPSG\",\"9122\"]],"
                            "AUTHORITY[\"EPSG\",\"4326\"]],"
                            "PROJECTION[\"Transverse_Mercator\"],"
@@ -342,7 +334,8 @@ namespace tut
                            "PARAMETER[\"scale_factor\",0.9996],"
                            "PARAMETER[\"false_easting\",500000],"
                            "PARAMETER[\"false_northing\",0],"
-                           "UNIT[\"Meter\",1,AUTHORITY[\"EPSG\",\"9001\"]]]");
+                           "UNIT[\"Meter\",1,AUTHORITY[\"EPSG\",\"9001\"]],"
+                           "AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH]]");
 
         ensure_equals("AUTO42001 urn lookup not as expected", std::string(wkt1), expect);
         CPLFree(wkt1);

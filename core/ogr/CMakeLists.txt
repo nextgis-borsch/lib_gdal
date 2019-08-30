@@ -3,8 +3,8 @@
 # Purpose:  CMake build scripts
 # Author:   Dmitry Baryshnikov, polimax@mail.ru
 ################################################################################
-# Copyright (C) 2015-2017, NextGIS <info@nextgis.com>
-# Copyright (C) 2012-2014, Dmitry Baryshnikov
+# Copyright (C) 2015-2017,2019 NextGIS <info@nextgis.com>
+# Copyright (C) 2012-2014,2015-2019 Dmitry Baryshnikov
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -24,13 +24,6 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
-
-find_anyproject(PROJ4 DEFAULT ON)
-if(PROJ4_FOUND)
-    add_definitions(-DHAVE_PROJ -DPROJ_STATIC)
-else()
-    message(WARNING "No proj.4 support")
-endif()
 
 #option(GDAL_ENABLE_OGR "Build OGR module" ON)
 if(GDAL_ENABLE_OGR)
@@ -63,12 +56,10 @@ set(LIB_HHEADERS_PRIV
     ogrgeomediageometry.h
     ogrpgeogeometry.h
     ogr_srs_esri_names.h
-    osr_cs_wkt.h
-    osr_cs_wkt_parser.h
     swq.h
-    ogr_json_header.h
     ogr_libs.h
     ogr_geo_utils.h
+    ogr_proj_p.h
 )
 
 set(LIB_CSOURCES
@@ -102,7 +93,6 @@ set(LIB_CSOURCES
     ogrmultipoint.cpp
     ogrmultipolygon.cpp
     ogrmultisurface.cpp
-    ogr_opt.cpp
     ogrpoint.cpp
     ogrpolygon.cpp
     ogrspatialreference.cpp
@@ -113,13 +103,10 @@ set(LIB_CSOURCES
     ogr_srs_ozi.cpp
     ogr_srs_panorama.cpp
     ogr_srs_pci.cpp
-    ogr_srs_proj4.cpp
     ogr_srs_usgs.cpp
-    ogr_srs_validate.cpp
     ogr_srs_xml.cpp
     ogrsurface.cpp
     ogrutils.cpp
-    osr_cs_wkt.c
     swq.cpp
     swq_expr_node.cpp
     swq_op_general.cpp
@@ -131,6 +118,7 @@ set(LIB_CSOURCES
     ogrtriangle.cpp
     ogrtriangulatedsurface.cpp
     ogr_geo_utils.cpp
+    ogr_proj_p.cpp
 )
 
 
@@ -164,10 +152,8 @@ if(GDAL_UPDATE_SWQ)
     find_package(BISON)
     if(BISON_FOUND)
         BISON_TARGET(SWQParser swq_parser.y ${CMAKE_CURRENT_BINARY_DIR}/swq_parser.cpp)
-        BISON_TARGET(WKTGrammarParser osr_cs_wkt_grammar.y ${CMAKE_CURRENT_BINARY_DIR}/osr_cs_wkt_parser.c)
         set(LIB_CSOURCES ${LIB_CSOURCES}
             ${BISON_SWQParser_OUTPUTS}
-            ${BISON_WKTGrammarParser_OUTPUTS}
         )
     endif()
 endif()
@@ -175,7 +161,6 @@ endif()
 if(NOT GDAL_UPDATE_SWQ OR NOT BISON_FOUND)
     set(LIB_CSOURCES ${LIB_CSOURCES}
         swq_parser.cpp
-        osr_cs_wkt_parser.c
     )
 endif()
 

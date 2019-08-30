@@ -841,7 +841,7 @@ OGRDXFFeature *OGRDXFLayer::TranslateMLEADER()
             poBlockFeature = InsertBlockReference( osBlockName,
                 oBlockTransformer, poBlockFeature );
 
-            if( !oBlockAttributes.empty() &&
+            if( !oBlockAttributes.empty() && 
                 poOverallFeature->GetFieldIndex( "BlockAttributes" ) != -1 )
             {
                 std::vector<char *> apszAttribs;

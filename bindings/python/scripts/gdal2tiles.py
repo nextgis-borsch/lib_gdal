@@ -40,7 +40,8 @@
 from __future__ import print_function, division
 
 import math
-from multiprocessing import Pipe, Pool, Process, Manager
+from multiprocessing import Pool
+from functools import partial
 import os
 import tempfile
 import threading
@@ -701,6 +702,7 @@ def setup_input_srs(input_dataset, options):
             input_srs = osr.SpatialReference()
             input_srs.ImportFromWkt(input_srs_wkt)
 
+    input_srs.SetAxisMappingStrategy(osr.OAMS_TRADITIONAL_GIS_ORDER)
     return input_srs, input_srs_wkt
 
 
@@ -709,6 +711,7 @@ def setup_output_srs(input_srs, options):
     Setup the desired SRS (based on options)
     """
     output_srs = osr.SpatialReference()
+    output_srs.SetAxisMappingStrategy(osr.OAMS_TRADITIONAL_GIS_ORDER)
 
     if options.profile == 'mercator':
         output_srs.ImportFromEPSG(3857)
@@ -892,7 +895,7 @@ def nb_data_bands(dataset):
         return dataset.RasterCount - 1
     return dataset.RasterCount
 
-def create_base_tile(tile_job_info, tile_detail, queue=None):
+def create_base_tile(tile_job_info, tile_detail):
 
     dataBandsCount = tile_job_info.nb_data_bands
     output = tile_job_info.output_file_path
@@ -995,8 +998,6 @@ def create_base_tile(tile_job_info, tile_detail, queue=None):
                     get_tile_swne(tile_job_info, options), tile_job_info.options
                 ).encode('utf-8'))
 
-    if queue:
-        queue.put("tile %s %s %s" % (tx, ty, tz))
 
 
 def create_overview_tiles(tile_job_info, output_folder, options):
@@ -1509,8 +1510,8 @@ class GDAL2Tiles(object):
         if not self.warped_input_dataset:
             self.warped_input_dataset = input_dataset
 
-        self.warped_input_dataset.GetDriver().CreateCopy(self.tmp_vrt_filename,
-                                                         self.warped_input_dataset)
+        gdal.GetDriverByName('VRT').CreateCopy(self.tmp_vrt_filename,
+                                               self.warped_input_dataset)
 
         # Get alpha band (either directly or from NODATA value)
         self.alphaband = self.warped_input_dataset.GetRasterBand(1).GetMaskBand()
@@ -1520,6 +1521,7 @@ class GDAL2Tiles(object):
         self.isepsg4326 = False
         srs4326 = osr.SpatialReference()
         srs4326.ImportFromEPSG(4326)
+        srs4326.SetAxisMappingStrategy(osr.OAMS_TRADITIONAL_GIS_ORDER)
         if self.out_srs and srs4326.ExportToProj4() == self.out_srs.ExportToProj4():
             self.kml = True
             self.isepsg4326 = True
@@ -2355,19 +2357,19 @@ class GDAL2Tiles(object):
 
         // Base layers
         //  .. OpenStreetMap
-        var osm = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'});
+        var osm = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors', minZoom: %(minzoom)s, maxZoom: %(maxzoom)s});
 
         //  .. CartoDB Positron
-        var cartodb = L.tileLayer('http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="http://cartodb.com/attributions">CartoDB</a>'});
+        var cartodb = L.tileLayer('http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="http://cartodb.com/attributions">CartoDB</a>', minZoom: %(minzoom)s, maxZoom: %(maxzoom)s});
 
         //  .. OSM Toner
-        var toner = L.tileLayer('http://{s}.tile.stamen.com/toner/{z}/{x}/{y}.png', {attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.'});
+        var toner = L.tileLayer('http://{s}.tile.stamen.com/toner/{z}/{x}/{y}.png', {attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.', minZoom: %(minzoom)s, maxZoom: %(maxzoom)s});
 
         //  .. White background
-        var white = L.tileLayer("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEAAQMAAABmvDolAAAAA1BMVEX///+nxBvIAAAAH0lEQVQYGe3BAQ0AAADCIPunfg43YAAAAAAAAAAA5wIhAAAB9aK9BAAAAABJRU5ErkJggg==");
+        var white = L.tileLayer("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEAAQMAAABmvDolAAAAA1BMVEX///+nxBvIAAAAH0lEQVQYGe3BAQ0AAADCIPunfg43YAAAAAAAAAAA5wIhAAAB9aK9BAAAAABJRU5ErkJggg==", {minZoom: %(minzoom)s, maxZoom: %(maxzoom)s});
 
         // Overlay layers (TMS)
-        var lyr = L.tileLayer('./{z}/{x}/{y}.%(tileformat)s', {tms: true, opacity: 0.7, attribution: "%(copyright)s"});
+        var lyr = L.tileLayer('./{z}/{x}/{y}.%(tileformat)s', {tms: true, opacity: 0.7, attribution: "%(copyright)s", minZoom: %(minzoom)s, maxZoom: %(maxzoom)s});
 
         // Map
         var map = L.map('map', {
@@ -2638,8 +2640,8 @@ class GDAL2Tiles(object):
               function getURL(bounds) {
                   bounds = this.adjustBounds(bounds);
                   var res = this.getServerResolution();
-                  var x = Math.round((bounds.left - this.tileOrigin.lon) / (res * this.tile_size.w));
-                  var y = Math.round((bounds.bottom - this.tileOrigin.lat) / (res * this.tile_size.h));
+                  var x = Math.round((bounds.left - this.tileOrigin.lon) / (res * this.tileSize.w));
+                  var y = Math.round((bounds.bottom - this.tileOrigin.lat) / (res * this.tileSize.h));
                   var z = this.getServerZoom();
                   if (this.map.baseLayer.CLASS_NAME === 'OpenLayers.Layer.Bing') {
                       z+=1;
@@ -2662,8 +2664,8 @@ class GDAL2Tiles(object):
               function getURL(bounds) {
                   bounds = this.adjustBounds(bounds);
                   var res = this.getServerResolution();
-                  var x = Math.round((bounds.left - this.tileOrigin.lon) / (res * this.tile_size.w));
-                  var y = Math.round((bounds.bottom - this.tileOrigin.lat) / (res * this.tile_size.h));
+                  var x = Math.round((bounds.left - this.tileOrigin.lon) / (res * this.tileSize.w));
+                  var y = Math.round((bounds.bottom - this.tileOrigin.lat) / (res * this.tileSize.h));
                   var z = this.getServerZoom()%(tmsoffset)s;
                   var path = this.serviceVersion + "/" + this.layername + "/" + z + "/" + x + "/" + y + "." + this.type;
                   var url = this.url;
@@ -2683,8 +2685,8 @@ class GDAL2Tiles(object):
               function getURL(bounds) {
                   bounds = this.adjustBounds(bounds);
                   var res = this.getServerResolution();
-                  var x = Math.round((bounds.left - this.tileOrigin.lon) / (res * this.tile_size.w));
-                  var y = Math.round((bounds.bottom - this.tileOrigin.lat) / (res * this.tile_size.h));
+                  var x = Math.round((bounds.left - this.tileOrigin.lon) / (res * this.tileSize.w));
+                  var y = Math.round((bounds.bottom - this.tileOrigin.lat) / (res * this.tileSize.h));
                   var z = this.getServerZoom();
                   var path = this.serviceVersion + "/" + this.layername + "/" + z + "/" + x + "/" + y + "." + this.type;
                   var url = this.url;
@@ -2744,29 +2746,12 @@ class GDAL2Tiles(object):
         return s
 
 
-def worker_tile_details(input_file, output_folder, options, send_pipe=None):
-    try:
-        gdal2tiles = GDAL2Tiles(input_file, output_folder, options)
-        gdal2tiles.open_input()
-        gdal2tiles.generate_metadata()
-        tile_job_info, tile_details = gdal2tiles.generate_base_tiles()
-        return_data = (tile_job_info, tile_details)
-        if send_pipe:
-            send_pipe.send(return_data)
-
-        return return_data
-    except Exception as e:
-        print("worker_tile_details failed ", str(e))
-
-
-def progress_printer_thread(queue, nb_jobs):
-    pb = ProgressBar(nb_jobs)
-    pb.start()
-    for _ in range(nb_jobs):
-        queue.get()
-        pb.log_progress()
-        queue.task_done()
-
+def worker_tile_details(input_file, output_folder, options):
+      gdal2tiles = GDAL2Tiles(input_file, output_folder, options)
+      gdal2tiles.open_input()
+      gdal2tiles.generate_metadata()
+      tile_job_info, tile_details = gdal2tiles.generate_base_tiles()
+      return tile_job_info, tile_details
 
 class ProgressBar(object):
 
@@ -2808,8 +2793,10 @@ def get_tile_swne(tile_job_info, options):
     elif options.profile == 'raster':
         srs4326 = osr.SpatialReference()
         srs4326.ImportFromEPSG(4326)
+        srs4326.SetAxisMappingStrategy(osr.OAMS_TRADITIONAL_GIS_ORDER)
         if tile_job_info.kml and tile_job_info.in_srs_wkt:
             in_srs = osr.SpatialReference()
+            in_srs.SetAxisMappingStrategy(osr.OAMS_TRADITIONAL_GIS_ORDER)
             in_srs.ImportFromWkt(tile_job_info.in_srs_wkt)
             ct = osr.CoordinateTransformation(in_srs, srs4326)
 
@@ -2870,39 +2857,28 @@ def multi_threaded_tiling(input_file, output_folder, options):
     # Make sure that all processes do not consume more than GDAL_CACHEMAX
     os.environ['GDAL_CACHEMAX'] = '%d' % int(gdal.GetCacheMax() / nb_processes)
 
-    (conf_receiver, conf_sender) = Pipe(False)
+    pool = Pool(processes=nb_processes)
 
     if options.verbose:
         print("Begin tiles details calc")
-    p = Process(target=worker_tile_details,
-                args=[input_file, output_folder, options],
-                kwargs={"send_pipe": conf_sender})
-    p.start()
-    # Make sure to consume the queue before joining. If the payload is too big, it won't be put in
-    # one go in the queue and therefore the sending process will never finish, waiting for space in
-    # the queue to send data
-    conf, tile_details = conf_receiver.recv()
-    p.join()
+
+    conf, tile_details = pool.apply(worker_tile_details, [input_file, output_folder, options])
+
     if options.verbose:
         print("Tiles details calc complete.")
-    # Have to create the Queue through a multiprocessing.Manager to get a Queue Proxy,
-    # otherwise you can't pass it as a param in the method invoked by the pool...
-    manager = Manager()
-    queue = manager.Queue()
-    pool = Pool(processes=nb_processes)
+        
+    if not options.verbose and not options.quiet:
+        progress_bar = ProgressBar(len(tile_details))
+        progress_bar.start()
+
     # TODO: gbataille - check the confs for which each element is an array... one useless level?
     # TODO: gbataille - assign an ID to each job for print in verbose mode "ReadRaster Extent ..."
-    for tile_detail in tile_details:
-        pool.apply_async(create_base_tile, (conf, tile_detail), {"queue": queue})
-
-    if not options.verbose and not options.quiet:
-        p = Process(target=progress_printer_thread, args=[queue, len(tile_details)])
-        p.start()
+    for _ in pool.imap_unordered(partial(create_base_tile, conf), tile_details, chunksize=128):
+        if not options.verbose and not options.quiet:
+            progress_bar.log_progress()
 
     pool.close()
     pool.join()     # Jobs finished
-    if not options.verbose and not options.quiet:
-        p.join()        # Traces done
 
     create_overview_tiles(conf, output_folder, options)
 

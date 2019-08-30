@@ -103,8 +103,14 @@ class MBTilesDataset final: public GDALPamDataset, public GDALGPKGMBTilesLikePse
 
     virtual CPLErr GetGeoTransform(double* padfGeoTransform) override;
     virtual CPLErr SetGeoTransform( double* padfGeoTransform ) override;
-    virtual const char* GetProjectionRef() override;
-    virtual CPLErr SetProjection( const char* pszProjection ) override;
+    virtual const char* _GetProjectionRef() override;
+    virtual CPLErr _SetProjection( const char* pszProjection ) override;
+    const OGRSpatialReference* GetSpatialRef() const override {
+        return GetSpatialRefFromOldGetProjectionRef();
+    }
+    CPLErr SetSpatialRef(const OGRSpatialReference* poSRS) override {
+        return OldSetProjectionFromSetSpatialRef(poSRS);
+    }
 
     virtual char      **GetMetadataDomainList() override;
     virtual char      **GetMetadata( const char * pszDomain = "" ) override;
@@ -534,12 +540,11 @@ char* MBTilesDataset::FindKey(int iPixel, int iLine)
     }
     if (poGrid != nullptr && json_object_is_type(poGrid, json_type_array))
     {
-        int nLines;
         int nFactor;
         json_object* poRow;
         char* pszRow = nullptr;
 
-        nLines = json_object_array_length(poGrid);
+        const auto nLines = json_object_array_length(poGrid);
         if (nLines == 0)
             goto end;
 
@@ -1157,6 +1162,7 @@ CPLErr MBTilesDataset::FinalizeRasterRegistration()
     for(int i=0; i<m_nOverviewCount; i++)
     {
         MBTilesDataset* poOvrDS = new MBTilesDataset();
+        poOvrDS->ShareLockWithParentDataset(this);
         int nBlockSize;
         GetRasterBand(1)->GetBlockSize(&nBlockSize, &nBlockSize);
         poOvrDS->InitRaster ( this, i, nBands,
@@ -1210,6 +1216,11 @@ bool MBTilesDataset::InitRaster ( MBTilesDataset* poParentDS,
         return false;
     }
 
+    if( poParentDS )
+    {
+        eAccess = poParentDS->eAccess;
+    }
+
     for(int i = 1; i <= nBandCount; i ++)
         SetBand( i, new MBTilesBand(this, nTileSize) );
 
@@ -1222,7 +1233,6 @@ bool MBTilesDataset::InitRaster ( MBTilesDataset* poParentDS,
     {
         m_poParentDS = poParentDS;
         poMainDS = poParentDS;
-        eAccess = poParentDS->eAccess;
         hDS = poParentDS->hDS;
         hDB = poParentDS->hDB;
         m_eTF = poParentDS->m_eTF;
@@ -1241,7 +1251,7 @@ bool MBTilesDataset::InitRaster ( MBTilesDataset* poParentDS,
 /*                         GetProjectionRef()                           */
 /************************************************************************/
 
-const char* MBTilesDataset::GetProjectionRef()
+const char* MBTilesDataset::_GetProjectionRef()
 {
     return SRS_EPSG_3857;
 }
@@ -1250,7 +1260,7 @@ const char* MBTilesDataset::GetProjectionRef()
 /*                           SetProjection()                            */
 /************************************************************************/
 
-CPLErr MBTilesDataset::SetProjection( const char* pszProjection )
+CPLErr MBTilesDataset::_SetProjection( const char* pszProjection )
 {
     if( eAccess != GA_Update )
     {
@@ -1282,7 +1292,7 @@ char **MBTilesDataset::GetMetadataDomainList()
 {
     return BuildMetadataDomainList(GDALDataset::GetMetadataDomainList(),
                                    TRUE,
-                                   "", NULL);
+                                   "", nullptr);
 }
 
 /************************************************************************/
@@ -2069,7 +2079,7 @@ int MBTilesGetMinMaxZoomLevel(OGRDataSourceH hDS, int bHasMap,
 #else
         pszSQL = "SELECT min(zoom_level), max(zoom_level) FROM tiles";
         CPLDebug("MBTILES", "%s", pszSQL);
-        hSQLLyr = OGR_DS_ExecuteSQL(hDS, pszSQL, NULL, NULL);
+        hSQLLyr = OGR_DS_ExecuteSQL(hDS, pszSQL, NULL, nullptr);
         if (hSQLLyr == NULL)
         {
             return FALSE;
@@ -2823,6 +2833,7 @@ GDALDataset* MBTilesDataset::Open(GDALOpenInfo* poOpenInfo)
         for( int iLevel = nMaxLevel - 1; iLevel >= nMinLevel; iLevel-- )
         {
             MBTilesDataset* poOvrDS = new MBTilesDataset();
+            poOvrDS->ShareLockWithParentDataset(poDS);
             poOvrDS->InitRaster ( poDS, iLevel, nBands, nTileSize,
                                   dfMinX, dfMinY, dfMaxX, dfMaxY );
 

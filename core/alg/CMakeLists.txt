@@ -3,8 +3,8 @@
 # Purpose:  CMake build scripts
 # Author:   Dmitry Baryshnikov, polimax@mail.ru
 ################################################################################
-# Copyright (C) 2015-2018, NextGIS <info@nextgis.com>
-# Copyright (C) 2012,2013,2014 Dmitry Baryshnikov
+# Copyright (C) 2015-2019, NextGIS <info@nextgis.com>
+# Copyright (C) 2012-2014,2015-2019 Dmitry Baryshnikov
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -34,24 +34,24 @@ include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/vrt)
 
 set(LIB_HHEADERS
     gdal_alg.h
+    gdal_alg_priv.h
     gdalgrid.h
     gdalpansharpen.h
     gdal_simplesurf.h
     gdalwarper.h
+)
+
+set(LIB_HHEADERS_PRIV
+    gdalgrid_priv.h
+    internal_qhull_headers.h
+    gdallinearsystem.h
     gvgcpfit.h
     thinplatespline.h
 )
 
-set(LIB_HHEADERS_PRIV
-    gdal_alg_priv.h
-    gdalgrid_priv.h
-    internal_qhull_headers.h
-    gdallinearsystem.h
-)
-
 set(LIB_CSOURCES
     gdalchecksum.cpp
-    gdal_crs.c
+    gdal_crs.cpp
     gdalcutline.cpp
     gdalmediancut.cpp
 #    gdal_nrgcrs.c

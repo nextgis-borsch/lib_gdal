@@ -39,7 +39,7 @@ if(ENABLE_ENVISAT)
     )
 
     set(LIB_HHEADERS_PRIV
-        ${CMAKE_SOURCE_DIR}/drivers/raster/raw/rawdataset.h
+        ${CMAKE_SOURCE_DIR}/core/gcore/rawdataset.h
     )
 
     set(LIB_CSOURCES

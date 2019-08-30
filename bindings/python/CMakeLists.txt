@@ -106,7 +106,7 @@ set(COPY_IF_DIFFERENT
 )
 
 set(COPY
-    README.txt
+    README.rst
     osgeo/gdal_array.py
     osgeo/gdalconst.py
     osgeo/gdalnumeric.py
@@ -118,7 +118,7 @@ set(COPY
     gdalconst.py
     gdalnumeric.py
     gdal.py
-    gnm.py
+    # gnm.py
     ogr.py
     osr.py
     setup.cfg

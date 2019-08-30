@@ -3,8 +3,8 @@
 # Purpose:  CMake build scripts
 # Author:   Dmitry Baryshnikov, polimax@mail.ru
 ################################################################################
-# Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
-# Copyright (C) 2012,2013,2014 Dmitry Baryshnikov
+# Copyright (C) 2015-2016,2019 NextGIS <info@nextgis.com>
+# Copyright (C) 2012-2019 Dmitry Baryshnikov
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -45,7 +45,7 @@ else()
     warning_msg("BigTIFF is not supported")
 endif()
 
-find_anyproject(GeoTIFF VERSION 1.2.1 REQUIRED CMAKE_ARGS
+find_anyproject(GeoTIFF REQUIRED CMAKE_ARGS
     -DBUILD_TESTING=OFF
     -DWITH_UTILITIES=OFF
 )
@@ -55,10 +55,11 @@ if(JPEG_FOUND)
     add_definitions(-DHAVE_LIBJPEG) # Added only after 2.1 release (especially for geotiff.cpp where incorrect #ifdef is used)
 endif()
 
-find_anyproject(JPEG12 DEFAULT ON)
+find_anyproject(JPEG12 DEFAULT ON NAMES jpeg jpeg12)
 if(JPEG12_FOUND)
     add_definitions(-DJPEG12_SUPPORTED)
 endif()
+
 find_anyproject(PNG DEFAULT ON)
 
 file(GLOB FORMATS ${CMAKE_CURRENT_SOURCE_DIR}/*)

@@ -58,7 +58,7 @@
 
 CPL_CVSID("$Id$")
 
-#if defined(HAVE_POPPLER) || defined(HAVE_PODOFO) || defined(HAVE_PDFIUM)
+#ifdef HAVE_PDF_READ_SUPPORT
 
 #if defined(HAVE_PDFIUM) && defined(HAVE_POPPLER)
 #define HAVE_MULTIPLE_PDF_BACKENDS
@@ -130,7 +130,7 @@ class ObjectAutoFree : public Object
 public:
     ObjectAutoFree() {}
     ~ObjectAutoFree() {
-#ifndef POPPLER_0_58_OR_LATER
+#if !(POPPLER_MAJOR_VERSION >= 1 || POPPLER_MINOR_VERSION >= 58)
         obj.free();
 #endif
     }
@@ -176,17 +176,10 @@ class GDALPDFOutputDev : public SplashOutputDev
         void SetEnableText(int bFlag) { bEnableText = bFlag; }
         void SetEnableBitmap(int bFlag) { bEnableBitmap = bFlag; }
 
-        virtual void startPage(int pageNum, GfxState *state
-#ifdef POPPLER_0_23_OR_LATER
-                               ,XRef* xrefIn
-#endif
+        virtual void startPage(int pageNum, GfxState *state,XRef* xrefIn
         ) override
         {
-            SplashOutputDev::startPage(pageNum, state
-#ifdef POPPLER_0_23_OR_LATER
-                                       ,xrefIn
-#endif
-            );
+            SplashOutputDev::startPage(pageNum, state,xrefIn);
             SplashBitmap* poBitmap = getBitmap();
             memset(poBitmap->getDataPtr(), 255, poBitmap->getRowSize() * poBitmap->getHeight());
         }
@@ -226,15 +219,6 @@ class GDALPDFOutputDev : public SplashOutputDev
                 SplashOutputDev::beginTextObject(state);
         }
 
-#ifndef POPPLER_0_23_OR_LATER
-        virtual GBool deviceHasTextClip(GfxState *state) override
-        {
-            if (bEnableText)
-                return SplashOutputDev::deviceHasTextClip(state);
-            return gFalse;
-        }
-#endif
-
         virtual void endTextObject(GfxState *state) override
         {
             if (bEnableText)
@@ -260,7 +244,6 @@ class GDALPDFOutputDev : public SplashOutputDev
             }
         }
 
-#ifdef POPPLER_0_20_OR_LATER
         virtual void setSoftMaskFromImageMask(GfxState *state,
                             Object *ref, Stream *str,
                             int width, int height, GBool invert,
@@ -279,7 +262,6 @@ class GDALPDFOutputDev : public SplashOutputDev
             if (bEnableBitmap)
                 SplashOutputDev::unsetSoftMaskFromImageMask(state, baseMatrix);
         }
-#endif
 
         virtual void drawImage(GfxState *state, Object *ref, Stream *str,
                                int width, int height, GfxImageColorMap *colorMap,
@@ -469,7 +451,7 @@ void GDALPDFDumper::Dump(GDALPDFObject* poObj, int nDepth)
         osIndent += " ";
     fprintf(f, "%sType = %s",
             osIndent.c_str(), poObj->GetTypeName());
-    int nRefNum = poObj->GetRefNum();
+    int nRefNum = poObj->GetRefNum().toInt();
     if (nRefNum != 0)
         fprintf(f, ", Num = %d, Gen = %d",
                 nRefNum, poObj->GetRefGen());
@@ -512,7 +494,8 @@ void GDALPDFDumper::Dump(GDALPDFObject* poObj, int nDepth)
     GDALPDFStream* poStream = poObj->GetStream();
     if (poStream != nullptr)
     {
-        fprintf(f, "%sHas stream (%d bytes)\n", osIndent.c_str(), poStream->GetLength());
+        fprintf(f, "%sHas stream (%d uncompressed bytes, %d raw bytes)\n",
+                osIndent.c_str(), poStream->GetLength(), poStream->GetRawLength());
     }
 }
 
@@ -535,9 +518,9 @@ void GDALPDFDumper::Dump(GDALPDFDictionary* poDict, int nDepth)
         GDALPDFObject* poObj = oIter->second;
         if (strcmp(pszKey, "Parent") == 0 && !bDumpParent)
         {
-            if (poObj->GetRefNum())
+            if (poObj->GetRefNum().toBool())
                 fprintf(f, ", Num = %d, Gen = %d",
-                        poObj->GetRefNum(), poObj->GetRefGen());
+                        poObj->GetRefNum().toInt(), poObj->GetRefGen());
             fprintf(f, "\n");
             continue;
         }
@@ -1758,11 +1741,7 @@ CPLErr PDFDataset::ReadPixels( int nReqXOff, int nReqYOff,
         }
 
         PDFDoc* poDoc = poDocPoppler;
-#ifdef POPPLER_0_20_OR_LATER
         poSplashOut->startDoc(poDoc);
-#else
-        poSplashOut->startDoc(poDoc->getXRef());
-#endif
 
         /* EVIL: we modify a private member... */
         /* poppler (at least 0.12 and 0.14 versions) don't render correctly */
@@ -1770,12 +1749,10 @@ CPLErr PDFDataset::ReadPixels( int nReqXOff, int nReqYOff,
         /* in those cases. This processing of optional content is an addition of */
         /* poppler in comparison to original xpdf, which hasn't the issue. All in */
         /* all, nullifying optContent removes the error message and improves the rendering */
-#ifdef POPPLER_HAS_OPTCONTENT
         Catalog* poCatalog = poDoc->getCatalog();
         OCGs* poOldOCGs = poCatalog->optContent;
         if (!bUseOCG)
             poCatalog->optContent = nullptr;
-#endif
         poDoc->displayPageSlice(poSplashOut,
                                 iPage,
                                 dfDPI, dfDPI,
@@ -1785,9 +1762,7 @@ CPLErr PDFDataset::ReadPixels( int nReqXOff, int nReqYOff,
                                 nReqXSize, nReqYSize);
 
     /* Restore back */
-#ifdef POPPLER_HAS_OPTCONTENT
         poCatalog->optContent = poOldOCGs;
-#endif
 
         SplashBitmap* poBitmap = poSplashOut->getBitmap();
         if (poBitmap->getWidth() != nReqXSize || poBitmap->getHeight() != nReqYSize)
@@ -2294,7 +2269,7 @@ GDALPDFObject* PDFDataset::GetCatalog()
     if (bUseLib.test(PDFLIB_POPPLER))
     {
         poCatalogObjectPoppler = new ObjectAutoFree;
-#ifdef POPPLER_0_58_OR_LATER
+#if POPPLER_MAJOR_VERSION >= 1 || POPPLER_MINOR_VERSION >= 58
         *poCatalogObjectPoppler->getObj() = poDocPoppler->getXRef()->getCatalog();
 #else
         poDocPoppler->getXRef()->getCatalog(poCatalogObjectPoppler->getObj());
@@ -2312,10 +2287,10 @@ GDALPDFObject* PDFDataset::GetCatalog()
         VSILFILE* fp = VSIFOpenL(osFilename.c_str(), "rb");
         if (fp != nullptr)
         {
-            GDALPDFWriter oWriter(fp, TRUE);
+            GDALPDFUpdateWriter oWriter(fp);
             if (oWriter.ParseTrailerAndXRef())
             {
-                nCatalogNum = oWriter.GetCatalogNum();
+                nCatalogNum = oWriter.GetCatalogNum().toInt();
                 nCatalogGen = oWriter.GetCatalogGen();
             }
             oWriter.Close();
@@ -2368,7 +2343,7 @@ PDFDataset::~PDFDataset()
     GDALPDFDictionaryRW* poCatalogDictCopy = nullptr;
     if( poPageObj )
     {
-        nNum = poPageObj->GetRefNum();
+        nNum = poPageObj->GetRefNum().toInt();
         nGen = poPageObj->GetRefGen();
         if (eAccess == GA_Update &&
             (bProjDirty || bNeatLineDirty || bInfoDirty || bXMPDirty) &&
@@ -2424,12 +2399,12 @@ PDFDataset::~PDFDataset()
         VSILFILE* fp = VSIFOpenL(osFilename, "rb+");
         if (fp != nullptr)
         {
-            GDALPDFWriter oWriter(fp, TRUE);
+            GDALPDFUpdateWriter oWriter(fp);
             if (oWriter.ParseTrailerAndXRef())
             {
                 if ((bProjDirty || bNeatLineDirty) && poPageDictCopy != nullptr)
                     oWriter.UpdateProj(this, dfDPI,
-                                        poPageDictCopy, nNum, nGen);
+                                        poPageDictCopy, GDALPDFObjectNum(nNum), nGen);
 
                 if (bInfoDirty)
                     oWriter.UpdateInfo(this);
@@ -2592,16 +2567,10 @@ static void PDFDatasetErrorFunctionCommon(const CPLString& osError)
     CPLError(CE_Failure, CPLE_AppDefined, "%s", osError.c_str());
 }
 
-#ifdef POPPLER_0_20_OR_LATER
-
 static void PDFDatasetErrorFunction(void* /* userData*/,
                                     ErrorCategory /* eErrCategory */,
-#ifdef POPPLER_0_23_OR_LATER
                                     Goffset nPos,
-#else
-                                    int nPos,
-#endif
-#ifdef POPPLER_0_71_OR_LATER
+#if POPPLER_MAJOR_VERSION >= 1 || POPPLER_MINOR_VERSION >= 71
                                     const char *pszMsg
 #else
                                     char *pszMsg
@@ -2615,17 +2584,6 @@ static void PDFDatasetErrorFunction(void* /* userData*/,
     osError += pszMsg;
     PDFDatasetErrorFunctionCommon(osError);
 }
-#else
-static void PDFDatasetErrorFunction(int nPos, char *pszMsg, va_list args)
-{
-    CPLString osError;
-
-    if (nPos >= 0)
-        osError.Printf("Pos = %d, ", nPos);
-    osError += CPLString().vPrintf(pszMsg, args);
-    PDFDatasetErrorFunctionCommon(osError);
-}
-#endif
 #endif
 
 /************************************************************************/
@@ -3390,7 +3348,8 @@ void PDFDataset::ExploreLayersPoppler(GDALPDFArray* poArray,
             else
                 osTopLayer = osName;
             AddLayer(osTopLayer.c_str());
-            oLayerOCGMapPoppler[osTopLayer.c_str()] = nullptr;
+            oLayerOCGListPoppler.push_back(
+                std::pair<CPLString, OptionalContentGroup*>(osTopLayer, nullptr));
         }
         else if (poObj->GetType() == PDFObjectType_Array)
         {
@@ -3413,13 +3372,13 @@ void PDFDataset::ExploreLayersPoppler(GDALPDFArray* poArray,
 
                 OCGs* optContentConfig = poDocPoppler->getOptContentConfig();
                 struct Ref r;
-                r.num = poObj->GetRefNum();
+                r.num = poObj->GetRefNum().toInt();
                 r.gen = poObj->GetRefGen();
                 OptionalContentGroup* ocg = optContentConfig->findOcgByRef(r);
                 if (ocg)
                 {
                     AddLayer(osCurLayer.c_str());
-                    oLayerOCGMapPoppler[osCurLayer.c_str()] = ocg;
+                    oLayerOCGListPoppler.push_back(std::make_pair(osCurLayer, ocg));
                     osLayerWithRefList.AddString(
                         CPLSPrintf("%s %d %d", osCurLayer.c_str(), r.num, r.gen));
                 }
@@ -3447,7 +3406,7 @@ void PDFDataset::FindLayersPoppler()
     }
     else
     {
-#ifdef POPPLER_0_69_OR_LATER
+#if POPPLER_MAJOR_VERSION >= 1 || POPPLER_MINOR_VERSION >= 69
         for( const auto& refOCGPair: optContentConfig->getOCGs() )
         {
             auto ocg = refOCGPair.second.get();
@@ -3459,9 +3418,13 @@ void PDFDataset::FindLayersPoppler()
 #endif
             if( ocg != nullptr && ocg->getName() != nullptr )
             {
+#if (POPPLER_MAJOR_VERSION >= 1 || POPPLER_MINOR_VERSION >= 72)
+                const char* pszLayerName = (const char*)ocg->getName()->c_str();
+#else
                 const char* pszLayerName = (const char*)ocg->getName()->getCString();
+#endif
                 AddLayer(pszLayerName);
-                oLayerOCGMapPoppler[pszLayerName] = ocg;
+                oLayerOCGListPoppler.push_back(std::make_pair(CPLString(pszLayerName), ocg));
             }
         }
     }
@@ -3485,7 +3448,7 @@ void PDFDataset::TurnLayersOnOffPoppler()
     {
         int i;
         int bAll = EQUAL(pszLayers, "ALL");
-#ifdef POPPLER_0_69_OR_LATER
+#if POPPLER_MAJOR_VERSION >= 1 || POPPLER_MINOR_VERSION >= 69
         for( const auto& refOCGPair: optContentConfig->getOCGs() )
         {
             auto ocg = refOCGPair.second.get();
@@ -3501,10 +3464,15 @@ void PDFDataset::TurnLayersOnOffPoppler()
         char** papszLayers = CSLTokenizeString2(pszLayers, ",", 0);
         for(i=0;!bAll && papszLayers[i] != nullptr;i++)
         {
-            std::map<CPLString, OptionalContentGroup*>::iterator oIter =
-                oLayerOCGMapPoppler.find(papszLayers[i]);
-            if (oIter != oLayerOCGMapPoppler.end())
+            bool isFound = false;
+            for (auto oIter2 = oLayerOCGListPoppler.begin();
+                oIter2 != oLayerOCGListPoppler.end(); ++oIter2)
             {
+                if (oIter2->first != papszLayers[i])
+                    continue;
+
+                isFound = true;
+                auto oIter = oIter2;
                 if (oIter->second)
                 {
                     //CPLDebug("PDF", "Turn '%s' on", papszLayers[i]);
@@ -3515,8 +3483,8 @@ void PDFDataset::TurnLayersOnOffPoppler()
                 // in the list.
                 size_t nLen = strlen(papszLayers[i]);
                 int bFoundChildLayer = FALSE;
-                oIter = oLayerOCGMapPoppler.begin();
-                for( ; oIter != oLayerOCGMapPoppler.end() && !bFoundChildLayer; oIter ++)
+                oIter = oLayerOCGListPoppler.begin();
+                for (; oIter != oLayerOCGListPoppler.end() && !bFoundChildLayer; ++oIter)
                 {
                     if (oIter->first.size() > nLen &&
                         strncmp(oIter->first.c_str(), papszLayers[i], nLen) == 0 &&
@@ -3525,15 +3493,18 @@ void PDFDataset::TurnLayersOnOffPoppler()
                         for(int j=0;papszLayers[j] != nullptr;j++)
                         {
                             if (strcmp(papszLayers[j], oIter->first.c_str()) == 0)
+                            {
                                 bFoundChildLayer = TRUE;
+                                break;
+                            }
                         }
                     }
                 }
 
                 if( !bFoundChildLayer )
                 {
-                    oIter = oLayerOCGMapPoppler.begin();
-                    for( ; oIter != oLayerOCGMapPoppler.end() && !bFoundChildLayer; oIter ++)
+                    oIter = oLayerOCGListPoppler.begin();
+                    for (; oIter != oLayerOCGListPoppler.end() && !bFoundChildLayer; ++oIter)
                     {
                         if (oIter->first.size() > nLen &&
                             strncmp(oIter->first.c_str(), papszLayers[i], nLen) == 0 &&
@@ -3549,22 +3520,23 @@ void PDFDataset::TurnLayersOnOffPoppler()
                 }
 
                 // Turn parent layers on too
-                char* pszLastDot = nullptr;
-                while( (pszLastDot = strrchr(papszLayers[i], '.')) != nullptr)
+                std::string layer(papszLayers[i]);
+                std::string::size_type j;
+                while ((j = layer.find_last_of('.')) != std::string::npos)
                 {
-                    *pszLastDot = '\0';
-                    oIter = oLayerOCGMapPoppler.find(papszLayers[i]);
-                    if (oIter != oLayerOCGMapPoppler.end())
+                    layer.resize(j);
+                    oIter = oLayerOCGListPoppler.begin();
+                    for (; oIter != oLayerOCGListPoppler.end(); ++oIter)
                     {
-                        if (oIter->second)
+                        if (oIter->first == layer && oIter->second)
                         {
-                            //CPLDebug("PDF", "Turn '%s' on too", papszLayers[i]);
+                            //CPLDebug("PDF", "Turn '%s' on too", layer.c_str());
                             oIter->second->setState(OptionalContentGroup::On);
                         }
                     }
                 }
             }
-            else
+            if (!isFound)
             {
                 CPLError(CE_Warning, CPLE_AppDefined, "Unknown layer '%s'",
                             papszLayers[i]);
@@ -3582,10 +3554,15 @@ void PDFDataset::TurnLayersOnOffPoppler()
         char** papszLayersOFF = CSLTokenizeString2(pszLayersOFF, ",", 0);
         for(int i=0;papszLayersOFF[i] != nullptr;i++)
         {
-            std::map<CPLString, OptionalContentGroup*>::iterator oIter =
-                oLayerOCGMapPoppler.find(papszLayersOFF[i]);
-            if (oIter != oLayerOCGMapPoppler.end())
+            bool isFound = false;
+            for (auto oIter2 = oLayerOCGListPoppler.begin();
+                oIter2 != oLayerOCGListPoppler.end(); ++oIter2)
             {
+                if (oIter2->first != papszLayersOFF[i])
+                    continue;
+
+                isFound = true;
+                auto oIter = oIter2;
                 if (oIter->second)
                 {
                     //CPLDebug("PDF", "Turn '%s' off", papszLayersOFF[i]);
@@ -3594,8 +3571,8 @@ void PDFDataset::TurnLayersOnOffPoppler()
 
                 // Turn child layers off too
                 size_t nLen = strlen(papszLayersOFF[i]);
-                oIter = oLayerOCGMapPoppler.begin();
-                for( ; oIter != oLayerOCGMapPoppler.end(); oIter ++)
+                oIter = oLayerOCGListPoppler.begin();
+                for (; oIter != oLayerOCGListPoppler.end(); ++oIter)
                 {
                     if (oIter->first.size() > nLen &&
                         strncmp(oIter->first.c_str(), papszLayersOFF[i], nLen) == 0 &&
@@ -3609,7 +3586,7 @@ void PDFDataset::TurnLayersOnOffPoppler()
                     }
                 }
             }
-            else
+            if (!isFound)
             {
                 CPLError(CE_Warning, CPLE_AppDefined, "Unknown layer '%s'",
                             papszLayersOFF[i]);
@@ -3672,9 +3649,9 @@ void PDFDataset::ExploreLayersPdfium(GDALPDFArray* poArray,
 
                 AddLayer(osCurLayer.c_str());
                 osLayerWithRefList.AddString(
-                    CPLSPrintf("%s %d %d", osCurLayer.c_str(), poObj->GetRefNum(), poObj->GetRefGen()));
+                    CPLSPrintf("%s %d %d", osCurLayer.c_str(), poObj->GetRefNum().toInt(), poObj->GetRefGen()));
                 oMapLayerNameToOCGNumGenPdfium[osCurLayer] =
-                    std::pair<int,int>(poObj->GetRefNum(), poObj->GetRefGen());
+                    std::pair<int,int>(poObj->GetRefNum().toInt(), poObj->GetRefGen());
             }
         }
     }
@@ -3742,7 +3719,7 @@ void PDFDataset::TurnLayersOnOffPdfium()
         for(i=0;i<nLength;i++)
         {
             GDALPDFObject* poOCG = poOCGsArray->Get(i);
-            oMapOCGNumGenToVisibilityStatePdfium[ std::pair<int,int>(poOCG->GetRefNum(), poOCG->GetRefGen()) ] =
+            oMapOCGNumGenToVisibilityStatePdfium[ std::pair<int,int>(poOCG->GetRefNum().toInt(), poOCG->GetRefGen()) ] =
                 (bAll) ? VISIBILITY_ON : VISIBILITY_OFF;
         }
 
@@ -3904,7 +3881,7 @@ CPLString PDFDataset::FindLayerOCG(GDALPDFDictionary* poPageDict,
         for(; oIter != oEnd; ++oIter)
         {
             GDALPDFObject* poObj = oIter->second;
-            if( poObj->GetRefNum() != 0 && poObj->GetType() == PDFObjectType_Dictionary )
+            if( poObj->GetRefNum().toBool() && poObj->GetType() == PDFObjectType_Dictionary )
             {
                 GDALPDFObject* poType = poObj->GetDictionary()->Get("Type");
                 GDALPDFObject* poName = poObj->GetDictionary()->Get("Name");
@@ -3942,7 +3919,7 @@ void PDFDataset::FindLayersGeneric(GDALPDFDictionary* poPageDict)
         for(; oIter != oEnd; ++oIter)
         {
             GDALPDFObject* poObj = oIter->second;
-            if( poObj->GetRefNum() != 0 && poObj->GetType() == PDFObjectType_Dictionary )
+            if( poObj->GetRefNum().toBool() && poObj->GetType() == PDFObjectType_Dictionary )
             {
                 GDALPDFObject* poType = poObj->GetDictionary()->Get("Type");
                 GDALPDFObject* poName = poObj->GetDictionary()->Get("Name");
@@ -3955,7 +3932,7 @@ void PDFDataset::FindLayersGeneric(GDALPDFDictionary* poPageDict)
                     osLayerWithRefList.AddString(
                         CPLSPrintf("%s %d %d",
                                     PDFSanitizeLayerName(poName->GetString()).c_str(),
-                                    poObj->GetRefNum(),
+                                    poObj->GetRefNum().toInt(),
                                     poObj->GetRefGen()));
                 }
             }
@@ -3967,7 +3944,7 @@ void PDFDataset::FindLayersGeneric(GDALPDFDictionary* poPageDict)
 /*                                Open()                                */
 /************************************************************************/
 
-GDALDataset *PDFDataset::Open( GDALOpenInfo * poOpenInfo )
+PDFDataset *PDFDataset::Open( GDALOpenInfo * poOpenInfo )
 
 {
     if (!Identify(poOpenInfo))
@@ -4058,7 +4035,7 @@ GDALDataset *PDFDataset::Open( GDALOpenInfo * poOpenInfo )
     GDALPDFObject* poPageObj = nullptr;
 #ifdef HAVE_POPPLER
     PDFDoc* poDocPoppler = nullptr;
-#ifdef POPPLER_0_58_OR_LATER
+#if POPPLER_MAJOR_VERSION >= 1 || POPPLER_MINOR_VERSION >= 58
     Object oObj;
 #else
     ObjectAutoFree oObj;
@@ -4082,11 +4059,7 @@ GDALDataset *PDFDataset::Open( GDALOpenInfo * poOpenInfo )
     GooString* poUserPwd = nullptr;
 
     /* Set custom error handler for poppler errors */
-#ifdef POPPLER_0_20_OR_LATER
     setErrorCallback(PDFDatasetErrorFunction, nullptr);
-#else
-    setErrorFunction(PDFDatasetErrorFunction);
-#endif
 
     {
         CPLMutexHolderD(&hGlobalParamsMutex);
@@ -4109,7 +4082,7 @@ GDALDataset *PDFDataset::Open( GDALOpenInfo * poOpenInfo )
         if (pszUserPwd)
             poUserPwd = new GooString(pszUserPwd);
 
-#ifdef POPPLER_0_58_OR_LATER
+#if POPPLER_MAJOR_VERSION >= 1 || POPPLER_MINOR_VERSION >= 58
         poDocPoppler = new PDFDoc(new VSIPDFFileStream(fp, pszFilename, std::move(oObj)), nullptr, poUserPwd);
 #else
         oObj.getObj()->initNull();
@@ -4219,7 +4192,7 @@ GDALDataset *PDFDataset::Open( GDALOpenInfo * poOpenInfo )
     Ref* poPageRef = poCatalogPoppler->getPageRef(iPage);
     if (poPageRef != nullptr)
     {
-        ((GDALPDFObjectPoppler*)poPageObj)->SetRefNumAndGen(poPageRef->num, poPageRef->gen);
+        ((GDALPDFObjectPoppler*)poPageObj)->SetRefNumAndGen(GDALPDFObjectNum(poPageRef->num), poPageRef->gen);
     }
   }
 #endif  // ~ HAVE_POPPLER
@@ -4659,11 +4632,11 @@ GDALDataset *PDFDataset::Open( GDALOpenInfo * poOpenInfo )
                     {
                         if (nImageNum < 0)
                             CPLDebug("PDF", "Measure found on Image object (%d)",
-                                     poObj->GetRefNum());
+                                     poObj->GetRefNum().toInt());
 
                         GDALPDFObject* poColorSpace = poDict->Get("ColorSpace");
                         GDALPDFObject* poBitsPerComponent = poDict->Get("BitsPerComponent");
-                        if (poObj->GetRefNum() != 0 &&
+                        if (poObj->GetRefNum().toBool() &&
                             poObj->GetRefGen() == 0 &&
                             poColorSpace != nullptr &&
                             poColorSpace->GetType() == PDFObjectType_Name &&
@@ -4679,7 +4652,7 @@ GDALDataset *PDFDataset::Open( GDALOpenInfo * poOpenInfo )
                                 poDS->SetMetadataItem(CPLSPrintf("SUBDATASET_%d_NAME",
                                                                  nSubDataset),
                                                       CPLSPrintf("PDF_IMAGE:%d:%d:%s",
-                                                                 iPage, poObj->GetRefNum(), pszFilename),
+                                                                 iPage, poObj->GetRefNum().toInt(), pszFilename),
                                                       "SUBDATASETS");
                                 poDS->SetMetadataItem(CPLSPrintf("SUBDATASET_%d_DESC",
                                                                  nSubDataset),
@@ -4687,7 +4660,7 @@ GDALDataset *PDFDataset::Open( GDALOpenInfo * poOpenInfo )
                                                                  nW, nH, iPage, pszFilename),
                                                       "SUBDATASETS");
                             }
-                            else if (poObj->GetRefNum() == nImageNum)
+                            else if (poObj->GetRefNum().toInt() == nImageNum)
                             {
                                 poDS->nRasterXSize = nW;
                                 poDS->nRasterYSize = nH;
@@ -4787,7 +4760,11 @@ GDALDataset *PDFDataset::Open( GDALOpenInfo * poOpenInfo )
     GooString* poMetadata = poCatalogPoppler->readMetadata();
     if (poMetadata)
     {
+#if (POPPLER_MAJOR_VERSION >= 1 || POPPLER_MINOR_VERSION >= 72)
+        const char* pszContent = poMetadata->c_str();
+#else
         const char* pszContent = poMetadata->getCString();
+#endif
         if (pszContent != nullptr &&
             STARTS_WITH(pszContent, "<?xpacket begin="))
         {
@@ -4803,14 +4780,14 @@ GDALDataset *PDFDataset::Open( GDALOpenInfo * poOpenInfo )
     if( poDocPoppler->getXRef()->isOk() )
     {
         Object oInfo;
-#ifdef POPPLER_0_58_OR_LATER
+#if POPPLER_MAJOR_VERSION >= 1 || POPPLER_MINOR_VERSION >= 58
         oInfo = poDocPoppler->getDocInfo();
 #else
         poDocPoppler->getDocInfo(&oInfo);
 #endif
         GDALPDFObjectPoppler oInfoObjPoppler(&oInfo, FALSE);
         poDS->ParseInfo(&oInfoObjPoppler);
-#ifndef POPPLER_0_58_OR_LATER
+#if !(POPPLER_MAJOR_VERSION >= 1 || POPPLER_MINOR_VERSION >= 58)
         oInfo.free();
 #endif
     }
@@ -6149,7 +6126,6 @@ int PDFDataset::ParseMeasure(GDALPDFObject* poMeasure,
                              double dfMediaBoxWidth, double dfMediaBoxHeight,
                              double dfULX, double dfULY, double dfLRX, double dfLRY)
 {
-    int i;
     GDALPDFDictionary* poMeasureDict = poMeasure->GetDictionary();
 
 /* -------------------------------------------------------------------- */
@@ -6194,7 +6170,7 @@ int PDFDataset::ParseMeasure(GDALPDFObject* poMeasure,
         if (nBoundsLength == 8)
         {
             double adfBounds[8];
-            for(i=0;i<8;i++)
+            for(int i=0;i<8;i++)
             {
                 adfBounds[i] = Get(poBounds, i);
                 CPLDebug("PDF", "Bounds[%d] = %f", i, adfBounds[i]);
@@ -6224,15 +6200,15 @@ int PDFDataset::ParseMeasure(GDALPDFObject* poMeasure,
     }
 
     int nGPTSLength = poGPTS->GetArray()->GetLength();
-    if (nGPTSLength != 8)
+    if ((nGPTSLength % 2) != 0 || nGPTSLength < 6)
     {
         CPLError(CE_Failure, CPLE_AppDefined,
                  "Invalid length for GPTS object");
         return FALSE;
     }
 
-    double adfGPTS[8];
-    for(i=0;i<8;i++)
+    std::vector<double> adfGPTS(nGPTSLength);
+    for(int i=0;i<nGPTSLength;i++)
     {
         adfGPTS[i] = Get(poGPTS, i);
         CPLDebug("PDF", "GPTS[%d] = %.18f", i, adfGPTS[i]);
@@ -6255,15 +6231,15 @@ int PDFDataset::ParseMeasure(GDALPDFObject* poMeasure,
     }
 
     int nLPTSLength = poLPTS->GetArray()->GetLength();
-    if (nLPTSLength != 8)
+    if (nLPTSLength != nGPTSLength)
     {
         CPLError(CE_Failure, CPLE_AppDefined,
                  "Invalid length for LPTS object");
         return FALSE;
     }
 
-    double adfLPTS[8];
-    for(i=0;i<8;i++)
+    std::vector<double> adfLPTS(nLPTSLength);
+    for(int i=0;i<nLPTSLength;i++)
     {
         adfLPTS[i] = Get(poLPTS, i);
         CPLDebug("PDF", "LPTS[%d] = %f", i, adfLPTS[i]);
@@ -6327,6 +6303,7 @@ int PDFDataset::ParseMeasure(GDALPDFObject* poMeasure,
     }
 
     OGRSpatialReference oSRS;
+    oSRS.SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
     int bSRSOK = FALSE;
     if (nEPSGCode != 0 &&
         oSRS.importFromEPSG(nEPSGCode) == OGRERR_NONE)
@@ -6389,13 +6366,18 @@ int PDFDataset::ParseMeasure(GDALPDFObject* poMeasure,
     /* ISO 32000 supplement spec, but in (northing, easting). Adobe reader is able to understand that, */
     /* so let's also try to do it with a heuristics. */
 
-    int bReproject = TRUE;
-    if (oSRS.IsProjected() &&
-        (fabs(adfGPTS[0]) > 91 || fabs(adfGPTS[2]) > 91 || fabs(adfGPTS[4]) > 91 || fabs(adfGPTS[6]) > 91 ||
-         fabs(adfGPTS[1]) > 361 || fabs(adfGPTS[3]) > 361 || fabs(adfGPTS[5]) > 361 || fabs(adfGPTS[7]) > 361))
+    bool bReproject = true;
+    if (oSRS.IsProjected() )
     {
-        CPLDebug("PDF", "GPTS coordinates seems to be in (northing, easting), which is non-standard");
-        bReproject = FALSE;
+        for( int i = 0; i < nGPTSLength / 2; i++ )
+        {
+            if( fabs(adfGPTS[2 * i]) > 91 || fabs(adfGPTS[2 * i + 1]) > 361 )
+            {
+                CPLDebug("PDF", "GPTS coordinates seems to be in (northing, easting), which is non-standard");
+                bReproject = false;
+                break;
+            }
+        }
     }
 
     OGRCoordinateTransformation* poCT = nullptr;
@@ -6411,14 +6393,18 @@ int PDFDataset::ParseMeasure(GDALPDFObject* poMeasure,
         }
     }
 
-    GDAL_GCP asGCPS[4];
+    std::vector<GDAL_GCP> asGCPS(nGPTSLength/ 2);
 
     /* Create NEATLINE */
-    poNeatLine = new OGRPolygon();
-    OGRLinearRing* poRing = new OGRLinearRing();
-    poNeatLine->addRingDirectly(poRing);
+    OGRLinearRing* poRing = nullptr;
+    if( nGPTSLength == 8 )
+    {
+        poNeatLine = new OGRPolygon();
+        poRing = new OGRLinearRing();
+        poNeatLine->addRingDirectly(poRing);
+    }
 
-    for(i=0;i<4;i++)
+    for(int i=0;i<nGPTSLength/ 2;i++)
     {
         /* We probably assume LPTS is 0 or 1 */
         asGCPS[i].dfGCPPixel = (dfULX * (1 - adfLPTS[2*i+0]) + dfLRX * adfLPTS[2*i+0]) / dfMediaBoxWidth * nRasterXSize;
@@ -6448,17 +6434,18 @@ int PDFDataset::ParseMeasure(GDALPDFObject* poMeasure,
         asGCPS[i].dfGCPX     = x;
         asGCPS[i].dfGCPY     = y;
 
-        poRing->addPoint(x, y);
+        if( poRing )
+            poRing->addPoint(x, y);
     }
 
     delete poSRSGeog;
     delete poCT;
 
-    if (!GDALGCPsToGeoTransform( 4, asGCPS,
+    if (!GDALGCPsToGeoTransform( nGPTSLength/ 2, asGCPS.data(),
                                adfGeoTransform, FALSE))
     {
         CPLDebug("PDF", "Could not compute GT with exact match. Try with approximate");
-        if (!GDALGCPsToGeoTransform( 4, asGCPS,
+        if (!GDALGCPsToGeoTransform( nGPTSLength/ 2, asGCPS.data(),
                                adfGeoTransform, TRUE))
         {
             CPLError(CE_Failure, CPLE_AppDefined,
@@ -6494,9 +6481,9 @@ int PDFDataset::ParseMeasure(GDALPDFObject* poMeasure,
 /*                          GetProjectionRef()                          */
 /************************************************************************/
 
-const char* PDFDataset::GetProjectionRef()
+const char* PDFDataset::_GetProjectionRef()
 {
-    const char* pszPAMProjection = GDALPamDataset::GetProjectionRef();
+    const char* pszPAMProjection = GDALPamDataset::_GetProjectionRef();
     if( pszPAMProjection != nullptr && pszPAMProjection[0] != '\0' )
         return pszPAMProjection;
 
@@ -6526,10 +6513,10 @@ CPLErr PDFDataset::GetGeoTransform( double * padfTransform )
 /*                            SetProjection()                           */
 /************************************************************************/
 
-CPLErr PDFDataset::SetProjection(const char* pszWKTIn)
+CPLErr PDFDataset::_SetProjection(const char* pszWKTIn)
 {
     if( eAccess == GA_ReadOnly )
-        GDALPamDataset::SetProjection(pszWKTIn);
+        GDALPamDataset::_SetProjection(pszWKTIn);
 
     CPLFree(pszWKT);
     pszWKT = pszWKTIn ? CPLStrdup(pszWKTIn) : CPLStrdup("");
@@ -6771,7 +6758,7 @@ int PDFDataset::GetGCPCount()
 /*                          GetGCPProjection()                          */
 /************************************************************************/
 
-const char * PDFDataset::GetGCPProjection()
+const char * PDFDataset::_GetGCPProjection()
 {
     if (pszWKT != nullptr && nGCPCount != 0)
         return pszWKT;
@@ -6791,7 +6778,7 @@ const GDAL_GCP * PDFDataset::GetGCPs()
 /*                               SetGCPs()                              */
 /************************************************************************/
 
-CPLErr PDFDataset::SetGCPs( int nGCPCountIn, const GDAL_GCP *pasGCPListIn,
+CPLErr PDFDataset::_SetGCPs( int nGCPCountIn, const GDAL_GCP *pasGCPListIn,
                             const char *pszGCPProjectionIn )
 {
     const char* pszGEO_ENCODING =
@@ -6824,14 +6811,14 @@ CPLErr PDFDataset::SetGCPs( int nGCPCountIn, const GDAL_GCP *pasGCPListIn,
     return CE_None;
 }
 
-#endif // #if defined(HAVE_POPPLER) || defined(HAVE_PODOFO) || defined(HAVE_PDFIUM)
+#endif // #ifdef HAVE_PDF_READ_SUPPORT
 
 /************************************************************************/
 /*                          GDALPDFOpen()                               */
 /************************************************************************/
 
 GDALDataset* GDALPDFOpen(
-#if defined(HAVE_POPPLER) || defined(HAVE_PODOFO) || defined(HAVE_PDFIUM)
+#ifdef HAVE_PDF_READ_SUPPORT
                          const char* pszFilename,
                          GDALAccess eAccess
 #else
@@ -6840,7 +6827,7 @@ GDALDataset* GDALPDFOpen(
 #endif
                          )
 {
-#if defined(HAVE_POPPLER) || defined(HAVE_PODOFO) || defined(HAVE_PDFIUM)
+#ifdef HAVE_PDF_READ_SUPPORT
     GDALOpenInfo oOpenInfo(pszFilename, eAccess);
     return PDFDataset::Open(&oOpenInfo);
 #else
@@ -6938,6 +6925,8 @@ void GDALRegister_PDF()
     poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, "frmt_pdf.html" );
     poDriver->SetMetadataItem( GDAL_DMD_EXTENSION, "pdf" );
     poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES, "Byte" );
+    poDriver->SetMetadataItem( GDAL_DMD_CREATIONFIELDDATATYPES,
+                               "Integer Integer64 Real String Date DateTime Time" );
 
 #if defined(HAVE_POPPLER) || defined(HAVE_PDFIUM)
     poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
@@ -7015,14 +7004,15 @@ void GDALRegister_PDF()
 "   <Option name='EXCLUSIVE_LAYERS' type='string' description='Comma separated list of layer names, such that only one of those layers can be ON at a time.'/>\n"
 "   <Option name='JAVASCRIPT' type='string' description='Javascript script to embed and run at file opening'/>\n"
 "   <Option name='JAVASCRIPT_FILE' type='string' description='Filename of the Javascript script to embed and run at file opening'/>\n"
+"   <Option name='COMPOSITION_FILE' type='string' description='XML file describing how the PDF should be composed'/>\n"
 "</CreationOptionList>\n" );
 
-#if defined(HAVE_POPPLER) || defined(HAVE_PODOFO) || defined(HAVE_PDFIUM)
+#ifdef HAVE_PDF_READ_SUPPORT
     poDriver->SetMetadataItem( GDAL_DMD_OPENOPTIONLIST, szOpenOptionList );
-    poDriver->pfnOpen = PDFDataset::Open;
+    poDriver->pfnOpen = PDFDataset::OpenWrapper;
     poDriver->pfnIdentify = PDFDataset::Identify;
     poDriver->SetMetadataItem( GDAL_DMD_SUBDATASETS, "YES" );
-#endif // HAVE_POPPLER || HAVE_PODOFO || defined(HAVE_PDFIUM)
+#endif // HAVE_PDF_READ_SUPPORT
 
     poDriver->pfnCreateCopy = GDALPDFCreateCopy;
     poDriver->pfnCreate = PDFWritableVectorDataset::Create;

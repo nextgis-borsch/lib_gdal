@@ -3,8 +3,8 @@
 # Purpose:  CMake build scripts
 # Authors:  Dmitry Baryshnikov (polimax@mail.ru), Mikhail Gusev (gusevmihs@gmail.com)
 ################################################################################
-# Copyright (C) 2015-2018, NextGIS <info@nextgis.com>
-# Copyright (C) 2012,2013,2014 Dmitry Baryshnikov
+# Copyright (C) 2015-2019, NextGIS <info@nextgis.com>
+# Copyright (C) 2012-2019 Dmitry Baryshnikov
 # Copyright (C) 2016 Mikhail Gusev
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -52,9 +52,9 @@ if(UNIX)
 endif()
 
 set(PROGS testperfcopywords testcopywords testclosedondestroydm
-    testthreadcond testvirtualmem testblockcache testblockcachewrite
+    testthreadcond testblockcache testblockcachewrite
     testblockcachelimits testdestroy testmultithreadedwriting
-    test_c_include_from_cpp_file
+    test_c_include_from_cpp_file # testvirtualmem
 )
 
 if(CMAKE_CL_64 OR UNIX)
@@ -70,34 +70,31 @@ endforeach()
 add_executable(test_include_from_c_file test_include_from_c_file.c)
 target_link_libraries(test_include_from_c_file PRIVATE ${TARGET_LINK_LIB})
 
-add_executable(gdal_unit_test gdal_unit_test.cpp
-    test_alg.cpp test_cpl.cpp test_gdal.cpp test_gdal_aaigrid.cpp
-    test_gdal_dted.cpp test_gdal_gtiff.cpp test_triangulation.cpp
-    test_ogr.cpp test_ogr_geos.cpp test_ogr_shape.cpp test_osr.cpp
-    test_osr_ct.cpp test_osr_pci.cpp test_osr_proj4.cpp
-    test_marching_squares_square.cpp test_marching_squares_tile.cpp
-    test_marching_squares_contour.cpp test_marching_squares_polygon.cpp
-    tut/tut_gdal.cpp)
-target_link_libraries(gdal_unit_test PRIVATE ${TARGET_LINK_LIB})
+# add_executable(gdal_unit_test gdal_unit_test.cpp
+#     test_alg.cpp test_cpl.cpp test_gdal.cpp test_gdal_aaigrid.cpp
+#     test_gdal_dted.cpp test_gdal_gtiff.cpp test_triangulation.cpp
+#     test_ogr.cpp test_ogr_geos.cpp test_ogr_shape.cpp test_osr.cpp
+#     test_osr_ct.cpp test_osr_pci.cpp test_osr_proj4.cpp
+#     test_marching_squares_square.cpp test_marching_squares_tile.cpp
+#     test_marching_squares_contour.cpp test_marching_squares_polygon.cpp
+#     tut/tut_gdal.cpp)
+# target_link_libraries(gdal_unit_test PRIVATE ${TARGET_LINK_LIB})
 
 if(WIN32)
-    file(GLOB_RECURSE IMPORTED_WIN_DLLS ${CMAKE_BINARY_DIR}/third-party/*.dll)
-    foreach(IMPORTED_WIN_DLL ${IMPORTED_WIN_DLLS})
-        add_custom_command(TARGET gdal_unit_test
-                            POST_BUILD
-                            COMMAND ${CMAKE_COMMAND} -E copy ${IMPORTED_WIN_DLL} $<TARGET_FILE_DIR:gdal_unit_test>
-                            COMMENT "Copy ${IMPORTED_WIN_DLL} to gdal_unit_test destination"
-                        )
-    endforeach()
+    add_custom_command(TARGET ${IMPORTED_WIN_DLLS}
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -DDST_PATH="$<TARGET_FILE_DIR:test_include_from_c_file>" -DSRC_PATH="${PROJECT_BINARY_DIR}" -P ${PROJECT_SOURCE_DIR}/cmake/test_dependency.cmake
+        COMMENT "Copy DLLs"
+    )
 endif()
 
 add_test(NAME quick_test COMMAND testperfcopywords)
 if(APPLE)
     set_tests_properties(quick_test
         PROPERTIES ENVIRONMENT "DO_NOT_FAIL_ON_RECODE_ERRORS=TRUE")
-    add_test(NAME gdal_unit_test COMMAND gdal_unit_test)
-    set_tests_properties(gdal_unit_test
-        PROPERTIES ENVIRONMENT "DO_NOT_FAIL_ON_RECODE_ERRORS=TRUE")
+    # add_test(NAME gdal_unit_test COMMAND gdal_unit_test)
+    # set_tests_properties(gdal_unit_test
+    #     PROPERTIES ENVIRONMENT "DO_NOT_FAIL_ON_RECODE_ERRORS=TRUE")
 endif()
 add_test(NAME testcopywords COMMAND testcopywords)
 add_test(NAME testclosedondestroydm COMMAND testclosedondestroydm)

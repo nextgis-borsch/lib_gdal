@@ -245,10 +245,20 @@ class JP2OpenJPEGDataset final: public GDALJP2AbstractDataset
                                            GDALProgressFunc pfnProgress,
                                            void * pProgressData );
 
-    virtual CPLErr SetProjection( const char * ) override;
+    virtual CPLErr _SetProjection( const char * ) override;
+    CPLErr SetSpatialRef(const OGRSpatialReference* poSRS) override {
+        return OldSetProjectionFromSetSpatialRef(poSRS);
+    }
+
     virtual CPLErr SetGeoTransform( double* ) override;
-    virtual CPLErr SetGCPs( int nGCPCount, const GDAL_GCP *pasGCPList,
+    virtual CPLErr _SetGCPs( int nGCPCount, const GDAL_GCP *pasGCPList,
                             const char *pszGCPProjection ) override;
+    using GDALJP2AbstractDataset::SetGCPs;
+    CPLErr SetGCPs( int nGCPCountIn, const GDAL_GCP *pasGCPListIn,
+                    const OGRSpatialReference* poSRS ) override {
+        return OldSetGCPsFromNew(nGCPCountIn, pasGCPListIn, poSRS);
+    }
+
     virtual CPLErr      SetMetadata( char ** papszMetadata,
                              const char * pszDomain = "" ) override;
     virtual CPLErr      SetMetadataItem( const char * pszName,
@@ -1011,7 +1021,7 @@ CPLErr JP2OpenJPEGDataset::ReadBlock( int nBand, VSILFILE* fpIn,
             if( iBand == 4 )
             {
                 const OPJ_INT32* pSrcA = psImage->comps[3].data;
-                for(int j=0;j<nHeightToRead;j++)
+                for(GPtrDiff_t j=0;j<nHeightToRead;j++)
                 {
                     memcpy(pDst + j*nBlockXSize,
                             pSrcA + j * psImage->comps[0].w,
@@ -1023,7 +1033,7 @@ CPLErr JP2OpenJPEGDataset::ReadBlock( int nBand, VSILFILE* fpIn,
                 const OPJ_INT32* pSrcY = psImage->comps[0].data;
                 const OPJ_INT32* pSrcCb = psImage->comps[1].data;
                 const OPJ_INT32* pSrcCr = psImage->comps[2].data;
-                for(int j=0;j<nHeightToRead;j++)
+                for(GPtrDiff_t j=0;j<nHeightToRead;j++)
                 {
                     for(int i=0;i<nWidthToRead;i++)
                     {
@@ -1042,7 +1052,7 @@ CPLErr JP2OpenJPEGDataset::ReadBlock( int nBand, VSILFILE* fpIn,
 
             if( bPromoteTo8Bit )
             {
-                for(int j=0;j<nHeightToRead;j++)
+                for(GPtrDiff_t j=0;j<nHeightToRead;j++)
                 {
                     for(int i=0;i<nWidthToRead;i++)
                     {
@@ -1067,7 +1077,7 @@ CPLErr JP2OpenJPEGDataset::ReadBlock( int nBand, VSILFILE* fpIn,
 
             if( bPromoteTo8Bit )
             {
-                for(int j=0;j<nHeightToRead;j++)
+                for(GPtrDiff_t j=0;j<nHeightToRead;j++)
                 {
                     for(int i=0;i<nWidthToRead;i++)
                     {
@@ -1079,12 +1089,12 @@ CPLErr JP2OpenJPEGDataset::ReadBlock( int nBand, VSILFILE* fpIn,
             if ((int)psImage->comps[iBand-1].w == nBlockXSize &&
                 (int)psImage->comps[iBand-1].h == nBlockYSize)
             {
-                GDALCopyWords(psImage->comps[iBand-1].data, GDT_Int32, 4,
-                            pDstBuffer, eDataType, nDataTypeSize, nBlockXSize * nBlockYSize);
+                GDALCopyWords64(psImage->comps[iBand-1].data, GDT_Int32, 4,
+                            pDstBuffer, eDataType, nDataTypeSize, static_cast<GPtrDiff_t>(nBlockXSize) * nBlockYSize);
             }
             else
             {
-                for(int j=0;j<nHeightToRead;j++)
+                for(GPtrDiff_t j=0;j<nHeightToRead;j++)
                 {
                     GDALCopyWords(psImage->comps[iBand-1].data + j * psImage->comps[iBand-1].w, GDT_Int32, 4,
                                 (GByte*)pDstBuffer + j * nBlockXSize * nDataTypeSize, eDataType, nDataTypeSize,
@@ -1479,7 +1489,7 @@ int JP2OpenJPEGDataset::CloseDependentDatasets()
 /*                           SetProjection()                            */
 /************************************************************************/
 
-CPLErr JP2OpenJPEGDataset::SetProjection( const char * pszProjectionIn )
+CPLErr JP2OpenJPEGDataset::_SetProjection( const char * pszProjectionIn )
 {
     if( eAccess == GA_Update )
     {
@@ -1489,7 +1499,7 @@ CPLErr JP2OpenJPEGDataset::SetProjection( const char * pszProjectionIn )
         return CE_None;
     }
     else
-        return GDALJP2AbstractDataset::SetProjection(pszProjectionIn);
+        return GDALJP2AbstractDataset::_SetProjection(pszProjectionIn);
 }
 
 /************************************************************************/
@@ -1516,7 +1526,7 @@ CPLErr JP2OpenJPEGDataset::SetGeoTransform( double *padfGeoTransform )
 /*                           SetGCPs()                                  */
 /************************************************************************/
 
-CPLErr JP2OpenJPEGDataset::SetGCPs( int nGCPCountIn, const GDAL_GCP *pasGCPListIn,
+CPLErr JP2OpenJPEGDataset::_SetGCPs( int nGCPCountIn, const GDAL_GCP *pasGCPListIn,
                                     const char *pszGCPProjectionIn )
 {
     if( eAccess == GA_Update )
@@ -1536,7 +1546,7 @@ CPLErr JP2OpenJPEGDataset::SetGCPs( int nGCPCountIn, const GDAL_GCP *pasGCPListI
         return CE_None;
     }
     else
-        return GDALJP2AbstractDataset::SetGCPs(nGCPCountIn, pasGCPListIn,
+        return GDALJP2AbstractDataset::_SetGCPs(nGCPCountIn, pasGCPListIn,
                                                pszGCPProjectionIn);
 }
 
@@ -2548,7 +2558,7 @@ GDALDataset * JP2OpenJPEGDataset::CreateCopy( const char * pszFilename,
         assert(!adfRates.empty());
     }
 
-    if( poCT != nullptr && (bIsIrreversible || adfRates.back() != 100.0 / 100.0) )
+    if( poCT != nullptr && (bIsIrreversible || adfRates.back() != 1.0) )
     {
         CPLError(CE_Warning, CPLE_AppDefined,
                  "Encoding a dataset with a color table with REVERSIBLE != YES "

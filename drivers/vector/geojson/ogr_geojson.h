@@ -113,6 +113,7 @@ class OGRGeoJSONLayer final: public OGRMemLayer
     bool bUpdated_;
     bool bOriginalIdModified_;
     GIntBig nTotalFeatureCount_;
+    GIntBig nFeatureReadSinceReset_ = 0;
     GIntBig nNextFID_;
 
     bool IngestAll();
@@ -161,6 +162,7 @@ class OGRGeoJSONWriteLayer final: public OGRLayer
 
     bool bRFC7946_;
     OGRCoordinateTransformation* poCT_;
+    OGRGeometryFactory::TransformWithOptionsCache oTransformCache_;
     OGRGeoJSONWriteOptions oWriteOptions_;
 };
 

@@ -36,10 +36,10 @@
 std::vector<EEDAIBandDesc> BuildBandDescArray(json_object* poBands,
                                 std::map<CPLString, CPLString>& oMapCodeToWKT)
 {
-    const int nBandCount = json_object_array_length( poBands );
+    const auto nBandCount = json_object_array_length( poBands );
     std::vector<EEDAIBandDesc> aoBandDesc;
 
-    for(int i = 0; i < nBandCount; i++)
+    for(auto i = decltype(nBandCount){0}; i < nBandCount; i++)
     {
         json_object* poBand = json_object_array_get_idx(poBands, i);
         if( poBand == nullptr || json_object_get_type(poBand) != json_type_object )
@@ -65,7 +65,7 @@ std::vector<EEDAIBandDesc> BuildBandDescArray(json_object* poBands,
             continue;
         GDALDataType eDT = GDT_Byte;
         bool bSignedByte = false;
-        if( EQUAL(pszPrecision, "INTEGER") )
+        if( EQUAL(pszPrecision, "INT") )
         {
             json_object* poRange = CPL_json_object_object_get(poDataType,
                                                               "range");
@@ -108,11 +108,11 @@ std::vector<EEDAIBandDesc> BuildBandDescArray(json_object* poBands,
                 }
             }
         }
-        else if( EQUAL(pszPrecision, "FLOAT32") )
+        else if( EQUAL(pszPrecision, "FLOAT") )
         {
             eDT = GDT_Float32;
         }
-        else if( EQUAL(pszPrecision, "FLOAT64") )
+        else if( EQUAL(pszPrecision, "DOUBLE") )
         {
             eDT = GDT_Float64;
         }

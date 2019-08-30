@@ -1037,7 +1037,7 @@ char** SENTINEL2GetUserProductMetadata( CPLXMLNode* psMainMTD,
         return nullptr;
     }
     int nDataTakeCounter = 1;
-    for( CPLXMLNode* psIter = (psProductInfo ? psProductInfo->psChild : nullptr);
+    for( CPLXMLNode* psIter = psProductInfo->psChild;
                      psIter != nullptr;
                      psIter = psIter->psNext )
     {
@@ -1192,7 +1192,7 @@ char** SENTINEL2GetUserProductMetadata( CPLXMLNode* psMainMTD,
         }
         if( psICCQI != nullptr )
         {
-            for( CPLXMLNode* psIter = (psICCQI ? psICCQI->psChild : nullptr);
+            for( CPLXMLNode* psIter = psICCQI->psChild;
                 psIter != nullptr;
                 psIter = psIter->psNext )
             {
@@ -2206,7 +2206,7 @@ GDALDataset *SENTINEL2Dataset::OpenL1BSubdataset( GDALOpenInfo * poOpenInfo )
                     }
                 }
 
-                poDS->SetGCPs( nGCPCount, asGCPList, SRS_WKT_WGS84 );
+                poDS->SetGCPs( nGCPCount, asGCPList, SRS_WKT_WGS84_LAT_LONG );
                 GDALDeinitGCPs( nGCPCount, asGCPList );
             }
         }
