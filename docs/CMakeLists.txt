@@ -42,14 +42,6 @@ if(GDAL_BUILD_DOCS)
         ${CMAKE_SOURCE_DIR}/docs/ogr"
         )
 
-        #                         frmts/gdalallregister.cpp \ \n
-        #                         frmts/vrt \ \n
-        #                         ogr/ogrsf_frmts \ \n
-        #                         ogr/ogrsf_frmts/generic \ \n
-        #                         ogr/ogrsf_frmts/geojson/ogrgeojsonwriter.cpp \ \n
-        #                         ogr/ogrsf_frmts/kml/ogr2kmlgeometry.cpp \ \n
-
-
         set(DOX_FILE_PATTERNS "*.h *.cpp *.c *.dox")
         set(DOX_GENERATE_HTML "YES")
         set(DOX_GENERATE_MAN "NO")
@@ -169,9 +161,8 @@ if(GDAL_BUILD_DOCS)
 
     endif()
 
-    set (DOC_FILES
+    set(DOC_FILES
         ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.TXT
-        ${CMAKE_CURRENT_SOURCE_DIR}/README
         ${CMAKE_CURRENT_SOURCE_DIR}/COMMITERS
         ${CMAKE_CURRENT_SOURCE_DIR}/NEWS
     )
@@ -183,15 +174,14 @@ if(GDAL_BUILD_DOCS)
     endif()
 
     if(NOT SKIP_INSTALL_DOCS AND NOT SKIP_INSTALL_ALL )        
-    install(FILES ${DOC_FILES}
+        install(FILES ${DOC_FILES}
             DESTINATION ${INSTALL_DOC_DIR}
             COMPONENT documents
             OPTIONAL
-           )
-
-    install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.TXT
+        )
+        install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.TXT
             DESTINATION ${INSTALL_SHARE_DIR}
-            COMPONENT documents)
+            COMPONENT documents
+        )
     endif()
-
 endif()

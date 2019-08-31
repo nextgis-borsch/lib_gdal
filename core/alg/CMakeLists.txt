@@ -88,7 +88,10 @@ set(LIB_CSOURCES
 
 find_anyproject(QHULL DEFAULT OFF)
 if(QHULL_FOUND)
-    add_definitions(-DEXTERNAL_QHULL -DQHULL_INCLUDE_SUBDIR_IS_LIBQHULL=1 -DHAVE_QHULL_LIBQHULL_H=1 -Dqh_dllimport)
+    add_definitions(-DEXTERNAL_QHULL -DQHULL_INCLUDE_SUBDIR_IS_LIBQHULL=1 -DHAVE_QHULL_LIBQHULL_H=1)
+    if(WIN32)
+        add_definitions(-Dqh_dllimport)
+    endif()
 endif()
 
 find_anyproject(Armadillo DEFAULT OFF)

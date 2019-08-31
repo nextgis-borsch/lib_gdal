@@ -177,7 +177,7 @@ gdal/ci,,skip,
 gdal/data,data,,"json,png,svg,rsc,cpp,h,csv,wkt,xml,xsd,gfs,ini,txt,dxf,dgn"
 gdal/doc,docs/doc,skip,"dox,Doxyfile,html"
 gdal/doc/br,docs/doc/br,skip,"dox,Doxyfile,gif"
-gdal,docs,skip,"COMMITERS,NEWS,TXT"
+gdal,docs,,"COMMITERS,NEWS,LICENSE.TXT"
 gdal/data,docs/data,skip,png
 gdal/doc/grid,docs/doc/grid,skip,"dox,Doxyfile,eps,png"
 gdal/doc/grid/src,docs/doc/grid/src,skip,"tex,mp"
