@@ -54,13 +54,15 @@ endif()
 set(PROGS testperfcopywords testcopywords testclosedondestroydm
     testthreadcond testblockcache testblockcachewrite
     testblockcachelimits testdestroy testmultithreadedwriting
-    test_c_include_from_cpp_file # testvirtualmem
+    test_c_include_from_cpp_file # 
 )
 
+if(TEST_VIRTUALMEM)
+    set(PROGS ${PROGS} testvirtualmem)
+endif()
+
 if(CMAKE_CL_64 OR UNIX)
-    set(PROGS ${PROGS}
-        testsse
-    )
+    set(PROGS ${PROGS} testsse)
 endif()
 
 foreach(PROG ${PROGS})
@@ -70,15 +72,17 @@ endforeach()
 add_executable(test_include_from_c_file test_include_from_c_file.c)
 target_link_libraries(test_include_from_c_file PRIVATE ${TARGET_LINK_LIB})
 
-# add_executable(gdal_unit_test gdal_unit_test.cpp
-#     test_alg.cpp test_cpl.cpp test_gdal.cpp test_gdal_aaigrid.cpp
-#     test_gdal_dted.cpp test_gdal_gtiff.cpp test_triangulation.cpp
-#     test_ogr.cpp test_ogr_geos.cpp test_ogr_shape.cpp test_osr.cpp
-#     test_osr_ct.cpp test_osr_pci.cpp test_osr_proj4.cpp
-#     test_marching_squares_square.cpp test_marching_squares_tile.cpp
-#     test_marching_squares_contour.cpp test_marching_squares_polygon.cpp
-#     tut/tut_gdal.cpp)
-# target_link_libraries(gdal_unit_test PRIVATE ${TARGET_LINK_LIB})
+if(TEST_UNIT)
+    add_executable(gdal_unit_test gdal_unit_test.cpp
+        test_alg.cpp test_cpl.cpp test_gdal.cpp test_gdal_aaigrid.cpp
+        test_gdal_dted.cpp test_gdal_gtiff.cpp test_triangulation.cpp
+        test_ogr.cpp test_ogr_geos.cpp test_ogr_shape.cpp test_osr.cpp
+        test_osr_ct.cpp test_osr_pci.cpp test_osr_proj4.cpp
+        test_marching_squares_square.cpp test_marching_squares_tile.cpp
+        test_marching_squares_contour.cpp test_marching_squares_polygon.cpp
+        tut/tut_gdal.cpp)
+    target_link_libraries(gdal_unit_test PRIVATE ${TARGET_LINK_LIB})
+endif()
 
 if(WIN32)
     add_custom_command(TARGET ${IMPORTED_WIN_DLLS}
@@ -92,14 +96,29 @@ add_test(NAME quick_test COMMAND testperfcopywords)
 if(APPLE)
     set_tests_properties(quick_test
         PROPERTIES ENVIRONMENT "DO_NOT_FAIL_ON_RECODE_ERRORS=TRUE")
-    # add_test(NAME gdal_unit_test COMMAND gdal_unit_test)
-    # set_tests_properties(gdal_unit_test
-    #     PROPERTIES ENVIRONMENT "DO_NOT_FAIL_ON_RECODE_ERRORS=TRUE")
+
 endif()
+
+if(TEST_UNIT)
+    get_filename_component(PROJ_PARENT ${PROJ_INCLUDE_DIRS} PATH)
+    if(WIN32)
+        set(PENV "PROJ_LIB=${PROJ_PARENT}/share/proj")
+    else()
+        set(PENV "PROJ_LIB=${PROJ_PARENT}/Resources/proj")
+    endif()
+    add_test(NAME gdal_unit_test COMMAND gdal_unit_test)
+    set_tests_properties(gdal_unit_test
+        PROPERTIES ENVIRONMENT "DO_NOT_FAIL_ON_RECODE_ERRORS=TRUE")
+endif()
+
 add_test(NAME testcopywords COMMAND testcopywords)
 add_test(NAME testclosedondestroydm COMMAND testclosedondestroydm)
 add_test(NAME testthreadcond COMMAND testthreadcond)
-add_test(NAME testvirtualmem COMMAND testvirtualmem)
+
+if(TEST_VIRTUALMEM)
+    add_test(NAME testvirtualmem COMMAND testvirtualmem)
+endif()
+
 add_test(NAME testblockcache1 COMMAND testblockcache -check -co TILED=YES --debug TEST,LOCK -loops 3 --config GDAL_RB_LOCK_DEBUG_CONTENTION YES)
 add_test(NAME testblockcache2 COMMAND testblockcache -check -co TILED=YES --debug TEST,LOCK -loops 3 --config GDAL_RB_LOCK_DEBUG_CONTENTION YES)
 add_test(NAME testblockcache3 COMMAND testblockcache -check -co TILED=YES --debug TEST,LOCK -loops 3 --config GDAL_RB_LOCK_DEBUG_CONTENTION YES --config GDAL_RB_LOCK_TYPE SPIN)
