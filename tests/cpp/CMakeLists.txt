@@ -85,7 +85,7 @@ if(TEST_UNIT)
 endif()
 
 if(WIN32)
-    add_custom_command(TARGET ${IMPORTED_WIN_DLLS}
+    add_custom_command(TARGET test_include_from_c_file
         POST_BUILD
         COMMAND ${CMAKE_COMMAND} -DDST_PATH="$<TARGET_FILE_DIR:test_include_from_c_file>" -DSRC_PATH="${PROJECT_BINARY_DIR}" -P ${PROJECT_SOURCE_DIR}/cmake/test_dependency.cmake
         COMMENT "Copy DLLs"
