@@ -32,6 +32,9 @@ if(ENABLE_SQLITE_GPKG)
         add_definitions(-DSQLITE_HAS_COLUMN_METADATA)
     endif()
 
+    add_definitions(-DGPKG_ENABLED)
+    set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DGPKG_ENABLED" PARENT_SCOPE)
+
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
     include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/sqlite)
     include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/mem)
