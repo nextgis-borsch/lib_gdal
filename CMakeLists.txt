@@ -192,7 +192,7 @@ if(SQLITE3_FOUND)
     endif()
 endif()
 
-find_anyproject(PROJ REGUIRED)
+find_anyproject(PROJ REQUIRED)
 if(PROJ_FOUND)
     add_definitions(-DHAVE_PROJ_H=1)
     # if(NOT BUILD_STATIC_LIBS)
