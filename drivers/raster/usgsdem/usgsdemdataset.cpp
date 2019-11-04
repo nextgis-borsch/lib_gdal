@@ -604,9 +604,17 @@ int USGSDEMDataset::LoadFromFile(VSILFILE *InDem)
             j = ReadInt(InDem);
             if ( i != 1 || j != 1 )  // File OK?
             {
-                CPLError( CE_Failure, CPLE_AppDefined,
-                          "Does not appear to be a USGS DEM file." );
-                return FALSE;
+                CPL_IGNORE_RET_VAL(VSIFSeekL(InDem, 918, 0));  // Latest iteration of the A record, such as in fema06-140cm_2995441b.dem
+                i = ReadInt(InDem);
+                j = ReadInt(InDem);
+                if ( i != 1 || j != 1 )  // File OK?
+                {
+                    CPLError( CE_Failure, CPLE_AppDefined,
+                            "Does not appear to be a USGS DEM file." );
+                    return FALSE;
+                }
+                else
+                    nDataStartOffset = 918;
             }
             else
                 nDataStartOffset = 893;
@@ -807,7 +815,10 @@ int USGSDEMDataset::LoadFromFile(VSILFILE *InDem)
         adfGeoTransform[5] = (-dydelta) / 3600.0;
     }
 
-    if (!GDALCheckDatasetDimensions(nRasterXSize, nRasterYSize))
+    // IReadBlock() not ready for more than INT_MAX pixels, and that
+    // would behave badly
+    if (!GDALCheckDatasetDimensions(nRasterXSize, nRasterYSize) ||
+        nRasterXSize > INT_MAX / nRasterYSize)
     {
         return FALSE;
     }

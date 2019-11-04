@@ -210,6 +210,9 @@ function(get_compiler_version ver)
             set(COMPILER "${COMPILER}-64bit")
         endif()
     endif()
+    
+    # Debug
+    set(COMPILER Clang-9.0)
 
     set(${ver} ${COMPILER} PARENT_SCOPE)
 endfunction()

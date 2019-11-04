@@ -828,10 +828,9 @@ void FITSDataset::WriteFITSInfo()
               ctype2.assign("EA");
             }
 
-            char * cstrobj = new char [object.length()+1];
-            std::strcpy (cstrobj, object.c_str());
-
-            fits_update_key( hFITS, TSTRING, "OBJECT", cstrobj, nullptr, &status);
+            fits_update_key( hFITS, TSTRING, "OBJECT",
+                             const_cast<void*>(static_cast<const void*>(object.c_str())),
+                             nullptr, &status);
         }
 
         double aradius = oSRS.GetSemiMajor();
@@ -922,9 +921,10 @@ void FITSDataset::WriteFITSInfo()
             ctype1.append(fitsproj);
             ctype2.append(fitsproj);
 
-            char * cstr1 = new char [ctype1.length()+1];
-            std::strcpy (cstr1, ctype1.c_str());
-            fits_update_key( hFITS, TSTRING, "CTYPE1", cstr1, nullptr, &status);
+            fits_update_key( hFITS, TSTRING, "CTYPE1",
+                             const_cast<void*>(
+                                 static_cast<const void*>(ctype1.c_str())),
+                             nullptr, &status);
             if (status)
             {
                 // Throw a warning with CFITSIO error status, then ignore status 
@@ -935,9 +935,10 @@ void FITSDataset::WriteFITSInfo()
                 return;
             }
 
-            char * cstr2 = new char [ctype2.length()+1];
-            std::strcpy (cstr2, ctype2.c_str());
-            fits_update_key( hFITS, TSTRING, "CTYPE2", cstr2, nullptr, &status);
+            fits_update_key( hFITS, TSTRING, "CTYPE2",
+                             const_cast<void*>(
+                                 static_cast<const void*>(ctype2.c_str())),
+                             nullptr, &status);
             if (status)
             {
                 // Throw a warning with CFITSIO error status, then ignore status 

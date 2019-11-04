@@ -54,7 +54,7 @@ if(ENABLE_WFS)
         ogrwfslayer.cpp
         ogrwfsfilter.cpp
         ogrwfsjoinlayer.cpp
-        ogrwfs3driver.cpp
+        ogroapifdriver.cpp
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
