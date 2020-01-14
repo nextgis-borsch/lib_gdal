@@ -900,8 +900,17 @@ public:
     return OSRSetTOWGS84( self, p1, p2, p3, p4, p5, p6, p7 );
   }
 
+  bool HasTOWGS84() {
+    double ignored[7];
+    return OSRGetTOWGS84( self, ignored, 7 ) == OGRERR_NONE;
+  }
+
   OGRErr GetTOWGS84( double argout[7] ) {
     return OSRGetTOWGS84( self, argout, 7 );
+  }
+
+  OGRErr AddGuessedTOWGS84() {
+    return OSRAddGuessedTOWGS84( self );
   }
 
   OGRErr SetLocalCS( const char *pszName ) {
@@ -1390,6 +1399,15 @@ void SetPROJSearchPaths( char** paths )
 %}
 %clear (char **);
 
+%apply (char **CSL) {(char **)};
+%inline %{
+char** GetPROJSearchPaths()
+{
+    return OSRGetPROJSearchPaths();
+}
+%}
+%clear (char **);
+
 %inline %{
 int GetPROJVersionMajor()
 {
@@ -1402,6 +1420,13 @@ int GetPROJVersionMinor()
 {
     int num;
     OSRGetPROJVersion(NULL, &num, NULL);
+    return num;
+}
+
+int GetPROJVersionMicro()
+{
+    int num;
+    OSRGetPROJVersion(NULL, NULL, &num);
     return num;
 }
 %}

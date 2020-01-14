@@ -3,8 +3,8 @@
 # Purpose:  CMake build scripts
 # Author:   Dmitry Baryshnikov, polimax@mail.ru
 ################################################################################
-# Copyright (C) 2015-2018, NextGIS <info@nextgis.com>
-# Copyright (C) 2012,2013,2014 Dmitry Baryshnikov
+# Copyright (C) 2015-2020, NextGIS <info@nextgis.com>
+# Copyright (C) 2012-2014 Dmitry Baryshnikov
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -71,6 +71,8 @@ set(LIB_HHEADERS
     cpl_vsil_curl_class.h
     cpl_userfaultfd.h
     cpl_auto_close.h
+    # cpl_json_streaming_writer.h
+    # cpl_vax.h
 )
 
 set(LIB_HHEADERS_PRIV
@@ -82,6 +84,7 @@ set(LIB_HHEADERS_PRIV
     cpl_md5.h
     cpl_swift.h
     cpl_safemaths.hpp
+    # cpl_error_internal.h
 )
 
 set(LIB_CSOURCES
@@ -148,6 +151,8 @@ set(LIB_CSOURCES
     cpl_vsil_webhdfs.cpp
     cpl_vsil_hdfs.cpp
     cpl_userfaultfd.cpp
+    # cpl_json_streaming_writer.cpp
+    # cpl_vax.cpp
 )
 
 if(WIN32)

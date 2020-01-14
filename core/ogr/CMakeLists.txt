@@ -3,7 +3,7 @@
 # Purpose:  CMake build scripts
 # Author:   Dmitry Baryshnikov, polimax@mail.ru
 ################################################################################
-# Copyright (C) 2015-2017,2019 NextGIS <info@nextgis.com>
+# Copyright (C) 2015-2020 NextGIS <info@nextgis.com>
 # Copyright (C) 2012-2014,2015-2019 Dmitry Baryshnikov
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -56,6 +56,7 @@ set(LIB_HHEADERS_PRIV
     ogrgeomediageometry.h
     ogrpgeogeometry.h
     ogr_srs_esri_names.h
+    # ogr_swq.h
     swq.h
     ogr_libs.h
     ogr_geo_utils.h

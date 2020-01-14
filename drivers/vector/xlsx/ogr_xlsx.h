@@ -38,6 +38,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <set>
 
 namespace OGRXLSX {
 
@@ -49,12 +50,15 @@ class OGRXLSXDataSource;
 
 class OGRXLSXLayer final: public OGRMemLayer
 {
+    friend class OGRXLSXDataSource;
+
     bool               bInit;
     OGRXLSXDataSource* poDS;
     CPLString          osFilename;
     void               Init();
     bool               bUpdated;
     bool               bHasHeaderLine;
+    std::set<int>      oSetFieldsOfUnknownType{};
 
   public:
         OGRXLSXLayer( OGRXLSXDataSource* poDSIn,

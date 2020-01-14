@@ -1168,9 +1168,19 @@ class SpatialReference(_object):
         return _osr.SpatialReference_SetTOWGS84(self, *args)
 
 
+    def HasTOWGS84(self, *args):
+        """HasTOWGS84(SpatialReference self) -> bool"""
+        return _osr.SpatialReference_HasTOWGS84(self, *args)
+
+
     def GetTOWGS84(self, *args):
         """GetTOWGS84(SpatialReference self) -> OGRErr"""
         return _osr.SpatialReference_GetTOWGS84(self, *args)
+
+
+    def AddGuessedTOWGS84(self, *args):
+        """AddGuessedTOWGS84(SpatialReference self) -> OGRErr"""
+        return _osr.SpatialReference_AddGuessedTOWGS84(self, *args)
 
 
     def SetLocalCS(self, *args):
@@ -1543,6 +1553,10 @@ def SetPROJSearchPaths(*args):
     """SetPROJSearchPaths(char ** paths)"""
     return _osr.SetPROJSearchPaths(*args)
 
+def GetPROJSearchPaths(*args):
+    """GetPROJSearchPaths() -> char **"""
+    return _osr.GetPROJSearchPaths(*args)
+
 def GetPROJVersionMajor(*args):
     """GetPROJVersionMajor() -> int"""
     return _osr.GetPROJVersionMajor(*args)
@@ -1550,6 +1564,10 @@ def GetPROJVersionMajor(*args):
 def GetPROJVersionMinor(*args):
     """GetPROJVersionMinor() -> int"""
     return _osr.GetPROJVersionMinor(*args)
+
+def GetPROJVersionMicro(*args):
+    """GetPROJVersionMicro() -> int"""
+    return _osr.GetPROJVersionMicro(*args)
 # This file is compatible with both classic and new-style classes.
 
 

@@ -3,7 +3,7 @@
 # Purpose:  CMake build scripts
 # Author:   Dmitry Baryshnikov, polimax@mail.ru
 ################################################################################
-# Copyright (C) 2015,2019 NextGIS <info@nextgis.com>
+# Copyright (C) 2015,2020 NextGIS <info@nextgis.com>
 # Copyright (C) 2012-2014,2015-2019 Dmitry Baryshnikov
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -101,6 +101,7 @@ set(LIB_CSOURCES
     rasterio.cpp
     rasterio_ssse3.cpp
     rawdataset.cpp
+    # gdalmultidim.cpp
 )
 
 if(GDAL_PAM_ENABLED)
@@ -112,7 +113,17 @@ if(GDAL_PAM_ENABLED)
         gdalpamrasterband.cpp
         gdalpamproxydb.cpp
     )
-endif(GDAL_PAM_ENABLED)
+endif()
+
+if(WITH_PYTHON OR WITH_PYTHON3)
+    # set(LIB_HHEADERS ${LIB_HHEADERS}
+    #     gdalpython.h
+    # )
+    # set(LIB_CSOURCES ${LIB_CSOURCES}
+    #     gdalpython.cpp
+    #     gdalpythondriverloader.cpp
+    # )
+endif()
 
 if(WIN32)
     set(LIB_CSOURCES ${LIB_CSOURCES} Version.rc)

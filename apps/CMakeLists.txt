@@ -3,8 +3,8 @@
 # Purpose:  CMake build scripts
 # Author:   Dmitry Baryshnikov, polimax@mail.ru
 ################################################################################
-# Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
-# Copyright (C) 2012,2013,2014 Dmitry Baryshnikov
+# Copyright (C) 2015-2020, NextGIS <info@nextgis.com>
+# Copyright (C) 2012-2014 Dmitry Baryshnikov
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -53,6 +53,8 @@ set(LIB_CSOURCES
     ogr2ogr_lib.cpp
     gdalbuildvrt_lib.cpp
     gdal_grid_lib.cpp
+    # gdalmdiminfo_lib.cpp
+    # gdalmdimtranslate_lib.cpp
 )
 
 add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
@@ -118,7 +120,9 @@ if(GDAL_BUILD_APPS)
     add_exe(ogrtindex ogrtindex.cpp)
     add_exe(testepsg testepsg.cpp)
     add_exe(gdalbuildvrt gdalbuildvrt_bin.cpp)
-#    add_exe(ogrdissolve ogrdissolve.cpp)
+    # add_exe(gdalmdiminfo gdalmdiminfo_bin.cpp)
+    # add_exe(gdalmdimtranslate gdalmdimtranslate_bin.cpp)
+    # add_exe(gdal_viewshed gdal_viewshed.cpp)
 
     option(GDAL_BUILD_OPT_APPS "Build optional console applications" OFF)
     if(GDAL_BUILD_OPT_APPS)

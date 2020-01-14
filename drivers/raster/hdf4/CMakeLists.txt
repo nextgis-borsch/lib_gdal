@@ -3,8 +3,9 @@
 # Purpose:  CMake build scripts
 # Author:   Mikhail Gusev, gusevmihs@gmail.com
 ################################################################################
-# Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
+# Copyright (C) 2015-2020, NextGIS <info@nextgis.com>
 # Copyright (C) 2016 Mikhail Gusev
+# Copyright (C) 2020 Dmitry Baryshnikov <dmitry.baryshnikov@nextgis.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -59,6 +60,7 @@ if(ENABLE_HDF4)
     set(LIB_CSOURCES
         hdf4dataset.cpp
         hdf4imagedataset.cpp
+        # hdf4multidim.cpp
     )
 
     # TODO: implement hdf-eos as separate target if needed.

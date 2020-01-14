@@ -3,7 +3,7 @@
 # Purpose:  CMake build scripts
 # Author:   Dmitry Baryshnikov, polimax@mail.ru
 ################################################################################
-# Copyright (C) 2015-2017, NextGIS <info@nextgis.com>
+# Copyright (C) 2015-2020, NextGIS <info@nextgis.com>
 # Copyright (C) 2012-2014 Dmitry Baryshnikov
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -53,6 +53,7 @@ set(LIB_CSOURCES
     vrtrasterband.cpp
     vrtsourcedrasterband.cpp
     pixelfunctions.cpp
+    # vrtmultidim.cpp
 )
 
 add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})

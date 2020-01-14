@@ -2450,6 +2450,10 @@ PDFDataset::~PDFDataset()
     for(int i=0;i<nLayers;i++)
         delete papoLayers[i];
     CPLFree( papoLayers );
+
+    // Do that only after having destroyed Poppler objects
+    if( m_fp )
+        VSIFCloseL(m_fp);
 }
 
 /************************************************************************/
@@ -4064,6 +4068,17 @@ PDFDataset *PDFDataset::Open( GDALOpenInfo * poOpenInfo )
 #endif
     int nPages = 0;
 
+    struct FilePointerKeeper
+    {
+        VSILFILE* m_fp;
+
+        FilePointerKeeper(VSILFILE* fp = nullptr): m_fp(fp) {}
+        ~FilePointerKeeper() { if( m_fp ) VSIFCloseL(m_fp); }
+        void reset(VSILFILE* fp) { if( m_fp ) VSIFCloseL(m_fp); m_fp = fp; }
+        VSILFILE* release() { VSILFILE* ret = m_fp; m_fp = nullptr; return ret; }
+    };
+    FilePointerKeeper fpKeeper;
+
 #ifdef HAVE_POPPLER
   if(bUseLib.test(PDFLIB_POPPLER))
   {
@@ -4076,29 +4091,38 @@ PDFDataset *PDFDataset::Open( GDALOpenInfo * poOpenInfo )
         CPLMutexHolderD(&hGlobalParamsMutex);
         /* poppler global variable */
         if (globalParams == nullptr)
+        {
+#if POPPLER_MAJOR_VERSION >= 1 || POPPLER_MINOR_VERSION >= 83
+            globalParams.reset(new GlobalParams());
+#else
             globalParams = new GlobalParams();
+#endif
+        }
 
         globalParams->setPrintCommands(CPLTestBool(
             CPLGetConfigOption("GDAL_PDF_PRINT_COMMANDS", "FALSE")));
     }
 
+    VSILFILE* fp = VSIFOpenL(pszFilename, "rb");
+    if (fp == nullptr)
+        return nullptr;
+
+    fp = (VSILFILE*)VSICreateBufferedReaderHandle((VSIVirtualHandle*)fp);
+    fpKeeper.reset(fp);
+
     while( true )
     {
-        VSILFILE* fp = VSIFOpenL(pszFilename, "rb");
-        if (fp == nullptr)
-            return nullptr;
-
-        fp = (VSILFILE*)VSICreateBufferedReaderHandle((VSIVirtualHandle*)fp);
-
+        VSIFSeekL(fp, 0, SEEK_SET);
         if (pszUserPwd)
             poUserPwd = new GooString(pszUserPwd);
 
 #if POPPLER_MAJOR_VERSION >= 1 || POPPLER_MINOR_VERSION >= 58
-        poDocPoppler = new PDFDoc(new VSIPDFFileStream(fp, pszFilename, std::move(oObj)), nullptr, poUserPwd);
+        auto poStream = new VSIPDFFileStream(fp, pszFilename, std::move(oObj));
 #else
         oObj.getObj()->initNull();
-        poDocPoppler = new PDFDoc(new VSIPDFFileStream(fp, pszFilename, oObj.getObj()), nullptr, poUserPwd);
+        auto poStream = new VSIPDFFileStream(fp, pszFilename, oObj.getObj());
 #endif
+        poDocPoppler = new PDFDoc(poStream, nullptr, poUserPwd);
         delete poUserPwd;
 
         if ( !poDocPoppler->isOk() || poDocPoppler->getNumPages() == 0 )
@@ -4133,11 +4157,26 @@ PDFDataset *PDFDataset::Open( GDALOpenInfo * poOpenInfo )
             }
 
             PDFFreeDoc(poDocPoppler);
+            return nullptr;
+        }
+        else if( poDocPoppler->isLinearized() &&
+                 !poStream->FoundLinearizedHint() )
+        {
+            // This is a likely defect of poppler Linearization.cc file that
+            // recognizes a file as linearized if the /Linearized hint is missing,
+            // but the content of this dictionary are present.
+            // But given the hacks of PDFFreeDoc() and VSIPDFFileStream::FillBuffer()
+            // opening such a file will result in a null-ptr deref at closing if
+            // we try to access a page and build the page cache, so just exit now
+            CPLError(CE_Failure, CPLE_AppDefined, "Invalid PDF");
 
+            PDFFreeDoc(poDocPoppler);
             return nullptr;
         }
         else
+        {
             break;
+        }
     }
 
     poCatalogPoppler = poDocPoppler->getCatalog();
@@ -4368,6 +4407,7 @@ PDFDataset *PDFDataset::Open( GDALOpenInfo * poOpenInfo )
     }
 
     PDFDataset* poDS = new PDFDataset();
+    poDS->m_fp = fpKeeper.release();
     poDS->papszOpenOptions = CSLDuplicate(poOpenInfo->papszOpenOptions);
     poDS->bUseLib = bUseLib;
     poDS->osFilename = pszFilename;

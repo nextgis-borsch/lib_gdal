@@ -259,6 +259,7 @@ const MapInfoDatumInfo asDatumInfoList[] =
 { 0,    1025,"JTSK03 (Slovak Republic)",   10, 485.014055, 169.473618, 483.842943, -7.78625453, -4.39770887, -4.10248899, 0, 0 },
 { 0,    9999,"Bosnia-Herzegovina",         10, 472.8677, 187.8769, 544.7084, -5.76198422, -5.3222842, 12.80666941, 1.54517287, 0 },
 { 6181, 9999,"Luxembourg 1930 / Gauss",     4, -192.986, 13.673, -39.309, 0.4099, 2.9332, -2.6881, 0.43, 0 },
+{ 1168, 9999,"Geocentric Datum of Australia 2020", 0,-0.06155, 0.01087, 0.04019, 0.0394924, 0.0327221, 0.0328979, 0.009994,0 },
 
 { -1,   -1, nullptr,                          0, 0, 0, 0, 0, 0, 0, 0, 0}
 };
@@ -1270,13 +1271,16 @@ OGRSpatialReference* TABFile::GetSpatialRefFromTABProj(const TABProjInfo& sTABPr
 
     if( psDatumInfo != nullptr )
     {
-        poSpatialRef->SetTOWGS84( psDatumInfo->dfShiftX,
-                                    psDatumInfo->dfShiftY,
-                                    psDatumInfo->dfShiftZ,
-                                    psDatumInfo->dfDatumParm0 == 0 ? 0 : -psDatumInfo->dfDatumParm0, /* avoids 0 to be transformed into -0 */
-                                    psDatumInfo->dfDatumParm1 == 0 ? 0 : -psDatumInfo->dfDatumParm1,
-                                    psDatumInfo->dfDatumParm2 == 0 ? 0 : -psDatumInfo->dfDatumParm2,
-                                    psDatumInfo->dfDatumParm3 );
+        if( CPLTestBool(CPLGetConfigOption("MITAB_SET_TOWGS84_ON_KNOWN_DATUM", "NO")) )
+        {
+            poSpatialRef->SetTOWGS84( psDatumInfo->dfShiftX,
+                                        psDatumInfo->dfShiftY,
+                                        psDatumInfo->dfShiftZ,
+                                        psDatumInfo->dfDatumParm0 == 0 ? 0 : -psDatumInfo->dfDatumParm0, /* avoids 0 to be transformed into -0 */
+                                        psDatumInfo->dfDatumParm1 == 0 ? 0 : -psDatumInfo->dfDatumParm1,
+                                        psDatumInfo->dfDatumParm2 == 0 ? 0 : -psDatumInfo->dfDatumParm2,
+                                        psDatumInfo->dfDatumParm3 );
+        }
     }
     else
     {
