@@ -53,8 +53,8 @@ set(LIB_CSOURCES
     ogr2ogr_lib.cpp
     gdalbuildvrt_lib.cpp
     gdal_grid_lib.cpp
-    # gdalmdiminfo_lib.cpp
-    # gdalmdimtranslate_lib.cpp
+    gdalmdiminfo_lib.cpp
+    gdalmdimtranslate_lib.cpp
 )
 
 add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
@@ -120,9 +120,9 @@ if(GDAL_BUILD_APPS)
     add_exe(ogrtindex ogrtindex.cpp)
     add_exe(testepsg testepsg.cpp)
     add_exe(gdalbuildvrt gdalbuildvrt_bin.cpp)
-    # add_exe(gdalmdiminfo gdalmdiminfo_bin.cpp)
-    # add_exe(gdalmdimtranslate gdalmdimtranslate_bin.cpp)
-    # add_exe(gdal_viewshed gdal_viewshed.cpp)
+    add_exe(gdalmdiminfo gdalmdiminfo_bin.cpp)
+    add_exe(gdalmdimtranslate gdalmdimtranslate_bin.cpp)
+    add_exe(gdal_viewshed gdal_viewshed.cpp)
 
     option(GDAL_BUILD_OPT_APPS "Build optional console applications" OFF)
     if(GDAL_BUILD_OPT_APPS)

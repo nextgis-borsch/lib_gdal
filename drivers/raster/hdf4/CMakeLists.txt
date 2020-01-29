@@ -60,7 +60,7 @@ if(ENABLE_HDF4)
     set(LIB_CSOURCES
         hdf4dataset.cpp
         hdf4imagedataset.cpp
-        # hdf4multidim.cpp
+        hdf4multidim.cpp
     )
 
     # TODO: implement hdf-eos as separate target if needed.

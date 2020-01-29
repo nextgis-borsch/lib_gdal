@@ -3,7 +3,7 @@
  *
  * Project:  PDF Translator
  * Purpose:  Definition of classes for OGR .pdf driver.
- * Author:   Even Rouault, even dot rouault at mines dash paris dot org
+ * Author:   Even Rouault, even dot rouault at spatialys.com
  *
  ******************************************************************************
  *
@@ -13,7 +13,7 @@
  * Author: Martin Mikita <martin.mikita@klokantech.com>, xmikit00 @ FIT VUT Brno
  *
  ******************************************************************************
- * Copyright (c) 2010-2014, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2010-2014, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -266,7 +266,7 @@ class PDFDataset final: public GDALPamDataset
 #endif
 
 #if defined(HAVE_POPPLER)
-    void         ExploreLayersPoppler(GDALPDFArray* poArray, int nRecLevel, CPLString osTopLayer = "");
+    void         ExploreLayersPoppler(GDALPDFArray* poArray, CPLString osTopLayer, int nRecLevel, int& nVisited, bool& bStop);
     void         FindLayersPoppler();
     void         TurnLayersOnOffPoppler();
     std::vector<std::pair<CPLString, OptionalContentGroup*> > oLayerOCGListPoppler;
@@ -296,7 +296,19 @@ private:
 
     CPLStringList osLayerList;
 
-    CPLStringList osLayerWithRefList;
+    struct LayerWithRef
+    {
+        CPLString        osName{};
+        GDALPDFObjectNum nOCGNum{};
+        int              nOCGGen = 0;
+
+        LayerWithRef(const CPLString& osNameIn,
+                     const GDALPDFObjectNum& nOCGNumIn,
+                     int nOCGGenIn) :
+            osName(osNameIn), nOCGNum(nOCGNumIn), nOCGGen(nOCGGenIn) {}
+    };
+    std::vector<LayerWithRef> aoLayerWithRef;
+
     CPLString     FindLayerOCG(GDALPDFDictionary* poPageDict,
                                const char* pszLayerName);
     void          FindLayersGeneric(GDALPDFDictionary* poPageDict);
@@ -328,7 +340,7 @@ private:
     void                ExploreTree(GDALPDFObject* poObj,
                                     std::set< std::pair<int,int> > aoSetAlreadyVisited,
                                     int nRecLevel);
-    void                ExploreContents(GDALPDFObject* poObj, GDALPDFObject* poResources);
+    void                ExploreContents(GDALPDFObject* poObj, GDALPDFObject* poResources, int nDepth, int& nVisited, bool& bStop);
 
     void                ExploreContentsNonStructuredInternal(GDALPDFObject* poContents,
                                                              GDALPDFObject* poResources,
@@ -441,7 +453,7 @@ private:
 /* ==================================================================== */
 /************************************************************************/
 
-class PDFRasterBand: public GDALPamRasterBand
+class PDFRasterBand CPL_NON_FINAL: public GDALPamRasterBand
 {
     friend class PDFDataset;
 

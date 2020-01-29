@@ -1,14 +1,14 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 ###############################################################################
 # $Id$
 #
 #  Project:  GDAL samples
 #  Purpose:  Display the list of files in a virtual directory, like /vsicurl or /vsizip
-#  Author:   Even Rouault <even dot rouault at mines dash paris dot org>
+#  Author:   Even Rouault <even dot rouault at spatialys.com>
 #
 ###############################################################################
-#  Copyright (c) 2011-2014, Even Rouault <even dot rouault at mines-paris dot org>
+#  Copyright (c) 2011-2014, Even Rouault <even dot rouault at spatialys.com>
 #
 #  Permission is hereby granted, free of charge, to any person obtaining a
 #  copy of this software and associated documentation files (the "Software"),

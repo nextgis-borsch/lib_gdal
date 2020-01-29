@@ -7,7 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2009, Frank Warmerdam <warmerdam@pobox.com>
- * Copyright (c) 2009-2013, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2009-2013, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -107,6 +107,11 @@ OGRErr OGRDXFWriterLayer::CreateField( OGRFieldDefn *poField,
     if( poFeatureDefn->GetFieldIndex(poField->GetNameRef()) >= 0
         && bApproxOK )
         return OGRERR_NONE;
+    if( EQUAL(poField->GetNameRef(), "OGR_STYLE") )
+    {
+        poFeatureDefn->AddFieldDefn(poField);
+        return OGRERR_NONE;
+    }
 
     CPLError( CE_Failure, CPLE_AppDefined,
               "DXF layer does not support arbitrary field creation, field '%s' not created.",

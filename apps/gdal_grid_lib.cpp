@@ -524,6 +524,9 @@ static CPLErr ProcessLayer( OGRLayerH hSrcLayer, GDALDatasetH hDstDS,
 
     // Try to grow the work buffer up to 16 MB if it is smaller
     GDALGetBlockSize( hBand, &nBlockXSize, &nBlockYSize );
+    if( nXSize == 0 || nYSize == 0 || nBlockXSize == 0 || nBlockYSize == 0 )
+        return CE_Failure;
+
     const int nDesiredBufferSize = 16*1024*1024;
     if( nBlockXSize < nXSize && nBlockYSize < nYSize &&
         nBlockXSize < nDesiredBufferSize / (nBlockYSize * nDataTypeSize) )
@@ -709,7 +712,7 @@ static OGRGeometryCollection* LoadGeometry( const char* pszDS,
 /**
  * Create raster from the scattered data.
  *
- * This is the equivalent of the <a href="gdal_grid.html">gdal_grid</a> utility.
+ * This is the equivalent of the <a href="/programs/gdal_grid.html">gdal_grid</a> utility.
  *
  * GDALGridOptions* must be allocated and freed with GDALGridOptionsNew()
  * and GDALGridOptionsFree() respectively.
@@ -980,7 +983,7 @@ static bool IsNumber(const char* pszStr)
  * Allocates a GDALGridOptions struct.
  *
  * @param papszArgv NULL terminated list of options (potentially including filename and open options too), or NULL.
- *                  The accepted options are the ones of the <a href="gdal_translate.html">gdal_translate</a> utility.
+ *                  The accepted options are the ones of the <a href="/programs/gdal_translate.html">gdal_translate</a> utility.
  * @param psOptionsForBinary (output) may be NULL (and should generally be NULL),
  *                           otherwise (gdal_translate_bin.cpp use case) must be allocated with
  *                           GDALGridOptionsForBinaryNew() prior to this function. Will be

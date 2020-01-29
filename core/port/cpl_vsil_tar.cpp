@@ -2,10 +2,10 @@
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Implement VSI large file api for tar files (.tar).
- * Author:   Even Rouault, even.rouault at mines-paris.org
+ * Author:   Even Rouault, even.rouault at spatialys.com
  *
  ******************************************************************************
- * Copyright (c) 2010-2014, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2010-2014, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -364,7 +364,17 @@ int VSITarReader::GotoNextFile()
         for(int i=0;i<11;i++)
         {
             if( abyHeader[124+i] != ' ' )
+            {
+                if( nNextFileSize > static_cast<GUIntBig>(GINTBIG_MAX / 8) ||
+                    abyHeader[124+i] < '0' ||
+                    abyHeader[124+i] >= '8' )
+                {
+                    CPLError(CE_Failure, CPLE_AppDefined,
+                            "Invalid file size for %s", osNextFileName.c_str());
+                    return FALSE;
+                }
                 nNextFileSize = nNextFileSize * 8 + (abyHeader[124+i] - '0');
+            }
         }
         if( nNextFileSize > GINTBIG_MAX )
         {
@@ -377,7 +387,18 @@ int VSITarReader::GotoNextFile()
         for(int i=0;i<11;i++)
         {
             if( abyHeader[136+i] != ' ' )
+            {
+                if( nModifiedTime > GINTBIG_MAX / 8 ||
+                    abyHeader[136+i] < '0' ||
+                    abyHeader[136+i] >= '8' ||
+                    nModifiedTime * 8 > GINTBIG_MAX - (abyHeader[136+i] - '0') )
+                {
+                    CPLError(CE_Failure, CPLE_AppDefined,
+                            "Invalid mtime for %s", osNextFileName.c_str());
+                    return FALSE;
+                }
                 nModifiedTime = nModifiedTime * 8 + (abyHeader[136+i] - '0');
+            }
         }
 
         if( abyHeader[156] == 'L' && nNextFileSize > 0 && nNextFileSize < 32768 )
@@ -453,7 +474,8 @@ int VSITarReader::GotoFileOffset( VSIArchiveEntryFileOffset* pOffset )
         return TRUE;
     }
 #endif
-    if( VSIFSeekL(fp, pTarEntryOffset->m_nOffset - 512, SEEK_SET) < 0 )
+    if( pTarEntryOffset->m_nOffset < 512 ||
+        VSIFSeekL(fp, pTarEntryOffset->m_nOffset - 512, SEEK_SET) < 0 )
         return FALSE;
     return GotoNextFile();
 }

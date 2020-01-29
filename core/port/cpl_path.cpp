@@ -6,7 +6,7 @@
  *
  **********************************************************************
  * Copyright (c) 1999, Frank Warmerdam
- * Copyright (c) 2008-2012, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2008-2012, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -1181,4 +1181,37 @@ const char *CPLGetHomeDir()
 #else
     return CPLGetConfigOption("HOME", nullptr);
 #endif
+}
+
+
+
+/************************************************************************/
+/*                        CPLLaunderForFilename()                       */
+/************************************************************************/
+
+/**
+ * Launder a string to be compatible of a filename.
+ *
+ * @param pszName The input string to launder.
+ * @param pszOutputPath The directory where the file would be created.
+ *                      Unused for now. May be NULL.
+ * @return the laundered name.
+ *
+ * @since GDAL 3.1
+ */
+
+const char* CPLLaunderForFilename(const char* pszName,
+                                  CPL_UNUSED const char* pszOutputPath )
+{
+    std::string osRet(pszName);
+    for( char& ch: osRet )
+    {
+        // https://docs.microsoft.com/en-us/windows/desktop/fileio/naming-a-file
+        if( ch == '<' || ch == '>' || ch == ':' || ch == '"' ||
+            ch == '/' || ch == '\\' || ch== '?' || ch == '*' )
+        {
+            ch = '_';
+        }
+    }
+    return CPLSPrintf("%s", osRet.c_str());
 }

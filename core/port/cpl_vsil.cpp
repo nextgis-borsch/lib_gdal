@@ -7,7 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2005, Frank Warmerdam <warmerdam@pobox.com>
- * Copyright (c) 2008-2014, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2008-2014, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -40,6 +40,7 @@
 #endif
 
 #include <algorithm>
+#include <limits>
 #include <map>
 #include <memory>
 #include <set>
@@ -549,8 +550,13 @@ int VSIRename( const char * oldpath, const char * newpath )
  * the timestamps of the files (or optionally the ETag/MD5Sum) to avoid
  * unneeded copy operations.
  *
- * Note: currently only implemented efficiently for local filesystem <-->
- * remote filesystem.
+ * This is only implemented efficiently for:
+ * <ul>
+ * <li> local filesystem <--> remote filesystem.</li>
+ * <li> remote filesystem <--> remote filesystem (starting with GDAL 3.1).
+ * Where the source and target remote filesystems are the same and one of
+ * /vsis3/, /vsigs/ or /vsiaz/</li>
+ * </ul>
  *
  * Similarly to rsync behaviour, if the source filename ends with a slash,
  * it means that the content of the directory must be copied, but not the
@@ -779,7 +785,8 @@ int VSIStatExL( const char * pszFilename, VSIStatBufL *psStatBuf, int nFlags )
     char szAltPath[4] = { '\0' };
 
     // Enable to work on "C:" as if it were "C:\".
-    if( strlen(pszFilename) == 2 && pszFilename[1] == ':' )
+    if( pszFilename[0] != '\0' && pszFilename[1] == ':' &&
+        pszFilename[2] == '\0' )
     {
         szAltPath[0] = pszFilename[0];
         szAltPath[1] = pszFilename[1];
@@ -1090,6 +1097,7 @@ bool VSIFilesystemHandler::Sync( const char* pszSource, const char* pszTarget,
                     CPLFormFilename(osSourceWithoutSlash, *iter, nullptr) );
                 CPLString osSubTarget(
                     CPLFormFilename(osTargetDir, *iter, nullptr) );
+                // coverity[divide_by_zero]
                 void* pScaledProgress = GDALCreateScaledProgress(
                     double(iFile) / nFileCount, double(iFile + 1) / nFileCount,
                     pProgressFunc, pProgressData);
@@ -2156,6 +2164,8 @@ int VSIIngestFile( VSILFILE* fp,
         // VSIMalloc could allocate. Catch it here.
         if( nDataLen != static_cast<vsi_l_offset>(static_cast<size_t>(nDataLen))
             || nDataLen + 1 < nDataLen
+            // opening a directory returns nDataLen = INT_MAX (on 32bit) or INT64_MAX (on 64bit)
+            || nDataLen + 1 > std::numeric_limits<size_t>::max() / 2
             || (nMaxSize >= 0 &&
                 nDataLen > static_cast<vsi_l_offset>(nMaxSize)) )
         {

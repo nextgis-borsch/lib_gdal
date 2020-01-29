@@ -2,10 +2,10 @@
  *
  * Project:  PDF driver
  * Purpose:  GDALDataset driver for PDF dataset.
- * Author:   Even Rouault, <even dot rouault at mines dash paris dot org>
+ * Author:   Even Rouault, <even dot rouault at spatialys.com>
  *
  ******************************************************************************
- * Copyright (c) 2010-2013, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2010-2013, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -219,7 +219,7 @@ int VSIPDFFileStream::FillBuffer()
     // and liberation of VSIPDFFileStream as PDFDoc::str member.
     if( nCurrentPos == 0 || nCurrentPos == VSI_L_OFFSET_MAX )
     {
-        for(int i=0;i<nToRead-(int)strlen("/Linearized ");i++)
+        for(int i=0;i<nBufferLength-(int)strlen("/Linearized ");i++)
         {
             if( memcmp(abyBuffer + i, "/Linearized ",
                        strlen("/Linearized ")) == 0 )

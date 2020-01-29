@@ -480,6 +480,11 @@ public:
     return OSRGetAxis( self, target_key, iAxis, NULL );
   }
 
+  /* Added in GDAL 3.1 */
+  int GetAxesCount() {
+    return OSRGetAxesCount(self);
+  }
+
   /* Added in GDAL 2.1 */
   OGRAxisOrientation GetAxisOrientation( const char *target_key, int iAxis ) {
     OGRAxisOrientation orientation = OAO_Other;
@@ -513,6 +518,10 @@ public:
       *pList = OSRGetDataAxisToSRSAxisMapping(self, nLen);
   }
 #endif
+
+  OGRErr SetDataAxisToSRSAxisMapping(int nList, int* pList) {
+    return OSRSetDataAxisToSRSAxisMapping(self, nList, pList);
+  }
 
   OGRErr SetUTM( int zone, int north =1 ) {
     return OSRSetUTM( self, zone, north );
@@ -876,6 +885,17 @@ public:
     return OSRSetVDG( self, clong, fe, fn );
   }
 
+%feature( "kwargs" ) SetVerticalPerspective;
+  OGRErr SetVerticalPerspective( double topoOriginLat,
+                                 double topoOriginLon,
+                                 double topoOriginHeight,
+                                 double viewPointHeight,
+                                 double fe, double fn )
+  {
+    return OSRSetVerticalPerspective( self,
+        topoOriginLat, topoOriginLon, topoOriginHeight, viewPointHeight, fe, fn );
+  }
+
   OGRErr SetWellKnownGeogCS( const char *name ) {
     return OSRSetWellKnownGeogCS( self, name );
   }
@@ -1021,6 +1041,10 @@ public:
     return OSRExportToPrettyWkt( self, argout, simplify );
   }
 
+  OGRErr ExportToPROJJSON( char **argout, char **options = NULL ) {
+    return OSRExportToPROJJSON( self, argout, options );
+  }
+
   OGRErr ExportToProj4( char **argout ) {
     return OSRExportToProj4( self, argout );
   }
@@ -1075,6 +1099,12 @@ public:
   OSRSpatialReferenceShadow* ConvertToOtherProjection(const char* other_projection, char **options = NULL) {
     return OSRConvertToOtherProjection(self, other_projection, options);
   }
+
+%clear const char* name;
+  OGRErr PromoteTo3D( const char* name = NULL ) {
+    return OSRPromoteTo3D(self, name);
+  }
+%apply Pointer NONNULL {const char* name};
 
 } /* %extend */
 };

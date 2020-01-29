@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 ###############################################################################
 # $Id$
@@ -75,6 +75,8 @@ def DoesDriverHandleExtension(drv, ext):
 
 
 def GetExtension(filename):
+    if filename.lower().endswith('.shp.zip'):
+        return 'shp.zip'
     ext = os.path.splitext(filename)[1]
     if ext.startswith('.'):
         ext = ext[1:]

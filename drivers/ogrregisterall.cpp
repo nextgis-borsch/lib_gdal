@@ -6,7 +6,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1999,  Les Technologies SoftMap Inc.
- * Copyright (c) 2007-2014, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2007-2014, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -177,6 +177,9 @@ void OGRRegisterAllInternal()
 #ifdef GRASS_ENABLED
     RegisterOGRGRASS();
 #endif
+#ifdef FLATGEOBUF_ENABLED
+    RegisterOGRFlatGeobuf();
+#endif
 #ifdef FME_ENABLED
     RegisterOGRFME();
 #endif
@@ -216,7 +219,7 @@ void OGRRegisterAllInternal()
 #endif
 #ifdef WFS_ENABLED
     RegisterOGRWFS();
-    RegisterOGRWFS3();
+    RegisterOGROAPIF();
 #endif
 #ifdef SOSI_ENABLED
     RegisterOGRSOSI();
@@ -232,9 +235,6 @@ void OGRRegisterAllInternal()
 #endif
 #ifdef EDIGEO_ENABLED
     RegisterOGREDIGEO();
-#endif
-#ifdef GFT_ENABLED
-    RegisterOGRGFT();
 #endif
 #ifdef SVG_ENABLED
     RegisterOGRSVG();

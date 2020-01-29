@@ -3,10 +3,10 @@
  *
  * Project:  XLSX Translator
  * Purpose:  Definition of classes for OGR OpenOfficeSpreadsheet .xlsx driver.
- * Author:   Even Rouault, even dot rouault at mines dash paris dot org
+ * Author:   Even Rouault, even dot rouault at spatialys.com
  *
  ******************************************************************************
- * Copyright (c) 2012, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2012, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -36,9 +36,9 @@
 #include "ogr_mem.h"
 
 #include <vector>
+#include <set>
 #include <string>
 #include <map>
-#include <set>
 
 namespace OGRXLSX {
 
@@ -150,7 +150,7 @@ public:
                     XLSXFieldTypeExtended() :
                         eType(OFTMaxType),
                         bHasMS(false) {}
-                    XLSXFieldTypeExtended(OGRFieldType eTypeIn,
+                    explicit XLSXFieldTypeExtended(OGRFieldType eTypeIn,
                                           bool bHasMSIn = false) :
                                     eType(eTypeIn), bHasMS(bHasMSIn) {}
 };
@@ -165,6 +165,7 @@ class OGRXLSXDataSource final: public GDALDataset
     int                 nLayers;
     OGRLayer          **papoLayers;
     std::map<CPLString, CPLString> oMapRelsIdToTarget;
+    std::set<std::string> m_oSetSheetId;
 
     void                AnalyseSharedStrings(VSILFILE* fpSharedStrings);
     void                AnalyseWorkbook(VSILFILE* fpWorkbook);

@@ -37,6 +37,7 @@
 #include "ogr_p.h"
 #include "cpl_http.h"
 
+#include <map>
 #include <memory>
 #include <set>
 #include <vector>
@@ -140,6 +141,8 @@ class OGRElasticLayer final: public OGRLayer {
                                                 char chNestedAttributeSeparator,
                                                 std::vector<CPLString>& aosPath);
 
+    CPLString                             BuildMappingURL(bool bMappingApi);
+
     CPLString                             BuildJSonFromFeature(OGRFeature *poFeature);
 
     static CPLString                      BuildPathFromArray(const std::vector<CPLString>& aosPath);
@@ -226,6 +229,7 @@ class OGRElasticDataSource final: public GDALDataset {
     std::vector<std::unique_ptr<OGRElasticLayer>> m_apoLayers;
     bool                m_bAllLayersListed = false;
     std::map<OGRLayer*, OGRLayer*> m_oMapResultSet;
+    std::map<std::string, std::string> m_oMapHeadersFromEnv{};
 
     bool                CheckVersion();
     int                 GetLayerIndex( const char* pszName );
@@ -250,7 +254,7 @@ public:
     int Create(const char *pszFilename,
                char **papszOptions);
 
-    CPLHTTPResult*      HTTPFetch(const char* pszURL, char** papszOptions);
+    CPLHTTPResult*      HTTPFetch(const char* pszURL, CSLConstList papszOptions);
 
     const char         *GetURL() { return m_osURL.c_str(); }
 

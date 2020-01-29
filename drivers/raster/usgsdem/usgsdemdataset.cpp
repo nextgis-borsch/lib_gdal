@@ -9,7 +9,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2001, Frank Warmerdam <warmerdam@pobox.com>
- * Copyright (c) 2008-2013, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2008-2013, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -285,7 +285,7 @@ static double DConvert( VSILFILE *fp, int nCharCount )
 
 class USGSDEMRasterBand;
 
-class USGSDEMDataset : public GDALPamDataset
+class USGSDEMDataset final: public GDALPamDataset
 {
     friend class USGSDEMRasterBand;
 
@@ -322,7 +322,7 @@ class USGSDEMDataset : public GDALPamDataset
 /* ==================================================================== */
 /************************************************************************/
 
-class USGSDEMRasterBand : public GDALPamRasterBand
+class USGSDEMRasterBand final: public GDALPamRasterBand
 {
     friend class USGSDEMDataset;
 

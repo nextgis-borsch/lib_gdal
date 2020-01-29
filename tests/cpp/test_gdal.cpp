@@ -177,6 +177,27 @@ namespace tut
         ENSURE_EQUALS(GDALDataTypeUnion(GDT_CFloat32, GDT_Float32), GDT_CFloat32);
         ENSURE_EQUALS(GDALDataTypeUnion(GDT_CFloat32, GDT_CInt16), GDT_CFloat32);
         ENSURE_EQUALS(GDALDataTypeUnion(GDT_CFloat32, GDT_CInt32), GDT_CFloat64);
+
+        ENSURE_EQUALS(GDALFindDataType(0, false /* signed */, false /* floating */, false /* complex */), GDT_Byte);
+        ENSURE_EQUALS(GDALFindDataType(0, true /* signed */, false /* floating */, false /* complex */), GDT_Int16);
+        ENSURE_EQUALS(GDALFindDataType(0, false /* signed */, false /* floating */, true /* complex */), GDT_CInt32);
+        ENSURE_EQUALS(GDALFindDataType(0, true /* signed */, false /* floating */, true /* complex */), GDT_CInt16);
+        ENSURE_EQUALS(GDALFindDataType(0, false /* signed */, true /* floating */, false /* complex */), GDT_Float32);
+        ENSURE_EQUALS(GDALFindDataType(0, true /* signed */, true /* floating */, false /* complex */), GDT_Float32);
+        ENSURE_EQUALS(GDALFindDataType(0, false /* signed */, true /* floating */, true /* complex */), GDT_CFloat32);
+        ENSURE_EQUALS(GDALFindDataType(0, true /* signed */, true /* floating */, true /* complex */), GDT_CFloat32);
+
+        ENSURE_EQUALS(GDALFindDataType(8, false /* signed */, false /* floating */, false /* complex */), GDT_Byte);
+        ENSURE_EQUALS(GDALFindDataType(8, true /* signed */, false /* floating */, false /* complex */), GDT_Int16);
+
+        ENSURE_EQUALS(GDALFindDataType(16, false /* signed */, false /* floating */, false /* complex */), GDT_UInt16);
+        ENSURE_EQUALS(GDALFindDataType(16, true /* signed */, false /* floating */, false /* complex */), GDT_Int16);
+
+        ENSURE_EQUALS(GDALFindDataType(32, false /* signed */, false /* floating */, false /* complex */), GDT_UInt32);
+        ENSURE_EQUALS(GDALFindDataType(32, true /* signed */, false /* floating */, false /* complex */), GDT_Int32);
+
+        ENSURE_EQUALS(GDALFindDataType(64, false /* signed */, true /* floating */, false /* complex */), GDT_Float64);
+        ENSURE_EQUALS(GDALFindDataType(64, false /* signed */, true /* floating */, true /* complex */), GDT_CFloat64);
     }
 
 #undef ENSURE
@@ -623,6 +644,714 @@ namespace tut
         ensure_equals( poDS->GetBands()[0], poDS->GetRasterBand(1) );
         ensure_equals( poDS->GetBands()[static_cast<size_t>(0)], poDS->GetRasterBand(1) );
 
+    }
+
+    template<> template<> void object::test<18>()
+    {
+        class myArray: public GDALMDArray
+        {
+                GDALExtendedDataType m_dt;
+                std::vector<std::shared_ptr<GDALDimension>> m_dims;
+                std::vector<GUInt64> m_blockSize;
+
+                static std::vector<std::shared_ptr<GDALDimension>> BuildDims(
+                    const std::vector<GUInt64>& sizes)
+                {
+                    std::vector<std::shared_ptr<GDALDimension>> dims;
+                    for( const auto sz: sizes )
+                    {
+                        dims.emplace_back(
+                            std::make_shared<GDALDimension>("", "", "", "", sz));
+                    }
+                    return dims;
+                }
+
+            protected:
+                bool IRead(const GUInt64*,
+                               const size_t*,
+                               const GInt64*,
+                               const GPtrDiff_t*,
+                               const GDALExtendedDataType&,
+                               void*) const override { return false; }
+            public:
+                myArray(GDALDataType eDT,
+                        const std::vector<GUInt64>& sizes,
+                        const std::vector<GUInt64>& blocksizes):
+                    GDALAbstractMDArray("", "array"),
+                    GDALMDArray("", "array"),
+                    m_dt(GDALExtendedDataType::Create(eDT)),
+                    m_dims(BuildDims(sizes)),
+                    m_blockSize(blocksizes)
+                {
+                }
+
+                myArray(const GDALExtendedDataType& dt,
+                        const std::vector<GUInt64>& sizes,
+                        const std::vector<GUInt64>& blocksizes):
+                    GDALAbstractMDArray("", "array"),
+                    GDALMDArray("", "array"),
+                    m_dt(dt),
+                    m_dims(BuildDims(sizes)),
+                    m_blockSize(blocksizes)
+                {
+                }
+
+                bool IsWritable() const override { return true; }
+
+                static std::shared_ptr<myArray> Create(GDALDataType eDT,
+                                const std::vector<GUInt64>& sizes,
+                                const std::vector<GUInt64>& blocksizes)
+                {
+                    auto ar(std::shared_ptr<myArray>(new myArray(eDT, sizes, blocksizes)));
+                    ar->SetSelf(ar);
+                    return ar;
+                }
+
+                static std::shared_ptr<myArray> Create(
+                                const GDALExtendedDataType& dt,
+                                const std::vector<GUInt64>& sizes,
+                                const std::vector<GUInt64>& blocksizes)
+                {
+                    auto ar(std::shared_ptr<myArray>(new myArray(dt, sizes, blocksizes)));
+                    ar->SetSelf(ar);
+                    return ar;
+                }
+
+                const std::vector<std::shared_ptr<GDALDimension>>& GetDimensions() const override
+                {
+                    return m_dims;
+                }
+
+                const GDALExtendedDataType& GetDataType() const override
+                {
+                    return m_dt;
+                }
+
+                std::vector<GUInt64> GetBlockSize() const override
+                {
+                    return m_blockSize;
+                }
+        };
+
+        {
+            auto ar(myArray::Create(GDT_UInt16, {3000,1000,2000},{32,64,128}));
+            ensure_equals(ar->at(0)->GetDimensionCount(), 2U);
+            ensure_equals(ar->at(2999,999,1999)->GetDimensionCount(), 0U);
+            CPLPushErrorHandler(CPLQuietErrorHandler);
+            ensure(ar->at(3000,0,0) == nullptr);
+            ensure(ar->at(0,0,0,0) == nullptr);
+            ensure((*ar)["foo"] == nullptr);
+            CPLPopErrorHandler();
+        }
+
+        {
+            std::vector<std::unique_ptr<GDALEDTComponent>> comps;
+            comps.emplace_back(std::unique_ptr<GDALEDTComponent>(new
+                GDALEDTComponent("f\\o\"o", 0, GDALExtendedDataType::Create(GDT_Int32))));
+            auto dt(GDALExtendedDataType::Create("", 4, std::move(comps)));
+            auto ar(myArray::Create(dt, {3000,1000,2000},{32,64,128}));
+            ensure((*ar)["f\\o\"o"] != nullptr);
+        }
+
+        {
+            myArray ar(GDT_UInt16, {}, {});
+
+            CPLPushErrorHandler(CPLQuietErrorHandler);
+            ensure(ar.GetView("[...]") == nullptr);
+            CPLPopErrorHandler();
+
+            auto cs = ar.GetProcessingChunkSize(0);
+            ensure_equals( cs.size(), 0U );
+
+            struct TmpStructNoDim
+            {
+                static bool func(GDALAbstractMDArray* p_ar,
+                                const GUInt64* chunk_array_start_idx,
+                                const size_t* chunk_count,
+                                GUInt64 iCurChunk,
+                                GUInt64 nChunkCount,
+                                void* user_data)
+                {
+                    ensure( p_ar->GetName() == "array" );
+                    ensure(chunk_array_start_idx == nullptr);
+                    ensure(chunk_count == nullptr);
+                    ensure_equals(iCurChunk, 1U);
+                    ensure_equals(nChunkCount, 1U);
+                    *static_cast<bool*>(user_data) = true;
+                    return true;
+                }
+            };
+
+            bool b = false;
+            ar.ProcessPerChunk(nullptr, nullptr, nullptr, TmpStructNoDim::func, &b);
+            ensure(b);
+        }
+
+        struct ChunkDef
+        {
+            std::vector<GUInt64> array_start_idx;
+            std::vector<GUInt64> count;
+        };
+
+        struct TmpStruct
+        {
+            static bool func(GDALAbstractMDArray* p_ar,
+                            const GUInt64* chunk_array_start_idx,
+                            const size_t* chunk_count,
+                            GUInt64 iCurChunk,
+                            GUInt64 nChunkCount,
+                            void* user_data)
+            {
+                ensure( p_ar->GetName() == "array" );
+                std::vector<ChunkDef>* p_chunkDefs =
+                    static_cast<std::vector<ChunkDef>*>(user_data);
+                std::vector<GUInt64> v_chunk_array_start_idx;
+                v_chunk_array_start_idx.insert(v_chunk_array_start_idx.end(),
+                        chunk_array_start_idx,
+                        chunk_array_start_idx + p_ar->GetDimensionCount());
+                std::vector<GUInt64> v_chunk_count;
+                v_chunk_count.insert(v_chunk_count.end(),
+                            chunk_count,
+                            chunk_count + p_ar->GetDimensionCount());
+                ChunkDef chunkDef;
+                chunkDef.array_start_idx = std::move(v_chunk_array_start_idx);
+                chunkDef.count = std::move(v_chunk_count);
+                p_chunkDefs->emplace_back(std::move(chunkDef));
+                ensure_equals(p_chunkDefs->size(), iCurChunk);
+                ensure( iCurChunk > 0 );
+                ensure( iCurChunk <= nChunkCount );
+                return true;
+            }
+        };
+
+
+        {
+            myArray ar(GDT_UInt16, {3000,1000,2000},{32,64,128});
+            {
+                auto cs = ar.GetProcessingChunkSize(0);
+                ensure_equals( cs.size(), 3U );
+                ensure_equals( cs[0], 32U );
+                ensure_equals( cs[1], 64U );
+                ensure_equals( cs[2], 128U );
+            }
+            {
+                auto cs = ar.GetProcessingChunkSize(40*1000*1000);
+                ensure_equals( cs.size(), 3U );
+                ensure_equals( cs[0], 32U );
+                ensure_equals( cs[1], 256U );
+                ensure_equals( cs[2], 2000U );
+
+                std::vector<ChunkDef> chunkDefs;
+
+                // Error cases of input parameters of ProcessPerChunk()
+                {
+                    // array_start_idx[0] + count[0] > 3000
+                    std::vector<GUInt64> array_start_idx{ 1, 0, 0 };
+                    std::vector<GUInt64> count{ 3000, 1000, 2000 };
+                    CPLPushErrorHandler(CPLQuietErrorHandler);
+                    ensure(!ar.ProcessPerChunk(
+                        array_start_idx.data(), count.data(), cs.data(),
+                        TmpStruct::func, &chunkDefs));
+                    CPLPopErrorHandler();
+
+                }
+                {
+                    // array_start_idx[0] >= 3000
+                    std::vector<GUInt64> array_start_idx{ 3000, 0, 0 };
+                    std::vector<GUInt64> count{ 1, 1000, 2000 };
+                    CPLPushErrorHandler(CPLQuietErrorHandler);
+                    ensure(!ar.ProcessPerChunk(
+                        array_start_idx.data(), count.data(), cs.data(),
+                        TmpStruct::func, &chunkDefs));
+                    CPLPopErrorHandler();
+
+                }
+                {
+                    // count[0] > 3000
+                    std::vector<GUInt64> array_start_idx{ 0, 0, 0 };
+                    std::vector<GUInt64> count{ 3001, 1000, 2000 };
+                    CPLPushErrorHandler(CPLQuietErrorHandler);
+                    ensure(!ar.ProcessPerChunk(
+                        array_start_idx.data(), count.data(), cs.data(),
+                        TmpStruct::func, &chunkDefs));
+                    CPLPopErrorHandler();
+
+                }
+                {
+                    // count[0] == 0
+                    std::vector<GUInt64> array_start_idx{ 0, 0, 0 };
+                    std::vector<GUInt64> count{ 0, 1000, 2000 };
+                    CPLPushErrorHandler(CPLQuietErrorHandler);
+                    ensure(!ar.ProcessPerChunk(
+                        array_start_idx.data(), count.data(), cs.data(),
+                        TmpStruct::func, &chunkDefs));
+                    CPLPopErrorHandler();
+                }
+                {
+                    // myCustomChunkSize[0] == 0
+                    std::vector<GUInt64> array_start_idx{ 0, 0, 0 };
+                    std::vector<GUInt64> count{ 3000, 1000, 2000 };
+                    std::vector<size_t> myCustomChunkSize{ 0, 1000, 2000 };
+                    CPLPushErrorHandler(CPLQuietErrorHandler);
+                    ensure(!ar.ProcessPerChunk(
+                        array_start_idx.data(), count.data(),
+                        myCustomChunkSize.data(),
+                        TmpStruct::func, &chunkDefs));
+                    CPLPopErrorHandler();
+                }
+                {
+                    // myCustomChunkSize[0] > 3000
+                    std::vector<GUInt64> array_start_idx{ 0, 0, 0 };
+                    std::vector<GUInt64> count{ 3000, 1000, 2000 };
+                    std::vector<size_t> myCustomChunkSize{ 3001, 1000, 2000 };
+                    CPLPushErrorHandler(CPLQuietErrorHandler);
+                    ensure(!ar.ProcessPerChunk(
+                        array_start_idx.data(), count.data(),
+                        myCustomChunkSize.data(),
+                        TmpStruct::func, &chunkDefs));
+                    CPLPopErrorHandler();
+                }
+
+                std::vector<GUInt64> array_start_idx{ 1500, 256, 0 };
+                std::vector<GUInt64> count{ 99, 512, 2000 };
+                ensure(ar.ProcessPerChunk(
+                    array_start_idx.data(), count.data(), cs.data(),
+                    TmpStruct::func, &chunkDefs));
+
+                size_t nExpectedChunks = 1;
+                for( size_t i = 0; i < ar.GetDimensionCount(); i++ )
+                {
+                    nExpectedChunks *= static_cast<size_t>(
+                        1+((array_start_idx[i]+count[i]-1)/cs[i])-(array_start_idx[i]/cs[i]));
+                }
+                ensure_equals( chunkDefs.size(), nExpectedChunks );
+
+                CPLString osChunks;
+                for( const auto& chunkDef: chunkDefs )
+                {
+                    osChunks += CPLSPrintf(
+                           "{%u, %u, %u}, {%u, %u, %u}\n",
+                           (unsigned)chunkDef.array_start_idx[0],
+                           (unsigned)chunkDef.array_start_idx[1],
+                           (unsigned)chunkDef.array_start_idx[2],
+                           (unsigned)chunkDef.count[0],
+                           (unsigned)chunkDef.count[1],
+                           (unsigned)chunkDef.count[2]);
+                }
+                ensure_equals(osChunks,
+                                "{1500, 256, 0}, {4, 256, 2000}\n"
+                                "{1500, 512, 0}, {4, 256, 2000}\n"
+                                "{1504, 256, 0}, {32, 256, 2000}\n"
+                                "{1504, 512, 0}, {32, 256, 2000}\n"
+                                "{1536, 256, 0}, {32, 256, 2000}\n"
+                                "{1536, 512, 0}, {32, 256, 2000}\n"
+                                "{1568, 256, 0}, {31, 256, 2000}\n"
+                                "{1568, 512, 0}, {31, 256, 2000}\n");
+            }
+        }
+
+        // Another error case of ProcessPerChunk
+        {
+            const auto M64 = std::numeric_limits<GUInt64>::max();
+            const auto Msize_t = std::numeric_limits<size_t>::max();
+            myArray ar(GDT_UInt16, {M64,M64,M64},{32,256,128});
+
+            // Product of myCustomChunkSize[] > Msize_t
+            std::vector<GUInt64> array_start_idx{ 0, 0, 0 };
+            std::vector<GUInt64> count{ 3000, 1000, 2000 };
+            std::vector<size_t> myCustomChunkSize{ Msize_t, Msize_t, Msize_t };
+            std::vector<ChunkDef> chunkDefs;
+            CPLPushErrorHandler(CPLQuietErrorHandler);
+            ensure(!ar.ProcessPerChunk(
+                array_start_idx.data(), count.data(),
+                myCustomChunkSize.data(),
+                TmpStruct::func, &chunkDefs));
+            CPLPopErrorHandler();
+        }
+
+        {
+            const auto BIG = GUInt64(5000) * 1000* 1000;
+            myArray ar(GDT_UInt16, {BIG + 3000,BIG + 1000,BIG + 2000},{32,256,128});
+            std::vector<GUInt64> array_start_idx{ BIG + 1500, BIG + 256, BIG + 0 };
+            std::vector<GUInt64> count{ 99, 512, 2000 };
+            std::vector<ChunkDef> chunkDefs;
+            auto cs = ar.GetProcessingChunkSize(40*1000*1000);
+            ensure(ar.ProcessPerChunk(
+                array_start_idx.data(), count.data(), cs.data(),
+                TmpStruct::func, &chunkDefs));
+
+            size_t nExpectedChunks = 1;
+            for( size_t i = 0; i < ar.GetDimensionCount(); i++ )
+            {
+                nExpectedChunks *= static_cast<size_t>(
+                    1+((array_start_idx[i]+count[i]-1)/cs[i])-(array_start_idx[i]/cs[i]));
+            }
+            ensure_equals( chunkDefs.size(), nExpectedChunks );
+
+            CPLString osChunks;
+            for( const auto& chunkDef: chunkDefs )
+            {
+                osChunks += CPLSPrintf(
+                        "{" CPL_FRMT_GUIB ", " CPL_FRMT_GUIB ", " CPL_FRMT_GUIB "}, {%u, %u, %u}\n",
+                        (GUIntBig)chunkDef.array_start_idx[0],
+                        (GUIntBig)chunkDef.array_start_idx[1],
+                        (GUIntBig)chunkDef.array_start_idx[2],
+                        (unsigned)chunkDef.count[0],
+                        (unsigned)chunkDef.count[1],
+                        (unsigned)chunkDef.count[2]);
+            }
+            ensure_equals(osChunks,
+                            "{5000001500, 5000000256, 5000000000}, {4, 256, 2000}\n"
+                            "{5000001500, 5000000512, 5000000000}, {4, 256, 2000}\n"
+                            "{5000001504, 5000000256, 5000000000}, {32, 256, 2000}\n"
+                            "{5000001504, 5000000512, 5000000000}, {32, 256, 2000}\n"
+                            "{5000001536, 5000000256, 5000000000}, {32, 256, 2000}\n"
+                            "{5000001536, 5000000512, 5000000000}, {32, 256, 2000}\n"
+                            "{5000001568, 5000000256, 5000000000}, {31, 256, 2000}\n"
+                            "{5000001568, 5000000512, 5000000000}, {31, 256, 2000}\n");
+        }
+
+        {
+            // Test with 0 in GetBlockSize()
+            myArray ar(GDT_UInt16, {500,1000,2000},{0,0,128});
+            {
+                auto cs = ar.GetProcessingChunkSize(300*2);
+                ensure_equals( cs.size(), 3U );
+                ensure_equals( cs[0], 1U );
+                ensure_equals( cs[1], 1U );
+                ensure_equals( cs[2], 256U );
+            }
+            {
+                auto cs = ar.GetProcessingChunkSize(40*1000*1000);
+                ensure_equals( cs.size(), 3U );
+                ensure_equals( cs[0], 10U );
+                ensure_equals( cs[1], 1000U );
+                ensure_equals( cs[2], 2000U );
+            }
+            {
+                auto cs = ar.GetProcessingChunkSize(500U*1000*2000*2);
+                ensure_equals( cs.size(), 3U );
+                ensure_equals( cs[0], 500U );
+                ensure_equals( cs[1], 1000U );
+                ensure_equals( cs[2], 2000U );
+            }
+            {
+                auto cs = ar.GetProcessingChunkSize(500U*1000*2000*2 - 1);
+                ensure_equals( cs.size(), 3U );
+                ensure_equals( cs[0], 499U );
+                ensure_equals( cs[1], 1000U );
+                ensure_equals( cs[2], 2000U );
+            }
+        }
+        {
+            const auto M = std::numeric_limits<GUInt64>::max();
+            myArray ar(GDT_UInt16,{M,M,M},{M,M,M/2});
+            {
+                auto cs = ar.GetProcessingChunkSize(0);
+                ensure_equals( cs.size(), 3U );
+                ensure_equals( cs[0], 1U );
+                ensure_equals( cs[1], 1U );
+#if SIZEOF_VOIDP == 8
+                ensure_equals( cs[2], static_cast<size_t>(M/2) );
+#else
+                ensure_equals( cs[2], 1U );
+#endif
+            }
+        }
+#if SIZEOF_VOIDP == 8
+        {
+            const auto M = std::numeric_limits<GUInt64>::max();
+            myArray ar(GDT_UInt16,{M,M,M},{M,M,M/4});
+            {
+                auto cs = ar.GetProcessingChunkSize(std::numeric_limits<size_t>::max());
+                ensure_equals( cs.size(), 3U );
+                ensure_equals( cs[0], 1U );
+                ensure_equals( cs[1], 1U );
+                ensure_equals( cs[2], (std::numeric_limits<size_t>::max() / 4) * 2 );
+            }
+        }
+#endif
+    }
+
+    // Test GDALDataset::GetRawBinaryLayout() implementations
+    template<> template<> void object::test<19>()
+    {
+        // ENVI
+        {
+            GDALDatasetUniquePtr poDS(
+                GDALDataset::Open(GDRIVERS_DATA_DIR "envi_rgbsmall_bip.img"));
+            ensure( poDS != nullptr );
+            GDALDataset::RawBinaryLayout sLayout;
+            ensure( poDS->GetRawBinaryLayout(sLayout) );
+            ensure_equals( sLayout.osRawFilename, poDS->GetDescription() );
+            ensure_equals( static_cast<int>(sLayout.eInterleaving),
+                           static_cast<int>(GDALDataset::RawBinaryLayout::Interleaving::BIP) );
+            ensure_equals( sLayout.eDataType, GDT_Byte );
+            ensure( sLayout.bLittleEndianOrder );
+            ensure_equals( sLayout.nImageOffset, 0U );
+            ensure_equals( sLayout.nPixelOffset, 3 );
+            ensure_equals( sLayout.nLineOffset, 3 * 50 );
+            ensure_equals( sLayout.nBandOffset, 1 );
+        }
+        {
+            GDALDatasetUniquePtr poDS(
+                GDALDataset::Open(GDRIVERS_DATA_DIR "envi_rgbsmall_bil.img"));
+            ensure( poDS != nullptr );
+            GDALDataset::RawBinaryLayout sLayout;
+            ensure( poDS->GetRawBinaryLayout(sLayout) );
+            ensure_equals( sLayout.osRawFilename, poDS->GetDescription() );
+            ensure_equals( static_cast<int>(sLayout.eInterleaving),
+                           static_cast<int>(GDALDataset::RawBinaryLayout::Interleaving::BIL) );
+            ensure_equals( sLayout.eDataType, GDT_Byte );
+            ensure( sLayout.bLittleEndianOrder );
+            ensure_equals( sLayout.nImageOffset, 0U );
+            ensure_equals( sLayout.nPixelOffset, 1 );
+            ensure_equals( sLayout.nLineOffset, 3 * 50 );
+            ensure_equals( sLayout.nBandOffset, 50 );
+        }
+        {
+            GDALDatasetUniquePtr poDS(
+                GDALDataset::Open(GDRIVERS_DATA_DIR "envi_rgbsmall_bsq.img"));
+            ensure( poDS != nullptr );
+            GDALDataset::RawBinaryLayout sLayout;
+            ensure( poDS->GetRawBinaryLayout(sLayout) );
+            ensure_equals( sLayout.osRawFilename, poDS->GetDescription() );
+            ensure_equals( static_cast<int>(sLayout.eInterleaving),
+                           static_cast<int>(GDALDataset::RawBinaryLayout::Interleaving::BSQ) );
+            ensure_equals( sLayout.eDataType, GDT_Byte );
+            ensure( sLayout.bLittleEndianOrder );
+            ensure_equals( sLayout.nImageOffset, 0U );
+            ensure_equals( sLayout.nPixelOffset, 1 );
+            ensure_equals( sLayout.nLineOffset, 50 );
+            ensure_equals( sLayout.nBandOffset, 50 * 49 );
+        }
+
+        // GTiff
+        {
+            GDALDatasetUniquePtr poDS(
+                GDALDataset::Open(GCORE_DATA_DIR "byte.tif"));
+            ensure( poDS != nullptr );
+            GDALDataset::RawBinaryLayout sLayout;
+            ensure( poDS->GetRawBinaryLayout(sLayout) );
+            ensure_equals( sLayout.osRawFilename, poDS->GetDescription() );
+            ensure_equals( static_cast<int>(sLayout.eInterleaving),
+                           static_cast<int>(GDALDataset::RawBinaryLayout::Interleaving::UNKNOWN) );
+            ensure_equals( sLayout.eDataType, GDT_Byte );
+            ensure( sLayout.bLittleEndianOrder );
+            ensure_equals( sLayout.nImageOffset, 8U );
+            ensure_equals( sLayout.nPixelOffset, 1 );
+            ensure_equals( sLayout.nLineOffset, 20 );
+            ensure_equals( sLayout.nBandOffset, 0 );
+        }
+        {
+            GDALDatasetUniquePtr poDS(
+                GDALDataset::Open(GCORE_DATA_DIR "rgbsmall.tif"));
+            ensure( poDS != nullptr );
+            GDALDataset::RawBinaryLayout sLayout;
+            // Compressed
+            ensure( !poDS->GetRawBinaryLayout(sLayout) );
+        }
+        {
+            GDALDatasetUniquePtr poDS(
+                GDALDataset::Open(GCORE_DATA_DIR "stefan_full_rgba.tif"));
+            ensure( poDS != nullptr );
+            GDALDataset::RawBinaryLayout sLayout;
+            ensure( poDS->GetRawBinaryLayout(sLayout) );
+            ensure_equals( sLayout.osRawFilename, poDS->GetDescription() );
+            ensure_equals( static_cast<int>(sLayout.eInterleaving),
+                           static_cast<int>(GDALDataset::RawBinaryLayout::Interleaving::BIP) );
+            ensure_equals( sLayout.eDataType, GDT_Byte );
+            ensure( sLayout.bLittleEndianOrder );
+            ensure_equals( sLayout.nImageOffset, 278U );
+            ensure_equals( sLayout.nPixelOffset, 4 );
+            ensure_equals( sLayout.nLineOffset, 162 * 4 );
+            ensure_equals( sLayout.nBandOffset, 1 );
+        }
+        {
+            GDALDatasetUniquePtr poSrcDS(
+                GDALDataset::Open(GCORE_DATA_DIR "rgbsmall.tif"));
+            ensure( poSrcDS != nullptr );
+            auto tmpFilename = "/vsimem/tmp.tif";
+            auto poDrv = GDALDriver::FromHandle(GDALGetDriverByName("GTiff"));
+            const char* options [] = { "INTERLEAVE=BAND", nullptr };
+            auto poDS(GDALDatasetUniquePtr(poDrv->CreateCopy(
+                tmpFilename, poSrcDS.get(), false, const_cast<char**>(options), nullptr, nullptr)));
+            ensure( poDS != nullptr );
+            GDALDataset::RawBinaryLayout sLayout;
+            ensure( poDS->GetRawBinaryLayout(sLayout) );
+            ensure_equals( sLayout.osRawFilename, poDS->GetDescription() );
+            ensure_equals( static_cast<int>(sLayout.eInterleaving),
+                           static_cast<int>(GDALDataset::RawBinaryLayout::Interleaving::BSQ) );
+            ensure_equals( sLayout.eDataType, GDT_Byte );
+            ensure( sLayout.bLittleEndianOrder );
+            ensure( sLayout.nImageOffset >= 396U );
+            ensure_equals( sLayout.nPixelOffset, 1 );
+            ensure_equals( sLayout.nLineOffset, 50 );
+            ensure_equals( sLayout.nBandOffset, 50 * 50 );
+            poDS.reset();
+            VSIUnlink(tmpFilename);
+        }
+        {
+            GDALDatasetUniquePtr poSrcDS(
+                GDALDataset::Open(GCORE_DATA_DIR "rgbsmall.tif"));
+            ensure( poSrcDS != nullptr );
+            auto tmpFilename = "/vsimem/tmp.tif";
+            const char* options [] = { "-srcwin", "0", "0", "48", "32",
+                                       "-co", "TILED=YES",
+                                       "-co", "BLOCKXSIZE=48",
+                                       "-co", "BLOCKYSIZE=32", nullptr };
+            auto psOptions = GDALTranslateOptionsNew( const_cast<char**>(options), nullptr );
+            auto poDS(GDALDatasetUniquePtr(GDALDataset::FromHandle(GDALTranslate(
+                tmpFilename, GDALDataset::ToHandle(poSrcDS.get()), psOptions, nullptr))));
+            GDALTranslateOptionsFree(psOptions);
+            ensure( poDS != nullptr );
+            GDALDataset::RawBinaryLayout sLayout;
+            ensure( poDS->GetRawBinaryLayout(sLayout) );
+            ensure_equals( sLayout.osRawFilename, poDS->GetDescription() );
+            ensure_equals( static_cast<int>(sLayout.eInterleaving),
+                           static_cast<int>(GDALDataset::RawBinaryLayout::Interleaving::BIP) );
+            ensure_equals( sLayout.eDataType, GDT_Byte );
+            ensure( sLayout.bLittleEndianOrder );
+            ensure( sLayout.nImageOffset >= 390U );
+            ensure_equals( sLayout.nPixelOffset, 3 );
+            ensure_equals( sLayout.nLineOffset, 48 * 3);
+            ensure_equals( sLayout.nBandOffset, 1 );
+            poDS.reset();
+            VSIUnlink(tmpFilename);
+        }
+        {
+            GDALDatasetUniquePtr poSrcDS(
+                GDALDataset::Open(GCORE_DATA_DIR "rgbsmall.tif"));
+            ensure( poSrcDS != nullptr );
+            auto tmpFilename = "/vsimem/tmp.tif";
+            const char* options [] = { "-srcwin", "0", "0", "48", "32",
+                                       "-co", "TILED=YES",
+                                       "-co", "BLOCKXSIZE=48",
+                                       "-co", "BLOCKYSIZE=32",
+                                       "-co", "INTERLEAVE=BAND", nullptr };
+            auto psOptions = GDALTranslateOptionsNew( const_cast<char**>(options), nullptr );
+            auto poDS(GDALDatasetUniquePtr(GDALDataset::FromHandle(GDALTranslate(
+                tmpFilename, GDALDataset::ToHandle(poSrcDS.get()), psOptions, nullptr))));
+            GDALTranslateOptionsFree(psOptions);
+            ensure( poDS != nullptr );
+            GDALDataset::RawBinaryLayout sLayout;
+            ensure( poDS->GetRawBinaryLayout(sLayout) );
+            ensure_equals( sLayout.osRawFilename, poDS->GetDescription() );
+            ensure_equals( static_cast<int>(sLayout.eInterleaving),
+                           static_cast<int>(GDALDataset::RawBinaryLayout::Interleaving::BSQ) );
+            ensure_equals( sLayout.eDataType, GDT_Byte );
+            ensure( sLayout.bLittleEndianOrder );
+            ensure( sLayout.nImageOffset >= 408U );
+            ensure_equals( sLayout.nPixelOffset, 1 );
+            ensure_equals( sLayout.nLineOffset, 48);
+            ensure_equals( sLayout.nBandOffset, 48 * 32 );
+            poDS.reset();
+            VSIUnlink(tmpFilename);
+        }
+
+        // ISIS3
+        {
+            GDALDatasetUniquePtr poDS(
+                GDALDataset::Open(GDRIVERS_DATA_DIR "isis3_detached.lbl"));
+            ensure( poDS != nullptr );
+            GDALDataset::RawBinaryLayout sLayout;
+            ensure( poDS->GetRawBinaryLayout(sLayout) );
+            ensure( sLayout.osRawFilename.find("isis3_detached.cub") != std::string::npos );
+            ensure_equals( static_cast<int>(sLayout.eInterleaving),
+                           static_cast<int>(GDALDataset::RawBinaryLayout::Interleaving::UNKNOWN) );
+            ensure_equals( sLayout.eDataType, GDT_Byte );
+            ensure( sLayout.bLittleEndianOrder );
+            ensure_equals( sLayout.nImageOffset, 0U );
+            ensure_equals( sLayout.nPixelOffset, 1 );
+            ensure_equals( sLayout.nLineOffset, 317 );
+            // ensure_equals( sLayout.nBandOffset, 9510 ); // doesn't matter on single band
+        }
+
+        // VICAR
+        {
+            GDALDatasetUniquePtr poDS(
+                GDALDataset::Open(GDRIVERS_DATA_DIR "test_vicar_truncated.bin"));
+            ensure( poDS != nullptr );
+            GDALDataset::RawBinaryLayout sLayout;
+            ensure( poDS->GetRawBinaryLayout(sLayout) );
+            ensure_equals( sLayout.osRawFilename, poDS->GetDescription() );
+            ensure_equals( static_cast<int>(sLayout.eInterleaving),
+                           static_cast<int>(GDALDataset::RawBinaryLayout::Interleaving::UNKNOWN) );
+            ensure_equals( sLayout.eDataType, GDT_Byte );
+            ensure( sLayout.bLittleEndianOrder );
+            ensure_equals( sLayout.nImageOffset, 9680U );
+            ensure_equals( sLayout.nPixelOffset, 1 );
+            ensure_equals( sLayout.nLineOffset, 400 );
+            ensure_equals( sLayout.nBandOffset, 0 ); // doesn't matter on single band
+        }
+
+        // FITS
+        {
+            GDALDatasetUniquePtr poSrcDS(
+                GDALDataset::Open(GCORE_DATA_DIR "int16.tif"));
+            ensure( poSrcDS != nullptr );
+            CPLString tmpFilename(CPLGenerateTempFilename(nullptr));
+            tmpFilename += ".fits";
+            auto poDrv = GDALDriver::FromHandle(GDALGetDriverByName("FITS"));
+            if( poDrv )
+            {
+                auto poDS(GDALDatasetUniquePtr(poDrv->CreateCopy(
+                    tmpFilename, poSrcDS.get(), false, nullptr, nullptr, nullptr)));
+                ensure( poDS != nullptr );
+                poDS.reset();
+                poDS.reset(GDALDataset::Open(tmpFilename));
+                ensure( poDS != nullptr );
+                GDALDataset::RawBinaryLayout sLayout;
+                ensure( poDS->GetRawBinaryLayout(sLayout) );
+                ensure_equals( sLayout.osRawFilename, poDS->GetDescription() );
+                ensure_equals( static_cast<int>(sLayout.eInterleaving),
+                            static_cast<int>(GDALDataset::RawBinaryLayout::Interleaving::UNKNOWN) );
+                ensure_equals( sLayout.eDataType, GDT_Int16 );
+                ensure( !sLayout.bLittleEndianOrder );
+                ensure_equals( sLayout.nImageOffset, 2880U );
+                ensure_equals( sLayout.nPixelOffset, 2 );
+                ensure_equals( sLayout.nLineOffset, 2 * 20 );
+                ensure_equals( sLayout.nBandOffset, 2 * 20 * 20 );
+                poDS.reset();
+                VSIUnlink(tmpFilename);
+            }
+        }
+
+        // PDS 3
+        {
+            GDALDatasetUniquePtr poDS(
+                GDALDataset::Open(GDRIVERS_DATA_DIR "mc02_truncated.img"));
+            ensure( poDS != nullptr );
+            GDALDataset::RawBinaryLayout sLayout;
+            ensure( poDS->GetRawBinaryLayout(sLayout) );
+            ensure_equals( sLayout.osRawFilename, poDS->GetDescription() );
+            ensure_equals( static_cast<int>(sLayout.eInterleaving),
+                           static_cast<int>(GDALDataset::RawBinaryLayout::Interleaving::UNKNOWN) );
+            ensure_equals( sLayout.eDataType, GDT_Byte );
+            ensure( sLayout.bLittleEndianOrder );
+            ensure_equals( sLayout.nImageOffset, 3840U );
+            ensure_equals( sLayout.nPixelOffset, 1 );
+            ensure_equals( sLayout.nLineOffset, 3840 );
+            ensure_equals( sLayout.nBandOffset, 0 ); // doesn't matter on single band
+        }
+
+        // PDS 4
+        {
+            GDALDatasetUniquePtr poDS(
+                GDALDataset::Open(GDRIVERS_DATA_DIR "byte_pds4_cart_1700.xml"));
+            ensure( poDS != nullptr );
+            GDALDataset::RawBinaryLayout sLayout;
+            ensure( poDS->GetRawBinaryLayout(sLayout) );
+            ensure( sLayout.osRawFilename.find("byte_pds4_cart_1700.img") != std::string::npos );
+            ensure_equals( static_cast<int>(sLayout.eInterleaving),
+                           static_cast<int>(GDALDataset::RawBinaryLayout::Interleaving::UNKNOWN) );
+            ensure_equals( sLayout.eDataType, GDT_Byte );
+            ensure( !sLayout.bLittleEndianOrder );
+            ensure_equals( sLayout.nImageOffset, 0U );
+            ensure_equals( sLayout.nPixelOffset, 1 );
+            ensure_equals( sLayout.nLineOffset, 20 );
+            ensure_equals( sLayout.nBandOffset, 0 ); // doesn't matter on single band
+        }
     }
 
 } // namespace tut

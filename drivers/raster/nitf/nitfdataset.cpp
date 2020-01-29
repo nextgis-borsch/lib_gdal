@@ -6,7 +6,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2002, Frank Warmerdam
- * Copyright (c) 2007-2013, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2007-2013, Even Rouault <even dot rouault at spatialys.com>
  *
  * Portions Copyright (c) Her majesty the Queen in right of Canada as
  * represented by the Minister of National Defence, 2006.
@@ -753,6 +753,14 @@ GDALDataset *NITFDataset::OpenInternal( GDALOpenInfo * poOpenInfo,
         poDS->nQLevel = poDS->ScanJPEGQLevel( &nJPEGStart, &bError );
 
         CPLString osDSName;
+
+        if( psFile->pasSegmentInfo[iSegment].nSegmentSize <
+                nJPEGStart - psFile->pasSegmentInfo[iSegment].nSegmentStart )
+        {
+            CPLError( CE_Failure, CPLE_AppDefined, "Corrupted segment size" );
+            delete poDS;
+            return nullptr;
+        }
 
         osDSName.Printf( "JPEG_SUBFILE:Q%d," CPL_FRMT_GUIB ","
                          CPL_FRMT_GUIB ",%s",
@@ -3486,6 +3494,9 @@ CPLErr NITFDataset::ScanJPEGBlocks()
 /* -------------------------------------------------------------------- */
     int iNextBlock = 1;
     GIntBig iSegOffset = 2;
+    if( psFile->pasSegmentInfo[psImage->iSegment].nSegmentSize <
+        nJPEGStart - psFile->pasSegmentInfo[psImage->iSegment].nSegmentStart )
+        return CE_Failure;
     GIntBig iSegSize = psFile->pasSegmentInfo[psImage->iSegment].nSegmentSize
         - (nJPEGStart - psFile->pasSegmentInfo[psImage->iSegment].nSegmentStart);
     GByte abyBlock[512];
@@ -4483,6 +4494,7 @@ NITFDataset::NITFCreateCopy(
                     pszGEOPSB += 3; /* GRD */
                     pszGEOPSB += 80; /* GRN */
                     WRITE_STR_NOSZ(pszGEOPSB, "0000"); pszGEOPSB += 4; /* ZNA */
+                    CPL_IGNORE_RET_VAL(pszGEOPSB);
                     CPLAssert(pszGEOPSB == szGEOPSB + 443);
 
                     CPLString osGEOPSB("FILE_TRE=GEOPSB=");

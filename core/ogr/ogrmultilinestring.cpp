@@ -6,7 +6,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1999, Frank Warmerdam
- * Copyright (c) 2008-2013, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2008-2013, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -133,11 +133,11 @@ OGRMultiLineString::isCompatibleSubType( OGRwkbGeometryType eGeomType ) const
 /*                            exportToWkt()                             */
 /************************************************************************/
 
-OGRErr OGRMultiLineString::exportToWkt( char ** ppszDstText,
-                                        OGRwkbVariant eWkbVariant ) const
+std::string OGRMultiLineString::exportToWkt(const OGRWktOptions& opts,
+                                            OGRErr *err) const
 
 {
-    return exportToWktInternal( ppszDstText, eWkbVariant, "LINESTRING" );
+    return exportToWktInternal(opts, err, "LINESTRING");
 }
 
 /************************************************************************/

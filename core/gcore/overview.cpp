@@ -6,7 +6,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2000, Frank Warmerdam
- * Copyright (c) 2007-2010, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2007-2010, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -35,6 +35,7 @@
 #include <cstdlib>
 
 #include <algorithm>
+#include <complex>
 #include <limits>
 #include <vector>
 
@@ -2635,7 +2636,7 @@ GDALResampleChunkC32R( int nSrcWidth, int nSrcHeight,
                             pafSrcScanline[iX*2+static_cast<GPtrDiff_t>(iY-nSrcYOff)*nSrcWidth*2+1];
                         dfTotalR += dfR;
                         dfTotalI += dfI;
-                        dfTotalM += sqrt( dfR*dfR + dfI*dfI );
+                        dfTotalM += std::hypot(dfR, dfI);
                         ++nCount;
                     }
                 }
@@ -2652,12 +2653,8 @@ GDALResampleChunkC32R( int nSrcWidth, int nSrcHeight,
                         static_cast<float>(dfTotalR/nCount);
                     pafDstScanline[iDstPixel*2+1] =
                         static_cast<float>(dfTotalI/nCount);
-
-                    const double dfM =
-                        std::sqrt( pafDstScanline[iDstPixel*2]
-                                  * pafDstScanline[iDstPixel*2]
-                              + pafDstScanline[iDstPixel*2+1]
-                                  * pafDstScanline[iDstPixel*2+1] );
+                    const double dfM = std::hypot(pafDstScanline[iDstPixel*2],
+                                                  pafDstScanline[iDstPixel*2+1]);
                     const double dfDesiredM = dfTotalM / nCount;
                     double dfRatio = 1.0;
                     if( dfM != 0.0 )
@@ -3137,6 +3134,7 @@ GDALRegenerateOverviews( GDALRasterBandH hSrcBand,
     GDALRasterBand* poMaskBand = nullptr;
     int nMaskFlags = 0;
     bool bUseNoDataMask = false;
+    bool bCanUseCascaded = true;
 
     if( !STARTS_WITH_CI(pszResampling, "NEAR") )
     {
@@ -3148,10 +3146,19 @@ GDALRegenerateOverviews( GDALRasterBandH hSrcBand,
             poMaskBand = poSrcBand;
             nMaskFlags = GMF_ALPHA | GMF_PER_DATASET;
         }
+        // Same as above for mask band. I'd wish we had a better way of conveying this !
+        else if( CPLTestBool(CPLGetConfigOption(
+                    "GDAL_REGENERATED_BAND_IS_MASK", "NO")) )
+        {
+            poMaskBand = poSrcBand;
+            nMaskFlags = GMF_PER_DATASET;
+        }
         else
         {
             poMaskBand = poSrcBand->GetMaskBand();
             nMaskFlags = poSrcBand->GetMaskFlags();
+            bCanUseCascaded = (nMaskFlags == GMF_NODATA ||
+                               nMaskFlags == GMF_ALL_VALID);
         }
 
         bUseNoDataMask = (nMaskFlags & GMF_ALL_VALID) == 0;
@@ -3172,7 +3179,7 @@ GDALRegenerateOverviews( GDALRasterBandH hSrcBand,
          EQUAL(pszResampling, "CUBICSPLINE") ||
          EQUAL(pszResampling, "LANCZOS") ||
          EQUAL(pszResampling, "BILINEAR")) && nOverviewCount > 1
-         && !(bUseNoDataMask && nMaskFlags != GMF_NODATA))
+         && bCanUseCascaded )
         return GDALRegenerateCascadingOverviews( poSrcBand,
                                                  nOverviewCount, papoOvrBands,
                                                  pszResampling,
@@ -3607,11 +3614,15 @@ GDALRegenerateOverviewsMultiBand( int nBands, GDALRasterBand** papoSrcBands,
     GDALDataType eWrkDataType =
         GDALGetOvrWorkDataType(pszResampling, eDataType);
 
+    // I'd wish we had a better way of conveying this !
+    const bool bIsMask = CPLTestBool(CPLGetConfigOption(
+                    "GDAL_REGENERATED_BAND_IS_MASK", "NO"));
+
     // If we have a nodata mask and we are doing something more complicated
     // than nearest neighbouring, we have to fetch to nodata mask.
     const bool bUseNoDataMask =
         !STARTS_WITH_CI(pszResampling, "NEAR") &&
-        (papoSrcBands[0]->GetMaskFlags() & GMF_ALL_VALID) == 0;
+        (bIsMask || (papoSrcBands[0]->GetMaskFlags() & GMF_ALL_VALID) == 0);
 
     int* const pabHasNoData = static_cast<int *>(
         VSI_MALLOC_VERBOSE(nBands * sizeof(int)) );
@@ -3849,7 +3860,8 @@ GDALRegenerateOverviewsMultiBand( int nBands, GDALRasterBand** papoSrcBands,
                         poSrcBand = papoSrcBands[0];
                     else
                         poSrcBand = papapoOverviewBands[0][iSrcOverview];
-                    eErr = poSrcBand->GetMaskBand()->RasterIO(
+                    auto poMaskBand = bIsMask ? poSrcBand : poSrcBand->GetMaskBand();
+                    eErr = poMaskBand->RasterIO(
                         GF_Read,
                         nChunkXOffQueried, nChunkYOffQueried,
                         nChunkXSizeQueried, nChunkYSizeQueried,
@@ -3995,9 +4007,8 @@ GDALComputeBandStats( GDALRasterBandH hSrcBand,
             if( bComplex )
             {
                 // Compute the magnitude of the complex value.
-                fValue =
-                    std::sqrt(pafData[iPixel*2  ] * pafData[iPixel*2  ]
-                         + pafData[iPixel*2+1] * pafData[iPixel*2+1]);
+                fValue = std::hypot(pafData[iPixel*2],
+                                    pafData[iPixel*2+1]);
             }
             else
             {

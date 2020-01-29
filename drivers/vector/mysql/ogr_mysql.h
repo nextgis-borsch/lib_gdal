@@ -8,7 +8,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2004, Frank Warmerdam <warmerdam@pobox.com>
- * Copyright (c) 2008-2012, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2008-2012, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -72,7 +72,7 @@
 
 class OGRMySQLDataSource;
 
-class OGRMySQLLayer : public OGRLayer
+class OGRMySQLLayer CPL_NON_FINAL: public OGRLayer
 {
   protected:
     OGRFeatureDefn     *poFeatureDefn;
@@ -240,6 +240,10 @@ class OGRMySQLDataSource final: public OGRDataSource
     OGRSpatialReference *FetchSRS( int nSRSId );
 
     OGRErr              InitializeMetadataTables();
+    OGRErr              UpdateMetadataTables(const char *pszLayerName,
+                                             OGRwkbGeometryType eType,
+                                             const char *pszGeomColumnName,
+                                             const int nSRSId);
 
     int                 Open( const char *, char** papszOpenOptions, int bUpdate );
     int                 OpenTable( const char *, int bUpdate );

@@ -6,7 +6,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1999,  Les Technologies SoftMap Inc.
- * Copyright (c) 2008-2014, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2008-2014, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -31,7 +31,7 @@
 #include "ogr_api.h"
 #include "ogr_p.h"
 #include "ogr_attrind.h"
-#include "swq.h"
+#include "ogr_swq.h"
 #include "ograpispy.h"
 
 CPL_CVSID("$Id$")

@@ -3,10 +3,10 @@
  * Project:  GDAL Core
  * Purpose:  A dataset and raster band classes that differ the opening of the
  *           underlying dataset in a limited pool of opened datasets.
- * Author:   Even Rouault <even dot rouault at mines dash paris dot org>
+ * Author:   Even Rouault <even dot rouault at spatialys.com>
  *
  ******************************************************************************
- * Copyright (c) 2008-2013, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2008-2013, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -1133,6 +1133,17 @@ GDALRasterBand* GDALProxyPoolRasterBand::RefUnderlyingRasterBand(bool bForceOpen
     if (poBand == nullptr)
     {
         (cpl::down_cast<GDALProxyPoolDataset*>(poDS))->UnrefUnderlyingDataset(poUnderlyingDataset);
+    }
+    else
+    if(nBlockXSize <= 0 || nBlockYSize <= 0)
+    {
+        // Here we try to load nBlockXSize&nBlockYSize from underlying band
+        // but we must guarantee that we will not access directly to
+        // nBlockXSize/nBlockYSize before RefUnderlyingRasterBand() is called
+        int nSrcBlockXSize, nSrcBlockYSize;
+        poBand->GetBlockSize(&nSrcBlockXSize, &nSrcBlockYSize);
+        nBlockXSize = nSrcBlockXSize;
+        nBlockYSize = nSrcBlockYSize;
     }
 
     return poBand;

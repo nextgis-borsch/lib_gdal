@@ -7,7 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1998, Frank Warmerdam
- * Copyright (c) 2007-2014, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2007-2014, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -432,7 +432,7 @@ CPLErr GDALRasterBand::IRasterIO( GDALRWFlag eRWFlag,
                     iSrcOffset += nBlockXSize * nBandDataSize;
                 }
 
-                iBufOffset += nXSpanSize;
+                iBufOffset = CPLUnsanitizedAdd<GPtrDiff_t>(iBufOffset, nXSpanSize);
                 nLBlockX++;
                 iSrcX+=nXSpan;
 
@@ -2828,7 +2828,7 @@ static inline void GDALUnrolledCopyGeneric( T* CPL_RESTRICT pDest,
 {
     if (nIters >= 16)
     {
-        for ( decltype(nIters) i = nIters / 16; i != 0; i -- )
+        for ( GPtrDiff_t i = nIters / 16; i != 0; i -- )
         {
             pDest[0*dstStride] = pSrc[0*srcStride];
             pDest[1*dstStride] = pSrc[1*srcStride];
@@ -2851,7 +2851,7 @@ static inline void GDALUnrolledCopyGeneric( T* CPL_RESTRICT pDest,
         }
         nIters = nIters % 16;
     }
-    for( decltype(nIters) i = 0; i < nIters; i++ )
+    for( GPtrDiff_t i = 0; i < nIters; i++ )
     {
         pDest[i*dstStride] = *pSrc;
         pSrc += srcStride;

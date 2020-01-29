@@ -6,7 +6,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2007, Mateusz Loskot
- * Copyright (c) 2008-2014, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2008-2014, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -939,6 +939,18 @@ json_object* OGRGeoJSONWriteAttributes( OGRFeature* poFeature,
                     json_object_new_string(papszStringList[i]));
             }
         }
+        else if( OFTDateTime == eType || OFTDate == eType )
+        {
+            char* pszDT = OGRGetXMLDateTime(poFeature->GetRawFieldRef(nField));
+            if( eType == OFTDate )
+            {
+                char* pszT = strchr(pszDT, 'T');
+                if( pszT )
+                    *pszT = 0;
+            }
+            poObjProp = json_object_new_string(pszDT);
+            CPLFree(pszDT);
+        }
         else
         {
             poObjProp = json_object_new_string(
@@ -1492,11 +1504,15 @@ static int OGR_json_double_with_precision_to_string( struct json_object *jso,
         static_cast<int>(reinterpret_cast<GUIntptr_t>(json_object_get_userdata(jso)));
 #endif
     char szBuffer[75] = {};
-    OGRFormatDouble( szBuffer, sizeof(szBuffer), json_object_get_double(jso), '.',
-                     (nPrecision < 0) ? 15 : nPrecision );
-    if( szBuffer[0] == 't' /*oobig */ )
+    const double dfVal =  json_object_get_double(jso);
+    if( fabs(dfVal) > 1e50 && !CPLIsInf(dfVal) )
     {
-        CPLsnprintf(szBuffer, sizeof(szBuffer), "%.18g", json_object_get_double(jso));
+        CPLsnprintf(szBuffer, sizeof(szBuffer), "%.18g", dfVal);
+    }
+    else
+    {
+        OGRFormatDouble( szBuffer, sizeof(szBuffer), dfVal, '.',
+                         (nPrecision < 0) ? 15 : nPrecision );
     }
     return printbuf_memappend(pb, szBuffer, static_cast<int>(strlen(szBuffer)));
 }

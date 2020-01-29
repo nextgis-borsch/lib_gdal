@@ -2,10 +2,10 @@
  *
  * Project:  PDF driver
  * Purpose:  GDALDataset driver for PDF dataset (read vector features)
- * Author:   Even Rouault, <even dot rouault at mines dash paris dot org>
+ * Author:   Even Rouault, <even dot rouault at spatialys.com>
  *
  ******************************************************************************
- * Copyright (c) 2010-2014, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2010-2014, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -79,7 +79,10 @@ int PDFDataset::OpenVectorLayers(GDALPDFDictionary* poPageDict)
     }
     else
     {
-        ExploreContents(poContents, poResources);
+        int nDepth = 0;
+        int nVisited = 0;
+        bool bStop = false;
+        ExploreContents(poContents, poResources, nDepth, nVisited, bStop);
         std::set< std::pair<int,int> > aoSetAlreadyVisited;
         ExploreTree(poStructTreeRoot, aoSetAlreadyVisited, 0);
     }
@@ -513,6 +516,8 @@ static OGRPoint* PDFGetStarCenter(OGRLineString* poLS)
     double dfSqD13 = SQUARE(poLS->getX(1) - poLS->getX(3)) +
                       SQUARE(poLS->getY(1) - poLS->getY(3));
     const double dfSin18divSin126 = 0.38196601125;
+    if( dfSqD02 == 0 )
+        return nullptr;
     int bOK = fabs(dfSqD13 / dfSqD02 - SQUARE(dfSin18divSin126)) < EPSILON;
     for(int i=1;i<10 && bOK;i++)
     {
@@ -1597,9 +1602,21 @@ OGRGeometry* PDFDataset::BuildGeometry(std::vector<double>& oCoords,
 /************************************************************************/
 
 void PDFDataset::ExploreContents(GDALPDFObject* poObj,
-                                       GDALPDFObject* poResources)
+                                 GDALPDFObject* poResources,
+                                 int nDepth,
+                                 int& nVisited,
+                                 bool& bStop)
 {
     std::map<CPLString, OGRPDFLayer*> oMapPropertyToLayer;
+    if( nDepth == 10 || nVisited == 1000 )
+    {
+        CPLError(CE_Failure, CPLE_AppDefined,
+                 "ExploreContents(): too deep exploration or too many items");
+        bStop = true;
+        return;
+    }
+    if( bStop )
+        return;
 
     if (poObj->GetType() == PDFObjectType_Array)
     {
@@ -1609,7 +1626,10 @@ void PDFDataset::ExploreContents(GDALPDFObject* poObj,
             GDALPDFObject* poSubObj = poArray->Get(i);
             if( poSubObj )
             {
-                ExploreContents(poSubObj, poResources);
+                nVisited ++;
+                ExploreContents(poSubObj, poResources, nDepth + 1, nVisited, bStop);
+                if( bStop )
+                    return;
             }
         }
     }
@@ -1739,25 +1759,10 @@ void PDFDataset::ExploreContentsNonStructured(GDALPDFObject* poContents,
         if (poProperties != nullptr &&
             poProperties->GetType() == PDFObjectType_Dictionary)
         {
-            char** papszLayersWithRef = osLayerWithRefList.List();
-            char** papszIter = papszLayersWithRef;
             std::map< std::pair<int, int>, OGRPDFLayer *> oMapNumGenToLayer;
-            while(papszIter && *papszIter)
+            for(const auto& oLayerWithref: aoLayerWithRef )
             {
-                char** papszTokens = CSLTokenizeString(*papszIter);
-
-                if( CSLCount(papszTokens) != 3 ) {
-                    CSLDestroy(papszTokens);
-                    CPLDebug("PDF", "Ignore '%s', unparsable.", *papszIter);
-                    papszIter ++;
-                    continue;
-                }
-
-                const char* pszLayerName = papszTokens[0];
-                int nNum = atoi(papszTokens[1]);
-                int nGen = atoi(papszTokens[2]);
-
-                CPLString osSanitizedName(PDFSanitizeLayerName(pszLayerName));
+                CPLString osSanitizedName(PDFSanitizeLayerName(oLayerWithref.osName));
 
                 OGRPDFLayer* poLayer = (OGRPDFLayer*) GetLayerByName(osSanitizedName.c_str());
                 if (poLayer == nullptr)
@@ -1775,10 +1780,7 @@ void PDFDataset::ExploreContentsNonStructured(GDALPDFObject* poContents,
                     nLayers ++;
                 }
 
-                oMapNumGenToLayer[ std::pair<int,int>(nNum, nGen) ] = poLayer;
-
-                CSLDestroy(papszTokens);
-                papszIter ++;
+                oMapNumGenToLayer[ std::pair<int,int>(oLayerWithref.nOCGNum.toInt(), oLayerWithref.nOCGGen) ] = poLayer;
             }
 
             std::map<CPLString, GDALPDFObject*>& oMap =

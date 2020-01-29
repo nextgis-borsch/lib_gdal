@@ -1014,7 +1014,8 @@ static int ParseSect3 (sInt4 *is3, sInt4 ns3, grib_MetaData *meta)
    }
    meta->gds.Nx = is3[30];
    meta->gds.Ny = is3[34];
-   if (meta->gds.Nx * meta->gds.Ny != meta->gds.numPts) {
+   if ((meta->gds.Nx != 0 && meta->gds.Ny > UINT_MAX / meta->gds.Nx) ||
+       meta->gds.Nx * meta->gds.Ny != meta->gds.numPts) {
       errSprintf ("Nx * Ny != number of points?\n");
       return -2;
    }
@@ -1027,9 +1028,7 @@ static int ParseSect3 (sInt4 *is3, sInt4 ns3, grib_MetaData *meta)
    meta->gds.lat2 = meta->gds.lon2 = 0;
    switch (is3[12]) {
       case GS3_LATLON: /* 0: Regular lat/lon grid. */
-#ifdef notdef
-      case 1: // 1: Rotated lat/lon grid
-#endif
+      case GS3_ROTATED_LATLON: // 1: Rotated lat/lon grid
       case GS3_GAUSSIAN_LATLON:  /* 40: Gaussian lat/lon grid. */
          if (ns3 < 72) {
             return -1;
@@ -1069,22 +1068,15 @@ static int ParseSect3 (sInt4 *is3, sInt4 ns3, grib_MetaData *meta)
          meta->gds.scan = (uChar) is3[71];
          meta->gds.meshLat = 0;
          meta->gds.orientLon = 0;
-#ifdef notdef
-         if( is3[12] == 1 ) {
+         if( is3[12] == GS3_ROTATED_LATLON ) {
              if( ns3 < 84 ) {
                  return -1;
              }
-             CPLDebug("GRIB", "Latitude1: %f", meta->gds.lat1);
-             CPLDebug("GRIB", "Longitude1: %f", meta->gds.lon1);
-             CPLDebug("GRIB", "Latitude2: %f", meta->gds.lat2);
-             CPLDebug("GRIB", "Longitude2: %f", meta->gds.lon2);
-             CPLDebug("GRIB", "Di : %f", meta->gds.Dx);
-             CPLDebug("GRIB", "Dj : %f", meta->gds.Dy);
-             CPLDebug("GRIB", "Latitude of the southern pole of projection: %f", is3[73-1] * unit);
-             CPLDebug("GRIB", "Longitude of the southern pole of projection: %f", is3[77-1] * unit);
-             CPLDebug("GRIB", "Angle of rotation of projection: %f", is3[81-1] * unit);
+             meta->gds.f_typeLatLon = 3;
+             meta->gds.southLat = is3[73-1] * unit;
+             meta->gds.southLon = is3[77-1] * unit;
+             meta->gds.angleRotate = is3[81-1] * unit;
          }
-#endif
          /* Resolve resolution flag(bit 3,4).  Copy Dx,Dy as appropriate. */
          if ((meta->gds.resFlag & GRIB2BIT_3) &&
              (!(meta->gds.resFlag & GRIB2BIT_4))) {

@@ -6,7 +6,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2013, Paul Ramsey <pramsey@boundlessgeo.com>
- * Copyright (c) 2014, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2014, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -1112,11 +1112,11 @@ OGRGeoPackageTableLayer::OGRGeoPackageTableLayer(
 
 OGRGeoPackageTableLayer::~OGRGeoPackageTableLayer()
 {
-    SyncToDisk();
+    OGRGeoPackageTableLayer::SyncToDisk();
 
     if( m_bDropRTreeTable )
     {
-        ResetReading();
+        OGRGeoPackageTableLayer::ResetReading();
 
         char* pszSQL =
             sqlite3_mprintf("DROP TABLE \"%w\"", m_osRTreeName.c_str());

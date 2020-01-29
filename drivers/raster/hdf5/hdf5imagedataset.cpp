@@ -6,7 +6,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2005, Frank Warmerdam <warmerdam@pobox.com>
- * Copyright (c) 2007-2013, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2007-2013, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -41,16 +41,7 @@
 
 CPL_CVSID("$Id$")
 
-// Release 1.6.3 or 1.6.4 changed the type of count in some API functions.
-
-#if H5_VERS_MAJOR == 1 && H5_VERS_MINOR <= 6 \
-       && (H5_VERS_MINOR < 6 || H5_VERS_RELEASE < 3)
-#  define H5OFFSET_TYPE hssize_t
-#else
-#  define H5OFFSET_TYPE  hsize_t
-#endif
-
-class HDF5ImageDataset : public HDF5Dataset
+class HDF5ImageDataset final: public HDF5Dataset
 {
     typedef enum { UNKNOWN_PRODUCT = 0, CSK_PRODUCT } Hdf5ProductType;
 
@@ -228,7 +219,7 @@ HDF5ImageDataset::~HDF5ImageDataset()
 /*                            Hdf5imagerasterband                       */
 /* ==================================================================== */
 /************************************************************************/
-class HDF5ImageRasterBand : public GDALPamRasterBand
+class HDF5ImageRasterBand final: public GDALPamRasterBand
 {
     friend class HDF5ImageDataset;
 
@@ -294,7 +285,8 @@ HDF5ImageRasterBand::HDF5ImageRasterBand( HDF5ImageDataset *poDSIn, int nBandIn,
             CPL_IGNORE_RET_VAL(nDimSize);
             CPLAssert(nDimSize == poDSIn->ndims);
             nBlockXSize = static_cast<int>(panChunkDims[poDSIn->GetXIndex()]);
-            nBlockYSize = static_cast<int>(panChunkDims[poDSIn->GetYIndex()]);
+            if( poDSIn->GetYIndex() >= 0 )
+                nBlockYSize = static_cast<int>(panChunkDims[poDSIn->GetYIndex()]);
         }
 
         H5Pclose(listid);
@@ -343,7 +335,7 @@ CPLErr HDF5ImageRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
     hsize_t count[3] = {0, 0, 0};
     H5OFFSET_TYPE offset[3] = {0, 0, 0};
     hsize_t col_dims[3] = {0, 0, 0};
-    hsize_t rank = 2;
+    hsize_t rank = std::min(poGDS->ndims, 2);
 
     if( poGDS->IsComplexCSKL1A() )
     {
@@ -359,17 +351,22 @@ CPLErr HDF5ImageRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
         count[0] = 1;
         col_dims[0] = 1;
     }
-    // Defaults to rank = 2;
 
-    offset[poGDS->GetYIndex()] = nBlockYOff * static_cast<hsize_t>(nBlockYSize);
+    const int nYIndex = poGDS->GetYIndex();
+    if( nYIndex >= 0 )
+        offset[nYIndex] = nBlockYOff * static_cast<hsize_t>(nBlockYSize);
     offset[poGDS->GetXIndex()] = nBlockXOff * static_cast<hsize_t>(nBlockXSize);
-    count[poGDS->GetYIndex()] = nBlockYSize;
+    if( nYIndex >= 0 )
+        count[nYIndex] = nBlockYSize;
     count[poGDS->GetXIndex()] = nBlockXSize;
 
     // Blocksize may not be a multiple of imagesize.
-    count[poGDS->GetYIndex()] =
-        std::min(hsize_t(nBlockYSize),
-                 poDS->GetRasterYSize() - offset[poGDS->GetYIndex()]);
+    if( nYIndex >= 0 )
+    {
+        count[nYIndex] =
+            std::min(hsize_t(nBlockYSize),
+                    poDS->GetRasterYSize() - offset[nYIndex]);
+    }
     count[poGDS->GetXIndex()] =
         std::min(hsize_t(nBlockXSize),
                  poDS->GetRasterXSize() - offset[poGDS->GetXIndex()]);
@@ -383,7 +380,8 @@ CPLErr HDF5ImageRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
         return CE_Failure;
 
     // Create memory space to receive the data.
-    col_dims[poGDS->GetYIndex()] = nBlockYSize;
+    if( nYIndex >= 0 )
+        col_dims[nYIndex] = nBlockYSize;
     col_dims[poGDS->GetXIndex()] = nBlockXSize;
 
     const hid_t memspace =
@@ -394,7 +392,10 @@ CPLErr HDF5ImageRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
                                   mem_offset, nullptr,
                                   count, nullptr);
     if( status < 0 )
+    {
+        H5Sclose(memspace);
         return CE_Failure;
+    }
 
     status = H5Dread(poGDS->dataset_id, poGDS->native, memspace,
                      poGDS->dataspace_id, H5P_DEFAULT, pImage);
@@ -481,11 +482,7 @@ GDALDataset *HDF5ImageDataset::Open( GDALOpenInfo *poOpenInfo )
     poDS->SetPhysicalFilename(osFilename);
 
     // Try opening the dataset.
-    hid_t fapl = H5Pcreate(H5P_FILE_ACCESS);
-    H5Pset_driver(fapl, HDF5GetFileDriver(), nullptr);
-    poDS->hHDF5 = H5Fopen(osFilename, H5F_ACC_RDONLY, fapl);
-    H5Pclose(fapl);
-
+    poDS->hHDF5 = GDAL_HDF5Open(osFilename);
     if( poDS->hHDF5 < 0 )
     {
         delete poDS;
@@ -519,7 +516,7 @@ GDALDataset *HDF5ImageDataset::Open( GDALOpenInfo *poOpenInfo )
     poDS->dataset_id = H5Dopen(poDS->hHDF5, poDS->poH5Objects->pszPath);
     poDS->dataspace_id = H5Dget_space(poDS->dataset_id);
     poDS->ndims = H5Sget_simple_extent_ndims(poDS->dataspace_id);
-    if( poDS->ndims < 0 )
+    if( poDS->ndims <= 0 )
     {
         delete poDS;
         return nullptr;
@@ -541,7 +538,7 @@ GDALDataset *HDF5ImageDataset::Open( GDALOpenInfo *poOpenInfo )
     // Check if the hdf5 is a well known product type
     poDS->IdentifyProductType();
 
-    poDS->nRasterYSize =
+    poDS->nRasterYSize = poDS->GetYIndex() < 0 ? 1 :
         static_cast<int>(poDS->dims[poDS->GetYIndex()]);  // nRows
     poDS->nRasterXSize =
         static_cast<int>(poDS->dims[poDS->GetXIndex()]);  // nCols

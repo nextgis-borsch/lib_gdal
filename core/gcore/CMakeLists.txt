@@ -101,7 +101,7 @@ set(LIB_CSOURCES
     rasterio.cpp
     rasterio_ssse3.cpp
     rawdataset.cpp
-    # gdalmultidim.cpp
+    gdalmultidim.cpp
 )
 
 if(GDAL_PAM_ENABLED)
@@ -116,13 +116,13 @@ if(GDAL_PAM_ENABLED)
 endif()
 
 if(WITH_PYTHON OR WITH_PYTHON3)
-    # set(LIB_HHEADERS ${LIB_HHEADERS}
-    #     gdalpython.h
-    # )
-    # set(LIB_CSOURCES ${LIB_CSOURCES}
-    #     gdalpython.cpp
-    #     gdalpythondriverloader.cpp
-    # )
+    set(LIB_HHEADERS ${LIB_HHEADERS}
+        gdalpython.h
+    )
+    set(LIB_CSOURCES ${LIB_CSOURCES}
+        gdalpython.cpp
+        gdalpythondriverloader.cpp
+    )
 endif()
 
 if(WIN32)

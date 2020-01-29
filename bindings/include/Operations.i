@@ -570,6 +570,62 @@ int ContourGenerateEx( GDALRasterBandShadow *srcBand,
 %clear OGRLayerShadow* dstLayer;
 
 /************************************************************************/
+/*                          ViewshedGenerate()                           */
+/************************************************************************/
+
+%rename (ViewshedMode) GDALViewshedMode;
+typedef enum {
+    GVM_Diagonal = 1,
+    GVM_Edge = 2,
+    GVM_Max = 3,
+    GVM_Min = 4
+} GDALViewshedMode;
+
+
+%newobject ViewshedGenerate;
+#ifndef SWIGJAVA
+%feature( "kwargs" ) ViewshedGenerate;
+#endif
+%apply Pointer NONNULL {GDALRasterBandShadow *srcBand};
+%inline %{
+GDALDatasetShadow *ViewshedGenerate( GDALRasterBandShadow *srcBand,
+                        const char* driverName,
+                        const char* targetRasterName,
+                        char** creationOptions,
+                        double observerX, double observerY, double observerHeight,
+                        double targetHeight, double visibleVal, double invisibleVal,
+                        double outOfRangeVal,  double noDataVal, double dfCurvCoeff,
+                        GDALViewshedMode mode, double maxDistance,
+                        GDALProgressFunc callback = NULL, void* callback_data = NULL,
+                        char** papszOptions = NULL)
+{
+    GDALDatasetShadow* ds = GDALViewshedGenerate( srcBand,
+                                 driverName,
+                                 targetRasterName,
+                                 creationOptions,
+                                 observerX,
+                                 observerY,
+                                 observerHeight,
+                                 targetHeight,
+                                 visibleVal,
+                                 invisibleVal,
+                                 outOfRangeVal,
+                                 noDataVal,
+                                 dfCurvCoeff,
+                                 mode,
+                                 maxDistance,
+                                 callback,
+                                 callback_data,
+                                 papszOptions);
+  if (ds == 0) {
+    /*throw CPLGetLastErrorMsg(); causes a SWIG_exception later*/
+  }
+  return ds;
+}
+%}
+%clear GDALRasterBandShadow *srcBand;
+
+/************************************************************************/
 /*                        AutoCreateWarpedVRT()                         */
 /************************************************************************/
 

@@ -627,6 +627,7 @@ VSIS3WriteHandle::VSIS3WriteHandle( IVSIS3LikeFSHandler* poFS,
         m_bUseChunked(bUseChunked),
         m_nMaxRetry(atoi(CPLGetConfigOption("GDAL_HTTP_MAX_RETRY",
                                    CPLSPrintf("%d",CPL_HTTP_MAX_RETRY)))),
+        // coverity[tainted_data]
         m_dfRetryDelay(CPLAtof(CPLGetConfigOption("GDAL_HTTP_RETRY_DELAY",
                                 CPLSPrintf("%f", CPL_HTTP_RETRY_DELAY))))
 {
@@ -2092,6 +2093,204 @@ int IVSIS3LikeFSHandler::Unlink( const char *pszFilename )
 }
 
 /************************************************************************/
+/*                               Rename()                               */
+/************************************************************************/
+
+int IVSIS3LikeFSHandler::Rename( const char *oldpath, const char *newpath )
+{
+    if( !STARTS_WITH_CI(oldpath, GetFSPrefix()) )
+        return -1;
+    if( !STARTS_WITH_CI(newpath, GetFSPrefix()) )
+        return -1;
+    VSIStatBufL sStat;
+    if( VSIStatL(oldpath, &sStat) != 0 )
+    {
+        CPLDebug(GetDebugKey(), "%s is not a object", oldpath);
+        errno = ENOENT;
+        return -1;
+    }
+
+    // AWS doesn't like renaming to the same name, and errors out
+    // But GCS does like it, and so we might end up killing ourselves !
+    // POSIX says renaming on the same file is OK
+    if( strcmp(oldpath, newpath) == 0 )
+        return 0;
+
+    if( sStat.st_mode == S_IFDIR )
+    {
+        CPLStringList aosList(VSIReadDir(oldpath));
+        Mkdir(newpath, 0755);
+        for( int i = 0; i < aosList.size(); i++ )
+        {
+            CPLString osSrc = CPLFormFilename(oldpath, aosList[i], nullptr);
+            CPLString osTarget = CPLFormFilename(newpath, aosList[i], nullptr);
+            if( Rename(osSrc, osTarget) != 0 )
+            {
+                return -1;
+            }
+        }
+        Rmdir(oldpath);
+        return 0;
+    }
+    else
+    {
+        if( VSIStatL(newpath, &sStat) == 0 && sStat.st_mode == S_IFDIR )
+        {
+            CPLDebug(GetDebugKey(), "%s already exists and is a directory", newpath);
+            errno = ENOTEMPTY;
+            return -1;
+        }
+        if( CopyObject(oldpath, newpath) != 0 )
+        {
+            return -1;
+        }
+        return DeleteObject(oldpath);
+    }
+}
+
+/************************************************************************/
+/*                            CopyObject()                              */
+/************************************************************************/
+
+int IVSIS3LikeFSHandler::CopyObject( const char *oldpath, const char *newpath )
+{
+    CPLString osTargetNameWithoutPrefix = newpath + GetFSPrefix().size();
+    IVSIS3LikeHandleHelper* poS3HandleHelper =
+        CreateHandleHelper(osTargetNameWithoutPrefix, false);
+    if( poS3HandleHelper == nullptr )
+    {
+        return -1;
+    }
+
+    std::string osSourceHeader(poS3HandleHelper->GetCopySourceHeader());
+    if( osSourceHeader.empty() )
+    {
+        CPLError(CE_Failure, CPLE_NotSupported,
+                 "Object copy not supported by this file system");
+        return -1;
+    }
+    osSourceHeader += ": /";
+    if( STARTS_WITH(oldpath, "/vsis3/") )
+        osSourceHeader += CPLAWSURLEncode(oldpath + GetFSPrefix().size(), false);
+    else
+        osSourceHeader += (oldpath + GetFSPrefix().size());
+
+    UpdateHandleFromMap(poS3HandleHelper);
+
+    int nRet = 0;
+
+    bool bRetry;
+
+    const int nMaxRetry = atoi(CPLGetConfigOption("GDAL_HTTP_MAX_RETRY",
+                                   CPLSPrintf("%d",CPL_HTTP_MAX_RETRY)));
+    // coverity[tainted_data]
+    double dfRetryDelay = CPLAtof(CPLGetConfigOption("GDAL_HTTP_RETRY_DELAY",
+                                CPLSPrintf("%f", CPL_HTTP_RETRY_DELAY)));
+    int nRetryCount = 0;
+
+    do
+    {
+        bRetry = false;
+        CURL* hCurlHandle = curl_easy_init();
+        curl_easy_setopt(hCurlHandle, CURLOPT_CUSTOMREQUEST, "PUT");
+
+        struct curl_slist* headers = static_cast<struct curl_slist*>(
+            CPLHTTPSetOptions(hCurlHandle,
+                              poS3HandleHelper->GetURL().c_str(),
+                              nullptr));
+        headers = curl_slist_append(headers, osSourceHeader.c_str());
+        headers = curl_slist_append(headers, "Content-Length: 0"); // Required by GCS, but not by S3
+        headers = VSICurlMergeHeaders(headers,
+                        poS3HandleHelper->GetCurlHeaders("PUT", headers));
+        curl_easy_setopt(hCurlHandle, CURLOPT_HTTPHEADER, headers);
+
+        WriteFuncStruct sWriteFuncData;
+        VSICURLInitWriteFuncStruct(&sWriteFuncData, nullptr, nullptr, nullptr);
+        curl_easy_setopt(hCurlHandle, CURLOPT_WRITEDATA, &sWriteFuncData);
+        curl_easy_setopt(hCurlHandle, CURLOPT_WRITEFUNCTION,
+                         VSICurlHandleWriteFunc);
+
+        WriteFuncStruct sWriteFuncHeaderData;
+        VSICURLInitWriteFuncStruct(&sWriteFuncHeaderData, nullptr, nullptr, nullptr);
+        curl_easy_setopt(hCurlHandle, CURLOPT_HEADERDATA, &sWriteFuncHeaderData);
+        curl_easy_setopt(hCurlHandle, CURLOPT_HEADERFUNCTION,
+                         VSICurlHandleWriteFunc);
+
+        char szCurlErrBuf[CURL_ERROR_SIZE+1] = {};
+        szCurlErrBuf[0] = '\0';
+        curl_easy_setopt(hCurlHandle, CURLOPT_ERRORBUFFER, szCurlErrBuf );
+
+        MultiPerform(GetCurlMultiHandleFor(poS3HandleHelper->GetURL()),
+                     hCurlHandle);
+
+        VSICURLResetHeaderAndWriterFunctions(hCurlHandle);
+
+        curl_slist_free_all(headers);
+
+        long response_code = 0;
+        curl_easy_getinfo(hCurlHandle, CURLINFO_HTTP_CODE, &response_code);
+        if( response_code != 200)
+        {
+            // Look if we should attempt a retry
+            const double dfNewRetryDelay = CPLHTTPGetNewRetryDelay(
+                static_cast<int>(response_code), dfRetryDelay,
+                sWriteFuncHeaderData.pBuffer, szCurlErrBuf);
+            if( dfNewRetryDelay > 0 &&
+                nRetryCount < nMaxRetry )
+            {
+                CPLError(CE_Warning, CPLE_AppDefined,
+                            "HTTP error code: %d - %s. "
+                            "Retrying again in %.1f secs",
+                            static_cast<int>(response_code),
+                            poS3HandleHelper->GetURL().c_str(),
+                            dfRetryDelay);
+                CPLSleep(dfRetryDelay);
+                dfRetryDelay = dfNewRetryDelay;
+                nRetryCount++;
+                bRetry = true;
+            }
+            else if( sWriteFuncData.pBuffer != nullptr &&
+                poS3HandleHelper->CanRestartOnError(sWriteFuncData.pBuffer,
+                                                    sWriteFuncHeaderData.pBuffer,
+                                                    false) )
+            {
+                UpdateMapFromHandle(poS3HandleHelper);
+                bRetry = true;
+            }
+            else
+            {
+                CPLDebug(GetDebugKey(), "%s",
+                         sWriteFuncData.pBuffer
+                         ? sWriteFuncData.pBuffer
+                         : "(null)");
+                CPLError(CE_Failure, CPLE_AppDefined, "Copy of %s to %s failed",
+                         oldpath, newpath);
+                nRet = -1;
+            }
+        }
+        else
+        {
+            InvalidateCachedData(poS3HandleHelper->GetURL().c_str());
+
+            CPLString osFilenameWithoutSlash(newpath);
+            if( !osFilenameWithoutSlash.empty() && osFilenameWithoutSlash.back() == '/' )
+                osFilenameWithoutSlash.resize( osFilenameWithoutSlash.size() - 1 );
+
+            InvalidateDirContent( CPLGetDirname(osFilenameWithoutSlash) );
+        }
+
+        CPLFree(sWriteFuncData.pBuffer);
+        CPLFree(sWriteFuncHeaderData.pBuffer);
+
+        curl_easy_cleanup(hCurlHandle);
+    }
+    while( bRetry );
+
+    delete poS3HandleHelper;
+    return nRet;
+}
+
+/************************************************************************/
 /*                           DeleteObject()                             */
 /************************************************************************/
 
@@ -2112,6 +2311,7 @@ int IVSIS3LikeFSHandler::DeleteObject( const char *pszFilename )
 
     const int nMaxRetry = atoi(CPLGetConfigOption("GDAL_HTTP_MAX_RETRY",
                                    CPLSPrintf("%d",CPL_HTTP_MAX_RETRY)));
+    // coverity[tainted_data]
     double dfRetryDelay = CPLAtof(CPLGetConfigOption("GDAL_HTTP_RETRY_DELAY",
                                 CPLSPrintf("%f", CPL_HTTP_RETRY_DELAY)));
     int nRetryCount = 0;
@@ -2447,6 +2647,7 @@ bool IVSIS3LikeFSHandler::Sync( const char* pszSource, const char* pszTarget,
                     CPLFormFilename(osSourceWithoutSlash, *iter, nullptr) );
                 CPLString osSubTarget(
                     CPLFormFilename(osTargetDir, *iter, nullptr) );
+                // coverity[divide_by_zero]
                 void* pScaledProgress = GDALCreateScaledProgress(
                     double(iFile) / nFileCount, double(iFile + 1) / nFileCount,
                     pProgressFunc, pProgressData);
@@ -2579,6 +2780,12 @@ bool IVSIS3LikeFSHandler::Sync( const char* pszSource, const char* pszTarget,
                 }
             }
         }
+    }
+
+    if( STARTS_WITH(pszSource, GetFSPrefix()) &&
+        STARTS_WITH(pszTarget, GetFSPrefix()) )
+    {
+        return CopyObject(osSourceWithoutSlash, osTarget) == 0;
     }
 
     if( fpIn == nullptr )

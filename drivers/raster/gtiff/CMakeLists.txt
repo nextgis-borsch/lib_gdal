@@ -47,7 +47,7 @@ set(LIB_HHEADERS_PRIV
     tifvsi.h
     gt_citation.h
     gt_wkt_srs.h
-    # cogdriver.h
+    cogdriver.h
 )
 
 set(LIB_CSOURCES
@@ -58,7 +58,7 @@ set(LIB_CSOURCES
     gt_wkt_srs.cpp
     tif_float.c
     tifvsi.cpp
-    # cogdriver.cpp
+    cogdriver.cpp
 )
 
 # TODO: Only support internal libtiff now

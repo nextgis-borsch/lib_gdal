@@ -6,7 +6,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1999, Frank Warmerdam
- * Copyright (c) 2011-2013, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2011-2013, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -171,6 +171,13 @@ int DDFSubfieldDefn::SetFormat( const char * pszFormat )
         // or do we have a binary type indicator? (is it binary)
         else
         {
+            if( pszFormatString[1] < '0' || pszFormatString[1] > '5' )
+            {
+                 CPLError( CE_Failure, CPLE_AppDefined,
+                           "Binary format = %c is invalid.",
+                           pszFormatString[1] );
+                return FALSE;
+            }
             eBinaryFormat = (DDFBinaryFormat) (pszFormatString[1] - '0');
             nFormatWidth = atoi(pszFormatString+2);
             if( nFormatWidth < 0 )

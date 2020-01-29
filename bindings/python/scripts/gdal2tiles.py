@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ******************************************************************************
 #  $Id$
@@ -16,7 +16,7 @@
 #
 ###############################################################################
 # Copyright (c) 2008, Klokan Petr Pridal
-# Copyright (c) 2010-2013, Even Rouault <even dot rouault at mines-paris dot org>
+# Copyright (c) 2010-2013, Even Rouault <even dot rouault at spatialys.com>
 #
 #  Permission is hereby granted, free of charge, to any person obtaining a
 #  copy of this software and associated documentation files (the "Software"),
@@ -64,7 +64,9 @@ except ImportError:
 
 __version__ = "$Id$"
 
-resampling_list = ('average', 'near', 'bilinear', 'cubic', 'cubicspline', 'lanczos', 'antialias')
+resampling_list = (
+    'average', 'near', 'bilinear', 'cubic', 'cubicspline', 'lanczos',
+    'antialias', 'mode', 'max', 'min', 'med', 'q1', 'q3')
 profile_list = ('mercator', 'geodetic', 'raster')
 webviewer_list = ('all', 'google', 'openlayers', 'leaflet', 'none')
 
@@ -651,6 +653,24 @@ def scale_query_to_tile(dsquery, dstile, tiledriver, options, tilefilename=''):
 
         elif options.resampling == 'lanczos':
             gdal_resampling = gdal.GRA_Lanczos
+
+        elif options.resampling == 'mode':
+            gdal_resampling = gdal.GRA_Mode
+
+        elif options.resampling == 'max':
+            gdal_resampling = gdal.GRA_Max
+
+        elif options.resampling == 'min':
+            gdal_resampling = gdal.GRA_Min
+
+        elif options.resampling == 'med':
+            gdal_resampling = gdal.GRA_Med
+
+        elif options.resampling == 'q1':
+            gdal_resampling = gdal.GRA_Q1
+
+        elif options.resampling == 'q3':
+            gdal_resampling = gdal.GRA_Q3
 
         # Other algorithms are implemented by gdal.ReprojectImage().
         dsquery.SetGeoTransform((0.0, tile_size / float(querysize), 0.0, 0.0, 0.0,
@@ -1413,6 +1433,9 @@ class GDAL2Tiles(object):
             zoom_min, zoom_max = minmax[:2]
             self.tminz = int(zoom_min)
             if zoom_max:
+                if int(zoom_max) < self.tminz:
+                    raise Exception('max zoom (%d) less than min zoom (%d)' %
+                                    (int(zoom_max), self.tminz))
                 self.tmaxz = int(zoom_max)
             else:
                 self.tmaxz = int(zoom_min)
@@ -1464,6 +1487,15 @@ class GDAL2Tiles(object):
                 "gdal2tiles temp.vrt" % self.input_file
             )
 
+        if input_dataset.GetRasterBand(1).DataType != gdal.GDT_Byte:
+            exit_with_error(
+                "Please convert this file to 8-bit and run gdal2tiles on the result.",
+                "To scale pixel values you can use:\n"
+                "gdal_translate -of VRT -ot Byte -scale %s temp.vrt\n"
+                "then run:\n"
+                "gdal2tiles temp.vrt" % self.input_file
+            )
+
         in_nodata = setup_no_data_values(input_dataset, self.options)
 
         if self.options.verbose:
@@ -1486,7 +1518,7 @@ class GDAL2Tiles(object):
             if not in_srs:
                 exit_with_error(
                     "Input file has unknown SRS.",
-                    "Use --s_srs ESPG:xyz (or similar) to provide source reference system.")
+                    "Use --s_srs EPSG:xyz (or similar) to provide source reference system.")
 
             if not has_georeference(input_dataset):
                 exit_with_error(
@@ -2875,7 +2907,7 @@ def multi_threaded_tiling(input_file, output_folder, options):
 
     if options.verbose:
         print("Tiles details calc complete.")
-        
+
     if not options.verbose and not options.quiet:
         progress_bar = ProgressBar(len(tile_details))
         progress_bar.start()

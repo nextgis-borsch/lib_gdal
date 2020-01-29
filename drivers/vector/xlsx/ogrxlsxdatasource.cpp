@@ -2,10 +2,10 @@
  *
  * Project:  XLSX Translator
  * Purpose:  Implements OGRXLSXDataSource class
- * Author:   Even Rouault, even dot rouault at mines dash paris dot org
+ * Author:   Even Rouault, even dot rouault at spatialys.com
  *
  ******************************************************************************
- * Copyright (c) 2012-2014, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2012-2014, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -1420,29 +1420,31 @@ void OGRXLSXDataSource::startElementWBCbk(const char *pszNameIn,
         const char* pszSheetName = GetAttributeValue(ppszAttr, "name", nullptr);
         const char* pszId = GetAttributeValue(ppszAttr, "r:id", nullptr);
         if (pszSheetName && pszId &&
-            oMapRelsIdToTarget.find(pszId) != oMapRelsIdToTarget.end() )
+            oMapRelsIdToTarget.find(pszId) != oMapRelsIdToTarget.end() &&
+            m_oSetSheetId.find(pszId) == m_oSetSheetId.end() )
         {
-            papoLayers = (OGRLayer**)CPLRealloc(papoLayers, (nLayers + 1) * sizeof(OGRLayer*));
+            const auto& osTarget(oMapRelsIdToTarget[pszId]);
+            m_oSetSheetId.insert(pszId);
             CPLString osFilename;
-            if( oMapRelsIdToTarget[pszId].empty() )
+            if( osTarget.empty() )
                 return;
-            if( oMapRelsIdToTarget[pszId][0] == '/' )
+            if( osTarget[0] == '/' )
             {
                 int nIdx = 1;
-                while( oMapRelsIdToTarget[pszId][nIdx] == '/' )
+                while( osTarget[nIdx] == '/' )
                     nIdx ++;
-                if( oMapRelsIdToTarget[pszId][nIdx] == '\0' )
+                if( osTarget[nIdx] == '\0' )
                     return;
                 // Is it an "absolute" path ?
-                osFilename = osPrefixedFilename +
-                             oMapRelsIdToTarget[pszId];
+                osFilename = osPrefixedFilename + osTarget;
             }
             else
             {
                 // or relative to the /xl subdirectory
                 osFilename = osPrefixedFilename +
-                             CPLString("/xl/") + oMapRelsIdToTarget[pszId];
+                             CPLString("/xl/") + osTarget;
             }
+            papoLayers = (OGRLayer**)CPLRealloc(papoLayers, (nLayers + 1) * sizeof(OGRLayer*));
             papoLayers[nLayers++] = new OGRXLSXLayer(this, osFilename,
                 pszSheetName);
         }

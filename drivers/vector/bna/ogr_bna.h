@@ -3,10 +3,10 @@
  *
  * Project:  BNA Translator
  * Purpose:  Definition of classes for OGR .bna driver.
- * Author:   Even Rouault, even dot rouault at mines dash paris dot org
+ * Author:   Even Rouault, even dot rouault at spatialys.com
  *
  ******************************************************************************
- * Copyright (c) 2007-2010, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2007-2010, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -34,6 +34,8 @@
 
 #include "ogrbnaparser.h"
 
+#include <vector>
+
 class OGRBNADataSource;
 
 /************************************************************************/
@@ -42,11 +44,11 @@ class OGRBNADataSource;
 
 typedef struct
 {
-  int   offset;
+  vsi_l_offset   offset;
   int   line;
 } OffsetAndLine;
 
-class OGRBNALayer : public OGRLayer
+class OGRBNALayer final: public OGRLayer
 {
     OGRFeatureDefn*    poFeatureDefn;
 
@@ -60,13 +62,11 @@ class OGRBNALayer : public OGRLayer
     int                nNextFID;
     VSILFILE*          fpBNA;
     int                nFeatures;
-    bool               partialIndexTable;
-    OffsetAndLine*     offsetAndLineFeaturesTable;
+    std::vector<OffsetAndLine> offsetAndLineFeaturesTable;
 
     BNAFeatureType     bnaFeatureType;
 
     OGRFeature *       BuildFeatureFromBNARecord (BNARecord* record, long fid);
-    void               FastParseUntil ( int interestFID);
     void               WriteFeatureAttributes(VSILFILE* fp, OGRFeature *poFeature);
     void               WriteCoord(VSILFILE* fp, double dfX, double dfY);
 
@@ -80,9 +80,7 @@ class OGRBNALayer : public OGRLayer
                                     int nIDs = NB_MAX_BNA_IDS);
                         ~OGRBNALayer();
 
-    void                SetFeatureIndexTable(int nFeatures,
-                                             OffsetAndLine* offsetAndLineFeaturesTable,
-                                             int partialIndexTable);
+    void                SetFeatureIndexTable(std::vector<OffsetAndLine>&& offsetAndLineFeaturesTable);
 
     void                ResetReading() override;
     OGRFeature *        GetNextFeature() override;
@@ -101,7 +99,7 @@ class OGRBNALayer : public OGRLayer
 /*                           OGRBNADataSource                           */
 /************************************************************************/
 
-class OGRBNADataSource : public OGRDataSource
+class OGRBNADataSource final: public OGRDataSource
 {
     char*               pszName;
 

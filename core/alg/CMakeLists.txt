@@ -47,6 +47,7 @@ set(LIB_HHEADERS_PRIV
     gdallinearsystem.h
     gvgcpfit.h
     thinplatespline.h
+    armadillo_headers.h
 )
 
 set(LIB_CSOURCES
@@ -84,6 +85,7 @@ set(LIB_CSOURCES
     rasterfill.cpp
     gdalapplyverticalshiftgrid.cpp
     gdallinearsystem.cpp
+    viewshed.cpp
 )
 
 find_anyproject(QHULL DEFAULT OFF)

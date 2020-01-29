@@ -7,7 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2009, Frank Warmerdam <warmerdam@pobox.com>
- * Copyright (c) 2009-2013, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2009-2013, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -99,7 +99,7 @@ PCIDSK2Band::PCIDSK2Band( PCIDSKChannel *poChannelIn )
 
     if( poChannel->GetType() == CHN_BIT )
     {
-        SetMetadataItem( "NBITS", "1", "IMAGE_STRUCTURE" );
+        PCIDSK2Band::SetMetadataItem( "NBITS", "1", "IMAGE_STRUCTURE" );
 
         if( !STARTS_WITH_CI(poChannel->GetDescription().c_str(),
                     "Contents Not Specified") )

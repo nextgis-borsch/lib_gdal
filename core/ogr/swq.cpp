@@ -6,7 +6,7 @@
  *
  ******************************************************************************
  * Copyright (C) 2001 Information Interoperability Institute (3i)
- * Copyright (c) 2010-2013, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2010-2013, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission to use, copy, modify and distribute this software and
  * its documentation for any purpose and without fee is hereby granted,
@@ -20,7 +20,7 @@
  ****************************************************************************/
 
 #include "cpl_port.h"
-#include "swq.h"
+#include "ogr_swq.h"
 
 #include <cassert>
 #include <cctype>
@@ -240,7 +240,7 @@ int swqlex( YYSTYPE *ppNode, swq_parse_context *context )
         else if( EQUAL(osToken, "LIKE") )
             nReturn = SWQT_LIKE;
         else if( EQUAL(osToken, "ILIKE") )
-            nReturn = SWQT_LIKE;
+            nReturn = SWQT_ILIKE;
         else if( EQUAL(osToken, "ESCAPE") )
             nReturn = SWQT_ESCAPE;
         else if( EQUAL(osToken, "NULL") )

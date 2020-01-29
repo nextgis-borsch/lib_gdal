@@ -2,10 +2,10 @@
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGROSMLayer class
- * Author:   Even Rouault, <even dot rouault at mines dash paris dot org>
+ * Author:   Even Rouault, <even dot rouault at spatialys.com>
  *
  ******************************************************************************
- * Copyright (c) 2012-2014, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2012-2014, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -346,7 +346,9 @@ bool OGROSMLayer::AddToArray( OGRFeature* poFeature,
         {
             CPLError(CE_Failure, CPLE_AppDefined,
                     "Too many features have accumulated in %s layer. "
-                    "Use OGR_INTERLEAVED_READING=YES mode",
+                    "Use the OGR_INTERLEAVED_READING=YES configuration option, "
+                    "or the INTERLEAVED_READING=YES open option, or the "
+                    "GDALDataset::GetNextFeature() / GDALDatasetGetNextFeature() API.",
                     GetName());
         }
         bHasWarnedTooManyFeatures = true;

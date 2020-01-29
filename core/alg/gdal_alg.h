@@ -7,7 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2001, Frank Warmerdam
- * Copyright (c) 2008-2012, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2008-2012, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -341,6 +341,30 @@ CPLErr CPL_DLL
 GDALContourGenerateEx( GDALRasterBandH hBand, void *hLayer,
                        CSLConstList options,
                        GDALProgressFunc pfnProgress, void *pProgressArg );
+
+/* -------------------------------------------------------------------- */
+/*      Viewshed Generation                                             */
+/* -------------------------------------------------------------------- */
+
+/** Viewshed Modes */
+typedef enum {
+    GVM_Diagonal = 1,
+    GVM_Edge = 2,
+    GVM_Max = 3,
+    GVM_Min = 4
+} GDALViewshedMode;
+
+GDALDatasetH CPL_DLL
+GDALViewshedGenerate(GDALRasterBandH hBand,
+                     const char* pszDriverName,
+                     const char* pszTargetRasterName,
+                     CSLConstList papszCreationOptions,
+                     double dfObserverX, double dfObserverY, double dfObserverHeight,
+                     double dfTargetHeight, double dfVisibleVal, double dfInvisibleVal,
+                     double dfOutOfRangeVal, double dfNoDataVal, double dfCurvCoeff,
+                     GDALViewshedMode eMode, double dfMaxDistance,
+                     GDALProgressFunc pfnProgress, void *pProgressArg,
+                     CSLConstList papszExtraOptions);
 
 /************************************************************************/
 /*      Rasterizer API - geometries burned into GDAL raster.            */

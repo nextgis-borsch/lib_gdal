@@ -6,7 +6,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2013, Paul Ramsey <pramsey@boundlessgeo.com>
- * Copyright (c) 2014, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2014, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -29,7 +29,7 @@
 
 #include "ogr_geopackage.h"
 #include "ogr_p.h"
-#include "swq.h"
+#include "ogr_swq.h"
 #include "gdalwarper.h"
 #include "ogrgeopackageutility.h"
 #include "ogrsqliteutility.h"
@@ -308,6 +308,7 @@ OGRSpatialReference* GDALGeoPackageDataset::GetSpatialRef(int iSrsId)
     // Try to import first from EPSG code, and then from WKT
     if( !(pszOrganization && pszOrganizationCoordsysID
           && EQUAL(pszOrganization, "EPSG") &&
+          atoi(pszOrganizationCoordsysID) == iSrsId &&
           GDALGPKGImportFromEPSG(poSpatialRef, atoi(pszOrganizationCoordsysID))
           == OGRERR_NONE) &&
         poSpatialRef->SetFromUserInput(pszWkt) != OGRERR_NONE )
@@ -461,7 +462,7 @@ bool GDALGeoPackageDataset::ConvertGpkgSpatialRefSysToExtensionWkt2()
 
 int GDALGeoPackageDataset::GetSrsId(const OGRSpatialReference& oSRS)
 {
-    OGRSpatialReference *poSRS = oSRS.Clone();
+    std::unique_ptr<OGRSpatialReference> poSRS(oSRS.Clone());
 
     const char* pszAuthorityName = poSRS->GetAuthorityName( nullptr );
 
@@ -491,12 +492,31 @@ int GDALGeoPackageDataset::GetSrsId(const OGRSpatialReference& oSRS)
     int nAuthorityCode = 0;
     OGRErr err = OGRERR_NONE;
     bool bCanUseAuthorityCode = false;
+    const char* const apszIsSameOptions[] = {
+        "IGNORE_DATA_AXIS_TO_SRS_AXIS_MAPPING=YES", nullptr };
     if ( pszAuthorityName != nullptr && strlen(pszAuthorityName) > 0 )
     {
-        // For the root authority name 'EPSG', the authority code
-        // should always be integral
-        nAuthorityCode = atoi( poSRS->GetAuthorityCode(nullptr) );
+        const char* pszAuthorityCode = poSRS->GetAuthorityCode(nullptr);
+        if( pszAuthorityCode )
+        {
+            if( CPLGetValueType(pszAuthorityCode) == CPL_VALUE_INTEGER )
+            {
+                nAuthorityCode = atoi(pszAuthorityCode);
+            }
+            else
+            {
+                CPLDebug("GPKG",
+                         "SRS has %s:%s identification, but the code not "
+                         "being an integer value cannot be stored as such "
+                         "in the database.",
+                         pszAuthorityName, pszAuthorityCode);
+                pszAuthorityName = nullptr;
+            }
+        }
+    }
 
+    if ( pszAuthorityName != nullptr && strlen(pszAuthorityName) > 0 )
+    {
         pszSQL = sqlite3_mprintf(
                          "SELECT srs_id FROM gpkg_spatial_ref_sys WHERE "
                          "upper(organization) = upper('%q') AND "
@@ -509,57 +529,138 @@ int GDALGeoPackageDataset::GetSrsId(const OGRSpatialReference& oSRS)
         // Got a match? Return it!
         if ( OGRERR_NONE == err )
         {
-            delete poSRS;
-            return nSRSId;
+            auto poRefSRS = GetSpatialRef(nSRSId);
+            bool bOK = (
+                poRefSRS == nullptr || poSRS->IsSame(poRefSRS, apszIsSameOptions) ||
+                !CPLTestBool(CPLGetConfigOption("OGR_GPKG_CHECK_SRS", "YES")) );
+            if( poRefSRS )
+                poRefSRS->Release();
+            if( bOK )
+            {
+                return nSRSId;
+            }
+            else
+            {
+                CPLError(CE_Warning, CPLE_AppDefined,
+                         "Passed SRS uses %s:%d identification, but its "
+                         "definition is not compatible with the "
+                         "definition of that object already in the database. "
+                         "Registering it as a new entry into the database.",
+                         pszAuthorityName, nAuthorityCode);
+                pszAuthorityName = nullptr;
+                nAuthorityCode = 0;
+            }
         }
-
-        // No match, but maybe we can use the nAuthorityCode as the nSRSId?
-        pszSQL = sqlite3_mprintf(
-                         "SELECT Count(*) FROM gpkg_spatial_ref_sys WHERE "
-                         "srs_id = %d", nAuthorityCode );
-
-        // Yep, we can!
-        if ( SQLGetInteger(hDB, pszSQL, nullptr) == 0 )
-            bCanUseAuthorityCode = true;
-        sqlite3_free(pszSQL);
     }
 
     // Translate SRS to WKT.
-    char *pszWKT1 = nullptr;
-    char *pszWKT2 = nullptr;
+    CPLCharUniquePtr pszWKT1;
+    CPLCharUniquePtr pszWKT2;
     const char* const apszOptionsWkt1[] = { "FORMAT=WKT1_GDAL", nullptr };
     const char* const apszOptionsWkt2[] = { "FORMAT=WKT2_2015", nullptr };
     if( !(poSRS->IsGeographic() && poSRS->GetAxesCount() == 3) )
     {
-        poSRS->exportToWkt( &pszWKT1, apszOptionsWkt1 );
-        if( pszWKT1 && pszWKT1[0] == '\0' )
+        char* pszTmp = nullptr;
+        poSRS->exportToWkt( &pszTmp, apszOptionsWkt1 );
+        pszWKT1.reset(pszTmp);
+        if( pszWKT1 && pszWKT1.get()[0] == '\0' )
         {
-            CPLFree(pszWKT1);
-            pszWKT1 = nullptr;
+            pszWKT1.reset();
         }
     }
-    poSRS->exportToWkt( &pszWKT2, apszOptionsWkt2 );
-    if( pszWKT2 && pszWKT2[0] == '\0' )
     {
-        CPLFree(pszWKT2);
-        pszWKT2 = nullptr;
+        char* pszTmp = nullptr;
+        poSRS->exportToWkt( &pszTmp, apszOptionsWkt2 );
+        pszWKT2.reset(pszTmp);
+        if( pszWKT2 && pszWKT2.get()[0] == '\0' )
+        {
+            pszWKT2.reset();
+        }
     }
 
     if( !pszWKT1 && !pszWKT2 )
     {
-        delete poSRS;
-        CPLFree(pszWKT1);
-        CPLFree(pszWKT2);
         return DEFAULT_SRID;
+    }
+
+    // Search if there is already an existing entry with this WKT
+    if( m_bHasDefinition12_063 && pszWKT2 )
+    {
+        if( pszWKT1 )
+        {
+            pszSQL = sqlite3_mprintf(
+                    "SELECT srs_id FROM gpkg_spatial_ref_sys WHERE "
+                    "definition = '%q' OR definition_12_063 = '%q'",
+                    pszWKT1.get(), pszWKT2.get() );
+        }
+        else
+        {
+            pszSQL = sqlite3_mprintf(
+                    "SELECT srs_id FROM gpkg_spatial_ref_sys WHERE "
+                    "definition_12_063 = '%q'", pszWKT2.get() );
+        }
+    }
+    else if( pszWKT1 )
+    {
+        pszSQL = sqlite3_mprintf(
+                "SELECT srs_id FROM gpkg_spatial_ref_sys WHERE "
+                "definition = '%q'", pszWKT1.get() );
+    }
+    else
+    {
+        pszSQL = nullptr;
+    }
+    if( pszSQL )
+    {
+        nSRSId = SQLGetInteger(hDB, pszSQL, &err);
+        sqlite3_free(pszSQL);
+        if ( OGRERR_NONE == err )
+        {
+            return nSRSId;
+        }
+    }
+
+    if ( pszAuthorityName != nullptr && strlen(pszAuthorityName) > 0 )
+    {
+        bool bTryToReuseSRSId = true;
+        if( EQUAL( pszAuthorityName, "EPSG") )
+        {
+            OGRSpatialReference oSRS_EPSG;
+            if( GDALGPKGImportFromEPSG(&oSRS_EPSG, nAuthorityCode) == OGRERR_NONE )
+            {
+                if( !poSRS->IsSame(&oSRS_EPSG, apszIsSameOptions) &&
+                    CPLTestBool(CPLGetConfigOption("OGR_GPKG_CHECK_SRS", "YES")) )
+                {
+                    bTryToReuseSRSId = false;
+                    CPLError(CE_Warning, CPLE_AppDefined,
+                        "Passed SRS uses %s:%d identification, but its "
+                        "definition is not compatible with the "
+                        "official definition of the object. "
+                        "Registering it as a non-%s entry into the database.",
+                        pszAuthorityName, nAuthorityCode, pszAuthorityName);
+                    pszAuthorityName = nullptr;
+                    nAuthorityCode = 0;
+                }
+            }
+        }
+        if( bTryToReuseSRSId )
+        {
+            // No match, but maybe we can use the nAuthorityCode as the nSRSId?
+            pszSQL = sqlite3_mprintf(
+                            "SELECT Count(*) FROM gpkg_spatial_ref_sys WHERE "
+                            "srs_id = %d", nAuthorityCode );
+
+            // Yep, we can!
+            if ( SQLGetInteger(hDB, pszSQL, nullptr) == 0 )
+                bCanUseAuthorityCode = true;
+            sqlite3_free(pszSQL);
+        }
     }
 
     if( !m_bHasDefinition12_063 && pszWKT1 == nullptr && pszWKT2 != nullptr )
     {
         if( !ConvertGpkgSpatialRefSysToExtensionWkt2() )
         {
-            delete poSRS;
-            CPLFree(pszWKT1);
-            CPLFree(pszWKT2);
             return DEFAULT_SRID;
         }
     }
@@ -591,8 +692,8 @@ int GDALGeoPackageDataset::GetSrsId(const OGRSpatialReference& oSRS)
                 "definition, definition_12_063) VALUES "
                 "('%q', %d, upper('%q'), %d, '%q', '%q')",
                 GetSrsName(*poSRS), nSRSId, pszAuthorityName, nAuthorityCode,
-                pszWKT1 ? pszWKT1 : "undefined",
-                pszWKT2 ? pszWKT2 : "undefined" );
+                pszWKT1 ? pszWKT1.get() : "undefined",
+                pszWKT2 ? pszWKT2.get() : "undefined" );
         }
         else
         {
@@ -602,8 +703,8 @@ int GDALGeoPackageDataset::GetSrsId(const OGRSpatialReference& oSRS)
                 "definition, definition_12_063) VALUES "
                 "('%q', %d, upper('%q'), %d, '%q', '%q')",
                 GetSrsName(*poSRS), nSRSId, "NONE", nSRSId,
-                pszWKT1 ? pszWKT1 : "undefined",
-                pszWKT2 ? pszWKT2 : "undefined" );
+                pszWKT1 ? pszWKT1.get() : "undefined",
+                pszWKT2 ? pszWKT2.get() : "undefined" );
         }
     }
     else
@@ -615,7 +716,7 @@ int GDALGeoPackageDataset::GetSrsId(const OGRSpatialReference& oSRS)
                 "(srs_name,srs_id,organization,organization_coordsys_id,"
                 "definition) VALUES ('%q', %d, upper('%q'), %d, '%q')",
                 GetSrsName(*poSRS), nSRSId, pszAuthorityName, nAuthorityCode,
-                pszWKT1 ? pszWKT1 : "undefined" );
+                pszWKT1 ? pszWKT1.get() : "undefined" );
         }
         else
         {
@@ -624,7 +725,7 @@ int GDALGeoPackageDataset::GetSrsId(const OGRSpatialReference& oSRS)
                 "(srs_name,srs_id,organization,organization_coordsys_id,"
                 "definition) VALUES ('%q', %d, upper('%q'), %d, '%q')",
                 GetSrsName(*poSRS), nSRSId, "NONE", nSRSId,
-                pszWKT1 ? pszWKT1 : "undefined" );
+                pszWKT1 ? pszWKT1.get() : "undefined" );
         }
     }
 
@@ -632,10 +733,7 @@ int GDALGeoPackageDataset::GetSrsId(const OGRSpatialReference& oSRS)
     CPL_IGNORE_RET_VAL( SQLCommand(hDB, pszSQL) );
 
     // Free everything that was allocated.
-    CPLFree(pszWKT1);
-    CPLFree(pszWKT2);
     sqlite3_free(pszSQL);
-    delete poSRS;
 
     return nSRSId;
 }
@@ -751,7 +849,7 @@ GDALGeoPackageDataset::~GDALGeoPackageDataset()
 
 bool GDALGeoPackageDataset::ICanIWriteBlock()
 {
-    if( !bUpdate )
+    if( !GetUpdate() )
     {
         CPLError(CE_Failure, CPLE_NotSupported,
                  "IWriteBlock() not supported on dataset opened in read-only mode");
@@ -994,8 +1092,7 @@ int GDALGeoPackageDataset::Open( GDALOpenInfo* poOpenInfo )
                                     poOpenInfo->nHeaderBytes);
     }
 
-    bUpdate = poOpenInfo->eAccess == GA_Update;
-    eAccess = poOpenInfo->eAccess; /* hum annoying duplication */
+    eAccess = poOpenInfo->eAccess;
     m_pszFilename = CPLStrdup( osFilename );
 
 #ifdef ENABLE_SQL_GPKG_FORMAT
@@ -1101,7 +1198,7 @@ int GDALGeoPackageDataset::Open( GDALOpenInfo* poOpenInfo )
         }
 
         /* See if we can open the SQLite database */
-        if( !OpenOrCreateDB(bUpdate
+        if( !OpenOrCreateDB(GetUpdate()
                         ? SQLITE_OPEN_READWRITE
                         : SQLITE_OPEN_READONLY) )
             return FALSE;
@@ -1574,7 +1671,7 @@ bool GDALGeoPackageDataset::AllocCachedTiles()
 
     const int nCacheCount =
         (m_nShiftXPixelsMod != 0 || m_nShiftYPixelsMod != 0) ? 4 :
-        (bUpdate && m_eDT == GDT_Byte) ? 2 : 1;
+        (GetUpdate() && m_eDT == GDT_Byte) ? 2 : 1;
 
     m_pabyCachedTiles = (GByte*) VSI_MALLOC3_VERBOSE(
         nCacheCount * (m_eDT == GDT_Byte ? 4 : 1) * m_nDTSize,
@@ -1637,7 +1734,6 @@ bool GDALGeoPackageDataset::InitRaster( GDALGeoPackageDataset* poParentDS,
     if( poParentDS )
     {
         m_poParentDS = poParentDS;
-        bUpdate = poParentDS->bUpdate;
         eAccess = poParentDS->eAccess;
         hDB = poParentDS->hDB;
         m_eTF = poParentDS->m_eTF;
@@ -1787,6 +1883,7 @@ bool GDALGeoPackageDataset::OpenRaster( const char* pszTableName,
                 {
                     SetDataType(GDT_Int16);
                 }
+                // coverity[tainted_data]
                 else if( dfOffset == -32767.0 && !osDataNull.empty() &&
                          CPLAtof(osDataNull) == 65535.0 )
                     // Given that we will map the nodata value to -32768
@@ -1799,6 +1896,7 @@ bool GDALGeoPackageDataset::OpenRaster( const char* pszTableName,
             // final integer result.
             if( m_eDT != GDT_Float32 )
             {
+                // coverity[tainted_data]
                 if( dfScale == 1.0 && dfOffset == -32768.0 &&
                     !osDataNull.empty() &&
                     CPLAtof(osDataNull) == 65535.0 )
@@ -1904,7 +2002,7 @@ bool GDALGeoPackageDataset::OpenRaster( const char* pszTableName,
     const char* pszZoomLevel =  CSLFetchNameValue(papszOpenOptionsIn, "ZOOM_LEVEL");
     if( pszZoomLevel )
     {
-        if( bUpdate )
+        if( GetUpdate() )
             osSQL += CPLSPrintf(" AND zoom_level <= %d", atoi(pszZoomLevel));
         else
         {
@@ -1913,7 +2011,7 @@ bool GDALGeoPackageDataset::OpenRaster( const char* pszTableName,
         }
     }
     // In read-only mode, only lists non empty zoom levels
-    else if( !bUpdate )
+    else if( !GetUpdate() )
     {
         osSQL += CPLSPrintf(" AND EXISTS(SELECT 1 FROM %s WHERE zoom_level = tm.zoom_level LIMIT 1)",
                             osQuotedTableName.c_str());
@@ -1937,7 +2035,7 @@ bool GDALGeoPackageDataset::OpenRaster( const char* pszTableName,
             SQLResultFree(&oResult);
             osSQL = pszSQL;
             osSQL += " ORDER BY zoom_level DESC";
-            if( !bUpdate )
+            if( !GetUpdate() )
                 osSQL += " LIMIT 1";
             err = SQLQuery(hDB, osSQL.c_str(), &oResult);
         }
@@ -2071,7 +2169,7 @@ bool GDALGeoPackageDataset::OpenRaster( const char* pszTableName,
     const char* pszTF = CSLFetchNameValue(papszOpenOptionsIn, "TILE_FORMAT");
     if( pszTF )
     {
-        if( !bUpdate )
+        if( !GetUpdate() )
         {
             CPLError(CE_Warning, CPLE_AppDefined,
                      "TILE_FORMAT open option ignored in read-only mode");
@@ -3685,8 +3783,7 @@ int GDALGeoPackageDataset::Create( const char * pszFilename,
     }
     m_pszFilename = CPLStrdup(pszFilename);
     m_bNew = true;
-    bUpdate = TRUE;
-    eAccess = GA_Update; /* hum annoying duplication */
+    eAccess = GA_Update;
 
     // for test/debug purposes only. true is the nominal value
     m_bPNGSupports2Bands = CPLTestBool(CPLGetConfigOption("GPKG_PNG_SUPPORTS_2BANDS", "TRUE"));
@@ -5006,7 +5103,7 @@ OGRLayer* GDALGeoPackageDataset::ICreateLayer( const char * pszLayerName,
 /* -------------------------------------------------------------------- */
 /*      Verify we are in update mode.                                   */
 /* -------------------------------------------------------------------- */
-    if( !bUpdate )
+    if( !GetUpdate() )
     {
         CPLError( CE_Failure, CPLE_NoWriteAccess,
                   "Data source %s opened read-only.\n"
@@ -5290,7 +5387,7 @@ OGRErr GDALGeoPackageDataset::DeleteLayerCommon(const char* pszLayerName)
 
 OGRErr GDALGeoPackageDataset::DeleteLayer( int iLayer )
 {
-    if( !bUpdate || iLayer < 0 || iLayer >= m_nLayers )
+    if( !GetUpdate() || iLayer < 0 || iLayer >= m_nLayers )
         return OGRERR_FAILURE;
 
     m_papoLayers[iLayer]->ResetReading();
@@ -5463,14 +5560,14 @@ int GDALGeoPackageDataset::TestCapability( const char * pszCap )
          EQUAL(pszCap,ODsCDeleteLayer) ||
          EQUAL(pszCap,"RenameLayer") )
     {
-         return bUpdate;
+         return GetUpdate();
     }
     else if( EQUAL(pszCap,ODsCCurveGeometries) )
         return TRUE;
     else if( EQUAL(pszCap,ODsCMeasuredGeometries) )
         return TRUE;
     else if( EQUAL(pszCap,ODsCRandomLayerWrite) )
-        return bUpdate;
+        return GetUpdate();
 
     return OGRSQLiteBaseDataSource::TestCapability(pszCap);
 }

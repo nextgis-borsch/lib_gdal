@@ -6,7 +6,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2000, Frank Warmerdam
- * Copyright (c) 2008-2013, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2008-2013, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -81,6 +81,37 @@ struct OGRCoordinateTransformationOptions::Private
 OGRCoordinateTransformationOptions::OGRCoordinateTransformationOptions():
     d(new Private())
 {
+}
+
+/************************************************************************/
+/*                  OGRCoordinateTransformationOptions()                */
+/************************************************************************/
+
+/** \brief Copy constructor
+ *
+ * @since GDAL 3.1
+ */
+OGRCoordinateTransformationOptions::OGRCoordinateTransformationOptions(
+    const OGRCoordinateTransformationOptions& other):
+        d(new Private(*(other.d)))
+{}
+
+/************************************************************************/
+/*                          operator =()                                */
+/************************************************************************/
+
+/** \brief Assignment operator
+ *
+ * @since GDAL 3.1
+ */
+OGRCoordinateTransformationOptions&
+    OGRCoordinateTransformationOptions::operator= (const OGRCoordinateTransformationOptions& other)
+{
+    if( this != &other )
+    {
+        *d = *(other.d);
+    }
+    return *this;
 }
 
 /************************************************************************/
@@ -274,10 +305,9 @@ int OCTCoordinateTransformationOptionsSetOperation(
 /*                              OGRProjCT                               */
 /************************************************************************/
 
+//! @cond Doxygen_Suppress
 class OGRProjCT : public OGRCoordinateTransformation
 {
-    CPL_DISALLOW_COPY_ASSIGN(OGRProjCT)
-
     OGRSpatialReference *poSRSSource = nullptr;
     bool        bSourceLatLong = false;
     bool        bSourceWrap = false;
@@ -370,6 +400,13 @@ class OGRProjCT : public OGRCoordinateTransformation
     };
     std::vector<Transformation> m_oTransformations{};
     int m_iCurTransformation = -1;
+    OGRCoordinateTransformationOptions m_options{};
+
+    OGRProjCT(const OGRProjCT& other)
+    {
+        Initialize(other.poSRSSource, other.poSRSTarget, other.m_options);
+    }
+    OGRProjCT& operator= (const OGRProjCT& ) = delete;
 
 public:
     OGRProjCT();
@@ -389,7 +426,12 @@ public:
     bool GetEmitErrors() const override { return m_bEmitErrors; }
     void SetEmitErrors( bool bEmitErrors ) override
         { m_bEmitErrors = bEmitErrors; }
+
+    OGRCoordinateTransformation* Clone() const override {
+        return new OGRProjCT(*this);
+    }
 };
+//! @endcond
 
 /************************************************************************/
 /*                 OCTDestroyCoordinateTransformation()                 */
@@ -634,6 +676,7 @@ OCTNewCoordinateTransformationEx(
 /*                             OGRProjCT()                             */
 /************************************************************************/
 
+//! @cond Doxygen_Suppress
 OGRProjCT::OGRProjCT()
 {
 }
@@ -680,6 +723,8 @@ int OGRProjCT::Initialize( const OGRSpatialReference * poSourceIn,
                            const OGRCoordinateTransformationOptions& options )
 
 {
+    m_options = options;
+
     if( poSourceIn == nullptr || poTargetIn == nullptr )
     {
         if( options.d->osCoordOperation.empty() )
@@ -722,13 +767,19 @@ int OGRProjCT::Initialize( const OGRSpatialReference * poSourceIn,
     {
         bSourceWrap = true;
         bTargetWrap = true;
+        // coverity[tainted_data]
         dfSourceWrapLong = dfTargetWrapLong =
             CPLAtof(CPLGetConfigOption( "CENTER_LONG", "" ));
         CPLDebug( "OGRCT", "Wrap at %g.", dfSourceWrapLong );
     }
 
-    const char *pszCENTER_LONG =
-        poSRSSource ? poSRSSource->GetExtension( "GEOGCS", "CENTER_LONG" ) : nullptr;
+    const char *pszCENTER_LONG;
+    {
+        CPLErrorStateBackuper oErrorStateBackuper;
+        CPLErrorHandlerPusher oErrorHandler(CPLQuietErrorHandler);
+        pszCENTER_LONG =
+            poSRSSource ? poSRSSource->GetExtension( "GEOGCS", "CENTER_LONG" ) : nullptr;
+    }
     if( pszCENTER_LONG != nullptr )
     {
         dfSourceWrapLong = CPLAtof(pszCENTER_LONG);
@@ -742,7 +793,12 @@ int OGRProjCT::Initialize( const OGRSpatialReference * poSourceIn,
         CPLDebug( "OGRCT", "Wrap source at %g.", dfSourceWrapLong );
     }
 
-    pszCENTER_LONG = poSRSTarget ? poSRSTarget->GetExtension( "GEOGCS", "CENTER_LONG" ) : nullptr;
+    {
+        CPLErrorStateBackuper oErrorStateBackuper;
+        CPLErrorHandlerPusher oErrorHandler(CPLQuietErrorHandler);
+        pszCENTER_LONG = poSRSTarget ?
+            poSRSTarget->GetExtension( "GEOGCS", "CENTER_LONG" ) : nullptr;
+    }
     if( pszCENTER_LONG != nullptr )
     {
         dfTargetWrapLong = CPLAtof(pszCENTER_LONG);
@@ -761,11 +817,17 @@ int OGRProjCT::Initialize( const OGRSpatialReference * poSourceIn,
 
     // The threshold is experimental. Works well with the cases of ticket #2305.
     if( bSourceLatLong )
+    {
+        // coverity[tainted_data]
         dfThreshold = CPLAtof(CPLGetConfigOption( "THRESHOLD", ".1" ));
+    }
     else
+    {
         // 1 works well for most projections, except for +proj=aeqd that
         // requires a tolerance of 10000.
+        // coverity[tainted_data]
         dfThreshold = CPLAtof(CPLGetConfigOption( "THRESHOLD", "10000" ));
+    }
 
     // Detect webmercator to WGS84
     OGRAxisOrientation orientAxis0, orientAxis1;
@@ -917,13 +979,13 @@ int OGRProjCT::Initialize( const OGRSpatialReference * poSourceIn,
             return true;
         };
 
-        const char* const apszOptions[] = { "FORMAT=WKT2_2018", nullptr };
-        char* pszSrcSRS = nullptr;
+        const auto exportSRSToText = [&CanUseAuthorityDef](const OGRSpatialReference* poSRS)
         {
+            char* pszText = nullptr;
             // If we have a AUTH:CODE attached, use it to retrieve the full
             // definition in case a trip to WKT1 has lost the area of use.
-            const char* pszAuth = poSRSSource->GetAuthorityName(nullptr);
-            const char* pszCode = poSRSSource->GetAuthorityCode(nullptr);
+            const char* pszAuth = poSRS->GetAuthorityName(nullptr);
+            const char* pszCode = poSRS->GetAuthorityCode(nullptr);
             if( pszAuth && pszCode )
             {
                 CPLString osAuthCode(pszAuth);
@@ -931,48 +993,33 @@ int OGRProjCT::Initialize( const OGRSpatialReference * poSourceIn,
                 osAuthCode += pszCode;
                 OGRSpatialReference oTmpSRS;
                 oTmpSRS.SetFromUserInput(osAuthCode);
-                oTmpSRS.SetDataAxisToSRSAxisMapping(poSRSSource->GetDataAxisToSRSAxisMapping());
-                if( oTmpSRS.IsSame(poSRSSource) )
+                oTmpSRS.SetDataAxisToSRSAxisMapping(poSRS->GetDataAxisToSRSAxisMapping());
+                if( oTmpSRS.IsSame(poSRS) )
                 {
-                    if( CanUseAuthorityDef(poSRSSource, &oTmpSRS, pszAuth) )
+                    if( CanUseAuthorityDef(poSRS, &oTmpSRS, pszAuth) )
                     {
-                        pszSrcSRS = CPLStrdup(osAuthCode);
+                        pszText = CPLStrdup(osAuthCode);
                     }
                 }
             }
-            if( pszSrcSRS == nullptr )
+            if( pszText == nullptr )
             {
-                poSRSSource->exportToWkt(&pszSrcSRS, apszOptions);
+                CPLErrorStateBackuper oErrorStateBackuper;
+                CPLErrorHandlerPusher oErrorHandler(CPLQuietErrorHandler);
+                const char *pszProjName = poSRS->GetAttrValue("PROJECTION");
+                const char* const apszOptionsWKT2_2018[] = { "FORMAT=WKT2_2018", nullptr };
+                const char* const apszOptionsWKT1[] = { "FORMAT=WKT1_GDAL", nullptr };
+                // NetCDF hack
+                if( pszProjName && EQUAL(pszProjName, "Rotated_pole") )
+                    poSRS->exportToWkt(&pszText, apszOptionsWKT1);
+                else
+                    poSRS->exportToWkt(&pszText, apszOptionsWKT2_2018);
             }
-        }
+            return pszText;
+        };
 
-        char* pszTargetSRS = nullptr;
-        {
-            // If we have a AUTH:CODE attached, use it to retrieve the full
-            // definition in case a trip to WKT1 has lost the area of use.
-            const char* pszAuth = poSRSTarget->GetAuthorityName(nullptr);
-            const char* pszCode = poSRSTarget->GetAuthorityCode(nullptr);
-            if( pszAuth && pszCode )
-            {
-                CPLString osAuthCode(pszAuth);
-                osAuthCode += ':';
-                osAuthCode += pszCode;
-                OGRSpatialReference oTmpSRS;
-                oTmpSRS.SetFromUserInput(osAuthCode);
-                oTmpSRS.SetDataAxisToSRSAxisMapping(poSRSTarget->GetDataAxisToSRSAxisMapping());
-                if( oTmpSRS.IsSame(poSRSTarget) )
-                {
-                    if( CanUseAuthorityDef(poSRSTarget, &oTmpSRS, pszAuth) )
-                    {
-                        pszTargetSRS = CPLStrdup(osAuthCode);
-                    }
-                }
-            }
-            if( pszTargetSRS == nullptr )
-            {
-                poSRSTarget->exportToWkt(&pszTargetSRS, apszOptions);
-            }
-        }
+        char* pszSrcSRS = exportSRSToText(poSRSSource);
+        char* pszTargetSRS = exportSRSToText(poSRSTarget);
 
         if( m_eStrategy == Strategy::PROJ )
         {
@@ -1435,29 +1482,6 @@ int OGRCoordinateTransformation::Transform(
         CPLFree( pabSuccess );
 
     return bOverallSuccess;
-}
-
-/************************************************************************/
-/*                            OCTTransform()                            */
-/************************************************************************/
-
-/** Transform an array of points
- *
- * @param hTransform Transformation object
- * @param nCount Number of points
- * @param x Array of nCount x values.
- * @param y Array of nCount y values.
- * @param z Array of nCount z values.
- * @return TRUE or FALSE
- */
-int CPL_STDCALL OCTTransform( OGRCoordinateTransformationH hTransform,
-                              int nCount, double *x, double *y, double *z )
-
-{
-    VALIDATE_POINTER1( hTransform, "OCTTransform", FALSE );
-
-    return OGRCoordinateTransformation::FromHandle(hTransform)->
-        Transform( nCount, x, y, z );
 }
 
 /************************************************************************/
@@ -2015,6 +2039,30 @@ int OGRProjCT::Transform( int nCount, double *x, double *y, double *z,
     }
 
     return TRUE;
+}
+//! @endcond
+
+/************************************************************************/
+/*                            OCTTransform()                            */
+/************************************************************************/
+
+/** Transform an array of points
+ *
+ * @param hTransform Transformation object
+ * @param nCount Number of points
+ * @param x Array of nCount x values.
+ * @param y Array of nCount y values.
+ * @param z Array of nCount z values.
+ * @return TRUE or FALSE
+ */
+int CPL_STDCALL OCTTransform( OGRCoordinateTransformationH hTransform,
+                              int nCount, double *x, double *y, double *z )
+
+{
+    VALIDATE_POINTER1( hTransform, "OCTTransform", FALSE );
+
+    return OGRCoordinateTransformation::FromHandle(hTransform)->
+        Transform( nCount, x, y, z );
 }
 
 /************************************************************************/

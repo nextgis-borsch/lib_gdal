@@ -6,7 +6,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1998, Frank Warmerdam
- * Copyright (c) 2007-2014, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2007-2014, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -72,6 +72,7 @@ void CPL_STDCALL GDALAllRegister()
 
 #ifdef FRMT_gtiff
     GDALRegister_GTiff();
+    GDALRegister_COG();
 #endif
 
 #ifdef FRMT_nitf
@@ -112,6 +113,7 @@ void CPL_STDCALL GDALAllRegister()
 #ifdef FRMT_aaigrid
     GDALRegister_AAIGrid();
     GDALRegister_GRASSASCIIGrid();
+    GDALRegister_ISG();
 #endif
 
 #ifdef FRMT_sdts
@@ -403,6 +405,9 @@ void CPL_STDCALL GDALAllRegister()
     GDALRegister_TileDB();
 #endif
 
+#ifdef FRMT_rdb
+    GDALRegister_RDB();
+#endif
 /* -------------------------------------------------------------------- */
 /*      Put raw formats at the end of the list. These drivers support   */
 /*      various ASCII-header labeled formats, so the driver could be    */
@@ -608,6 +613,8 @@ void CPL_STDCALL GDALAllRegister()
 #ifdef FRMT_wcs
     GDALRegister_HTTP();
 #endif
+
+    GetGDALDriverManager()->AutoLoadPythonDrivers();
 
 /* -------------------------------------------------------------------- */
 /*      Deregister any drivers explicitly marked as suppressed by the   */

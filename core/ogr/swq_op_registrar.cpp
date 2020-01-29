@@ -7,7 +7,7 @@
  *
  ******************************************************************************
  * Copyright (C) 2010 Frank Warmerdam <warmerdam@pobox.com>
- * Copyright (c) 2010-2013, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2010-2013, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -29,7 +29,7 @@
  ****************************************************************************/
 
 #include "cpl_port.h"
-#include "swq.h"
+#include "ogr_swq.h"
 
 #include <cstddef>
 
@@ -54,6 +54,7 @@ static const swq_operation swq_apsOperations[] =
     { "<", SWQ_LT , SWQGeneralEvaluator, SWQGeneralChecker },
     { ">", SWQ_GT , SWQGeneralEvaluator, SWQGeneralChecker },
     { "LIKE", SWQ_LIKE , SWQGeneralEvaluator, SWQGeneralChecker },
+    { "ILIKE", SWQ_ILIKE , SWQGeneralEvaluator, SWQGeneralChecker },
     { "IS NULL", SWQ_ISNULL , SWQGeneralEvaluator, SWQGeneralChecker },
     { "IN", SWQ_IN , SWQGeneralEvaluator, SWQGeneralChecker },
     { "BETWEEN", SWQ_BETWEEN , SWQGeneralEvaluator, SWQGeneralChecker },

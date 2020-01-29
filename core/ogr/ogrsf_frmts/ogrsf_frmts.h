@@ -7,7 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1999,  Les Technologies SoftMap Inc.
- * Copyright (c) 2007-2014, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2007-2014, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -446,6 +446,7 @@ void CPL_DLL RegisterOGRDGN();
 void CPL_DLL RegisterOGRGML();
 void CPL_DLL RegisterOGRLIBKML();
 void CPL_DLL RegisterOGRKML();
+void CPL_DLL RegisterOGRFlatGeobuf();
 void CPL_DLL RegisterOGRGeoJSON();
 void CPL_DLL RegisterOGRGeoJSONSeq();
 void CPL_DLL RegisterOGRESRIJSON();
@@ -485,14 +486,13 @@ void CPL_DLL RegisterOGRSUA();
 void CPL_DLL RegisterOGROpenAir();
 void CPL_DLL RegisterOGRPDS();
 void CPL_DLL RegisterOGRWFS();
-void CPL_DLL RegisterOGRWFS3();
+void CPL_DLL RegisterOGROAPIF();
 void CPL_DLL RegisterOGRSOSI();
 void CPL_DLL RegisterOGRHTF();
 void CPL_DLL RegisterOGRAeronavFAA();
 void CPL_DLL RegisterOGRGeomedia();
 void CPL_DLL RegisterOGRMDB();
 void CPL_DLL RegisterOGREDIGEO();
-void CPL_DLL RegisterOGRGFT();
 void CPL_DLL RegisterOGRSVG();
 void CPL_DLL RegisterOGRCouchDB();
 void CPL_DLL RegisterOGRCloudant();

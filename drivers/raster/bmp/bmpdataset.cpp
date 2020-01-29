@@ -7,7 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2002, Andrey Kiselev <dron@remotesensing.org>
- * Copyright (c) 2007-2010, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2007-2010, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -219,7 +219,7 @@ static int findfirstonbit( GUInt32 n )
 /* ==================================================================== */
 /************************************************************************/
 
-class BMPDataset : public GDALPamDataset
+class BMPDataset final: public GDALPamDataset
 {
     friend class BMPRasterBand;
     friend class BMPComprRasterBand;
@@ -263,7 +263,7 @@ class BMPDataset : public GDALPamDataset
 /* ==================================================================== */
 /************************************************************************/
 
-class BMPRasterBand : public GDALPamRasterBand
+class BMPRasterBand CPL_NON_FINAL: public GDALPamRasterBand
 {
     friend class BMPDataset;
 
@@ -342,13 +342,15 @@ CPLErr BMPRasterBand::IReadBlock( int /* nBlockXOff */,
                                   void * pImage )
 {
     BMPDataset  *poGDS = (BMPDataset *) poDS;
-    GUInt32 iScanOffset = 0;
+    vsi_l_offset iScanOffset = 0;
 
     if ( poGDS->sInfoHeader.iHeight > 0 )
         iScanOffset = poGDS->sFileHeader.iOffBits +
-            ( poGDS->GetRasterYSize() - nBlockYOff - 1 ) * nScanSize;
+            ( poGDS->GetRasterYSize() - nBlockYOff - 1 ) *
+                static_cast<vsi_l_offset>(nScanSize);
     else
-        iScanOffset = poGDS->sFileHeader.iOffBits + nBlockYOff * nScanSize;
+        iScanOffset = poGDS->sFileHeader.iOffBits +
+            nBlockYOff * static_cast<vsi_l_offset>(nScanSize);
 
     if ( VSIFSeekL( poGDS->fp, iScanOffset, SEEK_SET ) < 0 )
     {
@@ -362,8 +364,8 @@ CPLErr BMPRasterBand::IReadBlock( int /* nBlockXOff */,
         else
         {
             CPLError( CE_Failure, CPLE_FileIO,
-                      "Can't seek to offset %ld in input file to read data.",
-                      static_cast<long>(iScanOffset) );
+                      "Can't seek to offset " CPL_FRMT_GUIB " in input file to read data.",
+                      iScanOffset );
             return CE_Failure;
         }
     }
@@ -378,8 +380,8 @@ CPLErr BMPRasterBand::IReadBlock( int /* nBlockXOff */,
         else
         {
             CPLError( CE_Failure, CPLE_FileIO,
-                      "Can't read from offset %ld in input file.",
-                      static_cast<long>(iScanOffset) );
+                      "Can't read from offset " CPL_FRMT_GUIB " in input file.",
+                      iScanOffset );
             return CE_Failure;
         }
     }
@@ -550,13 +552,14 @@ CPLErr BMPRasterBand::IWriteBlock( int nBlockXOff, int nBlockYOff,
                && nBlockYOff >= 0
                && pImage != nullptr );
 
-    GUInt32 iScanOffset = poGDS->sFileHeader.iOffBits +
-            ( poGDS->GetRasterYSize() - nBlockYOff - 1 ) * nScanSize;
+    vsi_l_offset iScanOffset = poGDS->sFileHeader.iOffBits +
+            ( poGDS->GetRasterYSize() - nBlockYOff - 1 ) *
+                static_cast<vsi_l_offset>(nScanSize);
     if ( VSIFSeekL( poGDS->fp, iScanOffset, SEEK_SET ) < 0 )
     {
         CPLError( CE_Failure, CPLE_FileIO,
-                  "Can't seek to offset %ld in output file to write data.\n%s",
-                  (long) iScanOffset, VSIStrerror( errno ) );
+                  "Can't seek to offset " CPL_FRMT_GUIB " in output file to write data.\n%s",
+                  iScanOffset, VSIStrerror( errno ) );
         return CE_Failure;
     }
 
@@ -681,7 +684,7 @@ GDALColorInterp BMPRasterBand::GetColorInterpretation()
 /* ==================================================================== */
 /************************************************************************/
 
-class BMPComprRasterBand : public BMPRasterBand
+class BMPComprRasterBand final: public BMPRasterBand
 {
     friend class BMPDataset;
 
@@ -1141,7 +1144,15 @@ GDALDataset *BMPDataset::Open( GDALOpenInfo * poOpenInfo )
         VSIFReadL( &poDS->sInfoHeader.iHeight, 1, 4, poDS->fp );
         VSIFReadL( &poDS->sInfoHeader.iPlanes, 1, 2, poDS->fp );
         VSIFReadL( &poDS->sInfoHeader.iBitCount, 1, 2, poDS->fp );
-        VSIFReadL( &poDS->sInfoHeader.iCompression, 1, 4, poDS->fp );
+        unsigned int iCompression;
+        VSIFReadL( &iCompression, 1, 4, poDS->fp );
+        if( iCompression > BMPC_PNG )
+        {
+            CPLError(CE_Failure, CPLE_NotSupported, "Unsupported compression");
+            delete poDS;
+            return nullptr;
+        }
+        poDS->sInfoHeader.iCompression = static_cast<BMPComprMethod>(iCompression);
         VSIFReadL( &poDS->sInfoHeader.iSizeImage, 1, 4, poDS->fp );
         VSIFReadL( &poDS->sInfoHeader.iXPelsPerMeter, 1, 4, poDS->fp );
         VSIFReadL( &poDS->sInfoHeader.iYPelsPerMeter, 1, 4, poDS->fp );
@@ -1274,7 +1285,7 @@ GDALDataset *BMPDataset::Open( GDALOpenInfo * poOpenInfo )
                 break;
             }
 
-            if( VSIFSeekL( poDS->fp, BFH_SIZE + poDS->sInfoHeader.iSize, SEEK_SET ) != 0 ||
+            if( VSIFSeekL( poDS->fp, BFH_SIZE + static_cast<vsi_l_offset>(poDS->sInfoHeader.iSize), SEEK_SET ) != 0 ||
                 VSIFReadL( poDS->pabyColorTable, poDS->nColorElems,
                            nColorTableSize, poDS->fp ) != (size_t)nColorTableSize )
             {

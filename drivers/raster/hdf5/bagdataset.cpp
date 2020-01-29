@@ -48,14 +48,6 @@
 
 CPL_CVSID("$Id$")
 
-#if defined(H5_VERSION_GE) // added in 1.8.7
-# if !H5_VERSION_GE(1,8,13)
-#  define H5free_memory(x) CPL_IGNORE_RET_VAL(x)
-# endif
-#else
-#  define H5free_memory(x) CPL_IGNORE_RET_VAL(x)
-#endif
-
 struct BAGRefinementGrid
 {
     unsigned nIndex = 0;
@@ -237,7 +229,7 @@ public:
 /* ==================================================================== */
 /************************************************************************/
 
-class BAGBaseBand: public GDALRasterBand
+class BAGBaseBand CPL_NON_FINAL: public GDALRasterBand
 {
     protected:
         bool        m_bHasNoData = false;
@@ -3306,19 +3298,19 @@ void BAGDataset::LoadMetadata()
     if( psGeo != nullptr )
     {
         CPLString osResHeight, osResWidth;
-        for (const auto* psIter = psGeo->psChild; psIter; psIter = psIter->psNext)
+        for( const auto* psIter = psGeo->psChild; psIter; psIter = psIter->psNext )
         {
-            if (strcmp(psIter->pszValue, "axisDimensionProperties") == 0)
+            if( strcmp(psIter->pszValue, "axisDimensionProperties") == 0 )
             {
                 const char* pszDim = CPLGetXMLValue(
                     psIter, "MD_Dimension.dimensionName.MD_DimensionNameTypeCode", nullptr);
                 const char* pszRes = CPLGetXMLValue(
                     psIter, "MD_Dimension.resolution.Measure", nullptr);
-                if (pszDim && EQUAL(pszDim, "row") && pszRes)
+                if( pszDim && EQUAL(pszDim, "row") && pszRes )
                 {
                     osResHeight = pszRes;
                 }
-                else if (pszDim && EQUAL(pszDim, "column") && pszRes)
+                else if( pszDim && EQUAL(pszDim, "column") && pszRes )
                 {
                     osResWidth = pszRes;
                 }
@@ -3923,6 +3915,7 @@ CPLString BAGCreator::GenerateMatadata(GDALDataset *poSrcDS,
     double dfMaxX = dfMinX + (poSrcDS->GetRasterXSize() - 1) * adfGeoTransform[1];
     double dfMaxY = adfGeoTransform[3] + adfGeoTransform[5] / 2;
     double dfMinY = dfMaxY + (poSrcDS->GetRasterYSize() - 1) * adfGeoTransform[5];
+    
     if( adfGeoTransform[5] > 0 )
     {
         std::swap(dfMinY, dfMaxY);

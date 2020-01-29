@@ -6,7 +6,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1999, Frank Warmerdam
- * Copyright (c) 2008-2015, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2008-2015, Even Rouault <even dot rouault at spatialys.com>
  * Copyright (c) 2015, Faza Mahamood
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -54,6 +54,7 @@
 #include "cpl_vsi.h"
 #include "gdal.h"
 #include "gdal_alg.h"
+#include "gdal_alg_priv.h"
 #include "gdal_priv.h"
 #include "ogr_api.h"
 #include "ogr_core.h"
@@ -928,6 +929,15 @@ OGRFeatureDefn* OGRSplitListFieldLayer::GetLayerDefn()
 
 class GCPCoordTransformation : public OGRCoordinateTransformation
 {
+    GCPCoordTransformation(const GCPCoordTransformation& other):
+        hTransformArg(GDALCloneTransformer(other.hTransformArg)),
+        bUseTPS(other.bUseTPS),
+        poSRS(other.poSRS)
+    {
+        if( poSRS)
+            poSRS->Reference();
+    }
+
 public:
 
     void               *hTransformArg;
@@ -956,16 +966,17 @@ public:
             poSRS->Reference();
     }
 
+    OGRCoordinateTransformation* Clone() const override {
+        return new GCPCoordTransformation(*this);
+    }
+
     bool IsValid() const { return hTransformArg != nullptr; }
 
     virtual ~GCPCoordTransformation()
     {
         if( hTransformArg != nullptr )
         {
-            if( bUseTPS )
-                GDALDestroyTPSTransformer(hTransformArg);
-            else
-                GDALDestroyGCPTransformer(hTransformArg);
+            GDALDestroyTransformer(hTransformArg);
         }
         if( poSRS)
             poSRS->Dereference();
@@ -994,6 +1005,12 @@ public:
 
 class CompositeCT : public OGRCoordinateTransformation
 {
+    CompositeCT(const CompositeCT& other):
+        poCT1(other.poCT1 ? other.poCT1->Clone(): nullptr),
+        bOwnCT1(true),
+        poCT2(other.poCT2 ? other.poCT2->Clone(): nullptr),
+        bOwnCT2(true) {}
+
 public:
 
     OGRCoordinateTransformation* poCT1;
@@ -1015,6 +1032,10 @@ public:
             delete poCT1;
         if( bOwnCT2 )
             delete poCT2;
+    }
+
+    OGRCoordinateTransformation* Clone() const override {
+        return new CompositeCT(*this);
     }
 
     virtual OGRSpatialReference *GetSourceCS() override
@@ -1075,6 +1096,11 @@ public:
 
     ~AxisMappingCoordinateTransformation() override
     {
+    }
+
+    virtual OGRCoordinateTransformation *Clone() const override
+    {
+        return new AxisMappingCoordinateTransformation(*this);
     }
 
     virtual OGRSpatialReference *GetSourceCS() override
@@ -1932,7 +1958,7 @@ static GDALDataset* GDALVectorTranslateCreateCopy(
 /**
  * Converts vector data between file formats.
  *
- * This is the equivalent of the <a href="ogr2ogr.html">ogr2ogr</a> utility.
+ * This is the equivalent of the <a href="/programs/ogr2ogr.html">ogr2ogr</a> utility.
  *
  * GDALVectorTranslateOptions* must be allocated and freed with GDALVectorTranslateOptionsNew()
  * and GDALVectorTranslateOptionsFree() respectively.
@@ -2251,14 +2277,20 @@ GDALDatasetH GDALVectorTranslate( const char *pszDest, GDALDatasetH hDstDS, int 
                      psOptions->pszFormat);
         }
 
-        const char* pszOGRCompatFormat = psOptions->pszFormat;
+        CPLString osOGRCompatFormat(psOptions->pszFormat);
         // Special processing for non-unified drivers that have the same name
-        // as GDAL and OGR drivers
-        // Other candidates could be VRT, SDTS, OGDI and PDS, but they don't
-        // have write capabilities.
-        if( EQUAL(pszOGRCompatFormat, "GMT") )
-            pszOGRCompatFormat = "OGR_GMT";
-        poDriver = poDM->GetDriverByName(pszOGRCompatFormat);
+        // as GDAL and OGR drivers. GMT should become OGR_GMT.
+        // Other candidates could be VRT, SDTS and PDS, but they don't
+        // have write capabilities. But do the substitution to get a sensible
+        // error message
+        if( EQUAL(osOGRCompatFormat, "GMT") ||
+            EQUAL(osOGRCompatFormat, "VRT") |
+            EQUAL(osOGRCompatFormat, "SDTS") ||
+            EQUAL(osOGRCompatFormat, "PDS") )
+        {
+            osOGRCompatFormat = "OGR_" + osOGRCompatFormat;
+        }
+        poDriver = poDM->GetDriverByName(osOGRCompatFormat);
         if( poDriver == nullptr )
         {
             CPLError( CE_Failure, CPLE_AppDefined,
@@ -2618,7 +2650,10 @@ GDALDatasetH GDALVectorTranslate( const char *pszDest, GDALDatasetH hDstDS, int 
             VSIStatBufL sStat;
             if (EQUAL(poDriver->GetDescription(), "ESRI Shapefile") &&
                 psOptions->pszNewLayerName == nullptr &&
-                VSIStatL(osDestFilename, &sStat) == 0 && VSI_ISREG(sStat.st_mode))
+                VSIStatL(osDestFilename, &sStat) == 0 && VSI_ISREG(sStat.st_mode) &&
+                (EQUAL(CPLGetExtension(osDestFilename), "shp") ||
+                 EQUAL(CPLGetExtension(osDestFilename), "shz") ||
+                 EQUAL(CPLGetExtension(osDestFilename), "dbf")) )
             {
                 psOptions->pszNewLayerName = CPLStrdup(CPLGetBasename(osDestFilename));
             }
@@ -2699,8 +2734,12 @@ GDALDatasetH GDALVectorTranslate( const char *pszDest, GDALDatasetH hDstDS, int 
 /* -------------------------------------------------------------------- */
         VSIStatBufL  sStat;
         if (EQUAL(poDriver->GetDescription(), "ESRI Shapefile") &&
-            (CSLCount(psOptions->papszLayers) == 1 || nSrcLayerCount == 1) && psOptions->pszNewLayerName == nullptr &&
-            VSIStatL(osDestFilename, &sStat) == 0 && VSI_ISREG(sStat.st_mode))
+            (CSLCount(psOptions->papszLayers) == 1 || nSrcLayerCount == 1) &&
+            psOptions->pszNewLayerName == nullptr &&
+            VSIStatL(osDestFilename, &sStat) == 0 && VSI_ISREG(sStat.st_mode) &&
+            (EQUAL(CPLGetExtension(osDestFilename), "shp") ||
+             EQUAL(CPLGetExtension(osDestFilename), "shz") ||
+             EQUAL(CPLGetExtension(osDestFilename), "dbf")) )
         {
             psOptions->pszNewLayerName = CPLStrdup(CPLGetBasename(osDestFilename));
         }
@@ -2995,7 +3034,10 @@ GDALDatasetH GDALVectorTranslate( const char *pszDest, GDALDatasetH hDstDS, int 
         VSIStatBufL  sStat;
         if (EQUAL(poDriver->GetDescription(), "ESRI Shapefile") &&
             nLayerCount == 1 && psOptions->pszNewLayerName == nullptr &&
-            VSIStatL(osDestFilename, &sStat) == 0 && VSI_ISREG(sStat.st_mode))
+            VSIStatL(osDestFilename, &sStat) == 0 && VSI_ISREG(sStat.st_mode) &&
+            (EQUAL(CPLGetExtension(osDestFilename), "shp") ||
+             EQUAL(CPLGetExtension(osDestFilename), "shz") ||
+             EQUAL(CPLGetExtension(osDestFilename), "dbf")) )
         {
             psOptions->pszNewLayerName = CPLStrdup(CPLGetBasename(osDestFilename));
         }
@@ -4553,8 +4595,9 @@ int LayerTranslator::Translate( OGRFeature* poFeatureIn,
 
         psInfo->nFeaturesRead ++;
 
-        int nParts = 0;
         int nIters = 1;
+        std::unique_ptr<OGRGeometryCollection> poCollToExplode;
+        int iGeomCollToExplode = -1;
         if (bExplodeCollections)
         {
             OGRGeometry* poSrcGeometry;
@@ -4566,10 +4609,15 @@ int LayerTranslator::Translate( OGRFeature* poFeatureIn,
             if (poSrcGeometry &&
                 OGR_GT_IsSubClassOf(poSrcGeometry->getGeometryType(), wkbGeometryCollection) )
             {
-                nParts = poSrcGeometry->toGeometryCollection()->getNumGeometries();
-                nIters = nParts;
-                if (nIters == 0)
-                    nIters = 1;
+                const int nParts = poSrcGeometry->toGeometryCollection()->getNumGeometries();
+                if( nParts > 0 )
+                {
+                    iGeomCollToExplode = psInfo->iRequestedSrcGeomField >= 0 ?
+                        psInfo->iRequestedSrcGeomField : 0;
+                    poCollToExplode.reset(
+                        poFeature->StealGeometry(iGeomCollToExplode)->toGeometryCollection());
+                    nIters = nParts;
+                }
             }
         }
 
@@ -4679,18 +4727,20 @@ int LayerTranslator::Translate( OGRFeature* poFeatureIn,
 
             for( int iGeom = 0; iGeom < nDstGeomFieldCount; iGeom ++ )
             {
-                OGRGeometry* poDstGeometry = poDstFeature->StealGeometry(iGeom);
-                if (poDstGeometry == nullptr)
-                    continue;
+                OGRGeometry* poDstGeometry;
 
-                if (nParts > 0)
+                if( poCollToExplode && iGeom == iGeomCollToExplode )
                 {
-                    /* For -explodecollections, extract the iPart(th) of the geometry */
-                    OGRGeometry* poPart = poDstGeometry->toGeometryCollection()->getGeometryRef(iPart);
-                    poDstGeometry->toGeometryCollection()->removeGeometry(iPart, FALSE);
-                    delete poDstGeometry;
+                    OGRGeometry* poPart = poCollToExplode->getGeometryRef(0);
+                    poCollToExplode->removeGeometry(0, FALSE);
                     poDstGeometry = poPart;
                     assert(poDstGeometry);
+                }
+                else
+                {
+                    poDstGeometry = poDstFeature->StealGeometry(iGeom);
+                    if (poDstGeometry == nullptr)
+                        continue;
                 }
 
                 if (iSrcZField != -1)
@@ -4965,7 +5015,7 @@ static void RemoveSQLComments(char*& pszSQL)
  * allocates a GDALVectorTranslateOptions struct.
  *
  * @param papszArgv NULL terminated list of options (potentially including filename and open options too), or NULL.
- *                  The accepted options are the ones of the <a href="ogr2ogr.html">ogr2ogr</a> utility.
+ *                  The accepted options are the ones of the <a href="/programs/ogr2ogr.html">ogr2ogr</a> utility.
  * @param psOptionsForBinary (output) may be NULL (and should generally be NULL),
  *                           otherwise (gdal_translate_bin.cpp use case) must be allocated with
  *                           GDALVectorTranslateOptionsForBinaryNew() prior to this function. Will be

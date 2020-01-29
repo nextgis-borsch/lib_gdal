@@ -6,7 +6,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2002, Frank Warmerdam
- * Copyright (c) 2009-2014, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2009-2014, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -268,7 +268,6 @@ static bool ParseGMLCoordinates( const CPLXMLNode *psGeomNode,
 {
     const CPLXMLNode *psCoordinates =
         FindBareXMLChild( psGeomNode, "coordinates" );
-    int iCoord = 0;
 
 /* -------------------------------------------------------------------- */
 /*      Handle <coordinates> case.                                      */
@@ -316,7 +315,7 @@ static bool ParseGMLCoordinates( const CPLXMLNode *psGeomNode,
             if( strlen(pszTS) != 1 || (pszTS[0] >= '0' && pszTS[0] <= '9') )
             {
                 CPLError(CE_Failure, CPLE_AppDefined,
-                         "Wrong value for tes attribute");
+                         "Wrong value for ts attribute");
                 return false;
             }
             chTS = pszTS[0];
@@ -328,83 +327,117 @@ static bool ParseGMLCoordinates( const CPLXMLNode *psGeomNode,
             return true;
         }
 
-        while( *pszCoordString != '\0' )
+        int iCoord = 0;
+        const OGRwkbGeometryType eType = wkbFlatten(poGeometry->getGeometryType());
+        OGRSimpleCurve *poCurve =
+            (eType == wkbLineString || eType == wkbCircularString) ?
+                poGeometry->toSimpleCurve() : nullptr;
+        for( int iter = (eType == wkbPoint ? 1 : 0); iter < 2; iter++ )
         {
-            double dfX = 0.0;
-            int nDimension = 2;
-
-            // parse out 2 or 3 tuple.
-            if( chDecimal == '.' )
-                dfX = OGRFastAtof( pszCoordString );
-            else
-                dfX = CPLAtofDelim( pszCoordString, chDecimal);
-            while( *pszCoordString != '\0'
-                   && *pszCoordString != chCS
-                   && !isspace(static_cast<unsigned char>(*pszCoordString)) )
-                pszCoordString++;
-
-            if( *pszCoordString == '\0' )
+            const char* pszStr = pszCoordString;
+            double dfX = 0;
+            double dfY = 0;
+            double dfZ = 0;
+            iCoord = 0;
+            while( *pszStr != '\0' )
             {
-                CPLError(CE_Failure, CPLE_AppDefined,
-                         "Corrupt <coordinates> value.");
-                return false;
+                int nDimension = 2;
+                // parse out 2 or 3 tuple.
+                if( iter == 1 )
+                {
+                    if( chDecimal == '.' )
+                        dfX = OGRFastAtof( pszStr );
+                    else
+                        dfX = CPLAtofDelim( pszStr, chDecimal);
+                }
+                while( *pszStr != '\0'
+                    && *pszStr != chCS
+                    && !isspace(static_cast<unsigned char>(*pszStr)) )
+                    pszStr++;
+
+                if( *pszStr == '\0' )
+                {
+                    CPLError(CE_Failure, CPLE_AppDefined,
+                            "Corrupt <coordinates> value.");
+                    return false;
+                }
+                else if( chCS == ',' && pszCS == nullptr &&
+                        isspace(static_cast<unsigned char>(*pszStr)) )
+                {
+                    // In theory, the coordinates inside a coordinate tuple should
+                    // be separated by a comma. However it has been found in the
+                    // wild that the coordinates are in rare cases separated by a
+                    // space, and the tuples by a comma.
+                    // See:
+                    // https://52north.org/twiki/bin/view/Processing/WPS-IDWExtension-ObservationCollectionExample
+                    // or
+                    // http://agisdemo.faa.gov/aixmServices/getAllFeaturesByLocatorId?locatorId=DFW
+                    chCS = ' ';
+                    chTS = ',';
+                }
+
+                pszStr++;
+
+                if( iter == 1 )
+                {
+                    if( chDecimal == '.' )
+                        dfY = OGRFastAtof( pszStr );
+                    else
+                        dfY = CPLAtofDelim( pszStr, chDecimal);
+                }
+                while( *pszStr != '\0'
+                    && *pszStr != chCS
+                    && *pszStr != chTS
+                    && !isspace(static_cast<unsigned char>(*pszStr)) )
+                    pszStr++;
+
+                dfZ = 0.0;
+                if( *pszStr == chCS )
+                {
+                    pszStr++;
+                    if( iter == 1 )
+                    {
+                        if( chDecimal == '.' )
+                            dfZ = OGRFastAtof( pszStr );
+                        else
+                            dfZ = CPLAtofDelim( pszStr, chDecimal);
+                    }
+                    nDimension = 3;
+                    while( *pszStr != '\0'
+                        && *pszStr != chCS
+                        && *pszStr != chTS
+                        && !isspace(static_cast<unsigned char>(*pszStr)) )
+                    pszStr++;
+                }
+
+                if( *pszStr == chTS )
+                {
+                    pszStr++;
+                }
+
+                while( isspace(static_cast<unsigned char>(*pszStr)) )
+                    pszStr++;
+
+                if( iter == 1 )
+                {
+                    if( poCurve )
+                    {
+                        if( nDimension == 3 )
+                            poCurve->setPoint(iCoord, dfX, dfY, dfZ);
+                        else
+                            poCurve->setPoint(iCoord, dfX, dfY);
+                    }
+                    else if( !AddPoint( poGeometry, dfX, dfY, dfZ, nDimension ) )
+                        return false;
+                }
+
+                iCoord++;
             }
-            else if( chCS == ',' && pszCS == nullptr &&
-                     isspace(static_cast<unsigned char>(*pszCoordString)) )
+
+            if( poCurve && iter == 0 )
             {
-                // In theory, the coordinates inside a coordinate tuple should
-                // be separated by a comma. However it has been found in the
-                // wild that the coordinates are in rare cases separated by a
-                // space, and the tuples by a comma.
-                // See:
-                // https://52north.org/twiki/bin/view/Processing/WPS-IDWExtension-ObservationCollectionExample
-                // or
-                // http://agisdemo.faa.gov/aixmServices/getAllFeaturesByLocatorId?locatorId=DFW
-                chCS = ' ';
-                chTS = ',';
+                poCurve->setNumPoints(iCoord);
             }
-
-            pszCoordString++;
-
-            double dfY = 0.0;
-            if( chDecimal == '.' )
-                dfY = OGRFastAtof( pszCoordString );
-            else
-                dfY = CPLAtofDelim( pszCoordString, chDecimal);
-            while( *pszCoordString != '\0'
-                   && *pszCoordString != chCS
-                   && *pszCoordString != chTS
-                   && !isspace(static_cast<unsigned char>(*pszCoordString)) )
-                pszCoordString++;
-
-            double dfZ = 0.0;
-            if( *pszCoordString == chCS )
-            {
-                pszCoordString++;
-                if( chDecimal == '.' )
-                    dfZ = OGRFastAtof( pszCoordString );
-                else
-                    dfZ = CPLAtofDelim( pszCoordString, chDecimal);
-                nDimension = 3;
-                while( *pszCoordString != '\0'
-                       && *pszCoordString != chCS
-                       && *pszCoordString != chTS
-                       && !isspace(static_cast<unsigned char>(*pszCoordString)) )
-                pszCoordString++;
-            }
-
-            if( *pszCoordString == chTS )
-            {
-                pszCoordString++;
-            }
-
-            while( isspace(static_cast<unsigned char>(*pszCoordString)) )
-                pszCoordString++;
-
-            if( !AddPoint( poGeometry, dfX, dfY, dfZ, nDimension ) )
-                return false;
-
-            iCoord++;
         }
 
         return iCoord > 0;
@@ -586,6 +619,7 @@ static bool ParseGMLCoordinates( const CPLXMLNode *psGeomNode,
 /*      Handle form with a list of <coord> items each with an <X>,      */
 /*      and <Y> element.                                                */
 /* -------------------------------------------------------------------- */
+    int iCoord = 0;
     for( const CPLXMLNode *psCoordNode = psGeomNode->psChild;
          psCoordNode != nullptr;
          psCoordNode = psCoordNode->psNext )
@@ -1697,6 +1731,7 @@ OGRGeometry *GML2OGRGeometry_XMLNode_Internal(
              EQUAL(pszUnits, "mi") || EQUAL(pszUnits, "ft")) )
         {
             OGRLineString* poLS = new OGRLineString();
+            // coverity[tainted_data]
             const double dfStep =
                 CPLAtof(CPLGetConfigOption("OGR_ARC_STEPSIZE", "4"));
             double dfDistance = dfRadius;
@@ -3284,10 +3319,9 @@ OGRGeometry *GML2OGRGeometry_XMLNode_Internal(
                             poMS = new OGRMultiPolygon();
                         else
                             poMS = new OGRMultiSurface();
-#ifdef DEBUG
                         OGRErr eErr =
-#endif
                           poMS->addGeometryDirectly( poResultPoly );
+                        CPL_IGNORE_RET_VAL(eErr);
                         CPLAssert(eErr == OGRERR_NONE);
                         poResultPoly = poMS;
                     }
@@ -3299,10 +3333,9 @@ OGRGeometry *GML2OGRGeometry_XMLNode_Internal(
                         poMS = OGRMultiPolygon::CastToMultiSurface(poMultiPoly);
                         poResultPoly = poMS;
                     }
-#ifdef DEBUG
                     OGRErr eErr =
-#endif
                       poMS->addGeometryDirectly( poGeom );
+                    CPL_IGNORE_RET_VAL(eErr);
                     CPLAssert(eErr == OGRERR_NONE);
                 }
             }
@@ -3326,17 +3359,15 @@ OGRGeometry *GML2OGRGeometry_XMLNode_Internal(
                     if( poTIN == nullptr )
                     {
                         poTIN = new OGRTriangulatedSurface();
-#ifdef DEBUG
                         OGRErr eErr =
-#endif
                           poTIN->addGeometryDirectly( poResultTri );
+                        CPL_IGNORE_RET_VAL(eErr);
                         CPLAssert(eErr == OGRERR_NONE);
                         poResultTri = poTIN;
                     }
-#ifdef DEBUG
                     OGRErr eErr =
-#endif
                       poTIN->addGeometryDirectly( poGeom );
+                    CPL_IGNORE_RET_VAL(eErr);
                     CPLAssert(eErr == OGRERR_NONE);
                 }
             }

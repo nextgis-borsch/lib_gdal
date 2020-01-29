@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # ******************************************************************************
 #  $Id$
 #
@@ -12,7 +12,7 @@
 #
 # ******************************************************************************
 #  Copyright (c) 2005, Frank Warmerdam
-#  Copyright (c) 2009-2011, Even Rouault <even dot rouault at mines-paris dot org>
+#  Copyright (c) 2009-2011, Even Rouault <even dot rouault at spatialys.com>
 #
 #  Permission is hereby granted, free of charge, to any person obtaining a
 #  copy of this software and associated documentation files (the "Software"),

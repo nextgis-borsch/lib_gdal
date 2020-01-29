@@ -71,8 +71,8 @@ set(LIB_HHEADERS
     cpl_vsil_curl_class.h
     cpl_userfaultfd.h
     cpl_auto_close.h
-    # cpl_json_streaming_writer.h
-    # cpl_vax.h
+    cpl_json_streaming_writer.h
+    cpl_vax.h
 )
 
 set(LIB_HHEADERS_PRIV
@@ -84,7 +84,7 @@ set(LIB_HHEADERS_PRIV
     cpl_md5.h
     cpl_swift.h
     cpl_safemaths.hpp
-    # cpl_error_internal.h
+    cpl_error_internal.h
 )
 
 set(LIB_CSOURCES
@@ -151,8 +151,8 @@ set(LIB_CSOURCES
     cpl_vsil_webhdfs.cpp
     cpl_vsil_hdfs.cpp
     cpl_userfaultfd.cpp
-    # cpl_json_streaming_writer.cpp
-    # cpl_vax.cpp
+    cpl_json_streaming_writer.cpp
+    cpl_vax.cpp
 )
 
 if(WIN32)

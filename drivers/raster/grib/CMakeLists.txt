@@ -3,8 +3,9 @@
 # Purpose:  CMake build scripts
 # Author:   Mikhail Gusev, gusevmihs@gmail.com
 ################################################################################
-# Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
+# Copyright (C) 2015-2020, NextGIS <info@nextgis.com>
 # Copyright (C) 2016 Mikhail Gusev
+# Copyright (C) 2020 Dmitry Baryshnikov
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -35,6 +36,7 @@ if(ENABLE_GRIB)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/degrib/degrib)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/degrib/g2clib)
+    include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/mem)
 
     # TODO: implement JASPER support when it will be available as an external library.
     #if(JASPER_FOUND)

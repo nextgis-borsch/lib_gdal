@@ -6,7 +6,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2004, Pirmin Kalberer, Sourcepole AG
- * Copyright (c) 2008-2013, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2008-2013, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -264,7 +264,7 @@ int ILI1Reader::ReadTable(CPL_UNUSED const char *layername) {
                     "No field definition found for table: %s",
                     featureDef->GetName() );
           // Model not read - use heuristics.
-          for( int fIndex=1; fIndex<CSLCount(tokens); fIndex++ )
+          for( int fIndex=1; tokens[fIndex] != nullptr; fIndex++ )
           {
             char szFieldName[32];
             snprintf(szFieldName, sizeof(szFieldName), "Field%02d", fIndex);
@@ -278,7 +278,7 @@ int ILI1Reader::ReadTable(CPL_UNUSED const char *layername) {
         feature = new OGRFeature(featureDef);
 
         for( int fIndex=1, fieldno = 0;
-             fIndex<CSLCount(tokens) && fieldno < featureDef->GetFieldCount();
+             tokens[fIndex] != nullptr && fieldno < featureDef->GetFieldCount();
              fIndex++, fieldno++ )
         {
           if (!(tokens[fIndex][0] == codeUndefined && tokens[fIndex][1] == '\0')) {

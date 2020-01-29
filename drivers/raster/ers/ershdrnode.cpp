@@ -175,7 +175,7 @@ int ERSHdrNode::ParseChildren( VSILFILE * fp, int nRecLevel )
 
         if( (iOff = osLine.find_first_of( '=' )) != std::string::npos )
         {
-            CPLString osName = osLine.substr(0,iOff-1);
+            CPLString osName = iOff == 0 ? std::string() : osLine.substr(0,iOff-1);
             osName.Trim();
 
             CPLString osValue = osLine.c_str() + iOff + 1;
@@ -294,8 +294,11 @@ const char *ERSHdrNode::Find( const char *pszPath, const char *pszDefault )
                     {
                         // strip off quotes.
                         osTempReturn = papszItemValue[i];
-                        osTempReturn =
-                            osTempReturn.substr( 1, osTempReturn.length()-2 );
+                        if( osTempReturn.length() < 2 )
+                            osTempReturn.clear();
+                        else
+                            osTempReturn =
+                                osTempReturn.substr( 1, osTempReturn.length()-2 );
                         return osTempReturn;
                     }
                     else

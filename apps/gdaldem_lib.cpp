@@ -3,13 +3,13 @@
  * Project:  GDAL DEM Utilities
  * Purpose:
  * Authors:  Matthew Perry, perrygeo at gmail.com
- *           Even Rouault, even dot rouault at mines dash paris dot org
+ *           Even Rouault, even dot rouault at spatialys.com
  *           Howard Butler, hobu.inc at gmail.com
  *           Chris Yesson, chris dot yesson at ioz dot ac dot uk
  *
  ******************************************************************************
  * Copyright (c) 2006, 2009 Matthew Perry
- * Copyright (c) 2009-2013, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2009-2013, Even Rouault <even dot rouault at spatialys.com>
  * Portions derived from GRASS 4.1 (public domain) See
  * http://trac.osgeo.org/gdal/ticket/2975 for more information regarding
  * history of this code
@@ -3307,7 +3307,7 @@ static Algorithm GetAlgorithm(const char* pszProcessing)
 /**
  * Apply a DEM processing.
  *
- * This is the equivalent of the <a href="gdaldem.html">gdaldem</a> utility.
+ * This is the equivalent of the <a href="/programs/gdaldem.html">gdaldem</a> utility.
  *
  * GDALDEMProcessingOptions* must be allocated and freed with
  * GDALDEMProcessingOptionsNew() and GDALDEMProcessingOptionsFree()
@@ -3859,7 +3859,7 @@ GDALDatasetH GDALDEMProcessing( const char *pszDest,
  * Allocates a GDALDEMProcessingOptions struct.
  *
  * @param papszArgv NULL terminated list of options (potentially including filename and open options too), or NULL.
- *                  The accepted options are the ones of the <a href="gdaldem.html">gdaldem</a> utility.
+ *                  The accepted options are the ones of the <a href="/programs/gdaldem.html">gdaldem</a> utility.
  * @param psOptionsForBinary (output) may be NULL (and should generally be NULL),
  *                           otherwise (gdal_translate_bin.cpp use case) must be allocated with
  *                           GDALDEMProcessingOptionsForBinaryNew() prior to this function. Will be

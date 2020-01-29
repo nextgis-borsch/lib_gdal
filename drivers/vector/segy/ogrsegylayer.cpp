@@ -2,10 +2,10 @@
  *
  * Project:  SEG-Y Translator
  * Purpose:  Implements OGRSEGYLayer class.
- * Author:   Even Rouault, <even dot rouault at mines dash paris dot org>
+ * Author:   Even Rouault, <even dot rouault at spatialys.com>
  *
  ******************************************************************************
- * Copyright (c) 2011, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2011, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -359,7 +359,7 @@ static float GetIBMFloat(const GByte* pabyData)
     int nVal = 0;
     memcpy(&nVal, pabyData, 4);
     CPL_MSBPTR32(&nVal);
-    const int nSign = 1 - 2 * (((unsigned)nVal >> 31) & 0x01);
+    const int nSign = 1 - 2 * (int)(((unsigned)nVal >> 31) & 0x01);
     const int nExp = (nVal >> 24) & 0x7f;
     const int nMant = nVal & 0xffffff;
 

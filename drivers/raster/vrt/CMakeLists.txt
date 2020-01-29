@@ -53,7 +53,7 @@ set(LIB_CSOURCES
     vrtrasterband.cpp
     vrtsourcedrasterband.cpp
     pixelfunctions.cpp
-    # vrtmultidim.cpp
+    vrtmultidim.cpp
 )
 
 add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})

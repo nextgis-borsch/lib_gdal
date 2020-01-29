@@ -3,8 +3,9 @@
 # Purpose:  CMake build scripts
 # Author:   Mikhail Gusev, gusevmihs@gmail.com
 ################################################################################
-# Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
+# Copyright (C) 2015-2020, NextGIS <info@nextgis.com>
 # Copyright (C) 2016 Mikhail Gusev
+# Copyright (C) 2020 Dmitry Baryshnikov
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -43,7 +44,6 @@ if(ENABLE_DGN)
     set(LIB_MINSOURCES
         dgnopen.cpp
         dgnread.cpp
-        dgnfloat.cpp
         dgnhelp.cpp
         dgnwrite.cpp
         dgnstroke.cpp

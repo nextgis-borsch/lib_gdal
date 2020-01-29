@@ -7,7 +7,7 @@
 # Howard Butler hobu.inc@gmail.com
 
 
-gdal_version = '3.0.3'
+gdal_version = '3.0.0'
 
 import sys
 import os
@@ -240,6 +240,7 @@ class gdal_ext(build_ext):
         self.gdaldir = None
         self.gdal_config = self.GDAL_CONFIG
         self.extra_cflags = []
+        self.parallel = True # Python 3.5 only
 
     def get_compiler(self):
         return self.compiler or get_default_compiler()
@@ -252,7 +253,15 @@ class gdal_ext(build_ext):
             # the gdal-config location given in setup.cfg is
             # incorrect, or possibly the default -- ../../apps/gdal-config
             # We'll try to use the gdal-config that might be on the path.
-            return fetch_config(option)
+            try:
+                return fetch_config(option)
+            except gdal_config_error as e:
+                msg = 'Could not find gdal-config. Make sure you have installed the GDAL native library and development headers.'
+                import sys
+                import traceback
+                traceback_string = ''.join(traceback.format_exception(*sys.exc_info()))
+                raise gdal_config_error(traceback_string + '\n' + msg)
+
 
     def build_extensions(self):
 
@@ -323,6 +332,23 @@ class gdal_ext(build_ext):
         ext.extra_compile_args.extend(self.extra_cflags)
         return build_ext.build_extension(self, ext)
 
+# This is only needed with Python 2.
+if sys.version_info < (3,):
+    try:
+        import multiprocessing
+        from concurrent.futures import ThreadPoolExecutor as Pool
+
+        num_jobs = multiprocessing.cpu_count()
+
+        def parallel_build_extensions(self):
+            self.check_extensions_list(self.extensions)
+
+            with Pool(num_jobs) as pool:
+                pool.map(self.build_extension, self.extensions)
+
+        build_ext.build_extensions = parallel_build_extensions
+    except:
+        pass
 
 extra_link_args = []
 extra_compile_args = []

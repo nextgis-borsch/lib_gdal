@@ -58,7 +58,7 @@ class OGRESRIFeatureServiceDataset;
 /*                      OGRESRIFeatureServiceLayer                      */
 /************************************************************************/
 
-class OGRESRIFeatureServiceLayer: public OGRLayer
+class OGRESRIFeatureServiceLayer final: public OGRLayer
 {
     OGRESRIFeatureServiceDataset* poDS;
     OGRFeatureDefn* poFeatureDefn;
@@ -87,7 +87,7 @@ class OGRESRIFeatureServiceLayer: public OGRLayer
 /*                       OGRESRIFeatureServiceDataset                   */
 /************************************************************************/
 
-class OGRESRIFeatureServiceDataset: public GDALDataset
+class OGRESRIFeatureServiceDataset final: public GDALDataset
 {
     CPLString              osURL;
     GIntBig                nFirstOffset;
@@ -669,7 +669,7 @@ void RegisterOGRGeoJSON()
     poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
     poDriver->SetMetadataItem( GDAL_DMD_CREATIONFIELDDATATYPES,
                                "Integer Integer64 Real String IntegerList "
-                               "Integer64List RealList StringList" );
+                               "Integer64List RealList StringList Date DateTime" );
     poDriver->SetMetadataItem( GDAL_DMD_CREATIONFIELDDATASUBTYPES, "Boolean" );
 
     poDriver->pfnOpen = OGRGeoJSONDriverOpen;

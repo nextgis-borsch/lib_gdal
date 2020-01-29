@@ -8,7 +8,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1999,  Les Technologies SoftMap Inc.
- * Copyright (c) 2008-2013, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2008-2013, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -146,11 +146,12 @@ class CPL_DLL OGR_SRSNode
  * SRS using GetAttrValue(), but in special cases the underlying parse tree
  * (or OGR_SRSNode objects) can be accessed more directly.
  *
- * See <a href="osr_tutorial.html">the tutorial</a> for more information on
- * how to use this class.
+ * See <a href="https://gdal.org/tutorials/osr_api_tut.html">the tutorial
+ * </a> for more information on how to use this class.
  * 
- * Consult also the <a href="wktproblems.html">OGC WKT Coordinate System Issues</a> page
- * for implementation details of WKT in OGR.
+ * Consult also the <a href="https://gdal.org/tutorials/wktproblems.html">
+ * OGC WKT Coordinate System Issues</a> page for implementation details of 
+ * WKT in OGR.
  */
 
 class CPL_DLL OGRSpatialReference
@@ -191,6 +192,8 @@ class CPL_DLL OGRSpatialReference
     OGRErr      exportToWkt( char ** ) const;
     OGRErr      exportToWkt( char ** ppszWKT, const char* const* papszOptions ) const;
     OGRErr      exportToPrettyWkt( char **, int = FALSE) const;
+    // cppcheck-suppress functionStatic
+    OGRErr      exportToPROJJSON( char **, const char* const* papszOptions ) const;
     OGRErr      exportToProj4( char ** ) const;
     OGRErr      exportToPCI( char **, char **, double ** ) const;
     OGRErr      exportToUSGS( long *, long *, double **, long * ) const;
@@ -354,6 +357,9 @@ class CPL_DLL OGRSpatialReference
     OGRErr      SetCompoundCS( const char *pszName,
                                const OGRSpatialReference *poHorizSRS,
                                const OGRSpatialReference *poVertSRS );
+
+    // cppcheck-suppress functionStatic
+    OGRErr      PromoteTo3D( const char* pszName );
 
     OGRErr      SetFromUserInput( const char * );
 
@@ -634,6 +640,22 @@ class CPL_DLL OGRSpatialReference
     /** Spherical, Cross-track, Height */
     OGRErr      SetSCH( double dfPegLat, double dfPegLong,
                         double dfPegHeading, double dfPegHgt);
+
+    /** Vertical Perspective / Near-sided Perspective */
+    OGRErr      SetVerticalPerspective( double dfTopoOriginLat,
+                                        double dfTopoOriginLon,
+                                        double dfTopoOriginHeight,
+                                        double dfViewPointHeight,
+                                        double dfFalseEasting,
+                                        double dfFalseNorthing);
+
+    /** Pole rotation (GRIB convention) */
+    OGRErr      SetDerivedGeogCRSWithPoleRotationGRIBConvention(
+                                               const char* pszCRSName,
+                                               double dfSouthPoleLat,
+                                               double dfSouthPoleLon,
+                                               double dfAxisRotation );
+
     /** State Plane */
     OGRErr      SetStatePlane( int nZone, int bNAD83 = TRUE,
                                const char *pszOverrideUnitName = nullptr,
@@ -648,6 +670,10 @@ class CPL_DLL OGRSpatialReference
     OGRErr      ImportFromESRIWisconsinWKT(
         const char* pszPrjName, double dfCentralMeridian, double dfLatOfOrigin,
         const char* pszUnitsName, const char* pszCRSName = nullptr );
+
+/*! @cond Doxygen_Suppress */
+    void UpdateCoordinateSystemFromGeogCRS();
+/*! @endcond */
 
     static OGRSpatialReference* GetWGS84SRS();
 
@@ -755,6 +781,11 @@ public:
      */
     static inline OGRCoordinateTransformation* FromHandle(OGRCoordinateTransformationH hCT)
         { return reinterpret_cast<OGRCoordinateTransformation*>(hCT); }
+
+    /** Clone
+     * @since GDAL 3.1
+     */
+    virtual OGRCoordinateTransformation* Clone() const = 0;
 };
 
 OGRCoordinateTransformation CPL_DLL *
@@ -770,13 +801,17 @@ OGRCreateCoordinateTransformation( const OGRSpatialReference *poSource,
 
 struct CPL_DLL OGRCoordinateTransformationOptions
 {
+/*! @cond Doxygen_Suppress */
 private:
     friend class OGRProjCT;
     struct Private;
     std::unique_ptr<Private> d;
+/*! @endcond */
 
 public:
     OGRCoordinateTransformationOptions();
+    OGRCoordinateTransformationOptions(const OGRCoordinateTransformationOptions&);
+    OGRCoordinateTransformationOptions& operator= (const OGRCoordinateTransformationOptions&);
     ~OGRCoordinateTransformationOptions();
 
     bool SetAreaOfInterest(double dfWestLongitudeDeg,
