@@ -26,6 +26,7 @@
 ################################################################################
 
 set(DOC_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.TXT
     ${CMAKE_CURRENT_SOURCE_DIR}/COMMITTERS
     ${CMAKE_CURRENT_SOURCE_DIR}/NEWS
 )
