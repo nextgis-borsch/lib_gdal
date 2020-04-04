@@ -27,13 +27,13 @@ ENDIF(WIN32)
 
 FIND_PATH(PROJ_INCLUDE_DIR proj_api.h
     PATHS ${PROJ_OSGEO4W_HOME}/include
-    DOC "Path to PROJ.4 library include directory")
+    DOC "Path to PROJ library include directory")
 
 SET(PROJ_NAMES ${PROJ_NAMES} proj proj_i)
 FIND_LIBRARY(PROJ_LIBRARY
     NAMES ${PROJ_NAMES}
     PATHS ${PROJ_OSGEO4W_HOME}/lib
-    DOC "Path to PROJ.4 library file")
+    DOC "Path to PROJ library file")
 
 if(PROJ_INCLUDE_DIR)
     set(PROJ_VERSION_MAJOR 0)
@@ -60,7 +60,7 @@ endif ()
 # Handle the QUIETLY and REQUIRED arguments and set SPATIALINDEX_FOUND to TRUE
 # if all listed variables are TRUE
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(PROJ4 
+find_package_handle_standard_args(PROJ 
                                   REQUIRED_VARS PROJ_LIBRARY PROJ_INCLUDE_DIR 
                                   VERSION_VAR PROJ_VERSION_STRING)
 
