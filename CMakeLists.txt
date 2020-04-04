@@ -3,8 +3,8 @@
 # Purpose:  CMake build scripts
 # Author:   Dmitry Baryshnikov, polimax@mail.ru
 ################################################################################
-# Copyright (C) 2015-2019, NextGIS <info@nextgis.com>
-# Copyright (C) 2012-2019 Dmitry Baryshnikov
+# Copyright (C) 2015-2020, NextGIS <info@nextgis.com>
+# Copyright (C) 2012-2020 Dmitry Baryshnikov
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -89,7 +89,7 @@ include(util)
 
 check_version(GDAL_MAJOR_VERSION GDAL_MINOR_VERSION GDAL_REV_VERSION)
 set(VERSION ${GDAL_MAJOR_VERSION}.${GDAL_MINOR_VERSION}.${GDAL_REV_VERSION})
-set(SOVERSION ${GDAL_MAJOR_VERSION}0)
+set(SOVERSION ${GDAL_MAJOR_VERSION}6)
 
 if(OSX_FRAMEWORK)
     set(FRAMEWORK_VERSION "${GDAL_MAJOR_VERSION}")
@@ -291,7 +291,7 @@ if(BUILD_SHARED_LIBS OR OSX_FRAMEWORK)
             set_target_properties(${LIB_NAME} PROPERTIES IMPORT_SUFFIX "_i.lib")
         endif()
     else ()
-      set (LIB_VERSION "${GDAL_MAJOR_VERSION}0.${GDAL_MINOR_VERSION}.${GDAL_REV_VERSION}")
+      set (LIB_VERSION "${SOVERSION}.${GDAL_MINOR_VERSION}.${GDAL_REV_VERSION}")
     endif()
     set_target_properties (${LIB_NAME} PROPERTIES VERSION ${LIB_VERSION})
     set_target_properties (${LIB_NAME} PROPERTIES SOVERSION ${SOVERSION})
