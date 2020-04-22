@@ -115,14 +115,18 @@ if(GDAL_PAM_ENABLED)
     )
 endif()
 
+set(LIB_HHEADERS ${LIB_HHEADERS}
+    gdalpython.h
+)
+set(LIB_CSOURCES ${LIB_CSOURCES}
+    gdalpython.cpp
+    gdalpythondriverloader.cpp
+)
+
 if(WITH_PYTHON OR WITH_PYTHON3)
-    set(LIB_HHEADERS ${LIB_HHEADERS}
-        gdalpython.h
-    )
-    set(LIB_CSOURCES ${LIB_CSOURCES}
-        gdalpython.cpp
-        gdalpythondriverloader.cpp
-    )
+    # TODO: 
+else()
+    add_definitions(-DGDAL_VRT_DISABLE_PYTHON -DGDAL_NO_AUTOLOAD)
 endif()
 
 if(WIN32)

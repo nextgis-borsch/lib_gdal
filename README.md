@@ -79,7 +79,7 @@ with '\*' have high priority to be implemented.
 | **cosar** | **yes** | no | - |
 | **ctg** | **yes** | no | - |
 | dds | no |  |  |
-| derived | no |  |  |
+| **derived** | **yes** |  |  |
 | **dimap** | **yes** | no | - |
 | dods | no |  |  |
 | **dted** | **yes** | no | No additional build targets implemented |
