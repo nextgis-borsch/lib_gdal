@@ -178,6 +178,7 @@ S57Reader::S57Reader( const char * pszFilename ) :
     bAttrWarningIssued(false)
 {
     szUPDNUpdate[0] = '\0';
+    szISDTUpdate[0] = '\0';
 }
 
 /************************************************************************/
@@ -377,7 +378,7 @@ bool S57Reader::SetOptions( char ** papszOptionsIn )
     pszOptionValue = CSLFetchNameValue( papszOptions, S57O_UPDATES );
     if( pszOptionValue == nullptr )
         /* no change */;
-    else if( pszOptionValue != nullptr && !EQUAL(pszOptionValue,"APPLY") )
+    else if( !EQUAL(pszOptionValue,"APPLY") )
         nOptionFlags &= ~S57M_UPDATES;
     else
         nOptionFlags |= S57M_UPDATES;
@@ -1227,8 +1228,11 @@ OGRFeature *S57Reader::ReadDSID()
 
         poFeature->SetField( "DSID_UADT",
                      poDSIDRecord->GetStringSubfield( "DSID", 0, "UADT", 0 ));
-        poFeature->SetField( "DSID_ISDT",
-                     poDSIDRecord->GetStringSubfield( "DSID", 0, "ISDT", 0 ));
+        if( strlen(szISDTUpdate) > 0 )
+            poFeature->SetField( "DSID_ISDT", szISDTUpdate );
+        else
+            poFeature->SetField( "DSID_ISDT",
+                     poDSIDRecord->GetStringSubfield( "DSID", 0, "ISDT", 0 ));        
         poFeature->SetField( "DSID_STED",
                      poDSIDRecord->GetFloatSubfield( "DSID", 0, "STED", 0 ));
         poFeature->SetField( "DSID_PRSP",
@@ -2142,7 +2146,7 @@ void S57Reader::AssembleLineGeometry( DDFRecord * poFRecord,
             int nVC_RCID_firstnode = 0;
             int nVC_RCID_lastnode = 0;
 
-            if( poVRPT != nullptr && poVRPT->GetRepeatCount() == 1 )
+            if( poVRPT->GetRepeatCount() == 1 )
             {
                 nVC_RCID_firstnode = ParseName( poVRPT );
                 poVRPT = poSRecord->FindField( "VRPT", 1 );
@@ -3099,10 +3103,8 @@ bool S57Reader::ApplyRecordUpdate( DDFRecord *poTarget, DDFRecord *poUpdate )
 
         if( poDstATTF == nullptr )
         {
-            CPLError( CE_Warning, CPLE_AppDefined,
-                      "Unable to apply ATTF change to target record without "
-                      "an ATTF field (see GDAL/OGR Bug #1648)" );
-            return false;
+            // Create empty ATTF Field (see GDAL/OGR Bug #1648)" ); 
+            poDstATTF = poTarget->AddField(poModule->FindFieldDefn( "ATTF" ));         
         }
 
         DDFField *poSrcATTF = poUpdate->FindField( "ATTF" );
@@ -3269,6 +3271,10 @@ bool S57Reader::ApplyUpdates( DDFModule *poUpdateModule )
                     = poRecord->GetStringSubfield( "DSID", 0, "UPDN", 0 );
                 if( pszUPDN != nullptr && strlen(pszUPDN) < sizeof(szUPDNUpdate) )
                     strcpy( szUPDNUpdate, pszUPDN );
+               const char* pszISDT
+                    = poRecord->GetStringSubfield( "DSID", 0, "ISDT", 0 );
+                if( pszISDT != nullptr && strlen(pszISDT) < sizeof(szISDTUpdate) )
+                    strcpy( szISDTUpdate, pszISDT );                
             }
         }
 

@@ -110,6 +110,9 @@ class TileDBDataset final: public GDALPamDataset
         static void             SetBlockSize( GDALRasterBand* poBand,
                                                 char ** &papszOptions );
 
+        virtual void            FlushCache( void ) override;
+
+
 };
 
 /************************************************************************/
@@ -125,6 +128,8 @@ class TileDBRasterBand final: public GDALPamRasterBand
         TileDBDataset  *poGDS;
         bool bStats;
         CPLString osAttrName;
+        int nCurrBlockX = 0;
+        int nCurrBlockY = 0;
         std::unique_ptr<tiledb::Query> m_query;
         std::unique_ptr<tiledb::Query> m_roQuery;
         void   Finalize( );
@@ -135,6 +140,18 @@ class TileDBRasterBand final: public GDALPamRasterBand
         virtual GDALColorInterp GetColorInterpretation() override;
 
 };
+
+static CPLString vsi_to_s3( const char* pszUri )
+{
+    CPLString osUri;
+
+    if ( STARTS_WITH_CI( pszUri, "/VSIS3/") )
+        osUri.Printf("s3://%s", pszUri + 7);
+    else
+        osUri = pszUri;
+
+    return osUri;
+}
 
 /************************************************************************/
 /*                             SetBuffer()                              */
@@ -359,6 +376,23 @@ CPLErr TileDBRasterBand::IWriteBlock( int nBlockXOff,
 
         m_query->set_subarray( oaSubarray );
     }
+    else
+    {
+        // global order requires ordered blocks (see FlushCache())
+        if ( ( nCurrBlockX != nBlockXOff ) || ( nCurrBlockY != nBlockYOff ) )
+        {   CPLError( CE_Failure, CPLE_AppDefined,
+                    "Non-sequential global write to TileDB.\n");
+            return CE_Failure;
+        }
+        else
+        {
+            if ( ++nCurrBlockX == poGDS->nBlocksX )
+            {
+                nCurrBlockX = 0;
+                nCurrBlockY++;
+            }
+        }
+    }
 
     std::vector<std::unique_ptr<void, decltype(&VSIFree)>> aBlocks;
 
@@ -497,6 +531,19 @@ TileDBDataset::~TileDBDataset()
 }
 
 /************************************************************************/
+/*                             FlushCache()                             */
+/************************************************************************/
+
+void TileDBDataset::FlushCache()
+
+{
+    BlockBasedFlushCache();
+
+    if( nPamFlags & GPF_DIRTY )
+        TrySaveXML();
+}
+
+/************************************************************************/
 /*                           TrySaveXML()                               */
 /************************************************************************/
 
@@ -600,8 +647,7 @@ CPLErr TileDBDataset::TrySaveXML()
         CPLErrorHandlerPusher oQuietError( CPLQuietErrorHandler );
         char* pszTree = CPLSerializeXMLTree( psTree );
 
-#if TILEDB_VERSION_MAJOR >= 1 && TILEDB_VERSION_MINOR >= 7
-
+#if TILEDB_VERSION_MAJOR > 1 || TILEDB_VERSION_MINOR >= 7
         if ( eAccess == GA_ReadOnly )
         {
             auto oMeta = std::unique_ptr<tiledb::Array>( 
@@ -618,6 +664,7 @@ CPLErr TileDBDataset::TrySaveXML()
         bSaved = true;
 #endif
 
+        // cppcheck-suppress knownConditionTrueFalse
         if (!bSaved)
         {
             vfs.touch( psPam->pszPamFilename );
@@ -739,7 +786,7 @@ CPLErr TileDBDataset::TryLoadCachedXML( char ** /*papszSiblingFiles*/, bool bRel
         {
             CPLErrorHandlerPusher oQuietError( CPLQuietErrorHandler );
 
-#if TILEDB_VERSION_MAJOR >= 1 && TILEDB_VERSION_MINOR >= 7
+#if TILEDB_VERSION_MAJOR > 1 || TILEDB_VERSION_MINOR >= 7
             if ( bReload )
             {
                 tiledb_datatype_t v_type = TILEDB_UINT8; // CPLSerializeXMLTree returns char*
@@ -941,9 +988,11 @@ CPLErr TileDBDataset::Delete( const char * pszFilename )
     {
         tiledb::Context ctx;
         tiledb::VFS vfs( ctx );
-        if ( vfs.is_dir( pszFilename ) )
+        CPLString osArrayPath = vsi_to_s3( pszFilename );
+
+        if ( vfs.is_dir( osArrayPath ) )
         {
-            vfs.remove_dir( pszFilename );
+            vfs.remove_dir( osArrayPath );
             return CE_None;
         }
         else
@@ -978,10 +1027,12 @@ int TileDBDataset::Identify( GDALOpenInfo * poOpenInfo )
             return TRUE;
         }
 
-        if( poOpenInfo->bIsDirectory )
+        if( poOpenInfo->bIsDirectory ||
+                STARTS_WITH_CI( poOpenInfo->pszFilename, "/VSIS3/" ) )
         {
             tiledb::Context ctx;
-            return tiledb::Object::object( ctx, poOpenInfo->pszFilename ).type() == tiledb::Object::Type::Array;
+            CPLString osArrayPath = vsi_to_s3( poOpenInfo->pszFilename );
+            return tiledb::Object::object( ctx, osArrayPath ).type() == tiledb::Object::Type::Array;
         }
 
         return FALSE;
@@ -1052,7 +1103,7 @@ GDALDataset *TileDBDataset::Open( GDALOpenInfo * poOpenInfo )
                 poDS->SetSubdatasetName( pszAttr );
             }
 
-            osArrayPath = poOpenInfo->pszFilename;
+            osArrayPath = vsi_to_s3( poOpenInfo->pszFilename );
         }
 
         const char* pszArrayName = CPLGetBasename( osArrayPath );
@@ -1231,7 +1282,7 @@ GDALDataset *TileDBDataset::Open( GDALOpenInfo * poOpenInfo )
                 {
                     CPLError( CE_Failure, CPLE_NotSupported,
                         "%s is missing required TileDB subdataset metadata.",
-                        poOpenInfo->pszFilename );
+                        osArrayPath.c_str() );
                     return nullptr;
                 }
             }
@@ -1870,8 +1921,10 @@ TileDBDataset::Create( const char * pszFilename, int nXSize, int nYSize, int nBa
 {
     try
     {
+        CPLString osArrayPath = vsi_to_s3( pszFilename );
+
         std::unique_ptr<TileDBDataset> poDS(
-            TileDBDataset::CreateLL( pszFilename, nXSize, nYSize,
+            TileDBDataset::CreateLL( osArrayPath, nXSize, nYSize,
                                     nBands, papszOptions ));
         if( !poDS )
             return nullptr;
@@ -1879,9 +1932,9 @@ TileDBDataset::Create( const char * pszFilename, int nXSize, int nYSize, int nBa
         poDS->eDataType = eType;
 
         poDS->CreateAttribute( eType, TILEDB_VALUES );
-        tiledb::Array::create( pszFilename, *poDS->m_schema );
+        tiledb::Array::create( osArrayPath, *poDS->m_schema );
 
-        poDS->m_array.reset( new tiledb::Array( *poDS->m_ctx, pszFilename, TILEDB_WRITE ) );
+        poDS->m_array.reset( new tiledb::Array( *poDS->m_ctx, osArrayPath, TILEDB_WRITE ) );
 
         for( int i = 0; i < poDS->nBands;i++ )
             poDS->SetBand( i+1, new TileDBRasterBand( poDS.get(), i+1 ) );
@@ -1931,6 +1984,8 @@ TileDBDataset::CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 
 {
     char** papszCopyOptions = CSLDuplicate( papszOptions );
+    CPLString osArrayPath = vsi_to_s3( pszFilename );
+
     try
     {
         std::unique_ptr<TileDBDataset> poDstDS;
@@ -1969,7 +2024,7 @@ TileDBDataset::CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
                 }
 
                 poDstDS.reset(
-                    static_cast<TileDBDataset*>(TileDBDataset::Create( pszFilename, 
+                    static_cast<TileDBDataset*>(TileDBDataset::Create( osArrayPath,
                             poSrcDS->GetRasterXSize(),
                             poSrcDS->GetRasterYSize(), 
                             nBands, eType, papszOptions )));
@@ -2035,7 +2090,7 @@ TileDBDataset::CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
                         TileDBDataset::SetBlockSize( poBand, papszCopyOptions );
 
                         poDstDS.reset(TileDBDataset::CreateLL(
-                                    pszFilename, poBand->GetXSize(),
+                                    osArrayPath, poBand->GetXSize(),
                                     poBand->GetYSize(), 0, papszCopyOptions ));
 
                         if ( poDstDS &&
@@ -2091,7 +2146,7 @@ void GDALRegister_TileDB()
     poDriver->SetMetadataItem( GDAL_DCAP_RASTER, "YES" );
     poDriver->SetMetadataItem( GDAL_DCAP_SUBCREATECOPY, "YES" );
     poDriver->SetMetadataItem( GDAL_DMD_LONGNAME, "TileDB" );
-    poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, "frmt_tiledb.html" );
+    poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, "drivers/raster/tiledb.html" );
     poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES,
                                "Byte UInt16 Int16 UInt32 Int32 Float32 "
                                "Float64 CInt16 CInt32 CFloat32 CFloat64" );

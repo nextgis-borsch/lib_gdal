@@ -787,7 +787,8 @@ int ISGDataset::ParseHeader(const char *pszHeader, const char *)
     const int nRows = atoi(osRows);
     const int nCols = atoi(osCols);
     if( nRows <= 0 || nCols <= 0 ||
-        !(dfDeltaLat > 0 && dfDeltaLon > 0) )
+        !(dfDeltaLat > 0 && dfDeltaLon > 0 &&
+          dfDeltaLat < 180 && dfDeltaLon < 360) )
     {
         return FALSE;
     }
@@ -796,7 +797,7 @@ int ISGDataset::ParseHeader(const char *pszHeader, const char *)
 
     const double dfRoundedDeltaLon =
         ( osDeltaLon == "0.0167" ||
-          fabs(1. / dfDeltaLon - floor(1. / dfDeltaLon + 0.5)) < 0.06 ) ?
+          (dfDeltaLon < 1 && fabs(1. / dfDeltaLon - floor(1. / dfDeltaLon + 0.5)) < 0.06 )) ?
             1. / floor(1. / dfDeltaLon + 0.5) : dfDeltaLon;
     if( dfRoundedDeltaLon != dfDeltaLon &&
         fabs(fabs(dfLonMin / dfRoundedDeltaLon) - (floor(fabs(dfLonMin / dfRoundedDeltaLon)) + 0.5)) < 0.02 &&
@@ -829,7 +830,7 @@ int ISGDataset::ParseHeader(const char *pszHeader, const char *)
 
     const double dfRoundedDeltaLat =
         ( osDeltaLat == "0.0167" ||
-          fabs(1. / dfDeltaLat - floor(1. / dfDeltaLat + 0.5)) < 0.06 ) ?
+          (dfDeltaLat < 1 && fabs(1. / dfDeltaLat - floor(1. / dfDeltaLat + 0.5)) < 0.06 )) ?
             1. / floor(1. / dfDeltaLat + 0.5) : dfDeltaLat;
     if( dfRoundedDeltaLat != dfDeltaLat &&
         fabs(fabs(dfLatMin / dfRoundedDeltaLat) - (floor(fabs(dfLatMin / dfRoundedDeltaLat)) + 0.5)) < 0.02 &&
@@ -1505,7 +1506,7 @@ void GDALRegister_AAIGrid()
     poDriver->SetDescription("AAIGrid");
     poDriver->SetMetadataItem(GDAL_DCAP_RASTER, "YES");
     poDriver->SetMetadataItem(GDAL_DMD_LONGNAME, "Arc/Info ASCII Grid");
-    poDriver->SetMetadataItem(GDAL_DMD_HELPTOPIC, "frmt_various.html#AAIGrid");
+    poDriver->SetMetadataItem(GDAL_DMD_HELPTOPIC, "drivers/raster/aaigrid.html");
     poDriver->SetMetadataItem(GDAL_DMD_EXTENSION, "asc");
     poDriver->SetMetadataItem(GDAL_DMD_CREATIONDATATYPES,
                               "Byte UInt16 Int16 Int32 Float32");
@@ -1549,7 +1550,7 @@ void GDALRegister_GRASSASCIIGrid()
     poDriver->SetMetadataItem(GDAL_DCAP_RASTER, "YES");
     poDriver->SetMetadataItem(GDAL_DMD_LONGNAME, "GRASS ASCII Grid");
     poDriver->SetMetadataItem(GDAL_DMD_HELPTOPIC,
-                              "frmt_various.html#GRASSASCIIGrid");
+                              "drivers/raster/grassasciigrid.html");
 
     poDriver->SetMetadataItem(GDAL_DCAP_VIRTUALIO, "YES");
 
@@ -1575,7 +1576,7 @@ void GDALRegister_ISG()
     poDriver->SetMetadataItem(GDAL_DCAP_RASTER, "YES");
     poDriver->SetMetadataItem(GDAL_DMD_LONGNAME, "International Service for the Geoid");
     poDriver->SetMetadataItem(GDAL_DMD_HELPTOPIC,
-                              "isg.html");
+                              "drivers/raster/isg.html");
     poDriver->SetMetadataItem(GDAL_DMD_EXTENSION, "isg");
 
     poDriver->SetMetadataItem(GDAL_DCAP_VIRTUALIO, "YES");

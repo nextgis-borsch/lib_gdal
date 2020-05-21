@@ -589,7 +589,6 @@ static void basic_decode(const unsigned char* code,
                          unsigned char* buf,
                          int ns, int wid)
 {
-    unsigned char val = code[0];
     int runInt = -3;
     unsigned char runChar;
     unsigned int nval = 999999;
@@ -609,7 +608,7 @@ static void basic_decode(const unsigned char* code,
                 runInt--;
                 continue; 
             }
-            val = grab1(3, code, code_size, buffer_pos, bit1ptr);
+            unsigned char val = grab1(3, code, code_size, buffer_pos, bit1ptr);
 
             if (val<7)
             {
@@ -1373,7 +1372,7 @@ static std::string SanitizeItemName(const std::string& osItemName)
     if( osRet != osItemName )
     {
         CPLError(CE_Warning, CPLE_AppDefined,
-                 "Lable item name %s has been sanitized to %s",
+                 "Label item name %s has been sanitized to %s",
                  osItemName.c_str(), osRet.c_str());
     }
     return osRet;
@@ -2923,7 +2922,7 @@ void GDALRegister_VICAR()
     poDriver->SetMetadataItem( GDAL_DCAP_RASTER, "YES" );
     poDriver->SetMetadataItem( GDAL_DCAP_VECTOR, "YES" );
     poDriver->SetMetadataItem( GDAL_DMD_LONGNAME, "MIPL VICAR file" );
-    poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, "frmt_vicar.html" );
+    poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, "drivers/raster/vicar.html" );
     poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
     poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES,
                                "Byte Int16 Int32 Float32 Float64 CFloat32" );

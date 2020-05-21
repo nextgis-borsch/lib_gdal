@@ -1572,7 +1572,8 @@ class CPL_DLL GDALDriver : public GDALMajorObject
                                            GDALProgressFunc pfnProgress,
                                            void * pProgressData );
 //! @endcond
-    static CPLErr       QuietDelete( const char * pszName );
+    static CPLErr       QuietDelete( const char * pszName,
+                                     const char *const *papszAllowedDrivers = nullptr);
 
 //! @cond Doxygen_Suppress
     static CPLErr       DefaultRename( const char * pszNewName,
@@ -2401,6 +2402,10 @@ public:
     }
 
     virtual std::shared_ptr<GDALMDArray> Transpose(const std::vector<int>& anMapNewAxisToOldAxis) const;
+
+    std::shared_ptr<GDALMDArray> GetUnscaled() const;
+
+    virtual std::shared_ptr<GDALMDArray> GetMask(CSLConstList papszOptions) const;
 
     virtual GDALDataset* AsClassicDataset(size_t iXDim, size_t iYDim) const;
 

@@ -1146,6 +1146,9 @@ GDALDataset *BMPDataset::Open( GDALOpenInfo * poOpenInfo )
         VSIFReadL( &poDS->sInfoHeader.iBitCount, 1, 2, poDS->fp );
         unsigned int iCompression;
         VSIFReadL( &iCompression, 1, 4, poDS->fp );
+#ifdef CPL_MSB
+        CPL_SWAP32PTR( &iCompression );
+#endif
         if( iCompression > BMPC_PNG )
         {
             CPLError(CE_Failure, CPLE_NotSupported, "Unsupported compression");
@@ -1174,7 +1177,6 @@ GDALDataset *BMPDataset::Open( GDALOpenInfo * poOpenInfo )
         CPL_SWAP32PTR( &poDS->sInfoHeader.iHeight );
         CPL_SWAP16PTR( &poDS->sInfoHeader.iPlanes );
         CPL_SWAP16PTR( &poDS->sInfoHeader.iBitCount );
-        CPL_SWAP32PTR( &poDS->sInfoHeader.iCompression );
         CPL_SWAP32PTR( &poDS->sInfoHeader.iSizeImage );
         CPL_SWAP32PTR( &poDS->sInfoHeader.iXPelsPerMeter );
         CPL_SWAP32PTR( &poDS->sInfoHeader.iYPelsPerMeter );
@@ -1607,7 +1609,7 @@ void GDALRegister_BMP()
     poDriver->SetMetadataItem( GDAL_DMD_LONGNAME,
                                "MS Windows Device Independent Bitmap" );
     poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC,
-                               "frmt_bmp.html" );
+                               "drivers/raster/bmp.html" );
     poDriver->SetMetadataItem( GDAL_DMD_EXTENSION, "bmp" );
     poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES, "Byte" );
     poDriver->SetMetadataItem( GDAL_DMD_CREATIONOPTIONLIST,

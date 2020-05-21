@@ -226,6 +226,7 @@ class CPL_DLL OGRSpatialReference
                                 double *padfPrjParams, long iDatum,
                                 int nUSGSAngleFormat = USGS_ANGLE_PACKEDDMS );
     OGRErr      importFromPanorama( long, long, long, double* );
+    OGRErr      importVertCSFromPanorama( int );
     OGRErr      importFromOzi( const char * const* papszLines );
     OGRErr      importFromWMSAUTO( const char *pszAutoDef );
     OGRErr      importFromXML( const char * );
@@ -246,6 +247,9 @@ class CPL_DLL OGRSpatialReference
 
     OGRErr      Validate() const;
     OGRErr      StripVertical();
+
+    bool        StripTOWGS84IfKnownDatumAndAllowed();
+    bool        StripTOWGS84IfKnownDatum();
 
     int         EPSGTreatsAsLatLong() const;
     int         EPSGTreatsAsNorthingEasting() const;
@@ -323,6 +327,7 @@ class CPL_DLL OGRSpatialReference
 
     bool        IsEmpty() const;
     int         IsGeographic() const;
+    int         IsDerivedGeographic() const;
     int         IsProjected() const;
     int         IsGeocentric() const;
     int         IsLocal() const;

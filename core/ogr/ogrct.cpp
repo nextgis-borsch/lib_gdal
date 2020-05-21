@@ -31,6 +31,7 @@
 #include "ogr_spatialref.h"
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <cstring>
 #include <limits>
@@ -948,7 +949,7 @@ int OGRProjCT::Initialize( const OGRSpatialReference * poSourceIn,
                  m_bReversePj ? "(reversed) " : "");
 #endif
     }
-    else if( !bWebMercatorToWGS84LongLat )
+    else if( !bWebMercatorToWGS84LongLat && poSRSSource && poSRSTarget )
     {
         const auto CanUseAuthorityDef = [](const OGRSpatialReference* poSRS1,
                                            OGRSpatialReference* poSRSFromAuth,
@@ -1006,12 +1007,19 @@ int OGRProjCT::Initialize( const OGRSpatialReference * poSourceIn,
             {
                 CPLErrorStateBackuper oErrorStateBackuper;
                 CPLErrorHandlerPusher oErrorHandler(CPLQuietErrorHandler);
-                const char *pszProjName = poSRS->GetAttrValue("PROJECTION");
                 const char* const apszOptionsWKT2_2018[] = { "FORMAT=WKT2_2018", nullptr };
-                const char* const apszOptionsWKT1[] = { "FORMAT=WKT1_GDAL", nullptr };
-                // NetCDF hack
-                if( pszProjName && EQUAL(pszProjName, "Rotated_pole") )
-                    poSRS->exportToWkt(&pszText, apszOptionsWKT1);
+                // If there's a PROJ4 EXTENSION node in WKT1, then use
+                // it. For example when dealing with "+proj=longlat +lon_wrap=180"
+                if( poSRS->GetExtension(nullptr, "PROJ4", nullptr) )
+                {
+                    poSRS->exportToProj4(&pszText);
+                    if (strstr(pszText, " +type=crs") == nullptr )
+                    {
+                        auto tmpText = std::string(pszText) + " +type=crs";
+                        CPLFree(pszText);
+                        pszText = CPLStrdup(tmpText.c_str());
+                    }
+                }
                 else
                     poSRS->exportToWkt(&pszText, apszOptionsWKT2_2018);
             }
@@ -1020,6 +1028,10 @@ int OGRProjCT::Initialize( const OGRSpatialReference * poSourceIn,
 
         char* pszSrcSRS = exportSRSToText(poSRSSource);
         char* pszTargetSRS = exportSRSToText(poSRSTarget);
+#ifdef DEBUG
+        CPLDebug("OGR_CT", "Source CRS: '%s'", pszSrcSRS);
+        CPLDebug("OGR_CT", "Target CRS: '%s'", pszTargetSRS);
+#endif
 
         if( m_eStrategy == Strategy::PROJ )
         {
@@ -1064,7 +1076,7 @@ int OGRProjCT::Initialize( const OGRSpatialReference * poSourceIn,
         CPLFree(pszTargetSRS);
     }
 
-    if( options.d->osCoordOperation.empty() )
+    if( options.d->osCoordOperation.empty() && poSRSSource && poSRSTarget )
     {
         // Determine if we can skip the transformation completely.
         bNoTransform = !bSourceWrap && !bTargetWrap &&
@@ -1549,6 +1561,7 @@ int OGRProjCT::Transform( int nCount, double *x, double *y, double *z,
     if( bSourceLatLong && bSourceWrap )
     {
         OGRAxisOrientation orientation;
+        assert( poSRSSource );
         poSRSSource->GetAxis(nullptr, 0, &orientation);
         if( orientation == OAO_East )
         {
@@ -1961,6 +1974,7 @@ int OGRProjCT::Transform( int nCount, double *x, double *y, double *z,
     if( bTargetLatLong && bTargetWrap )
     {
         OGRAxisOrientation orientation;
+        assert( poSRSTarget );
         poSRSTarget->GetAxis(nullptr, 0, &orientation);
         if( orientation == OAO_East )
         {

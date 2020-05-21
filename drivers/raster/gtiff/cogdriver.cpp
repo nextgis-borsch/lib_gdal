@@ -757,6 +757,7 @@ GDALDataset* GDALCOGCreator::Create(const char * pszFilename,
     CPLConfigOptionSetter oSetterInternalMask(
         "GDAL_TIFF_INTERNAL_MASK", "YES", false);
 
+    CPLDebug("COG", "Generating final product");
     auto poRet = poGTiffDrv->CreateCopy(pszFilename, poCurDS, false,
                                         aosOptions.List(),
                                         GDALScaledProgress, pScaledProgress);
@@ -876,7 +877,7 @@ void GDALRegister_COG()
     poDriver->SetDescription( "COG" );
     poDriver->SetMetadataItem( GDAL_DCAP_RASTER, "YES" );
     poDriver->SetMetadataItem( GDAL_DMD_LONGNAME, "Cloud optimized GeoTIFF generator" );
-    poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, "cog.html" );
+    poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, "drivers/raster/cog.html" );
     poDriver->SetMetadataItem( GDAL_DMD_CREATIONOPTIONLIST, osOptions );
 
     poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES,

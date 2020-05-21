@@ -226,6 +226,14 @@ char CPL_DLL **VSIGetFileSystemsPrefixes( void );
 
 void CPL_DLL   *VSIFGetNativeFileDescriptorL( VSILFILE* );
 
+char CPL_DLL  **VSIGetFileMetadata( const char * pszFilename, const char* pszDomain,
+                                    CSLConstList papszOptions ) CPL_WARN_UNUSED_RESULT;
+
+int CPL_DLL VSISetFileMetadata( const char * pszFilename,
+                                CSLConstList papszMetadata,
+                                const char* pszDomain,
+                                CSLConstList papszOptions );
+
 /* ==================================================================== */
 /*      Memory allocation                                               */
 /* ==================================================================== */
@@ -340,7 +348,7 @@ struct VSIDIREntry
 /*! @cond Doxygen_Suppress */
     VSIDIREntry();
     ~VSIDIREntry();
-    VSIDIREntry(const VSIDIREntry&) = delete;
+    VSIDIREntry(const VSIDIREntry&);
     VSIDIREntry& operator=(VSIDIREntry&) = delete;
 /*! @endcond */
 #endif
@@ -354,6 +362,7 @@ int CPL_DLL VSIMkdirRecursive( const char * pszPathname, long mode );
 int CPL_DLL VSIRmdir( const char * pszDirname );
 int CPL_DLL VSIRmdirRecursive( const char * pszDirname );
 int CPL_DLL VSIUnlink( const char * pszFilename );
+int CPL_DLL *VSIUnlinkBatch( CSLConstList papszFiles );
 int CPL_DLL VSIRename( const char * oldpath, const char * newpath );
 int CPL_DLL VSISync( const char* pszSource, const char* pszTarget,
                       const char* const * papszOptions,
