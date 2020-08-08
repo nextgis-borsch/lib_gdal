@@ -963,9 +963,10 @@ CPLHTTPResult *CPLHTTPFetchEx( const char *pszURL, CSLConstList papszOptions,
         {
             const char* pszFormFileName = CSLFetchNameValue( papszOptions,
                 "FORM_FILE_NAME" );
+            const char* pszFilename = CPLGetFilename( pszFormFilePath );
             if( pszFormFileName == nullptr )
             {
-                pszFormFileName = CPLGetFilename( pszFormFilePath );
+                pszFormFileName = pszFilename;
             }
 
 #if LIBCURL_VERSION_NUM >= 0x073800 /* 7.56.0 */
@@ -976,7 +977,7 @@ CPLHTTPResult *CPLHTTPFetchEx( const char *pszURL, CSLConstList papszOptions,
                 if( mime_fp != nullptr )
                 {
                     curl_mime_name(mimepart, pszFormFileName);
-                    // curl_mime_filename(mimepart, pszFormFileName);
+                    curl_mime_filename(mimepart, pszFilename);
             /// curl_mime_filedata(mimepart, pszFormFilePath);
                     curl_mime_data_cb(mimepart, sStat.st_size, 
                         CPLReadFunction, CPLSeekFunction, CPLFreeFunction, mime_fp);
