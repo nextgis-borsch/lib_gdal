@@ -975,8 +975,8 @@ CPLHTTPResult *CPLHTTPFetchEx( const char *pszURL, CSLConstList papszOptions,
                 mime_fp = VSIFOpenL( pszFormFilePath, "rb" );
                 if( mime_fp != nullptr )
                 {
-                    //curl_mime_name(mimepart, pszFormFileName);
-                    curl_mime_filename(mimepart, pszFormFileName);
+                    curl_mime_name(mimepart, pszFormFileName);
+                    // curl_mime_filename(mimepart, pszFormFileName);
             /// curl_mime_filedata(mimepart, pszFormFilePath);
                     curl_mime_data_cb(mimepart, sStat.st_size, 
                         CPLReadFunction, CPLSeekFunction, CPLFreeFunction, mime_fp);
