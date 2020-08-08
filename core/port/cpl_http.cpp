@@ -421,8 +421,7 @@ static size_t CPLHdrWriteFct( void *buffer, size_t size, size_t nmemb,
 /************************************************************************/
 static size_t CPLReadFunction(char *buffer, size_t size, size_t nitems, void *arg)
 {
-    size_t retcode = VSIFReadL(buffer, size, nitems, static_cast<FILE*>(arg));
-    return retcode;
+    return VSIFReadL(buffer, size, nitems, static_cast<FILE*>(arg));
 }
 
 /************************************************************************/
@@ -976,8 +975,8 @@ CPLHTTPResult *CPLHTTPFetchEx( const char *pszURL, CSLConstList papszOptions,
                 mime_fp = VSIFOpenL( pszFormFilePath, "rb" );
                 if( mime_fp != nullptr )
                 {
-                    curl_mime_name(mimepart, pszFormFileName);
-                    curl_mime_type(mimepart, "application/octet-stream");
+                    //curl_mime_name(mimepart, pszFormFileName);
+                    curl_mime_filename(mimepart, pszFormFileName);
             /// curl_mime_filedata(mimepart, pszFormFilePath);
                     curl_mime_data_cb(mimepart, sStat.st_size, 
                         CPLReadFunction, CPLSeekFunction, CPLFreeFunction, mime_fp);
