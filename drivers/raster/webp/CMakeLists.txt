@@ -26,13 +26,11 @@
 ################################################################################
 
 option(ENABLE_WEBP "Build WebP format" OFF)
-if(ENABLE_WEBP)
+if(ENABLE_WEBP AND WEBP_FOUND)
     set(TARGET_NAME ras_webp)
 
     add_definitions(-DFRMT_webp)
-    set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DFRMT_webp" PARENT_SCOPE)
-
-    find_anyproject(WEBP REQUIRED)
+    set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DFRMT_webp" PARENT_SCOPE)   
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 

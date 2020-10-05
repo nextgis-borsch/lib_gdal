@@ -3,7 +3,7 @@
 # Purpose:  CMake build scripts
 # Author:   Dmitry Baryshnikov, dmitry.baryshnikov@nextgis.com
 ################################################################################
-# Copyright (C) 2015-2018, NextGIS <info@nextgis.com>
+# Copyright (C) 2015-2020, NextGIS <info@nextgis.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -33,20 +33,19 @@ if(ENABLE_MRF AND JPEG_FOUND AND PNG_FOUND AND TIFF_FOUND)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-if(WITH_LERC)
-    add_definitions(-DLERC)
-    include_directories(${CMAKE_SOURCE_DIR}/core/lib/LercLib)
+    if(WITH_LERC)
+        include_directories(${CMAKE_SOURCE_DIR}/core/lib/LercLib)
+        add_definitions(-DLERC)
 
+        set(LIB_LERC_HHEADERS
+            LERCV1/Lerc1Image.h
+        )
 
-    set(LIB_LERC_HHEADERS
-        libLERC/BitMaskV1.h libLERC/BitStufferV1.h libLERC/CntZImage.h
-    )
-
-    set(LIB_LERC_CSOURCES
-        libLERC/BitMaskV1.cpp libLERC/BitStufferV1.cpp libLERC/CntZImage.cpp
-        LERC_band.cpp
-    )
-endif()
+        set(LIB_LERC_CSOURCES
+            LERC_band.cpp
+            LERCV1/Lerc1Image.cpp
+        )
+    endif()
 
     set(LIB_HHEADERS
     )

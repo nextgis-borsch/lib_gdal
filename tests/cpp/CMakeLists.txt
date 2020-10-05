@@ -61,7 +61,7 @@ if(TEST_VIRTUALMEM)
     set(PROGS ${PROGS} testvirtualmem)
 endif()
 
-if(CMAKE_CL_64 OR UNIX)
+if((CMAKE_CL_64 OR UNIX) AND NOT APPLE)
     set(PROGS ${PROGS} testsse)
 endif()
 

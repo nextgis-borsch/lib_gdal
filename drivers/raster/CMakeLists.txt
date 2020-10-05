@@ -55,12 +55,18 @@ if(JPEG_FOUND)
     add_definitions(-DHAVE_LIBJPEG) # Added only after 2.1 release (especially for geotiff.cpp where incorrect #ifdef is used)
 endif()
 
-find_anyproject(JPEG12 DEFAULT ON NAMES jpeg jpeg12)
+find_anyproject(JPEG12 DEFAULT ON) # NAMES jpeg12 jpeg
 if(JPEG12_FOUND)
     add_definitions(-DJPEG12_SUPPORTED)
+    # message("${JPEG12_INCLUDE_DIRS} / ${JPEG12_INCLUDE_DIR} / ${JPEG12_LIBRARIES}")
 endif()
 
 find_anyproject(PNG DEFAULT ON)
+
+find_anyproject(WEBP DEFAULT ON)
+if(WEBP_FOUND)
+    add_definitions(-DWEBP_SUPPORT)
+endif()
 
 file(GLOB FORMATS ${CMAKE_CURRENT_SOURCE_DIR}/*)
 foreach(FORMAT ${FORMATS})
