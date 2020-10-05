@@ -761,13 +761,13 @@ OGRErr SXFFile::Read(OGRSXFDataSource *poDS, CSLConstList papszOpenOpts)
         axisAngle *= TO_DEGREES;
     }
 
-    GUInt32 nResolution = 1;
+    GInt32 nResolution = 1;
     GUInt32 frameCoords[8];
 
     if( nVersion == 3 )
     {
         struct _buff{
-            GUInt32 nRes;
+            GInt32 nRes;
             GInt16 anFrame[8];
         } buff;
         VSIFReadL(&buff, 20, 1, fpSXF);
