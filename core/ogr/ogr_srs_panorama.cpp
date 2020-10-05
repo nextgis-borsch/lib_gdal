@@ -8,6 +8,7 @@
  ******************************************************************************
  * Copyright (c) 2005, Andrey Kiselev <dron@ak4719.spb.edu>
  * Copyright (c) 2008-2012, Even Rouault <even dot rouault at spatialys.com>
+ * Copyright (c) 2020, Dmitry Baryshnikov <polimax@mail.ru>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -74,6 +75,8 @@ constexpr long PAN_PROJ_EQC    = 27L;  // Equirectangular
 constexpr long PAN_PROJ_CEA    = 28L;  // Cylindrical Equal Area (Lambert)
 constexpr long PAN_PROJ_IMWP   = 29L;  // International Map of the World Polyconic
 constexpr long PAN_PROJ_MILLER = 34L;  // Miller
+constexpr long PAN_PROJ_PSEUDO_MERCATOR = 35L; // Popular Visualisation Pseudo Mercator
+
 /************************************************************************/
 /*  "Panorama" datum codes.                                             */
 /************************************************************************/
@@ -125,27 +128,54 @@ constexpr int aoDatums[] =
 
 constexpr int aoEllips[] =
 {
-    0,
-    7024,   // Krassovsky, 1940
-    7043,   // WGS, 1972
-    7022,   // International, 1924 (Hayford, 1909)
-    7034,   // Clarke, 1880
-    7008,   // Clarke, 1866 (NAD1927)
-    7015,   // Everest, 1830
-    7004,   // Bessel, 1841
-    7001,   // Airy, 1830
-    7030,   // WGS, 1984 (GPS)
-    0,      // FIXME: PZ90.02
-    7019,   // GRS, 1980 (NAD1983)
-    7022,   // International, 1924 (Hayford, 1909) XXX?
-    7036,   // South American, 1969
-    7021,   // Indonesian, 1974
-    7020,   // Helmert 1906
-    0,      // FIXME: Fisher 1960
-    0,      // FIXME: Fisher 1968
-    0,      // FIXME: Haff 1960
-    7042,   // Everest, 1830
-    7003   // Australian National, 1965
+    0,      // 0. Undefined
+    7024,   // 1. Krassovsky, 1940
+    7043,   // 2. WGS, 1972
+    7022,   // 3. International, 1924 (Hayford, 1909)
+    7034,   // 4. Clarke, 1880
+    7008,   // 5. Clarke, 1866 (NAD1927)
+    7015,   // 6. Everest, 1830
+    7004,   // 7. Bessel, 1841
+    7001,   // 8. Airy, 1830
+    7030,   // 9. WGS, 1984 (GPS)
+    7054,   // 10. PZ-90.02 // http://epsg.io/7054-ellipsoid
+    7019,   // 11. GRS, 1980 (NAD1983)
+    0,      // 12. IERS 1996 (6378136.49 298.25645)
+    7022,   // 13. International, 1924 (Hayford, 1909) XXX?
+    7036,   // 14. South American, 1969
+    7021,   // 15. Indonesian, 1974
+    7020,   // 16. Helmert 1906
+    0,      // 17. FIXME: Fisher 1960 - https://epsg.io/37002
+    0,      // 18. FIXME: Fisher 1968 - https://epsg.io/37003
+    0,      // 19. FIXME: Haff 1960 - (6378270.0 297.0)
+    7042,   // 20. Everest, 1830
+    7003,   // 21. Australian National, 1965
+    1024,   // 22. CGCS2000 http://epsg.io/1024-ellipsoid
+    7002,   // 23. Airy Modified 1849 http://epsg.io/7002-ellipsoid
+    7005,   // 24. Bessel Modified
+    7046,   // 25. Bessel Namibia
+    7046,   // 26. Bessel Namibia (GLM)
+    7013,   // 27. Clarke 1880 (Arc)
+    7014,   // 28. Clarke 1880 (SGA 1922)
+    7042,   // 29. Everest (1830 Definition)
+    7018,   // 30. Everest 1830 Modified
+    7056,   // 31. Everest 1830 (RSO 1969)
+    7045,   // 32. Everest 1830 (1975 Definition)
+    7025,   // 33. NWL 9D
+    7027,   // 34. Plessis 1817
+    7028,   // 35. Struve 1860
+    7029,   // 36. War Office
+    7031,   // 37. GEM 10C
+    7032,   // 38. OSU86F
+    7033,   // 39. OSU91A
+    7036,   // 40. GRS 1967
+    7041,   // 41. Average Terrestrial System 1977
+    7049,   // 42. IAG 1975
+    7050,   // 43. GRS 1967 Modified
+    7051,   // 44. Danish 1876
+    7048,   // 45. GRS 1980 Authalic Sphere
+    1025,   // 46. GSK-2011
+    7054    // 47. PZ-90
 };
 
 constexpr int NUMBER_OF_ELLIPSOIDS = static_cast<int>(CPL_ARRAYSIZE(aoEllips));
@@ -156,34 +186,34 @@ constexpr int NUMBER_OF_ELLIPSOIDS = static_cast<int>(CPL_ARRAYSIZE(aoEllips));
 
 constexpr int aoVCS[] =
 {
-    0,
-    8357,   //1
-    5711,   //2
-    0,      //3
-    5710,   //4
-    5710,   //5
-    0,      //6
-    0,      //7
-    0,      //8
-    0,      //9
-    5716,   //10
-    5733,   //11
-    0,      //12
-    0,      //13
-    0,      //14
-    0,      //15
-    5709,   //16
-    5776,   //17
-    0,      //18
-    0,      //19
-    5717,   //20
-    5613,   //21
-    0,      //22
-    5775,   //23
-    5702,   //24
-    5705,   //25
-    0,      //26
-    5714    //27
+    0,      //0, 255, -1 - Undefined
+    8357,   //1 Baltic 1957 height
+    5711,   //2 AHD height
+    5195,   //3 Trieste height
+    5710,   //4 Ostend height - zero normal
+    5710,   //5 Ostend height - null point de shosse
+    0,      //6 Channel height (GB)
+    5732,   //7 Belfast height 
+    5731,   //8 Malin Head height
+    0,      //9 Dublib bay height
+    5716,   //10 Piraeus height
+    5733,   //11 DNN height
+    8089,   //12 ISH2004 height
+    5782,   //13 Alicante height
+    0,      //14 Canary islands
+    5214,   //15 Genoa height
+    5709,   //16 NAP height
+    5776,   //17 NN54 height
+    0,      //18 North Norway
+    5780,   //19 Cascais height
+    5717,   //20 N60 height
+    5613,   //21 RH2000 height
+    0,      //22 France, Marseilles height
+    5775,   //23 Antalya height
+    5702,   //24 NGVD29 height (ftUS)
+    5705,   //25 Baltic 1977 height
+    0,      //26 Pacific Ocean (Ohotsk sea level)
+    5714    //27 MSL height
 };
 
 constexpr int NUMBER_OF_VERTICALCS = (sizeof(aoVCS)/sizeof(aoVCS[0]));
@@ -267,6 +297,44 @@ OGRErr OSRImportFromPanorama( OGRSpatialReferenceH hSRS,
  *       7: Bessel, 1841
  *       8: Airy, 1830
  *       9: WGS, 1984 (GPS)
+ *      10: PZ-90.02
+ *      11: GRS, 1980 (NAD1983)
+ *      12: IERS 1996 (6378136.49 298.25645)
+ *      13: International, 1924 (Hayford, 1909)
+ *      14: South American, 1969
+ *      15: Indonesian, 1974
+ *      16: Helmert 1906
+ *      17: Fisher 1960
+ *      18: Fisher 1968
+ *      19. Haff 1960 - (6378270.0 297.0)
+ *      20: Everest, 1830
+ *      21: Australian National, 1965
+ *      22: CGCS2000 
+ *      23: Airy Modified 1849
+ *      24: Bessel Modified
+ *      25: Bessel Namibia
+ *      26: Bessel Namibia (GLM)
+ *      27: Clarke 1880 (Arc)
+ *      28: Clarke 1880 (SGA 1922)
+ *      29: Everest (1830 Definition)
+ *      30: Everest 1830 Modified
+ *      31: Everest 1830 (RSO 1969)
+ *      32: Everest 1830 (1975 Definition)
+ *      33: NWL 9D
+ *      34: Plessis 1817
+ *      35: Struve 1860
+ *      36: War Office
+ *      37: GEM 10C
+ *      38: OSU86F
+ *      39: OSU91A
+ *      40: GRS 1967
+ *      41: Average Terrestrial System 1977
+ *      42: IAG 1975
+ *      43: GRS 1967 Modified
+ *      44: Danish 1876
+ *      45: GRS 1980 Authalic Sphere
+ *      46: GSK-2011
+ *      47: PZ-90
  * \endcode
  *
  * @param padfPrjParams Array of 8 coordinate system parameters:
@@ -457,6 +525,9 @@ OGRErr OGRSpatialReference::importFromPanorama( long iProjSys, long iDatum,
                 padfPrjParams[6], padfPrjParams[7]);
             break;
 
+        case PAN_PROJ_PSEUDO_MERCATOR:
+            return importFromEPSG(3857);
+
         default:
             CPLDebug( "OSR_Panorama", "Unsupported projection: %ld", iProjSys );
             SetLocalCS( CPLString().Printf("\"Panorama\" projection number %ld",
@@ -553,10 +624,16 @@ OGRErr OGRSpatialReference::importFromPanorama( long iProjSys, long iDatum,
  *   2: AHD height (EPSG:5711)
  *   4: Ostend height (EPSG:5710)
  *   5: Ostend height (EPSG:5710)
+ *   7: Belfast height (EPSG: 5732)
+ *   8: Malin Head height (EPSG: 5731)
  *  10: Piraeus height (EPSG:5716)
  *  11: DNN height (EPSG:5733)
+ *  12: ISH2004 height (EPSG:8089)
+ *  13: Alicante height (EPSG:5782)
+ *  15: Genoa height (EPSG:5214)
  *  16: NAP height (EPSG:5709)
  *  17: NN54 height (EPSG:5776)
+ *  19: Cascais height (EPSG:5780)
  *  20: N60 height (EPSG:5717)
  *  21: RH2000 height (EPSG:5613)
  *  23: Antalya height (EPSG:5775)

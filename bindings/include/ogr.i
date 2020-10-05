@@ -389,8 +389,10 @@ typedef void retGetPoints;
 %constant ALTER_TYPE_FLAG = 2;
 %constant ALTER_WIDTH_PRECISION_FLAG = 4;
 %constant ALTER_NULLABLE_FLAG = 8;
+%constant ALTER__FLAG = 8;
 %constant ALTER_DEFAULT_FLAG = 16;
-%constant ALTER_ALL_FLAG = 1 + 2 + 4 + 8 + 16;
+%constant ALTER_UNIQUE_FLAG = 32;
+%constant ALTER_ALL_FLAG = 1 + 2 + 4 + 8 + 16 + 32;
 
 %constant F_VAL_NULL= 0x00000001; /**< Validate that fields respect not-null constraints */
 %constant F_VAL_GEOM_TYPE = 0x00000002; /**< Validate that geometries respect geometry column type */
@@ -849,6 +851,10 @@ public:
                                                       spatialFilter,
                                                       dialect);
     return layer;
+  }
+
+  OGRErr AbortSQL(){
+    return GDALDatasetAbortSQL((OGRDataSourceShadow*)self);
   }
 
 %apply SWIGTYPE *DISOWN {OGRLayerShadow *layer};
@@ -2202,6 +2208,18 @@ public:
     OGR_Fld_SetName(self, name);
   }
 
+  const char * GetAlternativeName() {
+    return OGR_Fld_GetAlternativeNameRef(self);
+  }
+
+  const char * GetAlternativeNameRef() {
+    return OGR_Fld_GetAlternativeNameRef(self);
+  }
+
+  void SetAlternativeName( const char* alternativeName) {
+    OGR_Fld_SetAlternativeName(self, alternativeName);
+  }
+
   OGRFieldType GetType() {
     return OGR_Fld_GetType(self);
   }
@@ -2269,6 +2287,14 @@ public:
 
   void SetNullable(int bNullable ) {
     OGR_Fld_SetNullable( self, bNullable );
+  }
+
+  int IsUnique() {
+    return OGR_Fld_IsUnique( self );
+  }
+
+  void SetUnique(int bUnique ) {
+    OGR_Fld_SetUnique( self, bUnique );
   }
 
   const char* GetDefault() {

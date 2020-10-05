@@ -150,7 +150,8 @@ void RegisterOGRSXF()
         "<OpenOptionList>"
         "  <Option name='SXF_LAYER_FULLNAME' type='string' description='Use long layer names' default='NO'/>"
         "  <Option name='SXF_RSC_FILENAME' type='string' description='RSC file name' default=''/>"
-        "  <Option name='SXF_SET_VERTCS' type='string' description='Layers spatial reference will include vertical coordinate system description if exist' default='NO'/>"
+        "  <Option name='SXF_SET_VERTCS' type='boolean' description='Layers spatial reference will include vertical coordinate system description if exist' default='NO'/>"
+        "  <Option name='SXF_NEW_BEHAVIOR' type='boolean' description='New behavior - vector object to lines, empty layers presence, etc.' default='NO'/>"
         "</OpenOptionList>");
 
     poDriver->pfnOpen = OGRSXFDriver::Open;

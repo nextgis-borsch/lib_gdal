@@ -4,7 +4,7 @@
 # Author:   Dmitry Baryshnikov, polimax@mail.ru
 ################################################################################
 # Copyright (C) 2015,2020 NextGIS <info@nextgis.com>
-# Copyright (C) 2012-2014,2015-2019 Dmitry Baryshnikov
+# Copyright (C) 2012-2020 Dmitry Baryshnikov
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -52,6 +52,8 @@ set(LIB_HHEADERS
     gdal_proxy.h
     gdal_rat.h
     rawdataset.h
+    tilematrixset.hpp
+    nasakeywordhandler.h
     ${CMAKE_CURRENT_BINARY_DIR}/gdal_version.h
 )
 
@@ -60,6 +62,7 @@ set(LIB_HHEADERS_PRIV
     gdaljp2metadatagenerator.h
     gdalsse_priv.h
     gdal_avx2_emulation.hpp
+    gdal_thread_pool.h
 )
 
 set(LIB_CSOURCES
@@ -102,6 +105,9 @@ set(LIB_CSOURCES
     rasterio_ssse3.cpp
     rawdataset.cpp
     gdalmultidim.cpp
+    tilematrixset.cpp
+    gdal_thread_pool.cpp
+    nasakeywordhandler.cpp
 )
 
 if(GDAL_PAM_ENABLED)

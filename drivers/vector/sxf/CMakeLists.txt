@@ -46,6 +46,8 @@ if(ENABLE_SXF)
         ogrsxfdatasource.cpp  
         ogrsxflayer.cpp
         ogrsxfdriver.cpp
+        sxffile.cpp
+        rscfile.cpp
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})

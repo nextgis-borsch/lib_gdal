@@ -58,6 +58,8 @@
 
 CPL_CVSID("$Id$")
 
+//! @cond Doxygen_Suppress
+
 /************************************************************************/
 /* ==================================================================== */
 /*                          NASAKeywordHandler                          */
@@ -162,7 +164,7 @@ int NASAKeywordHandler::ReadGroup( const char *pszPathPrefix, CPLJSONObject &oCu
             }
             CPLJSONObject oName = oNewGroup["Name"];
             if( (osValue == "Table" || osValue == "Field") &&
-                (oName.GetType() == CPLJSONObject::String) )
+                (oName.GetType() == CPLJSONObject::Type::String) )
             {
                 oCur.Add( osValue + "_" + oName.ToString(), oNewGroup );
                 oNewGroup.Add( "_container_name", osValue );
@@ -642,3 +644,5 @@ CPLJSONObject NASAKeywordHandler::GetJsonObject() const
 {
     return oJSon;
 }
+
+//! @endcond

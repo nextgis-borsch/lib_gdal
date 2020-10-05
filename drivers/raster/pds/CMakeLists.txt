@@ -5,6 +5,7 @@
 ################################################################################
 # Copyright (C) 2015-2017, NextGIS <info@nextgis.com>
 # Copyright (C) 2016 Mikhail Gusev
+# Copyright (C) 2020 Dmitry Baryshnikov <polimax@mail.ru>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -41,7 +42,6 @@ if(ENABLE_PDS_ISIS2_ISIS3_VICAR)
     )
 
     set(LIB_HHEADERS_PRIV
-        nasakeywordhandler.h
         vicarkeywordhandler.h
         ${CMAKE_SOURCE_DIR}/core/gcore/rawdataset.h
         pds4dataset.h
@@ -52,7 +52,6 @@ if(ENABLE_PDS_ISIS2_ISIS3_VICAR)
         isis2dataset.cpp
         isis3dataset.cpp
         vicardataset.cpp
-        nasakeywordhandler.cpp
         vicarkeywordhandler.cpp
         pds4dataset.cpp
         pds4vector.cpp

@@ -296,7 +296,9 @@ bool OGROAPIFDataset::Download(
     papszOptions =
         CSLAddString(papszOptions, CPLSPrintf("PERSISTENT=OAPIF:%p", this));
     CPLString osURLWithQueryParameters(osURL);
-    if( !m_osUserQueryParams.empty() )
+    if( !m_osUserQueryParams.empty() &&
+        osURL.find('?' + m_osUserQueryParams) == std::string::npos &&
+        osURL.find('&' + m_osUserQueryParams) == std::string::npos )
     {
         if( osURL.find('?') == std::string::npos )
         {
@@ -1041,14 +1043,14 @@ void OGROAPIFLayer::GetSchema()
 
     if( m_bDescribedByIsXML )
     {
-        std::vector<GMLFeatureClass*> aosClasses;
+        std::vector<GMLFeatureClass*> apoClasses;
         bool bFullyUnderstood = false;
-        bool bHaveSchema = GMLParseXSD( m_osDescribedByURL, aosClasses,
+        bool bHaveSchema = GMLParseXSD( m_osDescribedByURL, apoClasses,
                                         bFullyUnderstood );
-        if (bHaveSchema && aosClasses.size() == 1)
+        if (bHaveSchema && apoClasses.size() == 1)
         {
             CPLDebug("OAPIF", "Using XML schema");
-            const auto poGMLFeatureClass = aosClasses[0];
+            auto poGMLFeatureClass = apoClasses[0];
             if( poGMLFeatureClass->GetGeometryPropertyCount() ==  1 )
             {
                 // Force linear type as we work with GeoJSON data
@@ -1083,6 +1085,9 @@ void OGROAPIFLayer::GetSchema()
                 m_apoFieldsFromSchema.emplace_back(std::move(oField));
             }
         }
+
+        for( auto poFeatureClass: apoClasses )
+            delete poFeatureClass;
     }
     else
     {
@@ -1598,6 +1603,7 @@ GIntBig OGROAPIFLayer::GetFeatureCount(int bForce)
                 if( psDoc )
                 {
                     CPLXMLTreeCloser oCloser(psDoc);
+                    CPL_IGNORE_RET_VAL(oCloser);
                     CPLStripXMLNamespace(psDoc, nullptr, true);
                     CPLString osNumberMatched =
                         CPLGetXMLValue(psDoc,
@@ -2343,7 +2349,7 @@ int OGROAPIFLayer::TestCapability(const char* pszCap)
     {
         return TRUE;
     }
-    // Don't advertize OLCRandomRead as it requires a GET per feature
+    // Don't advertise OLCRandomRead as it requires a GET per feature
     return FALSE;
 }
 

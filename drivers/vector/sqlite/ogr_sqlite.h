@@ -248,6 +248,7 @@ class OGRSQLiteLayer CPL_NON_FINAL: public OGRLayer, public IOGRSQLiteGetSpatial
 
     sqlite3_stmt        *hStmt;
     int                  bDoStep;
+    bool                 m_bEOF = false;
 
     OGRSQLiteDataSource *poDS;
 
@@ -611,7 +612,7 @@ class OGRSQLiteSelectLayerCommonBehaviour
 
 class OGRSQLiteSelectLayer CPL_NON_FINAL: public OGRSQLiteLayer, public IOGRSQLiteSelectLayer
 {
-    OGRSQLiteSelectLayerCommonBehaviour* poBehaviour;
+    OGRSQLiteSelectLayerCommonBehaviour* poBehavior;
 
     virtual OGRErr      ResetStatement() override;
 
@@ -739,13 +740,15 @@ class OGRSQLiteBaseDataSource CPL_NON_FINAL: public GDALPamDataset
 
     virtual std::pair<OGRLayer*, IOGRSQLiteGetSpatialWhere*> GetLayerWithGetSpatialWhereByName( const char* pszName ) = 0;
 
+    virtual OGRErr     AbortSQL() override;
+
     virtual OGRErr      StartTransaction(int bForce = FALSE) override;
     virtual OGRErr      CommitTransaction() override;
     virtual OGRErr      RollbackTransaction() override;
 
     virtual int         TestCapability( const char * ) override;
 
-    virtual void *GetInternalHandle( const char * ) override;
+    virtual void        *GetInternalHandle( const char * ) override;
 
     OGRErr              SoftStartTransaction();
     OGRErr              SoftCommitTransaction();

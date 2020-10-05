@@ -267,7 +267,7 @@ bool OGRNGWDataset::Init(int nOpenFlagsIn)
             else if( (osResourceType == "vector_layer" ||
                 osResourceType == "postgis_layer") )
             {
-                // Cehck feature paging.
+                // Check feature paging.
                 FillCapabilities( papszHTTPOptions );
                 // Add vector layer.
                 AddLayer( oRoot, papszHTTPOptions, nOpenFlagsIn );
@@ -815,7 +815,7 @@ char **OGRNGWDataset::GetHeaders() const
 /*
  * SQLUnescape()
  * Get from gdal/ogr/ogrsf_frmts/sqlite/ogrsqliteutility.cpp as we don't want
- * depenency on sqlite
+ * dependency on sqlite
  */
 static CPLString SQLUnescape( const char *pszVal )
 {
@@ -843,7 +843,7 @@ static CPLString SQLUnescape( const char *pszVal )
 /*
  * SQLTokenize()
  * Get from gdal/ogr/ogrsf_frmts/sqlite/ogrsqliteutility.cpp as we don't want
- * depenency on sqlite
+ * dependency on sqlite
  */
 static char **SQLTokenize( const char *pszStr )
 {
@@ -1101,14 +1101,38 @@ OGRLayer *OGRNGWDataset::ExecuteSQL( const char *pszStatement,
             }
 
             std::string osNgwSelect;
+            for( int iKey = 0; iKey < oSelect.order_specs; iKey++ )
+            {
+                swq_order_def *psKeyDef = oSelect.order_defs + iKey;
+                if(iKey > 0 )
+                {
+                    osNgwSelect += ",";
+                }
+
+                if( psKeyDef->ascending_flag == TRUE )
+                {
+                    osNgwSelect += psKeyDef->field_name;
+                }
+                else 
+                {
+                    osNgwSelect += "-" + std::string(psKeyDef->field_name);
+                }
+            }
+
             if( oSelect.where_expr != nullptr )
             {
-                osNgwSelect = OGRNGWLayer::TranslateSQLToFilter(
-                    oSelect.where_expr);
-                if( osNgwSelect.empty() )
+                if( !osNgwSelect.empty() )
                 {
-                    bSkip = true;
+                    osNgwSelect += "&";
                 }
+                osNgwSelect += OGRNGWLayer::TranslateSQLToFilter(
+                    oSelect.where_expr );
+
+            }
+
+            if( osNgwSelect.empty() )
+            {
+                bSkip = true;
             }
 
             if( !bSkip )

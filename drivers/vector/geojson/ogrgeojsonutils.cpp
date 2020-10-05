@@ -28,6 +28,7 @@
  ****************************************************************************/
 
 #include "ogrgeojsonutils.h"
+#include <assert.h>
 #include <cpl_port.h>
 #include <cpl_conv.h>
 #include <ogr_geometry.h>
@@ -191,7 +192,9 @@ static bool IsGeoJSONLikeObject( const char* pszText, bool* pbMightBeSequence )
     }
 
     // See https://github.com/OSGeo/gdal/issues/2720
-    if( osWithoutSpace.find("{\"coordinates\":[") == 0 )
+    if( osWithoutSpace.find("{\"coordinates\":[") == 0 ||
+        // and https://github.com/OSGeo/gdal/issues/2787
+        osWithoutSpace.find("{\"geometry\":{\"coordinates\":[") == 0 )
     {
         if( pbMightBeSequence )
             *pbMightBeSequence = false;
@@ -293,6 +296,7 @@ static bool IsLikelyNewlineSequenceGeoJSON( VSILFILE* fpL,
         {
             const char* pszText = pszFileContent ? pszFileContent:
                 reinterpret_cast<const char*>(pabyHeader);
+            assert(pszText);
             nRead = std::min(strlen(pszText), nBufferSize);
             memcpy(abyBuffer.data(), pszText, nRead);
             bFirstIter = false;

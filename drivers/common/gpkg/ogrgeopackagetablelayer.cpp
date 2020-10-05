@@ -32,6 +32,7 @@
 #include "ogrsqliteutility.h"
 #include "cpl_time.h"
 #include "ogr_p.h"
+#include <cmath>
 
 CPL_CVSID("$Id$")
 
@@ -268,10 +269,10 @@ OGRErr OGRGeoPackageTableLayer::FeatureBindParameters( OGRFeature *poFeature,
                     const char *pszVal = poFeature->GetFieldAsString(i);
                     int nValLengthBytes = (int)strlen(pszVal);
                     char szVal[32];
-                    int nYear, nMonth, nDay, nHour, nMinute, nSecond, nTZFlag;
                     CPLString osTemp;
                     if( poFieldDefn->GetType() == OFTDate )
                     {
+                        int nYear, nMonth, nDay, nHour, nMinute, nSecond, nTZFlag;
                         poFeature->GetFieldAsDateTime(i, &nYear, &nMonth, &nDay, &nHour, &nMinute, &nSecond, &nTZFlag);
                         snprintf(szVal, sizeof(szVal), "%04d-%02d-%02d", nYear, nMonth, nDay);
                         pszVal = szVal;
@@ -279,21 +280,39 @@ OGRErr OGRGeoPackageTableLayer::FeatureBindParameters( OGRFeature *poFeature,
                     }
                     else if( poFieldDefn->GetType() == OFTDateTime )
                     {
-                        float fSecond = 0.0f;
-                        poFeature->GetFieldAsDateTime(i, &nYear, &nMonth, &nDay,
-                                                      &nHour, &nMinute,
-                                                      &fSecond, &nTZFlag);
-                        if( nTZFlag == 0 || nTZFlag == 100 )
+                        OGRField sField(*(poFeature->GetRawFieldRef(i)));
+
+                        if( !m_poDS->m_bDateTimeWithTZ &&
+                                (sField.Date.TZFlag == 0 || sField.Date.TZFlag == 1) )
                         {
-                            if( OGR_GET_MS(fSecond) )
-                                snprintf(szVal, sizeof(szVal), "%04d-%02d-%02dT%02d:%02d:%06.3fZ",
-                                     nYear, nMonth, nDay, nHour, nMinute, fSecond);
-                            else
-                                snprintf(szVal, sizeof(szVal), "%04d-%02d-%02dT%02d:%02d:%02dZ",
-                                     nYear, nMonth, nDay, nHour, nMinute, (int)fSecond);
-                            pszVal = szVal;
-                            nValLengthBytes = (int)strlen(pszVal);
+                            sField.Date.TZFlag = 100;
                         }
+                        else if( !m_poDS->m_bDateTimeWithTZ && sField.Date.TZFlag != 100 )
+                        {
+                            struct tm brokendowntime;
+                            brokendowntime.tm_year = sField.Date.Year - 1900;
+                            brokendowntime.tm_mon = sField.Date.Month -1;
+                            brokendowntime.tm_mday = sField.Date.Day;
+                            brokendowntime.tm_hour = sField.Date.Hour;
+                            brokendowntime.tm_min = sField.Date.Minute;
+                            brokendowntime.tm_sec = 0;
+                            GIntBig nDT = CPLYMDHMSToUnixTime(&brokendowntime);
+                            const int TZOffset = std::abs(sField.Date.TZFlag - 100) * 15;
+                            nDT -= TZOffset * 60;
+                            CPLUnixTimeToYMDHMS(nDT, &brokendowntime);
+                            sField.Date.Year = static_cast<GInt16>(brokendowntime.tm_year + 1900);
+                            sField.Date.Month = static_cast<GByte>(brokendowntime.tm_mon + 1);
+                            sField.Date.Day = static_cast<GByte>(brokendowntime.tm_mday);
+                            sField.Date.Hour = static_cast<GByte>(brokendowntime.tm_hour);
+                            sField.Date.Minute = static_cast<GByte>(brokendowntime.tm_min);
+                            sField.Date.TZFlag = 100;
+                        }
+
+                        char* pszXMLDateTime = OGRGetXMLDateTime(&sField);
+                        osTemp = pszXMLDateTime;
+                        pszVal = osTemp.c_str();
+                        nValLengthBytes = static_cast<int>(osTemp.size());
+                        CPLFree(pszXMLDateTime);
                     }
                     else if( poFieldDefn->GetType() == OFTString &&
                              poFieldDefn->GetWidth() > 0 )
@@ -811,6 +830,14 @@ OGRErr OGRGeoPackageTableLayer::ReadTableDefinition()
         }
     }
 
+
+    // set names (in upper case) of fields with unique constraint
+    std::set<std::string> uniqueFieldsUC;
+    if( m_bIsTable )
+    {
+        uniqueFieldsUC = SQLGetUniqueFieldUCConstraints(poDb, m_pszTableName);
+    }
+
     /* Use the "PRAGMA TABLE_INFO()" call to get table definition */
     /*  #|name|type|notnull|default|pk */
     /*  0|id|integer|0||1 */
@@ -948,6 +975,12 @@ OGRErr OGRGeoPackageTableLayer::ReadTableDefinition()
                 oField.SetWidth(nMaxWidth);
                 if( bNotNull )
                     oField.SetNullable(FALSE);
+
+                if ( uniqueFieldsUC.find( CPLString( pszName ).toupper() ) != uniqueFieldsUC.end() )
+                {
+                    oField.SetUnique(TRUE);
+                }
+
                 if( pszDefault != nullptr )
                 {
                     int nYear = 0;
@@ -1309,6 +1342,8 @@ OGRErr OGRGeoPackageTableLayer::CreateField( OGRFieldDefn *poField,
                                            nMaxWidth));
         if(  !poField->IsNullable() )
             osCommand += " NOT NULL";
+        if(  poField->IsUnique() )
+            osCommand += " UNIQUE";
         if( poField->GetDefault() != nullptr && !poField->IsDefaultDriverSpecific() )
         {
             osCommand += " DEFAULT ";
@@ -3787,6 +3822,10 @@ CPLString OGRGeoPackageTableLayer::GetColumnsOfCreateTable(const std::vector<OGR
         {
             osSQL += " NOT NULL";
         }
+        if( poFieldDefn->IsUnique() )
+        {
+            osSQL += " UNIQUE";
+        }
         const char* pszDefault = poFieldDefn->GetDefault();
         if( pszDefault != nullptr &&
             (!poFieldDefn->IsDefaultDriverSpecific() ||
@@ -4454,6 +4493,10 @@ OGRErr OGRGeoPackageTableLayer::AlterFieldDefn( int iFieldToAlter,
     {
         oTmpFieldDefn.SetDefault(poNewFieldDefn->GetDefault());
     }
+    if( (nFlagsIn & ALTER_UNIQUE_FLAG) )
+    {
+      oTmpFieldDefn.SetUnique( poNewFieldDefn->IsUnique());
+    }
     std::vector<OGRFieldDefn*> apoFields;
     std::vector<OGRFieldDefn*> apoFieldsOld;
     for( int iField = 0; iField < m_poFeatureDefn->GetFieldCount(); iField++ )
@@ -4712,6 +4755,8 @@ OGRErr OGRGeoPackageTableLayer::AlterFieldDefn( int iFieldToAlter,
                 poFieldDefn->SetNullable(poNewFieldDefn->IsNullable());
             if (nFlagsIn & ALTER_DEFAULT_FLAG)
                 poFieldDefn->SetDefault(poNewFieldDefn->GetDefault());
+            if (nFlagsIn & ALTER_UNIQUE_FLAG)
+              poFieldDefn->SetUnique(poNewFieldDefn->IsUnique());
 
             if( bRunDoSpecialProcessingForColumnCreation )
             {

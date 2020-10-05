@@ -373,6 +373,9 @@ int CPL_DLL VSISync( const char* pszSource, const char* pszTarget,
 char CPL_DLL *VSIStrerror( int );
 GIntBig CPL_DLL VSIGetDiskFreeSpace(const char *pszDirname);
 
+void CPL_DLL VSINetworkStatsReset( void );
+char CPL_DLL *VSINetworkStatsGetAsSerializedJSON( char** papszOptions );
+
 /* ==================================================================== */
 /*      Install special file access handlers.                           */
 /* ==================================================================== */
@@ -511,7 +514,7 @@ typedef int            (*VSIFilesystemPluginCloseCallback)         ( void *pFile
 
 /**
  * struct containing callbacks to used by the handler.
- * (rw), (r), (w) or () at the end indicate wether the given callback is mandatory
+ * (rw), (r), (w) or () at the end indicate whether the given callback is mandatory
  * for reading and or writing handlers. A (?) indicates that the callback might
  * be mandatory for certain drivers only.
  * @since GDAL 3.0
@@ -538,6 +541,8 @@ typedef struct {
     VSIFilesystemPluginFlushCallback            flush; /**< sync bytes (w) */
     VSIFilesystemPluginTruncateCallback         truncate; /**< truncate handle (w?) */
     VSIFilesystemPluginCloseCallback            close; /**< close handle  (rw) */
+    size_t                                      nBufferSize; /**< buffer small reads (makes handler read only) */
+    size_t                                      nCacheSize; /**< max mem to use per file when buffering */
 /* 
     Callbacks are defined as a struct allocated by a call to VSIAllocFilesystemPluginCallbacksStruct
     in order to try to maintain ABI stability when eventually adding a new member.

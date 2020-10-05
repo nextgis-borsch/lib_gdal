@@ -206,18 +206,18 @@ bool OGRODBCMDBDriver::FindDriverLib()
     };
     const int nLibNames = sizeof(aszDefaultLibName) / sizeof(aszDefaultLibName[0]);
     const char* libPath[] = {
+        "/usr/lib64",
+        "/usr/local/lib64",
         "/usr/lib",
         "/usr/local/lib"
     };
     const int nLibPaths = sizeof(libPath) / sizeof(libPath[0]);
 
-    CPLString strLibPath("");
-
     const char* pszDrvCfg = CPLGetConfigOption("MDBDRIVER_PATH", nullptr);
     if ( nullptr != pszDrvCfg )
     {
         // Directory or file path
-        strLibPath = pszDrvCfg;
+        CPLString strLibPath(pszDrvCfg);
 
         VSIStatBuf sStatBuf;
         if ( VSIStat( pszDrvCfg, &sStatBuf ) == 0

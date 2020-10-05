@@ -1894,6 +1894,10 @@ CPLErr GDALSetGCPs2( GDALDatasetH hDS, int nGCPCount,
  * deleted by specifying nOverviews == 0. This works at least for external
  * overviews (.ovr), TIFF internal overviews, etc.
  *
+ * Starting with GDAL 3.2, the GDAL_NUM_THREADS configuration option can be set
+ * to "ALL_CPUS" or a integer value to specify the number of threads to use for
+ * overview computation.
+ *
  * This method is the same as the C function GDALBuildOverviews().
  *
  * @param pszResampling one of "AVERAGE", "AVERAGE_MAGPHASE", "BILINEAR",
@@ -2028,7 +2032,6 @@ CPLErr GDALDataset::IRasterIO( GDALRWFlag eRWFlag,
                                GDALRasterIOExtraArg* psExtraArg )
 
 {
-
     const char *pszInterleave = nullptr;
 
     CPLAssert(nullptr != pData);
@@ -2057,6 +2060,23 @@ CPLErr GDALDataset::IRasterIO( GDALRWFlag eRWFlag,
          psExtraArg->eResampleAlg == GRIORA_Lanczos) &&
         !(nXSize == nBufXSize && nYSize == nBufYSize) && nBandCount > 1 )
     {
+        if( nBufXSize < nXSize && nBufYSize < nYSize )
+        {
+            int bTried = FALSE;
+            const CPLErr eErr =
+                TryOverviewRasterIO( eRWFlag,
+                                    nXOff, nYOff, nXSize, nYSize,
+                                    pData, nBufXSize, nBufYSize,
+                                    eBufType,
+                                    nBandCount, panBandMap,
+                                    nPixelSpace, nLineSpace,
+                                    nBandSpace,
+                                    psExtraArg,
+                                    &bTried );
+            if( bTried )
+                return eErr;
+        }
+
         GDALDataType eFirstBandDT = GDT_Unknown;
         int nFirstMaskFlags = 0;
         GDALRasterBand *poFirstMaskBand = nullptr;
@@ -2409,7 +2429,7 @@ CPLErr GDALDataset::ValidateRasterIOOrAdviseReadParameters(
  *
  * @param psExtraArg (new in GDAL 2.0) pointer to a GDALRasterIOExtraArg
  * structure with additional arguments to specify resampling and progress
- * callback, or NULL for default behaviour. The GDAL_RASTERIO_RESAMPLING
+ * callback, or NULL for default behavior. The GDAL_RASTERIO_RESAMPLING
  * configuration option can also be defined to override the default resampling
  * to one of BILINEAR, CUBIC, CUBICSPLINE, LANCZOS, AVERAGE or MODE.
  *
@@ -3103,9 +3123,6 @@ CPLErr CPL_STDCALL GDALCreateDatasetMaskBand( GDALDatasetH hDS, int nFlags )
  * .tar/.tar.gz/.tgz archive (see VSIInstallTarFileHandler()) or on a HTTP / FTP
  * server (see VSIInstallCurlFileHandler())
  *
- * In some situations (dealing with unverified data), the datasets can be opened
- * in another process through the \ref gdal_api_proxy mechanism.
- *
  * \sa GDALOpenShared()
  * \sa GDALOpenEx()
  *
@@ -3159,9 +3176,6 @@ GDALOpen( const char * pszFilename, GDALAccess eAccess )
  * file in a .zip archive (see VSIInstallZipFileHandler()), in a
  * .tar/.tar.gz/.tgz archive (see VSIInstallTarFileHandler()) or on a HTTP / FTP
  * server (see VSIInstallCurlFileHandler())
- *
- * In some situations (dealing with unverified data), the datasets can be opened
- * in another process through the \ref gdal_api_proxy mechanism.
  *
  * In order to reduce the need for searches through the operating system
  * file system machinery, it is possible to give an optional list of files with
@@ -3316,26 +3330,14 @@ GDALDatasetH CPL_STDCALL GDALOpenEx( const char *pszFilename,
     oOpenInfo.papszOpenOptions = papszOpenOptionsCleaned;
 
     const int nDriverCount = poDM->GetDriverCount();
-    const int nAllowedDrivers = CSLCount( papszAllowedDrivers );
-
-    for( int iDriver = -1; iDriver < nDriverCount; ++iDriver )
+    for( int iDriver = 0; iDriver < nDriverCount; ++iDriver )
     {
-        GDALDriver *poDriver = nullptr;
-
-        if ( (iDriver == -1 ) && ( nAllowedDrivers == 1 ) )
+        GDALDriver *poDriver = poDM->GetDriver(iDriver);
+        if (papszAllowedDrivers != nullptr &&
+            CSLFindString(papszAllowedDrivers,
+                            GDALGetDriverShortName(poDriver)) == -1)
+        {
             continue;
-
-        if ( iDriver < 0 )
-        {
-            poDriver = GDALGetAPIPROXYDriver();
-        }
-        else
-        {
-            poDriver = poDM->GetDriver(iDriver);
-            if (papszAllowedDrivers != nullptr &&
-                CSLFindString(papszAllowedDrivers,
-                              GDALGetDriverShortName(poDriver)) == -1)
-                continue;
         }
 
         if( (nOpenFlags & GDAL_OF_RASTER) != 0 &&
@@ -3576,9 +3578,6 @@ GDALDatasetH CPL_STDCALL GDALOpenEx( const char *pszFilename,
  * file in a .zip archive (see VSIInstallZipFileHandler()), in a
  * .tar/.tar.gz/.tgz archive (see VSIInstallTarFileHandler()) or on a HTTP / FTP
  * server (see VSIInstallCurlFileHandler())
- *
- * In some situations (dealing with unverified data), the datasets can be opened
- * in another process through the \ref gdal_api_proxy mechanism.
  *
  * \sa GDALOpen()
  * \sa GDALOpenEx()
@@ -4578,6 +4577,37 @@ OGRLayerH GDALDatasetExecuteSQL( GDALDatasetH hDS,
             pszStatement, OGRGeometry::FromHandle(hSpatialFilter),
             pszDialect));
 }
+
+
+/************************************************************************/
+/*                        GDALDatasetAbortSQL()                         */
+/************************************************************************/
+
+/**
+ \brief Abort any SQL statement running in the data store.
+ 
+ This function can be safely called from any thread (pending that the dataset object is still alive). Driver implementations will make sure that it can be called in a thread-safe way.
+ 
+ This might not be implemented by all drivers. At time of writing, only SQLite, GPKG and PG drivers implement it
+
+ This method is the same as the C++ method GDALDataset::AbortSQL()
+
+ @since GDAL 3.2.0
+
+ @param hDS the dataset handle.
+
+ @return OGRERR_NONE on success, or OGRERR_UNSUPPORTED_OPERATION if AbortSQL
+ is not supported for this datasource. .
+
+*/
+
+OGRErr GDALDatasetAbortSQL( GDALDatasetH hDS )
+
+{
+    VALIDATE_POINTER1(hDS, "GDALDatasetAbortSQL", OGRERR_FAILURE );
+    return GDALDataset::FromHandle(hDS)->AbortSQL();
+}
+
 
 /************************************************************************/
 /*                      GDALDatasetGetStyleTable()                      */
@@ -6157,6 +6187,32 @@ GDALDataset::ExecuteSQL( const char *pszStatement,
     return new OGRUnionLayer("SELECT", nSrcLayers, papoSrcLayers, TRUE);
 }
 //! @endcond
+
+
+/************************************************************************/
+/*                             AbortSQL()                             */
+/************************************************************************/
+
+/**
+ \brief Abort any SQL statement running in the data store.
+
+ This function can be safely called from any thread (pending that the dataset object is still alive). Driver implementations will make sure that it can be called in a thread-safe way.
+
+ This might not be implemented by all drivers. At time of writing, only SQLite, GPKG and PG drivers implement it
+
+ This method is the same as the C method GDALDatasetAbortSQL()
+
+ @since GDAL 3.2.0
+
+
+*/
+
+OGRErr GDALDataset::AbortSQL(  )
+{  
+  CPLError(CE_Failure, CPLE_NotSupported, "AbortSQL is not supported for this driver.");
+  return OGRERR_UNSUPPORTED_OPERATION;
+}
+
 
 /************************************************************************/
 /*                        BuildLayerFromSelectInfo()                    */
@@ -8056,6 +8112,7 @@ std::shared_ptr<GDALGroup> GDALDataset::GetRootGroup() const
 /*                        GetRawBinaryLayout()                          */
 /************************************************************************/
 
+//! @cond Doxygen_Suppress
 /**
  \brief Return the layout of a dataset that can be considered as a raw binary format.
 
@@ -8064,10 +8121,46 @@ std::shared_ptr<GDALGroup> GDALDataset::GetRootGroup() const
  @since GDAL 3.1
 */
 
-//! @cond Doxygen_Suppress
 bool GDALDataset::GetRawBinaryLayout(RawBinaryLayout& sLayout)
 {
     CPL_IGNORE_RET_VAL(sLayout);
     return false;
 }
 //! @endcond
+
+
+/************************************************************************/
+/*                          ClearStatistics()                           */
+/************************************************************************/
+
+/**
+ \brief Clear statistics
+
+ Only implemented for now in PAM supported datasets
+
+ This is the same as the C function GDALDatasetClearStatistics().
+
+ @since GDAL 3.2
+*/
+
+void GDALDataset::ClearStatistics()
+{
+}
+
+/************************************************************************/
+/*                        GDALDatasetClearStatistics()                  */
+/************************************************************************/
+
+/**
+ \brief Clear statistics
+
+ This is the same as the C++ method GDALDataset::ClearStatistics().
+
+ @since GDAL 3.2
+*/
+
+void GDALDatasetClearStatistics(GDALDatasetH hDS)
+{
+    VALIDATE_POINTER0(hDS, __func__);
+    GDALDataset::FromHandle(hDS)->ClearStatistics();
+}

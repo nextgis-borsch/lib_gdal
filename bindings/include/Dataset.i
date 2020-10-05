@@ -354,7 +354,6 @@ public:
     return GDALGetProjectionRef( self );
   }
 
-#ifndef SWIGCSHARP
   %newobject GetSpatialRef;
   OSRSpatialReferenceShadow *GetSpatialRef() {
     OGRSpatialReferenceH ref = GDALGetSpatialRef(self);
@@ -362,7 +361,6 @@ public:
        ref = OSRClone( ref );
     return (OSRSpatialReferenceShadow*) ref;
   }
-#endif
 
   %apply Pointer NONNULL {char const *prj};
   CPLErr SetProjection( char const *prj ) {
@@ -370,12 +368,10 @@ public:
   }
   %clear char const *prj;
 
-#ifndef SWIGCSHARP
   void SetSpatialRef(OSRSpatialReferenceShadow* srs)
   {
      GDALSetSpatialRef( self, (OGRSpatialReferenceH)srs );
   }
-#endif
 
 #ifdef SWIGPYTHON
 %feature("kwargs") GetGeoTransform;
@@ -979,6 +975,11 @@ CPLErr AdviseRead(  int xoff, int yoff, int xsize, int ysize,
 
 #endif /* defined(SWIGPYTHON) || defined(SWIGJAVA) || defined(SWIGPERL) */
 
+
+OGRErr AbortSQL() {
+    return GDALDatasetAbortSQL(self);
+}
+
 #ifndef SWIGJAVA
   %feature( "kwargs" ) StartTransaction;
 #endif
@@ -995,6 +996,11 @@ CPLErr AdviseRead(  int xoff, int yoff, int xsize, int ysize,
   OGRErr RollbackTransaction()
   {
     return GDALDatasetRollbackTransaction(self);
+  }
+
+  void ClearStatistics()
+  {
+      GDALDatasetClearStatistics(self);
   }
 
 } /* extend */

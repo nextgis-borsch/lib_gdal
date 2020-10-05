@@ -105,6 +105,10 @@ void CPL_STDCALL GDALAllRegister()
     GDALRegister_ELAS();
 #endif
 
+#ifdef FRMT_esric
+    GDALRegister_ESRIC();
+#endif
+
 #ifdef FRMT_aigrid
 //    GDALRegister_AIGrid2();
     GDALRegister_AIGrid();
@@ -309,10 +313,6 @@ void CPL_STDCALL GDALAllRegister()
 
 #ifdef FRMT_wms
     GDALRegister_WMS();
-#endif
-
-#ifdef FRMT_sde
-    GDALRegister_SDE();
 #endif
 
 #ifdef FRMT_msgn
@@ -585,6 +585,14 @@ void CPL_STDCALL GDALAllRegister()
 
 #ifdef FRMT_exr
     GDALRegister_EXR();
+#endif
+
+#ifdef FRMT_heif
+    GDALRegister_HEIF();
+#endif
+
+#ifdef FRMT_tga
+    GDALRegister_TGA();
 #endif
 
     // NOTE: you need to generally your own driver before that line.

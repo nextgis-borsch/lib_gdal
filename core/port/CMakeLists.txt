@@ -153,6 +153,7 @@ set(LIB_CSOURCES
     cpl_userfaultfd.cpp
     cpl_json_streaming_writer.cpp
     cpl_vax.cpp
+    cpl_vsil_uploadonclose.cpp
 )
 
 if(WIN32)

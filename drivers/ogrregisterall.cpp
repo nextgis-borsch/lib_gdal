@@ -54,6 +54,9 @@ void OGRRegisterAllInternal()
 #ifdef NTF_ENABLED
     RegisterOGRNTF();
 #endif
+#ifdef LVBAG_ENABLED
+    RegisterOGRLVBAG();
+#endif
 #ifdef SDTS_ENABLED
     RegisterOGRSDTS();
 #endif
@@ -148,9 +151,6 @@ void OGRRegisterAllInternal()
 #endif
 #ifdef INGRES_ENABLED
     RegisterOGRIngres();
-#endif
-#ifdef SDE_ENABLED
-    RegisterOGRSDE();
 #endif
 /* Register OpenFileGDB before FGDB as it is more capable for read-only */
 #ifdef OPENFILEGDB_ENABLED

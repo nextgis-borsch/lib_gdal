@@ -123,6 +123,7 @@ if(GDAL_BUILD_APPS)
     add_exe(gdalmdiminfo gdalmdiminfo_bin.cpp)
     add_exe(gdalmdimtranslate gdalmdimtranslate_bin.cpp)
     add_exe(gdal_viewshed gdal_viewshed.cpp)
+    add_exe(gdal_create gdal_create.cpp)
 
     option(GDAL_BUILD_OPT_APPS "Build optional console applications" OFF)
     if(GDAL_BUILD_OPT_APPS)

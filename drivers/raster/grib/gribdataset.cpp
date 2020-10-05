@@ -784,17 +784,21 @@ double GRIBRasterBand::GetNoDataValue( int *pbSuccess )
         ReadGribData(poGDS->fp, start, subgNum, nullptr, &m_Grib_MetaData);
         if( m_Grib_MetaData == nullptr )
         {
-            if (pbSuccess)
-            *pbSuccess = FALSE;
-            return 0;
+            m_bHasNoData = false;
+            m_dfNoData = 0;
+            if( pbSuccess )
+                *pbSuccess = m_bHasNoData;
+            return m_dfNoData;
         }
     }
 
     if( m_Grib_MetaData->gridAttrib.f_miss == 0)
     {
+        m_bHasNoData = false;
+        m_dfNoData = 0;
         if (pbSuccess)
-            *pbSuccess = FALSE;
-        return 0;
+            *pbSuccess = m_bHasNoData;
+        return m_dfNoData;
     }
 
     if (m_Grib_MetaData->gridAttrib.f_miss == 2)
@@ -804,9 +808,11 @@ double GRIBRasterBand::GetNoDataValue( int *pbSuccess )
                  nBand, m_Grib_MetaData->gridAttrib.missSec);
     }
 
+    m_bHasNoData = true;
+    m_dfNoData = m_Grib_MetaData->gridAttrib.missPri;
     if (pbSuccess)
-        *pbSuccess = TRUE;
-    return m_Grib_MetaData->gridAttrib.missPri;
+        *pbSuccess = m_bHasNoData;
+    return m_dfNoData;
 }
 
 /************************************************************************/
@@ -1940,6 +1946,15 @@ GDALDataset *GRIBDataset::OpenMultiDim( GDALOpenInfo *poOpenInfo )
 
     poDS->fp = nullptr;
     poDS->m_poRootGroup = poRootGroup;
+
+    poDS->SetDescription(poOpenInfo->pszFilename);
+
+    // Release hGRIBMutex otherwise we'll deadlock with GDALDataset own
+    // hGRIBMutex.
+    CPLReleaseMutex(hGRIBMutex);
+    poDS->TryLoadXML();
+    CPLAcquireMutex(hGRIBMutex, 1000.0);
+
     return poDS;
 }
 

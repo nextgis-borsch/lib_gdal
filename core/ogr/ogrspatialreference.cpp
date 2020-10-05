@@ -1627,7 +1627,7 @@ OGRErr OSRExportToWktEx( OGRSpatialReferenceH hSRS,
  * supported options are
  * <ul>
  * <li>MULTILINE=YES/NO. Defaults to YES</li>
- * <li>INDENTATION_WIDTH=number. Defauls to 2 (when multiline output is
+ * <li>INDENTATION_WIDTH=number. Defaults to 2 (when multiline output is
  * on).</li>
  * <li>SCHEMA=string. URL to PROJJSON schema. Can be set to empty string to
  * disable it.</li>
@@ -3627,7 +3627,7 @@ OGRErr CPL_STDCALL OSRSetFromUserInput( OGRSpatialReferenceH hSRS,
  * @param pszUrl text definition to try to deduce SRS from.
  *
  * @return OGRERR_NONE on success, or an error code with the curl
- * error message if it is unable to dowload data.
+ * error message if it is unable to download data.
  */
 
 OGRErr OGRSpatialReference::importFromUrl( const char * pszUrl )
@@ -7908,7 +7908,7 @@ OGRErr OGRSpatialReference::StripVertical()
  * \brief Remove TOWGS84 information if the CRS has a known horizontal datum
  *        and this is allowed by the user.
  *
- * The default behaviour is to remove TOWGS84 information if the CRS has a
+ * The default behavior is to remove TOWGS84 information if the CRS has a
  * known horizontal datum. This can be disabled by setting the
  * OSR_STRIP_TOWGS84 configuration option to NO.
  *
@@ -8888,28 +8888,14 @@ OGRSpatialReferenceH OSRConvertToOtherProjection(
 
 /**
  * \brief Try to identify a match between the passed SRS and a related SRS
- * in a catalog (currently EPSG only)
+ * in a catalog.
  *
  * Matching may be partial, or may fail.
  * Returned entries will be sorted by decreasing match confidence (first
  * entry has the highest match confidence).
  *
- * The exact way matching is done may change in future versions.
- *
- * The current algorithm is:
- * - try first AutoIdentifyEPSG(). If it succeeds, return the corresponding SRS
- * - otherwise iterate over all SRS from the EPSG catalog (as found in GDAL
- *   pcs.csv and gcs.csv files+esri_extra.wkt), and find those that match the
- *   input SRS using the IsSame() function (ignoring TOWGS84 clauses)
- * - if there is a single match using IsSame() or one of the matches has the
- *   same SRS name, return it with 100% confidence
- * - if a SRS has the same SRS name, but does not pass the IsSame() criteria,
- *   return it with 50% confidence.
- * - otherwise return all candidate SRS that pass the IsSame() criteria with a
- *   90% confidence.
- *
- * A pre-built SRS cache in ~/.gdal/X.Y/srs_cache will be used if existing,
- * otherwise it will be built at the first run of this function.
+ * The exact way matching is done may change in future versions. Starting with
+ * GDAL 3.0, it relies on PROJ' proj_identify() function.
  *
  * This function is the same as OGRSpatialReference::FindMatches().
  *
@@ -10141,7 +10127,7 @@ OGRErr OGRSpatialReference::importFromProj4( const char * pszProj4 )
 /**
  * \brief Export coordinate system in PROJ.4 legacy format.
  *
- * \warning Use of this function is discouraged. Its behaviour in GDAL &gt;= 3 /
+ * \warning Use of this function is discouraged. Its behavior in GDAL &gt;= 3 /
  * PROJ &gt;= 6 is significantly different from earlier versions. In particular
  * +datum will only encode WGS84, NAD27 and NAD83, and +towgs84/+nadgrids terms
  * will be missing most of the time. PROJ strings to encode CRS should be
@@ -10168,7 +10154,7 @@ OGRErr CPL_STDCALL OSRExportToProj4( OGRSpatialReferenceH hSRS,
 /**
  * \brief Export coordinate system in PROJ.4 legacy format.
  *
- * \warning Use of this function is discouraged. Its behaviour in GDAL &gt;= 3 /
+ * \warning Use of this function is discouraged. Its behavior in GDAL &gt;= 3 /
  * PROJ &gt;= 6 is significantly different from earlier versions. In particular
  * +datum will only encode WGS84, NAD27 and NAD83, and +towgs84/+nadgrids terms
  * will be missing most of the time. PROJ strings to encode CRS should be
@@ -10382,28 +10368,14 @@ OGRErr OSRMorphFromESRI( OGRSpatialReferenceH hSRS )
 
 /**
  * \brief Try to identify a match between the passed SRS and a related SRS
- * in a catalog (currently EPSG only)
+ * in a catalog.
  *
  * Matching may be partial, or may fail.
  * Returned entries will be sorted by decreasing match confidence (first
  * entry has the highest match confidence).
  *
- * The exact way matching is done may change in future versions.
- * 
- *  The current algorithm is:
- * - try first AutoIdentifyEPSG(). If it succeeds, return the corresponding SRS
- * - otherwise iterate over all SRS from the EPSG catalog (as found in GDAL
- *   pcs.csv and gcs.csv files+esri_extra.wkt), and find those that match the
- *   input SRS using the IsSame() function (ignoring TOWGS84 clauses)
- * - if there is a single match using IsSame() or one of the matches has the
- *   same SRS name, return it with 100% confidence
- * - if a SRS has the same SRS name, but does not pass the IsSame() criteria,
- *   return it with 50% confidence.
- * - otherwise return all candidate SRS that pass the IsSame() criteria with a
- *   90% confidence.
- * 
- * A pre-built SRS cache in ~/.gdal/X.Y/srs_cache will be used if existing,
- * otherwise it will be built at the first run of this function.
+ * The exact way matching is done may change in future versions. Starting with
+ * GDAL 3.0, it relies on PROJ' proj_identify() function.
  *
  * This method is the same as OSRFindMatches().
  *
@@ -10489,9 +10461,9 @@ OGRSpatialReferenceH* OGRSpatialReference::FindMatches(
  * Before GDAL 3.0.3, this method try to attach a 3-parameter or 7-parameter
  * Helmert transformation to WGS84 when there is one and only one such method
  * available for the CRS.
- * This behaviour might not always be desirable, so starting with GDAL 3.0.3,
+ * This behavior might not always be desirable, so starting with GDAL 3.0.3,
  * this is no longer done. However the OSR_ADD_TOWGS84_ON_IMPORT_FROM_EPSG
- * configuration option can be set to YES to enable past behaviour.
+ * configuration option can be set to YES to enable past behavior.
  * The AddGuessedTOWGS84() method can also be used for that purpose.
  *
  * This method is the same as the C function OSRImportFromEPSGA().
@@ -10659,9 +10631,9 @@ OGRErr CPL_STDCALL OSRImportFromEPSGA( OGRSpatialReferenceH hSRS, int nCode )
  *
  * This method try to attach a 3-parameter or 7-parameter Helmert transformation
  * to WGS84 when there is one and only one such method available for the CRS.
- * This behaviour might not always be desirable, so starting with GDAL 3.0.3,
+ * This behavior might not always be desirable, so starting with GDAL 3.0.3,
  * the OSR_ADD_TOWGS84_ON_IMPORT_FROM_EPSG configuration option can be set to
- * NO to disable this behaviour.
+ * NO to disable this behavior.
  *
  * @param nCode a GCS or PCS code from the horizontal coordinate system table.
  *
@@ -10704,7 +10676,7 @@ OGRErr CPL_STDCALL OSRImportFromEPSG( OGRSpatialReferenceH hSRS, int nCode )
  * Currently this returns TRUE for all geographic coordinate systems
  * with an EPSG code set, and axes set defining it as lat, long.
  *
- * \note Important change of behaviour since GDAL 3.0. In previous versions,
+ * \note Important change of behavior since GDAL 3.0. In previous versions,
  * geographic CRS imported with importFromEPSG() would cause this method to
  * return FALSE on them, whereas now it returns TRUE, since importFromEPSG()
  * is now equivalent to importFromEPSGA().
@@ -10785,7 +10757,7 @@ int OSREPSGTreatsAsLatLong( OGRSpatialReferenceH hSRS )
  * Currently this returns TRUE for all projected coordinate systems
  * with an EPSG code set, and axes set defining it as northing, easting.
  * 
- * \note Important change of behaviour since GDAL 3.0. In previous versions,
+ * \note Important change of behavior since GDAL 3.0. In previous versions,
  * projected CRS with northing, easting axis order imported with
  * importFromEPSG() would cause this method to
  * return FALSE on them, whereas now it returns TRUE, since importFromEPSG()
@@ -11016,7 +10988,7 @@ OGRErr OGRSpatialReference::ImportFromESRIWisconsinWKT(
 /*                      GetAxisMappingStrategy()                        */
 /************************************************************************/
 
-/** \brief Retun the data axis to CRS axis mapping strategy.
+/** \brief Return the data axis to CRS axis mapping strategy.
  * 
  * <ul>
  * <li>OAMS_TRADITIONAL_GIS_ORDER means that for geographic CRS with
@@ -11040,7 +11012,7 @@ OSRAxisMappingStrategy OGRSpatialReference::GetAxisMappingStrategy() const
 /*                      OSRGetAxisMappingStrategy()                     */
 /************************************************************************/
 
-/** \brief Retun the data axis to CRS axis mapping strategy.
+/** \brief Return the data axis to CRS axis mapping strategy.
  * 
  * See OGRSpatialReference::GetAxisMappingStrategy()
  * @since GDAL 3.0

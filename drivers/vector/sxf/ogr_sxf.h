@@ -9,7 +9,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2011, Ben Ahmed Daho Ali
- * Copyright (c) 2013, NextGIS
+ * Copyright (c) 2013-2020, NextGIS
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -40,9 +40,82 @@
 #include "ogrsf_frmts.h"
 #include "org_sxf_defs.h"
 
-#define CHECK_BIT(var,pos) (((var) & (1<<(pos))) != 0)
 #define TO_DEGREES 57.2957795130823208766
 #define TO_RADIANS 0.017453292519943295769
+
+class OGRSXFDataSource;
+
+/************************************************************************/
+/*                           SXFFile                                    */
+/************************************************************************/
+class SXFFile
+{
+    public:
+        SXFFile();
+        ~SXFFile();
+        bool Open(const std::string &osPath);
+        void Close();
+        VSILFILE *File() const;
+        CPLMutex **Mutex();
+        GUInt32 FeatureCount() const;
+        OGRErr Read(OGRSXFDataSource *poDS, CSLConstList papszOpenOpts);
+        OGRErr Write(OGRSXFDataSource *poDS);
+        GUInt32 Version() const;
+        OGRSpatialReference *SpatialRef() const;
+        OGRErr FillExtent(OGREnvelope *env) const;
+        void TranslateXY(double x, double y, double *dfX, double *dfY) const;
+        std::string Encoding() const;
+
+    // Static
+    public:
+        static std::string ReadSXFString(const void *pBuffer, size_t nLen, 
+            const char *pszSrcEncoding);
+
+    private:
+        OGRErr SetSRS(const long iEllips, const long iProjSys, const long iVCS, 
+            enum SXFCoordinateMeasureUnit eUnitInPlan, double *padfGeoCoords,
+            double *padfPrjParams, CSLConstList papszOpenOpts);
+        OGRErr SetVertCS(const long iVCS, CSLConstList papszOpenOpts);
+
+    private:
+        CPL_DISALLOW_COPY_ASSIGN(SXFFile)
+
+    private:
+        VSILFILE *fpSXF = nullptr;
+        CPLMutex *hIOMutex = nullptr;
+
+    private:        
+        GUInt32 nVersion = 0;
+        double dfScaleRatio = 1.0;
+        double dfXOr = 0.0;
+        double dfYOr = 0.0;
+        bool bHasRealCoordinates = true; 
+        OGRSpatialReference *pSpatRef = nullptr;
+        OGREnvelope oEnvelope;
+        std::string osEncoding = "CP1251";
+        GUInt32 nFeatureCount = 0;
+};
+
+/************************************************************************/
+/*                           RSCFile                                    */
+/************************************************************************/
+class RSCFile
+{
+    public:
+        RSCFile();
+        ~RSCFile();
+        OGRErr Read(const std::string &osPath, CSLConstList papszOpenOpts);
+
+    public:
+        std::map<GByte, SXFLayerDefn> mstLayers;
+
+    // static
+    public:
+        static std::map<GByte, SXFLayerDefn> GetDefaultLayers();
+
+    private:
+        CPL_DISALLOW_COPY_ASSIGN(RSCFile)
+};
 
 /************************************************************************/
 /*                         OGRSXFLayer                                */
@@ -50,96 +123,84 @@
 class OGRSXFLayer final: public OGRLayer
 {
 protected:
-    OGRFeatureDefn*    poFeatureDefn;
-    VSILFILE*          fpSXF;
-    GByte              nLayerID;
-    std::map<unsigned, CPLString> mnClassificators;
-    std::map<long, vsi_l_offset> mnRecordDesc;
-    std::map<long, vsi_l_offset>::const_iterator oNextIt;
-    SXFMapDescription  stSXFMapDescription;
-    std::set<GUInt16> snAttributeCodes;
-    int m_nSXFFormatVer;
-    CPLString sFIDColumn_;
-    CPLMutex            **m_hIOMutex;
-    double              m_dfCoeff;
-    virtual OGRFeature *       GetNextRawFeature(long nFID);
+    OGRFeatureDefn *poFeatureDefn;
+    SXFFile *fpSXF;
+    GUInt16 nLayerID;
+    std::map<GUInt32, std::string> mnClassificators;
+    std::map<GIntBig, vsi_l_offset> mnRecordDesc;
+    std::map<GIntBig, vsi_l_offset>::const_iterator oNextIt;
+    std::set<GUInt32> snAttributeCodes;
+    std::string osFIDColumn;
+    bool bIsNewBehavior;
 
-    GUInt32 TranslateXYH(const SXFRecordDescription& certifInfo,
-                         const char *psBuff, GUInt32 nBufLen,
-                         double *dfX, double *dfY, double *dfH = nullptr);
+    virtual OGRFeature *GetNextRawFeature(GIntBig nFID);
 
-    OGRFeature *TranslatePoint(const SXFRecordDescription& certifInfo, const char * psRecordBuf, GUInt32 nBufLen);
-    OGRFeature *TranslateText(const SXFRecordDescription& certifInfo, const char * psBuff, GUInt32 nBufLen);
-    OGRFeature *TranslatePolygon(const SXFRecordDescription& certifInfo, const char * psBuff, GUInt32 nBufLen);
-    OGRFeature *TranslateLine(const SXFRecordDescription& certifInfo, const char * psBuff, GUInt32 nBufLen);
-    OGRFeature *TranslateVetorAngle(const SXFRecordDescription& certifInfo, const char * psBuff, GUInt32 nBufLen);
+    GUInt32 TranslateXYH(const SXFRecordHeader &header, GByte *psBuff, 
+        GUInt32 nBufLen, double *dfX, double *dfY, double *dfH = nullptr);
+    GUInt32 TranslateLine(OGRLineString* poLS, const SXFRecordHeader &header, 
+        GByte *pBuff, GUInt32 nBuffSize, GUInt32 nPointCount);
+    GUInt32 TranslatePoint(OGRPoint *poPT, const SXFRecordHeader &header, 
+        GByte *pBuff, GUInt32 nBuffSize);
+
+    OGRFeature *TranslatePoint(const SXFRecordHeader &stHeader, GByte *psRecordBuf);
+    OGRFeature *TranslateText(const SXFRecordHeader &header, GByte *psRecordBuf);
+    OGRFeature *TranslatePolygon(const SXFRecordHeader &header, GByte *psRecordBuf);
+    OGRFeature *TranslateLine(const SXFRecordHeader &stHeader, GByte *psRecordBuf);
+    OGRFeature *TranslateVetorAngle(const SXFRecordHeader &header, GByte *psRecordBuf);
 public:
-    OGRSXFLayer(VSILFILE* fp, CPLMutex** hIOMutex, GByte nID, const char* pszLayerName, int nVer, const SXFMapDescription&  sxfMapDesc);
+    OGRSXFLayer(SXFFile *fp, GUInt16 nID, const char *pszLayerName, 
+        const std::vector<SXFField> &astFields, bool bIsNewBehavior);
     virtual ~OGRSXFLayer();
 
-    virtual void                ResetReading() override;
-    virtual OGRFeature         *GetNextFeature() override;
-    virtual OGRErr              SetNextByIndex(GIntBig nIndex) override;
-    virtual OGRFeature         *GetFeature(GIntBig nFID) override;
-    virtual OGRFeatureDefn     *GetLayerDefn() override { return poFeatureDefn;}
+    virtual void ResetReading() override;
+    virtual OGRFeature *GetNextFeature() override;
+    virtual OGRErr SetNextByIndex(GIntBig nIndex) override;
+    virtual OGRFeature *GetFeature(GIntBig nFID) override;
+    virtual OGRFeatureDefn *GetLayerDefn() override;
 
-    virtual int                 TestCapability( const char * ) override;
+    virtual int TestCapability( const char * ) override;
 
-    virtual GIntBig     GetFeatureCount(int bForce = TRUE) override;
-    virtual OGRErr      GetExtent(OGREnvelope *psExtent, int bForce = TRUE) override;
-    virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce) override
-                { return OGRLayer::GetExtent(iGeomField, psExtent, bForce); }
+    virtual GIntBig GetFeatureCount(int bForce = TRUE) override;
+    virtual OGRErr GetExtent(OGREnvelope *psExtent, int bForce = TRUE) override;
+    virtual OGRErr GetExtent(int iGeomField, OGREnvelope *psExtent, 
+        int bForce) override;
     virtual OGRSpatialReference *GetSpatialRef() override;
-    virtual const char* GetFIDColumn() override;
+    virtual const char *GetFIDColumn() override;
 
-    virtual GByte GetId() const { return nLayerID; }
-    virtual void AddClassifyCode(unsigned nClassCode, const char *szName = nullptr);
-    virtual bool AddRecord( long nFID, unsigned nClassCode,
-                            vsi_l_offset nOffset, bool bHasSemantic,
-                            size_t nSemanticsSize );
-private:
-    static int CanRecode(const char* pszEncoding);
+    virtual GByte GetId() const;
+    virtual void AddClassifyCode(GUInt32 nClassCode, const std::string &soName);
+    virtual bool AddRecord( GIntBig nFID, unsigned nClassCode, vsi_l_offset nOffset, 
+        bool bHasSemantic, size_t nSemanticsSize );
 };
 
 /************************************************************************/
-/*                        OGRSXFDataSource                       */
+/*                            OGRSXFDataSource                          */
 /************************************************************************/
 
 class OGRSXFDataSource final: public OGRDataSource
 {
-    SXFPassport oSXFPassport;
+    SXFFile oSXFFile;
 
-    CPLString               pszName;
+    CPLString pszName;
 
-    OGRLayer**          papoLayers;
-    size_t              nLayers;
+    std::vector<OGRLayer*> poLayers;
 
-    VSILFILE* fpSXF;
-    CPLMutex  *hIOMutex;
-    void FillLayers();
-    void CreateLayers();
-    void CreateLayers(VSILFILE* fpRSC, const char* const* papszOpenOpts);
-    static OGRErr ReadSXFInformationFlags(VSILFILE* fpSXF, SXFPassport& passport);
-    OGRErr ReadSXFDescription(VSILFILE* fpSXF, SXFPassport& passport);
-    static void SetVertCS(const long iVCS, SXFPassport& passport,
-                          const char* const* papszOpenOpts);
-    static OGRErr ReadSXFMapDescription(VSILFILE* fpSXF, SXFPassport& passport,
-                                        const char* const* papszOpenOpts);
-    OGRSXFLayer*       GetLayerById(GByte);
+    void FillLayers(bool bIsNewBehavior);
+    void CreateLayers(const std::map<GByte, SXFLayerDefn>& mstLayers, 
+        bool bIsNewBehavior);
+    OGRSXFLayer *GetLayerById(GByte nId);
+
 public:
-                        OGRSXFDataSource();
-                        virtual ~OGRSXFDataSource();
+    OGRSXFDataSource();
+    virtual ~OGRSXFDataSource();
 
-    int                 Open(const char * pszFilename, bool bUpdate,
-                             const char* const* papszOpenOpts = nullptr );
+    int Open(const char *pszFilename, bool bUpdate,
+             CSLConstList papszOpenOpts = nullptr );
 
-    virtual const char*     GetName() override { return pszName; }
-
-    virtual int             GetLayerCount() override { return static_cast<int>(nLayers); }
-    virtual OGRLayer*       GetLayer( int ) override;
-
-    virtual int             TestCapability( const char * ) override;
-    void                    CloseFile();
+    virtual const char *GetName() override;
+    virtual int GetLayerCount() override;
+    virtual OGRLayer *GetLayer( int ) override;
+    virtual int TestCapability( const char * ) override;
 };
 
 /************************************************************************/
@@ -149,11 +210,11 @@ public:
 class OGRSXFDriver final: public GDALDriver
 {
   public:
-                ~OGRSXFDriver();
+    ~OGRSXFDriver();
 
-    static GDALDataset* Open( GDALOpenInfo * );
-    static int          Identify( GDALOpenInfo * );
-    static CPLErr       DeleteDataSource(const char* pszName);
+    static GDALDataset *Open( GDALOpenInfo * );
+    static int Identify( GDALOpenInfo * );
+    static CPLErr DeleteDataSource(const char *pszName);
 };
 
 #endif

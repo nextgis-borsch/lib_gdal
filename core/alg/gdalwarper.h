@@ -289,6 +289,13 @@ GDALAutoCreateWarpedVRT( GDALDatasetH hSrcDS,
                          double dfMaxError, const GDALWarpOptions *psOptions );
 
 GDALDatasetH CPL_DLL CPL_STDCALL
+GDALAutoCreateWarpedVRTEx( GDALDatasetH hSrcDS,
+                           const char *pszSrcWKT, const char *pszDstWKT,
+                           GDALResampleAlg eResampleAlg,
+                           double dfMaxError, const GDALWarpOptions *psOptions,
+                           CSLConstList papszTransformerOptions );
+
+GDALDatasetH CPL_DLL CPL_STDCALL
 GDALCreateWarpedVRT( GDALDatasetH hSrcDS,
                      int nPixels, int nLines, double *padfGeoTransform,
                      GDALWarpOptions *psOptions );

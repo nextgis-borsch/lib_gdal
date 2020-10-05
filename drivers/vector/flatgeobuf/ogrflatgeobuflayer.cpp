@@ -132,7 +132,7 @@ OGRFlatGeobufLayer::OGRFlatGeobufLayer(
     OGRSpatialReference *poSpatialRef,
     OGRwkbGeometryType eGType,
     VSILFILE *poFpWrite,
-    std::string oTempFile,
+    const std::string& oTempFile,
     bool bCreateSpatialIndexAtClose) :
     m_eGType(eGType),
     m_poFpWrite(poFpWrite),
@@ -1192,6 +1192,11 @@ OGRErr OGRFlatGeobufLayer::ICreateFeature(OGRFeature *poNewFeature)
 
     OGREnvelope psEnvelope;
     ogrGeometry->getEnvelope(&psEnvelope);
+
+    if (m_sExtent.IsInit())
+        m_sExtent.Merge(psEnvelope);
+    else
+        m_sExtent = psEnvelope;
 
     if (m_featuresCount == 0) {
         if (m_poFpWrite == nullptr) {

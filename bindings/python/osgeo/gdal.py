@@ -392,8 +392,11 @@ def TranslateOptions(options=None, format=None,
         elif widthPct != 0 and heightPct != 0:
             new_options += ['-outsize', str(widthPct) + '%%', str(heightPct) + '%%']
         if creationOptions is not None:
-            for opt in creationOptions:
-                new_options += ['-co', opt]
+            if isinstance(creationOptions, str):
+                new_options += ['-co', creationOptions]
+            else:
+                for opt in creationOptions:
+                    new_options += ['-co', opt]
         if srcWin is not None:
             new_options += ['-srcwin', _strHighPrec(srcWin[0]), _strHighPrec(srcWin[1]), _strHighPrec(srcWin[2]), _strHighPrec(srcWin[3])]
         if strict:
@@ -411,8 +414,11 @@ def TranslateOptions(options=None, format=None,
         if outputBounds is not None:
             new_options += ['-a_ullr', _strHighPrec(outputBounds[0]), _strHighPrec(outputBounds[1]), _strHighPrec(outputBounds[2]), _strHighPrec(outputBounds[3])]
         if metadataOptions is not None:
-            for opt in metadataOptions:
-                new_options += ['-mo', opt]
+            if isinstance(metadataOptions, str):
+                new_options += ['-mo', metadataOptions]
+            else:
+                for opt in metadataOptions:
+                    new_options += ['-mo', opt]
         if outputSRS is not None:
             new_options += ['-a_srs', str(outputSRS)]
         if nogcp:
@@ -841,7 +847,7 @@ def DEMProcessingOptions(options=None, colorFilename=None, format=None,
               zFactor=None, scale=None, azimuth=None, altitude=None,
               combined=False, multiDirectional=False, igor=False,
               slopeFormat=None, trigonometric=False, zeroForFlat=False,
-              addAlpha=None,
+              addAlpha=None, colorSelection=None,
               callback=None, callback_data=None):
     """ Create a DEMProcessingOptions() object that can be passed to gdal.DEMProcessing()
         Keyword arguments are :
@@ -863,6 +869,7 @@ def DEMProcessingOptions(options=None, colorFilename=None, format=None,
           trigonometric --- (aspect only) whether to return trigonometric angle instead of azimuth. Thus 0deg means East, 90deg North, 180deg West, 270deg South.
           zeroForFlat --- (aspect only) whether to return 0 for flat areas with slope=0, instead of -9999.
           addAlpha --- adds an alpha band to the output file (only for processing = 'color-relief')
+          colorSelection --- (color-relief only) Determines how color entries are selected from an input value. Can be "nearest_color_entry", "exact_color_entry" or "linear_interpolation". Defaults to "linear_interpolation"
           callback --- callback method
           callback_data --- user data for callback
     """
@@ -902,6 +909,15 @@ def DEMProcessingOptions(options=None, colorFilename=None, format=None,
             new_options += ['-trigonometric']
         if zeroForFlat:
             new_options += ['-zero_for_flat']
+        if colorSelection is not None:
+            if colorSelection == 'nearest_color_entry':
+                new_options += ['-nearest_color_entry']
+            elif colorSelection == 'exact_color_entry':
+                new_options += ['-exact_color_entry']
+            elif colorSelection == 'linear_interpolation':
+                pass
+            else:
+                raise ValueError("Unsupported value for colorSelection")
         if addAlpha:
             new_options += ['-alpha']
 
@@ -1475,6 +1491,10 @@ def SetErrorHandler(*args):
     """SetErrorHandler(CPLErrorHandler pfnErrorHandler=0) -> CPLErr"""
     return _gdal.SetErrorHandler(*args)
 
+def SetCurrentErrorHandlerCatchDebug(*args):
+    """SetCurrentErrorHandlerCatchDebug(int bCatchDebug)"""
+    return _gdal.SetCurrentErrorHandlerCatchDebug(*args)
+
 def PushErrorHandler(*args):
     """PushErrorHandler(CPLErrorHandler pfnErrorHandler=0) -> CPLErr"""
     return _gdal.PushErrorHandler(*args)
@@ -1811,6 +1831,14 @@ def VSICurlClearCache(*args):
 def VSICurlPartialClearCache(*args):
     """VSICurlPartialClearCache(char const * utf8_path)"""
     return _gdal.VSICurlPartialClearCache(*args)
+
+def NetworkStatsReset(*args):
+    """NetworkStatsReset()"""
+    return _gdal.NetworkStatsReset(*args)
+
+def NetworkStatsGetAsSerializedJSON(*args):
+    """NetworkStatsGetAsSerializedJSON(char ** options=None) -> retStringAndCPLFree *"""
+    return _gdal.NetworkStatsGetAsSerializedJSON(*args)
 
 def ParseCommandLine(*args):
     """ParseCommandLine(char const * utf8_path) -> char **"""
@@ -2398,6 +2426,11 @@ class Dataset(MajorObject):
         return _gdal.Dataset_SetStyleTable(self, *args)
 
 
+    def AbortSQL(self, *args):
+        """AbortSQL(Dataset self) -> OGRErr"""
+        return _gdal.Dataset_AbortSQL(self, *args)
+
+
     def StartTransaction(self, *args, **kwargs):
         """StartTransaction(Dataset self, int force=False) -> OGRErr"""
         return _gdal.Dataset_StartTransaction(self, *args, **kwargs)
@@ -2411,6 +2444,11 @@ class Dataset(MajorObject):
     def RollbackTransaction(self, *args):
         """RollbackTransaction(Dataset self) -> OGRErr"""
         return _gdal.Dataset_RollbackTransaction(self, *args)
+
+
+    def ClearStatistics(self, *args):
+        """ClearStatistics(Dataset self)"""
+        return _gdal.Dataset_ClearStatistics(self, *args)
 
 
     def ReadRaster1(self, *args, **kwargs):
@@ -2653,6 +2691,16 @@ class Group(_object):
         return _gdal.Group_OpenMDArray(self, *args)
 
 
+    def OpenMDArrayFromFullname(self, *args):
+        """OpenMDArrayFromFullname(Group self, char const * name, char ** options=None) -> MDArray"""
+        return _gdal.Group_OpenMDArrayFromFullname(self, *args)
+
+
+    def ResolveMDArray(self, *args):
+        """ResolveMDArray(Group self, char const * name, char const * starting_point, char ** options=None) -> MDArray"""
+        return _gdal.Group_ResolveMDArray(self, *args)
+
+
     def GetGroupNames(self, *args):
         """GetGroupNames(Group self, char ** options=None) -> char **"""
         return _gdal.Group_GetGroupNames(self, *args)
@@ -2661,6 +2709,11 @@ class Group(_object):
     def OpenGroup(self, *args):
         """OpenGroup(Group self, char const * name, char ** options=None) -> Group"""
         return _gdal.Group_OpenGroup(self, *args)
+
+
+    def OpenGroupFromFullname(self, *args):
+        """OpenGroupFromFullname(Group self, char const * name, char ** options=None) -> Group"""
+        return _gdal.Group_OpenGroupFromFullname(self, *args)
 
 
     def GetDimensions(self, *args):
@@ -2704,6 +2757,42 @@ class Group(_object):
 
 Group_swigregister = _gdal.Group_swigregister
 Group_swigregister(Group)
+
+class Statistics(_object):
+    """Proxy of C++ Statistics class."""
+
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, Statistics, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, Statistics, name)
+    __repr__ = _swig_repr
+    __swig_getmethods__["min"] = _gdal.Statistics_min_get
+    if _newclass:
+        min = _swig_property(_gdal.Statistics_min_get)
+    __swig_getmethods__["max"] = _gdal.Statistics_max_get
+    if _newclass:
+        max = _swig_property(_gdal.Statistics_max_get)
+    __swig_getmethods__["mean"] = _gdal.Statistics_mean_get
+    if _newclass:
+        mean = _swig_property(_gdal.Statistics_mean_get)
+    __swig_getmethods__["std_dev"] = _gdal.Statistics_std_dev_get
+    if _newclass:
+        std_dev = _swig_property(_gdal.Statistics_std_dev_get)
+    __swig_getmethods__["valid_count"] = _gdal.Statistics_valid_count_get
+    if _newclass:
+        valid_count = _swig_property(_gdal.Statistics_valid_count_get)
+    __swig_destroy__ = _gdal.delete_Statistics
+    __del__ = lambda self: None
+
+    def __init__(self, *args):
+        """__init__(Statistics self) -> Statistics"""
+        this = _gdal.new_Statistics(*args)
+        try:
+            self.this.append(this)
+        except __builtin__.Exception:
+            self.this = this
+Statistics_swigregister = _gdal.Statistics_swigregister
+Statistics_swigregister(Statistics)
 
 class MDArray(_object):
     """Proxy of C++ GDALMDArrayHS class."""
@@ -2882,6 +2971,16 @@ class MDArray(_object):
     def AsClassicDataset(self, *args):
         """AsClassicDataset(MDArray self, size_t iXDim, size_t iYDim) -> Dataset"""
         return _gdal.MDArray_AsClassicDataset(self, *args)
+
+
+    def GetStatistics(self, *args, **kwargs):
+        """GetStatistics(MDArray self, Dataset ds=None, bool approx_ok=False, bool force=True, GDALProgressFunc callback=0, void * callback_data=None) -> Statistics"""
+        return _gdal.MDArray_GetStatistics(self, *args, **kwargs)
+
+
+    def ComputeStatistics(self, *args, **kwargs):
+        """ComputeStatistics(MDArray self, Dataset ds=None, bool approx_ok=False, GDALProgressFunc callback=0, void * callback_data=None) -> Statistics"""
+        return _gdal.MDArray_ComputeStatistics(self, *args, **kwargs)
 
 
     def Read(self,
