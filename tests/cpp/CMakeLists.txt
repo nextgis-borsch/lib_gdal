@@ -61,7 +61,7 @@ if(TEST_VIRTUALMEM)
     set(PROGS ${PROGS} testvirtualmem)
 endif()
 
-if((CMAKE_CL_64 OR UNIX) AND NOT APPLE)
+if(TESTSEE_ENABLE)
     set(PROGS ${PROGS} testsse)
 endif()
 
@@ -132,6 +132,6 @@ if(NOT CMAKE_CL_64) # Temp disable for win64
 add_test(NAME testmultithreadedwriting COMMAND testmultithreadedwriting)
 endif()
 add_test(NAME testdestroy COMMAND testdestroy)
-if((CMAKE_CL_64 OR UNIX) AND NOT APPLE)
+if(TESTSEE_ENABLE)
     add_test(NAME testsse COMMAND testsse)
 endif()
