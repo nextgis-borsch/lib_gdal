@@ -216,12 +216,16 @@ void OGRSXFDataSource::FillLayers(bool bIsNewBehavior)
     //2. Read all records (only classify code and offset) and add this to correspondence layer
     VSIFSeekL(oSXFFile.File(), nOffset, SEEK_SET);
 
-    for( GUInt32 nFID = 0; nFID < oSXFFile.FeatureCount(); nFID++ )
+    GIntBig nFID = 0;
+    int nGroupId = 1;
+    for( GUInt32 i = 0; i < oSXFFile.FeatureCount(); i++ )
     {
         GUInt32 nCurrentOffset = nOffset;
         bool bHasAttributes = false;
-        int nSemanticSize = 0;
+        int nAttributesSize = 0;
+        SXFGeometryType eGeomType = SXF_GT_Unknown;
         GUInt32 nCode = 0;
+        int nSubObjectCount = 0;
         if( oSXFFile.Version() == 3 )
         {
             SXFRecordHeaderV3 record;
@@ -235,11 +239,11 @@ void OGRSXFDataSource::FillLayers(bool bIsNewBehavior)
             {
                 CPL_LSBPTR32(&record.nFullLength);
                 CPL_LSBPTR32(&record.nGeometryLength);
-                nSemanticSize = record.nFullLength - 32 - record.nGeometryLength;
-                if( nSemanticSize < 0 )
+                nAttributesSize = record.nFullLength - 32 - record.nGeometryLength;
+                if( nAttributesSize < 0 )
                 {
                     bHasAttributes = false;
-                    nSemanticSize = 0;
+                    nAttributesSize = 0;
                 }
                 else 
                 {
@@ -249,8 +253,12 @@ void OGRSXFDataSource::FillLayers(bool bIsNewBehavior)
 
             CPL_LSBPTR32(&record.nFullLength);
             nOffset += record.nFullLength;
+
+            eGeomType =  SXFFile::CodeToGeometryType(record.nLocalizaton);
+            CPL_LSBPTR16(&record.nSubObjectCount);
+            nSubObjectCount = record.nSubObjectCount;
         }
-        else if( oSXFFile.Version() ==4 )
+        else if( oSXFFile.Version() == 4 )
         {
             SXFRecordHeaderV4 record;
             VSIFReadL(&record, sizeof(SXFRecordHeaderV4), 1, oSXFFile.File());
@@ -263,11 +271,11 @@ void OGRSXFDataSource::FillLayers(bool bIsNewBehavior)
             {
                 CPL_LSBPTR32(&record.nFullLength);
                 CPL_LSBPTR32(&record.nGeometryLength);
-                nSemanticSize = record.nFullLength - 32 - record.nGeometryLength;
-                if( nSemanticSize < 0 )
+                nAttributesSize = record.nFullLength - 32 - record.nGeometryLength;
+                if( nAttributesSize < 0 )
                 {
                     bHasAttributes = false;
-                    nSemanticSize = 0;
+                    nAttributesSize = 0;
                 }
                 else 
                 {
@@ -277,14 +285,28 @@ void OGRSXFDataSource::FillLayers(bool bIsNewBehavior)
 
             CPL_LSBPTR32(&record.nFullLength);
             nOffset += record.nFullLength;
+
+            eGeomType =  SXFFile::CodeToGeometryType(record.nLocalizaton);
+            CPL_LSBPTR16(&record.nSubObjectCount);
+            nSubObjectCount = record.nSubObjectCount;
         }
 
         for( auto poLayer : poLayers )
         {
-            OGRSXFLayer *pOGRSXFLayer = static_cast<OGRSXFLayer*>(poLayer);
-            if( pOGRSXFLayer && pOGRSXFLayer->AddRecord(nFID, nCode, 
-                nCurrentOffset, bHasAttributes, nSemanticSize) )
+            auto pOGRSXFLayer = static_cast<OGRSXFLayer*>(poLayer);
+            if( pOGRSXFLayer && pOGRSXFLayer->AddRecord(nFID++, nCode,
+                nCurrentOffset, bHasAttributes, nAttributesSize,
+                nSubObjectCount == 0 ? 0 : nGroupId++,
+                nSubObjectCount == 0 ? 0 : 1 ) )
             {
+                if( eGeomType == SXF_GT_Text )
+                {
+                    for(int i = 0; i < nSubObjectCount; i++)
+                    {
+                        pOGRSXFLayer->AddRecord(nFID++, nCode,
+                            nCurrentOffset, bHasAttributes, nAttributesSize, nGroupId, i + 2);
+                    }
+                }
                 break;
             }
         }

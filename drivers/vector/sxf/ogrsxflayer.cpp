@@ -61,6 +61,12 @@ static std::string SXFTypeToString(enum SXFGeometryType type)
     }
 }
 
+constexpr int MAX_CACHE_SIZE = 1024;
+
+////////////////////////////////////////////////////////////////////////////
+/// OGRSXFLayer
+///////////////////////////////////////////////////////?////////////////////
+
 OGRSXFLayer::OGRSXFLayer(SXFFile *fp, GUInt16 nID, const char *pszLayerName,
     const std::vector<SXFField> &astFields, bool bIsNewBehavior) :
     OGRLayer(),
@@ -132,6 +138,10 @@ OGRSXFLayer::OGRSXFLayer(SXFFile *fp, GUInt16 nID, const char *pszLayerName,
 
 OGRSXFLayer::~OGRSXFLayer()
 {
+    for( auto nFID : anCacheIds)
+    {
+        DeleteCachedFeature(nFID);
+    }
     poFeatureDefn->Release();
 }
 
@@ -154,12 +164,12 @@ void OGRSXFLayer::AddClassifyCode(GUInt32 nClassCode, const std::string &soName)
 }
 
 bool OGRSXFLayer::AddRecord( GIntBig nFID, GUInt32 nClassCode, vsi_l_offset nOffset,
-                             bool bHasSemantic, size_t nSemanticsSize )
+        bool bHasSemantic, size_t nSemanticsSize, int nGroup, int nSubObjectId )
 {
     if( mnClassificators.find(nClassCode) != mnClassificators.end() ||
         EQUAL(GetName(), "Not_Classified") )
     {
-        mnRecordDesc[nFID] = nOffset;
+        mnRecordDesc[nFID] = {nOffset, nGroup, nSubObjectId, nullptr};
         // Add additional semantics (attribute fields).
         if (bHasSemantic)
         {
@@ -323,8 +333,14 @@ OGRFeature *OGRSXFLayer::GetFeature(GIntBig nFID)
     const auto IT = mnRecordDesc.find(nFID);
     if (IT != mnRecordDesc.end())
     {
-        VSIFSeekL(fpSXF->File(), IT->second, SEEK_SET);
-        OGRFeature *poFeature = GetNextRawFeature(IT->first);
+        auto feature = IT->second;
+        if(feature.poFeature != nullptr)
+        {
+            return feature.poFeature->Clone();
+        }
+        VSIFSeekL(fpSXF->File(), feature.offset, SEEK_SET);
+        auto poFeature = GetNextRawFeature(IT->first, feature.group,
+            feature.subObject);
         if( poFeature != nullptr && poFeature->GetGeometryRef() != nullptr && 
             GetSpatialRef() != nullptr )
         {
@@ -383,8 +399,15 @@ OGRFeature *OGRSXFLayer::GetNextFeature()
     CPLMutexHolderD(fpSXF->Mutex());
     while( oNextIt != mnRecordDesc.end() )
     {
-        VSIFSeekL(fpSXF->File(), oNextIt->second, SEEK_SET);
-        OGRFeature *poFeature = GetNextRawFeature(oNextIt->first);
+        auto feature = oNextIt->second;
+        if(feature.poFeature != nullptr)
+        {
+            return feature.poFeature->Clone();
+        }
+
+        VSIFSeekL(fpSXF->File(), feature.offset, SEEK_SET);
+        auto poFeature = GetNextRawFeature(oNextIt->first, feature.group,
+            feature.subObject);
 
         ++oNextIt;
 
@@ -570,16 +593,6 @@ GUInt32 OGRSXFLayer::TranslateXYH( const SXFRecordHeader &header, GByte *psBuff,
     return offset;
 }
 
-static SXFGeometryType GetGeometryType(GByte nType)
-{
-    if( nType >= 0 && nType < 6 )
-    {
-        return static_cast<SXFGeometryType>(nType);
-    }
-    
-    return SXF_GT_Unknown;
-}
-
 static SXFValueType GetCoordinateValueType(GByte nType, GByte nSize)
 {
     if(nType == 0)
@@ -634,7 +647,7 @@ static bool ReadRawFeautre(SXFRecordHeader &recordHeader, VSILFILE *pFile,
         {
             return false;
         }      
-        recordHeader.eGeometryType = GetGeometryType(stRecordHeader.nLocalizaton);
+        recordHeader.eGeometryType = SXFFile::CodeToGeometryType(stRecordHeader.nLocalizaton);
         recordHeader.bHasZ = stRecordHeader.nDimension == 1;
         recordHeader.eCoordinateValueType = 
             GetCoordinateValueType(stRecordHeader.nElementType, 
@@ -666,6 +679,7 @@ static bool ReadRawFeautre(SXFRecordHeader &recordHeader, VSILFILE *pFile,
         {
             recordHeader.nAttributesLength = 0;
         }
+
         if( recordHeader.eGeometryType == SXF_GT_Text || 
             recordHeader.eGeometryType == SXF_GT_TextTemplate )
         {
@@ -681,7 +695,7 @@ static bool ReadRawFeautre(SXFRecordHeader &recordHeader, VSILFILE *pFile,
     else if( nVersion == 4 )
     {
         SXFRecordHeaderV4 stRecordHeader;
-        auto nObjectRead = VSIFReadL(&stRecordHeader, sizeof(SXFRecordHeaderV3), 
+        auto nObjectRead = VSIFReadL(&stRecordHeader, sizeof(SXFRecordHeaderV4),
             1, pFile);
         if( nObjectRead != 1 )
         {
@@ -697,7 +711,7 @@ static bool ReadRawFeautre(SXFRecordHeader &recordHeader, VSILFILE *pFile,
         {
             return false;
         }
-        recordHeader.eGeometryType = GetGeometryType(stRecordHeader.nLocalizaton);
+        recordHeader.eGeometryType = SXFFile::CodeToGeometryType(stRecordHeader.nLocalizaton);
 
         recordHeader.bHasZ = stRecordHeader.nDimension == 1;
         recordHeader.eCoordinateValueType = 
@@ -743,14 +757,14 @@ static bool ReadRawFeautre(SXFRecordHeader &recordHeader, VSILFILE *pFile,
             recordHeader.eGeometryType == SXF_GT_TextTemplate )
         {
             recordHeader.bHasTextSign = stRecordHeader.nIsText == 1;
-            if( stRecordHeader.nIsUTF16TextEnc )
+            if( stRecordHeader.nIsUTF16TextEnc == 1 )
             {
                 recordHeader.osEncoding = CPL_ENC_UTF16;
             }
             else
             {
                 recordHeader.osEncoding = defaultEncoding;
-            }            
+            }
         }
         else
         {
@@ -762,7 +776,7 @@ static bool ReadRawFeautre(SXFRecordHeader &recordHeader, VSILFILE *pFile,
     return false;
 }
 
-OGRFeature *OGRSXFLayer::GetNextRawFeature(GIntBig nFID)
+OGRFeature *OGRSXFLayer::GetNextRawFeature(GIntBig nFID, int nGroupId, int nSubObject)
 {
     SXFRecordHeader stRecordHeader;
     if( !ReadRawFeautre(stRecordHeader, fpSXF->File(), fpSXF->Version(),
@@ -800,10 +814,10 @@ OGRFeature *OGRSXFLayer::GetNextRawFeature(GIntBig nFID)
     {
         poFeature = TranslatePolygon(stRecordHeader, geometryBuff.get());
     }
-    else if( stRecordHeader.eGeometryType == SXF_GT_Text || 
+    else if( stRecordHeader.eGeometryType == SXF_GT_Text ||
         stRecordHeader.eGeometryType == SXF_GT_TextTemplate )
     {
-        poFeature = TranslateText(stRecordHeader, geometryBuff.get());
+        poFeature = TranslateText(stRecordHeader, geometryBuff.get(), nSubObject);
     }
     else if( stRecordHeader.eGeometryType == SXF_GT_Vector )
     {
@@ -834,8 +848,9 @@ OGRFeature *OGRSXFLayer::GetNextRawFeature(GIntBig nFID)
     if( bIsNewBehavior )
     {
         poFeature->SetField("OT", SXFTypeToString(stRecordHeader.eGeometryType).c_str());
-        poFeature->SetField("group_number", stRecordHeader.nGroupNumber);
-        poFeature->SetField("number_in_group", stRecordHeader.nNumberInGroup);
+        // Add extra 10000 as group id and id in group may present
+        poFeature->SetField("group_number", stRecordHeader.nGroupNumber + 10000 * nGroupId);
+        poFeature->SetField("number_in_group", stRecordHeader.nNumberInGroup + 10000 * nSubObject);
     }
     else
     {
@@ -1238,6 +1253,32 @@ OGRFeature *OGRSXFLayer::TranslateVetorAngle(const SXFRecordHeader &header,
     return poFeature;
 }
 
+void OGRSXFLayer::DeleteCachedFeature(GIntBig nFID)
+{
+    auto record = mnRecordDesc.find(nFID);
+    if(record != mnRecordDesc.end())
+    {
+        delete record->second.poFeature;
+        record->second.poFeature = nullptr;
+    }
+}
+
+void OGRSXFLayer::AddToCache(GIntBig nFID, OGRFeature *poFeature)
+{
+    auto record = mnRecordDesc.find(nFID);
+    if(record != mnRecordDesc.end())
+    {
+        record->second.poFeature = poFeature;
+        anCacheIds.insert(nFID);
+    }
+
+    if(anCacheIds.size() > MAX_CACHE_SIZE)
+    {
+        auto it = anCacheIds.begin();
+        DeleteCachedFeature(*it);
+    }
+}
+
 OGRFeature *OGRSXFLayer::TranslatePolygon(const SXFRecordHeader &header, 
     GByte *psRecordBuf)
 {
@@ -1286,22 +1327,20 @@ OGRFeature *OGRSXFLayer::TranslatePolygon(const SXFRecordHeader &header,
 }
 
 OGRFeature *OGRSXFLayer::TranslateText(const SXFRecordHeader &header, 
-    GByte *psRecordBuf)
+    GByte *psRecordBuf, int nSubObject)
 {
     OGRFeature *poFeature = new OGRFeature(poFeatureDefn);
     CPLString soText;
     if( header.nPointCount > 1 )
     {
-        OGRMultiLineString *poMLS = new  OGRMultiLineString();
+        auto poLS = new  OGRLineString();
 
-    /*---------------------- Reading Primary Line --------------------------------*/
+  /*---------------------- Reading Primary Line ----------------------------*/
 
-        OGRLineString* poLS = new OGRLineString();
         GUInt32 nOffset = TranslateLine(poLS, header, psRecordBuf, 
             header.nGeometryLength, header.nPointCount);
-        poMLS->addGeometryDirectly( poLS );
 
-    /*------------------     READING TEXT VALUE   --------------------------------*/
+  /*------------------     READING TEXT VALUE   ----------------------------*/
 
         if ( header.bHasTextSign )
         {
@@ -1312,61 +1351,82 @@ OGRFeature *OGRSXFLayer::TranslateText(const SXFRecordHeader &header,
 
             GByte nTextL;
             memcpy(&nTextL, psRecordBuf + nOffset, 1);
-            if( nOffset + 1 + nTextL > header.nGeometryLength )
-            {
-                return poFeature;
-            }
-
-            soText += SXFFile::ReadSXFString(psRecordBuf + nOffset + 1, nTextL, 
-                header.osEncoding.c_str());
-            nOffset += nTextL + 2;
-        }
-
-    /*---------------------- Reading Sub Lines --------------------------------*/
-
-        for( int count = 0; count < header.nSubObjectCount; count++ )
-        {
-            if( nOffset + 4 > header.nGeometryLength )
-            {    
-                break;
-            }
-            GUInt16 nSubObj, nCoords;
-            memcpy(&nSubObj, psRecordBuf + nOffset, 2);
-            CPL_LSBPTR16(&nSubObj);
-            memcpy(&nCoords, psRecordBuf + nOffset + 2, 2);
-            CPL_LSBPTR16(&nCoords);
-
-            nOffset +=4;
-
-            poLS = new OGRLineString();
-
-            nOffset += TranslateLine(poLS, header, psRecordBuf + nOffset, 
-                header.nGeometryLength - nOffset, nCoords);
-            poMLS->addGeometryDirectly( poLS );
-
-            if( nOffset + 1 > header.nGeometryLength )
-            {
-                return poFeature;
-            }
-
-            GByte nTextL;
-            memcpy(&nTextL, psRecordBuf + nOffset, 1);
             nOffset += 1;
             if( nOffset + nTextL > header.nGeometryLength )
             {
+                delete poLS;
                 return poFeature;
             }
 
-            soText += " " + SXFFile::ReadSXFString(psRecordBuf + nOffset, 
-                nTextL, header.osEncoding.c_str());
+            nTextL += 1;
 
-            nOffset += nTextL + 2;
+            soText = SXFFile::ReadSXFString(psRecordBuf + nOffset, nTextL,
+                header.osEncoding.c_str());
+            nOffset += nTextL;
         }
 
-        poFeature->SetGeometryDirectly( poMLS );
+        if(nSubObject < 2)
+        {
+            poFeature->SetGeometryDirectly( poLS );
+        }
+        else
+        {
+
+    /*---------------------- Reading Sub Lines --------------------------------*/
+
+            for( int count = 0; count < header.nSubObjectCount; count++ )
+            {
+                if( nOffset + 4 > header.nGeometryLength )
+                {
+                    break;
+                }
+
+                GUInt16 nSubObj, nCoords;
+                memcpy(&nSubObj, psRecordBuf + nOffset, 2);
+                CPL_LSBPTR16(&nSubObj);
+                memcpy(&nCoords, psRecordBuf + nOffset + 2, 2);
+                CPL_LSBPTR16(&nCoords);
+
+                nOffset +=4;
+
+                poLS->empty();
+
+                nOffset += TranslateLine(poLS, header, psRecordBuf + nOffset,
+                    header.nGeometryLength - nOffset, nCoords);
+
+                if( nOffset + 1 > header.nGeometryLength )
+                {
+                    delete poLS;
+                    return poFeature;
+                }
+
+                GByte nTextL;
+                memcpy(&nTextL, psRecordBuf + nOffset, 1);
+                nOffset += 1;
+                if( nOffset + nTextL > header.nGeometryLength )
+                {
+                    delete poLS;
+                    return poFeature;
+                }
+
+                nTextL += 1;
+
+                soText = SXFFile::ReadSXFString(psRecordBuf + nOffset,
+                    nTextL, header.osEncoding.c_str());
+
+                if( count == nSubObject - 1 )
+                {
+                    poFeature->SetGeometryDirectly( poLS );
+                    break;
+                }
+
+                nOffset += nTextL;
+            }
+        }
     }
     else if( header.nPointCount == 1 )
     {
+        // FIXME: Need real example of text template
         OGRMultiPoint *poMPT = new OGRMultiPoint();
 
     /*---------------------- Reading Primary Line --------------------------------*/
@@ -1392,9 +1452,11 @@ OGRFeature *OGRSXFLayer::TranslateText(const SXFRecordHeader &header,
                 return poFeature;
             }
 
-            soText += SXFFile::ReadSXFString(psRecordBuf + nOffset + 1, nTextL, 
+            nTextL += 1;
+
+            soText = SXFFile::ReadSXFString(psRecordBuf + nOffset + 1, nTextL,
                 header.osEncoding.c_str());
-            nOffset += nTextL + 2;
+            nOffset += nTextL;
         }
 
     /*---------------------- Reading Sub Lines --------------------------------*/
@@ -1432,10 +1494,12 @@ OGRFeature *OGRSXFLayer::TranslateText(const SXFRecordHeader &header,
                 return poFeature;
             }
 
+            nTextL += 1;
+
             soText += " " + SXFFile::ReadSXFString(psRecordBuf + nOffset, 
                 nTextL, header.osEncoding.c_str());
 
-            nOffset += nTextL + 2;
+            nOffset += nTextL;
         }
 
         poFeature->SetGeometryDirectly( poMPT );

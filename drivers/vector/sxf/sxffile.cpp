@@ -434,15 +434,29 @@ void SXFFile::TranslateXY(double x, double y, double *dfX, double *dfY) const
 std::string SXFFile::ReadSXFString(const void *pBuffer, size_t nLen, 
     const char *pszSrcEncoding)
 {
-    char * value = (char*)CPLMalloc(nLen);
+    if(nLen == 0)
+    {
+        return "";
+    }
+    char *value = static_cast<char*>(CPLMalloc(nLen + 1));
     memcpy(value, pBuffer, nLen);
-    value[nLen - 1] = 0;
-    char* pszRecoded = CPLRecode(value, pszSrcEncoding, CPL_ENC_UTF8);
+    value[nLen] = 0;
+    char *pszRecoded = CPLRecode(value, pszSrcEncoding, CPL_ENC_UTF8);
     std::string out(pszRecoded);
     CPLFree(pszRecoded);
     CPLFree(value);
     return out;
-} 
+}
+
+SXFGeometryType SXFFile::CodeToGeometryType(GByte nType)
+{
+    if( nType >= 0 && nType < 6 )
+    {
+        return static_cast<SXFGeometryType>(nType);
+    }
+
+    return SXF_GT_Unknown;
+}
 
 OGRErr SXFFile::Read(OGRSXFDataSource *poDS, CSLConstList papszOpenOpts)
 {

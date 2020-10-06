@@ -70,6 +70,7 @@ class SXFFile
     public:
         static std::string ReadSXFString(const void *pBuffer, size_t nLen, 
             const char *pszSrcEncoding);
+        static SXFGeometryType CodeToGeometryType(GByte nType);
 
     private:
         OGRErr SetSRS(const long iEllips, const long iProjSys, const long iVCS, 
@@ -123,17 +124,24 @@ class RSCFile
 class OGRSXFLayer final: public OGRLayer
 {
 protected:
+    typedef struct{
+        vsi_l_offset offset;
+        int group;
+        int subObject;
+        OGRFeature *poFeature;
+    } SXFFeature;
     OGRFeatureDefn *poFeatureDefn;
     SXFFile *fpSXF;
     GUInt16 nLayerID;
     std::map<GUInt32, std::string> mnClassificators;
-    std::map<GIntBig, vsi_l_offset> mnRecordDesc;
-    std::map<GIntBig, vsi_l_offset>::const_iterator oNextIt;
+    std::map<GIntBig, SXFFeature> mnRecordDesc;
+    std::map<GIntBig, SXFFeature>::const_iterator oNextIt;
     std::set<GUInt32> snAttributeCodes;
+    std::set<GIntBig> anCacheIds;
     std::string osFIDColumn;
     bool bIsNewBehavior;
 
-    virtual OGRFeature *GetNextRawFeature(GIntBig nFID);
+    virtual OGRFeature *GetNextRawFeature(GIntBig nFID, int nGroupId, int nSubObject);
 
     GUInt32 TranslateXYH(const SXFRecordHeader &header, GByte *psBuff, 
         GUInt32 nBufLen, double *dfX, double *dfY, double *dfH = nullptr);
@@ -143,10 +151,12 @@ protected:
         GByte *pBuff, GUInt32 nBuffSize);
 
     OGRFeature *TranslatePoint(const SXFRecordHeader &stHeader, GByte *psRecordBuf);
-    OGRFeature *TranslateText(const SXFRecordHeader &header, GByte *psRecordBuf);
+    OGRFeature *TranslateText(const SXFRecordHeader &header, GByte *psRecordBuf, int nSubObject);
     OGRFeature *TranslatePolygon(const SXFRecordHeader &header, GByte *psRecordBuf);
     OGRFeature *TranslateLine(const SXFRecordHeader &stHeader, GByte *psRecordBuf);
     OGRFeature *TranslateVetorAngle(const SXFRecordHeader &header, GByte *psRecordBuf);
+    void AddToCache(GIntBig nFID, OGRFeature *poFeature);
+    void DeleteCachedFeature(GIntBig nFID);
 public:
     OGRSXFLayer(SXFFile *fp, GUInt16 nID, const char *pszLayerName, 
         const std::vector<SXFField> &astFields, bool bIsNewBehavior);
@@ -167,10 +177,11 @@ public:
     virtual OGRSpatialReference *GetSpatialRef() override;
     virtual const char *GetFIDColumn() override;
 
-    virtual GByte GetId() const;
-    virtual void AddClassifyCode(GUInt32 nClassCode, const std::string &soName);
-    virtual bool AddRecord( GIntBig nFID, unsigned nClassCode, vsi_l_offset nOffset, 
-        bool bHasSemantic, size_t nSemanticsSize );
+    GByte GetId() const;
+    void AddClassifyCode(GUInt32 nClassCode, const std::string &soName);
+    bool AddRecord( GIntBig nFID, unsigned nClassCode, vsi_l_offset nOffset,
+        bool bHasSemantic, size_t nSemanticsSize, int nGroup = 0,
+        int nSubObjectId = 0 );
 };
 
 /************************************************************************/

@@ -224,7 +224,7 @@ typedef struct{
     GUInt16 anGroup[2];         /* 0 - no group, 1 - in group */
     GByte nLocalizaton : 4;     /* The nature of localization */
     GByte nMultiPolygonPartsOut : 1; /* 1 - Mutlipolygon parts maybe outside */ 
-    GByte nMainMetricsDuplicat : 1;
+    GByte nMainMetricsDuplicate : 1;
     GByte : 2; /* reserve */
     GByte nSymbolTransform : 1;
     GByte nHasSemantics : 1;
