@@ -217,7 +217,7 @@ void OGRSXFDataSource::FillLayers(bool bIsNewBehavior)
     VSIFSeekL(oSXFFile.File(), nOffset, SEEK_SET);
 
     GIntBig nFID = 0;
-    int nGroupId = 1;
+    int nGroupId = 0;
     for( GUInt32 i = 0; i < oSXFFile.FeatureCount(); i++ )
     {
         GUInt32 nCurrentOffset = nOffset;
@@ -296,7 +296,7 @@ void OGRSXFDataSource::FillLayers(bool bIsNewBehavior)
             auto pOGRSXFLayer = static_cast<OGRSXFLayer*>(poLayer);
             if( pOGRSXFLayer && pOGRSXFLayer->AddRecord(nFID++, nCode,
                 nCurrentOffset, bHasAttributes, nAttributesSize,
-                nSubObjectCount == 0 ? 0 : nGroupId++,
+                nSubObjectCount == 0 ? 0 : ++nGroupId,
                 nSubObjectCount == 0 ? 0 : 1 ) )
             {
                 if( eGeomType == SXF_GT_Text )

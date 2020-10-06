@@ -1329,7 +1329,7 @@ OGRFeature *OGRSXFLayer::TranslatePolygon(const SXFRecordHeader &header,
 OGRFeature *OGRSXFLayer::TranslateText(const SXFRecordHeader &header, 
     GByte *psRecordBuf, int nSubObject)
 {
-    OGRFeature *poFeature = new OGRFeature(poFeatureDefn);
+    auto poFeature = new OGRFeature(poFeatureDefn);
     CPLString soText;
     if( header.nPointCount > 1 )
     {
@@ -1414,7 +1414,7 @@ OGRFeature *OGRSXFLayer::TranslateText(const SXFRecordHeader &header,
                 soText = SXFFile::ReadSXFString(psRecordBuf + nOffset,
                     nTextL, header.osEncoding.c_str());
 
-                if( count == nSubObject - 1 )
+                if( count == nSubObject - 2 )
                 {
                     poFeature->SetGeometryDirectly( poLS );
                     break;
