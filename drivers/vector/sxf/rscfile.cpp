@@ -95,6 +95,12 @@ typedef struct {
     GByte bAllowMultiple;
     GByte bAllowAnythere;
     GByte szName[32];
+    GByte szShortName[16];
+    GByte szMeasurementValue[8];
+    GUInt16 nFieldSize; // 0 - 255
+    GByte nPrecision; // Number of digits after decimal point
+    GByte bIsComplex;
+    GUInt32 nClassifyOffset;
 } RSCSemantics;
 
 enum RSCSemanticsType {
@@ -267,8 +273,9 @@ OGRErr RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
             VSIFReadL(&stSemantics, sizeof(RSCSemantics), 1, fpRSC.get());
             CPL_LSBPTR32(&stSemantics.nCode);
             CPL_LSBPTR16(&stSemantics.nType);
+            CPL_LSBPTR32(&stSemantics.nClassifyOffset);
 
-            auto alias = 
+            std::string osAlias =
                 GetName(reinterpret_cast<const char*>(stSemantics.szName), 
                     stRSCFileHeaderEx.nFontEnc);
             RSCSemanticsType eType = RSC_SC_TEXT;
@@ -276,6 +283,10 @@ OGRErr RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
                 stSemantics.nType < 16) )
             {
                 eType = static_cast<RSCSemanticsType>(stSemantics.nType);
+            }
+            if( stSemantics.nClassifyOffset != 0 )
+            {
+                eType = RSC_SC_LINK;
             }
 
             bool bAllowMultiple = stSemantics.bAllowMultiple == 1;
@@ -317,7 +328,8 @@ OGRErr RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
             std::string name = CPLSPrintf("SC_%d", stSemantics.nCode);
 
             mstSemantics[stSemantics.nCode] = 
-                {stSemantics.nCode, name, alias, eFieldType};
+                { stSemantics.nCode, name, osAlias, eFieldType,
+                  stSemantics.nPrecision };
 
             nOffset += 84L;
             VSIFSeekL(fpRSC.get(), nOffset, SEEK_SET);   

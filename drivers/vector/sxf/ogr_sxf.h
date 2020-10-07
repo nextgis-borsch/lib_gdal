@@ -157,6 +157,10 @@ protected:
     OGRFeature *TranslateVetorAngle(const SXFRecordHeader &header, GByte *psRecordBuf);
     void AddToCache(GIntBig nFID, OGRFeature *poFeature);
     void DeleteCachedFeature(GIntBig nFID);
+    void AddValue(OGRFeature *poFeature, const std::string &osFieldName, const std::string &value);
+    void AddValue(OGRFeature *poFeature, const std::string &osFieldName, int value);
+    void AddValue(OGRFeature *poFeature, const std::string &osFieldName, double value);
+    bool IsFieldList(int nIndex) const;
 public:
     OGRSXFLayer(SXFFile *fp, GUInt16 nID, const char *pszLayerName, 
         const std::vector<SXFField> &astFields, bool bIsNewBehavior);

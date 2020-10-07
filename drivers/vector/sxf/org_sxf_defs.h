@@ -300,6 +300,7 @@ typedef struct {
     std::string osName;
     std::string osAlias;
     OGRFieldType eFieldType;
+    int nWidth;
 } SXFField;
 
 typedef struct {

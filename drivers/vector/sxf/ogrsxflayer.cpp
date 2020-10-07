@@ -114,6 +114,10 @@ OGRSXFLayer::OGRSXFLayer(SXFFile *fp, GUInt16 nID, const char *pszLayerName,
         {
             OGRFieldDefn fieldDefn(field.osName.c_str(), field.eFieldType);
             fieldDefn.SetAlternativeName(field.osAlias.c_str());
+            if( field.nWidth > 0 && field.eFieldType == OFTString)
+            {
+                fieldDefn.SetWidth(field.nWidth);
+            }
             poFeatureDefn->AddFieldDefn( &fieldDefn );
 
             snAttributeCodes.insert(field.nCode);
@@ -776,6 +780,67 @@ static bool ReadRawFeautre(SXFRecordHeader &recordHeader, VSILFILE *pFile,
     return false;
 }
 
+void OGRSXFLayer::AddValue(OGRFeature *poFeature, const std::string &osFieldName, const std::string &value)
+{
+    int nIndex = poFeatureDefn->GetFieldIndex(osFieldName.c_str());
+    if( IsFieldList(nIndex) )
+    {
+        auto list = poFeature->GetFieldAsStringList(nIndex);
+        int nRefCount = CSLCount(list);
+        list = static_cast<char**>(CPLRealloc(list, nRefCount + sizeof(char*)));
+        list[nRefCount] = const_cast<char*>(value.c_str());
+        poFeature->SetField(nIndex, list);
+        return;
+    }
+    poFeature->SetField(nIndex, value.c_str());
+}
+
+void OGRSXFLayer::AddValue(OGRFeature *poFeature, const std::string &osFieldName, int value)
+{
+    int nIndex = poFeatureDefn->GetFieldIndex(osFieldName.c_str());
+    if( IsFieldList(nIndex) )
+    {
+        int count = 0;
+        auto list = poFeature->GetFieldAsIntegerList(nIndex, &count);
+        auto size = count * sizeof(int);
+        auto newList = static_cast<int*>(CPLMalloc(size + sizeof(int)));
+        memcpy(newList, list, size);
+        newList[count] = value;
+        poFeature->SetField(nIndex, count + 1, newList);
+        return;
+    }
+    poFeature->SetField(nIndex, value);
+}
+
+void OGRSXFLayer::AddValue(OGRFeature *poFeature, const std::string &osFieldName, double value)
+{
+    int nIndex = poFeatureDefn->GetFieldIndex(osFieldName.c_str());
+    if( IsFieldList(nIndex) )
+    {
+        int count = 0;
+        auto list = poFeature->GetFieldAsDoubleList(nIndex, &count);
+        auto size = count * sizeof(double);
+        auto newList = static_cast<double*>(CPLMalloc(size + sizeof(double)));
+        memcpy(newList, list, size);
+        newList[count] = value;
+        poFeature->SetField(nIndex, count + 1, newList);
+        return;
+    }
+    poFeature->SetField(nIndex, value);
+}
+
+bool OGRSXFLayer::IsFieldList(int nIndex) const
+{
+    auto poFieldDefn = poFeatureDefn->GetFieldDefn(nIndex);
+    if(poFieldDefn)
+    {
+        return poFieldDefn->GetType() == OFTIntegerList ||
+               poFieldDefn->GetType() == OFTRealList ||
+               poFieldDefn->GetType() == OFTStringList;
+    }
+    return false;
+}
+
 OGRFeature *OGRSXFLayer::GetNextRawFeature(GIntBig nFID, int nGroupId, int nSubObject)
 {
     SXFRecordHeader stRecordHeader;
@@ -901,8 +966,8 @@ OGRFeature *OGRSXFLayer::GetNextRawFeature(GIntBig nFID, int nGroupId, int nSubO
                         break;
                     }
                     auto val = SXFFile::ReadSXFString(attributesBuff.get() + 
-                        nOffset, nLen, "CP866");                    
-                    poFeature->SetField(oFieldName, val.c_str());
+                        nOffset, nLen, "CP866");
+                    AddValue(poFeature, oFieldName, val);
                     nOffset += stAttInfo.nScale + 1;
                     break;
                 }
@@ -917,7 +982,7 @@ OGRFeature *OGRSXFLayer::GetNextRawFeature(GIntBig nFID, int nGroupId, int nSubO
                     memcpy(&nTmpVal, attributesBuff.get() + nOffset, 1);
                     auto val = double(nTmpVal) * pow(10.0, 
                         static_cast<double>(stAttInfo.nScale));
-                    poFeature->SetField(oFieldName, val);
+                    AddValue(poFeature, oFieldName, val);
                     nOffset += 1;
                     break;
                 }
@@ -934,7 +999,7 @@ OGRFeature *OGRSXFLayer::GetNextRawFeature(GIntBig nFID, int nGroupId, int nSubO
                     auto val = double(CPL_LSBWORD16(nTmpVal)) * pow(10.0, 
                         static_cast<double>(stAttInfo.nScale));
 
-                    poFeature->SetField(oFieldName, val);
+                    AddValue(poFeature, oFieldName, val);
                     nOffset += 2;
                     break;
                 }
@@ -951,7 +1016,7 @@ OGRFeature *OGRSXFLayer::GetNextRawFeature(GIntBig nFID, int nGroupId, int nSubO
                     auto val = double(CPL_LSBWORD32(nTmpVal)) * pow(10.0,
                         static_cast<double>(stAttInfo.nScale));
 
-                    poFeature->SetField(oFieldName, val);
+                    AddValue(poFeature, oFieldName, val);
                     nOffset += 4;
                     break;
                 }
@@ -968,7 +1033,7 @@ OGRFeature *OGRSXFLayer::GetNextRawFeature(GIntBig nFID, int nGroupId, int nSubO
                     auto val = dfTmpVal * pow(10.0,
                         static_cast<double>(stAttInfo.nScale));
 
-                    poFeature->SetField(oFieldName, val);
+                    AddValue(poFeature, oFieldName, val);
                     nOffset += 8;
                     break;
                 }
@@ -983,8 +1048,8 @@ OGRFeature *OGRSXFLayer::GetNextRawFeature(GIntBig nFID, int nGroupId, int nSubO
                     
                     auto val = 
                         SXFFile::ReadSXFString(attributesBuff.get() + nOffset, 
-                            nLen, "CP1251");                    
-                    poFeature->SetField(oFieldName, val.c_str());
+                            nLen, "CP1251");
+                    AddValue(poFeature, oFieldName, val);
 
                     nOffset += nLen;
                     break;
@@ -1018,7 +1083,7 @@ OGRFeature *OGRSXFLayer::GetNextRawFeature(GIntBig nFID, int nGroupId, int nSubO
                          }
                     }
 
-                    poFeature->SetField(oFieldName, dst);
+                    AddValue(poFeature, oFieldName, dst);
                     CPLFree(dst);
                     CPLFree(src);
 
@@ -1045,8 +1110,8 @@ OGRFeature *OGRSXFLayer::GetNextRawFeature(GIntBig nFID, int nGroupId, int nSubO
 
                     auto val = 
                         SXFFile::ReadSXFString(attributesBuff.get() + nOffset, 
-                            scale2, CPL_ENC_UTF16);                    
-                    poFeature->SetField(oFieldName, val.c_str());
+                            scale2, CPL_ENC_UTF16);
+                    AddValue(poFeature, oFieldName, val);
                     
                     nOffset += scale2;
                     break;
