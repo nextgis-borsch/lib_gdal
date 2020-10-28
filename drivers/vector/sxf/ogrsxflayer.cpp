@@ -422,7 +422,7 @@ static GByte *WriteAttributesToBuffer(OGRFeature *poFeature, size_t &nSize,
 			{
 				int nCount = 0;
 				auto anList = poFeature->GetFieldAsIntegerList(i, &nCount);
-				for (int j = 0; i < nCount; j++)
+				for (int j = 0; j < nCount; j++)
 				{
 					size_t nCurrentSize = nSize;
 					nSize += sizeof(SXFRecordAttributeInfo) + sizeof(GInt32);
@@ -575,8 +575,8 @@ OGRSXFLayer::OGRSXFLayer(OGRSXFDataSource *poDSIn, int nIDIn,
 	bool bIsNewBehavior) :
 	OGRMemLayer(pszLayerName, 
 		const_cast<OGRSpatialReference*>(poDSIn->GetSpatialRef()), wkbUnknown),
-	poDS(poDSIn),
 	nID(nIDIn * 10000000),
+	poDS(poDSIn),
     osFIDColumn(FID),
     bIsNewBehavior(bIsNewBehavior)
 {

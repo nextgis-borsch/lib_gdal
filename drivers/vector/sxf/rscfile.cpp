@@ -275,14 +275,6 @@ static bool WriteNextID(GUInt32 nNextID, VSILFILE *pofRSC)
 	return VSIFWriteL(&nNextID, 4, 1, pofRSC) == 1;
 }
 
-static void WriteUInt(vsi_l_offset nOffset, GUInt32 nVal, VSILFILE *poFile)
-{
-	auto currentPos = VSIFTellL(poFile);
-	VSIFSeekL(poFile, nOffset, SEEK_SET);
-	VSIFWriteL(&nVal, sizeof(GUInt32), 1, poFile);
-	VSIFSeekL(poFile, currentPos, SEEK_SET);
-}
-
 static void WriteRSCSection(vsi_l_offset pos, GUInt32 size, GUInt32 count,
 	vsi_l_offset nOffset, VSILFILE *poFile)
 {
@@ -1385,7 +1377,7 @@ bool RSCFile::Write(const std::string &osPath, OGRSXFDataSource *poDS,
 	auto nCMYOffset = WriteCMY(fpRSC.get());
 
 	// Write tables
-	auto nTabOffset = WriteTAB(fpRSC.get(), nCMYOffset);
+	WriteTAB(fpRSC.get(), nCMYOffset);
 
 	// Write objects
 	WriteOBJ(fpRSC.get(), astObjs, osEncoding.c_str());

@@ -53,7 +53,7 @@ namespace SXF {
 		GByte *pVal = new GByte[nSize];
 		WriteEncString(pszText, pVal, nSize, pszEncoding);
 		VSIFWriteL(pVal, nSize, 1, fpSXF);
-		delete pVal;
+		delete pVal[];
 	}
 
 	std::string ReadEncString(const void *pBuffer, size_t nLen,
