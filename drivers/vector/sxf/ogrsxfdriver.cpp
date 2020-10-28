@@ -106,7 +106,9 @@ int OGRSXFDriver::Identify(GDALOpenInfo *poOpenInfo)
 CPLErr OGRSXFDriver::DeleteDataSource(const char *pszName)
 {
     //TODO: add more extensions if applicable
-    static const char * const apszExtensions[] = { "szf", "rsc", "SZF", "RSC", nullptr };
+    static const char * const apszExtensions[] = { 
+        "szf", "rsc", "SZF", "RSC", nullptr 
+    };
 
     VSIStatBufL sStatBuf;
     if (VSIStatL(pszName, &sStatBuf) != 0)

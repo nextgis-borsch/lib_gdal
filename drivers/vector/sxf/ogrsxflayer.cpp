@@ -68,7 +68,8 @@ static enum SXFGeometryType OGRTypeToSXFType(OGRwkbGeometryType eType)
 	}
 }
 
-static bool IsTypesCompatible(OGRwkbGeometryType eOGRType, enum SXFGeometryType eSXFType)
+static bool IsTypesCompatible(OGRwkbGeometryType eOGRType, 
+	enum SXFGeometryType eSXFType)
 {
 	switch (eSXFType)
 	{
@@ -144,8 +145,8 @@ static size_t WriteLine(const OGRLineString *poLn, GByte *pBuff)
 	return nOffset;
 }
 
-static GByte* WriteRings(const std::vector<OGRLinearRing*> &apoRings, size_t &nSize, 
-	size_t nPointSize)
+static GByte* WriteRings(const std::vector<OGRLinearRing*> &apoRings, 
+	size_t &nSize, size_t nPointSize)
 {
 	GUInt32 nPointCount = apoRings[0]->getNumPoints();
 	nSize = nPointSize * nPointCount;
@@ -248,7 +249,8 @@ static GByte *WriteGeometryToBuffer(OGRGeometry *poGeom, SXFGeometryType eGeomTy
 			memcpy(pBuff + nOffset, &nTextL, 1);
 			nOffset++;
 			// FIXME: Possible broken last character if text length greater 254
-			SXF::WriteEncString(pszText, pBuff + nOffset, nTextLenght + 1, osEncoding.c_str());
+			SXF::WriteEncString(pszText, pBuff + nOffset, nTextLenght + 1, 
+				osEncoding.c_str());
 			return pBuff;
 		}
 	}
@@ -410,7 +412,8 @@ static GByte *WriteAttributesToBuffer(OGRFeature *poFeature, size_t &nSize,
 				size_t nCurrentSize = nSize;
 				nSize += sizeof(SXFRecordAttributeInfo) + sizeof(GInt32);
 				pBuff = static_cast<GByte*>(CPLRealloc(pBuff, nSize));
-				memcpy(pBuff + nCurrentSize, &stRecordHeader, sizeof(SXFRecordAttributeInfo));
+				memcpy(pBuff + nCurrentSize, &stRecordHeader, 
+					sizeof(SXFRecordAttributeInfo));
 				nCurrentSize += sizeof(SXFRecordAttributeInfo);
 				GInt32 val = poFeature->GetFieldAsInteger(i);
 				memcpy(pBuff + nCurrentSize, &val, sizeof(GInt32));
@@ -424,7 +427,8 @@ static GByte *WriteAttributesToBuffer(OGRFeature *poFeature, size_t &nSize,
 					size_t nCurrentSize = nSize;
 					nSize += sizeof(SXFRecordAttributeInfo) + sizeof(GInt32);
 					pBuff = static_cast<GByte*>(CPLRealloc(pBuff, nSize));
-					memcpy(pBuff + nCurrentSize, &stRecordHeader, sizeof(SXFRecordAttributeInfo));
+					memcpy(pBuff + nCurrentSize, &stRecordHeader, 
+						sizeof(SXFRecordAttributeInfo));
 					nCurrentSize += sizeof(SXFRecordAttributeInfo);
 					GInt32 val = anList[j];
 					memcpy(pBuff + nCurrentSize, &val, sizeof(GInt32));
@@ -439,7 +443,8 @@ static GByte *WriteAttributesToBuffer(OGRFeature *poFeature, size_t &nSize,
 				size_t nCurrentSize = nSize;
 				nSize += sizeof(SXFRecordAttributeInfo) + sizeof(double);
 				pBuff = static_cast<GByte*>(CPLRealloc(pBuff, nSize));
-				memcpy(pBuff + nCurrentSize, &stRecordHeader, sizeof(SXFRecordAttributeInfo));
+				memcpy(pBuff + nCurrentSize, &stRecordHeader, 
+					sizeof(SXFRecordAttributeInfo));
 				nCurrentSize += sizeof(SXFRecordAttributeInfo);
 				double val = poFeature->GetFieldAsDouble(i);
 				memcpy(pBuff + nCurrentSize, &val, sizeof(double));
@@ -453,7 +458,8 @@ static GByte *WriteAttributesToBuffer(OGRFeature *poFeature, size_t &nSize,
 					size_t nCurrentSize = nSize;
 					nSize += sizeof(SXFRecordAttributeInfo) + sizeof(double);
 					pBuff = static_cast<GByte*>(CPLRealloc(pBuff, nSize));
-					memcpy(pBuff + nCurrentSize, &stRecordHeader, sizeof(SXFRecordAttributeInfo));
+					memcpy(pBuff + nCurrentSize, &stRecordHeader, 
+						sizeof(SXFRecordAttributeInfo));
 					nCurrentSize += sizeof(SXFRecordAttributeInfo);
 					double val = anList[j];
 					memcpy(pBuff + nCurrentSize, &val, sizeof(double));
@@ -476,7 +482,8 @@ static GByte *WriteAttributesToBuffer(OGRFeature *poFeature, size_t &nSize,
 					size_t nCurrentSize = nSize;
 					nSize += sizeof(SXFRecordAttributeInfo) + nNewTextSize;
 					pBuff = static_cast<GByte*>(CPLRealloc(pBuff, nSize));
-					memcpy(pBuff + nCurrentSize, &stRecordHeader, sizeof(SXFRecordAttributeInfo));
+					memcpy(pBuff + nCurrentSize, &stRecordHeader, 
+						sizeof(SXFRecordAttributeInfo));
 					nCurrentSize += sizeof(SXFRecordAttributeInfo);
 					memcpy(pBuff + nCurrentSize, pszRecodedText, nTextSize);
 					nCurrentSize += nTextSize;
@@ -494,7 +501,8 @@ static GByte *WriteAttributesToBuffer(OGRFeature *poFeature, size_t &nSize,
 				size_t nCurrentSize = nSize;
 				nSize += sizeof(SXFRecordAttributeInfo) + nNewTextSize;
 				pBuff = static_cast<GByte*>(CPLRealloc(pBuff, nSize));
-				memcpy(pBuff + nCurrentSize, &stRecordHeader, sizeof(SXFRecordAttributeInfo));
+				memcpy(pBuff + nCurrentSize, &stRecordHeader, 
+					sizeof(SXFRecordAttributeInfo));
 				nCurrentSize += sizeof(SXFRecordAttributeInfo);
 				memcpy(pBuff + nCurrentSize, pszRecodedText, nTextSize);
 				nCurrentSize += nTextSize;
@@ -511,7 +519,8 @@ static GByte *WriteAttributesToBuffer(OGRFeature *poFeature, size_t &nSize,
 	return pBuff;
 }
 
-static void AddCode(OGRFeature *poFeature, int nID, std::map<std::string, std::string> &mnClassificators)
+static void AddCode(OGRFeature *poFeature, int nID, 
+	std::map<std::string, std::string> &mnClassificators)
 {
 	auto nClcodeIndex = poFeature->GetFieldIndex(CLCODE);
 	if (nClcodeIndex != -1 && poFeature->GetGeometryRef())
@@ -535,10 +544,12 @@ static void AddCode(OGRFeature *poFeature, int nID, std::map<std::string, std::s
 		}
 		else
 		{
-			auto eType = OGRTypeToSXFType(poFeature->GetGeometryRef()->getGeometryType());
+			auto eType = 
+				OGRTypeToSXFType(poFeature->GetGeometryRef()->getGeometryType());
 			osCode = SXFFile::SXFTypeToString(eType);
 
-			osDefaultClass = std::to_string(nID + SXFFile::CodeForGeometryType(eType));
+			osDefaultClass = 
+				std::to_string(nID + SXFFile::CodeForGeometryType(eType));
 		}
 
 		std::string osClass = poFeature->GetFieldAsString(nClcodeIndex);
@@ -562,7 +573,8 @@ static void AddCode(OGRFeature *poFeature, int nID, std::map<std::string, std::s
 OGRSXFLayer::OGRSXFLayer(OGRSXFDataSource *poDSIn, int nIDIn,
 	const char *pszLayerName, const std::vector<SXFField> &astFields, 
 	bool bIsNewBehavior) :
-	OGRMemLayer(pszLayerName, const_cast<OGRSpatialReference*>(poDSIn->GetSpatialRef()), wkbUnknown),
+	OGRMemLayer(pszLayerName, 
+		const_cast<OGRSpatialReference*>(poDSIn->GetSpatialRef()), wkbUnknown),
 	poDS(poDSIn),
 	nID(nIDIn * 10000000),
     osFIDColumn(FID),
@@ -621,7 +633,8 @@ OGRSXFLayer::OGRSXFLayer(OGRSXFDataSource *poDSIn, int nIDIn,
 
 	if (!poDS->Encoding().empty())
 	{
-		SetAdvertizeUTF8(CPLCanRecode("test", poDS->Encoding().c_str(), CPL_ENC_UTF8));
+		SetAdvertizeUTF8(CPLCanRecode("test", poDS->Encoding().c_str(), 
+			CPL_ENC_UTF8));
 	}
 	
 	SetUpdatable(poDS->GetAccess() == GA_Update);
@@ -633,7 +646,8 @@ OGRSXFLayer::OGRSXFLayer(OGRSXFDataSource *poDSIn, int nIDIn,
 /* be in layer                                                          */
 /************************************************************************/
 
-void OGRSXFLayer::AddClassifyCode(const std::string &osClassCode, const std::string &osName)
+void OGRSXFLayer::AddClassifyCode(const std::string &osClassCode, 
+	const std::string &osName)
 {
     if (osName.empty())
     {
@@ -889,7 +903,8 @@ static bool ReadRawFeautre(SXFRecordHeader &recordHeader, VSILFILE *pFile,
         {
             return false;
         }      
-        recordHeader.eGeometryType = SXFFile::CodeToGeometryType(stRecordHeader.nLocalizaton);
+        recordHeader.eGeometryType = 
+			SXFFile::CodeToGeometryType(stRecordHeader.nLocalizaton);
         recordHeader.bHasZ = stRecordHeader.nDimension == 1;
         recordHeader.eCoordinateValueType = 
             GetCoordinateValueType(stRecordHeader.nElementType, 
@@ -910,7 +925,8 @@ static bool ReadRawFeautre(SXFRecordHeader &recordHeader, VSILFILE *pFile,
         if (stRecordHeader.nHasSemantics == 1)
         {
             CPL_LSBPTR32(&stRecordHeader.nFullLength);
-            GInt32 nAttributesLength = stRecordHeader.nFullLength - 32 - stRecordHeader.nGeometryLength;
+            GInt32 nAttributesLength = 
+				stRecordHeader.nFullLength - 32 - stRecordHeader.nGeometryLength;
             if (nAttributesLength < 1 || nAttributesLength > MAX_ATTRIBUTES_DATA_SIZE)
             {
                 return false;
@@ -954,7 +970,8 @@ static bool ReadRawFeautre(SXFRecordHeader &recordHeader, VSILFILE *pFile,
         {
             return false;
         }
-        recordHeader.eGeometryType = SXFFile::CodeToGeometryType(stRecordHeader.nLocalizaton);
+        recordHeader.eGeometryType = 
+			SXFFile::CodeToGeometryType(stRecordHeader.nLocalizaton);
 
         recordHeader.bHasZ = stRecordHeader.nDimension == 1;
         recordHeader.eCoordinateValueType = 
@@ -984,7 +1001,8 @@ static bool ReadRawFeautre(SXFRecordHeader &recordHeader, VSILFILE *pFile,
         if (stRecordHeader.nHasSemantics == 1)
         {
             CPL_LSBPTR32(&stRecordHeader.nFullLength);
-            GInt32 nAttributesLength = stRecordHeader.nFullLength - 32 - stRecordHeader.nGeometryLength;
+            GInt32 nAttributesLength = 
+				stRecordHeader.nFullLength - 32 - stRecordHeader.nGeometryLength;
             if (nAttributesLength < 1 || nAttributesLength > MAX_ATTRIBUTES_DATA_SIZE)
             {
                 return false;
@@ -1019,7 +1037,8 @@ static bool ReadRawFeautre(SXFRecordHeader &recordHeader, VSILFILE *pFile,
     return false;
 }
 
-void OGRSXFLayer::AddValue(OGRFeature *poFeature, const std::string &osFieldName, const std::string &value)
+void OGRSXFLayer::AddValue(OGRFeature *poFeature, const std::string &osFieldName, 
+	const std::string &value)
 {
     int nIndex = GetLayerDefn()->GetFieldIndex(osFieldName.c_str());
     if (IsFieldList(GetLayerDefn(), nIndex))
@@ -1034,7 +1053,8 @@ void OGRSXFLayer::AddValue(OGRFeature *poFeature, const std::string &osFieldName
     poFeature->SetField(nIndex, value.c_str());
 }
 
-void OGRSXFLayer::AddValue(OGRFeature *poFeature, const std::string &osFieldName, int value)
+void OGRSXFLayer::AddValue(OGRFeature *poFeature, const std::string &osFieldName, 
+	int value)
 {
     int nIndex = GetLayerDefn()->GetFieldIndex(osFieldName.c_str());
     if (IsFieldList(GetLayerDefn(), nIndex))
@@ -1051,7 +1071,8 @@ void OGRSXFLayer::AddValue(OGRFeature *poFeature, const std::string &osFieldName
     poFeature->SetField(nIndex, value);
 }
 
-void OGRSXFLayer::AddValue(OGRFeature *poFeature, const std::string &osFieldName, double value)
+void OGRSXFLayer::AddValue(OGRFeature *poFeature, const std::string &osFieldName, 
+	double value)
 {
     int nIndex = GetLayerDefn()->GetFieldIndex(osFieldName.c_str());
     if (IsFieldList(GetLayerDefn(), nIndex))
@@ -1100,7 +1121,8 @@ OGRFeature *OGRSXFLayer::GetRawFeature(const SXFFile &oSXF,
 		int iVal;
 		double dfVal;
 
-		VAR(OGRFieldType eTypeIn, const std::string &strIn, int iValIn, double dfValIn)
+		VAR(OGRFieldType eTypeIn, const std::string &strIn, int iValIn, 
+			double dfValIn)
 			: eType(eTypeIn), str(strIn), iVal(iValIn), dfVal(dfValIn) {}
 	};
 
@@ -1148,8 +1170,11 @@ OGRFeature *OGRSXFLayer::GetRawFeature(const SXFFile &oSXF,
 					nSemanticsSize = 0;
 					break;
 				}
+				
+				// Expected here that input encoding set by parameters or from 
+				// SXF header is ASCIIZ
 				auto val = SXF::ReadEncString(attributesBuff.get() +
-					nOffset, nLen, oSXF.Encoding().c_str()); // Expected here that input encoding set by parameters or from SXF header is ASCIIZ
+					nOffset, nLen, oSXF.Encoding().c_str()); 
 				if (!HasField(GetLayerDefn(), oFieldName))
 				{
 					OGRFieldDefn oField(oFieldName.c_str(), OFTString);
@@ -1372,7 +1397,8 @@ OGRFeature *OGRSXFLayer::GetRawFeature(const SXFFile &oSXF,
     else if (stRecordHeader.eGeometryType == SXF_GT_Text ||
         stRecordHeader.eGeometryType == SXF_GT_TextTemplate)
     {
-        poFeature = TranslateText(oSXF, stRecordHeader, geometryBuff.get(), nSubObjectID);
+        poFeature = TranslateText(oSXF, stRecordHeader, geometryBuff.get(), 
+			nSubObjectID);
     }
     else if (stRecordHeader.eGeometryType == SXF_GT_Vector)
     {
@@ -1399,10 +1425,13 @@ OGRFeature *OGRSXFLayer::GetRawFeature(const SXFFile &oSXF,
 
     if (bIsNewBehavior)
     {
-        poFeature->SetField(OT, SXFFile::SXFTypeToString(stRecordHeader.eGeometryType).c_str());
+        poFeature->SetField(OT, 
+			SXFFile::SXFTypeToString(stRecordHeader.eGeometryType).c_str());
         // Add extra 10000 as group id and id in group may present
-        poFeature->SetField(GROUP_NUMBER, stRecordHeader.nGroupNumber + 10000 * nGroupID);
-        poFeature->SetField(NUMBER_IN_GROUP, stRecordHeader.nNumberInGroup + 10000 * nSubObjectID);
+        poFeature->SetField(GROUP_NUMBER, 
+			stRecordHeader.nGroupNumber + 10000 * nGroupID);
+        poFeature->SetField(NUMBER_IN_GROUP, 
+			stRecordHeader.nNumberInGroup + 10000 * nSubObjectID);
     }
     else
     {

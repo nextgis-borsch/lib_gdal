@@ -142,8 +142,9 @@ class RSCFile
 class OGRSXFLayer final: public OGRMemLayer
 {
 public:
-	explicit OGRSXFLayer(OGRSXFDataSource *poDSIn, int nIDIn, const char *pszLayerName, 
-		const std::vector<SXFField> &astFields, bool bIsNewBehavior);
+	explicit OGRSXFLayer(OGRSXFDataSource *poDSIn, int nIDIn, 
+		const char *pszLayerName,  const std::vector<SXFField> &astFields, 
+		bool bIsNewBehavior);
     virtual ~OGRSXFLayer() override = default;
 
     virtual int TestCapability( const char * ) override;
@@ -177,9 +178,10 @@ private:
 	GUInt32 TranslateXYH(const SXFFile &oSXF, const SXFRecordHeader &header, 
 		GByte *psBuff, GUInt32 nBufLen, double *dfX, double *dfY, double *dfH = nullptr);
 	GUInt32 TranslateLine(const SXFFile &oSXF, OGRLineString* poLS, 
-		const SXFRecordHeader &header, GByte *pBuff, GUInt32 nBuffSize, GUInt32 nPointCount);
-	GUInt32 TranslatePoint(const SXFFile &oSXF, OGRPoint *poPT, const SXFRecordHeader &header,
-		GByte *pBuff, GUInt32 nBuffSize);
+		const SXFRecordHeader &header, GByte *pBuff, GUInt32 nBuffSize, 
+		GUInt32 nPointCount);
+	GUInt32 TranslatePoint(const SXFFile &oSXF, OGRPoint *poPT, 
+		const SXFRecordHeader &header, GByte *pBuff, GUInt32 nBuffSize);
 
 	OGRFeature *TranslatePoint(const SXFFile &oSXF,  const SXFRecordHeader &stHeader,
 		GByte *psRecordBuf);
@@ -191,9 +193,12 @@ private:
 		GByte *psRecordBuf);
 	OGRFeature *TranslateVetorAngle(const SXFFile &oSXF, const SXFRecordHeader &header, 
 		GByte *psRecordBuf);
-	void AddValue(OGRFeature *poFeature, const std::string &osFieldName, const std::string &value);
-	void AddValue(OGRFeature *poFeature, const std::string &osFieldName, int value);
-	void AddValue(OGRFeature *poFeature, const std::string &osFieldName, double value);
+	void AddValue(OGRFeature *poFeature, const std::string &osFieldName, 
+		const std::string &value);
+	void AddValue(OGRFeature *poFeature, const std::string &osFieldName, 
+		int value);
+	void AddValue(OGRFeature *poFeature, const std::string &osFieldName, 
+		double value);
 
 private:
 	int nID;
@@ -230,7 +235,7 @@ public:
 	virtual const OGRSpatialReference *GetSpatialRef() const override;
 	virtual CPLErr SetSpatialRef(const OGRSpatialReference *poSRS) override;
 	virtual char **GetFileList(void) override; 
-	virtual OGRErr DeleteLayer(int iLayer);
+	virtual OGRErr DeleteLayer(int iLayer) override;
 
 protected:
 	virtual OGRLayer *ICreateLayer(const char *pszName,
@@ -242,7 +247,7 @@ private:
     void FillLayers(const SXFFile &oSXFFile, bool bIsNewBehavior);
     void CreateLayers(const OGREnvelope &oEnv, 
 		const std::map<GByte, SXFLayerDefn> &mstLayers, bool bIsNewBehavior);
-	std::map<std::string, int> OGRSXFDataSource::GenerateSXFClassMap() const;
+	std::map<std::string, int> GenerateSXFClassMap() const;
 
 private:
 	OGREnvelope oExtent;

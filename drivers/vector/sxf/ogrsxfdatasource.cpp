@@ -297,7 +297,8 @@ void OGRSXFDataSource::FillLayers(const SXFFile &oSXF, bool bIsNewBehavior)
     {
         nOffset = 400 + 52;
     }
-    //2. Read all records (only classify code and offset) and add this to correspondence layer
+    // 2. Read all records (only classify code and offset) and add this to 
+	// correspondence layer
     VSIFSeekL(oSXF.File(), nOffset, SEEK_SET);
 
     GIntBig nFID = 0;
@@ -507,8 +508,8 @@ OGRLayer *OGRSXFDataSource::ICreateLayer(const char *pszName,
 		CSLFetchNameValueDef(papszOptions, "SXF_NEW_BEHAVIOR",
 			CPLGetConfigOption("SXF_NEW_BEHAVIOR", "NO"));
 	bool bNewBehavior = CPLTestBool(pszIsNewBehavior);	
-	auto poNewLayer = new OGRSXFLayer(this, nLayerID++, pszName, std::vector<SXFField>(),
-		bNewBehavior);
+	auto poNewLayer = new OGRSXFLayer(this, nLayerID++, pszName, 
+		std::vector<SXFField>(), bNewBehavior);
 	poLayers.emplace_back(poNewLayer);
 	SetHasChanges();
 	return poNewLayer;

@@ -356,7 +356,8 @@ static GUInt32 WritePointDefaultParam(GUInt16 nCode, VSILFILE *poFile)
 	};
 
 	RSCParameter stParam = { 0 };
-	stParam.nLength = sizeof(RSCParameter) + sizeof(struct PointParam) + sizeof(struct ColorMask);
+	stParam.nLength = sizeof(RSCParameter) + sizeof(struct PointParam) + 
+		sizeof(struct ColorMask);
 	stParam.nType = 143;
 	stParam.nCode = nCode;
 	VSIFWriteL(&stParam, sizeof(RSCParameter), 1, poFile);
@@ -451,7 +452,8 @@ static GUInt32 WriteVectorDefaultParam(GUInt16 nCode, VSILFILE *poFile)
 	};
 
 	struct VectorParam stV = { 0 };
-	stV.nLength = sizeof(struct VectorParam) + sizeof(struct VectorFragment) + sizeof(struct Point) * 2;
+	stV.nLength = sizeof(struct VectorParam) + sizeof(struct VectorFragment) + 
+		sizeof(struct Point) * 2;
 	stV.nAnchorX = 500;
 	stV.nAnchorY = 500;
 	stV.nSize = 4500;
@@ -610,7 +612,8 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
     CPL_LSBPTR32(&stRSCFileHeader.nLength);
 	if (stRSCFileHeader.nLength != nFileLength)
 	{
-		CPLError(CE_Warning, CPLE_None, "RSC file length is wrong. Expected %d, got %d", 
+		CPLError(CE_Warning, CPLE_None, 
+			"RSC file length is wrong. Expected %d, got %d", 
 			stRSCFileHeader.nLength, nFileLength);
 	}
 
@@ -621,7 +624,8 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
 
     if ( nVersion != 7 )
     {
-        CPLError(CE_Failure, CPLE_NotSupported , "RSC File version %d not supported", nVersion);
+        CPLError(CE_Failure, CPLE_NotSupported , 
+			"RSC File version %d not supported", nVersion);
         return false;
     }
 	
@@ -689,7 +693,8 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
     if( bIsNewBehavior )
     {
         // Read all semantics
-        CPLDebug("SXF", "Read %d attributes from RSC", stRSCFileHeaderEx.Semantic.nRecordCount);
+        CPLDebug("SXF", "Read %d attributes from RSC", 
+			stRSCFileHeaderEx.Semantic.nRecordCount);
         vsi_l_offset nOffset = stRSCFileHeaderEx.Semantic.nOffset;
         VSIFSeekL(fpRSC.get(), nOffset, SEEK_SET);
         for( GUInt32 i = 0; i < stRSCFileHeaderEx.Semantic.nRecordCount; i++ )
@@ -762,7 +767,8 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
     }
 
     // Read classify code -> semantics[]
-    CPLDebug("SXF", "Read %d classify code -> attributes[] from RSC", stRSCFileHeaderEx.PossibleSemantic.nRecordCount);
+    CPLDebug("SXF", "Read %d classify code -> attributes[] from RSC", 
+		stRSCFileHeaderEx.PossibleSemantic.nRecordCount);
     vsi_l_offset nOffset = stRSCFileHeaderEx.PossibleSemantic.nOffset;
     VSIFSeekL(fpRSC.get(), nOffset, SEEK_SET);
 
@@ -791,7 +797,8 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
     }
 
     // Read layers
-    CPLDebug("SXF", "Read %d layers from RSC", stRSCFileHeaderEx.Layers.nRecordCount);
+    CPLDebug("SXF", "Read %d layers from RSC", 
+		stRSCFileHeaderEx.Layers.nRecordCount);
     nOffset = stRSCFileHeaderEx.Layers.nOffset;
     VSIFSeekL(fpRSC.get(), nOffset, SEEK_SET);
 
@@ -883,54 +890,6 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
         VSIFSeekL(fpRSC.get(), nOffset, SEEK_SET);
     }
 
-	/*
-	nOffset = stRSCFileHeaderEx.ImageParams.nOffset - 4;
-	VSIFSeekL(fpRSC.get(), nOffset, SEEK_SET);
-	GByte buff[4];
-	VSIFReadL(buff, 4, 1, fpRSC.get());
-	int x = 0;
-		for (GUInt32 i = 0; i < stRSCFileHeaderEx.Parameters.nRecordCount; i++)
-	{
-		RSCParameter stSt;
-		VSIFReadL(&stSt, sizeof(RSCParameter), 1, fpRSC.get());
-
-		if (stSt.nType == 153)
-		{
-			struct HatchPolygonParam {
-				GUInt32 nLength; 
-				GUInt32 nTemplateHeaderLength;
-				GUInt32 nCellType[12];
-				GUInt32 nAnchorCell;
-				GUInt32 nOrientation;
-				GUInt32 nFiguresCount;
-			};
-
-			struct TemplateParam stTP = { 0 };
-			VSIFReadL(&stTP, sizeof(struct TemplateParam), 1, fpRSC.get());
-
-			struct TemplateParamItem {
-				GUInt16 nLength;
-				GInt16 nIndex;
-			};
-
-			for (int j = 0; j < stTP.nFiguresCount; j++)
-			{
-				struct TemplateParamItem stTM;
-				VSIFReadL(&stTM, sizeof(struct TemplateParamItem), 1, fpRSC.get());
-
-				int y = 0;
-			}
-		}
-		else
-		{
-			size_t s = stSt.nLength - sizeof(RSCParameter);
-			GByte *buff = static_cast<GByte*>(CPLMalloc(s));
-			VSIFReadL(buff, s, 1, fpRSC.get());
-			CPLFree(buff);
-		}
-	}*/
-	
-
     return true;
 }
 
@@ -990,7 +949,8 @@ static vsi_l_offset WriteTAB(VSILFILE *fpRSC, vsi_l_offset nCMYOffset)
 	return pos;
 }
 
-static void WriteOBJ(VSILFILE *fpRSC, const std::vector<RSCObj> &astObj, const char *pszEncoding)
+static void WriteOBJ(VSILFILE *fpRSC, const std::vector<RSCObj> &astObj, 
+	const char *pszEncoding)
 {
 	GByte objId[4] = { 'O', 'B', 'J', 0 };
 	VSIFWriteL(objId, 4, 1, fpRSC);
@@ -1006,8 +966,10 @@ static void WriteOBJ(VSILFILE *fpRSC, const std::vector<RSCObj> &astObj, const c
 		stObject.nClassifyCode = stObj.nCode;
 		stObject.nInternalCode = nInternalCode;
 		stObject.nIdCode = nInternalCode++;
-		SXF::WriteEncString(stObj.osName.c_str(), stObject.szShortName, 32, pszEncoding);
-		SXF::WriteEncString(stObj.osName.c_str(), stObject.szName, 32, pszEncoding);
+		SXF::WriteEncString(stObj.osName.c_str(), stObject.szShortName, 32, 
+			pszEncoding);
+		SXF::WriteEncString(stObj.osName.c_str(), stObject.szName, 32, 
+			pszEncoding);
 		stObject.nGeometryType = stObj.nLoc; // Same as enum SXFGeometryType
 		stObject.nLayerId = stObj.nLayer;
 
@@ -1020,7 +982,8 @@ static void WriteOBJ(VSILFILE *fpRSC, const std::vector<RSCObj> &astObj, const c
 	WriteRSCSection(pos, nLength, nRecordCount, 120, fpRSC);
 }
 
-static void WriteEmptyBlock(VSILFILE *fpRSC, const char *panCode, vsi_l_offset nOffset)
+static void WriteEmptyBlock(VSILFILE *fpRSC, const char *panCode, 
+	vsi_l_offset nOffset)
 {
 	GByte anCode[4] = { 0 };
 	anCode[0] = panCode[0];
@@ -1035,7 +998,8 @@ static void WriteEmptyBlock(VSILFILE *fpRSC, const char *panCode, vsi_l_offset n
 	WriteRSCSection(pos, 0, 0, nOffset, fpRSC);
 }
 
-static void WriteSEM(VSILFILE *fpRSC, const std::vector<RSCSem> &astSem, const char *pszEncoding)
+static void WriteSEM(VSILFILE *fpRSC, const std::vector<RSCSem> &astSem, 
+	const char *pszEncoding)
 {
 	GByte semId[4] = { 'S', 'E', 'M', 0 };
 	VSIFWriteL(semId, 4, 1, fpRSC);
@@ -1065,7 +1029,8 @@ static void WriteSEM(VSILFILE *fpRSC, const std::vector<RSCSem> &astSem, const c
 	WriteRSCSection(pos, nLength, nRecordCount, 132, fpRSC);
 }
 
-static void WritePOS(VSILFILE *fpRSC, const std::vector<RSCObj> &astObj, const char *pszEncoding)
+static void WritePOS(VSILFILE *fpRSC, const std::vector<RSCObj> &astObj, 
+	const char *pszEncoding)
 {
 	GByte posId[4] = { 'P', 'O', 'S', 0 };
 	VSIFWriteL(posId, 4, 1, fpRSC);
@@ -1097,7 +1062,8 @@ static void WritePOS(VSILFILE *fpRSC, const std::vector<RSCObj> &astObj, const c
 	WriteRSCSection(pos, nLength, nRecordCount, 168, fpRSC);
 }
 
-static void WriteSEG(VSILFILE *fpRSC, const std::vector<std::string> &aosLyr, const char *pszEncoding)
+static void WriteSEG(VSILFILE *fpRSC, const std::vector<std::string> &aosLyr, 
+	const char *pszEncoding)
 {
 	GByte lyrId[4] = { 'S', 'E', 'G', 0 };
 	VSIFWriteL(lyrId, 4, 1, fpRSC);
@@ -1115,8 +1081,10 @@ static void WriteSEG(VSILFILE *fpRSC, const std::vector<std::string> &aosLyr, co
 		{
 			stRSCLayer.nDrawOrder = 255;
 		}
-		SXF::WriteEncString(aosLyr[i].c_str(), stRSCLayer.szName, 32, pszEncoding);
-		SXF::WriteEncString(aosLyr[i].c_str(), stRSCLayer.szShortName, 16, pszEncoding);
+		SXF::WriteEncString(aosLyr[i].c_str(), stRSCLayer.szName, 32, 
+			pszEncoding);
+		SXF::WriteEncString(aosLyr[i].c_str(), stRSCLayer.szShortName, 16, 
+			pszEncoding);
 		VSIFWriteL(&stRSCLayer, sizeof(RSCLayer), 1, fpRSC);
 	}
 	GByte nop[12] = { 0 };
@@ -1410,203 +1378,6 @@ bool RSCFile::Write(const std::string &osPath, OGRSXFDataSource *poDS,
 			astObjs.emplace_back(stObj);
 		}
 	}
-
-	/*
-	RSCSem stSem50611 = { 0 };
-	stSem50611.nCode = 50611;
-	stSem50611.nType = 0;
-	stSem50611.osName = "qqq";
-	stSem50611.nFieldSize = 255;
-		astSem.emplace_back(stSem50611);
-
-	RSCObj stRSCObject7 = { 0 };
-		stRSCObject7.nCode = 91000000;
-		stRSCObject7.nLayer = 0;
-		stRSCObject7.nLoc = SXF_GT_Line;
-		stRSCObject7.osName = "L0091000000";
-		stRSCObject7.aoSem.push_back(stSem50611);
-		astObjs.emplace_back(stRSCObject7);
-
-		
-	
-
-	RSCSem stSem0 = { 0 };
-	stSem0.nCode = 0;
-	stSem0.nType = 1;
-	stSem0.osName = "SYSTEM";
-	stSem0.nFieldSize = 255;
-	stSem0.bAllowAnythere = 1;
-	astSem.emplace_back(stSem0);
-
-	RSCSem stSem4 = { 0 };
-	stSem4.nCode = 4;
-	stSem4.nType = 1;
-	stSem4.osName = "HEIGTH(ABS)";
-	stSem4.nFieldSize = 18;
-	stSem4.nPrecision = 2;
-	stSem4.bAllowAnythere = 1;
-	astSem.emplace_back(stSem4);
-
-	RSCSem stSem9 = { 0 };
-	stSem9.nCode = 9;
-	stSem9.nType = 0;
-	stSem9.osName = "NAME";
-	stSem9.nFieldSize = 255;
-	stSem9.bAllowAnythere = 1;
-	astSem.emplace_back(stSem9);
-
-	RSCSem stSem32800 = { 0 };
-	stSem32800.nCode = 32800;
-	stSem32800.nType = 1;
-	stSem32800.osName = "OBJCODE";
-	stSem32800.nFieldSize = 18;
-	stSem32800.nPrecision = 2;
-	stSem32800.bAllowAnythere = 1;
-	astSem.emplace_back(stSem32800);
-
-	RSCSem stSem32801 = { 0 };
-	stSem32801.nCode = 32801;
-	stSem32801.nType = 1;
-	stSem32801.osName = "GRPLEADER";
-	stSem32801.nFieldSize = 18;
-	stSem32801.nPrecision = 2;
-	stSem32801.bAllowAnythere = 1;
-	astSem.emplace_back(stSem32801);
-
-	RSCSem stSem32802 = { 0 };
-	stSem32802.nCode = 32802;
-	stSem32802.nType = 1;
-	stSem32802.osName = "GRPSLAVE";
-	stSem32802.nFieldSize = 18;
-	stSem32802.nPrecision = 2;
-	stSem32802.bAllowAnythere = 1;
-	astSem.emplace_back(stSem32802);
-
-	RSCSem stSem32803 = { 0 };
-	stSem32803.nCode = 32803;
-	stSem32803.nType = 1;
-	stSem32803.osName = "GRPPARTNER";
-	stSem32803.nFieldSize = 18;
-	stSem32803.nPrecision = 2;
-	stSem32803.bAllowAnythere = 1;
-	astSem.emplace_back(stSem32803);
-
-	RSCSem stSem32804 = { 0 };
-	stSem32804.nCode = 32804;
-	stSem32804.nType = 0x0C;
-	stSem32804.osName = "OBJTOTEXT";
-	stSem32804.nFieldSize = 255;
-	stSem32804.bAllowMultiple = 1;
-	stSem32804.bAllowAnythere = 1;
-	astSem.emplace_back(stSem32804);
-
-	RSCSem stSem32805 = { 0 };
-	stSem32805.nCode = 32805;
-	stSem32805.nType = 0x0C;
-	stSem32805.osName = "TEXTTOOBJ";
-	stSem32805.nFieldSize = 255;
-	stSem32805.bAllowAnythere = 1;
-	astSem.emplace_back(stSem32805);
-
-	RSCSem stSem32810 = { 0 };
-	stSem32810.nCode = 32810;
-	stSem32810.nType = 0;
-	stSem32810.osName = "LAYERNAME";
-	stSem32810.nFieldSize = 255;
-	stSem32810.bAllowAnythere = 1;
-	astSem.emplace_back(stSem32810);
-
-	RSCSem stSem32811 = { 0 };
-	stSem32811.nCode = 32811;
-	stSem32811.nType = 0;
-	stSem32811.osName = "OBJECTNAME";
-	stSem32811.nFieldSize = 255;
-	stSem32811.bAllowAnythere = 1;
-	astSem.emplace_back(stSem32811);
-
-	RSCSem stSem32850 = { 0 };
-	stSem32850.nCode = 32850;
-	stSem32850.nType = 0;
-	stSem32850.osName = "DATECREATE";
-	stSem32850.nFieldSize = 255;
-	stSem32850.bAllowAnythere = 1;
-	astSem.emplace_back(stSem32850);
-
-	RSCSem stSem32851 = { 0 };
-	stSem32851.nCode = 32851;
-	stSem32851.nType = 0;
-	stSem32851.osName = "TIMECREATE";
-	stSem32851.nFieldSize = 255;
-	stSem32851.bAllowAnythere = 1;
-	astSem.emplace_back(stSem32851);
-
-	RSCSem stSem32852 = { 0 };
-	stSem32852.nCode = 32852;
-	stSem32852.nType = 0;
-	stSem32852.osName = "AUTHORNAME";
-	stSem32852.nFieldSize = 255;
-	stSem32852.bAllowAnythere = 1;
-	astSem.emplace_back(stSem32852);
-		
-
-GByte posId[4] = { 'P', 'O', 'S', 0 };
-VSIFWriteL(posId, 4, 1, fpRSC.get());
-
-pos = VSIFTellL(fpRSC.get());
-nRecordCount = 0;
-nLength = 0;
-std::vector<RSCObject> astObjects;
-std::vector<RSCLayer> astLayers;
-GUInt32 nCounter = 1;
-for (int i = 0; i < poDS->GetLayerCount() && i < 255; i++)
-{
-	auto anSem = mnLayerSem[i];
-	auto poLayer = static_cast<OGRSXFLayer*>(poDS->GetLayer(i));
-	RSCLayer stLayer = { 0 };
-	stLayer.nLength = sizeof(RSCLayer);
-	stLayer.nNo = static_cast<GByte>(i + 1);
-	SXF::WriteEncString(poLayer->GetName(), stLayer.szName, 32, osEncoding.c_str());
-	SXF::WriteEncString(poLayer->GetName(), stLayer.szShortName, 16, osEncoding.c_str());
-	astLayers.emplace_back(stLayer);
-
-	auto mCodes = poLayer->GetClassifyCodes();
-	for (auto itCode : mCodes)
-	{
-		if (itCode.first.size() < 2)
-		{
-			continue;
-		}
-		auto osCode = itCode.first.substr(1);
-		auto eType = SXFFile::StringToSXFType(itCode.first.substr(0, 1));
-		GUInt32 nCode = atoi(osCode.c_str());
-		RSCObjectSemantics stPos = { 0 };
-		stPos.nPossibleSemCount = static_cast<GUInt16>(anSem.size());
-		stPos.nLength = sizeof(RSCObjectSemantics) + stPos.nPossibleSemCount * 4;
-		stPos.nObjectCode = nCode;
-		stPos.nLocalization = static_cast<GByte>(eType);
-
-		VSIFWriteL(&stPos, sizeof(RSCObjectSemantics), 1, fpRSC.get());
-
-		for (auto nSem : anSem)
-		{
-			VSIFWriteL(&nSem, 4, 1, fpRSC.get());
-		}
-
-		nRecordCount++;
-		nLength += stPos.nLength;
-
-		RSCObject stRSCObject = { 0 };
-		stRSCObject.nLength = sizeof(RSCObject);
-		stRSCObject.nClassifyCode = nCode;
-		stRSCObject.nInternalCode = nCounter;
-		stRSCObject.nIdCode = nCounter++;
-		SXF::WriteEncString(itCode.second.c_str(), stRSCObject.szName, 32, osEncoding.c_str());
-		SXF::WriteEncString(itCode.first.c_str(), stRSCObject.szShortName, 16, osEncoding.c_str());
-		stRSCObject.nGeometryType = stPos.nLocalization;
-		stRSCObject.nLayerId = stLayer.nNo;
-		astObjects.emplace_back(stRSCObject);
-	}
-}*/
 
 	/////////////////////////////////////////////////////////
 

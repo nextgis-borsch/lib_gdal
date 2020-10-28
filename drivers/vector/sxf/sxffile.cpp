@@ -285,7 +285,8 @@ static double GetCenter(double dfMinX, double dfMaxX)
     return dfMinX + fabs(dfMaxX - dfMinX) / 2;
 }
 
-static void WriteSXFExtents(const OGREnvelope &stEnv, VSILFILE *fpSXF, bool bSwapCoordinates)
+static void WriteSXFExtents(const OGREnvelope &stEnv, VSILFILE *fpSXF, 
+    bool bSwapCoordinates)
 {
 	double corners[8];
 	if (bSwapCoordinates)
@@ -395,7 +396,8 @@ class SXFDate
         bool FromMetadata(OGRSXFDataSource *poDS, const char *metadataItemKey)
         {
             const char *val = poDS->GetMetadataItem(metadataItemKey);
-            if (val && CPLsscanf(val, "%hu-%hu-%hu", &m_nYear, &m_nMonth, &m_nDay) != 3)
+            if (val && 
+                CPLsscanf(val, "%hu-%hu-%hu", &m_nYear, &m_nMonth, &m_nDay) != 3)
             {
                 return false;
             }
@@ -419,7 +421,8 @@ SXFFile::~SXFFile()
     Close();
 }
 
-bool SXFFile::Open(const std::string &osPath, bool bReadOnly, const std::string &osCodePage)
+bool SXFFile::Open(const std::string &osPath, bool bReadOnly, 
+    const std::string &osCodePage)
 {
 	osEncoding = osCodePage;
     fpSXF = VSIFOpenL(osPath.c_str(), bReadOnly ? "rb" : "wb");
@@ -551,7 +554,8 @@ enum SXFGeometryType SXFFile::StringToSXFType(const std::string &type)
 	return SXF_GT_Unknown;
 }
 
-std::string SXFFile::ToStringCode(enum SXFGeometryType eType, GUInt32 nClassifyCode)
+std::string SXFFile::ToStringCode(enum SXFGeometryType eType, 
+    GUInt32 nClassifyCode)
 {
 	return SXFTypeToString(eType) + std::to_string(nClassifyCode);
 }
@@ -607,7 +611,8 @@ bool SXFFile::Read(OGRSXFDataSource *poDS, CSLConstList papszOpenOpts)
     SXFDate createDate;
     if (!createDate.Read(nVersion, fpSXF))
     {
-        CPLError(CE_Failure, CPLE_NotSupported , "Failed to read SXF file create date");
+        CPLError(CE_Failure, CPLE_NotSupported , 
+            "Failed to read SXF file create date");
         return false;
     }
 
@@ -802,7 +807,8 @@ bool SXFFile::Read(OGRSXFDataSource *poDS, CSLConstList papszOpenOpts)
     SXFDate surveyDate;
     if (!surveyDate.Read(nVersion, fpSXF))
     {
-        CPLError(CE_Failure, CPLE_NotSupported , "Failed to read map source survey date");
+        CPLError(CE_Failure, CPLE_NotSupported, 
+            "Failed to read map source survey date");
         return false;
     }
 
@@ -1086,12 +1092,17 @@ bool SXFFile::Read(OGRSXFDataSource *poDS, CSLConstList papszOpenOpts)
         return false;
     }
 
-	if (oEnvelope.MaxX - oEnvelope.MinX < DELTA || oEnvelope.MaxY - oEnvelope.MinY < DELTA)
+	if (oEnvelope.MaxX - oEnvelope.MinX < DELTA || 
+        oEnvelope.MaxY - oEnvelope.MinY < DELTA)
 	{
-		oEnvelope.MinX = MIN(MIN(geogCoords[0], geogCoords[2]), MIN(geogCoords[4], geogCoords[6]));
-		oEnvelope.MaxX = MAX(MAX(geogCoords[0], geogCoords[2]), MAX(geogCoords[4], geogCoords[6]));
-		oEnvelope.MinY = MIN(MIN(geogCoords[1], geogCoords[3]), MIN(geogCoords[5], geogCoords[7]));
-		oEnvelope.MaxY = MAX(MAX(geogCoords[1], geogCoords[3]), MAX(geogCoords[5], geogCoords[7]));
+		oEnvelope.MinX = MIN(MIN(geogCoords[0], geogCoords[2]), 
+            MIN(geogCoords[4], geogCoords[6]));
+		oEnvelope.MaxX = MAX(MAX(geogCoords[0], geogCoords[2]), 
+            MAX(geogCoords[4], geogCoords[6]));
+		oEnvelope.MinY = MIN(MIN(geogCoords[1], geogCoords[3]), 
+            MIN(geogCoords[5], geogCoords[7]));
+		oEnvelope.MaxY = MAX(MAX(geogCoords[1], geogCoords[3]), 
+            MAX(geogCoords[5], geogCoords[7]));
 	}
 
     // Read description ///////////////////////////////////////////////////////
@@ -1112,10 +1123,14 @@ bool SXFFile::Read(OGRSXFDataSource *poDS, CSLConstList papszOpenOpts)
         CPL_LSBPTR32(&stDataDescriptor.nFeatureCount);
         nFeatureCount = stDataDescriptor.nFeatureCount;
 
-        poDS->SetMetadataItem(MD_DESC_CLASSIFY_CODE_KEY, CPLSPrintf("%d", stDataDescriptor.nClassify));
-        poDS->SetMetadataItem(MD_DESC_AUTO_GUID_KEY, CPLSPrintf("%d", stDataDescriptor.nAutoGenGUID));
-        poDS->SetMetadataItem(MD_DESC_AUTO_TIMESTAMPS_KEY, CPLSPrintf("%d", stDataDescriptor.nAutoTimestamp));
-        poDS->SetMetadataItem(MD_DESC_USE_ALT_FONTS_KEY, CPLSPrintf("%d", stDataDescriptor.nAltFonts));
+        poDS->SetMetadataItem(MD_DESC_CLASSIFY_CODE_KEY, 
+            CPLSPrintf("%d", stDataDescriptor.nClassify));
+        poDS->SetMetadataItem(MD_DESC_AUTO_GUID_KEY, 
+            CPLSPrintf("%d", stDataDescriptor.nAutoGenGUID));
+        poDS->SetMetadataItem(MD_DESC_AUTO_TIMESTAMPS_KEY, 
+            CPLSPrintf("%d", stDataDescriptor.nAutoTimestamp));
+        poDS->SetMetadataItem(MD_DESC_USE_ALT_FONTS_KEY, 
+            CPLSPrintf("%d", stDataDescriptor.nAltFonts));
     }
     /* else nOffset and nObjectsRead will be 0 */
 
@@ -1163,7 +1178,8 @@ bool SXFFile::Write(OGRSXFDataSource *poDS)
 		static_cast<GUInt16>(tm.tm_mon + 1), static_cast<GUInt16>(tm.tm_mday));
 	if (!createDate.Write(fpSXF))
 	{
-		CPLError(CE_Failure, CPLE_NotSupported, "Failed to write SXF file create date");
+		CPLError(CE_Failure, CPLE_NotSupported, 
+            "Failed to write SXF file create date");
 		return false;
 	}
 
@@ -1286,7 +1302,8 @@ bool SXFFile::Write(OGRSXFDataSource *poDS)
 	}
 	VSIFWriteL(&val, 1, 1, fpSXF);
 
-	auto pszHeightMeasureUnit = poDS->GetMetadataItem(MD_MATH_BASE_SHEET_MEASURE_HEIGHT_KEY);
+	auto pszHeightMeasureUnit = 
+        poDS->GetMetadataItem(MD_MATH_BASE_SHEET_MEASURE_HEIGHT_KEY);
 	val = ToGByte(pszHeightMeasureUnit);
 	VSIFWriteL(&val, 1, 1, fpSXF);
 
@@ -1310,35 +1327,43 @@ bool SXFFile::Write(OGRSXFDataSource *poDS)
 	surveyDate.FromMetadata(poDS, MD_SOURCE_INFO_SURVEY_DATE_KEY);
 	if (!surveyDate.Write(fpSXF))
 	{
-		CPLError(CE_Failure, CPLE_NotSupported, "Failed to write SXF file survey date");
+		CPLError(CE_Failure, CPLE_NotSupported, 
+            "Failed to write SXF file survey date");
 		return false;
 	}
 
-	auto pszSourceType = poDS->GetMetadataItem(MD_SOURCE_INFO_SOURCE_TYPE_KEY);
+	auto pszSourceType = 
+        poDS->GetMetadataItem(MD_SOURCE_INFO_SOURCE_TYPE_KEY);
 	val = ToGByte(pszSourceType);
 	VSIFWriteL(&val, 1, 1, fpSXF);
 
-	auto pszSourceSubType = poDS->GetMetadataItem(MD_SOURCE_INFO_SOURCE_SUBTYPE_KEY);
+	auto pszSourceSubType = 
+        poDS->GetMetadataItem(MD_SOURCE_INFO_SOURCE_SUBTYPE_KEY);
 	val = ToGByte(pszSourceSubType);
 	VSIFWriteL(&val, 1, 1, fpSXF);
 
-	auto pszMSK63Letter = poDS->GetMetadataItem(MD_SOURCE_INFO_MSK_ZONE_ID_KEY);
+	auto pszMSK63Letter = 
+        poDS->GetMetadataItem(MD_SOURCE_INFO_MSK_ZONE_ID_KEY);
 	val = ToGByte(pszMSK63Letter);
 	VSIFWriteL(&val, 1, 1, fpSXF);
 
-	auto pszMapLimited = poDS->GetMetadataItem(MD_SOURCE_INFO_MAP_BORDER_LIMIT_KEY);
+	auto pszMapLimited = 
+        poDS->GetMetadataItem(MD_SOURCE_INFO_MAP_BORDER_LIMIT_KEY);
 	val = ToGByte(pszMapLimited);
 	VSIFWriteL(&val, 1, 1, fpSXF);
 
-	auto pszMagneticDeclination = poDS->GetMetadataItem(MD_SOURCE_INFO_MAGNETIC_DECLINATION_KEY);
+	auto pszMagneticDeclination = 
+        poDS->GetMetadataItem(MD_SOURCE_INFO_MAGNETIC_DECLINATION_KEY);
 	double fval = ToDouble(pszMagneticDeclination) * TO_RADIANS;
 	VSIFWriteL(&fval, 8, 1, fpSXF);
 
-	auto pszAverageAapproachMeridians = poDS->GetMetadataItem(MD_SOURCE_INFO_AVG_APPROACH_OF_MERIDIANS_KEY);
+	auto pszAverageAapproachMeridians = 
+        poDS->GetMetadataItem(MD_SOURCE_INFO_AVG_APPROACH_OF_MERIDIANS_KEY);
 	fval = ToDouble(pszAverageAapproachMeridians) * TO_RADIANS;
 	VSIFWriteL(&fval, 8, 1, fpSXF);
 
-	auto pszAnnualMagneticDecl = poDS->GetMetadataItem(MD_SOURCE_INFO_ANNUAL_MAGNETIC_DECLINATION_CHANGE_KEY);
+	auto pszAnnualMagneticDecl = 
+        poDS->GetMetadataItem(MD_SOURCE_INFO_ANNUAL_MAGNETIC_DECLINATION_CHANGE_KEY);
 	fval = ToDouble(pszAnnualMagneticDecl) * TO_RADIANS;
 	VSIFWriteL(&fval, 8, 1, fpSXF);
 
