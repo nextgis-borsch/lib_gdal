@@ -49,16 +49,23 @@
 #ifndef SXF_DEFS_H
 #define SXF_DEFS_H
 
-#define IDSXF          0x00465853     /* SXF  */
-
-#define IDSXFDATA      0x00544144     /* DAT  */
-#define IDSXFOBJ       0X7FFF7FFF     /* Object */
-#define IDSXFGRAPH     0X7FFF7FFE     /* graphics section */
-#define IDSXFVECT3D    0X7FFF7FFD     /* 3D vector section */
-
 #include "cpl_port.h"
 
 // All notes from sxf4bin.pdf
+constexpr GUInt32 IDSXFOBJ = 0X7FFF7FFF;
+constexpr const char * DEFAULT_ENC_ASCIIZ = "CP866";
+constexpr const char * DEFAULT_ENC_ANSI = "CP1251";
+constexpr const char * DEFAULT_ENC_KOI8 = "KOI8-R";
+
+constexpr const char * MD_SCALE_KEY = "SCALE";
+
+constexpr int START_CODE = 7654321;
+constexpr int DEFAULT_CLCODE_L = START_CODE;
+constexpr int DEFAULT_CLCODE_S = START_CODE + 1;
+constexpr int DEFAULT_CLCODE_P = START_CODE + 2;
+constexpr int DEFAULT_CLCODE_T = START_CODE + 3;
+constexpr int DEFAULT_CLCODE_V = START_CODE + 4;
+constexpr int DEFAULT_CLCODE_C = START_CODE + 5;
 
 enum SXFDataState /* Flag of the state of the data (Note 1) */
 {
@@ -304,7 +311,7 @@ typedef struct {
 } SXFField;
 
 typedef struct {
-    GUInt32 nCode;
+    std::string osCode;
     std::string osName;
 } SXFClassCode;
 

@@ -74,6 +74,7 @@ constexpr long PAN_PROJ_LAEA   = 24L;  // Lambert Azimuthal Equal Area
 constexpr long PAN_PROJ_EQC    = 27L;  // Equirectangular
 constexpr long PAN_PROJ_CEA    = 28L;  // Cylindrical Equal Area (Lambert)
 constexpr long PAN_PROJ_IMWP   = 29L;  // International Map of the World Polyconic
+constexpr long PAN_PROJ_SPHERE = 33L;  // Speher
 constexpr long PAN_PROJ_MILLER = 34L;  // Miller
 constexpr long PAN_PROJ_PSEUDO_MERCATOR = 35L; // Popular Visualisation Pseudo Mercator
 
@@ -769,6 +770,10 @@ OGRErr OGRSpatialReference::exportToPanorama( long *piProjSys, long *piDatum,
     {
         *piProjSys = PAN_PROJ_NONE;
     }
+	else if (IsGeographic() || IsGeocentric())
+	{
+		*piProjSys = PAN_PROJ_SPHERE;
+	}
     else if( pszProjection == nullptr )
     {
 #ifdef DEBUG

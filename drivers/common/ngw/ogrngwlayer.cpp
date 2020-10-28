@@ -754,7 +754,8 @@ OGRErr OGRNGWLayer::SetNextByIndex( GIntBig nIndex )
             if( poDS->HasFeaturePaging() )
             {
                 osUrl = NGWAPI::GetFeaturePage( poDS->GetUrl(), osResourceId, 0, 0,
-                    osFields, osWhere, osSpatialFilter );
+                    osFields, osWhere, osSpatialFilter, poDS->Extensions(), 
+					poFeatureDefn->IsGeometryIgnored() == TRUE);
             }
             else
             {
@@ -793,7 +794,8 @@ OGRFeature *OGRNGWLayer::GetNextFeature()
 
             osUrl = NGWAPI::GetFeaturePage( poDS->GetUrl(), osResourceId,
                 nPageStart, poDS->GetPageSize(), osFields, osWhere,
-                osSpatialFilter );
+                osSpatialFilter, poDS->Extensions(), 
+				poFeatureDefn->IsGeometryIgnored() == TRUE);
             nPageStart += poDS->GetPageSize();
         }
     }
@@ -802,7 +804,8 @@ OGRFeature *OGRNGWLayer::GetNextFeature()
         if( poDS->HasFeaturePaging() )
         {
             osUrl = NGWAPI::GetFeaturePage( poDS->GetUrl(), osResourceId, 0, 0,
-                osFields, osWhere, osSpatialFilter );
+                osFields, osWhere, osSpatialFilter, poDS->Extensions(),
+				poFeatureDefn->IsGeometryIgnored() == TRUE);
         }
         else
         {
