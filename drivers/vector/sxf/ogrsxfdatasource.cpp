@@ -62,10 +62,7 @@ OGRSXFDataSource::OGRSXFDataSource()
 /************************************************************************/
 OGRSXFDataSource::~OGRSXFDataSource()
 {
-	if (bHasChanges)
-	{
-		OGRSXFDataSource::FlushCache();
-	}
+	FlushCache();
 
 	for (auto poLayer : poLayers)
 	{
@@ -416,7 +413,7 @@ void OGRSXFDataSource::CreateLayers(const OGREnvelope &oEnv,
 
 void OGRSXFDataSource::FlushCache(void)
 {
-	if (GetAccess() != GA_Update)
+	if (!bHasChanges)
 	{
 		return;
 	}
@@ -517,7 +514,7 @@ OGRLayer *OGRSXFDataSource::ICreateLayer(const char *pszName,
 
 OGRErr OGRSXFDataSource::DeleteLayer(int iLayer)
 {
-	if (iLayer < 0 || iLayer >= poLayers.size())
+	if (iLayer < 0 || iLayer >= GetLayerCount())
 	{
 		return OGRERR_FAILURE;
 	}
