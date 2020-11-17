@@ -1880,16 +1880,17 @@ OGRFeature *OGRSXFLayer::TranslateText(const SXFFile &oSXF,
 
             GByte nTextL;
             memcpy(&nTextL, psRecordBuf + nOffset, 1);
-            if (nOffset + 1 + nTextL > header.nGeometryLength)
+			nOffset += 1;
+            if (nOffset + nTextL > header.nGeometryLength)
             {
                 return poFeature;
             }
 
-            nTextL += 1;
+			nTextL += 1;
 
-            soText = SXF::ReadEncString(psRecordBuf + nOffset + 1, nTextL,
-                header.osEncoding.c_str());
-            nOffset += nTextL;
+			soText = SXF::ReadEncString(psRecordBuf + nOffset, nTextL,
+				header.osEncoding.c_str());
+			nOffset += nTextL;
         }
 
     /*---------------------- Reading Sub Lines --------------------------------*/
@@ -1897,32 +1898,38 @@ OGRFeature *OGRSXFLayer::TranslateText(const SXFFile &oSXF,
         for (int count = 0; count < header.nSubObjectCount; count++)
         {
             if (nOffset + 4 > header.nGeometryLength)
-            {    
+            {
+				poFeature->SetGeometryDirectly(poMPT);
                 break;
             }
-            GUInt16 nSubObj, nCoords;
-            memcpy(&nSubObj, psRecordBuf + nOffset, 2);
-            CPL_LSBPTR16(&nSubObj);
-            memcpy(&nCoords, psRecordBuf + nOffset + 2, 2);
-            CPL_LSBPTR16(&nCoords);
+
+			GUInt16 nSubObj, nCoords;
+			memcpy(&nSubObj, psRecordBuf + nOffset, 2);
+			CPL_LSBPTR16(&nSubObj);
+			memcpy(&nCoords, psRecordBuf + nOffset + 2, 2);
+			CPL_LSBPTR16(&nCoords);
 
 			if (header.nPointCount > 65535)
 			{
 				nCoords += nSubObj << 16;
 			}
 
-            nOffset +=4;
+			nOffset += 4;
 
-            poPT = new OGRPoint();
+			for (int j = 0; j < nCoords; j++)
+			{
+				poPT = new OGRPoint();
 
-            nOffset += TranslatePoint(oSXF, poPT, header, psRecordBuf + nOffset, 
-                header.nGeometryLength - nOffset);
-            poMPT->addGeometryDirectly( poPT );
+				nOffset += TranslatePoint(oSXF, poPT, header, psRecordBuf + nOffset,
+					header.nGeometryLength - nOffset);
+				// FIXME: Skip addtional points in text template
+				// poMPT->addGeometryDirectly(poPT);
 
-            if (nOffset + 1 > header.nGeometryLength)
-            {
-                return poFeature;
-            }
+				if (nOffset + 1 > header.nGeometryLength)
+				{
+					return poFeature;
+				}
+			}
 
             GByte nTextL;
             memcpy(&nTextL, psRecordBuf + nOffset, 1);

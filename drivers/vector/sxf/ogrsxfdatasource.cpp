@@ -357,6 +357,8 @@ void OGRSXFDataSource::FillLayers(const SXFFile &oSXF, bool bIsNewBehavior)
             }
         }
         
+		// Clear changes flag as we just loaded features from file without any modifications
+		bHasChanges = false;
         VSIFSeekL(oSXF.File(), nOffset, SEEK_SET);
 
         // Prevent reading out of file size in case of broken SXF file
