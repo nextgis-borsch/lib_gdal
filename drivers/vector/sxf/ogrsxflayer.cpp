@@ -2015,6 +2015,11 @@ int OGRSXFLayer::SetRawFeature(OGRFeature *poFeature, OGRGeometry *poGeom,
 			poGeom->getGeometryName());
 		return 0;
 	}
+	else if (eGeomType == SXF_GT_TextTemplate)
+	{
+		// Write templates not supported yet
+		eGeomType = SXF_GT_Point;
+	}
 	
 	GUInt32 nPointCount = 0;
 	GUInt16 nPartsCount = 0;
@@ -2079,16 +2084,25 @@ int OGRSXFLayer::SetRawFeature(OGRFeature *poFeature, OGRGeometry *poGeom,
 		}
 		poWriteGeom = OGRGeometryPtr(poGeom->clone());
 
-		OGRPolygon *poPoly;
+		OGRPolygon *poPoly = nullptr;
 		if (wkbFlatten(poGeom->getGeometryType()) == wkbMultiPolygon)
 		{
 			auto poMulti = static_cast<OGRMultiPolygon*>(poGeom);
-			nPartsCount = static_cast<GUInt16>(poMulti->getNumGeometries()) - 1;
-			poPoly = static_cast<OGRPolygon*>(poMulti->getGeometryRef(0));
+			for (int i = 0; i < poMulti->getNumGeometries(); i++)
+			{
+				auto tmpPoly = static_cast<OGRPolygon*>(poMulti->getGeometryRef(i));
+				nPartsCount += tmpPoly->getNumInteriorRings() + 1;
+				if (poPoly == nullptr)
+				{
+					poPoly = tmpPoly;
+				}
+			}
+			nPartsCount--;
 		}
 		else
 		{
 			poPoly = static_cast<OGRPolygon*>(poGeom);
+			nPartsCount = poPoly->getNumInteriorRings();
 		}
 
 		if (poPoly)
@@ -2113,16 +2127,25 @@ int OGRSXFLayer::SetRawFeature(OGRFeature *poFeature, OGRGeometry *poGeom,
 		}
 		poWriteGeom = OGRGeometryPtr(OGRGeometryFactory::forceTo(
 			poGeom->clone(), wkbMultiPolygon, nullptr));
-		OGRPolygon *poPoly;
+		OGRPolygon *poPoly = nullptr;
 		if (wkbFlatten(poGeom->getGeometryType()) == wkbMultiPolygon)
 		{
 			auto poMulti = static_cast<OGRMultiPolygon*>(poGeom);
-			nPartsCount = static_cast<GUInt16>(poMulti->getNumGeometries()) - 1;
-			poPoly = static_cast<OGRPolygon*>(poMulti->getGeometryRef(0));
+			for (int i = 0; i < poMulti->getNumGeometries(); i++)
+			{
+				auto tmpPoly = static_cast<OGRPolygon*>(poMulti->getGeometryRef(i));
+				nPartsCount += tmpPoly->getNumInteriorRings() + 1;
+				if (poPoly == nullptr)
+				{
+					poPoly = tmpPoly;
+				}
+			}
+			nPartsCount--;
 		}
 		else
 		{
 			poPoly = static_cast<OGRPolygon*>(poGeom);
+			nPartsCount = poPoly->getNumInteriorRings();
 		}
 
 		if (poPoly)

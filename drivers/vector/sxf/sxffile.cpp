@@ -397,7 +397,7 @@ class SXFDate
         {
             const char *val = poDS->GetMetadataItem(metadataItemKey);
             if (val && 
-                CPLsscanf(val, "%hu-%hu-%hu", &m_nYear, &m_nMonth, &m_nDay) != 3)
+				sscanf(val, "%hu-%hu-%hu", &m_nYear, &m_nMonth, &m_nDay) != 3)
             {
                 return false;
             }
