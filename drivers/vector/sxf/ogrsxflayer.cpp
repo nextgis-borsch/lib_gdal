@@ -116,6 +116,22 @@ static bool HasField(OGRFeatureDefn *poDef, const std::string &osFieldName)
 	return poDef->GetFieldIndex(osFieldName.c_str()) >= 0;
 }
 
+static size_t WritePointCount(GUInt32 nPointCount, GByte *pBuff)
+{
+	if (nPointCount > 65535)
+	{
+		memcpy(pBuff, &nPointCount, sizeof(GUInt32));
+		return sizeof(GUInt32);
+	}
+	else
+	{
+		memset(pBuff, 0, sizeof(GUInt16));
+		GUInt16 nPointCountSmall = static_cast<GUInt16>(nPointCount);
+		memcpy(pBuff + sizeof(GUInt16), &nPointCountSmall, sizeof(GUInt16));
+		return sizeof(GUInt16) * 2;
+	}
+}
+
 static size_t WritePoint(const OGRPoint *poPt, GByte *pBuff)
 {
 	size_t nOffset = 0;
@@ -159,23 +175,79 @@ static GByte* WriteRings(const std::vector<OGRLinearRing*> &apoRings,
 		nSize += nPointSize * nPointCount + 4;
 		pBuff = static_cast<GByte*>(CPLRealloc(pBuff, nSize));
 
-		if (nPointCount > 65535)
-		{
-			memcpy(pBuff + nOffset, &nPointCount, sizeof(GUInt32));
-			nOffset += sizeof(GUInt32);
-		}
-		else
-		{
-			memset(pBuff + nOffset, 0, sizeof(GUInt16));
-			nOffset += sizeof(GUInt16);
-			GUInt16 nPointCountSmall = static_cast<GUInt16>(nPointCount);
-			memcpy(pBuff + nOffset, &nPointCountSmall, sizeof(GUInt16));
-			nOffset += sizeof(GUInt16);
-		}
-
+		nOffset += WritePointCount(nPointCount, pBuff + nOffset);
 		nOffset += WriteLine(apoRings[i], pBuff + nOffset);
 	}
 	return pBuff;
+}
+
+static GByte *WriteLineToBuffer(size_t nPointSize, GByte *pBuff, size_t &nOffset,
+	OGRLineString *poLn, SXFGeometryType eGeomType,
+	const char *pszText, size_t &nSize, const std::string &osEncoding)
+{
+	GByte *pLocalBuff;
+	if (eGeomType == SXF_GT_Line)
+	{
+		GUInt32 nPointCount = poLn->getNumPoints();
+		nSize += nPointSize * nPointCount;
+		if (pBuff == nullptr)
+		{
+			pLocalBuff = static_cast<GByte*>(CPLMalloc(nSize));
+		}
+		else
+		{
+			nSize += 4;
+			pLocalBuff = static_cast<GByte*>(CPLRealloc(pBuff, nSize));
+			nOffset += WritePointCount(nPointCount, pLocalBuff + nOffset);
+		}
+		nOffset = WriteLine(poLn, pLocalBuff + nOffset);
+		return pLocalBuff;
+	}
+	else if (eGeomType == SXF_GT_Vector)
+	{
+		nSize += nPointSize * 2;
+		if (pBuff == nullptr)
+		{
+			pLocalBuff = static_cast<GByte*>(CPLMalloc(nSize));
+		}
+		else
+		{
+			nSize += 4;
+			pLocalBuff = static_cast<GByte*>(CPLRealloc(pBuff, nSize));
+			nOffset += WritePointCount(2, pLocalBuff + nOffset);
+		}
+		OGRPoint pt;
+		poLn->StartPoint(&pt);
+		nOffset += WritePoint(&pt, pLocalBuff + nOffset);
+		poLn->EndPoint(&pt);
+		nOffset += WritePoint(&pt, pLocalBuff + nOffset);
+		return pLocalBuff;
+	}
+	else if (eGeomType == SXF_GT_Text)
+	{
+		size_t nTextLenght = CPLStrnlen(pszText, 254);
+		size_t nPointCount = poLn->getNumPoints();
+		nSize += nPointSize * nPointCount + nTextLenght + 2;
+		if (pBuff == nullptr)
+		{
+			pLocalBuff = static_cast<GByte*>(CPLMalloc(nSize));
+		}
+		else
+		{
+			nSize += 4;
+			pLocalBuff = static_cast<GByte*>(CPLRealloc(pBuff, nSize));
+			nOffset += WritePointCount(nPointCount, pLocalBuff + nOffset);
+		}
+		nOffset += WriteLine(poLn, pLocalBuff + nOffset);
+		GByte nTextL = static_cast<GByte>(nTextLenght);
+		memcpy(pLocalBuff + nOffset, &nTextL, 1);
+		nOffset++;
+		// FIXME: Possible broken last character if text length greater 254
+		SXF::WriteEncString(pszText, pLocalBuff + nOffset, nTextLenght + 1,
+			osEncoding.c_str());
+		nOffset += nTextLenght + 1;
+		return pLocalBuff;
+	}
 }
 
 static GByte *WriteGeometryToBuffer(OGRGeometry *poGeom, SXFGeometryType eGeomType,
@@ -218,74 +290,25 @@ static GByte *WriteGeometryToBuffer(OGRGeometry *poGeom, SXFGeometryType eGeomTy
 	}
 	else if (wkbFlatten(poGeom->getGeometryType()) == wkbLineString)
 	{
-		if (eGeomType == SXF_GT_Line)
-		{
-			auto poLn = static_cast<OGRLineString*>(poGeom);
-			nSize = nPointSize * poLn->getNumPoints();
-			GByte *pBuff = static_cast<GByte*>(CPLMalloc(nSize));
-			WriteLine(poLn, pBuff);
-			return pBuff;
-		} 
-		else if (eGeomType == SXF_GT_Vector)
-		{
-			auto poLn = static_cast<OGRLineString*>(poGeom);
-			nSize = nPointSize * 2;
-			GByte *pBuff = static_cast<GByte*>(CPLMalloc(nSize));
-			OGRPoint pt;
-			poLn->StartPoint(&pt);
-			WritePoint(&pt, pBuff);
-			poLn->EndPoint(&pt);
-			WritePoint(&pt, pBuff + nPointSize);
-			return pBuff;
-		}
-		else if (eGeomType == SXF_GT_Text)
-		{
-			size_t nTextLenght = CPLStrnlen(pszText, 254);
-			auto poLn = static_cast<OGRLineString*>(poGeom);
-			nSize = nPointSize * poLn->getNumPoints() + nTextLenght + 2;
-			GByte *pBuff = static_cast<GByte*>(CPLMalloc(nSize));
-			size_t nOffset = WriteLine(poLn, pBuff);
-			GByte nTextL = static_cast<GByte>(nTextLenght);
-			memcpy(pBuff + nOffset, &nTextL, 1);
-			nOffset++;
-			// FIXME: Possible broken last character if text length greater 254
-			SXF::WriteEncString(pszText, pBuff + nOffset, nTextLenght + 1, 
-				osEncoding.c_str());
-			return pBuff;
-		}
+		auto poLn = static_cast<OGRLineString*>(poGeom);
+		size_t nOffset = 0;
+		return WriteLineToBuffer(nPointSize, nullptr, nOffset, poLn,
+			eGeomType, pszText, nSize, osEncoding);
 	}
 	else if (wkbFlatten(poGeom->getGeometryType()) == wkbMultiLineString)
 	{
 		auto poMLn = static_cast<OGRMultiLineString*>(poGeom);
 		// Get first main line
 		auto poLn = static_cast<OGRLineString*>(poMLn->getGeometryRef(0));
-		GUInt32 nPointCount = poLn->getNumPoints();
-		nSize = nPointSize * nPointCount;
-		GByte *pBuff = static_cast<GByte*>(CPLMalloc(nSize));
 		size_t nOffset = 0;
-		nOffset = WriteLine(poLn, pBuff + nOffset);
+		GByte *pBuff = WriteLineToBuffer(nPointSize, nullptr, nOffset, poLn,
+			eGeomType, pszText, nSize, osEncoding);
+
 		for (int i = 1; i < poMLn->getNumGeometries(); i++)
 		{
 			poLn = static_cast<OGRLineString*>(poMLn->getGeometryRef(i));
-			nPointCount = poLn->getNumPoints();
-			nSize += nPointSize * nPointCount + 4;
-			pBuff = static_cast<GByte*>(CPLRealloc(pBuff, nSize));
-
-			if (nPointCount > 65535)
-			{
-				memcpy(pBuff + nOffset, &nPointCount, sizeof(GUInt32));
-				nOffset += sizeof(GUInt32);
-			}
-			else
-			{
-				memset(pBuff + nOffset, 0, sizeof(GUInt16));
-				nOffset += sizeof(GUInt16);
-				GUInt16 nPointCountSmall = static_cast<GUInt16>(nPointCount);
-				memcpy(pBuff + nOffset, &nPointCountSmall, sizeof(GUInt16));
-				nOffset += sizeof(GUInt16);
-			}
-
-			nOffset += WriteLine(poLn, pBuff + nOffset);
+			pBuff = WriteLineToBuffer(nPointSize, pBuff, nOffset, poLn,
+				eGeomType, pszText, nSize, osEncoding);
 		}
 		return pBuff;
 	}
@@ -1681,6 +1704,7 @@ OGRFeature *OGRSXFLayer::TranslatePolygon(const SXFFile &oSXF,
         header.nGeometryLength, header.nPointCount);
     OGRLinearRing *poLR = new OGRLinearRing();
     poLR->addSubLineString( poLS, 0 );
+	poLR->closeRings();
     poPoly->addRingDirectly( poLR );
 
 	apoPolygons.emplace_back(poPoly);
@@ -1718,6 +1742,7 @@ OGRFeature *OGRSXFLayer::TranslatePolygon(const SXFFile &oSXF,
 			{
 				poLR = new OGRLinearRing();
 				poLR->addSubLineString( poLS, 0 );
+				poLR->closeRings();
 
 				poPolygon->addRingDirectly( poLR );
 				bIsExternalRing = false;
@@ -1730,6 +1755,7 @@ OGRFeature *OGRSXFLayer::TranslatePolygon(const SXFFile &oSXF,
 			OGRPolygon *poPoly2 = new OGRPolygon();
 			poLR = new OGRLinearRing();
 			poLR->addSubLineString(poLS, 0);
+			poLR->closeRings();
 			poPoly2->addRingDirectly(poLR);
 
 			apoPolygons.emplace_back(poPoly2);
@@ -2015,6 +2041,11 @@ int OGRSXFLayer::SetRawFeature(OGRFeature *poFeature, OGRGeometry *poGeom,
 			poGeom->getGeometryName());
 		return 0;
 	}
+	else if (eGeomType == SXF_GT_TextTemplate)
+	{
+		// Write templates not supported yet
+		eGeomType = SXF_GT_Point;
+	}
 	
 	GUInt32 nPointCount = 0;
 	GUInt16 nPartsCount = 0;
@@ -2079,16 +2110,25 @@ int OGRSXFLayer::SetRawFeature(OGRFeature *poFeature, OGRGeometry *poGeom,
 		}
 		poWriteGeom = OGRGeometryPtr(poGeom->clone());
 
-		OGRPolygon *poPoly;
+		OGRPolygon *poPoly = nullptr;
 		if (wkbFlatten(poGeom->getGeometryType()) == wkbMultiPolygon)
 		{
 			auto poMulti = static_cast<OGRMultiPolygon*>(poGeom);
-			nPartsCount = static_cast<GUInt16>(poMulti->getNumGeometries()) - 1;
-			poPoly = static_cast<OGRPolygon*>(poMulti->getGeometryRef(0));
+			for (int i = 0; i < poMulti->getNumGeometries(); i++)
+			{
+				auto tmpPoly = static_cast<OGRPolygon*>(poMulti->getGeometryRef(i));
+				nPartsCount += tmpPoly->getNumInteriorRings() + 1;
+				if (poPoly == nullptr)
+				{
+					poPoly = tmpPoly;
+				}
+			}
+			nPartsCount--;
 		}
 		else
 		{
 			poPoly = static_cast<OGRPolygon*>(poGeom);
+			nPartsCount = poPoly->getNumInteriorRings();
 		}
 
 		if (poPoly)
@@ -2113,16 +2153,25 @@ int OGRSXFLayer::SetRawFeature(OGRFeature *poFeature, OGRGeometry *poGeom,
 		}
 		poWriteGeom = OGRGeometryPtr(OGRGeometryFactory::forceTo(
 			poGeom->clone(), wkbMultiPolygon, nullptr));
-		OGRPolygon *poPoly;
+		OGRPolygon *poPoly = nullptr;
 		if (wkbFlatten(poGeom->getGeometryType()) == wkbMultiPolygon)
 		{
 			auto poMulti = static_cast<OGRMultiPolygon*>(poGeom);
-			nPartsCount = static_cast<GUInt16>(poMulti->getNumGeometries()) - 1;
-			poPoly = static_cast<OGRPolygon*>(poMulti->getGeometryRef(0));
+			for (int i = 0; i < poMulti->getNumGeometries(); i++)
+			{
+				auto tmpPoly = static_cast<OGRPolygon*>(poMulti->getGeometryRef(i));
+				nPartsCount += tmpPoly->getNumInteriorRings() + 1;
+				if (poPoly == nullptr)
+				{
+					poPoly = tmpPoly;
+				}
+			}
+			nPartsCount--;
 		}
 		else
 		{
 			poPoly = static_cast<OGRPolygon*>(poGeom);
+			nPartsCount = poPoly->getNumInteriorRings();
 		}
 
 		if (poPoly)
