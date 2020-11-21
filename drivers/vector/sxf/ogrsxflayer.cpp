@@ -153,7 +153,7 @@ static GByte* WriteRings(const std::vector<OGRLinearRing*> &apoRings,
 	auto pBuff = static_cast<GByte*>(CPLMalloc(nSize));
 	size_t nOffset = WriteLine(apoRings[0], pBuff);
 	
-	for (int i = 1; i < apoRings.size(); i++)
+	for (size_t i = 1; i < apoRings.size(); i++)
 	{
 		nPointCount = apoRings[i]->getNumPoints();
 		nSize += nPointSize * nPointCount + 4;
