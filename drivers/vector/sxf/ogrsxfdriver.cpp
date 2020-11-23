@@ -136,21 +136,21 @@ CPLErr OGRSXFDriver::DeleteDataSource(const char *pszName)
 /************************************************************************/
 
 GDALDataset *OGRSXFDriver::Create(const char *pszName,
-	int /* nBands */,
-	int /* nXSize */,
-	int /* nYSize */,
-	GDALDataType /* eDT */,
-	char **papszOptions)
+    int /* nBands */,
+    int /* nXSize */,
+    int /* nYSize */,
+    GDALDataType /* eDT */,
+    char **papszOptions)
 {
-	OGRSXFDataSource *poDS = new OGRSXFDataSource();
+    OGRSXFDataSource *poDS = new OGRSXFDataSource();
 
-	if (!poDS->Create(pszName, papszOptions))
-	{
-		delete poDS;
-		poDS = nullptr;
-	}
+    if (!poDS->Create(pszName, papszOptions))
+    {
+        delete poDS;
+        poDS = nullptr;
+    }
 
-	return poDS;
+    return poDS;
 }
 
 
@@ -177,25 +177,28 @@ void RegisterOGRSXF()
         "  <Option name='SXF_RSC_FILENAME' type='string' description='RSC file name' default=''/>"
         "  <Option name='SXF_SET_VERTCS' type='boolean' description='Layers spatial reference will include vertical coordinate system description if exist' default='NO'/>"
         "  <Option name='SXF_NEW_BEHAVIOR' type='boolean' description='New behavior - vector object to lines, empty layers are presence' default='NO'/>"
-		"  <Option name='SXF_ENCODING' type='string' description='Character Encodings (ASCIIZ for format v3 and ANSI code page for format v4)' default=''/>"
-		"  <Option name='SXF_WRITE_RSC' type='bool' description='Write RSC file. Always write file with same name as SXF but with RSC extension' default='YES'/>"
+        "  <Option name='SXF_ENCODING' type='string' description='Character Encodings (ASCIIZ for format v3 and ANSI code page for format v4)' default=''/>"
+        "  <Option name='SXF_WRITE_RSC' type='bool' description='Write RSC file. Always write file with same name as SXF but with RSC extension' default='YES'/>"
         "</OpenOptionList>");
-	poDriver->SetMetadataItem(GDAL_DMD_CREATIONFIELDDATATYPES,
-		"Integer Real String IntegerList RealList StringList");
-	poDriver->SetMetadataItem(GDAL_DMD_CREATIONOPTIONLIST,
-		"<CreationOptionList>"
-		"  <Option name='SXF_ENCODING' type='string' description='Character Encodings (Only format v4 and ANSI code page supported)' default='CP1251'/>"
-		"  <Option name='SXF_WRITE_RSC' type='bool' description='Write RSC file' default='YES'/>"
-		"</CreationOptionList>");
-	poDriver->SetMetadataItem(GDAL_DS_LAYER_CREATIONOPTIONLIST,
-		"<LayerCreationOptionList>"
-		"  <Option name='SXF_NEW_BEHAVIOR' type='boolean' description='New behavior - vector object to lines, empty layers are presence' default='NO'/>"
-		"</LayerCreationOptionList>");
+    poDriver->SetMetadataItem(GDAL_DMD_CREATIONFIELDDATATYPES,
+        "Integer Real String IntegerList RealList StringList");
+    poDriver->SetMetadataItem(GDAL_DMD_CREATIONOPTIONLIST,
+        "<CreationOptionList>"
+        "  <Option name='SXF_ENCODING' type='string' description='Character Encodings (Only format v4 and ANSI code page supported)' default='CP1251'/>"
+        "  <Option name='SXF_WRITE_RSC' type='bool' description='Write RSC file' default='YES'/>"
+        "  <Option name='SXF_MAP_NAME' type='string' description='Override metadata item SHEET_NAME' default=''/>"
+        "  <Option name='SXF_SHEET_KEY' type='string' description='Override metadata item SHEET' default=''/>"
+        "  <Option name='SXF_MAP_SCALE' type='int' description='Override metadata item SCALE' default='1000000'/>"
+        "</CreationOptionList>");
+    poDriver->SetMetadataItem(GDAL_DS_LAYER_CREATIONOPTIONLIST,
+        "<LayerCreationOptionList>"
+        "  <Option name='SXF_NEW_BEHAVIOR' type='boolean' description='New behavior - vector object to lines, empty layers are presence' default='NO'/>"
+        "</LayerCreationOptionList>");
 
     poDriver->pfnOpen = OGRSXFDriver::Open;
     poDriver->pfnDelete = OGRSXFDriver::DeleteDataSource;
     poDriver->pfnIdentify = OGRSXFDriver::Identify;
-	poDriver->pfnCreate = OGRSXFDriver::Create;
+    poDriver->pfnCreate = OGRSXFDriver::Create;
 
     GetGDALDriverManager()->RegisterDriver( poDriver );
 }

@@ -29,47 +29,47 @@
 #include "ogr_sxf.h"
 
 namespace SXF {
-	void WriteEncString(const char *pszSrcText, GByte *pDst,
-		int nSize, const char *pszEncoding)
-	{
-		memset(pDst, 0, nSize);
-		if (pszSrcText == nullptr)
-		{
-			return;
-		}
-		char *pszRecoded = CPLRecode(pszSrcText, CPL_ENC_UTF8, pszEncoding);
-		size_t maxSize = CPLStrnlen(pszRecoded, nSize);
-		if (pszRecoded != nullptr)
-		{
-			memcpy(pDst, pszRecoded, maxSize);
-			pDst[nSize - 1] = 0;
-		}
-		CPLFree(pszRecoded);
-	}
+    void WriteEncString(const char *pszSrcText, GByte *pDst,
+        int nSize, const char *pszEncoding)
+    {
+        memset(pDst, 0, nSize);
+        if (pszSrcText == nullptr)
+        {
+            return;
+        }
+        char *pszRecoded = CPLRecode(pszSrcText, CPL_ENC_UTF8, pszEncoding);
+        size_t maxSize = CPLStrnlen(pszRecoded, nSize);
+        if (pszRecoded != nullptr)
+        {
+            memcpy(pDst, pszRecoded, maxSize);
+            pDst[nSize - 1] = 0;
+        }
+        CPLFree(pszRecoded);
+    }
 
-	void WriteEncString(const char *pszText, int nSize,
-		const char *pszEncoding, VSILFILE *fpSXF)
-	{
-		GByte *pVal = new GByte[nSize];
-		WriteEncString(pszText, pVal, nSize, pszEncoding);
-		VSIFWriteL(pVal, nSize, 1, fpSXF);
-		delete [] pVal;
-	}
+    void WriteEncString(const char *pszText, int nSize,
+        const char *pszEncoding, VSILFILE *fpSXF)
+    {
+        GByte *pVal = new GByte[nSize];
+        WriteEncString(pszText, pVal, nSize, pszEncoding);
+        VSIFWriteL(pVal, nSize, 1, fpSXF);
+        delete [] pVal;
+    }
 
-	std::string ReadEncString(const void *pBuffer, size_t nLen,
-		const char *pszSrcEncoding)
-	{
-		if (nLen == 0)
-		{
-			return "";
-		}
-		char *value = static_cast<char*>(CPLMalloc(nLen + 1));
-		memcpy(value, pBuffer, nLen);
-		value[nLen] = 0;
-		char *pszRecoded = CPLRecode(value, pszSrcEncoding, CPL_ENC_UTF8);
-		std::string out(pszRecoded);
-		CPLFree(pszRecoded);
-		CPLFree(value);
-		return out;
-	}
+    std::string ReadEncString(const void *pBuffer, size_t nLen,
+        const char *pszSrcEncoding)
+    {
+        if (nLen == 0)
+        {
+            return "";
+        }
+        char *value = static_cast<char*>(CPLMalloc(nLen + 1));
+        memcpy(value, pBuffer, nLen);
+        value[nLen] = 0;
+        char *pszRecoded = CPLRecode(value, pszSrcEncoding, CPL_ENC_UTF8);
+        std::string out(pszRecoded);
+        CPLFree(pszRecoded);
+        CPLFree(value);
+        return out;
+    }
 } // namespace SXF

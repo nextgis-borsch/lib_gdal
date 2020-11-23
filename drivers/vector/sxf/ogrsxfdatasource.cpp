@@ -40,14 +40,14 @@ CPL_CVSID("$Id$")
 
 static bool CheckFileExists(const char *pszPath)
 {
-	VSIStatBufL sStat;
-	if (VSIStatExL(pszPath, &sStat,
-		VSI_STAT_EXISTS_FLAG | VSI_STAT_NATURE_FLAG) == 0 &&
-		VSI_ISREG(sStat.st_mode))
-	{
-		return true;
-	}
-	return false;
+    VSIStatBufL sStat;
+    if (VSIStatExL(pszPath, &sStat,
+        VSI_STAT_EXISTS_FLAG | VSI_STAT_NATURE_FLAG) == 0 &&
+        VSI_ISREG(sStat.st_mode))
+    {
+        return true;
+    }
+    return false;
 }
 
 /************************************************************************/
@@ -62,18 +62,18 @@ OGRSXFDataSource::OGRSXFDataSource()
 /************************************************************************/
 OGRSXFDataSource::~OGRSXFDataSource()
 {
-	FlushCache();
+    FlushCache();
 
-	for (auto poLayer : poLayers)
-	{
-		delete poLayer;
-	}
+    for (auto poLayer : poLayers)
+    {
+        delete poLayer;
+    }
     poLayers.clear();
 
-	if (poSpatialRef)
-	{
-		poSpatialRef->Release();
-	}
+    if (poSpatialRef)
+    {
+        poSpatialRef->Release();
+    }
 }
 
 /************************************************************************/
@@ -81,26 +81,26 @@ OGRSXFDataSource::~OGRSXFDataSource()
 /************************************************************************/
 int OGRSXFDataSource::TestCapability( const char *pszCap )
 {
-	if (EQUAL(pszCap, ODsCCreateLayer))
-	{
-		return GetAccess() == GA_Update ? TRUE : FALSE;
-	}
-	else if (EQUAL(pszCap, ODsCDeleteLayer))
-	{
-		return GetAccess() == GA_Update ? TRUE : FALSE;
-	}
-	else if (EQUAL(pszCap, ODsCCreateGeomFieldAfterCreateLayer))
-	{
-		return GetAccess() == GA_Update ? TRUE : FALSE;
-	}
-	else if (EQUAL(pszCap, ODsCRandomLayerWrite))
-	{
-		return GetAccess() == GA_Update ? TRUE : FALSE;
-	}
-	else if (EQUAL(pszCap, ODsCRandomLayerRead))
-	{
-		return TRUE;
-	}
+    if (EQUAL(pszCap, ODsCCreateLayer))
+    {
+        return GetAccess() == GA_Update ? TRUE : FALSE;
+    }
+    else if (EQUAL(pszCap, ODsCDeleteLayer))
+    {
+        return GetAccess() == GA_Update ? TRUE : FALSE;
+    }
+    else if (EQUAL(pszCap, ODsCCreateGeomFieldAfterCreateLayer))
+    {
+        return GetAccess() == GA_Update ? TRUE : FALSE;
+    }
+    else if (EQUAL(pszCap, ODsCRandomLayerWrite))
+    {
+        return GetAccess() == GA_Update ? TRUE : FALSE;
+    }
+    else if (EQUAL(pszCap, ODsCRandomLayerRead))
+    {
+        return TRUE;
+    }
     return FALSE;
 }
 
@@ -120,10 +120,10 @@ OGRLayer *OGRSXFDataSource::GetLayer( int iLayer )
 // GetName
 const char *OGRSXFDataSource::GetName()
 {
-	if (aosFileList.empty())
-	{
-		return "";
-	}
+    if (aosFileList.empty())
+    {
+        return "";
+    }
     return aosFileList[0];
 }
 
@@ -137,23 +137,35 @@ int OGRSXFDataSource::GetLayerCount()
 ////////////////////////////////////////////////////////////////////////////
 // Create
 int OGRSXFDataSource::Create(const char *pszFilename, 
-	CSLConstList papszOpenOpts)
+    CSLConstList papszOpenOpts)
 {
-	eAccess = GA_Update;
-	aosFileList.Clear();
-	aosFileList.AddString(pszFilename);
+    eAccess = GA_Update;
+    aosFileList.Clear();
+    aosFileList.AddString(pszFilename);
 
-	osEncoding =
-		CSLFetchNameValueDef(papszOpenOpts, "SXF_ENCODING",
-			CPLGetConfigOption("SXF_ENCODING", "CP1251"));
+    osEncoding =
+        CSLFetchNameValueDef(papszOpenOpts, "SXF_ENCODING",
+            CPLGetConfigOption("SXF_ENCODING", "CP1251"));
 
-	const char *pszWriteRSC =
-		CSLFetchNameValueDef(papszOpenOpts,
-			"SXF_WRITE_RSC",
-			CPLGetConfigOption("SXF_WRITE_RSC", "YES"));
-	bWriteRSC = CPLTestBool(pszWriteRSC);
+    const char *pszWriteRSC =
+        CSLFetchNameValueDef(papszOpenOpts,
+            "SXF_WRITE_RSC",
+            CPLGetConfigOption("SXF_WRITE_RSC", "YES"));
+    bWriteRSC = CPLTestBool(pszWriteRSC);
 
-	return TRUE;
+    auto mapName = CSLFetchNameValueDef(papszOpenOpts, "SXF_MAP_NAME",
+        CPLGetConfigOption("SXF_MAP_NAME", ""));
+    SetMetadataItem("SHEET_NAME", mapName);
+
+    auto sheet = CSLFetchNameValueDef(papszOpenOpts, "SXF_SHEET_KEY",
+        CPLGetConfigOption("SXF_SHEET_KEY", ""));
+    SetMetadataItem("SHEET", sheet);
+
+    auto scale = CSLFetchNameValueDef(papszOpenOpts, "SXF_MAP_SCALE",
+        CPLGetConfigOption("SXF_MAP_SCALE", "1000000"));
+    SetMetadataItem("SCALE", CPLSPrintf("1 : %s", scale));
+
+    return TRUE;
 }
 
 /************************************************************************/
@@ -162,15 +174,15 @@ int OGRSXFDataSource::Create(const char *pszFilename,
 int OGRSXFDataSource::Open(const char *pszFilename, bool bUpdateIn,
     CSLConstList papszOpenOpts)
 {
-	eAccess = bUpdateIn ? GA_Update : GA_ReadOnly;
-	aosFileList.Clear();
-	aosFileList.AddString(pszFilename);
+    eAccess = bUpdateIn ? GA_Update : GA_ReadOnly;
+    aosFileList.Clear();
+    aosFileList.AddString(pszFilename);
 
-	osEncoding =
-		CSLFetchNameValueDef(papszOpenOpts, "SXF_ENCODING",
-			CPLGetConfigOption("SXF_ENCODING", ""));
+    osEncoding =
+        CSLFetchNameValueDef(papszOpenOpts, "SXF_ENCODING",
+            CPLGetConfigOption("SXF_ENCODING", ""));
 
-	SXFFile oSXFFile;
+    SXFFile oSXFFile;
     if (!oSXFFile.Open(aosFileList[0], true, osEncoding))
     {
         return FALSE;
@@ -182,21 +194,21 @@ int OGRSXFDataSource::Open(const char *pszFilename, bool bUpdateIn,
         return FALSE;
     }
 
-	if (!oSXFFile.CheckSum())
-	{
-		CPLError(CE_Warning, CPLE_None, "Checksum failed");
-	}
+    if (!oSXFFile.CheckSum())
+    {
+        CPLError(CE_Warning, CPLE_None, "Checksum failed");
+    }
 
-	const char *pszWriteRSC =
-		CSLFetchNameValueDef(papszOpenOpts,
-			"SXF_WRITE_RSC",
-			CPLGetConfigOption("SXF_WRITE_RSC", "YES"));
-	bWriteRSC = CPLTestBool(pszWriteRSC);
+    const char *pszWriteRSC =
+        CSLFetchNameValueDef(papszOpenOpts,
+            "SXF_WRITE_RSC",
+            CPLGetConfigOption("SXF_WRITE_RSC", "YES"));
+    bWriteRSC = CPLTestBool(pszWriteRSC);
 
-	oExtent = oSXFFile.Extent();
-	osEncoding = oSXFFile.Encoding();
-	// Set Spatial reference
-	SetSpatialRef(oSXFFile.SpatialRef());
+    oExtent = oSXFFile.Extent();
+    osEncoding = oSXFFile.Encoding();
+    // Set Spatial reference
+    SetSpatialRef(oSXFFile.SpatialRef());
 
     /*---------------- TRY READ THE RSC FILE HEADER  -----------------------*/
     CPLString osRSCFileName;
@@ -204,7 +216,7 @@ int OGRSXFDataSource::Open(const char *pszFilename, bool bUpdateIn,
         CSLFetchNameValueDef(papszOpenOpts, "SXF_RSC_FILENAME",
                              CPLGetConfigOption("SXF_RSC_FILENAME", ""));
     if (pszRSCFileName != nullptr && 
-		CPLCheckForFile((char *)pszRSCFileName, nullptr) == TRUE)
+        CPLCheckForFile((char *)pszRSCFileName, nullptr) == TRUE)
     {
         osRSCFileName = pszRSCFileName;
     }
@@ -242,10 +254,10 @@ int OGRSXFDataSource::Open(const char *pszFilename, bool bUpdateIn,
             CPLDebug( "SXF", "Default RSC file not found" );
         }
     }
-	else
-	{
-		aosFileList.AddString(osRSCFileName);
-	}
+    else
+    {
+        aosFileList.AddString(osRSCFileName);
+    }
 
     const char *pszIsNewBehavior =
         CSLFetchNameValueDef(papszOpenOpts,
@@ -255,8 +267,8 @@ int OGRSXFDataSource::Open(const char *pszFilename, bool bUpdateIn,
     if (osRSCFileName.empty())
     {
         CPLError(CE_Warning, CPLE_None, "RSC file for %s not exist", pszFilename);
-		CreateLayers(oSXFFile.Extent(), RSCFile::GetDefaultLayers(),
-			bNewBehavior);
+        CreateLayers(oSXFFile.Extent(), RSCFile::GetDefaultLayers(),
+            bNewBehavior);
     }
     else
     {
@@ -269,7 +281,7 @@ int OGRSXFDataSource::Open(const char *pszFilename, bool bUpdateIn,
             {
                 // Create default set of layers
                 CreateLayers(oSXFFile.Extent(), oRSCFile.GetDefaultLayers(), 
-					bNewBehavior);
+                    bNewBehavior);
             }
             else
             {
@@ -295,12 +307,12 @@ void OGRSXFDataSource::FillLayers(const SXFFile &oSXF, bool bIsNewBehavior)
         nOffset = 400 + 52;
     }
     // 2. Read all records (only classify code and offset) and add this to 
-	// correspondence layer
+    // correspondence layer
     VSIFSeekL(oSXF.File(), nOffset, SEEK_SET);
 
     GIntBig nFID = 0;
     int nGroupId = 0;
-	std::string osStrCode;
+    std::string osStrCode;
     for (GUInt32 i = 0; i < oSXF.FeatureCount(); i++)
     {
         GUInt32 nCurrentOffset = nOffset;
@@ -315,12 +327,12 @@ void OGRSXFDataSource::FillLayers(const SXFFile &oSXF, bool bIsNewBehavior)
             CPL_LSBPTR32(&record.nClassifyCode);
             nCode = record.nClassifyCode;
             eGeomType =  SXFFile::CodeToGeometryType(record.nLocalizaton);
-			osStrCode = SXFFile::ToStringCode(eGeomType, nCode);
+            osStrCode = SXFFile::ToStringCode(eGeomType, nCode);
             CPL_LSBPTR16(&record.nSubObjectCount);
             nSubObjectCount = record.nSubObjectCount;
 
-			CPL_LSBPTR32(&record.nFullLength);
-			nOffset += record.nFullLength;
+            CPL_LSBPTR32(&record.nFullLength);
+            nOffset += record.nFullLength;
         }
         else if (oSXF.Version() == 4)
         {
@@ -330,12 +342,12 @@ void OGRSXFDataSource::FillLayers(const SXFFile &oSXF, bool bIsNewBehavior)
             CPL_LSBPTR32(&record.nClassifyCode);
             nCode = record.nClassifyCode;
             eGeomType =  SXFFile::CodeToGeometryType(record.nLocalizaton);
-			osStrCode = SXFFile::ToStringCode(eGeomType, nCode);
+            osStrCode = SXFFile::ToStringCode(eGeomType, nCode);
             CPL_LSBPTR16(&record.nSubObjectCount);
             nSubObjectCount = record.nSubObjectCount;
 
-			CPL_LSBPTR32(&record.nFullLength);
-			nOffset += record.nFullLength;
+            CPL_LSBPTR32(&record.nFullLength);
+            nOffset += record.nFullLength;
         }
 
         for (auto poLayer : poLayers)
@@ -350,15 +362,15 @@ void OGRSXFDataSource::FillLayers(const SXFFile &oSXF, bool bIsNewBehavior)
                     for (int j = 0; j < nSubObjectCount; j++)
                     {
                         pOGRSXFLayer->AddRecord(nFID++, osStrCode,
-							oSXF, nCurrentOffset, nGroupId, j + 2);
+                            oSXF, nCurrentOffset, nGroupId, j + 2);
                     }
                 }
                 break;
             }
         }
         
-		// Clear changes flag as we just loaded features from file without any modifications
-		bHasChanges = false;
+        // Clear changes flag as we just loaded features from file without any modifications
+        bHasChanges = false;
         VSIFSeekL(oSXF.File(), nOffset, SEEK_SET);
 
         // Prevent reading out of file size in case of broken SXF file
@@ -395,13 +407,13 @@ void OGRSXFDataSource::FillLayers(const SXFFile &oSXF, bool bIsNewBehavior)
 }
 
 void OGRSXFDataSource::CreateLayers(const OGREnvelope &oEnv, 
-	const std::map<GByte, SXFLayerDefn>& mstLayers, bool bIsNewBehavior)
+    const std::map<GByte, SXFLayerDefn>& mstLayers, bool bIsNewBehavior)
 {
     for (const auto &layer : mstLayers)
     {
         OGRSXFLayer *poLayer = new OGRSXFLayer(this, nLayerID++,
-			layer.second.osName.c_str(), 
-			layer.second.astFields, bIsNewBehavior);
+            layer.second.osName.c_str(), 
+            layer.second.astFields, bIsNewBehavior);
         for (const auto &code : layer.second.astCodes)
         {
             poLayer->AddClassifyCode(code.osCode, code.osName);
@@ -410,174 +422,174 @@ void OGRSXFDataSource::CreateLayers(const OGREnvelope &oEnv,
     }
 
     poLayers.emplace_back(new OGRSXFLayer(this, nLayerID++, "Not_Classified", 
-		std::vector<SXFField>(), bIsNewBehavior));
+        std::vector<SXFField>(), bIsNewBehavior));
 }
 
 void OGRSXFDataSource::FlushCache(void)
 {
-	if (!bHasChanges)
-	{
-		return;
-	}
+    if (!bHasChanges)
+    {
+        return;
+    }
 
-	auto mnClassMap = GenerateSXFClassMap();
-	
-	SXFFile oSXFFile;
-	if (!oSXFFile.Open(aosFileList[0], false, osEncoding))
-	{
-		return;
-	}
-	
-	// Write header 
-	if (!oSXFFile.Write(this))
-	{
-		oSXFFile.Close();
-		return;
-	}
+    auto mnClassMap = GenerateSXFClassMap();
+    
+    SXFFile oSXFFile;
+    if (!oSXFFile.Open(aosFileList[0], false, osEncoding))
+    {
+        return;
+    }
+    
+    // Write header 
+    if (!oSXFFile.Write(this))
+    {
+        oSXFFile.Close();
+        return;
+    }
 
 
-	// Write features
-	int nTotalFeatureCount = 0;
-	
-	for (auto poLayer : poLayers)
-	{
-		auto layer = static_cast<OGRSXFLayer*>(poLayer);
-		nTotalFeatureCount += layer->Write(oSXFFile, mnClassMap);
-	}
+    // Write features
+    int nTotalFeatureCount = 0;
+    
+    for (auto poLayer : poLayers)
+    {
+        auto layer = static_cast<OGRSXFLayer*>(poLayer);
+        nTotalFeatureCount += layer->Write(oSXFFile, mnClassMap);
+    }
 
-	oSXFFile.WriteTotalFeatureCount(nTotalFeatureCount);	
-	oSXFFile.WriteCheckSum();
+    oSXFFile.WriteTotalFeatureCount(nTotalFeatureCount);    
+    oSXFFile.WriteCheckSum();
 
-	if (bWriteRSC)
-	{
-		auto pszRSCFileName = CPLResetExtension(aosFileList[0], "rsc");
+    if (bWriteRSC)
+    {
+        auto pszRSCFileName = CPLResetExtension(aosFileList[0], "rsc");
 
-		RSCFile oRSCFile;
-		if (!oRSCFile.Write(pszRSCFileName, this, osEncoding, mnClassMap))
-		{
-			return;
-		}
+        RSCFile oRSCFile;
+        if (!oRSCFile.Write(pszRSCFileName, this, osEncoding, mnClassMap))
+        {
+            return;
+        }
 
-		bool bHasName = false;
-		for (int i = 0; i < aosFileList.size(); i++)
-		{
-			if (EQUAL(aosFileList[i], pszRSCFileName))
-			{
-				bHasName = true;
-				break;
-			}
-		}
-		if (!bHasName)
-		{
-			aosFileList.AddString(pszRSCFileName);
-		}
-	}
+        bool bHasName = false;
+        for (int i = 0; i < aosFileList.size(); i++)
+        {
+            if (EQUAL(aosFileList[i], pszRSCFileName))
+            {
+                bHasName = true;
+                break;
+            }
+        }
+        if (!bHasName)
+        {
+            aosFileList.AddString(pszRSCFileName);
+        }
+    }
 }
 
 const OGRSpatialReference *OGRSXFDataSource::GetSpatialRef() const
 {
-	return poSpatialRef;
+    return poSpatialRef;
 }
 
 CPLErr OGRSXFDataSource::SetSpatialRef(const OGRSpatialReference *poSRS)
 {
-	if (poSpatialRef)
-	{
-		poSpatialRef->Release();
-	}
-	poSpatialRef = poSRS->Clone();
-	return CE_None;
+    if (poSpatialRef)
+    {
+        poSpatialRef->Release();
+    }
+    poSpatialRef = poSRS->Clone();
+    return CE_None;
 }
 
 char **OGRSXFDataSource::GetFileList(void)
 {
-	return aosFileList.StealList();
+    return aosFileList.StealList();
 }
 
 OGRLayer *OGRSXFDataSource::ICreateLayer(const char *pszName,
-	OGRSpatialReference *poSRS, CPL_UNUSED OGRwkbGeometryType eGType,
-	char **papszOptions)
+    OGRSpatialReference *poSRS, CPL_UNUSED OGRwkbGeometryType eGType,
+    char **papszOptions)
 {
-	// All layers must have same Spatial Reference.
-	if (poSRS != nullptr && poSpatialRef == nullptr)
-	{
-		SetSpatialRef(poSRS);
-	}
-	const char *pszIsNewBehavior =
-		CSLFetchNameValueDef(papszOptions, "SXF_NEW_BEHAVIOR",
-			CPLGetConfigOption("SXF_NEW_BEHAVIOR", "NO"));
-	bool bNewBehavior = CPLTestBool(pszIsNewBehavior);	
-	auto poNewLayer = new OGRSXFLayer(this, nLayerID++, pszName, 
-		std::vector<SXFField>(), bNewBehavior);
-	poLayers.emplace_back(poNewLayer);
-	SetHasChanges();
-	return poNewLayer;
+    // All layers must have same Spatial Reference.
+    if (poSRS != nullptr && poSpatialRef == nullptr)
+    {
+        SetSpatialRef(poSRS);
+    }
+    const char *pszIsNewBehavior =
+        CSLFetchNameValueDef(papszOptions, "SXF_NEW_BEHAVIOR",
+            CPLGetConfigOption("SXF_NEW_BEHAVIOR", "NO"));
+    bool bNewBehavior = CPLTestBool(pszIsNewBehavior);    
+    auto poNewLayer = new OGRSXFLayer(this, nLayerID++, pszName, 
+        std::vector<SXFField>(), bNewBehavior);
+    poLayers.emplace_back(poNewLayer);
+    SetHasChanges();
+    return poNewLayer;
 }
 
 OGRErr OGRSXFDataSource::DeleteLayer(int iLayer)
 {
-	if (iLayer < 0 || iLayer >= GetLayerCount())
-	{
-		return OGRERR_FAILURE;
-	}
-	delete poLayers[iLayer];
-	poLayers.erase(poLayers.begin() + iLayer);
-	SetHasChanges();
-	return OGRERR_NONE;
+    if (iLayer < 0 || iLayer >= GetLayerCount())
+    {
+        return OGRERR_FAILURE;
+    }
+    delete poLayers[iLayer];
+    poLayers.erase(poLayers.begin() + iLayer);
+    SetHasChanges();
+    return OGRERR_NONE;
 }
 
 OGRErr OGRSXFDataSource::GetExtent(OGREnvelope *psExtent) const
 {
-	psExtent->MinX = oExtent.MinX;
-	psExtent->MinY = oExtent.MinY;
-	psExtent->MaxX = oExtent.MaxX;
-	psExtent->MaxY = oExtent.MaxY;
-	return OGRERR_NONE;
+    psExtent->MinX = oExtent.MinX;
+    psExtent->MinY = oExtent.MinY;
+    psExtent->MaxX = oExtent.MaxX;
+    psExtent->MaxY = oExtent.MaxY;
+    return OGRERR_NONE;
 }
 
 void OGRSXFDataSource::UpdateExtent(const OGREnvelope &env)
 {
-	oExtent.Merge(env);
-	SetHasChanges();
+    oExtent.Merge(env);
+    SetHasChanges();
 }
 
 std::map<std::string, int> OGRSXFDataSource::GenerateSXFClassMap() const
 {
-	// For fields with names differs from standard TEXT, OP, etc. and not SC_<int> 
-	// we need to create unique numeric identifiers. Fields in different layers with
-	// same names but different types must have different identifiers.
-	// Form name with following template: field name:field type
+    // For fields with names differs from standard TEXT, OP, etc. and not SC_<int> 
+    // we need to create unique numeric identifiers. Fields in different layers with
+    // same names but different types must have different identifiers.
+    // Form name with following template: field name:field type
 
-	int nCounter = 5000;
-	std::map<std::string, int> mnSXFClassMap;
-	for (auto poLayer : poLayers)
-	{
-		auto poDef = poLayer->GetLayerDefn();
-		for (int i = 0; i < poDef->GetFieldCount(); i++)
-		{
-			auto poFld = poDef->GetFieldDefn(i);
-			if (!OGRSXFLayer::IsFieldNameHasCode(poFld->GetNameRef()))
-			{
-				std::string key = OGRSXFLayer::CreateFieldKey(poFld);
-				if (mnSXFClassMap.find(key) == mnSXFClassMap.end())
-				{
-					mnSXFClassMap[key] = nCounter++;
-				}
-			}
-		}
-	}
-	return mnSXFClassMap;
+    int nCounter = 5000;
+    std::map<std::string, int> mnSXFClassMap;
+    for (auto poLayer : poLayers)
+    {
+        auto poDef = poLayer->GetLayerDefn();
+        for (int i = 0; i < poDef->GetFieldCount(); i++)
+        {
+            auto poFld = poDef->GetFieldDefn(i);
+            if (!OGRSXFLayer::IsFieldNameHasCode(poFld->GetNameRef()))
+            {
+                std::string key = OGRSXFLayer::CreateFieldKey(poFld);
+                if (mnSXFClassMap.find(key) == mnSXFClassMap.end())
+                {
+                    mnSXFClassMap[key] = nCounter++;
+                }
+            }
+        }
+    }
+    return mnSXFClassMap;
 }
 
 void OGRSXFDataSource::SetHasChanges()
 {
-	if (GetAccess() == GA_Update)
-	{
-		bHasChanges = true;
-	}
+    if (GetAccess() == GA_Update)
+    {
+        bHasChanges = true;
+    }
 }
 
 std::string OGRSXFDataSource::Encoding() const
 {
-	return osEncoding;
+    return osEncoding;
 }

@@ -162,20 +162,20 @@ constexpr double DELTA = 0.00000001;
 
 static GByte ToGByte(const char *pszVal)
 {
-	if (pszVal)
-	{
-		return static_cast<GByte>(atoi(pszVal));
-	}
-	return 0;
+    if (pszVal)
+    {
+        return static_cast<GByte>(atoi(pszVal));
+    }
+    return 0;
 }
 
 static double ToDouble(const char *pszVal)
 {
-	if (pszVal)
-	{
-		return atof(pszVal);
-	}
-	return 0.0;
+    if (pszVal)
+    {
+        return atof(pszVal);
+    }
+    return 0.0;
 }
 
 static void CornersToMetadata(OGRSXFDataSource *ds, const char *prefix, double *data)
@@ -200,22 +200,22 @@ static void CornersToMetadata(OGRSXFDataSource *ds, const char *prefix, double *
 
 static void CornersFromMetadata(OGRSXFDataSource *ds, const char *prefix, double *data)
 {
-	auto val = ds->GetMetadataItem(CPLSPrintf("%s%s", prefix, MD_SW_X_CORNER_KEY));
-	data[0] = ToDouble(val);
-	val = ds->GetMetadataItem(CPLSPrintf("%s%s", prefix, MD_SW_Y_CORNER_KEY));
-	data[1] = ToDouble(val);
-	val = ds->GetMetadataItem(CPLSPrintf("%s%s", prefix, MD_NW_X_CORNER_KEY));
-	data[2] = ToDouble(val);
-	val = ds->GetMetadataItem(CPLSPrintf("%s%s", prefix, MD_NW_Y_CORNER_KEY));
-	data[3] = ToDouble(val);
-	val = ds->GetMetadataItem(CPLSPrintf("%s%s", prefix, MD_NE_X_CORNER_KEY));
-	data[4] = ToDouble(val);
-	val = ds->GetMetadataItem(CPLSPrintf("%s%s", prefix, MD_NE_Y_CORNER_KEY));
-	data[5] = ToDouble(val);
-	val = ds->GetMetadataItem(CPLSPrintf("%s%s", prefix, MD_SE_X_CORNER_KEY));
-	data[6] = ToDouble(val);
-	val = ds->GetMetadataItem(CPLSPrintf("%s%s", prefix, MD_SE_Y_CORNER_KEY));
-	data[7] = ToDouble(val);
+    auto val = ds->GetMetadataItem(CPLSPrintf("%s%s", prefix, MD_SW_X_CORNER_KEY));
+    data[0] = ToDouble(val);
+    val = ds->GetMetadataItem(CPLSPrintf("%s%s", prefix, MD_SW_Y_CORNER_KEY));
+    data[1] = ToDouble(val);
+    val = ds->GetMetadataItem(CPLSPrintf("%s%s", prefix, MD_NW_X_CORNER_KEY));
+    data[2] = ToDouble(val);
+    val = ds->GetMetadataItem(CPLSPrintf("%s%s", prefix, MD_NW_Y_CORNER_KEY));
+    data[3] = ToDouble(val);
+    val = ds->GetMetadataItem(CPLSPrintf("%s%s", prefix, MD_NE_X_CORNER_KEY));
+    data[4] = ToDouble(val);
+    val = ds->GetMetadataItem(CPLSPrintf("%s%s", prefix, MD_NE_Y_CORNER_KEY));
+    data[5] = ToDouble(val);
+    val = ds->GetMetadataItem(CPLSPrintf("%s%s", prefix, MD_SE_X_CORNER_KEY));
+    data[6] = ToDouble(val);
+    val = ds->GetMetadataItem(CPLSPrintf("%s%s", prefix, MD_SE_Y_CORNER_KEY));
+    data[7] = ToDouble(val);
 }
 
 static SXFCoordinateMeasureUnit ValueToMeasureUnit(int version, int val)
@@ -288,31 +288,31 @@ static double GetCenter(double dfMinX, double dfMaxX)
 static void WriteSXFExtents(const OGREnvelope &stEnv, VSILFILE *fpSXF, 
     bool bSwapCoordinates)
 {
-	double corners[8];
-	if (bSwapCoordinates)
-	{
-		corners[0] = stEnv.MinY;
-		corners[1] = stEnv.MinX;
-		corners[2] = stEnv.MinY;
-		corners[3] = stEnv.MaxX;
-		corners[4] = stEnv.MaxY;
-		corners[5] = stEnv.MaxX;
-		corners[6] = stEnv.MaxY;
-		corners[7] = stEnv.MinX;
-	}
-	else
-	{
-		corners[0] = stEnv.MinX;
-		corners[1] = stEnv.MinY;
-		corners[2] = stEnv.MinX;
-		corners[3] = stEnv.MaxY;
-		corners[4] = stEnv.MaxX;
-		corners[5] = stEnv.MaxY;
-		corners[6] = stEnv.MaxX;
-		corners[7] = stEnv.MinY;
-	}
+    double corners[8];
+    if (bSwapCoordinates)
+    {
+        corners[0] = stEnv.MinY;
+        corners[1] = stEnv.MinX;
+        corners[2] = stEnv.MinY;
+        corners[3] = stEnv.MaxX;
+        corners[4] = stEnv.MaxY;
+        corners[5] = stEnv.MaxX;
+        corners[6] = stEnv.MaxY;
+        corners[7] = stEnv.MinX;
+    }
+    else
+    {
+        corners[0] = stEnv.MinX;
+        corners[1] = stEnv.MinY;
+        corners[2] = stEnv.MinX;
+        corners[3] = stEnv.MaxY;
+        corners[4] = stEnv.MaxX;
+        corners[5] = stEnv.MaxY;
+        corners[6] = stEnv.MaxX;
+        corners[7] = stEnv.MinY;
+    }
 
-	VSIFWriteL(corners, 64, 1, fpSXF);
+    VSIFWriteL(corners, 64, 1, fpSXF);
 }
 
 /******************************************************************************/
@@ -379,12 +379,12 @@ class SXFDate
 
         bool Write(VSILFILE *poSXFFile)
         {
-			// NOTE: Only support SXF v4 format
-			GByte buff[12] = { 0 };
-			memcpy(buff, std::to_string(m_nYear).c_str(), 4);
-			memcpy(buff + 4, std::to_string(m_nMonth).c_str(), 2);
-			memcpy(buff + 6, std::to_string(m_nDay).c_str(), 2);
-			return VSIFWriteL(&buff, 12, 1, poSXFFile) == 1;
+            // NOTE: Only support SXF v4 format
+            GByte buff[12] = { 0 };
+            memcpy(buff, std::to_string(m_nYear).c_str(), 4);
+            memcpy(buff + 4, std::to_string(m_nMonth).c_str(), 2);
+            memcpy(buff + 6, std::to_string(m_nDay).c_str(), 2);
+            return VSIFWriteL(&buff, 12, 1, poSXFFile) == 1;
         }
 
         void ToMetadata(OGRSXFDataSource *poDS, const char *metadataItemKey) const
@@ -397,7 +397,7 @@ class SXFDate
         {
             const char *val = poDS->GetMetadataItem(metadataItemKey);
             if (val && 
-				sscanf(val, "%hu-%hu-%hu", &m_nYear, &m_nMonth, &m_nDay) != 3)
+                sscanf(val, "%hu-%hu-%hu", &m_nYear, &m_nMonth, &m_nDay) != 3)
             {
                 return false;
             }
@@ -424,7 +424,7 @@ SXFFile::~SXFFile()
 bool SXFFile::Open(const std::string &osPath, bool bReadOnly, 
     const std::string &osCodePage)
 {
-	osEncoding = osCodePage;
+    osEncoding = osCodePage;
     fpSXF = VSIFOpenL(osPath.c_str(), bReadOnly ? "rb" : "wb");
     if (fpSXF == nullptr)
     {
@@ -440,7 +440,7 @@ void SXFFile::Close()
     if (pSpatRef != nullptr) 
     {
         pSpatRef->Release();
-		pSpatRef = nullptr;
+        pSpatRef = nullptr;
     }
 
     if (fpSXF != nullptr)
@@ -505,59 +505,59 @@ SXFGeometryType SXFFile::CodeToGeometryType(GByte nType)
 
 std::string SXFFile::SXFTypeToString(enum SXFGeometryType eType)
 {
-	switch (eType)
-	{
-	case SXF_GT_Line:
-		return "L";
-	case SXF_GT_Polygon:
-		return "S";
-	case SXF_GT_Point:
-		return "P";
-	case SXF_GT_Text:
-		return "T";
-	case SXF_GT_Vector:
-		return "V";
-	case SXF_GT_TextTemplate:
-		return "C";
+    switch (eType)
+    {
+    case SXF_GT_Line:
+        return "L";
+    case SXF_GT_Polygon:
+        return "S";
+    case SXF_GT_Point:
+        return "P";
+    case SXF_GT_Text:
+        return "T";
+    case SXF_GT_Vector:
+        return "V";
+    case SXF_GT_TextTemplate:
+        return "C";
 
-	default:
-		return "";
-	}
+    default:
+        return "";
+    }
 }
 
 enum SXFGeometryType SXFFile::StringToSXFType(const std::string &type)
 {
-	if (type == "L")
-	{
-		return SXF_GT_Line;
-	}
-	else if (type == "S")
-	{
-		return SXF_GT_Polygon;
-	}
-	else if (type == "P")
-	{
-		return SXF_GT_Point;
-	}
-	else if (type == "T")
-	{
-		return SXF_GT_Text;
-	}
-	else if (type == "V")
-	{
-		return SXF_GT_Vector;
-	}
-	else if (type == "C")
-	{
-		return SXF_GT_TextTemplate;
-	}
-	return SXF_GT_Unknown;
+    if (type == "L")
+    {
+        return SXF_GT_Line;
+    }
+    else if (type == "S")
+    {
+        return SXF_GT_Polygon;
+    }
+    else if (type == "P")
+    {
+        return SXF_GT_Point;
+    }
+    else if (type == "T")
+    {
+        return SXF_GT_Text;
+    }
+    else if (type == "V")
+    {
+        return SXF_GT_Vector;
+    }
+    else if (type == "C")
+    {
+        return SXF_GT_TextTemplate;
+    }
+    return SXF_GT_Unknown;
 }
 
 std::string SXFFile::ToStringCode(enum SXFGeometryType eType, 
     GUInt32 nClassifyCode)
 {
-	return SXFTypeToString(eType) + std::to_string(nClassifyCode);
+    return SXFTypeToString(eType) + std::to_string(nClassifyCode);
 }
 
 bool SXFFile::Read(OGRSXFDataSource *poDS, CSLConstList papszOpenOpts)
@@ -620,20 +620,20 @@ bool SXFFile::Read(OGRSXFDataSource *poDS, CSLConstList papszOpenOpts)
     std::string sheetNomk;
     if (nVersion == 3)
     {
-		if (osEncoding.empty())
-		{
-			osEncoding = DEFAULT_ENC_ASCIIZ;
-		}
+        if (osEncoding.empty())
+        {
+            osEncoding = DEFAULT_ENC_ASCIIZ;
+        }
         GByte buff[24];
         VSIFReadL(buff, 24, 1, fpSXF);
         sheetNomk = SXF::ReadEncString(buff, 24, osEncoding.c_str());
     }
     else if (nVersion == 4)
     {
-		if (osEncoding.empty())
-		{
-			osEncoding = DEFAULT_ENC_ANSI;
-		}
+        if (osEncoding.empty())
+        {
+            osEncoding = DEFAULT_ENC_ANSI;
+        }
         GByte buff[32];
         VSIFReadL(buff, 32, 1, fpSXF);
         sheetNomk = SXF::ReadEncString(buff, 32, osEncoding.c_str());
@@ -694,20 +694,20 @@ bool SXFFile::Read(OGRSXFDataSource *poDS, CSLConstList papszOpenOpts)
             }
         }
 
-		/* Override file set encoding in favour of defaults or input options
-			if (val.textEncoding == 0)
-			{
-				osEncoding = DEFAULT_ASCIIZ;
-			}
-			else if (val.textEncoding == 1)
-			{
-				osEncoding = DEFAULT_ANSI;
-			}
-			else if (val.textEncoding == 2)
-			{
-				osEncoding = "KOI8-R";
-			}
-		*/
+        /* Override file set encoding in favour of defaults or input options
+            if (val.textEncoding == 0)
+            {
+                osEncoding = DEFAULT_ASCIIZ;
+            }
+            else if (val.textEncoding == 1)
+            {
+                osEncoding = DEFAULT_ANSI;
+            }
+            else if (val.textEncoding == 2)
+            {
+                osEncoding = "KOI8-R";
+            }
+        */
     }
 
     // Read sheet corners
@@ -1086,24 +1086,24 @@ bool SXFFile::Read(OGRSXFDataSource *poDS, CSLConstList papszOpenOpts)
     }
 
     if (SetSRS(stProjInfo.nEllipsoidType, stProjInfo.nProjectionType,
-		stProjInfo.nHeightSrsType, eUnitInPlan, geogCoords, adfPrjParams,
-		papszOpenOpts))
+        stProjInfo.nHeightSrsType, eUnitInPlan, geogCoords, adfPrjParams,
+        papszOpenOpts))
     {
         return false;
     }
 
-	if (oEnvelope.MaxX - oEnvelope.MinX < DELTA || 
+    if (oEnvelope.MaxX - oEnvelope.MinX < DELTA || 
         oEnvelope.MaxY - oEnvelope.MinY < DELTA)
-	{
-		oEnvelope.MinX = MIN(MIN(geogCoords[0], geogCoords[2]), 
+    {
+        oEnvelope.MinX = MIN(MIN(geogCoords[0], geogCoords[2]), 
             MIN(geogCoords[4], geogCoords[6]));
-		oEnvelope.MaxX = MAX(MAX(geogCoords[0], geogCoords[2]), 
+        oEnvelope.MaxX = MAX(MAX(geogCoords[0], geogCoords[2]), 
             MAX(geogCoords[4], geogCoords[6]));
-		oEnvelope.MinY = MIN(MIN(geogCoords[1], geogCoords[3]), 
+        oEnvelope.MinY = MIN(MIN(geogCoords[1], geogCoords[3]), 
             MIN(geogCoords[5], geogCoords[7]));
-		oEnvelope.MaxY = MAX(MAX(geogCoords[1], geogCoords[3]), 
+        oEnvelope.MaxY = MAX(MAX(geogCoords[1], geogCoords[3]), 
             MAX(geogCoords[5], geogCoords[7]));
-	}
+    }
 
     // Read description ///////////////////////////////////////////////////////
 
@@ -1141,311 +1141,311 @@ bool SXFFile::Read(OGRSXFDataSource *poDS, CSLConstList papszOpenOpts)
         
 bool SXFFile::Write(OGRSXFDataSource *poDS)
 {
-	// NOTE: Support only SXF v4
+    // NOTE: Support only SXF v4
 
-	// Write header
-	if (fpSXF == nullptr)
-	{
-		CPLError(CE_Failure, CPLE_None, "SXF File not openned for write");
-		return false;
-	}
+    // Write header
+    if (fpSXF == nullptr)
+    {
+        CPLError(CE_Failure, CPLE_None, "SXF File not openned for write");
+        return false;
+    }
 
-	// Read header
-	Header stSXFFileHeader = { {'S', 'X', 'F', 0}, 400 };
+    // Read header
+    Header stSXFFileHeader = { {'S', 'X', 'F', 0}, 400 };
 
-	size_t nObjectsWrite =
-		VSIFWriteL(&stSXFFileHeader, sizeof(Header), 1, fpSXF);
+    size_t nObjectsWrite =
+        VSIFWriteL(&stSXFFileHeader, sizeof(Header), 1, fpSXF);
 
-	if (nObjectsWrite != 1)
-	{
-		CPLError(CE_Failure, CPLE_None, "SXF head write failed");
-		return false;
-	}
-	
-	GByte ver[4] = { 0,0,4,0 };
-	VSIFWriteL(&ver, 4, 1, fpSXF);
-	
-	// Write temp checksum value
-	GUInt32 nCheckSum = 0;
-	VSIFWriteL(&nCheckSum, 4, 1, fpSXF);
+    if (nObjectsWrite != 1)
+    {
+        CPLError(CE_Failure, CPLE_None, "SXF head write failed");
+        return false;
+    }
+    
+    GByte ver[4] = { 0,0,4,0 };
+    VSIFWriteL(&ver, 4, 1, fpSXF);
+    
+    // Write temp checksum value
+    GUInt32 nCheckSum = 0;
+    VSIFWriteL(&nCheckSum, 4, 1, fpSXF);
 
-	// Write passport //////////////////////////////////////////////////////////
+    // Write passport //////////////////////////////////////////////////////////
 
-	// Write create date
-	struct tm tm;
-	CPLUnixTimeToYMDHMS(time(nullptr), &tm);
-	SXFDate createDate(static_cast<GUInt16>(tm.tm_year + 1900), 
-		static_cast<GUInt16>(tm.tm_mon + 1), static_cast<GUInt16>(tm.tm_mday));
-	if (!createDate.Write(fpSXF))
-	{
-		CPLError(CE_Failure, CPLE_NotSupported, 
+    // Write create date
+    struct tm tm;
+    CPLUnixTimeToYMDHMS(time(nullptr), &tm);
+    SXFDate createDate(static_cast<GUInt16>(tm.tm_year + 1900), 
+        static_cast<GUInt16>(tm.tm_mon + 1), static_cast<GUInt16>(tm.tm_mday));
+    if (!createDate.Write(fpSXF))
+    {
+        CPLError(CE_Failure, CPLE_NotSupported, 
             "Failed to write SXF file create date");
-		return false;
-	}
+        return false;
+    }
 
-	// Write sheet 
-	auto pszSheet = poDS->GetMetadataItem(MD_SHEET_KEY);
-	SXF::WriteEncString(pszSheet, 32, osEncoding.c_str(), fpSXF);
+    // Write sheet 
+    auto pszSheet = poDS->GetMetadataItem(MD_SHEET_KEY);
+    SXF::WriteEncString(pszSheet, 32, osEncoding.c_str(), fpSXF);
 
-	// Write scale
-	auto pszScale = poDS->GetMetadataItem(MD_SCALE_KEY);
-	GUInt32 nScale = 1000000;
-	if (pszScale != nullptr && CPLStrnlen(pszScale, 255) > 4)
-	{
-		nScale = atoi(pszScale + 4);
-	}
-	VSIFWriteL(&nScale, 4, 1, fpSXF);
+    // Write scale
+    auto pszScale = poDS->GetMetadataItem(MD_SCALE_KEY);
+    GUInt32 nScale = 1000000;
+    if (pszScale != nullptr && CPLStrnlen(pszScale, 255) > 4)
+    {
+        nScale = atoi(pszScale + 4);
+    }
+    VSIFWriteL(&nScale, 4, 1, fpSXF);
 
-	// Write sheet name
-	auto pszSheetName = poDS->GetMetadataItem(MD_SHEET_NAME_KEY);
-	SXF::WriteEncString(pszSheetName, 32, osEncoding.c_str(), fpSXF);
+    // Write sheet name
+    auto pszSheetName = poDS->GetMetadataItem(MD_SHEET_NAME_KEY);
+    SXF::WriteEncString(pszSheetName, 32, osEncoding.c_str(), fpSXF);
 
-	// Write information flags
-	SXFInformationFlagsV4 stFlags = { 0 };
-	stFlags.dataState = 3;
-	stFlags.hasRealCoords = 1;
-	stFlags.textEncoding = 1; // ANSI
-	stFlags.accuracy = 1;
+    // Write information flags
+    SXFInformationFlagsV4 stFlags = { 0 };
+    stFlags.dataState = 3;
+    stFlags.hasRealCoords = 1;
+    stFlags.textEncoding = 1; // ANSI
+    stFlags.accuracy = 1;
 
-	VSIFWriteL(&stFlags, sizeof(SXFInformationFlagsV4), 1, fpSXF);
-	
-	GUInt32 nEPSG = 0;
-	auto pSRS = poDS->GetSpatialRef();
-	if (pSRS)
-	{
-		auto pszEPSG = pSRS->GetAuthorityCode(nullptr);
-		if (pszEPSG == nullptr)
-		{
-			pszEPSG = pSRS->GetAuthorityCode("PROJCS");
-		}
-		if (pszEPSG == nullptr)
-		{
-			pszEPSG = pSRS->GetAuthorityCode("GEOGCS");
-		}
-		if (pszEPSG != nullptr)
-		{
-			nEPSG = atoi(pszEPSG);
-		}
-	}
-	VSIFWriteL(&nEPSG, 4, 1, fpSXF);
-	
-	OGREnvelope stEnv;
-	poDS->GetExtent(&stEnv);
+    VSIFWriteL(&stFlags, sizeof(SXFInformationFlagsV4), 1, fpSXF);
+    
+    GUInt32 nEPSG = 0;
+    auto pSRS = poDS->GetSpatialRef();
+    if (pSRS)
+    {
+        auto pszEPSG = pSRS->GetAuthorityCode(nullptr);
+        if (pszEPSG == nullptr)
+        {
+            pszEPSG = pSRS->GetAuthorityCode("PROJCS");
+        }
+        if (pszEPSG == nullptr)
+        {
+            pszEPSG = pSRS->GetAuthorityCode("GEOGCS");
+        }
+        if (pszEPSG != nullptr)
+        {
+            nEPSG = atoi(pszEPSG);
+        }
+    }
+    VSIFWriteL(&nEPSG, 4, 1, fpSXF);
+    
+    OGREnvelope stEnv;
+    poDS->GetExtent(&stEnv);
 
-	if (pSRS && pSRS->IsProjected())
-	{
-		WriteSXFExtents(stEnv, fpSXF, true);
-		auto pGeogCS = pSRS->CloneGeogCS();
-		auto ct = OGRCreateCoordinateTransformation(pSRS, pGeogCS);
-		if (ct)
-		{
-			double x[4];
-			double y[4];
-			x[0] = stEnv.MinX;
-			y[0] = stEnv.MinY;
-			x[1] = stEnv.MinX;
-			y[1] = stEnv.MaxY;
-			x[2] = stEnv.MaxX;
-			y[2] = stEnv.MaxY;
-			x[3] = stEnv.MaxX;
-			y[3] = stEnv.MinY;
-			ct->Transform(4, x, y);
-			stEnv.MinX = MIN(MIN(x[0], x[1]), MIN(x[2], x[3]));
-			stEnv.MaxX = MAX(MAX(x[0], x[1]), MAX(x[2], x[3]));
-			stEnv.MinY = MIN(MIN(y[0], y[1]), MIN(y[2], y[3]));
-			stEnv.MaxY = MAX(MAX(y[0], y[1]), MAX(y[2], y[3]));
-			OGRCoordinateTransformation::DestroyCT(ct);
-		}
-	}
-	else
-	{
-		// For GeogCS write 0.0 to projected extents
-		OGREnvelope stEmptyEnv;
-		stEmptyEnv.MinX = 0.0;
-		stEmptyEnv.MaxX = 0.0;
-		stEmptyEnv.MinY = 0.0;
-		stEmptyEnv.MaxY = 0.0;
-		WriteSXFExtents(stEmptyEnv, fpSXF, true);
-	}
+    if (pSRS && pSRS->IsProjected())
+    {
+        WriteSXFExtents(stEnv, fpSXF, true);
+        auto pGeogCS = pSRS->CloneGeogCS();
+        auto ct = OGRCreateCoordinateTransformation(pSRS, pGeogCS);
+        if (ct)
+        {
+            double x[4];
+            double y[4];
+            x[0] = stEnv.MinX;
+            y[0] = stEnv.MinY;
+            x[1] = stEnv.MinX;
+            y[1] = stEnv.MaxY;
+            x[2] = stEnv.MaxX;
+            y[2] = stEnv.MaxY;
+            x[3] = stEnv.MaxX;
+            y[3] = stEnv.MinY;
+            ct->Transform(4, x, y);
+            stEnv.MinX = MIN(MIN(x[0], x[1]), MIN(x[2], x[3]));
+            stEnv.MaxX = MAX(MAX(x[0], x[1]), MAX(x[2], x[3]));
+            stEnv.MinY = MIN(MIN(y[0], y[1]), MIN(y[2], y[3]));
+            stEnv.MaxY = MAX(MAX(y[0], y[1]), MAX(y[2], y[3]));
+            OGRCoordinateTransformation::DestroyCT(ct);
+        }
+    }
+    else
+    {
+        // For GeogCS write 0.0 to projected extents
+        OGREnvelope stEmptyEnv;
+        stEmptyEnv.MinX = 0.0;
+        stEmptyEnv.MaxX = 0.0;
+        stEmptyEnv.MinY = 0.0;
+        stEmptyEnv.MaxY = 0.0;
+        WriteSXFExtents(stEmptyEnv, fpSXF, true);
+    }
 
-	stEnv.MinX *= TO_RADIANS;
-	stEnv.MinY *= TO_RADIANS;
-	stEnv.MaxX *= TO_RADIANS;
-	stEnv.MaxY *= TO_RADIANS;
+    stEnv.MinX *= TO_RADIANS;
+    stEnv.MinY *= TO_RADIANS;
+    stEnv.MaxX *= TO_RADIANS;
+    stEnv.MaxY *= TO_RADIANS;
 
-	WriteSXFExtents(stEnv, fpSXF, true);
-		
-	long iProjSys(0), iDatum(0), iEllips(0), iZone(0);
-	double adfPrjParams[7] = { 0 };
-	if (pSRS)
-	{
-		pSRS->exportToPanorama(&iProjSys, &iDatum, &iEllips, &iZone, adfPrjParams);
-	}
-	GByte val = static_cast<GByte>(iEllips);
-	VSIFWriteL(&val, 1, 1, fpSXF);
+    WriteSXFExtents(stEnv, fpSXF, true);
+        
+    long iProjSys(0), iDatum(0), iEllips(0), iZone(0);
+    double adfPrjParams[7] = { 0 };
+    if (pSRS)
+    {
+        pSRS->exportToPanorama(&iProjSys, &iDatum, &iEllips, &iZone, adfPrjParams);
+    }
+    GByte val = static_cast<GByte>(iEllips);
+    VSIFWriteL(&val, 1, 1, fpSXF);
 
-	// Vertical SRS
-	auto psVertSRS = poDS->GetMetadataItem(MD_MATH_BASE_SHEET_HEIGHT_SYSTEM_KEY);
-	val = ToGByte(psVertSRS);
-	VSIFWriteL(&val, 1, 1, fpSXF);
+    // Vertical SRS
+    auto psVertSRS = poDS->GetMetadataItem(MD_MATH_BASE_SHEET_HEIGHT_SYSTEM_KEY);
+    val = ToGByte(psVertSRS);
+    VSIFWriteL(&val, 1, 1, fpSXF);
 
-	val = static_cast<GByte>(iProjSys);
-	VSIFWriteL(&val, 1, 1, fpSXF);
+    val = static_cast<GByte>(iProjSys);
+    VSIFWriteL(&val, 1, 1, fpSXF);
 
-	val = static_cast<GByte>(iDatum);
-	VSIFWriteL(&val, 1, 1, fpSXF);
+    val = static_cast<GByte>(iDatum);
+    VSIFWriteL(&val, 1, 1, fpSXF);
 
-	val = 0; // Default meters
-	if (pSRS && (pSRS->IsGeographic() || pSRS->IsGeocentric()))
-	{
-		val = 65; // Degrees
-	}
-	VSIFWriteL(&val, 1, 1, fpSXF);
+    val = 0; // Default meters
+    if (pSRS && (pSRS->IsGeographic() || pSRS->IsGeocentric()))
+    {
+        val = 65; // Degrees
+    }
+    VSIFWriteL(&val, 1, 1, fpSXF);
 
-	auto pszHeightMeasureUnit = 
+    auto pszHeightMeasureUnit = 
         poDS->GetMetadataItem(MD_MATH_BASE_SHEET_MEASURE_HEIGHT_KEY);
-	val = ToGByte(pszHeightMeasureUnit);
-	VSIFWriteL(&val, 1, 1, fpSXF);
+    val = ToGByte(pszHeightMeasureUnit);
+    VSIFWriteL(&val, 1, 1, fpSXF);
 
-	val = 0;	
-	auto pszFrameType = poDS->GetMetadataItem(MD_MATH_BASE_SHEET_FRAMTE_TYPE_KEY);
-	if (pszFrameType)
-	{
-		val = static_cast<GByte>(ValueToFrameType(atoi(pszFrameType)));
-	}
-	VSIFWriteL(&val, 1, 1, fpSXF);
-	
-	val = 0;
-	auto pszMapType = poDS->GetMetadataItem(MD_MATH_BASE_SHEET_MAP_TYPE_KEY);
-	if (pszMapType)
-	{
-		val = static_cast<GByte>(ValueToMapType(atoi(pszMapType)));
-	}
-	VSIFWriteL(&val, 1, 1, fpSXF);
+    val = 0;    
+    auto pszFrameType = poDS->GetMetadataItem(MD_MATH_BASE_SHEET_FRAMTE_TYPE_KEY);
+    if (pszFrameType)
+    {
+        val = static_cast<GByte>(ValueToFrameType(atoi(pszFrameType)));
+    }
+    VSIFWriteL(&val, 1, 1, fpSXF);
+    
+    val = 0;
+    auto pszMapType = poDS->GetMetadataItem(MD_MATH_BASE_SHEET_MAP_TYPE_KEY);
+    if (pszMapType)
+    {
+        val = static_cast<GByte>(ValueToMapType(atoi(pszMapType)));
+    }
+    VSIFWriteL(&val, 1, 1, fpSXF);
 
-	SXFDate surveyDate;
-	surveyDate.FromMetadata(poDS, MD_SOURCE_INFO_SURVEY_DATE_KEY);
-	if (!surveyDate.Write(fpSXF))
-	{
-		CPLError(CE_Failure, CPLE_NotSupported, 
+    SXFDate surveyDate;
+    surveyDate.FromMetadata(poDS, MD_SOURCE_INFO_SURVEY_DATE_KEY);
+    if (!surveyDate.Write(fpSXF))
+    {
+        CPLError(CE_Failure, CPLE_NotSupported, 
             "Failed to write SXF file survey date");
-		return false;
-	}
+        return false;
+    }
 
-	auto pszSourceType = 
+    auto pszSourceType = 
         poDS->GetMetadataItem(MD_SOURCE_INFO_SOURCE_TYPE_KEY);
-	val = ToGByte(pszSourceType);
-	VSIFWriteL(&val, 1, 1, fpSXF);
+    val = ToGByte(pszSourceType);
+    VSIFWriteL(&val, 1, 1, fpSXF);
 
-	auto pszSourceSubType = 
+    auto pszSourceSubType = 
         poDS->GetMetadataItem(MD_SOURCE_INFO_SOURCE_SUBTYPE_KEY);
-	val = ToGByte(pszSourceSubType);
-	VSIFWriteL(&val, 1, 1, fpSXF);
+    val = ToGByte(pszSourceSubType);
+    VSIFWriteL(&val, 1, 1, fpSXF);
 
-	auto pszMSK63Letter = 
+    auto pszMSK63Letter = 
         poDS->GetMetadataItem(MD_SOURCE_INFO_MSK_ZONE_ID_KEY);
-	val = ToGByte(pszMSK63Letter);
-	VSIFWriteL(&val, 1, 1, fpSXF);
+    val = ToGByte(pszMSK63Letter);
+    VSIFWriteL(&val, 1, 1, fpSXF);
 
-	auto pszMapLimited = 
+    auto pszMapLimited = 
         poDS->GetMetadataItem(MD_SOURCE_INFO_MAP_BORDER_LIMIT_KEY);
-	val = ToGByte(pszMapLimited);
-	VSIFWriteL(&val, 1, 1, fpSXF);
+    val = ToGByte(pszMapLimited);
+    VSIFWriteL(&val, 1, 1, fpSXF);
 
-	auto pszMagneticDeclination = 
+    auto pszMagneticDeclination = 
         poDS->GetMetadataItem(MD_SOURCE_INFO_MAGNETIC_DECLINATION_KEY);
-	double fval = ToDouble(pszMagneticDeclination) * TO_RADIANS;
-	VSIFWriteL(&fval, 8, 1, fpSXF);
+    double fval = ToDouble(pszMagneticDeclination) * TO_RADIANS;
+    VSIFWriteL(&fval, 8, 1, fpSXF);
 
-	auto pszAverageAapproachMeridians = 
+    auto pszAverageAapproachMeridians = 
         poDS->GetMetadataItem(MD_SOURCE_INFO_AVG_APPROACH_OF_MERIDIANS_KEY);
-	fval = ToDouble(pszAverageAapproachMeridians) * TO_RADIANS;
-	VSIFWriteL(&fval, 8, 1, fpSXF);
+    fval = ToDouble(pszAverageAapproachMeridians) * TO_RADIANS;
+    VSIFWriteL(&fval, 8, 1, fpSXF);
 
-	auto pszAnnualMagneticDecl = 
+    auto pszAnnualMagneticDecl = 
         poDS->GetMetadataItem(MD_SOURCE_INFO_ANNUAL_MAGNETIC_DECLINATION_CHANGE_KEY);
-	fval = ToDouble(pszAnnualMagneticDecl) * TO_RADIANS;
-	VSIFWriteL(&fval, 8, 1, fpSXF);
+    fval = ToDouble(pszAnnualMagneticDecl) * TO_RADIANS;
+    VSIFWriteL(&fval, 8, 1, fpSXF);
 
-	SXFDate checkDate;
-	checkDate.FromMetadata(poDS, MD_SOURCE_INFO_MAGNETIC_DECLINATION_CHECK_DATE_KEY);
-	if (!checkDate.Write(fpSXF))
-	{
-		CPLError(CE_Failure, CPLE_NotSupported, "Failed to write SXF file survey date");
-		return false;
-	}
+    SXFDate checkDate;
+    checkDate.FromMetadata(poDS, MD_SOURCE_INFO_MAGNETIC_DECLINATION_CHECK_DATE_KEY);
+    if (!checkDate.Write(fpSXF))
+    {
+        CPLError(CE_Failure, CPLE_NotSupported, "Failed to write SXF file survey date");
+        return false;
+    }
 
-	auto pszMSKZone = poDS->GetMetadataItem(MD_SOURCE_INFO_MSK_ZONE_KEY);
-	GUInt32 iVal = 0;
-	if (pszMSKZone)
-	{
-		iVal = atoi(pszMSKZone);
-	}
-	VSIFWriteL(&iVal, 4, 1, fpSXF);
+    auto pszMSKZone = poDS->GetMetadataItem(MD_SOURCE_INFO_MSK_ZONE_KEY);
+    GUInt32 iVal = 0;
+    if (pszMSKZone)
+    {
+        iVal = atoi(pszMSKZone);
+    }
+    VSIFWriteL(&iVal, 4, 1, fpSXF);
 
-	auto pszHeightStep = poDS->GetMetadataItem(MD_SOURCE_TERRAIN_STEP_KEY);
-	fval = ToDouble(pszHeightStep);
-	VSIFWriteL(&fval, 8, 1, fpSXF);
-	
-	auto pszAxisRotation = poDS->GetMetadataItem(MD_AXIS_ROTATION_KEY);
-	fval = ToDouble(pszAxisRotation) * TO_RADIANS;
-	VSIFWriteL(&fval, 8, 1, fpSXF);
+    auto pszHeightStep = poDS->GetMetadataItem(MD_SOURCE_TERRAIN_STEP_KEY);
+    fval = ToDouble(pszHeightStep);
+    VSIFWriteL(&fval, 8, 1, fpSXF);
+    
+    auto pszAxisRotation = poDS->GetMetadataItem(MD_AXIS_ROTATION_KEY);
+    fval = ToDouble(pszAxisRotation) * TO_RADIANS;
+    VSIFWriteL(&fval, 8, 1, fpSXF);
 
-	auto pszResolution = poDS->GetMetadataItem(MD_SCAN_RESOLUTION_KEY);
-	GInt32 nVal = -1;
-	if (pszResolution)
-	{
-		nVal = atoi(pszResolution);
-	}
-	VSIFWriteL(&nVal, 4, 1, fpSXF);
+    auto pszResolution = poDS->GetMetadataItem(MD_SCAN_RESOLUTION_KEY);
+    GInt32 nVal = -1;
+    if (pszResolution)
+    {
+        nVal = atoi(pszResolution);
+    }
+    VSIFWriteL(&nVal, 4, 1, fpSXF);
 
-	double adfFrameCornes[8];
-	CornersFromMetadata(poDS, "FRAME.", adfFrameCornes);
-	float adfFrameCornersShort[8];
-	for (int i = 0; i < 8; i++)
-	{
-		adfFrameCornersShort[i] = static_cast<float>(adfFrameCornes[i]);
-	}
-	VSIFWriteL(adfFrameCornersShort, 32, 1, fpSXF);
+    double adfFrameCornes[8];
+    CornersFromMetadata(poDS, "FRAME.", adfFrameCornes);
+    float adfFrameCornersShort[8];
+    for (int i = 0; i < 8; i++)
+    {
+        adfFrameCornersShort[i] = static_cast<float>(adfFrameCornes[i]);
+    }
+    VSIFWriteL(adfFrameCornersShort, 32, 1, fpSXF);
 
-	iVal = 91000000;
-	VSIFWriteL(&iVal, 4, 1, fpSXF);
+    iVal = 91000000;
+    VSIFWriteL(&iVal, 4, 1, fpSXF);
 
-	double adfProjDetails[6];
-	adfProjDetails[0] = adfPrjParams[0];
-	adfProjDetails[1] = adfPrjParams[1];
-	adfProjDetails[2] = adfPrjParams[2];
-	adfProjDetails[3] = adfPrjParams[3];
-	adfProjDetails[4] = adfPrjParams[5];
-	adfProjDetails[5] = adfPrjParams[6];
+    double adfProjDetails[6];
+    adfProjDetails[0] = adfPrjParams[0];
+    adfProjDetails[1] = adfPrjParams[1];
+    adfProjDetails[2] = adfPrjParams[2];
+    adfProjDetails[3] = adfPrjParams[3];
+    adfProjDetails[4] = adfPrjParams[5];
+    adfProjDetails[5] = adfPrjParams[6];
 
-	VSIFWriteL(adfProjDetails, 48, 1, fpSXF);
-	
-	// Write data description ///////////////////////////////////////////////////
-	
-	SXFDataDescriptorV4 stDataDesc = { 0 };
-	stDataDesc.nSectionID[0] = 'D';
-	stDataDesc.nSectionID[1] = 'A';
-	stDataDesc.nSectionID[2] = 'T';
-	stDataDesc.nLength = sizeof(SXFDataDescriptorV4);
-	SXF::WriteEncString(pszSheet, stDataDesc.szScheet, 32, osEncoding.c_str());
-	stDataDesc.nFeatureCount = 0;
-	stDataDesc.nDataState = 3;
-	stDataDesc.nProjCorrespondence = 1;
-	stDataDesc.nRealCoordinates = 3; // 1?
-	stDataDesc.nLablesEncode = 1; // ANSI
+    VSIFWriteL(adfProjDetails, 48, 1, fpSXF);
+    
+    // Write data description ///////////////////////////////////////////////////
+    
+    SXFDataDescriptorV4 stDataDesc = { 0 };
+    stDataDesc.nSectionID[0] = 'D';
+    stDataDesc.nSectionID[1] = 'A';
+    stDataDesc.nSectionID[2] = 'T';
+    stDataDesc.nLength = sizeof(SXFDataDescriptorV4);
+    SXF::WriteEncString(pszSheet, stDataDesc.szScheet, 32, osEncoding.c_str());
+    stDataDesc.nFeatureCount = 0;
+    stDataDesc.nDataState = 3;
+    stDataDesc.nProjCorrespondence = 1;
+    stDataDesc.nRealCoordinates = 3; // 1?
+    stDataDesc.nLablesEncode = 1; // ANSI
 
-	auto pszClass = poDS->GetMetadataItem(MD_DESC_CLASSIFY_CODE_KEY);
-	stDataDesc.nClassify = ToGByte(pszClass);
+    auto pszClass = poDS->GetMetadataItem(MD_DESC_CLASSIFY_CODE_KEY);
+    stDataDesc.nClassify = ToGByte(pszClass);
 
-	auto pszAutoGenGUID = poDS->GetMetadataItem(MD_DESC_AUTO_GUID_KEY);
-	stDataDesc.nAutoGenGUID = ToGByte(pszAutoGenGUID);
-	auto pszAutoTimestamps = poDS->GetMetadataItem(MD_DESC_AUTO_TIMESTAMPS_KEY);
-	stDataDesc.nAutoTimestamp = ToGByte(pszAutoTimestamps);
-	auto pszAltFonts = poDS->GetMetadataItem(MD_DESC_USE_ALT_FONTS_KEY);
-	stDataDesc.nAltFonts = ToGByte(pszAltFonts);
+    auto pszAutoGenGUID = poDS->GetMetadataItem(MD_DESC_AUTO_GUID_KEY);
+    stDataDesc.nAutoGenGUID = ToGByte(pszAutoGenGUID);
+    auto pszAutoTimestamps = poDS->GetMetadataItem(MD_DESC_AUTO_TIMESTAMPS_KEY);
+    stDataDesc.nAutoTimestamp = ToGByte(pszAutoTimestamps);
+    auto pszAltFonts = poDS->GetMetadataItem(MD_DESC_USE_ALT_FONTS_KEY);
+    stDataDesc.nAltFonts = ToGByte(pszAltFonts);
 
-	VSIFWriteL(&stDataDesc, sizeof(SXFDataDescriptorV4), 1, fpSXF);
+    VSIFWriteL(&stDataDesc, sizeof(SXFDataDescriptorV4), 1, fpSXF);
 
     return true;
 }
@@ -1588,85 +1588,85 @@ GUInt32 SXFFile::FeatureCount() const
 
 bool SXFFile::WriteTotalFeatureCount(GUInt32 nTotalFeatureCount)
 {
-	if (fpSXF == nullptr)
-	{
-		CPLError(CE_Failure, CPLE_None, "SXF File not openned for write");
-		return false;
-	}
-	VSIFSeekL(fpSXF, 400 + 40, SEEK_SET);
-	return VSIFWriteL(&nTotalFeatureCount, 4, 1, fpSXF) == 1;
+    if (fpSXF == nullptr)
+    {
+        CPLError(CE_Failure, CPLE_None, "SXF File not openned for write");
+        return false;
+    }
+    VSIFSeekL(fpSXF, 400 + 40, SEEK_SET);
+    return VSIFWriteL(&nTotalFeatureCount, 4, 1, fpSXF) == 1;
 }
 
 static GInt32 GetChecksum(VSILFILE *fpSXF)
 {
-	VSIFSeekL(fpSXF, 0, SEEK_SET);
-	GInt32 nCheckSum = 0;
-	int nCounter = 0;
-	size_t nRead = 0;
-	char nByte;
-	while ((nRead = VSIFReadL(&nByte, 1, 1, fpSXF)) > 0)
-	{
-		nCounter += nRead;
-		if (nCounter <= 12 || nCounter > 16) // Skip checksum field
-		{
-			nCheckSum += nByte;
-		}
-	}
-	return nCheckSum;
+    VSIFSeekL(fpSXF, 0, SEEK_SET);
+    GInt32 nCheckSum = 0;
+    int nCounter = 0;
+    size_t nRead = 0;
+    char nByte;
+    while ((nRead = VSIFReadL(&nByte, 1, 1, fpSXF)) > 0)
+    {
+        nCounter += nRead;
+        if (nCounter <= 12 || nCounter > 16) // Skip checksum field
+        {
+            nCheckSum += nByte;
+        }
+    }
+    return nCheckSum;
 }
 
 bool SXFFile::WriteCheckSum()
 {
-	if (fpSXF == nullptr)
-	{
-		CPLError(CE_Failure, CPLE_None, "SXF File not openned for write");
-		return false;
-	}
+    if (fpSXF == nullptr)
+    {
+        CPLError(CE_Failure, CPLE_None, "SXF File not openned for write");
+        return false;
+    }
 
-	GInt32 nCheckSum = GetChecksum(fpSXF);
+    GInt32 nCheckSum = GetChecksum(fpSXF);
 
-	CPLDebug("SXF", "Checksum is %d", nCheckSum);
-	VSIFSeekL(fpSXF, 12, SEEK_SET);
+    CPLDebug("SXF", "Checksum is %d", nCheckSum);
+    VSIFSeekL(fpSXF, 12, SEEK_SET);
 
-	return VSIFWriteL(&nCheckSum, 4, 1, fpSXF) == 1;
+    return VSIFWriteL(&nCheckSum, 4, 1, fpSXF) == 1;
 }
 
 bool SXFFile::CheckSum() const
 {
-	if (fpSXF == nullptr)
-	{
-		CPLError(CE_Failure, CPLE_None, "SXF File not openned");
-		return false;
-	}
+    if (fpSXF == nullptr)
+    {
+        CPLError(CE_Failure, CPLE_None, "SXF File not openned");
+        return false;
+    }
 
-	GUInt32 nCheckSum = GetChecksum(fpSXF);
+    GUInt32 nCheckSum = GetChecksum(fpSXF);
 
-	VSIFSeekL(fpSXF, 12, SEEK_SET);
-	GInt32 nCheckSumRecorded = 0;
-	VSIFReadL(&nCheckSumRecorded, 4, 1, fpSXF);
+    VSIFSeekL(fpSXF, 12, SEEK_SET);
+    GInt32 nCheckSumRecorded = 0;
+    VSIFReadL(&nCheckSumRecorded, 4, 1, fpSXF);
 
-	return nCheckSumRecorded - nCheckSum == 0;
+    return nCheckSumRecorded - nCheckSum == 0;
 }
 
  GUInt32 SXFFile::CodeForGeometryType(enum SXFGeometryType eGeomType)
 {
-	switch (eGeomType)
-	{
-	case SXF_GT_Unknown:
-		return 0;
-	case SXF_GT_Line:
-		return DEFAULT_CLCODE_L;
-	case SXF_GT_Polygon:
-		return DEFAULT_CLCODE_S;
-	case SXF_GT_Point:
-		return DEFAULT_CLCODE_P;
-	case SXF_GT_Text:
-		return DEFAULT_CLCODE_T;
-	case SXF_GT_Vector:
-		return DEFAULT_CLCODE_V;
-	case SXF_GT_TextTemplate:
-		return DEFAULT_CLCODE_C;
-	default:
-		return 0;
-	}
+    switch (eGeomType)
+    {
+    case SXF_GT_Unknown:
+        return 0;
+    case SXF_GT_Line:
+        return DEFAULT_CLCODE_L;
+    case SXF_GT_Polygon:
+        return DEFAULT_CLCODE_S;
+    case SXF_GT_Point:
+        return DEFAULT_CLCODE_P;
+    case SXF_GT_Text:
+        return DEFAULT_CLCODE_T;
+    case SXF_GT_Vector:
+        return DEFAULT_CLCODE_V;
+    case SXF_GT_TextTemplate:
+        return DEFAULT_CLCODE_C;
+    default:
+        return 0;
+    }
 }

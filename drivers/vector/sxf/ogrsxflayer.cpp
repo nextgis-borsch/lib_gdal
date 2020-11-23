@@ -49,544 +49,544 @@ constexpr const char *TEXT = "TEXT";
 
 static enum SXFGeometryType OGRTypeToSXFType(OGRwkbGeometryType eType)
 {
-	switch (wkbFlatten(eType))
-	{
-	case wkbPoint:
-	case wkbMultiPoint:
-		return SXF_GT_Point;
-	case wkbMultiLineString:
-	case wkbLineString:
-		return SXF_GT_Line;
-	case wkbPolygon:
-	case wkbMultiPolygon:
-	case wkbPolyhedralSurface:
-	case wkbTIN:
-		return SXF_GT_Polygon;
+    switch (wkbFlatten(eType))
+    {
+    case wkbPoint:
+    case wkbMultiPoint:
+        return SXF_GT_Point;
+    case wkbMultiLineString:
+    case wkbLineString:
+        return SXF_GT_Line;
+    case wkbPolygon:
+    case wkbMultiPolygon:
+    case wkbPolyhedralSurface:
+    case wkbTIN:
+        return SXF_GT_Polygon;
 
-	default:
-		return SXF_GT_Unknown;
-	}
+    default:
+        return SXF_GT_Unknown;
+    }
 }
 
 static bool IsTypesCompatible(OGRwkbGeometryType eOGRType, 
-	enum SXFGeometryType eSXFType)
+    enum SXFGeometryType eSXFType)
 {
-	switch (eSXFType)
-	{
-	case SXF_GT_Line:
-		return wkbFlatten(eOGRType) == wkbLineString || 
-			wkbFlatten(eOGRType) == wkbMultiLineString;
-	case SXF_GT_Polygon:
-		return wkbFlatten(eOGRType) == wkbPolygon || 
-			wkbFlatten(eOGRType) == wkbMultiPolygon || 
-			wkbFlatten(eOGRType) == wkbPolyhedralSurface || 
-			wkbFlatten(eOGRType) == wkbTIN;
-	case SXF_GT_Point:
-		return wkbFlatten(eOGRType) == wkbPoint ||
-			wkbFlatten(eOGRType) == wkbMultiPoint;
-	case SXF_GT_Text:
-		return wkbFlatten(eOGRType) == wkbLineString ||
-			wkbFlatten(eOGRType) == wkbMultiLineString;
-	case SXF_GT_Vector:
-		return wkbFlatten(eOGRType) == wkbLineString ||
-			wkbFlatten(eOGRType) == wkbMultiLineString;
-	case SXF_GT_TextTemplate:
-		return wkbFlatten(eOGRType) == wkbPoint ||
-			wkbFlatten(eOGRType) == wkbMultiPoint;
+    switch (eSXFType)
+    {
+    case SXF_GT_Line:
+        return wkbFlatten(eOGRType) == wkbLineString || 
+            wkbFlatten(eOGRType) == wkbMultiLineString;
+    case SXF_GT_Polygon:
+        return wkbFlatten(eOGRType) == wkbPolygon || 
+            wkbFlatten(eOGRType) == wkbMultiPolygon || 
+            wkbFlatten(eOGRType) == wkbPolyhedralSurface || 
+            wkbFlatten(eOGRType) == wkbTIN;
+    case SXF_GT_Point:
+        return wkbFlatten(eOGRType) == wkbPoint ||
+            wkbFlatten(eOGRType) == wkbMultiPoint;
+    case SXF_GT_Text:
+        return wkbFlatten(eOGRType) == wkbLineString ||
+            wkbFlatten(eOGRType) == wkbMultiLineString;
+    case SXF_GT_Vector:
+        return wkbFlatten(eOGRType) == wkbLineString ||
+            wkbFlatten(eOGRType) == wkbMultiLineString;
+    case SXF_GT_TextTemplate:
+        return wkbFlatten(eOGRType) == wkbPoint ||
+            wkbFlatten(eOGRType) == wkbMultiPoint;
 
-	default:
-		return false;
-	}
+    default:
+        return false;
+    }
 }
 
 static bool IsFieldList(OGRFeatureDefn *poDef, int nIndex)
 {
-	auto poFieldDefn = poDef->GetFieldDefn(nIndex);
-	if (poFieldDefn)
-	{
-		return poFieldDefn->GetType() == OFTIntegerList ||
-			poFieldDefn->GetType() == OFTRealList ||
-			poFieldDefn->GetType() == OFTStringList;
-	}
-	return false;
+    auto poFieldDefn = poDef->GetFieldDefn(nIndex);
+    if (poFieldDefn)
+    {
+        return poFieldDefn->GetType() == OFTIntegerList ||
+            poFieldDefn->GetType() == OFTRealList ||
+            poFieldDefn->GetType() == OFTStringList;
+    }
+    return false;
 }
 
 static bool HasField(OGRFeatureDefn *poDef, const std::string &osFieldName)
 {
-	return poDef->GetFieldIndex(osFieldName.c_str()) >= 0;
+    return poDef->GetFieldIndex(osFieldName.c_str()) >= 0;
 }
 
 static size_t WritePointCount(GUInt32 nPointCount, GByte *pBuff)
 {
-	if (nPointCount > 65535)
-	{
-		memcpy(pBuff, &nPointCount, sizeof(GUInt32));
-		return sizeof(GUInt32);
-	}
-	else
-	{
-		memset(pBuff, 0, sizeof(GUInt16));
-		GUInt16 nPointCountSmall = static_cast<GUInt16>(nPointCount);
-		memcpy(pBuff + sizeof(GUInt16), &nPointCountSmall, sizeof(GUInt16));
-		return sizeof(GUInt16) * 2;
-	}
+    if (nPointCount > 65535)
+    {
+        memcpy(pBuff, &nPointCount, sizeof(GUInt32));
+        return sizeof(GUInt32);
+    }
+    else
+    {
+        memset(pBuff, 0, sizeof(GUInt16));
+        GUInt16 nPointCountSmall = static_cast<GUInt16>(nPointCount);
+        memcpy(pBuff + sizeof(GUInt16), &nPointCountSmall, sizeof(GUInt16));
+        return sizeof(GUInt16) * 2;
+    }
 }
 
 static size_t WritePoint(const OGRPoint *poPt, GByte *pBuff)
 {
-	size_t nOffset = 0;
-	double dfX = poPt->getX();
-	double dfY = poPt->getY();
-	size_t nSize = sizeof(double);
-	memcpy(pBuff + nOffset, &dfY, nSize);
-	nOffset += nSize;
-	memcpy(pBuff + nOffset, &dfX, nSize);
-	nOffset += nSize;
-	if (poPt->Is3D())
-	{
-		double dfZ = poPt->getZ();
-		memcpy(pBuff + nOffset, &dfZ, nSize);
-		nOffset += nSize;
-	}
-	return nOffset;
+    size_t nOffset = 0;
+    double dfX = poPt->getX();
+    double dfY = poPt->getY();
+    size_t nSize = sizeof(double);
+    memcpy(pBuff + nOffset, &dfY, nSize);
+    nOffset += nSize;
+    memcpy(pBuff + nOffset, &dfX, nSize);
+    nOffset += nSize;
+    if (poPt->Is3D())
+    {
+        double dfZ = poPt->getZ();
+        memcpy(pBuff + nOffset, &dfZ, nSize);
+        nOffset += nSize;
+    }
+    return nOffset;
 }
 
 static size_t WriteLine(const OGRLineString *poLn, GByte *pBuff)
 {
-	size_t nOffset = 0;
-	for (const auto &poPt : poLn)
-	{
-		nOffset += WritePoint(&poPt, pBuff + nOffset);
-	}
-	return nOffset;
+    size_t nOffset = 0;
+    for (const auto &poPt : poLn)
+    {
+        nOffset += WritePoint(&poPt, pBuff + nOffset);
+    }
+    return nOffset;
 }
 
 static GByte* WriteRings(const std::vector<OGRLinearRing*> &apoRings, 
-	size_t &nSize, size_t nPointSize)
+    size_t &nSize, size_t nPointSize)
 {
-	GUInt32 nPointCount = apoRings[0]->getNumPoints();
-	nSize = nPointSize * nPointCount;
-	auto pBuff = static_cast<GByte*>(CPLMalloc(nSize));
-	size_t nOffset = WriteLine(apoRings[0], pBuff);
-	
-	for (size_t i = 1; i < apoRings.size(); i++)
-	{
-		nPointCount = apoRings[i]->getNumPoints();
-		nSize += nPointSize * nPointCount + 4;
-		pBuff = static_cast<GByte*>(CPLRealloc(pBuff, nSize));
+    GUInt32 nPointCount = apoRings[0]->getNumPoints();
+    nSize = nPointSize * nPointCount;
+    auto pBuff = static_cast<GByte*>(CPLMalloc(nSize));
+    size_t nOffset = WriteLine(apoRings[0], pBuff);
+    
+    for (size_t i = 1; i < apoRings.size(); i++)
+    {
+        nPointCount = apoRings[i]->getNumPoints();
+        nSize += nPointSize * nPointCount + 4;
+        pBuff = static_cast<GByte*>(CPLRealloc(pBuff, nSize));
 
-		nOffset += WritePointCount(nPointCount, pBuff + nOffset);
-		nOffset += WriteLine(apoRings[i], pBuff + nOffset);
-	}
-	return pBuff;
+        nOffset += WritePointCount(nPointCount, pBuff + nOffset);
+        nOffset += WriteLine(apoRings[i], pBuff + nOffset);
+    }
+    return pBuff;
 }
 
 static GByte *WriteLineToBuffer(size_t nPointSize, GByte *pBuff, size_t &nOffset,
-	OGRLineString *poLn, SXFGeometryType eGeomType,
-	const char *pszText, size_t &nSize, const std::string &osEncoding)
+    OGRLineString *poLn, SXFGeometryType eGeomType,
+    const char *pszText, size_t &nSize, const std::string &osEncoding)
 {
-	GByte *pLocalBuff;
-	if (eGeomType == SXF_GT_Line)
-	{
-		GUInt32 nPointCount = poLn->getNumPoints();
-		nSize += nPointSize * nPointCount;
-		if (pBuff == nullptr)
-		{
-			pLocalBuff = static_cast<GByte*>(CPLMalloc(nSize));
-		}
-		else
-		{
-			nSize += 4;
-			pLocalBuff = static_cast<GByte*>(CPLRealloc(pBuff, nSize));
-			nOffset += WritePointCount(nPointCount, pLocalBuff + nOffset);
-		}
-		nOffset = WriteLine(poLn, pLocalBuff + nOffset);
-		return pLocalBuff;
-	}
-	else if (eGeomType == SXF_GT_Vector)
-	{
-		nSize += nPointSize * 2;
-		if (pBuff == nullptr)
-		{
-			pLocalBuff = static_cast<GByte*>(CPLMalloc(nSize));
-		}
-		else
-		{
-			nSize += 4;
-			pLocalBuff = static_cast<GByte*>(CPLRealloc(pBuff, nSize));
-			nOffset += WritePointCount(2, pLocalBuff + nOffset);
-		}
-		OGRPoint pt;
-		poLn->StartPoint(&pt);
-		nOffset += WritePoint(&pt, pLocalBuff + nOffset);
-		poLn->EndPoint(&pt);
-		nOffset += WritePoint(&pt, pLocalBuff + nOffset);
-		return pLocalBuff;
-	}
-	else if (eGeomType == SXF_GT_Text)
-	{
-		size_t nTextLenght = CPLStrnlen(pszText, 254);
-		size_t nPointCount = poLn->getNumPoints();
-		nSize += nPointSize * nPointCount + nTextLenght + 2;
-		if (pBuff == nullptr)
-		{
-			pLocalBuff = static_cast<GByte*>(CPLMalloc(nSize));
-		}
-		else
-		{
-			nSize += 4;
-			pLocalBuff = static_cast<GByte*>(CPLRealloc(pBuff, nSize));
-			nOffset += WritePointCount(nPointCount, pLocalBuff + nOffset);
-		}
-		nOffset += WriteLine(poLn, pLocalBuff + nOffset);
-		GByte nTextL = static_cast<GByte>(nTextLenght);
-		memcpy(pLocalBuff + nOffset, &nTextL, 1);
-		nOffset++;
-		// FIXME: Possible broken last character if text length greater 254
-		SXF::WriteEncString(pszText, pLocalBuff + nOffset, nTextLenght + 1,
-			osEncoding.c_str());
-		nOffset += nTextLenght + 1;
-		return pLocalBuff;
-	}
+    GByte *pLocalBuff;
+    if (eGeomType == SXF_GT_Line)
+    {
+        GUInt32 nPointCount = poLn->getNumPoints();
+        nSize += nPointSize * nPointCount;
+        if (pBuff == nullptr)
+        {
+            pLocalBuff = static_cast<GByte*>(CPLMalloc(nSize));
+        }
+        else
+        {
+            nSize += 4;
+            pLocalBuff = static_cast<GByte*>(CPLRealloc(pBuff, nSize));
+            nOffset += WritePointCount(nPointCount, pLocalBuff + nOffset);
+        }
+        nOffset = WriteLine(poLn, pLocalBuff + nOffset);
+        return pLocalBuff;
+    }
+    else if (eGeomType == SXF_GT_Vector)
+    {
+        nSize += nPointSize * 2;
+        if (pBuff == nullptr)
+        {
+            pLocalBuff = static_cast<GByte*>(CPLMalloc(nSize));
+        }
+        else
+        {
+            nSize += 4;
+            pLocalBuff = static_cast<GByte*>(CPLRealloc(pBuff, nSize));
+            nOffset += WritePointCount(2, pLocalBuff + nOffset);
+        }
+        OGRPoint pt;
+        poLn->StartPoint(&pt);
+        nOffset += WritePoint(&pt, pLocalBuff + nOffset);
+        poLn->EndPoint(&pt);
+        nOffset += WritePoint(&pt, pLocalBuff + nOffset);
+        return pLocalBuff;
+    }
+    else if (eGeomType == SXF_GT_Text)
+    {
+        size_t nTextLenght = CPLStrnlen(pszText, 254);
+        size_t nPointCount = poLn->getNumPoints();
+        nSize += nPointSize * nPointCount + nTextLenght + 2;
+        if (pBuff == nullptr)
+        {
+            pLocalBuff = static_cast<GByte*>(CPLMalloc(nSize));
+        }
+        else
+        {
+            nSize += 4;
+            pLocalBuff = static_cast<GByte*>(CPLRealloc(pBuff, nSize));
+            nOffset += WritePointCount(nPointCount, pLocalBuff + nOffset);
+        }
+        nOffset += WriteLine(poLn, pLocalBuff + nOffset);
+        GByte nTextL = static_cast<GByte>(nTextLenght);
+        memcpy(pLocalBuff + nOffset, &nTextL, 1);
+        nOffset++;
+        // FIXME: Possible broken last character if text length greater 254
+        SXF::WriteEncString(pszText, pLocalBuff + nOffset, nTextLenght + 1,
+            osEncoding.c_str());
+        nOffset += nTextLenght + 1;
+        return pLocalBuff;
+    }
 }
 
 static GByte *WriteGeometryToBuffer(OGRGeometry *poGeom, SXFGeometryType eGeomType,
-	const char *pszText, size_t &nSize, const std::string &osEncoding)
+    const char *pszText, size_t &nSize, const std::string &osEncoding)
 {
-	if (poGeom->IsEmpty())
-	{
-		return nullptr;
-	}
+    if (poGeom->IsEmpty())
+    {
+        return nullptr;
+    }
 
-	auto nPointSize = sizeof(double) * (poGeom->Is3D() ? 3 : 2);
+    auto nPointSize = sizeof(double) * (poGeom->Is3D() ? 3 : 2);
 
-	if (wkbFlatten(poGeom->getGeometryType()) == wkbPoint)
-	{
-		nSize = nPointSize;
-		GByte *pBuff = static_cast<GByte*>(CPLMalloc(nSize));
-		WritePoint(static_cast<OGRPoint*>(poGeom), pBuff);
-		return pBuff;
-	}
-	else if (wkbFlatten(poGeom->getGeometryType()) == wkbMultiPoint)
-	{
-		auto poMPt = static_cast<OGRMultiPoint*>(poGeom);
-		nSize = nPointSize * poMPt->getNumGeometries() + 
-			4 * (poMPt->getNumGeometries() - 1);
-		GByte *pBuff = static_cast<GByte*>(CPLMalloc(nSize));
-		size_t nOffset = 0;
-		for (int i = 0; i < poMPt->getNumGeometries(); i++)
-		{
-			auto poPt = static_cast<OGRPoint*>(poMPt->getGeometryRef(i));
-			nOffset += WritePoint(poPt, pBuff + nOffset);
-			if (i < poMPt->getNumGeometries() - 1)
-			{
-				memset(pBuff + nOffset, 0, sizeof(GUInt16));
-				nOffset += sizeof(GUInt16);
-				memset(pBuff + nOffset, 1, sizeof(GUInt16));
-				nOffset += sizeof(GUInt16);
-			}
-		}
-		return pBuff;
-	}
-	else if (wkbFlatten(poGeom->getGeometryType()) == wkbLineString)
-	{
-		auto poLn = static_cast<OGRLineString*>(poGeom);
-		size_t nOffset = 0;
-		return WriteLineToBuffer(nPointSize, nullptr, nOffset, poLn,
-			eGeomType, pszText, nSize, osEncoding);
-	}
-	else if (wkbFlatten(poGeom->getGeometryType()) == wkbMultiLineString)
-	{
-		auto poMLn = static_cast<OGRMultiLineString*>(poGeom);
-		// Get first main line
-		auto poLn = static_cast<OGRLineString*>(poMLn->getGeometryRef(0));
-		size_t nOffset = 0;
-		GByte *pBuff = WriteLineToBuffer(nPointSize, nullptr, nOffset, poLn,
-			eGeomType, pszText, nSize, osEncoding);
+    if (wkbFlatten(poGeom->getGeometryType()) == wkbPoint)
+    {
+        nSize = nPointSize;
+        GByte *pBuff = static_cast<GByte*>(CPLMalloc(nSize));
+        WritePoint(static_cast<OGRPoint*>(poGeom), pBuff);
+        return pBuff;
+    }
+    else if (wkbFlatten(poGeom->getGeometryType()) == wkbMultiPoint)
+    {
+        auto poMPt = static_cast<OGRMultiPoint*>(poGeom);
+        nSize = nPointSize * poMPt->getNumGeometries() + 
+            4 * (poMPt->getNumGeometries() - 1);
+        GByte *pBuff = static_cast<GByte*>(CPLMalloc(nSize));
+        size_t nOffset = 0;
+        for (int i = 0; i < poMPt->getNumGeometries(); i++)
+        {
+            auto poPt = static_cast<OGRPoint*>(poMPt->getGeometryRef(i));
+            nOffset += WritePoint(poPt, pBuff + nOffset);
+            if (i < poMPt->getNumGeometries() - 1)
+            {
+                memset(pBuff + nOffset, 0, sizeof(GUInt16));
+                nOffset += sizeof(GUInt16);
+                memset(pBuff + nOffset, 1, sizeof(GUInt16));
+                nOffset += sizeof(GUInt16);
+            }
+        }
+        return pBuff;
+    }
+    else if (wkbFlatten(poGeom->getGeometryType()) == wkbLineString)
+    {
+        auto poLn = static_cast<OGRLineString*>(poGeom);
+        size_t nOffset = 0;
+        return WriteLineToBuffer(nPointSize, nullptr, nOffset, poLn,
+            eGeomType, pszText, nSize, osEncoding);
+    }
+    else if (wkbFlatten(poGeom->getGeometryType()) == wkbMultiLineString)
+    {
+        auto poMLn = static_cast<OGRMultiLineString*>(poGeom);
+        // Get first main line
+        auto poLn = static_cast<OGRLineString*>(poMLn->getGeometryRef(0));
+        size_t nOffset = 0;
+        GByte *pBuff = WriteLineToBuffer(nPointSize, nullptr, nOffset, poLn,
+            eGeomType, pszText, nSize, osEncoding);
 
-		for (int i = 1; i < poMLn->getNumGeometries(); i++)
-		{
-			poLn = static_cast<OGRLineString*>(poMLn->getGeometryRef(i));
-			pBuff = WriteLineToBuffer(nPointSize, pBuff, nOffset, poLn,
-				eGeomType, pszText, nSize, osEncoding);
-		}
-		return pBuff;
-	}
-	else if (wkbFlatten(poGeom->getGeometryType()) == wkbPolygon)
-	{
-		auto poPlg = static_cast<OGRPolygon*>(poGeom);
-		std::vector<OGRLinearRing*> apoRings;
-		apoRings.push_back(poPlg->getExteriorRing());
-		for (int i = 0; i < poPlg->getNumInteriorRings(); i++)
-		{
-			apoRings.push_back(poPlg->getInteriorRing(i));
-		}
-		return WriteRings(apoRings, nSize, nPointSize);
-	}
-	else if (wkbFlatten(poGeom->getGeometryType()) == wkbMultiPolygon)
-	{
-		auto poMPlg = static_cast<OGRMultiPolygon*>(poGeom);
-		std::vector<OGRLinearRing*> apoRings;
-		for (int i = 0; i < poMPlg->getNumGeometries(); i++)
-		{
-			auto poPlg = static_cast<OGRPolygon*>(poMPlg->getGeometryRef(i));
-			apoRings.push_back(poPlg->getExteriorRing());
-			for (int j = 0; j < poPlg->getNumInteriorRings(); j++)
-			{
-				apoRings.push_back(poPlg->getInteriorRing(j));
-			}
-		}
-		return WriteRings(apoRings, nSize, nPointSize);
-	}
-	else if (wkbFlatten(poGeom->getGeometryType()) == wkbPolyhedralSurface ||
-		wkbFlatten(poGeom->getGeometryType()) == wkbTIN)
-	{
-		auto poGeomToDelete = std::unique_ptr<OGRGeometry>(
-			OGRGeometryFactory::forceTo(poGeom->clone(),
-				wkbMultiPolygon, nullptr));
-		auto poMPlg = static_cast<OGRMultiPolygon*>(poGeomToDelete.get());
-		std::vector<OGRLinearRing*> apoRings;
-		for (int i = 0; i < poMPlg->getNumGeometries(); i++)
-		{
-			auto poPlg = static_cast<OGRPolygon*>(poMPlg->getGeometryRef(i));
-			apoRings.push_back(poPlg->getExteriorRing());
-			for (int j = 0; j < poPlg->getNumInteriorRings(); j++)
-			{
-				apoRings.push_back(poPlg->getInteriorRing(j));
-			}
-		}
-		return WriteRings(apoRings, nSize, nPointSize);
-	}
+        for (int i = 1; i < poMLn->getNumGeometries(); i++)
+        {
+            poLn = static_cast<OGRLineString*>(poMLn->getGeometryRef(i));
+            pBuff = WriteLineToBuffer(nPointSize, pBuff, nOffset, poLn,
+                eGeomType, pszText, nSize, osEncoding);
+        }
+        return pBuff;
+    }
+    else if (wkbFlatten(poGeom->getGeometryType()) == wkbPolygon)
+    {
+        auto poPlg = static_cast<OGRPolygon*>(poGeom);
+        std::vector<OGRLinearRing*> apoRings;
+        apoRings.push_back(poPlg->getExteriorRing());
+        for (int i = 0; i < poPlg->getNumInteriorRings(); i++)
+        {
+            apoRings.push_back(poPlg->getInteriorRing(i));
+        }
+        return WriteRings(apoRings, nSize, nPointSize);
+    }
+    else if (wkbFlatten(poGeom->getGeometryType()) == wkbMultiPolygon)
+    {
+        auto poMPlg = static_cast<OGRMultiPolygon*>(poGeom);
+        std::vector<OGRLinearRing*> apoRings;
+        for (int i = 0; i < poMPlg->getNumGeometries(); i++)
+        {
+            auto poPlg = static_cast<OGRPolygon*>(poMPlg->getGeometryRef(i));
+            apoRings.push_back(poPlg->getExteriorRing());
+            for (int j = 0; j < poPlg->getNumInteriorRings(); j++)
+            {
+                apoRings.push_back(poPlg->getInteriorRing(j));
+            }
+        }
+        return WriteRings(apoRings, nSize, nPointSize);
+    }
+    else if (wkbFlatten(poGeom->getGeometryType()) == wkbPolyhedralSurface ||
+        wkbFlatten(poGeom->getGeometryType()) == wkbTIN)
+    {
+        auto poGeomToDelete = std::unique_ptr<OGRGeometry>(
+            OGRGeometryFactory::forceTo(poGeom->clone(),
+                wkbMultiPolygon, nullptr));
+        auto poMPlg = static_cast<OGRMultiPolygon*>(poGeomToDelete.get());
+        std::vector<OGRLinearRing*> apoRings;
+        for (int i = 0; i < poMPlg->getNumGeometries(); i++)
+        {
+            auto poPlg = static_cast<OGRPolygon*>(poMPlg->getGeometryRef(i));
+            apoRings.push_back(poPlg->getExteriorRing());
+            for (int j = 0; j < poPlg->getNumInteriorRings(); j++)
+            {
+                apoRings.push_back(poPlg->getInteriorRing(j));
+            }
+        }
+        return WriteRings(apoRings, nSize, nPointSize);
+    }
 
-	return nullptr;
+    return nullptr;
 }
 
 static GByte *WriteAttributesToBuffer(OGRFeature *poFeature, size_t &nSize,
-	const std::map<std::string, int> &mnClassCodes, const std::string &osEncoding)
+    const std::map<std::string, int> &mnClassCodes, const std::string &osEncoding)
 {
-	GByte *pBuff = nullptr;
-	nSize = 0;
-	auto poDefn = poFeature->GetDefnRef();
-	for (int i = 0; i < poDefn->GetFieldCount(); i++)
-	{
-		auto poField = poDefn->GetFieldDefn(i);
-		if (EQUAL(poField->GetNameRef(), FID) ||
-			EQUAL(poField->GetNameRef(), CLCODE) ||
-			EQUAL(poField->GetNameRef(), CLNAME) ||
-			EQUAL(poField->GetNameRef(), OT) ||
-			EQUAL(poField->GetNameRef(), GROUP_NUMBER) ||
-			EQUAL(poField->GetNameRef(), NUMBER_IN_GROUP) ||
-			EQUAL(poField->GetNameRef(), OBJECTNUMB) ||
-			EQUAL(poField->GetNameRef(), ANGLE) ||
-			EQUAL(poField->GetNameRef(), TEXT))
-		{
-			// Don't write system fields into the attributes
-			continue;
-		}
+    GByte *pBuff = nullptr;
+    nSize = 0;
+    auto poDefn = poFeature->GetDefnRef();
+    for (int i = 0; i < poDefn->GetFieldCount(); i++)
+    {
+        auto poField = poDefn->GetFieldDefn(i);
+        if (EQUAL(poField->GetNameRef(), FID) ||
+            EQUAL(poField->GetNameRef(), CLCODE) ||
+            EQUAL(poField->GetNameRef(), CLNAME) ||
+            EQUAL(poField->GetNameRef(), OT) ||
+            EQUAL(poField->GetNameRef(), GROUP_NUMBER) ||
+            EQUAL(poField->GetNameRef(), NUMBER_IN_GROUP) ||
+            EQUAL(poField->GetNameRef(), OBJECTNUMB) ||
+            EQUAL(poField->GetNameRef(), ANGLE) ||
+            EQUAL(poField->GetNameRef(), TEXT))
+        {
+            // Don't write system fields into the attributes
+            continue;
+        }
 
-		int nCode = OGRSXFLayer::GetFieldNameCode(poField->GetNameRef());
-		if (nCode == -1)
-		{
-			auto key = OGRSXFLayer::CreateFieldKey(poField);
-			auto it = mnClassCodes.find(key);
-			if (it != mnClassCodes.end())
-			{
-				nCode = it->second;
-			}
-		}
+        int nCode = OGRSXFLayer::GetFieldNameCode(poField->GetNameRef());
+        if (nCode == -1)
+        {
+            auto key = OGRSXFLayer::CreateFieldKey(poField);
+            auto it = mnClassCodes.find(key);
+            if (it != mnClassCodes.end())
+            {
+                nCode = it->second;
+            }
+        }
 
-		GByte iType;
-		switch (poField->GetType())
-		{
-		case OFTInteger:
-		case OFTIntegerList:
-		case OFTInteger64:
-		case OFTInteger64List:
-			iType = 4;
-			break;
-		case OFTReal:
-		case OFTRealList:
-			iType = 8;
-			break;
-		case OFTString:
-		case OFTStringList:
-		case OFTDate:
-		case OFTTime:
-		case OFTDateTime:
-			iType = 126; // Default ANSI
-			break;
-		default:
-			return nullptr;
-		}
+        GByte iType;
+        switch (poField->GetType())
+        {
+        case OFTInteger:
+        case OFTIntegerList:
+        case OFTInteger64:
+        case OFTInteger64List:
+            iType = 4;
+            break;
+        case OFTReal:
+        case OFTRealList:
+            iType = 8;
+            break;
+        case OFTString:
+        case OFTStringList:
+        case OFTDate:
+        case OFTTime:
+        case OFTDateTime:
+            iType = 126; // Default ANSI
+            break;
+        default:
+            return nullptr;
+        }
 
-		SXFRecordAttributeInfo stRecordHeader = {
-			static_cast<GUInt16>(nCode),
-			iType,
-			0
-		};
+        SXFRecordAttributeInfo stRecordHeader = {
+            static_cast<GUInt16>(nCode),
+            iType,
+            0
+        };
 
-		switch (iType)
-		{
-		case 4: // Integer
-		{
-			if (poField->GetType() == OFTInteger ||
-				poField->GetType() == OFTInteger64)
-			{ // Possible lose data for integer64 as SXF can only hold 4 or 8 bit. 
-				size_t nCurrentSize = nSize;
-				nSize += sizeof(SXFRecordAttributeInfo) + sizeof(GInt32);
-				pBuff = static_cast<GByte*>(CPLRealloc(pBuff, nSize));
-				memcpy(pBuff + nCurrentSize, &stRecordHeader, 
-					sizeof(SXFRecordAttributeInfo));
-				nCurrentSize += sizeof(SXFRecordAttributeInfo);
-				GInt32 val = poFeature->GetFieldAsInteger(i);
-				memcpy(pBuff + nCurrentSize, &val, sizeof(GInt32));
-			}
-			else // List
-			{
-				int nCount = 0;
-				auto anList = poFeature->GetFieldAsIntegerList(i, &nCount);
-				for (int j = 0; j < nCount; j++)
-				{
-					size_t nCurrentSize = nSize;
-					nSize += sizeof(SXFRecordAttributeInfo) + sizeof(GInt32);
-					pBuff = static_cast<GByte*>(CPLRealloc(pBuff, nSize));
-					memcpy(pBuff + nCurrentSize, &stRecordHeader, 
-						sizeof(SXFRecordAttributeInfo));
-					nCurrentSize += sizeof(SXFRecordAttributeInfo);
-					GInt32 val = anList[j];
-					memcpy(pBuff + nCurrentSize, &val, sizeof(GInt32));
-				}
-			}
-			break;
-		}
-		case 8:
-		{
-			if (poField->GetType() == OFTReal)
-			{
-				size_t nCurrentSize = nSize;
-				nSize += sizeof(SXFRecordAttributeInfo) + sizeof(double);
-				pBuff = static_cast<GByte*>(CPLRealloc(pBuff, nSize));
-				memcpy(pBuff + nCurrentSize, &stRecordHeader, 
-					sizeof(SXFRecordAttributeInfo));
-				nCurrentSize += sizeof(SXFRecordAttributeInfo);
-				double val = poFeature->GetFieldAsDouble(i);
-				memcpy(pBuff + nCurrentSize, &val, sizeof(double));
-			}
-			else
-			{
-				int nCount = 0;
-				auto anList = poFeature->GetFieldAsDoubleList(i, &nCount);
-				for (int j = 0; j < nCount; j++)
-				{
-					size_t nCurrentSize = nSize;
-					nSize += sizeof(SXFRecordAttributeInfo) + sizeof(double);
-					pBuff = static_cast<GByte*>(CPLRealloc(pBuff, nSize));
-					memcpy(pBuff + nCurrentSize, &stRecordHeader, 
-						sizeof(SXFRecordAttributeInfo));
-					nCurrentSize += sizeof(SXFRecordAttributeInfo);
-					double val = anList[j];
-					memcpy(pBuff + nCurrentSize, &val, sizeof(double));
-				}
-			}
-			break;
-		}
-		case 126:
-		{
-			if (poField->GetType() == OFTStringList)
-			{
-				CPLStringList aosList(poFeature->GetFieldAsStringList(i));
-				for (int j = 0; j < aosList.size(); j++)
-				{
-					auto pszText = aosList[j];
-					auto pszRecodedText = CPLRecode(pszText, CPL_ENC_UTF8, osEncoding.c_str());
-					GByte nTextSize = static_cast<GByte>(CPLStrnlen(pszRecodedText, 254));
-					GUInt32 nNewTextSize = nTextSize + 1;
-					stRecordHeader.nScale = nTextSize;
-					size_t nCurrentSize = nSize;
-					nSize += sizeof(SXFRecordAttributeInfo) + nNewTextSize;
-					pBuff = static_cast<GByte*>(CPLRealloc(pBuff, nSize));
-					memcpy(pBuff + nCurrentSize, &stRecordHeader, 
-						sizeof(SXFRecordAttributeInfo));
-					nCurrentSize += sizeof(SXFRecordAttributeInfo);
-					memcpy(pBuff + nCurrentSize, pszRecodedText, nTextSize);
-					nCurrentSize += nTextSize;
-					memset(pBuff + nCurrentSize, 0, 1);
-					CPLFree(pszRecodedText);
-				}
-			}
-			else
-			{
-				auto pszText = poFeature->GetFieldAsString(i);
-				auto pszRecodedText = CPLRecode(pszText, CPL_ENC_UTF8, osEncoding.c_str());
-				GByte nTextSize = static_cast<GByte>(CPLStrnlen(pszRecodedText, 254));
-				GUInt32 nNewTextSize = nTextSize + 1;
-				stRecordHeader.nScale = nTextSize;
-				size_t nCurrentSize = nSize;
-				nSize += sizeof(SXFRecordAttributeInfo) + nNewTextSize;
-				pBuff = static_cast<GByte*>(CPLRealloc(pBuff, nSize));
-				memcpy(pBuff + nCurrentSize, &stRecordHeader, 
-					sizeof(SXFRecordAttributeInfo));
-				nCurrentSize += sizeof(SXFRecordAttributeInfo);
-				memcpy(pBuff + nCurrentSize, pszRecodedText, nTextSize);
-				nCurrentSize += nTextSize;
-				memset(pBuff + nCurrentSize, 0, 1);
-				CPLFree(pszRecodedText);
-			}
-			break;
-		}
-		default:
-			break;
-		}
+        switch (iType)
+        {
+        case 4: // Integer
+        {
+            if (poField->GetType() == OFTInteger ||
+                poField->GetType() == OFTInteger64)
+            { // Possible lose data for integer64 as SXF can only hold 4 or 8 bit. 
+                size_t nCurrentSize = nSize;
+                nSize += sizeof(SXFRecordAttributeInfo) + sizeof(GInt32);
+                pBuff = static_cast<GByte*>(CPLRealloc(pBuff, nSize));
+                memcpy(pBuff + nCurrentSize, &stRecordHeader, 
+                    sizeof(SXFRecordAttributeInfo));
+                nCurrentSize += sizeof(SXFRecordAttributeInfo);
+                GInt32 val = poFeature->GetFieldAsInteger(i);
+                memcpy(pBuff + nCurrentSize, &val, sizeof(GInt32));
+            }
+            else // List
+            {
+                int nCount = 0;
+                auto anList = poFeature->GetFieldAsIntegerList(i, &nCount);
+                for (int j = 0; j < nCount; j++)
+                {
+                    size_t nCurrentSize = nSize;
+                    nSize += sizeof(SXFRecordAttributeInfo) + sizeof(GInt32);
+                    pBuff = static_cast<GByte*>(CPLRealloc(pBuff, nSize));
+                    memcpy(pBuff + nCurrentSize, &stRecordHeader, 
+                        sizeof(SXFRecordAttributeInfo));
+                    nCurrentSize += sizeof(SXFRecordAttributeInfo);
+                    GInt32 val = anList[j];
+                    memcpy(pBuff + nCurrentSize, &val, sizeof(GInt32));
+                }
+            }
+            break;
+        }
+        case 8:
+        {
+            if (poField->GetType() == OFTReal)
+            {
+                size_t nCurrentSize = nSize;
+                nSize += sizeof(SXFRecordAttributeInfo) + sizeof(double);
+                pBuff = static_cast<GByte*>(CPLRealloc(pBuff, nSize));
+                memcpy(pBuff + nCurrentSize, &stRecordHeader, 
+                    sizeof(SXFRecordAttributeInfo));
+                nCurrentSize += sizeof(SXFRecordAttributeInfo);
+                double val = poFeature->GetFieldAsDouble(i);
+                memcpy(pBuff + nCurrentSize, &val, sizeof(double));
+            }
+            else
+            {
+                int nCount = 0;
+                auto anList = poFeature->GetFieldAsDoubleList(i, &nCount);
+                for (int j = 0; j < nCount; j++)
+                {
+                    size_t nCurrentSize = nSize;
+                    nSize += sizeof(SXFRecordAttributeInfo) + sizeof(double);
+                    pBuff = static_cast<GByte*>(CPLRealloc(pBuff, nSize));
+                    memcpy(pBuff + nCurrentSize, &stRecordHeader, 
+                        sizeof(SXFRecordAttributeInfo));
+                    nCurrentSize += sizeof(SXFRecordAttributeInfo);
+                    double val = anList[j];
+                    memcpy(pBuff + nCurrentSize, &val, sizeof(double));
+                }
+            }
+            break;
+        }
+        case 126:
+        {
+            if (poField->GetType() == OFTStringList)
+            {
+                CPLStringList aosList(poFeature->GetFieldAsStringList(i));
+                for (int j = 0; j < aosList.size(); j++)
+                {
+                    auto pszText = aosList[j];
+                    auto pszRecodedText = CPLRecode(pszText, CPL_ENC_UTF8, osEncoding.c_str());
+                    GByte nTextSize = static_cast<GByte>(CPLStrnlen(pszRecodedText, 254));
+                    GUInt32 nNewTextSize = nTextSize + 1;
+                    stRecordHeader.nScale = nTextSize;
+                    size_t nCurrentSize = nSize;
+                    nSize += sizeof(SXFRecordAttributeInfo) + nNewTextSize;
+                    pBuff = static_cast<GByte*>(CPLRealloc(pBuff, nSize));
+                    memcpy(pBuff + nCurrentSize, &stRecordHeader, 
+                        sizeof(SXFRecordAttributeInfo));
+                    nCurrentSize += sizeof(SXFRecordAttributeInfo);
+                    memcpy(pBuff + nCurrentSize, pszRecodedText, nTextSize);
+                    nCurrentSize += nTextSize;
+                    memset(pBuff + nCurrentSize, 0, 1);
+                    CPLFree(pszRecodedText);
+                }
+            }
+            else
+            {
+                auto pszText = poFeature->GetFieldAsString(i);
+                auto pszRecodedText = CPLRecode(pszText, CPL_ENC_UTF8, osEncoding.c_str());
+                GByte nTextSize = static_cast<GByte>(CPLStrnlen(pszRecodedText, 254));
+                GUInt32 nNewTextSize = nTextSize + 1;
+                stRecordHeader.nScale = nTextSize;
+                size_t nCurrentSize = nSize;
+                nSize += sizeof(SXFRecordAttributeInfo) + nNewTextSize;
+                pBuff = static_cast<GByte*>(CPLRealloc(pBuff, nSize));
+                memcpy(pBuff + nCurrentSize, &stRecordHeader, 
+                    sizeof(SXFRecordAttributeInfo));
+                nCurrentSize += sizeof(SXFRecordAttributeInfo);
+                memcpy(pBuff + nCurrentSize, pszRecodedText, nTextSize);
+                nCurrentSize += nTextSize;
+                memset(pBuff + nCurrentSize, 0, 1);
+                CPLFree(pszRecodedText);
+            }
+            break;
+        }
+        default:
+            break;
+        }
 
-	}
-	return pBuff;
+    }
+    return pBuff;
 }
 
 static void AddCode(OGRFeature *poFeature, int nID, 
-	std::map<std::string, std::string> &mnClassificators)
+    std::map<std::string, std::string> &mnClassificators)
 {
-	auto nClcodeIndex = poFeature->GetFieldIndex(CLCODE);
-	if (nClcodeIndex != -1 && poFeature->GetGeometryRef())
-	{
-		std::string osName;
-		auto nClnameIndex = poFeature->GetFieldIndex(CLNAME);
-		if (nClnameIndex != -1)
-		{
-			osName = poFeature->GetFieldAsString(nClnameIndex);
-		}
-		else
-		{
-			osName = poFeature->GetFieldAsString(nClcodeIndex);
-		}
+    auto nClcodeIndex = poFeature->GetFieldIndex(CLCODE);
+    if (nClcodeIndex != -1 && poFeature->GetGeometryRef())
+    {
+        std::string osName;
+        auto nClnameIndex = poFeature->GetFieldIndex(CLNAME);
+        if (nClnameIndex != -1)
+        {
+            osName = poFeature->GetFieldAsString(nClnameIndex);
+        }
+        else
+        {
+            osName = poFeature->GetFieldAsString(nClcodeIndex);
+        }
 
-		std::string osCode, osDefaultClass;
-		auto nOtIndex = poFeature->GetFieldIndex(OT);
-		if (nOtIndex != -1)
-		{
-			osCode = poFeature->GetFieldAsString(nOtIndex);
-		}
-		else
-		{
-			auto eType = 
-				OGRTypeToSXFType(poFeature->GetGeometryRef()->getGeometryType());
-			osCode = SXFFile::SXFTypeToString(eType);
+        std::string osCode, osDefaultClass;
+        auto nOtIndex = poFeature->GetFieldIndex(OT);
+        if (nOtIndex != -1)
+        {
+            osCode = poFeature->GetFieldAsString(nOtIndex);
+        }
+        else
+        {
+            auto eType = 
+                OGRTypeToSXFType(poFeature->GetGeometryRef()->getGeometryType());
+            osCode = SXFFile::SXFTypeToString(eType);
 
-			osDefaultClass = 
-				std::to_string(nID + SXFFile::CodeForGeometryType(eType));
-		}
+            osDefaultClass = 
+                std::to_string(nID + SXFFile::CodeForGeometryType(eType));
+        }
 
-		std::string osClass = poFeature->GetFieldAsString(nClcodeIndex);
-		if (osClass.empty())
-		{
-			osClass = osDefaultClass;
-			if (osName.empty())
-			{
-				osName = osCode + osClass;
-			}
-		}
+        std::string osClass = poFeature->GetFieldAsString(nClcodeIndex);
+        if (osClass.empty())
+        {
+            osClass = osDefaultClass;
+            if (osName.empty())
+            {
+                osName = osCode + osClass;
+            }
+        }
 
-		mnClassificators[osCode + osClass] = osName;
-	}
+        mnClassificators[osCode + osClass] = osName;
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -594,17 +594,17 @@ static void AddCode(OGRFeature *poFeature, int nID,
 ////////////////////////////////////////////////////////////////////////////
 
 OGRSXFLayer::OGRSXFLayer(OGRSXFDataSource *poDSIn, int nIDIn,
-	const char *pszLayerName, const std::vector<SXFField> &astFields, 
-	bool bIsNewBehavior) :
-	OGRMemLayer(pszLayerName, 
-		const_cast<OGRSpatialReference*>(poDSIn->GetSpatialRef()), wkbUnknown),
-	nID(nIDIn * 10000000),
-	poDS(poDSIn),
+    const char *pszLayerName, const std::vector<SXFField> &astFields, 
+    bool bIsNewBehavior) :
+    OGRMemLayer(pszLayerName, 
+        const_cast<OGRSpatialReference*>(poDSIn->GetSpatialRef()), wkbUnknown),
+    nID(nIDIn * 10000000),
+    poDS(poDSIn),
     osFIDColumn(FID),
     bIsNewBehavior(bIsNewBehavior)
 {
 
-	auto poFeatureDefn = GetLayerDefn();
+    auto poFeatureDefn = GetLayerDefn();
     OGRFieldDefn oFIDField(osFIDColumn.c_str(), OFTInteger64);
     poFeatureDefn->AddFieldDefn(&oFIDField);
 
@@ -654,13 +654,13 @@ OGRSXFLayer::OGRSXFLayer(OGRSXFDataSource *poDSIn, int nIDIn,
     oTextField.SetWidth(255);
     poFeatureDefn->AddFieldDefn( &oTextField );
 
-	if (!poDS->Encoding().empty())
-	{
-		SetAdvertizeUTF8(CPLCanRecode("test", poDS->Encoding().c_str(), 
-			CPL_ENC_UTF8));
-	}
-	
-	SetUpdatable(poDS->GetAccess() == GA_Update);
+    if (!poDS->Encoding().empty())
+    {
+        SetAdvertizeUTF8(CPLCanRecode("test", poDS->Encoding().c_str(), 
+            CPL_ENC_UTF8));
+    }
+    
+    SetUpdatable(poDS->GetAccess() == GA_Update);
 }
 
 /************************************************************************/
@@ -670,7 +670,7 @@ OGRSXFLayer::OGRSXFLayer(OGRSXFDataSource *poDSIn, int nIDIn,
 /************************************************************************/
 
 void OGRSXFLayer::AddClassifyCode(const std::string &osClassCode, 
-	const std::string &osName)
+    const std::string &osName)
 {
     if (osName.empty())
     {
@@ -683,21 +683,21 @@ void OGRSXFLayer::AddClassifyCode(const std::string &osClassCode,
 }
 
 bool OGRSXFLayer::AddRecord(GIntBig nFID, const std::string &osClassCode, 
-	const SXFFile &oSXF, vsi_l_offset nOffset, int nGroupID, int nSubObjectID)
+    const SXFFile &oSXF, vsi_l_offset nOffset, int nGroupID, int nSubObjectID)
 {
     if( mnClassificators.find(osClassCode) != mnClassificators.end() ||
         EQUAL(GetName(), "Not_Classified") )
     {
-		VSIFSeekL(oSXF.File(), nOffset, SEEK_SET);
-		auto poFeature = GetRawFeature(oSXF, nGroupID, nSubObjectID);
-		if (poFeature)
-		{
-			poFeature->SetFID(nFID);
-			// FIXME: Do we need this? poFeature->SetField(osFIDColumn.c_str(), nFID);
-			SetUpdatable(true);  // Temporary toggle on updatable flag.
-			CPL_IGNORE_RET_VAL(OGRMemLayer::SetFeature(poFeature));
-			SetUpdatable(poDS->GetAccess() == GA_Update);
-		}
+        VSIFSeekL(oSXF.File(), nOffset, SEEK_SET);
+        auto poFeature = GetRawFeature(oSXF, nGroupID, nSubObjectID);
+        if (poFeature)
+        {
+            poFeature->SetFID(nFID);
+            // FIXME: Do we need this? poFeature->SetField(osFIDColumn.c_str(), nFID);
+            SetUpdatable(true);  // Temporary toggle on updatable flag.
+            CPL_IGNORE_RET_VAL(OGRMemLayer::SetFeature(poFeature));
+            SetUpdatable(poDS->GetAccess() == GA_Update);
+        }
         return true;
     }
     return false;
@@ -711,9 +711,9 @@ OGRErr OGRSXFLayer::GetExtent(OGREnvelope *psExtent, int bForce)
         return OGRLayer::GetExtent(psExtent, bForce);
     }
     else
-	{
-		return poDS->GetExtent(psExtent);
-	}
+    {
+        return poDS->GetExtent(psExtent);
+    }
 }
 
 OGRErr OGRSXFLayer::GetExtent(int iGeomField, OGREnvelope *psExtent, int bForce)
@@ -725,13 +725,13 @@ int OGRSXFLayer::TestCapability( const char * pszCap )
 {
 
 
-	if (EQUAL(pszCap, OLCCurveGeometries) || EQUAL(pszCap, OLCMeasuredGeometries))
-		return FALSE;
-	return OGRMemLayer::TestCapability(pszCap);
+    if (EQUAL(pszCap, OLCCurveGeometries) || EQUAL(pszCap, OLCMeasuredGeometries))
+        return FALSE;
+    return OGRMemLayer::TestCapability(pszCap);
 }
 
 GUInt32 OGRSXFLayer::TranslateXYH(const SXFFile &oSXF, const SXFRecordHeader &header, 
-	GByte *psBuff, GUInt32 nBufLen, double *dfX, double *dfY, double *dfH )
+    GByte *psBuff, GUInt32 nBufLen, double *dfX, double *dfY, double *dfH )
 {
 /**
  * TODO : Take into account information given in the passport
@@ -755,7 +755,7 @@ GUInt32 OGRSXFLayer::TranslateXYH(const SXFFile &oSXF, const SXFRecordHeader &he
         memcpy(&x, psBuff + 2, 2);
         CPL_LSBPTR16(&x);
 
-		oSXF.TranslateXY(x, y, dfX, dfY);
+        oSXF.TranslateXY(x, y, dfX, dfY);
 
         offset += 4;
 
@@ -786,7 +786,7 @@ GUInt32 OGRSXFLayer::TranslateXYH(const SXFFile &oSXF, const SXFRecordHeader &he
         memcpy(&x, psBuff + 4, 4);
         CPL_LSBPTR32(&x);
 
-		oSXF.TranslateXY(x, y, dfX, dfY);
+        oSXF.TranslateXY(x, y, dfX, dfY);
 
         offset += 8;
 
@@ -817,7 +817,7 @@ GUInt32 OGRSXFLayer::TranslateXYH(const SXFFile &oSXF, const SXFRecordHeader &he
         memcpy(&x, psBuff + 4, 4);
         CPL_LSBPTR32(&x);
 
-		oSXF.TranslateXY(x, y, dfX, dfY);
+        oSXF.TranslateXY(x, y, dfX, dfY);
 
         offset += 8;
 
@@ -848,7 +848,7 @@ GUInt32 OGRSXFLayer::TranslateXYH(const SXFFile &oSXF, const SXFRecordHeader &he
         memcpy(&x, psBuff + 8, 8);
         CPL_LSBPTR64(&x);
 
-		oSXF.TranslateXY(x, y, dfX, dfY);
+        oSXF.TranslateXY(x, y, dfX, dfY);
 
         offset += 16;
 
@@ -927,7 +927,7 @@ static bool ReadRawFeautre(SXFRecordHeader &recordHeader, VSILFILE *pFile,
             return false;
         }      
         recordHeader.eGeometryType = 
-			SXFFile::CodeToGeometryType(stRecordHeader.nLocalizaton);
+            SXFFile::CodeToGeometryType(stRecordHeader.nLocalizaton);
         recordHeader.bHasZ = stRecordHeader.nDimension == 1;
         recordHeader.eCoordinateValueType = 
             GetCoordinateValueType(stRecordHeader.nElementType, 
@@ -949,7 +949,7 @@ static bool ReadRawFeautre(SXFRecordHeader &recordHeader, VSILFILE *pFile,
         {
             CPL_LSBPTR32(&stRecordHeader.nFullLength);
             GInt32 nAttributesLength = 
-				stRecordHeader.nFullLength - 32 - stRecordHeader.nGeometryLength;
+                stRecordHeader.nFullLength - 32 - stRecordHeader.nGeometryLength;
             if (nAttributesLength < 1 || nAttributesLength > MAX_ATTRIBUTES_DATA_SIZE)
             {
                 return false;
@@ -994,7 +994,7 @@ static bool ReadRawFeautre(SXFRecordHeader &recordHeader, VSILFILE *pFile,
             return false;
         }
         recordHeader.eGeometryType = 
-			SXFFile::CodeToGeometryType(stRecordHeader.nLocalizaton);
+            SXFFile::CodeToGeometryType(stRecordHeader.nLocalizaton);
 
         recordHeader.bHasZ = stRecordHeader.nDimension == 1;
         recordHeader.eCoordinateValueType = 
@@ -1025,7 +1025,7 @@ static bool ReadRawFeautre(SXFRecordHeader &recordHeader, VSILFILE *pFile,
         {
             CPL_LSBPTR32(&stRecordHeader.nFullLength);
             GInt32 nAttributesLength = 
-				stRecordHeader.nFullLength - 32 - stRecordHeader.nGeometryLength;
+                stRecordHeader.nFullLength - 32 - stRecordHeader.nGeometryLength;
             if (nAttributesLength < 1 || nAttributesLength > MAX_ATTRIBUTES_DATA_SIZE)
             {
                 return false;
@@ -1061,7 +1061,7 @@ static bool ReadRawFeautre(SXFRecordHeader &recordHeader, VSILFILE *pFile,
 }
 
 void OGRSXFLayer::AddValue(OGRFeature *poFeature, const std::string &osFieldName, 
-	const std::string &value)
+    const std::string &value)
 {
     int nIndex = GetLayerDefn()->GetFieldIndex(osFieldName.c_str());
     if (IsFieldList(GetLayerDefn(), nIndex))
@@ -1077,7 +1077,7 @@ void OGRSXFLayer::AddValue(OGRFeature *poFeature, const std::string &osFieldName
 }
 
 void OGRSXFLayer::AddValue(OGRFeature *poFeature, const std::string &osFieldName, 
-	int value)
+    int value)
 {
     int nIndex = GetLayerDefn()->GetFieldIndex(osFieldName.c_str());
     if (IsFieldList(GetLayerDefn(), nIndex))
@@ -1095,7 +1095,7 @@ void OGRSXFLayer::AddValue(OGRFeature *poFeature, const std::string &osFieldName
 }
 
 void OGRSXFLayer::AddValue(OGRFeature *poFeature, const std::string &osFieldName, 
-	double value)
+    double value)
 {
     int nIndex = GetLayerDefn()->GetFieldIndex(osFieldName.c_str());
     if (IsFieldList(GetLayerDefn(), nIndex))
@@ -1113,11 +1113,11 @@ void OGRSXFLayer::AddValue(OGRFeature *poFeature, const std::string &osFieldName
 }
 
 OGRFeature *OGRSXFLayer::GetRawFeature(const SXFFile &oSXF,  
-	int nGroupID, int nSubObjectID)
+    int nGroupID, int nSubObjectID)
 {
     SXFRecordHeader stRecordHeader;
     if( !ReadRawFeautre(stRecordHeader, oSXF.File(), oSXF.Version(),
-		oSXF.Encoding()) )
+        oSXF.Encoding()) )
     {
         CPLError(CE_Failure, CPLE_FileIO, "SXF. Read record failed.");
         return nullptr;
@@ -1132,277 +1132,277 @@ OGRFeature *OGRSXFLayer::GetRawFeature(const SXFFile &oSXF,
     }
 
     if( VSIFReadL(geometryBuff.get(), stRecordHeader.nGeometryLength, 1, 
-		oSXF.File()) != 1)
+        oSXF.File()) != 1)
     {
         CPLError(CE_Failure, CPLE_FileIO, "SXF. Read geometry failed.");
         return nullptr;
     }
 
-	struct VAR {
-		OGRFieldType eType;
-		std::string str;
-		int iVal;
-		double dfVal;
+    struct VAR {
+        OGRFieldType eType;
+        std::string str;
+        int iVal;
+        double dfVal;
 
-		VAR(OGRFieldType eTypeIn, const std::string &strIn, int iValIn, 
-			double dfValIn)
-			: eType(eTypeIn), str(strIn), iVal(iValIn), dfVal(dfValIn) {}
-	};
+        VAR(OGRFieldType eTypeIn, const std::string &strIn, int iValIn, 
+            double dfValIn)
+            : eType(eTypeIn), str(strIn), iVal(iValIn), dfVal(dfValIn) {}
+    };
 
-	std::map<std::string, std::vector<VAR>> mFieldValues;
+    std::map<std::string, std::vector<VAR>> mFieldValues;
 
-	if (stRecordHeader.nAttributesLength > 0)
-	{
-		std::shared_ptr<GByte> attributesBuff(
-			static_cast<GByte*>(VSI_MALLOC_VERBOSE(stRecordHeader.nAttributesLength)),
-			CPLFree);
-		if (attributesBuff == nullptr)
-		{
-			return nullptr;
-		}
+    if (stRecordHeader.nAttributesLength > 0)
+    {
+        std::shared_ptr<GByte> attributesBuff(
+            static_cast<GByte*>(VSI_MALLOC_VERBOSE(stRecordHeader.nAttributesLength)),
+            CPLFree);
+        if (attributesBuff == nullptr)
+        {
+            return nullptr;
+        }
 
-		if (VSIFReadL(attributesBuff.get(), stRecordHeader.nAttributesLength, 1,
-			oSXF.File()) != 1)
-		{
-			return nullptr;
-		}
+        if (VSIFReadL(attributesBuff.get(), stRecordHeader.nAttributesLength, 1,
+            oSXF.File()) != 1)
+        {
+            return nullptr;
+        }
 
-		size_t nOffset = 0;
-		size_t nSemanticsSize = stRecordHeader.nAttributesLength;
+        size_t nOffset = 0;
+        size_t nSemanticsSize = stRecordHeader.nAttributesLength;
 
-		auto bIsUpdatable = IsUpdatable();
-		SetUpdatable(true);
+        auto bIsUpdatable = IsUpdatable();
+        SetUpdatable(true);
 
-		while (nOffset + sizeof(SXFRecordAttributeInfo) < nSemanticsSize)
-		{
-			SXFRecordAttributeInfo stAttInfo;
-			memcpy(&stAttInfo, attributesBuff.get() + nOffset,
-				sizeof(SXFRecordAttributeInfo));
-			CPL_LSBPTR16(&stAttInfo.nCode);
-			nOffset += sizeof(SXFRecordAttributeInfo);
+        while (nOffset + sizeof(SXFRecordAttributeInfo) < nSemanticsSize)
+        {
+            SXFRecordAttributeInfo stAttInfo;
+            memcpy(&stAttInfo, attributesBuff.get() + nOffset,
+                sizeof(SXFRecordAttributeInfo));
+            CPL_LSBPTR16(&stAttInfo.nCode);
+            nOffset += sizeof(SXFRecordAttributeInfo);
 
-			std::string oFieldName = "SC_" + std::to_string(stAttInfo.nCode);
+            std::string oFieldName = "SC_" + std::to_string(stAttInfo.nCode);
 
-			switch (stAttInfo.nType)
-			{
-			case 0: // SXF_RAT_ASCIIZ_DOS
-			{
-				size_t nLen = size_t(stAttInfo.nScale) + 1;
-				if (nOffset + nLen > nSemanticsSize)
-				{
-					nSemanticsSize = 0;
-					break;
-				}
-				
-				// Expected here that input encoding set by parameters or from 
-				// SXF header is ASCIIZ
-				auto val = SXF::ReadEncString(attributesBuff.get() +
-					nOffset, nLen, oSXF.Encoding().c_str()); 
-				if (!HasField(GetLayerDefn(), oFieldName))
-				{
-					OGRFieldDefn oField(oFieldName.c_str(), OFTString);
-					oField.SetWidth(255);
-					CreateField(&oField);
-				}
-				mFieldValues[oFieldName].emplace_back( OFTString , val, 0, 0.0 );
-				nOffset += stAttInfo.nScale + 1;
-				break;
-			}
-			case 1: // SXF_RAT_ONEBYTE
-			{
-				if (nOffset + 1 > nSemanticsSize)
-				{
-					nSemanticsSize = 0;
-					break;
-				}
-				GByte nTmpVal;
-				memcpy(&nTmpVal, attributesBuff.get() + nOffset, 1);
-				auto val = double(nTmpVal) * pow(10.0,
-					static_cast<double>(stAttInfo.nScale));
-				if (!HasField(GetLayerDefn(), oFieldName))
-				{
-					OGRFieldDefn oField(oFieldName.c_str(), OFTReal);
-					CreateField(&oField);
-				}
-				mFieldValues[oFieldName].emplace_back( OFTReal , "", 0, val );
-				nOffset += 1;
-				break;
-			}
-			case 2: // SXF_RAT_TWOBYTE
-			{
-				if (nOffset + 2 > nSemanticsSize)
-				{
-					nSemanticsSize = 0;
-					break;
-				}
-				GInt16 nTmpVal;
-				memcpy(&nTmpVal, attributesBuff.get() + nOffset, 2);
-				CPL_LSBPTR16(&nTmpVal);
-				auto val = double(CPL_LSBWORD16(nTmpVal)) * pow(10.0,
-					static_cast<double>(stAttInfo.nScale));
-				if (!HasField(GetLayerDefn(), oFieldName))
-				{
-					OGRFieldDefn oField(oFieldName.c_str(), OFTReal);
-					CreateField(&oField);
-				}
-				mFieldValues[oFieldName].emplace_back( OFTReal , "", 0, val );
-				nOffset += 2;
-				break;
-			}
-			case 4: // SXF_RAT_FOURBYTE
-			{
-				if (nOffset + 4 > nSemanticsSize)
-				{
-					nSemanticsSize = 0;
-					break;
-				}
-				GInt32 nTmpVal;
-				memcpy(&nTmpVal, attributesBuff.get() + nOffset, 4);
-				CPL_LSBPTR32(&nTmpVal);
-				auto val = double(CPL_LSBWORD32(nTmpVal)) * pow(10.0,
-					static_cast<double>(stAttInfo.nScale));
-				if (!HasField(GetLayerDefn(), oFieldName))
-				{
-					OGRFieldDefn oField(oFieldName.c_str(), OFTReal);
-					CreateField(&oField);
-				}
-				mFieldValues[oFieldName].emplace_back( OFTReal , "", 0, val );
-				nOffset += 4;
-				break;
-			}
-			case 8: // SXF_RAT_EIGHTBYTE
-			{
-				if (nOffset + 8 > nSemanticsSize)
-				{
-					nSemanticsSize = 0;
-					break;
-				}
-				double dfTmpVal;
-				memcpy(&dfTmpVal, attributesBuff.get() + nOffset, 8);
-				CPL_LSBPTR64(&dfTmpVal);
-				auto val = dfTmpVal * pow(10.0,
-					static_cast<double>(stAttInfo.nScale));
-				if (!HasField(GetLayerDefn(), oFieldName))
-				{
-					OGRFieldDefn oField(oFieldName.c_str(), OFTReal);
-					CreateField(&oField);
-				}
-				mFieldValues[oFieldName].emplace_back( OFTReal , "", 0, val );
-				nOffset += 8;
-				break;
-			}
-			case 126: // SXF_RAT_ANSI_WIN
-			{
-				size_t nLen = size_t(stAttInfo.nScale) + 1;
-				if (nOffset + nLen > nSemanticsSize)
-				{
-					nSemanticsSize = 0;
-					break;
-				}
+            switch (stAttInfo.nType)
+            {
+            case 0: // SXF_RAT_ASCIIZ_DOS
+            {
+                size_t nLen = size_t(stAttInfo.nScale) + 1;
+                if (nOffset + nLen > nSemanticsSize)
+                {
+                    nSemanticsSize = 0;
+                    break;
+                }
+                
+                // Expected here that input encoding set by parameters or from 
+                // SXF header is ASCIIZ
+                auto val = SXF::ReadEncString(attributesBuff.get() +
+                    nOffset, nLen, oSXF.Encoding().c_str()); 
+                if (!HasField(GetLayerDefn(), oFieldName))
+                {
+                    OGRFieldDefn oField(oFieldName.c_str(), OFTString);
+                    oField.SetWidth(255);
+                    CreateField(&oField);
+                }
+                mFieldValues[oFieldName].emplace_back( OFTString , val, 0, 0.0 );
+                nOffset += stAttInfo.nScale + 1;
+                break;
+            }
+            case 1: // SXF_RAT_ONEBYTE
+            {
+                if (nOffset + 1 > nSemanticsSize)
+                {
+                    nSemanticsSize = 0;
+                    break;
+                }
+                GByte nTmpVal;
+                memcpy(&nTmpVal, attributesBuff.get() + nOffset, 1);
+                auto val = double(nTmpVal) * pow(10.0,
+                    static_cast<double>(stAttInfo.nScale));
+                if (!HasField(GetLayerDefn(), oFieldName))
+                {
+                    OGRFieldDefn oField(oFieldName.c_str(), OFTReal);
+                    CreateField(&oField);
+                }
+                mFieldValues[oFieldName].emplace_back( OFTReal , "", 0, val );
+                nOffset += 1;
+                break;
+            }
+            case 2: // SXF_RAT_TWOBYTE
+            {
+                if (nOffset + 2 > nSemanticsSize)
+                {
+                    nSemanticsSize = 0;
+                    break;
+                }
+                GInt16 nTmpVal;
+                memcpy(&nTmpVal, attributesBuff.get() + nOffset, 2);
+                CPL_LSBPTR16(&nTmpVal);
+                auto val = double(CPL_LSBWORD16(nTmpVal)) * pow(10.0,
+                    static_cast<double>(stAttInfo.nScale));
+                if (!HasField(GetLayerDefn(), oFieldName))
+                {
+                    OGRFieldDefn oField(oFieldName.c_str(), OFTReal);
+                    CreateField(&oField);
+                }
+                mFieldValues[oFieldName].emplace_back( OFTReal , "", 0, val );
+                nOffset += 2;
+                break;
+            }
+            case 4: // SXF_RAT_FOURBYTE
+            {
+                if (nOffset + 4 > nSemanticsSize)
+                {
+                    nSemanticsSize = 0;
+                    break;
+                }
+                GInt32 nTmpVal;
+                memcpy(&nTmpVal, attributesBuff.get() + nOffset, 4);
+                CPL_LSBPTR32(&nTmpVal);
+                auto val = double(CPL_LSBWORD32(nTmpVal)) * pow(10.0,
+                    static_cast<double>(stAttInfo.nScale));
+                if (!HasField(GetLayerDefn(), oFieldName))
+                {
+                    OGRFieldDefn oField(oFieldName.c_str(), OFTReal);
+                    CreateField(&oField);
+                }
+                mFieldValues[oFieldName].emplace_back( OFTReal , "", 0, val );
+                nOffset += 4;
+                break;
+            }
+            case 8: // SXF_RAT_EIGHTBYTE
+            {
+                if (nOffset + 8 > nSemanticsSize)
+                {
+                    nSemanticsSize = 0;
+                    break;
+                }
+                double dfTmpVal;
+                memcpy(&dfTmpVal, attributesBuff.get() + nOffset, 8);
+                CPL_LSBPTR64(&dfTmpVal);
+                auto val = dfTmpVal * pow(10.0,
+                    static_cast<double>(stAttInfo.nScale));
+                if (!HasField(GetLayerDefn(), oFieldName))
+                {
+                    OGRFieldDefn oField(oFieldName.c_str(), OFTReal);
+                    CreateField(&oField);
+                }
+                mFieldValues[oFieldName].emplace_back( OFTReal , "", 0, val );
+                nOffset += 8;
+                break;
+            }
+            case 126: // SXF_RAT_ANSI_WIN
+            {
+                size_t nLen = size_t(stAttInfo.nScale) + 1;
+                if (nOffset + nLen > nSemanticsSize)
+                {
+                    nSemanticsSize = 0;
+                    break;
+                }
 
-				auto val =
-					SXF::ReadEncString(attributesBuff.get() + nOffset,
-						nLen, oSXF.Encoding().c_str());
-				if (!HasField(GetLayerDefn(), oFieldName))
-				{
-					OGRFieldDefn oField(oFieldName.c_str(), OFTString);
-					oField.SetWidth(255);
-					CreateField(&oField);
-				}
-				mFieldValues[oFieldName].emplace_back( OFTString , val, 0, 0.0 );
-				nOffset += nLen;
-				break;
-			}
-			case 127: // SXF_RAT_UNICODE
-			{
-				size_t nLen = (size_t(stAttInfo.nScale) + 1) * 2;
-				if (nLen < 2 || nLen + nOffset > nSemanticsSize)
-				{
-					nSemanticsSize = 0;
-					break;
-				}
-				auto src = static_cast<char*>(CPLMalloc(nLen));
-				memcpy(src, attributesBuff.get() + nOffset, nLen - 2);
-				src[nLen - 1] = 0;
-				src[nLen - 2] = 0;
-				auto dst = static_cast<char*>(CPLMalloc(nLen));
-				int nCount = 0;
-				for (unsigned i = 0; i < nLen; i += 2)
-				{
-					unsigned char ucs = src[i];
+                auto val =
+                    SXF::ReadEncString(attributesBuff.get() + nOffset,
+                        nLen, oSXF.Encoding().c_str());
+                if (!HasField(GetLayerDefn(), oFieldName))
+                {
+                    OGRFieldDefn oField(oFieldName.c_str(), OFTString);
+                    oField.SetWidth(255);
+                    CreateField(&oField);
+                }
+                mFieldValues[oFieldName].emplace_back( OFTString , val, 0, 0.0 );
+                nOffset += nLen;
+                break;
+            }
+            case 127: // SXF_RAT_UNICODE
+            {
+                size_t nLen = (size_t(stAttInfo.nScale) + 1) * 2;
+                if (nLen < 2 || nLen + nOffset > nSemanticsSize)
+                {
+                    nSemanticsSize = 0;
+                    break;
+                }
+                auto src = static_cast<char*>(CPLMalloc(nLen));
+                memcpy(src, attributesBuff.get() + nOffset, nLen - 2);
+                src[nLen - 1] = 0;
+                src[nLen - 2] = 0;
+                auto dst = static_cast<char*>(CPLMalloc(nLen));
+                int nCount = 0;
+                for (unsigned i = 0; i < nLen; i += 2)
+                {
+                    unsigned char ucs = src[i];
 
-					if (ucs < 0x80U)
-					{
-						dst[nCount++] = ucs;
-					}
-					else
-					{
-						dst[nCount++] = 0xc0 | (ucs >> 6);
-						dst[nCount++] = 0x80 | (ucs & 0x3F);
-					}
-				}
-				if (!HasField(GetLayerDefn(), oFieldName))
-				{
-					OGRFieldDefn oField(oFieldName.c_str(), OFTString);
-					oField.SetWidth(255);
-					CreateField(&oField);
-				}
-				mFieldValues[oFieldName].emplace_back( OFTString , dst, 0, 0.0 );
-				CPLFree(dst);
-				CPLFree(src);
+                    if (ucs < 0x80U)
+                    {
+                        dst[nCount++] = ucs;
+                    }
+                    else
+                    {
+                        dst[nCount++] = 0xc0 | (ucs >> 6);
+                        dst[nCount++] = 0x80 | (ucs & 0x3F);
+                    }
+                }
+                if (!HasField(GetLayerDefn(), oFieldName))
+                {
+                    OGRFieldDefn oField(oFieldName.c_str(), OFTString);
+                    oField.SetWidth(255);
+                    CreateField(&oField);
+                }
+                mFieldValues[oFieldName].emplace_back( OFTString , dst, 0, 0.0 );
+                CPLFree(dst);
+                CPLFree(src);
 
-				nOffset += nLen;
-				break;
-			}
-			case 128: // SXF_RAT_BIGTEXT
-			{
-				// FIXME: Need example of UTF16 encoded data
-				if (nOffset + 4 > nSemanticsSize)
-				{
-					nSemanticsSize = 0;
-					break;
-				}
-				GUInt32 nTextLen;
-				memcpy(&nTextLen, attributesBuff.get() + nOffset, 4);
-				CPL_LSBPTR32(&nTextLen);
-				nOffset += 4;
+                nOffset += nLen;
+                break;
+            }
+            case 128: // SXF_RAT_BIGTEXT
+            {
+                // FIXME: Need example of UTF16 encoded data
+                if (nOffset + 4 > nSemanticsSize)
+                {
+                    nSemanticsSize = 0;
+                    break;
+                }
+                GUInt32 nTextLen;
+                memcpy(&nTextLen, attributesBuff.get() + nOffset, 4);
+                CPL_LSBPTR32(&nTextLen);
+                nOffset += 4;
 
-				if (nOffset + nTextLen > nSemanticsSize)
-				{
-					nSemanticsSize = 0;
-					break;
-				}
+                if (nOffset + nTextLen > nSemanticsSize)
+                {
+                    nSemanticsSize = 0;
+                    break;
+                }
 
-				std::string val;
-				if (nTextLen > 0)
-				{
-					char *pBuff = static_cast<char*>(CPLMalloc(nTextLen));
-					memcpy(pBuff, attributesBuff.get() + nOffset, nTextLen);
-					auto pszRecodedText = 
-						CPLRecodeFromWChar(reinterpret_cast<wchar_t*>(pBuff),
-							CPL_ENC_UTF16, CPL_ENC_UTF8);
-					val = pszRecodedText;
-					CPLFree(pszRecodedText);
-					CPLFree(pBuff);
-				}
-				
-				if (!HasField(GetLayerDefn(), oFieldName))
-				{
-					OGRFieldDefn oField(oFieldName.c_str(), OFTString);
-					oField.SetWidth(255);
-					CreateField(&oField);
-				}
-				mFieldValues[oFieldName].emplace_back( OFTString , val, 0, 0.0 );
-				nOffset += nTextLen;
-				break;
-			}
-			default:
-				SetUpdatable(bIsUpdatable);
-				return nullptr;
-			}
-		}
-		SetUpdatable(bIsUpdatable);
-	}
+                std::string val;
+                if (nTextLen > 0)
+                {
+                    char *pBuff = static_cast<char*>(CPLMalloc(nTextLen));
+                    memcpy(pBuff, attributesBuff.get() + nOffset, nTextLen);
+                    auto pszRecodedText = 
+                        CPLRecodeFromWChar(reinterpret_cast<wchar_t*>(pBuff),
+                            CPL_ENC_UTF16, CPL_ENC_UTF8);
+                    val = pszRecodedText;
+                    CPLFree(pszRecodedText);
+                    CPLFree(pBuff);
+                }
+                
+                if (!HasField(GetLayerDefn(), oFieldName))
+                {
+                    OGRFieldDefn oField(oFieldName.c_str(), OFTString);
+                    oField.SetWidth(255);
+                    CreateField(&oField);
+                }
+                mFieldValues[oFieldName].emplace_back( OFTString , val, 0, 0.0 );
+                nOffset += nTextLen;
+                break;
+            }
+            default:
+                SetUpdatable(bIsUpdatable);
+                return nullptr;
+            }
+        }
+        SetUpdatable(bIsUpdatable);
+    }
 
     OGRFeature *poFeature = nullptr;
     if (stRecordHeader.eGeometryType == SXF_GT_Point)
@@ -1421,7 +1421,7 @@ OGRFeature *OGRSXFLayer::GetRawFeature(const SXFFile &oSXF,
         stRecordHeader.eGeometryType == SXF_GT_TextTemplate)
     {
         poFeature = TranslateText(oSXF, stRecordHeader, geometryBuff.get(), 
-			nSubObjectID);
+            nSubObjectID);
     }
     else if (stRecordHeader.eGeometryType == SXF_GT_Vector)
     {
@@ -1441,53 +1441,53 @@ OGRFeature *OGRSXFLayer::GetRawFeature(const SXFFile &oSXF,
 
     poFeature->SetField(CLCODE, stRecordHeader.nClassifyCode);
 
-	auto osStrCode = SXFFile::ToStringCode(stRecordHeader.eGeometryType, 
-		stRecordHeader.nClassifyCode);
+    auto osStrCode = SXFFile::ToStringCode(stRecordHeader.eGeometryType, 
+        stRecordHeader.nClassifyCode);
     auto osName = mnClassificators[osStrCode];
     poFeature->SetField(CLNAME, osName.c_str());
 
     if (bIsNewBehavior)
     {
         poFeature->SetField(OT, 
-			SXFFile::SXFTypeToString(stRecordHeader.eGeometryType).c_str());
+            SXFFile::SXFTypeToString(stRecordHeader.eGeometryType).c_str());
         // Add extra 10000 as group id and id in group may present
         poFeature->SetField(GROUP_NUMBER, 
-			stRecordHeader.nGroupNumber + 10000 * nGroupID);
+            stRecordHeader.nGroupNumber + 10000 * nGroupID);
         poFeature->SetField(NUMBER_IN_GROUP, 
-			stRecordHeader.nNumberInGroup + 10000 * nSubObjectID);
+            stRecordHeader.nNumberInGroup + 10000 * nSubObjectID);
     }
     else
     {
         poFeature->SetField(OBJECTNUMB, stRecordHeader.nSubObjectCount);
     }
-	
-	for (auto fieldVal : mFieldValues)
-	{
-		for (auto val : fieldVal.second)
-		{
-			switch (val.eType)
-			{
-			case OFTString:
-				AddValue(poFeature, fieldVal.first, val.str);
-				break;
-			case OFTReal:
-				AddValue(poFeature, fieldVal.first, val.dfVal);
-				break;
-			case OFTInteger:
-				AddValue(poFeature, fieldVal.first, val.iVal);
-				break;
-			default:
-				break;
-			}
-		}
-	}
+    
+    for (auto fieldVal : mFieldValues)
+    {
+        for (auto val : fieldVal.second)
+        {
+            switch (val.eType)
+            {
+            case OFTString:
+                AddValue(poFeature, fieldVal.first, val.str);
+                break;
+            case OFTReal:
+                AddValue(poFeature, fieldVal.first, val.dfVal);
+                break;
+            case OFTInteger:
+                AddValue(poFeature, fieldVal.first, val.iVal);
+                break;
+            default:
+                break;
+            }
+        }
+    }
 
     return poFeature;
 }
 
 
 GUInt32 OGRSXFLayer::TranslatePoint(const SXFFile &oSXF, OGRPoint *poPT, 
-	const SXFRecordHeader &header, GByte *pBuff, GUInt32 nBuffSize)
+    const SXFRecordHeader &header, GByte *pBuff, GUInt32 nBuffSize)
 {
     double dfX = 0.0;
     double dfY = 0.0;
@@ -1497,7 +1497,7 @@ GUInt32 OGRSXFLayer::TranslatePoint(const SXFFile &oSXF, OGRPoint *poPT,
     if (header.bHasZ)
     {
         nDelta = TranslateXYH( oSXF, header, pBuff, nBuffSize, &dfX, &dfY, &dfZ );
-		poPT->setZ(dfZ);
+        poPT->setZ(dfZ);
     }
     else
     {
@@ -1511,18 +1511,18 @@ GUInt32 OGRSXFLayer::TranslatePoint(const SXFFile &oSXF, OGRPoint *poPT,
 }
 
 OGRFeature *OGRSXFLayer::TranslatePoint(const SXFFile &oSXF, 
-	const SXFRecordHeader &header, GByte *psRecordBuf)
+    const SXFRecordHeader &header, GByte *psRecordBuf)
 {
     OGRFeature *poFeature = new OGRFeature(GetLayerDefn());
 
     OGRPoint *poPT = new OGRPoint();
     GUInt32 nOffset = TranslatePoint(oSXF, poPT, header, psRecordBuf, 
         header.nGeometryLength);
-	if (header.nSubObjectCount == 0)
-	{
-		poFeature->SetGeometryDirectly(poPT);
-		return poFeature;
-	}
+    if (header.nSubObjectCount == 0)
+    {
+        poFeature->SetGeometryDirectly(poPT);
+        return poFeature;
+    }
 
     OGRMultiPoint *poMPt = new OGRMultiPoint();
     poMPt->addGeometryDirectly( poPT );
@@ -1542,10 +1542,10 @@ OGRFeature *OGRSXFLayer::TranslatePoint(const SXFFile &oSXF,
         memcpy(&nCoords, psRecordBuf + nOffset + 2, 2);
         CPL_LSBPTR16(&nCoords);
 
-		if (header.nPointCount > 65535)
-		{
-			nCoords += nSubObj << 16;
-		}
+        if (header.nPointCount > 65535)
+        {
+            nCoords += nSubObj << 16;
+        }
 
         nOffset +=4;
 
@@ -1599,7 +1599,7 @@ GUInt32 OGRSXFLayer::TranslateLine(const SXFFile &oSXF, OGRLineString* poLS,
 }
 
 OGRFeature *OGRSXFLayer::TranslateLine(const SXFFile &oSXF, 
-	const SXFRecordHeader &header, GByte *psRecordBuf)
+    const SXFRecordHeader &header, GByte *psRecordBuf)
 {
     OGRFeature *poFeature = new OGRFeature(GetLayerDefn());
     OGRMultiLineString *poMLS = new OGRMultiLineString();
@@ -1625,10 +1625,10 @@ OGRFeature *OGRSXFLayer::TranslateLine(const SXFFile &oSXF,
         memcpy(&nCoords, psRecordBuf + nOffset + 2, 2);
         CPL_LSBPTR16(&nCoords);
 
-		if (header.nPointCount > 65535)
-		{
-			nCoords += nSubObj << 16;
-		}
+        if (header.nPointCount > 65535)
+        {
+            nCoords += nSubObj << 16;
+        }
 
         nOffset +=4;
 
@@ -1645,7 +1645,7 @@ OGRFeature *OGRSXFLayer::TranslateLine(const SXFFile &oSXF,
 }
 
 OGRFeature *OGRSXFLayer::TranslateVetorAngle(const SXFFile &oSXF, 
-	const SXFRecordHeader &header, GByte *psRecordBuf)
+    const SXFRecordHeader &header, GByte *psRecordBuf)
 {
     if (header.nPointCount != 2)
     {
@@ -1660,7 +1660,7 @@ OGRFeature *OGRSXFLayer::TranslateVetorAngle(const SXFFile &oSXF,
 
     OGRLineString* poLS = new OGRLineString();
     TranslateLine(oSXF, poLS, header, psRecordBuf, header.nGeometryLength, 
-		header.nPointCount);
+        header.nPointCount);
 
     if (bIsNewBehavior)
     {
@@ -1692,10 +1692,10 @@ OGRFeature *OGRSXFLayer::TranslateVetorAngle(const SXFFile &oSXF,
 }
 
 OGRFeature *OGRSXFLayer::TranslatePolygon(const SXFFile &oSXF, 
-	const SXFRecordHeader &header, GByte *psRecordBuf)
+    const SXFRecordHeader &header, GByte *psRecordBuf)
 {
     OGRFeature *poFeature = new OGRFeature(GetLayerDefn());
-	std::vector<OGRPolygon*> apoPolygons;
+    std::vector<OGRPolygon*> apoPolygons;
     OGRPolygon *poPoly = new OGRPolygon();
 
 /*---------------------- Reading Primary Polygon --------------------------*/
@@ -1704,10 +1704,10 @@ OGRFeature *OGRSXFLayer::TranslatePolygon(const SXFFile &oSXF,
         header.nGeometryLength, header.nPointCount);
     OGRLinearRing *poLR = new OGRLinearRing();
     poLR->addSubLineString( poLS, 0 );
-	poLR->closeRings();
+    poLR->closeRings();
     poPoly->addRingDirectly( poLR );
 
-	apoPolygons.emplace_back(poPoly);
+    apoPolygons.emplace_back(poPoly);
 
 /*---------------------- Reading Sub Lines --------------------------------*/
 
@@ -1723,11 +1723,11 @@ OGRFeature *OGRSXFLayer::TranslatePolygon(const SXFFile &oSXF,
         CPL_LSBPTR16(&nSubObj);
         memcpy(&nCoords, psRecordBuf + nOffset + 2, 2);
         CPL_LSBPTR16(&nCoords);
-		
-		if (header.nPointCount > 65535)
-		{
-			nCoords += nSubObj << 16;
-		}
+        
+        if (header.nPointCount > 65535)
+        {
+            nCoords += nSubObj << 16;
+        }
 
         nOffset +=4;
 
@@ -1735,53 +1735,53 @@ OGRFeature *OGRSXFLayer::TranslatePolygon(const SXFFile &oSXF,
         nOffset += TranslateLine(oSXF, poLS, header, psRecordBuf + nOffset, 
             header.nGeometryLength - nOffset, nCoords);
 
-		bool bIsExternalRing = true;
-		for (auto poPolygon : apoPolygons)
-		{
-			if (poLS->Within(poPolygon))
-			{
-				poLR = new OGRLinearRing();
-				poLR->addSubLineString( poLS, 0 );
-				poLR->closeRings();
+        bool bIsExternalRing = true;
+        for (auto poPolygon : apoPolygons)
+        {
+            if (poLS->Within(poPolygon))
+            {
+                poLR = new OGRLinearRing();
+                poLR->addSubLineString( poLS, 0 );
+                poLR->closeRings();
 
-				poPolygon->addRingDirectly( poLR );
-				bIsExternalRing = false;
-				break;
-			}
-		}
+                poPolygon->addRingDirectly( poLR );
+                bIsExternalRing = false;
+                break;
+            }
+        }
 
-		if (bIsExternalRing)
-		{
-			OGRPolygon *poPoly2 = new OGRPolygon();
-			poLR = new OGRLinearRing();
-			poLR->addSubLineString(poLS, 0);
-			poLR->closeRings();
-			poPoly2->addRingDirectly(poLR);
+        if (bIsExternalRing)
+        {
+            OGRPolygon *poPoly2 = new OGRPolygon();
+            poLR = new OGRLinearRing();
+            poLR->addSubLineString(poLS, 0);
+            poLR->closeRings();
+            poPoly2->addRingDirectly(poLR);
 
-			apoPolygons.emplace_back(poPoly2);
-		}
+            apoPolygons.emplace_back(poPoly2);
+        }
     }
 
-	if (apoPolygons.size() > 1)
-	{
-		OGRMultiPolygon *poMultiPoly = new OGRMultiPolygon();
-		for (auto poPolygon : apoPolygons)
-		{
-			poMultiPoly->addGeometryDirectly(poPolygon);
-		}
-		poFeature->SetGeometryDirectly(poMultiPoly);
-	}
-	else
-	{
-		poFeature->SetGeometryDirectly(poPoly);
-	}
-	delete poLS;
+    if (apoPolygons.size() > 1)
+    {
+        OGRMultiPolygon *poMultiPoly = new OGRMultiPolygon();
+        for (auto poPolygon : apoPolygons)
+        {
+            poMultiPoly->addGeometryDirectly(poPolygon);
+        }
+        poFeature->SetGeometryDirectly(poMultiPoly);
+    }
+    else
+    {
+        poFeature->SetGeometryDirectly(poPoly);
+    }
+    delete poLS;
 
     return poFeature;
 }
 
 OGRFeature *OGRSXFLayer::TranslateText(const SXFFile &oSXF, 
-	const SXFRecordHeader &header, GByte *psRecordBuf, int nSubObject)
+    const SXFRecordHeader &header, GByte *psRecordBuf, int nSubObject)
 {
     auto poFeature = new OGRFeature(GetLayerDefn());
     CPLString soText;
@@ -1841,10 +1841,10 @@ OGRFeature *OGRSXFLayer::TranslateText(const SXFFile &oSXF,
                 memcpy(&nCoords, psRecordBuf + nOffset + 2, 2);
                 CPL_LSBPTR16(&nCoords);
 
-				if (header.nPointCount > 65535)
-				{
-					nCoords += nSubObj << 16;
-				}
+                if (header.nPointCount > 65535)
+                {
+                    nCoords += nSubObj << 16;
+                }
 
                 nOffset +=4;
 
@@ -1906,17 +1906,17 @@ OGRFeature *OGRSXFLayer::TranslateText(const SXFFile &oSXF,
 
             GByte nTextL;
             memcpy(&nTextL, psRecordBuf + nOffset, 1);
-			nOffset += 1;
+            nOffset += 1;
             if (nOffset + nTextL > header.nGeometryLength)
             {
                 return poFeature;
             }
 
-			nTextL += 1;
+            nTextL += 1;
 
-			soText = SXF::ReadEncString(psRecordBuf + nOffset, nTextL,
-				header.osEncoding.c_str());
-			nOffset += nTextL;
+            soText = SXF::ReadEncString(psRecordBuf + nOffset, nTextL,
+                header.osEncoding.c_str());
+            nOffset += nTextL;
         }
 
     /*---------------------- Reading Sub Lines --------------------------------*/
@@ -1925,37 +1925,37 @@ OGRFeature *OGRSXFLayer::TranslateText(const SXFFile &oSXF,
         {
             if (nOffset + 4 > header.nGeometryLength)
             {
-				poFeature->SetGeometryDirectly(poMPT);
+                poFeature->SetGeometryDirectly(poMPT);
                 break;
             }
 
-			GUInt16 nSubObj, nCoords;
-			memcpy(&nSubObj, psRecordBuf + nOffset, 2);
-			CPL_LSBPTR16(&nSubObj);
-			memcpy(&nCoords, psRecordBuf + nOffset + 2, 2);
-			CPL_LSBPTR16(&nCoords);
+            GUInt16 nSubObj, nCoords;
+            memcpy(&nSubObj, psRecordBuf + nOffset, 2);
+            CPL_LSBPTR16(&nSubObj);
+            memcpy(&nCoords, psRecordBuf + nOffset + 2, 2);
+            CPL_LSBPTR16(&nCoords);
 
-			if (header.nPointCount > 65535)
-			{
-				nCoords += nSubObj << 16;
-			}
+            if (header.nPointCount > 65535)
+            {
+                nCoords += nSubObj << 16;
+            }
 
-			nOffset += 4;
+            nOffset += 4;
 
-			for (int j = 0; j < nCoords; j++)
-			{
-				poPT = new OGRPoint();
+            for (int j = 0; j < nCoords; j++)
+            {
+                poPT = new OGRPoint();
 
-				nOffset += TranslatePoint(oSXF, poPT, header, psRecordBuf + nOffset,
-					header.nGeometryLength - nOffset);
-				// FIXME: Skip addtional points in text template
-				// poMPT->addGeometryDirectly(poPT);
+                nOffset += TranslatePoint(oSXF, poPT, header, psRecordBuf + nOffset,
+                    header.nGeometryLength - nOffset);
+                // FIXME: Skip addtional points in text template
+                // poMPT->addGeometryDirectly(poPT);
 
-				if (nOffset + 1 > header.nGeometryLength)
-				{
-					return poFeature;
-				}
-			}
+                if (nOffset + 1 > header.nGeometryLength)
+                {
+                    return poFeature;
+                }
+            }
 
             GByte nTextL;
             memcpy(&nTextL, psRecordBuf + nOffset, 1);
@@ -1987,464 +1987,464 @@ const char *OGRSXFLayer::GetFIDColumn()
 
 OGRErr OGRSXFLayer::SyncToDisk()
 {
-	poDS->FlushCache();
-	return OGRERR_NONE;
+    poDS->FlushCache();
+    return OGRERR_NONE;
 }
 
 int OGRSXFLayer::SetRawFeature(OGRFeature *poFeature, OGRGeometry *poGeom, 
-	const SXFFile &oSXF, const std::map<std::string, int> &mnClassCodes)
+    const SXFFile &oSXF, const std::map<std::string, int> &mnClassCodes)
 {
-	if (!poGeom)
-	{
-		CPLError(CE_Warning, CPLE_AppDefined,
-			"SXF. Geometry is mandatory. Unexpected entry.");
-		return 0;
-	}
+    if (!poGeom)
+    {
+        CPLError(CE_Warning, CPLE_AppDefined,
+            "SXF. Geometry is mandatory. Unexpected entry.");
+        return 0;
+    }
 
-	if (wkbFlatten(poGeom->getGeometryType()) == wkbGeometryCollection)
-	{
-		int nWrites = 0;
-		OGRGeometryCollection *poGC = 
-			static_cast<OGRGeometryCollection*>(poGeom);
-		for (int iGeom = 0; iGeom < poGC->getNumGeometries(); iGeom++)
-		{
-			auto poSubGeom = poGC->getGeometryRef(iGeom);
-			if (!poSubGeom)
-			{
-				continue;
-			}
-			nWrites += SetRawFeature(poFeature, poSubGeom, oSXF, mnClassCodes);
-		}
-		return nWrites;
-	}
+    if (wkbFlatten(poGeom->getGeometryType()) == wkbGeometryCollection)
+    {
+        int nWrites = 0;
+        OGRGeometryCollection *poGC = 
+            static_cast<OGRGeometryCollection*>(poGeom);
+        for (int iGeom = 0; iGeom < poGC->getNumGeometries(); iGeom++)
+        {
+            auto poSubGeom = poGC->getGeometryRef(iGeom);
+            if (!poSubGeom)
+            {
+                continue;
+            }
+            nWrites += SetRawFeature(poFeature, poSubGeom, oSXF, mnClassCodes);
+        }
+        return nWrites;
+    }
 
-	int nOTFieldIndex = poFeature->GetDefnRef()->GetFieldIndex(OT);
-	SXFGeometryType eGeomType = SXF_GT_Unknown;
-	// Set SXF geometry type from field
-	if (nOTFieldIndex != -1)
-	{
-		eGeomType = SXFFile::StringToSXFType(
-			poFeature->GetFieldAsString(nOTFieldIndex));
-	}
-	
-	// Set SXF geometry type from OGR geometry type
-	if(eGeomType == SXF_GT_Unknown)
-	{
-		eGeomType = OGRTypeToSXFType(poGeom->getGeometryType());
-	}
+    int nOTFieldIndex = poFeature->GetDefnRef()->GetFieldIndex(OT);
+    SXFGeometryType eGeomType = SXF_GT_Unknown;
+    // Set SXF geometry type from field
+    if (nOTFieldIndex != -1)
+    {
+        eGeomType = SXFFile::StringToSXFType(
+            poFeature->GetFieldAsString(nOTFieldIndex));
+    }
+    
+    // Set SXF geometry type from OGR geometry type
+    if(eGeomType == SXF_GT_Unknown)
+    {
+        eGeomType = OGRTypeToSXFType(poGeom->getGeometryType());
+    }
 
-	if (eGeomType == SXF_GT_Unknown || 
-		!IsTypesCompatible(poGeom->getGeometryType(), eGeomType)) // Check if OGR geometry type compatible with SXF geometry type
-	{
-		CPLError(CE_Warning, CPLE_AppDefined,
-			"SXF. Unsupported geometry type %s.", 
-			poGeom->getGeometryName());
-		return 0;
-	}
-	else if (eGeomType == SXF_GT_TextTemplate)
-	{
-		// Write templates not supported yet
-		eGeomType = SXF_GT_Point;
-	}
-	
-	GUInt32 nPointCount = 0;
-	GUInt16 nPartsCount = 0;
-	using OGRGeometryPtr = std::unique_ptr<OGRGeometry>;
-	OGRGeometryPtr poWriteGeom;
-	if (wkbFlatten(poGeom->getGeometryType()) == wkbPoint || 
-		wkbFlatten(poGeom->getGeometryType()) == wkbMultiPoint)
-	{
-		if (eGeomType != SXF_GT_Point && eGeomType != SXF_GT_TextTemplate)
-		{
-			CPLError(CE_Warning, CPLE_AppDefined,
-				"SXF. Inconsistent geometry type. Expected point or text template, got %s", 
-				SXFFile::SXFTypeToString(eGeomType).c_str());
-			return 0;
-		}
-		poWriteGeom = OGRGeometryPtr(poGeom->clone());
-		nPointCount = 1;
-		if (wkbFlatten(poGeom->getGeometryType()) == wkbMultiPoint)
-		{
-			auto poMulti = static_cast<OGRMultiPoint*>(poGeom);
-			nPartsCount = static_cast<GUInt16>(poMulti->getNumGeometries()) - 1;
-		}
-	}
-	else if (wkbFlatten(poGeom->getGeometryType()) == wkbLineString || 
-		wkbFlatten(poGeom->getGeometryType()) == wkbMultiLineString)
-	{
-		if (eGeomType != SXF_GT_Line && eGeomType != SXF_GT_Vector && eGeomType != SXF_GT_Text)
-		{
-			CPLError(CE_Warning, CPLE_AppDefined,
-				"SXF. Inconsistent geometry type. Expected line, vector or text, got %s",
-				SXFFile::SXFTypeToString(eGeomType).c_str());
-			return 0;
-		}
-		poWriteGeom = OGRGeometryPtr(poGeom->clone());
+    if (eGeomType == SXF_GT_Unknown || 
+        !IsTypesCompatible(poGeom->getGeometryType(), eGeomType)) // Check if OGR geometry type compatible with SXF geometry type
+    {
+        CPLError(CE_Warning, CPLE_AppDefined,
+            "SXF. Unsupported geometry type %s.", 
+            poGeom->getGeometryName());
+        return 0;
+    }
+    else if (eGeomType == SXF_GT_TextTemplate)
+    {
+        // Write templates not supported yet
+        eGeomType = SXF_GT_Point;
+    }
+    
+    GUInt32 nPointCount = 0;
+    GUInt16 nPartsCount = 0;
+    using OGRGeometryPtr = std::unique_ptr<OGRGeometry>;
+    OGRGeometryPtr poWriteGeom;
+    if (wkbFlatten(poGeom->getGeometryType()) == wkbPoint || 
+        wkbFlatten(poGeom->getGeometryType()) == wkbMultiPoint)
+    {
+        if (eGeomType != SXF_GT_Point && eGeomType != SXF_GT_TextTemplate)
+        {
+            CPLError(CE_Warning, CPLE_AppDefined,
+                "SXF. Inconsistent geometry type. Expected point or text template, got %s", 
+                SXFFile::SXFTypeToString(eGeomType).c_str());
+            return 0;
+        }
+        poWriteGeom = OGRGeometryPtr(poGeom->clone());
+        nPointCount = 1;
+        if (wkbFlatten(poGeom->getGeometryType()) == wkbMultiPoint)
+        {
+            auto poMulti = static_cast<OGRMultiPoint*>(poGeom);
+            nPartsCount = static_cast<GUInt16>(poMulti->getNumGeometries()) - 1;
+        }
+    }
+    else if (wkbFlatten(poGeom->getGeometryType()) == wkbLineString || 
+        wkbFlatten(poGeom->getGeometryType()) == wkbMultiLineString)
+    {
+        if (eGeomType != SXF_GT_Line && eGeomType != SXF_GT_Vector && eGeomType != SXF_GT_Text)
+        {
+            CPLError(CE_Warning, CPLE_AppDefined,
+                "SXF. Inconsistent geometry type. Expected line, vector or text, got %s",
+                SXFFile::SXFTypeToString(eGeomType).c_str());
+            return 0;
+        }
+        poWriteGeom = OGRGeometryPtr(poGeom->clone());
 
-		OGRLineString *poLine;
-		if (wkbFlatten(poGeom->getGeometryType()) == wkbMultiLineString)
-		{
-			auto poMulti = static_cast<OGRMultiLineString*>(poGeom);
-			nPartsCount = static_cast<GUInt16>(poMulti->getNumGeometries()) - 1;
-			poLine = static_cast<OGRLineString*>(poMulti->getGeometryRef(0));
-		}
-		else
-		{
-			poLine = static_cast<OGRLineString*>(poGeom);
-		}
+        OGRLineString *poLine;
+        if (wkbFlatten(poGeom->getGeometryType()) == wkbMultiLineString)
+        {
+            auto poMulti = static_cast<OGRMultiLineString*>(poGeom);
+            nPartsCount = static_cast<GUInt16>(poMulti->getNumGeometries()) - 1;
+            poLine = static_cast<OGRLineString*>(poMulti->getGeometryRef(0));
+        }
+        else
+        {
+            poLine = static_cast<OGRLineString*>(poGeom);
+        }
 
-		if (poLine)
-		{
-			nPointCount = poLine->getNumPoints();
-		}
-	}
-	else if (wkbFlatten(poGeom->getGeometryType()) == wkbPolygon ||
-		wkbFlatten(poGeom->getGeometryType()) == wkbMultiPolygon)
-	{
-		if (eGeomType != SXF_GT_Polygon)
-		{
-			CPLError(CE_Warning, CPLE_AppDefined,
-				"SXF. Inconsistent geometry type. Expected polygon, got %s",
-				SXFFile::SXFTypeToString(eGeomType).c_str());
-			return 0;
-		}
-		poWriteGeom = OGRGeometryPtr(poGeom->clone());
+        if (poLine)
+        {
+            nPointCount = poLine->getNumPoints();
+        }
+    }
+    else if (wkbFlatten(poGeom->getGeometryType()) == wkbPolygon ||
+        wkbFlatten(poGeom->getGeometryType()) == wkbMultiPolygon)
+    {
+        if (eGeomType != SXF_GT_Polygon)
+        {
+            CPLError(CE_Warning, CPLE_AppDefined,
+                "SXF. Inconsistent geometry type. Expected polygon, got %s",
+                SXFFile::SXFTypeToString(eGeomType).c_str());
+            return 0;
+        }
+        poWriteGeom = OGRGeometryPtr(poGeom->clone());
 
-		OGRPolygon *poPoly = nullptr;
-		if (wkbFlatten(poGeom->getGeometryType()) == wkbMultiPolygon)
-		{
-			auto poMulti = static_cast<OGRMultiPolygon*>(poGeom);
-			for (int i = 0; i < poMulti->getNumGeometries(); i++)
-			{
-				auto tmpPoly = static_cast<OGRPolygon*>(poMulti->getGeometryRef(i));
-				nPartsCount += tmpPoly->getNumInteriorRings() + 1;
-				if (poPoly == nullptr)
-				{
-					poPoly = tmpPoly;
-				}
-			}
-			nPartsCount--;
-		}
-		else
-		{
-			poPoly = static_cast<OGRPolygon*>(poGeom);
-			nPartsCount = poPoly->getNumInteriorRings();
-		}
+        OGRPolygon *poPoly = nullptr;
+        if (wkbFlatten(poGeom->getGeometryType()) == wkbMultiPolygon)
+        {
+            auto poMulti = static_cast<OGRMultiPolygon*>(poGeom);
+            for (int i = 0; i < poMulti->getNumGeometries(); i++)
+            {
+                auto tmpPoly = static_cast<OGRPolygon*>(poMulti->getGeometryRef(i));
+                nPartsCount += tmpPoly->getNumInteriorRings() + 1;
+                if (poPoly == nullptr)
+                {
+                    poPoly = tmpPoly;
+                }
+            }
+            nPartsCount--;
+        }
+        else
+        {
+            poPoly = static_cast<OGRPolygon*>(poGeom);
+            nPartsCount = poPoly->getNumInteriorRings();
+        }
 
-		if (poPoly)
-		{
-			auto poRing = poPoly->getExteriorRing();
-			if (poRing)
-			{
-				nPointCount = poRing->getNumPoints();
-			}
-		}
-	}
-	// For PolyhedralSurface and TIN
-	else if (wkbFlatten(poGeom->getGeometryType()) == wkbPolyhedralSurface || 
-		wkbFlatten(poGeom->getGeometryType()) == wkbTIN)
-	{
-		if (eGeomType != SXF_GT_Polygon)
-		{
-			CPLError(CE_Warning, CPLE_AppDefined,
-				"SXF. Inconsistent geometry type. Expected polygon, got %s",
-				SXFFile::SXFTypeToString(eGeomType).c_str());
-			return 0;
-		}
-		poWriteGeom = OGRGeometryPtr(OGRGeometryFactory::forceTo(
-			poGeom->clone(), wkbMultiPolygon, nullptr));
-		OGRPolygon *poPoly = nullptr;
-		if (wkbFlatten(poGeom->getGeometryType()) == wkbMultiPolygon)
-		{
-			auto poMulti = static_cast<OGRMultiPolygon*>(poGeom);
-			for (int i = 0; i < poMulti->getNumGeometries(); i++)
-			{
-				auto tmpPoly = static_cast<OGRPolygon*>(poMulti->getGeometryRef(i));
-				nPartsCount += tmpPoly->getNumInteriorRings() + 1;
-				if (poPoly == nullptr)
-				{
-					poPoly = tmpPoly;
-				}
-			}
-			nPartsCount--;
-		}
-		else
-		{
-			poPoly = static_cast<OGRPolygon*>(poGeom);
-			nPartsCount = poPoly->getNumInteriorRings();
-		}
+        if (poPoly)
+        {
+            auto poRing = poPoly->getExteriorRing();
+            if (poRing)
+            {
+                nPointCount = poRing->getNumPoints();
+            }
+        }
+    }
+    // For PolyhedralSurface and TIN
+    else if (wkbFlatten(poGeom->getGeometryType()) == wkbPolyhedralSurface || 
+        wkbFlatten(poGeom->getGeometryType()) == wkbTIN)
+    {
+        if (eGeomType != SXF_GT_Polygon)
+        {
+            CPLError(CE_Warning, CPLE_AppDefined,
+                "SXF. Inconsistent geometry type. Expected polygon, got %s",
+                SXFFile::SXFTypeToString(eGeomType).c_str());
+            return 0;
+        }
+        poWriteGeom = OGRGeometryPtr(OGRGeometryFactory::forceTo(
+            poGeom->clone(), wkbMultiPolygon, nullptr));
+        OGRPolygon *poPoly = nullptr;
+        if (wkbFlatten(poGeom->getGeometryType()) == wkbMultiPolygon)
+        {
+            auto poMulti = static_cast<OGRMultiPolygon*>(poGeom);
+            for (int i = 0; i < poMulti->getNumGeometries(); i++)
+            {
+                auto tmpPoly = static_cast<OGRPolygon*>(poMulti->getGeometryRef(i));
+                nPartsCount += tmpPoly->getNumInteriorRings() + 1;
+                if (poPoly == nullptr)
+                {
+                    poPoly = tmpPoly;
+                }
+            }
+            nPartsCount--;
+        }
+        else
+        {
+            poPoly = static_cast<OGRPolygon*>(poGeom);
+            nPartsCount = poPoly->getNumInteriorRings();
+        }
 
-		if (poPoly)
-		{
-			auto poRing = poPoly->getExteriorRing();
-			if (poRing)
-			{
-				nPointCount = poRing->getNumPoints();
-			}
-		}
-	}
-	else
-	{
-		CPLError(CE_Warning, CPLE_AppDefined,
-			"SXF. Unsupported geometry type %s.",
-			poGeom->getGeometryName());
-		return 0;
-	}
-	
-	// SXF support only:
-	// - point, multipoint
-	// - linestring, multilinestring
-	// - polygon, multipolygon
-	// - special types VECTOR, TEXT and TEXTTEMPLATE
+        if (poPoly)
+        {
+            auto poRing = poPoly->getExteriorRing();
+            if (poRing)
+            {
+                nPointCount = poRing->getNumPoints();
+            }
+        }
+    }
+    else
+    {
+        CPLError(CE_Warning, CPLE_AppDefined,
+            "SXF. Unsupported geometry type %s.",
+            poGeom->getGeometryName());
+        return 0;
+    }
+    
+    // SXF support only:
+    // - point, multipoint
+    // - linestring, multilinestring
+    // - polygon, multipolygon
+    // - special types VECTOR, TEXT and TEXTTEMPLATE
 
-	SXFRecordHeaderV4 stRecordHeader = { 0 };
-	stRecordHeader.nSign = IDSXFOBJ;
+    SXFRecordHeaderV4 stRecordHeader = { 0 };
+    stRecordHeader.nSign = IDSXFOBJ;
 
-	int nFieldIndex = 0;
-	bool bSetClcode = false;
-	if ((nFieldIndex = poFeature->GetFieldIndex(CLCODE)) != -1)
-	{
-		if (poFeature->IsFieldSet(nFieldIndex))
-		{
-			stRecordHeader.nClassifyCode = poFeature->GetFieldAsInteger(nFieldIndex);
-			bSetClcode = true;
-		}
-	}
+    int nFieldIndex = 0;
+    bool bSetClcode = false;
+    if ((nFieldIndex = poFeature->GetFieldIndex(CLCODE)) != -1)
+    {
+        if (poFeature->IsFieldSet(nFieldIndex))
+        {
+            stRecordHeader.nClassifyCode = poFeature->GetFieldAsInteger(nFieldIndex);
+            bSetClcode = true;
+        }
+    }
 
-	if(!bSetClcode)
-	{
-		stRecordHeader.nClassifyCode = nID + SXFFile::CodeForGeometryType(eGeomType);
-	}
-	
-	if ((nFieldIndex = poFeature->GetFieldIndex(GROUP_NUMBER)) != -1)
-	{
-		stRecordHeader.anGroup[0] = 
-			static_cast<GUInt16>(poFeature->GetFieldAsInteger(nFieldIndex));
-	}
-	else
-	{
-		stRecordHeader.anGroup[0] = 0;
-	}
-	if ((nFieldIndex = poFeature->GetFieldIndex(NUMBER_IN_GROUP)) != -1)
-	{
-		stRecordHeader.anGroup[1] =
-			static_cast<GUInt16>(poFeature->GetFieldAsInteger(nFieldIndex));
-	}
-	else
-	{
-		stRecordHeader.anGroup[1] = static_cast<GUInt16>(poFeature->GetFID());
-	}
+    if(!bSetClcode)
+    {
+        stRecordHeader.nClassifyCode = nID + SXFFile::CodeForGeometryType(eGeomType);
+    }
+    
+    if ((nFieldIndex = poFeature->GetFieldIndex(GROUP_NUMBER)) != -1)
+    {
+        stRecordHeader.anGroup[0] = 
+            static_cast<GUInt16>(poFeature->GetFieldAsInteger(nFieldIndex));
+    }
+    else
+    {
+        stRecordHeader.anGroup[0] = 0;
+    }
+    if ((nFieldIndex = poFeature->GetFieldIndex(NUMBER_IN_GROUP)) != -1)
+    {
+        stRecordHeader.anGroup[1] =
+            static_cast<GUInt16>(poFeature->GetFieldAsInteger(nFieldIndex));
+    }
+    else
+    {
+        stRecordHeader.anGroup[1] = static_cast<GUInt16>(poFeature->GetFID());
+    }
 
-	stRecordHeader.nMultiPolygonPartsOut = 
-		(poWriteGeom->getGeometryType() == wkbMultiPolygon && nPartsCount > 0) ? 1 : 0;
-	stRecordHeader.nLocalizaton = static_cast<GByte>(eGeomType);
-	stRecordHeader.nCoordinateValueSize = 1; // 1 - double precision
-	stRecordHeader.nDimension = poWriteGeom->Is3D() ? 1 : 0;
-	stRecordHeader.nElementType = 1; // 1 - double
-	if (eGeomType == SXF_GT_Text || eGeomType == SXF_GT_TextTemplate)
-	{
-		stRecordHeader.nIsText = 1;
-	}
-	stRecordHeader.nLowViewScale = 15; //// 0xFF;
-	stRecordHeader.nHighViewScale = 15; //// 0xFF;
-	if (nPointCount > 65535)
-	{
-		stRecordHeader.nPointCount = nPointCount;
-		stRecordHeader.nPointCountSmall = 65535;
-	}
-	else
-	{
-		stRecordHeader.nPointCount = nPointCount;
-		stRecordHeader.nPointCountSmall = static_cast<GUInt16>(nPointCount);
-	}
-	stRecordHeader.nSubObjectCount = nPartsCount;
+    stRecordHeader.nMultiPolygonPartsOut = 
+        (poWriteGeom->getGeometryType() == wkbMultiPolygon && nPartsCount > 0) ? 1 : 0;
+    stRecordHeader.nLocalizaton = static_cast<GByte>(eGeomType);
+    stRecordHeader.nCoordinateValueSize = 1; // 1 - double precision
+    stRecordHeader.nDimension = poWriteGeom->Is3D() ? 1 : 0;
+    stRecordHeader.nElementType = 1; // 1 - double
+    if (eGeomType == SXF_GT_Text || eGeomType == SXF_GT_TextTemplate)
+    {
+        stRecordHeader.nIsText = 1;
+    }
+    stRecordHeader.nLowViewScale = 15; //// 0xFF;
+    stRecordHeader.nHighViewScale = 15; //// 0xFF;
+    if (nPointCount > 65535)
+    {
+        stRecordHeader.nPointCount = nPointCount;
+        stRecordHeader.nPointCountSmall = 65535;
+    }
+    else
+    {
+        stRecordHeader.nPointCount = nPointCount;
+        stRecordHeader.nPointCountSmall = static_cast<GUInt16>(nPointCount);
+    }
+    stRecordHeader.nSubObjectCount = nPartsCount;
 
-	// Write geometry
-	size_t nGeometryBufferSize = 0;
-	auto pszText = poFeature->GetFieldAsString(TEXT);
-	auto pGeomBuffer = WriteGeometryToBuffer(poWriteGeom.get(),
-		eGeomType, pszText, nGeometryBufferSize, poDS->Encoding());
+    // Write geometry
+    size_t nGeometryBufferSize = 0;
+    auto pszText = poFeature->GetFieldAsString(TEXT);
+    auto pGeomBuffer = WriteGeometryToBuffer(poWriteGeom.get(),
+        eGeomType, pszText, nGeometryBufferSize, poDS->Encoding());
 
-	// Write attributes 
-	size_t nAttributesBufferSize = 0;
-	auto pAttributesBuffer = WriteAttributesToBuffer(poFeature, nAttributesBufferSize, 
-		mnClassCodes, oSXF.Encoding());
-	// stRecordHeader.nIsUTF16TextEnc = 0; // Default ANSI
+    // Write attributes 
+    size_t nAttributesBufferSize = 0;
+    auto pAttributesBuffer = WriteAttributesToBuffer(poFeature, nAttributesBufferSize, 
+        mnClassCodes, oSXF.Encoding());
+    // stRecordHeader.nIsUTF16TextEnc = 0; // Default ANSI
 
-	stRecordHeader.nHasSemantics = (nAttributesBufferSize > 0) ? 1 : 0;
+    stRecordHeader.nHasSemantics = (nAttributesBufferSize > 0) ? 1 : 0;
 
-	stRecordHeader.nFullLength = static_cast<GUInt32>(sizeof(SXFRecordHeaderV4) + 
-		nGeometryBufferSize + nAttributesBufferSize);
-	stRecordHeader.nGeometryLength = static_cast<GUInt32>(nGeometryBufferSize);
+    stRecordHeader.nFullLength = static_cast<GUInt32>(sizeof(SXFRecordHeaderV4) + 
+        nGeometryBufferSize + nAttributesBufferSize);
+    stRecordHeader.nGeometryLength = static_cast<GUInt32>(nGeometryBufferSize);
 
-	// Write record data 
-	VSIFWriteL(&stRecordHeader, sizeof(SXFRecordHeaderV4), 1, oSXF.File());
-	VSIFWriteL(pGeomBuffer, nGeometryBufferSize, 1, oSXF.File());
-	VSIFWriteL(pAttributesBuffer, nAttributesBufferSize, 1, oSXF.File());
+    // Write record data 
+    VSIFWriteL(&stRecordHeader, sizeof(SXFRecordHeaderV4), 1, oSXF.File());
+    VSIFWriteL(pGeomBuffer, nGeometryBufferSize, 1, oSXF.File());
+    VSIFWriteL(pAttributesBuffer, nAttributesBufferSize, 1, oSXF.File());
 
-	CPLFree(pGeomBuffer);
-	CPLFree(pAttributesBuffer);
+    CPLFree(pGeomBuffer);
+    CPLFree(pAttributesBuffer);
 
-	return 1;
+    return 1;
 }
 
 int OGRSXFLayer::Write(const SXFFile &oSXF, 
-	const std::map<std::string, int> &mnClassCodes)
+    const std::map<std::string, int> &mnClassCodes)
 {
-	int nWrites = 0;
-	ResetReading();
-	using OGRFeaturePtr = std::unique_ptr<OGRFeature> ;
-	OGRFeaturePtr poFeature;
-	while ((poFeature = OGRFeaturePtr(GetNextFeature())) != nullptr)
-	{
-		nWrites += SetRawFeature(poFeature.get(), 
-			poFeature->GetGeometryRef(), oSXF, mnClassCodes);
-	}
-	return nWrites;
+    int nWrites = 0;
+    ResetReading();
+    using OGRFeaturePtr = std::unique_ptr<OGRFeature> ;
+    OGRFeaturePtr poFeature;
+    while ((poFeature = OGRFeaturePtr(GetNextFeature())) != nullptr)
+    {
+        nWrites += SetRawFeature(poFeature.get(), 
+            poFeature->GetGeometryRef(), oSXF, mnClassCodes);
+    }
+    return nWrites;
 }
 
 OGRErr OGRSXFLayer::ISetFeature(OGRFeature *poFeature)
 {
-	auto eErr = OGRMemLayer::ISetFeature(poFeature);
-	if (eErr != OGRERR_NONE)
-	{
-		return eErr;
-	}
+    auto eErr = OGRMemLayer::ISetFeature(poFeature);
+    if (eErr != OGRERR_NONE)
+    {
+        return eErr;
+    }
 
-	auto geom = poFeature->GetGeometryRef();
-	if (!geom)
-	{
-		CPLError(CE_Failure, CPLE_NotSupported,
-			"SXF. Geometry is mandatory.");
-		return OGRERR_UNSUPPORTED_GEOMETRY_TYPE;
-	}
-	OGREnvelope env;
-	geom->getEnvelope(&env);
-	poDS->UpdateExtent(env);
+    auto geom = poFeature->GetGeometryRef();
+    if (!geom)
+    {
+        CPLError(CE_Failure, CPLE_NotSupported,
+            "SXF. Geometry is mandatory.");
+        return OGRERR_UNSUPPORTED_GEOMETRY_TYPE;
+    }
+    OGREnvelope env;
+    geom->getEnvelope(&env);
+    poDS->UpdateExtent(env);
 
-	AddCode(poFeature, nID, mnClassificators);
-	
-	return eErr;
+    AddCode(poFeature, nID, mnClassificators);
+    
+    return eErr;
 }
 
 OGRErr OGRSXFLayer::ICreateFeature(OGRFeature *poFeature)
 {
-	auto eErr = OGRMemLayer::ICreateFeature(poFeature);
-	if (eErr != OGRERR_NONE)
-	{
-		return eErr;
-	}
+    auto eErr = OGRMemLayer::ICreateFeature(poFeature);
+    if (eErr != OGRERR_NONE)
+    {
+        return eErr;
+    }
 
-	auto geom = poFeature->GetGeometryRef();
-	if (!geom)
-	{
-		CPLError(CE_Failure, CPLE_NotSupported,
-			"SXF. Geometry is mandatory.");
-		return OGRERR_UNSUPPORTED_GEOMETRY_TYPE;
-	}
-	
-	OGREnvelope env;
-	geom->getEnvelope(&env);
-	poDS->UpdateExtent(env);
-	
-	AddCode(poFeature, nID, mnClassificators);
+    auto geom = poFeature->GetGeometryRef();
+    if (!geom)
+    {
+        CPLError(CE_Failure, CPLE_NotSupported,
+            "SXF. Geometry is mandatory.");
+        return OGRERR_UNSUPPORTED_GEOMETRY_TYPE;
+    }
+    
+    OGREnvelope env;
+    geom->getEnvelope(&env);
+    poDS->UpdateExtent(env);
+    
+    AddCode(poFeature, nID, mnClassificators);
 
-	return eErr;
+    return eErr;
 }
 
 OGRErr OGRSXFLayer::DeleteFeature(GIntBig nFID)
 {
-	auto eErr = OGRMemLayer::DeleteFeature(nFID);
-	if (eErr != OGRERR_NONE)
-	{
-		return eErr;
-	}
-	poDS->SetHasChanges();
-	return eErr;
+    auto eErr = OGRMemLayer::DeleteFeature(nFID);
+    if (eErr != OGRERR_NONE)
+    {
+        return eErr;
+    }
+    poDS->SetHasChanges();
+    return eErr;
 }
 
 OGRErr OGRSXFLayer::CreateField(OGRFieldDefn *poField, int bApproxOK)
 {
-	if (poField == nullptr || poField->GetType() > 5)
-	{
-		CPLError(CE_Failure, CPLE_NotSupported, 
-			"SXF. Unsupported field type %d or field is null.", poField->GetType());
-		return OGRERR_UNSUPPORTED_OPERATION;
-	}
-	return OGRMemLayer::CreateField(poField, bApproxOK);
+    if (poField == nullptr || poField->GetType() > 5)
+    {
+        CPLError(CE_Failure, CPLE_NotSupported, 
+            "SXF. Unsupported field type %d or field is null.", poField->GetType());
+        return OGRERR_UNSUPPORTED_OPERATION;
+    }
+    return OGRMemLayer::CreateField(poField, bApproxOK);
 }
 
 std::string OGRSXFLayer::OGRFieldTypeToString(const OGRFieldType type)
 {
-	switch (type)
-	{
-	case OFTInteger:
-	case OFTIntegerList:
-		return "I";
-	case OFTReal:
-	case OFTRealList:
-		return "R";
-	case OFTString:
-	case OFTStringList:
-		return "S";
-	default:
-		return "";
-	}
+    switch (type)
+    {
+    case OFTInteger:
+    case OFTIntegerList:
+        return "I";
+    case OFTReal:
+    case OFTRealList:
+        return "R";
+    case OFTString:
+    case OFTStringList:
+        return "S";
+    default:
+        return "";
+    }
 }
 
 std::string OGRSXFLayer::CreateFieldKey(OGRFieldDefn *poFld)
 {
-	return std::string(poFld->GetNameRef()) + ":" + 
-		OGRSXFLayer::OGRFieldTypeToString(poFld->GetType());
+    return std::string(poFld->GetNameRef()) + ":" + 
+        OGRSXFLayer::OGRFieldTypeToString(poFld->GetType());
 }
 
 
 int OGRSXFLayer::GetFieldNameCode(const char * pszFieldName)
 {
-	int nCode = -1;
-	if (pszFieldName == nullptr)
-	{
-		return nCode;
-	}
-	int n = 0; // For case of SC_8_txt - we only expected SC_<int>
-	int cnt = sscanf(pszFieldName, "SC_%d%n", &nCode, &n);
-	if (cnt == 1 && n > 0 && pszFieldName[n] == '\0')
-	{
-		return nCode;
-	}
-	return -1;
+    int nCode = -1;
+    if (pszFieldName == nullptr)
+    {
+        return nCode;
+    }
+    int n = 0; // For case of SC_8_txt - we only expected SC_<int>
+    int cnt = sscanf(pszFieldName, "SC_%d%n", &nCode, &n);
+    if (cnt == 1 && n > 0 && pszFieldName[n] == '\0')
+    {
+        return nCode;
+    }
+    return -1;
 }
 
 bool OGRSXFLayer::IsFieldNameHasCode(const char *pszFieldName)
 {
-	return OGRSXFLayer::GetFieldNameCode(pszFieldName) != -1 ||
-		EQUAL(pszFieldName, FID) || 
-		EQUAL(pszFieldName, CLCODE) ||
-		EQUAL(pszFieldName, CLNAME) || 
-		EQUAL(pszFieldName, OT) || 
-		EQUAL(pszFieldName, GROUP_NUMBER) || 
-		EQUAL(pszFieldName, NUMBER_IN_GROUP) ||
-		EQUAL(pszFieldName, OBJECTNUMB) ||
-		EQUAL(pszFieldName, ANGLE) ||
-		EQUAL(pszFieldName, TEXT);
+    return OGRSXFLayer::GetFieldNameCode(pszFieldName) != -1 ||
+        EQUAL(pszFieldName, FID) || 
+        EQUAL(pszFieldName, CLCODE) ||
+        EQUAL(pszFieldName, CLNAME) || 
+        EQUAL(pszFieldName, OT) || 
+        EQUAL(pszFieldName, GROUP_NUMBER) || 
+        EQUAL(pszFieldName, NUMBER_IN_GROUP) ||
+        EQUAL(pszFieldName, OBJECTNUMB) ||
+        EQUAL(pszFieldName, ANGLE) ||
+        EQUAL(pszFieldName, TEXT);
 }
 
 std::map<std::string, std::string> OGRSXFLayer::GetClassifyCodes() const
 {
-	if (mnClassificators.empty())
-	{
-		auto osCode = "L" + std::to_string(nID + DEFAULT_CLCODE_L);
-		mnClassificators[osCode] = osCode;
-		osCode = "S" + std::to_string(nID + DEFAULT_CLCODE_S);
-		mnClassificators[osCode] = osCode;
-		osCode = "P" + std::to_string(nID + DEFAULT_CLCODE_P);
-		mnClassificators[osCode] = osCode;
-		osCode = "T" + std::to_string(nID + DEFAULT_CLCODE_T);
-		mnClassificators[osCode] = osCode;
-		osCode = "V" + std::to_string(nID + DEFAULT_CLCODE_V);
-		mnClassificators[osCode] = osCode;
-		osCode = "C" + std::to_string(nID + DEFAULT_CLCODE_C);
-		mnClassificators[osCode] = osCode;
-	}
-	return mnClassificators;
+    if (mnClassificators.empty())
+    {
+        auto osCode = "L" + std::to_string(nID + DEFAULT_CLCODE_L);
+        mnClassificators[osCode] = osCode;
+        osCode = "S" + std::to_string(nID + DEFAULT_CLCODE_S);
+        mnClassificators[osCode] = osCode;
+        osCode = "P" + std::to_string(nID + DEFAULT_CLCODE_P);
+        mnClassificators[osCode] = osCode;
+        osCode = "T" + std::to_string(nID + DEFAULT_CLCODE_T);
+        mnClassificators[osCode] = osCode;
+        osCode = "V" + std::to_string(nID + DEFAULT_CLCODE_V);
+        mnClassificators[osCode] = osCode;
+        osCode = "C" + std::to_string(nID + DEFAULT_CLCODE_C);
+        mnClassificators[osCode] = osCode;
+    }
+    return mnClassificators;
 }
