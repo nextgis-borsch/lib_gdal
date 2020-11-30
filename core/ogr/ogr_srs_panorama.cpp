@@ -118,7 +118,8 @@ constexpr int aoDatums[] =
     0,
     0,
     0,
-    4200    // Pulkovo, 1995
+    4200,   // Pulkovo, 1995
+	1159 	// GSK 2011
 };
 
 #define NUMBER_OF_DATUMS        static_cast<long>(CPL_ARRAYSIZE(aoDatums))
@@ -542,13 +543,7 @@ OGRErr OGRSpatialReference::importFromPanorama( long iProjSys, long iDatum,
 
     if( !IsLocal() )
     {
-        if( iDatum > 0 && iDatum < NUMBER_OF_DATUMS && aoDatums[iDatum] )
-        {
-            OGRSpatialReference oGCS;
-            oGCS.importFromEPSG( aoDatums[iDatum] );
-            CopyGeogCSFrom( &oGCS );
-        }
-        else if( iEllips == PAN_ELLIPSOID_GSK2011 )
+        if( iEllips == PAN_ELLIPSOID_GSK2011 )
         {
             OGRSpatialReference oGCS;
             oGCS.importFromEPSG( 7683 );
@@ -592,6 +587,12 @@ OGRErr OGRSpatialReference::importFromPanorama( long iProjSys, long iDatum,
 
             CPLFree( pszName );
         }
+		else if (iDatum > 0 && iDatum < NUMBER_OF_DATUMS && aoDatums[iDatum])
+		{
+			OGRSpatialReference oGCS;
+			oGCS.importFromEPSG(aoDatums[iDatum]);
+			CopyGeogCSFrom(&oGCS);
+		}
         else
         {
             CPLError( CE_Warning, CPLE_AppDefined,
