@@ -837,7 +837,10 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
             }
             else
             {
-                oLim.AddRange(aSC1Def[j], 0.0, aMatrix[j]);
+                for (size_t j = 0; j < aSC1Def.size(); j++)
+                {
+                    oLim.AddRange(aSC1Def[j], 0.0, aMatrix[j]);
+                }
             }
 
             int nDefaultExt;
