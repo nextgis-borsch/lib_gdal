@@ -409,6 +409,170 @@ class SXFDate
 };
 
 /******************************************************************************/
+/* SXFLimits                                                                  */
+/******************************************************************************/
+SXFLimits::SXFLimits(int nSC1In, int nSC2In) : nSC1(nSC1In), nSC2(nSC2In)
+{
+
+}
+
+void SXFLimits::AddRange(double dfStart, double dfEnd, int nExt)
+{
+    aRanges.push_back({ dfStart, dfEnd, nExt });
+}
+
+void SXFLimits::SetDefaultExt(int nExt)
+{
+    nDefaultExt = nExt;
+}
+
+int SXFLimits::GetExtention(double dfSC1Val, double dfSC2Val) const
+{
+    double dfPrevVal1 = -1000000.0, dfPrevVal2 = -1000000.0;
+    for (const auto &stRange : aRanges)
+    {
+        if (dfSC1Val >= dfPrevVal1)
+        {
+            dfPrevVal2 = -1000000.0;
+            if (dfSC1Val <= stRange.dfStart)
+            {
+                if (dfSC2Val == 0.0 ||
+                    (dfSC2Val > dfPrevVal2 && dfSC2Val <= stRange.dfEnd))
+                {
+                    {
+                        return stRange.nExt;
+                    }
+                }
+            }
+        }
+        
+        dfPrevVal2 = stRange.dfEnd;
+        dfPrevVal1 = stRange.dfStart;
+    }
+    return nDefaultExt;
+}
+
+std::pair<int, int> SXFLimits::GetLimitCodes() const
+{
+    return std::make_pair(nSC1, nSC2);
+}
+
+/******************************************************************************/
+/* SXFLayerDefn                                                               */
+/******************************************************************************/
+
+SXFLayerDefn::SXFLayerDefn(int nLayerID, const std::string &osLayerName) :
+	nID(nLayerID), osName(osLayerName)
+{
+
+}
+
+void SXFLayerDefn::AddCode(SXFClassCode stCodeIn)
+{
+    // Check duplicates
+    for (const auto &stCode : astCodes)
+    {
+        if (stCode == stCodeIn)
+        {
+            return;
+        }
+    }
+	astCodes.emplace_back(stCodeIn);
+}
+
+bool SXFLayerDefn::HasField(GUInt32 nSemCode) const
+{
+	for (const auto &field : astFields) {
+		if (field.nCode == nSemCode)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+void SXFLayerDefn::AddField(SXFField stField)
+{
+	astFields.emplace_back(stField);
+}
+
+std::string SXFLayerDefn::GetName() const
+{
+	return osName;
+}
+
+std::vector<SXFClassCode> SXFLayerDefn::GetCodes(bool bForce)
+{
+	if (bForce && astCodes.empty())
+	{
+		auto osCode = "L" + std::to_string(nID + DEFAULT_CLCODE_L);
+		astCodes.push_back({ osCode, osCode });
+		osCode = "S" + std::to_string(nID + DEFAULT_CLCODE_S);
+		astCodes.push_back({ osCode, osCode });
+		osCode = "P" + std::to_string(nID + DEFAULT_CLCODE_P);
+		astCodes.push_back({ osCode, osCode });
+		osCode = "T" + std::to_string(nID + DEFAULT_CLCODE_T);
+		astCodes.push_back({ osCode, osCode });
+		osCode = "V" + std::to_string(nID + DEFAULT_CLCODE_V);
+		astCodes.push_back({ osCode, osCode });
+		osCode = "C" + std::to_string(nID + DEFAULT_CLCODE_C);
+		astCodes.push_back({ osCode, osCode });
+	}
+	return astCodes;
+}
+
+std::vector<SXFField> SXFLayerDefn::GetFields() const
+{
+	return astFields;
+}
+
+bool SXFLayerDefn::HasCode(const std::string &osCode) const
+{
+	for (const auto &stCode : astCodes)
+	{
+		if (stCode.osCode == osCode)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+GUInt32 SXFLayerDefn::GenerateCode(SXFGeometryType eGeomType) const
+{
+    return nID + SXFFile::CodeForGeometryType(eGeomType);
+}
+
+
+void SXFLayerDefn::AddLimits(const std::string &osCode, const SXFLimits &oLimIn)
+{
+    mLim[osCode] = oLimIn;
+}
+
+
+SXFLimits SXFLayerDefn::GetLimits(const std::string &osCode) const
+{
+    auto it = mLim.find(osCode);
+    if (it != mLim.end())
+    {
+        return it->second;
+    }
+    return SXFLimits();
+}
+
+std::string SXFLayerDefn::GetCodeName(const std::string &osCode, int nExt) const
+{
+    for (const auto &stCode : astCodes)
+    {
+        if (stCode.osCode == osCode && stCode.nExt == nExt)
+        {
+            return stCode.osName;
+        }
+    }
+    return "";
+}
+
+/******************************************************************************/
 /* SXFFile                                                                    */
 /******************************************************************************/
 

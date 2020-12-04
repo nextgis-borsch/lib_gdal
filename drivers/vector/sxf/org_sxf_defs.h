@@ -310,15 +310,16 @@ typedef struct {
     int nWidth;
 } SXFField;
 
-typedef struct {
+typedef struct _SXFClassCode {
     std::string osCode;
     std::string osName;
-} SXFClassCode;
+    int nExt;
 
-typedef struct {
-    std::string osName;
-    std::vector<SXFClassCode> astCodes;
-    std::vector<SXFField> astFields;
-} SXFLayerDefn;
+    bool operator==(const struct _SXFClassCode &rhs) const
+    {
+        return osCode == rhs.osCode && 
+            osName == rhs.osName && nExt == rhs.nExt;
+    }
+} SXFClassCode;
 
 #endif  /* SXF_DEFS_H */

@@ -166,7 +166,11 @@ typedef struct {
     GByte nMaxZoom;
     GByte nMinZoom;
     GByte nUseBorders;
-    GByte reseve[15];
+    GByte reseve;
+	GUInt32 nLinkedText;
+	GUInt32 nSemCode;
+	GByte szPref[7];
+	GByte nZeroes;
 } RSCObject;
 
 typedef struct {
@@ -177,6 +181,19 @@ typedef struct {
     GUInt16 nMandatorySemCount;
     GUInt16 nPossibleSemCount;
 } RSCObjectSemantics;
+
+typedef struct {
+	GUInt32 nLength;
+	GUInt32 nObjectCode;
+	GByte nLocalization;
+	GByte reserve[7];
+	GUInt32 nSC1;
+	GUInt16 nSC1LimCount;
+	GUInt16 nSC1LimDefIndex;
+	GUInt32 nSC2;
+	GUInt16 nSC2LimCount;
+	GUInt16 nSC2LimDefIndex;
+} RSCLimitsRecord;
 
 typedef struct {
     GUInt32 nColorsTablesOffset;
@@ -590,7 +607,7 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
     auto nFileLength = FileLength(fpRSC.get());
     VSIFSeekL(fpRSC.get(), 0, SEEK_SET);
 
-        // Read header
+    // Read header
     Header stRSCFileHeader;
     size_t nObjectsRead =
         VSIFReadL(&stRSCFileHeader, sizeof(Header), 1, fpRSC.get());
@@ -669,7 +686,7 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
         CSLFetchNameValueDef(papszOpenOpts, "SXF_LAYER_FULLNAME",
             CPLGetConfigOption("SXF_LAYER_FULLNAME", "NO")));
 
-    if (osEncoding.empty()) // Input encoding overrides one set in header
+    if (osEncoding.empty()) // Input encoding overrides the one set in header
     {
         if (stRSCFileHeaderEx.nFontEnc == 125)
         {
@@ -682,6 +699,7 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
     }
     
     std::map<GUInt32, SXFField> mstSemantics;
+	std::map<std::string, SXFLimits> moLimits;
     if( bIsNewBehavior )
     {
         // Read all semantics
@@ -756,6 +774,91 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
             nOffset += 84L;
             VSIFSeekL(fpRSC.get(), nOffset, SEEK_SET);   
         }
+
+		// Read limits
+		CPLDebug("SXF", "Read %d limits from RSC",
+			stRSCFileHeaderEx.Domains.nRecordCount);
+		nOffset = stRSCFileHeaderEx.Domains.nOffset;
+		VSIFSeekL(fpRSC.get(), nOffset, SEEK_SET);
+        for (GUInt32 i = 0; i < stRSCFileHeaderEx.Domains.nRecordCount; i++)
+        {
+            RSCLimitsRecord stLim;
+            VSIFReadL(&stLim, sizeof(RSCLimitsRecord), 1, fpRSC.get());
+            CPL_LSBPTR32(&stLim.nLength);
+            CPL_LSBPTR32(&stLim.nObjectCode);
+            CPL_LSBPTR32(&stLim.nSC1);
+            CPL_LSBPTR16(&stLim.nSC1LimCount);
+            CPL_LSBPTR16(&stLim.nSC1LimDefIndex);
+            CPL_LSBPTR32(&stLim.nSC2);
+            CPL_LSBPTR16(&stLim.nSC2LimCount);
+            CPL_LSBPTR16(&stLim.nSC2LimDefIndex);
+
+            SXFLimits oLim(stLim.nSC1, stLim.nSC2);
+            std::vector<double> aSC1Def, aSC2Def;
+            std::vector<int> aMatrix;
+            for (int j = 0; j < stLim.nSC1LimCount; j++)
+            {
+                double dfSCLimDef;
+                VSIFReadL(&dfSCLimDef, 8, 1, fpRSC.get());
+                CPL_LSBPTR64(&dfSCLimDef);
+                aSC1Def.emplace_back(dfSCLimDef);
+            }
+
+            for (int j = 0; j < stLim.nSC2LimCount; j++)
+            {
+                double dfSCLimDef;
+                VSIFReadL(&dfSCLimDef, 8, 1, fpRSC.get());
+                CPL_LSBPTR64(&dfSCLimDef);
+                aSC2Def.emplace_back(dfSCLimDef);
+            }
+
+            if (stLim.nSC2LimCount == 0)
+            {
+                stLim.nSC2LimCount = 1;
+            }
+
+            for (int j = 0; j < stLim.nSC1LimCount * stLim.nSC2LimCount; j++)
+            {
+                GByte nExt;
+                VSIFReadL(&nExt, 1, 1, fpRSC.get());
+                aMatrix.emplace_back(nExt);
+            }
+
+            for (size_t j = 0; j < aSC1Def.size(); j++)
+            {
+                if (aSC2Def.size() > 0)
+                {
+                    for (size_t k = 0; k < aSC2Def.size(); k++)
+                    {
+                        size_t nMatrixIndex = j * aSC2Def.size() + k;
+                        oLim.AddRange(aSC1Def[j], aSC2Def[k], aMatrix[nMatrixIndex]);
+                    }
+                }
+                else
+                {
+                    oLim.AddRange(aSC1Def[j], 0.0, aMatrix[j]);
+                }
+            }
+
+            int nDefaultExt;
+            if (aSC2Def.size() > 0)
+            {
+                size_t nMatrixIndex = (stLim.nSC1LimDefIndex - 1) * aSC2Def.size() + (stLim.nSC2LimDefIndex - 1);
+                nDefaultExt = aMatrix[nMatrixIndex];
+            }
+            else
+            {
+                nDefaultExt = aMatrix[stLim.nSC1LimDefIndex - 1];
+            }
+            oLim.SetDefaultExt(nDefaultExt);
+
+            auto eGeomType = SXFFile::CodeToGeometryType(stLim.nLocalization);
+            auto osFullCode = SXFFile::ToStringCode(eGeomType, stLim.nObjectCode);
+            moLimits[osFullCode] = oLim;
+
+            nOffset += stLim.nLength;
+            VSIFSeekL(fpRSC.get(), nOffset, SEEK_SET);
+        }
     }
 
     // Read classify code -> semantics[]
@@ -801,21 +904,19 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
 
         CPL_LSBPTR32(&stLayer.nLength);
         
-        std::string name;
+        std::string osLayerName;
         if (bLayerFullName)
         {
-            name = GetName(reinterpret_cast<const char*>(stLayer.szName), 
+			osLayerName = GetName(reinterpret_cast<const char*>(stLayer.szName),
                 osEncoding);
         }
         else
         {
-            name = GetName(reinterpret_cast<const char*>(stLayer.szShortName), 
+			osLayerName = GetName(reinterpret_cast<const char*>(stLayer.szShortName),
                 osEncoding);
         }
 
-        SXFLayerDefn defn;
-        defn.osName = name;
-        mstLayers[stLayer.nNo] = defn;
+        mstLayers[stLayer.nNo] = SXFLayerDefn(stLayer.nNo * EXTRA_ID, osLayerName);
 
         nOffset += stLayer.nLength;
         VSIFSeekL(fpRSC.get(), nOffset, SEEK_SET);
@@ -825,53 +926,46 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
     CPLDebug("SXF", "Read %d objects from RSC", stRSCFileHeaderEx.Objects.nRecordCount);
     nOffset = stRSCFileHeaderEx.Objects.nOffset;
     VSIFSeekL(fpRSC.get(), nOffset, SEEK_SET);
-    std::set<std::string> sUsedCodes;
     for( GUInt32 i = 0; i < stRSCFileHeaderEx.Objects.nRecordCount; i++ )
     {
         RSCObject stRSCObject;
         VSIFReadL(&stRSCObject, sizeof(RSCObject), 1, fpRSC.get());
         CPL_LSBPTR32(&stRSCObject.nLength);
         CPL_LSBPTR32(&stRSCObject.nClassifyCode);
+		CPL_LSBPTR16(&stRSCObject.nExtNo);
 
         auto eGeomType = SXFFile::CodeToGeometryType(stRSCObject.nGeometryType);
-        auto osFullCode = SXFFile::ToStringCode(eGeomType, stRSCObject.nClassifyCode);
+		auto osFullCode = SXFFile::ToStringCode(eGeomType, stRSCObject.nClassifyCode);
 
-        if( sUsedCodes.find(osFullCode) == sUsedCodes.end() )
-        {
-            sUsedCodes.insert(osFullCode);
+        auto name = GetName(reinterpret_cast<const char*>(stRSCObject.szName),
+            osEncoding);
 
-            auto name = 
-                GetName(reinterpret_cast<const char*>(stRSCObject.szName),
-                    osEncoding);
+        auto layer = mstLayers.find(stRSCObject.nLayerId);
+        if ( layer != mstLayers.end() ) {
+            SXFClassCode cc = { osFullCode, name, stRSCObject.nExtNo };
+			layer->second.AddCode(cc);
 
-            auto layer = mstLayers.find(stRSCObject.nLayerId);
-            if ( layer != mstLayers.end() ) {
-                SXFClassCode cc = { osFullCode, name };
-                layer->second.astCodes.emplace_back(cc);
-                if( bIsNewBehavior )
+            if( bIsNewBehavior )
+            {
+                // Add limits for specific code and geometry type
+                auto mLimits = moLimits.find(osFullCode);
+                if (mLimits != moLimits.end())
                 {
-                    // Get semantics for classify code
-                    auto semantics = codeSemMap[stRSCObject.nClassifyCode];
+                    layer->second.AddLimits(osFullCode, mLimits->second);
+                }
 
-                    for( auto semantic : semantics )
+                // Get semantics for classify code
+                auto semantics = codeSemMap[stRSCObject.nClassifyCode];
+
+                for( auto semantic : semantics )
+                {
+                    if( !layer->second.HasField(semantic) )
                     {
-                        bool bHasField = false;
-                        for( const auto &field : layer->second.astFields ) {
-                            if( field.nCode == semantic )
-                            {
-                                bHasField = true;
-                                break;
-                            }
-                        }
-
-                        if( !bHasField )
+                        auto semanticsIt = mstSemantics.find(semantic); 
+                        if( semanticsIt != mstSemantics.end() )
                         {
-                            auto semanticsIt = mstSemantics.find(semantic); 
-                            if( semanticsIt != mstSemantics.end() )
-                            {
-                                auto ss = mstSemantics[semantic];
-                                layer->second.astFields.emplace_back(ss);
-                            }
+                            auto ss = mstSemantics[semantic];
+                            layer->second.AddField(ss);
                         }
                     }
                 }
@@ -885,29 +979,37 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
     return true;
 }
 
-std::map<GByte, SXFLayerDefn> RSCFile::GetDefaultLayers()
+static std::map<GByte, SXFLayerDefn> GetDefaultLayers()
 {
     std::map<GByte, SXFLayerDefn> mstDefaultLayers;
-    SXFLayerDefn defn;
-    defn.osName = "SYSTEM";
+    SXFLayerDefn defn(0, "SYSTEM");
 
     // Some initial codes
-    defn.astCodes.push_back({ "L1000000001", "Selection line"});
-    defn.astCodes.push_back({ "S1000000002", "Selection square" });
-    defn.astCodes.push_back({ "P1000000003", "Selection point" });
-    defn.astCodes.push_back({ "T1000000004", "Selection text" });
-    defn.astCodes.push_back({ "V1000000005", "Selection vector" });
-    defn.astCodes.push_back({ "C1000000006", "Selection template" });
-    defn.astCodes.push_back({ "L1000000007", "System object" });
-    defn.astCodes.push_back({ "L1000000008", "System object" });
-    defn.astCodes.push_back({ "L1000000009", "System object" });
-    defn.astCodes.push_back({ "L1000000010", "System object" });
-    defn.astCodes.push_back({ "L1000000011", "System object" });
-    defn.astCodes.push_back({ "L1000000012", "System object" });
-    defn.astCodes.push_back({ "L1000000013", "System object" });
-    defn.astCodes.push_back({ "L1000000014", "System object" });
+    defn.AddCode({ "L1000000001", "Selection line", 0});
+    defn.AddCode({ "S1000000002", "Selection square", 0 });
+    defn.AddCode({ "P1000000003", "Selection point", 0 });
+    defn.AddCode({ "T1000000004", "Selection text", 0 });
+    defn.AddCode({ "V1000000005", "Selection vector", 0 });
+    defn.AddCode({ "C1000000006", "Selection template", 0 });
+    defn.AddCode({ "L1000000007", "System object", 0 });
+    defn.AddCode({ "L1000000008", "System object", 0 });
+    defn.AddCode({ "L1000000009", "System object", 0 });
+    defn.AddCode({ "L1000000010", "System object", 0 });
+    defn.AddCode({ "L1000000011", "System object", 0 });
+    defn.AddCode({ "L1000000012", "System object", 0 });
+    defn.AddCode({ "L1000000013", "System object", 0 });
+    defn.AddCode({ "L1000000014", "System object", 0 });
     mstDefaultLayers[0] = defn;
     return mstDefaultLayers;
+}
+
+std::map<GByte, SXFLayerDefn> RSCFile::GetLayers() const
+{
+	if (mstLayers.empty())
+	{
+		return GetDefaultLayers();
+	}
+	return mstLayers;
 }
 
 static vsi_l_offset WriteCMY(VSILFILE *fpRSC)
@@ -1348,23 +1450,22 @@ bool RSCFile::Write(const std::string &osPath, OGRSXFDataSource *poDS,
             astLayerSem.emplace_back(stSem);
         }
 
-        auto mosCodes = poLayer->GetClassifyCodes();
-        for (const auto &itCode : mosCodes)
+        for (const auto &stCode : poLayer->GetClassifyCodes())
         {
             RSCObj stObj = { 0 };
 
-            if (itCode.first.size() < 2)
+            if (stCode.osCode.size() < 2)
             {
                 continue;
             }
 
-            auto osCode = itCode.first.substr(1);
-            auto eType = SXFFile::StringToSXFType(itCode.first.substr(0, 1));
+            auto osCode = stCode.osCode.substr(1);
+            auto eType = SXFFile::StringToSXFType(stCode.osCode.substr(0, 1));
             int nCode = atoi(osCode.c_str());
             
             stObj.nCode = nCode;
             stObj.nLayer = i + 1; // 0 index is for code of SYSTEM layer
-            stObj.osName = itCode.second;
+            stObj.osName = stCode.osName;
             stObj.nLoc = static_cast<int>(eType);
             stObj.aoSem = astLayerSem;
             astObjs.emplace_back(stObj);

@@ -41,6 +41,7 @@ constexpr const char *FID = "ogc_fid";
 constexpr const char *CLCODE = "CLCODE";
 constexpr const char *CLNAME = "CLNAME";
 constexpr const char *OT = "OT";
+constexpr const char *EXT = "EXT";
 constexpr const char *GROUP_NUMBER = "group_number";
 constexpr const char *NUMBER_IN_GROUP = "number_in_group";
 constexpr const char *OBJECTNUMB = "OBJECTNUMB";
@@ -185,7 +186,7 @@ static GByte *WriteLineToBuffer(size_t nPointSize, GByte *pBuff, size_t &nOffset
     OGRLineString *poLn, SXFGeometryType eGeomType,
     const char *pszText, size_t &nSize, const std::string &osEncoding)
 {
-    GByte *pLocalBuff;
+    GByte *pLocalBuff = nullptr;
     if (eGeomType == SXF_GT_Line)
     {
         GUInt32 nPointCount = poLn->getNumPoints();
@@ -201,7 +202,6 @@ static GByte *WriteLineToBuffer(size_t nPointSize, GByte *pBuff, size_t &nOffset
             nOffset += WritePointCount(nPointCount, pLocalBuff + nOffset);
         }
         nOffset = WriteLine(poLn, pLocalBuff + nOffset);
-        return pLocalBuff;
     }
     else if (eGeomType == SXF_GT_Vector)
     {
@@ -221,7 +221,6 @@ static GByte *WriteLineToBuffer(size_t nPointSize, GByte *pBuff, size_t &nOffset
         nOffset += WritePoint(&pt, pLocalBuff + nOffset);
         poLn->EndPoint(&pt);
         nOffset += WritePoint(&pt, pLocalBuff + nOffset);
-        return pLocalBuff;
     }
     else if (eGeomType == SXF_GT_Text)
     {
@@ -246,8 +245,8 @@ static GByte *WriteLineToBuffer(size_t nPointSize, GByte *pBuff, size_t &nOffset
         SXF::WriteEncString(pszText, pLocalBuff + nOffset, nTextLenght + 1,
             osEncoding.c_str());
         nOffset += nTextLenght + 1;
-        return pLocalBuff;
     }
+    return pLocalBuff;
 }
 
 static GByte *WriteGeometryToBuffer(OGRGeometry *poGeom, SXFGeometryType eGeomType,
@@ -374,6 +373,7 @@ static GByte *WriteAttributesToBuffer(OGRFeature *poFeature, size_t &nSize,
             EQUAL(poField->GetNameRef(), CLCODE) ||
             EQUAL(poField->GetNameRef(), CLNAME) ||
             EQUAL(poField->GetNameRef(), OT) ||
+			EQUAL(poField->GetNameRef(), EXT) ||
             EQUAL(poField->GetNameRef(), GROUP_NUMBER) ||
             EQUAL(poField->GetNameRef(), NUMBER_IN_GROUP) ||
             EQUAL(poField->GetNameRef(), OBJECTNUMB) ||
@@ -542,8 +542,22 @@ static GByte *WriteAttributesToBuffer(OGRFeature *poFeature, size_t &nSize,
     return pBuff;
 }
 
-static void AddCode(OGRFeature *poFeature, int nID, 
-    std::map<std::string, std::string> &mnClassificators)
+static int GetExtention(const std::string &strCode, OGRFeature &feature, const SXFLayerDefn &sxfDefn)
+{
+    SXFLimits oLimits = sxfDefn.GetLimits(strCode);
+    auto oLimitCodes = oLimits.GetLimitCodes();
+    if (oLimitCodes.first >= 0)
+    {
+        std::string oSCName = CPLSPrintf("SC_%d", oLimitCodes.first);
+        double dfVal1 = feature.GetFieldAsDouble(oSCName.c_str());
+        oSCName = CPLSPrintf("SC_%d", oLimitCodes.second);
+        double dfVal2 = feature.GetFieldAsDouble(oSCName.c_str());
+        return oLimits.GetExtention(dfVal1, dfVal2);
+    }
+    return 0;
+}
+
+static void AddCode(OGRFeature *poFeature, SXFLayerDefn &oSXFDefn)
 {
     auto nClcodeIndex = poFeature->GetFieldIndex(CLCODE);
     if (nClcodeIndex != -1 && poFeature->GetGeometryRef())
@@ -571,8 +585,7 @@ static void AddCode(OGRFeature *poFeature, int nID,
                 OGRTypeToSXFType(poFeature->GetGeometryRef()->getGeometryType());
             osCode = SXFFile::SXFTypeToString(eType);
 
-            osDefaultClass = 
-                std::to_string(nID + SXFFile::CodeForGeometryType(eType));
+            osDefaultClass = std::to_string(oSXFDefn.GenerateCode(eType));
         }
 
         std::string osClass = poFeature->GetFieldAsString(nClcodeIndex);
@@ -585,7 +598,10 @@ static void AddCode(OGRFeature *poFeature, int nID,
             }
         }
 
-        mnClassificators[osCode + osClass] = osName;
+        auto osStrCode = osCode + osClass;
+        int nExt = GetExtention(osStrCode, *poFeature, oSXFDefn);
+
+		oSXFDefn.AddCode({ osStrCode, osName, nExt });
     }
 }
 
@@ -593,15 +609,14 @@ static void AddCode(OGRFeature *poFeature, int nID,
 /// OGRSXFLayer
 ////////////////////////////////////////////////////////////////////////////
 
-OGRSXFLayer::OGRSXFLayer(OGRSXFDataSource *poDSIn, int nIDIn,
-    const char *pszLayerName, const std::vector<SXFField> &astFields, 
-    bool bIsNewBehavior) :
-    OGRMemLayer(pszLayerName, 
+OGRSXFLayer::OGRSXFLayer(OGRSXFDataSource *poDSIn,
+	const SXFLayerDefn &oSXFDefn, bool bIsNewBehavior) :
+    OGRMemLayer(oSXFDefn.GetName().c_str(),
         const_cast<OGRSpatialReference*>(poDSIn->GetSpatialRef()), wkbUnknown),
-    nID(nIDIn * 10000000),
     poDS(poDSIn),
     osFIDColumn(FID),
-    bIsNewBehavior(bIsNewBehavior)
+    bIsNewBehavior(bIsNewBehavior),
+	oSXFLayerDefn(oSXFDefn)
 {
 
     auto poFeatureDefn = GetLayerDefn();
@@ -622,12 +637,15 @@ OGRSXFLayer::OGRSXFLayer(OGRSXFDataSource *poDSIn, int nIDIn,
         ocOTField.SetWidth(1);
         poFeatureDefn->AddFieldDefn( &ocOTField );
 
+		OGRFieldDefn ocEXTField(EXT, OFTInteger);
+		poFeatureDefn->AddFieldDefn(&ocEXTField);
+
         OGRFieldDefn ocGNField( GROUP_NUMBER, OFTInteger );
         poFeatureDefn->AddFieldDefn( &ocGNField );
         OGRFieldDefn ocNGField( NUMBER_IN_GROUP, OFTInteger );
         poFeatureDefn->AddFieldDefn( &ocNGField );
 
-        for( const auto &field : astFields )
+        for( const auto &field : oSXFDefn.GetFields() )
         {
             OGRFieldDefn fieldDefn(field.osName.c_str(), field.eFieldType);
             fieldDefn.SetAlternativeName(field.osAlias.c_str());
@@ -663,29 +681,10 @@ OGRSXFLayer::OGRSXFLayer(OGRSXFDataSource *poDSIn, int nIDIn,
     SetUpdatable(poDS->GetAccess() == GA_Update);
 }
 
-/************************************************************************/
-/*                          AddClassifyCode                             */
-/* Add layer supported classify codes. Only records with this code can  */
-/* be in layer                                                          */
-/************************************************************************/
-
-void OGRSXFLayer::AddClassifyCode(const std::string &osClassCode, 
-    const std::string &osName)
-{
-    if (osName.empty())
-    {
-        mnClassificators[osClassCode] = osClassCode;
-    }
-    else
-    {
-        mnClassificators[osClassCode] = osName;
-    }
-}
-
 bool OGRSXFLayer::AddRecord(GIntBig nFID, const std::string &osClassCode, 
     const SXFFile &oSXF, vsi_l_offset nOffset, int nGroupID, int nSubObjectID)
 {
-    if( mnClassificators.find(osClassCode) != mnClassificators.end() ||
+    if( oSXFLayerDefn.HasCode(osClassCode) ||
         EQUAL(GetName(), "Not_Classified") )
     {
         VSIFSeekL(oSXF.File(), nOffset, SEEK_SET);
@@ -1147,6 +1146,24 @@ OGRFeature *OGRSXFLayer::GetRawFeature(const SXFFile &oSXF,
         VAR(OGRFieldType eTypeIn, const std::string &strIn, int iValIn, 
             double dfValIn)
             : eType(eTypeIn), str(strIn), iVal(iValIn), dfVal(dfValIn) {}
+        int ToInt() {
+            switch (eType)
+            {
+            case OFTInteger:
+            case OFTIntegerList:
+            case OFTInteger64:
+            case OFTInteger64List:
+                return iVal;
+            case OFTReal:
+            case OFTRealList:
+                return int(dfVal);
+            case OFTString:
+            case OFTStringList:
+                return atoi(str.c_str());
+            default:
+                return -1;
+            }
+        }
     };
 
     std::map<std::string, std::vector<VAR>> mFieldValues;
@@ -1443,24 +1460,7 @@ OGRFeature *OGRSXFLayer::GetRawFeature(const SXFFile &oSXF,
 
     auto osStrCode = SXFFile::ToStringCode(stRecordHeader.eGeometryType, 
         stRecordHeader.nClassifyCode);
-    auto osName = mnClassificators[osStrCode];
-    poFeature->SetField(CLNAME, osName.c_str());
-
-    if (bIsNewBehavior)
-    {
-        poFeature->SetField(OT, 
-            SXFFile::SXFTypeToString(stRecordHeader.eGeometryType).c_str());
-        // Add extra 10000 as group id and id in group may present
-        poFeature->SetField(GROUP_NUMBER, 
-            stRecordHeader.nGroupNumber + 10000 * nGroupID);
-        poFeature->SetField(NUMBER_IN_GROUP, 
-            stRecordHeader.nNumberInGroup + 10000 * nSubObjectID);
-    }
-    else
-    {
-        poFeature->SetField(OBJECTNUMB, stRecordHeader.nSubObjectCount);
-    }
-    
+   
     for (auto fieldVal : mFieldValues)
     {
         for (auto val : fieldVal.second)
@@ -1480,6 +1480,27 @@ OGRFeature *OGRSXFLayer::GetRawFeature(const SXFFile &oSXF,
                 break;
             }
         }
+    }
+
+    int nExt = GetExtention(osStrCode, *poFeature, oSXFLayerDefn);
+    auto osName = oSXFLayerDefn.GetCodeName(osStrCode, nExt);
+    poFeature->SetField(CLNAME, osName.c_str());
+
+    if (bIsNewBehavior)
+    {
+        poFeature->SetField(OT,
+            SXFFile::SXFTypeToString(stRecordHeader.eGeometryType).c_str());
+        // Add extra 10000 as group id and id in group may present
+        poFeature->SetField(GROUP_NUMBER,
+            stRecordHeader.nGroupNumber + 10000 * nGroupID);
+        poFeature->SetField(NUMBER_IN_GROUP,
+            stRecordHeader.nNumberInGroup + 10000 * nSubObjectID);
+        // Add EXT
+        poFeature->SetField(EXT, nExt);
+    }
+    else
+    {
+        poFeature->SetField(OBJECTNUMB, stRecordHeader.nSubObjectCount);
     }
 
     return poFeature;
@@ -2213,7 +2234,7 @@ int OGRSXFLayer::SetRawFeature(OGRFeature *poFeature, OGRGeometry *poGeom,
 
     if(!bSetClcode)
     {
-        stRecordHeader.nClassifyCode = nID + SXFFile::CodeForGeometryType(eGeomType);
+        stRecordHeader.nClassifyCode = oSXFLayerDefn.GenerateCode(eGeomType);
     }
     
     if ((nFieldIndex = poFeature->GetFieldIndex(GROUP_NUMBER)) != -1)
@@ -2322,7 +2343,7 @@ OGRErr OGRSXFLayer::ISetFeature(OGRFeature *poFeature)
     geom->getEnvelope(&env);
     poDS->UpdateExtent(env);
 
-    AddCode(poFeature, nID, mnClassificators);
+    AddCode(poFeature, oSXFLayerDefn);
     
     return eErr;
 }
@@ -2347,7 +2368,7 @@ OGRErr OGRSXFLayer::ICreateFeature(OGRFeature *poFeature)
     geom->getEnvelope(&env);
     poDS->UpdateExtent(env);
     
-    AddCode(poFeature, nID, mnClassificators);
+    AddCode(poFeature, oSXFLayerDefn);
 
     return eErr;
 }
@@ -2421,7 +2442,8 @@ bool OGRSXFLayer::IsFieldNameHasCode(const char *pszFieldName)
         EQUAL(pszFieldName, FID) || 
         EQUAL(pszFieldName, CLCODE) ||
         EQUAL(pszFieldName, CLNAME) || 
-        EQUAL(pszFieldName, OT) || 
+        EQUAL(pszFieldName, OT) ||
+		EQUAL(pszFieldName, EXT) ||
         EQUAL(pszFieldName, GROUP_NUMBER) || 
         EQUAL(pszFieldName, NUMBER_IN_GROUP) ||
         EQUAL(pszFieldName, OBJECTNUMB) ||
@@ -2429,22 +2451,7 @@ bool OGRSXFLayer::IsFieldNameHasCode(const char *pszFieldName)
         EQUAL(pszFieldName, TEXT);
 }
 
-std::map<std::string, std::string> OGRSXFLayer::GetClassifyCodes() const
+std::vector<SXFClassCode> OGRSXFLayer::GetClassifyCodes()
 {
-    if (mnClassificators.empty())
-    {
-        auto osCode = "L" + std::to_string(nID + DEFAULT_CLCODE_L);
-        mnClassificators[osCode] = osCode;
-        osCode = "S" + std::to_string(nID + DEFAULT_CLCODE_S);
-        mnClassificators[osCode] = osCode;
-        osCode = "P" + std::to_string(nID + DEFAULT_CLCODE_P);
-        mnClassificators[osCode] = osCode;
-        osCode = "T" + std::to_string(nID + DEFAULT_CLCODE_T);
-        mnClassificators[osCode] = osCode;
-        osCode = "V" + std::to_string(nID + DEFAULT_CLCODE_V);
-        mnClassificators[osCode] = osCode;
-        osCode = "C" + std::to_string(nID + DEFAULT_CLCODE_C);
-        mnClassificators[osCode] = osCode;
-    }
-    return mnClassificators;
+    return oSXFLayerDefn.GetCodes(true);
 }

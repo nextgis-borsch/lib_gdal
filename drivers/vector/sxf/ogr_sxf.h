@@ -43,6 +43,7 @@
 
 constexpr double TO_DEGREES = 57.2957795130823208766;
 constexpr double TO_RADIANS = 0.017453292519943295769;
+constexpr int EXTRA_ID = 100000000;
 
 class OGRSXFDataSource;
 
@@ -54,6 +55,58 @@ namespace SXF {
     std::string ReadEncString(const void *pBuffer, size_t nLen,
         const char *pszSrcEncoding);
 } // namespace SXF
+
+/************************************************************************/
+/*                            SXFLimits                                 */
+/************************************************************************/
+class SXFLimits
+{
+    public:
+        typedef struct {
+            double dfStart;
+            double dfEnd;
+            int nExt;
+        } Range;
+
+    public:
+        explicit SXFLimits(int nSC1In = -1, int nSC2In = -1);
+        void AddRange(double dfStart, double dfEnd, int nExt);
+        void SetDefaultExt(int nExt);
+        int GetExtention(double dfnSC1Val, double dfSC2Val) const;
+        std::pair<int, int> GetLimitCodes() const;
+    private:
+		int nSC1, nSC2;
+		std::vector<Range> aRanges;
+        int nDefaultExt = 0;
+};
+
+/************************************************************************/
+/*                          SXFLayerDefn                                */
+/************************************************************************/
+class SXFLayerDefn 
+{
+	public:
+		explicit SXFLayerDefn(int nLayerID = 0, const std::string &osLayerName = "");
+		//int GetExtentionNo(const std::string &osCode, const std::pair<int, int> &nSCValues) const;
+		bool HasCode(const std::string &osCode) const;
+		void AddCode(SXFClassCode stCode);
+		bool HasField(GUInt32 nSemCode) const;
+		void AddField(SXFField stField);
+        void AddLimits(const std::string &osCode, const SXFLimits &oLimIn);
+		std::string GetName() const;
+		std::vector<SXFClassCode> GetCodes(bool bForce = false);
+		std::vector<SXFField> GetFields() const;
+        SXFLimits GetLimits(const std::string &osCode) const;
+        std::string GetCodeName(const std::string &osCode, int nExt) const;
+        GUInt32 GenerateCode(SXFGeometryType eGeometryType) const;
+	
+	private:
+		int nID;
+		std::string osName;
+		std::vector<SXFClassCode> astCodes;
+		std::vector<SXFField> astFields;
+		std::map<std::string, SXFLimits> mLim;
+};
 
 /************************************************************************/
 /*                           SXFFile                                    */
@@ -124,13 +177,10 @@ class RSCFile
         bool Write(const std::string &osPath, OGRSXFDataSource *poDS, 
             const std::string &osEncoding, 
             const std::map<std::string, int> &mnClassMap);
+		std::map<GByte, SXFLayerDefn> GetLayers() const;
 
-    public:
+    private:
         std::map<GByte, SXFLayerDefn> mstLayers;
-
-    // static
-    public:
-        static std::map<GByte, SXFLayerDefn> GetDefaultLayers();
 
     private:
         CPL_DISALLOW_COPY_ASSIGN(RSCFile)
@@ -142,9 +192,8 @@ class RSCFile
 class OGRSXFLayer final: public OGRMemLayer
 {
 public:
-    explicit OGRSXFLayer(OGRSXFDataSource *poDSIn, int nIDIn, 
-        const char *pszLayerName,  const std::vector<SXFField> &astFields, 
-        bool bIsNewBehavior);
+    explicit OGRSXFLayer(OGRSXFDataSource *poDSIn, 
+        const SXFLayerDefn &oSXFDefn, bool bIsNewBehavior);
     virtual ~OGRSXFLayer() override = default;
 
     virtual int TestCapability( const char * ) override;
@@ -159,8 +208,7 @@ public:
     virtual OGRErr DeleteFeature(GIntBig nFID) override;
     OGRErr CreateField(OGRFieldDefn *poField, int bApproxOK = FALSE) override;
 
-    void AddClassifyCode(const std::string &osClassCode, const std::string &osName);
-    std::map<std::string, std::string> GetClassifyCodes() const;
+	std::vector<SXFClassCode> GetClassifyCodes();
     bool AddRecord(GIntBig nFID, const std::string &osClassCode, const SXFFile &oSXF,
         vsi_l_offset nOffset, int nGroupID = 0, int nSubObjectID = 0);
     int Write(const SXFFile &oSXF, const std::map<std::string, int> &mnClassCodes);
@@ -201,11 +249,10 @@ private:
         double value);
 
 private:
-    int nID;
     OGRSXFDataSource *poDS = nullptr;
     std::string osFIDColumn;
     bool bIsNewBehavior;
-    mutable std::map<std::string, std::string> mnClassificators;
+	SXFLayerDefn oSXFLayerDefn;
 };
 
 /************************************************************************/
@@ -257,7 +304,6 @@ private:
     bool bHasChanges = false;
     std::string osEncoding = "";
     bool bWriteRSC = true;
-    int nLayerID = 1;
 };
 
 /************************************************************************/

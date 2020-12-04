@@ -551,9 +551,9 @@ OGRErr OGRSpatialReference::importFromPanorama( long iProjSys, long iDatum,
         }
         else if( iEllips == PAN_ELLIPSOID_PZ90 )
         {
-            SetGeogCS( "PZ-90.11", "Parametry_Zemli_1990_11",
-                       "PZ-90", 6378136, 298.257839303);
-            SetAuthority( "SPHEROID", "EPSG", 7054 );
+			OGRSpatialReference oGCS;
+			oGCS.importFromEPSG(7679);
+			CopyGeogCSFrom(&oGCS);
         }
         else if( iEllips > 0
                  && iEllips < NUMBER_OF_ELLIPSOIDS
@@ -587,7 +587,7 @@ OGRErr OGRSpatialReference::importFromPanorama( long iProjSys, long iDatum,
 
             CPLFree( pszName );
         }
-		else if (iDatum > 0 && iDatum < NUMBER_OF_DATUMS && aoDatums[iDatum])
+		else if (iDatum > 0 && iDatum < NUMBER_OF_DATUMS && aoDatums[iDatum]) // Ellipsoid is prefereable instead datum
 		{
 			OGRSpatialReference oGCS;
 			oGCS.importFromEPSG(aoDatums[iDatum]);

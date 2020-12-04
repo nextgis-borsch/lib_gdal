@@ -37,7 +37,6 @@
 
 CPL_CVSID("$Id$")
 
-
 static bool CheckFileExists(const char *pszPath)
 {
     VSIStatBufL sStat;
@@ -263,33 +262,18 @@ int OGRSXFDataSource::Open(const char *pszFilename, bool bUpdateIn,
         CSLFetchNameValueDef(papszOpenOpts,
                              "SXF_NEW_BEHAVIOR",
                              CPLGetConfigOption("SXF_NEW_BEHAVIOR", "NO"));
-    bool bNewBehavior = CPLTestBool(pszIsNewBehavior);                        
+    bool bNewBehavior = CPLTestBool(pszIsNewBehavior);  
+	RSCFile oRSCFile;
     if (osRSCFileName.empty())
     {
         CPLError(CE_Warning, CPLE_None, "RSC file for %s not exist", pszFilename);
-        CreateLayers(oSXFFile.Extent(), RSCFile::GetDefaultLayers(),
-            bNewBehavior);
     }
-    else
-    {
-        RSCFile oRSCFile;
-        if (oRSCFile.Read(osRSCFileName, papszOpenOpts))
-        {
-            // Fill layers
-            auto mstLayers = oRSCFile.mstLayers;
-            if (mstLayers.empty())
-            {
-                // Create default set of layers
-                CreateLayers(oSXFFile.Extent(), oRSCFile.GetDefaultLayers(), 
-                    bNewBehavior);
-            }
-            else
-            {
-                CreateLayers(oSXFFile.Extent(), mstLayers, bNewBehavior);
-            }            
-        }
-    }
-
+	else
+	{
+		oRSCFile.Read(osRSCFileName, papszOpenOpts); // If read failed we get default layers and codes
+	}
+	auto mstLayers = oRSCFile.GetLayers();
+    CreateLayers(oSXFFile.Extent(), mstLayers, bNewBehavior);
     FillLayers(oSXFFile, bNewBehavior);
 
     return TRUE;
@@ -312,7 +296,6 @@ void OGRSXFDataSource::FillLayers(const SXFFile &oSXF, bool bIsNewBehavior)
 
     GIntBig nFID = 0;
     int nGroupId = 0;
-    std::string osStrCode;
     for (GUInt32 i = 0; i < oSXF.FeatureCount(); i++)
     {
         GUInt32 nCurrentOffset = nOffset;
@@ -327,7 +310,6 @@ void OGRSXFDataSource::FillLayers(const SXFFile &oSXF, bool bIsNewBehavior)
             CPL_LSBPTR32(&record.nClassifyCode);
             nCode = record.nClassifyCode;
             eGeomType =  SXFFile::CodeToGeometryType(record.nLocalizaton);
-            osStrCode = SXFFile::ToStringCode(eGeomType, nCode);
             CPL_LSBPTR16(&record.nSubObjectCount);
             nSubObjectCount = record.nSubObjectCount;
 
@@ -342,14 +324,14 @@ void OGRSXFDataSource::FillLayers(const SXFFile &oSXF, bool bIsNewBehavior)
             CPL_LSBPTR32(&record.nClassifyCode);
             nCode = record.nClassifyCode;
             eGeomType =  SXFFile::CodeToGeometryType(record.nLocalizaton);
-            osStrCode = SXFFile::ToStringCode(eGeomType, nCode);
             CPL_LSBPTR16(&record.nSubObjectCount);
             nSubObjectCount = record.nSubObjectCount;
 
             CPL_LSBPTR32(&record.nFullLength);
             nOffset += record.nFullLength;
         }
-
+        
+		auto osStrCode = SXFFile::ToStringCode(eGeomType, nCode);
         for (auto poLayer : poLayers)
         {
             auto pOGRSXFLayer = static_cast<OGRSXFLayer*>(poLayer);
@@ -411,18 +393,13 @@ void OGRSXFDataSource::CreateLayers(const OGREnvelope &oEnv,
 {
     for (const auto &layer : mstLayers)
     {
-        OGRSXFLayer *poLayer = new OGRSXFLayer(this, nLayerID++,
-            layer.second.osName.c_str(), 
-            layer.second.astFields, bIsNewBehavior);
-        for (const auto &code : layer.second.astCodes)
-        {
-            poLayer->AddClassifyCode(code.osCode, code.osName);
-        }    
+        OGRSXFLayer *poLayer = new OGRSXFLayer(this,
+            layer.second, bIsNewBehavior); 
         poLayers.emplace_back(poLayer);
     }
 
-    poLayers.emplace_back(new OGRSXFLayer(this, nLayerID++, "Not_Classified", 
-        std::vector<SXFField>(), bIsNewBehavior));
+	SXFLayerDefn oNotClassify(EXTRA_ID * poLayers.size() + 1, "Not_Classified");
+    poLayers.emplace_back(new OGRSXFLayer(this, oNotClassify, bIsNewBehavior));
 }
 
 void OGRSXFDataSource::FlushCache(void)
@@ -519,8 +496,8 @@ OGRLayer *OGRSXFDataSource::ICreateLayer(const char *pszName,
         CSLFetchNameValueDef(papszOptions, "SXF_NEW_BEHAVIOR",
             CPLGetConfigOption("SXF_NEW_BEHAVIOR", "NO"));
     bool bNewBehavior = CPLTestBool(pszIsNewBehavior);    
-    auto poNewLayer = new OGRSXFLayer(this, nLayerID++, pszName, 
-        std::vector<SXFField>(), bNewBehavior);
+	SXFLayerDefn oSXFLayerDefn(EXTRA_ID * poLayers.size() + 1, pszName);
+    auto poNewLayer = new OGRSXFLayer(this, oSXFLayerDefn, bNewBehavior);
     poLayers.emplace_back(poNewLayer);
     SetHasChanges();
     return poNewLayer;
