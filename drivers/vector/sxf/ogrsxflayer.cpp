@@ -373,7 +373,7 @@ static GByte *WriteAttributesToBuffer(OGRFeature *poFeature, size_t &nSize,
             EQUAL(poField->GetNameRef(), CLCODE) ||
             EQUAL(poField->GetNameRef(), CLNAME) ||
             EQUAL(poField->GetNameRef(), OT) ||
-			EQUAL(poField->GetNameRef(), EXT) ||
+            EQUAL(poField->GetNameRef(), EXT) ||
             EQUAL(poField->GetNameRef(), GROUP_NUMBER) ||
             EQUAL(poField->GetNameRef(), NUMBER_IN_GROUP) ||
             EQUAL(poField->GetNameRef(), OBJECTNUMB) ||
@@ -601,7 +601,7 @@ static void AddCode(OGRFeature *poFeature, SXFLayerDefn &oSXFDefn)
         auto osStrCode = osCode + osClass;
         int nExt = GetExtention(osStrCode, *poFeature, oSXFDefn);
 
-		oSXFDefn.AddCode({ osStrCode, osName, nExt });
+        oSXFDefn.AddCode({ osStrCode, osName, nExt });
     }
 }
 
@@ -610,13 +610,13 @@ static void AddCode(OGRFeature *poFeature, SXFLayerDefn &oSXFDefn)
 ////////////////////////////////////////////////////////////////////////////
 
 OGRSXFLayer::OGRSXFLayer(OGRSXFDataSource *poDSIn,
-	const SXFLayerDefn &oSXFDefn, bool bIsNewBehavior) :
+    const SXFLayerDefn &oSXFDefn, bool bIsNewBehavior) :
     OGRMemLayer(oSXFDefn.GetName().c_str(),
         const_cast<OGRSpatialReference*>(poDSIn->GetSpatialRef()), wkbUnknown),
     poDS(poDSIn),
     osFIDColumn(FID),
     bIsNewBehavior(bIsNewBehavior),
-	oSXFLayerDefn(oSXFDefn)
+    oSXFLayerDefn(oSXFDefn)
 {
 
     auto poFeatureDefn = GetLayerDefn();
@@ -637,8 +637,8 @@ OGRSXFLayer::OGRSXFLayer(OGRSXFDataSource *poDSIn,
         ocOTField.SetWidth(1);
         poFeatureDefn->AddFieldDefn( &ocOTField );
 
-		OGRFieldDefn ocEXTField(EXT, OFTInteger);
-		poFeatureDefn->AddFieldDefn(&ocEXTField);
+        OGRFieldDefn ocEXTField(EXT, OFTInteger);
+        poFeatureDefn->AddFieldDefn(&ocEXTField);
 
         OGRFieldDefn ocGNField( GROUP_NUMBER, OFTInteger );
         poFeatureDefn->AddFieldDefn( &ocGNField );
@@ -2443,7 +2443,7 @@ bool OGRSXFLayer::IsFieldNameHasCode(const char *pszFieldName)
         EQUAL(pszFieldName, CLCODE) ||
         EQUAL(pszFieldName, CLNAME) || 
         EQUAL(pszFieldName, OT) ||
-		EQUAL(pszFieldName, EXT) ||
+        EQUAL(pszFieldName, EXT) ||
         EQUAL(pszFieldName, GROUP_NUMBER) || 
         EQUAL(pszFieldName, NUMBER_IN_GROUP) ||
         EQUAL(pszFieldName, OBJECTNUMB) ||

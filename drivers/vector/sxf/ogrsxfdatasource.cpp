@@ -263,16 +263,16 @@ int OGRSXFDataSource::Open(const char *pszFilename, bool bUpdateIn,
                              "SXF_NEW_BEHAVIOR",
                              CPLGetConfigOption("SXF_NEW_BEHAVIOR", "NO"));
     bool bNewBehavior = CPLTestBool(pszIsNewBehavior);  
-	RSCFile oRSCFile;
+    RSCFile oRSCFile;
     if (osRSCFileName.empty())
     {
         CPLError(CE_Warning, CPLE_None, "RSC file for %s not exist", pszFilename);
     }
-	else
-	{
-		oRSCFile.Read(osRSCFileName, papszOpenOpts); // If read failed we get default layers and codes
-	}
-	auto mstLayers = oRSCFile.GetLayers();
+    else
+    {
+        oRSCFile.Read(osRSCFileName, papszOpenOpts); // If read failed we get default layers and codes
+    }
+    auto mstLayers = oRSCFile.GetLayers();
     CreateLayers(oSXFFile.Extent(), mstLayers, bNewBehavior);
     FillLayers(oSXFFile, bNewBehavior);
 
@@ -331,7 +331,7 @@ void OGRSXFDataSource::FillLayers(const SXFFile &oSXF, bool bIsNewBehavior)
             nOffset += record.nFullLength;
         }
         
-		auto osStrCode = SXFFile::ToStringCode(eGeomType, nCode);
+        auto osStrCode = SXFFile::ToStringCode(eGeomType, nCode);
         for (auto poLayer : poLayers)
         {
             auto pOGRSXFLayer = static_cast<OGRSXFLayer*>(poLayer);
@@ -398,7 +398,7 @@ void OGRSXFDataSource::CreateLayers(const OGREnvelope &oEnv,
         poLayers.emplace_back(poLayer);
     }
 
-	SXFLayerDefn oNotClassify(EXTRA_ID * poLayers.size() + 1, "Not_Classified");
+    SXFLayerDefn oNotClassify(EXTRA_ID * poLayers.size() + 1, "Not_Classified");
     poLayers.emplace_back(new OGRSXFLayer(this, oNotClassify, bIsNewBehavior));
 }
 
@@ -496,7 +496,7 @@ OGRLayer *OGRSXFDataSource::ICreateLayer(const char *pszName,
         CSLFetchNameValueDef(papszOptions, "SXF_NEW_BEHAVIOR",
             CPLGetConfigOption("SXF_NEW_BEHAVIOR", "NO"));
     bool bNewBehavior = CPLTestBool(pszIsNewBehavior);    
-	SXFLayerDefn oSXFLayerDefn(EXTRA_ID * poLayers.size() + 1, pszName);
+    SXFLayerDefn oSXFLayerDefn(EXTRA_ID * poLayers.size() + 1, pszName);
     auto poNewLayer = new OGRSXFLayer(this, oSXFLayerDefn, bNewBehavior);
     poLayers.emplace_back(poNewLayer);
     SetHasChanges();

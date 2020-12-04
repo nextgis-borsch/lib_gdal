@@ -167,10 +167,10 @@ typedef struct {
     GByte nMinZoom;
     GByte nUseBorders;
     GByte reseve;
-	GUInt32 nLinkedText;
-	GUInt32 nSemCode;
-	GByte szPref[7];
-	GByte nZeroes;
+    GUInt32 nLinkedText;
+    GUInt32 nSemCode;
+    GByte szPref[7];
+    GByte nZeroes;
 } RSCObject;
 
 typedef struct {
@@ -183,16 +183,16 @@ typedef struct {
 } RSCObjectSemantics;
 
 typedef struct {
-	GUInt32 nLength;
-	GUInt32 nObjectCode;
-	GByte nLocalization;
-	GByte reserve[7];
-	GUInt32 nSC1;
-	GUInt16 nSC1LimCount;
-	GUInt16 nSC1LimDefIndex;
-	GUInt32 nSC2;
-	GUInt16 nSC2LimCount;
-	GUInt16 nSC2LimDefIndex;
+    GUInt32 nLength;
+    GUInt32 nObjectCode;
+    GByte nLocalization;
+    GByte reserve[7];
+    GUInt32 nSC1;
+    GUInt16 nSC1LimCount;
+    GUInt16 nSC1LimDefIndex;
+    GUInt32 nSC2;
+    GUInt16 nSC2LimCount;
+    GUInt16 nSC2LimDefIndex;
 } RSCLimitsRecord;
 
 typedef struct {
@@ -699,7 +699,7 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
     }
     
     std::map<GUInt32, SXFField> mstSemantics;
-	std::map<std::string, SXFLimits> moLimits;
+    std::map<std::string, SXFLimits> moLimits;
     if( bIsNewBehavior )
     {
         // Read all semantics
@@ -775,11 +775,11 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
             VSIFSeekL(fpRSC.get(), nOffset, SEEK_SET);   
         }
 
-		// Read limits
-		CPLDebug("SXF", "Read %d limits from RSC",
-			stRSCFileHeaderEx.Domains.nRecordCount);
-		nOffset = stRSCFileHeaderEx.Domains.nOffset;
-		VSIFSeekL(fpRSC.get(), nOffset, SEEK_SET);
+        // Read limits
+        CPLDebug("SXF", "Read %d limits from RSC",
+            stRSCFileHeaderEx.Domains.nRecordCount);
+        nOffset = stRSCFileHeaderEx.Domains.nOffset;
+        VSIFSeekL(fpRSC.get(), nOffset, SEEK_SET);
         for (GUInt32 i = 0; i < stRSCFileHeaderEx.Domains.nRecordCount; i++)
         {
             RSCLimitsRecord stLim;
@@ -907,12 +907,12 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
         std::string osLayerName;
         if (bLayerFullName)
         {
-			osLayerName = GetName(reinterpret_cast<const char*>(stLayer.szName),
+            osLayerName = GetName(reinterpret_cast<const char*>(stLayer.szName),
                 osEncoding);
         }
         else
         {
-			osLayerName = GetName(reinterpret_cast<const char*>(stLayer.szShortName),
+            osLayerName = GetName(reinterpret_cast<const char*>(stLayer.szShortName),
                 osEncoding);
         }
 
@@ -932,10 +932,10 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
         VSIFReadL(&stRSCObject, sizeof(RSCObject), 1, fpRSC.get());
         CPL_LSBPTR32(&stRSCObject.nLength);
         CPL_LSBPTR32(&stRSCObject.nClassifyCode);
-		CPL_LSBPTR16(&stRSCObject.nExtNo);
+        CPL_LSBPTR16(&stRSCObject.nExtNo);
 
         auto eGeomType = SXFFile::CodeToGeometryType(stRSCObject.nGeometryType);
-		auto osFullCode = SXFFile::ToStringCode(eGeomType, stRSCObject.nClassifyCode);
+        auto osFullCode = SXFFile::ToStringCode(eGeomType, stRSCObject.nClassifyCode);
 
         auto name = GetName(reinterpret_cast<const char*>(stRSCObject.szName),
             osEncoding);
@@ -943,7 +943,7 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
         auto layer = mstLayers.find(stRSCObject.nLayerId);
         if ( layer != mstLayers.end() ) {
             SXFClassCode cc = { osFullCode, name, stRSCObject.nExtNo };
-			layer->second.AddCode(cc);
+            layer->second.AddCode(cc);
 
             if( bIsNewBehavior )
             {
@@ -1005,11 +1005,11 @@ static std::map<GByte, SXFLayerDefn> GetDefaultLayers()
 
 std::map<GByte, SXFLayerDefn> RSCFile::GetLayers() const
 {
-	if (mstLayers.empty())
-	{
-		return GetDefaultLayers();
-	}
-	return mstLayers;
+    if (mstLayers.empty())
+    {
+        return GetDefaultLayers();
+    }
+    return mstLayers;
 }
 
 static vsi_l_offset WriteCMY(VSILFILE *fpRSC)

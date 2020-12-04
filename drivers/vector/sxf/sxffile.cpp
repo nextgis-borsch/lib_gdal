@@ -462,7 +462,7 @@ std::pair<int, int> SXFLimits::GetLimitCodes() const
 /******************************************************************************/
 
 SXFLayerDefn::SXFLayerDefn(int nLayerID, const std::string &osLayerName) :
-	nID(nLayerID), osName(osLayerName)
+    nID(nLayerID), osName(osLayerName)
 {
 
 }
@@ -477,65 +477,65 @@ void SXFLayerDefn::AddCode(SXFClassCode stCodeIn)
             return;
         }
     }
-	astCodes.emplace_back(stCodeIn);
+    astCodes.emplace_back(stCodeIn);
 }
 
 bool SXFLayerDefn::HasField(GUInt32 nSemCode) const
 {
-	for (const auto &field : astFields) {
-		if (field.nCode == nSemCode)
-		{
-			return true;
-		}
-	}
-	return false;
+    for (const auto &field : astFields) {
+        if (field.nCode == nSemCode)
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 void SXFLayerDefn::AddField(SXFField stField)
 {
-	astFields.emplace_back(stField);
+    astFields.emplace_back(stField);
 }
 
 std::string SXFLayerDefn::GetName() const
 {
-	return osName;
+    return osName;
 }
 
 std::vector<SXFClassCode> SXFLayerDefn::GetCodes(bool bForce)
 {
-	if (bForce && astCodes.empty())
-	{
-		auto osCode = "L" + std::to_string(nID + DEFAULT_CLCODE_L);
-		astCodes.push_back({ osCode, osCode });
-		osCode = "S" + std::to_string(nID + DEFAULT_CLCODE_S);
-		astCodes.push_back({ osCode, osCode });
-		osCode = "P" + std::to_string(nID + DEFAULT_CLCODE_P);
-		astCodes.push_back({ osCode, osCode });
-		osCode = "T" + std::to_string(nID + DEFAULT_CLCODE_T);
-		astCodes.push_back({ osCode, osCode });
-		osCode = "V" + std::to_string(nID + DEFAULT_CLCODE_V);
-		astCodes.push_back({ osCode, osCode });
-		osCode = "C" + std::to_string(nID + DEFAULT_CLCODE_C);
-		astCodes.push_back({ osCode, osCode });
-	}
-	return astCodes;
+    if (bForce && astCodes.empty())
+    {
+        auto osCode = "L" + std::to_string(nID + DEFAULT_CLCODE_L);
+        astCodes.push_back({ osCode, osCode });
+        osCode = "S" + std::to_string(nID + DEFAULT_CLCODE_S);
+        astCodes.push_back({ osCode, osCode });
+        osCode = "P" + std::to_string(nID + DEFAULT_CLCODE_P);
+        astCodes.push_back({ osCode, osCode });
+        osCode = "T" + std::to_string(nID + DEFAULT_CLCODE_T);
+        astCodes.push_back({ osCode, osCode });
+        osCode = "V" + std::to_string(nID + DEFAULT_CLCODE_V);
+        astCodes.push_back({ osCode, osCode });
+        osCode = "C" + std::to_string(nID + DEFAULT_CLCODE_C);
+        astCodes.push_back({ osCode, osCode });
+    }
+    return astCodes;
 }
 
 std::vector<SXFField> SXFLayerDefn::GetFields() const
 {
-	return astFields;
+    return astFields;
 }
 
 bool SXFLayerDefn::HasCode(const std::string &osCode) const
 {
-	for (const auto &stCode : astCodes)
-	{
-		if (stCode.osCode == osCode)
-		{
-			return true;
-		}
-	}
-	return false;
+    for (const auto &stCode : astCodes)
+    {
+        if (stCode.osCode == osCode)
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 GUInt32 SXFLayerDefn::GenerateCode(SXFGeometryType eGeomType) const
