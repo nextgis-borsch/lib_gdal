@@ -824,26 +824,26 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
                 aMatrix.emplace_back(nExt);
             }
 
-            for (size_t j = 0; j < aSC1Def.size(); j++)
+            if (aSC2Def.size() > 0)
             {
-                if (aSC2Def.size() > 0)
-                {
-                    for (size_t k = 0; k < aSC2Def.size(); k++)
+                for (size_t j = 0; j < aSC2Def.size(); j++)
+                {                
+                    for (size_t k = 0; k < aSC1Def.size(); k++)
                     {
-                        size_t nMatrixIndex = j * aSC2Def.size() + k;
-                        oLim.AddRange(aSC1Def[j], aSC2Def[k], aMatrix[nMatrixIndex]);
+                        size_t nMatrixIndex = j * aSC1Def.size() + k;
+                        oLim.AddRange(aSC1Def[k], aSC2Def[j], aMatrix[nMatrixIndex]);
                     }
                 }
-                else
-                {
-                    oLim.AddRange(aSC1Def[j], 0.0, aMatrix[j]);
-                }
+            }
+            else
+            {
+                oLim.AddRange(aSC1Def[j], 0.0, aMatrix[j]);
             }
 
             int nDefaultExt;
             if (aSC2Def.size() > 0)
             {
-                size_t nMatrixIndex = (stLim.nSC1LimDefIndex - 1) * aSC2Def.size() + (stLim.nSC2LimDefIndex - 1);
+                size_t nMatrixIndex = (stLim.nSC2LimDefIndex - 1) * aSC1Def.size() + (stLim.nSC1LimDefIndex - 1);
                 nDefaultExt = aMatrix[nMatrixIndex];
             }
             else
