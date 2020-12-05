@@ -550,8 +550,12 @@ static int GetExtention(const std::string &strCode, OGRFeature &feature, const S
     {
         std::string oSCName = CPLSPrintf("SC_%d", oLimitCodes.first);
         double dfVal1 = feature.GetFieldAsDouble(oSCName.c_str());
+        double dfVal2 = 0.0;
         oSCName = CPLSPrintf("SC_%d", oLimitCodes.second);
-        double dfVal2 = feature.GetFieldAsDouble(oSCName.c_str());
+        if (feature.GetFieldIndex(oSCName.c_str()) >= 0)
+        {
+            dfVal2 = feature.GetFieldAsDouble(oSCName.c_str());
+        }
         return oLimits.GetExtention(dfVal1, dfVal2);
     }
     return 0;
@@ -696,6 +700,7 @@ bool OGRSXFLayer::AddRecord(GIntBig nFID, const std::string &osClassCode,
             SetUpdatable(true);  // Temporary toggle on updatable flag.
             CPL_IGNORE_RET_VAL(OGRMemLayer::SetFeature(poFeature));
             SetUpdatable(poDS->GetAccess() == GA_Update);
+            OGRFeature::DestroyFeature(poFeature);
         }
         return true;
     }

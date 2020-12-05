@@ -426,28 +426,29 @@ void SXFLimits::SetDefaultExt(int nExt)
     nDefaultExt = nExt;
 }
 
+static bool IsDoubleEqual(double v1, double v2)
+{
+    if (std::abs(v1 - v2) < 0.0000001)
+    {
+        return true;
+    }
+    return false;
+}
+
 int SXFLimits::GetExtention(double dfSC1Val, double dfSC2Val) const
 {
-    double dfPrevVal1 = -1000000.0, dfPrevVal2 = -1000000.0;
     for (const auto &stRange : aRanges)
     {
-        if (dfSC1Val >= dfPrevVal1)
+        if (IsDoubleEqual(dfSC1Val, stRange.dfStart))
         {
-            dfPrevVal2 = -1000000.0;
-            if (dfSC1Val <= stRange.dfStart)
+            if (IsDoubleEqual(dfSC2Val, 0.0) || 
+                IsDoubleEqual(dfSC2Val, stRange.dfEnd))
             {
-                if (dfSC2Val == 0.0 ||
-                    (dfSC2Val > dfPrevVal2 && dfSC2Val <= stRange.dfEnd))
                 {
-                    {
-                        return stRange.nExt;
-                    }
+                    return stRange.nExt;
                 }
             }
         }
-        
-        dfPrevVal2 = stRange.dfEnd;
-        dfPrevVal1 = stRange.dfStart;
     }
     return nDefaultExt;
 }
@@ -546,7 +547,10 @@ GUInt32 SXFLayerDefn::GenerateCode(SXFGeometryType eGeomType) const
 
 void SXFLayerDefn::AddLimits(const std::string &osCode, const SXFLimits &oLimIn)
 {
-    mLim[osCode] = oLimIn;
+    if (mLim.find(osCode) == mLim.end())
+    {
+        mLim[osCode] = oLimIn;
+    }
 }
 
 

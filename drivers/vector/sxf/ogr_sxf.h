@@ -43,7 +43,7 @@
 
 constexpr double TO_DEGREES = 57.2957795130823208766;
 constexpr double TO_RADIANS = 0.017453292519943295769;
-constexpr int EXTRA_ID = 100000000;
+constexpr int EXTRA_ID = 1000000;
 
 class OGRSXFDataSource;
 
