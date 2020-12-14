@@ -37,7 +37,6 @@
 
 CPL_CVSID("$Id$")
 
-constexpr const char *FID = "ogc_fid";
 constexpr const char *CLCODE = "CLCODE";
 constexpr const char *CLNAME = "CLNAME";
 constexpr const char *OT = "OT";
@@ -369,8 +368,7 @@ static GByte *WriteAttributesToBuffer(OGRFeature *poFeature, size_t &nSize,
     for (int i = 0; i < poDefn->GetFieldCount(); i++)
     {
         auto poField = poDefn->GetFieldDefn(i);
-        if (EQUAL(poField->GetNameRef(), FID) ||
-            EQUAL(poField->GetNameRef(), CLCODE) ||
+        if (EQUAL(poField->GetNameRef(), CLCODE) ||
             EQUAL(poField->GetNameRef(), CLNAME) ||
             EQUAL(poField->GetNameRef(), OT) ||
             EQUAL(poField->GetNameRef(), EXT) ||
@@ -618,15 +616,11 @@ OGRSXFLayer::OGRSXFLayer(OGRSXFDataSource *poDSIn,
     OGRMemLayer(oSXFDefn.GetName().c_str(),
         const_cast<OGRSpatialReference*>(poDSIn->GetSpatialRef()), wkbUnknown),
     poDS(poDSIn),
-    osFIDColumn(FID),
     bIsNewBehavior(bIsNewBehavior),
     oSXFLayerDefn(oSXFDefn)
 {
 
     auto poFeatureDefn = GetLayerDefn();
-    OGRFieldDefn oFIDField(osFIDColumn.c_str(), OFTInteger64);
-    poFeatureDefn->AddFieldDefn(&oFIDField);
-
     OGRFieldDefn oClCodeField( CLCODE, OFTInteger );
     poFeatureDefn->AddFieldDefn( &oClCodeField );
 
@@ -2014,11 +2008,6 @@ OGRFeature *OGRSXFLayer::TranslateText(const SXFFile &oSXF,
     return poFeature;
 }
 
-const char *OGRSXFLayer::GetFIDColumn()
-{
-    return osFIDColumn.c_str();
-}
-
 OGRErr OGRSXFLayer::SyncToDisk()
 {
     poDS->FlushCache();
@@ -2452,7 +2441,6 @@ int OGRSXFLayer::GetFieldNameCode(const char * pszFieldName)
 bool OGRSXFLayer::IsFieldNameHasCode(const char *pszFieldName)
 {
     return OGRSXFLayer::GetFieldNameCode(pszFieldName) != -1 ||
-        EQUAL(pszFieldName, FID) || 
         EQUAL(pszFieldName, CLCODE) ||
         EQUAL(pszFieldName, CLNAME) || 
         EQUAL(pszFieldName, OT) ||

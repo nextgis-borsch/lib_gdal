@@ -202,7 +202,6 @@ public:
     virtual OGRErr GetExtent(OGREnvelope *psExtent, int bForce = TRUE) override;
     virtual OGRErr GetExtent(int iGeomField, OGREnvelope *psExtent, 
         int bForce) override;
-    virtual const char *GetFIDColumn() override;
     OGRErr ISetFeature(OGRFeature *poFeature) override;
     OGRErr ICreateFeature(OGRFeature *poFeature) override;
     virtual OGRErr DeleteFeature(GIntBig nFID) override;
@@ -250,7 +249,6 @@ private:
 
 private:
     OGRSXFDataSource *poDS = nullptr;
-    std::string osFIDColumn;
     bool bIsNewBehavior;
 	SXFLayerDefn oSXFLayerDefn;
 };
