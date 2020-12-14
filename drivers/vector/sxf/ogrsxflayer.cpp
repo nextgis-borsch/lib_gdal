@@ -1239,8 +1239,10 @@ OGRFeature *OGRSXFLayer::GetRawFeature(const SXFFile &oSXF,
                 }
                 GByte nTmpVal;
                 memcpy(&nTmpVal, attributesBuff.get() + nOffset, 1);
+
+                char nScale = static_cast<char>(stAttInfo.nScale);
                 auto val = double(nTmpVal) * pow(10.0,
-                    static_cast<double>(stAttInfo.nScale));
+                    static_cast<double>(nScale));
                 if (!HasField(GetLayerDefn(), oFieldName))
                 {
                     OGRFieldDefn oField(oFieldName.c_str(), OFTReal);
@@ -1260,8 +1262,10 @@ OGRFeature *OGRSXFLayer::GetRawFeature(const SXFFile &oSXF,
                 GInt16 nTmpVal;
                 memcpy(&nTmpVal, attributesBuff.get() + nOffset, 2);
                 CPL_LSBPTR16(&nTmpVal);
+
+                char nScale = static_cast<char>(stAttInfo.nScale);
                 auto val = double(CPL_LSBWORD16(nTmpVal)) * pow(10.0,
-                    static_cast<double>(stAttInfo.nScale));
+                    static_cast<double>(nScale));
                 if (!HasField(GetLayerDefn(), oFieldName))
                 {
                     OGRFieldDefn oField(oFieldName.c_str(), OFTReal);
@@ -1281,8 +1285,10 @@ OGRFeature *OGRSXFLayer::GetRawFeature(const SXFFile &oSXF,
                 GInt32 nTmpVal;
                 memcpy(&nTmpVal, attributesBuff.get() + nOffset, 4);
                 CPL_LSBPTR32(&nTmpVal);
+
+                char nScale = static_cast<char>(stAttInfo.nScale);
                 auto val = double(CPL_LSBWORD32(nTmpVal)) * pow(10.0,
-                    static_cast<double>(stAttInfo.nScale));
+                    static_cast<double>(nScale));
                 if (!HasField(GetLayerDefn(), oFieldName))
                 {
                     OGRFieldDefn oField(oFieldName.c_str(), OFTReal);
@@ -1302,8 +1308,10 @@ OGRFeature *OGRSXFLayer::GetRawFeature(const SXFFile &oSXF,
                 double dfTmpVal;
                 memcpy(&dfTmpVal, attributesBuff.get() + nOffset, 8);
                 CPL_LSBPTR64(&dfTmpVal);
+
+                char nScale = static_cast<char>(stAttInfo.nScale);
                 auto val = dfTmpVal * pow(10.0,
-                    static_cast<double>(stAttInfo.nScale));
+                    static_cast<double>(nScale));
                 if (!HasField(GetLayerDefn(), oFieldName))
                 {
                     OGRFieldDefn oField(oFieldName.c_str(), OFTReal);
