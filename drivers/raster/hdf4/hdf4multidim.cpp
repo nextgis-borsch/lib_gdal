@@ -32,6 +32,8 @@
 
 #include "HdfEosDef.h"
 
+#include "cpl_string.h"
+
 #include <algorithm>
 #include <map>
 #include <set>
@@ -48,6 +50,7 @@ class HDF4SharedResources
     friend class ::HDF4Dataset;
     int32       m_hSD;
     std::string m_osFilename;
+    CPLStringList m_aosOpenOptions;
 
 public:
     HDF4SharedResources() = default;
@@ -55,6 +58,9 @@ public:
 
     int32       GetSDHandle() const { return m_hSD; }
     const std::string& GetFilename() const { return m_osFilename; }
+    const char*        FetchOpenOption(const char* pszName, const char* pszDefault) const {
+        return m_aosOpenOptions.FetchNameValueDef(pszName, pszDefault);
+    }
 };
 
 /************************************************************************/
@@ -486,9 +492,9 @@ public:
 
     const void* GetRawNoDataValue() const override;
 
-    double GetOffset(bool* pbHasOffset = nullptr) const override;
+    double GetOffset(bool* pbHasOffset = nullptr, GDALDataType* peStorageType = nullptr) const override;
 
-    double GetScale(bool* pbHasScale = nullptr) const override;
+    double GetScale(bool* pbHasScale = nullptr, GDALDataType* peStorageType = nullptr) const override;
 
     const std::string& GetUnit() const override;
 
@@ -622,9 +628,9 @@ public:
 
     const void* GetRawNoDataValue() const override;
 
-    double GetOffset(bool* pbHasOffset = nullptr) const override;
+    double GetOffset(bool* pbHasOffset = nullptr, GDALDataType* peStorageType = nullptr) const override;
 
-    double GetScale(bool* pbHasScale = nullptr) const override;
+    double GetScale(bool* pbHasScale = nullptr, GDALDataType* peStorageType = nullptr) const override;
 
     const std::string& GetUnit() const override;
 
@@ -1026,7 +1032,10 @@ std::vector<std::string> HDF4Group::GetGroupNames(CSLConstList) const
         GDclose( gd_handle );
     }
 
-    if( res.empty() )
+    const char* pszListSDS =
+        m_poShared->FetchOpenOption("LIST_SDS", "AUTO");
+    if( (res.empty() && EQUAL(pszListSDS, "AUTO")) ||
+        (!EQUAL(pszListSDS, "AUTO") && CPLTestBool(pszListSDS)) )
     {
         int32 nDatasets = 0;
         int32 nAttrs = 0;
@@ -2128,65 +2137,67 @@ const void* HDF4EOSGridArray::GetRawNoDataValue() const
 }
 
 /************************************************************************/
-/*                              GetOffset()                             */
+/*                           GetOffsetOrScale()                         */
 /************************************************************************/
 
-static double GetOffset(const GDALMDArray* poArray, bool* pbHasOffset)
+static double GetOffsetOrScale(const GDALMDArray* poArray,
+                               const char* pszAttrName,
+                               double dfDefaultValue,
+                               bool* pbHasVal,
+                               GDALDataType* peStorageType)
 {
-    auto poAttr = poArray->GetAttribute("add_offset");
+    auto poAttr = poArray->GetAttribute(pszAttrName);
     if( poAttr &&
         (poAttr->GetDataType().GetNumericDataType() == GDT_Float32 ||
          poAttr->GetDataType().GetNumericDataType() == GDT_Float64) )
     {
-        if( pbHasOffset )
-            *pbHasOffset = true;
+        if( pbHasVal )
+            *pbHasVal = true;
+        if( peStorageType )
+            *peStorageType = poAttr->GetDataType().GetNumericDataType();
         return poAttr->ReadAsDouble();
     }
-    if( pbHasOffset )
-        *pbHasOffset = false;
-    return 0;
+    if( pbHasVal )
+        *pbHasVal = false;
+    return dfDefaultValue;
 }
 
 /************************************************************************/
 /*                              GetOffset()                             */
 /************************************************************************/
 
-double HDF4EOSGridArray::GetOffset(bool* pbHasOffset) const
+static double GetOffset(const GDALMDArray* poArray, bool* pbHasOffset,
+                        GDALDataType* peStorageType)
 {
-    return ::GetOffset(this, pbHasOffset);
+    return GetOffsetOrScale(poArray, "add_offset", 0, pbHasOffset, peStorageType);
+}
+
+/************************************************************************/
+/*                              GetOffset()                             */
+/************************************************************************/
+
+double HDF4EOSGridArray::GetOffset(bool* pbHasOffset, GDALDataType* peStorageType) const
+{
+    return ::GetOffset(this, pbHasOffset, peStorageType);
 }
 
 /************************************************************************/
 /*                               GetScale()                             */
 /************************************************************************/
 
-static double GetScale(const GDALMDArray* poArray, bool* pbHasScale)
+static double GetScale(const GDALMDArray* poArray, bool* pbHasScale,
+                       GDALDataType* peStorageType)
 {
-    auto poAttr = poArray->GetAttribute("scale_factor");
-    if( poAttr &&
-        (poAttr->GetDataType().GetNumericDataType() == GDT_Float32 ||
-         poAttr->GetDataType().GetNumericDataType() == GDT_Float64) )
-    {
-        const double dfVal = poAttr->ReadAsDouble();
-        if( dfVal != 0 )
-        {
-            if( pbHasScale )
-                *pbHasScale = true;
-            return dfVal;
-        }
-    }
-    if( pbHasScale )
-        *pbHasScale = false;
-    return 1;
+    return GetOffsetOrScale(poArray, "scale_factor", 1, pbHasScale, peStorageType);
 }
 
 /************************************************************************/
 /*                               GetScale()                             */
 /************************************************************************/
 
-double HDF4EOSGridArray::GetScale(bool* pbHasScale) const
+double HDF4EOSGridArray::GetScale(bool* pbHasScale, GDALDataType* peStorageType) const
 {
-    return ::GetScale(this, pbHasScale);
+    return ::GetScale(this, pbHasScale, peStorageType);
 }
 
 /************************************************************************/
@@ -2672,18 +2683,18 @@ std::vector<std::shared_ptr<GDALAttribute>> HDF4SDSArray::GetAttributes(
 /*                              GetOffset()                             */
 /************************************************************************/
 
-double HDF4SDSArray::GetOffset(bool* pbHasOffset) const
+double HDF4SDSArray::GetOffset(bool* pbHasOffset, GDALDataType* peStorageType) const
 {
-    return ::GetOffset(this, pbHasOffset);
+    return ::GetOffset(this, pbHasOffset, peStorageType);
 }
 
 /************************************************************************/
 /*                               GetScale()                             */
 /************************************************************************/
 
-double HDF4SDSArray::GetScale(bool* pbHasScale) const
+double HDF4SDSArray::GetScale(bool* pbHasScale, GDALDataType* peStorageType) const
 {
-    return ::GetScale(this, pbHasScale);
+    return ::GetScale(this, pbHasScale, peStorageType);
 }
 
 /************************************************************************/
@@ -3138,13 +3149,16 @@ bool HDF4GRPalette::IRead(const GUInt64* arrayStartIdx,
 /*                           OpenMultiDim()                             */
 /************************************************************************/
 
-void HDF4Dataset::OpenMultiDim(const char* pszFilename)
+void HDF4Dataset::OpenMultiDim(const char* pszFilename,
+                               CSLConstList papszOpenOptionsIn)
 {
     // under hHDF4Mutex
 
     auto poShared = std::make_shared<HDF4SharedResources>();
     poShared->m_osFilename = pszFilename;
     poShared->m_hSD = hSD;
+    poShared->m_aosOpenOptions = papszOpenOptionsIn;
+
     hSD = -1;
 
     m_poRootGroup = std::make_shared<HDF4Group>(std::string(), "/", poShared);

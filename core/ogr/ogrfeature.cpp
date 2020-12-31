@@ -122,7 +122,7 @@ OGRFeature::OGRFeature( OGRFeatureDefn * poDefnIn ) :
  * @param hDefn handle to the feature class (layer) definition to
  * which the feature will adhere.
  *
- * @return an handle to the new feature object with null fields and no geometry,
+ * @return a handle to the new feature object with null fields and no geometry,
  * or, starting with GDAL 2.1, NULL in case out of memory situation.
  */
 
@@ -321,7 +321,7 @@ void OGRFeature::DestroyFeature( OGRFeature *poFeature )
  *
  * @param hFeat handle to the feature to get the feature definition from.
  *
- * @return an handle to the feature definition object on which feature
+ * @return a handle to the feature definition object on which feature
  * depends.
  */
 
@@ -615,13 +615,13 @@ const OGRGeometry *OGRFeature::GetGeometryRef() const
 /************************************************************************/
 
 /**
- * \brief Fetch an handle to feature geometry.
+ * \brief Fetch a handle to feature geometry.
  *
  * This function is essentially the same as the C++ method OGRFeature::GetGeometryRef()
  * (the only difference is that this C function honours OGRGetNonLinearGeometriesEnabledFlag())
  *
  * @param hFeat handle to the feature to get geometry from.
- * @return an handle to internal feature geometry.  This object should
+ * @return a handle to internal feature geometry.  This object should
  * not be modified.
  */
 
@@ -740,13 +740,13 @@ const OGRGeometry *OGRFeature::GetGeomFieldRef( const char* pszFName ) const
 /************************************************************************/
 
 /**
- * \brief Fetch an handle to feature geometry.
+ * \brief Fetch a handle to feature geometry.
  *
  * This function is the same as the C++ method OGRFeature::GetGeomFieldRef().
  *
  * @param hFeat handle to the feature to get geometry from.
  * @param iField geometry field to get.
- * @return an handle to internal feature geometry.  This object should
+ * @return a handle to internal feature geometry.  This object should
  * not be modified.
  *
  * @since GDAL 1.11
@@ -974,7 +974,7 @@ OGRFeature *OGRFeature::Clone() const
  * This function is the same as the C++ method OGRFeature::Clone().
  *
  * @param hFeat handle to the feature to clone.
- * @return an handle to the new feature, exactly matching this feature.
+ * @return a handle to the new feature, exactly matching this feature.
  */
 
 OGRFeatureH OGR_F_Clone( OGRFeatureH hFeat )
@@ -1138,7 +1138,7 @@ int OGR_F_GetFieldCount( OGRFeatureH hFeat )
  * @param hFeat handle to the feature on which the field is found.
  * @param i the field to fetch, from 0 to GetFieldCount()-1.
  *
- * @return an handle to the field definition (from the OGRFeatureDefn).
+ * @return a handle to the field definition (from the OGRFeatureDefn).
  * This is an internal reference, and should not be deleted or modified.
  */
 
@@ -1285,7 +1285,7 @@ int OGR_F_GetGeomFieldCount( OGRFeatureH hFeat )
  * @param hFeat handle to the feature on which the field is found.
  * @param i the field to fetch, from 0 to GetGeomFieldCount()-1.
  *
- * @return an handle to the field definition (from the OGRFeatureDefn).
+ * @return a handle to the field definition (from the OGRFeatureDefn).
  * This is an internal reference, and should not be deleted or modified.
  *
  * @since GDAL 1.11
@@ -1804,7 +1804,7 @@ OGRFeature::FieldValue OGRFeature::operator[](const char* pszFieldName)
 /************************************************************************/
 
 /**
- * \brief Fetch an handle to the internal field value given the index.
+ * \brief Fetch a handle to the internal field value given the index.
  *
  * This function is the same as the C++ method OGRFeature::GetRawFieldRef().
  *
@@ -2399,14 +2399,26 @@ const char *OGRFeature::GetFieldAsString( int iField ) const
         {
             snprintf( szFormat, sizeof(szFormat), "%%.%df",
                 poFDefn->GetPrecision() );
+
+            CPLsnprintf( szTempBuffer, TEMP_BUFFER_SIZE,
+                         szFormat, pauFields[iField].Real );
         }
         else
         {
-            strcpy( szFormat, "%.15g" );
-        }
+            if( poFDefn->GetSubType() == OFSTFloat32 )
+            {
+                OGRFormatFloat(szTempBuffer, TEMP_BUFFER_SIZE,
+                               static_cast<float>(pauFields[iField].Real),
+                               -1, 'g');
+            }
+            else
+            {
+                strcpy( szFormat, "%.15g" );
 
-        CPLsnprintf( szTempBuffer, TEMP_BUFFER_SIZE,
-                  szFormat, pauFields[iField].Real );
+                CPLsnprintf( szTempBuffer, TEMP_BUFFER_SIZE,
+                        szFormat, pauFields[iField].Real );
+            }
+        }
 
         m_pszTmpFieldValue = VSI_STRDUP_VERBOSE( szTempBuffer );
         if( m_pszTmpFieldValue == nullptr )
@@ -2512,8 +2524,10 @@ const char *OGRFeature::GetFieldAsString( int iField ) const
         char szItem[40] = {};
         char szFormat[64] = {};
         const int nCount = pauFields[iField].RealList.nCount;
+        const bool bIsFloat32 = poFDefn->GetSubType() == OFSTFloat32;
+        const bool bIsZeroWidth = poFDefn->GetWidth() == 0;
 
-        if( poFDefn->GetWidth() != 0 )
+        if( !bIsZeroWidth )
         {
             snprintf( szFormat, sizeof(szFormat), "%%%d.%df",
                       poFDefn->GetWidth(), poFDefn->GetPrecision() );
@@ -2524,10 +2538,20 @@ const char *OGRFeature::GetFieldAsString( int iField ) const
         CPLString osBuffer;
 
         osBuffer.Printf("(%d:", nCount );
+
         for(int i = 0; i < nCount; i++ )
         {
-            CPLsnprintf( szItem, sizeof(szItem), szFormat,
-                      pauFields[iField].RealList.paList[i] );
+            if( bIsFloat32 && bIsZeroWidth )
+            {
+                OGRFormatFloat(szItem, sizeof(szItem),
+                               static_cast<float>(pauFields[iField].RealList.paList[i]),
+                               -1, 'g');
+            }
+            else
+            {
+                CPLsnprintf( szItem, sizeof(szItem), szFormat,
+                        pauFields[iField].RealList.paList[i] );
+            }
             if( i > 0 )
                 osBuffer += ',';
             osBuffer += szItem;
@@ -4265,7 +4289,7 @@ void OGR_F_SetFieldIntegerList( OGRFeatureH hFeat, int iField,
  * This method currently on has an effect of OFTIntegerList, OFTInteger64List
  * and OFTRealList fields.
  *
- * This method is the same as the C function OGR_F_SetFieldIntege64rList().
+ * This method is the same as the C function OGR_F_SetFieldInteger64List().
  *
  * @note This method has only an effect on the in-memory feature object. If
  * this object comes from a layer and the modifications must be serialized back

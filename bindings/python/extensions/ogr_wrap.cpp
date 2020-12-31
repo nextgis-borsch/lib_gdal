@@ -3020,20 +3020,21 @@ SWIG_Python_NonDynamicSetAttr(PyObject *obj, PyObject *name, PyObject *value) {
 #define SWIGTYPE_p_OGRGeomTransformerShadow swig_types[9]
 #define SWIGTYPE_p_OGRGeometryShadow swig_types[10]
 #define SWIGTYPE_p_OGRLayerShadow swig_types[11]
-#define SWIGTYPE_p_OGRStyleTableShadow swig_types[12]
-#define SWIGTYPE_p_OSRCoordinateTransformationShadow swig_types[13]
-#define SWIGTYPE_p_OSRSpatialReferenceShadow swig_types[14]
-#define SWIGTYPE_p_char swig_types[15]
-#define SWIGTYPE_p_double swig_types[16]
-#define SWIGTYPE_p_f_double_p_q_const__char_p_void__int swig_types[17]
-#define SWIGTYPE_p_float swig_types[18]
-#define SWIGTYPE_p_int swig_types[19]
-#define SWIGTYPE_p_p_GIntBig swig_types[20]
-#define SWIGTYPE_p_p_char swig_types[21]
-#define SWIGTYPE_p_p_double swig_types[22]
-#define SWIGTYPE_p_p_int swig_types[23]
-static swig_type_info *swig_types[25];
-static swig_module_info swig_module = {swig_types, 24, 0, 0, 0, 0};
+#define SWIGTYPE_p_OGRPreparedGeometryShadow swig_types[12]
+#define SWIGTYPE_p_OGRStyleTableShadow swig_types[13]
+#define SWIGTYPE_p_OSRCoordinateTransformationShadow swig_types[14]
+#define SWIGTYPE_p_OSRSpatialReferenceShadow swig_types[15]
+#define SWIGTYPE_p_char swig_types[16]
+#define SWIGTYPE_p_double swig_types[17]
+#define SWIGTYPE_p_f_double_p_q_const__char_p_void__int swig_types[18]
+#define SWIGTYPE_p_float swig_types[19]
+#define SWIGTYPE_p_int swig_types[20]
+#define SWIGTYPE_p_p_GIntBig swig_types[21]
+#define SWIGTYPE_p_p_char swig_types[22]
+#define SWIGTYPE_p_p_double swig_types[23]
+#define SWIGTYPE_p_p_int swig_types[24]
+static swig_type_info *swig_types[26];
+static swig_module_info swig_module = {swig_types, 25, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -3186,6 +3187,7 @@ typedef void OGRFieldDefnShadow;
 typedef struct OGRStyleTableHS OGRStyleTableShadow;
 typedef struct OGRGeomFieldDefnHS OGRGeomFieldDefnShadow;
 typedef struct OGRGeomTransformer OGRGeomTransformerShadow;
+typedef struct _OGRPreparedGeometry OGRPreparedGeometryShadow;
 
 
 SWIGINTERNINLINE PyObject*
@@ -4898,6 +4900,7 @@ SWIGINTERN int OGRFeatureDefnShadow_IsSame(OGRFeatureDefnShadow *self,OGRFeature
             case OFSTInt16:
             case OFSTFloat32:
             case OFSTJSON:
+            case OFSTUUID:
                 return TRUE;
             default:
                 CPLError(CE_Failure, CPLE_IllegalArg, "Illegal field subtype value");
@@ -5521,6 +5524,18 @@ SWIGINTERN OGRGeometryShadow *OGRGeometryShadow_Value(OGRGeometryShadow *self,do
   }
 SWIGINTERN OGRGeometryShadow *OGRGeometryShadow_Transform__SWIG_1(OGRGeometryShadow *self,OGRGeomTransformerShadow *transformer){
     return (OGRGeometryShadow*)OGR_GeomTransformer_Transform(transformer, self);
+  }
+SWIGINTERN OGRPreparedGeometryShadow *OGRGeometryShadow_CreatePreparedGeometry(OGRGeometryShadow *self){
+    return (OGRPreparedGeometryShadow*)OGRCreatePreparedGeometry(self);
+  }
+SWIGINTERN void delete_OGRPreparedGeometryShadow(OGRPreparedGeometryShadow *self){
+    OGRDestroyPreparedGeometry( self );
+  }
+SWIGINTERN bool OGRPreparedGeometryShadow_Intersects(OGRPreparedGeometryShadow *self,OGRGeometryShadow const *otherGeom){
+    return OGRPreparedGeometryIntersects(self, (OGRGeometryH)otherGeom);
+  }
+SWIGINTERN bool OGRPreparedGeometryShadow_Contains(OGRPreparedGeometryShadow *self,OGRGeometryShadow const *otherGeom){
+    return OGRPreparedGeometryContains(self, (OGRGeometryH)otherGeom);
   }
 SWIGINTERN OGRGeomTransformerShadow *new_OGRGeomTransformerShadow(OSRCoordinateTransformationShadow *ct,char **options=NULL){
     return OGR_GeomTransformer_Create(ct, options);
@@ -27451,10 +27466,204 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_Geometry_CreatePreparedGeometry(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
+  OGRGeometryShadow *arg1 = (OGRGeometryShadow *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  OGRPreparedGeometryShadow *result = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:Geometry_CreatePreparedGeometry",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_OGRGeometryShadow, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Geometry_CreatePreparedGeometry" "', argument " "1"" of type '" "OGRGeometryShadow *""'"); 
+  }
+  arg1 = reinterpret_cast< OGRGeometryShadow * >(argp1);
+  {
+    if ( bUseExceptions ) {
+      ClearErrorState();
+    }
+    {
+      SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+      result = (OGRPreparedGeometryShadow *)OGRGeometryShadow_CreatePreparedGeometry(arg1);
+      SWIG_PYTHON_THREAD_END_ALLOW;
+    }
+#ifndef SED_HACKS
+    if ( bUseExceptions ) {
+      CPLErr eclass = CPLGetLastErrorType();
+      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
+        SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
+      }
+    }
+#endif
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_OGRPreparedGeometryShadow, SWIG_POINTER_OWN |  0 );
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *Geometry_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *obj;
   if (!PyArg_ParseTuple(args,(char *)"O:swigregister", &obj)) return NULL;
   SWIG_TypeNewClientData(SWIGTYPE_p_OGRGeometryShadow, SWIG_NewClientData(obj));
+  return SWIG_Py_Void();
+}
+
+SWIGINTERN PyObject *_wrap_delete_PreparedGeometry(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
+  OGRPreparedGeometryShadow *arg1 = (OGRPreparedGeometryShadow *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:delete_PreparedGeometry",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_OGRPreparedGeometryShadow, SWIG_POINTER_DISOWN |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_PreparedGeometry" "', argument " "1"" of type '" "OGRPreparedGeometryShadow *""'"); 
+  }
+  arg1 = reinterpret_cast< OGRPreparedGeometryShadow * >(argp1);
+  {
+    if ( bUseExceptions ) {
+      ClearErrorState();
+    }
+    {
+      SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+      delete_OGRPreparedGeometryShadow(arg1);
+      SWIG_PYTHON_THREAD_END_ALLOW;
+    }
+#ifndef SED_HACKS
+    if ( bUseExceptions ) {
+      CPLErr eclass = CPLGetLastErrorType();
+      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
+        SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
+      }
+    }
+#endif
+  }
+  resultobj = SWIG_Py_Void();
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_PreparedGeometry_Intersects(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
+  OGRPreparedGeometryShadow *arg1 = (OGRPreparedGeometryShadow *) 0 ;
+  OGRGeometryShadow *arg2 = (OGRGeometryShadow *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  bool result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:PreparedGeometry_Intersects",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_OGRPreparedGeometryShadow, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "PreparedGeometry_Intersects" "', argument " "1"" of type '" "OGRPreparedGeometryShadow *""'"); 
+  }
+  arg1 = reinterpret_cast< OGRPreparedGeometryShadow * >(argp1);
+  res2 = SWIG_ConvertPtr(obj1, &argp2,SWIGTYPE_p_OGRGeometryShadow, 0 |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "PreparedGeometry_Intersects" "', argument " "2"" of type '" "OGRGeometryShadow const *""'"); 
+  }
+  arg2 = reinterpret_cast< OGRGeometryShadow * >(argp2);
+  {
+    if (!arg2) {
+      SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
+    }
+  }
+  {
+    if ( bUseExceptions ) {
+      ClearErrorState();
+    }
+    {
+      SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+      result = (bool)OGRPreparedGeometryShadow_Intersects(arg1,(OGRGeometryShadow const *)arg2);
+      SWIG_PYTHON_THREAD_END_ALLOW;
+    }
+#ifndef SED_HACKS
+    if ( bUseExceptions ) {
+      CPLErr eclass = CPLGetLastErrorType();
+      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
+        SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
+      }
+    }
+#endif
+  }
+  resultobj = SWIG_From_bool(static_cast< bool >(result));
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_PreparedGeometry_Contains(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0; int bLocalUseExceptionsCode = bUseExceptions;
+  OGRPreparedGeometryShadow *arg1 = (OGRPreparedGeometryShadow *) 0 ;
+  OGRGeometryShadow *arg2 = (OGRGeometryShadow *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  bool result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:PreparedGeometry_Contains",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_OGRPreparedGeometryShadow, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "PreparedGeometry_Contains" "', argument " "1"" of type '" "OGRPreparedGeometryShadow *""'"); 
+  }
+  arg1 = reinterpret_cast< OGRPreparedGeometryShadow * >(argp1);
+  res2 = SWIG_ConvertPtr(obj1, &argp2,SWIGTYPE_p_OGRGeometryShadow, 0 |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "PreparedGeometry_Contains" "', argument " "2"" of type '" "OGRGeometryShadow const *""'"); 
+  }
+  arg2 = reinterpret_cast< OGRGeometryShadow * >(argp2);
+  {
+    if (!arg2) {
+      SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
+    }
+  }
+  {
+    if ( bUseExceptions ) {
+      ClearErrorState();
+    }
+    {
+      SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+      result = (bool)OGRPreparedGeometryShadow_Contains(arg1,(OGRGeometryShadow const *)arg2);
+      SWIG_PYTHON_THREAD_END_ALLOW;
+    }
+#ifndef SED_HACKS
+    if ( bUseExceptions ) {
+      CPLErr eclass = CPLGetLastErrorType();
+      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
+        SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
+      }
+    }
+#endif
+  }
+  resultobj = SWIG_From_bool(static_cast< bool >(result));
+  if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *PreparedGeometry_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *obj;
+  if (!PyArg_ParseTuple(args,(char *)"O:swigregister", &obj)) return NULL;
+  SWIG_TypeNewClientData(SWIGTYPE_p_OGRPreparedGeometryShadow, SWIG_NewClientData(obj));
   return SWIG_Py_Void();
 }
 
@@ -29122,7 +29331,7 @@ static PyMethodDef SwigMethods[] = {
 		"papszOptions:  a StringList of name=value options. Options are driver\n"
 		"specific.\n"
 		"\n"
-		"an handle to the layer, or NULL if an error occurs. \n"
+		"a handle to the layer, or NULL if an error occurs. \n"
 		""},
 	 { (char *)"DataSource_GetLayerByIndex", _wrap_DataSource_GetLayerByIndex, METH_VARARGS, (char *)"DataSource_GetLayerByIndex(DataSource self, int index=0) -> Layer"},
 	 { (char *)"DataSource_GetLayerByName", _wrap_DataSource_GetLayerByName, METH_VARARGS, (char *)"\n"
@@ -29145,7 +29354,7 @@ static PyMethodDef SwigMethods[] = {
 		"\n"
 		"pszLayerName:  Layer the layer name of the layer to fetch.\n"
 		"\n"
-		"an handle to the layer, or NULL if the layer is not found or an error\n"
+		"a handle to the layer, or NULL if the layer is not found or an error\n"
 		"occurs. \n"
 		""},
 	 { (char *)"DataSource_TestCapability", _wrap_DataSource_TestCapability, METH_VARARGS, (char *)"\n"
@@ -29225,7 +29434,7 @@ static PyMethodDef SwigMethods[] = {
 		"the dialect. Starting with OGR 1.10, the SQLITE dialect can also be\n"
 		"used.\n"
 		"\n"
-		"an handle to a OGRLayer containing the results of the query.\n"
+		"a handle to a OGRLayer containing the results of the query.\n"
 		"Deallocate with OGR_DS_ReleaseResultSet(). \n"
 		""},
 	 { (char *)"DataSource_AbortSQL", _wrap_DataSource_AbortSQL, METH_VARARGS, (char *)"DataSource_AbortSQL(DataSource self) -> OGRErr"},
@@ -29247,7 +29456,7 @@ static PyMethodDef SwigMethods[] = {
 		"Parameters:\n"
 		"-----------\n"
 		"\n"
-		"hDS:  an handle to the data source on which was executed an SQL query.\n"
+		"hDS:  a handle to the data source on which was executed an SQL query.\n"
 		"\n"
 		"hLayer:  handle to the result of a previous OGR_DS_ExecuteSQL() call.\n"
 		"\n"
@@ -29379,7 +29588,7 @@ static PyMethodDef SwigMethods[] = {
 		"\n"
 		"hLayer:  handle to the layer to get the spatial filter from.\n"
 		"\n"
-		"an handle to the spatial filter geometry. \n"
+		"a handle to the spatial filter geometry. \n"
 		""},
 	 { (char *)"Layer_SetAttributeFilter", _wrap_Layer_SetAttributeFilter, METH_VARARGS, (char *)"\n"
 		"Layer_SetAttributeFilter(Layer self, char * filter_string) -> OGRErr\n"
@@ -29569,7 +29778,7 @@ static PyMethodDef SwigMethods[] = {
 		"\n"
 		"nFeatureId:  the feature id of the feature to read.\n"
 		"\n"
-		"an handle to a feature now owned by the caller, or NULL on failure. \n"
+		"a handle to a feature now owned by the caller, or NULL on failure. \n"
 		""},
 	 { (char *)"Layer_GetNextFeature", _wrap_Layer_GetNextFeature, METH_VARARGS, (char *)"\n"
 		"Layer_GetNextFeature(Layer self) -> Feature\n"
@@ -29609,7 +29818,7 @@ static PyMethodDef SwigMethods[] = {
 		"\n"
 		"hLayer:  handle to the layer from which feature are read.\n"
 		"\n"
-		"an handle to a feature, or NULL if no more features are available. \n"
+		"a handle to a feature, or NULL if no more features are available. \n"
 		""},
 	 { (char *)"Layer_SetNextByIndex", _wrap_Layer_SetNextByIndex, METH_VARARGS, (char *)"\n"
 		"Layer_SetNextByIndex(Layer self, GIntBig new_index) -> OGRErr\n"
@@ -29774,7 +29983,7 @@ static PyMethodDef SwigMethods[] = {
 		"\n"
 		"hLayer:  handle to the layer to get the schema information.\n"
 		"\n"
-		"an handle to the feature definition. \n"
+		"a handle to the feature definition. \n"
 		""},
 	 { (char *)"Layer_GetFeatureCount", (PyCFunction) _wrap_Layer_GetFeatureCount, METH_VARARGS | METH_KEYWORDS, (char *)"\n"
 		"Layer_GetFeatureCount(Layer self, int force=1) -> GIntBig\n"
@@ -30880,7 +31089,7 @@ static PyMethodDef SwigMethods[] = {
 		"\n"
 		"hFeat:  handle to the feature to get the feature definition from.\n"
 		"\n"
-		"an handle to the feature definition object on which feature depends.\n"
+		"a handle to the feature definition object on which feature depends.\n"
 		"\n"
 		""},
 	 { (char *)"Feature_SetGeometry", _wrap_Feature_SetGeometry, METH_VARARGS, (char *)"\n"
@@ -30952,7 +31161,7 @@ static PyMethodDef SwigMethods[] = {
 		"OGRGeometryH\n"
 		"OGR_F_GetGeometryRef(OGRFeatureH hFeat)\n"
 		"\n"
-		"Fetch an handle to feature geometry.\n"
+		"Fetch a handle to feature geometry.\n"
 		"\n"
 		"This function is essentially the same as the C++ method\n"
 		"OGRFeature::GetGeometryRef() (the only difference is that this C\n"
@@ -30963,7 +31172,7 @@ static PyMethodDef SwigMethods[] = {
 		"\n"
 		"hFeat:  handle to the feature to get geometry from.\n"
 		"\n"
-		"an handle to internal feature geometry. This object should not be\n"
+		"a handle to internal feature geometry. This object should not be\n"
 		"modified. \n"
 		""},
 	 { (char *)"Feature_SetGeomField", _wrap_Feature_SetGeomField, METH_VARARGS, (char *)"\n"
@@ -31033,7 +31242,7 @@ static PyMethodDef SwigMethods[] = {
 		"OGRGeometryH\n"
 		"OGR_F_GetGeomFieldRef(OGRFeatureH hFeat, int iField)\n"
 		"\n"
-		"Fetch an handle to feature geometry.\n"
+		"Fetch a handle to feature geometry.\n"
 		"\n"
 		"This function is the same as the C++ method\n"
 		"OGRFeature::GetGeomFieldRef().\n"
@@ -31045,7 +31254,7 @@ static PyMethodDef SwigMethods[] = {
 		"\n"
 		"iField:  geometry field to get.\n"
 		"\n"
-		"an handle to internal feature geometry. This object should not be\n"
+		"a handle to internal feature geometry. This object should not be\n"
 		"modified.\n"
 		"\n"
 		"GDAL 1.11 \n"
@@ -31068,7 +31277,7 @@ static PyMethodDef SwigMethods[] = {
 		"\n"
 		"hFeat:  handle to the feature to clone.\n"
 		"\n"
-		"an handle to the new feature, exactly matching this feature. \n"
+		"a handle to the new feature, exactly matching this feature. \n"
 		""},
 	 { (char *)"Feature_Equal", _wrap_Feature_Equal, METH_VARARGS, (char *)"\n"
 		"Feature_Equal(Feature self, Feature feature) -> bool\n"
@@ -31131,7 +31340,7 @@ static PyMethodDef SwigMethods[] = {
 		"\n"
 		"i:  the field to fetch, from 0 to GetFieldCount()-1.\n"
 		"\n"
-		"an handle to the field definition (from the OGRFeatureDefn). This is\n"
+		"a handle to the field definition (from the OGRFeatureDefn). This is\n"
 		"an internal reference, and should not be deleted or modified. \n"
 		""},
 	 { (char *)"Feature_GetGeomFieldCount", _wrap_Feature_GetGeomFieldCount, METH_VARARGS, (char *)"\n"
@@ -31174,7 +31383,7 @@ static PyMethodDef SwigMethods[] = {
 		"\n"
 		"i:  the field to fetch, from 0 to GetGeomFieldCount()-1.\n"
 		"\n"
-		"an handle to the field definition (from the OGRFeatureDefn). This is\n"
+		"a handle to the field definition (from the OGRFeatureDefn). This is\n"
 		"an internal reference, and should not be deleted or modified.\n"
 		"\n"
 		"GDAL 1.11 \n"
@@ -32244,7 +32453,7 @@ static PyMethodDef SwigMethods[] = {
 		"\n"
 		"iField:  the field to fetch, between 0 and GetFieldCount()-1.\n"
 		"\n"
-		"an handle to an internal field definition object or NULL if invalid\n"
+		"a handle to an internal field definition object or NULL if invalid\n"
 		"index. This object should not be modified or freed by the application.\n"
 		"\n"
 		""},
@@ -32337,7 +32546,7 @@ static PyMethodDef SwigMethods[] = {
 		"iGeomField:  the geometry field to fetch, between 0 and\n"
 		"GetGeomFieldCount() - 1.\n"
 		"\n"
-		"an handle to an internal field definition object or NULL if invalid\n"
+		"a handle to an internal field definition object or NULL if invalid\n"
 		"index. This object should not be modified or freed by the application.\n"
 		"\n"
 		"GDAL 1.11 \n"
@@ -33288,7 +33497,7 @@ static PyMethodDef SwigMethods[] = {
 		"\n"
 		"hGeom:  handle on the geometry to clone from.\n"
 		"\n"
-		"an handle on the copy of the geometry with the spatial reference\n"
+		"a handle on the copy of the geometry with the spatial reference\n"
 		"system as the original. \n"
 		""},
 	 { (char *)"Geometry_GetGeometryType", _wrap_Geometry_GetGeometryType, METH_VARARGS, (char *)"\n"
@@ -34647,7 +34856,12 @@ static PyMethodDef SwigMethods[] = {
 		"\n"
 		"OGRERR_NONE on success or an error code. \n"
 		""},
+	 { (char *)"Geometry_CreatePreparedGeometry", _wrap_Geometry_CreatePreparedGeometry, METH_VARARGS, (char *)"Geometry_CreatePreparedGeometry(Geometry self) -> PreparedGeometry"},
 	 { (char *)"Geometry_swigregister", Geometry_swigregister, METH_VARARGS, NULL},
+	 { (char *)"delete_PreparedGeometry", _wrap_delete_PreparedGeometry, METH_VARARGS, (char *)"delete_PreparedGeometry(PreparedGeometry self)"},
+	 { (char *)"PreparedGeometry_Intersects", _wrap_PreparedGeometry_Intersects, METH_VARARGS, (char *)"PreparedGeometry_Intersects(PreparedGeometry self, Geometry otherGeom) -> bool"},
+	 { (char *)"PreparedGeometry_Contains", _wrap_PreparedGeometry_Contains, METH_VARARGS, (char *)"PreparedGeometry_Contains(PreparedGeometry self, Geometry otherGeom) -> bool"},
+	 { (char *)"PreparedGeometry_swigregister", PreparedGeometry_swigregister, METH_VARARGS, NULL},
 	 { (char *)"new_GeomTransformer", _wrap_new_GeomTransformer, METH_VARARGS, (char *)"new_GeomTransformer(CoordinateTransformation ct, char ** options=None) -> GeomTransformer"},
 	 { (char *)"delete_GeomTransformer", _wrap_delete_GeomTransformer, METH_VARARGS, (char *)"delete_GeomTransformer(GeomTransformer self)"},
 	 { (char *)"GeomTransformer_Transform", _wrap_GeomTransformer_Transform, METH_VARARGS, (char *)"GeomTransformer_Transform(GeomTransformer self, Geometry src_geom) -> Geometry"},
@@ -34708,6 +34922,7 @@ static swig_type_info _swigt__p_OGRGeomFieldDefnShadow = {"_p_OGRGeomFieldDefnSh
 static swig_type_info _swigt__p_OGRGeomTransformerShadow = {"_p_OGRGeomTransformerShadow", "OGRGeomTransformerShadow *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_OGRGeometryShadow = {"_p_OGRGeometryShadow", "OGRGeometryShadow *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_OGRLayerShadow = {"_p_OGRLayerShadow", "OGRLayerShadow *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_OGRPreparedGeometryShadow = {"_p_OGRPreparedGeometryShadow", "OGRPreparedGeometryShadow *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_OGRStyleTableShadow = {"_p_OGRStyleTableShadow", "OGRStyleTableShadow *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_OSRCoordinateTransformationShadow = {"_p_OSRCoordinateTransformationShadow", "OSRCoordinateTransformationShadow *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_OSRSpatialReferenceShadow = {"_p_OSRSpatialReferenceShadow", "OSRSpatialReferenceShadow *", 0, 0, (void*)0, 0};
@@ -34734,6 +34949,7 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_OGRGeomTransformerShadow,
   &_swigt__p_OGRGeometryShadow,
   &_swigt__p_OGRLayerShadow,
+  &_swigt__p_OGRPreparedGeometryShadow,
   &_swigt__p_OGRStyleTableShadow,
   &_swigt__p_OSRCoordinateTransformationShadow,
   &_swigt__p_OSRSpatialReferenceShadow,
@@ -34760,6 +34976,7 @@ static swig_cast_info _swigc__p_OGRGeomFieldDefnShadow[] = {  {&_swigt__p_OGRGeo
 static swig_cast_info _swigc__p_OGRGeomTransformerShadow[] = {  {&_swigt__p_OGRGeomTransformerShadow, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_OGRGeometryShadow[] = {  {&_swigt__p_OGRGeometryShadow, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_OGRLayerShadow[] = {  {&_swigt__p_OGRLayerShadow, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_OGRPreparedGeometryShadow[] = {  {&_swigt__p_OGRPreparedGeometryShadow, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_OGRStyleTableShadow[] = {  {&_swigt__p_OGRStyleTableShadow, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_OSRCoordinateTransformationShadow[] = {  {&_swigt__p_OSRCoordinateTransformationShadow, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_OSRSpatialReferenceShadow[] = {  {&_swigt__p_OSRSpatialReferenceShadow, 0, 0, 0},{0, 0, 0, 0}};
@@ -34786,6 +35003,7 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_OGRGeomTransformerShadow,
   _swigc__p_OGRGeometryShadow,
   _swigc__p_OGRLayerShadow,
+  _swigc__p_OGRPreparedGeometryShadow,
   _swigc__p_OGRStyleTableShadow,
   _swigc__p_OSRCoordinateTransformationShadow,
   _swigc__p_OSRSpatialReferenceShadow,
@@ -35581,6 +35799,7 @@ SWIG_init(void) {
   SWIG_Python_SetConstant(d, "OFSTInt16",SWIG_From_int(static_cast< int >(2)));
   SWIG_Python_SetConstant(d, "OFSTFloat32",SWIG_From_int(static_cast< int >(3)));
   SWIG_Python_SetConstant(d, "OFSTJSON",SWIG_From_int(static_cast< int >(4)));
+  SWIG_Python_SetConstant(d, "OFSTUUID",SWIG_From_int(static_cast< int >(5)));
   SWIG_Python_SetConstant(d, "OJUndefined",SWIG_From_int(static_cast< int >(0)));
   SWIG_Python_SetConstant(d, "OJLeft",SWIG_From_int(static_cast< int >(1)));
   SWIG_Python_SetConstant(d, "OJRight",SWIG_From_int(static_cast< int >(2)));

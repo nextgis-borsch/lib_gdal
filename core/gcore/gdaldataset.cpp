@@ -843,7 +843,7 @@ int CPL_STDCALL GDALGetRasterCount( GDALDatasetH hDS )
  * @return a pointer to an internal projection reference string.  It should
  * not be altered, freed or expected to last for long.
  *
- * @see http://www.gdal.org/osr_tutorial.html
+ * @see https://gdal.org/tutorials/osr_api_tut.html
  */
 
 const char *GDALDataset::GetProjectionRef() const
@@ -903,7 +903,7 @@ const char *GDALDataset::_GetProjectionRef() { return (""); }
  * Its lifetime will be the one of the dataset object, or until the next
  * call to this method.
  *
- * @see http://www.gdal.org/osr_tutorial.html
+ * @see https://gdal.org/tutorials/osr_api_tut.html
  */
 
 const OGRSpatialReference* GDALDataset::GetSpatialRef() const
@@ -916,7 +916,7 @@ const OGRSpatialReference* GDALDataset::GetSpatialRef() const
 /************************************************************************/
 
 /**
- * \brief Fetch the projection definition string for this dataset.
+ * \brief Fetch the spatial reference for this dataset.
  *
  * @since GDAL 3.0
  *
@@ -1528,7 +1528,7 @@ int CPL_STDCALL GDALGetGCPCount( GDALDatasetH hDS )
  *
  * The projection string follows the normal rules from GetProjectionRef().
  *
- * \note Startig with GDAL 3.0, this is a compatibility layer around
+ * \note Starting with GDAL 3.0, this is a compatibility layer around
  * GetGCPSpatialRef()
  *
  * @return internal projection string or "" if there are no GCPs.
@@ -1900,9 +1900,9 @@ CPLErr GDALSetGCPs2( GDALDatasetH hDS, int nGCPCount,
  *
  * This method is the same as the C function GDALBuildOverviews().
  *
- * @param pszResampling one of "AVERAGE", "AVERAGE_MAGPHASE", "BILINEAR",
- * "CUBIC", "CUBICSPLINE", "GAUSS", "LANCZOS", "MODE", "NEAREST", or "NONE"
- * controlling the downsampling method applied.
+ * @param pszResampling one of "AVERAGE", "AVERAGE_MAGPHASE", "RMS",
+ * "BILINEAR", "CUBIC", "CUBICSPLINE", "GAUSS", "LANCZOS", "MODE", "NEAREST",
+ * or "NONE" controlling the downsampling method applied.
  * @param nOverviews number of overviews to build, or 0 to clean overviews.
  * @param panOverviewList the list of overview decimation factors to build, or
  *                        NULL if nOverviews == 0.
@@ -3223,6 +3223,8 @@ GDALOpen( const char * pszFilename, GDALAccess eAccess )
  * VALIDATE_OPEN_OPTIONS can be set to NO to avoid such warnings. Alternatively,
  * since GDAL 2.1, an option name can be preceded by the @ character to indicate
  * that it may not cause a warning if the driver doesn't declare this option.
+ * Starting with GDAL 3.3, OVERVIEW_LEVEL=NONE is supported to indicate that
+ * no overviews should be exposed.
  *
  * @param papszSiblingFiles NULL, or a NULL terminated list of strings that are
  * filenames that are auxiliary to the main filename. If NULL is passed, a
@@ -3328,6 +3330,13 @@ GDALDatasetH CPL_STDCALL GDALOpenEx( const char *pszFilename,
     }
 
     oOpenInfo.papszOpenOptions = papszOpenOptionsCleaned;
+
+#ifdef OGRAPISPY_ENABLED
+    const bool bUpdate = (nOpenFlags & GDAL_OF_UPDATE) != 0;
+    const int iSnapshot = (nOpenFlags & GDAL_OF_VECTOR) != 0 &&
+                          (nOpenFlags & GDAL_OF_RASTER) == 0 ?
+        OGRAPISpyOpenTakeSnapshot(pszFilename, bUpdate) : INT_MIN;
+#endif
 
     const int nDriverCount = poDM->GetDriverCount();
     for( int iDriver = 0; iDriver < nDriverCount; ++iDriver )
@@ -3479,9 +3488,9 @@ GDALDatasetH CPL_STDCALL GDALOpenEx( const char *pszFilename,
             {
                 CPLString osVal(
                     CSLFetchNameValue(papszOpenOptions, "OVERVIEW_LEVEL"));
-                const int nOvrLevel = atoi(osVal);
+                const int nOvrLevel = EQUAL(osVal, "NONE") ? -1 : atoi(osVal);
                 const bool bThisLevelOnly =
-                    osVal.ifind("only") != std::string::npos;
+                    nOvrLevel == -1 || osVal.ifind("only") != std::string::npos;
                 GDALDataset *poOvrDS = GDALCreateOverviewDataset(
                     poDS, nOvrLevel, bThisLevelOnly);
                 poDS->ReleaseRef();
@@ -3499,6 +3508,16 @@ GDALDatasetH CPL_STDCALL GDALOpenEx( const char *pszFilename,
             VSIErrorReset();
 
             CSLDestroy(papszOpenOptionsCleaned);
+
+#ifdef OGRAPISPY_ENABLED
+            if( iSnapshot != INT_MIN )
+            {
+                GDALDatasetH hDS = GDALDataset::ToHandle(poDS);
+                OGRAPISpyOpen(pszFilename, bUpdate, iSnapshot, &hDS);
+                poDS = GDALDataset::FromHandle(hDS);
+            }
+#endif
+
             return poDS;
         }
 
@@ -3515,12 +3534,28 @@ GDALDatasetH CPL_STDCALL GDALOpenEx( const char *pszFilename,
         if( CPLGetLastErrorNo() != 0 && CPLGetLastErrorType() > CE_Warning)
         {
             CSLDestroy(papszOpenOptionsCleaned);
+
+#ifdef OGRAPISPY_ENABLED
+            if( iSnapshot != INT_MIN )
+            {
+                GDALDatasetH hDS = nullptr;
+                OGRAPISpyOpen(pszFilename, bUpdate, iSnapshot, &hDS);
+            }
+#endif
             return nullptr;
         }
 #endif
     }
 
     CSLDestroy(papszOpenOptionsCleaned);
+
+#ifdef OGRAPISPY_ENABLED
+    if( iSnapshot != INT_MIN )
+    {
+        GDALDatasetH hDS = nullptr;
+        OGRAPISpyOpen(pszFilename, bUpdate, iSnapshot, &hDS);
+    }
+#endif
 
     if( nOpenFlags & GDAL_OF_VERBOSE_ERROR )
     {
@@ -3626,6 +3661,11 @@ void CPL_STDCALL GDALClose( GDALDatasetH hDS )
     if( hDS == nullptr )
         return;
 
+#ifdef OGRAPISPY_ENABLED
+    if( bOGRAPISpyEnabled )
+        OGRAPISpyPreClose(hDS);
+#endif
+
     GDALDataset *poDS = GDALDataset::FromHandle(hDS);
 
     if (poDS->GetShared())
@@ -3639,6 +3679,12 @@ void CPL_STDCALL GDALClose( GDALDatasetH hDS )
             return;
 
         delete poDS;
+
+#ifdef OGRAPISPY_ENABLED
+        if( bOGRAPISpyEnabled )
+            OGRAPISpyPostClose();
+#endif
+
         return;
     }
 
@@ -3646,6 +3692,11 @@ void CPL_STDCALL GDALClose( GDALDatasetH hDS )
 /*      This is not shared dataset, so directly delete it.              */
 /* -------------------------------------------------------------------- */
     delete poDS;
+
+#ifdef OGRAPISPY_ENABLED
+    if( bOGRAPISpyEnabled )
+        OGRAPISpyPostClose();
+#endif
 }
 
 /************************************************************************/
@@ -4000,6 +4051,7 @@ int GDALDataset::CloseDependentDatasets()
 /*                            ReportError()                             */
 /************************************************************************/
 
+#ifndef DOXYGEN_XML
 /**
  * \brief Emits an error related to a dataset.
  *
@@ -4020,11 +4072,43 @@ void GDALDataset::ReportError(CPLErr eErrClass, CPLErrorNum err_no,
                               const char *fmt, ...)
 {
     va_list args;
-
     va_start(args, fmt);
+    ReportErrorV(GetDescription(), eErrClass, err_no, fmt, args);
+    va_end(args);
+}
 
+/**
+ * \brief Emits an error related to a dataset (static method)
+ *
+ * This function is a wrapper for regular CPLError(). The only difference
+ * with CPLError() is that it prepends the error message with the dataset
+ * name.
+ *
+ * @param pszDSName dataset name.
+ * @param eErrClass one of CE_Warning, CE_Failure or CE_Fatal.
+ * @param err_no the error number (CPLE_*) from cpl_error.h.
+ * @param fmt a printf() style format string.  Any additional arguments
+ * will be treated as arguments to fill in this format in a manner
+ * similar to printf().
+ *
+ * @since GDAL 3.2.0
+ */
+
+void GDALDataset::ReportError(const char* pszDSName,
+                              CPLErr eErrClass, CPLErrorNum err_no,
+                              const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    ReportErrorV(pszDSName, eErrClass, err_no, fmt, args);
+    va_end(args);
+}
+
+void GDALDataset::ReportErrorV(const char* pszDSName,
+                               CPLErr eErrClass, CPLErrorNum err_no,
+                               const char *fmt, va_list args)
+{
     char szNewFmt[256] = {};
-    const char *pszDSName = GetDescription();
     if (strlen(fmt) + strlen(pszDSName) + 3 >= sizeof(szNewFmt) - 1)
         pszDSName = CPLGetFilename(pszDSName);
     if (pszDSName[0] != '\0' && strchr(pszDSName, '%') == nullptr &&
@@ -4037,8 +4121,8 @@ void GDALDataset::ReportError(CPLErr eErrClass, CPLErrorNum err_no,
     {
         CPLErrorV(eErrClass, err_no, fmt, args);
     }
-    va_end(args);
 }
+#endif
 
 /************************************************************************/
 /*                            GetMetadata()                             */
@@ -4196,6 +4280,11 @@ void GDALDatasetReleaseResultSet( GDALDatasetH hDS, OGRLayerH hLayer )
 {
     VALIDATE_POINTER0(hDS, "GDALDatasetReleaseResultSet");
 
+#ifdef OGRAPISPY_ENABLED
+    if( bOGRAPISpyEnabled )
+        OGRAPISpy_DS_ReleaseResultSet(hDS, hLayer);
+#endif
+
     GDALDataset::FromHandle(hDS)
         ->ReleaseResultSet(OGRLayer::FromHandle(hLayer));
 }
@@ -4219,6 +4308,11 @@ int GDALDatasetGetLayerCount( GDALDatasetH hDS )
 
 {
     VALIDATE_POINTER1(hDS, "GDALDatasetH", 0);
+
+#ifdef OGRAPISPY_ENABLED
+    if( bOGRAPISpyEnabled )
+        OGRAPISpy_DS_GetLayerCount(reinterpret_cast<GDALDatasetH>(hDS));
+#endif
 
     return GDALDataset::FromHandle(hDS)->GetLayerCount();
 }
@@ -4248,8 +4342,15 @@ OGRLayerH GDALDatasetGetLayer( GDALDatasetH hDS, int iLayer )
 {
     VALIDATE_POINTER1(hDS, "GDALDatasetGetLayer", nullptr);
 
-    return OGRLayer::ToHandle(
+    OGRLayerH hLayer = OGRLayer::ToHandle(
         GDALDataset::FromHandle(hDS)->GetLayer(iLayer));
+
+#ifdef OGRAPISPY_ENABLED
+    if( bOGRAPISpyEnabled )
+        OGRAPISpy_DS_GetLayer(hDS, iLayer, hLayer);
+#endif
+
+    return hLayer;
 }
 
 /************************************************************************/
@@ -4277,8 +4378,15 @@ OGRLayerH GDALDatasetGetLayerByName( GDALDatasetH hDS, const char *pszName )
 {
     VALIDATE_POINTER1(hDS, "GDALDatasetGetLayerByName", nullptr);
 
-    return OGRLayer::ToHandle(
+    OGRLayerH hLayer = OGRLayer::ToHandle(
         GDALDataset::FromHandle(hDS)->GetLayerByName(pszName));
+
+#ifdef OGRAPISPY_ENABLED
+    if( bOGRAPISpyEnabled )
+        OGRAPISpy_DS_GetLayerByName(hDS, pszName, hLayer);
+#endif
+
+    return hLayer;
 }
 
 /************************************************************************/
@@ -4478,10 +4586,17 @@ OGRLayerH GDALDatasetCreateLayer( GDALDatasetH hDS,
         return nullptr;
     }
 
-    return OGRLayer::ToHandle(
+    OGRLayerH hLayer = OGRLayer::ToHandle(
         GDALDataset::FromHandle(hDS)->CreateLayer(
             pszName, OGRSpatialReference::FromHandle(hSpatialRef),
             eGType, const_cast<char**>(papszOptions)));
+
+#ifdef OGRAPISPY_ENABLED
+    if( bOGRAPISpyEnabled )
+        OGRAPISpy_DS_CreateLayer(hDS, pszName, hSpatialRef, eGType, const_cast<char**>(papszOptions), hLayer);
+#endif
+
+    return hLayer;
 }
 
 /************************************************************************/
@@ -4508,7 +4623,7 @@ OGRLayerH GDALDatasetCreateLayer( GDALDatasetH hDS,
  @param papszOptions a StringList of name=value options.  Options are driver
                      specific.
 
- @return an handle to the layer, or NULL if an error occurs.
+ @return a handle to the layer, or NULL if an error occurs.
 */
 OGRLayerH GDALDatasetCopyLayer( GDALDatasetH hDS,
                                 OGRLayerH hSrcLayer, const char *pszNewName,
@@ -4542,10 +4657,10 @@ OGRLayerH GDALDatasetCopyLayer( GDALDatasetH hDS,
  This method is the same as the C++ method GDALDataset::ExecuteSQL()
 
  For more information on the SQL dialect supported internally by OGR
- review the <a href="ogr_sql.html">OGR SQL</a> document.  Some drivers (i.e.
+ review the <a href="https://gdal.org/user/ogr_sql_dialect.html">OGR SQL</a> document.  Some drivers (i.e.
  Oracle and PostGIS) pass the SQL directly through to the underlying RDBMS.
 
- Starting with OGR 1.10, the <a href="ogr_sql_sqlite.html">SQLITE dialect</a>
+ Starting with OGR 1.10, the <a href="https://gdal.org/user/sql_sqlite_dialect.html">SQLITE dialect</a>
  can also be used.
 
  @since GDAL 2.0
@@ -4560,7 +4675,7 @@ OGRLayerH GDALDatasetCopyLayer( GDALDatasetH hDS,
  dialect. Starting with OGR 1.10, the SQLITE dialect can also be used.
 
  @return an OGRLayer containing the results of the query.  Deallocate with
- ReleaseResultSet().
+ GDALDatasetReleaseResultSet().
 
 */
 
@@ -4572,10 +4687,17 @@ OGRLayerH GDALDatasetExecuteSQL( GDALDatasetH hDS,
 {
     VALIDATE_POINTER1(hDS, "GDALDatasetExecuteSQL", nullptr);
 
-    return OGRLayer::ToHandle(
+    OGRLayerH hLayer = OGRLayer::ToHandle(
         GDALDataset::FromHandle(hDS)->ExecuteSQL(
             pszStatement, OGRGeometry::FromHandle(hSpatialFilter),
             pszDialect));
+
+#ifdef OGRAPISPY_ENABLED
+    if( bOGRAPISpyEnabled )
+        OGRAPISpy_DS_ExecuteSQL(hDS, pszStatement, hSpatialFilter, pszDialect, hLayer);
+#endif
+
+    return hLayer;
 }
 
 
@@ -4848,7 +4970,7 @@ OGRLayer *GDALDataset::ICreateLayer( CPL_UNUSED const char * pszName,
                      spatial reference: DST_SRSWKT. The option should be in
                      WKT format.
 
- @return an handle to the layer, or NULL if an error occurs.
+ @return a handle to the layer, or NULL if an error occurs.
 */
 
 OGRLayer *GDALDataset::CopyLayer( OGRLayer *poSrcLayer,
@@ -6008,10 +6130,10 @@ OGRErr GDALDataset::ProcessSQLAlterTableAlterColumn( const char *pszSQLCommand )
  deprecated OGR_DS_ExecuteSQL().
 
  For more information on the SQL dialect supported internally by OGR
- review the <a href="ogr_sql.html">OGR SQL</a> document.  Some drivers (i.e.
+ review the <a href="https://gdal.org/user/ogr_sql_dialect.html">OGR SQL</a> document.  Some drivers (i.e.
  Oracle and PostGIS) pass the SQL directly through to the underlying RDBMS.
 
- Starting with OGR 1.10, the <a href="ogr_sql_sqlite.html">SQLITE dialect</a>
+ Starting with OGR 1.10, the <a href="https://gdal.org/user/sql_sqlite_dialect.html">SQLITE dialect</a>
  can also be used.
 
  In GDAL 1.X, this method used to be in the OGRDataSource class.

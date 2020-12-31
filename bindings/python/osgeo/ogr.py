@@ -187,6 +187,7 @@ OFSTBoolean = _ogr.OFSTBoolean
 OFSTInt16 = _ogr.OFSTInt16
 OFSTFloat32 = _ogr.OFSTFloat32
 OFSTJSON = _ogr.OFSTJSON
+OFSTUUID = _ogr.OFSTUUID
 OJUndefined = _ogr.OJUndefined
 OJLeft = _ogr.OJLeft
 OJRight = _ogr.OJRight
@@ -677,7 +678,7 @@ class DataSource(MajorObject):
         papszOptions:  a StringList of name=value options. Options are driver
         specific.
 
-        an handle to the layer, or NULL if an error occurs. 
+        a handle to the layer, or NULL if an error occurs. 
         """
         return _ogr.DataSource_CopyLayer(self, *args, **kwargs)
 
@@ -708,7 +709,7 @@ class DataSource(MajorObject):
 
         pszLayerName:  Layer the layer name of the layer to fetch.
 
-        an handle to the layer, or NULL if the layer is not found or an error
+        a handle to the layer, or NULL if the layer is not found or an error
         occurs. 
         """
         return _ogr.DataSource_GetLayerByName(self, *args)
@@ -796,7 +797,7 @@ class DataSource(MajorObject):
         the dialect. Starting with OGR 1.10, the SQLITE dialect can also be
         used.
 
-        an handle to a OGRLayer containing the results of the query.
+        a handle to a OGRLayer containing the results of the query.
         Deallocate with OGR_DS_ReleaseResultSet(). 
         """
         return _ogr.DataSource_ExecuteSQL(self, *args, **kwargs)
@@ -826,7 +827,7 @@ class DataSource(MajorObject):
         Parameters:
         -----------
 
-        hDS:  an handle to the data source on which was executed an SQL query.
+        hDS:  a handle to the data source on which was executed an SQL query.
 
         hLayer:  handle to the result of a previous OGR_DS_ExecuteSQL() call.
 
@@ -1079,7 +1080,7 @@ class Layer(MajorObject):
 
         hLayer:  handle to the layer to get the spatial filter from.
 
-        an handle to the spatial filter geometry. 
+        a handle to the spatial filter geometry. 
         """
         return _ogr.Layer_GetSpatialFilter(self, *args)
 
@@ -1297,7 +1298,7 @@ class Layer(MajorObject):
 
         nFeatureId:  the feature id of the feature to read.
 
-        an handle to a feature now owned by the caller, or NULL on failure. 
+        a handle to a feature now owned by the caller, or NULL on failure. 
         """
         return _ogr.Layer_GetFeature(self, *args)
 
@@ -1341,7 +1342,7 @@ class Layer(MajorObject):
 
         hLayer:  handle to the layer from which feature are read.
 
-        an handle to a feature, or NULL if no more features are available. 
+        a handle to a feature, or NULL if no more features are available. 
         """
         return _ogr.Layer_GetNextFeature(self, *args)
 
@@ -1530,7 +1531,7 @@ class Layer(MajorObject):
 
         hLayer:  handle to the layer to get the schema information.
 
-        an handle to the feature definition. 
+        a handle to the feature definition. 
         """
         return _ogr.Layer_GetLayerDefn(self, *args)
 
@@ -2829,7 +2830,7 @@ class Feature(_object):
 
         hFeat:  handle to the feature to get the feature definition from.
 
-        an handle to the feature definition object on which feature depends.
+        a handle to the feature definition object on which feature depends.
 
         """
         return _ogr.Feature_GetDefnRef(self, *args)
@@ -2913,7 +2914,7 @@ class Feature(_object):
         OGRGeometryH
         OGR_F_GetGeometryRef(OGRFeatureH hFeat)
 
-        Fetch an handle to feature geometry.
+        Fetch a handle to feature geometry.
 
         This function is essentially the same as the C++ method
         OGRFeature::GetGeometryRef() (the only difference is that this C
@@ -2924,7 +2925,7 @@ class Feature(_object):
 
         hFeat:  handle to the feature to get geometry from.
 
-        an handle to internal feature geometry. This object should not be
+        a handle to internal feature geometry. This object should not be
         modified. 
         """
         return _ogr.Feature_GetGeometryRef(self, *args)
@@ -3006,7 +3007,7 @@ class Feature(_object):
         OGRGeometryH
         OGR_F_GetGeomFieldRef(OGRFeatureH hFeat, int iField)
 
-        Fetch an handle to feature geometry.
+        Fetch a handle to feature geometry.
 
         This function is the same as the C++ method
         OGRFeature::GetGeomFieldRef().
@@ -3018,7 +3019,7 @@ class Feature(_object):
 
         iField:  geometry field to get.
 
-        an handle to internal feature geometry. This object should not be
+        a handle to internal feature geometry. This object should not be
         modified.
 
         GDAL 1.11 
@@ -3045,7 +3046,7 @@ class Feature(_object):
 
         hFeat:  handle to the feature to clone.
 
-        an handle to the new feature, exactly matching this feature. 
+        a handle to the new feature, exactly matching this feature. 
         """
         return _ogr.Feature_Clone(self, *args)
 
@@ -3120,7 +3121,7 @@ class Feature(_object):
 
         i:  the field to fetch, from 0 to GetFieldCount()-1.
 
-        an handle to the field definition (from the OGRFeatureDefn). This is
+        a handle to the field definition (from the OGRFeatureDefn). This is
         an internal reference, and should not be deleted or modified. 
         """
         return _ogr.Feature_GetFieldDefnRef(self, *args)
@@ -3171,7 +3172,7 @@ class Feature(_object):
 
         i:  the field to fetch, from 0 to GetGeomFieldCount()-1.
 
-        an handle to the field definition (from the OGRFeatureDefn). This is
+        a handle to the field definition (from the OGRFeatureDefn). This is
         an internal reference, and should not be deleted or modified.
 
         GDAL 1.11 
@@ -4688,7 +4689,7 @@ class FeatureDefn(_object):
 
         iField:  the field to fetch, between 0 and GetFieldCount()-1.
 
-        an handle to an internal field definition object or NULL if invalid
+        a handle to an internal field definition object or NULL if invalid
         index. This object should not be modified or freed by the application.
 
         """
@@ -4797,7 +4798,7 @@ class FeatureDefn(_object):
         iGeomField:  the geometry field to fetch, between 0 and
         GetGeomFieldCount() - 1.
 
-        an handle to an internal field definition object or NULL if invalid
+        a handle to an internal field definition object or NULL if invalid
         index. This object should not be modified or freed by the application.
 
         GDAL 1.11 
@@ -6122,7 +6123,7 @@ class Geometry(_object):
 
         hGeom:  handle on the geometry to clone from.
 
-        an handle on the copy of the geometry with the spatial reference
+        a handle on the copy of the geometry with the spatial reference
         system as the original. 
         """
         return _ogr.Geometry_Clone(self, *args)
@@ -7796,6 +7797,11 @@ class Geometry(_object):
         return _ogr.Geometry_Transform(self, *args)
 
 
+    def CreatePreparedGeometry(self, *args):
+        """CreatePreparedGeometry(Geometry self) -> PreparedGeometry"""
+        return _ogr.Geometry_CreatePreparedGeometry(self, *args)
+
+
     def Destroy(self):
       self.__swig_destroy__(self)
       self.__del__()
@@ -7804,6 +7810,15 @@ class Geometry(_object):
     def __str__(self):
       return self.ExportToWkt()
 
+    def __copy__(self):
+      return self.Clone()
+
+    def __deepcopy__(self, memo):
+      g = self.Clone()
+      srs = self.GetSpatialReference()
+      if srs:
+          g.AssignSpatialReference(srs.Clone())
+      return g
 
     def __reduce__(self):
       return (self.__class__, (), self.ExportToWkb())
@@ -7819,6 +7834,32 @@ class Geometry(_object):
 
 Geometry_swigregister = _ogr.Geometry_swigregister
 Geometry_swigregister(Geometry)
+
+class PreparedGeometry(_object):
+    """Proxy of C++ OGRPreparedGeometryShadow class."""
+
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, PreparedGeometry, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, PreparedGeometry, name)
+
+    def __init__(self, *args, **kwargs):
+        raise AttributeError("No constructor defined")
+    __repr__ = _swig_repr
+    __swig_destroy__ = _ogr.delete_PreparedGeometry
+    __del__ = lambda self: None
+
+    def Intersects(self, *args):
+        """Intersects(PreparedGeometry self, Geometry otherGeom) -> bool"""
+        return _ogr.PreparedGeometry_Intersects(self, *args)
+
+
+    def Contains(self, *args):
+        """Contains(PreparedGeometry self, Geometry otherGeom) -> bool"""
+        return _ogr.PreparedGeometry_Contains(self, *args)
+
+PreparedGeometry_swigregister = _ogr.PreparedGeometry_swigregister
+PreparedGeometry_swigregister(PreparedGeometry)
 
 class GeomTransformer(_object):
     """Proxy of C++ OGRGeomTransformerShadow class."""

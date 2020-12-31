@@ -595,6 +595,14 @@ void CPL_STDCALL GDALAllRegister()
     GDALRegister_TGA();
 #endif
 
+#ifdef FRMT_ogcapi
+    GDALRegister_OGCAPI();
+#endif
+
+#ifdef FRMT_stacta
+    GDALRegister_STACTA();
+#endif
+
     // NOTE: you need to generally your own driver before that line.
 
 /* -------------------------------------------------------------------- */

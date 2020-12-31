@@ -702,6 +702,44 @@ public:
     return eErr;
   }
 %clear (void **buf );
+
+
+%apply (int nList, GUIntBig* pList) {(int nDims1, GUIntBig *array_start_idx)};
+%apply (int nList, GUIntBig* pList) {(int nDims2, GUIntBig *count)};
+  CPLErr AdviseRead( int nDims1, GUIntBig* array_start_idx,
+                     int nDims2, GUIntBig* count ) {
+
+    const int nExpectedDims = (int)GDALMDArrayGetDimensionCount(self);
+    if( nDims1 != nExpectedDims )
+    {
+        CPLError(CE_Failure, CPLE_AppDefined,
+            "Wrong number of values in array_start_idx");
+        return CE_Failure;
+    }
+    if( nDims2 != nExpectedDims )
+    {
+        CPLError(CE_Failure, CPLE_AppDefined,
+            "Wrong number of values in count");
+        return CE_Failure;
+    }
+
+    std::vector<size_t> count_internal(nExpectedDims+1);
+    for( int i = 0; i < nExpectedDims; i++ )
+    {
+        count_internal[i] = (size_t)count[i];
+        if( count_internal[i] != count[i] )
+        {
+            CPLError(CE_Failure, CPLE_AppDefined, "Integer overflow");
+            return CE_Failure;
+        }
+    }
+
+    if( !(GDALMDArrayAdviseRead( self, array_start_idx, count_internal.data() )) )
+    {
+        return CE_Failure;
+    }
+    return CE_None;
+  }
 #endif
 
 %newobject GetAttribute;
@@ -811,16 +849,32 @@ public:
     *val = GDALMDArrayGetOffset( self, hasval );
   }
 
+  GDALDataType GetOffsetStorageType() {
+    GDALDataType eDT = GDT_Unknown;
+    int hasval = FALSE;
+    GDALMDArrayGetOffsetEx( self, &hasval, &eDT );
+    return hasval ? eDT : GDT_Unknown;
+  }
+
   void GetScale( double *val, int *hasval ) {
     *val = GDALMDArrayGetScale( self, hasval );
   }
 
-  CPLErr SetOffset( double val ) {
-    return GDALMDArraySetOffset( self, val ) ? CE_None : CE_Failure;
+  GDALDataType GetScaleStorageType() {
+    GDALDataType eDT = GDT_Unknown;
+    int hasval = FALSE;
+    GDALMDArrayGetScaleEx( self, &hasval, &eDT );
+    return hasval ? eDT : GDT_Unknown;
   }
 
-  CPLErr SetScale( double val ) {
-    return GDALMDArraySetScale( self, val ) ? CE_None : CE_Failure;
+%feature ("kwargs") SetOffset;
+  CPLErr SetOffset( double val, GDALDataType storageType = GDT_Unknown ) {
+    return GDALMDArraySetOffsetEx( self, val, storageType ) ? CE_None : CE_Failure;
+  }
+
+%feature ("kwargs") SetScale;
+  CPLErr SetScale( double val, GDALDataType storageType = GDT_Unknown ) {
+    return GDALMDArraySetScaleEx( self, val, storageType ) ? CE_None : CE_Failure;
   }
 
   CPLErr SetUnit(const char* unit) {

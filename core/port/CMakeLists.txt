@@ -3,8 +3,8 @@
 # Purpose:  CMake build scripts
 # Author:   Dmitry Baryshnikov, polimax@mail.ru
 ################################################################################
-# Copyright (C) 2015-2020, NextGIS <info@nextgis.com>
-# Copyright (C) 2012-2014 Dmitry Baryshnikov
+# Copyright (C) 2015-2021, NextGIS <info@nextgis.com>
+# Copyright (C) 2012-2021 Dmitry Baryshnikov
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -119,6 +119,7 @@ set(LIB_CSOURCES
     cpl_vsil_buffered_reader.cpp
     cpl_vsil_cache.cpp
     cpl_vsil.cpp
+    cpl_vsil_adls.cpp
 #    cpl_vsil_simple.cpp
     cpl_vsil_sparsefile.cpp
     cpl_vsil_stdin.cpp
@@ -157,7 +158,7 @@ set(LIB_CSOURCES
 )
 
 if(WIN32)
-    list(APPEND LIB_CSOURCES cpl_vsil_win32.cpp)
+    list(APPEND LIB_CSOURCES cpl_vsil_win32.cpp cpl_aws_win32.cpp)
 else()
     list(APPEND LIB_CSOURCES cpl_vsil_unix_stdio_64.cpp)
 endif()

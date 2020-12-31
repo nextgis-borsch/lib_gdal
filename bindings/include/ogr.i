@@ -200,6 +200,10 @@ typedef enum
      * @since GDAL 2.4
      */
                                                         OFSTJSON = 4,
+    /** UUID string representation. Only valid for OFTString.
+     * @since GDAL 3.3
+     */
+                                                        OFSTUUID = 5,
 } OGRFieldSubType;
 
 
@@ -258,6 +262,7 @@ typedef void OGRFieldDefnShadow;
 typedef struct OGRStyleTableHS OGRStyleTableShadow;
 typedef struct OGRGeomFieldDefnHS OGRGeomFieldDefnShadow;
 typedef struct OGRGeomTransformer OGRGeomTransformerShadow;
+typedef struct _OGRPreparedGeometry OGRPreparedGeometryShadow;
 %}
 
 #ifdef SWIGJAVA
@@ -375,6 +380,7 @@ typedef void retGetPoints;
 %constant OFSTInt16 = 2;
 %constant OFSTFloat32 = 3;
 %constant OFSTJSON = 4;
+%constant OFSTUUID = 5;
 
 %constant OJUndefined = 0;
 %constant OJLeft = 1;
@@ -2168,6 +2174,7 @@ public:
             case OFSTInt16:
             case OFSTFloat32:
             case OFSTJSON:
+            case OFSTUUID:
                 return TRUE;
             default:
                 CPLError(CE_Failure, CPLE_IllegalArg, "Illegal field subtype value");
@@ -3263,10 +3270,43 @@ public:
   {
     return (OGRGeometryShadow*)OGR_GeomTransformer_Transform(transformer, self);
   }
+
+  %newobject CreatePreparedGeometry;
+  OGRPreparedGeometryShadow* CreatePreparedGeometry()
+  {
+    return (OGRPreparedGeometryShadow*)OGRCreatePreparedGeometry(self);
+  }
 } /* %extend */
 
 }; /* class OGRGeometryShadow */
 
+
+/************************************************************************/
+/*                        OGRPreparedGeometry                           */
+/************************************************************************/
+
+%rename (PreparedGeometry) OGRPreparedGeometryShadow;
+class OGRPreparedGeometryShadow {
+  OGRPreparedGeometryShadow();
+public:
+%extend {
+
+  ~OGRPreparedGeometryShadow() {
+    OGRDestroyPreparedGeometry( self );
+  }
+
+  %apply Pointer NONNULL {const OGRGeometryShadow* otherGeom};
+  bool Intersects(const OGRGeometryShadow* otherGeom) {
+    return OGRPreparedGeometryIntersects(self, (OGRGeometryH)otherGeom);
+  }
+
+  bool Contains(const OGRGeometryShadow* otherGeom) {
+    return OGRPreparedGeometryContains(self, (OGRGeometryH)otherGeom);
+  }
+
+} /* %extend */
+
+}; /* class OGRPreparedGeometryShadow */
 
 
 #ifdef SWIGPYTHON

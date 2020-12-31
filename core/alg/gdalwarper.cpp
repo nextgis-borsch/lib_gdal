@@ -1296,6 +1296,7 @@ GDALCloneWarpOptions( const GDALWarpOptions *psSrcOptions )
     COPY_MEM( padfSrcNoDataImag, double, psSrcOptions->nBandCount );
     COPY_MEM( padfDstNoDataReal, double, psSrcOptions->nBandCount );
     COPY_MEM( padfDstNoDataImag, double, psSrcOptions->nBandCount );
+    // cppcheck-suppress pointerSize
     COPY_MEM( papfnSrcPerBandValidityMaskFunc, GDALMaskFunc,
               psSrcOptions->nBandCount );
     psDstOptions->papSrcPerBandValidityMaskFuncArg = nullptr;
@@ -1582,6 +1583,8 @@ GDALSerializeWarpOptions( const GDALWarpOptions *psWO )
         pszAlgName = "Lanczos";
     else if( psWO->eResampleAlg == GRA_Average )
         pszAlgName = "Average";
+    else if( psWO->eResampleAlg == GRA_RMS )
+        pszAlgName = "RootMeanSquare";
     else if( psWO->eResampleAlg == GRA_Mode )
         pszAlgName = "Mode";
     else if( psWO->eResampleAlg == GRA_Max )
@@ -1833,6 +1836,8 @@ GDALWarpOptions * CPL_STDCALL GDALDeserializeWarpOptions( CPLXMLNode *psTree )
         psWO->eResampleAlg = GRA_Lanczos;
     else if( EQUAL(pszValue, "Average") )
         psWO->eResampleAlg = GRA_Average;
+    else if( EQUAL(pszValue, "RootMeanSquare") )
+        psWO->eResampleAlg = GRA_RMS;
     else if( EQUAL(pszValue, "Mode") )
         psWO->eResampleAlg = GRA_Mode;
     else if( EQUAL(pszValue, "Maximum") )

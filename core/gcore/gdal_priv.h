@@ -66,6 +66,8 @@ class GDALAsyncReader;
 #include "cpl_multiproc.h"
 #include "cpl_atomic_ops.h"
 
+#include <stdarg.h>
+
 #include <cmath>
 #include <cstdint>
 #include <iterator>
@@ -350,6 +352,10 @@ class CPL_DLL GDALDataset : public GDALMajorObject
 
     CPL_INTERNAL void AddToDatasetOpenList();
 
+    CPL_INTERNAL static void ReportErrorV(
+                                     const char* pszDSName,
+                                     CPLErr eErrClass, CPLErrorNum err_no,
+                                     const char *fmt, va_list args);
   protected:
 //! @cond Doxygen_Suppress
     GDALDriver  *poDriver = nullptr;
@@ -606,6 +612,10 @@ class CPL_DLL GDALDataset : public GDALMajorObject
 
 #ifndef DOXYGEN_XML
     void ReportError(CPLErr eErrClass, CPLErrorNum err_no, const char *fmt, ...)  CPL_PRINT_FUNC_FORMAT (4, 5);
+
+    static void ReportError(const char* pszDSName,
+                            CPLErr eErrClass, CPLErrorNum err_no,
+                            const char *fmt, ...)  CPL_PRINT_FUNC_FORMAT (4, 5);
 #endif
 
     char ** GetMetadata(const char * pszDomain = "") override;
@@ -1993,11 +2003,12 @@ public:
     virtual bool CopyFrom(const std::shared_ptr<GDALGroup>& poDstRootGroup,
                           GDALDataset* poSrcDS,
                           const std::shared_ptr<GDALGroup>& poSrcGroup,
-                            bool bStrict,
-                            GUInt64& nCurCost,
-                            const GUInt64 nTotalCost,
-                            GDALProgressFunc pfnProgress,
-                            void * pProgressData);
+                          bool bStrict,
+                          GUInt64& nCurCost,
+                          const GUInt64 nTotalCost,
+                          GDALProgressFunc pfnProgress,
+                          void * pProgressData,
+                          CSLConstList papszOptions = nullptr);
 
     virtual CSLConstList GetStructuralInfo() const;
 
@@ -2350,6 +2361,10 @@ class CPL_DLL GDALMDArray: virtual public GDALAbstractMDArray, public GDALIHasAt
 protected:
 //! @cond Doxygen_Suppress
     GDALMDArray(const std::string& osParentName, const std::string& osName);
+
+    virtual bool IAdviseRead(const GUInt64* arrayStartIdx,
+                             const size_t* count) const;
+
 //! @endcond
 
 public:
@@ -2385,13 +2400,13 @@ public:
 
     bool SetNoDataValue(double dfNoData);
 
-    virtual double GetOffset(bool* pbHasOffset = nullptr) const;
+    virtual double GetOffset(bool* pbHasOffset = nullptr, GDALDataType* peStorageType = nullptr) const;
 
-    virtual double GetScale(bool* pbHasScale = nullptr) const;
+    virtual double GetScale(bool* pbHasScale = nullptr, GDALDataType* peStorageType = nullptr) const;
 
-    virtual bool SetOffset(double dfOffset);
+    virtual bool SetOffset(double dfOffset, GDALDataType eStorageType = GDT_Unknown);
 
-    virtual bool SetScale(double dfScale);
+    virtual bool SetScale(double dfScale, GDALDataType eStorageType = GDT_Unknown);
 
     std::shared_ptr<GDALMDArray> GetView(const std::string& viewExpr) const;
 
@@ -2436,6 +2451,9 @@ public:
                                     double *pdfMean, double *pdfStdDev,
                                     GUInt64* pnValidCount,
                                     GDALProgressFunc, void *pProgressData );
+
+    bool AdviseRead(const GUInt64* arrayStartIdx,
+                    const size_t* count) const;
 
 //! @cond Doxygen_Suppress
     static constexpr GUInt64 COPY_COST = 1000;

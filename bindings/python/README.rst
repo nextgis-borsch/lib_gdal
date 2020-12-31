@@ -16,7 +16,7 @@ reference documentation, but the `GDAL API Tutorial`_ includes Python examples.
 Dependencies
 ------------
  
- * libgdal (3.1.0 or greater) and header files (gdal-devel)
+ * libgdal (3.2.0 or greater) and header files (gdal-devel)
  * numpy (1.0.0 or greater) and header files (numpy-devel) (not explicitly 
    required, but many examples and utilities will not work without it)
 
@@ -207,7 +207,7 @@ ReadAsArray expects to make an entire copy of a raster band or dataset unless
 the data are explicitly subsetted as part of the function call. For large 
 data, this approach is expected to be prohibitively memory intensive.
 
-.. _GDAL API Tutorial: http://www.gdal.org/gdal_tutorial.html
+.. _GDAL API Tutorial: https://gdal.org/tutorials/
 .. _GDAL Windows Binaries: http://gisinternals.com/sdk/
 .. _Microsoft Knowledge Base doc: http://support.microsoft.com/kb/310519
 .. _Python Cheeseshop: http://pypi.python.org/pypi/GDAL/

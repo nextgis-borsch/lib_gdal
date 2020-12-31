@@ -86,7 +86,8 @@ toff_t GTIFFWriteDirectory( TIFF *hTIFF, int nSubfileType,
                             const char* pszJPEGTablesMode,
                             const char* pszNoData,
                             CPL_UNUSED const uint32* panLercAddCompressionAndVersion,
-                            bool bDeferStrileArrayWriting )
+                            bool bDeferStrileArrayWriting,
+                            const char *pszWebpLevel)
 
 {
     const toff_t nBaseDirOffset = TIFFCurrentDirOffset( hTIFF );
@@ -170,6 +171,13 @@ toff_t GTIFFWriteDirectory( TIFF *hTIFF, int nSubfileType,
             // is a no-op (helps for cloud optimized geotiffs)
             TIFFSetField( hTIFF, TIFFTAG_YCBCRSUBSAMPLING, 2, 2 );
         }
+    }
+
+    if (nCompressFlag == COMPRESSION_WEBP  && pszWebpLevel != nullptr)
+    {
+        const int nWebpLevel = atoi(pszWebpLevel);
+        if ( nWebpLevel >= 1 )
+            TIFFSetField( hTIFF, TIFFTAG_WEBP_LEVEL, nWebpLevel );
     }
 
 #ifdef HAVE_LERC
@@ -912,7 +920,10 @@ GTIFFBuildOverviewsEx( const char * pszFilename,
                                 CPLGetConfigOption( "JPEG_TABLESMODE_OVERVIEW", nullptr ),
                              pszNoData,
                              nullptr,
-                             false
+                             false,
+                             papszOptions ?
+                                CSLFetchNameValue(papszOptions, "WEBP_LEVEL") :
+                                CPLGetConfigOption( "WEBP_LEVEL_OVERVIEW", nullptr )
                            ) == 0 )
         {
             XTIFFClose( hOTIFF );
@@ -970,6 +981,19 @@ GTIFFBuildOverviewsEx( const char * pszFilename,
                       nJpegQuality );
         GTIFFSetJpegQuality(GDALDataset::ToHandle(hODS), nJpegQuality);
     }
+    const char* pszWebpLevel =
+        papszOptions ?
+            CSLFetchNameValue(papszOptions, "WEBP_LEVEL") :
+            CPLGetConfigOption( "WEBP_LEVEL_OVERVIEW", nullptr );
+    if( nCompression == COMPRESSION_WEBP && pszWebpLevel != nullptr )
+    {
+        const int nWebpLevel = atoi(pszWebpLevel);
+        if ( nWebpLevel >= 1 )
+        {
+            TIFFSetField( hTIFF, TIFFTAG_WEBP_LEVEL, nWebpLevel );
+            GTIFFSetWebPLevel(GDALDataset::ToHandle(hODS), nWebpLevel);
+        }
+    }
 
     const char* pszJPEGTablesMode =
         papszOptions ?
@@ -1006,6 +1030,7 @@ GTIFFBuildOverviewsEx( const char * pszFilename,
          papoBandList[0]->GetColorTable() == nullptr &&
          (STARTS_WITH_CI(pszResampling, "NEAR") ||
           EQUAL(pszResampling, "AVERAGE") ||
+          EQUAL(pszResampling, "RMS") ||
           EQUAL(pszResampling, "GAUSS") ||
           EQUAL(pszResampling, "CUBIC") ||
           EQUAL(pszResampling, "CUBICSPLINE") ||

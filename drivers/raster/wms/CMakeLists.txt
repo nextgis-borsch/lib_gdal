@@ -3,7 +3,7 @@
 # Purpose:  CMake build scripts
 # Author:   Mikhail Gusev, gusevmihs@gmail.com
 ################################################################################
-# Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
+# Copyright (C) 2015-2021, NextGIS <info@nextgis.com>
 # Copyright (C) 2016 Mikhail Gusev
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -51,6 +51,8 @@ if(ENABLE_WMS)
         minidriver_virtualearth.h
         minidriver_arcgis_server.h
         minidriver_mrf.h
+        minidriver_ogcapicoverage.h
+        minidriver_ogcapimaps.h
     )
 
     set(LIB_CSOURCES
@@ -71,6 +73,8 @@ if(ENABLE_WMS)
         minidriver_arcgis_server.cpp
         minidriver_iip.cpp
         minidriver_mrf.cpp
+        minidriver_ogcapicoverage.cpp
+        minidriver_ogcapimaps.cpp
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})

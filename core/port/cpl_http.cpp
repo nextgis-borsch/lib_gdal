@@ -514,6 +514,7 @@ constexpr TupleEnvVarOptionName asAssocEnvVarOptionName[] =
     { "GDAL_HTTP_NETRC", "NETRC" },
     { "GDAL_HTTP_MAX_RETRY", "MAX_RETRY" },
     { "GDAL_HTTP_RETRY_DELAY", "RETRY_DELAY" },
+    { "GDAL_CURL_CA_BUNDLE", "CAINFO" },
     { "CURL_CA_BUNDLE", "CAINFO" },
     { "SSL_CERT_FILE", "CAINFO" },
     { "GDAL_HTTP_HEADER_FILE", "HEADER_FILE" },
@@ -762,6 +763,121 @@ static void CPLHTTPFetchCleanup(CURL *http_handle, struct curl_slist* headers,
 }
 #endif // HAVE_CURL
 
+struct CPLHTTPFetchContext
+{
+    std::vector< std::pair<CPLHTTPFetchCallbackFunc, void*> > stack{};
+};
+
+/************************************************************************/
+/*                        GetHTTPFetchContext()                         */
+/************************************************************************/
+
+static CPLHTTPFetchContext* GetHTTPFetchContext(bool bAlloc)
+{
+    int bError = FALSE;
+    CPLHTTPFetchContext *psCtx =
+        static_cast<CPLHTTPFetchContext *>(
+            CPLGetTLSEx( CTLS_HTTPFETCHCALLBACK, &bError ) );
+    if( bError )
+        return nullptr;
+
+    if( psCtx == nullptr && bAlloc)
+    {
+        const auto FreeFunc = [](void* pData)
+        {
+            delete static_cast<CPLHTTPFetchContext*>(pData);
+        };
+        psCtx = new CPLHTTPFetchContext();
+        CPLSetTLSWithFreeFuncEx( CTLS_HTTPFETCHCALLBACK, psCtx, FreeFunc, &bError );
+        if( bError )
+        {
+            delete psCtx;
+            psCtx = nullptr;
+        }
+    }
+    return psCtx;
+}
+
+/************************************************************************/
+/*                      CPLHTTPSetFetchCallback()                       */
+/************************************************************************/
+
+static CPLHTTPFetchCallbackFunc gpsHTTPFetchCallbackFunc = nullptr;
+static void* gpHTTPFetchCallbackUserData = nullptr;
+
+/** Installs an alternate callback to the default implementation of CPLHTTPFetchEx().
+ *
+ * This callback will be used by all threads, unless contextual callbacks are
+ * installed with CPLHTTPPushFetchCallback().
+ *
+ * It is the responsibility of the caller to make sure this function is not
+ * called concurrently, or during CPLHTTPFetchEx() execution.
+ *
+ * @param pFunc Callback function to be called with CPLHTTPFetchEx() is called
+ *              (or NULL to restore default handler)
+ * @param pUserData Last argument to provide to the pFunc callback.
+ *
+ * @since GDAL 3.2
+ */
+void CPLHTTPSetFetchCallback( CPLHTTPFetchCallbackFunc pFunc, void* pUserData )
+{
+    gpsHTTPFetchCallbackFunc = pFunc;
+    gpHTTPFetchCallbackUserData = pUserData;
+}
+
+/************************************************************************/
+/*                      CPLHTTPPushFetchCallback()                      */
+/************************************************************************/
+
+/** Installs an alternate callback to the default implementation of CPLHTTPFetchEx().
+ *
+ * This callback will only be used in the thread where this function has been
+ * called. It must be un-installed by CPLHTTPPopFetchCallback(), which must also
+ * be called from the same thread.
+ *
+ * @param pFunc Callback function to be called with CPLHTTPFetchEx() is called.
+ * @param pUserData Last argument to provide to the pFunc callback.
+ * @return TRUE in case of success.
+ *
+ * @since GDAL 3.2
+ */
+int CPLHTTPPushFetchCallback( CPLHTTPFetchCallbackFunc pFunc, void* pUserData )
+{
+    auto psCtx = GetHTTPFetchContext(true);
+    if( psCtx == nullptr )
+        return false;
+    psCtx->stack.emplace_back(
+        std::pair<CPLHTTPFetchCallbackFunc, void*>(pFunc, pUserData) );
+    return true;
+}
+
+/************************************************************************/
+/*                       CPLHTTPPopFetchCallback()                      */
+/************************************************************************/
+
+/** Uninstalls a callback set by CPLHTTPPushFetchCallback().
+ *
+ * @see CPLHTTPPushFetchCallback()
+ * @return TRUE in case of success.
+ * @since GDAL 3.2
+ */
+int CPLHTTPPopFetchCallback(void)
+{
+    auto psCtx = GetHTTPFetchContext(false);
+    if( psCtx == nullptr || psCtx->stack.empty() )
+    {
+        CPLError(CE_Failure, CPLE_AppDefined,
+                 "CPLHTTPPushFetchCallback / CPLHTTPPopFetchCallback not balanced");
+        return false;
+    }
+    else
+    {
+        psCtx->stack.pop_back();
+        return true;
+    }
+}
+
+
 /************************************************************************/
 /*                           CPLHTTPFetch()                             */
 /************************************************************************/
@@ -815,10 +931,12 @@ static void CPLHTTPFetchCleanup(CURL *http_handle, struct curl_slist* headers,
  *                 Default is 30. (GDAL >= 2.0)</li>
  * <li>MAX_FILE_SIZE=val, where val is a number of bytes (GDAL >= 2.2)</li>
  * <li>CAINFO=/path/to/bundle.crt. This is path to Certificate Authority (CA)
- *     bundle file. By default, it will be looked in a system location. If
- *     the CAINFO options is not defined, GDAL will also look if the CURL_CA_BUNDLE
- *     environment variable is defined to use it as the CAINFO value, and as a
- *     fallback to the SSL_CERT_FILE environment variable. (GDAL >= 2.1.3)</li>
+ *     bundle file. By default, it will be looked for in a system location. If
+ *     the CAINFO option is not defined, GDAL will also look in the the
+ *     CURL_CA_BUNDLE and SSL_CERT_FILE environment variables respectively
+ *     and use the first one found as the CAINFO value (GDAL >= 2.1.3). The
+ *     GDAL_CURL_CA_BUNDLE environment variable may also be used to set the
+ *     CAINFO value in GDAL >= 3.2.</li>
  * <li>HTTP_VERSION=1.0/1.1/2/2TLS (GDAL >= 2.3). Specify HTTP version to use.
  *     Will default to 1.1 generally (except on some controlled environments,
  *     like Google Compute Engine VMs, where 2TLS will be the default).
@@ -947,14 +1065,50 @@ CPLHTTPResult *CPLHTTPFetchEx( const char *pszURL, CSLConstList papszOptions,
         return psResult;
     }
 
-#ifndef HAVE_CURL
-    (void) papszOptions;
-    (void) pszURL;
-    (void) pfnProgress;
-    (void) pProgressArg;
-    (void) pfnWrite;
-    (void) pWriteArg;
+    // Try to user alternate network layer if set.
+    auto pCtx = GetHTTPFetchContext(false);
+    if( pCtx )
+    {
+        for( size_t i = pCtx->stack.size(); i > 0; )
+        {
+            --i;
+            auto& cbk = pCtx->stack[i];
+            auto cbkFunc = cbk.first;
+            auto pUserData = cbk.second;
+            auto res = cbkFunc( pszURL, papszOptions,
+                                pfnProgress, pProgressArg,
+                                pfnWrite, pWriteArg,
+                                pUserData );
+            if( res )
+            {
+                if( CSLFetchNameValue( papszOptions, "CLOSE_PERSISTENT" ) )
+                {
+                    CPLHTTPDestroyResult(res);
+                    res = nullptr;
+                }
+                return res;
+            }
+        }
+    }
 
+    if( gpsHTTPFetchCallbackFunc )
+    {
+        auto res = gpsHTTPFetchCallbackFunc( pszURL, papszOptions,
+                                pfnProgress, pProgressArg,
+                                pfnWrite, pWriteArg,
+                                gpHTTPFetchCallbackUserData );
+        if( res )
+        {
+            if( CSLFetchNameValue( papszOptions, "CLOSE_PERSISTENT" ) )
+            {
+                CPLHTTPDestroyResult(res);
+                res = nullptr;
+            }
+            return res;
+        }
+    }
+
+#ifndef HAVE_CURL
     CPLError( CE_Failure, CPLE_NotSupported,
               "GDAL/OGR not compiled with libcurl support, "
               "remote requests not supported." );
@@ -1270,10 +1424,24 @@ bool CPLMultiPerformWait(void* hCurlMultiHandleIn, int& repeats)
     CURLM* hCurlMultiHandle = static_cast<CURLM*>(hCurlMultiHandleIn);
 
     // Wait for events on the sockets
+
+    // 7.66.0
+#if LIBCURL_VERSION_NUM >= 0x074200
+    // Using curl_multi_poll() is preferred to avoid hitting the 1024 file
+    // descriptor limit
+    (void)repeats;
+
+    int numfds = 0;
+    if( curl_multi_poll(hCurlMultiHandle, nullptr, 0, 1000, &numfds) != CURLM_OK )
+    {
+        CPLError(CE_Failure, CPLE_AppDefined, "curl_multi_poll() failed");
+        return false;
+    }
+
+    // 7.28.0
+#elif LIBCURL_VERSION_NUM >= 0x071C00
     // Using curl_multi_wait() is preferred to avoid hitting the 1024 file
     // descriptor limit
-    // 7.28.0
-#if LIBCURL_VERSION_NUM >= 0x071C00
     int numfds = 0;
     if( curl_multi_wait(hCurlMultiHandle, nullptr, 0, 1000, &numfds) != CURLM_OK )
     {
@@ -1957,6 +2125,9 @@ void *CPLHTTPSetOptions(void *pcurl, const char* pszURL,
 
     // Custom path to SSL certificates.
     const char* pszCAInfo = CSLFetchNameValue( papszOptions, "CAINFO" );
+    if( pszCAInfo == nullptr )
+        // Name of GDAL environment variable for the CA Bundle path
+        pszCAInfo = CPLGetConfigOption("GDAL_CURL_CA_BUNDLE", nullptr);
     if( pszCAInfo == nullptr )
         // Name of environment variable used by the curl binary
         pszCAInfo = CPLGetConfigOption("CURL_CA_BUNDLE", nullptr);

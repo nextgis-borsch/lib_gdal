@@ -31,6 +31,7 @@
 #include "ogr_p.h"
 #include "ogr_swq.h"
 #include "gdalwarper.h"
+#include "gdal_utils.h"
 #include "ogrgeopackageutility.h"
 #include "ogrsqliteutility.h"
 #include "vrt/vrtdataset.h"
@@ -332,14 +333,9 @@ static OGRErr GDALGPKGImportFromEPSG(OGRSpatialReference *poSpatialRef,
     return eErr;
 }
 
-OGRSpatialReference* GDALGeoPackageDataset::GetSpatialRef(int iSrsId)
+OGRSpatialReference* GDALGeoPackageDataset::GetSpatialRef(int iSrsId,
+                                                          bool bFallbackToEPSG)
 {
-    /* Should we do something special with undefined SRS ? */
-    if( iSrsId == 0 || iSrsId == -1 )
-    {
-        return nullptr;
-    }
-
     std::map<int, OGRSpatialReference*>::const_iterator oIter =
                                                 m_oMapSrsIdToSrs.find(iSrsId);
     if( oIter != m_oMapSrsIdToSrs.end() )
@@ -348,6 +344,31 @@ OGRSpatialReference* GDALGeoPackageDataset::GetSpatialRef(int iSrsId)
             return nullptr;
         oIter->second->Reference();
         return oIter->second;
+    }
+
+    if( iSrsId == 0 || iSrsId == -1 )
+    {
+        OGRSpatialReference *poSpatialRef = new OGRSpatialReference();
+        poSpatialRef->SetAxisMappingStrategy( OAMS_TRADITIONAL_GIS_ORDER );
+
+        // See corresponding tests in GDALGeoPackageDataset::GetSrsId
+        if( iSrsId == 0)
+        {
+            poSpatialRef->SetGeogCS("Undefined geographic SRS",
+                                    "unknown",
+                                    "unknown",
+                                    SRS_WGS84_SEMIMAJOR,
+                                    SRS_WGS84_INVFLATTENING);
+        }
+        else if( iSrsId == -1)
+        {
+            poSpatialRef->SetLocalCS("Undefined cartesian SRS");
+            poSpatialRef->SetLinearUnits( SRS_UL_METER, 1.0 );
+        }
+
+        m_oMapSrsIdToSrs[iSrsId] = poSpatialRef;
+        poSpatialRef->Reference();
+        return poSpatialRef;
     }
 
     CPLString oSQL;
@@ -363,10 +384,26 @@ OGRSpatialReference* GDALGeoPackageDataset::GetSpatialRef(int iSrsId)
     if ( err != OGRERR_NONE || oResult.nRowCount != 1 )
     {
         SQLResultFree(&oResult);
-        CPLError( CE_Warning, CPLE_AppDefined,
-                  "unable to read srs_id '%d' from gpkg_spatial_ref_sys",
-                  iSrsId);
-        m_oMapSrsIdToSrs[iSrsId] = nullptr;
+        if( bFallbackToEPSG )
+        {
+            CPLDebug("GPKG",
+                     "unable to read srs_id '%d' from gpkg_spatial_ref_sys",
+                     iSrsId);
+            OGRSpatialReference* poSRS = new OGRSpatialReference();
+            if( poSRS->importFromEPSG(iSrsId) == OGRERR_NONE )
+            {
+                poSRS->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
+                return poSRS;
+            }
+            poSRS->Release();
+        }
+        else
+        {
+            CPLError(CE_Warning, CPLE_AppDefined,
+                        "unable to read srs_id '%d' from gpkg_spatial_ref_sys",
+                        iSrsId);
+            m_oMapSrsIdToSrs[iSrsId] = nullptr;
+        }
         return nullptr;
     }
 
@@ -538,6 +575,20 @@ bool GDALGeoPackageDataset::ConvertGpkgSpatialRefSysToExtensionWkt2()
 int GDALGeoPackageDataset::GetSrsId(const OGRSpatialReference& oSRS)
 {
     std::unique_ptr<OGRSpatialReference> poSRS(oSRS.Clone());
+
+    if (poSRS->IsGeographic() || poSRS->IsLocal())
+    {
+        // See corresponding tests in GDALGeoPackageDataset::GetSpatialRef
+        const char* pszName = poSRS->GetName();
+        if ( pszName != nullptr && strlen(pszName) > 0 )
+        {
+            if (EQUAL(pszName, "Undefined geographic SRS"))
+                return 0;
+
+            if (EQUAL(pszName, "Undefined cartesian SRS"))
+                return -1;
+        }
+    }
 
     const char* pszAuthorityName = poSRS->GetAuthorityName( nullptr );
 
@@ -4704,6 +4755,7 @@ static const WarpResamplingAlg asResamplingAlg[] =
     { "LANCZOS", GRA_Lanczos },
     { "MODE", GRA_Mode },
     { "AVERAGE", GRA_Average },
+    { "RMS", GRA_RMS },
 };
 
 GDALDataset* GDALGeoPackageDataset::CreateCopy( const char *pszFilename,
@@ -4769,8 +4821,70 @@ GDALDataset* GDALGeoPackageDataset::CreateCopy( const char *pszFilename,
     char* pszWKT = nullptr;
     oSRS.exportToWkt(&pszWKT);
     char** papszTO = CSLSetNameValue( nullptr, "DST_SRS", pszWKT );
-    void* hTransformArg =
+
+    void* hTransformArg = nullptr;
+
+    // Hack to compensate for GDALSuggestedWarpOutput2() failure (or not
+    // ideal suggestion with PROJ 8) when reprojecting latitude = +/- 90 to
+    // EPSG:3857.
+    double adfSrcGeoTransform[6];
+    std::unique_ptr<GDALDataset> poTmpDS;
+    bool bEPSG3857Adjust = false;
+    if( nEPSGCode == 3857 &&
+        poSrcDS->GetGeoTransform(adfSrcGeoTransform) == CE_None &&
+        adfSrcGeoTransform[2] == 0 &&
+        adfSrcGeoTransform[4] == 0 &&
+        adfSrcGeoTransform[5] < 0)
+    {
+        const auto poSrcSRS = poSrcDS->GetSpatialRef();
+        if( poSrcSRS && poSrcSRS->IsGeographic() )
+        {
+            double maxLat = adfSrcGeoTransform[3];
+            double minLat = adfSrcGeoTransform[3] +
+                                    poSrcDS->GetRasterYSize() *
+                                    adfSrcGeoTransform[5];
+            // Corresponds to the latitude of below MAX_GM
+            constexpr double MAX_LAT = 85.0511287798066;
+            bool bModified = false;
+            if( maxLat > MAX_LAT )
+            {
+                maxLat = MAX_LAT;
+                bModified = true;
+            }
+            if( minLat < -MAX_LAT )
+            {
+                minLat = -MAX_LAT;
+                bModified = true;
+            }
+            if( bModified )
+            {
+                CPLStringList aosOptions;
+                aosOptions.AddString("-of");
+                aosOptions.AddString("VRT");
+                aosOptions.AddString("-projwin");
+                aosOptions.AddString(CPLSPrintf("%.18g", adfSrcGeoTransform[0]));
+                aosOptions.AddString(CPLSPrintf("%.18g", maxLat));
+                aosOptions.AddString(CPLSPrintf("%.18g", adfSrcGeoTransform[0] + poSrcDS->GetRasterXSize() * adfSrcGeoTransform[1]));
+                aosOptions.AddString(CPLSPrintf("%.18g", minLat));
+                auto psOptions = GDALTranslateOptionsNew(aosOptions.List(), nullptr);
+                poTmpDS.reset(GDALDataset::FromHandle(
+                    GDALTranslate("", GDALDataset::ToHandle(poSrcDS), psOptions, nullptr)));
+                GDALTranslateOptionsFree(psOptions);
+                if( poTmpDS )
+                {
+                    bEPSG3857Adjust = true;
+                    hTransformArg = GDALCreateGenImgProjTransformer2(
+                        GDALDataset::FromHandle(poTmpDS.get()), nullptr, papszTO );
+                }
+            }
+        }
+    }
+    if( hTransformArg == nullptr )
+    {
+        hTransformArg =
             GDALCreateGenImgProjTransformer2( poSrcDS, nullptr, papszTO );
+    }
+
     if( hTransformArg == nullptr )
     {
         CPLFree(pszWKT);
@@ -4797,54 +4911,33 @@ GDALDataset* GDALGeoPackageDataset::CreateCopy( const char *pszFilename,
 
     GDALDestroyGenImgProjTransformer( hTransformArg );
     hTransformArg = nullptr;
+    poTmpDS.reset();
 
-    // Hack to compensate for GDALSuggestedWarpOutput2() failure when
-    // reprojection latitude = +/- 90 to EPSG:3857.
-    double adfSrcGeoTransform[6];
-    if( nEPSGCode == 3857 && poSrcDS->GetGeoTransform(adfSrcGeoTransform) == CE_None )
+    if( bEPSG3857Adjust )
     {
-        const char* pszSrcWKT = poSrcDS->GetProjectionRef();
-        if( pszSrcWKT != nullptr && pszSrcWKT[0] != '\0' )
-        {
-            OGRSpatialReference oSrcSRS;
-            if( oSrcSRS.SetFromUserInput( pszSrcWKT ) == OGRERR_NONE &&
-                oSrcSRS.IsGeographic() )
-            {
-                const double minLat =
-                    std::min(adfSrcGeoTransform[3],
-                             adfSrcGeoTransform[3] +
-                             poSrcDS->GetRasterYSize() *
-                             adfSrcGeoTransform[5]);
-                const double maxLat =
-                    std::max(adfSrcGeoTransform[3],
-                             adfSrcGeoTransform[3] +
-                             poSrcDS->GetRasterYSize() *
-                             adfSrcGeoTransform[5]);
-                double maxNorthing = adfGeoTransform[3];
-                double minNorthing =
-                    adfGeoTransform[3] + adfGeoTransform[5] * nYSize;
-                bool bChanged = false;
-                const double SPHERICAL_RADIUS = 6378137.0;
-                const double MAX_GM =
+        constexpr double SPHERICAL_RADIUS = 6378137.0;
+        constexpr double MAX_GM =
                     SPHERICAL_RADIUS * M_PI;  // 20037508.342789244
-                if( maxLat > 89.9999999 )
-                {
-                    bChanged = true;
-                    maxNorthing = MAX_GM;
-                }
-                if( minLat <= -89.9999999 )
-                {
-                    bChanged = true;
-                    minNorthing = -MAX_GM;
-                }
-                if( bChanged )
-                {
-                    adfGeoTransform[3] = maxNorthing;
-                    nYSize = int((maxNorthing - minNorthing) / (-adfGeoTransform[5]) + 0.5);
-                    adfExtent[1] = maxNorthing + nYSize * adfGeoTransform[5];
-                    adfExtent[3] = maxNorthing;
-                }
-            }
+        double maxNorthing = adfGeoTransform[3];
+        double minNorthing =
+            adfGeoTransform[3] + adfGeoTransform[5] * nYSize;
+        bool bChanged = false;
+        if( maxNorthing > MAX_GM )
+        {
+            bChanged = true;
+            maxNorthing = MAX_GM;
+        }
+        if( minNorthing < -MAX_GM )
+        {
+            bChanged = true;
+            minNorthing = -MAX_GM;
+        }
+        if( bChanged )
+        {
+            adfGeoTransform[3] = maxNorthing;
+            nYSize = int((maxNorthing - minNorthing) / (-adfGeoTransform[5]) + 0.5);
+            adfExtent[1] = maxNorthing + nYSize * adfGeoTransform[5];
+            adfExtent[3] = maxNorthing;
         }
     }
 
@@ -5669,6 +5762,9 @@ OGRLayer * GDALGeoPackageDataset::ExecuteSQL( const char *pszSQLCommand,
 
     FlushMetadata();
 
+    while( *pszSQLCommand == ' ' )
+        pszSQLCommand ++;
+
     CPLString osSQLCommand(pszSQLCommand);
     if( !osSQLCommand.empty() && osSQLCommand.back() == ';' )
         osSQLCommand.resize(osSQLCommand.size() - 1);
@@ -5694,7 +5790,8 @@ OGRLayer * GDALGeoPackageDataset::ExecuteSQL( const char *pszSQLCommand,
                 m_papoLayers[i]->DisableFeatureCount();
             }
 #endif
-            m_papoLayers[i]->SyncToDisk();
+            if( m_papoLayers[i]->SyncToDisk() != OGRERR_NONE )
+                return nullptr;
         }
     }
 
@@ -5863,6 +5960,12 @@ OGRLayer * GDALGeoPackageDataset::ExecuteSQL( const char *pszSQLCommand,
 /*      Do we get a resultset?                                          */
 /* -------------------------------------------------------------------- */
     rc = sqlite3_step( hSQLStmt );
+
+    for( int i = 0; i < m_nLayers; i++ )
+    {
+        m_papoLayers[i]->RunDeferredDropRTreeTableIfNecessary();
+    }
+
     if( rc != SQLITE_ROW )
     {
         if ( rc != SQLITE_DONE )
@@ -6418,7 +6521,7 @@ void OGRGeoPackageTransform(sqlite3_context* pContext,
     GDALGeoPackageDataset* poDS = static_cast<GDALGeoPackageDataset*>(
                                                 sqlite3_user_data(pContext));
 
-    OGRSpatialReference* poSrcSRS = poDS->GetSpatialRef(sHeader.iSrsId);
+    OGRSpatialReference* poSrcSRS = poDS->GetSpatialRef(sHeader.iSrsId, true);
     if( poSrcSRS == nullptr )
     {
         CPLError(CE_Failure, CPLE_AppDefined,
@@ -6428,7 +6531,7 @@ void OGRGeoPackageTransform(sqlite3_context* pContext,
     }
 
     int nDestSRID = sqlite3_value_int (argv[1]);
-    OGRSpatialReference* poDstSRS = poDS->GetSpatialRef(nDestSRID);
+    OGRSpatialReference* poDstSRS = poDS->GetSpatialRef(nDestSRID, true);
     if( poDstSRS == nullptr )
     {
         CPLError(CE_Failure, CPLE_AppDefined,
@@ -6911,15 +7014,6 @@ std::pair<OGRLayer*, IOGRSQLiteGetSpatialWhere*>
 }
 
 /************************************************************************/
-/*                         IsInTransaction()                            */
-/************************************************************************/
-
-bool GDALGeoPackageDataset::IsInTransaction() const
-{
-    return nSoftTransactionLevel > 0;
-}
-
-/************************************************************************/
 /*                       CommitTransaction()                            */
 /************************************************************************/
 
@@ -6931,7 +7025,7 @@ OGRErr GDALGeoPackageDataset::CommitTransaction()
         FlushMetadata();
         for( int i = 0; i < m_nLayers; i++ )
         {
-            m_papoLayers[i]->RunDeferredCreationIfNecessary();
+            m_papoLayers[i]->DoJobAtTransactionCommit();
         }
     }
 
@@ -6962,8 +7056,7 @@ OGRErr GDALGeoPackageDataset::RollbackTransaction()
                     GetOGRFeatureCountTriggersDeletedInTransaction());
             m_papoLayers[i]->SetAddOGRFeatureCountTriggers(false);
 #endif
-            m_papoLayers[i]->SyncToDisk();
-            m_papoLayers[i]->ResetReading();
+            m_papoLayers[i]->DoJobAtTransactionRollback();
 #ifdef ENABLE_GPKG_OGR_CONTENTS
             m_papoLayers[i]->DisableFeatureCount();
 #endif

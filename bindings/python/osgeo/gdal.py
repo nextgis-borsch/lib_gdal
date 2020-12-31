@@ -99,16 +99,20 @@ except __builtin__.Exception:
 
 
 have_warned = 0
-def deprecation_warn(module):
+def deprecation_warn(module, sub_package=None):
   global have_warned
 
   if have_warned == 1:
       return
 
   have_warned = 1
+  if sub_package:
+      new_module = sub_package+'.'+module
+  else:
+      new_module = module
 
   from warnings import warn
-  warn('%s.py was placed in a namespace, it is now available as osgeo.%s' % (module,module),
+  warn('%s.py was placed in a namespace, it is now available as osgeo.%s' % (module, new_module),
        DeprecationWarning)
 
 
@@ -451,6 +455,8 @@ def TranslateOptions(options=None, format=None,
                 new_options += ['-r', 'lanczos']
             elif resampleAlg == gdalconst.GRA_Average:
                 new_options += ['-r', 'average']
+            elif resampleAlg == gdalconst.GRA_RMS:
+                new_options += ['-r', 'rms']
             elif resampleAlg == gdalconst.GRA_Mode:
                 new_options += ['-r', 'mode']
             else:
@@ -591,6 +597,8 @@ def WarpOptions(options=None, format=None,
                 new_options += ['-r', 'lanczos']
             elif resampleAlg == gdalconst.GRIORA_Average:
                 new_options += ['-r', 'average']
+            elif resampleAlg == gdalconst.GRIORA_RMS:
+                new_options += ['-r', 'rms']
             elif resampleAlg == gdalconst.GRIORA_Mode:
                 new_options += ['-r', 'mode']
             elif resampleAlg == gdalconst.GRIORA_Gauss:
@@ -692,6 +700,7 @@ def VectorTranslateOptions(options=None, format=None,
          SQLStatement=None, SQLDialect=None, where=None, selectFields=None,
          addFields=False,
          forceNullable=False,
+         emptyStrAsNull=False,
          spatFilter=None, spatSRS=None,
          datasetCreationOptions=None,
          layerCreationOptions=None,
@@ -720,6 +729,7 @@ def VectorTranslateOptions(options=None, format=None,
           selectFields --- list of fields to select
           addFields --- whether to add new fields found in source layers (to be used with accessMode == 'append')
           forceNullable --- whether to drop NOT NULL constraints on newly created fields
+          emptyStrAsNull --- whether to treat empty string values as NULL
           spatFilter --- spatial filter as (minX, minY, maxX, maxY) bounding box
           spatSRS --- SRS in which the spatFilter is expressed. If not specified, it is assumed to be the one of the layer(s)
           datasetCreationOptions --- list of dataset creation options
@@ -772,6 +782,8 @@ def VectorTranslateOptions(options=None, format=None,
             new_options += ['-addfields']
         if forceNullable:
             new_options += ['-forceNullable']
+        if emptyStrAsNull:
+            new_options += ['-emptyStrAsNull']
         if selectFields is not None:
             val = ''
             for item in selectFields:
@@ -1321,6 +1333,8 @@ def BuildVRTOptions(options=None,
                 new_options += ['-r', 'lanczos']
             elif resampleAlg == gdalconst.GRIORA_Average:
                 new_options += ['-r', 'average']
+            elif resampleAlg == gdalconst.GRIORA_RMS:
+                new_options += ['-r', 'rms']
             elif resampleAlg == gdalconst.GRIORA_Mode:
                 new_options += ['-r', 'mode']
             elif resampleAlg == gdalconst.GRIORA_Gauss:
@@ -2262,7 +2276,7 @@ class Dataset(MajorObject):
 
 
     def SetSpatialRef(self, *args):
-        """SetSpatialRef(Dataset self, SpatialReference srs)"""
+        """SetSpatialRef(Dataset self, SpatialReference srs) -> CPLErr"""
         return _gdal.Dataset_SetSpatialRef(self, *args)
 
 
@@ -2452,7 +2466,7 @@ class Dataset(MajorObject):
 
 
     def ReadRaster1(self, *args, **kwargs):
-        """ReadRaster1(Dataset self, int xoff, int yoff, int xsize, int ysize, int * buf_xsize=None, int * buf_ysize=None, GDALDataType * buf_type=None, int band_list=0, GIntBig * buf_pixel_space=None, GIntBig * buf_line_space=None, GIntBig * buf_band_space=None, GDALRIOResampleAlg resample_alg, GDALProgressFunc callback=0, void * callback_data=None) -> CPLErr"""
+        """ReadRaster1(Dataset self, double xoff, double yoff, double xsize, double ysize, int * buf_xsize=None, int * buf_ysize=None, GDALDataType * buf_type=None, int band_list=0, GIntBig * buf_pixel_space=None, GIntBig * buf_line_space=None, GIntBig * buf_band_space=None, GDALRIOResampleAlg resample_alg, GDALProgressFunc callback=0, void * callback_data=None) -> CPLErr"""
         return _gdal.Dataset_ReadRaster1(self, *args, **kwargs)
 
 
@@ -2868,6 +2882,11 @@ class MDArray(_object):
         return _gdal.MDArray_Write(self, *args)
 
 
+    def AdviseRead(self, *args):
+        """AdviseRead(MDArray self, int nDims1, int nDims2) -> CPLErr"""
+        return _gdal.MDArray_AdviseRead(self, *args)
+
+
     def GetAttribute(self, *args):
         """GetAttribute(MDArray self, char const * name) -> Attribute"""
         return _gdal.MDArray_GetAttribute(self, *args)
@@ -2913,19 +2932,29 @@ class MDArray(_object):
         return _gdal.MDArray_GetOffset(self, *args)
 
 
+    def GetOffsetStorageType(self, *args):
+        """GetOffsetStorageType(MDArray self) -> GDALDataType"""
+        return _gdal.MDArray_GetOffsetStorageType(self, *args)
+
+
     def GetScale(self, *args):
         """GetScale(MDArray self)"""
         return _gdal.MDArray_GetScale(self, *args)
 
 
-    def SetOffset(self, *args):
-        """SetOffset(MDArray self, double val) -> CPLErr"""
-        return _gdal.MDArray_SetOffset(self, *args)
+    def GetScaleStorageType(self, *args):
+        """GetScaleStorageType(MDArray self) -> GDALDataType"""
+        return _gdal.MDArray_GetScaleStorageType(self, *args)
 
 
-    def SetScale(self, *args):
-        """SetScale(MDArray self, double val) -> CPLErr"""
-        return _gdal.MDArray_SetScale(self, *args)
+    def SetOffset(self, *args, **kwargs):
+        """SetOffset(MDArray self, double val, GDALDataType storageType) -> CPLErr"""
+        return _gdal.MDArray_SetOffset(self, *args, **kwargs)
+
+
+    def SetScale(self, *args, **kwargs):
+        """SetScale(MDArray self, double val, GDALDataType storageType) -> CPLErr"""
+        return _gdal.MDArray_SetScale(self, *args, **kwargs)
 
 
     def SetUnit(self, *args):
@@ -3018,6 +3047,13 @@ class MDArray(_object):
         from osgeo import gdalnumeric
         return gdalnumeric.MDArrayReadAsArray(self, array_start_idx, count, array_step, buffer_datatype, buf_obj)
 
+    def AdviseRead(self, array_start_idx = None, count = None):
+        if not array_start_idx:
+          array_start_idx = [0] * self.GetDimensionCount()
+        if not count:
+          count = [ (self.GetDimensions()[i].GetSize() - array_start_idx[i]) for i in range (self.GetDimensionCount()) ]
+        return _gdal.MDArray_AdviseRead(self, array_start_idx, count)
+
     def __getitem__(self, item):
 
           def stringify(v):
@@ -3094,6 +3130,32 @@ class MDArray(_object):
 
         from osgeo import gdalnumeric
         return gdalnumeric.MDArrayWriteArray(self, array, array_start_idx, array_step)
+
+    def ReadAsMaskedArray(self,
+                    array_start_idx = None,
+                    count = None,
+                    array_step = None):
+        """ Return a numpy masked array of ReadAsArray() with GetMask() """
+        import numpy
+        mask = self.GetMask()
+        if mask is not None:
+            array = self.ReadAsArray(array_start_idx, count, array_step)
+            mask_array = mask.ReadAsArray(array_start_idx, count, array_step)
+            bool_array = ~mask_array.astype(numpy.bool)
+            return numpy.ma.array(array, mask=bool_array)
+        else:
+            return numpy.ma.array(self.ReadAsArray(array_start_idx, count, array_step), mask=None)
+
+    def GetShape(self):
+      """ Return the shape of the array """
+      if not self.GetDimensionCount():
+        return None
+      shp = ()
+      for dim in self.GetDimensions():
+        shp += (dim.GetSize(),)
+      return shp
+
+    shape = property(fget=GetShape, doc='Returns the shape of the array.')
 
 
 MDArray_swigregister = _gdal.MDArray_swigregister
