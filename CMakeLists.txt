@@ -119,7 +119,7 @@ set(TARGET_OBJECTS)
 include(FindAnyProject)
 
 if(WIN32)
-    set(TARGET_LINK_LIB ${TARGET_LINK_LIB} Ws2_32.lib)
+    set(TARGET_LINK_LIB ${TARGET_LINK_LIB} Ws2_32.lib wbemuuid.lib)
 endif()
 
 
