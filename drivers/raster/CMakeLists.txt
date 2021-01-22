@@ -58,7 +58,7 @@ endif()
 find_anyproject(JPEG12 DEFAULT ON) # NAMES jpeg12 jpeg
 if(JPEG12_FOUND)
     add_definitions(-DJPEG12_SUPPORTED)
-    # message("${JPEG12_INCLUDE_DIRS} / ${JPEG12_INCLUDE_DIR} / ${JPEG12_LIBRARIES}")
+    # message(FATAL_ERROR "${JPEG12_INCLUDE_DIRS} / ${JPEG12_INCLUDE_DIR} / ${JPEG12_LIBRARIES}")
 endif()
 
 find_anyproject(PNG DEFAULT ON)
