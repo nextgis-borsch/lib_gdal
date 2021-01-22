@@ -31,6 +31,7 @@ if(ENABLE_JPEG)
     set(TARGET_NAME ras_jpeg)
 
     add_definitions(-DFRMT_jpeg)
+    remove_definitions(-DIPPJ_HUFF)
     set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DFRMT_jpeg" PARENT_SCOPE)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
