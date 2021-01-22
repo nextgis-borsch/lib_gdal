@@ -46,6 +46,7 @@ if(ENABLE_JPEG)
     # CPPFLAGS += -Wno-clobbered
     add_definitions(-DENABLE_LIBJPEG_NO_RETURN)
 
+
     set(LIB_HHEADERS
         jpgdataset.h
     )
@@ -57,6 +58,13 @@ if(ENABLE_JPEG)
         jpgdataset.cpp
         vsidataio.cpp
     )
+    
+    if(JPEG12_FOUND)
+        add_definitions(-DJPEG_DUAL_MODE_8_12)
+        set(LIB_CSOURCES ${LIB_CSOURCES} 
+            jpgdataset_12.cpp vsidataio_12.cpp
+        )
+    endif()
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})
 
