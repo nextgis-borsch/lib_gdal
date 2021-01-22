@@ -55,11 +55,11 @@ if(JPEG_FOUND)
     add_definitions(-DHAVE_LIBJPEG) # Added only after 2.1 release (especially for geotiff.cpp where incorrect #ifdef is used)
 endif()
 
-find_anyproject(JPEG12 DEFAULT ON) # NAMES jpeg12 jpeg
-if(JPEG12_FOUND)
-    add_definitions(-DJPEG12_SUPPORTED)
-    # message(FATAL_ERROR "${JPEG12_INCLUDE_DIRS} / ${JPEG12_INCLUDE_DIR} / ${JPEG12_LIBRARIES}")
-endif()
+# find_anyproject(JPEG12 DEFAULT ON) # NAMES jpeg12 jpeg
+# if(JPEG12_FOUND)
+#     add_definitions(-DJPEG12_SUPPORTED)
+#     # message(FATAL_ERROR "${JPEG12_INCLUDE_DIRS} / ${JPEG12_INCLUDE_DIR} / ${JPEG12_LIBRARIES}")
+# endif()
 
 find_anyproject(PNG DEFAULT ON)
 
