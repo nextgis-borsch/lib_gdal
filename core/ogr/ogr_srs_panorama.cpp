@@ -8,7 +8,7 @@
  ******************************************************************************
  * Copyright (c) 2005, Andrey Kiselev <dron@ak4719.spb.edu>
  * Copyright (c) 2008-2012, Even Rouault <even dot rouault at spatialys.com>
- * Copyright (c) 2020, Dmitry Baryshnikov <polimax@mail.ru>
+ * Copyright (c) 2020-2021, Dmitry Baryshnikov <polimax@mail.ru>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -118,7 +118,7 @@ constexpr int aoDatums[] =
     0,
     0,
     0,
-    4200,   // Pulkovo, 1995
+    6200,   // Pulkovo, 1995
 	1159 	// GSK 2011
 };
 
@@ -528,7 +528,7 @@ OGRErr OGRSpatialReference::importFromPanorama( long iProjSys, long iDatum,
             break;
 
         case PAN_PROJ_PSEUDO_MERCATOR:
-            return importFromEPSG(3857);
+            return importFromEPSG( 3857 );
 
         default:
             CPLDebug( "OSR_Panorama", "Unsupported projection: %ld", iProjSys );
@@ -552,7 +552,7 @@ OGRErr OGRSpatialReference::importFromPanorama( long iProjSys, long iDatum,
         else if( iEllips == PAN_ELLIPSOID_PZ90 )
         {
 			OGRSpatialReference oGCS;
-			oGCS.importFromEPSG(7679);
+			oGCS.importFromEPSG( 7679 );
 			CopyGeogCSFrom(&oGCS);
         }
         else if( iEllips > 0

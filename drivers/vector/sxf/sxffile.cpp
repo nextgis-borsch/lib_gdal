@@ -5,7 +5,7 @@
  * Author:   Dmitry Baryshnikov, polimax@mail.ru
  *
  ******************************************************************************
- * Copyright (c) 2020, NextGIS <info@nextgis.com>
+ * Copyright (c) 2020-2021, NextGIS <info@nextgis.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -1114,8 +1114,8 @@ bool SXFFile::Read(OGRSXFDataSource *poDS, CSLConstList papszOpenOpts)
 
         adfPrjParams[0] = double(anParams[0]) / VAL_100M;
         adfPrjParams[1] = double(anParams[1]) / VAL_100M;
-        adfPrjParams[2] = double(anParams[2]) / VAL_100M;
-        adfPrjParams[3] = double(anParams[3]) / VAL_100M;
+        adfPrjParams[2] = double(anParams[3]) / VAL_100M;
+        adfPrjParams[3] = double(anParams[2]) / VAL_100M;
 
         if( anParams[0] != -1 )
         {
@@ -1152,8 +1152,8 @@ bool SXFFile::Read(OGRSXFDataSource *poDS, CSLConstList papszOpenOpts)
            adfPrjParams[1] = adfParams[1];
         }
 
-        adfPrjParams[2] = adfParams[2];
-        adfPrjParams[3] = adfParams[3];
+        adfPrjParams[2] = adfParams[3];
+        adfPrjParams[3] = adfParams[2];
         adfPrjParams[5] = adfParams[4];
         adfPrjParams[6] = adfParams[5];
         
@@ -1253,9 +1253,9 @@ bool SXFFile::Read(OGRSXFDataSource *poDS, CSLConstList papszOpenOpts)
         }
     }
 
-    if (SetSRS(stProjInfo.nEllipsoidType, stProjInfo.nProjectionType,
-        stProjInfo.nHeightSrsType, eUnitInPlan, geogCoords, adfPrjParams,
-        papszOpenOpts))
+    if (SetSRS(stProjInfo.nEllipsoidType, stProjInfo.nProjectionType, 
+        stProjInfo.nSrsType, stProjInfo.nHeightSrsType, eUnitInPlan, geogCoords, 
+        adfPrjParams, papszOpenOpts))
     {
         return false;
     }
@@ -1632,7 +1632,7 @@ OGRErr SXFFile::SetVertCS(const long iVCS, CSLConstList papszOpenOpts)
 }
 
 
-OGRErr SXFFile::SetSRS(const long iEllips, const long iProjSys, 
+OGRErr SXFFile::SetSRS(const long iEllips, const long iProjSys, const long iCS,
     const long iVCS, enum SXFCoordinateMeasureUnit eUnitInPlan, 
     double *padfGeoCoords, double *padfPrjParams, CSLConstList papszOpenOpts)
 {
@@ -1729,6 +1729,13 @@ OGRErr SXFFile::SetSRS(const long iEllips, const long iProjSys,
     else if (iEllips == 9 && iProjSys == 33 && eUnitInPlan == SXF_COORD_MU_DEGREE)
     {
         pSpatRef = new OGRSpatialReference(SRS_WKT_WGS84_LAT_LONG);
+        pSpatRef->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
+        return SetVertCS(iVCS, papszOpenOpts);
+    }
+    else if (iEllips == 1 && iProjSys == 20 && iCS == 9)
+    {
+        CPLString osRefStr = CPLSPrintf("PROJCS[\"Equidistant_Conic\",GEOGCS[\"Pulkovo 1995\",DATUM[\"Pulkovo_1995\",SPHEROID[\"Krassowsky 1940\", 6378245, 298.3,AUTHORITY[\"EPSG\", \"7024\"]],AUTHORITY[\"EPSG\", \"6200\"]],PRIMEM[\"Greenwich\", 0,AUTHORITY[\"EPSG\", \"8901\"]],UNIT[\"degree\", 0.0174532925199433,AUTHORITY[\"EPSG\", \"9122\"]],AUTHORITY[\"EPSG\", \"4200\"]],PROJECTION[\"Equidistant_Conic\"],PARAMETER[\"False_Easting\", %f],PARAMETER[\"False_Northing\", %f],PARAMETER[\"Longitude_Of_Center\", %f],PARAMETER[\"Standard_Parallel_1\", %f],PARAMETER[\"Standard_Parallel_2\", %f],PARAMETER[\"Latitude_Of_Center\", %f],UNIT[\"Meter\", 1]]", TO_DEGREES * padfPrjParams[5], TO_DEGREES * padfPrjParams[6], TO_DEGREES * padfPrjParams[3], TO_DEGREES * padfPrjParams[0], TO_DEGREES * padfPrjParams[1], TO_DEGREES * padfPrjParams[2]);
+        pSpatRef = new OGRSpatialReference(osRefStr);
         pSpatRef->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
         return SetVertCS(iVCS, papszOpenOpts);
     }

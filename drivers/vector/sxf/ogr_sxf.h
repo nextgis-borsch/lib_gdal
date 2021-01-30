@@ -9,7 +9,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2011, Ben Ahmed Daho Ali
- * Copyright (c) 2013-2020, NextGIS
+ * Copyright (c) 2013-2021, NextGIS
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -142,9 +142,10 @@ class SXFFile
         static GUInt32 CodeForGeometryType(enum SXFGeometryType eGeomType);
 
     private:
-        OGRErr SetSRS(const long iEllips, const long iProjSys, const long iVCS, 
-            enum SXFCoordinateMeasureUnit eUnitInPlan, double *padfGeoCoords,
-            double *padfPrjParams, CSLConstList papszOpenOpts);
+        OGRErr SetSRS(const long iEllips, const long iProjSys, const long iCS, 
+            const long iVCS, enum SXFCoordinateMeasureUnit eUnitInPlan, 
+            double *padfGeoCoords, double *padfPrjParams, 
+            CSLConstList papszOpenOpts);
         OGRErr SetVertCS(const long iVCS, CSLConstList papszOpenOpts);
 
     private:
