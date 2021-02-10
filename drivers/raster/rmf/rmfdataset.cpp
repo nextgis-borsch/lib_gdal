@@ -1735,8 +1735,8 @@ do {                                                                    \
         }
 
         OGRErr  res = OGRERR_FAILURE;
-        if(nProj >= 0 &&
-           (poDS->sExtHeader.nDatum >= 0 || poDS->sExtHeader.nEllipsoid >= 0))
+        if(nProj > 0 && // In SXF specification undefined are -1, 0 and 255
+           (poDS->sExtHeader.nDatum > 0 || poDS->sExtHeader.nEllipsoid > 0))
         {
             res = oSRS.importFromPanorama( nProj, poDS->sExtHeader.nDatum,
                                  poDS->sExtHeader.nEllipsoid, padfPrjParams );

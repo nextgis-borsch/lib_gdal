@@ -596,7 +596,7 @@ OGRErr OGRSpatialReference::importFromPanorama( long iProjSys, long iDatum,
         else
         {
             CPLError( CE_Warning, CPLE_AppDefined,
-                      "Wrong datum code %ld. Supported datums are 1--%ld "
+                      "Wrong datum code %ld. Supported datums are 1 - %ld "
                       "only.  Falling back to use Pulkovo 42.",
                       iDatum, NUMBER_OF_DATUMS - 1 );
             SetWellKnownGeogCS( "EPSG:4284" );
