@@ -178,14 +178,14 @@ void RegisterOGRSXF()
         "  <Option name='SXF_SET_VERTCS' type='boolean' description='Layers spatial reference will include vertical coordinate system description if exist' default='NO'/>"
         "  <Option name='SXF_NEW_BEHAVIOR' type='boolean' description='New behavior - vector object to lines, empty layers are presence' default='NO'/>"
         "  <Option name='SXF_ENCODING' type='string' description='Character Encodings (ASCIIZ for format v3 and ANSI code page for format v4)' default=''/>"
-        "  <Option name='SXF_WRITE_RSC' type='bool' description='Write RSC file. Always write file with same name as SXF but with RSC extension' default='YES'/>"
+        "  <Option name='SXF_WRITE_RSC' type='boolean' description='Write RSC file. Always write file with same name as SXF but with RSC extension' default='YES'/>"
         "</OpenOptionList>");
     poDriver->SetMetadataItem(GDAL_DMD_CREATIONFIELDDATATYPES,
         "Integer Real String IntegerList RealList StringList");
     poDriver->SetMetadataItem(GDAL_DMD_CREATIONOPTIONLIST,
         "<CreationOptionList>"
         "  <Option name='SXF_ENCODING' type='string' description='Character Encodings (Only format v4 and ANSI code page supported)' default='CP1251'/>"
-        "  <Option name='SXF_WRITE_RSC' type='bool' description='Write RSC file' default='YES'/>"
+        "  <Option name='SXF_WRITE_RSC' type='boolean' description='Write RSC file' default='YES'/>"
         "  <Option name='SXF_MAP_NAME' type='string' description='Override metadata item SHEET_NAME' default=''/>"
         "  <Option name='SXF_SHEET_KEY' type='string' description='Override metadata item SHEET' default=''/>"
         "  <Option name='SXF_MAP_SCALE' type='int' description='Override metadata item SCALE' default='1000000'/>"
