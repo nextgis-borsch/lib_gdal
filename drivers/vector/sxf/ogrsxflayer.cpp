@@ -200,7 +200,7 @@ static GByte *WriteLineToBuffer(size_t nPointSize, GByte *pBuff, size_t &nOffset
             pLocalBuff = static_cast<GByte*>(CPLRealloc(pBuff, nSize));
             nOffset += WritePointCount(nPointCount, pLocalBuff + nOffset);
         }
-        nOffset = WriteLine(poLn, pLocalBuff + nOffset);
+        nOffset += WriteLine(poLn, pLocalBuff + nOffset);
     }
     else if (eGeomType == SXF_GT_Vector)
     {
