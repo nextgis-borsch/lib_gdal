@@ -1291,6 +1291,10 @@ std::string OGRNGWLayer::CreateNGWResourceJson()
                 oField.Add("display_name", pszFieldAlias);
             }
         }
+        else 
+        {
+            oField.Add("display_name", osFieldAliasName);
+        }
         oVectorLayerFields.Add(oField);
     }
     oVectorLayer.Add("fields", oVectorLayerFields);
