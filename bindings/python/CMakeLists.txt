@@ -115,6 +115,31 @@ set(COPY
     osgeo/__init__.py
     osgeo/ogr.py
     osgeo/osr.py
+    osgeo/utils/__init__.py
+    osgeo/utils/epsg_tr.py
+    osgeo/utils/esri2wkt.py
+    osgeo/utils/gcps2vec.py
+    osgeo/utils/gcps2wld.py
+    osgeo/utils/gdal_auth.py
+    osgeo/utils/gdal_calc.py
+    osgeo/utils/gdal_edit.py
+    osgeo/utils/gdal_fillnodata.py
+    osgeo/utils/gdal_merge.py
+    osgeo/utils/gdal_pansharpen.py
+    osgeo/utils/gdal_polygonize.py
+    osgeo/utils/gdal_proximity.py
+    osgeo/utils/gdal_retile.py
+    osgeo/utils/gdal_sieve.py
+    osgeo/utils/gdal2xyz.py
+    osgeo/utils/gdalchksum.py
+    osgeo/utils/gdalcompare.py
+    osgeo/utils/gdalident.py
+    osgeo/utils/gdalimport.py
+    osgeo/utils/gdalmove.py
+    osgeo/utils/mkgraticule.py
+    osgeo/utils/ogrmerge.py
+    osgeo/utils/pct2rgb.py
+    osgeo/utils/rgb2pct.py
     gdalconst.py
     gdalnumeric.py
     gdal.py

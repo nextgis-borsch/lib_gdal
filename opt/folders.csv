@@ -1,4 +1,4 @@
-﻿autotest,tests,,py
+autotest,tests,,py
 autotest/alg,tests/alg,skip,py
 autotest/alg/data,tests/alg/data,skip,*
 autotest/alg/tmp,tests/alg/tmp,skip,*
@@ -109,7 +109,7 @@ autotest/ogr/data/cad,tests/ogr/data/cad,skip,*
 autotest/ogr/data/curve_circle_by_center.gdb,tests/ogr/data/curve_circle_by_center.gdb,skip,*
 autotest/ogr/data/D3607551_rd0s_1_sdts_truncated,tests/ogr/data/D3607551_rd0s_1_sdts_truncated,skip,*
 autotest/ogr/data/db2,tests/ogr/data/db2,,*
-autotest/gcore/data,tests/autotest/gcore/data,,"byte*"
+autotest/gcore/data,tests/autotest/gcore/data,,byte*
 autotest/ogr/data/filegdb_polygonzm_m_not_closing_with_curves.gdb,tests/ogr/data/filegdb_polygonzm_m_not_closing_with_curves.gdb,skip,*
 autotest/ogr/data/filegdb_polygonzm_nan_m_with_curves.gdb,tests/ogr/data/filegdb_polygonzm_nan_m_with_curves.gdb,skip,*
 autotest/ogr/data/gml_jpfgd,tests/ogr/data/gml_jpfgd,skip,*
@@ -467,8 +467,9 @@ gdal/swig/perl/t,bindings/perl/t,skip,t
 gdal/swig/python,bindings/python,,"cpp,h,txt,py,conf,cfg,rst"
 gdal/swig/python/extensions,bindings/python/extensions,,"cpp,h,c,hpp"
 gdal/swig/python/osgeo,bindings/python/osgeo,,py
+gdal/swig/python/osgeo/utils,bindings/python/osgeo/utils,,py
 gdal/swig/python/samples,bindings/python/samples,,"py,README"
-gdal/swig/python/scripts,bindings/python/scripts,,"py"
+gdal/swig/python/scripts,bindings/python/scripts,,py
 gdal/frmts/vrt,core/frmts/vrt,,h
 gdal/frmts/mem,core/frmts/mem,,h
 gdal/frmts/gtiff,core/frmts/gtiff,,h
