@@ -1064,11 +1064,9 @@ void OGRSXFLayer::AddValue(OGRFeature *poFeature, const std::string &osFieldName
     int nIndex = GetLayerDefn()->GetFieldIndex(osFieldName.c_str());
     if (IsFieldList(GetLayerDefn(), nIndex))
     {
-        auto list = poFeature->GetFieldAsStringList(nIndex);
-        int nRefCount = CSLCount(list);
-        list = static_cast<char**>(CPLRealloc(list, nRefCount + sizeof(char*)));
-        list[nRefCount] = const_cast<char*>(value.c_str());
-        poFeature->SetField(nIndex, list);
+        CPLStringList aosList(poFeature->GetFieldAsStringList(nIndex));
+        aosList.AddString(value.c_str());
+        poFeature->SetField(nIndex, aosList);
         return;
     }
     poFeature->SetField(nIndex, value.c_str());
