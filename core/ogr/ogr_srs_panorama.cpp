@@ -555,6 +555,12 @@ OGRErr OGRSpatialReference::importFromPanorama( long iProjSys, long iDatum,
 			oGCS.importFromEPSG( 7679 );
 			CopyGeogCSFrom(&oGCS);
         }
+		else if (iDatum > 0 && iDatum < NUMBER_OF_DATUMS && aoDatums[iDatum])
+		{
+			OGRSpatialReference oGCS;
+			oGCS.importFromEPSG(aoDatums[iDatum]);
+			CopyGeogCSFrom(&oGCS);
+		}
         else if( iEllips > 0
                  && iEllips < NUMBER_OF_ELLIPSOIDS
                  && aoEllips[iEllips] )
@@ -587,12 +593,6 @@ OGRErr OGRSpatialReference::importFromPanorama( long iProjSys, long iDatum,
 
             CPLFree( pszName );
         }
-		else if (iDatum > 0 && iDatum < NUMBER_OF_DATUMS && aoDatums[iDatum]) // Ellipsoid is prefereable instead datum
-		{
-			OGRSpatialReference oGCS;
-			oGCS.importFromEPSG(aoDatums[iDatum]);
-			CopyGeogCSFrom(&oGCS);
-		}
         else
         {
             CPLError( CE_Warning, CPLE_AppDefined,
