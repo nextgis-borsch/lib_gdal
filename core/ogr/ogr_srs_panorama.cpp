@@ -85,6 +85,8 @@ constexpr long PAN_PROJ_PSEUDO_MERCATOR = 35L; // Popular Visualisation Pseudo M
 constexpr long PAN_DATUM_NONE      = -1L;
 constexpr long PAN_DATUM_PULKOVO42 = 1L;  // Pulkovo 1942
 constexpr long PAN_DATUM_WGS84     = 2L;  // WGS84
+constexpr long PAN_DATUM_PULKOVO95 = 9L;  // Pulokovo 1995
+constexpr long PAN_DATUM_GSK2011   = 10L; // GSK2011
 
 /************************************************************************/
 /*  "Panorama" ellipsoid codes.                                         */
@@ -543,7 +545,7 @@ OGRErr OGRSpatialReference::importFromPanorama( long iProjSys, long iDatum,
 
     if( !IsLocal() )
     {
-        if( iEllips == PAN_ELLIPSOID_GSK2011 )
+        if( iEllips == PAN_ELLIPSOID_GSK2011 || iDatum == PAN_DATUM_GSK2011 )
         {
             OGRSpatialReference oGCS;
             oGCS.importFromEPSG( 7683 );
@@ -554,13 +556,13 @@ OGRErr OGRSpatialReference::importFromPanorama( long iProjSys, long iDatum,
 			OGRSpatialReference oGCS;
 			oGCS.importFromEPSG( 7679 );
 			CopyGeogCSFrom(&oGCS);
+        }        
+        else if (iDatum == PAN_DATUM_PULKOVO95)
+        {
+            OGRSpatialReference oGCS;
+            oGCS.importFromEPSG(4200);
+            CopyGeogCSFrom(&oGCS);
         }
-		else if (iDatum > 0 && iDatum < NUMBER_OF_DATUMS && aoDatums[iDatum])
-		{
-			OGRSpatialReference oGCS;
-			oGCS.importFromEPSG(aoDatums[iDatum]);
-			CopyGeogCSFrom(&oGCS);
-		}
         else if( iEllips > 0
                  && iEllips < NUMBER_OF_ELLIPSOIDS
                  && aoEllips[iEllips] )
@@ -593,6 +595,12 @@ OGRErr OGRSpatialReference::importFromPanorama( long iProjSys, long iDatum,
 
             CPLFree( pszName );
         }
+		else if (iDatum > 0 && iDatum < NUMBER_OF_DATUMS && aoDatums[iDatum])
+		{
+			OGRSpatialReference oGCS;
+			oGCS.importFromEPSG(aoDatums[iDatum]);
+			CopyGeogCSFrom(&oGCS);
+		}
         else
         {
             CPLError( CE_Warning, CPLE_AppDefined,
