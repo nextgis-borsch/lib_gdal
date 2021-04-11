@@ -201,13 +201,13 @@ bool OGRNGWDataset::Open( const std::string &osUrlIn,
     osJsonDepth = CSLFetchNameValueDef( papszOpenOptionsIn, "JSON_DEPTH",
         CPLGetConfigOption("NGW_JSON_DEPTH", "32"));
 
-	osExtensions = CSLFetchNameValueDef(papszOpenOptionsIn, "EXTENSIONS",
-		CPLGetConfigOption("NGW_EXTENSIONS", ""));
+    osExtensions = CSLFetchNameValueDef(papszOpenOptionsIn, "EXTENSIONS",
+        CPLGetConfigOption("NGW_EXTENSIONS", ""));
 
-	if (osExtensions.empty())
-	{
-		bExtInNativeData = false;
-	}
+    if (osExtensions.empty())
+    {
+        bExtInNativeData = false;
+    }
 
     return Init( nOpenFlagsIn );
 }
@@ -1277,5 +1277,5 @@ void OGRNGWDataset::FillCapabilities( char **papszOptions )
  */
 std::string OGRNGWDataset::Extensions() const
 {
-	return osExtensions;
+    return osExtensions;
 }

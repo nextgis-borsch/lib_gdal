@@ -449,7 +449,7 @@ void RegisterOGRNGW()
     poDriver->SetMetadataItem( GDAL_DCAP_RASTER, "YES" );
     poDriver->SetMetadataItem( GDAL_DCAP_VECTOR, "YES" );
     poDriver->SetMetadataItem( GDAL_DMD_SUBDATASETS, "YES" );
-    poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, "drv_ngw.html" );
+    poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, "drivers/vector/ngw.html" );
     poDriver->SetMetadataItem( GDAL_DMD_CONNECTION_PREFIX, "NGW:" );
 
     poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES, "Byte" );
@@ -464,8 +464,8 @@ void RegisterOGRNGW()
         "   <Option name='CACHE_EXPIRES' scope='raster' type='integer' description='Time in seconds cached files will stay valid. If cached file expires it is deleted when maximum size of cache is reached. Also expired file can be overwritten by the new one from web' default='604800'/>"
         "   <Option name='CACHE_MAX_SIZE' scope='raster' type='integer' description='The cache maximum size in bytes. If cache reached maximum size, expired cached files will be deleted' default='67108864'/>"
         "   <Option name='JSON_DEPTH' scope='raster,vector' type='integer' description='The depth of json response that can be parsed. If depth is greater than this value, parse error occurs' default='32'/>"
-		"   <Option name='EXTENSIONS' scope='vector' type='string' description='Comma separated extensions list. Available are description and attachment' default=''/>"
-		"</OpenOptionList>"
+        "   <Option name='EXTENSIONS' scope='vector' type='string' description='Comma separated extensions list. Available are description and attachment' default=''/>"
+        "</OpenOptionList>"
     );
 
     poDriver->SetMetadataItem( GDAL_DMD_CREATIONOPTIONLIST,
@@ -481,8 +481,8 @@ void RegisterOGRNGW()
         "   <Option name='CACHE_MAX_SIZE' scope='raster' type='integer' description='The cache maximum size in bytes. If cache reached maximum size, expired cached files will be deleted' default='67108864'/>"
         "   <Option name='JSON_DEPTH' scope='raster,vector' type='integer' description='The depth of json response that can be parsed. If depth is greater than this value, parse error occurs' default='32'/>"
         "   <Option name='RASTER_QML_PATH' scope='raster' type='string' description='Raster QMS style path'/>"
-		"   <Option name='EXTENSIONS' scope='vector' type='string' description='Comma separated extensions list. Available are description and attachment' default=''/>"
-		"</CreationOptionList>"
+        "   <Option name='EXTENSIONS' scope='vector' type='string' description='Comma separated extensions list. Available are description and attachment' default=''/>"
+        "</CreationOptionList>"
     );
 
     poDriver->SetMetadataItem( GDAL_DS_LAYER_CREATIONOPTIONLIST,

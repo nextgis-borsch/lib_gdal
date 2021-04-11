@@ -437,6 +437,9 @@ std::string OGRNGWLayer::TranslateSQLToFilter( swq_expr_node *poNode )
             case SWQ_ILIKE:
                 osFieldName += "__ilike";
                 break;
+            default:
+                CPLAssert(false);
+                break;
             }
 
             std::string osVal;
@@ -755,7 +758,7 @@ OGRErr OGRNGWLayer::SetNextByIndex( GIntBig nIndex )
             {
                 osUrl = NGWAPI::GetFeaturePage( poDS->GetUrl(), osResourceId, 0, 0,
                     osFields, osWhere, osSpatialFilter, poDS->Extensions(), 
-					poFeatureDefn->IsGeometryIgnored() == TRUE);
+                    poFeatureDefn->IsGeometryIgnored() == TRUE);
             }
             else
             {
@@ -795,7 +798,7 @@ OGRFeature *OGRNGWLayer::GetNextFeature()
             osUrl = NGWAPI::GetFeaturePage( poDS->GetUrl(), osResourceId,
                 nPageStart, poDS->GetPageSize(), osFields, osWhere,
                 osSpatialFilter, poDS->Extensions(), 
-				poFeatureDefn->IsGeometryIgnored() == TRUE);
+                poFeatureDefn->IsGeometryIgnored() == TRUE);
             nPageStart += poDS->GetPageSize();
         }
     }
@@ -805,7 +808,7 @@ OGRFeature *OGRNGWLayer::GetNextFeature()
         {
             osUrl = NGWAPI::GetFeaturePage( poDS->GetUrl(), osResourceId, 0, 0,
                 osFields, osWhere, osSpatialFilter, poDS->Extensions(),
-				poFeatureDefn->IsGeometryIgnored() == TRUE);
+                poFeatureDefn->IsGeometryIgnored() == TRUE);
         }
         else
         {

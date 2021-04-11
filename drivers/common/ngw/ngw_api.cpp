@@ -62,7 +62,7 @@ std::string GetTMS(const std::string &osUrl, const std::string &osResourceId)
 std::string GetFeaturePage(const std::string &osUrl, const std::string &osResourceId,
     GIntBig nStart, int nCount, const std::string &osFields,
     const std::string &osWhere, const std::string &osSpatialWhere, 
-	const std::string &osExtensions, bool IsGeometryIgnored)
+    const std::string &osExtensions, bool IsGeometryIgnored)
 {
     std::string osFeatureUrl = GetFeature(osUrl, osResourceId);
     bool bParamAdd = false;
@@ -108,31 +108,31 @@ std::string GetFeaturePage(const std::string &osUrl, const std::string &osResour
         else
         {
             osFeatureUrl += "?intersects=" + osSpatialWhere;
-			bParamAdd = true;
+            bParamAdd = true;
         }
     }
 
-	if (bParamAdd)
-	{
-		osFeatureUrl += "&extensions=" + osExtensions;
-	}
-	else
-	{
-		osFeatureUrl += "?extensions=" + osExtensions;
-		bParamAdd = true;
-	}
+    if (bParamAdd)
+    {
+        osFeatureUrl += "&extensions=" + osExtensions;
+    }
+    else
+    {
+        osFeatureUrl += "?extensions=" + osExtensions;
+        bParamAdd = true;
+    }
 
-	if (IsGeometryIgnored)
-	{
-		if (bParamAdd)
-		{
-			osFeatureUrl += "&geom=no";
-		}
-		else
-		{
-			osFeatureUrl += "?geom=no";
-		}
-	}
+    if (IsGeometryIgnored)
+    {
+        if (bParamAdd)
+        {
+            osFeatureUrl += "&geom=no";
+        }
+        else
+        {
+            osFeatureUrl += "?geom=no";
+        }
+    }
 
     return osFeatureUrl;
 }
