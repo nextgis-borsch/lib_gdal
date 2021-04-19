@@ -2184,13 +2184,12 @@ void *CPLHTTPSetOptions(void *pcurl, const char* pszURL,
             curl_easy_setopt(http_handle, CURLOPT_POST, 1 );
             curl_easy_setopt(http_handle, CURLOPT_POSTFIELDS, pszPost );
         }
-
-        const char* pszCustomRequest =
-            CSLFetchNameValue( papszOptions, "CUSTOMREQUEST" );
-        if( pszCustomRequest != nullptr )
-        {
-            curl_easy_setopt(http_handle, CURLOPT_CUSTOMREQUEST, pszCustomRequest );
-        }
+    }
+  
+    const char* pszCustomRequest = CSLFetchNameValue( papszOptions, "CUSTOMREQUEST" );
+    if( pszCustomRequest != nullptr )
+    {
+        curl_easy_setopt(http_handle, CURLOPT_CUSTOMREQUEST, pszCustomRequest );
     }
 
     const char* pszCookie = CSLFetchNameValue(papszOptions, "COOKIE");
