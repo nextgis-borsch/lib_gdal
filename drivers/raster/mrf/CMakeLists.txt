@@ -69,7 +69,8 @@ if(ENABLE_MRF AND JPEG_FOUND AND PNG_FOUND AND TIFF_FOUND)
     )
 
     if(JPEG12_FOUND)
-        add_definitions(-DJPEG12_SUPPORTED -DLIBJPEG_12_H="${JPEG12_INCLUDE_DIRS}/jpeglib.h")
+        find_file(LIBJPEG_12_PATH NAMES jpeglib.h PATHS ${JPEG12_INCLUDE_DIRS})
+        add_definitions(-DJPEG12_SUPPORTED -DLIBJPEG_12_H="${LIBJPEG_12_PATH}")
         set(LIB_CSOURCES ${LIB_CSOURCES}
             JPEG12_band.cpp
         )
