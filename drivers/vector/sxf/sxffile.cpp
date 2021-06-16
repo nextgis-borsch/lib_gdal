@@ -1154,8 +1154,8 @@ bool SXFFile::Read(OGRSXFDataSource *poDS, CSLConstList papszOpenOpts)
 
         adfPrjParams[2] = adfParams[3];
         adfPrjParams[3] = adfParams[2];
-        adfPrjParams[5] = adfParams[4];
-        adfPrjParams[6] = adfParams[5];
+        adfPrjParams[5] = adfParams[5];
+        adfPrjParams[6] = adfParams[4];
         
         dfXOr = adfParams[2] * TO_DEGREES;
         dfYOr = adfParams[3] * TO_DEGREES;
