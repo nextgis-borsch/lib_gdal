@@ -1644,7 +1644,13 @@ OGRErr SXFFile::SetSRS(const long iEllips, const long iProjSys, const long iCS,
     // Normalize some coordintates systems
     if ((iEllips == 1 || iEllips == 0 ) && iProjSys == 1) // Pulkovo 1942 / Gauss-Kruger
     {
-        double dfCenterLongEnv = GetCenter(padfGeoCoords[1], padfGeoCoords[5]);
+        // First try to get center meridian from metadata
+        double dfCenterLongEnv = adfPrjParams[3] * TO_DEGREES;
+        if (dfCenterLongEnv < 9 || dfCenterLongEnv > 189) 
+        {
+            // Next try to get center meridian from sheet bounds. May be errors for double/triple/quad sheets.
+            dfCenterLongEnv = GetCenter(padfGeoCoords[1], padfGeoCoords[5]);
+        }
         int nZoneEnv = GetZoneNumber(dfCenterLongEnv);
         if (nZoneEnv > 1 && nZoneEnv < 33)
         {
@@ -1677,7 +1683,13 @@ OGRErr SXFFile::SetSRS(const long iEllips, const long iProjSys, const long iCS,
     }
     else if (iEllips == 9 && iProjSys == 17) // WGS84 / UTM
     {
-        double dfCenterLongEnv = GetCenter(padfGeoCoords[1], padfGeoCoords[5]);
+        // First try to get center meridian from metadata
+        double dfCenterLongEnv = adfPrjParams[3] * TO_DEGREES;
+        if (dfCenterLongEnv < 9 || dfCenterLongEnv > 189) 
+        {
+            // Next try to get center meridian from sheet bounds. May be errors for double/triple/quad sheets.
+            dfCenterLongEnv = GetCenter(padfGeoCoords[1], padfGeoCoords[5]);
+        }
         int nZoneEnv = 30 + GetZoneNumber(dfCenterLongEnv);
         bool bNorth = padfGeoCoords[6] + (padfGeoCoords[2] - padfGeoCoords[6]) / 2 < 0;
         int nEPSG = 0;
