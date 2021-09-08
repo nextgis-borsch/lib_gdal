@@ -1369,7 +1369,7 @@ bool SXFFile::Write(OGRSXFDataSource *poDS)
     SXF::WriteEncString(pszSheetName, 32, osEncoding.c_str(), fpSXF);
 
     // Write information flags
-    SXFInformationFlagsV4 stFlags = { 0 };
+    SXFInformationFlagsV4 stFlags = SXFInformationFlagsV4();
     stFlags.dataState = 3;
     stFlags.hasRealCoords = 1;
     stFlags.textEncoding = 1; // ANSI
@@ -1591,7 +1591,7 @@ bool SXFFile::Write(OGRSXFDataSource *poDS)
     
     // Write data description ///////////////////////////////////////////////////
     
-    SXFDataDescriptorV4 stDataDesc = { 0 };
+    SXFDataDescriptorV4 stDataDesc = SXFDataDescriptorV4();
     stDataDesc.nSectionID[0] = 'D';
     stDataDesc.nSectionID[1] = 'A';
     stDataDesc.nSectionID[2] = 'T';

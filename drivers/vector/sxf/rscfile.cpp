@@ -295,7 +295,7 @@ static bool WriteNextID(GUInt32 nNextID, VSILFILE *pofRSC)
 static void WriteRSCSection(vsi_l_offset pos, GUInt32 size, GUInt32 count,
     vsi_l_offset nOffset, VSILFILE *poFile)
 {
-    RSCSection stSect = { 0 };
+    RSCSection stSect = RSCSection();
     stSect.nOffset = static_cast<GUInt32>(pos);
     stSect.nLength = size;
     stSect.nRecordCount = count;
@@ -308,7 +308,7 @@ static void WriteRSCSection(vsi_l_offset pos, GUInt32 size, GUInt32 count,
 
 static GUInt32 WritePolygonDefaultParam(GUInt16 nCode, VSILFILE *poFile)
 {
-    RSCParameter stParam = { 0 };
+    RSCParameter stParam = RSCParameter();
     stParam.nLength = sizeof(RSCParameter) + 4;
     stParam.nType = 135;
     stParam.nCode = nCode;
@@ -330,13 +330,13 @@ static GUInt32 WriteHatchPolygonDefaultParam(GUInt16 nCode, VSILFILE *poFile)
         GUInt32 nWidth;
     };
 
-    RSCParameter stParam = { 0 };
+    RSCParameter stParam = RSCParameter();
     stParam.nLength = sizeof(RSCParameter) + sizeof(struct HatchPolygonParam);
     stParam.nType = 153;
     stParam.nCode = nCode;
     VSIFWriteL(&stParam, sizeof(RSCParameter), 1, poFile);
 
-    struct HatchPolygonParam stHatchParam = { 0 };
+    struct HatchPolygonParam stHatchParam = {};
     stHatchParam.nLength = sizeof(struct HatchPolygonParam);
     stHatchParam.nAngle = 45;
     stHatchParam.nHatchStep = 5 * 250;
@@ -364,7 +364,7 @@ static GUInt32 WritePointDefaultParam(GUInt16 nCode, VSILFILE *poFile)
         GByte anMask[128];
     };
 
-    RSCParameter stParam = { 0 };
+    RSCParameter stParam = RSCParameter();
     stParam.nLength = sizeof(RSCParameter) + sizeof(struct PointParam) + 
         sizeof(struct ColorMask);
     stParam.nType = 143;
@@ -377,7 +377,7 @@ static GUInt32 WritePointDefaultParam(GUInt16 nCode, VSILFILE *poFile)
     };
     VSIFWriteL(&stTP, sizeof(struct PointParam), 1, poFile);
 
-    struct ColorMask stTM = { 0 };
+    struct ColorMask stTM = {};
     stTM.nColor = DEFAULT_RGB;
     memcpy(stTM.anMask, CROSS, sizeof(CROSS));
 
@@ -405,13 +405,13 @@ static GUInt32 WriteTextDefaultParam(GUInt16 nCode, VSILFILE *poFile)
         GByte nScaled;
     };
 
-    RSCParameter stParam = { 0 };
+    RSCParameter stParam = RSCParameter();
     stParam.nLength = sizeof(RSCParameter) + sizeof(struct TextParam);
     stParam.nType = 142;
     stParam.nCode = nCode;
     VSIFWriteL(&stParam, sizeof(RSCParameter), 1, poFile);
 
-    struct TextParam stPar = { 0 };
+    struct TextParam stPar = {};
     stPar.nColor = static_cast<GUInt32>(DEFAULT_RGB);
     stPar.nBkColor = 0x0FFFFFFFF;
     stPar.nHeight = 14;
@@ -460,7 +460,7 @@ static GUInt32 WriteVectorDefaultParam(GUInt16 nCode, VSILFILE *poFile)
         GUInt32 X, Y;
     };
 
-    struct VectorParam stV = { 0 };
+    struct VectorParam stV = {};
     stV.nLength = sizeof(struct VectorParam) + sizeof(struct VectorFragment) + 
         sizeof(struct Point) * 2;
     stV.nAnchorX = 500;
@@ -474,7 +474,7 @@ static GUInt32 WriteVectorDefaultParam(GUInt16 nCode, VSILFILE *poFile)
     stV.nSizeY = 2500;
     stV.nFragmentCount = 1;
 
-    RSCParameter stParam = { 0 };
+    RSCParameter stParam = RSCParameter();
     stParam.nLength = sizeof(RSCParameter) + stV.nLength;
     stParam.nType = 149;
     stParam.nCode = nCode;
@@ -482,7 +482,7 @@ static GUInt32 WriteVectorDefaultParam(GUInt16 nCode, VSILFILE *poFile)
 
     VSIFWriteL(&stV, sizeof(struct VectorParam), 1, poFile);
 
-    struct VectorFragment stVF = { 0 };
+    struct VectorFragment stVF = {};
     stVF.nType = 1;
     stVF.nParamType = 128;
     stVF.nParamLength = sizeof(struct Point) * 2;
@@ -516,7 +516,7 @@ static GUInt32 WriteTemplateDefaultParam(GUInt16 nCode, VSILFILE *poFile)
         GInt16 nIndex;
     };
 
-    struct TemplateParam stTP = { 0 };
+    struct TemplateParam stTP = {};
     stTP.nLength = sizeof(struct TemplateParam) + sizeof(struct TemplateParamItem) + 8;
     stTP.nTemplateHeaderLength = 60;
     stTP.nCellType[1] = -1;
@@ -524,7 +524,7 @@ static GUInt32 WriteTemplateDefaultParam(GUInt16 nCode, VSILFILE *poFile)
     stTP.nOrientation = 1;
     stTP.nFiguresCount = 1;
 
-    RSCParameter stParam = { 0 };
+    RSCParameter stParam = RSCParameter();
     stParam.nLength = sizeof(RSCParameter) + stTP.nLength;
     stParam.nType = 150;
     stParam.nCode = nCode;
@@ -545,7 +545,7 @@ static GUInt32 WriteTemplateDefaultParam(GUInt16 nCode, VSILFILE *poFile)
 
 static GUInt32 WriteLineDefaultParam(GUInt16 nCode, VSILFILE *poFile)
 {
-    RSCParameter stParam = { 0 };
+    RSCParameter stParam = RSCParameter();
     stParam.nLength = sizeof(RSCParameter) + 8;
     stParam.nType = 128;
     stParam.nCode = nCode;
@@ -1032,7 +1032,7 @@ static vsi_l_offset WriteTAB(VSILFILE *fpRSC, vsi_l_offset nCMYOffset)
     GByte acId[4] = { 'T', 'A', 'B', 0 };
     VSIFWriteL(acId, 4, 1, fpRSC);
 
-    RSCTables stRSCTables = { 0 };
+    RSCTables stRSCTables = RSCTables();
     stRSCTables.nColorsTablesLength = 1024;
     stRSCTables.nColorsTablesOffset = static_cast<GUInt32>(nCMYOffset);
     stRSCTables.nRecordCount = 1;
@@ -1058,7 +1058,7 @@ static void WriteOBJ(VSILFILE *fpRSC, const std::vector<RSCObj> &astObj,
     GUInt32 nInternalCode = 1;
     for (const auto &stObj : astObj)
     {
-        RSCObject stObject = { 0 };
+        RSCObject stObject = RSCObject();
         stObject.nLength = sizeof(RSCObject);
         stObject.nClassifyCode = stObj.nCode;
         stObject.nInternalCode = nInternalCode;
@@ -1108,7 +1108,7 @@ static void WriteSEM(VSILFILE *fpRSC, const std::vector<RSCSem> &astSem,
     auto pos = VSIFTellL(fpRSC);
     for (const auto &stSem : astSem)
     {
-        RSCSemantics stSemVal = { 0 };
+        RSCSemantics stSemVal = RSCSemantics();
         stSemVal.nCode = stSem.nCode;
         stSemVal.nType = stSem.nType;
         SXF::WriteEncString(stSem.osName.c_str(), stSemVal.szName, 32, pszEncoding);
@@ -1138,7 +1138,7 @@ static void WritePOS(VSILFILE *fpRSC, const std::vector<RSCObj> &astObj,
     auto pos = VSIFTellL(fpRSC);
     for (const auto &stObj : astObj)
     {
-        RSCObjectSemantics stPos = { 0 };
+        RSCObjectSemantics stPos = RSCObjectSemantics();
         stPos.nPossibleSemCount = static_cast<GUInt16>(stObj.aoSem.size());
         stPos.nLength = sizeof(RSCObjectSemantics) + stPos.nPossibleSemCount * 4;
         stPos.nObjectCode = stObj.nCode;
@@ -1171,7 +1171,7 @@ static void WriteSEG(VSILFILE *fpRSC, const std::vector<std::string> &aosLyr,
 
     for (GByte i = 0; i < aosLyr.size(); i++)
     {
-        RSCLayer stRSCLayer = { 0 };
+        RSCLayer stRSCLayer = RSCLayer();
         stRSCLayer.nLength = sizeof(RSCLayer);
         stRSCLayer.nNo = i;
         if (aosLyr[i] == "SYSTEM")
@@ -1258,7 +1258,7 @@ bool RSCFile::Write(const std::string &osPath, OGRSXFDataSource *poDS,
     GByte ver[4] = { 2, 7, 0, 0 };
     VSIFWriteL(ver, 4, 1, fpRSC.get());
 
-    RSCHeader stHeader = { 0 };
+    RSCHeader stHeader = RSCHeader();
     stHeader.nEncoding[0] = 'N';//126; // ANSI encoding
     stHeader.nEncoding[1] = 'A';
     stHeader.nFileState = 0x0f;
@@ -1306,42 +1306,42 @@ bool RSCFile::Write(const std::string &osPath, OGRSXFDataSource *poDS,
     aosLyr.push_back("SYSTEM");
 
     /// Add default objects
-    RSCObj stRSCObject1 = { 0 };
+    RSCObj stRSCObject1 = RSCObj();
     stRSCObject1.nCode = 1000000001;
     stRSCObject1.nLayer = 0;
     stRSCObject1.nLoc = SXF_GT_Line;
     stRSCObject1.osName = "L1000000001";
     astObjs.emplace_back(stRSCObject1);
 
-    RSCObj stRSCObject2 = { 0 };
+    RSCObj stRSCObject2 = RSCObj();
     stRSCObject2.nCode = 1000000002;
     stRSCObject2.nLayer = 0;
     stRSCObject2.nLoc = SXF_GT_Polygon;
     stRSCObject2.osName = "S1000000002";
     astObjs.emplace_back(stRSCObject2);
 
-    RSCObj stRSCObject3 = { 0 };
+    RSCObj stRSCObject3 = RSCObj();
     stRSCObject3.nCode = 1000000003;
     stRSCObject3.nLayer = 0;
     stRSCObject3.nLoc = SXF_GT_Point;
     stRSCObject3.osName = "P1000000003";
     astObjs.emplace_back(stRSCObject3);
 
-    RSCObj stRSCObject4 = { 0 };
+    RSCObj stRSCObject4 = RSCObj();
     stRSCObject4.nCode = 1000000004;
     stRSCObject4.nLayer = 0;
     stRSCObject4.nLoc = SXF_GT_Text;
     stRSCObject4.osName = "T1000000004";
     astObjs.emplace_back(stRSCObject4);
 
-    RSCObj stRSCObject5 = { 0 };
+    RSCObj stRSCObject5 = RSCObj();
     stRSCObject5.nCode = 1000000005;
     stRSCObject5.nLayer = 0;
     stRSCObject5.nLoc = SXF_GT_Vector;
     stRSCObject5.osName = "V1000000005";
     astObjs.emplace_back(stRSCObject5);
 
-    RSCObj stRSCObject6 = { 0 };
+    RSCObj stRSCObject6 = RSCObj();
     stRSCObject6.nCode = 1000000006;
     stRSCObject6.nLayer = 0;
     stRSCObject6.nLoc = SXF_GT_TextTemplate;
@@ -1353,7 +1353,7 @@ bool RSCFile::Write(const std::string &osPath, OGRSXFDataSource *poDS,
         auto nCode = 1000000000 + i;
         auto stName = "L" + std::to_string(nCode);
 
-        RSCObj stRSCObjectX = { 0 };
+        RSCObj stRSCObjectX = RSCObj();
         stRSCObjectX.nCode = nCode;
         stRSCObjectX.nLayer = 0;
         stRSCObjectX.nLoc = SXF_GT_Line;
@@ -1395,7 +1395,7 @@ bool RSCFile::Write(const std::string &osPath, OGRSXFDataSource *poDS,
                 continue;
             }
 
-            RSCSem stSem = { 0 };
+            RSCSem stSem = RSCSem();
             stSem.nCode = nCode;
             
             switch (poFld->GetType())
@@ -1455,7 +1455,7 @@ bool RSCFile::Write(const std::string &osPath, OGRSXFDataSource *poDS,
 
         for (const auto &stCode : poLayer->GetClassifyCodes())
         {
-            RSCObj stObj = { 0 };
+            RSCObj stObj = RSCObj();
 
             if (stCode.osCode.size() < 2)
             {
@@ -1514,7 +1514,7 @@ bool RSCFile::Write(const std::string &osPath, OGRSXFDataSource *poDS,
     GByte palId[4] = { 'P', 'A', 'L', 0 };
     VSIFWriteL(palId, 4, 1, fpRSC.get());
 
-    RSCPalette stRSCPalette = { 0 };
+    RSCPalette stRSCPalette = RSCPalette();
     memcpy(stRSCPalette.anPal, CMYK, sizeof(CMYK));
     SXF::WriteEncString("Standard", stRSCPalette.pszName, 32, osEncoding.c_str());
     auto pos = VSIFTellL(fpRSC.get());
@@ -1529,7 +1529,7 @@ bool RSCFile::Write(const std::string &osPath, OGRSXFDataSource *poDS,
     GByte txtId[4] = { 'T', 'X', 'T', 0 };
     VSIFWriteL(txtId, 4, 1, fpRSC.get());
 
-    RSCFont stRSCFont = { 0 };
+    RSCFont stRSCFont = RSCFont();
     SXF::WriteEncString("Arial", stRSCFont.pszName, 32, osEncoding.c_str());
     SXF::WriteEncString("Arial", stRSCFont.pszCode, 32, osEncoding.c_str());
     stRSCFont.nCode = 1;
