@@ -1645,7 +1645,7 @@ OGRErr SXFFile::SetSRS(const long iEllips, const long iProjSys, const long iCS,
     if ((iEllips == 1 || iEllips == 0 ) && iProjSys == 1) // Pulkovo 1942 / Gauss-Kruger
     {
         // First try to get center meridian from metadata
-        double dfCenterLongEnv = adfPrjParams[3] * TO_DEGREES;
+        double dfCenterLongEnv = padfPrjParams[3] * TO_DEGREES;
         if (dfCenterLongEnv < 9 || dfCenterLongEnv > 189) 
         {
             // Next try to get center meridian from sheet bounds. May be errors for double/triple/quad sheets.
@@ -1684,7 +1684,7 @@ OGRErr SXFFile::SetSRS(const long iEllips, const long iProjSys, const long iCS,
     else if (iEllips == 9 && iProjSys == 17) // WGS84 / UTM
     {
         // First try to get center meridian from metadata
-        double dfCenterLongEnv = adfPrjParams[3] * TO_DEGREES;
+        double dfCenterLongEnv = padfPrjParams[3] * TO_DEGREES;
         if (dfCenterLongEnv < 9 || dfCenterLongEnv > 189) 
         {
             // Next try to get center meridian from sheet bounds. May be errors for double/triple/quad sheets.
