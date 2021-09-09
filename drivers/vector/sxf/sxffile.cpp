@@ -855,6 +855,7 @@ bool SXFFile::Read(OGRSXFDataSource *poDS, CSLConstList papszOpenOpts)
         if( epsgCode >= MIN_EPSG && epsgCode <= MAX_EPSG ) // Check epsg valid range
         {
             pSpatRef = new OGRSpatialReference();
+            pSpatRef->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
             if (pSpatRef->importFromEPSG(epsgCode) != OGRERR_NONE)
             {
                 delete pSpatRef;
@@ -1656,12 +1657,12 @@ OGRErr SXFFile::SetSRS(const long iEllips, const long iProjSys, const long iCS,
         {
             int nEPSG = 28400 + nZoneEnv;
             pSpatRef = new OGRSpatialReference();
-            pSpatRef->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
             OGRErr eErr = pSpatRef->importFromEPSG(nEPSG);
             if (eErr != OGRERR_NONE)
             {
                 return eErr;
             }
+            pSpatRef->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
             return SetVertCS(iVCS, papszOpenOpts);
         }
         else
@@ -1702,34 +1703,34 @@ OGRErr SXFFile::SetSRS(const long iEllips, const long iProjSys, const long iCS,
             nEPSG = 32700 + nZoneEnv;
         }
         pSpatRef = new OGRSpatialReference();
-        pSpatRef->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
         OGRErr eErr = pSpatRef->importFromEPSG(nEPSG);
         if (eErr != OGRERR_NONE)
         {
             return eErr;
         }
+        pSpatRef->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
         return SetVertCS(iVCS, papszOpenOpts);
     }
     else if (iEllips == 45 && iProjSys == 35) //Mercator 3857 on sphere wgs84
     {
         pSpatRef = new OGRSpatialReference();
-        pSpatRef->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
         OGRErr eErr = pSpatRef->importFromEPSG(3857);
         if (eErr != OGRERR_NONE)
         {
             return eErr;
         }
+        pSpatRef->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
         return SetVertCS(iVCS, papszOpenOpts);
     }
     else if (iEllips == 9 && iProjSys == 35) //Mercator 3395 on ellips wgs84
     {
         pSpatRef = new OGRSpatialReference();
-        pSpatRef->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
         OGRErr eErr = pSpatRef->importFromEPSG(3395);
         if (eErr != OGRERR_NONE)
         {
             return eErr;
         }
+        pSpatRef->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
         return SetVertCS(iVCS, papszOpenOpts);
     }
     else if (iEllips == 9 && iProjSys == 34) //Miller 54003 on sphere wgs84
@@ -1753,13 +1754,13 @@ OGRErr SXFFile::SetSRS(const long iEllips, const long iProjSys, const long iCS,
     }
 
     pSpatRef = new OGRSpatialReference();
-    pSpatRef->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
     OGRErr eErr = 
         pSpatRef->importFromPanorama(iProjSys, 0L, iEllips, padfPrjParams);
     if (eErr != OGRERR_NONE)
     {
         return eErr;
     }
+    pSpatRef->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
     return SetVertCS(iVCS, papszOpenOpts);
 }
 
