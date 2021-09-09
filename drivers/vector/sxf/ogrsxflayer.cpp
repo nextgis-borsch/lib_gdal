@@ -1540,14 +1540,18 @@ GUInt32 OGRSXFLayer::TranslatePoint(const SXFFile &oSXF, OGRPoint *poPT,
 OGRFeature *OGRSXFLayer::TranslatePoint(const SXFFile &oSXF, 
     const SXFRecordHeader &header, GByte *psRecordBuf)
 {
-    OGRFeature *poFeature = new OGRFeature(GetLayerDefn());
+    auto poFeatureDefn = GetLayerDefn();
+    OGRFeature *poFeature = new OGRFeature(poFeatureDefn);
+
+    auto poSpaRef = poFeatureDefn->GetGeomFieldDefn(0)->GetSpatialRef();
 
     OGRPoint *poPT = new OGRPoint();
     GUInt32 nOffset = TranslatePoint(oSXF, poPT, header, psRecordBuf, 
         header.nGeometryLength);
     if (header.nSubObjectCount == 0)
     {
-        poFeature->SetGeometryDirectly(poPT);
+        poPT->assignSpatialReference( poSpaRef );
+        poFeature->SetGeometryDirectly( poPT );
         return poFeature;
     }
 
@@ -1586,6 +1590,7 @@ OGRFeature *OGRSXFLayer::TranslatePoint(const SXFFile &oSXF,
         }
     }
 
+    poMPt->assignSpatialReference( poSpaRef );
     poFeature->SetGeometryDirectly( poMPt );
 
     return poFeature;
@@ -1628,7 +1633,8 @@ GUInt32 OGRSXFLayer::TranslateLine(const SXFFile &oSXF, OGRLineString* poLS,
 OGRFeature *OGRSXFLayer::TranslateLine(const SXFFile &oSXF, 
     const SXFRecordHeader &header, GByte *psRecordBuf)
 {
-    OGRFeature *poFeature = new OGRFeature(GetLayerDefn());
+    auto poFeatureDefn = GetLayerDefn();
+    OGRFeature *poFeature = new OGRFeature(poFeatureDefn);
     OGRMultiLineString *poMLS = new OGRMultiLineString();
 
 /*---------------------- Reading Primary Line ----------------------------*/
@@ -1666,6 +1672,8 @@ OGRFeature *OGRSXFLayer::TranslateLine(const SXFFile &oSXF,
         poMLS->addGeometryDirectly( poLS );
     }
 
+    auto poSpaRef = poFeatureDefn->GetGeomFieldDefn(0)->GetSpatialRef();
+    poMLS->assignSpatialReference( poSpaRef );
     poFeature->SetGeometryDirectly( poMLS );
 
     return poFeature;
@@ -1681,7 +1689,9 @@ OGRFeature *OGRSXFLayer::TranslateVetorAngle(const SXFFile &oSXF,
         return nullptr;
     }
 
-    OGRFeature *poFeature = new OGRFeature(GetLayerDefn());
+    auto poFeatureDefn = GetLayerDefn();
+    OGRFeature *poFeature = new OGRFeature(poFeatureDefn);
+    auto poSpaRef = poFeatureDefn->GetGeomFieldDefn(0)->GetSpatialRef();
 
     /*---------------------- Reading Primary Line --------------------------*/
 
@@ -1691,7 +1701,8 @@ OGRFeature *OGRSXFLayer::TranslateVetorAngle(const SXFFile &oSXF,
 
     if (bIsNewBehavior)
     {
-        poFeature->SetGeometryDirectly(poLS);
+        poLS->assignSpatialReference( poSpaRef );
+        poFeature->SetGeometryDirectly( poLS );
     }
     else
     {
@@ -1708,7 +1719,8 @@ OGRFeature *OGRSXFLayer::TranslateVetorAngle(const SXFFile &oSXF,
         {
             dfAngle += 360;
         }
-        poFeature->SetGeometryDirectly(poPT);
+        poPT->assignSpatialReference( poSpaRef );
+        poFeature->SetGeometryDirectly( poPT );
         poFeature->SetField("ANGLE", dfAngle);
 
         delete poAngPT;
@@ -1721,7 +1733,10 @@ OGRFeature *OGRSXFLayer::TranslateVetorAngle(const SXFFile &oSXF,
 OGRFeature *OGRSXFLayer::TranslatePolygon(const SXFFile &oSXF, 
     const SXFRecordHeader &header, GByte *psRecordBuf)
 {
-    OGRFeature *poFeature = new OGRFeature(GetLayerDefn());
+    auto poFeatureDefn = GetLayerDefn();
+    OGRFeature *poFeature = new OGRFeature(poFeatureDefn);
+    auto poSpaRef = poFeatureDefn->GetGeomFieldDefn(0)->GetSpatialRef();
+
     std::vector<OGRPolygon*> apoPolygons;
     OGRPolygon *poPoly = new OGRPolygon();
 
@@ -1796,11 +1811,13 @@ OGRFeature *OGRSXFLayer::TranslatePolygon(const SXFFile &oSXF,
         {
             poMultiPoly->addGeometryDirectly(poPolygon);
         }
-        poFeature->SetGeometryDirectly(poMultiPoly);
+        poMultiPoly->assignSpatialReference( poSpaRef );
+        poFeature->SetGeometryDirectly( poMultiPoly );
     }
     else
     {
-        poFeature->SetGeometryDirectly(poPoly);
+        poPoly->assignSpatialReference( poSpaRef );
+        poFeature->SetGeometryDirectly( poPoly );
     }
     delete poLS;
 
@@ -1810,7 +1827,10 @@ OGRFeature *OGRSXFLayer::TranslatePolygon(const SXFFile &oSXF,
 OGRFeature *OGRSXFLayer::TranslateText(const SXFFile &oSXF, 
     const SXFRecordHeader &header, GByte *psRecordBuf, int nSubObject)
 {
-    auto poFeature = new OGRFeature(GetLayerDefn());
+    auto poFeatureDefn = GetLayerDefn();
+    OGRFeature *poFeature = new OGRFeature(poFeatureDefn);
+    auto poSpaRef = poFeatureDefn->GetGeomFieldDefn(0)->GetSpatialRef();
+
     CPLString soText;
     if (header.nPointCount > 1)
     {
@@ -1848,6 +1868,7 @@ OGRFeature *OGRSXFLayer::TranslateText(const SXFFile &oSXF,
 
         if (nSubObject < 2)
         {
+            poLS->assignSpatialReference( poSpaRef );
             poFeature->SetGeometryDirectly( poLS );
         }
         else
@@ -1902,6 +1923,7 @@ OGRFeature *OGRSXFLayer::TranslateText(const SXFFile &oSXF,
 
                 if (count == nSubObject - 2)
                 {
+                    poLS->assignSpatialReference( poSpaRef );
                     poFeature->SetGeometryDirectly( poLS );
                     break;
                 }
@@ -1952,7 +1974,8 @@ OGRFeature *OGRSXFLayer::TranslateText(const SXFFile &oSXF,
         {
             if (nOffset + 4 > header.nGeometryLength)
             {
-                poFeature->SetGeometryDirectly(poMPT);
+                poMPT->assignSpatialReference( poSpaRef );
+                poFeature->SetGeometryDirectly( poMPT );
                 break;
             }
 
@@ -2000,6 +2023,7 @@ OGRFeature *OGRSXFLayer::TranslateText(const SXFFile &oSXF,
             nOffset += nTextL;
         }
 
+        poMPT->assignSpatialReference( poSpaRef );
         poFeature->SetGeometryDirectly( poMPT );
     }
 
