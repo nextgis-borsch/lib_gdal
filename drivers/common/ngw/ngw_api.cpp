@@ -175,8 +175,9 @@ bool CheckVersion(const std::string &osVersion, int nMajor, int nMinor, int nPat
         nCurrentMajor = atoi(aosList[0]);
     }
 
-    return nCurrentMajor >= nMajor && nCurrentMinor >= nMinor &&
-        nCurrentPatch >= nPatch;
+    int nCheckVersion = nMajor * 1000 + nMinor * 100 + nPatch;
+    int nCurrentVersion = nCurrentMajor * 1000 + nCurrentMinor * 100 + nCurrentPatch;
+    return nCurrentVersion >= nCheckVersion;
 }
 
 Uri ParseUri(const std::string &osUrl)
