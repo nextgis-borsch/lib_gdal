@@ -198,16 +198,11 @@ static CPLErr OGRNGWDriverDelete( const char *pszName )
         return CE_Failure;
     }
 
-    std::string osUserPwd = CSLFetchNameValueDef( papszOptions, "USERPWD",
-        CPLGetConfigOption("NGW_USERPWD", "") );
-    std::string osConnectTimeout = CSLFetchNameValueDef( papszOptions, "CONNECTTIMEOUT", 
-        CPLGetConfigOption("NGW_CONNECTTIMEOUT", "") );
-    std::string osTimeout = CSLFetchNameValueDef( papszOptions, "TIMEOUT", 
-        CPLGetConfigOption("NGW_TIMEOUT", "") );
-    std::string osRetryCount = CSLFetchNameValueDef( papszOptions, "MAX_RETRY",
-        CPLGetConfigOption("NGW_MAX_RETRY", ""));   
-    std::string osRetryDelay = CSLFetchNameValueDef( papszOptions, "RETRY_DELAY",
-        CPLGetConfigOption("NGW_RETRY_DELAY", "")); 
+    std::string osUserPwd = CPLGetConfigOption("NGW_USERPWD", "");
+    std::string osConnectTimeout = CPLGetConfigOption("NGW_CONNECTTIMEOUT", "");
+    std::string osTimeout = CPLGetConfigOption("NGW_TIMEOUT", "");
+    std::string osRetryCount = CPLGetConfigOption("NGW_MAX_RETRY", "");   
+    std::string osRetryDelay = CPLGetConfigOption("NGW_RETRY_DELAY", ""); 
 
     char **papszOptions = GetHeaders(osUserPwd, osConnectTimeout, osTimeout, 
         osRetryCount, osRetryDelay);
@@ -237,16 +232,11 @@ static CPLErr OGRNGWDriverRename( const char *pszNewName, const char *pszOldName
     CPLDebug("NGW", "Parse uri result. URL: %s, ID: %s, New name: %s",
         stUri.osAddress.c_str(), stUri.osResourceId.c_str(), pszNewName);
 
-    std::string osUserPwd = CSLFetchNameValueDef( papszOptions, "USERPWD",
-        CPLGetConfigOption("NGW_USERPWD", "") );
-    std::string osConnectTimeout = CSLFetchNameValueDef( papszOptions, "CONNECTTIMEOUT", 
-        CPLGetConfigOption("NGW_CONNECTTIMEOUT", "") );
-    std::string osTimeout = CSLFetchNameValueDef( papszOptions, "TIMEOUT", 
-        CPLGetConfigOption("NGW_TIMEOUT", "") );
-    std::string osRetryCount = CSLFetchNameValueDef( papszOptions, "MAX_RETRY",
-        CPLGetConfigOption("NGW_MAX_RETRY", ""));   
-    std::string osRetryDelay = CSLFetchNameValueDef( papszOptions, "RETRY_DELAY",
-        CPLGetConfigOption("NGW_RETRY_DELAY", "")); 
+    std::string osUserPwd = CPLGetConfigOption("NGW_USERPWD", "");
+    std::string osConnectTimeout = CPLGetConfigOption("NGW_CONNECTTIMEOUT", "");
+    std::string osTimeout = CPLGetConfigOption("NGW_TIMEOUT", "");
+    std::string osRetryCount = CPLGetConfigOption("NGW_MAX_RETRY", "");   
+    std::string osRetryDelay = CPLGetConfigOption("NGW_RETRY_DELAY", ""); 
 
     char **papszOptions = GetHeaders(osUserPwd, osConnectTimeout, osTimeout, 
         osRetryCount, osRetryDelay);
