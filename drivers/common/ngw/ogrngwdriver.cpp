@@ -38,11 +38,11 @@ static char **GetHeaders(const std::string &osUserPwdIn = "",
 {
     char **papszOptions = nullptr;
     papszOptions = CSLAddString(papszOptions, "HEADERS=Accept: */*");
-    if( !osUserPwd.empty() )
+    if( !osUserPwdIn.empty() )
     {
         papszOptions = CSLAddString(papszOptions, "HTTPAUTH=BASIC");
         std::string osUserPwdOption("USERPWD=");
-        osUserPwdOption += osUserPwd;
+        osUserPwdOption += osUserPwdIn;
         papszOptions = CSLAddString(papszOptions, osUserPwdOption.c_str());
     }
 
@@ -154,11 +154,6 @@ static GDALDataset *OGRNGWDriverCreate( const char *pszName,
     std::string osTimeout = CSLFetchNameValueDef( papszOptions, "TIMEOUT", 
         CPLGetConfigOption("NGW_TIMEOUT", "") );
 
-    std::string osRetryCount = CSLFetchNameValueDef( papszOpenOptionsIn, "MAX_RETRY",
-        CPLGetConfigOption("NGW_MAX_RETRY", ""));   
-    std::string osRetryDelay = CSLFetchNameValueDef( papszOpenOptionsIn, "RETRY_DELAY",
-        CPLGetConfigOption("NGW_RETRY_DELAY", "")); 
-
     std::string osNewResourceId = NGWAPI::CreateResource( stUri.osAddress,
         oPayload.Format(CPLJSONObject::PrettyFormat::Plain), 
             GetHeaders(osUserPwd, osConnectTimeout, osTimeout) );
@@ -209,9 +204,9 @@ static CPLErr OGRNGWDriverDelete( const char *pszName )
         CPLGetConfigOption("NGW_CONNECTTIMEOUT", "") );
     std::string osTimeout = CSLFetchNameValueDef( papszOptions, "TIMEOUT", 
         CPLGetConfigOption("NGW_TIMEOUT", "") );
-    std::string osRetryCount = CSLFetchNameValueDef( papszOpenOptionsIn, "MAX_RETRY",
+    std::string osRetryCount = CSLFetchNameValueDef( papszOptions, "MAX_RETRY",
         CPLGetConfigOption("NGW_MAX_RETRY", ""));   
-    std::string osRetryDelay = CSLFetchNameValueDef( papszOpenOptionsIn, "RETRY_DELAY",
+    std::string osRetryDelay = CSLFetchNameValueDef( papszOptions, "RETRY_DELAY",
         CPLGetConfigOption("NGW_RETRY_DELAY", "")); 
 
     char **papszOptions = GetHeaders(osUserPwd, osConnectTimeout, osTimeout, 
@@ -248,9 +243,9 @@ static CPLErr OGRNGWDriverRename( const char *pszNewName, const char *pszOldName
         CPLGetConfigOption("NGW_CONNECTTIMEOUT", "") );
     std::string osTimeout = CSLFetchNameValueDef( papszOptions, "TIMEOUT", 
         CPLGetConfigOption("NGW_TIMEOUT", "") );
-    std::string osRetryCount = CSLFetchNameValueDef( papszOpenOptionsIn, "MAX_RETRY",
+    std::string osRetryCount = CSLFetchNameValueDef( papszOptions, "MAX_RETRY",
         CPLGetConfigOption("NGW_MAX_RETRY", ""));   
-    std::string osRetryDelay = CSLFetchNameValueDef( papszOpenOptionsIn, "RETRY_DELAY",
+    std::string osRetryDelay = CSLFetchNameValueDef( papszOptions, "RETRY_DELAY",
         CPLGetConfigOption("NGW_RETRY_DELAY", "")); 
 
     char **papszOptions = GetHeaders(osUserPwd, osConnectTimeout, osTimeout, 
