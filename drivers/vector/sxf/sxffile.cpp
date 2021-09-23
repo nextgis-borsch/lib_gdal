@@ -293,12 +293,12 @@ static void WriteSXFExtents(const OGREnvelope &stEnv, VSILFILE *fpSXF,
     {
         corners[0] = stEnv.MinY;
         corners[1] = stEnv.MinX;
-        corners[2] = stEnv.MinY;
-        corners[3] = stEnv.MaxX;
+        corners[2] = stEnv.MaxY;
+        corners[3] = stEnv.MinX;
         corners[4] = stEnv.MaxY;
         corners[5] = stEnv.MaxX;
-        corners[6] = stEnv.MaxY;
-        corners[7] = stEnv.MinX;
+        corners[6] = stEnv.MinY;
+        corners[7] = stEnv.MaxX;
     }
     else
     {
@@ -884,7 +884,7 @@ bool SXFFile::Read(OGRSXFDataSource *poDS, CSLConstList papszOpenOpts)
     oEnvelope.MinX = VAL_100M;
     oEnvelope.MaxY = -VAL_100M;
     oEnvelope.MinY = VAL_100M;
-    bool bIsX = true;
+    bool bIsX = false;
     double projCoords[8];
     double geogCoords[8];
     if (nVersion == 3)
@@ -898,19 +898,19 @@ bool SXFFile::Read(OGRSXFDataSource *poDS, CSLConstList papszOpenOpts)
         {
             CPL_LSBPTR32(&nCorners[i]);
             projCoords[i] = double(nCorners[i]) / 10.0;
-            if (bIsX) //X
-            {
-                if (oEnvelope.MaxY < projCoords[i])
-                    oEnvelope.MaxY = projCoords[i];
-                if (oEnvelope.MinY > projCoords[i])
-                    oEnvelope.MinY = projCoords[i];
-            }
-            else
+            if (bIsX)
             {
                 if (oEnvelope.MaxX < projCoords[i])
                     oEnvelope.MaxX = projCoords[i];
                 if (oEnvelope.MinX > projCoords[i])
                     oEnvelope.MinX = projCoords[i];
+            }
+            else
+            {
+                if (oEnvelope.MaxY < projCoords[i])
+                    oEnvelope.MaxY = projCoords[i];
+                if (oEnvelope.MinY > projCoords[i])
+                    oEnvelope.MinY = projCoords[i];
             }
             bIsX = !bIsX;
         }
@@ -933,19 +933,19 @@ bool SXFFile::Read(OGRSXFDataSource *poDS, CSLConstList papszOpenOpts)
         {
             CPL_LSBPTR64(&dfCorners[i]);
             projCoords[i] = dfCorners[i];
-            if (bIsX) //X
-            {
-                if( oEnvelope.MaxY < projCoords[i] )
-                    oEnvelope.MaxY = projCoords[i];
-                if( oEnvelope.MinY > projCoords[i] )
-                    oEnvelope.MinY = projCoords[i];
-            }
-            else
+            if (bIsX)
             {
                 if( oEnvelope.MaxX < projCoords[i] )
                     oEnvelope.MaxX = projCoords[i];
                 if( oEnvelope.MinX > projCoords[i] )
                     oEnvelope.MinX = projCoords[i];
+            }
+            else
+            {
+                if( oEnvelope.MaxY < projCoords[i] )
+                    oEnvelope.MaxY = projCoords[i];
+                if( oEnvelope.MinY > projCoords[i] )
+                    oEnvelope.MinY = projCoords[i];
             }
             bIsX = !bIsX;
         }
@@ -1063,7 +1063,7 @@ bool SXFFile::Read(OGRSXFDataSource *poDS, CSLConstList papszOpenOpts)
     }
 
     GInt32 nResolution = 1;
-    GUInt32 frameCoords[8];
+    GUInt32 frameCoords[8] = { 0 };
 
     if (nVersion == 3)
     {
@@ -1568,12 +1568,12 @@ bool SXFFile::Write(OGRSXFDataSource *poDS)
     }
     VSIFWriteL(&nVal, 4, 1, fpSXF);
 
-    double adfFrameCornes[8];
+    double adfFrameCornes[8] = { 0 };
     CornersFromMetadata(poDS, "FRAME.", adfFrameCornes);
-    float adfFrameCornersShort[8];
+    GInt32 adfFrameCornersShort[8];
     for (int i = 0; i < 8; i++)
     {
-        adfFrameCornersShort[i] = static_cast<float>(adfFrameCornes[i]);
+        adfFrameCornersShort[i] = static_cast<GInt32>(adfFrameCornes[i]);
     }
     VSIFWriteL(adfFrameCornersShort, 32, 1, fpSXF);
 
@@ -1583,8 +1583,8 @@ bool SXFFile::Write(OGRSXFDataSource *poDS)
     double adfProjDetails[6];
     adfProjDetails[0] = adfPrjParams[0];
     adfProjDetails[1] = adfPrjParams[1];
-    adfProjDetails[2] = adfPrjParams[2];
-    adfProjDetails[3] = adfPrjParams[3];
+    adfProjDetails[2] = adfPrjParams[3];
+    adfProjDetails[3] = adfPrjParams[2];
     adfProjDetails[4] = adfPrjParams[5];
     adfProjDetails[5] = adfPrjParams[6];
 
