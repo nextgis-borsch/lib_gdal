@@ -6,7 +6,7 @@
  *******************************************************************************
  *  The MIT License (MIT)
  *
- *  Copyright (c) 2018-2020, NextGIS
+ *  Copyright (c) 2018-2021, NextGIS
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -170,6 +170,7 @@ public:
 
     virtual OGRErr DeleteFeature(GIntBig nFID) override;
     bool DeleteAllFeatures();
+    // bool DeleteFeatures(const std::string &osWhere);
 
     virtual CPLErr SetMetadata( char **papszMetadata,
         const char *pszDomain = "" ) override;
@@ -217,6 +218,11 @@ class OGRNGWDataset final : public GDALDataset
     std::string osName;
     bool bExtInNativeData;
     bool bMetadataDerty;
+    // http options
+    std::string osConnectTimeout;
+    std::string osTimeout;
+    std::string osRetryCount;
+    std::string osRetryDelay;
 
     // vector
     OGRNGWLayer **papoLayers;
@@ -268,7 +274,7 @@ public:
         GDALRasterIOExtraArg* psExtraArg ) override;
 
 private:
-    char **GetHeaders() const;
+    char **GetHeaders(bool bSkipRetry = true) const;
     std::string GetUrl() const { return osUrl; }
     std::string GetResourceId() const { return osResourceId; }
     void FillMetadata( const CPLJSONObject &oRootObject );
