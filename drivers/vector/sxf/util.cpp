@@ -63,13 +63,25 @@ namespace SXF {
         {
             return "";
         }
-        char *value = static_cast<char*>(CPLMalloc(nLen + 1));
-        memcpy(value, pBuffer, nLen);
-        value[nLen] = 0;
-        char *pszRecoded = CPLRecode(value, pszSrcEncoding, CPL_ENC_UTF8);
+        char *pszRecoded = nullptr;
+        if (EQUAL(pszSrcEncoding, CPL_ENC_UTF16))
+        {
+            auto value = static_cast<wchar_t*>(CPLMalloc(nLen + 2));
+            memset(value, 0, nLen + 2);
+            memcpy(value, pBuffer, nLen);
+            pszRecoded = CPLRecodeFromWChar(value, pszSrcEncoding, CPL_ENC_UTF8);
+            CPLFree(value);
+        }
+        else
+        {
+            auto value = static_cast<char*>(CPLMalloc(nLen + 1));
+            memset(value, 0, nLen + 1);
+            memcpy(value, pBuffer, nLen);
+            pszRecoded = CPLRecode(value, pszSrcEncoding, CPL_ENC_UTF8);
+            CPLFree(value);
+        }
         std::string out(pszRecoded);
         CPLFree(pszRecoded);
-        CPLFree(value);
         return out;
     }
 } // namespace SXF

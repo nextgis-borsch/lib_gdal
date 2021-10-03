@@ -8,7 +8,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2011, Ben Ahmed Daho Ali
- * Copyright (c) 2013-2020, NextGIS <info@nextgis.com>
+ * Copyright (c) 2013-2021, NextGIS <info@nextgis.com>
  * Copyright (c) 2014, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -1338,32 +1338,16 @@ OGRFeature *OGRSXFLayer::GetRawFeature(const SXFFile &oSXF,
             }
             case 127: // SXF_RAT_UNICODE
             {
-                size_t nLen = (size_t(stAttInfo.nScale) + 1) * 2;
+                size_t nLen = size_t(stAttInfo.nScale);// +2); // *2;
                 if (nLen < 2 || nLen + nOffset > nSemanticsSize)
                 {
                     nSemanticsSize = 0;
                     break;
                 }
-                auto src = static_cast<char*>(CPLMalloc(nLen));
-                memcpy(src, attributesBuff.get() + nOffset, nLen - 2);
-                src[nLen - 1] = 0;
-                src[nLen - 2] = 0;
-                auto dst = static_cast<char*>(CPLMalloc(nLen));
-                int nCount = 0;
-                for (unsigned i = 0; i < nLen; i += 2)
-                {
-                    unsigned char ucs = src[i];
-
-                    if (ucs < 0x80U)
-                    {
-                        dst[nCount++] = ucs;
-                    }
-                    else
-                    {
-                        dst[nCount++] = 0xc0 | (ucs >> 6);
-                        dst[nCount++] = 0x80 | (ucs & 0x3F);
-                    }
-                }
+                auto src = static_cast<wchar_t*>(CPLMalloc(nLen + 2));
+                memset(src, 0, nLen + 2);
+                memcpy(src, attributesBuff.get() + nOffset, nLen);
+                auto dst = CPLRecodeFromWChar(src, CPL_ENC_UCS2, CPL_ENC_UTF8);
                 if (!HasField(GetLayerDefn(), oFieldName))
                 {
                     OGRFieldDefn oField(oFieldName.c_str(), OFTString);
@@ -1399,11 +1383,11 @@ OGRFeature *OGRSXFLayer::GetRawFeature(const SXFFile &oSXF,
                 std::string val;
                 if (nTextLen > 0)
                 {
-                    char *pBuff = static_cast<char*>(CPLMalloc(nTextLen));
+                    auto *pBuff = static_cast<wchar_t*>(CPLMalloc(nTextLen + 4));
+                    memset(pBuff, 0, nTextLen + 4);
                     memcpy(pBuff, attributesBuff.get() + nOffset, nTextLen);
                     auto pszRecodedText = 
-                        CPLRecodeFromWChar(reinterpret_cast<wchar_t*>(pBuff),
-                            CPL_ENC_UTF16, CPL_ENC_UTF8);
+                        CPLRecodeFromWChar(pBuff, CPL_ENC_UTF16, CPL_ENC_UTF8);
                     val = pszRecodedText;
                     CPLFree(pszRecodedText);
                     CPLFree(pBuff);
