@@ -964,8 +964,8 @@ static char **SQLTokenize( const char *pszStr )
 /*
  * ExecuteSQL()
  */
-OGRLayer *OGRNGWDataset::ExecuteSQL( const char *pszStatement,
-    OGRGeometry *poSpatialFilter, const char *pszDialect )
+OGRLayer *OGRNGWDataset::ExecuteSQL(const char *pszStatement,
+    OGRGeometry *poSpatialFilter, const char *pszDialect)
 {
     // Clean statement string.
     CPLString osStatement(pszStatement);
@@ -996,57 +996,55 @@ OGRLayer *OGRNGWDataset::ExecuteSQL( const char *pszStatement,
         return nullptr;
     }
 
-    if( STARTS_WITH_CI(osStatement, "DELETE FROM") )
+    if( STARTS_WITH_CI(osStatement, "DELETE FROM ") )
     {
-        // TODO: Add support for where in DELETE FROM yyyy WHERE zzzzzz;
-        // swq_select oDelete;
-        // CPLDebug("NGW", "Delete statement: %s", osStatement.c_str());
-        // if( oDelete.preparse( osStatement ) != CE_None )
-        // {
-        //     return nullptr;
-        // }
+        const char *pszIter = osStatement + 12;
+        while (*pszIter && *pszIter != ' ')
+            pszIter++;
 
-        // OGRNGWLayer *poLayer = reinterpret_cast<OGRNGWLayer*>(
-        //         GetLayerByName( oSelect.table_defs[0].table_name ) );
-        // if( nullptr == poLayer )
-        // {
-        //     CPLError(CE_Failure, CPLE_AppDefined,
-        //         "Layer %s not found in dataset.", oSelect.table_defs[0].table_name);
-        //     return nullptr;
-        // }
+        CPLString osName = osStatement + 12;
+        osName.resize(pszIter - (osStatement + 12));
 
-        // std::string osNgwSelect;
-        // if( oSelect.where_expr != nullptr )
-        // {
-        //     osNgwSelect = "NGW:" + OGRNGWLayer::TranslateSQLToFilter( oSelect.where_expr );
-        //     poLayer->DeleteFeatures(osNgwSelect);
+        OGRNGWLayer *poLayer = reinterpret_cast<OGRNGWLayer *>(GetLayerByName(osName));
+		if (nullptr == poLayer)
+		{
+			CPLError(CE_Failure, CPLE_AppDefined,
+				"Layer %s not found in dataset.", osName.c_str());
+			return nullptr;
+		}
 
-        // }
-        // else
-        // {
-        //     poLayer->DeleteAllFeatures();
-        // }
-
-        // Get layer name from pszStatement DELETE FROM layer;.
-        CPLString osLayerName = osStatement.substr(strlen("DELETE FROM "));
-        if( osLayerName.endsWith(";") )
-        {
-            osLayerName = osLayerName.substr(0, osLayerName.size() - 1);
-            osLayerName.Trim();
-        }
-
-        CPLDebug("NGW", "Delete features from layer with name %s.", osLayerName.c_str());
-
-        OGRNGWLayer *poLayer = static_cast<OGRNGWLayer*>(GetLayerByName(osLayerName));
-        if( poLayer )
+        if (*pszIter == 0)
         {
             poLayer->DeleteAllFeatures();
+            return nullptr;
         }
-        else
+
+        while (*pszIter == ' ')
+            pszIter++;
+        if (!STARTS_WITH_CI(pszIter, "WHERE "))
         {
-            CPLError(CE_Failure, CPLE_AppDefined, "Unknown layer : %s",
-                osLayerName.c_str());
+            CPLError(CE_Failure, CPLE_AppDefined, "WHERE clause missing");
+            return nullptr;
         }
+        pszIter += 5;
+
+        const char *pszQuery = pszIter;
+        /* Check with the generic SQL engine that this is a valid WHERE clause */
+        OGRFeatureQuery oQuery;
+        OGRErr eErr = oQuery.Compile( poLayer->GetLayerDefn(), pszQuery );
+        if (eErr != OGRERR_NONE)
+            return nullptr;
+
+        std::string osNgwDelete = "NGW:" + OGRNGWLayer::TranslateSQLToFilter(reinterpret_cast<swq_expr_node*>(oQuery.GetSWQExpr()));
+		poLayer->SetAttributeFilter(osNgwDelete.c_str());
+
+        std::vector<GIntBig> vFeaturesID;
+		OGRFeature *pFet;
+        while ((pFet = poLayer->GetNextFeature()) != nullptr)
+            vFeaturesID.push_back(pFet->GetFID());
+
+        poLayer->DeleteFeatures(vFeaturesID);
+
         return nullptr;
     }
 
