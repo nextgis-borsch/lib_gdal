@@ -1006,12 +1006,12 @@ OGRLayer *OGRNGWDataset::ExecuteSQL(const char *pszStatement,
         osName.resize(pszIter - (osStatement + 12));
 
         OGRNGWLayer *poLayer = reinterpret_cast<OGRNGWLayer *>(GetLayerByName(osName));
-		if (nullptr == poLayer)
-		{
-			CPLError(CE_Failure, CPLE_AppDefined,
-				"Layer %s not found in dataset.", osName.c_str());
-			return nullptr;
-		}
+        if (nullptr == poLayer)
+        {
+            CPLError(CE_Failure, CPLE_AppDefined,
+                "Layer %s not found in dataset.", osName.c_str());
+            return nullptr;
+        }
 
         if (*pszIter == 0)
         {
@@ -1036,10 +1036,10 @@ OGRLayer *OGRNGWDataset::ExecuteSQL(const char *pszStatement,
             return nullptr;
 
         std::string osNgwDelete = "NGW:" + OGRNGWLayer::TranslateSQLToFilter(reinterpret_cast<swq_expr_node*>(oQuery.GetSWQExpr()));
-		poLayer->SetAttributeFilter(osNgwDelete.c_str());
+        poLayer->SetAttributeFilter(osNgwDelete.c_str());
 
         std::vector<GIntBig> vFeaturesID;
-		OGRFeature *pFet;
+        OGRFeature *pFet;
         while ((pFet = poLayer->GetNextFeature()) != nullptr)
             vFeaturesID.push_back(pFet->GetFID());
 
