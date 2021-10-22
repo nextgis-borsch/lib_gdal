@@ -135,7 +135,11 @@ static size_t WritePointCount(GUInt32 nPointCount, GByte *pBuff)
 
 static size_t WriteAlignment(int nAlignment, GByte *pBuff)
 {
-    GByte aAligment[3] = { nAlignment, 0, 0 };
+    if (nAlignment < 0)
+    {
+        return 0;
+    }
+    GByte aAligment[3] = { static_cast<GByte>(nAlignment), 0, 0 };
     size_t size = sizeof(GByte) * 3;
     memcpy(pBuff, aAligment, size);
     return size;
