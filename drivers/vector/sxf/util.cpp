@@ -29,22 +29,24 @@
 #include "ogr_sxf.h"
 
 namespace SXF {
-    void WriteEncString(const char *pszSrcText, GByte *pDst,
+    size_t WriteEncString(const char *pszSrcText, GByte *pDst,
         int nSize, const char *pszEncoding)
     {
         memset(pDst, 0, nSize);
         if (pszSrcText == nullptr)
         {
-            return;
+            return 0;
         }
         char *pszRecoded = CPLRecode(pszSrcText, CPL_ENC_UTF8, pszEncoding);
         size_t maxSize = CPLStrnlen(pszRecoded, nSize);
         if (pszRecoded != nullptr)
         {
             memcpy(pDst, pszRecoded, maxSize);
-            pDst[nSize - 1] = 0;
+            pDst[maxSize + 1] = 0;
         }
         CPLFree(pszRecoded);
+
+        return maxSize + 1;
     }
 
     void WriteEncString(const char *pszText, int nSize,

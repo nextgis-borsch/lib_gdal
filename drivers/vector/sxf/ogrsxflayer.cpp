@@ -46,6 +46,7 @@ constexpr const char *NUMBER_IN_GROUP = "number_in_group";
 constexpr const char *OBJECTNUMB = "OBJECTNUMB";
 constexpr const char *ANGLE = "ANGLE";
 constexpr const char *TEXT = "TEXT";
+constexpr const char *ALIGNMENT = "ALIGNMENT";
 
 static enum SXFGeometryType OGRTypeToSXFType(OGRwkbGeometryType eType)
 {
@@ -132,6 +133,14 @@ static size_t WritePointCount(GUInt32 nPointCount, GByte *pBuff)
     }
 }
 
+static size_t WriteAlignment(int nAlignment, GByte *pBuff)
+{
+    GByte aAligment[3] = { nAlignment, 0, 0 };
+    size_t size = sizeof(GByte) * 3;
+    memcpy(pBuff, aAligment, size);
+    return size;
+}
+
 static size_t WritePoint(const OGRPoint *poPt, GByte *pBuff)
 {
     size_t nOffset = 0;
@@ -181,9 +190,10 @@ static GByte* WriteRings(const std::vector<OGRLinearRing*> &apoRings,
     return pBuff;
 }
 
-static GByte *WriteLineToBuffer(size_t nPointSize, GByte *pBuff, size_t &nOffset,
-    OGRLineString *poLn, SXFGeometryType eGeomType,
-    const char *pszText, size_t &nSize, const std::string &osEncoding)
+static GByte *WriteLineToBuffer(size_t nPointSize, GByte *pBuff, 
+    size_t &nOffset, OGRLineString *poLn, SXFGeometryType eGeomType,
+    const char *pszText, int nAlignment, size_t &nSize, 
+    const std::string &osEncoding)
 {
     GByte *pLocalBuff = nullptr;
     if (eGeomType == SXF_GT_Line)
@@ -226,30 +236,43 @@ static GByte *WriteLineToBuffer(size_t nPointSize, GByte *pBuff, size_t &nOffset
         size_t nTextLenght = CPLStrnlen(pszText, 254);
         size_t nPointCount = poLn->getNumPoints();
         nSize += nPointSize * nPointCount + nTextLenght + 2;
+        if (nAlignment >= 0)
+        {
+            nSize += 4;
+        }
         if (pBuff == nullptr)
         {
-            pLocalBuff = static_cast<GByte*>(CPLMalloc(nSize));
+            pLocalBuff = static_cast<GByte*>(CPLMalloc(nSize + 5));
         }
         else
         {
-            nSize += 4;
-            pLocalBuff = static_cast<GByte*>(CPLRealloc(pBuff, nSize));
+            nSize += 2;
+            pLocalBuff = static_cast<GByte*>(CPLRealloc(pBuff, nSize + 5));
             nOffset += WritePointCount(nPointCount, pLocalBuff + nOffset);
         }
         nOffset += WriteLine(poLn, pLocalBuff + nOffset);
         GByte nTextL = static_cast<GByte>(nTextLenght);
+        if (nAlignment >= 0)
+        {
+            nTextL += 4;
+        }
         memcpy(pLocalBuff + nOffset, &nTextL, 1);
         nOffset++;
+        memset(pLocalBuff + nOffset, 0, nTextL + 1);
         // FIXME: Possible broken last character if text length greater 254
-        SXF::WriteEncString(pszText, pLocalBuff + nOffset, nTextLenght + 1,
+        nOffset += SXF::WriteEncString(pszText, pLocalBuff + nOffset, nTextLenght + 1,
             osEncoding.c_str());
-        nOffset += nTextLenght + 1;
+        
+        if (nAlignment >= 0)
+        {
+            nOffset += WriteAlignment(nAlignment, pLocalBuff + nOffset) + 1;
+        }
     }
     return pLocalBuff;
 }
 
 static GByte *WriteGeometryToBuffer(OGRGeometry *poGeom, SXFGeometryType eGeomType,
-    const char *pszText, size_t &nSize, const std::string &osEncoding)
+    const char *pszText, int nAlignment, size_t &nSize, const std::string &osEncoding)
 {
     if (poGeom->IsEmpty())
     {
@@ -291,7 +314,7 @@ static GByte *WriteGeometryToBuffer(OGRGeometry *poGeom, SXFGeometryType eGeomTy
         auto poLn = static_cast<OGRLineString*>(poGeom);
         size_t nOffset = 0;
         return WriteLineToBuffer(nPointSize, nullptr, nOffset, poLn,
-            eGeomType, pszText, nSize, osEncoding);
+            eGeomType, pszText, nAlignment, nSize, osEncoding);
     }
     else if (wkbFlatten(poGeom->getGeometryType()) == wkbMultiLineString)
     {
@@ -300,13 +323,13 @@ static GByte *WriteGeometryToBuffer(OGRGeometry *poGeom, SXFGeometryType eGeomTy
         auto poLn = static_cast<OGRLineString*>(poMLn->getGeometryRef(0));
         size_t nOffset = 0;
         GByte *pBuff = WriteLineToBuffer(nPointSize, nullptr, nOffset, poLn,
-            eGeomType, pszText, nSize, osEncoding);
+            eGeomType, pszText, nAlignment, nSize, osEncoding);
 
         for (int i = 1; i < poMLn->getNumGeometries(); i++)
         {
             poLn = static_cast<OGRLineString*>(poMLn->getGeometryRef(i));
             pBuff = WriteLineToBuffer(nPointSize, pBuff, nOffset, poLn,
-                eGeomType, pszText, nSize, osEncoding);
+                eGeomType, pszText, nAlignment, nSize, osEncoding);
         }
         return pBuff;
     }
@@ -376,7 +399,8 @@ static GByte *WriteAttributesToBuffer(OGRFeature *poFeature, size_t &nSize,
             EQUAL(poField->GetNameRef(), NUMBER_IN_GROUP) ||
             EQUAL(poField->GetNameRef(), OBJECTNUMB) ||
             EQUAL(poField->GetNameRef(), ANGLE) ||
-            EQUAL(poField->GetNameRef(), TEXT))
+            EQUAL(poField->GetNameRef(), TEXT) || 
+            EQUAL(poField->GetNameRef(), ALIGNMENT))
         {
             // Don't write system fields into the attributes
             continue;
@@ -607,6 +631,42 @@ static void AddCode(OGRFeature *poFeature, SXFLayerDefn &oSXFDefn)
     }
 }
 
+static int GetTextAligment(GByte *pBuff, GUInt32 nTextL)
+{
+    if (nTextL < 4)
+    {
+        return -1;
+    }
+
+    if (*(pBuff + nTextL) == 0)
+    {
+        nTextL++;
+    }
+
+    for (GUInt32 i = nTextL - 1; i > 0; i--)
+    {
+        GByte c1 = *(pBuff + i);
+        GByte c2 = *(pBuff + i - 1);
+        GByte c3 = *(pBuff + i - 2);
+
+        if (c1 == 0 && c3 == 0 && c2 > 0)
+        {
+            return c2;
+        }
+
+        if (c1 == 0 && c2 == 0 && (c3 > 0 || c3 == 0))
+        {
+            continue;
+        }
+
+        if (c2 != 0 && c3 != 0)
+        {
+            return -1;
+        }
+    }
+    return -1;
+}
+
 ////////////////////////////////////////////////////////////////////////////
 /// OGRSXFLayer
 ////////////////////////////////////////////////////////////////////////////
@@ -642,6 +702,9 @@ OGRSXFLayer::OGRSXFLayer(OGRSXFDataSource *poDSIn,
         poFeatureDefn->AddFieldDefn( &ocGNField );
         OGRFieldDefn ocNGField( NUMBER_IN_GROUP, OFTInteger );
         poFeatureDefn->AddFieldDefn( &ocNGField );
+
+        OGRFieldDefn ocALIGMENTField(ALIGNMENT, OFTInteger);
+        poFeatureDefn->AddFieldDefn(&ocALIGMENTField);
 
         for( const auto &field : oSXFDefn.GetFields() )
         {
@@ -1121,7 +1184,7 @@ OGRFeature *OGRSXFLayer::GetRawFeature(const SXFFile &oSXF,
     }
 
     std::shared_ptr<GByte> geometryBuff(
-        static_cast<GByte*>(VSI_MALLOC_VERBOSE(stRecordHeader.nGeometryLength)), 
+        static_cast<GByte*>(VSI_MALLOC_VERBOSE(stRecordHeader.nGeometryLength + 1)), 
         CPLFree);
     if( geometryBuff == nullptr )
     {
@@ -1134,6 +1197,8 @@ OGRFeature *OGRSXFLayer::GetRawFeature(const SXFFile &oSXF,
         CPLError(CE_Failure, CPLE_FileIO, "SXF. Read geometry failed.");
         return nullptr;
     }
+
+    geometryBuff.get()[stRecordHeader.nGeometryLength] = 0;
 
     struct VAR {
         OGRFieldType eType;
@@ -1847,6 +1912,12 @@ OGRFeature *OGRSXFLayer::TranslateText(const SXFFile &oSXF,
 
             soText = SXF::ReadEncString(psRecordBuf + nOffset, nTextL,
                 header.osEncoding.c_str());
+
+            int nAlignment = GetTextAligment(psRecordBuf + nOffset, nTextL);
+            if (nAlignment >= 0) {
+                poFeature->SetField(ALIGNMENT, nAlignment);
+            }
+
             nOffset += nTextL;
         }
 
@@ -1905,6 +1976,11 @@ OGRFeature *OGRSXFLayer::TranslateText(const SXFFile &oSXF,
                 soText = SXF::ReadEncString(psRecordBuf + nOffset,
                     nTextL, header.osEncoding.c_str());
 
+                int nAlignment = GetTextAligment(psRecordBuf + nOffset, nTextL);
+                if (nAlignment >= 0) {
+                    poFeature->SetField(ALIGNMENT, nAlignment);
+                }
+
                 if (count == nSubObject - 2)
                 {
                     poLS->assignSpatialReference( poSpaRef );
@@ -1949,6 +2025,12 @@ OGRFeature *OGRSXFLayer::TranslateText(const SXFFile &oSXF,
 
             soText = SXF::ReadEncString(psRecordBuf + nOffset, nTextL,
                 header.osEncoding.c_str());
+
+            int nAlignment = GetTextAligment(psRecordBuf + nOffset, nTextL);
+            if (nAlignment >= 0) {
+                poFeature->SetField(ALIGNMENT, nAlignment);
+            }
+
             nOffset += nTextL;
         }
 
@@ -2004,6 +2086,11 @@ OGRFeature *OGRSXFLayer::TranslateText(const SXFFile &oSXF,
             soText += " " + SXF::ReadEncString(psRecordBuf + nOffset,
                 nTextL, header.osEncoding.c_str());
 
+            int nAlignment = GetTextAligment(psRecordBuf + nOffset, nTextL);
+            if (nAlignment >= 0) {
+                poFeature->SetField(ALIGNMENT, nAlignment);
+            }
+
             nOffset += nTextL;
         }
 
@@ -2011,7 +2098,7 @@ OGRFeature *OGRSXFLayer::TranslateText(const SXFFile &oSXF,
         poFeature->SetGeometryDirectly( poMPT );
     }
 
-    poFeature->SetField("TEXT", soText);
+    poFeature->SetField(TEXT, soText);
     return poFeature;
 }
 
@@ -2292,8 +2379,14 @@ int OGRSXFLayer::SetRawFeature(OGRFeature *poFeature, OGRGeometry *poGeom,
     // Write geometry
     size_t nGeometryBufferSize = 0;
     auto pszText = poFeature->GetFieldAsString(TEXT);
+    int nAlignment = -1;
+    auto nAlignmentIndex = poFeature->GetFieldIndex(ALIGNMENT);
+    if (poFeature->IsFieldSet(nAlignmentIndex))
+    {
+        nAlignment = poFeature->GetFieldAsInteger(nAlignmentIndex);
+    }
     auto pGeomBuffer = WriteGeometryToBuffer(poWriteGeom.get(),
-        eGeomType, pszText, nGeometryBufferSize, poDS->Encoding());
+        eGeomType, pszText, nAlignment, nGeometryBufferSize, poDS->Encoding());
 
     // Write attributes 
     size_t nAttributesBufferSize = 0;
@@ -2456,7 +2549,8 @@ bool OGRSXFLayer::IsFieldNameHasCode(const char *pszFieldName)
         EQUAL(pszFieldName, NUMBER_IN_GROUP) ||
         EQUAL(pszFieldName, OBJECTNUMB) ||
         EQUAL(pszFieldName, ANGLE) ||
-        EQUAL(pszFieldName, TEXT);
+        EQUAL(pszFieldName, TEXT) ||
+        EQUAL(pszFieldName, ALIGNMENT);
 }
 
 std::vector<SXFClassCode> OGRSXFLayer::GetClassifyCodes()

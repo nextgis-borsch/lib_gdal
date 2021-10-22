@@ -48,7 +48,7 @@ constexpr int EXTRA_ID = 1000000;
 class OGRSXFDataSource;
 
 namespace SXF {
-    void WriteEncString(const char *pszSrcText, GByte *pDst,
+    size_t WriteEncString(const char *pszSrcText, GByte *pDst,
         int nSize, const char *pszEncoding);
     void WriteEncString(const char *pszText, int nSize,
         const char *pszEncoding, VSILFILE *fpSXF);
