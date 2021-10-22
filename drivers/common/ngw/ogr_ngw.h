@@ -98,6 +98,8 @@ namespace NGWAPI {
     std::string GetResmetaSuffix(CPLJSONObject::Type eType);
     bool DeleteFeature(const std::string &osUrl, const std::string &osResourceId,
         const std::string &osFeatureId, char **papszHTTPOptions);
+    bool DeleteFeatures(const std::string &osUrl, const std::string &osResourceId,
+        const std::string &osFeaturesIDJson, char **papszHTTPOptions);
     GIntBig CreateFeature(const std::string &osUrl, const std::string &osResourceId,
         const std::string &osFeatureJson, char **papszHTTPOptions);
     bool UpdateFeature(const std::string &osUrl, const std::string &osResourceId,
@@ -169,8 +171,8 @@ public:
     virtual OGRErr SyncToDisk() override;
 
     virtual OGRErr DeleteFeature(GIntBig nFID) override;
+    OGRErr DeleteFeatures(const std::vector<GIntBig> &vFeaturesID);
     bool DeleteAllFeatures();
-    // bool DeleteFeatures(const std::string &osWhere);
 
     virtual CPLErr SetMetadata( char **papszMetadata,
         const char *pszDomain = "" ) override;

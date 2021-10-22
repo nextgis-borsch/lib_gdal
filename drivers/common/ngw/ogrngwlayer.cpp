@@ -291,6 +291,24 @@ static std::string FeatureToJsonString(OGRFeature *poFeature)
 }
 
 /*
+ * FeaturesIDToJsonString()
+ */
+static std::string FeaturesIDToJsonString(const std::vector<GIntBig> &vFeaturesID)
+{
+    CPLJSONArray oFeaturesIDJsonArray;
+
+    for (GIntBig nFeatureID : vFeaturesID)
+    {
+        CPLJSONObject oFeatureIDJson;
+        oFeatureIDJson.Add("id", nFeatureID);
+
+        oFeaturesIDJsonArray.Add(oFeatureIDJson);
+    }
+
+    return oFeaturesIDJsonArray.Format(CPLJSONObject::PrettyFormat::Plain);
+}
+
+/*
  * FreeMap()
  */
 static void FreeMap( std::map<GIntBig, OGRFeature*> &moFeatures )
@@ -1454,19 +1472,53 @@ OGRErr OGRNGWLayer::DeleteFeature(GIntBig nFID)
 /*
  * DeleteFeatures()
  */
-// bool OGRNGWLayer::DeleteFeatures(const std::string &osWhere)
-// {
-//     if( osResourceId == "-1" )
-//     {
-//     }
-//     else
-//     {
-//     }
-//     CPLErrorReset();
-//     CPLError(CE_Failure, CPLE_AppDefined,
-//         "Delete features operation is not permitted.");
-//     return false;
-// }
+OGRErr OGRNGWLayer::DeleteFeatures(const std::vector<GIntBig> &vFeaturesID)
+{
+    CPLErrorReset();
+
+    for (GIntBig nFID : vFeaturesID)
+    {
+        if (nFID < 0)
+        {
+            if (moFeatures[nFID] != nullptr)
+            {
+                OGRFeature::DestroyFeature(moFeatures[nFID]);
+                moFeatures[nFID] = nullptr;
+                nFeatureCount--;
+                soChangedIds.erase(nFID);
+                return OGRERR_NONE;
+            }
+            CPLError(CE_Failure, CPLE_AppDefined,
+                "Feature with id " CPL_FRMT_GIB " not found.", nFID);
+            return OGRERR_FAILURE;
+        }
+    }
+
+    FetchPermissions();
+    if (stPermissions.bDataCanWrite && poDS->IsUpdateMode())
+    {
+        std::string osFeaturesJson;
+        bool bResult = NGWAPI::DeleteFeatures(poDS->GetUrl(), osResourceId, FeaturesIDToJsonString(vFeaturesID), poDS->GetHeaders(false));
+        if (bResult)
+        {
+            for (GIntBig nFID : vFeaturesID)
+            {
+                if (moFeatures[nFID] != nullptr)
+                {
+                    OGRFeature::DestroyFeature(moFeatures[nFID]);
+                    moFeatures[nFID] = nullptr;
+                }
+                nFeatureCount--;
+                soChangedIds.erase(nFID);
+            }
+            return OGRERR_NONE;
+        }
+        return OGRERR_FAILURE;
+    }
+    CPLError(CE_Failure, CPLE_AppDefined,
+        "Delete feature " CPL_FRMT_GIB " operation is not permitted.");
+    return OGRERR_FAILURE;
+}
 
 /*
  * DeleteAllFeatures()
