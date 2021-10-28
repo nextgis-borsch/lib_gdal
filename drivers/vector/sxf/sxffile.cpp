@@ -953,10 +953,12 @@ bool SXFFile::Read(OGRSXFDataSource *poDS, CSLConstList papszOpenOpts)
         // Get geographic corner coords
        VSIFReadL(&dfCorners, 64, 1, fpSXF);
 
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < 8; i+=2)
         {
+            CPL_LSBPTR64(&dfCorners[i+1]);
+            geogCoords[i] = dfCorners[i+1] * TO_DEGREES; // to degree
             CPL_LSBPTR64(&dfCorners[i]);
-            geogCoords[i] = dfCorners[i] * TO_DEGREES; // to degree
+            geogCoords[i+1] = dfCorners[i] * TO_DEGREES; // to degree
         }
     }
 
@@ -1357,11 +1359,20 @@ bool SXFFile::Write(OGRSXFDataSource *poDS)
     SXF::WriteEncString(pszSheet, 32, osEncoding.c_str(), fpSXF);
 
     // Write scale
-    auto pszScale = poDS->GetMetadataItem(MD_SCALE_KEY);
     GUInt32 nScale = 1000000;
-    if (pszScale != nullptr && CPLStrnlen(pszScale, 255) > 4)
+    auto pSRS = poDS->GetSpatialRef();
+    if (pSRS && (pSRS->IsGeographic() || pSRS->IsGeocentric()))
     {
-        nScale = atoi(pszScale + 4);
+        // Force scale for Geographic
+        nScale = 100000;
+    }
+    else
+    {
+        auto pszScale = poDS->GetMetadataItem(MD_SCALE_KEY);        
+        if (pszScale != nullptr && CPLStrnlen(pszScale, 255) > 4)
+        {
+            nScale = atoi(pszScale + 4);
+        }
     }
     VSIFWriteL(&nScale, 4, 1, fpSXF);
 
@@ -1379,7 +1390,6 @@ bool SXFFile::Write(OGRSXFDataSource *poDS)
     VSIFWriteL(&stFlags, sizeof(SXFInformationFlagsV4), 1, fpSXF);
     
     GUInt32 nEPSG = 0;
-    auto pSRS = poDS->GetSpatialRef();
     if (pSRS)
     {
         auto pszEPSG = pSRS->GetAuthorityCode(nullptr);
@@ -1428,6 +1438,31 @@ bool SXFFile::Write(OGRSXFDataSource *poDS)
     }
     else
     {
+        /*OGRSpatialReference oSRS_EPSG4087;
+        oSRS_EPSG4087.importFromEPSG(4087);
+        oSRS_EPSG4087.SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
+        auto ct = OGRCreateCoordinateTransformation(pSRS, &oSRS_EPSG4087);
+        if (ct)
+        {
+            double x[4];
+            double y[4];
+            x[0] = stEnv.MinX;
+            y[0] = stEnv.MinY;
+            x[1] = stEnv.MinX;
+            y[1] = stEnv.MaxY;
+            x[2] = stEnv.MaxX;
+            y[2] = stEnv.MaxY;
+            x[3] = stEnv.MaxX;
+            y[3] = stEnv.MinY;
+            ct->Transform(4, x, y);
+            OGREnvelope stTmpEnv;
+            stTmpEnv.MinX = MIN(MIN(x[0], x[1]), MIN(x[2], x[3]));
+            stTmpEnv.MaxX = MAX(MAX(x[0], x[1]), MAX(x[2], x[3]));
+            stTmpEnv.MinY = MIN(MIN(y[0], y[1]), MIN(y[2], y[3]));
+            stTmpEnv.MaxY = MAX(MAX(y[0], y[1]), MAX(y[2], y[3]));
+            OGRCoordinateTransformation::DestroyCT(ct);
+            WriteSXFExtents(stTmpEnv, fpSXF, true);
+        }*/
         // For GeogCS write 0.0 to projected extents
         OGREnvelope stEmptyEnv;
         stEmptyEnv.MinX = 0.0;
@@ -1455,7 +1490,14 @@ bool SXFFile::Write(OGRSXFDataSource *poDS)
 
     // Vertical SRS
     auto psVertSRS = poDS->GetMetadataItem(MD_MATH_BASE_SHEET_HEIGHT_SYSTEM_KEY);
-    val = ToGByte(psVertSRS);
+    if (pSRS && (pSRS->IsGeographic() || pSRS->IsGeocentric()))
+    {
+        val = 25; // Baltic 1977 height (EPSG : 5705)
+    }
+    else
+    {
+        val = ToGByte(psVertSRS);
+    }
     VSIFWriteL(&val, 1, 1, fpSXF);
 
     val = static_cast<GByte>(iProjSys);
@@ -1476,7 +1518,11 @@ bool SXFFile::Write(OGRSXFDataSource *poDS)
     val = ToGByte(pszHeightMeasureUnit);
     VSIFWriteL(&val, 1, 1, fpSXF);
 
-    val = 0;    
+    val = SXF_FT_NO_LIMIT;
+    if (pSRS && (pSRS->IsGeographic() || pSRS->IsGeocentric()))
+    {
+        val = SXF_FT_RECTANGULAR;
+    }
     auto pszFrameType = poDS->GetMetadataItem(MD_MATH_BASE_SHEET_FRAMTE_TYPE_KEY);
     if (pszFrameType)
     {
@@ -1484,7 +1530,11 @@ bool SXFFile::Write(OGRSXFDataSource *poDS)
     }
     VSIFWriteL(&val, 1, 1, fpSXF);
     
-    val = 0;
+    val = SXF_MT_UNDEFINED;
+    if (pSRS && (pSRS->IsGeographic() || pSRS->IsGeocentric()))
+    {
+        val = SXF_MT_SPHERE;
+    }
     auto pszMapType = poDS->GetMetadataItem(MD_MATH_BASE_SHEET_MAP_TYPE_KEY);
     if (pszMapType)
     {

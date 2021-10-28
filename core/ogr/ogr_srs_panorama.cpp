@@ -84,7 +84,8 @@ constexpr long PAN_PROJ_PSEUDO_MERCATOR = 35L; // Popular Visualisation Pseudo M
 
 constexpr long PAN_DATUM_NONE      = -1L;
 constexpr long PAN_DATUM_PULKOVO42 = 1L;  // Pulkovo 1942
-constexpr long PAN_DATUM_WGS84     = 2L;  // WGS84
+constexpr long PAN_DATUM_RECTANGULAR = 6L; // WGS84
+constexpr long PAN_DATUM_WGS84     = 8L;  // WGS84
 constexpr long PAN_DATUM_PULKOVO95 = 9L;  // Pulokovo 1995
 constexpr long PAN_DATUM_GSK2011   = 10L; // GSK2011
 
@@ -781,7 +782,7 @@ OGRErr OGRSpatialReference::exportToPanorama( long *piProjSys, long *piDatum,
     }
 	else if (IsGeographic() || IsGeocentric())
 	{
-		*piProjSys = PAN_PROJ_SPHERE;
+        *piProjSys = PAN_PROJ_SPHERE;
 	}
     else if( pszProjection == nullptr )
     {
@@ -991,7 +992,7 @@ OGRErr OGRSpatialReference::exportToPanorama( long *piProjSys, long *piDatum,
     }
     else if( EQUAL( pszDatum, SRS_DN_WGS84 ) )
     {
-        *piDatum = PAN_DATUM_WGS84;
+        *piDatum = PAN_DATUM_RECTANGULAR; // PAN_DATUM_WGS84;
         *piEllips = PAN_ELLIPSOID_WGS84;
     }
 
