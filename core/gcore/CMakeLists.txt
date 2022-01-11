@@ -129,7 +129,7 @@ set(LIB_CSOURCES ${LIB_CSOURCES}
     gdalpythondriverloader.cpp
 )
 
-if(WITH_PYTHON OR WITH_PYTHON3)
+if(WITH_PYTHON)
     # TODO: 
 else()
     add_definitions(-DGDAL_VRT_DISABLE_PYTHON -DGDAL_NO_AUTOLOAD)
