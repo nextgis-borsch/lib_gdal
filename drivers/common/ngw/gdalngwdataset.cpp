@@ -998,12 +998,26 @@ OGRLayer *OGRNGWDataset::ExecuteSQL(const char *pszStatement,
 
     if( STARTS_WITH_CI(osStatement, "DELETE FROM ") )
     {
-        const char *pszIter = osStatement + 12;
-        while (*pszIter && *pszIter != ' ')
-            pszIter++;
+        osStatement = osStatement.substr(strlen("DELETE FROM "));
+        if( osStatement.endsWith(";") )
+        {
+            osStatement = osStatement.substr(0, osStatement.size() - 1);
+            osStatement.Trim();
+        }
 
-        CPLString osName = osStatement + 12;
-        osName.resize(pszIter - (osStatement + 12));
+        std::size_t found = osStatement.find("WHERE");
+        CPLString osName;
+        if (found == std::string::npos)
+        { // No where clause
+            osName = osStatement;
+            osStatement.clear();
+        } 
+        else 
+        {
+            osName = osStatement.substr(0, found);
+            osName.Trim();
+            osStatement = osStatement.substr(found + strlen("WHERE "));
+        }
 
         OGRNGWLayer *poLayer = reinterpret_cast<OGRNGWLayer *>(GetLayerByName(osName));
         if (nullptr == poLayer)
@@ -1013,42 +1027,54 @@ OGRLayer *OGRNGWDataset::ExecuteSQL(const char *pszStatement,
             return nullptr;
         }
 
-        if (*pszIter == 0)
+        if (osStatement.empty())
         {
             poLayer->DeleteAllFeatures();
-            return nullptr;
         }
-
-        while (*pszIter == ' ')
-            pszIter++;
-        if (!STARTS_WITH_CI(pszIter, "WHERE "))
+        else 
         {
-            CPLError(CE_Failure, CPLE_AppDefined, "WHERE clause missing");
-            return nullptr;
+            OGRFeatureQuery oQuery;
+            OGRErr eErr = oQuery.Compile( poLayer->GetLayerDefn(), osStatement );
+            if (eErr != OGRERR_NONE)
+            {
+                return nullptr;
+            }
+
+            // Ignore all fields except first and ignore geometry
+            auto poLayerDefn = poLayer->GetLayerDefn();
+            if (poLayerDefn->GetFieldCount() > 0 )
+            {
+                std::set<std::string> osFields;
+                OGRFieldDefn *poFieldDefn = poLayerDefn->GetFieldDefn(0);
+                osFields.insert(poFieldDefn->GetNameRef());
+                poLayer->SetSelectedFields(osFields);
+            }
+            poLayerDefn->SetGeometryIgnored(TRUE);
+            CPLString osNgwDelete = "NGW:" + 
+                OGRNGWLayer::TranslateSQLToFilter(
+                    reinterpret_cast<swq_expr_node*>(oQuery.GetSWQExpr()));
+            poLayer->SetAttributeFilter(osNgwDelete);
+
+            std::vector<GIntBig> aiFeaturesIDs;
+            OGRFeature *poFeat;
+            while ((poFeat = poLayer->GetNextFeature()) != nullptr)
+            {
+                aiFeaturesIDs.push_back(poFeat->GetFID());
+                OGRFeature::DestroyFeature(poFeat);
+            }
+
+            poLayer->DeleteFeatures(aiFeaturesIDs);
+
+            // Reset all filters and ignores
+            poLayer->SetAttributeFilter(nullptr);
+            poLayerDefn->SetGeometryIgnored(FALSE);
+            poLayer->SetIgnoredFields(nullptr);
         }
-        pszIter += 5;
-
-        const char *pszQuery = pszIter;
-        /* Check with the generic SQL engine that this is a valid WHERE clause */
-        OGRFeatureQuery oQuery;
-        OGRErr eErr = oQuery.Compile( poLayer->GetLayerDefn(), pszQuery );
-        if (eErr != OGRERR_NONE)
-            return nullptr;
-
-        std::string osNgwDelete = "NGW:" + OGRNGWLayer::TranslateSQLToFilter(reinterpret_cast<swq_expr_node*>(oQuery.GetSWQExpr()));
-        poLayer->SetAttributeFilter(osNgwDelete.c_str());
-
-        std::vector<GIntBig> vFeaturesID;
-        OGRFeature *pFet;
-        while ((pFet = poLayer->GetNextFeature()) != nullptr)
-            vFeaturesID.push_back(pFet->GetFID());
-
-        poLayer->DeleteFeatures(vFeaturesID);
 
         return nullptr;
     }
 
-    if( STARTS_WITH_CI(osStatement, "DROP TABLE") )
+    if( STARTS_WITH_CI(osStatement, "DROP TABLE ") )
     {
         // Get layer name from pszStatement DELETE FROM layer;.
         CPLString osLayerName = osStatement.substr(strlen("DROP TABLE "));
