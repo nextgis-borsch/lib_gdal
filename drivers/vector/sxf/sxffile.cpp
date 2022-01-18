@@ -1693,7 +1693,7 @@ OGRErr SXFFile::SetSRS(const long iEllips, const long iProjSys, const long iCS,
     }
 
     // Normalize some coordintates systems
-    if ((iEllips == 1 || iEllips == 0 ) && iProjSys == 1) // Pulkovo 1942 / Gauss-Kruger
+    if ((iEllips == 1 || iEllips == 0 ) && iCS == 1) // Pulkovo 1942 / Gauss-Kruger
     {
         // First try to get center meridian from metadata
         double dfCenterLongEnv = padfPrjParams[3] * TO_DEGREES;
@@ -1732,7 +1732,46 @@ OGRErr SXFFile::SetSRS(const long iEllips, const long iProjSys, const long iCS,
             }
         }
     }
-    else if (iEllips == 9 && iProjSys == 17) // WGS84 / UTM
+    else if ((iEllips == 1 || iEllips == 0) && iCS == 9) // Pulkovo 1995 / Gauss-Kruger
+    {
+        // First try to get center meridian from metadata
+        double dfCenterLongEnv = padfPrjParams[3] * TO_DEGREES;
+        if (dfCenterLongEnv < 9 || dfCenterLongEnv > 189)
+        {
+            // Next try to get center meridian from sheet bounds. May be errors for double/triple/quad sheets.
+            dfCenterLongEnv = GetCenter(padfGeoCoords[1], padfGeoCoords[5]);
+        }
+        int nZoneEnv = GetZoneNumber(dfCenterLongEnv);
+        if (nZoneEnv > 3 && nZoneEnv < 33)
+        {
+            int nEPSG = 20000 + nZoneEnv;
+            pSpatRef = new OGRSpatialReference();
+            OGRErr eErr = pSpatRef->importFromEPSG(nEPSG);
+            if (eErr != OGRERR_NONE)
+            {
+                return eErr;
+            }
+            pSpatRef->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
+            return SetVertCS(iVCS, papszOpenOpts);
+        }
+        else
+        {
+            padfPrjParams[7] = nZoneEnv;
+
+            if (padfPrjParams[5] == 0) // False Easting
+            {
+                if (oEnvelope.MaxX < 500000)
+                {
+                    padfPrjParams[5] = 500000;
+                }
+                else
+                {
+                    padfPrjParams[5] = nZoneEnv * 1000000 + 500000;
+                }
+            }
+        }
+    }
+    else if (iEllips == 9 && iCS == 2) // WGS84 / UTM
     {
         // First try to get center meridian from metadata
         double dfCenterLongEnv = padfPrjParams[3] * TO_DEGREES;
