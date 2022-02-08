@@ -700,6 +700,32 @@ OGRErr OGRSpatialReference::importVertCSFromPanorama(int iVCS)
     return OGRERR_NONE;
 }
 
+/**
+ * Export vertical coordinate system to "Panorama" GIS projection definition.
+ */
+OGRErr OGRSpatialReference::exportVertCSToPanorama(int *piVert) const
+{
+    const char *pszAuthName = GetAuthorityName("VERTCS");
+
+    if (pszAuthName != nullptr && EQUAL(pszAuthName, "epsg"))
+    {
+        auto nEPSG = atoi(GetAuthorityCode("VERTCS"));
+        if (nEPSG > 0)
+        {
+            for (int i = 0; i < NUMBER_OF_VERTICALCS; i++)
+            {
+                if (aoVCS[i] == nEPSG)
+                {
+                    *piVert = i;
+                    return OGRERR_NONE;
+                }
+            }
+        }
+    }
+    CPLError(CE_Warning, CPLE_None, "Vertical coordinate system get error");
+    return OGRERR_UNSUPPORTED_SRS;
+}
+
 /************************************************************************/
 /*                      OSRExportToPanorama()                           */
 /************************************************************************/
@@ -725,6 +751,11 @@ OGRErr OSRExportToPanorama( OGRSpatialReferenceH hSRS,
                           piDatum, piEllips,
                           piZone,
                           padfPrjParams );
+}
+
+static int GetZoneNumber(double dfCenterLong)
+{
+    return static_cast<int>((dfCenterLong + 3.0) / 6.0 + 0.5);
 }
 
 /************************************************************************/
@@ -867,8 +898,9 @@ OGRErr OGRSpatialReference::exportToPanorama( long *piProjSys, long *piDatum,
         else
         {
             *piProjSys = PAN_PROJ_TM;
+            auto dfCenterLong = GetNormProjParm(SRS_PP_CENTRAL_MERIDIAN, 0.0);
             padfPrjParams[3] =
-                TO_RADIANS * GetNormProjParm( SRS_PP_CENTRAL_MERIDIAN, 0.0 );
+                TO_RADIANS * dfCenterLong;
             padfPrjParams[2] =
                 TO_RADIANS * GetNormProjParm( SRS_PP_LATITUDE_OF_ORIGIN, 0.0 );
             padfPrjParams[4] =
@@ -877,6 +909,7 @@ OGRErr OGRSpatialReference::exportToPanorama( long *piProjSys, long *piDatum,
                 GetNormProjParm( SRS_PP_FALSE_EASTING, 0.0 );
             padfPrjParams[6] =
                 GetNormProjParm( SRS_PP_FALSE_NORTHING, 0.0 );
+            *piZone = GetZoneNumber(dfCenterLong);
         }
     }
     else if( EQUAL(pszProjection, SRS_PT_WAGNER_I) )
@@ -988,6 +1021,11 @@ OGRErr OGRSpatialReference::exportToPanorama( long *piProjSys, long *piDatum,
     else if( EQUAL( pszDatum, "Pulkovo_1942" ) )
     {
         *piDatum = PAN_DATUM_PULKOVO42;
+        *piEllips = PAN_ELLIPSOID_KRASSOVSKY;
+    }
+    else if (EQUAL(pszDatum, "Pulkovo_1995"))
+    {
+        *piDatum = PAN_DATUM_PULKOVO95;
         *piEllips = PAN_ELLIPSOID_KRASSOVSKY;
     }
     else if( EQUAL( pszDatum, SRS_DN_WGS84 ) )

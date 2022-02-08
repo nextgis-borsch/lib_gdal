@@ -30,54 +30,54 @@
 
 #include "cpl_time.h"
 
-#define MD_SHEET_CREATE_DATE_KEY "SHEET_CREATE_DATE"
-#define MD_SHEET_KEY "SHEET"
-#define MD_SHEET_NAME_KEY "SHEET_NAME"
-#define MD_SXF_VERSION_KEY "SXF_VERSION"
+constexpr const char * MD_SHEET_CREATE_DATE_KEY = "CREATE_DATE";
+constexpr const char * MD_SHEET_KEY = "SHEET";
+constexpr const char * MD_SHEET_NAME_KEY = "NAME";
+constexpr const char * MD_SXF_VERSION_KEY = "SXF_VERSION";
 
-#define MD_SW_X_CORNER_KEY "SW_X"
-#define MD_SW_Y_CORNER_KEY "SW_Y"
-#define MD_NW_X_CORNER_KEY "NW_X"
-#define MD_NW_Y_CORNER_KEY "NW_Y"
-#define MD_NE_X_CORNER_KEY "NE_X"
-#define MD_NE_Y_CORNER_KEY "NE_Y"
-#define MD_SE_X_CORNER_KEY "SE_X"
-#define MD_SE_Y_CORNER_KEY "SE_Y"
+constexpr const char * MD_SW_X_CORNER_KEY = "SW_X";
+constexpr const char * MD_SW_Y_CORNER_KEY = "SW_Y";
+constexpr const char * MD_NW_X_CORNER_KEY = "NW_X";
+constexpr const char * MD_NW_Y_CORNER_KEY = "NW_Y";
+constexpr const char * MD_NE_X_CORNER_KEY = "NE_X";
+constexpr const char * MD_NE_Y_CORNER_KEY = "NE_Y";
+constexpr const char * MD_SE_X_CORNER_KEY = "SE_X";
+constexpr const char * MD_SE_Y_CORNER_KEY = "SE_Y";
 
-#define MD_MATH_BASE_SHEET_ELLIPSOID_KEY "MATH_BASE_SHEET.Ellipsoid"
-#define MD_MATH_BASE_SHEET_HEIGHT_SYSTEM_KEY "MATH_BASE_SHEET.Height_system"
-#define MD_MATH_BASE_SHEET_PROJECTION_KEY "MATH_BASE_SHEET.Projection"
-#define MD_MATH_BASE_SHEET_SRS_KEY "MATH_BASE_SHEET.SRS"
-#define MD_MATH_BASE_SHEET_MEASURE_PLANE_KEY "MATH_BASE_SHEET.Measure_unit_plane"
-#define MD_MATH_BASE_SHEET_MEASURE_HEIGHT_KEY "MATH_BASE_SHEET.Measure_unit_height"
-#define MD_MATH_BASE_SHEET_FRAMTE_TYPE_KEY "MATH_BASE_SHEET.Frame type"
-#define MD_MATH_BASE_SHEET_MAP_TYPE_KEY "MATH_BASE_SHEET.Map type"
+constexpr const char * MD_MATH_BASE_SHEET_ELLIPSOID_KEY = "MATH_BASE.Ellipsoid";
+constexpr const char * MD_MATH_BASE_SHEET_HEIGHT_SYSTEM_KEY = "MATH_BASE.Height_system";
+constexpr const char * MD_MATH_BASE_SHEET_PROJECTION_KEY = "MATH_BASE.Projection";
+constexpr const char * MD_MATH_BASE_SHEET_SRS_KEY = "MATH_BASE.SRS";
+constexpr const char * MD_MATH_BASE_SHEET_MEASURE_PLANE_KEY = "MATH_BASE.Measure_unit_plane";
+constexpr const char * MD_MATH_BASE_SHEET_MEASURE_HEIGHT_KEY = "MATH_BASE.Measure_unit_height";
+constexpr const char * MD_MATH_BASE_SHEET_FRAMTE_TYPE_KEY = "MATH_BASE.Frame type";
+constexpr const char * MD_MATH_BASE_SHEET_MAP_TYPE_KEY = "MATH_BASE.Map type";
 
-#define MD_SOURCE_INFO_SURVEY_DATE_KEY "SOURCE_INFO.Survey date"
-#define MD_SOURCE_INFO_SOURCE_TYPE_KEY "SOURCE_INFO.Source type"
-#define MD_SOURCE_INFO_SOURCE_SUBTYPE_KEY "SOURCE_INFO.Source subtype"
-#define MD_SOURCE_INFO_MSK_ZONE_ID_KEY "SOURCE_INFO.MSK Zone ID"
-#define MD_SOURCE_INFO_MAP_BORDER_LIMIT_KEY "SOURCE_INFO.Map limits by border"
-#define MD_SOURCE_INFO_MAGNETIC_DECLINATION_KEY "SOURCE_INFO.Magnetic declination"
-#define MD_SOURCE_INFO_AVG_APPROACH_OF_MERIDIANS_KEY "SOURCE_INFO.Average approach of meridians"
-#define MD_SOURCE_INFO_ANNUAL_MAGNETIC_DECLINATION_CHANGE_KEY "SOURCE_INFO.Annual magnetic declination change"
-#define MD_SOURCE_INFO_MAGNETIC_DECLINATION_CHECK_DATE_KEY "SOURCE_INFO.Magnetic declination check date"
-#define MD_SOURCE_INFO_MSK_ZONE_KEY "SOURCE_INFO.MSK Zone"
-#define MD_SOURCE_TERRAIN_STEP_KEY "SOURCE_INFO.Terrain height step"
-#define MD_AXIS_ROTATION_KEY "AXIS_ROTATION"
-#define MD_SCAN_RESOLUTION_KEY "SCAN_RESOLUTION"
+constexpr const char * MD_SOURCE_INFO_SURVEY_DATE_KEY = "SOURCE_INFO.Survey date";
+constexpr const char * MD_SOURCE_INFO_SOURCE_TYPE_KEY = "SOURCE_INFO.Source type";
+constexpr const char * MD_SOURCE_INFO_SOURCE_SUBTYPE_KEY = "SOURCE_INFO.Source subtype";
+constexpr const char * MD_SOURCE_INFO_MSK_ZONE_ID_KEY = "SOURCE_INFO.MSK Zone ID";
+constexpr const char * MD_SOURCE_INFO_MAP_BORDER_LIMIT_KEY = "SOURCE_INFO.Map limits by border";
+constexpr const char * MD_SOURCE_INFO_MAGNETIC_DECLINATION_KEY = "SOURCE_INFO.Magnetic declination";
+constexpr const char * MD_SOURCE_INFO_AVG_APPROACH_OF_MERIDIANS_KEY = "SOURCE_INFO.Average approach of meridians";
+constexpr const char * MD_SOURCE_INFO_ANNUAL_MAGNETIC_DECLINATION_CHANGE_KEY = "SOURCE_INFO.Annual magnetic declination change";
+constexpr const char * MD_SOURCE_INFO_MAGNETIC_DECLINATION_CHECK_DATE_KEY = "SOURCE_INFO.Magnetic declination check date";
+constexpr const char * MD_SOURCE_INFO_MSK_ZONE_KEY = "SOURCE_INFO.MSK Zone";
+constexpr const char * MD_SOURCE_TERRAIN_STEP_KEY = "SOURCE_INFO.Terrain height step";
+constexpr const char * MD_AXIS_ROTATION_KEY = "AXIS_ROTATION";
+constexpr const char * MD_SCAN_RESOLUTION_KEY = "SCAN_RESOLUTION";
 
-#define MD_MAP_PROJ_INFO_LAT_1SP_KEY "PROJECTION_INFO.Latitude of the first standard parallel"
-#define MD_MAP_PROJ_INFO_LAT_2SP_KEY "PROJECTION_INFO.Latitude of the second standard parallel"
-#define MD_MAP_PROJ_INFO_LAT_CENTER_KEY "PROJECTION_INFO.Latitude of center of projection"
-#define MD_MAP_PROJ_INFO_LONG_CENTER_KEY "PROJECTION_INFO.Longitude of center of projection"
-#define MD_MAP_PROJ_INFO_FALSE_EASTING_KEY "PROJECTION_INFO.False Easting"
-#define MD_MAP_PROJ_INFO_FALSE_NORTHING_KEY "PROJECTION_INFO.False Northing"
+constexpr const char * MD_MAP_PROJ_INFO_LAT_1SP_KEY = "PROJECTION_INFO.Latitude of the first standard parallel";
+constexpr const char * MD_MAP_PROJ_INFO_LAT_2SP_KEY = "PROJECTION_INFO.Latitude of the second standard parallel";
+constexpr const char * MD_MAP_PROJ_INFO_LAT_CENTER_KEY = "PROJECTION_INFO.Latitude of center of projection";
+constexpr const char * MD_MAP_PROJ_INFO_LONG_CENTER_KEY = "PROJECTION_INFO.Longitude of center of projection";
+constexpr const char * MD_MAP_PROJ_INFO_FALSE_EASTING_KEY = "PROJECTION_INFO.False Easting";
+constexpr const char * MD_MAP_PROJ_INFO_FALSE_NORTHING_KEY = "PROJECTION_INFO.False Northing";
 
-#define MD_DESC_CLASSIFY_CODE_KEY "DESCRIPTION.Classify"
-#define MD_DESC_AUTO_GUID_KEY "DESCRIPTION.Automatic generate GUID"
-#define MD_DESC_AUTO_TIMESTAMPS_KEY "DESCRIPTION.Automatic generate timestamps"
-#define MD_DESC_USE_ALT_FONTS_KEY "DESCRIPTION.Use alternative fonts"
+constexpr const char * MD_DESC_CLASSIFY_CODE_KEY = "DESCRIPTION.Classify";
+constexpr const char * MD_DESC_AUTO_GUID_KEY = "DESCRIPTION.Automatic generate GUID";
+constexpr const char * MD_DESC_AUTO_TIMESTAMPS_KEY = "DESCRIPTION.Automatic generate timestamps";
+constexpr const char * MD_DESC_USE_ALT_FONTS_KEY = "DESCRIPTION.Use alternative fonts";
 
 typedef struct
 {
@@ -1392,18 +1392,11 @@ bool SXFFile::Write(OGRSXFDataSource *poDS)
     GUInt32 nEPSG = 0;
     if (pSRS)
     {
-        auto pszEPSG = pSRS->GetAuthorityCode(nullptr);
-        if (pszEPSG == nullptr)
+        if (pSRS->GetAuthorityName(nullptr) != nullptr &&
+            pSRS->GetAuthorityCode(nullptr) != nullptr &&
+            EQUAL(pSRS->GetAuthorityName(nullptr), "EPSG"))
         {
-            pszEPSG = pSRS->GetAuthorityCode("PROJCS");
-        }
-        if (pszEPSG == nullptr)
-        {
-            pszEPSG = pSRS->GetAuthorityCode("GEOGCS");
-        }
-        if (pszEPSG != nullptr)
-        {
-            nEPSG = atoi(pszEPSG);
+            nEPSG = atoi(pSRS->GetAuthorityCode(nullptr));
         }
     }
     VSIFWriteL(&nEPSG, 4, 1, fpSXF);
@@ -1489,14 +1482,28 @@ bool SXFFile::Write(OGRSXFDataSource *poDS)
     VSIFWriteL(&val, 1, 1, fpSXF);
 
     // Vertical SRS
-    auto psVertSRS = poDS->GetMetadataItem(MD_MATH_BASE_SHEET_HEIGHT_SYSTEM_KEY);
-    if (pSRS && (pSRS->IsGeographic() || pSRS->IsGeocentric()))
+    OGRErr eErr = OGRERR_NONE;
+    if (pSRS)
     {
-        val = 25; // Baltic 1977 height (EPSG : 5705)
+        int nVertNo = 0;
+        eErr = pSRS->exportVertCSToPanorama(&nVertNo);
+        if (eErr == OGRERR_NONE)
+        {
+            val = nVertNo;
+        }
     }
-    else
+    // Try get from metadata    
+    if (eErr != OGRERR_NONE || pSRS == nullptr)
     {
-        val = ToGByte(psVertSRS);
+        auto psVertSRS = poDS->GetMetadataItem(MD_MATH_BASE_SHEET_HEIGHT_SYSTEM_KEY);
+        if (pSRS && (pSRS->IsGeographic() || pSRS->IsGeocentric()))
+        {
+            val = 25; // Baltic 1977 height (EPSG : 5705)
+        }
+        else
+        {
+            val = ToGByte(psVertSRS);
+        }
     }
     VSIFWriteL(&val, 1, 1, fpSXF);
 
