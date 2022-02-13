@@ -136,6 +136,21 @@ typedef struct
 } RMFExtHeader;
 
 /************************************************************************/
+/*                              RSWFrame                                */
+/************************************************************************/
+typedef struct
+{
+    GInt32 nType;
+    GInt32 nSize;       // (4 struct items + coordinates count) * 4
+    GInt32 nSubCount;
+    GInt32 nCoordsSize; // 32768 * coordinates count
+} RSWFrame;
+
+typedef struct {
+    GInt32 nX, nY;
+} RSWFrameCoord;
+
+/************************************************************************/
 /*                            RMFCompressionJob                         */
 /************************************************************************/
 
