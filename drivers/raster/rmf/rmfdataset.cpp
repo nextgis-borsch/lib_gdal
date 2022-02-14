@@ -1090,7 +1090,9 @@ do {                                                    \
     {
         VSIFSeekL(fp, GetFileOffset(sHeader.nROIOffset), SEEK_SET);
         auto nPointCount = astFrameCoords.size();
-        RSWFrame stFrame = { 2147385342, (4 + nPointCount * 2) * 4, 0, 32768 * nPointCount * 2 };
+        RSWFrame stFrame = { 2147385342, 
+            static_cast<GInt32>((4 + nPointCount * 2) * 4), 0, 
+            static_cast<GInt32>(32768 * nPointCount * 2) };
         VSIFWriteL(&stFrame, 1, sizeof(RSWFrame), fp);
 
         // Write points
