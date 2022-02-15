@@ -125,7 +125,7 @@ constexpr int aoDatums[] =
 	1159 	// GSK 2011
 };
 
-#define NUMBER_OF_DATUMS        static_cast<long>(CPL_ARRAYSIZE(aoDatums))
+constexpr int NUMBER_OF_DATUMS = static_cast<int>(CPL_ARRAYSIZE(aoDatums));
 
 /************************************************************************/
 /*  Correspondence between "Panorama" and EPSG ellipsoid codes.         */
@@ -221,7 +221,7 @@ constexpr int aoVCS[] =
     5714    //27 MSL height
 };
 
-constexpr int NUMBER_OF_VERTICALCS = (sizeof(aoVCS)/sizeof(aoVCS[0]));
+constexpr int NUMBER_OF_VERTICALCS = static_cast<int>(CPL_ARRAYSIZE(aoVCS));
 
 /************************************************************************/
 /*                        OSRImportFromPanorama()                       */

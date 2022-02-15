@@ -883,7 +883,7 @@ CPLErr RMFDataset::WriteHeader()
 
             oSRS.exportToPanorama( &iProjection, &iDatum, &iEllips, &iZone,
                                    adfPrjParams );
-            sHeader.iProjection = static_cast<int>(iProjection);
+            sHeader.iProjection = static_cast<GInt32>(iProjection);
             sHeader.dfStdP1 = adfPrjParams[0];
             sHeader.dfStdP2 = adfPrjParams[1];
             sHeader.dfCenterLat = adfPrjParams[2];
@@ -895,9 +895,9 @@ CPLErr RMFDataset::WriteHeader()
                 sHeader.iEPSGCode = atoi(oSRS.GetAuthorityCode(nullptr));
             }
 
-            sExtHeader.nEllipsoid = static_cast<int>(iEllips);
-            sExtHeader.nDatum = static_cast<int>(iDatum);
-            sExtHeader.nZone = static_cast<int>(iZone);
+            sExtHeader.nEllipsoid = static_cast<GInt32>(iEllips);
+            sExtHeader.nDatum = static_cast<GInt32>(iDatum);
+            sExtHeader.nZone = static_cast<GInt32>(iZone);
 
             OGRErr eErr = oSRS.exportVertCSToPanorama(&sExtHeader.nVertDatum);
             if (eErr != OGRERR_NONE) // Try to set from metadata
@@ -949,7 +949,7 @@ do {                                                    \
         OGRGeometry *poFrameGeom = nullptr;
         if (OGRGeometryFactory::createFromWkt(pszFrameWKT, nullptr, &poFrameGeom) == OGRERR_NONE)
         {
-            if (poFrameGeom && poFrameGeom->getGeometryType() == wkbPolygon)
+            if (poFrameGeom->getGeometryType() == wkbPolygon)
             {
                 double adfReverseGeoTransform[6] = { 0 };
                 if (GDALInvGeoTransform(adfGeoTransform, adfReverseGeoTransform) == TRUE)
@@ -969,7 +969,7 @@ do {                                                    \
 
                     if (astFrameCoords.empty() || astFrameCoords.size() > nMaxFramePointCount)
                     {
-                        CPLError(CE_Warning, CPLE_AppDefined, "Invalid frame WKT: %s", pszFrameWKT);
+                        // CPLError(CE_Warning, CPLE_AppDefined, "Invalid frame WKT: %s", pszFrameWKT);
                         astFrameCoords.clear();
                     }
                     else
@@ -979,6 +979,7 @@ do {                                                    \
                     }
                 }
             }
+            OGRGeometryFactory::destroyGeometry(poFrameGeom);
         }
     }
 
@@ -1100,6 +1101,12 @@ do {                                                    \
         {
             VSIFWriteL(&astFrameCoords[i], 1, sizeof(RSWFrameCoord), fp);
         }
+
+        RSWFrameCoord stTmp = { 0, 0 };
+        for (size_t i = 0; i < (nMaxFramePointCount - nPointCount); i++)
+        {
+            VSIFWriteL(&stTmp, 1, sizeof(RSWFrameCoord), fp);
+        }
     }
 
     if (sHeader.nFlagsTblOffset && sHeader.nFlagsTblSize)
@@ -1173,6 +1180,10 @@ void RMFDataset::FlushCache()
         }
     }
     WriteHeader();
+    if (CPLGetLastErrorType() <= CE_Warning)
+    {
+        CPLErrorReset();
+    }
 }
 
 /************************************************************************/
@@ -1387,7 +1398,10 @@ do {                                                                    \
     }
 
     poDS->SetMetadataItem(MD_SCALE_KEY, CPLSPrintf("1 : %u", int(poDS->sHeader.dfScale))); 
-    poDS->SetMetadataItem(MD_NAME_KEY, CPLSPrintf("%s", poDS->sHeader.byName));
+    if (poDS->sHeader.byName)
+    {
+        poDS->SetMetadataItem(MD_NAME_KEY, CPLSPrintf("%s", poDS->sHeader.byName));
+    }
     poDS->SetMetadataItem(MD_VERSION_KEY, CPLSPrintf("%d", poDS->sHeader.iVersion));
     poDS->SetMetadataItem(MD_MATH_BASE_MAP_TYPE_KEY, CPLSPrintf("%d", poDS->sHeader.iMapType));
     poDS->SetMetadataItem(MD_MATH_BASE_PROJECTION_KEY, CPLSPrintf("%d", poDS->sHeader.iProjection));
@@ -1913,10 +1927,9 @@ do {                                                                    \
         VSIFSeekL(poDS->fp, poDS->GetFileOffset(poDS->sHeader.nROIOffset), SEEK_SET);
         VSIFReadL(&stFrame, 1, sizeof(stFrame), poDS->fp);
 
-        CPLString osWKT;
         if (stFrame.nType == 2147385342) // 2147385342 magic number for polygon
         {
-            osWKT = "POLYGON((";
+            CPLString osWKT = "POLYGON((";
             bool bFirst = true;
 
             CPLDebug("RMF", "ROI coordinates:");
@@ -2140,7 +2153,7 @@ GDALDataset *RMFDataset::Create( const char * pszFilename,
     CPLDebug( "RMF", "Version %d", poDS->sHeader.iVersion );
 
     poDS->sHeader.iUserID = 0x00;
-    // memset( poDS->sHeader.byName, 0, sizeof(poDS->sHeader.byName) );
+    memset( poDS->sHeader.byName, 0, sizeof(poDS->sHeader.byName) );
     poDS->sHeader.nBitDepth = GDALGetDataTypeSizeBits( eType ) * nBands;
     poDS->sHeader.nHeight = nYSize;
     poDS->sHeader.nWidth = nXSize;
@@ -3327,17 +3340,17 @@ CPLErr RMFDataset::SetMetadataItem(const char * pszName,
 {
     if (GetAccess() == GA_Update)
     {
-        if (EQUAL(pszName, "NAME"))
+        if (EQUAL(pszName, MD_NAME_KEY))
         {
             memcpy(sHeader.byName, pszValue, CPLStrnlen(pszValue, RMF_NAME_SIZE));
             bHeaderDirty = true;
         }
-        else if (EQUAL(pszName, "SCALE"))
+        else if (EQUAL(pszName, MD_SCALE_KEY) && CPLStrnlen(pszValue, 10) > 4)
         {
             sHeader.dfScale = atof(pszValue + 4);
             bHeaderDirty = true;
         }
-        else if (EQUAL(pszName, "FRAME"))
+        else if (EQUAL(pszName, MD_FRAME_KEY))
         {
             bHeaderDirty = true;
         }
@@ -3349,19 +3362,19 @@ CPLErr RMFDataset::SetMetadata(char ** papszMetadata, const char * pszDomain)
 {
     if (GetAccess() == GA_Update)
     {
-        auto pszName = CSLFetchNameValue(papszMetadata, "NAME");
+        auto pszName = CSLFetchNameValue(papszMetadata, MD_NAME_KEY);
         if (pszName != nullptr)
         {
             memcpy(sHeader.byName, pszName, CPLStrnlen(pszName, RMF_NAME_SIZE));
             bHeaderDirty = true;
         }
-        auto pszScale = CSLFetchNameValue(papszMetadata, "SCALE");
-        if (pszScale != nullptr)
+        auto pszScale = CSLFetchNameValue(papszMetadata, MD_SCALE_KEY);
+        if (pszScale != nullptr && CPLStrnlen(pszScale, 10) > 4)
         {
             sHeader.dfScale = atof(pszScale + 4);
             bHeaderDirty = true;
         }
-        auto pszFrame = CSLFetchNameValue(papszMetadata, "SCALE"); 
+        auto pszFrame = CSLFetchNameValue(papszMetadata, MD_FRAME_KEY);
         if (pszFrame != nullptr)
         {
             bHeaderDirty = true;
