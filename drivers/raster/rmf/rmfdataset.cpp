@@ -947,7 +947,7 @@ do {                                                    \
     // Frame if present
     std::vector<RSWFrameCoord> astFrameCoords;
     auto pszFrameWKT = GetMetadataItem(MD_FRAME_KEY);
-    if (pszFrameWKT)
+    if (pszFrameWKT != nullptr)
     {
         OGRGeometry *poFrameGeom = nullptr;
         if (OGRGeometryFactory::createFromWkt(pszFrameWKT, nullptr, &poFrameGeom) == OGRERR_NONE)
@@ -1600,7 +1600,7 @@ do {                                                                    \
     }
 #endif
 
-#ifndef NDEBUG
+#ifdef DEBUG
     CPLDebug( "RMF", "List of block offsets/sizes:" );
 
     for( GUInt32 i = 0;
@@ -1610,7 +1610,7 @@ do {                                                                    \
         CPLDebug( "RMF", "    %u / %u",
                   poDS->paiTiles[i], poDS->paiTiles[i + 1] );
     }
-#endif // NDEBUG
+#endif // DEBUG
 
 /* -------------------------------------------------------------------- */
 /*  Set up essential image parameters.                                  */
@@ -3343,6 +3343,7 @@ CPLErr RMFDataset::SetMetadataItem(const char * pszName,
 {
     if (GetAccess() == GA_Update)
     {
+        CPLDebug("RMF", "SetMetadataItem: %s=%s", pszName, pszValue);
         if (EQUAL(pszName, MD_NAME_KEY))
         {
             memcpy(sHeader.byName, pszValue, CPLStrnlen(pszValue, RMF_NAME_SIZE));
@@ -3370,17 +3371,23 @@ CPLErr RMFDataset::SetMetadata(char ** papszMetadata, const char * pszDomain)
         {
             memcpy(sHeader.byName, pszName, CPLStrnlen(pszName, RMF_NAME_SIZE));
             bHeaderDirty = true;
+
+            CPLDebug("RMF", "SetMetadata: %s", pszName);
         }
         auto pszScale = CSLFetchNameValue(papszMetadata, MD_SCALE_KEY);
         if (pszScale != nullptr && CPLStrnlen(pszScale, 10) > 4)
         {
             sHeader.dfScale = atof(pszScale + 4);
             bHeaderDirty = true;
+
+            CPLDebug("RMF", "SetMetadata: %s", pszScale);
         }
         auto pszFrame = CSLFetchNameValue(papszMetadata, MD_FRAME_KEY);
         if (pszFrame != nullptr)
         {
             bHeaderDirty = true;
+
+            CPLDebug("RMF", "SetMetadata: %s", pszFrame);
         }
     }
     return GDALDataset::SetMetadata(papszMetadata, pszDomain);
