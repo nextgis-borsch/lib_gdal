@@ -44,12 +44,11 @@ ELSE (APPLE)
 
 	    # find out if the user asked for a 64-bit build, and use the corresponding 
 	    # 64 or 32 bit NVIDIA library paths to the search:
-	    STRING(REGEX MATCH "Win64" ISWIN64 ${CMAKE_GENERATOR})
-	    IF("${ISWIN64}" STREQUAL "Win64") 
+	    IF("${CMAKE_GENERATOR}" MATCHES "(Win64|IA64)" OR "${CMAKE_GENERATOR_PLATFORM}" MATCHES "x64")
 	    	FIND_LIBRARY(OPENCL_LIBRARIES OpenCL.lib $ENV{CUDA_PATH}/lib/x64 ${OPENCL_LIB_DIR} )
-	    ELSE("${ISWIN64}" STREQUAL "Win64") 
+	    ELSE()
 	    	FIND_LIBRARY(OPENCL_LIBRARIES OpenCL.lib $ENV{CUDA_PATH}/lib/Win32 ${OPENCL_LIB_DIR} )
-	    ENDIF("${ISWIN64}" STREQUAL "Win64") 
+	    ENDIF()
 
 	    GET_FILENAME_COMPONENT(_OPENCL_INC_CAND ${OPENCL_LIB_DIR}/../../include ABSOLUTE)
 	    
