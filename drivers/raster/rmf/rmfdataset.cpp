@@ -902,20 +902,23 @@ CPLErr RMFDataset::WriteHeader()
             OGRErr eErr = oSRS.exportVertCSToPanorama(&sExtHeader.nVertDatum);
             if (eErr != OGRERR_NONE) // Try to set from metadata
             {
-                auto psVertSRS = GetMetadataItem(MD_MATH_BASE_HEIGHT_SYSTEM_KEY);
                 if (oSRS.IsGeographic() || oSRS.IsGeocentric())
                 {
                     sExtHeader.nVertDatum = 25; // Baltic 1977 height (EPSG : 5705)
                 }
                 else
                 {
-                    sExtHeader.nVertDatum = atoi(psVertSRS);
+                    auto psVertSRS = GetMetadataItem(MD_MATH_BASE_HEIGHT_SYSTEM_KEY);
+                    if (psVertSRS != nullptr)
+                    {
+                        sExtHeader.nVertDatum = static_cast<GInt32>(atoi(psVertSRS));
+                    }
                 }
             }
 
             // Set map type
             auto pszMapType = GetMetadataItem(MD_MATH_BASE_MAP_TYPE_KEY);
-            if (pszMapType)
+            if (pszMapType != nullptr)
             {
                 sHeader.iMapType = static_cast<GInt32>(atoi(pszMapType));
             }
