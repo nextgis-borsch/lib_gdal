@@ -949,6 +949,7 @@ do {                                                    \
     auto pszFrameWKT = GetMetadataItem(MD_FRAME_KEY);
     if (pszFrameWKT != nullptr)
     {
+        CPLDebug("RMF", "Write to header frame: %s", pszFrameWKT);
         OGRGeometry *poFrameGeom = nullptr;
         if (OGRGeometryFactory::createFromWkt(pszFrameWKT, nullptr, &poFrameGeom) == OGRERR_NONE)
         {
@@ -973,6 +974,7 @@ do {                                                    \
                     if (astFrameCoords.empty() || astFrameCoords.size() > nMaxFramePointCount)
                     {
                         // CPLError(CE_Warning, CPLE_AppDefined, "Invalid frame WKT: %s", pszFrameWKT);
+                        CPLDebug("RMF", "Write to header frame failed: no points or too many");
                         astFrameCoords.clear();
                     }
                     else
@@ -981,8 +983,16 @@ do {                                                    \
                         sHeader.iFrameFlag = 0;
                     }
                 }
+                else
+                {
+                    CPLDebug("RMF", "Write to header frame failed: GDALInvGeoTransform == FALSE");
+                }
             }
             OGRGeometryFactory::destroyGeometry(poFrameGeom);
+        }
+        else
+        {
+            CPLDebug("RMF", "Write to header frame failed: OGRGeometryFactory::createFromWkt error");
         }
     }
 
