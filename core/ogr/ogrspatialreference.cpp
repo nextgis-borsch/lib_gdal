@@ -634,7 +634,7 @@ OGRErr OGRSpatialReference::Private::replaceConversionAndUnref(PJ* conv)
 /*                           ToPointer()                                */
 /************************************************************************/
 
-inline OGRSpatialReference* ToPointer(OGRSpatialReferenceH hSRS)
+static inline OGRSpatialReference* ToPointer(OGRSpatialReferenceH hSRS)
 {
     return OGRSpatialReference::FromHandle(hSRS);
 }
@@ -643,7 +643,7 @@ inline OGRSpatialReference* ToPointer(OGRSpatialReferenceH hSRS)
 /*                           ToHandle()                                 */
 /************************************************************************/
 
-inline OGRSpatialReferenceH ToHandle(OGRSpatialReference* poSRS)
+static inline OGRSpatialReferenceH ToHandle(OGRSpatialReference* poSRS)
 {
     return OGRSpatialReference::ToHandle(poSRS);
 }
@@ -1476,7 +1476,9 @@ OGRErr OGRSpatialReference::exportToWkt( char ** ppszResult,
     auto ctxt = d->getPROJContext();
     auto wktFormat = PJ_WKT1_GDAL;
     const char* pszFormat = CSLFetchNameValueDef(papszOptions, "FORMAT",
-                                    CPLGetConfigOption("OSR_WKT_FORMAT", ""));
+                                    CPLGetConfigOption("OSR_WKT_FORMAT", "DEFAULT"));
+    if( EQUAL(pszFormat, "DEFAULT") )
+        pszFormat = "";
     if( EQUAL(pszFormat, "WKT1_ESRI" ) || d->m_bMorphToESRI )
     {
         wktFormat = PJ_WKT1_ESRI;
@@ -1543,9 +1545,27 @@ OGRErr OGRSpatialReference::exportToWkt( char ** ppszResult,
             d->getPROJContext(), d->m_pj_crs, true, true);
     }
 
+    std::vector<CPLErrorHandlerAccumulatorStruct> aoErrors;
+    CPLInstallErrorHandlerAccumulator(aoErrors);
     const char* pszWKT = proj_as_wkt(
         ctxt, boundCRS ? boundCRS : d->m_pj_crs,
         wktFormat, aosOptions.List());
+    CPLUninstallErrorHandlerAccumulator();
+    for( const auto& oError: aoErrors )
+    {
+        if( pszFormat[0] == '\0' &&
+            (oError.msg.find("Unsupported conversion method") != std::string::npos ||
+             oError.msg.find("can only be exported to WKT2") != std::string::npos) )
+        {
+            CPLErrorReset();
+            // If we cannot export in the default mode (WKT1), retry with WKT2
+            pszWKT = proj_as_wkt(
+                ctxt, boundCRS ? boundCRS : d->m_pj_crs,
+                PJ_WKT2_2018, aosOptions.List());
+            break;
+        }
+        CPLError( oError.type, oError.no, "%s", oError.msg.c_str() );
+    }
 
     if( !pszWKT )
     {
@@ -2730,16 +2750,38 @@ double OGRSpatialReference::GetTargetLinearUnits( const char *pszTargetKey,
                 break;
             }
             auto csType = proj_cs_get_type(d->getPROJContext(), coordSys);
-            if(csType != PJ_CS_TYPE_CARTESIAN && csType != PJ_CS_TYPE_VERTICAL )
+            if( csType != PJ_CS_TYPE_CARTESIAN
+                && csType != PJ_CS_TYPE_VERTICAL
+                && csType != PJ_CS_TYPE_ELLIPSOIDAL
+                && csType != PJ_CS_TYPE_SPHERICAL )
             {
                 proj_destroy(coordSys);
                 break;
             }
 
+            int axis = 0;
+
+            if ( csType == PJ_CS_TYPE_ELLIPSOIDAL
+                 || csType == PJ_CS_TYPE_SPHERICAL )
+            {
+                const int axisCount = proj_cs_get_axis_count(
+                    d->getPROJContext(), coordSys);
+
+                if( axisCount == 3 )
+                {
+                    axis = 2;
+                }
+                else
+                {
+                    proj_destroy(coordSys);
+                    break;
+                }
+            }
+
             double dfConvFactor = 0.0;
             const char* pszUnitName = nullptr;
             if( !proj_cs_get_axis_info(
-                d->getPROJContext(), coordSys, 0, nullptr, nullptr, nullptr,
+                d->getPROJContext(), coordSys, axis, nullptr, nullptr, nullptr,
                 &dfConvFactor, &pszUnitName, nullptr, nullptr) )
             {
                 proj_destroy(coordSys);
@@ -3148,7 +3190,13 @@ OGRErr OGRSpatialReference::SetWellKnownGeogCS( const char * pszName )
     else if( EQUAL(pszName, "CRS84") ||
              EQUAL(pszName, "CRS:84") )
     {
-        pszWKT = "GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AXIS[\"Longitude\",EAST],AXIS[\"Latitude\",NORTH]]";
+        pszWKT =
+            "GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\","
+            "SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],"
+            "AUTHORITY[\"EPSG\",\"6326\"]],"
+            "PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],"
+            "UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],"
+            "AXIS[\"Longitude\",EAST],AXIS[\"Latitude\",NORTH]]";
     }
     else if( EQUAL(pszName, "WGS72") )
         pszWKT =
@@ -3156,7 +3204,8 @@ OGRErr OGRSpatialReference::SetWellKnownGeogCS( const char * pszName )
             "SPHEROID[\"WGS 72\",6378135,298.26,AUTHORITY[\"EPSG\",\"7043\"]],"
             "AUTHORITY[\"EPSG\",\"6322\"]],"
             "PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],"
-            "UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AXIS[\"Latitude\",NORTH],AXIS[\"Longitude\",EAST],"
+            "UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],"
+            "AXIS[\"Latitude\",NORTH],AXIS[\"Longitude\",EAST],"
             "AUTHORITY[\"EPSG\",\"4322\"]]";
 
     else if( EQUAL(pszName, "NAD27") )
@@ -3165,7 +3214,8 @@ OGRErr OGRSpatialReference::SetWellKnownGeogCS( const char * pszName )
             "SPHEROID[\"Clarke 1866\",6378206.4,294.9786982138982,"
             "AUTHORITY[\"EPSG\",\"7008\"]],AUTHORITY[\"EPSG\",\"6267\"]],"
             "PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],"
-            "UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AXIS[\"Latitude\",NORTH],AXIS[\"Longitude\",EAST],"
+            "UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],"
+            "AXIS[\"Latitude\",NORTH],AXIS[\"Longitude\",EAST],"
             "AUTHORITY[\"EPSG\",\"4267\"]]";
 
     else if( EQUAL(pszName, "CRS27") || EQUAL(pszName, "CRS:27") )
@@ -3174,25 +3224,28 @@ OGRErr OGRSpatialReference::SetWellKnownGeogCS( const char * pszName )
             "SPHEROID[\"Clarke 1866\",6378206.4,294.9786982138982,"
             "AUTHORITY[\"EPSG\",\"7008\"]],AUTHORITY[\"EPSG\",\"6267\"]],"
             "PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],"
-            "UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AXIS[\"Longitude\",EAST],AXIS[\"Latitude\",NORTH]]";
+            "UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],"
+            "AXIS[\"Longitude\",EAST],AXIS[\"Latitude\",NORTH]]";
 
     else if( EQUAL(pszName, "NAD83") )
         pszWKT =
             "GEOGCS[\"NAD83\",DATUM[\"North_American_Datum_1983\","
             "SPHEROID[\"GRS 1980\",6378137,298.257222101,"
             "AUTHORITY[\"EPSG\",\"7019\"]],"
-            "AUTHORITY[\"EPSG\",\"6269\"]],PRIMEM[\"Greenwich\",0,"
-            "AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,"
-            "AUTHORITY[\"EPSG\",\"9122\"]],AXIS[\"Latitude\",NORTH],AXIS[\"Longitude\",EAST],AUTHORITY[\"EPSG\",\"4269\"]]";
+            "AUTHORITY[\"EPSG\",\"6269\"]],"
+            "PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],"
+            "UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],"
+            "AXIS[\"Latitude\",NORTH],AXIS[\"Longitude\",EAST],AUTHORITY[\"EPSG\",\"4269\"]]";
 
     else if(  EQUAL(pszName, "CRS83") ||  EQUAL(pszName, "CRS:83") )
         pszWKT =
             "GEOGCS[\"NAD83\",DATUM[\"North_American_Datum_1983\","
             "SPHEROID[\"GRS 1980\",6378137,298.257222101,"
             "AUTHORITY[\"EPSG\",\"7019\"]],"
-            "AUTHORITY[\"EPSG\",\"6269\"]],PRIMEM[\"Greenwich\",0,"
-            "AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,"
-            "AUTHORITY[\"EPSG\",\"9122\"]],AXIS[\"Longitude\",EAST],AXIS[\"Latitude\",NORTH]]";
+            "AUTHORITY[\"EPSG\",\"6269\"]],"
+            "PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],"
+            "UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],"
+            "AXIS[\"Longitude\",EAST],AXIS[\"Latitude\",NORTH]]";
 
     else
         return OGRERR_FAILURE;
@@ -3470,7 +3523,9 @@ OGRErr OGRSpatialReference::SetFromUserInput( const char * pszDefinition )
         return importFromURN( pszDefinition );
 
     if( STARTS_WITH_CI(pszDefinition, "http://opengis.net/def/crs")
+        || STARTS_WITH_CI(pszDefinition, "https://opengis.net/def/crs")
         || STARTS_WITH_CI(pszDefinition, "http://www.opengis.net/def/crs")
+        || STARTS_WITH_CI(pszDefinition, "https://www.opengis.net/def/crs")
         || STARTS_WITH_CI(pszDefinition, "www.opengis.net/def/crs"))
         return importFromCRSURL( pszDefinition );
 
@@ -3541,21 +3596,45 @@ OGRErr OGRSpatialReference::SetFromUserInput( const char * pszDefinition )
     }
 
     // Deal with IGNF:xxx, ESRI:xxx, etc from the PROJ database
-    const char* pszDot = strchr(pszDefinition, ':');
+    const char* pszDot = strrchr(pszDefinition, ':');
     if( pszDot )
     {
         CPLString osPrefix(pszDefinition, pszDot - pszDefinition);
         auto authorities = proj_get_authorities_from_database(d->getPROJContext());
         if( authorities )
         {
+            std::set<std::string> aosCandidateAuthorities;
             for( auto iter = authorities; *iter; ++iter )
             {
                 if( *iter == osPrefix )
                 {
+                    aosCandidateAuthorities.clear();
+                    aosCandidateAuthorities.insert(*iter);
+                    break;
+                }
+                // Deal with "IAU_2015" as authority in the list and input "IAU:code"
+                else if( strncmp(*iter, osPrefix.c_str(), osPrefix.size()) == 0 &&
+                         (*iter)[osPrefix.size()] == '_' )
+                {
+                    aosCandidateAuthorities.insert(*iter);
+                }
+                // Deal with "IAU_2015" as authority in the list and input "IAU:2015:code"
+                else if( osPrefix.find(':') != std::string::npos &&
+                         osPrefix.size() == strlen(*iter) &&
+                         CPLString(osPrefix).replaceAll(':', '_') == *iter )
+                {
+                    aosCandidateAuthorities.clear();
+                    aosCandidateAuthorities.insert(*iter);
+                    break;
+                }
+            }
                     proj_string_list_destroy(authorities);
 
+            if( !aosCandidateAuthorities.empty() )
+            {
                     auto obj = proj_create_from_database(d->getPROJContext(),
-                        osPrefix, pszDot + 1, PJ_CATEGORY_CRS,
+                    aosCandidateAuthorities.rbegin()->c_str(),
+                    pszDot + 1, PJ_CATEGORY_CRS,
                         false, nullptr);
                     if( !obj )
                     {
@@ -3566,7 +3645,6 @@ OGRErr OGRSpatialReference::SetFromUserInput( const char * pszDefinition )
                     return OGRERR_NONE;
                 }
             }
-            proj_string_list_destroy(authorities);
         }
     }
 
@@ -3756,6 +3834,12 @@ OGRErr OGRSpatialReference::importFromURNPart(const char* pszAuthority,
                                               const char* pszCode,
                                               const char* pszURN)
 {
+#if PROJ_AT_LEAST_VERSION(8,1,0)
+    (void)pszAuthority;
+    (void)pszCode;
+    (void)pszURN;
+    return OGRERR_FAILURE;
+#else
 /* -------------------------------------------------------------------- */
 /*      Is this an EPSG code? Note that we import it with EPSG          */
 /*      preferred axis ordering for geographic coordinate systems.      */
@@ -5087,6 +5171,9 @@ double OGRSpatialReference::GetProjParm( const char * pszName,
                                          OGRErr *pnErr ) const
 
 {
+    d->refreshProjObj();
+    GetRoot(); // force update of d->m_bNodesWKT2
+
     if( pnErr != nullptr )
         *pnErr = OGRERR_NONE;
 
@@ -5104,6 +5191,16 @@ double OGRSpatialReference::GetProjParm( const char * pszName,
     const int iChild = FindProjParm( pszName, poPROJCS );
     if( iChild == -1 )
     {
+#if PROJ_VERSION_MAJOR > 6 || PROJ_VERSION_MINOR >= 3
+        if( IsProjected() && GetAxesCount() == 3 )
+        {
+            OGRSpatialReference* poSRSTmp = Clone();
+            poSRSTmp->DemoteTo2D(nullptr);
+            const double dfRet = poSRSTmp->GetProjParm(pszName, dfDefaultValue, pnErr);
+            delete poSRSTmp;
+            return dfRet;
+        }
+#endif
         if( pnErr != nullptr )
             *pnErr = OGRERR_FAILURE;
         return dfDefaultValue;
