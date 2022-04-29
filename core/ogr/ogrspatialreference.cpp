@@ -38,6 +38,7 @@
 #include <limits>
 #include <string>
 #include <mutex>
+#include <set>
 #include <vector>
 
 #include "cpl_atomic_ops.h"
