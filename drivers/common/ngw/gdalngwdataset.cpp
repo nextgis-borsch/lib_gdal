@@ -1006,20 +1006,20 @@ OGRLayer *OGRNGWDataset::ExecuteSQL(const char *pszStatement,
         }
 
         std::size_t found = osStatement.find("WHERE");
-        CPLString osName;
+        CPLString osLayerName;
         if (found == std::string::npos)
         { // No where clause
-            osName = osStatement;
+            osLayerName = osStatement;
             osStatement.clear();
         } 
         else 
         {
-            osName = osStatement.substr(0, found);
-            osName.Trim();
+            osLayerName = osStatement.substr(0, found);
+            osLayerName.Trim();
             osStatement = osStatement.substr(found + strlen("WHERE "));
         }
 
-        OGRNGWLayer *poLayer = reinterpret_cast<OGRNGWLayer *>(GetLayerByName(osName));
+        OGRNGWLayer *poLayer = reinterpret_cast<OGRNGWLayer *>(GetLayerByName(osLayerName));
         if (nullptr == poLayer)
         {
             CPLError(CE_Failure, CPLE_AppDefined,
