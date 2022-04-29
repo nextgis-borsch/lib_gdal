@@ -3615,18 +3615,17 @@ OGRErr OGRSpatialReference::SetFromUserInput( const char * pszDefinition )
 
             if( !aosCandidateAuthorities.empty() )
             {
-                    auto obj = proj_create_from_database(d->getPROJContext(),
-                    aosCandidateAuthorities.rbegin()->c_str(),
-                    pszDot + 1, PJ_CATEGORY_CRS,
-                        false, nullptr);
-                    if( !obj )
-                    {
-                        return OGRERR_FAILURE;
-                    }
-                    Clear();
-                    d->setPjCRS(obj);
-                    return OGRERR_NONE;
+                auto obj = proj_create_from_database(d->getPROJContext(),
+                aosCandidateAuthorities.rbegin()->c_str(),
+                pszDot + 1, PJ_CATEGORY_CRS,
+                    false, nullptr);
+                if( !obj )
+                {
+                    return OGRERR_FAILURE;
                 }
+                Clear();
+                d->setPjCRS(obj);
+                return OGRERR_NONE;
             }
         }
     }
