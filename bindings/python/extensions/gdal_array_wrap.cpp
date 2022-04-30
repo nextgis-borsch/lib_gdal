@@ -4816,7 +4816,6 @@ SWIGINTERN PyObject *_wrap_VirtualMem_GetAddr(PyObject *SWIGUNUSEDPARM(self), Py
   }
   resultobj = SWIG_Py_Void();
   {
-#if PY_VERSION_HEX >= 0x02070000
     /* %typemap(argout) (void** pptr, size_t* pnsize, GDALDataType* pdatatype, int* preadonly)*/
     Py_buffer *buf=(Py_buffer*)malloc(sizeof(Py_buffer));
     
@@ -4865,9 +4864,6 @@ SWIGINTERN PyObject *_wrap_VirtualMem_GetAddr(PyObject *SWIGUNUSEDPARM(self), Py
     }
     Py_DECREF(resultobj);
     resultobj = PyMemoryView_FromBuffer(buf);
-#else
-    PyErr_SetString( PyExc_RuntimeError, "needs Python 2.7 or later" );
-#endif
   }
   return resultobj;
 fail:
