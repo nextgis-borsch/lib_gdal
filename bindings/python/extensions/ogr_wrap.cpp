@@ -3285,6 +3285,7 @@ PythonBindingErrorHandler(CPLErr eclass, int code, const char *msg )
 
 static
 int GetUseExceptions() {
+  CPLErrorReset();
   return bUseExceptions;
 }
 
@@ -3321,10 +3322,7 @@ void DontUseExceptions() {
     }
     char* pszNewValue = CPLStrdup(pszValue + strlen(MODULE_NAME) + 1);
     if( pszNewValue[0] == ' ' && pszNewValue[1] == '\0' )
-    {
-        CPLFree(pszNewValue);
         pszNewValue = NULL;
-    }
     CPLSetConfigOption("__chain_python_error_handlers", pszNewValue);
     CPLFree(pszNewValue);
     bUseExceptions = 0;
@@ -4455,7 +4453,7 @@ SWIGINTERN char **OGRFeatureShadow_GetFieldAsStringList(OGRFeatureShadow *self,i
   }
 SWIGINTERN OGRErr OGRFeatureShadow_GetFieldAsBinary__SWIG_0(OGRFeatureShadow *self,int id,int *nLen,char **pBuf){
     GByte* pabyBlob = OGR_F_GetFieldAsBinary(self, id, nLen);
-    *pBuf = (char*)VSIMalloc(*nLen);
+    *pBuf = (char*)malloc(*nLen);
     memcpy(*pBuf, pabyBlob, *nLen);
     return 0;
   }
@@ -4469,7 +4467,7 @@ SWIGINTERN OGRErr OGRFeatureShadow_GetFieldAsBinary__SWIG_1(OGRFeatureShadow *se
       else
       {
         GByte* pabyBlob = OGR_F_GetFieldAsBinary(self, id, nLen);
-        *pBuf = (char*)VSIMalloc(*nLen);
+        *pBuf = (char*)malloc(*nLen);
         memcpy(*pBuf, pabyBlob, *nLen);
         return 0;
       }
@@ -5049,7 +5047,7 @@ SWIGINTERN void OGRGeomFieldDefnShadow_SetNullable(OGRGeomFieldDefnShadow *self,
     return OGR_GFld_SetNullable( self, bNullable );
   }
 
-  OGRGeometryShadow* CreateGeometryFromWkb( size_t len, char *bin_string,
+  OGRGeometryShadow* CreateGeometryFromWkb( int len, char *bin_string,
                                             OSRSpatialReferenceShadow *reference=NULL ) {
     OGRGeometryH geom = NULL;
     OGRErr err = OGR_G_CreateFromWkb( (unsigned char *) bin_string,
@@ -5207,18 +5205,14 @@ SWIGINTERN OGRErr OGRGeometryShadow_ExportToWkt(OGRGeometryShadow *self,char **a
 SWIGINTERN OGRErr OGRGeometryShadow_ExportToIsoWkt(OGRGeometryShadow *self,char **argout){
     return OGR_G_ExportToIsoWkt(self, argout);
   }
-SWIGINTERN OGRErr OGRGeometryShadow_ExportToWkb(OGRGeometryShadow *self,size_t *nLen,char **pBuf,OGRwkbByteOrder byte_order=wkbXDR){
-    *nLen = OGR_G_WkbSizeEx( self );
-    *pBuf = (char *) VSI_MALLOC_VERBOSE( *nLen );
-    if( *pBuf == NULL )
-        return 6;
+SWIGINTERN OGRErr OGRGeometryShadow_ExportToWkb(OGRGeometryShadow *self,int *nLen,char **pBuf,OGRwkbByteOrder byte_order=wkbXDR){
+    *nLen = OGR_G_WkbSize( self );
+    *pBuf = (char *) malloc( *nLen );
     return OGR_G_ExportToWkb(self, byte_order, (unsigned char*) *pBuf );
   }
-SWIGINTERN OGRErr OGRGeometryShadow_ExportToIsoWkb(OGRGeometryShadow *self,size_t *nLen,char **pBuf,OGRwkbByteOrder byte_order=wkbXDR){
-    *nLen = OGR_G_WkbSizeEx( self );
-    *pBuf = (char *) VSI_MALLOC_VERBOSE( *nLen );
-    if( *pBuf == NULL )
-        return 6;
+SWIGINTERN OGRErr OGRGeometryShadow_ExportToIsoWkb(OGRGeometryShadow *self,int *nLen,char **pBuf,OGRwkbByteOrder byte_order=wkbXDR){
+    *nLen = OGR_G_WkbSize( self );
+    *pBuf = (char *) malloc( *nLen );
     return OGR_G_ExportToIsoWkb(self, byte_order, (unsigned char*) *pBuf );
   }
 SWIGINTERN retStringAndCPLFree *OGRGeometryShadow_ExportToGML(OGRGeometryShadow *self,char **options=0){
@@ -5489,8 +5483,8 @@ SWIGINTERN OGRGeometryShadow *OGRGeometryShadow_Centroid(OGRGeometryShadow *self
 SWIGINTERN OGRGeometryShadow *OGRGeometryShadow_PointOnSurface(OGRGeometryShadow *self){
     return (OGRGeometryShadow*) OGR_G_PointOnSurface( self );
   }
-SWIGINTERN size_t OGRGeometryShadow_WkbSize(OGRGeometryShadow *self){
-    return OGR_G_WkbSizeEx(self);
+SWIGINTERN int OGRGeometryShadow_WkbSize(OGRGeometryShadow *self){
+    return OGR_G_WkbSize(self);
   }
 SWIGINTERN int OGRGeometryShadow_GetCoordinateDimension(OGRGeometryShadow *self){
     return OGR_G_GetCoordinateDimension(self);
@@ -5661,12 +5655,7 @@ SWIGINTERN PyObject *_wrap_GetUseExceptions(PyObject *SWIGUNUSEDPARM(self), PyOb
   int result;
   
   if (!PyArg_ParseTuple(args,(char *)":GetUseExceptions")) SWIG_fail;
-  {
-#ifdef SED_HACKS
-    if( bUseExceptions ) bLocalUseExceptionsCode = FALSE;
-#endif
-    result = GetUseExceptions();
-  }
+  result = (int)GetUseExceptions();
   resultobj = SWIG_From_int(static_cast< int >(result));
   if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }
   return resultobj;
