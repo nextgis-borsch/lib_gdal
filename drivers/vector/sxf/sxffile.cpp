@@ -1700,7 +1700,48 @@ OGRErr SXFFile::SetSRS(const long iEllips, const long iProjSys, const long iCS,
     }
 
     // Normalize some coordintates systems
-    if ((iEllips == 1 || iEllips == 0 ) && iCS == 1) // Pulkovo 1942 / Gauss-Kruger
+    if (iEllips == 45 && iProjSys == 35) //Mercator 3857 on sphere wgs84
+    {
+        pSpatRef = new OGRSpatialReference();
+        OGRErr eErr = pSpatRef->importFromEPSG(3857);
+        if (eErr != OGRERR_NONE)
+        {
+            return eErr;
+        }
+        pSpatRef->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
+        return SetVertCS(iVCS, papszOpenOpts);
+    }
+    else if (iEllips == 9 && iProjSys == 35) //Mercator 3395 on ellips wgs84
+    {
+        pSpatRef = new OGRSpatialReference();
+        OGRErr eErr = pSpatRef->importFromEPSG(3395);
+        if (eErr != OGRERR_NONE)
+        {
+            return eErr;
+        }
+        pSpatRef->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
+        return SetVertCS(iVCS, papszOpenOpts);
+    }
+    else if (iEllips == 9 && iProjSys == 34) //Miller 54003 on sphere wgs84
+    {
+        pSpatRef = new OGRSpatialReference("PROJCS[\"World_Miller_Cylindrical\",GEOGCS[\"GCS_GLOBE\", DATUM[\"GLOBE\", SPHEROID[\"GLOBE\", 6367444.6571, 0.0]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]],PROJECTION[\"Miller_Cylindrical\"],PARAMETER[\"False_Easting\",0],PARAMETER[\"False_Northing\",0],PARAMETER[\"Central_Meridian\",0],UNIT[\"Meter\",1],AUTHORITY[\"ESRI\",\"54003\"]]");
+        pSpatRef->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
+        return SetVertCS(iVCS, papszOpenOpts);
+    }
+    else if (iEllips == 9 && iProjSys == 33 && eUnitInPlan == SXF_COORD_MU_DEGREE)
+    {
+        pSpatRef = new OGRSpatialReference(SRS_WKT_WGS84_LAT_LONG);
+        pSpatRef->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
+        return SetVertCS(iVCS, papszOpenOpts);
+    }
+    else if (iEllips == 1 && iProjSys == 20 && iCS == 9)
+    {
+        CPLString osRefStr = CPLSPrintf("PROJCS[\"Equidistant_Conic\",GEOGCS[\"Pulkovo 1995\",DATUM[\"Pulkovo_1995\",SPHEROID[\"Krassowsky 1940\", 6378245, 298.3,AUTHORITY[\"EPSG\", \"7024\"]],AUTHORITY[\"EPSG\", \"6200\"]],PRIMEM[\"Greenwich\", 0,AUTHORITY[\"EPSG\", \"8901\"]],UNIT[\"degree\", 0.0174532925199433,AUTHORITY[\"EPSG\", \"9122\"]],AUTHORITY[\"EPSG\", \"4200\"]],PROJECTION[\"Equidistant_Conic\"],PARAMETER[\"False_Easting\", %f],PARAMETER[\"False_Northing\", %f],PARAMETER[\"Longitude_Of_Center\", %f],PARAMETER[\"Standard_Parallel_1\", %f],PARAMETER[\"Standard_Parallel_2\", %f],PARAMETER[\"Latitude_Of_Center\", %f],UNIT[\"Meter\", 1]]", TO_DEGREES * padfPrjParams[5], TO_DEGREES * padfPrjParams[6], TO_DEGREES * padfPrjParams[3], TO_DEGREES * padfPrjParams[0], TO_DEGREES * padfPrjParams[1], TO_DEGREES * padfPrjParams[2]);
+        pSpatRef = new OGRSpatialReference(osRefStr);
+        pSpatRef->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
+        return SetVertCS(iVCS, papszOpenOpts);
+    }
+    else if ((iEllips == 1 || iEllips == 0 ) && iCS == 1 && iProjSys == 1) // Pulkovo 1942 / Gauss-Kruger
     {
         // First try to get center meridian from metadata
         double dfCenterLongEnv = padfPrjParams[3] * TO_DEGREES;
@@ -1739,7 +1780,7 @@ OGRErr SXFFile::SetSRS(const long iEllips, const long iProjSys, const long iCS,
             }
         }
     }
-    else if ((iEllips == 1 || iEllips == 0) && iCS == 9) // Pulkovo 1995 / Gauss-Kruger
+    else if ((iEllips == 1 || iEllips == 0) && iCS == 9 && iProjSys == 1) // Pulkovo 1995 / Gauss-Kruger
     {
         // First try to get center meridian from metadata
         double dfCenterLongEnv = padfPrjParams[3] * TO_DEGREES;
@@ -1804,47 +1845,6 @@ OGRErr SXFFile::SetSRS(const long iEllips, const long iProjSys, const long iCS,
         {
             return eErr;
         }
-        pSpatRef->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
-        return SetVertCS(iVCS, papszOpenOpts);
-    }
-    else if (iEllips == 45 && iProjSys == 35) //Mercator 3857 on sphere wgs84
-    {
-        pSpatRef = new OGRSpatialReference();
-        OGRErr eErr = pSpatRef->importFromEPSG(3857);
-        if (eErr != OGRERR_NONE)
-        {
-            return eErr;
-        }
-        pSpatRef->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
-        return SetVertCS(iVCS, papszOpenOpts);
-    }
-    else if (iEllips == 9 && iProjSys == 35) //Mercator 3395 on ellips wgs84
-    {
-        pSpatRef = new OGRSpatialReference();
-        OGRErr eErr = pSpatRef->importFromEPSG(3395);
-        if (eErr != OGRERR_NONE)
-        {
-            return eErr;
-        }
-        pSpatRef->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
-        return SetVertCS(iVCS, papszOpenOpts);
-    }
-    else if (iEllips == 9 && iProjSys == 34) //Miller 54003 on sphere wgs84
-    {
-        pSpatRef = new OGRSpatialReference("PROJCS[\"World_Miller_Cylindrical\",GEOGCS[\"GCS_GLOBE\", DATUM[\"GLOBE\", SPHEROID[\"GLOBE\", 6367444.6571, 0.0]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]],PROJECTION[\"Miller_Cylindrical\"],PARAMETER[\"False_Easting\",0],PARAMETER[\"False_Northing\",0],PARAMETER[\"Central_Meridian\",0],UNIT[\"Meter\",1],AUTHORITY[\"ESRI\",\"54003\"]]");
-        pSpatRef->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
-        return SetVertCS(iVCS, papszOpenOpts);
-    }
-    else if (iEllips == 9 && iProjSys == 33 && eUnitInPlan == SXF_COORD_MU_DEGREE)
-    {
-        pSpatRef = new OGRSpatialReference(SRS_WKT_WGS84_LAT_LONG);
-        pSpatRef->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
-        return SetVertCS(iVCS, papszOpenOpts);
-    }
-    else if (iEllips == 1 && iProjSys == 20 && iCS == 9)
-    {
-        CPLString osRefStr = CPLSPrintf("PROJCS[\"Equidistant_Conic\",GEOGCS[\"Pulkovo 1995\",DATUM[\"Pulkovo_1995\",SPHEROID[\"Krassowsky 1940\", 6378245, 298.3,AUTHORITY[\"EPSG\", \"7024\"]],AUTHORITY[\"EPSG\", \"6200\"]],PRIMEM[\"Greenwich\", 0,AUTHORITY[\"EPSG\", \"8901\"]],UNIT[\"degree\", 0.0174532925199433,AUTHORITY[\"EPSG\", \"9122\"]],AUTHORITY[\"EPSG\", \"4200\"]],PROJECTION[\"Equidistant_Conic\"],PARAMETER[\"False_Easting\", %f],PARAMETER[\"False_Northing\", %f],PARAMETER[\"Longitude_Of_Center\", %f],PARAMETER[\"Standard_Parallel_1\", %f],PARAMETER[\"Standard_Parallel_2\", %f],PARAMETER[\"Latitude_Of_Center\", %f],UNIT[\"Meter\", 1]]", TO_DEGREES * padfPrjParams[5], TO_DEGREES * padfPrjParams[6], TO_DEGREES * padfPrjParams[3], TO_DEGREES * padfPrjParams[0], TO_DEGREES * padfPrjParams[1], TO_DEGREES * padfPrjParams[2]);
-        pSpatRef = new OGRSpatialReference(osRefStr);
         pSpatRef->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
         return SetVertCS(iVCS, papszOpenOpts);
     }
