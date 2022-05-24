@@ -1289,7 +1289,7 @@ OGRFeature *OGRSXFLayer::GetRawFeature(const SXFFile &oSXF,
                     CreateField(&oField);
                 }
                 mFieldValues[oFieldName].emplace_back( OFTString , val, 0, 0.0 );
-                nOffset += stAttInfo.nScale + 1;
+                nOffset += nLen;
                 break;
             }
             case 1: // SXF_RAT_ONEBYTE
@@ -1473,8 +1473,16 @@ OGRFeature *OGRSXFLayer::GetRawFeature(const SXFFile &oSXF,
                 break;
             }
             default:
-                SetUpdatable(bIsUpdatable);
-                return nullptr;
+                size_t nLen = size_t(stAttInfo.nScale) + 1;
+                if (nOffset + nLen > nSemanticsSize)
+                {
+                    nSemanticsSize = 0;
+                    break;
+                }
+                // SetUpdatable(bIsUpdatable);
+                //return nullptr;
+                CPLError(CE_Warning, CPLE_AppDefined, "SXF. Unsupported attribute type.");
+                nOffset += nLen;
             }
         }
         SetUpdatable(bIsUpdatable);
