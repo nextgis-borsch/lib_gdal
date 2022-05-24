@@ -852,17 +852,6 @@ bool SXFFile::Read(OGRSXFDataSource *poDS, CSLConstList papszOpenOpts)
 
         CPL_LSBPTR32(&epsgCode);
 
-        if( epsgCode >= MIN_EPSG && epsgCode <= MAX_EPSG ) // Check epsg valid range
-        {
-            pSpatRef = new OGRSpatialReference();
-            pSpatRef->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
-            if (pSpatRef->importFromEPSG(epsgCode) != OGRERR_NONE)
-            {
-                delete pSpatRef;
-                pSpatRef = nullptr;
-            }
-        }
-
         /* Override file set encoding in favour of defaults or input options
             if (val.textEncoding == 0)
             {
@@ -1260,7 +1249,23 @@ bool SXFFile::Read(OGRSXFDataSource *poDS, CSLConstList papszOpenOpts)
         stProjInfo.nSrsType, stProjInfo.nHeightSrsType, eUnitInPlan, geogCoords, 
         adfPrjParams, papszOpenOpts))
     {
-        return false;
+        // Try set from EPSG code
+        if (epsgCode >= MIN_EPSG && epsgCode <= MAX_EPSG) // Check epsg valid range
+        {
+            pSpatRef = new OGRSpatialReference();
+            pSpatRef->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
+            if (pSpatRef->importFromEPSG(epsgCode) != OGRERR_NONE)
+            {
+                delete pSpatRef;
+                pSpatRef = nullptr;
+                return false;
+            }
+        }
+        else
+        {
+            // Not SetSRS and not EPSG are suitable
+            return false;
+        }
     }
 
     if (oEnvelope.MaxX - oEnvelope.MinX < DELTA || 
