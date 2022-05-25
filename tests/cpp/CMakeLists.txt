@@ -33,10 +33,6 @@ include_directories(${PROJECT_SOURCE_DIR}/drivers/vector)
 
 file(COPY data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-find_anyproject(OpenSSL REQUIRED)
-find_anyproject(JBIG REQUIRED)
-find_anyproject(SZIP REQUIRED)
-find_anyproject(UriParser REQUIRED CMAKE_ARGS -DSKIP_BUILD_APPS=ON)
 set(TARGET_LINK_LIB ${TARGET_LINK_LIB} ${LIB_NAME})
 
 macro(add_cpp_test_app name)
@@ -84,13 +80,36 @@ if(TEST_UNIT)
     target_link_libraries(gdal_unit_test PRIVATE ${TARGET_LINK_LIB})
 endif()
 
+# Copy dependencies to bin dir
+set(TEST_DEPENDENCIES
+    lib_openssl
+    lib_jbig
+    lib_szip
+    lib_uriparser
+)
+
 if(WIN32)
+    set(TEST_DEPENDENCIES ${TEST_DEPENDENCIES} lib_z)
+    set(DST_PATH "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_BUILD_TYPE}")
+
     add_custom_command(TARGET test_include_from_c_file
         POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -DDST_PATH="$<TARGET_FILE_DIR:test_include_from_c_file>" -DSRC_PATH="${PROJECT_BINARY_DIR}" -P ${PROJECT_SOURCE_DIR}/cmake/test_dependency.cmake
-        COMMENT "Copy DLLs"
+        COMMAND ${CMAKE_COMMAND} -DDST_PATH=${DST_PATH} -DSRC_PATH="${PROJECT_BINARY_DIR}" -P ${PROJECT_SOURCE_DIR}/cmake/test_dependency_win.cmake
+        COMMENT "Copy compiled dll files"
     )
+elseif(OSX_FRAMEWORK)
+    set(DST_PATH "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
 endif()
+
+get_compiler_version(COMPILER)
+
+foreach(TEST_DEPENDENCY ${TEST_DEPENDENCIES})
+    add_custom_command(TARGET test_include_from_c_file
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -DDST_PATH="${DST_PATH}" -DSRC_PATH="${PROJECT_BINARY_DIR}" -DREPKA_PACKAGE="${TEST_DEPENDENCY}" -DCOMPILER="${COMPILER}" -DOSX_FRAMEWORK="${OSX_FRAMEWORK}" -P ${PROJECT_SOURCE_DIR}/cmake/test_dependency.cmake
+        COMMENT "Get dependency ${TEST_DEPENDENCY}"
+    )
+endforeach()
 
 add_test(NAME quick_test COMMAND testperfcopywords)
 if(APPLE)

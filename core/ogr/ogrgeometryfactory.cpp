@@ -3830,7 +3830,7 @@ OGRGeometry* OGRGeometryFactory::transformWithOptions(
                     !cache.d->poRevCT->GetTargetCS()->IsSame(poSourceCRS) )
                 {
                     delete cache.d->poRevCT;
-                    cache.d->poRevCT = 
+                    cache.d->poRevCT =
                         OGRCreateCoordinateTransformation( &oSRSWGS84, poSourceCRS );
                     cache.d->bIsNorthPolar = false;
                     cache.d->bIsPolar = false;

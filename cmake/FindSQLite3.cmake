@@ -8,7 +8,7 @@
 #  SQLITE3_DEFINITIONS - Compiler switches required for using Sqlite3
 #
 #  Copyright (c) 2008 Andreas Schneider <mail@cynapses.org>
-#  Copyright (c) 2016, NextGIS <info@nextgis.com>
+#  Copyright (c) 2016-2022, NextGIS <info@nextgis.com>
 #
 #  Redistribution and use is allowed according to the terms of the New
 #  BSD license.
@@ -54,7 +54,7 @@ PATHS
 # Handle the QUIETLY and REQUIRED arguments and set GEOS_FOUND to TRUE
 # if all listed variables are TRUE
 INCLUDE(FindPackageHandleStandardArgs)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(SQLITE3 DEFAULT_MSG SQLITE3_LIBRARY SQLITE3_INCLUDE_DIR)
+find_package_handle_standard_args(SQLite3 DEFAULT_MSG SQLITE3_LIBRARY SQLITE3_INCLUDE_DIR)
 
 if(SQLITE3_FOUND)
   set(SQLITE3_LIBRARIES ${SQLITE3_LIBRARY})
