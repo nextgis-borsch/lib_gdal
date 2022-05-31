@@ -3,7 +3,7 @@
 # Purpose:  CMake build scripts
 # Author:   Mikhail Gusev, gusevmihs@gmail.com
 ################################################################################
-# Copyright (C) 2015-2016, NextGIS <info@nextgis.com>
+# Copyright (C) 2015-2022, NextGIS <info@nextgis.com>
 # Copyright (C) 2016 Mikhail Gusev
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -26,7 +26,7 @@
 ################################################################################
 
 find_anyproject(KML DEFAULT ON)
-find_anyproject(Boost DEFAULT ON)
+find_anyproject(Boost DEFAULT ON COMPONENTS ALL)
 
 CMAKE_DEPENDENT_OPTION(ENABLE_LIBKML "Build LIBKML driver for KML format" ON
 "KML_FOUND;BOOST_FOUND" OFF)
